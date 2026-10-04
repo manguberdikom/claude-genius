@@ -66,6 +66,21 @@ Enterprise Integration Patterns (EIP) - Gregor Hohpe va Bobby Woolf tomonidan ko
 
 **Ehtiyot bo'ling:** `DirectChannel` nomi "kanal" bo'lsa ham asinxron emas - u chaqiruvchi thread'da ishlaydi, shuning uchun uni ishlatib "asinxron qildim" deb o'ylash eng keng tarqalgan xato. `QueueChannel` esa in-memory bo'lgani uchun JVM o'chsa xabarlar yo'qoladi - durability kerak bo'lsa broker-backed kanal (Kafka, Rabbit, JMS) ishlating.
 
+```java
+// Kanal - jo'natuvchi va qabul qiluvchi o'rtasidagi nomlangan yo'l
+@Bean
+NewTopic ordersPlaced() {
+    return TopicBuilder.name("orders.placed")
+            .partitions(12)
+            .replicas(3)
+            .config(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
+            .build();
+}
+// Har kanal uchun hujjatlashtirilishi kerak: nomi, formati, egasi,
+// iste'molchilari, kutilayotgan hajmi va maksimal xabar o'lchami.
+// Kanal nomi domen tilida: `orders.placed`, `topic1` emas.
+```
+
 ## 15.2 Xabar (Message)
 
 **Tavsif:** Kanal orqali uzatiladigan atomar ma'lumot birligi: foydali yuk (payload) va meta-ma'lumot (header'lar) dan iborat konvert. Header'lar texnik kontekstni (ID, correlation ID, timestamp, reply address, content type) tashiydi, payload esa biznes ma'lumotini. Bu ajratish tufayli infrastruktura payload'ni ochib ko'rmasdan marshrutlash, filtrlash va kuzatish (tracing) ishlarini bajara oladi.
@@ -103,6 +118,27 @@ Message<Order> msg = MessageBuilder.withPayload(order)
 
 **Ehtiyot bo'ling:** Juda ko'p mayda bosqich serialize/deserialize va kanal hop xarajatini oshiradi - latency sezgir oqimda bosqichlarni birlashtirish yaxshiroq. Bosqichlar orasida yashirin umumiy mutable state (static map, shared bean field) paydo bo'lsa, pattern afzalligi yo'qoladi va parallel ishlaganda race condition chiqadi.
 
+```java
+// Har filtr bitta ish bajaradi va bir xil shaklga ega
+public interface Stage extends UnaryOperator<Message<?>> {}
+
+@Component @Order(10) class Validate  implements Stage { /* ... */ }
+@Component @Order(20) class Enrich    implements Stage { /* ... */ }
+@Component @Order(30) class Transform implements Stage { /* ... */ }
+
+@Service
+public class ImportPipeline {
+    private final List<Stage> stages;      // tartib @Order bilan aniq
+
+    public Message<?> run(Message<?> in) {
+        Message<?> out = in;
+        for (Stage s : stages) out = s.apply(out);
+        return out;
+    }
+}
+// Bosqichlarni almashtirish va qayta tartiblash arzon bo'ladi
+```
+
 ## 15.4 Xabar marshrutlagich (Message Router)
 
 **Tavsif:** Bitta kirish kanalidan xabarni olib, uning mazmuni yoki header'iga qarab bir nechta chiqish kanalidan birini tanlaydi. Router xabarni o'zgartirmaydi - faqat "qayerga ketishi" qarorini qabul qiladi, shu bilan jo'natuvchini qabul qiluvchilar topologiyasidan ajratadi. Qoida o'zgarganda faqat router sozlamasi o'zgaradi, producer kodiga tegilmaydi.
@@ -117,6 +153,24 @@ Message<Order> msg = MessageBuilder.withPayload(order)
 - Xato turiga qarab retry kanali yoki DLQ orasida tanlov qilish.
 
 **Ehtiyot bo'ling:** Router tizimda markaziy "bilimli" nuqtaga aylanib ketishi mumkin - barcha biznes qoidalari unga yig'ilsa, bu yashirin monolit bo'ladi; qoidalar ko'paysa Publish-Subscribe + filter yoki Content-Based Router'ni servislarga tarqatishni ko'rib chiqing. `defaultOutputChannel` berilmasa, mos kanal topilmagan xabar exception bilan tushadi.
+
+```java
+// Router: xabarni o'zgartirmaydi, faqat qayerga ketishini hal qiladi
+@Component
+public class PaymentRouter {
+
+    public String route(PaymentMessage m) {
+        // Qaror faqat header va bir nechta maydonga asoslanadi
+        return switch (m.method()) {
+            case CARD -> "payments.card";
+            case BANK_TRANSFER -> "payments.bank";
+            case WALLET -> "payments.wallet";
+        };
+    }
+}
+// Router xabar tanasini o'zgartirsa, u Translator bo'lib qoladi.
+// Ikki mas'uliyatni aralashtirmang: tashxis qiyinlashadi.
+```
 
 ## 15.5 Xabar tarjimoni (Message Translator)
 
@@ -133,6 +187,24 @@ Message<Order> msg = MessageBuilder.withPayload(order)
 
 **Ehtiyot bo'ling:** Transformer ichida I/O (DB yoki REST chaqiruvi) qilish - bu allaqachon Content Enricher vazifasi; ularni aralashtirsangiz test qilish qiyinlashadi va oqim latency'si ko'rinmas bo'lib qoladi. Qo'lda yozilgan mapping kodi sxema o'zgarganda sekin buziladi - MapStruct yoki sxema reestri (schema registry) bilan compile-time/contract tekshiruvini qo'shing.
 
+```java
+// Translator: format aylantiradi, marshrutlash qarori qabul qilmaydi
+@Component
+public class PspCallbackTranslator {
+
+    public PaymentConfirmed translate(PspCallback raw) {
+        // Tashqi format shu sinfda tug'iladi va shu yerda o'ladi
+        return new PaymentConfirmed(
+                Long.parseLong(raw.merchantRef()),
+                new BigDecimal(raw.amountMinor()).movePointLeft(2),
+                Currency.getInstance(raw.ccy()),
+                Instant.ofEpochSecond(raw.ts()));
+    }
+}
+// Translator idempotent va yon ta'sirsiz bo'lishi kerak: u faqat
+// aylantiradi, bazaga yozmaydi va xabar yubormaydi.
+```
+
 ## 15.6 Xabar endpoint'i (Message Endpoint)
 
 **Tavsif:** Ilova kodi bilan messaging infrastrukturasi orasidagi ulanish nuqtasi: ilova messaging API'sini bilmaydi, endpoint uning o'rniga xabarni oladi/jo'natadi va metod chaqiruviga aylantiradi. Bu ikki yo'nalishda ishlaydi - kiruvchi xabarni POJO metodiga uzatadi (consumer endpoint) yoki metod chaqiruvini xabarga o'rab kanalga yozadi (producer/gateway). Natijada biznes logikasi broker turiga bog'lanmagan va alohida test qilinadigan bo'lib qoladi.
@@ -147,6 +219,22 @@ Message<Order> msg = MessageBuilder.withPayload(order)
 - Biznes servisni messaging'dan mustaqil unit test qilish (endpoint'ni mocklab).
 
 **Ehtiyot bo'ling:** Biznes logikasini bevosita listener metodining ichiga yozish - endpoint'ni biznes qatlamiga aylantirib, uni brokersiz test qilishni imkonsiz qiladi; handler faqat delegatsiya qilsin. Listener metodida exception'ni jimgina yutib yuborish ack semantikasini buzadi: Kafka'da offset commit bo'lib xabar yo'qoladi.
+
+```java
+// Endpoint: ilovani kanalga ulaydigan yagona nuqta
+@Component
+public class OrderEndpoint {
+
+    @KafkaListener(topics = "orders.placed", groupId = "warehouse")
+    public void receive(OrderPlaced event, Acknowledgment ack) {
+        // Endpoint biznes logikani o'zi bajarmaydi: servisga uzatadi
+        warehouseService.reserve(event.orderId(), event.items());
+        ack.acknowledge();           // faqat muvaffaqiyatdan keyin
+    }
+}
+// Xabar almashish tafsiloti (ack, retry, deserializatsiya) endpointda
+// qoladi, biznes servisi Kafka ni bilmaydi va oddiy testdan o'tadi.
+```
 
 ## 15.7 Nuqta-nuqta kanali (Point-to-Point Channel)
 
@@ -163,6 +251,18 @@ Message<Order> msg = MessageBuilder.withPayload(order)
 
 **Ehtiyot bo'ling:** Point-to-point "bir marta yetkazish" degani emas - retry va rebalance paytida takroriy yetkazish bo'lishi mumkin, shuning uchun handler idempotent bo'lishi shart. Kafka'da parallelizm partition soni bilan cheklangan: consumer'ni partition'dan ko'p qilsangiz, ortiqchasi bo'sh turadi.
 
+```java
+// Point-to-point: bitta xabarni faqat bitta iste'molchi oladi
+@KafkaListener(topics = "orders.placed", groupId = "warehouse")
+void warehouse(OrderPlaced e) { /* ... */ }
+
+// Bir xil groupId dagi barcha nusxalar partition'larni bo'lib oladi,
+// shuning uchun xabar guruh ichida bir marta ishlanadi.
+// Parallellik chegarasi = partition soni: 12 partition da 12 dan ko'p
+// faol iste'molchi bo'lishi foydasiz.
+// JMS da bu Queue, Kafka da esa bitta consumer group.
+```
+
 ## 15.8 E'lon-obuna kanali (Publish-Subscribe Channel)
 
 **Tavsif:** Kanalga yozilgan xabarning nusxasi barcha obunachilarga (subscriber) yetkaziladi, ya'ni bir hodisaga bir nechta mustaqil reaksiya bo'lishi mumkin. Producer obunachilar kimligini va sonini bilmaydi - yangi obunachi qo'shilsa, jo'natuvchi kodi o'zgarmaydi. Bu "hodisa yuz berdi" (event) semantikasi uchun to'g'ri model.
@@ -177,6 +277,22 @@ Message<Order> msg = MessageBuilder.withPayload(order)
 - Yangi analitik servisni ishlab chiqishda mavjud oqimga "tinglovchi" sifatida ulash.
 
 **Ehtiyot bo'ling:** Default `PublishSubscribeChannel` sinxron ishlaydi - bitta obunachi sekin yoki exception tashlasa, u butun chain'ni bloklaydi yoki buzadi; `TaskExecutor` va `ErrorHandler` sozlang. Pub-sub'ni command uchun ishlatish (masalan to'lovni olish) ikki marta bajarilish xatosiga olib keladi - command uchun point-to-point ishlating.
+
+```java
+// Publish-subscribe: har obunachi o'z nusxasini oladi
+@KafkaListener(topics = "orders.placed", groupId = "warehouse")
+void warehouse(OrderPlaced e) { /* ... */ }
+
+@KafkaListener(topics = "orders.placed", groupId = "analytics")
+void analytics(OrderPlaced e) { /* ... */ }
+
+@KafkaListener(topics = "orders.placed", groupId = "notifications")
+void notifications(OrderPlaced e) { /* ... */ }
+
+// Uch xil groupId = uch mustaqil obunachi, har biri o'z offset'i bilan.
+// Yangi obunachi qo'shish mavjud iste'molchilarga tegmaydi: shuning
+// uchun hodisaga asoslangan integratsiya kengaytirilishi oson.
+```
 
 ## 15.9 Ma'lumot turi kanali (Datatype Channel)
 
@@ -193,6 +309,20 @@ Message<Order> msg = MessageBuilder.withPayload(order)
 
 **Ehtiyot bo'ling:** Har bir mayda tur uchun alohida kanal ochish topologiyani portlatib yuboradi - tur yaqin bo'lsa umumiy bazaviy tur yoki canonical data model bilan bitta kanalda qolish arzonroq. `setDatatypes` bilan qattiq cheklash evolyutsiyani qiyinlashtiradi: sxema o'zgarganda eski producer'lar birdan `MessageDeliveryException` ola boshlaydi.
 
+```java
+// Datatype channel: bitta kanalda bitta tur, aralashtirilmaydi
+@Bean
+NewTopic ordersPlaced()    { return TopicBuilder.name("orders.placed").build(); }
+@Bean
+NewTopic ordersCancelled() { return TopicBuilder.name("orders.cancelled").build(); }
+
+// Yomon: bitta `orders.events` kanali va ichida `type` maydoni bo'yicha
+// switch. Natijada har iste'molchi keraksiz xabarlarni ham o'qiydi,
+// sxema umumiylashadi va versiyalash qiyinlashadi.
+// Istisno: hodisalar tartibi muhim bo'lsa, bir agregat hodisalari
+// bitta kanalda va bitta partition kalitida qolishi kerak.
+```
+
 ## 15.10 Noto'g'ri xabar kanali (Invalid Message Channel)
 
 **Tavsif:** Formati, turi yoki mazmuni kutilganiga mos kelmagan xabarlarni asosiy oqimdan chiqarib, alohida kanalga yuborish uchun ishlatiladi. Bu "poison message" bitta sekund ichida minglab marta qayta ishlanib oqimni to'xtatib qo'yishining oldini oladi va texnik jamoaga tahlil uchun material beradi. Muhim farqi: bu yetkazib berish muammosi emas - xabar keldi, lekin uni tushunib bo'lmadi.
@@ -207,6 +337,22 @@ Message<Order> msg = MessageBuilder.withPayload(order)
 - Tahlil qilingan xabarlarni tuzatib, qayta oqimga qo'yish (replay) uchun saqlash.
 
 **Ehtiyot bo'ling:** Invalid message kanalini hech kim o'qimasa - u ko'rinmas ma'lumot qabristoniga aylanadi; alert, retention va replay protsedurasi bo'lishi shart. Bu kanalni infrastruktura xatolari (broker uzilishi, timeout) uchun ishlatmang - ular retry va Dead Letter Channel hududiga tegishli.
+
+```java
+// Invalid message channel: o'qib bo'lmagan xabar yo'qolmaydi
+@Bean
+DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> template) {
+    // Deserializatsiya yoki validatsiya xatosi -> DLQ
+    DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(
+            template, (record, ex) -> new TopicPartition(record.topic() + ".DLT", -1));
+    DefaultErrorHandler handler = new DefaultErrorHandler(recoverer,
+            new FixedBackOff(1000L, 2));            // 2 marta urinib ko'radi
+    handler.addNotRetryableExceptions(DeserializationException.class);
+    return handler;
+}
+// DLQ kuzatilmasa, u ma'lumot qabristoniga aylanadi: unga tushgan
+// xabar soni uchun alert qo'ying va sababini tahlil qilish jarayoni bo'lsin.
+```
 
 ## 15.11 O'lik xat kanali (Dead Letter Channel)
 
@@ -247,6 +393,27 @@ DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> template) {
 
 **Ehtiyot bo'ling:** Persistence o'z-o'zidan "exactly-once" bermaydi - failover va retry paytida duplicate bo'ladi, shuning oqibatida iste'molchi idempotent bo'lishi yoki dedup store ishlatishi kerak. `acks=all` va `fsync` har bir xabar uchun latency'ni bir necha barobar oshiradi; past qiymatli telemetriya yoki metrika oqimida bu kafolatni talab qilish ortiqcha xarajat. Shuningdek DB va broker'ni bitta XA tranzaksiyaga bog'lashga urinmang - outbox pattern soddaroq va ishonchliroq.
 
+```yaml
+// Kafolat uch tomondan ta'minlanadi: producer, broker va consumer
+spring:
+  kafka:
+    producer:
+      acks: all                        # barcha in-sync replika yozsin
+      properties:
+        enable.idempotence: true       # takroriy yozuv bo'lmaydi
+        max.in.flight.requests.per.connection: 5
+    consumer:
+      enable-auto-commit: false        # ishlovdan keyin qo'lda commit
+      isolation-level: read_committed
+    listener:
+      ack-mode: manual
+
+# Broker tomonida: min.insync.replicas=2, replication.factor=3,
+# unclean.leader.election.enable=false
+# Uchtasidan biri yetishmasa kafolat yo'q: acks=1 bo'lsa leader
+# yiqilganda xabar yo'qoladi.
+```
+
 ## 15.13 Kanal adapteri (Channel Adapter)
 
 **Tavsif:** Messaging tizimidan tashqarida turgan tizimni (fayl tizimi, baza, HTTP endpoint, SMTP, legacy API) messaging kanaliga ulaydigan ko'prikdir. Adapter bir tomonda domen/transport protokolini "gaplashadi", ikkinchi tomonda esa `Message<?>` bilan ishlaydi, shu bilan ilova kodi integratsiya mexanikasidan ajraladi. Inbound adapter tashqi tizimdan ma'lumot olib kanalga qo'yadi, outbound adapter kanaldan olib tashqi tizimga uzatadi. Natijada tashqi tizimni almashtirsangiz, faqat adapter o'zgaradi - oqimning qolgan qismi tegmaydi.
@@ -261,6 +428,26 @@ DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> template) {
 - Mikroservis chiqaradigan event'larni outbound adapter orqali RabbitMQ exchange'iga uzatish.
 
 **Ehtiyot bo'ling:** Polling adapter'da `poller` fixed-delay va `maxMessagesPerPoll` noto'g'ri sozlansa, baza yoki fayl tizimini "o'ldirib" qo'yadi; inbound adapter ichida biznes logika yozmang - adapter faqat tarjimon bo'lishi kerak. Shuningdek polling adapter bir nechta instance'da ishlasa, taqsimlangan lock (`JdbcLockRegistry`, `RedisLockRegistry`) yoki leader election bo'lmasa, bitta yozuv bir necha marta qayta ishlanadi.
+
+```java
+// Channel adapter: xabar almashishni bilmaydigan tizimni kanalga ulaydi
+@Component
+public class LegacyFileChannelAdapter {
+
+    @Scheduled(fixedDelay = 10_000)
+    public void poll() throws IOException {
+        try (Stream<Path> files = Files.list(inbox)) {
+            files.filter(p -> p.toString().endsWith(".csv")).forEach(p -> {
+                // Fayl tizimi -> xabar kanali
+                kafka.send("imports.raw", p.getFileName().toString(), read(p));
+                Files.move(p, processed.resolve(p.getFileName()));
+            });
+        }
+    }
+}
+// Adapter ikki tomonli bo'lishi mumkin: kanaldan faylga ham yozadi.
+// Legacy tizim kodi o'zgarmaydi - bu patternning asosiy foydasi.
+```
 
 ## 15.14 Xabar ko'prigi (Messaging Bridge)
 
@@ -277,6 +464,26 @@ DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> template) {
 
 **Ehtiyot bo'ling:** Ko'prik ikki transportni bog'laganda yagona atomar transaksiya bo'lmaydi - ikki fazali commit o'rniga idempotentlik va duplikat bardoshligini loyihalash kerak, aks holda xabar yo'qoladi yoki ikkilanadi. Ko'prikni "vaqtinchalik" deb kiritib, keyin arxitekturada abadiy qoldirish ham tipik xato: migratsiya tugash muddatini boshidan belgilang.
 
+```java
+// Messaging bridge: ikki xil xabar tizimini bog'laydi
+@Component
+public class JmsToKafkaBridge {
+    private final KafkaTemplate<String, byte[]> kafka;
+
+    @JmsListener(destination = "LEGACY.ORDERS")
+    public void forward(jakarta.jms.Message message) throws JMSException {
+        // Faqat uzatadi: tarjima ham, biznes qarori ham yo'q
+        BytesMessage bytes = (BytesMessage) message;
+        byte[] body = new byte[(int) bytes.getBodyLength()];
+        bytes.readBytes(body);
+        kafka.send("orders.legacy", message.getJMSCorrelationID(), body);
+    }
+}
+// Ko'prik migratsiya davrida foydali: eski va yangi tizim bir vaqtda
+// ishlaydi. Doimiy yechim bo'lib qolmasligi kerak - u ikki tizimning
+// nosozlik rejimlarini birlashtiradi.
+```
+
 ## 15.15 Xabar sahnasi / Message Bus (Message Bus)
 
 **Tavsif:** Ko'plab ilovalarni bitta umumiy messaging infratuzilmasi, kelishilgan kanal nomlari va yagona kanonik ma'lumot modeli orqali birlashtiruvchi arxitektura uslubidir. Yangi ilova bus'ga "ulanadi" - qolgan tizimlar haqida hech narsa bilmaydi, faqat umumiy xabar formatini va adapter konvensiyasini biladi. Bu Message Channel, Message Router, Message Translator va Channel Adapter patternlarining birlashgan, tashkilot miqyosidagi ko'rinishi. Natijada integratsiya point-to-point ulanishlar o'rniga markazlashgan "orqa miya" ko'rinishini oladi.
@@ -291,6 +498,28 @@ DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> template) {
 - Monolitdan ajratilgan mikroservislarni umumiy event bus orqali bosqichma-bosqich ko'chirish.
 
 **Ehtiyot bo'ling:** Bus tez orada taqsimlangan monolitga aylanishi mumkin: kanonik model har bir yangi talabda o'sib, barcha consumer'larni bir vaqtda deploy qilishga majbur qiladi - shuning uchun sxema evolyutsiyasini (backward/forward compatibility) kun birinchi talabi qiling. Bus'ga biznes logika va marshrutlash qoidalarini yig'ish (klassik ESB anti-patterni) uni yagona nosozlik nuqtasi va tashkiliy "tirbandlik" ga aylantiradi.
+
+```java
+// Message bus: umumiy shina, umumiy sxema va umumiy manzil qoidasi
+public interface EventBus {
+    void publish(String channel, DomainEvent event);
+}
+
+@Component
+class KafkaEventBus implements EventBus {
+    @Override
+    public void publish(String channel, DomainEvent e) {
+        // Umumiy qoidalar bitta joyda: header, kalit, serializatsiya
+        ProducerRecord<String, DomainEvent> r =
+                new ProducerRecord<>(channel, e.aggregateId(), e);
+        r.headers().add("eventId", e.eventId().getBytes(UTF_8));
+        r.headers().add("schemaVersion", "1".getBytes(UTF_8));
+        kafka.send(r);
+    }
+}
+// Shina foydali, lekin u umumiy kutubxonaga aylanib, barcha servisni
+// bog'lab qo'yishi mumkin: ichida biznes logika bo'lmasligi kerak.
+```
 
 ## 15.16 Buyruq xabari (Command Message)
 
@@ -307,6 +536,21 @@ DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> template) {
 
 **Ehtiyot bo'ling:** Buyruq xabarini event bilan aralashtirmang - buyruqni `PublishSubscribeChannel` ga qo'ysangiz, bitta amal necha marta bajariladi; har doim point-to-point kanaldan foydalaning. Qayta yetkazish (at-least-once) tufayli har bir buyruq handler'i idempotent bo'lishi va buyruq `messageId` bo'yicha deduplikatsiya (`IdempotentReceiverInterceptor`, `MetadataStore`) qilinishi kerak.
 
+```java
+// Command message: qabul qiluvchidan aniq harakat so'raydi
+public record ReserveStock(
+        String commandId,          // idempotentlik uchun
+        long orderId,
+        List<Item> items,
+        Instant issuedAt) {}
+
+// Nom buyruq shaklida: ReserveStock, CapturePayment, CancelOrder.
+// Odatda point-to-point kanalga yuboriladi: buyruqni bitta ishlovchi
+// bajarishi kerak, bir nechtasi emas.
+// Hodisadan farqi: buyruq rad etilishi mumkin, hodisa esa allaqachon
+// sodir bo'lgan fakt - uni rad etib bo'lmaydi.
+```
+
 ## 15.17 Hujjat xabari (Document Message)
 
 **Tavsif:** Qabul qiluvchiga ma'lumotning o'zini - biznes hujjat yoki data strukturasini - uzatish uchun ishlatiladigan xabar turidir. Jo'natuvchi qabul qiluvchi bu ma'lumot bilan nima qilishini belgilamaydi va natijani kutmaydi; muhim bo'lgani - hujjatning yetib borishi. Buyruqdan farqi: niyat emas, mazmun uzatiladi; event'dan farqi: vaqt sezgirligi past va payload odatda to'liq va katta bo'ladi. Shuning uchun u ko'pincha "data transfer" integratsiyalarida asosiy shakl bo'ladi.
@@ -322,6 +566,20 @@ DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> template) {
 
 **Ehtiyot bo'ling:** Katta hujjatni to'g'ridan-to'g'ri payload qilib yuborish broker limitlarini (Kafka `max.message.bytes`, Rabbit frame o'lchami) va heap'ni buzadi - bunday holatda Claim Check yoki obyekt saqlovga havola ishlating. Shuningdek hujjat sxemasini versiyalamasdan o'zgartirish barcha consumer'larni sindiradi: yangi maydonlarni ixtiyoriy qilib qo'shing, mavjudlarini olib tashlamang.
 
+```java
+// Document message: ma'lumot uzatadi, harakat so'ramaydi
+public record PriceList(
+        String documentId,
+        LocalDate effectiveFrom,
+        List<PriceEntry> entries) {       // asosiy qism - ma'lumotning o'zi
+    public record PriceEntry(String sku, String price, String currency) {}
+}
+// Qabul qiluvchi u bilan nima qilishni o'zi hal qiladi: saqlaydi,
+// indekslaydi yoki e'tiborsiz qoldiradi.
+// Katta hujjat uchun claim check ishlatiladi: xabarda havola ketadi,
+// tana esa obyekt omborida qoladi.
+```
+
 ## 15.18 Hodisa xabari (Event Message)
 
 **Tavsif:** Tizimda yuz bergan o'zgarish haqida xabar beruvchi, o'tgan zamonda nomlanadigan xabar turidir: `OrderPlaced`, `PaymentFailed`. Jo'natuvchi kim tinglashini bilmaydi va javob kutmaydi, shuning uchun bu eng kam bog'liqlikka ega shakl va publish-subscribe kanallari bilan birga ishlatiladi. Event odatda kichik, immutable va vaqt belgisiga ega bo'ladi; consumer'lar o'z reaksiyasini mustaqil tanlaydi. Shu sababli yangi consumer qo'shish producer kodini o'zgartirishni talab qilmaydi.
@@ -336,6 +594,21 @@ DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> template) {
 - Event sourcing uchun audit qilinadigan o'zgarishlar jurnalini yuritish.
 
 **Ehtiyot bo'ling:** Event ichida javob yoki ko'rsatma kutish (aslida buyruq bo'lgan "event") arxitekturani yashirin bog'liqlik bilan to'ldiradi; event faqat fakt haqida xabar berishi kerak. Tranzaksiya commit bo'lmasdan event chiqarish esa consumer'ning mavjud bo'lmagan ma'lumotni o'qishiga olib keladi - `@TransactionalEventListener(AFTER_COMMIT)` yoki transactional outbox ishlating.
+
+```java
+// Event message: sodir bo'lgan fakt, o'tgan zamonda
+public record OrderPlaced(
+        String eventId,
+        long orderId,
+        String total,
+        Instant occurredAt) {}       // qachon sodir bo'lgani, qachon yuborilgani emas
+
+// Publish-subscribe kanaliga yuboriladi: kim tinglashini jo'natuvchi
+// bilmaydi va bilishi kerak ham emas.
+// Hodisa nomi harakatni emas, natijani aytadi: `OrderPlaced`, mana
+// `PlaceOrder` emas. Hodisani rad etib bo'lmaydi va unga javob
+// qaytarilmaydi - bu buyruqdan asosiy farqi.
+```
 
 ## 15.19 So'rov-javob (Request-Reply)
 
@@ -374,6 +647,26 @@ public interface PricingGateway {
 - Test muhitida javobni mock `QueueChannel` ga qaytarib tekshirish.
 
 **Ehtiyot bo'ling:** Qaytish manzilini tashqi, ishonchsiz chaqiruvchidan olingan header'dan ko'r-ko'rona ishlatish xavfli - zararli manzil bilan tizimingiz begona topic'ga yozishi mumkin, shuning uchun whitelist bilan validatsiya qiling. Splitter/aggregator orqali o'tganda `replyChannel` header'i yo'qolib qolishi mumkin: `HeaderEnricher` yoki `@Gateway` orqali uni ataylab saqlab o'tkazing.
+
+```java
+// Return address: javob qayerga qaytishini jo'natuvchi aytadi
+@Component
+public class QuoteRequester {
+
+    public void request(QuoteRequest req) {
+        ProducerRecord<String, QuoteRequest> r =
+                new ProducerRecord<>("quotes.request", req.id(), req);
+        // Qabul qiluvchi javob kanalini o'zi tanlamaydi
+        r.headers().add("replyTo", "quotes.reply.checkout".getBytes(UTF_8));
+        r.headers().add("correlationId", req.id().getBytes(UTF_8));
+        kafka.send(r);
+    }
+}
+// Shu sabab qabul qiluvchi ko'p mijozga xizmat qila oladi va yangi
+// mijoz qo'shilganda uning kodi o'zgarmaydi.
+// Correlation ID bilan birga ishlatiladi: javob qaysi so'rovga
+// tegishli ekanini aniqlash uchun.
+```
 
 ## 15.21 Korrelyatsiya identifikatori (Correlation Identifier)
 
@@ -415,6 +708,21 @@ public IntegrationFlow aggregateFlow() {
 
 **Ehtiyot bo'ling:** Resequencer va aggregator holat saqlaydi - in-memory `SimpleMessageStore` bilan ilova restart bo'lsa yarim yig'ilgan guruhlar yo'qoladi, shuning uchun persistent store va `MessageGroupStoreReaper` timeout'ini sozlang. Agar oqim bir nechta instance'da parallel ishlasa, bitta guruh bo'laklari turli node'larga tushib hech qachon yopilmaydi: umumiy `JdbcMessageStore` + `LockRegistry` yoki partition-affinity (Kafka key) kerak.
 
+```java
+// Message sequence: katta natija bo'laklab yuboriladi
+public record BatchChunk<T>(
+        String sequenceId,     // butun ketma-ketlik identifikatori
+        int position,          // 1-dan boshlab
+        int size,              // jami nechta bo'lak
+        boolean last,
+        List<T> items) {}
+
+// Qabul qiluvchi to'liqlikni shu uch maydon bilan aniqlaydi:
+// position, size va last. Yetishmagan bo'lak uchun timeout va
+// qayta so'rash mexanizmi bo'lishi kerak, aks holda aggregator
+// abadiy kutib qoladi.
+```
+
 ## 15.23 Xabar amal qilish muddati (Message Expiration)
 
 **Tavsif:** Xabarga "shu vaqtdan keyin qiymatsiz" degan muddat belgilash patterni: muddat o'tgach xabar iste'mol qilinmaydi, balki o'chiriladi yoki dead letter kanaliga yo'naltiriladi. Bu eskirgan ma'lumot bilan ish bajarilishini oldini oladi va navbatlarning cheksiz o'sishini cheklaydi. Muddat odatda header'da absolyut vaqt yoki TTL sifatida yuritiladi. Qabul qiluvchi yoki broker muddatni tekshirish mas'uliyatini oladi.
@@ -429,6 +737,25 @@ public IntegrationFlow aggregateFlow() {
 - Consumer uzilganda eskirgan buyruqlarning qayta yetkazilishini oldini olish.
 
 **Ehtiyot bo'ling:** Muddat o'tgan xabarni jimgina tashlab yuborish ma'lumot yo'qolishiga teng - har doim dead letter kanalini va monitoring/alert'ni yoqib qo'ying. Rabbit'da klassik queue'da TTL faqat navbat boshidagi xabarga qo'llanishi (head-of-line effekti) va tarqoq server/klient soatlari (clock skew) absolyut `expirationDate` ni ishonchsiz qilishini hisobga oling.
+
+```java
+// Message expiration: eskirgan xabar ishlanmaydi
+@KafkaListener(topics = "quotes.request")
+public void onQuote(ConsumerRecord<String, QuoteRequest> record) {
+    Header expires = record.headers().lastHeader("expiresAt");
+    if (expires != null) {
+        Instant deadline = Instant.parse(new String(expires.value(), UTF_8));
+        if (Instant.now().isAfter(deadline)) {
+            metrics.counter("quote.expired").increment();
+            return;                          // jimgina tashlanmaydi, o'lchanadi
+        }
+    }
+    process(record.value());
+}
+// Kurs taklifi yoki vaqtinchalik band qilish kabi vaqtga bog'liq
+// xabarlar uchun shart. Muddati o'tgan xabar soni kuzatilishi kerak:
+// u iste'molchi orqada qolganini ko'rsatadi.
+```
 
 ## 15.24 Format ko'rsatkichi (Format Indicator)
 
@@ -445,6 +772,25 @@ public IntegrationFlow aggregateFlow() {
 
 **Ehtiyot bo'ling:** Java sinf nomini (`__TypeId__`, type info headers) format ko'rsatkichi sifatida ishlatish producer va consumer'ni bir xil paket strukturasiga bog'lab qo'yadi va ishonchsiz manbadan kelganda deserializatsiya zaifligiga yo'l ochadi - trusted packages/type mapping ni albatta cheklang. Versiyani faqat payload ichida yashirish esa marshrutlashni payload'ni to'liq parse qilishga majbur qiladi: ko'rsatkichni header'da saqlang.
 
+```java
+// Format indicator: xabar formatining versiyasi o'zi bilan keladi
+ProducerRecord<String, byte[]> record =
+        new ProducerRecord<>("orders.placed", key, payload);
+record.headers().add("schemaVersion", "2".getBytes(UTF_8));
+record.headers().add("contentType", "application/avro".getBytes(UTF_8));
+
+// Qabul qiluvchi tomonida:
+int version = Integer.parseInt(new String(
+        record.headers().lastHeader("schemaVersion").value(), UTF_8));
+OrderPlaced event = switch (version) {
+    case 1 -> upgradeV1(decodeV1(record.value()));   // eski format o'qiladi
+    case 2 -> decodeV2(record.value());
+    default -> throw new UnsupportedSchemaVersionException(version);
+};
+// Versiya ko'rsatkichi bo'lmasa, format o'zgarishi barcha
+// iste'molchini bir vaqtda yangilashga majbur qiladi.
+```
+
 ## 15.25 Kontent asosidagi marshrutizator (Content-Based Router)
 
 **Tavsif:** Xabarni uning mazmuni - payload turi, header qiymati yoki payload ichidagi maydon - asosida bir nechta mumkin bo'lgan kanaldan bittasiga yo'naltiradi. Jo'natuvchi qabul qiluvchini bilmaydi: u faqat routerning input kanaliga yozadi, qaror esa markazlashgan bir joyda qabul qilinadi. Bu `if/else` zanjirini biznes logikasidan ajratib, marshrutlash qoidalarini deklarativ qiladi. Router xabarni o'zgartirmaydi - faqat uni qayerga borishini hal qiladi.
@@ -459,6 +805,23 @@ public IntegrationFlow aggregateFlow() {
 - Mijoz segmentiga (VIP / standart) qarab turli SLA'li ishlov berish oqimini tanlash.
 
 **Ehtiyot bo'ling:** Routerning `channelMapping` xaritasi vaqt o'tib o'nlab tarmoqqa aylansa, u yashirin "god object"ga aylanadi - bunday holda mas'uliyatni bir nechta kichik routerga yoki qabul qiluvchining o'zidagi filterga bo'lish yaxshiroq. `defaultOutputChannel` berilmagan bo'lsa, mos kelmagan xabar `MessageDeliveryException` bilan yiqiladi, shuning uchun har doim default yoki `resolutionRequired=false` strategiyasini ongli tanlang.
+
+```java
+// Content-based router: qaror xabar mazmuniga asoslanadi
+@Component
+public class ClaimRouter {
+
+    public String route(Claim claim) {
+        if (claim.amount().compareTo(MANUAL_LIMIT) > 0) return "claims.manual";
+        if (claim.type() == ClaimType.MEDICAL) return "claims.medical";
+        return "claims.auto";
+    }
+}
+// Qoida ko'paysa router switch-ga aylanadi: shunda qoidalarni
+// konfiguratsiyaga chiqarish (Dynamic Router, 15.27) yoki qoidalar
+// dvigateliga o'tish kerak.
+// Router xabarni o'zgartirmasligi shart - aks holda tashxis qiyinlashadi.
+```
 
 ## 15.26 Xabar filtri (Message Filter)
 
@@ -475,6 +838,21 @@ public IntegrationFlow aggregateFlow() {
 
 **Ehtiyot bo'ling:** Default holatda rad etilgan xabar hech qanday iz qoldirmasdan yo'qoladi - bu production'da "xabar yo'qolgan" degan eng og'riqli debug keysini tug'diradi, shuning uchun `discardChannel`ni log yoki audit oqimiga ulang. Filterni biznes qoidasi uchun ishlatganda, "nega o'tmadi" savoliga javob beradigan sababni header'da saqlamasa, keyinchalik qoidani isbotlash imkonsiz bo'ladi.
 
+```java
+// Message filter: kerakli bo'lmagan xabarni jimgina tashlaydi
+@KafkaListener(topics = "orders.placed", groupId = "vip-notifications")
+public void onOrder(OrderPlaced e) {
+    if (!e.customerTier().equals(CustomerTier.VIP)) {
+        return;                       // bizga tegishli emas
+    }
+    notifications.sendVipThankYou(e.orderId());
+}
+// Router va filtrning farqi: router xabarni boshqa kanalga yuboradi,
+// filtr esa butunlay to'xtatadi.
+// Filtrlangan xabar soni o'lchanishi kerak: 99% filtrlanayotgan bo'lsa,
+// kanal noto'g'ri tanlangan va alohida kanal kerak.
+```
+
 ## 15.27 Dinamik marshrutizator (Dynamic Router)
 
 **Tavsif:** Marshrutlash qoidalari kod ichida qotib qolmaydi, balki runtime'da - qabul qiluvchilarning o'zlari tomonidan ro'yxatdan o'tish yoki tashqi konfiguratsiya orqali - o'zgaradi. Router "control channel" yoki tashqi manba orqali yangi kanal xaritasini oladi va keyingi xabarlarni unga ko'ra yuboradi. Bu yangi qabul qiluvchi qo'shilganda tizimni qayta deploy qilish zaruratini yo'q qiladi. Haqiqiy dinamikada har bir xabar uchun keyingi qadam alohida hisoblanadi.
@@ -489,6 +867,26 @@ public IntegrationFlow aggregateFlow() {
 - Qabul qiluvchi servis sog'lig'i (health) yo'qolganda uni marshrut xaritasidan vaqtincha chiqarib tashlash.
 
 **Ehtiyot bo'ling:** Runtime'da o'zgaradigan marshrut - kuzatuvi eng qiyin holat: qaysi xabar qayerga ketgani hech qayerda yozilmasa, incident paytida tiklash imkonsiz, shuning uchun tanlangan marshrutni header va trace span attribute'iga yozing. Xarita mutable bo'lgani uchun uni bir nechta thread o'qiydi va yozadi - `ConcurrentHashMap` yoki `AbstractMappingMessageRouter`ning o'z API'sidan foydalaning, oddiy `HashMap`ni tashqaridan o'zgartirmang.
+
+```java
+// Dynamic router: marshrut jadvali runtime'da o'zgaradi
+@Component
+public class DynamicRouter {
+    private final Map<String, String> routes = new ConcurrentHashMap<>();
+
+    @EventListener                       // obunachilar o'zini ro'yxatga oladi
+    void onSubscribe(RouteRegistered e) {
+        routes.put(e.messageType(), e.channel());
+    }
+
+    public Optional<String> route(String messageType) {
+        return Optional.ofNullable(routes.get(messageType));
+    }
+}
+// Afzalligi: yangi obunachi qo'shilganda router kodi o'zgarmaydi.
+// Narxi: joriy marshrut jadvali kodda ko'rinmaydi, shuning uchun u
+// Actuator endpoint orqali ochilishi va log'ga yozilishi kerak.
+```
 
 ## 15.28 Qabul qiluvchilar ro'yxati (Recipient List)
 
@@ -505,6 +903,26 @@ public IntegrationFlow aggregateFlow() {
 
 **Ehtiyot bo'ling:** Default holatda `RecipientListRouter` barcha recipient'larga bir xil thread'da ketma-ket yuboradi - bitta sekin yoki yiqilgan qabul qiluvchi butun yuborishni bloklaydi yoki yarim yo'lda to'xtatadi, shuning uchun kritik bo'lmagan tarmoqlarni `ExecutorChannel` yoki broker orqasiga oling. Payload mutable obyekt bo'lsa, barcha recipient'lar ayni bir instansiyani oladi va biri uni o'zgartirsa boshqalari buziladi - immutable payload ishlating.
 
+```java
+// Recipient list: bitta xabar hisoblangan ro'yxatga yuboriladi
+@Component
+public class NotificationFanout {
+
+    public void publish(OrderPlaced e) {
+        List<String> recipients = new ArrayList<>();
+        recipients.add("notify.email");
+        if (e.customerTier() == CustomerTier.VIP) recipients.add("notify.sms");
+        if (e.total().compareTo(BIG) > 0) recipients.add("notify.account-manager");
+
+        // Ro'yxat har xabar uchun qayta hisoblanadi
+        recipients.forEach(channel -> kafka.send(channel, e.orderIdAsKey(), e));
+    }
+}
+// Publish-subscribe dan farqi: ro'yxatni jo'natuvchi nazorat qiladi,
+// obunachilarning o'zi emas. Qabul qiluvchilar soni dinamik bo'lsa
+// ham, qaysilari xabar olgani log'da aniq qoladi.
+```
+
 ## 15.29 Ajratuvchi (Splitter)
 
 **Tavsif:** Bir nechta element saqlagan kompozit xabarni mustaqil ishlov berilishi mumkin bo'lgan alohida xabarlarga bo'ladi. Har bir chiqish xabariga korrelyatsiya identifikatori, tartib raqami va umumiy soni (sequence details) qo'yiladi, shunda keyinchalik Aggregator yoki Resequencer ularni qayta yig'ishi mumkin. Bu katta batch'ni parallel va oqim (streaming) tarzda qayta ishlashga yo'l ochadi. Splitter - Composed Message Processor va Scatter-Gather'ning asosiy qurilish bloki.
@@ -519,6 +937,28 @@ public IntegrationFlow aggregateFlow() {
 - Katta XML batch hujjatini `XPathMessageSplitter` orqali tranzaksiyalarga ajratish.
 
 **Ehtiyot bo'ling:** Collection'ni to'liq xotiraga yuklab bo'lib tashlash katta fayllarda darhol `OutOfMemoryError` keltiradi - splitter metodidan `Iterator`/`Stream` qaytarib streaming rejimida ishlang va downstream'da backpressure yoki `QueueChannel` sig'imini hisobga oling. Tranzaksiya chegarasi ham o'zgaradi: bo'lingan xabarlar bir xil thread'da ketmasa, ularning muvaffaqiyati endi atomik emas, shuning uchun qisman muvaffaqiyat (partial failure) stsenariysini ongli loyihalash kerak.
+
+```java
+// Splitter: bitta xabar bir nechta xabarga bo'linadi
+@Component
+public class OrderSplitter {
+
+    public void split(OrderPlaced order) {
+        for (Item item : order.items()) {
+            // Har bo'lakka korrelyatsiya kaliti va pozitsiya qo'shiladi
+            ProducerRecord<String, ItemReservation> r = new ProducerRecord<>(
+                    "reservations.request", String.valueOf(order.orderId()),
+                    new ItemReservation(order.orderId(), item, order.items().size()));
+            r.headers().add("correlationId",
+                    String.valueOf(order.orderId()).getBytes(UTF_8));
+            kafka.send(r);
+        }
+    }
+}
+// Bo'laklar soni (`size`) har bo'lakka yoziladi: aggregator to'liqlikni
+// shu bilan aniqlaydi. Bir xil kalit ishlatilsa, bo'laklar bitta
+// partition'ga tushadi va tartibi saqlanadi.
+```
 
 ## 15.30 Agregator (Aggregator)
 
@@ -565,6 +1005,30 @@ IntegrationFlow aggregateOrderLines(JdbcMessageStore store) {
 
 **Ehtiyot bo'ling:** Agar bitta xabar butunlay yo'qolsa, resequencer kutilayotgan raqamni abadiy kutib oqimni to'xtatib qo'yadi - `releasePartialSequences`, timeout va reaper'ni albatta sozlang. Shuningdek bu pattern tabiatan buferlaydi va ketma-ketlikni talab qiladi, ya'ni parallelizmni yo'q qiladi: kerakli tartibni transport darajasida (bir xil partition kaliti) ta'minlash ko'pincha arzonroq yechim.
 
+```java
+// Resequencer: kelgan tartib buzilgan xabarlarni qayta tartiblaydi
+@Component
+public class Resequencer {
+    private final Map<String, SortedMap<Integer, Message>> buffers = new ConcurrentHashMap<>();
+    private final Map<String, Integer> nextExpected = new ConcurrentHashMap<>();
+
+    public List<Message> accept(String sequenceId, int position, Message m) {
+        SortedMap<Integer, Message> buf =
+                buffers.computeIfAbsent(sequenceId, k -> new TreeMap<>());
+        buf.put(position, m);
+        List<Message> ready = new ArrayList<>();
+        int expected = nextExpected.getOrDefault(sequenceId, 1);
+        while (buf.containsKey(expected)) {      // uzluksiz qismni chiqaradi
+            ready.add(buf.remove(expected++));
+        }
+        nextExpected.put(sequenceId, expected);
+        return ready;
+    }
+}
+// Bufer chegaralanmasa va timeout bo'lmasa, yo'qolgan bitta xabar
+// butun ketma-ketlikni abadiy ushlab turadi.
+```
+
 ## 15.32 Birlashtirilgan xabar protsessori (Composed Message Processor)
 
 **Tavsif:** Splitter, marshrutlash/ishlov berish va Aggregator'ni yagona mantiqiy komponentga birlashtiradi: kompozit xabar bo'laklarga bo'linadi, har bir bo'lak o'z yo'li bilan qayta ishlanadi, so'ng natijalar bitta javobga yig'iladi. Tashqaridan bu oddiy "so'rov → javob" protsessori kabi ko'rinadi, ichidagi murakkablik yashiriladi. Shu bilan har xil turdagi elementlarni o'z mutaxassis handler'lariga yuborib, keyin yaxlit natija qaytarish mumkin bo'ladi.
@@ -579,6 +1043,28 @@ IntegrationFlow aggregateOrderLines(JdbcMessageStore store) {
 - Bir nechta tashqi API'dan olingan bo'laklardan mijozning 360-daraja profilini qurish.
 
 **Ehtiyot bo'ling:** Bu pattern asosan Splitter va Aggregator xatolarini meros qilib oladi: bitta bo'lak yiqilsa yoki kechiksa, butun kompozit javob osilib qoladi - har bir sub-flow uchun timeout, retry va `sendPartialResultOnExpiry` siyosatini oldindan belgilang. Ichida bir nechta EIP yashirinishi kuzatuvni qiyinlashtiradi, shuning uchun correlation id'ni uchidan uchiga olib o'tib, Micrometer Tracing bilan span'larni bog'lang.
+
+```java
+// Composed message processor: bo'lish, parallel ishlov va yig'ish
+@Service
+public class OrderValidationProcessor {
+
+    public ValidationReport validate(Order order) throws InterruptedException {
+        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+            // Bo'lish: har tekshiruv mustaqil va parallel ketadi
+            var stock  = scope.fork(() -> inventory.check(order.items()));
+            var credit = scope.fork(() -> billing.checkCredit(order.customerId()));
+            var fraud  = scope.fork(() -> riskEngine.score(order));
+
+            scope.join().throwIfFailed();
+            // Yig'ish: bitta natija qaytadi
+            return new ValidationReport(stock.get(), credit.get(), fraud.get());
+        }
+    }
+}
+// Splitter, parallel endpointlar va aggregator bitta mas'uliyat ichida.
+// Timeout butun to'plam uchun qo'yilishi kerak, har qadam uchun emas.
+```
 
 ## 15.33 Sochish-yig'ish (Scatter-Gather)
 
@@ -624,6 +1110,29 @@ IntegrationFlow quoteFlow() {
 
 **Ehtiyot bo'ling:** Routing slip faqat chiziqli ketma-ketlik uchun: shartli tarmoqlanish, parallel qadamlar yoki compensation kerak bo'lsa, u tezda o'qib bo'lmas holatga keladi - bunday holda Process Manager yoki haqiqiy workflow engine tanlang. Marshrut xabar header'ida yurgani uchun uni tashqi manbadan (masalan foydalanuvchi so'rovidan) to'g'ridan-to'g'ri olish xavfli: ro'yxatni faqat ichki, oq ro'yxatdagi kanal nomlaridan yasang.
 
+```java
+// Routing slip: marshrut xabar bilan birga yuradi
+public record RoutingSlip(List<String> remaining) {
+
+    public Optional<String> next() {
+        return remaining.isEmpty() ? Optional.empty() : Optional.of(remaining.getFirst());
+    }
+    public RoutingSlip advance() {
+        return new RoutingSlip(remaining.subList(1, remaining.size()));
+    }
+}
+
+// Har bosqich o'zidan keyingisini xabardan o'qiydi
+@KafkaListener(topics = "pipeline.step")
+void process(Envelope env) {
+    Object result = handle(env.payload());
+    env.slip().advance().next().ifPresent(
+            channel -> kafka.send(channel, env.withPayload(result)));
+}
+// Markaziy orkestrator kerak emas, lekin marshrutni o'zgartirish
+// uchun xabar yaratilgan joyga qaytish kerak bo'ladi.
+```
+
 ## 15.35 Jarayon menejeri (Process Manager)
 
 **Tavsif:** Ko'p qadamli, uzoq davom etadigan jarayonni markazlashgan holda boshqaradigan stateful komponent: har bir qadam yakunlanganda kelgan xabarga qarab keyingi qadamni hal qiladi va jarayon holatini saqlaydi. Routing Slip'dan farqi - marshrut xabarda emas, menejerda; u shartli tarmoqlanish, parallel qadamlar, timeout va compensation (teskari amal) ni ham boshqaradi. Distributed tranzaksiyalarda bu orchestration-based Saga sifatida tanilgan. Jarayon holati davomli saqlangani uchun restart va qayta tiklash mumkin bo'ladi.
@@ -639,6 +1148,34 @@ IntegrationFlow quoteFlow() {
 
 **Ehtiyot bo'ling:** Process Manager - tizimning markaziy nuqtasi: unga juda ko'p biznes qoida yuklansa, u taqsimlangan arxitekturadagi yangi monolitga va yagona nosozlik nuqtasiga aylanadi, shuning uchun unda faqat koordinatsiya qolsin, domen logikasi servislarda. Jarayon holatini davomli saqlamasdan va qadamlarni idempotent qilmasdan qurish - restart'dan keyin takroriy to'lov yoki yarim qolgan saga degani; shuningdek har bir uzoq qadam uchun timeout/deadline belgilash shart.
 
+```java
+// Process manager: holatni saqlaydi va keyingi qadamni belgilaydi
+@Component
+public class CheckoutProcessManager {
+    private final ProcessStateRepository state;    // saqlanishi SHART
+
+    public void start(OrderId id) {
+        state.save(ProcessState.at(id, Step.STARTED));
+        commands.send(new ReserveStock(id));
+    }
+
+    @KafkaListener(topics = "stock.reserved")
+    void onStockReserved(StockReserved e) {
+        state.advance(e.orderId(), Step.STOCK_RESERVED);
+        commands.send(new CapturePayment(e.orderId()));
+    }
+
+    @KafkaListener(topics = "payment.failed")
+    void onPaymentFailed(PaymentFailed e) {
+        commands.send(new ReleaseStock(e.orderId()));      // kompensatsiya
+        state.fail(e.orderId(), e.reason());
+    }
+}
+// Routing slip dan farqi: marshrut xabarda emas, menejerda. Shuning
+// uchun oqimni o'zgartirish bitta joyda bo'ladi, lekin menejer
+// yiqilsa davom etishi uchun holati bazada turishi kerak.
+```
+
 ## 15.36 Xabar brokeri (Message Broker)
 
 **Tavsif:** Ko'plab jo'natuvchi va qabul qiluvchi o'rtasida nuqta-nuqta ulanishlar o'rniga markaziy hub joylashtiradi: barcha xabarlar brokerga boradi, broker esa ularni obuna va marshrut qoidalariga ko'ra tarqatadi. Natijada N×M integratsiya bog'lanishlari N+M ga tushadi, jo'natuvchi qabul qiluvchining joylashuvi va hatto mavjudligini bilmaydi. Broker, shu bilan birga, xabarlarni davomli saqlash, qayta urinish, dead-letter va yukni tekislash (buffering) mas'uliyatini ham oladi. Bu EIP'ning "hub-and-spoke" asosiy infratuzilma patterni.
@@ -653,6 +1190,23 @@ IntegrationFlow quoteFlow() {
 - Legacy JMS tizimini yangi servislar bilan broker orqali, kodini o'zgartirmasdan bog'lash.
 
 **Ehtiyot bo'ling:** Broker kuchli bo'lgani uchun unga marshrutlash va transformatsiya logikasini ko'chirishga kuchli vasvasa bo'ladi - bu "aqlli broker, ahmoq servislar" anti-patternini va yagona nosozlik nuqtasini tug'diradi; biznes logikasi servislarda qolsin, broker esa transport bo'lib qolsin. Shuningdek broker avtomatik ravishda "exactly-once" yoki global tartib bermaydi: idempotent consumer, partition kaliti, dead-letter topic va retry siyosatini o'zingiz loyihalashingiz kerak, aks holda yo'qotilgan yoki takrorlangan xabarlar production'da chiqadi.
+
+```java
+// Broker: jo'natuvchi va qabul qiluvchi bir-birini bilmaydi
+@Service
+public class OrderEventPublisher {
+    private final KafkaTemplate<String, OrderPlaced> kafka;
+
+    public void publish(OrderPlaced e) {
+        // Kalit: bir buyurtma hodisalari bitta partition'da, tartibda
+        kafka.send("orders.placed", String.valueOf(e.orderId()), e);
+    }
+}
+// Broker bog'liqlikni kamaytiradi, lekin yangi nosozlik rejimlarini
+// qo'shadi: consumer lag, rebalance, takroriy yetkazish va DLQ.
+// Har iste'molchi idempotent bo'lishi shart (15.10 va 14.18),
+// va broker o'zi yuqori mavjudlikda sozlanishi kerak (15.12).
+```
 
 ## 15.37 Amalda qo'llash
 
