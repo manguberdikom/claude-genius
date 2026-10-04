@@ -18,6 +18,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 TOOL = os.path.join(HERE, "check_code.py")
+RULES = os.path.join(HERE, "rules_for.py")
 BAD = os.path.join(HERE, "testdata", "java", "Bad.java")
 GOOD = os.path.join(HERE, "testdata", "java", "Good.java")
 
@@ -36,6 +37,12 @@ def run_file(path):
     proc = subprocess.run([sys.executable, TOOL, path],
                           capture_output=True, text=True, cwd=ROOT)
     return proc.returncode, proc.stdout
+
+
+def prepare(path):
+    """rules_for ni chaqirib, zanjir qadamini belgilaydi."""
+    subprocess.run([sys.executable, RULES, path],
+                   capture_output=True, text=True, cwd=ROOT)
 
 
 def run_hook(path, tool_name="Write"):
@@ -89,7 +96,26 @@ def main():
         failures += not ok
         print("%-4s %s" % ("OK" if ok else "XATO", label))
 
-    print("\n== Hook javobi ==")
+    print("\n== Zanjir majburlanadi ==")
+    sys.path.insert(0, HERE)
+    import state
+    state.clear()
+    raw_skipped = run_hook(GOOD)
+    enforce = [
+        ("rules_for chaqirilmasa block",
+         bool(raw_skipped)
+         and json.loads(raw_skipped).get("decision") == "block"),
+        ("sabab rules_for buyrug'ini beradi",
+         bool(raw_skipped)
+         and "rules_for.py" in json.loads(raw_skipped).get("reason", "")),
+    ]
+    for label, ok in enforce:
+        failures += not ok
+        print("%-4s %s" % ("OK" if ok else "XATO", label))
+
+    print("\n== Hook javobi (zanjir bajarilgan) ==")
+    prepare(BAD)
+    prepare(GOOD)
     raw_bad = run_hook(BAD)
     raw_good = run_hook(GOOD)
     checks = [
@@ -105,7 +131,7 @@ def main():
         failures += not ok
         print("%-4s %s" % ("OK" if ok else "XATO", label))
 
-    total = len(EXPECT) + 1 + 3 + 2 + len(checks)
+    total = len(EXPECT) + 1 + 3 + 2 + len(enforce) + len(checks)
     print("\n%d/%d o'tdi" % (total - failures, total))
     return 1 if failures else 0
 

@@ -91,9 +91,13 @@ Boshqa asboblar:
 - `doc.sh rule java:S3776` - Sonar kalitini izohlagan bo'lim.
 - `doc.sh checklist <hujjat> [bob]` - yozilgan tekshiruv punktlari.
 - `parse_test_output.py` - test chiqishidan birinchi haqiqiy sababni oladi.
-- `check_code.py` - Java fayl yozilgandan keyin `PostToolUse` hook sifatida
-  mexanik qoidalarni tekshiradi va buzilganini bo'lim raqami bilan
-  qaytaradi. Faqat yolg'on ishga tushishi nol bo'lgan tekshiruvlar.
+- `rules_for.py` - tegilayotgan fayllarga qaysi boblar, tekshiruv
+  punktlari va avvalgi xatolar tegishli. Java yozishdan OLDIN majburiy.
+- `check_code.py` - Java fayl yozilgandan keyin `PostToolUse` hook
+  sifatida mexanik qoidalarni tekshiradi va `rules_for` chaqirilganini
+  talab qiladi. Faqat yolg'on ishga tushishi nol bo'lgan tekshiruvlar.
+- `eval_skill.py` - zanjirning determinik qismini o'lchaydi: marshrut,
+  topilma va aniqlik.
 
 ## Tekshiruv
 

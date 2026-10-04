@@ -22,6 +22,7 @@
       "Bash(python3 tools/test_skill.py:*)",
       "Bash(python3 tools/rules_for.py:*)",
       "Bash(python3 tools/test_rules_for.py:*)",
+      "Bash(python3 tools/eval_skill.py:*)",
       "Bash(sed -n:*)",
       "Bash(grep:*)",
       "Bash(awk:*)",

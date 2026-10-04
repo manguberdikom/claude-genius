@@ -27,6 +27,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 
+from state import mark  # noqa: E402
+
 CHAPTERS = os.path.join(ROOT, "index", "chapters.tsv")
 CHECKLIST = os.path.join(ROOT, "index", "checklist.tsv")
 MEMORY = os.path.join(ROOT, "memory")
@@ -36,27 +38,20 @@ MEMORY = os.path.join(ROOT, "memory")
 # shovqin bo'ladi va o'qilmay o'tiladi. Shuning uchun kam olinadi va
 # boblar bo'ylab navbatma-navbat: har mavzudan birinchi punktlar.
 MAX_ITEMS = 12
+# Bir chaqiruvda shuncha bob. Belgilar ko'p, lekin bitta o'zgarish uchun
+# yigirmata bob ro'yxati yo'l ko'rsatmaydi, chalg'itadi. ALWAYS shundan
+# tashqarida: Java faylida nomlash va funksiya shakli har doim tegishli.
+MAX_CHAPTERS = 8
 
 # Kod ichidagi belgi -> tegishli boblar. Jadval qo'lda tuzilgan, lekin
 # har bob ishga tushishdan oldin indeksda borligi tekshiriladi, shuning
 # uchun bob ko'chsa yoki o'chsa, jim xato bo'lmaydi.
 # Tartib muhim: aniqroq belgi oldinda, punktlar shu tartibda olinadi.
+# Tartib muhim: eng aniq belgi oldinda. Har chaqiruvda MAX_CHAPTERS ta
+# bob olinadi, shuning uchun umumiy belgi (`List<`, `->`) oxirida turadi
+# va aniqrog'i ishga tushganda u chiqib ketadi.
 SIGNALS = [
-    ("entity va ORM", r"@Entity\b|@Table\b|@ManyToOne\b|@OneToMany\b|@Column\b",
-     [("patterns", "9"), ("architect", "18"), ("sonarqube", "29"),
-      ("code-review", "23")]),
-    ("tranzaksiya", r"@Transactional\b",
-     [("architect", "19"), ("code-review", "19")]),
-    ("tashqi chaqiruv", r"\b(?:RestTemplate|WebClient|RestClient|FeignClient)\b",
-     [("patterns", "17"), ("code-review", "22")]),
-    ("web qatlami", r"@RestController\b|@Controller\b|@(?:Get|Post|Put|Delete|Request)Mapping\b",
-     [("patterns", "7"), ("architect", "17"), ("code-review", "20")]),
-    ("test", r"@Test\b|@ParameterizedTest\b|\bassertThat\b|\bAssertions\.",
-     [("testing", "5"), ("sonarqube", "19"), ("code-review", "35"),
-      ("code-review", "34"), ("code-review", "36")]),
-    ("xavfsizlik: ruxsat", r"@PreAuthorize\b|SecurityFilterChain|@Secured\b|@RolesAllowed\b",
-     [("patterns", "18"), ("code-review", "30"), ("code-review", "28"),
-      ("sonarqube", "26")]),
+    # --- xavfsizlik: eng qimmat xato turi, shuning uchun birinchi ---
     ("xavfsizlik: SQL", r"createNativeQuery|createQuery|\bStatement\b|@Query\b|jdbcTemplate",
      [("code-review", "29"), ("sonarqube", "26")]),
     ("xavfsizlik: sir va kripto",
@@ -65,14 +60,82 @@ SIGNALS = [
     ("xavfsizlik: tashqi kirish",
      r"MultipartFile|ObjectInputStream|readObject\(|new\s+URL\(|URI\.create\(",
      [("code-review", "31")]),
+    ("xavfsizlik: ruxsat", r"@PreAuthorize\b|SecurityFilterChain|@Secured\b|@RolesAllowed\b",
+     [("patterns", "18"), ("code-review", "30"), ("code-review", "28")]),
+
+    # --- ma'lumot va tranzaksiya ---
+    ("entity va ORM", r"@Entity\b|@Table\b|@ManyToOne\b|@OneToMany\b|@Column\b",
+     [("patterns", "9"), ("architect", "18"), ("sonarqube", "29"),
+      ("code-review", "23"), ("clean-code", "28")]),
+    ("tranzaksiya", r"@Transactional\b",
+     [("architect", "19"), ("code-review", "19")]),
+    ("sxema migratsiyasi", r"Flyway|Liquibase|\bV\d+__|changeSet",
+     [("architect", "33"), ("code-review", "25")]),
+
+    # --- integratsiya ---
+    ("tashqi chaqiruv", r"\b(?:RestTemplate|WebClient|RestClient|FeignClient)\b",
+     [("patterns", "17"), ("code-review", "22")]),
+    ("broker", r"@KafkaListener\b|@RabbitListener\b|KafkaTemplate|StreamBridge",
+     [("architect", "29"), ("patterns", "16")]),
+
+    # --- test: turiga qarab ajratiladi ---
+    ("test: Testcontainers", r"@Testcontainers\b|@Container\b|GenericContainer|PostgreSQLContainer",
+     [("testing", "8")]),
+    ("test: tashqi servis taqlidi", r"WireMock|MockRestServiceServer|\bPact\b|StubRunner",
+     [("testing", "9")]),
+    ("test: slice", r"@SpringBootTest\b|@WebMvcTest\b|@DataJpaTest\b|@JsonTest\b",
+     [("testing", "7"), ("clean-code", "30")]),
+    ("test: mock", r"@MockBean\b|@MockitoBean\b|@Mock\b|Mockito\.",
+     [("testing", "6")]),
+    ("test: ma'lumot", r"@Sql\b|TestEntityManager|@DirtiesContext\b|@TestPropertySource\b",
+     [("testing", "10")]),
+    ("test: arxitektura", r"ArchUnit|ArchTest|ArchRuleDefinition",
+     [("testing", "14")]),
+    ("test: asinxron", r"Awaitility|CountDownLatch|@RepeatedTest\b|@Disabled\b",
+     [("testing", "11"), ("testing", "16")]),
+    ("test", r"@Test\b|@ParameterizedTest\b|\bassertThat\b|\bAssertions\.",
+     [("testing", "5"), ("sonarqube", "19"), ("code-review", "35"),
+      ("code-review", "34"), ("code-review", "36")]),
+
+    # --- web va servis ---
+    ("web qatlami", r"@RestController\b|@Controller\b|@(?:Get|Post|Put|Delete|Request)Mapping\b",
+     [("patterns", "7"), ("architect", "17"), ("code-review", "20"),
+      ("clean-code", "27")]),
     ("keshlash", r"@Cacheable\b|@CacheEvict\b|CacheManager",
      [("patterns", "11"), ("architect", "28")]),
     ("rejalashtirilgan ish", r"@Scheduled\b|JobBuilder|StepBuilder",
      [("patterns", "20")]),
-    ("loglash", r"\bLogger\b|@Slf4j\b|\blog\.(?:info|warn|error|debug)\b",
+    ("konkurentlik", r"\bsynchronized\b|ReentrantLock|AtomicInteger|AtomicLong|ExecutorService",
+     [("architect", "11"), ("architect", "12")]),
+    ("asinxron", r"@Async\b|CompletableFuture",
+     [("architect", "12"), ("patterns", "19")]),
+
+    # --- kod shakli ---
+    ("xato bilan ishlash", r"\bthrow new\b|\bcatch\s*\(|\bfinally\b",
+     [("clean-code", "18"), ("clean-code", "19")]),
+    ("tenglik shartnomasi", r"\bequals\s*\(|\bhashCode\s*\(|\bcompareTo\s*\(",
+     [("clean-code", "15")]),
+    ("vorislik", r"\bextends\s+\w|\babstract\s+class\b|\bsuper\.",
+     [("clean-code", "17")]),
+    ("pul va son", r"\bBigDecimal\b|\bdouble\s+\w|\bfloat\s+\w",
+     [("clean-code", "20")]),
+    ("sana va vaqt", r"\bLocalDate\b|\bLocalDateTime\b|\bInstant\b|\bZoneId\b|\bDuration\b",
+     [("clean-code", "22")]),
+    ("satr va regex", r"Pattern\.|String\.format|\breplaceAll\b|\bmatches\s*\(",
+     [("clean-code", "21")]),
+    ("o'zgarmaslik", r"\brecord\s+\w+\s*\(|\bfinal\s+class\b|List\.of\(|Map\.of\(",
+     [("clean-code", "16")]),
+    ("Lombok", r"@Builder\b|@Data\b|@Getter\b|@Setter\b|@Slf4j\b|@Value\b",
+     [("sonarqube", "41"), ("clean-code", "26")]),
+    ("loglash", r"\bLogger\b|\blog\.(?:info|warn|error|debug)\b",
      [("clean-code", "29")]),
     ("servis qatlami", r"@Service\b|@Component\b",
      [("patterns", "8")]),
+    # --- umumiy: eng oxirida, aniqrog'i bo'lsa chiqib ketadi ---
+    ("oqim va lambda", r"\.stream\s*\(\)|Collectors\.|\bOptional<",
+     [("clean-code", "24"), ("clean-code", "23")]),
+    ("shart va sikl", r"\bswitch\s*\(|\belse\s+if\b|\bfor\s*\(|\bwhile\s*\(",
+     [("clean-code", "6"), ("clean-code", "7")]),
     # Build fayli: bog'liqlik qo'shish ham kod o'zgarishi, lekin uning
     # qoidalari boshqa bobda va .java faylidan ko'rinmaydi.
     ("bog'liqlik", r"<dependency>|<artifactId>|implementation\s|api\s*[(']|plugins\s*\{",
@@ -196,12 +259,16 @@ def main():
               file=sys.stderr)
         return 2
 
+    # Zanjirning birinchi qadami bajarilgani belgilanadi: check_code
+    # yozuvdan oldin shuni talab qiladi.
+    mark(paths)
+
     titles = chapter_titles()
     signals = detect(paths)
     wanted, order = set(), []
     for _, chapters, _ in signals:
         for ch in chapters:
-            if ch not in wanted:
+            if ch not in wanted and len(order) < MAX_CHAPTERS:
                 wanted.add(ch)
                 order.append(ch)
     if any(p.endswith(".java") for p in paths):

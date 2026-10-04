@@ -50,9 +50,10 @@ deyarli har doim shu uch sababdan biri bilan keladi:
 | Reviewer boshqa mezon bilan tekshirgan | ikkalasi bir xil ro'yxatni oladi |
 | "Bajarildi" nimaligi aytilmagan | qabul mezoni normalizatsiyada belgilanadi |
 
-Shuning uchun `rules_for.py` tavsiya emas, zanjirning birinchi qadami.
-U chaqirilmagan bo'lsa, review topilmasi aktyorning xatosi emas,
-jarayonning xatosi.
+Shuning uchun `rules_for.py` tavsiya emas, zanjirning birinchi qadami,
+va u **majburlanadi**: `check_code.py` Java fayl yozilganda shu
+chaqiruv bo'lganini tekshiradi va bo'lmasa yozuvni to'xtatadi.
+Zanjir sifati odamning yodida qolishiga tayanmaydi.
 
 ## Kamchilik kimga qaytadi
 

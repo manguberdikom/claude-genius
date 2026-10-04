@@ -25,6 +25,7 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 
 from docref import hint  # noqa: E402
+from state import was_marked  # noqa: E402
 
 MAX_SHOWN = 6
 
@@ -175,6 +176,15 @@ def analyse(path):
     return check_text(text, path)
 
 
+SKIPPED = (
+    "Yozishdan oldin qoidalar olinmagan:\n"
+    "    python3 tools/rules_for.py %s\n"
+    "U tegishli boblarni, tekshiruv punktlarini va avvalgi xatolarni\n"
+    "beradi. Reviewer aynan shu ro'yxat bilan tekshiradi, shuning uchun\n"
+    "uni o'tkazib yuborish ikkinchi aylanani keltiradi."
+)
+
+
 def main():
     if len(sys.argv) > 1:
         path = sys.argv[1]
@@ -193,6 +203,16 @@ def main():
     response = payload.get("tool_response") or {}
     path = (response.get("filePath") or tool_input.get("file_path") or "")
     findings = analyse(path)
+
+    # Zanjir qoidasi: .java yozilishidan oldin rules_for chaqirilgan
+    # bo'lishi kerak. Bu ko'rsatma emas, shart: aks holda u unutiladi.
+    if path.endswith(".java") and os.path.isfile(path) and not was_marked(path):
+        reason = SKIPPED % path
+        if findings:
+            reason = render(path, findings) + "\n\n" + reason
+        json.dump({"decision": "block", "reason": reason}, sys.stdout)
+        return 0
+
     if not findings:
         return 0
 
