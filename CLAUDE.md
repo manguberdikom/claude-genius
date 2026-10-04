@@ -34,72 +34,50 @@ Oltita hujjat, har biri `docs/<hujjat>/` papkasida, har bob alohida faylda:
 
 ## Qidirish va o'qish
 
-Korpus 5.9 MB, ~2.1M token. Eng katta bob ~68k token, bitta bo'lim esa
-o'rtacha ~700 token. Shuning uchun bob fayli butunligicha emas, bo'lim
-darajasida o'qiladi. Hammasi `tools/doc.sh` orqali:
+Korpus ~2.1M token, eng katta bob ~68k, bitta bo'lim esa ~700. Shuning
+uchun bob butunligicha emas, bo'lim darajasida o'qiladi.
 
 ```bash
-tools/doc.sh find "circuit breaker"       # sarlavha va inglizcha taxalluslar
-tools/doc.sh find -f "pg_stat_statements" # matn ichidan ham, ~60 ms
-tools/doc.sh show patterns 17.2           # faqat o'sha bo'limni chiqaradi
-tools/doc.sh outline sonarqube 29         # bobdagi bo'limlar
-tools/doc.sh path patterns 17.2           # fayl, satr oralig'i va anchor
+tools/doc.sh find "circuit breaker"   # sarlavha va inglizcha taxalluslar
+tools/doc.sh find -f "pg_stat_statements"  # matn ichidan ham
+tools/doc.sh show patterns 17.2       # faqat o'sha bo'lim
+tools/doc.sh outline sonarqube 29     # bobdagi bo'limlar
+tools/doc.sh path patterns 17.2       # fayl, satr oralig'i, anchor
+tools/doc.sh toc                      # hujjat kalitlari
 ```
 
-Odatiy yo'l ikki qadam: `find` bo'lim raqamini beradi, `show` matnni beradi.
-Hujjat kalitlari `doc.sh toc` da.
+`tools/suggest_sections.py` har so'rovda avtomatik ishlaydi va mos bo'lim
+raqamlarini kontekstga qo'shadi, ya'ni `find` chaqirilmasa ham kerakli
+joy ko'rsatiladi. Taklif chiqqan bo'lsa javob unga tayanadi: `show` bilan
+o'qing yoki nega mos emasligini ayting. Taklif yo'qligi mavzu yo'q degani
+emas, `find` bilan qidiring.
 
-Buning ustiga `tools/suggest_sections.py` har bir so'rovda avtomatik
-ishlaydi (`UserPromptSubmit` hook) va mos bo'lim raqamlarini kontekstga
-qo'shadi. Ya'ni kerakli joy `find` chaqirilmasa ham ko'rsatiladi. Taklif
-chiqqan bo'lsa, javob o'sha bo'limlarga tayanishi kerak: ularni `show`
-bilan o'qing yoki nega mos emasligini ayting. Taklif chiqmasligi mavzu
-yo'q degani emas, `find` bilan qidirib ko'ring.
-
-Qoidalar:
-
-- `cat`, `less` yoki chegarasiz `Read` bilan 1200 satrdan uzun bob fayli
-  o'qilmaydi. Buni `tools/guard_bigdocs.py` PreToolUse hook sifatida to'sadi
-  (`.claude/settings.json`), sinovlari `tools/test_guard.py` da.
-- Havolani qo'lda yozmang: `doc.sh path` tayyor anchor beradi, u
-  `check_docs.py` ishlatadigan slug bilan bir xil hisoblanadi.
-- Indeks `index/` da, uni `tools/build_index.py` `docs/manifest.json` dan
-  yasaydi. Bob fayli indeksdan yangiroq bo'lsa `doc.sh` o'zi qayta yasaydi,
-  shuning uchun tahrirdan keyin qo'lda hech narsa qilish shart emas.
-- Indeks grep qilinadi, o'qilmaydi. Uni ham kontekstga to'liq olmang.
-- Qidiruv sifati o'lchanadi: `python3 tools/eval_find.py`. U bo'limni
-  topish emas, nechanchi o'rinda chiqishini o'lchaydi. `find` mantig'i yoki
-  indeks o'zgarsa, pasayish shu yerda ko'rinadi.
-- Avtomatik taklifning chegaralari `python3 tools/test_suggest.py` da
-  sinaladi: mavzuli so'rovga taklif chiqishi, mavzusiziga jim turishi
-  shart. Chegara qiymatlari o'sha ro'yxatda sozlangan, ko'z bilan emas.
+- 1200 satrdan uzun faylni chegarasiz o'qish `tools/guard.py` tomonidan
+  to'siladi. Havolani qo'lda yozmang, `doc.sh path` tayyor anchor beradi.
+- Indeks `index/` da, hosila. Bob yangiroq bo'lsa `doc.sh` o'zi qayta
+  yasaydi. Indeks grep qilinadi, kontekstga olinmaydi.
+- O'lchov: `eval_find.py` (qidiruv o'rni), `test_suggest.py` (taklif
+  chegaralari), `cost_report.py` (har navbatdagi kontekst).
 
 ## Arzon yo'ldan borish
 
-Javob ko'pincha kodning yoki chiqishning o'zida turadi. Qimmat yo'l
-natijani yaxshilamasa, u shunchaki pul va vaqt.
+Javob ko'pincha kodning yoki chiqishning o'zida. Qimmat yo'l natijani
+yaxshilamasa, u shunchaki pul va vaqt.
 
-| Kerak bo'lsa | Qimmat yo'l | Arzon yo'l |
-|---|---|---|
-| Baza tuzilishi | konteyner, ulanish, `\d+` | `python3 tools/schema_from_entities.py <src>` |
-| Test nega yiqildi | qayta ishga tushirish | chiqishdagi birinchi xatoni o'qish |
-| Qoida nima deydi | bobni to'liq o'qish | `tools/doc.sh show <hujjat> <raqam>` |
-| Diff to'g'rimi | hammasini qurib ko'rish | `review` agenti, keyin maqsadli test |
+| Kerak bo'lsa | Arzon yo'l |
+|---|---|
+| Baza tuzilishi | `python3 tools/schema_from_entities.py <src>` |
+| Test nega yiqildi | chiqishdagi birinchi xatoni o'qish |
+| Qoida nima deydi | `tools/doc.sh show <hujjat> <raqam>` |
+| Diff to'g'rimi | `review` agenti, keyin maqsadli test |
 
 `docker up/run/build/pull` va bazaga ulanish `tools/guard.py` tomonidan
-to'siladi. Yo'l yopiq emas: haqiqatan kerak bo'lsa buyruq oldiga
-`COST_OK=1` qo'yiladi va nega arzon yo'l yetmagani aytiladi. `docker ps`,
-`docker logs` kabi tashxis buyruqlari arzon, ular to'silmaydi.
+to'siladi. Haqiqatan kerak bo'lsa buyruq oldiga `COST_OK=1` qo'yiladi va
+sababi aytiladi. `docker ps`, `docker logs` to'silmaydi.
 
-Og'ir o'qishni arzon modelga bering. `.claude/agents/` da uchta agent bor:
-
-- `qidiruv` (haiku) - bir nechta bo'limni o'qib, qisqa parcha qaytaradi.
-- `tahlil` (haiku) - asbobni yurgizib, uzun chiqishdan topilmani ajratadi.
-- `review` (sonnet) - diffni qoidaga solishtiradi.
-
-Qoida: **ko'p o'qib oz qaytaradigan ish** agentga boradi, chunki uzun
-chiqish uning kontekstida qoladi. Qaror va yozish asosiy sessiyada
-qoladi.
+Og'ir o'qishni arzon modelga bering: `qidiruv` va `tahlil` (haiku) ko'p
+o'qib oz qaytaradi, `review` (sonnet) diffni qoidaga solishtiradi. Uzun
+chiqish ularning kontekstida qoladi. Qaror va yozish asosiy sessiyada.
 
 ## Tekshiruv
 

@@ -13,6 +13,7 @@
       "Bash(python3 tools/test_suggest.py:*)",
       "Bash(python3 tools/test_schema.py:*)",
       "Bash(python3 tools/eval_find.py:*)",
+      "Bash(python3 tools/cost_report.py:*)",
       "Bash(sed -n:*)",
       "Bash(grep:*)",
       "Bash(awk:*)",
