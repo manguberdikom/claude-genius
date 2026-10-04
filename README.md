@@ -23,6 +23,31 @@ statik tahlil esa SonarQube hujjatida turadi.
 Har bir hujjat mundarija bilan boshlanadi va har bob `Amalda qo'llash` ro'yxati
 bilan tugaydi.
 
+## Reja tuzuvchi skill: `/reja`
+
+`.claude/skills/reja/` — kod yozishdan oldin bitta hujjat (`REJA.md`) tayyorlaydigan
+Claude Code skill'i. U to'rtta qo'llanmani bitta ish oqimiga bog'laydi: arxitektura
+qarorini, pattern tanlovini, test strategiyasini va quality gate talablarini bitta
+rejaga yig'adi.
+
+Ishlash tartibi — yettita bosqich, har biri o'z artefakti bilan:
+
+| Bosqich | Nima qiladi | Reference |
+|---|---|---|
+| 1. Manba yig'ish | `pom.xml`, `application.yml`, Sonar/CI config, `CLAUDE.md` va memory fayllari, berilgan PDF / HTML / DOCX / rasm / URL | `references/manbalar.md` |
+| 2. Kod analizi | tuzilish, kirish nuqtalari, qatlam yo'nalishi, ma'lumot yo'li, issiq nuqtalar, test haqiqati | `references/kod-analizi.md` |
+| 3. Arxitektura | NFR budjeti, napkin math, chegaralar, ADR, risk ro'yxati | `references/arxitektura.md` |
+| 4. Pattern tayinlash | `fayl:qator` -> pattern -> sabab -> narx -> qo'llanma bo'limi | `references/pattern-tanlash.md` |
+| 5. Test va sifat | test matritsasi (daraja, joy, ma'lumot, oracle) va gate talablari | `references/test-sifat.md` |
+| 6. Rejani yozish | prompt dizayn qoidalari va `REJA.md` shabloni | `references/prompt-dizayn.md`, `references/shablon.md` |
+| 7. Tekshirish | 12 bandli yakuniy checklist | `SKILL.md` |
+
+Asosiy qoidalari: manbaga bog'lanmagan da'vo yozilmaydi (`fayl:qator`, config
+kaliti yoki PDF sahifasi), variant emas — qaror beriladi, har qadam loyihani
+yashil qoldiradi, har pattern uchun narxi va qo'llanma bo'limi ko'rsatiladi.
+Prompt dizayn bo'yicha PDF/HTML berilsa, uning texnikalari skill'ning bazaviy
+qoidalaridan ustun turadi.
+
 ## Til va uslub
 
 O'zbek lotin yozuvi. Texnik atamalar inglizcha qoldirilgan: bean, proxy, thread,
