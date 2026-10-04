@@ -39,11 +39,20 @@ natijaning emas.
 
 ## Kontekst to'lsa
 
-Skill yangi sessiya ocha olmaydi. Buning o'rniga ish **uzatiladi**:
-keyingi sessiya noldan boshlamasligi uchun qisqa topshiriq yoziladi.
+Belgini taxmin qilish shart emas, u o'lchanadi:
 
-Belgi: bir vazifa ichida uchinchi marta katta o'qish kerak bo'lsa yoki
-javoblar oldingi qarorlarni unuta boshlasa.
+```bash
+python3 tools/handoff.py            # kontekst hajmi va tavsiya
+python3 tools/handoff.py --prompt   # yangi sessiya uchun tayyor matn
+```
+
+O'lchov transkriptdagi haqiqiy raqamdan olinadi, oynaning hajmi esa
+siqish (compact) bo'lgan bo'lsa shu sessiyaning o'zidan. Siqish bo'lgan
+yoki kontekst 75% dan oshgan bo'lsa yangi sessiya tavsiya qilinadi.
+
+Skill yangi sessiya ocha olmaydi, lekin `--prompt` nusxalanadigan
+topshiriq beradi: git holati, oxirgi commitlar va memory indeksi
+mashina tomonidan to'ldiriladi, uch burchakli joylar sizdan.
 
 Uzatish hujjati shu beshtadan iborat va **qisqa** bo'ladi. Uzun
 topshiriq yangi sessiyani ham to'ldiradi:

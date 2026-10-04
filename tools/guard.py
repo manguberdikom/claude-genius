@@ -58,8 +58,11 @@ EXPENSIVE = (
      "Avval test chiqishini va entity sinflarini o'qing:\n"
      "  python3 tools/schema_from_entities.py <src>\n"
      "Konteyner haqiqatan kerak bo'lsa: COST_OK=1 <buyruq>"),
+    # Skript nomi buyruq o'rnida turishi shart. Aks holda uni shunchaki
+    # ATAGAN buyruq ham to'siladi: `wc -l install/x.ps1`, `git add x.ps1`.
+    # Bu amalda uchradi, o'rnatuvchi faylni yozayotganda.
     (re.compile(r"(?:^|[|;&]\s*)(?:pwsh|powershell(?:\.exe)?)\b"
-                r"|\.ps1\b"),
+                r"|(?:^|[|;&]\s*)(?:[.]{1,2}[/\\])?[\w.-]*\.ps1\b"),
      "PowerShell skripti",
      "Bu muhitda PowerShell ishlatilmaydi va u yozilgan skript boshqa\n"
      "mashinada tekshirilmagan bo'ladi. Shu ishni bash yoki python3 bilan\n"

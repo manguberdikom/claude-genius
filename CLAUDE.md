@@ -98,6 +98,10 @@ Boshqa asboblar:
   talab qiladi. Faqat yolg'on ishga tushishi nol bo'lgan tekshiruvlar.
 - `eval_skill.py` - zanjirning determinik qismini o'lchaydi: marshrut,
   topilma va aniqlik.
+- `budget.py` - aktyor chaqiruvlarini sanaydi va uchinchisini to'sadi
+  (`PreToolUse` hook). Vazifa boshida `--yangi-vazifa "<nom>"`.
+- `handoff.py` - sessiya kontekstini transkriptdan o'lchaydi, to'lsa
+  yangi sessiya uchun tayyor prompt beradi (`--prompt`).
 
 ## Tekshiruv
 

@@ -29,15 +29,19 @@ Budjet tugaganda va muammo qolganda zanjir to'xtaydi. Shunda yoziladi:
 nima bajarildi, nima qolgan, nega ikki urinish yetmadi, nima
 yetishmayapti. Uchinchi urinish o'rniga aniq savol beriladi.
 
-Budjetni kuzatish uchun har vazifada shu jadval yuritiladi:
+Budjet **sanaladi**, yodda saqlanmaydi. Vazifa boshida:
 
+```bash
+python3 tools/budget.py --yangi-vazifa "<vazifa nomi>"
+python3 tools/budget.py --holat          # jadval
 ```
-aktyor            1-chaqiruv   2-chaqiruv   holat
-rejalashtiruvchi  bajarildi    -            tugadi
-arxitektor        bajarildi    bajarildi    tugadi
-test-muhandis     bajarildi    -            tugadi
-review            bajarildi    bajarildi    toza
-```
+
+`PreToolUse` hook har aktyor chaqiruvini hisoblaydi va uchinchisini
+**to'sadi**. `qidiruv` va `tahlil` sanalmaydi: ular zanjir qadami emas,
+o'qish asbobi, va ularni cheklash arzon yo'lni qimmat qiladi.
+
+Chaqiruv behuda ketgan bo'lsa (aktyor boshqa sababdan yiqildi):
+`python3 tools/budget.py --tiklash <aktyor>`.
 
 ## Ikkinchi chaqiruvning oldini olish
 

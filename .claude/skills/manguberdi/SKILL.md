@@ -67,7 +67,9 @@ rejalashtiruvchi (zarur bo'lsa)
 `review` kamchilik topsa, u **egasiga** qaytadi: kod muammosi
 `arxitektor` ga, test muammosi `test-muhandis` ga. Har aktyor bitta
 vazifada ko'pi bilan **ikki marta** chaqiriladi. Ikkinchidan keyin ham
-hal bo'lmasa, zanjir to'xtaydi va nima yetishmayotgani aytiladi.
+hal bo'lmasa, zanjir to'xtaydi va nima yetishmayotgani aytiladi. Buni
+hook sanaydi, yod emas: vazifa boshida
+`python3 tools/budget.py --yangi-vazifa "<nom>"`.
 
 ## Model tanlash
 
@@ -105,5 +107,6 @@ emas, chunki hooklar aynan shu qoidalarni majburlaydi (`guard.py`
 qimmat amalni, `check_code.py` kod qoidasini). Skill ishning tartibini
 belgilaydi, muhitni emas.
 
-Skill yangi sessiya ocha olmaydi. Kontekst to'lganda ish uzatiladi:
-qanday - `references/kontekst.md`.
+Skill yangi sessiya ocha olmaydi. Buning o'rniga kontekst o'lchanadi
+va tayyor topshiriq beriladi: `python3 tools/handoff.py --prompt`.
+Batafsil: `references/kontekst.md`.

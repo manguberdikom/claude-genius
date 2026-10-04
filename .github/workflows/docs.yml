@@ -41,7 +41,7 @@ jobs:
       - name: Asbob sinovlari
         run: |
           for t in guard suggest schema doc check_code parse_test_output \
-                   rules_for add_code skill; do
+                   rules_for add_code skill budget handoff; do
             echo "== test_$t =="
             python3 "tools/test_$t.py"
           done

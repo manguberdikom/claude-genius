@@ -23,6 +23,10 @@
       "Bash(python3 tools/rules_for.py:*)",
       "Bash(python3 tools/test_rules_for.py:*)",
       "Bash(python3 tools/eval_skill.py:*)",
+      "Bash(python3 tools/budget.py:*)",
+      "Bash(python3 tools/test_budget.py:*)",
+      "Bash(python3 tools/handoff.py:*)",
+      "Bash(python3 tools/test_handoff.py:*)",
       "Bash(python3 tools/code_gap.py:*)",
       "Bash(python3 tools/add_code.py:*)",
       "Bash(python3 tools/test_add_code.py:*)",
@@ -60,6 +64,17 @@
             "command": "python3 \"$CLAUDE_PROJECT_DIR/tools/guard.py\"",
             "timeout": 10,
             "statusMessage": "Qimmat amal tekshirilmoqda"
+          }
+        ]
+      },
+      {
+        "matcher": "Task|Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/tools/budget.py\"",
+            "timeout": 10,
+            "statusMessage": "Aktyor budjeti tekshirilmoqda"
           }
         ]
       }

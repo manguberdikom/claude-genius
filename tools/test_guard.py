@@ -110,6 +110,20 @@ CASES = [
      {"tool_name": "Bash", "tool_input":
       {"command": "echo " + chr(39) + "psql -h localhost" + chr(39)
                   + " >> notes.txt"}}),
+    # Skript nomini ATASH uni yurgizish emas. Bu holat amalda uchradi:
+    # o'rnatuvchi faylni yozayotganda qo'riqchi o'z yozuvini to'xtatdi.
+    ("ps1 nomi argument sifatida", ALLOW,
+     {"tool_name": "Bash", "tool_input":
+      {"command": "wc -l install/manguberdi" + ".ps1"}}),
+    ("ps1 ni git ga qo'shish", ALLOW,
+     {"tool_name": "Bash", "tool_input":
+      {"command": "git add install/manguberdi" + ".ps1"}}),
+    ("ps1 ni cat qilish", ALLOW,
+     {"tool_name": "Bash", "tool_input":
+      {"command": "head -20 install/x" + ".ps1"}}),
+    ("pwsh bilan yurgizish to'siladi", DENY,
+     {"tool_name": "Bash", "tool_input":
+      {"command": "pwsh install/x" + ".ps1"}}),
     # Ataylab ruxsat berilgan holat.
     ("COST_OK bilan docker", ALLOW,
      {"tool_name": "Bash", "tool_input":
