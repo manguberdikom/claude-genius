@@ -1,0 +1,210 @@
+{
+ "parts": {
+  "asos": "I. SonarQube qanday ishlaydi",
+  "gate": "II. Quality gate",
+  "coverage": "III. Qamrov (coverage)",
+  "kod": "IV. Sonar o'tadigan kod",
+  "test": "V. Sonar o'tadigan test",
+  "amaliyot": "VI. Amaliyot va jarayon",
+  "katalog": "VII. Xato katalogi: qanday kod qanday xato hisoblanadi"
+ },
+ "order": [
+  "asos",
+  "gate",
+  "coverage",
+  "kod",
+  "test",
+  "amaliyot",
+  "katalog"
+ ],
+ "title": "SonarQube: qanday ishlaydi va qanday kod bilan test undan o'tadi",
+ "chapters": [
+  {
+   "n": 1,
+   "part": "asos",
+   "title": "SonarQube arxitekturasi va tahlil oqimi",
+   "en": "Architecture and Analysis Flow"
+  },
+  {
+   "n": 2,
+   "part": "asos",
+   "title": "Scanner nimani yig'adi va qanday yuboradi",
+   "en": "What the Scanner Collects"
+  },
+  {
+   "n": 3,
+   "part": "asos",
+   "title": "Issue turlari: bug, vulnerability, code smell, security hotspot",
+   "en": "Issue Types"
+  },
+  {
+   "n": 4,
+   "part": "asos",
+   "title": "Rule, quality profile va severity",
+   "en": "Rules, Profiles and Severity"
+  },
+  {
+   "n": 5,
+   "part": "asos",
+   "title": "Metrikalar: rating, texnik qarz, murakkablik, takrorlanish",
+   "en": "Metrics and Ratings"
+  },
+  {
+   "n": 6,
+   "part": "gate",
+   "title": "Quality gate mexanikasi va shartlari",
+   "en": "Quality Gate Mechanics"
+  },
+  {
+   "n": 7,
+   "part": "gate",
+   "title": "Yangi kod (new code) va \"clean as you code\" tamoyili",
+   "en": "New Code and Clean as You Code"
+  },
+  {
+   "n": 8,
+   "part": "gate",
+   "title": "100% ga sozlangan gate: har bir shart nimani talab qiladi",
+   "en": "A Gate Set to 100 Percent"
+  },
+  {
+   "n": 9,
+   "part": "coverage",
+   "title": "Coverage qanday o'lchanadi: JaCoCo mexanikasi",
+   "en": "How Coverage Is Measured"
+  },
+  {
+   "n": 10,
+   "part": "coverage",
+   "title": "JaCoCo va SonarQube ulanishi: Maven va Gradle sozlash",
+   "en": "Wiring JaCoCo to SonarQube"
+  },
+  {
+   "n": 11,
+   "part": "coverage",
+   "title": "Qamralmay qoladigan kod va unga test yozish",
+   "en": "Code That Stays Uncovered"
+  },
+  {
+   "n": 12,
+   "part": "coverage",
+   "title": "Exclusion: nimani chiqarish halol, nimani chiqarish aldov",
+   "en": "Exclusions, Honest and Dishonest"
+  },
+  {
+   "n": 13,
+   "part": "kod",
+   "title": "Sonar o'tadigan kod yozish qoidalari",
+   "en": "Writing Code That Passes"
+  },
+  {
+   "n": 14,
+   "part": "kod",
+   "title": "Java va Spring da eng ko'p uchraydigan issue va ularning yechimi",
+   "en": "Common Java and Spring Issues"
+  },
+  {
+   "n": 15,
+   "part": "kod",
+   "title": "Cognitive complexity va takrorlanishni kamaytirish",
+   "en": "Cognitive Complexity and Duplication"
+  },
+  {
+   "n": 16,
+   "part": "kod",
+   "title": "Security hotspot va vulnerability: tekshirish va tuzatish",
+   "en": "Security Hotspots and Vulnerabilities"
+  },
+  {
+   "n": 17,
+   "part": "test",
+   "title": "Sonar talablarini qondiradigan test yozish",
+   "en": "Writing Tests That Satisfy Sonar"
+  },
+  {
+   "n": 18,
+   "part": "test",
+   "title": "Branch va shart qamrovini to'liq yopish usullari",
+   "en": "Covering Every Branch"
+  },
+  {
+   "n": 19,
+   "part": "test",
+   "title": "Testning o'zidagi Sonar qoidalari va test sifati",
+   "en": "Sonar Rules on Test Code"
+  },
+  {
+   "n": 20,
+   "part": "test",
+   "title": "Mutation testing: 100% coverage qachon yolg'on",
+   "en": "Mutation Testing"
+  },
+  {
+   "n": 21,
+   "part": "amaliyot",
+   "title": "CI/CD ga ulash, PR decoration va blokirovka",
+   "en": "CI/CD Integration"
+  },
+  {
+   "n": 22,
+   "part": "amaliyot",
+   "title": "Lokal tekshirish: IDE, sonar-scanner va tez qaytish",
+   "en": "Local Feedback Loop"
+  },
+  {
+   "n": 23,
+   "part": "amaliyot",
+   "title": "Legacy loyihani 100% ga olib chiqish rejasi",
+   "en": "Bringing a Legacy Project to 100"
+  },
+  {
+   "n": 24,
+   "part": "amaliyot",
+   "title": "False positive, suppression va o'z qoidangiz",
+   "en": "False Positives and Custom Rules"
+  },
+  {
+   "n": 25,
+   "part": "katalog",
+   "title": "Xato katalogi: reliability (bug) toifasi",
+   "en": "Catalog: Reliability"
+  },
+  {
+   "n": 26,
+   "part": "katalog",
+   "title": "Xato katalogi: security (vulnerability va hotspot)",
+   "en": "Catalog: Security"
+  },
+  {
+   "n": 27,
+   "part": "katalog",
+   "title": "Xato katalogi: maintainability, tuzilish va murakkablik",
+   "en": "Catalog: Maintainability, Structure"
+  },
+  {
+   "n": 28,
+   "part": "katalog",
+   "title": "Xato katalogi: maintainability, nomlash, o'lik kod va uslub",
+   "en": "Catalog: Maintainability, Naming"
+  },
+  {
+   "n": 29,
+   "part": "katalog",
+   "title": "Xato katalogi: Spring, JPA va PostgreSQL ga xos xatolar",
+   "en": "Catalog: Spring, JPA and PostgreSQL"
+  },
+  {
+   "n": 30,
+   "part": "katalog",
+   "title": "Xato katalogi: test kodidagi xatolar",
+   "en": "Catalog: Test Code"
+  },
+  {
+   "n": 31,
+   "part": "katalog",
+   "title": "Xatolarga tushmaslik uchun yakuniy tavsiyalar",
+   "en": "Preventive Checklist"
+  }
+ ],
+ "intro": "Bu hujjat SonarQube ning ichki ishlashini va undan o'tadigan kod bilan testni\nyozish yo'lini bir joyga yig'adi. Tayanch stek: Java, Spring va PostgreSQL.\n\nOgohlantirish: \"har doim 100% o'tadigan\" universal retsept yo'q. Quality gate\nshartlari har loyihada boshqacha sozlanadi, va 100% coverage sifatni kafolatlamaydi.\nHujjat ikkalasini ham ko'rsatadi: shartni qanday qondirish, va qayerda bu raqam aldashi.\n\nHujjat to'rtlikning bir qismi. Dizayn patternlar `java-spring-design-patterns.md`\nfaylida, testlashning butun sohasi `java-spring-testing-handbook.md` faylida,\nJVM, Spring va PostgreSQL mexanikasi `java-spring-architect-mindset.md` faylida."
+}
