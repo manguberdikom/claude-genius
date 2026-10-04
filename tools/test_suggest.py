@@ -53,6 +53,14 @@ SILENT = [
     "yana bir marta ko'rib chiq",
     "bu qatorni o'chir",
     "yuqoridagini tushuntirib ber",
+    # Asboblarning o'zi haqidagi meta-savollar. Bular amalda uchradi va
+    # eng yomon turdagi shovqinni berdi: "tezlik", "aniqlik", "sifat"
+    # kabi mavhum otlar bu korpusda kamyob (aniqlik IDF 5.1, deadlock
+    # 4.4), shuning uchun chastota ularni atama deb o'ylaydi.
+    "kerakli qoidani ozi topa oladimi tezlik bilan",
+    "bu qoida qanday ishlaydi",
+    "sifat yaxshimi yoki yo'q",
+    "qidiruv qanchalik aniq ishlayapti",
 ]
 
 # Chegaradagi so'rovlar: buyruq shaklida, lekin ichida haqiqiy mavzu so'zi
@@ -64,6 +72,12 @@ BORDERLINE = [
     "git push qilib qoy",
     "fayl nomini o'zgartir",
     "testni ishga tushir",
+    # "performance" bu korpusda haqiqiy atama: "Performance regressiyasini
+    # diffdan ko'rish" degan bob bor. So'rov asbob tezligi haqida bo'lsa
+    # ham, so'z darajasidagi moslik buni ajrata olmaydi. Qoidani shu
+    # holat uchun burish haqiqiy atamalarni yo'qotardi, shuning uchun
+    # taklif chiqishi qabul qilinadi, faqat soni chegaralanadi.
+    "performance, tezlik, aniqlik haqida nima deysan",
 ]
 
 

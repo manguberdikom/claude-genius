@@ -37,7 +37,12 @@ MAX_SUGGESTIONS = 4
 MIN_SCORE = 3.0
 MIN_RARE_IDF = 2.9
 # Yagona dalil bo'ladigan so'z shuncha belgidan qisqa bo'lmasin.
-MIN_SPECIFIC_LEN = 5
+MIN_SPECIFIC_LEN = 4
+# Yolg'iz so'z yetarli emas, agar u atama lug'atida bo'lmasa.
+MIN_EVIDENCE = 2
+# Dalil bo'lish uchun so'z shunchaki uzun emas, kamyob ham bo'lsin:
+# `bilan` besh harfli, lekin 2480 bo'limda uchraydi.
+EVIDENCE_MIN_IDF = 2.0
 ALIAS_WEIGHT = 1.2
 ALIAS_BASE = 2.2
 PAREN_SUFFIX_RE = __import__('re').compile(r'\s*\([^()]*\)\s*$')
@@ -79,17 +84,19 @@ def load_idf(total_sections):
     return idf
 
 
-def score_sections(prompt, sections, idf):
-    """Har bir bo'lim uchun ball va eng kamyob mos so'zning og'irligi.
+def score_sections(prompt, sections, idf, term_vocab):
+    """Har bir bo'lim uchun uchta son: ball, kamyoblik, dalil kuchi.
 
-    Ikkinchisi kerak, chunki yig'indining o'zi aldaydi: uchta umumiy so'z
-    ("qilib", "va", "kerak") bitta aniq atama bilan teng ball to'playdi.
-    Shuning uchun kamida bitta haqiqatan kamyob so'z talab qilinadi.
+    Uchinchisi kerak bo'lib qoldi, chunki chastota atamani mavhum so'zdan
+    ajrata olmaydi: bu korpusda `aniqlik` ning IDF si 5.1, `deadlock` niki
+    4.4, `coverage` niki esa atigi 2.7. Chegarani ko'tarish mavhum so'zdan
+    oldin haqiqiy atamalarni o'ldiradi.
 
-    Kamyoblikka faqat aniq so'z hisobga olinadi (is_specific). Chastota
-    o'zi yetarli emas: `ber` kabi qisqa o'zbek fe'li ham kam bo'limda
-    uchraydi va "tushuntirib ber" so'rovini "Qulashiga yo'l ber" bo'limiga
-    ulab yuboradi.
+    Shuning uchun yolg'iz so'zga ishonilmaydi. Bitta mos so'z faqat u
+    atamalar lug'atida bo'lsa (ya'ni biror inglizcha texnik nomning qismi)
+    dalil hisoblanadi. Aks holda kamida ikkita aniq so'z mos kelishi
+    kerak: "tezlik" yolg'iz o'zi hech narsani ko'rsatmaydi, "funksiya
+    nomi" esa ko'rsatadi.
     """
     wanted = set(tokens(prompt))
     if not wanted:
@@ -101,19 +108,39 @@ def score_sections(prompt, sections, idf):
         shared = wanted & set(tokens(row["title"]))
         if not shared:
             continue
-        total = sum(idf.get(t, 0.0) for t in shared)
-        specific = [idf.get(t, 0.0) for t in shared if is_specific(t)]
-        scores[(row["doc"], row["section"])] = [total, max(specific, default=0.0)]
+        specific = [t for t in shared if is_specific(t)]
+        carrying = [t for t in specific if idf.get(t, 0.0) >= EVIDENCE_MIN_IDF]
+        evidence = len(carrying)
+        if evidence == 1 and carrying[0] in term_vocab:
+            evidence = 2
+        scores[(row["doc"], row["section"])] = [
+            sum(idf.get(t, 0.0) for t in shared),
+            max((idf.get(t, 0.0) for t in specific), default=0.0),
+            evidence,
+        ]
     return scores
 
 
-def is_specific(token):
-    """Yagona dalil bo'la oladigan so'zmi.
+def term_vocabulary(aliases):
+    """Taxalluslarda uchraydigan so'zlar: korpusning atama lug'ati.
 
-    Texnik atama odatda uzun (`testcontainers`, `deadlock`) yoki harfdan
-    boshqa belgi tutadi (`n+1`, `c++`, `@transactional`). Qisqa sof
-    harfli so'z ko'pincha o'zbek yordamchi fe'li, shuning uchun u yolg'iz
-    o'zi taklif uchun asos bo'lmaydi. Qisqa texnik atamalar (`jpa`, `gc`)
+    `deadlock`, `testcontainers`, `coverage` shu yerda bor, chunki ular
+    inglizcha texnik nomlarning qismi. `tezlik`, `aniqlik`, `qoida` yo'q,
+    chunki ular mavhum ot va hech qaysi pattern nomiga kirmaydi.
+    """
+    vocab = set()
+    for row in aliases:
+        for token in tokens(row["alias"]):
+            if is_specific(token):
+                vocab.add(token)
+    return vocab
+
+
+def is_specific(token):
+    """Dalil sifatida sanaladigan so'zmi.
+
+    Qisqa sof harfli so'z ko'pincha o'zbek yordamchi fe'li ("ber", "qil"),
+    shuning uchun u sanalmaydi. Qisqa texnik atamalar (`jpa`, `gc`)
     taxalluslar jadvali orqali baribir topiladi.
     """
     return len(token) >= MIN_SPECIFIC_LEN or not token.isalpha()
@@ -138,9 +165,10 @@ def score_aliases(prompt, aliases, scores):
             continue
         key = (row["doc"], row["ref"])
         # Uzun taxallus aniqroq: "circuit breaker" > "retry".
-        entry = scores.setdefault(key, [0.0, 0.0])
+        entry = scores.setdefault(key, [0.0, 0.0, 0])
         entry[0] += ALIAS_WEIGHT * best + ALIAS_BASE
         entry[1] = max(entry[1], MIN_RARE_IDF)
+        entry[2] = max(entry[2], MIN_EVIDENCE)
     return scores
 
 
@@ -167,15 +195,16 @@ def suggest(prompt):
     if not sections:
         return []
     idf = load_idf(len(sections))
-    scores = score_sections(prompt, sections, idf)
-    scores = score_aliases(prompt, read_tsv("aliases.tsv"), scores)
+    aliases = read_tsv("aliases.tsv")
+    scores = score_sections(prompt, sections, idf, term_vocabulary(aliases))
+    scores = score_aliases(prompt, aliases, scores)
 
     keep = {k: v for k, v in scores.items()
-            if v[0] >= MIN_SCORE and v[1] >= MIN_RARE_IDF}
+            if v[0] >= MIN_SCORE and v[1] >= MIN_RARE_IDF and v[2] >= MIN_EVIDENCE}
     ranked = sorted(keep.items(), key=lambda kv: (-kv[1][0], kv[0]))
     titles = titles_by_key(sections)
     return [(doc, sec, titles.get((doc, sec), ""), total)
-            for (doc, sec), (total, _) in ranked[:MAX_SUGGESTIONS]]
+            for (doc, sec), (total, _, _) in ranked[:MAX_SUGGESTIONS]]
 
 
 def main():
