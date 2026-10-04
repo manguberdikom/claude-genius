@@ -52,9 +52,19 @@ SIGNALS = [
     ("web qatlami", r"@RestController\b|@Controller\b|@(?:Get|Post|Put|Delete|Request)Mapping\b",
      [("patterns", "7"), ("architect", "17"), ("code-review", "20")]),
     ("test", r"@Test\b|@ParameterizedTest\b|\bassertThat\b|\bAssertions\.",
-     [("testing", "5"), ("sonarqube", "19"), ("code-review", "35")]),
-    ("xavfsizlik", r"@PreAuthorize\b|SecurityFilterChain|@Secured\b",
-     [("patterns", "18"), ("sonarqube", "26")]),
+     [("testing", "5"), ("sonarqube", "19"), ("code-review", "35"),
+      ("code-review", "34"), ("code-review", "36")]),
+    ("xavfsizlik: ruxsat", r"@PreAuthorize\b|SecurityFilterChain|@Secured\b|@RolesAllowed\b",
+     [("patterns", "18"), ("code-review", "30"), ("code-review", "28"),
+      ("sonarqube", "26")]),
+    ("xavfsizlik: SQL", r"createNativeQuery|createQuery|\bStatement\b|@Query\b|jdbcTemplate",
+     [("code-review", "29"), ("sonarqube", "26")]),
+    ("xavfsizlik: sir va kripto",
+     r"\bCipher\.|MessageDigest\.|KeyStore\b|SecretKey|getPassword\(|apiKey|secretKey",
+     [("code-review", "32")]),
+    ("xavfsizlik: tashqi kirish",
+     r"MultipartFile|ObjectInputStream|readObject\(|new\s+URL\(|URI\.create\(",
+     [("code-review", "31")]),
     ("keshlash", r"@Cacheable\b|@CacheEvict\b|CacheManager",
      [("patterns", "11"), ("architect", "28")]),
     ("rejalashtirilgan ish", r"@Scheduled\b|JobBuilder|StepBuilder",
@@ -63,7 +73,16 @@ SIGNALS = [
      [("clean-code", "29")]),
     ("servis qatlami", r"@Service\b|@Component\b",
      [("patterns", "8")]),
+    # Build fayli: bog'liqlik qo'shish ham kod o'zgarishi, lekin uning
+    # qoidalari boshqa bobda va .java faylidan ko'rinmaydi.
+    ("bog'liqlik", r"<dependency>|<artifactId>|implementation\s|api\s*[(']|plugins\s*\{",
+     [("code-review", "33"), ("sonarqube", "39")]),
 ]
+
+# Qaysi fayllar ko'riladi. Build fayllari ham: ular kod kabi tekshiruvga
+# muhtoj, lekin .java emas.
+WATCHED = (".java", "pom.xml", "build.gradle", "build.gradle.kts",
+           "settings.gradle", "settings.gradle.kts")
 
 # Har Java fayl uchun, belgisidan qat'i nazar.
 ALWAYS = [("clean-code", "2"), ("clean-code", "4"), ("code-review", "8")]
@@ -91,9 +110,9 @@ def changed_files(args):
         candidates = out.split("\n")
     else:
         candidates = [a for a in args if not a.startswith("--")]
-    # Faqat .java. Boshqa faylni jim qabul qilish chalg'itadi: javob
-    # beriladi, lekin u o'sha faylga tegishli emas.
-    return [f.strip() for f in candidates if f.strip().endswith(".java")]
+    # Faqat kuzatiladigan turlar. Boshqa faylni jim qabul qilish
+    # chalg'itadi: javob beriladi, lekin u o'sha faylga tegishli emas.
+    return [f.strip() for f in candidates if f.strip().endswith(WATCHED)]
 
 
 def detect(paths):
@@ -156,7 +175,7 @@ def mechanical(paths):
     out = []
     for path in paths:
         full = path if os.path.isabs(path) else os.path.join(ROOT, path)
-        if not os.path.isfile(full):
+        if not os.path.isfile(full) or not full.endswith(".java"):
             continue
         proc = subprocess.run([sys.executable, tool, full],
                               capture_output=True, text=True, cwd=ROOT)
@@ -173,7 +192,8 @@ def main():
 
     paths = changed_files(args)
     if not paths:
-        print("Java fayl berilmadi.", file=sys.stderr)
+        print("Tekshiriladigan fayl berilmadi (.java yoki build fayli).",
+              file=sys.stderr)
         return 2
 
     titles = chapter_titles()
@@ -184,10 +204,11 @@ def main():
             if ch not in wanted:
                 wanted.add(ch)
                 order.append(ch)
-    for ch in ALWAYS:
-        if ch not in wanted:
-            wanted.add(ch)
-            order.append(ch)
+    if any(p.endswith(".java") for p in paths):
+        for ch in ALWAYS:
+            if ch not in wanted:
+                wanted.add(ch)
+                order.append(ch)
 
     missing = [ch for ch in order if ch not in titles]
     if missing:

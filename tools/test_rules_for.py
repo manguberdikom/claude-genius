@@ -23,6 +23,8 @@ import rules_for as R  # noqa: E402
 BAD = os.path.join("tools", "testdata", "java", "Bad.java")
 GOOD = os.path.join("tools", "testdata", "java", "Good.java")
 ENTITY = os.path.join("tools", "testdata", "entities", "Order.java")
+INSECURE = os.path.join("tools", "testdata", "java", "Insecure.java")
+POM = os.path.join("tools", "testdata", "java", "pom.xml")
 
 
 def run(*args):
@@ -50,6 +52,15 @@ def main():
         ("tashqi chaqiruv", BAD, "tashqi chaqiruv"),
         ("entity", ENTITY, "entity va ORM"),
         ("loglash", GOOD, "loglash"),
+        # Xavfsizlik: avval faqat @PreAuthorize belgisi bor edi, shuning
+        # uchun SQL injection, sir va fayl yuklash hech qayerga
+        # yo'naltirilmasdi. Qamrov o'lchangandan keyin topilgan kamchilik.
+        ("SQL injection", INSECURE, "xavfsizlik: SQL"),
+        ("sir va kripto", INSECURE, "xavfsizlik: sir va kripto"),
+        ("tashqi kirish", INSECURE, "xavfsizlik: tashqi kirish"),
+        # Build fayli ham ko'riladi: bog'liqlik qo'shish .java da
+        # ko'rinmaydi, lekin uning o'z review bobi bor.
+        ("build fayli", POM, "bog'liqlik"),
     ]
     for name, path, label in cases:
         found = {l for l, _, _ in R.detect([path])}
@@ -84,7 +95,7 @@ def main():
 
     print("\n== Xato yo'llar ==")
     for label, args, want in (("fayl berilmadi", [], 2),
-                              ("java bo'lmagan fayl", ["README.md"], 2),
+                              ("ko'rilmaydigan fayl", ["README.md"], 2),
                               ("mavjud bo'lmagan fayl", ["/yoq/A.java"], 0)):
         code_e, _, _ = run(*args)
         ok = code_e == want
