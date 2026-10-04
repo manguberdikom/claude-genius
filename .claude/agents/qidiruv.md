@@ -1,6 +1,6 @@
 ---
 name: qidiruv
-description: Qo'llanmalardan ma'lumot topib, faqat kerakli parchani qaytaradi. Bir nechta bo'lim yoki bobni o'qib, javobni qisqartirish kerak bo'lganda ishlatiladi: "patternlar bo'yicha nima deyilgan", "shu mavzu qaysi boblarda bor", "uchta bo'limni solishtir". Asosiy sessiya o'nlab bo'limni o'z kontekstiga tortmasin uchun.
+description: Qo'llanmalardan bir nechta bo'limni o'qib, faqat kerakli parchani qaytaradi. Asosiy sessiya o'nlab bo'limni o'z kontekstiga tortmasligi uchun.
 tools: Bash, Read, Grep, Glob
 model: haiku
 ---

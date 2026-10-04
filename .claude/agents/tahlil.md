@@ -1,6 +1,6 @@
 ---
 name: tahlil
-description: Statik tahlil asboblarini ishga tushirib, faqat topilmalarni qaytaradi. JPA entity'laridan baza sxemasini chiqarish, test chiqishidagi xatoni o'qish, log yoki stack trace'ni ajratish kerak bo'lganda ishlatiladi. Konteyner ko'tarmaydi va bazaga ulanmaydi: javob odatda kodning yoki chiqishning o'zida.
+description: Statik asbobni yurgizib, uzun chiqishdan faqat topilmani qaytaradi: entity sxemasi, test xatosi, stack trace. Konteyner ko'tarmaydi, bazaga ulanmaydi.
 tools: Bash, Read, Grep, Glob
 model: haiku
 ---

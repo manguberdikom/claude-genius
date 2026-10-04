@@ -59,6 +59,13 @@ emas, `find` bilan qidiring.
 - O'lchov: `eval_find.py` (qidiruv o'rni), `test_suggest.py` (taklif
   chegaralari), `cost_report.py` (har navbatdagi kontekst).
 
+## Orkestrator
+
+Katta ish uchun `/manguberdi` sessiyada bir marta chaqiriladi: u promptni
+normallashtiradi, aktyor tanlaydi (`rejalashtiruvchi`, `arxitektor`,
+`test-muhandis`, `review`), ularni ketma-ket yurgizadi va oxirida
+memoryga yozadi. Qoidalar `.claude/skills/manguberdi/` da.
+
 ## Arzon yo'ldan borish
 
 Javob ko'pincha kodning yoki chiqishning o'zida. Qimmat yo'l natijani

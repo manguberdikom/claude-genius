@@ -14,13 +14,19 @@ hisob-kitob qilish emas.
 
 import os
 import re
+import signal
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Taxminiy: o'zbek lotin va inglizcha aralash matnda bitta token ~3 belgi.
 CHARS_PER_TOKEN = 3
-DEFAULT_BUDGET = 4500
+# Shift: orkestrator skill va olti aktyor qo'shilgandan keyin haqiqiy
+# narx ~4460. Byudjet unga teng qilib qo'yilmaydi, aks holda har kichik
+# tahrir yolg'on signal beradi; zahira taxminan bitta skill yoki ikkita
+# agentga yetadi. Shundan oshsa, yangi narsa qo'shishdan oldin eskisi
+# qisqartiriladi yoki birlashtiriladi.
+DEFAULT_BUDGET = 5000
 
 DESC_RE = re.compile(r"^description:\s*(.*?)(?=^\w+:|^---)", re.S | re.M)
 FRONT_RE = re.compile(r"^---\n(.*?)\n---", re.S)
@@ -124,4 +130,11 @@ def main():
 
 
 if __name__ == "__main__":
+    # `| head` quvuri yopilganda Python BrokenPipeError beradi. Hisobot
+    # asbobi buning uchun qulamasligi kerak: standart xatti-harakat
+    # tiklanadi va jarayon jim tugaydi.
+    try:
+        signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+    except (AttributeError, ValueError):
+        pass
     sys.exit(main())

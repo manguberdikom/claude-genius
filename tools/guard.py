@@ -56,6 +56,12 @@ EXPENSIVE = (
      "Avval test chiqishini va entity sinflarini o'qing:\n"
      "  python3 tools/schema_from_entities.py <src>\n"
      "Konteyner haqiqatan kerak bo'lsa: COST_OK=1 <buyruq>"),
+    (re.compile(r"(?:^|[|;&]\s*)(?:pwsh|powershell(?:\.exe)?)\b"
+                r"|\.ps1\b"),
+     "PowerShell skripti",
+     "Bu muhitda PowerShell ishlatilmaydi va u yozilgan skript boshqa\n"
+     "mashinada tekshirilmagan bo'ladi. Shu ishni bash yoki python3 bilan\n"
+     "bajaring; ikkalasi ham shu yerda sinaladi."),
     (re.compile(r"\b(?:psql|mysql|mariadb|mongosh|mongo|redis-cli)\b"
                 r"(?=.*(?:-h|--host|://))"),
      "Bazaga ulanish",

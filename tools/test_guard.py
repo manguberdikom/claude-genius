@@ -86,6 +86,16 @@ CASES = [
      {"tool_name": "Bash", "tool_input": {"command": "psql --version"}}),
     ("mvn test to'silmaydi", ALLOW,
      {"tool_name": "Bash", "tool_input": {"command": "mvn -q test -Dtest=OrderTest"}}),
+    ("powershell", DENY,
+     {"tool_name": "Bash", "tool_input": {"command": "powershell -c ls"}}),
+    ("pwsh", DENY,
+     {"tool_name": "Bash", "tool_input": {"command": "pwsh ./build.ps1"}}),
+    (".ps1 skript", DENY,
+     {"tool_name": "Bash", "tool_input": {"command": "./deploy.ps1 -Env prod"}}),
+    # "powershell" so'zi matn ichida: to'silmasligi kerak.
+    ("matndagi powershell", ALLOW,
+     {"tool_name": "Bash", "tool_input":
+      {"command": "grep -rn powershell docs/"}}),
     # Ataylab ruxsat berilgan holat.
     ("COST_OK bilan docker", ALLOW,
      {"tool_name": "Bash", "tool_input":

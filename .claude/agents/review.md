@@ -1,6 +1,6 @@
 ---
 name: review
-description: O'zgarishni qo'llanmadagi qoidalarga solishtirib ko'rib chiqadi va topilmalarni bo'lim raqami bilan qaytaradi. Diff tayyor bo'lganda, commit yoki PR dan oldin, yoki "shu kodni tekshir" deyilganda ishlatiladi. Kodni o'zgartirmaydi, faqat nima noto'g'ri va qaysi qoidaga ko'ra noto'g'ri ekanini aytadi.
+description: O'zgarishni qo'llanma qoidalariga solishtiradi va topilmalarni bo'lim raqami bilan qaytaradi. Kodni o'zgartirmaydi.
 tools: Bash, Read, Grep, Glob
 model: sonnet
 ---
