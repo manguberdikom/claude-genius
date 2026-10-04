@@ -40,6 +40,14 @@ MIN_RARE_IDF = 2.9
 MIN_SPECIFIC_LEN = 4
 # Yolg'iz so'z yetarli emas, agar u atama lug'atida bo'lmasa.
 MIN_EVIDENCE = 2
+# O'zbekcha qo'shimchalar. Kesish faqat o'zak korpus lug'atida bo'lsa
+# bajariladi, shuning uchun "tezlik" ga tegilmaydi, "funksiyani" esa
+# "funksiya" ga keladi. Uzundan qisqaga qarab sinaladi.
+SUFFIXES = ("larini", "lariga", "larida", "lardan", "ningiz", "larni", "larga",
+            "larda", "lari", "ning", "dagi", "gacha", "siz", "dan", "lar",
+            "ini", "iga", "ida", "ni", "ga", "da", "ta", "si", "i")
+SYNONYMS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                             "synonyms.tsv")
 # Dalil bo'lish uchun so'z shunchaki uzun emas, kamyob ham bo'lsin:
 # `bilan` besh harfli, lekin 2480 bo'limda uchraydi.
 EVIDENCE_MIN_IDF = 2.0
@@ -69,6 +77,53 @@ def read_tsv(name):
         return out
 
 
+def load_synonyms():
+    """So'rov so'zi -> korpusda turgan so'zlar."""
+    table = {}
+    if not os.path.exists(SYNONYMS_FILE):
+        return table
+    with open(SYNONYMS_FILE, encoding="utf-8") as handle:
+        handle.readline()
+        for line in handle:
+            line = line.rstrip("\n")
+            if not line or line.startswith("#"):
+                continue
+            parts = line.split("\t")
+            if len(parts) == 2 and parts[0] and parts[1]:
+                table[parts[0]] = parts[1].split()
+    return table
+
+
+def roots(token, vocab):
+    """So'zning o'zi va qo'shimchasi kesilgan shakli.
+
+    Qo'shimcha kesish ALMASHTIRISH emas, QO'SHISH: "keshni" ning o'zi ham
+    biror sarlavhada uchraydi, shuning uchun uni tashlab yuborib bo'lmaydi,
+    lekin "kesh" ni ham qo'shish kerak. Kesish faqat o'zak korpus lug'atida
+    bo'lsa bajariladi: shartsiz kesish "tezlik" ni "tez" ga aylantirib,
+    mavjud bo'lmagan so'z yasaydi.
+    """
+    out = {token}
+    for suffix in SUFFIXES:
+        if len(token) - len(suffix) >= 4 and token.endswith(suffix):
+            root = token[: -len(suffix)]
+            if root in vocab:
+                out.add(root)
+                break
+    return out
+
+
+def expand(prompt, vocab, synonyms):
+    """So'rov so'zlari: o'zagi va sinonimlari bilan birga."""
+    out = set()
+    for token in tokens(prompt):
+        forms = roots(token, vocab)
+        out |= forms
+        for form in forms:
+            out.update(synonyms.get(form, ()))
+    return out
+
+
 def load_idf(total_sections):
     """So'z og'irligi, bo'lim TANASIDAGI chastotadan (index/df.tsv).
 
@@ -84,7 +139,7 @@ def load_idf(total_sections):
     return idf
 
 
-def score_sections(prompt, sections, idf, term_vocab):
+def score_sections(wanted, sections, idf, term_vocab):
     """Har bir bo'lim uchun uchta son: ball, kamyoblik, dalil kuchi.
 
     Uchinchisi kerak bo'lib qoldi, chunki chastota atamani mavhum so'zdan
@@ -98,7 +153,6 @@ def score_sections(prompt, sections, idf, term_vocab):
     kerak: "tezlik" yolg'iz o'zi hech narsani ko'rsatmaydi, "funksiya
     nomi" esa ko'rsatadi.
     """
-    wanted = set(tokens(prompt))
     if not wanted:
         return {}
     scores = {}
@@ -196,7 +250,8 @@ def suggest(prompt):
         return []
     idf = load_idf(len(sections))
     aliases = read_tsv("aliases.tsv")
-    scores = score_sections(prompt, sections, idf, term_vocabulary(aliases))
+    wanted = expand(prompt, idf, load_synonyms())
+    scores = score_sections(wanted, sections, idf, term_vocabulary(aliases))
     scores = score_aliases(prompt, aliases, scores)
 
     keep = {k: v for k, v in scores.items()

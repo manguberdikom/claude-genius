@@ -79,6 +79,15 @@ Og'ir o'qishni arzon modelga bering: `qidiruv` va `tahlil` (haiku) ko'p
 o'qib oz qaytaradi, `review` (sonnet) diffni qoidaga solishtiradi. Uzun
 chiqish ularning kontekstida qoladi. Qaror va yozish asosiy sessiyada.
 
+Boshqa asboblar:
+
+- `doc.sh rule java:S3776` - Sonar kalitini izohlagan bo'lim.
+- `doc.sh checklist <hujjat> [bob]` - yozilgan tekshiruv punktlari.
+- `parse_test_output.py` - test chiqishidan birinchi haqiqiy sababni oladi.
+- `check_code.py` - Java fayl yozilgandan keyin `PostToolUse` hook sifatida
+  mexanik qoidalarni tekshiradi va buzilganini bo'lim raqami bilan
+  qaytaradi. Faqat yolg'on ishga tushishi nol bo'lgan tekshiruvlar.
+
 ## Tekshiruv
 
 Hujjat o'zgartirilgandan keyin:

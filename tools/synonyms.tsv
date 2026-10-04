@@ -1,0 +1,41 @@
+terim	moslik
+# So'rovda ishlatiladigan so'z -> korpus sarlavhalarida turgan so'z.
+# Faqat lug'at farqi uchun: qo'shimchani kesishni stem() bajaradi, uni
+# bu yerda takrorlamang. Har bir juft sarlavhalarda haqiqatan mavjud
+# so'zga olib borishi kerak, aks holda u shunchaki shovqin qo'shadi.
+#
+# Kod tuzilishi
+metod	funksiya metod
+funksya	funksiya
+bolaklash	ajratish chiqarish
+boglash	bogliqlik
+qisqartirish	kichik ajratish
+uzunlik	kichik uzun
+# Baza
+baza	postgresql jadval
+jadval	jadval sxema
+sorov	sorov query
+sekinlashdi	sekin ishlash
+qotib	qulf lock deadlock
+# Tarmoq va integratsiya
+tashqi	integratsiya tashqi
+uzilish	nosozlik timeout
+javob	javob endpoint
+# Test
+tekshiruv	test assertion
+sinov	test
+yiqildi	nosozlik xato
+# So'z yasalishi: o'zak va undan yasalgan ot bir xil mavzuni bildiradi,
+# lekin sarlavhada faqat bittasi turadi. Qo'shimcha kesish bu ko'prikni
+# qurmaydi, chunki bu qo'shimcha emas, yangi so'z.
+kesh	kesh keshlash
+test	test testlash
+log	log loglash
+nom	nom nomlash
+indeks	indeks indekslash
+izolyatsiya	izolyatsiya izolyatsiyalash
+tranzaksiya	tranzaksiya tranzaksiyalar
+# Sifat
+chiroyli	toza nomlash
+tartib	tuzilish tartib
+nusxa	takrorlanish nusxa

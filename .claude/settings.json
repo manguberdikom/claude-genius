@@ -14,6 +14,11 @@
       "Bash(python3 tools/test_schema.py:*)",
       "Bash(python3 tools/eval_find.py:*)",
       "Bash(python3 tools/cost_report.py:*)",
+      "Bash(python3 tools/parse_test_output.py:*)",
+      "Bash(python3 tools/check_code.py:*)",
+      "Bash(python3 tools/test_doc.py:*)",
+      "Bash(python3 tools/test_check_code.py:*)",
+      "Bash(python3 tools/test_parse_test_output.py:*)",
       "Bash(sed -n:*)",
       "Bash(grep:*)",
       "Bash(awk:*)",
@@ -48,6 +53,19 @@
             "command": "python3 \"$CLAUDE_PROJECT_DIR/tools/guard.py\"",
             "timeout": 10,
             "statusMessage": "Qimmat amal tekshirilmoqda"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/tools/check_code.py\"",
+            "timeout": 15,
+            "statusMessage": "Java qoidalari tekshirilmoqda"
           }
         ]
       }

@@ -13,12 +13,16 @@ Hook har bir so'rovda ishlaydi, shuning uchun ikki xato ham qimmat:
 Shuning uchun ikkala tomon ham sinaladi. suggest_sections.py dagi
 MIN_SCORE, MIN_RARE_IDF va MIN_SPECIFIC_LEN shu ro'yxatda sozlangan.
 
-Ma'lum cheklov: moslik so'z darajasida ishlaydi, sinonimni bilmaydi.
-"metod juda uzun, qanday bo'laklayman" so'rovi "Funksiya: kichiklik va
-bitta ish" bobiga ulanmaydi, chunki umumiy so'z yo'q. Bo'lim tanasining
-kalit so'zlarini indekslash sinab ko'rildi va bu holatni yechmadi, shuning
-uchun u olib tashlandi: indeks 304 KB ga, build esa uch barobarga oshar,
-natija esa o'zgarmas edi. Bunday so'rov uchun `doc.sh find -f` bor.
+Ma'lum cheklov: bitta texnik atama va to'ldiruvchi so'zlardan iborat
+so'rov ("tranzaksiyani qayerda ochaman") jim qoladi, chunki bitta mos
+so'z dalil uchun yetarli emas. Bu ataylab: shu shartni yumshatish
+"tezlik", "aniqlik" kabi mavhum otlarni ham o'tkazib yuboradi, ular bu
+korpusda texnik atamalardan ham kamyobroq. Bunday so'rov uchun
+`doc.sh find` bor va u bir so'zli so'rovni mukammal bajaradi.
+
+Bo'lim tanasining kalit so'zlarini indekslash ham sinab ko'rildi va
+natijani o'zgartirmadi, shuning uchun olib tashlandi: indeks 304 KB ga,
+build uch barobarga oshar edi.
 """
 
 import os
@@ -40,6 +44,9 @@ EXPECTED = [
     ("deadlock chiqdi, izolyatsiya darajasini qanday tanlayman", "architect"),
     ("connection pool kattaligini qanday hisoblayman", "architect"),
     ("bu funksiya nomi to'g'rimi", "clean-code"),
+    # Qo'shimcha kesish va sinonim jadvali bilan ishlaydigan holatlar.
+    ("metod juda uzun, qanday bo'laklayman", "clean-code"),
+    ("keshni qachon invalidatsiya qilaman", "architect"),
     ("saga pattern kerakmi yoki outbox", "patterns"),
     ("N+1 so'rov muammosi", "patterns"),
 ]

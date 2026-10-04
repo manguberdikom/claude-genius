@@ -10,6 +10,8 @@ SECTIONS="$IDX/sections.tsv"
 CHAPTERS="$IDX/chapters.tsv"
 ALIASES="$IDX/aliases.tsv"
 DOCS="$IDX/docs.tsv"
+RULES="$IDX/rules.tsv"
+CHECKLIST="$IDX/checklist.tsv"
 
 # show uchun chegara: bundan uzun blok tasodifan kontekstni to'ldirmasin.
 MAX_LINES="${DOC_MAX_LINES:-1200}"
@@ -185,6 +187,55 @@ cmd_outline() {
     "$SECTIONS" | grep . || die "topilmadi: $doc ${chapter:-}"
 }
 
+# Sonar qoida kalitidan uni tushuntirgan bo'limga. Kalit `java:S3776`,
+# `S3776` yoki `3776` shaklida berilishi mumkin.
+cmd_rule() {
+  [ $# -eq 1 ] || die "foydalanish: doc.sh rule <kalit>   masalan java:S3776"
+  local digits key
+  digits="$(printf '%s' "$1" | tr -cd '0-9')"
+  [ -n "$digits" ] || die "kalitda raqam yo'q: $1"
+  key="java:S$digits"
+
+  local out
+  out="$(awk -F'\t' -v k="$key" '
+    FILENAME ~ /sections\.tsv$/ { if (FNR > 1) st[$1"|"$2] = $4; next }
+    FILENAME ~ /chapters\.tsv$/ { if (FNR > 1) ch[$1"|"$2] = $3; next }
+    FNR > 1 && $1 == k {
+      if ($4 != "") { ref = $4; title = st[$2"|"$4] }
+      else          { ref = $3; title = ch[$2"|"$3] }
+      printf "%-11s %-7s %5.2f  %s\n", $2, ref, $6, title
+    }
+  ' "$SECTIONS" "$CHAPTERS" "$RULES")"
+
+  if [ -z "$out" ]; then
+    printf '%s qo%sllanmada izohlanmagan.\n' "$key" "'" >&2
+    printf "matn ichidan qidirish: doc.sh find -f '%s'\n" "$key" >&2
+    return 1
+  fi
+  printf '%s\n' "$out"
+  printf "> doc.sh show <hujjat> <raqam>   (uchinchi ustun: ko'zga tashlanish)\n" >&2
+}
+
+# Bo'lim yoki bobning tekshiruv punktlari. Korpusda 2000 dan ortiq punkt
+# yozilgan; ishdan oldin ro'yxatni o'ylab topish shart emas.
+cmd_checklist() {
+  [ $# -ge 1 ] || die "foydalanish: doc.sh checklist <hujjat> [bob yoki bo'lim]"
+  local doc="$1" ref="${2:-}"
+  local out
+  out="$(awk -F'\t' -v d="$doc" -v r="$ref" '
+    NR > 1 && $1 == d {
+      if (r == "")                       keep = 1
+      else if (index(r, ".") > 0)        keep = ($3 == r)
+      else                               keep = ($2 == r)
+      if (!keep) next
+      if ($3 != last) { if (last != "") print ""; print $3; last = $3 }
+      print "  - [ ] " $4
+    }
+  ' "$CHECKLIST")"
+  [ -n "$out" ] || die "punkt topilmadi: $doc ${ref:-}"
+  printf '%s\n' "$out"
+}
+
 # Bo'limning fayli, satr oralig'i va markdown havolasi: skill yoki hujjat
 # yozayotganda havolani qo'lda hisoblamaslik uchun.
 cmd_path() {
@@ -203,6 +254,8 @@ cmd_path() {
   doc.sh toc [hujjat]                     hujjatlar yoki boblar ro'yxati
   doc.sh outline <hujjat> [bob]           bo'limlar ro'yxati
   doc.sh path <hujjat> <raqam>            fayl, satr oralig'i va havola
+  doc.sh rule <java:Sxxxx>                Sonar kalitini izohlagan bo'lim
+  doc.sh checklist <hujjat> [bob]         tekshiruv punktlari
   doc.sh rebuild                          indeksni qayta yasash
 
 hujjatlar: patterns  testing  architect  sonarqube  clean-code  code-review
@@ -215,6 +268,8 @@ case "$cmd" in
   toc)     ensure_index; cmd_toc "$@" ;;
   outline) ensure_index; cmd_outline "$@" ;;
   path)    ensure_index; cmd_path "$@" ;;
+  rule)    ensure_index; cmd_rule "$@" ;;
+  checklist) ensure_index; cmd_checklist "$@" ;;
   rebuild) rebuild ;;
   *)       die "noma'lum buyruq: $cmd  (doc.sh yordam uchun argumentsiz)" ;;
 esac

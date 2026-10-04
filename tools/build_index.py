@@ -38,6 +38,9 @@ PAREN_RE = re.compile(r"\(([^()]*(?:\([^()]*\)[^()]*)*)\)\s*$")
 ALIAS_FILE = "99-alifbo-boyicha-indeks.md"
 
 # `n+1`, `c++` kabi atamalar bitta token bo'lib qolishi kerak.
+RULE_RE = re.compile(r"\bjava:S\d+\b")
+CHECKBOX_RE = re.compile(r"^\s*- \[ \]\s+(.*?)\s*$")
+
 WORD_RE = re.compile(r"[a-z0-9_.@#]+(?:\+\+|\+\d+)?(?:'[a-z0-9]+)*")
 
 
@@ -103,12 +106,40 @@ def parse_alias_file(path, doc_key, known_sections):
     return aliases
 
 
+def scan_body(doc_key, chapter, section, body, rows):
+    """Bo'lim tanasidan Sonar qoida kalitlari va tekshiruv punktlarini oladi.
+
+    Ikkalasi ham korpusda allaqachon mashina o'qiydigan shaklda yotibdi:
+    98 ta `java:Sxxxx` kaliti va 2000 dan ortiq `- [ ]` punkti. Indekssiz
+    ularni faqat odam ko'radi.
+    """
+    if not section and not chapter:
+        return
+    text = "\n".join(body)
+    for rule in set(RULE_RE.findall(text)):
+        rows["rules"].append(
+            (rule, doc_key, chapter, section, text.count(rule))
+        )
+    for line in body:
+        match = CHECKBOX_RE.match(line)
+        if match:
+            rows["checklist"].append(
+                (doc_key, chapter, section, clean(match.group(1)))
+            )
+
+
 def index_chapter(doc_key, chapter, rel_path, rows):
     """Bitta bob faylini o'qib, bob va bo'lim qatorlarini to'playdi."""
     lines = read_lines(os.path.join(ROOT, rel_path))
     headings = parse_headings(lines)
     ends = assign_ends(headings, len(lines))
     num = str(chapter["num"]) if chapter.get("num") is not None else ""
+
+    # Bobning muqaddimasi: H1 dan birinchi bo'limgacha. Katalog jadvallari
+    # aynan shu yerda turadi, shuning uchun u ham skanlanadi. H1 ning o'z
+    # oralig'i butun bobni qamraydi, undan foydalanilsa hammasi ikki marta
+    # sanalardi.
+    first_section = next((ln for lvl, ln, _ in headings if lvl == 2), len(lines) + 1)
 
     for (level, lineno, title), end in zip(headings, ends):
         if level == 1:
@@ -118,6 +149,7 @@ def index_chapter(doc_key, chapter, rel_path, rows):
             alias = english_alias(title)
             if num and alias:
                 rows["aliases"].append((clean(alias), doc_key, "chapter", num))
+            scan_body(doc_key, num, "", lines[lineno:first_section - 1], rows)
         elif level == 2:
             match = SECTION_NUM_RE.match(title)
             section = match.group(1) if match else ""
@@ -132,11 +164,15 @@ def index_chapter(doc_key, chapter, rel_path, rows):
                     rows["aliases"].append(
                         (clean(alias), doc_key, "section", section)
                     )
+            # Tana shu yerda qo'lda, chunki satrlar allaqachon o'qilgan:
+            # alohida yurish fayllarni ikkinchi marta ochishni talab qilardi.
+            scan_body(doc_key, num, section, lines[lineno:end], rows)
 
 
 def build():
     manifest = json.load(open(os.path.join(DOCS_DIR, "manifest.json"), encoding="utf-8"))
-    rows = {"chapters": [], "sections": [], "aliases": [], "known": set()}
+    rows = {"chapters": [], "sections": [], "aliases": [], "known": set(),
+            "rules": [], "checklist": []}
     doc_rows = []
 
     for doc_key, doc in manifest.items():
@@ -184,14 +220,36 @@ def build():
           rows["sections"])
     write("aliases.tsv", ["alias", "doc", "kind", "ref"], aliases)
 
+    # Bir kalit bir necha bo'limda uchraydi. Ko'p uchragani odatda uni
+    # tushuntirgan bo'lim, bir marta uchragani esa ro'yxatda eslatilgan.
+    # Reyting: sanoqning o'zi aldaydi. Yigirmata kalit sanab o'tgan
+    # katalog qatori ham, bitta kalitni tushuntirgan bo'lim ham kalitni
+    # bir necha marta tilga oladi. Ko'zga tashlanish kerak: shu bo'limdagi
+    # BARCHA kalitlarga nisbatan shu kalitning ulushi.
+    per_section = {}
+    for rule, doc, chapter, section, _ in set(rows["rules"]):
+        per_section.setdefault((doc, chapter, section), set()).add(rule)
+    rules = []
+    for rule, doc, chapter, section, count in set(rows["rules"]):
+        distinct = len(per_section[(doc, chapter, section)])
+        rules.append((rule, doc, chapter, section, count,
+                      round(count / distinct, 3)))
+    rules.sort(key=lambda r: (r[0], -r[5], -r[4], r[1], r[2], r[3]))
+    write("rules.tsv",
+          ["rule", "doc", "chapter", "section", "marta", "ulush"], rules)
+    write("checklist.tsv", ["doc", "chapter", "section", "item"],
+          rows["checklist"])
+
     df = build_df(rows["sections"])
     write("df.tsv", ["token", "sections"],
           sorted(df.items(), key=lambda kv: (-kv[1], kv[0])))
 
 
-    print("index: %d hujjat, %d bob, %d bo'lim, %d taxallus, %d so'z chastotasi"
+    print("index: %d hujjat, %d bob, %d bo'lim, %d taxallus, %d so'z, "
+          "%d qoida kaliti, %d tekshiruv punkti"
           % (len(doc_rows), len(rows["chapters"]), len(rows["sections"]),
-             len(aliases), len(df)))
+             len(aliases), len(df), len({r[0] for r in rules}),
+             len(rows["checklist"])))
 
 
 def word_tokens(text):

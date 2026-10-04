@@ -20,8 +20,11 @@ import os
 import re
 import sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ALIASES = os.path.join(ROOT, "index", "aliases.tsv")
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)
+sys.path.insert(0, HERE)
+
+from docref import hint  # noqa: E402
 
 ENTITY_RE = re.compile(r"@Entity\b")
 CLASS_RE = re.compile(r"\b(?:public\s+)?(?:final\s+)?class\s+(\w+)")
@@ -243,20 +246,6 @@ def check(entity):
     return out
 
 
-def resolve(topic):
-    """Mavzuni qo'llanmadagi bo'lim raqamiga bog'laydi, topilsa."""
-    if not os.path.exists(ALIASES):
-        return None
-    low = topic.lower()
-    with open(ALIASES, encoding="utf-8") as handle:
-        handle.readline()
-        for line in handle:
-            parts = line.rstrip("\n").split("\t")
-            if len(parts) == 4 and parts[0].lower() == low and parts[2] == "section":
-                return "%s %s" % (parts[1], parts[3])
-    return None
-
-
 def collect(src):
     entities = []
     for dirpath, dirnames, filenames in os.walk(src):
@@ -325,12 +314,9 @@ def main():
     print("# Ehtimoliy muammolar (%d ta, hech narsa ishga tushirilmadi)\n"
           % len(findings))
     for f in findings:
-        ref = resolve(f.topic)
-        where = "%s.%s" % (f.table, f.column)
-        print("[%s] %s" % (f.level, where))
+        print("[%s] %s.%s" % (f.level, f.table, f.column))
         print("    %s" % f.message)
-        print("    %s" % ("qo'llanma: tools/doc.sh show %s" % ref if ref
-                          else "qo'llanma: tools/doc.sh find \"%s\"" % f.topic))
+        print("    %s" % hint(f.topic))
     return 0
 
 
