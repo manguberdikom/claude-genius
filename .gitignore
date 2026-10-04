@@ -17,3 +17,6 @@ __pycache__/
 
 # tools/state.py: sessiya holati, jamoaga tegishli emas
 .claude/.state/
+
+# tools/usage.py: kunlik token sarfi, mashinaga tegishli
+.claude/usage/

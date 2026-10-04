@@ -102,6 +102,8 @@ Boshqa asboblar:
   (`PreToolUse` hook). Vazifa boshida `--yangi-vazifa "<nom>"`.
 - `handoff.py` - sessiya kontekstini transkriptdan o'lchaydi, to'lsa
   yangi sessiya uchun tayyor prompt beradi (`--prompt`).
+- `usage.py` - kunlik token sarfi va qaysi aktyor sarflagani, dollarda.
+  `Stop` hook har navbat oxirida `.claude/usage/<oy>.json` ga yozadi.
 
 ## Tekshiruv
 

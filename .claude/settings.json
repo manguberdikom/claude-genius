@@ -24,6 +24,10 @@
       "Bash(python3 tools/test_rules_for.py:*)",
       "Bash(python3 tools/eval_skill.py:*)",
       "Bash(python3 tools/budget.py:*)",
+      "Bash(python3 tools/usage.py:*)",
+      "Bash(python3 tools/test_usage.py:*)",
+      "Bash(python3 tools/test_rewrite_paths.py:*)",
+      "Bash(python3 install/rewrite_paths.py:*)",
       "Bash(python3 tools/test_budget.py:*)",
       "Bash(python3 tools/handoff.py:*)",
       "Bash(python3 tools/test_handoff.py:*)",
@@ -75,6 +79,18 @@
             "command": "python3 \"$CLAUDE_PROJECT_DIR/tools/budget.py\"",
             "timeout": 10,
             "statusMessage": "Aktyor budjeti tekshirilmoqda"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/tools/usage.py\" --saqlash",
+            "timeout": 20,
+            "statusMessage": "Token sarfi yozilmoqda"
           }
         ]
       }

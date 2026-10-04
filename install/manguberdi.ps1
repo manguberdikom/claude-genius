@@ -106,12 +106,40 @@ if (-not $Python) {
 }
 $PythonExe = $Python.Source
 
+# doc.sh bash skripti va qidiruv qatlamining hammasi unga tayanadi.
+# Windows da bash kafolatlanmagan: Git for Windows yoki WSL bilan keladi.
+$BashCmd = Get-Command 'bash' -ErrorAction SilentlyContinue
+$BashExe = if ($BashCmd) { $BashCmd.Source } else { $null }
+if (-not $BashExe) {
+  foreach ($candidate in @(
+      "$env:ProgramFiles\Git\bin\bash.exe",
+      "${env:ProgramFiles(x86)}\Git\bin\bash.exe",
+      "$env:LOCALAPPDATA\Programs\Git\bin\bash.exe")) {
+    if ($candidate -and (Test-Path -LiteralPath $candidate)) {
+      $BashExe = $candidate
+      break
+    }
+  }
+}
+
 Say ""
 Say "Manba : $GeniusPath"
 Say "Python: $PythonExe"
+Say ("Bash  : " + $(if ($BashExe) { $BashExe } else { "TOPILMADI" }))
 Say "Global: $ClaudeDir"
 if ($Project) { Say "Proyekt: $Project" }
 Say ("Rejim : " + $(if ($Apply) { 'BAJARILADI' } else { 'quruq yurish (-Apply bermadingiz)' }))
+
+if (-not $BashExe) {
+  Say ""
+  Say "OGOHLANTIRISH: bash topilmadi." -ForegroundColor Yellow
+  Say "  tools\doc.sh bash skripti, qidiruv qatlamining hammasi unga tayanadi:"
+  Say "  find, show, rule, checklist, outline. Usiz skill qoida matnini"
+  Say "  o'qiy olmaydi, faqat hooklar ishlaydi."
+  Say "  Yechim: Git for Windows o'rnating (https://git-scm.com/download/win)"
+  Say "  yoki WSL dan bash bering, keyin shu skriptni qayta yurgizing."
+  Say ""
+}
 
 # --- 2. Zaxira ------------------------------------------------------------
 
@@ -191,6 +219,33 @@ foreach ($actor in $Actors) {
   if ($Apply) { Copy-Item -LiteralPath $src -Destination $agentsDst -Force }
 }
 
+# --- 4b. Yo'llarni mutlaq qilish -----------------------------------------
+
+# Skill matnida buyruqlar `python3 tools/rules_for.py` ko'rinishida yozilgan
+# va bu yo'l JORIY papkaga nisbatan hal qilinadi. Global o'rnatilgan skill
+# boshqa proyektda ishlatilsa, ularning hammasi topilmaydi. Almashtirish
+# Python da, chunki bu qism sinaladi: tools/test_rewrite_paths.py.
+
+$rewriter = Join-Path $GeniusPath 'install\rewrite_paths.py'
+$bashArg = if ($BashExe) { $BashExe.Replace('\', '/') } else { 'bash' }
+
+Say ""
+Say "3b. Yo'llar mutlaq qilinmoqda"
+Step "manba: $GeniusPath"
+Step "bash : $bashArg"
+
+if ($Apply) {
+  foreach ($target in @($skillDst, $agentsDst)) {
+    $out = & $PythonExe $rewriter $target '--root' $GeniusPath '--bash' $bashArg 2>&1
+    if ($LASTEXITCODE -ne 0) {
+      Say "  XATO: yo'llarni almashtirish yiqildi: $out"
+      Say "  Zaxira: $BackupTo"
+      exit 1
+    }
+    Step "$out"
+  }
+}
+
 # --- 5. Sozlama ----------------------------------------------------------
 
 # Hook yo'llari MUTLAQ bo'ladi. Repodagi settings.json $CLAUDE_PROJECT_DIR
@@ -224,13 +279,18 @@ $settings = [ordered]@{
         type = 'command'; command = (HookCmd 'check_code.py')
         timeout = 15; statusMessage = 'Java qoidalari tekshirilmoqda' }) }
     )
+    Stop = @(
+      [ordered]@{ hooks = @([ordered]@{
+        type = 'command'; command = ((HookCmd 'usage.py') + ' --saqlash')
+        timeout = 20; statusMessage = 'Token sarfi yozilmoqda' }) }
+    )
   }
 }
 
 $settingsPath = Join-Path $ClaudeDir 'settings.json'
 Say ""
 Say "4. Sozlama -> $settingsPath"
-Step "uch hook: bo'lim taklifi, qo'riqchi va budjet, kod tekshiruvi"
+Step "besh hook: bo'lim taklifi, qo'riqchi, budjet, kod tekshiruvi, sarf hisobi"
 Step "yo'llar mutlaq, manba: $toolsDir"
 
 if ($Apply) {
@@ -265,6 +325,14 @@ try {
   $null = Get-Content -LiteralPath $settingsPath -Raw | ConvertFrom-Json
   Step "settings.json o'qiladi"
 } catch { Step "XATO: settings.json buzuq"; $ok = $false }
+
+# Nisbiy yo'l qolmaganini tasdiqlash. Qolsa, skill boshqa proyektda
+# jim ishlamaydi: buyruq topilmaydi, sabab ko'rinmaydi.
+foreach ($target in @($skillDst, $agentsDst)) {
+  $check = & $PythonExe $rewriter $target '--root' $GeniusPath '--tekshir' 2>&1
+  if ($LASTEXITCODE -eq 0) { Step "nisbiy yo'l qolmadi: $(Split-Path -Leaf $target)" }
+  else { Step "XATO: $check"; $ok = $false }
+}
 
 # Asboblarning o'zi ishlayaptimi: bitta arzon chaqiruv yetadi.
 try {

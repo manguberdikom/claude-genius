@@ -76,6 +76,10 @@ sessiyada `/manguberdi` chaqirilib, topshiriq fayli ko'rsatiladi.
 
 ## O'lchov
 
+Kunlik token sarfi va uni qaysi aktyor sarflagani:
+`python3 tools/usage.py` (dollarda, aktyor bo'yicha). `Stop` hook har
+navbat oxirida uni o'zi yozib boradi, so'rash shart emas.
+
 Har navbatdagi qat'iy kontekst `python3 tools/cost_report.py` bilan
 o'lchanadi. Agar u byudjetdan oshsa, sabab odatda yangi qo'shilgan
 doimiy matn bo'ladi, sessiya uzunligi emas.
