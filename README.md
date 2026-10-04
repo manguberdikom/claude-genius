@@ -1,9 +1,9 @@
-# Java, Spring va PostgreSQL bo'yicha to'rtta qo'llanma
+# Java, Spring va PostgreSQL bo'yicha beshta qo'llanma
 
-O'zbek tilidagi to'rtta bir-birini to'ldiruvchi hujjat. Har biri alohida sohani
+O'zbek tilidagi beshta bir-birini to'ldiruvchi hujjat. Har biri alohida sohani
 qamraydi va mavzular takrorlanmaydi: pattern katalogi patternlar hujjatida,
 testlash texnikasi testlash qo'llanmasida, ichki mexanika arxitektor hujjatida,
-statik tahlil esa SonarQube hujjatida turadi.
+statik tahlil SonarQube hujjatida, kod review esa review hujjatida turadi.
 
 | Hujjat | Hajm | Mazmun |
 |---|---|---|
@@ -11,6 +11,7 @@ statik tahlil esa SonarQube hujjatida turadi.
 | [java-spring-testing-handbook.md](java-spring-testing-handbook.md) | 18 bob | Test piramidasi, unit va integratsion test, Testcontainers, contract testing, E2E, CI/CD test pipeline |
 | [java-spring-architect-mindset.md](java-spring-architect-mindset.md) | 39 bob, 482 bo'lim | Fikrlash va qaror, JVM ichki tuzilishi, Spring mexanikasi, PostgreSQL chuqur bilim, operatsion haqiqat |
 | [java-spring-sonarqube.md](java-spring-sonarqube.md) | 43 bob, 557 bo'lim | SonarQube mexanikasi, quality gate, coverage, xato katalogi, server va tashkilot, ma'lumotnoma |
+| [java-spring-code-review.md](java-spring-code-review.md) | 44 bob, 445 bo'lim | Diffni o'qish, arxitektura va pattern review, Java/Spring/PostgreSQL tahlili, xavfsizlik, test to'liqligi, jarayon va metrikalar |
 
 ## Memory protokoli
 
@@ -31,12 +32,27 @@ proyekt papkasidan kerakligini o'qiydi. Ombor qoidasi [memory/README.md](memory/
 - **Dizayn qaroriga pattern tanlayapsiz** - patternlar hujjatidagi mavzuga mos bo'lim
 - **Test strategiyasi tuzyapsiz** - testlash qo'llanmasining birinchi boblari
 - **Ichkarida nima sodir bo'layotganini bilmoqchisiz** - arxitektor hujjatidagi tegishli qism
-- **O'zingizni baholamoqchisiz** - arxitektor hujjatining oxirgi bobi
+- **Oldingizda PR turibdi va nimaga qarashni bilmoqchisiz** - review hujjatining 3, 4 va 44-boblari
+- **O'zingizni baholamoqchisiz** - arxitektor hujjatining oxirgi bobi, review hujjatining 44-bobi
 
 Har bir hujjat mundarija bilan boshlanadi va har bob `Amalda qo'llash` ro'yxati
 bilan tugaydi.
 
+## Hujjatlar qanday bog'langan
+
+Review hujjati qolgan to'rttasining bilimini review stoliga olib chiqadi: qaysi
+mexanika diffda qanday belgi qoldiradi va shu belgini ko'rgan reviewer nima
+deyishi kerak. Mexanikaning o'zi kerak bo'lganda tegishli hujjatga havola
+qilinadi, takrorlanmaydi.
+
+```
+patterns  --->  "bu yerda Strategy kerakmi, yoki switch yetadi?"      ---> review
+testing   --->  "test holatlari to'liqmi, assertion nimani tekshiradi?" ---> review
+architect --->  "bu migratsiya qanday qulf oladi, N+1 qayerdan keldi?"  ---> review
+sonarqube --->  "Sonar nimani topadi, odam nimani topishi kerak?"       ---> review
+```
+
 ## Til va uslub
 
 O'zbek lotin yozuvi. Texnik atamalar inglizcha qoldirilgan: bean, proxy, thread,
-cache, latency, quality gate, coverage.
+cache, latency, quality gate, coverage, review, blocker, diff.
