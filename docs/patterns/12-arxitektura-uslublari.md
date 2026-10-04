@@ -63,6 +63,22 @@ Arxitektura uslublari - bu alohida sinf darajasidagi dizayn patternlardan farqli
 
 **Ehtiyot bo'ling:** Eng ko'p uchraydigan tuzoq - "anemik domen modeli": butun logika `@Service` sinflarida to'planib, entity'lar faqat getter/setter to'plamiga aylanadi va service'lar minglab qatorga o'sadi. Shuningdek domen qatlami JPA annotatsiyalariga va `Repository` interfeyslariga bog'lanib qolsa, qatlamlar faqat paket nomida qoladi - DB'ni almashtirish yoki domenni alohida test qilish imkoni yo'qoladi.
 
+```text
+com.example.orders
+  web/          OrderController, OrderDto
+  service/      OrderService
+  repository/   OrderRepository
+  domain/       Order
+
+Bog'liqlik yo'nalishi faqat pastga: web -> service -> repository -> domain.
+ArchUnit bilan majburlash:
+  noClasses().that().resideInAPackage("..domain..")
+    .should().dependOnClassesThat().resideInAPackage("..web..")
+
+Kamchiligi: har biznes o'zgarishi to'rt paketga tegadi, shuning uchun
+koheziya past va qaysi funksiya borligi tuzilmadan ko'rinmaydi.
+```
+
 ## 12.2 Olti burchakli arxitektura (Hexagonal Architecture / Ports & Adapters)
 
 **Tavsif:** Ilova yadrosi (domain + use case'lar) markazda turadi va tashqi dunyo bilan faqat o'zi e'lon qilgan interfeyslar - port'lar orqali gaplashadi. Har bir texnologiya (HTTP, Kafka, JPA, SMTP) shu port'ni amalga oshiruvchi adapter sifatida chetga chiqariladi, natijada bog'liqlik yo'nalishi har doim tashqaridan yadroga qarab bo'ladi. Inbound (driving) port'lar yadroni chaqiradi, outbound (driven) port'lar yadro ehtiyojini ifodalaydi. Bu yadroni Spring'dan ham, DB'dan ham mustaqil sinovdan o'tkazish imkonini beradi.
@@ -77,6 +93,27 @@ Arxitektura uslublari - bu alohida sinf darajasidagi dizayn patternlardan farqli
 - Legacy integratsiyalarni asta-sekin anti-corruption adapterlar orqali izolyatsiya qilishda.
 
 **Ehtiyot bo'ling:** Yupqa CRUD xizmatlar uchun bu uslub ortiqcha: har bir maydon uchun domen obyekti, DTO, entity va ikki mapper paydo bo'lib, foydali kodga nisbatan boilerplate ulushi keskin oshadi. Yana bir tuzoq - JPA entity'ni to'g'ridan-to'g'ri domen obyekti sifatida ishlatish: bu port'lar orqali hosil qilingan izolyatsiyani yashirin tarzda buzadi va lazy loading muammolarini yadroga olib kiradi.
+
+```java
+// Port: domen o'ziga keragini e'lon qiladi (domen paketida)
+public interface PaymentPort {
+    Receipt charge(Payment payment);
+}
+
+// Adapter: tashqi dunyo (infra paketida)
+@Component
+class PspPaymentAdapter implements PaymentPort {
+    private final RestClient psp;
+    @Override public Receipt charge(Payment p) { /* HTTP tafsiloti faqat shu yerda */ }
+}
+
+// Domen servisi faqat portni biladi
+public class PlaceOrderUseCase {
+    private final PaymentPort payments;                 // interfeys
+    public PlaceOrderUseCase(PaymentPort payments) { this.payments = payments; }
+}
+// Bog'liqlik yo'nalishi: infra -> domen. Domen Spring ni ham bilmaydi.
+```
 
 ## 12.3 Clean Architecture (Clean Architecture)
 
@@ -93,6 +130,24 @@ Arxitektura uslublari - bu alohida sinf darajasidagi dizayn patternlardan farqli
 
 **Ehtiyot bo'ling:** Clean Architecture'ni "har bir halqa uchun alohida model" deb mexanik tushunish mapping do'zaxiga olib keladi - 4 qatlamli mapping zanjirlari xatolar manbaiga aylanadi va ishlab chiqish tezligini pasaytiradi. Agar jamoa Dependency Rule'ni ArchUnit yoki modul chegaralari bilan majburlamasa, bir yildan keyin bu faqat paket nomlari qolgan oddiy layered arxitektura bo'lib chiqadi.
 
+```text
+com.example
+  domain/        Order, Money            (hech kimga bog'liq emas)
+  usecase/       PlaceOrder, CancelOrder (domain ga bog'liq)
+  adapter/
+    in/web/      OrderController         (usecase ga bog'liq)
+    out/persistence/ OrderJpaAdapter     (usecase portlarini amalga oshiradi)
+
+Qoida bitta: bog'liqlik har doim ichkariga qaraydi.
+ArchUnit bilan:
+  layeredArchitecture().consideringAllDependencies()
+    .layer("domain").definedBy("..domain..")
+    .layer("usecase").definedBy("..usecase..")
+    .layer("adapter").definedBy("..adapter..")
+    .whereLayer("domain").mayOnlyBeAccessedByLayers("usecase", "adapter")
+    .whereLayer("adapter").mayNotBeAccessedByAnyLayer()
+```
+
 ## 12.4 Piyoz arxitekturasi (Onion Architecture)
 
 **Tavsif:** Clean Architecture'ning DDD'ga yaqin varianti: markazda Domain Model, uning ustida Domain Services, keyin Application Services, eng tashqarida Infrastructure va UI. Asosiy urg'u - infrastruktura (DB, ORM, messaging) hech qachon markazda emas, balki eng tashqi, almashtiriladigan halqada bo'lishi; repository interfeyslari domen ichida e'lon qilinadi. Hexagonal'dan farqi shundaki, Onion ichki halqalarni DDD terminlarida (Aggregate, Domain Service, Specification) aniq ajratadi. Bu uslub "database-centric" fikrlashdan "domain-centric" fikrlashga o'tishni rasmiylashtiradi.
@@ -108,6 +163,20 @@ Arxitektura uslublari - bu alohida sinf darajasidagi dizayn patternlardan farqli
 
 **Ehtiyot bo'ling:** Onion va Clean/Hexagonal o'rtasidagi farqlar juda kichik, shuning uchun jamoada terminologiya urushiga aylanib, haqiqiy muammo - domen modelini boyitish - e'tibordan chetda qolishi mumkin. Agar domen halqasi JPA annotatsiyalari va lazy proxy'lar bilan to'lsa, "infrastructure tashqarida" degan asosiy va'da buziladi.
 
+```java
+// Onion: markazda domen modeli, tashqarida infratuzilma
+// 1-qatlam (markaz): Order, Money - hech qanday import yo'q
+// 2-qatlam: OrderRepository interfeysi (domen xizmatlari)
+// 3-qatlam: PlaceOrderService (ilova xizmatlari)
+// 4-qatlam (tashqi): JPA, REST, Kafka adapterlari
+
+// Farqi hexagonal dan: Onion qatlamlarni aniq sanab beradi,
+// hexagonal esa faqat "ichkari va tashqari" deydi. Amalda ikkisi
+// bir xil natijaga olib keladi: domen hech narsaga bog'liq emas.
+@Entity class OrderEntity { }        // 4-qatlam
+public record Order(OrderId id) { }  // 1-qatlam, JPA annotatsiyasi yo'q
+```
+
 ## 12.5 Vertikal qatlamli arxitektura (Vertical Slice Architecture)
 
 **Tavsif:** Kod gorizontal texnik qatlamlar emas, balki feature (use case) bo'yicha vertikal "tilim"larga bo'linadi: har bir tilim o'z controller, handler, so'rov/javob modeli va DB kirishini o'zida saqlaydi. Maqsad - o'zgarishni bitta papkada lokalizatsiya qilish, ya'ni yangi funksiya qo'shganda 5 xil qatlamga tegmaslik. Tilimlar o'rtasida kodni majburan umumlashtirish ataylab minimallashtiriladi; takrorlanish bog'liqlikdan afzal deb hisoblanadi. Har bir tilim o'ziga mos murakkablik darajasini tanlashi mumkin - oddiy query uchun to'g'ridan-to'g'ri SQL, murakkab komanda uchun to'liq aggregate.
@@ -122,6 +191,23 @@ Arxitektura uslublari - bu alohida sinf darajasidagi dizayn patternlardan farqli
 - Ichki qatlamlararo abstraksiyalar foyda bermayotgan, "service → repository → service" zanjirlari ortiqcha bo'lgan loyihalarda.
 
 **Ehtiyot bo'ling:** Umumiy biznes invariantlari bir necha tilimda takrorlansa, bitta qoidaning ikki xil versiyasi paydo bo'lib, nomuvofiqlik xatolari yuzaga keladi - shuning uchun haqiqiy domen qoidalari uchun umumiy domen moduli saqlanishi kerak. Shuningdek tilimlar o'rtasida DB jadvallarini erkin ulashish yashirin bog'lanish hosil qiladi va keyinchalik modullarni ajratishni qiyinlashtiradi.
+
+```text
+com.example.orders
+  placeorder/
+    PlaceOrderController.java
+    PlaceOrderService.java
+    PlaceOrderRequest.java
+    PlaceOrderTest.java
+  cancelorder/
+    CancelOrderController.java
+    CancelOrderService.java
+
+Bitta o'zgarish bitta papkaga tegadi, shuning uchun koheziya yuqori.
+Narxi: umumiy kod qayerda turishi haqida qaror kerak, aks holda
+takrorlanish boshlanadi. Umumiy qismni `shared/` ga chiqarish qoidasi
+oldindan yozilgan bo'lishi kerak.
+```
 
 ## 12.6 Modulli monolit (Modular Monolith / Spring Modulith)
 
@@ -160,6 +246,29 @@ void on(OrderCompleted event) {
 
 **Ehtiyot bo'ling:** Plugin kontraktini noto'g'ri loyihalash eng katta xavf: interfeys juda tor bo'lsa plugin'lar yadroni "aylanib o'tish" uchun hack qiladi, juda keng bo'lsa har bir o'zgarish barcha plugin'larni buzadi. Bir JVM'da ishlayotgan plugin'lar xotira, thread va exception darajasida izolyatsiyalanmagan - ishonchsiz uchinchi tomon kodi uchun alohida class loader yoki process kerak.
 
+```java
+// Mikroyadro: o'zak kichik, imkoniyat plugin bilan qo'shiladi
+public interface ReportPlugin {
+    String format();                                 // "pdf", "xlsx"
+    byte[] render(ReportModel model);
+}
+
+@Service
+public class ReportKernel {
+    private final Map<String, ReportPlugin> plugins;
+
+    public ReportKernel(List<ReportPlugin> all) {     // konteyner yig'adi
+        this.plugins = all.stream()
+                .collect(Collectors.toMap(ReportPlugin::format, p -> p));
+    }
+
+    public byte[] render(String format, ReportModel m) {
+        return plugins.getOrDefault(format, plugins.get("pdf")).render(m);
+    }
+}
+// Yangi format = yangi bean. O'zak kodi o'zgarmaydi.
+```
+
 ## 12.8 Quvurlar va filtrlar (Pipes and Filters)
 
 **Tavsif:** Ishlov berish mustaqil, holatsiz filter'lar ketma-ketligiga bo'linadi; har biri kirish oqimini o'zgartirib, natijani keyingi filter'ga quvur (pipe) orqali uzatadi. Filter'lar bir-biri haqida bilmaydi, faqat ma'lumot formatiga kelishadi, shuning uchun ularni qayta tartiblash, qayta ishlatish va parallellashtirish oson. Bu uslub ETL, media transkodlash va message transformation uchun tabiiy. Quvur in-memory kolleksiya, reactive stream yoki haqiqiy message queue bo'lishi mumkin.
@@ -174,6 +283,26 @@ void on(OrderCompleted event) {
 - HTTP so'rovlari uchun kesishgan mas'uliyatlar zanjiri: auth → rate limit → audit log.
 
 **Ehtiyot bo'ling:** Ko'p bosqichli quvurda xatolarni boshqarish va idempotentlik eng murakkab qism - qaysi bosqichda qayta urinish, qaysi birida dead-letter'ga yuborish aniq loyihalanmasa, ma'lumot yo'qolishi yoki dublikatlar paydo bo'ladi. Shuningdek har bir bosqich holatsiz bo'lishi kerak; filter'lar orasida yashirin umumiy mutable holat paydo bo'lsa, parallellashtirish va kuzatuvchanlik buziladi.
+
+```java
+// Pipes and filters: har filtr bitta ish, shakl bir xil
+public interface Filter<T> extends UnaryOperator<T> {}
+
+@Component @Order(10) class Normalize implements Filter<Record> { /* ... */ }
+@Component @Order(20) class Validate  implements Filter<Record> { /* ... */ }
+@Component @Order(30) class Enrich    implements Filter<Record> { /* ... */ }
+
+@Service
+public class ImportPipeline {
+    private final List<Filter<Record>> filters;       // tartib @Order bilan
+
+    public Record run(Record in) {
+        Record out = in;
+        for (Filter<Record> f : filters) out = f.apply(out);
+        return out;
+    }
+}
+```
 
 ## 12.9 Hodisaga asoslangan arxitektura (Event-Driven Architecture - broker va mediator topologiyalari)
 
@@ -190,6 +319,29 @@ void on(OrderCompleted event) {
 
 **Ehtiyot bo'ling:** Broker topologiyasida biznes jarayonining to'liq oqimi hech bir joyda yozilmagan bo'ladi - debugging va xato tahlili uchun kuchli tracing, correlation ID va event katalogi bo'lmasa, tizim "tushunarsiz" holatga keladi. Eventual consistency'ni mahsulot talablari bilan kelishmasdan tanlash ham tipik xato: foydalanuvchi darhol ko'rishi kerak bo'lgan natijani asinxron hodisaga topshirish UX muammolari va ikki marta yuborilgan buyurtmalarga olib keladi.
 
+```java
+// Broker topologiyasi: ishtirokchilar bir-birini bilmaydi
+@Component
+class OrderPlacedListener {
+    @KafkaListener(topics = "orders.placed", groupId = "warehouse")
+    void on(OrderPlaced e) { warehouse.reserve(e.orderId()); }
+}
+// Afzalligi: yangi iste'molchi qo'shish hech kimga tegmaydi.
+// Narxi: butun oqimni hech kim ko'rmaydi, nosozlikni kuzatish qiyin.
+
+// Mediator topologiyasi: markazda orkestrator, qadamlar aniq
+@Component
+class CheckoutSaga {
+    void on(OrderPlaced e) {
+        commands.send(new ReserveStock(e.orderId()));      // 1
+        commands.send(new ChargePayment(e.orderId()));     // 2
+    }
+    void on(PaymentFailed e) {
+        commands.send(new ReleaseStock(e.orderId()));      // kompensatsiya
+    }
+}
+```
+
 ## 12.10 Buyruq va so'rovlar mas'uliyatini ajratish (CQRS - Command Query Responsibility Segregation)
 
 **Tavsif:** Yozish (command) va o'qish (query) yo'llari turli modellar, ba'zan turli ma'lumotlar bazalari bilan amalga oshiriladi. Command modeli biznes invariantlarini himoya qiladi va normalizatsiyalangan bo'ladi, query modeli esa UI ehtiyojiga moslashtirilgan denormalizatsiyalangan proyeksiyalardan iborat. Bu ikki yo'lni mustaqil optimallashtirish va mustaqil masshtablash imkonini beradi. Oddiy shaklda bu faqat kod darajasidagi ajratish (bir DB), kuchli shaklda - alohida read store va asinxron proyeksiya yangilash.
@@ -204,6 +356,30 @@ void on(OrderCompleted event) {
 - Event sourcing bilan birga: hodisalardan bir nechta ixtisoslashgan proyeksiya qurish.
 
 **Ehtiyot bo'ling:** Alohida read store tanlash bilan siz avtomatik ravishda eventual consistency'ni qabul qilasiz - "saqlagandan keyin ro'yxatda ko'rinmaydi" muammosi UX va test darajasida oldindan hal qilinishi kerak. Oddiy CRUD domenida to'liq CQRS ortiqcha: ikki model, sinxronizatsiya kodi va qo'shimcha infratuzilma qo'llab-quvvatlash xarajatini keskin oshiradi, shuning uchun avval bir DB ichidagi yengil ajratishdan boshlash to'g'ri.
+
+```java
+// Yozuv modeli: invariant va tranzaksiya
+@Service
+class OrderCommandService {
+    @Transactional
+    public void place(PlaceOrder cmd) {
+        Order order = Order.from(cmd);       // boy domen modeli
+        orders.save(order);
+    }
+}
+
+// O'qish modeli: so'rovga mos, denormallashtirilgan, invariant yo'q
+@Service
+class OrderQueryService {
+    public List<OrderListRow> list(OrderFilter f) {
+        return jdbc.sql("SELECT id, customer_name, total FROM order_list_view WHERE ...")
+                   .query(OrderListRow.class).list();
+    }
+}
+// CQRS ikki ombor degani emas: bir bazada ikki model ham CQRS.
+// Ikki ombor bo'lsa sinxronlash kechikishi paydo bo'ladi va u
+// foydalanuvchiga ko'rinishi kerak.
+```
 
 ## 12.11 Hodisalarni saqlash (Event Sourcing)
 
@@ -220,6 +396,31 @@ void on(OrderCompleted event) {
 
 **Ehtiyot bo'ling:** Eng katta xavf - hodisa sxemasining evolyutsiyasi: hodisalar abadiy saqlanadi, shuning uchun eski versiyalarni o'qish (upcasting) strategiyasi birinchi kundan kerak, aks holda bir yildan keyin replay ishlamay qoladi. Shuningdek GDPR'dagi "o'chirish huquqi" immutable log bilan ziddiyatda (crypto-shredding talab qiladi), va bu uslubni oddiy CRUD domenga qo'llash jamoani sezilarli operatsion murakkablik bilan yuklaydi - faqat haqiqatan tarix biznes qiymatiga ega bo'lganda tanlang.
 
+```java
+// Holat saqlanmaydi, hodisalar saqlanadi
+public class Account {
+    private final List<DomainEvent> pending = new ArrayList<>();
+    private BigDecimal balance = BigDecimal.ZERO;
+    private long version;
+
+    public void withdraw(Money amount) {
+        if (balance.compareTo(amount.amount()) < 0) throw new InsufficientFundsException();
+        apply(new MoneyWithdrawn(amount, version + 1));   // qoida tekshirildi
+    }
+
+    void apply(DomainEvent e) {                           // holatni yangilash
+        switch (e) {
+            case MoneyWithdrawn w -> balance = balance.subtract(w.amount().amount());
+            case MoneyDeposited d -> balance = balance.add(d.amount().amount());
+            default -> throw new IllegalStateException();
+        }
+        version = e.version();
+        pending.add(e);
+    }
+}
+// Hodisa sxemasi abadiy o'qiladi: uni versiyalash rejasi boshidan kerak
+```
+
 ## 12.12 Mikroservislar (Microservices)
 
 **Tavsif:** Tizim mustaqil deploy qilinadigan, o'z ma'lumot bazasiga ega bo'lgan kichik servislarga bo'linadi va ular tarmoq orqali (HTTP/gRPC yoki message broker) muloqot qiladi. Bu uslub katta monolitning deploy bog'liqligi, jamoalar o'rtasidagi kod to'qnashuvi va bitta komponentni alohida scale qilish imkonsizligi muammolarini hal qiladi. Har bir servis o'z bounded context'iga egalik qiladi, shuning uchun Domain-Driven Design bilan birga qo'llanadi. Buning narxi - tarmoq ishonchsizligi, taqsimlangan tranzaksiyalar va operatsion murakkablik.
@@ -234,6 +435,19 @@ void on(OrderCompleted event) {
 - SaaS mahsulotida har bir jamoa kuniga bir necha marta o'z servisini deploy qiladi va boshqa jamoalarni kutmaydi.
 
 **Ehtiyot bo'ling:** Mikroservislarni tashkiliy tayyorlik (CI/CD, observability, on-call) bo'lmaganda joriy qilish "distributed monolith"ga olib keladi - servislar bir vaqtda deploy qilinishi shart bo'lib qoladi va kechikish ortadi. Bir nechta servis bitta ma'lumot bazasiga yozsa yoki servislar aro sinxron zanjir 3-4 qatlamdan oshsa, siz mikroservis emas, taqsimlangan tranzaksiyali tuzoq qurgan bo'lasiz.
+
+```yaml
+# Servis chegarasi uch mezon bilan tekshiriladi
+orders-service:
+  owns: [orders, order_lines]      # o'z ma'lumotlari
+  releases: independently          # o'z relizi
+  team: checkout                   # o'z jamoasi
+
+# Uchtasidan biri yo'q bo'lsa, u servis emas - taqsimlangan modul.
+# Qo'shimcha narx: tarmoq, kuzatuvchanlik, izchillik, deploy va
+# mahalliy ishlab chiqish muhiti. Monolit bilan boshlab, chegara
+# aniq bo'lgandan keyin ajratish arzonroq.
+```
 
 ## 12.13 O'z-o'ziga Yetarli Tizimlar (Self-Contained Systems)
 
@@ -250,6 +464,20 @@ void on(OrderCompleted event) {
 
 **Ehtiyot bo'ling:** SCS'lar orasida ma'lumotni replikatsiya qilish zarur bo'lgani uchun eventual consistency bilan yashashga tayyor bo'lishingiz kerak; agar jamoalar sinxron API'larga qayta tushib ketsa, uslubning asosiy foydasi yo'qoladi. UI'da umumiy dizayn tizimi versiyalanmasa, foydalanuvchi bir portalda bir nechta "boshqa" ilovani ko'radi.
 
+```yaml
+# Self-contained system: har tizim o'z UI, logika va bazasi bilan to'liq
+checkout-scs:
+  ui: server-side rendered (o'z sahifalari)
+  logic: o'z servislari
+  data: o'z bazasi
+  integration: havola va asinxron hodisa (sinxron chaqiruv emas)
+
+# Microservice dan farqi: SCS UI ni ham o'z ichiga oladi, shuning uchun
+# bitta jamoa funksiyani boshdan oxir yetkazadi va sinxron chaqiruvlar
+# zanjiri paydo bo'lmaydi. Integratsiya eng kuchsiz bog'liqlik bilan:
+# brauzerda havola yoki fragment.
+```
+
 ## 12.14 Servisga Yo'naltirilgan Arxitektura (Service-Oriented Architecture, SOA)
 
 **Tavsif:** Korporativ funksiyalar qayta ishlatiladigan, shartnoma (contract) asosidagi servislar sifatida e'lon qilinadi va ularni markazlashgan integratsiya qatlami - Enterprise Service Bus - bog'laydi, yo'naltiradi va formatlarini o'giradi. Bu heterogen legacy tizimlarni (mainframe, ERP, CRM) yagona korporativ qatlam orqali bog'lash muammosini hal qiladi. Mikroservislardan farqi: servislar yirikroq, ma'lumot bazasi ko'pincha umumiy, orkestratsiya markazda (BPEL/ESB) bo'ladi. Governance va servis reyestri markaziy ahamiyatga ega.
@@ -264,6 +492,23 @@ void on(OrderCompleted event) {
 - Regulyator tomonidan WSDL/XSD shartnoma majburiy bo'lgan B2B integratsiyalar.
 
 **Ehtiyot bo'ling:** ESB markaziy "single point of failure" va tashkiliy tiqilinchga aylanishi mumkin - har bir o'zgarish integratsiya jamoasi navbatidan o'tadi. Yangi loyihada SOAP/ESB'ni "korporativ standart" deb tanlash ko'pincha ortiqcha: REST/event-driven yetarli bo'lgan joyda XML transformatsiyalari va governance narxini to'lamang.
+
+```java
+// SOA: korxona darajasidagi umumiy servislar va shartnomalar
+// Microservice dan asosiy farqi: umumiy ESB va umumiy kanonik model.
+@Component
+public class CustomerServiceGateway {          // ESB orqali chaqiruv
+    private final WebServiceTemplate soap;
+
+    public CustomerInfo lookup(String taxId) {
+        GetCustomerRequest req = new GetCustomerRequest();
+        req.setTaxId(taxId);                   // kanonik korxona modeli
+        return ((GetCustomerResponse) soap.marshalSendAndReceive(req)).getCustomer();
+    }
+}
+// Kanonik model afzalligi: bir marta kelishiladi. Narxi: uni o'zgartirish
+// barcha tizimni bog'laydi, shuning uchun o'zgarish sekinlashadi.
+```
 
 ## 12.15 Serverless / FaaS (Serverless / Function as a Service)
 
@@ -302,6 +547,25 @@ public Function<OrderEvent, Receipt> handleOrder(PricingService pricing) {
 
 **Ehtiyot bo'ling:** Oddiy CRUD ilovaga bu uslubni qo'llash ortiqcha - grid replikatsiyasi, split-brain va cache-to-database oqimining nosozligi tufayli ma'lumot yo'qolishi riski real. Grid'dagi barcha ma'lumot RAM'da yashashini va node yo'qolganda qayta taqsimlanishini (rebalance paytidagi latency sakrashini) hisobga olmasa, tizim eng kerakli daqiqada sekinlashadi.
 
+```java
+// Space-based: holat taqsimlangan xotira panjarasida, baza orqa planda
+@Bean
+Config hazelcastConfig() {
+    Config config = new Config();
+    config.getMapConfig("sessions")
+            .setBackupCount(1)                  // nusxa: bitta node yiqilsa saqlanadi
+            .setInMemoryFormat(InMemoryFormat.OBJECT)
+            .setTimeToLiveSeconds(1800);
+    config.getMapConfig("cart")
+            .setMapStoreConfig(new MapStoreConfig()
+                    .setImplementation(new CartMapStore())
+                    .setWriteDelaySeconds(5));  // bazaga asinxron ko'chadi
+    return config;
+}
+// Maqsad: baza tor joy bo'lishdan chiqadi. Narxi: izchillik murakkab,
+// split-brain xavfi va xotira narxi.
+```
+
 ## 12.17 Klient-Server (Client-Server)
 
 **Tavsif:** Tizim so'rov yuboruvchi klientlar va ularni qayta ishlovchi markazlashgan serverga bo'linadi; biznes logika va ma'lumot serverda, taqdimot klientda bo'ladi. Bu umumiy ma'lumotga ko'p foydalanuvchining nazoratli kirishini va mantiqni bitta joyda yangilashni ta'minlaydi. Ko'pchilik web va mobil ilovalar - shu uslubning zamonaviy ko'rinishi (two-tier yoki uch qatlamli variantda). Aloqa odatda so'rov-javob protokoli (HTTP, JDBC, gRPC) ustida quriladi.
@@ -316,6 +580,22 @@ public Function<OrderEvent, Receipt> handleOrder(PricingService pricing) {
 - Ichki admin paneli umumiy ma'lumot bazasiga faqat server orqali kirish beradi.
 
 **Ehtiyot bo'ling:** Server yagona nosozlik nuqtasi bo'lgani uchun horizontal scaling va stateless dizayn (sessiyani serverda saqlamaslik) boshidan rejalashtirilishi kerak. Biznes qoidalarini klientga ko'chirib qo'ymang - validatsiya va avtorizatsiya har doim serverda takrorlanishi shart, aks holda klientni o'zgartirgan har kim qoidani chetlab o'tadi.
+
+```java
+// Klient-server: eng oddiy taqsimlash. Chegarada ikki narsa shart.
+@Bean
+RestClient pspClient(RestClient.Builder builder, PspProperties props) {
+    return builder
+            .baseUrl(props.url())
+            .requestFactory(ClientHttpRequestFactories.get(
+                    ClientHttpRequestFactorySettings.DEFAULTS
+                            .withConnectTimeout(Duration.ofSeconds(2))   // 1) timeout
+                            .withReadTimeout(Duration.ofSeconds(5))))
+            .defaultStatusHandler(HttpStatusCode::isError,
+                    (req, res) -> { throw new PspException(res.getStatusCode()); })
+            .build();                                                    // 2) xato tarjimasi
+}
+```
 
 ## 12.18 Broker (Broker)
 
@@ -332,6 +612,21 @@ public Function<OrderEvent, Receipt> handleOrder(PricingService pricing) {
 
 **Ehtiyot bo'ling:** Broker ko'rinmas markaziy bog'liqlikka aylanadi - uning to'xtashi butun tizimni to'xtatadi, shuning uchun klasterlash, dead-letter queue va idempotent consumer'lar majburiy. "At-least-once" yetkazish sababli bir xabar bir necha marta kelishi mumkin; iste'molchi idempotent bo'lmasa, dublikat buyurtma yoki ikki marta to'lov yuzaga keladi.
 
+```java
+// Broker: jo'natuvchi va qabul qiluvchi bir-birini bilmaydi
+@Service
+public class OrderEventPublisher {
+    private final KafkaTemplate<String, OrderPlaced> kafka;
+
+    public void publish(OrderPlaced e) {
+        // Kalit: bir xil buyurtma uchun tartib saqlanadi (bir partition)
+        kafka.send("orders.placed", String.valueOf(e.orderId()), e);
+    }
+}
+// Broker yangi nosozlik rejimi qo'shadi: lag, rebalance, takroriy
+// yetkazish va DLQ. Har iste'molchi idempotent bo'lishi shart.
+```
+
 ## 12.19 Teng-Tengga (Peer-to-Peer)
 
 **Tavsif:** Markaziy server o'rniga har bir node bir vaqtning o'zida klient ham, server ham bo'ladi va resurslarni bevosita o'zaro almashadi. Bu markaziy bo'g'iz, yagona nosozlik nuqtasi va markaziy infratuzilma narxi muammolarini hal qiladi. Node'lar bir-birini discovery (gossip, DHT yoki seed ro'yxati) orqali topadi va ma'lumot replikasi tarmoq bo'ylab tarqaladi. Narxi - murakkab consistency, xavfsizlik va topologiyani kuzatish qiyinligi.
@@ -346,6 +641,21 @@ public Function<OrderEvent, Receipt> handleOrder(PricingService pricing) {
 - Katta fayl tarqatish (CDN o'rniga ichki P2P tarqatish) bilan deploy artefaktlarini yoyish.
 
 **Ehtiyot bo'ling:** P2P klasterni Kubernetes kabi dinamik muhitda ishlatganda split-brain va noto'g'ri discovery eng ko'p uchraydigan tuzoq - multicast o'rniga aniq peer ro'yxati yoki Kubernetes discovery plugin'ini ishlatish kerak. Agar sizga tranzaksion, qat'iy consistency kerak bo'lsa, P2P replikatsiyaga tayanmang; markaziy ma'lumot bazasi soddaroq va xatolari oldindan bilinadi.
+
+```java
+// P2P: tengdoshlar bir-birini topadi, markaz yo'q
+// Java dunyosida bu ko'pincha klaster a'zoligi ko'rinishida uchraydi:
+@Bean
+Config p2pConfig() {
+    Config c = new Config();
+    JoinConfig join = c.getNetworkConfig().getJoin();
+    join.getMulticastConfig().setEnabled(false);          // konteynerda ishlamaydi
+    join.getKubernetesConfig().setEnabled(true)
+            .setProperty("service-dns", "payments-headless.default.svc");
+    return c;
+}
+// Biznes ilovalarida sof P2P kam uchraydi: operatsion murakkablik yuqori.
+```
 
 ## 12.20 Qoratakhta (Blackboard)
 
@@ -362,6 +672,27 @@ public Function<OrderEvent, Receipt> handleOrder(PricingService pricing) {
 
 **Ehtiyot bo'ling:** Blackboard juda kam uchraydigan uslub - oddiy pipeline yoki qoidalar dvigateli yetarli bo'lgan joyda uni tanlash tizimni tushunarsiz va debug qilish qiyin qiladi. Umumiy holatga bir nechta modul parallel yozsa, race condition va aniqlanmagan yakuniy natija (nondeterminizm) paydo bo'ladi, shuning uchun versiyalash yoki optimistik lock majburiy.
 
+```java
+// Blackboard arxitekturasi: umumiy holat, mustaqil ekspertlar
+@Service
+public class RiskBlackboard {
+    private final Map<String, Object> facts = new ConcurrentHashMap<>();
+
+    public void put(String key, Object value) { facts.put(key, value); }
+    public Optional<Object> get(String key) { return Optional.ofNullable(facts.get(key)); }
+}
+
+@Component
+class VelocityExpert {
+    boolean contribute(RiskBlackboard board) {
+        if (board.get("velocity").isPresent()) return false;
+        board.put("velocity", computeVelocity(board));
+        return true;                                  // yangi fakt qo'shdim
+    }
+}
+// Faqat determinant algoritmi yo'q masalalar uchun: aks holda Pipeline arzon
+```
+
 ## 12.21 Reaktiv Arxitektura (Reactive Architecture)
 
 **Tavsif:** Tizim asinxron, non-blocking xabar almashinuvi ustiga quriladi va shu orqali javobgarlik (responsive), chidamlilik (resilient), elastiklik va xabarga asoslanganlik xossalariga erishadi. Asosiy maqsad - ko'p sonli parallel, I/O'ga bog'liq so'rovni kam thread bilan xizmat qilish va backpressure orqali tizimni ortiqcha yuklanishdan saqlash. Blocking thread-per-request modelida minglab bir vaqtli ulanish thread pool'ni tugatadi; reaktiv modelda esa event loop ishlatiladi. Buning narxi - debug, stack trace va kognitiv murakkablikning oshishi.
@@ -376,6 +707,23 @@ public Function<OrderEvent, Receipt> handleOrder(PricingService pricing) {
 - IoT yoki chat backend'i: uzun yashovchi ulanishlar soni serverdagi thread sonidan ancha ko'p.
 
 **Ehtiyot bo'ling:** Reaktiv zanjir ichida bitta blocking chaqiruv (JDBC, `RestTemplate`, `Thread.sleep`) butun event loop'ni to'xtatadi - `BlockHound` bilan tekshirmasa bu xato ishlab chiqarishda topiladi. Oddiy CRUD ilovada WebFlux ko'pincha asossiz murakkablik: Java 21+ virtual thread'lar bilan MVC ko'p hollarda shu scalability'ni ancha soddaroq kod bilan beradi.
+
+```java
+// Reaktiv arxitektura: to'liq non-blocking zanjir
+@RestController
+class OrderReactiveApi {
+    private final OrderReactiveRepository repo;        // R2DBC
+
+    @GetMapping("/orders")
+    Flux<OrderDto> stream() {
+        return repo.findAll()                          // hech bir qadam bloklamaydi
+                   .map(OrderDto::of)
+                   .limitRate(100);                    // backpressure
+    }
+}
+// Shart: butun zanjir reaktiv bo'lishi kerak. Bitta JDBC chaqiruvi
+// event loop ni bloklaydi va butun foyda yo'qoladi.
+```
 
 ## 12.22 Monolit (Monolith)
 
@@ -414,6 +762,20 @@ void modullarChegarasiBuzilmagan() {
 
 **Ehtiyot bo'ling:** Katta "big rewrite" deyarli har doim muvaffaqiyatsiz bo'ladi - o'rniga chegaralarni avval test bilan qotirib, keyin modullarni ajrating. Shuningdek, toza arxitektura nomidan 5 kishilik jamoa uchun 12 qatlam yaratish ham xuddi shunday zarar: tartibsizlikning yechimi ortiqcha abstraksiya emas, balki aniq chegaralardir.
 
+```text
+Belgilari (o'lchanadigan):
+  - paket bog'liqligi grafida tsikl bor (jdeps yoki ArchUnit aniqlaydi)
+  - bitta o'zgarish 10 dan ko'p paketga tegadi (git tarixidan ko'rinadi)
+  - eng katta sinf 2000 qatordan oshgan
+  - test yozish uchun butun kontekstni ko'tarish kerak
+
+ArchUnit bilan tsiklni to'sish:
+  slices().matching("com.example.(*)..").should().beFreeOfCycles()
+
+Davolash: butunlay qayta yozish emas, chegara qo'yishdan boshlanadi.
+Eng ko'p o'zgaradigan modulni ajratib, unga aniq interfeys beriladi.
+```
+
 ## 12.24 Taqsimlangan Monolit (Distributed Monolith) - anti-pattern
 
 **Tavsif:** Bu tashqi ko'rinishda microservice bo'lgan, lekin ichkarida barcha servislar bir-biriga qattiq bog'langan va mustaqil deploy qilinmaydigan tizim. Bitta biznes operatsiyasi 7 ta sinxron HTTP chaqiruvini talab qiladi, servislar umumiy ma'lumotlar bazasini bo'lishadi va bitta DTO o'zgarsa hamma servisni birga relizga chiqarish kerak bo'ladi. Natijada monolitning barcha kamchiliklari (bog'lanish) tarmoqning barcha muammolari (latency, partial failure) bilan qo'shiladi. Mustaqillik yo'qoladi, lekin operatsion murakkablik qoladi.
@@ -428,6 +790,21 @@ void modullarChegarasiBuzilmagan() {
 - Shared database'dan database-per-service'ga o'tishda o'tish davri uchun view'lar yaratish.
 
 **Ehtiyot bo'ling:** Eng xavfli holat - servis chegaralari biznes qobiliyatlari emas, texnik qatlamlar bo'yicha chizilgani (`user-api`, `user-logic`, `user-dao` alohida servis). Agar servislarni mustaqil deploy qila olmayotgan bo'lsangiz, ularni qaytib monolitga birlashtirish ko'pincha to'g'ri qaror.
+
+```text
+Belgilari:
+  - bitta foydalanuvchi so'rovi 5 va undan ko'p servisni sinxron chaqiradi
+  - servislar bitta bazani bo'lishadi
+  - bitta funksiyani chiqarish uchun 3 servisni birga deploy qilish kerak
+  - bitta servis yiqilsa hammasi yiqiladi
+
+Tekshiruv: trace dan sinxron chaqiruv zanjiri uzunligini o'lchang.
+  SELECT trace_id, count(*) FROM spans WHERE kind = 'client'
+  GROUP BY 1 ORDER BY 2 DESC LIMIT 20;
+
+Davolash: zanjirni asinxron hodisaga aylantirish yoki servislarni
+qayta birlashtirish. Microservice nomi natijani o'zgartirmaydi.
+```
 
 ## 12.25 Hujayra Asosidagi Arxitektura (Cell-Based Architecture)
 
@@ -444,6 +821,23 @@ void modullarChegarasiBuzilmagan() {
 
 **Ehtiyot bo'ling:** Operatsion narx yuqori - N hujayra degani N marta monitoring, migratsiya va reliz jarayoni, shuning uchun to'liq avtomatlashtirilgan CI/CD va IaC bo'lmasa boshlamang. Shuningdek, hujayralar orasida tenant'ni ko'chirish (rebalancing) alohida, murakkab muammo bo'lib, uni loyihaning boshida o'ylab qo'yish kerak.
 
+```yaml
+# Cell-based: nosozlik bitta hujayra ichida qoladi
+cells:
+  - name: cell-a
+    tenants: [t1, t2, t3]
+    stack: {app: 3 pod, db: own instance, cache: own}
+  - name: cell-b
+    tenants: [t4, t5]
+    stack: {app: 3 pod, db: own instance, cache: own}
+
+router:
+  strategy: tenant-id-hash      # tenant har doim bir xil hujayraga tushadi
+
+# Afzalligi: blast radius bitta hujayra. Reliz ham hujayra-hujayra.
+# Narxi: infratuzilma nusxalanadi va marshrutlash qatlami qo'shiladi.
+```
+
 ## 12.26 Hech Narsani Bo'lishmaslik (Shared-Nothing)
 
 **Tavsif:** Har bir node o'z CPU, xotira va diskiga ega bo'lib, boshqa node'lar bilan hech qanday mutable resursni bo'lishmaydi; koordinatsiya faqat tarmoq xabarlari orqali. Bu gorizontal masshtablashning asosiy sharti - umumiy resurs bo'lmaganda, bottleneck va lock contention ham yo'qoladi. Node'lar bir-birining holatini bilmaganligi uchun node qo'shish deyarli chiziqli ishlash o'sishini beradi. Amaliyotda to'liq "nothing" kam uchraydi, odatda umumiy ma'lumotlar bazasi qoladi, lekin application layer stateless bo'ladi.
@@ -458,6 +852,22 @@ void modullarChegarasiBuzilmagan() {
 - Serverless (AWS Lambda + Spring Cloud Function) muhiti, bunda instance umri qisqa.
 
 **Ehtiyot bo'ling:** "Stateless" degan ilovalar amalda yashirin holat saqlaydi - lokal fayl cache, static mutable field, in-memory rate limiter yoki scheduler lock - va bu faqat ikkinchi instance qo'shilganda ko'rinadi. Ma'lumotlar bazasi hamon umumiy resurs bo'lib qolgani uchun, shared-nothing application layer DB bottleneck'ini hal qilmaydi: sharding yoki read replica alohida qaror talab qiladi.
+
+```yaml
+# Shared-nothing: nusxalar hech narsani bo'lishmaydi
+spring:
+  session:
+    store-type: none          # sessiya ilovada saqlanmaydi
+  jpa:
+    open-in-view: false
+
+# Shart bo'lgan narsalar:
+#  - lokal fayl tizimiga yozilmaydi (yuklangan fayl -> S3)
+#  - lokal kesh faqat qisqa TTL bilan, haqiqat manbasi emas
+#  - rejalashtirilgan ish qulf bilan (ShedLock)
+#  - sticky session kerak emas
+# Shundan keyin gorizontal masshtab shunchaki nusxa sonini oshirish bo'ladi.
+```
 
 ## 12.27 Lambda / Kappa Arxitekturasi (Lambda / Kappa Architecture)
 
@@ -474,6 +884,19 @@ void modullarChegarasiBuzilmagan() {
 
 **Ehtiyot bo'ling:** Lambda'da eng katta xavf - ikki pipeline logikasining asta-sekin bir-biridan uzoqlashishi (training/serving skew), shuning uchun agar Kafka'da yetarli retention bera olsangiz Kappa'ni afzal ko'ring. Kappa'da esa replay vaqti va downstream'ga tushadigan yuk oldindan hisoblangan bo'lishi kerak, aks holda "kichik bir tuzatish" production'ni bosib qoladi.
 
+```yaml
+# Lambda: ikki yo'l - batch (aniq) va stream (tez)
+batch_layer:   {input: s3://events/, output: daily_aggregates, schedule: "0 2 * * *"}
+speed_layer:   {input: kafka://events, output: realtime_counters, window: 5m}
+serving_layer: {query: "batch UNION ALL speed"}
+
+# Narxi: bir xil mantiq ikki marta yoziladi va ikkisi bir-biridan farq qiladi.
+
+# Kappa: faqat oqim. Tarixni qayta hisoblash kerak bo'lsa,
+# hodisalar boshidan qayta o'qiladi.
+kappa: {input: kafka://events (retention: infinite), reprocess: "offset 0 dan"}
+```
+
 ## 12.28 Feature Bo'yicha vs Qatlam Bo'yicha Paketlash (Package-by-feature vs Package-by-layer)
 
 **Tavsif:** Package-by-layer kodni texnik rolga ko'ra guruhlaydi (`controller`, `service`, `repository`, `dto`), package-by-feature esa biznes qobiliyatiga ko'ra (`order`, `payment`, `shipping`) - har bir paket ichida o'zining controller, service va repository'si bo'ladi. Feature bo'yicha paketlashda bitta o'zgarish bitta paket ichida qoladi, cohesion yuqori, coupling past bo'ladi va paketni keyinchalik alohida modul yoki servisga ajratish oson. Qatlam bo'yicha paketlash kichik loyihada tushunarli, lekin o'sgan sari har bir feature kodi 4-5 paket bo'ylab sochilib ketadi.
@@ -489,6 +912,22 @@ void modullarChegarasiBuzilmagan() {
 
 **Ehtiyot bo'ling:** Feature paketlari ichida yana to'liq qatlam ierarxiyasini takrorlab, 3 qatlamli kichik monolitlar yasash ortiqcha ceremoniya bo'ladi - kichik feature uchun 2-3 sinf yetadi. Shuningdek, `common`/`shared` paketi tez orada yangi Big Ball of Mud markaziga aylanadi: unga nima tushishini qat'iy cheklang.
 
+```text
+Qatlam bo'yicha (package-by-layer):
+  web/OrderController, web/InvoiceController
+  service/OrderService, service/InvoiceService
+  repository/OrderRepository, repository/InvoiceRepository
+
+Funksiya bo'yicha (package-by-feature):
+  order/OrderController, OrderService, OrderRepository, Order
+  invoice/InvoiceController, InvoiceService, InvoiceRepository, Invoice
+
+Ikkinchisi afzal: bitta o'zgarish bitta papkada qoladi, `package-private`
+ishlaydi va chegara haqiqiy bo'ladi. Buni git tarixidan tekshiring:
+  git log --name-only --since="6 months" | grep "^src" | xargs -n1 dirname |
+    sort | uniq -c | sort -rn | head
+```
+
 ## 12.29 Baqiruvchi Arxitektura (Screaming Architecture)
 
 **Tavsif:** Robert Martin tomonidan ifodalangan g'oyaga ko'ra, loyihaning yuqori darajadagi strukturasi framework haqida emas, balki tizimning biznes maqsadi haqida "baqirib" turishi kerak. Ya'ni paket daraxtini ko'rgan kishi "bu Spring MVC loyihasi" emas, "bu sug'urta polisi boshqaruv tizimi" degan xulosaga kelishi lozim. Bu package-by-feature'ning falsafiy asosi: katalog nomlari use-case va domen tilidan olinadi, framework esa detal bo'lib chetga suriladi. Natijada yangi injener kodga kirganda domenni o'rganadi, texnologiyani keyin.
@@ -503,6 +942,18 @@ void modullarChegarasiBuzilmagan() {
 - Biznes analitik bilan kod strukturasi ustida bir tilda gaplashish (ubiquitous language).
 
 **Ehtiyot bo'ling:** Nomlarni haqiqiy domen tilidan olish kerak - `manager`, `processor`, `helper` kabi umumiy nomlar strukturani yana "baqirmaydigan" holatga qaytaradi. Va bu toza domenni framework'dan ajratishni talab qilgani uchun qo'shimcha mapping kodi tug'diradi: oddiy CRUD servis uchun bu ortiqcha bo'lishi mumkin.
+
+```java
+// Tuzilma nima qilayotganini aytishi kerak, qaysi framework ekanini emas
+// Baqirmaydigan tuzilma:
+//   controller/, service/, repository/, config/, util/
+// Baqiradigan tuzilma:
+//   placeorder/, cancelorder/, refund/, settlement/, fraudcheck/
+
+// Tekshiruv: yangi dasturchi ildiz papkani ko'rib, tizim nima qilishini
+// bir daqiqada aytib bera oladimi? Yo'q bo'lsa, tuzilma texnologiyani
+// aks ettiryapti, domenni emas.
+```
 
 ## 12.30 Komponentga Asoslangan Arxitektura (Component-Based Architecture)
 
@@ -549,6 +1000,27 @@ class PaymentRouter {
 
 **Ehtiyot bo'ling:** Kontraktni avval yozib, keyin uni koddan sekin-asta uzoqlashtirish eng keng tarqalgan xato - generatsiyani build'ning majburiy qadamiga aylantirmasa, spetsifikatsiya hujjatga aylanadi va yolg'on gapira boshlaydi. Shuningdek, DTO'ni to'g'ridan-to'g'ri JPA `@Entity` dan generatsiya qilib, ma'lumotlar bazasi strukturasini public API'ga chiqarib qo'yish keyinchalik orqaga qaytmas bog'lanish yaratadi.
 
+```yaml
+# API-first: shartnoma kod'dan oldin kelishiladi
+# openapi.yaml (versiya nazoratida, review qilinadi)
+openapi: 3.1.0
+paths:
+  /orders:
+    post:
+      operationId: placeOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PlaceOrderRequest'}
+      responses:
+        '201': {description: Yaratildi}
+        '409': {description: Takroriy idempotentlik kaliti}
+
+# Keyin interfeys generatsiya qilinadi (openapi-generator, interfaceOnly=true)
+# va CI da spetsifikatsiya bilan kod mosligi tekshiriladi.
+```
+
 ## 12.32 Event-Birinchi (Event-First)
 
 **Tavsif:** Tizimni loyihalash ma'lumotlar bazasi jadvallari yoki REST endpointlardan emas, biznesda sodir bo'ladigan hodisalardan (domain events) boshlanadi: `OrderPlaced`, `PaymentCaptured`, `ShipmentDispatched`. Event'lar birinchi darajali kontrakt bo'lib, servislar bir-birini chaqirmaydi, balki o'zi uchun muhim hodisalarga obuna bo'ladi - bu temporal coupling'ni yo'qotadi va yangi consumer'ni mavjud kodga tegmasdan qo'shishga imkon beradi. Event Storming shu yondashuvning standart dizayn amaliyoti.
@@ -564,6 +1036,19 @@ class PaymentRouter {
 
 **Ehtiyot bo'ling:** Event'larni CRUD bildirishnomasiga aylantirib (`UserUpdated` ichida butun entity) yuborish yashirin bog'lanish yaratadi - event biznes faktini, nima sodir bo'lganini ifodalashi kerak. Eventual consistency'ni biznes bilan kelishmasdan tanlamang: "buyurtma darhol ko'rinmaydi" degani UI va qo'llab-quvvatlash jarayonlariga ham ta'sir qiladi, hamda debugging uchun distributed tracing majburiy bo'ladi.
 
+```java
+// Event-first: avval hodisalar aniqlanadi, keyin servislar
+// Hodisa ro'yxati domen tilida va o'tgan zamonda:
+public sealed interface CheckoutEvent {
+    record OrderPlaced(long orderId, Money total, Instant at) implements CheckoutEvent {}
+    record StockReserved(long orderId, List<Item> items) implements CheckoutEvent {}
+    record PaymentCaptured(long orderId, String reference) implements CheckoutEvent {}
+    record OrderShipped(long orderId, String tracking) implements CheckoutEvent {}
+}
+// Servis chegarasi shu ro'yxatdan chiqadi: kim hodisa chiqaradi,
+// kim tinglaydi. Event storming aynan shu ro'yxatni tuzish uchun.
+```
+
 ## 12.33 Mikro-Frontendlar (Micro-frontends) - eslatib o'tish
 
 **Tavsif:** Backend'dagi microservice g'oyasini brauzer tomoniga ko'chirish: yagona katta SPA o'rniga, har bir jamoa o'z UI bo'lagini mustaqil ishlab chiqadi va deploy qiladi, shell (host) ilova esa ularni runtime'da birlashtiradi. Birlashtirish Webpack/Rspack Module Federation, Web Components, iframe yoki server-side include orqali amalga oshiriladi. Bu vertikal jamoalarga (backend + frontend bitta biznes qobiliyati uchun) to'liq mustaqillik beradi.
@@ -578,6 +1063,21 @@ class PaymentRouter {
 - A/B test: bitta fragment'ning yangi versiyasini faqat ayrim foydalanuvchilarga ko'rsatish.
 
 **Ehtiyot bo'ling:** Narxi juda yuqori: umumiy dizayn tizimi, versiya nomuvofiqligi, takrorlangan kutubxonalar va yaxlit UX uchun qattiq boshqaruv kerak - 2-3 jamoadan kichik tashkilotda bu deyarli har doim ortiqcha. Autentifikatsiya, routing va global holatni fragmentlar o'rtasida bo'lishish eng ko'p muammo tug'diradigan joy, shuning uchun BFF bilan boshlang va fragmentlarni biznes chegarasi bo'yicha, komponent darajasida emas, bo'ling.
+
+```html
+<!-- Micro-frontend: har jamoa o'z bo'lagini mustaqil deploy qiladi -->
+<!-- Eng oddiy va eng ishonchli variant: server tomonida fragment qo'shish -->
+<div id="cart">
+  <!--#include virtual="/cart-service/fragment" -->
+</div>
+
+<!-- Qoidalar:
+     - CSS nom maydoni ajratilgan bo'lsin (prefiks yoki shadow DOM)
+     - fragment yiqilsa sahifa yiqilmasin (timeout va fallback)
+     - umumiy holat brauzerda bo'lishilmasin: aloqa hodisa orqali
+     Narxi: ishlab chiqish muhiti va test murakkablashadi. Backend
+     ajratilmagan bo'lsa, bu faqat qo'shimcha murakkablik qo'shadi. -->
+```
 
 ## 12.34 Amalda qo'llash
 

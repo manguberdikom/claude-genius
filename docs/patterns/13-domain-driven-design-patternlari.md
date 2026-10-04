@@ -65,6 +65,20 @@ Domain-Driven Design patternlari - bu kodni emas, balki biznes domenini va jamoa
 
 **Ehtiyot bo'ling:** Umumiy tilni butun kompaniya uchun yagona "korporativ kanonik model"ga aylantirishga urinish eng keng tarqalgan xato - har bir kontekstda `Customer` so'zi boshqa ma'noni bildiradi va bu normal. Shuningdek, atamalarni bir marta kelishib, keyin biznes o'zgarganda kodni refactor qilmaslik tilni tezda o'lik hujjatga aylantiradi.
 
+```java
+// Domen tilidagi atama kodda ham shu nom bilan turadi
+public class Policy {                      // "shartnoma" emas, sug'urta tilida "polis"
+    private PolicyNumber number;
+    private Premium premium;               // "narx" emas, "mukofot puli"
+
+    public void endorse(Endorsement e) { } // "update" emas, "o'zgartirish kiritish"
+    public void lapse() { }                // "deactivate" emas, "muddati o'tish"
+}
+// Yomon: OrderManager.processData(), DataService.handle()
+// Lug'at jamoada kelishiladi va kod review da tekshiriladi: yangi atama
+// paydo bo'lsa, u lug'atga qo'shiladi, sinonim ishlatilmaydi.
+```
+
 ## 13.2 Chegaralangan kontekst (Bounded Context)
 
 **Tavsif:** Domen modelining ma'noga ega bo'lgan aniq chegarasini belgilaydi: shu chegara ichida har bir atama bitta aniq ma'noga ega, chegaradan tashqarida esa boshqa model boshlanadi. Bu katta tizimda bitta yagona model qurish imkonsizligi muammosini hal qiladi - model o'sgani sari ichki qarama-qarshiliklar paydo bo'ladi. Amalda kontekst o'z modeli, o'z ma'lumotlar bazasi sxemasi va o'z jamoasiga ega bo'ladi; tashqi dunyo bilan faqat aniq belgilangan API yoki eventlar orqali gaplashadi. Mikroservis chegaralarini aniqlashda asosiy mezon aynan shu pattern.
@@ -105,6 +119,22 @@ package com.acme.billing;
 
 **Ehtiyot bo'ling:** Xaritani bir marta chizib, devorga osib qo'yish foydasiz - u real holatni emas, orzuni ko'rsatib qoladi; generatsiya qilinadigan qismni CI'ga ulang. Shuningdek, xaritada faqat "strelkalar" ko'rsatib, munosabat turini (kim boshqaradi, kim moslashadi) yozmaslik uning asosiy qiymatini yo'qotadi.
 
+```text
+Kontekstlar va ular orasidagi munosabat turi:
+
+  Checkout ──(Customer-Supplier)──> Pricing
+  Checkout ──(Anti-Corruption Layer)──> Legacy ERP
+  Billing  ──(Shared Kernel: Money, TaxId)──> Checkout
+  Analytics ──(Published Language: Avro sxema)──> hammasi
+  Marketing ──(Separate Ways)──  (integratsiya yo'q)
+
+Har strelka uchun uch savolga javob yozilishi kerak:
+  1) kim shartnomani belgilaydi
+  2) o'zgarish qanday e'lon qilinadi
+  3) buzilsa kim tuzatadi
+Xarita kodda emas, hujjatda yashaydi va har chorakda qayta ko'riladi.
+```
+
 ## 13.4 Umumiy yadro (Shared Kernel)
 
 **Tavsif:** Ikki yoki undan ko'p Bounded Context ataylab modelning kichik bir qismini - kod, sxema yoki umumiy value object'larni - birgalikda egallaydi va birgalikda boshqaradi. Bu takrorlanishni kamaytiradi, lekin juda qattiq bog'liqlik yaratadi: yadroni bir tomonlama o'zgartirish mumkin emas, har qanday o'zgarish barcha egalar bilan kelishiladi. Shuning uchun yadro iloji boricha kichik va barqaror bo'lishi kerak - odatda faqat o'zgarmas value object'lar va umumiy identifikatorlar.
@@ -119,6 +149,19 @@ package com.acme.billing;
 - Mikroservislarda umumiy xato kodlari va `ProblemDetail` (RFC 9457) tuzilmasini standartlashtirish.
 
 **Ehtiyot bo'ling:** Shared Kernel vaqt o'tib "common-utils" axlatxonasiga aylanib, DTO, mapper, HTTP client va hatto entity'larni o'z ichiga oladi - bu barcha kontekstlarni bir vaqtda deploy qilishga majbur qiladi. Agar jamoalar yadroni birgalikda boshqarishga tayyor bo'lmasa, Shared Kernel o'rniga Published Language yoki ACL tanlang.
+
+```java
+// Shared kernel: ikki kontekst ataylab bo'lishadigan kichik yadro
+// shared-kernel moduli: faqat o'zgarmas qiymat obyektlari
+public record Money(BigDecimal amount, Currency currency) { }
+public record TaxId(String value) { }
+
+// Qoidalar:
+//  - yadro kichik qoladi va sekin o'zgaradi
+//  - o'zgarish ikki jamoa kelishuvi bilan bo'ladi
+//  - yadroga entity, repository yoki servis kirmaydi
+// Yadro o'sib ketsa, u taqsimlangan monolitning sababiga aylanadi.
+```
 
 ## 13.5 Mijoz-ta'minotchi (Customer-Supplier)
 
@@ -135,6 +178,22 @@ package com.acme.billing;
 
 **Ehtiyot bo'ling:** Agar upstream jamoa boshqa budjet yoki boshqa prioritetga ega bo'lsa, "mijoz-ta'minotchi" faqat qog'ozda qoladi va amalda Conformist'ga aylanadi - bu holatni oldindan tan olish yaxshiroq. Kontrakt testlarini consumer o'zi yozmasa va ular upstream CI'sida ishlamasa, pattern hech qanday himoya bermaydi.
 
+```java
+// Customer-Supplier: yuqori oqim (supplier) quyi oqim talabini hisobga oladi
+// Pricing (supplier) chiqargan shartnoma, Checkout (customer) uchun test bo'ladi
+@Pact(consumer = "checkout", provider = "pricing")
+RequestResponsePact priceQuote(PactDslWithProvider b) {
+    return b.given("mahsulot mavjud")
+            .uponReceiving("narx so'rovi")
+            .path("/quote").method("POST")
+            .willRespondWith().status(200)
+            .body(new PactDslJsonBody().stringType("total"))
+            .toPact();
+}
+// Shartnoma buzilsa supplier'ning CI si yiqiladi: munosabat shunday
+// majburlanadi, yaxshi niyat bilan emas.
+```
+
 ## 13.6 Konformist (Conformist)
 
 **Tavsif:** Downstream kontekst upstream modeliga hech qanday tarjimasiz, to'liq bo'ysunadi - uning DTO'lari, atamalari va hatto xato kodlarini o'ziga oladi. Bu upstream'ga ta'sir o'tkazish imkoni bo'lmaganda (tashqi vendor, yirik platforma, hukumat API'si) ongli ravishda tanlanadigan strategiya: tarjima qilish narxidan voz kechib, upstream model bilan yashashga kelishiladi. Afzalligi - tez va arzon integratsiya; narxi - upstream modelining nomukammalligi va o'zgarishlari to'g'ridan-to'g'ri ichki kodga kirib keladi.
@@ -149,6 +208,25 @@ package com.acme.billing;
 - Faqat o'qish (read-only) integratsiyalarda, ma'lumot biznes qaroriga ta'sir qilmaganda.
 
 **Ehtiyot bo'ling:** Conformist'ni core domain'da ishlatish eng xavfli xato - tashqi vendorning modeli sizning eng qimmatli biznes logikangizni shakllantirib qo'yadi va keyinchalik vendor almashtirish deyarli imkonsiz bo'ladi. Generatsiya qilingan DTO'lar aggregate ichiga kirib ketsa, bu amalda ACL'ni butunlay yo'q qiladi.
+
+```java
+// Conformist: quyi oqim yuqori oqim modelini o'zgartirmasdan qabul qiladi
+// Tashqi tizim modeli to'g'ridan-to'g'ri ishlatiladi (tarjima yo'q)
+@Service
+public class TaxReportService {
+    private final SoapTaxClient client;
+
+    public void submit(long orderId) {
+        // Soliq organining o'z sxemasi: biz uni o'zgartira olmaymiz
+        TaxDeclarationType decl = new TaxDeclarationType();
+        decl.setInn(taxId);
+        client.submit(decl);
+    }
+}
+// Qachon to'g'ri: tashqi model barqaror va bizning domenimizga yaqin.
+// Qachon xato: tashqi model domenga sizib kirsa, u butun kodni buzadi -
+// o'sha holatda Anti-Corruption Layer kerak.
+```
 
 ## 13.7 Buzilishdan himoya qatlami (Anti-Corruption Layer)
 
@@ -194,6 +272,22 @@ class BureauCreditScoreAdapter implements CreditScoreProvider {
 
 **Ehtiyot bo'ling:** Ichki JPA entity'lari yoki ichki enum'larni to'g'ridan-to'g'ri OHS orqali chiqarish eng keng tarqalgan xato - bu tashqi mijozlarni ichki refactoring'ga bog'lab qo'yadi, shuning uchun alohida API model (DTO) shart. Har bir iste'molchi so'roviga yangi endpoint qo'shish OHS'ni "umumiy" bo'lishdan to'xtatadi va uni n ta maxsus integratsiyaga aylantiradi.
 
+```java
+// Open Host Service: tashqi iste'molchilar uchun maxsus, barqaror API
+@RestController
+@RequestMapping("/public/v1")              // ichki API dan alohida
+class PublicOrderApi {
+
+    @GetMapping("/orders/{id}")
+    PublicOrderDto get(@PathVariable long id) {
+        // Ichki modelni tashqariga chiqarmaydi: alohida DTO va alohida versiya
+        return PublicOrderDto.of(service.load(id));
+    }
+}
+// Ichki refaktoring tashqi shartnomani buzmasligi kerak, shuning uchun
+// ichki va ommaviy API bir xil sinflarni bo'lishmaydi.
+```
+
 ## 13.9 E'lon qilingan til (Published Language)
 
 **Tavsif:** Kontekstlar o'rtasida ma'lumot almashish uchun ishlatiladigan, rasmiy ravishda e'lon qilingan, versiyalangan va hech bir kontekstning ichki modeliga tegishli bo'lmagan umumiy format. Muammo: agar har bir juftlik o'z formatida gaplashsa, N ta kontekst uchun N² ta tarjima kerak bo'ladi; Published Language esa yagona neytral oraliq tilni beradi. U sxema (schema) ko'rinishida kodlanadi va sxema evolyutsiyasi qoidalari bilan boshqariladi.
@@ -208,6 +302,25 @@ class BureauCreditScoreAdapter implements CreditScoreProvider {
 - Spring Modulith'da ichki domen eventini `@Externalized` bilan tashqi barqaror formatga mapping qilish.
 
 **Ehtiyot bo'ling:** Published Language'ni "yagona korporativ kanonik model"ga aylantirmang - u barcha kontekstlarning birlashmasi bo'lib ketsa, hech kimga mos kelmaydigan va doimo o'zgaradigan gigant sxema chiqadi; faqat almashish uchun zarur maydonlarni kiritgan. Sxema versiyalash siyosati va deprecation jarayoni bo'lmasa, e'lon qilingan til birinchi buzuvchi o'zgarishda ishdan chiqadi.
+
+```json
+# Published language: hamma kelishgan, versiyalangan sxema
+# orders.placed.v1.avsc
+{
+  "type": "record",
+  "name": "OrderPlaced",
+  "namespace": "com.example.orders.v1",
+  "fields": [
+    {"name": "orderId", "type": "long"},
+    {"name": "total", "type": "string"},
+    {"name": "currency", "type": "string"},
+    {"name": "placedAt", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "channel", "type": ["null", "string"], "default": null}
+  ]
+}
+# Schema registry moslik rejimi BACKWARD bo'lsin: yangi maydon default
+# bilan qo'shiladi, mavjud maydon olib tashlanmaydi.
+```
 
 ## 13.10 Ajralgan yo'llar (Separate Ways)
 
@@ -224,6 +337,20 @@ class BureauCreditScoreAdapter implements CreditScoreProvider {
 
 **Ehtiyot bo'ling:** Separate Ways'ni "biz keyin integratsiya qilamiz" degan kechiktirish sifatida ishlatish xato - vaqt o'tib ikki joyda bir-biriga mos kelmaydigan ma'lumot (masalan ikki xil mijoz ro'yxati) paydo bo'ladi va reconciliation narxi integratsiyadan qimmatroq bo'lib chiqadi. Agar ma'lumot ikki kontekstda ham biznes qaroriga ta'sir qilsa, bu pattern mos emas.
 
+```java
+// Separate Ways: integratsiya qilmaslik ham qaror
+// Marketing kampaniyalari Checkout bilan integratsiya qilinmaydi:
+// ikki tizim bir xil mijoz ro'yxatini mustaqil saqlaydi.
+//
+// Qachon to'g'ri:
+//  - integratsiya narxi foydadan katta
+//  - ikki kontekst mustaqil rivojlanadi va bir-biriga tayanmaydi
+//  - takrorlangan ma'lumot kichik va eskirsa zarar yo'q
+//
+// Qarorni ADR sifatida yozib qo'ying: aks holda keyingi jamoa
+// "unutilgan integratsiya" deb o'ylab, keraksiz bog'liqlik qo'shadi.
+```
+
 ## 13.11 Hamkorlik (Partnership)
 
 **Tavsif:** Ikki kontekst va ularning jamoalari shunday chambarchas bog'liq bo'ladi, birining muvaffaqiyatsizligi ikkinchisini ham muvaffaqiyatsiz qiladi - shuning uchun ular rejalashtirish, integratsiya va chiqarishni (release) birgalikda muvofiqlashtiradi. Bu yerda upstream/downstream ierarxiyasi yo'q: interfeys o'zgarishi ikki tomonning kelishuvi bilan bo'ladi va ikkisi bir vaqtda deploy qilinadi. Bu eng qimmat munosabat turi, shuning uchun uzoq muddat saqlanmasligi, vaqtincha holat bo'lishi kerak.
@@ -238,6 +365,19 @@ class BureauCreditScoreAdapter implements CreditScoreProvider {
 - Regulyator talab qilgan xususiyatni ikki servisda bir vaqtda, bir deploy bilan yetkazish.
 
 **Ehtiyot bo'ling:** Partnership'ni doimiy holatga aylantirish mikroservislarning asosiy afzalligi - mustaqil deploy'ni yo'q qiladi; agar munosabat yillar davomida Partnership bo'lib qolsa, bu ikki kontekstni bitta kontekstga birlashtirish kerakligining alomati. Bu pattern faqat jamoalar haqiqatan ham bir xil prioritet va umumiy menejment ostida bo'lganda ishlaydi.
+
+```java
+// Partnership: ikki jamoa birga muvaffaqiyatga erishadi yoki birga yiqiladi
+// Shartnoma o'zgarishi ikki tomondan ham kelishiladi va birga chiqariladi.
+//
+// Amalda nima qilinadi:
+//  - umumiy integratsiya testlari ikki repoda ham ishlaydi
+//  - reliz oynasi birga rejalashtiriladi
+//  - buzuvchi o'zgarish uchun umumiy expand/contract rejasi
+//
+// Bu eng qimmat munosabat: u faqat chegara noto'g'ri qo'yilgan joyda
+// kerak bo'ladi. Partnership ko'payib ketsa, chegaralarni qayta ko'ring.
+```
 
 ## 13.12 Core / Supporting / Generic subdomenlar (Core / Supporting / Generic Subdomains)
 
@@ -254,6 +394,20 @@ class BureauCreditScoreAdapter implements CreditScoreProvider {
 
 **Ehtiyot bo'ling:** Eng keng tarqalgan xato - Generic subdomenni (o'z autentifikatsiya yoki bildirishnoma tizimini) o'zi yozib, Core'ni esa shoshma-shosharlik bilan anemik CRUD sifatida qoldirish. Shuni ham yodda tuting: klassifikatsiya statik emas - bugun Generic bo'lgan narsa biznes modeli o'zgarishi bilan Core'ga aylanishi mumkin, shuning uchun uni yiliga qayta ko'rib chiqish kerak.
 
+```text
+Subdomen turini aniqlash qarorni belgilaydi:
+
+  Core (raqobat ustunligi)      -> eng yaxshi muhandislar, o'z kodi, chuqur model
+    narx hisoblash, fraud baholash
+  Supporting (kerak, lekin oddiy) -> sodda yechim, CRUD yetarli
+    buyurtma tarixini ko'rsatish, bildirishnoma shabloni
+  Generic (hamma uchun bir xil) -> sotib olinadi yoki tayyor yechim
+    autentifikatsiya, pochta yuborish, PDF generatsiya
+
+Xato: Generic subdomenga Core darajasida kuch sarflash. Tekshiruv savoli:
+"bu kodni raqobatchi ham xuddi shunday yozadimi?" Javob "ha" bo'lsa, u Core emas.
+```
+
 ## 13.13 Entity (Entity)
 
 **Tavsif:** Entity - bu o'z identifikatori (identity) orqali ajratiladigan domain obyekti: uning atributlari vaqt o'tishi bilan o'zgarsa ham, u bir xil obyekt bo'lib qoladi. Tenglik `equals`/`hashCode` ichida faqat identifikator asosida aniqlanadi, hech qachon barcha maydonlar bo'yicha emas. Entity o'z holatini himoya qiladi: setter'lar o'rniga domain ma'nosiga ega metodlar (`confirm()`, `cancel()`) invariantlarni tekshirib holatni o'zgartiradi. Shu sababli biznes qoidalari service'lar emas, aynan entity ichida yashaydi.
@@ -268,6 +422,27 @@ class BureauCreditScoreAdapter implements CreditScoreProvider {
 - `@Version` bilan bir vaqtda ikki foydalanuvchi bitta `Invoice`ni tahrirlaganda optimistic lock xatosi beriladi.
 
 **Ehtiyot bo'ling:** Lombok `@Data` yoki `@EqualsAndHashCode` ni entity'ga qo'yish barcha maydonlar bo'yicha tenglik va lazy collection'larni yuklab yuboradigan `toString`/`hashCode` muammolarini keltiradi - faqat ID bo'yicha qo'lda yozing. Shuningdek, entity'ni ochiq setter'lar bilan anemic data holder'ga aylantirsangiz, DDD foydasi yo'qoladi va mantiq service'larga tarqaladi.
+
+```java
+// Entity: identifikatori bo'yicha tenglik, holati o'zgaradi
+@Entity
+public class Customer {
+    @Id private Long id;
+    private String email;
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Customer other)) return false;
+        // ID bo'yicha, lekin ID null bo'lsa faqat o'zi bilan teng
+        return id != null && id.equals(other.id);
+    }
+
+    @Override
+    public int hashCode() { return 31; }    // barqaror: ID keyin paydo bo'ladi
+}
+// Maydonlar bo'yicha equals yozish entity uchun xato: holat o'zgaradi,
+// identifikator esa o'zgarmaydi.
+```
 
 ## 13.14 Qiymat obyekti (Value Object)
 
@@ -284,6 +459,28 @@ class BureauCreditScoreAdapter implements CreditScoreProvider {
 
 **Ehtiyot bo'ling:** Value Object'ni mutable qilib (setter'lar bilan) yozish eng keng tarqalgan xato - bir obyekt ikki joyda ulashilsa, kutilmagan o'zgarishlar tarqaladi; o'zgartirish uchun doim yangi nusxa (`withAmount()`) qaytaring. Juda mayda tushunchalarni ham majburan o'rab chiqish (masalan har bir `boolean` uchun alohida tur) kodni ortiqcha shishiradi.
 
+```java
+// Value object: qiymati bo'yicha tenglik, o'zgarmas
+public record Money(BigDecimal amount, Currency currency) implements Comparable<Money> {
+
+    public Money {
+        Objects.requireNonNull(currency);
+        amount = amount.setScale(currency.getDefaultFractionDigits(), RoundingMode.HALF_UP);
+    }
+
+    public Money plus(Money other) {
+        requireSameCurrency(other);
+        return new Money(amount.add(other.amount), currency);   // yangi nusxa
+    }
+
+    @Override public int compareTo(Money o) { requireSameCurrency(o); return amount.compareTo(o.amount); }
+    private void requireSameCurrency(Money o) {
+        if (!currency.equals(o.currency)) throw new CurrencyMismatchException(currency, o.currency);
+    }
+}
+// `record` equals, hashCode va toString ni beradi: qiymat semantikasi tekin
+```
+
 ## 13.15 Agregat va Agregat ildizi (Aggregate & Aggregate Root)
 
 **Tavsif:** Aggregate - bir-biri bilan chambarchas bog'liq entity va Value Object'larning yagona tranzaksion va konsistentlik chegarasi; tashqi dunyo unga faqat Aggregate Root orqali murojaat qiladi. Root invariantlarni himoya qiladi: ichki obyektlarga havola tashqariga chiqmaydi, ichki o'zgarishlar faqat root metodlari orqali bo'ladi. Aggregate'lar o'zaro to'g'ridan-to'g'ri obyekt havolasi emas, balki ID orqali bog'lanadi, shu bilan ular mustaqil yuklanadi va mustaqil saqlanadi. Qoida sifatida bitta tranzaksiyada faqat bitta aggregate o'zgartiriladi, qolganlari esa domain event'lar bilan eventual consistency rejimida yangilanadi.
@@ -298,6 +495,27 @@ class BureauCreditScoreAdapter implements CreditScoreProvider {
 - Spring Data JDBC'da `BlogPost` root bilan `Comment` larini bitta `save()` chaqirig'ida sinxron saqlash.
 
 **Ehtiyot bo'ling:** Katta aggregate (masalan `Customer` ichiga barcha buyurtmalarni solish) lock kurashini, lazy-loading muammolarini va sekin tranzaksiyalarni keltiradi - chegarani invariantlar talab qilgan minimal hajmda saqlang. Bitta tranzaksiyada bir nechta aggregate'ni o'zgartirish deadlock va qattiq bog'lanishga olib keladi.
+
+```java
+// Agregat: tashqariga faqat ildiz ko'rinadi, invariant ildizda
+@Entity
+public class Order {                        // agregat ildizi
+    @Id private Long id;
+    private OrderStatus status;
+
+    @OneToMany(mappedBy = "order", cascade = ALL, orphanRemoval = true)
+    private final List<OrderLine> lines = new ArrayList<>();
+
+    public void addLine(ProductId p, int qty, Money price) {
+        if (status != OrderStatus.DRAFT) throw new OrderNotEditableException(id);
+        if (lines.size() >= 100) throw new TooManyLinesException(id);   // invariant
+        lines.add(new OrderLine(this, p, qty, price));
+    }
+
+    public List<OrderLine> lines() { return List.copyOf(lines); }  // tashqariga nusxa
+}
+// OrderLine uchun repository yo'q va u tashqaridan o'zgartirilmaydi
+```
 
 ## 13.16 Repozitoriy (Repository - DDD view)
 
@@ -314,6 +532,24 @@ class BureauCreditScoreAdapter implements CreditScoreProvider {
 
 **Ehtiyot bo'ling:** Generic `JpaRepository<Order, Long>` ni to'g'ridan-to'g'ri controller'larga ochib yuborish aggregate chegarasini buzadi va har qanday maydonni tashqaridan o'zgartirishga yo'l beradi - domain uchun toraytirilgan interfeys e'lon qiling. Repository'ni hisobot va UI uchun o'nlab `findByXyzOrderByAbc` metodlari bilan to'ldirish uni query-service'ga aylantiradi; bunda CQRS read-model to'g'ri yechim.
 
+```java
+// DDD nuqtai nazaridan repository - kolleksiya, DAO emas
+public interface Orders {                   // domen paketida, domen tilida
+    Optional<Order> byId(OrderId id);
+    List<Order> awaitingPayment();          // domen savoli, SQL emas
+    void add(Order order);
+}
+
+@Repository
+class JpaOrders implements Orders {         // infratuzilmada
+    private final OrderJpaRepository jpa;
+    @Override public List<Order> awaitingPayment() {
+        return jpa.findByStatus(OrderStatus.AWAITING_PAYMENT);
+    }
+}
+// Har agregat ildizi uchun bitta repository: OrderLine uchun yo'q
+```
+
 ## 13.17 Fabrika (Factory - DDD view)
 
 **Tavsif:** Factory murakkab aggregate yoki Value Object'ni yaratish mantig'ini ichkariga yashiradi, shunda mijoz kod obyektni to'liq va invariantlari bajarilgan holatda oladi. Konstruktor juda ko'p parametrli yoki yaratish bir necha qoidaga bog'liq bo'lganda factory ishlatiladi: u domain tilida nomlangan metodlar beradi (`Order.placeFor(customer, cart)`). Factory obyekt yaratadi, lekin uni saqlamaydi - persistence repository'ning ishi. Reconstruction (bazadan tiklash) odatda ORM yoki alohida mapper vazifasi, factory esa yangi obyekt tug'ilishi uchun.
@@ -329,6 +565,23 @@ class BureauCreditScoreAdapter implements CreditScoreProvider {
 
 **Ehtiyot bo'ling:** Har bir entity uchun avtomatik `XxxFactory` yasash ortiqcha abstraksiya - konstruktor yetarli bo'lsa factory qo'shmang. Factory ichiga repository'ni kiritib, u yerda `save()` chaqirish mas'uliyatlarni aralashtiradi va tranzaksiya chegarasini noaniq qiladi.
 
+```java
+// Factory: murakkab agregatni to'g'ri holatda yaratadi
+public final class OrderFactory {
+
+    public static Order fromCart(Cart cart, PricingPolicy pricing) {
+        if (cart.isEmpty()) throw new EmptyCartException(cart.id());
+        Order order = new Order(OrderId.next(), cart.customerId());
+        for (CartItem item : cart.items()) {
+            // Narx yaratish paytida qotiriladi: keyin o'zgarsa buyurtma o'zgarmaydi
+            order.addLine(item.productId(), item.quantity(), pricing.priceOf(item));
+        }
+        return order;                       // invariant bajarilgan holatda qaytadi
+    }
+}
+// Konstruktor murakkab qoidani ifodalay olmasa, fabrika kerak
+```
+
 ## 13.18 Domen servisi (Domain Service)
 
 **Tavsif:** Domain Service - tabiiy ravishda biror entity yoki Value Object'ga tegishli bo'lmagan, bir nechta aggregate yoki murakkab domain qoidasini qamrab oladigan stateless domain operatsiyasi. U domain tilida nomlanadi (`PricingService`, `TransferService`, `RiskScoring`) va faqat domain turlari bilan ishlaydi: HTTP, tranzaksiya yoki DTO'lar haqida bilmaydi. Holat saqlamaydi, shuning uchun thread-safe va oson test qilinadi. Domain Service'ni Application Service bilan aralashtirmaslik kerak: birinchisi *nima* qoida, ikkinchisi *qanday* orkestratsiya.
@@ -343,6 +596,21 @@ class BureauCreditScoreAdapter implements CreditScoreProvider {
 - `TaxCalculator` domain service'i mamlakat qoidalarini `List<TaxRule>` injection orqali qo'llaydi.
 
 **Ehtiyot bo'ling:** Entity'dagi mantiqni `XxxService` larga ko'chirish anemic domain model'ga olib keladi - qoida bitta aggregate ichida bajarilsa, uni entity metodi qilib qoldiring. Domain service'ga repository, `RestClient` yoki `@Transactional` ni to'g'ridan-to'g'ri bog'lash domain'ni infrastructure'ga qul qiladi.
+
+```java
+// Domain service: bir nechta agregatga tegadigan, lekin birortasiga
+// tegishli bo'lmagan qoida
+public class TransferService {              // domen paketida, Spring'siz
+
+    public TransferReceipt transfer(Account from, Account to, Money amount) {
+        from.withdraw(amount);              // qoida agregatlarda
+        to.deposit(amount);
+        return new TransferReceipt(from.id(), to.id(), amount, Instant.now());
+    }
+}
+// Farqi ilova servisidan: domen servisi tranzaksiya, xabar yoki
+// repository bilan ishlamaydi. U faqat domen qoidasini ifodalaydi.
+```
 
 ## 13.19 Ilova servisi (Application Service - DDD view)
 
@@ -416,6 +684,19 @@ class Order extends AbstractAggregateRoot<Order> {
 
 **Ehtiyot bo'ling:** `controller`/`service`/`repository` bo'yicha qatlamli package'lash har bir feature'ni uch joyga sochadi va hamma narsa `public` bo'lishini talab qiladi - feature bo'yicha bo'ling. Shuningdek modullarni faqat nomda e'lon qilib, avtomatlashtirilgan tekshiruv (Modulith `verify()` yoki ArchUnit) qo'ymasangiz, chegaralar bir necha sprint ichida yemiriladi.
 
+```text
+com.example.sales                 // modul = bounded context ichidagi bo'lak
+  Order.java                      // public: agregat ildizi
+  OrderLine.java                  // package-private: tashqariga chiqmaydi
+  Orders.java                     // public: repository shartnomasi
+  internal/
+    OrderPricingRules.java        // ichki tafsilot
+
+Modul nomi domen tilida bo'ladi: `sales`, `billing`, `shipping`.
+`util`, `common`, `helper` nomlari modul emas, chiqindi qutisi.
+Spring Modulith `verify()` bilan chegarani majburlash mumkin.
+```
+
 ## 13.22 Spetsifikatsiya (Specification - DDD view)
 
 **Tavsif:** Specification - "obyekt shu shartga javob beradimi?" degan biznes predikatini birinchi darajali domain obyektiga aylantiradi. U uch xil ishlatiladi: validatsiya (mavjud obyektni tekshirish), tanlash (kolleksiya yoki bazadan filtrlash) va yaratish talabini ifodalash. Specification'lar `and`, `or`, `not` bilan birlashtirilib, murakkab qoidalarni kichik, nomlangan va alohida test qilinadigan bo'laklardan yig'ish mumkin. Shu bilan `if` lar daraxti o'rniga domain lug'atida o'qiladigan kod paydo bo'ladi.
@@ -430,6 +711,26 @@ class Order extends AbstractAggregateRoot<Order> {
 - Querydsl `BooleanExpression` lar kutubxonasini qurib, type-safe reporting query'lari yozish.
 
 **Ehtiyot bo'ling:** Criteria API asosidagi juda ko'p qatlamli specification'lar o'qilishi qiyin va kutilmagan JOIN'lar hamda N+1 muammosini keltirib chiqaradi - murakkab o'qish uchun aniq `@Query` yoki alohida read-model ko'pincha sodda yechim. Spring Data `Specification` ni domain qatlamiga tarqatish domain'ni JPA'ga bog'lab qo'yadi; domain ichida framework'siz o'z predikat abstraksiyangizni saqlang.
+
+```java
+// DDD da Specification domen qoidasini ifodalaydi, nafaqat so'rov shartini
+public interface Specification<T> {
+    boolean isSatisfiedBy(T candidate);
+
+    default Specification<T> and(Specification<T> other) {
+        return c -> this.isSatisfiedBy(c) && other.isSatisfiedBy(c);
+    }
+}
+
+public final class EligibleForRefund implements Specification<Order> {
+    @Override public boolean isSatisfiedBy(Order o) {
+        return o.status() == OrderStatus.DELIVERED
+                && Duration.between(o.deliveredAt(), Instant.now()).toDays() <= 14;
+    }
+}
+// Bir xil qoida ikki joyda ishlaydi: xotiradagi obyektni tekshirish va
+// so'rov sharti sifatida (Spring Data Specification ga aylantirilib).
+```
 
 ## 13.23 Siyosat (Policy)
 
@@ -446,6 +747,28 @@ class Order extends AbstractAggregateRoot<Order> {
 
 **Ehtiyot bo'ling:** Faqat bitta implementatsiyasi bo'lgan va o'zgarishi kutilmayotgan qoidani Policy interfeysiga o'rash - bu keraksiz abstraksiya; variativlik real paydo bo'lganda ajratishni boshlang. Policy'larni infrastructure annotatsiyalariga (`@Retryable`, `@Cacheable`) bog'lab yuborish domain qoidasini framework'ga qamab qo'yadi va test qilishni qiyinlashtiradi.
 
+```java
+// Policy: almashtirilishi mumkin bo'lgan qaror qoidasi
+public interface LateFeePolicy {
+    Money feeFor(Invoice invoice, LocalDate today);
+}
+
+public final class FlatLateFeePolicy implements LateFeePolicy {
+    private final Money flat;
+    @Override public Money feeFor(Invoice i, LocalDate today) {
+        return i.isOverdue(today) ? flat : Money.zero(i.currency());
+    }
+}
+
+public final class DailyLateFeePolicy implements LateFeePolicy {
+    @Override public Money feeFor(Invoice i, LocalDate today) {
+        long days = i.daysOverdue(today);
+        return i.total().percent(new BigDecimal("0.1")).times(days);
+    }
+}
+// Qoida o'zgarsa yangi Policy qo'shiladi: Invoice kodi o'zgarmaydi
+```
+
 ## 13.24 Invariantlar (Invariants)
 
 **Tavsif:** Invariant - agregat ichida har qanday tranzaksiya tugaganda doimo rost bo'lishi shart bo'lgan biznes qoidasi ("buyurtma qatorlari summasi jami summaga teng", "hisob qoldig'i limitdan past tushmaydi"). Invariantlar aggregate root'ning konsistentlik chegarasini belgilaydi: root o'z ichidagi barcha o'zgarishlarni nazorat qiladi va har bir public metod oxirida qoidani tekshiradi. Shu sababli agregat hajmi invariantlar to'plamidan kelib chiqadi, ma'lumotlar bazasi jadvallari tuzilishidan emas. Invariant buzilganda obyekt yaratilmaydi yoki amal bajarilmaydi - noto'g'ri holat hech qachon xotirada paydo bo'lmasligi kerak.
@@ -460,6 +783,26 @@ class Order extends AbstractAggregateRoot<Order> {
 - `Subscription.changePlan(...)` faqat `ACTIVE` statusda ruxsat etilishini state machine tekshiruvi orqali ta'minlaydi.
 
 **Ehtiyot bo'ling:** Invariantni faqat controller yoki DTO darajasidagi `@Valid` bilan himoya qilish xato - domen obyektini boshqa kod yo'li (importer, message listener, test) chetlab o'tadi, shuning uchun qoida agregat ichida ham turishi shart. Bir nechta agregatni qamrab oluvchi "global invariant" talab qilsangiz, bu agregat chegarasi noto'g'ri tortilganini yoki qoida eventual consistency'ga o'tishi kerakligini bildiradi.
+
+```java
+// Invariant: har doim rost bo'lishi kerak bo'lgan shart
+public class Order {
+    private final List<OrderLine> lines = new ArrayList<>();
+    private Money total;
+
+    // Invariant 1: total har doim qatorlar yig'indisiga teng
+    // Invariant 2: DRAFT bo'lmagan buyurtma o'zgartirilmaydi
+    // Invariant 3: qator soni 100 dan oshmaydi
+    public void addLine(OrderLine line) {
+        requireDraft();                               // 2
+        if (lines.size() >= 100) throw new TooManyLinesException(id);  // 3
+        lines.add(line);
+        this.total = recalculateTotal();              // 1
+    }
+}
+// Invariant agregat chegarasida tekshiriladi: shuning uchun agregat
+// chegarasi "nimani bir vaqtda izchil saqlash kerak" savolidan chiqadi.
+```
 
 ## 13.25 Agregatlar orasida yakuniy izchillik (Eventual Consistency Between Aggregates)
 
@@ -476,6 +819,27 @@ class Order extends AbstractAggregateRoot<Order> {
 
 **Ehtiyot bo'ling:** Pul, zaxira yoki huquqiy jihatdan qat'iy qoidalar uchun "yakuniy" izchillik yaroqsiz bo'lishi mumkin - biznes bilan ruxsat etilgan nomuvofiqlik oynasini aniq kelishib oling. Oddiy `@EventListener` (`AFTER_COMMIT`siz yoki registry'siz) yetkazib berishni kafolatlamaydi: application qulasa hodisa yo'qoladi, shuning uchun outbox yoki Modulith registry'siz production'da tayanmang.
 
+```java
+// Bitta tranzaksiya - bitta agregat. Qolgani hodisa orqali.
+@Transactional
+public void place(PlaceOrder cmd) {
+    Order order = Order.from(cmd);
+    orders.add(order);                            // faqat Order agregati
+    events.publish(new OrderPlaced(order.id(), order.items()));
+}
+
+@Component
+class StockReservation {
+    @TransactionalEventListener(phase = AFTER_COMMIT)
+    void on(OrderPlaced e) {
+        inventory.reserve(e.items());             // alohida tranzaksiya
+    }
+}
+// Natija: qisqa vaqt ichida buyurtma bor, zaxira hali band emas.
+// Bu holat biznes uchun qabul qilinishi aniq yozilgan bo'lishi kerak,
+// va band qilish muvaffaqiyatsiz bo'lsa kompensatsiya rejasi bo'lsin.
+```
+
 ## 13.26 Yon ta'sirsiz funksiyalar (Side-Effect-Free Functions)
 
 **Tavsif:** Operatsiyalarni ikki turga ajratamiz: holatni o'zgartiruvchi `command`lar va hech narsani o'zgartirmaydigan, faqat natija qaytaruvchi `query`lar (funksiyalar). Murakkab hisob-kitoblarni yon ta'sirsiz funksiyalarga, afzal holda value object'lar ustiga ko'chirsak, ularni erkin chaqirish, kombinatsiyalash, keshlash va test qilish mumkin bo'ladi. Command'lar esa iloji boricha sodda bo'lib, natijani funksiyalardan olib, faqat yakuniy holatni o'rnatadi. Bu "supple design"ning asosiy vositalaridan biri va invariantlar haqida fikrlashni ancha osonlashtiradi.
@@ -490,6 +854,25 @@ class Order extends AbstractAggregateRoot<Order> {
 - `Specification` metodlari (`byStatus`, `createdAfter`) `and`/`or` bilan qo'shilib, qayta ishlatiladigan filtrlar beradi.
 
 **Ehtiyot bo'ling:** "Getter ichida lazy yuklash yoki audit yozish" kabi yashirin yon ta'sirlar funksiya shartnomasini buzadi va keshlashni xavfli qiladi. Har bir hisob uchun yangi obyekt yaratish hot path'da ortiqcha allocation bersa, profiling natijasiga tayanib optimallashtiring - lekin immutable'likni sababsiz tashlab yubormang.
+
+```java
+// Yon ta'sirsiz funksiya: hisoblaydi, lekin holatni o'zgartirmaydi
+public record Cart(List<CartItem> items) {
+
+    public Money subtotal() {                     // so'rov: yon ta'siri yo'q
+        return items.stream().map(CartItem::lineTotal)
+                .reduce(Money.zero("UZS"), Money::plus);
+    }
+
+    public Cart withItem(CartItem item) {         // o'zgartirish: yangi nusxa
+        List<CartItem> next = new ArrayList<>(items);
+        next.add(item);
+        return new Cart(List.copyOf(next));
+    }
+}
+// Qoida: holatni o'zgartiradigan metod qiymat qaytarmaydi, qiymat
+// qaytaradigan metod holatni o'zgartirmaydi (command-query separation).
+```
 
 ## 13.27 Niyatni ochib beruvchi interfeyslar (Intention-Revealing Interfaces)
 
@@ -506,6 +889,27 @@ class Order extends AbstractAggregateRoot<Order> {
 
 **Ehtiyot bo'ling:** Faqat getter/setter'ni qayta nomlash bilan cheklanib qolsangiz, anemik model o'zgarmaydi - niyat bilan birga xatti-harakat ham domen obyektiga ko'chishi kerak. Nomlar domen ekspertlari atamasidan uzoqlashsa (injener o'ylab topgan "chiroyli" nom) pattern teskari ishlaydi: tilni ekspertlar bilan tasdiqlang.
 
+```java
+// Niyat nomdan ko'rinadi, implementatsiyadan emas
+// Yomon: nima qilayotgani noma'lum
+order.setStatus(OrderStatus.CANCELLED);
+order.setCancelReason(reason);
+order.setCancelledAt(Instant.now());
+
+// Yaxshi: bitta niyat, bitta chaqiruv, qoida ichda
+order.cancel(reason);
+
+public class Order {
+    public void cancel(CancelReason reason) {
+        if (status != OrderStatus.NEW) throw new OrderNotCancellableException(status);
+        this.status = OrderStatus.CANCELLED;
+        this.cancelReason = reason;
+        this.cancelledAt = clock.instant();
+    }
+}
+// Setter'lar to'plami chaqiruvchini qoidani bilishga majbur qiladi
+```
+
 ## 13.28 Amallarning yopiqligi (Closure of Operations)
 
 **Tavsif:** Agar amal argument sifatida qabul qilgan va natija sifatida qaytargan tur bir xil bo'lsa, amal shu tur ustida "yopiq" deyiladi: `Money.add(Money) -> Money`, `Specification.and(Specification) -> Specification`. Bunday amallar yangi tushuncha kiritmaydi, shuning uchun interfeys soddalashadi va amallarni cheksiz zanjirlash hamda kombinatsiyalash mumkin bo'ladi. Bu matematikadagi yarim guruh/monoid g'oyasining domen modelidagi ko'rinishi va u ko'pincha value object'lar ustida tabiiy chiqadi. Yopiqlikni qisman ham qo'llash mumkin - masalan, argument boshqa tur, natija esa o'sha turda bo'lsa (`Money.multiply(BigDecimal) -> Money`).
@@ -520,6 +924,20 @@ class Order extends AbstractAggregateRoot<Order> {
 - `Quantity.plus/minus` bilan ombor hisob-kitoblarini o'lchov birligi xavfsiz holda bajarish.
 
 **Ehtiyot bo'ling:** Yopiqlikni sun'iy ravishda majburlash xato - turlar haqiqatan bir xil ma'noda bo'lmasa (`Money` + `Percentage`), bu modelni chalg'itadi. Shuningdek yopiq amallar immutable'likka tayanadi: ichki holatni o'zgartirib, `this` qaytarsangiz, zanjirlash kutilmagan natija beradi.
+
+```java
+// Closure of operations: amal o'z turi ichida qoladi
+public record Money(BigDecimal amount, Currency currency) {
+    public Money plus(Money other)  { return new Money(amount.add(other.amount), currency); }
+    public Money minus(Money other) { return new Money(amount.subtract(other.amount), currency); }
+    public Money times(int n)       { return new Money(amount.multiply(valueOf(n)), currency); }
+}
+
+// Natija har doim Money: shuning uchun zanjir tabiiy o'qiladi
+Money total = price.times(qty).plus(shipping).minus(discount);
+// Agar `plus` BigDecimal qaytarsa, chaqiruvchi har qadamda turni
+// qayta o'rashga majbur bo'ladi va valyuta tekshiruvi yo'qoladi.
+```
 
 ## 13.29 Mustaqil sinflar (Standalone Classes)
 
@@ -536,6 +954,25 @@ class Order extends AbstractAggregateRoot<Order> {
 
 **Ehtiyot bo'ling:** "Nol bog'liqlik" dogma emas: JPA'ni domenga umuman kirtmaslik uchun qo'shimcha mapping qatlami yozish kichik loyihada ortiqcha xarajat bo'lib chiqadi - narx/foyda nisbatini o'lchang. Shuningdek sinfni ajratish uchun uni anemik qilib qo'ymang: mustaqillik mantiqni olib tashlash hisobiga erishilmasligi kerak.
 
+```java
+// Standalone class: bog'liqliksiz, shuning uchun o'qilishi va testi oson
+public final class Percent {                  // hech narsa import qilmaydi
+    private final BigDecimal value;
+
+    private Percent(BigDecimal value) {
+        if (value.signum() < 0) throw new IllegalArgumentException("manfiy foiz");
+        this.value = value;
+    }
+
+    public static Percent of(String v) { return new Percent(new BigDecimal(v)); }
+    public BigDecimal applyTo(BigDecimal base) {
+        return base.multiply(value).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+    }
+}
+// Bu sinfni tushunish uchun boshqa hech narsani o'qish kerak emas:
+// kognitiv yuk minimal. Domen yadrosi shunday sinflardan qurilishi kerak.
+```
+
 ## 13.30 Egiluvchan dizayn (Supple Design)
 
 **Tavsif:** Supple Design - Evans kitobining 10-bobidagi umumlashtiruvchi maqsad: model shunday yozilsinki, undan foydalanuvchi injener o'zgartirish kiritishdan qo'rqmasin va yangi talablar modelga "qulf"ga kalit kabi joylashsin. U alohida pattern emas, balki bir nechta texnikaning yig'indisi: Intention-Revealing Interfaces, Side-Effect-Free Functions, Assertions, Conceptual Contours, Standalone Classes, Closure of Operations va Declarative Style of Design. Asosiy mezoni - refactoring qilish qo'rqinchli emas, balki arzon bo'lishi; bu esa chuqur modelni izlash (deep model) jarayonining mevasi.
@@ -550,6 +987,24 @@ class Order extends AbstractAggregateRoot<Order> {
 - Domen hodisalari nomlarini ekspert tiliga moslab, yangi integratsiyani hodisalarga ulash orqali qo'shish.
 
 **Ehtiyot bo'ling:** Supple design barcha kodga emas, eng murakkab va eng tez o'zgaruvchan core domain'ga yo'naltirilishi kerak - CRUD-ga yaqin supporting subdomain'ni shu darajada mukammallashtirish resurs isrofi. Shuningdek "chiroyli DSL" sifatida yozilgan, lekin ekspertlar atamasidan uzoq abstraksiyalar modelni egiluvchan emas, aksincha qotib qolgan qiladi.
+
+```java
+// Supple design: model o'zgarishga qarshilik qilmaydi
+public final class DateRange {
+    private final LocalDate from, to;
+
+    public boolean overlaps(DateRange other) { /* ... */ return false; }
+    public DateRange intersect(DateRange other) { /* ... */ return this; }
+    public boolean contains(LocalDate day) { /* ... */ return false; }
+}
+
+// Shu uch amal bilan yangi talablar kod yozmasdan ifodalanadi:
+//   tariflar kesishmasligi, chegirma davri, hisobot oynasi
+// Belgilari: niyatni ochib beruvchi nomlar, yon ta'sirsiz funksiyalar,
+// yopiq amallar, mustaqil sinflar va aniq invariantlar. Shundan keyin
+// yangi talab "qanday qo'shaman" emas, "qaysi amallar bilan ifodalanadi"
+// savoliga aylanadi.
+```
 
 ## 13.31 Anemik domen modeli (anti) (Anemic Domain Model (anti))
 
@@ -566,6 +1021,24 @@ class Order extends AbstractAggregateRoot<Order> {
 
 **Ehtiyot bo'ling:** Teskari chetga chiqmang: agregatga repository, HTTP client yoki tashqi servis in'ektsiya qilib, uni "boy" qilishga urinish bog'liqliklarni domenga tortadi - bunday mantiq application servisga yoki domain service'ga tegishli. Shuningdek DTO va API modellari ataylab anemik bo'ladi; anemiklik muammosi faqat domen modeliga tegishli.
 
+```java
+// Anemik: qoida servisda, obyekt faqat ma'lumot tashiydi
+class Order { private OrderStatus status; /* getter + setter */ }
+
+class OrderService {
+    void cancel(Order o) {
+        if (o.getStatus() != OrderStatus.NEW) throw new IllegalStateException();
+        o.setStatus(OrderStatus.CANCELLED);     // qoida tashqarida
+    }
+    void refund(Order o) {
+        if (o.getStatus() != OrderStatus.NEW) throw new IllegalStateException();  // takror
+    }
+}
+// Belgisi: domen sinflarida faqat getter va setter, barcha `if` servisda,
+// va bir xil tekshiruv bir necha joyda takrorlanadi.
+// Davolash: qoidani ma'lumot yoniga ko'chirish (13.15 va 13.24).
+```
+
 ## 13.32 Event Storming (texnika) (Event Storming (technique))
 
 **Tavsif:** Event Storming - Alberto Brandolini taklif qilgan ustaxona (workshop) texnikasi: domen ekspertlari va injenerlar katta devorga vaqt bo'yicha tartiblangan domen hodisalarini yopishqoq qog'ozlarda joylab, biznes jarayonini birgalikda kashf qiladi. Odatda uch darajada o'tkaziladi: Big Picture (butun biznes manzarasi), Process Level (bitta jarayonni chuqurlashtirish) va Design Level (agregatlar, command'lar, policy'lar aniqlanadigan daraja). Rang konvensiyasi keng tarqalgan: to'q sariq - domen hodisasi, ko'k - command, sariq - agregat, siyohrang - policy/qoida, pushti - tashqi sistema, yashil - read model, qizil - "hot spot" (nizo yoki noaniqlik). Natija sifatida Ubiquitous Language, bounded context chegaralari va agregat nomzodlari qo'lga kiritiladi.
@@ -580,6 +1053,25 @@ class Order extends AbstractAggregateRoot<Order> {
 - Onboarding: yangi senior injenerga tizim mantiqini bir kunda ko'rsatish.
 
 **Ehtiyot bo'ling:** Ustaxonada haqiqiy domen ekspertlari qatnashmasa, natija injenerlarning taxminlari to'plamiga aylanadi - texnikaning qiymati aynan birgalikdagi muhokamada. Shuningdek Big Picture natijasini to'g'ridan-to'g'ri jadval yoki sinf diagrammasiga ko'chirmang: bu kashf qilish vositasi, dizayn esa Design Level va keyingi modellashtirishda yetiladi.
+
+```text
+Event storming: hodisalar devorga yopishtiriladi, keyin guruhlanadi
+
+  1. Domen hodisalari (to'q sariq): o'tgan zamonda
+       OrderPlaced, StockReserved, PaymentCaptured, OrderShipped
+  2. Buyruqlar (ko'k): hodisani keltirib chiqaradi
+       PlaceOrder, ReserveStock, CapturePayment
+  3. Aktorlar (sariq): kim chaqiradi
+       Mijoz, Ombor xodimi, To'lov provayderi
+  4. Siyosatlar (siyohrang): "har qachon X bo'lsa, Y qilinadi"
+       OrderPlaced -> ReserveStock
+  5. Agregatlar (och sariq): buyruqni qabul qiladi va invariantni saqlaydi
+       Order, Reservation, Payment
+  6. Chegaralar: hodisalar zich guruhlangan joyda bounded context chizig'i
+
+Natija: hodisa ro'yxati, agregat ro'yxati va kontekst xaritasining
+birinchi qoralamasi. Bu kod emas, lekin keyingi butun dizayn shundan chiqadi.
+```
 
 ## 13.33 Spring Data bilan domen hodisalari (Domain Events with Spring Data: AbstractAggregateRoot, @DomainEvents)
 
@@ -624,6 +1116,23 @@ class Order extends AbstractAggregateRoot<Order> {
 - Monolitni modullarga ajratishda har bir modul ichida bir xil qatlam strukturasini takrorlash.
 
 **Ehtiyot bo'ling:** Qatlamlarni "texnik" ajratish (hamma controller bitta paketda, hamma service boshqasida) modullikni bermaydi - avval bounded context/modul bo'yicha, keyin qatlam bo'yicha bo'lish ancha barqaror. Kichik CRUD servisda to'liq port/adapter mapping qatlamlari ortiqcha ko'p kod keltirib chiqaradi: qatlam sonini domen murakkabligiga moslab tanlang.
+
+```text
+com.example.sales
+  domain/            Order, Money, Orders (interfeys)   -- hech narsaga bog'liq emas
+  application/       PlaceOrderUseCase                  -- domain ga bog'liq
+  infrastructure/    JpaOrders, PspPaymentAdapter       -- application portlarini bajaradi
+  presentation/      OrderController                    -- application ni chaqiradi
+
+ArchUnit bilan majburlash:
+  noClasses().that().resideInAPackage("..domain..")
+    .should().dependOnClassesThat()
+    .resideInAnyPackage("..application..", "..infrastructure..", "..presentation..")
+
+Klassik qatlamli arxitekturadan farqi: domen pastda emas, markazda.
+Repository interfeysi domenda, implementatsiyasi infratuzilmada turadi,
+shuning uchun bog'liqlik yo'nalishi teskari (dependency inversion).
+```
 
 ## 13.35 Pul (Money (Value Object specialization))
 
