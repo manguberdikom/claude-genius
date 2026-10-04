@@ -1,59 +1,107 @@
-# Bu repoda ishlash qoidasi
+# Loyiha ko'rsatmalari
 
-Repo to'rtta monolit qo'llanmadan iborat: **4.6 MB, ~1.67M token, 135 bob,
-2285 bo'lim**. Eng kattasi (`java-spring-design-patterns.md`) yolg'iz o'zi
-~837k token — 200k kontekst oynasidan to'rt barobar katta.
+## Til va uslub
 
-**Shuning uchun bu fayllar hech qachon to'liq o'qilmaydi.** Bitta `###` bo'lim
-medianasi atigi ~700 token, ya'ni javob deyarli har doim kichik bo'lakda turadi.
-Vazifa — o'sha bo'lakni bir urinishda topish.
+- Javob va hujjatlar o'zbek lotin yozuvida. Kirill yoki rus tili bo'lmaydi.
+- Texnik atamalar inglizcha qoladi: bean, proxy, thread, cache, latency,
+  quality gate, coverage. To'liq ro'yxat `GLOSSARY.md` da.
+- Javob birinchi qatorida natija turadi, keyin tafsilot. Em-dash ishlatilmaydi.
 
-## Kirish protokoli
+## Hujjat konvensiyasi
 
-Hamma narsa bitta skript orqali: `tools/doc.sh`.
+- Har bir hujjat mundarija bilan boshlanadi, havolalar GitHub anchor formatida.
+- Har bob `Amalda qo'llash` yoki `Arxitektor nazorat ro'yxati` ro'yxati bilan
+  tugaydi.
+- Mavzu takrorlanmaydi: boshqa hujjatga bob raqami bilan emas, mavzu nomi bilan
+  havola qilinadi.
 
-```sh
-tools/doc.sh find "circuit breaker"       # sarlavha va inglizcha taxalluslar bo'yicha
-tools/doc.sh find -f "pg_stat_statements" # matn ichidan ham (sekinroq, ~80 ms)
+## Struktura
+
+Oltita hujjat, har biri `docs/<hujjat>/` papkasida, har bob alohida faylda:
+`patterns` (30 bob, 1007 pattern), `testing` (18 bob), `architect` (39 bob),
+`sonarqube` (43 bob), `clean-code` (49 bob), `code-review` (44 bob).
+
+- `docs/<hujjat>/README.md` - mundarija va kirish.
+- `docs/<hujjat>/NN-slug.md` - bitta bob. Shakli `CONTRIBUTING.md` da.
+- `docs/manifest.json` - boblar ro'yxati. Bob qo'shilsa yoki o'chirilsa
+  yangilanadi, aks holda tekshiruv xato beradi.
+- `dist/` - `tools/build_single.py` natijasi. Git da yo'q, qo'lda tahrir
+  qilinmaydi.
+- `.claude/skills/` - sakkizta skill, `docs/` ga marshrutlash jadvallari.
+
+`docs/` yagona haqiqat manbasi. Bitta fayllik variant kerak bo'lsa
+`python3 tools/build_single.py` ishga tushiriladi.
+
+## Qidirish va o'qish
+
+Korpus 5.9 MB, ~2.1M token. Eng katta bob ~68k token, bitta bo'lim esa
+o'rtacha ~700 token. Shuning uchun bob fayli butunligicha emas, bo'lim
+darajasida o'qiladi. Hammasi `tools/doc.sh` orqali:
+
+```bash
+tools/doc.sh find "circuit breaker"       # sarlavha va inglizcha taxalluslar
+tools/doc.sh find -f "pg_stat_statements" # matn ichidan ham, ~60 ms
 tools/doc.sh show patterns 17.2           # faqat o'sha bo'limni chiqaradi
-tools/doc.sh toc                          # hujjatlar ro'yxati
-tools/doc.sh toc sonar                    # boblar ro'yxati
-tools/doc.sh outline patterns 17          # bobdagi bo'limlar
+tools/doc.sh outline sonarqube 29         # bobdagi bo'limlar
+tools/doc.sh path patterns 17.2           # fayl, satr oralig'i va anchor
 ```
 
 Odatiy yo'l ikki qadam: `find` bo'lim raqamini beradi, `show` matnni beradi.
-`find` ko'pi bilan 20 ta natija chiqaradi (`-n N` bilan o'zgaradi).
+Hujjat kalitlari `doc.sh toc` da.
 
-Hujjat kalitlari: `patterns`, `mindset`, `sonar`, `testing`.
+Qoidalar:
 
-## Nima qilmaslik kerak
+- `cat`, `less` yoki chegarasiz `Read` bilan 1200 satrdan uzun bob fayli
+  o'qilmaydi. Buni `tools/guard_bigdocs.py` PreToolUse hook sifatida to'sadi
+  (`.claude/settings.json`), sinovlari `tools/test_guard.py` da.
+- Havolani qo'lda yozmang: `doc.sh path` tayyor anchor beradi, u
+  `check_docs.py` ishlatadigan slug bilan bir xil hisoblanadi.
+- Indeks `index/` da, uni `tools/build_index.py` `docs/manifest.json` dan
+  yasaydi. Bob fayli indeksdan yangiroq bo'lsa `doc.sh` o'zi qayta yasaydi,
+  shuning uchun tahrirdan keyin qo'lda hech narsa qilish shart emas.
+- Indeks grep qilinadi, o'qilmaydi. Uni ham kontekstga to'liq olmang.
 
-- `cat`, `less` yoki chegarasiz `Read` — `java-spring-*.md` fayllarida.
-  Buni `tools/guard_bigdocs.py` (PreToolUse hook) to'sadi; u
-  `.claude/settings.json` da ulangan, sinovlari `tools/test_guard.py` da.
-- Bobni butunligicha o'qish. `show` 1200 satrdan uzun blokni chiqarmaydi;
-  o'rniga ichidagi bo'limlar ro'yxatini beradi. Haqiqatan kerak bo'lsa `--force`.
-- Monolitni qo'lda `grep` qilib satr raqamini izlash. `find -f` shuni qiladi
-  va natijani bo'lim raqamiga bog'laydi.
+## Tekshiruv
 
-Chegaralangan o'qish ruxsat etilgan: `sed -n '8499,8543p'`, `grep`, `head`,
-`limit` berilgan `Read`.
+Hujjat o'zgartirilgandan keyin:
 
-## Indeks
+```bash
+python3 tools/check_docs.py
+```
 
-`index/` dagi to'rtta TSV — `docs`, `chapters`, `sections`, `aliases`.
-Ularni `tools/build_index.py` monolitlardan yasaydi; hujjatlarga tegmaydi.
+Tekshiradi: fayl hajmi, har bir havola va anchor, kirill harf, em-dash, kod
+fence juftligi, manifest mosligi, bob strukturasi, skilllardagi havolalar.
+Xatosiz o'tishi shart. CI ham shuni ishlatadi.
 
-Indeks o'z-o'zini tiklaydi: `doc.sh` har chaqiruvda manba faylning o'zgarish
-vaqtini tekshiradi va indeks eskirgan bo'lsa qayta yasaydi. Hujjat
-tahrirlangandan keyin qo'lda hech narsa qilish shart emas. Majburiy qayta
-yasash: `tools/doc.sh rebuild`.
+## Qattiq qoidalar
 
-Indeks grep qilinadi, o'qilmaydi — uni ham to'liq kontekstga olmang.
+1. **Fayl 900 KB dan oshmaydi.** GitHub 1 MB dan katta markdown ni render
+   qilmaydi. Bob o'sib ketsa ikkiga bo'linadi.
+2. **Havolani qo'lda hisoblamang** - `tools/check_docs.py` ishlatilsin.
+3. **Bob fayl shakli buzilmaydi**: metadata izohi, breadcrumb, H1, kontent,
+   navigatsiya footer.
+4. **Mavzular takrorlanmaydi.** Bir mavzu ikki hujjatda yozilmaydi, havola
+   qilinadi.
 
-## Til
+## Pattern yozuvi shakli
 
-Hujjatlar o'zbek lotin yozuvida, texnik atamalar inglizcha (bean, proxy,
-cache, quality gate, coverage). Inglizcha pattern nomlari `aliases.tsv` da
-bo'lim raqamiga bog'langan, shuning uchun `find "Circuit Breaker"` ishlaydi.
-Apostrof hamma joyda ASCII `'` — qidiruvda normalizatsiya kerak emas.
+`docs/patterns/` dagi har yozuv to'rt qismdan iborat, tartibi o'zgarmaydi:
+`**Tavsif:**`, `**Spring'da qayerda uchraydi:**`, `**Qo'llanish keyslari:**`,
+`**Ehtiyot bo'ling:**`.
+
+## Ma'lum bo'shliqlar
+
+1. `docs/patterns/` ning 30 bo'limida `Amalda qo'llash` ro'yxati yo'q,
+   konvensiya esa uni talab qiladi. Bob tahrirlanganda qo'shiladi.
+2. 1007 patternning 146 tasida kod misoli bor, 861 tasida yo'q. Pattern
+   tahrirlanganda imkon bo'lsa 5-15 qatorlik `java` bloki qo'shiladi.
+
+## Memory
+
+Bu proyektning memoryasi `memory/claude-genius/` papkasida, barcha proyektlarga
+tegishli bilim `memory/umumiy/` da. Ish boshida o'sha ikki `MEMORY.md` indeksi
+o'qiladi, kerakli topic fayl indeksga qarab o'qiladi.
+
+Memoryga yozish yoki uni tozalash kerak bo'lganda `memory-protocol.md` o'qiladi:
+darvoza, marshrut jadvali va saqlash ketma-ketligi o'sha faylda. Ombor qoidasi
+`memory/README.md` da. Bu yerda ular takrorlanmaydi.

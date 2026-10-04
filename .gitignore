@@ -1,0 +1,16 @@
+# tools/build_single.py natijasi - har safar qayta yig'iladi
+dist/
+
+# tools/build_index.py natijasi - doc.sh kerak bo'lganda qayta yasaydi
+index/
+
+# muharrir va OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Python
+__pycache__/
+*.pyc
+.venv/

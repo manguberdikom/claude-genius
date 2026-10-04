@@ -6,6 +6,9 @@
       "Bash(./tools/doc.sh:*)",
       "Bash(bash tools/doc.sh:*)",
       "Bash(python3 tools/build_index.py:*)",
+      "Bash(python3 tools/check_docs.py:*)",
+      "Bash(python3 tools/build_single.py:*)",
+      "Bash(python3 tools/test_guard.py:*)",
       "Bash(sed -n:*)",
       "Bash(grep:*)",
       "Bash(awk:*)",
@@ -26,7 +29,7 @@
             "type": "command",
             "command": "python3 \"$CLAUDE_PROJECT_DIR/tools/guard_bigdocs.py\"",
             "timeout": 10,
-            "statusMessage": "Hujjat hajmi tekshirilmoqda"
+            "statusMessage": "Fayl hajmi tekshirilmoqda"
           }
         ]
       }

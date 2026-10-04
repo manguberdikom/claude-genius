@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Hujjatlarga tez kirish. Monolit fayllar hech qachon to'liq o'qilmaydi:
-# indeks kerakli bo'limni topadi, sed faqat o'sha satrlarni chiqaradi.
+# docs/ ga tez kirish: indeks kerakli bo'limni topadi, sed faqat o'sha
+# satrlarni chiqaradi. Bob fayllari 68k tokengacha boradi, bitta bo'lim esa
+# ~700 token, shuning uchun qidiruv bob emas, bo'lim darajasida ishlaydi.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -10,32 +11,26 @@ CHAPTERS="$IDX/chapters.tsv"
 ALIASES="$IDX/aliases.tsv"
 DOCS="$IDX/docs.tsv"
 
-# show uchun xavfsizlik chegarasi: bundan uzun blok tasodifan
-# kontekstni to'ldirmasin. --force bilan chetlab o'tiladi.
+# show uchun chegara: bundan uzun blok tasodifan kontekstni to'ldirmasin.
 MAX_LINES="${DOC_MAX_LINES:-1200}"
 LIMIT_DEFAULT=20
 
 die() { printf '%s\n' "$*" >&2; exit 1; }
 
-# Manba fayl indeksdan yangiroq bo'lsa, indeksni qayta yasaymiz.
+rebuild() { python3 "$ROOT/tools/build_index.py" >&2; }
+
+# Biror bob fayli indeksdan yangiroq bo'lsa, indeks qayta yasaladi.
 # Eskirgan indeks noto'g'ri satr raqami beradi, bu jim xato bo'lar edi.
 ensure_index() {
-  local newest=0 mtime
   if [ ! -f "$SECTIONS" ]; then
-    rebuild; return
+    rebuild
+    return
   fi
-  while IFS=$'\t' read -r _ file _; do
-    [ -f "$ROOT/$file" ] || continue
-    mtime=$(stat -c %Y "$ROOT/$file")
-    [ "$mtime" -gt "$newest" ] && newest=$mtime
-  done < <(tail -n +2 "$DOCS")
-  if [ "$newest" -gt "$(stat -c %Y "$SECTIONS")" ]; then
+  if [ -n "$(find "$ROOT/docs" -name '*.md' -newer "$SECTIONS" -print -quit)" ]; then
     printf 'indeks eskirgan, qayta yasalmoqda...\n' >&2
     rebuild
   fi
 }
-
-rebuild() { python3 "$ROOT/tools/build_index.py" >&2; }
 
 # ---------------------------------------------------------------- find
 
@@ -76,7 +71,6 @@ cmd_find() {
 $(fulltext "$query")"
   fi
 
-  # bir xil (hujjat, raqam) juftligini bir marta ko'rsatamiz
   local out
   out="$(printf '%s\n' "$raw" | awk -F'\t' 'NF && !seen[$1"\t"$2]++')"
 
@@ -89,38 +83,41 @@ $(fulltext "$query")"
   local total
   total="$(printf '%s\n' "$out" | wc -l)"
   printf '%s\n' "$out" | head -n "$limit" | awk -F'\t' '{
-    printf "%-9s %-7s %s\n", $1, $2, $3
+    printf "%-11s %-7s %s\n", $1, $2, $3
   }'
   if [ "$total" -gt "$limit" ]; then
     printf "... yana %d ta ('-n %d' bilan ko'proq)\n" \
       "$((total - limit))" "$((limit * 3))" >&2
   fi
-  printf "\xe2\x86\x92 doc.sh show <hujjat> <raqam>\n" >&2
+  printf "> doc.sh show <hujjat> <raqam>\n" >&2
 }
 
 # To'liq matn qidiruvi: topilgan satrni egasi bo'lgan bo'limga bog'laydi.
-# grep hech narsa topmasa 1 qaytaradi, bu xato emas - shuning uchun yutiladi.
+# grep hech narsa topmasa 1 qaytaradi, bu xato emas, shuning uchun yutiladi.
 fulltext() {
-  local query="$1" doc file
-  while IFS=$'\t' read -r doc file _; do
-    [ -f "$ROOT/$file" ] || continue
-    { grep -nFi -- "$query" "$ROOT/$file" || true; } \
-      | cut -d: -f1 \
-      | awk -F'\t' -v doc="$doc" '
-          NR==FNR {
-            if ($1 == doc) { n++; num[n]=$2; title[n]=$4; st[n]=$6; en[n]=$7 }
-            next
+  local query="$1"
+  { cd "$ROOT" && grep -rnFi --include='*.md' -- "$query" docs || true; } \
+    | cut -d: -f1,2 \
+    | awk -F'\t' '
+        NR==FNR {
+          if (FNR > 1) {
+            n++; doc[n]=$1; num[n]=$2; title[n]=$4
+            file[n]=$5; st[n]=$6; en[n]=$7
           }
-          {
-            for (i = 1; i <= n; i++)
-              if ($1 >= st[i] && $1 <= en[i]) { hits[i]++; break }
-          }
-          END {
-            for (i in hits)
-              print doc"\t"num[i]"\t"title[i]" ("hits[i]" marta)"
-          }
-        ' "$SECTIONS" -
-  done < <(tail -n +2 "$DOCS")
+          next
+        }
+        {
+          p = index($0, ":")
+          f = substr($0, 1, p - 1)
+          l = substr($0, p + 1) + 0
+          for (i = 1; i <= n; i++)
+            if (file[i] == f && l >= st[i] && l <= en[i]) { hits[i]++; break }
+        }
+        END {
+          for (i in hits)
+            print doc[i]"\t"num[i]"\t"title[i]" ("hits[i]" marta)"
+        }
+      ' "$SECTIONS" -
 }
 
 # ---------------------------------------------------------------- show
@@ -154,17 +151,17 @@ cmd_show() {
     printf '%d satr (chegara %d). Ichidagi bo%slimlar:\n\n' \
       "$span" "$MAX_LINES" "'" >&2
     cmd_outline "$doc" "$ref"
-    printf '\nto%sliq chiqarish: doc.sh show --force %s %s\n' "'" "$doc" "$ref" >&2
+    printf "\nto'liq chiqarish: doc.sh show --force %s %s\n" "$doc" "$ref" >&2
     return 1
   fi
   sed -n "${start},${end}p" "$ROOT/$file"
 }
 
-# ---------------------------------------------------------------- toc / outline
+# ---------------------------------------------------------------- toc / outline / path
 
 cmd_toc() {
   if [ $# -eq 0 ]; then
-    awk -F'\t' 'NR>1 { printf "%-9s %-6s bob  %5s bo%slim  %s\n", $1, $5, $6, "'"'"'", $2 }' "$DOCS"
+    awk -F'\t' 'NR>1 { printf "%-11s %3s bob %5s bo%slim  %s\n", $1, $5, $6, "'"'"'", $2 }' "$DOCS"
     return
   fi
   awk -F'\t' -v d="$1" 'NR>1 && $1==d { printf "%-7s %s\n", $2, $3 }' "$CHAPTERS" \
@@ -175,21 +172,32 @@ cmd_outline() {
   [ $# -ge 1 ] || die "foydalanish: doc.sh outline <hujjat> [bob]"
   local doc="$1" chapter="${2:-}"
   awk -F'\t' -v d="$doc" -v c="$chapter" \
-    'NR>1 && $1==d && (c=="" || $3==c) { printf "%-9s %-7s %s\n", $1, $2, $4 }' \
+    'NR>1 && $1==d && (c=="" || $3==c) { printf "%-11s %-7s %s\n", $1, $2, $4 }' \
     "$SECTIONS" | grep . || die "topilmadi: $doc ${chapter:-}"
+}
+
+# Bo'limning fayli, satr oralig'i va markdown havolasi: skill yoki hujjat
+# yozayotganda havolani qo'lda hisoblamaslik uchun.
+cmd_path() {
+  [ $# -eq 2 ] || die "foydalanish: doc.sh path <hujjat> <raqam>"
+  awk -F'\t' -v d="$1" -v r="$2" 'NR>1 && $1==d && $2==r {
+    printf "%s:%s-%s\n%s#%s\n", $5, $6, $7, $5, $8; found=1; exit
+  } END { exit !found }' "$SECTIONS" \
+    || die "topilmadi: $1 $2"
 }
 
 # ---------------------------------------------------------------- main
 
-[ $# -gt 0 ] || { sed -n '2,3p' "${BASH_SOURCE[0]}"; printf '
-  doc.sh find [-f] [-n N] <so%srov>   bo%slim qidirish (-f: matn ichidan ham)
-  doc.sh show [--force] <hujjat> <raqam>  bo%slim yoki bobni chiqarish
-  doc.sh toc [hujjat]                 hujjatlar yoki boblar ro%syxati
-  doc.sh outline <hujjat> [bob]       bo%slimlar ro%syxati
-  doc.sh rebuild                      indeksni qayta yasash
+[ $# -gt 0 ] || { sed -n '2,4p' "${BASH_SOURCE[0]}"; printf "
+  doc.sh find [-f] [-n N] <so'rov>        bo'lim qidirish (-f: matn ichidan ham)
+  doc.sh show [--force] <hujjat> <raqam>  bo'lim yoki bobni chiqarish
+  doc.sh toc [hujjat]                     hujjatlar yoki boblar ro'yxati
+  doc.sh outline <hujjat> [bob]           bo'limlar ro'yxati
+  doc.sh path <hujjat> <raqam>            fayl, satr oralig'i va havola
+  doc.sh rebuild                          indeksni qayta yasash
 
-hujjatlar: patterns  mindset  sonar  testing
-' "'" "'" "'" "'" "'" "'"; exit 0; }
+hujjatlar: patterns  testing  architect  sonarqube  clean-code  code-review
+"; exit 0; }
 
 cmd="$1"; shift
 case "$cmd" in
@@ -197,6 +205,7 @@ case "$cmd" in
   show)    ensure_index; cmd_show "$@" ;;
   toc)     ensure_index; cmd_toc "$@" ;;
   outline) ensure_index; cmd_outline "$@" ;;
+  path)    ensure_index; cmd_path "$@" ;;
   rebuild) rebuild ;;
   *)       die "noma'lum buyruq: $cmd  (doc.sh yordam uchun argumentsiz)" ;;
 esac

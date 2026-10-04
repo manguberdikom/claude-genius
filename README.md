@@ -1,42 +1,102 @@
-# Java, Spring va PostgreSQL bo'yicha to'rtta qo'llanma
+# Java, Spring va PostgreSQL bo'yicha oltita qo'llanma
 
-O'zbek tilidagi to'rtta bir-birini to'ldiruvchi hujjat. Har biri alohida sohani
-qamraydi va mavzular takrorlanmaydi: pattern katalogi patternlar hujjatida,
-testlash texnikasi testlash qo'llanmasida, ichki mexanika arxitektor hujjatida,
-statik tahlil esa SonarQube hujjatida turadi.
+O'zbek tilidagi oltita bir-birini to'ldiruvchi hujjat: 223 bob, 3270 bo'lim,
+1955 kod misoli. Mavzular takrorlanmaydi. Har bir hujjat bir savolga javob
+beradi, qolganlariga mavzu nomi bilan havola qiladi.
 
-| Hujjat | Hajm | Mazmun |
+| Hujjat | Hajm | Qanday savolga javob beradi |
 |---|---|---|
-| [java-spring-design-patterns.md](java-spring-design-patterns.md) | 30 bo'lim, 1007 pattern | GoF, Spring, DDD, microservices, EIP, resilience, cloud-native va boshqa pattern kataloglari |
-| [java-spring-testing-handbook.md](java-spring-testing-handbook.md) | 18 bob | Test piramidasi, unit va integratsion test, Testcontainers, contract testing, E2E, CI/CD test pipeline |
-| [java-spring-architect-mindset.md](java-spring-architect-mindset.md) | 39 bob, 482 bo'lim | Fikrlash va qaror, JVM ichki tuzilishi, Spring mexanikasi, PostgreSQL chuqur bilim, operatsion haqiqat |
-| [java-spring-sonarqube.md](java-spring-sonarqube.md) | 43 bob, 557 bo'lim | SonarQube mexanikasi, quality gate, coverage, xato katalogi, server va tashkilot, ma'lumotnoma |
+| [Dizayn patternlar](docs/patterns/README.md) | 30 bo'lim, 1007 pattern | Bu muammoga qaysi pattern to'g'ri keladi |
+| [Testlash qo'llanmasi](docs/testing/README.md) | 18 bob, 239 bo'lim | Buni qanday test qilaman |
+| [Arxitektor miyyasi](docs/architect/README.md) | 39 bob, 482 bo'lim | Ichkarida nima sodir bo'ladi va qanday qaror chiqaraman |
+| [SonarQube](docs/sonarqube/README.md) | 43 bob, 557 bo'lim | Statik tahlil nimadan shikoyat qilyapti va qanday tuzataman |
+| [Toza kod qoidalari](docs/clean-code/README.md) | 49 bob, 533 bo'lim | Klaviatura ostidagi shu qator toza yoki yo'q |
+| [Kod review](docs/code-review/README.md) | 44 bob, 452 bo'lim | Diffda nimani ko'raman, nimani so'rayman, nimani to'xtataman |
+
+Har bob alohida faylda. Bu ataylab: GitHub 1 MB dan katta markdown faylni
+render qilmaydi, monolit variant brauzerda ochilmaydi.
 
 ## Qayerdan boshlash
 
-- **Kod yozyapsiz va Sonar shikoyat qilyapti** - SonarQube hujjatidagi xato katalogi
-- **Dizayn qaroriga pattern tanlayapsiz** - patternlar hujjatidagi mavzuga mos bo'lim
-- **Test strategiyasi tuzyapsiz** - testlash qo'llanmasining birinchi boblari
-- **Ichkarida nima sodir bo'layotganini bilmoqchisiz** - arxitektor hujjatidagi tegishli qism
-- **O'zingizni baholamoqchisiz** - arxitektor hujjatining oxirgi bobi
+- **Kod yozyapsiz va Sonar shikoyat qilyapti** - [xato katalogi](docs/sonarqube/README.md#vii-xato-katalogi-qanday-kod-qanday-xato-hisoblanadi)
+- **Dizayn qaroriga pattern tanlayapsiz** - [patternlar mundarijasi](docs/patterns/README.md) yoki [alifbo indeksi](docs/patterns/99-alifbo-boyicha-indeks.md)
+- **Test strategiyasi tuzyapsiz** - [testlash qo'llanmasining birinchi boblari](docs/testing/README.md)
+- **PR ni review qilyapsiz** - [kod review hujjati](docs/code-review/README.md)
+- **Shu qatorni qanday yozish kerakligini bilmoqchisiz** - [toza kod qoidalari](docs/clean-code/README.md)
+- **Ichkarida nima sodir bo'layotganini bilmoqchisiz** - [arxitektor hujjati](docs/architect/README.md)
+- **O'zingizni baholamoqchisiz** - [Birinchi 90 kun va o'z-o'zini baholash](docs/architect/39-birinchi-90-kun-va-oz-ozini-baholash.md)
+- **Atama tushunarsiz** - [GLOSSARY.md](GLOSSARY.md)
 
-Har bir hujjat mundarija bilan boshlanadi va har bob `Amalda qo'llash` ro'yxati
-bilan tugaydi.
+## Claude Code bilan ishlatish
+
+`.claude/skills/` ichida sakkizta skill bor. Repoda Claude Code ishga tushsa,
+ular avtomatik ko'rinadi va kerakli bobni o'zi topib o'qiydi.
+
+| Skill | Qachon ishga tushadi |
+|---|---|
+| `reja` | murakkab vazifa uchun bosqichli reja tuzish |
+| `design-patterns` | pattern tanlash, refaktoring, "bu yerga qaysi pattern to'g'ri keladi" |
+| `spring-testing` | test yozish, Testcontainers, flaky test, test strategiyasi |
+| `sonarqube-fix` | Sonar issue tuzatish, quality gate, coverage, exclusion |
+| `architect-review` | dizayn ko'rigi, chegaralar, ADR, nosozlik tahlili |
+| `postgres-tuning` | sekin so'rov, indeks, EXPLAIN, vacuum, connection pool |
+| `clean-code` | nomlash, funksiya uzunligi, izoh, kod hidi, refaktoring |
+| `code-review` | diffni o'qish, review izohi yozish, nimani to'xtatish |
+
+Boshqa loyihada ishlatish uchun shu repo'ni klon qilib,
+`.claude/skills/*` ni o'z loyihangizning `.claude/skills/` ichiga
+ko'chiring yoki `~/.claude/skills/` ga qo'ying. Skilllar `docs/` ga
+havola qiladi, shuning uchun repo'ning o'zi ham qo'lda bo'lishi kerak.
+
+## Memory
+
+`memory/` papkasida git ichida saqlanadigan memory ombori. Proyekt memoryasi
+`memory/claude-genius/`, barcha proyektlarga tegishli bilim `memory/umumiy/`
+da. Qoidalar: [memory-protocol.md](memory-protocol.md) va
+[memory/README.md](memory/README.md).
 
 ## Tez qidirish
 
-Hujjatlar katta (jami ~1.67M token), shuning uchun ular indeks orqali o'qiladi:
+Korpus katta (~2.1M token), shuning uchun bob fayli butunligicha emas,
+bo'lim darajasida o'qiladi:
 
-```sh
+```bash
 tools/doc.sh find "circuit breaker"   # bo'limni topish
 tools/doc.sh show patterns 17.2       # faqat o'sha bo'limni chiqarish
 tools/doc.sh toc                      # hujjatlar va boblar
 ```
 
-Indeks `index/` da turadi va manba o'zgarganda o'zini yangilaydi.
-Batafsil qoida: [CLAUDE.md](CLAUDE.md).
+Qidiruv inglizcha atama bo'yicha ham ishlaydi: 1380 ta inglizcha nom bo'lim
+raqamiga bog'langan. Indeks `index/` da turadi va bob o'zgarganda o'zini
+yangilaydi. Qoidalar: [CLAUDE.md](CLAUDE.md).
+
+## Bitta fayllik variant
+
+Offline o'qish, PDF yoki LLM kontekstiga uzatish uchun:
+
+```bash
+python3 tools/build_single.py              # oltitasi ham -> dist/
+python3 tools/build_single.py patterns     # faqat bittasi
+```
+
+`dist/` git ga kirmaydi, u har safar `docs/` dan qayta yig'iladi.
+
+## Tekshirish
+
+```bash
+python3 tools/check_docs.py
+```
+
+Fayl hajmi, har bir havola va anchor, kirill harflar, em-dash, manifest
+mosligi, bob strukturasi va skilllardagi havolalar tekshiriladi. CI da har
+push va PR da ishlaydi.
 
 ## Til va uslub
 
-O'zbek lotin yozuvi. Texnik atamalar inglizcha qoldirilgan: bean, proxy, thread,
-cache, latency, quality gate, coverage.
+O'zbek lotin yozuvi. Texnik atamalar inglizcha qoldirilgan: bean, proxy,
+thread, cache, latency, quality gate, coverage. Em-dash ishlatilmaydi.
+To'liq qoidalar: [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Litsenziya
+
+Matn: [CC BY 4.0](LICENSE). Kod misollari va `tools/`: [MIT](LICENSE-CODE).
