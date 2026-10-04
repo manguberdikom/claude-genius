@@ -78,6 +78,26 @@ public final class AppClock {
 
 **Ehtiyot bo'ling:** Kalitlar to'plami cheklanmagan bo'lsa (masalan, foydalanuvchi ID), xarita cheksiz o'sadi - bu memory leak; bu holda eviction (Caffeine) yoki qat'iy TTL kerak. Nusxalar hech qachon yopilmasa, resurs (ulanish, thread) oqishi yuz beradi - yopish (close) siyosatini aniq belgilang. Spring'da buni static xarita o'rniga `@Bean` + `Map` yoki `ObjectProvider` bilan konteyner nazoratida qilish afzal.
 
+```java
+// Multiton: kalit bo'yicha bitta nusxa, konteyner nazoratida
+@Component
+public class TenantDataSources {
+    private final Map<TenantId, DataSource> byTenant = new ConcurrentHashMap<>();
+    private final DataSourceFactory factory;
+
+    public TenantDataSources(DataSourceFactory factory) { this.factory = factory; }
+
+    public DataSource forTenant(TenantId id) {
+        // computeIfAbsent: bir xil kalit uchun bir xil nusxa, thread-safe
+        return byTenant.computeIfAbsent(id, factory::create);
+    }
+}
+
+// JDK darajasidagi multiton'lar: kalit -> yagona nusxa
+Logger log = LoggerFactory.getLogger("audit");   // nom bo'yicha bitta Logger
+ZoneId zone = ZoneId.of("Asia/Tashkent");        // ID bo'yicha bitta ZoneId
+```
+
 ## 1.3 Yagona holat (Monostate)
 
 **Tavsif:** Monostate (Borg) - Singleton'ning "teskari" varianti: sinfdan istalgancha nusxa yaratish mumkin, lekin barcha maydonlar `static`, shuning uchun hamma nusxalar bir xil holatni bo'lishadi. Chaqiruvchi kod `new` bilan odatdagidek ishlaydi, polimorfizm va meros saqlanadi, lekin semantik jihatdan tizimda "bitta holat" mavjud bo'ladi. U yagona nusxa kafolati o'rniga yagona holat kafolatini beradi va shu bilan chaqiruvchi kodni Singleton API'siga bog'lamaydi.
@@ -91,6 +111,22 @@ public final class AppClock {
 - Test fixture'larida ilova bo'ylab umumiy "soat" yoki feature-flag holati (yaxshiroq alternativ: `Clock` bean, qarang: [23-bo'lim](23-testing-patternlari.md), Clock injection).
 
 **Ehtiyot bo'ling:** Static holat - Spring test context caching bilan birga flaky testlarning klassik manbai: bir test ikkinchisining holatini ko'radi. Monostate meros bilan ishlatilsa, subclass'lar ham static holatni bo'lishadi va bu kutilmagan bog'liqlik yaratadi. Spring ilovasida asosli sabab bo'lmasa, singleton bean + DI ishlating.
+
+```java
+// Monostate: nusxa ko'p, holat bitta (static). Legacy kodda uchraydi.
+public class FeatureFlags {
+    private static final Map<String, Boolean> FLAGS = new ConcurrentHashMap<>();
+    public boolean isOn(String key) { return FLAGS.getOrDefault(key, false); }
+    public void set(String key, boolean on) { FLAGS.put(key, on); }
+}
+
+// Spring'da afzal variant: static holat yo'q, konteyner nusxa sonini boshqaradi
+@Service
+public class FeatureFlagService {
+    private final Map<String, Boolean> flags = new ConcurrentHashMap<>();
+    public boolean isOn(String key) { return flags.getOrDefault(key, false); }
+}
+```
 
 ## 1.4 Kechiktirilgan initsializatsiya (Lazy Initialization)
 
@@ -106,6 +142,26 @@ public final class AppClock {
 - Circular bog'liqlikni vaqtincha uzish - `@Lazy` konstruktor parametrida (lekin bu dizayn muammosini yashiradi).
 
 **Ehtiyot bo'ling:** Lazy rejim konfiguratsiya xatolarini startup'dan birinchi so'rov vaqtiga ko'chiradi - production'da "fail fast" prinsipiga zid va readiness probe'ni aldab qo'yishi mumkin. Birinchi so'rov latency'si oshadi (p99 ga ta'sir). `@Lazy` proxy faqat interfeys yoki CGLIB bilan proxy qilinadigan tiplar uchun ishlaydi; `final` sinflar va primitivlar uchun ishlamaydi.
+
+```java
+// Bean darajasida: yaratilish birinchi murojaatgacha kechiktiriladi
+@Bean
+@Lazy
+PdfRenderer pdfRenderer() {           // og'ir obyekt, kamdan-kam kerak
+    return new PdfRenderer(fontCache());
+}
+
+// Qiymat darajasida: bir marta hisoblanadi va keshlanadi
+@Service
+public class TaxTableService {
+    private final Supplier<TaxTable> table =
+            SingletonSupplier.of(this::loadFromDb);   // Spring'ning memoizatsiyasi
+
+    public TaxTable table() { return table.get(); }
+
+    private TaxTable loadFromDb() { /* qimmat yuklash */ return new TaxTable(); }
+}
+```
 
 ## 1.5 Talab bo'yicha initsializatsiya holder idiomasi (Initialization-on-Demand Holder Idiom)
 
@@ -149,6 +205,23 @@ public final class SchemaValidator {
 - Tashqi event turiga (`enum EventType`) qarab tegishli `Handler` yaratish - kichik tizimlarda `switch` bilan.
 
 **Ehtiyot bo'ling:** Static metodlar polimorfik emas - ularni mock qilish va subclass'da o'zgartirish qiyin, shuning uchun Spring bean'lari orasidagi bog'liqlik uchun DI afzal. Simple Factory'dagi `switch` har yangi tur qo'shilganda o'zgaradi (Open/Closed buziladi) - turlar ko'paysa `Map<Key, Supplier>` (1.9) yoki Factory Method / Strategy registry'ga o'ting. `public` konstruktorsiz sinflar JPA/Jackson kabi reflection asosidagi kutubxonalar bilan muammo tug'dirishi mumkin (`@JsonCreator` kerak).
+
+```java
+// Statik fabrika: konstruktorga nisbatan nomi bor, keshlashi va tur tanlashi mumkin
+public record Money(BigDecimal amount, Currency currency) {
+    public static Money of(String amount, String code) {
+        return new Money(new BigDecimal(amount), Currency.getInstance(code));
+    }
+    public static Money zero(String code) {        // nom maqsadni ochib beradi
+        return new Money(BigDecimal.ZERO, Currency.getInstance(code));
+    }
+}
+
+// Spring va JDK dagi tanish misollar
+ResponseEntity<Order> ok = ResponseEntity.ok(order);
+Pageable page = PageRequest.of(0, 20, Sort.by("createdAt").descending());
+Duration timeout = Duration.ofSeconds(3);
+```
 
 ## 1.7 Fabrika metodi (Factory Method)
 
@@ -225,6 +298,26 @@ class AwsCloudConfig {
 
 **Ehtiyot bo'ling:** Kalit sifatida satr ishlatish "stringly typed" xatolarga olib keladi - `enum` yoki sealed tip afzal (qarang: [25-bo'lim](25-anti-patternlar.md), Stringly Typed). Noma'lum kalit uchun aniq siyosat (exception yoki default) belgilang. Ro'yxat runtime'da o'zgaruvchan bo'lsa, thread-safety haqida o'ylang (`ConcurrentHashMap`, yoki startup'dan keyin immutable).
 
+```java
+// Factory Kit: yaratish retseptlari bitta joyda ro'yxatga olinadi
+public interface NotifierKit {
+    Notifier create(Channel channel);
+
+    static NotifierKit of(Consumer<Map<Channel, Supplier<Notifier>>> recipes) {
+        Map<Channel, Supplier<Notifier>> map = new EnumMap<>(Channel.class);
+        recipes.accept(map);
+        return channel -> Optional.ofNullable(map.get(channel))
+                .orElseThrow(() -> new IllegalArgumentException("kanal yo'q: " + channel))
+                .get();
+    }
+}
+
+NotifierKit kit = NotifierKit.of(r -> {
+    r.put(Channel.SMS, () -> new SmsNotifier(smsClient));
+    r.put(Channel.EMAIL, () -> new EmailNotifier(mailSender));
+});
+```
+
 ## 1.10 Quruvchi (Builder, Step Builder, Lombok @Builder)
 
 **Tavsif:** Ko'p parametrli (ayniqsa ixtiyoriy parametrli) yoki bosqichma-bosqich quriladigan murakkab obyektni yaratish jarayonini uning ko'rinishidan ajratadi: klient fluent metodlar bilan qismlarni belgilaydi, `build()` validatsiya qilib, immutable obyekt qaytaradi; "telescoping constructor" muammosini hal qiladi. **Step Builder (Staged Builder)** - har bosqich alohida interfeys qaytaradigan variant: majburiy parametrlar tartibini kompilyator kafolatlaydi, `build()` faqat oxirgi bosqichda mavjud. **Lombok `@Builder`** - builder sinfini kompilyatsiya vaqtida generatsiya qiladi; `@Builder.Default` (default qiymat), `@Singular` (kolleksiya uchun `add` metodlari), `toBuilder = true` (mavjud obyektdan nusxa builder), `@SuperBuilder` (meros ierarxiyasi), `@Jacksonized` (Jackson deserializatsiya bilan integratsiya); record'lar ustida ham ishlaydi.
@@ -299,6 +392,17 @@ class ReportService {
 
 **Ehtiyot bo'ling:** Qaytarilmagan obyekt - leak (HikariCP `leakDetectionThreshold` bilan aniqlang); hovuzga qaytarilayotgan obyekt holatini tozalash (reset) shart, aks holda bir klient holati boshqasiga "oqadi". Hovuz o'lchami noto'g'ri bo'lsa, u o'zi bottleneck bo'ladi (qarang: [25-bo'lim](25-anti-patternlar.md), Unbounded connection pool / wrong pool size). Virtual thread'lar (Java 21+) thread pool'ga ehtiyojni kamaytiradi, lekin ulanish hovuzlariga emas - DB ulanishlari hali ham cheklangan resurs.
 
+```yaml
+# Hovuz deyarli hech qachon qo'lda yozilmaydi - tayyorini sozlang
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 20        # Little qonuni bilan hisoblangan qiymat
+      minimum-idle: 20             # bir xil: pool "pulsatsiya" qilmaydi
+      connection-timeout: 2000     # bo'sh ulanish yo'q bo'lsa tez xato
+      max-lifetime: 1200000        # 20 daqiqa: DNS va failover uchun
+```
+
 ## 1.13 Bog'liqliklarni kiritish (Dependency Injection)
 
 **Tavsif:** Obyekt o'z bog'liqliklarini o'zi yaratmaydi yoki qidirmaydi - ular tashqaridan (konteyner yoki composition root tomonidan) beriladi. Bu Inversion of Control prinsipining obyekt yaratishga tatbiqi: sinf faqat "nimaga muhtoj"ligini e'lon qiladi, "qayerdan olish"ni bilmaydi. Turlari: **konstruktor orqali** (majburiy, immutable, test uchun eng qulay - tavsiya etiladi), **setter orqali** (ixtiyoriy yoki qayta sozlanadigan bog'liqliklar), **maydon (field) orqali** (`@Autowired` maydonga - qisqa, lekin yashirin va test uchun yomon), **metod orqali** (`@Autowired` ixtiyoriy nomli metodga yoki `@Lookup`) va Fowler bo'yicha **interfeys orqali** (Spring'dagi `*Aware` interfeyslari bunga yaqin).
@@ -345,6 +449,25 @@ public class OrderService {
 - Spring'siz kutubxonalarda `main` metodida qo'lda "Pure DI" wiring.
 
 **Ehtiyot bo'ling:** Component scanning + hamma joyda `@Service` - qulay, lekin composition root yo'qoladi va "nima nimaga bog'langan"ini topish qiyinlashadi; kamida infratuzilma bog'liqliklarini aniq konfiguratsiyaga chiqaring. Bitta gigant `AppConfig` sinfi ham yomon - mavzu bo'yicha bo'ling. Over-broad component scanning (qarang: [25-bo'lim](25-anti-patternlar.md)) testlarni sekinlashtiradi va keraksiz bean'larni yuklaydi.
+
+```java
+// Composition Root: barcha wiring bitta joyda, biznes kodda `new` yo'q
+@SpringBootApplication
+public class PaymentsApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(PaymentsApplication.class, args);
+    }
+}
+
+// Infratuzilma wiring'ini aniq konfiguratsiyada ushlab turish, scanning'ga tashlamaslik
+@Configuration(proxyBeanMethods = false)
+class PaymentsInfrastructureConfig {
+    @Bean
+    PspClient pspClient(RestClient.Builder builder, PspProperties props) {
+        return new PspClient(builder.baseUrl(props.url()).build(), props.timeout());
+    }
+}
+```
 
 ## 1.15 Provider / Supplier orqali kiritish (Provider / Supplier Injection)
 
@@ -394,6 +517,25 @@ public class NotificationService {
 
 **Ehtiyot bo'ling:** Locator bog'liqliklarni imzodan yashiradi: sinfni o'qib nimaga muhtojligini bilib bo'lmaydi, unit test uchun butun konteyner yoki static mock kerak. Bean nomiga satr orqali bog'lanish refaktoringni buzadi. Agar `getBean()` biznes kodda uchrayotgan bo'lsa, odatda `ObjectProvider` (1.15), `Map<String, T>` injection yoki `@Lookup` to'g'riroq yechim bo'ladi.
 
+```java
+// Anti-pattern: bog'liqlik yashiringan, test uchun mock qilish qiyin
+@Service
+public class BadOrderService {
+    private final ApplicationContext ctx;
+    public void place(Order o) {
+        ctx.getBean(PricingService.class).price(o);   // locator: yashirin bog'liqlik
+    }
+}
+
+// To'g'ri: bog'liqlik konstruktorda ko'rinadi
+@Service
+public class OrderService {
+    private final PricingService pricing;
+    public OrderService(PricingService pricing) { this.pricing = pricing; }
+    public void place(Order o) { pricing.price(o); }
+}
+```
+
 ## 1.17 Reyestr (Registry)
 
 **Tavsif:** Kalit bo'yicha obyektlarni (implementatsiya, konfiguratsiya, metadata) ro'yxatdan o'tkazish va topish uchun yaxshi ma'lum bo'lgan markaziy obyekt (Fowler, PoEAA). Reyestr yaratishni emas, "qayerda topish"ni hal qiladi, lekin ko'pincha fabrika bilan birga ishlaydi: fabrika yaratadi, reyestr saqlaydi va qaytaradi. Statik (global) yoki instance (konteyner nazoratida) bo'lishi mumkin; zamonaviy amaliyotda instance variant + DI afzal.
@@ -408,6 +550,31 @@ public class NotificationService {
 - Health, metrika, circuit-breaker kabi nomlangan infratuzilma obyektlarini markazlashtirish.
 
 **Ehtiyot bo'ling:** Statik reyestr - global mutable holat, testlar orasida "oqadi" va parallel testlarni buzadi; konteyner nazoratidagi bean reyestri afzal. Satr kalitlar yozuv xatolariga olib keladi - `enum` yoki tip-xavfsiz kalit ishlating. Reyestrga ro'yxatdan o'tkazish tartibi va thread-safety (runtime'da o'zgarsa) haqida aniq qaror qabul qiling; startup'dan keyin immutable qilish eng xavfsiz.
+
+```java
+// Reyestr: nomlangan implementatsiyalar konteyner tomonidan yig'iladi
+public interface PaymentHandler {
+    PaymentMethod method();
+    Receipt pay(Payment payment);
+}
+
+@Service
+public class PaymentHandlerRegistry {
+    private final Map<PaymentMethod, PaymentHandler> handlers;
+
+    // Spring barcha PaymentHandler bean'larini ro'yxatga oladi
+    public PaymentHandlerRegistry(List<PaymentHandler> all) {
+        this.handlers = all.stream()
+                .collect(Collectors.toUnmodifiableMap(PaymentHandler::method, h -> h));
+    }
+
+    public PaymentHandler forMethod(PaymentMethod m) {
+        PaymentHandler h = handlers.get(m);
+        if (h == null) throw new UnsupportedPaymentMethodException(m);
+        return h;
+    }
+}
+```
 
 ## 1.18 Amalda qo'llash
 

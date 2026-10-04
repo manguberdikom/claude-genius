@@ -53,6 +53,27 @@ Xulq-atvor patternlari obyektlar orasidagi mas'uliyat taqsimoti va o'zaro muloqo
 
 **Ehtiyot bo'ling:** Zanjir uzun bo'lsa, debug qilish og'irlashadi va handler'lar tartibiga yashirin bog'liqlik paydo bo'ladi - shuning uchun `@Order`/`OrderComparator` bilan tartibni oshkora belgilang va zanjirni Actuator yoki log orqali ko'rinadigan qiling. Agar so'rovni albatta kimdir qayta ishlashi shart bo'lsa, zanjir oxirida default handler qo'ying; aks holda "jim yo'qolgan" so'rovlar paydo bo'ladi.
 
+```java
+// Chain of Responsibility: har bo'g'in o'ziga tegishlisini hal qiladi yoki uzatadi
+public interface DiscountRule {
+    Optional<Discount> apply(Cart cart);        // bo'sh = men emas, keyingisi
+}
+
+@Service
+public class DiscountChain {
+    private final List<DiscountRule> rules;     // tartib @Order bilan belgilanadi
+
+    public DiscountChain(List<DiscountRule> rules) { this.rules = rules; }
+
+    public Discount resolve(Cart cart) {
+        return rules.stream()
+                .flatMap(r -> r.apply(cart).stream())
+                .findFirst()
+                .orElse(Discount.none());
+    }
+}
+```
+
 ## 3.2 Buyruq (Command)
 
 **Tavsif:** Amalni obyekt sifatida inkapsulyatsiya qiladi: bajariladigan ish, uning parametrlari va receiver bitta sinfga joylanadi. Shu sababli amalni navbatga qo'yish, kechiktirish, qayta urinish, jurnalga yozish yoki bekor qilish (undo) mumkin bo'ladi. Chaqiruvchi (invoker) amal nima qilishini bilmaydi - faqat `execute()` ni biladi, bu esa chaqiruvchini mantiqdan to'liq ajratadi.
@@ -67,6 +88,28 @@ Xulq-atvor patternlari obyektlar orasidagi mas'uliyat taqsimoti va o'zaro muloqo
 - Outbox pattern bilan tranzaksiya oxirida bajarilishi kerak bo'lgan tashqi chaqiruvlarni buyruq sifatida saqlash.
 
 **Ehtiyot bo'ling:** Har bir kichik amal uchun alohida command sinfi yozish kodni portlatib yuboradi - buni faqat navbat, retry, audit yoki undo kerak bo'lganda qo'llang. Seriyalanadigan buyruqlar API shartnomasiga aylanadi: maydon qo'shish/olib tashlashda versiyalashni oldindan o'ylamasa, navbatda yotgan eski buyruqlar deserializatsiyada sinadi.
+
+```java
+// Command: harakat obyekt sifatida - navbatga qo'yish, log, qayta bajarish mumkin
+public sealed interface AccountCommand permits Freeze, Close {
+    long accountId();
+}
+public record Freeze(long accountId, String reason) implements AccountCommand {}
+public record Close(long accountId) implements AccountCommand {}
+
+@Service
+public class AccountCommandHandler {
+    private final Map<Class<?>, Consumer<AccountCommand>> handlers = Map.of(
+            Freeze.class, c -> freeze((Freeze) c),
+            Close.class,  c -> close((Close) c));
+
+    public void handle(AccountCommand cmd) {
+        handlers.get(cmd.getClass()).accept(cmd);
+    }
+    private void freeze(Freeze c) { /* ... */ }
+    private void close(Close c) { /* ... */ }
+}
+```
 
 ## 3.3 Interpretator (Interpreter)
 
@@ -83,6 +126,22 @@ Xulq-atvor patternlari obyektlar orasidagi mas'uliyat taqsimoti va o'zaro muloqo
 
 **Ehtiyot bo'ling:** Tashqi foydalanuvchi kiritgan SpEL'ni to'g'ridan-to'g'ri hisoblash jiddiy RCE xavfi - `SimpleEvaluationContext` yoki o'zingiz yozgan cheklangan grammatikadan foydalaning, `StandardEvaluationContext` ni ishonchsiz matn bilan ishlatmang. To'laqonli til yozishga kirishishdan oldin o'ylab ko'ring: ko'p holatda Strategy yoki tayyor rule engine (Drools, OpenPolicyAgent) arzonga tushadi.
 
+```java
+// Interpreter: qoida matn sifatida saqlanadi va bajarilyapti
+@Service
+public class SpelRuleEngine {
+    private final SpelExpressionParser parser = new SpelExpressionParser();
+    private final Map<String, Expression> cache = new ConcurrentHashMap<>();
+
+    public boolean matches(String rule, Order order) {
+        Expression e = cache.computeIfAbsent(rule, parser::parseExpression);
+        // Ishonchsiz manbadan kelgan ifodani bajarmang: SpEL to'liq Java chaqiradi
+        return Boolean.TRUE.equals(e.getValue(new StandardEvaluationContext(order), Boolean.class));
+    }
+}
+// matches("total > 1000000 and customer.vip", order)
+```
+
 ## 3.4 Iterator (Iterator)
 
 **Tavsif:** To'plam elementlarini uning ichki tuzilishini oshkor qilmasdan ketma-ket aylanib chiqish usulini beradi. Aylanish holati (kursor) alohida obyektda saqlanadi, shuning uchun bir to'plam ustida bir nechta mustaqil obxod bo'lishi mumkin. Katta ma'lumotlar bilan ishlaganda esa butun to'plamni xotiraga olmasdan, bo'lak-bo'lak o'qishga yo'l ochadi.
@@ -97,6 +156,24 @@ Xulq-atvor patternlari obyektlar orasidagi mas'uliyat taqsimoti va o'zaro muloqo
 - Domen agregatida ichki kolleksiyani faqat o'qish uchun ochib berish (incapsulyatsiyani buzmasdan).
 
 **Ehtiyot bo'ling:** Repository'dan qaytgan `Stream` yoki `CloseableIterator` ochiq DB kursorini ushlab turadi - uni `try-with-resources` ichida yoping va tranzaksiya doirasida ishlating, aks holda connection pool tez tugaydi. `Iterator` bilan aylanib turib to'plamni o'zgartirish `ConcurrentModificationException` beradi; offset-asosidagi pagination esa chuqur sahifalarda sekinlashadi va yozuvlar siljishi sababli element tashlab ketadi.
+
+```java
+// Iterator: katta natijani xotiraga yig'masdan aylanib chiqish
+public interface OrderRepository extends JpaRepository<Order, Long> {
+    @QueryHints(@QueryHint(name = HINT_FETCH_SIZE, value = "500"))
+    Stream<Order> findByStatus(OrderStatus status);     // kursor asosida
+}
+
+@Service
+public class OrderExport {
+    @Transactional(readOnly = true)                     // stream uchun shart
+    public void exportPending(Writer out) {
+        try (Stream<Order> orders = repo.findByStatus(PENDING)) {
+            orders.forEach(o -> write(out, o));         // bir vaqtda bitta qator
+        }
+    }
+}
+```
 
 ## 3.5 Vositachi (Mediator)
 
@@ -113,6 +190,28 @@ Xulq-atvor patternlari obyektlar orasidagi mas'uliyat taqsimoti va o'zaro muloqo
 
 **Ehtiyot bo'ling:** Vositachi o'sib ketsa, u "god object" ga aylanadi - barcha biznes qoidalari bitta sinfga yig'ilib, uni o'zgartirish xavfli bo'ladi; mantiqni domen servislariga qaytarib, vositachida faqat yo'naltirishni qoldiring. Event'lar orqali qurilgan vositachilik oqimni ko'rinmas qiladi: tracing (Micrometer Tracing) va oshkora event katalogi bo'lmasa, nosozlikni topish qiyinlashadi.
 
+```java
+// Mediator: modullar bir-birini bilmaydi, vositachi orqali gaplashadi
+@Service
+public class OrderService {
+    private final ApplicationEventPublisher events;     // vositachi
+
+    public OrderService(ApplicationEventPublisher events) { this.events = events; }
+
+    @Transactional
+    public void place(Order order) {
+        repo.save(order);
+        events.publishEvent(new OrderPlaced(order.id()));   // kim tinglaydi - bilmaymiz
+    }
+}
+
+@Component
+class StockReservation {
+    @TransactionalEventListener            // commit'dan keyin ishlaydi
+    void on(OrderPlaced e) { /* zaxirani band qilish */ }
+}
+```
+
 ## 3.6 Memento (Memento)
 
 **Tavsif:** Obyektning ichki holatini inkapsulyatsiyani buzmasdan tashqi "snapshot" sifatida saqlaydi va keyin shu holatga qaytarish imkonini beradi. Snapshot ichini faqat egasi tushunadi, boshqalar uni shunchaki saqlovchi (caretaker) sifatida ushlab turadi. Shu tufayli undo, checkpoint va davom ettirish (resume) imkoniyatlari paydo bo'ladi.
@@ -127,6 +226,23 @@ Xulq-atvor patternlari obyektlar orasidagi mas'uliyat taqsimoti va o'zaro muloqo
 - Domen agregatining "oldingi qiymatlari" ni audit uchun snapshot ko'rinishida yozish.
 
 **Ehtiyot bo'ling:** Katta obyektlarning snapshot'lari xotira va I/O ni tez yeb qo'yadi - faqat zarur maydonlarni saqlang yoki event sourcing + davriy snapshot kombinatsiyasiga o'tishni ko'rib chiqing. Snapshot'ni oddiy DTO sifatida ochib qo'ysangiz, inkapsulyatsiya yo'qoladi va saqlangan formatning har bir o'zgarishi migratsiya muammosiga aylanadi.
+
+```java
+// Memento: holat tashqariga chiqariladi va keyin tiklanadi
+public record ImportCheckpoint(long lastId, int processed) {}
+
+@Component
+public class ImportJob {
+    public ImportCheckpoint snapshot() {            // memento yaratish
+        return new ImportCheckpoint(lastId, processed);
+    }
+    public void restore(ImportCheckpoint c) {       // memento'dan tiklash
+        this.lastId = c.lastId();
+        this.processed = c.processed();
+    }
+}
+// Spring Batch da bir xil g'oya: ExecutionContext ni JobRepository saqlaydi
+```
 
 ## 3.7 Kuzatuvchi (Observer)
 
@@ -167,6 +283,24 @@ class OrderPaidListener {
 - Subscription billing holatlari (trial, active, past due, canceled) va ularga mos ruxsatlar.
 
 **Ehtiyot bo'ling:** To'laqonli state machine framework'ini uch-to'rt holatli oddiy oqim uchun kiritish ortiqcha murakkablik - avval enum + o'tish jadvali yoki `sealed` ierarxiyani sinab ko'ring. Holatni bazada faqat satr (`String status`) sifatida saqlab, o'tish qoidalarini kodda tarqatib yuborish eng keng tarqalgan xato: tekshiruvni bitta joyda markazlashtiring, aks holda ma'lumot bazasida "imkonsiz" holatlar paydo bo'ladi.
+
+```java
+// State: xulq holatga qarab o'zgaradi, if zanjiri yo'q
+public enum OrderState {
+    NEW      { @Override public OrderState pay()    { return PAID; } },
+    PAID     { @Override public OrderState ship()   { return SHIPPED; } },
+    SHIPPED  { @Override public OrderState deliver(){ return DELIVERED; } },
+    DELIVERED;
+
+    public OrderState pay()     { throw illegal("pay"); }
+    public OrderState ship()    { throw illegal("ship"); }
+    public OrderState deliver() { throw illegal("deliver"); }
+
+    private IllegalStateException illegal(String op) {
+        return new IllegalStateException(op + " holatda mumkin emas: " + name());
+    }
+}
+```
 
 ## 3.9 Strategiya (Strategy)
 
@@ -209,6 +343,23 @@ class PaymentRouter {
 
 **Ehtiyot bo'ling:** Meros qattiq bog'liqlik yaratadi - baza sinf o'zgarganda barcha merosxo'rlar sinishi mumkin va Java'da bitta sinfdan ko'p meros yo'q; shuning uchun ko'p holatda Strategy yoki funksional interfeys (lambda-callback) moslashuvchanroq. Hook metodlarni `public` qilib qo'ymang va konstruktordan chaqirilgan overridable metodlardan voz keching: subclass hali to'liq initsializatsiya bo'lmagan holatda ishlab ketadi.
 
+```java
+// Template Method: qat'iy skelet, o'zgaradigan qadamlar subclass'da
+public abstract class ImportTemplate<T> {
+
+    public final ImportResult run(Path file) {       // final: skelet o'zgarmaydi
+        List<T> rows = parse(file);
+        List<T> valid = rows.stream().filter(this::isValid).toList();
+        save(valid);
+        return new ImportResult(rows.size(), valid.size());
+    }
+
+    protected abstract List<T> parse(Path file);     // o'zgaradigan qadam
+    protected abstract boolean isValid(T row);
+    protected abstract void save(List<T> rows);
+}
+```
+
 ## 3.11 Tashrifchi (Visitor)
 
 **Tavsif:** Obyekt tuzilmasi (masalan AST yoki hujjat daraxti) ustida bajariladigan amalni alohida "tashrifchi" sinfga chiqaradi, shunda yangi amal qo'shish uchun element sinflarini o'zgartirish kerak bo'lmaydi. Double dispatch orqali har bir element tashrifchining o'ziga mos `visitXxx()` metodini chaqiradi. Natijada tuzilma barqaror, amallar esa erkin kengayadigan bo'ladi.
@@ -223,6 +374,23 @@ class PaymentRouter {
 - Statik tahlil/lint vositalarida bir xil daraxt ustida ko'p tekshiruvni ishlatish.
 
 **Ehtiyot bo'ling:** Visitor element turlari barqaror bo'lganda foydali: yangi element turi qo'shilsa, barcha visitor'larni o'zgartirishga majbur bo'lasiz - bu teskari yo'nalishdagi qattiqlik. Java 21'dagi `sealed` ierarxiya + `switch` pattern matching aksariyat holatda visitor boilerplate'ini butunlay o'rnini bosadi, shuning uchun yangi kodda avval shuni ko'rib chiqing.
+
+```java
+// Visitor: yopiq ierarxiya ustida yangi amal, sinflarga tegmasdan
+public sealed interface Node permits Literal, Add, Mul {}
+public record Literal(BigDecimal value) implements Node {}
+public record Add(Node left, Node right) implements Node {}
+public record Mul(Node left, Node right) implements Node {}
+
+// Pattern matching bilan visitor: yangi amal = yangi metod, sealed to'liqlikni majburlaydi
+public static BigDecimal eval(Node n) {
+    return switch (n) {
+        case Literal l -> l.value();
+        case Add a -> eval(a.left()).add(eval(a.right()));
+        case Mul m -> eval(m.left()).multiply(eval(m.right()));
+    };
+}
+```
 
 ## 3.12 Bo'sh obyekt (Null Object)
 
@@ -239,6 +407,22 @@ class PaymentRouter {
 
 **Ehtiyot bo'ling:** Null Object xatoni yashirib qo'yishi mumkin - konfiguratsiya yo'qolgani sababli hamma joyda jim ishlaydigan no-op bean ulanib qolsa, muammo production'da ancha keyin ma'lum bo'ladi; shuning uchun ishga tushishda ogohlantirish logi yoki Actuator'da ko'rinadigan belgi qoldiring. Shuningdek, "hech nima qilmaslik" domen uchun to'g'ri javob bo'lmagan joyda (masalan to'lovni o'tkazish) no-op emas, oshkora xatolik kerak.
 
+```java
+// Null Object: null tekshiruvi o'rniga hech nima qilmaydigan implementatsiya
+public interface AuditLog {
+    void record(String event);
+
+    AuditLog NONE = event -> { };            // bo'sh obyekt
+}
+
+@Configuration
+class AuditConfig {
+    @Bean
+    @ConditionalOnProperty(name = "audit.enabled", havingValue = "false")
+    AuditLog disabledAuditLog() { return AuditLog.NONE; }   // chaqiruvchi kod o'zgarmaydi
+}
+```
+
 ## 3.13 Spetsifikatsiya (Specification)
 
 **Tavsif:** Biznes qoidasini (predikatni) alohida obyekt sifatida kapsulalaydi va ularni `and`, `or`, `not` operatorlari bilan kompozitsiya qilish imkonini beradi. Natijada murakkab filtrlash shartlari qayta ishlatiladigan, mustaqil testlanadigan bloklarga ajraladi va service qatlamidagi uzun `if` zanjirlari yo'qoladi. Ko'pincha ikki qiyofada bo'ladi: in-memory kolleksiyani tekshirish va ma'lumotlar bazasiga query sifatida tarjima qilish.
@@ -253,6 +437,23 @@ class PaymentRouter {
 - Querydsl `BooleanExpression`lari orqali type-safe hisobot filtrlarini qurish.
 
 **Ehtiyot bo'ling:** `Specification` ichida JPA Criteria API bilan ishlash tezda o'qishga qiyin kodga aylanadi, shuning uchun uni factory metodlar bilan nomlab yashirish kerak; shuningdek in-memory `Predicate` va baza `Specification` versiyalarini bir sinfda aralashtirish semantik farq (null, `LIKE` case-sensitivity, collation) tufayli xatolarga olib keladi.
+
+```java
+// Specification: so'rov sharti qayta ishlatiladigan obyekt
+public final class OrderSpecs {
+    public static Specification<Order> status(OrderStatus s) {
+        return (root, q, cb) -> cb.equal(root.get("status"), s);
+    }
+    public static Specification<Order> createdAfter(Instant t) {
+        return (root, q, cb) -> cb.greaterThan(root.get("createdAt"), t);
+    }
+}
+
+// Shartlar birlashtiriladi, repository metodlari ko'paymaydi
+Page<Order> page = orderRepository.findAll(
+        OrderSpecs.status(PENDING).and(OrderSpecs.createdAfter(yesterday)),
+        PageRequest.of(0, 50));
+```
 
 ## 3.14 Xizmatkor (Servant)
 
@@ -269,6 +470,19 @@ class PaymentRouter {
 
 **Ehtiyot bo'ling:** Servant'ga juda ko'p mas'uliyat yuklasa, u anemik domen modeli va "god service" ga olib keladi - obyektning o'ziga tegishli invariantlar entity ichida qolishi kerak. Servant stateless bo'lishi shart, aks holda singleton bean sifatida thread-safety muammolari paydo bo'ladi.
 
+```java
+// Servant: bir nechta turga xizmat qiladigan stateless yordamchi
+@Service
+public class ShippingCostCalculator {              // xizmatkor: holati yo'q
+
+    public Money cost(Shippable item, Destination to) {
+        BigDecimal base = item.weightKg().multiply(to.ratePerKg());
+        return Money.of(base.add(to.fixedFee()), to.currency());
+    }
+}
+// Order, Parcel va Pallet - hammasi Shippable, lekin hisob mantiqini saqlamaydi
+```
+
 ## 3.15 Ravon interfeys (Fluent Interface)
 
 **Tavsif:** Metodlar `this` yoki yangi obyekt qaytarib, chaqiruvlarni zanjir shaklida yozish imkonini beradigan API dizayni. Maqsad - kodni domen tiliga yaqin, o'qishga oson qilish va ko'p parametrli konstruktorlar yoki setter to'dasidan qutulish. Ko'pincha Builder bilan birga keladi, ammo fluent interface konfiguratsiya va query qurishda ham mustaqil ishlatiladi.
@@ -283,6 +497,28 @@ class PaymentRouter {
 - Domain-specific til ko'rinishidagi validatsiya yoki hisobot konfiguratsiyasi API'si.
 
 **Ehtiyot bo'ling:** Mutable `this` qaytaradigan fluent obyekt shared holatda xavfli - har bir qadamda yangi immutable obyekt qaytarish ishonchliroq; shuningdek zanjir yarmida qolgan obyekt (`build()` chaqirilmagan) va noto'g'ri tartibda chaqirish mumkin bo'lgan API xatolarni compile-time'da emas, runtime'da yuzaga chiqaradi.
+
+```java
+// Fluent interface: qurish qadamlari o'qiladigan zanjirga aylanadi
+public final class QueryBuilder {
+    private final StringBuilder where = new StringBuilder();
+
+    public static QueryBuilder orders() { return new QueryBuilder(); }
+
+    public QueryBuilder status(OrderStatus s) { return add("status = '" + s + "'"); }
+    public QueryBuilder after(LocalDate d)    { return add("created_at > '" + d + "'"); }
+
+    private QueryBuilder add(String cond) {
+        if (!where.isEmpty()) where.append(" AND ");
+        where.append(cond);
+        return this;                                 // zanjir uchun o'zini qaytaradi
+    }
+    public String build() { return "SELECT * FROM orders WHERE " + where; }
+}
+
+// Spring'dagi tanish zanjir
+Order o = restClient.get().uri("/orders/{id}", id).retrieve().body(Order.class);
+```
 
 ## 3.16 Callback (Callback)
 
@@ -299,6 +535,24 @@ class PaymentRouter {
 
 **Ehtiyot bo'ling:** Asinxron callback'larni ketma-ket ulash "callback hell" va kuzatib bo'lmaydigan stack trace'larga olib keladi - reactive operator'lar yoki `CompletableFuture` kompozitsiyasi afzal. Callback ichida `ThreadLocal`ga tayanmang: transaksiya, `SecurityContext` va MDC asinxron thread'ga avtomatik ko'chmaydi.
 
+```java
+// Callback: nima qilishni chaqiruvchi beradi, qachon qilishni kutubxona
+@Repository
+public class OrderJdbc {
+    private final JdbcClient db;
+
+    public List<OrderRow> recent(int limit) {
+        return db.sql("SELECT id, status, total FROM orders ORDER BY id DESC LIMIT :n")
+                 .param("n", limit)
+                 // RowMapper - callback: qator qanday o'qilishini biz aytamiz
+                 .query((rs, i) -> new OrderRow(rs.getLong("id"),
+                                                rs.getString("status"),
+                                                rs.getBigDecimal("total")))
+                 .list();
+    }
+}
+```
+
 ## 3.17 Pipeline (obyekt darajasida) (Pipeline (object-level))
 
 **Tavsif:** Ishlov berishni ketma-ket bosqichlarga (stage) ajratadi, har bir bosqich kirishni qabul qilib, chiqishni keyingisiga uzatadi. Chain of Responsibility'dan farqi - bu yerda maqsad so'rovni "kimga tegishli" ekanini aniqlash emas, balki ma'lumotni bosqichma-bosqich transformatsiya qilish. Bosqichlar mustaqil, almashtiriladigan va alohida testlanadigan bo'ladi.
@@ -313,6 +567,24 @@ class PaymentRouter {
 - Spring Cloud Stream'da bir nechta `Function` beanini `|` bilan birlashtirib stream pipeline qurish.
 
 **Ehtiyot bo'ling:** Pipeline bosqichlari orasida mutable shared kontekst obyektini uzatish yashirin bog'lanish (coupling) yaratadi va bosqich tartibiga sezgir qiladi - immutable natija obyektlari afzal. Xatolik boshqaruvi va partial failure strategiyasini oldindan belgilang, aks holda pipeline o'rtasida uzilgan ish qayerda qolganini aniqlash qiyin bo'ladi.
+
+```java
+// Pipeline: bosqichlar bir xil shakl, tartib aniq va o'zgartirilishi oson
+public interface Stage<T> extends UnaryOperator<T> {}
+
+@Service
+public class InvoicePipeline {
+    private final List<Stage<Invoice>> stages;   // validate -> enrich -> price -> round
+
+    public InvoicePipeline(List<Stage<Invoice>> stages) { this.stages = stages; }
+
+    public Invoice process(Invoice in) {
+        Invoice out = in;
+        for (Stage<Invoice> s : stages) out = s.apply(out);
+        return out;
+    }
+}
+```
 
 ## 3.18 Ikki tomonlama dispatch (Double Dispatch)
 
@@ -329,6 +601,23 @@ class PaymentRouter {
 
 **Ehtiyot bo'ling:** Double dispatch tur kombinatsiyalari ko'paygan sayin N×M metodga o'sadi va yangi tur qo'shilganda barcha visitor'larni o'zgartirishga majbur qiladi; Java 21+ loyihalarda `sealed` iyerarxiya ustida pattern matching `switch` ko'pincha soddaroq va compile-time to'liqlik tekshiruvini (exhaustiveness) beradi.
 
+```java
+// Double dispatch: natija ikki argumentning turiga bog'liq
+public BigDecimal fee(Instrument instrument, Account account) {
+    return switch (instrument) {
+        case Stock s -> switch (account) {
+            case Retail r -> s.price().multiply(new BigDecimal("0.003"));
+            case Institutional i -> s.price().multiply(new BigDecimal("0.0005"));
+        };
+        case Bond b -> switch (account) {
+            case Retail r -> b.nominal().multiply(new BigDecimal("0.001"));
+            case Institutional i -> BigDecimal.ZERO;
+        };
+    };
+}
+// Ikki sealed ierarxiya: kompilyator barcha juftlikni qamrab olishga majbur qiladi
+```
+
 ## 3.19 Event agregatori (Event Aggregator)
 
 **Tavsif:** Ko'p sonli publisher va subscriber o'rtasida bitta markaziy vositachi (hub) turadi; komponentlar bir-biriga emas, faqat agregatorga bog'lanadi. Bu N×M bog'lanishni N+M ga kamaytiradi va yangi tinglovchini mavjud kodga tegmasdan qo'shish imkonini beradi. Observer'dan farqi - subscription manbasi har bir publisher emas, yagona nuqta.
@@ -343,6 +632,27 @@ class PaymentRouter {
 - Domain audit log'ini biznes kodga aralashmasdan event tinglash orqali to'ldirish.
 
 **Ehtiyot bo'ling:** Event oqimi oshgach tizim "kim nimani chaqirdi" ni kuzatish qiyin bo'lgan yashirin bog'lanishga aylanadi - muhim biznes oqimini faqat eventga tayanib qurmang. Standart `ApplicationEventMulticaster` sinxron va bir xil thread'da ishlaydi, shuning uchun listener ichidagi sekin yoki exception tashlagan kod publisher'ni ham bloklaydi yoki buzadi; asinxron qilganda transaksiya va `SecurityContext` propagatsiyasini alohida sozlash kerak.
+
+```java
+// Event aggregator: ko'p manba, bitta nuqta, iste'molchilar manbani bilmaydi
+public record DomainEvent(String type, String aggregateId, Instant at) {}
+
+@Component
+public class DomainEventBus {
+    private final ApplicationEventPublisher publisher;
+
+    public DomainEventBus(ApplicationEventPublisher publisher) { this.publisher = publisher; }
+
+    public void publish(DomainEvent e) { publisher.publishEvent(e); }
+}
+
+@Component
+class AuditListener {
+    @Async                                        // tinglovchi chaqiruvchini kutmaydi
+    @EventListener
+    void on(DomainEvent e) { /* audit yozuvi */ }
+}
+```
 
 ## 3.20 O'rab bajarish (Execute Around)
 
@@ -359,6 +669,26 @@ class PaymentRouter {
 
 **Ehtiyot bo'ling:** Callback ichida checked exception va natija turlarini to'g'ri uzatish (generic `<T>` bilan) oldindan o'ylanmasa, API noqulay bo'lib qoladi; shuningdek `@Transactional` kabi annotatsiya proxy orqali ishlaydi, shuning uchun bir sinf ichidagi self-invocation advice'ni butunlay chetlab o'tadi.
 
+```java
+// Execute Around: ochish va yopish kutubxonada, o'rtasi chaqiruvchida
+@Component
+public class WithAdvisoryLock {
+    private final JdbcClient db;
+
+    public <T> T run(long key, Supplier<T> body) {
+        db.sql("SELECT pg_advisory_lock(:k)").param("k", key).update();
+        try {
+            return body.get();                    // faqat bu qism o'zgaradi
+        } finally {
+            db.sql("SELECT pg_advisory_unlock(:k)").param("k", key).update();
+        }
+    }
+}
+
+// Chaqiruvchi lock olish va bo'shatishni eslab qolmaydi
+Receipt r = withAdvisoryLock.run(accountId, () -> transfer(from, to, amount));
+```
+
 ## 3.21 Chekli holatlar mashinasi (Finite State Machine (Spring Statemachine))
 
 **Tavsif:** Obyektning mumkin bo'lgan holatlari, ular orasidagi o'tishlar va o'tishni qo'zg'atuvchi eventlarni aniq modellashtiradi. Biznes jarayoni (buyurtma, to'lov, ariza) `if/else` va boolean flag'lar o'rniga deklarativ holat diagrammasiga aylanadi, noto'g'ri o'tishlar esa markazda bloklanadi. Har bir o'tishga guard (shart) va action (yon ta'sir) bog'lash mumkin.
@@ -373,6 +703,28 @@ class PaymentRouter {
 - IoT yoki qurilma sessiyasining ulanish holatlarini kuzatish.
 
 **Ehtiyot bo'ling:** Spring Statemachine qo'shimcha infratuzilma va o'rganish narxini keltiradi - oddiy 3-4 holatli oqim uchun `enum` asosidagi o'tish jadvali yetarli va osonroq. Holat mashinasi instance'i stateful, shuning uchun uni singleton bean sifatida bir necha request orasida ulashish xato: har bir biznes obyekt uchun alohida instance oling yoki `StateMachinePersister` bilan holatni bazadan tiklang.
+
+```java
+// FSM: ruxsat etilgan o'tishlar deklarativ, kodda if zanjiri yo'q
+@Configuration
+@EnableStateMachineFactory
+class OrderStateMachineConfig extends StateMachineConfigurerAdapter<OrderState, OrderEvent> {
+
+    @Override
+    public void configure(StateMachineStateConfigurer<OrderState, OrderEvent> states)
+            throws Exception {
+        states.withStates().initial(OrderState.NEW).states(EnumSet.allOf(OrderState.class));
+    }
+
+    @Override
+    public void configure(StateMachineTransitionConfigurer<OrderState, OrderEvent> t)
+            throws Exception {
+        t.withExternal().source(OrderState.NEW).target(OrderState.PAID).event(OrderEvent.PAY)
+         .and()
+         .withExternal().source(OrderState.PAID).target(OrderState.SHIPPED).event(OrderEvent.SHIP);
+    }
+}
+```
 
 ## 3.22 Qoidalar dvigateli / Siyosat (Rules Engine / Policy)
 
@@ -389,6 +741,26 @@ class PaymentRouter {
 
 **Ehtiyot bo'ling:** To'laqonli rules engine (Drools) katta operatsion va bilim narxiga ega - qoidalar soni o'nlab bo'lsa, oddiy `Specification`/strategy bean'lar ancha tushunarli va tez. Qoidalarni matn (SpEL, skript) sifatida tashqi manbadan olish compile-time xavfsizlikni yo'qotadi va foydalanuvchi kiritgan ifodani baholash code injection xavfini tug'diradi, shuning uchun ishonchsiz kirishni hech qachon `SpelExpressionParser`ga bermang.
 
+```java
+// Rules engine: qoidalar ma'lumot, kod o'zgarmaydi
+public record Rule(String name, Predicate<Claim> when, Decision then) {}
+
+@Service
+public class ClaimPolicy {
+    private final List<Rule> rules = List.of(
+            new Rule("limit", c -> c.amount().compareTo(LIMIT) > 0, Decision.MANUAL),
+            new Rule("blacklist", c -> blacklist.contains(c.customerId()), Decision.REJECT));
+
+    public Decision decide(Claim claim) {
+        return rules.stream()
+                .filter(r -> r.when().test(claim))
+                .findFirst()
+                .map(Rule::then)
+                .orElse(Decision.AUTO_APPROVE);
+    }
+}
+```
+
 ## 3.23 Qora taxta (Blackboard)
 
 **Tavsif:** Aniq algoritmi yo'q murakkab masalalarni hal qilish uchun umumiy "qora taxta" (shared knowledge base) yaratiladi; mustaqil ekspert komponentlar (knowledge source) taxtadagi hozirgi holatni o'qib, o'z hissasini qo'shadi, nazoratchi (control) esa qaysi ekspertni qachon ishlatishni belgilaydi. Yechim bir yo'lda emas, bosqichma-bosqich, qisman natijalar to'planishi orqali shakllanadi. Nutq tanish, OCR, diagnostika va murakkab skoring tizimlarida qo'llanadi.
@@ -403,6 +775,27 @@ class PaymentRouter {
 - Logistikada marshrutni bir nechta evristika yordamida bosqichma-bosqich yaxshilash.
 
 **Ehtiyot bo'ling:** Blackboard mutable shared holatga asoslangani uchun concurrency, versiyalash va "qaysi ekspert nimani o'zgartirdi" muammolari darhol paydo bo'ladi - yozishni atomar qiling va har bir hissani kim qo'shganini qayd eting. Bu pattern faqat haqiqatan determinant algoritmi yo'q masalalar uchun; aniq ketma-ketlik ma'lum bo'lsa, oddiy Pipeline yoki orkestrlangan service ancha arzon va tushunarli.
+
+```java
+// Blackboard: ekspertlar umumiy holatga hissa qo'shadi, tartib oldindan ma'lum emas
+public interface Expert {
+    boolean contribute(Blackboard board);        // true = yangi narsa qo'shdim
+}
+
+@Service
+public class DiagnosisEngine {
+    private final List<Expert> experts;
+
+    public Blackboard solve(Blackboard board, int maxRounds) {
+        for (int round = 0; round < maxRounds; round++) {
+            boolean progress = false;
+            for (Expert e : experts) progress |= e.contribute(board);
+            if (!progress) break;                 // hech kim yangi narsa qo'shmadi
+        }
+        return board;
+    }
+}
+```
 
 ## 3.24 Amalda qo'llash
 

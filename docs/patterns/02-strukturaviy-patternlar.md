@@ -47,6 +47,26 @@ Strukturaviy patternlar obyektlar va sinflarni kattaroq tuzilmalarga birlashtiri
 
 **Ehtiyot bo'ling:** Adapter faqat interfeysni o'girishi kerak - unga biznes-logika, validatsiya yoki transformatsiya qoidalarini yuklash "god adapter"ga olib keladi. Agar ikki interfeys mohiyatan bir xil bo'lsa, adapter qatlami ortiqcha indirection va debug qiyinchiligidan boshqa narsa bermaydi.
 
+```java
+// Adapter: tashqi SDK shaklini o'z portimizga moslaydi
+public interface SmsGateway {                 // bizning port
+    void send(PhoneNumber to, String text);
+}
+
+@Component
+class TwilioSmsAdapter implements SmsGateway {
+    private final TwilioRestClient twilio;    // tashqi SDK, shakli boshqa
+
+    TwilioSmsAdapter(TwilioRestClient twilio) { this.twilio = twilio; }
+
+    @Override
+    public void send(PhoneNumber to, String text) {
+        // SDK atamalari shu sinfdan tashqariga chiqmaydi
+        twilio.messages().create(new MessageParams(to.e164(), text));
+    }
+}
+```
+
 ## 2.2 Ko'prik (Bridge)
 
 **Tavsif:** Bridge abstraksiyani uning implementatsiyasidan ajratib, ikkisini mustaqil ravishda rivojlantirish imkonini beradi. Abstraksiya ierarxiyasi implementatsiya ierarxiyasiga kompozitsiya orqali murojaat qiladi, meros orqali emas. Bu sinflar sonining kombinator portlashini (M×N o'rniga M+N) oldini oladi. Adapter'dan farqi: Bridge dizayn vaqtida ataylab rejalashtiriladi, Adapter esa mavjud nomuvofiqlikni keyin tuzatadi.
@@ -62,6 +82,26 @@ Strukturaviy patternlar obyektlar va sinflarni kattaroq tuzilmalarga birlashtiri
 
 **Ehtiyot bo'ling:** Agar implementatsiya kelgusida almashmaydigan bo'lsa, Bridge faqat ortiqcha qatlam va kognitiv yuk qo'shadi - YAGNI'ni eslang. Ikkala ierarxiya bir vaqtda o'sib ketsa, ularning shartnomasini sinxron ushlab turish qimmatga tushadi.
 
+```java
+// Bridge: abstraksiya va implementatsiya alohida ierarxiyada o'sadi
+public abstract class Report {                       // abstraksiya
+    protected final ReportRenderer renderer;         // implementatsiyaga ko'prik
+    protected Report(ReportRenderer renderer) { this.renderer = renderer; }
+    public abstract byte[] render();
+}
+
+public interface ReportRenderer {                    // implementatsiya ierarxiyasi
+    byte[] render(ReportModel model);
+}
+
+public class InvoiceReport extends Report {
+    private final Invoice invoice;
+    public InvoiceReport(ReportRenderer r, Invoice i) { super(r); this.invoice = i; }
+    @Override public byte[] render() { return renderer.render(ReportModel.of(invoice)); }
+}
+// PdfRenderer, XlsxRenderer va HtmlRenderer Report ierarxiyasini o'zgartirmaydi
+```
+
 ## 2.3 Kompozit (Composite)
 
 **Tavsif:** Composite obyektlarni daraxt tuzilmasiga yig'ib, yakka obyekt (leaf) va obyektlar guruhi (composite) bilan client'ning bir xil muomala qilishini ta'minlaydi. Ikkisi ham bitta umumiy interfeysni implement qiladi, shuning uchun client `if (guruhmi?)` tekshiruvlaridan xalos bo'ladi. Rekursiv tuzilmalarni ifodalashning tabiiy usuli.
@@ -76,6 +116,29 @@ Strukturaviy patternlar obyektlar va sinflarni kattaroq tuzilmalarga birlashtiri
 - Health check'larni subsystem'lar bo'yicha guruhlab, bitta aggregated status qaytarish.
 
 **Ehtiyot bo'ling:** Chuqur daraxtlarda rekursiv traversal kutilmagan N+1 query yoki `StackOverflowError`ga olib kelishi mumkin - chuqurlik limitini va lazy loading'ni nazorat qiling. `add()`/`remove()` metodlarini umumiy interfeysga chiqarish leaf uchun ma'nosiz operatsiyalar (`UnsupportedOperationException`) tug'diradi, shuning uchun shaffoflik va xavfsizlik orasidagi tanlovni ongli qiling.
+
+```java
+// Composite: bitta va ko'p bir xil interfeys ortida
+@Component
+@Primary
+public class CompositeFraudCheck implements FraudCheck {
+    private final List<FraudCheck> checks;
+
+    public CompositeFraudCheck(List<FraudCheck> checks) {
+        // o'zini ro'yxatga olmaslik uchun @Primary emas, filtrlangan ro'yxat kerak bo'lsa
+        this.checks = checks.stream().filter(c -> c != this).toList();
+    }
+
+    @Override
+    public Decision check(Payment payment) {
+        for (FraudCheck c : checks) {
+            Decision d = c.check(payment);
+            if (d.isReject()) return d;      // birinchi rad etish yetarli
+        }
+        return Decision.accept();
+    }
+}
+```
 
 ## 2.4 Dekorator (Decorator)
 
@@ -123,6 +186,24 @@ public class RetryingPaymentClient implements PaymentClient {
 
 **Ehtiyot bo'ling:** Facade asta-sekin "god service"ga aylanib, yuzlab metodli va hamma narsani biladigan sinfga o'sib ketishi juda keng tarqalgan xato - uni use-case bo'yicha bo'lib tashlang. Agar facade faqat bitta metodni bitta sinfga uzatsa, u hech qanday qiymat qo'shmaydigan anemik qatlam.
 
+```java
+// Facade: JDBC murakkabligi yashiringan, resurs yopish Spring zimmasida
+@Repository
+public class OrderQueries {
+    private final JdbcClient db;                 // Spring Framework 6.1+
+
+    public OrderQueries(JdbcClient db) { this.db = db; }
+
+    public Optional<OrderSummary> findSummary(long id) {
+        return db.sql("SELECT id, status, total FROM orders WHERE id = :id")
+                 .param("id", id)
+                 .query(OrderSummary.class)
+                 .optional();
+    }
+}
+// Connection, PreparedStatement, ResultSet va try-with-resources ko'rinmaydi
+```
+
 ## 2.6 Flyweight (Flyweight)
 
 **Tavsif:** Flyweight ko'p sonli mayda obyektlarning umumiy (intrinsic) holatini ulashib, xotira iste'molini kamaytiradi. O'zgaruvchi (extrinsic) holat esa tashqaridan parametr sifatida uzatiladi. Shart - obyekt immutable bo'lishi, aks holda ulashish race condition va kutilmagan mutatsiyalarga olib keladi.
@@ -137,6 +218,25 @@ public class RetryingPaymentClient implements PaymentClient {
 - Stateless strategy bean'larini singleton qilib, har bir request uchun yangi obyekt yaratmaslik.
 
 **Ehtiyot bo'ling:** `String.intern()` va cheksiz o'sadigan `HashMap` pool'lari metaspace/heap leak'ga sabab bo'ladi - chegarali cache (Caffeine, `maximumSize`) ishlating. Flyweight'ni mutable holat bilan aralashtirish eng xavfli xato: singleton bean ichida request-specific field saqlash klassik thread-safety buzilishi.
+
+```java
+// Flyweight: o'zgarmas, ko'p takrorlanadigan qiymatlar qayta ishlatiladi
+public final class Currency3 {
+    private static final Map<String, Currency3> CACHE = new ConcurrentHashMap<>();
+    private final String code;
+
+    private Currency3(String code) { this.code = code; }
+
+    public static Currency3 of(String code) {     // bir xil kod -> bir xil nusxa
+        return CACHE.computeIfAbsent(code, Currency3::new);
+    }
+    public String code() { return code; }
+}
+
+// JDK dagi tayyor flyweight'lar
+Integer small = Integer.valueOf(42);   // -128..127 oralig'i keshlangan
+Boolean yes = Boolean.valueOf(true);   // har doim bir xil nusxa
+```
 
 ## 2.7 Proxy (Proxy - static, JDK dynamic proxy, CGLIB)
 
@@ -153,6 +253,30 @@ public class RetryingPaymentClient implements PaymentClient {
 
 **Ehtiyot bo'ling:** Eng ko'p uchraydigan tuzoq - self-invocation: bir metod ichida `this.other()` chaqirilsa proxy chetlab o'tiladi va `@Transactional`/`@Cacheable` ishlamaydi (yechim: alohida bean, `AopContext.currentProxy()` yoki self-injection). CGLIB `final` sinf/metodni proxy qilolmaydi, parametrsiz constructor talab qiladi va `private` metodlarga ta'sir qilmaydi; JDK proxy esa faqat interfeys metodlarini qamraydi, shuning uchun konkret tipga `cast` qilish `ClassCastException` beradi.
 
+```java
+// Spring proxy qanday tanlanadi va qachon chetlab o'tiladi
+@Service
+public class ReportService {
+
+    @Transactional                       // proxy orqali ishlaydi
+    public void generate(long id) {
+        store(id);                       // TUZOQ: self-invocation, proxy chetlab o'tiladi
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void store(long id) { /* ... */ }
+}
+
+// Yechim: chegarani boshqa bean'ga chiqarish
+@Service
+public class ReportFacade {
+    private final ReportWriter writer;           // alohida bean = alohida proxy
+    public ReportFacade(ReportWriter writer) { this.writer = writer; }
+
+    public void generate(long id) { writer.store(id); }   // proxy ishlaydi
+}
+```
+
 ## 2.8 Marker interfeys (Marker Interface)
 
 **Tavsif:** Marker interface hech qanday metod e'lon qilmaydi - uning yagona vazifasi sinfga tip darajasidagi metadata "yorliq" qo'yish. Runtime yoki framework `instanceof` tekshiruvi orqali shu yorliqni ko'rib, maxsus xatti-harakat qo'llaydi. Annotatsiyalardan avvalgi davrda metadata berishning asosiy usuli bo'lgan, hozir esa compile-time tip xavfsizligi kerak bo'lganda qiymatli.
@@ -167,6 +291,25 @@ public class RetryingPaymentClient implements PaymentClient {
 - Sealed interface bilan birga (Java 17+) permitted implementatsiyalarni cheklab, exhaustive `switch` pattern matching'ni ta'minlash.
 
 **Ehtiyot bo'ling:** Zamonaviy Java'da ko'p hollarda annotatsiya (`@Retention(RUNTIME)`) yoki `sealed interface` yaxshiroq tanlov - marker interfeys meros ierarxiyasini "ifloslantiradi" va subclass'lar yorliqni xohlamasa ham oladi. `Serializable` misoli ko'rsatganidek, marker qo'yish yashirin kontrakt (serialVersionUID, security surface) yuklaydi, shuning uchun uni faqat tip darajasidagi tekshiruv haqiqatan kerak bo'lganda ishlating.
+
+```java
+// Marker interfeys: tur tizimi orqali belgi
+public interface AuditedCommand {}               // metod yo'q, faqat belgi
+
+public record CloseAccount(long accountId) implements AuditedCommand {}
+
+@Component
+class AuditingDispatcher {
+    void dispatch(Object command) {
+        if (command instanceof AuditedCommand) { /* audit yozuvi */ }
+    }
+}
+
+// Zamonaviy alternativa: annotatsiya (meta-ma'lumot qo'shish mumkin)
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface Audited { String category() default "default"; }
+```
 
 ## 2.9 Modul (Module)
 
@@ -183,6 +326,19 @@ public class RetryingPaymentClient implements PaymentClient {
 
 **Ehtiyot bo'ling:** Modulni texnik qatlamlar (`controller`, `service`, `repository`) bo'yicha emas, domen bo'yicha ajratish kerak - aks holda har bir o'zgarish barcha modullarga tegadi. Spring Modulith event'lari bilan modullarni juda ko'p asinxron bog'lab tashlash kuzatuvchanlikni (observability) yo'qotadi, shuning uchun `@ApplicationModuleListener` va event publication registry'ni monitoring bilan birga joriy qiling.
 
+```java
+// Modul chegarasi: tashqariga faqat API paketi chiqadi
+module payments.core {
+    requires spring.context;
+    exports com.example.payments.api;            // shartnoma
+    // com.example.payments.internal eksport qilinmaydi
+}
+
+// Spring Modulith bilan bir xil g'oya, JPMS siz
+@ApplicationModule(allowedDependencies = "shared")
+package com.example.payments;
+```
+
 ## 2.10 Yopiq sinf ma'lumotlari (Private Class Data)
 
 **Tavsif:** Sinf holatini (state) uning xatti-harakatidan ajratib, ma'lumotlarni alohida, faqat o'qish uchun ochilgan tashuvchida saqlaydi va konstruktordan keyin o'zgartirishni butunlay to'sadi. Maqsad - ko'rinadigan atributlar sonini kamaytirish va kerak bo'lmagan `setter`'lar orqali yuzaga keladigan nomuvofiq holatni yo'q qilish. Natijada obyekt immutable bo'ladi, thread-safe bo'ladi va uni `HashMap` kaliti yoki cache qiymati sifatida xavfsiz ishlatish mumkin. Java'da bu bugun record'lar va `final` maydonlar bilan tabiiy ravishda beriladi.
@@ -198,6 +354,21 @@ public class RetryingPaymentClient implements PaymentClient {
 
 **Ehtiyot bo'ling:** "Immutable" deb e'lon qilingan sinf ichida `List` yoki `Date` kabi mutable havolani to'g'ridan-to'g'ri qaytarish yopiqlikni buzadi - konstruktorda ham, getter'da ham defensive copy qiling (record bunga avtomatik kafolat bermaydi). JPA `@Entity` uchun esa Hibernate argumentsiz konstruktor va proxy talab qilgani uchun to'liq immutable record'ni entity qilib ishlatmang.
 
+```java
+// Private Class Data: qurilgandan keyin o'zgarmaydi
+@ConfigurationProperties("psp")
+public record PspProperties(
+        @NotBlank String url,
+        @DurationUnit(ChronoUnit.MILLIS) Duration timeout,
+        @NotEmpty List<String> allowedCurrencies) {
+
+    public PspProperties {
+        // nusxa olinadi: tashqi ro'yxat keyin o'zgarsa ham bizga ta'sir qilmaydi
+        allowedCurrencies = List.copyOf(allowedCurrencies);
+    }
+}
+```
+
 ## 2.11 Kengaytirish obyekti (Extension Object)
 
 **Tavsif:** Sinf ierarxiyasini o'zgartirmasdan obyektga runtime'da qo'shimcha interfeys va imkoniyat qo'shish imkonini beradi: iste'molchi obyektdan "sen shu rolni bajara olasanmi?" deb so'raydi va mavjud bo'lsa kengaytma obyektini oladi. Bu interfeys bo'rtib ketishini (fat interface) oldini oladi, chunki kamdan-kam kerak bo'ladigan imkoniyatlar asosiy abstraksiyaga kiritilmaydi. Plugin arxitekturalarining asosiy qurilish bloki hisoblanadi.
@@ -212,6 +383,26 @@ public class RetryingPaymentClient implements PaymentClient {
 - Test infratuzilmasida JUnit 5 extension'lari orqali Testcontainers yoki soat (clock) boshqaruvini qo'shish.
 
 **Ehtiyot bo'ling:** Har bir `unwrap`/`instanceof` tekshiruvi abstraksiyadan chiqish (leaky abstraction) hisoblanadi - kod aniq implementatsiyaga bog'lanadi va provider almashtirilganda sinadi, shuning uchun uni bitta adapter sinf ichida saqlang. Kengaytmani oddiy ixtiyoriy bog'liqlik o'rniga ishlatmang: `ObjectProvider<T>` yoki `Optional` bilan hal bo'ladigan holatda bu pattern ortiqcha murakkablik keltiradi.
+
+```java
+// Extension Object: asosiy shartnoma toza qoladi, qo'shimcha imkoniyat so'rab olinadi
+public interface Exportable {
+    <T> Optional<T> as(Class<T> extension);      // kengaytirishni so'rash
+}
+
+@Service
+class OrderDocument implements Exportable {
+    @Override
+    public <T> Optional<T> as(Class<T> ext) {
+        if (ext == PdfExport.class) return Optional.of(ext.cast(new PdfExport(this)));
+        return Optional.empty();
+    }
+}
+
+// JDK va JPA dagi tayyor misollar
+Session session = entityManager.unwrap(Session.class);
+if (dataSource.isWrapperFor(HikariDataSource.class)) { /* ... */ }
+```
 
 ## 2.12 Egizak (Twin)
 
@@ -254,6 +445,26 @@ class JobEntity extends AbstractAuditable {  // ikkinchi egizak
 
 **Ehtiyot bo'ling:** Delegatsiya zanjiri uzayib ketsa stack trace o'qilmas bo'ladi va har bir qatlam tashlanadigan exception'ni yashirib qo'yishi mumkin. Shuningdek, Spring'da bean o'z metodini `this` orqali chaqirsa proxy chetlab o'tiladi - `@Transactional` yoki `@Cacheable` ishlamaydi, bunda `AopContext.currentProxy()` yoki alohida bean'ga ajratish kerak.
 
+```java
+// Delegatsiya: meros o'rniga ichki obyektga uzatish
+@Component
+public class MeteredPaymentGateway implements PaymentGateway {
+    private final PaymentGateway delegate;       // merossiz kengaytirish
+    private final Timer timer;
+
+    public MeteredPaymentGateway(@Qualifier("psp") PaymentGateway delegate,
+                                 MeterRegistry registry) {
+        this.delegate = delegate;
+        this.timer = registry.timer("payment.gateway");
+    }
+
+    @Override
+    public Receipt charge(Payment p) {
+        return timer.record(() -> delegate.charge(p));   // ish egasiga uzatiladi
+    }
+}
+```
+
 ## 2.14 O'rovchi (Wrapper)
 
 **Tavsif:** Mavjud obyektni bir xil yoki yaqin interfeysli yangi obyekt ichiga joylab, chaqiruvlarni ushlab turish, o'zgartirish yoki qo'shimcha xulq berish imkonini beradi. "Wrapper" aniq GoF pattern emas, balki Decorator, Adapter va Proxy uchun umumiy atama bo'lib, asosiy g'oya - original kodni o'zgartirmasdan uning atrofida qatlam yaratish. Ko'pincha bitta metodni almashtirish uchun butun ierarxiyani qayta yozishdan qutqaradi. Shu bilan birga yangi, cheklangan yoki xavfsizroq ko'rinish (read-only view) berish uchun ishlatiladi.
@@ -268,6 +479,22 @@ class JobEntity extends AbstractAuditable {  // ikkinchi egizak
 - Uchinchi tomon SDK klientini o'rab, retry, timeout va exception translation'ni bitta joyda markazlashtirish.
 
 **Ehtiyot bo'ling:** Wrapper original obyektning barcha metodlarini to'g'ri uzatmasa (masalan `equals`, `hashCode`, `toString` yoki yangi interfeys metodlari) nozik buglar paydo bo'ladi - iloji bo'lsa `Delegating*` bazaviy sinflaridan meros oling. `ContentCachingRequestWrapper` butun body'ni xotirada saqlagani uchun katta yoki file upload so'rovlarida xotira va latency muammosi tug'diradi, shuning uchun uni o'lcham va URL bo'yicha cheklang.
+
+```java
+// Wrapper: body'ni ikki marta o'qish uchun so'rovni o'rash
+@Component
+public class RequestLoggingFilter extends OncePerRequestFilter {
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res,
+                                    FilterChain chain) throws ServletException, IOException {
+        ContentCachingRequestWrapper wrapped = new ContentCachingRequestWrapper(req);
+        chain.doFilter(wrapped, res);            // controller body'ni o'qiydi
+        // zanjirdan keyin biz ham o'qiymiz: wrapper keshlagan
+        log.debug("body={}", new String(wrapped.getContentAsByteArray(), UTF_8));
+    }
+}
+```
 
 ## 2.15 Mixin / Trait default metodlar orqali (Mixin / Trait via default methods)
 
@@ -335,6 +562,28 @@ public abstract class BaseEntity {
 - Kutubxona yozganda mijozga faqat interfeys va auto-configuration berib, implementatsiyani keyinchalik buzmasdan o'zgartirish imkonini saqlash.
 
 **Ehtiyot bo'ling:** Har bir sinf uchun avtomatik ravishda bitta implementatsiyali interfeys yaratish ("`FooService` + `FooServiceImpl`") hech qanday foyda bermaydi, faqat navigatsiyani qiyinlashtiradi - interfeysni haqiqatan bir nechta implementatsiya, modul chegarasi yoki testda almashtirish ehtiyoji bo'lganda ajratish kerak. Interfeys imzosiga infratuzilma tiplari (JPA `Entity`, `ResultSet`, Kafka `ConsumerRecord`) sizib kirsa, bog'liqlik baribir teskari bo'lmaydi va pattern faqat qog'ozda qoladi.
+
+```java
+// Separated Interface: shartnoma domen paketida, implementatsiya infratuzilmada
+// com/example/orders/domain/ExchangeRates.java
+public interface ExchangeRates {                 // domen o'ziga keragini e'lon qiladi
+    BigDecimal rate(Currency from, Currency to);
+}
+
+// com/example/orders/infra/CbuExchangeRates.java
+@Component
+class CbuExchangeRates implements ExchangeRates {
+    private final RestClient client;
+    CbuExchangeRates(RestClient client) { this.client = client; }
+
+    @Override
+    public BigDecimal rate(Currency from, Currency to) {
+        return client.get().uri("/rates/{f}/{t}", from, to)
+                     .retrieve().body(BigDecimal.class);
+    }
+}
+// Bog'liqlik yo'nalishi: infra -> domen. Domen RestClient ni bilmaydi.
+```
 
 ## 2.18 Amalda qo'llash
 
