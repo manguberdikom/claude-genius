@@ -105,10 +105,24 @@ Xatosiz o'tishi shart. CI ham shuni ishlatadi.
 
 ## Ma'lum bo'shliq
 
-1007 patternning hammasida kod misoli yo'q. Pattern qo'shilsa yoki
-tahrirlansa, 5-15 qatorlik `java` bloki qo'shiladi: Spring'dagi tayyor
-variantini yoki patternning eng kichik shaklini ko'rsatadigan misol.
-Hozirgi holat `tools/check_docs.py` chiqishida ko'rinadi.
+1007 patternning 498 tasida kod misoli bor, 509 tasida yo'q. 1-14
+bo'limlar tugatilgan, 15-30 bo'limlar qolgan.
+
+Pattern qo'shilsa yoki tahrirlansa, 5-15 qatorlik kod bloki qo'shiladi:
+Spring'dagi tayyor variantini yoki patternning eng kichik shaklini
+ko'rsatadigan misol. Til snippet'ga mos bo'lsin (`java`, `yaml`, `sql`,
+`json`), `java` deb yozib qo'yilmasin.
+
+Holatni ko'rish va ish qo'shish:
+
+```bash
+python3 tools/code_gap.py                 # hujjat bo'yicha qolgan son
+python3 tools/code_gap.py patterns 17 -v  # bo'lim ro'yxati, Spring qatori bilan
+python3 tools/add_code.py snippets.json   # bloklarni bo'lim oxiriga joylashtiradi
+```
+
+`add_code.py` kirishi: `{"patterns": {"17.2": "<kod>", ...}}`. Boshqa til
+kerak bo'lsa qiymat `{"lang": "yaml", "code": "..."}` ko'rinishida beriladi.
 
 ## Memory
 
