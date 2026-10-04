@@ -21,6 +21,18 @@
     ]
   },
   "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/tools/suggest_sections.py\"",
+            "timeout": 10,
+            "statusMessage": "Mos bo'limlar qidirilmoqda"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Read|Bash",

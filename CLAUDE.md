@@ -49,6 +49,13 @@ tools/doc.sh path patterns 17.2           # fayl, satr oralig'i va anchor
 Odatiy yo'l ikki qadam: `find` bo'lim raqamini beradi, `show` matnni beradi.
 Hujjat kalitlari `doc.sh toc` da.
 
+Buning ustiga `tools/suggest_sections.py` har bir so'rovda avtomatik
+ishlaydi (`UserPromptSubmit` hook) va mos bo'lim raqamlarini kontekstga
+qo'shadi. Ya'ni kerakli joy `find` chaqirilmasa ham ko'rsatiladi. Taklif
+chiqqan bo'lsa, javob o'sha bo'limlarga tayanishi kerak: ularni `show`
+bilan o'qing yoki nega mos emasligini ayting. Taklif chiqmasligi mavzu
+yo'q degani emas, `find` bilan qidirib ko'ring.
+
 Qoidalar:
 
 - `cat`, `less` yoki chegarasiz `Read` bilan 1200 satrdan uzun bob fayli
@@ -63,6 +70,9 @@ Qoidalar:
 - Qidiruv sifati o'lchanadi: `python3 tools/eval_find.py`. U bo'limni
   topish emas, nechanchi o'rinda chiqishini o'lchaydi. `find` mantig'i yoki
   indeks o'zgarsa, pasayish shu yerda ko'rinadi.
+- Avtomatik taklifning chegaralari `python3 tools/test_suggest.py` da
+  sinaladi: mavzuli so'rovga taklif chiqishi, mavzusiziga jim turishi
+  shart. Chegara qiymatlari o'sha ro'yxatda sozlangan, ko'z bilan emas.
 
 ## Tekshiruv
 

@@ -37,6 +37,9 @@ PAREN_RE = re.compile(r"\(([^()]*(?:\([^()]*\)[^()]*)*)\)\s*$")
 
 ALIAS_FILE = "99-alifbo-boyicha-indeks.md"
 
+# `n+1`, `c++` kabi atamalar bitta token bo'lib qolishi kerak.
+WORD_RE = re.compile(r"[a-z0-9_.@#]+(?:\+\+|\+\d+)?(?:'[a-z0-9]+)*")
+
 
 def clean(text):
     """TSV ni buzmaydigan bir satrli matn."""
@@ -181,8 +184,43 @@ def build():
           rows["sections"])
     write("aliases.tsv", ["alias", "doc", "kind", "ref"], aliases)
 
-    print("index: %d hujjat, %d bob, %d bo'lim, %d taxallus"
-          % (len(doc_rows), len(rows["chapters"]), len(rows["sections"]), len(aliases)))
+    df = build_df(rows["sections"])
+    write("df.tsv", ["token", "sections"],
+          sorted(df.items(), key=lambda kv: (-kv[1], kv[0])))
+
+
+    print("index: %d hujjat, %d bob, %d bo'lim, %d taxallus, %d so'z chastotasi"
+          % (len(doc_rows), len(rows["chapters"]), len(rows["sections"]),
+             len(aliases), len(df)))
+
+
+def word_tokens(text):
+    return {t for t in (x.strip(".") for x in WORD_RE.findall(text.lower()))
+            if len(t) > 1 or not t.isalpha()}
+
+
+def build_df(section_rows):
+    """Sarlavha so'zlari nechta bo'lim TANASIDA uchrashini sanaydi.
+
+    Nega tana bo'yicha: sarlavhalar qisqa, shuning uchun u yerda `yaxshi`
+    ham, `deadlock` ham bir necha marta uchraydi va ikkalasi teng kamyob
+    ko'rinadi. Tana bo'yicha sanalganda `yaxshi` yuzlab bo'limda chiqadi,
+    `deadlock` esa o'nlarida: taklif qilish uchun farq shu yerda.
+    """
+    wanted = set()
+    for row in section_rows:
+        wanted |= word_tokens(row[3])
+
+    cache = {}
+    df = dict.fromkeys(wanted, 0)
+    for row in section_rows:
+        path = row[4]
+        if path not in cache:
+            cache[path] = read_lines(os.path.join(ROOT, path))
+        body = "\n".join(cache[path][row[5] - 1:row[6]])
+        for token in word_tokens(body) & wanted:
+            df[token] += 1
+    return df
 
 
 def write(name, header, data):
