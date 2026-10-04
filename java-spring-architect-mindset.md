@@ -4,8 +4,10 @@ Bu hujjat kod yozadigan arxitektorning bilimi va fikrlash tarzini yig'adi.
 Tayanch stek: Java, Spring va PostgreSQL. Har bob ikki narsani beradi: ichkarida nima
 sodir bo'lishining mexanikasi, va shu bilimdan qanday qaror chiqarish.
 
-Hujjat uchlikning bir qismi. Dizayn patternlar katalogi `java-spring-design-patterns.md`
-faylida, testlashning butun sohasi `java-spring-testing-handbook.md` faylida. Bu yerda
+Hujjat beshlikning bir qismi. Dizayn patternlar katalogi `java-spring-design-patterns.md`
+faylida, testlashning butun sohasi `java-spring-testing-handbook.md` faylida, statik
+tahlil `java-spring-sonarqube.md` faylida, kod review esa `java-spring-code-review.md`
+faylida. Bu yerda
 ular takrorlanmaydi, kerak bo'lganda mavzu nomi bilan havola qilinadi.
 
 ## Mundarija

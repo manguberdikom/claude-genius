@@ -4,12 +4,17 @@ Bu hujjat toza kodning **qoidalar to'plami**. Arxitektura qarorlari, pattern kat
 test texnikasi boshqa hujjatlarda turadi; bu yerda faqat bitta savolga javob beriladi:
 klaviatura ostida tug'ilayotgan shu qator toza yoki yo'q.
 
-Hujjat beshlikning bir qismi va qasddan takrorlanmaydi:
+Hujjat oltilikning bir qismi va qasddan takrorlanmaydi:
 
-- `java-spring-design-patterns.md` — pattern katalogi, SOLID va GRASP printsiplari, 83 ta anti-pattern.
-- `java-spring-architect-mindset.md` — qaror, abstraksiya, chegara, murakkablik, JVM va PostgreSQL mexanikasi.
-- `java-spring-testing-handbook.md` — test strategiyasi, piramida, Testcontainers, CI pipeline.
-- `java-spring-sonarqube.md` — statik tahlil, quality gate, coverage, Sonar xato katalogi.
+- `java-spring-design-patterns.md` - pattern katalogi, SOLID va GRASP printsiplari, 83 ta anti-pattern.
+- `java-spring-architect-mindset.md` - qaror, abstraksiya, chegara, murakkablik, JVM va PostgreSQL mexanikasi.
+- `java-spring-testing-handbook.md` - test strategiyasi, piramida, Testcontainers, CI pipeline.
+- `java-spring-sonarqube.md` - statik tahlil, quality gate, coverage, Sonar xato katalogi.
+- `java-spring-code-review.md` - diffni o'qish, review stolida nimani ko'rish va nimani to'xtatish.
+
+Shu hujjatlar bir xil bilimga turli tomondan qaraydi: review hujjati "diffda nimani
+ko'rasiz" degan savolga javob beradi, bu hujjat esa "shu qatorni qanday yozasiz" degan
+savolga.
 
 Arxitektor va pattern hujjatlarida yoritilgan mavzular bu yerda qayta yozilmaydi, faqat
 nomi bilan havola qilinadi: masalan nomni domen tilidan olish, kognitiv yuk, erta qaytish,
@@ -634,7 +639,8 @@ ma'lumotnoma va o'z-o'zini baholash uchun.
   - [48.8 Review paytida tekshiruv ro'yxati (toza kod qismi)](#488-review-paytida-tekshiruv-royxati-toza-kod-qismi)
   - [48.9 Yangi sinf uchun tekshiruv ro'yxati](#489-yangi-sinf-uchun-tekshiruv-royxati)
   - [48.10 Terminlar lug'ati](#4810-terminlar-lugati)
-  - [48.11 Besh hujjat bilan bog'lanish xaritasi](#4811-besh-hujjat-bilan-boglanish-xaritasi)
+  - [48.11 Olti hujjat bilan bog'lanish xaritasi](#4811-olti-hujjat-bilan-boglanish-xaritasi)
+  - [48.12 Amalda qo'llash](#4812-amalda-qollash)
 - [49. O'z-o'zini baholash: toza kod yetukligi (Self-Assessment)](#49-oz-ozini-baholash-toza-kod-yetukligi-self-assessment)
   - [49.1 Yetuklik darajalari](#491-yetuklik-darajalari)
   - [49.2 Nomlash va o'qilishi: o'zingizni sinash](#492-nomlash-va-oqilishi-ozingizni-sinash)
@@ -659,7 +665,7 @@ Toza kod haqidagi suhbat did haqidagi bahsga aylanib ketsa, u foydasiz. Shuning 
 
 Toza kodni ta'riflashning eng ishonchli yo'li uni kuzatiladigan xatti-harakat orqali belgilash. Kod toza, agar uni birinchi marta ko'rgan odam debuggersiz o'qib tushunsa; o'zgartirish kiritishda u nimani buzishi mumkinligini oldindan ayta olsa; va o'zgartirishdan keyin test uni tasdiqlasa yoki rad etsa. Uchta shartning hech biri estetika haqida emas.
 
-Shundan amaliy natija chiqadi. "Menga bu uslub yoqmaydi" argumenti toza kod argumenti emas. "Bu metodni o'qish uchun ikkita boshqa faylni ochish kerak" — toza kod argumenti, chunki o'qish narxini oshiradi. "Bu nomni o'zgartirsa, uch joyda kutilmagan xatti-harakat chiqadi" — toza kod argumenti, chunki o'zgartirish ishonchini pasaytiradi.
+Shundan amaliy natija chiqadi. "Menga bu uslub yoqmaydi" argumenti toza kod argumenti emas. "Bu metodni o'qish uchun ikkita boshqa faylni ochish kerak" - toza kod argumenti, chunki o'qish narxini oshiradi. "Bu nomni o'zgartirsa, uch joyda kutilmagan xatti-harakat chiqadi" - toza kod argumenti, chunki o'zgartirish ishonchini pasaytiradi.
 
 | Savol | Iflos kod | Toza kod |
 |---|---|---|
@@ -673,7 +679,7 @@ Shundan amaliy natija chiqadi. "Menga bu uslub yoqmaydi" argumenti toza kod argu
 
 Buzilgan deraza nazariyasi kod bazasiga aniq ko'chadi: bitta tuzatilmagan hid keyingi hidga ruxsat beradi. Mexanizm psixologik, lekin oqibati o'lchanadi. Kodda 30 ta `// TODO` bo'lsa, 31-chisini qo'shish arzon ko'rinadi. Bitta 2000 qatorli sinf bo'lsa, ikkinchisini yaratish qiyin bo'lmaydi, chunki standart allaqachon shu.
 
-Shu sababli toza kod intizomi katta tozalash kampaniyalaridan emas, kichik va to'xtovsiz tuzatishlardan yig'iladi. Har bir tegilgan fayl bir nuqta yaxshilanib qolsa, kod bazasi yaxshilanish yo'nalishida turadi. Hech narsa tuzatilmasa, u faqat bitta yo'nalishda — pastga — qarab ketadi.
+Shu sababli toza kod intizomi katta tozalash kampaniyalaridan emas, kichik va to'xtovsiz tuzatishlardan yig'iladi. Har bir tegilgan fayl bir nuqta yaxshilanib qolsa, kod bazasi yaxshilanish yo'nalishida turadi. Hech narsa tuzatilmasa, u faqat bitta yo'nalishda - pastga - qarab ketadi.
 
 ### 1.3 "Keyin tozalaymiz" nega hech qachon kelmaydi
 
@@ -710,7 +716,7 @@ Toza kod haqida bahsni o'lchovga ko'chirish mumkin. Quyidagi ko'rsatkichlar kod 
 
 ### 1.7 Qoida, evristika va did farqi
 
-Uch darajani ajratish bahsni qisqartiradi. **Qoida** — mashina tekshiradi va muhokama qilinmaydi: formatlash, import tartibi, `equals`/`hashCode` juftligi, resursni yopish. **Evristika** — odatda to'g'ri, lekin istisnosi bor: "funksiya 20 qatordan oshmasin". **Did** — shaxsiy va review da vaqt sarflashga arzimaydi: o'zgaruvchi nomining ohangi, qavs joylashuvi (allaqachon formatter hal qilgan).
+Uch darajani ajratish bahsni qisqartiradi. **Qoida** - mashina tekshiradi va muhokama qilinmaydi: formatlash, import tartibi, `equals`/`hashCode` juftligi, resursni yopish. **Evristika** - odatda to'g'ri, lekin istisnosi bor: "funksiya 20 qatordan oshmasin". **Did** - shaxsiy va review da vaqt sarflashga arzimaydi: o'zgaruvchi nomining ohangi, qavs joylashuvi (allaqachon formatter hal qilgan).
 
 Jamoada eng ko'p vaqt shu uchlik aralashganda yo'qoladi. Yechim: qoidalarni CI ga ko'chirish (42-bob), evristikalarni hujjatda yozib qo'yish (48-bob), did haqida bahsni to'xtatish.
 
@@ -727,14 +733,15 @@ Chegarani bilib turish takrorlanishni yo'qotadi va qidirishni tezlashtiradi.
 | Savol | Qaysi hujjat |
 |---|---|
 | Bu nomni qanday yozaman? | shu hujjat, 2-3 bob |
-| Nomni domen tilidan qanday olaman? | arxitektor hujjati, 4.2 |
+| Nomni domen tilidan qanday olaman? | arxitektor hujjatidagi nomlash bo'limi |
 | Bu yerda qaysi pattern kerak? | patternlar hujjati |
-| SOLID nimani talab qiladi? | patternlar hujjati, 26-bob |
-| Bu anti-pattern nomi nima? | patternlar hujjati, 25-bob |
-| Chegarani qayerdan o'tkazaman? | arxitektor hujjati, 5-bob |
+| SOLID nimani talab qiladi? | patternlar hujjatidagi dizayn printsiplari bo'limi |
+| Bu anti-pattern nomi nima? | patternlar hujjatidagi anti-patternlar bo'limi |
+| Chegarani qayerdan o'tkazaman? | arxitektor hujjatidagi chegara bo'limi |
 | Bu testni qanday yozaman? | testlash qo'llanmasi |
 | Test kodi toza ko'rinishi kerak? | shu hujjat, 30-bob |
 | Sonar nega shikoyat qilyapti? | SonarQube hujjati |
+| Boshqa odamning diffida nimani ko'raman? | review hujjati |
 | Bu hidni qanday refaktoring qilaman? | shu hujjat, 32-38 bob |
 
 ### 1.10 Amalda qo'llash
@@ -747,9 +754,10 @@ Chegarani bilib turish takrorlanishni yo'qotadi va qidirishni tezlashtiradi.
 - [ ] Review da "menga yoqmaydi" turidagi izohlarni to'xtatish uchun formatterni majburiy qiling (13-bob).
 - [ ] Yangi odamning birinchi haftasida yozib olgan savollarini to'plab, javobi kodda yo'q bo'lganlarini kodga ko'chiring.
 - [ ] Ishlash haqidagi har bir da'voni o'lchovsiz qabul qilmaslikni jamoa kelishuviga kiriting.
+
 ## 2. Nomlash qoidalari: maqsadni ochib beruvchi nom (Naming: Intention-Revealing Names)
 
-Nomni domen tilidan olish qoidasi arxitektor hujjatida (4.2) yoritilgan. Bu bobda qolgan qism: nomning o'zini tekshirish uchun aniq qoidalar to'plami. Har bir qoida bitta aniq xatoni to'sadi va ularning hammasini review paytida bir daqiqada qo'llash mumkin.
+Nomni domen tilidan olish qoidasi arxitektor hujjatidagi nomlashni domen tilidan olish bo'limida yoritilgan. Bu bobda qolgan qism: nomning o'zini tekshirish uchun aniq qoidalar to'plami. Har bir qoida bitta aniq xatoni to'sadi va ularning hammasini review paytida bir daqiqada qo'llash mumkin.
 
 ### 2.1 Nom javob berishi kerak bo'lgan uchta savol
 
@@ -807,7 +815,7 @@ Agar ikkita nom orasidagi farqni bir gapda aytib bera olmasangiz, ikkitasidan bi
 
 ### 2.4 Shovqin so'zlar: `Info`, `Data`, `Object`, `Variable`, `The`
 
-Shovqin so'z nomga uzunlik qo'shadi, ma'no qo'shmaydi. `theCustomer` va `customer`, `CustomerObject` va `Customer`, `nameString` va `name` juftliklarida ikkinchisi har doim yaxshiroq. `Manager`, `Helper`, `Util`, `Processor` qo'shimchalari arxitektor hujjatida (4.2) ko'rilgan; bu yerdagi ro'yxat ularning qolgani.
+Shovqin so'z nomga uzunlik qo'shadi, ma'no qo'shmaydi. `theCustomer` va `customer`, `CustomerObject` va `Customer`, `nameString` va `name` juftliklarida ikkinchisi har doim yaxshiroq. `Manager`, `Helper`, `Util`, `Processor` qo'shimchalari arxitektor hujjatidagi nomlashni domen tilidan olish bo'limida ko'rilgan; bu yerdagi ro'yxat ularning qolgani.
 
 | Shovqin | Nega keraksiz | Almashtirish |
 |---|---|---|
@@ -895,7 +903,7 @@ for (PaymentRow payment : paymentRows) {
 
 Konvensiya oddiy va istisnosi kam: sinf va record nomi ot yoki ot iborasi (`Invoice`, `PaymentGateway`, `OrderLine`), metod nomi fe'l yoki fe'l iborasi (`postPayment`, `deletePage`, `save`). Fe'l bo'lmagan metod nomi (`data()`, `info()`) nima qilishini aytmaydi.
 
-Aksessor, mutator va predikat uchun JavaBean konvensiyasi: `getName`, `setName`, `isPosted`. Record va domen obyektlarida esa `get` prefiksini tashlab, maydon nomini ishlatish qabul qilingan: `order.total()`, `payment.settledAt()`. Muhimi — bitta kod bazasida bitta uslub.
+Aksessor, mutator va predikat uchun JavaBean konvensiyasi: `getName`, `setName`, `isPosted`. Record va domen obyektlarida esa `get` prefiksini tashlab, maydon nomini ishlatish qabul qilingan: `order.total()`, `payment.settledAt()`. Muhimi - bitta kod bazasida bitta uslub.
 
 ```java
 // konstruktor overload o'rniga nomlangan statik fabrika (nom maqsadni aytadi)
@@ -948,7 +956,7 @@ Xato ikki yo'nalishda bo'ladi. Domen sinfiga texnik nom berish (`OrderStrategyFa
 
 ### 2.14 Kontekst qo'shish va ortiqcha kontekst qo'shmaslik
 
-Nom o'z-o'zidan yetarli kontekst bermasa, uni qo'shish kerak — lekin prefiks bilan emas, tur yoki paket bilan. `state` o'zi noaniq; `Address` sinfi ichidagi `state` esa aniq.
+Nom o'z-o'zidan yetarli kontekst bermasa, uni qo'shish kerak - lekin prefiks bilan emas, tur yoki paket bilan. `state` o'zi noaniq; `Address` sinfi ichidagi `state` esa aniq.
 
 ```java
 // yomon: har bir maydonga prefiks qo'yilgan
@@ -991,6 +999,7 @@ Amaliy qoida: nom uzunligi uning qamrovi (scope) ga mutanosib bo'lishi kerak. Uc
 - [ ] Bir xil tushuncha uchun ikki nom ishlatilgan joylarni (`Product`/`ProductInfo`) birlashtiring yoki farqini bir gapda hujjatlashtiring.
 - [ ] Har bir public konstanta nomida birlik borligini tekshiring (`...Ms`, `...Bytes`, `...Percent`).
 - [ ] Jamoa lug'atini (glossary) fayl sifatida repoga qo'shib, har bir yangi domen atamasini shu yerda qayd eting (3.14).
+
 ## 3. Nom turlari bo'yicha aniq konvensiyalar (Naming Conventions by Kind)
 
 Oldingi bob nomning umumiy sifatini tekshirdi. Bu bobda har bir nom turi uchun alohida konvensiya beriladi: mantiqiy qiymat, to'plam, konstanta, enum, interfeys, generik parametr, istisno, paket, fayl. Konvensiya bo'lmasa, har bir ishlab chiquvchi o'z uslubini kiritadi va kod bazasi bir necha dialektga bo'linadi.
@@ -999,7 +1008,7 @@ Oldingi bob nomning umumiy sifatini tekshirdi. Bu bobda har bir nom turi uchun a
 
 Mantiqiy qiymat nomi gap bo'lishi kerak, shunda `if` ichida o'qilishi tabiiy chiqadi. To'rtta prefiks yetarli: `is` (holat), `has` (egalik), `can` (ruxsat yoki imkoniyat), `should` (siyosat qarori). `was`, `will` va `requires` ham qo'shiladi, lekin faqat ma'nosi aniq bo'lganda.
 
-Eng qimmat xato — inkor nom. `isNotValid`, `disableCache`, `notFound` nomlari `if (!isNotValid)` kabi ikki marta inkorga olib keladi va o'quvchi xato o'qiydi. Qoida: nom har doim ijobiy shaklda, inkor `!` operatorida qoladi.
+Eng qimmat xato - inkor nom. `isNotValid`, `disableCache`, `notFound` nomlari `if (!isNotValid)` kabi ikki marta inkorga olib keladi va o'quvchi xato o'qiydi. Qoida: nom har doim ijobiy shaklda, inkor `!` operatorida qoladi.
 
 ```java
 // yomon
@@ -1079,7 +1088,7 @@ Konstantani interfeysga qo'yib voris olish (constant interface) qoldirilgan amal
 
 ### 3.5 Enum turi va holat nomlari
 
-Enum turi birlikda nomlanadi, chunki u bitta qiymatning turini bildiradi: `OrderStatus`, `PaymentMethod`, `Currency` — `OrderStatuses` emas. A'zolari esa `UPPER_SNAKE_CASE` va ma'nosi domen tilida: `PENDING`, `AWAITING_SETTLEMENT`, `PARTIALLY_REFUNDED`.
+Enum turi birlikda nomlanadi, chunki u bitta qiymatning turini bildiradi: `OrderStatus`, `PaymentMethod`, `Currency` - `OrderStatuses` emas. A'zolari esa `UPPER_SNAKE_CASE` va ma'nosi domen tilida: `PENDING`, `AWAITING_SETTLEMENT`, `PARTIALLY_REFUNDED`.
 
 Enum a'zosi nomida qisqartma va texnik kod yashirmaslik kerak. `S1`, `S2` ma'nosiz; agar bazada raqamli kod saqlanishi kerak bo'lsa, kodni enum ichidagi maydonga olib, nomni o'qiladigan qoldirish kerak.
 
@@ -1102,7 +1111,7 @@ public enum SettlementStatus {
 
 Interfeys domen rolini oladi, implementatsiya esa shu rolni **qanday** bajarishini aytadi. Shunday bo'lsa, `Impl` qo'shimchasi o'z-o'zidan keraksiz bo'lib qoladi: `OrderRepository` / `JdbcOrderRepository`, `PriceCalculator` / `TieredPriceCalculator`, `NotificationSender` / `SmtpNotificationSender`.
 
-`Impl` faqat bitta holatda haqli: implementatsiya bitta va uning mexanikasini ayta olmaydigan darajada oddiy (masalan interfeys faqat test uchun ajratilgan). Bunda ham ko'pincha yaxshiroq yechim bor: interfeysni umuman yozmaslik va sinfning o'zini ishlatish (arxitektor hujjati 5.7).
+`Impl` faqat bitta holatda haqli: implementatsiya bitta va uning mexanikasini ayta olmaydigan darajada oddiy (masalan interfeys faqat test uchun ajratilgan). Bunda ham ko'pincha yaxshiroq yechim bor: interfeysni umuman yozmaslik va sinfning o'zini ishlatish (arxitektor hujjatidagi interfeysni foydalanuvchi tomonda e'lon qilish bo'limi).
 
 | Interfeys | Yaxshi implementatsiya nomi | Yomon |
 |---|---|---|
@@ -1138,7 +1147,7 @@ public interface Pipeline<InputT, OutputT, ContextT> {
 
 ### 3.9 Metod nomi va qaytish turi muvofiqligi
 
-Nom qaytish turiga mos bo'lmasa, o'quvchi chalg'iydi. `getOrders()` bitta `Order` qaytarsa, `isValid()` `String` qaytarsa, `save()` `void` emas `Long` qaytarsa — har birida yashirin shartnoma bor va u nomda ko'rinmaydi.
+Nom qaytish turiga mos bo'lmasa, o'quvchi chalg'iydi. `getOrders()` bitta `Order` qaytarsa, `isValid()` `String` qaytarsa, `save()` `void` emas `Long` qaytarsa - har birida yashirin shartnoma bor va u nomda ko'rinmaydi.
 
 | Qaytish turi | Nom shakli | Misol |
 |---|---|---|
@@ -1151,7 +1160,7 @@ Nom qaytish turiga mos bo'lmasa, o'quvchi chalg'iydi. `getOrders()` bitta `Order
 | yangi obyekt | `to`/`as`/`with` | `toDto()`, `withDiscount()` |
 | yon ta'sirli va qiymatli | ikkiga bo'lish | `reserve()` + `reservationId()` |
 
-Oxirgi qator buyruq-so'rov ajratilishiga (patternlar hujjati 26.23) ishora qiladi: bir metod ham o'zgartirsa, ham qiymat qaytarsa, nomi ikkisini ham aytolmaydi.
+Oxirgi qator buyruq-so'rov ajratilishiga (patternlar hujjatidagi buyruq-so'rov ajratilishi printsipi) ishora qiladi: bir metod ham o'zgartirsa, ham qiymat qaytarsa, nomi ikkisini ham aytolmaydi.
 
 ### 3.10 Istisno sinflari nomlari
 
@@ -1171,7 +1180,7 @@ Texnik istisnolarda `Failure` yoki `Error` emas, `Exception` qo'shimchasi qolave
 
 ### 3.11 Paket, modul va artefakt nomlari
 
-Paket nomi kichik harflarda, ko'plik yoki birlikda izchil, va xususiyatni anglatadi (arxitektor hujjati 4.8 paketni xususiyat bo'yicha bo'lishni ko'rib chiqadi). Bu yerda qolgan konvensiyalar: qisqartma yo'q, kamalak (`com.company.project.service.impl.v2`) yo'q, `util` paketiga hamma narsani tashlash yo'q.
+Paket nomi kichik harflarda, ko'plik yoki birlikda izchil, va xususiyatni anglatadi (arxitektor hujjatidagi paketni xususiyat bo'yicha bo'lish bo'limi paketni xususiyat bo'yicha bo'lishni ko'rib chiqadi). Bu yerda qolgan konvensiyalar: qisqartma yo'q, kamalak (`com.company.project.service.impl.v2`) yo'q, `util` paketiga hamma narsani tashlash yo'q.
 
 | Daraja | Konvensiya | Misol |
 |---|---|---|
@@ -1185,7 +1194,7 @@ Paket nomi kichik harflarda, ko'plik yoki birlikda izchil, va xususiyatni anglat
 
 ### 3.12 Test metodi va test sinfi nomlari
 
-Test nomlash konvensiyalari testlash qo'llanmasida (5.3) berilgan. Bu yerda faqat nomlash nuqtai nazaridan ikki qo'shimcha qoida bor. Birinchi, test nomi texnik emas, xatti-harakat tilida bo'lishi kerak: `shouldRejectRefundExceedingSettledAmount`, `test1` emas. Ikkinchi, test sinfi nomi sinab ko'rilayotgan sinfga bog'lanadi: `OrderPricingTest`, `OrderPricingIT` (integratsion).
+Test nomlash konvensiyalari testlash qo'llanmasidagi test nomlash va AAA bo'limida berilgan. Bu yerda faqat nomlash nuqtai nazaridan ikki qo'shimcha qoida bor. Birinchi, test nomi texnik emas, xatti-harakat tilida bo'lishi kerak: `shouldRejectRefundExceedingSettledAmount`, `test1` emas. Ikkinchi, test sinfi nomi sinab ko'rilayotgan sinfga bog'lanadi: `OrderPricingTest`, `OrderPricingIT` (integratsion).
 
 ### 3.13 Fayl, resurs va konfiguratsiya kaliti nomlari
 
@@ -1221,7 +1230,7 @@ Majburlash uchun ikki vosita bor: review paytida lug'atga havola qilish, va Arch
 
 ### 3.15 Nomni o'zgartirish intizomi
 
-Nomni yaxshilash eng arzon refaktoring, lekin faqat to'g'ri bajarilganda. Uch qoida: IDE refaktoringi bilan qilish (qo'lda almashtirish satr literallarini ham o'zgartirib qo'yadi), alohida commit qilish (mantiq o'zgarishi bilan aralashmasin, 40.1), va public API bo'lsa deprecate siklidan o'tish (arxitektor hujjati 13.9).
+Nomni yaxshilash eng arzon refaktoring, lekin faqat to'g'ri bajarilganda. Uch qoida: IDE refaktoringi bilan qilish (qo'lda almashtirish satr literallarini ham o'zgartirib qo'yadi), alohida commit qilish (mantiq o'zgarishi bilan aralashmasin, 40.1), va public API bo'lsa deprecate siklidan o'tish (arxitektor hujjatidagi orqaga moslik bo'limi).
 
 ```bash
 # Nomni o'zgartirish commiti faqat nom o'zgarishini o'z ichiga oladi.
@@ -1243,17 +1252,18 @@ grep -rn "orderManager" --include=*.java --include=*.yml --include=*.sql src/
 - [ ] Metod nomlari va qaytish turlari muvofiqligini 3.9 jadvali bo'yicha tekshirib, mos kelmaganlarini qayta nomlang.
 - [ ] Flyway, property, jadval va metrika nomlanishini 3.13 jadvaliga moslab, farqlarni bitta migratsiyada tuzating.
 - [ ] Nom o'zgartirish uchun alohida commit qoidasini jamoa kelishuviga kiritib, PR shabloniga eslatma qo'shing.
+
 # II. Funksiya va boshqaruv oqimi
 
 ## 4. Funksiya: kichiklik va bitta ish (Functions: Small and Doing One Thing)
 
-Metod uzunligi, ichma-ich shartlar va erta qaytish arxitektor hujjatida (4.4) ko'rib chiqilgan. Bu bobda funksiya qoidalarining qolgan qismi: "bitta ish qiladi" ni qanday tekshirish, pastga tushish qoidasi, ajratib olish mexanikasi va funksiyani toza holatga keltirish tartibi.
+Metod uzunligi, ichma-ich shartlar va erta qaytish arxitektor hujjatidagi metod uzunligi va erta qaytish bo'limida ko'rib chiqilgan. Bu bobda funksiya qoidalarining qolgan qismi: "bitta ish qiladi" ni qanday tekshirish, pastga tushish qoidasi, ajratib olish mexanikasi va funksiyani toza holatga keltirish tartibi.
 
 ### 4.1 Birinchi qoida: kichik; ikkinchi qoida: yana kichikroq
 
 Funksiyaning to'g'ri uzunligi haqida aniq son berish qiyin, lekin kuzatish bor: toza kod bazalarida funksiyalarning katta qismi 4-12 qator oralig'ida bo'ladi va har biri bir ekranga sig'adi. Shu hajmda funksiya nomi uning butun mazmunini qamrab oladi, test yozish oson bo'ladi va qayta ishlatish imkoniyati paydo bo'ladi.
 
-Kichik funksiyadan qo'rqishning odatiy sababi — "juda ko'p metod bo'lib ketadi". Amalda esa teskari natija chiqadi: metodlar soni oshadi, lekin har birining o'qish narxi tushadi va jami o'qish vaqti qisqaradi. Bundan tashqari, nomlangan kichik funksiya izohni almashtiradi (8.2).
+Kichik funksiyadan qo'rqishning odatiy sababi - "juda ko'p metod bo'lib ketadi". Amalda esa teskari natija chiqadi: metodlar soni oshadi, lekin har birining o'qish narxi tushadi va jami o'qish vaqti qisqaradi. Bundan tashqari, nomlangan kichik funksiya izohni almashtiradi (8.2).
 
 ```java
 // yomon: bitta funksiya to'rt ishni bajaradi, 30+ qator
@@ -1285,7 +1295,7 @@ public void placeOrder(Order order) {
 
 "Bitta ish" ta'rifi noaniq ko'rinadi, lekin aniq sinovi bor: funksiyadan ma'noli nom bilan boshqa funksiya ajratib olish mumkin bo'lsa va u shunchaki asl funksiyaning qayta ifodasi bo'lmasa, demak funksiya bir necha ish qilayotgan edi.
 
-Ikkinchi sinov abstraksiya darajasida: funksiya ichidagi barcha gaplar nom aytgan abstraksiyadan **bir daraja pastda** bo'lishi kerak (patternlar hujjati 26.28 shu printsipni ta'riflaydi). `placeOrder` ichida `jdbc.update(...)` turishi ikki darajani buzadi, chunki SQL "buyurtma berish" dan ikki daraja past.
+Ikkinchi sinov abstraksiya darajasida: funksiya ichidagi barcha gaplar nom aytgan abstraksiyadan **bir daraja pastda** bo'lishi kerak (patternlar hujjatidagi yagona abstraksiya darajasi printsipi shu printsipni ta'riflaydi). `placeOrder` ichida `jdbc.update(...)` turishi ikki darajani buzadi, chunki SQL "buyurtma berish" dan ikki daraja past.
 
 ```java
 // yomon: uchta daraja bir funksiyada (siyosat, mapping, SQL)
@@ -1367,7 +1377,7 @@ Nomni tanlashning amaliy usuli: funksiyani izoh bilan tasvirlab ko'ring, keyin s
 
 ### 4.7 Funksiya qaytish nuqtalari: bitta `return` afsonasi
 
-"Funksiyada bitta `return` bo'lishi kerak" qoidasi strukturali dasturlash davridan qolgan va kichik funksiyalarda zarar qiladi: u guard clause ni (arxitektor hujjati 4.4) imkonsiz qiladi va ichma-ich shartlarni ko'paytiradi.
+"Funksiyada bitta `return` bo'lishi kerak" qoidasi strukturali dasturlash davridan qolgan va kichik funksiyalarda zarar qiladi: u guard clause ni (arxitektor hujjatidagi metod uzunligi va erta qaytish bo'limi) imkonsiz qiladi va ichma-ich shartlarni ko'paytiradi.
 
 Haqiqiy qoida boshqa: funksiya kichik bo'lsa, bir necha `return` muammo emas. Muammo faqat katta funksiyada paydo bo'ladi, chunki o'quvchi chiqish nuqtalarini sanab chiqolmaydi. Shu sababli yechim `return` sonini kamaytirish emas, funksiyani kichraytirish.
 
@@ -1421,6 +1431,7 @@ Shu tartib TDD da tabiiy chiqadi (31-bob): yashil holatda refaktoring bepul, chu
 - [ ] 15 dan ko'p private metodi bor sinflarni ro'yxatlab, ichida yashiringan sinfni ajratish variantini ko'rib chiqing.
 - [ ] Bir funksiya ichida SQL, HTTP va biznes qoidasi birga turgan joylarni topib, darajalarni ajratib bering.
 - [ ] Yangi kod uchun "bir funksiya bir ekranga sig'adi" qoidasini review checklistiga kiritib, istisnolarni izohlashni talab qiling.
+
 ## 5. Funksiya argumentlari (Function Arguments)
 
 Uzun parametr ro'yxati patternlar hujjatida anti-pattern sifatida sanalgan (25.22). Bu bobda argumentlarning **shakli** ko'rib chiqiladi: nechta argument haqli, flag va selector argument nega zararli, chiqish argumenti nima uchun qoldirilgan, va argument obyekti qachon kerak.
@@ -1443,7 +1454,7 @@ Diadik funksiyada tabiiy tartib bo'lsa, u xavfsiz: `new Point(x, y)`, `assertEqu
 
 Bitta argumentli funksiyalar uch shaklga bo'linadi va har birining o'z konvensiyasi bor. **So'rov**: argument haqida savol beradi va javob qaytaradi (`boolean fileExists(String path)`). **O'zgartirish**: argumentni boshqa narsaga aylantiradi va natijani **qaytaradi** (`InputStream fileOpen(String path)`). **Hodisa**: argumentni qabul qilib tizim holatini o'zgartiradi va hech narsa qaytarmaydi (`void passwordAttemptFailedNTimes(int attempts)`).
 
-Eng ko'p uchraydigan xato — o'zgartirish shaklida argumentni o'zgartirib, uni qaytarmaslik. Bu chiqish argumentiga aylanadi (5.5) va o'quvchi natijani qayerdan olishini bilmaydi.
+Eng ko'p uchraydigan xato - o'zgartirish shaklida argumentni o'zgartirib, uni qaytarmaslik. Bu chiqish argumentiga aylanadi (5.5) va o'quvchi natijani qayerdan olishini bilmaydi.
 
 ### 5.3 Flag argumenti va uni ikki funksiyaga bo'lish
 
@@ -1464,7 +1475,7 @@ Agar flag argumenti tashqi API dan kelgan bo'lsa va olib tashlab bo'lmasa, uni e
 
 ### 5.4 Tanlov (selector) argumenti va `enum` bilan almashtirish
 
-Selector argumenti — flag argumentining umumlashgan shakli: funksiya ichida `switch` yoki `if` bilan xatti-harakatni tanlaydi. U funksiyani bir necha vazifaga birlashtirib, har bir chaqiruvchini keraksiz kontekst bilan yuklaydi.
+Selector argumenti - flag argumentining umumlashgan shakli: funksiya ichida `switch` yoki `if` bilan xatti-harakatni tanlaydi. U funksiyani bir necha vazifaga birlashtirib, har bir chaqiruvchini keraksiz kontekst bilan yuklaydi.
 
 ```java
 // yomon: selector argumenti funksiyani ikki vazifaga birlashtirgan
@@ -1488,7 +1499,7 @@ public Money weeklyPay(OvertimePolicy policy) {
 
 ### 5.5 Chiqish argumenti va `void` dan qaytishga o'tish
 
-Chiqish argumenti — funksiyaga uzatilgan obyektni funksiya o'zgartirib, natijani shu obyekt orqali qaytarishi. Bu shakl o'quvchidan imzoni tekshirishni talab qiladi, chunki argument odatda **kirish** deb o'qiladi.
+Chiqish argumenti - funksiyaga uzatilgan obyektni funksiya o'zgartirib, natijani shu obyekt orqali qaytarishi. Bu shakl o'quvchidan imzoni tekshirishni talab qiladi, chunki argument odatda **kirish** deb o'qiladi.
 
 ```java
 // yomon: s ni kim o'zgartiradi, nimaga aylanadi - imzodan ko'rinmaydi
@@ -1504,7 +1515,7 @@ Xuddi shu qoida to'plamlarga ham tegishli: metodga `List` berib, uni to'ldirib q
 
 ### 5.6 Argument obyekti va parametr guruhlari
 
-Uch yoki undan ko'p argument birga sayohat qilsa (data clump), ular aslida bir tushuncha. Ularni obyektga yig'ish argument sonini kamaytirmaydi — u tushunchaga nom beradi, va shu nom kod bazasida qayta ishlatiladi.
+Uch yoki undan ko'p argument birga sayohat qilsa (data clump), ular aslida bir tushuncha. Ularni obyektga yig'ish argument sonini kamaytirmaydi - u tushunchaga nom beradi, va shu nom kod bazasida qayta ishlatiladi.
 
 ```java
 // yomon: beshta argument, tartibi yodda saqlanadi
@@ -1542,7 +1553,7 @@ boolean expired = clock.isAfter(order.expiresAt());
 
 ### 5.8 Argument tartibi va bir xil turdagi qo'shni argumentlar
 
-Eng xavfli imzo — yonma-yon turgan bir xil turdagi argumentlar, chunki ularni almashtirib yuborish kompilyatsiyadan o'tadi va faqat production da ko'rinadi.
+Eng xavfli imzo - yonma-yon turgan bir xil turdagi argumentlar, chunki ularni almashtirib yuborish kompilyatsiyadan o'tadi va faqat production da ko'rinadi.
 
 ```java
 // yomon: ikki String va ikki int - almashtirsa kompilyator jim turadi
@@ -1590,7 +1601,7 @@ Qo'shimcha qoida: overload qilingan metodlar bir xil sonli argument bilan turlic
 
 ### 5.11 Argumentni tekshirish joyi: chegara, konstruktor, domen
 
-Validatsiyani har bir metodda takrorlash kodni shishiradi; umuman tekshirmaslik xatoni chuqurga suradi. To'g'ri yechim — tekshirishni joy bo'yicha taqsimlash.
+Validatsiyani har bir metodda takrorlash kodni shishiradi; umuman tekshirmaslik xatoni chuqurga suradi. To'g'ri yechim - tekshirishni joy bo'yicha taqsimlash.
 
 | Daraja | Nima tekshiriladi | Vosita |
 |---|---|---|
@@ -1613,9 +1624,10 @@ Shu taqsimot "fail fast" ni ta'minlaydi (18.10) va ichki metodlarni toza qoldira
 - [ ] Overload qilingan metodlar ro'yxatini chiqarib, xatti-harakati farq qiladiganlarini qayta nomlang.
 - [ ] Validatsiya 5.11 jadvalidagi darajalarga mos taqsimlanganini tekshirib, takrorlangan tekshiruvlarni olib tashlang.
 - [ ] Yangi public API uchun "3 dan ko'p parametr review da asoslanadi" qoidasini kiritib, PR shabloniga qo'shing.
+
 ## 6. Shart, mantiq va boshqaruv oqimi (Conditionals and Control Flow)
 
-Erta qaytish va ichma-ich chuqurlik arxitektor hujjatida (4.4) berilgan. Bu bobda shartlarning qolgan qoidalari: inkor, mantiqiy soddalashtirish, `else` ni yo'qotish, `switch` ni to'g'ri ishlatish, chegaraviy shartlarni inkapsulyatsiya qilish va yashirin vaqt bog'liqligi.
+Erta qaytish va ichma-ich chuqurlik arxitektor hujjatidagi metod uzunligi va erta qaytish bo'limida berilgan. Bu bobda shartlarning qolgan qoidalari: inkor, mantiqiy soddalashtirish, `else` ni yo'qotish, `switch` ni to'g'ri ishlatish, chegaraviy shartlarni inkapsulyatsiya qilish va yashirin vaqt bog'liqligi.
 
 ### 6.1 Shartni nomlash va inkapsulyatsiya qilish
 
@@ -1682,7 +1694,7 @@ return customer.isCreditSuspended();
 
 ### 6.4 `else` ni yo'q qilish usullari
 
-`else` bloki ko'pincha keraksiz va uni yo'qotish kodni tekislaydi. To'rt usul bor: guard clause bilan erta qaytish, standart qiymatni oldin belgilash, `switch` ifodasiga o'tish, va polimorfizm (patternlar hujjati 26.11).
+`else` bloki ko'pincha keraksiz va uni yo'qotish kodni tekislaydi. To'rt usul bor: guard clause bilan erta qaytish, standart qiymatni oldin belgilash, `switch` ifodasiga o'tish, va polimorfizm (patternlar hujjatidagi polimorfizm printsipi).
 
 ```java
 // yomon: ichma-ich if/else zinapoyasi
@@ -1723,7 +1735,7 @@ CustomerTier tier = CustomerTier.forAnnualSpend(total);
 
 ### 6.6 `switch` ni toza ishlatish: to'liqlik, `default`, fallthrough
 
-Zamonaviy Java da `switch` **ifodasi** (`->` shakli) eski `switch` gapidan ustun, chunki fallthrough xatosi yo'q, har bir shox qiymat qaytaradi va `sealed` tur ustida to'liqligi kompilyator tomonidan tekshiriladi (arxitektor hujjati 13.2-13.3).
+Zamonaviy Java da `switch` **ifodasi** (`->` shakli) eski `switch` gapidan ustun, chunki fallthrough xatosi yo'q, har bir shox qiymat qaytaradi va `sealed` tur ustida to'liqligi kompilyator tomonidan tekshiriladi (arxitektor hujjatidagi sealed interfeys va pattern matching bo'limlari).
 
 Qolgan qoidalar: enum ustida `switch` da `default` yozmaslik (shunda yangi enum a'zosi qo'shilganda kompilyator xato beradi), eski `switch` gapida har bir `case` ni `break` bilan tugatish yoki `->` shakliga o'tish, va `switch` ni past darajali kodda ushlab turish (patternlar hujjatidagi polimorfizm bilan almashtirish qoidasi).
 
@@ -1840,6 +1852,7 @@ public enum ShippingMethod {
 - [ ] Ichma-ich ternar operatorlarni topib, domen metodi yoki `switch` ifodasiga aylantiring.
 - [ ] `null` tekshiruvi zanjirlari bor joylarni `Optional` yoki manbadagi `null` ni yo'qotish bilan tekislang.
 - [ ] Ma'lum tartibda chaqirilishi shart bo'lgan metod guruhlarini topib, tartibni qaytish turlari orqali majburiy qiling.
+
 ## 7. Sikl, iteratsiya va to'plam bilan ishlash (Loops and Iteration)
 
 Sikl o'qish narxi jihatidan shartdan qimmat, chunki o'quvchi nafaqat tanani, balki holatning vaqt bo'yicha o'zgarishini ham ushlab turishi kerak. Bu bobda siklni o'qiladigan ushlashning aniq qoidalari: tana uzunligi, o'zgaruvchi nomi, chiqish nuqtalari, siklni bo'lish va quvurga o'tish mezoni.
@@ -1964,7 +1977,7 @@ Xuddi shu qoida `Map` ga tegishli: iteratsiya vaqtida `put` qilish taqiqlangan; 
 
 ### 7.7 Sikldan quvurga o'tish mezoni
 
-Oqim va sikl tanlovi arxitektor hujjatida (13.6) ko'rib chiqilgan. Bu yerda amaliy mezon: quvur (`stream`) **transformatsiya va filtr** zanjirida o'qiladi; sikl esa **holat yig'ish, erta chiqish va yon ta'sir** da o'qiladi.
+Oqim va sikl tanlovi arxitektor hujjatidagi Stream API bo'limida ko'rib chiqilgan. Bu yerda amaliy mezon: quvur (`stream`) **transformatsiya va filtr** zanjirida o'qiladi; sikl esa **holat yig'ish, erta chiqish va yon ta'sir** da o'qiladi.
 
 | Vazifa | O'qiladigan shakl |
 |---|---|
@@ -1979,7 +1992,7 @@ Oqim va sikl tanlovi arxitektor hujjatida (13.6) ko'rib chiqilgan. Bu yerda amal
 
 ### 7.8 Off-by-one va chegarani hujjatlashtirish
 
-Off-by-one xatolarining asosiy sababi — chegaraning inklyuzivligi hech qayerda yozilmagani. Yechim ikki qatlamli: nomda yozish (`fromInclusive`, `toExclusive`) va turga olish (6.7 dagi `DateRange`).
+Off-by-one xatolarining asosiy sababi - chegaraning inklyuzivligi hech qayerda yozilmagani. Yechim ikki qatlamli: nomda yozish (`fromInclusive`, `toExclusive`) va turga olish (6.7 dagi `DateRange`).
 
 ```java
 // yomon: oxirgi element kiradimi - kodni o'qib chiqarish kerak
@@ -1990,11 +2003,11 @@ List<Order> page(Pageable pageable);                 // Spring konvensiyasi
 List<Order> inRange(LocalDate fromInclusive, LocalDate toExclusive);
 ```
 
-Test tomonida qoida: har bir chegara uchun uchta holat yozish — chegaradan oldin, chegarada, chegaradan keyin.
+Test tomonida qoida: har bir chegara uchun uchta holat yozish - chegaradan oldin, chegarada, chegaradan keyin.
 
 ### 7.9 Katta siklda resurs va xotira xatti-harakati
 
-Toza kod katta hajmda ham toza qolishi kerak. Uch qoida bor va ularning hammasi o'qilishini buzmaydi. Birinchi, siklda butun natijani xotiraga yig'maslik: `Stream` yoki kursor bilan oqim sifatida ishlash. Ikkinchi, siklda resurs ochmaslik (ulanish, fayl) — resurs sikldan tashqarida ochiladi. Uchinchi, siklda bitta-bitta so'rov yuborish o'rniga paket (batch) ishlatish; bu N+1 ning umumiy shakli (patternlar hujjati 25.43).
+Toza kod katta hajmda ham toza qolishi kerak. Uch qoida bor va ularning hammasi o'qilishini buzmaydi. Birinchi, siklda butun natijani xotiraga yig'maslik: `Stream` yoki kursor bilan oqim sifatida ishlash. Ikkinchi, siklda resurs ochmaslik (ulanish, fayl) - resurs sikldan tashqarida ochiladi. Uchinchi, siklda bitta-bitta so'rov yuborish o'rniga paket (batch) ishlatish; bu N+1 ning umumiy shakli (patternlar hujjatidagi N+1 so'rovlar anti-patterni).
 
 ```java
 // yomon: siklda bitta-bitta so'rov va ulanish
@@ -2018,15 +2031,16 @@ orderRepository.markShipped(ids);     // ichida: update ... where id = any(?)
 - [ ] Chegara parametrlari nomiga inklyuzivlikni yozing yoki oraliqni `record` ga oling.
 - [ ] Siklda ulanish ochadigan yoki so'rov yuboradigan joylarni paketli amalga aylantiring.
 - [ ] Har bir chegaraviy shart uchun uch holatli test (oldin, chegarada, keyin) yozilganini tekshiring.
+
 # III. Izoh va hujjat
 
 ## 8. Izoh qoidalari: yaxshi izohlar (Comments: The Good Ones)
 
-Izohning "nima" emas "nega" yozish qoidasi arxitektor hujjatida (4.5) berilgan. Bu bobda qolgan qism: izoh qanday holatlarda haqli ekanining to'liq ro'yxati. Keyingi bob esa yomon izohlarning katalogi. Ikkisi birga review paytida izohni qoldirish yoki o'chirish qarorini bir necha soniyada beradi.
+Izohning "nima" emas "nega" yozish qoidasi arxitektor hujjatidagi izohning "nega" qoidasida berilgan. Bu bobda qolgan qism: izoh qanday holatlarda haqli ekanining to'liq ro'yxati. Keyingi bob esa yomon izohlarning katalogi. Ikkisi birga review paytida izohni qoldirish yoki o'chirish qarorini bir necha soniyada beradi.
 
 ### 8.1 Izoh - muvaffaqiyatsizlikni tan olish
 
-Izohning har bir qo'llanishi kichik mag'lubiyat: niyatni kod bilan ifodalay olmaganimiz uchun tabiiy tilga murojaat qilyapmiz. Shu qarash izohga to'g'ri munosabat beradi — izohni yozishdan oldin ikki marta kodni o'zgartirishga urinish kerak.
+Izohning har bir qo'llanishi kichik mag'lubiyat: niyatni kod bilan ifodalay olmaganimiz uchun tabiiy tilga murojaat qilyapmiz. Shu qarash izohga to'g'ri munosabat beradi - izohni yozishdan oldin ikki marta kodni o'zgartirishga urinish kerak.
 
 Shundan kelib chiqadigan ikkinchi haqiqat: izoh eskiradi, kod esa eskirmaydi. Kompilyator izohni tekshirmaydi, test izohni tasdiqlamaydi. Shu sababli kod bazasidagi eng yosh izoh ham yolg'on bo'lishi mumkin, va o'quvchi izohga ishonib xato qiladi. Izohni saqlash uchun **egalik** kerak: kim o'zgartirsa, izohni ham o'zgartiradi.
 
@@ -2152,6 +2166,7 @@ public boolean isValid(String iban) { ... }
 - [ ] Soliq, tarif va huquqiy hisoblar yonida rasmiy asos havolasi borligini tekshirib, yo'qlarini qo'shing.
 - [ ] Litsenziya sarlavhalarini Spotless `licenseHeader` bilan avtomatlashtiring.
 - [ ] Tashqi tizim cheklovlari (limit, format, thread-safety) kodda izohlanganini tekshirib, yetishmaganini qo'shing.
+
 ## 9. Yomon izohlar katalogi (Comments: The Bad Ones)
 
 Izohlarning katta qismi shu bobdagi toifalarga tushadi va ularning hammasi o'chirilishi kerak. Katalog shaklida berilgani ataylab: review paytida izohni toifaga solib, qaror bir necha soniyada chiqadi.
@@ -2295,9 +2310,9 @@ Qoida: izohga olingan kod darhol o'chiriladi. Kerak bo'lsa `git log -S` yoki `gi
 
 ### 9.9 Nolokal ma'lumot va ortiqcha ma'lumot
 
-**Nolokal** izoh — shu kodga tegishli bo'lmagan ma'lumotni aytadi (masalan metod izohida butun tizim konfiguratsiyasini tushuntiradi). Muammo: kod o'zgarmasa ham izoh eskiradi, chunki u boshqa joyga tegishli.
+**Nolokal** izoh - shu kodga tegishli bo'lmagan ma'lumotni aytadi (masalan metod izohida butun tizim konfiguratsiyasini tushuntiradi). Muammo: kod o'zgarmasa ham izoh eskiradi, chunki u boshqa joyga tegishli.
 
-**Ortiqcha ma'lumot** — izohda tarixiy muhokama, RFC ning to'liq matni, akademik tushuntirish. Izoh yozish uchun emas, o'qish uchun mo'ljallangan: uzun matn o'qilmaydi.
+**Ortiqcha ma'lumot** - izohda tarixiy muhokama, RFC ning to'liq matni, akademik tushuntirish. Izoh yozish uchun emas, o'qish uchun mo'ljallangan: uzun matn o'qilmaydi.
 
 ```java
 // yomon: nolokal - bu metodga tegishli emas
@@ -2366,13 +2381,14 @@ Review paytida izoh uchun ketma-ket beriladigan savollar. Birinchi "yo'q" javobi
 - [ ] 9.12 jadvalidagi savollar ro'yxatini review checklistiga kiritib, izoh bo'yicha qarorni standartlashtiring.
 - [ ] Uzun tushuntirish izohlarini `docs/` dagi faylga ko'chirib, kodda faqat havola qoldiring.
 - [ ] Checkstyle yoki custom qoida bilan `FIXME` ni CI da bloklang.
+
 ## 10. Javadoc va API hujjati (Javadoc and API Documentation)
 
-Public API ni o'zini hujjatlaydigan qilish arxitektor hujjatida (4.10 va 13.8) ko'rib chiqilgan. Bu bobda Javadoc ning mexanikasi: nimani yozish, qanday shaklda, qanday tekshirish. Javadoc yagona izoh turi bo'lib, uni mashina tekshiradi va shu sababli uni toza ushlash mumkin.
+Public API ni o'zini hujjatlaydigan qilish arxitektor hujjatidagi o'zini hujjatlaydigan API bo'limida ko'rib chiqilgan. Bu bobda Javadoc ning mexanikasi: nimani yozish, qanday shaklda, qanday tekshirish. Javadoc yagona izoh turi bo'lib, uni mashina tekshiradi va shu sababli uni toza ushlash mumkin.
 
 ### 10.1 Javadoc kimga yoziladi va qayerga yozilmaydi
 
-Javadoc ning adresati — sinf ichini ko'rmaydigan foydalanuvchi. Shundan to'g'ri qamrov kelib chiqadi: Javadoc modul yoki kutubxona chegarasidan tashqariga chiqadigan har bir elementga yoziladi, qolgan joyga yozilmaydi.
+Javadoc ning adresati - sinf ichini ko'rmaydigan foydalanuvchi. Shundan to'g'ri qamrov kelib chiqadi: Javadoc modul yoki kutubxona chegarasidan tashqariga chiqadigan har bir elementga yoziladi, qolgan joyga yozilmaydi.
 
 | Element | Javadoc |
 |---|---|
@@ -2408,9 +2424,9 @@ public Reservation reserve(Order order, ReservationKey reservationKey) { ... }
 
 ### 10.3 `@param`, `@return`, `@throws` to'liqligi
 
-Uchta teg to'liq bo'lishi kerak yoki umuman bo'lmasligi kerak — yarim to'ldirilgan Javadoc eng yomon holat, chunki o'quvchi qolganini ham yo'q deb o'ylaydi.
+Uchta teg to'liq bo'lishi kerak yoki umuman bo'lmasligi kerak - yarim to'ldirilgan Javadoc eng yomon holat, chunki o'quvchi qolganini ham yo'q deb o'ylaydi.
 
-Har bir teg uchun aniq talab bor. `@param` — qiymatning ma'nosi va chegarasi (`null` bo'lishi mumkinmi, diapazon qanday). `@return` — nima qaytadi va bo'sh holat qanday ifodalanadi. `@throws` — **har bir** tekshiriladigan istisno, va unchecked istisnolardan chaqiruvchi uchun ma'noli bo'lganlari.
+Har bir teg uchun aniq talab bor. `@param` - qiymatning ma'nosi va chegarasi (`null` bo'lishi mumkinmi, diapazon qanday). `@return` - nima qaytadi va bo'sh holat qanday ifodalanadi. `@throws` - **har bir** tekshiriladigan istisno, va unchecked istisnolardan chaqiruvchi uchun ma'noli bo'lganlari.
 
 ```java
 // yomon: tur nomini takrorlaydi, ma'lumot bermaydi
@@ -2422,7 +2438,7 @@ Har bir teg uchun aniq talab bor. `@param` — qiymatning ma'nosi va chegarasi (
 
 ### 10.4 Shartnoma yozish: oldin shart, keyin shart, invariant
 
-Javadoc ning eng qimmatli qismi — shartnoma. Uchta savolga javob berish kerak: chaqirishdan oldin nima to'g'ri bo'lishi kerak (precondition), chaqiruvdan keyin nima kafolatlanadi (postcondition), va nima har doim to'g'ri qoladi (invariant).
+Javadoc ning eng qimmatli qismi - shartnoma. Uchta savolga javob berish kerak: chaqirishdan oldin nima to'g'ri bo'lishi kerak (precondition), chaqiruvdan keyin nima kafolatlanadi (postcondition), va nima har doim to'g'ri qoladi (invariant).
 
 Spring va JPA kontekstida shartnomaga qo'shimcha to'rt element kiradi va ularning yo'qligi eng ko'p xatolarga sabab bo'ladi: tranzaksiya talabi, idempotentlik, thread-safety, va yon ta'sirlar.
 
@@ -2441,7 +2457,7 @@ public SettlementResult settle(PaymentId paymentId) { ... }
 
 ### 10.5 `{@link}`, `{@code}`, `@see` va havola gigiyenasi
 
-`{@code}` matnni kod shriftida ko'rsatadi va HTML belgilarini qochiradi — barcha tur nomlari, qiymatlar va `null` shu teg ichida yozilishi kerak. `{@link}` esa haqiqiy havola yaratadi va kompilyatsiya vaqtida tekshiriladi, shuning uchun sinf va metod nomlari uchun `{@code}` emas, `{@link}` afzal: nom o'zgarsa Javadoc buziladi va eslatadi.
+`{@code}` matnni kod shriftida ko'rsatadi va HTML belgilarini qochiradi - barcha tur nomlari, qiymatlar va `null` shu teg ichida yozilishi kerak. `{@link}` esa haqiqiy havola yaratadi va kompilyatsiya vaqtida tekshiriladi, shuning uchun sinf va metod nomlari uchun `{@code}` emas, `{@link}` afzal: nom o'zgarsa Javadoc buziladi va eslatadi.
 
 ```java
 // yaxshi: havola tekshiriladi
@@ -2488,11 +2504,11 @@ Almashtirish ko'rsatmasi bo'lmagan `@Deprecated` foydasiz: foydalanuvchi ogohlan
 package uz.shop.payment;
 ```
 
-`@NullMarked` (JSpecify) kabi paket darajasidagi annotatsiyalar ham shu faylda turadi (arxitektor hujjati 13.10).
+`@NullMarked` (JSpecify) kabi paket darajasidagi annotatsiyalar ham shu faylda turadi (arxitektor hujjatidagi null xavfsizligi bo'limi).
 
 ### 10.8 Namuna kod va uni kompilyatsiya ostida ushlash
 
-Javadoc dagi namuna kod eng tez eskiradigan hujjat, chunki uni hech narsa tekshirmaydi. Java 18 dan beri `{@snippet}` tegi bor va u namunani tashqi faylga (yoki test kodiga) bog'lash imkonini beradi — shunda namuna kompilyatsiya va test ostida qoladi.
+Javadoc dagi namuna kod eng tez eskiradigan hujjat, chunki uni hech narsa tekshirmaydi. Java 18 dan beri `{@snippet}` tegi bor va u namunani tashqi faylga (yoki test kodiga) bog'lash imkonini beradi - shunda namuna kompilyatsiya va test ostida qoladi.
 
 ```java
 /**
@@ -2540,7 +2556,7 @@ Hujjatning qayerda turishi uning hayot muddatini belgilaydi. Qoida: kod bilan bi
 | Metod shartnomasi | Javadoc |
 | Paket maqsadi va chegarasi | `package-info.java` |
 | Sinf ichidagi qaror asosi | kod ichidagi izoh (8.4) |
-| Arxitektura qarori | `docs/adr/` (arxitektor hujjati 3-bob) |
+| Arxitektura qarori | `docs/adr/` (arxitektor hujjatidagi ADR va qaror hujjatlashtirish bo'limi) |
 | Loyihani ishga tushirish | `README.md` |
 | API shartnomasi (tashqi) | OpenAPI spetsifikatsiyasi |
 | Domen lug'ati | `docs/glossary.md` (3.14) |
@@ -2557,11 +2573,12 @@ Hujjatning qayerda turishi uning hayot muddatini belgilaydi. Qoida: kod bilan bi
 - [ ] Har bir public paketga `package-info.java` yozib, kirish nuqtalari va chegarani belgilang.
 - [ ] `maven-javadoc-plugin` ni `doclint=all` va `failOnWarnings` bilan CI ga qo'shing.
 - [ ] Javadoc dagi namuna kodlarni `{@snippet}` orqali testdagi faylga bog'lang.
+
 # IV. Formatlash va kod uslubi
 
 ## 11. Vertikal formatlash (Vertical Formatting)
 
-Formatlash did masalasi emas, muloqot masalasi: u o'quvchining ko'zini boshqaradi. Bu bobda vertikal o'q bo'yicha qoidalar — fayl uzunligi, bo'sh qatorlar, e'lon va ishlatish orasidagi masofa, a'zolar tartibi. Bu qoidalarning katta qismi formatter bilan avtomatlashtirilmaydi, shuning uchun ularni bilish kerak (13-bob avtomatlashtirilgan qismi haqida).
+Formatlash did masalasi emas, muloqot masalasi: u o'quvchining ko'zini boshqaradi. Bu bobda vertikal o'q bo'yicha qoidalar - fayl uzunligi, bo'sh qatorlar, e'lon va ishlatish orasidagi masofa, a'zolar tartibi. Bu qoidalarning katta qismi formatter bilan avtomatlashtirilmaydi, shuning uchun ularni bilish kerak (13-bob avtomatlashtirilgan qismi haqida).
 
 ### 11.1 Fayl o'lchami va sinf uzunligi
 
@@ -2581,7 +2598,7 @@ find src/main/java -name '*.java' | xargs wc -l | awk '{print $1}' \
 
 ### 11.2 Gazeta metaforasi: yuqoridan pastga ma'lumot zichligi
 
-Yaxshi manba fayli gazeta maqolasiga o'xshaydi: yuqorida eng umumiy ma'lumot, pastga tushgan sari tafsilot ortadi. Fayl nomi sarlavha, yuqoridagi e'lonlar va public metodlar — kirish qismi, pastdagi private metodlar — tafsilot.
+Yaxshi manba fayli gazeta maqolasiga o'xshaydi: yuqorida eng umumiy ma'lumot, pastga tushgan sari tafsilot ortadi. Fayl nomi sarlavha, yuqoridagi e'lonlar va public metodlar - kirish qismi, pastdagi private metodlar - tafsilot.
 
 Shundan amaliy tartib chiqadi va u Java konvensiyasi bilan mos: paket, importlar, sinf Javadoc i, statik konstantalar, maydonlar, konstruktor, public metodlar, private metodlar (11.6).
 
@@ -2682,7 +2699,7 @@ Checkstyle `DeclarationOrder` va `OverloadMethodsDeclarationOrder` qoidalari shu
 
 Agar bir funksiya ikkinchisini chaqirsa, ular vertikal jihatdan yaqin bo'lishi kerak va chaqiruvchi yuqorida turishi kerak. Shunda o'qish bir yo'nalishda boradi va "bu metod qayerda?" savoli tug'ilmaydi.
 
-Overload qilingan metodlar ham yonma-yon turishi kerak, orasiga boshqa metod tushmasligi kerak — aks holda o'quvchi barcha variantlarni bir vaqtda ko'rolmaydi.
+Overload qilingan metodlar ham yonma-yon turishi kerak, orasiga boshqa metod tushmasligi kerak - aks holda o'quvchi barcha variantlarni bir vaqtda ko'rolmaydi.
 
 ### 11.8 Tushunchaviy yaqinlik
 
@@ -2712,20 +2729,21 @@ Istisno: `equals`, `hashCode`, `toString` va boshqa shartnoma metodlari sinf oxi
 - [ ] Maydonlar orasidagi keraksiz Javadoc bloklarini olib tashlab, vertikal zichlikni tiklang.
 - [ ] Paket, import va sinf e'lonlari orasida bo'sh qator borligini formatter bilan ta'minlang.
 - [ ] `equals`/`hashCode`/`toString` ni sinf oxiriga ko'chiring va shu konvensiyani hujjatlashtiring.
+
 ## 12. Gorizontal formatlash va kod uslubi (Horizontal Formatting and Style)
 
-Gorizontal o'q bo'yicha qoidalar kamroq, lekin ulardan biri — qator uzunligi — eng ko'p bahs qo'zg'atadigan qoida. Bu bobda qator uzunligi, bo'shliq, tekislash, indentatsiya, import tartibi va zanjirli chaqiruvni bo'lish ko'rib chiqiladi.
+Gorizontal o'q bo'yicha qoidalar kamroq, lekin ulardan biri - qator uzunligi - eng ko'p bahs qo'zg'atadigan qoida. Bu bobda qator uzunligi, bo'shliq, tekislash, indentatsiya, import tartibi va zanjirli chaqiruvni bo'lish ko'rib chiqiladi.
 
 ### 12.1 Qator uzunligi chegarasi va uni tanlash
 
-Qator uzunligi chegarasining maqsadi — gorizontal skrollni yo'qotish va yonma-yon diff ni o'qiladigan qilish. Zamonaviy ekranlarda 80 juda qisqa, 200 esa diff ni buzadi. Amalda uchta tanlov ishlatiladi: 100 (eng keng tarqalgan), 120 (Spring ekotizimida ko'p), 80 (klassik).
+Qator uzunligi chegarasining maqsadi - gorizontal skrollni yo'qotish va yonma-yon diff ni o'qiladigan qilish. Zamonaviy ekranlarda 80 juda qisqa, 200 esa diff ni buzadi. Amalda uchta tanlov ishlatiladi: 100 (eng keng tarqalgan), 120 (Spring ekotizimida ko'p), 80 (klassik).
 
-Muhimi — son emas, chegara borligi va uni formatter majburlashi. Chegara bo'lmasa, uzun ifodalar paydo bo'ladi va ularni o'qish uchun gorizontal skroll kerak bo'ladi, bu esa code review ni ikki marta qiyinlashtiradi.
+Muhimi - son emas, chegara borligi va uni formatter majburlashi. Chegara bo'lmasa, uzun ifodalar paydo bo'ladi va ularni o'qish uchun gorizontal skroll kerak bo'ladi, bu esa code review ni ikki marta qiyinlashtiradi.
 
 | Chegara | Afzalligi | Kamchiligi |
 |---|---|---|
 | 80 | ikki fayl yonma-yon, terminalga sig'adi | Java da ko'p bo'linish |
-| 100 | muvozanat, diff o'qiladi | — |
+| 100 | muvozanat, diff o'qiladi | - |
 | 120 | kam bo'linish | yonma-yon diff siqiladi |
 | chegarasiz | bo'linish yo'q | review buziladi |
 
@@ -2768,7 +2786,7 @@ private Request request;
 
 Indentatsiya kodning ierarxiyasini ko'rsatadigan asosiy vosita. Java konvensiyasi: 4 bo'shliq, tab emas (tab turli muhitlarda turlicha ko'rinadi va diff ni buzadi). Ikkinchi darajali davomiy qator uchun 8 bo'shliq.
 
-Indentatsiyani buzish — bir qatorli `if` yoki metodni indentatsiyasiz yozish — vaqt tejamaydi, lekin ierarxiyani yashiradi.
+Indentatsiyani buzish - bir qatorli `if` yoki metodni indentatsiyasiz yozish - vaqt tejamaydi, lekin ierarxiyani yashiradi.
 
 ```java
 // yomon: indentatsiya buzilgan, ierarxiya ko'rinmaydi
@@ -2808,7 +2826,7 @@ while (dis.read(buf, 0, readBufferSize) != -1) {
 }
 ```
 
-Xuddi shu qoida bo'sh `catch` ga tegishli (patternlar hujjati 25.14 Exception Swallowing) — u hech qachon izohsiz qolmaydi.
+Xuddi shu qoida bo'sh `catch` ga tegishli (patternlar hujjatidagi istisnolarni yutib yuborish anti-patterni Exception Swallowing) - u hech qachon izohsiz qolmaydi.
 
 ### 12.6 Qavs uslubi va bir qatorli `if`
 
@@ -2857,7 +2875,7 @@ Zanjir uch bo'g'indan oshsa va har bir bo'g'in murakkab bo'lsa, oraliq natijani 
 
 ### 12.9 Uzun satr, matn bloki va SQL joylashtirish
 
-Uzun satr literalini `+` bilan bo'lish o'qilmaydi va formatterni chalg'itadi. Java 15 dan beri matn bloki (`"""`) bor va SQL, JSON, XML uchun to'g'ri yechim (arxitektor hujjati 13.4).
+Uzun satr literalini `+` bilan bo'lish o'qilmaydi va formatterni chalg'itadi. Java 15 dan beri matn bloki (`"""`) bor va SQL, JSON, XML uchun to'g'ri yechim (arxitektor hujjatidagi matn bloki va `var` bo'limi).
 
 ```java
 // yomon: + bilan bo'lingan SQL
@@ -2905,6 +2923,7 @@ Bu qoidalar ko'rinmas, lekin ularning yo'qligi diff ni buzadi va cross-platform 
 - [ ] `.gitattributes` va `.editorconfig` fayllarini qo'shib, kodirovka va qator oxirini normallashtiring.
 - [ ] Bo'sh bloklarni (`;` bilan tugagan sikl, bo'sh `catch`) topib, qavs va izoh qo'shing.
 - [ ] Uzun oqim zanjirlarini har bir bo'g'in alohida qatorda bo'ladigan shaklga keltiring.
+
 ## 13. Formatlashni avtomatlashtirish va diff gigiyenasi (Automated Formatting and Diff Hygiene)
 
 Formatlash haqidagi bahs code review vaqtining eng foydasiz qismi. Yechim oddiy: formatlashni mashinaga topshirish va bahsni butunlay yopish. Bu bobda shu sozlamaning aniq mexanikasi va formatlash o'zgarishlarini tarixni buzmaydigan qilib kiritish usullari.
@@ -2913,7 +2932,7 @@ Formatlash haqidagi bahs code review vaqtining eng foydasiz qismi. Yechim oddiy:
 
 Uslub tanlovida eng yaxshi variant yo'q, lekin eng yomon variant bor: har kimning o'z uslubi. Shu sababli qoida shunday: uslub bir marta tanlanadi, repoda sozlama sifatida saqlanadi va keyin muhokama qilinmaydi.
 
-Amalda eng tez yo'l — tayyor uslubni olish va o'zgartirmaslik. google-java-format yoki Spring Java Format ikkisi ham to'liq, sozlanmaydigan (yoki kam sozlanadigan) va shu sababli bahsni yopadi. Sozlanadigan uslub tanlansa, jamoa oylar davomida qavs va bo'shliq haqida gaplashadi.
+Amalda eng tez yo'l - tayyor uslubni olish va o'zgartirmaslik. google-java-format yoki Spring Java Format ikkisi ham to'liq, sozlanmaydigan (yoki kam sozlanadigan) va shu sababli bahsni yopadi. Sozlanadigan uslub tanlansa, jamoa oylar davomida qavs va bo'shliq haqida gaplashadi.
 
 ### 13.2 `.editorconfig` va IDE sozlamalarini repoda saqlash
 
@@ -3027,7 +3046,7 @@ Checkstyle ning foydali qismi formatlash emas (uni Spotless qiladi), balki **usl
 
 ### 13.5 Pre-commit va CI da formatlash tekshiruvi
 
-Formatlash ikki joyda tekshiriladi: mahalliy (tez qaytish uchun) va CI da (kafolat uchun). Mahalliy hook ni majburiy qilmaslik kerak — u faqat qulaylik; kafolat CI da bo'ladi.
+Formatlash ikki joyda tekshiriladi: mahalliy (tez qaytish uchun) va CI da (kafolat uchun). Mahalliy hook ni majburiy qilmaslik kerak - u faqat qulaylik; kafolat CI da bo'ladi.
 
 ```bash
 #!/bin/sh
@@ -3050,7 +3069,7 @@ echo "$changed" | xargs git add
 
 Eng muhim diff qoidasi: bitta commit da ham formatlash, ham mantiq o'zgarmasligi kerak. Aks holda review da 400 qatorli diff ichida 3 qatorlik mantiq o'zgarishi ko'rinmay ketadi va xato o'tadi.
 
-Amaliy tartib: avval mantiqni o'zgartirib commit qilish, keyin `spotless:apply` ni alohida commit qilish. Teskari tartib ham ishlaydi, muhimi — aralashtirmaslik. Review paytida esa `git diff -w` (bo'shliqlarni e'tiborsiz) bilan tekshirish mumkin.
+Amaliy tartib: avval mantiqni o'zgartirib commit qilish, keyin `spotless:apply` ni alohida commit qilish. Teskari tartib ham ishlaydi, muhimi - aralashtirmaslik. Review paytida esa `git diff -w` (bo'shliqlarni e'tiborsiz) bilan tekshirish mumkin.
 
 ```bash
 # Review da formatlash shovqinini olib tashlab ko'rish
@@ -3106,11 +3125,12 @@ Shu bilan birga, generatsiya qilingan kod `target/` ichida turishi va `git` ga t
 - [ ] Generatsiya qilingan manbalarni formatlash va statik tahlildan chiqarib tashlang.
 - [ ] "Formatlash va mantiq bir commitda bo'lmaydi" qoidasini jamoa kelishuviga kiriting.
 - [ ] Review da formatlash haqidagi izohlarni taqiqlab, ularni CI xatosiga aylantiring.
+
 # V. Obyekt, ma'lumot va holat
 
 ## 14. Obyekt va ma'lumot tuzilmasi: inkapsulyatsiya (Objects vs Data Structures)
 
-Abstraksiya va chegara arxitektor hujjatida (5-bob) ko'rib chiqilgan, Demeter qonuni va Tell-Don't-Ask patternlar hujjatida (26.15-26.16). Bu bobda kod darajasidagi qoidalar: inkapsulyatsiyaning haqiqiy ma'nosi, obyekt va struktura farqi, ichki holatni oshkor qilmaslik, va obyektning o'z invariantini himoya qilishi.
+Abstraksiya va chegara arxitektor hujjatidagi abstraksiya, bog'liqlik va chegara bo'limida ko'rib chiqilgan, Demeter qonuni va Tell-Don't-Ask patternlar hujjatidagi Demeter qonuni va "aytib qo'y, so'ramay" printsiplarida. Bu bobda kod darajasidagi qoidalar: inkapsulyatsiyaning haqiqiy ma'nosi, obyekt va struktura farqi, ichki holatni oshkor qilmaslik, va obyektning o'z invariantini himoya qilishi.
 
 ### 14.1 Ma'lumot abstraksiyasi: getter/setter inkapsulyatsiya emas
 
@@ -3145,11 +3165,11 @@ Ikki yondashuv bir-biriga teskari va ikkisi ham o'z o'rnida to'g'ri. **Obyekt** 
 | Tashqi shakl (JSON, jadval) | `record` yoki entitet |
 | Hisob va siyosat | obyekt |
 
-Eng ko'p xato — ikkisini aralashtirish, ya'ni gibrid yaratish (14.3).
+Eng ko'p xato - ikkisini aralashtirish, ya'ni gibrid yaratish (14.3).
 
 ### 14.3 Gibrid tuzilma: yarim obyekt, yarim struktura
 
-Gibrid — getter va setter lari bor, lekin ichida biznes mantiqi ham bor sinf. U ikki dunyoning kamchiligini oladi: yangi tur qo'shish ham, yangi funksiya qo'shish ham qiyin.
+Gibrid - getter va setter lari bor, lekin ichida biznes mantiqi ham bor sinf. U ikki dunyoning kamchiligini oladi: yangi tur qo'shish ham, yangi funksiya qo'shish ham qiyin.
 
 ```java
 // yomon: gibrid - holat oshkor, lekin mantiq ham ichida
@@ -3180,7 +3200,7 @@ public final class Order {
 
 ### 14.4 Poyezd avariyasi va tuzilmani yashirish
 
-`a.getB().getC().doSomething()` shaklidagi zanjir — poyezd avariyasi (train wreck) va u Demeter qonunini buzadi (patternlar hujjati 26.15). Clean code darajasidagi muhim nuqta: muammo zanjirning uzunligida emas, **kim nimani bilishi kerakligida**.
+`a.getB().getC().doSomething()` shaklidagi zanjir - poyezd avariyasi (train wreck) va u Demeter qonunini buzadi (patternlar hujjatidagi Demeter qonuni). Clean code darajasidagi muhim nuqta: muammo zanjirning uzunligida emas, **kim nimani bilishi kerakligida**.
 
 ```java
 // yomon: chaqiruvchi uch darajali tuzilmani biladi
@@ -3198,9 +3218,9 @@ Shuning uchun qoida shunday: **obyekt** da zanjir hid, **ma'lumot tuzilmasi** da
 
 ### 14.5 DTO, Active Record va ularning o'rni
 
-DTO (`record`) — sof ma'lumot tuzilmasi: maydonlar, mantiq yo'q. U tashqi chegarada (HTTP, Kafka, fayl) to'g'ri tanlov va unga biznes qoidasini qo'shish xato.
+DTO (`record`) - sof ma'lumot tuzilmasi: maydonlar, mantiq yo'q. U tashqi chegarada (HTTP, Kafka, fayl) to'g'ri tanlov va unga biznes qoidasini qo'shish xato.
 
-Active Record — DTO ustiga `save`, `find` metodlari qo'shilgan shakl (JPA entiteti ko'pincha shunday ishlatiladi). U kichik CRUD da ishlaydi, lekin biznes qoidalari ko'payganda gibridga aylanadi. Qoida: Active Record ga biznes qoidasi qo'shila boshlasa, domen obyektini ajratish vaqti keldi.
+Active Record - DTO ustiga `save`, `find` metodlari qo'shilgan shakl (JPA entiteti ko'pincha shunday ishlatiladi). U kichik CRUD da ishlaydi, lekin biznes qoidalari ko'payganda gibridga aylanadi. Qoida: Active Record ga biznes qoidasi qo'shila boshlasa, domen obyektini ajratish vaqti keldi.
 
 ### 14.6 Maydon ko'rinishi: `public` maydon, `package-private`, `final`
 
@@ -3268,7 +3288,7 @@ Statik holat qachon haqli: `static final` konstantalar, `Logger`, va `Pattern` k
 
 ### 14.9 Obyekt o'z invariantini qanday himoya qiladi
 
-Invariant — obyekt hayoti davomida har doim to'g'ri bo'lishi kerak bo'lgan shart. Uni himoya qilish uchun uch nuqta yopiladi: konstruktor (yaratishda), har bir o'zgartiruvchi metod (o'zgarishda), va seriyalash/deseriyalash (tashqi yo'ldan).
+Invariant - obyekt hayoti davomida har doim to'g'ri bo'lishi kerak bo'lgan shart. Uni himoya qilish uchun uch nuqta yopiladi: konstruktor (yaratishda), har bir o'zgartiruvchi metod (o'zgarishda), va seriyalash/deseriyalash (tashqi yo'ldan).
 
 ```java
 public final class DateRange {
@@ -3336,9 +3356,10 @@ Spring kontekstida bu qoida `@PostConstruct` yoki `ApplicationReadyEvent` da ro'
 - [ ] Value object larda invariantni konstruktorga ko'chirib, tarqalgan validatsiyani olib tashlang.
 - [ ] Konstruktorda `this` ni tashqariga beradigan joylarni statik fabrikaga yoki `@PostConstruct` ga ko'chiring.
 - [ ] Har bir DTO da biznes mantiqi yo'qligini, har bir domen obyektida esa oshkor setter yo'qligini tekshiring.
+
 ## 15. Tenglik, hash va obyekt shartnomalari (Equality, Hashing and Object Contracts)
 
-`equals`, `hashCode`, `compareTo` va `toString` — Java da eng ko'p noto'g'ri yoziladigan to'rt metod, va ularning xatosi eng qiyin topiladigan xatolar qatoriga kiradi: `HashMap` dan yozuv yo'qoladi, `TreeSet` tartibi buziladi, log da ma'lumot oqib ketadi. Bu bobda to'rt shartnomaning aniq talablari va ularni Java da to'g'ri bajarish.
+`equals`, `hashCode`, `compareTo` va `toString` - Java da eng ko'p noto'g'ri yoziladigan to'rt metod, va ularning xatosi eng qiyin topiladigan xatolar qatoriga kiradi: `HashMap` dan yozuv yo'qoladi, `TreeSet` tartibi buziladi, log da ma'lumot oqib ketadi. Bu bobda to'rt shartnomaning aniq talablari va ularni Java da to'g'ri bajarish.
 
 ### 15.1 `equals` shartnomasi: besh qoida
 
@@ -3352,7 +3373,7 @@ Spring kontekstida bu qoida `@PostConstruct` yoki `ApplicationReadyEvent` da ro'
 | Izchillik | qiymat o'zgarmasa natija o'zgarmaydi | yozuv yo'qoladi (15.9) |
 | `null` | `x.equals(null)` → `false` | `NullPointerException` |
 
-Eng ko'p buziladigani — simmetriklik, va u odatda vorislikda yoki turlar aralashganda chiqadi (`String` bilan `CaseInsensitiveString` ni solishtirish).
+Eng ko'p buziladigani - simmetriklik, va u odatda vorislikda yoki turlar aralashganda chiqadi (`String` bilan `CaseInsensitiveString` ni solishtirish).
 
 ### 15.2 `hashCode` shartnomasi va `equals` bilan bog'liqligi
 
@@ -3403,7 +3424,7 @@ public boolean equals(Object o) {
 }
 ```
 
-Eng oson va eng xavfsiz yechim esa — `record` ishlatish: `equals`, `hashCode` va `toString` avtomatik generatsiya qilinadi va shartnomaga mos bo'ladi (arxitektor hujjati 13.1).
+Eng oson va eng xavfsiz yechim esa - `record` ishlatish: `equals`, `hashCode` va `toString` avtomatik generatsiya qilinadi va shartnomaga mos bo'ladi (arxitektor hujjatidagi record bo'limi).
 
 ### 15.4 Vorislik ostida tenglik: `getClass()` yoki `instanceof`
 
@@ -3544,7 +3565,7 @@ orders.sort(comparing(Order::createdAt).reversed()
         .thenComparing(Order::customerName, nullsLast(naturalOrder())));
 ```
 
-Ikkinchi qoida: `Comparator` ni `static final` maydonga chiqarish — har bir chaqiruvda yangi obyekt yaratilmaydi va nom tartibni tushuntiradi (`NEWEST_FIRST`).
+Ikkinchi qoida: `Comparator` ni `static final` maydonga chiqarish - har bir chaqiruvda yangi obyekt yaratilmaydi va nom tartibni tushuntiradi (`NEWEST_FIRST`).
 
 ### 15.11 Amalda qo'llash
 
@@ -3556,9 +3577,10 @@ Ikkinchi qoida: `Comparator` ni `static final` maydonga chiqarish — har bir ch
 - [ ] Barcha `toString` larni ko'rib, sezgir maydonlarni maskalang va lazy assotsiatsiyalarni olib tashlang.
 - [ ] `Cloneable` ishlatilgan joylarni nusxa konstruktori yoki o'zgarmas turga o'tkazing.
 - [ ] `Map` kaliti va `Set` elementi sifatida ishlatilgan o'zgaradigan turlarni topib, o'zgarmas turga almashtiring.
+
 ## 16. O'zgarmaslik va holat boshqaruvi kod darajasida (Immutability in Code)
 
-Holatni kamaytirish murakkablikni boshqarish vositasi sifatida arxitektor hujjatida (6.3) ko'rib chiqilgan. Bu bobda shu qarorning kod darajasidagi mexanikasi: `final` ning haqiqiy kuchi, chuqur va sayoz o'zgarmaslik, o'zgarmas to'plamlar, nusxalab o'zgartirish, va setter larni yo'qotish yo'li.
+Holatni kamaytirish murakkablikni boshqarish vositasi sifatida arxitektor hujjatidagi holatni kamaytirish bo'limida ko'rib chiqilgan. Bu bobda shu qarorning kod darajasidagi mexanikasi: `final` ning haqiqiy kuchi, chuqur va sayoz o'zgarmaslik, o'zgarmas to'plamlar, nusxalab o'zgartirish, va setter larni yo'qotish yo'li.
 
 ### 16.1 `final` maydon, `final` sinf va haqiqiy o'zgarmaslik
 
@@ -3595,7 +3617,7 @@ public final class Order {
 
 ### 16.2 Chuqur va sayoz o'zgarmaslik
 
-Sayoz o'zgarmaslik — obyektning o'zi o'zgarmas, lekin ichidagi obyektlar o'zgaradi. Bu holat eng xavfli, chunki kod o'zgarmas ko'rinadi va dasturchi himoyaga ishonadi.
+Sayoz o'zgarmaslik - obyektning o'zi o'zgarmas, lekin ichidagi obyektlar o'zgaradi. Bu holat eng xavfli, chunki kod o'zgarmas ko'rinadi va dasturchi himoyaga ishonadi.
 
 ```java
 // yomon: record o'zgarmas ko'rinadi, lekin ichidagi Date o'zgaradi
@@ -3606,7 +3628,7 @@ shipment.dispatchedAt().setTime(0);    // o'zgardi!
 public record Shipment(TrackingNumber trackingNumber, Instant dispatchedAt) { }
 ```
 
-Qoida: o'zgarmas sinf ichida faqat o'zgarmas turlar bo'lishi kerak — `String`, `Instant`, `LocalDate`, `BigDecimal`, `record`, enum, `List.of`. `Date`, `Calendar`, massiv, `ArrayList` esa chegarada nusxalanadi.
+Qoida: o'zgarmas sinf ichida faqat o'zgarmas turlar bo'lishi kerak - `String`, `Instant`, `LocalDate`, `BigDecimal`, `record`, enum, `List.of`. `Date`, `Calendar`, massiv, `ArrayList` esa chegarada nusxalanadi.
 
 ### 16.3 O'zgarmas to'plamlar: `List.of`, `unmodifiable*`, nusxa
 
@@ -3622,7 +3644,7 @@ Java da to'plam o'zgarmasligining uch darajasi bor va ularni ajratish muhim.
 | `stream().toList()` | o'zgarmas | ruxsat |
 | `Collectors.toList()` | kafolat yo'q | ruxsat |
 
-Eng ko'p uchraydigan tuzoq — `Collections.unmodifiableList` ni haqiqiy o'zgarmaslik deb o'ylash: u faqat **ko'rinish** beradi va manba o'zgarsa ko'rinish ham o'zgaradi.
+Eng ko'p uchraydigan tuzoq - `Collections.unmodifiableList` ni haqiqiy o'zgarmaslik deb o'ylash: u faqat **ko'rinish** beradi va manba o'zgarsa ko'rinish ham o'zgaradi.
 
 ```java
 List<String> source = new ArrayList<>(List.of("a"));
@@ -3633,7 +3655,7 @@ view.size();   // 2 - "o'zgarmas" ko'rinish o'zgardi
 
 ### 16.4 `with` uslubidagi o'zgartiruvchilar
 
-O'zgarmas obyektni "o'zgartirish" — yangi nusxa qaytarish. Konvensiya: metod nomi `with`, `plus`, `minus` yoki domen fe'li bilan boshlanadi va `this` ni o'zgartirmaydi.
+O'zgarmas obyektni "o'zgartirish" - yangi nusxa qaytarish. Konvensiya: metod nomi `with`, `plus`, `minus` yoki domen fe'li bilan boshlanadi va `this` ni o'zgartirmaydi.
 
 ```java
 public record Money(BigDecimal amount, Currency currency) {
@@ -3662,7 +3684,7 @@ Maydon soni ko'p bo'lsa, har bir `with` metodi uzun bo'lib ketadi; bunda builder
 
 ### 16.5 Builder: validatsiya va majburiy maydonlar
 
-Builder pattern ning o'zi patternlar hujjatida; bu yerda clean code tomoni: validatsiya **qayerda** turishi. Eng ko'p uchraydigan xato — validatsiyani builder metodlarida qilish va `build()` da unutish, natijada yarim to'ldirilgan obyekt yaratiladi.
+Builder pattern ning o'zi patternlar hujjatida; bu yerda clean code tomoni: validatsiya **qayerda** turishi. Eng ko'p uchraydigan xato - validatsiyani builder metodlarida qilish va `build()` da unutish, natijada yarim to'ldirilgan obyekt yaratiladi.
 
 ```java
 public final class ReservationRequest {
@@ -3701,7 +3723,7 @@ Agar majburiy maydonlar kam bo'lsa, builder o'rniga konstruktor yoki `record` ya
 
 ### 16.6 Mutatsiyani bir joyga to'plash
 
-Butun tizimni o'zgarmas qilish amalda mumkin emas: ma'lumotlar bazasi, kesh, hisoblagich o'zgaradi. To'g'ri strategiya — o'zgarishni **chegaraga** siqish: hisob va qoidalar o'zgarmas obyektlarda, o'zgarish esa bir-ikki aniq joyda.
+Butun tizimni o'zgarmas qilish amalda mumkin emas: ma'lumotlar bazasi, kesh, hisoblagich o'zgaradi. To'g'ri strategiya - o'zgarishni **chegaraga** siqish: hisob va qoidalar o'zgarmas obyektlarda, o'zgarish esa bir-ikki aniq joyda.
 
 ```java
 // yaxshi: hisob sof, o'zgarish bitta joyda
@@ -3746,7 +3768,7 @@ public Order shipped(Instant shippedAt) { ... }
 
 ### 16.8 Vaqtinchalik maydon va uni yo'qotish
 
-Vaqtinchalik maydon (temporary field) — faqat ma'lum metod ishlaganda to'ldiriladigan, qolgan vaqt `null` turadigan maydon. U o'quvchini chalg'itadi: maydonni ko'rgan odam uning har doim to'ldirilganini o'ylaydi.
+Vaqtinchalik maydon (temporary field) - faqat ma'lum metod ishlaganda to'ldiriladigan, qolgan vaqt `null` turadigan maydon. U o'quvchini chalg'itadi: maydonni ko'rgan odam uning har doim to'ldirilganini o'ylaydi.
 
 ```java
 // yomon: ikki maydon faqat calculate() ichida ishlatiladi
@@ -3799,13 +3821,14 @@ public record RequestContext(UserId user, TraceId trace) { }
 - [ ] Statik o'zgaradigan maydonlarni topib (`static` + `final` emas), kontekst parametriga yoki framework mexanizmiga o'tkazing.
 - [ ] `ThreadLocal` ishlatilgan joylarda `finally` da tozalash borligini tekshiring.
 - [ ] Yangi value object lar uchun `record` ni standart tanlov qilib, uni jamoa kelishuviga yozib qo'ying.
+
 ## 17. Vorislik, kompozitsiya va polimorfizm mexanikasi (Inheritance Mechanics)
 
-"Vorislikdan ustun kompozitsiya" printsipi patternlar hujjatida (26.17) berilgan. Bu bobda vorislik **ishlatilganda** uni to'g'ri bajarish mexanikasi: vorislik uchun dizayn, konstruktor tuzog'i, `protected` muammosi, va vorislikdan kompozitsiyaga o'tish yo'li.
+"Vorislikdan ustun kompozitsiya" printsipi patternlar hujjatidagi vorislikdan ustun kompozitsiya printsipida berilgan. Bu bobda vorislik **ishlatilganda** uni to'g'ri bajarish mexanikasi: vorislik uchun dizayn, konstruktor tuzog'i, `protected` muammosi, va vorislikdan kompozitsiyaga o'tish yo'li.
 
 ### 17.1 Vorislik uchun dizayn qilish yoki `final` qilish
 
-Sinf uch holatdan birida bo'lishi kerak: vorislik uchun mo'ljallangan va hujjatlashtirilgan, `final`, yoki interfeys. "Vorislik mumkin, lekin o'ylanmagan" to'rtinchi holat — xato manbasi, chunki voris sinf bazaviy sinfning ichki qoidalarini bilmaydi va ularni buzadi.
+Sinf uch holatdan birida bo'lishi kerak: vorislik uchun mo'ljallangan va hujjatlashtirilgan, `final`, yoki interfeys. "Vorislik mumkin, lekin o'ylanmagan" to'rtinchi holat - xato manbasi, chunki voris sinf bazaviy sinfning ichki qoidalarini bilmaydi va ularni buzadi.
 
 Shu sababli amaliy standart: **sinf `final` bo'lishi standart holat**, vorislik esa ongli qaror. Spring kontekstida istisno bor: `@Configuration` sinflari va CGLIB proxy qilinadigan beanlar `final` bo'lmaydi (26.1).
 
@@ -3886,7 +3909,7 @@ Qoida: `protected` maydon bo'lmaydi; `protected` metod bo'lishi mumkin va u `fin
 
 Agar override qilingan metod `super.method()` ni chaqirishi **shart** bo'lsa, bu yashirin shartnoma va u buziladi: kimdir chaqirmay qo'yadi va xato uzoqda chiqadi.
 
-To'g'ri yechim — shablon metod (template method) bilan tuzilishni teskari aylantirish: bazaviy sinf `final` metodda tartibni ushlaydi va voris sinfga faqat bo'sh joyni beradi.
+To'g'ri yechim - shablon metod (template method) bilan tuzilishni teskari aylantirish: bazaviy sinf `final` metodda tartibni ushlaydi va voris sinfga faqat bo'sh joyni beradi.
 
 ```java
 // yomon: super ni chaqirish majburiyati izohda
@@ -3926,7 +3949,7 @@ protected abstract String separator();
 
 ### 17.6 Rad etilgan meros va interfeysni bo'lish
 
-Rad etilgan meros (refused bequest) — voris sinf bazaviy sinfdan olgan metodlarning bir qismini ishlatmaydi yoki `UnsupportedOperationException` tashlaydi. Bu Liskov printsipining buzilishi va interfeys juda keng ekanining belgisi.
+Rad etilgan meros (refused bequest) - voris sinf bazaviy sinfdan olgan metodlarning bir qismini ishlatmaydi yoki `UnsupportedOperationException` tashlaydi. Bu Liskov printsipining buzilishi va interfeys juda keng ekanining belgisi.
 
 ```java
 // yomon: voris sinf merosni rad etadi
@@ -3983,7 +4006,7 @@ public enum RetryLimit { ... }
 
 ### 17.9 Delegatsiya bilan vorislikni almashtirish
 
-Vorislikdan chiqish yo'li — delegatsiya: voris sinf bazaviy sinfni **maydon** sifatida saqlaydi va kerakli metodlarni o'ziga o'tkazadi. Shunda bazaviy sinfning butun API si meros bo'lib o'tmaydi va shartnoma buzilmaydi.
+Vorislikdan chiqish yo'li - delegatsiya: voris sinf bazaviy sinfni **maydon** sifatida saqlaydi va kerakli metodlarni o'ziga o'tkazadi. Shunda bazaviy sinfning butun API si meros bo'lib o'tmaydi va shartnoma buzilmaydi.
 
 ```java
 // yomon: HashMap dan voris olish - butun API meros bo'ladi, invariant himoyalanmaydi
@@ -4018,11 +4041,12 @@ O'tish tartibi: maydon qo'shish → `extends` ni olib tashlash → kompilyator k
 - [ ] `UnsupportedOperationException` tashlaydigan override larni topib, interfeysni bo'ling.
 - [ ] Constant interface larni yo'qotib, konstantalarni tegishli sinfga yoki enum ga ko'chiring.
 - [ ] `ArrayList`, `HashMap` kabi to'plamlardan voris olgan sinflarni delegatsiyaga o'tkazing.
+
 # VI. Xato bilan ishlash
 
 ## 18. Xato bilan ishlash qoidalari (Error Handling Rules)
 
-Istisno dizayni, tekshiriladigan va tekshirilmaydigan istisnolar tanlovi arxitektor hujjatida (13.7), istisno orqali muloqot esa 4.6 da ko'rilgan. Bu bobda qolgan qoidalar: xato kodidan voz kechish, `try` blokini ajratish, normal oqimni aniqlash, `null` siyosati, va chegarada tez to'xtash.
+Istisno dizayni, tekshiriladigan va tekshirilmaydigan istisnolar tanlovi arxitektor hujjatidagi istisnolar dizayni bo'limida, istisno orqali muloqot esa 4.6 da ko'rilgan. Bu bobda qolgan qoidalar: xato kodidan voz kechish, `try` blokini ajratish, normal oqimni aniqlash, `null` siyosati, va chegarada tez to'xtash.
 
 ### 18.1 Xato kodi emas, istisno
 
@@ -4052,7 +4076,7 @@ Bitta istisno: **kutilayotgan** yo'qlik xato emas. `findById` topilmasa `Optiona
 
 ### 18.2 `try-catch-finally` ni birinchi yozish
 
-Xato bilan ishlashni keyin qo'shish deyarli har doim yarim ishlaydi: resurslar yopilmagan, holat yarim o'zgargan bo'lib qoladi. To'g'ri tartib — `try` blokini birinchi yozish va u "qolgan kod uchun qamrov" yaratadi.
+Xato bilan ishlashni keyin qo'shish deyarli har doim yarim ishlaydi: resurslar yopilmagan, holat yarim o'zgargan bo'lib qoladi. To'g'ri tartib - `try` blokini birinchi yozish va u "qolgan kod uchun qamrov" yaratadi.
 
 TDD kontekstida bu aniq qadamga aylanadi: oldin istisno kutadigan test yozish, keyin `try/catch` qo'shish, keyin ichini to'ldirish (31-bob).
 
@@ -4130,7 +4154,7 @@ private void logError(Exception e) {
 
 ### 18.5 Xato bilan ishlash ham bitta ish
 
-Agar funksiyada `try` kalit so'zi bo'lsa, u `try` dan boshlanishi va `catch`/`finally` dan keyin tugashi kerak. Ya'ni xato bilan ishlash — funksiyaning **bitta** ishi va unga biznes mantiqi qo'shilmaydi (4.2 ning tatbiqi).
+Agar funksiyada `try` kalit so'zi bo'lsa, u `try` dan boshlanishi va `catch`/`finally` dan keyin tugashi kerak. Ya'ni xato bilan ishlash - funksiyaning **bitta** ishi va unga biznes mantiqi qo'shilmaydi (4.2 ning tatbiqi).
 
 ```java
 // yomon: try bloki ichida ham biznes mantiqi, ham xato ishlovi
@@ -4207,7 +4231,7 @@ public List<Employee> getEmployees() {
 
 ### 18.8 Bo'sh to'plam qaytarish qoidasi
 
-Metod to'plam qaytarsa, u hech qachon `null` qaytarmasligi kerak — bu Java da eng kam bahsli qoidalardan biri. `List.of()` va `Collections.emptyList()` ikkisi ham o'zgarmas va deyarli bepul (umumiy nusxa).
+Metod to'plam qaytarsa, u hech qachon `null` qaytarmasligi kerak - bu Java da eng kam bahsli qoidalardan biri. `List.of()` va `Collections.emptyList()` ikkisi ham o'zgarmas va deyarli bepul (umumiy nusxa).
 
 Shu qoidaning `Map`, `Set`, `Stream` va massiv uchun ekvivalentlari: `Map.of()`, `Set.of()`, `Stream.empty()`, `new String[0]`.
 
@@ -4238,7 +4262,7 @@ Shu qoidaning amaliy shakli: validatsiya uchun `try { Integer.parseInt(s) } catc
 
 Xato qanchalik manbaga yaqin aniqlansa, uni tuzatish shunchalik arzon. Shu sababli noto'g'ri ma'lumot tizimga kirishi bilan to'xtatilishi kerak, ichkariga tarqalib ketmasligi kerak.
 
-Amalda bu 5.11 dagi validatsiya taqsimoti bilan amalga oshadi: tashqi chegarada format va majburiylik, value object konstruktorida invariant, domen metodida biznes qoidasi. Ichki metodlar esa tekshirmaydi — ular allaqachon to'g'ri ma'lumot oladi.
+Amalda bu 5.11 dagi validatsiya taqsimoti bilan amalga oshadi: tashqi chegarada format va majburiylik, value object konstruktorida invariant, domen metodida biznes qoidasi. Ichki metodlar esa tekshirmaydi - ular allaqachon to'g'ri ma'lumot oladi.
 
 ```java
 // Chegarada: format, majburiylik, diapazon
@@ -4270,13 +4294,14 @@ public void refund(Money amount) {
 - [ ] Oqim boshqarish uchun istisno ishlatilgan joylarni (`catch (ArrayIndexOutOfBounds)`) oddiy shartga aylantiring.
 - [ ] "Yo'q" holati normal bo'lgan joylarni maxsus holat obyekti bilan ifodalab, `catch` bloklarini olib tashlang.
 - [ ] Validatsiyani 5.11 taqsimoti bo'yicha chegaraga ko'chirib, ichki metodlardagi takroriy tekshiruvlarni o'chiring.
+
 ## 19. Istisno mexanikasi va resurslar (Exception Mechanics and Resources)
 
 Oldingi bobda xato bilan ishlashning qoidalari berildi. Bu bobda Java dagi mexanika: stack trace ni saqlash, tutish tartibi, `finally` tuzoqlari, `try-with-resources`, `InterruptedException`, assertion, va xato xabarining uch xil adresati.
 
 ### 19.1 Stack trace ni yo'qotmaslik: wrap va rethrow
 
-Istisnoni qayta tashlashning to'g'ri yo'li — asl istisnoni **sabab** (cause) sifatida uzatish. Buni unutish diagnostikani imkonsiz qiladi: log da yangi istisnoning stack trace i turadi, asl xato qayerda bo'lganini ko'rsatmaydi.
+Istisnoni qayta tashlashning to'g'ri yo'li - asl istisnoni **sabab** (cause) sifatida uzatish. Buni unutish diagnostikani imkonsiz qiladi: log da yangi istisnoning stack trace i turadi, asl xato qayerda bo'lganini ko'rsatmaydi.
 
 ```java
 // yomon: sabab yo'qoldi, asl xato qayerda bo'lgani ko'rinmaydi
@@ -4296,7 +4321,7 @@ catch (SQLException e) {
 }
 ```
 
-Agar istisnoni o'zgartirmasdan qayta tashlasangiz, `throw e;` yozing — yangi istisno yaratish stack trace ni almashtiradi.
+Agar istisnoni o'zgartirmasdan qayta tashlasangiz, `throw e;` yozing - yangi istisno yaratish stack trace ni almashtiradi.
 
 ### 19.2 Ko'p turni tutish va tutish tartibi
 
@@ -4403,7 +4428,7 @@ catch (Exception e) {
 }
 ```
 
-Yagona istisno: eng tashqi thread chegarasi (`UncaughtExceptionHandler`, scheduler) `Throwable` ni tutib log qilishi va keyin tizimni to'xtatishi mumkin — lekin davom ettirmasligi kerak.
+Yagona istisno: eng tashqi thread chegarasi (`UncaughtExceptionHandler`, scheduler) `Throwable` ni tutib log qilishi va keyin tizimni to'xtatishi mumkin - lekin davom ettirmasligi kerak.
 
 ### 19.7 Log qilish yoki tashlash: ikkisini birga qilmaslik
 
@@ -4433,7 +4458,7 @@ ResponseEntity<ProblemDetail> handle(ImportException e) {
 
 ### 19.8 Assertion va `-ea`: qachon haqli
 
-`assert` gapi standart holatda **o'chirilgan** (`-ea` flagi kerak), shuning uchun u hech qachon kirish ma'lumotini tekshirish uchun ishlatilmasligi kerak — production da u umuman bajarilmaydi.
+`assert` gapi standart holatda **o'chirilgan** (`-ea` flagi kerak), shuning uchun u hech qachon kirish ma'lumotini tekshirish uchun ishlatilmasligi kerak - production da u umuman bajarilmaydi.
 
 Assertion faqat bitta holatda haqli: **ichki** taxminni hujjatlashtirish va test muhitida tekshirish. Public API validatsiyasi esa har doim oshkor tekshiruv bilan amalga oshadi.
 
@@ -4474,7 +4499,7 @@ public SettlementService(PaymentGateway gateway, Clock clock) {
 }
 ```
 
-Qoida: xabar har doim **maydon nomini** ko'rsatishi kerak — `requireNonNull(gateway)` xabarsiz `NullPointerException` beradi va stack trace dan qaysi argument `null` bo'lganini aniqlash qiyin bo'ladi.
+Qoida: xabar har doim **maydon nomini** ko'rsatishi kerak - `requireNonNull(gateway)` xabarsiz `NullPointerException` beradi va stack trace dan qaysi argument `null` bo'lganini aniqlash qiyin bo'ladi.
 
 ### 19.10 Xato xabari matni: uch xil adresat
 
@@ -4534,6 +4559,7 @@ public enum SettlementErrorCode {
 - [ ] "Log va qayta tashlash" namunalarini topib, log ni faqat qayta ishlagan joyda qoldiring.
 - [ ] `assert` bilan kirish tekshiradigan joylarni oshkor tekshiruvga o'tkazing.
 - [ ] API xato kodlari katalogini enum sifatida yozib, hujjatlashtiring va barqarorlik qoidasini kelishib oling.
+
 # VII. Java tilining toza ishlatilishi
 
 ## 20. Primitiv, son va pul (Primitives, Numbers and Money)
@@ -4558,7 +4584,7 @@ BigDecimal total = new BigDecimal("0.10").add(new BigDecimal("0.20"));   // 0.30
 Money total = Money.of("0.10", UZS).plus(Money.of("0.20", UZS));
 ```
 
-Qo'shimcha muhim qoida: `new BigDecimal(0.1)` **xato** — u `double` ni oladi va noaniqlikni saqlab qoladi. Har doim `new BigDecimal("0.1")` yoki `BigDecimal.valueOf(0.1)` ishlatiladi.
+Qo'shimcha muhim qoida: `new BigDecimal(0.1)` **xato** - u `double` ni oladi va noaniqlikni saqlab qoladi. Har doim `new BigDecimal("0.1")` yoki `BigDecimal.valueOf(0.1)` ishlatiladi.
 
 | Vazifa | To'g'ri tur |
 |---|---|
@@ -4598,7 +4624,7 @@ if (amount.compareTo(new BigDecimal("100.00")) == 0) { ... }
 
 ### 20.3 Butun sonning to'lib ketishi va `Math.*Exact`
 
-Java da butun son to'lib ketganda istisno tashlanmaydi — natija aylanib ketadi va manfiy bo'ladi. Bu `compareTo` da (15.6), hisoblagichlarda va vaqt hisobida xatoga olib keladi.
+Java da butun son to'lib ketganda istisno tashlanmaydi - natija aylanib ketadi va manfiy bo'ladi. Bu `compareTo` da (15.6), hisoblagichlarda va vaqt hisobida xatoga olib keladi.
 
 ```java
 // yomon: to'lib ketish jim o'tadi
@@ -4656,7 +4682,7 @@ Qoida: hisob va mahalliy o'zgaruvchilarda primitiv; `null` ma'noga ega bo'lgan j
 
 ### 20.6 Avtoboxing narxi va `null` unboxing
 
-Avtoboxing ikki muammo keltiradi. Birinchi — narx: sikl ichida har bir amal yangi obyekt yaratadi. Ikkinchi va xavflisi — `null` unboxing: `null` bo'lgan `Integer` ni `int` ga aylantirish `NullPointerException` beradi va u imzoda ko'rinmaydi.
+Avtoboxing ikki muammo keltiradi. Birinchi - narx: sikl ichida har bir amal yangi obyekt yaratadi. Ikkinchi va xavflisi - `null` unboxing: `null` bo'lgan `Integer` ni `int` ga aylantirish `NullPointerException` beradi va u imzoda ko'rinmaydi.
 
 ```java
 // yomon: issiq siklda million obyekt yaratiladi
@@ -4679,7 +4705,7 @@ int quantity = Objects.requireNonNullElse(order.quantity(), 0);
 
 ### 20.7 Pul va o'lchovni value object bilan ifodalash
 
-Pul uchun value object yozish primitivlarga berilish anti-patternidan (patternlar hujjati 25.19) chiqish yo'li va u uch foyda beradi: valyuta aralashmaydi, yakkalash qoidasi bir joyda, va arifmetika domen tilida o'qiladi.
+Pul uchun value object yozish primitivlarga berilish anti-patternidan (patternlar hujjatidagi primitivlarga berilish anti-patterni) chiqish yo'li va u uch foyda beradi: valyuta aralashmaydi, yakkalash qoidasi bir joyda, va arifmetika domen tilida o'qiladi.
 
 ```java
 public record Money(BigDecimal amount, Currency currency) implements Comparable<Money> {
@@ -4762,9 +4788,10 @@ static String newToken() {
 - [ ] Issiq sikllardagi boxed hisoblagichlarni primitiv turlarga almashtiring.
 - [ ] `new Random()` ishlatilgan xavfsizlikka tegishli joylarni `SecureRandom` ga o'tkazing.
 - [ ] ArchUnit qoidasi bilan `amount`, `price`, `total` nomli maydonlarda `double` ni taqiqlang.
+
 ## 21. Satr, matn va regex (Strings, Text and Regex)
 
-Satr Java da eng ko'p ishlatiladigan tur va shu sababli eng ko'p yashirin xato manbasi: kodirovka, locale, `==` solishtirish, regex narxi. Bu bobda shu xatolarning hammasini to'sadigan qoidalar. Satr bilan tiplash (stringly typed) anti-patterni patternlar hujjatida (25.27).
+Satr Java da eng ko'p ishlatiladigan tur va shu sababli eng ko'p yashirin xato manbasi: kodirovka, locale, `==` solishtirish, regex narxi. Bu bobda shu xatolarning hammasini to'sadigan qoidalar. Satr bilan tiplash (stringly typed) anti-patterni patternlar hujjatidagi satr bilan tiplash anti-patternida.
 
 ### 21.1 `==` emas `equals`, `intern` va literal pool
 
@@ -4879,7 +4906,7 @@ String[] columns = line.split(",", -1);     // "a,b,," -> 4 element
 
 ### 21.6 Regexni oldindan kompilyatsiya qilish va nomlash
 
-`String.matches`, `replaceAll` va `split` har bir chaqiruvda regexni qaytadan kompilyatsiya qiladi. Issiq yo'lda bu sezilarli narx. Yechim: `Pattern` ni `static final` maydonga chiqarish — bu bir vaqtda tezlikni va o'qilishni yaxshilaydi, chunki regex nom oladi.
+`String.matches`, `replaceAll` va `split` har bir chaqiruvda regexni qaytadan kompilyatsiya qiladi. Issiq yo'lda bu sezilarli narx. Yechim: `Pattern` ni `static final` maydonga chiqarish - bu bir vaqtda tezlikni va o'qilishni yaxshilaydi, chunki regex nom oladi.
 
 ```java
 // yomon: har chaqiruvda kompilyatsiya, regex nomsiz
@@ -4920,7 +4947,7 @@ Qo'shimcha himoya: tashqi kiritish uzunligini regexdan **oldin** cheklash, va mu
 
 ### 21.8 Satr bilan tiplash o'rniga tur
 
-Satr har qanday qiymatni ushlaydi va shu sababli hech qanday xatoni to'smaydi. Domen tushunchalarini satrda saqlash eng ko'p uchraydigan tur xatosi (patternlar hujjati 25.27).
+Satr har qanday qiymatni ushlaydi va shu sababli hech qanday xatoni to'smaydi. Domen tushunchalarini satrda saqlash eng ko'p uchraydigan tur xatosi (patternlar hujjatidagi satr bilan tiplash anti-patterni).
 
 ```java
 // yomon: hammasi String - almashtirish kompilyatsiyadan o'tadi
@@ -4964,13 +4991,14 @@ String query = """
 - [ ] Barcha inline regexlarni `static final Pattern` maydonlariga chiqarib, nom bering.
 - [ ] Tashqi kiritishni tekshiradigan regexlarni ichma-ich kvantifikatorga qarshi ko'rib chiqing va uzunlik chegarasi qo'ying.
 - [ ] `+` bilan qurilgan SQL va JSON literallarini matn blokiga o'tkazing.
+
 ## 22. Sana, vaqt va mintaqa (Date, Time and Zone)
 
 Vaqt bilan ishlash xatolari odatda production da, ma'lum sanada va bir marta chiqadi: yoz vaqti o'tishida, oy oxirida, yoki boshqa mintaqadagi foydalanuvchida. Bu bobda `java.time` ni to'g'ri ishlatishning qoidalari va testlanadigan vaqt.
 
 ### 22.1 `Date`, `Calendar`, `SimpleDateFormat` dan voz kechish
 
-Eski API uch sababdan tashlab yuborilgan: `Date` o'zgaradigan (16.2 dagi sayoz o'zgarmaslik muammosi), `Calendar` oy indeksini 0 dan boshlaydi (`JANUARY == 0`), va `SimpleDateFormat` thread-safe emas — u statik maydonda saqlansa, yuk ostida tasodifiy noto'g'ri sanalar beradi.
+Eski API uch sababdan tashlab yuborilgan: `Date` o'zgaradigan (16.2 dagi sayoz o'zgarmaslik muammosi), `Calendar` oy indeksini 0 dan boshlaydi (`JANUARY == 0`), va `SimpleDateFormat` thread-safe emas - u statik maydonda saqlansa, yuk ostida tasodifiy noto'g'ri sanalar beradi.
 
 ```java
 // yomon: statik SimpleDateFormat - yuk ostida buziladi
@@ -5110,7 +5138,7 @@ API shartnomasida esa shablon yozmaslik kerak: ISO-8601 (`DateTimeFormatter.ISO_
 
 Uchta kalendar hodisasi kodni buzadi va ularning hammasi testlanishi kerak.
 
-**Yoz vaqti o'tishi**: ba'zi sana-vaqtlar mavjud bo'lmaydi (soat 02:00 dan 03:00 ga o'tganda) yoki ikki marta bo'ladi. `ZonedDateTime` bu holatlarni o'zi hal qiladi, `LocalDateTime` esa yo'q — shu sababli rejalashtirish uchun `ZonedDateTime` kerak.
+**Yoz vaqti o'tishi**: ba'zi sana-vaqtlar mavjud bo'lmaydi (soat 02:00 dan 03:00 ga o'tganda) yoki ikki marta bo'ladi. `ZonedDateTime` bu holatlarni o'zi hal qiladi, `LocalDateTime` esa yo'q - shu sababli rejalashtirish uchun `ZonedDateTime` kerak.
 
 **Oy oxiri**: `plusMonths` kunni moslaydi (31-yanvar + 1 oy = 28/29-fevral) va bu odatda to'g'ri xatti-harakat, lekin biznes qoidasi boshqa bo'lishi mumkin.
 
@@ -5142,7 +5170,7 @@ Uch qatlamda vaqt turi mos bo'lishi kerak, aks holda konvertatsiya paytida minta
 | Log | ISO-8601, UTC |
 | Metrika | Unix epoch |
 
-`timestamp without time zone` ustunini `Instant` ga bog'lash eng ko'p uchraydigan nomuvofiqlik: baza mintaqani saqlamaydi va qiymat server mintaqasiga qarab o'zgaradi (arxitektor hujjati 25-bob sxema dizaynini ko'rib chiqadi).
+`timestamp without time zone` ustunini `Instant` ga bog'lash eng ko'p uchraydigan nomuvofiqlik: baza mintaqani saqlamaydi va qiymat server mintaqasiga qarab o'zgaradi (arxitektor hujjatidagi sxema dizayni bo'limi sxema dizaynini ko'rib chiqadi).
 
 ### 22.10 Amalda qo'llash
 
@@ -5154,6 +5182,7 @@ Uch qatlamda vaqt turi mos bo'lishi kerak, aks holda konvertatsiya paytida minta
 - [ ] Timeout va TTL qiymatlarini `Duration` ga o'tkazib, konfiguratsiyada `30s` shaklida yozing.
 - [ ] `DateTimeFormatter` shablonlarida `YYYY`, `DD`, `hh` xatolarini qidirib tuzating.
 - [ ] Baza ustunlarini `timestamptz` ga keltirib, JPA maydonlari `Instant` ekanini tekshiring.
+
 ## 23. To'plamlar va generiklar gigiyenasi (Collections and Generics)
 
 To'plam tanlovi va generik turlar bilan ishlash Java kodining kundalik qismi, va shu sababli kichik xatolar ko'p takrorlanadi. Bu bobda to'plam turini tanlash, `Map` ni toza ishlatish, iteratsiya tartibi, o'zgartirilmaslik darajalari (16.3 ni to'ldiradi) va generiklar qoidalari.
@@ -5273,9 +5302,9 @@ Qoida: o'zgarmas kerak bo'lsa `List.of`/`List.copyOf`; o'zgaradigan kerak bo'lsa
 | `TreeMap` | taqiqlangan (NPE) | ruxsat |
 | `ConcurrentHashMap` | taqiqlangan | taqiqlangan |
 | `Map.of` | taqiqlangan | taqiqlangan |
-| `HashSet` | 1 ta ruxsat | — |
-| `List.of` | taqiqlangan | — |
-| `ArrayList` | ruxsat | — |
+| `HashSet` | 1 ta ruxsat | - |
+| `List.of` | taqiqlangan | - |
+| `ArrayList` | ruxsat | - |
 
 Eng ko'p uchraydigan tuzoq: `HashMap` dan `ConcurrentHashMap` ga o'tish mavjud kodni buzadi, chunki `null` qiymat endi taqiqlangan. Qoida: to'plamlarda `null` ni umuman ishlatmaslik (18.7).
 
@@ -5300,7 +5329,7 @@ Qoida: `-Xlint:all` va `-Werror` bilan ogohlantirishlarni xatoga aylantirish (25
 
 ### 23.8 Wildcard qoidalari: PECS
 
-Generik parametrlarda `? extends` va `? super` tanlovi uchun oddiy qoida bor: **PECS** — Producer Extends, Consumer Super. Agar parametr ma'lumot **beradi** (o'qiladi), `? extends`; agar ma'lumot **oladi** (yoziladi), `? super`.
+Generik parametrlarda `? extends` va `? super` tanlovi uchun oddiy qoida bor: **PECS** - Producer Extends, Consumer Super. Agar parametr ma'lumot **beradi** (o'qiladi), `? extends`; agar ma'lumot **oladi** (yoziladi), `? super`.
 
 ```java
 // Ishlab chiqaruvchi (o'qiymiz): extends
@@ -5318,11 +5347,11 @@ void collectInto(List<? super SettlementRow> target) {
 void copy(List<? extends T> source, List<? super T> target) { ... }
 ```
 
-Amaliy qoida: **qaytish turida** wildcard ishlatmaslik — u chaqiruvchini wildcard bilan ishlashga majbur qiladi va kod tarqaladi.
+Amaliy qoida: **qaytish turida** wildcard ishlatmaslik - u chaqiruvchini wildcard bilan ishlashga majbur qiladi va kod tarqaladi.
 
 ### 23.9 Generik metod, tur xulosasi va `var`
 
-Generik metod turni argumentdan xulosa qiladi va bu kodni qisqartiradi. `var` bilan birga ishlatilganda esa tur umuman ko'rinmay qolishi mumkin — bunda o'qilish buziladi (arxitektor hujjati 13.4).
+Generik metod turni argumentdan xulosa qiladi va bu kodni qisqartiradi. `var` bilan birga ishlatilganda esa tur umuman ko'rinmay qolishi mumkin - bunda o'qilish buziladi (arxitektor hujjatidagi matn bloki va `var` bo'limi).
 
 ```java
 // yaxshi: generik metod, tur xulosa qilinadi
@@ -5379,13 +5408,14 @@ Hech qachon ichki to'plamni to'g'ridan-to'g'ri qaytarmaslik kerak (14.7). Qaytis
 - [ ] `@SuppressWarnings` larni ko'rib, qamrovini torroq qilib, sababini izohlang.
 - [ ] Public API dagi massiv qaytaradigan metodlarni `List` ga o'tkazing.
 - [ ] To'plam qaytaradigan getter larni 23.11 jadvaliga qarab bitta izchil shaklga keltiring.
+
 ## 24. Lambda, oqim va funksional uslub tozaligi (Lambdas and Streams)
 
-Oqim va sikl tanlovi arxitektor hujjatida (13.6), `Optional` ning to'g'ri ishlatilishi 13.5 da berilgan. Bu bobda funksional kodning tozalik qoidalari: lambda uzunligi, metod havolasi, yon ta'sir, `Collectors` ni o'qiladigan ushlash va istisnolar.
+Oqim va sikl tanlovi arxitektor hujjatidagi Stream API bo'limida, `Optional` ning to'g'ri ishlatilishi 13.5 da berilgan. Bu bobda funksional kodning tozalik qoidalari: lambda uzunligi, metod havolasi, yon ta'sir, `Collectors` ni o'qiladigan ushlash va istisnolar.
 
 ### 24.1 Lambda uzunligi va uni metodga chiqarish
 
-Lambda bir ifoda bo'lsa o'qiladi; blokka aylansa (qavs va `return` paydo bo'lsa) o'qilishi tushadi. Amaliy chegara: lambda uch qatordan oshsa, uni nomlangan metodga chiqarish kerak — shunda nom niyatni aytadi va metod alohida testlanadi.
+Lambda bir ifoda bo'lsa o'qiladi; blokka aylansa (qavs va `return` paydo bo'lsa) o'qilishi tushadi. Amaliy chegara: lambda uch qatordan oshsa, uni nomlangan metodga chiqarish kerak - shunda nom niyatni aytadi va metod alohida testlanadi.
 
 ```java
 // yomon: oqim ichida 8 qatorli lambda
@@ -5447,7 +5477,7 @@ O'z interfeysingizni yozish faqat ikki holatda haqli: nom domen ma'nosini beradi
 
 ### 24.4 Oqim ichida yon ta'sir va `forEach` tuzog'i
 
-Oqim transformatsiya uchun mo'ljallangan; uning ichida tashqi holatni o'zgartirish ikki muammo keltiradi: parallel oqimda poyga holati, va o'qilishi — oqim nima qaytarayotgani ko'rinmaydi.
+Oqim transformatsiya uchun mo'ljallangan; uning ichida tashqi holatni o'zgartirish ikki muammo keltiradi: parallel oqimda poyga holati, va o'qilishi - oqim nima qaytarayotgani ko'rinmaydi.
 
 ```java
 // yomon: oqim ichida tashqi holat o'zgaradi
@@ -5484,11 +5514,11 @@ try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
 }
 ```
 
-`forEachOrdered` tartibni saqlaydi, lekin parallel oqimning foydasini yo'qotadi — bu ikkisining birga kerak bo'lishi parallel oqim noto'g'ri tanlov ekanini bildiradi.
+`forEachOrdered` tartibni saqlaydi, lekin parallel oqimning foydasini yo'qotadi - bu ikkisining birga kerak bo'lishi parallel oqim noto'g'ri tanlov ekanini bildiradi.
 
 ### 24.6 `Optional` ni zanjirda toza ishlatish
 
-`Optional` ning asosiy qoidalari arxitektor hujjatida (13.5): qaytish qiymati sifatida ishlatiladi, maydon va parametr sifatida emas. Bu yerda zanjirni toza ushlash qoidalari.
+`Optional` ning asosiy qoidalari arxitektor hujjatidagi `Optional` bo'limida: qaytish qiymati sifatida ishlatiladi, maydon va parametr sifatida emas. Bu yerda zanjirni toza ushlash qoidalari.
 
 ```java
 // yomon: isPresent + get - Optional ning ma'nosi yo'qoladi
@@ -5538,7 +5568,7 @@ List<String> contents = files.stream().map(this::readOrThrow).toList();
 files.stream().map(f -> { try { ... } catch (IOException e) { ... } });
 ```
 
-`@SneakyThrows` (Lombok) bu muammoni yashiradi, lekin istisnoni imzodan olib tashlaydi va chaqiruvchi uni ko'rmaydi — shu sababli taqiqlanishi kerak (26.10).
+`@SneakyThrows` (Lombok) bu muammoni yashiradi, lekin istisnoni imzodan olib tashlaydi va chaqiruvchi uni ko'rmaydi - shu sababli taqiqlanishi kerak (26.10).
 
 ### 24.8 `Collectors` ni o'qiladigan ushlash
 
@@ -5563,7 +5593,7 @@ Statik import (`groupingBy` emas `Collectors.groupingBy`) shu kodni ancha o'qila
 
 ### 24.9 Oqimni qaytarish yoki to'plam qaytarish
 
-Public metod `Stream` qaytarishi mumkin, lekin bu shartnomani o'zgartiradi: oqim bir marta o'qiladi va yopilishi kerak bo'lishi mumkin. Shuning uchun standart tanlov — `List` qaytarish; `Stream` faqat ikki holatda.
+Public metod `Stream` qaytarishi mumkin, lekin bu shartnomani o'zgartiradi: oqim bir marta o'qiladi va yopilishi kerak bo'lishi mumkin. Shuning uchun standart tanlov - `List` qaytarish; `Stream` faqat ikki holatda.
 
 | Holat | Qaytish turi |
 |---|---|
@@ -5594,6 +5624,7 @@ Stream<Payment> streamSettledIn(DateRange range);
 - [ ] `orElse(<qimmat chaqiruv>)` holatlarini `orElseGet` ga o'tkazing.
 - [ ] `@SneakyThrows` ishlatilgan joylarni oshkor o'rashga almashtirib, annotatsiyani taqiqlang.
 - [ ] Ikki darajadan chuqur `groupingBy` zanjirlarini oraliq record bilan tekislang.
+
 ## 25. Java kodidagi umumiy tuzoqlar (Common Java Pitfalls)
 
 Bu bob oldingi boblarga sig'magan, lekin kundalik kodda uchraydigan Java tuzoqlarini yig'adi: `Optional` ning chegaralari, statik ishga tushirish, seriyalash, refleksiya, ichki sinflar, enum mexanikasi va kompilyator ogohlantirishlari.
@@ -5654,7 +5685,7 @@ Statik maydonlarning ishga tushish tartibi e'lon tartibida boradi va bu tartibga
 
 ### 25.3 `instanceof` zanjiri va `getClass()` solishtirish
 
-Uzun `instanceof` zanjiri turga qarab shoxlanish hidi (6.10) va zamonaviy Java da uning to'g'ri shakli bor: `sealed` interfeys va pattern matching bilan `switch`, bunda to'liqlik kompilyator tomonidan tekshiriladi (arxitektor hujjati 13.2).
+Uzun `instanceof` zanjiri turga qarab shoxlanish hidi (6.10) va zamonaviy Java da uning to'g'ri shakli bor: `sealed` interfeys va pattern matching bilan `switch`, bunda to'liqlik kompilyator tomonidan tekshiriladi (arxitektor hujjatidagi sealed interfeys bo'limi).
 
 ```java
 // yomon: zanjir, to'liqligi tekshirilmaydi
@@ -5700,7 +5731,7 @@ public final class SessionData implements Serializable {
 
 ### 25.5 Refleksiya narxi va uni chegaralash
 
-Refleksiya tur xavfsizligini ish vaqtiga suradi: xato kompilyatsiyada emas, production da chiqadi. Bundan tashqari, refleksiya bilan yozilgan kod refaktoringga chidamsiz — nom o'zgarsa IDE uni topmaydi.
+Refleksiya tur xavfsizligini ish vaqtiga suradi: xato kompilyatsiyada emas, production da chiqadi. Bundan tashqari, refleksiya bilan yozilgan kod refaktoringga chidamsiz - nom o'zgarsa IDE uni topmaydi.
 
 ```java
 // yomon: nom satrda - refaktoring buzadi, xato ish vaqtida chiqadi
@@ -5722,7 +5753,7 @@ Qoida: resursni `AutoCloseable` va `try-with-resources` bilan boshqarish (19.4);
 
 ### 25.7 Ichki sinf va yashirin tashqi havola
 
-Nostatik ichki sinf (`inner class`) tashqi sinf nusxasiga yashirin havola saqlaydi. Natijada ichki sinf nusxasi yashasa, tashqi obyekt ham xotirada qoladi — bu klassik xotira oqishi (memory leak) sababi.
+Nostatik ichki sinf (`inner class`) tashqi sinf nusxasiga yashirin havola saqlaydi. Natijada ichki sinf nusxasi yashasa, tashqi obyekt ham xotirada qoladi - bu klassik xotira oqishi (memory leak) sababi.
 
 ```java
 // yomon: Listener tashqi Service ga havola saqlaydi, u GC qilinmaydi
@@ -5824,11 +5855,12 @@ Error Prone bu hujjatdagi ko'p qoidalarni avtomatik tekshiradi: `EqualsHashCode`
 - [ ] Nostatik ichki sinflarni `static` qilib, Error Prone `ClassCanBeStatic` ni yoqing.
 - [ ] `Enum.valueOf` tashqi ma'lumot bilan chaqirilgan joylarni xavfsiz parslashga o'tkazing.
 - [ ] `-Xlint:all -Werror` va Error Prone + NullAway ni build ga qo'shib, chiqqan ogohlantirishlarni bosqichma-bosqich tuzating.
+
 # VIII. Spring va ma'lumot qatlamida toza kod
 
 ## 26. Spring kodining tozaligi (Clean Code in Spring)
 
-Spring mexanikasi arxitektor hujjatida (15-20 boblar), Spring patternlari esa patternlar hujjatida. Bu bobda Spring kodining **yozilish** qoidalari: inyeksiya shakli, bean ko'rinishi, konfiguratsiya, controller va service chegarasi, Lombok siyosati.
+Spring mexanikasi arxitektor hujjatidagi Spring mexanikasi boblarida, Spring patternlari esa patternlar hujjatida. Bu bobda Spring kodining **yozilish** qoidalari: inyeksiya shakli, bean ko'rinishi, konfiguratsiya, controller va service chegarasi, Lombok siyosati.
 
 ### 26.1 Konstruktor inyeksiyasi va `final` maydon
 
@@ -5853,11 +5885,11 @@ public class SettlementService {
 
 Konstruktor inyeksiyasi to'rt foyda beradi: maydonlar `final` bo'ladi (16.1), bog'liqliklar imzoda ko'rinadi, obyekt `new` bilan testda yaratiladi (framework kerak emas), va aylanali bog'liqlik ishga tushishda darhol aniqlanadi.
 
-Bog'liqliklar soni to'rtdan oshsa, bu sinfning juda ko'p ish qilayotgani belgisi — konstruktor parametr soni tabiiy ogohlantirish beradi (5.1).
+Bog'liqliklar soni to'rtdan oshsa, bu sinfning juda ko'p ish qilayotgani belgisi - konstruktor parametr soni tabiiy ogohlantirish beradi (5.1).
 
 ### 26.2 Bean ko'rinishi: `package-private` konfiguratsiya va komponentlar
 
-Spring beanlari `public` bo'lishi shart emas va `package-private` qilish paket chegarasini mustahkamlaydi (arxitektor hujjati 4.8 va 5.9). Shunda boshqa paketdan tasodifiy import qilib bo'lmaydi.
+Spring beanlari `public` bo'lishi shart emas va `package-private` qilish paket chegarasini mustahkamlaydi (arxitektor hujjatidagi paketni xususiyat bo'yicha bo'lish bo'limi va 5.9). Shunda boshqa paketdan tasodifiy import qilib bo'lmaydi.
 
 ```java
 // yaxshi: faqat API public, implementatsiya paket ichida
@@ -5880,7 +5912,7 @@ class PaymentConfiguration {                              // package-private
 
 ### 26.3 Konfiguratsiya: `@ConfigurationProperties` record bilan
 
-`@Value` ni kod bo'ylab tarqatish property tarqoqligiga olib keladi (patternlar hujjati 25.53): sozlamalar ro'yxati hech qayerda to'liq ko'rinmaydi, validatsiya yo'q, va standart qiymatlar takrorlanadi.
+`@Value` ni kod bo'ylab tarqatish property tarqoqligiga olib keladi (patternlar hujjatidagi property tarqoqligi anti-patterni): sozlamalar ro'yxati hech qayerda to'liq ko'rinmaydi, validatsiya yo'q, va standart qiymatlar takrorlanadi.
 
 ```java
 // yomon: tarqoq, validatsiyasiz, birligi noaniq
@@ -5919,7 +5951,7 @@ shop:
     merchant-id: ${MERCHANT_ID}      # sir muhitdan keladi, kodda emas
 ```
 
-Ikkinchi qoida: sirlar (`password`, `token`, `secret`) hech qachon `application.yml` da literal sifatida turmaydi — ular muhit o'zgaruvchisi yoki secret manager dan keladi (39.8).
+Ikkinchi qoida: sirlar (`password`, `token`, `secret`) hech qachon `application.yml` da literal sifatida turmaydi - ular muhit o'zgaruvchisi yoki secret manager dan keladi (39.8).
 
 ### 26.5 Controller ni yupqa ushlash
 
@@ -5956,13 +5988,13 @@ Mapping qayerda turishi aniq qaror bo'lishi kerak, aks holda u hamma joyda takro
 | MapStruct | DTO ko'p, maydonlar bir xil | generatsiya, `@Mapper` |
 | Domen ichida | hech qachon | domen DTO ni bilmasligi kerak |
 
-Qoida: domen obyekti DTO ni bilmaydi (bog'liqlik yo'nalishi, arxitektor hujjati 5.8); shuning uchun mapping DTO tomonda yoki alohida sinfda turadi.
+Qoida: domen obyekti DTO ni bilmaydi (bog'liqlik yo'nalishi, arxitektor hujjatidagi bog'liqlik yo'nalishi bo'limi); shuning uchun mapping DTO tomonda yoki alohida sinfda turadi.
 
 ### 26.7 Service qatlamida metod nomlari va tranzaksiya chegarasi
 
-Service metodlari **use case** nomini olishi kerak, CRUD nomini emas: `cancelOrder`, `reserveStock`, `settlePayment` — `update`, `process`, `handle` emas (2.4 va 3.9).
+Service metodlari **use case** nomini olishi kerak, CRUD nomini emas: `cancelOrder`, `reserveStock`, `settlePayment` - `update`, `process`, `handle` emas (2.4 va 3.9).
 
-Tranzaksiya chegarasi va `@Transactional` mexanikasi arxitektor hujjatida (19-bob) berilgan. Clean code darajasidagi ikki qoida: `@Transactional` service qatlamida turadi (controller yoki repository da emas), va `readOnly = true` o'qish metodlarida oshkor belgilanadi.
+Tranzaksiya chegarasi va `@Transactional` mexanikasi arxitektor hujjatidagi Spring tranzaksiyalari bo'limida berilgan. Clean code darajasidagi ikki qoida: `@Transactional` service qatlamida turadi (controller yoki repository da emas), va `readOnly = true` o'qish metodlarida oshkor belgilanadi.
 
 ```java
 @Service
@@ -6004,7 +6036,7 @@ PaymentGateway paymentGateway(PaymentProperties properties, ...) {
 
 ### 26.9 Shartli konfiguratsiya va `@Profile` ni kamaytirish
 
-Profil tarqoqligi patternlar hujjatida anti-pattern (25.39). Clean code qoidasi: `@Profile` ni **kod** da emas, konfiguratsiyada hal qilish — xatti-harakat farqi property qiymati bilan boshqarilsa, muhitlar orasidagi farq bir faylda ko'rinadi.
+Profil tarqoqligi patternlar hujjatida anti-pattern (25.39). Clean code qoidasi: `@Profile` ni **kod** da emas, konfiguratsiyada hal qilish - xatti-harakat farqi property qiymati bilan boshqarilsa, muhitlar orasidagi farq bir faylda ko'rinadi.
 
 ```java
 // yomon: profil kod bo'ylab tarqalgan, nima farq qilishi ko'rinmaydi
@@ -6023,7 +6055,7 @@ SmsSender loggingSmsSender() { ... }
 
 ### 26.10 Lombok siyosati: xavfsiz va xavfli annotatsiyalar
 
-Lombok kodni qisqartiradi, lekin ba'zi annotatsiyalari yashirin xatti-harakat qo'shadi. Jamoada aniq siyosat bo'lishi kerak va u hujjatlashtirilishi lozim (SonarQube hujjati 41-bobda Lombok va generatsiya qilingan kod ko'rib chiqiladi).
+Lombok kodni qisqartiradi, lekin ba'zi annotatsiyalari yashirin xatti-harakat qo'shadi. Jamoada aniq siyosat bo'lishi kerak va u hujjatlashtirilishi lozim (SonarQube hujjatidagi Lombok va generatsiya qilingan kod bo'limi Lombok va generatsiya qilingan kod ko'rib chiqiladi).
 
 | Annotatsiya | Siyosat | Sabab |
 |---|---|---|
@@ -6048,9 +6080,10 @@ Lombok kodni qisqartiradi, lekin ba'zi annotatsiyalari yashirin xatti-harakat qo
 - [ ] Mapping joyini bitta konvensiyaga keltirib (DTO fabrikasi yoki mapper), takrorlangan mappinglarni birlashtiring.
 - [ ] `@Primary` ishlatilgan joylarni `@Qualifier` yoki konfiguratsiyadagi oshkor tanlovga almashtiring.
 - [ ] Lombok siyosatini yozib, `@Data`, `@SneakyThrows` va entitetdagi `@EqualsAndHashCode` ni ArchUnit bilan taqiqlang.
+
 ## 27. REST API kodining o'qilishi (Readable REST Code)
 
-API dizayn patternlari patternlar hujjatida (7-bob), REST so'rov yo'li arxitektor hujjatida (17-bob). Bu bobda controller **kodining** tozaligi: imzo, holat kodi, xato javobi, validatsiya, seriyalash sozlamalari va idempotentlik.
+API dizayn patternlari patternlar hujjatidagi API dizayn patternlari bo'limida, REST so'rov yo'li arxitektor hujjatidagi Spring MVC va WebFlux bo'limida. Bu bobda controller **kodining** tozaligi: imzo, holat kodi, xato javobi, validatsiya, seriyalash sozlamalari va idempotentlik.
 
 ### 27.1 Controller metodi imzosi va qaytish turi
 
@@ -6213,7 +6246,7 @@ spring:
     time-zone: UTC
 ```
 
-Qo'shimcha qoidalar: JPA entitetini API da qaytarmaslik (patternlar hujjati 25.33), `@JsonIgnore` bilan sezgir maydonlarni yopish, va DTO maydonlari nomini API shartnomasida barqaror ushlash.
+Qo'shimcha qoidalar: JPA entitetini API da qaytarmaslik (patternlar hujjatidagi API da JPA entitetlarini fosh qilish anti-patterni), `@JsonIgnore` bilan sezgir maydonlarni yopish, va DTO maydonlari nomini API shartnomasida barqaror ushlash.
 
 ### 27.7 Idempotentlik va `Idempotency-Key` kodda
 
@@ -6261,9 +6294,10 @@ class OrderV2Controller { ... }
 - [ ] Saralash maydonlarini oq ro'yxat bilan cheklab, indekssiz ustunlarni chiqarib tashlang.
 - [ ] Jackson sozlamalarini `application.yml` da oshkor yozib, sana formatini ISO-8601 ga qotiring.
 - [ ] Yaratish endpointlariga `Idempotency-Key` sarlavhasini va bazada unikal cheklovni qo'shing.
+
 ## 28. JPA va SQL kodining tozaligi (Clean JPA and SQL)
 
-Hibernate mexanikasi va PostgreSQL chuqur bilimi arxitektor hujjatida (18, 21-27 boblar), ORM patternlari patternlar hujjatida (9-bob). Bu bobda ma'lumot qatlami **kodining** tozaligi: entitet gigiyenasi, assotsiatsiyalar, repository metodlari, SQL yozish uslubi.
+Hibernate mexanikasi va PostgreSQL chuqur bilimi arxitektor hujjatidagi Spring Data JPA va Hibernate bo'limida, ORM patternlari patternlar hujjatidagi ma'lumotlarga kirish va ORM patternlari bo'limida. Bu bobda ma'lumot qatlami **kodining** tozaligi: entitet gigiyenasi, assotsiatsiyalar, repository metodlari, SQL yozish uslubi.
 
 ### 28.1 Entitet gigiyenasi: `equals`, `hashCode`, `toString`
 
@@ -6403,7 +6437,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
 ### 28.6 `@Query`, native query va ularni o'qiladigan ushlash
 
-JPQL va native query uchun uch qoida bor. Birinchi, matn bloki ishlatish (12.9) — satr birlashtirish SQL ni o'qilmaydigan qiladi. Ikkinchi, nomlangan parametrlar (`:customerId`), pozitsion emas (`?1`). Uchinchi, parametrlarni **hech qachon** satr birlashtirish bilan qo'ymaslik (SQL injection).
+JPQL va native query uchun uch qoida bor. Birinchi, matn bloki ishlatish (12.9) - satr birlashtirish SQL ni o'qilmaydigan qiladi. Ikkinchi, nomlangan parametrlar (`:customerId`), pozitsion emas (`?1`). Uchinchi, parametrlarni **hech qachon** satr birlashtirish bilan qo'ymaslik (SQL injection).
 
 ```java
 // yomon: SQL injection va o'qilmaydigan matn
@@ -6421,7 +6455,7 @@ List<PaymentRow> findSettledSince(@Param("status") String status, @Param("from")
 
 ### 28.7 Projeksiya va DTO qaytarish
 
-Butun entitetni o'qish kerak bo'lmasa, uni o'qimaslik kerak: projeksiya kamroq ustun oladi, lazy muammolarini yo'qotadi va entitetni tranzaksiyadan tashqariga chiqarmaydi (patternlar hujjati 25.33).
+Butun entitetni o'qish kerak bo'lmasa, uni o'qimaslik kerak: projeksiya kamroq ustun oladi, lazy muammolarini yo'qotadi va entitetni tranzaksiyadan tashqariga chiqarmaydi (patternlar hujjatidagi API da JPA entitetlarini fosh qilish anti-patterni).
 
 ```java
 // yaxshi: interfeys projeksiyasi - Spring Data o'zi amalga oshiradi
@@ -6478,7 +6512,7 @@ order by o.created_at desc;
 
 ### 28.9 Migratsiya fayli nomlanishi va mazmuni
 
-Migratsiya strategiyasi va to'xtashsiz reliz arxitektor hujjatida (33-bob). Bu yerda fayl darajasidagi qoidalar: nomlanish (3.13), bir migratsiya bir maqsad, va orqaga qaytarish imkoni.
+Migratsiya strategiyasi va to'xtashsiz reliz arxitektor hujjatidagi sxema migratsiyasi va to'xtashsiz reliz bo'limida. Bu yerda fayl darajasidagi qoidalar: nomlanish (3.13), bir migratsiya bir maqsad, va orqaga qaytarish imkoni.
 
 ```sql
 -- V12__add_settled_at_to_payment.sql
@@ -6506,9 +6540,10 @@ Qoidalar: bir faylda bir mantiqiy o'zgarish, migratsiyani qo'lda tahrirlamaslik 
 - [ ] Uch shartdan uzun derived query nomlarini `@Query` ga o'tkazib, matn bloki bilan yozing.
 - [ ] Entitet qaytaradigan API metodlarini projeksiya yoki DTO ga o'tkazing.
 - [ ] SQL fayllarini 28.8 qoidalariga keltirib, `select *` ni ustun ro'yxatiga almashtiring.
+
 ## 29. Log kodining tozaligi (Clean Logging Code)
 
-Kuzatuvchanlik amaliyoti va log narxi arxitektor hujjatida (30-bob), observability patternlari patternlar hujjatida (21-bob). Bu bobda log **kodining** o'zi: xabar yozish shakli, daraja tanlash, istisno uzatish, takrorlanish va MDC.
+Kuzatuvchanlik amaliyoti va log narxi arxitektor hujjatidagi kuzatuvchanlik amaliyoti bo'limida, observability patternlari patternlar hujjatidagi observability patternlari bo'limida. Bu bobda log **kodining** o'zi: xabar yozish shakli, daraja tanlash, istisno uzatish, takrorlanish va MDC.
 
 ### 29.1 SLF4J parametrlangan xabar va satr birlashtirmaslik
 
@@ -6528,7 +6563,7 @@ log.debug("to'lov {} yopildi, summa: {}", paymentId, amount);
 log.atDebug().setMessage("holat: {}").addArgument(() -> expensiveSnapshot()).log();
 ```
 
-`isDebugEnabled()` tekshiruvi parametrlangan xabar bilan **kerak emas** — u faqat argument hisoblash qimmat bo'lganda haqli.
+`isDebugEnabled()` tekshiruvi parametrlangan xabar bilan **kerak emas** - u faqat argument hisoblash qimmat bo'lganda haqli.
 
 ### 29.2 Daraja tanlash qoidalari
 
@@ -6542,7 +6577,7 @@ Daraja noto'g'ri tanlansa, ikki muammo paydo bo'ladi: `ERROR` shovqinga aylanadi
 | `DEBUG` | diagnostika uchun tafsilot | ishlab chiqish, incident |
 | `TRACE` | juda batafsil, odatda o'chirilgan | chuqur diagnostika |
 
-Amaliy sinov: `ERROR` yozilganda kimdir uyg'onishi kerakmi? Javob "yo'q" bo'lsa, u `WARN`. Validatsiya xatosi, topilmadi (404), biznes qoidasi buzildi — bular `ERROR` emas (27.3).
+Amaliy sinov: `ERROR` yozilganda kimdir uyg'onishi kerakmi? Javob "yo'q" bo'lsa, u `WARN`. Validatsiya xatosi, topilmadi (404), biznes qoidasi buzildi - bular `ERROR` emas (27.3).
 
 ### 29.3 Istisnoni oxirgi argument sifatida berish
 
@@ -6658,7 +6693,7 @@ Log ga hech qachon chiqmasligi kerak bo'lgan ma'lumotlar ro'yxati: parol, token,
 
 ### 29.9 Log ni test bilan mahkamlash
 
-Muhim log yozuvlari (audit, xavfsizlik hodisasi) shartnomaning qismi bo'lsa, ular test bilan qotirilishi kerak — aks holda refaktoring paytida jim yo'qoladi.
+Muhim log yozuvlari (audit, xavfsizlik hodisasi) shartnomaning qismi bo'lsa, ular test bilan qotirilishi kerak - aks holda refaktoring paytida jim yo'qoladi.
 
 ```java
 @Test
@@ -6676,7 +6711,7 @@ void logsAuditEventOnRefund() {
 }
 ```
 
-Bu testni har bir log uchun yozish kerak emas — faqat audit va xavfsizlik yozuvlari uchun.
+Bu testni har bir log uchun yozish kerak emas - faqat audit va xavfsizlik yozuvlari uchun.
 
 ### 29.10 Amalda qo'llash
 
@@ -6688,17 +6723,18 @@ Bu testni har bir log uchun yozish kerak emas — faqat audit va xavfsizlik yozu
 - [ ] MDC ishlatilgan filtrlarda `finally` da `MDC.clear()` borligini tekshiring.
 - [ ] Karta, parol va token turlariga maskalangan `toString` qo'shib, log filtrini sozlang.
 - [ ] Audit va xavfsizlik log yozuvlarini test bilan mahkamlang.
+
 # IX. Test kodining tozaligi
 
 ## 30. Test kodi ham ishlab chiqarish kodi (Test Code Is Production Code)
 
-Test strategiyasi, piramida, FIRST printsiplari, AAA tuzilishi va test nomlash testlash qo'llanmasida (2, 5-boblar) berilgan; Sonar ning test kodiga tegishli qoidalari SonarQube hujjatida (19-bob). Bu bobda faqat bitta mavzu: test kodining **o'qilishi va saqlanishi**.
+Test strategiyasi, piramida, FIRST printsiplari, AAA tuzilishi va test nomlash testlash qo'llanmasidagi test piramidasi bo'limida berilgan; Sonar ning test kodiga tegishli qoidalari SonarQube hujjatidagi test kodidagi Sonar qoidalari bo'limida. Bu bobda faqat bitta mavzu: test kodining **o'qilishi va saqlanishi**.
 
 ### 30.1 Toza test nega kod bazasini saqlab qoladi
 
 Test kodi iflos bo'lsa, u o'zgarishga qarshilik qiladi: har bir refaktoring o'nlab testni buzadi va jamoa refaktoringdan voz kechadi. Natijada ishlab chiqarish kodi ham eskiradi. Shu sababli test kodining tozaligi ishlab chiqarish kodining tozaligidan kam ahamiyatli emas.
 
-Teskari tomoni ham bor: ishonchli test to'plami refaktoringni **bepul** qiladi. Bu hujjatdagi deyarli har bir refaktoring harakati (35-37 boblar) xavfsizlik to'rini talab qiladi, va u to'r — testlar.
+Teskari tomoni ham bor: ishonchli test to'plami refaktoringni **bepul** qiladi. Bu hujjatdagi deyarli har bir refaktoring harakati (35-37 boblar) xavfsizlik to'rini talab qiladi, va u to'r - testlar.
 
 ### 30.2 DRY va DAMP muvozanati testda
 
@@ -6732,7 +6768,7 @@ Qoida: testga **ta'sir qiladigan** qiymatlar testda ko'rinadi; ahamiyatsiz qiyma
 
 Test ma'lumotini qurish takrorlanishi eng katta test qarzi manbai. Ikki pattern ishlaydi va ularni birga ishlatish mumkin.
 
-**Test data builder** — standart qiymatlar bilan to'ldirilgan builder, testda faqat muhim maydon o'zgartiriladi. **Object mother** — nomlangan tipik holatlar fabrikasi (`aSettledPayment()`, `anExpiredOrder()`).
+**Test data builder** - standart qiymatlar bilan to'ldirilgan builder, testda faqat muhim maydon o'zgartiriladi. **Object mother** - nomlangan tipik holatlar fabrikasi (`aSettledPayment()`, `anExpiredOrder()`).
 
 ```java
 // Test data builder: standart qiymatlar + nuqtali o'zgartirish
@@ -6791,7 +6827,7 @@ void calculatesTax(Region region, String net, String expectedTax) {
 
 ### 30.5 Bir tushuncha, bir test
 
-"Bir testda bir assert" qoidasi juda qattiq; to'g'ri qoida — **bir testda bir tushuncha**. Bitta natijaning bir nechta jihati tekshirilsa, bir necha assert normal; ikki mustaqil xatti-harakat tekshirilsa, ikki test kerak.
+"Bir testda bir assert" qoidasi juda qattiq; to'g'ri qoida - **bir testda bir tushuncha**. Bitta natijaning bir nechta jihati tekshirilsa, bir necha assert normal; ikki mustaqil xatti-harakat tekshirilsa, ikki test kerak.
 
 ```java
 // yaxshi: bir tushuncha (yaratilgan refund holati), bir necha assert
@@ -6894,9 +6930,10 @@ Test kodidagi hidlar alohida katalogga ega va ularning har biri aniq muammoni bi
 - [ ] `Thread.sleep` ishlatilgan testlarni Awaitility yoki qotirilgan `Clock` ga o'tkazing.
 - [ ] `@Disabled` testlarni ro'yxatlab, har biriga sabab va ticket qo'shing yoki o'chiring.
 - [ ] 30.9 jadvalidagi hidlar bo'yicha test kodini bir marta to'liq ko'rib chiqib, ro'yxat tuzing.
+
 ## 31. TDD intizomi va kod dizayniga ta'siri (TDD Discipline)
 
-Test yozish texnikasi testlash qo'llanmasida. Bu bobda boshqa narsa: test yozish **tartibi** va uning kod dizayniga ta'siri. TDD test usuli emas, dizayn usuli — va shu sababli u toza kod hujjatiga tegishli.
+Test yozish texnikasi testlash qo'llanmasida. Bu bobda boshqa narsa: test yozish **tartibi** va uning kod dizayniga ta'siri. TDD test usuli emas, dizayn usuli - va shu sababli u toza kod hujjatiga tegishli.
 
 ### 31.1 Uchta qoida va qisqa sikl
 
@@ -6957,9 +6994,9 @@ Shu sababli "test yozish qiyin" degan hissiyot dizayn signali (31.5), vaqt yo'ql
 
 ### 31.4 Ishlasin, to'g'ri bo'lsin, tez bo'lsin tartibi
 
-Tartib muhim va uni buzish eng ko'p vaqt yo'qotadi. **Ishlasin** — test o'tadi, yechim chirkin bo'lishi mumkin. **To'g'ri bo'lsin** — tuzilish tozalanadi, nomlar aniqlashadi, takrorlanish yo'qoladi. **Tez bo'lsin** — faqat o'lchov muammo ko'rsatsa (1.5).
+Tartib muhim va uni buzish eng ko'p vaqt yo'qotadi. **Ishlasin** - test o'tadi, yechim chirkin bo'lishi mumkin. **To'g'ri bo'lsin** - tuzilish tozalanadi, nomlar aniqlashadi, takrorlanish yo'qoladi. **Tez bo'lsin** - faqat o'lchov muammo ko'rsatsa (1.5).
 
-Uchinchi qadamga o'tish sharti aniq: o'lchov bor va u talabni buzayotganini ko'rsatadi. O'lchovsiz optimizatsiya vaqtidan oldin optimizatsiya (patternlar hujjati 25.10).
+Uchinchi qadamga o'tish sharti aniq: o'lchov bor va u talabni buzayotganini ko'rsatadi. O'lchovsiz optimizatsiya vaqtidan oldin optimizatsiya (patternlar hujjatidagi vaqtidan oldin optimizatsiya anti-patterni).
 
 ### 31.5 Test yozish qiyin bo'lsa, dizayn signal beradi
 
@@ -6979,7 +7016,7 @@ Testning qiyinligi deyarli har doim aniq dizayn muammosini ko'rsatadi. Jadval sh
 
 ### 31.6 TDD qachon mos emas
 
-TDD universal emas va uni majburlash zarar keltiradigan holatlar bor. Tadqiqot (spike) kodida: hali nima qurilayotgani ma'lum bo'lmaganda test yozish ma'nosiz — spike tashlab yuboriladi va keyin TDD bilan qaytadan yoziladi. UI joylashuvi va vizual dizaynda: natijani ko'z bilan baholash arzonroq. Generatsiya qilingan kodda: test generator uchun yoziladi, natija uchun emas. Shuningdek, tashqi tizim xatti-harakatini o'rganishda: bunda "learning test" yoziladi, lekin u TDD sikli emas.
+TDD universal emas va uni majburlash zarar keltiradigan holatlar bor. Tadqiqot (spike) kodida: hali nima qurilayotgani ma'lum bo'lmaganda test yozish ma'nosiz - spike tashlab yuboriladi va keyin TDD bilan qaytadan yoziladi. UI joylashuvi va vizual dizaynda: natijani ko'z bilan baholash arzonroq. Generatsiya qilingan kodda: test generator uchun yoziladi, natija uchun emas. Shuningdek, tashqi tizim xatti-harakatini o'rganishda: bunda "learning test" yoziladi, lekin u TDD sikli emas.
 
 Qolgan hamma joyda, ayniqsa biznes qoidalari va hisob mantiqida, TDD eng arzon yo'l.
 
@@ -6987,7 +7024,7 @@ Qolgan hamma joyda, ayniqsa biznes qoidalari va hisob mantiqida, TDD eng arzon y
 
 "Green" qadamida kodni qanday o'zgartirish kerakligi haqida foydali evristika bor: eng **oddiy** transformatsiyani tanlash. Tartib soddadan murakkabga: `{}` → `null`, `null` → konstanta, konstanta → o'zgaruvchi, ifoda → shart, qiymat → massiv, massiv → to'plam, shart → sikl, sikl → rekursiya, qiymat → polimorfizm.
 
-Amaliy foydasi: har qadamda eng oddiy transformatsiyani tanlash kodni tabiiy ravishda sodda holatda ushlab turadi va vaqtidan oldin umumiylashtirishni (patternlar hujjati 25.25) to'sadi.
+Amaliy foydasi: har qadamda eng oddiy transformatsiyani tanlash kodni tabiiy ravishda sodda holatda ushlab turadi va vaqtidan oldin umumiylashtirishni (patternlar hujjatidagi spekulyativ umumiylik anti-patterni) to'sadi.
 
 ### 31.8 Amalda qo'llash
 
@@ -6999,11 +7036,12 @@ Amaliy foydasi: har qadamda eng oddiy transformatsiyani tanlash kodni tabiiy rav
 - [ ] Spike kodini alohida branch da ushlab, uni to'g'ridan-to'g'ri merge qilmaslikni kelishib oling.
 - [ ] Jamoada bir hafta TDD bilan ishlab, keyin test qarzining o'zgarishini o'lchab ko'ring.
 - [ ] "Green" qadamida eng oddiy transformatsiyani tanlash qoidasini mashq sessiyasida (46.7) sinab ko'ring.
+
 # X. Hid katalogi va refaktoring harakatlari
 
 ## 32. Kod hidlari katalogi I: nom, funksiya, ma'lumot (Code Smells I)
 
-Kod hidi — xato emas, lekin muammo ehtimolini oshiradigan tuzilish. Patternlar hujjatida 83 ta anti-pattern sanalgan (25-bob); bu va keyingi bob ularni **takrorlamaydi** va qolgan hidlarni beradi. Har bir hid uchun uch qism: belgisi, nega muammo, va qaysi refaktoring harakati bilan tuzatiladi (35-37 boblar).
+Kod hidi - xato emas, lekin muammo ehtimolini oshiradigan tuzilish. Patternlar hujjatida 83 ta anti-pattern sanalgan (25-bob); bu va keyingi bob ularni **takrorlamaydi** va qolgan hidlarni beradi. Har bir hid uchun uch qism: belgisi, nega muammo, va qaysi refaktoring harakati bilan tuzatiladi (35-37 boblar).
 
 ### 32.1 Sirli nom (Mysterious Name)
 
@@ -7011,11 +7049,11 @@ Kod hidi — xato emas, lekin muammo ehtimolini oshiradigan tuzilish. Patternlar
 
 **Nega muammo**: nom eng arzon hujjat va u ishlamasa, har bir o'quvchi kodni qaytadan o'qib chiqadi. Bu eng ko'p uchraydigan va eng arzon tuzatiladigan hid.
 
-**Tuzatish**: Rename Variable / Rename Field / Change Function Declaration (35-bob). Agar nom o'ylab chiqmasa, bu sinfning javobgarligi noaniq ekanini bildiradi — Extract Class kerak bo'lishi mumkin.
+**Tuzatish**: Rename Variable / Rename Field / Change Function Declaration (35-bob). Agar nom o'ylab chiqmasa, bu sinfning javobgarligi noaniq ekanini bildiradi - Extract Class kerak bo'lishi mumkin.
 
 ### 32.2 Takrorlangan kod (Duplicated Code)
 
-DRY printsipi patternlar hujjatida (26.19). Bu yerda amaliy qism: takrorlanishning **uch turi** bor va ularning har biri boshqa yechim talab qiladi.
+DRY printsipi patternlar hujjatidagi DRY printsipida. Bu yerda amaliy qism: takrorlanishning **uch turi** bor va ularning har biri boshqa yechim talab qiladi.
 
 | Tur | Ko'rinishi | Yechim |
 |---|---|---|
@@ -7024,11 +7062,11 @@ DRY printsipi patternlar hujjatida (26.19). Bu yerda amaliy qism: takrorlanishni
 | Shaklli takrorlanish | tuzilish bir xil, qiymatlar boshqa | Parameterize Function |
 | Soxta takrorlanish | o'xshash ko'rinadi, lekin boshqa sabab bilan o'zgaradi | **tegmaslik** |
 
-Oxirgi qator eng muhim: tasodifan o'xshash kodni birlashtirish noto'g'ri abstraksiya yaratadi va u takrorlanishdan qimmat (arxitektor hujjati 5.2-5.3).
+Oxirgi qator eng muhim: tasodifan o'xshash kodni birlashtirish noto'g'ri abstraksiya yaratadi va u takrorlanishdan qimmat (arxitektor hujjatidagi erta abstraksiya va noto'g'ri abstraksiya narxi bo'limlari).
 
 ### 32.3 Uzun funksiya (Long Function)
 
-Metod uzunligi arxitektor hujjatida (4.4) va 4-bobda ko'rilgan. Hid sifatida uning belgisi aniq: funksiyani tushunish uchun uni bo'laklarga ajratib o'qish kerak.
+Metod uzunligi arxitektor hujjatidagi metod uzunligi va erta qaytish bo'limida va 4-bobda ko'rilgan. Hid sifatida uning belgisi aniq: funksiyani tushunish uchun uni bo'laklarga ajratib o'qish kerak.
 
 **Tuzatish tartibi**: Extract Function (eng ko'p), Replace Temp with Query, Introduce Parameter Object, Decompose Conditional, Split Loop, Replace Conditional with Polymorphism.
 
@@ -7036,9 +7074,9 @@ Metod uzunligi arxitektor hujjatida (4.4) va 4-bobda ko'rilgan. Hid sifatida uni
 
 **Belgisi**: `public static` o'zgaradigan maydon, singleton ichidagi o'zgaradigan holat, `System.getProperties()` ni kod bo'ylab o'zgartirish.
 
-**Nega muammo**: o'zgarishning manbasini topib bo'lmaydi — har qanday kod istalgan vaqtda o'zgartirgan bo'lishi mumkin. Debug qilish uchun butun kod bazasini ko'rish kerak.
+**Nega muammo**: o'zgarishning manbasini topib bo'lmaydi - har qanday kod istalgan vaqtda o'zgartirgan bo'lishi mumkin. Debug qilish uchun butun kod bazasini ko'rish kerak.
 
-**Tuzatish**: Encapsulate Variable (36-bob) — global ma'lumotni funksiya ortiga yashirish, keyin bog'liqlik sifatida uzatish (16.9).
+**Tuzatish**: Encapsulate Variable (36-bob) - global ma'lumotni funksiya ortiga yashirish, keyin bog'liqlik sifatida uzatish (16.9).
 
 ### 32.5 O'zgaradigan ma'lumot (Mutable Data)
 
@@ -7054,13 +7092,13 @@ Metod uzunligi arxitektor hujjatida (4.4) va 4-bobda ko'rilgan. Hid sifatida uni
 
 **Nega muammo**: tushuncha nomsiz qolgan. Har bir yangi ishlatilish takrorlanish qo'shadi va validatsiya tarqaladi.
 
-**Tuzatish**: Introduce Parameter Object yoki Extract Class (5.6, 36-bob). Sinov: maydonlardan birini olib tashlasa, qolganlari ma'nosini yo'qotadimi? Ha bo'lsa — bu bitta tushuncha.
+**Tuzatish**: Introduce Parameter Object yoki Extract Class (5.6, 36-bob). Sinov: maydonlardan birini olib tashlasa, qolganlari ma'nosini yo'qotadimi? Ha bo'lsa - bu bitta tushuncha.
 
 ### 32.7 Takrorlangan `switch` (Repeated Switches)
 
 **Belgisi**: bir xil `switch` yoki `if/else` zanjiri kod bazasining bir necha joyida takrorlanadi (6.10).
 
-**Nega muammo**: yangi variant qo'shilganda barcha takrorlarni topish kerak va bittasi doim esdan chiqadi — xato faqat shu variant uchrashganda chiqadi.
+**Nega muammo**: yangi variant qo'shilganda barcha takrorlarni topish kerak va bittasi doim esdan chiqadi - xato faqat shu variant uchrashganda chiqadi.
 
 **Tuzatish**: xatti-harakatni enum ichiga ko'chirish, Replace Conditional with Polymorphism, yoki `sealed` + pattern matching (25.3).
 
@@ -7070,15 +7108,15 @@ Metod uzunligi arxitektor hujjatida (4.4) va 4-bobda ko'rilgan. Hid sifatida uni
 
 **Nega muammo**: sikl **nima** qilayotganini aytmaydi, faqat **qanday** qilayotganini ko'rsatadi. O'quvchi niyatni o'zi chiqarib olishi kerak.
 
-**Tuzatish**: Replace Loop with Pipeline (35-bob) — lekin 7.7 dagi mezonni hisobga olib: erta chiqish, yon ta'sir va istisno bo'lsa sikl qoladi.
+**Tuzatish**: Replace Loop with Pipeline (35-bob) - lekin 7.7 dagi mezonni hisobga olib: erta chiqish, yon ta'sir va istisno bo'lsa sikl qoladi.
 
 ### 32.9 Dangasa element (Lazy Element)
 
-**Belgisi**: hech narsa qo'shmaydigan abstraksiya — bitta metodi bor interfeys, faqat bazaviy sinfni chaqiradigan voris sinf, bitta qatordan iborat va bir joyda chaqiriladigan funksiya nomi o'z tanasi bilan bir xil ma'noda.
+**Belgisi**: hech narsa qo'shmaydigan abstraksiya - bitta metodi bor interfeys, faqat bazaviy sinfni chaqiradigan voris sinf, bitta qatordan iborat va bir joyda chaqiriladigan funksiya nomi o'z tanasi bilan bir xil ma'noda.
 
 **Nega muammo**: har bir qo'shimcha daraja o'qish narxini oshiradi, lekin foyda bermaydi (patternlar hujjatidagi Poltergeist va Yo-Yo bilan qardosh).
 
-**Tuzatish**: Inline Function, Inline Class, Collapse Hierarchy (37-bob). Ehtiyot: kelgusi o'zgarish uchun qo'yilgan abstraksiya dangasa emas (arxitektor hujjati 5.1).
+**Tuzatish**: Inline Function, Inline Class, Collapse Hierarchy (37-bob). Ehtiyot: kelgusi o'zgarish uchun qo'yilgan abstraksiya dangasa emas (arxitektor hujjatidagi abstraksiyaning maqsadi bo'limi).
 
 ### 32.10 Vaqtinchalik maydon (Temporary Field)
 
@@ -7088,19 +7126,19 @@ Metod uzunligi arxitektor hujjatida (4.4) va 4-bobda ko'rilgan. Hid sifatida uni
 
 ### 32.11 Uzun xabar zanjiri (Message Chains)
 
-**Belgisi**: `a.b().c().d().e()` — chaqiruvchi tuzilmaning bir necha darajasini biladi (14.4).
+**Belgisi**: `a.b().c().d().e()` - chaqiruvchi tuzilmaning bir necha darajasini biladi (14.4).
 
 **Nega muammo**: oraliq turlardan birortasi o'zgarsa, zanjir buziladi. Chaqiruvchi o'ziga kerak bo'lmagan turlarga bog'lanib qoladi.
 
-**Tuzatish**: Hide Delegate (36-bob) — oraliq obyekt delegatsiya metodi beradi; yoki Extract Function (zanjirni bir metodga olib, uni egasiga ko'chirish — Move Function).
+**Tuzatish**: Hide Delegate (36-bob) - oraliq obyekt delegatsiya metodi beradi; yoki Extract Function (zanjirni bir metodga olib, uni egasiga ko'chirish - Move Function).
 
 ### 32.12 Vositachi (Middle Man)
 
 **Belgisi**: sinfning metodlarining katta qismi boshqa obyektga delegatsiya qiladi va o'zi hech narsa qilmaydi.
 
-**Nega muammo**: 32.11 ning teskarisi — delegatsiyani yashirishga urinish ortiqcha ketgan. Har bir yangi metod ikki joyda yoziladi.
+**Nega muammo**: 32.11 ning teskarisi - delegatsiyani yashirishga urinish ortiqcha ketgan. Har bir yangi metod ikki joyda yoziladi.
 
-**Tuzatish**: Remove Middle Man (chaqiruvchi to'g'ridan-to'g'ri murojaat qiladi) yoki Inline Function. Eslatma: fasad va adapter atayin "vositachi" — ular hid emas, chunki ular chegara vazifasini bajaradi.
+**Tuzatish**: Remove Middle Man (chaqiruvchi to'g'ridan-to'g'ri murojaat qiladi) yoki Inline Function. Eslatma: fasad va adapter atayin "vositachi" - ular hid emas, chunki ular chegara vazifasini bajaradi.
 
 ### 32.13 Izohlar hid sifatida (Comments)
 
@@ -7114,7 +7152,7 @@ Hid ro'yxati faqat **nomzodlar** beradi, hukm bermaydi. To'rtta holatda hidga te
 
 | Holat | Nega tegmaslik |
 |---|---|
-| Kod ishlayapti va o'zgarmaydi | tuzatish narxi foydadan ko'p (arxitektor hujjati 34.11) |
+| Kod ishlayapti va o'zgarmaydi | tuzatish narxi foydadan ko'p (arxitektor hujjatidagi "qachon tegmaslik kerak" bo'limi) |
 | Testlar yo'q | refaktoring xavfli, oldin test kerak |
 | Hid chegarada (adapter, DTO) | ataylab shunday |
 | Soxta takrorlanish | birlashtirish noto'g'ri abstraksiya beradi (32.2) |
@@ -7129,25 +7167,26 @@ Hid ro'yxati faqat **nomzodlar** beradi, hukm bermaydi. To'rtta holatda hidga te
 - [ ] Uch darajadan uzun chaqiruv zanjirlarini topib, Hide Delegate yoki Move Function qo'llang.
 - [ ] Faqat delegatsiya qiladigan sinflarni ko'rib, chegara vazifasini bajarmaganlarini olib tashlang.
 - [ ] Izohlar eng ko'p to'plangan uch faylni tanlab, izohlarni metod nomlariga aylantirishni sinab ko'ring.
+
 ## 33. Kod hidlari katalogi II: sinf, ierarxiya, bog'liqlik (Code Smells II)
 
-Bu bob sinf darajasidagi va sinflar orasidagi hidlarni qamrab oladi. God Object, Big Ball of Mud, Circular Dependency va boshqa arxitektura darajasidagi anti-patternlar patternlar hujjatida (25-bob); bu yerda ularning kod darajasidagi qardoshlari.
+Bu bob sinf darajasidagi va sinflar orasidagi hidlarni qamrab oladi. God Object, Big Ball of Mud, Circular Dependency va boshqa arxitektura darajasidagi anti-patternlar patternlar hujjatidagi anti-patternlar bo'limida; bu yerda ularning kod darajasidagi qardoshlari.
 
 ### 33.1 Tarqoq o'zgarish (Divergent Change)
 
-**Belgisi**: bitta sinf turli sabablarga ko'ra o'zgaradi — bugun soliq qoidasi uchun, ertaga ma'lumot bazasi sxemasi uchun, indinga JSON formati uchun.
+**Belgisi**: bitta sinf turli sabablarga ko'ra o'zgaradi - bugun soliq qoidasi uchun, ertaga ma'lumot bazasi sxemasi uchun, indinga JSON formati uchun.
 
-**Nega muammo**: har bir o'zgarish boshqa sabablar bilan yozilgan kodga tegadi va regressiya xavfi oshadi. Bu yagona javobgarlik printsipining buzilishi (patternlar hujjati 26.1).
+**Nega muammo**: har bir o'zgarish boshqa sabablar bilan yozilgan kodga tegadi va regressiya xavfi oshadi. Bu yagona javobgarlik printsipining buzilishi (patternlar hujjatidagi yagona javobgarlik printsipi).
 
-**Tuzatish**: Extract Class, Split Phase (36-bob). Aniqlash usuli: `git log` bilan sinf o'zgarishlarining sabablarini sanash (arxitektor hujjati 5.6 chegara aniqlash texnikasini beradi).
+**Tuzatish**: Extract Class, Split Phase (36-bob). Aniqlash usuli: `git log` bilan sinf o'zgarishlarining sabablarini sanash (arxitektor hujjatidagi modul chegarasini o'tkazish bo'limi chegara aniqlash texnikasini beradi).
 
 ### 33.2 Ma'lumot sinfi (Data Class)
 
 **Belgisi**: sinfda faqat maydonlar, getter va setter lar bor; xatti-harakat yo'q. Shu sinf bilan bog'liq mantiq boshqa sinflarda tarqalgan.
 
-**Nega muammo**: Anemik domen modelining kichik shakli (patternlar hujjati 25.35). Har bir foydalanuvchi o'z nusxasidagi qoidani yozadi va qoidalar bir-biridan farq qiladi.
+**Nega muammo**: Anemik domen modelining kichik shakli (patternlar hujjatidagi anemik domen modeli anti-patterni). Har bir foydalanuvchi o'z nusxasidagi qoidani yozadi va qoidalar bir-biridan farq qiladi.
 
-**Tuzatish**: Move Function (mantiqni ma'lumot egasiga ko'chirish), Encapsulate Record, Remove Setting Method. Eslatma: DTO va `record` chegarada ataylab ma'lumot sinfi bo'ladi (14.5) — bu hid emas.
+**Tuzatish**: Move Function (mantiqni ma'lumot egasiga ko'chirish), Encapsulate Record, Remove Setting Method. Eslatma: DTO va `record` chegarada ataylab ma'lumot sinfi bo'ladi (14.5) - bu hid emas.
 
 ### 33.3 Noo'rin yaqinlik (Inappropriate Intimacy / Insider Trading)
 
@@ -7163,7 +7202,7 @@ Bu bob sinf darajasidagi va sinflar orasidagi hidlarni qamrab oladi. God Object,
 
 **Nega muammo**: ularni almashtirib ishlatish imkonsiz, shuning uchun har bir chaqiruv joyi `if` bilan shoxlanadi.
 
-**Tuzatish**: Change Function Declaration (nomlarni moslashtirish), keyin Extract Superclass yoki umumiy interfeys ajratish. Agar biri uchinchi tomon sinfi bo'lsa — adapter (patternlar hujjati).
+**Tuzatish**: Change Function Declaration (nomlarni moslashtirish), keyin Extract Superclass yoki umumiy interfeys ajratish. Agar biri uchinchi tomon sinfi bo'lsa - adapter (patternlar hujjati).
 
 ### 33.5 Rad etilgan meros (Refused Bequest)
 
@@ -7191,13 +7230,13 @@ Bu bob sinf darajasidagi va sinflar orasidagi hidlarni qamrab oladi. God Object,
 
 **Belgisi**: sinf yoki interfeys 20+ public metod beradi; paketdan o'nlab tur eksport qilinadi; `public` modifikatori standart tanlov.
 
-**Nega muammo**: keng interfeys ko'p bog'liqlik yaratadi va har bir public element kelajakdagi majburiyat (arxitektor hujjati 13.9).
+**Nega muammo**: keng interfeys ko'p bog'liqlik yaratadi va har bir public element kelajakdagi majburiyat (arxitektor hujjatidagi orqaga moslik bo'limi).
 
 **Tuzatish**: ko'rinishni toraytirish (14.6), interfeysni bo'lish, paketdan faqat API turlarini chiqarish (26.2).
 
 ### 33.9 Izchilsizlik (Inconsistency)
 
-**Belgisi**: bir xil narsa kod bazasining turli joylarida turlicha qilinadi — bir joyda `Optional`, boshqa joyda `null`; bir joyda konstruktor inyeksiyasi, boshqa joyda maydon; bir joyda `find`, boshqa joyda `get`.
+**Belgisi**: bir xil narsa kod bazasining turli joylarida turlicha qilinadi - bir joyda `Optional`, boshqa joyda `null`; bir joyda konstruktor inyeksiyasi, boshqa joyda maydon; bir joyda `find`, boshqa joyda `get`.
 
 **Nega muammo**: o'quvchi har bir joyda qaytadan o'ylashi kerak va taxminlari xato bo'ladi.
 
@@ -7205,19 +7244,19 @@ Bu bob sinf darajasidagi va sinflar orasidagi hidlarni qamrab oladi. God Object,
 
 ### 33.10 Keraksizlik (Clutter)
 
-**Belgisi**: hech narsa qilmaydigan elementlar — bo'sh konstruktor, ishlatilmaydigan maydon, hech kim chaqirmaydigan metod, mazmunsiz izoh, ishlatilmaydigan import, `default` konstruktorni oshkor yozish.
+**Belgisi**: hech narsa qilmaydigan elementlar - bo'sh konstruktor, ishlatilmaydigan maydon, hech kim chaqirmaydigan metod, mazmunsiz izoh, ishlatilmaydigan import, `default` konstruktorni oshkor yozish.
 
 **Nega muammo**: har bir keraksiz element o'quvchidan "bu nega bor?" savolini talab qiladi.
 
-**Tuzatish**: Remove Dead Code (35-bob). O'lik kodni topish uchun IDE inspeksiyasi, `-Xlint`, va kod qamrovi hisoboti ishlatiladi (SonarQube hujjati 28-bobda o'lik kod katalogini beradi).
+**Tuzatish**: Remove Dead Code (35-bob). O'lik kodni topish uchun IDE inspeksiyasi, `-Xlint`, va kod qamrovi hisoboti ishlatiladi (SonarQube hujjatidagi maintainability va nomlash xato katalogi o'lik kod katalogini beradi).
 
 ### 33.11 Sun'iy bog'liqlik (Artificial Coupling)
 
-**Belgisi**: bir-biriga tegishli bo'lmagan narsalar bir joyda turadi — umumiy enum "umumiy" paketda, ichki sinf boshqa modulda e'lon qilingan, konstanta tasodifiy sinfda.
+**Belgisi**: bir-biriga tegishli bo'lmagan narsalar bir joyda turadi - umumiy enum "umumiy" paketda, ichki sinf boshqa modulda e'lon qilingan, konstanta tasodifiy sinfda.
 
 **Nega muammo**: bog'liqlik grafi sabab bilan emas, qulaylik bilan qurilgan. Har bir import keraksiz bog'lanish qo'shadi.
 
-**Tuzatish**: Move Function / Move Field / Move Class — elementni eng ko'p ishlatiladigan joyga ko'chirish.
+**Tuzatish**: Move Function / Move Field / Move Class - elementni eng ko'p ishlatiladigan joyga ko'chirish.
 
 ### 33.12 Noto'g'ri joylashgan javobgarlik (Misplaced Responsibility)
 
@@ -7225,11 +7264,11 @@ Bu bob sinf darajasidagi va sinflar orasidagi hidlarni qamrab oladi. God Object,
 
 **Nega muammo**: o'quvchi funksiyani topa olmaydi, chunki u mantiqan boshqa joyda bo'lishi kerak. Natijada funksiya ikkinchi marta yoziladi.
 
-**Tuzatish**: Move Function. Aniqlash savoli: "bu funksiya qaysi ma'lumotga eng ko'p murojaat qiladi?" — javob uning uyi (patternlar hujjati 26.6, Information Expert).
+**Tuzatish**: Move Function. Aniqlash savoli: "bu funksiya qaysi ma'lumotga eng ko'p murojaat qiladi?" - javob uning uyi (patternlar hujjatidagi ma'lumot egasi (Information Expert) printsipi , Information Expert).
 
 ### 33.13 Noo'rin statik (Inappropriate Static)
 
-**Belgisi**: statik metod aslida polimorfizm talab qiladi — `Money.calculateTax(money, region)` har bir mintaqa uchun boshqa hisob qilsa, u statik bo'lmasligi kerak.
+**Belgisi**: statik metod aslida polimorfizm talab qiladi - `Money.calculateTax(money, region)` har bir mintaqa uchun boshqa hisob qilsa, u statik bo'lmasligi kerak.
 
 **Nega muammo**: statik metodni override qilib bo'lmaydi va mock qilish qiyin (31.5). Kelajakdagi variant qo'shish uchun butun chaqiruv zanjirini o'zgartirish kerak.
 
@@ -7267,9 +7306,10 @@ Bu bob sinf darajasidagi va sinflar orasidagi hidlarni qamrab oladi. God Object,
 - [ ] 20 dan ko'p public metodi bor sinf va interfeyslarni ro'yxatlab, ko'rinishni toraytiring.
 - [ ] Izchilsizlik ro'yxatini tuzib (`Optional`/`null`, nomlash, inyeksiya), har biri uchun bitta konvensiya kelishib oling.
 - [ ] Ishlatilmaydigan maydon, metod va importlarni IDE inspeksiyasi bilan topib o'chiring.
+
 ## 34. Toza kod evristikalarining to'liq ro'yxati (Clean Code Heuristics)
 
-Bu bob toza kod evristikalarining klassik ro'yxatini to'liq beradi: izohlar (C), muhit (E), funksiyalar (F), umumiy (G), Java (J), nomlar (N) va testlar (T). Ro'yxat jadval shaklida, chunki uning vazifasi — review va o'z-o'zini tekshirish paytida tez ko'rib chiqish. Har bir satrda ushbu hujjatning yoki qardosh hujjatlarning tegishli bo'limiga havola bor.
+Bu bob toza kod evristikalarining klassik ro'yxatini to'liq beradi: izohlar (C), muhit (E), funksiyalar (F), umumiy (G), Java (J), nomlar (N) va testlar (T). Ro'yxat jadval shaklida, chunki uning vazifasi - review va o'z-o'zini tekshirish paytida tez ko'rib chiqish. Har bir satrda ushbu hujjatning yoki qardosh hujjatlarning tegishli bo'limiga havola bor.
 
 ### 34.1 Izohlar (C1-C5)
 
@@ -7356,7 +7396,7 @@ Bu bob toza kod evristikalarining klassik ro'yxatini to'liq beradi: izohlar (C),
 | J2 | Konstantani voris olmaslik | constant interface anti-patterni | 17.8 |
 | J3 | Konstanta emas, enum | enum xatti-harakat va tur xavfsizligi beradi | 3.5, 25.9 |
 
-J1 bo'yicha izoh: klassik ro'yxat uzun import ro'yxatidan qochish uchun yulduzcha importni tavsiya qiladi. Zamonaviy amaliyot teskari: IDE importlarni o'zi boshqaradi va yulduzcha import nom konfliktlari bilan muammo tug'diradi (12.7). Shu sababli bu hujjatda J1 ning amaliy shakli — importlarni IDE va formatter boshqarishi, yulduzchani taqiqlash.
+J1 bo'yicha izoh: klassik ro'yxat uzun import ro'yxatidan qochish uchun yulduzcha importni tavsiya qiladi. Zamonaviy amaliyot teskari: IDE importlarni o'zi boshqaradi va yulduzcha import nom konfliktlari bilan muammo tug'diradi (12.7). Shu sababli bu hujjatda J1 ning amaliy shakli - importlarni IDE va formatter boshqarishi, yulduzchani taqiqlash.
 
 ### 34.8 Nomlar (N1-N7)
 
@@ -7375,18 +7415,18 @@ J1 bo'yicha izoh: klassik ro'yxat uzun import ro'yxatidan qochish uchun yulduzch
 | Kod | Evristika | Mazmuni | Batafsil |
 |---|---|---|---|
 | T1 | Yetarlicha test yo'q | har bir shart va chegara qamralgan bo'lsin | testlash qo'llanmasi |
-| T2 | Qamrov vositasidan foydalanish | qamralmagan shoxlarni ko'rsatadi | SonarQube hujjati 18 |
+| T2 | Qamrov vositasidan foydalanish | qamralmagan shoxlarni ko'rsatadi | SonarQube hujjatidagi branch qamrovi |
 | T3 | Mayda testni e'tiborsiz qoldirmaslik | kichik test ham qoida hujjatlaydi | 30.1 |
 | T4 | O'chirilgan testni tekshirish | `@Disabled` sababsiz qolmasin | 30.9 |
 | T5 | Chegaraviy shartlarni sinash | oldin, chegarada, keyin | 7.8 |
 | T6 | Xato atrofini to'liq sinash | bitta xato topilsa, atrofini ham sinash | 31.1 |
 | T7 | Yiqilish naqshini o'rganish | yiqilgan testlar tartibi sababni ko'rsatadi | 41.3 |
-| T8 | Qamrov naqshini o'rganish | qamralmagan qatorlar nimani bildiradi | SonarQube hujjati 11 |
+| T8 | Qamrov naqshini o'rganish | qamralmagan qatorlar nimani bildiradi | SonarQube hujjatidagi qamralmagan kod |
 | T9 | Sekin testlarni tezlashtirish | sekin test ishga tushirilmaydi | 30.9, 39.7 |
 
 ### 34.10 Evristikani review da ishlatish
 
-66 ta evristikani har bir review da ko'rib chiqish amalda mumkin emas. Ishlaydigan yondashuv — **kichik to'plam** bilan boshlash va vaqt o'tib ularni mashinaga topshirish.
+66 ta evristikani har bir review da ko'rib chiqish amalda mumkin emas. Ishlaydigan yondashuv - **kichik to'plam** bilan boshlash va vaqt o'tib ularni mashinaga topshirish.
 
 | Bosqich | Nima qilinadi |
 |---|---|
@@ -7406,9 +7446,10 @@ J1 bo'yicha izoh: klassik ro'yxat uzun import ro'yxatidan qochish uchun yulduzch
 - [ ] G25 bo'yicha kodni magic number uchun skanerlab, nomlangan konstantalar kiriting.
 - [ ] N1-N7 bo'yicha eng ko'p o'zgaradigan 5 faylning nomlarini qayta ko'rib chiqing.
 - [ ] T1-T9 bo'yicha test to'plamini baholab, eng sekin 10 testni ro'yxatlab tezlashtirish rejasini tuzing.
+
 ## 35. Refaktoring harakatlari katalogi I: funksiya va o'zgaruvchi (Refactoring Moves I)
 
-Legacy kodni refaktoring qilish strategiyasi, chok (seam) topish va strangler usuli arxitektor hujjatida (34-bob). Bu va keyingi ikki bob boshqa narsani beradi: **mexanik harakatlar katalogi**. Har bir harakat uchun nima qilinishi, qachon qo'llanishi va teskari harakati berilgan. Teskari harakat muhim, chunki refaktoring ikki yo'nalishda ham to'g'ri bo'lishi mumkin.
+Legacy kodni refaktoring qilish strategiyasi, chok (seam) topish va strangler usuli arxitektor hujjatidagi legacy kod va bosqichma-bosqich refaktoring bo'limida. Bu va keyingi ikki bob boshqa narsani beradi: **mexanik harakatlar katalogi**. Har bir harakat uchun nima qilinishi, qachon qo'llanishi va teskari harakati berilgan. Teskari harakat muhim, chunki refaktoring ikki yo'nalishda ham to'g'ri bo'lishi mumkin.
 
 ### 35.1 Funksiya ajratish (Extract Function)
 
@@ -7477,7 +7518,7 @@ return basePrice.minus(quantityDiscount).plus(shipping);
 
 **Mexanika (migratsiya bilan)**: eski funksiya tanasini yangi nomli funksiyaga ko'chirish → eski funksiyani yangisiga delegatsiya qiluvchi qilib qoldirish va `@Deprecated` qilish → chaqiruvchilarni bosqichma-bosqich ko'chirish → eski funksiyani o'chirish.
 
-Bu "parallel o'zgarish" usuli public API uchun majburiy (arxitektor hujjati 13.9).
+Bu "parallel o'zgarish" usuli public API uchun majburiy (arxitektor hujjatidagi orqaga moslik bo'limi).
 
 ### 35.6 O'zgaruvchini inkapsulyatsiya qilish (Encapsulate Variable)
 
@@ -7540,7 +7581,7 @@ Bu Combine Functions into Class ning funksional varianti; o'zgarmas ma'lumot bil
 
 ### 35.11 Bosqichlarni ajratish (Split Phase)
 
-**Qachon**: funksiya ikki ketma-ket ishni bajaradi — parslash keyin hisoblash, tayyorlash keyin yuborish.
+**Qachon**: funksiya ikki ketma-ket ishni bajaradi - parslash keyin hisoblash, tayyorlash keyin yuborish.
 
 **Mexanika**: ikkinchi bosqichni alohida funksiyaga ajratish → bosqichlar orasida oraliq ma'lumot tuzilmasi kiritish → birinchi bosqichni oraliq tuzilmani qaytaradigan qilish.
 
@@ -7563,7 +7604,7 @@ Money price(Order order) {
 
 **Move Statements into Function**: bir xil gap har bir chaqiruv joyida funksiyadan oldin/keyin takrorlanadi → uni funksiya ichiga ko'chirish.
 
-**Move Statements to Callers**: teskari holat — funksiya ichidagi gap chaqiruvchilarning bir qismi uchun to'g'ri emas → uni chaqiruvchilarga chiqarish.
+**Move Statements to Callers**: teskari holat - funksiya ichidagi gap chaqiruvchilarning bir qismi uchun to'g'ri emas → uni chaqiruvchilarga chiqarish.
 
 Ikkisi juft harakat va ular funksiya chegarasini aniqlashtirishga xizmat qiladi.
 
@@ -7636,7 +7677,7 @@ public Money total() {
 }
 ```
 
-Agar hisob qimmat bo'lsa va o'lchov muammo ko'rsatsa, keshlash qo'shiladi — lekin oldin o'lchov (1.5).
+Agar hisob qimmat bo'lsa va o'lchov muammo ko'rsatsa, keshlash qo'shiladi - lekin oldin o'lchov (1.5).
 
 ### 35.21 Amalda qo'llash
 
@@ -7648,6 +7689,7 @@ Agar hisob qimmat bo'lsa va o'lchov muammo ko'rsatsa, keshlash qo'shiladi — le
 - [ ] Ikki ishni bajaradigan sikllarni Split Loop bilan bo'lib, har birini nomlang.
 - [ ] 7.7 mezoniga mos sikllarni Replace Loop with Pipeline bilan quvurga o'tkazing.
 - [ ] O'lik kodni qamrov hisoboti bilan tasdiqlab o'chiring va alohida commit qiling.
+
 ## 36. Refaktoring harakatlari katalogi II: ma'lumot va inkapsulyatsiya (Refactoring Moves II)
 
 Bu bob ma'lumot tuzilishini o'zgartiradigan harakatlarni qamrab oladi: sinf ajratish va birlashtirish, to'plamni inkapsulyatsiya qilish, primitivni obyektga aylantirish, havola va qiymat o'rtasida o'tish. Bu harakatlar 14-16 boblardagi qoidalarga olib boradigan mexanik yo'l.
@@ -7705,7 +7747,7 @@ class Person {
 
 ### 36.4 Vositachini olib tashlash (Remove Middle Man)
 
-**Qachon**: 36.3 ning teskarisi — delegatsiya metodlari ko'payib ketgan va sinf vositachiga aylangan (32.12).
+**Qachon**: 36.3 ning teskarisi - delegatsiya metodlari ko'payib ketgan va sinf vositachiga aylangan (32.12).
 
 **Mexanika**: delegatga kirish metodi (getter) qo'shish → chaqiruvchilarni delegatga to'g'ridan-to'g'ri murojaatga o'tkazish → keraksiz delegatsiya metodlarini o'chirish.
 
@@ -7737,7 +7779,7 @@ record Organization(String name, CountryCode country) { }
 
 ### 36.8 Primitivni obyektga almashtirish (Replace Primitive with Object)
 
-**Qachon**: primitiv qiymat atrofida mantiq paydo bo'ladi — validatsiya, formatlash, solishtirish (patternlar hujjati 25.19; 21.8).
+**Qachon**: primitiv qiymat atrofida mantiq paydo bo'ladi - validatsiya, formatlash, solishtirish (patternlar hujjatidagi primitivlarga berilish anti-patterni ; 21.8).
 
 **Mexanika**: yangi `record` yaratish → maydon turini almashtirish → getter ni yangi tur qaytaradigan qilish → chaqiruvchilarni bosqichma-bosqich ko'chirish → mantiqni yangi turga ko'chirish.
 
@@ -7808,7 +7850,7 @@ public static Money parse(String text) { ... }
 
 **Replace Function with Command**: funksiya murakkab, ko'p mahalliy o'zgaruvchi va bosqichga ega → uni obyektga aylantirish (maydonlar mahalliy o'zgaruvchilarni almashtiradi), keyin ichini Extract Function bilan bo'lish oson bo'ladi.
 
-**Replace Command with Function**: teskari — buyruq obyekti faqat bitta `execute` metodidan iborat va holat saqlamaydi → oddiy funksiyaga qaytarish (32.9).
+**Replace Command with Function**: teskari - buyruq obyekti faqat bitta `execute` metodidan iborat va holat saqlamaydi → oddiy funksiyaga qaytarish (32.9).
 
 ### 36.15 Maydon va metodni yuqoriga/pastga ko'chirish
 
@@ -7834,6 +7876,7 @@ Eslatma: yuqoriga ko'chirish vorislikni kuchaytiradi; agar natijada bazaviy sinf
 - [ ] Murakkab konstruktorlarni nomlangan statik fabrikalarga o'tkazing.
 - [ ] Ikki darajali chaqiruv zanjirlarini Hide Delegate bilan yopib, delegat getter larini olib tashlang.
 - [ ] Voris sinflardagi takrorlangan metod va maydonlarni Pull Up bilan birlashtiring, keyin bazaviy sinf hajmini tekshiring.
+
 ## 37. Refaktoring harakatlari katalogi III: shart, API va ierarxiya (Refactoring Moves III)
 
 Bu bob shartli mantiqni, API shaklini va vorislik ierarxiyasini o'zgartiradigan harakatlarni qamrab oladi. Ular 6, 17 va 5 boblardagi qoidalarga olib boradigan mexanik yo'l.
@@ -7871,7 +7914,7 @@ if (isNotEligibleForDisability(employee)) return 0;
 
 ### 37.3 Ichma-ich shartni guard clause ga almashtirish
 
-Erta qaytish arxitektor hujjatida (4.4) ko'rilgan; bu yerda mexanikasi: eng tashqi shartni olib, uni teskari aylantirish va darhol qaytarish → qolgan shartlarni ketma-ket shu tarzda chiqarish → har qadamdan keyin test.
+Erta qaytish arxitektor hujjatidagi metod uzunligi va erta qaytish bo'limida ko'rilgan; bu yerda mexanikasi: eng tashqi shartni olib, uni teskari aylantirish va darhol qaytarish → qolgan shartlarni ketma-ket shu tarzda chiqarish → har qadamdan keyin test.
 
 Qoida: guard clause **istisnoli** holatlar uchun, `if/else` esa teng huquqli shoxlar uchun. Ikki shox ham normal bo'lsa, guard clause ishlatilmaydi.
 
@@ -7908,13 +7951,13 @@ final class UnknownCustomer implements Customer {
 
 **Qachon**: kod ma'lum taxminga asoslangan, lekin taxmin hech qayerda yozilmagan (G22).
 
-**Mexanika**: taxminni oshkor tekshiruvga aylantirish — public chegarada istisno (18.10), ichki kodda `assert` yoki `Objects.requireNonNull` (19.8-19.9).
+**Mexanika**: taxminni oshkor tekshiruvga aylantirish - public chegarada istisno (18.10), ichki kodda `assert` yoki `Objects.requireNonNull` (19.8-19.9).
 
-Qoida: assertion **hujjat** vazifasini bajaradi va u bajarilmasligi kerak — agar u ishga tushsa, kod xato.
+Qoida: assertion **hujjat** vazifasini bajaradi va u bajarilmasligi kerak - agar u ishga tushsa, kod xato.
 
 ### 37.7 So'rovni o'zgartirishdan ajratish (Separate Query from Modifier)
 
-**Qachon**: metod ham qiymat qaytaradi, ham holatni o'zgartiradi (patternlar hujjati 26.23).
+**Qachon**: metod ham qiymat qaytaradi, ham holatni o'zgartiradi (patternlar hujjatidagi buyruq-so'rov ajratilishi printsipi).
 
 **Mexanika**: faqat so'rov qiladigan yangi metod yaratish → asl metodni so'rov metodini chaqiradigan qilish → chaqiruvchilarni ikki chaqiruvga ajratish → asl metoddan qaytish qiymatini olib tashlash.
 
@@ -7956,7 +7999,7 @@ void raise(Employee employee, BigDecimal factor) { employee.raiseBy(factor); }
 
 **Replace Parameter with Query**: parametr qiymatini funksiya o'zi aniqlay oladi (obyekt holatidan) → parametrni olib tashlash va ichida hisoblash. Bog'liqlikni kamaytiradi, lekin funksiyani holatga bog'laydi.
 
-**Replace Query with Parameter**: teskari — funksiya global yoki tashqi holatga murojaat qiladi → shu qiymatni parametrga chiqarish. Funksiyani sof qiladi va test qilishni osonlashtiradi (31.3).
+**Replace Query with Parameter**: teskari - funksiya global yoki tashqi holatga murojaat qiladi → shu qiymatni parametrga chiqarish. Funksiyani sof qiladi va test qilishni osonlashtiradi (31.3).
 
 Ikkinchisi ko'pincha afzal, chunki sof funksiya testlanadi va keshlanadi.
 
@@ -7966,7 +8009,7 @@ Ikkinchisi ko'pincha afzal, chunki sof funksiya testlanadi va keshlanadi.
 
 **Mexanika**: mavjud xatti-harakatni to'liq qamrab oladigan testlar yozish → yangi algoritmni yozish → testlarni ishga tushirish → eski kodni o'chirish.
 
-Bu harakatni test qamrovisiz bajarish mumkin emas: u xatti-harakatni saqlashi kerak, lekin ichini to'liq o'zgartiradi (arxitektor hujjati 34.3 xavfsizlik to'ri haqida).
+Bu harakatni test qamrovisiz bajarish mumkin emas: u xatti-harakatni saqlashi kerak, lekin ichini to'liq o'zgartiradi (arxitektor hujjatidagi xavfsizlik to'ri va xatti-harakatni qayd etuvchi test bo'limi xavfsizlik to'ri haqida).
 
 ### 37.13 Turni kodlashdan voris sinflarga almashtirish
 
@@ -7978,7 +8021,7 @@ Bu harakatni test qamrovisiz bajarish mumkin emas: u xatti-harakatni saqlashi ke
 
 17.9 da ko'rilgan. Mexanikasi: delegat maydon qo'shish → `extends` ni olib tashlash → kompilyator ko'rsatgan metodlarni delegatsiyaga aylantirish → keraksizlarini o'chirish → test.
 
-**Replace Superclass with Delegate** — xuddi shu harakatning bazaviy sinf tomoni: `extends HashMap` kabi noto'g'ri vorislikni yo'qotadi.
+**Replace Superclass with Delegate** - xuddi shu harakatning bazaviy sinf tomoni: `extends HashMap` kabi noto'g'ri vorislikni yo'qotadi.
 
 ### 37.15 Voris sinfni va ierarxiyani yo'qotish
 
@@ -8025,13 +8068,14 @@ Hid topilganda qaysi harakatni qo'llash kerakligini tez aniqlash uchun jadval.
 - [ ] Obyektdan maydon ajratib uzatadigan chaqiruvlarni Preserve Whole Object bilan soddalashtiring.
 - [ ] To'plamlardan voris olgan sinflarni Replace Superclass with Delegate bilan tuzating.
 - [ ] 37.16 jadvalini jamoa bilan ko'rib chiqib, review izohlarida harakat nomini ishlatishni odat qiling.
+
 ## 38. Refaktoringni xavfsiz bajarish (Safe Refactoring Mechanics)
 
-Refaktoring xatti-harakatni o'zgartirmasdan tuzilishni yaxshilash. "Xatti-harakatni o'zgartirmasdan" qismi uni xavfli qiladi: har bir qadam regressiya kiritishi mumkin. Bu bobda shu xavfni nolga yaqinlashtiradigan intizom. Legacy kodda chok topish va bosqichma-bosqich almashtirish strategiyasi arxitektor hujjatida (34-bob).
+Refaktoring xatti-harakatni o'zgartirmasdan tuzilishni yaxshilash. "Xatti-harakatni o'zgartirmasdan" qismi uni xavfli qiladi: har bir qadam regressiya kiritishi mumkin. Bu bobda shu xavfni nolga yaqinlashtiradigan intizom. Legacy kodda chok topish va bosqichma-bosqich almashtirish strategiyasi arxitektor hujjatidagi legacy kod va bosqichma-bosqich refaktoring bo'limida.
 
 ### 38.1 Bir vaqtda bitta harakat
 
-Eng muhim qoida: bir vaqtda bitta refaktoring harakati bajariladi va undan keyin kompilyatsiya va test ishga tushiriladi. Ikki harakatni birlashtirish vaqt tejaydi deb o'ylash odatiy xato — aslida xato topilganda qaysi harakat sabab bo'lganini aniqlash uchun ikkisini ham qaytarish kerak bo'ladi.
+Eng muhim qoida: bir vaqtda bitta refaktoring harakati bajariladi va undan keyin kompilyatsiya va test ishga tushiriladi. Ikki harakatni birlashtirish vaqt tejaydi deb o'ylash odatiy xato - aslida xato topilganda qaysi harakat sabab bo'lganini aniqlash uchun ikkisini ham qaytarish kerak bo'ladi.
 
 ```bash
 # Har bir harakatdan keyin: tez testlar (butun to'plam emas)
@@ -8045,9 +8089,9 @@ git add -A && git commit -m "refactor: Payment dan TelephoneNumber ni ajratish"
 
 Refaktoring paytida kompilyator va testlar ikki xil rol o'ynaydi. **Kompilyator** tuzilish o'zgarishini boshqaradi: maydonni o'chirsangiz, u barcha ishlatilishlarni ko'rsatadi. **Testlar** xatti-harakatni himoya qiladi: mantiq o'zgarsa, ular yiqiladi.
 
-Shu sababli ikki xil refaktoring bor. Kompilyator boshqaradigan harakatlar (rename, move, signature change) nisbatan xavfsiz — IDE ularni bajaradi. Mantiqqa tegadigan harakatlar (Substitute Algorithm, Replace Conditional with Polymorphism) esa **faqat** test bilan xavfsiz.
+Shu sababli ikki xil refaktoring bor. Kompilyator boshqaradigan harakatlar (rename, move, signature change) nisbatan xavfsiz - IDE ularni bajaradi. Mantiqqa tegadigan harakatlar (Substitute Algorithm, Replace Conditional with Polymorphism) esa **faqat** test bilan xavfsiz.
 
-Agar testlar yo'q bo'lsa, birinchi qadam — xatti-harakatni qayd etuvchi test yozish (arxitektor hujjati 34.3), refaktoring emas.
+Agar testlar yo'q bo'lsa, birinchi qadam - xatti-harakatni qayd etuvchi test yozish (arxitektor hujjatidagi xavfsizlik to'ri va xatti-harakatni qayd etuvchi test bo'limi), refaktoring emas.
 
 ### 38.3 IDE refaktoringiga ishonish chegarasi
 
@@ -8078,7 +8122,7 @@ Amaliy tartib: oldin refaktoring (kodni o'zgarish uchun tayyorlash), keyin xatti
 
 ### 38.5 Katta refaktoringni bo'lish: abstraksiya orqali shox
 
-Katta refaktoringni bir PR da bajarish deyarli har doim muvaffaqiyatsiz bo'ladi: branch uzoq yashaydi, konfliktlar yig'iladi, review imkonsiz bo'ladi (arxitektor hujjati 34.6).
+Katta refaktoringni bir PR da bajarish deyarli har doim muvaffaqiyatsiz bo'ladi: branch uzoq yashaydi, konfliktlar yig'iladi, review imkonsiz bo'ladi (arxitektor hujjatidagi katta qayta yozish bo'limi).
 
 **Branch by abstraction** usuli katta refaktoringni kichik, merge qilinadigan qadamlarga bo'ladi:
 
@@ -8098,7 +8142,7 @@ Refaktoring cheksiz davom etishi mumkin va bu alohida xavf: "yana bir oz yaxshil
 | Asl vazifa bajarildi va kod toza | maqsadga erishildi |
 | Refaktoring PR qamrovidan chiqdi | alohida PR ga ko'chiriladi (1.4) |
 | Keyingi qadam test talab qiladi | oldin test, keyin davom |
-| Qaror arxitektura darajasiga chiqdi | ADR kerak (arxitektor hujjati 3-bob) |
+| Qaror arxitektura darajasiga chiqdi | ADR kerak (arxitektor hujjatidagi ADR va qaror hujjatlashtirish bo'limi) |
 | Vaqt budjeti tugadi | qolgani ro'yxatga yoziladi |
 | Foyda noaniq bo'lib qoldi | to'xtash va o'lchash |
 
@@ -8108,7 +8152,7 @@ Oxirgi qator eng muhim: agar refaktoringdan keyin kod yaxshilangani haqida ishon
 
 Refaktoring odatda ishlashga ta'sir qilmaydi, lekin ba'zi harakatlar qiladi: Replace Derived Variable with Query (35.20) hisobni har chaqiruvda bajaradi, Extract Function qo'shimcha chaqiruv qo'shadi (JIT odatda inline qiladi), Replace Loop with Pipeline qo'shimcha obyektlar yaratadi.
 
-Qoida: refaktoringni o'qilishi uchun bajarish, keyin o'lchash. Agar o'lchov muammo ko'rsatsa, maqsadli optimizatsiya qilish va **nega** shunday qilinganini izohlash (8.4). O'lchovsiz "tezlik uchun" chirkin kod yozish esa vaqtidan oldin optimizatsiya (patternlar hujjati 25.10).
+Qoida: refaktoringni o'qilishi uchun bajarish, keyin o'lchash. Agar o'lchov muammo ko'rsatsa, maqsadli optimizatsiya qilish va **nega** shunday qilinganini izohlash (8.4). O'lchovsiz "tezlik uchun" chirkin kod yozish esa vaqtidan oldin optimizatsiya (patternlar hujjatidagi vaqtidan oldin optimizatsiya anti-patterni).
 
 ### 38.8 Refaktoring commitlarini o'qiladigan ushlash
 
@@ -8135,15 +8179,16 @@ Oxirgi qator reviewer uchun eng muhim signal: testlar o'zgarmagan bo'lsa, xatti-
 - [ ] Har bir refaktoring PR i uchun oldindan vaqt budjeti va to'xtatish shartini belgilang.
 - [ ] Refaktoring commit xabarlarida harakat nomini va "xatti-harakat o'zgarmadi" qatorini yozishni standart qiling.
 - [ ] Refaktoringdan keyin ishlash o'lchovini (p99, so'rov soni) taqqoslab, sezilarli o'zgarishni tekshiring.
+
 # XI. Kod bazasi va jarayon gigiyenasi
 
 ## 39. Bir qadamli build va mahalliy qaytish halqasi (One-Step Build)
 
-Toza kod faqat fayllar ichida emas: kod bazasining atrofidagi mexanika ham o'qilishi va ishonchli bo'lishi kerak. Bu bobda build, bog'liqliklar va mahalliy qaytish halqasining gigiyenasi. CI/CD test pipeline i testlash qo'llanmasida (15-bob), Sonar ulanishi SonarQube hujjatida (10, 21-boblar).
+Toza kod faqat fayllar ichida emas: kod bazasining atrofidagi mexanika ham o'qilishi va ishonchli bo'lishi kerak. Bu bobda build, bog'liqliklar va mahalliy qaytish halqasining gigiyenasi. CI/CD test pipeline i testlash qo'llanmasidagi CI/CD test pipeline bo'limida, Sonar ulanishi SonarQube hujjatidagi JaCoCo ni ulash bo'limida.
 
 ### 39.1 Build bitta buyruq bo'lsin
 
-Evristika E1 (34.2) aniq talab qo'yadi: `git clone` dan keyin bitta buyruq butun loyihani qurishi kerak. Har bir qo'shimcha qadam — qo'lda o'rnatiladigan vosita, tahrirlanishi kerak bo'lgan fayl, maxfiy bilim — yangi odamning birinchi kunini yo'qotadi va avtomatlashtirishni to'sadi.
+Evristika E1 (34.2) aniq talab qo'yadi: `git clone` dan keyin bitta buyruq butun loyihani qurishi kerak. Har bir qo'shimcha qadam - qo'lda o'rnatiladigan vosita, tahrirlanishi kerak bo'lgan fayl, maxfiy bilim - yangi odamning birinchi kunini yo'qotadi va avtomatlashtirishni to'sadi.
 
 ```bash
 # Maqsad: shu uchta buyruq yetarli bo'lsin
@@ -8156,7 +8201,7 @@ Buni ta'minlash uchun: wrapper (`mvnw`, `gradlew`) repoda, JDK versiyasi `.sdkma
 
 ### 39.2 Test bitta buyruq bo'lsin
 
-Evristika E2: testni ishga tushirish ham bir buyruq bo'lishi kerak va u hech qanday tashqi sozlama talab qilmasligi lozim. Testcontainers shu talabni bajaradi: baza va Kafka test paytida avtomatik ko'tariladi (testlash qo'llanmasi 8-bob).
+Evristika E2: testni ishga tushirish ham bir buyruq bo'lishi kerak va u hech qanday tashqi sozlama talab qilmasligi lozim. Testcontainers shu talabni bajaradi: baza va Kafka test paytida avtomatik ko'tariladi (testlash qo'llanmasidagi Testcontainers bo'limi).
 
 ```bash
 ./mvnw test              # unit testlar, soniyalar
@@ -8195,7 +8240,7 @@ Build takrorlanadigan bo'lishi kerak: bir xil commit bir xil natija bersin. Buni
 
 ### 39.4 Bog'liqlik gigiyenasi: BOM, scope, keraksizni o'chirish
 
-Bog'liqlik qo'shishning yashirin narxi arxitektor hujjatida (38.5). Bu yerda kod bazasi darajasidagi qoidalar: versiyalar bir joyda, `scope` to'g'ri, va ishlatilmaydigan bog'liqliklar o'chirilgan.
+Bog'liqlik qo'shishning yashirin narxi arxitektor hujjatidagi bog'liqlik qo'shishning yashirin narxi bo'limida. Bu yerda kod bazasi darajasidagi qoidalar: versiyalar bir joyda, `scope` to'g'ri, va ishlatilmaydigan bog'liqliklar o'chirilgan.
 
 ```bash
 # Ishlatilmaydigan va e'lon qilinmagan bog'liqliklarni topish
@@ -8216,7 +8261,7 @@ Bog'liqlik qo'shishning yashirin narxi arxitektor hujjatida (38.5). Bu yerda kod
 | `test` | faqat testda |
 | `import` | BOM |
 
-Eng ko'p uchraydigan xato: test kutubxonasini (`assertj`, `mockito`) `compile` scope da qoldirish — u production jar ga tushadi.
+Eng ko'p uchraydigan xato: test kutubxonasini (`assertj`, `mockito`) `compile` scope da qoldirish - u production jar ga tushadi.
 
 ### 39.5 Build fayli o'qilishi
 
@@ -8246,7 +8291,7 @@ build/
 src/main/generated/
 ```
 
-Agar generator vositasi `src/` ga yozsa, uning sozlamasini o'zgartirish kerak; imkonsiz bo'lsa, shu papkani formatlash, statik tahlil va coverage dan chiqarish lozim (13.8, SonarQube hujjati 41-bob).
+Agar generator vositasi `src/` ga yozsa, uning sozlamasini o'zgartirish kerak; imkonsiz bo'lsa, shu papkani formatlash, statik tahlil va coverage dan chiqarish lozim (13.8 va SonarQube hujjatidagi Lombok va generatsiya qilingan kod bo'limi).
 
 ### 39.7 Mahalliy tez qaytish halqasi
 
@@ -8294,7 +8339,7 @@ secrets/
 .DS_Store
 ```
 
-Qoida: `application.yml` da sir bo'lmaydi — faqat `${ENV_VAR}` havolasi (26.4). Sirlar muhit o'zgaruvchisi, Kubernetes Secret yoki secret manager dan keladi.
+Qoida: `application.yml` da sir bo'lmaydi - faqat `${ENV_VAR}` havolasi (26.4). Sirlar muhit o'zgaruvchisi, Kubernetes Secret yoki secret manager dan keladi.
 
 ```yaml
 # CI da sir skanerlash: tarixga tushishini to'sadi
@@ -8314,9 +8359,10 @@ Qoida: `application.yml` da sir bo'lmaydi — faqat `${ENV_VAR}` havolasi (26.4)
 - [ ] Generatsiya qilingan kodni `git` dan chiqarib, formatlash va tahlildan istisno qiling.
 - [ ] Mahalliy qaytish halqasini 39.7 jadvaliga qarab o'lchab, eng sekin bo'g'inni tezlashtiring.
 - [ ] `.gitignore` ni sir fayllari bilan to'ldirib, CI ga sir skanerlashni qo'shing.
+
 ## 40. Versiya nazorati gigiyenasi (Version Control Hygiene)
 
-Git tarixi kod bazasining hujjati: u "nega shunday qilingan" savoliga javob beradi va incident vaqtida eng tez diagnostika vositasi bo'ladi. Iflos tarix esa foydasiz. Review hajmi va navbat vaqti arxitektor hujjatida (36.5); bu bobda commit va branch darajasidagi qoidalar.
+Git tarixi kod bazasining hujjati: u "nega shunday qilingan" savoliga javob beradi va incident vaqtida eng tez diagnostika vositasi bo'ladi. Iflos tarix esa foydasiz. Review hajmi va navbat vaqti arxitektor hujjatidagi review hajmi bo'limida; bu bobda commit va branch darajasidagi qoidalar.
 
 ### 40.1 Atomik commit: bitta mantiqiy o'zgarish
 
@@ -8359,7 +8405,7 @@ qator kunlik hisob-kitobni to'xtatib qo'yadi.
 Refs: SHOP-4821
 ```
 
-Sarlavha qoidalari: 50-72 belgigacha, buyruq shaklida ("qo'shish", "tuzatish" — "qo'shdim" emas), nuqta bilan tugamaydi, va prefiks bilan boshlanadi (40.3).
+Sarlavha qoidalari: 50-72 belgigacha, buyruq shaklida ("qo'shish", "tuzatish" - "qo'shdim" emas), nuqta bilan tugamaydi, va prefiks bilan boshlanadi (40.3).
 
 ### 40.3 Conventional commits va avtomatik changelog
 
@@ -8403,7 +8449,7 @@ Rebase va merge o'rtasidagi tanlov jamoa kelishuviga bog'liq, lekin bitta qoida 
 | Merge qilingan branch ni tozalash | o'chirish |
 | Umumiy branch ga noto'g'ri commit tushdi | `git revert` (reset emas) |
 
-Squash merge tarixni sodda qiladi (bitta xususiyat — bitta commit), lekin oraliq qadamlarni yo'qotadi. Katta refaktoring uchun oraliq commitlarni saqlash afzal.
+Squash merge tarixni sodda qiladi (bitta xususiyat - bitta commit), lekin oraliq qadamlarni yo'qotadi. Katta refaktoring uchun oraliq commitlarni saqlash afzal.
 
 ### 40.6 PR hajmi va bo'lish texnikasi
 
@@ -8454,6 +8500,7 @@ Tarixni qayta yozish umumiy branch da jamoaga qimmat tushadi, shuning uchun qada
 - [ ] 400 qatordan katta PR lar uchun ogohlantirish qo'yib, 40.6 dagi bo'lish texnikalarini qo'llang.
 - [ ] `.git-blame-ignore-revs` ni sozlab, blame ni toza ushlang (13.7).
 - [ ] Sir tarixga tushgan holat uchun 40.8 dagi to'rt qadamli reja (runbook) yozib qo'ying.
+
 ## 41. O'zgarishni kiritish jarayoni: kichik qadamlar (Working in Small Steps)
 
 Toza kod yozish usuli ham ahamiyatga ega: bir xil natijaga olib boradigan ikki yo'ldan biri xato ehtimolini bir necha barobar kamaytiradi. Bu bobda o'zgarish kiritishning amaliy tartibi: tushunishdan boshlash, kichik qadamlar, o'zini review qilish, va tugatish ta'rifi.
@@ -8480,7 +8527,7 @@ Aralash valyutali fayl bilan integratsion test; rad etilgan qatorlar soni metrik
 
 Evristika G21: algoritmni **tushunish** kerak, uning ishlashini kuzatish yetarli emas. Amalda bu shunday ko'rinadi: o'zgartirish kiritishdan oldin mavjud kodning nima qilayotganini aytib bera olish kerak.
 
-Tushunishni tekshirish usuli: mavjud xatti-harakat uchun test yozish (xatti-harakatni qayd etuvchi test, arxitektor hujjati 34.3). Test o'tsa — tushunish to'g'ri; yiqilsa — taxmin xato edi va bu o'zgartirishdan **oldin** bilish qimmatli.
+Tushunishni tekshirish usuli: mavjud xatti-harakat uchun test yozish (arxitektor hujjatidagi xavfsizlik to'ri va xatti-harakatni qayd etuvchi test bo'limi). Test o'tsa - tushunish to'g'ri; yiqilsa - taxmin xato edi va bu o'zgartirishdan **oldin** bilish qimmatli.
 
 ### 41.3 Kodni o'qish texnikalari
 
@@ -8500,13 +8547,13 @@ Oxirgi texnika eng kam ishlatiladi va eng samarali: 15 daqiqa qog'ozda chizish b
 
 ### 41.4 Birinchi ishlaydigan versiya va keyin tozalash
 
-4.10 da ko'rilgan tartib ish darajasida ham ishlaydi: oldin ishlaydigan, keyin toza. Buning sababi psixologik — toza kod yozishga urinish bir vaqtda ikki muammoni (nima qilish va qanday qilish) hal qilishni talab qiladi va ikkisi ham sekinlashadi.
+4.10 da ko'rilgan tartib ish darajasida ham ishlaydi: oldin ishlaydigan, keyin toza. Buning sababi psixologik - toza kod yozishga urinish bir vaqtda ikki muammoni (nima qilish va qanday qilish) hal qilishni talab qiladi va ikkisi ham sekinlashadi.
 
 Muhim shart: tozalash **o'sha ish ichida** bajariladi, keyinga qoldirilmaydi (1.3). Amaliy usul: ishlaydigan versiyani lokal commit qilib, keyin tozalash commitlari qo'shish va push dan oldin `rebase -i` bilan tartiblash (40.5).
 
 ### 41.5 Yarim ishni boshqarish va feature flag
 
-Katta xususiyatni kichik PR larga bo'lishning asosiy vositasi — feature flag: kod merge qilinadi, lekin yoqilmaydi. Konfiguratsiya murakkabligi va har bir flag ning narxi arxitektor hujjatida (6.4); bu yerda kod gigiyenasi.
+Katta xususiyatni kichik PR larga bo'lishning asosiy vositasi - feature flag: kod merge qilinadi, lekin yoqilmaydi. Konfiguratsiya murakkabligi va har bir flag ning narxi arxitektor hujjatidagi konfiguratsiya murakkabligi bo'limida; bu yerda kod gigiyenasi.
 
 ```java
 // yaxshi: flag bitta joyda o'qiladi, mantiq tarqalmaydi
@@ -8595,9 +8642,10 @@ Juftlikda ishlash hamma vazifa uchun emas: oddiy, aniq ishlarda u resursni ikki 
 - [ ] `git diff` bo'yicha qoldirilgan tafsilot (debug log, `TODO`) skriptini pre-push hook ga qo'shing.
 - [ ] Juftlikda ishlash uchun mos vazifa turlarini jamoa bilan kelishib oling.
 - [ ] Ishni tugatish ta'rifini yozib, jamoa kelishuviga va PR shabloniga kiriting.
+
 ## 42. Statik tahlil va avtomatik qoidalar (Static Analysis and Automated Rules)
 
-Toza kod qoidasi odam xotirasida yashasa, u buziladi. Shu sababli har bir qoidaning oxirgi manzili — mashina. SonarQube ning mexanikasi, quality gate va xato katalogi alohida hujjatda; bu bobda qolgan vositalar va qoidani joriy qilish tartibi.
+Toza kod qoidasi odam xotirasida yashasa, u buziladi. Shu sababli har bir qoidaning oxirgi manzili - mashina. SonarQube ning mexanikasi, quality gate va xato katalogi alohida hujjatda; bu bobda qolgan vositalar va qoidani joriy qilish tartibi.
 
 ### 42.1 Kompilyator birinchi tekshiruvchi
 
@@ -8616,7 +8664,7 @@ Kompilyator eng tez va eng arzon statik tahlilchi, lekin uning ogohlantirishlari
 
 ### 42.2 Error Prone va NullAway
 
-Error Prone kompilyatsiya paytida ishlaydi va **xatolik namunalarini** topadi — uslub emas, haqiqiy xatolar. Bu hujjatdagi ko'p qoidalar uning qoidalariga bevosita mos keladi.
+Error Prone kompilyatsiya paytida ishlaydi va **xatolik namunalarini** topadi - uslub emas, haqiqiy xatolar. Bu hujjatdagi ko'p qoidalar uning qoidalariga bevosita mos keladi.
 
 | Bu hujjatdagi qoida | Error Prone qoidasi |
 |---|---|
@@ -8632,7 +8680,7 @@ Error Prone kompilyatsiya paytida ishlaydi va **xatolik namunalarini** topadi �
 | Immutable obyektga yozish (16.1) | `Immutable` |
 | Ishlatilmaydigan o'zgaruvchi (33.10) | `UnusedVariable` |
 
-NullAway esa `null` xavfini kompilyatsiya vaqtida topadi va u JSpecify annotatsiyalari bilan ishlaydi (arxitektor hujjati 13.10): paketga `@NullMarked` qo'yilsa, barcha turlar standart holatda `null` bo'lmaydi va istisnolar `@Nullable` bilan belgilanadi.
+NullAway esa `null` xavfini kompilyatsiya vaqtida topadi va u JSpecify annotatsiyalari bilan ishlaydi (arxitektor hujjatidagi null xavfsizligi bo'limi): paketga `@NullMarked` qo'yilsa, barcha turlar standart holatda `null` bo'lmaydi va istisnolar `@Nullable` bilan belgilanadi.
 
 ```java
 // package-info.java (10.7)
@@ -8714,7 +8762,7 @@ class CleanCodeRulesTest {
 
 ### 42.5 Maxsus lint qoidasi yozish
 
-Review da bir xil izoh har haftada qaytsa, u qoidaga aylanishi kerak (arxitektor hujjati 36.9). ArchUnit ko'p holatni qoplaydi, lekin ba'zi qoidalar AST darajasini talab qiladi — bunda Error Prone ning maxsus tekshiruvi yoziladi.
+Review da bir xil izoh har haftada qaytsa, u qoidaga aylanishi kerak (arxitektor hujjatidagi standart o'rnatish bo'limi). ArchUnit ko'p holatni qoplaydi, lekin ba'zi qoidalar AST darajasini talab qiladi - bunda Error Prone ning maxsus tekshiruvi yoziladi.
 
 ```java
 // Error Prone maxsus qoidasi: log'da satr birlashtirish taqiqlangan (29.1)
@@ -8752,7 +8800,7 @@ Yangi qoidani darhol xato darajasida yoqish mavjud kod bazasida yuzlab xato bera
 | 4 | Son nolga yetganda qoidani xato darajasiga ko'tarish |
 | 5 | Qoida sababini hujjatda yozib qo'yish (48-bob) |
 
-Ikkinchi bosqich eng muhim: Sonar ning "new code" tushunchasi (SonarQube hujjati 7-bob) shu yondashuvni to'g'ridan-to'g'ri qo'llab-quvvatlaydi.
+Ikkinchi bosqich eng muhim: Sonar ning "new code" tushunchasi (SonarQube hujjatidagi "clean as you code" va yangi kod bo'limi) shu yondashuvni to'g'ridan-to'g'ri qo'llab-quvvatlaydi.
 
 ### 42.7 False positive va bostirishni hujjatlashtirish
 
@@ -8786,17 +8834,18 @@ grep -rn "@SuppressWarnings" src/main/java | grep -v "//" | head    # izohsizlar
 - [ ] Review da takrorlanadigan uch izohni tanlab, ularni ArchUnit yoki maxsus qoidaga aylantiring.
 - [ ] Yangi qoidalarni 42.6 dagi besh bosqichli tartib bo'yicha joriy qiling.
 - [ ] `@SuppressWarnings` sonini o'lchab, izohsizlarini tuzatib, o'sishini CI da kuzatib turing.
+
 # XII. Professional intizom
 
 ## 43. Professional mas'uliyat (Professionalism)
 
-Toza kod texnik qoidalar to'plami emas, kasbiy munosabat natijasi. Bu va keyingi to'rt bob shu munosabatni ko'rib chiqadi: javobgarlik, majburiyat, baholash, vaqt va birgalikda ishlash. Texnik yetakchilik va jamoada qaror tarqatish arxitektor hujjatida (36-bob), o'rganish va texnologiya tanlash esa 38-bobda.
+Toza kod texnik qoidalar to'plami emas, kasbiy munosabat natijasi. Bu va keyingi to'rt bob shu munosabatni ko'rib chiqadi: javobgarlik, majburiyat, baholash, vaqt va birgalikda ishlash. Texnik yetakchilik va jamoada qaror tarqatish arxitektor hujjatidagi code review va texnik yetakchilik bo'limida, o'rganish va texnologiya tanlash esa 38-bobda.
 
 ### 43.1 "Zarar qilmaslik": funksiyaga va tuzilishga
 
-Professional ikki xil zarar qilmasligi kerak. **Funksiyaga zarar** — ishlaydigan narsani buzish: xato kiritish, regressiya, ma'lumot yo'qotish. **Tuzilishga zarar** — kod bazasini o'zgartirishga qarshilik qiladigan holga keltirish.
+Professional ikki xil zarar qilmasligi kerak. **Funksiyaga zarar** - ishlaydigan narsani buzish: xato kiritish, regressiya, ma'lumot yo'qotish. **Tuzilishga zarar** - kod bazasini o'zgartirishga qarshilik qiladigan holga keltirish.
 
-Birinchi zarar ko'rinadi va u haqida gapiradilar. Ikkinchi zarar ko'rinmaydi va shu sababli ko'proq uchraydi: har bir shoshilib yozilgan, testsiz, chalkash o'zgarish tuzilishga qarz qo'shadi. Oqibati keyin keladi — har bir yangi xususiyat sekinlashadi.
+Birinchi zarar ko'rinadi va u haqida gapiradilar. Ikkinchi zarar ko'rinmaydi va shu sababli ko'proq uchraydi: har bir shoshilib yozilgan, testsiz, chalkash o'zgarish tuzilishga qarz qo'shadi. Oqibati keyin keladi - har bir yangi xususiyat sekinlashadi.
 
 "Xato qilmayman" degan da'vo haqiqatga mos emas; to'g'ri da'vo boshqa: **xatolarim uchun javob beraman va ularni tez topadigan tizim quraman**. Shu tizimning qismlari: testlar, statik tahlil, monitoring, kichik qadamlar.
 
@@ -8812,7 +8861,7 @@ Professionalizmning amaliy belgisi: xato chiqqanda uni tan olish, oqibatini bart
 | Noto'g'ri qaror | himoyalanish | qarorni qayta ko'rish (ADR yangilanishi) |
 | Review da o'tkazib yuborilgan xato | "u yozgan" | jamoaviy javobgarlik, qoida qo'shish |
 
-Incident tahlili va post-mortem mexanikasi arxitektor hujjatida (35-bob); bu yerda muhim nuqta: ayblov emas, tizim o'zgarishi.
+Incident tahlili va post-mortem mexanikasi arxitektor hujjatidagi incident va post-mortem bo'limida; bu yerda muhim nuqta: ayblov emas, tizim o'zgarishi.
 
 ### 43.3 Ishga layoqat: charchagan holda kod yozmaslik
 
@@ -8824,9 +8873,9 @@ Amaliy qoidalar: charchagan holda murakkab mantiq yozmaslik (o'rniga hujjat, rev
 
 Mijoz tez va arzon natija xohlaydi; ishlab chiquvchi uzoq muddatli sifat uchun javob beradi. Bu to'qnashuv tabiiy va uni yashirish zarar keltiradi.
 
-To'g'ri yondashuv: tanlovni **oshkor** qilish va qarorni narx bilan ifodalash. "Buni bir kunda qilish mumkin, lekin testsiz va keyin har bir o'zgarish ikki barobar sekin bo'ladi" — bu qaror mijoz bilan birga qabul qilinadi. Yashirin qaror esa (jim testsiz yozish) professionalizm emas.
+To'g'ri yondashuv: tanlovni **oshkor** qilish va qarorni narx bilan ifodalash. "Buni bir kunda qilish mumkin, lekin testsiz va keyin har bir o'zgarish ikki barobar sekin bo'ladi" - bu qaror mijoz bilan birga qabul qilinadi. Yashirin qaror esa (jim testsiz yozish) professionalizm emas.
 
-Bir narsa muhokama qilinmaydi: **sifat me'yori**. Testsiz kod, tekshirilmagan xavfsizlik, ma'lumot yo'qotish xavfi — bular tanlov emas (44.1).
+Bir narsa muhokama qilinmaydi: **sifat me'yori**. Testsiz kod, tekshirilmagan xavfsizlik, ma'lumot yo'qotish xavfi - bular tanlov emas (44.1).
 
 ### 43.5 Kasbiy etika: sir, ma'lumot, xavfsizlik
 
@@ -8836,7 +8885,7 @@ Toza kodning etik o'lchovi bor va u uchta amaliy qoidaga qisqaradi.
 
 **Xavfsizlik**: topilgan zaiflikni yashirmaslik, hatto o'zingiz kiritgan bo'lsangiz ham; xavfsizlik tekshiruvini "vaqt yo'q" sababi bilan o'tkazib yubormaslik.
 
-**Sir**: mijoz ma'lumoti, ichki arxitektura va kod — ular haqida tashqarida gapirmaslik; lekin texnik bilimni (pattern, yondashuv) ulashish normal.
+**Sir**: mijoz ma'lumoti, ichki arxitektura va kod - ular haqida tashqarida gapirmaslik; lekin texnik bilimni (pattern, yondashuv) ulashish normal.
 
 ### 43.6 Amalda qo'llash
 
@@ -8848,13 +8897,14 @@ Toza kodning etik o'lchovi bor va u uchta amaliy qoidaga qisqaradi.
 - [ ] Log va `toString` larda sezgir ma'lumot yo'qligini bir marta to'liq audit qiling (29.8).
 - [ ] Topilgan zaifliklarni xabar qilish kanalini (kimga, qanday) aniq belgilang.
 - [ ] O'z xatolaringizni yozib boradigan shaxsiy jurnal yuritib, har chorakda naqshlarni ko'rib chiqing.
+
 ## 44. "Yo'q" va "ha" deyish: majburiyat tili (Saying No and Saying Yes)
 
-Toza kodni buzadigan eng kuchli kuch — noto'g'ri majburiyat. "Juma kuniga bo'ladi" degan gap aytilgach, sifat birinchi qurbon bo'ladi. Bu bobda majburiyat tilining aniq qoidalari.
+Toza kodni buzadigan eng kuchli kuch - noto'g'ri majburiyat. "Juma kuniga bo'ladi" degan gap aytilgach, sifat birinchi qurbon bo'ladi. Bu bobda majburiyat tilining aniq qoidalari.
 
 ### 44.1 "Yo'q" ni qachon va qanday aytish
 
-Professionalizmning eng aniq belgisi — bajarilmaydigan ishga "yo'q" deyish qobiliyati. "Yo'q" deyishdan qochish qisqa muddatda ziddiyatni yo'qotadi, uzoq muddatda ishonchni yo'qotadi.
+Professionalizmning eng aniq belgisi - bajarilmaydigan ishga "yo'q" deyish qobiliyati. "Yo'q" deyishdan qochish qisqa muddatda ziddiyatni yo'qotadi, uzoq muddatda ishonchni yo'qotadi.
 
 "Yo'q" aytishning ishlaydigan shakli uchta elementdan iborat: aniq javob, sabab, va muqobil taklif.
 
@@ -8897,13 +8947,13 @@ Haqiqiy majburiyat uch qismdan iborat va uchtasi ham bo'lishi shart: **kim**, **
 | "Seshanba kuni soat 12 gacha PR ochaman" | ha |
 | "Bugun kech soat 6 ga qadar javob beraman" | ha |
 
-Majburiyat olingach, uni bajarish professionalizmning asosiy sinovidir. Bajarilmasligi aniq bo'lsa — **darhol** xabar qilish kerak (45.6), oxirgi kungacha kutmaslik.
+Majburiyat olingach, uni bajarish professionalizmning asosiy sinovidir. Bajarilmasligi aniq bo'lsa - **darhol** xabar qilish kerak (45.6), oxirgi kungacha kutmaslik.
 
 ### 44.4 Passiv tavakkalchilik va uning narxi
 
-Passiv tavakkalchilik — "menga aytilgani shu" deb aniq xato bo'lgan yo'lni davom ettirish. Bu javobgarlikni boshqaga o'tkazishga urinish va u ishlamaydi: tizim buzilganda hamma javob beradi.
+Passiv tavakkalchilik - "menga aytilgani shu" deb aniq xato bo'lgan yo'lni davom ettirish. Bu javobgarlikni boshqaga o'tkazishga urinish va u ishlamaydi: tizim buzilganda hamma javob beradi.
 
-Professional xatti-harakat: xavfni **yozib** xabar qilish, muqobil taklif qilish, qaror boshqa tomondan kelsa uni qayd etish va davom etish. "Rozi emasman, lekin bajaraman" qoidasi arxitektor hujjatida (3.6) ko'rilgan.
+Professional xatti-harakat: xavfni **yozib** xabar qilish, muqobil taklif qilish, qaror boshqa tomondan kelsa uni qayd etish va davom etish. "Rozi emasman, lekin bajaraman" qoidasi arxitektor hujjatidagi "rozi emasman, lekin bajaraman" qoidasida ko'rilgan.
 
 ```markdown
 ## Xavf haqida xabar (qisqa shakl)
@@ -8931,13 +8981,14 @@ Buning sharti: jamoa ichida kelishuv bo'lishi. Agar bir odam "bo'ladi" deb aytsa
 - [ ] Muddat haqidagi tashqi suhbatdan oldin jamoa ichida kelishuvga erishish qoidasini kiriting.
 - [ ] Bajarilmaydigan majburiyat haqida darhol xabar qilish qoidasini kelishuvga yozing.
 - [ ] Oxirgi uch kechikishni ko'rib chiqib, qaysi birida majburiyat aniq bo'lmaganini aniqlang.
+
 ## 45. Baholash, muddat va bosim (Estimation, Deadlines and Pressure)
 
 Noto'g'ri baho toza kodni buzadigan ikkinchi kuch: vaqt yetmaganda test, refaktoring va hujjat birinchi qurbon bo'ladi. Bu bobda baholashning amaliy texnikalari va bosim ostida intizomni saqlash.
 
 ### 45.1 Baho va majburiyat farqi
 
-Eng ko'p chalkashlik shu ikki tushunchani aralashtirishdan keladi. **Baho** — ehtimollik taqsimoti, u xato bo'lishi mumkin va bu normal. **Majburiyat** — bajarilishi kerak bo'lgan gap (44.3), u xato bo'lmasligi kerak.
+Eng ko'p chalkashlik shu ikki tushunchani aralashtirishdan keladi. **Baho** - ehtimollik taqsimoti, u xato bo'lishi mumkin va bu normal. **Majburiyat** - bajarilishi kerak bo'lgan gap (44.3), u xato bo'lmasligi kerak.
 
 Professional bahoni majburiyatga aylantirmasligi kerak. "Taxminan uch kun" degan baho "uch kunda qilaman" degan majburiyatga aylantirilsa, keyinchalik ayblov tug'iladi.
 
@@ -8963,11 +9014,11 @@ Misol: migratsiya ishi uchun O = 2 kun, M = 4 kun, P = 10 kun.
 μ = (2 + 16 + 10) / 6 = 4.67 kun; σ = (10 - 2) / 6 = 1.33 kun.
 Ya'ni "taxminan 5 kun, 68% ehtimol bilan 3.3-6 kun oralig'ida".
 
-Bir necha vazifa uchun kutilgan qiymatlar qo'shiladi, chetlanishlar esa kvadratik qo'shiladi: `σ_total = √(σ₁² + σ₂² + ...)`. Natijada ko'p kichik vazifaning jami bahosi bitta katta vazifadan **aniqroq** bo'ladi — bu ishni bo'lishning matematik asosi.
+Bir necha vazifa uchun kutilgan qiymatlar qo'shiladi, chetlanishlar esa kvadratik qo'shiladi: `σ_total = √(σ₁² + σ₂² + ...)`. Natijada ko'p kichik vazifaning jami bahosi bitta katta vazifadan **aniqroq** bo'ladi - bu ishni bo'lishning matematik asosi.
 
 ### 45.3 Planning poker va kattalik birligi
 
-Jamoa bo'lib baholashning amaliy usuli: har kim mustaqil baho beradi, keyin farqlar muhokama qilinadi. Farqning o'zi eng qimmatli ma'lumot — u kimdir boshqa narsani tushunganini ko'rsatadi.
+Jamoa bo'lib baholashning amaliy usuli: har kim mustaqil baho beradi, keyin farqlar muhokama qilinadi. Farqning o'zi eng qimmatli ma'lumot - u kimdir boshqa narsani tushunganini ko'rsatadi.
 
 Mutlaq vaqt o'rniga nisbiy kattalik (story point) ishlatish ikki foyda beradi: odamlar nisbatni vaqtdan yaxshiroq baholaydi, va baho odamga bog'liq bo'lmaydi.
 
@@ -8982,13 +9033,13 @@ Mutlaq vaqt o'rniga nisbiy kattalik (story point) ishlatish ikki foyda beradi: o
 
 ### 45.4 Katta ishni baholash va noaniqlik konusi
 
-Loyiha boshida baho 4 barobar xato bo'lishi mumkin; talab aniqlashgach 2 barobar; dizayn tugagach 1.5 barobar. Bu "noaniqlik konusi" va u baholashning tabiatini ko'rsatadi: bahoni aniqlashtirishning yagona yo'li — ma'lumot to'plash.
+Loyiha boshida baho 4 barobar xato bo'lishi mumkin; talab aniqlashgach 2 barobar; dizayn tugagach 1.5 barobar. Bu "noaniqlik konusi" va u baholashning tabiatini ko'rsatadi: bahoni aniqlashtirishning yagona yo'li - ma'lumot to'plash.
 
-Amaliy natija: katta ish uchun bitta son bermaslik, balki **diapazon** berish va qayta ko'rish nuqtalarini belgilash. Spike (arxitektor hujjati 3.5) noaniqlikni kamaytirishning eng arzon vositasi: ikki kunlik tajriba ikki haftalik bahoni aniqlashtiradi.
+Amaliy natija: katta ish uchun bitta son bermaslik, balki **diapazon** berish va qayta ko'rish nuqtalarini belgilash. Spike (arxitektor hujjatidagi spike va prototip bo'limi) noaniqlikni kamaytirishning eng arzon vositasi: ikki kunlik tajriba ikki haftalik bahoni aniqlashtiradi.
 
 ### 45.5 Bosim ostida intizomni saqlash
 
-Bosim paytida odatiy reaksiya — intizomni tashlash: testni o'tkazib yuborish, review ni qisqartirish, kodni shoshilib yozish. Bu deyarli har doim **sekinlashtiradi**, chunki xato topilib tuzatilishi ko'proq vaqt oladi.
+Bosim paytida odatiy reaksiya - intizomni tashlash: testni o'tkazib yuborish, review ni qisqartirish, kodni shoshilib yozish. Bu deyarli har doim **sekinlashtiradi**, chunki xato topilib tuzatilishi ko'proq vaqt oladi.
 
 | Bosim ostida | To'g'ri harakat |
 |---|---|
@@ -9037,9 +9088,10 @@ Sababi iqtisodiy: qamrovni qisqartirish bir martalik narx, sifatni qisqartirish 
 - [ ] Bosim paytida qisqartirilmaydigan narsalar ro'yxatini (45.7) jamoa kelishuviga kiriting.
 - [ ] Oxirgi uch loyihadagi baho va haqiqiy vaqtni taqqoslab, o'z koeffitsientingizni hisoblang.
 - [ ] Kechikish haqida xabar berish muddatini ("bilgan kuni") kelishuvga yozing.
+
 ## 46. Vaqt, diqqat va mashq (Time, Focus and Practice)
 
-Kod sifati diqqat sifatiga bog'liq va diqqat cheklangan resurs. Bu bobda shu resursni boshqarish: uzilishlar, vaqt bloklari, ko'r yo'laklardan chiqish va ataylab mashq. Vaqtni taqsimlash yetakchi nuqtai nazaridan arxitektor hujjatida (36.12), o'rganish rejasi esa 38.12 da.
+Kod sifati diqqat sifatiga bog'liq va diqqat cheklangan resurs. Bu bobda shu resursni boshqarish: uzilishlar, vaqt bloklari, ko'r yo'laklardan chiqish va ataylab mashq. Vaqtni taqsimlash yetakchi nuqtai nazaridan arxitektor hujjatidagi vaqtni taqsimlash bo'limida, o'rganish rejasi esa 38.12 da.
 
 ### 46.1 Diqqat resursi va uni sarflash
 
@@ -9049,7 +9101,7 @@ Amaliy natijalar: eng murakkab ishni diqqat eng ko'p bo'lgan vaqtga qo'yish; diq
 
 ### 46.2 Oqim holati haqidagi afsona
 
-"Oqim" (flow) holati — vaqt sezilmaydigan, tez kod yozilayotgan holat — ko'pincha ideal deb ko'rsatiladi. Amalda u aralash natija beradi: tezlik oshadi, lekin umumiy ko'rinish torayadi. Oqimda yozilgan kod ko'pincha keyin refaktoring talab qiladi, chunki muallif katta rasmni ko'rmagan.
+"Oqim" (flow) holati - vaqt sezilmaydigan, tez kod yozilayotgan holat - ko'pincha ideal deb ko'rsatiladi. Amalda u aralash natija beradi: tezlik oshadi, lekin umumiy ko'rinish torayadi. Oqimda yozilgan kod ko'pincha keyin refaktoring talab qiladi, chunki muallif katta rasmni ko'rmagan.
 
 Amaliy tavsiya: oqimni maqsad qilmaslik; o'rniga qisqa, ongli siklda ishlash (TDD sikli, 31.1) va har sikldan keyin bir qadam orqaga chiqib qarash. Juftlikda ishlash oqimni tabiiy ravishda buzadi va bu uning foydasi (41.7).
 
@@ -9072,13 +9124,13 @@ Uzilishdan oldin kontekstni yozib qo'yish (bir-ikki qator: "shu yerda to'xtadim,
 
 Pomodoro texnikasi: 25 daqiqa uzilmasdan ishlash, 5 daqiqa tanaffus; to'rt siklda uzun tanaffus. Uning asosiy foydasi vaqt o'lchash emas, **uzilishlardan himoya**: 25 daqiqa ichida hech narsaga javob berilmaydi.
 
-Amaliy moslashtirish: 25 daqiqa ba'zi ishlar uchun qisqa (murakkab debug), shuning uchun 50/10 ham ishlaydi. Muhimi — blok ichida uzilish bo'lmasligi va blok oxirida ongli to'xtash.
+Amaliy moslashtirish: 25 daqiqa ba'zi ishlar uchun qisqa (murakkab debug), shuning uchun 50/10 ham ishlaydi. Muhimi - blok ichida uzilish bo'lmasligi va blok oxirida ongli to'xtash.
 
 ### 46.5 Ko'r yo'lak va botqoqdan chiqish
 
-**Ko'r yo'lak** (blind alley) — tanlangan yondashuv ishlamayotgani aniq bo'lgan holat. Professional javob: tan olish va qaytish. Sarflangan vaqt argument emas (sunk cost): u allaqachon ketgan.
+**Ko'r yo'lak** (blind alley) - tanlangan yondashuv ishlamayotgani aniq bo'lgan holat. Professional javob: tan olish va qaytish. Sarflangan vaqt argument emas (sunk cost): u allaqachon ketgan.
 
-**Botqoq** (marsh) — yondashuv ishlaydi, lekin sekin va qimmat; har bir qadam qiyinlashadi. Botqoq ko'r yo'lakdan xavfliroq, chunki unda qolish mumkin.
+**Botqoq** (marsh) - yondashuv ishlaydi, lekin sekin va qimmat; har bir qadam qiyinlashadi. Botqoq ko'r yo'lakdan xavfliroq, chunki unda qolish mumkin.
 
 | Belgi | Harakat |
 |---|---|
@@ -9088,7 +9140,7 @@ Amaliy moslashtirish: 25 daqiqa ba'zi ishlar uchun qisqa (murakkab debug), shuni
 | Yechim tushunilmaydi, lekin ishlaydi | tushunmaguncha davom etmaslik (41.2) |
 | Vaqt budjeti oshdi | to'xtash va yordam so'rash |
 
-Eng arzon chiqish usuli — boshqa odamga tushuntirish. Ko'p holatda muammo tushuntirish paytida o'zi hal bo'ladi.
+Eng arzon chiqish usuli - boshqa odamga tushuntirish. Ko'p holatda muammo tushuntirish paytida o'zi hal bo'ladi.
 
 ### 46.6 Majlis: qachon chiqib ketish haqli
 
@@ -9136,9 +9188,10 @@ Debug vaqtini o'lchab borish foydali: u qancha ko'p bo'lsa, test va kuzatuvchanl
 - [ ] Kun tartibi yo'q majlislarga rozilik bermaslik qoidasini joriy qiling.
 - [ ] Jamoa uchun haftada bir soatlik dojo tashkil qilib, Gilded Rose katasidan boshlang.
 - [ ] Debug vaqtini bir oy davomida o'lchab, eng ko'p vaqt ketgan sohaga test va log qo'shing.
+
 ## 47. Birgalikda ishlash va o'rgatish (Collaboration and Mentoring)
 
-Toza kod jamoaviy natija: bir odam yolg'iz uni saqlab qola olmaydi. Bu bobda jamoaviy egalik, ustoz-shogird munosabati, standartni yetkazish va jamoa kelishuvi. Code review mexanikasi va texnik yetakchilik arxitektor hujjatida (36-bob).
+Toza kod jamoaviy natija: bir odam yolg'iz uni saqlab qola olmaydi. Bu bobda jamoaviy egalik, ustoz-shogird munosabati, standartni yetkazish va jamoa kelishuvi. Code review mexanikasi va texnik yetakchilik arxitektor hujjatidagi code review va texnik yetakchilik bo'limida.
 
 ### 47.1 Kodga egalik: shaxsiy emas, jamoaviy
 
@@ -9151,11 +9204,11 @@ Yomon: "Nega sen bu yerda Optional ishlatmagansan?"
 Yaxshi: "Bu metod null qaytarishi mumkinmi? Optional aniqroq bo'lardi."
 ```
 
-Jamoaviy egalik "hech kim javob bermaydi" degani emas: CODEOWNERS bilan sohaga mas'ul belgilanadi (arxitektor hujjati 36.10), lekin mas'ullik to'siq emas, bilim markazi bo'ladi.
+Jamoaviy egalik "hech kim javob bermaydi" degani emas: CODEOWNERS bilan sohaga mas'ul belgilanadi (arxitektor hujjatidagi jamoaning bilim xaritasi bo'limi), lekin mas'ullik to'siq emas, bilim markazi bo'ladi.
 
 ### 47.2 Ustoz-shogird modeli
 
-Dasturlash kasbini kitobdan o'rganib bo'lmaydi: uning katta qismi — qaror qabul qilish usuli, va u faqat kuzatish va qaytarma aloqa bilan uzatiladi. Shu sababli ustoz-shogird munosabati eng samarali o'qitish shakli bo'lib qolgan.
+Dasturlash kasbini kitobdan o'rganib bo'lmaydi: uning katta qismi - qaror qabul qilish usuli, va u faqat kuzatish va qaytarma aloqa bilan uzatiladi. Shu sababli ustoz-shogird munosabati eng samarali o'qitish shakli bo'lib qolgan.
 
 | Daraja | Nima kerak | Qanday beriladi |
 |---|---|---|
@@ -9168,17 +9221,17 @@ Dasturlash kasbini kitobdan o'rganib bo'lmaydi: uning katta qismi — qaror qabu
 
 Standartni hujjat bilan yetkazish eng kam samarali usul: hujjat o'qiladi va esdan chiqadi. Samarali usullar tartibi boshqa.
 
-1. **Namuna kod**: shablon loyiha va mavjud kod — yangi odam shunga qaraydi (arxitektor hujjati 36.9).
+1. **Namuna kod**: shablon loyiha va mavjud kod - yangi odam shunga qaraydi (arxitektor hujjatidagi standart o'rnatish bo'limi).
 2. **Mashina**: formatter va linter qoidalarni darhol o'rgatadi (13, 42 boblar).
 3. **Review**: birinchi besh PR da batafsil, sabab bilan izohlar.
 4. **Juftlikda ishlash**: birinchi haftada bir-ikki sessiya (41.7).
 5. **Hujjat**: qolgan qism uchun havola sifatida (48-bob).
 
-Eng tez xato — yangi odamga 50 qoidadan iborat hujjat berib, keyin review da hammasini talab qilish. To'g'ri yondashuv: birinchi haftada 5 qoida, keyin bosqichma-bosqich.
+Eng tez xato - yangi odamga 50 qoidadan iborat hujjat berib, keyin review da hammasini talab qilish. To'g'ri yondashuv: birinchi haftada 5 qoida, keyin bosqichma-bosqich.
 
 ### 47.4 Review ni o'rgatish vositasiga aylantirish
 
-Review ning o'qitish funksiyasi arxitektor hujjatida (36.7) ko'rilgan. Bu yerda qo'shimcha amaliy qoidalar: izohda **sabab** bo'lishi, muqobil taklif bo'lishi, va izohlar soni cheklangan bo'lishi.
+Review ning o'qitish funksiyasi arxitektor hujjatidagi review orqali o'rgatish bo'limida ko'rilgan. Bu yerda qo'shimcha amaliy qoidalar: izohda **sabab** bo'lishi, muqobil taklif bo'lishi, va izohlar soni cheklangan bo'lishi.
 
 | Izoh shakli | Samarasi |
 |---|---|
@@ -9189,11 +9242,11 @@ Review ning o'qitish funksiyasi arxitektor hujjatida (36.7) ko'rilgan. Bu yerda 
 | 30 ta izoh bir PR da | nol (prioritet yo'q) |
 | 3 ta muhim izoh + "qolgani ixtiyoriy" | yuqori |
 
-Qo'shimcha texnika: izohlarga prefiks qo'yish — `[majburiy]`, `[taklif]`, `[savol]`, `[nit]`. Bu prioritetni darhol ko'rsatadi va muallif vaqtini tejaydi.
+Qo'shimcha texnika: izohlarga prefiks qo'yish - `[majburiy]`, `[taklif]`, `[savol]`, `[nit]`. Bu prioritetni darhol ko'rsatadi va muallif vaqtini tejaydi.
 
 ### 47.5 Jamoa kelishuvi (working agreement) yozish
 
-Jamoa kelishuvi — og'zaki qoidalarni yozma shaklga keltirish. Uning qiymati bahsni yopishda: "biz shunday kelishganmiz" argumenti did haqidagi muhokamani to'xtatadi.
+Jamoa kelishuvi - og'zaki qoidalarni yozma shaklga keltirish. Uning qiymati bahsni yopishda: "biz shunday kelishganmiz" argumenti did haqidagi muhokamani to'xtatadi.
 
 ```markdown
 # Jamoa kelishuvi
@@ -9233,7 +9286,8 @@ Jamoa kelishuvi — og'zaki qoidalarni yozma shaklga keltirish. Uning qiymati ba
 - [ ] Shablon loyihani (yoki mavjud eng toza modulni) namuna sifatida belgilang va havola bering.
 - [ ] Jamoa kelishuvini 47.5 shabloni bo'yicha yozib, repoda saqlang.
 - [ ] Kelishuvni har chorakda ko'rib chiqish sanasini kalendarda belgilang.
-- [ ] Har bir kritik tizimda kamida ikki odam o'zgartirish kirita olishini ta'minlang (arxitektor hujjati 36.10).
+- [ ] Har bir kritik tizimda kamida ikki odam o'zgartirish kirita olishini ta'minlang (arxitektor hujjatidagi jamoaning bilim xaritasi bo'limi).
+
 # XIII. Ma'lumotnoma
 
 ## 48. Tezkor ma'lumotnoma: qoidalar va tekshiruv ro'yxatlari (Quick Reference)
@@ -9405,46 +9459,61 @@ Arxitektor hujjati 36.1-36.4 review ning nimani topishi kerakligini ko'rib chiqa
 | Noaniqlik konusi | baho aniqligi ma'lumot bilan oshishi |
 | Diqqat-mana | kun bo'yi cheklangan aqliy diqqat resursi |
 
-### 48.11 Besh hujjat bilan bog'lanish xaritasi
+### 48.11 Olti hujjat bilan bog'lanish xaritasi
 
 | Savol | Hujjat va bo'lim |
 |---|---|
 | Nomni qanday yozaman? | shu hujjat, 2-3 |
-| Nomni domen tilidan olish | arxitektor, 4.2 |
+| Nomni domen tilidan olish | arxitektor: nomlash bo'limi |
 | Funksiya qanday bo'linadi? | shu hujjat, 4-5 |
-| Kognitiv yuk va chuqurlik | arxitektor, 4.3-4.4 |
+| Kognitiv yuk va chuqurlik | arxitektor: kognitiv yuk va erta qaytish |
 | Izoh qoldirilsinmi? | shu hujjat, 8-9 |
 | Formatlash sozlamasi | shu hujjat, 11-13 |
 | `equals`/`hashCode` | shu hujjat, 15 |
-| Abstraksiya va chegara | arxitektor, 5 |
-| Murakkablik va texnik qarz | arxitektor, 6 |
-| Qaysi pattern kerak? | patternlar, 1-24, 27-30 |
-| SOLID va GRASP | patternlar, 26 |
-| Anti-pattern nomi | patternlar, 25 |
+| Abstraksiya va chegara | arxitektor: abstraksiya va chegara bo'limi |
+| Murakkablik va texnik qarz | arxitektor: murakkablikni boshqarish bo'limi |
+| Qaysi pattern kerak? | patternlar: mavzuga mos pattern bo'limi |
+| SOLID va GRASP | patternlar: dizayn printsiplari bo'limi |
+| Anti-pattern nomi | patternlar: anti-patternlar bo'limi |
 | Xato bilan ishlash | shu hujjat, 18-19 |
-| Istisno ierarxiyasi dizayni | arxitektor, 13.7 |
+| Istisno ierarxiyasi dizayni | arxitektor: istisnolar dizayni bo'limi |
 | Pul, vaqt, satr, to'plam | shu hujjat, 20-23 |
-| Record, sealed, `Optional`, Stream | arxitektor, 13 |
-| Spring mexanikasi | arxitektor, 15-20 |
+| Record, sealed, `Optional`, Stream | arxitektor: zamonaviy Java bo'limi |
+| Spring mexanikasi | arxitektor: Spring mexanikasi boblari |
 | Spring kodi uslubi | shu hujjat, 26-27 |
-| JPA mexanikasi va N+1 | arxitektor, 18 |
+| JPA mexanikasi va N+1 | arxitektor: Spring Data JPA va Hibernate bo'limi |
 | JPA kodi uslubi | shu hujjat, 28 |
-| PostgreSQL ichki tuzilishi | arxitektor, 21-27 |
-| Log narxi va kuzatuvchanlik | arxitektor, 30 |
+| PostgreSQL ichki tuzilishi | arxitektor: PostgreSQL boblari |
+| Log narxi va kuzatuvchanlik | arxitektor: kuzatuvchanlik amaliyoti bo'limi |
 | Log kodi uslubi | shu hujjat, 29 |
 | Test strategiyasi va texnikasi | testlash qo'llanmasi |
 | Test kodi tozaligi va TDD | shu hujjat, 30-31 |
 | Kod hidi va refaktoring harakati | shu hujjat, 32-38 |
-| Legacy refaktoring strategiyasi | arxitektor, 34 |
+| Legacy refaktoring strategiyasi | arxitektor: legacy kod va refaktoring bo'limi |
 | Build va versiya nazorati | shu hujjat, 39-41 |
 | Statik tahlil vositalari | shu hujjat, 42 |
 | Sonar qoidalari va quality gate | SonarQube hujjati |
 | Professional intizom | shu hujjat, 43-47 |
-| Code review va yetakchilik | arxitektor, 36 |
-| O'rganish va texnologiya tanlash | arxitektor, 38 |
+| Review jarayoni va yetakchilik | arxitektor: code review va texnik yetakchilik |
+| Diffda xatoni ko'rish | review hujjati |
+| Review izohi matni va kelishmovchilik | review hujjati: madaniyat va til bo'limi |
+| Xavfsizlik review metodikasi | review hujjati: xavfsizlik boblari |
+| O'rganish va texnologiya tanlash | arxitektor: doimiy o'rganish bo'limi |
+
+### 48.12 Amalda qo'llash
+
+- [ ] 48.1-48.5 jadvallarini bitta sahifaga chiqarib, jamoa kelishuviga ilova qiling.
+- [ ] 48.7 ro'yxatini pre-push hook yoki PR shabloniga kiriting.
+- [ ] 48.8 ro'yxatidan jamoaga eng ko'p tegishli 10 bandni tanlab, review checklistiga qo'ying.
+- [ ] 48.9 ro'yxatini yangi sinf shabloni (IDE live template) sifatida saqlang.
+- [ ] 48.10 lug'atidagi atamalarni `docs/glossary.md` ga qo'shing.
+- [ ] 48.11 xaritasini yangi odamning birinchi kun materialiga kiriting.
+- [ ] Jadvallardagi qoidalardan mashina tekshira oladiganlarini ajratib, statik tahlilga ko'chiring.
+- [ ] Har chorakda jadvallarni ko'rib chiqib, ishlamayotgan qoidalarni olib tashlang.
+
 ## 49. O'z-o'zini baholash: toza kod yetukligi (Self-Assessment)
 
-Bu bob hujjatni o'zingizga qo'llash uchun: qaysi mavzuda qay darajada turganingizni aniqlash va keyingi qadamni tanlash. Arxitektor hujjatining oxirgi bobi (39) arxitektura bilimini baholaydi; bu bob toza kod amaliyotini baholaydi.
+Bu bob hujjatni o'zingizga qo'llash uchun: qaysi mavzuda qay darajada turganingizni aniqlash va keyingi qadamni tanlash. Arxitektor hujjatidagi o'z-o'zini baholash bobi arxitektura bilimini baholaydi; bu bob toza kod amaliyotini baholaydi.
 
 ### 49.1 Yetuklik darajalari
 
@@ -9563,11 +9632,11 @@ git log --since="3 months ago" --pretty=format: --name-only | sort | uniq -c \
 
 Bu hujjatni boshdan-oxir o'qish shart emas va samarali ham emas. Uchta ishlatish usuli bor.
 
-**Birinchi — muammo bo'yicha.** Aniq savol tug'ilganda 48.11 jadvalidan bo'limni topish. Bu eng ko'p ishlatiladigan usul.
+**Birinchi - muammo bo'yicha.** Aniq savol tug'ilganda 48.11 jadvalidan bo'limni topish. Bu eng ko'p ishlatiladigan usul.
 
-**Ikkinchi — jamoa standarti sifatida.** 48-bobdagi jadvallarni jamoa kelishuviga (47.5) ko'chirish, keyin 42-bob bo'yicha ularni mashinaga topshirish. Bu hujjatning asosiy qiymati shu yerda: qoida mashinaga ko'chganda u haqiqatan ishlaydi.
+**Ikkinchi - jamoa standarti sifatida.** 48-bobdagi jadvallarni jamoa kelishuviga (47.5) ko'chirish, keyin 42-bob bo'yicha ularni mashinaga topshirish. Bu hujjatning asosiy qiymati shu yerda: qoida mashinaga ko'chganda u haqiqatan ishlaydi.
 
-**Uchinchi — o'sish rejasi sifatida.** 49.2-49.7 bo'limlaridagi savollarga javob berib, 2 dan past darajadagi mavzularni ro'yxatlab, chorakda uch mavzuni 3 darajaga chiqarish.
+**Uchinchi - o'sish rejasi sifatida.** 49.2-49.7 bo'limlaridagi savollarga javob berib, 2 dan past darajadagi mavzularni ro'yxatlab, chorakda uch mavzuni 3 darajaga chiqarish.
 
 ### 49.10 Amalda qo'llash
 
