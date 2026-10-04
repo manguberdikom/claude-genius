@@ -69,6 +69,20 @@ Mikroservis patternlari - bu bitta deployment birligiga sig'maydigan tizimni mus
 
 **Ehtiyot bo'ling:** Domen chegaralari hali aniq bo'lmaganda mikroservislarga bo'lish eng qimmat xato - har bir refactoring API versiyalash, migratsiya va koordinatsiyaga aylanadi ("distributed monolith"). Jamoa CI/CD, observability va on-call madaniyatiga tayyor bo'lmasa, mikroservislar tezlikni oshirmaydi, balki kamaytiradi.
 
+```text
+Qaror jadvali (har qatorga loyihadan javob yoziladi):
+
+  Jamoa soni          1-2 -> monolit         5+ -> ajratish mumkin
+  Reliz chastotasi    haftada 1 -> monolit   kuniga ko'p -> ajratish
+  Chegara aniqligi    noma'lum -> monolit    barqaror -> ajratish
+  Operatsion yetuklik CI yo'q -> monolit     kuzatuvchanlik bor -> ajratish
+  Masshtab talabi     bir xil -> monolit     qismlarga har xil -> ajratish
+
+Modular monolit ko'pincha to'g'ri birinchi qadam: chegara kodda qo'yiladi
+(Spring Modulith `verify()`), tarmoq esa keyin qo'shiladi.
+Microservice hisobi: har servis uchun CI, deploy, monitoring va on-call.
+```
+
 ## 14.2 Biznes imkoniyati bo'yicha dekompozitsiya (Decompose by Business Capability)
 
 **Tavsif:** Servislar texnik qatlamlar (UI, service, DAO) emas, balki biznes nima qila oladigani - "imkoniyat" bo'yicha ajratiladi: Order Management, Inventory, Payment, Shipping, Pricing. Har bir imkoniyat o'z ma'lumotlari, qoidalari va API'siga ega bo'ladi va odatda biznesdagi muayyan bo'linmaga mos tushadi. Natijada o'zgarish bitta biznes talabidan bitta servisga tushadi, ya'ni "bitta feature - bitta deploy" prinsipi ishlaydi. Manba sifatida kompaniyaning biznes-imkoniyatlar xaritasi (capability map) ishlatiladi.
@@ -83,6 +97,18 @@ Mikroservis patternlari - bu bitta deployment birligiga sig'maydigan tizimni mus
 - Sug'urta tizimida Policy Administration va Claims Processing mustaqil release tsikliga ega bo'ladi.
 
 **Ehtiyot bo'ling:** Imkoniyatlar ro'yxatini tashkiliy struktura bo'yicha emas, balki haqiqiy biznes funksiyasi bo'yicha tuzing - aks holda kompaniya reorganizatsiya qilinganda arxitektura yaroqsiz bo'lib qoladi. Juda mayda imkoniyatlar (masalan, "EmailSender service") mustaqil biznes qiymatiga ega bo'lmagani uchun faqat operatsion yukni oshiradi.
+
+```yaml
+services:
+  - name: order-management     # buyurtma qabul qilish va kuzatish
+  - name: payment-processing   # to'lov yig'ish va qaytarish
+  - name: inventory            # zaxira hisobi
+  - name: shipping             # yetkazib berish
+
+# Texnik bo'linishdan farqi: `order-api`, `order-worker`, `order-db-service`
+# imkoniyat emas, bitta imkoniyatning qatlamlari.
+# Tekshiruv: har servis nomi biznes rahbariga tushunarli bo'lishi kerak.
+```
 
 ## 14.3 Subdomen bo'yicha dekompozitsiya (Decompose by Subdomain)
 
@@ -99,6 +125,17 @@ Mikroservis patternlari - bu bitta deployment birligiga sig'maydigan tizimni mus
 
 **Ehtiyot bo'ling:** Umumiy "canonical data model" yaratishga urinish bounded context g'oyasini buzadi va barcha servislarni bitta sxemaga bog'lab qo'yadi. Shuningdek, generic subdomenlarni (auth, notification, file storage) o'zingiz yozishdan oldin tayyor yechimni ko'rib chiqing - core domenga vaqt yetmay qoladi.
 
+```yaml
+contexts:
+  sales:    {aggregates: [Order, Quote],     ubiquitous: "buyurtma, taklif"}
+  billing:  {aggregates: [Invoice, Payment], ubiquitous: "hisob-faktura"}
+  shipping: {aggregates: [Shipment, Parcel], ubiquitous: "jo'natma"}
+
+# Bir xil so'z ikki kontekstda boshqa narsani bildiradi: sales dagi
+# "Customer" va billing dagi "Customer" bitta jadval bo'lishi shart emas.
+# Shuning uchun chegara DDD kontekst chegarasi bilan mos tushadi.
+```
+
 ## 14.4 O'zi-yetarli servis (Self-Contained Service)
 
 **Tavsif:** Servis sinxron so'rovni boshqa servislarga murojaat qilmasdan bajara olishi kerak: kerakli tashqi ma'lumotning replikasini oldindan event orqali olib, lokal saqlaydi. Masalan, Order Service mijoz kredit limitini Customer Service'dan so'ramasdan, o'zida saqlangan limit nusxasidan foydalanib buyurtmani qabul qiladi. Bu availability'ni oshiradi (bog'liq servis o'chsa ham ishlaydi) va latency zanjirini qisqartiradi, lekin ma'lumot eventual consistent bo'ladi. Amalda bu CQRS read model'ning servis ichidagi ko'rinishi.
@@ -113,6 +150,25 @@ Mikroservis patternlari - bu bitta deployment birligiga sig'maydigan tizimni mus
 - Mobil BFF servisi feature-flag va konfiguratsiya nusxasini lokal ushlab turadi.
 
 **Ehtiyot bo'ling:** Replika eskirgan bo'lishi mumkin - pul yoki huquqiy oqibatli qarorlar (masalan, oxirgi qoldiqni yechish) uchun eskirish oynasi qabul qilinadimi, buni biznes bilan aniq kelishib oling. Har bir servisga hamma narsani replikatsiya qilish esa ma'lumotlar egaligini xiralashtiradi va storage/izchillik narxini portlatadi.
+
+```java
+// Self-contained service: tashqi sinxron chaqiruvga tayanmaydi
+@Service
+public class ShippingService {
+    private final RateCache localRates;        // nusxa lokal saqlanadi
+
+    public ShippingQuote quote(Parcel p) {
+        // Tashqi servisni so'rov vaqtida chaqirmaydi: ma'lumot oldindan
+        // hodisa orqali kelib, lokal nusxada turadi
+        return localRates.quote(p);
+    }
+
+    @KafkaListener(topics = "pricing.rates.updated")
+    void onRatesUpdated(RatesUpdated e) { localRates.replace(e.rates()); }
+}
+// Natija: Pricing yiqilsa Shipping ishlashda davom etadi.
+// Narxi: ma'lumot nusxalanadi va qisqa vaqt eskirgan bo'ladi.
+```
 
 ## 14.5 Har bir jamoaga bitta servis (Service per Team)
 
@@ -129,6 +185,17 @@ Mikroservis patternlari - bu bitta deployment birligiga sig'maydigan tizimni mus
 
 **Ehtiyot bo'ling:** Reorganizatsiyada jamoalar o'zgaradi, servis chegarasi esa oson o'zgarmaydi - shuning uchun jamoa strukturasini domen chegarasiga moslashtirish, teskarisi emas, to'g'ri yo'l. "Hamma hamma joyni o'zgartira oladi" degan madaniyatda bu pattern faqat qog'ozda qoladi va egasiz servislar paydo bo'ladi.
 
+```yaml
+teams:
+  checkout:  {services: [order-management],   oncall: true, repo: orders}
+  payments:  {services: [payment-processing], oncall: true, repo: payments}
+  logistics: {services: [shipping, inventory], oncall: true, repo: logistics}
+
+# Qoida: bitta servisning egasi bitta jamoa. Ikki jamoa bitta servisga
+# yozsa, reliz muvofiqlashtirish kerak bo'ladi va mustaqillik yo'qoladi.
+# Teskari holat ham yomon: bitta jamoa 15 servis - operatsion yuk ortadi.
+```
+
 ## 14.6 Strangler Fig (Strangler Fig)
 
 **Tavsif:** Legacy monolitni bir zarbada qayta yozmasdan, uning atrofida yangi servislar o'stirib, funksiyalarni asta-sekin "bo'g'ib" ko'chirish strategiyasi. Oldiga proxy/gateway qo'yiladi: ko'chirilgan marshrutlar yangi servisga, qolganlari monolitga yo'naltiriladi; har bir qadamda rollback imkoniyati saqlanadi. Ma'lumotlar vaqtincha ikki tomonda sinxronlanadi (event yoki CDC bilan), monolitdagi kod oxirida o'chiriladi. Asosiy qiymati - risk kichik bo'laklarga bo'linadi va biznes ishlab turadi.
@@ -143,6 +210,26 @@ Mikroservis patternlari - bu bitta deployment birligiga sig'maydigan tizimni mus
 - Mintaqa bo'yicha migratsiya: avval bitta davlat trafigi yangi servisga yo'naltiriladi.
 
 **Ehtiyot bo'ling:** Eng katta xato - migratsiyani oxirigacha yetkazmaslik: proxy, ikki ma'lumot manbasi va sinxronizatsiya kodi yillarga qolib, murakkablik ikki barobar bo'ladi. Har bir qadamga aniq "monolitdagi kod o'chirildi" mezonini va muddatni yozib qo'ying.
+
+```yaml
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: orders-new            # yangi servis, hozircha kichik ulush
+          uri: lb://orders-service
+          predicates:
+            - Path=/api/orders/**
+            - Weight=orders, 10     # 10% trafik
+        - id: orders-legacy
+          uri: http://legacy-erp:8080
+          predicates:
+            - Path=/api/orders/**
+            - Weight=orders, 90     # 90% eski tizimda
+
+# Har qadamda: ulush oshiriladi, metrika solishtiriladi, orqaga qaytish
+# yo'li ochiq qoladi (Weight ni qaytarish bitta konfiguratsiya o'zgarishi).
+```
 
 ## 14.7 Har bir servisga alohida ma'lumotlar bazasi (Database per Service (microservice view))
 
@@ -159,6 +246,22 @@ Mikroservis patternlari - bu bitta deployment birligiga sig'maydigan tizimni mus
 
 **Ehtiyot bo'ling:** "Shared database" ga qaytish eng keng tarqalgan regress - hisobot uchun bo'lsa ham boshqa servis jadvaliga to'g'ridan-to'g'ri SELECT qilish chegarani yo'q qiladi. Shuningdek, cross-service `@Transactional` ishlamaydi: XA/2PC ni tiklashga urinmasdan, saga yoki outbox patternini loyihalashtiring.
 
+```sql
+-- Har servis o'z sxemasi va o'z roli bilan
+CREATE SCHEMA orders   AUTHORIZATION orders_app;
+CREATE SCHEMA payments AUTHORIZATION payments_app;
+
+-- Boshqa sxemaga kirish bekor qilinadi: chegara bazada majburlanadi
+REVOKE ALL ON SCHEMA payments FROM orders_app;
+REVOKE ALL ON ALL TABLES IN SCHEMA payments FROM orders_app;
+
+-- O'tish davri uchun aniq va cheklangan huquq beriladi
+GRANT USAGE ON SCHEMA payments TO orders_app;
+GRANT SELECT ON payments.payment_summary TO orders_app;
+-- Shundan keyin "vaqtincha boshqa jadvalni o'qib turamiz" qarori
+-- kod review da emas, bazada to'siladi.
+```
+
 ## 14.8 Saga (xoreografiya) (Saga (choreography))
 
 **Tavsif:** Bir nechta servisni qamragan biznes tranzaksiya lokal tranzaksiyalar ketma-ketligi sifatida bajariladi va har bir qadam natijasini event ko'rinishida e'lon qiladi; keyingi servis shu eventga reaksiya qilib o'z qadamini bajaradi. Markazlashgan koordinator yo'q - mantiq ishtirokchilar orasida tarqalgan. Xato bo'lsa, kompensatsion event'lar (masalan, `OrderRejected`, `InventoryReleased`) teskari yo'nalishda effektni bekor qiladi. Oddiy, 2-4 qadamli oqimlar uchun eng yengil yechim.
@@ -174,6 +277,30 @@ Mikroservis patternlari - bu bitta deployment birligiga sig'maydigan tizimni mus
 
 **Ehtiyot bo'ling:** Qadamlar soni oshgani sayin oqim hech bir kodda ko'rinmay qoladi - debug va "hozir saga qayerda?" savoliga javob berish qiyinlashadi, shuning uchun 4-5 qadamdan ko'pida orkestratsiyaga o'ting. Tsiklik bog'liqlik (A eventi B'ni, B eventi yana A'ni uyg'otishi) va kompensatsiya qilib bo'lmaydigan qadamlar (yuborilgan email) ni oldindan hisobga oling.
 
+```java
+// Xoreografiya: markaz yo'q, har servis hodisaga javob beradi
+@Component
+class StockReservationSaga {
+    @KafkaListener(topics = "orders.placed")
+    void on(OrderPlaced e) {
+        try {
+            inventory.reserve(e.orderId(), e.items());
+            kafka.send("stock.reserved", new StockReserved(e.orderId()));
+        } catch (OutOfStockException ex) {
+            kafka.send("stock.rejected", new StockRejected(e.orderId(), ex.sku()));
+        }
+    }
+}
+
+@Component
+class OrderCancellation {
+    @KafkaListener(topics = "stock.rejected")
+    void on(StockRejected e) { orders.cancel(e.orderId(), "zaxira yo'q"); }
+}
+// Afzalligi: servislar bir-birini bilmaydi. Narxi: butun oqimni hech kim
+// ko'rmaydi, nosozlikni kuzatish uchun trace shart.
+```
+
 ## 14.9 Saga (orkestratsiya) (Saga (orchestration))
 
 **Tavsif:** Tarqatilgan tranzaksiyani markaziy orchestrator (saga manager) boshqaradi: u ishtirokchilarga buyruq (command) yuboradi, javoblarni kutadi, holatni saqlaydi va xato bo'lsa kompensatsion buyruqlarni teskari tartibda ishga tushiradi. Oqim bitta joyda - state machine ko'rinishida - tasvirlanadi, shuning uchun murakkab shartlar, timeout'lar va retry'lar ancha boshqariladigan bo'ladi. Narxi - orchestrator qo'shimcha komponent va u biznes mantiqni o'ziga tortib ketishi mumkin.
@@ -188,6 +315,32 @@ Mikroservis patternlari - bu bitta deployment birligiga sig'maydigan tizimni mus
 - Bulutli resurs provisioning: VM → tarmoq → DNS → monitoring, xatoda teskari tozalash.
 
 **Ehtiyot bo'ling:** Orchestrator "god service" ga aylanib, ishtirokchilar anemik CRUD'ga tushib qolmasligi uchun unda faqat koordinatsiya mantiqi qolsin. Saga ACID emas: oraliq holatlar tashqariga ko'rinadi, shuning uchun `PENDING`/`CONFIRMED` statuslarini UI va API shartnomasida ochiq modellashtirish shart.
+
+```java
+// Orkestratsiya: qadamlar va kompensatsiya bitta joyda ko'rinadi
+@Component
+public class CheckoutSaga {
+    private final SagaStateRepository state;      // holat saqlanishi SHART
+
+    public void start(OrderId id) {
+        state.save(SagaState.started(id));
+        commands.send(new ReserveStock(id));
+    }
+
+    @KafkaListener(topics = "stock.reserved")
+    void onStockReserved(StockReserved e) {
+        state.advance(e.orderId(), Step.STOCK_RESERVED);
+        commands.send(new CapturePayment(e.orderId()));
+    }
+
+    @KafkaListener(topics = "payment.failed")
+    void onPaymentFailed(PaymentFailed e) {
+        commands.send(new ReleaseStock(e.orderId()));     // kompensatsiya
+        state.fail(e.orderId(), e.reason());
+    }
+}
+// Orkestrator holati bazada saqlanadi: u yiqilsa saga davom etishi kerak
+```
 
 ## 14.10 API kompozitsiyasi (API Composition)
 
@@ -228,6 +381,25 @@ public Mono<OrderView> load(String id) {
 - `SubscriptionExpired` hodisasi kirish huquqini olib tashlash oqimini boshlaydi.
 
 **Ehtiyot bo'ling:** Hodisaga butun entity'ni (barcha maydonlari bilan) solib yuborish iste'molchilarni ichki modelingizga bog'lab qo'yadi - faqat ma'noli, barqaror maydonlarni chiqaring va sxemani faqat qo'shimcha (backward compatible) o'zgartiring. Hodisani `@Transactional` ichida to'g'ridan-to'g'ri broker'ga yuborish atomar emas: rollback bo'lsa ham hodisa ketgan bo'lishi mumkin - outbox ishlatiladi.
+
+```java
+// Domen hodisasi: servislar orasidagi shartnoma, ichki model emas
+public record OrderPlaced(
+        long orderId,
+        String customerId,
+        String total,            // pul satr sifatida: float emas
+        String currency,
+        List<Item> items,
+        Instant placedAt,
+        String eventId) {        // idempotentlik uchun
+    public record Item(String sku, int quantity) {}
+}
+// Qoidalar:
+//  - nom o'tgan zamonda: OrderPlaced, OrderCancelled
+//  - ichki entity emas, alohida versiyalangan sxema
+//  - faqat iste'molchiga kerakli maydonlar (butun agregat emas)
+//  - eventId va placedAt har doim bor
+```
 
 ## 14.12 Tranzaksion Outbox (Transactional Outbox (microservice view))
 
@@ -270,6 +442,23 @@ record OrderPlaced(String orderId, BigDecimal total) {}
 
 **Ehtiyot bo'ling:** CDC ni to'g'ridan-to'g'ri biznes jadvallariga ulash iste'molchilarni ichki sxemaga bog'laydi - har bir migratsiya tashqi kontraktni buzadi, shuning uchun outbox jadvali orqali o'tkazish afzal. Replication slot'ni kuzatmaslik (iste'molchi to'xtab qolsa WAL o'sib disk to'ladi), schema evolution va snapshot rejimining ishlab chiqarishdagi yuki - ekspluatatsiyadagi asosiy tuzoqlar.
 
+```json
+{
+  "name": "orders-outbox",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "plugin.name": "pgoutput",
+    "slot.name": "orders_outbox_slot",
+    "table.include.list": "orders.outbox",
+    "transforms": "outbox",
+    "transforms.outbox.type": "io.debezium.transforms.outbox.EventRouter",
+    "transforms.outbox.route.by.field": "aggregate_type"
+  }
+}
+// Afzalligi: polling yo'q, kechikish millisekund.
+// Narxi: wal_level = logical kerak va slot iste'mol qilinmasa WAL o'sadi.
+```
+
 ## 14.14 Polling Publisher (Polling Publisher)
 
 **Tavsif:** Transactional Outbox jadvaliga yozilgan xabarlarni alohida background process davriy ravishda `SELECT ... WHERE published = false` qilib o'qib, message broker'ga publish qiladi va keyin yozuvni `published = true` deb belgilaydi yoki o'chiradi. Bu Change Data Capture (Debezium, transaction log tailing) talab qilmaydigan eng oddiy outbox relay usuli - faqat SQL va scheduler kerak. Afzalligi - infratuzilma minimal; kamchiligi - polling interval tufayli latency paydo bo'ladi va DB'ga doimiy yuk tushadi. Yuqori throughput'da `FOR UPDATE SKIP LOCKED` va batch o'qish bilan optimallashtiriladi.
@@ -284,6 +473,22 @@ record OrderPlaced(String orderId, BigDecimal total) {}
 - Multi-tenant SaaS'da har bir tenant schema'sidagi outbox'ni bitta leader instansiya tomonidan skanerlash.
 
 **Ehtiyot bo'ling:** Polling interval'ni juda kichik qilsangiz DB CPU va WAL yuki oshadi, juda katta qilsangiz end-to-end latency sekinlashadi; ko'p instansiyada `SKIP LOCKED` yoki distributed lock bo'lmasa bir xabar bir necha marta publish bo'ladi. Publish bo'lgandan keyin status update fail bo'lishi mumkin, shuning uchun consumer tomonida Idempotent Consumer majburiy - bu pattern at-least-once kafolat beradi, exactly-once emas.
+
+```java
+// Polling publisher: outbox jadvalini davriy o'qib yuboradi
+@Scheduled(fixedDelay = 500)
+@SchedulerLock(name = "outbox-publisher", lockAtMostFor = "PT1M")
+public void publish() {
+    List<OutboxMessage> batch = outbox.lockNextBatch(100);   // FOR UPDATE SKIP LOCKED
+    for (OutboxMessage m : batch) {
+        kafka.send(m.topic(), m.key(), m.payload());
+        outbox.markSent(m.id());
+    }
+}
+// SKIP LOCKED: bir nechta nusxa parallel ishlaydi va bir xil xabarni olmaydi.
+// Debezium'dan sodda (qo'shimcha infratuzilma yo'q), lekin kechikish
+// polling davriga teng va bazaga doimiy yuk tushadi.
+```
 
 ## 14.15 Masofaviy protsedura chaqirig'i (Remote Procedure Invocation)
 
@@ -300,6 +505,22 @@ record OrderPlaced(String orderId, BigDecimal total) {}
 
 **Ehtiyot bo'ling:** Sinxron chaqiriqlar zanjiri (A→B→C→D) availability'ni ko'paytma qilib kamaytiradi va latency'ni jamlaydi - har bir hop'da timeout, bulkhead va circuit breaker (Resilience4j) bo'lishi kerak. Yozuv operatsiyalarida retry'ni idempotency key'siz qilmang va distributed transaction o'rniga RPC zanjirini ishlatmang - bunday holatda Saga yoki Messaging to'g'ri tanlov.
 
+```java
+// RPC: sodda, lekin chaqiruvchi chaqirilganning mavjudligiga bog'lanadi
+@Bean
+RestClient inventoryClient(RestClient.Builder b, ServiceProperties p) {
+    return b.baseUrl(p.inventoryUrl())
+            .requestFactory(ClientHttpRequestFactories.get(
+                    ClientHttpRequestFactorySettings.DEFAULTS
+                            .withConnectTimeout(Duration.ofSeconds(1))
+                            .withReadTimeout(Duration.ofSeconds(3))))
+            .build();
+}
+// Har sinxron chaqiruv uchun uchtasi shart: timeout, retry siyosati
+// (faqat idempotent operatsiyaga) va circuit breaker.
+// Zanjir uzunligi mavjudlikni kamaytiradi: 5 x 99.9% = 99.5%.
+```
+
 ## 14.16 Xabar almashish (Messaging)
 
 **Tavsif:** Servislar bir-biriga to'g'ridan-to'g'ri murojaat qilmasdan, message broker orqali asinxron xabar (event yoki command) almashadi. Producer xabarni yuborib ishini davom etadi, consumer o'z tezligida qayta ishlaydi - bu temporal coupling'ni yo'q qiladi, consumer vaqtincha o'chsa ham xabarlar queue'da saqlanadi. Buffering, back-pressure va bir xabarni ko'p consumer'ga tarqatish (pub/sub) imkonini beradi. Narxi - eventual consistency, duplicate'lar va distributed debugging murakkabligi.
@@ -314,6 +535,21 @@ record OrderPlaced(String orderId, BigDecimal total) {}
 - Peak trafik paytida tashqi provayder rate limit'ini queue bilan tekislash (load leveling).
 
 **Ehtiyot bo'ling:** Broker at-least-once yetkazadi, shuning uchun consumer idempotent bo'lishi va retry + DLQ strategiyasi aniq belgilanishi kerak; `@KafkaListener`'da cheksiz retry poison message bilan partition'ni butunlay to'xtatib qo'yadi. Xabar sxemasini (schema) versiyalamasdan o'zgartirish barcha consumer'larni buzadi - Avro/Protobuf + Schema Registry yoki tolerant reader yondashuvini qo'llang.
+
+```java
+// Xabar: jo'natuvchi javobni kutmaydi, qabul qiluvchi yiqilsa xabar yo'qolmaydi
+@Bean
+NewTopic ordersPlaced() {
+    return TopicBuilder.name("orders.placed")
+            .partitions(12)                       // parallellik chegarasi
+            .replicas(3)
+            .config(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
+            .config(TopicConfig.RETENTION_MS_CONFIG, "604800000")   // 7 kun
+            .build();
+}
+// Producer tomonida: acks=all, enable.idempotence=true
+// Consumer tomonida: idempotentlik (14.18) va DLQ shart
+```
 
 ## 14.17 Domenga xos protokol (Domain-Specific Protocol)
 
@@ -330,6 +566,24 @@ record OrderPlaced(String orderId, BigDecimal total) {}
 
 **Ehtiyot bo'ling:** Domen protokolini tizim ichkarisiga "sizdirib" yuborish eng katta xato - protokol modeli (FIX tag'lari, HL7 segmentlari) faqat adapter qatlamida qolishi, domen esa toza bo'lishi kerak. Bunday protokollar ko'pincha stateful session, maxsus TLS va vendor'ga xos quirk'lar talab qiladi, shuning uchun autoscaling va blue-green deploy rejasini oldindan sinab ko'ring.
 
+```java
+// Domain-specific protocol: umumiy RPC o'rniga soha standarti
+@Component
+public class Iso20022PaymentAdapter {
+
+    public PaymentReceipt send(Payment p) {
+        // Protokol tafsiloti (maydon kodlari, formatlar) faqat shu sinfda
+        Pain001Document doc = Pain001Builder.from(p)
+                .debtor(p.from()).creditor(p.to())
+                .amount(p.amount()).build();
+        return translate(gateway.submit(doc.marshal()));
+    }
+}
+// Afzalligi: soha standarti, integratsiya kelishuvi qisqa.
+// Narxi: protokol og'ir va o'zgartirish sekin, shuning uchun u
+// bitta adapter ichida qolishi kerak.
+```
+
 ## 14.18 Idempotent iste'molchi (Idempotent Consumer)
 
 **Tavsif:** At-least-once yetkazib beruvchi broker bir xabarni takroriy yuborishi mumkin, shuning uchun consumer bir xabarni bir necha marta qayta ishlaganda ham natija bir martalik bilan bir xil bo'lishini ta'minlaydi. Amalga oshirishning asosiy usuli - har bir xabarning unique `messageId`'sini `processed_message` jadvaliga biznes o'zgarishi bilan bitta local transaction ichida yozish; takror kelganda unique constraint violation bo'lib xabar e'tiborsiz qoldiriladi. Alternativ - operatsiyani tabiiy idempotent qilish (`UPSERT`, absolute qiymat qo'yish, state machine'da faqat oldinga o'tish). Bu pattern deyarli har bir event-driven tizimda majburiy.
@@ -344,6 +598,24 @@ record OrderPlaced(String orderId, BigDecimal total) {}
 - Email yuborish consumer'ida duplikat xabarga ikkinchi email jo'natmaslik.
 
 **Ehtiyot bo'ling:** Dedup yozuvini biznes o'zgarishidan alohida transaction'da yozish pattern'ni buzadi - ikkisi bir atomar birlikda bo'lishi shart, aks holda crash oynasida duplikat yoki yo'qotish yuz beradi. Dedup jadvali cheksiz o'smasligi uchun TTL/retention (masalan 7 kun) qo'ying, lekin retention broker'ning maksimal retry/replay oynasidan uzunroq bo'lsin.
+
+```java
+// Idempotent iste'molchi: bir xil xabar ikki marta kelsa bir marta ishlanadi
+@KafkaListener(topics = "orders.placed")
+@Transactional
+public void on(OrderPlaced e) {
+    // Inbox: event_id unique, ikkinchi marta INSERT o'tmaydi
+    int inserted = db.sql(
+            "INSERT INTO inbox(event_id, consumer) VALUES (:id, 'warehouse') "
+          + "ON CONFLICT (event_id) DO NOTHING")
+            .param("id", e.eventId())
+            .update();
+    if (inserted == 0) return;                  // allaqachon ishlangan
+    warehouse.reserve(e.orderId(), e.items());
+}
+// Inbox yozuvi va biznes o'zgarishi bitta tranzaksiyada bo'lishi shart,
+// aks holda ikkisi orasida yiqilish takroriy ishlovga olib keladi.
+```
 
 ## 14.19 Klient tomonda aniqlash (Client-Side Discovery)
 
@@ -360,6 +632,23 @@ record OrderPlaced(String orderId, BigDecimal total) {}
 
 **Ehtiyot bo'ling:** Client'dagi instansiya ro'yxati cache'lanadi, shuning uchun scale-in yoki crash'dan keyin bir muddat "o'lik" instansiyaga so'rov ketadi - refresh interval'ni va retry (`spring-retry` + `LoadBalancedRetryPolicy`) sozlamasini birgalikda tuzatish kerak. Polyglot muhitda har bir tilda discovery client saqlash qimmat; bunda Server-Side Discovery yoki service mesh (Istio/Linkerd) ko'proq mos keladi.
 
+```java
+// Klient tomonda aniqlash: klient reyestrdan ro'yxatni oladi va o'zi tanlaydi
+@Bean
+@LoadBalanced                         // Spring Cloud LoadBalancer
+RestClient.Builder loadBalancedBuilder() { return RestClient.builder(); }
+
+@Service
+class InventoryClient {
+    private final RestClient client;
+    InventoryClient(@LoadBalanced RestClient.Builder b) {
+        this.client = b.baseUrl("http://inventory-service").build();   // logik nom
+    }
+}
+// Afzalligi: qo'shimcha tarmoq o'tishi yo'q, klient aqlli balanslash qiladi.
+// Narxi: har til uchun kutubxona kerak va u ilova bilan birga yangilanadi.
+```
+
 ## 14.20 Server tomonda aniqlash (Server-Side Discovery)
 
 **Tavsif:** Client faqat barqaror manzilga (router, load balancer yoki gateway) so'rov yuboradi; registry'ni so'rash va instansiya tanlash mas'uliyati shu infratuzilma komponentiga tegishli. Client hech qanday discovery kodi saqlamaydi, shuning uchun polyglot muhit uchun ideal va discovery logikasi markazlashgan holda yangilanadi. Kamchiligi - qo'shimcha network hop va LB'ning o'zi high-availability talab qiladigan kritik komponentga aylanishi. Kubernetes'dagi `Service` + kube-proxy/DNS, AWS ALB yoki Istio sidecar - bu pattern'ning eng keng tarqalgan ko'rinishlari.
@@ -374,6 +663,23 @@ record OrderPlaced(String orderId, BigDecimal total) {}
 - Legacy .NET klientlari Spring servislariga hech qanday SDK o'rnatmasdan ulanishi.
 
 **Ehtiyot bo'ling:** Qo'shimcha hop latency va single point of failure xavfini keltiradi - LB/gateway'ni albatta bir nechta replika va health-check bilan ishlating. Gateway'ga biznes logikani (validatsiya, transformatsiya, orkestratsiya) yuklash klassik anti-pattern: u yangi monolitga aylanadi; gateway faqat routing, auth va cross-cutting masalalar bilan shug'ullansin.
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory-service
+spec:
+  selector:
+    app: inventory
+  ports:
+    - port: 80
+      targetPort: 8080
+
+# Klient shunchaki http://inventory-service ga murojaat qiladi.
+# Service DNS va kube-proxy balanslashni o'zi bajaradi: ilovada
+# kutubxona kerak emas, lekin balanslash siyosati platformada qoladi.
+```
 
 ## 14.21 Servis reyestri (Service Registry)
 
@@ -390,6 +696,21 @@ record OrderPlaced(String orderId, BigDecimal total) {}
 
 **Ehtiyot bo'ling:** Registry - tizim uchun single point of failure; uni bir nechta node bilan HA qilib, client tomonda oxirgi ma'lum ro'yxatni cache qilib ishlashga (fail-static) tayyor bo'lish kerak. Kubernetes'da ishlayotgan bo'lsangiz, platformaning o'z discovery'si ustiga Eureka qo'shish ko'pincha ortiqcha murakkablik - faqat real sabab bo'lganda (hybrid, VM'lar, cross-cluster) qo'shing.
 
+```yaml
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-1:8761/eureka/,http://eureka-2:8761/eureka/
+    registry-fetch-interval-seconds: 10
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 10     # heartbeat
+    lease-expiration-duration-in-seconds: 30  # shundan keyin o'lik hisoblanadi
+
+# Kubernetes'da bu rolni etcd va Service DNS bajaradi, shuning uchun
+# alohida Eureka ko'pincha keraksiz qatlam bo'ladi.
+```
+
 ## 14.22 O'z-o'zini ro'yxatga olish (Self Registration)
 
 **Tavsif:** Servis instansiyasi ishga tushganda registry'ning registration API'siga o'zini yozadi, davriy heartbeat yuborib "tirik" ekanini bildiradi va to'g'ri o'chishda (graceful shutdown) o'zini de-register qiladi. Bu eng oddiy yondashuv, chunki hech qanday qo'shimcha infratuzilma komponenti kerak emas va instansiya o'zi haqida boy metadata (versiya, zone, capability) berishi mumkin. Kamchiligi - registration kodi ilovaga kiradi, demak har bir til/framework uchun client kutubxona kerak va ilova registry bilan bog'lanib qoladi.
@@ -405,6 +726,19 @@ record OrderPlaced(String orderId, BigDecimal total) {}
 
 **Ehtiyot bo'ling:** Heartbeat interval va lease expiration sozlamalari noto'g'ri bo'lsa, o'lgan instansiya registry'da uzoq "tirik" turadi yoki tirik instansiya noto'g'ri chiqarib tashlanadi - Eureka'ning self-preservation rejimi ham bu xatti-harakatni o'zgartiradi, uni production'da bilib turing. Graceful shutdown'da de-register bo'lmasa klientlar o'chgan instansiyaga so'rov yuboraveradi; shuningdek registration kodi ilovaga kirishi polyglot muhitda 3rd Party Registration'ni afzal qiladi.
 
+```java
+// Self registration: nusxa o'zini ro'yxatga oladi va heartbeat yuboradi
+@SpringBootApplication
+@EnableDiscoveryClient            // startup'da register, shutdown'da deregister
+public class InventoryApplication { }
+
+// Graceful shutdown bo'lmasa, o'lik nusxa reyestrda qolib, unga trafik
+// ketishda davom etadi:
+//   server.shutdown=graceful
+//   spring.lifecycle.timeout-per-shutdown-phase=30s
+// Shart: deregister shutdown boshida, so'rovlarni tugatishdan oldin bo'lsin.
+```
+
 ## 14.23 Uchinchi tomon orqali ro'yxatga olish (3rd Party Registration)
 
 **Tavsif:** Instansiyalarni registry'ga yozish va chiqarish mas'uliyati ilovadan tashqaridagi alohida komponentga - registrar yoki deployment platformasiga beriladi. Registrar deployment muhitini (container runtime, orchestrator API) kuzatadi va yangi instansiya paydo bo'lganda registry'ga yozadi, yo'qolganda o'chiradi. Ilova kodi discovery haqida hech narsa bilmaydi, bu polyglot tizimlar va legacy ilovalar uchun katta afzallik. Narxi - yana bir infratuzilma komponenti va uning o'zi HA bo'lishi talabi.
@@ -419,6 +753,22 @@ record OrderPlaced(String orderId, BigDecimal total) {}
 - Platform jamoasi registratsiya siyosatini (TTL, health-check turi) markazdan yangilay olishi.
 
 **Ehtiyot bo'ling:** Registrar ishdan chiqsa registry haqiqatdan uzoqlashadi (stale yoki yo'q yozuvlar) - uni monitoring va alerting bilan qoplang. Ilovaning health endpoint'i sayoz bo'lsa (masalan DB uzilganida ham `UP` qaytarsa) platforma buzuq instansiyaga trafik yuboraveradi, shuning uchun readiness probe'ni haqiqiy dependency'larga asoslang va liveness'ni og'ir tekshiruvlar bilan yuklab yubormang.
+
+```yaml
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+    - name: app
+      readinessProbe:               # ro'yxatga kirish sharti
+        httpGet: {path: /actuator/health/readiness, port: 8080}
+        periodSeconds: 5
+        failureThreshold: 3
+
+# Afzalligi: ilovada registratsiya kodi yo'q, shuning uchun til va
+# framework ahamiyatsiz. Ro'yxat haqiqati readiness probe'ga tayanadi:
+# probe noto'g'ri yozilsa, trafik tayyor bo'lmagan nusxaga ketadi.
+```
 
 ## 14.24 Access token (Access Token)
 
@@ -462,6 +812,19 @@ SecurityFilterChain api(HttpSecurity http) throws Exception {
 
 **Ehtiyot bo'ling:** Bir sekin fragment butun sahifani ushlab turmasligi uchun har bir fragment chaqirig'iga qat'iy timeout, circuit breaker va bo'sh/keshlangan fallback bering. Umumiy CSS, dizayn tokenlari va versiyalanishini boshqarmasa, sahifa vizual jihatdan tarqalib ketadi va kompozitsiya qatlami yangi muvofiqlashtirish bo'yni (coupling point) bo'lib qoladi.
 
+```html
+<div class="cart">
+  <!--#include virtual="/cart-service/fragment" -->
+</div>
+
+<!-- Nginx SSI yoki shlyuzda yig'ish. Qoidalar:
+     - fragment timeout bilan so'raladi va yiqilsa fallback ko'rsatiladi
+     - CSS nom maydoni ajratilgan (prefiks)
+     - fragment HTML qaytaradi, JSON emas: brauzerda yig'ish kerak emas
+     Afzalligi: birinchi renderlash tez va SEO ishlaydi.
+     Narxi: shlyuz yangi tor joy bo'ladi va keshlash murakkablashadi. -->
+```
+
 ## 14.26 Klient tomonda UI kompozitsiyasi (Client-Side UI Composition)
 
 **Tavsif:** Sahifa brauzerda yig'iladi: shell ilova turli jamoalar deploy qilgan frontend modullarni (fragment, web component yoki remote bundle) runtime'da yuklaydi va har biri o'z backend servisi bilan to'g'ridan-to'g'ri gaplashadi. Bu jamoalarga to'liq mustaqil deploy va texnologiya tanlash erkinligini beradi, shuningdek sahifa bir qismi ishlamasa ham qolgani ishlashini (graceful degradation) ta'minlaydi. Odatda Module Federation, custom elements yoki single-spa bilan quriladi. Narxi - bundle hajmi, shared dependency boshqaruvi va birinchi yuklanish tezligi.
@@ -476,6 +839,21 @@ SecurityFilterChain api(HttpSecurity http) throws Exception {
 - Mobil va web klientlar uchun alohida BFF qurib, har biriga mos payload shakllantirish.
 
 **Ehtiyot bo'ling:** Shared dependency (React, dizayn tizimi) versiyalarini muvofiqlashtirmasa bundle hajmi va runtime konflikt muammolari paydo bo'ladi, SEO va first-contentful-paint esa server-side kompozitsiyadan yomonroq bo'lishi mumkin. Autentifikatsiya tokenini brauzer `localStorage`'ida saqlash XSS xavfini oshiradi - BFF + `HttpOnly` cookie yondashuvi afzal; shuningdek cross-module global state'ni iloji boricha kamaytiring, aks holda mustaqillik illyuziyaga aylanadi.
+
+```javascript
+// Klient tomonda UI kompozitsiyasi: brauzer bo'laklarni o'zi yig'adi
+async function renderHome() {
+  const [orders, promos] = await Promise.allSettled([
+    fetch('/api/orders/recent').then(r => r.json()),
+    fetch('/api/promos/active').then(r => r.json()),
+  ]);
+  // allSettled: bitta bo'lak yiqilsa sahifa yiqilmaydi
+  if (orders.status === 'fulfilled') mountOrders(orders.value);
+  if (promos.status === 'fulfilled') mountPromos(promos.value);
+}
+// Narxi: chaqiruv soni ko'payadi va birinchi renderlash sekinlashadi.
+// BFF yoki API composition bilan bu kamayadi.
+```
 
 ## 14.27 API Gateway (API Gateway)
 
@@ -492,6 +870,27 @@ SecurityFilterChain api(HttpSecurity http) throws Exception {
 
 **Ehtiyot bo'ling:** Gateway'ga business logika yuklash eng keng tarqalgan xato - u tezda yangi monolitga va har bir jamoa uchun deployment bottleneck'ga aylanadi. Shuningdek Spring Cloud Gateway reactive bo'lgani uchun filter ichida blocking JDBC yoki `RestTemplate` chaqirmang, aks holda Netty event loop thread'lari band bo'lib butun gateway qotib qoladi.
 
+```yaml
+spring:
+  cloud:
+    gateway:
+      default-filters:
+        - name: RequestSize
+          args: {maxSize: 1MB}
+      routes:
+        - id: orders
+          uri: lb://orders-service
+          predicates: [Path=/api/orders/**]
+          filters:
+            - StripPrefix=1
+            - name: CircuitBreaker
+              args: {name: ordersCb, fallbackUri: 'forward:/fallback/orders'}
+
+# Gateway chegarada: autentifikatsiya, rate limit, so'rov hajmi va
+# marshrutlash. Biznes logika gateway'ga kirmasligi kerak: aks holda u
+# yashirin monolitga aylanadi va barcha jamoa unga bog'lanadi.
+```
+
 ## 14.28 Frontend uchun Backend (Backend for Frontend)
 
 **Tavsif:** Yagona umumiy API o'rniga har bir client turi - iOS, Android, web SPA, hamkor API - uchun alohida backend qatlami quriladi. Har bir BFF faqat o'z client'iga kerakli ma'lumotni downstream service'lardan yig'adi, keraksiz field'larni tashlab, aynan o'sha UI ekranlariga mos shaklda qaytaradi. Bu mobil client'da over-fetching va chatty network chaqiruvlarini kamaytiradi hamda UI jamoasiga o'z backend'ini mustaqil deploy qilish imkonini beradi. Amalda BFF - bu bitta client'ga tegishli, o'sha client jamoasi egalik qiladigan ixtisoslashgan aggregator.
@@ -506,6 +905,26 @@ SecurityFilterChain api(HttpSecurity http) throws Exception {
 - Web va mobil UI'ni turli tezlikda rivojlantirish: har bir BFF mustaqil release cycle'da bo'ladi.
 
 **Ehtiyot bo'ling:** Client turlari ko'paygani sayin BFF'lar soni ortib, ularda bir xil logika takrorlanadi - umumiy qoidalarni downstream service'ga yoki shared kutubxonaga chiqarmasa, maintenance narxi keskin oshadi. BFF'ni "hamma uchun bitta" qilib qo'ysangiz, u oddiy API Gateway'ga aylanadi va BFF pattern'ining asosiy foydasi yo'qoladi.
+
+```java
+// BFF: bitta mijoz turi uchun moslashtirilgan API
+@RestController
+@RequestMapping("/bff/mobile")
+class MobileHomeController {
+    private final OrderClient orders;
+    private final PromoClient promos;
+
+    @GetMapping("/home")
+    MobileHome home(@AuthenticationPrincipal Jwt jwt) {
+        // Mobil ekran uchun minimal to'plam: 1 chaqiruv, kichik payload
+        return new MobileHome(orders.lastThree(jwt.getSubject()),
+                              promos.activeBanner());
+    }
+}
+// Har mijoz turi uchun o'z BFF si: mobil, veb va hamkor API si
+// bir-birining ehtiyoji uchun murosaga kelmaydi. Narxi: yana bir
+// deploy birligi va takrorlanish xavfi.
+```
 
 ## 14.29 Microservice Shassi (Microservice Chassis)
 
@@ -522,6 +941,27 @@ SecurityFilterChain api(HttpSecurity http) throws Exception {
 
 **Ehtiyot bo'ling:** Chassis'ga business logika yoki domain model kirib qolsa, u shared library coupling'ga aylanadi va har bir versiya yangilanishi butun landscape'ni bir vaqtda deploy qilishga majbur qiladi. Versiyalashni jiddiy oling: chassis'ning major versiyasi uzun muddat qo'llab-quvvatlanishi va service'lar o'z tezligida migratsiya qilishi mumkin bo'lsin.
 
+```java
+// Chassis: har servisda takrorlanadigan infratuzilma bitta starter'da
+@AutoConfiguration
+public class ChassisAutoConfiguration {
+
+    @Bean @ConditionalOnMissingBean
+    CorrelationIdFilter correlationIdFilter() { return new CorrelationIdFilter(); }
+
+    @Bean @ConditionalOnMissingBean
+    ProblemDetailExceptionHandler problemDetailHandler() {
+        return new ProblemDetailExceptionHandler();
+    }
+
+    @Bean @ConditionalOnMissingBean
+    HealthIndicator chassisHealth() { return new ChassisHealthIndicator(); }
+}
+// Natija: yangi servis kuzatuvchanlik, xato formati va health bilan tug'iladi.
+// Xavf: chassis o'sib ketsa shared library bog'liqligiga aylanadi (14.36),
+// shuning uchun unga biznes logika kirmasligi kerak.
+```
+
 ## 14.30 Tashqariga chiqarilgan konfiguratsiya (Externalized Configuration)
 
 **Tavsif:** Konfiguratsiya qiymatlari (DB URL, credential, feature flag, timeout) artifact ichiga qotirilmaydi, balki tashqi manbadan - environment variable, config server, secret store yoki ConfigMap'dan - ish vaqtida o'qiladi. Shu sababli bir xil image dev, staging va prod muhitlarida o'zgartirilmasdan ishlatiladi. Bu 12-factor app tamoyili bo'lib, secret'larni kod repository'dan chiqarib tashlash va rebuild'siz sozlamani o'zgartirish imkonini beradi.
@@ -536,6 +976,24 @@ SecurityFilterChain api(HttpSecurity http) throws Exception {
 - Incident vaqtida downstream timeout va retry qiymatlarini tezda kamaytirib tizimni barqarorlashtirish.
 
 **Ehtiyot bo'ling:** Config server yagona nosozlik nuqtasiga aylanmasligi uchun client'da fail-fast va retry sozlanishi, startup paytdagi config'ni esa keshlab qo'yish kerak. `@RefreshScope` hamma narsani qayta yoqmaydi - connection pool, Kafka listener yoki `@Value` qotirilgan primitive'lar jonli yangilanmasligi mumkin, shuning uchun muhim o'zgarishlarda rolling restart'ga tayanganingiz xavfsizroq.
+
+```yaml
+spring:
+  config:
+    import:
+      - optional:configserver:http://config-server:8888
+      - optional:file:/etc/app/application.yml
+
+# Kubernetes'da ConfigMap va Secret:
+#   envFrom:
+#     - configMapRef: {name: orders-config}
+#     - secretRef: {name: orders-secrets}
+
+# Qoidalar:
+#  - bir xil image barcha muhitda ishlaydi
+#  - sir image ichida yoki git da bo'lmaydi
+#  - majburiy kalit yo'q bo'lsa startup yiqiladi (@Validated + @NotBlank)
+```
 
 ## 14.31 Service Shabloni (Service Template)
 
@@ -552,6 +1010,20 @@ SecurityFilterChain api(HttpSecurity http) throws Exception {
 
 **Ehtiyot bo'ling:** Template bir marta generatsiya qilinadi, shuning uchun unda jiddiy kamchilik bo'lsa, u o'nlab repo'ga tarqab ketadi va keyin orqaga qaytarish qiyin - tez-tez o'zgaradigan qismlarni template'da emas, versiyalanadigan chassis starter'da ushlab turing. Shuningdek template "majburiy qolip" bo'lmasin: boshqa stack'ga haqiqatan ehtiyoj bo'lgan holatlar uchun chetga chiqish yo'li qoldirilsin.
 
+```text
+my-service/
+  pom.xml                   # chassis starter, qadalgan versiyalar
+  Dockerfile                # layered jar, non-root user
+  .github/workflows/ci.yml  # build, test, Sonar, image push
+  src/main/resources/application.yml
+  src/main/java/.../Application.java
+  src/test/java/.../ArchitectureTest.java   # ArchUnit qoidalari
+  README.md                 # on-call, runbook havolasi, SLO
+
+Shablon kodni ko'chirmaydi, balki yangi servisni mavjud standartga
+moslaydi: CI, kuzatuvchanlik, xavfsizlik va test darvozalari tayyor.
+```
+
 ## 14.32 Sidecar (Sidecar)
 
 **Tavsif:** Yordamchi funksionallik asosiy ilova process'iga emas, balki u bilan bir xil deployment unit'da (Kubernetes'da bir pod'da) yonma-yon ishlaydigan alohida container'ga joylashtiriladi. Sidecar asosiy ilova bilan localhost va umumiy volume orqali gaplashadi, shuning uchun til va framework'dan mustaqil bo'ladi. Shu yo'l bilan log yig'ish, proxy, secret yangilash yoki config sync kabi vazifalar ilova kodiga tegmasdan qo'shiladi. Ayni paytda sidecar asosiy container bilan bir xil hayot tsiklini va resurs cheklovini bo'lishadi.
@@ -566,6 +1038,26 @@ SecurityFilterChain api(HttpSecurity http) throws Exception {
 - Database'ga ulanish uchun Cloud SQL Auth Proxy sidecar'ini ishlatish va ilovada oddiy localhost JDBC URL qoldirish.
 
 **Ehtiyot bo'ling:** Sidecar asosiy container bilan CPU va memory'ni bo'lishadi - resource request/limit'ni to'g'ri bermasangiz, log agent ilovangizni OOMKill'ga olib keladi. Startup va shutdown tartibini ham hisobga oling: proxy sidecar ilovadan oldin tayyor bo'lishi va undan keyin to'xtashi kerak, aks holda deploy paytida qisqa muddatli xatolar paydo bo'ladi.
+
+```yaml
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+    - name: app
+      image: orders:1.4.2
+    - name: log-shipper              # sidecar
+      image: fluent-bit:3.0
+      volumeMounts:
+        - {name: logs, mountPath: /var/log/app}
+  volumes:
+    - name: logs
+      emptyDir: {}
+
+# Afzalligi: ilova tiliga bog'liq emas va alohida yangilanadi.
+# Narxi: har pod uchun qo'shimcha xotira va CPU, hamda ishga tushish
+# tartibi (sidecar app dan oldin tayyor bo'lishi kerak).
+```
 
 ## 14.33 Ambassador (Ambassador)
 
@@ -582,6 +1074,22 @@ SecurityFilterChain api(HttpSecurity http) throws Exception {
 
 **Ehtiyot bo'ling:** Resilience logikasini ham proxy'da, ham ilovada takrorlasangiz, retry'lar ko'payib (retry amplification) downstream'ni yuklab qo'yadi - har bir mas'uliyat faqat bitta qatlamda bo'lsin. Yana bir tuzoq: proxy orqali o'tgan trafikda real client IP va error semantikasi o'zgarib, debug va observability chalkashadi, shuning uchun tracing header'lari uzatilishiga ishonch hosil qiling.
 
+```yaml
+spec:
+  containers:
+    - name: app
+      env:
+        - name: PSP_URL
+          value: "http://localhost:9000"   # ambassador'ga murojaat qiladi
+    - name: ambassador
+      image: envoy:1.31
+      # Timeout, retry, circuit breaker, mTLS va kuzatuvchanlik
+      # shu yerda, ilova kodida emas.
+
+# Afzalligi: resilience siyosati bir joyda va barcha til uchun bir xil.
+# Narxi: nosozlikni tashxislashda yana bir qatlam paydo bo'ladi.
+```
+
 ## 14.34 Service Mesh (Service Mesh)
 
 **Tavsif:** Ambassador/sidecar yondashuvining platforma darajasidagi, markazlashtirilgan boshqaruvga ega shakli: har bir pod'ga data plane proxy qo'yiladi va ularning hammasi control plane orqali bir joydan sozlanadi. Mesh mTLS, service discovery, L7 routing, traffic splitting, retry, outlier detection, authorization policy va yagona telemetriyani ilova kodidan tashqarida ta'minlaydi. Natijada minglab service bo'ylab tarmoq siyosati deklarativ va auditga yaroqli bo'ladi. To'lovi - qo'shimcha infratuzilma murakkabligi va latency.
@@ -596,6 +1104,30 @@ SecurityFilterChain api(HttpSecurity http) throws Exception {
 - Namespace'lar orasidagi ruxsatlarni authorization policy bilan cheklash (PCI zonasini izolyatsiya qilish).
 
 **Ehtiyot bo'ling:** Mesh'ni kichik landscape'ga (masalan 5-10 service) kiritish ko'pincha foydadan ko'proq operatsion yuk keltiradi - control plane, sertifikat rotatsiyasi va upgrade'lar alohida jamoa ishini talab qiladi. Retry'ni mesh'da ham, Resilience4j'da ham yoqib qo'yish klassik xato: natijada bitta so'rov downstream'da o'nlab chaqiruvga aylanadi.
+
+```yaml
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: inventory
+spec:
+  hosts: [inventory-service]
+  http:
+    - timeout: 3s
+      retries:
+        attempts: 2
+        perTryTimeout: 1s
+        retryOn: connect-failure,refused-stream   # 5xx ga retry qilmaydi
+      route:
+        - destination: {host: inventory-service, subset: v1}
+          weight: 90
+        - destination: {host: inventory-service, subset: v2}
+          weight: 10
+
+# Mesh ilova kodini o'zgartirmasdan mTLS, retry va canary beradi.
+# Narxi: har pod uchun proxy, yangi nosozlik rejimlari va operatsion
+# bilim. Servis soni kichik bo'lsa, mesh foydadan ko'p murakkablik qo'shadi.
+```
 
 ## 14.35 Aggregator, Proxy, Chained va Branch microservice patternlari (Aggregator / Proxy / Chained / Branch Microservice Patterns)
 
@@ -638,6 +1170,21 @@ Mono<Dashboard> load(String id) {
 
 **Ehtiyot bo'ling:** "Kod takrorlanmasin" degan niyat bilan domain model'ni ulashish - microservice'da DRY prinsipi coupling'dan muhimroq emas; biroz dublikat kod mustaqil deploy'dan arzonroq turadi. Agar shared kutubxona qolsa, uning backward-compatible versiyalash siyosatini va bir necha major versiyani parallel qo'llab-quvvatlash majburiyatini oldindan belgilang.
 
+```java
+// Anti-pattern: umumiy kutubxona servislarni bog'laydi
+// company-common 4.2.0:
+public class Order { }                 // domen sinfi umumiy kutubxonada
+public class OrderStatusMapper { }     // biznes qoida umumiy kutubxonada
+
+// Natijasi: `Order` ga maydon qo'shish uchun barcha servisni yangilash
+// va birga deploy qilish kerak. Bu taqsimlangan monolit.
+
+// Qoida: umumiy kutubxonada faqat domen bilan bog'liq bo'lmagan
+// infratuzilma qolishi mumkin (correlation ID filtri, log formati).
+// Domen sinfi, DTO va biznes qoida umumiy bo'lmaydi: har servis o'z
+// nusxasini saqlaydi, hatto maydonlar bir xil bo'lsa ham.
+```
+
 ## 14.37 Taqsimlangan monolit (Distributed Monolith) - antipattern
 
 **Tavsif:** Tizim tashqi ko'rinishda microservice'lardan iborat, lekin service'lar shunchalik qattiq bog'langan ki, ularni mustaqil deploy qilish, test qilish yoki scale qilish mumkin emas. Belgilari: har bir release'da barcha service'ni birga chiqarish, sinxron chaqiruvlarning uzun zanjirlari, umumiy database schema, shared domain kutubxona va bitta service to'xtasa butun tizimning ishdan chiqishi. Natija - monolitning barcha coupling muammolari ustiga taqsimlangan tizimning tarmoq, latency va debug murakkabligi qo'shiladi. Bu ko'pincha monolitni domain chegaralarini tahlil qilmasdan, texnik qatlamlar bo'yicha bo'lish natijasida paydo bo'ladi.
@@ -652,6 +1199,23 @@ Mono<Dashboard> load(String id) {
 - Release coupling metrikasini (bir service'ni yakka deploy qilish mumkinmi?) KPI sifatida kuzatish.
 
 **Ehtiyot bo'ling:** Eng xatarli xato - muammoni "yana ko'proq microservice qilib" hal qilishga urinish; chegaralar noto'g'ri bo'lsa, bo'lish faqat coupling nuqtalarini ko'paytiradi. Ko'p holatda to'g'ri yo'l - avval modulli monolit (Spring Modulith) bilan chegaralarni to'g'rilash, keyin haqiqatan mustaqil bo'lgan qismlarni ajratish.
+
+```sql
+-- Taqsimlangan monolitni o'lchash: sinxron chaqiruv zanjiri uzunligi
+SELECT trace_id, count(*) AS client_spans
+FROM spans
+WHERE kind = 'client' AND start_time > now() - interval '1 hour'
+GROUP BY trace_id
+ORDER BY client_spans DESC
+LIMIT 20;
+
+-- Boshqa belgilar:
+--  - bitta funksiyani chiqarish uchun 3 servisni birga deploy qilish
+--  - servislar bitta bazani bo'lishadi
+--  - bitta servis yiqilsa barcha so'rov yiqiladi
+-- Davolash: zanjirni asinxron hodisaga aylantirish, lokal nusxa (14.4)
+-- yoki servislarni qayta birlashtirish.
+```
 
 ## 14.38 Nano-service'lar (Nano-services) - antipattern
 
@@ -668,6 +1232,21 @@ Mono<Dashboard> load(String id) {
 
 **Ehtiyot bo'ling:** "Single Responsibility Principle" ni service darajasiga mexanik ko'chirish - asosiy sabab: SRP sinf uchun, service chegarasi esa bounded context va mustaqil o'zgarish sababi uchun. Konsolidatsiya qilayotganda ham ortiqcha narigi tomonga o'tib ketmang: biznes jihatdan turli tezlikda o'zgaradigan va turlicha scale talab qiladigan qismlarni zo'rlab bitta service'ga tiqish distributed monolit yoki bottleneck'ga olib keladi.
 
+```java
+// Nano-service: chegara juda mayda qo'yilgan
+@RestController
+class TaxRateController {                      // butun servis bitta endpoint
+    @GetMapping("/rate") BigDecimal rate() { return new BigDecimal("0.12"); }
+}
+// Belgilari:
+//  - servisda bitta-ikkita endpoint va o'z ma'lumotlari yo'q
+//  - har o'zgarish ikki-uch servisga birga tegadi
+//  - chaqiruv zanjiri uzun va latency tarmoqdan kelib chiqadi
+//
+// Narxi: deploy, monitoring, on-call va tarmoq yuki funksiyadan katta.
+// Davolash: nano-service'ni egasi bo'lgan servisga qaytarib qo'shish.
+```
+
 ## 14.39 Service granularligi bo'yicha qaror (Service Granularity Decision)
 
 **Tavsif:** Service chegarasini qancha mayda yoki yirik olish - microservice arxitekturasining eng qimmat va eng qaytarib bo'lmas qarori. Qarorni "qancha qatorlik kod" bilan emas, aniq kuchlar (granularity drivers) bilan o'lchash kerak: o'zgarish sabablari (bounded context), mustaqil scale ehtiyoji, fault isolation, turli xavfsizlik/compliance talablari, jamoa egaligi va release tezligi. Ularga qarshi kuchlar ham bor: data bog'liqligi, transaction integrity va service'lararo chaqiruvlar soni. Amalda yirikdan boshlab (modulli monolit yoki yirik service) kerakli joydan bo'lish - teskarisidan arzonroq va xatolarga chidamliroq.
@@ -682,6 +1261,20 @@ Mono<Dashboard> load(String id) {
 - Tracing ma'lumotiga tayanib, o'ta chatty bo'lgan ikki service'ni qayta birlashtirish (merge) qarorini qabul qilish.
 
 **Ehtiyot bo'ling:** Chegarani texnik qatlam (controller-service-repository) yoki ma'lumotlar jadvali bo'yicha emas, business capability bo'yicha torting - jadval asosidagi bo'linish deyarli har doim distributed monolitga olib keladi. Qarorni bir martalik va abadiy deb qaramang: granularlikni vaqti-vaqti bilan release coupling, latency va incident ma'lumotlari asosida qayta ko'rib chiqing, va ajratishdan avval ma'lumot egaligi (data ownership) masalasini hal qilmasdan boshlamang.
+
+```text
+Granularlik qarori uchun uch mezon (har biriga raqam bilan javob):
+
+  1. Birga o'zgaradimi?   git tarixidan: ikki modul bir xil commit'da
+     necha marta o'zgargan. Yuqori son -> bitta servis.
+  2. Birga masshtablanadimi?  metrikadan: RPS va CPU profili bir xilmi.
+     Har xil bo'lsa -> ajratish foydali.
+  3. Birga yiqiladimi?    bittasi o'chsa ikkinchisi ishlay oladimi.
+     Yo'q bo'lsa, ajratish mavjudlikni oshirmaydi, kamaytiradi.
+
+Shubha bo'lsa kattaroq servis tanlanadi: ajratish keyin ham mumkin,
+birlashtirish esa ancha qimmat.
+```
 
 ## 14.40 Amalda qo'llash
 
