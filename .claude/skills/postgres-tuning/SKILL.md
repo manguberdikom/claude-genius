@@ -49,3 +49,16 @@ PostgreSQL muammosi ko'pincha Java tomonda tug'iladi:
 | Repository/Specification/ID generatsiyasi patternlari | `docs/patterns/09-malumotlarga-kirish-va-orm-patternlari.md` |
 | Testda H2 emas, real PostgreSQL konteyner | `docs/testing/08-testcontainers-bilan-real-infratuzilmada.md` |
 | PostgreSQL ga xos Sonar issue'lari | `docs/sonarqube/29-xato-katalogi-spring-jpa-va-postgresql-ga.md` |
+
+## Asboblar
+
+```bash
+python3 tools/schema_from_entities.py <src>  # jadval, ustun, FK, indeks
+python3 tools/schema_from_entities.py <src> --only-findings  # EAGER, indekssiz
+                                                   # FK, ORDINAL enum, precision
+tools/doc.sh find -f "pg_stat_statements"    # matn ichidan qidirish
+```
+
+Sxemani bilish uchun bazaga ulanish shart emas: entity sinflari uni
+to'liq tasvirlaydi. `psql -h ...` `tools/guard.py` tomonidan to'siladi,
+jonli ma'lumot haqiqatan kerak bo'lsa buyruq oldiga `COST_OK=1` qo'yiladi.

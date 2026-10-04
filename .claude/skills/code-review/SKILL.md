@@ -62,3 +62,15 @@ muhim, qanday tuzatish mumkin. Tayyor iboralar oxirgi bobda
 - Test yozish texnikasi: `docs/testing/README.md`
 - Sonar qoidasi va kaliti: `docs/sonarqube/README.md`
 - Qator darajasidagi toza kod qoidasi: `docs/clean-code/README.md`
+
+## Asboblar
+
+Diffni o'qishdan oldin mexanik qismni mashinaga bering, ko'z faqat
+qolganiga qarasin:
+
+```bash
+python3 tools/rules_for.py <o'zgargan fayllar>  # qaysi boblar tegishli
+python3 tools/check_code.py <fayl>              # bo'sh catch, keng catch,
+                                                # System.out, BigDecimal(double)
+tools/doc.sh checklist code-review <bob>        # yozilgan tekshiruv punktlari
+```

@@ -64,3 +64,14 @@ Issue toifasiga qarab:
 | Spring, JPA va PostgreSQL ga xos xatolar | `docs/sonarqube/29-xato-katalogi-spring-jpa-va-postgresql-ga.md` |
 | Test kodidagi xatolar | `docs/sonarqube/30-xato-katalogi-test-kodidagi-xatolar.md` |
 | Oldini olish checklisti | `docs/sonarqube/31-xatolarga-tushmaslik-uchun-yakuniy.md` |
+
+## Asboblar
+
+Kalitdan bo'limga to'g'ridan-to'g'ri o'tish mumkin, katalogni varaqlash
+shart emas:
+
+```bash
+tools/doc.sh rule java:S3776        # shu kalitni izohlagan bo'lim
+python3 tools/check_code.py <fayl>  # S108, S2221, S106, S1148, S2111, S2925
+tools/doc.sh checklist sonarqube <bob>
+```

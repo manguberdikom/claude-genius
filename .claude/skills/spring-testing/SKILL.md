@@ -58,3 +58,17 @@ oldin shuni o'qing.
 
 Sonar coverage talablari va JaCoCo mexanikasi boshqa hujjatda:
 `docs/sonarqube/README.md`.
+
+## Asboblar
+
+```bash
+mvn -q test | python3 tools/parse_test_output.py  # qaysi test, nima kutilgan
+                                                  # edi, loyiha kodining qaysi
+                                                  # qatorida
+python3 tools/rules_for.py <test fayli>
+tools/doc.sh checklist testing <bob>
+```
+
+Testni ikkinchi marta yurgizish sababni ko'rsatmaydi, chiqishni o'qish
+ko'rsatadi. Testcontainers kerak bo'lgan bobda ham avval chiqish o'qiladi:
+`docker run` `tools/guard.py` tomonidan to'siladi.

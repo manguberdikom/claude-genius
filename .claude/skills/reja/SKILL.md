@@ -180,3 +180,13 @@ Bu faylda memory qoidalari takrorlanmaydi. Ish boshida proyekt va umumiy
 Rejadan keyin memoryga faqat qaytariladigan bilim tushadi: shu proyektda
 takrorlangan tuzoq, qabul qilingan qaror va uning sababi. Rejaning o'zi
 memoryga ko'chirilmaydi, u `REJA.md` da va git tarixida qoladi.
+
+## Asboblar
+
+Reja qadami qaysi qoidaga tegishini qo'lda eslash shart emas:
+
+```bash
+python3 tools/rules_for.py <qadam tegadigan fayllar>  # boblar va punktlar
+tools/doc.sh checklist <hujjat> <bob>                 # qabul mezoni uchun
+python3 tools/schema_from_entities.py <src>           # mavjud sxema
+```

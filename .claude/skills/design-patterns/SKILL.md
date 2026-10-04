@@ -66,3 +66,14 @@ Singleton, Factory yoki Registry yozishdan oldin
 Pattern tavsiya qilganda har doim to'rttasini bering: **qaysi pattern**,
 **nega aynan shu muammoga**, **Spring'da tayyor varianti bormi**, va
 **qaysi tuzoqqa tushmaslik kerak**. Faqat nom aytib qo'yish yetarli emas.
+
+## Asboblar
+
+Jadvalda mavzu topilmasa qidiruv indeksi bor, u inglizcha taxallusni ham
+biladi (`circuit breaker`, `saga`, `outbox`):
+
+```bash
+tools/doc.sh find "<pattern nomi>"    # bo'lim raqamini beradi
+tools/doc.sh show patterns <raqam>    # butun bob emas, faqat o'sha bo'lim
+tools/doc.sh outline patterns <bob>   # ichidagi bo'limlar ro'yxati
+```

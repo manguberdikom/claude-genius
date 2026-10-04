@@ -77,3 +77,16 @@ Bu qism uchun `postgres-tuning` skilliga qarang (21-27 boblar).
 
 Pattern tanlash kerak bo'lsa: `design-patterns` skilli.
 Test strategiyasi: `spring-testing` skilli.
+
+## Asboblar
+
+Bob jadvali mavzuni topadi, bu asboblar esa ish oldidan faktni beradi:
+
+```bash
+python3 tools/rules_for.py <fayl>...        # tegilayotgan faylga qaysi boblar
+python3 tools/schema_from_entities.py <src> # baza tuzilishi, ulanmasdan
+tools/doc.sh find -f "<so'rov>"             # matn ichidan qidirish
+```
+
+`docker up/run/build` va bazaga ulanish `tools/guard.py` tomonidan
+to'siladi: sxemani entity sinflari, sababni esa chiqish aytadi.

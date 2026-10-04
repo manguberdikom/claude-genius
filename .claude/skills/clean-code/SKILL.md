@@ -59,3 +59,14 @@ Bu hujjat qoida beradi, arxitektura qarori bermaydi:
 - chegara, abstraksiya, murakkablik qarori - `docs/architect/README.md`
 - diffni review qilish - `docs/code-review/README.md`
 - Sonar qoidasi va uning kalitlari - `docs/sonarqube/README.md`
+
+## Asboblar
+
+```bash
+python3 tools/rules_for.py <fayl>      # Java yozishdan OLDIN majburiy
+python3 tools/check_code.py <fayl>     # yozgandan keyin mexanik qoidalar
+tools/doc.sh checklist clean-code <bob>  # shu bobning tekshiruv punktlari
+```
+
+`check_code.py` `PostToolUse` hook sifatida ham ishlaydi va `rules_for`
+chaqirilganini talab qiladi, ya'ni qoidani ko'rmay yozib bo'lmaydi.
