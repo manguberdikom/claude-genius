@@ -5,7 +5,7 @@
 # 16. Enterprise Integration Patterns II: transformatsiya, endpointlar, boshqaruv, event patternlar (EIP II: Transformation, Endpoints, System Management, Event Patterns)
 
 <details>
-<summary>Bu bo'limdagi 44 bo'lim</summary>
+<summary>Bu bo'limdagi 45 bo'lim</summary>
 
 - [16.1 Konvert O'ramchisi (Envelope Wrapper)](#161-konvert-oramchisi-envelope-wrapper)
 - [16.2 Mazmun Boyituvchi (Content Enricher)](#162-mazmun-boyituvchi-content-enricher)
@@ -51,6 +51,7 @@
 - [16.42 Oynalash (Windowing)](#1642-oynalash-windowing)
 - [16.43 Event vaqti va ishlov vaqti (Event Time vs Processing Time)](#1643-event-vaqti-va-ishlov-vaqti-event-time-vs-processing-time)
 - [16.44 Watermark (Watermark)](#1644-watermark-watermark)
+- [16.45 Amalda qo'llash](#1645-amalda-qollash)
 
 </details>
 
@@ -802,6 +803,17 @@ public class OrderTimeExtractor implements TimestampExtractor {
 - Stream-stream join'da ikki oqimdan birining kechikishini `JoinWindows.ofTimeDifferenceAndGrace(...)` bilan toleratsiya qilish.
 
 **Ehtiyot bo'ling:** Kafka Streams'ning stream time faqat kelgan ma'lumot bilan oldinga suriladi - oqim to'xtab qolsa (partition bo'sh bo'lsa) watermark qotib qoladi va oynalar hech qachon yopilmaydi, shuning uchun "nega natija chiqmayapti" muammosi ko'pincha shundan; past trafikli topic'larda `suppress(untilWindowCloses)` ni ehtiyotkorlik bilan ishlating. Grace period'ni haddan ziyod uzun qilsangiz latency va state store hajmi oshadi, juda qisqa qilsangiz esa haqiqiy biznes ma'lumoti jimgina yo'qoladi - shuning uchun uni real kechikish taqsimotini (p99) o'lchab tanlang va tashlangan yozuvlar uchun albatta alert qo'ying.
+
+## 16.45 Amalda qo'llash
+
+- [ ] Xabar transformatsiyasi bajariladigan joylarni sanab chiqing va har biri idempotent ekanini tasdiqlang.
+- [ ] Content enricher ishlatiladigan joylarni toping va boyitish uchun tashqi chaqiruv borligini, uning timeout'i borligini tekshiring.
+- [ ] Har bir iste'molchi uchun idempotent receiver mexanizmini yozib qo'ying: qanday kalit bo'yicha takrorlanish aniqlanadi.
+- [ ] Xabar tartibi muhim bo'lgan oqimlarni belgilab, ularning partition kaliti to'g'ri tanlanganini tasdiqlang.
+- [ ] Hodisa turlarini ajratib yozing: hodisa xabarnomasimi, holat uzatuvchimi yoki event sourcing uchunmi.
+- [ ] Control bus yoki boshqaruv kanali orqali bajariladigan operatsiyalarni ro'yxatga olib, ularning huquqlari cheklanganini tekshiring.
+- [ ] Xabar oqimlarida kuzatuvchanlik borligini tasdiqlang: correlation ID uzatiladimi, lag o'lchanadimi.
+- [ ] Har bir sxema o'zgarishi uchun orqaga va oldinga moslik testini CI ga qo'shing.
 
 ---
 

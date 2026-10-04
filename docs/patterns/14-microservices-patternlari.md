@@ -5,7 +5,7 @@
 # 14. Microservices patternlari (Microservices Patterns)
 
 <details>
-<summary>Bu bo'limdagi 39 bo'lim</summary>
+<summary>Bu bo'limdagi 40 bo'lim</summary>
 
 - [14.1 Monolitik arxitektura va mikroservis arxitekturasi qarori (Monolithic Architecture vs Microservice Architecture (decision))](#141-monolitik-arxitektura-va-mikroservis-arxitekturasi-qarori-monolithic-architecture-vs-microservice-architecture-decision)
 - [14.2 Biznes imkoniyati bo'yicha dekompozitsiya (Decompose by Business Capability)](#142-biznes-imkoniyati-boyicha-dekompozitsiya-decompose-by-business-capability)
@@ -46,6 +46,7 @@
 - [14.37 Taqsimlangan monolit (Distributed Monolith) - antipattern](#1437-taqsimlangan-monolit-distributed-monolith---antipattern)
 - [14.38 Nano-service'lar (Nano-services) - antipattern](#1438-nano-servicelar-nano-services---antipattern)
 - [14.39 Service granularligi bo'yicha qaror (Service Granularity Decision)](#1439-service-granularligi-boyicha-qaror-service-granularity-decision)
+- [14.40 Amalda qo'llash](#1440-amalda-qollash)
 
 </details>
 
@@ -681,6 +682,17 @@ Mono<Dashboard> load(String id) {
 - Tracing ma'lumotiga tayanib, o'ta chatty bo'lgan ikki service'ni qayta birlashtirish (merge) qarorini qabul qilish.
 
 **Ehtiyot bo'ling:** Chegarani texnik qatlam (controller-service-repository) yoki ma'lumotlar jadvali bo'yicha emas, business capability bo'yicha torting - jadval asosidagi bo'linish deyarli har doim distributed monolitga olib keladi. Qarorni bir martalik va abadiy deb qaramang: granularlikni vaqti-vaqti bilan release coupling, latency va incident ma'lumotlari asosida qayta ko'rib chiqing, va ajratishdan avval ma'lumot egaligi (data ownership) masalasini hal qilmasdan boshlamang.
+
+## 14.40 Amalda qo'llash
+
+- [ ] Servislar xaritasini chizib, har bir sinxron chaqiruv zanjirini va uning umumiy timeout budjetini yozib qo'ying.
+- [ ] Ikki yoki undan ko'p servis bitta bazaga ulanadigan joylarni toping - bu taqsimlangan monolit belgisi.
+- [ ] Har bir servis uchun o'z ma'lumotlari, o'z relizi va o'z jamoasi borligini tekshiring; uchtasi yo'q bo'lsa, u servis emas.
+- [ ] Service discovery va konfiguratsiya manbasini hujjatlashtiring; qattiq yozilgan host nomlarini qidirib ro'yxat qiling.
+- [ ] API gateway da autentifikatsiya, rate limit va so'rov hajmi chegarasi borligini tasdiqlang.
+- [ ] Har bir servisning readiness va liveness probe'i alohida va to'g'ri ma'no berayotganini tekshiring.
+- [ ] Servislar o'rtasida umumiy kutubxona (`shared`, `common`) borligini tekshirib, undagi har bir sinfni egasi bor servisga ko'chirish rejasini yozing.
+- [ ] Strangler fig bilan ajratilayotgan funksiyalar uchun o'tish mezoni va orqaga qaytish yo'lini yozib qo'ying.
 
 ---
 

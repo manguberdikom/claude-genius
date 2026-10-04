@@ -5,7 +5,7 @@
 # 3. Xulq-atvor patternlari (Behavioral Patterns)
 
 <details>
-<summary>Bu bo'limdagi 23 bo'lim</summary>
+<summary>Bu bo'limdagi 24 bo'lim</summary>
 
 - [3.1 Mas'uliyat zanjiri (Chain of Responsibility)](#31-masuliyat-zanjiri-chain-of-responsibility)
 - [3.2 Buyruq (Command)](#32-buyruq-command)
@@ -30,6 +30,7 @@
 - [3.21 Chekli holatlar mashinasi (Finite State Machine (Spring Statemachine))](#321-chekli-holatlar-mashinasi-finite-state-machine-spring-statemachine)
 - [3.22 Qoidalar dvigateli / Siyosat (Rules Engine / Policy)](#322-qoidalar-dvigateli--siyosat-rules-engine--policy)
 - [3.23 Qora taxta (Blackboard)](#323-qora-taxta-blackboard)
+- [3.24 Amalda qo'llash](#324-amalda-qollash)
 
 </details>
 
@@ -402,6 +403,17 @@ class PaymentRouter {
 - Logistikada marshrutni bir nechta evristika yordamida bosqichma-bosqich yaxshilash.
 
 **Ehtiyot bo'ling:** Blackboard mutable shared holatga asoslangani uchun concurrency, versiyalash va "qaysi ekspert nimani o'zgartirdi" muammolari darhol paydo bo'ladi - yozishni atomar qiling va har bir hissani kim qo'shganini qayd eting. Bu pattern faqat haqiqatan determinant algoritmi yo'q masalalar uchun; aniq ketma-ketlik ma'lum bo'lsa, oddiy Pipeline yoki orkestrlangan service ancha arzon va tushunarli.
+
+## 3.24 Amalda qo'llash
+
+- [ ] `switch` yoki `if/else if` zanjiri bilan algoritm tanlaydigan metodlarni toping va har birini Strategy yoki `Map<Enum, Handler>` registriga o'tkazish rejasini yozing.
+- [ ] Domen holatini `String` yoki `int` bilan saqlaydigan maydonlarni `enum` ga o'tkazing va ruxsat etilgan o'tishlarni aniq ro'yxat qilib yozing.
+- [ ] `ApplicationEventPublisher` chaqiruvlarini sanab chiqing va har biri tranzaksiya ichida yoki tashqarisida bo'lishi kerakligini qaror qiling.
+- [ ] `null` qaytaradigan public metodlarni toping va `Optional`, bo'sh kolleksiya yoki Null Object ga o'tkazing.
+- [ ] Takrorlanadigan so'rov shartlarini (`findByStatusAndTypeAndDate...`) Specification ga chiqarish rejasini tuzing.
+- [ ] Resursni ochib-yopadigan takrorlanuvchi `try` bloklarini qidirib, Execute Around yoki `Template` sinfiga ajratish nomzodlarini belgilang.
+- [ ] Zanjir shaklidagi ishlov (validatsiya, boyitish, transformatsiya) joylarini toping va ularni aniq nomli bosqichlarga ajratilgan Pipeline qilib yozing.
+- [ ] Har bir Observer yoki listener uchun savolga javob yozing: u sinxronmi, xato bersa chaqiruvchi nima qiladi.
 
 ---
 

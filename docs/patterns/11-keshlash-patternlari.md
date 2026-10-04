@@ -5,7 +5,7 @@
 # 11. Keshlash patternlari (Caching Patterns)
 
 <details>
-<summary>Bu bo'limdagi 22 bo'lim</summary>
+<summary>Bu bo'limdagi 23 bo'lim</summary>
 
 - [11.1 Kesh-yonida (Cache-Aside)](#111-kesh-yonida-cache-aside)
 - [11.2 O'qish-orqali (Read-Through)](#112-oqish-orqali-read-through)
@@ -29,6 +29,7 @@
 - [11.20 Hot key ta'sirini yumshatish (Hot Key Mitigation)](#1120-hot-key-tasirini-yumshatish-hot-key-mitigation)
 - [11.21 So'rov doirasidagi kesh (Request-Scoped Cache)](#1121-sorov-doirasidagi-kesh-request-scoped-cache)
 - [11.22 Kesh konsistensiyasi murosalari (Cache Consistency Trade-offs)](#1122-kesh-konsistensiyasi-murosalari-cache-consistency-trade-offs)
+- [11.23 Amalda qo'llash](#1123-amalda-qollash)
 
 </details>
 
@@ -402,6 +403,17 @@ void warmUp() {
 - Hibernate `READ_WRITE` strategiyasini kam o'zgaruvchi referens entity'lar uchun tanlash.
 
 **Ehtiyot bo'ling:** Eng ko'p uchraydigan xato - konsistensiya talabini hujjatlashtirmaslik: kesh "optimizatsiya" sifatida kiritiladi, keyin biznes uni haqiqat manbai deb o'ylaydi va eskirgan qiymat moliyaviy xatoga aylanadi. "Avval DB'ni yangila, keyin keshni o'chir" tartibini buzish yoki yangilashda `@CachePut` bilan eski qiymatni yozib qo'yish ham bir vaqtda ishlayotgan thread'lar tufayli doimiy stale holat qoldiradi.
+
+## 11.23 Amalda qo'llash
+
+- [ ] Har bir kesh uchun TTL, maksimal hajm va eviction siyosatini yozib qo'ying; chegarasiz kesh xotira oqishi demak.
+- [ ] Keshlanadigan har bir so'rovning `EXPLAIN (ANALYZE, BUFFERS)` natijasini o'lchang; 1 ms dan tez bo'lsa keshni olib tashlashni taklif qiling.
+- [ ] `@Cacheable` metodlari o'z sinfi ichidan chaqirilmayotganini tekshiring - self-invocation proxy'ni chetlab o'tadi.
+- [ ] Kesh kaliti tarkibini ko'rib chiqing: foydalanuvchi, tenant va lokal kalitga kiritilganmi, aks holda ma'lumot oqib ketadi.
+- [ ] Invalidatsiya yo'lini har bir kesh uchun chizib bering: kim, qachon va qanday tozalaydi.
+- [ ] Stampede himoyasi borligini tekshiring: bitta kalit bir vaqtda ko'p so'rovga tushganda nima bo'ladi.
+- [ ] Redis ishlatilsa, serializatsiya formati va versiyalashni hujjatlashtiring; sinf o'zgarsa eski qiymatlar o'qiladimi.
+- [ ] Kesh hit nisbatini metrika sifatida chiqarib, 80 foizdan past keshlarni qayta ko'rib chiqish ro'yxatiga qo'ying.
 
 ---
 

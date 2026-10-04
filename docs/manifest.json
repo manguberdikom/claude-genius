@@ -8,210 +8,210 @@
     "title": "1. Yaratuvchi patternlar (Creational Patterns)",
     "file": "01-yaratuvchi-patternlar.md",
     "part": null,
-    "sections": 17
+    "sections": 18
    },
    {
     "num": 2,
     "title": "2. Strukturaviy patternlar (Structural Patterns)",
     "file": "02-strukturaviy-patternlar.md",
     "part": null,
-    "sections": 17
+    "sections": 18
    },
    {
     "num": 3,
     "title": "3. Xulq-atvor patternlari (Behavioral Patterns)",
     "file": "03-xulq-atvor-patternlari.md",
     "part": null,
-    "sections": 23
+    "sections": 24
    },
    {
     "num": 4,
     "title": "4. Concurrency patternlari (Concurrency Patterns)",
     "file": "04-concurrency-patternlari.md",
     "part": null,
-    "sections": 27
+    "sections": 28
    },
    {
     "num": 5,
     "title": "5. Spring Core ichidagi patternlar xaritasi (Patterns inside Spring Core)",
     "file": "05-spring-core-ichidagi-patternlar-xaritasi.md",
     "part": null,
-    "sections": 41
+    "sections": 42
    },
    {
     "num": 6,
     "title": "6. Web va taqdimot qatlami patternlari (Web & Presentation Patterns)",
     "file": "06-web-va-taqdimot-qatlami-patternlari.md",
     "part": null,
-    "sections": 34
+    "sections": 35
    },
    {
     "num": 7,
     "title": "7. API dizayn patternlari (API Design Patterns)",
     "file": "07-api-dizayn-patternlari.md",
     "part": null,
-    "sections": 33
+    "sections": 34
    },
    {
     "num": 8,
     "title": "8. Biznes logika va Service qatlam patternlari (Business & Service Layer Patterns)",
     "file": "08-biznes-logika-va-service-qatlam-patternlari.md",
     "part": null,
-    "sections": 26
+    "sections": 27
    },
    {
     "num": 9,
     "title": "9. Ma'lumotlarga kirish va ORM patternlari (Data Access & ORM Patterns)",
     "file": "09-malumotlarga-kirish-va-orm-patternlari.md",
     "part": null,
-    "sections": 37
+    "sections": 38
    },
    {
     "num": 10,
     "title": "10. Ma'lumotlarni boshqarish va taqsimlash patternlari (Data Management & Distribution Patterns)",
     "file": "10-malumotlarni-boshqarish-va-taqsimlash.md",
     "part": null,
-    "sections": 31
+    "sections": 32
    },
    {
     "num": 11,
     "title": "11. Keshlash patternlari (Caching Patterns)",
     "file": "11-keshlash-patternlari.md",
     "part": null,
-    "sections": 22
+    "sections": 23
    },
    {
     "num": 12,
     "title": "12. Arxitektura uslublari (Architectural Styles)",
     "file": "12-arxitektura-uslublari.md",
     "part": null,
-    "sections": 33
+    "sections": 34
    },
    {
     "num": 13,
     "title": "13. Domain-Driven Design patternlari (DDD Patterns)",
     "file": "13-domain-driven-design-patternlari.md",
     "part": null,
-    "sections": 35
+    "sections": 36
    },
    {
     "num": 14,
     "title": "14. Microservices patternlari (Microservices Patterns)",
     "file": "14-microservices-patternlari.md",
     "part": null,
-    "sections": 39
+    "sections": 40
    },
    {
     "num": 15,
     "title": "15. Enterprise Integration Patterns I: xabarlar, kanallar, marshrutlash (EIP I: Messaging Systems, Channels, Construction, Routing)",
     "file": "15-enterprise-integration-patterns-i-xabarlar.md",
     "part": null,
-    "sections": 36
+    "sections": 37
    },
    {
     "num": 16,
     "title": "16. Enterprise Integration Patterns II: transformatsiya, endpointlar, boshqaruv, event patternlar (EIP II: Transformation, Endpoints, System Management, Event Patterns)",
     "file": "16-enterprise-integration-patterns-ii.md",
     "part": null,
-    "sections": 44
+    "sections": 45
    },
    {
     "num": 17,
     "title": "17. Resilience va cloud dizayn patternlari (Resilience & Cloud Design Patterns)",
     "file": "17-resilience-va-cloud-dizayn-patternlari.md",
     "part": null,
-    "sections": 42
+    "sections": 43
    },
    {
     "num": 18,
     "title": "18. Xavfsizlik patternlari (Security Patterns)",
     "file": "18-xavfsizlik-patternlari.md",
     "part": null,
-    "sections": 48
+    "sections": 49
    },
    {
     "num": 19,
     "title": "19. Reactive patternlar (Reactive Patterns)",
     "file": "19-reactive-patternlar.md",
     "part": null,
-    "sections": 25
+    "sections": 26
    },
    {
     "num": 20,
     "title": "20. Batch va scheduling patternlari (Batch & Scheduling Patterns)",
     "file": "20-batch-va-scheduling-patternlari.md",
     "part": null,
-    "sections": 30
+    "sections": 31
    },
    {
     "num": 21,
     "title": "21. Observability patternlari (Observability Patterns)",
     "file": "21-observability-patternlari.md",
     "part": null,
-    "sections": 25
+    "sections": 26
    },
    {
     "num": 22,
     "title": "22. Deployment va operatsion patternlar (Deployment & Operations Patterns)",
     "file": "22-deployment-va-operatsion-patternlar.md",
     "part": null,
-    "sections": 37
+    "sections": 38
    },
    {
     "num": 23,
     "title": "23. Testing patternlari (Testing Patterns)",
     "file": "23-testing-patternlari.md",
     "part": null,
-    "sections": 61
+    "sections": 62
    },
    {
     "num": 24,
     "title": "24. Zamonaviy Java va funksional patternlar (Modern Java & Functional Patterns)",
     "file": "24-zamonaviy-java-va-funksional-patternlar.md",
     "part": null,
-    "sections": 40
+    "sections": 41
    },
    {
     "num": 25,
     "title": "25. Anti-patternlar (Anti-Patterns)",
     "file": "25-anti-patternlar.md",
     "part": null,
-    "sections": 83
+    "sections": 84
    },
    {
     "num": 26,
     "title": "26. Dizayn printsiplari: SOLID, GRASP va umumiy qoidalar (Design Principles: SOLID, GRASP & General Rules)",
     "file": "26-dizayn-printsiplari-solid-grasp-va-umumiy.md",
     "part": null,
-    "sections": 29
+    "sections": 30
    },
    {
     "num": 27,
     "title": "27. Monolitdan microservice'ga migratsiya patternlari (Monolith to Microservices Migration Patterns)",
     "file": "27-monolitdan-microservicega-migratsiya.md",
     "part": null,
-    "sections": 22
+    "sections": 23
    },
    {
     "num": 28,
     "title": "28. Taqsimlangan ma'lumot, replikatsiya va konsistentlik patternlari (Distributed Data, Replication & Consistency Patterns)",
     "file": "28-taqsimlangan-malumot-replikatsiya-va.md",
     "part": null,
-    "sections": 28
+    "sections": 29
    },
    {
     "num": 29,
     "title": "29. Kubernetes va cloud-native patternlar (Kubernetes & Cloud-Native Patterns)",
     "file": "29-kubernetes-va-cloud-native-patternlar.md",
     "part": null,
-    "sections": 22
+    "sections": 23
    },
    {
     "num": 30,
     "title": "30. Spring AI va LLM integratsiya patternlari (Spring AI & LLM Integration Patterns)",
     "file": "30-spring-ai-va-llm-integratsiya-patternlari.md",
     "part": null,
-    "sections": 20
+    "sections": 21
    },
    {
     "num": null,

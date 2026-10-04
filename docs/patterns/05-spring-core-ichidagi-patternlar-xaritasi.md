@@ -5,7 +5,7 @@
 # 5. Spring Core ichidagi patternlar xaritasi (Patterns inside Spring Core)
 
 <details>
-<summary>Bu bo'limdagi 41 bo'lim</summary>
+<summary>Bu bo'limdagi 42 bo'lim</summary>
 
 - [5.1 IoC konteyner (IoC Container - BeanFactory / ApplicationContext)](#51-ioc-konteyner-ioc-container---beanfactory--applicationcontext)
 - [5.2 Bean definition va registry (Bean Definition & BeanDefinitionRegistry - Registry Pattern)](#52-bean-definition-va-registry-bean-definition--beandefinitionregistry---registry-pattern)
@@ -48,6 +48,7 @@
 - [5.39 Konfiguratsiyadan ustun konvensiya (Convention over Configuration)](#539-konfiguratsiyadan-ustun-konvensiya-convention-over-configuration)
 - [5.40 Spring'da Null Object qo'llanishi (Null Object Usage in Spring)](#540-springda-null-object-qollanishi-null-object-usage-in-spring)
 - [5.41 Spring'dagi fluent DSL builder'lar (Fluent DSL Builders in Spring)](#541-springdagi-fluent-dsl-builderlar-fluent-dsl-builders-in-spring)
+- [5.42 Amalda qo'llash](#542-amalda-qollash)
 
 </details>
 
@@ -727,6 +728,17 @@ SecurityFilterChain chain(HttpSecurity http) throws Exception {
 - `SpringApplicationBuilder` bilan parent-child kontekst yoki banner/profil sozlamalarini programmatik berish.
 
 **Ehtiyot bo'ling:** Builder'ni chaqiruvlar orasida qayta ishlatishda mutable/immutable semantikasini aniq bilish kerak - `RestClient.Builder` ni `clone()` qilmasdan bir nechta joyda o'zgartirsang, sozlamalar bir-biriga oqib ketadi. `HttpSecurity` DSL'da tartib va matcher'lar aniqligi muhim: kengroq `requestMatchers` ni oldin yozib qo'ysang, keyingi qat'iyroq qoidalar hech qachon ishlamaydi, shuning uchun eng aniq matcher'lar yuqorida turishi lozim.
+
+## 5.42 Amalda qo'llash
+
+- [ ] `applicationContext.getBean(...)` va `BeanFactoryAware` ishlatadigan joylarni qidirib, har birini injeksiyaga aylantirish rejasini yozing.
+- [ ] Bir interfeysga bir nechta implementatsiya bo'lgan joylarni toping va `@Primary` yoki `@Qualifier` aniq qo'yilganini tasdiqlang.
+- [ ] `@PostConstruct` ichida tashqi chaqiruv yoki uzoq ish bajaradigan bean'larni toping; ular startup'ni va readiness probe'ni buzadi.
+- [ ] `BeanPostProcessor` va `BeanFactoryPostProcessor` implementatsiyalarini sanab chiqing va har birining `@Order` qiymatini yozib qo'ying.
+- [ ] Request yoki session scope'dagi bean'lar singleton ichiga inject qilingan joylarni tekshirib, scoped proxy ishlatilganini tasdiqlang.
+- [ ] `@ConfigurationProperties` sinflarini `@Validated` bilan qoplab, noto'g'ri konfiguratsiya startup'da yiqitishini ta'minlang.
+- [ ] `@EventListener` larni ko'rib chiqing va tranzaksiya commit'idan keyin ishlashi kerak bo'lganlarini `@TransactionalEventListener` ga o'tkazing.
+- [ ] Auto-konfiguratsiya qaroriga ta'sir qilgan shartlarni `--debug` rejimidagi `ConditionEvaluationReport` dan eksport qilib, hujjatlashtirib qo'ying.
 
 ---
 

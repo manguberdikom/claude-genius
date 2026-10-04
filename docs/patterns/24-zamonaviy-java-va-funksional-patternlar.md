@@ -5,7 +5,7 @@
 # 24. Zamonaviy Java va funksional patternlar (Modern Java & Functional Patterns)
 
 <details>
-<summary>Bu bo'limdagi 40 bo'lim</summary>
+<summary>Bu bo'limdagi 41 bo'lim</summary>
 
 - [24.1 Records qiymat obyekti va DTO sifatida (Records as Value Objects / DTOs)](#241-records-qiymat-obyekti-va-dto-sifatida-records-as-value-objects--dtos)
 - [24.2 Sealed interfeyslar va pattern matching (Sealed Interfaces + Pattern Matching / Algebraic Data Types)](#242-sealed-interfeyslar-va-pattern-matching-sealed-interfaces--pattern-matching--algebraic-data-types)
@@ -47,6 +47,7 @@
 - [24.38 Nomsiz o'zgaruvchilar va pattern'lar (Unnamed Variables & Patterns)](#2438-nomsiz-ozgaruvchilar-va-patternlar-unnamed-variables--patterns)
 - [24.39 Funktor (Functor)](#2439-funktor-functor)
 - [24.40 Temir Yo'l Uslubidagi Dasturlash (Railway Oriented Programming)](#2440-temir-yol-uslubidagi-dasturlash-railway-oriented-programming)
+- [24.41 Amalda qo'llash](#2441-amalda-qollash)
 
 </details>
 
@@ -689,6 +690,17 @@ public Page<UserDto> findAll(Pageable pageable) {
 - Spring Batch `ItemProcessor`da yaroqsiz yozuvlarni butun chunk'ni yiqitmasdan xatolik relsiga o'tkazish.
 
 **Ehtiyot bo'ling:** Eng keng tarqalgan xato - `Result` qaytaradigan metodni `@Transactional` ichida ishlatib, xatolik holatida rollback bo'lishini kutish: bunda tranzaksiya muvaffaqiyatli commit bo'ladi, shuning uchun `TransactionAspectSupport.currentTransactionStatus().setRollbackOnly()` chaqirish yoki chegarada exception'ga aylantirish kerak. Bu patternni butun kodbazaga majburan tatbiq etmang - infratuzilma nosozliklari (DB uzilishi, timeout) uchun exception tabiiyroq, `Result` esa faqat kutilayotgan biznes xatoliklari uchun; aks holda har bir metod signaturasi va zanjir shovqinli bo'lib, o'qilishi exception'li koddan ham qiyinlashadi.
+
+## 24.41 Amalda qo'llash
+
+- [ ] `record` ga o'tkazilishi mumkin bo'lgan DTO va qiymat obyektlarini ro'yxatga oling.
+- [ ] Yopiq ierarxiya bo'lishi kerak bo'lgan interfeyslarni toping va `sealed` qo'llash foydasini qaror qiling.
+- [ ] `Optional` ni maydon yoki parametr sifatida ishlatadigan joylarni qidirib tuzating - u qaytish turi uchun.
+- [ ] `switch` bloklarini pattern matching bilan soddalashtirish nomzodlarini belgilang va `default` shoxi kerak emasligini tekshiring.
+- [ ] Stream zanjirlarini ko'rib chiqing: ular oddiy siklga nisbatan o'qilishi osonmi, yo'qsa qaytaring.
+- [ ] `var` ishlatilgan joylarni tekshirib, tur o'ng tomondan aniq ko'rinmaydigan holatlarni tuzating.
+- [ ] Loyihaning Java versiyasini `pom.xml` dan tasdiqlab, keyingi LTS ga o'tish uchun to'siqlar ro'yxatini tuzing.
+- [ ] Tekshirilgan istisnolarni (`checked exception`) oqimlar ichida ishlatadigan joylarni toping va ularni o'rash usulini birlashtiring.
 
 ---
 

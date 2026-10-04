@@ -5,7 +5,7 @@
 # 27. Monolitdan microservice'ga migratsiya patternlari (Monolith to Microservices Migration Patterns)
 
 <details>
-<summary>Bu bo'limdagi 22 bo'lim</summary>
+<summary>Bu bo'limdagi 23 bo'lim</summary>
 
 - [27.1 Bo'g'uvchi Anjir Ilovasi (Strangler Fig Application)](#271-boguvchi-anjir-ilovasi-strangler-fig-application)
 - [27.2 UI Kompozitsiyasi (UI Composition)](#272-ui-kompozitsiyasi-ui-composition)
@@ -29,6 +29,7 @@
 - [27.20 Umumiy statik ma'lumot (Shared Static Data)](#2720-umumiy-statik-malumot-shared-static-data)
 - [27.21 Maxsus reference data sxemasi (Dedicated Reference Data Schema)](#2721-maxsus-reference-data-sxemasi-dedicated-reference-data-schema)
 - [27.22 Migratsiyani bosqichma-bosqich joriy etish va qaytarish (Incremental Rollout & Rollback of a Migration)](#2722-migratsiyani-bosqichma-bosqich-joriy-etish-va-qaytarish-incremental-rollout--rollback-of-a-migration)
+- [27.23 Amalda qo'llash](#2723-amalda-qollash)
 
 </details>
 
@@ -399,6 +400,17 @@ class ShippingFacade {
 - Xatolik darajasi oshganda flag'ni sekundlar ichida o'chirib, deploy'siz rollback qilish.
 
 **Ehtiyot bo'ling:** Ma'lumot migratsiyasi odatda qaytarib olinmaydi - rollback faqat kod va trafik marshruti uchun ishlaydi, shuning uchun har bir sxema qadami backward-compatible bo'lishi va yangi bazadagi o'zgarishlar eski bazaga qaytarilishi kafolatlanishi kerak. Feature flag'lar tozalanmasa kod bazasi tezda boshqarib bo'lmas holatga keladi: har bir migratsiya flag'iga yaroqlilik muddati va uni o'chirish tiketini biriktiring.
+
+## 27.23 Amalda qo'llash
+
+- [ ] Monolitdagi modullarni o'zgarish zichligi va bog'liqlik soni bo'yicha jadvalga yozib, ajratish tartibini belgilang.
+- [ ] Birinchi ajratiladigan modul uchun savolga javob yozing: uning ma'lumotlari boshqa modullar bilan JOIN qilinadimi.
+- [ ] Strangler fig uchun marshrutlash nuqtasini belgilang va orqaga qaytish yo'lini yozib qo'ying.
+- [ ] Branch by abstraction qo'llanadigan joylarda abstraksiya interfeysi va ikki implementatsiya mavjudligini tasdiqlang.
+- [ ] Parallel run rejasini yozing: ikki yo'l natijasi qanday solishtiriladi va farq topilsa nima qilinadi.
+- [ ] Ma'lumotlarni ajratish rejasini expand/contract bosqichlari bilan yozing; bitta relizda ikkisini qilmang.
+- [ ] Har bir ajratilgan servis uchun chiqish mezonini yozing: qancha trafik o'tdi, qancha vaqt barqaror ishladi.
+- [ ] Migratsiyani to'xtatish mezonini oldindan yozib qo'ying: qaysi belgilar ko'rilsa, ajratish to'xtatiladi.
 
 ---
 

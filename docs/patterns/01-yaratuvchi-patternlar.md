@@ -5,7 +5,7 @@
 # 1. Yaratuvchi patternlar (Creational Patterns)
 
 <details>
-<summary>Bu bo'limdagi 17 bo'lim</summary>
+<summary>Bu bo'limdagi 18 bo'lim</summary>
 
 - [1.1 Yagona nusxa (Singleton)](#11-yagona-nusxa-singleton)
 - [1.2 Kalit bo'yicha yagona nusxalar (Multiton)](#12-kalit-boyicha-yagona-nusxalar-multiton)
@@ -24,6 +24,7 @@
 - [1.15 Provider / Supplier orqali kiritish (Provider / Supplier Injection)](#115-provider--supplier-orqali-kiritish-provider--supplier-injection)
 - [1.16 Servis topuvchi (Service Locator)](#116-servis-topuvchi-service-locator)
 - [1.17 Reyestr (Registry)](#117-reyestr-registry)
+- [1.18 Amalda qo'llash](#118-amalda-qollash)
 
 </details>
 
@@ -407,6 +408,17 @@ public class NotificationService {
 - Health, metrika, circuit-breaker kabi nomlangan infratuzilma obyektlarini markazlashtirish.
 
 **Ehtiyot bo'ling:** Statik reyestr - global mutable holat, testlar orasida "oqadi" va parallel testlarni buzadi; konteyner nazoratidagi bean reyestri afzal. Satr kalitlar yozuv xatolariga olib keladi - `enum` yoki tip-xavfsiz kalit ishlating. Reyestrga ro'yxatdan o'tkazish tartibi va thread-safety (runtime'da o'zgarsa) haqida aniq qaror qabul qiling; startup'dan keyin immutable qilish eng xavfsiz.
+
+## 1.18 Amalda qo'llash
+
+- [ ] Servis va controller sinflarida `new` bilan yaratilgan har bir obyektni ro'yxatga oling va qaysilari konteyner nazoratiga o'tishi kerakligini belgilang.
+- [ ] `getInstance()` metodi bor sinflarni toping; har biri uchun DI ga o'tkazish yoki qoldirish qarorini sabab bilan yozib qo'ying.
+- [ ] Singleton scope'dagi bean'larning `final` bo'lmagan maydonlarini sanab chiqing - har biri race condition nomzodi.
+- [ ] 6 dan ko'p parametr oladigan konstruktorlarni toping va ularga Builder yoki parametr obyekti qo'llash rejasini tuzing.
+- [ ] Prototype bean'lar singleton ichiga to'g'ridan-to'g'ri inject qilingan joylarni qidiring va `ObjectProvider` yoki scoped proxy ga o'tkazing.
+- [ ] Kalit bo'yicha nusxa saqlaydigan har bir `Map` ni tekshiring: kalitlar to'plami chegaralanganmi, eviction bormi, nusxalar yopiladimi.
+- [ ] `spring.main.lazy-initialization` qiymatini muhitlar bo'yicha tekshiring va production'da `false` turganini tasdiqlang.
+- [ ] Service Locator ko'rinishidagi kodni (`applicationContext.getBean(...)`) qidirib, har bir chaqiruvni konstruktor injeksiyasiga aylantirish rejasini yozing.
 
 ---
 

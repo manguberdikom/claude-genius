@@ -5,7 +5,7 @@
 # 26. Dizayn printsiplari: SOLID, GRASP va umumiy qoidalar (Design Principles: SOLID, GRASP & General Rules)
 
 <details>
-<summary>Bu bo'limdagi 29 bo'lim</summary>
+<summary>Bu bo'limdagi 30 bo'lim</summary>
 
 - [26.1 Yagona javobgarlik printsipi (Single Responsibility Principle)](#261-yagona-javobgarlik-printsipi-single-responsibility-principle)
 - [26.2 Ochiq/yopiq printsipi (Open/Closed Principle)](#262-ochiqyopiq-printsipi-openclosed-principle)
@@ -36,6 +36,7 @@
 - [26.27 Mustahkamlik Printsipi (Robustness Principle (Postel's Law))](#2627-mustahkamlik-printsipi-robustness-principle-postels-law)
 - [26.28 Yagona Abstraksiya Darajasi (Single Level of Abstraction)](#2628-yagona-abstraksiya-darajasi-single-level-of-abstraction)
 - [26.29 Barqaror Bog'liqliklar va Barqaror Abstraksiyalar (Stable Dependencies & Stable Abstractions)](#2629-barqaror-bogliqliklar-va-barqaror-abstraksiyalar-stable-dependencies--stable-abstractions)
+- [26.30 Amalda qo'llash](#2630-amalda-qollash)
 
 </details>
 
@@ -539,6 +540,17 @@ public interface BillingClient {
 - Ko'p jamoa foydalanadigan umumiy modulni semantik versiyalash va deprecation davri bilan boshqarish.
 
 **Ehtiyot bo'ling:** Eng keng tarqalgan buzilish - "shared-common" yoki "utils" moduli: unga hamma tayanadi (ya'ni u barqaror), lekin ichida konkret, tez o'zgaradigan kod va entity'lar bo'ladi, natijada har bir o'zgarish butun tizimni qayta deploy qilishni talab qiladi. Ikkinchi tuzoq - metrikalarni (instability, abstractness) maqsadga aylantirib, haqiqiy ehtiyojsiz interfeyslar o'rmonini yaratish.
+
+## 26.30 Amalda qo'llash
+
+- [ ] Eng katta 10 sinfni topib, har biri uchun savolga javob yozing: uning o'zgarish sababi nechta.
+- [ ] `instanceof` yoki tur bo'yicha `switch` ishlatadigan joylarni qidirib, polimorfizm bilan almashtirish nomzodlarini belgilang.
+- [ ] Interfeyslarni ko'rib chiqing: mijozlar ishlatmaydigan metodlar borligini tekshiring (interface segregation).
+- [ ] Konkret sinfga bog'langan konstruktor parametrlarini toping va ularni abstraksiyaga o'tkazish foydasini qaror qiling.
+- [ ] Vorislik ishlatilgan har bir joyni tekshirib, subclass bazaning shartnomasini buzmayotganini tasdiqlang.
+- [ ] Zanjir shaklidagi chaqiruvlarni (`a.getB().getC().getD()`) qidirib, Demeter qonunini buzadigan joylarni ro'yxat qiling.
+- [ ] DRY nomi bilan yaratilgan umumiy kodni tekshiring: u haqiqatan bir xil qoidami yoki tasodifan o'xshash ikki qoidami.
+- [ ] YAGNI bo'yicha ishlatilmaydigan abstraksiya va konfiguratsiya nuqtalarini topib, olib tashlash ro'yxatini tuzing.
 
 ---
 

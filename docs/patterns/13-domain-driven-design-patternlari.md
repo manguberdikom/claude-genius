@@ -5,7 +5,7 @@
 # 13. Domain-Driven Design patternlari (DDD Patterns)
 
 <details>
-<summary>Bu bo'limdagi 35 bo'lim</summary>
+<summary>Bu bo'limdagi 36 bo'lim</summary>
 
 - [13.1 Umumiy til (Ubiquitous Language)](#131-umumiy-til-ubiquitous-language)
 - [13.2 Chegaralangan kontekst (Bounded Context)](#132-chegaralangan-kontekst-bounded-context)
@@ -42,6 +42,7 @@
 - [13.33 Spring Data bilan domen hodisalari (Domain Events with Spring Data: AbstractAggregateRoot, @DomainEvents)](#1333-spring-data-bilan-domen-hodisalari-domain-events-with-spring-data-abstractaggregateroot-domainevents)
 - [13.34 DDD qatlamli arxitekturasi (DDD Layered Architecture)](#1334-ddd-qatlamli-arxitekturasi-ddd-layered-architecture)
 - [13.35 Pul (Money (Value Object specialization))](#1335-pul-money-value-object-specialization)
+- [13.36 Amalda qo'llash](#1336-amalda-qollash)
 
 </details>
 
@@ -651,6 +652,17 @@ public record Money(BigDecimal amount, Currency currency) {
 - Soliq, komissiya yoki foiz hisoblashda yaxlitlash qoidasini (`HALF_EVEN` vs `HALF_UP`) bitta joyda belgilab, butun tizimda bir xil natijaga erishish.
 
 **Ehtiyot bo'ling:** Money'ni hech qachon `double`/`float` ustiga qurmang va `BigDecimal` ni `equals` bilan taqqoslashda ehtiyot bo'ling - `2.0` va `2.00` `equals` bo'yicha teng emas, shuning uchun konstruktorda scale'ni normallashtirib qo'ying va `compareTo` dan foydalanish qoidasini belgilang. Valyuta konvertatsiyasini Money ichiga qurmang: kurs vaqtga bog'liq tashqi ma'lumot, uni alohida `ExchangeRateService`/domen servisiga chiqaring, aks holda Value Object o'zgaruvchan infratuzilmaga bog'lanib qoladi va test qilinmas holga keladi.
+
+## 13.36 Amalda qo'llash
+
+- [ ] Domen tilidagi atamalarni ro'yxat qiling va kodda boshqa nom bilan atalganlarini toping.
+- [ ] Har bir agregat uchun invariantni bir gapda yozing va u qayerda majburlanayotganini ko'rsating.
+- [ ] Agregat chegarasidan tashqariga chiqadigan tranzaksiyalarni toping - bitta tranzaksiya bitta agregatni o'zgartirishi kerak.
+- [ ] Qiymat obyekti bo'lishi kerak bo'lgan primitivlarni toping (pul, email, telefon, ID) va ularni `record` ga o'tkazish rejasini tuzing.
+- [ ] Bounded context chegaralarini chizib, kontekstlar o'rtasidagi har bir integratsiya uchun anti-corruption layer kerakligini qaror qiling.
+- [ ] Domen hodisalarini sanab chiqing va har birining nomi o'tgan zamonda ekanini tasdiqlang.
+- [ ] Repository interfeyslari domen paketida, implementatsiyasi infratuzilmada turganini tekshiring.
+- [ ] Domen paketida `jakarta.persistence`, Jackson va Spring web importlarini qidirib, topilganlarini ro'yxat qiling.
 
 ---
 

@@ -5,7 +5,7 @@
 # 18. Xavfsizlik patternlari (Security Patterns)
 
 <details>
-<summary>Bu bo'limdagi 48 bo'lim</summary>
+<summary>Bu bo'limdagi 49 bo'lim</summary>
 
 - [18.1 Autentifikatsiya va avtorizatsiya ajratilishi (Authentication vs Authorization)](#181-autentifikatsiya-va-avtorizatsiya-ajratilishi-authentication-vs-authorization)
 - [18.2 Xavfsizlik filtrlar zanjiri (SecurityFilterChain - Chain of Responsibility)](#182-xavfsizlik-filtrlar-zanjiri-securityfilterchain---chain-of-responsibility)
@@ -55,6 +55,7 @@
 - [18.46 Munosabatga asoslangan kirish nazorati (Relationship-Based Access Control (ReBAC))](#1846-munosabatga-asoslangan-kirish-nazorati-relationship-based-access-control-rebac)
 - [18.47 Tokenizatsiya (Tokenization)](#1847-tokenizatsiya-tokenization)
 - [18.48 Ma'lumotni maskalash (Data Masking)](#1848-malumotni-maskalash-data-masking)
+- [18.49 Amalda qo'llash](#1849-amalda-qollash)
 
 </details>
 
@@ -852,6 +853,17 @@ public class MaskingSerializer extends JsonSerializer<String> {
 - Qo'llab-quvvatlash xodimi mijoz profilini ko'radi, lekin JSHSHIR va bank rekvizitlari niqoblangan holatda.
 
 **Ehtiyot bo'ling:** Maskani faqat UI yoki DTO darajasida qo'yish mumkin emas - asl qiymat baribir API javobi, GraphQL, export (CSV/Excel), Actuator endpoint'lari yoki stack trace orqali chiqib ketishi odatiy xato; masking qoidasini mumkin bo'lgan eng chuqur qatlamda (DB view, repository projection) qo'llang. Yana bir tuzoq - qisman masking deanonimizatsiyaga yo'l qoldirishi: tug'ilgan sana + pochta indeksi + jins kabi bir nechta "zararsiz" niqoblangan maydon birlashtirilganda shaxsni aniqlash mumkin, shuning uchun masking'ni shifrlash va access control o'rnini bosuvchi chora deb hisoblamang.
+
+## 18.49 Amalda qo'llash
+
+- [ ] `SecurityFilterChain` konfiguratsiyasini o'qib, har bir yo'l uchun kim ruxsat olgani jadval shaklida yozib qo'ying.
+- [ ] `permitAll()` qo'yilgan yo'llarni sanab chiqing va har biri ataylab ochiq ekanini tasdiqlang.
+- [ ] Metod darajasidagi xavfsizlik (`@PreAuthorize`) qayerda borligini xaritalang va tekshiruvsiz servis metodlarini ro'yxat qiling.
+- [ ] Parol hash algoritmini tekshiring: `DelegatingPasswordEncoder` ishlatilyaptimi, eski hash'lar yangilanadimi.
+- [ ] Sirlarni qidirish uchun repozitoriyni skanerlang (`git log -p` bo'ylab ham) va topilgan har bir sirni rotatsiya ro'yxatiga qo'ying.
+- [ ] Javob header'larini tekshiring: CSP, HSTS, `X-Content-Type-Options` qo'yilganmi.
+- [ ] Foydalanuvchi kiritgan ma'lumot SQL, LDAP, OS buyruq yoki fayl yo'liga tushadigan joylarni aniqlab, har birida parametrlash yoki validatsiya borligini tasdiqlang.
+- [ ] Autorizatsiya qarorini ma'lumot egasi bo'yicha tekshiradigan testlar borligini tasdiqlang: boshqa foydalanuvchi resursiga kirish 403 qaytarishi kerak.
 
 ---
 

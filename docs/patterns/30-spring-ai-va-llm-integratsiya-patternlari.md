@@ -5,7 +5,7 @@
 # 30. Spring AI va LLM integratsiya patternlari (Spring AI & LLM Integration Patterns)
 
 <details>
-<summary>Bu bo'limdagi 20 bo'lim</summary>
+<summary>Bu bo'limdagi 21 bo'lim</summary>
 
 - [30.1 ChatClient abstraksiyasi (ChatClient abstraction - Bridge over model providers)](#301-chatclient-abstraksiyasi-chatclient-abstraction---bridge-over-model-providers)
 - [30.2 Prompt shabloni (Prompt Template)](#302-prompt-shabloni-prompt-template)
@@ -27,6 +27,7 @@
 - [30.18 Agent va tool tsikli (Agent / tool loop)](#3018-agent-va-tool-tsikli-agent--tool-loop)
 - [30.19 Model Context Protocol mijozi va serveri (Model Context Protocol (MCP) client & server)](#3019-model-context-protocol-mijozi-va-serveri-model-context-protocol-mcp-client--server)
 - [30.20 Token budjeti va kontekst oynasini boshqarish (Token budget & context window management)](#3020-token-budjeti-va-kontekst-oynasini-boshqarish-token-budget--context-window-management)
+- [30.21 Amalda qo'llash](#3021-amalda-qollash)
 
 </details>
 
@@ -360,6 +361,17 @@ meterRegistry.counter("llm.tokens", "model", modelName, "tenant", tenantId)
 - Katta hujjatni `TokenTextSplitter` bilan bo'lib, map-reduce summarizatsiya orqali oyna chekloviga tushmaslik.
 
 **Ehtiyot bo'ling:** Tokenizer baholashi taxminiy - turli provayderlar turli tokenizer ishlatadi, shuning uchun `JTokkitTokenCountEstimator` natijasini Anthropic yoki Gemini uchun aniq deb olmang va cheklovga yetib qolmaslik uchun 10-20% zaxira qoldiring. Tarixni mexanik qirqish ham xatarli: ko'p xabar o'chirilganda model avvalroq kelishilgan shartni unutib, mantiqsiz javob beradi, shuning uchun summarizatsiya qilinayotgan qismdan muhim faktlarni alohida (structured state yoki vector memory sifatida) saqlab qolish kerak.
+
+## 30.21 Amalda qo'llash
+
+- [ ] LLM chaqiruvlari uchun timeout, retry va narx chegarasi belgilanganini tasdiqlang.
+- [ ] Har bir prompt shablonini kod ichidan ajratib, versiyalanadigan resursga ko'chirish rejasini yozing.
+- [ ] Foydalanuvchi kiritgan matn prompt ichiga tushadigan joylarni aniqlab, prompt injection himoyasini hujjatlashtiring.
+- [ ] RAG ishlatilsa, embedding modeli va vektor indeksining versiyasini qayd qilib, qayta indekslash rejasini yozing.
+- [ ] LLM javobining tasdiqlanishini (schema validatsiyasi) har bir integratsiya nuqtasida tekshiring.
+- [ ] Tool calling ishlatilsa, har bir tool uchun ruxsat chegarasini yozib qo'ying; model buyruq bermasligi kerak.
+- [ ] Token sarfini metrika sifatida chiqarib, so'rov turi bo'yicha oyiga narxni hisoblang.
+- [ ] Model javobini keshlash mumkin bo'lgan holatlarni aniqlab, kesh kaliti prompt va model versiyasini qamrab olishini tasdiqlang.
 
 ---
 

@@ -5,7 +5,7 @@
 # 19. Reactive patternlar (Reactive Patterns)
 
 <details>
-<summary>Bu bo'limdagi 25 bo'lim</summary>
+<summary>Bu bo'limdagi 26 bo'lim</summary>
 
 - [19.1 Reactive Streams (Reactive Streams)](#191-reactive-streams-reactive-streams)
 - [19.2 Backpressure strategiyalari (Backpressure Strategies)](#192-backpressure-strategiyalari-backpressure-strategies)
@@ -32,6 +32,7 @@
 - [19.23 java.util.concurrent.Flow](#1923-javautilconcurrentflow)
 - [19.24 Observable / Reactive Extensions merosi (Observable / Reactive Extensions Heritage)](#1924-observable--reactive-extensions-merosi-observable--reactive-extensions-heritage)
 - [19.25 Sovuq start va subscription hayot sikli (Cold Start & Subscription Lifecycle)](#1925-sovuq-start-va-subscription-hayot-sikli-cold-start--subscription-lifecycle)
+- [19.26 Amalda qo'llash](#1926-amalda-qollash)
 
 </details>
 
@@ -444,6 +445,17 @@ Mono<Order> findOrder(Long id) {
 - `share()` bilan bitta Kafka/WebSocket oqimini bir nechta ichki consumerga tarqatish.
 
 **Ehtiyot bo'ling:** `subscribe()` ni unutish (`fireAndForget()` deb yozilgan, lekin hech kim subscribe qilmagan `Mono`) jim nosozlikning klassik ko'rinishi; teskarisi - bitta cold `Mono` ni ikki joyda ishlatib, tashqi API ga ikki marta so'rov yuborish. `cache()` ni muddatsiz ishlatish eskirgan ma'lumotni va xotira o'sishini beradi, `share()` esa subscriber yo'q qolganda manbani bekor qilib, keyingi subscriberga kutilmagan natija berishi mumkin.
+
+## 19.26 Amalda qo'llash
+
+- [ ] Reactive zanjir ichida blocking chaqiruv borligini BlockHound bilan test muhitida tekshirib, topilganlarini ro'yxat qiling.
+- [ ] Har bir reactive oqim uchun backpressure strategiyasini yozib qo'ying; `onBackpressureBuffer` chegarasiz bo'lmasligi kerak.
+- [ ] `subscribeOn` va `publishOn` ishlatilgan joylarni sanab chiqib, har birining nega shu yerda turganini yozing.
+- [ ] Blocking kodni `boundedElastic` orqali ko'prikka olgan joylarni tekshirib, pool chegarasi borligini tasdiqlang.
+- [ ] Reactive va blocking kod aralashgan joylarni aniqlang; aralash model ko'pincha ikki modeldan ham sekin.
+- [ ] SSE yoki streaming endpointlar uchun mijoz uzilganda resurs bo'shatilayotganini tekshiring.
+- [ ] Reactive kodda kontekst uzatish (`contextWrite`) orqali correlation ID saqlanayotganini tasdiqlang.
+- [ ] WebFlux ishlatilsa, butun zanjir reactive drayverda ekanini tekshiring; bitta JDBC chaqiruvi butun foydani yo'qotadi.
 
 ---
 

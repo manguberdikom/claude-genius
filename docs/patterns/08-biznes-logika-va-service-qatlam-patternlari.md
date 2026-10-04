@@ -5,7 +5,7 @@
 # 8. Biznes logika va Service qatlam patternlari (Business & Service Layer Patterns)
 
 <details>
-<summary>Bu bo'limdagi 26 bo'lim</summary>
+<summary>Bu bo'limdagi 27 bo'lim</summary>
 
 - [8.1 Tranzaksiya skripti (Transaction Script)](#81-tranzaksiya-skripti-transaction-script)
 - [8.2 Domen modeli (Domain Model)](#82-domen-modeli-domain-model)
@@ -33,6 +33,7 @@
 - [8.24 Aggregate-ga bitta service (Service-per-Aggregate)](#824-aggregate-ga-bitta-service-service-per-aggregate)
 - [8.25 Orkestrator vs Fasad (Orchestrator vs Facade)](#825-orkestrator-vs-fasad-orchestrator-vs-facade)
 - [8.26 Service'dan domain event chiqarish (Domain Event Publishing from Service)](#826-servicedan-domain-event-chiqarish-domain-event-publishing-from-service)
+- [8.27 Amalda qo'llash](#827-amalda-qollash)
 
 </details>
 
@@ -460,6 +461,17 @@ class PaymentService {
 - Audit va analitika yozuvlarini asosiy biznes oqimidan ajratish.
 
 **Ehtiyot bo'ling:** Default `@EventListener` sinxron va chaqiruvchi tranzaksiyasida ishlaydi - tinglovchidagi exception butun biznes amalini rollback qilishi mumkin; yon ta'sirlar uchun `AFTER_COMMIT` ishlating, lekin unda DB yozuvi yangi tranzaksiya talab qiladi (`REQUIRES_NEW`). `@Async` event'lar esa jarayon qulaganda yo'qoladi va tartibi kafolatlanmaydi - ishonchlilik kerak bo'lsa Modulith event registry yoki outbox jadvalini qo'shing.
+
+## 8.27 Amalda qo'llash
+
+- [ ] Servis sinflarining qator sonini o'lchab, 300 qatordan oshganlarini use-case bo'yicha bo'lish nomzodi sifatida belgilang.
+- [ ] Faqat getter va setter'dan iborat domen sinflarini toping (anemik model) va ularga tegishli mantiqni ko'chirish rejasini yozing.
+- [ ] `@Transactional` qo'yilgan metodlarni sanab chiqing va har birining chegarasi bitta biznes operatsiyaga mos kelishini tasdiqlang.
+- [ ] Tranzaksiya ichida tashqi HTTP chaqiruvi yoki xabar yuborish bor joylarni toping - ular tranzaksiyani uzaytiradi va noizchillik yaratadi.
+- [ ] Qo'lda yozilgan mapping kodini ro'yxatga olib, MapStruct yoki aniq nomli mapper sinfiga o'tkazish nomzodlarini belgilang.
+- [ ] Validatsiya qayerda bajarilayotganini xaritalang: DTO da, servisda yoki domenda. Takrorlanganlarini bitta joyga yig'ing.
+- [ ] Bir nechta xatoni yig'ib qaytarishi kerak bo'lgan oqimlarni toping va ularga Notification patternini qo'llang.
+- [ ] Har bir servis metodi uchun savolga javob yozing: u nima qaytaradi, xato holatida nima bo'ladi, qayta chaqirilsa xavfsizmi.
 
 ---
 
