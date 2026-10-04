@@ -7,9 +7,10 @@ Ogohlantirish: "har doim 100% o'tadigan" universal retsept yo'q. Quality gate
 shartlari har loyihada boshqacha sozlanadi, va 100% coverage sifatni kafolatlamaydi.
 Hujjat ikkalasini ham ko'rsatadi: shartni qanday qondirish, va qayerda bu raqam aldashi.
 
-Hujjat to'rtlikning bir qismi. Dizayn patternlar `java-spring-design-patterns.md`
+Hujjat beshlikning bir qismi. Dizayn patternlar `java-spring-design-patterns.md`
 faylida, testlashning butun sohasi `java-spring-testing-handbook.md` faylida,
-JVM, Spring va PostgreSQL mexanikasi `java-spring-architect-mindset.md` faylida.
+JVM, Spring va PostgreSQL mexanikasi `java-spring-architect-mindset.md` faylida,
+kod review va diffni o'qish esa `java-spring-code-review.md` faylida.
 
 ## Mundarija
 

@@ -22,7 +22,7 @@ belgilaydi. Shu jadval rejada bo'lishi shart (noma'lum qiymat `?` bilan):
 | Nosozlikka chidamlilik | tashqi servis 1 daqiqa yo'q bo'lsa, buyruq yo'qolmasligi kerak | biznes qarori |
 | Ma'lumot yo'qolishi (RPO/RTO) | 0 / 5 daqiqa | operatsion talab |
 
-Raqamlardan keyin napkin math qilinadi (arxitektor 8-bob): bitta so'rovga nechta
+Raqamlardan keyin napkin math qilinadi (arxitektor: `Ishlash va resurs hissi`): bitta so'rovga nechta
 DB chaqiruvi, qancha bayt, qancha latency qo'shiladi. Natija bitta qator bo'lib
 rejaga tushadi:
 
@@ -39,21 +39,21 @@ rejaning birinchi qadami uni o'lchash bo'ladi.
 
 | Talab | Birinchi tanlanadigan mexanizm | Qarash kerak |
 |---|---|---|
-| Javob tezligi (o'qish) | indeks, proyeksiya (DTO), keyset pagination | arxitektor 23, 24-bob; patternlar 9.22, 7.7 |
-| Javob tezligi (takroriy o'qish) | kesh + aniq invalidatsiya | patternlar 11-bo'lim; arxitektor 28-bob |
-| O'tkazuvchanlik (yozish) | batch, partiya, asinxron | patternlar 10.20; arxitektor 18-bob |
-| Tashqi servis ishonchsizligi | timeout -> retry (jitter) -> circuit breaker -> fallback, shu tartibda | patternlar 17.1, 17.2, 19.10; arxitektor 32-bob |
-| Xabar yo'qolmasligi | tranzaksion outbox, idempotent consumer | patternlar 10.14, 14.18, 16.16 |
-| Ikki tizimga yozish | outbox yoki saga; dual write taqiqlanadi | patternlar 10.31, 14.8, 14.9 |
-| Raqobatli yangilanish | optimistik lock (`@Version`), kerak bo'lsa pessimistik | patternlar 9.23, 9.24; arxitektor 22-bob |
-| O'sib boradigan jadval | indeks strategiyasi -> partitioning -> arxivlash | arxitektor 23, 26-bob |
-| Xavfsiz kiritish | validatsiya chegarada, parametrli so'rov | patternlar 18-bo'lim; sonarqube 26, 37-bob |
-| To'xtashsiz reliz | expand/contract migratsiya, feature flag | patternlar 10.5, 22.10; arxitektor 33-bob |
-| Kuzatuvchanlik | strukturali log + metrika + trace, kardinallik chegarasi bilan | patternlar 21-bo'lim; arxitektor 30-bob |
-| Legacy ni xavfsiz o'zgartirish | seam topish, branch by abstraction, strangler | patternlar 27.1, 27.3; arxitektor 34-bob |
+| Javob tezligi (o'qish) | indeks, proyeksiya (DTO), keyset pagination | arxitektor: `Indekslar`, `Planner, statistika va EXPLAIN ANALYZE o'qish`; patternlar: `DTO Projection` / `Keyset / Cursor Pagination` |
+| Javob tezligi (takroriy o'qish) | kesh + aniq invalidatsiya | patternlar: `Keshlash patternlari`; arxitektor: `Keshlash amaliyoti` |
+| O'tkazuvchanlik (yozish) | batch, partiya, asinxron | patternlar: `Bulk / Batch insert`; arxitektor: `Spring Data JPA va Hibernate chuqur` |
+| Tashqi servis ishonchsizligi | timeout -> retry (jitter) -> circuit breaker -> fallback, shu tartibda | patternlar: `Retry` / `Circuit Breaker` / `Retry / Timeout / Fallback`; arxitektor: `Tarmoq, timeout va integratsiya haqiqati` |
+| Xabar yo'qolmasligi | tranzaksion outbox, idempotent consumer | patternlar: `Transactional Outbox` / `Idempotent Consumer` / `Idempotent Receiver` |
+| Ikki tizimga yozish | outbox yoki saga; dual write taqiqlanadi | patternlar: `Dual Write Problem` / `Saga (xoreografiya)` / `Saga (orkestratsiya)` |
+| Raqobatli yangilanish | optimistik lock (`@Version`), kerak bo'lsa pessimistik | patternlar: `Optimistic Offline Lock` / `Pessimistic Offline Lock`; arxitektor: `MVCC, izolyatsiya darajalari, lock va deadlock` |
+| O'sib boradigan jadval | indeks strategiyasi -> partitioning -> arxivlash | arxitektor: `Indekslar`, `Partitioning, replikatsiya va katta hajm` |
+| Xavfsiz kiritish | validatsiya chegarada, parametrli so'rov | patternlar: `Xavfsizlik patternlari`; sonarqube: `Xato katalogi: security (vulnerability va hotspot)`, `Taint analysis mexanikasi` |
+| To'xtashsiz reliz | expand/contract migratsiya, feature flag | patternlar: `Expand/Contract schema migration` / `Feature Toggle / Feature Flags`; arxitektor: `Sxema migratsiyasi va to'xtashsiz reliz` |
+| Kuzatuvchanlik | strukturali log + metrika + trace, kardinallik chegarasi bilan | patternlar: `Observability patternlari`; arxitektor: `Kuzatuvchanlik amaliyoti` |
+| Legacy ni xavfsiz o'zgartirish | seam topish, branch by abstraction, strangler | patternlar: `Strangler Fig Application` / `Branch by Abstraction`; arxitektor: `Legacy kod va bosqichma-bosqich refaktoring` |
 
 Jadval "mexanizm" beradi, "pattern" bermaydi. Mexanizmni kodda qanday
-ko'rinishga keltirish — 4-bosqich.
+ko'rinishga keltirish - 4-bosqich.
 
 ## 3.3 Chegara qarorlari
 
@@ -62,22 +62,22 @@ Uch savolga javob yoziladi:
 1. **Yangi kod qayerga tushadi?** Mavjud modul ichiga, yangi paketga yoki yangi
    modulga? Asos: kim o'zgarsa, kim bilan birga o'zgaradi.
 2. **Bog'liqlik yo'nalishi qanday?** Domen hech kimga qaramaydi; infrastruktura
-   domenga qaraydi. Yo'nalish buzilsa — port/adapter (patternlar 12.2) yoki
-   anti-corruption layer (13.7).
+   domenga qaraydi. Yo'nalish buzilsa - port/adapter (patternlar: `Hexagonal Architecture / Ports & Adapters`) yoki
+   anti-corruption layer (`Anti-Corruption Layer`).
 3. **Tranzaksiya chegarasi qayerda?** Bitta tranzaksiya = bitta agregat
-   (patternlar 13.15). Tranzaksiya ichida tashqi chaqiruv — taqiq.
+   (patternlar: `Aggregate & Aggregate Root`). Tranzaksiya ichida tashqi chaqiruv - taqiq.
 
 Chegaraga tegmaslik ham qaror: "bu o'zgarish `order` moduli ichida qoladi, yangi
-modul ochilmaydi" — rejada aniq yoziladi, chunki bu keyingi savollarni yopadi.
+modul ochilmaydi" - rejada aniq yoziladi, chunki bu keyingi savollarni yopadi.
 
 ## 3.4 ADR: qaytarib bo'lmaydigan qarorlar
 
 ADR yoziladigan holatlar: ma'lumot sxemasi, tashqi kontrakt (API, event formati),
 yangi infratuzilma komponenti, konsistentlik modeli, texnologiya tanlovi.
 
-ADR **yozilmaydi**: fayl nomi, metod joyi, ichki refaktoring — arzon qaytariladi.
+ADR **yozilmaydi**: fayl nomi, metod joyi, ichki refaktoring - arzon qaytariladi.
 
-Shabloni (arxitektor 3-bob bilan bir xil):
+Shabloni (arxitektor: `Qaror qabul qilish va uni hujjatlashtirish` bilan bir xil):
 
 ```markdown
 ### ADR-1: Buyruq hodisalarini outbox orqali chiqarish
@@ -96,7 +96,7 @@ publisher uni Kafka ga jo'natadi va `sent_at` ni belgilaydi.
 - Debezium CDC: infratuzilma qo'shadi, hozirgi hajm uni oqlamaydi.
 
 **Oqibatlar.** Kechikish ~1 s ga oshadi; consumer idempotent bo'lishi shart
-(patternlar 14.18); yangi jadval va publisher kuzatuvi kerak.
+(patternlar: `Idempotent Consumer`); yangi jadval va publisher kuzatuvi kerak.
 
 **Taxminlar.** Kunlik hajm 10x oshmaydi; publisher bitta nusxada ishlaydi.
 
@@ -107,7 +107,7 @@ jo'natilmagan qator soni < 100.
 ## 3.5 Nosozlik haqida fikrlash
 
 Rejadagi har yangi tashqi chaqiruv uchun to'rt javob bo'lishi shart
-(arxitektor 7, 32-bob):
+(arxitektor: `Nosozlik haqida fikrlash`, `Tarmoq, timeout va integratsiya haqiqati`):
 
 | Savol | Rejada ko'rinishi |
 |---|---|
@@ -118,18 +118,19 @@ Rejadagi har yangi tashqi chaqiruv uchun to'rt javob bo'lishi shart
 
 Retry budjetini hisoblash kerak: 3 marta retry x 3 s timeout = bitta so'rov 9 s
 ushlab turadi; thread pool va upstream timeout bilan solishtiriladi (retry
-bo'roni: patternlar 17.42).
+bo'roni: patternlar: `Retry Storm`).
 
 ## 3.6 Ma'lumot va konsistentlik
 
-- Sxema o'zgarishi bo'lsa: expand/contract tartibi (patternlar 10.5; arxitektor
-  33-bob) — avval qo'shish, keyin to'ldirish, keyin kodni almashtirish, oxirida
-  o'chirish. Har bosqich alohida reliz.
+- Sxema o'zgarishi bo'lsa: expand/contract tartibi, ya'ni avval qo'shish, keyin
+  to'ldirish, keyin kodni almashtirish, oxirida o'chirish. Har bosqich alohida
+  reliz (patternlar: `Expand/Contract schema migration`;
+  arxitektor: `Sxema migratsiyasi va to'xtashsiz reliz`).
 - Yangi so'rov bo'lsa: kutilgan plan aytiladi (`EXPLAIN ANALYZE` bilan
-  tekshirish qadami qo'yiladi) va kerakli indeks nomlanadi (arxitektor 23, 24-bob).
+  tekshirish qadami qo'yiladi) va kerakli indeks nomlanadi (arxitektor: `Indekslar`, `Planner, statistika va EXPLAIN ANALYZE o'qish`).
 - Katta jadvalga indeks: `CREATE INDEX CONCURRENTLY`, aks holda lock.
-- Izolyatsiya darajasi o'zgarishi — ADR, chunki u xulqni o'zgartiradi
-  (arxitektor 22-bob).
+- Izolyatsiya darajasi o'zgarishi - ADR, chunki u xulqni o'zgartiradi
+  (arxitektor: `MVCC, izolyatsiya darajalari, lock va deadlock`).
 
 ## 3.7 Risk ro'yxati
 
@@ -139,9 +140,9 @@ Har risk uchta ustun bilan yoziladi:
 |---|---|---|
 | Outbox publisher sekinlashadi | o'rta / yuqori | `outbox_lag_seconds` alert > 30 s; qo'lda qayta jo'natish buyrug'i |
 | Migratsiya katta jadvalni lock qiladi | past / yuqori | `CONCURRENTLY`, test bazada o'lchash, reliz oynasi |
-| Consumer idempotent emas | o'rta / o'rta | unique indeks + takroriy xabar testi (testlash 11-bob) |
+| Consumer idempotent emas | o'rta / o'rta | unique indeks + takroriy xabar testi (testlash: `Xavfsizlik, tranzaksiya, asinxron va konkurentlik testlari`) |
 
-"Risk bor" deb yozib, yumshatish yozmaslik — risk ro'yxati emas, ogohlantirish.
+"Risk bor" deb yozib, yumshatish yozmaslik - risk ro'yxati emas, ogohlantirish.
 
 ## Bosqich tugaganini qanday bilamiz
 

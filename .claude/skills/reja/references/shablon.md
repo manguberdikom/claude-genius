@@ -1,6 +1,6 @@
 # 6-bosqich (b): REJA.md shabloni
 
-Fayl joyi: loyiha ildizida `REJA.md`. Bir nechta reja bo'lsa —
+Fayl joyi: loyiha ildizida `REJA.md`. Bir nechta reja bo'lsa -
 `reja/<slug>-reja.md` (masalan `reja/outbox-reja.md`). Foydalanuvchi ochib
 o'qiydigan joyda bo'lishi shart.
 
@@ -9,11 +9,11 @@ o'qiydigan joyda bo'lishi shart.
 | Hajm | Qachon | Majburiy bo'limlar |
 |---|---|---|
 | **S** | bitta modul, < 5 fayl, sxema o'zgarmaydi, yangi dependency yo'q | 1, 2, 4, 7, 8, 9, 14 |
-| **M** | bir nechta modul yoki sxema o'zgaradi yoki yangi tashqi chaqiruv | 1–9, 11, 13, 14 |
-| **L** | chegara o'zgaradi, migratsiya, yangi infratuzilma, ko'p relizli ish | hammasi (1–15) |
+| **M** | bir nechta modul yoki sxema o'zgaradi yoki yangi tashqi chaqiruv | 1-9, 11, 13, 14 |
+| **L** | chegara o'zgaradi, migratsiya, yangi infratuzilma, ko'p relizli ish | hammasi (1-15) |
 
 Bo'limni bo'sh qoldirish o'rniga olib tashlash afzal. Olib tashlangan bo'lim
-sababini kirishda bir qatorda aytish kerak ("sxema o'zgarmaydi — 12-bo'lim yo'q").
+sababini kirishda bir qatorda aytish kerak ("sxema o'zgarmaydi - 12-bo'lim yo'q").
 
 ## Shablon
 
@@ -38,7 +38,7 @@ Nima uchun bu ish qilinadi, hozir nima og'riyapti (bir-ikki abzats, har da'vo
 
 **Kiradi:** <ro'yxat>
 
-**Kirmaydi (non-goals):** <ro'yxat — bu bo'lim kelishuvni soddalashtiradi>
+**Kirmaydi (non-goals):** <ro'yxat - bu bo'lim kelishuvni soddalashtiradi>
 
 ## 3. Aniqlangan haqiqatlar
 
@@ -54,9 +54,9 @@ Nima uchun bu ish qilinadi, hozir nima og'riyapti (bir-ikki abzats, har da'vo
 
 ## 4. Hozirgi holat
 
-| Joy | Simptom | Nega muhim | Qo'llanma § |
+| Joy | Simptom | Nega muhim | Qo'llanmadagi mavzu |
 |---|---|---|---|
-| `X.java:120-180` | | | patternlar 25.1 |
+| `X.java:120-180` | | | patternlar: `God Object` |
 
 Bog'liqlik eskizi (buzilgan yo'nalish `!` bilan):
 
@@ -68,7 +68,7 @@ web -> application -> domain <- infrastructure
 ## 5. Maqsadli dizayn
 
 O'zgarishdan keyin tuzilish qanday bo'ladi: qatlamlar, yangi komponentlar,
-ma'lumot oqimi. Matnli diagramma + 3–5 qator izoh. Yangi narsa nega shu joyda
+ma'lumot oqimi. Matnli diagramma + 3-5 qator izoh. Yangi narsa nega shu joyda
 turishi aytiladi.
 
 ## 6. Arxitektura qarorlari (ADR)
@@ -89,11 +89,11 @@ turishi aytiladi.
 
 ## 7. Pattern tayinlash
 
-| Joy | Hozir | Pattern | Nega | Narxi | § |
+| Joy | Hozir | Pattern | Nega | Narxi | Qo'llanmada qidirish |
 |---|---|---|---|---|---|
-| `OrderService.java:142-198` | uch joyda bir xil `switch` | Strategy + registry | yangi tur mavjud kodga tegmaydi | +1 interfeys, +3 sinf | 3.9, 8.21 |
+| `OrderService.java:142-198` | uch joyda bir xil `switch` | Strategy + registry | yangi tur mavjud kodga tegmaydi | +1 interfeys, +3 sinf | `Strategy`, `Strategy Registry via Map<String, Bean>` |
 
-Tekshirilgan anti-patternlar: <§ raqamlari va nega tushmaydi>.
+Tekshirilgan anti-patternlar: <nomlari va nega tushmaydi>.
 
 ## 8. Qadamlar
 
@@ -166,9 +166,14 @@ Exclusion qo'shilsa: qaysi fayl, nega halol.
 
 - Kod: `fayl:qator` ro'yxati
 - Config: `pom.xml`, `application.yml:22`, `sonar-project.properties:12`
-- Qo'llanmalar: patternlar §3.9, §10.14; arxitektor 19-bob; testlash 8-bob; sonarqube 9-bob
-- Hujjatlar: `spec.pdf` s.14, 22; `prompt-design.pdf` s.3–7
-- Memory: `CLAUDE.md` (Lombok taqiqi), `docs/adr/0004-*.md`
+- Qo'llanmalar (mavzu nomi bilan):
+  - patternlar: `Strategy`, `Strategy Registry via Map<String, Bean>`, `Transactional Outbox`
+  - arxitektor: `Spring tranzaksiyalari va ularning chegaralari`
+  - testlash: `Testcontainers bilan real infratuzilmada test`
+  - sonarqube: `Coverage qanday o'lchanadi`
+  - review: `Dizayn pattern review II: noto'g'ri va ortiqcha qo'llangan pattern`
+- Hujjatlar: `spec.pdf` s.14, 22; `prompt-design.pdf` s.3-7
+- Memory: `CLAUDE.md` (Lombok taqiqi), `memory/<proyekt-slug>/MEMORY.md`, `docs/adr/0004-*.md`
 ````
 
 ## To'ldirilgan mikro-namuna (S hajm)
@@ -191,13 +196,13 @@ offsetda PostgreSQL 50k qatorni tashlab o'tadi (`EXPLAIN` da
 Kiradi: `GET /api/orders` ro'yxati. Kirmaydi: boshqa endpointlar, UI o'zgarishi.
 
 ## 4. Hozirgi holat
-| Joy | Simptom | Qo'llanma § |
+| Joy | Simptom | Qo'llanmadagi mavzu |
 |---|---|---|
-| `OrderRepository.java:21` | `findAll(Pageable)` offset asosida | patternlar 7.7 |
-| `orders` jadvali | `(created_at, id)` indeksi yo'q | arxitektor 23-bob |
+| `OrderRepository.java:21` | `findAll(Pageable)` offset asosida | patternlar: `Keyset / Cursor Pagination` |
+| `orders` jadvali | `(created_at, id)` indeksi yo'q | arxitektor: `Indekslar` |
 
 ## 7. Pattern tayinlash
-| Joy | Hozir | Pattern | Nega | Narxi | § |
+| Joy | Hozir | Pattern | Nega | Narxi | Qo'llanmada qidirish |
 |---|---|---|---|---|---|
 | `OrderRepository.java:21` | offset pagination | Keyset / cursor pagination | offset o'smaydi, indeks bo'yicha o'qish | klient `page` emas, `cursor` yuboradi (API o'zgaradi) | 7.7 |
 
@@ -207,7 +212,7 @@ Kiradi: `GET /api/orders` ro'yxati. Kirmaydi: boshqa endpointlar, UI o'zgarishi.
 **Nima qilinadi.** `db/migration/V12__orders_created_at_id_idx.sql`:
 `CREATE INDEX CONCURRENTLY idx_orders_created_at_id ON orders (created_at DESC, id DESC);`
 **Qilinmaydi.** Kod o'zgarmaydi.
-**Test.** `MigrationIT` — migratsiya yuqoriga va orqaga o'tadi.
+**Test.** `MigrationIT` - migratsiya yuqoriga va orqaga o'tadi.
 **Tekshirish.** `EXPLAIN (ANALYZE) SELECT ... ORDER BY created_at DESC, id DESC LIMIT 20`
 -> `Index Scan`, `Seq Scan` emas.
 
@@ -230,4 +235,4 @@ Kiradi: `GET /api/orders` ro'yxati. Kirmaydi: boshqa endpointlar, UI o'zgarishi.
 - Jadval ustunlari shablondagidek, qo'shimcha ustun kiritilmaydi
 - Har qadamda beshlik to'liq (`references/prompt-dizayn.md` 6.3)
 - Fayl 10 daqiqada o'qiladi: S ~1 varaq, M ~3, L ~6
-- Chatga reja ko'chirilmaydi — xulosa + fayl yo'li + eng muhim qaror + eng katta risk
+- Chatga reja ko'chirilmaydi - xulosa + fayl yo'li + eng muhim qaror + eng katta risk

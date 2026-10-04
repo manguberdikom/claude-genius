@@ -5,7 +5,7 @@ Bu bosqichda reja test injener ko'zi bilan o'qiladi. Natija ikki artefakt:
 talablari** (o'zgarish Sonar/CI dan o'tishi uchun nima kerak).
 
 Qoida: **"test yozish" degan qadam yo'q.** Har test uchun to'rt narsa aytiladi:
-daraja, joy, ma'lumot, oracle (kutilgan natija). Oracle yo'q test — yolg'on
+daraja, joy, ma'lumot, oracle (kutilgan natija). Oracle yo'q test - yolg'on
 xotirjamlik.
 
 ## 5.1 Test matritsasi formati
@@ -22,54 +22,61 @@ xotirjamlik.
 
 ## 5.2 Daraja tanlash
 
-Piramida qoidasi (testlash 2-bob): past darajada mumkin bo'lsa, yuqorida
-yozilmaydi. Spring kontekstini ko'tarish — test sekinligining asosiy manbasi
-(patternlar 25.40).
+Piramida qoidasi (testlash: `Test piramidasi va test turlari xaritasi`): past darajada mumkin bo'lsa, yuqorida
+yozilmaydi. Spring kontekstini ko'tarish - test sekinligining asosiy manbasi
+(patternlar: `@SpringBootTest for Everything`).
 
 | Nimani tekshiramiz | Daraja | Vosita | Qarash |
 |---|---|---|---|
-| Sof logika, shart, hisob, validatsiya qoidasi | unit, kontekstsiz | JUnit 5 + Mockito | testlash 5, 6-bob |
-| Controller: marshrutlash, serializatsiya, status, validatsiya | slice | `@WebMvcTest` | testlash 7-bob |
-| Repository: so'rov, mapping, indeks ishlashi | slice + real DB | `@DataJpaTest` + Testcontainers | testlash 7, 8-bob |
-| Tranzaksiya chegarasi, rollback, lock | integratsion | `@SpringBootTest` + Testcontainers | testlash 11-bob |
-| Broker bilan oqim (producer/consumer) | integratsion | Testcontainers Kafka | testlash 8-bob |
-| Tashqi HTTP servis xulqi (timeout, 500, sekinlik) | unit/integratsion | WireMock | testlash 9-bob |
-| Tashqi kontrakt buzilmasligi | contract test | Spring Cloud Contract / Pact | testlash 9-bob; patternlar 23.17 |
-| Foydalanuvchi oqimi | E2E (kam sonda) | REST-assured / Playwright | testlash 12-bob |
-| Yuklama, chidamlilik | nofunksional | k6/Gatling, chaos | testlash 13-bob |
-| Arxitektura qoidasi (qatlam, tsikl, nomlash) | arxitektura testi | ArchUnit | testlash 14-bob |
-| Coverage yolg'on emasligi | mutation | PIT | sonarqube 20-bob; patternlar 23.10 |
+| Sof logika, shart, hisob, validatsiya qoidasi | unit, kontekstsiz | JUnit 5 + Mockito | testlash: `Unit test`, `Unit test Spring loyihasida` |
+| Controller: marshrutlash, serializatsiya, status, validatsiya | slice | `@WebMvcTest` | testlash: `Integratsion test` |
+| Repository: so'rov, mapping, indeks ishlashi | slice + real DB | `@DataJpaTest` + Testcontainers | testlash: `Integratsion test`, `Testcontainers bilan real infratuzilmada test` |
+| Tranzaksiya chegarasi, rollback, lock | integratsion | `@SpringBootTest` + Testcontainers | testlash: `Xavfsizlik, tranzaksiya, asinxron va konkurentlik testlari` |
+| Broker bilan oqim (producer/consumer) | integratsion | Testcontainers Kafka | testlash: `Testcontainers bilan real infratuzilmada test` |
+| Tashqi HTTP servis xulqi (timeout, 500, sekinlik) | unit/integratsion | WireMock | testlash: `Tashqi servislarni taqlid qilish va contract testing` |
+| Tashqi kontrakt buzilmasligi | contract test | Spring Cloud Contract / Pact | testlash: `Tashqi servislarni taqlid qilish va contract testing`; patternlar: `Contract Testing` |
+| Foydalanuvchi oqimi | E2E (kam sonda) | REST-assured / Playwright | testlash: `End-to-end va UI testlar` |
+| Yuklama, chidamlilik | nofunksional | k6/Gatling, chaos | testlash: `Nofunksional testlar` |
+| Arxitektura qoidasi (qatlam, tsikl, nomlash) | arxitektura testi | ArchUnit | testlash: `Arxitektura testlari va kod sifati darvozalari` |
+| Coverage yolg'on emasligi | mutation | PIT | sonarqube: `Mutation testing`; patternlar: `Mutation Testing` |
 
 Qoida: **bitta xulq bitta darajada tekshiriladi.** Bir xil shartni unit va E2E da
-ikki marta tekshirish — ikki marta saqlash xarajati.
+ikki marta tekshirish - ikki marta saqlash xarajati.
+
+Matritsa tugagandan keyin u to'liqlik ko'zi bilan qayta o'qiladi (review:
+`Test to'liqligini review qilish`): chegara qiymatlari, bo'sh va bitta elementli
+holat, xato yo'li, takroriy chaqiruv va ruxsat yetmagan foydalanuvchi
+qoldirilmaganmi. Qoldirilgan holat bilib qoldirilsa, sababi matritsada bitta
+qator bo'lib qoladi.
 
 ## 5.3 Test ma'lumoti
 
-- Qurilish takrorlanadigan bo'lsa — Test Data Builder (patternlar 23.5) yoki
+- Qurilish takrorlanadigan bo'lsa - Test Data Builder (patternlar: `Test Data Builder`) yoki
   Object Mother (23.6). Rejada builder qayerda turishi aytiladi.
 - Umumiy mutable fixture ishlatilmaydi: test tartibiga bog'liqlik paydo bo'ladi
-  (testlash 16-bob).
-- Real ma'lumot nusxasi ishlatilsa, shaxsiy ma'lumot maskalanadi (testlash 10-bob).
-- Har test o'z ma'lumotini yaratadi va tozalaydi; `@Sql` yoki builder — tanlov
+  (testlash: `Flaky testlar, test qarzi va test kodini saqlash`).
+- Real ma'lumot nusxasi ishlatilsa, shaxsiy ma'lumot maskalanadi (testlash: `Test ma'lumotlarini boshqarish`).
+- Har test o'z ma'lumotini yaratadi va tozalaydi; `@Sql` yoki builder - tanlov
   rejada aytiladi.
 
 ## 5.4 Test qiyin joylar uchun reja
 
-Kod o'zgarmasdan test yozilmaydigan holatlar (arxitektor 34-bob, sonarqube
-11-bob) rejada **alohida qadam** bo'ladi:
+Kod o'zgarmasdan test yozilmaydigan holatlar rejada **alohida qadam** bo'ladi
+(arxitektor: `Legacy kod va bosqichma-bosqich refaktoring`;
+sonarqube: `Qamralmay qoladigan kod va unga test yozish`):
 
 | To'siq | Reja qadami |
 |---|---|
 | `static` chaqiruv (`LocalDate.now()`, util sinflar) | `Clock` bean inject qilinadi; test `Clock.fixed` beradi |
 | `new` konstruktor ichida | fabrika yoki konstruktor injection |
 | `private` metod murakkab | xulq public API orqali tekshiriladi yoki metod alohida sinfga chiqariladi |
-| Tashqi tizim qattiq bog'langan | port interfeysi + adapter (patternlar 12.2) |
+| Tashqi tizim qattiq bog'langan | port interfeysi + adapter (patternlar: `Hexagonal Architecture / Ports & Adapters`) |
 | Random / UUID | generator interfeysi yoki seed |
-| Thread va vaqt | `Awaitility`, deterministik executor (testlash 11-bob) |
+| Thread va vaqt | `Awaitility`, deterministik executor (testlash: `Xavfsizlik, tranzaksiya, asinxron va konkurentlik testlari`) |
 
 ## 5.5 Quality gate talablari
 
-Chegaralar **taxmin qilinmaydi** — loyihadan o'qiladi (1-bosqich jadvalidan).
+Chegaralar **taxmin qilinmaydi** - loyihadan o'qiladi (1-bosqich jadvalidan).
 Rejaga aynan shu qiymatlar yoziladi:
 
 | Shart | Loyihadagi qiymat | Manba | Reja uchun ma'nosi |
@@ -81,48 +88,48 @@ Rejaga aynan shu qiymatlar yoziladi:
 | Security hotspot | hammasi ko'rib chiqilgan | gate | yangi tashqi kiritish uchun validatsiya |
 | Test muvaffaqiyati | 100% | CI | `@Disabled` qo'shilmaydi |
 
-Agar gate topilmasa: rejada `TAXMIN:` deb yoziladi va birinchi qadamlardan biri —
+Agar gate topilmasa: rejada `TAXMIN:` deb yoziladi va birinchi qadamlardan biri -
 gate shartlarini aniqlash.
 
 ### Exclusion halolligi
 
-Coverage ni `sonar.coverage.exclusions` bilan "yopish" — faqat haqiqatan
+Coverage ni `sonar.coverage.exclusions` bilan "yopish" - faqat haqiqatan
 mantiqsiz kod uchun (generatsiya qilingan, DTO/record, konfiguratsiya sinflari);
-mantiq bor kodni chiqarish aldov (sonarqube 12-bob). Reja exclusion qo'shsa,
+mantiq bor kodni chiqarish aldov (sonarqube: `Exclusion`). Reja exclusion qo'shsa,
 sababi va qaysi fayl ekani aniq yoziladi.
 
 ## 5.6 O'zgarish turi -> ehtimoliy Sonar qoidalari
 
 Reja qanday kod yozishni aytadi, demak qaysi qoidani buzish xavfi borligini ham
-aytadi (sonarqube 14, 25–30-boblar):
+aytadi (sonarqube: `Java va Spring da eng ko'p uchraydigan issue va ularning yechimi`, `Xato katalogi: reliability (bug) toifasi`, `Xato katalogi: test kodidagi xatolar`):
 
 | Reja nima qo'shadi | Xavfdagi qoidalar |
 |---|---|
-| Yangi `switch` / shartlar | cognitive complexity, takrorlanish (15-bob) |
-| Yangi tashqi chaqiruv | resurs yopilmasligi, timeout yo'qligi, `InterruptedException` yutilishi (25-bob) |
-| SQL yoki filtr | SQL injection, taint oqimi (26, 37-bob) |
-| Yangi DTO/record | Lombok/record va coverage (41-bob) |
-| Yangi `@Transactional` | `private`/`self-invocation` xatolari (29-bob) |
-| Yangi test | assertion yo'qligi, `@Disabled`, test ichida mantiq (19, 30-bob) |
-| Yangi log | foydalanuvchi ma'lumotini log qilish, formatlash (26, 28-bob) |
+| Yangi `switch` / shartlar | cognitive complexity, takrorlanish (sonarqube: `Cognitive complexity va takrorlanishni kamaytirish`) |
+| Yangi tashqi chaqiruv | resurs yopilmasligi, timeout yo'qligi, `InterruptedException` yutilishi (sonarqube: `Xato katalogi: reliability (bug) toifasi`) |
+| SQL yoki filtr | SQL injection, taint oqimi (sonarqube: `Xato katalogi: security (vulnerability va hotspot)`, `Taint analysis mexanikasi`) |
+| Yangi DTO/record | Lombok/record va coverage (sonarqube: `Lombok, record va generatsiya qilingan kod`) |
+| Yangi `@Transactional` | `private`/`self-invocation` xatolari (sonarqube: `Xato katalogi: Spring, JPA va PostgreSQL ga xos xatolar`) |
+| Yangi test | assertion yo'qligi, `@Disabled`, test ichida mantiq (sonarqube: `Testning o'zidagi Sonar qoidalari va test sifati`, `Xato katalogi: test kodidagi xatolar`) |
+| Yangi log | foydalanuvchi ma'lumotini log qilish, formatlash (sonarqube: `Xato katalogi: security (vulnerability va hotspot)`, `Xato katalogi: maintainability, nomlash, o'lik kod va uslub`) |
 
 ## 5.7 CI dagi o'rni
 
 Rejada yangi test turi paydo bo'lsa, u pipeline ga qanday tushishi aytiladi
-(testlash 15-bob):
+(testlash: `CI/CD da test pipeline`):
 
-- unit testlar — har push da, PR ni blokirovka qiladi
-- integratsion/Testcontainers — PR da, alohida job, timeout bilan
-- contract test — provider va consumer tomonida
-- E2E / yuklama — kechasi yoki reliz oldidan, PR ni blokirovka qilmaydi
-- mutation testing — nightly, o'zgargan modulga
+- unit testlar - har push da, PR ni blokirovka qiladi
+- integratsion/Testcontainers - PR da, alohida job, timeout bilan
+- contract test - provider va consumer tomonida
+- E2E / yuklama - kechasi yoki reliz oldidan, PR ni blokirovka qilmaydi
+- mutation testing - nightly, o'zgargan modulga
 
-Vaqt budjeti yoziladi: "integratsion job ~4 daqiqa qo'shadi" — pipeline sekinligi
+Vaqt budjeti yoziladi: "integratsion job ~4 daqiqa qo'shadi" - pipeline sekinligi
 ham narx.
 
 ## 5.8 Definition of Done qatorlar
 
-Reja oxiridagi DoD ga shular kiradi (testlash 18-bob shabloni bilan mos):
+Reja oxiridagi DoD ga shular kiradi (testlash: `Shablonlar, checklistlar va ma'lumotnoma` shabloni bilan mos):
 
 - [ ] Kod o'zgarishlari rejadagi qadamlarga mos, qo'shimchasiz
 - [ ] Har yangi xulq uchun test bor va u o'zgarishsiz kodda qulaydi (test avval

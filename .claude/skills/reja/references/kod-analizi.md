@@ -1,11 +1,11 @@
 # 2-bosqich: kod strukturasini analiz qilish
 
-Maqsad — **xarita**, dump emas. Bosqich oxirida uch narsa bo'ladi: tuzilish
+Maqsad - **xarita**, dump emas. Bosqich oxirida uch narsa bo'ladi: tuzilish
 inventari, bog'liqlik yo'nalishi eskizi va `fayl:qator` ga bog'langan simptomlar
 ro'yxati. Shu uchtasidan keyin pattern tanlashga haqli bo'lamiz.
 
-Vaqt budjeti: kichik ish uchun 5–10 fayl, o'rta uchun o'zgaradigan modul to'liq,
-katta uchun chegaralar va ularni kesib o'tuvchi oqimlar. Hamma kodni o'qish —
+Vaqt budjeti: kichik ish uchun 5-10 fayl, o'rta uchun o'zgaradigan modul to'liq,
+katta uchun chegaralar va ularni kesib o'tuvchi oqimlar. Hamma kodni o'qish -
 analiz emas, kechikish.
 
 ## Olti o'tish
@@ -30,7 +30,7 @@ grep -rn "@FeignClient\|RestTemplate\|WebClient" src/main/java | head
 ```
 
 Yoziladi: HTTP endpointlar, consumerlar, scheduled ishlar, tashqi chaqiruvlar.
-Har tashqi chaqiruv — keyinchalik timeout/retry/idempotentlik savoli.
+Har tashqi chaqiruv - keyinchalik timeout/retry/idempotentlik savoli.
 
 ### 3. Qatlamlar va bog'liqlik yo'nalishi
 
@@ -44,7 +44,7 @@ grep -rn "@Entity" src/main/java | wc -l
 ```
 
 Yoziladi: qatlamlar ro'yxati, ruxsat etilgan yo'nalish va uni buzgan joylar.
-Buzilgan har yo'nalish — alohida simptom qatori.
+Buzilgan har yo'nalish - alohida simptom qatori.
 
 ### 4. Ma'lumot yo'li: so'rovdan jadvalgacha
 
@@ -97,30 +97,30 @@ muhim.
 har yangi to'lov turi uchta joyni o'zgartirishni talab qiladi.
 ```
 
-Taqiq: "kod sifatsiz", "arxitektura yaxshi emas", "ko'p joyda muammo bor" —
+Taqiq: "kod sifatsiz", "arxitektura yaxshi emas", "ko'p joyda muammo bor" -
 bular simptom emas, taassurot.
 
 ## Simptomdan qo'llanmaga xarita
 
-| Kodda ko'rinadigan narsa | Qarash kerak |
+| Kodda ko'rinadigan narsa | Qarash kerak (hujjat: mavzu) |
 |---|---|
-| Bitta sinf hamma ishni qiladi (1000+ qator, 20+ dependency) | patternlar 25.1 (God Object), 26-bo'lim (SRP) |
-| Entity faqat getter/setter, logika servicelarda | patternlar 25.35 (Anemic Domain Model), 13.15 |
-| Loop ichida repository chaqiruvi, sekin ro'yxat | patternlar 9.27 (N+1), 25.43; arxitektor 18-bob |
-| `open-in-view: true` yoki view da lazy load | patternlar 9.28 / 25.32; arxitektor 18-bob |
-| `ApplicationContext.getBean(...)` kod ichida | patternlar 1.16 (Service Locator) |
-| `new` operatori hamma joyda, test qilib bo'lmaydi | patternlar 1.7, 1.8 |
-| Konstruktorda 8 parametr, yarmi optional | patternlar 1.10 (Builder) |
-| Tranzaksiya ichida HTTP yoki Kafka chaqiruvi | patternlar 10.14 (Outbox), 10.31 (Dual Write); arxitektor 19-bob |
-| Bir xil kod ikki-uch servisda takrorlangan | sonarqube 15-bob; patternlar 26-bo'lim |
-| Timeout va retry yo'q tashqi chaqiruv | patternlar 17.1, 17.2, 17.3; arxitektor 32-bob |
-| Kesh bor, lekin invalidatsiya yo'q | patternlar 11-bo'lim; arxitektor 28-bob |
-| `catch (Exception e) {}` yoki log qilib yutib yuborish | sonarqube 25-bob (reliability katalogi) |
-| String concat bilan SQL | sonarqube 26-bob, 37-bob (taint analysis) |
-| Statik mutable holat, singleton ichida mutable maydon | patternlar 25.26, 25.48 |
-| Paketlar orasida tsikl | arxitektor 5-bob; testlash 14-bob (ArchUnit) |
-| Metodda cognitive complexity yuqori | sonarqube 15-bob |
-| Test yo'q, lekin kod o'zgaradi | arxitektor 34-bob (legacy, seam topish) |
+| Bitta sinf hamma ishni qiladi (1000+ qator, 20+ dependency) | patternlar: `God Object`, `Dizayn printsiplari` (SRP) |
+| Entity faqat getter/setter, logika servicelarda | patternlar: `Anemic Domain Model`, `Aggregate & Aggregate Root` |
+| Loop ichida repository chaqiruvi, sekin ro'yxat | patternlar: `N+1 Problem Solutions`, `N+1 Queries`; arxitektor: `Spring Data JPA va Hibernate chuqur` |
+| `open-in-view: true` yoki view da lazy load | patternlar: `Open Session in View`; arxitektor: `Spring Data JPA va Hibernate chuqur` |
+| `ApplicationContext.getBean(...)` kod ichida | patternlar: `Service Locator` (Service Locator) |
+| `new` operatori hamma joyda, test qilib bo'lmaydi | patternlar: `Factory Method` / `Abstract Factory` |
+| Konstruktorda 8 parametr, yarmi optional | patternlar: `Builder, Step Builder, Lombok @Builder` (Builder) |
+| Tranzaksiya ichida HTTP yoki Kafka chaqiruvi | patternlar: `Transactional Outbox`, `Dual Write Problem`; arxitektor: `Spring tranzaksiyalari va ularning chegaralari` |
+| Bir xil kod ikki-uch servisda takrorlangan | sonarqube: `Cognitive complexity va takrorlanishni kamaytirish`; patternlar: `Dizayn printsiplari` |
+| Timeout va retry yo'q tashqi chaqiruv | patternlar: `Retry` / `Circuit Breaker` / `Bulkhead`; arxitektor: `Tarmoq, timeout va integratsiya haqiqati` |
+| Kesh bor, lekin invalidatsiya yo'q | patternlar: `Keshlash patternlari`; arxitektor: `Keshlash amaliyoti` |
+| `catch (Exception e) {}` yoki log qilib yutib yuborish | sonarqube: `Xato katalogi: reliability (bug) toifasi` (reliability katalogi) |
+| String concat bilan SQL | sonarqube: `Xato katalogi: security (vulnerability va hotspot)`, `Taint analysis mexanikasi` |
+| Statik mutable holat, singleton ichida mutable maydon | patternlar: `Singleton abuse / Static Cling` / `Mutable State in Singleton Beans` |
+| Paketlar orasida tsikl | arxitektor: `Abstraksiya hissi, bog'liqlik va chegaralar`; testlash: `Arxitektura testlari va kod sifati darvozalari` (ArchUnit) |
+| Metodda cognitive complexity yuqori | sonarqube: `Cognitive complexity va takrorlanishni kamaytirish` |
+| Test yo'q, lekin kod o'zgaradi | arxitektor: `Legacy kod va bosqichma-bosqich refaktoring` (legacy, seam topish) |
 
 ## Chegaralar va tsikllar
 
@@ -133,8 +133,8 @@ grep -rn "^import com.example.billing" src/main/java/com/example/order/ | head
 grep -rn "^import com.example.order"   src/main/java/com/example/billing/ | head
 ```
 
-Agar loyihada ArchUnit testlari bo'lsa (`testlash 14-bob`), ularning qoidalari
-reja uchun qattiq cheklov — yangi kod ularni buzmasligi kerak.
+Agar loyihada ArchUnit testlari bo'lsa (`testlash: `Arxitektura testlari va kod sifati darvozalari``), ularning qoidalari
+reja uchun qattiq cheklov - yangi kod ularni buzmasligi kerak.
 
 ## Bosqich artefakti
 
@@ -144,7 +144,7 @@ Rejaga ko'chiriladigan uch blok:
 2. **Bog'liqlik eskizi:** matnli ko'rinish, masalan
    `web -> application -> domain <- infrastructure (adapter)`; buzilgan
    yo'nalishlar `!` bilan belgilanadi
-3. **Simptomlar jadvali:** `joy | simptom | nega muhim | qo'llanma §`
+3. **Simptomlar jadvali:** `joy | simptom | nega muhim | qo'llanmadagi mavzu`
 
 ## Bosqich tugaganini qanday bilamiz
 
