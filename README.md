@@ -1,9 +1,10 @@
-# Java, Spring va PostgreSQL bo'yicha to'rtta qo'llanma
+# Java, Spring va PostgreSQL bo'yicha beshta qo'llanma
 
-O'zbek tilidagi to'rtta bir-birini to'ldiruvchi hujjat. Har biri alohida sohani
+O'zbek tilidagi beshta bir-birini to'ldiruvchi hujjat. Har biri alohida sohani
 qamraydi va mavzular takrorlanmaydi: pattern katalogi patternlar hujjatida,
 testlash texnikasi testlash qo'llanmasida, ichki mexanika arxitektor hujjatida,
-statik tahlil esa SonarQube hujjatida turadi.
+statik tahlil SonarQube hujjatida, kod yozish qoidalari esa toza kod hujjatida
+turadi.
 
 | Hujjat | Hajm | Mazmun |
 |---|---|---|
@@ -11,6 +12,7 @@ statik tahlil esa SonarQube hujjatida turadi.
 | [java-spring-testing-handbook.md](java-spring-testing-handbook.md) | 18 bob | Test piramidasi, unit va integratsion test, Testcontainers, contract testing, E2E, CI/CD test pipeline |
 | [java-spring-architect-mindset.md](java-spring-architect-mindset.md) | 39 bob, 482 bo'lim | Fikrlash va qaror, JVM ichki tuzilishi, Spring mexanikasi, PostgreSQL chuqur bilim, operatsion haqiqat |
 | [java-spring-sonarqube.md](java-spring-sonarqube.md) | 43 bob, 557 bo'lim | SonarQube mexanikasi, quality gate, coverage, xato katalogi, server va tashkilot, ma'lumotnoma |
+| [java-spring-clean-coder.md](java-spring-clean-coder.md) | 49 bob, 532 bo'lim | Nomlash, funksiya, izoh, formatlash, obyekt shartnomalari, xato bilan ishlash, Java/Spring/JPA kodi uslubi, test tozaligi, hid va refaktoring katalogi, professional intizom |
 
 ## Qayerdan boshlash
 
@@ -18,7 +20,9 @@ statik tahlil esa SonarQube hujjatida turadi.
 - **Dizayn qaroriga pattern tanlayapsiz** - patternlar hujjatidagi mavzuga mos bo'lim
 - **Test strategiyasi tuzyapsiz** - testlash qo'llanmasining birinchi boblari
 - **Ichkarida nima sodir bo'layotganini bilmoqchisiz** - arxitektor hujjatidagi tegishli qism
-- **O'zingizni baholamoqchisiz** - arxitektor hujjatining oxirgi bobi
+- **Nomni, funksiyani yoki izohni qanday yozishni hal qilyapsiz** - toza kod hujjatining tegishli bobi
+- **Kod hidini topdingiz va refaktoring harakati kerak** - toza kod hujjatining hid va refaktoring kataloglari
+- **O'zingizni baholamoqchisiz** - arxitektor hujjatining oxirgi bobi va toza kod hujjatining 49-bobi
 
 Har bir hujjat mundarija bilan boshlanadi va har bob `Amalda qo'llash` ro'yxati
 bilan tugaydi.
