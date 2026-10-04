@@ -64,6 +64,22 @@ Web va taqdimot qatlami - bu HTTP so'rovi tizimga kirib, biznes mantiqqa yetib b
 
 **Ehtiyot bo'ling:** Controller'ga biznes mantiq va ma'lumotlarga kirish kodini joylash "Fat Controller" anti-patterniga olib keladi (qarang: [25-bo'lim](25-anti-patternlar.md), Fat Controller) - controller faqat HTTP'ni domen chaqiruviga tarjima qilishi kerak. JPA entity'larni model sifatida to'g'ridan-to'g'ri view'ga yoki JSON'ga chiqarish ichki modelni tashqi kontraktga aylantiradi (qarang: [25-bo'lim](25-anti-patternlar.md), Exposing JPA entities in API). MVC - taqdimot qatlami patterni; u Service va Domain qatlamlarini ([8-bo'lim](08-biznes-logika-va-service-qatlam-patternlari.md)) o'rnini bosmaydi.
 
+```java
+// Model: domen, View: shablon, Controller: ikkisini bog'laydi
+@Controller
+@RequestMapping("/orders")
+class OrderPageController {
+    private final OrderService service;
+
+    @GetMapping("/{id}")
+    String show(@PathVariable long id, Model model) {
+        model.addAttribute("order", service.view(id));   // Model
+        return "orders/show";                            // View nomi
+    }
+}
+// Controller ichida biznes qoida bo'lmasligi kerak: u faqat tarjimon
+```
+
 ## 6.2 Old boshqaruvchi (Front Controller - DispatcherServlet)
 
 **Tavsif:** Muammo - har bir sahifa yoki endpoint o'z servlet'iga ega bo'lsa, autentifikatsiya, lokalizatsiya, xato ishlovi va kuzatuv kabi kesishuvchi vazifalar har joyda takrorlanadi va izchilligini yo'qotadi. Front Controller barcha kiruvchi so'rovlarni yagona kirish nuqtasidan o'tkazadi: u so'rovni tahlil qiladi, umumiy ishlovni bajaradi, so'ngra uni tegishli ishlovchiga (handler) yo'naltiradi va javobni renderlash jarayonini boshqaradi. Kesishuvchi mantiq bir joyda jamlanadi, handler'lar esa faqat o'z vazifasiga e'tibor qaratadi.
@@ -77,6 +93,21 @@ Web va taqdimot qatlami - bu HTTP so'rovi tizimga kirib, biznes mantiqqa yetib b
 - Yagona kirish nuqtasida kuzatuv (`ServerHttpObservationFilter`) va xatolarni yagona formatga keltirish.
 
 **Ehtiyot bo'ling:** Front Controller'ning o'zini `extends DispatcherServlet` qilib o'zgartirish deyarli hech qachon kerak emas - kengaytirish nuqtalari `HandlerInterceptor`, `HandlerExceptionResolver`, `HandlerMethodArgumentResolver` va `WebMvcConfigurer` orqali beriladi. `DispatcherServlet` servlet konteyner `Filter` zanjiridan keyin ishlaydi, shuning uchun Security filtrlarida yuzaga kelgan istisnolar `@ControllerAdvice` ga yetib bormaydi.
+
+```yaml
+// Front Controller: barcha so'rov bitta kirish nuqtasidan o'tadi
+spring:
+  mvc:
+    servlet:
+      path: /                 # DispatcherServlet qayerga ulanadi
+    throw-exception-if-no-handler-found: true
+  web:
+    resources:
+      add-mappings: false     # 404 ni handler yo'qligidan ajratish uchun
+
+# DispatcherServlet zanjiri: Filter -> HandlerMapping -> HandlerAdapter
+# -> HandlerInterceptor -> controller -> ViewResolver -> View
+```
 
 ## 6.3 Sahifa boshqaruvchisi (Page Controller)
 
@@ -92,6 +123,26 @@ Web va taqdimot qatlami - bu HTTP so'rovi tizimga kirib, biznes mantiqqa yetib b
 
 **Ehtiyot bo'ling:** Bir controller klassiga o'nlab sahifani joylash uni God Object'ga aylantiradi - controller'larni domen bo'yicha (buyurtmalar, to'lovlar) guruhlang. Har bir metodda takrorlanadigan "umumiy model atributlari" ni `@ModelAttribute` metodlar yoki `@ControllerAdvice` ga ko'chiring, aks holda Page Controller'lar nusxa-ko'chirma kodga to'ladi.
 
+```java
+// Page Controller: bitta sahifa yoki bitta harakat uchun bitta controller
+@Controller
+class CheckoutPageController {
+
+    @GetMapping("/checkout")
+    String form(Model model) {
+        model.addAttribute("form", new CheckoutForm());
+        return "checkout/form";
+    }
+
+    @PostMapping("/checkout")
+    String submit(@Valid @ModelAttribute("form") CheckoutForm form, BindingResult errors) {
+        if (errors.hasErrors()) return "checkout/form";
+        service.place(form.toCommand());
+        return "redirect:/orders";                       // Post/Redirect/Get
+    }
+}
+```
+
 ## 6.4 Ilova boshqaruvchisi (Application Controller - HandlerMapping + HandlerAdapter)
 
 **Tavsif:** Front Controller kattalashgach, "qaysi so'rov qaysi ishlovchiga boradi" va "ishlovchini qanday chaqirish kerak" mantig'i uni og'irlashtiradi. Application Controller bu ikki javobgarlikni ajratib oladi: amal (action) ni aniqlash va view'ni tanlash markazlashgan, konfiguratsiya qilinadigan komponentga topshiriladi. Front Controller "darvoza", Application Controller esa "yo'l xaritasi": u so'rov atributlari (yo'l, metod, header, media type) asosida ishlovchini tanlaydi va uni yagona kontrakt orqali bajaradi.
@@ -106,6 +157,23 @@ Web va taqdimot qatlami - bu HTTP so'rovi tizimga kirib, biznes mantiqqa yetib b
 - Yangi protokol yoki handler turi uchun shaxsiy `HandlerAdapter` yozish (kamdan-kam, lekin plugin arxitekturalarida uchraydi).
 
 **Ehtiyot bo'ling:** `HandlerMapping` tartibi (`Ordered`) muhim - xato tartib "noto'g'ri handler topildi" yoki 404 ko'rinishida namoyon bo'ladi. `AntPathMatcher` ga qaytish (`spring.mvc.pathmatch.matching-strategy=ant_path_matcher`) faqat legacy suffix-pattern'lar uchun va vaqtinchalik bo'lishi kerak. `@RequestMapping` larda bir xil yo'l uchun ikkilamchi (ambiguous) mapping ishga tushirishda istisno beradi - buni testlar bilan ushlang.
+
+```java
+// Application Controller: qaysi handler va qanday chaqirish qarori markazda
+@Component
+class RequestMappingReporter implements ApplicationListener<ContextRefreshedEvent> {
+    private final RequestMappingHandlerMapping mapping;
+
+    RequestMappingReporter(RequestMappingHandlerMapping mapping) { this.mapping = mapping; }
+
+    @Override
+    public void onApplicationEvent(ContextRefreshedEvent e) {
+        // Qaysi URL qaysi metodga ketadi - diagnostika uchun
+        mapping.getHandlerMethods().forEach((info, method) ->
+                log.info("{} -> {}", info, method.getShortLogMessage()));
+    }
+}
+```
 
 ## 6.5 Tutib qoluvchi filtr (Intercepting Filter - Filter, HandlerInterceptor)
 
@@ -154,6 +222,23 @@ public class TenantInterceptor implements HandlerInterceptor {
 
 **Ehtiyot bo'ling:** `RequestContextHolder` `ThreadLocal`ga asoslangan - `@Async`, `CompletableFuture` yoki reaktiv zanjirda kontekst yo'qoladi; tarqatish uchun `TaskDecorator` yoki Micrometer `ContextPropagation` kerak. Kontekstni "global o'zgaruvchi" sifatida suiiste'mol qilish yashirin bog'liqlik yaratadi: domen qatlamiga kerakli qiymatlarni aniq parametr sifatida uzatish afzal, kontekst - faqat web-qatlam chegarasida.
 
+```java
+// Context Object: servlet API controller'dan tashqariga chiqmaydi
+public record RequestContext(TenantId tenant, Locale locale, String correlationId) {}
+
+@Component
+class RequestContextResolver implements HandlerMethodArgumentResolver {
+    @Override public boolean supportsParameter(MethodParameter p) {
+        return p.getParameterType() == RequestContext.class;
+    }
+    @Override public Object resolveArgument(MethodParameter p, ModelAndViewContainer m,
+                                            NativeWebRequest req, WebDataBinderFactory f) {
+        return new RequestContext(TenantId.of(req.getHeader("X-Tenant")),
+                req.getLocale(), req.getHeader("X-Correlation-Id"));
+    }
+}
+```
+
 ## 6.7 Ko'rinish yordamchisi (View Helper)
 
 **Tavsif:** Muammo - shablon ichida formatlash, hisoblash, lokalizatsiya va shartli ko'rsatish mantig'i to'planib, view'ni sinab bo'lmaydigan va dizaynerlar uchun tushunarsiz qiladi. View Helper bu mantiqni alohida yordamchi komponentlarga (teglar, utility ob'ektlar, formatlovchilar, model tayyorlovchilar) ko'chiradi; shablon faqat ularni chaqiradi. Natijada view "yupqa", yordamchilar esa birlik testlar bilan qoplangan bo'ladi.
@@ -168,6 +253,22 @@ public class TenantInterceptor implements HandlerInterceptor {
 - Statik resurs URL'lariga versiya qo'shishni `ResourceUrlProvider` yordamchisi orqali bajarish.
 
 **Ehtiyot bo'ling:** Yordamchidan servis yoki repository chaqirish (shablon ichidan `${@orderService.findAll()}`) taqdimot qatlamida yashirin ma'lumot kirishini tug'diradi va N+1 muammolarini view'ga olib keladi - yordamchi faqat tayyor modelni bezaydi. `@ControllerAdvice` dagi `@ModelAttribute` metodlar har bir so'rovda, shu jumladan JSON endpointlarida ham ishlaydi; ularni `assignableTypes`/`basePackages` bilan cheklang.
+
+```java
+// View Helper: formatlash mantig'i shablondan ajratiladi
+@Component("fmt")
+public class FormatHelper {
+    public String money(Money m) {
+        return NumberFormat.getCurrencyInstance(LocaleContextHolder.getLocale())
+                .format(m.amount());
+    }
+    public String shortDate(Instant t) {
+        return DateTimeFormatter.ofPattern("dd.MM.yyyy")
+                .withZone(ZoneId.systemDefault()).format(t);
+    }
+}
+// Thymeleaf: <span th:text="${@fmt.money(order.total)}"></span>
+```
 
 ## 6.8 Kompozit ko'rinish (Composite View)
 
@@ -184,6 +285,18 @@ public class TenantInterceptor implements HandlerInterceptor {
 
 **Ehtiyot bo'ling:** Fragmentlar chuqur ichma-ich bo'lsa, ma'lumot oqimini kuzatish qiyinlashadi va "qaysi controller qaysi fragment uchun model beradi" chalkashadi - har bir fragmentning kirish kontraktini (parametrlarni) aniq hujjatlang. Fragment ichida ma'lumot yuklash (View Helper'dan servis chaqirish) kompozitsiyani sekin va kuzatib bo'lmaydigan qiladi.
 
+```html
+<!-- Composite View: sahifa mustaqil bo'laklardan yig'iladi -->
+<div th:replace="~{fragments/header :: header(${user})}"></div>
+
+<main>
+  <div th:replace="~{orders/table :: table(${orders})}"></div>
+  <div th:replace="~{orders/summary :: summary(${totals})}"></div>
+</main>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+```
+
 ## 6.9 Dispetcher ko'rinish (Dispatcher View)
 
 **Tavsif:** Core J2EE'dagi Dispatcher View - Front Controller so'rovni minimal yoki hech qanday ishlovsiz bevosita view'ga yo'naltiradigan variant; ma'lumotni olish va tayyorlash view renderlash paytida (yoki View Helper'lar orqali) bajariladi. Bu Service to Worker'ning "teskari" tomoni: u yerda ishlov controller'da, bu yerda - view yoki yordamchilarda. Pattern statik yoki deyarli statik sahifalar, hamda modelni allaqachon tayyor holda olgan hollar uchun mos.
@@ -198,6 +311,23 @@ public class TenantInterceptor implements HandlerInterceptor {
 - Maintenance yoki "tez orada" sahifasini `addStatusController` bilan 503 statusda ko'rsatish.
 
 **Ehtiyot bo'ling:** Dispatcher View'ni dinamik ma'lumotli sahifalarga tatbiq etish view ichida ma'lumot yuklashni rag'batlantiradi - bu testlab bo'lmaydigan shablonlarga olib keladi. `RequestToViewNameTranslator` ga tayanib view nomini yashirin qoldirish o'qilishini pasaytiradi; aniq `return "about"` afzal.
+
+```java
+// Dispatcher View: controller yengil, qaror ko'rinish tanlashda
+@Controller
+class DashboardController {
+
+    @GetMapping("/dashboard")
+    String dashboard(@RequestParam(defaultValue = "summary") String tab) {
+        // Minimal ishlov: faqat qaysi ko'rinish kerakligini hal qiladi
+        return switch (tab) {
+            case "orders" -> "dashboard/orders";
+            case "payments" -> "dashboard/payments";
+            default -> "dashboard/summary";
+        };
+    }
+}
+```
 
 ## 6.10 Xizmatdan ishchiga (Service to Worker)
 
@@ -214,6 +344,22 @@ public class TenantInterceptor implements HandlerInterceptor {
 
 **Ehtiyot bo'ling:** Worker'ga biznes mantiqni joylash controller'ni semirtiradi - worker faqat orkestratsiya va HTTP tarjimasi. Lazy JPA assotsiatsiyalarini view renderlash paytida yuklashga tayanish Open Session in View ga bog'liqlik yaratadi (qarang: [9-bo'lim](09-malumotlarga-kirish-va-orm-patternlari.md)) - modelni controller'da to'liq DTO ko'rinishida tayyorlang.
 
+```java
+// Service to Worker: controller ishni to'liq bajaradi, keyin ko'rinishga uzatadi
+@Controller
+class ReportController {
+    private final ReportService reports;
+
+    @GetMapping("/reports/monthly")
+    String monthly(@RequestParam YearMonth month, Model model) {
+        MonthlyReport report = reports.build(month);     // butun ish shu yerda
+        model.addAttribute("report", report);
+        model.addAttribute("chart", reports.chartData(report));
+        return "reports/monthly";                        // keyin ko'rinish
+    }
+}
+```
+
 ## 6.11 Shablon ko'rinish (Template View - Thymeleaf)
 
 **Tavsif:** Fowler'ning Template View'i - HTML sahifasida belgilar (markers) joylashtirilib, renderlash paytida ular model qiymatlari bilan to'ldiriladi. Shablon statik tuzilmani (dizayn) saqlaydi, dinamik qismlar esa ifoda tili orqali kiritiladi. Bu web'dagi eng keng tarqalgan view strategiyasi: dizaynerlar HTML bilan ishlaydi, dasturchilar modelni beradi. "Natural templating" (brauzerda statik fayl sifatida ham ochiladigan shablon) Thymeleaf'ning asosiy ustunligi.
@@ -228,6 +374,19 @@ public class TenantInterceptor implements HandlerInterceptor {
 - htmx bilan birgalikda interaktiv, lekin serverda renderlanadigan "gipermedia" ilovalar.
 
 **Ehtiyot bo'ling:** Shablonda mantiq (murakkab shartlar, hisoblashlar, servis chaqiruvlari) to'planishi - Template View'ning asosiy kasalligi; View Helper ga ko'chiring. Ishlab chiqish rejimida `spring.thymeleaf.cache=false`, ishlab chiqarishda `true` bo'lishi shart. `th:utext` bilan foydalanuvchi kiritgan matnni chiqarish XSS'ga yo'l ochadi - sukutdagi `th:text` escape'ini saqlang (qarang: [18-bo'lim](18-xavfsizlik-patternlari.md), Output Encoding).
+
+```html
+<!-- Template View: HTML skeleti statik, qiymatlar server tomonda joylashadi -->
+<table>
+  <tr th:each="o : ${orders}">
+    <td th:text="${o.id}">0</td>
+    <!-- th:text HTML escape qiladi: XSS himoyasi default -->
+    <td th:text="${o.customerName}">nomi</td>
+    <td th:text="${#numbers.formatDecimal(o.total, 1, 2)}">0.00</td>
+  </tr>
+</table>
+<!-- th:utext escape qilmaydi: faqat ishonchli HTML uchun -->
+```
 
 ## 6.12 Transformatsiya ko'rinishi (Transform View)
 
@@ -244,6 +403,22 @@ public class TenantInterceptor implements HandlerInterceptor {
 
 **Ehtiyot bo'ling:** XSLT bugun kam ishlatiladi va mutaxassis topish qiyin - yangi loyihada uni faqat XML-markaziy integratsiyalar talab qilsa tanlang. Transform View'da tasvir mantiqi Java kodida bo'ladi, shuning uchun dizayn o'zgarishlari dasturchi ishtirokini talab qiladi; HTML uchun Template View odatda afzal. PDF/Excel generatsiyasi CPU va xotira talab qiladi - katta hajmlarda asinxron (6.33) yoki batch ([20-bo'lim](20-batch-va-scheduling-patternlari.md)) yondashuvga o'ting.
 
+```java
+// Transform View: model element-element aylantiriladi
+@RestController
+class OrderFeedController {
+
+    @GetMapping(value = "/orders.xml", produces = MediaType.APPLICATION_XML_VALUE)
+    String feed() {
+        // Har element bir xil qoida bilan aylantiriladi (XSLT g'oyasi)
+        return orders.stream()
+                .map(o -> "<order id=\"%d\"><total>%s</total></order>"
+                        .formatted(o.id(), o.total()))
+                .collect(Collectors.joining("", "<orders>", "</orders>"));
+    }
+}
+```
+
 ## 6.13 Ikki bosqichli ko'rinish (Two Step View - layouts)
 
 **Tavsif:** Fowler'ning Two Step View'i renderlashni ikki bosqichga ajratadi: birinchi bosqichda domen modeli mantiqiy sahifaga (sarlavha, kontent bloki, yon panel - hali HTML'siz tuzilma) aylanadi, ikkinchi bosqichda bu mantiqiy sahifa yagona layout orqali konkret HTML'ga renderlanadi. Natijada saytning umumiy ko'rinishini (layout, tema) bir joyda o'zgartirish mumkin va barcha sahifalar izchil bo'ladi. Amaliyotda bu "layout + kontent fragmenti" (decorator) modelidir.
@@ -259,6 +434,24 @@ public class TenantInterceptor implements HandlerInterceptor {
 
 **Ehtiyot bo'ling:** Chuqur layout ierarxiyasi (layout → sub-layout → sahifa → fragment) kuzatishni qiyinlashtiradi - ikki-uch darajadan oshmang. Layout Dialect uchinchi tomon kutubxonasi bo'lib, Thymeleaf versiyalari bilan moslik oynasini tekshirish kerak; sof Thymeleaf fragment ifodalari bilan ham xuddi shu natijaga erishish mumkin. htmx uslubidagi qismiy javoblarda layout'ni chetlab o'tishni (`HX-Request` header'i bo'lsa faqat fragmentni qaytarish) oldindan loyihalashtiring.
 
+```html
+<!-- Two Step View: 1-qadam umumiy layout, 2-qadam sahifa mazmuni -->
+<!-- layouts/main.html -->
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head><title layout:title-pattern="$CONTENT_TITLE - Payments">Payments</title></head>
+<body>
+  <nav th:replace="~{fragments/nav :: nav}"></nav>
+  <section layout:fragment="content"></section>
+</body>
+</html>
+
+<!-- orders/list.html -->
+<html layout:decorate="~{layouts/main}">
+<head><title>Buyurtmalar</title></head>
+<body><section layout:fragment="content">...</section></body>
+</html>
+```
+
 ## 6.14 Model-Ko'rinish-Taqdimotchi (Model-View-Presenter, MVP)
 
 **Tavsif:** MVP - MVC'ning view'ni passiv qiladigan varianti: Presenter view interfeysi orqali view'ni to'liq boshqaradi (nima ko'rsatish, qaysi tugma faol), view esa foydalanuvchi hodisalarini presenter'ga uzatadi va o'zi hech qanday qaror qabul qilmaydi ("Passive View"). View interfeys orqali abstraksiyalangani uchun presenter UI framework'siz birlik test qilinadi. Bu pattern asosan holatli (stateful), komponentga asoslangan UI'lar uchun (desktop, Vaadin, Android) tabiiy, so'rov-javob web MVC'da kamroq.
@@ -272,6 +465,28 @@ public class TenantInterceptor implements HandlerInterceptor {
 - Android/KMP mijozlar uchun Spring backend bilan ishlaydigan jamoada umumiy terminologiya.
 
 **Ehtiyot bo'ling:** So'rov-javob Spring MVC'ga "sun'iy" MVP qatlamini qo'shish (view interfeyslari, presenter'lar) ortiqcha abstraksiya tug'diradi - u yerda controller + servis yetarli. Vaadin'da presenter'ni session scope'da saqlash xotira iste'molini oshiradi va gorizontal masshtablashni (sticky session) talab qiladi.
+
+```java
+// MVP: ko'rinish passiv, Presenter nima ko'rsatilishini hal qiladi
+public interface OrderView {
+    void showOrders(List<OrderRow> rows);
+    void showError(String message);
+}
+
+@Component
+public class OrderPresenter {
+    private final OrderService service;
+
+    public void load(OrderView view, OrderFilter filter) {
+        try {
+            view.showOrders(service.search(filter));
+        } catch (AccessDeniedException e) {
+            view.showError("Ruxsat yo'q");
+        }
+    }
+}
+// Presenter View interfeysiga bog'langan: testda mock View beriladi
+```
 
 ## 6.15 Model-Ko'rinish-Ko'rinishModeli (Model-View-ViewModel, MVVM)
 
@@ -287,6 +502,24 @@ public class TenantInterceptor implements HandlerInterceptor {
 - Real vaqt dashboard: WebSocket/SSE orqali keluvchi hodisalar frontend ViewModel'ini yangilaydi (6.23, 6.24).
 
 **Ehtiyot bo'ling:** Backend DTO'ni frontend ViewModel'i bilan 1:1 tenglashtirish API'ni bitta ekranga qattiq bog'laydi - bu BFF uchun maqbul, umumiy (public) API uchun emas. Ikki tomonlama binding katta holatlarda kuzatib bo'lmaydigan yangilanish zanjirlarini tug'diradi; bir tomonlama oqimni (unidirectional data flow) afzal ko'ring.
+
+```java
+// MVVM: server ko'rinish modelini beradi, bog'lanish mijozda
+public record OrderViewModel(
+        long id,
+        String statusLabel,          // allaqachon tarjima qilingan
+        String totalFormatted,       // allaqachon formatlangan
+        boolean cancellable) {       // qaror serverda chiqarilgan
+
+    static OrderViewModel of(Order o, MessageSource ms, Locale locale) {
+        return new OrderViewModel(o.id(),
+                ms.getMessage("status." + o.status(), null, locale),
+                NumberFormat.getCurrencyInstance(locale).format(o.total().amount()),
+                o.status() == OrderStatus.NEW);
+    }
+}
+// Mijozda `if (status === 'NEW')` kabi takroriy qoida qolmaydi
+```
 
 ## 6.16 Post/Redirect/Get (Post/Redirect/Get, PRG)
 
@@ -332,6 +565,22 @@ public String create(@Valid @ModelAttribute OrderForm form, BindingResult errors
 
 **Ehtiyot bo'ling:** Flash atributlar sessiyaga tayanadi - stateless REST API'da yoki sessiya yo'q muhitda ishlamaydi va bir nechta instance bo'lsa Spring Session kabi tarqatilgan sessiya saqlash kerak. Katta ob'ektlarni (butun entity) flash'ga joylash sessiyani shishiradi va seriyalashtirish muammolariga olib keladi - faqat kichik, `Serializable` qiymatlar. Parallel tab'lar flash xabarni "noto'g'ri" sahifada ko'rsatishi mumkin; `FlashMap` ni maqsadli yo'lga bog'lang.
 
+```java
+// Flash atributlar: redirect orqali bir martalik xabar uzatish
+@PostMapping("/orders/{id}/cancel")
+String cancel(@PathVariable long id, RedirectAttributes flash) {
+    service.cancel(id);
+    flash.addFlashAttribute("notice", "Buyurtma bekor qilindi");
+    return "redirect:/orders";       // xabar sessiyada bir so'rov yashaydi
+}
+
+@GetMapping("/orders")
+String list(@ModelAttribute("notice") String notice, Model model) {
+    // notice bor bo'lsa ko'rsatiladi, keyin o'chadi
+    return "orders/list";
+}
+```
+
 ## 6.18 Istisnolarni qayta ishlovchi (Exception Handler - @ControllerAdvice, @ExceptionHandler)
 
 **Tavsif:** Muammo - har bir controller o'z try/catch'ini yozsa, xato javoblari formati, status kodlari va log'lash tarqoq va nomuvofiq bo'ladi. Pattern istisnolarni web-qatlam chegarasida markazlashgan ishlovchiga yo'naltiradi: istisno turi → HTTP status + yagona xato tanasi (va log darajasi) xaritasi bir joyda. Domen qatlami o'z istisnolarini tashlaydi, HTTP'ga tarjima faqat web-qatlamda bo'ladi; controller'lar xato kodidan xoli qoladi.
@@ -376,6 +625,17 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
 **Ehtiyot bo'ling:** `?format=` parametri keshlash va proxy'lar bilan yomon chiqishadi va URL'ni formatga bog'laydi - faqat brauzerdan test qilish qulayligi uchun yoqing. Sukutdagi `Accept: */*` yoki yo'q header holatida qaytariladigan format aniq belgilanmasa, converter tartibiga bog'liq "tasodifiy" natija chiqadi - `defaultContentType` ni o'rnating. Juda ko'p format qo'llab-quvvatlash test matritsasini ko'paytiradi; haqiqatan ishlatiladiganlarini qoldiring.
 
+```java
+// Content negotiation: bir endpoint, bir nechta format
+@GetMapping(value = "/orders/{id}",
+            produces = {MediaType.APPLICATION_JSON_VALUE,
+                        MediaType.APPLICATION_XML_VALUE})
+OrderDto get(@PathVariable long id) { return service.view(id); }
+
+// Qaror Accept header'dan chiqadi. URL kengaytmasi bo'yicha tanlash
+// (/orders/1.json) Boot 3 da o'chirilgan: u xavfsizlik muammosi edi.
+```
+
 ## 6.20 HTTP xabar konvertori (HttpMessageConverter)
 
 **Tavsif:** Muammo - controller HTTP tanasini baytlardan Java ob'ektiga va aksincha o'zi aylantirsa, format mantiqi hamma joyga tarqaladi. HttpMessageConverter - Strategy patternining (qarang: [3-bo'lim](03-xulq-atvor-patternlari.md)) web ko'rinishi: har bir converter "men ushbu Java turini ushbu media type'da o'qiy/yoza olaman" deb e'lon qiladi, framework esa tur + media type juftligi uchun mos converter'ni tanlaydi. Controller faqat tiplangan ob'ektlar bilan ishlaydi; serializatsiya to'liq almashtiriladigan komponentda.
@@ -390,6 +650,23 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 - Fayl yuklab berishda `Resource` + `ResourceRegionHttpMessageConverter` bilan `Range` so'rovlarini qo'llash (video streaming).
 
 **Ehtiyot bo'ling:** `configureMessageConverters` sukutdagi ro'yxatni butunlay o'chiradi - ko'pincha `extendMessageConverters` kerak. Bir nechta `ObjectMapper` (Boot'niki va qo'lda yaratilgani) bo'lsa, converter qaysi birini ishlatayotgani chalkashadi - Boot'ning `ObjectMapper` bean'ini customizer orqali sozlang. JPA entity'larni to'g'ridan-to'g'ri seriyalashtirish lazy yuklash, siklik havolalar va ichki maydonlarning sizib chiqishiga olib keladi (qarang: [25-bo'lim](25-anti-patternlar.md), Exposing JPA entities in API).
+
+```java
+// HttpMessageConverter: tur va media turi orasidagi aylantirish
+@Configuration
+class WebConfig implements WebMvcConfigurer {
+
+    @Override
+    public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
+        converters.stream()
+                .filter(MappingJackson2HttpMessageConverter.class::isInstance)
+                .map(MappingJackson2HttpMessageConverter.class::cast)
+                .forEach(c -> c.getObjectMapper()
+                        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                        .registerModule(new JavaTimeModule()));
+    }
+}
+```
 
 ## 6.21 Argument va qaytish qiymati ishlovchilari (HandlerMethodArgumentResolver / HandlerMethodReturnValueHandler)
 
@@ -470,6 +747,20 @@ class OrderRoutes {
 
 **Ehtiyot bo'ling:** Har bir ochiq SSE ulanishi Servlet stack'da thread egallamaydi (asinxron), lekin emitter'lar xotirada qoladi - uzilgan mijozlarni `onCompletion`/`onTimeout` da tozalang, aks holda sizish bo'ladi. Load balancer, Nginx yoki Spring Cloud Gateway javobni buferlashi mumkin (`X-Accel-Buffering: no`, `proxy_buffering off`) va idle timeout'lar ulanishni uzadi - heartbeat (`:ping` comment) yuboring. SSE faqat matn va bir tomonlama; ikki tomonlama yoki binar oqim kerak bo'lsa WebSocket (6.24). Ko'p instance'li muhitda hodisani barcha emitter'larga etkazish uchun Redis pub/sub yoki broker kerak.
 
+```java
+// SSE: server bir tomonlama oqim yuboradi, mijoz oddiy HTTP ishlatadi
+@GetMapping(value = "/orders/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+public SseEmitter stream() {
+    SseEmitter emitter = new SseEmitter(Duration.ofMinutes(5).toMillis());
+    emitter.onTimeout(emitter::complete);
+    emitter.onError(e -> emitter.completeWithError(e));
+    // Ro'yxatdan chiqarish shart: aks holda emitter'lar yig'ilib qoladi
+    emitter.onCompletion(() -> registry.remove(emitter));
+    registry.add(emitter);
+    return emitter;
+}
+```
+
 ## 6.24 WebSocket va STOMP (WebSocket / STOMP)
 
 **Tavsif:** Muammo - chat, hamkorlikda tahrirlash, o'yin yoki savdo terminali kabi ilovalar past kechikishli, ikki tomonlama, doimiy kanalni talab qiladi; HTTP so'rov-javob modeli bunga mos emas. WebSocket bitta TCP ulanish ustida ikki tomonlama freym oqimini beradi; STOMP esa uning ustida xabar semantikasi (destination, subscribe, send, ack) qo'shib, pub/sub modelini va broker bilan integratsiyani standartlashtiradi. Natijada "mavzuga obuna bo'l, xabar yubor" - xom freymlar emas.
@@ -484,6 +775,24 @@ class OrderRoutes {
 - Server tomonidan boshlanadigan amaliyot: foydalanuvchini aniq sessiyadan chiqarish yoki pop-up ko'rsatish.
 
 **Ehtiyot bo'ling:** `SimpleBroker` bitta JVM ichida ishlaydi - ikki va undan ortiq instance'da obunalar bo'linib ketadi; ishlab chiqarishda `StompBrokerRelay` (RabbitMQ/ActiveMQ) yoki Redis orqali tarqatish shart. WebSocket ulanishi uzoq umr ko'radi: autentifikatsiya handshake'da bir marta bo'ladi, token muddati tugaganini alohida tekshirish kerak; CSRF va `Origin` tekshiruvini (`setAllowedOriginPatterns`) o'chirmang. Load balancer idle timeout'lari va korporativ proxy'lar ulanishni uzadi - heartbeat'larni sozlang va SockJS fallback'ni baholang. Faqat server→mijoz oqimi kerak bo'lsa SSE (6.23) ancha sodda.
+
+```java
+@Configuration
+@EnableWebSocketMessageBroker
+class WsConfig implements WebSocketMessageBrokerConfigurer {
+
+    @Override
+    public void registerStompEndpoints(StompEndpointRegistry registry) {
+        registry.addEndpoint("/ws").setAllowedOrigins("https://app.example.com");
+    }
+
+    @Override
+    public void configureMessageBroker(MessageBrokerRegistry registry) {
+        registry.enableSimpleBroker("/topic");     // ko'p nusxada: tashqi broker kerak
+        registry.setApplicationDestinationPrefixes("/app");
+    }
+}
+```
 
 ## 6.25 Mijoz tomonidagi sessiya holati (Client Session State)
 
@@ -500,6 +809,18 @@ class OrderRoutes {
 
 **Ehtiyot bo'ling:** Mijozdagi har qanday holat o'zgartirilishi mumkin deb hisoblang - narx, rol, chegirma kabi qiymatlarni hech qachon mijozdan qabul qilmang, imzolang (HMAC) yoki serverda qayta hisoblang. Cookie'lar har so'rov bilan ketadi (4 KB chegara, trafik yuki) va `HttpOnly`/`Secure`/`SameSite` bo'lmasa XSS/CSRF'ga ochiq. JWT'ni "sessiya o'rnini bosuvchi" sifatida ishlatish bekor qilish (revocation) muammosini tug'diradi - qisqa muddat + refresh rotation (qarang: [18-bo'lim](18-xavfsizlik-patternlari.md)).
 
+```java
+// Mijoz tomonidagi holat: server stateless qoladi, lekin imzo shart
+@Bean
+JwtDecoder jwtDecoder(@Value("${auth.jwk-set-uri}") String jwkSetUri) {
+    return NimbusJwtDecoder.withJwkSetUri(jwkSetUri)
+            .jwsAlgorithm(SignatureAlgorithm.RS256)
+            .build();
+}
+// Holat token ichida: server sessiya saqlamaydi, shuning uchun gorizontal
+// masshtab oson. Narxi: token bekor qilish qiyin, hajmi har so'rovda ketadi.
+```
+
 ## 6.26 Server tomonidagi sessiya holati (Server Session State)
 
 **Tavsif:** Holat server xotirasida (yoki serverga yaqin saqlashda) ushlanadi, mijoz faqat sessiya identifikatorini (cookie) tashiydi. Dasturlash eng sodda - ob'ektni sessiyaga joylash kifoya - va mijozga ishonish shart emas. Narxi: server endi stateful; instance ishdan chiqsa holat yo'qoladi, gorizontal masshtablash sticky session yoki sessiya replikatsiyasini talab qiladi, xotira iste'moli faol foydalanuvchilar soniga proporsional o'sadi.
@@ -514,6 +835,25 @@ class OrderRoutes {
 - Server tomonidagi UI framework'lar (Vaadin) - komponent daraxti to'liq sessiyada yashaydi.
 
 **Ehtiyot bo'ling:** Sessiyaga katta ob'ektlar (entity grafigi, hisobot natijalari) joylash xotirani to'ldiradi va Redis'ga seriyalashtirish narxini oshiradi - faqat identifikator va kichik DTO. Sessiyadagi ob'ektlar `Serializable` bo'lishi va versiya o'zgarishida (deploy) deseriyalanishi kerak - JSON seriyalashtirish (`GenericJackson2JsonRedisSerializer`) klass versiyasiga kamroq bog'liq. Sticky session'ga tayanish nol-uzilishli deploy va autoscaling'ni murakkablashtiradi; API uchun stateless (6.25), UI uchun Spring Session afzal. `@SessionAttributes` ni `setComplete()` siz qoldirish sessiyada "eskirgan" holat qoldiradi.
+
+```yaml
+// Server sessiyasi: oddiy, lekin stateless deploy'ni buzadi
+spring:
+  session:
+    store-type: redis        # sessiya tashqi omborda: podlar almashtirilsa yo'qolmaydi
+    redis:
+      namespace: payments:session
+  servlet:
+    session:
+      timeout: 30m
+server:
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        secure: true
+        same-site: lax
+```
 
 ## 6.27 Ma'lumotlar bazasidagi sessiya holati (Database Session State)
 
@@ -530,6 +870,21 @@ class OrderRoutes {
 
 **Ehtiyot bo'ling:** Har so'rovda sessiyani bazadan o'qish/yozish asosiy bazaga yuk va kechikish qo'shadi - yuqori trafikli tizimlarda Redis (6.26) yoki stateless (6.25) afzal; JDBC sessiya kichik/o'rta ilovalar uchun. Sessiya atributlarini bazaga BLOB sifatida seriyalashtirish so'rovlab bo'lmaydigan, versiyaga bog'liq ma'lumot yaratadi - biznes ma'noli holatni (savatcha) alohida, normal jadvallarda saqlang, sessiyada faqat identifikatorlar. Tozalash ishini unutish jadvalni cheksiz o'stiradi (qarang: [10-bo'lim](10-malumotlarni-boshqarish-va-taqsimlash.md), Archive / Purge).
 
+```java
+// Database session state: holat bazada, ilova stateless
+@Entity
+@Table(name = "checkout_sessions")
+class CheckoutSession {
+    @Id private UUID id;
+    private long customerId;
+    @Column(columnDefinition = "jsonb") private String cart;
+    private Instant expiresAt;              // tozalash uchun shart
+}
+
+// Eskirgan yozuvlarni muntazam o'chirish rejasi bo'lishi kerak:
+// DELETE FROM checkout_sessions WHERE expires_at < now()
+```
+
 ## 6.28 Ma'lumotlarni bog'lash va forma ob'ekti (Data Binding / Form Backing Object)
 
 **Tavsif:** Muammo - HTTP so'rov parametrlari matn ko'rinishida keladi; ularni tiplangan ob'ektga aylantirish, konvertatsiya xatolarini yig'ish va validatsiya qilish qo'lda yozilsa zerikarli va xatoga moyil. Data Binding so'rov parametrlarini nomlari bo'yicha ob'ekt xususiyatlariga avtomatik bog'laydi, konvertatsiya va validatsiya xatolarini `Errors` ob'ektida to'playdi; Form Backing Object - shu bog'lanish uchun maxsus yaratilgan, faqat formani ifodalovchi ob'ekt (domen entity'si emas). Shablon (`th:object`/`th:field`) ham ayni ob'ektdan qiymat va xatolarni o'qiydi - ikki tomonlama forma bog'lanishi.
@@ -544,6 +899,23 @@ class OrderRoutes {
 - `@InitBinder` bilan kirish matnlarini trim qilish (`StringTrimmerEditor`) va sana formatini jamoa standartiga keltirish.
 
 **Ehtiyot bo'ling:** JPA entity'ni to'g'ridan-to'g'ri `@ModelAttribute` qilish mass-assignment zaifligini tug'diradi - foydalanuvchi `role=ADMIN` yoki `balance=...` yubora oladi; alohida form ob'ekti yoki `setAllowedFields` shart (qarang: [25-bo'lim](25-anti-patternlar.md), Exposing JPA entities in API). Bog'lash xatolarini `BindingResult` siz qoldirish 400 o'rniga istisno beradi - forma handler'larida `BindingResult` ni darhol `@ModelAttribute` dan keyin qo'ying. Validatsiya annotatsiyalari biznes qoidalarini (unikal email) o'rnini bosmaydi - ularni servis qatlamida tekshirib, `errors.rejectValue` bilan formaga qaytaring.
+
+```java
+// Form backing object: validatsiya va bog'lanish bitta joyda
+public class CheckoutForm {
+    @NotBlank private String fullName;
+    @Email private String email;
+    @NotNull @Min(1) private Integer quantity;
+    // getter va setter: data binding setter talab qiladi
+}
+
+@PostMapping("/checkout")
+String submit(@Valid @ModelAttribute CheckoutForm form, BindingResult errors) {
+    if (errors.hasErrors()) return "checkout/form";
+    return "redirect:/orders";
+}
+// Entity'ni to'g'ridan-to'g'ri bog'lamang: mass assignment xavfi
+```
 
 ## 6.29 Lokal va tema aniqlovchilar (LocaleResolver / ThemeResolver)
 
@@ -560,6 +932,27 @@ class OrderRoutes {
 
 **Ehtiyot bo'ling:** `AcceptHeaderLocaleResolver` lokalni o'zgartirishni qo'llab-quvvatlamaydi - `LocaleChangeInterceptor` bilan ishlatganda `UnsupportedOperationException` olinadi; cookie yoki sessiya resolver'i kerak. `LocaleContextHolder` thread'ga bog'langan: `@Async` yoki reaktiv kodda lokal yo'qoladi, aniq parametr sifatida uzating. Sana/valyuta formatlashni frontend'ga va backend'ga ikki marta amalga oshirish nomuvofiqlik tug'diradi - formatlash qayerda bo'lishini bitta joyda hal qiling.
 
+```java
+@Bean
+LocaleResolver localeResolver() {
+    CookieLocaleResolver r = new CookieLocaleResolver("LANG");
+    r.setDefaultLocale(new Locale("uz"));
+    r.setCookieHttpOnly(true);
+    return r;
+}
+
+@Bean
+WebMvcConfigurer localeInterceptor() {
+    return new WebMvcConfigurer() {
+        @Override public void addInterceptors(InterceptorRegistry registry) {
+            LocaleChangeInterceptor i = new LocaleChangeInterceptor();
+            i.setParamName("lang");          // /orders?lang=ru
+            registry.addInterceptor(i);
+        }
+    };
+}
+```
+
 ## 6.30 Statik resurslarni xizmat qilish (Static Resource Handling)
 
 **Tavsif:** Muammo - CSS, JS, rasm, shrift va SPA bundle'lari kabi statik fayllar `DispatcherServlet` orqali o'tsa ham, ular uchun controller yozish ma'nosiz; ayni paytda ularga keshlash sarlavhalari, versiyalash (cache busting), siqish va xavfsiz yo'l tekshiruvi kerak. Pattern statik resurslarni alohida, deklarativ sozlanadigan handler orqali xizmat qiladi: resurs joylashuvlari, URL namunalari, kesh siyosati va resolver/transformer zanjiri (versiya, siqish, URL qayta yozish) konfiguratsiyada e'lon qilinadi.
@@ -574,6 +967,24 @@ class OrderRoutes {
 - Foydalanuvchi yuklagan rasmlarni fayl tizimidan (`file:/var/app/uploads/`) alohida handler bilan, qisqa kesh muddati bilan xizmat qilish.
 
 **Ehtiyot bo'ling:** Katta trafikli statik kontentni JVM'dan xizmat qilish CPU va ulanishlarni isrof qiladi - ishlab chiqarishda CDN yoki reverse proxy (Nginx) oldinga qo'yiladi, Spring faqat fallback. Versiyalash yoqilganda shablonlardagi URL'lar `ResourceUrlProvider`/`@{...}` orqali yaratilishi kerak, aks holda eski (keshdagi) nomlar 404 beradi. `addResourceLocations("file:" + userPath)` da yo'l tekshiruvisiz (`PathResourceResolver` saqlab qolinmasa) directory traversal xavfi bor. `index.html` fallback'ini `/api/**` ga ham qo'llash API 404'larini HTML'ga aylantiradi - namunalarni ajrating.
+
+```yaml
+// Statik resurslar: kesh va versiyalash
+spring:
+  web:
+    resources:
+      static-locations: classpath:/static/
+      cache:
+        cachecontrol:
+          max-age: 365d          # uzoq kesh
+          cache-public: true
+      chain:
+        strategy:
+          content:
+            enabled: true        # fayl nomiga hash qo'shadi
+            paths: /**
+# Hash tufayli uzoq kesh xavfsiz: fayl o'zgarsa URL ham o'zgaradi
+```
 
 ## 6.31 Multipart (fayl yuklash) ishlovi (Multipart Handling)
 
@@ -590,6 +1001,19 @@ class OrderRoutes {
 
 **Ehtiyot bo'ling:** Hajm chegaralari ikki darajada ishlaydi - Spring/Boot xususiyatlari va oldingi proxy (Nginx `client_max_body_size`, Gateway) - ikkalasini muvofiqlashtiring, aks holda foydalanuvchi tushunarsiz 413/502 oladi. `getOriginalFilename()` va `getContentType()` mijozdan keladi - ularga ishonmang: fayl nomini qayta nomlang (UUID), MIME'ni tarkib bo'yicha aniqlang (Apache Tika), zarur bo'lsa antivirus tekshiruvi. Faylni bazaga BLOB sifatida saqlash o'rniga obyekt saqlash + Valet Key (qarang: [17-bo'lim](17-resilience-va-cloud-dizayn-patternlari.md)) orqali to'g'ridan-to'g'ri yuklashni ko'rib chiqing. Vaqtinchalik `location` katalogi konteynerda to'lib ketmasligi uchun diskni kuzating.
 
+```yaml
+// Multipart: chegara qo'yish majburiy
+spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
+      file-size-threshold: 1MB   # shundan kattasi diskka yoziladi
+
+# Controller tomonida tur va nom tekshiruvi ham kerak:
+# fayl kengaytmasiga ishonmang, content turini aniqlang va nomni tozalang
+```
+
 ## 6.32 Ko'rinish aniqlovchi (View Resolver)
 
 **Tavsif:** Muammo - controller qaysi shablon texnologiyasi (Thymeleaf, FreeMarker, PDF, JSON) ishlatilishini bilmasligi kerak; u faqat mantiqiy view nomini qaytaradi. View Resolver mantiqiy nomni (va lokalni) konkret `View` ob'ektiga aylantiradigan strategiya: bir nechta resolver tartib bilan so'raladi, birinchi topgani g'olib. Shu tufayli shablon dvigatelini almashtirish, lokalga xos view'lar, bean nomi bo'yicha maxsus view'lar va kontent muzokarasi controller'ga tegmasdan amalga oshiriladi. Bu GoF Strategy + Chain of Responsibility'ning taqdimot qatlamidagi kombinatsiyasi.
@@ -604,6 +1028,22 @@ class OrderRoutes {
 - Testlarda `MockMvc` + `view().name("orders/list")` bilan controller'ni shablonsiz tekshirish (qarang: [23-bo'lim](23-testing-patternlari.md), @WebMvcTest).
 
 **Ehtiyot bo'ling:** `InternalResourceViewResolver` har doim `View` qaytaradi (mavjudligini tekshirmaydi), shuning uchun zanjirda oxirgi bo'lishi kerak - aks holda keyingi resolver'lar hech qachon so'ralmaydi. Ishlab chiqarishda view keshi (`setCache(true)`, `spring.thymeleaf.cache=true`) yoqilgan bo'lishi shart. Controller'da view yo'lini (`"templates/orders/list.html"`) to'liq yozish resolver g'oyasini buzadi - faqat mantiqiy nom.
+
+```java
+@Bean
+ViewResolver excelViewResolver() {
+    // Bir nechta resolver zanjiri: tartib @Order bilan belgilanadi
+    BeanNameViewResolver r = new BeanNameViewResolver();
+    r.setOrder(1);               // avval nom bo'yicha qaraladi
+    return r;
+}
+
+@Component("orders.xlsx")        // controller "orders.xlsx" qaytarsa shu ishlaydi
+class OrdersExcelView extends AbstractXlsxView {
+    @Override protected void buildExcelDocument(Map<String, Object> model, Workbook wb,
+            HttpServletRequest req, HttpServletResponse res) { /* ... */ }
+}
+```
 
 ## 6.33 Asinxron so'rovlarni qayta ishlash (Async Request Processing - Callable, DeferredResult, StreamingResponseBody)
 
@@ -620,6 +1060,21 @@ class OrderRoutes {
 
 **Ehtiyot bo'ling:** Asinxron ishlov umumiy ish hajmini kamaytirmaydi - faqat konteyner thread'larini bo'shatadi; agar ish o'zi bloklovchi bo'lsa, boshqa pool to'ladi. Virtual thread'lar (Java 21+) ko'p hollarda `Callable`/`DeferredResult` murakkabligisiz xuddi shu samarani beradi - avval `spring.threads.virtual.enabled` ni baholang. Asinxron dispetcherlashda `ThreadLocal` kontekstlar (Security, MDC, lokal) yo'qoladi - `TaskDecorator` yoki `DelegatingSecurityContextAsyncTaskExecutor` kerak; filtrlar `asyncSupported=true` bo'lishi shart. Timeout'ni belgilamaslik "osilib qolgan" so'rovlarga olib keladi.
 
+```java
+// Asinxron so'rov: servlet thread bo'shatiladi, ish boshqa pool'da
+@GetMapping("/reports/{id}")
+public CompletableFuture<ReportDto> report(@PathVariable long id) {
+    return reportService.buildAsync(id);     // @Async executor'da bajariladi
+}
+
+// Katta fayl: xotiraga yig'masdan oqim bilan yuborish
+@GetMapping("/exports/orders.csv")
+public StreamingResponseBody export() {
+    return out -> orderExporter.writeCsv(out);
+}
+// MVC da bu throughput'ni oshiradi, lekin latency'ni kamaytirmaydi
+```
+
 ## 6.34 Server tomonida renderlash, SPA va gipermedia ilovalar (Server-Side Rendering vs SPA vs Hypermedia-Driven Application)
 
 **Tavsif:** Bu arxitektura tanlovi patterni: foydalanuvchi interfeysi qayerda yig'iladi? SSR - HTML to'liq serverda shablon orqali renderlanadi (Template View), brauzer minimal JS bilan ishlaydi; SPA - server faqat JSON API beradi, interfeys brauzerda JavaScript framework'i tomonidan yig'iladi; HDA (Hypermedia-Driven Application, htmx uslubi) - server HTML fragmentlari qaytaradi, brauzerdagi yengil kutubxona ularni sahifaga joylaydi, holat serverda qoladi. Har biri kechikish, SEO, jamoa ko'nikmalari, autentifikatsiya modeli va murakkablikda turli kelishuvlarni beradi; arxitektor bu tanlovni ongli qilishi kerak.
@@ -634,6 +1089,21 @@ class OrderRoutes {
 - Mavjud SSR ilovaga bosqichma-bosqich interaktivlik qo'shish - htmx fragmentlari, to'liq SPA qayta yozishsiz.
 
 **Ehtiyot bo'ling:** "Hamma SPA qilyapti" degan tanlov ikki jamoa, ikki build, CORS/CSRF/token boshqaruvi va BFF kabi murakkablikni olib keladi - faqat interaktivlik va mijoz xilma-xilligi buni oqlasa tanlang (qarang: [25-bo'lim](25-anti-patternlar.md), Resume-Driven Development). SSR ilovada JSON API'ni "keyinroq qo'shamiz" deyish controller'larni HTML'ga qattiq bog'laydi - servis qatlamini boshidan DTO asosida loyihalang. Vaadin kabi server-holatli UI'lar sessiya xotirasi va sticky session talab qiladi (6.26) - autoscaling rejasiga kiriting.
+
+```java
+// Gipermedia: keyingi mumkin harakatlar javobda keladi
+@GetMapping("/orders/{id}")
+EntityModel<OrderDto> get(@PathVariable long id) {
+    Order order = service.load(id);
+    EntityModel<OrderDto> model = EntityModel.of(OrderDto.of(order));
+    model.add(linkTo(methodOn(getClass()).get(id)).withSelfRel());
+    if (order.status() == OrderStatus.NEW) {
+        model.add(linkTo(methodOn(getClass()).cancel(id)).withRel("cancel"));
+    }
+    return model;
+}
+// Mijoz "qachon bekor qilish mumkin" qoidasini takrorlamaydi
+```
 
 ## 6.35 Amalda qo'llash
 

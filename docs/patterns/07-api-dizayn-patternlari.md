@@ -63,6 +63,19 @@ API dizayn patternlari - bu tizimning tashqi dunyo bilan shartnomasini (contract
 
 **Ehtiyot bo'ling:** Har bir domen amalini resursga majburan siqib tiqish anti-pattern: "to'lovni qaytarish" yoki "buyurtmani bekor qilish" kabi tranzaksion amallar uchun alohida sub-resurs (`POST /orders/{id}/cancellations`) yoki ochiq RPC endpoint tabiiyroq bo'ladi. Shuningdek, DB jadvallarini bir-biriga aynan moslashtirish (`@Entity` to'g'ridan-to'g'ri JSON'ga) API'ni schema o'zgarishlariga qattiq bog'laydi - DTO qatlamini saqlang.
 
+```java
+// Resurs va holat: fe'l URL da emas, HTTP metodida
+@RestController
+@RequestMapping("/orders")
+class OrderApi {
+    @GetMapping("/{id}")    OrderDto get(@PathVariable long id) { /* ... */ }
+    @PostMapping            ResponseEntity<Void> create(@RequestBody CreateOrder cmd) { /* ... */ }
+    @PatchMapping("/{id}")  OrderDto patch(@PathVariable long id, @RequestBody JsonNode p) { /* ... */ }
+    @DeleteMapping("/{id}") ResponseEntity<Void> delete(@PathVariable long id) { /* ... */ }
+}
+// Yomon: POST /createOrder, GET /getOrderById?id=1
+```
+
 ## 7.2 Richardson yetuklik modeli (Richardson Maturity Model)
 
 **Tavsif:** Leonard Richardson taklif qilgan, REST API'ning HTTP protokolidan qanchalik to'liq foydalanayotganini o'lchaydigan to'rt darajali shkala. Level 0 - bitta endpoint ustidan XML/JSON "botqoq" (SOAP-uslub tunnel), Level 1 - alohida resurslar paydo bo'ladi, Level 2 - HTTP metodlari va status kodlar to'g'ri semantikada ishlatiladi, Level 3 - javoblar o'z ichida keyingi mumkin bo'lgan harakatlar havolalarini (HATEOAS) olib yuradi. Model maqsad emas, balki diagnostika vositasi: u API'ning qaysi joyida protokol imkoniyatlari behuda qolganini ko'rsatadi.
@@ -76,6 +89,22 @@ API dizayn patternlari - bu tizimning tashqi dunyo bilan shartnomasini (contract
 - SOAP yoki bitta `/api/execute` endpointidan HTTP-native API'ga migratsiya rejasini bosqichlarga bo'lish.
 
 **Ehtiyot bo'ling:** Level 3'ga intilish o'z-o'zidan qiymat emas - agar klientlar havolalarni kuzatmasa (follow qilmasa), HATEOAS faqat javob hajmini oshiradi. Modelni "ball to'plash" o'yiniga aylantirmang; asosiy xato Level 2 gigiyenasini (to'g'ri status kodlar, idempotent PUT) chetlab o'tib, darhol link'lar qo'shishdir.
+
+```text
+0-daraja: bitta URL, bitta metod (RPC over HTTP)
+  POST /api  {"method":"getOrder","id":1}
+
+1-daraja: resurslar paydo bo'ldi
+  POST /orders/1
+
+2-daraja: HTTP metod va status kodlari to'g'ri ishlatiladi
+  GET /orders/1      -> 200
+  DELETE /orders/1   -> 204
+  POST /orders       -> 201 + Location
+
+3-daraja: javobda keyingi harakatlar havolasi (HATEOAS)
+  GET /orders/1 -> {"id":1,"_links":{"cancel":{"href":"/orders/1/cancel"}}}
+```
 
 ## 7.3 HATEOAS - gipermedia bilan boshqariladigan holat (HATEOAS, Hypermedia as the Engine of Application State)
 
@@ -92,6 +121,20 @@ API dizayn patternlari - bu tizimning tashqi dunyo bilan shartnomasini (contract
 
 **Ehtiyot bo'ling:** Ko'pchilik klient jamoalari amalda URI'ni hardcode qiladi va `_links`'ni e'tiborsiz qoldiradi - natijada siz ikki tomonlama shartnomani saqlashga majbur bo'lasiz. Katta kolleksiyalarda har bir element uchun link generatsiyasi (`linkTo(methodOn(...))` reflection ishlatadi) sezilarli CPU va javob hajmi qo'shadi, shuning uchun uni o'lchab ko'ring.
 
+```java
+@GetMapping("/accounts/{id}")
+EntityModel<AccountDto> get(@PathVariable long id) {
+    Account a = service.load(id);
+    EntityModel<AccountDto> model = EntityModel.of(AccountDto.of(a));
+    model.add(linkTo(methodOn(getClass()).get(id)).withSelfRel());
+    // Harakat faqat ruxsat etilgan holatda ko'rinadi
+    if (a.canWithdraw()) {
+        model.add(linkTo(methodOn(getClass()).withdraw(id, null)).withRel("withdraw"));
+    }
+    return model;
+}
+```
+
 ## 7.4 URI dizayn konvensiyalari (URI Design Conventions)
 
 **Tavsif:** URI'larni bashorat qilinadigan va barqaror qiladigan qoidalar to'plami: resurs kolleksiyalari ko'plikda va ot shaklida (`/orders`), ierarxiya sub-resurs sifatida (`/orders/{orderId}/items/{itemId}`), ko'p so'zli segmentlar uchun kebab-case, versiya yoki format URI'da aralashtirilmasligi, so'rov parametrlari faqat filtr/sort/pagination uchun. Maqsad - URI'ni dokumentatsiyasiz ham o'qiladigan qilish va marshrutlash qoidalarini (gateway, rate limit, log grouping) oddiy saqlash.
@@ -106,6 +149,18 @@ API dizayn patternlari - bu tizimning tashqi dunyo bilan shartnomasini (contract
 - Legacy API'ni konsolidatsiya qilishda yangi konvensiyaga o'tish uchun `addPathPrefix` bilan bosqichma-bosqich migratsiya.
 
 **Ehtiyot bo'ling:** Chuqur ierarxiya (`/a/{id}/b/{id}/c/{id}/d`) qattiq bog'lanish hosil qiladi - ikki daraja odatda kifoya, qolganini filtr parametriga chiqaring. Spring 6'da trailing slash mosligi olib tashlangani uchun eski klientlar `/orders/` bilan 404 olishi mumkin; migratsiyada bunga aniq redirect yoki gateway qoidasi yozing.
+
+```text
+Konvensiya: ko'plik, kichik harf, chiziqcha, ichma-ich kolleksiya
+  GET    /customers/42/orders              # 42-mijozning buyurtmalari
+  GET    /orders/1001/line-items           # kebab-case, ko'plik
+  POST   /orders/1001/cancellation         # harakat resurs sifatida
+
+Qochish kerak:
+  /getOrders, /orders_list, /Orders, /order/1001/LineItems
+
+Ichma-ich 2 darajadan oshmasin: /a/1/b/2/c/3 o'qilmaydi
+```
 
 ## 7.5 API versiyalash (API Versioning)
 
@@ -149,6 +204,17 @@ class OrderController {
 
 **Ehtiyot bo'ling:** Chuqur pagination (yuz minglab offset) DB'ni jiddiy sekinlashtiradi, `Page<T>`'ning `count(*)` query'si esa katta jadvalda alohida og'ir operatsiya - bunday holatda `Slice<T>` yoki keyset pagination'ga o'ting. `size` parametriga yuqori chegara qo'ymaslik - bu klassik DoS vektori.
 
+```java
+// Offset pagination: oddiy, lekin chuqur sahifada sekin
+@GetMapping("/orders")
+Page<OrderDto> list(@PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
+    return repo.findAll(pageable).map(OrderDto::of);
+}
+// OFFSET 100000 LIMIT 20 - baza 100020 qatorni o'qib 20 tasini qaytaradi.
+// Ikkinchi muammo: yangi yozuv qo'shilsa sahifalar siljiydi va yozuv ikki
+// marta yoki umuman ko'rinmaydi. Katta jadval uchun keyset ishlatilsin.
+```
+
 ## 7.7 Keyset / kursor pagination (Keyset / Cursor Pagination)
 
 **Tavsif:** Offset o'rniga oxirgi ko'rilgan element qiymati (keyset) yoki uni kodlagan opaque cursor ishlatiladi: `WHERE (created_at, id) < (:lastCreatedAt, :lastId) ORDER BY created_at DESC, id DESC LIMIT n`. Natijada so'rov indeks bo'yicha to'g'ridan-to'g'ri kerakli joyga tushadi va ishlash vaqti sahifa chuqurligiga bog'liq bo'lmaydi; bir vaqtda yangi yozuvlar qo'shilsa ham elementlar takrorlanmaydi yoki o'tkazib yuborilmaydi. Shart - tartiblash kaliti aniq (deterministik) va unikal bo'lishi, shuning uchun odatda oxiriga `id` qo'shiladi.
@@ -163,6 +229,20 @@ class OrderController {
 - Mobil API'lar, bu yerda umumiy sahifa soni kerak emas, lekin barqaror ishlash muhim.
 
 **Ehtiyot bo'ling:** Keyset bilan ixtiyoriy sahifaga sakrash va umumiy sahifa sonini ko'rsatish mumkin emas - agar UI shuni talab qilsa, pattern mos emas. Cursor'ni shaffof (ochiq) qilib bersangiz, klientlar uni qo'lda qurishga urinadi va ichki tartiblash kalitini o'zgartirish imkoniyatini yo'qotasiz; tartiblash maydoni nullable bo'lsa, keyset predikati noto'g'ri natija berishi mumkin.
+
+```java
+// Keyset pagination: kursor oxirgi ko'rilgan qiymat
+public interface OrderRepository extends Repository<Order, Long> {
+    @Query("""
+           SELECT o FROM Order o
+           WHERE (o.createdAt, o.id) < (:afterAt, :afterId)
+           ORDER BY o.createdAt DESC, o.id DESC
+           """)
+    List<Order> pageAfter(Instant afterAt, long afterId, Limit limit);
+}
+// Indeks (created_at DESC, id DESC) bo'lsa, 1-sahifa ham 10000-sahifa ham
+// bir xil tezlikda ishlaydi. Kursor base64 qilib mijozga berilsin.
+```
 
 ## 7.8 Filtrlash, tartiblash va maydon tanlash (Filtering, Sorting, Field Selection)
 
@@ -179,6 +259,20 @@ class OrderController {
 
 **Ehtiyot bo'ling:** Filtr va sort maydonlarini whitelist qilmasdan to'g'ridan-to'g'ri entity property'siga bog'lash ma'lumot oshkor qilish (masalan, `?sort=passwordHash`) va indekssiz maydon bo'yicha og'ir skan xavfini tug'diradi - `QuerydslBinderCustomizer` yoki aniq DTO bilan cheklang. Juda moslashuvchan filtr tili (ixtiyoriy `AND/OR` ifodalar) tezda o'z-o'zidan query tiliga aylanadi va keshlashni deyarli imkonsiz qiladi; bunday talab ko'p bo'lsa GraphQL'ni ko'rib chiqing.
 
+```java
+// Oq ro'yxat: faqat ruxsat etilgan maydon bo'yicha saralash va filtr
+private static final Set<String> SORTABLE = Set.of("createdAt", "total", "status");
+
+@GetMapping("/orders")
+List<OrderDto> list(@RequestParam(required = false) OrderStatus status,
+                    @RequestParam(defaultValue = "createdAt") String sort,
+                    @RequestParam(defaultValue = "20") @Max(100) int limit) {
+    if (!SORTABLE.contains(sort)) throw new InvalidSortException(sort);
+    return service.search(status, sort, limit);
+}
+// Foydalanuvchi bergan ustun nomini to'g'ridan-to'g'ri SQL ga qo'ymang
+```
+
 ## 7.9 Idempotentlik kaliti (Idempotency Key)
 
 **Tavsif:** Tabiatan idempotent bo'lmagan `POST` operatsiyalarini xavfsiz qayta urinishga (retry) yaroqli qilish mexanizmi: klient so'rov bilan birga unikal kalit (odatda UUID) `Idempotency-Key` header'ida yuboradi, server esa bu kalitni saqlab, takroriy so'rovda operatsiyani qayta bajarmasdan avvalgi javobni qaytaradi. Bu tarmoq timeout'lari, gateway retry'lari va at-least-once message delivery sharoitida ikki marta to'lov yoki ikki marta buyurtma muammosini oldini oladi. To'liq implementatsiya kalit bilan birga so'rov tanasining hash'ini ham saqlaydi va bir xil kalit bilan boshqa payload kelsa `422`/`409` qaytaradi.
@@ -193,6 +287,22 @@ class OrderController {
 - API Gateway yoki service mesh avtomatik retry yoqilgan har qanday yozuv (write) endpointi.
 
 **Ehtiyot bo'ling:** Kalitni faqat keshda (TTL bilan) saqlash va biznes tranzaksiyasini alohida bajarish race condition qoldiradi - kalit yozilishi va asosiy operatsiya bir atomik chegarada (bitta DB tranzaksiyasi yoki unikal constraint) bo'lishi kerak. Kalitni server generatsiya qilishi patternni buzadi: kalit klient tomonidan, retry'lar orasida o'zgarmas bo'lishi shart; TTL ni juda qisqa qo'yish esa kech kelgan retry'ni dublikatga aylantiradi.
+
+```java
+// Idempotentlik kaliti: takroriy so'rov ikkinchi marta bajarilmaydi
+@PostMapping("/payments")
+ResponseEntity<Receipt> pay(@RequestHeader("Idempotency-Key") @NotBlank String key,
+                            @RequestBody PaymentRequest req) {
+    return store.find(key)
+            .map(ResponseEntity::ok)                       // avvalgi natija
+            .orElseGet(() -> {
+                Receipt r = service.charge(req);
+                store.save(key, r, Duration.ofHours(24));  // TTL bilan
+                return ResponseEntity.status(201).body(r);
+            });
+}
+// Kalitni unique indeks bilan qo'riqlang: parallel ikki so'rov ham tutilsin
+```
 
 ## 7.10 Problem Details - standart xato formati (Problem Details, RFC 9457)
 
@@ -209,6 +319,22 @@ class OrderController {
 
 **Ehtiyot bo'ling:** `detail` maydoniga stack trace, SQL matni yoki ichki identifikatorlarni tushirish - ma'lumot oshkor qilish xavfi; foydalanuvchiga mo'ljallangan matn va ichki diagnostika aniq ajratilishi kerak. Shuningdek, 4xx va 5xx larni farqsiz `500 ProblemDetail` ga aylantirish klientning retry qarorini buzadi - status kodni domen xatosiga to'g'ri mapping qiling.
 
+```java
+@RestControllerAdvice
+class ApiExceptionHandler {
+
+    @ExceptionHandler(InsufficientFundsException.class)
+    ProblemDetail onInsufficientFunds(InsufficientFundsException e) {
+        ProblemDetail p = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        p.setType(URI.create("https://errors.example.com/insufficient-funds"));
+        p.setTitle("Hisobda mablag' yetarli emas");
+        p.setProperty("accountId", e.accountId());   // mashina o'qiydigan tafsilot
+        return p;                                    // application/problem+json
+    }
+}
+// Stack trace va ichki xabar tashqariga chiqmasligi kerak
+```
+
 ## 7.11 Shartli so'rovlar va ETag (Conditional Requests / ETag)
 
 **Tavsif:** Resurs versiyasini `ETag` (kontent hash yoki versiya) yoki `Last-Modified` header'i bilan belgilash va klientga shartli so'rov yuborish imkonini berish. `If-None-Match` bilan GET o'zgarmagan bo'lsa `304 Not Modified` qaytariladi - tarmoq trafigi va serializatsiya tejaladi; `If-Match` bilan PUT/PATCH/DELETE yuborilsa va ETag mos kelmasa `412 Precondition Failed` qaytariladi - bu HTTP darajasidagi optimistik locking bo'lib, "oxirgi yozgan g'olib" (lost update) muammosini hal qiladi.
@@ -223,6 +349,26 @@ class OrderController {
 - REST API ustida optimistik locking: JPA `@Version` qiymatini ETag sifatida tashqariga chiqarish.
 
 **Ehtiyot bo'ling:** `ShallowEtagHeaderFilter` javobni to'liq buferlab hash hisoblaydi - ya'ni server ishini tejamaydi va katta javoblarda xotira hamda streaming (SSE, file download) bilan muammo tug'diradi; uni streaming endpointlarda yoqmang. ETag'ni serializatsiya tartibiga bog'liq hash'dan olish (Jackson maydon tartibi, timestamp formati o'zgarishi) soxta cache miss'ga olib keladi - barqaror versiya raqamidan foydalanish ishonchliroq.
+
+```java
+@GetMapping("/orders/{id}")
+ResponseEntity<OrderDto> get(@PathVariable long id) {
+    Order order = service.load(id);
+    // Versiya ustunidan ETag: bir xil versiya -> bir xil teg
+    return ResponseEntity.ok()
+            .eTag("\"" + order.version() + "\"")
+            .body(OrderDto.of(order));
+}
+
+@PutMapping("/orders/{id}")
+ResponseEntity<Void> update(@PathVariable long id,
+                            @RequestHeader("If-Match") String ifMatch,
+                            @RequestBody UpdateOrder cmd) {
+    // Optimistik lock: boshqa kishi o'zgartirgan bo'lsa 412 qaytadi
+    service.update(id, cmd, Long.parseLong(ifMatch.replace("\"", "")));
+    return ResponseEntity.noContent().build();
+}
+```
 
 ## 7.12 HTTP keshlash sarlavhalari (HTTP Caching Headers)
 
@@ -239,6 +385,23 @@ class OrderController {
 
 **Ehtiyot bo'ling:** Shaxsiy (per-user) javobga `public` qo'yish eng xavfli xato - shared proxy yoki CDN bir foydalanuvchi ma'lumotini boshqasiga beradi; bunday holatda `private` yoki `no-store` va `Vary: Authorization` ishlating. `ShallowEtagHeaderFilter` butun javob body'sini xotirada buferlab hash hisoblaydi, shuning uchun streaming, katta fayl yoki yuqori RPS endpoint'larda u foyda emas, zarar keltiradi.
 
+```java
+// O'zgarmas resurs: uzoq kesh. O'zgaruvchan: qisqa yoki tekshiruv bilan.
+@GetMapping("/currencies")
+ResponseEntity<List<Currency>> currencies() {
+    return ResponseEntity.ok()
+            .cacheControl(CacheControl.maxAge(Duration.ofHours(12)).cachePublic())
+            .body(service.all());
+}
+
+@GetMapping("/accounts/{id}/balance")
+ResponseEntity<Balance> balance(@PathVariable long id) {
+    return ResponseEntity.ok()
+            .cacheControl(CacheControl.noStore())    // shaxsiy va tez o'zgaradi
+            .body(service.balance(id));
+}
+```
+
 ## 7.13 So'rov tezligini cheklash (Rate Limiting)
 
 **Tavsif:** Rate limiting ma'lum vaqt oynasida bitta client (API key, foydalanuvchi, IP, tenant) bajara oladigan so'rov sonini cheklaydi va limit oshganda `429 Too Many Requests` qaytaradi. Eng ko'p ishlatiladigan algoritm - token bucket: bucket'da sanab turilgan token'lar bo'ladi, har so'rov bitta token oladi, token'lar belgilangan tezlikda to'ldiriladi, bu esa qisqa burst'larga yo'l berib o'rtacha tezlikni ushlab turadi. Maqsad - resursni adolatli bo'lish, abuse va noyob quota'li tashqi API'larni himoya qilish.
@@ -253,6 +416,26 @@ class OrderController {
 - Resilience4j RateLimiter bilan tashqi to'lov provayderining shartnomadagi TPS limitidan oshmaslik.
 
 **Ehtiyot bo'ling:** In-memory bucket bir nechta instance'da limitni instance soniga ko'paytirib yuboradi - horizontal scale qilinadigan servisda Redis/Hazelcast backing majburiy. Kalit tanlashda ehtiyot bo'ling: faqat IP bo'yicha cheklash NAT yoki korporativ proxy ortidagi minglab foydalanuvchini bitta sifatida ko'radi, shuning uchun autentifikatsiyadan keyin tenant/user kaliti afzal; `429` bilan albatta `Retry-After` qaytaring, aks holda client'lar darhol qayta urinib yuklamani kuchaytiradi.
+
+```java
+// Rate limit: chegara va qolgan miqdor header'da e'lon qilinadi
+@Component
+class RateLimitFilter extends OncePerRequestFilter {
+    private final RateLimiterRegistry registry;
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res,
+                                    FilterChain chain) throws IOException, ServletException {
+        RateLimiter limiter = registry.rateLimiter(apiKeyOf(req));
+        if (!limiter.acquirePermission()) {
+            res.setStatus(429);
+            res.setHeader("Retry-After", "60");
+            return;
+        }
+        chain.doFilter(req, res);
+    }
+}
+```
 
 ## 7.14 Bulk / Batch endpoint'lar (Bulk / Batch Endpoints)
 
@@ -269,6 +452,22 @@ class OrderController {
 
 **Ehtiyot bo'ling:** Batch hajmini cheklamasa, bitta so'rov butun heap'ni yeb qo'yadi yoki timeout'ga uchraydi - `@Size` validatsiyasi va `server.tomcat.max-http-form-post-size`/`spring.codec.max-in-memory-size` kabi chegaralar majburiy. Qismiy muvaffaqiyatni `200 OK` ichida yashirmang: client qaysi element yiqilganini aniq bilishi kerak, aks holda retry butun batch'ni takrorlab duplicate yaratadi - shu sababli idempotency key bilan birga qo'llash tavsiya etiladi.
 
+```java
+// Batch endpoint: har element uchun alohida natija qaytariladi
+public record BatchResult<T>(int index, boolean ok, T value, ProblemDetail error) {}
+
+@PostMapping("/orders/batch")
+ResponseEntity<List<BatchResult<OrderDto>>> batch(@RequestBody @Size(max = 100)
+                                                  List<CreateOrder> commands) {
+    List<BatchResult<OrderDto>> results = new ArrayList<>();
+    for (int i = 0; i < commands.size(); i++) {
+        try { results.add(new BatchResult<>(i, true, service.create(commands.get(i)), null)); }
+        catch (ApiException e) { results.add(new BatchResult<>(i, false, null, e.toProblem())); }
+    }
+    return ResponseEntity.status(207).body(results);   // 207 Multi-Status
+}
+```
+
 ## 7.15 Asinxron so'rov-javob (Asynchronous Request-Reply)
 
 **Tavsif:** Uzoq davom etadigan ishni HTTP so'rovi ichida kutib turish o'rniga, server ishni navbatga qo'yib darhol `202 Accepted` va `Location: /jobs/{id}` sarlavhasini qaytaradi. Client keyin shu status resursini polling qilib `PENDING → RUNNING → SUCCEEDED/FAILED` holatini kuzatadi va tugagach natija resursiga (`303 See Other` yoki javobdagi `resultUrl`) o'tadi. Bu pattern HTTP timeout'lari, load balancer cheklovlari va thread'larni uzoq ushlab turish muammosini hal qiladi.
@@ -283,6 +482,25 @@ class OrderController {
 - ML modeli bilan batch inference yoki katta analitik query'ni bajarish.
 
 **Ehtiyot bo'ling:** Job'ni in-memory executor'da saqlash eng keng tarqalgan xato - pod restart bo'lsa ish ham, holat ham yo'qoladi; durable store va navbat ishlating. Status endpoint'ga `Cache-Control: no-store` qo'ying, polling intervalini `Retry-After` bilan boshqaring, job'ga TTL va retry chegarasi bering, hamda `POST` ni idempotency key bilan himoya qilmasangiz client retry'si bir xil ishni ikki marta tushiradi.
+
+```java
+// Asinxron so'rov-javob: 202 + holatni kuzatish havolasi
+@PostMapping("/reports")
+ResponseEntity<Void> request(@RequestBody ReportRequest req) {
+    String jobId = jobs.submit(req);
+    return ResponseEntity.accepted()
+            .location(URI.create("/reports/jobs/" + jobId))
+            .build();
+}
+
+@GetMapping("/reports/jobs/{id}")
+ResponseEntity<?> status(@PathVariable String id) {
+    JobStatus s = jobs.status(id);
+    return s.done()
+            ? ResponseEntity.status(303).location(s.resultUri()).build()
+            : ResponseEntity.ok(s);
+}
+```
 
 ## 7.16 Uzoq polling (Long Polling)
 
@@ -299,6 +517,20 @@ class OrderController {
 
 **Ehtiyot bo'ling:** Blocking Servlet stack'da `DeferredResult` qo'llanmasa va thread'da `Thread.sleep`/`Future.get` bilan kutilsa, thread pool tez to'yinadi va butun servis javob bermay qoladi. Timeout qiymatini load balancer/ingress idle timeout'idan kichik qiling, aks holda client `504` oladi; yo'qolgan event'larga qarshi har javobda cursor yoki `lastEventId` qaytaring, bir yo'nalishli push uchun esa SSE/WebSocket aniq yaxshiroq tanlov.
 
+```java
+// Long polling: server o'zgarish bo'lguncha javobni ushlab turadi
+@GetMapping("/orders/{id}/status")
+public DeferredResult<OrderStatus> awaitChange(@PathVariable long id,
+                                               @RequestParam OrderStatus current) {
+    DeferredResult<OrderStatus> result = new DeferredResult<>(25_000L, current);
+    // Timeout'da joriy holat qaytadi: mijoz qayta so'raydi
+    watchers.register(id, current, result);
+    result.onCompletion(() -> watchers.remove(id, result));
+    return result;
+}
+// SSE bor joyda long polling kerak emas: u ko'proq resurs yeydi
+```
+
 ## 7.17 Webhook'lar (Webhooks)
 
 **Tavsif:** Webhook - "teskari API": client polling qilish o'rniga, hodisa yuz berganda server client'ning ro'yxatdan o'tgan HTTPS URL'iga `POST` yuboradi. Bu kechikishni minimumga tushiradi va behuda so'rovlarni yo'q qiladi, lekin yetkazib berish ishonchliligi, autentifikatsiya va qabul qiluvchi tomondagi idempotentlik mas'uliyatini keltirib chiqaradi. Ishlab chiqarishga yaroqli webhook har doim HMAC imzo, retry + exponential backoff, dead-letter va `at-least-once` semantikasini o'z ichiga oladi.
@@ -313,6 +545,24 @@ class OrderController {
 - Ichki tizimlar o'rtasida event-driven integratsiya, broker o'rnatish imkoni bo'lmaganda.
 
 **Ehtiyot bo'ling:** Webhook `at-least-once` - bir xil hodisa bir necha marta keladi, shuning uchun qabul qiluvchi `eventId` ni unique constraint bilan saqlab idempotent bo'lishi shart; imzoni Jackson deserializatsiya qilgan obyektdan qayta serializatsiya qilib hisoblash imzoni buzadi, faqat raw body ustida tekshiring. Yuborishni HTTP so'rov thread'ida sinxron qilmang va imzo tekshirilmagan webhook endpoint'ini hech qachon ishonchli deb qabul qilmang - bu to'g'ridan-to'g'ri SSRF/spoofing yo'li.
+
+```java
+// Webhook yuborish: imzo, retry va takrorlanishga tayyorlik
+@Service
+public class WebhookSender {
+
+    public void send(Subscription sub, DomainEvent event) {
+        String body = json.write(event);
+        String signature = hmacSha256(sub.secret(), body);   // qabul qiluvchi tekshiradi
+        rest.post().uri(sub.url())
+                .header("X-Signature", signature)
+                .header("X-Event-Id", event.id())            // idempotentlik uchun
+                .body(body)
+                .retrieve().toBodilessEntity();
+    }
+}
+// Yetkazib berilmasa exponential backoff bilan qayta urinish va DLQ kerak
+```
 
 ## 7.18 API Gateway (API Gateway)
 
@@ -329,6 +579,25 @@ class OrderController {
 
 **Ehtiyot bo'ling:** Gateway'ga biznes logika, ma'lumot transformatsiyasi va orkestratsiyani yiqib qo'ysangiz, u yangi distributed monolit va yakka failure point'ga aylanadi - logika servislarda yoki alohida BFF'da qolishi kerak. Reaktiv Gateway'da blocking kod yozish (JDBC, `RestTemplate`, `block()`) event loop thread'ini to'sib butun gateway throughput'ini yo'q qiladi.
 
+```yaml
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: orders
+          uri: lb://orders-service
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - StripPrefix=1
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 100
+                redis-rate-limiter.burstCapacity: 200
+            - name: CircuitBreaker
+              args: { name: ordersCb, fallbackUri: 'forward:/fallback/orders' }
+```
+
 ## 7.19 Frontend uchun backend (Backend for Frontend, BFF)
 
 **Tavsif:** BFF - har bir client turi (iOS, Android, web SPA, smart TV, partner portal) uchun alohida, o'ziga xos backend qatlami; u ichki servislarni chaqirib, aynan shu UI ehtiyojiga moslashtirilgan javob shaklini beradi. Bu "bitta universal API hammani qoniqtirmaydi" muammosini hal qiladi: mobil kam maydonli va kam so'rovli javob xohlaydi, web esa boshqa kesim. Har bir frontend jamoasi o'z BFF'siga egalik qilgani uchun reliz tezligi oshadi va umumiy API'da kelishuv muzokaralari kamayadi.
@@ -343,6 +612,24 @@ class OrderController {
 - Legacy va yangi servislarni bitta UI uchun vaqtincha birlashtirish.
 
 **Ehtiyot bo'ling:** Har bir client uchun BFF ko'paygan sari bir xil kod nusxalanadi - umumiy mantiqni kutubxona yoki downstream domain servisiga chiqaring, aks holda 5 ta BFF'da 5 xil biznes qoida paydo bo'ladi. BFF faqat moslashtirish qatlami: u DB'ga to'g'ridan-to'g'ri yozishni yoki domain qoidalarini o'z ichiga olsa, domain mas'uliyati tarqalib ketadi.
+
+```java
+// BFF: bitta mijoz turi uchun moslashtirilgan API
+@RestController
+@RequestMapping("/bff/mobile")
+class MobileHomeController {
+    private final OrderClient orders;
+    private final PromoClient promos;
+
+    @GetMapping("/home")
+    MobileHome home(@AuthenticationPrincipal Jwt jwt) {
+        // Mobil ekran uchun kerakli minimal to'plam: 1 chaqiruv, kichik payload
+        return new MobileHome(
+                orders.lastThree(jwt.getSubject()),
+                promos.activeBanner());
+    }
+}
+```
 
 ## 7.20 API kompozitsiyasi / Aggregator (API Composition / Aggregator)
 
@@ -359,6 +646,20 @@ class OrderController {
 
 **Ehtiyot bo'ling:** Ketma-ket (sequential) chaqiruvlar latency'ni qo'shib yuboradi va eng sekin downstream butun javobni ushlaydi - parallel bajaring, har chaqiruvga alohida timeout qo'ying va kritik bo'lmaganlar uchun fallback bering. Kompozitsiyani katta ro'yxatlar ustida (`per-item` chaqiruv) qilish N+1 ga olib keladi; bunday hollarda bulk endpoint, `DataLoader` yoki materialized read model kerak.
 
+```java
+// API composition: bir nechta servisdan parallel yig'ish
+@GetMapping("/customers/{id}/overview")
+CustomerOverview overview(@PathVariable long id) throws InterruptedException {
+    try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+        var profile = scope.fork(() -> profiles.get(id));
+        var orders  = scope.fork(() -> orderClient.recent(id));
+        var balance = scope.fork(() -> billing.balance(id));
+        scope.join().throwIfFailed();        // bittasi yiqilsa hammasi bekor
+        return new CustomerOverview(profile.get(), orders.get(), balance.get());
+    }
+}
+```
+
 ## 7.21 Bag'rikeng o'quvchi (Tolerant Reader)
 
 **Tavsif:** Client javobni qat'iy to'liq moslik talab qilmasdan o'qiydi: faqat o'ziga kerakli maydonlarni oladi, notanish yangi maydonlarni e'tiborsiz qoldiradi va tartib yoki qo'shimcha elementlarga bog'lanmaydi. Bu Postel qonunining integratsiyadagi ko'rinishi va API evolyutsiyasining asosiy sharti: provayder additive o'zgarish kiritganda hech bir consumer buzilmaydi. Pattern consumer tomonda minimal DTO va himoyalangan deserializatsiya bilan amalga oshiriladi.
@@ -373,6 +674,21 @@ class OrderController {
 - Legacy tizim versiyalari turlicha javob qaytarganda bitta client bilan ishlash.
 
 **Ehtiyot bo'ling:** Bag'rikenglik "jim yutish" degani emas - majburiy maydon yo'qolganini ham e'tiborsiz qoldirsangiz, xato ma'lumot bilan ishlab noto'g'ri biznes natija chiqaradi; kerakli maydonlarni `@NotNull`/validatsiya bilan tekshiring va kutilmagan holatni log qiling. Shuningdek bu pattern breaking o'zgarishlardan himoya qilmaydi: maydon turi yoki semantikasi o'zgarsa, faqat versiyalash va contract test yordam beradi.
+
+```java
+// Tolerant reader: faqat kerakli maydonni o'qiydi, qolganiga e'tibor bermaydi
+@Bean
+ObjectMapper tolerantMapper() {
+    return JsonMapper.builder()
+            // Yangi maydon qo'shilsa integratsiya buzilmaydi
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
+            .build();
+}
+
+// Faqat kerakli maydonlar e'lon qilinadi
+public record PspCallback(String reference, String status) { }
+```
 
 ## 7.22 Consumer tomonidan boshqarilgan kontraktlar (Consumer-Driven Contracts)
 
@@ -389,6 +705,24 @@ class OrderController {
 
 **Ehtiyot bo'ling:** Kontraktlarni to'liq funksional testga aylantirmang - ular shakl va asosiy semantikani tekshiradi, biznes logikani emas; haddan ziyod qattiq kontrakt (har maydon aniq qiymat bilan) provayderni mayda o'zgarishda ham qamoqqa oladi, shuning uchun matcher'lar (`$(consumer(...), producer(regex(...)))`) ishlatiladi. Kontrakt mas'uliyati va stub versiyalash jarayoni belgilanmagan jamoalarda bu infrastruktura tez eskirib, "yashil lekin yolg'on" testlarga aylanadi.
 
+```java
+// Consumer-driven contract: iste'molchi kutgan narsa testga aylanadi
+@Pact(consumer = "orders-service", provider = "psp")
+public RequestResponsePact chargePact(PactDslWithProvider builder) {
+    return builder
+            .given("hisobda mablag' bor")
+            .uponReceiving("to'lov so'rovi")
+                .path("/charge").method("POST")
+            .willRespondWith()
+                .status(201)
+                .body(new PactDslJsonBody()
+                        .stringType("reference")
+                        .stringValue("status", "CAPTURED"))
+            .toPact();
+}
+// Provayder shu kontraktni o'z CI'da tekshiradi: buzilsa uning build'i yiqiladi
+```
+
 ## 7.23 Kengaytir/Qisqartir (Expand/Contract - Parallel Change)
 
 **Tavsif:** Breaking change'ni uch bosqichga bo'lib, iste'molchilarni sindirmasdan API yoki sxemani evolyutsiya qilish usuli. Birinchi bosqichda yangi shakl qo'shiladi (expand) va eski bilan yonma-yon yashaydi, ikkinchi bosqichda barcha client'lar yangisiga ko'chiriladi (migrate), uchinchi bosqichda eskisi olib tashlanadi (contract). Bu pattern deploy'ni release'dan ajratib, nol downtime bilan rolling update qilishga imkon beradi. Asosiy shart - oraliq davrda ikkala shakl ham bir vaqtda to'g'ri ishlashi.
@@ -404,6 +738,22 @@ class OrderController {
 
 **Ehtiyot bo'ling:** Eng ko'p uchraydigan xato - "contract" bosqichini hech qachon bajarmaslik: kod ikki shaklni abadiy ushlab turadi va texnik qarz to'planadi, shuning uchun har bir expand'ga deadline va iste'molchi telemetriyasi (eski field qancha so'raldi) bog'lanishi kerak. Dual write davrida ikki manba o'rtasida divergensiya paydo bo'lishi mumkin, shuning uchun reconciliation job va monitoring majburiy.
 
+```java
+// Expand/Contract: uch reliz, hech qachon ikkisini birga qilmang
+// 1) EXPAND: yangi maydon qo'shiladi, eskisi ham to'ldiriladi
+public record CustomerDto(
+        @Deprecated String name,      // eski mijozlar uchun
+        String firstName,             // yangi
+        String lastName) {
+    static CustomerDto of(Customer c) {
+        return new CustomerDto(c.firstName() + " " + c.lastName(),
+                               c.firstName(), c.lastName());
+    }
+}
+// 2) MIGRATE: mijozlar yangi maydonga o'tadi (metrika bilan kuzatiladi)
+// 3) CONTRACT: `name` olib tashlanadi
+```
+
 ## 7.24 Konvert javob va yalang'och javob (Envelope vs Bare Response)
 
 **Tavsif:** Javob tanasini metadata uchun o'rovchi obyektga (`{"data": ..., "meta": ..., "errors": ...}`) joylashtirish yoki resursning o'zini to'g'ridan-to'g'ri qaytarish o'rtasidagi tanlov. Konvert pagination, trace ID, warning va qisman xatolarni bir joyda uzatishga qulay, ammo har bir client'ni ortiqcha unwrap qilishga majbur qiladi va HTTP semantikasini (status kod, header) takrorlashga undaydi. Yalang'och javob HTTP'ni o'z protokoli sifatida ishlatadi: metadata header'larga va `Link`ga, xato esa `ProblemDetail`ga chiqadi. Qoida - bitta API ichida ikkisini aralashtirmaslik.
@@ -418,6 +768,23 @@ class OrderController {
 - SSE/stream endpoint'larida har bir element yalang'och chiqadi, umumiy konvert esa qo'llanilmaydi.
 
 **Ehtiyot bo'ling:** Konvert ichida o'z "statusCode" yoki "success" maydonini saqlab, HTTP 200 bilan xato qaytarish anti-pattern: monitoring, retry va proxy'lar buzuladi. `ResponseBodyAdvice` bilan hamma javobni global o'rash `ProblemDetail`, `byte[]`, `Resource` va actuator endpoint'larini ham ushlab qolib sindirishi mumkin - albatta `supports()` va `MediaType` bo'yicha filtrlang.
+
+```java
+// Yalang'och javob: resurs o'zi, metadata header'da
+@GetMapping("/orders/{id}")
+OrderDto bare(@PathVariable long id) { return service.view(id); }
+
+// Konvert: sahifalash yoki ogohlantirish kerak bo'lganda
+public record Envelope<T>(T data, PageInfo page, List<String> warnings) {}
+
+@GetMapping("/orders")
+Envelope<List<OrderDto>> list(Pageable p) {
+    Page<Order> page = repo.findAll(p);
+    return new Envelope<>(page.map(OrderDto::of).getContent(),
+                          PageInfo.of(page), List.of());
+}
+// Bitta API da ikkisini aralashtirmang: mijoz har javobni ikki xil o'qiydi
+```
 
 ## 7.25 Xato javobini loyihalash (Error Response Design)
 
@@ -463,6 +830,18 @@ class ApiErrors extends ResponseEntityExceptionHandler {
 
 **Ehtiyot bo'ling:** Ochiq internetda query depth/complexity limiti, `DataLoader` bilan batching va persisted queries bo'lmasa, bitta chuqur so'rov bazani o'ldiradigan DoS vektoriga aylanadi. GraphQL'ni "REST o'rnini bosuvchi" deb hamma joyda ishlatish xato: fayl yuklash/yuklab olish, CDN keshlanadigan oddiy resurslar va servis-servis ichki chaqiruvlari uchun REST yoki gRPC qulayroq.
 
+```graphql
+type Order {
+  id: ID!
+  total: String!
+  lineItems: [LineItem!]!      # N+1 xavfi: DataLoader shart
+}
+
+type Query {
+  order(id: ID!): Order
+}
+```
+
 ## 7.27 gRPC (gRPC with Spring)
 
 **Tavsif:** Protocol Buffers sxemasi va HTTP/2 ustida ishlaydigan, kod generatsiyasiga asoslangan yuqori unumli RPC framework'i. Binary serialization, multiplexing, ikki tomonlama streaming va qat'iy kontrakt uni servis-servis aloqasi uchun JSON/REST'dan tezroq va xavfsizroq qiladi. Narxi - brauzerdan to'g'ridan-to'g'ri chaqirishning qiyinligi (gRPC-Web/proxy kerak), debug qilishning noqulayligi va proto fayllarini boshqarish zarurati.
@@ -478,6 +857,19 @@ class ApiErrors extends ResponseEntityExceptionHandler {
 
 **Ehtiyot bo'ling:** Proto evolyutsiyasi qoidalarini buzish (field raqamini qayta ishlatish, `reserved` qo'ymaslik, `required` semantikasini o'zgartirish) jimgina data corruption keltiradi - buf yoki protolock kabi breaking-change linter'ini CI'ga qo'ying. Public, uchinchi tomon integratsiyalari uchun gRPC'ni yagona yo'l qilib qo'ymang: ko'p client firewall, proxy va brauzer cheklovlari sabab REST/`problem+json` fasad'ini talab qiladi.
 
+```proto
+service Payments {
+  rpc Charge (ChargeRequest) returns (ChargeReply);
+}
+
+message ChargeRequest {
+  string account_id = 1;
+  string amount = 2;           // pul uchun string: float ishlatilmaydi
+  string currency = 3;
+}
+// Maydon raqamlari qayta ishlatilmaydi: olib tashlanganini `reserved` qiling
+```
+
 ## 7.28 OpenAPI: kontrakt-birinchi yoki kod-birinchi (Contract-First vs Code-First OpenAPI)
 
 **Tavsif:** API spetsifikatsiyasi haqiqat manbai bo'lishi (contract-first: avval YAML yoziladi, kod undan generatsiya qilinadi) yoki kod haqiqat manbai bo'lishi (code-first: controller'lardan runtime'da spetsifikatsiya chiqariladi) o'rtasidagi arxitektura tanlovi. Contract-first parallel ishlashni (frontend mock'ni darhol oladi), review'ni va breaking-change tekshiruvini kuchaytiradi; code-first esa boshlashga tez va kod bilan spetsifikatsiya o'rtasidagi drift'ni kamaytiradi. Yirik tashkilotlarda odatda tashqi API'lar contract-first, ichki API'lar code-first bo'ladi.
@@ -492,6 +884,19 @@ class ApiErrors extends ResponseEntityExceptionHandler {
 - Mavjud legacy API'ni dokumentlashtirish: springdoc bilan spetsifikatsiya olib, keyin uni contract-first bazasiga aylantirish.
 
 **Ehtiyot bo'ling:** Code-first'da spetsifikatsiya "tasodifiy kontrakt"ga aylanadi - DTO'ni refactor qilish jimgina public API'ni o'zgartirib qo'yadi, shuning uchun generated spec'ni artefakt sifatida saqlab, diff'ini CI'da tekshirish kerak. Contract-first'da generated kodni qo'lda tahrirlash yoki generator'ni build'dan chiqarib tashlash patternni butunlay yo'q qiladi; Swagger UI'ni prod'da autentifikatsiyasiz ochiq qoldirish esa alohida xavf.
+
+```java
+// Kod-birinchi: annotatsiyadan spetsifikatsiya chiqadi
+@Operation(summary = "Buyurtma yaratish")
+@ApiResponse(responseCode = "201", description = "Yaratildi")
+@ApiResponse(responseCode = "409", description = "Takroriy idempotentlik kaliti")
+@PostMapping("/orders")
+ResponseEntity<OrderDto> create(@Valid @RequestBody CreateOrder cmd) { /* ... */ }
+
+// Kontrakt-birinchi: openapi.yaml dan interfeys generatsiya qilinadi
+// (openapi-generator-maven-plugin, generatorName=spring, interfaceOnly=true)
+// Har ikki holatda CI da spetsifikatsiya va kod mosligi tekshirilsin.
+```
 
 ## 7.29 Deklarativ HTTP client'lar (Declarative HTTP Interfaces / @HttpExchange)
 
@@ -537,6 +942,20 @@ public interface CustomerClient {
 
 **Ehtiyot bo'ling:** Header'larni qo'yib, lekin haqiqiy foydalanish telemetriyasini yig'maslik eng keng tarqalgan xato - o'chirish paytida kim sinishini bilmay qolasiz. Sunset sanasini o'tkazib yuborish yoki uni bir necha marta surish header'ga ishonchni yo'q qiladi; `Sunset` qiymati esa albatta HTTP-date formatida bo'lishi kerak, ISO-8601 emas.
 
+```java
+// Eskirishni e'lon qilish: mijoz oldindan xabardor bo'ladi
+@GetMapping("/v1/orders/{id}")
+ResponseEntity<OrderDto> getV1(@PathVariable long id) {
+    return ResponseEntity.ok()
+            .header("Deprecation", "Sat, 01 Mar 2026 00:00:00 GMT")
+            .header("Sunset", "Mon, 01 Jun 2026 00:00:00 GMT")
+            .header("Link", "</v2/orders/" + id + ">; rel=\"successor-version\"")
+            .body(service.view(id));
+}
+// Header yetarli emas: eskirgan endpoint foydalanuvchilari metrika bilan
+// kuzatilsin va Sunset sanasidan oldin bevosita xabardor qilinsin.
+```
+
 ## 7.31 Hypermedia boshqaruvlari va RPC uslubi (Hypermedia Controls vs RPC-style)
 
 **Tavsif:** Javobga keyingi mumkin bo'lgan harakatlarning link va forma tavsiflarini kiritib (HATEOAS), client'ni URL'larni qo'lda yasashdan va holat mashinasini takrorlashdan xalos qilish yondashuvi; qarshi qutbda RPC uslubi - `POST /orders/{id}/cancel` kabi fe'l-endpoint'lar va client ichida qattiq kodlangan yo'llar. Hypermedia server tomonda evolyutsiya erkinligi va discoverability beradi, RPC esa soddaligi va kod generatsiyasiga qulayligi bilan ustun. Amalda ko'p tizim o'rtacha yo'lni tanlaydi: resurs-markazli URL'lar + ba'zi fe'l-endpoint'lar, linklar faqat workflow'li joylarda.
@@ -551,6 +970,21 @@ public interface CustomerClient {
 - Sahifalashda `next`/`prev` linklarini `PagedModel` bilan berish - client cursor logikasini yozmaydi.
 
 **Ehtiyot bo'ling:** To'liq HATEOAS'ning foydasi faqat client haqiqatan linklarga tayanganda paydo bo'ladi; aksariyat mobil va SPA client'lar URL'ni qattiq kodlaydi, natijada javob hajmi va murakkabligi ortib, hech kim ishlatmaydigan metadata qoladi. Shuningdek `linkTo(methodOn(...))` har bir element uchun proxy yasaydi - katta ro'yxatlarda bu sezilarli CPU xarajati, assembler'ni o'lchab ko'rish kerak.
+
+```text
+RPC uslubi: mijoz qoidani biladi
+  POST /orders/1/cancel        # mijoz "qachon mumkin" ni o'zi hisoblaydi
+
+Gipermedia: qoida serverda qoladi
+  GET /orders/1
+  {
+    "id": 1, "status": "NEW",
+    "_links": { "cancel": { "href": "/orders/1/cancel", "method": "POST" } }
+  }
+
+Mijoz faqat _links.cancel bor-yo'qligini tekshiradi.
+Narxi: javob kattaroq va mijoz kutubxonasi gipermediani tushunishi kerak.
+```
 
 ## 7.32 Chegarada API Key va token autentifikatsiyasi (API Key / Token Auth at the Edge)
 
@@ -567,6 +1001,22 @@ public interface CustomerClient {
 
 **Ehtiyot bo'ling:** API Key'ni autentifikatsiya emas, balki avtorizatsiya vositasi deb qarash xato - u URL'da, log'da va mobil ilova binary'sida oson oshkor bo'ladi, shuning uchun uni hech qachon query parametrida uzatmang va rotation imkoniyatini oldindan rejalashtiring. "Gateway tekshirdi" degan ishonch bilan ichki servislarni ochiq qoldirish (confused deputy / zero-trust buzilishi) eng xavfli holat: ichki chaqiruvlar ham mTLS yoki token bilan himoyalanishi va token `aud`/`iss` claim'lari albatta tekshirilishi kerak.
 
+```java
+@Bean
+SecurityFilterChain api(HttpSecurity http) throws Exception {
+    return http
+        .securityMatcher("/api/**")
+        .csrf(AbstractHttpConfigurer::disable)        // stateless API uchun
+        .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .authorizeHttpRequests(a -> a
+            .requestMatchers("/api/public/**").permitAll()
+            .anyRequest().authenticated())
+        .oauth2ResourceServer(o -> o.jwt(Customizer.withDefaults()))
+        .build();
+}
+// API kalitini query parametrda uzatmang: u log va Referer orqali oqib ketadi
+```
+
 ## 7.33 Veb-servis brokeri (Web Service Broker)
 
 **Tavsif:** Veb-servis brokeri bir yoki bir nechta ichki (domain) servisni tashqi dunyoga yagona, qo'pol donali (coarse-grained) veb-servis interfeysi orqali ochib beradi va shu bilan tashqi iste'molchini ichki komponentlar tuzilishidan ajratadi. Broker tashqi so'rovni qabul qiladi, uni ichki chaqiruvlarga (REST, gRPC, JMS, lokal bean metodlari) tarjima qiladi, natijalarni bitta javobga yig'adi va protokol hamda format o'girishni o'z ichiga oladi. Bu Facade va Adapter g'oyalarining integratsiya chegarasidagi ko'rinishi: domain modeli o'zgarsa ham tashqi kontrakt barqaror qoladi. Shuningdek broker markazlashgan nuqta sifatida autentifikatsiya, audit, throttling va xatolarni normallashtirish uchun qulay joy beradi.
@@ -581,6 +1031,26 @@ public interface CustomerClient {
 - Autentifikatsiya, rate limiting, audit log va PII maskalashni yagona chegara nuqtasida markazlashtirish.
 
 **Ehtiyot bo'ling:** Broker oson "distributed god object"ga aylanadi - biznes mantig'i unda to'planib, har bir domain o'zgarishi brokerni ham o'zgartirishni talab qiladi, shuning uchun uni orkestratsiya va tarjima bilan cheklang. Yana bir tuzoq - sinxron ketma-ket chaqiruvlar latency'ni qo'shib yuboradi va bitta sekin ichki servis butun brokerni bloklaydi: timeout, Resilience4j circuit breaker va parallel chaqiruvlarni albatta qo'ying, agar tashqi kontrakt ichki servis bilan amalda bir xil bo'lsa esa, bu qatlam faqat ortiqcha hop bo'ladi va uni umuman qo'ymaslik kerak.
+
+```java
+// Web service broker: tashqi tizim tafsiloti bitta sinfda qoladi
+@Component
+public class PspBroker {
+    private final RestClient client;
+
+    public Receipt charge(Payment p) {
+        try {
+            return client.post().uri("/v3/charge")
+                    .body(toPspRequest(p))            // tashqi format bu yerda tug'iladi
+                    .retrieve()
+                    .body(PspResponse.class)
+                    .toDomain();                      // va bu yerda o'ladi
+        } catch (RestClientResponseException e) {
+            throw PspErrorTranslator.translate(e);    // tashqi xato -> domen xatosi
+        }
+    }
+}
+```
 
 ## 7.34 Amalda qo'llash
 

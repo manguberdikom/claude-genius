@@ -56,6 +56,24 @@ Biznes logika va Service qatlam patternlari - ilovaning eng qimmatbaho qismi, ya
 
 **Ehtiyot bo'ling:** Biznes qoidalari o'sgach skriptlar o'rtasida logika copy-paste bo'lib ketadi va bitta qoidani o'zgartirish uchun o'nlab joyni tahrirlashga to'g'ri keladi. Murakkab, ko'p invariantli domen (sug'urta, narxlash, buxgalteriya) uchun ishlatmang - bunda Domain Model afzal.
 
+```java
+// Transaction Script: bitta amal, boshdan oxir protsedura
+@Service
+public class TopUpScript {
+    private final JdbcClient db;
+
+    @Transactional
+    public void topUp(long accountId, Money amount) {
+        int updated = db.sql("UPDATE accounts SET balance = balance + :a WHERE id = :id")
+                .param("a", amount.amount()).param("id", accountId).update();
+        if (updated == 0) throw new AccountNotFoundException(accountId);
+        db.sql("INSERT INTO ledger(account_id, amount, kind) VALUES (:id, :a, 'TOPUP')")
+                .param("id", accountId).param("a", amount.amount()).update();
+    }
+}
+// Oddiy CRUD uchun yetarli. Qoida ko'paysa takrorlanish boshlanadi.
+```
+
 ## 8.2 Domen modeli (Domain Model)
 
 **Tavsif:** Biznes logikani ma'lumot va xatti-harakatni birlashtirgan obyektlar to'ri sifatida ifodalaydi: har bir obyekt o'z invariantlarini o'zi qo'riqlaydi. Service qatlam faqat yupqa koordinator bo'lib qoladi - tranzaksiyani ochadi, aggregate'ni yuklaydi, unga metod chaqiradi va saqlaydi. Murakkab, tez o'zgaruvchi qoidalar uchun eng kuchli yechim, ammo o'rganish narxi va mapping murakkabligi yuqori.
@@ -70,6 +88,23 @@ Biznes logika va Service qatlam patternlari - ilovaning eng qimmatbaho qismi, ya
 - Subscription billing: plan o'zgarishi, proration, grace period hisoblash.
 
 **Ehtiyot bo'ling:** Eng keng tarqalgan xato - "anemic domain model": entity'lar faqat getter/setter bo'lib, logika yana service'da qolib ketadi, natijada Domain Model nomi ostida aslida Transaction Script ishlaydi. JPA lazy loading va `LazyInitializationException` tufayli domen metodlarini tranzaksiyadan tashqarida chaqirmang.
+
+```java
+// Domain Model: qoida ma'lumot bilan birga turadi
+@Entity
+public class Account {
+    @Id private Long id;
+    private BigDecimal balance;
+    private AccountStatus status;
+
+    public void withdraw(Money amount) {
+        if (status != AccountStatus.ACTIVE) throw new AccountFrozenException(id);
+        if (balance.compareTo(amount.amount()) < 0) throw new InsufficientFundsException(id);
+        this.balance = balance.subtract(amount.amount());   // invariant ichda
+    }
+}
+// Servis endi faqat orkestratsiya qiladi: yuklash, chaqirish, saqlash
+```
 
 ## 8.3 Jadval moduli (Table Module)
 
@@ -86,6 +121,22 @@ Biznes logika va Service qatlam patternlari - ilovaning eng qimmatbaho qismi, ya
 
 **Ehtiyot bo'ling:** Boy invariantlar va obyektlar o'rtasidagi murakkab munosabatlar bo'lsa, Table Module tez orada protsedural "SQL'ga o'ralgan god class"ga aylanadi. Domen chegaralari jadval chegaralaridan farq qilsa (bitta aggregate bir necha jadvalga yoyilgan bo'lsa) bu patterndan voz kechish kerak.
 
+```java
+// Table Module: bitta jadval uchun bitta modul, nusxa emas
+@Service
+public class ContractTable {
+    private final JdbcClient db;
+
+    public BigDecimal totalRevenue(int year) {
+        return db.sql("SELECT coalesce(sum(amount),0) FROM contracts WHERE year = :y")
+                .param("y", year).query(BigDecimal.class).single();
+    }
+
+    public List<ContractRow> expiring(LocalDate until) { /* ... */ }
+}
+// Hisobot va ommaviy ishlov uchun qulay: obyekt grafini yuklamaydi
+```
+
 ## 8.4 Service qatlami (Service Layer)
 
 **Tavsif:** Ilovaning tashqi chegarasida use-case'lar to'plamini ifodalovchi aniq API o'rnatadi: tranzaksiya, security, orkestrovka va domen chaqiruvlari shu qatlamda birlashtiriladi. Controller, scheduler yoki message listener kabi barcha kiruvchi adapterlar aynan shu qatlam bilan gaplashadi, shuning uchun bitta logika turli kanallarda takrorlanmaydi. Service qatlam yupqa (domen boy bo'lganda) yoki qalin (Transaction Script uslubida) bo'lishi mumkin.
@@ -100,6 +151,25 @@ Biznes logika va Service qatlam patternlari - ilovaning eng qimmatbaho qismi, ya
 - Audit va metrikalarni bitta joyda, use-case granularligida yig'ish.
 
 **Ehtiyot bo'ling:** `@Transactional` self-invocation (shu sinf ichidagi metodni `this.` orqali chaqirish) proxy'ni chetlab o'tadi va tranzaksiya ochilmaydi - bu eng ko'p uchraydigan tuzoq. Service qatlamni repository metodlarini shunchaki qayta chaqiruvchi "pass-through" sinflar bilan to'ldirmang: qiymat qo'shmaydigan qatlam faqat shovqin.
+
+```java
+// Service Layer: tranzaksiya chegarasi va use-case kirish nuqtasi
+@Service
+public class TransferService {
+    private final AccountRepository accounts;
+    private final DomainEventBus events;
+
+    @Transactional
+    public Receipt transfer(long fromId, long toId, Money amount) {
+        Account from = accounts.findByIdForUpdate(fromId).orElseThrow();
+        Account to = accounts.findByIdForUpdate(toId).orElseThrow();
+        from.withdraw(amount);                  // qoida domenda
+        to.deposit(amount);
+        events.publish(new MoneyTransferred(fromId, toId, amount));
+        return Receipt.of(from, to, amount);
+    }
+}
+```
 
 ## 8.5 Application Service va Domain Service (Application Service vs Domain Service)
 
@@ -146,6 +216,23 @@ class PlaceOrderService {                     // Application Service
 
 **Ehtiyot bo'ling:** Delegate ichida biznes qoidasi paydo bo'lsa, u yashirin ikkinchi service qatlamga aylanadi - uni faqat transport va resilience uchun saqlang. Bitta jarayon ichidagi chaqiruvlar uchun ortiqcha delegate qo'shish keraksiz indirection beradi.
 
+```java
+// Business Delegate: mijoz tomonidagi kod masofaviy tafsilotni bilmaydi
+@Component
+public class PaymentDelegate {
+    private final RestClient psp;
+
+    public Receipt charge(Payment p) {
+        try {
+            return psp.post().uri("/charge").body(p).retrieve().body(Receipt.class);
+        } catch (ResourceAccessException e) {       // tarmoq xatosi
+            throw new PaymentUnavailableException(e);
+        }
+    }
+}
+// Chaqiruvchi HTTP, retry va serializatsiyani ko'rmaydi
+```
+
 ## 8.7 Sessiya fasadi (Session Facade)
 
 **Tavsif:** Bir nechta mayda biznes komponent (entity, DAO, helper) ustida bitta yirik, use-case'ga yo'naltirilgan interfeys yaratadi va shu chaqiruvni bitta tranzaksiyada bajaradi. Maqsad - client va server o'rtasidagi "chatty" chaqiruvlar sonini kamaytirish va tranzaksion/security chegarasini bir joyga to'plash. J2EE'da bu Stateless Session Bean sifatida amalga oshirilgan.
@@ -160,6 +247,24 @@ class PlaceOrderService {                     // Application Service
 - Security va audit tekshiruvini use-case darajasida markazlashtirish.
 
 **Ehtiyot bo'ling:** Fasad vaqt o'tib "god service"ga aylanishi oson - har bir yangi ekran uchun metod qo'shilib, sinf minglab qatorga yetadi; fasadlarni use-case bo'yicha bo'lib saqlang. Agar fasad faqat bitta repository metodini chaqirsa, u keraksiz qatlam.
+
+```java
+// Session Facade: bir nechta ichki chaqiruvni bitta tranzaksiyada yig'adi
+@Service
+public class CheckoutFacade {
+    private final CartService carts;
+    private final InventoryService inventory;
+    private final OrderService orders;
+
+    @Transactional
+    public OrderId checkout(long cartId) {
+        Cart cart = carts.load(cartId);
+        inventory.reserve(cart.items());        // uchta chaqiruv, bitta chegara
+        return orders.create(cart);
+    }
+}
+// Mijoz uchta servisni ketma-ket chaqirmaydi: chaqiruv soni va xato yuzasi kamayadi
+```
 
 ## 8.8 Biznes obyekti (Business Object)
 
@@ -176,6 +281,25 @@ class PlaceOrderService {                     // Application Service
 
 **Ehtiyot bo'ling:** Business Object'ni Jackson yoki JPA talablariga moslashtirib, hamma maydonga setter va bo'sh konstruktor qo'shish invariantlarni buzadi - API chegarasida alohida DTO ishlating. Shuningdek domen sinfiga `@Autowired` yoki repository bog'liqligini kiritish uni test qilishni qiyinlashtiradi.
 
+```java
+// Business Object: domen tushunchasi, saqlash tafsilotidan mustaqil
+public class Invoice {
+    private final InvoiceId id;
+    private final List<LineItem> lines;
+    private InvoiceStatus status;
+
+    public Money total() {
+        return lines.stream().map(LineItem::amount)
+                .reduce(Money.zero("UZS"), Money::plus);
+    }
+
+    public void issue() {
+        if (lines.isEmpty()) throw new EmptyInvoiceException(id);
+        this.status = InvoiceStatus.ISSUED;
+    }
+}
+```
+
 ## 8.9 Kompozit entity (Composite Entity)
 
 **Tavsif:** Bir nechta o'zaro bog'liq persistent obyektni bitta coarse-grained entity ostida birlashtiradi, shunda client ichki obyektlarga alohida murojaat qilmaydi. Ichki obyektlar mustaqil identifikatsiyaga ega bo'lmaydi va faqat "root" orqali boshqariladi - bu tranzaksion yaxlitlikni va remote chaqiruvlar sonini yaxshilaydi. DDD'dagi Aggregate va Aggregate Root g'oyasining bevosita ajdodi.
@@ -190,6 +314,22 @@ class PlaceOrderService {                     // Application Service
 - MongoDB'da nested dokument sifatida saqlanadigan buyurtma yoki profil.
 
 **Ehtiyot bo'ling:** Aggregate chegarasini juda katta qilib belgilash lock contention va og'ir yuklanishga olib keladi - bir aggregate'da minglab bola yozuv bo'lsa, pagination va partial update imkonsiz bo'ladi. Ichki obyektlarga tashqaridan to'g'ridan-to'g'ri repository berish Composite Entity'ning butun ma'nosini yo'qotadi.
+
+```java
+// Composite Entity: qo'pol donali ildiz, mayda bo'laklar ichda
+@Entity
+public class Order {
+    @Id private Long id;
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private final List<OrderLine> lines = new ArrayList<>();   // faqat ildiz orqali
+
+    public void addLine(Product p, int qty) {
+        lines.add(new OrderLine(this, p, qty));   // invariant ildizda tekshiriladi
+    }
+}
+// OrderLine uchun alohida repository bo'lmasligi kerak: u ildizga tegishli
+```
 
 ## 8.10 Ma'lumot uzatish obyekti (Transfer Object / DTO)
 
@@ -206,6 +346,18 @@ class PlaceOrderService {                     // Application Service
 
 **Ehtiyot bo'ling:** Entity'ni to'g'ridan-to'g'ri controller'dan qaytarish lazy loading muammolari va ma'lumot oshkor bo'lishiga olib keladi - DTO'ni o'tkazib yubormang. Boshqa chekka - har bir qatlam uchun bir xil DTO'larni ko'paytirish; mapping xarajati foydadan oshsa, projection yoki yagona API DTO yetarli.
 
+```java
+// DTO: tashqi shartnoma, entity emas
+public record OrderDto(long id, String status, String total, List<LineDto> lines) {
+    public static OrderDto of(Order o) {
+        return new OrderDto(o.id(), o.status().name(), o.total().toString(),
+                o.lines().stream().map(LineDto::of).toList());
+    }
+}
+// Entity'ni API da qaytarish: lazy load xatolari, maydon oqishi va
+// sxema o'zgarishi bilan birga API o'zgarishi degani.
+```
+
 ## 8.11 Transfer Object yig'uvchi (Transfer Object Assembler)
 
 **Tavsif:** Bir nechta manbadan (turli business object, service yoki microservice'dan) ma'lumot yig'ib, client uchun yagona kompozit DTO yasaydi. Client model butunligini bilishi shart emas: u faqat bitta chaqiruv bilan tayyor "view model" oladi. Odatda faqat o'qish uchun ishlatiladi va bir nechta chaqiruvni parallel bajarish mumkin.
@@ -220,6 +372,24 @@ class PlaceOrderService {                     // Application Service
 - Mobil ilova uchun chaqiruv sonini kamaytiruvchi coarse-grained read endpoint.
 
 **Ehtiyot bo'ling:** Assembler ichida yozish operatsiyalari yoki biznes qoidasi paydo bo'lsa, u tranzaksion mas'uliyati noaniq hybrid'ga aylanadi - uni read-only saqlang. Ketma-ket (sequential) remote chaqiruvlar latency'ni ko'paytiradi: timeout va fallback siyosatini albatta belgilang.
+
+```java
+// Transfer Object Assembler: bir nechta manbadan bitta DTO yig'adi
+@Service
+public class CustomerOverviewAssembler {
+    private final CustomerRepository customers;
+    private final OrderClient orders;
+    private final BillingClient billing;
+
+    public CustomerOverview assemble(long id) {
+        Customer c = customers.findById(id).orElseThrow();
+        return new CustomerOverview(
+                CustomerDto.of(c),
+                orders.recent(id, 5),
+                billing.balance(id));
+    }
+}
+```
 
 ## 8.12 Qiymatlar ro'yxati boshqaruvchisi (Value List Handler)
 
@@ -236,6 +406,20 @@ class PlaceOrderService {                     // Application Service
 
 **Ehtiyot bo'ling:** `OFFSET`ga asoslangan pagination chuqur sahifalarda sekinlashadi va ma'lumot o'zgarganda satrlar takrorlanib yoki tushib qolishi mumkin - barqaror sort kaliti yoki keyset ishlating. `findAll()` bilan butun jadvalni yuklash va xotirada sahifalash esa to'g'ridan-to'g'ri `OutOfMemoryError`ga yo'l.
 
+```java
+// Value List Handler: katta ro'yxatni sahifalab beradi, hammasini yuklamaydi
+@Service
+public class OrderListHandler {
+    private final OrderRepository repo;
+
+    public Slice<OrderRow> page(OrderFilter filter, Pageable pageable) {
+        // Slice: umumiy sonni hisoblamaydi, shuning uchun COUNT so'rovi yo'q
+        return repo.findProjectedBy(filter.toSpec(), pageable);
+    }
+}
+// Katta jadvalda `Page` ni `Slice` ga almashtirish COUNT(*) ni olib tashlaydi
+```
+
 ## 8.13 Masofaviy fasad (Remote Facade)
 
 **Tavsif:** Mayda granulali domen obyektlari ustida coarse-grained, tarmoq uchun optimallashtirilgan interfeys yaratadi: bitta chaqiruvda ko'p ma'lumot uzatiladi va remote chaqiruvlar soni minimallashadi. Remote Facade o'zida biznes logika saqlamaydi - u faqat tarjimon va to'plovchi: DTO yasaydi, domenga delegatsiya qiladi. Tarmoq latency'si eng katta xarajat bo'lgan joyda muhim.
@@ -250,6 +434,22 @@ class PlaceOrderService {                     // Application Service
 - Versiyalangan API (`/v1`, `/v2`) ni bitta domen modeli ustida parallel saqlash.
 
 **Ehtiyot bo'ling:** Fasadga biznes qoidasi, tranzaksiya boshqaruvi yoki SQL kirib kelsa, u test qilinishi qiyin "fat controller"ga aylanadi - logikani service/domen qatlamida qoldiring. Shuningdek domen entity'larini fasaddan to'g'ridan-to'g'ri serializatsiya qilish API'ni domen refaktoringiga qattiq bog'lab qo'yadi.
+
+```java
+// Remote Facade: qo'pol donali interfeys, chaqiruv soni kam
+@RestController
+@RequestMapping("/checkout")
+class CheckoutApi {
+
+    // Yomon: mijoz 5 marta chaqiradi (setAddress, setPayment, addItem, ...)
+    // Yaxshi: bitta chaqiruvda butun niyat
+    @PostMapping
+    ResponseEntity<OrderDto> checkout(@Valid @RequestBody CheckoutCommand cmd) {
+        return ResponseEntity.status(201).body(facade.checkout(cmd));
+    }
+}
+// Masofaviy chaqiruv qimmat: mayda donali API latency'ni ko'paytiradi
+```
 
 ## 8.14 Mapper (Mapper - MapStruct, ModelMapper)
 
@@ -266,6 +466,21 @@ class PlaceOrderService {                     // Application Service
 
 **Ehtiyot bo'ling:** ModelMapper kabi reflection-based mapper'lar maydon nomi o'zgarganda compile-time'da xato bermaydi va noto'g'ri yoki `null` map natijasi faqat production'da chiqadi - shuning uchun MapStruct afzal. Mapper ichiga biznes qoidasi (narx hisoblash, status tekshirish) yozmang; lazy JPA assotsiatsiyalarini map qilish esa transaction tashqarisida `LazyInitializationException` yoki N+1 so'rovga olib keladi.
 
+```java
+// Mapper: aylantirish kodi generatsiya qilinadi, qo'lda yozilmaydi
+@Mapper(componentModel = "spring",
+        unmappedTargetPolicy = ReportingPolicy.ERROR)   // yangi maydon unutilmaydi
+public interface OrderMapper {
+
+    @Mapping(target = "total", expression = "java(order.total().toString())")
+    OrderDto toDto(Order order);
+
+    List<OrderDto> toDtos(List<Order> orders);
+}
+// unmappedTargetPolicy = ERROR: DTO ga maydon qo'shilsa build yiqiladi,
+// jimgina `null` qolib ketmaydi.
+```
+
 ## 8.15 Buyruq / Use Case Handler (Command / Use Case Handler - Interactor)
 
 **Tavsif:** Har bir biznes amali (use case) o'zining alohida handler sinfiga joylashtiriladi: input sifatida immutable command obyekti keladi, handler uni bajaradi va natija qaytaradi. Bu "god service" (1000 qatorli `UserService`) muammosini hal qiladi - har bir sinf bitta javobgarlikka ega bo'ladi va mustaqil test qilinadi. Clean Architecture va Hexagonal arxitekturada bu qatlam "application layer" deb ataladi. Handler faqat orkestratsiya qiladi: domain obyektlarini yuklaydi, ularning metodlarini chaqiradi, repository orqali saqlaydi.
@@ -280,6 +495,24 @@ class PlaceOrderService {                     // Application Service
 - Audit log: har bir command obyektini bajarilishdan oldin serialize qilib saqlash.
 
 **Ehtiyot bo'ling:** Kichik CRUD loyihada har bir metod uchun alohida sinf yaratish sun'iy murakkablik keltiradi - bu pattern domain mantiqi boy bo'lganda foyda beradi. Handler'lar bir-birini chaqira boshlasa, tranzaksiya chegarasi va nested use case bog'liqliklari chigallashadi; umumiy mantiqni domain service'ga chiqaring.
+
+```java
+// Use case handler: bitta sinf, bitta amal, aniq kirish va chiqish
+public record CancelOrder(long orderId, String reason) {}
+
+@Service
+public class CancelOrderHandler {
+    private final OrderRepository orders;
+
+    @Transactional
+    public void handle(CancelOrder cmd) {
+        Order order = orders.findById(cmd.orderId()).orElseThrow();
+        order.cancel(cmd.reason());          // qoida domenda
+        orders.save(order);
+    }
+}
+// 300 qatorlik OrderService o'rniga 10 ta kichik handler
+```
 
 ## 8.16 Buyruq shinasi / Mediator (Command Bus / Mediator)
 
@@ -296,6 +529,27 @@ class PlaceOrderService {                     // Application Service
 
 **Ehtiyot bo'ling:** Bus stack trace'ni va IDE'dagi "find usages" navigatsiyasini buzadi - kichik loyihada handler'ni to'g'ridan-to'g'ri inject qilish ancha ravshan. Generic tipni runtime'da yechish type-safety'ni yo'qotadi, shuning uchun handler ro'yxatini ilova ishga tushganda tekshiruvdan o'tkazing (har bir command uchun aynan bitta handler bor-yo'qligini).
 
+```java
+// Command bus: chaqiruvchi handler'ni bilmaydi
+public interface CommandHandler<C> { void handle(C command); }
+
+@Service
+public class CommandBus {
+    private final Map<Class<?>, CommandHandler<Object>> handlers;
+
+    @SuppressWarnings("unchecked")
+    public CommandBus(List<CommandHandler<?>> all) {
+        this.handlers = all.stream().collect(Collectors.toMap(
+                h -> GenericTypeResolver.resolveTypeArgument(h.getClass(), CommandHandler.class),
+                h -> (CommandHandler<Object>) h));
+    }
+
+    public void dispatch(Object command) {
+        handlers.get(command.getClass()).handle(command);
+    }
+}
+```
+
 ## 8.17 Tranzaksiya chegarasi (Transaction Boundary - @Transactional on service)
 
 **Tavsif:** Tranzaksiya chegarasi - bu "biznes amali atomar bajariladigan" aniq belgilangan nuqta. To'g'ri joyi service (use case) qatlami: controller juda yuqori (HTTP so'rov DB tranzaksiyasiga teng emas), repository juda past (bir use case bir nechta repository chaqiradi). Spring buni declarative tarzda `@Transactional` bilan amalga oshiradi va proxy orqali `begin/commit/rollback`ni boshqaradi. Shu chegara ichida JPA persistence context, optimistik lock va domain event'larni commit'ga bog'lash ishlaydi.
@@ -310,6 +564,25 @@ class PlaceOrderService {                     // Application Service
 - Outbox jadvaliga xabar yozishni biznes o'zgarishi bilan bitta commit'ga bog'lash.
 
 **Ehtiyot bo'ling:** Proxy sababli bir sinf ichida `this.otherTransactionalMethod()` chaqirilsa `@Transactional` ishlamaydi, `private`/`final` metodlarga ham ta'sir qilmaydi; shuningdek default holatda faqat unchecked exception rollback qiladi (checked uchun `rollbackFor` kerak). Tranzaksiya ichida HTTP chaqiruv yoki uzoq hisob-kitob qilish connection pool'ni bo'g'adi - tashqi I/O'ni chegaradan tashqariga chiqaring.
+
+```java
+// Chegara servisda: bitta biznes amal = bitta tranzaksiya
+@Service
+public class OrderService {
+
+    @Transactional                           // chegara shu yerda boshlanadi
+    public void place(CreateOrder cmd) {
+        Order order = Order.from(cmd);
+        orders.save(order);
+        inventory.reserve(order.items());    // bir xil tranzaksiyada
+    }
+
+    @Transactional(readOnly = true)          // o'qish uchun aniq belgilanadi
+    public OrderDto view(long id) { /* ... */ }
+}
+// Controller va repository darajasida @Transactional qo'ymang:
+// biri juda keng, ikkinchisi juda tor chegara beradi.
+```
 
 ## 8.18 Notification (Notification - validatsiya xatolarini yig'ish)
 
@@ -326,6 +599,26 @@ class PlaceOrderService {                     // Application Service
 
 **Ehtiyot bo'ling:** Notification'ni invariant buzilishi uchun ishlatmang - domain holatini noto'g'ri qilib qo'yadigan holatda exception to'g'riroq; Notification kirish ma'lumotini tekshirish uchun. Shuningdek `hasErrors()` natijasini tekshirishni unutib, xatoli ma'lumot bilan davom etish - bu pattern'ning eng ko'p uchraydigan tuzog'i.
 
+```java
+// Notification: bir nechta xatoni yig'ib bir marta qaytarish
+public final class Notification {
+    private final List<String> errors = new ArrayList<>();
+
+    public void require(boolean condition, String message) {
+        if (!condition) errors.add(message);
+    }
+    public boolean hasErrors() { return !errors.isEmpty(); }
+    public List<String> errors() { return List.copyOf(errors); }
+}
+
+public Notification validate(TransferRequest r) {
+    Notification n = new Notification();
+    n.require(r.amount().signum() > 0, "Summa noldan katta bo'lishi kerak");
+    n.require(!Objects.equals(r.from(), r.to()), "Hisoblar bir xil");
+    return n;                                 // foydalanuvchi hammasini birga ko'radi
+}
+```
+
 ## 8.19 Natija obyekti vs Exception (Result Object vs Exceptions)
 
 **Tavsif:** Kutilgan biznes muvaffaqiyatsizligi (balans yetarli emas, kod muddati o'tgan) exception emas - u metodning normal natijalaridan biri. Result obyekti muvaffaqiyat qiymatini yoki xato sababini explicit tarzda qaytaradi, shuning uchun chaqiruvchi uni ignore qila olmaydi va control flow o'qilishi oson bo'ladi. Exception'lar esa haqiqiy anomal holatlar uchun qoldiriladi: DB uzilishi, bug, invariant buzilishi. Bu ayirma performance (stack trace qimmat) va API kontraktining ravshanligi uchun ham muhim.
@@ -341,6 +634,23 @@ class PlaceOrderService {                     // Application Service
 
 **Ehtiyot bo'ling:** Result'ni qaytarib, biznes xatosida tranzaksiya rollback bo'lishini kutish - klassik xato: `TransactionAspectSupport.currentTransactionStatus().setRollbackOnly()` yoki exception kerak. Barcha narsani Result'ga o'tkazish ham zarar: har bir chaqiruvda `if (result.isFailure())` tekshiruvi kod shovqinini oshiradi, shuning uchun faqat kutilgan, ma'noli muvaffaqiyatsizliklar uchun ishlating.
 
+```java
+// Natija obyekti: kutilgan xato oqimning bir qismi
+public sealed interface TransferResult {
+    record Success(Receipt receipt) implements TransferResult {}
+    record InsufficientFunds(Money available) implements TransferResult {}
+    record AccountFrozen(long accountId) implements TransferResult {}
+}
+
+// Chaqiruvchi barcha holatni qamrab olishga majbur
+String message = switch (service.transfer(cmd)) {
+    case TransferResult.Success s -> "Bajarildi: " + s.receipt().reference();
+    case TransferResult.InsufficientFunds f -> "Mablag' yetarli emas: " + f.available();
+    case TransferResult.AccountFrozen a -> "Hisob bloklangan";
+};
+// Istisno kutilmagan holat uchun qoladi, kutilgan natija uchun emas
+```
+
 ## 8.20 Siyosat obyekti (Policy Object)
 
 **Tavsif:** Policy object - bitta biznes qoidasini (chegirma shartlari, kredit limiti, qaytarish siyosati) alohida, nomlangan va test qilinadigan obyektga ajratish. Qoida service metodining ichidagi chigal `if` zanjiridan chiqib, domenning birinchi darajali tushunchasiga aylanadi: `RefundPolicy.isRefundable(order)`. Odatda Specification/Rules pattern'lari bilan birgalikda ishlatiladi va qoidalarni `and`/`or` bilan kompozitsiya qilish mumkin. Qoida o'zgarganda faqat bitta sinf o'zgaradi, service esa tegilmaydi.
@@ -355,6 +665,22 @@ class PlaceOrderService {                     // Application Service
 - Ko'p tenant'li tizimda har bir tenant uchun boshqa policy implementatsiyasini ulash.
 
 **Ehtiyot bo'ling:** Har bir kichik `if` uchun sinf yaratish policy portlashiga olib keladi - faqat o'zgarib turuvchi yoki biznes tomonidan muhokama qilinadigan qoidalarni ajratish kerak. Policy ichida repository chaqirib DB'ga murojaat qilish uni sekin va test qilish qiyin qiladi; kerakli ma'lumotni parametr sifatida bering.
+
+```java
+// Policy obyekti: qoida alohida, almashtirilishi mumkin
+public interface RefundPolicy {
+    boolean allows(Order order, Instant now);
+}
+
+@Component
+class StandardRefundPolicy implements RefundPolicy {
+    @Override public boolean allows(Order order, Instant now) {
+        return order.status() == OrderStatus.DELIVERED
+                && Duration.between(order.deliveredAt(), now).toDays() <= 14;
+    }
+}
+// Qoida o'zgarsa yangi Policy qo'shiladi, servis kodi o'zgarmaydi
+```
 
 ## 8.21 Strategiyalar registri Map<String, Bean> orqali (Strategy Registry via Map<String, Bean>)
 
@@ -402,6 +728,28 @@ class PaymentService {
 
 **Ehtiyot bo'ling:** `@Qualifier`ni string nomi bilan ishlatish compile-time xavfsizligini yo'qotadi - custom qualifier annotatsiyasi afzal. `@Primary`ni ko'p joyda ishlatish qaysi bean haqiqatda ulanganini tushunishni qiyinlashtiradi; runtime'da har so'rov uchun boshqa implementatsiya kerak bo'lsa `@Qualifier` emas, Strategy registry kerak.
 
+```java
+public interface TaxCalculator { Money tax(Order order); }
+
+@Component("uz") class UzTaxCalculator implements TaxCalculator { /* ... */ }
+@Component("kz") class KzTaxCalculator implements TaxCalculator { /* ... */ }
+
+@Service
+public class PricingService {
+    private final Map<String, TaxCalculator> byCountry;   // Spring nom bo'yicha yig'adi
+
+    public PricingService(Map<String, TaxCalculator> byCountry) {
+        this.byCountry = byCountry;
+    }
+
+    public Money tax(Order o) {
+        TaxCalculator c = byCountry.get(o.countryCode());
+        if (c == null) throw new UnsupportedCountryException(o.countryCode());
+        return c.tax(o);
+    }
+}
+```
+
 ## 8.23 Boy domain modeli vs Anemik (Rich Domain Model vs Anemic)
 
 **Tavsif:** Anemik modelda entity'lar faqat getter/setter'dan iborat ma'lumot sumkasi bo'lib, barcha biznes mantiqi service'larda yashaydi; boy (rich) modelda esa xatti-harakat o'z ma'lumoti bilan birga turadi - `order.cancel()`, `account.withdraw(amount)`. Rich model invariantlarni obyektning o'zi himoya qilishini ta'minlaydi: holat faqat ma'noli metodlar orqali o'zgaradi, setter'lar yopiladi. Service qatlami esa yupqa orkestratorga aylanadi. Anemik model sodda CRUD uchun yetarli, lekin murakkab qoidalar o'sganda mantiq service'lar bo'ylab dublikat bo'lib tarqaydi.
@@ -416,6 +764,27 @@ class PaymentService {
 - Oddiy ma'lumotnoma (reference data) jadvallari uchun ataylab anemik CRUD qoldirish.
 
 **Ehtiyot bo'ling:** JPA entity ichiga repository yoki tashqi service inject qilish (`@Configurable`, `@Autowired` field) kuchli bog'liqlik va test qiyinligini keltiradi - kerakli ma'lumotni metod parametri sifatida bering. Rich modelni har joyda majburlash ham xato: oddiy CRUD mikroservisda bu ortiqcha qatlam, va JPA lazy loading bilan domain metodlari kutilmagan DB so'rovlarini keltirib chiqarishi mumkin.
+
+```java
+// Anemik: qoida servisda, obyekt faqat ma'lumot tashiydi
+class AnemicOrder { private OrderStatus status; /* getter va setter */ }
+
+class AnemicOrderService {
+    void cancel(AnemicOrder o) {
+        if (o.getStatus() != OrderStatus.NEW) throw new IllegalStateException();
+        o.setStatus(OrderStatus.CANCELLED);   // qoida tashqarida, takrorlanadi
+    }
+}
+
+// Boy model: qoida ma'lumot bilan birga, buzib bo'lmaydi
+class Order {
+    private OrderStatus status;
+    void cancel() {
+        if (status != OrderStatus.NEW) throw new OrderNotCancellableException(status);
+        this.status = OrderStatus.CANCELLED;
+    }
+}
+```
 
 ## 8.24 Aggregate-ga bitta service (Service-per-Aggregate)
 
@@ -432,6 +801,23 @@ class PaymentService {
 
 **Ehtiyot bo'ling:** Service'lar orasida ikki tomonlama (circular) bog'liqlik paydo bo'lsa, aggregate chegarasi noto'g'ri qo'yilgan - Spring konstruktor injection'da bunday tsiklda ishga tushishdan bosh tortadi. Bitta tranzaksiyada bir nechta aggregate'ni o'zgartirishni odatga aylantirish bu pattern'ning foydasini yo'q qiladi va lock konfliktlarini oshiradi.
 
+```java
+// Agregatga bitta servis: chegara aniq, tranzaksiya bitta agregatga tegadi
+@Service
+public class OrderApplicationService {        // faqat Order agregati
+    private final OrderRepository orders;
+
+    @Transactional
+    public void cancel(long id, String reason) {
+        Order order = orders.findById(id).orElseThrow();
+        order.cancel(reason);
+        orders.save(order);
+    }
+}
+// Boshqa agregat kerak bo'lsa (Inventory), u o'z servisi orqali va
+// ko'pincha hodisa bilan, bir xil tranzaksiyada emas.
+```
+
 ## 8.25 Orkestrator vs Fasad (Orchestrator vs Facade)
 
 **Tavsif:** Facade bir nechta ichki komponentni sodda, qulay interface ortiga yashiradi - unda biznes qarori yo'q, faqat delegatsiya va qulaylik. Orchestrator esa ketma-ketlikni, shartlarni va muvaffaqiyatsizlik holatida kompensatsiyani boshqaradi - ya'ni process mantiqiga ega. Ularni aralashtirish eng keng tarqalgan arxitektura xatosi: "facade" deb nomlangan sinf asta-sekin biznes qoidalari to'planadigan god object'ga aylanadi. Shuning uchun nomlash va javobgarlikni oldindan ajratish kerak: `OrderFacade` - API uchun qulaylik, `CheckoutOrchestrator` - jarayon egasi.
@@ -447,6 +833,30 @@ class PaymentService {
 
 **Ehtiyot bo'ling:** Facade ichiga shart va qoida yozilsa, u testlanmaydigan orkestratorga aylanadi - qaroringizni nom bilan mustahkamlab, facade'ni mantiqsiz qoldiring. Orchestrator'ni esa bitta `@Transactional` metod ichida tashqi HTTP chaqiruvlari bilan qurish xavfli: tarmoq xatosi yarim bajarilgan holatni qoldiradi, shuning uchun saga/outbox va idempotentlik kerak.
 
+```java
+// Fasad: faqat uzatadi, qaror qabul qilmaydi
+@Service
+class ReportFacade {
+    OrderReport monthly(YearMonth m) { return reportService.monthly(m); }
+}
+
+// Orkestrator: tartib, xato va kompensatsiya uchun javobgar
+@Service
+class CheckoutOrchestrator {
+    @Transactional
+    public OrderId run(CheckoutCommand cmd) {
+        Reservation r = inventory.reserve(cmd.items());
+        try {
+            Receipt receipt = payments.charge(cmd.payment());
+            return orders.create(cmd, receipt, r);
+        } catch (PaymentFailedException e) {
+            inventory.release(r);                 // kompensatsiya
+            throw e;
+        }
+    }
+}
+```
+
 ## 8.26 Service'dan domain event chiqarish (Domain Event Publishing from Service)
 
 **Tavsif:** Biznes amali yakunlangach, service "nima sodir bo'ldi" faktini event sifatida e'lon qiladi (`OrderPlaced`, `PaymentCaptured`), yon ta'sirlarni esa tinglovchilar bajaradi. Bu service'ni email yuborish, cache tozalash, analitika kabi vazifalardan ajratadi va yangi reaksiya qo'shishni asosiy kodga tegmasdan imkonli qiladi. Eng muhim nuqta - event'ni commit bilan to'g'ri bog'lash: tranzaksiya rollback bo'lsa, event chiqmasligi kerak. Shu sababli `AFTER_COMMIT` fazasi va outbox pattern birgalikda ishlatiladi.
@@ -461,6 +871,26 @@ class PaymentService {
 - Audit va analitika yozuvlarini asosiy biznes oqimidan ajratish.
 
 **Ehtiyot bo'ling:** Default `@EventListener` sinxron va chaqiruvchi tranzaksiyasida ishlaydi - tinglovchidagi exception butun biznes amalini rollback qilishi mumkin; yon ta'sirlar uchun `AFTER_COMMIT` ishlating, lekin unda DB yozuvi yangi tranzaksiya talab qiladi (`REQUIRES_NEW`). `@Async` event'lar esa jarayon qulaganda yo'qoladi va tartibi kafolatlanmaydi - ishonchlilik kerak bo'lsa Modulith event registry yoki outbox jadvalini qo'shing.
+
+```java
+// Hodisa servisdan chiqadi, lekin commit'dan keyin yetkaziladi
+@Service
+public class OrderService {
+    private final ApplicationEventPublisher events;
+
+    @Transactional
+    public void place(CreateOrder cmd) {
+        Order order = orders.save(Order.from(cmd));
+        events.publishEvent(new OrderPlaced(order.id(), order.total()));
+    }
+}
+
+@Component
+class WarehouseNotifier {
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    void on(OrderPlaced e) { warehouse.send(e); }   // rollback bo'lsa yuborilmaydi
+}
+```
 
 ## 8.27 Amalda qo'llash
 
