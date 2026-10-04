@@ -15,6 +15,9 @@ u shaxsiy didga aylanadi.
 
 1. Diffni oling: `git diff` yoki `git diff --cached`, aniq fayl berilsa
    o'shani o'qing.
+1b. **Mezonni oling:** `python3 tools/rules_for.py --diff`. Bu arxitektor
+   ishlatgan aynan o'sha ro'yxat. Undan tashqaridagi narsani topilma
+   sifatida yozmang: u taklif, topilma emas.
 2. JPA entity o'zgargan bo'lsa, avval arzon tekshiruv:
    `python3 tools/schema_from_entities.py <src> --only-findings`
 3. Diffdagi har mavzu uchun qoidani toping:

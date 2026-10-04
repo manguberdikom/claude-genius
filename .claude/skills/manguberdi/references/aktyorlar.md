@@ -39,6 +39,21 @@ test-muhandis     bajarildi    -            tugadi
 review            bajarildi    bajarildi    toza
 ```
 
+## Ikkinchi chaqiruvning oldini olish
+
+Budjet ikkita, lekin maqsad bittasida tugatish. Ikkinchi chaqiruv
+deyarli har doim shu uch sababdan biri bilan keladi:
+
+| Sabab | Oldini olish |
+|---|---|
+| Aktyor qoidani bilmagan | `rules_for.py` ni ishdan oldin chaqirish |
+| Reviewer boshqa mezon bilan tekshirgan | ikkalasi bir xil ro'yxatni oladi |
+| "Bajarildi" nimaligi aytilmagan | qabul mezoni normalizatsiyada belgilanadi |
+
+Shuning uchun `rules_for.py` tavsiya emas, zanjirning birinchi qadami.
+U chaqirilmagan bo'lsa, review topilmasi aktyorning xatosi emas,
+jarayonning xatosi.
+
 ## Kamchilik kimga qaytadi
 
 `review` topilmasi turiga qarab yo'naltiriladi. Noto'g'ri aktyorga

@@ -20,6 +20,8 @@
       "Bash(python3 tools/test_check_code.py:*)",
       "Bash(python3 tools/test_parse_test_output.py:*)",
       "Bash(python3 tools/test_skill.py:*)",
+      "Bash(python3 tools/rules_for.py:*)",
+      "Bash(python3 tools/test_rules_for.py:*)",
       "Bash(sed -n:*)",
       "Bash(grep:*)",
       "Bash(awk:*)",

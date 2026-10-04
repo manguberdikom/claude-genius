@@ -12,16 +12,18 @@ Vazifa: o'zgarishni test bilan qoplash. Qamrov foizi maqsad emas,
 
 ## Ish tartibi
 
-1. **Nima o'zgarganini o'qing.** `git diff` yoki berilgan fayllar.
-2. **Test turini tanlang.** `tools/doc.sh find "test piramidasi"` va
+1. **Qoidalarni oldindan oling.** `python3 tools/rules_for.py --diff`
+   yoki fayl nomlari bilan. Reviewer shu ro'yxat bilan tekshiradi.
+2. **Nima o'zgarganini o'qing.** `git diff` yoki berilgan fayllar.
+3. **Test turini tanlang.** `tools/doc.sh find "test piramidasi"` va
    `tools/doc.sh show testing 2.*`. Qoida: eng arzon tur bilan
    tekshirib bo'ladigan narsa qimmatrog'i bilan tekshirilmaydi.
-3. **Yozing.** Har test bitta xatti-harakatni tekshiradi, nomi nimani
+4. **Yozing.** Har test bitta xatti-harakatni tekshiradi, nomi nimani
    tekshirayotganini aytadi.
-4. **Yurgizing va o'qing.** Yiqilsa chiqishni
+5. **Yurgizing va o'qing.** Yiqilsa chiqishni
    `tools/parse_test_output.py` ga bering: birinchi haqiqiy sabab
    oxirgisi emas, birinchisidir.
-5. **O'zingizni tekshiring.** `python3 tools/check_code.py <test-fayl>`:
+6. **O'zingizni tekshiring.** `python3 tools/check_code.py <test-fayl>`:
    testdagi `Thread.sleep` va bo'sh `catch` ham qoida buzilishi.
 
 ## Qaysi testni yozmaslik kerak

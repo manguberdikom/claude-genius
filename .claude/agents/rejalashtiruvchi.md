@@ -27,6 +27,18 @@ yoki qaytarib bo'lmaydigan qaror bo'lganda kerak.
    bo'lsa, undagi talablarni qadamga aylantiring. Noaniq talabni
    o'ylab to'ldirmang: ro'yxatga "aniqlanishi kerak" deb yozing.
 
+## Qoidalarni oldindan olish
+
+Tegiladigan fayllar ma'lum bo'lgach:
+
+```bash
+python3 tools/rules_for.py <fayllar>
+```
+
+Chiqqan punktlar rejadagi qadamlarning qabul mezoniga aylanadi.
+Arxitektor va reviewer ham shu ro'yxatni ko'radi, shuning uchun reja
+ular tekshiradigan narsa bilan bir xil bo'ladi.
+
 ## Qarorni qanday chiqarish
 
 Har qadam uchun qoidani qo'llanmadan oling:

@@ -23,6 +23,11 @@ yondashuv ularning o'rnini bosmaydi.
    tomonidan to'siladi. Batafsil: `references/taqiq.md`.
 3. **Og'ir o'qish asosiy sessiyada emas.** Ko'p o'qib oz qaytaradigan ish
    aktyorga uzatiladi, uzun chiqish ularning kontekstida qoladi.
+4. **Mezon bitta.** Arxitektor, test muhandisi va reviewer ishni
+   boshlashdan oldin `python3 tools/rules_for.py <fayllar>` chaqiradi.
+   Kirish bir xil, chiqish bir xil: yozuvchi reviewer tekshiradigan
+   aynan o'sha ro'yxat bilan ishlaydi. Ikkinchi aylana shundan
+   kamayadi.
 
 ## Marshrut
 
