@@ -8,7 +8,11 @@
       "Bash(python3 tools/build_index.py:*)",
       "Bash(python3 tools/check_docs.py:*)",
       "Bash(python3 tools/build_single.py:*)",
+      "Bash(python3 tools/schema_from_entities.py:*)",
       "Bash(python3 tools/test_guard.py:*)",
+      "Bash(python3 tools/test_suggest.py:*)",
+      "Bash(python3 tools/test_schema.py:*)",
+      "Bash(python3 tools/eval_find.py:*)",
       "Bash(sed -n:*)",
       "Bash(grep:*)",
       "Bash(awk:*)",
@@ -20,6 +24,7 @@
       "Glob"
     ]
   },
+  "bashOutputMaxChars": 12000,
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -39,9 +44,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/tools/guard_bigdocs.py\"",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/tools/guard.py\"",
             "timeout": 10,
-            "statusMessage": "Fayl hajmi tekshirilmoqda"
+            "statusMessage": "Qimmat amal tekshirilmoqda"
           }
         ]
       }

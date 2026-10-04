@@ -74,6 +74,33 @@ Qoidalar:
   sinaladi: mavzuli so'rovga taklif chiqishi, mavzusiziga jim turishi
   shart. Chegara qiymatlari o'sha ro'yxatda sozlangan, ko'z bilan emas.
 
+## Arzon yo'ldan borish
+
+Javob ko'pincha kodning yoki chiqishning o'zida turadi. Qimmat yo'l
+natijani yaxshilamasa, u shunchaki pul va vaqt.
+
+| Kerak bo'lsa | Qimmat yo'l | Arzon yo'l |
+|---|---|---|
+| Baza tuzilishi | konteyner, ulanish, `\d+` | `python3 tools/schema_from_entities.py <src>` |
+| Test nega yiqildi | qayta ishga tushirish | chiqishdagi birinchi xatoni o'qish |
+| Qoida nima deydi | bobni to'liq o'qish | `tools/doc.sh show <hujjat> <raqam>` |
+| Diff to'g'rimi | hammasini qurib ko'rish | `review` agenti, keyin maqsadli test |
+
+`docker up/run/build/pull` va bazaga ulanish `tools/guard.py` tomonidan
+to'siladi. Yo'l yopiq emas: haqiqatan kerak bo'lsa buyruq oldiga
+`COST_OK=1` qo'yiladi va nega arzon yo'l yetmagani aytiladi. `docker ps`,
+`docker logs` kabi tashxis buyruqlari arzon, ular to'silmaydi.
+
+Og'ir o'qishni arzon modelga bering. `.claude/agents/` da uchta agent bor:
+
+- `qidiruv` (haiku) - bir nechta bo'limni o'qib, qisqa parcha qaytaradi.
+- `tahlil` (haiku) - asbobni yurgizib, uzun chiqishdan topilmani ajratadi.
+- `review` (sonnet) - diffni qoidaga solishtiradi.
+
+Qoida: **ko'p o'qib oz qaytaradigan ish** agentga boradi, chunki uzun
+chiqish uning kontekstida qoladi. Qaror va yozish asosiy sessiyada
+qoladi.
+
 ## Tekshiruv
 
 Hujjat o'zgartirilgandan keyin:

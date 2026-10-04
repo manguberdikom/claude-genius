@@ -1,15 +1,22 @@
 #!/usr/bin/env python3
-"""PreToolUse hook: juda katta hujjat faylini butunligicha o'qishni to'sadi.
+"""PreToolUse hook: qimmat amallarni to'xtatib, arzon yo'lni ko'rsatadi.
 
-docs/ dagi eng katta bob ~68k token, dist/ dagi yig'ma fayl esa bundan ham
-kattaroq. Bitta bo'lim o'rtacha ~700 token, ya'ni javob deyarli har doim
-kichik bo'lakda. Bu hook butun faylni oqizadigan chaqiruvni to'xtatib,
-o'rniga tools/doc.sh ni ko'rsatadi.
+Ikki xil qimmatlik bor va ikkalasi ham shu yerda tekshiriladi, chunki
+alohida hook har Bash chaqiruvida ikkinchi marta Python ishga tushirardi.
 
-Fayllar ro'yxati qattiq yozilmagan: har chaqiruvda haqiqiy satr soni
-sanaladi, shuning uchun yangi bob qo'shilganda hech narsa yangilanmaydi.
+1. Kontekst qimmatligi. docs/ dagi eng katta bob ~68k token, bitta bo'lim
+   esa ~700. Butun faylni o'qish kontekstni yoqadi, holbuki javob kichik
+   bo'lakda turadi. Fayllar ro'yxati yozilmagan: har chaqiruvda haqiqiy
+   satr soni sanaladi, shuning uchun yangi bob qo'shilsa ham ishlaydi.
+
+2. Pul va vaqt qimmatligi. Konteyner ko'tarish yoki bazaga ulanish bir
+   necha daqiqa va katta chiqish beradi, holbuki kerakli javob ko'pincha
+   kodning o'zida: entity sinflari sxemani to'liq tasvirlaydi, test
+   chiqishi esa xatoni aytib turadi. Bu amallar to'siladi, lekin yo'l
+   yopiq emas: buyruq oldiga COST_OK=1 qo'yilsa o'tadi.
 
 Chegaralangan o'qish o'tadi: limit berilgan Read, sed oralig'i, grep, head.
+Tashxis buyruqlari ham o'tadi: docker ps, docker logs, docker images.
 """
 
 import json
@@ -32,6 +39,32 @@ SLURP_RE = re.compile(
     r"(?:^|[|;&]\s*|\$\(\s*)(?:cat|bat|less|more|most|view)\s+([^|;&\n>]*)"
 )
 
+# Buyruq oldiga qo'yilsa, qimmat amal baribir bajariladi.
+ESCAPE = "COST_OK=1"
+
+# Pul va vaqt sarflaydigan amallar. Tashxis fe'llari (ps, logs, images,
+# inspect, version) ataylab yo'q: ular arzon va ko'pincha aynan kerak.
+EXPENSIVE = (
+    (re.compile(r"\bdocker(?:\s+compose)?\s+(?:up|run|build|pull|start)\b"),
+     "Konteyner ko'tarish yoki yig'ish",
+     "Avval arzon yo'lni sinang: test chiqishidagi xato odatda sababni "
+     "aytadi, baza tuzilishini esa entity sinflari ko'rsatadi:\n"
+     "  python3 tools/schema_from_entities.py <src>\n"
+     "Konteyner haqiqatan kerak bo'lsa: COST_OK=1 <buyruq>"),
+    (re.compile(r"\bdocker-compose\s+(?:up|build|pull|start)\b"),
+     "Konteyner ko'tarish yoki yig'ish",
+     "Avval test chiqishini va entity sinflarini o'qing:\n"
+     "  python3 tools/schema_from_entities.py <src>\n"
+     "Konteyner haqiqatan kerak bo'lsa: COST_OK=1 <buyruq>"),
+    (re.compile(r"\b(?:psql|mysql|mariadb|mongosh|mongo|redis-cli)\b"
+                r"(?=.*(?:-h|--host|://))"),
+     "Bazaga ulanish",
+     "Sxemani bilish uchun ulanish shart emas, entity sinflari uni "
+     "to'liq tasvirlaydi:\n"
+     "  python3 tools/schema_from_entities.py <src>\n"
+     "Jonli ma'lumot haqiqatan kerak bo'lsa: COST_OK=1 <buyruq>"),
+)
+
 HINT = (
     "Butun faylni o'qish o'rniga indeksdan foydalaning:\n"
     "  tools/doc.sh find [-f] <so'rov>      - bo'limni topish\n"
@@ -42,12 +75,16 @@ HINT = (
 
 
 def deny(reason):
+    deny_with(reason, HINT)
+
+
+def deny_with(reason, hint):
     json.dump(
         {
             "hookSpecificOutput": {
                 "hookEventName": "PreToolUse",
                 "permissionDecision": "deny",
-                "permissionDecisionReason": reason + "\n" + HINT,
+                "permissionDecisionReason": reason + "\n" + hint,
             }
         },
         sys.stdout,
@@ -97,8 +134,19 @@ def check_read(tool_input):
     deny("%s - limit=%s juda katta (chegara %d)." % (name, limit, MAX_LINES))
 
 
+def check_cost(command):
+    """Konteyner va baza chaqiruvlari: arzon yo'l bor ekan, to'xtatiladi."""
+    if ESCAPE in command:
+        return
+    for pattern, what, hint in EXPENSIVE:
+        match = pattern.search(command)
+        if match:
+            deny_with("%s qimmat amal: %s" % (what, match.group(0)), hint)
+
+
 def check_bash(tool_input):
     command = tool_input.get("command") or ""
+    check_cost(command)
     for match in SLURP_RE.finditer(command):
         for arg in match.group(1).split():
             full = watched_path(arg)

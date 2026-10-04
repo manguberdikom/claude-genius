@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""guard_bigdocs.py uchun sinovlar.
+"""guard.py uchun sinovlar.
 
     python3 tools/test_guard.py
 
@@ -14,7 +14,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-GUARD = os.path.join(HERE, "guard_bigdocs.py")
+GUARD = os.path.join(HERE, "guard.py")
 
 # 1414 satr - chegaradan katta.
 BIG = "docs/patterns/25-anti-patternlar.md"
@@ -62,6 +62,34 @@ CASES = [
     ("Bash bo'lmagan asbob", ALLOW,
      {"tool_name": "Grep", "tool_input": {"pattern": "x", "path": BIG}}),
     ("buzuq JSON", ALLOW, None),
+
+    # Pul va vaqt sarflaydigan amallar.
+    ("docker compose up", DENY,
+     {"tool_name": "Bash", "tool_input": {"command": "docker compose up -d"}}),
+    ("docker run", DENY,
+     {"tool_name": "Bash", "tool_input": {"command": "docker run -it pg:16"}}),
+    ("docker build", DENY,
+     {"tool_name": "Bash", "tool_input": {"command": "docker build -t app ."}}),
+    ("docker-compose up (eski)", DENY,
+     {"tool_name": "Bash", "tool_input": {"command": "docker-compose up"}}),
+    ("psql uzoq hostga", DENY,
+     {"tool_name": "Bash", "tool_input": {"command": "psql -h db.local -U u app"}}),
+    ("mongosh URI bilan", DENY,
+     {"tool_name": "Bash", "tool_input":
+      {"command": "mongosh mongodb://localhost:27017/app"}}),
+    # Tashxis arzon, to'silmaydi.
+    ("docker ps", ALLOW,
+     {"tool_name": "Bash", "tool_input": {"command": "docker ps -a"}}),
+    ("docker logs", ALLOW,
+     {"tool_name": "Bash", "tool_input": {"command": "docker logs app --tail 50"}}),
+    ("psql --version", ALLOW,
+     {"tool_name": "Bash", "tool_input": {"command": "psql --version"}}),
+    ("mvn test to'silmaydi", ALLOW,
+     {"tool_name": "Bash", "tool_input": {"command": "mvn -q test -Dtest=OrderTest"}}),
+    # Ataylab ruxsat berilgan holat.
+    ("COST_OK bilan docker", ALLOW,
+     {"tool_name": "Bash", "tool_input":
+      {"command": "COST_OK=1 docker compose up -d"}}),
 ]
 
 
