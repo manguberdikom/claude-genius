@@ -96,6 +96,20 @@ CASES = [
     ("matndagi powershell", ALLOW,
      {"tool_name": "Bash", "tool_input":
       {"command": "grep -rn powershell docs/"}}),
+    # Qidiruv naqshi ichidagi so'z chaqiruv emas. Bu holat amalda
+    # uchradi: qo'riqchi shu repoda o'z sozlamalarini qidirgan grep ni
+    # to'xtatib qo'ydi.
+    ("naqsh ichida taqiqlangan so'zlar", ALLOW,
+     {"tool_name": "Bash", "tool_input":
+      {"command": "grep -rnoiE " + chr(39) + "(" + "docker (run|build)"
+                  + "|powershell)" + chr(39) + " .claude/"}}),
+    ("naqsh ichida konteyner buyrug'i", ALLOW,
+     {"tool_name": "Bash", "tool_input":
+      {"command": "grep -rn " + chr(39) + "docker " + "run" + chr(39) + " docs/"}}),
+    ("matnga yozilgan ulanish", ALLOW,
+     {"tool_name": "Bash", "tool_input":
+      {"command": "echo " + chr(39) + "psql -h localhost" + chr(39)
+                  + " >> notes.txt"}}),
     # Ataylab ruxsat berilgan holat.
     ("COST_OK bilan docker", ALLOW,
      {"tool_name": "Bash", "tool_input":

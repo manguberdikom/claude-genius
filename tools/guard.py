@@ -45,13 +45,15 @@ ESCAPE = "COST_OK=1"
 # Pul va vaqt sarflaydigan amallar. Tashxis fe'llari (ps, logs, images,
 # inspect, version) ataylab yo'q: ular arzon va ko'pincha aynan kerak.
 EXPENSIVE = (
-    (re.compile(r"\bdocker(?:\s+compose)?\s+(?:up|run|build|pull|start)\b"),
+    (re.compile(r"(?:^|[|;&]\s*|\$\(\s*)docker(?:\s+compose)?\s+"
+                r"(?:up|run|build|pull|start)\b"),
      "Konteyner ko'tarish yoki yig'ish",
      "Avval arzon yo'lni sinang: test chiqishidagi xato odatda sababni "
      "aytadi, baza tuzilishini esa entity sinflari ko'rsatadi:\n"
      "  python3 tools/schema_from_entities.py <src>\n"
      "Konteyner haqiqatan kerak bo'lsa: COST_OK=1 <buyruq>"),
-    (re.compile(r"\bdocker-compose\s+(?:up|build|pull|start)\b"),
+    (re.compile(r"(?:^|[|;&]\s*|\$\(\s*)docker-compose\s+"
+                r"(?:up|build|pull|start)\b"),
      "Konteyner ko'tarish yoki yig'ish",
      "Avval test chiqishini va entity sinflarini o'qing:\n"
      "  python3 tools/schema_from_entities.py <src>\n"
@@ -62,7 +64,8 @@ EXPENSIVE = (
      "Bu muhitda PowerShell ishlatilmaydi va u yozilgan skript boshqa\n"
      "mashinada tekshirilmagan bo'ladi. Shu ishni bash yoki python3 bilan\n"
      "bajaring; ikkalasi ham shu yerda sinaladi."),
-    (re.compile(r"\b(?:psql|mysql|mariadb|mongosh|mongo|redis-cli)\b"
+    (re.compile(r"(?:^|[|;&]\s*|\$\(\s*)"
+                r"(?:psql|mysql|mariadb|mongosh|mongo|redis-cli)\b"
                 r"(?=.*(?:-h|--host|://))"),
      "Bazaga ulanish",
      "Sxemani bilish uchun ulanish shart emas, entity sinflari uni "
@@ -140,10 +143,29 @@ def check_read(tool_input):
     deny("%s - limit=%s juda katta (chegara %d)." % (name, limit, MAX_LINES))
 
 
+QUOTED_RE = re.compile(r"'[^']*'|\"[^\"]*\"")
+
+
+def strip_quoted(command):
+    """Qo'shtirnoq ichidagi matnni bo'sh joyga almashtiradi.
+
+    `grep -n 'docker run' .` buyrug'i konteyner ko'tarmaydi, u shu haqda
+    QIDIRADI. Naqsh ichidagi so'zni chaqiruv deb o'qish qidiruvning
+    o'zini to'sib qo'yadi. Bu amalda uchradi: qo'riqchi shu repoda
+    o'z sozlamalarini qidirgan buyruqni to'xtatdi.
+    """
+    return QUOTED_RE.sub(lambda m: " " * len(m.group(0)), command)
+
+
 def check_cost(command):
-    """Konteyner va baza chaqiruvlari: arzon yo'l bor ekan, to'xtatiladi."""
+    """Konteyner va baza chaqiruvlari: arzon yo'l bor ekan, to'xtatiladi.
+
+    Bu odatga qarshi to'siq, xavfsizlik chegarasi emas: `bash -c` ichiga
+    yashirilgan buyruqni u ko'rmaydi va ko'rishga urinmaydi ham.
+    """
     if ESCAPE in command:
         return
+    command = strip_quoted(command)
     for pattern, what, hint in EXPENSIVE:
         match = pattern.search(command)
         if match:
