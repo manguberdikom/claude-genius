@@ -57,6 +57,20 @@ Concurrency patternlari ko'p oqimli (multi-threaded) va asinxron tizimlarda ishn
 
 **Ehtiyot bo'ling:** Cheksiz `LinkedBlockingQueue` bilan `max-size` hech qachon ishlamaydi - navbat o'sib OOM'ga olib keladi va backpressure yo'qoladi; `CallerRunsPolicy` yoki chegaralangan navbat tanlang. Platform threadli hovuzda bloklanuvchi I/O'ni ko'paytirish thread starvation beradi: bunday ishni virtual threadlarga yoki alohida ajratilgan (bulkhead) hovuzga chiqarish kerak.
 
+```java
+@Bean
+ThreadPoolTaskExecutor reportExecutor() {
+    ThreadPoolTaskExecutor ex = new ThreadPoolTaskExecutor();
+    ex.setCorePoolSize(8);
+    ex.setMaxPoolSize(8);              // core = max: pool "pulsatsiya" qilmaydi
+    ex.setQueueCapacity(200);          // chegarasiz navbat = xotira tugashi
+    ex.setThreadNamePrefix("report-"); // thread dump o'qilishi uchun
+    ex.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
+    ex.setTaskDecorator(new ContextPropagatingTaskDecorator()); // MDC va trace
+    return ex;
+}
+```
+
 ## 4.2 Ishlab chiqaruvchi-Iste'molchi (Producer-Consumer)
 
 **Tavsif:** Ishni yaratuvchi va uni qayta ishlovchi komponentlar o'rtasiga navbat qo'yiladi, shu bilan ular bir-biridan vaqt va tezlik jihatidan ajratiladi. Chegaralangan navbat tabiiy backpressure beradi: navbat to'lsa producer sekinlashadi yoki rad etiladi. Iste'molchilar sonini o'zgartirib, qayta ishlash quvvatini yuklamaga moslash mumkin.
@@ -71,6 +85,24 @@ Concurrency patternlari ko'p oqimli (multi-threaded) va asinxron tizimlarda ishn
 - ETL oqimida o'qish, transformatsiya va yozish bosqichlarini mustaqil tezlikda ishlatish.
 
 **Ehtiyot bo'ling:** Navbat ichidagi elementlar JVM o'chganda yo'qoladi - "ishonchli" yetkazib berish kerak bo'lsa in-memory queue emas, broker yoki transactional outbox ishlatilsin. Poison message yoki sekin consumer navbatni to'ldirib butun pipeline'ni to'xtatishi mumkin, shuning uchun dead-letter va timeout majburiy.
+
+```java
+// Producer-Consumer: chegaralangan navbat backpressure beradi
+private final BlockingQueue<Job> queue = new ArrayBlockingQueue<>(1_000);
+
+void produce(Job job) throws InterruptedException {
+    if (!queue.offer(job, 200, TimeUnit.MILLISECONDS)) {
+        throw new QueueFullException();   // kutib qolmaydi, tez xato
+    }
+}
+
+void consume() throws InterruptedException {
+    while (!Thread.currentThread().isInterrupted()) {
+        Job job = queue.take();           // bo'sh bo'lsa kutadi
+        process(job);
+    }
+}
+```
 
 ## 4.3 Kelasi natija / Vada (Future / Promise / CompletableFuture)
 
@@ -110,6 +142,22 @@ return u.thenCombine(o, UserProfile::new)
 
 **Ehtiyot bo'ling:** Bitta oqim bo'g'iz (bottleneck) bo'lib qoladi - og'ir CPU ishi yoki bloklanuvchi chaqiruv butun navbatni to'xtatadi. Navbat chegarasiz bo'lsa yuklama ostida xotira o'sadi va latency ko'rinmas tarzda oshib ketadi.
 
+```java
+// Active Object: chaqiruv navbatga tushadi, o'z thread'ida bajariladi
+@Component
+public class LedgerActor {
+    private final ExecutorService worker = Executors.newSingleThreadExecutor();
+    private BigDecimal balance = BigDecimal.ZERO;   // lock kerak emas: bitta thread
+
+    public CompletableFuture<BigDecimal> credit(BigDecimal amount) {
+        return CompletableFuture.supplyAsync(() -> balance = balance.add(amount), worker);
+    }
+
+    @PreDestroy
+    void shutdown() { worker.shutdown(); }
+}
+```
+
 ## 4.5 Monitor obyekti (Monitor Object)
 
 **Tavsif:** Obyektning umumiy holatiga kirishni bitta mutex bilan seriyalashtiradi va shart bajarilmaganda oqimni shu monitor ichida kutishga qo'yadi. Ya'ni "o'zaro istisno" (mutual exclusion) va "shartli kutish" (condition wait) bir obyektda jamlanadi: bir vaqtda faqat bitta metod ishlaydi, kutayotgan oqim lock'ni bo'shatib turadi. Bu Java'ga tilning o'ziga singdirilgan eng asosiy sinxronlash patterni.
@@ -124,6 +172,22 @@ return u.thenCombine(o, UserProfile::new)
 - Lazy ravishda yuklanadigan og'ir resursni bir marta initsializatsiya qilish.
 
 **Ehtiyot bo'ling:** `synchronized` blok ichida tashqi tarmoq chaqiruvi yoki boshqa lock olish deadlock va uzun lock contention manbai - kritik bo'limni minimal ushlang va lock'larni doim bir xil tartibda oling. Virtual threadlarda `synchronized` Java 24+ da endi carrier threadni pinlamaydi (JEP 491), lekin eski JDK'larda pinlaydi - bunday hollarda `ReentrantLock` xavfsizroq.
+
+```java
+// Monitor Object: holat va uni qo'riqlovchi lock bitta obyektda
+public class BoundedCounter {
+    private final Object lock = new Object();   // ichki, tashqariga chiqmaydi
+    private int value;
+
+    public void increment() {
+        synchronized (lock) { value++; }        // ichida I/O yo'q
+    }
+
+    public int get() {
+        synchronized (lock) { return value; }
+    }
+}
+```
 
 ## 4.6 Reaktor (Reactor)
 
@@ -140,6 +204,19 @@ return u.thenCombine(o, UserProfile::new)
 
 **Ehtiyot bo'ling:** Event loop oqimida bitta `Thread.sleep()`, JDBC chaqiruvi yoki `block()` butun serverni to'xtatadi - bloklanuvchi ishni `Schedulers.boundedElastic()` ga chiqarish shart. Agar domeningizda blocking kutubxonalar ko'p bo'lsa, WebFlux emas, virtual threadli MVC oddiyroq va diagnostikasi osonroq yechim bo'lishi mumkin.
 
+```java
+// Reactor: bitta event loop ko'p ulanishni navbat bilan multipleksirlaydi
+@Bean
+NettyReactiveWebServerFactory serverFactory() {
+    NettyReactiveWebServerFactory f = new NettyReactiveWebServerFactory();
+    // event loop thread'lari soni = yadro soni; blocking ish bu yerda bo'lmasligi kerak
+    f.addServerCustomizers(server -> server.runOn(LoopResources.create("http", 1,
+            Runtime.getRuntime().availableProcessors(), true)));
+    return f;
+}
+// Event loop ichida JDBC yoki Thread.sleep chaqirilsa butun server to'xtaydi
+```
+
 ## 4.7 Proaktor (Proactor)
 
 **Tavsif:** Reaktordan farqli ravishda operatsiyaning tayyorligi haqida emas, tugallanganligi haqida xabar beradi: dastur asinxron o'qish/yozishni boshlab yuboradi, OS uni bajaradi va natija bilan completion handler'ni chaqiradi. Shu bilan I/O'ni kutish to'liq operatsion tizimga o'tadi va foydalanuvchi kodida kutish nuqtasi qolmaydi. Juda yuqori throughputli I/O uchun samarali, lekin boshqaruv oqimi callback'larga bo'linib ketadi.
@@ -154,6 +231,20 @@ return u.thenCombine(o, UserProfile::new)
 - Mavjud callback'li native kutubxonani `CompletionHandler` orqali JVM'ga integratsiya qilish.
 
 **Ehtiyot bo'ling:** Platformaga bog'liqlik yuqori - bir OS'da tezlik beradigan yechim boshqasida emulyatsiya orqali sekinlashadi, shuning uchun o'lchovsiz tanlamang. Callback zanjirlari xato va timeout boshqaruvini qiyinlashtiradi; aksariyat Spring loyihasi uchun `CompletableFuture`/Reactor abstraksiyasi ostida qolish to'g'ri qaror.
+
+```java
+// Proactor: amal tugaganda callback chaqiriladi (haqiqiy asinxron I/O)
+AsynchronousFileChannel ch = AsynchronousFileChannel.open(path, READ);
+ByteBuffer buf = ByteBuffer.allocate(8192);
+
+ch.read(buf, 0, buf, new CompletionHandler<Integer, ByteBuffer>() {
+    @Override public void completed(Integer read, ByteBuffer b) {
+        b.flip();                     // OS o'qishni tugatgandan keyin chaqiriladi
+        handle(b);
+    }
+    @Override public void failed(Throwable t, ByteBuffer b) { log.error("o'qish xatosi", t); }
+});
+```
 
 ## 4.8 Yarim-sinxron/Yarim-asinxron (Half-Sync/Half-Async)
 
@@ -170,6 +261,21 @@ return u.thenCombine(o, UserProfile::new)
 
 **Ehtiyot bo'ling:** Ikki qatlam orasidagi navbat chegarasiz bo'lsa, asinxron qatlam sinxron qatlamdan tezroq ishlab xotirani to'ldiradi - chegara va rad etish siyosati majburiy. Shuningdek kontekst (SecurityContext, MDC, `@Transactional` transaksiyasi) chegaradan avtomatik o'tmaydi: `DelegatingSecurityContextAsyncTaskExecutor` yoki Micrometer `ContextPropagation` bilan ko'chirish kerak.
 
+```java
+// Half-Sync/Half-Async: asinxron qabul, sinxron ishlov - o'rtada navbat
+@RestController
+class UploadController {
+    private final BlockingQueue<UploadTask> queue;   // chegaralangan
+
+    @PostMapping("/uploads")
+    ResponseEntity<Void> accept(@RequestBody UploadTask task) {
+        if (!queue.offer(task)) return ResponseEntity.status(503).build();
+        return ResponseEntity.accepted().build();    // tez javob, ish keyinroq
+    }
+}
+// Worker pool navbatdan olib sinxron (blocking) ishlaydi
+```
+
 ## 4.9 Yetakchi/Izdoshlar (Leader/Followers)
 
 **Tavsif:** Hovuzdagi oqimlardan faqat bittasi "yetakchi" bo'lib hodisa manbasini kuzatadi; hodisa kelganda u darhol yangi yetakchini tanlab, o'zi qayta ishlashga o'tadi. Shu bilan hodisani bir oqimdan boshqasiga uzatish (handoff) va navbat ustidagi kontekst almashinuvi yo'qoladi, ya'ni latency va lock contention kamayadi. Bu Half-Sync/Half-Async'ning yuqori samarali, lekin murakkabroq alternativasi.
@@ -185,6 +291,16 @@ return u.thenCombine(o, UserProfile::new)
 
 **Ehtiyot bo'ling:** Thread-darajali Leader/Followers'ni qo'lda yozish deyarli hech qachon o'zini oqlamaydi - Netty yoki konteyner implementatsiyasidan foydalaning. Taqsimlangan leader election'da esa split-brain va fencing muammosi bor: yetakchilik yo'qolganda ishni darhol to'xtatish va token/fence bilan tekshirish logikasi bo'lmasa, ikki instansiya bir vaqtda "yetakchi" deb o'ylaydi.
 
+```java
+// Leader/Followers: bir vaqtda bitta nusxa yetakchi bo'ladi
+@Scheduled(fixedDelay = 60_000)
+@SchedulerLock(name = "nightly-settlement", lockAtMostFor = "PT10M")
+public void settle() {
+    // ShedLock: ko'p nusxada ishlaydigan ilovada faqat bittasi bajaradi
+    settlementService.runOnce();
+}
+```
+
 ## 4.10 O'qish-yozish lock'i (Read-Write Lock)
 
 **Tavsif:** Umumiy resursga bir vaqtda ko'p o'quvchiga ruxsat beradi, lekin yozuvchini yakka (exclusive) qo'yib, o'qish bilan birga kelmasligini kafolatlaydi. O'qish yozishdan ancha ko'p bo'lgan stsenariylarda oddiy mutexga nisbatan sezilarli parallellik beradi. Lock'ning adolatlilik (fairness) siyosati o'quvchilar yozuvchini "ochdan o'ldirmasligi" uchun muhim.
@@ -199,6 +315,23 @@ return u.thenCombine(o, UserProfile::new)
 - Fayl yoki hujjat keshini ko'p o'quvchi va bitta yangilovchi bilan boshqarish.
 
 **Ehtiyot bo'ling:** Lock olish va bo'shatish narxi oddiy `synchronized` dan yuqori - agar kritik bo'lim juda qisqa yoki yozish ulushi katta bo'lsa, read-write lock faqat sekinlashtiradi. `StampedLock` reentrant emas va `Condition` bermaydi; o'qish ichida yozish lock'iga "ko'tarilish" (upgrade) `ReentrantReadWriteLock` da deadlock keltiradi. Imkon bo'lsa umuman lock'siz immutable snapshot almashtirishni afzal ko'ring.
+
+```java
+// Read-Write lock: ko'p o'quvchi parallel, yozuvchi yakka
+private final ReadWriteLock lock = new ReentrantReadWriteLock();
+private volatile RateTable table = RateTable.empty();
+
+public BigDecimal rate(String pair) {
+    lock.readLock().lock();
+    try { return table.get(pair); } finally { lock.readLock().unlock(); }
+}
+
+public void reload(RateTable fresh) {
+    lock.writeLock().lock();
+    try { this.table = fresh; } finally { lock.writeLock().unlock(); }
+}
+// Agar faqat almashtirish bo'lsa, volatile referens yetadi va lock kerak emas
+```
 
 ## 4.11 Ikki marta tekshirilgan lock (Double-Checked Locking)
 
@@ -248,6 +381,25 @@ public Config get() {
 
 **Ehtiyot bo'ling:** Timeout'siz kutish - ishlab chiqarishdagi to'liq osilib qolishning (hang) eng oson yo'li; har bir `await`/`take` uchun chegara va ortga qaytish rejasi bo'lsin. `wait()` ni doim `while (!condition)` tsikli ichida ishlating, chunki spurious wakeup bor; `notify()` o'rniga `notifyAll()` ni afzal ko'ring, aks holda noto'g'ri oqim uyg'otiladi.
 
+```java
+// Guarded Suspension: shart bajarilmaguncha kutish
+private final Lock lock = new ReentrantLock();
+private final Condition notEmpty = lock.newCondition();
+private final Deque<Task> tasks = new ArrayDeque<>();
+
+public Task take(Duration timeout) throws InterruptedException {
+    lock.lock();
+    try {
+        long nanos = timeout.toNanos();
+        while (tasks.isEmpty()) {                 // while, if emas: spurious wakeup
+            if (nanos <= 0) throw new TimeoutException();
+            nanos = notEmpty.awaitNanos(nanos);
+        }
+        return tasks.pollFirst();
+    } finally { lock.unlock(); }
+}
+```
+
 ## 4.13 Rad etib qaytish (Balking)
 
 **Tavsif:** Obyekt operatsiya uchun mos holatda bo'lmasa, kutmaydi ham, xato tashlamaydi ham - shunchaki hech narsa qilmasdan darhol qaytadi. Bu idempotent yoki "qayta urinish keyin ham bo'ladi" tabiatli ishlar uchun eng oddiy himoya: ikkinchi chaqiruv jim tashlab ketiladi. Guarded Suspension bilan tanlov: kutish arzonmi yoki o'tkazib yuborish xavfsizmi.
@@ -262,6 +414,22 @@ public Config get() {
 - Lifecycle komponentini qayta `stop()` qilishda hech narsa qilmaslik.
 
 **Ehtiyot bo'ling:** Jim tashlab ketish kuzatuvchanlikni yo'qotadi - har bir balk hodisasini metrik yoki debug log bilan belgilab qo'ying, aks holda "ish bajarilmagani" sezilmaydi. Muhim biznes operatsiyasini balking bilan o'tkazib yuborish ma'lumot yo'qolishiga olib keladi: bunday joyda navbat, retry yoki aniq xato qaytarish to'g'riroq.
+
+```java
+// Balking: holat mos kelmasa, kutmasdan darhol qaytadi
+private final AtomicBoolean running = new AtomicBoolean(false);
+
+public void startReindex() {
+    if (!running.compareAndSet(false, true)) {
+        return;                       // allaqachon ketyapti: jimgina chiqadi
+    }
+    try {
+        reindexAll();
+    } finally {
+        running.set(false);
+    }
+}
+```
 
 ## 4.14 Rejalashtiruvchi (Scheduler)
 
@@ -278,6 +446,25 @@ public Config get() {
 
 **Ehtiyot bo'ling:** Standart `ThreadPoolTaskScheduler` o'lchami 1 ga teng - bitta uzun vazifa boshqa barcha `@Scheduled` ishlarni kechiktiradi; pool o'lchamini oshiring va har bir vazifaga timeout qo'ying. `fixedRate` vazifa o'z intervalidan uzoq ishlasa navbat yig'iladi (odatda `fixedDelay` xavfsizroq), klasterda esa har bir instansiya ishni mustaqil bajaradi - leader election yoki ShedLock bo'lmasa, ish N marta takrorlanadi.
 
+```java
+// Scheduler: ishni qachon bajarish qarori alohida joyda
+@Configuration
+@EnableScheduling
+class SchedulingConfig implements SchedulingConfigurer {
+    @Override
+    public void configureTasks(ScheduledTaskRegistrar registrar) {
+        // default bitta thread: sekin job qolganini kechiktiradi
+        ThreadPoolTaskScheduler s = new ThreadPoolTaskScheduler();
+        s.setPoolSize(4);
+        s.setThreadNamePrefix("sched-");
+        s.setAwaitTerminationSeconds(30);
+        s.setWaitForTasksToCompleteOnShutdown(true);
+        s.initialize();
+        registrar.setTaskScheduler(s);
+    }
+}
+```
+
 ## 4.15 Thread'ga xos saqlash (Thread-Specific Storage)
 
 **Tavsif:** Har bir thread o'ziga tegishli alohida qiymat nusxasiga ega bo'ladi, shu sababli umumiy o'zgaruvchini lock bilan himoyalash kerak emas. Kontekst (joriy foydalanuvchi, so'rov identifikatori, tranzaksiya) metod signaturalariga parametr qo'shmasdan chaqiruv stack'i bo'ylab "yashirin" tarzda uzatiladi. Amalda bu `ThreadLocal` orqali ro'yobga chiqadi: kalit - thread, qiymat - shu thread'ning xususiy holati. Kamchiligi shunda - kontekst thread bilan bog'langani uchun boshqa thread'ga avtomatik o'tmaydi va tozalanmasa leak beradi.
@@ -292,6 +479,19 @@ public Config get() {
 - Og'ir va thread-safe bo'lmagan obyektlarni (`SimpleDateFormat`, `Jackson ObjectWriter` ba'zi konfiguratsiyalari) thread bo'yicha keshlash.
 
 **Ehtiyot bo'ling:** Thread pool'da `remove()` chaqirilmasa qiymat keyingi so'rovga "sizib o'tadi" - bu xavfsizlik incident'i darajasidagi xato, shuning uchun har doim `finally` blokida tozalang. Reactive (WebFlux) va `@Async` kodda kontekst o'z-o'zidan ko'chmaydi, virtual thread'larda esa millionlab `ThreadLocal` nusxasi xotirani yeb qo'yadi - yangi kodda `ScopedValue` yoki Reactor `Context` afzal.
+
+```java
+// Thread-specific storage: kontekst thread'ga bog'langan, tozalash majburiy
+public final class TenantContext {
+    private static final ThreadLocal<TenantId> CURRENT = new ThreadLocal<>();
+
+    public static void set(TenantId id) { CURRENT.set(id); }
+    public static TenantId get() { return CURRENT.get(); }
+    public static void clear() { CURRENT.remove(); }   // finally da chaqirilmasa oqadi
+}
+
+// Virtual thread va reactive kodda ScopedValue yoki Reactor Context afzal
+```
 
 ## 4.16 O'zgarmas obyekt (Immutable Object)
 
@@ -308,6 +508,20 @@ public Config get() {
 
 **Ehtiyot bo'ling:** `record` faqat sayoz (shallow) immutability beradi - ichidagi `List` yoki massiv mutable bo'lsa, himoya buziladi, shuning uchun konstruktorda `List.copyOf` qiling. JPA entity'larni immutable qilish amalda qiyin (proxy va dirty checking talab qiladi), shuning uchun entity emas, DTO/projection darajasida qo'llang.
 
+```java
+// Immutable: yaratilgandan keyin o'zgarmaydi, shuning uchun thread-safe
+public record Money(BigDecimal amount, Currency currency) {
+    public Money {
+        Objects.requireNonNull(amount);
+        amount = amount.setScale(currency.getDefaultFractionDigits(), RoundingMode.HALF_UP);
+    }
+    public Money plus(Money other) {      // yangi nusxa qaytaradi
+        if (!currency.equals(other.currency)) throw new CurrencyMismatchException();
+        return new Money(amount.add(other.amount), currency);
+    }
+}
+```
+
 ## 4.17 Barrier va sanoqli kutish (Barrier / CountDownLatch / Phaser)
 
 **Tavsif:** Bir nechta thread ma'lum nuqtaga yetib kelishini kutib, shundan keyingina davom etishni ta'minlaydigan koordinatsiya pattern'i. `CountDownLatch` bir martalik hisoblagich - N ta vazifa tugaganini kutish uchun; `CyclicBarrier` qayta ishlatiladigan to'siq - bir xil thread'lar har raundda uchrashib turadi; `Phaser` esa dinamik ravishda ro'yxatdan o'tadigan va chiqib ketadigan ishtirokchilar bilan ko'p fazali kutishni qo'llab-quvvatlaydi. Maqsad - "hammasi tayyor bo'lgandan keyin" semantikasini busy-wait qilmasdan ifodalash.
@@ -322,6 +536,24 @@ public Config get() {
 - Ko'p fazali ETL'da har bir faza oxirida barcha worker'larni `Phaser` bilan sinxronlash.
 
 **Ehtiyot bo'ling:** Latch'ni timeout'siz `await()` qilish ilovani butunlay muzlatib qo'yadi - har doim `await(timeout, unit)` ishlatib natijani tekshiring. Biznes-logikada bunday quyi darajali primitivlarni qo'lda yozish o'rniga `CompletableFuture`, Reactor yoki structured concurrency'ni afzal ko'ring; `CyclicBarrier` virtual thread'lar bilan ishlashda thread sonini chegaralab qo'yishi mumkin.
+
+```java
+// CountDownLatch: hamma tayyor bo'lguncha kutish
+int workers = 4;
+CountDownLatch ready = new CountDownLatch(workers);
+CountDownLatch start = new CountDownLatch(1);
+
+for (int i = 0; i < workers; i++) {
+    executor.submit(() -> {
+        ready.countDown();
+        start.await();        // hamma bir vaqtda boshlaydi (yuk testi uchun)
+        doWork();
+        return null;
+    });
+}
+ready.await();               // hamma tayyor
+start.countDown();           // start berildi
+```
 
 ## 4.18 Fork-Join va ishni o'g'irlash (Fork-Join / Work Stealing)
 
@@ -338,6 +570,26 @@ public Config get() {
 
 **Ehtiyot bo'ling:** `commonPool` butun JVM uchun umumiy va sig'imi `CPU-1` ga teng - unda blocking I/O bajarish (JDBC, HTTP) butun ilovani, hatto boshqa parallel stream'larni ham to'xtatib qo'yadi; I/O uchun alohida pool yoki virtual thread ishlatilsin. Agar blocking muqarrar bo'lsa, `ForkJoinPool.ManagedBlocker` qo'llang va bo'lish chuqurligini ortiqcha mayda qilmang, aks holda koordinatsiya narxi foydadan oshadi.
 
+```java
+// Fork-Join: ishni bo'lib, natijani yig'ish. Faqat CPU ishi uchun.
+class SumTask extends RecursiveTask<Long> {
+    private static final int THRESHOLD = 10_000;
+    private final long[] data; private final int from, to;
+
+    SumTask(long[] data, int from, int to) { this.data = data; this.from = from; this.to = to; }
+
+    @Override protected Long compute() {
+        if (to - from <= THRESHOLD) {
+            long s = 0; for (int i = from; i < to; i++) s += data[i]; return s;
+        }
+        int mid = (from + to) >>> 1;
+        SumTask left = new SumTask(data, from, mid);
+        left.fork();
+        return new SumTask(data, mid, to).compute() + left.join();
+    }
+}
+```
+
 ## 4.19 Actor modeli (Actor Model)
 
 **Tavsif:** Umumiy o'zgaruvchan holat butunlay yo'q qilinadi: har bir actor o'z xususiy holatiga ega va faqat asinxron xabarlar orqali muloqot qiladi. Actor o'zining mailbox'idagi xabarlarni ketma-ket, bittalab qayta ishlaganligi uchun uning ichida lock ham, race condition ham bo'lmaydi. Supervision ierarxiyasi xatolarni lokalizatsiya qiladi - "let it crash" tamoyili bilan actor qayta ishga tushiriladi. Natijada concurrency lock emas, balki xabar almashinuvi va joylashuv shaffofligi (location transparency) orqali boshqariladi.
@@ -352,6 +604,25 @@ public Config get() {
 - Chat yoki hamkorlikdagi tahrirlash sessiyalarini bitta "egasi" bo'lgan actor ichida tutish.
 
 **Ehtiyot bo'ling:** Actor modeli typesafe emas (xabar - odatda `Object`) va debug qilish qiyin: stack trace yo'qoladi, xabar yo'qolishi mumkin, mailbox cheklanmagan bo'lsa OutOfMemoryError beradi. Shuning uchun uni butun ilovaga tarqatmang - faqat haqiqatan holatli, yuqori raqobatli domen qismlarida qo'llang; oddiy CRUD servis uchun bu ortiqcha murakkablik.
+
+```java
+// Actor: holat yakka egada, aloqa faqat xabar orqali
+@Component
+public class SeatBookingActor {
+    private final BlockingQueue<BookRequest> inbox = new LinkedBlockingQueue<>(10_000);
+    private final Set<Integer> taken = new HashSet<>();   // lock yo'q: bitta thread
+
+    @PostConstruct
+    void start() {
+        Thread.ofVirtual().name("seat-actor").start(() -> {
+            while (true) {
+                BookRequest r = inbox.take();
+                r.result().complete(taken.add(r.seat()));
+            }
+        });
+    }
+}
+```
 
 ## 4.20 Lock'larni bo'lish (Lock Striping)
 
@@ -368,6 +639,23 @@ public Config get() {
 
 **Ehtiyot bo'ling:** Stripe soni kam bo'lsa turli kalitlar bitta lock'ga tushib "soxta" contention paydo bo'ladi, ko'p bo'lsa xotira va cache miss ortadi - odatda CPU sonidan bir necha baravar ko'p qilib tanlanadi. Eng muhimi: lokal lock striping bir nechta instansiyada ishlamaydi, klaster uchun `JdbcLockRegistry`/`RedisLockRegistry` yoki ShedLock kabi taqsimlangan yechim kerak.
 
+```java
+// Lock striping: bitta katta lock o'rniga kalit bo'yicha ko'p kichik lock
+private final Object[] stripes = IntStream.range(0, 64)
+        .mapToObj(i -> new Object()).toArray();
+
+private Object stripeFor(String key) {
+    return stripes[Math.floorMod(key.hashCode(), stripes.length)];
+}
+
+public void update(String key, Consumer<String> body) {
+    synchronized (stripeFor(key)) {     // turli kalitlar bir-birini kutmaydi
+        body.accept(key);
+    }
+}
+// ConcurrentHashMap ichida xuddi shu g'oya ishlatiladi
+```
+
 ## 4.21 Compare-And-Swap va lock-free algoritmlar (Compare-And-Swap / Lock-Free)
 
 **Tavsif:** Lock olish o'rniga protsessorning atomar CAS instruksiyasiga tayanadi: "qiymat hali ham kutganimdek bo'lsa, yangisiga almashtir, aks holda qaytadan urin". Muvaffaqiyatsiz urinish retry bilan davom etadi, shuning uchun hech bir thread boshqasini bloklamaydi - kontekst almashinuvi va deadlock yo'qoladi. Past contention'da bu lock'dan sezilarli tez, yuqori contention'da esa retry'lar soni ortib samaradorlik tushib ketishi mumkin.
@@ -382,6 +670,19 @@ public Config get() {
 - Yuqori throughput'li queue va ring buffer (LMAX Disruptor uslubi) implementatsiyalari.
 
 **Ehtiyot bo'ling:** CAS retry loop'i yuqori raqobatda CPU'ni behuda yoqadi va "livelock"ka olib kelishi mumkin; bir nechta o'zgaruvchini atomar o'zgartirish kerak bo'lsa CAS yetarli emas - immutable holatni bitta `AtomicReference`da almashtirish yoki lock ishlatish to'g'ri. Qo'lda lock-free struktura yozishdan saqlaning: memory model (`volatile`, happens-before) nozikliklari sabab JDK'dagi tayyor struktura deyarli har doim yaxshiroq.
+
+```java
+// CAS: lock'siz atomik o'zgartirish
+private final AtomicReference<RateTable> table = new AtomicReference<>(RateTable.empty());
+
+public void merge(RateTable delta) {
+    table.updateAndGet(current -> current.mergedWith(delta));  // ichida CAS tsikli
+}
+
+private final AtomicLong processed = new AtomicLong();
+public void onRecord() { processed.incrementAndGet(); }
+// Nizo yuqori bo'lsa CAS tsikli ko'p aylanadi: LongAdder afzal
+```
 
 ## 4.22 So'rovga bitta thread va event loop (Thread-per-request vs Event Loop)
 
@@ -399,6 +700,17 @@ public Config get() {
 
 **Ehtiyot bo'ling:** WebFlux'da event loop thread'ida JDBC, `Thread.sleep` yoki sinxron `RestTemplate` chaqirish eng ko'p uchraydigan halokatli xato - butun server kechikishi oshadi; bunday kodni albatta `boundedElastic`ga chiqaring. Shunchaki "tezroq bo'lsin" degan sabab bilan reactive stack'ga o'tmang: domen blocking bo'lsa, virtual thread'lar bir xil natijani ancha arzon murakkablikda beradi.
 
+```yaml
+// Thread-per-request: har so'rov o'z thread'ida, blocking ruxsat
+spring:
+  threads:
+    virtual:
+      enabled: true          # Boot 3.2+: so'rovlar virtual thread'da
+  datasource:
+    hikari:
+      maximum-pool-size: 20  # virtual thread ko'p, DB ulanishi kam - chegara shu yerda
+```
+
 ## 4.23 Virtual thread'lar (Virtual Threads)
 
 **Tavsif:** JVM tomonidan boshqariladigan juda yengil thread'lar: ular platform thread'larga ko'p-ga-oz (M:N) nisbatda mount qilinadi va blocking operatsiya paytida (socket, lock, `sleep`) carrier thread'ni bo'shatib, stack'ni heap'ga park qiladi. Natijada bir JVM'da millionlab thread yaratish mumkin bo'ladi va "blocking kod - qimmat" degan asosiy cheklov yo'qoladi. Bu thread-per-request modelining oddiyligini event loop'ning scalability'si bilan birlashtiradi; API o'zgarmaydi - `Thread` o'sha-o'sha.
@@ -413,6 +725,19 @@ public Config get() {
 - Test va yuklama generatorlarida minglab mijoz sessiyasini soddagina modellashtirish.
 
 **Ehtiyot bo'ling:** Virtual thread'larni pool qilmang - ular arzon, ularni cheklash kerak bo'lsa `Semaphore` ishlatilsin; `ThreadLocal`ga og'ir obyekt saqlash esa endi million nusxaga ko'payib xotirani yeb qo'yadi. Shuni ham yodda tuting: CPU-bound ish uchun hech qanday foyda bermaydi, JDBC pool (HikariCP) va downstream rate limit baribir haqiqiy bottleneck bo'lib qoladi, JDK 21-23 da `synchronized` ichidagi blocking carrier'ni pin qilib qo'yadi.
+
+```java
+// Virtual thread: arzon, blocking I/O uchun mo'ljallangan
+try (var scope = Executors.newVirtualThreadPerTaskExecutor()) {
+    List<Future<Quote>> futures = suppliers.stream()
+            .map(s -> scope.submit(() -> s.fetchQuote(request)))   // har biri bloklanadi
+            .toList();
+    for (Future<Quote> f : futures) collect(f.get());
+}
+
+// Virtual thread bilan `synchronized` o'rniga ReentrantLock ishlating,
+// va pool yasamang: thread o'zi arzon, chegara resursda bo'lishi kerak.
+```
 
 ## 4.24 Strukturaviy concurrency (Structured Concurrency)
 
@@ -479,6 +804,21 @@ String tenant = TENANT.orElse("default");
 
 **Ehtiyot bo'ling:** `@Async` proxy orqali ishlaydi - xuddi shu bean ichidan o'zini chaqirsangiz (self-invocation) annotatsiya butunlay e'tiborsiz qoladi va metod sinxron bajariladi; shuningdek `private`/`final` metodlarda ishlamaydi. `@Async` yangi thread'da `@Transactional` tranzaksiyani meros qilmaydi (`ThreadLocal`dagi tranzaksiya ko'chmaydi) va standart `SimpleAsyncTaskExecutor` chegarasiz thread yaratadi - har doim queue va pool chegarasi aniq belgilangan `ThreadPoolTaskExecutor` ko'rsating.
 
+```java
+// Asinxron metod chaqiruvi: natija keyinroq keladi
+@Service
+public class StatementService {
+
+    @Async("reportExecutor")                  // aniq executor: default'ga tayanmang
+    public CompletableFuture<Path> build(long accountId) {
+        Path file = render(accountId);
+        return CompletableFuture.completedFuture(file);
+    }
+}
+// @Async proxy orqali ishlaydi: o'z sinfi ichidan chaqirilsa ishlamaydi,
+// va `void` qaytarsa xato jimgina yo'qoladi.
+```
+
 ## 4.27 Semaphore va concurrency chegarasi (Semaphore / Concurrency Limit)
 
 **Tavsif:** Bir vaqtning o'zida resursdan foydalanayotgan bajaruvchilar sonini ruxsatnomalar (permit) soni bilan chegaralaydi: permit bo'lmasa, thread kutadi yoki darhol rad etiladi. Bu bulkhead vazifasini bajaradi - bitta sekin downstream butun ilovaning barcha thread'larini yutib ketishiga yo'l qo'ymaydi va yukni bashorat qilinadigan darajada ushlab turadi. Rate limiting'dan farqi shunda: bu yerda "vaqt birligidagi so'rov soni" emas, balki "bir paytda ishlayotgan ish soni" chegaralanadi.
@@ -493,6 +833,22 @@ String tenant = TENANT.orElse("default");
 - Downstream partnyorning kontraktdagi concurrency limitiga rioya qilish.
 
 **Ehtiyot bo'ling:** `acquire()`ni timeout'siz chaqirish sekin downstream'da butun ilovani muzlatib qo'yadi - `tryAcquire(timeout, unit)` bilan tez fail qilish va fallback berish to'g'ri; `release()` har doim `finally` blokida bo'lsin, aks holda permit'lar asta-sekin "yo'qolib", tizim butunlay to'xtaydi. Lokal semaphore faqat bitta instansiyada amal qiladi: 10 ta pod'da chegara avtomatik 10 barobar oshadi, shuning uchun global limit uchun taqsimlangan rate limiter (masalan Redis asosidagi) kerak.
+
+```java
+// Semaphore: tashqi tizimga bir vaqtda necha chaqiruv ketishini cheklash
+private final Semaphore permits = new Semaphore(10);
+
+public Quote fetch(QuoteRequest r) throws InterruptedException {
+    if (!permits.tryAcquire(100, TimeUnit.MILLISECONDS)) {
+        throw new OverloadedException();      // navbatda kutmaydi
+    }
+    try {
+        return pspClient.quote(r);
+    } finally {
+        permits.release();                    // finally shart
+    }
+}
+```
 
 ## 4.28 Amalda qo'llash
 
