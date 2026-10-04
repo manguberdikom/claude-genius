@@ -60,6 +60,9 @@ Qoidalar:
   yasaydi. Bob fayli indeksdan yangiroq bo'lsa `doc.sh` o'zi qayta yasaydi,
   shuning uchun tahrirdan keyin qo'lda hech narsa qilish shart emas.
 - Indeks grep qilinadi, o'qilmaydi. Uni ham kontekstga to'liq olmang.
+- Qidiruv sifati o'lchanadi: `python3 tools/eval_find.py`. U bo'limni
+  topish emas, nechanchi o'rinda chiqishini o'lchaydi. `find` mantig'i yoki
+  indeks o'zgarsa, pasayish shu yerda ko'rinadi.
 
 ## Tekshiruv
 

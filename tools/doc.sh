@@ -96,6 +96,10 @@ $(fulltext "$query")"
 # grep hech narsa topmasa 1 qaytaradi, bu xato emas, shuning uchun yutiladi.
 fulltext() {
   local query="$1"
+  # awk bloki single-quote ichida, shuning uchun u yerda apostrof ishlatilmaydi.
+  # lo/hi: bir faylning bo'limlari indeksda ketma-ket turadi, shuning uchun
+  # har topilgan satr uchun 3293 ta emas, faqat shu fayl bo'limlari ko'riladi.
+  # Oxirgi sort: topilish soni ko'p bo'lim yuqorida turadi.
   { cd "$ROOT" && grep -rnFi --include='*.md' -- "$query" docs || true; } \
     | cut -d: -f1,2 \
     | awk -F'\t' '
@@ -103,21 +107,26 @@ fulltext() {
           if (FNR > 1) {
             n++; doc[n]=$1; num[n]=$2; title[n]=$4
             file[n]=$5; st[n]=$6; en[n]=$7
+            if (!(file[n] in lo)) lo[file[n]] = n
+            hi[file[n]] = n
           }
           next
         }
         {
           p = index($0, ":")
           f = substr($0, 1, p - 1)
+          if (!(f in lo)) next
           l = substr($0, p + 1) + 0
-          for (i = 1; i <= n; i++)
-            if (file[i] == f && l >= st[i] && l <= en[i]) { hits[i]++; break }
+          for (i = lo[f]; i <= hi[f]; i++)
+            if (l >= st[i] && l <= en[i]) { hits[i]++; break }
         }
         END {
           for (i in hits)
-            print doc[i]"\t"num[i]"\t"title[i]" ("hits[i]" marta)"
+            print hits[i]"\t"doc[i]"\t"num[i]"\t"title[i]
         }
-      ' "$SECTIONS" -
+      ' "$SECTIONS" - \
+    | sort -t$'\t' -k1,1nr \
+    | awk -F'\t' '{ print $2"\t"$3"\t"$4" ("$1" marta)" }'
 }
 
 # ---------------------------------------------------------------- show
