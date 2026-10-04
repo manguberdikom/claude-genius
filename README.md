@@ -1,6 +1,6 @@
 # Java, Spring va PostgreSQL bo'yicha oltita qo'llanma
 
-O'zbek tilidagi oltita bir-birini to'ldiruvchi hujjat: 223 bob, 3270 bo'lim,
+O'zbek tilidagi oltita bir-birini to'ldiruvchi hujjat: 223 bob, 3300 bo'lim,
 1955 kod misoli. Mavzular takrorlanmaydi. Har bir hujjat bir savolga javob
 beradi, qolganlariga mavzu nomi bilan havola qiladi.
 
@@ -72,8 +72,9 @@ python3 tools/build_single.py patterns     # faqat bittasi
 python3 tools/check_docs.py
 ```
 
-Fayl hajmi, har bir havola va anchor, kirill harflar, em-dash, manifest
-mosligi, bob strukturasi va skilllardagi havolalar tekshiriladi. CI da har
+Fayl hajmi, har bir havola va anchor, kirill harflar, em-dash, kod fence
+juftligi, manifest mosligi, bob strukturasi, bob-yopish konvensiyasi va
+skilllardagi havolalar tekshiriladi. CI da har
 push va PR da ishlaydi.
 
 ## Til va uslub

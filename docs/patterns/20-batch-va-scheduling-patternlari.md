@@ -5,7 +5,7 @@
 # 20. Batch va scheduling patternlari (Batch & Scheduling Patterns)
 
 <details>
-<summary>Bu bo'limdagi 30 bo'lim</summary>
+<summary>Bu bo'limdagi 31 bo'lim</summary>
 
 - [20.1 Chunk'ga asoslangan ishlov (Chunk-Oriented Processing)](#201-chunkga-asoslangan-ishlov-chunk-oriented-processing)
 - [20.2 Tasklet (Tasklet)](#202-tasklet-tasklet)
@@ -37,6 +37,7 @@
 - [20.28 Batch oynasi va SLA (Batch Window & SLA)](#2028-batch-oynasi-va-sla-batch-window--sla)
 - [20.29 Idempotent batch (Idempotent Batch)](#2029-idempotent-batch-idempotent-batch)
 - [20.30 Batch'da dead-letter boshqaruvi (Dead-Letter Handling in Batch)](#2030-batchda-dead-letter-boshqaruvi-dead-letter-handling-in-batch)
+- [20.31 Amalda qo'llash](#2031-amalda-qollash)
 
 </details>
 
@@ -532,6 +533,17 @@ return new StepBuilder("importStep", jobRepository)
 - Tuzatilgan reject'larni qayta ishlash uchun alohida "replay" jobini ishga tushirish.
 
 **Ehtiyot bo'ling:** `skipLimit`ni juda katta (yoki `Integer.MAX_VALUE`) qilib qo'yish eng xavfli antipattern - manba tizimida global buzilish yuz berganda job "muvaffaqiyatli" tugab, ma'lumotning yarmi jimgina yo'qoladi; limitni biznes uchun qabul qilinadigan darajada past tutib, oshsa job'ni fail qildiring. Shuningdek `skip` bilan birga tranzaksiya rollback va chunk'ni element-element qayta ishlash yuz beradi, bu performansni sezilarli pasaytiradi, va dead-letter store'ni monitoring qilmasangiz u hech kim qaramaydigan "ma'lumot qabristoni"ga aylanadi.
+
+## 20.31 Amalda qo'llash
+
+- [ ] Har bir batch job uchun chunk hajmi, commit chegarasi va qayta ishga tushirish xatti-harakatini yozib qo'ying.
+- [ ] Job larning takrorlanishiga qarshi himoyasi borligini tekshiring: ikki marta ishga tushsa nima bo'ladi.
+- [ ] `@Scheduled` metodlarni sanab chiqing va ko'p nusxada ishlaydigan ilovada ShedLock yoki shunga o'xshash qulf borligini tasdiqlang.
+- [ ] Batch job larning ishlash vaqtini o'lchab, reliz oynasi va kunlik yuk cho'qqisi bilan kesishmasligini tekshiring.
+- [ ] Xato bo'lgan yozuvlar uchun skip va retry siyosatini yozib qo'ying; jimgina o'tkazib yuborilgan yozuvlar kuzatilishi kerak.
+- [ ] Katta hajmli job larni partitioning bilan bo'lish foydasini o'lchang va natijani yozib qo'ying.
+- [ ] Har bir job uchun metrika chiqarilayotganini tasdiqlang: ishlash vaqti, ishlangan yozuv soni, xato soni.
+- [ ] Job to'xtatilganda yoki pod o'chirilganda holat qanday saqlanishini sinab ko'rib, natijani hujjatlashtiring.
 
 ---
 

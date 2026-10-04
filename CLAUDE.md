@@ -41,7 +41,8 @@ python3 tools/check_docs.py
 ```
 
 Tekshiradi: fayl hajmi, har bir havola va anchor, kirill harf, em-dash, kod
-fence juftligi, manifest mosligi, bob strukturasi, skilllardagi havolalar.
+fence juftligi, manifest mosligi, bob strukturasi, bob-yopish konvensiyasi,
+skilllardagi havolalar.
 Xatosiz o'tishi shart. CI ham shuni ishlatadi.
 
 ## Qattiq qoidalar
@@ -60,12 +61,12 @@ Xatosiz o'tishi shart. CI ham shuni ishlatadi.
 `**Tavsif:**`, `**Spring'da qayerda uchraydi:**`, `**Qo'llanish keyslari:**`,
 `**Ehtiyot bo'ling:**`.
 
-## Ma'lum bo'shliqlar
+## Ma'lum bo'shliq
 
-1. `docs/patterns/` ning 30 bo'limida `Amalda qo'llash` ro'yxati yo'q,
-   konvensiya esa uni talab qiladi. Bob tahrirlanganda qo'shiladi.
-2. 1007 patternning 146 tasida kod misoli bor, 861 tasida yo'q. Pattern
-   tahrirlanganda imkon bo'lsa 5-15 qatorlik `java` bloki qo'shiladi.
+1007 patternning hammasida kod misoli yo'q. Pattern qo'shilsa yoki
+tahrirlansa, 5-15 qatorlik `java` bloki qo'shiladi: Spring'dagi tayyor
+variantini yoki patternning eng kichik shaklini ko'rsatadigan misol.
+Hozirgi holat `tools/check_docs.py` chiqishida ko'rinadi.
 
 ## Memory
 

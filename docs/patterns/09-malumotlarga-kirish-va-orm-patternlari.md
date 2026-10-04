@@ -5,7 +5,7 @@
 # 9. Ma'lumotlarga kirish va ORM patternlari (Data Access & ORM Patterns)
 
 <details>
-<summary>Bu bo'limdagi 37 bo'lim</summary>
+<summary>Bu bo'limdagi 38 bo'lim</summary>
 
 - [9.1 Ma'lumotlarga kirish obyekti (Data Access Object - DAO)](#91-malumotlarga-kirish-obyekti-data-access-object---dao)
 - [9.2 Repository (Repository - Spring Data)](#92-repository-repository---spring-data)
@@ -44,6 +44,7 @@
 - [9.35 Spetsifikatsiya (Specification - Spring Data JPA)](#935-spetsifikatsiya-specification---spring-data-jpa)
 - [9.36 Domen ombori (Domain Store)](#936-domen-ombori-domain-store)
 - [9.37 Yozuvlar to'plami (Record Set)](#937-yozuvlar-toplami-record-set)
+- [9.38 Amalda qo'llash](#938-amalda-qollash)
 
 </details>
 
@@ -687,6 +688,17 @@ while (rs.next()) {                         // connection allaqachon yopilgan
 - Migration va reconciliation skriptlarida ikki manbadan olingan tabular natijalarni solishtirish.
 
 **Ehtiyot bo'ling:** Record Set type-safe emas - ustun nomidagi xato yoki tur nomuvofiqligi faqat runtime'da chiqadi, bundan tashqari baza sxemasi service va web qatlamlariga "oqib" ketadi, shuning uchun uning ustiga domen mantiqini qurmang va tashqi API javobi sifatida bermang. Katta natijani butunlay xotiraga yuklash OOM keltiradi: bunday holatda `RowCallbackHandler` va mos `fetchSize` bilan stream qilish yoki kursor/pagination bo'yicha ishlash kerak.
+
+## 9.38 Amalda qo'llash
+
+- [ ] Hibernate statistikasini yoqib, eng ko'p so'rov chiqaradigan 10 endpointni aniqlang va N+1 holatlarini ro'yxatga oling.
+- [ ] `FetchType.EAGER` ishlatadigan har bir aloqani toping va uni `LAZY` ga o'tkazib, kerakli joyda `JOIN FETCH` yoki entity graph qo'llang.
+- [ ] `spring.jpa.open-in-view` qiymatini tekshirib, `false` ga o'tkazing va paydo bo'lgan lazy load xatolarini ro'yxat qiling.
+- [ ] Faqat o'qish uchun ishlatiladigan so'rovlarni toping va ularni DTO projection ga o'tkazish foydasini o'lchang.
+- [ ] `IDENTITY` generatsiyasi ishlatiladigan entity'larni toping - u JDBC batch insert'ni o'chiradi.
+- [ ] `equals` va `hashCode` ni ID bo'yicha yozgan entity'larni tekshiring: ID generatsiyadan oldin `null` bo'lsa, xatti-harakat buziladi.
+- [ ] Har bir repository metodi uchun uning chiqargan SQL rejasini `EXPLAIN (ANALYZE, BUFFERS)` bilan bir marta ko'rib, natijani yozib qo'ying.
+- [ ] Connection pool kattaligini real yuk ostida o'lchab, Little qonuni bilan hisoblangan qiymat bilan solishtiring.
 
 ---
 

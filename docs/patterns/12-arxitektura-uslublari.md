@@ -5,7 +5,7 @@
 # 12. Arxitektura uslublari (Architectural Styles)
 
 <details>
-<summary>Bu bo'limdagi 33 bo'lim</summary>
+<summary>Bu bo'limdagi 34 bo'lim</summary>
 
 - [12.1 Qatlamli arxitektura (Layered / N-tier Architecture)](#121-qatlamli-arxitektura-layered--n-tier-architecture)
 - [12.2 Olti burchakli arxitektura (Hexagonal Architecture / Ports & Adapters)](#122-olti-burchakli-arxitektura-hexagonal-architecture--ports--adapters)
@@ -40,6 +40,7 @@
 - [12.31 API-Birinchi (API-First)](#1231-api-birinchi-api-first)
 - [12.32 Event-Birinchi (Event-First)](#1232-event-birinchi-event-first)
 - [12.33 Mikro-Frontendlar (Micro-frontends) - eslatib o'tish](#1233-mikro-frontendlar-micro-frontends---eslatib-otish)
+- [12.34 Amalda qo'llash](#1234-amalda-qollash)
 
 </details>
 
@@ -577,6 +578,17 @@ class PaymentRouter {
 - A/B test: bitta fragment'ning yangi versiyasini faqat ayrim foydalanuvchilarga ko'rsatish.
 
 **Ehtiyot bo'ling:** Narxi juda yuqori: umumiy dizayn tizimi, versiya nomuvofiqligi, takrorlangan kutubxonalar va yaxlit UX uchun qattiq boshqaruv kerak - 2-3 jamoadan kichik tashkilotda bu deyarli har doim ortiqcha. Autentifikatsiya, routing va global holatni fragmentlar o'rtasida bo'lishish eng ko'p muammo tug'diradigan joy, shuning uchun BFF bilan boshlang va fragmentlarni biznes chegarasi bo'yicha, komponent darajasida emas, bo'ling.
+
+## 12.34 Amalda qo'llash
+
+- [ ] Loyihaning hozirgi arxitektura uslubini bir gapda yozing va kodda unga zid bo'lgan joylarni ro'yxatga oling.
+- [ ] Modullar o'rtasidagi bog'liqlik yo'nalishini chizib, domenga kiradigan strelkalarni toping.
+- [ ] Modular monolit ishlatilsa, Spring Modulith `verify()` testini CI ga qo'shing va buzilgan chegaralarni ro'yxat qiling.
+- [ ] Microservice'ga o'tish taklif qilingan har bir modul uchun savolga javob yozing: uning o'z ma'lumotlari bormi.
+- [ ] CQRS taklif qilinsa, o'qish va yozish modeli alohida ekanini va sinxronlash kechikishi qabul qilinganini hujjatlashtiring.
+- [ ] Hexagonal uslub ishlatilsa, port interfeyslari domen paketida, adapterlar tashqarida turganini tekshiring.
+- [ ] Har bir sinxron servis chaqiruvi uchun timeout, retry va fallback qiymatini yozib qo'ying.
+- [ ] Arxitektura qarorini ADR sifatida yozib, ko'rib chiqilgan variantlar va rad etish sabablarini qo'shing.
 
 ---
 

@@ -5,7 +5,7 @@
 # 10. Ma'lumotlarni boshqarish va taqsimlash patternlari (Data Management & Distribution Patterns)
 
 <details>
-<summary>Bu bo'limdagi 31 bo'lim</summary>
+<summary>Bu bo'limdagi 32 bo'lim</summary>
 
 - [10.1 Yumshoq o'chirish (Soft Delete)](#101-yumshoq-ochirish-soft-delete)
 - [10.2 Audit izi / Auditlash (Audit Trail / Auditing)](#102-audit-izi--auditlash-audit-trail--auditing)
@@ -38,6 +38,7 @@
 - [10.29 Taqsimlangan lock (Distributed Lock - Redis, ShedLock, Database)](#1029-taqsimlangan-lock-distributed-lock---redis-shedlock-database)
 - [10.30 Idempotentlik ombori (Idempotency Store)](#1030-idempotentlik-ombori-idempotency-store)
 - [10.31 Dual Write muammosi (Dual Write Problem)](#1031-dual-write-muammosi-dual-write-problem)
+- [10.32 Amalda qo'llash](#1032-amalda-qollash)
 
 </details>
 
@@ -552,6 +553,17 @@ public class EncryptedStringConverter implements AttributeConverter<String, Stri
 - Legacy monolitdan yangi mikroservisga ma'lumotni real vaqtda ko'chirish (Debezium bilan strangler migratsiyasi).
 
 **Ehtiyot bo'ling:** `@TransactionalEventListener(AFTER_COMMIT)` ni to'liq yechim deb o'ylash eng keng tarqalgan xato - commit bo'lib, keyin JVM qulasa, event abadiy yo'qoladi; faqat davomli (durable) outbox yoki CDC kafolat beradi. Shuningdek, outbox iste'molchisi at-least-once ishlaganini unutmang: qabul qiluvchi tomonda idempotentlik va event tartibini (per-aggregate partition key) albatta ta'minlang.
+
+## 10.32 Amalda qo'llash
+
+- [ ] Bir nechta servis yoki modul bitta jadvalga yozadigan joylarni aniqlang - bu Shared Database anti-patterni.
+- [ ] Tranzaksiya ichida xabar yuboradigan kodni toping va har birini Transactional Outbox ga o'tkazish rejasini yozing.
+- [ ] Bir nechta qadamdan iborat biznes oqimlarini sanab chiqing va har biri uchun kompensatsiya qadamini yozib qo'ying.
+- [ ] Multi-tenant ajratish usulini hujjatlashtiring: sxema, ustun yoki alohida baza. Aralash holatlarni ro'yxat qiling.
+- [ ] Read replica ga yo'naltirilgan so'rovlarni tekshirib, replikatsiya kechikishi javobni buzmasligini tasdiqlang.
+- [ ] Taqsimlangan lock ishlatadigan joylarni toping va har birining TTL, egalik va lock yo'qolganda xatti-harakati yozilganini tasdiqlang.
+- [ ] CDC yoki Debezium ishlatilsa, `wal_level = logical` boshidan yoqilganini va reliz oynasidan tashqarida o'zgarmasligini tekshiring.
+- [ ] Har bir xabar iste'molchisi uchun savolga javob yozing: xabar ikki marta kelsa nima bo'ladi.
 
 ---
 

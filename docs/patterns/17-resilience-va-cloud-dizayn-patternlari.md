@@ -5,7 +5,7 @@
 # 17. Resilience va cloud dizayn patternlari (Resilience & Cloud Design Patterns)
 
 <details>
-<summary>Bu bo'limdagi 42 bo'lim</summary>
+<summary>Bu bo'limdagi 43 bo'lim</summary>
 
 - [17.1 Qayta urinish (Retry - exponential backoff, jitter)](#171-qayta-urinish-retry---exponential-backoff-jitter)
 - [17.2 Zanjirni uzgich (Circuit Breaker)](#172-zanjirni-uzgich-circuit-breaker)
@@ -49,6 +49,7 @@
 - [17.40 Spring Framework 7 yadrosidagi resilience (Spring Framework 7 core resilience: @Retryable, @ConcurrencyLimit)](#1740-spring-framework-7-yadrosidagi-resilience-spring-framework-7-core-resilience-retryable-concurrencylimit)
 - [17.41 Timeout budjeti / deadline propagatsiyasi (Timeouts Budget / Deadline Propagation)](#1741-timeout-budjeti--deadline-propagatsiyasi-timeouts-budget--deadline-propagation)
 - [17.42 Retry bo'roni (Retry Storm - anti-pattern)](#1742-retry-boroni-retry-storm---anti-pattern)
+- [17.43 Amalda qo'llash](#1743-amalda-qollash)
 
 </details>
 
@@ -747,6 +748,17 @@ public class RatesClient {
 - Retry budjetini joriy etish: umumiy so'rovlarning masalan 10%idan ko'pi retry bo'lmasin (adaptive retry).
 
 **Ehtiyot bo'ling:** Default retry sozlamalarini "xavfsiz" deb o'ylamang - jitter'siz fixed delay va ko'p qatlamli retry eng ko'p uchraydigan prod incident sababidir; retry'ni har doim circuit breaker, concurrency limit va timeout budjeti bilan birga joylashtiring. Kafka'da bloklanuvchi retry (`DefaultErrorHandler` uzoq backoff bilan) butun partitionni to'xtatadi va rebalance'ga olib keladi - bunday holda `@RetryableTopic` asosidagi non-blocking retry'ni tanlang.
+
+## 17.43 Amalda qo'llash
+
+- [ ] Har bir tashqi chaqiruv uchun connect va read timeout aniq qo'yilganini tekshiring; default qiymatga tayanadigan joylarni ro'yxat qiling.
+- [ ] Chaqiruv zanjirlari bo'yicha timeout budjetini hisoblang: ichki timeout tashqisidan kichik bo'lishi kerak.
+- [ ] Retry qo'llanadigan joylarni sanab chiqing va faqat idempotent operatsiyalarga qo'llanganini tasdiqlang.
+- [ ] Har bir retry da exponential backoff va jitter borligini tekshiring; jittersiz retry bo'ron yaratadi.
+- [ ] Circuit breaker chegaralarini yozib qo'ying: qancha xatodan keyin ochiladi, qancha vaqtdan keyin yarim ochiladi.
+- [ ] Tashqi tizim bo'yicha bulkhead yoki `Semaphore` chegarasi borligini tasdiqlang.
+- [ ] Har bir xato holati uchun fallback xatti-harakatini yozing: kesh, bo'sh javob yoki aniq xato.
+- [ ] Resilience sozlamalarini chaos yoki nosozlik testi bilan bir marta tekshirib, natijani hujjatlashtiring.
 
 ---
 

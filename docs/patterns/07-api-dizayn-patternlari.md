@@ -5,7 +5,7 @@
 # 7. API dizayn patternlari (API Design Patterns)
 
 <details>
-<summary>Bu bo'limdagi 33 bo'lim</summary>
+<summary>Bu bo'limdagi 34 bo'lim</summary>
 
 - [7.1 Resurs-yo'naltirilgan REST (Resource-oriented REST)](#71-resurs-yonaltirilgan-rest-resource-oriented-rest)
 - [7.2 Richardson yetuklik modeli (Richardson Maturity Model)](#72-richardson-yetuklik-modeli-richardson-maturity-model)
@@ -40,6 +40,7 @@
 - [7.31 Hypermedia boshqaruvlari va RPC uslubi (Hypermedia Controls vs RPC-style)](#731-hypermedia-boshqaruvlari-va-rpc-uslubi-hypermedia-controls-vs-rpc-style)
 - [7.32 Chegarada API Key va token autentifikatsiyasi (API Key / Token Auth at the Edge)](#732-chegarada-api-key-va-token-autentifikatsiyasi-api-key--token-auth-at-the-edge)
 - [7.33 Veb-servis brokeri (Web Service Broker)](#733-veb-servis-brokeri-web-service-broker)
+- [7.34 Amalda qo'llash](#734-amalda-qollash)
 
 </details>
 
@@ -580,6 +581,17 @@ public interface CustomerClient {
 - Autentifikatsiya, rate limiting, audit log va PII maskalashni yagona chegara nuqtasida markazlashtirish.
 
 **Ehtiyot bo'ling:** Broker oson "distributed god object"ga aylanadi - biznes mantig'i unda to'planib, har bir domain o'zgarishi brokerni ham o'zgartirishni talab qiladi, shuning uchun uni orkestratsiya va tarjima bilan cheklang. Yana bir tuzoq - sinxron ketma-ket chaqiruvlar latency'ni qo'shib yuboradi va bitta sekin ichki servis butun brokerni bloklaydi: timeout, Resilience4j circuit breaker va parallel chaqiruvlarni albatta qo'ying, agar tashqi kontrakt ichki servis bilan amalda bir xil bo'lsa esa, bu qatlam faqat ortiqcha hop bo'ladi va uni umuman qo'ymaslik kerak.
+
+## 7.34 Amalda qo'llash
+
+- [ ] Har bir public endpoint uchun versiyalash strategiyasini yozib qo'ying va bitta loyihada bir nechta strategiya aralashmaganini tasdiqlang.
+- [ ] Xato javoblarini tekshiring: hammasi bir xil formatdami, `stack trace` yoki ichki xabar tashqariga chiqmayaptimi.
+- [ ] Sahifalashda `OFFSET` ishlatadigan endpointlarni toping va katta jadvallar uchun keyset pagination ga o'tkazish rejasini tuzing.
+- [ ] Pul o'tkazish yoki buyurtma yaratish kabi takrorlanmasligi kerak bo'lgan endpointlarda idempotentlik kaliti borligini tasdiqlang.
+- [ ] OpenAPI spetsifikatsiyasi kodga mos kelayotganini CI da tekshiradigan qadam qo'shing.
+- [ ] Breaking change ro'yxatini tuzing: olib tashlangan maydon, majburiy bo'lgan parametr, o'zgargan tur va enum qiymati.
+- [ ] Har bir endpoint uchun rate limit va maksimal payload hajmi belgilanganini tekshiring.
+- [ ] Filtrlash va saralash parametrlarini ro'yxatga olib, har biri indekslangan ustunga tushayotganini tasdiqlang.
 
 ---
 

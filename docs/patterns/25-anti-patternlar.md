@@ -5,7 +5,7 @@
 # 25. Anti-patternlar (Anti-Patterns)
 
 <details>
-<summary>Bu bo'limdagi 83 bo'lim</summary>
+<summary>Bu bo'limdagi 84 bo'lim</summary>
 
 - [25.1 Xudo obyekt (God Object)](#251-xudo-obyekt-god-object)
 - [25.2 Spagetti kod (Spaghetti Code)](#252-spagetti-kod-spaghetti-code)
@@ -90,6 +90,7 @@
 - [25.81 Mo'ri tizim (Stovepipe System)](#2581-mori-tizim-stovepipe-system)
 - [25.82 Katta portlash bilan qayta yozish (Big-Bang Rewrite)](#2582-katta-portlash-bilan-qayta-yozish-big-bang-rewrite)
 - [25.83 Rejalashtirishdan o'lim (Death by Planning)](#2583-rejalashtirishdan-olim-death-by-planning)
+- [25.84 Amalda qo'llash](#2584-amalda-qollash)
 
 </details>
 
@@ -1411,6 +1412,17 @@ public Rate fetch(String code) {
 - Migratsiya rejasi batafsil yozilgan, ammo bitta jadvalni ham sinov muhitida ko'chirib ko'rilmagan.
 
 **Ehtiyot bo'ling:** Buning aksi - rejasiz "shunchaki kod yozish" ham xavfli, ayniqsa qaytarib bo'lmaydigan qarorlar (ma'lumot modeli, public kontrakt, muvofiqlik talablari) uchun. Rejani qisqa va yangilanadigan ushlang (ADR + yupqa roadmap), har bir rejalashtirish fazasini ishlaydigan artefakt bilan tasdiqlang - hujjat kodni almashtirmaydi, faqat uning yo'nalishini belgilaydi.
+
+## 25.84 Amalda qo'llash
+
+- [ ] Bu bo'limdagi anti-patternlar ro'yxatini loyiha ustidan bir marta o'tkazib, topilgan har birini fayl va qator bilan yozib qo'ying.
+- [ ] Topilgan anti-patternlarni ikki guruhga ajratib belgilang: hozir tuzatiladigan va ADR bilan qabul qilinadigan.
+- [ ] Eng ko'p o'zgaradigan 5 faylni git tarixidan topib, ular ichida qaysi anti-pattern borligini tekshiring.
+- [ ] Anemik domen modeli va God Object nomzodlarini sinf hajmi va metod soni bo'yicha o'lchab ro'yxat qiling.
+- [ ] Aniqlangan anti-patternlarning har biri uchun avtomatik tekshiruv yozish mumkinmi degan savolga javob bering (ArchUnit yoki Sonar qoidasi).
+- [ ] `catch (Exception e) {}` ko'rinishidagi yutilgan istisnolarni qidirib, hammasini ro'yxat qiling.
+- [ ] Open Session in View, Shared Database va Distributed Monolith holatlarini alohida tekshirib, natijani hujjatlashtiring.
+- [ ] Anti-pattern qarzini kamaytirish rejasini yozing: har chorakda qaysi biri yopiladi va buni qanday o'lchaysiz.
 
 ---
 

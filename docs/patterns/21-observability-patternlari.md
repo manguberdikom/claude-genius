@@ -5,7 +5,7 @@
 # 21. Observability patternlari (Observability Patterns)
 
 <details>
-<summary>Bu bo'limdagi 25 bo'lim</summary>
+<summary>Bu bo'limdagi 26 bo'lim</summary>
 
 - [21.1 Loglarni markazlashtirish (Log Aggregation)](#211-loglarni-markazlashtirish-log-aggregation)
 - [21.2 Strukturalangan loglash (Structured Logging)](#212-strukturalangan-loglash-structured-logging)
@@ -32,6 +32,7 @@
 - [21.23 Biznes metrikalari / KPI (Business metrics / KPIs)](#2123-biznes-metrikalari--kpi-business-metrics--kpis)
 - [21.24 OpenTelemetry Collector (OpenTelemetry Collector (agent, sidecar))](#2124-opentelemetry-collector-opentelemetry-collector-agent-sidecar)
 - [21.25 Exemplar'lar (Exemplars (logs-metrics-traces correlation))](#2125-exemplarlar-exemplars-logs-metrics-traces-correlation)
+- [21.26 Amalda qo'llash](#2126-amalda-qollash)
 
 </details>
 
@@ -461,6 +462,17 @@ MeterFilter cardinalityGuard() {
 - Yuklama testida p99'ga tushgan namunalarni exemplar orqali ochib, qaysi downstream aybdor ekanini aniqlash.
 
 **Ehtiyot bo'ling:** Exemplar faqat sampling natijasida saqlangan trace'ga ishora qilsa foydali - agar sampling ehtimoli past bo'lsa, havola "trace topilmadi" degan natija beradi, shuning uchun xatoli va sekin so'rovlar uchun tail sampling bilan birga ishlatish kerak. Exemplar'lar scrape hajmini oshiradi va faqat histogram/counter turlari hamda OpenMetrics formatida ishlaydi, shuning uchun ularni barcha metrikalarga yoqish o'rniga kritik SLI'lar bilan cheklang.
+
+## 21.26 Amalda qo'llash
+
+- [ ] Har bir so'rov uchun correlation ID yaratilayotganini va u tashqi chaqiruvlarga uzatilayotganini tasdiqlang.
+- [ ] Log yozuvlarini tekshiring: struktura (JSON) bormi, maxfiy ma'lumot log'ga tushmayaptimi.
+- [ ] Log darajalarini qayta ko'rib chiqing: `INFO` da har so'rov uchun necha qator chiqadi, bu hajm qancha turadi.
+- [ ] Biznes metrikalarini sanab chiqing; faqat texnik metrika bo'lsa, nosozlikni biznes tomonidan ko'rib bo'lmaydi.
+- [ ] Trace sampling darajasini yozib qo'ying va xato bo'lgan so'rovlar har doim saqlanayotganini tasdiqlang.
+- [ ] Health endpoint'lari tashqi tizim holatini qaytarmasligini tekshiring - aks holda bitta tashqi uzilish butun klasterni yiqitadi.
+- [ ] Har bir alert uchun savolga javob yozing: bu alert kelganda odam nima qiladi. Javob yo'q bo'lsa, alertni olib tashlang.
+- [ ] Kuzatuvchanlik narxini oyiga hisoblab chiqing va eng qimmat uch manbani aniqlang.
 
 ---
 

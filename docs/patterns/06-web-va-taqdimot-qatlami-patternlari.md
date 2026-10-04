@@ -5,7 +5,7 @@
 # 6. Web va taqdimot qatlami patternlari (Web & Presentation Patterns)
 
 <details>
-<summary>Bu bo'limdagi 34 bo'lim</summary>
+<summary>Bu bo'limdagi 35 bo'lim</summary>
 
 - [6.1 Model-Ko'rinish-Boshqaruvchi (Model-View-Controller, MVC)](#61-model-korinish-boshqaruvchi-model-view-controller-mvc)
 - [6.2 Old boshqaruvchi (Front Controller - DispatcherServlet)](#62-old-boshqaruvchi-front-controller---dispatcherservlet)
@@ -41,6 +41,7 @@
 - [6.32 Ko'rinish aniqlovchi (View Resolver)](#632-korinish-aniqlovchi-view-resolver)
 - [6.33 Asinxron so'rovlarni qayta ishlash (Async Request Processing - Callable, DeferredResult, StreamingResponseBody)](#633-asinxron-sorovlarni-qayta-ishlash-async-request-processing---callable-deferredresult-streamingresponsebody)
 - [6.34 Server tomonida renderlash, SPA va gipermedia ilovalar (Server-Side Rendering vs SPA vs Hypermedia-Driven Application)](#634-server-tomonida-renderlash-spa-va-gipermedia-ilovalar-server-side-rendering-vs-spa-vs-hypermedia-driven-application)
+- [6.35 Amalda qo'llash](#635-amalda-qollash)
 
 </details>
 
@@ -633,6 +634,17 @@ class OrderRoutes {
 - Mavjud SSR ilovaga bosqichma-bosqich interaktivlik qo'shish - htmx fragmentlari, to'liq SPA qayta yozishsiz.
 
 **Ehtiyot bo'ling:** "Hamma SPA qilyapti" degan tanlov ikki jamoa, ikki build, CORS/CSRF/token boshqaruvi va BFF kabi murakkablikni olib keladi - faqat interaktivlik va mijoz xilma-xilligi buni oqlasa tanlang (qarang: [25-bo'lim](25-anti-patternlar.md), Resume-Driven Development). SSR ilovada JSON API'ni "keyinroq qo'shamiz" deyish controller'larni HTML'ga qattiq bog'laydi - servis qatlamini boshidan DTO asosida loyihalang. Vaadin kabi server-holatli UI'lar sessiya xotirasi va sticky session talab qiladi (6.26) - autoscaling rejasiga kiriting.
+
+## 6.35 Amalda qo'llash
+
+- [ ] Controller metodlarining uzunligini o'lchab, 20 qatordan oshganlarini ro'yxatga oling - ularda biznes logika bor.
+- [ ] Controller ichidan repository yoki `EntityManager` chaqirilgan joylarni qidirib, har birini servis qatlamiga ko'chirish rejasini yozing.
+- [ ] Barcha `Filter` va `HandlerInterceptor` larni tartibi bilan ro'yxatga olib, har birining nega shu tartibda turganini yozib qo'ying.
+- [ ] `@ControllerAdvice` borligini va u barcha istisnolarni Problem Details (RFC 9457) formatida qaytarayotganini tasdiqlang.
+- [ ] Entity to'g'ridan-to'g'ri HTTP javobida qaytarilgan joylarni toping va har biri uchun DTO yoki projection kiriting.
+- [ ] Forma yuborgandan keyin redirect qilinmaydigan POST endpointlarni toping va ularga Post/Redirect/Get qo'llang.
+- [ ] Sessiyada saqlanadigan ma'lumotni sanab chiqing va har biri uchun savolga javob yozing: bu stateless deploy'ni buzadimi.
+- [ ] Uzoq ishlaydigan so'rovlarni toping va ularni `DeferredResult`, SSE yoki navbatga o'tkazish nomzodi sifatida belgilang.
 
 ---
 

@@ -5,7 +5,7 @@
 # 22. Deployment va operatsion patternlar (Deployment & Operations Patterns)
 
 <details>
-<summary>Bu bo'limdagi 37 bo'lim</summary>
+<summary>Bu bo'limdagi 38 bo'lim</summary>
 
 - [22.1 O'n ikki faktorli ilova (Twelve-Factor App)](#221-on-ikki-faktorli-ilova-twelve-factor-app)
 - [22.2 Tashqi konfiguratsiya (Externalized Configuration)](#222-tashqi-konfiguratsiya-externalized-configuration)
@@ -44,6 +44,7 @@
 - [22.35 Secrets manager integratsiyasi (Secrets Manager Integration)](#2235-secrets-manager-integratsiyasi-secrets-manager-integration)
 - [22.36 Hisoblash resurslarini konsolidatsiya qilish (Compute Resource Consolidation)](#2236-hisoblash-resurslarini-konsolidatsiya-qilish-compute-resource-consolidation)
 - [22.37 Har bir servis nusxasi uchun alohida container (Service Instance per Container)](#2237-har-bir-servis-nusxasi-uchun-alohida-container-service-instance-per-container)
+- [22.38 Amalda qo'llash](#2238-amalda-qollash)
 
 </details>
 
@@ -672,6 +673,17 @@ class DrainOnShutdown {
 - Lokal integratsiya testlarida Testcontainers (`@ServiceConnection`, `PostgreSQLContainer`) servis va bog'liqliklarini real container'larda ko'taradi.
 
 **Ehtiyot bo'ling:** Container ichidagi JVM'ga memory limit haqida xabar bermaslik klassik tuzoq - `-XX:MaxRAMPercentage` yoki to'g'ri `requests/limits` sozlanmasa, pod `OOMKilled` bo'lib doimiy restart qiladi, heap esa limitdan katta bo'lib qoladi. Shuningdek container'ga state (yuklangan fayllar, lokal cache, H2 fayl bazasi) yozib qo'yish uni stateless bo'lmagan "pet"ga aylantiradi: har bir restart yoki rescheduling'da ma'lumot yo'qoladi, shuning uchun state tashqi store'ga (S3, Redis, DB) chiqarilishi va graceful shutdown bilan in-flight so'rovlar tugatilishi shart.
+
+## 22.38 Amalda qo'llash
+
+- [ ] Konteyner image'ini tekshiring: qatlamlar ajratilganmi, JAR to'liq nusxalanmayaptimi, base image yangilanadimi.
+- [ ] JVM ning cgroup limitlarini hurmat qilayotganini tasdiqlang va heap foizini yozib qo'ying.
+- [ ] Konteyner xotira limitini formula bilan hisoblang: heap, metaspace, code cache, thread stack va native zahira.
+- [ ] Readiness va liveness probe'lari alohida ekanini va readiness tashqi tizimga bog'lanmaganini tekshiring.
+- [ ] Graceful shutdown yoqilganini va `preStop` kechikishi bilan mos kelishini tasdiqlang.
+- [ ] Deploy strategiyasini hujjatlashtiring: rolling, blue-green yoki canary. Orqaga qaytish qadamlarini yozib qo'ying.
+- [ ] Konfiguratsiya image ichiga qotib qolmaganini tekshiring; har bir muhit uchun qiymat tashqaridan kelishi kerak.
+- [ ] Feature flag larni ro'yxatga olib, har biriga yaratilgan sana va o'chirish rejasini qo'shing.
 
 ---
 

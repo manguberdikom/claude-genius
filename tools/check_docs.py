@@ -12,6 +12,8 @@ Tekshiradi:
   4. Manifest     - docs/manifest.json diskdagi fayllar bilan mos.
   5. Skilllar     - .claude/skills/ ichidagi docs/ havolalari haqiqiy.
   6. Struktura    - har bob faylida metadata va navigatsiya bor.
+  7. Konvensiya   - har bob `Amalda qo'llash` yoki `Arxitektor nazorat
+                    ro'yxati` bilan tugaydi.
 """
 import json, os, re, sys, unicodedata
 
@@ -159,6 +161,12 @@ def main():
                     err(f"docs/{key}/{c['file']}: metadata izohi yo'q")
                 if '[Mundarija](README.md)' not in t:
                     err(f"docs/{key}/{c['file']}: navigatsiya havolasi yo'q")
+
+                # 7. bob-yopish konvensiyasi
+                if c['num'] and not re.search(
+                        r"^## [\d.]+ (Amalda qo'llash|Arxitektor nazorat ro'yxati)\s*$", t, re.M):
+                    err(f"docs/{key}/{c['file']}: bob `Amalda qo'llash` yoki "
+                        f"`Arxitektor nazorat ro'yxati` bilan tugamaydi")
 
     print(f"{len(files)} markdown fayl, {total} nisbiy havola tekshirildi")
     for w in warnings:

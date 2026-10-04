@@ -5,7 +5,7 @@
 # 15. Enterprise Integration Patterns I: xabarlar, kanallar, marshrutlash (EIP I: Messaging Systems, Channels, Construction, Routing)
 
 <details>
-<summary>Bu bo'limdagi 36 bo'lim</summary>
+<summary>Bu bo'limdagi 37 bo'lim</summary>
 
 - [15.1 Xabar kanali (Message Channel)](#151-xabar-kanali-message-channel)
 - [15.2 Xabar (Message)](#152-xabar-message)
@@ -43,6 +43,7 @@
 - [15.34 Marshrut varaqasi (Routing Slip)](#1534-marshrut-varaqasi-routing-slip)
 - [15.35 Jarayon menejeri (Process Manager)](#1535-jarayon-menejeri-process-manager)
 - [15.36 Xabar brokeri (Message Broker)](#1536-xabar-brokeri-message-broker)
+- [15.37 Amalda qo'llash](#1537-amalda-qollash)
 
 </details>
 
@@ -652,6 +653,17 @@ IntegrationFlow quoteFlow() {
 - Legacy JMS tizimini yangi servislar bilan broker orqali, kodini o'zgartirmasdan bog'lash.
 
 **Ehtiyot bo'ling:** Broker kuchli bo'lgani uchun unga marshrutlash va transformatsiya logikasini ko'chirishga kuchli vasvasa bo'ladi - bu "aqlli broker, ahmoq servislar" anti-patternini va yagona nosozlik nuqtasini tug'diradi; biznes logikasi servislarda qolsin, broker esa transport bo'lib qolsin. Shuningdek broker avtomatik ravishda "exactly-once" yoki global tartib bermaydi: idempotent consumer, partition kaliti, dead-letter topic va retry siyosatini o'zingiz loyihalashingiz kerak, aks holda yo'qotilgan yoki takrorlangan xabarlar production'da chiqadi.
+
+## 15.37 Amalda qo'llash
+
+- [ ] Har bir xabar kanali uchun nom, format, egasi va iste'molchilari ro'yxatini tuzing.
+- [ ] Point-to-point va publish-subscribe kanallarini ajratib belgilang; aralashtirilgan joylarni toping.
+- [ ] Xabar formatini versiyalash qoidasini yozing: yangi maydon qo'shish, maydonni olib tashlash va turni o'zgartirish qanday bajariladi.
+- [ ] Marshrutlash qaroriga ta'sir qiladigan har bir header'ni hujjatlashtiring; xabar tanasiga qarab marshrutlanadigan joylarni ro'yxat qiling.
+- [ ] Splitter va aggregator ishlatiladigan oqimlarda korrelyatsiya kaliti va to'liqlik sharti aniq yozilganini tasdiqlang.
+- [ ] Dead letter kanali borligini va unga tushgan xabarlar kuzatilayotganini tekshiring.
+- [ ] Xabar yo'qolishi mumkin bo'lgan nuqtalarni aniqlang: producer ack, broker replikatsiyasi va consumer commit tartibi.
+- [ ] Har bir kanal uchun kutilayotgan hajm va maksimal xabar o'lchamini yozib qo'ying.
 
 ---
 

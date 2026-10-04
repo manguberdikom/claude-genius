@@ -5,7 +5,7 @@
 # 28. Taqsimlangan ma'lumot, replikatsiya va konsistentlik patternlari (Distributed Data, Replication & Consistency Patterns)
 
 <details>
-<summary>Bu bo'limdagi 28 bo'lim</summary>
+<summary>Bu bo'limdagi 29 bo'lim</summary>
 
 - [28.1 Yozishdan-oldingi jurnal (Write-Ahead Log)](#281-yozishdan-oldingi-jurnal-write-ahead-log)
 - [28.2 Leader asosidagi replikatsiya (Leader-based Replication)](#282-leader-asosidagi-replikatsiya-leader-based-replication)
@@ -35,6 +35,7 @@
 - [28.26 Kappa arxitekturasi (Kappa Architecture)](#2826-kappa-arxitekturasi-kappa-architecture)
 - [28.27 Split brain (Split Brain)](#2827-split-brain-split-brain)
 - [28.28 Gibrid logik soat / soat siljishi (Hybrid Logical Clock / Clock Skew)](#2828-gibrid-logik-soat--soat-siljishi-hybrid-logical-clock--clock-skew)
+- [28.29 Amalda qo'llash](#2829-amalda-qollash)
 
 </details>
 
@@ -495,6 +496,17 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 - Idempotency va deduplikatsiya oynasini vaqtga tayanmasdan, versiyaga tayanib belgilash.
 
 **Ehtiyot bo'ling:** Biznes qarorini (kim birinchi, kim g'olib) turli serverlarda olingan `System.currentTimeMillis()` ga qurish - klassik va juda qimmat xato; tartib kerak bo'lsa yagona manbadan (DB sequence, Kafka offset, konsensus log) olingan monoton raqam ishlatilishi kerak. NTP soatni orqaga ham suradi, shuning uchun o'tgan vaqt (davomiylik) o'lchash uchun `System.nanoTime()` yoki `Micrometer Timer` ishlatish, `Instant.now()` emas.
+
+## 28.29 Amalda qo'llash
+
+- [ ] Har bir ma'lumot to'plami uchun uning egasi bo'lgan bitta servisni belgilab, qolganlarini o'quvchi deb hujjatlashtiring.
+- [ ] Nusxalangan (replikatsiya qilingan) ma'lumotlarni ro'yxatga olib, har biri uchun ruxsat etilgan kechikishni yozing.
+- [ ] Yakuniy izchillik qabul qilingan joylarni aniq belgilang va foydalanuvchi interfeysi buni ko'rsatayotganini tekshiring.
+- [ ] Konflikt yuzaga kelishi mumkin bo'lgan yozuvlarni aniqlab, har biri uchun konflikt yechish qoidasini yozing.
+- [ ] Read-your-own-writes talab qilinadigan oqimlarni belgilab, ularni primary ga yo'naltirilganini tasdiqlang.
+- [ ] Taqsimlangan tranzaksiya ishlatilgan joylarni toping va ularni Saga yoki Outbox ga o'tkazish rejasini tuzing.
+- [ ] Har bir agregat bo'yicha versiyalash yoki optimistik lock borligini tekshiring.
+- [ ] Replikatsiya kechikishini metrika sifatida chiqarib, chegarasidan oshganda alert qo'ying.
 
 ---
 

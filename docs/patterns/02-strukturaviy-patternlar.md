@@ -5,7 +5,7 @@
 # 2. Strukturaviy patternlar (Structural Patterns)
 
 <details>
-<summary>Bu bo'limdagi 17 bo'lim</summary>
+<summary>Bu bo'limdagi 18 bo'lim</summary>
 
 - [2.1 Adapter (Adapter)](#21-adapter-adapter)
 - [2.2 Ko'prik (Bridge)](#22-koprik-bridge)
@@ -24,6 +24,7 @@
 - [2.15 Mixin / Trait default metodlar orqali (Mixin / Trait via default methods)](#215-mixin--trait-default-metodlar-orqali-mixin--trait-via-default-methods)
 - [2.16 Qatlam ustki turi (Layer Supertype)](#216-qatlam-ustki-turi-layer-supertype)
 - [2.17 Ajratilgan interfeys (Separated Interface)](#217-ajratilgan-interfeys-separated-interface)
+- [2.18 Amalda qo'llash](#218-amalda-qollash)
 
 </details>
 
@@ -334,6 +335,17 @@ public abstract class BaseEntity {
 - Kutubxona yozganda mijozga faqat interfeys va auto-configuration berib, implementatsiyani keyinchalik buzmasdan o'zgartirish imkonini saqlash.
 
 **Ehtiyot bo'ling:** Har bir sinf uchun avtomatik ravishda bitta implementatsiyali interfeys yaratish ("`FooService` + `FooServiceImpl`") hech qanday foyda bermaydi, faqat navigatsiyani qiyinlashtiradi - interfeysni haqiqatan bir nechta implementatsiya, modul chegarasi yoki testda almashtirish ehtiyoji bo'lganda ajratish kerak. Interfeys imzosiga infratuzilma tiplari (JPA `Entity`, `ResultSet`, Kafka `ConsumerRecord`) sizib kirsa, bog'liqlik baribir teskari bo'lmaydi va pattern faqat qog'ozda qoladi.
+
+## 2.18 Amalda qo'llash
+
+- [ ] Tashqi kutubxona tiplari domen paketiga kirib kelgan joylarni qidiring va har biri uchun Adapter chegarasini belgilang.
+- [ ] `@Transactional`, `@Cacheable` va `@Async` annotatsiyasi bor metodlarning `public` va tashqaridan chaqirilayotganini tekshiring - self-invocation proxy'ni chetlab o'tadi.
+- [ ] `final` sinf yoki `final` metodga proxy qo'llanmoqchi bo'lgan joylarni toping; CGLIB ularni proxy qila olmaydi.
+- [ ] Dekorator zanjirlarini sanab chiqing va har bir zanjirning tartibi `@Order` bilan aniq belgilanganini tasdiqlang.
+- [ ] Faqat bitta implementatsiyasi bor interfeyslarni ro'yxatga oling va ularning qanchasi haqiqatan chegara ekanini qaror qiling.
+- [ ] Fasad deb nomlangan sinflarni tekshiring: ular soddalashtiryaptimi yoki shunchaki chaqiruvlarni uzatyaptimi.
+- [ ] Ko'p nusxada yaratilgan o'zgarmas qiymat obyektlarini (valyuta, mintaqa, status) toping va ularni Flyweight sifatida keshlash foydasini o'lchang.
+- [ ] Marker interfeyslarni annotatsiyaga almashtirish mumkinmi degan savolni har biri uchun hal qiling.
 
 ---
 

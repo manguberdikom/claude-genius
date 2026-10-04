@@ -5,7 +5,7 @@
 # 4. Concurrency patternlari (Concurrency Patterns)
 
 <details>
-<summary>Bu bo'limdagi 27 bo'lim</summary>
+<summary>Bu bo'limdagi 28 bo'lim</summary>
 
 - [4.1 Oqimlar hovuzi / Bajaruvchi (Thread Pool / Executor)](#41-oqimlar-hovuzi--bajaruvchi-thread-pool--executor)
 - [4.2 Ishlab chiqaruvchi-Iste'molchi (Producer-Consumer)](#42-ishlab-chiqaruvchi-istemolchi-producer-consumer)
@@ -34,6 +34,7 @@
 - [4.25 Qamrovli qiymatlar (Scoped Values)](#425-qamrovli-qiymatlar-scoped-values)
 - [4.26 Asinxron metod chaqiruvi (Asynchronous Method Invocation)](#426-asinxron-metod-chaqiruvi-asynchronous-method-invocation)
 - [4.27 Semaphore va concurrency chegarasi (Semaphore / Concurrency Limit)](#427-semaphore-va-concurrency-chegarasi-semaphore--concurrency-limit)
+- [4.28 Amalda qo'llash](#428-amalda-qollash)
 
 </details>
 
@@ -492,6 +493,17 @@ String tenant = TENANT.orElse("default");
 - Downstream partnyorning kontraktdagi concurrency limitiga rioya qilish.
 
 **Ehtiyot bo'ling:** `acquire()`ni timeout'siz chaqirish sekin downstream'da butun ilovani muzlatib qo'yadi - `tryAcquire(timeout, unit)` bilan tez fail qilish va fallback berish to'g'ri; `release()` har doim `finally` blokida bo'lsin, aks holda permit'lar asta-sekin "yo'qolib", tizim butunlay to'xtaydi. Lokal semaphore faqat bitta instansiyada amal qiladi: 10 ta pod'da chegara avtomatik 10 barobar oshadi, shuning uchun global limit uchun taqsimlangan rate limiter (masalan Redis asosidagi) kerak.
+
+## 4.28 Amalda qo'llash
+
+- [ ] Loyihadagi har bir `ExecutorService` va `TaskExecutor` ni ro'yxatga olib, pool kattaligi, navbat hajmi va rejection siyosatini yozib qo'ying.
+- [ ] Chegarasiz navbat (`LinkedBlockingQueue` parametrsiz) ishlatadigan pool'larni toping - ular xotira tugashiga olib keladi.
+- [ ] `synchronized` bloklarni sanab chiqing va har biri ichida I/O yoki tashqi chaqiruv yo'qligini tasdiqlang.
+- [ ] `ThreadLocal` ishlatadigan har bir joyni tekshirib, `finally` da tozalanayotganini va virtual thread bilan mos kelishini tasdiqlang.
+- [ ] `CompletableFuture` chaqiruvlarida aniq Executor berilganini tekshiring; default `ForkJoinPool.commonPool()` blocking ish uchun mos emas.
+- [ ] Virtual thread'ga o'tish nomzodlarini belgilang va ularda `synchronized` o'rniga `ReentrantLock` ishlatilganini tekshiring.
+- [ ] Tashqi chaqiruvlar uchun `Semaphore` yoki bulkhead chegarasi borligini tekshiring; chegarasiz parallellik tashqi tizimni yiqitadi.
+- [ ] O'zgarmas bo'lishi mumkin bo'lgan domen obyektlarini toping va ularni `record` yoki `final` maydonlarga o'tkazish rejasini tuzing.
 
 ---
 

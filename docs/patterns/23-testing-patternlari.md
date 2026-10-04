@@ -5,7 +5,7 @@
 # 23. Testing patternlari (Testing Patterns)
 
 <details>
-<summary>Bu bo'limdagi 61 bo'lim</summary>
+<summary>Bu bo'limdagi 62 bo'lim</summary>
 
 - [23.1 Test piramidasi / Testing Trophy / Honeycomb (Test Pyramid / Testing Trophy / Honeycomb)](#231-test-piramidasi--testing-trophy--honeycomb-test-pyramid--testing-trophy--honeycomb)
 - [23.2 Test dublyorlari (Test Doubles - Dummy, Fake, Stub, Spy, Mock)](#232-test-dublyorlari-test-doubles---dummy-fake-stub-spy-mock)
@@ -68,6 +68,7 @@
 - [23.59 Jadvalni Bo'shatish Orqali Tozalash (Table Truncation Teardown)](#2359-jadvalni-boshatish-orqali-tozalash-table-truncation-teardown)
 - [23.60 Avtomatik Tozalash (Automated Teardown)](#2360-avtomatik-tozalash-automated-teardown)
 - [23.61 Tasdiqlash Testi (Approval Test)](#2361-tasdiqlash-testi-approval-test)
+- [23.62 Amalda qo'llash](#2362-amalda-qollash)
 
 </details>
 
@@ -1082,6 +1083,17 @@ static class FixedClockConfig {
 - OpenAPI spetsifikatsiyasi (springdoc tomonidan generatsiya qilingan) tasodifan o'zgarmaganini tekshirish.
 
 **Ehtiyot bo'ling:** Chiqishda determinizmsiz qiymatlar (`UUID`, `Instant.now()`, tartibsiz `Set`, ketma-ket ID'lar) bo'lsa test flaky bo'ladi - ularni `Clock` bean'i, fixed generator yoki scrubber bilan normalizatsiya qilish shart. Diff'ni o'ylab ko'rmasdan "approve" bosish odati testni ma'nosiz qiladi: approval test bug'ni ushlamaydi, faqat o'zgarishni qayd etadi.
+
+## 23.62 Amalda qo'llash
+
+- [ ] Test to'plamini uch guruhga ajratib o'lchang: unit, slice va to'liq kontekst. Har birining vaqtini yozib qo'ying.
+- [ ] H2 ni PostgreSQL o'rniga ishlatadigan testlarni toping va ularni Testcontainers ga o'tkazish rejasini tuzing.
+- [ ] `Thread.sleep` ishlatadigan testlarni qidirib, har birini Awaitility yoki deterministik soatga o'tkazing.
+- [ ] Spring kontekst keshi necha marta qayta yaratilayotganini log'dan o'lchab, kontekst konfiguratsiyalarini birlashtirish nomzodlarini belgilang.
+- [ ] Mockito `STRICT_STUBS` rejimida ishlayotganini tasdiqlang va `LENIENT` ishlatadigan joylarni asoslab yozing.
+- [ ] Domen va hisob-kitob paketlari uchun mutation score ni PIT bilan o'lchab, natijani yozib qo'ying.
+- [ ] `@Disabled` testlarni sanab chiqib, har biriga sabab va issue havolasi qo'shilganini tasdiqlang.
+- [ ] Test ma'lumotlarini yaratish usulini birlashtiring: builder yoki object mother tanlang va qolganini ko'chirish rejasini yozing.
 
 ---
 

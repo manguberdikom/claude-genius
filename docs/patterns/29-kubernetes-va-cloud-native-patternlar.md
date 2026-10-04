@@ -5,7 +5,7 @@
 # 29. Kubernetes va cloud-native patternlar (Kubernetes & Cloud-Native Patterns)
 
 <details>
-<summary>Bu bo'limdagi 22 bo'lim</summary>
+<summary>Bu bo'limdagi 23 bo'lim</summary>
 
 - [29.1 Oldindan aytib beriladigan talablar (Predictable Demands)](#291-oldindan-aytib-beriladigan-talablar-predictable-demands)
 - [29.2 Deklarativ joylashtirish (Declarative Deployment)](#292-deklarativ-joylashtirish-declarative-deployment)
@@ -29,6 +29,7 @@
 - [29.20 Operator (Operator)](#2920-operator-operator)
 - [29.21 Pod - deploy birligi sifatida (Pod as Deployment Unit)](#2921-pod---deploy-birligi-sifatida-pod-as-deployment-unit)
 - [29.22 Resurs so'rovlari va limitlari (Resource Requests & Limits)](#2922-resurs-sorovlari-va-limitlari-resource-requests--limits)
+- [29.23 Amalda qo'llash](#2923-amalda-qollash)
 
 </details>
 
@@ -411,6 +412,17 @@ public class CacheReconciler implements Reconciler<CacheCluster> {
 - `LimitRange` va `ResourceQuota` bilan jamoalar o'rtasida klaster resurslarini adolatli taqsimlash.
 
 **Ehtiyot bo'ling:** `limits`ni belgilamaslik ham, `requests`ni real iste'moldan ancha yuqori qo'yish ham zarar: birinchisida bitta ilova node'ni yiqitadi, ikkinchisida klasterning yarmi bo'sh turgan holda to'la hisoblanadi. CPU limitini juda past qo'yish Spring Boot ilovasini startup paytida throttling'ga uchratib, liveness probe'ning noto'g'ri restart tsikliga olib keladi; memory limitida esa heap'ni limitga teng qilib qo'ymang - JVM'ning non-heap qismi ham o'sha limit ichida hisoblanadi.
+
+## 29.23 Amalda qo'llash
+
+- [ ] Har bir pod uchun `requests` va `limits` qiymatlarini o'lchangan p95 CPU va maksimal RSS ga asoslab qayta hisoblang.
+- [ ] Readiness, liveness va startup probe'lari uchta alohida maqsadga xizmat qilayotganini tasdiqlang.
+- [ ] Graceful shutdown va `terminationGracePeriodSeconds` qiymatlari ilovaning eng uzun so'rovidan katta ekanini tekshiring.
+- [ ] ConfigMap va Secret dan keladigan qiymatlarni ro'yxatga olib, o'zgarganda restart kerakligini yozib qo'ying.
+- [ ] HPA sozlamalarini tekshiring: metrika to'g'ri tanlanganmi, minimal nusxa soni nol emasmi.
+- [ ] Pod disruption budget borligini va reliz paytida xizmat uzilmasligini tasdiqlang.
+- [ ] Init container va sidecar larni sanab chiqib, har birining nega kerakligini yozib qo'ying.
+- [ ] Stateless talabini tekshirish uchun bitta podni ataylab o'chirib ko'ring va natijani hujjatlashtiring.
 
 ---
 
