@@ -124,6 +124,19 @@ def main():
                          "review", "qidiruv", "tahlil"}:
                 err("manguberdi/SKILL.md", "aktyor yo'q: %s" % actor)
 
+    # Talab shunday: Sonar qo'llanmasini TO'RTTALASI ishlatadi. Bu
+    # o'z-o'zidan ko'rinmaydi, chunki hech narsa yiqilmaydi: aktyor
+    # shunchaki sifat darvozasini bilmay ishlaydi va kamchilik keyin
+    # chiqadi. Ikkitasi aynan shu holatda topildi.
+    sonar_actors = ("arxitektor", "test-muhandis", "rejalashtiruvchi", "review")
+    for name in sonar_actors:
+        path = os.path.join(AGENTS, name + ".md")
+        if not os.path.exists(path):
+            continue
+        body = open(path, encoding="utf-8").read().lower()
+        if "sonar" not in body:
+            err("agents/%s.md" % name, "Sonar qo'llanmasiga yo'l yo'q")
+
     if errors:
         print("\n%d XATO:" % len(errors))
         for e in errors:

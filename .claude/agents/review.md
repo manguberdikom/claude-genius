@@ -22,6 +22,9 @@ u shaxsiy didga aylanadi.
    `python3 tools/schema_from_entities.py <src> --only-findings`
 3. Diffdagi har mavzu uchun qoidani toping:
    `tools/doc.sh find "<mavzu>"`, keyin `tools/doc.sh show <hujjat> <raqam>`.
+   Sonar kaliti bo'lsa (CI chiqishida yoki 1b dagi ro'yxatda) to'g'ridan
+   to'g'ri: `tools/doc.sh rule java:Sxxxx`. Mexanik topilma allaqachon
+   kalitini olib keladi, uni qayta izlash shart emas.
 4. Faqat **diff tegib o'tgan** joylarni ko'ring. Yonidagi eski kod
    yomon bo'lsa ham, bu diffning ishi emas: alohida ayting.
 

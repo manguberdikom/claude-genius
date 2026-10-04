@@ -75,6 +75,13 @@ def main():
         ("tegishli boblar bor", "# Tegishli boblar" in out),
         ("punktlar bor", "- [ ] (" in out),
         ("mashina topilmasi bor", "[yuqori] Bad.java" in out),
+        # Topilma yonida Sonar kaliti va bo'lim turishi shart. Avval
+        # bu yerda faqat "[" bilan boshlangan qatorlar olinardi va
+        # havola tashlanardi: aktyor muammoni ko'rib, qoidani
+        # ko'rmasdi. Skillning birinchi qoidasi aynan buni talab
+        # qiladi, shuning uchun sinov ham shu yerda.
+        ("topilma Sonar kaliti bilan keladi", "java:S108" in out),
+        ("kalit bo'limga ulangan", "java:S108 -> sonarqube" in out),
         ("punkt chegarasi hurmat qilindi",
          out.count("  - [ ] (") <= R.MAX_ITEMS),
         ("navbatma-navbat: bir nechta bobdan",

@@ -235,8 +235,21 @@ def past_mistakes():
     return out
 
 
+# check_code chiqishidagi havola qatori: "qo'llanma: ... show sonarqube
+# 13.5  (java:S108)". Shundan kalit va bo'lim ajratiladi.
+REF_RE = re.compile(r"show\s+(\S+)\s+(\S+)")
+KEY_RE = re.compile(r"\((java:S\d+)\)")
+
+
 def mechanical(paths):
-    """check_code allaqachon topa oladigan muammolar."""
+    """check_code topgan muammolar, har biri havolasi bilan.
+
+    Avval bu yerda faqat `[` bilan boshlanadigan qatorlar olinardi, ya'ni
+    check_code bergan Sonar kaliti va bo'lim raqami tashlab ketilardi.
+    Natijada aktyor "bo'sh catch yomon" degan gapni olardi, `java:S108`
+    va `sonarqube 13.5` ni esa olmasdi, holbuki skillning birinchi
+    qoidasi aynan shuni talab qiladi: qoidasiz topilma yo'q.
+    """
     tool = os.path.join(HERE, "check_code.py")
     out = []
     for path in paths:
@@ -245,8 +258,21 @@ def mechanical(paths):
             continue
         proc = subprocess.run([sys.executable, tool, full],
                               capture_output=True, text=True, cwd=ROOT)
-        if proc.returncode == 1:
-            out.extend(l for l in proc.stdout.split("\n") if l.startswith("["))
+        if proc.returncode != 1:
+            continue
+        finding = None
+        for line in proc.stdout.split("\n"):
+            if line.startswith("["):
+                finding = line.strip()
+                out.append((finding, ""))
+            elif finding and "qo'llanma:" in line:
+                ref = REF_RE.search(line)
+                key = KEY_RE.search(line)
+                tail = " ".join(x for x in (
+                    key.group(1) if key else "",
+                    "-> %s %s" % ref.groups() if ref else "") if x)
+                out[-1] = (finding, tail)
+                finding = None
     return out
 
 
@@ -316,8 +342,10 @@ def main():
 
     found = mechanical(paths)
     print("\n# Mashina topgani (%d)\n" % len(found))
-    for line in found[:MAX_ITEMS]:
-        print("  " + line.strip())
+    for line, ref in found[:MAX_ITEMS]:
+        print("  " + line)
+        if ref:
+            print("    " + ref)
     if not found:
         print("  yo'q")
 

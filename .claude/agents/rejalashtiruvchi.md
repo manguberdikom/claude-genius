@@ -46,6 +46,12 @@ Har qadam uchun qoidani qo'llanmadan oling:
 bir jumlada ayting, keyin mos patternni toping, teskarisini emas.
 Qaytarib bo'lmaydigan qaror uchun `doc.sh show architect 3.*` (ADR).
 
+Qabul mezoniga sifat darvozasi ham kiradi: `rules_for.py` chiqishidagi
+Sonar kalitlari va `tools/doc.sh rule java:Sxxxx` bilan ulangan bo'limlar.
+Reja qadami "ishlaydi" bilan emas, darvozadan o'tadigan holat bilan
+tugaydi, aks holda uni test muhandisi ham, reviewer ham boshqacha
+tushunadi.
+
 ## Reja shakli
 
 ```
