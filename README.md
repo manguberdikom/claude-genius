@@ -23,6 +23,19 @@ statik tahlil esa SonarQube hujjatida turadi.
 Har bir hujjat mundarija bilan boshlanadi va har bob `Amalda qo'llash` ro'yxati
 bilan tugaydi.
 
+## Tez qidirish
+
+Hujjatlar katta (jami ~1.67M token), shuning uchun ular indeks orqali o'qiladi:
+
+```sh
+tools/doc.sh find "circuit breaker"   # bo'limni topish
+tools/doc.sh show patterns 17.2       # faqat o'sha bo'limni chiqarish
+tools/doc.sh toc                      # hujjatlar va boblar
+```
+
+Indeks `index/` da turadi va manba o'zgarganda o'zini yangilaydi.
+Batafsil qoida: [CLAUDE.md](CLAUDE.md).
+
 ## Til va uslub
 
 O'zbek lotin yozuvi. Texnik atamalar inglizcha qoldirilgan: bean, proxy, thread,
