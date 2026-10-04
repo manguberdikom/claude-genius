@@ -122,19 +122,46 @@ def main():
             if anc and key in anchors and anc not in anchors[key]:
                 err(f"{rel}: anchor topilmadi -> {tgt}")
 
-    # 3b. skill havolalari
-    for sk in sorted(__import__('glob').glob(os.path.join(ROOT, '.claude/skills/*/SKILL.md'))):
+    # 3b. skill va agent havolalari.
+    # Agentlar ham skilllar kabi docs/ ga va tools/ ga yo'naltiradi, lekin
+    # avval tekshirilmasdi. Asbob nomi o'zgarsa yoki fayl ko'chirilsa,
+    # ko'rsatma jim buziladi: chaqiruv ishlamaydi, hech kim xabar bermaydi.
+    glob = __import__('glob')
+    routed = (glob.glob(os.path.join(ROOT, '.claude/skills/*/SKILL.md'))
+              + glob.glob(os.path.join(ROOT, '.claude/skills/*/references/*.md'))
+              + glob.glob(os.path.join(ROOT, '.claude/agents/*.md')))
+    # Faqat shu repoga tegishli yo'llar tekshiriladi. Ko'rsatmalarda
+    # tahlil qilinadigan LOYIHA yo'llari ham uchraydi (`docs/adr/` kabi);
+    # ular bu yerda bo'lmasligi xato emas. Manifest kalitlari chegara.
+    try:
+        own = set(json.load(open(os.path.join(ROOT, 'docs', 'manifest.json'),
+                                 encoding='utf-8')))
+    except (OSError, ValueError):
+        own = set()
+
+    def is_ours(path):
+        parts = path.split('/')
+        return len(parts) > 1 and parts[1] in own
+
+    for sk in sorted(routed):
         rel_sk = os.path.relpath(sk, ROOT)
         body = open(sk, encoding='utf-8').read()
         for m in re.finditer(r'`(docs/[^`\s<>]+?\.md)(#[-\w]+)?`', body):
             p_, a_ = m.group(1), (m.group(2) or '')[1:]
+            if not is_ours(p_):
+                continue
             if not os.path.exists(os.path.join(ROOT, p_)):
-                err(f"{rel_sk}: skill havolasi fayli yo'q -> {p_}")
+                err(f"{rel_sk}: havola fayli yo'q -> {p_}")
             elif a_ and a_ not in anchors.get(p_, set()):
-                err(f"{rel_sk}: skill havolasi anchori yo'q -> {p_}#{a_}")
+                err(f"{rel_sk}: havola anchori yo'q -> {p_}#{a_}")
         for m in re.finditer(r'`(docs/[^`\s<>]+/)`', body):
-            if not os.path.isdir(os.path.join(ROOT, m.group(1))):
-                err(f"{rel_sk}: skill havolasi papkasi yo'q -> {m.group(1)}")
+            if is_ours(m.group(1)) and not os.path.isdir(
+                    os.path.join(ROOT, m.group(1))):
+                err(f"{rel_sk}: havola papkasi yo'q -> {m.group(1)}")
+        # tools/ ga ishora: faqat fayl nomi, argumentlarsiz tekshiriladi.
+        for m in re.finditer(r'`(?:python3 )?(tools/[\w./-]+\.(?:py|sh))', body):
+            if not os.path.exists(os.path.join(ROOT, m.group(1))):
+                err(f"{rel_sk}: asbob yo'q -> {m.group(1)}")
 
     # 4. manifest
     mpath = os.path.join(ROOT, 'docs', 'manifest.json')
