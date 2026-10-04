@@ -314,8 +314,10 @@ xil ko'rinishi paydo bo'ladi.
     buyrug'i keladi: bir yozuv bir qator, tafsilot topic faylga, eskisi
     birlashtiriladi yoki o'chiriladi. Chegaradan oshsa, yozish o'tadi, lekin
     keyingi yuklanishda oshgan qismi **tushib qoladi**.
-14. **Natijani ko'r.** Interfeysda "Saved N memories" chiqadi. Chiqmasa, yozuv
-    yo'q.
+14. **Natijani tasdiqla.** Claude memoryga yozganda yoki undan o'qiganda
+    interfeysda "Saved N memories" yoki "Recalled N memories" chiqadi. Bu
+    signal, dalil emas: yozuv haqiqatan tushganini `/memory` bilan papkani
+    ochib ko'rish tasdiqlaydi.
 
 ### F faza. Vaqti-vaqti bilan: tozalash
 
