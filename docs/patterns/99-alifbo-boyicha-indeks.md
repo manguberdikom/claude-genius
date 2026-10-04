@@ -1,0 +1,1097 @@
+<!-- doc: patterns | chapter:  | part:  -->
+
+[Java Spring arxitektori bilishi kerak bo'lgan barcha dizayn patternlar](../../README.md) / [Dizayn patternlar](README.md)
+
+# Alifbo bo'yicha indeks
+
+
+Inglizcha nomi bo'yicha saralangan; raqam bo'lim va pattern tartibini ko'rsatadi.
+
+**#**
+
+- [3rd Party Registration](14-microservices-patternlari.md#1423-uchinchi-tomon-orqali-royxatga-olish-3rd-party-registration) — 14.23
+- [@Async Without Executor Configuration](25-anti-patternlar.md#2549-executor-sozlanmagan-async-async-without-executor-configuration) — 25.49
+- [@Conditional & Auto-configuration](05-spring-core-ichidagi-patternlar-xaritasi.md#524-shartli-beanlar-va-auto-konfiguratsiya-conditional--auto-configuration) — 5.24
+- [@ConfigurationProperties Binding](05-spring-core-ichidagi-patternlar-xaritasi.md#522-konfiguratsiya-xossalarini-boglash-configurationproperties-binding) — 5.22
+- [@Import / ImportSelector / ImportBeanDefinitionRegistrar](05-spring-core-ichidagi-patternlar-xaritasi.md#537-import-importselector-va-registrar-import--importselector--importbeandefinitionregistrar) — 5.37
+- [@Lazy — Lazy Initialization / Virtual Proxy](05-spring-core-ichidagi-patternlar-xaritasi.md#57-lazy-orqali-kechiktirilgan-initsializatsiya-lazy--lazy-initialization--virtual-proxy) — 5.7
+- [@Lookup Method Injection](05-spring-core-ichidagi-patternlar-xaritasi.md#55-lookup-metod-injeksiyasi-lookup-method-injection) — 5.5
+- [@MockitoBean / @MockitoSpyBean](23-testing-patternlari.md#2313-mockitobean--mockitospybean) — 23.13
+- [@Primary / @Qualifier Disambiguation](05-spring-core-ichidagi-patternlar-xaritasi.md#58-primary--qualifier-bilan-noaniqlikni-yechish-primary--qualifier-disambiguation) — 5.8
+- [@SpringBootTest & context caching](23-testing-patternlari.md#2312-springboottest-va-context-keshlash-springboottest--context-caching) — 23.12
+- [@SpringBootTest for Everything](25-anti-patternlar.md#2540-hamma-narsa-uchun-springboottest-springboottest-for-everything) — 25.40
+- [@TestConfiguration](23-testing-patternlari.md#2314-test-konfiguratsiyasi-testconfiguration) — 23.14
+- [@Transactional on Non-Public Methods](25-anti-patternlar.md#2531-public-bolmagan-metodda-transactional-transactional-on-non-public-methods) — 25.31
+- [@Transactional Proxy & TransactionTemplate](05-spring-core-ichidagi-patternlar-xaritasi.md#517-tranzaksiya-proxysi-va-transactiontemplate-transactional-proxy--transactiontemplate) — 5.17
+
+**A**
+
+- [A/B Testing](22-deployment-va-operatsion-patternlar.md#2213-ab-testlash-ab-testing) — 22.13
+- [Abstract Factory](01-yaratuvchi-patternlar.md#18-abstrakt-fabrika-abstract-factory) — 1.8
+- [Access Token](14-microservices-patternlari.md#1424-access-token-access-token) — 14.24
+- [Accidental Complexity](25-anti-patternlar.md#2574-tasodifiy-murakkablik-accidental-complexity) — 25.74
+- [Active Object](04-concurrency-patternlari.md#44-faol-obyekt-active-object) — 4.4
+- [Active Record](09-malumotlarga-kirish-va-orm-patternlari.md#95-faol-yozuv-active-record) — 9.5
+- [Actor Model](04-concurrency-patternlari.md#419-actor-modeli-actor-model) — 4.19
+- [Adapter](02-strukturaviy-patternlar.md#21-adapter-adapter) — 2.1
+- [Adapter Container](22-deployment-va-operatsion-patternlar.md#2217-adapter-konteyner-adapter-container) — 22.17
+- [Advisors — interceptor chain for LLM calls](30-spring-ai-va-llm-integratsiya-patternlari.md#309-advisorlar--llm-chaqiruvlari-uchun-interceptor-zanjiri-advisors--interceptor-chain-for-llm-calls) — 30.9
+- [Agent / tool loop](30-spring-ai-va-llm-integratsiya-patternlari.md#3018-agent-va-tool-tsikli-agent--tool-loop) — 30.18
+- [Aggregate & Aggregate Root](13-domain-driven-design-patternlari.md#1315-agregat-va-agregat-ildizi-aggregate--aggregate-root) — 13.15
+- [Aggregate Exposing Monolith](27-monolitdan-microservicega-migratsiya.md#2710-agregatni-ochuvchi-monolit-aggregate-exposing-monolith) — 27.10
+- [Aggregator](15-enterprise-integration-patterns-i-xabarlar.md#1530-agregator-aggregator) — 15.30
+- [Aggregator / Proxy / Chained / Branch Microservice Patterns](14-microservices-patternlari.md#1435-aggregator-proxy-chained-va-branch-microservice-patternlari-aggregator--proxy--chained--branch-microservice-patterns) — 14.35
+- [Alerting](21-observability-patternlari.md#2114-ogohlantirish-alerting) — 21.14
+- [Ambassador](14-microservices-patternlari.md#1433-ambassador-ambassador) — 14.33
+- [Ambassador Container](22-deployment-va-operatsion-patternlar.md#2216-ambassador-konteyner-ambassador-container) — 22.16
+- [Analysis Paralysis](25-anti-patternlar.md#2577-tahlil-falaji-analysis-paralysis) — 25.77
+- [Anemic Domain Model — Anti View](25-anti-patternlar.md#2535-anemik-domen-modeli-anemic-domain-model--anti-view) — 25.35
+- [Anemik domen modeli (anti) (Anemic Domain Model (anti))](13-domain-driven-design-patternlari.md#1331-anemik-domen-modeli-anti-anemic-domain-model-anti) — 13.31
+- [Anti-Corruption Layer](13-domain-driven-design-patternlari.md#137-buzilishdan-himoya-qatlami-anti-corruption-layer) — 13.7
+- [Anti-Entropy](28-taqsimlangan-malumot-replikatsiya-va.md#288-anti-entropiya-anti-entropy) — 28.8
+- [API Composition](14-microservices-patternlari.md#1410-api-kompozitsiyasi-api-composition) — 14.10
+- [API Composition / Aggregator](07-api-dizayn-patternlari.md#720-api-kompozitsiyasi--aggregator-api-composition--aggregator) — 7.20
+- [API Gateway](07-api-dizayn-patternlari.md#718-api-gateway-api-gateway) — 7.18
+- [API Gateway](14-microservices-patternlari.md#1427-api-gateway-api-gateway) — 14.27
+- [API Key](18-xavfsizlik-patternlari.md#1833-api-kaliti-api-key) — 18.33
+- [API Key / Token Auth at the Edge](07-api-dizayn-patternlari.md#732-chegarada-api-key-va-token-autentifikatsiyasi-api-key--token-auth-at-the-edge) — 7.32
+- [API Versioning](07-api-dizayn-patternlari.md#75-api-versiyalash-api-versioning) — 7.5
+- [API-First](12-arxitektura-uslublari.md#1231-api-birinchi-api-first) — 12.31
+- [Application Controller — HandlerMapping + HandlerAdapter](06-web-va-taqdimot-qatlami-patternlari.md#64-ilova-boshqaruvchisi-application-controller--handlermapping--handleradapter) — 6.4
+- [Application Metrics](21-observability-patternlari.md#216-ilova-metrikalari-application-metrics) — 21.6
+- [Application Service vs Domain Service](08-biznes-logika-va-service-qatlam-patternlari.md#85-application-service-va-domain-service-application-service-vs-domain-service) — 8.5
+- [Application Service — DDD view](13-domain-driven-design-patternlari.md#1319-ilova-servisi-application-service--ddd-view) — 13.19
+- [ApplicationContext.getBean() Service Locator Sifatida (ApplicationContext.getBean() as Service Locator)](25-anti-patternlar.md#2536-applicationcontextgetbean-service-locator-sifatida-applicationcontextgetbean-as-service-locator) — 25.36
+- [ApplicationEvent / @EventListener / @TransactionalEventListener](05-spring-core-ichidagi-patternlar-xaritasi.md#520-ilova-hodisalari-applicationevent--eventlistener--transactionaleventlistener) — 5.20
+- [Approval / Golden Master Testing](23-testing-patternlari.md#2322-tasdiqlash--golden-master-testlash-approval--golden-master-testing) — 23.22
+- [Approval Test](23-testing-patternlari.md#2361-tasdiqlash-testi-approval-test) — 23.61
+- [Architecture Astronaut](25-anti-patternlar.md#2573-arxitektura-astronavti-architecture-astronaut) — 25.73
+- [Architecture Tests — ArchUnit, Spring Modulith verify](23-testing-patternlari.md#2321-arxitektura-testlari-architecture-tests--archunit-spring-modulith-verify) — 23.21
+- [Archive / Purge](10-malumotlarni-boshqarish-va-taqsimlash.md#1025-arxivlash--tozalash-archive--purge) — 10.25
+- [Archive / Purge Jobs](20-batch-va-scheduling-patternlari.md#2027-arxivlash-va-tozalash-joblari-archive--purge-jobs) — 20.27
+- [Arrange-Act-Assert](23-testing-patternlari.md#233-tayyorlash-bajarish-tasdiqlash-arrange-act-assert) — 23.3
+- [Association Table Mapping](09-malumotlarga-kirish-va-orm-patternlari.md#912-assotsiatsiya-jadvali-mappingi-association-table-mapping) — 9.12
+- [Async Request Processing — Callable, DeferredResult, StreamingResponseBody](06-web-va-taqdimot-qatlami-patternlari.md#633-asinxron-sorovlarni-qayta-ishlash-async-request-processing--callable-deferredresult-streamingresponsebody) — 6.33
+- [Asynchronous Method Invocation](04-concurrency-patternlari.md#426-asinxron-metod-chaqiruvi-asynchronous-method-invocation) — 4.26
+- [Asynchronous Request-Reply](07-api-dizayn-patternlari.md#715-asinxron-sorov-javob-asynchronous-request-reply) — 7.15
+- [Asynchronous Request-Reply](17-resilience-va-cloud-dizayn-patternlari.md#1722-asinxron-sorov-javob-asynchronous-request-reply) — 17.22
+- [Attribute-Based / Policy-Based Access Control — ABAC](18-xavfsizlik-patternlari.md#189-atribut-va-siyosatga-asoslangan-kirish-nazorati-attribute-based--policy-based-access-control--abac) — 18.9
+- [Audit Logging](18-xavfsizlik-patternlari.md#1834-audit-log-yuritish-audit-logging) — 18.34
+- [Audit Logging](21-observability-patternlari.md#2110-audit-loglash-audit-logging) — 21.10
+- [Audit Trail / Auditing](10-malumotlarni-boshqarish-va-taqsimlash.md#102-audit-izi--auditlash-audit-trail--auditing) — 10.2
+- [Authentication vs Authorization](18-xavfsizlik-patternlari.md#181-autentifikatsiya-va-avtorizatsiya-ajratilishi-authentication-vs-authorization) — 18.1
+- [AuthenticationManager / ProviderManager](18-xavfsizlik-patternlari.md#183-autentifikatsiya-menejeri-va-delegatsiya-authenticationmanager--providermanager) — 18.3
+- [AuthenticationProvider](18-xavfsizlik-patternlari.md#184-autentifikatsiya-provayderi-authenticationprovider) — 18.4
+- [Authorization Server vs Embedded Auth](18-xavfsizlik-patternlari.md#1844-authorization-server-yoki-ichki-auth-tanlovi-authorization-server-vs-embedded-auth) — 18.44
+- [AutoConfiguration.imports / spring.factories SPI](05-spring-core-ichidagi-patternlar-xaritasi.md#526-auto-konfiguratsiya-spi-royxati-autoconfigurationimports--springfactories-spi) — 5.26
+- [Automated Placement](29-kubernetes-va-cloud-native-patternlar.md#294-avtomatlashtirilgan-joylashtirish-automated-placement) — 29.4
+- [Automated Teardown](23-testing-patternlari.md#2360-avtomatik-tozalash-automated-teardown) — 23.60
+- [Aware Interfaces — Callback Injection](05-spring-core-ichidagi-patternlar-xaritasi.md#512-aware-interfeyslari-aware-interfaces--callback-injection) — 5.12
+
+**B**
+
+- [Back Door Manipulation](23-testing-patternlari.md#2357-orqa-eshik-manipulyatsiyasi-back-door-manipulation) — 23.57
+- [Back Pressure](17-resilience-va-cloud-dizayn-patternlari.md#1715-orqa-bosim-back-pressure) — 17.15
+- [Backend for Frontend](14-microservices-patternlari.md#1428-frontend-uchun-backend-backend-for-frontend) — 14.28
+- [Backend for Frontend, BFF](07-api-dizayn-patternlari.md#719-frontend-uchun-backend-backend-for-frontend-bff) — 7.19
+- [Backfill](20-batch-va-scheduling-patternlari.md#2020-backfill-backfill) — 20.20
+- [Backpressure Strategies](19-reactive-patternlar.md#192-backpressure-strategiyalari-backpressure-strategies) — 19.2
+- [Baggage](21-observability-patternlari.md#215-baggage--kontekstni-olib-yurish-baggage) — 21.5
+- [Balking](04-concurrency-patternlari.md#413-rad-etib-qaytish-balking) — 4.13
+- [Barrier / CountDownLatch / Phaser](04-concurrency-patternlari.md#417-barrier-va-sanoqli-kutish-barrier--countdownlatch--phaser) — 4.17
+- [Batch Job](29-kubernetes-va-cloud-native-patternlar.md#295-batch-ishi-batch-job) — 29.5
+- [Batch Window & SLA](20-batch-va-scheduling-patternlari.md#2028-batch-oynasi-va-sla-batch-window--sla) — 20.28
+- [Bean Definition & BeanDefinitionRegistry — Registry Pattern](05-spring-core-ichidagi-patternlar-xaritasi.md#52-bean-definition-va-registry-bean-definition--beandefinitionregistry--registry-pattern) — 5.2
+- [Bean Lifecycle Callbacks — Template Method](05-spring-core-ichidagi-patternlar-xaritasi.md#59-bean-lifecycle-callbacklari-bean-lifecycle-callbacks--template-method) — 5.9
+- [Bean Scopes & Scoped Proxy](05-spring-core-ichidagi-patternlar-xaritasi.md#56-bean-scopelari-va-scoped-proxy-bean-scopes--scoped-proxy) — 5.6
+- [BeanFactoryPostProcessor / BeanDefinitionRegistryPostProcessor](05-spring-core-ichidagi-patternlar-xaritasi.md#511-beanfactorypostprocessor-va-beandefinitionregistrypostprocessor-beanfactorypostprocessor--beandefinitionregistrypostprocessor) — 5.11
+- [BeanPostProcessor — Decorator / Interceptor](05-spring-core-ichidagi-patternlar-xaritasi.md#510-beanpostprocessor-beanpostprocessor--decorator--interceptor) — 5.10
+- [Big Ball of Mud](25-anti-patternlar.md#2554-katta-loy-top-big-ball-of-mud) — 25.54
+- [Big-Bang Rewrite](25-anti-patternlar.md#2582-katta-portlash-bilan-qayta-yozish-big-bang-rewrite) — 25.82
+- [Bikeshedding](25-anti-patternlar.md#2578-mayda-chuyda-bahs-bikeshedding) — 25.78
+- [Blackboard](03-xulq-atvor-patternlari.md#323-qora-taxta-blackboard) — 3.23
+- [Blackboard](12-arxitektura-uslublari.md#1220-qoratakhta-blackboard) — 12.20
+- [Blocking Call Detection — BlockHound](19-reactive-patternlar.md#1917-blocking-chaqiruvlarni-aniqlash-blocking-call-detection--blockhound) — 19.17
+- [Blocking in Reactive Pipeline](25-anti-patternlar.md#2542-reactive-pipeline-ichida-bloklash-blocking-in-reactive-pipeline) — 25.42
+- [Blue-Green Deployment](22-deployment-va-operatsion-patternlar.md#226-kok-yashil-joylashtirish-blue-green-deployment) — 22.6
+- [Boat Anchor](25-anti-patternlar.md#255-qayiq-langari-boat-anchor) — 25.5
+- [Boolean Blindness](25-anti-patternlar.md#2528-mantiqiy-qiymat-korligi-boolean-blindness) — 25.28
+- [Boshqaruvchi (Controller (GRASP))](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#268-boshqaruvchi-controller-grasp) — 26.8
+- [Boshqaruvchi halqa (Controller (Kubernetes))](29-kubernetes-va-cloud-native-patternlar.md#2919-boshqaruvchi-halqa-controller-kubernetes) — 29.19
+- [Bounded Context](13-domain-driven-design-patternlari.md#132-chegaralangan-kontekst-bounded-context) — 13.2
+- [Branch by Abstraction](27-monolitdan-microservicega-migratsiya.md#273-abstraksiya-orqali-tarmoqlanish-branch-by-abstraction) — 27.3
+- [Bridge](02-strukturaviy-patternlar.md#22-koprik-bridge) — 2.2
+- [Bridging Blocking Code — boundedElastic](19-reactive-patternlar.md#1918-blocking-kodni-koprikka-olish-bridging-blocking-code--boundedelastic) — 19.18
+- [Broker](12-arxitektura-uslublari.md#1218-broker-broker) — 12.18
+- [Brute-force Protection / Account Lockout](18-xavfsizlik-patternlari.md#1826-brute-force-himoyasi--akkaunt-bloklash-brute-force-protection--account-lockout) — 18.26
+- [Builder, Step Builder, Lombok @Builder](01-yaratuvchi-patternlar.md#110-quruvchi-builder-step-builder-lombok-builder) — 1.10
+- [Bulk / Batch Endpoints](07-api-dizayn-patternlari.md#714-bulk--batch-endpointlar-bulk--batch-endpoints) — 7.14
+- [Bulk / Batch insert](10-malumotlarni-boshqarish-va-taqsimlash.md#1020-ommaviy--paketli-kiritish-bulk--batch-insert) — 10.20
+- [Bulkhead](17-resilience-va-cloud-dizayn-patternlari.md#173-tosiq-bulkhead) — 17.3
+- [Business Delegate](08-biznes-logika-va-service-qatlam-patternlari.md#86-biznes-delegati-business-delegate) — 8.6
+- [Business metrics / KPIs](21-observability-patternlari.md#2123-biznes-metrikalari--kpi-business-metrics--kpis) — 21.23
+- [Business Object](08-biznes-logika-va-service-qatlam-patternlari.md#88-biznes-obyekti-business-object) — 8.8
+- [Busy Database](25-anti-patternlar.md#2562-band-malumotlar-bazasi-busy-database) — 25.62
+
+**C**
+
+- [Cache Abstraction / @Cacheable Proxy](05-spring-core-ichidagi-patternlar-xaritasi.md#534-cache-abstraksiyasi-cache-abstraction--cacheable-proxy) — 5.34
+- [Cache Consistency Trade-offs](11-keshlash-patternlari.md#1122-kesh-konsistensiyasi-murosalari-cache-consistency-trade-offs) — 11.22
+- [Cache Invalidation Strategies: Event-based, Versioned Keys](11-keshlash-patternlari.md#1114-kesh-invalidation-strategiyalari-cache-invalidation-strategies-event-based-versioned-keys) — 11.14
+- [Cache Key Design](11-keshlash-patternlari.md#1115-kesh-kalitini-loyihalash-cache-key-design) — 11.15
+- [Cache Stampede / Thundering Herd Protection](11-keshlash-patternlari.md#1111-kesh-bosqini-himoyasi-cache-stampede--thundering-herd-protection) — 11.11
+- [Cache Warming](11-keshlash-patternlari.md#1119-keshni-oldindan-toldirish-cache-warming) — 11.19
+- [Cache-Aside](11-keshlash-patternlari.md#111-kesh-yonida-cache-aside) — 11.1
+- [Callback](03-xulq-atvor-patternlari.md#316-callback-callback) — 3.16
+- [Callback Interfaces](05-spring-core-ichidagi-patternlar-xaritasi.md#519-callback-interfeyslari-callback-interfaces) — 5.19
+- [Canary Release](22-deployment-va-operatsion-patternlar.md#227-kanareyka-relizi-canary-release) — 22.7
+- [Canonical Data Model](16-enterprise-integration-patterns-ii.md#166-kanonik-malumot-modeli-canonical-data-model) — 16.6
+- [Cargo Cult Programming](25-anti-patternlar.md#2511-kargo-kulti-dasturlash-cargo-cult-programming) — 25.11
+- [Catch-all Exception Handler](25-anti-patternlar.md#2541-hammasini-tutuvchi-exception-handler-catch-all-exception-handler) — 25.41
+- [Causal Consistency](28-taqsimlangan-malumot-replikatsiya-va.md#2814-kauzal-konsistentlik-causal-consistency) — 28.14
+- [CDS / AppCDS / Project Leyden](22-deployment-va-operatsion-patternlar.md#2228-sinflar-arxivi-va-aot-cache-cds--appcds--project-leyden) — 22.28
+- [Cell-Based Architecture](12-arxitektura-uslublari.md#1225-hujayra-asosidagi-arxitektura-cell-based-architecture) — 12.25
+- [Chain of Responsibility](03-xulq-atvor-patternlari.md#31-masuliyat-zanjiri-chain-of-responsibility) — 3.1
+- [Change Data Capture](27-monolitdan-microservicega-migratsiya.md#276-malumot-ozgarishini-ushlash-change-data-capture) — 27.6
+- [Change Data Capture / Debezium](10-malumotlarni-boshqarish-va-taqsimlash.md#1016-malumot-ozgarishini-ushlash-change-data-capture--debezium) — 10.16
+- [Change Data Ownership](27-monolitdan-microservicega-migratsiya.md#2711-malumot-egaligini-ozgartirish-change-data-ownership) — 27.11
+- [Channel Adapter](15-enterprise-integration-patterns-i-xabarlar.md#1513-kanal-adapteri-channel-adapter) — 15.13
+- [Channel Purger](16-enterprise-integration-patterns-ii.md#1625-kanal-tozalovchi-channel-purger) — 16.25
+- [Chaos Engineering](17-resilience-va-cloud-dizayn-patternlari.md#1738-chaos-engineering-chaos-engineering) — 17.38
+- [Characterization Tests](23-testing-patternlari.md#2324-xarakterizatsiya-testlari-characterization-tests) — 23.24
+- [Chat Memory](30-spring-ai-va-llm-integratsiya-patternlari.md#308-suhbat-xotirasi-chat-memory) — 30.8
+- [ChatClient abstraction — Bridge over model providers](30-spring-ai-va-llm-integratsiya-patternlari.md#301-chatclient-abstraksiyasi-chatclient-abstraction--bridge-over-model-providers) — 30.1
+- [Chatty I/O](25-anti-patternlar.md#2557-suhbatkash-io-chatty-io) — 25.57
+- [Checked Exception Without rollbackFor](25-anti-patternlar.md#2550-rollbackforsiz-checked-exception-checked-exception-without-rollbackfor) — 25.50
+- [Checked vs Unchecked Exception Strategy](24-zamonaviy-java-va-funksional-patternlar.md#2430-checked-va-unchecked-exception-strategiyasi-checked-vs-unchecked-exception-strategy) — 24.30
+- [Chekli holatlar mashinasi (Finite State Machine (Spring Statemachine))](03-xulq-atvor-patternlari.md#321-chekli-holatlar-mashinasi-finite-state-machine-spring-statemachine) — 3.21
+- [Choreography](17-resilience-va-cloud-dizayn-patternlari.md#1735-xoreografiya-choreography) — 17.35
+- [Chunk-Oriented Processing](20-batch-va-scheduling-patternlari.md#201-chunkga-asoslangan-ishlov-chunk-oriented-processing) — 20.1
+- [Circuit Breaker](17-resilience-va-cloud-dizayn-patternlari.md#172-zanjirni-uzgich-circuit-breaker) — 17.2
+- [Circular Bean Dependencies](25-anti-patternlar.md#2537-aylanali-bean-bogliqliklari-circular-bean-dependencies) — 25.37
+- [Circular Dependency](25-anti-patternlar.md#2518-siklik-bogliqlik-circular-dependency) — 25.18
+- [Claim Check](16-enterprise-integration-patterns-ii.md#164-yuk-kvitansiyasi-claim-check) — 16.4
+- [Class Table Inheritance / JOINED](09-malumotlarga-kirish-va-orm-patternlari.md#917-sinf-jadvallari-merosi-class-table-inheritance--joined) — 9.17
+- [Classifier Composite Writer](20-batch-va-scheduling-patternlari.md#2014-classifier-bilan-kompozit-writer-classifier-composite-writer) — 20.14
+- [Clean Architecture](12-arxitektura-uslublari.md#123-clean-architecture-clean-architecture) — 12.3
+- [Client Session State](06-web-va-taqdimot-qatlami-patternlari.md#625-mijoz-tomonidagi-sessiya-holati-client-session-state) — 6.25
+- [Client-Server](12-arxitektura-uslublari.md#1217-klient-server-client-server) — 12.17
+- [Client-Side Discovery](14-microservices-patternlari.md#1419-klient-tomonda-aniqlash-client-side-discovery) — 14.19
+- [Client-Side UI Composition](14-microservices-patternlari.md#1426-klient-tomonda-ui-kompozitsiyasi-client-side-ui-composition) — 14.26
+- [Clock Injection](23-testing-patternlari.md#2330-clock-injection-clock-injection) — 23.30
+- [Closure of Operations](13-domain-driven-design-patternlari.md#1328-amallarning-yopiqligi-closure-of-operations) — 13.28
+- [CloudEvents](16-enterprise-integration-patterns-ii.md#1629-cloudevents-cloudevents) — 16.29
+- [Coarse-Grained Lock](09-malumotlarga-kirish-va-orm-patternlari.md#925-yirik-donali-qulf-coarse-grained-lock) — 9.25
+- [Cold Start & Subscription Lifecycle](19-reactive-patternlar.md#1925-sovuq-start-va-subscription-hayot-sikli-cold-start--subscription-lifecycle) — 19.25
+- [Collector / accumulator-builder](24-zamonaviy-java-va-funksional-patternlar.md#2416-yiguvchi-collector--accumulator-builder) — 24.16
+- [Command](03-xulq-atvor-patternlari.md#32-buyruq-command) — 3.2
+- [Command / Use Case Handler — Interactor](08-biznes-logika-va-service-qatlam-patternlari.md#815-buyruq--use-case-handler-command--use-case-handler--interactor) — 8.15
+- [Command Bus / Mediator](08-biznes-logika-va-service-qatlam-patternlari.md#816-buyruq-shinasi--mediator-command-bus--mediator) — 8.16
+- [Command Message](15-enterprise-integration-patterns-i-xabarlar.md#1516-buyruq-xabari-command-message) — 15.16
+- [Command-Query Separation](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2623-buyruq-sorov-ajratilishi-command-query-separation) — 26.23
+- [Compare-And-Swap / Lock-Free](04-concurrency-patternlari.md#421-compare-and-swap-va-lock-free-algoritmlar-compare-and-swap--lock-free) — 4.21
+- [Compensating Transaction](10-malumotlarni-boshqarish-va-taqsimlash.md#1023-kompensatsiyalovchi-tranzaksiya-compensating-transaction) — 10.23
+- [Competing Consumers](16-enterprise-integration-patterns-ii.md#1612-raqobatlashuvchi-istemolchilar-competing-consumers) — 16.12
+- [Complete Mediation](18-xavfsizlik-patternlari.md#1841-toliq-vositachilik-complete-mediation) — 18.41
+- [Component-Based Architecture](12-arxitektura-uslublari.md#1230-komponentga-asoslangan-arxitektura-component-based-architecture) — 12.30
+- [Composed Message Processor](15-enterprise-integration-patterns-i-xabarlar.md#1532-birlashtirilgan-xabar-protsessori-composed-message-processor) — 15.32
+- [Composite](02-strukturaviy-patternlar.md#23-kompozit-composite) — 2.3
+- [Composite Entity](08-biznes-logika-va-service-qatlam-patternlari.md#89-kompozit-entity-composite-entity) — 8.9
+- [Composite ItemProcessor / ItemWriter](20-batch-va-scheduling-patternlari.md#2013-kompozit-itemprocessor--itemwriter-composite-itemprocessor--itemwriter) — 20.13
+- [Composite View](06-web-va-taqdimot-qatlami-patternlari.md#68-kompozit-korinish-composite-view) — 6.8
+- [Composition over Inheritance](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2617-vorislikdan-ustun-kompozitsiya-composition-over-inheritance) — 26.17
+- [Composition Root](01-yaratuvchi-patternlar.md#114-kompozitsiya-ildizi-composition-root) — 1.14
+- [Compute Resource Consolidation](22-deployment-va-operatsion-patternlar.md#2236-hisoblash-resurslarini-konsolidatsiya-qilish-compute-resource-consolidation) — 22.36
+- [Concrete Table Inheritance / TABLE_PER_CLASS](09-malumotlarga-kirish-va-orm-patternlari.md#918-konkret-jadval-merosi-concrete-table-inheritance--table_per_class) — 9.18
+- [Conditional Requests / ETag](07-api-dizayn-patternlari.md#711-shartli-sorovlar-va-etag-conditional-requests--etag) — 7.11
+- [Configuration Resource](29-kubernetes-va-cloud-native-patternlar.md#2915-konfiguratsiya-resursi-configuration-resource) — 29.15
+- [Configuration Template](29-kubernetes-va-cloud-native-patternlar.md#2918-konfiguratsiya-shabloni-configuration-template) — 29.18
+- [Conformist](13-domain-driven-design-patternlari.md#136-konformist-conformist) — 13.6
+- [Connection Pool — HikariCP](09-malumotlarga-kirish-va-orm-patternlari.md#930-connection-pool-connection-pool--hikaricp) — 9.30
+- [Consistent Hashing](28-taqsimlangan-malumot-replikatsiya-va.md#286-konsistent-xeshlash-consistent-hashing) — 28.6
+- [Consumer-Driven Contracts](07-api-dizayn-patternlari.md#722-consumer-tomonidan-boshqarilgan-kontraktlar-consumer-driven-contracts) — 7.22
+- [Consumer-Side Contract Test](23-testing-patternlari.md#2320-istemolchi-tomonidagi-kontrakt-testi-consumer-side-contract-test) — 23.20
+- [Container Image Build — Buildpacks, Jib, layered jar, multi-stage](22-deployment-va-operatsion-patternlar.md#2226-container-image-qurish-container-image-build--buildpacks-jib-layered-jar-multi-stage) — 22.26
+- [Content Enricher](16-enterprise-integration-patterns-ii.md#162-mazmun-boyituvchi-content-enricher) — 16.2
+- [Content Filter](16-enterprise-integration-patterns-ii.md#163-mazmun-filtri-content-filter) — 16.3
+- [Content Negotiation](06-web-va-taqdimot-qatlami-patternlari.md#619-kontent-muzokarasi-content-negotiation) — 6.19
+- [Content-Based Router](15-enterprise-integration-patterns-i-xabarlar.md#1525-kontent-asosidagi-marshrutizator-content-based-router) — 15.25
+- [Context Map](13-domain-driven-design-patternlari.md#133-kontekst-xaritasi-context-map) — 13.3
+- [Context Object](06-web-va-taqdimot-qatlami-patternlari.md#66-kontekst-obekti-context-object) — 6.6
+- [Contract Testing](23-testing-patternlari.md#2317-kontrakt-testlash-contract-testing) — 23.17
+- [Contract-First vs Code-First OpenAPI](07-api-dizayn-patternlari.md#728-openapi-kontrakt-birinchi-yoki-kod-birinchi-contract-first-vs-code-first-openapi) — 7.28
+- [Control Bus](16-enterprise-integration-patterns-ii.md#1618-boshqaruv-shinasi-control-bus) — 16.18
+- [Convention over Configuration](05-spring-core-ichidagi-patternlar-xaritasi.md#539-konfiguratsiyadan-ustun-konvensiya-convention-over-configuration) — 5.39
+- [ConversionService / Converter / Formatter](05-spring-core-ichidagi-patternlar-xaritasi.md#528-konvertatsiya-xizmati-conversionservice--converter--formatter) — 5.28
+- [Copy-Paste Programming](25-anti-patternlar.md#257-nusxa-kochirma-dasturlash-copy-paste-programming) — 25.7
+- [Core / Supporting / Generic Subdomains](13-domain-driven-design-patternlari.md#1312-core--supporting--generic-subdomenlar-core--supporting--generic-subdomains) — 13.12
+- [Correlation ID / Trace ID Propagation](21-observability-patternlari.md#213-korrelyatsiya-id--trace-id-tarqatish-correlation-id--trace-id-propagation) — 21.3
+- [Correlation Identifier](15-enterprise-integration-patterns-i-xabarlar.md#1521-korrelyatsiya-identifikatori-correlation-identifier) — 15.21
+- [CQRS — Command Query Responsibility Segregation](12-arxitektura-uslublari.md#1210-buyruq-va-sorovlar-masuliyatini-ajratish-cqrs--command-query-responsibility-segregation) — 12.10
+- [Creation Method](23-testing-patternlari.md#2346-yaratish-metodi-creation-method) — 23.46
+- [Cross-Origin Resource Sharing](18-xavfsizlik-patternlari.md#1824-cors-cross-origin-resource-sharing) — 18.24
+- [CSRF Protection — Synchronizer Token, Double Submit](18-xavfsizlik-patternlari.md#1823-csrf-himoyasi-csrf-protection--synchronizer-token-double-submit) — 18.23
+- [Currying / Partial Application](24-zamonaviy-java-va-funksional-patternlar.md#2413-currying-va-qismiy-qollash-currying--partial-application) — 24.13
+- [Custom Assertion](23-testing-patternlari.md#2349-maxsus-assertion-custom-assertion) — 23.49
+- [Customer-Supplier](13-domain-driven-design-patternlari.md#135-mijoz-taminotchi-customer-supplier) — 13.5
+
+**D**
+
+- [Daemon Service](29-kubernetes-va-cloud-native-patternlar.md#297-demon-servis-daemon-service) — 29.7
+- [Dark Launch](22-deployment-va-operatsion-patternlar.md#2211-yashirin-ishga-tushirish-dark-launch) — 22.11
+- [Dashboards](21-observability-patternlari.md#2113-dashboardlar-dashboards) — 21.13
+- [Data Access Object — DAO](09-malumotlarga-kirish-va-orm-patternlari.md#91-malumotlarga-kirish-obyekti-data-access-object--dao) — 9.1
+- [Data Binding / Form Backing Object](06-web-va-taqdimot-qatlami-patternlari.md#628-malumotlarni-boglash-va-forma-obekti-data-binding--form-backing-object) — 6.28
+- [Data Mapper](09-malumotlarga-kirish-va-orm-patternlari.md#96-malumot-mapperi-data-mapper) — 9.6
+- [Data Masking](18-xavfsizlik-patternlari.md#1848-malumotni-maskalash-data-masking) — 18.48
+- [Data Retention](10-malumotlarni-boshqarish-va-taqsimlash.md#1026-malumotlarni-saqlash-muddati-data-retention) — 10.26
+- [DataAccessException Hierarchy / Exception Translation](05-spring-core-ichidagi-patternlar-xaritasi.md#533-dataaccessexception-iyerarxiyasi-va-exception-tarjimasi-dataaccessexception-hierarchy--exception-translation) — 5.33
+- [Database Migration](10-malumotlarni-boshqarish-va-taqsimlash.md#104-malumotlar-bazasi-migratsiyasi-database-migration) — 10.4
+- [Database per Bounded Context](27-monolitdan-microservicega-migratsiya.md#2717-har-bir-bounded-context-uchun-malumotlar-bazasi-database-per-bounded-context) — 27.17
+- [Database per Service](10-malumotlarni-boshqarish-va-taqsimlash.md#1012-har-bir-servis-uchun-alohida-malumotlar-bazasi-database-per-service) — 10.12
+- [Database Session State](06-web-va-taqdimot-qatlami-patternlari.md#627-malumotlar-bazasidagi-sessiya-holati-database-session-state) — 6.27
+- [Database State Setup](23-testing-patternlari.md#2328-malumotlar-bazasi-holatini-tayyorlash-database-state-setup) — 23.28
+- [Database View](27-monolitdan-microservicega-migratsiya.md#277-malumotlar-bazasi-korinishi-database-view) — 27.7
+- [Database Wrapping Service](27-monolitdan-microservicega-migratsiya.md#278-malumotlar-bazasini-orovchi-servis-database-wrapping-service) — 27.8
+- [Database-as-a-Service Interface](27-monolitdan-microservicega-migratsiya.md#279-malumotlar-bazasi-servis-interfeysi-database-as-a-service-interface) — 27.9
+- [Datatype Channel](15-enterprise-integration-patterns-i-xabarlar.md#159-malumot-turi-kanali-datatype-channel) — 15.9
+- [DDD Layered Architecture](13-domain-driven-design-patternlari.md#1334-ddd-qatlamli-arxitekturasi-ddd-layered-architecture) — 13.34
+- [Dead Code](25-anti-patternlar.md#256-olik-kod-dead-code) — 25.6
+- [Dead Letter Channel](15-enterprise-integration-patterns-i-xabarlar.md#1511-olik-xat-kanali-dead-letter-channel) — 15.11
+- [Dead-Letter Handling in Batch](20-batch-va-scheduling-patternlari.md#2030-batchda-dead-letter-boshqaruvi-dead-letter-handling-in-batch) — 20.30
+- [Death by Planning](25-anti-patternlar.md#2583-rejalashtirishdan-olim-death-by-planning) — 25.83
+- [Declarative Deployment](29-kubernetes-va-cloud-native-patternlar.md#292-deklarativ-joylashtirish-declarative-deployment) — 29.2
+- [Declarative HTTP Interfaces / @HttpExchange](07-api-dizayn-patternlari.md#729-deklarativ-http-clientlar-declarative-http-interfaces--httpexchange) — 7.29
+- [Decompose by Business Capability](14-microservices-patternlari.md#142-biznes-imkoniyati-boyicha-dekompozitsiya-decompose-by-business-capability) — 14.2
+- [Decompose by Subdomain](14-microservices-patternlari.md#143-subdomen-boyicha-dekompozitsiya-decompose-by-subdomain) — 14.3
+- [Decorating Collaborator](27-monolitdan-microservicega-migratsiya.md#275-bezovchi-hamkor-decorating-collaborator) — 27.5
+- [Decorator](02-strukturaviy-patternlar.md#24-dekorator-decorator) — 2.4
+- [Decoupling Middleware](17-resilience-va-cloud-dizayn-patternlari.md#1712-ajratuvchi-middleware-decoupling-middleware) — 17.12
+- [Dedicated Reference Data Schema](27-monolitdan-microservicega-migratsiya.md#2721-maxsus-reference-data-sxemasi-dedicated-reference-data-schema) — 27.21
+- [Defense in Depth](18-xavfsizlik-patternlari.md#1836-qatlamli-himoya-defense-in-depth) — 18.36
+- [Defensive Copying](24-zamonaviy-java-va-funksional-patternlar.md#2426-himoyali-nusxalash-defensive-copying) — 24.26
+- [Delegation](02-strukturaviy-patternlar.md#213-delegatsiya-delegation) — 2.13
+- [Delta Assertion](23-testing-patternlari.md#2347-delta-assertion-delta-assertion) — 23.47
+- [Dependency Injection](01-yaratuvchi-patternlar.md#113-bogliqliklarni-kiritish-dependency-injection) — 1.13
+- [Dependency Inversion Principle](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#265-bogliqliklarni-teskari-aylantirish-printsipi-dependency-inversion-principle) — 26.5
+- [Dependent Mapping](09-malumotlarga-kirish-va-orm-patternlari.md#913-qaram-maplash-dependent-mapping) — 9.13
+- [Deployment Stamps](17-resilience-va-cloud-dizayn-patternlari.md#1727-deploy-shtamplari-deployment-stamps) — 17.27
+- [Deprecation / Sunset Headers](07-api-dizayn-patternlari.md#730-deprecation-va-sunset-headerlari-deprecation--sunset-headers) — 7.30
+- [Design by Committee](25-anti-patternlar.md#2579-komissiya-bilan-loyihalash-design-by-committee) — 25.79
+- [Detour](16-enterprise-integration-patterns-ii.md#1619-chetlab-otish-yoli-detour) — 16.19
+- [Dispatcher View](06-web-va-taqdimot-qatlami-patternlari.md#69-dispetcher-korinish-dispatcher-view) — 6.9
+- [Distributed Cache — Redis, Hazelcast](11-keshlash-patternlari.md#118-taqsimlangan-kesh-distributed-cache--redis-hazelcast) — 11.8
+- [Distributed Lock — Redis, ShedLock, Database](10-malumotlarni-boshqarish-va-taqsimlash.md#1029-taqsimlangan-lock-distributed-lock--redis-shedlock-database) — 10.29
+- [Distributed Monolith](25-anti-patternlar.md#2555-taqsimlangan-monolit-distributed-monolith) — 25.55
+- [Distributed Scheduler Lock, ShedLock](20-batch-va-scheduling-patternlari.md#2022-taqsimlangan-scheduler-lock-distributed-scheduler-lock-shedlock) — 20.22
+- [Distributed Tracing](21-observability-patternlari.md#214-taqsimlangan-trassirovka-distributed-tracing) — 21.4
+- [Document ETL pipeline — Reader / Transformer / Writer](30-spring-ai-va-llm-integratsiya-patternlari.md#307-hujjat-etl-quvuri-document-etl-pipeline--reader--transformer--writer) — 30.7
+- [Document Message](15-enterprise-integration-patterns-i-xabarlar.md#1517-hujjat-xabari-document-message) — 15.17
+- [Domain Event](13-domain-driven-design-patternlari.md#1320-domen-hodisasi-domain-event) — 13.20
+- [Domain Event Publishing from Service](08-biznes-logika-va-service-qatlam-patternlari.md#826-servicedan-domain-event-chiqarish-domain-event-publishing-from-service) — 8.26
+- [Domain Events with Spring Data: AbstractAggregateRoot, @DomainEvents](13-domain-driven-design-patternlari.md#1333-spring-data-bilan-domen-hodisalari-domain-events-with-spring-data-abstractaggregateroot-domainevents) — 13.33
+- [Domain Model](08-biznes-logika-va-service-qatlam-patternlari.md#82-domen-modeli-domain-model) — 8.2
+- [Domain Service](13-domain-driven-design-patternlari.md#1318-domen-servisi-domain-service) — 13.18
+- [Domain Store](09-malumotlarga-kirish-va-orm-patternlari.md#936-domen-ombori-domain-store) — 9.36
+- [Domain-Specific Protocol](14-microservices-patternlari.md#1417-domenga-xos-protokol-domain-specific-protocol) — 14.17
+- [Domen hodisasi (Domain Event (microservice view))](14-microservices-patternlari.md#1411-domen-hodisasi-domain-event-microservice-view) — 14.11
+- [Double Dispatch](03-xulq-atvor-patternlari.md#318-ikki-tomonlama-dispatch-double-dispatch) — 3.18
+- [Double-Checked Locking](04-concurrency-patternlari.md#411-ikki-marta-tekshirilgan-lock-double-checked-locking) — 4.11
+- [Driving Query](20-batch-va-scheduling-patternlari.md#2017-boshqaruvchi-sorov-driving-query) — 20.17
+- [DTO Projection](09-malumotlarga-kirish-va-orm-patternlari.md#922-dto-proyeksiyasi-dto-projection) — 9.22
+- [Dual Write Problem](10-malumotlarni-boshqarish-va-taqsimlash.md#1031-dual-write-muammosi-dual-write-problem) — 10.31
+- [Dual Writes](25-anti-patternlar.md#2569-ikki-tomonlama-yozish-dual-writes) — 25.69
+- [Dummy Object](23-testing-patternlari.md#2340-dummy-obyekt-dummy-object) — 23.40
+- [Durable Subscriber](16-enterprise-integration-patterns-ii.md#1615-ishonchli-obunachi-durable-subscriber) — 16.15
+- [Dynamic Router](15-enterprise-integration-patterns-i-xabarlar.md#1527-dinamik-marshrutizator-dynamic-router) — 15.27
+
+**E**
+
+- [Edge Workload Configuration](17-resilience-va-cloud-dizayn-patternlari.md#1729-edge-ish-yuklamasi-konfiguratsiyasi-edge-workload-configuration) — 17.29
+- [Elastic Scale](29-kubernetes-va-cloud-native-patternlar.md#2913-elastik-masshtablash-elastic-scale) — 29.13
+- [Embedded DB Mismatch — anti-pattern: H2 for PostgreSQL](23-testing-patternlari.md#2316-embedded-db-mos-kelmasligi-embedded-db-mismatch--anti-pattern-h2-for-postgresql) — 23.16
+- [Embedded Value](09-malumotlarga-kirish-va-orm-patternlari.md#914-ichki-ornatilgan-qiymat-embedded-value) — 9.14
+- [Embedding Model abstraction](30-spring-ai-va-llm-integratsiya-patternlari.md#3010-embedding-modeli-abstraksiyasi-embedding-model-abstraction) — 30.10
+- [Encapsulate What Varies](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2624-ozgaruvchan-qismni-inkapsulyatsiya-qilish-encapsulate-what-varies) — 26.24
+- [Encryption at Rest / Field-Level Encryption](10-malumotlarni-boshqarish-va-taqsimlash.md#1027-diskda-va-maydon-darajasida-shifrlash-encryption-at-rest--field-level-encryption) — 10.27
+- [End-to-End Tests](23-testing-patternlari.md#2335-uchidan-uchiga-testlar-end-to-end-tests) — 23.35
+- [Entity](13-domain-driven-design-patternlari.md#1313-entity-entity) — 13.13
+- [Entity Services](25-anti-patternlar.md#2559-entitet-servislar-entity-services) — 25.59
+- [Enum Singleton](24-zamonaviy-java-va-funksional-patternlar.md#2410-enum-singleton-enum-singleton) — 24.10
+- [Enum-based State Machine / Strategy](24-zamonaviy-java-va-funksional-patternlar.md#2420-enum-asosidagi-holat-mashinasi-va-strategiya-enum-based-state-machine--strategy) — 24.20
+- [Envelope vs Bare Response](07-api-dizayn-patternlari.md#724-konvert-javob-va-yalangoch-javob-envelope-vs-bare-response) — 7.24
+- [Envelope Wrapper](16-enterprise-integration-patterns-ii.md#161-konvert-oramchisi-envelope-wrapper) — 16.1
+- [Environment & PropertySource Chain](05-spring-core-ichidagi-patternlar-xaritasi.md#521-environment-va-propertysource-zanjiri-environment--propertysource-chain) — 5.21
+- [Environment Parity](22-deployment-va-operatsion-patternlar.md#2234-muhitlar-ozarosi-mosligi-environment-parity) — 22.34
+- [EnvVar Configuration](29-kubernetes-va-cloud-native-patternlar.md#2917-muhit-ozgaruvchilari-orqali-konfiguratsiya-envvar-configuration) — 29.17
+- [Error Response Design](07-api-dizayn-patternlari.md#725-xato-javobini-loyihalash-error-response-design) — 7.25
+- [Event Aggregator](03-xulq-atvor-patternlari.md#319-event-agregatori-event-aggregator) — 3.19
+- [Event Loop](19-reactive-patternlar.md#193-event-loop-event-loop) — 19.3
+- [Event Message](15-enterprise-integration-patterns-i-xabarlar.md#1518-hodisa-xabari-event-message) — 15.18
+- [Event Notification](16-enterprise-integration-patterns-ii.md#1626-hodisa-xabarnomasi-event-notification) — 16.26
+- [Event Sourcing](12-arxitektura-uslublari.md#1211-hodisalarni-saqlash-event-sourcing) — 12.11
+- [Event Sourcing (messaging nuqtai nazaridan) (Event Sourcing (messaging view))](16-enterprise-integration-patterns-ii.md#1628-event-sourcing-messaging-nuqtai-nazaridan-event-sourcing-messaging-view) — 16.28
+- [Event Sourcing Store](10-malumotlarni-boshqarish-va-taqsimlash.md#1024-event-sourcing-ombori-event-sourcing-store) — 10.24
+- [Event Spaghetti](25-anti-patternlar.md#2575-hodisa-spagettisi-event-spaghetti) — 25.75
+- [Event Storming (texnika) (Event Storming (technique))](13-domain-driven-design-patternlari.md#1332-event-storming-texnika-event-storming-technique) — 13.32
+- [Event Time vs Processing Time](16-enterprise-integration-patterns-ii.md#1643-event-vaqti-va-ishlov-vaqti-event-time-vs-processing-time) — 16.43
+- [Event-Carried State Transfer](16-enterprise-integration-patterns-ii.md#1627-holat-kochiruvchi-event-event-carried-state-transfer) — 16.27
+- [Event-Driven Architecture — broker va mediator topologiyalari](12-arxitektura-uslublari.md#129-hodisaga-asoslangan-arxitektura-event-driven-architecture--broker-va-mediator-topologiyalari) — 12.9
+- [Event-Driven Consumer](16-enterprise-integration-patterns-ii.md#1611-hodisaga-asoslangan-istemolchi-event-driven-consumer) — 16.11
+- [Event-First](12-arxitektura-uslublari.md#1232-event-birinchi-event-first) — 12.32
+- [Eventual Consistency](28-taqsimlangan-malumot-replikatsiya-va.md#2817-yakuniy-konsistentlik-eventual-consistency) — 28.17
+- [Eventual Consistency Between Aggregates](13-domain-driven-design-patternlari.md#1325-agregatlar-orasida-yakuniy-izchillik-eventual-consistency-between-aggregates) — 13.25
+- [Eviction Policies: LRU, LFU, W-TinyLFU / Caffeine](11-keshlash-patternlari.md#1113-chiqarib-tashlash-siyosatlari-eviction-policies-lru-lfu-w-tinylfu--caffeine) — 11.13
+- [Exactly-Once Semantics](16-enterprise-integration-patterns-ii.md#1640-aynan-bir-marta-semantikasi-exactly-once-semantics) — 16.40
+- [Exception Handler — @ControllerAdvice, @ExceptionHandler](06-web-va-taqdimot-qatlami-patternlari.md#618-istisnolarni-qayta-ishlovchi-exception-handler--controlleradvice-exceptionhandler) — 6.18
+- [Exception Swallowing](25-anti-patternlar.md#2514-istisnolarni-yutib-yuborish-exception-swallowing) — 25.14
+- [Exception Tracking](21-observability-patternlari.md#2111-xatolarni-kuzatish-exception-tracking) — 21.11
+- [Exception Translation / Chaining](24-zamonaviy-java-va-funksional-patternlar.md#2431-exception-tarjimasi-va-zanjiri-exception-translation--chaining) — 24.31
+- [Execute Around](03-xulq-atvor-patternlari.md#320-orab-bajarish-execute-around) — 3.20
+- [Execute Around / Loan Pattern](24-zamonaviy-java-va-funksional-patternlar.md#2418-orab-bajarish--qarz-patterni-execute-around--loan-pattern) — 24.18
+- [Exemplar'lar (Exemplars (logs-metrics-traces correlation))](21-observability-patternlari.md#2125-exemplarlar-exemplars-logs-metrics-traces-correlation) — 21.25
+- [Exhaustive Switch as Visitor Replacement](24-zamonaviy-java-va-funksional-patternlar.md#243-exhaustive-switch-visitor-ornida-exhaustive-switch-as-visitor-replacement) — 24.3
+- [Expand/Contract schema migration](10-malumotlarni-boshqarish-va-taqsimlash.md#105-keng-aytib-toraytirish-schema-migratsiyasi-expandcontract-schema-migration) — 10.5
+- [Expand/Contract — Parallel Change](07-api-dizayn-patternlari.md#723-kengaytirqisqartir-expandcontract--parallel-change) — 7.23
+- [Exposing JPA Entities in API](25-anti-patternlar.md#2533-apida-jpa-entitylarini-fosh-qilish-exposing-jpa-entities-in-api) — 25.33
+- [Expression-based security — SpEL](18-xavfsizlik-patternlari.md#1811-ifodaga-asoslangan-xavfsizlik-expression-based-security--spel) — 18.11
+- [Extension Object](02-strukturaviy-patternlar.md#211-kengaytirish-obyekti-extension-object) — 2.11
+- [External Configuration Store](17-resilience-va-cloud-dizayn-patternlari.md#1730-tashqi-konfiguratsiya-ombori-external-configuration-store) — 17.30
+- [Externalized Configuration](14-microservices-patternlari.md#1430-tashqariga-chiqarilgan-konfiguratsiya-externalized-configuration) — 14.30
+- [Externalized Configuration](22-deployment-va-operatsion-patternlar.md#222-tashqi-konfiguratsiya-externalized-configuration) — 22.2
+- [Extract-Transform-Load — ETL](20-batch-va-scheduling-patternlari.md#2019-extract-transform-load-extract-transform-load--etl) — 20.19
+- [Extraneous Fetching](25-anti-patternlar.md#2568-keraksiz-malumot-olish-extraneous-fetching) — 25.68
+
+**F**
+
+- [Facade](02-strukturaviy-patternlar.md#25-fasad-facade) — 2.5
+- [Factory Kit](01-yaratuvchi-patternlar.md#19-fabrika-toplami-factory-kit) — 1.9
+- [Factory Method](01-yaratuvchi-patternlar.md#17-fabrika-metodi-factory-method) — 1.7
+- [Factory — DDD view](13-domain-driven-design-patternlari.md#1317-fabrika-factory--ddd-view) — 13.17
+- [FactoryBean — Abstract Factory](05-spring-core-ichidagi-patternlar-xaritasi.md#53-factorybean-factorybean--abstract-factory) — 5.3
+- [Fail Fast](17-resilience-va-cloud-dizayn-patternlari.md#178-tez-ishdan-chiqish-fail-fast) — 17.8
+- [Fail Securely](18-xavfsizlik-patternlari.md#1839-xavfsiz-tarzda-yiqilish-fail-securely) — 18.39
+- [Fake Object](23-testing-patternlari.md#2344-soxta-obyekt-fake-object) — 23.44
+- [Fallback](17-resilience-va-cloud-dizayn-patternlari.md#177-zaxira-yechim-fallback) — 17.7
+- [Fat Controller](25-anti-patternlar.md#2534-semiz-controller-fat-controller) — 25.34
+- [Favor Composition over Inheritance](24-zamonaviy-java-va-funksional-patternlar.md#2428-merosdan-kora-kompozitsiyani-afzal-bilish-favor-composition-over-inheritance) — 24.28
+- [Feature Envy](25-anti-patternlar.md#2520-begona-malumotga-havas-feature-envy) — 25.20
+- [Feature Toggle / Feature Flags](22-deployment-va-operatsion-patternlar.md#2210-funksiya-kalitlari-feature-toggle--feature-flags) — 22.10
+- [Federated Identity](17-resilience-va-cloud-dizayn-patternlari.md#1726-federatsiyalangan-identifikatsiya-federated-identity) — 17.26
+- [Federated Identity](18-xavfsizlik-patternlari.md#1820-federatsiyalangan-identifikatsiya-federated-identity) — 18.20
+- [Fencing Token](28-taqsimlangan-malumot-replikatsiya-va.md#2812-fencing-token-fencing-token) — 28.12
+- [Field Injection](25-anti-patternlar.md#2529-maydonga-injeksiya-field-injection) — 25.29
+- [Filtering, Sorting, Field Selection](07-api-dizayn-patternlari.md#78-filtrlash-tartiblash-va-maydon-tanlash-filtering-sorting-field-selection) — 7.8
+- [Flaky Test Quarantine](23-testing-patternlari.md#2332-flaky-testlarni-karantinga-olish-flaky-test-quarantine) — 23.32
+- [Flash Attributes / Flash Scope](06-web-va-taqdimot-qatlami-patternlari.md#617-flash-atributlar--flash-doirasi-flash-attributes--flash-scope) — 6.17
+- [Flexible Constructor Bodies](24-zamonaviy-java-va-funksional-patternlar.md#2437-moslashuvchan-konstruktor-tanalari-flexible-constructor-bodies) — 24.37
+- [Fluent DSL Builders in Spring](05-spring-core-ichidagi-patternlar-xaritasi.md#541-springdagi-fluent-dsl-builderlar-fluent-dsl-builders-in-spring) — 5.41
+- [Fluent Interface](03-xulq-atvor-patternlari.md#315-ravon-interfeys-fluent-interface) — 3.15
+- [Fluent Interface / Method Chaining](24-zamonaviy-java-va-funksional-patternlar.md#248-fluent-interfeys-va-metod-zanjiri-fluent-interface--method-chaining) — 24.8
+- [Flyweight](02-strukturaviy-patternlar.md#26-flyweight-flyweight) — 2.6
+- [Foreign Key Mapping](09-malumotlarga-kirish-va-orm-patternlari.md#911-tashqi-kalit-mappingi-foreign-key-mapping) — 9.11
+- [Fork-Join / Work Stealing](04-concurrency-patternlari.md#418-fork-join-va-ishni-ogirlash-fork-join--work-stealing) — 4.18
+- [Format Indicator](15-enterprise-integration-patterns-i-xabarlar.md#1524-format-korsatkichi-format-indicator) — 15.24
+- [Four-Phase Test](23-testing-patternlari.md#2345-tort-fazali-test-four-phase-test) — 23.45
+- [Fresh Fixture](23-testing-patternlari.md#2350-yangi-fixture-fresh-fixture) — 23.50
+- [Front Controller — DispatcherServlet](06-web-va-taqdimot-qatlami-patternlari.md#62-old-boshqaruvchi-front-controller--dispatcherservlet) — 6.2
+- [Function Composition](24-zamonaviy-java-va-funksional-patternlar.md#2412-funksiya-kompozitsiyasi-function-composition) — 24.12
+- [Functional Endpoints — RouterFunction](06-web-va-taqdimot-qatlami-patternlari.md#622-funksional-endpointlar-functional-endpoints--routerfunction) — 6.22
+- [Functor](24-zamonaviy-java-va-funksional-patternlar.md#2439-funktor-functor) — 24.39
+- [Future / Promise / CompletableFuture](04-concurrency-patternlari.md#43-kelasi-natija--vada-future--promise--completablefuture) — 4.3
+
+**G**
+
+- [Gatekeeper](17-resilience-va-cloud-dizayn-patternlari.md#1725-darvozabon-gatekeeper) — 17.25
+- [Gateway Aggregation](17-resilience-va-cloud-dizayn-patternlari.md#1731-gateway-agregatsiyasi-gateway-aggregation) — 17.31
+- [Gateway Offloading](17-resilience-va-cloud-dizayn-patternlari.md#1732-gateway-offloading-gateway-offloading) — 17.32
+- [Gateway Routing](17-resilience-va-cloud-dizayn-patternlari.md#1733-gateway-routing-gateway-routing) — 17.33
+- [Geode](17-resilience-va-cloud-dizayn-patternlari.md#1728-geode-geode) — 17.28
+- [GitOps](22-deployment-va-operatsion-patternlar.md#225-gitops-gitops) — 22.5
+- [Given-When-Then — BDD](23-testing-patternlari.md#234-berilgan-qachon-unda-given-when-then--bdd) — 23.4
+- [God Object](25-anti-patternlar.md#251-xudo-obyekt-god-object) — 25.1
+- [Gold Plating](25-anti-patternlar.md#2576-oltin-qoplama-gold-plating) — 25.76
+- [Golden Hammer](25-anti-patternlar.md#254-oltin-bolga-golden-hammer) — 25.4
+- [Gollivud Printsipi (Hollywood Principle (Inversion of Control))](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2626-gollivud-printsipi-hollywood-principle-inversion-of-control) — 26.26
+- [Governor](17-resilience-va-cloud-dizayn-patternlari.md#1716-hokim--tezlik-cheklovchi-nazoratchi-governor) — 17.16
+- [GraalVM Native Image](22-deployment-va-operatsion-patternlar.md#2227-graalvm-native-image-graalvm-native-image) — 22.27
+- [Graceful Degradation](17-resilience-va-cloud-dizayn-patternlari.md#1737-bosqichma-bosqich-funksionallikni-pasaytirish-graceful-degradation) — 17.37
+- [Graceful Shutdown](22-deployment-va-operatsion-patternlar.md#2220-nazorat-ostida-toxtatish-graceful-shutdown) — 22.20
+- [GraphQL with Spring for GraphQL](07-api-dizayn-patternlari.md#726-graphql-graphql-with-spring-for-graphql) — 7.26
+- [gRPC with Spring](07-api-dizayn-patternlari.md#727-grpc-grpc-with-spring) — 7.27
+- [Guaranteed Delivery](15-enterprise-integration-patterns-i-xabarlar.md#1512-kafolatlangan-yetkazib-berish-guaranteed-delivery) — 15.12
+- [Guard Assertion](23-testing-patternlari.md#2348-guard-assertion-guard-assertion) — 23.48
+- [Guarded Suspension](04-concurrency-patternlari.md#412-shart-bilan-toxtatish-guarded-suspension) — 4.12
+- [Guardrails / content filtering](30-spring-ai-va-llm-integratsiya-patternlari.md#3014-guardrails-va-kontent-filtrlash-guardrails--content-filtering) — 30.14
+
+**H**
+
+- [H2 for Production-DB Tests](25-anti-patternlar.md#2545-production-db-testlari-uchun-h2-h2-for-production-db-tests) — 25.45
+- [Half-Sync/Half-Async](04-concurrency-patternlari.md#48-yarim-sinxronyarim-asinxron-half-synchalf-async) — 4.8
+- [HandlerMethodArgumentResolver / HandlerMethodReturnValueHandler](06-web-va-taqdimot-qatlami-patternlari.md#621-argument-va-qaytish-qiymati-ishlovchilari-handlermethodargumentresolver--handlermethodreturnvaluehandler) — 6.21
+- [Handshaking](17-resilience-va-cloud-dizayn-patternlari.md#1710-qol-berib-sorashuv-handshaking) — 17.10
+- [Har bir servisga alohida ma'lumotlar bazasi (Database per Service (microservice view))](14-microservices-patternlari.md#147-har-bir-servisga-alohida-malumotlar-bazasi-database-per-service-microservice-view) — 14.7
+- [Hard-Coding](25-anti-patternlar.md#259-qattiq-kodlash-hard-coding) — 25.9
+- [HATEOAS, Hypermedia as the Engine of Application State](07-api-dizayn-patternlari.md#73-hateoas--gipermedia-bilan-boshqariladigan-holat-hateoas-hypermedia-as-the-engine-of-application-state) — 7.3
+- [Health Check API](21-observability-patternlari.md#219-salomatlik-tekshiruvi-api-health-check-api) — 21.9
+- [Health Endpoint Monitoring](17-resilience-va-cloud-dizayn-patternlari.md#1717-salomatlik-endpoint-monitoringi-health-endpoint-monitoring) — 17.17
+- [Health Probes: Liveness, Readiness, Startup](22-deployment-va-operatsion-patternlar.md#2219-health-probelar-health-probes-liveness-readiness-startup) — 22.19
+- [Heartbeat / Watchdog](21-observability-patternlari.md#2121-heartbeat--watchdog-heartbeat--watchdog) — 21.21
+- [Hedged Requests](17-resilience-va-cloud-dizayn-patternlari.md#1736-hedged-sorovlar-hedged-requests) — 17.36
+- [Hermetic Tests](23-testing-patternlari.md#2331-germetik-testlar-hermetic-tests) — 23.31
+- [Hexagonal Architecture / Ports & Adapters](12-arxitektura-uslublari.md#122-olti-burchakli-arxitektura-hexagonal-architecture--ports--adapters) — 12.2
+- [Hibernate Flush Modes & Dirty Checking](09-malumotlarga-kirish-va-orm-patternlari.md#933-hibernate-flush-rejimlari-va-dirty-checking-hibernate-flush-modes--dirty-checking) — 9.33
+- [Hibernate Second-Level Cache & Query Cache](11-keshlash-patternlari.md#119-hibernate-ikkinchi-darajali-kesh-va-query-kesh-hibernate-second-level-cache--query-cache) — 11.9
+- [Higher-Order Functions](24-zamonaviy-java-va-funksional-patternlar.md#2414-oliy-tartibli-funksiyalar-higher-order-functions) — 24.14
+- [Hinted Handoff](28-taqsimlangan-malumot-replikatsiya-va.md#289-ishora-bilan-topshirish-hinted-handoff) — 28.9
+- [Horizontal / Vertical Autoscaling](22-deployment-va-operatsion-patternlar.md#2221-gorizontal--vertikal-avtomatik-masshtablash-horizontal--vertical-autoscaling) — 22.21
+- [Hot Key Mitigation](11-keshlash-patternlari.md#1120-hot-key-tasirini-yumshatish-hot-key-mitigation) — 11.20
+- [Hot vs Cold Publishers](19-reactive-patternlar.md#196-hot-va-cold-publisherlar-hot-vs-cold-publishers) — 19.6
+- [HTTP Caching Headers](07-api-dizayn-patternlari.md#712-http-keshlash-sarlavhalari-http-caching-headers) — 7.12
+- [HTTP Caching: Cache-Control, ETag, CDN](11-keshlash-patternlari.md#1116-http-keshlash-http-caching-cache-control-etag-cdn) — 11.16
+- [HttpMessageConverter](06-web-va-taqdimot-qatlami-patternlari.md#620-http-xabar-konvertori-httpmessageconverter) — 6.20
+- [Humble Object](23-testing-patternlari.md#2325-kamtarin-obyekt-humble-object) — 23.25
+- [Hybrid Logical Clock / Clock Skew](28-taqsimlangan-malumot-replikatsiya-va.md#2828-gibrid-logik-soat--soat-siljishi-hybrid-logical-clock--clock-skew) — 28.28
+- [Hypermedia Controls vs RPC-style](07-api-dizayn-patternlari.md#731-hypermedia-boshqaruvlari-va-rpc-uslubi-hypermedia-controls-vs-rpc-style) — 7.31
+
+**I**
+
+- [ID Generation — SEQUENCE, IDENTITY, UUIDv7, TSID, Hi/Lo](09-malumotlarga-kirish-va-orm-patternlari.md#932-id-generatsiyasi-id-generation--sequence-identity-uuidv7-tsid-hilo) — 9.32
+- [Idempotency Key](07-api-dizayn-patternlari.md#79-idempotentlik-kaliti-idempotency-key) — 7.9
+- [Idempotency Store](10-malumotlarni-boshqarish-va-taqsimlash.md#1030-idempotentlik-ombori-idempotency-store) — 10.30
+- [Idempotent Batch](20-batch-va-scheduling-patternlari.md#2029-idempotent-batch-idempotent-batch) — 20.29
+- [Idempotent Consumer](14-microservices-patternlari.md#1418-idempotent-istemolchi-idempotent-consumer) — 14.18
+- [Idempotent Receiver](16-enterprise-integration-patterns-ii.md#1616-idempotent-qabul-qiluvchi-idempotent-receiver) — 16.16
+- [Idempotent Receiver store](10-malumotlarni-boshqarish-va-taqsimlash.md#1015-inbox-idempotent-receiver-store) — 10.15
+- [Identity Field](09-malumotlarga-kirish-va-orm-patternlari.md#910-identifikator-maydoni-identity-field) — 9.10
+- [Identity Map — first-level cache](09-malumotlarga-kirish-va-orm-patternlari.md#98-identifikatsiya-xaritasi-identity-map--first-level-cache) — 9.8
+- [Image Builder](29-kubernetes-va-cloud-native-patternlar.md#2914-image-quruvchi-image-builder) — 29.14
+- [Immutable Configuration](29-kubernetes-va-cloud-native-patternlar.md#2916-ozgarmas-konfiguratsiya-immutable-configuration) — 29.16
+- [Immutable Infrastructure](22-deployment-va-operatsion-patternlar.md#223-ozgarmas-infratuzilma-immutable-infrastructure) — 22.3
+- [Immutable Object](04-concurrency-patternlari.md#416-ozgarmas-obyekt-immutable-object) — 4.16
+- [Immutable Object & Immutable Collections](24-zamonaviy-java-va-funksional-patternlar.md#247-immutable-obyekt-va-immutable-kolleksiyalar-immutable-object--immutable-collections) — 24.7
+- [Implicit Lock](09-malumotlarga-kirish-va-orm-patternlari.md#926-yashirin-qulf-implicit-lock) — 9.26
+- [Improper Instantiation](25-anti-patternlar.md#2563-notogri-obyekt-yaratish-improper-instantiation) — 25.63
+- [Incremental Rollout & Rollback of a Migration](27-monolitdan-microservicega-migratsiya.md#2722-migratsiyani-bosqichma-bosqich-joriy-etish-va-qaytarish-incremental-rollout--rollback-of-a-migration) — 27.22
+- [Index Table](10-malumotlarni-boshqarish-va-taqsimlash.md#1019-indeks-jadvali-index-table) — 10.19
+- [Indirection](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2613-vositachilik-indirection) — 26.13
+- [Infrastructure as Code](22-deployment-va-operatsion-patternlar.md#224-infratuzilma-kod-sifatida-infrastructure-as-code) — 22.4
+- [Inheritance Mappers](09-malumotlarga-kirish-va-orm-patternlari.md#919-meros-mapperlari-inheritance-mappers) — 9.19
+- [Init Container](22-deployment-va-operatsion-patternlar.md#2218-init-konteyner-init-container) — 22.18
+- [Initialization-on-Demand Holder Idiom](01-yaratuvchi-patternlar.md#15-talab-boyicha-initsializatsiya-holder-idiomasi-initialization-on-demand-holder-idiom) — 1.5
+- [Inner-Platform Effect](25-anti-patternlar.md#2524-ichki-platforma-effekti-inner-platform-effect) — 25.24
+- [Input Validation / Output Encoding](18-xavfsizlik-patternlari.md#1835-kirish-malumotini-tekshirish--chiqishni-kodlash-input-validation--output-encoding) — 18.35
+- [Intention-Revealing Interfaces](13-domain-driven-design-patternlari.md#1327-niyatni-ochib-beruvchi-interfeyslar-intention-revealing-interfaces) — 13.27
+- [Intercepting Filter — Filter, HandlerInterceptor](06-web-va-taqdimot-qatlami-patternlari.md#65-tutib-qoluvchi-filtr-intercepting-filter--filter-handlerinterceptor) — 6.5
+- [Interface Bloat](25-anti-patternlar.md#2516-interfeys-shishishi-interface-bloat) — 25.16
+- [Interface default methods / Mixin, Trait](24-zamonaviy-java-va-funksional-patternlar.md#2421-interfeys-default-metodlari-interface-default-methods--mixin-trait) — 24.21
+- [Interface Segregation Principle](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#264-interfeys-ajratish-printsipi-interface-segregation-principle) — 26.4
+- [Interpreter](03-xulq-atvor-patternlari.md#33-interpretator-interpreter) — 3.3
+- [Invalid Message Channel](15-enterprise-integration-patterns-i-xabarlar.md#1510-notogri-xabar-kanali-invalid-message-channel) — 15.10
+- [Invariants](13-domain-driven-design-patternlari.md#1324-invariantlar-invariants) — 13.24
+- [IoC Container — BeanFactory / ApplicationContext](05-spring-core-ichidagi-patternlar-xaritasi.md#51-ioc-konteyner-ioc-container--beanfactory--applicationcontext) — 5.1
+- [ItemReader / ItemProcessor / ItemWriter](20-batch-va-scheduling-patternlari.md#203-itemreader--itemprocessor--itemwriter-itemreader--itemprocessor--itemwriter) — 20.3
+- [Iterator](03-xulq-atvor-patternlari.md#34-iterator-iterator) — 3.4
+
+**J**
+
+- [Java Platform Module System — JPMS](24-zamonaviy-java-va-funksional-patternlar.md#2432-java-platforma-modullar-tizimi-java-platform-module-system--jpms) — 24.32
+- [java.util.concurrent.Flow](19-reactive-patternlar.md#1923-javautilconcurrentflow) — 19.23
+- [Javoblar sifatini baholash (Model Evaluation (Evaluator))](30-spring-ai-va-llm-integratsiya-patternlari.md#3011-javoblar-sifatini-baholash-model-evaluation-evaluator) — 30.11
+- [JMS va AMQP moslashuvi (JMS / AMQP mapping (Spring JMS, Spring AMQP))](16-enterprise-integration-patterns-ii.md#1638-jms-va-amqp-moslashuvi-jms--amqp-mapping-spring-jms-spring-amqp) — 16.38
+- [Job / Step / Flow](20-batch-va-scheduling-patternlari.md#204-job--step--flow-job--step--flow) — 20.4
+- [Job Parameters & Job Identity](20-batch-va-scheduling-patternlari.md#2010-job-parametrlari-va-job-identifikatori-job-parameters--job-identity) — 20.10
+- [JobRepository & Restartability](20-batch-va-scheduling-patternlari.md#205-jobrepository-va-restart-imkoniyati-jobrepository--restartability) — 20.5
+- [JVM Container Ergonomics](22-deployment-va-operatsion-patternlar.md#2229-jvmning-container-ergonomikasi-jvm-container-ergonomics) — 22.29
+
+**K**
+
+- [Kafka: Compacted topic](16-enterprise-integration-patterns-ii.md#1632-compacted-topic-kafka-compacted-topic) — 16.32
+- [Kafka: Consumer Group](16-enterprise-integration-patterns-ii.md#1630-kafka-consumer-group-kafka-consumer-group) — 16.30
+- [Kafka: Exactly-once / transactional producer](16-enterprise-integration-patterns-ii.md#1633-exactly-once-va-tranzaksion-producer-kafka-exactly-once--transactional-producer) — 16.33
+- [Kafka: Partition key ordering](16-enterprise-integration-patterns-ii.md#1631-partition-kaliti-boyicha-tartib-kafka-partition-key-ordering) — 16.31
+- [Kappa Architecture](28-taqsimlangan-malumot-replikatsiya-va.md#2826-kappa-arxitekturasi-kappa-architecture) — 28.26
+- [Katta Loy To'pi (Big Ball of Mud) — anti-pattern](12-arxitektura-uslublari.md#1223-katta-loy-topi-big-ball-of-mud--anti-pattern) — 12.23
+- [Kerak Bo'lmaydi Printsipi (You Aren't Gonna Need It (YAGNI))](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2621-kerak-bolmaydi-printsipi-you-arent-gonna-need-it-yagni) — 26.21
+- [Keyset / Cursor Pagination](07-api-dizayn-patternlari.md#77-keyset--kursor-pagination-keyset--cursor-pagination) — 7.7
+- [Konsensus (Consensus (Raft / Paxos))](28-taqsimlangan-malumot-replikatsiya-va.md#2823-konsensus-consensus-raft--paxos) — 28.23
+- [Kontekstni tarqatish (Context propagation (MDC, ThreadLocal, Reactor))](21-observability-patternlari.md#2117-kontekstni-tarqatish-context-propagation-mdc-threadlocal-reactor) — 21.17
+
+**L**
+
+- [Lambda / Kappa Architecture](12-arxitektura-uslublari.md#1227-lambda--kappa-arxitekturasi-lambda--kappa-architecture) — 12.27
+- [Lambda Architecture](28-taqsimlangan-malumot-replikatsiya-va.md#2825-lambda-arxitekturasi-lambda-architecture) — 28.25
+- [Last Write Wins](28-taqsimlangan-malumot-replikatsiya-va.md#2811-oxirgi-yozuv-galaba-qozonadi-last-write-wins) — 28.11
+- [Lava Flow](25-anti-patternlar.md#253-lava-oqimi-lava-flow) — 25.3
+- [Law of Demeter](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2615-demeter-qonuni-law-of-demeter) — 26.15
+- [Layer Supertype](02-strukturaviy-patternlar.md#216-qatlam-ustki-turi-layer-supertype) — 2.16
+- [Layer Test](23-testing-patternlari.md#2358-qatlam-testi-layer-test) — 23.58
+- [Layered / N-tier Architecture](12-arxitektura-uslublari.md#121-qatlamli-arxitektura-layered--n-tier-architecture) — 12.1
+- [Lazy evaluation / Supplier](24-zamonaviy-java-va-funksional-patternlar.md#2424-kechiktirilgan-hisoblash-lazy-evaluation--supplier) — 24.24
+- [Lazy Initialization](01-yaratuvchi-patternlar.md#14-kechiktirilgan-initsializatsiya-lazy-initialization) — 1.4
+- [Lazy Load — proxy, ghost, value holder](09-malumotlarga-kirish-va-orm-patternlari.md#99-kechiktirilgan-yuklash-lazy-load--proxy-ghost-value-holder) — 9.9
+- [Lazy Setup](23-testing-patternlari.md#2353-dangasa-sozlash-lazy-setup) — 23.53
+- [LazyInitializationException Outside Transaction](25-anti-patternlar.md#2552-tranzaksiyadan-tashqarida-lazyinitializationexception-lazyinitializationexception-outside-transaction) — 25.52
+- [Leader Election](17-resilience-va-cloud-dizayn-patternlari.md#1720-yetakchini-saylash-leader-election) — 17.20
+- [Leader Election for Jobs](20-batch-va-scheduling-patternlari.md#2024-joblar-uchun-leader-election-leader-election-for-jobs) — 20.24
+- [Leader-based Replication](28-taqsimlangan-malumot-replikatsiya-va.md#282-leader-asosidagi-replikatsiya-leader-based-replication) — 28.2
+- [Leader/Followers](04-concurrency-patternlari.md#49-yetakchiizdoshlar-leaderfollowers) — 4.9
+- [Leaderless Replication](28-taqsimlangan-malumot-replikatsiya-va.md#284-leadersiz-replikatsiya-leaderless-replication) — 28.4
+- [Leaky Abstraction](25-anti-patternlar.md#2515-oqib-chiquvchi-abstraksiya-leaky-abstraction) — 25.15
+- [Least Privilege](18-xavfsizlik-patternlari.md#1837-eng-kam-imtiyoz-least-privilege) — 18.37
+- [Let It Crash](17-resilience-va-cloud-dizayn-patternlari.md#1713-qulashiga-yol-ber-let-it-crash) — 17.13
+- [Lifecycle / SmartLifecycle](05-spring-core-ichidagi-patternlar-xaritasi.md#513-lifecycle-va-smartlifecycle-lifecycle--smartlifecycle) — 5.13
+- [Linearizability](28-taqsimlangan-malumot-replikatsiya-va.md#2813-linearizatsiyalanganlik-linearizability) — 28.13
+- [Liskov Substitution Principle](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#263-liskov-almashtirish-printsipi-liskov-substitution-principle) — 26.3
+- [Listeners — JobExecutionListener, StepExecutionListener](20-batch-va-scheduling-patternlari.md#2012-listenerlar-listeners--jobexecutionlistener-stepexecutionlistener) — 20.12
+- [LocaleResolver / ThemeResolver](06-web-va-taqdimot-qatlami-patternlari.md#629-lokal-va-tema-aniqlovchilar-localeresolver--themeresolver) — 6.29
+- [Lock Striping](04-concurrency-patternlari.md#420-locklarni-bolish-lock-striping) — 4.20
+- [Log Aggregation](21-observability-patternlari.md#211-loglarni-markazlashtirish-log-aggregation) — 21.1
+- [Log Compaction](16-enterprise-integration-patterns-ii.md#1639-log-siqilishi-log-compaction) — 16.39
+- [Log darajasini ish vaqtida o'zgartirish (Runtime log level change (Actuator loggers))](21-observability-patternlari.md#2119-log-darajasini-ish-vaqtida-ozgartirish-runtime-log-level-change-actuator-loggers) — 21.19
+- [Log Deployments and Changes](21-observability-patternlari.md#2112-deploy-va-ozgarishlarni-qayd-etish-log-deployments-and-changes) — 21.12
+- [Logging Sensitive Data](25-anti-patternlar.md#2547-sezgir-malumotni-logga-yozish-logging-sensitive-data) — 25.47
+- [Long Parameter List](25-anti-patternlar.md#2522-uzun-parametrlar-royxati-long-parameter-list) — 25.22
+- [Long Polling](07-api-dizayn-patternlari.md#716-uzoq-polling-long-polling) — 7.16
+
+**M**
+
+- [Ma'lumot egasi (Information Expert (GRASP))](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#266-malumot-egasi-information-expert-grasp) — 26.6
+- [Magic Numbers / Strings](25-anti-patternlar.md#258-sehrli-sonlar-va-satrlar-magic-numbers--strings) — 25.8
+- [Managed Lifecycle](29-kubernetes-va-cloud-native-patternlar.md#293-boshqariladigan-hayot-sikli-managed-lifecycle) — 29.3
+- [Mapper — MapStruct, ModelMapper](08-biznes-logika-va-service-qatlam-patternlari.md#814-mapper-mapper--mapstruct-modelmapper) — 8.14
+- [Marker Interface](02-strukturaviy-patternlar.md#28-marker-interfeys-marker-interface) — 2.8
+- [Materialized View](10-malumotlarni-boshqarish-va-taqsimlash.md#1018-materiallashtirilgan-korinish-materialized-view) — 10.18
+- [Mediator](03-xulq-atvor-patternlari.md#35-vositachi-mediator) — 3.5
+- [Memento](03-xulq-atvor-patternlari.md#36-memento-memento) — 3.6
+- [Memoization](11-keshlash-patternlari.md#1117-memoizatsiya-memoization) — 11.17
+- [Memoization](24-zamonaviy-java-va-funksional-patternlar.md#2423-memoizatsiya-memoization) — 24.23
+- [Message](15-enterprise-integration-patterns-i-xabarlar.md#152-xabar-message) — 15.2
+- [Message Broker](15-enterprise-integration-patterns-i-xabarlar.md#1536-xabar-brokeri-message-broker) — 15.36
+- [Message Bus](15-enterprise-integration-patterns-i-xabarlar.md#1515-xabar-sahnasi--message-bus-message-bus) — 15.15
+- [Message Channel](15-enterprise-integration-patterns-i-xabarlar.md#151-xabar-kanali-message-channel) — 15.1
+- [Message Dispatcher](16-enterprise-integration-patterns-ii.md#1613-xabar-dispetcheri-message-dispatcher) — 16.13
+- [Message Endpoint](15-enterprise-integration-patterns-i-xabarlar.md#156-xabar-endpointi-message-endpoint) — 15.6
+- [Message Expiration](15-enterprise-integration-patterns-i-xabarlar.md#1523-xabar-amal-qilish-muddati-message-expiration) — 15.23
+- [Message Filter](15-enterprise-integration-patterns-i-xabarlar.md#1526-xabar-filtri-message-filter) — 15.26
+- [Message History](16-enterprise-integration-patterns-ii.md#1621-xabar-tarixi-message-history) — 16.21
+- [Message Router](15-enterprise-integration-patterns-i-xabarlar.md#154-xabar-marshrutlagich-message-router) — 15.4
+- [Message Sequence](15-enterprise-integration-patterns-i-xabarlar.md#1522-xabarlar-ketma-ketligi-message-sequence) — 15.22
+- [Message Store](16-enterprise-integration-patterns-ii.md#1622-xabar-ombori-message-store) — 16.22
+- [Message Translator](15-enterprise-integration-patterns-i-xabarlar.md#155-xabar-tarjimoni-message-translator) — 15.5
+- [MessageSource / i18n](05-spring-core-ichidagi-patternlar-xaritasi.md#530-xabar-manbasi-va-xalqarolashtirish-messagesource--i18n) — 5.30
+- [Messaging](14-microservices-patternlari.md#1416-xabar-almashish-messaging) — 14.16
+- [Messaging Bridge](15-enterprise-integration-patterns-i-xabarlar.md#1514-xabar-koprigi-messaging-bridge) — 15.14
+- [Messaging Gateway](16-enterprise-integration-patterns-ii.md#167-messaging-shlyuzi-messaging-gateway) — 16.7
+- [Messaging Mapper](16-enterprise-integration-patterns-ii.md#168-messaging-mapperi-messaging-mapper) — 16.8
+- [Meta-annotations / Composed Annotations](05-spring-core-ichidagi-patternlar-xaritasi.md#538-meta-annotatsiyalar-va-kompozit-annotatsiyalar-meta-annotations--composed-annotations) — 5.38
+- [Metadata Mapping](09-malumotlarga-kirish-va-orm-patternlari.md#920-metamalumot-maplash-metadata-mapping) — 9.20
+- [Method Security — @PreAuthorize, @PostAuthorize](18-xavfsizlik-patternlari.md#1810-metod-darajasidagi-xavfsizlik-method-security--preauthorize-postauthorize) — 18.10
+- [Metrics tag cardinality control](21-observability-patternlari.md#2120-metrika-teglari-kardinalligini-nazorat-qilish-metrics-tag-cardinality-control) — 21.20
+- [Microkernel / Plugin Architecture](12-arxitektura-uslublari.md#127-mikroyadro--plugin-arxitekturasi-microkernel--plugin-architecture) — 12.7
+- [Micrometer Observation API](21-observability-patternlari.md#2116-micrometer-observation-api-micrometer-observation-api) — 21.16
+- [Microservice Chassis](14-microservices-patternlari.md#1429-microservice-shassi-microservice-chassis) — 14.29
+- [Microservices](12-arxitektura-uslublari.md#1212-mikroservislar-microservices) — 12.12
+- [Mikro-Frontendlar (Micro-frontends) — eslatib o'tish](12-arxitektura-uslublari.md#1233-mikro-frontendlar-micro-frontends--eslatib-otish) — 12.33
+- [Minimize Mutability](24-zamonaviy-java-va-funksional-patternlar.md#2427-mutabilligni-minimallashtirish-minimize-mutability) — 24.27
+- [Missing @Version](25-anti-patternlar.md#2544-yoq-version-missing-version) — 25.44
+- [Mixin / Trait via default methods](02-strukturaviy-patternlar.md#215-mixin--trait-default-metodlar-orqali-mixin--trait-via-default-methods) — 2.15
+- [Mock Object](23-testing-patternlari.md#2343-mock-obyekt-mock-object) — 23.43
+- [Model Context Protocol mijozi va serveri (Model Context Protocol (MCP) client & server)](30-spring-ai-va-llm-integratsiya-patternlari.md#3019-model-context-protocol-mijozi-va-serveri-model-context-protocol-mcp-client--server) — 30.19
+- [Model-View-Controller, MVC](06-web-va-taqdimot-qatlami-patternlari.md#61-model-korinish-boshqaruvchi-model-view-controller-mvc) — 6.1
+- [Model-View-Presenter, MVP](06-web-va-taqdimot-qatlami-patternlari.md#614-model-korinish-taqdimotchi-model-view-presenter-mvp) — 6.14
+- [Model-View-ViewModel, MVVM](06-web-va-taqdimot-qatlami-patternlari.md#615-model-korinish-korinishmodeli-model-view-viewmodel-mvvm) — 6.15
+- [Modular Monolith / Spring Modulith](12-arxitektura-uslublari.md#126-modulli-monolit-modular-monolith--spring-modulith) — 12.6
+- [Module](02-strukturaviy-patternlar.md#29-modul-module) — 2.9
+- [Module — DDD view](13-domain-driven-design-patternlari.md#1321-modul-module--ddd-view) — 13.21
+- [Monitor Object](04-concurrency-patternlari.md#45-monitor-obyekti-monitor-object) — 4.5
+- [Mono / Flux](19-reactive-patternlar.md#195-mono-va-flux-mono--flux) — 19.5
+- [Monolith](12-arxitektura-uslublari.md#1222-monolit-monolith) — 12.22
+- [Monolith as Data Access Layer](27-monolitdan-microservicega-migratsiya.md#2718-monolit-malumotga-kirish-qatlami-sifatida-monolith-as-data-access-layer) — 27.18
+- [Monolithic Persistence](25-anti-patternlar.md#2564-monolit-saqlash-qatlami-monolithic-persistence) — 25.64
+- [Monolitik arxitektura va mikroservis arxitekturasi qarori (Monolithic Architecture vs Microservice Architecture (decision))](14-microservices-patternlari.md#141-monolitik-arxitektura-va-mikroservis-arxitekturasi-qarori-monolithic-architecture-vs-microservice-architecture-decision) — 14.1
+- [Monostate](01-yaratuvchi-patternlar.md#13-yagona-holat-monostate) — 1.3
+- [Monotonic Reads](28-taqsimlangan-malumot-replikatsiya-va.md#2816-monoton-oqishlar-monotonic-reads) — 28.16
+- [Move Foreign-Key Relationship to Code](27-monolitdan-microservicega-migratsiya.md#2715-tashqi-kalit-munosabatini-kodga-kochirish-move-foreign-key-relationship-to-code) — 27.15
+- [Multi-Factor Authentication](18-xavfsizlik-patternlari.md#1827-kop-faktorli-autentifikatsiya-multi-factor-authentication) — 18.27
+- [Multi-Leader Replication](28-taqsimlangan-malumot-replikatsiya-va.md#283-kop-leaderli-replikatsiya-multi-leader-replication) — 28.3
+- [Multi-model routing & fallback](30-spring-ai-va-llm-integratsiya-patternlari.md#3017-kop-modelli-yonaltirish-va-fallback-multi-model-routing--fallback) — 30.17
+- [Multi-tenancy: database per tenant](10-malumotlarni-boshqarish-va-taqsimlash.md#108-kop-tenantlilik-tenant-boshiga-baza-multi-tenancy-database-per-tenant) — 10.8
+- [Multi-tenancy: schema per tenant](10-malumotlarni-boshqarish-va-taqsimlash.md#107-kop-tenantlilik-tenant-boshiga-schema-multi-tenancy-schema-per-tenant) — 10.7
+- [Multi-tenancy: shared schema discriminator](10-malumotlarni-boshqarish-va-taqsimlash.md#106-kop-tenantlilik-umumiy-schema-diskriminator-multi-tenancy-shared-schema-discriminator) — 10.6
+- [Multi-Tenant Security](18-xavfsizlik-patternlari.md#1843-multi-tenant-xavfsizlik-multi-tenant-security) — 18.43
+- [Multipart Handling](06-web-va-taqdimot-qatlami-patternlari.md#631-multipart-fayl-yuklash-ishlovi-multipart-handling) — 6.31
+- [Multiple Service Instances per Host](22-deployment-va-operatsion-patternlar.md#2222-bitta-hostda-bir-nechta-service-instance-multiple-service-instances-per-host) — 22.22
+- [Multischema Storage](27-monolitdan-microservicega-migratsiya.md#2719-kop-sxemali-saqlash-multischema-storage) — 27.19
+- [Multiton](01-yaratuvchi-patternlar.md#12-kalit-boyicha-yagona-nusxalar-multiton) — 1.2
+- [Munosabatga asoslangan kirish nazorati (Relationship-Based Access Control (ReBAC))](18-xavfsizlik-patternlari.md#1846-munosabatga-asoslangan-kirish-nazorati-relationship-based-access-control-rebac) — 18.46
+- [Mustahkamlik Printsipi (Robustness Principle (Postel's Law))](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2627-mustahkamlik-printsipi-robustness-principle-postels-law) — 26.27
+- [Mutable State in Singleton Beans](25-anti-patternlar.md#2548-singleton-bean-ichida-mutable-state-mutable-state-in-singleton-beans) — 25.48
+- [Mutation Testing — PIT](23-testing-patternlari.md#2310-mutatsion-testlash-mutation-testing--pit) — 23.10
+- [Mutual TLS](18-xavfsizlik-patternlari.md#1832-mtls-mutual-tls) — 18.32
+
+**N**
+
+- [N+1 Problem Solutions](09-malumotlarga-kirish-va-orm-patternlari.md#927-n1-muammosi-yechimlari-n1-problem-solutions) — 9.27
+- [N+1 Queries](25-anti-patternlar.md#2543-n1-sorovlar-n1-queries) — 25.43
+- [Namuna olish (Sampling (head, tail))](21-observability-patternlari.md#2115-namuna-olish-sampling-head-tail) — 21.15
+- [Nano-service'lar (Nano-services) — antipattern](14-microservices-patternlari.md#1438-nano-servicelar-nano-services--antipattern) — 14.38
+- [Nano-services](25-anti-patternlar.md#2558-nano-servislar-nano-services) — 25.58
+- [Natural vs Surrogate Key](09-malumotlarga-kirish-va-orm-patternlari.md#931-natural-va-surrogate-kalit-natural-vs-surrogate-key) — 9.31
+- [Near Cache / Multi-level L1-L2 Cache](11-keshlash-patternlari.md#117-yaqin-kesh--kop-qatlamli-kesh-near-cache--multi-level-l1-l2-cache) — 11.7
+- [Negative Caching](11-keshlash-patternlari.md#1118-salbiy-keshlash-negative-caching) — 11.18
+- [No Caching](25-anti-patternlar.md#2565-cachening-yoqligi-no-caching) — 25.65
+- [Noisy Neighbor](25-anti-patternlar.md#2566-shovqinli-qoshni-noisy-neighbor) — 25.66
+- [Non-blocking I/O](19-reactive-patternlar.md#194-bloklanmaydigan-io-non-blocking-io) — 19.4
+- [Normalizer](16-enterprise-integration-patterns-ii.md#165-normalizator-normalizer) — 16.5
+- [Not Invented Here](25-anti-patternlar.md#2580-bu-yerda-oylab-topilmagan-not-invented-here) — 25.80
+- [Notification — validatsiya xatolarini yig'ish](08-biznes-logika-va-service-qatlam-patternlari.md#818-notification-notification--validatsiya-xatolarini-yigish) — 8.18
+- [Null Object](03-xulq-atvor-patternlari.md#312-bosh-obyekt-null-object) — 3.12
+- [Null Object Usage in Spring](05-spring-core-ichidagi-patternlar-xaritasi.md#540-springda-null-object-qollanishi-null-object-usage-in-spring) — 5.40
+- [Null-safety / JSpecify, Objects.requireNonNull](24-zamonaviy-java-va-funksional-patternlar.md#2425-null-xavfsizlik-null-safety--jspecify-objectsrequirenonnull) — 24.25
+
+**O**
+
+- [O'zini Takrorlamaslik (Don't Repeat Yourself (DRY))](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2619-ozini-takrorlamaslik-dont-repeat-yourself-dry) — 26.19
+- [OAuth2 Authorization Code + PKCE](18-xavfsizlik-patternlari.md#1812-avtorizatsiya-kodi--pkce-oauth2-authorization-code--pkce) — 18.12
+- [OAuth2 Client Credentials](18-xavfsizlik-patternlari.md#1813-client-credentials-oqimi-oauth2-client-credentials) — 18.13
+- [Object Mother](23-testing-patternlari.md#236-obyekt-ona-object-mother) — 23.6
+- [Object Pool](01-yaratuvchi-patternlar.md#112-obyektlar-hovuzi-object-pool) — 1.12
+- [ObjectProvider / Lazy Lookup](05-spring-core-ichidagi-patternlar-xaritasi.md#54-objectprovider-va-lazy-lookup-objectprovider--lazy-lookup) — 5.4
+- [Observability for LLM calls](30-spring-ai-va-llm-integratsiya-patternlari.md#3012-llm-chaqiruvlar-observabilitysi-observability-for-llm-calls) — 30.12
+- [Observable / Reactive Extensions Heritage](19-reactive-patternlar.md#1924-observable--reactive-extensions-merosi-observable--reactive-extensions-heritage) — 19.24
+- [Observer](03-xulq-atvor-patternlari.md#37-kuzatuvchi-observer) — 3.7
+- [Oddiy Tut (Keep It Simple (KISS))](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2620-oddiy-tut-keep-it-simple-kiss) — 26.20
+- [Offset Pagination](07-api-dizayn-patternlari.md#76-offset-pagination-offset-pagination) — 7.6
+- [One-Time Token Login / Magic Link](18-xavfsizlik-patternlari.md#1829-bir-martalik-token-bilan-kirish-one-time-token-login--magic-link) — 18.29
+- [Onion Architecture](12-arxitektura-uslublari.md#124-piyoz-arxitekturasi-onion-architecture) — 12.4
+- [Open Host Service](13-domain-driven-design-patternlari.md#138-ochiq-xizmat-interfeysi-open-host-service) — 13.8
+- [Open Session in View](09-malumotlarga-kirish-va-orm-patternlari.md#928-view-ichida-ochiq-sessiya--antipattern-open-session-in-view) — 9.28
+- [Open Session in View — Anti View](25-anti-patternlar.md#2532-view-ichida-ochiq-sessiya-open-session-in-view--anti-view) — 25.32
+- [Open/Closed Principle](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#262-ochiqyopiq-printsipi-openclosed-principle) — 26.2
+- [OpenID Connect](18-xavfsizlik-patternlari.md#1818-openid-connect-openid-connect) — 18.18
+- [OpenTelemetry Collector (OpenTelemetry Collector (agent, sidecar))](21-observability-patternlari.md#2124-opentelemetry-collector-opentelemetry-collector-agent-sidecar) — 21.24
+- [Operator](29-kubernetes-va-cloud-native-patternlar.md#2920-operator-operator) — 29.20
+- [Operator Composition](19-reactive-patternlar.md#199-operatorlar-kompozitsiyasi-operator-composition) — 19.9
+- [Optimistic Offline Lock](09-malumotlarga-kirish-va-orm-patternlari.md#923-optimistik-oflayn-qulf-optimistic-offline-lock) — 9.23
+- [Optional as Maybe Monad](24-zamonaviy-java-va-funksional-patternlar.md#245-optional-maybe-monad-sifatida-optional-as-maybe-monad) — 24.5
+- [Orchestrator vs Facade](08-biznes-logika-va-service-qatlam-patternlari.md#825-orkestrator-vs-fasad-orchestrator-vs-facade) — 8.25
+- [Ordered / @Order](05-spring-core-ichidagi-patternlar-xaritasi.md#515-tartiblash-va-ustuvorlik-ordered--order) — 5.15
+- [Over-broad Component Scanning](25-anti-patternlar.md#2538-juda-keng-component-scanning-over-broad-component-scanning) — 25.38
+
+**P**
+
+- [Package-by-feature vs Package-by-layer](12-arxitektura-uslublari.md#1228-feature-boyicha-vs-qatlam-boyicha-paketlash-package-by-feature-vs-package-by-layer) — 12.28
+- [Page Controller](06-web-va-taqdimot-qatlami-patternlari.md#63-sahifa-boshqaruvchisi-page-controller) — 6.3
+- [Page Object](23-testing-patternlari.md#2326-sahifa-obyekti-page-object) — 23.26
+- [Paging Reader vs Cursor Reader](20-batch-va-scheduling-patternlari.md#2015-paging-reader-va-cursor-reader-paging-reader-vs-cursor-reader) — 20.15
+- [Parallel Run](27-monolitdan-microservicega-migratsiya.md#274-parallel-ishga-tushirish-parallel-run) — 27.4
+- [Parallel Steps / Multi-threaded Step](20-batch-va-scheduling-patternlari.md#209-parallel-qadamlar-va-kop-threadli-qadam-parallel-steps--multi-threaded-step) — 20.9
+- [Parameterized Tests](23-testing-patternlari.md#238-parametrlangan-testlar-parameterized-tests) — 23.8
+- [Partitioning — local, remote](20-batch-va-scheduling-patternlari.md#207-partitsiyalash-partitioning--local-remote) — 20.7
+- [Partnership](13-domain-driven-design-patternlari.md#1311-hamkorlik-partnership) — 13.11
+- [Passkeys / WebAuthn](18-xavfsizlik-patternlari.md#1828-passkeylar--webauthn-passkeys--webauthn) — 18.28
+- [Password hashing — DelegatingPasswordEncoder, upgradable encoding](18-xavfsizlik-patternlari.md#187-parol-hashlash-va-yangilanuvchan-kodlash-password-hashing--delegatingpasswordencoder-upgradable-encoding) — 18.7
+- [Past bog'liqlik (Low Coupling (GRASP))](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#269-past-bogliqlik-low-coupling-grasp) — 26.9
+- [Peer-to-Peer](12-arxitektura-uslublari.md#1219-teng-tengga-peer-to-peer) — 12.19
+- [Performance / Load Testing](23-testing-patternlari.md#2333-unumdorlik-va-yuklama-testlari-performance--load-testing) — 23.33
+- [Periodic Job](29-kubernetes-va-cloud-native-patternlar.md#296-davriy-ish-periodic-job) — 29.6
+- [Pessimistic Offline Lock](09-malumotlarga-kirish-va-orm-patternlari.md#924-pessimistik-oflayn-qulf-pessimistic-offline-lock) — 9.24
+- [Phantom Read](28-taqsimlangan-malumot-replikatsiya-va.md#2821-fantom-oqish-phantom-read) — 28.21
+- [Pipeline (obyekt darajasida) (Pipeline (object-level))](03-xulq-atvor-patternlari.md#317-pipeline-obyekt-darajasida-pipeline-object-level) — 3.17
+- [Pipes and Filters](12-arxitektura-uslublari.md#128-quvurlar-va-filtrlar-pipes-and-filters) — 12.8
+- [Pipes and Filters](15-enterprise-integration-patterns-i-xabarlar.md#153-quvurlar-va-filtrlar-pipes-and-filters) — 15.3
+- [Plugin Selection via @Qualifier](08-biznes-logika-va-service-qatlam-patternlari.md#822-plugin-tanlash-qualifier-orqali-plugin-selection-via-qualifier) — 8.22
+- [Pod as Deployment Unit](29-kubernetes-va-cloud-native-patternlar.md#2921-pod--deploy-birligi-sifatida-pod-as-deployment-unit) — 29.21
+- [Point-to-Point Channel](15-enterprise-integration-patterns-i-xabarlar.md#157-nuqta-nuqta-kanali-point-to-point-channel) — 15.7
+- [Policy](13-domain-driven-design-patternlari.md#1323-siyosat-policy) — 13.23
+- [Policy Object](08-biznes-logika-va-service-qatlam-patternlari.md#820-siyosat-obyekti-policy-object) — 8.20
+- [Polling Consumer](16-enterprise-integration-patterns-ii.md#1610-sorovchi-istemolchi-polling-consumer) — 16.10
+- [Polling Publisher](14-microservices-patternlari.md#1414-polling-publisher-polling-publisher) — 14.14
+- [Poltergeist](25-anti-patternlar.md#2513-arvoh-obyekt-poltergeist) — 25.13
+- [Polyglot Persistence](10-malumotlarni-boshqarish-va-taqsimlash.md#1011-poliglot-persistence-polyglot-persistence) — 10.11
+- [Polymorphism](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2611-polimorfizm-polymorphism) — 26.11
+- [Post/Redirect/Get, PRG](06-web-va-taqdimot-qatlami-patternlari.md#616-postredirectget-postredirectget-prg) — 6.16
+- [Prebuilt Fixture](23-testing-patternlari.md#2352-oldindan-qurilgan-fixture-prebuilt-fixture) — 23.52
+- [Predictable Demands](29-kubernetes-va-cloud-native-patternlar.md#291-oldindan-aytib-beriladigan-talablar-predictable-demands) — 29.1
+- [Prefer Interfaces to Abstract Classes](24-zamonaviy-java-va-funksional-patternlar.md#2429-abstrakt-sinflardan-kora-interfeyslarni-afzal-bilish-prefer-interfaces-to-abstract-classes) — 24.29
+- [Premature Optimization](25-anti-patternlar.md#2510-vaqtidan-oldin-optimizatsiya-premature-optimization) — 25.10
+- [Primitive Obsession](25-anti-patternlar.md#2519-primitivlarga-berilish-primitive-obsession) — 25.19
+- [Principle of Least Astonishment](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2622-eng-kam-hayratlanish-printsipi-principle-of-least-astonishment) — 26.22
+- [Priority Queue](17-resilience-va-cloud-dizayn-patternlari.md#1719-prioritetli-navbat-priority-queue) — 17.19
+- [Private Class Data](02-strukturaviy-patternlar.md#210-yopiq-sinf-malumotlari-private-class-data) — 2.10
+- [Proactor](04-concurrency-patternlari.md#47-proaktor-proactor) — 4.7
+- [Problem Details, RFC 9457](07-api-dizayn-patternlari.md#710-problem-details--standart-xato-formati-problem-details-rfc-9457) — 7.10
+- [Process Indicator](20-batch-va-scheduling-patternlari.md#2018-process-indikatori-process-indicator) — 20.18
+- [Process Manager](15-enterprise-integration-patterns-i-xabarlar.md#1535-jarayon-menejeri-process-manager) — 15.35
+- [Producer-Consumer](04-concurrency-patternlari.md#42-ishlab-chiqaruvchi-istemolchi-producer-consumer) — 4.2
+- [Profile Sprawl](25-anti-patternlar.md#2539-profile-tarqoqligi-profile-sprawl) — 25.39
+- [Profiles](05-spring-core-ichidagi-patternlar-xaritasi.md#523-profillar-profiles) — 5.23
+- [Program to an Interface](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2625-interfeysga-qarab-programmalash-program-to-an-interface) — 26.25
+- [Prompt Injection defense](30-spring-ai-va-llm-integratsiya-patternlari.md#3015-prompt-injectiondan-himoya-prompt-injection-defense) — 30.15
+- [Prompt Template](30-spring-ai-va-llm-integratsiya-patternlari.md#302-prompt-shabloni-prompt-template) — 30.2
+- [Property Sprawl](25-anti-patternlar.md#2553-property-tarqoqligi-property-sprawl) — 25.53
+- [Property-Based Testing — jqwik](23-testing-patternlari.md#239-xususiyatga-asoslangan-testlash-property-based-testing--jqwik) — 23.9
+- [Protected Variations](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2614-himoyalangan-ozgarishlar-protected-variations) — 26.14
+- [Prototype](01-yaratuvchi-patternlar.md#111-prototip-prototype) — 1.11
+- [Provider / Supplier Injection](01-yaratuvchi-patternlar.md#115-provider--supplier-orqali-kiritish-provider--supplier-injection) — 1.15
+- [Proxy — static, JDK dynamic proxy, CGLIB](02-strukturaviy-patternlar.md#27-proxy-proxy--static-jdk-dynamic-proxy-cglib) — 2.7
+- [Publish-Subscribe Channel](15-enterprise-integration-patterns-i-xabarlar.md#158-elon-obuna-kanali-publish-subscribe-channel) — 15.8
+- [Published Language](13-domain-driven-design-patternlari.md#139-elon-qilingan-til-published-language) — 13.9
+- [Pul (Money (Value Object specialization))](13-domain-driven-design-patternlari.md#1335-pul-money-value-object-specialization) — 13.35
+- [Pure Fabrication](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2612-sof-fabrikatsiya-pure-fabrication) — 26.12
+
+**Q**
+
+- [Qayta urinish bo'roni (Retry Storm (anti view))](25-anti-patternlar.md#2561-qayta-urinish-boroni-retry-storm-anti-view) — 25.61
+- [Quartz Clustering](20-batch-va-scheduling-patternlari.md#2023-quartz-klasterlash-quartz-clustering) — 20.23
+- [Query Object](09-malumotlarga-kirish-va-orm-patternlari.md#921-sorov-obyekti-query-object) — 9.21
+- [Queue-Based Load Leveling](17-resilience-va-cloud-dizayn-patternlari.md#1718-queue-asosida-yukni-tekislash-queue-based-load-leveling) — 17.18
+- [Quorum Read/Write](28-taqsimlangan-malumot-replikatsiya-va.md#285-quorum-oqishyozish-quorum-readwrite) — 28.5
+
+**R**
+
+- [Railway Oriented Programming](24-zamonaviy-java-va-funksional-patternlar.md#2440-temir-yol-uslubidagi-dasturlash-railway-oriented-programming) — 24.40
+- [Rate Limiter](17-resilience-va-cloud-dizayn-patternlari.md#175-chastota-cheklovchi-rate-limiter) — 17.5
+- [Rate Limiting](07-api-dizayn-patternlari.md#713-sorov-tezligini-cheklash-rate-limiting) — 7.13
+- [Reactive Architecture](12-arxitektura-uslublari.md#1221-reaktiv-arxitektura-reactive-architecture) — 12.21
+- [Reactive Event Bus — Sinks](19-reactive-patternlar.md#1919-sinks-reactive-event-bus--sinks) — 19.19
+- [Reactive Manifesto Principles](19-reactive-patternlar.md#1922-reactive-manifesto-tamoyillari-reactive-manifesto-principles) — 19.22
+- [Reactive Repositories](19-reactive-patternlar.md#1911-reactive-repositorylar-reactive-repositories) — 19.11
+- [Reactive Security](19-reactive-patternlar.md#1915-reactive-security) — 19.15
+- [Reactive Streams](19-reactive-patternlar.md#191-reactive-streams-reactive-streams) — 19.1
+- [Reactive Transactions](19-reactive-patternlar.md#1916-reactive-tranzaksiyalar-reactive-transactions) — 19.16
+- [Reactive vs Virtual Threads Decision](19-reactive-patternlar.md#1921-reactive-va-virtual-threads-tanlovi-reactive-vs-virtual-threads-decision) — 19.21
+- [Reactor](04-concurrency-patternlari.md#46-reaktor-reactor) — 4.6
+- [Reactor Context & Context Propagation](19-reactive-patternlar.md#198-reactor-context-va-context-propagation-reactor-context--context-propagation) — 19.8
+- [reactor-kafka](19-reactive-patternlar.md#1920-reactive-kafka-reactor-kafka) — 19.20
+- [Read Repair](28-taqsimlangan-malumot-replikatsiya-va.md#287-oqishda-tuzatish-read-repair) — 28.7
+- [Read-only Transactions](09-malumotlarga-kirish-va-orm-patternlari.md#929-faqat-oqish-uchun-tranzaksiyalar-read-only-transactions) — 9.29
+- [Read-Through](11-keshlash-patternlari.md#112-oqish-orqali-read-through) — 11.2
+- [Read-Write Lock](04-concurrency-patternlari.md#410-oqish-yozish-locki-read-write-lock) — 4.10
+- [Read-Your-Writes Consistency](28-taqsimlangan-malumot-replikatsiya-va.md#2815-oz-yozuvingni-oqish-konsistentligi-read-your-writes-consistency) — 28.15
+- [Read/Write Splitting](10-malumotlarni-boshqarish-va-taqsimlash.md#1028-oqishyozishni-ajratish-readwrite-splitting) — 10.28
+- [Recipient List](15-enterprise-integration-patterns-i-xabarlar.md#1528-qabul-qiluvchilar-royxati-recipient-list) — 15.28
+- [Reconciliation Jobs](20-batch-va-scheduling-patternlari.md#2026-solishtirish-reconciliation-joblari-reconciliation-jobs) — 20.26
+- [Record Patterns](24-zamonaviy-java-va-funksional-patternlar.md#244-record-patternlar-record-patterns) — 24.4
+- [Record Set](09-malumotlarga-kirish-va-orm-patternlari.md#937-yozuvlar-toplami-record-set) — 9.37
+- [Records as Value Objects / DTOs](24-zamonaviy-java-va-funksional-patternlar.md#241-records-qiymat-obyekti-va-dto-sifatida-records-as-value-objects--dtos) — 24.1
+- [Recreate Deployment](22-deployment-va-operatsion-patternlar.md#229-qayta-yaratish-usuli-bilan-joylashtirish-recreate-deployment) — 22.9
+- [RED / USE / Four Golden Signals](21-observability-patternlari.md#217-red--use--tortta-oltin-signal-red--use--four-golden-signals) — 21.7
+- [Refresh Token Rotation](18-xavfsizlik-patternlari.md#1817-refresh-token-aylanishi-refresh-token-rotation) — 18.17
+- [Refresh-Ahead](11-keshlash-patternlari.md#116-oldindan-yangilash-refresh-ahead) — 11.6
+- [Registry](01-yaratuvchi-patternlar.md#117-reyestr-registry) — 1.17
+- [Reinventing the Wheel](25-anti-patternlar.md#2523-gildirakni-qaytadan-oylab-topish-reinventing-the-wheel) — 25.23
+- [Remember-Me](18-xavfsizlik-patternlari.md#1822-remember-me-remember-me) — 18.22
+- [Remote Chunking](20-batch-va-scheduling-patternlari.md#208-masofaviy-chunking-remote-chunking) — 20.8
+- [Remote Facade](08-biznes-logika-va-service-qatlam-patternlari.md#813-masofaviy-fasad-remote-facade) — 8.13
+- [Remote Procedure Invocation](14-microservices-patternlari.md#1415-masofaviy-protsedura-chaqirigi-remote-procedure-invocation) — 14.15
+- [Replication & Read Replica routing](10-malumotlarni-boshqarish-va-taqsimlash.md#1010-replikatsiya-va-read-replicaga-yonaltirish-replication--read-replica-routing) — 10.10
+- [Repository per Bounded Context](27-monolitdan-microservicega-migratsiya.md#2716-har-bir-bounded-context-uchun-repository-repository-per-bounded-context) — 27.16
+- [Repository — DDD view](13-domain-driven-design-patternlari.md#1316-repozitoriy-repository--ddd-view) — 13.16
+- [Repository — Spring Data](09-malumotlarga-kirish-va-orm-patternlari.md#92-repository-repository--spring-data) — 9.2
+- [Request-Reply](15-enterprise-integration-patterns-i-xabarlar.md#1519-sorov-javob-request-reply) — 15.19
+- [Request-Scoped Cache](11-keshlash-patternlari.md#1121-sorov-doirasidagi-kesh-request-scoped-cache) — 11.21
+- [Resequencer](15-enterprise-integration-patterns-i-xabarlar.md#1531-qayta-tartiblovchi-resequencer) — 15.31
+- [Resilience4j & Spring Cloud Circuit Breaker](17-resilience-va-cloud-dizayn-patternlari.md#1739-resilience4j-va-spring-cloud-circuit-breaker-resilience4j--spring-cloud-circuit-breaker) — 17.39
+- [Resource Abstraction](05-spring-core-ichidagi-patternlar-xaritasi.md#527-resurs-abstraksiyasi-resource-abstraction) — 5.27
+- [Resource Requests & Limits](29-kubernetes-va-cloud-native-patternlar.md#2922-resurs-sorovlari-va-limitlari-resource-requests--limits) — 29.22
+- [Resource Server (OAuth2 Resource Server (JWT / opaque))](18-xavfsizlik-patternlari.md#1814-resource-server-oauth2-resource-server-jwt--opaque) — 18.14
+- [Resource-oriented REST](07-api-dizayn-patternlari.md#71-resurs-yonaltirilgan-rest-resource-oriented-rest) — 7.1
+- [Result / Either Type, Vavr Try](24-zamonaviy-java-va-funksional-patternlar.md#246-result--either-tipi-result--either-type-vavr-try) — 24.6
+- [Result Object vs Exceptions](08-biznes-logika-va-service-qatlam-patternlari.md#819-natija-obyekti-vs-exception-result-object-vs-exceptions) — 8.19
+- [Resume-Driven Development](25-anti-patternlar.md#2572-rezyume-uchun-dasturlash-resume-driven-development) — 25.72
+- [Retrieval-Augmented Generation — RAG](30-spring-ai-va-llm-integratsiya-patternlari.md#305-qidiruv-bilan-boyitilgan-generatsiya-retrieval-augmented-generation--rag) — 30.5
+- [Retry / Timeout / Fallback](19-reactive-patternlar.md#1910-qayta-urinish-timeout-va-fallback-retry--timeout--fallback) — 19.10
+- [Retry Storm — anti-pattern](17-resilience-va-cloud-dizayn-patternlari.md#1742-retry-boroni-retry-storm--anti-pattern) — 17.42
+- [Retry topic va Dead Letter Topic (Retry topic / Dead Letter Topic (Spring Kafka))](16-enterprise-integration-patterns-ii.md#1635-retry-topic-va-dead-letter-topic-retry-topic--dead-letter-topic-spring-kafka) — 16.35
+- [Retry — exponential backoff, jitter](17-resilience-va-cloud-dizayn-patternlari.md#171-qayta-urinish-retry--exponential-backoff-jitter) — 17.1
+- [Retry, Timeout & Rate limiting for model calls](30-spring-ai-va-llm-integratsiya-patternlari.md#3013-model-chaqiruvlari-uchun-retry-timeout-va-rate-limiting-retry-timeout--rate-limiting-for-model-calls) — 30.13
+- [Return Address](15-enterprise-integration-patterns-i-xabarlar.md#1520-qaytish-manzili-return-address) — 15.20
+- [Rich Domain Model vs Anemic](08-biznes-logika-va-service-qatlam-patternlari.md#823-boy-domain-modeli-vs-anemik-rich-domain-model-vs-anemic) — 8.23
+- [Richardson Maturity Model](07-api-dizayn-patternlari.md#72-richardson-yetuklik-modeli-richardson-maturity-model) — 7.2
+- [Role-Based Access Control — RBAC](18-xavfsizlik-patternlari.md#188-rolga-asoslangan-kirish-nazorati-role-based-access-control--rbac) — 18.8
+- [Rollback Strategy](22-deployment-va-operatsion-patternlar.md#2214-rollback-strategiyasi-rollback-strategy) — 22.14
+- [Rolling Update](22-deployment-va-operatsion-patternlar.md#228-bosqichma-bosqich-yangilash-rolling-update) — 22.8
+- [Routing Slip](15-enterprise-integration-patterns-i-xabarlar.md#1534-marshrut-varaqasi-routing-slip) — 15.34
+- [Row Data Gateway](09-malumotlarga-kirish-va-orm-patternlari.md#94-satr-malumotlari-shlyuzi-row-data-gateway) — 9.4
+- [Rules Engine / Policy](03-xulq-atvor-patternlari.md#322-qoidalar-dvigateli--siyosat-rules-engine--policy) — 3.22
+- [Runbooks](22-deployment-va-operatsion-patternlar.md#2233-runbooklar-runbooks) — 22.33
+
+**S**
+
+- [Saga (orkestratsiya) (Saga (orchestration))](14-microservices-patternlari.md#149-saga-orkestratsiya-saga-orchestration) — 14.9
+- [Saga (xoreografiya) (Saga (choreography))](14-microservices-patternlari.md#148-saga-xoreografiya-saga-choreography) — 14.8
+- [Scatter-Gather](15-enterprise-integration-patterns-i-xabarlar.md#1533-sochish-yigish-scatter-gather) — 15.33
+- [Scheduled Tasks](20-batch-va-scheduling-patternlari.md#2021-rejalashtirilgan-vazifalar-scheduled-tasks) — 20.21
+- [Scheduler](04-concurrency-patternlari.md#414-rejalashtiruvchi-scheduler) — 4.14
+- [Scheduler Agent Supervisor](17-resilience-va-cloud-dizayn-patternlari.md#1721-rejalashtiruvchiagentnazoratchi-scheduler-agent-supervisor) — 17.21
+- [Schedulers: publishOn / subscribeOn](19-reactive-patternlar.md#197-schedulerlar-schedulers-publishon--subscribeon) — 19.7
+- [Schema Registry & schema evolution](16-enterprise-integration-patterns-ii.md#1634-schema-registry-va-schema-evolyutsiyasi-schema-registry--schema-evolution) — 16.34
+- [Scoped Values](04-concurrency-patternlari.md#425-qamrovli-qiymatlar-scoped-values) — 4.25
+- [Scoped Values](24-zamonaviy-java-va-funksional-patternlar.md#2436-scoped-values-scoped-values) — 24.36
+- [Screaming Architecture](12-arxitektura-uslublari.md#1229-baqiruvchi-arxitektura-screaming-architecture) — 12.29
+- [Sealed Interfaces + Pattern Matching / Algebraic Data Types](24-zamonaviy-java-va-funksional-patternlar.md#242-sealed-interfeyslar-va-pattern-matching-sealed-interfaces--pattern-matching--algebraic-data-types) — 24.2
+- [Secrets Management — Vault, Config Server Encryption](18-xavfsizlik-patternlari.md#1830-sirlarni-boshqarish-secrets-management--vault-config-server-encryption) — 18.30
+- [Secrets Manager Integration](22-deployment-va-operatsion-patternlar.md#2235-secrets-manager-integratsiyasi-secrets-manager-integration) — 22.35
+- [Secure by Default](18-xavfsizlik-patternlari.md#1838-standart-holatda-xavfsiz-secure-by-default) — 18.38
+- [Security Context Propagation](18-xavfsizlik-patternlari.md#1842-security-kontekstini-tarqatish-security-context-propagation) — 18.42
+- [Security Headers — CSP, HSTS](18-xavfsizlik-patternlari.md#1825-xavfsizlik-headerlari-security-headers--csp-hsts) — 18.25
+- [SecurityContextHolder — Thread-Specific Storage](18-xavfsizlik-patternlari.md#186-xavfsizlik-konteksti-egasi-securitycontextholder--thread-specific-storage) — 18.6
+- [SecurityFilterChain — Chain of Responsibility](18-xavfsizlik-patternlari.md#182-xavfsizlik-filtrlar-zanjiri-securityfilterchain--chain-of-responsibility) — 18.2
+- [Selective Consumer](16-enterprise-integration-patterns-ii.md#1614-tanlab-qabul-qiluvchi-selective-consumer) — 16.14
+- [Self Awareness](29-kubernetes-va-cloud-native-patternlar.md#2912-oz-ozini-anglash-self-awareness) — 29.12
+- [Self Registration](14-microservices-patternlari.md#1422-oz-ozini-royxatga-olish-self-registration) — 14.22
+- [Self-Contained Service](14-microservices-patternlari.md#144-ozi-yetarli-servis-self-contained-service) — 14.4
+- [Self-Contained Systems](12-arxitektura-uslublari.md#1213-oz-oziga-yetarli-tizimlar-self-contained-systems) — 12.13
+- [Self-invocation breaking @Transactional / @Cacheable](25-anti-patternlar.md#2530-oz-oziga-chaqiruv-proxyni-buzishi-self-invocation-breaking-transactional--cacheable) — 25.30
+- [Semantic caching](30-spring-ai-va-llm-integratsiya-patternlari.md#3016-semantik-keshlash-semantic-caching) — 30.16
+- [Semantic Versioning & BOM Dependency Management](22-deployment-va-operatsion-patternlar.md#2232-semantik-versiyalash-va-bom-bilan-dependency-boshqarish-semantic-versioning--bom-dependency-management) — 22.32
+- [Semaphore / Concurrency Limit](04-concurrency-patternlari.md#427-semaphore-va-concurrency-chegarasi-semaphore--concurrency-limit) — 4.27
+- [Separate Ways](13-domain-driven-design-patternlari.md#1310-ajralgan-yollar-separate-ways) — 13.10
+- [Separated Interface](02-strukturaviy-patternlar.md#217-ajratilgan-interfeys-separated-interface) — 2.17
+- [Separation of Concerns](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2618-masuliyatlarni-ajratish-separation-of-concerns) — 26.18
+- [Separation of Duties](18-xavfsizlik-patternlari.md#1840-vazifalarni-ajratish-separation-of-duties) — 18.40
+- [Sequential Convoy](17-resilience-va-cloud-dizayn-patternlari.md#1734-ketma-ket-konvoy-sequential-convoy) — 17.34
+- [Sequential Coupling](25-anti-patternlar.md#2517-ketma-ket-bogliqlik-sequential-coupling) — 25.17
+- [Serializable Snapshot Isolation](28-taqsimlangan-malumot-replikatsiya-va.md#2819-serializable-snapshot-izolyatsiyasi-serializable-snapshot-isolation) — 28.19
+- [Serialized LOB](09-malumotlarga-kirish-va-orm-patternlari.md#915-serializatsiyalangan-lob-serialized-lob) — 9.15
+- [Servant](03-xulq-atvor-patternlari.md#314-xizmatkor-servant) — 3.14
+- [Server Session State](06-web-va-taqdimot-qatlami-patternlari.md#626-server-tomonidagi-sessiya-holati-server-session-state) — 6.26
+- [Server-Sent Events, SSE](06-web-va-taqdimot-qatlami-patternlari.md#623-server-tomonidan-yuboriladigan-hodisalar-server-sent-events-sse) — 6.23
+- [Server-Side Discovery](14-microservices-patternlari.md#1420-server-tomonda-aniqlash-server-side-discovery) — 14.20
+- [Server-Side Page Fragment Composition](14-microservices-patternlari.md#1425-server-tomonda-sahifa-fragmentini-kompozitsiya-qilish-server-side-page-fragment-composition) — 14.25
+- [Server-Side Rendering vs SPA vs Hypermedia-Driven Application](06-web-va-taqdimot-qatlami-patternlari.md#634-server-tomonida-renderlash-spa-va-gipermedia-ilovalar-server-side-rendering-vs-spa-vs-hypermedia-driven-application) — 6.34
+- [Serverless / Function as a Service](12-arxitektura-uslublari.md#1215-serverless--faas-serverless--function-as-a-service) — 12.15
+- [Serverless Deployment](22-deployment-va-operatsion-patternlar.md#2224-serverless-deployment-serverless-deployment) — 22.24
+- [Service Activator](16-enterprise-integration-patterns-ii.md#1617-service-activator-service-activator) — 16.17
+- [Service Component Test](23-testing-patternlari.md#2318-servis-komponent-testi-service-component-test) — 23.18
+- [Service Deployment Platform — Kubernetes, PaaS](22-deployment-va-operatsion-patternlar.md#2225-servis-deploy-platformasi-service-deployment-platform--kubernetes-paas) — 22.25
+- [Service Granularity Decision](14-microservices-patternlari.md#1439-service-granularligi-boyicha-qaror-service-granularity-decision) — 14.39
+- [Service Instance per Container](22-deployment-va-operatsion-patternlar.md#2237-har-bir-servis-nusxasi-uchun-alohida-container-service-instance-per-container) — 22.37
+- [Service Instance per Host / VM / Container](22-deployment-va-operatsion-patternlar.md#2223-har-bir-service-instance-alohida-host--vm--konteynerda-service-instance-per-host--vm--container) — 22.23
+- [Service Integration Contract Test](23-testing-patternlari.md#2319-servis-integratsiya-kontrakti-testi-service-integration-contract-test) — 23.19
+- [Service Layer](08-biznes-logika-va-service-qatlam-patternlari.md#84-service-qatlami-service-layer) — 8.4
+- [Service Locator](01-yaratuvchi-patternlar.md#116-servis-topuvchi-service-locator) — 1.16
+- [Service Mesh](14-microservices-patternlari.md#1434-service-mesh-service-mesh) — 14.34
+- [Service per Team](14-microservices-patternlari.md#145-har-bir-jamoaga-bitta-servis-service-per-team) — 14.5
+- [Service Provider Interface + ServiceLoader](24-zamonaviy-java-va-funksional-patternlar.md#2422-servis-provayder-interfeysi-va-serviceloader-service-provider-interface--serviceloader) — 24.22
+- [Service Registry](14-microservices-patternlari.md#1421-servis-reyestri-service-registry) — 14.21
+- [Service Stub](23-testing-patternlari.md#2327-servis-stub-service-stub) — 23.27
+- [Service Template](14-microservices-patternlari.md#1431-service-shabloni-service-template) — 14.31
+- [Service to Worker](06-web-va-taqdimot-qatlami-patternlari.md#610-xizmatdan-ishchiga-service-to-worker) — 6.10
+- [Service-Oriented Architecture, SOA](12-arxitektura-uslublari.md#1214-servisga-yonaltirilgan-arxitektura-service-oriented-architecture-soa) — 12.14
+- [Service-per-Aggregate](08-biznes-logika-va-service-qatlam-patternlari.md#824-aggregate-ga-bitta-service-service-per-aggregate) — 8.24
+- [Servis topish (Service Discovery (Kubernetes view))](29-kubernetes-va-cloud-native-patternlar.md#2911-servis-topish-service-discovery-kubernetes-view) — 29.11
+- [Session Facade](08-biznes-logika-va-service-qatlam-patternlari.md#87-sessiya-fasadi-session-facade) — 8.7
+- [Sessiyani boshqarish (Session Management (fixation protection, concurrent sessions))](18-xavfsizlik-patternlari.md#1821-sessiyani-boshqarish-session-management-fixation-protection-concurrent-sessions) — 18.21
+- [Shadow Traffic](22-deployment-va-operatsion-patternlar.md#2212-soya-trafik-shadow-traffic) — 22.12
+- [Sharding / Partitioning](10-malumotlarni-boshqarish-va-taqsimlash.md#109-shardlash--bolaklash-sharding--partitioning) — 10.9
+- [Shared Database](25-anti-patternlar.md#2556-umumiy-malumotlar-bazasi-shared-database) — 25.56
+- [Shared Fixture](23-testing-patternlari.md#2351-umumiy-fixture-shared-fixture) — 23.51
+- [Shared Kernel](13-domain-driven-design-patternlari.md#134-umumiy-yadro-shared-kernel) — 13.4
+- [Shared Library bog'liqligi (Shared Library Coupling) — antipattern](14-microservices-patternlari.md#1436-shared-library-bogliqligi-shared-library-coupling--antipattern) — 14.36
+- [Shared Static Data](27-monolitdan-microservicega-migratsiya.md#2720-umumiy-statik-malumot-shared-static-data) — 27.20
+- [Shared-Nothing](12-arxitektura-uslublari.md#1226-hech-narsani-bolishmaslik-shared-nothing) — 12.26
+- [Shed Load / Load Shedding](17-resilience-va-cloud-dizayn-patternlari.md#1714-yuklamani-tashlash-shed-load--load-shedding) — 17.14
+- [Shotgun Surgery](25-anti-patternlar.md#2521-sochma-jarrohlik-shotgun-surgery) — 25.21
+- [Side-Effect-Free Functions](13-domain-driven-design-patternlari.md#1326-yon-tasirsiz-funksiyalar-side-effect-free-functions) — 13.26
+- [Sidecar](14-microservices-patternlari.md#1432-sidecar-sidecar) — 14.32
+- [Sidecar Container](22-deployment-va-operatsion-patternlar.md#2215-sidecar-konteyner-sidecar-container) — 22.15
+- [Single Level of Abstraction](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2628-yagona-abstraksiya-darajasi-single-level-of-abstraction) — 26.28
+- [Single Responsibility Principle](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#261-yagona-javobgarlik-printsipi-single-responsibility-principle) — 26.1
+- [Single Table Inheritance](09-malumotlarga-kirish-va-orm-patternlari.md#916-yagona-jadval-merosi-single-table-inheritance) — 9.16
+- [Singleton](01-yaratuvchi-patternlar.md#11-yagona-nusxa-singleton) — 1.1
+- [Singleton abuse / Static Cling](25-anti-patternlar.md#2526-singletondan-suiistemol--statik-yopishqoqlik-singleton-abuse--static-cling) — 25.26
+- [Singleton Service](29-kubernetes-va-cloud-native-patternlar.md#298-yakka-servis-singleton-service) — 29.8
+- [Skip / Retry Policies](20-batch-va-scheduling-patternlari.md#206-skip-va-retry-siyosatlari-skip--retry-policies) — 20.6
+- [SLI / SLO / Error Budget](21-observability-patternlari.md#218-sli--slo--xato-budjeti-sli--slo--error-budget) — 21.8
+- [Smart Proxy](16-enterprise-integration-patterns-ii.md#1623-aqlli-proxy-smart-proxy) — 16.23
+- [SmartInitializingSingleton](05-spring-core-ichidagi-patternlar-xaritasi.md#514-smartinitializingsingleton-smartinitializingsingleton) — 5.14
+- [Smoke Tests](23-testing-patternlari.md#2334-smoke-testlar-smoke-tests) — 23.34
+- [Snapshot](10-malumotlarni-boshqarish-va-taqsimlash.md#1017-snapshot-snapshot) — 10.17
+- [Snapshot Isolation / MVCC](28-taqsimlangan-malumot-replikatsiya-va.md#2818-snapshot-izolyatsiyasi--mvcc-snapshot-isolation--mvcc) — 28.18
+- [Snapshot Testing](23-testing-patternlari.md#2323-snapshot-testlash-snapshot-testing) — 23.23
+- [Soft Delete](10-malumotlarni-boshqarish-va-taqsimlash.md#101-yumshoq-ochirish-soft-delete) — 10.1
+- [Space-Based Architecture](12-arxitektura-uslublari.md#1216-kosmosga-asoslangan-arxitektura-space-based-architecture) — 12.16
+- [Spaghetti Code](25-anti-patternlar.md#252-spagetti-kod-spaghetti-code) — 25.2
+- [Specification](03-xulq-atvor-patternlari.md#313-spetsifikatsiya-specification) — 3.13
+- [Specification — DDD view](13-domain-driven-design-patternlari.md#1322-spetsifikatsiya-specification--ddd-view) — 13.22
+- [Specification — Spring Data JPA](09-malumotlarga-kirish-va-orm-patternlari.md#935-spetsifikatsiya-specification--spring-data-jpa) — 9.35
+- [Speculative Generality / Over-engineering](25-anti-patternlar.md#2525-spekulyativ-umumiylik--ortiqcha-injinerlik-speculative-generality--over-engineering) — 25.25
+- [Split Brain](28-taqsimlangan-malumot-replikatsiya-va.md#2827-split-brain-split-brain) — 28.27
+- [Split Table](27-monolitdan-microservicega-migratsiya.md#2714-jadvalni-bolish-split-table) — 27.14
+- [Splitter](15-enterprise-integration-patterns-i-xabarlar.md#1529-ajratuvchi-splitter) — 15.29
+- [Spring AOP — Advice, Pointcut, Advisor, Interceptor](05-spring-core-ichidagi-patternlar-xaritasi.md#516-spring-aop-proxy-asosidagi-kesishuv-spring-aop--advice-pointcut-advisor-interceptor) — 5.16
+- [Spring Authorization Server](18-xavfsizlik-patternlari.md#1819-spring-authorization-server-spring-authorization-server) — 18.19
+- [Spring Cache Abstraction](11-keshlash-patternlari.md#1110-spring-cache-abstraksiyasi-spring-cache-abstraction) — 11.10
+- [Spring Cloud Stream binder abstraction](16-enterprise-integration-patterns-ii.md#1637-spring-cloud-stream-binder-abstraksiyasi-spring-cloud-stream-binder-abstraction) — 16.37
+- [Spring Cloud Task](20-batch-va-scheduling-patternlari.md#2025-spring-cloud-task) — 20.25
+- [Spring Data JDBC Aggregate-Oriented Mapping](09-malumotlarga-kirish-va-orm-patternlari.md#934-spring-data-jdbc-aggregate-yonaltirilgan-mapping-spring-data-jdbc-aggregate-oriented-mapping) — 9.34
+- [Spring Expression Language / SpEL](05-spring-core-ichidagi-patternlar-xaritasi.md#536-spring-ifoda-tili-spring-expression-language--spel) — 5.36
+- [Spring Framework 7 core resilience: @Retryable, @ConcurrencyLimit](17-resilience-va-cloud-dizayn-patternlari.md#1740-spring-framework-7-yadrosidagi-resilience-spring-framework-7-core-resilience-retryable-concurrencylimit) — 17.40
+- [Spring Integration DSL mapping](16-enterprise-integration-patterns-ii.md#1636-spring-integration-dsl-moslashuvi-spring-integration-dsl-mapping) — 16.36
+- [Spring Retry / @Retryable](05-spring-core-ichidagi-patternlar-xaritasi.md#535-spring-retry-va-retryable-spring-retry--retryable) — 5.35
+- [Stable Dependencies & Stable Abstractions](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2629-barqaror-bogliqliklar-va-barqaror-abstraksiyalar-stable-dependencies--stable-abstractions) — 26.29
+- [Staging Table](20-batch-va-scheduling-patternlari.md#2016-staging-jadval-staging-table) — 20.16
+- [Standalone Classes](13-domain-driven-design-patternlari.md#1329-mustaqil-sinflar-standalone-classes) — 13.29
+- [Starters](05-spring-core-ichidagi-patternlar-xaritasi.md#525-starterlar-starters) — 5.25
+- [State](03-xulq-atvor-patternlari.md#38-holat-state) — 3.8
+- [Stateful Service](29-kubernetes-va-cloud-native-patternlar.md#2910-stateful-servis-stateful-service) — 29.10
+- [Stateless Service](29-kubernetes-va-cloud-native-patternlar.md#299-stateless-servis-stateless-service) — 29.9
+- [Static Content Hosting](17-resilience-va-cloud-dizayn-patternlari.md#1723-statik-kontentni-hosting-qilish-static-content-hosting) — 17.23
+- [Static Factory Method / Simple Factory](01-yaratuvchi-patternlar.md#16-statik-fabrika-metodi--oddiy-fabrika-static-factory-method--simple-factory) — 1.6
+- [Static Factory Method, Effective Java](24-zamonaviy-java-va-funksional-patternlar.md#249-statik-fabrika-metodi-static-factory-method-effective-java) — 24.9
+- [Static Resource Handling](06-web-va-taqdimot-qatlami-patternlari.md#630-statik-resurslarni-xizmat-qilish-static-resource-handling) — 6.30
+- [Steady State](17-resilience-va-cloud-dizayn-patternlari.md#179-barqaror-holat-steady-state) — 17.9
+- [Step Scope / Late Binding](20-batch-va-scheduling-patternlari.md#2011-step-scope-va-kechiktirilgan-binding-step-scope--late-binding) — 20.11
+- [Stovepipe System](25-anti-patternlar.md#2581-mori-tizim-stovepipe-system) — 25.81
+- [Strangler Fig](14-microservices-patternlari.md#146-strangler-fig-strangler-fig) — 14.6
+- [Strangler Fig Application](27-monolitdan-microservicega-migratsiya.md#271-boguvchi-anjir-ilovasi-strangler-fig-application) — 27.1
+- [Strategy](03-xulq-atvor-patternlari.md#39-strategiya-strategy) — 3.9
+- [Strategy Registry via Map<String, Bean>](08-biznes-logika-va-service-qatlam-patternlari.md#821-strategiyalar-registri-mapstring-bean-orqali-strategy-registry-via-mapstring-bean) — 8.21
+- [Strategy via Lambdas / Functional Interfaces](24-zamonaviy-java-va-funksional-patternlar.md#2411-strategiya-lambdalar-va-funksional-interfeyslar-orqali-strategy-via-lambdas--functional-interfaces) — 24.11
+- [Stream Gatherers](24-zamonaviy-java-va-funksional-patternlar.md#2417-stream-gathererlari-stream-gatherers) — 24.17
+- [Stream pipeline / Pipes & Filters in Java](24-zamonaviy-java-va-funksional-patternlar.md#2415-stream-oqimi-quvuri-stream-pipeline--pipes--filters-in-java) — 24.15
+- [Stream-Table Join](16-enterprise-integration-patterns-ii.md#1641-stream-jadval-birlashtirish-stream-table-join) — 16.41
+- [Streaming Responses — SSE, NDJSON](19-reactive-patternlar.md#1914-oqimli-javoblar-streaming-responses--sse-ndjson) — 19.14
+- [Stringly Typed](25-anti-patternlar.md#2527-satr-bilan-tiplash-stringly-typed) — 25.27
+- [Structured Concurrency](04-concurrency-patternlari.md#424-strukturaviy-concurrency-structured-concurrency) — 4.24
+- [Structured Concurrency](24-zamonaviy-java-va-funksional-patternlar.md#2435-strukturalangan-concurrency-structured-concurrency) — 24.35
+- [Structured Logging](21-observability-patternlari.md#212-strukturalangan-loglash-structured-logging) — 21.2
+- [Structured Output Converter](30-spring-ai-va-llm-integratsiya-patternlari.md#303-strukturalangan-chiqish-konvertori-structured-output-converter) — 30.3
+- [Suite Fixture Setup](23-testing-patternlari.md#2354-toplam-darajasidagi-fixture-sozlash-suite-fixture-setup) — 23.54
+- [Supple Design](13-domain-driven-design-patternlari.md#1330-egiluvchan-dizayn-supple-design) — 13.30
+- [Synchronize Data in Application](27-monolitdan-microservicega-migratsiya.md#2712-malumotlarni-ilova-darajasida-sinxronlashtirish-synchronize-data-in-application) — 27.12
+- [Synchronous call chains](25-anti-patternlar.md#2560-sinxron-chaqiruv-zanjirlari-synchronous-call-chains) — 25.60
+- [Synchronous I/O](25-anti-patternlar.md#2567-bloklovchi-sinxron-io-synchronous-io) — 25.67
+- [Synthetic Monitoring](21-observability-patternlari.md#2118-sintetik-monitoring-synthetic-monitoring) — 21.18
+
+**T**
+
+- [Table Data Gateway](09-malumotlarga-kirish-va-orm-patternlari.md#93-jadval-malumotlari-shlyuzi-table-data-gateway) — 9.3
+- [Table Module](08-biznes-logika-va-service-qatlam-patternlari.md#83-jadval-moduli-table-module) — 8.3
+- [Table Truncation Teardown](23-testing-patternlari.md#2359-jadvalni-boshatish-orqali-tozalash-table-truncation-teardown) — 23.59
+- [Taqsimlangan Monolit (Distributed Monolith) — anti-pattern](12-arxitektura-uslublari.md#1224-taqsimlangan-monolit-distributed-monolith--anti-pattern) — 12.24
+- [Taqsimlangan monolit (Distributed Monolith) — antipattern](14-microservices-patternlari.md#1437-taqsimlangan-monolit-distributed-monolith--antipattern) — 14.37
+- [TaskExecutor / TaskScheduler](05-spring-core-ichidagi-patternlar-xaritasi.md#531-vazifa-bajaruvchi-va-rejalashtiruvchi-taskexecutor--taskscheduler) — 5.31
+- [Tasklet](20-batch-va-scheduling-patternlari.md#202-tasklet-tasklet) — 20.2
+- [TCC](10-malumotlarni-boshqarish-va-taqsimlash.md#1022-try-confirm-cancel-tcc) — 10.22
+- [Tell Don't Ask](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2616-aytib-qoy-soramay-tell-dont-ask) — 26.16
+- [Template Classes](05-spring-core-ichidagi-patternlar-xaritasi.md#518-template-sinflari-template-classes) — 5.18
+- [Template Method](03-xulq-atvor-patternlari.md#310-shablon-metodi-template-method) — 3.10
+- [Template View — Thymeleaf](06-web-va-taqdimot-qatlami-patternlari.md#611-shablon-korinish-template-view--thymeleaf) — 6.11
+- [Test Data Builder](23-testing-patternlari.md#235-test-malumot-quruvchisi-test-data-builder) — 23.5
+- [Test Doubles — Dummy, Fake, Stub, Spy, Mock](23-testing-patternlari.md#232-test-dublyorlari-test-doubles--dummy-fake-stub-spy-mock) — 23.2
+- [Test Harness](17-resilience-va-cloud-dizayn-patternlari.md#1711-sinov-qurilmasi-test-harness) — 17.11
+- [Test Hook](23-testing-patternlari.md#2356-test-ilgagi-test-hook) — 23.56
+- [Test Message](16-enterprise-integration-patterns-ii.md#1624-test-xabari-test-message) — 16.24
+- [Test Pyramid / Testing Trophy / Honeycomb](23-testing-patternlari.md#231-test-piramidasi--testing-trophy--honeycomb-test-pyramid--testing-trophy--honeycomb) — 23.1
+- [Test Slices — @WebMvcTest, @DataJpaTest, @JsonTest, @RestClientTest](23-testing-patternlari.md#2311-test-bolaklari-test-slices--webmvctest-datajpatest-jsontest-restclienttest) — 23.11
+- [Test Spy](23-testing-patternlari.md#2342-test-spy-test-spy) — 23.42
+- [Test Stub](23-testing-patternlari.md#2341-test-stub-test-stub) — 23.41
+- [Testcase Class per Fixture](23-testing-patternlari.md#2355-fixture-boyicha-test-sinfi-testcase-class-per-fixture) — 23.55
+- [Testcontainers & @ServiceConnection](23-testing-patternlari.md#2315-testcontainers-va-servis-ulanishi-testcontainers--serviceconnection) — 23.15
+- [Testing Async Code](23-testing-patternlari.md#2339-asinxron-kodni-test-qilish-testing-async-code) — 23.39
+- [Testing Events](23-testing-patternlari.md#2338-eventlarni-test-qilish-testing-events) — 23.38
+- [Testing Reactive Code](23-testing-patternlari.md#2336-reactive-kodni-test-qilish-testing-reactive-code) — 23.36
+- [Testing Security](23-testing-patternlari.md#2337-xavfsizlikni-test-qilish-testing-security) — 23.37
+- [Text Blocks & Switch Expressions for Readability](24-zamonaviy-java-va-funksional-patternlar.md#2433-oqiluvchanlik-uchun-text-block-va-switch-ifodalari-text-blocks--switch-expressions-for-readability) — 24.33
+- [Thread Pool / Executor](04-concurrency-patternlari.md#41-oqimlar-hovuzi--bajaruvchi-thread-pool--executor) — 4.1
+- [Thread-per-request vs Event Loop](04-concurrency-patternlari.md#422-sorovga-bitta-thread-va-event-loop-thread-per-request-vs-event-loop) — 4.22
+- [Thread-Specific Storage](04-concurrency-patternlari.md#415-threadga-xos-saqlash-thread-specific-storage) — 4.15
+- [Throttling](17-resilience-va-cloud-dizayn-patternlari.md#176-bogish-throttling) — 17.6
+- [Timeout](17-resilience-va-cloud-dizayn-patternlari.md#174-timeout-timeout) — 17.4
+- [Timeouts Budget / Deadline Propagation](17-resilience-va-cloud-dizayn-patternlari.md#1741-timeout-budjeti--deadline-propagatsiyasi-timeouts-budget--deadline-propagation) — 17.41
+- [Token budget & context window management](30-spring-ai-va-llm-integratsiya-patternlari.md#3020-token-budjeti-va-kontekst-oynasini-boshqarish-token-budget--context-window-management) — 30.20
+- [Token Introspection](18-xavfsizlik-patternlari.md#1815-token-introspeksiyasi-token-introspection) — 18.15
+- [Token Relay](18-xavfsizlik-patternlari.md#1816-token-uzatish-token-relay) — 18.16
+- [Tokenization](18-xavfsizlik-patternlari.md#1847-tokenizatsiya-tokenization) — 18.47
+- [Tolerant Reader](07-api-dizayn-patternlari.md#721-bagrikeng-oquvchi-tolerant-reader) — 7.21
+- [Tool / Function Calling](30-spring-ai-va-llm-integratsiya-patternlari.md#304-tool--funksiya-chaqiruvi-tool--function-calling) — 30.4
+- [Total Order Broadcast](28-taqsimlangan-malumot-replikatsiya-va.md#2824-umumiy-tartibli-broadcast-total-order-broadcast) — 28.24
+- [Tracer Write](27-monolitdan-microservicega-migratsiya.md#2713-tracer-write-tracer-write) — 27.13
+- [Transaction Boundary — @Transactional on service](08-biznes-logika-va-service-qatlam-patternlari.md#817-tranzaksiya-chegarasi-transaction-boundary--transactional-on-service) — 8.17
+- [Transaction Log Tailing](14-microservices-patternlari.md#1413-tranzaksiya-logini-kuzatish-transaction-log-tailing) — 14.13
+- [Transaction Script](08-biznes-logika-va-service-qatlam-patternlari.md#81-tranzaksiya-skripti-transaction-script) — 8.1
+- [Transaction Spanning Remote Calls](25-anti-patternlar.md#2551-remote-chaqiruvni-qamrab-olgan-tranzaksiya-transaction-spanning-remote-calls) — 25.51
+- [Transactional Client](16-enterprise-integration-patterns-ii.md#169-tranzaksion-mijoz-transactional-client) — 16.9
+- [Transactional Outbox](10-malumotlarni-boshqarish-va-taqsimlash.md#1014-tranzaksion-outbox-transactional-outbox) — 10.14
+- [Transactional Test Rollback Pitfalls](23-testing-patternlari.md#2329-transactional-test-rollback-tuzoqlari-transactional-test-rollback-pitfalls) — 23.29
+- [TransactionSynchronization](05-spring-core-ichidagi-patternlar-xaritasi.md#532-tranzaksiya-sinxronizatsiyasi-transactionsynchronization) — 5.32
+- [Transfer Object / DTO](08-biznes-logika-va-service-qatlam-patternlari.md#810-malumot-uzatish-obyekti-transfer-object--dto) — 8.10
+- [Transfer Object Assembler](08-biznes-logika-va-service-qatlam-patternlari.md#811-transfer-object-yiguvchi-transfer-object-assembler) — 8.11
+- [Transform View](06-web-va-taqdimot-qatlami-patternlari.md#612-transformatsiya-korinishi-transform-view) — 6.12
+- [Tranzaksion Outbox (Transactional Outbox (microservice view))](14-microservices-patternlari.md#1412-tranzaksion-outbox-transactional-outbox-microservice-view) — 14.12
+- [Trunk-Based Development & Release Trains](22-deployment-va-operatsion-patternlar.md#2231-trunk-based-development-va-reliz-poyezdlari-trunk-based-development--release-trains) — 22.31
+- [TTL / TTI Expiration](11-keshlash-patternlari.md#1112-ttl--tti-muddati-tugashi-ttl--tti-expiration) — 11.12
+- [Twelve-Factor App](22-deployment-va-operatsion-patternlar.md#221-on-ikki-faktorli-ilova-twelve-factor-app) — 22.1
+- [Twin](02-strukturaviy-patternlar.md#212-egizak-twin) — 2.12
+- [Two Step View — layouts](06-web-va-taqdimot-qatlami-patternlari.md#613-ikki-bosqichli-korinish-two-step-view--layouts) — 6.13
+- [Two-Phase Commit / XA](10-malumotlarni-boshqarish-va-taqsimlash.md#1021-ikki-fazali-commit--xa-two-phase-commit--xa) — 10.21
+- [Two-Phase Commit across services](25-anti-patternlar.md#2570-servislar-ortasida-ikki-fazali-commit-two-phase-commit-across-services) — 25.70
+- [Two-Phase Locking](28-taqsimlangan-malumot-replikatsiya-va.md#2822-ikki-fazali-qulflash-two-phase-locking) — 28.22
+- [Type-Safe Heterogeneous Container](24-zamonaviy-java-va-funksional-patternlar.md#2419-tur-boyicha-xavfsiz-geterogen-konteyner-type-safe-heterogeneous-container) — 24.19
+
+**U**
+
+- [Ubiquitous Language](13-domain-driven-design-patternlari.md#131-umumiy-til-ubiquitous-language) — 13.1
+- [UI Composition](27-monolitdan-microservicega-migratsiya.md#272-ui-kompozitsiyasi-ui-composition) — 27.2
+- [Umumiy ma'lumotlar bazasi (Shared Database) — anti-pattern](10-malumotlarni-boshqarish-va-taqsimlash.md#1013-umumiy-malumotlar-bazasi-shared-database--anti-pattern) — 10.13
+- [Unbounded Connection Pool / Wrong Pool Size](25-anti-patternlar.md#2546-cheklanmagan-connection-pool--notogri-pool-olchami-unbounded-connection-pool--wrong-pool-size) — 25.46
+- [Unit of Work — persistence context](09-malumotlarga-kirish-va-orm-patternlari.md#97-ish-birligi-unit-of-work--persistence-context) — 9.7
+- [Unnamed Variables & Patterns](24-zamonaviy-java-va-funksional-patternlar.md#2438-nomsiz-ozgaruvchilar-va-patternlar-unnamed-variables--patterns) — 24.38
+- [URI Design Conventions](07-api-dizayn-patternlari.md#74-uri-dizayn-konvensiyalari-uri-design-conventions) — 7.4
+- [UserDetailsService](18-xavfsizlik-patternlari.md#185-foydalanuvchi-malumotlari-manbasi-userdetailsservice) — 18.5
+- [Uzluksiz profiling (Continuous Profiling (JFR))](21-observability-patternlari.md#2122-uzluksiz-profiling-continuous-profiling-jfr) — 21.22
+
+**V**
+
+- [Valet Key](17-resilience-va-cloud-dizayn-patternlari.md#1724-valet-kaliti-valet-key) — 17.24
+- [Validator Abstraction](05-spring-core-ichidagi-patternlar-xaritasi.md#529-validator-abstraksiyasi-validator-abstraction) — 5.29
+- [Value List Handler](08-biznes-logika-va-service-qatlam-patternlari.md#812-qiymatlar-royxati-boshqaruvchisi-value-list-handler) — 8.12
+- [Value Object](13-domain-driven-design-patternlari.md#1314-qiymat-obyekti-value-object) — 13.14
+- [Vector Clock](28-taqsimlangan-malumot-replikatsiya-va.md#2810-vektor-soat-vector-clock) — 28.10
+- [Vector Store abstraction](30-spring-ai-va-llm-integratsiya-patternlari.md#306-vector-store-abstraksiyasi-vector-store-abstraction) — 30.6
+- [Vendor Lock-in](25-anti-patternlar.md#2571-taminotchi-qulfi-vendor-lock-in) — 25.71
+- [Versioned / Temporal / Bitemporal data](10-malumotlarni-boshqarish-va-taqsimlash.md#103-versiyalangan--temporal--bitemporal-malumot-versioned--temporal--bitemporal-data) — 10.3
+- [Vertical Slice Architecture](12-arxitektura-uslublari.md#125-vertikal-qatlamli-arxitektura-vertical-slice-architecture) — 12.5
+- [View Helper](06-web-va-taqdimot-qatlami-patternlari.md#67-korinish-yordamchisi-view-helper) — 6.7
+- [View Resolver](06-web-va-taqdimot-qatlami-patternlari.md#632-korinish-aniqlovchi-view-resolver) — 6.32
+- [Virtual Threads](04-concurrency-patternlari.md#423-virtual-threadlar-virtual-threads) — 4.23
+- [Virtual Threads](24-zamonaviy-java-va-funksional-patternlar.md#2434-virtual-threadlar-virtual-threads) — 24.34
+- [Visitor](03-xulq-atvor-patternlari.md#311-tashrifchi-visitor) — 3.11
+
+**W**
+
+- [Watermark](16-enterprise-integration-patterns-ii.md#1644-watermark-watermark) — 16.44
+- [Web Service Broker](07-api-dizayn-patternlari.md#733-veb-servis-brokeri-web-service-broker) — 7.33
+- [WebClient](19-reactive-patternlar.md#1912-webclient-webclient) — 19.12
+- [WebFlux Functional Endpoints](19-reactive-patternlar.md#1913-webflux-funksional-endpointlar-webflux-functional-endpoints) — 19.13
+- [Webhooks](07-api-dizayn-patternlari.md#717-webhooklar-webhooks) — 7.17
+- [WebSocket / STOMP](06-web-va-taqdimot-qatlami-patternlari.md#624-websocket-va-stomp-websocket--stomp) — 6.24
+- [Windowing](16-enterprise-integration-patterns-ii.md#1642-oynalash-windowing) — 16.42
+- [Wire Tap](16-enterprise-integration-patterns-ii.md#1620-sim-ulanishi-wire-tap) — 16.20
+- [Wrapper](02-strukturaviy-patternlar.md#214-orovchi-wrapper) — 2.14
+- [Write Skew](28-taqsimlangan-malumot-replikatsiya-va.md#2820-write-skew-anomaliyasi-write-skew) — 28.20
+- [Write-Ahead Log](28-taqsimlangan-malumot-replikatsiya-va.md#281-yozishdan-oldingi-jurnal-write-ahead-log) — 28.1
+- [Write-Around](11-keshlash-patternlari.md#115-yozish-atrofida-write-around) — 11.5
+- [Write-Behind](11-keshlash-patternlari.md#114-yozish-ortda-write-behind) — 11.4
+- [Write-Through](11-keshlash-patternlari.md#113-yozish-orqali-write-through) — 11.3
+
+**Y**
+
+- [Yagona kirish (Single Sign-On (SSO))](18-xavfsizlik-patternlari.md#1845-yagona-kirish-single-sign-on-sso) — 18.45
+- [yangi va umumiy — Fixture: fresh vs shared](23-testing-patternlari.md#237-fixture-yangi-va-umumiy--fixture-fresh-vs-shared) — 23.7
+- [Yaratuvchi (Creator (GRASP))](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#267-yaratuvchi-creator-grasp) — 26.7
+- [Yo-Yo Problem](25-anti-patternlar.md#2512-yo-yo-muammosi-yo-yo-problem) — 25.12
+- [Yuqori kogeziya (High Cohesion (GRASP))](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2610-yuqori-kogeziya-high-cohesion-grasp) — 26.10
+
+**Z**
+
+- [Zero Trust Architecture](18-xavfsizlik-patternlari.md#1831-zero-trust-zero-trust-architecture) — 18.31
+- [Zero-Downtime Deployment](22-deployment-va-operatsion-patternlar.md#2230-nol-toxtalishli-deploy-zero-downtime-deployment) — 22.30
+
+---
+
+[&larr; 30. Spring AI va LLM integratsiya patternlari](30-spring-ai-va-llm-integratsiya-patternlari.md) · [Mundarija](README.md)

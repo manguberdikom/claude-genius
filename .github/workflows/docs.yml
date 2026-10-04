@@ -1,0 +1,27 @@
+name: docs
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Hujjatlarni tekshirish
+        run: python3 tools/check_docs.py
+
+      - name: Monolit qayta yig'ilishini sinash
+        run: |
+          python3 tools/build_single.py
+          for f in dist/*.md; do
+            test -s "$f" || { echo "bo'sh fayl: $f"; exit 1; }
+          done
+          ls -la dist/

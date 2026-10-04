@@ -1,0 +1,13 @@
+# tools/build_single.py natijasi - har safar qayta yig'iladi
+dist/
+
+# muharrir va OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Python
+__pycache__/
+*.pyc
+.venv/

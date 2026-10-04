@@ -1,0 +1,943 @@
+{
+ "patterns": {
+  "title": "Java Spring arxitektori bilishi kerak bo'lgan barcha dizayn patternlar",
+  "label": "Dizayn patternlar",
+  "chapters": [
+   {
+    "num": 1,
+    "title": "1. Yaratuvchi patternlar (Creational Patterns)",
+    "file": "01-yaratuvchi-patternlar.md",
+    "part": null,
+    "sections": 17
+   },
+   {
+    "num": 2,
+    "title": "2. Strukturaviy patternlar (Structural Patterns)",
+    "file": "02-strukturaviy-patternlar.md",
+    "part": null,
+    "sections": 17
+   },
+   {
+    "num": 3,
+    "title": "3. Xulq-atvor patternlari (Behavioral Patterns)",
+    "file": "03-xulq-atvor-patternlari.md",
+    "part": null,
+    "sections": 23
+   },
+   {
+    "num": 4,
+    "title": "4. Concurrency patternlari (Concurrency Patterns)",
+    "file": "04-concurrency-patternlari.md",
+    "part": null,
+    "sections": 27
+   },
+   {
+    "num": 5,
+    "title": "5. Spring Core ichidagi patternlar xaritasi (Patterns inside Spring Core)",
+    "file": "05-spring-core-ichidagi-patternlar-xaritasi.md",
+    "part": null,
+    "sections": 41
+   },
+   {
+    "num": 6,
+    "title": "6. Web va taqdimot qatlami patternlari (Web & Presentation Patterns)",
+    "file": "06-web-va-taqdimot-qatlami-patternlari.md",
+    "part": null,
+    "sections": 34
+   },
+   {
+    "num": 7,
+    "title": "7. API dizayn patternlari (API Design Patterns)",
+    "file": "07-api-dizayn-patternlari.md",
+    "part": null,
+    "sections": 33
+   },
+   {
+    "num": 8,
+    "title": "8. Biznes logika va Service qatlam patternlari (Business & Service Layer Patterns)",
+    "file": "08-biznes-logika-va-service-qatlam-patternlari.md",
+    "part": null,
+    "sections": 26
+   },
+   {
+    "num": 9,
+    "title": "9. Ma'lumotlarga kirish va ORM patternlari (Data Access & ORM Patterns)",
+    "file": "09-malumotlarga-kirish-va-orm-patternlari.md",
+    "part": null,
+    "sections": 37
+   },
+   {
+    "num": 10,
+    "title": "10. Ma'lumotlarni boshqarish va taqsimlash patternlari (Data Management & Distribution Patterns)",
+    "file": "10-malumotlarni-boshqarish-va-taqsimlash.md",
+    "part": null,
+    "sections": 31
+   },
+   {
+    "num": 11,
+    "title": "11. Keshlash patternlari (Caching Patterns)",
+    "file": "11-keshlash-patternlari.md",
+    "part": null,
+    "sections": 22
+   },
+   {
+    "num": 12,
+    "title": "12. Arxitektura uslublari (Architectural Styles)",
+    "file": "12-arxitektura-uslublari.md",
+    "part": null,
+    "sections": 33
+   },
+   {
+    "num": 13,
+    "title": "13. Domain-Driven Design patternlari (DDD Patterns)",
+    "file": "13-domain-driven-design-patternlari.md",
+    "part": null,
+    "sections": 35
+   },
+   {
+    "num": 14,
+    "title": "14. Microservices patternlari (Microservices Patterns)",
+    "file": "14-microservices-patternlari.md",
+    "part": null,
+    "sections": 39
+   },
+   {
+    "num": 15,
+    "title": "15. Enterprise Integration Patterns I: xabarlar, kanallar, marshrutlash (EIP I: Messaging Systems, Channels, Construction, Routing)",
+    "file": "15-enterprise-integration-patterns-i-xabarlar.md",
+    "part": null,
+    "sections": 36
+   },
+   {
+    "num": 16,
+    "title": "16. Enterprise Integration Patterns II: transformatsiya, endpointlar, boshqaruv, event patternlar (EIP II: Transformation, Endpoints, System Management, Event Patterns)",
+    "file": "16-enterprise-integration-patterns-ii.md",
+    "part": null,
+    "sections": 44
+   },
+   {
+    "num": 17,
+    "title": "17. Resilience va cloud dizayn patternlari (Resilience & Cloud Design Patterns)",
+    "file": "17-resilience-va-cloud-dizayn-patternlari.md",
+    "part": null,
+    "sections": 42
+   },
+   {
+    "num": 18,
+    "title": "18. Xavfsizlik patternlari (Security Patterns)",
+    "file": "18-xavfsizlik-patternlari.md",
+    "part": null,
+    "sections": 48
+   },
+   {
+    "num": 19,
+    "title": "19. Reactive patternlar (Reactive Patterns)",
+    "file": "19-reactive-patternlar.md",
+    "part": null,
+    "sections": 25
+   },
+   {
+    "num": 20,
+    "title": "20. Batch va scheduling patternlari (Batch & Scheduling Patterns)",
+    "file": "20-batch-va-scheduling-patternlari.md",
+    "part": null,
+    "sections": 30
+   },
+   {
+    "num": 21,
+    "title": "21. Observability patternlari (Observability Patterns)",
+    "file": "21-observability-patternlari.md",
+    "part": null,
+    "sections": 25
+   },
+   {
+    "num": 22,
+    "title": "22. Deployment va operatsion patternlar (Deployment & Operations Patterns)",
+    "file": "22-deployment-va-operatsion-patternlar.md",
+    "part": null,
+    "sections": 37
+   },
+   {
+    "num": 23,
+    "title": "23. Testing patternlari (Testing Patterns)",
+    "file": "23-testing-patternlari.md",
+    "part": null,
+    "sections": 61
+   },
+   {
+    "num": 24,
+    "title": "24. Zamonaviy Java va funksional patternlar (Modern Java & Functional Patterns)",
+    "file": "24-zamonaviy-java-va-funksional-patternlar.md",
+    "part": null,
+    "sections": 40
+   },
+   {
+    "num": 25,
+    "title": "25. Anti-patternlar (Anti-Patterns)",
+    "file": "25-anti-patternlar.md",
+    "part": null,
+    "sections": 83
+   },
+   {
+    "num": 26,
+    "title": "26. Dizayn printsiplari: SOLID, GRASP va umumiy qoidalar (Design Principles: SOLID, GRASP & General Rules)",
+    "file": "26-dizayn-printsiplari-solid-grasp-va-umumiy.md",
+    "part": null,
+    "sections": 29
+   },
+   {
+    "num": 27,
+    "title": "27. Monolitdan microservice'ga migratsiya patternlari (Monolith to Microservices Migration Patterns)",
+    "file": "27-monolitdan-microservicega-migratsiya.md",
+    "part": null,
+    "sections": 22
+   },
+   {
+    "num": 28,
+    "title": "28. Taqsimlangan ma'lumot, replikatsiya va konsistentlik patternlari (Distributed Data, Replication & Consistency Patterns)",
+    "file": "28-taqsimlangan-malumot-replikatsiya-va.md",
+    "part": null,
+    "sections": 28
+   },
+   {
+    "num": 29,
+    "title": "29. Kubernetes va cloud-native patternlar (Kubernetes & Cloud-Native Patterns)",
+    "file": "29-kubernetes-va-cloud-native-patternlar.md",
+    "part": null,
+    "sections": 22
+   },
+   {
+    "num": 30,
+    "title": "30. Spring AI va LLM integratsiya patternlari (Spring AI & LLM Integration Patterns)",
+    "file": "30-spring-ai-va-llm-integratsiya-patternlari.md",
+    "part": null,
+    "sections": 20
+   },
+   {
+    "num": null,
+    "title": "Alifbo bo'yicha indeks",
+    "file": "99-alifbo-boyicha-indeks.md",
+    "part": null,
+    "sections": 0
+   }
+  ]
+ },
+ "testing": {
+  "title": "Java Spring loyihasida testlash: arxitektor uchun to'liq qo'llanma",
+  "label": "Testlash qo'llanmasi",
+  "chapters": [
+   {
+    "num": 1,
+    "title": "1. Sifat strategiyasi va arxitektorning roli (Quality Strategy & the Architect's Role)",
+    "file": "01-sifat-strategiyasi-va-arxitektorning-roli.md",
+    "part": null,
+    "sections": 9
+   },
+   {
+    "num": 2,
+    "title": "2. Test piramidasi va test turlari xaritasi (Test Pyramid & the Map of Test Types)",
+    "file": "02-test-piramidasi-va-test-turlari-xaritasi.md",
+    "part": null,
+    "sections": 9
+   },
+   {
+    "num": 3,
+    "title": "3. Kim nima yozadi: rollar va mas'uliyat (Who Writes What — Roles & Responsibilities)",
+    "file": "03-kim-nima-yozadi-rollar-va-masuliyat.md",
+    "part": null,
+    "sections": 10
+   },
+   {
+    "num": 4,
+    "title": "4. Testrovshik qanday ishlashi kerak: QA ish jarayoni (How a Tester Actually Works — The QA Workflow)",
+    "file": "04-testrovshik-qanday-ishlashi-kerak-qa-ish.md",
+    "part": null,
+    "sections": 12
+   },
+   {
+    "num": 5,
+    "title": "5. Unit test: asoslar, qoidalar va JUnit 5 (Unit Testing — Foundations, Rules & JUnit 5)",
+    "file": "05-unit-test-asoslar-qoidalar-va-junit-5.md",
+    "part": null,
+    "sections": 14
+   },
+   {
+    "num": 6,
+    "title": "6. Unit test Spring loyihasida: kontekstsiz testlash (Unit Testing in a Spring Project)",
+    "file": "06-unit-test-spring-loyihasida-kontekstsiz.md",
+    "part": null,
+    "sections": 12
+   },
+   {
+    "num": 7,
+    "title": "7. Integratsion test: Spring Boot slice testlari (Integration Testing — Spring Boot Test Slices)",
+    "file": "07-integratsion-test-spring-boot-slice-testlari.md",
+    "part": null,
+    "sections": 13
+   },
+   {
+    "num": 8,
+    "title": "8. Testcontainers bilan real infratuzilmada test (Integration Testing with Testcontainers)",
+    "file": "08-testcontainers-bilan-real-infratuzilmada.md",
+    "part": null,
+    "sections": 13
+   },
+   {
+    "num": 9,
+    "title": "9. Tashqi servislarni taqlid qilish va contract testing (Faking External Services & Contract Testing)",
+    "file": "09-tashqi-servislarni-taqlid-qilish-va.md",
+    "part": null,
+    "sections": 14
+   },
+   {
+    "num": 10,
+    "title": "10. Test ma'lumotlarini boshqarish (Managing Test Data)",
+    "file": "10-test-malumotlarini-boshqarish.md",
+    "part": null,
+    "sections": 15
+   },
+   {
+    "num": 11,
+    "title": "11. Xavfsizlik, tranzaksiya, asinxron va konkurentlik testlari (Testing Security, Transactions, Async & Concurrency)",
+    "file": "11-xavfsizlik-tranzaksiya-asinxron-va.md",
+    "part": null,
+    "sections": 15
+   },
+   {
+    "num": 12,
+    "title": "12. End-to-end va UI testlar (End-to-End & UI Testing)",
+    "file": "12-end-to-end-va-ui-testlar.md",
+    "part": null,
+    "sections": 14
+   },
+   {
+    "num": 13,
+    "title": "13. Nofunksional testlar: performance, resilience, xavfsizlik (Non-Functional Testing)",
+    "file": "13-nofunksional-testlar-performance-resilience.md",
+    "part": null,
+    "sections": 16
+   },
+   {
+    "num": 14,
+    "title": "14. Arxitektura testlari va kod sifati darvozalari (Architecture Tests & Code Quality Gates)",
+    "file": "14-arxitektura-testlari-va-kod-sifati.md",
+    "part": null,
+    "sections": 14
+   },
+   {
+    "num": 15,
+    "title": "15. CI/CD da test pipeline (The Test Pipeline in CI/CD)",
+    "file": "15-ci-cd-da-test-pipeline.md",
+    "part": null,
+    "sections": 16
+   },
+   {
+    "num": 16,
+    "title": "16. Flaky testlar, test qarzi va test kodini saqlash (Flaky Tests, Test Debt & Maintenance)",
+    "file": "16-flaky-testlar-test-qarzi-va-test-kodini.md",
+    "part": null,
+    "sections": 13
+   },
+   {
+    "num": 17,
+    "title": "17. Metrikalar va test yetukligi modeli (Metrics & Testing Maturity)",
+    "file": "17-metrikalar-va-test-yetukligi-modeli.md",
+    "part": null,
+    "sections": 14
+   },
+   {
+    "num": 18,
+    "title": "18. Shablonlar, checklistlar va ma'lumotnoma (Templates, Checklists & Reference)",
+    "file": "18-shablonlar-checklistlar-va-malumotnoma.md",
+    "part": null,
+    "sections": 16
+   }
+  ]
+ },
+ "architect": {
+  "title": "Kod yozadigan arxitektorning miyyasi: Java, Spring, PostgreSQL",
+  "label": "Arxitektor miyyasi",
+  "chapters": [
+   {
+    "num": 1,
+    "title": "1. Arxitektorning fikrlash modeli (The Architect's Mental Model)",
+    "file": "01-arxitektorning-fikrlash-modeli.md",
+    "part": "I. Fikrlash va qarorlar",
+    "sections": 11
+   },
+   {
+    "num": 2,
+    "title": "2. Muammoni tushunish va to'g'ri savol berish (Understanding the Problem)",
+    "file": "02-muammoni-tushunish-va-togri-savol-berish.md",
+    "part": "I. Fikrlash va qarorlar",
+    "sections": 11
+   },
+   {
+    "num": 3,
+    "title": "3. Qaror qabul qilish va uni hujjatlashtirish (Decisions and ADRs)",
+    "file": "03-qaror-qabul-qilish-va-uni-hujjatlashtirish.md",
+    "part": "I. Fikrlash va qarorlar",
+    "sections": 11
+   },
+   {
+    "num": 4,
+    "title": "4. Kod - muloqot vositasi: nomlash, aniqlik, kognitiv yuk (Code as Communication)",
+    "file": "04-kod-muloqot-vositasi-nomlash-aniqlik.md",
+    "part": "I. Fikrlash va qarorlar",
+    "sections": 11
+   },
+   {
+    "num": 5,
+    "title": "5. Abstraksiya hissi, bog'liqlik va chegaralar (Abstraction, Coupling and Boundaries)",
+    "file": "05-abstraksiya-hissi-bogliqlik-va-chegaralar.md",
+    "part": "I. Fikrlash va qarorlar",
+    "sections": 11
+   },
+   {
+    "num": 6,
+    "title": "6. Murakkablikni boshqarish (Managing Complexity)",
+    "file": "06-murakkablikni-boshqarish.md",
+    "part": "I. Fikrlash va qarorlar",
+    "sections": 11
+   },
+   {
+    "num": 7,
+    "title": "7. Nosozlik haqida fikrlash (Thinking About Failure)",
+    "file": "07-nosozlik-haqida-fikrlash.md",
+    "part": "I. Fikrlash va qarorlar",
+    "sections": 11
+   },
+   {
+    "num": 8,
+    "title": "8. Ishlash va resurs hissi: napkin math (Performance Intuition and Napkin Math)",
+    "file": "08-ishlash-va-resurs-hissi-napkin-math.md",
+    "part": "I. Fikrlash va qarorlar",
+    "sections": 11
+   },
+   {
+    "num": 9,
+    "title": "9. JVM ichki tuzilishi: class loading, memory model, JIT (JVM Internals)",
+    "file": "09-jvm-ichki-tuzilishi-class-loading-memory.md",
+    "part": "II. Java chuqur bilim",
+    "sections": 12
+   },
+   {
+    "num": 10,
+    "title": "10. Garbage collection va xotira sozlash (Garbage Collection and Memory Tuning)",
+    "file": "10-garbage-collection-va-xotira-sozlash.md",
+    "part": "II. Java chuqur bilim",
+    "sections": 12
+   },
+   {
+    "num": 11,
+    "title": "11. Concurrency: thread, lock, atomic, happens-before (Java Concurrency)",
+    "file": "11-concurrency-thread-lock-atomic-happens.md",
+    "part": "II. Java chuqur bilim",
+    "sections": 12
+   },
+   {
+    "num": 12,
+    "title": "12. Virtual threads, structured concurrency va scoped values (Modern Concurrency)",
+    "file": "12-virtual-threads-structured-concurrency-va.md",
+    "part": "II. Java chuqur bilim",
+    "sections": 11
+   },
+   {
+    "num": 13,
+    "title": "13. Zamonaviy Java tili va API dizayni (Modern Java and API Design)",
+    "file": "13-zamonaviy-java-tili-va-api-dizayni.md",
+    "part": "II. Java chuqur bilim",
+    "sections": 12
+   },
+   {
+    "num": 14,
+    "title": "14. JVM profiling va diagnostika: JFR, async-profiler, heap dump (JVM Profiling and Diagnostics)",
+    "file": "14-jvm-profiling-va-diagnostika-jfr-async.md",
+    "part": "II. Java chuqur bilim",
+    "sections": 12
+   },
+   {
+    "num": 15,
+    "title": "15. Spring Core mexanikasi: IoC konteyner, bean lifecycle, AOP proxy (Spring Core Mechanics)",
+    "file": "15-spring-core-mexanikasi-ioc-konteyner-bean.md",
+    "part": "III. Spring chuqur bilim",
+    "sections": 12
+   },
+   {
+    "num": 16,
+    "title": "16. Spring Boot mexanikasi: auto-configuration, starter, Actuator (Spring Boot Mechanics)",
+    "file": "16-spring-boot-mexanikasi-auto-configuration.md",
+    "part": "III. Spring chuqur bilim",
+    "sections": 12
+   },
+   {
+    "num": 17,
+    "title": "17. Spring MVC va WebFlux: so'rov yo'li, thread modeli, REST dizayni (Spring MVC and WebFlux)",
+    "file": "17-spring-mvc-va-webflux-sorov-yoli-thread.md",
+    "part": "III. Spring chuqur bilim",
+    "sections": 12
+   },
+   {
+    "num": 18,
+    "title": "18. Spring Data JPA va Hibernate chuqur (Spring Data JPA and Hibernate)",
+    "file": "18-spring-data-jpa-va-hibernate-chuqur.md",
+    "part": "III. Spring chuqur bilim",
+    "sections": 13
+   },
+   {
+    "num": 19,
+    "title": "19. Spring tranzaksiyalari va ularning chegaralari (Spring Transactions)",
+    "file": "19-spring-tranzaksiyalari-va-ularning.md",
+    "part": "III. Spring chuqur bilim",
+    "sections": 13
+   },
+   {
+    "num": 20,
+    "title": "20. Spring Security: filter chain, OAuth2, JWT (Spring Security)",
+    "file": "20-spring-security-filter-chain-oauth2-jwt.md",
+    "part": "III. Spring chuqur bilim",
+    "sections": 13
+   },
+   {
+    "num": 21,
+    "title": "21. PostgreSQL arxitekturasi: process model, WAL, checkpoint, vacuum (PostgreSQL Architecture)",
+    "file": "21-postgresql-arxitekturasi-process-model-wal.md",
+    "part": "IV. PostgreSQL chuqur bilim",
+    "sections": 12
+   },
+   {
+    "num": 22,
+    "title": "22. MVCC, izolyatsiya darajalari, lock va deadlock (MVCC and Isolation)",
+    "file": "22-mvcc-izolyatsiya-darajalari-lock-va-deadlock.md",
+    "part": "IV. PostgreSQL chuqur bilim",
+    "sections": 12
+   },
+   {
+    "num": 23,
+    "title": "23. Indekslar: B-tree, GIN, GiST, BRIN va tanlov (Indexes)",
+    "file": "23-indekslar-b-tree-gin-gist-brin-va-tanlov.md",
+    "part": "IV. PostgreSQL chuqur bilim",
+    "sections": 13
+   },
+   {
+    "num": 24,
+    "title": "24. Planner, statistika va EXPLAIN ANALYZE o'qish (Planner and EXPLAIN ANALYZE)",
+    "file": "24-planner-statistika-va-explain-analyze-oqish.md",
+    "part": "IV. PostgreSQL chuqur bilim",
+    "sections": 13
+   },
+   {
+    "num": 25,
+    "title": "25. Sxema dizayni, ma'lumot turlari va cheklovlar (Schema Design and Data Types)",
+    "file": "25-sxema-dizayni-malumot-turlari-va-cheklovlar.md",
+    "part": "IV. PostgreSQL chuqur bilim",
+    "sections": 13
+   },
+   {
+    "num": 26,
+    "title": "26. Partitioning, replikatsiya va katta hajm (Partitioning, Replication and Scale)",
+    "file": "26-partitioning-replikatsiya-va-katta-hajm.md",
+    "part": "IV. PostgreSQL chuqur bilim",
+    "sections": 13
+   },
+   {
+    "num": 27,
+    "title": "27. Sozlash, connection pool va monitoring (Configuration, Pooling and Monitoring)",
+    "file": "27-sozlash-connection-pool-va-monitoring.md",
+    "part": "IV. PostgreSQL chuqur bilim",
+    "sections": 13
+   },
+   {
+    "num": 28,
+    "title": "28. Keshlash amaliyoti: invalidatsiya, stampede, Redis haqiqati (Caching in Practice)",
+    "file": "28-keshlash-amaliyoti-invalidatsiya-stampede.md",
+    "part": "V. Atrof ekotizim: operatsion haqiqat",
+    "sections": 13
+   },
+   {
+    "num": 29,
+    "title": "29. Kafka operatsion haqiqati: partition, lag, rebalance, idempotentlik (Kafka in Production)",
+    "file": "29-kafka-operatsion-haqiqati-partition-lag.md",
+    "part": "V. Atrof ekotizim: operatsion haqiqat",
+    "sections": 14
+   },
+   {
+    "num": 30,
+    "title": "30. Kuzatuvchanlik amaliyoti: log, metrika, trace va ularning narxi (Observability in Practice)",
+    "file": "30-kuzatuvchanlik-amaliyoti-log-metrika-trace.md",
+    "part": "V. Atrof ekotizim: operatsion haqiqat",
+    "sections": 13
+   },
+   {
+    "num": 31,
+    "title": "31. Deployment haqiqati: konteyner, cgroup, JVM va probe (Deployment Reality)",
+    "file": "31-deployment-haqiqati-konteyner-cgroup-jvm-va.md",
+    "part": "V. Atrof ekotizim: operatsion haqiqat",
+    "sections": 13
+   },
+   {
+    "num": 32,
+    "title": "32. Tarmoq, timeout va integratsiya haqiqati (Network, Timeouts and Integration)",
+    "file": "32-tarmoq-timeout-va-integratsiya-haqiqati.md",
+    "part": "V. Atrof ekotizim: operatsion haqiqat",
+    "sections": 13
+   },
+   {
+    "num": 33,
+    "title": "33. Sxema migratsiyasi va to'xtashsiz reliz (Schema Migration and Zero-Downtime Release)",
+    "file": "33-sxema-migratsiyasi-va-toxtashsiz-reliz.md",
+    "part": "VI. Amaliyot va o'sish",
+    "sections": 13
+   },
+   {
+    "num": 34,
+    "title": "34. Legacy kod va bosqichma-bosqich refaktoring (Legacy Code and Refactoring)",
+    "file": "34-legacy-kod-va-bosqichma-bosqich-refaktoring.md",
+    "part": "VI. Amaliyot va o'sish",
+    "sections": 13
+   },
+   {
+    "num": 35,
+    "title": "35. Incident, on-call va post-mortem (Incidents and Post-mortems)",
+    "file": "35-incident-on-call-va-post-mortem.md",
+    "part": "VI. Amaliyot va o'sish",
+    "sections": 14
+   },
+   {
+    "num": 36,
+    "title": "36. Code review va jamoada texnik yetakchilik (Code Review and Technical Leadership)",
+    "file": "36-code-review-va-jamoada-texnik-yetakchilik.md",
+    "part": "VI. Amaliyot va o'sish",
+    "sections": 13
+   },
+   {
+    "num": 37,
+    "title": "37. Xarajat, SLO va biznes bilan muloqot (Cost, SLO and Business Communication)",
+    "file": "37-xarajat-slo-va-biznes-bilan-muloqot.md",
+    "part": "VI. Amaliyot va o'sish",
+    "sections": 13
+   },
+   {
+    "num": 38,
+    "title": "38. Doimiy o'rganish va texnologiya tanlash (Continuous Learning and Technology Choice)",
+    "file": "38-doimiy-organish-va-texnologiya-tanlash.md",
+    "part": "VI. Amaliyot va o'sish",
+    "sections": 13
+   },
+   {
+    "num": 39,
+    "title": "39. Birinchi 90 kun va o'z-o'zini baholash (First 90 Days and Self-Assessment)",
+    "file": "39-birinchi-90-kun-va-oz-ozini-baholash.md",
+    "part": "VI. Amaliyot va o'sish",
+    "sections": 14
+   }
+  ]
+ },
+ "sonarqube": {
+  "title": "SonarQube: qanday ishlaydi va qanday kod bilan test undan o'tadi",
+  "label": "SonarQube",
+  "chapters": [
+   {
+    "num": 1,
+    "title": "1. SonarQube arxitekturasi va tahlil oqimi (Architecture and Analysis Flow)",
+    "file": "01-sonarqube-arxitekturasi-va-tahlil-oqimi.md",
+    "part": "I. SonarQube qanday ishlaydi",
+    "sections": 11
+   },
+   {
+    "num": 2,
+    "title": "2. Scanner nimani yig'adi va qanday yuboradi (What the Scanner Collects)",
+    "file": "02-scanner-nimani-yigadi-va-qanday-yuboradi.md",
+    "part": "I. SonarQube qanday ishlaydi",
+    "sections": 11
+   },
+   {
+    "num": 3,
+    "title": "3. Issue turlari: bug, vulnerability, code smell, security hotspot (Issue Types)",
+    "file": "03-issue-turlari-bug-vulnerability-code-smell.md",
+    "part": "I. SonarQube qanday ishlaydi",
+    "sections": 11
+   },
+   {
+    "num": 4,
+    "title": "4. Rule, quality profile va severity (Rules, Profiles and Severity)",
+    "file": "04-rule-quality-profile-va-severity.md",
+    "part": "I. SonarQube qanday ishlaydi",
+    "sections": 11
+   },
+   {
+    "num": 5,
+    "title": "5. Metrikalar: rating, texnik qarz, murakkablik, takrorlanish (Metrics and Ratings)",
+    "file": "05-metrikalar-rating-texnik-qarz-murakkablik.md",
+    "part": "I. SonarQube qanday ishlaydi",
+    "sections": 11
+   },
+   {
+    "num": 6,
+    "title": "6. Quality gate mexanikasi va shartlari (Quality Gate Mechanics)",
+    "file": "06-quality-gate-mexanikasi-va-shartlari.md",
+    "part": "II. Quality gate",
+    "sections": 11
+   },
+   {
+    "num": 7,
+    "title": "7. Yangi kod (new code) va \"clean as you code\" tamoyili (New Code and Clean as You Code)",
+    "file": "07-yangi-kod-new-code-va-clean-as-you-code.md",
+    "part": "II. Quality gate",
+    "sections": 11
+   },
+   {
+    "num": 8,
+    "title": "8. 100% ga sozlangan gate: har bir shart nimani talab qiladi (A Gate Set to 100 Percent)",
+    "file": "08-100-ga-sozlangan-gate-har-bir-shart-nimani.md",
+    "part": "II. Quality gate",
+    "sections": 12
+   },
+   {
+    "num": 9,
+    "title": "9. Coverage qanday o'lchanadi: JaCoCo mexanikasi (How Coverage Is Measured)",
+    "file": "09-coverage-qanday-olchanadi-jacoco-mexanikasi.md",
+    "part": "III. Qamrov (coverage)",
+    "sections": 11
+   },
+   {
+    "num": 10,
+    "title": "10. JaCoCo va SonarQube ulanishi: Maven va Gradle sozlash (Wiring JaCoCo to SonarQube)",
+    "file": "10-jacoco-va-sonarqube-ulanishi-maven-va.md",
+    "part": "III. Qamrov (coverage)",
+    "sections": 12
+   },
+   {
+    "num": 11,
+    "title": "11. Qamralmay qoladigan kod va unga test yozish (Code That Stays Uncovered)",
+    "file": "11-qamralmay-qoladigan-kod-va-unga-test-yozish.md",
+    "part": "III. Qamrov (coverage)",
+    "sections": 15
+   },
+   {
+    "num": 12,
+    "title": "12. Exclusion: nimani chiqarish halol, nimani chiqarish aldov (Exclusions, Honest and Dishonest)",
+    "file": "12-exclusion-nimani-chiqarish-halol-nimani.md",
+    "part": "III. Qamrov (coverage)",
+    "sections": 12
+   },
+   {
+    "num": 13,
+    "title": "13. Sonar o'tadigan kod yozish qoidalari (Writing Code That Passes)",
+    "file": "13-sonar-otadigan-kod-yozish-qoidalari.md",
+    "part": "IV. Sonar o'tadigan kod",
+    "sections": 12
+   },
+   {
+    "num": 14,
+    "title": "14. Java va Spring da eng ko'p uchraydigan issue va ularning yechimi (Common Java and Spring Issues)",
+    "file": "14-java-va-spring-da-eng-kop-uchraydigan-issue.md",
+    "part": "IV. Sonar o'tadigan kod",
+    "sections": 13
+   },
+   {
+    "num": 15,
+    "title": "15. Cognitive complexity va takrorlanishni kamaytirish (Cognitive Complexity and Duplication)",
+    "file": "15-cognitive-complexity-va-takrorlanishni.md",
+    "part": "IV. Sonar o'tadigan kod",
+    "sections": 12
+   },
+   {
+    "num": 16,
+    "title": "16. Security hotspot va vulnerability: tekshirish va tuzatish (Security Hotspots and Vulnerabilities)",
+    "file": "16-security-hotspot-va-vulnerability.md",
+    "part": "IV. Sonar o'tadigan kod",
+    "sections": 12
+   },
+   {
+    "num": 17,
+    "title": "17. Sonar talablarini qondiradigan test yozish (Writing Tests That Satisfy Sonar)",
+    "file": "17-sonar-talablarini-qondiradigan-test-yozish.md",
+    "part": "V. Sonar o'tadigan test",
+    "sections": 12
+   },
+   {
+    "num": 18,
+    "title": "18. Branch va shart qamrovini to'liq yopish usullari (Covering Every Branch)",
+    "file": "18-branch-va-shart-qamrovini-toliq-yopish.md",
+    "part": "V. Sonar o'tadigan test",
+    "sections": 15
+   },
+   {
+    "num": 19,
+    "title": "19. Testning o'zidagi Sonar qoidalari va test sifati (Sonar Rules on Test Code)",
+    "file": "19-testning-ozidagi-sonar-qoidalari-va-test.md",
+    "part": "V. Sonar o'tadigan test",
+    "sections": 12
+   },
+   {
+    "num": 20,
+    "title": "20. Mutation testing: 100% coverage qachon yolg'on (Mutation Testing)",
+    "file": "20-mutation-testing-100-coverage-qachon-yolgon.md",
+    "part": "V. Sonar o'tadigan test",
+    "sections": 12
+   },
+   {
+    "num": 21,
+    "title": "21. CI/CD ga ulash, PR decoration va blokirovka (CI/CD Integration)",
+    "file": "21-ci-cd-ga-ulash-pr-decoration-va-blokirovka.md",
+    "part": "VI. Amaliyot va jarayon",
+    "sections": 12
+   },
+   {
+    "num": 22,
+    "title": "22. Lokal tekshirish: IDE, sonar-scanner va tez qaytish (Local Feedback Loop)",
+    "file": "22-lokal-tekshirish-ide-sonar-scanner-va-tez.md",
+    "part": "VI. Amaliyot va jarayon",
+    "sections": 11
+   },
+   {
+    "num": 23,
+    "title": "23. Legacy loyihani 100% ga olib chiqish rejasi (Bringing a Legacy Project to 100)",
+    "file": "23-legacy-loyihani-100-ga-olib-chiqish-rejasi.md",
+    "part": "VI. Amaliyot va jarayon",
+    "sections": 13
+   },
+   {
+    "num": 24,
+    "title": "24. False positive, suppression va o'z qoidangiz (False Positives and Custom Rules)",
+    "file": "24-false-positive-suppression-va-oz-qoidangiz.md",
+    "part": "VI. Amaliyot va jarayon",
+    "sections": 12
+   },
+   {
+    "num": 25,
+    "title": "25. Xato katalogi: reliability (bug) toifasi (Catalog: Reliability)",
+    "file": "25-xato-katalogi-reliability-bug-toifasi.md",
+    "part": "VII. Xato katalogi: qanday kod qanday xato hisoblanadi",
+    "sections": 19
+   },
+   {
+    "num": 26,
+    "title": "26. Xato katalogi: security (vulnerability va hotspot) (Catalog: Security)",
+    "file": "26-xato-katalogi-security-vulnerability-va.md",
+    "part": "VII. Xato katalogi: qanday kod qanday xato hisoblanadi",
+    "sections": 17
+   },
+   {
+    "num": 27,
+    "title": "27. Xato katalogi: maintainability, tuzilish va murakkablik (Catalog: Maintainability, Structure)",
+    "file": "27-xato-katalogi-maintainability-tuzilish-va.md",
+    "part": "VII. Xato katalogi: qanday kod qanday xato hisoblanadi",
+    "sections": 17
+   },
+   {
+    "num": 28,
+    "title": "28. Xato katalogi: maintainability, nomlash, o'lik kod va uslub (Catalog: Maintainability, Naming)",
+    "file": "28-xato-katalogi-maintainability-nomlash-olik.md",
+    "part": "VII. Xato katalogi: qanday kod qanday xato hisoblanadi",
+    "sections": 17
+   },
+   {
+    "num": 29,
+    "title": "29. Xato katalogi: Spring, JPA va PostgreSQL ga xos xatolar (Catalog: Spring, JPA and PostgreSQL)",
+    "file": "29-xato-katalogi-spring-jpa-va-postgresql-ga.md",
+    "part": "VII. Xato katalogi: qanday kod qanday xato hisoblanadi",
+    "sections": 17
+   },
+   {
+    "num": 30,
+    "title": "30. Xato katalogi: test kodidagi xatolar (Catalog: Test Code)",
+    "file": "30-xato-katalogi-test-kodidagi-xatolar.md",
+    "part": "VII. Xato katalogi: qanday kod qanday xato hisoblanadi",
+    "sections": 15
+   },
+   {
+    "num": 31,
+    "title": "31. Xatolarga tushmaslik uchun yakuniy tavsiyalar (Preventive Checklist)",
+    "file": "31-xatolarga-tushmaslik-uchun-yakuniy.md",
+    "part": "VII. Xato katalogi: qanday kod qanday xato hisoblanadi",
+    "sections": 12
+   },
+   {
+    "num": 32,
+    "title": "32. SonarQube nashrlari va ularning farqi (Editions)",
+    "file": "32-sonarqube-nashrlari-va-ularning-farqi.md",
+    "part": "VIII. Server va tashkilot",
+    "sections": 12
+   },
+   {
+    "num": 33,
+    "title": "33. Serverni o'rnatish, sozlash va resurs rejalashtirish (Installing and Sizing the Server)",
+    "file": "33-serverni-ornatish-sozlash-va-resurs.md",
+    "part": "VIII. Server va tashkilot",
+    "sections": 12
+   },
+   {
+    "num": 34,
+    "title": "34. Yangilash, LTA migratsiyasi, zaxira va housekeeping (Upgrades, Backup and Housekeeping)",
+    "file": "34-yangilash-lta-migratsiyasi-zaxira-va.md",
+    "part": "VIII. Server va tashkilot",
+    "sections": 12
+   },
+   {
+    "num": 35,
+    "title": "35. Foydalanuvchi, guruh, huquqlar, token va SSO (Users, Permissions and Tokens)",
+    "file": "35-foydalanuvchi-guruh-huquqlar-token-va-sso.md",
+    "part": "VIII. Server va tashkilot",
+    "sections": 12
+   },
+   {
+    "num": 36,
+    "title": "36. Web API va avtomatlashtirish (Web API and Automation)",
+    "file": "36-web-api-va-avtomatlashtirish.md",
+    "part": "IX. Kengaytirish va integratsiya",
+    "sections": 12
+   },
+   {
+    "num": 37,
+    "title": "37. Taint analysis mexanikasi: source, sink, sanitizer (Taint Analysis Mechanics)",
+    "file": "37-taint-analysis-mexanikasi-source-sink.md",
+    "part": "IX. Kengaytirish va integratsiya",
+    "sections": 13
+   },
+   {
+    "num": 38,
+    "title": "38. Ko'p tilli loyiha: SQL, XML, YAML, Docker, Kubernetes, frontend (Multi-language Projects)",
+    "file": "38-kop-tilli-loyiha-sql-xml-yaml-docker.md",
+    "part": "IX. Kengaytirish va integratsiya",
+    "sections": 13
+   },
+   {
+    "num": 39,
+    "title": "39. Bog'liqlik zaifliklari va litsenziya tekshiruvi (Dependency Risk and Licences)",
+    "file": "39-bogliqlik-zaifliklari-va-litsenziya.md",
+    "part": "IX. Kengaytirish va integratsiya",
+    "sections": 13
+   },
+   {
+    "num": 40,
+    "title": "40. Sonar va boshqa vositalar: qachon qaysi biri (Sonar and Other Tools)",
+    "file": "40-sonar-va-boshqa-vositalar-qachon-qaysi-biri.md",
+    "part": "IX. Kengaytirish va integratsiya",
+    "sections": 12
+   },
+   {
+    "num": 41,
+    "title": "41. Lombok, record va generatsiya qilingan kod (Lombok, Records and Generated Code)",
+    "file": "41-lombok-record-va-generatsiya-qilingan-kod.md",
+    "part": "X. Amaliy ma'lumotnoma",
+    "sections": 13
+   },
+   {
+    "num": 42,
+    "title": "42. Diagnostika: tahlil ishlamaganda nima qilish (Troubleshooting)",
+    "file": "42-diagnostika-tahlil-ishlamaganda-nima-qilish.md",
+    "part": "X. Amaliy ma'lumotnoma",
+    "sections": 17
+   },
+   {
+    "num": 43,
+    "title": "43. Tezkor ma'lumotnoma: parametrlar, buyruqlar, glossariy (Quick Reference and Glossary)",
+    "file": "43-tezkor-malumotnoma-parametrlar-buyruqlar.md",
+    "part": "X. Amaliy ma'lumotnoma",
+    "sections": 15
+   }
+  ]
+ }
+}
