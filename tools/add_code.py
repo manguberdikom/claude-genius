@@ -20,6 +20,27 @@ def chapter_paths(key):
     return [os.path.join(ROOT, 'docs', key, c['file']) for c in man['chapters'] if c['num']]
 
 
+NAV = '[Mundarija](README.md)'
+
+
+def content_end(lines, first_section):
+    """Navigatsiya footeri boshlanadigan qator raqami.
+
+    Oxirgi bo'limning tanasi fayl oxirigacha emas, footergacha davom
+    etadi: aks holda kod bloki navigatsiya havolasidan KEYIN tushadi va
+    bob shakli buziladi (CLAUDE.md, qattiq qoida 3). check_docs footer
+    borligini tekshiradi, oxirida turganini emas, shuning uchun bu xato
+    jim o'tardi.
+    """
+    for i in range(len(lines) - 1, first_section, -1):
+        if NAV in lines[i]:
+            end = i
+            while end > first_section and lines[end - 1].strip() in ('', '---'):
+                end -= 1
+            return end
+    return len(lines)
+
+
 def insert(path, wanted):
     """wanted: {'1.2': kod}. Qo'shilgan raqamlar to'plamini qaytaradi."""
     text = open(path, encoding='utf-8').read()
@@ -39,7 +60,7 @@ def insert(path, wanted):
         if not m or m.group(1) not in wanted:
             continue
         num = m.group(1)
-        end = marks[n + 1] if n + 1 < len(marks) else len(lines)
+        end = marks[n + 1] if n + 1 < len(marks) else content_end(lines, start)
         body = lines[start + 1:end]
         if any(l.startswith('```') for l in body):
             continue

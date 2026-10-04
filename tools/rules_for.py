@@ -27,6 +27,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 
+from docref import ensure_index  # noqa: E402
 from state import mark  # noqa: E402
 
 CHAPTERS = os.path.join(ROOT, "index", "chapters.tsv")
@@ -153,6 +154,7 @@ ALWAYS = [("clean-code", "2"), ("clean-code", "4"), ("code-review", "8")]
 
 def chapter_titles():
     titles = {}
+    ensure_index("chapters.tsv")
     if not os.path.exists(CHAPTERS):
         return titles
     with open(CHAPTERS, encoding="utf-8") as handle:
@@ -201,6 +203,7 @@ def detect(paths):
 def checklist_for(wanted):
     """Berilgan boblarning tekshiruv punktlari, bob tartibida."""
     items = {}
+    ensure_index("checklist.tsv")
     if not os.path.exists(CHECKLIST):
         return items
     with open(CHECKLIST, encoding="utf-8") as handle:

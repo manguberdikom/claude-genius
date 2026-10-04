@@ -188,6 +188,13 @@ def main():
                     err(f"docs/{key}/{c['file']}: metadata izohi yo'q")
                 if '[Mundarija](README.md)' not in t:
                     err(f"docs/{key}/{c['file']}: navigatsiya havolasi yo'q")
+                # Footer oxirida turishi kerak, shunchaki mavjud bo'lishi
+                # emas: add_code.py kabi yozuvchi asbob kod blokini uning
+                # ORQASIGA qo'yib yuborishi mumkin va bob shakli buziladi.
+                body = [l for l in t.split('\n') if l.strip()]
+                if body and '[Mundarija](README.md)' not in body[-1]:
+                    err(f"docs/{key}/{c['file']}: navigatsiya footeridan keyin "
+                        f"matn bor -> {body[-1][:50]}")
 
                 # 7. bob-yopish konvensiyasi
                 if c['num'] and not re.search(

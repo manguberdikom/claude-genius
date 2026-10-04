@@ -26,6 +26,7 @@ build uch barobarga oshar edi.
 """
 
 import os
+import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -89,9 +90,15 @@ BORDERLINE = [
 
 
 def main():
+    # Indeks hosila va git ga kirmaydi, ya'ni toza checkout da yo'q.
+    # Avval bu yerda "yo'q, qo'lda yasang" deb yiqilardi: lokalda indeks
+    # allaqachon turgani uchun sezilmay qolgan, CI da esa birinchi
+    # yurgizishda qizil berardi. Endi o'zi yasaydi, eval_find kabi.
     if not os.path.exists(os.path.join(S.INDEX, "df.tsv")):
-        print("index/df.tsv yo'q, avval: tools/doc.sh rebuild")
-        return 1
+        print("indeks yo'q, yasalmoqda: tools/doc.sh rebuild")
+        subprocess.run([os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                     "doc.sh"), "rebuild"],
+                       capture_output=True, check=True)
 
     failures = 0
 

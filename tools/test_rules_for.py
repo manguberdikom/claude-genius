@@ -11,6 +11,7 @@ oldini olish uchun bu asbob yozilgan.
 """
 
 import os
+import re
 import subprocess
 import sys
 
@@ -93,6 +94,50 @@ def main():
         failures += not ok
         print("%-4s %s" % ("OK" if ok else "XATO", label))
 
+    print("\n== Indekssiz ishlaydimi ==")
+    # Indeks hosila va git ga kirmaydi, ya'ni toza klonda yo'q. Avval
+    # rules_for jim turib bob raqamisiz chiqish berardi: topilma bor,
+    # havola yo'q, sabab aytilmagan. Endi o'zi yasaydi. Bu sinov shuni
+    # qo'riqlaydi, chunki xato ko'rinmaydigan turdan: hech narsa
+    # yiqilmaydi, faqat javob kambag'allashadi.
+    index_dir = os.path.join(ROOT, "index")
+    moved = index_dir + ".sinov"
+    index_checks = []
+    if os.path.isdir(index_dir):
+        os.rename(index_dir, moved)
+    try:
+        code_i, out_i, err_i = run(BAD)
+        # Indekssiz chiqish shakli saqlanadi, faqat ichi bo'shaydi:
+        # "# Tegishli boblar" sarlavhasi baribir chiqadi, ostida esa hech
+        # narsa bo'lmaydi. Shuning uchun sarlavhani sanash yetarli emas,
+        # uning OSTIDAGI qatorlar sanaladi.
+        # Keyingi sarlavhada to'xtash SHART: aks holda pastdagi
+        # "# Mashina topgani" topilmalari ham bob deb sanaladi va sinov
+        # indekssiz holatda ham yashil beradi.
+        body = out_i.split("# Tegishli boblar", 1)[-1].split("\n#", 1)[0]
+        listed = [l for l in body.split("\n")
+                  if l.startswith("  ") and len(l.split()) >= 4]
+        punkt = re.search(r"# Tekshiruv punktlari \((\d+) tadan", out_i)
+        index_checks = [
+            ("indeks o'zi yasaladi", os.path.isdir(index_dir)),
+            ("boblar sarlavhasi bilan chiqdi", len(listed) >= 5),
+            ("tekshiruv punktlari topildi",
+             bool(punkt) and int(punkt.group(1)) > 0),
+            # Ogohlantirish stderr ga chiqadi, shuning uchun aynan
+            # stderr tekshiriladi.
+            ("ogohlantirish chiqmadi", "indeksda yo'q" not in err_i),
+            ("chiqish kodi 0", code_i == 0),
+        ]
+    finally:
+        if os.path.isdir(moved) and not os.path.isdir(index_dir):
+            os.rename(moved, index_dir)
+        elif os.path.isdir(moved):
+            import shutil
+            shutil.rmtree(moved)
+    for label, ok in index_checks:
+        failures += not ok
+        print("%-4s %s" % ("OK" if ok else "XATO", label))
+
     print("\n== Xato yo'llar ==")
     for label, args, want in (("fayl berilmadi", [], 2),
                               ("ko'rilmaydigan fayl", ["README.md"], 2),
@@ -103,7 +148,7 @@ def main():
         print("%-4s %-22s kutilgan=%d olingan=%d"
               % ("OK" if ok else "XATO", label, want, code_e))
 
-    total = 1 + len(cases) + len(checks) + 3 + 3
+    total = 1 + len(cases) + len(checks) + 3 + len(index_checks) + 3
     print("\n%d/%d o'tdi" % (total - failures, total))
     return 1 if failures else 0
 

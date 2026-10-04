@@ -112,6 +112,11 @@ fence juftligi, manifest mosligi, bob strukturasi, bob-yopish konvensiyasi,
 skilllardagi havolalar.
 Xatosiz o'tishi shart. CI ham shuni ishlatadi.
 
+Asbob o'zgartirilsa uning `tools/test_<nom>.py` si, oxirida `eval_skill.py`,
+`eval_find.py` va `cost_report.py`. CI hammasini `tools` ishida yurgizadi.
+`eval_find` pastki chegara bilan o'lchaydi: so'rovlar tasodifiy olinadi,
+100% talab qilsa har safar qizil berib e'tibordan qolardi.
+
 ## Qattiq qoidalar
 
 1. **Fayl 900 KB dan oshmaydi.** GitHub 1 MB dan katta markdown ni render

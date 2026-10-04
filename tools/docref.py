@@ -11,16 +11,39 @@ funksiyadan o'tadi.
 """
 
 import os
+import subprocess
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 INDEX = os.path.join(ROOT, "index")
 
 _cache = {}
+_built = False
+
+
+def ensure_index(name):
+    """Indeks fayli yo'q bo'lsa bir marta yasaydi.
+
+    Indeks hosila va git ga kirmaydi. U yo'q bo'lganda bu modul avval
+    jim turib bo'sh ro'yxat qaytarardi: topilmalar chiqar, lekin bo'lim
+    raqami yo'q, va nega yo'qligini hech kim aytmasdi. Toza klonda
+    birinchi Java yozuvi aynan shunday kamroq narsa olardi. doc.sh
+    allaqachon o'zini shunday davolaydi, bu yerda ham shunday.
+    """
+    global _built
+    if _built or os.path.exists(os.path.join(INDEX, name)):
+        return
+    _built = True   # yasash yiqilsa ham ikkinchi marta urinilmaydi
+    try:
+        subprocess.run([os.path.join(ROOT, "tools", "doc.sh"), "rebuild"],
+                       capture_output=True, timeout=120, check=False)
+    except (OSError, subprocess.SubprocessError):
+        pass
 
 
 def _rows(name):
     if name in _cache:
         return _cache[name]
+    ensure_index(name)
     path = os.path.join(INDEX, name)
     rows = []
     if os.path.exists(path):

@@ -25,3 +25,32 @@ jobs:
             test -s "$f" || { echo "bo'sh fayl: $f"; exit 1; }
           done
           ls -la dist/
+
+  tools:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Nega alohida ish: yuqoridagi `check` hujjatni tekshiradi, bu esa
+      # asboblarni. Ular mustaqil yiqiladi, shuning uchun qaysi biri
+      # buzilganini loglardan izlash kerak bo'lmasin.
+      - name: Asbob sinovlari
+        run: |
+          for t in guard suggest schema doc check_code parse_test_output \
+                   rules_for add_code skill; do
+            echo "== test_$t =="
+            python3 "tools/test_$t.py"
+          done
+
+      - name: Zanjir o'lchovi
+        run: python3 tools/eval_skill.py
+
+      - name: Qidiruv o'rni
+        run: python3 tools/eval_find.py
+
+      - name: Har navbatdagi kontekst byudjeti
+        run: python3 tools/cost_report.py
