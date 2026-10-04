@@ -12,6 +12,14 @@ statik tahlil esa SonarQube hujjatida turadi.
 | [java-spring-architect-mindset.md](java-spring-architect-mindset.md) | 39 bob, 482 bo'lim | Fikrlash va qaror, JVM ichki tuzilishi, Spring mexanikasi, PostgreSQL chuqur bilim, operatsion haqiqat |
 | [java-spring-sonarqube.md](java-spring-sonarqube.md) | 43 bob, 557 bo'lim | SonarQube mexanikasi, quality gate, coverage, xato katalogi, server va tashkilot, ma'lumotnoma |
 
+## Memory protokoli
+
+Qo'llanmalardan tashqari bitta ish hujjati bor:
+[memory-protocol.md](memory-protocol.md). U Claude sessiyalari orasida bilim
+qanday saqlanishini belgilaydi: qaysi bilim qaysi joyga boradi, qanday tartibda
+o'qiladi va yoziladi, nima umuman saqlanmaydi. Memory haqida gap boradigan
+boshqa fayllar qoidani nusxalamaydi, shu faylga havola qiladi.
+
 ## Qayerdan boshlash
 
 - **Kod yozyapsiz va Sonar shikoyat qilyapti** - SonarQube hujjatidagi xato katalogi
