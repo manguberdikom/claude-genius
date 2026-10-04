@@ -32,6 +32,38 @@ Oltita hujjat, har biri `docs/<hujjat>/` papkasida, har bob alohida faylda:
 `docs/` yagona haqiqat manbasi. Bitta fayllik variant kerak bo'lsa
 `python3 tools/build_single.py` ishga tushiriladi.
 
+## Qidirish va o'qish
+
+Korpus 5.9 MB, ~2.1M token. Eng katta bob ~68k token, bitta bo'lim esa
+o'rtacha ~700 token. Shuning uchun bob fayli butunligicha emas, bo'lim
+darajasida o'qiladi. Hammasi `tools/doc.sh` orqali:
+
+```bash
+tools/doc.sh find "circuit breaker"       # sarlavha va inglizcha taxalluslar
+tools/doc.sh find -f "pg_stat_statements" # matn ichidan ham, ~60 ms
+tools/doc.sh show patterns 17.2           # faqat o'sha bo'limni chiqaradi
+tools/doc.sh outline sonarqube 29         # bobdagi bo'limlar
+tools/doc.sh path patterns 17.2           # fayl, satr oralig'i va anchor
+```
+
+Odatiy yo'l ikki qadam: `find` bo'lim raqamini beradi, `show` matnni beradi.
+Hujjat kalitlari `doc.sh toc` da.
+
+Qoidalar:
+
+- `cat`, `less` yoki chegarasiz `Read` bilan 1200 satrdan uzun bob fayli
+  o'qilmaydi. Buni `tools/guard_bigdocs.py` PreToolUse hook sifatida to'sadi
+  (`.claude/settings.json`), sinovlari `tools/test_guard.py` da.
+- Havolani qo'lda yozmang: `doc.sh path` tayyor anchor beradi, u
+  `check_docs.py` ishlatadigan slug bilan bir xil hisoblanadi.
+- Indeks `index/` da, uni `tools/build_index.py` `docs/manifest.json` dan
+  yasaydi. Bob fayli indeksdan yangiroq bo'lsa `doc.sh` o'zi qayta yasaydi,
+  shuning uchun tahrirdan keyin qo'lda hech narsa qilish shart emas.
+- Indeks grep qilinadi, o'qilmaydi. Uni ham kontekstga to'liq olmang.
+- Qidiruv sifati o'lchanadi: `python3 tools/eval_find.py`. U bo'limni
+  topish emas, nechanchi o'rinda chiqishini o'lchaydi. `find` mantig'i yoki
+  indeks o'zgarsa, pasayish shu yerda ko'rinadi.
+
 ## Tekshiruv
 
 Hujjat o'zgartirilgandan keyin:
