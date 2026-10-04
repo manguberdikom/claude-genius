@@ -61,6 +61,20 @@ Ma'lumotlarni boshqarish va taqsimlash patternlari ma'lumotning hayot davri - ya
 
 **Ehtiyot bo'ling:** Unique index'lar soft delete bilan ziddiyatga kiradi - o'chirilgan `email` yangi ro'yxatdan o'tishni bloklaydi, shuning uchun partial/filtered index yoki `deleted_at` ni kalitga qo'shish kerak. Native query, `JOIN`, reporting va `COUNT` joylarida filtr esdan chiqsa "o'chirilgan" ma'lumot ko'rinib qoladi; GDPR "o'chirish huquqi" talab qilsa soft delete yetarli emas - haqiqiy anonimlashtirish yoki hard delete kerak.
 
+```java
+// Soft delete: qator qolaveradi, filtr avtomatik qo'llanadi
+@Entity
+@SQLDelete(sql = "UPDATE orders SET deleted_at = now() WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")        // Hibernate 6.3+
+class Order {
+    @Id private Long id;
+    private Instant deletedAt;
+}
+// Partial indeks bo'lmasa so'rovlar sekinlashadi:
+// CREATE INDEX ix_orders_live ON orders(status) WHERE deleted_at IS NULL;
+// Unique cheklov ham shartli bo'lishi kerak, aks holda qayta yaratish buziladi.
+```
+
 ## 10.2 Audit izi / Auditlash (Audit Trail / Auditing)
 
 **Tavsif:** Har bir o'zgarish uchun kim, qachon va nimani o'zgartirganini avtomatik qayd qilish. Eng oddiy darajada bu `created_by`/`created_at`/`modified_by`/`modified_at` ustunlari, kuchliroq darajada - har bir `UPDATE` uchun to'liq revision jadvali. Muammosi: biznes kodini audit logikasi bilan ifloslantirmaslik, shuning uchun u framework darajasidagi callback'lar orqali amalga oshiriladi.
@@ -75,6 +89,27 @@ Ma'lumotlarni boshqarish va taqsimlash patternlari ma'lumotning hayot davri - ya
 - Tibbiy yozuvlarga kirish va o'zgartirishni qonun talabiga ko'ra qayd etish.
 
 **Ehtiyot bo'ling:** Envers yozish hajmini va jadvallar sonini keskin oshiradi - har bir `UPDATE` ikkinchi `INSERT` keltiradi, shuning uchun uni hamma entity'ga emas, faqat biznesga muhim bo'lganlarga qo'llang va retention/arxivlash siyosatini oldindan rejalashtiring. `AuditorAware` async thread yoki batch job ichida bo'sh qaytadi (`SecurityContext` propagate bo'lmaydi), shuningdek audit jadvallariga parol, token yoki PII tushib qolmasligini nazorat qilish kerak.
+
+```java
+@Entity
+@EntityListeners(AuditingEntityListener.class)
+class Order {
+    @CreatedDate private Instant createdAt;
+    @LastModifiedDate private Instant updatedAt;
+    @CreatedBy private String createdBy;
+}
+
+@Configuration
+@EnableJpaAuditing
+class AuditConfig {
+    @Bean
+    AuditorAware<String> auditorAware() {
+        return () -> Optional.ofNullable(SecurityContextHolder.getContext()
+                .getAuthentication()).map(Authentication::getName);
+    }
+}
+// Kim nimani o'zgartirganini bilish uchun bu yetmaydi: eski qiymat ham kerak
+```
 
 ## 10.3 Versiyalangan / Temporal / Bitemporal ma'lumot (Versioned / Temporal / Bitemporal data)
 
@@ -91,6 +126,26 @@ Ma'lumotlarni boshqarish va taqsimlash patternlari ma'lumotning hayot davri - ya
 
 **Ehtiyot bo'ling:** Temporal model so'rovlar va unique constraint'larni ancha murakkablashtiradi - oynalar kesishib ketmasligini baza darajasida kafolatlash kerak, aks holda bitta sanada ikkita "joriy" versiya paydo bo'ladi. Bitemporal'ni haqiqiy ehtiyoj bo'lmasa tanlamang: ko'p holatda oddiy audit trail yetarli, bitemporal esa butun domen modeli va UI'ni og'irlashtiradi.
 
+```sql
+-- Temporal: har o'zgarish yangi qator, joriy holat `valid_to IS NULL`
+CREATE TABLE price_history (
+    product_id bigint    NOT NULL,
+    price      numeric   NOT NULL,
+    valid_from timestamptz NOT NULL,
+    valid_to   timestamptz,
+    EXCLUDE USING gist (product_id WITH =,
+             tstzrange(valid_from, valid_to) WITH &&)   -- kesishmaslik kafolati
+);
+
+-- Joriy narx
+SELECT price FROM price_history
+WHERE product_id = $1 AND valid_to IS NULL;
+
+-- O'tgan sanadagi narx
+SELECT price FROM price_history
+WHERE product_id = $1 AND tstzrange(valid_from, valid_to) @> $2::timestamptz;
+```
+
 ## 10.4 Ma'lumotlar bazasi migratsiyasi (Database Migration)
 
 **Tavsif:** Schema o'zgarishlarini versiyalangan, tartiblangan va takrorlanadigan skriptlar ko'rinishida kodga joylashtirish, so'ng ilova ishga tushganda yoki CI/CD bosqichida avtomatik qo'llash. Har bir migratsiya bir marta bajariladi va baza ichidagi maxsus jadvalda (checksum bilan) qayd etiladi, shuning uchun har qanday muhitda schema holati bir xil va kuzatiladigan bo'ladi.
@@ -105,6 +160,18 @@ Ma'lumotlarni boshqarish va taqsimlash patternlari ma'lumotning hayot davri - ya
 - Legacy bazani birinchi marta Flyway nazoratiga olish (`baseline-on-migrate`).
 
 **Ehtiyot bo'ling:** Allaqachon qo'llanilgan migratsiya faylini tahrirlash checksum xatosiga olib keladi - tuzatish uchun yangi migratsiya yozing, eskisini o'zgartirmang. Bir nechta pod bir vaqtda ishga tushsa migratsiya race'i yuz berishi mumkin (Flyway lock ko'p bazalarda yordam beradi, lekin MySQL DDL transactional emas), katta jadvalga `ALTER` esa uzoq lock olib ilovani to'xtatishi mumkin - bunday o'zgarishlarni expand/contract bilan bosqichlang.
+
+```sql
+-- V1_012__add_order_status_index.sql
+-- Flyway: har migratsiya o'zgarmas, oldinga qarab yoziladi
+CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_orders_status
+    ON orders (status) WHERE deleted_at IS NULL;
+
+-- CONCURRENTLY tranzaksiya ichida ishlamaydi, shuning uchun:
+-- flyway.conf: flyway.executeInTransaction=false (yoki migratsiya nomida -- noTransaction)
+-- Qoida: deploy qilingan migratsiya hech qachon tahrirlanmaydi,
+-- xato bo'lsa yangi migratsiya yoziladi.
+```
 
 ## 10.5 Keng aytib-toraytirish schema migratsiyasi (Expand/Contract schema migration)
 
@@ -144,6 +211,26 @@ Ma'lumotlarni boshqarish va taqsimlash patternlari ma'lumotning hayot davri - ya
 
 **Ehtiyot bo'ling:** Bitta unutilgan `WHERE tenant_id = ?` - ayniqsa native query, reporting yoki yangi repository metodida - tenant'lar orasida ma'lumot oqishiga olib keladi; shuning uchun filtrni ilovaga emas, Hibernate `@TenantId` va RLS kabi "default on" mexanizmlarga tayanib qo'ying. Shuningdek "shovqinli qo'shni" (bitta yirik tenant butun bazani sekinlashtirishi) va tenant'ni alohida eksport/o'chirish (GDPR) qiyinligi bu modelning doimiy narxi.
 
+```java
+// Shared schema: tenant ustuni va avtomatik filtr
+@Entity
+@FilterDef(name = "tenantFilter", parameters = @ParamDef(name = "tenantId", type = String.class))
+@Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
+class Order {
+    @Id private Long id;
+    @Column(name = "tenant_id", nullable = false, updatable = false)
+    private String tenantId;
+}
+
+@Component
+class TenantFilterActivator {
+    void enable(EntityManager em, String tenantId) {
+        em.unwrap(Session.class).enableFilter("tenantFilter")
+          .setParameter("tenantId", tenantId);   // unutilsa ma'lumot oqib ketadi
+    }
+}
+```
+
 ## 10.7 Ko'p-tenantlilik: tenant boshiga schema (Multi-tenancy: schema per tenant)
 
 **Tavsif:** Bitta baza instance'i ichida har bir tenant uchun alohida schema yaratiladi; so'rovlar bir xil, faqat ulanishning joriy schema'si almashtiriladi. Bu izolyatsiya va xarajat o'rtasidagi o'rta yo'l: ma'lumot fizik ajratilgan, backup va o'chirish schema darajasida bajariladi, lekin baza resurslari hamon umumiy.
@@ -158,6 +245,30 @@ Ma'lumotlarni boshqarish va taqsimlash patternlari ma'lumotning hayot davri - ya
 - Tenant'ni keyinchalik alohida bazaga ko'chirishga tayyor arxitektura qurish.
 
 **Ehtiyot bo'ling:** Schema soni o'sgach migratsiya vaqti chiziqli oshadi va bir nechta schema yarim migratsiya holatida qolib ketishi mumkin - tenant provisioning va migratsiyani idempotent, qayta ishga tushirilishi mumkin qilib yozing. Connection pool ham diqqatli bo'lishni talab qiladi: pool'ga qaytarilgan connection'da `search_path` tozalanmasa, keyingi so'rov boshqa tenant schema'siga tushib qolishi mumkin.
+
+```java
+// Schema per tenant: bitta ulanish, search_path almashtiriladi
+@Component
+public class SchemaTenantConnectionProvider
+        implements MultiTenantConnectionProvider<String> {
+
+    @Override
+    public Connection getConnection(String tenantId) throws SQLException {
+        Connection c = dataSource.getConnection();
+        try (Statement s = c.createStatement()) {
+            // Tenant nomi oq ro'yxatdan kelishi shart: SQL injection xavfi
+            s.execute("SET search_path TO " + quoteIdentifier(tenantId));
+        }
+        return c;
+    }
+
+    @Override
+    public void releaseConnection(String tenantId, Connection c) throws SQLException {
+        try (Statement s = c.createStatement()) { s.execute("SET search_path TO public"); }
+        c.close();                      // pool'ga qaytganda tozalash majburiy
+    }
+}
+```
 
 ## 10.8 Ko'p-tenantlilik: tenant boshiga baza (Multi-tenancy: database per tenant)
 
@@ -174,6 +285,28 @@ Ma'lumotlarni boshqarish va taqsimlash patternlari ma'lumotning hayot davri - ya
 
 **Ehtiyot bo'ling:** Tenant soni oshgani sari connection pool'lar ko'payib, ilova xotirasi va baza connection limiti tez tugaydi - pool'ni kichik qilib, foydalanilmagan tenant pool'larini lazy yaratib va idle'da yopib boring. Bu modelda cross-tenant hisobot, global migratsiya va deploy koordinatsiyasi sezilarli darajada qimmatlashadi, shuning uchun uni faqat haqiqiy compliance yoki yirik tenant talabi bo'lganda tanlang.
 
+```java
+// Database per tenant: har tenant uchun alohida DataSource
+@Component
+public class TenantRoutingDataSource extends AbstractRoutingDataSource {
+
+    @Override
+    protected Object determineCurrentLookupKey() {
+        return TenantContext.get();      // ThreadLocal yoki ScopedValue
+    }
+}
+
+@Bean
+DataSource dataSource(TenantProperties props) {
+    TenantRoutingDataSource ds = new TenantRoutingDataSource();
+    ds.setTargetDataSources(props.tenants().entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, e -> build(e.getValue()))));
+    ds.setDefaultTargetDataSource(build(props.defaultTenant()));
+    return ds;
+}
+// Narxi: tenant soni oshsa ulanish va migratsiya boshqaruvi qiyinlashadi
+```
+
 ## 10.9 Shardlash / Bo'laklash (Sharding / Partitioning)
 
 **Tavsif:** Jadval yoki butun dataset'ni kalit bo'yicha bir nechta bo'lakka ajratish: *partitioning* bitta baza ichida (range, list, hash), *sharding* esa turli serverlar bo'ylab. Maqsad - jadval hajmi, yozish IOPS'i yoki index kattaligi bitta node imkoniyatidan oshganda horizontal masshtablash va saqlashni boshqarish (eski partition'ni arzon diskka chiqarish yoki `DROP` qilish).
@@ -188,6 +321,23 @@ Ma'lumotlarni boshqarish va taqsimlash patternlari ma'lumotning hayot davri - ya
 - Yozish yuklamasi bitta master'ga sig'maydigan yuqori-TPS tizimlarini masshtablash.
 
 **Ehtiyot bo'ling:** Noto'g'ri tanlangan shard kaliti eng qimmat xato - u notekis taqsimlanish (hot shard) yoki har bir so'rovda scatter-gather'ga olib keladi, resharding esa katta loyihaga aylanadi, shuning uchun kalitni asosiy so'rov pattern'iga qarab tanlang. Shardlangan tizimda cross-shard `JOIN`, global unique ID (UUIDv7/Snowflake kerak bo'ladi) va distributed tranzaksiya qimmat - shardlashni faqat replica va partitioning yetmaganda, eng oxirgi chora sifatida qo'llang.
+
+```sql
+-- PostgreSQL deklarativ partitioning: kalit bo'yicha bo'lish
+CREATE TABLE events (
+    id         bigint      NOT NULL,
+    tenant_id  text        NOT NULL,
+    created_at timestamptz NOT NULL,
+    PRIMARY KEY (id, created_at)          -- partition kaliti PK ga kirishi shart
+) PARTITION BY RANGE (created_at);
+
+CREATE TABLE events_2026_01 PARTITION OF events
+    FOR VALUES FROM ('2026-01-01') TO ('2026-02-01');
+
+-- So'rovda partition kaliti bo'lmasa, barcha partition o'qiladi (partition pruning yo'q):
+-- SELECT * FROM events WHERE tenant_id = 'x';                    -- yomon
+-- SELECT * FROM events WHERE tenant_id = 'x' AND created_at > now() - interval '7 day';
+```
 
 ## 10.10 Replikatsiya va read replica'ga yo'naltirish (Replication & Read Replica routing)
 
@@ -227,6 +377,19 @@ public class RoutingDataSource extends AbstractRoutingDataSource {
 
 **Ehtiyot bo'ling:** Har bir qo'shimcha store - yangi backup, monitoring, versiya yangilash, failover va jamoa bilimi talabi; "chiroyli" deb qo'shilgan to'rtinchi baza ko'pincha PostgreSQL'ning JSONB, full-text search yoki `LISTEN/NOTIFY` imkoniyatlari bilan ham hal qilinardi. Store'lar orasidagi eventual consistency'ni oshkora loyihalashtiring: qidiruv index'i va asosiy baza farq qilgan holatni UI va biznes qoidalari qanday ko'rishini oldindan belgilang, aks holda "mahsulot bor, lekin topilmaydi" turidagi xatolar doimiy bo'ladi.
 
+```java
+// Poliglot: har vazifaga mos ombor, lekin har biri narxi bilan keladi
+@Configuration
+class StorageConfig {
+    @Bean DataSource postgres(/* ... */) { /* tranzaksion yozuv */ return null; }
+    @Bean RedisTemplate<String, String> redis(/* ... */) { /* kesh, qulf */ return null; }
+    @Bean RestClient opensearch(/* ... */) { /* to'liq matn qidiruv */ return null; }
+}
+// Har qo'shilgan ombor: yana bir operatsion yuk, zaxira rejasi, monitoring,
+// nosozlik rejimi va izchillik muammosi. PostgreSQL ko'p holatda
+// JSONB, full-text search va LISTEN/NOTIFY bilan yetarli bo'ladi.
+```
+
 ## 10.12 Har bir servis uchun alohida ma'lumotlar bazasi (Database per Service)
 
 **Tavsif:** Mikroservis arxitekturasida har bir servis o'zining ma'lumotlar sxemasiga yoki butunlay alohida bazasiga egalik qiladi va unga faqat shu servis bevosita murojaat qila oladi. Boshqa servislar ma'lumotni faqat API yoki event orqali oladi, SQL darajasida emas. Bu loose coupling beradi: sxemani o'zgartirish boshqa servislarni buzmaydi, har bir team o'z deployment tezligida harakatlanadi. Narxi esa - distributed transaction yo'qoladi, JOIN o'rniga API composition yoki CQRS kerak bo'ladi.
@@ -242,6 +405,19 @@ public class RoutingDataSource extends AbstractRoutingDataSource {
 
 **Ehtiyot bo'ling:** Bitta jismoniy serverda faqat sxema bilan ajratish "mustaqillik" illyuziyasini beradi - bir servisning og'ir query'si qo'shnilarni sekinlashtiradi. Modul chegaralari hali barqarorlashmagan bo'lsa, erta bo'linish sizni cross-service JOIN va eventual consistency murakkabligiga olib kiradi; monolit ichida modullarga bo'lib, keyin ajratish xavfsizroq.
 
+```yaml
+# Har servis o'z sxemasi va o'z roli bilan ishlaydi
+# orders-service
+spring:
+  datasource:
+    url: jdbc:postgresql://db:5432/app?currentSchema=orders
+    username: orders_app        # faqat orders sxemasiga huquqi bor
+
+# Boshqa sxemaga kirish bazada bekor qilinadi:
+#   REVOKE ALL ON SCHEMA payments FROM orders_app;
+# Shunda "vaqtincha boshqa jadvalni o'qib turamiz" qarori imkonsiz bo'ladi.
+```
+
 ## 10.13 Umumiy ma'lumotlar bazasi (Shared Database) - anti-pattern
 
 **Tavsif:** Bir nechta servis yoki ilova bitta ma'lumotlar bazasiga va bitta jadvallar to'plamiga bevosita yozadi va o'qiydi. Qisqa muddatda bu qulay: tranzaksiya oson, JOIN ishlaydi, consistency "bepul". Uzoq muddatda baza yashirin integratsiya nuqtasiga aylanadi - bitta ustunni o'zgartirish qaysi servisni buzishini hech kim bilmaydi, deploy'lar bir-biriga bog'lanib qoladi va biznes-qoida bir necha codebase'da dublikat bo'ladi. Shuning uchun u mikroservis kontekstida anti-pattern deb qaraladi; faqat modular monolit ichida ongli tanlov sifatida maqbul.
@@ -256,6 +432,20 @@ public class RoutingDataSource extends AbstractRoutingDataSource {
 - Bir martalik ETL job ishlab chiqarish bazasidan snapshot oladi.
 
 **Ehtiyot bo'ling:** Uni "tezlik uchun hozircha" tanlasangiz, migratsiya rejasini va o'chirish muddatini yozib qo'ying - aks holda u doimiy arxitekturaga aylanadi. Eng xavfli ko'rinishi: ikki servis bir jadvalga yozadi va biznes-invariant (masalan, balans manfiy bo'lmasligi) faqat application kodda tekshiriladi - bu race condition'larni muqarrar qiladi.
+
+```sql
+-- Anti-pattern: ikki servis bitta jadvalga yozadi
+-- orders-service:
+UPDATE orders SET status = 'PAID' WHERE id = $1;
+-- payments-service (xuddi shu jadvalga):
+UPDATE orders SET status = 'PAID', paid_at = now() WHERE id = $1;
+
+-- Natijasi: sxema o'zgarishi ikki jamoani bloklaydi, hech kim egasi emas,
+-- va bitta servisdagi xato boshqasini buzadi.
+-- Yechim: jadval egasi bitta servis bo'ladi, qolganlar API yoki
+-- hodisa orqali o'qiydi; o'tish davrida read-only grant beriladi:
+--   GRANT SELECT ON orders TO payments_app;
+```
 
 ## 10.14 Tranzaksion Outbox (Transactional Outbox)
 
@@ -296,6 +486,21 @@ public void placeOrder(OrderCmd cmd) {
 
 **Ehtiyot bo'ling:** Inbox yozuvi va biznes o'zgarishi bir tranzaksiyada bo'lmasa, pattern hech narsani kafolatlamaydi - "avval tekshirdim, keyin ishladim" ketma-ketligi klassik race condition. Jadvalni cheksiz o'stirmang: retention oynasini broker'ning maksimal retry/replay oynasidan kattaroq qilib tanlang va eski yozuvlarni muntazam tozalang.
 
+```sql
+-- Inbox: kelgan xabar ID si saqlanadi, takrorlanishi rad etiladi
+CREATE TABLE inbox (
+    message_id text        PRIMARY KEY,
+    consumer   text        NOT NULL,
+    handled_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- Iste'molchi tomonida, bitta tranzaksiyada:
+-- INSERT INTO inbox(message_id, consumer) VALUES ($1, $2)
+--   ON CONFLICT (message_id) DO NOTHING;
+-- Agar 0 qator qo'shilgan bo'lsa, xabar allaqachon ishlangan: o'tkazib yuboriladi.
+-- Eski yozuvlar muntazam tozalanadi (handled_at bo'yicha).
+```
+
 ## 10.16 Ma'lumot o'zgarishini ushlash (Change Data Capture / Debezium)
 
 **Tavsif:** Ilova kodini o'zgartirmasdan, ma'lumotlar bazasidagi har bir INSERT/UPDATE/DELETE ni event oqimiga aylantiradi. Debezium bazaning tranzaksion log'ini (PostgreSQL logical replication slot va WAL, MySQL binlog, MongoDB oplog, Oracle LogMiner) o'qiydi va o'zgarishlarni Kafka topic'lariga `before`/`after` tasvirlari bilan yuboradi. Bu polling'ga qaraganda arzon va ishonchli: bazaga qo'shimcha query yuklanmaydi, o'chirishlar ham ko'rinadi, tartib tranzaksion log tartibida saqlanadi. Odatda legacy bazadan event-driven dunyoga ko'prik yoki read model'ni yangilash uchun ishlatiladi.
@@ -310,6 +515,23 @@ public void placeOrder(OrderCmd cmd) {
 - Transactional Outbox publisher'ini polling o'rniga log-based qilib tezlashtirish.
 
 **Ehtiyot bo'ling:** CDC bazaning jismoniy sxemasini event kontraktiga aylantirib qo'yadi - ustun nomini o'zgartirsangiz consumer'lar buziladi; shuning uchun xom CDC topic'ini tashqi iste'molchilarga ochmang, domen eventiga transform qiling. Operatsion jihatdan ham ehtiyotkorlik kerak: ishlamay qolgan replication slot PostgreSQL'da WAL to'planib diskni to'ldiradi, schema evolution va snapshot (initial load) rejimlari esa alohida rejalashtirishni talab qiladi.
+
+```json
+# Debezium: WAL dan o'qiydi, ilova kodiga tegmaydi
+{
+  "name": "orders-cdc",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "plugin.name": "pgoutput",
+    "slot.name": "orders_slot",
+    "publication.autocreate.mode": "filtered",
+    "table.include.list": "orders.orders,orders.order_lines",
+    "tombstones.on.delete": "false"
+  }
+}
+# Shart: wal_level = logical (restart talab qiladi, boshidan yoqilsin).
+# Replication slot iste'mol qilinmasa WAL to'planib diskni to'ldiradi: alert qo'ying.
+```
 
 ## 10.17 Snapshot (Snapshot)
 
@@ -326,6 +548,25 @@ public void placeOrder(OrderCmd cmd) {
 
 **Ehtiyot bo'ling:** Snapshot serializatsiya formatiga bog'liq - aggregate sinfi o'zgarganda eski snapshotlarni o'qiy olmay qolishingiz mumkin, shuning uchun versiyalangan format yoki "schema o'zgarsa snapshotlarni invalidatsiya qilish" strategiyasi kerak. Snapshot'ni haqiqat manbai sifatida ishlatib, eventlarni o'chirib tashlash event sourcing'ning butun qiymatini yo'q qiladi.
 
+```java
+// Snapshot: hodisalarni boshidan o'qimaslik uchun oraliq holat
+@Entity
+class AccountSnapshot {
+    @Id private Long accountId;
+    private long version;                // qaysi hodisadan keyin olingan
+    @Column(columnDefinition = "jsonb") private String state;
+}
+
+public Account load(long id) {
+    AccountSnapshot snap = snapshots.findById(id).orElse(AccountSnapshot.empty(id));
+    Account account = Account.from(snap);
+    // Faqat snapshot'dan keyingi hodisalar qayta qo'llanadi
+    events.findByAccountIdAndVersionGreaterThan(id, snap.version())
+          .forEach(account::apply);
+    return account;
+}
+```
+
 ## 10.18 Materiallashtirilgan ko'rinish (Materialized View)
 
 **Tavsif:** Query vaqtida qimmat JOIN va agregatsiya qilish o'rniga, natija oldindan hisoblanib alohida o'qishga optimallashtirilgan strukturada saqlanadi. Yozuv tomonida normalizatsiya saqlanadi, o'qish tomonida esa denormalizatsiyalangan ko'rinish - shu bilan read latency keskin tushadi. Ko'rinish event, CDC yoki jadval bo'yicha yangilanadi, ya'ni ma'lumot eventual consistent bo'ladi. Mikroservislarda bu cross-service JOIN muammosining asosiy yechimi: bir servis boshqalarning eventlaridan o'ziga kerakli "o'qish modeli"ni yig'adi.
@@ -341,6 +582,23 @@ public void placeOrder(OrderCmd cmd) {
 
 **Ehtiyot bo'ling:** Ko'rinish eventual consistent - foydalanuvchi o'zi yozgan ma'lumotni darhol ko'rmasligi mumkin, shuning uchun read-your-writes kerak bo'lgan ekranlarda to'g'ridan-to'g'ri write model'dan o'qing. Yana bir tuzoq: ko'rinishni qayta qurish (rebuild) yo'lini kun birinchi kunidan loyihalashtirmaslik - event bilan yangilanadigan modelda bug topilganda uni noldan tiklash imkoniyati bo'lishi shart.
 
+```sql
+-- Materiallashtirilgan ko'rinish: qimmat agregat oldindan hisoblanadi
+CREATE MATERIALIZED VIEW daily_revenue AS
+SELECT date_trunc('day', created_at) AS day,
+       currency,
+       sum(total) AS revenue
+FROM orders
+WHERE status = 'PAID'
+GROUP BY 1, 2;
+
+CREATE UNIQUE INDEX ON daily_revenue (day, currency);   -- CONCURRENTLY uchun shart
+
+-- Yangilash: CONCURRENTLY o'qishni bloklamaydi, lekin sekinroq
+REFRESH MATERIALIZED VIEW CONCURRENTLY daily_revenue;
+-- Ma'lumot eskiradi: yangilanish davriyligi talabga mos bo'lishi kerak.
+```
+
 ## 10.19 Indeks jadvali (Index Table)
 
 **Tavsif:** Asosiy saqlash strukturasi faqat bitta kalit bo'yicha samarali qidiruvga imkon berganda (masalan, NoSQL'da partition key), boshqa maydon bo'yicha qidiruv uchun maxsus "indeks" jadvali yaratiladi: unda kalit - izlanadigan maydon, qiymat - asosiy yozuvning identifikatori (yoki tez-tez kerak bo'ladigan maydonlar nusxasi). Bu secondary index'ni qo'lda qurish demakdir. Natijada full scan o'rniga ikki marta nuqtaviy o'qish bo'ladi, lekin yozuvda bir nechta jadvalni sinxron ushlab turish majburiyati paydo bo'ladi.
@@ -355,6 +613,21 @@ public void placeOrder(OrderCmd cmd) {
 - Fayl saqlash (S3) metadata'sini nom va hash bo'yicha ikki xil kalit bilan indekslash.
 
 **Ehtiyot bo'ling:** Indeks jadvali - qo'lda yuritiladigan dublikat, demak uni yangilashni o'tkazib yuborgan har bir kod yo'li "ko'rinmas" ma'lumot nomuvofiqligi yaratadi; yozuvlarni bitta joyda (repository/service) markazlashtiring va muntazam reconciliation job yuritib turing. Kardinalligi past maydon (masalan, `status`) uchun indeks jadvali qilish esa "hot partition" muammosiga olib keladi.
+
+```sql
+-- Index table: boshqa kalit bo'yicha tez qidirish uchun alohida jadval
+CREATE TABLE orders_by_customer (
+    customer_id bigint      NOT NULL,
+    created_at  timestamptz NOT NULL,
+    order_id    bigint      NOT NULL,
+    PRIMARY KEY (customer_id, created_at DESC, order_id)
+);
+
+-- Relational bazada bu ko'pincha kerak emas: oddiy indeks yetadi
+CREATE INDEX ix_orders_customer ON orders (customer_id, created_at DESC);
+-- Alohida jadval faqat ikkilamchi indeks qo'llab-quvvatlanmagan omborlarda
+-- (Cassandra, DynamoDB) yoki partitioning kaliti boshqa bo'lganda asoslanadi.
+```
 
 ## 10.20 Ommaviy / paketli kiritish (Bulk / Batch insert)
 
@@ -394,6 +667,22 @@ jdbcTemplate.batchUpdate("INSERT INTO price(sku, amount) VALUES (?,?)",
 
 **Ehtiyot bo'ling:** XA ni mikroservislar orasida ishlatish eng keng tarqalgan xato - u servislarni availability jihatidan bir-biriga bog'laydi (bir qatnashchi tushsa hammasi bloklanadi) va gorizontal kengayishga to'sqinlik qiladi; bunday hollarda Saga + Outbox + Inbox kombinatsiyasini tanlang. Agar XA zarur bo'lsa, recovery log'ni doimiy diskda saqlash, in-doubt tranzaksiyalarni monitoring qilish va unique transaction manager ID berish operatsion majburiyatga aylanadi - klasterda bir xil ID bilan ikki instance ko'tarish ma'lumotni buzadi.
 
+```java
+// XA: ikki resurs bitta tranzaksiyada. Zamonaviy amaliyotda deyarli ishlatilmaydi.
+@Bean
+JtaTransactionManager transactionManager(UserTransaction tx, TransactionManager tm) {
+    return new JtaTransactionManager(tx, tm);
+}
+
+@Transactional          // JTA: DB va JMS birga commit bo'ladi
+public void place(Order order) {
+    orderRepository.save(order);
+    jmsTemplate.convertAndSend("orders", order);
+}
+// Narxi: koordinator nosozligida qulflar ushlanib qoladi, throughput tushadi,
+// Kafka XA ni qo'llab-quvvatlamaydi. Amalda Outbox + Saga afzal.
+```
+
 ## 10.22 Try-Confirm-Cancel (TCC)
 
 **Tavsif:** TCC - distributed tranzaksiyalarni uch fazaga ajratadigan pattern: `Try` fazasida resurs rezerv qilinadi (masalan, balansdan pul "frozen" holatga o'tadi), `Confirm` fazasida rezerv haqiqiy o'zgarishga aylanadi, `Cancel` fazasida esa rezerv bo'shatiladi. Saga'dan farqi shundaki, har bir servis o'z resursini oldindan ushlab turadi, shuning uchun `Confirm` fazasi deyarli hech qachon muvaffaqiyatsiz bo'lmaydi. Bu 2PC'ning biznes-darajadagi muqobili: lock ma'lumotlar bazasida emas, balki domen modelida (reserved/available maydonlari) saqlanadi.
@@ -408,6 +697,29 @@ jdbcTemplate.batchUpdate("INSERT INTO price(sku, amount) VALUES (?,?)",
 - Mehmonxona va avtomobil ijarasi kabi "cheklangan inventar" domenlarida overbooking'ni oldini olish.
 
 **Ehtiyot bo'ling:** `Try` muvaffaqiyatli bo'lib, koordinator qulagan holatda rezervlar abadiy "osilib" qolishi mumkin - shuning uchun TTL va majburiy reaper job hayotiy zarur, hamda `Cancel` operatsiyasi `Try` kelmagan holatda ham xatosiz ishlashi (empty rollback) kerak. TCC har bir servisning domen modelini o'zgartirishni talab qiladi, shuning uchun uchinchi tomon API'lari yoki legacy tizimlar bilan amalda qo'llash qiyin; oddiy eventual consistency yetarli bo'lsa, Saga'ni tanlang.
+
+```java
+// TCC: uch bosqich, har biri alohida va idempotent
+public interface InventoryTcc {
+    ReservationId tryReserve(List<Item> items, Duration holdFor);   // Try
+    void confirm(ReservationId id);                                  // Confirm
+    void cancel(ReservationId id);                                   // Cancel
+}
+
+@Transactional
+public OrderId checkout(CheckoutCommand cmd) {
+    ReservationId r = inventory.tryReserve(cmd.items(), Duration.ofMinutes(10));
+    try {
+        Receipt receipt = payments.charge(cmd.payment());
+        inventory.confirm(r);
+        return orders.create(cmd, receipt);
+    } catch (RuntimeException e) {
+        inventory.cancel(r);            // Cancel ham idempotent bo'lishi kerak
+        throw e;
+    }
+}
+// Try bosqichidagi band qilish TTL bilan: Confirm kelmasa o'zi bo'shaydi
+```
 
 ## 10.23 Kompensatsiyalovchi tranzaksiya (Compensating Transaction)
 
@@ -424,6 +736,22 @@ jdbcTemplate.batchUpdate("INSERT INTO price(sku, amount) VALUES (?,?)",
 
 **Ehtiyot bo'ling:** Kompensatsiyaning o'zi ham muvaffaqiyatsiz bo'lishi mumkin, shuning uchun u idempotent, retry'ga chidamli va monitoring ostida bo'lishi shart - aks holda tizim yarim-bajarilgan holatda qoladi. Ba'zi harakatlarni kompensatsiya qilib bo'lmaydi (yuborilgan SMS, chop etilgan hujjat, uchinchi tomonga oshkor etilgan ma'lumot), shuning uchun bunday "qaytarib bo'lmaydigan" qadamlarni Saga'ning eng oxiriga qo'ying.
 
+```java
+// Kompensatsiya: orqaga qaytarish emas, teskari biznes amali
+@Service
+public class RefundCompensation {
+
+    public void compensate(OrderId id, Receipt receipt) {
+        // To'lovni "o'chirib" bo'lmaydi: qaytarish yoziladi
+        payments.refund(receipt.reference(), receipt.amount());
+        inventory.release(id);
+        notifications.send(id, "Buyurtma bekor qilindi va mablag' qaytarildi");
+    }
+}
+// Kompensatsiya ham xato berishi mumkin: uni retry va DLQ bilan qo'riqlang,
+// va har bir qadam idempotent bo'lsin.
+```
+
 ## 10.24 Event Sourcing ombori (Event Sourcing Store)
 
 **Tavsif:** Agregatning joriy holatini jadvalda saqlash o'rniga, unga olib kelgan barcha o'zgarishlar immutable event'lar ketma-ketligi sifatida append-only jurnalga yoziladi. Joriy holat event'larni qayta o'ynatish (replay) yo'li bilan tiklanadi, katta agregatlar uchun esa snapshot'lar qo'llaniladi. Natijada to'liq audit izi, vaqt bo'yicha "orqaga qaytish" (temporal query) va bir xil event oqimidan turli read model'lar qurish imkoni paydo bo'ladi.
@@ -438,6 +766,22 @@ jdbcTemplate.batchUpdate("INSERT INTO price(sku, amount) VALUES (?,?)",
 - Yangi analitik read model'ni mavjud event'lardan noldan qurib olish (retroactive reporting).
 
 **Ehtiyot bo'ling:** Event schema evolyutsiyasi (upcasting) va GDPR'ning "o'chirilish huquqi" immutable jurnal bilan to'qnashadi - shuning uchun shaxsiy ma'lumotlarni event ichida emas, kalit bilan ajratilgan shifrlangan "crypto-shredding" omborida saqlang. Event Sourcing'ni butun tizimga emas, faqat tarix va audit haqiqatan zarur bo'lgan core domenlarga qo'llang; CRUD'ga yaqin modullarda u ortiqcha murakkablik va juda qimmat debugging keltiradi.
+
+```sql
+-- Event store: faqat qo'shiladi, o'zgartirilmaydi
+CREATE TABLE account_events (
+    aggregate_id bigint      NOT NULL,
+    version      bigint      NOT NULL,
+    type         text        NOT NULL,
+    payload      jsonb       NOT NULL,
+    occurred_at  timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (aggregate_id, version)     -- optimistik qulf shu yerda
+);
+
+-- Yozish: kutilgan versiya bilan, konflikt bo'lsa INSERT yiqiladi
+-- INSERT INTO account_events VALUES ($1, $2, $3, $4);
+-- Hodisa sxemasi versiyalanishi kerak: eski hodisalar abadiy o'qiladi.
+```
 
 ## 10.25 Arxivlash / tozalash (Archive / Purge)
 
@@ -454,6 +798,20 @@ jdbcTemplate.batchUpdate("INSERT INTO price(sku, amount) VALUES (?,?)",
 
 **Ehtiyot bo'ling:** Katta `DELETE` bir urinishda transaction log'ni to'ldiradi, lock eskalatsiyasiga va replikatsiya lag'iga olib keladi - har doim batch'lab (masalan 5-10 ming qator) va past yuklama oynasida bajaring. Tashqi kalitlar va hisobotlar arxivlangan yozuvlarga murojaat qilishi mumkin, shuning uchun purge'dan oldin bog'liqliklarni va huquqiy saqlash muddatlarini tekshiring.
 
+```sql
+-- Arxivlash: issiq jadval kichik qoladi
+BEGIN;
+INSERT INTO orders_archive
+SELECT * FROM orders WHERE created_at < now() - interval '2 year';
+
+DELETE FROM orders WHERE created_at < now() - interval '2 year';
+COMMIT;
+
+-- Katta hajmda bitta tranzaksiyada qilmang: WAL o'sadi va qulf uzoq turadi.
+-- Partitioning bor bo'lsa eng arzon yo'l - butun partition'ni ajratish:
+--   ALTER TABLE orders DETACH PARTITION orders_2024_01;
+```
+
 ## 10.26 Ma'lumotlarni saqlash muddati (Data Retention)
 
 **Tavsif:** Har bir ma'lumot toifasi uchun qancha vaqt saqlanishi, qachon anonimlashtirilishi va qachon o'chirilishi oldindan belgilanadigan va avtomatlashtirilgan siyosat. Retention - Archive/Purge'ning "nima uchun va qancha" tomoni: u huquqiy talablardan (GDPR, buxgalteriya qonunlari, PCI DSS) kelib chiqadi va kodda deklarativ qoida sifatida ifodalanadi. To'g'ri qo'yilgan retention ham xarajatni, ham huquqiy riskni kamaytiradi.
@@ -468,6 +826,20 @@ jdbcTemplate.batchUpdate("INSERT INTO price(sku, amount) VALUES (?,?)",
 - Xodim ishdan bo'shagandan keyin HR ma'lumotlarining bir qismini bosqichma-bosqich purge qilish.
 
 **Ehtiyot bo'ling:** Retention siyosati backup, replika, data warehouse, log aggregator va cache nusxalariga ham tatbiq etilishi kerak - asosiy jadvaldan o'chirib, Elasticsearch yoki S3 backup'da qoldirib ketish eng keng tarqalgan xato. Sud yoki tekshiruv davridagi "legal hold" avtomatik o'chirishdan ustun turishi shart, aks holda dalillarni yo'q qilish deb baholanishi mumkin.
+
+```yaml
+# Saqlash muddati siyosati kodda emas, konfiguratsiyada va hujjatda
+retention:
+  orders: P7Y            # soliq talabi
+  audit-log: P3Y
+  sessions: P30D
+  pii-exports: P7D       # shaxsiy ma'lumot: eng qisqa muddat
+
+# Har tur uchun uch savolga javob bo'lishi kerak:
+#  1) qancha saqlanadi va nega (qonun, biznes yoki texnik sabab)
+#  2) kim o'chiradi va qanday tekshiriladi
+#  3) zaxira nusxalardan ham o'chadimi (GDPR uchun muhim)
+```
 
 ## 10.27 Diskda va maydon darajasida shifrlash (Encryption at Rest / Field-Level Encryption)
 
@@ -509,6 +881,23 @@ public class EncryptedStringConverter implements AttributeConverter<String, Stri
 
 **Ehtiyot bo'ling:** "Write-then-read" senariysi (yozgandan keyin darhol o'qish) replikatsiya lag'i sababli eski ma'lumot qaytaradi - bunday oqimlarda majburan primary'dan o'qing yoki read-your-writes uchun sticky routing qo'llang. `@Transactional(readOnly = true)` ni faqat optimizatsiya deb o'ylab qo'yish xavfli: routing sozlanmagan bo'lsa u hech narsani ajratmaydi, sozlangan bo'lsa esa kutilmaganda yozuvni `SQLException` bilan yiqitadi.
 
+```java
+// O'qish replika'ga, yozish primary'ga
+@Component
+public class ReadWriteRoutingDataSource extends AbstractRoutingDataSource {
+
+    @Override
+    protected Object determineCurrentLookupKey() {
+        // Spring tranzaksiya readOnly bayrog'ini shu yerda ko'radi
+        return TransactionSynchronizationManager.isCurrentTransactionReadOnly()
+                ? "replica" : "primary";
+    }
+}
+// Shart: @Transactional(readOnly = true) aniq qo'yilgan bo'lishi kerak.
+// Xavf: replikatsiya kechikishi. Yozgandan keyin darhol o'qish kerak bo'lsa
+// (read-your-own-writes), o'sha oqim primary'da qolishi shart.
+```
+
 ## 10.29 Taqsimlangan lock (Distributed Lock - Redis, ShedLock, Database)
 
 **Tavsif:** Bir nechta instance bir vaqtda ishlayotganda, faqat bittasi ma'lum bir critical section'ni bajarishi kerak bo'lsa, umumiy ombor (Redis, DB qatori, ZooKeeper) orqali mutual exclusion ta'minlanadi. Lock egasi TTL bilan belgilanadi, shunda instance qulasa lock avtomatik bo'shaydi. Eng keng tarqalgan ko'rinishi - cluster'da `@Scheduled` job'larning faqat bir marta ishga tushishini kafolatlash.
@@ -523,6 +912,22 @@ public class EncryptedStringConverter implements AttributeConverter<String, Stri
 - Tashqi API'ning rate limit'ini butun cluster bo'yicha markazlashtirib boshqarish.
 
 **Ehtiyot bo'ling:** Redis asosidagi lock - correctness kafolati emas, balki optimizatsiya: network partition, GC pauza yoki clock drift tufayli ikki instance bir vaqtda o'zini lock egasi deb hisoblashi mumkin, shuning uchun pul va buxgalteriyaga tegishli invariantlarni DB constraint yoki idempotentlik bilan himoyalang. `lockAtMostFor`ni job'ning real davomiyligidan kattaroq qo'ying, aks holda lock ish tugamasdan bo'shab, parallel bajarilish yuzaga keladi.
+
+```java
+// Advisory lock: tranzaksiya oxirida o'zi bo'shaydi, TTL kerak emas
+@Transactional
+public void runExclusive(long key, Runnable body) {
+    db.sql("SELECT pg_advisory_xact_lock(:k)").param("k", key).update();
+    body.run();                 // commit yoki rollback'da qulf bo'shaydi
+}
+
+// Rejalashtirilgan ish uchun ShedLock
+@Scheduled(cron = "0 0 3 * * *")
+@SchedulerLock(name = "nightly-archive", lockAtMostFor = "PT30M")
+public void archive() { /* faqat bitta nusxa bajaradi */ }
+// Redis lock ishlatilsa: TTL, egalik tokeni va qulf yo'qolganda nima
+// bo'lishi aniq yozilgan bo'lishi kerak.
+```
 
 ## 10.30 Idempotentlik ombori (Idempotency Store)
 
@@ -539,6 +944,23 @@ public class EncryptedStringConverter implements AttributeConverter<String, Stri
 
 **Ehtiyot bo'ling:** Idempotentlik yozuvi va biznes o'zgarishi bir atomik tranzaksiyada bo'lmasa, pattern buziladi - alohida Redis'ga yozish "yozildi, lekin biznes qulaganda" holatini yaratadi. Kalitni kliyent generatsiya qilishi, uni so'rov payload'i bilan bog'lab tekshirish (bir xil kalit bilan boshqa summa kelsa xato qaytarish) va TTL'ni retry oynasidan uzunroq tanlash kerak.
 
+```sql
+-- Idempotentlik ombori: kalit unique, natija saqlanadi
+CREATE TABLE idempotency_keys (
+    key         text        PRIMARY KEY,
+    request_hash text       NOT NULL,
+    response    jsonb,
+    status      text        NOT NULL,   -- IN_PROGRESS | DONE
+    created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+-- Parallel ikkinchi so'rov INSERT da to'xtaydi:
+-- INSERT INTO idempotency_keys(key, request_hash, status)
+--   VALUES ($1, $2, 'IN_PROGRESS');   -- unique violation -> avvalgisini kutish
+-- request_hash: bir xil kalit bilan boshqa tana kelsa 422 qaytarish uchun.
+-- created_at bo'yicha eski kalitlar tozalanadi.
+```
+
 ## 10.31 Dual Write muammosi (Dual Write Problem)
 
 **Tavsif:** Ilova bir operatsiya ichida ikki xil tizimga (masalan, ma'lumotlar bazasi va Kafka, yoki DB va Elasticsearch) mustaqil yozganda, biri muvaffaqiyatli, ikkinchisi muvaffaqiyatsiz bo'lishi mumkin - natijada tizimlar orasida doimiy nomuvofiqlik paydo bo'ladi. Bu pattern emas, balki anti-pattern: uning yechimi yozishni bitta atomik manbaga (DB) jamlab, ikkinchi tizimga Transactional Outbox yoki Change Data Capture orqali asinxron tarqatishdir. Boshqa yo'l - event store'ni yagona haqiqat manbai qilib olish (Event Sourcing).
@@ -553,6 +975,23 @@ public class EncryptedStringConverter implements AttributeConverter<String, Stri
 - Legacy monolitdan yangi mikroservisga ma'lumotni real vaqtda ko'chirish (Debezium bilan strangler migratsiyasi).
 
 **Ehtiyot bo'ling:** `@TransactionalEventListener(AFTER_COMMIT)` ni to'liq yechim deb o'ylash eng keng tarqalgan xato - commit bo'lib, keyin JVM qulasa, event abadiy yo'qoladi; faqat davomli (durable) outbox yoki CDC kafolat beradi. Shuningdek, outbox iste'molchisi at-least-once ishlaganini unutmang: qabul qiluvchi tomonda idempotentlik va event tartibini (per-aggregate partition key) albatta ta'minlang.
+
+```java
+// Muammo: ikki yozuv, bitta tranzaksiya yo'q
+@Transactional
+public void place(Order order) {
+    orders.save(order);                  // 1) bazaga yozildi
+    kafka.send("orders", order);         // 2) brokerga ketdi - commit'dan OLDIN
+}
+// Rollback bo'lsa: xabar ketgan, qator yo'q. Broker yiqilsa: qator bor, xabar yo'q.
+
+// Yechim: faqat bazaga yozish, xabarni outbox jadvalidan alohida jo'natuvchi oladi
+@Transactional
+public void placeSafely(Order order) {
+    orders.save(order);
+    outbox.save(new OutboxMessage("orders", json.write(order)));   // bir tranzaksiya
+}
+```
 
 ## 10.32 Amalda qo'llash
 

@@ -52,6 +52,20 @@ Keshlash patternlari - bu ma'lumotni asl manbadan (relational database, tashqi R
 
 **Ehtiyot bo'ling:** Kesh va database o'rtasidagi consistency butunlay sizning mas'uliyatingizda - yozish yo'lida evict qilishni eslab qolmasangiz, stale ma'lumot cheksiz yashaydi. Yana bir tuzoq: bir vaqtda ko'p thread miss bo'lgan kalitni yuklay boshlaydi (stampede), shu sababli TTL bilan birga sync/lock mexanizmini ham o'ylab ko'ring.
 
+```java
+// Cache-aside: ilova keshni o'zi boshqaradi
+public Rate rate(String pair) {
+    Rate cached = redis.opsForValue().get(key(pair));
+    if (cached != null) return cached;
+
+    Rate fresh = cbuClient.fetch(pair);          // kesh bo'sh: manbadan
+    redis.opsForValue().set(key(pair), fresh, Duration.ofMinutes(10));
+    return fresh;
+}
+// Eng ko'p ishlatiladigan strategiya. Ikki xavf: stampede (bir vaqtda
+// ko'p so'rov manbaga ketadi) va invalidatsiya unutilishi.
+```
+
 ## 11.2 O'qish-orqali (Read-Through)
 
 **Tavsif:** Application faqat kesh bilan gaplashadi, kesh esa miss bo'lganda asl manbadan ma'lumotni o'zi yuklab oladi. Yuklash logikasi loader (ya'ni kesh provayderiga berilgan funksiya) ichiga ko'chiriladi, shuning uchun chaqiruvchi kod "bor-yo'qligini tekshirish" kodidan xoli bo'ladi. Natijada cache-aside bilan bir xil effekt, lekin mas'uliyat kesh qatlamiga o'tadi.
@@ -66,6 +80,21 @@ Keshlash patternlari - bu ma'lumotni asl manbadan (relational database, tashqi R
 - Konfiguratsiya daraxtini (tenant sozlamalari) loader bilan tenant kaliti bo'yicha yuklash.
 
 **Ehtiyot bo'ling:** Loader ichidagi exception kesh provayderining semantikasiga qarab turlicha ishlanadi - Caffeine `null` qaytarsa kalit umuman keshlanmaydi, bu esa har request'da database'ga urilishga olib keladi. Loader ichida uzun bloklanuvchi I/O qilsangiz, kesh'ni ishlatuvchi barcha thread'lar shu yerda navbatga tizilib qolishi mumkin.
+
+```java
+// Read-through: keshni abstraksiya boshqaradi, ilova bilmaydi
+@Service
+public class RateService {
+
+    @Cacheable(cacheNames = "rates", key = "#pair")
+    public Rate rate(String pair) {
+        return cbuClient.fetch(pair);    // faqat kesh bo'sh bo'lsa chaqiriladi
+    }
+}
+// Afzalligi: chaqiruvchi kodda kesh mantig'i yo'q.
+// Narxi: kesh qachon o'qilganini ko'rish qiyinroq, proxy chetlab o'tilsa
+// (self-invocation) kesh jimgina ishlamaydi.
+```
 
 ## 11.3 Yozish-orqali (Write-Through)
 
@@ -82,6 +111,22 @@ Keshlash patternlari - bu ma'lumotni asl manbadan (relational database, tashqi R
 
 **Ehtiyot bo'ling:** `@CachePut` va `@Cacheable`ni bitta method'ga birga qo'yish mantiqiy xato - `@Cacheable` chaqiruvni butunlay o'tkazib yuborishi mumkin, `@CachePut` esa har safar bajarilishini talab qiladi. Shuningdek yozish yo'li kesh cluster'iga bog'lanib qoladi: Redis tushsa, business yozuv ham fail bo'lishi mumkin, shuning uchun degradation strategiyasini oldindan belgilang.
 
+```java
+// Write-through: yozuv bir vaqtda keshga va manbaga ketadi
+@Service
+public class ProfileService {
+
+    @Transactional
+    @CachePut(cacheNames = "profiles", key = "#profile.id")
+    public Profile save(Profile profile) {
+        return repo.save(profile);       // natija keshga yoziladi
+    }
+}
+// Kesh har doim yangi, lekin yozuv sekinlashadi.
+// Tranzaksiya rollback bo'lsa kesh eskirgan qiymat bilan qoladi:
+// shuning uchun keshni commit'dan keyin yangilash xavfsizroq.
+```
+
 ## 11.4 Yozish-ortda (Write-Behind)
 
 **Tavsif:** Yozish avval faqat keshga tushadi va chaqiruvchiga darhol javob qaytadi; asl manbaga yozish esa asinxron, ko'pincha batch holida va kechiktirilgan tarzda bajariladi. Bu yozish latency'sini keskin kamaytiradi va database'dagi write IOPS'ni batching hisobiga pasaytiradi. Buning evaziga ma'lumot yo'qolish riski paydo bo'ladi: kesh node'i flush'gacha o'lsa, yozuvlar yo'qoladi.
@@ -97,6 +142,25 @@ Keshlash patternlari - bu ma'lumotni asl manbadan (relational database, tashqi R
 
 **Ehtiyot bo'ling:** Pul, buyurtma, to'lov kabi durability talab qiladigan ma'lumot uchun hech qachon ishlatmang - flush'gacha bo'lgan oynada yo'qolgan yozuvni tiklash imkoni bo'lmaydi. Yana bir muammo: database'dagi constraint violation asinxron yuzaga keladi, ya'ni foydalanuvchi allaqachon "muvaffaqiyatli" javobni olgan bo'ladi, shuning uchun kompensatsiya mexanizmi kerak.
 
+```java
+// Write-behind: keshga yozildi, manbaga keyinroq (batch bilan)
+@Component
+public class ViewCounterBuffer {
+    private final Map<Long, LongAdder> buffer = new ConcurrentHashMap<>();
+
+    public void increment(long articleId) {
+        buffer.computeIfAbsent(articleId, k -> new LongAdder()).increment();
+    }
+
+    @Scheduled(fixedDelay = 5_000)
+    void flush() {
+        buffer.forEach((id, adder) -> repo.addViews(id, adder.sumThenReset()));
+    }
+}
+// Yozuv tez, lekin ilova yiqilsa buffer yo'qoladi. Faqat yo'qotish
+// qabul qilinadigan ma'lumot uchun (ko'rish soni, metrika).
+```
+
 ## 11.5 Yozish-atrofida (Write-Around)
 
 **Tavsif:** Yozish operatsiyasi keshni butunlay chetlab o'tib, to'g'ridan-to'g'ri database'ga boradi; kesh esa yoki invalidatsiya qilinadi, yoki umuman tegilmaydi va kalit faqat keyingi o'qishda (read-through/cache-aside orqali) to'ldiriladi. Bu strategiya "yozilgan ma'lumot tez orada o'qilmaydi" degan taxminga asoslanadi va keshni hech kim so'ramaydigan qiymatlar bilan to'ldirib yuborishdan (cache pollution) saqlaydi.
@@ -111,6 +175,21 @@ Keshlash patternlari - bu ma'lumotni asl manbadan (relational database, tashqi R
 - Batch job natijalarini yozib, keshni faqat `allEntries = true` bilan tozalash.
 
 **Ehtiyot bo'ling:** Yozishdan so'ng darhol o'qish bo'ladigan oqimda (read-your-own-writes) bu pattern foydalanuvchiga eski ma'lumot ko'rsatadi yoki kafolatlangan cache miss keltiradi. `@CacheEvict`ni `beforeInvocation = true` bilan ishlatish rollback holatida keshni allaqachon bo'shatib qo'yadi - bu ko'pincha xavfsizroq, lekin miss to'lqinini keltiradi.
+
+```java
+// Write-around: yozuv faqat manbaga, kesh invalidatsiya qilinadi
+@Service
+public class CatalogService {
+
+    @Transactional
+    @CacheEvict(cacheNames = "products", key = "#product.id")
+    public Product update(Product product) {
+        return repo.save(product);       // keshga yozilmaydi, o'chiriladi
+    }
+}
+// Bir marta yozilib kamdan-kam o'qiladigan ma'lumot uchun to'g'ri:
+// kesh keraksiz qiymat bilan to'lmaydi. Keyingi o'qish kesh bo'sh bo'ladi.
+```
 
 ## 11.6 Oldindan-yangilash (Refresh-Ahead)
 
@@ -149,6 +228,22 @@ LoadingCache<String, Rate> rates = Caffeine.newBuilder()
 
 **Ehtiyot bo'ling:** Asosiy xavf - L1 invalidatsiyasi: bitta node'da `@CacheEvict` ishlasa, boshqa node'larning local keshida eski qiymat qolib ketadi, shuning uchun invalidatsiya event'i (pub/sub yoki Hazelcast invalidation) bo'lmagan multi-level kesh deyarli har doim bug manbai. L1 TTL'ni qisqa (sekundlar) tutish bu riskni cheklaydi, lekin L1'ning foydasini ham kamaytiradi.
 
+```java
+// Ko'p qatlamli kesh: L1 lokal (tez), L2 taqsimlangan (umumiy)
+@Bean
+CacheManager cacheManager(RedisConnectionFactory redis) {
+    CaffeineCacheManager l1 = new CaffeineCacheManager("rates");
+    l1.setCaffeine(Caffeine.newBuilder()
+            .maximumSize(10_000)
+            .expireAfterWrite(Duration.ofSeconds(30)));   // qisqa TTL shart
+
+    RedisCacheManager l2 = RedisCacheManager.builder(redis).build();
+    return new CompositeCacheManager(l1, l2);
+}
+// L1 ning TTL si qisqa bo'lishi kerak: u invalidatsiya xabarini ko'rmaydi,
+// shuning uchun nusxalar orasida farq (stale read) paydo bo'ladi.
+```
+
 ## 11.8 Taqsimlangan kesh (Distributed Cache - Redis, Hazelcast)
 
 **Tavsif:** Kesh application process'idan tashqarida, alohida cluster'da yashaydi va barcha instance'lar uchun bitta umumiy haqiqat manbasi bo'ladi. Bu horizontal scaling'da keshning bir xil ko'rinishini kafolatlaydi, deploy va restart'dan keyin ham ma'lumot saqlanib qoladi va JVM heap'ni shishirmaydi. Narxi - har murojaat tarmoq hop'i, serialization va cluster'ga operatsion qaramlik.
@@ -164,6 +259,24 @@ LoadingCache<String, Rate> rates = Caffeine.newBuilder()
 
 **Ehtiyot bo'ling:** Serialization formatini puxta tanlang - default `JdkSerializationRedisSerializer` class nomiga bog'lanib qoladi va deploy'dan keyin `ClassCastException` yoki deserialization xatosiga olib keladi; JSON ishlatganda esa polymorphic type'lar va `LocalDateTime` uchun `JavaTimeModule` kerak. Kesh cluster'i yagona nuqtali nosozlikka (single point of failure) aylanmasligi uchun timeout, circuit breaker va `CacheErrorHandler` bilan graceful degradation qo'shing.
 
+```java
+@Bean
+RedisCacheManager cacheManager(RedisConnectionFactory cf) {
+    RedisCacheConfiguration base = RedisCacheConfiguration.defaultCacheConfig()
+            .entryTtl(Duration.ofMinutes(10))
+            .disableCachingNullValues()
+            .prefixCacheNameWith("payments:")     // nom maydoni ajratilgan
+            .serializeValuesWith(SerializationPair.fromSerializer(
+                    new GenericJackson2JsonRedisSerializer()));   // JDK emas: JSON
+
+    return RedisCacheManager.builder(cf)
+            .cacheDefaults(base)
+            .withCacheConfiguration("rates", base.entryTtl(Duration.ofMinutes(1)))
+            .build();
+}
+// JDK serializatsiyasi sinf o'zgarsa buziladi: JSON yoki sxema asosida saqlang
+```
+
 ## 11.9 Hibernate ikkinchi darajali kesh va query kesh (Hibernate Second-Level Cache & Query Cache)
 
 **Tavsif:** Hibernate'ning birinchi darajali keshi `EntityManager`/`Session` ichida va faqat bitta tranzaksiya umrida yashaydi; ikkinchi darajali kesh (L2) esa `SessionFactory` darajasida, barcha session'lar uchun umumiy bo'lib, entity'larni `id` bo'yicha keshlaydi. Query cache alohida mexanizm: u SQL/JPQL so'rovining parametrlari bo'yicha qaytgan identifikatorlar ro'yxatini saqlaydi, entity'larning o'zini esa L2'dan oladi. Collection cache bog'langan kolleksiyalarning id ro'yxatini keshlaydi.
@@ -178,6 +291,24 @@ LoadingCache<String, Rate> rates = Caffeine.newBuilder()
 - Read-only replica'ga tushadigan hisobot yukini L2 bilan kamaytirish.
 
 **Ehtiyot bo'ling:** Query cache deyarli har doim muammoli: keshlangan so'rov tegib turgan jadvallardan biri o'zgarsa butun region invalidatsiya bo'ladi, shuning uchun yozish aktiv bo'lgan jadvallarda u foydadan ko'ra zarar keltiradi. Native SQL yoki JPQL `UPDATE`/`DELETE` bulk so'rovlari L2'ni bexabar eskirtiradi; `CacheConcurrencyStrategy.NONSTRICT_READ_WRITE` esa qisqa muddatli stale o'qishga yo'l qo'yadi - bu moliyaviy ma'lumot uchun qabul qilinmaydi.
+
+```yaml
+# Ikkinchi darajali kesh: entity bo'yicha, aniq yoqiladi
+spring:
+  jpa:
+    properties:
+      hibernate:
+        cache:
+          use_second_level_cache: true
+          use_query_cache: false       # query kesh ko'pincha zarar keltiradi
+          region.factory_class: jcache
+
+# Entity tomonida:
+# @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+# Faqat kamdan-kam o'zgaradigan ma'lumot uchun (lug'at, tarif, sozlama).
+# Query kesh har jadval o'zgarishida butunlay bekor bo'ladi, shuning uchun
+# yozuv ko'p bo'lgan tizimda u foyda bermaydi.
+```
 
 ## 11.10 Spring Cache abstraksiyasi (Spring Cache Abstraction)
 
@@ -219,6 +350,21 @@ public void save(Product p) { repo.save(p); }
 
 **Ehtiyot bo'ling:** `sync = true` faqat bitta JVM ichida yordam beradi - 20 pod'li deployment'da hamon 20 parallel so'rov ketadi, shuning uchun gorizontal scale'da distributed lock yoki jitter zarur. Distributed lock'ning o'zi ham xavf: lock TTL'si yuklash vaqtidan qisqa bo'lsa ikki yuklovchi paydo bo'ladi, uzun bo'lsa esa node o'lganda kalit uzoq muddatga bloklanib qoladi.
 
+```java
+// Stampede: bitta kalit bo'sh bo'lganda ko'p so'rov manbaga ketadi
+@Cacheable(cacheNames = "rates", key = "#pair", sync = true)
+public Rate rate(String pair) {
+    return cbuClient.fetch(pair);        // sync = true: bitta thread hisoblaydi
+}
+
+// Taqsimlangan muhitda `sync` faqat bitta nusxa ichida ishlaydi.
+// Klaster bo'ylab himoya uchun qisqa muddatli qulf kerak:
+Boolean acquired = redis.opsForValue()
+        .setIfAbsent("lock:rate:" + pair, "1", Duration.ofSeconds(5));
+// Qo'shimcha chora: TTL ga tasodifiy qo'shimcha (jitter) berib, kalitlar
+// bir vaqtda eskirmasligini ta'minlash.
+```
+
 ## 11.12 TTL / TTI muddati tugashi (TTL / TTI Expiration)
 
 **Tavsif:** Keshdagi yozuv cheksiz yashamasligi uchun unga yashash muddati beriladi: TTL (time-to-live) yozuv yozilgan paytdan boshlab sanaladi, TTI (time-to-idle, ya'ni expireAfterAccess) esa oxirgi murojaatdan boshlab. TTL ma'lumotning "eskirish" darajasini (staleness bound) cheklab, invalidation logikasi bo'lmagan joyda ham eventual consistency beradi. TTI kam ishlatiladigan yozuvlarni o'zi tozalab, kesh hajmini ish yuki profiliga moslashtiradi. Ikkisi birga ishlatilsa, TTL yuqori chegara, TTI esa resurs tejash vositasi bo'ladi.
@@ -233,6 +379,18 @@ public void save(Product p) { repo.save(p); }
 - Tashqi SOAP/REST provayder javobini SLA ruxsat bergan eskirish oynasi bo'yicha TTL bilan saqlash.
 
 **Ehtiyot bo'ling:** Faqat `expireAfterAccess` qo'yilsa, doimiy so'rov tushadigan hot key hech qachon eskirmay, yillar davomida stale ma'lumot qaytarishi mumkin - har doim TTL bilan birga chegaralang. Barcha yozuvlarga bir xil TTL berib, ularni bir vaqtda yozsangiz, muddat tugashi sinxron bo'lib "cache stampede" keltiradi; TTL'ga kichik tasodifiy jitter qo'shing.
+
+```java
+// TTL: yozilgandan keyin. TTI: oxirgi murojaatdan keyin.
+Caffeine.newBuilder()
+        .expireAfterWrite(Duration.ofMinutes(10))   // TTL: eskirish kafolati
+        .expireAfterAccess(Duration.ofMinutes(2))   // TTI: issiq kalit uzoq yashaydi
+        .refreshAfterWrite(Duration.ofMinutes(5))   // fonda yangilash
+        .maximumSize(50_000)
+        .build(key -> source.load(key));
+// TTL bo'lmasa kesh abadiy eskirgan qiymatni ushlab turadi.
+// Faqat TTI bo'lsa, doimiy so'raladigan kalit hech qachon yangilanmaydi.
+```
 
 ## 11.13 Chiqarib tashlash siyosatlari (Eviction Policies: LRU, LFU, W-TinyLFU / Caffeine)
 
@@ -276,6 +434,19 @@ CacheManager cacheManager() {
 
 **Ehtiyot bo'ling:** `@CacheEvict`ni o'z-o'zidan transaction commit'dan oldin ishlashi tufayli rollback bo'lsa ham kesh tozalanadi yoki, battarroq, commit'gacha bo'shliqda eski qiymat qaytib yoziladi - transaction-aware rejim yoki after-commit hodisa ishlating. `allEntries = true` ni tez-tez chaqirish esa butun keshni yo'q qilib, DB'ga stampede yuboradi.
 
+```java
+// 1) Hodisaga asoslangan: manba o'zgarganda kesh o'chiriladi
+@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+void onProductUpdated(ProductUpdated e) {
+    cacheManager.getCache("products").evict(e.productId());
+}
+
+// 2) Versiyalangan kalit: o'chirish kerak emas, kalit o'zgaradi
+String key = "product:%d:v%d".formatted(id, product.version());
+// Eski kalitlar TTL bilan o'zi o'ladi. Klaster bo'ylab izchil,
+// invalidatsiya xabarini tarqatish kerak emas.
+```
+
 ## 11.15 Kesh kalitini loyihalash (Cache Key Design)
 
 **Tavsif:** Kalit keshning "indeksi" bo'lgani uchun uning dizayni to'g'ri natija, hit ratio va xavfsizlikni bir vaqtda belgilaydi. Yaxshi kalitda javobga ta'sir qiluvchi barcha o'lchamlar - entity id, tenant, locale, rol/permission scope, API versiyasi, serializatsiya formati - aniq va barqaror tartibda jamlanadi. Aks holda bir foydalanuvchi boshqasining ma'lumotini ko'radi yoki bir xil ma'lumot o'nlab kalitga tarqalib hit ratio tushadi. Kalit qisqa, deterministik va inson o'qiy oladigan bo'lsa, operatsion debugging ham osonlashadi.
@@ -290,6 +461,19 @@ CacheManager cacheManager() {
 - API `v2`/`v3` javob shakllarini kalitdagi versiya segmenti bilan izolyatsiya qilish.
 - Qidiruv filtri kombinatsiyasini normalizatsiya qilib (tartiblangan parametrlar) bitta kalitga keltirish.
 - Rolga bog'liq ko'rinishlarni `role` segmenti bilan ajratib, permission oqishini oldini olish.
+
+```java
+// Kalit tarkibi: kim, nima, qanday ko'rinishda
+private String key(long productId) {
+    return "catalog:%s:%s:product:%d:v%d".formatted(
+            TenantContext.get(),             // tenant: ma'lumot oqib ketmasligi uchun
+            LocaleContextHolder.getLocale(), // til: tarjima aralashmasligi uchun
+            productId,
+            schemaVersion);                  // format o'zgarsa eski kalit o'qilmaydi
+}
+// Kalitga foydalanuvchi roli ham kirishi kerak, agar javob rolga bog'liq bo'lsa.
+// Aks holda bir foydalanuvchi boshqasining ko'rinishini oladi.
+```
 
 ## 11.16 HTTP keshlash (HTTP Caching: Cache-Control, ETag, CDN)
 
@@ -306,6 +490,22 @@ CacheManager cacheManager() {
 
 **Ehtiyot bo'ling:** Autentifikatsiyalangan, foydalanuvchiga xos javobga `public` yoki `s-maxage` qo'yish shared CDN keshi orqali boshqa foydalanuvchiga ma'lumot oqishiga olib keladi - bunday javoblarda `private`/`no-store` va kerakli `Vary` (masalan `Vary: Authorization`) majburiy. `ShallowEtagHeaderFilter` javobni buferlab ETag hisoblaydi, ya'ni CPU va xotira sarflaydi hamda streaming/SSE javoblarni buzadi.
 
+```java
+// HTTP kesh: eng arzon kesh, chunki server umuman chaqirilmaydi
+@GetMapping("/products/{id}")
+ResponseEntity<ProductDto> get(@PathVariable long id) {
+    Product p = service.load(id);
+    return ResponseEntity.ok()
+            .eTag("\"" + p.version() + "\"")
+            .cacheControl(CacheControl.maxAge(Duration.ofMinutes(5))
+                    .cachePublic()
+                    .staleWhileRevalidate(Duration.ofMinutes(1)))
+            .body(ProductDto.of(p));
+}
+// Shaxsiy ma'lumot uchun `cachePublic()` ishlatmang: CDN uni boshqa
+// foydalanuvchiga beradi.
+```
+
 ## 11.17 Memoizatsiya (Memoization)
 
 **Tavsif:** Memoizatsiya - toza (pure), deterministik funksiya natijasini argumentlari bo'yicha saqlab, takroriy chaqiruvda hisoblashni butunlay chetlab o'tish. Bu kesh emas, balki funksiya darajasidagi mikro-optimizatsiya: I/O emas, CPU yoki allocation tejaladi. Rekursiv va dinamik algoritmlarda eksponensial ishni polinomialga tushiradi, enterprise kodda esa qimmat regex kompilyatsiyasi, reflection tahlili yoki format parsing'ini bir martaga qisqartiradi. Shart - funksiyaning yon ta'siri bo'lmasligi va natijasi vaqt bilan o'zgarmasligi.
@@ -321,6 +521,20 @@ CacheManager cacheManager() {
 
 **Ehtiyot bo'ling:** Chegarasiz `HashMap` bilan memoizatsiya - klassik xotira oqishi (memory leak), ayniqsa kalit foydalanuvchi kiritmasidan kelsa; har doim `maximumSize` yoki weak/soft referens ishlating. Natija deterministik bo'lmasa (vaqt, random, tashqi holatga bog'liq) memoizatsiya nozik, takrorlanmaydigan bug'lar keltiradi.
 
+```java
+// Memoizatsiya: bir xil argument uchun natija qayta hisoblanmaydi
+@Service
+public class TaxTableService {
+    private final Map<Integer, TaxTable> byYear = new ConcurrentHashMap<>();
+
+    public TaxTable forYear(int year) {
+        return byYear.computeIfAbsent(year, this::loadFromDb);
+    }
+}
+// Argument to'plami chegaralangan bo'lishi shart: aks holda bu memory leak.
+// Chegarasiz bo'lsa Caffeine va maximumSize ishlatilsin.
+```
+
 ## 11.18 Salbiy keshlash (Negative Caching)
 
 **Tavsif:** Salbiy keshlash "topilmadi" yoki "yo'q" javobini ham keshlaydi, ya'ni mavjud bo'lmagan kalit uchun takroriy qimmat qidiruvni to'xtatadi. Bunisiz tizim mavjud bo'lmagan id'lar bo'yicha so'rovlar ostida DB'ga to'g'ridan-to'g'ri o'tib ketadi - bu cache penetration hujumining asosi. Amalda `null` o'rniga maxsus sentinel qiymat (`EMPTY`, bo'sh `Optional`, tombstone) saqlanadi va unga odatdagidan qisqaroq TTL beriladi, chunki "yo'q" holati "bor"ga aylanishi mumkin. Katta kalit maydoni uchun Bloom filter bilan birgalikda ishlatiladi.
@@ -335,6 +549,24 @@ CacheManager cacheManager() {
 - Fayl mavjudligini tekshirishda yo'q fayl holatini qisqa muddat eslab qolish.
 
 **Ehtiyot bo'ling:** Negative TTL uzoq bo'lsa, yangi yaratilgan resurs foydalanuvchiga "mavjud emas" bo'lib ko'rinadi - yaratish yo'lida albatta negative yozuvni evict qilish kerak. Shuningdek, xatolik (timeout, 500) bilan "haqiqatan yo'q" (404) ni farqlamay keshlash vaqtinchalik uzilishni soatlab davom etuvchi buzuq holatga aylantiradi.
+
+```java
+// Negative caching: "yo'q" javobi ham keshlanadi, lekin qisqaroq
+public Optional<Profile> find(long id) {
+    String key = "profile:" + id;
+    String cached = redis.opsForValue().get(key);
+    if ("__MISSING__".equals(cached)) return Optional.empty();   // keshlangan yo'qlik
+    if (cached != null) return Optional.of(json.read(cached, Profile.class));
+
+    Optional<Profile> found = repo.findById(id);
+    redis.opsForValue().set(key,
+            found.map(json::write).orElse("__MISSING__"),
+            found.isPresent() ? Duration.ofMinutes(10) : Duration.ofSeconds(30));
+    return found;
+}
+// Yo'qlikni keshlash mavjud bo'lmagan ID bilan bazani urishdan saqlaydi,
+// lekin TTL qisqa bo'lishi kerak: yozuv paydo bo'lsa tez ko'rinishi uchun.
+```
 
 ## 11.19 Keshni oldindan to'ldirish (Cache Warming)
 
@@ -374,6 +606,19 @@ void warmUp() {
 
 **Ehtiyot bo'ling:** Distributed lock bilan single-flight qilish deadlock va lock timeout muammolarini olib keladi - lock muddatini hisob vaqtidan uzunroq qo'yib, lock olmagan thread uchun "eski qiymatni qaytarish" (serve-stale) yo'lini ko'rib chiqing. Near cache qo'shish esa consistency oynasini kengaytiradi: endi invalidation ikki qatlamga ham yetib borishi kerak.
 
+```java
+// Hot key: bitta kalit butun yukni tortadi
+// 1) Lokal L1 kesh qo'shish: so'rov Redis ga ham yetib bormaydi
+Caffeine.newBuilder().maximumSize(1_000)
+        .expireAfterWrite(Duration.ofSeconds(5)).build();
+
+// 2) Kalitni bo'lish (key splitting): yuk nusxalar bo'ylab tarqaladi
+int shard = ThreadLocalRandom.current().nextInt(8);
+String key = "banner:active:" + shard;      // 8 ta nusxa, biri o'qiladi
+
+// Hot key ni topish: Redis `--hotkeys` yoki kalit prefiksi bo'yicha metrika.
+```
+
 ## 11.21 So'rov doirasidagi kesh (Request-Scoped Cache)
 
 **Tavsif:** Bitta HTTP so'rovi yoki bitta transaction ichida bir xil ma'lumot bir necha marta so'ralishi juda keng tarqalgan (validator, mapper, security check hammasi bir xil userni oladi). Request-scoped kesh shu qiymatni so'rov davomiyligida saqlab, takroriy DB yoki remote chaqiruvni yo'qotadi, lekin so'rov tugashi bilan o'chadi. Shu sababli unda eskirish (staleness) riski deyarli yo'q - ma'lumot faqat bir so'rov ichida "muzlatiladi". Bu read-your-own-writes semantikasini buzmasligi uchun ham qulay.
@@ -389,6 +634,22 @@ void warmUp() {
 
 **Ehtiyot bo'ling:** Request-scoped bean'ni singleton'ga to'g'ridan-to'g'ri inject qilish `scoped proxy` bo'lmasa xato beradi yoki, battarroq, birinchi so'rovning holatini barcha so'rovlarga tarqatadi. Async yoki reaktiv kodda `ThreadLocal` asosidagi kontekst thread almashganda yo'qoladi yoki boshqa so'rovga "sizib" o'tadi - `@Async`, `CompletableFuture` va WebFlux yo'lida kontekst propagatsiyasini ataylab sozlang.
 
+```java
+// So'rov doirasidagi kesh: bir so'rov ichida takroriy chaqiruv bir marta
+@Component
+@RequestScope
+public class RequestRateCache {
+    private final Map<String, Rate> cache = new HashMap<>();   // thread bitta
+    private final RateService source;
+
+    public Rate rate(String pair) {
+        return cache.computeIfAbsent(pair, source::rate);
+    }
+}
+// Bir so'rovda 50 qator uchun bir xil kursni 50 marta so'rash o'rniga bir marta.
+// Invalidatsiya muammosi yo'q: so'rov tugashi bilan kesh yo'qoladi.
+```
+
 ## 11.22 Kesh konsistensiyasi murosalari (Cache Consistency Trade-offs)
 
 **Tavsif:** Kesh - joylangan nusxa, ya'ni har qanday kesh dizayni "qanchalik eski ma'lumotga toqat qilamiz" degan savolga javobdir. Strong consistency uchun write-through + sinxron invalidation va distributed lock kerak bo'ladi, bu esa kechikish va murakkablik qo'shadi; eventual consistency arzon va tez, lekin foydalanuvchi o'z o'zgarishini darhol ko'rmasligi mumkin. Amaliy yechim - SLA darajasida eskirish chegarasini (staleness budget) ochiq belgilash: pul va huquqiy ma'lumotlarga nol, katalog va analitikaga sekundlar yoki daqiqalar. Alohida e'tibor - bir vaqtdagi yozuv va o'qish oralig'ida eski qiymat keshga qaytib yozilishi (stale set) muammosi.
@@ -403,6 +664,23 @@ void warmUp() {
 - Hibernate `READ_WRITE` strategiyasini kam o'zgaruvchi referens entity'lar uchun tanlash.
 
 **Ehtiyot bo'ling:** Eng ko'p uchraydigan xato - konsistensiya talabini hujjatlashtirmaslik: kesh "optimizatsiya" sifatida kiritiladi, keyin biznes uni haqiqat manbai deb o'ylaydi va eskirgan qiymat moliyaviy xatoga aylanadi. "Avval DB'ni yangila, keyin keshni o'chir" tartibini buzish yoki yangilashda `@CachePut` bilan eski qiymatni yozib qo'yish ham bir vaqtda ishlayotgan thread'lar tufayli doimiy stale holat qoldiradi.
+
+```java
+// Izchillik tanlovi aniq yozilishi kerak
+@Transactional
+public void updatePrice(long id, Money price) {
+    repo.updatePrice(id, price);
+    // Variant A: commit'dan keyin o'chirish - qisqa vaqt eskirgan qiymat o'qiladi
+    TransactionSynchronizationManager.registerSynchronization(
+            new TransactionSynchronization() {
+                @Override public void afterCommit() { cache.evict(id); }
+            });
+    // Variant B: oldin o'chirish - rollback bo'lsa kesh keraksiz bo'shaydi (xavfsiz)
+    // Variant C: versiyalangan kalit - eskirgan qiymat umuman o'qilmaydi
+}
+// Har bir kesh uchun javob yozilgan bo'lishi kerak: necha sekund eskirish
+// qabul qilinadi va bu biznes uchun nimani bildiradi.
+```
 
 ## 11.23 Amalda qo'llash
 
