@@ -27,21 +27,22 @@
 </details>
 
 
-Oldingi boblarda testlash strategiyasining mantiqi, darajalari va arxitekturaga ta'siri muhokama qilindi. Bu bobda esa nazariya emas, balki bevosita ishlatishga tayyor materiallar jamlangan: hujjat shablonlari, checklistlar, kutubxonalar ma'lumotnomasi va eng ko'p uchraydigan muammolar jadvali. Har bir shablonni nusxa olib, loyihangiz nomlari bilan to'ldirib, repozitoriyning `docs/testing/` papkasiga joylashtirish mumkin. Maqsad — jamoada "qanday yozamiz?" savolini muhokamadan chiqarib, kelishilgan standartga aylantirish.
+
+Oldingi boblarda testlash strategiyasining mantiqi, darajalari va arxitekturaga ta'siri muhokama qilindi. Bu bobda esa nazariya emas, balki bevosita ishlatishga tayyor materiallar jamlangan: hujjat shablonlari, checklistlar, kutubxonalar ma'lumotnomasi va eng ko'p uchraydigan muammolar jadvali. Har bir shablonni nusxa olib, loyihangiz nomlari bilan to'ldirib, repozitoriyning `docs/testing/` papkasiga joylashtirish mumkin. Maqsad - jamoada "qanday yozamiz?" savolini muhokamadan chiqarib, kelishilgan standartga aylantirish.
 
 ## 18.1 Test strategiyasi hujjati shabloni
 
-Test strategiyasi — bu bitta release uchun emas, butun tizim (yoki domen) uchun yoziladigan uzoq muddatli hujjat. U "nimani qanday darajada tekshiramiz va nega" degan savolga javob beradi. Uni arxitektor QA lead bilan birgalikda yozadi, har chorakda qayta ko'rib chiqadi va versiyalaydi (git tarixida saqlanishi shart).
+Test strategiyasi - bu bitta release uchun emas, butun tizim (yoki domen) uchun yoziladigan uzoq muddatli hujjat. U "nimani qanday darajada tekshiramiz va nega" degan savolga javob beradi. Uni arxitektor QA lead bilan birgalikda yozadi, har chorakda qayta ko'rib chiqadi va versiyalaydi (git tarixida saqlanishi shart).
 
 ```markdown
-# Test strategiyasi — <tizim/domen nomi>
+# Test strategiyasi - <tizim/domen nomi>
 Versiya: 1.3 | Muallif: <ism> | Oxirgi ko'rib chiqilgan: 2026-10-04
 Keyingi ko'rib chiqish: 2027-01-15
 
 ## 1. Maqsad va kontekst
 - Bu hujjat kimga: <auditoriya>
 - Qaysi tizimlarni qamraydi: <servislar ro'yxati>
-- Biznes risk profili: <masalan, to'lov oqimi — yuqori, admin panel — o'rta>
+- Biznes risk profili: <masalan, to'lov oqimi - yuqori, admin panel - o'rta>
 - Strategik prinsiplar (3-5 ta jumla): masalan "tez qaytish aloqasi
   qamrov foizidan muhimroq", "har bir incident regression testga aylanadi".
 
@@ -65,7 +66,7 @@ Keyingi ko'rib chiqish: 2027-01-15
 | local | developer | Testcontainers | developer | istalgan vaqt |
 | ci | PR tekshiruvi | ephemeral | platforma | har run |
 | staging | E2E, UAT | anonimlashtirilgan | platforma | kunlik |
-| prod | smoke, synthetic | real | platforma | — |
+| prod | smoke, synthetic | real | platforma | - |
 
 ## 5. Test ma'lumotlari
 - Yaratish usuli: <fixture builder / Datafaker / Instancio>
@@ -109,7 +110,7 @@ Keyingi ko'rib chiqish: 2027-01-15
 | Legacy modulda test yo'q | regressiya | yuqori | har o'zgarishda "test qarzi" to'lash qoidasi |
 
 ## 11. Kelishilmagan/ochiq masalalar
-- <masalan: UI testlar uchun Playwright yoki Selenide — qaror kutilmoqda,
+- <masalan: UI testlar uchun Playwright yoki Selenide - qaror kutilmoqda,
   mas'ul: <ism>, muddat: <sana>>
 ```
 
@@ -118,7 +119,7 @@ Keyingi ko'rib chiqish: 2027-01-15
 Strategiya uzoq muddatli bo'lsa, test rejasi bitta release yoki epic uchun yoziladi va bir sahifadan oshmasligi kerak. Agar reja ikki sahifaga chiqsa, demak epic juda katta bo'lgan.
 
 ```markdown
-# Test rejasi — <epic/release nomi>
+# Test rejasi - <epic/release nomi>
 Jira: <EPIC-123> | QA mas'ul: <ism> | Sana: <...>
 
 ## Nima o'zgaradi
@@ -143,9 +144,9 @@ Jira: <EPIC-123> | QA mas'ul: <ism> | Sana: <...>
 <kerakli hisoblar, feature flag holati, tashqi stublar>
 
 ## Riskka asoslangan ustuvorlik
-- P1: <to'lov hisob-kitobi> — maksimal qamrov
-- P2: <bildirishnoma yuborish> — happy path + 1 xato holati
-- P3: <UI matnlari> — faqat exploratory
+- P1: <to'lov hisob-kitobi> - maksimal qamrov
+- P2: <bildirishnoma yuborish> - happy path + 1 xato holati
+- P3: <UI matnlari> - faqat exploratory
 
 ## Chiqish mezonlari (exit criteria)
 - [ ] Barcha P1 ssenariylari o'tdi
@@ -159,7 +160,7 @@ Jira: <EPIC-123> | QA mas'ul: <ism> | Sana: <...>
 
 ## 18.3 Definition of Done namunasi
 
-DoD — jamoa kelishuvi, uni PR shablonida takrorlash foydali. Quyidagi namuna Spring xizmatlari uchun minimal va real ishlaydigan variant.
+DoD - jamoa kelishuvi, uni PR shablonida takrorlash foydali. Quyidagi namuna Spring xizmatlari uchun minimal va real ishlaydigan variant.
 
 ```markdown
 ## Definition of Done
@@ -179,7 +180,7 @@ Test
 
 Hujjat
 - [ ] README/OpenAPI yangilandi
-- [ ] Arxitektura qaroriga ta'sir qilsa — ADR yozildi
+- [ ] Arxitektura qaroriga ta'sir qilsa - ADR yozildi
 - [ ] Runbook'da yangi failure mode tasvirlandi
 
 Kuzatuvchanlik (observability)
@@ -221,7 +222,7 @@ Bu checklist review paytida "test bor" degan yuzaki tekshiruvdan "test foydali" 
 - [ ] Testcontainers konteynerlari qayta ishlatiladi (statik yoki shared), har metodda qayta ko'tarilmaydi
 - [ ] Test xabarlari yiqilganda diagnostika beradi (AssertJ `as("...")` yoki soft assertions)
 - [ ] CI'da flaky bo'lish ehtimoli baholangan (tarmoq, vaqt, tartib, parallel)
-- [ ] Agar bu bugfix bo'lsa — avval yiqiladigan regression test qo'shilgan
+- [ ] Agar bu bugfix bo'lsa - avval yiqiladigan regression test qo'shilgan
 
 ## 18.5 Bug report shabloni
 
@@ -287,7 +288,7 @@ CHECKLIST: yangi REST endpoint
 
 ## 18.7 Exploratory testing charter va sessiya hisoboti
 
-Exploratory testing tartibsiz "o'ynash" emas — u vaqt bilan cheklangan, maqsadi yozilgan va natijasi hisobot bo'lgan ish usuli.
+Exploratory testing tartibsiz "o'ynash" emas - u vaqt bilan cheklangan, maqsadi yozilgan va natijasi hisobot bo'lgan ish usuli.
 
 ```text
 CHARTER
@@ -305,7 +306,7 @@ Qamrab olindi: qisman qaytarish, to'liq qaytarish, takroriy qaytarish,
 Topilganlar:
   - BUG-884 (Sev-2): 3 ta qisman qaytarish asl summadan oshdi
   - BUG-885 (Sev-4): xato xabari texnik stack trace ko'rsatadi
-Savollar/risklar: PSP timeout'dan keyin holat noaniq qoladi — runbook yo'q
+Savollar/risklar: PSP timeout'dan keyin holat noaniq qoladi - runbook yo'q
 Keyingi charter taklifi: refund + chargeback kombinatsiyasi
 ```
 
@@ -361,21 +362,21 @@ Yangi servis birinchi kundan to'g'ri sozlanmasa, keyin tuzatish bir necha hafta 
 Qoida oddiy: har bir prodga chiqqan incident kamida bitta avtomatlashtirilgan regression test qoldiradi. Test yozilmagan postmortem yopilmaydi.
 
 - [ ] Incident'ning aniq texnik sababi bir jumlada yozilgan
-- [ ] Nega mavjud testlar ushlab qolmadi — javob yozilgan (qamrov bo'shlig'i, noto'g'ri daraja, mock haqiqatni yashirgan)
+- [ ] Nega mavjud testlar ushlab qolmadi - javob yozilgan (qamrov bo'shlig'i, noto'g'ri daraja, mock haqiqatni yashirgan)
 - [ ] Muammoni takrorlaydigan test yozildi va u tuzatishdan OLDIN yiqildi
 - [ ] Test eng past mumkin bo'lgan darajada (agar unit yetsa, E2E yozilmadi)
 - [ ] Test nomida incident ID bor (masalan `shouldNotDoubleCharge_INC_412`)
-- [ ] Agar sabab integratsiya chegarasida bo'lsa — contract test yangilandi
-- [ ] Agar sabab konfiguratsiyada bo'lsa — konfiguratsiya validatsiya testi qo'shildi
-- [ ] Agar sabab yuklama ostida yuzaga kelgan bo'lsa — yuklama ssenariysi qo'shildi
+- [ ] Agar sabab integratsiya chegarasida bo'lsa - contract test yangilandi
+- [ ] Agar sabab konfiguratsiyada bo'lsa - konfiguratsiya validatsiya testi qo'shildi
+- [ ] Agar sabab yuklama ostida yuzaga kelgan bo'lsa - yuklama ssenariysi qo'shildi
 - [ ] Monitoring/alert qo'shildi, test uni ham qoplaydi (metrika chiqishini tekshirish)
-- [ ] Shu sinf xatolar uchun ArchUnit yoki statik qoida qo'shish mumkinmi — baholandi
+- [ ] Shu sinf xatolar uchun ArchUnit yoki statik qoida qo'shish mumkinmi - baholandi
 - [ ] Postmortem'da test havolasi ko'rsatilgan, PR merge qilindi
 - [ ] Yangi test flaky emasligi 20 marta ketma-ket run bilan tekshirildi
 
 ## 18.12 Tavsiya etilgan kutubxonalar ma'lumotnomasi
 
-Muhim ogohlantirish: aksariyat kutubxonalar versiyasini Spring Boot BOM (`spring-boot-dependencies`) boshqaradi — `pom.xml`da `<version>` yozish kerak EMAS va zararli. Pastdagi jadvalda "BOM" degani shu. BOM tashqarisidagilar uchun faqat taxminiy major versiya ko'rsatilgan; aniq versiyani Maven Central'dan tekshiring.
+Muhim ogohlantirish: aksariyat kutubxonalar versiyasini Spring Boot BOM (`spring-boot-dependencies`) boshqaradi - `pom.xml`da `<version>` yozish kerak EMAS va zararli. Pastdagi jadvalda "BOM" degani shu. BOM tashqarisidagilar uchun faqat taxminiy major versiya ko'rsatilgan; aniq versiyani Maven Central'dan tekshiring.
 
 | Maqsad | Kutubxona | Maven coordinate | Izoh |
 |---|---|---|---|
@@ -418,7 +419,7 @@ Muhim ogohlantirish: aksariyat kutubxonalar versiyasini Spring Boot BOM (`spring
 | Test metodi | `should<Natija>_when<Shart>` | `shouldRejectOrder_whenStockIsEmpty()` |
 | Muqobil metod uslubi | `given...when...then...` (bitta uslub tanlang) | `givenEmptyStock_whenOrder_thenRejected()` |
 | Paket | Production bilan bir xil paket | `com.acme.orders.pricing` |
-| Fayl joyi | `src/test/java/...` | — |
+| Fayl joyi | `src/test/java/...` | - |
 | Resurslar | `src/test/resources/` | `__files/psp/capture-200.json` |
 | Fixture/builder | `<Entity>TestDataBuilder` yoki `<Entity>Fixtures` | `OrderTestDataBuilder` |
 | Bazaviy sinflar | `support/` yoki `testsupport/` subpaketi | `com.acme.support.AbstractIntegrationTest` |
@@ -450,7 +451,7 @@ Muhim ogohlantirish: aksariyat kutubxonalar versiyasini Spring Boot BOM (`spring
 | Manba | Turi | Nega foydali |
 |---|---|---|
 | Gerard Meszaros, *xUnit Test Patterns* | Kitob | Test smells va fixture pattern'larining eng to'liq katalogi; nomlash va tozalash muammolarida ma'lumotnoma |
-| Michael Feathers, *Working Effectively with Legacy Code* | Kitob | Testsiz legacy kodga seam yaratib test kiritish texnikalari — Spring monolitlarini bo'lishda bevosita qo'llanadi |
+| Michael Feathers, *Working Effectively with Legacy Code* | Kitob | Testsiz legacy kodga seam yaratib test kiritish texnikalari - Spring monolitlarini bo'lishda bevosita qo'llanadi |
 | Freeman & Pryce, *Growing Object-Oriented Software, Guided by Tests* | Kitob | Testlar dizaynni qanday boshqarishi va mock'ning o'rni haqida eng aniq tushuntirish |
 | Vladimir Khorikov, *Unit Testing: Principles, Practices, and Patterns* | Kitob | Yaxshi testning to'rt ustuni va "nimani mock qilmaslik" bo'yicha amaliy mezonlar |
 | Ham Vocke, "The Practical Test Pyramid" (martinfowler.com) | Maqola | Piramidani Spring kontekstida bosqichma-bosqich tushuntiradi; jamoaga o'qitish uchun qisqa material |
@@ -463,7 +464,7 @@ Muhim ogohlantirish: aksariyat kutubxonalar versiyasini Spring Boot BOM (`spring
 - [ ] PR test review checklisti amalda ishlatiladi (faqat qog'ozda emas) va PR shablonida mavjud
 - [ ] Definition of Done'da test, kuzatuvchanlik va xavfsizlik bandlari bor hamda darvozalar bilan bog'langan
 - [ ] Yangi servis uchun test setup checklisti shablon repozitoriyda avtomatlashtirilgan
-- [ ] Har bir Sev-1/Sev-2 incident regression test bilan yopilgan — bu metrika sifatida kuzatiladi
+- [ ] Har bir Sev-1/Sev-2 incident regression test bilan yopilgan - bu metrika sifatida kuzatiladi
 - [ ] Kutubxona versiyalari Spring Boot BOM orqali boshqariladi, BOM tashqarisidagilar markazlashtirilgan
 - [ ] Nomlash va tag konvensiyalari ArchUnit qoidasi bilan majburlanadi
 - [ ] Flaky testlar uchun ko'rinadigan backlog va mas'ul shaxs tayinlangan

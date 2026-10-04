@@ -23,6 +23,7 @@
 </details>
 
 
+
 Java 17 dan 25 gacha til shunchalik o'zgardi ki, eski uslubda yozilgan kod endi texnik qarz bo'lib qoldi. Record, sealed interface va pattern matching birgalikda ma'lumot modelini kompilyator tekshiradigan shaklga keltiradi. Arxitektor uchun bu yerdagi savol "yangi sintaksis chiroylimi" emas, balki "qaysi xato kompilyatsiya vaqtida tutiladi va qaysi biri production da tutiladi". Bu bobda til imkoniyatlari va API dizayni qarorlari aynan shu mezon bilan ko'rib chiqiladi.
 
 ## 13.1 Record: qachon ishlatish, qachon oddiy sinf kerak

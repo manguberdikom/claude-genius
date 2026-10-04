@@ -23,6 +23,7 @@
 </details>
 
 
+
 Coverage raqami kodning bajarilganini o'lchaydi, tekshirilganini emas. JaCoCo
 qatorga bayroq qo'yadi: bu qator test paytida ishga tushdi. Lekin natija to'g'rimi
 yoki yo'qmi, JaCoCo buni bilmaydi. Mutation testing shu bo'shliqni yopadi: kodni

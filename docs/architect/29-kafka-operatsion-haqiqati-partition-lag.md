@@ -25,6 +25,7 @@
 </details>
 
 
+
 Kafka ko'pchilik loyihada "xabar navbati" deb tushuniladi, lekin u aslida taqsimlangan, saqlanadigan va qayta o'qiladigan log. Shu farqni tushunmagan jamoa partition sonini tasodifiy tanlaydi, offset ni avtomatik commit qiladi, rebalance paytida xabarlarni ikki marta ishlaydi va dead letter topic ni hech kim o'qimaydi. Bu bob Kafka ning operatsion mexanikasini ko'rib chiqadi: ichkarida nima sodir bo'ladi, qaysi sozlama qanday raqamga ta'sir qiladi va arxitektor qaysi joyda qaror qabul qilishi kerak. To'lov servisi, buyurtma oqimi va ombor qoldig'i misollari orqali boramiz.
 
 ## 29.1 Kafka modeli: topic, partition, offset, consumer group

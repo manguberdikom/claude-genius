@@ -24,23 +24,24 @@
 </details>
 
 
+
 Test suite'ning qiymati uning yashil rangiga emas, ishonchliligiga bog'liq: agar jamoa qizil build'ni ko'rib birinchi navbatda "qayta ishga tushir" tugmasini bossa, siz testlarni emas, faqat CI vaqtini sotib olgansiz. Flaky testlar, to'planib qolgan test qarzi va saqlanmaydigan test kodi eng yaxshi test strategiyasini ham yemirib tashlaydi. Bu bob flaky testni sabablari bo'yicha tasniflash, aniqlash, karantinga olish va yo'q qilish jarayonini, shuningdek test kodini production kodi darajasida saqlash amaliyotlarini qamrab oladi.
 
 ## 16.1 Flaky test nima va nega eng qimmat muammo
 
-Flaky test — kod va muhit o'zgarmagan holda bir xil commit'da bir marta yashil, boshqa marta qizil bo'ladigan test. Texnik jihatdan bu determinizmning yo'qolishi: natija faqat tekshirilayotgan kodga emas, balki vaqt, tartib, parallelism yoki tashqi holatga ham bog'liq bo'lib qoladi.
+Flaky test - kod va muhit o'zgarmagan holda bir xil commit'da bir marta yashil, boshqa marta qizil bo'ladigan test. Texnik jihatdan bu determinizmning yo'qolishi: natija faqat tekshirilayotgan kodga emas, balki vaqt, tartib, parallelism yoki tashqi holatga ham bog'liq bo'lib qoladi.
 
 Narxi uch qatlamdan iborat:
 
 1. **CI xarajati.** 1500 testli suite, build 12 daqiqa, kuniga 60 build. Test darajasida 0.05% flake rate ham build'larning yarmida kamida bitta qizil test beradi. Kuniga 25 qayta ishga tushirish × 12 daqiqa ≈ 5 soat runner vaqti, oyiga ~110 soat.
-2. **Insoniy xarajat.** Qizil build'ni tekshirish, log o'qish, "bu flaky ekan" xulosasiga kelish — o'rtacha 10-15 daqiqa. Kuniga 25 hodisa × 12 daqiqa ≈ 5 soat/kun, oyiga deyarli bitta FTE ekvivalenti.
-3. **Ishonchning yo'qolishi — eng qimmati.** Flake rate 1-2% dan oshganda jamoa har bir qizilni "ehtimol flaky" deb taxmin qiladi. Shu daqiqadan boshlab suite regressiyani ushlash qobiliyatini yo'qotadi: haqiqiy xato ham xuddi shu "qayta ishga tushir" bilan yopilib, production'ga chiqib ketadi.
+2. **Insoniy xarajat.** Qizil build'ni tekshirish, log o'qish, "bu flaky ekan" xulosasiga kelish - o'rtacha 10-15 daqiqa. Kuniga 25 hodisa × 12 daqiqa ≈ 5 soat/kun, oyiga deyarli bitta FTE ekvivalenti.
+3. **Ishonchning yo'qolishi - eng qimmati.** Flake rate 1-2% dan oshganda jamoa har bir qizilni "ehtimol flaky" deb taxmin qiladi. Shu daqiqadan boshlab suite regressiyani ushlash qobiliyatini yo'qotadi: haqiqiy xato ham xuddi shu "qayta ishga tushir" bilan yopilib, production'ga chiqib ketadi.
 
 Arxitektor uchun xulosa: flaky test bitta test muammosi emas, butun suite'ning ishonch koeffitsiyentini pasaytiruvchi tizimli nuqson. Shuning uchun flake rate 1% dan oshsa, yangi feature testlarini yozishni to'xtatib barqarorlikni tiklash to'g'ri qaror bo'ladi.
 
 ## 16.2 Flaky testning asosiy sabablari, misollar va yechimlari
 
-Quyidagi jadval — diagnostikada birinchi murojaat qiladigan ro'yxat. Amalda hodisalarning 80% i birinchi beshta qatorga to'g'ri keladi.
+Quyidagi jadval - diagnostikada birinchi murojaat qiladigan ro'yxat. Amalda hodisalarning 80% i birinchi beshta qatorga to'g'ri keladi.
 
 | Sabab | Tipik Java/Spring ko'rinishi | Nega flaky | Yechim |
 |---|---|---|---|
@@ -182,7 +183,7 @@ Vositalar: lokal tekshiruv uchun `@RepeatedTest(50)`; tartib bog'liqligi uchun `
 
 ## 16.4 Karantin (quarantine) jarayoni
 
-Karantin — flaky testni o'chirib yuborish emas, uni vaqtincha blocking bo'lishdan chiqarib, egasi va muddati bilan ro'yxatga olish. Qadamlar:
+Karantin - flaky testni o'chirib yuborish emas, uni vaqtincha blocking bo'lishdan chiqarib, egasi va muddati bilan ro'yxatga olish. Qadamlar:
 
 1. **Aniqlash.** Haftalik hisobotda flake rate > 0.5% bo'lgan test nomzod bo'ladi.
 2. **Belgilash.** `@Tag("flaky")` + sabab + ticket. `@Disabled` emas, chunki `@Tag` testni nightly'da ishlatishga imkon beradi:
@@ -203,7 +204,7 @@ mvn verify -Dgroups='!flaky'   # PR gate; yoki <excludedGroups>flaky</excludedGr
 mvn test   -Dgroups='flaky'    # nightly: flake rate'ni o'lchash
 ```
 
-4. **Egasini belgilash.** Egasi yo'q karantin — abadiy karantin.
+4. **Egasini belgilash.** Egasi yo'q karantin - abadiy karantin.
 5. **SLA qo'yish.** Tavsiya: 2 sprint (14 kun), muddat test kodida va ticket'da yoziladi.
 6. **Muddat o'tgach qaror.** Faqat ikki variant: tuzatildi va karantindan chiqdi, yoki o'chirildi. "Yana 2 sprint" taqiqlanadi, aks holda ro'yxat go'ristonga aylanadi.
 7. **Kvota.** Karantinda bir vaqtda jami testlarning 0.5% dan ko'pi bo'lmasligi kerak. Kvota to'lsa, yangi feature ishi to'xtatiladi.
@@ -212,7 +213,7 @@ Zanjir: `flake aniqlandi → @Tag + ticket + egasi + SLA → PR gate'dan chiqari
 
 ## 16.5 Retry'ning o'rni
 
-Retry — og'riq qoldiruvchi, davo emas. Qoida: retry faqat infratuzilma nosozligi uchun. Legitim holatlar — Docker image tortib olish, Testcontainers start, dependency yuklash, runner tarmog'ining uzilishi; bunday retry'lar pipeline step darajasida qo'yiladi, test darajasida emas.
+Retry - og'riq qoldiruvchi, davo emas. Qoida: retry faqat infratuzilma nosozligi uchun. Legitim holatlar - Docker image tortib olish, Testcontainers start, dependency yuklash, runner tarmog'ining uzilishi; bunday retry'lar pipeline step darajasida qo'yiladi, test darajasida emas.
 
 Test retry xavfli, chunki u flake'ni yashiradi (test yashil, nondeterminizm joyida); signal-to-noise nisbatini buzadi (production kodidagi haqiqiy race condition retry bilan yopiladi); suite'ni sekinlashtiradi; va "retry bor, demak flake yozish arzon" degan noto'g'ri madaniy signal beradi.
 
@@ -229,13 +230,13 @@ Agar legacy suite'ni bosqichma-bosqich tozalash davrida retry kerak bo'lsa, u fa
 </plugin>
 ```
 
-Surefire bunday testlarni XML hisobotda `flakyFailure` elementi sifatida belgilaydi — bu aynan o'lchash uchun kerakli ma'lumot. Gradle'da `org.gradle.test-retry` plugin'i `maxRetries` va muhim `failOnPassedAfterRetry` opsiyasini beradi. JUnit 5'da standart retry API yo'q: `TestTemplateInvocationContextProvider` asosida custom extension yozish yoki tashqi kutubxona ishlatish kerak; `@RepeatedTest` retry emas, u boshqa maqsadga xizmat qiladi.
+Surefire bunday testlarni XML hisobotda `flakyFailure` elementi sifatida belgilaydi - bu aynan o'lchash uchun kerakli ma'lumot. Gradle'da `org.gradle.test-retry` plugin'i `maxRetries` va muhim `failOnPassedAfterRetry` opsiyasini beradi. JUnit 5'da standart retry API yo'q: `TestTemplateInvocationContextProvider` asosida custom extension yozish yoki tashqi kutubxona ishlatish kerak; `@RepeatedTest` retry emas, u boshqa maqsadga xizmat qiladi.
 
-Qat'iy qoida: retry yoqilgan bo'lsa, `flakyFailure` soni dashboard'da ko'rsatiladi va u ham nolga intilishi kerak. Retry'ni global yoqib hisobotni o'qimaslik — flake'ni rasman qonuniylashtirish.
+Qat'iy qoida: retry yoqilgan bo'lsa, `flakyFailure` soni dashboard'da ko'rsatiladi va u ham nolga intilishi kerak. Retry'ni global yoqib hisobotni o'qimaslik - flake'ni rasman qonuniylashtirish.
 
 ## 16.6 Test qarzi (test debt)
 
-Test qarzi — suite'ning kelajakdagi o'zgarishlarni qo'llab-quvvatlash qobiliyatini kamaytiruvchi har qanday holat. Turlari: **eskirgan test** (o'zgargan talabni tekshiradi, lekin mock'lar shunchalik chuqur ki real xatti-harakat ko'rinmaydi); **assertion'siz test** (faqat metodni chaqiradi — mutation testing bunday testlarni darhol ochadi); **abadiy `@Disabled`** (sababi yozilmagan, hech kim tegishga qo'rqadi); **takrorlangan test** (bir scenariyni uch darajada tekshiradi, qo'shimcha xavf qoplamaydi); **tushunarsiz test** (80 qatorli setup, nomi `test1`).
+Test qarzi - suite'ning kelajakdagi o'zgarishlarni qo'llab-quvvatlash qobiliyatini kamaytiruvchi har qanday holat. Turlari: **eskirgan test** (o'zgargan talabni tekshiradi, lekin mock'lar shunchalik chuqur ki real xatti-harakat ko'rinmaydi); **assertion'siz test** (faqat metodni chaqiradi - mutation testing bunday testlarni darhol ochadi); **abadiy `@Disabled`** (sababi yozilmagan, hech kim tegishga qo'rqadi); **takrorlangan test** (bir scenariyni uch darajada tekshiradi, qo'shimcha xavf qoplamaydi); **tushunarsiz test** (80 qatorli setup, nomi `test1`).
 
 Inventarizatsiya qilmasdan qarzni to'lash mumkin emas:
 
@@ -255,15 +256,15 @@ Test o'chirish tabu emas: noto'g'ri test salbiy qiymatga ega, chunki saqlashni t
 
 **O'chirish to'g'ri:** test boshqa test bilan to'liq dublikat; talab o'zgardi yoki feature olib tashlandi; test faqat implementatsiya detalini (private metod, getter) tekshiradi va refaktoringda har doim buziladi; xuddi shu xavf arzonroq va barqarorroq test bilan qoplangan; test flaky, karantin SLA o'tdi va qoplanayotgan xavf muhim emas.
 
-**O'chirish noto'g'ri:** test qizil, chunki production kodda haqiqiy bug bor (eng xavfli holat); test sekin (bu tezlashtirish vazifasi); testni tushunish qiyin (bu refaktoring vazifasi); test har o'zgarishda buziladi, lekin biznes qoidasini himoya qiladi (buzilishi — signal, shovqin emas); muallifi noma'lum.
+**O'chirish noto'g'ri:** test qizil, chunki production kodda haqiqiy bug bor (eng xavfli holat); test sekin (bu tezlashtirish vazifasi); testni tushunish qiyin (bu refaktoring vazifasi); test har o'zgarishda buziladi, lekin biznes qoidasini himoya qiladi (buzilishi - signal, shovqin emas); muallifi noma'lum.
 
-**Kim qaror qiladi.** Unit darajada — kod egasi jamoa, PR review'da. Integration va E2E darajada — jamoa va tech lead, chunki bu xavf qoplamasini o'zgartiradi. Compliance yoki audit testlari — faqat arxitektor va product owner roziligi bilan. Har bir o'chirishda PR description'da bitta savolga javob bo'lishi shart: "bu testni o'chirgach, qanday xavf endi qoplanmay qoladi?" Javob "hech qanday" bo'lsa, o'chirish xavfsiz; aks holda avval qoplamani boshqa joyga ko'chirish kerak.
+**Kim qaror qiladi.** Unit darajada - kod egasi jamoa, PR review'da. Integration va E2E darajada - jamoa va tech lead, chunki bu xavf qoplamasini o'zgartiradi. Compliance yoki audit testlari - faqat arxitektor va product owner roziligi bilan. Har bir o'chirishda PR description'da bitta savolga javob bo'lishi shart: "bu testni o'chirgach, qanday xavf endi qoplanmay qoladi?" Javob "hech qanday" bo'lsa, o'chirish xavfsiz; aks holda avval qoplamani boshqa joyga ko'chirish kerak.
 
 ## 16.8 Test kodini refaktoring qilish
 
-Test kodi production kodidir: u kompilyatsiya qilinadi, CI'da ishlaydi, saqlanadi va buzilganda ish to'xtaydi. Lekin uning optimallashtirish maqsadi boshqacha — o'qiluvchanlik va xato sababini tez tushunish, DRY emas.
+Test kodi production kodidir: u kompilyatsiya qilinadi, CI'da ishlaydi, saqlanadi va buzilganda ish to'xtaydi. Lekin uning optimallashtirish maqsadi boshqacha - o'qiluvchanlik va xato sababini tez tushunish, DRY emas.
 
-Balans qoidasi: testda bir oz takrorlanish yaxshi. Umumiy `setUp()` ga ko'chirilgan har bir qator testning lokal tushunarliligini kamaytiradi; agar testni o'qishda yuqoriga qarab uch metodni ochish kerak bo'lsa, abstraksiya juda uzoqqa ketgan. Shu bilan birga setup'ni qisqartirish zarur — abstraksiya orqali emas, test data builder orqali:
+Balans qoidasi: testda bir oz takrorlanish yaxshi. Umumiy `setUp()` ga ko'chirilgan har bir qator testning lokal tushunarliligini kamaytiradi; agar testni o'qishda yuqoriga qarab uch metodni ochish kerak bo'lsa, abstraksiya juda uzoqqa ketgan. Shu bilan birga setup'ni qisqartirish zarur - abstraksiya orqali emas, test data builder orqali:
 
 ```java
 // OLDIN: obscure setup, nima muhimligi ko'rinmaydi
@@ -278,7 +279,7 @@ void shouldRejectOrderOverCreditLimit() {
         .isInstanceOf(CreditLimitExceededException.class);
 }
 
-// KEYIN: builder — faqat scenariy uchun muhim qiymatlar ko'rinadi
+// KEYIN: builder - faqat scenariy uchun muhim qiymatlar ko'rinadi
 @Test
 void shouldRejectOrderOverCreditLimit() {
     var customer = aCustomer().withCreditLimit("1000").build();
@@ -289,7 +290,7 @@ void shouldRejectOrderOverCreditLimit() {
 }
 ```
 
-Amaliy ro'yxat: nomlarni biznes tilida yozish (`shouldRejectOrderOverCreditLimit`, `testSubmit` emas); `@DisplayName` bilan scenariyni to'liq ifodalash; assertion'ni mazmunli qilish (`hasSize(3)` o'rniga `containsExactly(...)`); `assertTrue(x.equals(y))` ni AssertJ'ning tipga xos matcher'lariga o'tkazish — xato xabari ancha ma'lumotli bo'ladi; bir testda bir mantiqiy tasdiq, kerak bo'lsa `assertAll` yoki `SoftAssertions` bilan guruhlash. Test source'lariga ham code review va static analysis qo'llanadi.
+Amaliy ro'yxat: nomlarni biznes tilida yozish (`shouldRejectOrderOverCreditLimit`, `testSubmit` emas); `@DisplayName` bilan scenariyni to'liq ifodalash; assertion'ni mazmunli qilish (`hasSize(3)` o'rniga `containsExactly(...)`); `assertTrue(x.equals(y))` ni AssertJ'ning tipga xos matcher'lariga o'tkazish - xato xabari ancha ma'lumotli bo'ladi; bir testda bir mantiqiy tasdiq, kerak bo'lsa `assertAll` yoki `SoftAssertions` bilan guruhlash. Test source'lariga ham code review va static analysis qo'llanadi.
 
 ## 16.9 Test smell'lar katalogi
 
@@ -312,7 +313,7 @@ Katalog PR review checklist'i sifatida eng samarali: review'chi smell nomini ayt
 
 ## 16.10 Sekin testlarni tezlashtirish
 
-Sekin suite — flake'ning yashirin sababi: muhandislar lokal ishga tushirishni tashlab faqat CI'ga tayanadi va fikr-mulohaza halqasi uzayadi. Eng sekin testlarni Surefire XML'dagi `time` atributidan topish mumkin:
+Sekin suite - flake'ning yashirin sababi: muhandislar lokal ishga tushirishni tashlab faqat CI'ga tayanadi va fikr-mulohaza halqasi uzayadi. Eng sekin testlarni Surefire XML'dagi `time` atributidan topish mumkin:
 
 ```bash
 find . -name 'TEST-*.xml' -path '*surefire-reports*' -print0 \
@@ -325,23 +326,23 @@ Gradle'da `build/reports/tests/test/index.html` sortlanadigan davomiylik ustunig
 
 Asosiy vositalar:
 
-1. **Spring context sonini kamaytirish.** Har bir noyob konfiguratsiya — alohida yuklanish (5-20 s). `logging.level.org.springframework.test.context.cache=DEBUG` bilan kesh hit/miss statistikasini va `spring.test.context.cache.maxSize` (standart 32) chegarasini ko'rish mumkin. Maqsad: 3-5 ta standart test konfiguratsiyasi, mock bean'larni ad-hoc qo'shishdan voz kechish — har bir yangi kombinatsiya yangi context yaratadi.
+1. **Spring context sonini kamaytirish.** Har bir noyob konfiguratsiya - alohida yuklanish (5-20 s). `logging.level.org.springframework.test.context.cache=DEBUG` bilan kesh hit/miss statistikasini va `spring.test.context.cache.maxSize` (standart 32) chegarasini ko'rish mumkin. Maqsad: 3-5 ta standart test konfiguratsiyasi, mock bean'larni ad-hoc qo'shishdan voz kechish - har bir yangi kombinatsiya yangi context yaratadi.
 2. **Konteynerni qayta ishlatish.** Testcontainers'da `@Container` ni `static` qilish, butun suite uchun singleton container pattern'i, lokal ishlab chiqishda `testcontainers.reuse.enable=true`. CI'da reuse o'chiriladi, chunki runner har safar toza.
-3. **Testni past darajaga tushirish.** Eng samarali optimallashtirish — testni piramidaning pastki qatlamiga ko'chirish: E2E'dagi validatsiya scenariysi → `@WebMvcTest`; integration'dagi hisob-kitob mantiqi → toza unit test. Bitta E2E testni unit testga aylantirish odatda 30-60 sekundni millisekundlarga tushiradi.
+3. **Testni past darajaga tushirish.** Eng samarali optimallashtirish - testni piramidaning pastki qatlamiga ko'chirish: E2E'dagi validatsiya scenariysi → `@WebMvcTest`; integration'dagi hisob-kitob mantiqi → toza unit test. Bitta E2E testni unit testga aylantirish odatda 30-60 sekundni millisekundlarga tushiradi.
 4. **Parallelism.** `mode.default=same_thread` + `mode.classes.default=concurrent` eng xavfsiz boshlang'ich konfiguratsiya; Surefire `forkCount=1C` modul darajasida parallelism beradi. Parallelismni yoqishdan oldin tartib bog'liqligi tozalanishi shart, aks holda flake rate oshadi.
 
 ## 16.11 Testlar egaligi va madaniyat
 
-Texnik yechimlar madaniyatsiz ishlamaydi. Minimal qoidalar: **buzgan tuzatadi** — buzilgan testni kodni o'zgartirgan muhandis tuzatadi, testni yozgan odam emas. **"Red build" qoidasi** — main qizil bo'lsa yangi merge yo'q; tiklash boshqa barcha ishdan ustun, SLA 30 daqiqa, aks holda revert (revert — jazo emas, standart operatsiya). **Egalik xaritasi** — har bir test paketi uchun mas'ul jamoa `CODEOWNERS` da yozilgan; egasiz test — tuzatilmaydigan test. **Haftalik test sog'ligi ko'rib chiqishi** — 20-30 daqiqa: flake rate trendi, karantin ro'yxati va SLA'lar, eng sekin 10 test, yangi `@Disabled` testlar; natija — nomlangan egali ticket'lar, umumiy xohish emas. **Yangi flake'ni darhol to'xtatish** — ikki hafta ichida ikki marta flake bo'lgan test avtomatik karantin nomzodi.
+Texnik yechimlar madaniyatsiz ishlamaydi. Minimal qoidalar: **buzgan tuzatadi** - buzilgan testni kodni o'zgartirgan muhandis tuzatadi, testni yozgan odam emas. **"Red build" qoidasi** - main qizil bo'lsa yangi merge yo'q; tiklash boshqa barcha ishdan ustun, SLA 30 daqiqa, aks holda revert (revert - jazo emas, standart operatsiya). **Egalik xaritasi** - har bir test paketi uchun mas'ul jamoa `CODEOWNERS` da yozilgan; egasiz test - tuzatilmaydigan test. **Haftalik test sog'ligi ko'rib chiqishi** - 20-30 daqiqa: flake rate trendi, karantin ro'yxati va SLA'lar, eng sekin 10 test, yangi `@Disabled` testlar; natija - nomlangan egali ticket'lar, umumiy xohish emas. **Yangi flake'ni darhol to'xtatish** - ikki hafta ichida ikki marta flake bo'lgan test avtomatik karantin nomzodi.
 
 ## 16.12 Anti-patternlar
 
-- **Flaky testni `@Disabled` qilib unutish.** Sababsiz, egasiz, muddatsiz `@Disabled` — qarzni rasmiylashtirish; bir yildan keyin 200 ta o'chirilgan test va hech kim nega ekanini bilmaydi.
+- **Flaky testni `@Disabled` qilib unutish.** Sababsiz, egasiz, muddatsiz `@Disabled` - qarzni rasmiylashtirish; bir yildan keyin 200 ta o'chirilgan test va hech kim nega ekanini bilmaydi.
 - **Retry'ni global yoqib qo'yish.** Butun suite'ga `rerunFailingTestsCount=3` flake rate'ni nolga tushirmaydi, uni ko'rinmas qiladi; haqiqiy race condition production'ga chiqadi.
-- **"Mening mashinamda ishlaydi".** Bu diagnostika emas, muammoning tavsifi: test muhitga bog'liq, demak flaky. To'g'ri javob — timezone, locale, CPU soni, Docker versiyasi va test tartibini CI bilan tenglashtirib qayta sinash.
+- **"Mening mashinamda ishlaydi".** Bu diagnostika emas, muammoning tavsifi: test muhitga bog'liq, demak flaky. To'g'ri javob - timezone, locale, CPU soni, Docker versiyasi va test tartibini CI bilan tenglashtirib qayta sinash.
 - **Testni o'zgartirib production xatosini yashirish.** Kutilgan qiymatni haqiqiy qiymatga moslashtirish bug'ni test suite ichida muzlatib qo'yadi. Qoida: avval "talab o'zgardimi?" savoliga PR'da yozma javob berish.
 - **Assertion'ni yumshatib testni yashil qilish.** `isEqualTo(expected)` ni `isNotNull()` ga almashtirish: test yashil, qoplama yo'q. Mutation testing bunday yumshatishni aniq ko'rsatadi.
-- **Flake'ni "normal shovqin" deb qabul qilish.** "Har build'da 2-3 test flake bo'ladi, bu normal" — suite'ning o'lim sertifikati.
+- **Flake'ni "normal shovqin" deb qabul qilish.** "Har build'da 2-3 test flake bo'ladi, bu normal" - suite'ning o'lim sertifikati.
 - **Barcha flake'larni bir vaqtda tuzatishga urinish.** Flake rate bo'yicha reyting tuzib eng yuqori 20 tasidan boshlash kerak: odatda ular hodisalarning 70-80% ini beradi.
 
 ## 16.13 Arxitektor nazorat ro'yxati

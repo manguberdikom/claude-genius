@@ -24,6 +24,7 @@
 </details>
 
 
+
 Generatsiya qilingan kod Sonar hisobotida eng ko'p chalkashlik tug'diradigan joy. Developer `@Data` yozadi, keyin coverage hisobotida o'zi yozmagan o'nlab satr "qoplanmagan" deb turganini ko'radi. Buning sababi oddiy: JaCoCo bytecode ni o'lchaydi, Sonar esa manba kodni tahlil qiladi, va Lombok bu ikki qatlam orasiga tushadi. Bu bobda shu uzilishni qanday boshqarish, qaysi sozlama nimani hal qiladi va qaysi annotatsiya qamrovdan tashqari haqiqiy xavf olib kelishini ko'rib chiqamiz.
 
 ## 41.1 Lombok qanday ishlaydi: annotatsiya ishlovchisi va yaratilgan bytecode

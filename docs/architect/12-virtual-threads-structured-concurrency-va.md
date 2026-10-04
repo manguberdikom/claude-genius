@@ -22,6 +22,7 @@
 </details>
 
 
+
 Virtual thread Java dunyosida bir necha o'n yillik "thread qimmat, shuning uchun uni pool qil" qoidasini bekor qildi. Java 21 da bu imkoniyat barqaror (stable) bo'ldi, Java 24 da eng og'riqli cheklovi olib tashlandi, Java 25 da esa uning atrofidagi ikki yordamchi mexanizm yetildi: scoped values final bo'ldi, structured concurrency hali preview holatida qoldi. Arxitektor uchun bu yerdagi savol "yoqamanmi yoki yo'q" emas, balki "qaysi yuk profilida nima o'zgaradi va qaysi chegara endi bo'g'iz bo'lib qoladi" degan savol. Pastdagi bo'limlar aynan shu mexanikani va undan chiqadigan qarorlarni yig'adi.
 
 ## 12.1 Virtual thread nima: carrier thread, mount va unmount mexanikasi

@@ -23,6 +23,7 @@
 </details>
 
 
+
 Exclusion Sonarda eng kuchli va ayni paytda eng xavfli sozlama. Bir qator konfiguratsiya bilan siz minglab satrni tahlildan chiqarib, quality gate ni yashil qilib qo'yishingiz mumkin. Farq shundaki, ba'zi exclusion lar o'lchovni aniqroq qiladi, boshqalari esa o'lchovni soxtalashtiradi. Bu bob shu ikki holatni ajratishga, va qaysi biri ekanini kod review da isbotlashga qaratilgan.
 
 ## 12.1 Exclusion turlari: tahlildan, qamrovdan, takrorlanishdan, muayyan qoidadan

@@ -23,6 +23,7 @@
 </details>
 
 
+
 SonarQube lokal kompyuterda ishga tushganda foyda beradi, lekin haqiqiy kuchi CI pipeline ichida ochiladi. Faqat o'sha joyda tahlil har bir commit uchun avtomatik bajariladi va quality gate natijasi merge qarorini boshqaradi. Bu bobda tahlilni pipeline ga qanday tartibda qo'yish, pull request natijasini qayerda ko'rish va qaysi texnik tuzoqlar eng ko'p vaqt yo'qotishini ko'rib chiqamiz. Test turlarini qanday yozish va CI da umuman qanday pipeline qurish masalasi [testlash qo'llanmasidagi](../testing/README.md) CI/CD test pipeline mavzusida, bu yerda faqat Sonar qismi.
 
 ## 21.1 Pipeline dagi to'g'ri tartib: qurish, test, coverage hisoboti, tahlil, gate kutish

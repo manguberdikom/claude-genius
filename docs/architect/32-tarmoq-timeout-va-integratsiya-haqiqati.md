@@ -24,6 +24,7 @@
 </details>
 
 
+
 Tarmoq orqali chaqiruv lokal metod chaqiruvi emas, lekin kodda ikkisi bir xil ko'rinadi. Arxitektorning asosiy vazifasi shu farqni kodda ko'rinadigan qilish: har bir tashqi chaqiruvda vaqt chegarasi, qayta urinish qoidasi va to'xtash sharti bo'lsin. Quyida mexanika va raqamlar bor: TCP nima qiladi, timeout qanday ishlaydi, pool qancha bo'lishi kerak, DNS va TLS qayerda tishlaydi. Resilience pattern katalogi (circuit breaker, bulkhead, outbox) dizayn [patternlar hujjatida](../patterns/README.md), bu yerda faqat sozlash va qaror.
 
 ## 32.1 Tarmoq ishonchsiz: ulanish uzilishi, paket yo'qolishi, yarim ochiq ulanish

@@ -28,6 +28,7 @@
 </details>
 
 
+
 Bu bob maintainability toifasidagi eng ko'p uchraydigan code smell larni katalog ko'rinishida yig'adi. Har bir holat uchun avval Sonar shikoyat qiladigan kod, keyin shikoyat sababi, keyin tuzatilgan variant beriladi. Misollar to'lov, buyurtma va hisobot servislari ustida qurilgan. Jiddiylik ustuni "taxminan", chunki uni quality profile belgilaydi.
 
 | Kod holati | Sonar nima deydi | Toifa | Jiddiylik (taxminan) | Ta'siri |

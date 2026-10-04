@@ -24,6 +24,7 @@
 </details>
 
 
+
 Indeks so'rovni tezlashtiradigan sehr emas, balki ma'lumotning ikkinchi, tartiblangan nusxasi. Har bir indeks o'qishni tezlashtirgani uchun yozishdan, diskdan va vacuum vaqtidan to'lov oladi. Arxitektor uchun savol "indeks qo'shaylikmi" emas, balki "qaysi tur, qaysi ustunlar tartibida, qanday shart bilan va qaysi so'rovni qoplash uchun". Bu bobda PostgreSQL 15-17 dagi indeks turlarining ichki mexanikasi, ularning narxi va tanlov mezonlari ko'rib chiqiladi.
 
 ## 23.1 B-tree tuzilishi va u qaysi so'rovlarga yordam beradi

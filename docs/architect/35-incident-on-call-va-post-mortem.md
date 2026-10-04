@@ -25,6 +25,7 @@
 </details>
 
 
+
 Incident vaqtida arxitektorning qiymati kod yozishda emas, qarorni tez va to'g'ri chiqarishda ko'rinadi. Tizimni bilgan odam "nega buzildi" savolidan oldin "qanday tiklanadi" savoliga javob beradi. Bu bob darajalash, rollar, tiklash usullari, diagnostika tartibi va ayblamaydigan post-mortem mexanikasini beradi. Oxirida to'lov servisi uzilishi misolida to'liq shablon bor.
 
 ## 35.1 Incident darajalari va ularni belgilash mezoni

@@ -24,6 +24,7 @@
 </details>
 
 
+
 Kesh tizimga tezlik qo'shmaydi, u faqat sekinlikni yashiradi. Yashirilgan sekinlik kesh sovib qolgan paytda, odatda eng yuqori yuklamada, to'liq kuch bilan qaytib keladi. Shuning uchun kesh qarori "qancha tez bo'ladi" emas, "qanday nomuvofiqlikka va operatsion yukka rozi bo'lamiz" degan savol. Bu bobda raqamlar, sozlash parametrlari va kesh joriy qilgandan keyin chiqadigan tuzoqlar ko'rib chiqiladi.
 
 ## 28.1 Kesh qo'yishdan oldin so'raladigan savollar

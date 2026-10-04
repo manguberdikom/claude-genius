@@ -22,6 +22,7 @@
 </details>
 
 
+
 Abstraksiya hissi deganda chiroyli ierarxiya qurish qobiliyati emas, o'zgarish qayerdan kelishini oldindan sezish tushuniladi. Arxitektor har bir interfeysni savol bilan qo'yadi: "ertaga nima o'zgaradi va o'zgarish qancha faylga tegadi?". Agar javob yo'q bo'lsa, abstraksiya hali kerak emas. Bu bobda abstraksiyaning iqtisodi, bog'liqlik mexanikasi va chegarani qayerdan o'tkazish qarori ko'rib chiqiladi.
 
 ## 5.1 Abstraksiya nima uchun qo'yiladi: o'zgarishni bitta joyga to'plash

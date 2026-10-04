@@ -23,6 +23,7 @@
 </details>
 
 
+
 Har bir jamoada bir kun shu savol tug'ilad: "Sonar xato qilyapti, buni qanday o'chiramiz?". Javob oson emas, chunki bostirishning to'rt xil yo'li bor va ularning har biri boshqa odamga boshqa narsani ko'rsatadi. Bu bobda haqiqiy false positive ni shunchaki noqulay qoidadan ajratishni, bostirishni qayerda va qanday qayd etishni, va qachon qoidani butunlay o'chirish eng halol qaror bo'lishini ko'rib chiqamiz. Oxirida bostirishlar sonini metrika sifatida kuzatish tartibi bor, chunki kuzatilmagan suppression bir yilda minglab bo'lib ketadi.
 
 ## 24.1 False positive nima va u qanchalik tez-tez uchraydi

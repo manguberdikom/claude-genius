@@ -24,6 +24,7 @@
 </details>
 
 
+
 Hibernate bilan ishlashdagi eng keng tarqalgan xato uni "ob'ektni jadvalga saqlaydigan kutubxona" deb tushunishdir. Aslida u tranzaksiya davomida yashaydigan holat mashinasi: o'zi ushlab turgan ob'ektlarni kuzatadi, o'zgarishlarni to'playdi va qat'iy belgilangan paytda SQL ga aylantiradi. Arxitektor uchun asosiy savol "qanday annotatsiya qo'yaman" emas, "bu kod oxirida PostgreSQL ga nechta va qanday so'rov ketadi" degan savol. Bob shu savol atrofida quriladi.
 
 ## 18.1 Persistence context: birinchi daraja kesh, dirty checking, flush tartibi

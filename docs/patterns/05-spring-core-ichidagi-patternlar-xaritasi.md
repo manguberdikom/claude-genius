@@ -7,22 +7,22 @@
 <details>
 <summary>Bu bo'limdagi 41 bo'lim</summary>
 
-- [5.1 IoC konteyner (IoC Container — BeanFactory / ApplicationContext)](#51-ioc-konteyner-ioc-container--beanfactory--applicationcontext)
-- [5.2 Bean definition va registry (Bean Definition & BeanDefinitionRegistry — Registry Pattern)](#52-bean-definition-va-registry-bean-definition--beandefinitionregistry--registry-pattern)
-- [5.3 FactoryBean (FactoryBean — Abstract Factory)](#53-factorybean-factorybean--abstract-factory)
+- [5.1 IoC konteyner (IoC Container - BeanFactory / ApplicationContext)](#51-ioc-konteyner-ioc-container---beanfactory--applicationcontext)
+- [5.2 Bean definition va registry (Bean Definition & BeanDefinitionRegistry - Registry Pattern)](#52-bean-definition-va-registry-bean-definition--beandefinitionregistry---registry-pattern)
+- [5.3 FactoryBean (FactoryBean - Abstract Factory)](#53-factorybean-factorybean---abstract-factory)
 - [5.4 ObjectProvider va lazy lookup (ObjectProvider / Lazy Lookup)](#54-objectprovider-va-lazy-lookup-objectprovider--lazy-lookup)
 - [5.5 @Lookup metod injeksiyasi (@Lookup Method Injection)](#55-lookup-metod-injeksiyasi-lookup-method-injection)
 - [5.6 Bean scope'lari va scoped proxy (Bean Scopes & Scoped Proxy)](#56-bean-scopelari-va-scoped-proxy-bean-scopes--scoped-proxy)
-- [5.7 @Lazy orqali kechiktirilgan initsializatsiya (@Lazy — Lazy Initialization / Virtual Proxy)](#57-lazy-orqali-kechiktirilgan-initsializatsiya-lazy--lazy-initialization--virtual-proxy)
+- [5.7 @Lazy orqali kechiktirilgan initsializatsiya (@Lazy - Lazy Initialization / Virtual Proxy)](#57-lazy-orqali-kechiktirilgan-initsializatsiya-lazy---lazy-initialization--virtual-proxy)
 - [5.8 @Primary / @Qualifier bilan noaniqlikni yechish (@Primary / @Qualifier Disambiguation)](#58-primary--qualifier-bilan-noaniqlikni-yechish-primary--qualifier-disambiguation)
-- [5.9 Bean lifecycle callback'lari (Bean Lifecycle Callbacks — Template Method)](#59-bean-lifecycle-callbacklari-bean-lifecycle-callbacks--template-method)
-- [5.10 BeanPostProcessor (BeanPostProcessor — Decorator / Interceptor)](#510-beanpostprocessor-beanpostprocessor--decorator--interceptor)
+- [5.9 Bean lifecycle callback'lari (Bean Lifecycle Callbacks - Template Method)](#59-bean-lifecycle-callbacklari-bean-lifecycle-callbacks---template-method)
+- [5.10 BeanPostProcessor (BeanPostProcessor - Decorator / Interceptor)](#510-beanpostprocessor-beanpostprocessor---decorator--interceptor)
 - [5.11 BeanFactoryPostProcessor va BeanDefinitionRegistryPostProcessor (BeanFactoryPostProcessor / BeanDefinitionRegistryPostProcessor)](#511-beanfactorypostprocessor-va-beandefinitionregistrypostprocessor-beanfactorypostprocessor--beandefinitionregistrypostprocessor)
-- [5.12 Aware interfeyslari (Aware Interfaces — Callback Injection)](#512-aware-interfeyslari-aware-interfaces--callback-injection)
+- [5.12 Aware interfeyslari (Aware Interfaces - Callback Injection)](#512-aware-interfeyslari-aware-interfaces---callback-injection)
 - [5.13 Lifecycle va SmartLifecycle (Lifecycle / SmartLifecycle)](#513-lifecycle-va-smartlifecycle-lifecycle--smartlifecycle)
 - [5.14 SmartInitializingSingleton (SmartInitializingSingleton)](#514-smartinitializingsingleton-smartinitializingsingleton)
 - [5.15 Tartiblash va ustuvorlik (Ordered / @Order)](#515-tartiblash-va-ustuvorlik-ordered--order)
-- [5.16 Spring AOP: proxy asosidagi kesishuv (Spring AOP — Advice, Pointcut, Advisor, Interceptor)](#516-spring-aop-proxy-asosidagi-kesishuv-spring-aop--advice-pointcut-advisor-interceptor)
+- [5.16 Spring AOP: proxy asosidagi kesishuv (Spring AOP - Advice, Pointcut, Advisor, Interceptor)](#516-spring-aop-proxy-asosidagi-kesishuv-spring-aop---advice-pointcut-advisor-interceptor)
 - [5.17 Tranzaksiya proxy'si va TransactionTemplate (@Transactional Proxy & TransactionTemplate)](#517-tranzaksiya-proxysi-va-transactiontemplate-transactional-proxy--transactiontemplate)
 - [5.18 Template sinflari (Template Classes)](#518-template-sinflari-template-classes)
 - [5.19 Callback interfeyslari (Callback Interfaces)](#519-callback-interfeyslari-callback-interfaces)
@@ -52,13 +52,14 @@
 </details>
 
 
-Spring Framework'ning o'zi — klassik dizayn patternlar katalogining ishlab chiqarishga tayyor, jangovar sinovdan o'tgan amaliy ko'rinishi: IoC konteyner Factory, Registry, Proxy, Template va Observer patternlarini bir necha qatlamda birlashtirib ishlatadi. Arxitektor uchun bu xarita muhim, chunki Spring'da "sehrli" ko'ringan har bir xususiyat ortida aniq nomlangan pattern va aniq extension point turadi. Shu xaritani bilgan injener bean yaratilish tartibini, startup muammolarini, circular dependency va proxy bilan bog'liq nozik xatolarni taxmin qilmasdan diagnostika qiladi. Eng muhimi — framework'ni "hack" qilmasdan, uning o'z kengaytirish nuqtalari orqali to'g'ri qatlamga ulanishni bilib oladi.
 
-## 5.1 IoC konteyner (IoC Container — BeanFactory / ApplicationContext)
+Spring Framework'ning o'zi - klassik dizayn patternlar katalogining ishlab chiqarishga tayyor, jangovar sinovdan o'tgan amaliy ko'rinishi: IoC konteyner Factory, Registry, Proxy, Template va Observer patternlarini bir necha qatlamda birlashtirib ishlatadi. Arxitektor uchun bu xarita muhim, chunki Spring'da "sehrli" ko'ringan har bir xususiyat ortida aniq nomlangan pattern va aniq extension point turadi. Shu xaritani bilgan injener bean yaratilish tartibini, startup muammolarini, circular dependency va proxy bilan bog'liq nozik xatolarni taxmin qilmasdan diagnostika qiladi. Eng muhimi - framework'ni "hack" qilmasdan, uning o'z kengaytirish nuqtalari orqali to'g'ri qatlamga ulanishni bilib oladi.
 
-**Tavsif:** Obyektlarni kim yaratadi va kim ularning bog'liqliklarini uzatadi — bu mas'uliyatni ilova kodidan tashqi konteynerga ko'chiradi (Inversion of Control). Konteyner bean definition'lar katalogini o'qiydi, har bir bean'ning tip va bog'liqlik grafigini quradi, so'ng to'g'ri tartibda instantiate qilib, dependency'larni inject qiladi. `BeanFactory` — minimal lookup va lifecycle kontrakti, `ApplicationContext` esa uning ustiga event publishing, i18n, resource loading va annotation-based konfiguratsiyani qo'shadi. Natijada komponentlar bir-biriga emas, abstraksiyaga va konteyner kontraktiga bog'lanadi.
+## 5.1 IoC konteyner (IoC Container - BeanFactory / ApplicationContext)
 
-**Spring'da qayerda uchraydi:** `org.springframework.beans.factory.BeanFactory`, `ListableBeanFactory`, `HierarchicalBeanFactory`, `ConfigurableListableBeanFactory` va asosiy implementatsiya `DefaultListableBeanFactory`. Yuqori qatlamda `ApplicationContext` / `ConfigurableApplicationContext`, amalda `GenericApplicationContext`, `AnnotationConfigApplicationContext`, `ClassPathXmlApplicationContext`; Spring Boot 3.x/4.x web ilovada `AnnotationConfigServletWebServerApplicationContext` yoki reactive uchun `AnnotationConfigReactiveWebServerApplicationContext` (`SpringApplication.run()` tanlaydi). Parent-child context ierarxiyasi Spring MVC'da (root context + `DispatcherServlet` context) va Spring Cloud'da ishlatiladi; `@Configuration`, `@Bean`, `@ComponentScan`, `@Import` — konfiguratsiya metadatasi uchun asosiy annotatsiyalar.
+**Tavsif:** Obyektlarni kim yaratadi va kim ularning bog'liqliklarini uzatadi - bu mas'uliyatni ilova kodidan tashqi konteynerga ko'chiradi (Inversion of Control). Konteyner bean definition'lar katalogini o'qiydi, har bir bean'ning tip va bog'liqlik grafigini quradi, so'ng to'g'ri tartibda instantiate qilib, dependency'larni inject qiladi. `BeanFactory` - minimal lookup va lifecycle kontrakti, `ApplicationContext` esa uning ustiga event publishing, i18n, resource loading va annotation-based konfiguratsiyani qo'shadi. Natijada komponentlar bir-biriga emas, abstraksiyaga va konteyner kontraktiga bog'lanadi.
+
+**Spring'da qayerda uchraydi:** `org.springframework.beans.factory.BeanFactory`, `ListableBeanFactory`, `HierarchicalBeanFactory`, `ConfigurableListableBeanFactory` va asosiy implementatsiya `DefaultListableBeanFactory`. Yuqori qatlamda `ApplicationContext` / `ConfigurableApplicationContext`, amalda `GenericApplicationContext`, `AnnotationConfigApplicationContext`, `ClassPathXmlApplicationContext`; Spring Boot 3.x/4.x web ilovada `AnnotationConfigServletWebServerApplicationContext` yoki reactive uchun `AnnotationConfigReactiveWebServerApplicationContext` (`SpringApplication.run()` tanlaydi). Parent-child context ierarxiyasi Spring MVC'da (root context + `DispatcherServlet` context) va Spring Cloud'da ishlatiladi; `@Configuration`, `@Bean`, `@ComponentScan`, `@Import` - konfiguratsiya metadatasi uchun asosiy annotatsiyalar.
 
 **Qo'llanish keyslari:**
 - Monolit Spring Boot ilovada barcha service, repository va infrastruktura bean'larini bitta `ApplicationContext` orqali boshqarish.
@@ -67,11 +68,11 @@ Spring Framework'ning o'zi — klassik dizayn patternlar katalogining ishlab chi
 - Plugin arxitekturasida har bir plugin uchun alohida child context yaratib, uni to'liq `close()` qilib tashlash.
 - CLI yoki batch jobda `SpringApplication` orqali context ko'tarib, ish tugagach graceful shutdown qilish.
 
-**Ehtiyot bo'ling:** `ApplicationContext`'ni kod ichida `getBean()` uchun aylantirib yurish Service Locator anti-patterniga olib keladi — o'rniga constructor injection ishlatilsin. Katta ilovada bir nechta context ko'tarish (ayniqsa testlarda har xil konfiguratsiya bilan) context cache'ni buzadi va startup vaqtini ko'paytiradi.
+**Ehtiyot bo'ling:** `ApplicationContext`'ni kod ichida `getBean()` uchun aylantirib yurish Service Locator anti-patterniga olib keladi - o'rniga constructor injection ishlatilsin. Katta ilovada bir nechta context ko'tarish (ayniqsa testlarda har xil konfiguratsiya bilan) context cache'ni buzadi va startup vaqtini ko'paytiradi.
 
-## 5.2 Bean definition va registry (Bean Definition & BeanDefinitionRegistry — Registry Pattern)
+## 5.2 Bean definition va registry (Bean Definition & BeanDefinitionRegistry - Registry Pattern)
 
-**Tavsif:** Bean obyektning o'zi emas, balki uning "retsepti" — class nomi, scope, constructor argumentlari, property qiymatlari, init/destroy method nomlari, lazy va primary flag'lari — alohida metadata obyektida saqlanadi. Bu metadata markaziy registry'da nom bo'yicha saqlanadi va instantiate qilishdan oldin o'zgartirilishi mumkin. Shu ajratish tufayli konfiguratsiya manbasi (annotation, XML, Groovy, programmatik kod, AOT metadata) bean yaratish mexanizmidan mustaqil bo'ladi. Registry — nom bo'yicha retseptni qidirish va ro'yxatga olish uchun yagona kontrakt.
+**Tavsif:** Bean obyektning o'zi emas, balki uning "retsepti" - class nomi, scope, constructor argumentlari, property qiymatlari, init/destroy method nomlari, lazy va primary flag'lari - alohida metadata obyektida saqlanadi. Bu metadata markaziy registry'da nom bo'yicha saqlanadi va instantiate qilishdan oldin o'zgartirilishi mumkin. Shu ajratish tufayli konfiguratsiya manbasi (annotation, XML, Groovy, programmatik kod, AOT metadata) bean yaratish mexanizmidan mustaqil bo'ladi. Registry - nom bo'yicha retseptni qidirish va ro'yxatga olish uchun yagona kontrakt.
 
 **Spring'da qayerda uchraydi:** `BeanDefinition` interfeysi va implementatsiyalari: `GenericBeanDefinition`, `RootBeanDefinition`, `ChildBeanDefinition`, `AnnotatedGenericBeanDefinition`, `ScannedGenericBeanDefinition`. Registry tomoni: `BeanDefinitionRegistry` (uni `DefaultListableBeanFactory` va `GenericApplicationContext` implement qiladi), yordamchilar `BeanDefinitionBuilder`, `BeanDefinitionReaderUtils`, `AbstractBeanDefinitionReader`, `ClassPathBeanDefinitionScanner`. Dinamik ro'yxatga olish uchun `ImportBeanDefinitionRegistrar` (masalan `@EnableJpaRepositories`, `@MapperScan`) va `BeanDefinitionRegistryPostProcessor`; Spring Framework 7.0'da programmatik ro'yxatga olish uchun `BeanRegistrar` API, Spring Boot 3.x AOT'da esa `BeanRegistrationAotProcessor` definition'larni compile-time kodga aylantiradi.
 
@@ -82,11 +83,11 @@ Spring Framework'ning o'zi — klassik dizayn patternlar katalogining ishlab chi
 - Definition darajasida `setPrimary(true)` yoki `setLazyInit(true)` qo'yib, mavjud auto-configuration xatti-harakatini o'zgartirish.
 - Testda bean definition'ni almashtirib (`@MockitoBean` yoki qo'lda `registerBeanDefinition`) real infrastrukturani stub bilan almashtirish.
 
-**Ehtiyot bo'ling:** Registry'ni context `refresh()` tugagandan keyin o'zgartirish xavfli — singleton'lar allaqachon yaratilgan bo'lishi mumkin va metadata bilan real holat farq qiladi. Bir xil bean nomi bilan qayta ro'yxatga olish jim turib override qilishi mumkin; Spring Boot'da `spring.main.allow-bean-definition-overriding` standart holda `false` — buni yoqish o'rniga nomlarni aniq boshqarish kerak.
+**Ehtiyot bo'ling:** Registry'ni context `refresh()` tugagandan keyin o'zgartirish xavfli - singleton'lar allaqachon yaratilgan bo'lishi mumkin va metadata bilan real holat farq qiladi. Bir xil bean nomi bilan qayta ro'yxatga olish jim turib override qilishi mumkin; Spring Boot'da `spring.main.allow-bean-definition-overriding` standart holda `false` - buni yoqish o'rniga nomlarni aniq boshqarish kerak.
 
-## 5.3 FactoryBean (FactoryBean — Abstract Factory)
+## 5.3 FactoryBean (FactoryBean - Abstract Factory)
 
-**Tavsif:** Ba'zi obyektlarni oddiy constructor bilan yaratish mumkin emas: ular murakkab builder, JNDI lookup yoki proxy generatsiyasini talab qiladi. `FactoryBean` — konteyner ichida yashovchi fabrika bean: konteyner uni o'zini yaratadi, lekin boshqa bean'larga uning `getObject()` natijasini inject qiladi. Shu bilan murakkab yaratish logikasi konfiguratsiyadan va iste'molchi koddan to'liq yashiriladi. Haqiqiy fabrika obyektining o'ziga kerak bo'lsa, bean nomi oldiga `&` prefiksi qo'yiladi.
+**Tavsif:** Ba'zi obyektlarni oddiy constructor bilan yaratish mumkin emas: ular murakkab builder, JNDI lookup yoki proxy generatsiyasini talab qiladi. `FactoryBean` - konteyner ichida yashovchi fabrika bean: konteyner uni o'zini yaratadi, lekin boshqa bean'larga uning `getObject()` natijasini inject qiladi. Shu bilan murakkab yaratish logikasi konfiguratsiyadan va iste'molchi koddan to'liq yashiriladi. Haqiqiy fabrika obyektining o'ziga kerak bo'lsa, bean nomi oldiga `&` prefiksi qo'yiladi.
 
 **Spring'da qayerda uchraydi:** `org.springframework.beans.factory.FactoryBean<T>` (`getObject()`, `getObjectType()`, `isSingleton()`), `SmartFactoryBean`, qulaylik uchun `AbstractFactoryBean<T>`. Keng tarqalgan implementatsiyalar: JPA uchun `LocalContainerEntityManagerFactoryBean`, Hibernate uchun `LocalSessionFactoryBean`, AOP'da `ProxyFactoryBean`, `JndiObjectFactoryBean`, `MethodInvokingFactoryBean`, `ServiceLocatorFactoryBean`, MyBatis'dagi `SqlSessionFactoryBean` va `MapperFactoryBean`. Spring Boot JPA auto-configuration (`HibernateJpaConfiguration`) aynan `LocalContainerEntityManagerFactoryBean`ni bean sifatida e'lon qiladi, shuning uchun `EntityManagerFactory` inject qilinadi.
 
@@ -97,13 +98,13 @@ Spring Framework'ning o'zi — klassik dizayn patternlar katalogining ishlab chi
 - Legacy JNDI yoki tashqi resursni lookup qilib, qolgan kodga oddiy tip sifatida ko'rsatish.
 - Og'ir, bir marta yaratiladigan obyekt (connection pool, `EntityManagerFactory`) uchun yaratish va validatsiya logikasini bir joyga yig'ish.
 
-**Ehtiyot bo'ling:** `getObjectType()` `null` qaytarsa yoki noto'g'ri tip bersa, by-type autowiring buziladi va `FactoryBean` erta instantiate qilinib startup tartibini o'zgartiradi. Oddiy holatlarda `@Bean` metodi ancha sodda va o'qishga qulay — `FactoryBean` faqat tip dinamik yoki proxy generatsiya kerak bo'lganda oqlanadi.
+**Ehtiyot bo'ling:** `getObjectType()` `null` qaytarsa yoki noto'g'ri tip bersa, by-type autowiring buziladi va `FactoryBean` erta instantiate qilinib startup tartibini o'zgartiradi. Oddiy holatlarda `@Bean` metodi ancha sodda va o'qishga qulay - `FactoryBean` faqat tip dinamik yoki proxy generatsiya kerak bo'lganda oqlanadi.
 
 ## 5.4 ObjectProvider va lazy lookup (ObjectProvider / Lazy Lookup)
 
-**Tavsif:** Bean'ni darhol emas, kerak bo'lgan paytda olish, yoki umuman bo'lmasa ham ishlashga chidash kerak bo'ladi. `ObjectProvider` injection point'ga obyektning o'zi emas, unga indirection beruvchi handle uzatadi: mavjudligini tekshirish, bir nechtasini stream sifatida olish yoki argument bilan prototype yaratish mumkin. Bu optional dependency'ni `null` bilan emas, tipli API bilan ifodalaydi. Qo'shimcha foyda — singleton ichida har safar yangi prototype olish va circular dependency'ni uzish.
+**Tavsif:** Bean'ni darhol emas, kerak bo'lgan paytda olish, yoki umuman bo'lmasa ham ishlashga chidash kerak bo'ladi. `ObjectProvider` injection point'ga obyektning o'zi emas, unga indirection beruvchi handle uzatadi: mavjudligini tekshirish, bir nechtasini stream sifatida olish yoki argument bilan prototype yaratish mumkin. Bu optional dependency'ni `null` bilan emas, tipli API bilan ifodalaydi. Qo'shimcha foyda - singleton ichida har safar yangi prototype olish va circular dependency'ni uzish.
 
-**Spring'da qayerda uchraydi:** `org.springframework.beans.factory.ObjectProvider<T>` (`ObjectFactory<T>` kengaytmasi): `getIfAvailable()`, `getIfUnique()`, `getObject(Object... args)`, `stream()`, `orderedStream()`; programmatik olish `BeanFactory.getBeanProvider(Class)`. Standart alternativa — `jakarta.inject.Provider<T>` (Spring Framework 6.x `jakarta` namespace'ida). Spring Boot auto-configuration'larida bu idiomatik usul: ko'p `*AutoConfiguration` klasslari customizer va optional komponentlarni `ObjectProvider` orqali qabul qiladi (masalan `ObjectProvider<HttpMessageConverters>`, `ObjectProvider<RestClientCustomizer>`), `orderedStream()` esa `@Order`/`Ordered` bo'yicha tartiblangan ro'yxat beradi.
+**Spring'da qayerda uchraydi:** `org.springframework.beans.factory.ObjectProvider<T>` (`ObjectFactory<T>` kengaytmasi): `getIfAvailable()`, `getIfUnique()`, `getObject(Object... args)`, `stream()`, `orderedStream()`; programmatik olish `BeanFactory.getBeanProvider(Class)`. Standart alternativa - `jakarta.inject.Provider<T>` (Spring Framework 6.x `jakarta` namespace'ida). Spring Boot auto-configuration'larida bu idiomatik usul: ko'p `*AutoConfiguration` klasslari customizer va optional komponentlarni `ObjectProvider` orqali qabul qiladi (masalan `ObjectProvider<HttpMessageConverters>`, `ObjectProvider<RestClientCustomizer>`), `orderedStream()` esa `@Order`/`Ordered` bo'yicha tartiblangan ro'yxat beradi.
 
 **Qo'llanish keyslari:**
 - Starter yozishda optional customizer'larni qabul qilish: bor bo'lsa qo'llanadi, yo'q bo'lsa default ishlaydi.
@@ -112,13 +113,13 @@ Spring Framework'ning o'zi — klassik dizayn patternlar katalogining ishlab chi
 - Og'ir bean'ni faqat tegishli kod yo'li ishga tushganda yaratish, startup vaqtini qisqartirish.
 - Ikki bean orasidagi circular dependency'ni to'g'ridan-to'g'ri injection o'rniga provider bilan uzish.
 
-**Ehtiyot bo'ling:** `ObjectProvider`ni hamma joyda ishlatish kodni Spring API'siga bog'laydi va dependency grafigini yashirin qiladi — majburiy bog'liqlik uchun oddiy constructor injection qolsin. `getIfAvailable()` bilan jim `null` qaytarish, konfiguratsiya xatosini startup'da emas, runtime'da yuzaga chiqarish xavfini tug'diradi.
+**Ehtiyot bo'ling:** `ObjectProvider`ni hamma joyda ishlatish kodni Spring API'siga bog'laydi va dependency grafigini yashirin qiladi - majburiy bog'liqlik uchun oddiy constructor injection qolsin. `getIfAvailable()` bilan jim `null` qaytarish, konfiguratsiya xatosini startup'da emas, runtime'da yuzaga chiqarish xavfini tug'diradi.
 
 ## 5.5 @Lookup metod injeksiyasi (@Lookup Method Injection)
 
-**Tavsif:** Singleton bean ichida har safar yangi prototype instance kerak bo'lganda, oddiy field injection ishlamaydi — u faqat bir marta inject qilinadi. `@Lookup` konteynerga aytadi: bu metodni CGLIB subclass orqali override qilib, har chaqiruvda `getBean()` natijasini qaytar. Natijada iste'molchi kod `BeanFactory`ga bog'lanmaydi, abstrakt metodning o'zi factory rolini bajaradi. Bu klassik Service Locator'ning deklarativ, konteyner tomonidan amalga oshiriladigan varianti.
+**Tavsif:** Singleton bean ichida har safar yangi prototype instance kerak bo'lganda, oddiy field injection ishlamaydi - u faqat bir marta inject qilinadi. `@Lookup` konteynerga aytadi: bu metodni CGLIB subclass orqali override qilib, har chaqiruvda `getBean()` natijasini qaytar. Natijada iste'molchi kod `BeanFactory`ga bog'lanmaydi, abstrakt metodning o'zi factory rolini bajaradi. Bu klassik Service Locator'ning deklarativ, konteyner tomonidan amalga oshiriladigan varianti.
 
-**Spring'da qayerda uchraydi:** `org.springframework.beans.factory.annotation.Lookup`, uni `AutowiredAnnotationBeanPostProcessor` qayta ishlaydi va CGLIB subclass generatsiya qiladi. XML dunyosidagi ekvivalenti — `<lookup-method>` (`LookupOverride`) va yaqin qarindoshi `<replaced-method>` (`MethodReplacer`, `ReplaceOverride`). Amalda bu yondashuv `ObjectProvider` bilan almashtirilishi mumkin, Spring'ning o'z kodida esa prototype-ga bog'liq singleton'lar uchun tarixiy mexanizm sifatida qoladi.
+**Spring'da qayerda uchraydi:** `org.springframework.beans.factory.annotation.Lookup`, uni `AutowiredAnnotationBeanPostProcessor` qayta ishlaydi va CGLIB subclass generatsiya qiladi. XML dunyosidagi ekvivalenti - `<lookup-method>` (`LookupOverride`) va yaqin qarindoshi `<replaced-method>` (`MethodReplacer`, `ReplaceOverride`). Amalda bu yondashuv `ObjectProvider` bilan almashtirilishi mumkin, Spring'ning o'z kodida esa prototype-ga bog'liq singleton'lar uchun tarixiy mexanizm sifatida qoladi.
 
 ```java
 @Component
@@ -142,7 +143,7 @@ public abstract class ReportRunner {
 
 ## 5.6 Bean scope'lari va scoped proxy (Bean Scopes & Scoped Proxy)
 
-**Tavsif:** Bean definition bitta bo'lsa ham, uning nechta instance'i va qancha yashashi ortogonal masala — scope aynan shu hayot muddatini belgilaydi. Singleton context bilan, prototype har murojaatda, request/session esa web so'rovi yoki foydalanuvchi sessiyasi bilan bog'lanadi. Qisqa umrli bean'ni uzoq umrli bean'ga to'g'ridan-to'g'ri inject qilish mumkin emas, shuning uchun konteyner o'rtaga scoped proxy qo'yadi: proxy singleton sifatida inject qilinadi, lekin har chaqiruvda joriy scope'dagi haqiqiy instance'ni topib, unga delegate qiladi.
+**Tavsif:** Bean definition bitta bo'lsa ham, uning nechta instance'i va qancha yashashi ortogonal masala - scope aynan shu hayot muddatini belgilaydi. Singleton context bilan, prototype har murojaatda, request/session esa web so'rovi yoki foydalanuvchi sessiyasi bilan bog'lanadi. Qisqa umrli bean'ni uzoq umrli bean'ga to'g'ridan-to'g'ri inject qilish mumkin emas, shuning uchun konteyner o'rtaga scoped proxy qo'yadi: proxy singleton sifatida inject qilinadi, lekin har chaqiruvda joriy scope'dagi haqiqiy instance'ni topib, unga delegate qiladi.
 
 **Spring'da qayerda uchraydi:** `@Scope` annotatsiyasi va konstantalar `ConfigurableBeanFactory.SCOPE_SINGLETON` / `SCOPE_PROTOTYPE`, web scope'lar `WebApplicationContext.SCOPE_REQUEST` / `SCOPE_SESSION` / `SCOPE_APPLICATION`; qulay meta-annotatsiyalar `@RequestScope`, `@SessionScope`, `@ApplicationScope`. Proxy tomoni: `@Scope(proxyMode = ScopedProxyMode.TARGET_CLASS | INTERFACES)`, `ScopedProxyFactoryBean`, `ScopedProxyUtils`. Custom scope uchun `org.springframework.beans.factory.config.Scope` interfeysi va `CustomScopeConfigurer`; mavjud misollar `SimpleThreadScope`, Spring Cloud Context'dagi `@RefreshScope`. Web scope'lar ishlashi uchun `RequestContextFilter`/`RequestContextListener` yoki `DispatcherServlet` kerak (Spring Boot buni avtomatik sozlaydi).
 
@@ -153,13 +154,13 @@ public abstract class ReportRunner {
 - Prototype scope bilan har safar toza stateful validator yoki parser instance'ini olish.
 - Batch yoki messaging pipeline uchun custom scope yozib, har job ichida resurs izolyatsiyasini ta'minlash.
 
-**Ehtiyot bo'ling:** Request/session scoped bean'ga proxy orqali `@Async` thread yoki `@Scheduled` job ichida murojaat qilish `No thread-bound request found` xatosini beradi — scope kontekstini thread'lar o'rtasida o'zi ko'chirmaydi. Prototype bean'lar uchun konteyner destroy callback'larini chaqirmaydi, shuning uchun ularda resurs ochib qoldirish memory leak'ka olib keladi.
+**Ehtiyot bo'ling:** Request/session scoped bean'ga proxy orqali `@Async` thread yoki `@Scheduled` job ichida murojaat qilish `No thread-bound request found` xatosini beradi - scope kontekstini thread'lar o'rtasida o'zi ko'chirmaydi. Prototype bean'lar uchun konteyner destroy callback'larini chaqirmaydi, shuning uchun ularda resurs ochib qoldirish memory leak'ka olib keladi.
 
-## 5.7 @Lazy orqali kechiktirilgan initsializatsiya (@Lazy — Lazy Initialization / Virtual Proxy)
+## 5.7 @Lazy orqali kechiktirilgan initsializatsiya (@Lazy - Lazy Initialization / Virtual Proxy)
 
 **Tavsif:** Standart holda singleton bean'lar context refresh paytida darhol yaratiladi; bu startup'da barcha konfiguratsiya xatolarini ochadi, lekin og'ir bean'lar uchun qimmat. `@Lazy` bean yaratilishini birinchi real murojaatgacha kechiktiradi. Injection point'da qo'yilganda esa Spring o'rtaga lazy resolution proxy qo'yadi: proxy darhol inject qilinadi, haqiqiy bean esa ilk metod chaqirilganda yaratiladi. Bu Virtual Proxy patterning konteyner darajasidagi ko'rinishi.
 
-**Spring'da qayerda uchraydi:** `org.springframework.context.annotation.Lazy` — `@Component`, `@Bean`, `@Configuration` klassida yoki injection point'da (constructor parametri, field, `@Autowired` metodi) ishlatiladi; proxy generatsiyasini `ContextAnnotationAutowireCandidateResolver` boshqaradi. Butun ilova darajasida Spring Boot 3.x/4.x'da `spring.main.lazy-initialization=true`, undan ayrim bean'larni ajratib olish uchun `LazyInitializationExcludeFilter` bean'i. `@ComponentScan(lazyInit = true)` ham mavjud; `@Lazy(false)` esa global lazy rejimda aniq bean'ni eager qilib qaytaradi.
+**Spring'da qayerda uchraydi:** `org.springframework.context.annotation.Lazy` - `@Component`, `@Bean`, `@Configuration` klassida yoki injection point'da (constructor parametri, field, `@Autowired` metodi) ishlatiladi; proxy generatsiyasini `ContextAnnotationAutowireCandidateResolver` boshqaradi. Butun ilova darajasida Spring Boot 3.x/4.x'da `spring.main.lazy-initialization=true`, undan ayrim bean'larni ajratib olish uchun `LazyInitializationExcludeFilter` bean'i. `@ComponentScan(lazyInit = true)` ham mavjud; `@Lazy(false)` esa global lazy rejimda aniq bean'ni eager qilib qaytaradi.
 
 **Qo'llanish keyslari:**
 - Lokal development va test'da `spring.main.lazy-initialization=true` bilan startup vaqtini keskin qisqartirish.
@@ -168,13 +169,13 @@ public abstract class ReportRunner {
 - Ikki bean orasidagi konstruktor circular dependency'ni injection point'da `@Lazy` bilan uzish.
 - Ko'p profilli monolitda faqat ayrim profilda ishlatiladigan modul bean'larini talab bo'yicha ko'tarish.
 
-**Ehtiyot bo'ling:** Lazy rejim konfiguratsiya xatolarini startup'dan birinchi so'rovga ko'chiradi — production'da bu "healthy" ko'ringan, lekin ilk trafikda yiqiladigan ilova degani. `@Scheduled`, `@EventListener`, `Lifecycle` va metrikalarni ro'yxatga oluvchi bean'lar lazy bo'lsa, ular hech qachon ishga tushmay qolishi mumkin.
+**Ehtiyot bo'ling:** Lazy rejim konfiguratsiya xatolarini startup'dan birinchi so'rovga ko'chiradi - production'da bu "healthy" ko'ringan, lekin ilk trafikda yiqiladigan ilova degani. `@Scheduled`, `@EventListener`, `Lifecycle` va metrikalarni ro'yxatga oluvchi bean'lar lazy bo'lsa, ular hech qachon ishga tushmay qolishi mumkin.
 
 ## 5.8 @Primary / @Qualifier bilan noaniqlikni yechish (@Primary / @Qualifier Disambiguation)
 
 **Tavsif:** Bir tipdan bir nechta bean bo'lsa, by-type autowiring noaniq bo'lib qoladi va konteyner xato beradi. `@Primary` "teng bo'lsa, standart sifatida shuni ol" deydi, `@Qualifier` esa injection point'da aniq nomli yoki meta-annotatsiyali kandidatni tanlaydi. Bu Strategy patternni konfiguratsiya darajasida boshqarish usuli: implementatsiyalar ko'p, tanlov esa deklarativ. To'g'ri qo'llanganda kod `if/else` va factory switch'lardan xoli bo'ladi.
 
-**Spring'da qayerda uchraydi:** `@Primary`, `@Qualifier` (`org.springframework.beans.factory.annotation`), `@Qualifier` bilan meta-annotatsiyalangan custom annotatsiyalar (masalan o'zingizning `@Fast`, `@Audit`), ro'yxat injeksiyasida tartib uchun `@Order` / `Ordered` / `@Priority`. Spring Framework 6.2'dan: `@Fallback` (faqat boshqa kandidat bo'lmasa tanlanadi) va `@Bean(defaultCandidate = false)` — bean'ni by-type tanlovdan chiqarib, faqat qualifier bilan olish mumkin. Noaniqlik xatosi `NoUniqueBeanDefinitionException`, bean yo'qligi `NoSuchBeanDefinitionException`; Spring Boot auto-configuration'lari esa `@ConditionalOnMissingBean` va `@Primary` kombinatsiyasi bilan foydalanuvchi bean'iga yo'l beradi.
+**Spring'da qayerda uchraydi:** `@Primary`, `@Qualifier` (`org.springframework.beans.factory.annotation`), `@Qualifier` bilan meta-annotatsiyalangan custom annotatsiyalar (masalan o'zingizning `@Fast`, `@Audit`), ro'yxat injeksiyasida tartib uchun `@Order` / `Ordered` / `@Priority`. Spring Framework 6.2'dan: `@Fallback` (faqat boshqa kandidat bo'lmasa tanlanadi) va `@Bean(defaultCandidate = false)` - bean'ni by-type tanlovdan chiqarib, faqat qualifier bilan olish mumkin. Noaniqlik xatosi `NoUniqueBeanDefinitionException`, bean yo'qligi `NoSuchBeanDefinitionException`; Spring Boot auto-configuration'lari esa `@ConditionalOnMissingBean` va `@Primary` kombinatsiyasi bilan foydalanuvchi bean'iga yo'l beradi.
 
 **Qo'llanish keyslari:**
 - Bir nechta `DataSource` bo'lganda asosiysini `@Primary` qilib, qolganlarini `@Qualifier("reporting")` bilan olish.
@@ -183,11 +184,11 @@ public abstract class ReportRunner {
 - Starter yozishda default bean'ni `@Fallback` yoki `@ConditionalOnMissingBean` bilan berib, foydalanuvchiga override imkonini qoldirish.
 - Bir nechta `TaskExecutor` yoki `TransactionManager` bo'lganda har bir qo'llanish joyini aniq qualifier bilan bog'lash.
 
-**Ehtiyot bo'ling:** Bir tipdan ikkita `@Primary` bo'lishi startup'da xato beradi, `@Primary`ga ortiqcha tayanish esa noto'g'ri bean jim turib inject qilinishiga olib keladi — kritik joylarda aniq `@Qualifier` yozish xavfsizroq. `@Qualifier` qiymati sifatida bean nomini string ko'rinishida tarqatish refactoring'da sinadi; meta-annotatsiya yoki konstanta ishlatish ma'qul.
+**Ehtiyot bo'ling:** Bir tipdan ikkita `@Primary` bo'lishi startup'da xato beradi, `@Primary`ga ortiqcha tayanish esa noto'g'ri bean jim turib inject qilinishiga olib keladi - kritik joylarda aniq `@Qualifier` yozish xavfsizroq. `@Qualifier` qiymati sifatida bean nomini string ko'rinishida tarqatish refactoring'da sinadi; meta-annotatsiya yoki konstanta ishlatish ma'qul.
 
-## 5.9 Bean lifecycle callback'lari (Bean Lifecycle Callbacks — Template Method)
+## 5.9 Bean lifecycle callback'lari (Bean Lifecycle Callbacks - Template Method)
 
-**Tavsif:** Bean to'liq inject qilingandan keyin ba'zan validatsiya, cache isitish yoki resurs ochish kerak; context yopilganda esa ularni toza yopish lozim. Konteyner shu uchun belgilangan nuqtalarda bean'ning o'z metodlarini chaqiradi — bu Template Method patterning lifecycle versiyasi: skeletni konteyner boshqaradi, "bo'shliqni" bean to'ldiradi. Chaqirilish tartibi qat'iy: `@PostConstruct` → `InitializingBean.afterPropertiesSet()` → `@Bean(initMethod)`, destroy tomonda esa `@PreDestroy` → `DisposableBean.destroy()` → `@Bean(destroyMethod)`.
+**Tavsif:** Bean to'liq inject qilingandan keyin ba'zan validatsiya, cache isitish yoki resurs ochish kerak; context yopilganda esa ularni toza yopish lozim. Konteyner shu uchun belgilangan nuqtalarda bean'ning o'z metodlarini chaqiradi - bu Template Method patterning lifecycle versiyasi: skeletni konteyner boshqaradi, "bo'shliqni" bean to'ldiradi. Chaqirilish tartibi qat'iy: `@PostConstruct` → `InitializingBean.afterPropertiesSet()` → `@Bean(initMethod)`, destroy tomonda esa `@PreDestroy` → `DisposableBean.destroy()` → `@Bean(destroyMethod)`.
 
 **Spring'da qayerda uchraydi:** `InitializingBean`, `DisposableBean`, `jakarta.annotation.PostConstruct` / `jakarta.annotation.PreDestroy` (Spring Framework 6.x'da `javax` emas, `jakarta`), `@Bean(initMethod = "...", destroyMethod = "...")`. Annotatsiyalarni `CommonAnnotationBeanPostProcessor` qayta ishlaydi, destroy tomonini `DestructionAwareBeanPostProcessor` va `DisposableBeanAdapter` boshqaradi. `@Bean` uchun `destroyMethod` standart holda inferred: bean `AutoCloseable` yoki `close()`/`shutdown()` metodiga ega bo'lsa avtomatik chaqiriladi (`destroyMethod = ""` bilan o'chiriladi). Spring Boot'da context yopilishi `SpringApplication` registratsiya qilgan shutdown hook orqali sodir bo'ladi.
 
@@ -198,11 +199,11 @@ public abstract class ReportRunner {
 - Tashqi registry'ga (service discovery, JMX) o'zini ro'yxatdan o'tkazish va chiqishda o'chirish.
 - Legacy komponentning `init()` / `cleanup()` metodlarini kodga qo'l tekizmasdan `@Bean` orqali ulash.
 
-**Ehtiyot bo'ling:** Prototype scope bean'larda destroy callback'lari umuman chaqirilmaydi — ularni yopish mas'uliyati chaqiruvchida qoladi. `@PostConstruct` ichida og'ir I/O yoki boshqa bean'ga murojaat qilish startup'ni sekinlashtiradi va initsializatsiya tartibiga yashirin bog'liqlik yaratadi; proxy bilan o'ralgan bean'da bu callback target obyektda ishlaydi, shuning uchun u yerdan o'z-o'ziga chaqiruv AOP'ni chetlab o'tadi.
+**Ehtiyot bo'ling:** Prototype scope bean'larda destroy callback'lari umuman chaqirilmaydi - ularni yopish mas'uliyati chaqiruvchida qoladi. `@PostConstruct` ichida og'ir I/O yoki boshqa bean'ga murojaat qilish startup'ni sekinlashtiradi va initsializatsiya tartibiga yashirin bog'liqlik yaratadi; proxy bilan o'ralgan bean'da bu callback target obyektda ishlaydi, shuning uchun u yerdan o'z-o'ziga chaqiruv AOP'ni chetlab o'tadi.
 
-## 5.10 BeanPostProcessor (BeanPostProcessor — Decorator / Interceptor)
+## 5.10 BeanPostProcessor (BeanPostProcessor - Decorator / Interceptor)
 
-**Tavsif:** Konteyner yaratgan har bir bean'ni, uning kodini o'zgartirmasdan, yaratilish paytida ushlab turib boyitish yoki proxy bilan o'rash mumkin. `BeanPostProcessor` initsializatsiyadan oldin va keyin chaqiriladi va `postProcessAfterInitialization()` butunlay boshqa obyekt — masalan proxy — qaytarishi mumkin. Spring'ning annotation'ga asoslangan deyarli barcha sehri shu nuqtada tug'iladi: `@Transactional`, `@Async`, `@Cacheable` proxy'lari aynan shu yerda o'raladi. Bu Decorator patterning konteyner darajasida, global va deklarativ ko'rinishi.
+**Tavsif:** Konteyner yaratgan har bir bean'ni, uning kodini o'zgartirmasdan, yaratilish paytida ushlab turib boyitish yoki proxy bilan o'rash mumkin. `BeanPostProcessor` initsializatsiyadan oldin va keyin chaqiriladi va `postProcessAfterInitialization()` butunlay boshqa obyekt - masalan proxy - qaytarishi mumkin. Spring'ning annotation'ga asoslangan deyarli barcha sehri shu nuqtada tug'iladi: `@Transactional`, `@Async`, `@Cacheable` proxy'lari aynan shu yerda o'raladi. Bu Decorator patterning konteyner darajasida, global va deklarativ ko'rinishi.
 
 **Spring'da qayerda uchraydi:** `BeanPostProcessor` va kengaytmalari `InstantiationAwareBeanPostProcessor`, `SmartInstantiationAwareBeanPostProcessor`, `MergedBeanDefinitionPostProcessor`, `DestructionAwareBeanPostProcessor`. Framework'ning o'z implementatsiyalari: `AutowiredAnnotationBeanPostProcessor`, `CommonAnnotationBeanPostProcessor`, `ApplicationContextAwareProcessor`, `AbstractAutoProxyCreator` / `AnnotationAwareAspectJAutoProxyCreator`, `AsyncAnnotationBeanPostProcessor`, `ScheduledAnnotationBeanPostProcessor`, `PersistenceAnnotationBeanPostProcessor`; Spring Boot'da `ConfigurationPropertiesBindingPostProcessor`. Tartib `PriorityOrdered` / `Ordered` bilan boshqariladi, ro'yxatga olish `ConfigurableBeanFactory.addBeanPostProcessor()` yoki oddiy bean e'loni orqali bo'ladi.
 
@@ -213,13 +214,13 @@ public abstract class ReportRunner {
 - Uchinchi tomon kutubxonasi bean'ini kodini o'zgartirmasdan decorator bilan o'rab, xatti-harakatini moslashtirish.
 - `@ConfigurationProperties` bean'lariga qo'shimcha dekripsiya yoki normalizatsiya qadamini ulash.
 
-**Ehtiyot bo'ling:** `BeanPostProcessor`'ning o'zi boshqa bean'larni inject qilsa, ular juda erta instantiate qilinadi va boshqa post-processor'lardan (masalan AOP proxy'dan) chetda qolib ketadi — bog'liqliklarni `ObjectProvider` yoki `BeanFactoryAware` orqali kechiktirib olish kerak. Shuningdek har bir bean uchun chaqirilgani sababli, ichida sekin logika yozish butun startup'ni sezilarli sekinlashtiradi.
+**Ehtiyot bo'ling:** `BeanPostProcessor`'ning o'zi boshqa bean'larni inject qilsa, ular juda erta instantiate qilinadi va boshqa post-processor'lardan (masalan AOP proxy'dan) chetda qolib ketadi - bog'liqliklarni `ObjectProvider` yoki `BeanFactoryAware` orqali kechiktirib olish kerak. Shuningdek har bir bean uchun chaqirilgani sababli, ichida sekin logika yozish butun startup'ni sezilarli sekinlashtiradi.
 
 ## 5.11 BeanFactoryPostProcessor va BeanDefinitionRegistryPostProcessor (BeanFactoryPostProcessor / BeanDefinitionRegistryPostProcessor)
 
-**Tavsif:** Ba'zi o'zgarishlarni bean yaratilgandan keyin emas, undan oldin — metadata darajasida qilish kerak. `BeanFactoryPostProcessor` barcha definition'lar o'qilgandan, lekin birorta singleton yaratilmasdan oldin chaqiriladi va definition'larni erkin o'zgartirishga ruxsat beradi. `BeanDefinitionRegistryPostProcessor` undan ham ilgari ishlaydi va yangi definition'lar qo'shish imkonini beradi. Shu ikkita nuqta Spring'ning plugin va starter ekotizimining asosiy kirish eshigi hisoblanadi.
+**Tavsif:** Ba'zi o'zgarishlarni bean yaratilgandan keyin emas, undan oldin - metadata darajasida qilish kerak. `BeanFactoryPostProcessor` barcha definition'lar o'qilgandan, lekin birorta singleton yaratilmasdan oldin chaqiriladi va definition'larni erkin o'zgartirishga ruxsat beradi. `BeanDefinitionRegistryPostProcessor` undan ham ilgari ishlaydi va yangi definition'lar qo'shish imkonini beradi. Shu ikkita nuqta Spring'ning plugin va starter ekotizimining asosiy kirish eshigi hisoblanadi.
 
-**Spring'da qayerda uchraydi:** `BeanFactoryPostProcessor.postProcessBeanFactory(ConfigurableListableBeanFactory)` va `BeanDefinitionRegistryPostProcessor.postProcessBeanDefinitionRegistry(BeanDefinitionRegistry)`. Eng muhim implementatsiya — `ConfigurationClassPostProcessor`, ya'ni `@Configuration`/`@Bean`/`@Import`/`@ComponentScan` ni qayta ishlovchi dvigatel. Boshqalari: `PropertySourcesPlaceholderConfigurer` (`${...}` placeholder'lar), `PropertyOverrideConfigurer`, `CustomScopeConfigurer`, `EventListenerMethodProcessor`; ekotizimda MyBatis'ning `MapperScannerConfigurer`, Spring Data'ning repository registrar infratuzilmasi. `@Configuration` klassi ichida e'lon qilinsa, metod albatta `static @Bean` bo'lishi kerak.
+**Spring'da qayerda uchraydi:** `BeanFactoryPostProcessor.postProcessBeanFactory(ConfigurableListableBeanFactory)` va `BeanDefinitionRegistryPostProcessor.postProcessBeanDefinitionRegistry(BeanDefinitionRegistry)`. Eng muhim implementatsiya - `ConfigurationClassPostProcessor`, ya'ni `@Configuration`/`@Bean`/`@Import`/`@ComponentScan` ni qayta ishlovchi dvigatel. Boshqalari: `PropertySourcesPlaceholderConfigurer` (`${...}` placeholder'lar), `PropertyOverrideConfigurer`, `CustomScopeConfigurer`, `EventListenerMethodProcessor`; ekotizimda MyBatis'ning `MapperScannerConfigurer`, Spring Data'ning repository registrar infratuzilmasi. `@Configuration` klassi ichida e'lon qilinsa, metod albatta `static @Bean` bo'lishi kerak.
 
 **Qo'llanish keyslari:**
 - Interfeyslarni skanerlab, har biri uchun client yoki repository bean definition'ini generatsiya qiluvchi starter yozish.
@@ -228,13 +229,13 @@ public abstract class ReportRunner {
 - Custom scope'ni `CustomScopeConfigurer` orqali ro'yxatga olish.
 - Ko'p tenant arxitekturasida tenant ro'yxatiga qarab har biri uchun bir to'plam bean definition yaratish.
 
-**Ehtiyot bo'ling:** Bu processor'lar ichida `getBean()` chaqirish bean'larni muddatidan oldin yaratadi va boshqa post-processing qadamlarini chetlab o'tadi — faqat metadata bilan ishlash kerak. `@Configuration` klassida `static` bo'lmagan `@Bean` metodi sifatida e'lon qilinsa, butun konfiguratsiya klassi juda erta instantiate qilinadi va `@Autowired` hamda placeholder resolution ishlamay qolishi mumkin.
+**Ehtiyot bo'ling:** Bu processor'lar ichida `getBean()` chaqirish bean'larni muddatidan oldin yaratadi va boshqa post-processing qadamlarini chetlab o'tadi - faqat metadata bilan ishlash kerak. `@Configuration` klassida `static` bo'lmagan `@Bean` metodi sifatida e'lon qilinsa, butun konfiguratsiya klassi juda erta instantiate qilinadi va `@Autowired` hamda placeholder resolution ishlamay qolishi mumkin.
 
-## 5.12 Aware interfeyslari (Aware Interfaces — Callback Injection)
+## 5.12 Aware interfeyslari (Aware Interfaces - Callback Injection)
 
-**Tavsif:** Ba'zi infratuzilma komponentlariga konteynerning o'zi — uning nomi, factory'si, environment'i yoki event publisher'i — kerak bo'ladi. Spring bu ehtiyojni bir to'plam tor, bitta setter'li interfeys bilan qondiradi: bean kerakli `Aware` interfeysini implement qilsa, konteyner initsializatsiyadan oldin tegishli obyektni uzatadi. Bu push-based callback injection: bean hech narsani qidirmaydi, konteyner o'zi beradi. Interfeyslarning torligi tufayli bean faqat o'ziga kerak bo'lgan infratuzilma qismiga bog'lanadi.
+**Tavsif:** Ba'zi infratuzilma komponentlariga konteynerning o'zi - uning nomi, factory'si, environment'i yoki event publisher'i - kerak bo'ladi. Spring bu ehtiyojni bir to'plam tor, bitta setter'li interfeys bilan qondiradi: bean kerakli `Aware` interfeysini implement qilsa, konteyner initsializatsiyadan oldin tegishli obyektni uzatadi. Bu push-based callback injection: bean hech narsani qidirmaydi, konteyner o'zi beradi. Interfeyslarning torligi tufayli bean faqat o'ziga kerak bo'lgan infratuzilma qismiga bog'lanadi.
 
-**Spring'da qayerda uchraydi:** `BeanNameAware`, `BeanFactoryAware`, `BeanClassLoaderAware` (beans moduli); `ApplicationContextAware`, `EnvironmentAware`, `ResourceLoaderAware`, `ApplicationEventPublisherAware`, `MessageSourceAware`, `EmbeddedValueResolverAware`, `ImportAware`, `ApplicationStartupAware` (context moduli); web tomonda `ServletContextAware`, `ServletConfigAware`. Ko'pchiligini `ApplicationContextAwareProcessor` (ichki `BeanPostProcessor`) uzatadi, `BeanNameAware`/`BeanFactoryAware` esa `AbstractAutowireCapableBeanFactory.invokeAwareMethods()` ichida bevosita chaqiriladi — shu sababli ular `@PostConstruct` va `afterPropertiesSet()` dan oldin ishlaydi.
+**Spring'da qayerda uchraydi:** `BeanNameAware`, `BeanFactoryAware`, `BeanClassLoaderAware` (beans moduli); `ApplicationContextAware`, `EnvironmentAware`, `ResourceLoaderAware`, `ApplicationEventPublisherAware`, `MessageSourceAware`, `EmbeddedValueResolverAware`, `ImportAware`, `ApplicationStartupAware` (context moduli); web tomonda `ServletContextAware`, `ServletConfigAware`. Ko'pchiligini `ApplicationContextAwareProcessor` (ichki `BeanPostProcessor`) uzatadi, `BeanNameAware`/`BeanFactoryAware` esa `AbstractAutowireCapableBeanFactory.invokeAwareMethods()` ichida bevosita chaqiriladi - shu sababli ular `@PostConstruct` va `afterPropertiesSet()` dan oldin ishlaydi.
 
 **Qo'llanish keyslari:**
 - Infratuzilma bean'i (custom post-processor, registrar) uchun `BeanFactory`ga erta kirish.
@@ -243,11 +244,11 @@ public abstract class ReportRunner {
 - `ImportAware` bilan `@Enable*` annotatsiyasining atributlarini konfiguratsiya klassida o'qish.
 - `ResourceLoaderAware` bilan classpath yoki tashqi resurslarni yuklovchi umumiy utility yozish.
 
-**Ehtiyot bo'ling:** Oddiy business bean'da `Aware` interfeyslarini ishlatish kodni Spring'ga qattiq bog'laydi va testlashni qiyinlashtiradi — ularning o'rni faqat framework va infratuzilma qatlamida. `ApplicationContextAware` orqali `getBean()` chaqirish esa to'g'ridan-to'g'ri Service Locator anti-patterniga aylanadi; kerakli bog'liqlikni constructor'da yoki `ObjectProvider` bilan olish ma'qul.
+**Ehtiyot bo'ling:** Oddiy business bean'da `Aware` interfeyslarini ishlatish kodni Spring'ga qattiq bog'laydi va testlashni qiyinlashtiradi - ularning o'rni faqat framework va infratuzilma qatlamida. `ApplicationContextAware` orqali `getBean()` chaqirish esa to'g'ridan-to'g'ri Service Locator anti-patterniga aylanadi; kerakli bog'liqlikni constructor'da yoki `ObjectProvider` bilan olish ma'qul.
 
 ## 5.13 Lifecycle va SmartLifecycle (Lifecycle / SmartLifecycle)
 
-**Tavsif:** Bean yaratilishi va uning ichidagi fon aktivligini boshlash — ikki xil narsa: listener, poller, scheduler yoki server socket'ni context to'liq tayyor bo'lgandan keyin, belgilangan tartibda ishga tushirish kerak. `Lifecycle` `start()`/`stop()`/`isRunning()` kontraktini beradi, `SmartLifecycle` esa unga avtomatik ishga tushish, faza (phase) bo'yicha tartib va asinxron, callback bilan to'xtash imkonini qo'shadi. Start fazalar o'sish tartibida, stop esa teskari tartibda bajariladi — bu graceful shutdown'ning asosi.
+**Tavsif:** Bean yaratilishi va uning ichidagi fon aktivligini boshlash - ikki xil narsa: listener, poller, scheduler yoki server socket'ni context to'liq tayyor bo'lgandan keyin, belgilangan tartibda ishga tushirish kerak. `Lifecycle` `start()`/`stop()`/`isRunning()` kontraktini beradi, `SmartLifecycle` esa unga avtomatik ishga tushish, faza (phase) bo'yicha tartib va asinxron, callback bilan to'xtash imkonini qo'shadi. Start fazalar o'sish tartibida, stop esa teskari tartibda bajariladi - bu graceful shutdown'ning asosi.
 
 **Spring'da qayerda uchraydi:** `org.springframework.context.Lifecycle`, `SmartLifecycle` (`isAutoStartup()`, `getPhase()`, `stop(Runnable)`, `DEFAULT_PHASE = Integer.MAX_VALUE`), `Phased`, boshqaruvchi `LifecycleProcessor` / `DefaultLifecycleProcessor`. Spring Boot 3.x/4.x'da web server aynan shu mexanizm orqali boshqariladi (`WebServerStartStopLifecycle`, graceful shutdown uchun `WebServerGracefulShutdownLifecycle`, `server.shutdown=graceful`), timeout `spring.lifecycle.timeout-per-shutdown-phase` bilan sozlanadi. Messaging dunyosida Spring Kafka'ning `MessageListenerContainer` va Spring AMQP'ning `SimpleMessageListenerContainer` `SmartLifecycle` implementatsiyalari; CRaC checkpoint/restore (`spring.context.checkpoint=onRefresh`) ham `Lifecycle` orqali ishlaydi.
 
@@ -269,11 +270,11 @@ class OutboxPoller implements SmartLifecycle {
 - Faza raqamlari bilan "avval cache isisin, keyin trafik qabul qilinsin" tartibini kafolatlash.
 - Testda tashqi tizimga ulanadigan listener'larni `isAutoStartup() == false` qilib o'chirib qo'yish.
 
-**Ehtiyot bo'ling:** `stop()` bloklovchi va uzoq bo'lsa, shutdown timeout'i urib ketadi va ish yarim yo'lda uzilib qoladi — uzoq to'xtash uchun `stop(Runnable)` variantini ishlatish kerak. `Lifecycle` (`SmartLifecycle` emas) implementatsiyasi avtomatik ishga tushmaydi, lazy bean esa umuman start qilinmaydi — bu jim turib ishlamaydigan consumer'ga olib keladi.
+**Ehtiyot bo'ling:** `stop()` bloklovchi va uzoq bo'lsa, shutdown timeout'i urib ketadi va ish yarim yo'lda uzilib qoladi - uzoq to'xtash uchun `stop(Runnable)` variantini ishlatish kerak. `Lifecycle` (`SmartLifecycle` emas) implementatsiyasi avtomatik ishga tushmaydi, lazy bean esa umuman start qilinmaydi - bu jim turib ishlamaydigan consumer'ga olib keladi.
 
 ## 5.14 SmartInitializingSingleton (SmartInitializingSingleton)
 
-**Tavsif:** Ba'zi ishlarni bean o'zi tayyor bo'lgandan keyin emas, barcha singleton'lar tayyor bo'lgandan keyin qilish kerak — masalan butun context'ni skanerlab, annotatsiyalangan metodlarni ro'yxatga olish. `SmartInitializingSingleton` aynan shu "hammasi tayyor" nuqtasiga ilinadi: `afterSingletonsInstantiated()` eager singleton'lar pre-instantiation bosqichi tugagach chaqiriladi. Bu `@PostConstruct`dan kechroq, lekin `ContextRefreshedEvent`dan oldinroq ishlaydigan oraliq hook. Shu tufayli boshqa bean'larni erta instantiate qilib qo'yish xavfisiz global ro'yxat yig'ish mumkin.
+**Tavsif:** Ba'zi ishlarni bean o'zi tayyor bo'lgandan keyin emas, barcha singleton'lar tayyor bo'lgandan keyin qilish kerak - masalan butun context'ni skanerlab, annotatsiyalangan metodlarni ro'yxatga olish. `SmartInitializingSingleton` aynan shu "hammasi tayyor" nuqtasiga ilinadi: `afterSingletonsInstantiated()` eager singleton'lar pre-instantiation bosqichi tugagach chaqiriladi. Bu `@PostConstruct`dan kechroq, lekin `ContextRefreshedEvent`dan oldinroq ishlaydigan oraliq hook. Shu tufayli boshqa bean'larni erta instantiate qilib qo'yish xavfisiz global ro'yxat yig'ish mumkin.
 
 **Spring'da qayerda uchraydi:** `org.springframework.beans.factory.SmartInitializingSingleton`, uni `DefaultListableBeanFactory.preInstantiateSingletons()` oxirida chaqiradi. Framework'dagi real implementatsiyalar: `EventListenerMethodProcessor` (`@EventListener` metodlarini topib ro'yxatga oladi), `ScheduledAnnotationBeanPostProcessor` (`@Scheduled` task'larni context tayyor bo'lgach ishga tushiradi), JMX'dagi `MBeanExporter`, Spring Kafka'dagi `KafkaListenerAnnotationBeanPostProcessor`. Muqobil hook'lar: `@EventListener(ContextRefreshedEvent.class)`, `ApplicationListener<ApplicationReadyEvent>` hamda Spring Boot'ning `ApplicationRunner` / `CommandLineRunner`.
 
@@ -284,11 +285,11 @@ class OutboxPoller implements SmartLifecycle {
 - Metrika va health indicator'larni context to'liq shakllangandan keyin ro'yxatga olish.
 - `BeanPostProcessor` bilan juftlikda ishlatib, yig'ilgan ma'lumotni oxirida bir marta yakuniy holatga keltirish.
 
-**Ehtiyot bo'ling:** Bu callback faqat eager singleton'lar uchun kafolatlangan — lazy yoki scoped bean'lar hali yaratilmagan bo'ladi, shuning uchun `getBeanNamesForType()` bilan definition darajasida ishlash xavfsizroq. Ilova trafik qabul qilishga tayyor bo'lgandan keyin bajarilishi kerak bo'lgan ish uchun u mos emas — bunday holatda `ApplicationReadyEvent` yoki `ApplicationRunner` ishlatilsin.
+**Ehtiyot bo'ling:** Bu callback faqat eager singleton'lar uchun kafolatlangan - lazy yoki scoped bean'lar hali yaratilmagan bo'ladi, shuning uchun `getBeanNamesForType()` bilan definition darajasida ishlash xavfsizroq. Ilova trafik qabul qilishga tayyor bo'lgandan keyin bajarilishi kerak bo'lgan ish uchun u mos emas - bunday holatda `ApplicationReadyEvent` yoki `ApplicationRunner` ishlatilsin.
 
 ## 5.15 Tartiblash va ustuvorlik (Ordered / @Order)
 
-**Tavsif:** Bir xil tipdagi bir nechta komponent (filter, interceptor, advice, post-processor) ketma-ket ishlaganda ularning ijro tartibi muhim bo'ladi, lekin bean'larni yaratish tartibi bunga kafolat bermaydi. Bu pattern tartibni alohida metadata — butun son ko'rinishidagi "order" qiymati — sifatida ajratib oladi va framework bu qiymat bo'yicha ro'yxatni saralaydi. Kichik qiymat yuqori ustuvorlikni bildiradi (`Ordered.HIGHEST_PRECEDENCE` = `Integer.MIN_VALUE`). Natijada komponentlar bir-biri haqida bilmagan holda ham bashorat qilinadigan zanjir hosil qiladi.
+**Tavsif:** Bir xil tipdagi bir nechta komponent (filter, interceptor, advice, post-processor) ketma-ket ishlaganda ularning ijro tartibi muhim bo'ladi, lekin bean'larni yaratish tartibi bunga kafolat bermaydi. Bu pattern tartibni alohida metadata - butun son ko'rinishidagi "order" qiymati - sifatida ajratib oladi va framework bu qiymat bo'yicha ro'yxatni saralaydi. Kichik qiymat yuqori ustuvorlikni bildiradi (`Ordered.HIGHEST_PRECEDENCE` = `Integer.MIN_VALUE`). Natijada komponentlar bir-biri haqida bilmagan holda ham bashorat qilinadigan zanjir hosil qiladi.
 
 **Spring'da qayerda uchraydi:** `org.springframework.core.Ordered` va undan oldin ishlaydigan `PriorityOrdered` interfeyslari, `@Order` annotatsiyasi (`org.springframework.core.annotation.Order`), `jakarta.annotation.Priority`, saralash mantiqini bajaradigan `OrderComparator` va `AnnotationAwareOrderComparator`, `OrderUtils`. Amalda: `FilterRegistrationBean#setOrder`, Spring Security'da bir nechta `SecurityFilterChain` bean'ini `@Order` bilan tartiblash, `HandlerInterceptor` zanjiri, `@ControllerAdvice` sinflari, `HandlerMapping` va `HandlerExceptionResolver` ro'yxatlari, `@EventListener` metodlari, `List<T>` ko'rinishida inject qilinadigan strategiya to'plamlari. Spring Boot 3.x auto-konfiguratsiyada `@AutoConfigureOrder`, `@AutoConfigureBefore`, `@AutoConfigureAfter` ishlatiladi; `BeanPostProcessor` esa `PriorityOrdered` → `Ordered` → tartibsiz guruhlariga bo'lib qo'llanadi.
 
@@ -299,13 +300,13 @@ class OutboxPoller implements SmartLifecycle {
 - `List<ValidationRule>` sifatida inject qilingan validatsiya qoidalarini aniq ketma-ketlikda bajarish.
 - Kutubxona beradigan auto-konfiguratsiyani mijoz loyihasining konfiguratsiyasidan keyin qo'llash.
 
-**Ehtiyot bo'ling:** `@Order` faqat kolleksiya sifatida yig'ilgan yoki zanjirga qo'shilgan komponentlarni saralaydi — u bean'larning yaratilish (instantiation) tartibini yoki `@Bean` metodlari chaqiriluvini boshqarmaydi; bunga `@DependsOn` yoki haqiqiy dependency kerak. Qo'lda yozilgan "1, 2, 3" qiymatlari o'rniga `Ordered.LOWEST_PRECEDENCE - 10` kabi nisbiy konstantalardan foydalaning, aks holda kutubxona order'lari bilan to'qnashuv chiqadi.
+**Ehtiyot bo'ling:** `@Order` faqat kolleksiya sifatida yig'ilgan yoki zanjirga qo'shilgan komponentlarni saralaydi - u bean'larning yaratilish (instantiation) tartibini yoki `@Bean` metodlari chaqiriluvini boshqarmaydi; bunga `@DependsOn` yoki haqiqiy dependency kerak. Qo'lda yozilgan "1, 2, 3" qiymatlari o'rniga `Ordered.LOWEST_PRECEDENCE - 10` kabi nisbiy konstantalardan foydalaning, aks holda kutubxona order'lari bilan to'qnashuv chiqadi.
 
-## 5.16 Spring AOP: proxy asosidagi kesishuv (Spring AOP — Advice, Pointcut, Advisor, Interceptor)
+## 5.16 Spring AOP: proxy asosidagi kesishuv (Spring AOP - Advice, Pointcut, Advisor, Interceptor)
 
-**Tavsif:** Logging, audit, metrika, retry, tranzaksiya kabi cross-cutting masalalar o'nlab sinfga tarqalib ketsa, biznes kodi shovqinga ko'miladi. AOP bu masalalarni uch mustaqil tushunchaga ajratadi: *advice* — nima qilish kerak, *pointcut* — qayerda qo'llash kerak, *advisor* — ularni birlashtirgan juftlik. Spring buni runtime'da proxy yaratib amalga oshiradi: target bean o'rniga kontekstga uning proxy'si joylashtiriladi va har bir chaqiruv interceptor zanjiri orqali o'tadi. Bu Proxy, Decorator va Chain of Responsibility patternlarining amaliy birikmasi.
+**Tavsif:** Logging, audit, metrika, retry, tranzaksiya kabi cross-cutting masalalar o'nlab sinfga tarqalib ketsa, biznes kodi shovqinga ko'miladi. AOP bu masalalarni uch mustaqil tushunchaga ajratadi: *advice* - nima qilish kerak, *pointcut* - qayerda qo'llash kerak, *advisor* - ularni birlashtirgan juftlik. Spring buni runtime'da proxy yaratib amalga oshiradi: target bean o'rniga kontekstga uning proxy'si joylashtiriladi va har bir chaqiruv interceptor zanjiri orqali o'tadi. Bu Proxy, Decorator va Chain of Responsibility patternlarining amaliy birikmasi.
 
-**Spring'da qayerda uchraydi:** `org.aopalliance.intercept.MethodInterceptor` va `MethodInvocation`, `org.springframework.aop.Pointcut`, `Advisor`, `PointcutAdvisor`, `DefaultPointcutAdvisor`, `AspectJExpressionPointcut`, `NameMatchMethodPointcut`. Deklarativ uslub: `@Aspect`, `@Around`, `@Before`, `@AfterReturning`, `@AfterThrowing`, `ProceedingJoinPoint`, `@EnableAspectJAutoProxy` va uning ortidagi `AnnotationAwareAspectJAutoProxyCreator`. Programmatik uslub: `ProxyFactory`, `ProxyFactoryBean`. Proxy mexanizmlari — interfeys uchun `JdkDynamicAopProxy`, sinf uchun `CglibAopProxy` (Spring Framework 6.x'da CGLIB Spring ichiga "repackage" qilingan, Spring Boot 3.x esa `spring.aop.proxy-target-class=true` bilan odatda CGLIB ishlatadi). Yordamchilar: `AopUtils`, `AopProxyUtils.ultimateTargetClass`, `AopContext.currentProxy()` (faqat `exposeProxy=true` bo'lsa).
+**Spring'da qayerda uchraydi:** `org.aopalliance.intercept.MethodInterceptor` va `MethodInvocation`, `org.springframework.aop.Pointcut`, `Advisor`, `PointcutAdvisor`, `DefaultPointcutAdvisor`, `AspectJExpressionPointcut`, `NameMatchMethodPointcut`. Deklarativ uslub: `@Aspect`, `@Around`, `@Before`, `@AfterReturning`, `@AfterThrowing`, `ProceedingJoinPoint`, `@EnableAspectJAutoProxy` va uning ortidagi `AnnotationAwareAspectJAutoProxyCreator`. Programmatik uslub: `ProxyFactory`, `ProxyFactoryBean`. Proxy mexanizmlari - interfeys uchun `JdkDynamicAopProxy`, sinf uchun `CglibAopProxy` (Spring Framework 6.x'da CGLIB Spring ichiga "repackage" qilingan, Spring Boot 3.x esa `spring.aop.proxy-target-class=true` bilan odatda CGLIB ishlatadi). Yordamchilar: `AopUtils`, `AopProxyUtils.ultimateTargetClass`, `AopContext.currentProxy()` (faqat `exposeProxy=true` bo'lsa).
 
 **Qo'llanish keyslari:**
 - `@Timed` yoki o'z annotatsiyangiz bo'yicha metod bajarilish vaqtini Micrometer'ga yozish.
@@ -314,22 +315,22 @@ class OutboxPoller implements SmartLifecycle {
 - Sezgir metodlar uchun audit log yozib, kim qanday argument bilan chaqirganini saqlash.
 - Legacy sinflarga kod tegmasdan kirish nazoratini (`@PreAuthorize`ga o'xshash) qo'llash.
 
-**Ehtiyot bo'ling:** Eng ko'p uchraydigan tuzoq — self-invocation: bir xil bean ichidan `this.method()` chaqirilsa proxy chetlab o'tiladi va advice ishlamaydi; shuningdek `private`, `static` va `final` metodlar, `final` sinflar advise qilinmaydi. Proxy'lar qo'shimcha chaqiruv qatlamini va `getClass()` natijasining o'zgarishini keltirib chiqaradi, shuning uchun tip tekshiruvi va reflection'ga tayangan kod `AopProxyUtils`dan foydalanishi kerak.
+**Ehtiyot bo'ling:** Eng ko'p uchraydigan tuzoq - self-invocation: bir xil bean ichidan `this.method()` chaqirilsa proxy chetlab o'tiladi va advice ishlamaydi; shuningdek `private`, `static` va `final` metodlar, `final` sinflar advise qilinmaydi. Proxy'lar qo'shimcha chaqiruv qatlamini va `getClass()` natijasining o'zgarishini keltirib chiqaradi, shuning uchun tip tekshiruvi va reflection'ga tayangan kod `AopProxyUtils`dan foydalanishi kerak.
 
 ## 5.17 Tranzaksiya proxy'si va TransactionTemplate (@Transactional Proxy & TransactionTemplate)
 
-**Tavsif:** Tranzaksiyani qo'lda boshqarish (`begin`, `commit`, `rollback`, `finally close`) takrorlanuvchi va xatoga moyil kod. Spring buni ikki yo'l bilan hal qiladi: deklarativ — `@Transactional` annotatsiyasi AOP proxy orqali metod atrofiga tranzaksiya chegarasini o'raydi; programmatik — `TransactionTemplate` callback ichidagi kodni tranzaksiya ichida bajaradi. Ikkisi ham bir xil `PlatformTransactionManager` abstraksiyasiga tayanadi, shuning uchun JDBC, JPA yoki JTA ostida kod o'zgarmaydi.
+**Tavsif:** Tranzaksiyani qo'lda boshqarish (`begin`, `commit`, `rollback`, `finally close`) takrorlanuvchi va xatoga moyil kod. Spring buni ikki yo'l bilan hal qiladi: deklarativ - `@Transactional` annotatsiyasi AOP proxy orqali metod atrofiga tranzaksiya chegarasini o'raydi; programmatik - `TransactionTemplate` callback ichidagi kodni tranzaksiya ichida bajaradi. Ikkisi ham bir xil `PlatformTransactionManager` abstraksiyasiga tayanadi, shuning uchun JDBC, JPA yoki JTA ostida kod o'zgarmaydi.
 
 **Spring'da qayerda uchraydi:** `@Transactional`, `@EnableTransactionManagement`, ichki ishni bajaruvchi `TransactionInterceptor` va `TransactionAspectSupport`, metadata o'quvchi `AnnotationTransactionAttributeSource`. Manager'lar: `PlatformTransactionManager`, `DataSourceTransactionManager`, `JpaTransactionManager`, `JtaTransactionManager`, reaktiv tomonda `ReactiveTransactionManager` va `TransactionalOperator`. Programmatik: `TransactionTemplate`, `TransactionCallback`, `TransactionCallbackWithoutResult`, `TransactionStatus`, `TransactionDefinition`, `Propagation` va `Isolation` enum'lari, `TransactionSynchronizationManager`. Spring Boot 3.x `DataSourceTransactionManagerAutoConfiguration` va `JpaBaseConfiguration` orqali manager'ni avtomatik yaratadi.
 
 **Qo'llanish keyslari:**
 - Service qatlamidagi use-case metodini bitta atomar tranzaksiyaga o'rash.
-- Hisobot o'qish metodlarini `@Transactional(readOnly = true)` bilan belgilash — flush'ni o'chiradi va replica'ga yo'naltirishga imkon beradi.
+- Hisobot o'qish metodlarini `@Transactional(readOnly = true)` bilan belgilash - flush'ni o'chiradi va replica'ga yo'naltirishga imkon beradi.
 - `Propagation.REQUIRES_NEW` bilan audit yozuvini asosiy tranzaksiya rollback bo'lsa ham saqlab qolish.
 - Uzun batch jobda `TransactionTemplate` yordamida har 500 yozuvni alohida tranzaksiyada commit qilish.
 - `TransactionSynchronizationManager.registerSynchronization` bilan commit'dan keyin cache'ni tozalash.
 
-**Ehtiyot bo'ling:** Standart sozlamada rollback faqat `RuntimeException` va `Error`da sodir bo'ladi — checked exception uchun `rollbackFor` ni aniq ko'rsatish shart; `catch` bilan "yutilgan" exception esa tranzaksiyani allaqachon rollback-only holatga o'tkazib, commit paytida `UnexpectedRollbackException` beradi. `@Transactional`ni `private` metodga yoki bir sinf ichidagi o'z-o'zini chaqiruvga qo'yish hech qanday ta'sir bermaydi, hamda `@Transactional` metod ichida tashqi HTTP chaqiruv qilish tranzaksiyani va connection'ni keraksiz uzoq ushlab turadi.
+**Ehtiyot bo'ling:** Standart sozlamada rollback faqat `RuntimeException` va `Error`da sodir bo'ladi - checked exception uchun `rollbackFor` ni aniq ko'rsatish shart; `catch` bilan "yutilgan" exception esa tranzaksiyani allaqachon rollback-only holatga o'tkazib, commit paytida `UnexpectedRollbackException` beradi. `@Transactional`ni `private` metodga yoki bir sinf ichidagi o'z-o'zini chaqiruvga qo'yish hech qanday ta'sir bermaydi, hamda `@Transactional` metod ichida tashqi HTTP chaqiruv qilish tranzaksiyani va connection'ni keraksiz uzoq ushlab turadi.
 
 ## 5.18 Template sinflari (Template Classes)
 
@@ -344,11 +345,11 @@ class OutboxPoller implements SmartLifecycle {
 - `KafkaTemplate` orqali transactional producer'da event yuborish.
 - `RedisTemplate` yordamida distributed lock yoki rate-limit counter'ini boshqarish.
 
-**Ehtiyot bo'ling:** Template'lar konfiguratsiya tugagandan keyin thread-safe deb hisoblanadi, lekin runtime'da `setInterceptors`, `setMessageConverters` kabi setter'larni chaqirish yashirin race condition yaratadi — har bir maqsad uchun alohida bean yasang. Yangi kodda `RestTemplate` o'rniga `RestClient` yoki `WebClient` ni tanlang va timeout'ni albatta aniq belgilang, chunki standart `RestTemplate` cheksiz kutishi mumkin.
+**Ehtiyot bo'ling:** Template'lar konfiguratsiya tugagandan keyin thread-safe deb hisoblanadi, lekin runtime'da `setInterceptors`, `setMessageConverters` kabi setter'larni chaqirish yashirin race condition yaratadi - har bir maqsad uchun alohida bean yasang. Yangi kodda `RestTemplate` o'rniga `RestClient` yoki `WebClient` ni tanlang va timeout'ni albatta aniq belgilang, chunki standart `RestTemplate` cheksiz kutishi mumkin.
 
 ## 5.19 Callback interfeyslari (Callback Interfaces)
 
-**Tavsif:** Template sinfi skeletni boshqaradi, ammo "har bir qatorni qanday obyektga aylantirish kerak" degan qismni faqat chaqiruvchi biladi. Callback — bu template ichiga uzatiladigan kichik strategiya: framework resursni ochadi, callback'ga beradi va undan keyin tozalaydi. Bu Strategy va Inversion of Control birikmasi bo'lib, resurs oqib ketishini (resource leak) tuzilmaviy darajada imkonsiz qiladi.
+**Tavsif:** Template sinfi skeletni boshqaradi, ammo "har bir qatorni qanday obyektga aylantirish kerak" degan qismni faqat chaqiruvchi biladi. Callback - bu template ichiga uzatiladigan kichik strategiya: framework resursni ochadi, callback'ga beradi va undan keyin tozalaydi. Bu Strategy va Inversion of Control birikmasi bo'lib, resurs oqib ketishini (resource leak) tuzilmaviy darajada imkonsiz qiladi.
 
 **Spring'da qayerda uchraydi:** JDBC tomonida `RowMapper<T>`, `ResultSetExtractor<T>`, `RowCallbackHandler`, `PreparedStatementSetter`, `PreparedStatementCreator`, `ConnectionCallback`, `StatementCallback`, `CallableStatementCallback`, `BatchPreparedStatementSetter`; tayyor implementatsiyalar `BeanPropertyRowMapper`, `DataClassRowMapper` (Java record va immutable sinflar uchun), `SingleColumnRowMapper`, `RowMapperResultSetExtractor`. Boshqa modullarda: `TransactionCallback`, `JmsTemplate`ning `MessageCreator` va `SessionCallback`, `RedisCallback` va `SessionCallback` (Spring Data Redis), `CollectionCallback` (Spring Data MongoDB). Java 17+ da bu interfeyslarning deyarli barchasi funksional, shuning uchun lambda yoki method reference sifatida yoziladi.
 
@@ -359,7 +360,7 @@ class OutboxPoller implements SmartLifecycle {
 - `PreparedStatementSetter` bilan dinamik filtr parametrlarini xavfsiz bog'lash.
 - `ConnectionCallback` orqali vendor-specific JDBC API (masalan PostgreSQL `COPY`) ga tushish.
 
-**Ehtiyot bo'ling:** `ResultSet`, `Connection` yoki `Statement` obyektini callback'dan tashqariga chiqarib yubormang — template qaytgandan keyin ular yopilgan bo'ladi va `SQLException` yoki yashirin leak chiqadi. `RowCallbackHandler` holat saqlaydi, demak u thread-safe emas va bean sifatida bir marta yaratib qayta ishlatilmasligi kerak; `BeanPropertyRowMapper` esa reflection'ga tayangani uchun eng issiq (hot) query'larda qo'lda yozilgan mapper'dan sekinroq ishlaydi.
+**Ehtiyot bo'ling:** `ResultSet`, `Connection` yoki `Statement` obyektini callback'dan tashqariga chiqarib yubormang - template qaytgandan keyin ular yopilgan bo'ladi va `SQLException` yoki yashirin leak chiqadi. `RowCallbackHandler` holat saqlaydi, demak u thread-safe emas va bean sifatida bir marta yaratib qayta ishlatilmasligi kerak; `BeanPropertyRowMapper` esa reflection'ga tayangani uchun eng issiq (hot) query'larda qo'lda yozilgan mapper'dan sekinroq ishlaydi.
 
 ## 5.20 Ilova hodisalari (ApplicationEvent / @EventListener / @TransactionalEventListener)
 
@@ -374,13 +375,13 @@ class OutboxPoller implements SmartLifecycle {
 - `ApplicationReadyEvent`da warm-up query va health probe'larni ishga tushirish.
 - Modulli monolitda modullar orasidagi aloqani event bilan kuchsizlantirish (loose coupling).
 
-**Ehtiyot bo'ling:** Standart holatda event'lar sinxron — publisher thread'ida va ayni tranzaksiyada bajariladi, demak listener ichidagi exception publisher'ga qaytib, uning tranzaksiyasini rollback qiladi. `AFTER_COMMIT` listener esa tranzaksiyadan tashqarida ishlaydi: unda DB yozishni xohlasangiz `Propagation.REQUIRES_NEW` kerak, aks holda yozuv jim saqlanmay qolishi mumkin; shuningdek event oqimi juda ko'payib ketsa, mantiq "ko'rinmas" bo'lib, debug qilish og'irlashadi.
+**Ehtiyot bo'ling:** Standart holatda event'lar sinxron - publisher thread'ida va ayni tranzaksiyada bajariladi, demak listener ichidagi exception publisher'ga qaytib, uning tranzaksiyasini rollback qiladi. `AFTER_COMMIT` listener esa tranzaksiyadan tashqarida ishlaydi: unda DB yozishni xohlasangiz `Propagation.REQUIRES_NEW` kerak, aks holda yozuv jim saqlanmay qolishi mumkin; shuningdek event oqimi juda ko'payib ketsa, mantiq "ko'rinmas" bo'lib, debug qilish og'irlashadi.
 
 ## 5.21 Environment va PropertySource zanjiri (Environment & PropertySource Chain)
 
-**Tavsif:** Konfiguratsiya qiymatlari bir nechta manbadan keladi: command-line, environment variable, `application.yml`, Kubernetes ConfigMap, Vault. Spring bu manbalarni bir xil `PropertySource` abstraksiyasiga keltirib, ularni ustuvorligi bo'yicha tartiblangan zanjirga joylaydi. Qiymat so'ralganda zanjir boshidan yurib, birinchi topilgan javob qaytadi — bu Chain of Responsibility pattern bo'lib, "override qilish" semantikasini tabiiy beradi.
+**Tavsif:** Konfiguratsiya qiymatlari bir nechta manbadan keladi: command-line, environment variable, `application.yml`, Kubernetes ConfigMap, Vault. Spring bu manbalarni bir xil `PropertySource` abstraksiyasiga keltirib, ularni ustuvorligi bo'yicha tartiblangan zanjirga joylaydi. Qiymat so'ralganda zanjir boshidan yurib, birinchi topilgan javob qaytadi - bu Chain of Responsibility pattern bo'lib, "override qilish" semantikasini tabiiy beradi.
 
-**Spring'da qayerda uchraydi:** `Environment`, `ConfigurableEnvironment`, `StandardEnvironment`, `PropertyResolver`, `MutablePropertySources` (`addFirst`, `addLast`, `addBefore`), `PropertySource` va uning implementatsiyalari `SystemEnvironmentPropertySource`, `MapPropertySource`, `OriginTrackedMapPropertySource`, `RandomValuePropertySource`. Placeholder'ni ochish `PropertySourcesPlaceholderConfigurer` va `@Value` orqali, qo'shimcha fayl `@PropertySource` bilan qo'shiladi. Spring Boot 3.x konfiguratsiya yuklashni `ConfigDataEnvironmentPostProcessor` va `EnvironmentPostProcessor` SPI orqali bajaradi, `spring.config.import` (masalan `optional:configtree:/etc/secrets/`) tashqi manbalarni ulaydi; ustuvorlik tartibi hujjatlashtirilgan — command-line argumentlar `SPRING_APPLICATION_JSON`, keyin OS environment, so'ngra profil fayllari va oxirida `application.properties`.
+**Spring'da qayerda uchraydi:** `Environment`, `ConfigurableEnvironment`, `StandardEnvironment`, `PropertyResolver`, `MutablePropertySources` (`addFirst`, `addLast`, `addBefore`), `PropertySource` va uning implementatsiyalari `SystemEnvironmentPropertySource`, `MapPropertySource`, `OriginTrackedMapPropertySource`, `RandomValuePropertySource`. Placeholder'ni ochish `PropertySourcesPlaceholderConfigurer` va `@Value` orqali, qo'shimcha fayl `@PropertySource` bilan qo'shiladi. Spring Boot 3.x konfiguratsiya yuklashni `ConfigDataEnvironmentPostProcessor` va `EnvironmentPostProcessor` SPI orqali bajaradi, `spring.config.import` (masalan `optional:configtree:/etc/secrets/`) tashqi manbalarni ulaydi; ustuvorlik tartibi hujjatlashtirilgan - command-line argumentlar `SPRING_APPLICATION_JSON`, keyin OS environment, so'ngra profil fayllari va oxirida `application.properties`.
 
 **Qo'llanish keyslari:**
 - Bir xil image'ni dev/stage/prod'da faqat environment variable almashtirib ishlatish.
@@ -389,7 +390,7 @@ class OutboxPoller implements SmartLifecycle {
 - `Environment.getProperty` bilan feature flag'ni runtime'da emas, startup'da o'qib bean tanlash.
 - `OriginTrackedValue` ma'lumotidan foydalanib, "bu qiymat qaysi fayldan keldi" degan diagnostika chiqarish.
 
-**Ehtiyot bo'ling:** `@Value` qiymati bean yaratilganda bir marta hal qilinadi — Spring Cloud `@RefreshScope` bo'lmasa, property o'zgarishi ilovaga ta'sir qilmaydi. Zanjirga manba qo'shayotganda `addFirst`/`addLast` tanlovini aniq o'ylab ko'ring, aks holda prod'da kutilmaganda default qiymat ustun chiqib ketadi; sirlarni esa `/actuator/env` orqali oshkor qilmaslik uchun sanitize sozlamalarini tekshirib qo'ying.
+**Ehtiyot bo'ling:** `@Value` qiymati bean yaratilganda bir marta hal qilinadi - Spring Cloud `@RefreshScope` bo'lmasa, property o'zgarishi ilovaga ta'sir qilmaydi. Zanjirga manba qo'shayotganda `addFirst`/`addLast` tanlovini aniq o'ylab ko'ring, aks holda prod'da kutilmaganda default qiymat ustun chiqib ketadi; sirlarni esa `/actuator/env` orqali oshkor qilmaslik uchun sanitize sozlamalarini tekshirib qo'ying.
 
 ## 5.22 Konfiguratsiya xossalarini bog'lash (@ConfigurationProperties Binding)
 
@@ -414,11 +415,11 @@ public record GatewayProps(
 - `Map<String, TenantConfig>` ko'rinishida ko'p tenant sozlamalarini dinamik o'qish.
 - Testda `@ConfigurationProperties` bean'ini `ApplicationContextRunner` bilan izolyatsiyada tekshirish.
 
-**Ehtiyot bo'ling:** Constructor/record binding immutable bo'lgani uchun `@RefreshScope` bilan yangilanmaydi va setter binding kutgan kod ishlamay qoladi — bitta sinfda ikki uslubni aralashtirmang. Shuningdek `@Value` ichidagi SpEL `@ConfigurationProperties` bog'lanishida qo'llanmaydi, binding esa relaxed nomlashga tayanadi, shuning uchun YAML'da kalitni kamelCase emas, kebab-case bilan yozish eng bashoratli variant.
+**Ehtiyot bo'ling:** Constructor/record binding immutable bo'lgani uchun `@RefreshScope` bilan yangilanmaydi va setter binding kutgan kod ishlamay qoladi - bitta sinfda ikki uslubni aralashtirmang. Shuningdek `@Value` ichidagi SpEL `@ConfigurationProperties` bog'lanishida qo'llanmaydi, binding esa relaxed nomlashga tayanadi, shuning uchun YAML'da kalitni kamelCase emas, kebab-case bilan yozish eng bashoratli variant.
 
 ## 5.23 Profillar (Profiles)
 
-**Tavsif:** Bir xil kod bazasi turli muhitlarda turli bean'lar va sozlamalar bilan ishlashi kerak: lokalda in-memory queue, prod'da Kafka. Profile — bu nomlangan shart bo'lib, bean definition yoki konfiguratsiya blokini faqat ma'lum muhitda aktiv qiladi. Bu `@Conditional`ning maxsus, odam o'qiy oladigan ko'rinishi va muhit bo'yicha variantlarni bitta joydan boshqarish imkonini beradi.
+**Tavsif:** Bir xil kod bazasi turli muhitlarda turli bean'lar va sozlamalar bilan ishlashi kerak: lokalda in-memory queue, prod'da Kafka. Profile - bu nomlangan shart bo'lib, bean definition yoki konfiguratsiya blokini faqat ma'lum muhitda aktiv qiladi. Bu `@Conditional`ning maxsus, odam o'qiy oladigan ko'rinishi va muhit bo'yicha variantlarni bitta joydan boshqarish imkonini beradi.
 
 **Spring'da qayerda uchraydi:** `@Profile` annotatsiyasi (shart ifodalari bilan: `@Profile("!prod & cloud")`), `Environment.getActiveProfiles()` va `acceptsProfiles(Profiles.of(...))`, `spring.profiles.active`, `spring.profiles.default`, `spring.profiles.group` (Spring Boot 2.4+ da eski `spring.profiles.include` o'rniga tavsiya etiladi), profil fayllari `application-{profile}.yml`, YAML dokumenti darajasidagi `spring.config.activate.on-profile`. Testlarda `@ActiveProfiles`, shuningdek Spring Boot 3.x `ApplicationContextRunner#withSystemProperties` bilan profil xatti-harakatini tekshirish mumkin.
 
@@ -429,7 +430,7 @@ public record GatewayProps(
 - Integration testda `@ActiveProfiles("test")` orqali Testcontainers konfiguratsiyasini tanlash.
 - Local demo uchun seed data yuklovchi `CommandLineRunner`ni faqat `demo` profilda ishga tushirish.
 
-**Ehtiyot bo'ling:** Profile'ni biznes feature-flag sifatida ishlatish anti-pattern: profillar startup'da qotib qoladi, runtime'da o'zgarmaydi va kombinatsiyalari tez portlab ketadi — buning uchun `@ConfigurationProperties` yoki haqiqiy flag tizimidan foydalaning. Profil ostidagi bean yo'q bo'lsa, unga bog'langan inject nuqtalari startup'da yiqiladi, shuning uchun har bir profilni CI'da kamida bir marta kontekst yuklab sinab ko'rish kerak.
+**Ehtiyot bo'ling:** Profile'ni biznes feature-flag sifatida ishlatish anti-pattern: profillar startup'da qotib qoladi, runtime'da o'zgarmaydi va kombinatsiyalari tez portlab ketadi - buning uchun `@ConfigurationProperties` yoki haqiqiy flag tizimidan foydalaning. Profil ostidagi bean yo'q bo'lsa, unga bog'langan inject nuqtalari startup'da yiqiladi, shuning uchun har bir profilni CI'da kamida bir marta kontekst yuklab sinab ko'rish kerak.
 
 ## 5.24 Shartli bean'lar va auto-konfiguratsiya (@Conditional & Auto-configuration)
 
@@ -458,11 +459,11 @@ public class AuditAutoConfiguration {
 - Servlet va reactive stack uchun bir xil funksiyaning ikki xil implementatsiyasini ro'yxatga olish.
 - Startup muammosini `/actuator/conditions` hisoboti bilan "nega bu bean yaratilmadi" savoliga javob topish.
 
-**Ehtiyot bo'ling:** `@ConditionalOnBean` va `@ConditionalOnMissingBean` baholash paytida faqat o'sha vaqtgacha ro'yxatga olingan bean definition'larni ko'radi, shuning uchun ular tartibga sezgir va faqat auto-konfiguratsiya sinflarida ishlatilishi kerak — oddiy `@Configuration`da ular jim, takrorlanmaydigan xatolarga olib keladi. Shartlarni haddan tashqari ko'paytirish esa kontekstni "sehrli" qilib qo'yadi, shuning uchun har bir auto-config uchun `ApplicationContextRunner` bilan test yozish amalda majburiy.
+**Ehtiyot bo'ling:** `@ConditionalOnBean` va `@ConditionalOnMissingBean` baholash paytida faqat o'sha vaqtgacha ro'yxatga olingan bean definition'larni ko'radi, shuning uchun ular tartibga sezgir va faqat auto-konfiguratsiya sinflarida ishlatilishi kerak - oddiy `@Configuration`da ular jim, takrorlanmaydigan xatolarga olib keladi. Shartlarni haddan tashqari ko'paytirish esa kontekstni "sehrli" qilib qo'yadi, shuning uchun har bir auto-config uchun `ApplicationContextRunner` bilan test yozish amalda majburiy.
 
 ## 5.25 Starter'lar (Starters)
 
-**Tavsif:** Yangi loyihada "qaysi kutubxonaning qaysi versiyasi qaysi biri bilan mos keladi" muammosi ko'p vaqt oladi. Starter — bu o'z kodi bo'lmagan, faqat bir-biriga mos dependency to'plamini va kerakli auto-konfiguratsiyani olib keladigan "ruxsatnoma" artifact. Mohiyatan bu dependency darajasidagi Facade: bitta koordinatani qo'shib, butun ishlaydigan stack'ni olasiz.
+**Tavsif:** Yangi loyihada "qaysi kutubxonaning qaysi versiyasi qaysi biri bilan mos keladi" muammosi ko'p vaqt oladi. Starter - bu o'z kodi bo'lmagan, faqat bir-biriga mos dependency to'plamini va kerakli auto-konfiguratsiyani olib keladigan "ruxsatnoma" artifact. Mohiyatan bu dependency darajasidagi Facade: bitta koordinatani qo'shib, butun ishlaydigan stack'ni olasiz.
 
 **Spring'da qayerda uchraydi:** `spring-boot-starter-web`, `spring-boot-starter-webflux`, `spring-boot-starter-data-jpa`, `spring-boot-starter-security`, `spring-boot-starter-validation`, `spring-boot-starter-actuator`, `spring-boot-starter-test` va boshqalar; versiyalarni boshqaruvchi `spring-boot-dependencies` BOM hamda `spring-boot-starter-parent`. Uchinchi tomon uchun rasmiy nomlash konvensiyasi `xxx-spring-boot-starter` (Spring o'z nomini `spring-boot-starter-xxx` prefiksiga saqlab qo'ygan) va tavsiya etilgan struktura: alohida `xxx-spring-boot-autoconfigure` moduli + bo'sh `xxx-spring-boot-starter` moduli. Gradle'da BOM `platform(SpringBootPlugin.BOM_COORDINATES)` orqali ulanadi.
 
@@ -473,13 +474,13 @@ public class AuditAutoConfiguration {
 - `spring-boot-starter-test` bilan JUnit 5, AssertJ, Mockito va Testcontainers integratsiyasini bir zarbada olish.
 - SDK'ni mijoz jamoalarga "qo'sh va ishlat" shaklida yetkazish.
 
-**Ehtiyot bo'ling:** Starter'ga biznes kodi yoki `@Component` sinflarini joylashtirmang — kod `autoconfigure` modulida, starter faqat POM/dependency bo'lib qolishi kerak, aks holda majburiy classpath bog'liqliklari paydo bo'ladi. BOM boshqargan versiyani qo'lda override qilish (`<spring-boot.version>` tashqarisida) runtime'da `NoSuchMethodError` kabi mos kelmaslik xatolarini keltiradi.
+**Ehtiyot bo'ling:** Starter'ga biznes kodi yoki `@Component` sinflarini joylashtirmang - kod `autoconfigure` modulida, starter faqat POM/dependency bo'lib qolishi kerak, aks holda majburiy classpath bog'liqliklari paydo bo'ladi. BOM boshqargan versiyani qo'lda override qilish (`<spring-boot.version>` tashqarisida) runtime'da `NoSuchMethodError` kabi mos kelmaslik xatolarini keltiradi.
 
 ## 5.26 Auto-konfiguratsiya SPI ro'yxati (AutoConfiguration.imports / spring.factories SPI)
 
-**Tavsif:** Spring Boot classpath'dagi barcha sinflarni skanerlab auto-konfiguratsiyalarni topmaydi — buning uchun har bir jar o'zining kirish nuqtalarini matnli ro'yxatda e'lon qiladi. Bu klassik Service Provider Interface (SPI) pattern: kontrakt framework'da, implementatsiya ro'yxati esa resurs faylida, natijada kengaytirish uchun kodga tegish kerak emas va startup tez qoladi. Spring buni Java'ning `ServiceLoader` mexanizmidan ilhomlanib, lekin o'z yuklovchisi bilan amalga oshiradi.
+**Tavsif:** Spring Boot classpath'dagi barcha sinflarni skanerlab auto-konfiguratsiyalarni topmaydi - buning uchun har bir jar o'zining kirish nuqtalarini matnli ro'yxatda e'lon qiladi. Bu klassik Service Provider Interface (SPI) pattern: kontrakt framework'da, implementatsiya ro'yxati esa resurs faylida, natijada kengaytirish uchun kodga tegish kerak emas va startup tez qoladi. Spring buni Java'ning `ServiceLoader` mexanizmidan ilhomlanib, lekin o'z yuklovchisi bilan amalga oshiradi.
 
-**Spring'da qayerda uchraydi:** Spring Boot 3.x'da auto-konfiguratsiyalar `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` faylida — har qatorda bitta to'liq sinf nomi (bu format 2.7'da kiritilib, 3.0'dan majburiy bo'ldi). Eski `META-INF/spring.factories` fayli esa boshqa kengaytirish nuqtalari uchun saqlanib qolgan: `EnvironmentPostProcessor`, `ApplicationContextInitializer`, `ApplicationListener`, `SpringApplicationRunListener`, `FailureAnalyzer`, `TemplateAvailabilityProvider`. Yuklovchi sinflar: `SpringFactoriesLoader`, `ImportCandidates`, `AutoConfigurationImportSelector`; metadata generatsiyasi uchun `spring-boot-autoconfigure-processor`.
+**Spring'da qayerda uchraydi:** Spring Boot 3.x'da auto-konfiguratsiyalar `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` faylida - har qatorda bitta to'liq sinf nomi (bu format 2.7'da kiritilib, 3.0'dan majburiy bo'ldi). Eski `META-INF/spring.factories` fayli esa boshqa kengaytirish nuqtalari uchun saqlanib qolgan: `EnvironmentPostProcessor`, `ApplicationContextInitializer`, `ApplicationListener`, `SpringApplicationRunListener`, `FailureAnalyzer`, `TemplateAvailabilityProvider`. Yuklovchi sinflar: `SpringFactoriesLoader`, `ImportCandidates`, `AutoConfigurationImportSelector`; metadata generatsiyasi uchun `spring-boot-autoconfigure-processor`.
 
 **Qo'llanish keyslari:**
 - O'z kutubxonangizning `@AutoConfiguration` sinfini imports fayliga yozib, mijoz loyihasida avtomatik faollashtirish.
@@ -488,7 +489,7 @@ public class AuditAutoConfiguration {
 - `ApplicationContextInitializer` orqali kontekst ko'tarilishidan oldin dinamik property qo'shish.
 - Testda `AutoConfigurations.of(...)` bilan ro'yxatdan mustaqil ravishda auto-config'ni sinab ko'rish.
 
-**Ehtiyot bo'ling:** Bu fayllardagi sinf nomlari oddiy matn — refactoring yoki paketni ko'chirish ularni jim buzadi va auto-konfiguratsiya shunchaki "yo'qoladi", hech qanday compile xatosi bermaydi; shuning uchun imports faylini `ApplicationContextRunner`siz emas, `@SpringBootTest` yoki `AutoConfigurations` testi bilan qoplang. Spring Boot 3.x'da auto-konfiguratsiyani faqat `spring.factories`da qoldirgan eski kutubxonalar umuman yuklanmaydi — migratsiyada shuni birinchi tekshiring.
+**Ehtiyot bo'ling:** Bu fayllardagi sinf nomlari oddiy matn - refactoring yoki paketni ko'chirish ularni jim buzadi va auto-konfiguratsiya shunchaki "yo'qoladi", hech qanday compile xatosi bermaydi; shuning uchun imports faylini `ApplicationContextRunner`siz emas, `@SpringBootTest` yoki `AutoConfigurations` testi bilan qoplang. Spring Boot 3.x'da auto-konfiguratsiyani faqat `spring.factories`da qoldirgan eski kutubxonalar umuman yuklanmaydi - migratsiyada shuni birinchi tekshiring.
 
 ## 5.27 Resurs abstraksiyasi (Resource Abstraction)
 
@@ -503,7 +504,7 @@ public class AuditAutoConfiguration {
 - JWT public key yoki sertifikatni `file:` prefiksi bilan tashqi mount'dan olish.
 - Test fiksturalarini bir xil kod bilan ham IDE'da, ham jar ichida o'qiydigan util yozish.
 
-**Ehtiyot bo'ling:** Fat jar ichidagi classpath resursi haqiqiy fayl emas — `getFile()` yoki `resource.getFile().toPath()` lokalda ishlab, prod'da `FileNotFoundException` beradi; har doim `getInputStream()` dan foydalaning va uni try-with-resources bilan yoping. `classpath*:` bilan nested jar'larni skanerlash cheklangan va sekin, shuning uchun uni startup'da bir marta, hot path'da esa umuman ishlatmang.
+**Ehtiyot bo'ling:** Fat jar ichidagi classpath resursi haqiqiy fayl emas - `getFile()` yoki `resource.getFile().toPath()` lokalda ishlab, prod'da `FileNotFoundException` beradi; har doim `getInputStream()` dan foydalaning va uni try-with-resources bilan yoping. `classpath*:` bilan nested jar'larni skanerlash cheklangan va sekin, shuning uchun uni startup'da bir marta, hot path'da esa umuman ishlatmang.
 
 ## 5.28 Konvertatsiya xizmati (ConversionService / Converter / Formatter)
 
@@ -518,13 +519,13 @@ public class AuditAutoConfiguration {
 - Enum'ning tashqi kodlarini (`"A1"`, `"B2"`) `ConverterFactory` bilan umumiy tarzda bog'lash.
 - Thymeleaf form'larida lokalga mos son va sana ko'rinishini `@NumberFormat` orqali boshqarish.
 
-**Ehtiyot bo'ling:** Web MVC ishlatadigan conversion service va property binding'dagi service alohida — faqat `@Component` sifatida ro'yxatga olingan converter avtomatik hamma joyda ishlamaydi, konfiguratsiya binding uchun `@ConfigurationPropertiesBinding` shart. Converter'lar singleton va ko'p thread'dan chaqiriladi, shuning uchun ularni mutable holat yoki thread-safe bo'lmagan `SimpleDateFormat` bilan yozmang; `java.time` va immutable mantiqdan foydalaning.
+**Ehtiyot bo'ling:** Web MVC ishlatadigan conversion service va property binding'dagi service alohida - faqat `@Component` sifatida ro'yxatga olingan converter avtomatik hamma joyda ishlamaydi, konfiguratsiya binding uchun `@ConfigurationPropertiesBinding` shart. Converter'lar singleton va ko'p thread'dan chaqiriladi, shuning uchun ularni mutable holat yoki thread-safe bo'lmagan `SimpleDateFormat` bilan yozmang; `java.time` va immutable mantiqdan foydalaning.
 
 ## 5.29 Validator abstraksiyasi (Validator Abstraction)
 
 **Tavsif:** Obyektni tekshirish mantiqini obyektning o'zidan va web qatlamidan ajratib, alohida strategiya sinfiga chiqaradi. `Validator` interfeysi `supports(Class<?>)` va `validate(Object, Errors)` metodlaridan iborat bo'lib, xatolar domain obyektiga emas, balki `Errors`/`BindingResult` kontekstiga yoziladi. Bu Strategy pattern'ining klassik ko'rinishi: bitta model uchun bir nechta kontekstga xos validator bo'lishi mumkin (create vs update). Spring shuningdek Jakarta Bean Validation (JSR-380) ni shu abstraksiya ustiga adapter orqali ulaydi.
 
-**Spring'da qayerda uchraydi:** `org.springframework.validation.Validator`, `Errors`, `BeanPropertyBindingResult`, `ValidationUtils`, `SmartValidator`. Bean Validation ko'prigi — `LocalValidatorFactoryBean` va `SpringValidatorAdapter` (Hibernate Validator 8.x ustida). Web qatlamida `@Valid`/`@Validated` + `@InitBinder` ichidagi `WebDataBinder.addValidators(...)`, global holda `WebMvcConfigurer#getValidator()`. Service qatlamida metod darajasidagi tekshirish `MethodValidationPostProcessor` orqali; Spring Framework 6.1+ da bu `MethodValidationResult` bilan boyitilgan va Spring Boot 3.2+ da controller metodlari uchun ham ishlaydi. `@ConfigurationProperties` + `@Validated` esa konfiguratsiyani ishga tushishda tekshiradi.
+**Spring'da qayerda uchraydi:** `org.springframework.validation.Validator`, `Errors`, `BeanPropertyBindingResult`, `ValidationUtils`, `SmartValidator`. Bean Validation ko'prigi - `LocalValidatorFactoryBean` va `SpringValidatorAdapter` (Hibernate Validator 8.x ustida). Web qatlamida `@Valid`/`@Validated` + `@InitBinder` ichidagi `WebDataBinder.addValidators(...)`, global holda `WebMvcConfigurer#getValidator()`. Service qatlamida metod darajasidagi tekshirish `MethodValidationPostProcessor` orqali; Spring Framework 6.1+ da bu `MethodValidationResult` bilan boyitilgan va Spring Boot 3.2+ da controller metodlari uchun ham ishlaydi. `@ConfigurationProperties` + `@Validated` esa konfiguratsiyani ishga tushishda tekshiradi.
 
 **Qo'llanish keyslari:**
 - Bir xil DTO uchun "yaratish" va "tahrirlash" senariylarida turlicha qoidalar qo'llash.
@@ -533,13 +534,13 @@ public class AuditAutoConfiguration {
 - `@ConfigurationProperties` orqali kelgan noto'g'ri sozlamada ilovani fail-fast holatda to'xtatish.
 - Service qatlamida metod argumentlarini tekshirish, controller'dan tashqari chaqiruvlar uchun ham.
 
-**Ehtiyot bo'ling:** Validator ichida tranzaksion yoki tashqi I/O chaqiruvlar qilish uni sekin va nozik qiladi — og'ir business qoidalarni domain service'ga qoldiring. `Errors` obyektiga xato qo'shish exception tashlamaydi, shuning uchun `BindingResult` ni controller'da tekshirmasang, noto'g'ri ma'lumot jimgina o'tib ketadi.
+**Ehtiyot bo'ling:** Validator ichida tranzaksion yoki tashqi I/O chaqiruvlar qilish uni sekin va nozik qiladi - og'ir business qoidalarni domain service'ga qoldiring. `Errors` obyektiga xato qo'shish exception tashlamaydi, shuning uchun `BindingResult` ni controller'da tekshirmasang, noto'g'ri ma'lumot jimgina o'tib ketadi.
 
 ## 5.30 Xabar manbasi va xalqarolashtirish (MessageSource / i18n)
 
-**Tavsif:** Matnli xabarlarni kod ichidan chiqarib, kalit + locale juftligi bo'yicha tashqi manbadan oladigan yagona nuqta beradi. `MessageSource` interfeysi kalitni, argumentlarni va `Locale` ni qabul qilib, formatlangan satrni qaytaradi; yechilmagan kalit uchun default qiymat yoki `NoSuchMessageException`. Ichida `MessageFormat` va parent-child iyerarxiya (Chain of Responsibility ko'rinishi) ishlaydi: bola topmasa, ota manbadan izlanadi. Bu Service Locator va Strategy aralashmasi — xabar manbasini properties, DB yoki boshqa joyga almashtirish mumkin.
+**Tavsif:** Matnli xabarlarni kod ichidan chiqarib, kalit + locale juftligi bo'yicha tashqi manbadan oladigan yagona nuqta beradi. `MessageSource` interfeysi kalitni, argumentlarni va `Locale` ni qabul qilib, formatlangan satrni qaytaradi; yechilmagan kalit uchun default qiymat yoki `NoSuchMessageException`. Ichida `MessageFormat` va parent-child iyerarxiya (Chain of Responsibility ko'rinishi) ishlaydi: bola topmasa, ota manbadan izlanadi. Bu Service Locator va Strategy aralashmasi - xabar manbasini properties, DB yoki boshqa joyga almashtirish mumkin.
 
-**Spring'da qayerda uchraydi:** `org.springframework.context.MessageSource`, `ResourceBundleMessageSource`, `ReloadableResourceBundleMessageSource`, `StaticMessageSource`, `MessageSourceAccessor`. `ApplicationContext` o'zi `MessageSource` ni extend qiladi, shuning uchun `applicationContext.getMessage(...)` ishlaydi. Spring Boot `messages.properties` ni avtomatik ulaydi (`spring.messages.basename`, `spring.messages.fallback-to-system-locale`). Locale aniqlash — `LocaleResolver` implementatsiyalari: `AcceptHeaderLocaleResolver`, `SessionLocaleResolver`, `CookieLocaleResolver` va `LocaleChangeInterceptor`. Validation xatolari `MessageCodesResolver` (`DefaultMessageCodesResolver`) orqali kalitlarga aylanadi; Thymeleaf'da `#{...}`, `ProblemDetail` matnlari uchun esa `ErrorResponse` + `MessageSource` birgalikda ishlaydi.
+**Spring'da qayerda uchraydi:** `org.springframework.context.MessageSource`, `ResourceBundleMessageSource`, `ReloadableResourceBundleMessageSource`, `StaticMessageSource`, `MessageSourceAccessor`. `ApplicationContext` o'zi `MessageSource` ni extend qiladi, shuning uchun `applicationContext.getMessage(...)` ishlaydi. Spring Boot `messages.properties` ni avtomatik ulaydi (`spring.messages.basename`, `spring.messages.fallback-to-system-locale`). Locale aniqlash - `LocaleResolver` implementatsiyalari: `AcceptHeaderLocaleResolver`, `SessionLocaleResolver`, `CookieLocaleResolver` va `LocaleChangeInterceptor`. Validation xatolari `MessageCodesResolver` (`DefaultMessageCodesResolver`) orqali kalitlarga aylanadi; Thymeleaf'da `#{...}`, `ProblemDetail` matnlari uchun esa `ErrorResponse` + `MessageSource` birgalikda ishlaydi.
 
 **Qo'llanish keyslari:**
 - Ko'p tilli web UI yoki email template'larida foydalanuvchiga ko'rinadigan matnlarni locale bo'yicha berish.
@@ -548,13 +549,13 @@ public class AuditAutoConfiguration {
 - Pul, sana va son formatlarini locale'ga mos ravishda `MessageFormat` argumentlari bilan chiqarish.
 - Xabar matnini DB yoki admin paneldan boshqarish uchun maxsus `AbstractMessageSource` yozish.
 
-**Ehtiyot bo'ling:** `ResourceBundleMessageSource` fayllarni cache qiladi va JVM ishlab turganda qayta o'qimaydi — dev muhitda `ReloadableResourceBundleMessageSource` + `cacheSeconds` ishlatilsin. `fallback-to-system-locale=true` holati production'da serverning locale'iga qarab kutilmagan tilni qaytaradi; odatda uni `false` qilib, aniq default bundle qo'yish to'g'ri.
+**Ehtiyot bo'ling:** `ResourceBundleMessageSource` fayllarni cache qiladi va JVM ishlab turganda qayta o'qimaydi - dev muhitda `ReloadableResourceBundleMessageSource` + `cacheSeconds` ishlatilsin. `fallback-to-system-locale=true` holati production'da serverning locale'iga qarab kutilmagan tilni qaytaradi; odatda uni `false` qilib, aniq default bundle qo'yish to'g'ri.
 
 ## 5.31 Vazifa bajaruvchi va rejalashtiruvchi (TaskExecutor / TaskScheduler)
 
-**Tavsif:** "Nimani bajarish" va "qanday/qachon bajarish" masalalarini ajratadi: kod `Runnable`/`Callable` beradi, infrastruktura esa thread pool, virtual thread yoki sinxron bajarishni tanlaydi. `TaskExecutor` — `java.util.concurrent.Executor` ning Spring varianti (Strategy), `TaskScheduler` esa cron va fixed-rate rejalashtirishni abstraksiya qiladi. Buning foydasi: bir xil business kod test'da sinxron, production'da pool orqali ishlaydi — faqat bean almashtiriladi. `@Async` va `@Scheduled` esa bu abstraksiyani proxy orqali deklarativ qiladi.
+**Tavsif:** "Nimani bajarish" va "qanday/qachon bajarish" masalalarini ajratadi: kod `Runnable`/`Callable` beradi, infrastruktura esa thread pool, virtual thread yoki sinxron bajarishni tanlaydi. `TaskExecutor` - `java.util.concurrent.Executor` ning Spring varianti (Strategy), `TaskScheduler` esa cron va fixed-rate rejalashtirishni abstraksiya qiladi. Buning foydasi: bir xil business kod test'da sinxron, production'da pool orqali ishlaydi - faqat bean almashtiriladi. `@Async` va `@Scheduled` esa bu abstraksiyani proxy orqali deklarativ qiladi.
 
-**Spring'da qayerda uchraydi:** `org.springframework.core.task.TaskExecutor`, `SimpleAsyncTaskExecutor`, `SyncTaskExecutor`, `ThreadPoolTaskExecutor`, `VirtualThreadTaskExecutor` (Spring 6.1+), `ConcurrentTaskExecutor`. Rejalashtirish — `TaskScheduler`, `ThreadPoolTaskScheduler`, `SimpleTriggerContext`, `CronTrigger`, `PeriodicTrigger`. Deklarativ qatlam: `@EnableAsync` + `@Async` (`AsyncAnnotationBeanPostProcessor`), `@EnableScheduling` + `@Scheduled` (`ScheduledAnnotationBeanPostProcessor`), xatolar uchun `AsyncUncaughtExceptionHandler`. Spring Boot 3.2+ da `spring.threads.virtual.enabled=true` bilan `applicationTaskExecutor` va Tomcat virtual thread'larga o'tadi; `spring.task.execution.*` va `spring.task.scheduling.*` pool'larni sozlaydi. MVC'da `AsyncTaskExecutor` `Callable` qaytaruvchi controller'lar uchun ishlatiladi.
+**Spring'da qayerda uchraydi:** `org.springframework.core.task.TaskExecutor`, `SimpleAsyncTaskExecutor`, `SyncTaskExecutor`, `ThreadPoolTaskExecutor`, `VirtualThreadTaskExecutor` (Spring 6.1+), `ConcurrentTaskExecutor`. Rejalashtirish - `TaskScheduler`, `ThreadPoolTaskScheduler`, `SimpleTriggerContext`, `CronTrigger`, `PeriodicTrigger`. Deklarativ qatlam: `@EnableAsync` + `@Async` (`AsyncAnnotationBeanPostProcessor`), `@EnableScheduling` + `@Scheduled` (`ScheduledAnnotationBeanPostProcessor`), xatolar uchun `AsyncUncaughtExceptionHandler`. Spring Boot 3.2+ da `spring.threads.virtual.enabled=true` bilan `applicationTaskExecutor` va Tomcat virtual thread'larga o'tadi; `spring.task.execution.*` va `spring.task.scheduling.*` pool'larni sozlaydi. MVC'da `AsyncTaskExecutor` `Callable` qaytaruvchi controller'lar uchun ishlatiladi.
 
 **Qo'llanish keyslari:**
 - Email yuborish yoki audit yozish kabi javobni kutmaydigan ishlarni `@Async` bilan background'ga chiqarish.
@@ -563,13 +564,13 @@ public class AuditAutoConfiguration {
 - I/O og'ir workload uchun platform pool'dan virtual thread executor'ga o'tish.
 - Testda `SyncTaskExecutor` ni inject qilib, asinxron kodni determinizmli sinash.
 
-**Ehtiyot bo'ling:** `@Async` metodni o'sha sinf ichidan chaqirsang proxy aylanib o'tiladi va kod sinxron ishlaydi; shuningdek thread almashgani uchun `SecurityContext`, `RequestContext` va tranzaksiya avtomatik ko'chmaydi (`DelegatingSecurityContextAsyncTaskExecutor` kerak). Default `ThreadPoolTaskScheduler` pool size 1 — bir job cho'zilsa qolganlari kutib qoladi va bir nechta instansda `@Scheduled` har bir node'da takrorlanadi (ShedLock yoki Quartz kerak).
+**Ehtiyot bo'ling:** `@Async` metodni o'sha sinf ichidan chaqirsang proxy aylanib o'tiladi va kod sinxron ishlaydi; shuningdek thread almashgani uchun `SecurityContext`, `RequestContext` va tranzaksiya avtomatik ko'chmaydi (`DelegatingSecurityContextAsyncTaskExecutor` kerak). Default `ThreadPoolTaskScheduler` pool size 1 - bir job cho'zilsa qolganlari kutib qoladi va bir nechta instansda `@Scheduled` har bir node'da takrorlanadi (ShedLock yoki Quartz kerak).
 
 ## 5.32 Tranzaksiya sinxronizatsiyasi (TransactionSynchronization)
 
-**Tavsif:** Tranzaksiyaning hayot tsikliga — commit oldidan, commit keyin, rollback'da va yopilishda — o'z kodini ulash imkonini beradi. Bu Observer/callback pattern'i: ishtirokchilar `TransactionSynchronizationManager` ga ro'yxatdan o'tadi va tranzaksiya menejeri mos momentda ularni chaqiradi. Asosiy maqsad — tranzaksiyadan tashqaridagi ta'sirlarni (xabar yuborish, cache tozalash) faqat commit muvaffaqiyatli bo'lganda bajarish, ya'ni dual-write muammosini kamaytirish. U shuningdek resurslarni (Connection, EntityManager) thread'ga bog'lab, bir tranzaksiya ichida qayta ishlatish uchun ham ishlatiladi.
+**Tavsif:** Tranzaksiyaning hayot tsikliga - commit oldidan, commit keyin, rollback'da va yopilishda - o'z kodini ulash imkonini beradi. Bu Observer/callback pattern'i: ishtirokchilar `TransactionSynchronizationManager` ga ro'yxatdan o'tadi va tranzaksiya menejeri mos momentda ularni chaqiradi. Asosiy maqsad - tranzaksiyadan tashqaridagi ta'sirlarni (xabar yuborish, cache tozalash) faqat commit muvaffaqiyatli bo'lganda bajarish, ya'ni dual-write muammosini kamaytirish. U shuningdek resurslarni (Connection, EntityManager) thread'ga bog'lab, bir tranzaksiya ichida qayta ishlatish uchun ham ishlatiladi.
 
-**Spring'da qayerda uchraydi:** `org.springframework.transaction.support.TransactionSynchronization`, `TransactionSynchronizationAdapter`, `TransactionSynchronizationManager`, `TransactionTemplate`, `PlatformTransactionManager`. Deklarativ varianti — `@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)` va `ApplicationEventPublisher`; Spring Data domain event'lari `@DomainEvents` + `AbstractAggregateRoot` orqali shu mexanizmdan foydalanadi. JPA integratsiyasida `EntityManagerHolder`, JDBC'da `DataSourceUtils.getConnection(...)` ayni shu resource binding'ga tayanadi. Spring Modulith esa `@ApplicationModuleListener` ni transaction-after-commit semantikasi bilan beradi.
+**Spring'da qayerda uchraydi:** `org.springframework.transaction.support.TransactionSynchronization`, `TransactionSynchronizationAdapter`, `TransactionSynchronizationManager`, `TransactionTemplate`, `PlatformTransactionManager`. Deklarativ varianti - `@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)` va `ApplicationEventPublisher`; Spring Data domain event'lari `@DomainEvents` + `AbstractAggregateRoot` orqali shu mexanizmdan foydalanadi. JPA integratsiyasida `EntityManagerHolder`, JDBC'da `DataSourceUtils.getConnection(...)` ayni shu resource binding'ga tayanadi. Spring Modulith esa `@ApplicationModuleListener` ni transaction-after-commit semantikasi bilan beradi.
 
 **Qo'llanish keyslari:**
 - Entity saqlangandan keyin, faqat commit bo'lsa Kafka yoki RabbitMQ'ga event yuborish.
@@ -578,13 +579,13 @@ public class AuditAutoConfiguration {
 - Audit yozuvini `beforeCommit` da qo'shib, u ham bir xil tranzaksiyaga tushishini ta'minlash.
 - Outbox jadvaliga yozib, publisher'ni `afterCommit` da trigger qilish.
 
-**Ehtiyot bo'ling:** `afterCommit` callback'i tranzaksiyadan tashqarida ishlaydi — u yerda DB'ga yozsang yangi tranzaksiya kerak (`REQUIRES_NEW`), aks holda o'zgarish yo'qoladi; callback ichidagi exception esa commit'ni ortga qaytarmaydi. Qo'lda `registerSynchronization` chaqirishdan oldin `isSynchronizationActive()` ni tekshir, aks holda `IllegalStateException` olasan.
+**Ehtiyot bo'ling:** `afterCommit` callback'i tranzaksiyadan tashqarida ishlaydi - u yerda DB'ga yozsang yangi tranzaksiya kerak (`REQUIRES_NEW`), aks holda o'zgarish yo'qoladi; callback ichidagi exception esa commit'ni ortga qaytarmaydi. Qo'lda `registerSynchronization` chaqirishdan oldin `isSynchronizationActive()` ni tekshir, aks holda `IllegalStateException` olasan.
 
 ## 5.33 DataAccessException iyerarxiyasi va exception tarjimasi (DataAccessException Hierarchy / Exception Translation)
 
 **Tavsif:** Har bir ma'lumot manbasining o'ziga xos xatolarini (JDBC `SQLException` va vendor error code'lari, JPA `PersistenceException`, Mongo xatolari) yagona, texnologiyadan mustaqil runtime exception daraxtiga aylantiradi. Bu Adapter va Translator pattern'i: business kod `SQLState` yoki vendor kodini bilmasdan `DuplicateKeyException` yoki `OptimisticLockingFailureException` ni tutadi. Barchasi unchecked bo'lgani uchun DAO imzolari `throws` bilan ifloslanmaydi va qatlamlar o'rtasida almashish osonlashadi.
 
-**Spring'da qayerda uchraydi:** `org.springframework.dao.DataAccessException` va uning avlodlari: `DataIntegrityViolationException`, `DuplicateKeyException`, `EmptyResultDataAccessException`, `OptimisticLockingFailureException`, `CannotAcquireLockException`, `QueryTimeoutException`, `DeadlockLoserDataAccessException`. Tarjimonlar — `SQLExceptionTranslator`, `SQLErrorCodeSQLExceptionTranslator` (`sql-error-codes.xml`), `SQLStateSQLExceptionTranslator`, `SQLExceptionSubclassTranslator`, `PersistenceExceptionTranslator`. Avtomatik ulash: `@Repository` + `PersistenceExceptionTranslationPostProcessor` (Spring Boot'da avtomatik), `JdbcTemplate`, `JdbcClient` (Spring 6.1+), `NamedParameterJdbcTemplate` va Spring Data repository'lari ham shu iyerarxiyani qaytaradi.
+**Spring'da qayerda uchraydi:** `org.springframework.dao.DataAccessException` va uning avlodlari: `DataIntegrityViolationException`, `DuplicateKeyException`, `EmptyResultDataAccessException`, `OptimisticLockingFailureException`, `CannotAcquireLockException`, `QueryTimeoutException`, `DeadlockLoserDataAccessException`. Tarjimonlar - `SQLExceptionTranslator`, `SQLErrorCodeSQLExceptionTranslator` (`sql-error-codes.xml`), `SQLStateSQLExceptionTranslator`, `SQLExceptionSubclassTranslator`, `PersistenceExceptionTranslator`. Avtomatik ulash: `@Repository` + `PersistenceExceptionTranslationPostProcessor` (Spring Boot'da avtomatik), `JdbcTemplate`, `JdbcClient` (Spring 6.1+), `NamedParameterJdbcTemplate` va Spring Data repository'lari ham shu iyerarxiyani qaytaradi.
 
 **Qo'llanish keyslari:**
 - Unique constraint buzilishini `DuplicateKeyException` orqali tutib, 409 Conflict qaytarish.
@@ -593,13 +594,13 @@ public class AuditAutoConfiguration {
 - JDBC'dan JPA'ga yoki aksincha ko'chganda catch bloklarini o'zgartirmaslik.
 - `@RestControllerAdvice` da `DataAccessException` ni yagona `ProblemDetail` javobga aylantirish.
 
-**Ehtiyot bo'ling:** Tarjima avtomatik emas — oddiy POJO DAO'da `EntityManager` ni to'g'ridan-to'g'ri ishlatsang, `@Repository` yoki translation post-processor bo'lmasa, native `PersistenceException` chiqadi. Shuningdek `DataIntegrityViolationException` ni "duplicate" deb taxmin qilish xato: u foreign key, not-null va check constraint'lar uchun ham keladi, shuning uchun sabab bo'yicha aniqlashtirish kerak.
+**Ehtiyot bo'ling:** Tarjima avtomatik emas - oddiy POJO DAO'da `EntityManager` ni to'g'ridan-to'g'ri ishlatsang, `@Repository` yoki translation post-processor bo'lmasa, native `PersistenceException` chiqadi. Shuningdek `DataIntegrityViolationException` ni "duplicate" deb taxmin qilish xato: u foreign key, not-null va check constraint'lar uchun ham keladi, shuning uchun sabab bo'yicha aniqlashtirish kerak.
 
 ## 5.34 Cache abstraksiyasi (Cache Abstraction / @Cacheable Proxy)
 
 **Tavsif:** Caching mantiqini business kodga aralashtirmasdan, metod chaqiruvini AOP proxy bilan o'rab, natijani kalit bo'yicha saqlaydi va keyingi chaqiruvda qaytaradi. `Cache` va `CacheManager` interfeyslari Strategy sifatida ishlaydi: Caffeine, Redis, Hazelcast yoki oddiy `ConcurrentHashMap` kodga ta'sir qilmasdan almashtiriladi. Kalit `KeyGenerator` yoki SpEL ifodasi bilan hosil qilinadi, shartlar `condition` va `unless` bilan beriladi. Bu klassik Proxy + Decorator kombinatsiyasi.
 
-**Spring'da qayerda uchraydi:** `@EnableCaching`, `@Cacheable`, `@CachePut`, `@CacheEvict`, `@Caching`, `@CacheConfig`; infrastruktura — `CacheManager`, `Cache`, `CacheInterceptor`, `CacheAspectSupport`, `KeyGenerator`, `SimpleKeyGenerator`, `CacheResolver`, `CacheErrorHandler`. Implementatsiyalar: `ConcurrentMapCacheManager`, `CaffeineCacheManager`, `RedisCacheManager` (`RedisCacheConfiguration` bilan TTL), `JCacheCacheManager`, `CompositeCacheManager`. Spring Boot `spring.cache.type` va `spring.cache.cache-names` bilan auto-konfiguratsiya qiladi; `CacheManagerCustomizer` sozlashga imkon beradi. Spring Framework 6.2+ da `@Cacheable` reactive `Mono`/`Flux` bilan ham ishlay oladi.
+**Spring'da qayerda uchraydi:** `@EnableCaching`, `@Cacheable`, `@CachePut`, `@CacheEvict`, `@Caching`, `@CacheConfig`; infrastruktura - `CacheManager`, `Cache`, `CacheInterceptor`, `CacheAspectSupport`, `KeyGenerator`, `SimpleKeyGenerator`, `CacheResolver`, `CacheErrorHandler`. Implementatsiyalar: `ConcurrentMapCacheManager`, `CaffeineCacheManager`, `RedisCacheManager` (`RedisCacheConfiguration` bilan TTL), `JCacheCacheManager`, `CompositeCacheManager`. Spring Boot `spring.cache.type` va `spring.cache.cache-names` bilan auto-konfiguratsiya qiladi; `CacheManagerCustomizer` sozlashga imkon beradi. Spring Framework 6.2+ da `@Cacheable` reactive `Mono`/`Flux` bilan ham ishlay oladi.
 
 **Qo'llanish keyslari:**
 - Kam o'zgaradigan reference ma'lumot (davlatlar, tariflar) uchun DB yuklamasini kamaytirish.
@@ -614,7 +615,7 @@ public class AuditAutoConfiguration {
 
 **Tavsif:** Vaqtinchalik xatolarda operatsiyani belgilangan siyosat bo'yicha qayta urinishni deklarativ qiladi. Retry siyosati (necha marta, qaysi exception'larda) va backoff siyosati (fixed, exponential, jitter) alohida Strategy sifatida ajratilgan, urinishlar tugaganda `@Recover` metodi fallback beradi. Shuningdek Circuit Breaker ko'rinishi ham bor: ketma-ket xatolardan keyin chaqiruvlar ma'lum vaqt to'xtatiladi. Bu Retry va Circuit Breaker pattern'larining AOP proxy orqali ifodasi.
 
-**Spring'da qayerda uchraydi:** `spring-retry` kutubxonasi — `@EnableRetry`, `@Retryable`, `@Recover`, `@Backoff`, `@CircuitBreaker`; imperativ API: `RetryTemplate`, `RetryPolicy` (`SimpleRetryPolicy`, `ExceptionClassifierRetryPolicy`), `BackOffPolicy` (`ExponentialBackOffPolicy`, `ExponentialRandomBackOffPolicy`), `RetryCallback`, `RecoveryCallback`, `RetryListener`. Spring Framework 7.0 core'ga `org.springframework.core.retry.RetryTemplate`/`RetryPolicy` va `@Retryable` qo'shildi, shuning uchun yangi loyihalarda tashqi kutubxonaga ehtiyoj kamayadi. Shuningdek `@Retryable` Spring Boot 3.x da `spring-retry` dependency qo'shilganda ishlaydi; Resilience4j (`@CircuitBreaker`, `@RateLimiter`) muqobil yechim, Spring Kafka va Spring AMQP esa `RetryTemplate` ni ichida ishlatadi.
+**Spring'da qayerda uchraydi:** `spring-retry` kutubxonasi - `@EnableRetry`, `@Retryable`, `@Recover`, `@Backoff`, `@CircuitBreaker`; imperativ API: `RetryTemplate`, `RetryPolicy` (`SimpleRetryPolicy`, `ExceptionClassifierRetryPolicy`), `BackOffPolicy` (`ExponentialBackOffPolicy`, `ExponentialRandomBackOffPolicy`), `RetryCallback`, `RecoveryCallback`, `RetryListener`. Spring Framework 7.0 core'ga `org.springframework.core.retry.RetryTemplate`/`RetryPolicy` va `@Retryable` qo'shildi, shuning uchun yangi loyihalarda tashqi kutubxonaga ehtiyoj kamayadi. Shuningdek `@Retryable` Spring Boot 3.x da `spring-retry` dependency qo'shilganda ishlaydi; Resilience4j (`@CircuitBreaker`, `@RateLimiter`) muqobil yechim, Spring Kafka va Spring AMQP esa `RetryTemplate` ni ichida ishlatadi.
 
 **Qo'llanish keyslari:**
 - Tashqi HTTP API'dagi 503 yoki timeout'da exponential backoff bilan qayta urinish.
@@ -623,11 +624,11 @@ public class AuditAutoConfiguration {
 - Ishga tushishda bog'liq servisning hozir bo'lishini kutib, ulanishni qayta sinash.
 - `@Recover` bilan cache'dagi eski qiymatni yoki default javobni fallback qilib berish.
 
-**Ehtiyot bo'ling:** Idempotent bo'lmagan operatsiyani retry qilish dublikat to'lov yoki ikki marta yozuv hosil qiladi — avval idempotentlikni ta'minlang. `@Retryable` ni `@Transactional` metodga qo'yish tartibi muhim: retry tranzaksiyadan tashqarida bo'lmasa, allaqachon rollback-only belgilangan tranzaksiya ichida qayta urinish foydasiz, shuningdek uzun backoff thread'ni va HTTP timeout budjetini yeb qo'yadi.
+**Ehtiyot bo'ling:** Idempotent bo'lmagan operatsiyani retry qilish dublikat to'lov yoki ikki marta yozuv hosil qiladi - avval idempotentlikni ta'minlang. `@Retryable` ni `@Transactional` metodga qo'yish tartibi muhim: retry tranzaksiyadan tashqarida bo'lmasa, allaqachon rollback-only belgilangan tranzaksiya ichida qayta urinish foydasiz, shuningdek uzun backoff thread'ni va HTTP timeout budjetini yeb qo'yadi.
 
 ## 5.36 Spring ifoda tili (Spring Expression Language / SpEL)
 
-**Tavsif:** Runtime'da obyekt grafini so'rash va ifoda hisoblash uchun kichik til beradi: property navigatsiyasi, metod chaqirish, arifmetika, kolleksiya proyeksiya/selection va bean murojaatlari. Arxitektura jihatidan bu Interpreter pattern'i — ifoda `Expression` AST'ga parse qilinadi, so'ngra `EvaluationContext` ustida hisoblanadi. Shu sababli bir marta parse qilib, ko'p marta turli kontekstlarda ishlatish mumkin. Spring uni annotatsiya qiymatlari, security qoidalari va cache kalitlari uchun ichki "plugin" tili sifatida ishlatadi.
+**Tavsif:** Runtime'da obyekt grafini so'rash va ifoda hisoblash uchun kichik til beradi: property navigatsiyasi, metod chaqirish, arifmetika, kolleksiya proyeksiya/selection va bean murojaatlari. Arxitektura jihatidan bu Interpreter pattern'i - ifoda `Expression` AST'ga parse qilinadi, so'ngra `EvaluationContext` ustida hisoblanadi. Shu sababli bir marta parse qilib, ko'p marta turli kontekstlarda ishlatish mumkin. Spring uni annotatsiya qiymatlari, security qoidalari va cache kalitlari uchun ichki "plugin" tili sifatida ishlatadi.
 
 **Spring'da qayerda uchraydi:** `org.springframework.expression.spel.standard.SpelExpressionParser`, `Expression`, `EvaluationContext`, `StandardEvaluationContext`, `SimpleEvaluationContext`, `BeanFactoryResolver`. Ishlatilish joylari: `@Value("#{...}")` va `${...}` property placeholder'lari, `@Cacheable(key = "#id")`, `@Cacheable(condition/unless)`, `@PreAuthorize("hasRole('ADMIN') and #id == authentication.name")` (Spring Security), `@ConditionalOnExpression`, `@EventListener(condition = "#event.important")`, `@Scheduled(cron = "${...}")` bilan birga, Spring Data `@Query` ichida `?#{...}` va `SpEL` kengaytmalari, Spring Integration router/filter ifodalari. Spring Framework 6.2+ da `SpelCompilerMode` va ifoda uzunligi/chuqurligi bo'yicha himoya limitlari mavjud.
 
@@ -638,7 +639,7 @@ public class AuditAutoConfiguration {
 - Event listener'ni faqat ma'lum shartli event'larda ishga tushirish.
 - Spring Data query'siga joriy foydalanuvchi yoki tenant id'sini ifoda bilan uzatish.
 
-**Ehtiyot bo'ling:** Foydalanuvchi kiritgan matnni SpEL ifodasi sifatida hisoblash — jiddiy RCE xavfi; bunday holatda `SimpleEvaluationContext` (reflection va bean access cheklangan) ishlating yoki butunlay voz keching. Murakkab biznes mantiqni annotatsiya satriga yozish compile-time tekshiruvdan va refactoring'dan chetda qoladi, shuning uchun ifodalarni qisqa tutib, mantiqni Java metodiga chiqarish ma'qul.
+**Ehtiyot bo'ling:** Foydalanuvchi kiritgan matnni SpEL ifodasi sifatida hisoblash - jiddiy RCE xavfi; bunday holatda `SimpleEvaluationContext` (reflection va bean access cheklangan) ishlating yoki butunlay voz keching. Murakkab biznes mantiqni annotatsiya satriga yozish compile-time tekshiruvdan va refactoring'dan chetda qoladi, shuning uchun ifodalarni qisqa tutib, mantiqni Java metodiga chiqarish ma'qul.
 
 ## 5.37 @Import, ImportSelector va registrar (@Import / ImportSelector / ImportBeanDefinitionRegistrar)
 
@@ -653,11 +654,11 @@ public class AuditAutoConfiguration {
 - Legacy XML yoki uchinchi tomon konfiguratsiyasini `@Import` bilan modulga biriktirish.
 - Test uchun faqat kerakli slice konfiguratsiyalarini `@Import` bilan yig'ish.
 
-**Ehtiyot bo'ling:** `ImportSelector` va registrar lifecycle'ning juda erta fazasida ishlaydi — ularga oddiy bean inject qilinmaydi, faqat `Environment`, `ResourceLoader`, `BeanFactory`, `BeanClassLoader` aware interfeyslari orqali resurs olinadi. Registrar'da qo'lda yaratilgan bean definition'lar `@ConditionalOn*` va ordering qoidalarini chetlab o'tishi mumkin, shu sababli odatdagi holatlarda `@Bean` + `@Conditional` yetarli bo'lsa, bu mexanizmdan foydalanmaslik soddaroq.
+**Ehtiyot bo'ling:** `ImportSelector` va registrar lifecycle'ning juda erta fazasida ishlaydi - ularga oddiy bean inject qilinmaydi, faqat `Environment`, `ResourceLoader`, `BeanFactory`, `BeanClassLoader` aware interfeyslari orqali resurs olinadi. Registrar'da qo'lda yaratilgan bean definition'lar `@ConditionalOn*` va ordering qoidalarini chetlab o'tishi mumkin, shu sababli odatdagi holatlarda `@Bean` + `@Conditional` yetarli bo'lsa, bu mexanizmdan foydalanmaslik soddaroq.
 
 ## 5.38 Meta-annotatsiyalar va kompozit annotatsiyalar (Meta-annotations / Composed Annotations)
 
-**Tavsif:** Bir nechta annotatsiyani bitta yangi annotatsiya ortiga yashirib, takrorlanuvchi konfiguratsiyani nomlangan, bir joyda boshqariladigan abstraksiyaga aylantiradi. Spring annotatsiyalarni "merged" ko'rinishda o'qiydi: meta-annotatsiya atributlari `@AliasFor` orqali ustki annotatsiyaga chiqariladi, shuning uchun o'z annotatsiyangiz standart annotatsiya bilan bir xil kuchga ega bo'ladi. Bu Facade va Decorator'ning deklarativ varianti — semantikani kengaytirmay, uni qulay nom ostida qayta ishlatish.
+**Tavsif:** Bir nechta annotatsiyani bitta yangi annotatsiya ortiga yashirib, takrorlanuvchi konfiguratsiyani nomlangan, bir joyda boshqariladigan abstraksiyaga aylantiradi. Spring annotatsiyalarni "merged" ko'rinishda o'qiydi: meta-annotatsiya atributlari `@AliasFor` orqali ustki annotatsiyaga chiqariladi, shuning uchun o'z annotatsiyangiz standart annotatsiya bilan bir xil kuchga ega bo'ladi. Bu Facade va Decorator'ning deklarativ varianti - semantikani kengaytirmay, uni qulay nom ostida qayta ishlatish.
 
 **Spring'da qayerda uchraydi:** `org.springframework.core.annotation.AnnotatedElementUtils`, `MergedAnnotations`, `AnnotationUtils`, `@AliasFor`. Spring o'zida ko'p: `@RestController` = `@Controller` + `@ResponseBody`, `@GetMapping` = `@RequestMapping(method = GET)`, `@SpringBootApplication` = `@SpringBootConfiguration` + `@EnableAutoConfiguration` + `@ComponentScan`, `@Service`/`@Repository` = `@Component`, `@SpringBootTest` slice'lari (`@WebMvcTest`, `@DataJpaTest`), Spring Security'da `@PreAuthorize` ustida qurilgan maxsus annotatsiyalar. `@Transactional` ni meta-annotatsiya qilib `@ReadOnlyTransaction` yaratish ham odatiy amaliyot.
 
@@ -668,7 +669,7 @@ public class AuditAutoConfiguration {
 - API versiyalash uchun `@V1GetMapping` kabi path prefiksi bilan kompozit mapping yaratish.
 - Observability annotatsiyalarini (`@Observed`, `@Timed`) biznes semantikasi bilan birlashtirish.
 
-**Ehtiyot bo'ling:** Chuqur annotatsiya iyerarxiyasi kodni "sehrli" qiladi — o'quvchi haqiqiy xatti-harakatni ko'rish uchun bir necha fayl ochishga majbur bo'ladi, shuning uchun 2-3 ta annotatsiyani birlashtirishdan nariga ketmaslik ma'qul. Atributni ustki annotatsiyaga chiqarish uchun `@AliasFor` shart; `@Retention(RUNTIME)` ni unutsang annotatsiya umuman ko'rinmaydi va standart `java.lang.reflect` chaqiruvlari merged semantikani bilmaydi — `AnnotatedElementUtils` ishlatilsin.
+**Ehtiyot bo'ling:** Chuqur annotatsiya iyerarxiyasi kodni "sehrli" qiladi - o'quvchi haqiqiy xatti-harakatni ko'rish uchun bir necha fayl ochishga majbur bo'ladi, shuning uchun 2-3 ta annotatsiyani birlashtirishdan nariga ketmaslik ma'qul. Atributni ustki annotatsiyaga chiqarish uchun `@AliasFor` shart; `@Retention(RUNTIME)` ni unutsang annotatsiya umuman ko'rinmaydi va standart `java.lang.reflect` chaqiruvlari merged semantikani bilmaydi - `AnnotatedElementUtils` ishlatilsin.
 
 ## 5.39 Konfiguratsiyadan ustun konvensiya (Convention over Configuration)
 
@@ -683,7 +684,7 @@ public class AuditAutoConfiguration {
 - Spring Data derived query'lar bilan oddiy CRUD repository'larni SQL yozmasdan olish.
 - Ichki starter yaratib, jamoadagi barcha servislarga bir xil observability va security default'larini berish.
 
-**Ehtiyot bo'ling:** Default'lar ko'rinmas bo'lgani uchun muammo chiqqanda sabab noma'lum tuyuladi — `--debug` yoki `ConditionEvaluationReport` bilan nima yuklanganini tekshirishni o'rganish kerak. Production uchun muhim parametrlarni (pool size, timeout, `open-in-view`, `ddl-auto`) default holatida qoldirmang: ular qulaylik uchun tanlangan, yuklama uchun emas.
+**Ehtiyot bo'ling:** Default'lar ko'rinmas bo'lgani uchun muammo chiqqanda sabab noma'lum tuyuladi - `--debug` yoki `ConditionEvaluationReport` bilan nima yuklanganini tekshirishni o'rganish kerak. Production uchun muhim parametrlarni (pool size, timeout, `open-in-view`, `ddl-auto`) default holatida qoldirmang: ular qulaylik uchun tanlangan, yuklama uchun emas.
 
 ## 5.40 Spring'da Null Object qo'llanishi (Null Object Usage in Spring)
 
@@ -698,13 +699,13 @@ public class AuditAutoConfiguration {
 - Xabar yuborish servisining dev muhitdagi "log-only" yoki "do-nothing" variantini berish.
 - Test'da notifikatsiya yoki audit yon ta'sirlarini butunlay neytrallash.
 
-**Ehtiyot bo'ling:** `NoOpPasswordEncoder` ni production'da ishlatish parolni ochiq matnda saqlash bilan teng — u faqat migratsiya davrida, `DelegatingPasswordEncoder` ortida va muddatli reja bilan ishlatilishi mumkin. No-op implementatsiya xatolarni jimgina yutib, muammoni yashirishi mumkin, shuning uchun uni kutilgan joyda ekanini log yoki startup xabari bilan ko'rsatish foydali.
+**Ehtiyot bo'ling:** `NoOpPasswordEncoder` ni production'da ishlatish parolni ochiq matnda saqlash bilan teng - u faqat migratsiya davrida, `DelegatingPasswordEncoder` ortida va muddatli reja bilan ishlatilishi mumkin. No-op implementatsiya xatolarni jimgina yutib, muammoni yashirishi mumkin, shuning uchun uni kutilgan joyda ekanini log yoki startup xabari bilan ko'rsatish foydali.
 
 ## 5.41 Spring'dagi fluent DSL builder'lar (Fluent DSL Builders in Spring)
 
 **Tavsif:** Murakkab obyektni yoki konfiguratsiyani bosqichma-bosqich, zanjirli metod chaqiruvlari bilan yig'ishga imkon beradi: har bir chaqiruv `this` yoki yangi bosqichni qaytaradi, oxirida `build()` yoki terminal operatsiya natija beradi. Bu Builder pattern'ining o'qiladigan DSL ko'rinishi; ko'p argumentli konstruktorlar va mutable setter'lar o'rnini bosadi, shuningdek IDE autocomplete orqali konfiguratsiya "yo'l xaritasini" ko'rsatadi. Immutable natija qaytaradigan builder'lar thread-safe qayta ishlatishni ham osonlashtiradi.
 
-**Spring'da qayerda uchraydi:** HTTP klientlari — `RestClient.builder()` (Spring 6.1+), `WebClient.builder()`, `RestTemplateBuilder` (Spring Boot), `RestClient.Builder#requestInterceptor`, `HttpRequest`/`RequestEntity.method(...).headers(...).body(...)`, `UriComponentsBuilder`. Security — `HttpSecurity` DSL (`http.authorizeHttpRequests(a -> a.requestMatchers(...).hasRole(...)).oauth2ResourceServer(...)`) va `SecurityFilterChain` bean'lari, `AuthenticationManagerBuilder`. Boshqalar: `SpringApplicationBuilder`, `MockMvcRequestBuilders` / `MockMvcResultMatchers` va `WebTestClient`, `BeanDefinitionBuilder`, `ProblemDetail.forStatusAndDetail(...)`, `RouterFunctions.route()` (WebFlux/WebMvc.fn), `IntegrationFlow` DSL (Spring Integration), `JdbcClient.sql(...).param(...).query(...)`, `ChatClient.create(model).prompt()...` (Spring AI).
+**Spring'da qayerda uchraydi:** HTTP klientlari - `RestClient.builder()` (Spring 6.1+), `WebClient.builder()`, `RestTemplateBuilder` (Spring Boot), `RestClient.Builder#requestInterceptor`, `HttpRequest`/`RequestEntity.method(...).headers(...).body(...)`, `UriComponentsBuilder`. Security - `HttpSecurity` DSL (`http.authorizeHttpRequests(a -> a.requestMatchers(...).hasRole(...)).oauth2ResourceServer(...)`) va `SecurityFilterChain` bean'lari, `AuthenticationManagerBuilder`. Boshqalar: `SpringApplicationBuilder`, `MockMvcRequestBuilders` / `MockMvcResultMatchers` va `WebTestClient`, `BeanDefinitionBuilder`, `ProblemDetail.forStatusAndDetail(...)`, `RouterFunctions.route()` (WebFlux/WebMvc.fn), `IntegrationFlow` DSL (Spring Integration), `JdbcClient.sql(...).param(...).query(...)`, `ChatClient.create(model).prompt()...` (Spring AI).
 
 ```java
 SecurityFilterChain chain(HttpSecurity http) throws Exception {
@@ -725,7 +726,7 @@ SecurityFilterChain chain(HttpSecurity http) throws Exception {
 - `UriComponentsBuilder` bilan query parametrlarini to'g'ri encode qilib URL yig'ish.
 - `SpringApplicationBuilder` bilan parent-child kontekst yoki banner/profil sozlamalarini programmatik berish.
 
-**Ehtiyot bo'ling:** Builder'ni chaqiruvlar orasida qayta ishlatishda mutable/immutable semantikasini aniq bilish kerak — `RestClient.Builder` ni `clone()` qilmasdan bir nechta joyda o'zgartirsang, sozlamalar bir-biriga oqib ketadi. `HttpSecurity` DSL'da tartib va matcher'lar aniqligi muhim: kengroq `requestMatchers` ni oldin yozib qo'ysang, keyingi qat'iyroq qoidalar hech qachon ishlamaydi, shuning uchun eng aniq matcher'lar yuqorida turishi lozim.
+**Ehtiyot bo'ling:** Builder'ni chaqiruvlar orasida qayta ishlatishda mutable/immutable semantikasini aniq bilish kerak - `RestClient.Builder` ni `clone()` qilmasdan bir nechta joyda o'zgartirsang, sozlamalar bir-biriga oqib ketadi. `HttpSecurity` DSL'da tartib va matcher'lar aniqligi muhim: kengroq `requestMatchers` ni oldin yozib qo'ysang, keyingi qat'iyroq qoidalar hech qachon ishlamaydi, shuning uchun eng aniq matcher'lar yuqorida turishi lozim.
 
 ---
 

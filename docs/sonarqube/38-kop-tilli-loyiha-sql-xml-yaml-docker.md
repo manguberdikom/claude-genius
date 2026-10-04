@@ -24,6 +24,7 @@
 </details>
 
 
+
 Ko'pchilik Java loyihani "Java loyiha" deb ataydi, lekin repozitoriyni ochib sanab chiqsang, odatda sakkiztadan o'n ikkitagacha til topiladi. Sonar bu tillarning hammasini birdan ko'rmaydi: bir qismini standart holatda tahlil qiladi, bir qismini sozlash kerak, bir qismi esa faqat tijorat nashrida mavjud. Bu bobda qaysi til qanday yo'l bilan tahlilga kiradi, qamrov va quality gate ko'p tilli loyihada qanday hisoblanadi, va nimani ataylab tahlildan chiqarib qo'yish mantiqiy ekanini ko'rib chiqamiz. Maqsad bitta: Sonar hisoboti loyihaning haqiqiy holatini ko'rsatsin, Java fayllarining yarmini emas.
 
 ## 38.1 Java loyihada aslida nechta til bor: manba, konfiguratsiya, migratsiya, skript

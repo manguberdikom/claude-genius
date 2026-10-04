@@ -26,6 +26,7 @@
 </details>
 
 
+
 Sonar test kodini ham production kod kabi tahlil qiladi, lekin boshqa qoida to'plamini qo'llaydi. Asosiy savol "bu metod ishlaydimi" emas, balki "bu test haqiqatan biror narsani tekshiradimi". Quyidagi katalog test kodida eng ko'p uchraydigan shikoyatlarni, toifasini va tuzatilgan variantini yig'adi. Jiddiylik "taxminan", chunki u quality profile sozlamasiga qarab o'zgaradi.
 
 | Kod holati | Sonar nima deydi | Toifa | Jiddiylik (taxminan) | Ta'siri |

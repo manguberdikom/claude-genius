@@ -28,6 +28,7 @@
 </details>
 
 
+
 Spring va JPA loyihalarida Sonar shikoyatlarining katta qismi bir necha o'nlab takrorlanuvchi holatdan kelib chiqadi. Bu bob shu holatlarni katalog sifatida yig'adi: avval qisqa xulosa jadvali, keyin har bir holat uchun shikoyat qilinadigan kod va tuzatilgan variant. Bu yerda faqat bitta savolga javob bor: Sonar nima deydi va kodni qanday o'zgartirsak shikoyat yo'qoladi.
 
 | Kod holati | Sonar nima deydi | Toifa | Jiddiylik (taxminan) | Ta'siri |

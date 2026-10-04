@@ -22,6 +22,7 @@
 </details>
 
 
+
 SonarQube ni "kodni tekshiradigan dastur" deb bilish yetarli emas. U bir nechta alohida jarayondan iborat tizim va ularning har biri boshqa joyda, boshqa vaqtda ishlaydi. Quality gate nega qizil bo'lganini yoki nega tahlil sekin ketganini tushunish uchun avval shu qismlar va ular orasidagi ma'lumot oqimini bilish kerak. Bu bob aynan shu mexanikani ochadi, keyingi boblardagi qoida va shartlar shu asosga tayanadi.
 
 ## 1.1 SonarQube qismlari: server, web interfeys, compute engine, ma'lumotlar bazasi, scanner

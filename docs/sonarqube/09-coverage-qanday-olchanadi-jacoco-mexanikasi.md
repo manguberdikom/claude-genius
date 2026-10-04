@@ -22,6 +22,7 @@
 </details>
 
 
+
 SonarQube coverage raqamini o'zi hisoblamaydi. U faqat tashqi vositadan kelgan hisobotni o'qiydi, Java dunyosida bu deyarli har doim JaCoCo. Shuning uchun "coverage 68% chiqdi" degan savolning javobi Sonar da emas, JaCoCo ning bytecode bilan ishlash mexanikasida yotadi. Bu bobda probe qanday qo'yiladi, `jacoco.exec` ichida nima bor, qaysi ko'rsatkich Sonar ga boradi va nega ba'zi qator yashil bo'lsa ham branch sariq qolishini ko'rib chiqamiz.
 
 ## 9.1 JaCoCo qanday ishlaydi: bytecode ga instrumentatsiya qo'shish

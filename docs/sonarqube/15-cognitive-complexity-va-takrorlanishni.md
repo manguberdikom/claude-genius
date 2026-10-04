@@ -23,6 +23,7 @@
 </details>
 
 
+
 Cognitive complexity va takrorlanish Sonar hisobotida eng ko'p uchraydigan ikki muammo. Ikkisi ham quality gate ni Maintainability tomonidan to'xtatadi, lekin sababi boshqa: biri bitta metod ichidagi fikr yuki, ikkinchisi kod bazasidagi nusxalar. Quyida Sonar ularni qanday hisoblashini ko'rib chiqamiz, keyin bir uzun metodni bosqichma-bosqich chegaradan pastga tushiramiz. Maqsad raqamni yashirish emas, o'qilishi oson kod yozish.
 
 ## 15.1 Cognitive complexity qanday hisoblanadi: ortish va chuqurlik jarimasi

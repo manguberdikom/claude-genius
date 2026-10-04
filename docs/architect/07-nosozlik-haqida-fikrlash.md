@@ -22,6 +22,7 @@
 </details>
 
 
+
 Nosozlik haqida fikrlash arxitektorni developerdan ajratadigan eng aniq chegara. Developer "bu kod ishlaydi" deb o'ylaydi, arxitektor "bu kod qachon va qanday ishlamaydi" deb so'raydi. Bu bob pattern katalogi emas: bu yerda nosozlikning mexanikasi, uning raqamlari va shu raqamlardan chiqadigan qarorlar bor. Har bir bo'limda siz jamoadan nimani so'rashingiz va qanday son kelishib olishingiz kerakligi ko'rsatilgan.
 
 ## 7.1 Hamma narsa buziladi: tarmoq, disk, protsess, boshqa servis

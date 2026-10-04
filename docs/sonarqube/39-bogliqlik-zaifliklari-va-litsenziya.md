@@ -24,6 +24,7 @@
 </details>
 
 
+
 Quality gate yashil bo'lishi loyihada xavf yo'q degani emas. Zamonaviy Spring Boot ilovasida yozilgan kod umumiy bayt hajmining juda kichik qismini tashkil qiladi, qolgani esa `pom.xml` yoki `build.gradle` orqali kelgan kutubxonalar. Shu bobda bog'liqlik zaifliklari qanday aniqlanishi, tranzitiv bog'liqlik nima uchun eng xavfli joy bo'lishi, zaiflik tekshiruvini CI ga qanday ulash va litsenziya masalasiga qanday qarash kerakligini ko'rib chiqamiz. Maqsad bitta: Sonar hisoboti bilan bog'liqlik hisobotini bir stolda o'qishni o'rganish.
 
 ## 39.1 Sonar kodingizni tekshiradi, bog'liqliklaringizni esa to'liq tekshirmaydi

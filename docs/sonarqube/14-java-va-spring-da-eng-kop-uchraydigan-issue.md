@@ -24,6 +24,7 @@
 </details>
 
 
+
 Har bir Java loyihada Sonar topadigan issue larning aksariyati o'n chog'li naqshdan iborat. Ular yangi emas va qiyin ham emas, lekin takrorlanadi, chunki ularni kod yozish paytida ko'rmaslik oson. Quyida har bir naqsh uchun Sonar nimani o'lchaydi, nega shikoyat qiladi va qanday kod bilan u shikoyat qilmaydi ko'rsatilgan. Qoida kalitlari faqat ishonch komil bo'lgan joyda yozilgan, qolgan joyda qoidaning mazmuni tasvirlangan.
 
 ## 14.1 Maydon orqali bog'liqlik kiritish (`@Autowired` field injection) va konstruktor bilan almashtirish

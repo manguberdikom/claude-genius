@@ -24,6 +24,7 @@
 </details>
 
 
+
 Sonar qoidalarining kattaroq qismi bitta metod yoki bitta fayl ichida qaror qabul qiladi. Xavfsizlik qoidalarining eng qimmatli qismi esa boshqacha ishlaydi: u ma'lumotning kirish nuqtasidan xavfli chaqiruvgacha bo'lgan butun yo'lini kuzatadi. Bu mexanizm taint analysis deb ataladi va uning uchta asosiy tushunchasi bor: source, sink va sanitizer. Bu bobda shu uch tushuncha qanday ishlashini, zanjir qanday qurilishini, natijani qanday o'qishni va qaysi nashrda bu imkoniyat borligini ko'rib chiqamiz.
 
 ## 37.1 Oddiy qoida va taint analysis farqi: bitta fayl va butun oqim

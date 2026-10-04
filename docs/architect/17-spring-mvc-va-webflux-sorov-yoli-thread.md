@@ -23,6 +23,7 @@
 </details>
 
 
+
 Web qatlami arxitektor uchun eng ko'p noto'g'ri tushunilgan joy, chunki u tashqaridan oddiy ko'rinadi: annotatsiya qo'yasan, JSON chiqadi. Haqiqatda bitta HTTP so'rov konteyner socket'idan boshlab, thread pool, filter zanjiri, `DispatcherServlet`, argument resolver, message converter va javob buferi orqali o'tadi. Shu yo'lning har bir bo'g'inida o'z limiti, o'z timeout'i va o'z xotira narxi bor. Quyida mexanikani, aniq sozlash raqamlarini va eng ko'p uchraydigan tuzoqlarni ko'rib chiqamiz.
 
 ## 17.1 So'rovning to'liq yo'li: konteyner, filter, `DispatcherServlet`, handler, converter

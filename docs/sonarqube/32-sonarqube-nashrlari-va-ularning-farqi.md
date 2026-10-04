@@ -23,6 +23,7 @@
 </details>
 
 
+
 SonarQube bitta mahsulot emas, balki bir nechta nashrdan iborat qator. Siz CI da ko'rgan xatti-harakat ko'p hollarda kod sifatiga emas, balki qaysi nashr litsenziyasi o'rnatilganiga bog'liq bo'ladi. Shu sababli "nega mening PR da Sonar hech narsa yozmadi" yoki "nega taint analysis topilmadi" degan savollarning javobi texnik emas, tijoriy bo'lishi mumkin. Bu bobda nashrlar farqi, ularning amaliy natijasi va tanlash mantiqini ko'rib chiqamiz, lekin nomlar va narx siyosati vaqt o'tishi bilan o'zgarganini doim yodda tutamiz.
 
 ## 32.1 Nashrlar qatori: Community, Developer, Enterprise va Data Center yo'nalishi

@@ -30,6 +30,7 @@
 </details>
 
 
+
 Reliability toifasi Sonar uchun eng qattiq toifa, chunki bu yerdagi issue "kod ishlamaydi yoki kutilmagan holatda sinadi" degan ma'noni bildiradi. Quality gate ko'pincha aynan yangi bug soniga nol chek qo'yadi, shuning uchun bu katalogdagi holatlar birinchi navbatda tuzatiladi. Quyida har bir holat uchun shikoyat qilinadigan kod, shikoyat sababi va tuzatilgan variant berilgan. Misollar to'lov servisi, buyurtma va ombor qoldig'i ustida.
 
 | Kod holati | Sonar nima deydi | Toifa | Jiddiylik (taxminan) | Ta'siri |

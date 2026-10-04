@@ -23,6 +23,7 @@
 </details>
 
 
+
 Tranzaksiya izolyatsiyasi arxitektor uchun eng ko'p pul yo'qotadigan joy. Buyurtma ikki marta to'lanadi, ombor qoldig'i manfiy bo'ladi, hisobot jami summasi balansga to'g'ri kelmaydi. Bu xatolar testda ko'rinmaydi, chunki bitta sessiyada hamma narsa ishlaydi. Shu bob PostgreSQL ichida aniq nima sodir bo'layotganini va shu mexanikadan qanday qaror chiqarishni ko'rsatadi.
 
 ## 22.1 MVCC mexanikasi: `xmin`, `xmax`, snapshot va ko'rinuvchanlik qoidasi

@@ -23,6 +23,7 @@
 </details>
 
 
+
 SonarQube server bitta jarayon emas. Uning ichida to'rtta mustaqil qism bor va ularning har biri boshqa resursni yeydi. Shuning uchun "serverni o'rnatish" aslida ikki ish: to'g'ri ko'tarish va to'g'ri o'lchamlash. Quyida versiyadan versiyaga o'zgarmaydigan mexanika, o'zgaradigan raqamlar esa aniq belgilangan holda beriladi.
 
 ## 33.1 Server tarkibi: web, compute engine, qidiruv indeksi va ma'lumotlar bazasi

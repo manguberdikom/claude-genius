@@ -22,6 +22,7 @@
 </details>
 
 
+
 Sonar hech qachon "kod yomon" degan umumiy hukm chiqarmaydi. U faqat o'ziga berilgan qoidalar ro'yxatini bajaradi, va bu ro'yxat quality profile deb ataladi. Shuning uchun bitta kodni ikki xil profil bilan tekshirsangiz, natija ham ikki xil chiqadi. Bu bobda qoida nima, profil qanday boshqariladi, qoidani o'chirish qachon mantiqiy qaror va qachon o'zini aldash ekanini ko'rib chiqamiz.
 
 ## 4.1 Qoida nima: tavsif, misol, tuzatish yo'li, kalit

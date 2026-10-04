@@ -24,6 +24,7 @@
 </details>
 
 
+
 Kuzatuvchanlik tizim ishlayotganini emas, nega ishlamayotganini aytib berishi kerak. Ko'p jamoada bu teskari: dashboard yashil, log to'la, lekin "to'lov nega 14:20 da sekinlashdi" degan savolga javob yo'q. Sabab oddiy: uchta manba o'ylamasdan yoqilgan, holbuki har birining alohida narxi va alohida savoli bor. Bu bobda shu uchlikning mexanikasi, raqamlari va arxitektor tanlovlari ko'rib chiqiladi.
 
 ## 30.1 Uchta manba: log, metrika, trace va har biri qaysi savolga javob beradi

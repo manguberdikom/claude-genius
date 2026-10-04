@@ -23,6 +23,7 @@
 </details>
 
 
+
 Bu hujjatning oxirgi bobi. Undan oldingi boblarda Sonar nimani qanday hisoblashini, qaysi qoida qachon ishga tushishini va quality gate shartlari qanday tekshirilishini ko'rdik. Shu bilimdan amaliy natija chiqarish vaqti keldi: quyida tushuntirish emas, qoida bor. Har bir band kundalik ishda bajariladigan harakat, uni jamoa kelishuvi yoki shaxsiy odat sifatida qabul qilish mumkin.
 
 ## 31.1 Kod yozishdan oldin: metod kichik, nom aniq, shart sodda bo'lsin degan odat

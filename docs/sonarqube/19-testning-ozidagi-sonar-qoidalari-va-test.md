@@ -23,6 +23,7 @@
 </details>
 
 
+
 Ko'p jamoa Sonar faqat `src/main/java` ni ko'radi deb o'ylaydi. Bu xato: Sonar test fayllarini ham skanerlaydi, ularda ham issue ochadi va bu issue'lar quality gate'ga tushadi. Lekin test kodiga asosiy koddan boshqa qoidalar to'plami ishlaydi, chunki har bir qoidaning "scope" xossasi bor. Bu bobda aynan shu mexanika va undan kelib chiqadigan test yozish usuli ko'rilgan.
 
 ## 19.1 Sonar test kodini ham tahlil qiladi: qaysi qoidalar unga tegishli

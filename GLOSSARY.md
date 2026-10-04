@@ -1,11 +1,14 @@
 # Atamalar lug'ati
 
-To'rtta hujjat bo'ylab ishlatiladigan atamalar. Maqsad: inglizcha manbadan
+Oltita hujjat bo'ylab ishlatiladigan atamalar. Maqsad: inglizcha manbadan
 kelgan o'quvchi o'zbekcha bo'limni topa olsin, va aksincha.
 
-Har bir hujjatning o'z sohaviy lug'ati ham bor:
-[SonarQube glossariysi](docs/sonarqube/43-tezkor-malumotnoma-parametrlar-buyruqlar.md#4314-glossariy).
-Pattern nomlari uchun: [alifbo indeksi](docs/patterns/99-alifbo-boyicha-indeks.md).
+Sohaviy ma'lumotnomalar:
+
+- [SonarQube glossariysi](docs/sonarqube/43-tezkor-malumotnoma-parametrlar-buyruqlar.md#4314-glossariy)
+- [Pattern nomlari alifbo indeksi](docs/patterns/99-alifbo-boyicha-indeks.md)
+- [Toza kod qoidalari jadvallari](docs/clean-code/48-tezkor-malumotnoma-qoidalar-va-tekshiruv.md)
+- [Review izohlari uchun tayyor iboralar](docs/code-review/44-shablonlar-checklistlar-va-reviewer.md#443-review-izohlari-uchun-tayyor-iboralar)
 
 ## Inglizcha qoladigan atamalar
 
@@ -107,6 +110,14 @@ kalitlari hech qachon tarjima qilinmaydi - `@Transactional`, `HikariCP`,
 | yakuniy izchillik | eventual consistency |
 | yaratuvchi | creational |
 | yuk | load |
+| hid (kod) | code smell |
+| refaktoring harakati | refactoring move |
+| diff | diff |
+| nit | nit, minor comment |
+| to'xtatuvchi izoh | blocking comment |
+| xavf yuzasi | risk surface |
+| invariant | invariant |
+| majburiyat tili | language of commitment |
 | zaiflik | vulnerability |
 | zanjir | chain |
 
@@ -127,6 +138,12 @@ kalitlari hech qachon tarjima qilinmaydi - `@Transactional`, `HikariCP`,
 | quality gate | [Quality gate mexanikasi](docs/sonarqube/06-quality-gate-mexanikasi-va-shartlari.md) |
 | resilience | [Resilience va cloud dizayn patternlari](docs/patterns/17-resilience-va-cloud-dizayn-patternlari.md) |
 | structural patterns | [Strukturaviy patternlar](docs/patterns/02-strukturaviy-patternlar.md) |
+| code smells | [Kod hidlari katalogi I](docs/clean-code/32-kod-hidlari-katalogi-i-nom-funksiya-malumot.md), [II](docs/clean-code/33-kod-hidlari-katalogi-ii-sinf-ierarxiya.md) |
+| naming | [Nomlash qoidalari](docs/clean-code/02-nomlash-qoidalari-maqsadni-ochib-beruvchi.md) |
+| reading a diff | [Diffni o'qish mexanikasi](docs/code-review/04-diffni-oqish-mexanikasi.md) |
+| refactoring moves | [Refaktoring harakatlari katalogi I](docs/clean-code/35-refaktoring-harakatlari-katalogi-i-funksiya.md) |
+| reviewing AI code | [AI yozgan kodni review qilish](docs/code-review/43-ai-yozgan-kodni-review-qilish-va-ai-bilan.md) |
+| security review | [Xavfsizlik review metodikasi](docs/code-review/28-xavfsizlik-review-metodikasi.md) |
 | test pyramid | [Test piramidasi](docs/testing/02-test-piramidasi-va-test-turlari-xaritasi.md) |
 | Testcontainers | [Testcontainers bilan test](docs/testing/08-testcontainers-bilan-real-infratuzilmada.md) |
 | transactions | [Spring tranzaksiyalari](docs/architect/19-spring-tranzaksiyalari-va-ularning.md) |

@@ -26,6 +26,7 @@
 </details>
 
 
+
 Bu bob tushuntirish uchun emas, qarash uchun yozilgan. Unda eng ko'p ishlatiladigan parametrlar, buyruqlar, metrika kalitlari va atamalar bir joyda to'plangan. Har bir jadvalda faqat amalda tasdiqlangan nomlar bor, shubhali nom esa umuman kiritilmagan. Shuning uchun bu ro'yxatni to'liq deb hisoblamang va aniq versiyangizdagi to'liq ro'yxatni serverdagi `/web_api` sahifasidan oling.
 
 ## 43.1 Eng ko'p ishlatiladigan `sonar.*` parametrlari

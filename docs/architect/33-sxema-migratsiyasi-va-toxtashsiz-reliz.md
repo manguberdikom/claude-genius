@@ -24,6 +24,7 @@
 </details>
 
 
+
 Sxema relizning eng qaytarib bo'lmaydigan qismi. Kodni oldingi image'ga qaytarish bir daqiqa oladi, o'chirilgan ustunni qaytarish esa backup'dan tiklashni talab qiladi. Shuning uchun arxitektor sxema o'zgarishini bir necha relizga cho'zilgan bosqichli operatsiya deb ko'radi. Bu bobda shu operatsiyaning mexanikasi bor: qaysi DDL qanday lock oladi, qaysi o'zgarish jadvalni qayta yozadi, va kod bilan sxemani qanday tartibda chiqarish kerak.
 
 ## 33.1 Migratsiya vositalari: Flyway va Liquibase, versiyalash va nomlash tartibi

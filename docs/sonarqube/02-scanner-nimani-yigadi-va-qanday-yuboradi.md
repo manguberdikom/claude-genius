@@ -22,6 +22,7 @@
 </details>
 
 
+
 Sonar serverdagi quality gate qanchalik aqlli sozlangan bo'lsa ham, u faqat scanner yuborgan ma'lumot ustida ishlaydi. Scanner esa sizning konfiguratsiyangizga so'zsiz bo'ysunadi: siz ko'rsatmagan papkani o'qimaydi, siz ulamagan coverage hisobotini o'ylab topmaydi, kompilyatsiya natijasini topmasa esa qoidalarning yarmini jimgina o'chiradi. Shuning uchun "nega mening testlarim bor, lekin coverage 0%" degan savolning javobi deyarli har doim serverda emas, `sonar-project.properties` faylida yoki build loginida yotadi. Bu bobda scanner nimani yig'adi, nimani ko'rmaydi va yuborishdan oldin buni qanday tekshirish mumkinligini ko'rib chiqamiz.
 
 ## 2.1 `sonar-project.properties` va asosiy parametrlar

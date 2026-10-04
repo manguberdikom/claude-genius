@@ -25,7 +25,8 @@
 </details>
 
 
-Mikroservisda kodning katta qismi o'z bazasi bilan emas, boshqa servislar bilan gaplashadi: to'lov gateway, KYC provayderi, ichki buyurtma yoki hisob servisi. Shu integratsiyalarni qanday testlash — arxitektura qarori: u build vaqtini, test barqarorligini va integratsiya nosozligini qancha erta ushlashni belgilaydi. Bu bobda stub vositalaridan (WireMock, MockRestServiceServer) boshlab, stub drift orqali contract testing'ga (Spring Cloud Contract, Pact) va schema evolution nazoratiga o'tamiz.
+
+Mikroservisda kodning katta qismi o'z bazasi bilan emas, boshqa servislar bilan gaplashadi: to'lov gateway, KYC provayderi, ichki buyurtma yoki hisob servisi. Shu integratsiyalarni qanday testlash - arxitektura qarori: u build vaqtini, test barqarorligini va integratsiya nosozligini qancha erta ushlashni belgilaydi. Bu bobda stub vositalaridan (WireMock, MockRestServiceServer) boshlab, stub drift orqali contract testing'ga (Spring Cloud Contract, Pact) va schema evolution nazoratiga o'tamiz.
 
 ## 9.1 Muammo va yechim variantlari ierarxiyasi
 
@@ -33,20 +34,20 @@ Integratsion testda haqiqiy tashqi servisga murojaat qilish bir vaqtda to'rt xil
 
 Shuning uchun integratsiya nuqtasini testlashda bir necha qatlamni bosqichma-bosqich qo'llash kerak:
 
-1. **Mock (unit daraja)** — client interfeysini Mockito bilan almashtirish. Eng tez, lekin HTTP, serializatsiya va xato mapping'ini tekshirmaydi; faqat biznes logikani client'dan ajratish uchun.
-2. **In-process stub (`MockRestServiceServer`)** — socket ochilmaydi, lekin URL, header, body serializatsiyasi va javob deserializatsiyasi tekshiriladi. Client sinfining o'zini testlash uchun ideal.
-3. **Out-of-process stub server (WireMock, MockServer, Hoverfly)** — haqiqiy TCP port, haqiqiy HTTP client stack: connection pool, timeout, retry, TLS. Kechikish va tarmoq xatolarini simulyatsiya qilish mumkin.
-4. **Contract test** — stub endi qo'lda yozilmaydi, provider tomonidan verifikatsiya qilingan contract'dan generatsiya qilinadi. Stub drift'ni ushlaydigan yagona qatlam.
-5. **Vendor sandbox** — kunda bir marta, alohida pipeline'da, release gate emas: vendor bilan haqiqiy muvofiqlikni tekshirish uchun.
-6. **Real servis** — faqat production'dagi synthetic monitoring va smoke sifatida, PR build'ida emas.
+1. **Mock (unit daraja)** - client interfeysini Mockito bilan almashtirish. Eng tez, lekin HTTP, serializatsiya va xato mapping'ini tekshirmaydi; faqat biznes logikani client'dan ajratish uchun.
+2. **In-process stub (`MockRestServiceServer`)** - socket ochilmaydi, lekin URL, header, body serializatsiyasi va javob deserializatsiyasi tekshiriladi. Client sinfining o'zini testlash uchun ideal.
+3. **Out-of-process stub server (WireMock, MockServer, Hoverfly)** - haqiqiy TCP port, haqiqiy HTTP client stack: connection pool, timeout, retry, TLS. Kechikish va tarmoq xatolarini simulyatsiya qilish mumkin.
+4. **Contract test** - stub endi qo'lda yozilmaydi, provider tomonidan verifikatsiya qilingan contract'dan generatsiya qilinadi. Stub drift'ni ushlaydigan yagona qatlam.
+5. **Vendor sandbox** - kunda bir marta, alohida pipeline'da, release gate emas: vendor bilan haqiqiy muvofiqlikni tekshirish uchun.
+6. **Real servis** - faqat production'dagi synthetic monitoring va smoke sifatida, PR build'ida emas.
 
 Arxitektorning asosiy qarori shu: 2 va 3 qatlam "mening kodim to'g'ri ishlaydi" ishonchini beradi, 4-qatlam esa "mening kutganim provayderning haqiqatiga mos" deganini. Bu ikki xil savol.
 
 ## 9.2 WireMock bilan HTTP stub server
 
-WireMock 3.x — JVM dunyosida eng keng tarqalgan HTTP stub server. Ikki rejimi bor: standalone jar (`java -jar wiremock-standalone-3.x.jar --port 8089`, mapping'lar `mappings/` papkasidan o'qiladi — lokal development va QA muhiti uchun) va test ichidagi JUnit 5 extension. Testda `@RegisterExtension` bilan `WireMockExtension` tavsiya etiladi: har bir testdan keyin stub'larni reset qiladi, `dynamicPort()` esa parallel build'da port konfliktini yo'qotadi.
+WireMock 3.x - JVM dunyosida eng keng tarqalgan HTTP stub server. Ikki rejimi bor: standalone jar (`java -jar wiremock-standalone-3.x.jar --port 8089`, mapping'lar `mappings/` papkasidan o'qiladi - lokal development va QA muhiti uchun) va test ichidagi JUnit 5 extension. Testda `@RegisterExtension` bilan `WireMockExtension` tavsiya etiladi: har bir testdan keyin stub'larni reset qiladi, `dynamicPort()` esa parallel build'da port konfliktini yo'qotadi.
 
-Spring Boot bilan ulashning to'g'ri usuli — base URL'ni property orqali berib, testda `@DynamicPropertySource` bilan WireMock port'iga yo'naltirish. Shunda production kodida test-aware shart qolmaydi.
+Spring Boot bilan ulashning to'g'ri usuli - base URL'ni property orqali berib, testda `@DynamicPropertySource` bilan WireMock port'iga yo'naltirish. Shunda production kodida test-aware shart qolmaydi.
 
 ```java
 @SpringBootTest
@@ -79,7 +80,7 @@ class PaymentClientWireMockTest {
 }
 ```
 
-WireMock'ning asl qiymati happy path emas, yomon yo'llarni arzon simulyatsiya qilishda. `withFixedDelay(ms)` client'ning read timeout sozlamasini tekshiradi, `withChunkedDribbleDelay` javobni bo'lib yuboradi, `withFault(...)` connection reset chaqiradi. `inScenario(...)` stateful stub yaratadi: birinchi chaqiruvda 503, ikkinchisida 200 — retry va circuit breaker siyosati uchun zarur.
+WireMock'ning asl qiymati happy path emas, yomon yo'llarni arzon simulyatsiya qilishda. `withFixedDelay(ms)` client'ning read timeout sozlamasini tekshiradi, `withChunkedDribbleDelay` javobni bo'lib yuboradi, `withFault(...)` connection reset chaqiradi. `inScenario(...)` stateful stub yaratadi: birinchi chaqiruvda 503, ikkinchisida 200 - retry va circuit breaker siyosati uchun zarur.
 
 ```java
 @Test
@@ -111,13 +112,13 @@ Amaliy qoidalar: `failOnUnmatchedRequests(true)` yoqilgan bo'lsin, aks holda not
 
 ## 9.3 MockServer va Hoverfly: qachon qaysi biri
 
-MockServer (`org.mock-server:mockserver-junit-jupiter`) WireMock'ga funksional jihatdan yaqin; kuchli tomoni — expectation/verification DSL'i va forward proxy rejimi: trafikni o'tkazib yuborib bir qismini ushlab qolish mumkin. Hoverfly (`io.specto:hoverfly-java`) boshqa falsafada: capture mode'da real trafikni yozib oladi, simulate mode'da qaytaradi, latency va xato injection'ni (chaos) qulay beradi — hujjatlashtirilmagan legacy servis bilan eng tez natija beradi.
+MockServer (`org.mock-server:mockserver-junit-jupiter`) WireMock'ga funksional jihatdan yaqin; kuchli tomoni - expectation/verification DSL'i va forward proxy rejimi: trafikni o'tkazib yuborib bir qismini ushlab qolish mumkin. Hoverfly (`io.specto:hoverfly-java`) boshqa falsafada: capture mode'da real trafikni yozib oladi, simulate mode'da qaytaradi, latency va xato injection'ni (chaos) qulay beradi - hujjatlashtirilmagan legacy servis bilan eng tez natija beradi.
 
-Default tanlov — WireMock: eng katta ecosystem va Spring Cloud Contract ham stub'larni WireMock orqali serve qiladi, ya'ni contract testing'ga o'tish uzluksiz bo'ladi. MockServer'ni proxy va ko'p protokolli ehtiyoj paydo bo'lganda, Hoverfly'ni record-and-replay asosiy rejim bo'lganda qo'shing.
+Default tanlov - WireMock: eng katta ecosystem va Spring Cloud Contract ham stub'larni WireMock orqali serve qiladi, ya'ni contract testing'ga o'tish uzluksiz bo'ladi. MockServer'ni proxy va ko'p protokolli ehtiyoj paydo bo'lganda, Hoverfly'ni record-and-replay asosiy rejim bo'lganda qo'shing.
 
 ## 9.4 MockRestServiceServer bilan client'ni testlash
 
-Agar maqsad client sinfining o'zi bo'lsa — URL qurish, header, DTO serializatsiyasi, xato status'ni domen exception'ga aylantirish — socket ochish shart emas. `MockRestServiceServer` `RestTemplate` va `RestClient` uchun in-process stub beradi, `@RestClientTest` uni avtomatik sozlaydi: eng tez variant.
+Agar maqsad client sinfining o'zi bo'lsa - URL qurish, header, DTO serializatsiyasi, xato status'ni domen exception'ga aylantirish - socket ochish shart emas. `MockRestServiceServer` `RestTemplate` va `RestClient` uchun in-process stub beradi, `@RestClientTest` uni avtomatik sozlaydi: eng tez variant.
 
 ```java
 @RestClientTest(value = PaymentClient.class,
@@ -150,25 +151,25 @@ class PaymentClientSliceTest {
 }
 ```
 
-Cheklovi: haqiqiy HTTP stack chetlab o'tiladi, demak connection timeout, TLS, redirect, connection pool tugashi ko'rinmaydi. Reactive `WebClient` uchun u ishlamaydi — WireMock yoki `ExchangeFunction` almashtirish kerak. Taqsimot: client sinfi uchun `@RestClientTest`, resilience siyosati uchun WireMock.
+Cheklovi: haqiqiy HTTP stack chetlab o'tiladi, demak connection timeout, TLS, redirect, connection pool tugashi ko'rinmaydi. Reactive `WebClient` uchun u ishlamaydi - WireMock yoki `ExchangeFunction` almashtirish kerak. Taqsimot: client sinfi uchun `@RestClientTest`, resilience siyosati uchun WireMock.
 
 ## 9.5 Record and replay: foydasi va xavfi
 
-Stub'ni qo'lda yozish qimmat bo'lganda javobni real servisdan yozib olish mumkin: WireMock'da `--proxy-all="https://api.vendor.com" --record-mappings` rejimi yoki `/__admin/recorder` admin API, Hoverfly'da capture mode. Foydasi — real, to'liq payload'lar, chunki qo'lda yozilgan stub provayder javobidan soddalashtirilgan bo'ladi va bug aynan shu soddalashtirish ichida yashiringan bo'ladi.
+Stub'ni qo'lda yozish qimmat bo'lganda javobni real servisdan yozib olish mumkin: WireMock'da `--proxy-all="https://api.vendor.com" --record-mappings` rejimi yoki `/__admin/recorder` admin API, Hoverfly'da capture mode. Foydasi - real, to'liq payload'lar, chunki qo'lda yozilgan stub provayder javobidan soddalashtirilgan bo'ladi va bug aynan shu soddalashtirish ichida yashiringan bo'ladi.
 
-Xavfi: fayllarda token, karta raqami, shaxsiy ma'lumot qolib ketadi va repo'ga tushadi; fixture'lar keraksiz maydonlar bilan o'sadi; eng muhimi — stub yozilgan kundan boshlab eskiradi, lekin test yashil turadi. Qoidalar: maxfiy maydonlarni avtomatik tozalash, faqat ishlatiladigan maydonlarni qoldirish, fixture yoniga sana va provider API versiyasini yozish, rejali qayta yozib olish. Record-and-replay — boshlash vositasi, strategiya emas.
+Xavfi: fayllarda token, karta raqami, shaxsiy ma'lumot qolib ketadi va repo'ga tushadi; fixture'lar keraksiz maydonlar bilan o'sadi; eng muhimi - stub yozilgan kundan boshlab eskiradi, lekin test yashil turadi. Qoidalar: maxfiy maydonlarni avtomatik tozalash, faqat ishlatiladigan maydonlarni qoldirish, fixture yoniga sana va provider API versiyasini yozish, rejali qayta yozib olish. Record-and-replay - boshlash vositasi, strategiya emas.
 
 ## 9.6 Stub drift muammosi
 
-Stub drift — integratsion testlashning markaziy nosozligi. Provider `status` maydonini `state` ga o'zgartiradi, `201` o'rniga `200` qaytaradi, xato formatini RFC 7807 `problem+json` ga ko'chiradi yoki enum'ga yangi qiymat qo'shadi. Consumer tomonidagi stub buni bilmaydi: eski shaklni qaytaradi, testlar yashil, deploy o'tadi, production'da esa deserializatsiya sinadi. Ko'proq stub yozish muammoni yomonlashtiradi — har bir yangi stub provider haqida yana bir tasdiqlanmagan taxmin.
+Stub drift - integratsion testlashning markaziy nosozligi. Provider `status` maydonini `state` ga o'zgartiradi, `201` o'rniga `200` qaytaradi, xato formatini RFC 7807 `problem+json` ga ko'chiradi yoki enum'ga yangi qiymat qo'shadi. Consumer tomonidagi stub buni bilmaydi: eski shaklni qaytaradi, testlar yashil, deploy o'tadi, production'da esa deserializatsiya sinadi. Ko'proq stub yozish muammoni yomonlashtiradi - har bir yangi stub provider haqida yana bir tasdiqlanmagan taxmin.
 
-Sabab arxitektura darajasida: stub consumer repo'sida yashaydi, haqiqat esa provider repo'sida o'zgaradi va ikkisi o'rtasida avtomatik bog'lanish yo'q. Nightly sandbox smoke bu bog'lanishni kech va noaniq signal bilan beradi. To'g'ri yechim — stub'ni tasdiqlangan contract'dan olish: provider contract'ni buzsa, provider'ning o'z build'i qizil bo'ladi. Aynan shu contract testing'ning mavjudlik sababi.
+Sabab arxitektura darajasida: stub consumer repo'sida yashaydi, haqiqat esa provider repo'sida o'zgaradi va ikkisi o'rtasida avtomatik bog'lanish yo'q. Nightly sandbox smoke bu bog'lanishni kech va noaniq signal bilan beradi. To'g'ri yechim - stub'ni tasdiqlangan contract'dan olish: provider contract'ni buzsa, provider'ning o'z build'i qizil bo'ladi. Aynan shu contract testing'ning mavjudlik sababi.
 
 ## 9.7 Contract testing nazariyasi
 
 Consumer-driven contract'da consumer o'z kutganini misollar ko'rinishida yozadi: shu so'rovga shu shakldagi javob kerak. Bu misollar mashina o'qiydigan, versiyalangan artefaktga aylanadi. Provider tomonda verification bo'ladi: provider haqiqiy implementatsiyasini ko'tarib, har bir interaction'ni qayta o'ynaydi va javob kutilgan shaklga mosligini tekshiradi. Broker (Pact Broker/PactFlow, SCC holatida Maven repository) o'rtada turadi: contract, versiya, muhit holati va verification natijalarini saqlaydi.
 
-Integratsion testdan farqi: integratsion test ikki real tizimni bir muhitda, bir vaqtda ishlatishni talab qiladi va "hozir ishladi" deydi. Contract test juftlik muvofiqligini mustaqil tekshiradi — ikki servis bir vaqtda ishlashi shart emas, shuning uchun tez va deterministik. Narxi: u provider biznes logikasini tekshirmaydi, faqat kelishilgan interaction shakli va semantikasini. Ya'ni contract test E2E'ni emas, stub'larni almashtiradi.
+Integratsion testdan farqi: integratsion test ikki real tizimni bir muhitda, bir vaqtda ishlatishni talab qiladi va "hozir ishladi" deydi. Contract test juftlik muvofiqligini mustaqil tekshiradi - ikki servis bir vaqtda ishlashi shart emas, shuning uchun tez va deterministik. Narxi: u provider biznes logikasini tekshirmaydi, faqat kelishilgan interaction shakli va semantikasini. Ya'ni contract test E2E'ni emas, stub'larni almashtiradi.
 
 ## 9.8 Spring Cloud Contract: buyurtma va to'lov servisi
 
@@ -227,7 +228,7 @@ response:
     status: DECLINED
 ```
 
-Generatsiya qilingan testlar base class'dan meros oladi — unda application ishga tushadi va tashqi bog'liqliklar (DB, downstream) boshqariladi:
+Generatsiya qilingan testlar base class'dan meros oladi - unda application ishga tushadi va tashqi bog'liqliklar (DB, downstream) boshqariladi:
 
 ```java
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -303,7 +304,7 @@ class PaymentPactConsumerTest {
 }
 ```
 
-Pact fayli broker'ga `pact:publish` bilan yuboriladi, provider uni broker'dan olib o'z implementatsiyasiga qarshi tekshiradi. `given(...)` matni provider tomonda `@State` metodiga bog'lanadi — test ma'lumotlarini kerakli holatga keltirish nuqtasi.
+Pact fayli broker'ga `pact:publish` bilan yuboriladi, provider uni broker'dan olib o'z implementatsiyasiga qarshi tekshiradi. `given(...)` matni provider tomonda `@State` metodiga bog'lanadi - test ma'lumotlarini kerakli holatga keltirish nuqtasi.
 
 ```java
 @Provider("payment-service")
@@ -337,7 +338,7 @@ class PaymentPactProviderTest {
 | Format | Groovy yoki YAML DSL, Java DSL | Pact JSON spetsifikatsiyasi (V3/V4) |
 | Stub tarqatish | `*-stubs.jar` Maven/Nexus orqali, WireMock serve qiladi | Broker'dan pact, mock server test ichida |
 | Markaziy registry | Maven repository (versiyalash bor, muhit holati yo'q) | Pact Broker/PactFlow: matritsa, tag, environment |
-| Deploy gate | Yo'q (build va versiya tartibi bilan qo'lda) | `can-i-deploy` CLI — tayyor gate |
+| Deploy gate | Yo'q (build va versiya tartibi bilan qo'lda) | `can-i-deploy` CLI - tayyor gate |
 | Polyglot | JVM-markazli (boshqa tillar uchun cheklangan) | Kuchli: JS, .NET, Go, Python, Ruby |
 | Messaging | Qo'llab-quvvatlanadi (Kafka, AMQP, Spring Cloud Stream) | Qo'llab-quvvatlanadi (async message pact) |
 | Spring integratsiyasi | Juda chuqur, Boot bilan tabiiy | Yaxshi (`pact-jvm-provider-spring`), lekin tashqi |
@@ -370,13 +371,13 @@ Contract.make {
 }
 ```
 
-Avro yoki Protobuf ishlatilsa, ikkinchi himoya qatlami — schema registry. Confluent Schema Registry terminologiyasida BACKWARD compatibility yangi schema eski ma'lumotni o'qiy olishini bildiradi (consumer birinchi yangilanadi), FORWARD esa yangi schema bilan yozilgan ma'lumotni eski schema o'qiy olishini (producer birinchi yangilanadi), FULL ikkisini birga talab qiladi, `_TRANSITIVE` variantlari esa faqat oldingi emas, barcha tarixiy versiyalarga nisbatan tekshiradi. CI'da `kafka-schema-registry-maven-plugin`ning `test-compatibility` goal'i yoki Protobuf uchun breaking-change linter'i schema o'zgarishini merge'dan oldin to'xtatadi.
+Avro yoki Protobuf ishlatilsa, ikkinchi himoya qatlami - schema registry. Confluent Schema Registry terminologiyasida BACKWARD compatibility yangi schema eski ma'lumotni o'qiy olishini bildiradi (consumer birinchi yangilanadi), FORWARD esa yangi schema bilan yozilgan ma'lumotni eski schema o'qiy olishini (producer birinchi yangilanadi), FULL ikkisini birga talab qiladi, `_TRANSITIVE` variantlari esa faqat oldingi emas, barcha tarixiy versiyalarga nisbatan tekshiradi. CI'da `kafka-schema-registry-maven-plugin`ning `test-compatibility` goal'i yoki Protobuf uchun breaking-change linter'i schema o'zgarishini merge'dan oldin to'xtatadi.
 
 Ogohlantirish: schema compatibility semantik contract emas. `status` maydoniga yangi enum qiymati qo'shilishi Avro uchun mos, lekin consumer'dagi `switch` uchun halokat. Shuning uchun schema registry va messaging contract test bir-birini almashtirmaydi: biri strukturani, ikkinchisi kelishilgan ma'noni himoya qiladi.
 
 ## 9.11 OpenAPI'ni contract sifatida ishlatish
 
-Agar provider spec-first ishlasa, OpenAPI fayli tabiiy contract bo'lib xizmat qiladi. Birinchi foydalanish — `openapi-generator-maven-plugin` bilan consumer uchun client generatsiya qilish: spec o'zgarsa, consumer kodi kompilyatsiya bosqichida sinadi, ya'ni signal eng arzon joyda keladi. Ikkinchisi — provider javoblarini spec'ga qarshi validatsiya qilish, buning uchun `swagger-request-validator` kutubxonasi ishlatiladi.
+Agar provider spec-first ishlasa, OpenAPI fayli tabiiy contract bo'lib xizmat qiladi. Birinchi foydalanish - `openapi-generator-maven-plugin` bilan consumer uchun client generatsiya qilish: spec o'zgarsa, consumer kodi kompilyatsiya bosqichida sinadi, ya'ni signal eng arzon joyda keladi. Ikkinchisi - provider javoblarini spec'ga qarshi validatsiya qilish, buning uchun `swagger-request-validator` kutubxonasi ishlatiladi.
 
 ```java
 @WebMvcTest(OrderController.class)
@@ -397,11 +398,11 @@ class OrderApiSpecComplianceTest {
 }
 ```
 
-Uchinchisi — CI'da spec diff'ini breaking change sifatida ushlash: `oasdiff`/`openapi-diff` maydon olib tashlanganini, required qo'shilganini, status kod o'zgarganini aniqlaydi va pipeline'ni to'xtatadi. Cheklovi: OpenAPI provider-driven, ya'ni provider nima qila olishini aytadi, lekin qaysi consumer qaysi maydonga tayanganini bilmaydi. Shuning uchun OpenAPI — keng qamrov, consumer-driven contract — kritik juftliklar uchun.
+Uchinchisi - CI'da spec diff'ini breaking change sifatida ushlash: `oasdiff`/`openapi-diff` maydon olib tashlanganini, required qo'shilganini, status kod o'zgarganini aniqlaydi va pipeline'ni to'xtatadi. Cheklovi: OpenAPI provider-driven, ya'ni provider nima qila olishini aytadi, lekin qaysi consumer qaysi maydonga tayanganini bilmaydi. Shuning uchun OpenAPI - keng qamrov, consumer-driven contract - kritik juftliklar uchun.
 
 ## 9.12 Contract testni CI'ga qo'yish
 
-Pipeline javobgarligi aniq taqsimlanadi. Consumer build'i contract'ni (yoki pact'ni) yaratadi va broker'ga consumer versiyasi va branch bilan publish qiladi. Provider build'i har commit'da aktual consumer contract'larini verifikatsiya qilib natijani broker'ga qaytaradi; bundan tashqari broker webhook'i yangi contract paydo bo'lganda verification'ni alohida ishga tushiradi — consumer kutganini o'zgartirsa, provider darhol biladi. Deploy oldidan gate `can-i-deploy` bilan qo'yiladi.
+Pipeline javobgarligi aniq taqsimlanadi. Consumer build'i contract'ni (yoki pact'ni) yaratadi va broker'ga consumer versiyasi va branch bilan publish qiladi. Provider build'i har commit'da aktual consumer contract'larini verifikatsiya qilib natijani broker'ga qaytaradi; bundan tashqari broker webhook'i yangi contract paydo bo'lganda verification'ni alohida ishga tushiradi - consumer kutganini o'zgartirsa, provider darhol biladi. Deploy oldidan gate `can-i-deploy` bilan qo'yiladi.
 
 ```yaml
 jobs:
@@ -427,19 +428,19 @@ jobs:
             --retry-while-unknown 6
 ```
 
-Provider consumer contract'ini buzsa, provider build'i qizil bo'ladi — bu nosozlik emas, tizimning maqsadi. Hali release qilinmagan kutganlar provider jamoasini bloklamasligi uchun Pact'da pending va WIP pacts bor: yangi contract avval ogohlantiradi, release'dan keyin qattiq gate'ga aylanadi. Deploy tartibi: additive o'zgarishda provider birinchi deploy qilinadi, maydon olib tashlanganda esa avval barcha consumer'lar undan voz kechadi — expand-and-contract (parallel change) usuli. Contract'larni consumer versiyasi va branch bo'yicha versiyalash, muhitlarni tag qilish bu tartibni kuzatiladigan qiladi.
+Provider consumer contract'ini buzsa, provider build'i qizil bo'ladi - bu nosozlik emas, tizimning maqsadi. Hali release qilinmagan kutganlar provider jamoasini bloklamasligi uchun Pact'da pending va WIP pacts bor: yangi contract avval ogohlantiradi, release'dan keyin qattiq gate'ga aylanadi. Deploy tartibi: additive o'zgarishda provider birinchi deploy qilinadi, maydon olib tashlanganda esa avval barcha consumer'lar undan voz kechadi - expand-and-contract (parallel change) usuli. Contract'larni consumer versiyasi va branch bo'yicha versiyalash, muhitlarni tag qilish bu tartibni kuzatiladigan qiladi.
 
 ## 9.13 Anti-patternlar
 
-Provider contract'ni o'zi yozib qo'yishi — eng ko'p uchraydigan nosozlik: contract implementatsiyaning ko'zgusiga aylanadi va yangi signal bermaydi, provider o'zini o'zi tasdiqlaydi. Contract manbasi consumer bo'lishi kerak, hatto provider repo'siga pull request sifatida kelsa ham.
+Provider contract'ni o'zi yozib qo'yishi - eng ko'p uchraydigan nosozlik: contract implementatsiyaning ko'zgusiga aylanadi va yangi signal bermaydi, provider o'zini o'zi tasdiqlaydi. Contract manbasi consumer bo'lishi kerak, hatto provider repo'siga pull request sifatida kelsa ham.
 
-Stub'ni qo'lda yangilash: provider o'zgargani haqida Slack'dan bilib, consumer repo'sidagi JSON faylni tahrirlash — contract testing emas, drift'ni qo'lda kuzatish.
+Stub'ni qo'lda yangilash: provider o'zgargani haqida Slack'dan bilib, consumer repo'sidagi JSON faylni tahrirlash - contract testing emas, drift'ni qo'lda kuzatish.
 
 Contract testni E2E bilan almashtirish yoki teskarisi. E2E butun oqimni kech va beqaror tekshiradi, contract test juftlik muvofiqligini erta va deterministik; ular turli xavflarni yopadi.
 
 Har bir integratsiyani real servisga urib testlash: suite sekin va flaky bo'ladi, vendor rate limit'iga tiqiladi va oxirida testlar `@Disabled` bo'ladi.
 
-Contract'da hamma narsani aniq qiymat bilan qotirish. Timestamp, UUID, hisoblangan maydonlarni exact match qilish contract'ni mo'rt qiladi — matcher (regex, type) ishlatish kerak.
+Contract'da hamma narsani aniq qiymat bilan qotirish. Timestamp, UUID, hisoblangan maydonlarni exact match qilish contract'ni mo'rt qiladi - matcher (regex, type) ishlatish kerak.
 
 Verification natijasini e'tiborsiz qoldirish: qizil provider verification'ini `@Disabled` yoki doimiy pending flag bilan yashirish contract testing'ni dekoratsiyaga aylantiradi.
 

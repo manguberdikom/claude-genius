@@ -24,6 +24,7 @@
 </details>
 
 
+
 Legacy kod degani eski kod emas. Legacy kod degani siz uning xatti-harakatini isbotlay olmaydigan kod. Shu ta'rifdan bitta amaliy xulosa chiqadi: refaktoring kodni o'zgartirishdan emas, kodning hozirgi xatti-harakatini qayd etishdan boshlanadi. Bu bobda arxitektor legacy tizimga kirib, uni to'xtatmasdan bosqichma-bosqich almashtirish ketma-ketligi ko'rib chiqiladi.
 
 ## 34.1 Legacy kodga birinchi kun: o'qish, o'lchash, hech narsani o'zgartirmaslik

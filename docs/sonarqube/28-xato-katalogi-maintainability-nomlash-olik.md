@@ -28,6 +28,7 @@
 </details>
 
 
+
 Bu bob Sonar hisobotida eng ko'p uchraydigan, lekin eng arzon tuzatiladigan shikoyatlar katalogi. Bu yerdagi deyarli hamma narsa `maintainability` toifasiga tushadi, ya'ni code smell, va ko'pchiligi dastur ishlashiga bugun ta'sir qilmaydi. Shuning uchun ularni e'tiborsiz qoldirish oson, keyin esa ular technical debt ratio va `Maintainability Rating` orqali quality gate ni yiqitadi. Katalog Spring servis va repository klasslari ustida qurilgan, chunki real loyihada bu shikoyatlarning asosiy qismi aynan shu ikki qatlamda yig'iladi.
 
 | Kod holati | Sonar nima deydi | Toifa | Jiddiylik (taxminan) | Ta'siri |

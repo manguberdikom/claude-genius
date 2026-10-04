@@ -24,6 +24,7 @@
 </details>
 
 
+
 Spring Security ko'pchilik uchun "sehrli qora quti" bo'lib qoladi: konfiguratsiya ishlaydi, lekin nega ishlaydi degan savolga javob yo'q. Aslida u oddiy servlet filter zanjiri ustiga qurilgan, va deyarli har bir xatolik shu zanjirdagi tartib, SecurityContext ning umri yoki token tekshiruvining to'liq bo'lmagani bilan izohlanadi. Bu bobda to'lov va buyurtma servislari misolida mexanikaga qaraymiz: so'rov qaysi filtrdan o'tadi, JWT qanday tekshiriladi, va arxitektor qayerda qaror qabul qiladi.
 
 ## 20.1 `SecurityFilterChain` tuzilishi va filtrlar tartibi

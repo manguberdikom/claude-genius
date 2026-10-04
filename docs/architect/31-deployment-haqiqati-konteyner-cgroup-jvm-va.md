@@ -24,6 +24,7 @@
 </details>
 
 
+
 Lokalda ishlagan servis production'da boshqacha yashaydi. U cgroup bilan chegaralangan, orkestrator tomonidan har qanday paytda o'ldirilishi mumkin, va uning sog'ligi haqida qaror HTTP probe orqali chiqariladi. Arxitektor uchun deployment YAML fayl to'ldirish emas, balki JVM, kernel va orkestrator o'rtasidagi shartnomani tushunishdir. Bu bobda to'lov servisi va buyurtma servisi misolida shu shartnomaning har bir bandi ochiladi.
 
 ## 31.1 Konteyner nima va nima emas

@@ -1,7 +1,7 @@
 # Hissa qo'shish qoidalari
 
-Bu repozitoriy - hujjat korpusi, kod bazasi emas. Shuning uchun asosiy
-qoidalar uslub va struktura haqida.
+Bu repozitoriy - oltita hujjatdan iborat korpus, kod bazasi emas. Shuning
+uchun asosiy qoidalar uslub va struktura haqida.
 
 ## Struktura
 
@@ -56,10 +56,16 @@ Har hujjatning o'z bob-yopish konvensiyasi bor; buzmang:
 
 | Hujjat | Bob oxiri |
 |---|---|
-| `docs/patterns/` | konvensiya yo'q - patternlar ketma-ket |
+| `docs/patterns/` | konvensiya yo'q (ma'lum bo'shliq, pastga qarang) |
 | `docs/testing/` | `### N.M Arxitektor nazorat ro'yxati` (`- [ ]` bandlar) |
 | `docs/architect/` | `### Amalda qo'llash` |
 | `docs/sonarqube/` | `### Amalda qo'llash` |
+| `docs/clean-code/` | `### Amalda qo'llash` |
+| `docs/code-review/` | `### Amalda qo'llash` |
+
+Loyiha qoidasi: har bob `Amalda qo'llash` yoki `Arxitektor nazorat ro'yxati`
+bilan tugaydi. `docs/patterns/` ning 30 bo'limida bu ro'yxat yo'q; bob
+tahrirlanganda qo'shiladi.
 
 Pattern yozuvi to'rt qismdan iborat va tartibi o'zgarmaydi:
 
@@ -78,9 +84,8 @@ Pattern yozuvi to'rt qismdan iborat va tartibi o'zgarmaydi:
 
 ## Yozuv uslubi
 
-- Tire: `docs/patterns/` va `docs/testing/` em-dash (`—`) ishlatadi,
-  `docs/architect/` va `docs/sonarqube/` oddiy tire (`-`). Bir fayl ichida
-  aralashtirmang; mavjud hujjat uslubiga moslang.
+- **Em-dash ishlatilmaydi.** Faqat oddiy tire (`-`). En-dash ham yo'q.
+  CI buni tekshiradi.
 - Kod bloklariga til belgisi qo'yiladi: ```java, ```sql, ```bash, ```yaml,
   ```properties, ```xml.
 - Kod misoli iloji boricha ko'chirib ishlatish mumkin bo'lsin: import
@@ -116,7 +121,7 @@ Bob o'sib ketsa, uni ikkiga bo'ling.
 ## Tekshiruv
 
 ```bash
-python3 tools/check_docs.py      # hajm, havola, kirill, manifest, struktura
+python3 tools/check_docs.py      # hajm, havola, kirill, em-dash, manifest, struktura
 python3 tools/build_single.py    # monolit qayta yig'ilishini sinash
 ```
 

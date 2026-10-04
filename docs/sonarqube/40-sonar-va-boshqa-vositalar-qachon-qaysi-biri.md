@@ -23,6 +23,7 @@
 </details>
 
 
+
 Sonar bitta vosita, u hamma narsani topmaydi. Ko'p jamoa shu yerda ikki xatodan birini qiladi: yoki Sonar dan boshqa hech narsani ishlatmaydi, yoki beshta vositani yoqib, bir xil ogohlantirishni uch joydan oladi. Bu bobda Sonar ning chegarasini chizib, qolgan vositalarni faqat ochiq qolgan bo'shliqqa qo'yamiz. Maqsad: eng kam vosita bilan eng ko'p haqiqiy xatoni topish, pipeline vaqtini esa o'stirmaslik.
 
 ## 40.1 Sonar nimani yaxshi qiladi va nimani umuman qilmaydi

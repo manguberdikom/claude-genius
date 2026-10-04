@@ -20,11 +20,11 @@
 - [8.11 Transfer Object yig'uvchi (Transfer Object Assembler)](#811-transfer-object-yiguvchi-transfer-object-assembler)
 - [8.12 Qiymatlar ro'yxati boshqaruvchisi (Value List Handler)](#812-qiymatlar-royxati-boshqaruvchisi-value-list-handler)
 - [8.13 Masofaviy fasad (Remote Facade)](#813-masofaviy-fasad-remote-facade)
-- [8.14 Mapper (Mapper — MapStruct, ModelMapper)](#814-mapper-mapper--mapstruct-modelmapper)
-- [8.15 Buyruq / Use Case Handler (Command / Use Case Handler — Interactor)](#815-buyruq--use-case-handler-command--use-case-handler--interactor)
+- [8.14 Mapper (Mapper - MapStruct, ModelMapper)](#814-mapper-mapper---mapstruct-modelmapper)
+- [8.15 Buyruq / Use Case Handler (Command / Use Case Handler - Interactor)](#815-buyruq--use-case-handler-command--use-case-handler---interactor)
 - [8.16 Buyruq shinasi / Mediator (Command Bus / Mediator)](#816-buyruq-shinasi--mediator-command-bus--mediator)
-- [8.17 Tranzaksiya chegarasi (Transaction Boundary — @Transactional on service)](#817-tranzaksiya-chegarasi-transaction-boundary--transactional-on-service)
-- [8.18 Notification (Notification — validatsiya xatolarini yig'ish)](#818-notification-notification--validatsiya-xatolarini-yigish)
+- [8.17 Tranzaksiya chegarasi (Transaction Boundary - @Transactional on service)](#817-tranzaksiya-chegarasi-transaction-boundary---transactional-on-service)
+- [8.18 Notification (Notification - validatsiya xatolarini yig'ish)](#818-notification-notification---validatsiya-xatolarini-yigish)
 - [8.19 Natija obyekti vs Exception (Result Object vs Exceptions)](#819-natija-obyekti-vs-exception-result-object-vs-exceptions)
 - [8.20 Siyosat obyekti (Policy Object)](#820-siyosat-obyekti-policy-object)
 - [8.21 Strategiyalar registri Map<String, Bean> orqali (Strategy Registry via Map<String, Bean>)](#821-strategiyalar-registri-mapstring-bean-orqali-strategy-registry-via-mapstring-bean)
@@ -37,13 +37,14 @@
 </details>
 
 
-Biznes logika va Service qatlam patternlari — ilovaning eng qimmatbaho qismi, ya'ni domen qoidalari, use-case'lar va tranzaksion chegaralar qanday tashkil etilishini belgilaydi. Bu patternlar aynan shu savolga javob beradi: logika SQL so'rovlarida, `@Service` sinflarida yoki boy domen obyektlarida yashashi kerakmi, va tranzaksiya qayerda boshlanib, qayerda tugaydi. Arxitektor uchun bu muhim, chunki noto'g'ri tanlov "anemic domain model" yoki 3000 qatorli "god service" kabi texnik qarzga olib keladi — bunday kodni test qilish ham, o'zgartirish ham qimmatga tushadi. Quyidagi entry'lar Fowler'ning PoEAA va Core J2EE Patterns kataloglaridan olingan klassik yechimlarni zamonaviy Spring Boot 3.x/4.x konteksti bilan bog'laydi.
+
+Biznes logika va Service qatlam patternlari - ilovaning eng qimmatbaho qismi, ya'ni domen qoidalari, use-case'lar va tranzaksion chegaralar qanday tashkil etilishini belgilaydi. Bu patternlar aynan shu savolga javob beradi: logika SQL so'rovlarida, `@Service` sinflarida yoki boy domen obyektlarida yashashi kerakmi, va tranzaksiya qayerda boshlanib, qayerda tugaydi. Arxitektor uchun bu muhim, chunki noto'g'ri tanlov "anemic domain model" yoki 3000 qatorli "god service" kabi texnik qarzga olib keladi - bunday kodni test qilish ham, o'zgartirish ham qimmatga tushadi. Quyidagi entry'lar Fowler'ning PoEAA va Core J2EE Patterns kataloglaridan olingan klassik yechimlarni zamonaviy Spring Boot 3.x/4.x konteksti bilan bog'laydi.
 
 ## 8.1 Tranzaksiya skripti (Transaction Script)
 
-**Tavsif:** Har bir biznes so'rovni (use-case'ni) bir protsedura — bitta ketma-ket skript sifatida tashkil etadi: validatsiya, hisob-kitob va ma'lumotlar bazasiga yozish hammasi shu metod ichida bajariladi. Domen obyektlari deyarli bo'lmaydi, ma'lumotlar oddiy DTO yoki `Map` ko'rinishida uzatiladi. Oddiy va tushunarli, ammo use-case'lar soni ortishi bilan takrorlanuvchi logika ko'payadi. Odatda bitta tranzaksiya chegarasi aynan shu skriptga to'g'ri keladi.
+**Tavsif:** Har bir biznes so'rovni (use-case'ni) bir protsedura - bitta ketma-ket skript sifatida tashkil etadi: validatsiya, hisob-kitob va ma'lumotlar bazasiga yozish hammasi shu metod ichida bajariladi. Domen obyektlari deyarli bo'lmaydi, ma'lumotlar oddiy DTO yoki `Map` ko'rinishida uzatiladi. Oddiy va tushunarli, ammo use-case'lar soni ortishi bilan takrorlanuvchi logika ko'payadi. Odatda bitta tranzaksiya chegarasi aynan shu skriptga to'g'ri keladi.
 
-**Spring'da qayerda uchraydi:** `@Service` sinfidagi `@Transactional` metod ichida `JdbcClient` (Spring Framework 6.1+) yoki `NamedParameterJdbcTemplate` orqali to'g'ridan-to'g'ri SQL yozish — klassik Transaction Script. Shuningdek jOOQ yoki MyBatis (`spring-boot-starter-mybatis` orqali) bilan birga ishlatiladi; tranzaksiyani `PlatformTransactionManager` yoki `TransactionTemplate` boshqaradi. Spring Batch'dagi `Tasklet` implementatsiyasi ham mohiyatan bitta tranzaksion skript.
+**Spring'da qayerda uchraydi:** `@Service` sinfidagi `@Transactional` metod ichida `JdbcClient` (Spring Framework 6.1+) yoki `NamedParameterJdbcTemplate` orqali to'g'ridan-to'g'ri SQL yozish - klassik Transaction Script. Shuningdek jOOQ yoki MyBatis (`spring-boot-starter-mybatis` orqali) bilan birga ishlatiladi; tranzaksiyani `PlatformTransactionManager` yoki `TransactionTemplate` boshqaradi. Spring Batch'dagi `Tasklet` implementatsiyasi ham mohiyatan bitta tranzaksion skript.
 
 **Qo'llanish keyslari:**
 - CRUD'ga yaqin admin panel backend'i, bu yerda domen qoidalari deyarli yo'q.
@@ -52,11 +53,11 @@ Biznes logika va Service qatlam patternlari — ilovaning eng qimmatbaho qismi, 
 - Yuqori yuklamali, bitta jadval bilan ishlovchi "ledger entry qo'shish" kabi tor operatsiyalar.
 - Prototip yoki MVP: domen hali noma'lum, ortiqcha abstraksiya zararli.
 
-**Ehtiyot bo'ling:** Biznes qoidalari o'sgach skriptlar o'rtasida logika copy-paste bo'lib ketadi va bitta qoidani o'zgartirish uchun o'nlab joyni tahrirlashga to'g'ri keladi. Murakkab, ko'p invariantli domen (sug'urta, narxlash, buxgalteriya) uchun ishlatmang — bunda Domain Model afzal.
+**Ehtiyot bo'ling:** Biznes qoidalari o'sgach skriptlar o'rtasida logika copy-paste bo'lib ketadi va bitta qoidani o'zgartirish uchun o'nlab joyni tahrirlashga to'g'ri keladi. Murakkab, ko'p invariantli domen (sug'urta, narxlash, buxgalteriya) uchun ishlatmang - bunda Domain Model afzal.
 
 ## 8.2 Domen modeli (Domain Model)
 
-**Tavsif:** Biznes logikani ma'lumot va xatti-harakatni birlashtirgan obyektlar to'ri sifatida ifodalaydi: har bir obyekt o'z invariantlarini o'zi qo'riqlaydi. Service qatlam faqat yupqa koordinator bo'lib qoladi — tranzaksiyani ochadi, aggregate'ni yuklaydi, unga metod chaqiradi va saqlaydi. Murakkab, tez o'zgaruvchi qoidalar uchun eng kuchli yechim, ammo o'rganish narxi va mapping murakkabligi yuqori.
+**Tavsif:** Biznes logikani ma'lumot va xatti-harakatni birlashtirgan obyektlar to'ri sifatida ifodalaydi: har bir obyekt o'z invariantlarini o'zi qo'riqlaydi. Service qatlam faqat yupqa koordinator bo'lib qoladi - tranzaksiyani ochadi, aggregate'ni yuklaydi, unga metod chaqiradi va saqlaydi. Murakkab, tez o'zgaruvchi qoidalar uchun eng kuchli yechim, ammo o'rganish narxi va mapping murakkabligi yuqori.
 
 **Spring'da qayerda uchraydi:** JPA `@Entity` sinflari xatti-harakat bilan boyitiladi, `@Embeddable` orqali Value Object yasaladi, Spring Data JPA `Repository`'lari aggregate'ni yuklaydi. Domen hodisalari `AbstractAggregateRoot.registerEvent(...)` (Spring Data) yoki `ApplicationEventPublisher` + `@TransactionalEventListener` bilan tarqatiladi. Java 17+ `record` va `sealed interface` Value Object va domen natijalarini modellashda qulay; Spring Modulith esa modul chegaralarini `@ApplicationModule` bilan majburlaydi.
 
@@ -67,7 +68,7 @@ Biznes logika va Service qatlam patternlari — ilovaning eng qimmatbaho qismi, 
 - Ko'p bosqichli approval workflow'i, har bir o'tish o'z shartlariga ega.
 - Subscription billing: plan o'zgarishi, proration, grace period hisoblash.
 
-**Ehtiyot bo'ling:** Eng keng tarqalgan xato — "anemic domain model": entity'lar faqat getter/setter bo'lib, logika yana service'da qolib ketadi, natijada Domain Model nomi ostida aslida Transaction Script ishlaydi. JPA lazy loading va `LazyInitializationException` tufayli domen metodlarini tranzaksiyadan tashqarida chaqirmang.
+**Ehtiyot bo'ling:** Eng keng tarqalgan xato - "anemic domain model": entity'lar faqat getter/setter bo'lib, logika yana service'da qolib ketadi, natijada Domain Model nomi ostida aslida Transaction Script ishlaydi. JPA lazy loading va `LazyInitializationException` tufayli domen metodlarini tranzaksiyadan tashqarida chaqirmang.
 
 ## 8.3 Jadval moduli (Table Module)
 
@@ -97,13 +98,13 @@ Biznes logika va Service qatlam patternlari — ilovaning eng qimmatbaho qismi, 
 - Tashqi integratsiyalarni (payment gateway, email) use-case ichida koordinatsiya qilish.
 - Audit va metrikalarni bitta joyda, use-case granularligida yig'ish.
 
-**Ehtiyot bo'ling:** `@Transactional` self-invocation (shu sinf ichidagi metodni `this.` orqali chaqirish) proxy'ni chetlab o'tadi va tranzaksiya ochilmaydi — bu eng ko'p uchraydigan tuzoq. Service qatlamni repository metodlarini shunchaki qayta chaqiruvchi "pass-through" sinflar bilan to'ldirmang: qiymat qo'shmaydigan qatlam faqat shovqin.
+**Ehtiyot bo'ling:** `@Transactional` self-invocation (shu sinf ichidagi metodni `this.` orqali chaqirish) proxy'ni chetlab o'tadi va tranzaksiya ochilmaydi - bu eng ko'p uchraydigan tuzoq. Service qatlamni repository metodlarini shunchaki qayta chaqiruvchi "pass-through" sinflar bilan to'ldirmang: qiymat qo'shmaydigan qatlam faqat shovqin.
 
 ## 8.5 Application Service va Domain Service (Application Service vs Domain Service)
 
-**Tavsif:** Application Service tashqi dunyo uchun use-case'ni boshqaradi: tranzaksiya ochadi, DTO'ni domen turlariga aylantiradi, repository'dan aggregate yuklaydi va natijani qaytaradi — lekin o'zida biznes qoidasi saqlamaydi. Domain Service esa aksincha, bitta aggregate'ga sig'maydigan sof domen qoidasini (masalan bir necha aggregate ustidagi hisob-kitobni) ifodalaydi va infrastrukturaga bog'lanmaydi. Bu ikkisini ajratish domen logikasini framework'dan mustaqil va test qilishga oson holda saqlaydi.
+**Tavsif:** Application Service tashqi dunyo uchun use-case'ni boshqaradi: tranzaksiya ochadi, DTO'ni domen turlariga aylantiradi, repository'dan aggregate yuklaydi va natijani qaytaradi - lekin o'zida biznes qoidasi saqlamaydi. Domain Service esa aksincha, bitta aggregate'ga sig'maydigan sof domen qoidasini (masalan bir necha aggregate ustidagi hisob-kitobni) ifodalaydi va infrastrukturaga bog'lanmaydi. Bu ikkisini ajratish domen logikasini framework'dan mustaqil va test qilishga oson holda saqlaydi.
 
-**Spring'da qayerda uchraydi:** Application Service — `@Service` + `@Transactional`, controller'ga eng yaqin qatlam; Domain Service — ko'pincha oddiy POJO yoki `@Component` bo'lib, `@Transactional` yoki repository'ga bog'liqligi minimal. Hexagonal/Spring Modulith uslubida domen paketda port interfeyslari (oddiy Java interface) e'lon qilinadi, adapterlar esa `@Repository`/`@Component` sifatida infrastruktura paketida bo'ladi; `ArchUnit` testlari bu yo'nalishni majburlaydi.
+**Spring'da qayerda uchraydi:** Application Service - `@Service` + `@Transactional`, controller'ga eng yaqin qatlam; Domain Service - ko'pincha oddiy POJO yoki `@Component` bo'lib, `@Transactional` yoki repository'ga bog'liqligi minimal. Hexagonal/Spring Modulith uslubida domen paketda port interfeyslari (oddiy Java interface) e'lon qilinadi, adapterlar esa `@Repository`/`@Component` sifatida infrastruktura paketida bo'ladi; `ArchUnit` testlari bu yo'nalishni majburlaydi.
 
 ```java
 @Service
@@ -127,13 +128,13 @@ class PlaceOrderService {                     // Application Service
 - Domen qoidalarini Spring konteksti ko'tarmasdan, sof JUnit 5 unit test bilan sinash.
 - Bir use-case'ni bir nechta kanal (REST, gRPC, batch) uchun qayta ishlatish.
 
-**Ehtiyot bo'ling:** Domain Service'ga `EntityManager`, HTTP client yoki `@Transactional` kirib kelsa, u aslida Application Service'ga aylanadi va ajratishning ma'nosi yo'qoladi. Shuningdek har bir aggregate uchun avtomatik "...DomainService" yasash anemic model belgisi — qoida avval aggregate ichida joy izlashi kerak.
+**Ehtiyot bo'ling:** Domain Service'ga `EntityManager`, HTTP client yoki `@Transactional` kirib kelsa, u aslida Application Service'ga aylanadi va ajratishning ma'nosi yo'qoladi. Shuningdek har bir aggregate uchun avtomatik "...DomainService" yasash anemic model belgisi - qoida avval aggregate ichida joy izlashi kerak.
 
 ## 8.6 Biznes delegati (Business Delegate)
 
 **Tavsif:** Client (masalan web qatlam) bilan remote biznes service o'rtasiga abstraksiya qo'yadi: lookup, remote chaqiruv tafsilotlari va texnik exception'lar delegate ichida yashiriladi. Natijada presentation qatlam transport texnologiyasini bilmaydi va service joyi o'zgarsa client kodi o'zgarmaydi. Ko'pincha caching va retry ham shu yerda amalga oshiriladi.
 
-**Spring'da qayerda uchraydi:** Zamonaviy ekvivalenti — deklarativ HTTP client interfeyslari: Spring Framework 6.x `@HttpExchange` + `HttpServiceProxyFactory` (`RestClient` yoki `WebClient` ustida) va Spring Cloud OpenFeign'dagi `@FeignClient`. Resilience `spring-retry` (`@Retryable`) yoki Resilience4j (`@CircuitBreaker`) annotatsiyalari bilan qo'shiladi; klassik EJB/RMI davrida esa `JndiObjectFactoryBean` va `RmiProxyFactoryBean` shu rolni bajargan.
+**Spring'da qayerda uchraydi:** Zamonaviy ekvivalenti - deklarativ HTTP client interfeyslari: Spring Framework 6.x `@HttpExchange` + `HttpServiceProxyFactory` (`RestClient` yoki `WebClient` ustida) va Spring Cloud OpenFeign'dagi `@FeignClient`. Resilience `spring-retry` (`@Retryable`) yoki Resilience4j (`@CircuitBreaker`) annotatsiyalari bilan qo'shiladi; klassik EJB/RMI davrida esa `JndiObjectFactoryBean` va `RmiProxyFactoryBean` shu rolni bajargan.
 
 **Qo'llanish keyslari:**
 - Microservice'lar o'rtasidagi chaqiruvni interfeys ortida yashirib, HTTP tafsilotlarini izolyatsiya qilish.
@@ -142,11 +143,11 @@ class PlaceOrderService {                     // Application Service
 - Monolitdan microservice'ga ko'chirishda client kodini o'zgartirmasdan transportni almashtirish.
 - Legacy EJB/SOAP service'ni zamonaviy Spring ilovasiga ulash.
 
-**Ehtiyot bo'ling:** Delegate ichida biznes qoidasi paydo bo'lsa, u yashirin ikkinchi service qatlamga aylanadi — uni faqat transport va resilience uchun saqlang. Bitta jarayon ichidagi chaqiruvlar uchun ortiqcha delegate qo'shish keraksiz indirection beradi.
+**Ehtiyot bo'ling:** Delegate ichida biznes qoidasi paydo bo'lsa, u yashirin ikkinchi service qatlamga aylanadi - uni faqat transport va resilience uchun saqlang. Bitta jarayon ichidagi chaqiruvlar uchun ortiqcha delegate qo'shish keraksiz indirection beradi.
 
 ## 8.7 Sessiya fasadi (Session Facade)
 
-**Tavsif:** Bir nechta mayda biznes komponent (entity, DAO, helper) ustida bitta yirik, use-case'ga yo'naltirilgan interfeys yaratadi va shu chaqiruvni bitta tranzaksiyada bajaradi. Maqsad — client va server o'rtasidagi "chatty" chaqiruvlar sonini kamaytirish va tranzaksion/security chegarasini bir joyga to'plash. J2EE'da bu Stateless Session Bean sifatida amalga oshirilgan.
+**Tavsif:** Bir nechta mayda biznes komponent (entity, DAO, helper) ustida bitta yirik, use-case'ga yo'naltirilgan interfeys yaratadi va shu chaqiruvni bitta tranzaksiyada bajaradi. Maqsad - client va server o'rtasidagi "chatty" chaqiruvlar sonini kamaytirish va tranzaksion/security chegarasini bir joyga to'plash. J2EE'da bu Stateless Session Bean sifatida amalga oshirilgan.
 
 **Spring'da qayerda uchraydi:** Spring'da Session Facade roli coarse-grained `@Service` fasadiga to'g'ri keladi: bitta `@Transactional` metod ichida bir necha repository va domen chaqiruvi bajariladi, natijada client faqat bitta chaqiruv qiladi. Jakarta EE tomonida ekvivalenti `@Stateless` EJB; Spring Boot 3.x'da esa odatda `@RestController` ortidagi `ApplicationFacade`/`...UseCase` sinfi va `@Transactional(readOnly = true)` bilan o'qish fasadlari.
 
@@ -157,11 +158,11 @@ class PlaceOrderService {                     // Application Service
 - Legacy entity bean'lar ustida tranzaksion chegara o'rnatish.
 - Security va audit tekshiruvini use-case darajasida markazlashtirish.
 
-**Ehtiyot bo'ling:** Fasad vaqt o'tib "god service"ga aylanishi oson — har bir yangi ekran uchun metod qo'shilib, sinf minglab qatorga yetadi; fasadlarni use-case bo'yicha bo'lib saqlang. Agar fasad faqat bitta repository metodini chaqirsa, u keraksiz qatlam.
+**Ehtiyot bo'ling:** Fasad vaqt o'tib "god service"ga aylanishi oson - har bir yangi ekran uchun metod qo'shilib, sinf minglab qatorga yetadi; fasadlarni use-case bo'yicha bo'lib saqlang. Agar fasad faqat bitta repository metodini chaqirsa, u keraksiz qatlam.
 
 ## 8.8 Biznes obyekti (Business Object)
 
-**Tavsif:** Domen tushunchasini (Customer, Invoice) ma'lumot va unga tegishli qoidalar bilan birga ifodalovchi obyekt — persistence va presentation tafsilotlaridan mustaqil bo'lishi kerak. Core J2EE kataloglarida bu Domain Model'ning konkret qurilish bloki sifatida keltiriladi: holat + validatsiya + xatti-harakat. DTO'dan farqi — Business Object logika saqlaydi, DTO esa faqat ma'lumot tashiydi.
+**Tavsif:** Domen tushunchasini (Customer, Invoice) ma'lumot va unga tegishli qoidalar bilan birga ifodalovchi obyekt - persistence va presentation tafsilotlaridan mustaqil bo'lishi kerak. Core J2EE kataloglarida bu Domain Model'ning konkret qurilish bloki sifatida keltiriladi: holat + validatsiya + xatti-harakat. DTO'dan farqi - Business Object logika saqlaydi, DTO esa faqat ma'lumot tashiydi.
 
 **Spring'da qayerda uchraydi:** JPA `@Entity`/`@Embeddable` sinflari yoki Spring Data JDBC aggregate sinflari, hamda sof POJO domen sinflari. Invariantlarni Bean Validation 3.x (`@NotNull`, `@Positive`, `jakarta.validation`) va konstruktor ichidagi tekshiruvlar bilan qo'riqlash mumkin; Java 17+ `record` o'zgarmas Value Object uchun, `sealed interface` esa domen holat ierarxiyasi uchun ishlatiladi.
 
@@ -172,11 +173,11 @@ class PlaceOrderService {                     // Application Service
 - Bir nechta kanal (REST, batch) tomonidan qayta ishlatiluvchi domen qoidalari.
 - JPA'siz, sof domen sinflarini unit test bilan tez tekshirish.
 
-**Ehtiyot bo'ling:** Business Object'ni Jackson yoki JPA talablariga moslashtirib, hamma maydonga setter va bo'sh konstruktor qo'shish invariantlarni buzadi — API chegarasida alohida DTO ishlating. Shuningdek domen sinfiga `@Autowired` yoki repository bog'liqligini kiritish uni test qilishni qiyinlashtiradi.
+**Ehtiyot bo'ling:** Business Object'ni Jackson yoki JPA talablariga moslashtirib, hamma maydonga setter va bo'sh konstruktor qo'shish invariantlarni buzadi - API chegarasida alohida DTO ishlating. Shuningdek domen sinfiga `@Autowired` yoki repository bog'liqligini kiritish uni test qilishni qiyinlashtiradi.
 
 ## 8.9 Kompozit entity (Composite Entity)
 
-**Tavsif:** Bir nechta o'zaro bog'liq persistent obyektni bitta coarse-grained entity ostida birlashtiradi, shunda client ichki obyektlarga alohida murojaat qilmaydi. Ichki obyektlar mustaqil identifikatsiyaga ega bo'lmaydi va faqat "root" orqali boshqariladi — bu tranzaksion yaxlitlikni va remote chaqiruvlar sonini yaxshilaydi. DDD'dagi Aggregate va Aggregate Root g'oyasining bevosita ajdodi.
+**Tavsif:** Bir nechta o'zaro bog'liq persistent obyektni bitta coarse-grained entity ostida birlashtiradi, shunda client ichki obyektlarga alohida murojaat qilmaydi. Ichki obyektlar mustaqil identifikatsiyaga ega bo'lmaydi va faqat "root" orqali boshqariladi - bu tranzaksion yaxlitlikni va remote chaqiruvlar sonini yaxshilaydi. DDD'dagi Aggregate va Aggregate Root g'oyasining bevosita ajdodi.
 
 **Spring'da qayerda uchraydi:** JPA'da `@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)` va `@ElementCollection` bilan root entity ostidagi bolalar boshqariladi. Spring Data JDBC bu modelni yanada qat'iy qo'llaydi: aggregate root saqlanganda butun ichki graf qayta yoziladi va repository faqat root uchun yaratiladi. Spring Data MongoDB'da esa `@Document` ichida nested obyektlar bitta yozuv sifatida saqlanadi.
 
@@ -187,13 +188,13 @@ class PlaceOrderService {                     // Application Service
 - Konfiguratsiya aggregate'i: bir nechta sozlama bloki bitta versiyalangan yozuvda.
 - MongoDB'da nested dokument sifatida saqlanadigan buyurtma yoki profil.
 
-**Ehtiyot bo'ling:** Aggregate chegarasini juda katta qilib belgilash lock contention va og'ir yuklanishga olib keladi — bir aggregate'da minglab bola yozuv bo'lsa, pagination va partial update imkonsiz bo'ladi. Ichki obyektlarga tashqaridan to'g'ridan-to'g'ri repository berish Composite Entity'ning butun ma'nosini yo'qotadi.
+**Ehtiyot bo'ling:** Aggregate chegarasini juda katta qilib belgilash lock contention va og'ir yuklanishga olib keladi - bir aggregate'da minglab bola yozuv bo'lsa, pagination va partial update imkonsiz bo'ladi. Ichki obyektlarga tashqaridan to'g'ridan-to'g'ri repository berish Composite Entity'ning butun ma'nosini yo'qotadi.
 
 ## 8.10 Ma'lumot uzatish obyekti (Transfer Object / DTO)
 
 **Tavsif:** Qatlamlar yoki jarayonlar o'rtasida ma'lumotni bitta serializable obyektda tashiydi, shunda har bir maydon uchun alohida chaqiruv qilish kerak bo'lmaydi. DTO biznes logikasiz bo'lib, aniq bir client ehtiyojiga moslashtiriladi va domen modelini tashqi API'dan ajratadi. Bu ajratish tufayli domen refaktoringi API contract'ini buzmaydi.
 
-**Spring'da qayerda uchraydi:** `@RestController` metodlarining request/response turlari — odatda Java 17+ `record`, Jackson (`@JsonProperty`, `@JsonView`) bilan serializatsiya qilinadi va `@Valid` + Bean Validation 3.x bilan tekshiriladi. Mapping uchun MapStruct (compile-time) yoki qo'lda yozilgan static factory metodlari ishlatiladi; Spring Data'ning interface/class-based projection'lari (`findAllBy...` natijasi) esa DTO'ni to'g'ridan-to'g'ri so'rovdan olish imkonini beradi.
+**Spring'da qayerda uchraydi:** `@RestController` metodlarining request/response turlari - odatda Java 17+ `record`, Jackson (`@JsonProperty`, `@JsonView`) bilan serializatsiya qilinadi va `@Valid` + Bean Validation 3.x bilan tekshiriladi. Mapping uchun MapStruct (compile-time) yoki qo'lda yozilgan static factory metodlari ishlatiladi; Spring Data'ning interface/class-based projection'lari (`findAllBy...` natijasi) esa DTO'ni to'g'ridan-to'g'ri so'rovdan olish imkonini beradi.
 
 **Qo'llanish keyslari:**
 - REST API response contract'ini JPA entity'dan ajratib, entity o'zgarishini client'dan yashirish.
@@ -202,7 +203,7 @@ class PlaceOrderService {                     // Application Service
 - Parol yoki ichki ID kabi maydonlarni javobdan chiqarib tashlash.
 - Mobil va web client uchun bir domen asosida turli shakldagi javob berish.
 
-**Ehtiyot bo'ling:** Entity'ni to'g'ridan-to'g'ri controller'dan qaytarish lazy loading muammolari va ma'lumot oshkor bo'lishiga olib keladi — DTO'ni o'tkazib yubormang. Boshqa chekka — har bir qatlam uchun bir xil DTO'larni ko'paytirish; mapping xarajati foydadan oshsa, projection yoki yagona API DTO yetarli.
+**Ehtiyot bo'ling:** Entity'ni to'g'ridan-to'g'ri controller'dan qaytarish lazy loading muammolari va ma'lumot oshkor bo'lishiga olib keladi - DTO'ni o'tkazib yubormang. Boshqa chekka - har bir qatlam uchun bir xil DTO'larni ko'paytirish; mapping xarajati foydadan oshsa, projection yoki yagona API DTO yetarli.
 
 ## 8.11 Transfer Object yig'uvchi (Transfer Object Assembler)
 
@@ -217,7 +218,7 @@ class PlaceOrderService {                     // Application Service
 - GraphQL `@BatchMapping` bilan N+1 chaqiruvni oldini olib, bog'liq ma'lumot yig'ish.
 - Mobil ilova uchun chaqiruv sonini kamaytiruvchi coarse-grained read endpoint.
 
-**Ehtiyot bo'ling:** Assembler ichida yozish operatsiyalari yoki biznes qoidasi paydo bo'lsa, u tranzaksion mas'uliyati noaniq hybrid'ga aylanadi — uni read-only saqlang. Ketma-ket (sequential) remote chaqiruvlar latency'ni ko'paytiradi: timeout va fallback siyosatini albatta belgilang.
+**Ehtiyot bo'ling:** Assembler ichida yozish operatsiyalari yoki biznes qoidasi paydo bo'lsa, u tranzaksion mas'uliyati noaniq hybrid'ga aylanadi - uni read-only saqlang. Ketma-ket (sequential) remote chaqiruvlar latency'ni ko'paytiradi: timeout va fallback siyosatini albatta belgilang.
 
 ## 8.12 Qiymatlar ro'yxati boshqaruvchisi (Value List Handler)
 
@@ -232,11 +233,11 @@ class PlaceOrderService {                     // Application Service
 - Katta eksport job'ida `Stream` yoki paging reader orqali xotirani barqaror ushlash.
 - Qidiruv natijalarini filtrlar bilan birga, barqaror tartibda sahifalash.
 
-**Ehtiyot bo'ling:** `OFFSET`ga asoslangan pagination chuqur sahifalarda sekinlashadi va ma'lumot o'zgarganda satrlar takrorlanib yoki tushib qolishi mumkin — barqaror sort kaliti yoki keyset ishlating. `findAll()` bilan butun jadvalni yuklash va xotirada sahifalash esa to'g'ridan-to'g'ri `OutOfMemoryError`ga yo'l.
+**Ehtiyot bo'ling:** `OFFSET`ga asoslangan pagination chuqur sahifalarda sekinlashadi va ma'lumot o'zgarganda satrlar takrorlanib yoki tushib qolishi mumkin - barqaror sort kaliti yoki keyset ishlating. `findAll()` bilan butun jadvalni yuklash va xotirada sahifalash esa to'g'ridan-to'g'ri `OutOfMemoryError`ga yo'l.
 
 ## 8.13 Masofaviy fasad (Remote Facade)
 
-**Tavsif:** Mayda granulali domen obyektlari ustida coarse-grained, tarmoq uchun optimallashtirilgan interfeys yaratadi: bitta chaqiruvda ko'p ma'lumot uzatiladi va remote chaqiruvlar soni minimallashadi. Remote Facade o'zida biznes logika saqlamaydi — u faqat tarjimon va to'plovchi: DTO yasaydi, domenga delegatsiya qiladi. Tarmoq latency'si eng katta xarajat bo'lgan joyda muhim.
+**Tavsif:** Mayda granulali domen obyektlari ustida coarse-grained, tarmoq uchun optimallashtirilgan interfeys yaratadi: bitta chaqiruvda ko'p ma'lumot uzatiladi va remote chaqiruvlar soni minimallashadi. Remote Facade o'zida biznes logika saqlamaydi - u faqat tarjimon va to'plovchi: DTO yasaydi, domenga delegatsiya qiladi. Tarmoq latency'si eng katta xarajat bo'lgan joyda muhim.
 
 **Spring'da qayerda uchraydi:** `@RestController`/`@GraphQlController` yoki gRPC service implementatsiyasi aynan Remote Facade vazifasini bajaradi: so'rovni DTO'ga bog'laydi (`@RequestBody`, `@Valid`), use-case'ga delegatsiya qiladi va DTO qaytaradi. Spring Framework 6.x'da `@HttpExchange` interfeyslari client tomonda shu fasadning oynasi bo'ladi; `@RestControllerAdvice` + `ProblemDetail` (RFC 9457) esa xatolarni remote contract'ga mos shaklga keltiradi.
 
@@ -247,9 +248,9 @@ class PlaceOrderService {                     // Application Service
 - Ichki exception'larni `ProblemDetail` ko'rinishidagi standart xato javobiga aylantirish.
 - Versiyalangan API (`/v1`, `/v2`) ni bitta domen modeli ustida parallel saqlash.
 
-**Ehtiyot bo'ling:** Fasadga biznes qoidasi, tranzaksiya boshqaruvi yoki SQL kirib kelsa, u test qilinishi qiyin "fat controller"ga aylanadi — logikani service/domen qatlamida qoldiring. Shuningdek domen entity'larini fasaddan to'g'ridan-to'g'ri serializatsiya qilish API'ni domen refaktoringiga qattiq bog'lab qo'yadi.
+**Ehtiyot bo'ling:** Fasadga biznes qoidasi, tranzaksiya boshqaruvi yoki SQL kirib kelsa, u test qilinishi qiyin "fat controller"ga aylanadi - logikani service/domen qatlamida qoldiring. Shuningdek domen entity'larini fasaddan to'g'ridan-to'g'ri serializatsiya qilish API'ni domen refaktoringiga qattiq bog'lab qo'yadi.
 
-## 8.14 Mapper (Mapper — MapStruct, ModelMapper)
+## 8.14 Mapper (Mapper - MapStruct, ModelMapper)
 
 **Tavsif:** Mapper pattern bir qatlamning model obyektini boshqa qatlamning modeliga (entity → DTO, DTO → domain command) aylantirish mantiqini alohida komponentga ajratadi. Bu service metodlarini qo'lda yozilgan o'nlab setter chaqiruvlaridan xalos qiladi va konvertatsiya qoidalarini bitta joyda saqlaydi. MapStruct bu kodni compile-time'da generatsiya qiladi, ModelMapper esa runtime'da reflection bilan ishlaydi. Natijada qatlamlar orasidagi model chegarasi aniq bo'lib, entity'lar API kontraktiga "oqib" ketmaydi.
 
@@ -262,28 +263,28 @@ class PlaceOrderService {                     // Application Service
 - PATCH so'rovida faqat kelgan maydonlarni mavjud entity ustiga yozish (`@MappingTarget` + `NullValuePropertyMappingStrategy.IGNORE`).
 - Kafka/event payload'ini domain command obyektiga map qilish.
 
-**Ehtiyot bo'ling:** ModelMapper kabi reflection-based mapper'lar maydon nomi o'zgarganda compile-time'da xato bermaydi va noto'g'ri yoki `null` map natijasi faqat production'da chiqadi — shuning uchun MapStruct afzal. Mapper ichiga biznes qoidasi (narx hisoblash, status tekshirish) yozmang; lazy JPA assotsiatsiyalarini map qilish esa transaction tashqarisida `LazyInitializationException` yoki N+1 so'rovga olib keladi.
+**Ehtiyot bo'ling:** ModelMapper kabi reflection-based mapper'lar maydon nomi o'zgarganda compile-time'da xato bermaydi va noto'g'ri yoki `null` map natijasi faqat production'da chiqadi - shuning uchun MapStruct afzal. Mapper ichiga biznes qoidasi (narx hisoblash, status tekshirish) yozmang; lazy JPA assotsiatsiyalarini map qilish esa transaction tashqarisida `LazyInitializationException` yoki N+1 so'rovga olib keladi.
 
-## 8.15 Buyruq / Use Case Handler (Command / Use Case Handler — Interactor)
+## 8.15 Buyruq / Use Case Handler (Command / Use Case Handler - Interactor)
 
-**Tavsif:** Har bir biznes amali (use case) o'zining alohida handler sinfiga joylashtiriladi: input sifatida immutable command obyekti keladi, handler uni bajaradi va natija qaytaradi. Bu "god service" (1000 qatorli `UserService`) muammosini hal qiladi — har bir sinf bitta javobgarlikka ega bo'ladi va mustaqil test qilinadi. Clean Architecture va Hexagonal arxitekturada bu qatlam "application layer" deb ataladi. Handler faqat orkestratsiya qiladi: domain obyektlarini yuklaydi, ularning metodlarini chaqiradi, repository orqali saqlaydi.
+**Tavsif:** Har bir biznes amali (use case) o'zining alohida handler sinfiga joylashtiriladi: input sifatida immutable command obyekti keladi, handler uni bajaradi va natija qaytaradi. Bu "god service" (1000 qatorli `UserService`) muammosini hal qiladi - har bir sinf bitta javobgarlikka ega bo'ladi va mustaqil test qilinadi. Clean Architecture va Hexagonal arxitekturada bu qatlam "application layer" deb ataladi. Handler faqat orkestratsiya qiladi: domain obyektlarini yuklaydi, ularning metodlarini chaqiradi, repository orqali saqlaydi.
 
-**Spring'da qayerda uchraydi:** Odatiy amalga oshirish — `CommandHandler<C, R>` yoki `UseCase<I, O>` generic interface va uni implement qiluvchi `@Service`/`@Component` sinflar (`PlaceOrderHandler implements UseCase<PlaceOrderCommand, OrderId>`), command'lar Java `record` sifatida. Spring tranzaksiyani `@Transactional` bilan handler'ning `handle` metodiga qo'yadi, validatsiya esa `@Validated` + `jakarta.validation` annotatsiyalari bilan command'da amalga oshiriladi. Spring Modulith (`spring-modulith-core`) bu uslubni modul-ichi application service sifatida rasmiylashtiradi; Axon Framework'da esa `@CommandHandler` annotatsiyasi bor. Controller handler'ni to'g'ridan-to'g'ri inject qiladi yoki Command Bus orqali chaqiradi.
+**Spring'da qayerda uchraydi:** Odatiy amalga oshirish - `CommandHandler<C, R>` yoki `UseCase<I, O>` generic interface va uni implement qiluvchi `@Service`/`@Component` sinflar (`PlaceOrderHandler implements UseCase<PlaceOrderCommand, OrderId>`), command'lar Java `record` sifatida. Spring tranzaksiyani `@Transactional` bilan handler'ning `handle` metodiga qo'yadi, validatsiya esa `@Validated` + `jakarta.validation` annotatsiyalari bilan command'da amalga oshiriladi. Spring Modulith (`spring-modulith-core`) bu uslubni modul-ichi application service sifatida rasmiylashtiradi; Axon Framework'da esa `@CommandHandler` annotatsiyasi bor. Controller handler'ni to'g'ridan-to'g'ri inject qiladi yoki Command Bus orqali chaqiradi.
 
 **Qo'llanish keyslari:**
-- `PlaceOrderHandler`, `CancelOrderHandler`, `RefundOrderHandler` — har bir buyurtma amali alohida sinf.
+- `PlaceOrderHandler`, `CancelOrderHandler`, `RefundOrderHandler` - har bir buyurtma amali alohida sinf.
 - Katta monolitda `OrderService`ni o'nlab mustaqil use case'ga bo'lib, merge conflict va regressiyani kamaytirish.
 - CQRS'da yozish tomonini (command handler) o'qish tomonidan (query service) ajratish.
 - Bir xil use case'ni HTTP controller, Kafka consumer va scheduled job'dan qayta ishlatish.
 - Audit log: har bir command obyektini bajarilishdan oldin serialize qilib saqlash.
 
-**Ehtiyot bo'ling:** Kichik CRUD loyihada har bir metod uchun alohida sinf yaratish sun'iy murakkablik keltiradi — bu pattern domain mantiqi boy bo'lganda foyda beradi. Handler'lar bir-birini chaqira boshlasa, tranzaksiya chegarasi va nested use case bog'liqliklari chigallashadi; umumiy mantiqni domain service'ga chiqaring.
+**Ehtiyot bo'ling:** Kichik CRUD loyihada har bir metod uchun alohida sinf yaratish sun'iy murakkablik keltiradi - bu pattern domain mantiqi boy bo'lganda foyda beradi. Handler'lar bir-birini chaqira boshlasa, tranzaksiya chegarasi va nested use case bog'liqliklari chigallashadi; umumiy mantiqni domain service'ga chiqaring.
 
 ## 8.16 Buyruq shinasi / Mediator (Command Bus / Mediator)
 
-**Tavsif:** Command Bus chaqiruvchi (controller) va handler o'rtasida vositachi bo'lib, command tipiga qarab mos handler'ni topadi va unga yuboradi. Chaqiruvchi aniq handler sinfiga bog'liq bo'lmaydi — faqat `bus.send(command)` deb chaqiradi. Shina ustiga kesishgan mantiq (validatsiya, logging, metrika, retry, tranzaksiya) decorator/pipeline sifatida qo'shiladi. Bu Mediator pattern'ning application qatlamidagi ko'rinishi.
+**Tavsif:** Command Bus chaqiruvchi (controller) va handler o'rtasida vositachi bo'lib, command tipiga qarab mos handler'ni topadi va unga yuboradi. Chaqiruvchi aniq handler sinfiga bog'liq bo'lmaydi - faqat `bus.send(command)` deb chaqiradi. Shina ustiga kesishgan mantiq (validatsiya, logging, metrika, retry, tranzaksiya) decorator/pipeline sifatida qo'shiladi. Bu Mediator pattern'ning application qatlamidagi ko'rinishi.
 
-**Spring'da qayerda uchraydi:** Spring'ning o'zida command bus yo'q, lekin uni oson yasash mumkin: barcha `CommandHandler<C,R>` bean'larini `List<CommandHandler<?,?>>` yoki `Map<Class<?>, CommandHandler<?,?>>` sifatida inject qilib, `ResolvableType`/`GenericTypeResolver` bilan generic tipni aniqlash. Tayyor kutubxonalar: Axon Framework (`CommandGateway`, `@CommandHandler`), `an.awesome:pipelinr`, `io.github.jkratz55:spring-mediatr`. Spring'ning native alternativalari — `ApplicationEventPublisher` + `@EventListener` (fire-and-forget uchun) va `@Async`. Pipeline bosqichlari Spring AOP (`@Around` advice) yoki qo'lda yozilgan decorator bean'lar bilan ulanadi.
+**Spring'da qayerda uchraydi:** Spring'ning o'zida command bus yo'q, lekin uni oson yasash mumkin: barcha `CommandHandler<C,R>` bean'larini `List<CommandHandler<?,?>>` yoki `Map<Class<?>, CommandHandler<?,?>>` sifatida inject qilib, `ResolvableType`/`GenericTypeResolver` bilan generic tipni aniqlash. Tayyor kutubxonalar: Axon Framework (`CommandGateway`, `@CommandHandler`), `an.awesome:pipelinr`, `io.github.jkratz55:spring-mediatr`. Spring'ning native alternativalari - `ApplicationEventPublisher` + `@EventListener` (fire-and-forget uchun) va `@Async`. Pipeline bosqichlari Spring AOP (`@Around` advice) yoki qo'lda yozilgan decorator bean'lar bilan ulanadi.
 
 **Qo'llanish keyslari:**
 - Controller'larda o'nlab service dependency o'rniga bitta `CommandBus` inject qilish.
@@ -292,13 +293,13 @@ class PlaceOrderService {                     // Application Service
 - Axon bilan event-sourced aggregate'larga command yuborish.
 - Command'larni bajarishdan oldin ruxsat (authorization) tekshiruvini bitta interceptor'da qilish.
 
-**Ehtiyot bo'ling:** Bus stack trace'ni va IDE'dagi "find usages" navigatsiyasini buzadi — kichik loyihada handler'ni to'g'ridan-to'g'ri inject qilish ancha ravshan. Generic tipni runtime'da yechish type-safety'ni yo'qotadi, shuning uchun handler ro'yxatini ilova ishga tushganda tekshiruvdan o'tkazing (har bir command uchun aynan bitta handler bor-yo'qligini).
+**Ehtiyot bo'ling:** Bus stack trace'ni va IDE'dagi "find usages" navigatsiyasini buzadi - kichik loyihada handler'ni to'g'ridan-to'g'ri inject qilish ancha ravshan. Generic tipni runtime'da yechish type-safety'ni yo'qotadi, shuning uchun handler ro'yxatini ilova ishga tushganda tekshiruvdan o'tkazing (har bir command uchun aynan bitta handler bor-yo'qligini).
 
-## 8.17 Tranzaksiya chegarasi (Transaction Boundary — @Transactional on service)
+## 8.17 Tranzaksiya chegarasi (Transaction Boundary - @Transactional on service)
 
-**Tavsif:** Tranzaksiya chegarasi — bu "biznes amali atomar bajariladigan" aniq belgilangan nuqta. To'g'ri joyi service (use case) qatlami: controller juda yuqori (HTTP so'rov DB tranzaksiyasiga teng emas), repository juda past (bir use case bir nechta repository chaqiradi). Spring buni declarative tarzda `@Transactional` bilan amalga oshiradi va proxy orqali `begin/commit/rollback`ni boshqaradi. Shu chegara ichida JPA persistence context, optimistik lock va domain event'larni commit'ga bog'lash ishlaydi.
+**Tavsif:** Tranzaksiya chegarasi - bu "biznes amali atomar bajariladigan" aniq belgilangan nuqta. To'g'ri joyi service (use case) qatlami: controller juda yuqori (HTTP so'rov DB tranzaksiyasiga teng emas), repository juda past (bir use case bir nechta repository chaqiradi). Spring buni declarative tarzda `@Transactional` bilan amalga oshiradi va proxy orqali `begin/commit/rollback`ni boshqaradi. Shu chegara ichida JPA persistence context, optimistik lock va domain event'larni commit'ga bog'lash ishlaydi.
 
-**Spring'da qayerda uchraydi:** `org.springframework.transaction.annotation.@Transactional` service metodida; `PlatformTransactionManager` (`JpaTransactionManager`, `DataSourceTransactionManager`) yoki reaktiv `ReactiveTransactionManager`. Atributlar: `propagation` (`REQUIRED`, `REQUIRES_NEW`, `NESTED`), `isolation`, `readOnly = true`, `timeout`, `rollbackFor`, `noRollbackFor`. Programmatic variant — `TransactionTemplate` va Spring Framework 6'dagi `TransactionalOperator` (reaktiv). Spring Boot 3.x/4.x'da `spring-boot-starter-data-jpa` tranzaksiyani avtomatik sozlaydi; `@TransactionalEventListener(phase = AFTER_COMMIT)` esa event'ni commit'dan keyin ishlatadi. Spring Boot 3.x'da AOP default sifatida CGLIB proxy ishlatadi.
+**Spring'da qayerda uchraydi:** `org.springframework.transaction.annotation.@Transactional` service metodida; `PlatformTransactionManager` (`JpaTransactionManager`, `DataSourceTransactionManager`) yoki reaktiv `ReactiveTransactionManager`. Atributlar: `propagation` (`REQUIRED`, `REQUIRES_NEW`, `NESTED`), `isolation`, `readOnly = true`, `timeout`, `rollbackFor`, `noRollbackFor`. Programmatic variant - `TransactionTemplate` va Spring Framework 6'dagi `TransactionalOperator` (reaktiv). Spring Boot 3.x/4.x'da `spring-boot-starter-data-jpa` tranzaksiyani avtomatik sozlaydi; `@TransactionalEventListener(phase = AFTER_COMMIT)` esa event'ni commit'dan keyin ishlatadi. Spring Boot 3.x'da AOP default sifatida CGLIB proxy ishlatadi.
 
 **Qo'llanish keyslari:**
 - Bir use case ichida bir nechta jadvalga yozishni atomar qilish (buyurtma + ombor rezervi + to'lov yozuvi).
@@ -307,13 +308,13 @@ class PlaceOrderService {                     // Application Service
 - Optimistik lock (`@Version`) konfliktini bitta tranzaksiya chegarasida ushlab, retry qilish.
 - Outbox jadvaliga xabar yozishni biznes o'zgarishi bilan bitta commit'ga bog'lash.
 
-**Ehtiyot bo'ling:** Proxy sababli bir sinf ichida `this.otherTransactionalMethod()` chaqirilsa `@Transactional` ishlamaydi, `private`/`final` metodlarga ham ta'sir qilmaydi; shuningdek default holatda faqat unchecked exception rollback qiladi (checked uchun `rollbackFor` kerak). Tranzaksiya ichida HTTP chaqiruv yoki uzoq hisob-kitob qilish connection pool'ni bo'g'adi — tashqi I/O'ni chegaradan tashqariga chiqaring.
+**Ehtiyot bo'ling:** Proxy sababli bir sinf ichida `this.otherTransactionalMethod()` chaqirilsa `@Transactional` ishlamaydi, `private`/`final` metodlarga ham ta'sir qilmaydi; shuningdek default holatda faqat unchecked exception rollback qiladi (checked uchun `rollbackFor` kerak). Tranzaksiya ichida HTTP chaqiruv yoki uzoq hisob-kitob qilish connection pool'ni bo'g'adi - tashqi I/O'ni chegaradan tashqariga chiqaring.
 
-## 8.18 Notification (Notification — validatsiya xatolarini yig'ish)
+## 8.18 Notification (Notification - validatsiya xatolarini yig'ish)
 
-**Tavsif:** Birinchi xatoda exception tashlash o'rniga, barcha validatsiya muammolari `Notification` obyektiga yig'iladi va oxirida birgalikda qaytariladi. Bu foydalanuvchiga formadagi hamma xatoni bir martada ko'rsatish imkonini beradi va "bir xato tuzatdim — ikkinchisi chiqdi" aylanishini yo'q qiladi. Martin Fowler ta'rifiga ko'ra Notification — bu xatolar ro'yxatini saqlovchi, `hasErrors()` va `addError(...)` metodlariga ega oddiy obyekt. Domain qoidalari ham exception'siz tekshirilib, natija shu obyektga yoziladi.
+**Tavsif:** Birinchi xatoda exception tashlash o'rniga, barcha validatsiya muammolari `Notification` obyektiga yig'iladi va oxirida birgalikda qaytariladi. Bu foydalanuvchiga formadagi hamma xatoni bir martada ko'rsatish imkonini beradi va "bir xato tuzatdim - ikkinchisi chiqdi" aylanishini yo'q qiladi. Martin Fowler ta'rifiga ko'ra Notification - bu xatolar ro'yxatini saqlovchi, `hasErrors()` va `addError(...)` metodlariga ega oddiy obyekt. Domain qoidalari ham exception'siz tekshirilib, natija shu obyektga yoziladi.
 
-**Spring'da qayerda uchraydi:** Spring'ning tabiiy Notification analogi — `org.springframework.validation.Errors`/`BindingResult` va `Validator` interface'i (`validate(Object target, Errors errors)`), hamda `ValidationUtils.rejectIfEmpty(...)`. Bean Validation (`jakarta.validation`) `@Valid`/`@Validated` bilan barcha constraint'larni bir yo'la tekshirib `MethodArgumentNotValidException` yoki `ConstraintViolationException` ichida `Set<ConstraintViolation<?>>` qaytaradi — bu ham yig'ilgan xatolar ro'yxati. Ularni `@RestControllerAdvice` + `@ExceptionHandler` ichida `ProblemDetail` (RFC 9457, Spring Framework 6+) formatiga aylantirish standart yo'l. Service qatlamida o'z `Notification` record'ingizni yozib, uni `Result` obyektiga joylash mumkin.
+**Spring'da qayerda uchraydi:** Spring'ning tabiiy Notification analogi - `org.springframework.validation.Errors`/`BindingResult` va `Validator` interface'i (`validate(Object target, Errors errors)`), hamda `ValidationUtils.rejectIfEmpty(...)`. Bean Validation (`jakarta.validation`) `@Valid`/`@Validated` bilan barcha constraint'larni bir yo'la tekshirib `MethodArgumentNotValidException` yoki `ConstraintViolationException` ichida `Set<ConstraintViolation<?>>` qaytaradi - bu ham yig'ilgan xatolar ro'yxati. Ularni `@RestControllerAdvice` + `@ExceptionHandler` ichida `ProblemDetail` (RFC 9457, Spring Framework 6+) formatiga aylantirish standart yo'l. Service qatlamida o'z `Notification` record'ingizni yozib, uni `Result` obyektiga joylash mumkin.
 
 **Qo'llanish keyslari:**
 - Ko'p maydonli registratsiya yoki to'lov formasining barcha xatolarini bitta 400 javobda qaytarish.
@@ -322,26 +323,26 @@ class PlaceOrderService {                     // Application Service
 - Ko'p qadamli wizard'da qadam yakunida to'plangan ogohlantirish va xatolarni ajratish.
 - Batch job'da muvaffaqiyatsiz yozuvlar sababini yig'ib, dead-letter jadvaliga yozish.
 
-**Ehtiyot bo'ling:** Notification'ni invariant buzilishi uchun ishlatmang — domain holatini noto'g'ri qilib qo'yadigan holatda exception to'g'riroq; Notification kirish ma'lumotini tekshirish uchun. Shuningdek `hasErrors()` natijasini tekshirishni unutib, xatoli ma'lumot bilan davom etish — bu pattern'ning eng ko'p uchraydigan tuzog'i.
+**Ehtiyot bo'ling:** Notification'ni invariant buzilishi uchun ishlatmang - domain holatini noto'g'ri qilib qo'yadigan holatda exception to'g'riroq; Notification kirish ma'lumotini tekshirish uchun. Shuningdek `hasErrors()` natijasini tekshirishni unutib, xatoli ma'lumot bilan davom etish - bu pattern'ning eng ko'p uchraydigan tuzog'i.
 
 ## 8.19 Natija obyekti vs Exception (Result Object vs Exceptions)
 
-**Tavsif:** Kutilgan biznes muvaffaqiyatsizligi (balans yetarli emas, kod muddati o'tgan) exception emas — u metodning normal natijalaridan biri. Result obyekti muvaffaqiyat qiymatini yoki xato sababini explicit tarzda qaytaradi, shuning uchun chaqiruvchi uni ignore qila olmaydi va control flow o'qilishi oson bo'ladi. Exception'lar esa haqiqiy anomal holatlar uchun qoldiriladi: DB uzilishi, bug, invariant buzilishi. Bu ayirma performance (stack trace qimmat) va API kontraktining ravshanligi uchun ham muhim.
+**Tavsif:** Kutilgan biznes muvaffaqiyatsizligi (balans yetarli emas, kod muddati o'tgan) exception emas - u metodning normal natijalaridan biri. Result obyekti muvaffaqiyat qiymatini yoki xato sababini explicit tarzda qaytaradi, shuning uchun chaqiruvchi uni ignore qila olmaydi va control flow o'qilishi oson bo'ladi. Exception'lar esa haqiqiy anomal holatlar uchun qoldiriladi: DB uzilishi, bug, invariant buzilishi. Bu ayirma performance (stack trace qimmat) va API kontraktining ravshanligi uchun ham muhim.
 
-**Spring'da qayerda uchraydi:** Java'da Result'ni `sealed interface` + `record` bilan yozish Java 17+ `switch` pattern matching bilan juda qulay; kutubxonalar — Vavr `Either<L,R>`/`Try<T>`, `io.vavr.control.Validation`. Spring ekosistemasida Result obyekti controller qatlamida `ResponseEntity` yoki `ProblemDetail`ga aylantiriladi. Exception yo'li esa Spring'ning `@RestControllerAdvice`, `ResponseStatusException`, `ErrorResponseException` va `@ExceptionHandler` infratuzilmasi bilan yaxshi integratsiyalashgan; Spring'ning o'zi `DataAccessException` ierarxiyasida unchecked exception'larni afzal ko'radi. Diqqat: `@Transactional` rollback exception'ga bog'langani uchun Result qaytarilganda tranzaksiya commit bo'ladi.
+**Spring'da qayerda uchraydi:** Java'da Result'ni `sealed interface` + `record` bilan yozish Java 17+ `switch` pattern matching bilan juda qulay; kutubxonalar - Vavr `Either<L,R>`/`Try<T>`, `io.vavr.control.Validation`. Spring ekosistemasida Result obyekti controller qatlamida `ResponseEntity` yoki `ProblemDetail`ga aylantiriladi. Exception yo'li esa Spring'ning `@RestControllerAdvice`, `ResponseStatusException`, `ErrorResponseException` va `@ExceptionHandler` infratuzilmasi bilan yaxshi integratsiyalashgan; Spring'ning o'zi `DataAccessException` ierarxiyasida unchecked exception'larni afzal ko'radi. Diqqat: `@Transactional` rollback exception'ga bog'langani uchun Result qaytarilganda tranzaksiya commit bo'ladi.
 
 **Qo'llanish keyslari:**
-- To'lov provayderidan "insufficient funds" javobi — Result bilan, tarmoq uzilishi — exception bilan.
+- To'lov provayderidan "insufficient funds" javobi - Result bilan, tarmoq uzilishi - exception bilan.
 - Promo-kod tekshirish: `Invalid`, `Expired`, `AlreadyUsed` holatlarini sealed tip bilan modellashtirish.
 - Batch qayta ishlashda har bir element natijasini `List<Result<T>>` sifatida yig'ish.
-- Autentifikatsiya: noto'g'ri parol kutilgan natija, LDAP server o'chgani — exception.
+- Autentifikatsiya: noto'g'ri parol kutilgan natija, LDAP server o'chgani - exception.
 - Hot path'da (minutda yuz minglab chaqiruv) exception yaratish narxidan qochish.
 
-**Ehtiyot bo'ling:** Result'ni qaytarib, biznes xatosida tranzaksiya rollback bo'lishini kutish — klassik xato: `TransactionAspectSupport.currentTransactionStatus().setRollbackOnly()` yoki exception kerak. Barcha narsani Result'ga o'tkazish ham zarar: har bir chaqiruvda `if (result.isFailure())` tekshiruvi kod shovqinini oshiradi, shuning uchun faqat kutilgan, ma'noli muvaffaqiyatsizliklar uchun ishlating.
+**Ehtiyot bo'ling:** Result'ni qaytarib, biznes xatosida tranzaksiya rollback bo'lishini kutish - klassik xato: `TransactionAspectSupport.currentTransactionStatus().setRollbackOnly()` yoki exception kerak. Barcha narsani Result'ga o'tkazish ham zarar: har bir chaqiruvda `if (result.isFailure())` tekshiruvi kod shovqinini oshiradi, shuning uchun faqat kutilgan, ma'noli muvaffaqiyatsizliklar uchun ishlating.
 
 ## 8.20 Siyosat obyekti (Policy Object)
 
-**Tavsif:** Policy object — bitta biznes qoidasini (chegirma shartlari, kredit limiti, qaytarish siyosati) alohida, nomlangan va test qilinadigan obyektga ajratish. Qoida service metodining ichidagi chigal `if` zanjiridan chiqib, domenning birinchi darajali tushunchasiga aylanadi: `RefundPolicy.isRefundable(order)`. Odatda Specification/Rules pattern'lari bilan birgalikda ishlatiladi va qoidalarni `and`/`or` bilan kompozitsiya qilish mumkin. Qoida o'zgarganda faqat bitta sinf o'zgaradi, service esa tegilmaydi.
+**Tavsif:** Policy object - bitta biznes qoidasini (chegirma shartlari, kredit limiti, qaytarish siyosati) alohida, nomlangan va test qilinadigan obyektga ajratish. Qoida service metodining ichidagi chigal `if` zanjiridan chiqib, domenning birinchi darajali tushunchasiga aylanadi: `RefundPolicy.isRefundable(order)`. Odatda Specification/Rules pattern'lari bilan birgalikda ishlatiladi va qoidalarni `and`/`or` bilan kompozitsiya qilish mumkin. Qoida o'zgarganda faqat bitta sinf o'zgaradi, service esa tegilmaydi.
 
 **Spring'da qayerda uchraydi:** Oddiy `@Component` sinf yoki domain qatlamidagi framework'siz POJO/`record` sifatida; bir nechta policy'ni `List<DiscountPolicy>` sifatida inject qilib, `@Order`/`Ordered` bilan tartiblash mumkin. Spring Data JPA'da ma'lumot bazasi darajasidagi policy'lar `Specification<T>` (`org.springframework.data.jpa.domain.Specification`) sifatida yozilib `and()`/`or()` bilan birlashtiriladi. Xavfsizlik policy'lari uchun Spring Security `AuthorizationManager`, `PermissionEvaluator` va `@PreAuthorize` SpEL ifodalari mavjud. Murakkab, biznes tomonidan boshqariladigan qoidalar uchun Drools yoki Easy Rules integratsiya qilinadi.
 
@@ -352,13 +353,13 @@ class PlaceOrderService {                     // Application Service
 - Kredit berish/limit oshirish qarorlari uchun bir nechta policy'ni ketma-ket qo'llash.
 - Ko'p tenant'li tizimda har bir tenant uchun boshqa policy implementatsiyasini ulash.
 
-**Ehtiyot bo'ling:** Har bir kichik `if` uchun sinf yaratish policy portlashiga olib keladi — faqat o'zgarib turuvchi yoki biznes tomonidan muhokama qilinadigan qoidalarni ajratish kerak. Policy ichida repository chaqirib DB'ga murojaat qilish uni sekin va test qilish qiyin qiladi; kerakli ma'lumotni parametr sifatida bering.
+**Ehtiyot bo'ling:** Har bir kichik `if` uchun sinf yaratish policy portlashiga olib keladi - faqat o'zgarib turuvchi yoki biznes tomonidan muhokama qilinadigan qoidalarni ajratish kerak. Policy ichida repository chaqirib DB'ga murojaat qilish uni sekin va test qilish qiyin qiladi; kerakli ma'lumotni parametr sifatida bering.
 
 ## 8.21 Strategiyalar registri Map<String, Bean> orqali (Strategy Registry via Map<String, Bean>)
 
-**Tavsif:** Spring bir interface'ning barcha implementatsiyalarini `Map<String, T>` sifatida inject qila oladi, bu yerda kalit — bean nomi. Shu xususiyat tufayli `switch`/`if-else` zanjiri yo'qoladi: kelgan tipga mos strategiya map'dan olinadi. Yangi strategiya qo'shish uchun faqat yangi `@Component` yozish kifoya — mavjud kodni o'zgartirish shart emas (Open/Closed). Bu Spring'dagi eng ko'p ishlatiladigan Strategy pattern ko'rinishi.
+**Tavsif:** Spring bir interface'ning barcha implementatsiyalarini `Map<String, T>` sifatida inject qila oladi, bu yerda kalit - bean nomi. Shu xususiyat tufayli `switch`/`if-else` zanjiri yo'qoladi: kelgan tipga mos strategiya map'dan olinadi. Yangi strategiya qo'shish uchun faqat yangi `@Component` yozish kifoya - mavjud kodni o'zgartirish shart emas (Open/Closed). Bu Spring'dagi eng ko'p ishlatiladigan Strategy pattern ko'rinishi.
 
-**Spring'da qayerda uchraydi:** `ApplicationContext` collection/map injection'ni qo'llab-quvvatlaydi: `Map<String, PaymentProcessor>` (kalit = bean nomi) yoki `List<PaymentProcessor>` (`@Order` bilan tartiblangan). Bean nomini `@Component("CARD")` yoki `@Bean(name = "CARD")` bilan belgilash mumkin; yanada ishonchli yo'l — interface'ga `supports()`/`getType()` metodi qo'shib, `@PostConstruct` ichida `Map`ni `Collectors.toMap`bilan o'zingiz qurish. Shuningdek `ObjectProvider<T>` lazy olish uchun, `@ConditionalOnProperty`/`@Profile` esa faqat kerakli strategiyalarni registratsiya qilish uchun ishlatiladi.
+**Spring'da qayerda uchraydi:** `ApplicationContext` collection/map injection'ni qo'llab-quvvatlaydi: `Map<String, PaymentProcessor>` (kalit = bean nomi) yoki `List<PaymentProcessor>` (`@Order` bilan tartiblangan). Bean nomini `@Component("CARD")` yoki `@Bean(name = "CARD")` bilan belgilash mumkin; yanada ishonchli yo'l - interface'ga `supports()`/`getType()` metodi qo'shib, `@PostConstruct` ichida `Map`ni `Collectors.toMap`bilan o'zingiz qurish. Shuningdek `ObjectProvider<T>` lazy olish uchun, `@ConditionalOnProperty`/`@Profile` esa faqat kerakli strategiyalarni registratsiya qilish uchun ishlatiladi.
 
 ```java
 @Service
@@ -383,13 +384,13 @@ class PaymentService {
 - Hujjat turi bo'yicha validator yoki tax-calculator strategiyasini tanlash.
 - Event tipiga qarab mos handler'ni dispatch qilish.
 
-**Ehtiyot bo'ling:** Bean nomini kalit sifatida ishlatish mo'rt — refactoring yoki `@Component` nomini o'zgartirish map kalitini jimgina buzadi, shuning uchun enum yoki interface metodidan olingan kalit afzal. Kalit topilmaganda `null` qaytishini tekshirmaslik `NullPointerException`ga olib keladi; ilova ishga tushganda barcha kutilgan kalitlar borligini tekshirish foydali.
+**Ehtiyot bo'ling:** Bean nomini kalit sifatida ishlatish mo'rt - refactoring yoki `@Component` nomini o'zgartirish map kalitini jimgina buzadi, shuning uchun enum yoki interface metodidan olingan kalit afzal. Kalit topilmaganda `null` qaytishini tekshirmaslik `NullPointerException`ga olib keladi; ilova ishga tushganda barcha kutilgan kalitlar borligini tekshirish foydali.
 
 ## 8.22 Plugin tanlash @Qualifier orqali (Plugin Selection via @Qualifier)
 
 **Tavsif:** Bir interface'ning bir nechta implementatsiyasi bo'lganda Spring qaysi birini inject qilishni bilmaydi va `NoUniqueBeanDefinitionException` tashlaydi. `@Qualifier` injection nuqtasida aniq bean'ni nomi yoki custom annotatsiya bilan ko'rsatadi, `@Primary` esa default'ni belgilaydi. Bu statik, konfiguratsiya vaqtida hal qilinadigan plugin tanlash: strategiya runtime'da emas, ilova yuklanganda bog'lanadi. Natijada muhit yoki profil bo'yicha boshqa implementatsiyaga o'tish kodga tegmasdan amalga oshadi.
 
-**Spring'da qayerda uchraydi:** `@Qualifier("stripeGateway")`, `@Primary`, hamda `@Qualifier` bilan meta-annotatsiyalangan o'z annotatsiyangiz (`@PaymentProvider(STRIPE)`); Jakarta'ning `@Named`/`@Inject` ham qo'llanadi. Shartli registratsiya uchun — `@Profile("prod")`, `@ConditionalOnProperty`, `@ConditionalOnMissingBean` (Spring Boot auto-configuration'ning asosi) va `@ConditionalOnClass`. Spring Framework 6.2+ `@Fallback` annotatsiyasini qo'shdi — `@Primary`ning teskarisi, ya'ni boshqa nomzod bo'lmasa ishlatiladigan bean. Test'da `@MockitoBean`/`@TestConfiguration` bilan kerakli implementatsiya almashtiriladi.
+**Spring'da qayerda uchraydi:** `@Qualifier("stripeGateway")`, `@Primary`, hamda `@Qualifier` bilan meta-annotatsiyalangan o'z annotatsiyangiz (`@PaymentProvider(STRIPE)`); Jakarta'ning `@Named`/`@Inject` ham qo'llanadi. Shartli registratsiya uchun - `@Profile("prod")`, `@ConditionalOnProperty`, `@ConditionalOnMissingBean` (Spring Boot auto-configuration'ning asosi) va `@ConditionalOnClass`. Spring Framework 6.2+ `@Fallback` annotatsiyasini qo'shdi - `@Primary`ning teskarisi, ya'ni boshqa nomzod bo'lmasa ishlatiladigan bean. Test'da `@MockitoBean`/`@TestConfiguration` bilan kerakli implementatsiya almashtiriladi.
 
 **Qo'llanish keyslari:**
 - `dev` profilda `InMemoryFileStorage`, `prod`da `S3FileStorage` ulanishi.
@@ -398,11 +399,11 @@ class PaymentService {
 - Starter kutubxonada default implementatsiya berib, foydalanuvchiga `@ConditionalOnMissingBean` bilan uni almashtirish imkonini qoldirish.
 - Legacy va yangi implementatsiyani parallel saqlab, `@Primary`ni ko'chirish orqali migratsiya qilish.
 
-**Ehtiyot bo'ling:** `@Qualifier`ni string nomi bilan ishlatish compile-time xavfsizligini yo'qotadi — custom qualifier annotatsiyasi afzal. `@Primary`ni ko'p joyda ishlatish qaysi bean haqiqatda ulanganini tushunishni qiyinlashtiradi; runtime'da har so'rov uchun boshqa implementatsiya kerak bo'lsa `@Qualifier` emas, Strategy registry kerak.
+**Ehtiyot bo'ling:** `@Qualifier`ni string nomi bilan ishlatish compile-time xavfsizligini yo'qotadi - custom qualifier annotatsiyasi afzal. `@Primary`ni ko'p joyda ishlatish qaysi bean haqiqatda ulanganini tushunishni qiyinlashtiradi; runtime'da har so'rov uchun boshqa implementatsiya kerak bo'lsa `@Qualifier` emas, Strategy registry kerak.
 
 ## 8.23 Boy domain modeli vs Anemik (Rich Domain Model vs Anemic)
 
-**Tavsif:** Anemik modelda entity'lar faqat getter/setter'dan iborat ma'lumot sumkasi bo'lib, barcha biznes mantiqi service'larda yashaydi; boy (rich) modelda esa xatti-harakat o'z ma'lumoti bilan birga turadi — `order.cancel()`, `account.withdraw(amount)`. Rich model invariantlarni obyektning o'zi himoya qilishini ta'minlaydi: holat faqat ma'noli metodlar orqali o'zgaradi, setter'lar yopiladi. Service qatlami esa yupqa orkestratorga aylanadi. Anemik model sodda CRUD uchun yetarli, lekin murakkab qoidalar o'sganda mantiq service'lar bo'ylab dublikat bo'lib tarqaydi.
+**Tavsif:** Anemik modelda entity'lar faqat getter/setter'dan iborat ma'lumot sumkasi bo'lib, barcha biznes mantiqi service'larda yashaydi; boy (rich) modelda esa xatti-harakat o'z ma'lumoti bilan birga turadi - `order.cancel()`, `account.withdraw(amount)`. Rich model invariantlarni obyektning o'zi himoya qilishini ta'minlaydi: holat faqat ma'noli metodlar orqali o'zgaradi, setter'lar yopiladi. Service qatlami esa yupqa orkestratorga aylanadi. Anemik model sodda CRUD uchun yetarli, lekin murakkab qoidalar o'sganda mantiq service'lar bo'ylab dublikat bo'lib tarqaydi.
 
 **Spring'da qayerda uchraydi:** JPA entity'lar (`@Entity`) ichiga biznes metodlarini yozish, `protected` no-arg constructor qoldirib, public setter'larni olib tashlash; qiymat obyektlari uchun `@Embeddable` yoki Hibernate 6 `@JavaType`/`AttributeConverter`, Java `record` esa DTO va value object uchun. Lifecycle'da `@PrePersist`/`@PreUpdate`, optimistik lock uchun `@Version`. Domain event'larni entity ichida yig'ish uchun Spring Data'ning `AbstractAggregateRoot<T>` (`registerEvent(...)`) va `@DomainEvents`/`@AfterDomainEventPublication` mexanizmi bor. Spring Modulith aggregate chegaralarini modul darajasida tekshiradi.
 
@@ -413,11 +414,11 @@ class PaymentService {
 - Murakkab narx/chegirma hisobini aggregate ichida saqlab, bir nechta service'dagi dublikatni yo'q qilish.
 - Oddiy ma'lumotnoma (reference data) jadvallari uchun ataylab anemik CRUD qoldirish.
 
-**Ehtiyot bo'ling:** JPA entity ichiga repository yoki tashqi service inject qilish (`@Configurable`, `@Autowired` field) kuchli bog'liqlik va test qiyinligini keltiradi — kerakli ma'lumotni metod parametri sifatida bering. Rich modelni har joyda majburlash ham xato: oddiy CRUD mikroservisda bu ortiqcha qatlam, va JPA lazy loading bilan domain metodlari kutilmagan DB so'rovlarini keltirib chiqarishi mumkin.
+**Ehtiyot bo'ling:** JPA entity ichiga repository yoki tashqi service inject qilish (`@Configurable`, `@Autowired` field) kuchli bog'liqlik va test qiyinligini keltiradi - kerakli ma'lumotni metod parametri sifatida bering. Rich modelni har joyda majburlash ham xato: oddiy CRUD mikroservisda bu ortiqcha qatlam, va JPA lazy loading bilan domain metodlari kutilmagan DB so'rovlarini keltirib chiqarishi mumkin.
 
 ## 8.24 Aggregate-ga bitta service (Service-per-Aggregate)
 
-**Tavsif:** Service'larni texnik qatlam bo'yicha emas, domain aggregate (consistency chegarasi) bo'yicha bo'lish: `OrderService` faqat `Order` aggregate'ini, `InventoryService` faqat `Inventory`ni boshqaradi. Har bir service o'z aggregate'ining tranzaksion chegarasiga egalik qiladi va boshqa aggregate'ni to'g'ridan-to'g'ri o'zgartirmaydi — faqat o'z service'i yoki event orqali. Bu DDD'ning "bir tranzaksiya — bir aggregate" qoidasini kodda aks ettiradi va kelajakda modulni mikroservisga ajratishni osonlashtiradi. Natijada bog'liqliklar grafigi yo'naltirilgan va tushunarli bo'ladi.
+**Tavsif:** Service'larni texnik qatlam bo'yicha emas, domain aggregate (consistency chegarasi) bo'yicha bo'lish: `OrderService` faqat `Order` aggregate'ini, `InventoryService` faqat `Inventory`ni boshqaradi. Har bir service o'z aggregate'ining tranzaksion chegarasiga egalik qiladi va boshqa aggregate'ni to'g'ridan-to'g'ri o'zgartirmaydi - faqat o'z service'i yoki event orqali. Bu DDD'ning "bir tranzaksiya - bir aggregate" qoidasini kodda aks ettiradi va kelajakda modulni mikroservisga ajratishni osonlashtiradi. Natijada bog'liqliklar grafigi yo'naltirilgan va tushunarli bo'ladi.
 
 **Spring'da qayerda uchraydi:** Har bir aggregate uchun alohida package (`com.app.order`, `com.app.inventory`), ichida `@Service`, `Repository` (`JpaRepository<Order, OrderId>`) va domain sinflari; tashqariga faqat interface va DTO chiqariladi. Spring Modulith (`@ApplicationModule`, `ApplicationModules.verify()`) modullar orasidagi noto'g'ri bog'liqlikni test paytida aniqlaydi, ArchUnit ham shu maqsadda ishlatiladi. Aggregate'lar orasidagi aloqa `ApplicationEventPublisher` + `@TransactionalEventListener` yoki Spring Modulith'ning event publication registry'si (`spring-modulith-events-jpa`) orqali amalga oshiriladi. Spring Data REST va `@RepositoryRestResource` ham aggregate-markazli modelga mos keladi.
 
@@ -428,11 +429,11 @@ class PaymentService {
 - Jamoalar orasida egalik (ownership) chegarasini kod strukturasida aks ettirish.
 - Cross-aggregate yozishni taqiqlab, tarqoq tranzaksiya (distributed transaction) ehtiyojini kamaytirish.
 
-**Ehtiyot bo'ling:** Service'lar orasida ikki tomonlama (circular) bog'liqlik paydo bo'lsa, aggregate chegarasi noto'g'ri qo'yilgan — Spring konstruktor injection'da bunday tsiklda ishga tushishdan bosh tortadi. Bitta tranzaksiyada bir nechta aggregate'ni o'zgartirishni odatga aylantirish bu pattern'ning foydasini yo'q qiladi va lock konfliktlarini oshiradi.
+**Ehtiyot bo'ling:** Service'lar orasida ikki tomonlama (circular) bog'liqlik paydo bo'lsa, aggregate chegarasi noto'g'ri qo'yilgan - Spring konstruktor injection'da bunday tsiklda ishga tushishdan bosh tortadi. Bitta tranzaksiyada bir nechta aggregate'ni o'zgartirishni odatga aylantirish bu pattern'ning foydasini yo'q qiladi va lock konfliktlarini oshiradi.
 
 ## 8.25 Orkestrator vs Fasad (Orchestrator vs Facade)
 
-**Tavsif:** Facade bir nechta ichki komponentni sodda, qulay interface ortiga yashiradi — unda biznes qarori yo'q, faqat delegatsiya va qulaylik. Orchestrator esa ketma-ketlikni, shartlarni va muvaffaqiyatsizlik holatida kompensatsiyani boshqaradi — ya'ni process mantiqiga ega. Ularni aralashtirish eng keng tarqalgan arxitektura xatosi: "facade" deb nomlangan sinf asta-sekin biznes qoidalari to'planadigan god object'ga aylanadi. Shuning uchun nomlash va javobgarlikni oldindan ajratish kerak: `OrderFacade` — API uchun qulaylik, `CheckoutOrchestrator` — jarayon egasi.
+**Tavsif:** Facade bir nechta ichki komponentni sodda, qulay interface ortiga yashiradi - unda biznes qarori yo'q, faqat delegatsiya va qulaylik. Orchestrator esa ketma-ketlikni, shartlarni va muvaffaqiyatsizlik holatida kompensatsiyani boshqaradi - ya'ni process mantiqiga ega. Ularni aralashtirish eng keng tarqalgan arxitektura xatosi: "facade" deb nomlangan sinf asta-sekin biznes qoidalari to'planadigan god object'ga aylanadi. Shuning uchun nomlash va javobgarlikni oldindan ajratish kerak: `OrderFacade` - API uchun qulaylik, `CheckoutOrchestrator` - jarayon egasi.
 
 **Spring'da qayerda uchraydi:** Facade odatda `@Service` yoki `@Component` bo'lib, bir nechta domain service'ni inject qiladi va controller uchun DTO-markazli metodlar beradi (ba'zan "application service" deb ataladi). Orchestrator uchun Spring'da bir nechta vosita bor: oddiy `@Transactional` service metodi (qisqa jarayon), Spring Statemachine (`spring-statemachine-core`), Spring Integration (`IntegrationFlow`, `@ServiceActivator`), Spring Batch (`Job`, `Step`, `JobLauncher`), yoki uzoq davom etuvchi saga uchun Temporal/Camunda integratsiyasi. Tarqoq jarayonlarda `@TransactionalEventListener` + outbox bilan choreography, markazlashgan boshqaruv kerak bo'lsa orchestration tanlanadi.
 
@@ -443,11 +444,11 @@ class PaymentService {
 - Legacy tizimga qulay yagona kirish nuqtasi yaratish (facade) uni refactoring qilmasdan.
 - Mikroservislar orasidagi sagani Temporal workflow sifatida markazlashgan boshqarish.
 
-**Ehtiyot bo'ling:** Facade ichiga shart va qoida yozilsa, u testlanmaydigan orkestratorga aylanadi — qaroringizni nom bilan mustahkamlab, facade'ni mantiqsiz qoldiring. Orchestrator'ni esa bitta `@Transactional` metod ichida tashqi HTTP chaqiruvlari bilan qurish xavfli: tarmoq xatosi yarim bajarilgan holatni qoldiradi, shuning uchun saga/outbox va idempotentlik kerak.
+**Ehtiyot bo'ling:** Facade ichiga shart va qoida yozilsa, u testlanmaydigan orkestratorga aylanadi - qaroringizni nom bilan mustahkamlab, facade'ni mantiqsiz qoldiring. Orchestrator'ni esa bitta `@Transactional` metod ichida tashqi HTTP chaqiruvlari bilan qurish xavfli: tarmoq xatosi yarim bajarilgan holatni qoldiradi, shuning uchun saga/outbox va idempotentlik kerak.
 
 ## 8.26 Service'dan domain event chiqarish (Domain Event Publishing from Service)
 
-**Tavsif:** Biznes amali yakunlangach, service "nima sodir bo'ldi" faktini event sifatida e'lon qiladi (`OrderPlaced`, `PaymentCaptured`), yon ta'sirlarni esa tinglovchilar bajaradi. Bu service'ni email yuborish, cache tozalash, analitika kabi vazifalardan ajratadi va yangi reaksiya qo'shishni asosiy kodga tegmasdan imkonli qiladi. Eng muhim nuqta — event'ni commit bilan to'g'ri bog'lash: tranzaksiya rollback bo'lsa, event chiqmasligi kerak. Shu sababli `AFTER_COMMIT` fazasi va outbox pattern birgalikda ishlatiladi.
+**Tavsif:** Biznes amali yakunlangach, service "nima sodir bo'ldi" faktini event sifatida e'lon qiladi (`OrderPlaced`, `PaymentCaptured`), yon ta'sirlarni esa tinglovchilar bajaradi. Bu service'ni email yuborish, cache tozalash, analitika kabi vazifalardan ajratadi va yangi reaksiya qo'shishni asosiy kodga tegmasdan imkonli qiladi. Eng muhim nuqta - event'ni commit bilan to'g'ri bog'lash: tranzaksiya rollback bo'lsa, event chiqmasligi kerak. Shu sababli `AFTER_COMMIT` fazasi va outbox pattern birgalikda ishlatiladi.
 
 **Spring'da qayerda uchraydi:** `ApplicationEventPublisher.publishEvent(...)` (yoki Spring Framework 6'dan oddiy POJO event'lar, `ApplicationEvent`dan meros shart emas), tinglovchilar `@EventListener` va `@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)`; asinxron ishlash uchun `@Async` + `@EnableAsync` yoki `@EventListener` ustida `ApplicationEventMulticaster` sozlamasi. Spring Data JPA tomonida `AbstractAggregateRoot.registerEvent(...)` va `@DomainEvents`/`@AfterDomainEventPublication` event'ni `save()` vaqtida chiqaradi. Ishonchli yetkazish uchun Spring Modulith `spring-modulith-events-jpa`/`-kafka` event publication registry'sini beradi (nashr etilmagan event'lar jadvalda saqlanib, qayta urinib ko'riladi); Kafka/RabbitMQ'ga chiqarish `KafkaTemplate`/`RabbitTemplate` bilan.
 
@@ -458,7 +459,7 @@ class PaymentService {
 - Outbox orqali Kafka'ga integratsiya event'larini commit bilan atomar yozish.
 - Audit va analitika yozuvlarini asosiy biznes oqimidan ajratish.
 
-**Ehtiyot bo'ling:** Default `@EventListener` sinxron va chaqiruvchi tranzaksiyasida ishlaydi — tinglovchidagi exception butun biznes amalini rollback qilishi mumkin; yon ta'sirlar uchun `AFTER_COMMIT` ishlating, lekin unda DB yozuvi yangi tranzaksiya talab qiladi (`REQUIRES_NEW`). `@Async` event'lar esa jarayon qulaganda yo'qoladi va tartibi kafolatlanmaydi — ishonchlilik kerak bo'lsa Modulith event registry yoki outbox jadvalini qo'shing.
+**Ehtiyot bo'ling:** Default `@EventListener` sinxron va chaqiruvchi tranzaksiyasida ishlaydi - tinglovchidagi exception butun biznes amalini rollback qilishi mumkin; yon ta'sirlar uchun `AFTER_COMMIT` ishlating, lekin unda DB yozuvi yangi tranzaksiya talab qiladi (`REQUIRES_NEW`). `@Async` event'lar esa jarayon qulaganda yo'qoladi va tartibi kafolatlanmaydi - ishonchlilik kerak bo'lsa Modulith event registry yoki outbox jadvalini qo'shing.
 
 ---
 

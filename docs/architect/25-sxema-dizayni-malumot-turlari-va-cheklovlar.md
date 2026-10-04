@@ -24,6 +24,7 @@
 </details>
 
 
+
 Sxema ilovaning eng uzoq yashaydigan qismi. Java kodi har yili qayta yoziladi, Spring versiyasi almashadi, lekin `orders` jadvalidagi ustun turi besh yildan keyin ham shu yerda turadi. Noto'g'ri tanlangan tur yoki yozilmagan cheklov keyinchalik yuz minglab qatorni migratsiya qilish narxini keltiradi. Shuning uchun arxitektor tur tanlashni detal deb emas, uzoq muddatli majburiyat deb ko'radi.
 
 ## 25.1 Turni to'g'ri tanlash: `text`, `varchar`, `numeric`, `timestamptz`, `uuid`, `boolean`

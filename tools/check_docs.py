@@ -7,6 +7,8 @@ Tekshiradi:
   1. Fayl hajmi   - GitHub 1 MB dan katta markdown ni render qilmaydi.
   2. Havolalar    - har bir nisbiy havola va anchor haqiqatan mavjudmi.
   3. Kirill       - hujjat o'zbek lotin yozuvida, kirill harf bo'lmasin.
+  3b. Em-dash     - loyiha qoidasi: em-dash va en-dash ishlatilmaydi.
+  3c. Kod fence   - ``` soni juft bo'lishi kerak, aks holda render buziladi.
   4. Manifest     - docs/manifest.json diskdagi fayllar bilan mos.
   5. Skilllar     - .claude/skills/ ichidagi docs/ havolalari haqiqiy.
   6. Struktura    - har bob faylida metadata va navigatsiya bor.
@@ -90,6 +92,16 @@ def main():
         if cyr:
             err(f"{rel}: kirill harflar topildi: {''.join(cyr)}")
 
+        # 3c. kod fence juftligi
+        fences = sum(1 for l in text.split('\n') if l.startswith('```'))
+        if fences % 2:
+            err(f"{rel}: kod fence soni juft emas ({fences} ta ```), render buziladi")
+
+        # 3b. em-dash / en-dash
+        dashes = text.count('\u2014') + text.count('\u2013')
+        if dashes:
+            err(f"{rel}: {dashes} ta em-dash/en-dash topildi, oddiy tire (-) ishlatilsin")
+
     # 2. havolalar
     total = 0
     for rel in files:
@@ -112,13 +124,13 @@ def main():
     for sk in sorted(__import__('glob').glob(os.path.join(ROOT, '.claude/skills/*/SKILL.md'))):
         rel_sk = os.path.relpath(sk, ROOT)
         body = open(sk, encoding='utf-8').read()
-        for m in re.finditer(r'`(docs/[^`\s]+?\.md)(#[-\w]+)?`', body):
+        for m in re.finditer(r'`(docs/[^`\s<>]+?\.md)(#[-\w]+)?`', body):
             p_, a_ = m.group(1), (m.group(2) or '')[1:]
             if not os.path.exists(os.path.join(ROOT, p_)):
                 err(f"{rel_sk}: skill havolasi fayli yo'q -> {p_}")
             elif a_ and a_ not in anchors.get(p_, set()):
                 err(f"{rel_sk}: skill havolasi anchori yo'q -> {p_}#{a_}")
-        for m in re.finditer(r'`(docs/[^`\s]+/)`', body):
+        for m in re.finditer(r'`(docs/[^`\s<>]+/)`', body):
             if not os.path.isdir(os.path.join(ROOT, m.group(1))):
                 err(f"{rel_sk}: skill havolasi papkasi yo'q -> {m.group(1)}")
 

@@ -23,6 +23,7 @@
 </details>
 
 
+
 Spring Boot ko'pchilik uchun "sehr" bo'lib ko'rinadi, lekin ichida sehr yo'q. Bor-yo'g'i classpath da nima borligini o'qiydigan shartli konfiguratsiya mexanizmi va bean ni faqat foydalanuvchi o'zi bermagan holda yaratadigan qoida bor. Arxitektor uchun bu mexanikani bilish ikki narsani beradi: ishga tushmayotgan kontekstni daqiqalarda emas, sekundlarda tushuntirish, va o'z jamoasi uchun to'g'ri sozlanadigan umumiy kutubxona qurish. Quyida auto-configuration ning ichki ishlashi, konfiguratsiya ustunligi, Actuator ning xavfsiz qismi va startup vaqtini qisqartirish yo'llari ko'rib chiqiladi.
 
 ## 16.1 Auto-configuration qanday ishlaydi: `AutoConfiguration.imports` va shartli annotatsiyalar

@@ -23,6 +23,7 @@
 </details>
 
 
+
 Arxitektor JVM ni "qora quti" deb qarasa, ishlab chiqarishdagi har bir g'alati holat uchun tushuntirish topa olmaydi. Nega to'lov servisi deploy dan keyin birinchi 90 sekundda p99 ni 40 ms dan 900 ms ga ko'taradi, nega hisobot generatori heap da joy bor paytda ham `OutOfMemoryError` beradi, nega bitta `volatile` olib tashlansa ombor qoldig'i hisoblovi bir necha kundan keyin xato qiymat ko'rsatadi. Javob bitta joyda: JVM ichida xotira qanday bo'linadi, class qanday yuklanadi, kod qanday kompilyatsiya qilinadi va kompilyatsiya qachon bekor qilinadi. Quyida shu mexanika va undan chiqadigan qarorlar.
 
 ## 9.1 JVM xotira hududlari: heap, metaspace, stack, code cache, direct buffer

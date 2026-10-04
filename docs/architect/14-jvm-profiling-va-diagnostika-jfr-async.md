@@ -23,6 +23,7 @@
 </details>
 
 
+
 Ishlab chiqarishda sekinlashgan to'lov servisi haqida xabar kelganda arxitektorning birinchi ishi kodga qarash emas. Birinchi ish JVM dan dalil olish: thread qayerda turgan, xotira qayerda yig'ilgan, vaqt qayerda yo'qolgan. JFR, async-profiler, thread dump va heap dump bu dalilni bir necha daqiqada beradi, lekin faqat ularni qanday o'qishni bilgan odamga. Bu bob shu asboblarning mexanikasi va ulardan qaror chiqarish tartibi haqida.
 
 ## 14.1 Diagnostika tartibi: avval o'lchov, keyin faraz, keyin tuzatish

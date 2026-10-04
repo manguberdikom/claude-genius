@@ -24,6 +24,7 @@
 </details>
 
 
+
 PostgreSQL planner so'rovni qanday bajarishni o'zi tanlaydi va bu tanlov statistikaga asoslangan taxminlar ustiga qurilgan. Arxitektor uchun muhim narsa index qo'shish emas, balki planner nimaga ishonib shu rejani tanlaganini o'qib tushunish. `EXPLAIN (ANALYZE, BUFFERS)` chiqishi aynan shu ishonchni va haqiqatni yonma-yon ko'rsatadigan yagona vosita. Bu bobda planner mexanikasi, narx modeli, skan va join turlari, hamda sekin so'rovni tartib bilan tekshirish usuli ko'rib chiqiladi.
 
 ## 24.1 Planner nima qiladi: variantlar, narx modeli, tanlov

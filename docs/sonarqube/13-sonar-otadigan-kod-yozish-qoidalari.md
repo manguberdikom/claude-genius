@@ -23,6 +23,7 @@
 </details>
 
 
+
 Sonar qoidalarining katta qismi kodning mantiqini emas, shaklini o'lchaydi. Shuning uchun "Sonar o'tadigan kod" degani sirli uslub emas, balki bir nechta o'lchanadigan xususiyatni qondiradigan kod: metod qisqa, shartlar yassi, resurs yopilgan, istisno yo'qolmagan, taqqoslash to'g'ri tipda qilingan. Quyida har bir mavzu uchun avval analizator nimadan shikoyat qiladi, keyin o'sha shikoyatni yo'q qiladigan variant keltirilgan. Misollar to'lov, buyurtma va ombor qoldig'i domenidan olingan, chunki real shikoyatlar aynan shunday servislarda to'planadi.
 
 ## 13.1 Metodni qisqa va bitta mas'uliyatli qilish: murakkablik chegarasidan oshmaslik

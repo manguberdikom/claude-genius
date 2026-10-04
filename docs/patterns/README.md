@@ -2,14 +2,15 @@
 
 Bu ma'lumotnoma Java va Spring ekotizimida ishlaydigan arxitektor bilishi kerak bo'lgan **1007 ta** dizayn pattern, arxitektura uslubi, integratsiya, resilience, xavfsizlik, testing va anti-patternni **30 ta bo'limda** qamrab oladi. Har bir pattern uchun to'rt qism berilgan:
 
-- **Tavsif** — pattern qanday muammoni hal qiladi va qanday ishlaydi.
-- **Spring'da qayerda uchraydi** — Spring Framework, Spring Boot va ekotizimdagi aniq sinflar, annotatsiyalar, kutubxonalar.
-- **Qo'llanish keyslari** — real loyihalarda qayerda ishlatiladi.
-- **Ehtiyot bo'ling** — tuzoqlar, noto'g'ri qo'llash holatlari va qachon ishlatmaslik kerak.
+- **Tavsif** - pattern qanday muammoni hal qiladi va qanday ishlaydi.
+- **Spring'da qayerda uchraydi** - Spring Framework, Spring Boot va ekotizimdagi aniq sinflar, annotatsiyalar, kutubxonalar.
+- **Qo'llanish keyslari** - real loyihalarda qayerda ishlatiladi.
+- **Ehtiyot bo'ling** - tuzoqlar, noto'g'ri qo'llash holatlari va qachon ishlatmaslik kerak.
 
 Barcha patternlarning inglizcha nomi bo'yicha [alifbo indeksi](99-alifbo-boyicha-indeks.md) alohida faylda.
 
-**Bu hujjat to'rtlikning bir qismi.** Mavzular takrorlanmaydi; qolgan uchtasi: [Testlash qo'llanmasi](../testing/README.md), [Arxitektor miyyasi](../architect/README.md), [SonarQube hujjati](../sonarqube/README.md).
+
+**Bu hujjat oltilikning bir qismi.** Mavzular takrorlanmaydi; qolgan beshtasi: [Testlash qo'llanmasi](../testing/README.md), [Arxitektor miyyasi](../architect/README.md), [SonarQube hujjati](../sonarqube/README.md), [Toza kod qoidalari](../clean-code/README.md), [Kod review](../code-review/README.md).
 
 **Versiya bazasi:** Java 21 LTS (pol: 17, Java 25 eslatmalari bilan), Spring Boot 3.2-3.5 (4.0 eslatmalari bilan), PostgreSQL 16+ (15-18 havolalari bilan), JUnit 5.
 

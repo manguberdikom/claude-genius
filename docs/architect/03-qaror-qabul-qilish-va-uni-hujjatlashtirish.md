@@ -22,6 +22,7 @@
 </details>
 
 
+
 Arxitektorning asosiy mahsuloti kod emas, qaror. Kod qaytarilishi mumkin, qaror esa jamoaning keyingi ikki yilini belgilaydi. Qaror yozilmasa, u yo'q: olti oydan keyin "nega bu yerda Kafka turibdi" degan savolga javob beradigan hujjat kerak. Bu bob qarorni qanday pishitish, qanday yozib qo'yish va keyin uning natijasini qanday kuzatish haqida.
 
 ## 3.1 ADR (Architecture Decision Record) tuzilishi: kontekst, qaror, oqibat, holat

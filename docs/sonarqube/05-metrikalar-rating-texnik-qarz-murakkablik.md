@@ -22,6 +22,7 @@
 </details>
 
 
+
 Sonar hisobotidagi harf va foizlar sehrli emas. Ularning ortida juda oddiy arifmetika turadi: qoida topgan har bir issue ga daqiqa bahosi qo'yiladi, bahalar qo'shiladi, keyin kod hajmiga bo'linadi. Shu mexanikani bilgan developer reytingni ko'rib darhol tushunadi: bu yerda bitta blocker bugmi, yoki minglab mayda smell to'planganmi. Quyida har bir metrika qanday hisoblanadi, qaysi biriga qaror uchun tayanish mumkin va qaysi biri faqat tekshirishga chaqiruvchi signal ekani ko'rsatiladi.
 
 ## 5.1 Reliability, security va maintainability reytinglari qanday hisoblanadi

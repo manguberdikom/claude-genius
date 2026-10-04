@@ -23,6 +23,7 @@
 </details>
 
 
+
 Jamoalar "gate ni 100% ga sozlaymiz" deganda ko'pincha bitta raqamni, ya'ni coverage ni nazarda tutadi. Amalda esa quality gate bir nechta mustaqil shartning mantiqiy VA birikmasi, va ularning har biri boshqa narsani o'lchaydi. Shuning uchun "100% gate" ni qondirish bitta ish emas, balki besh-olti xil ishning jamlanmasi. Bu bob har bir shartni alohida ochadi, ularning o'zaro ziddiyatini ko'rsatadi va qondirish tartibini aniq ketma-ketlikda beradi.
 
 ## 8.1 "100% gate" aslida nimani anglatadi: bu bitta raqam emas, bir nechta shart

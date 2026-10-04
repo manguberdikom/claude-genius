@@ -23,6 +23,7 @@
 </details>
 
 
+
 Sonar testni ikki tomondan ko'radi. Birinchi tomon: test ishlab chiqarish kodining qancha qatorini va qancha shoxini ishga tushirdi, ya'ni coverage raqami. Ikkinchi tomon: testning o'zi ham tahlil qilinadigan kod, unda ham issue chiqadi. Shu ikki tomonni bir vaqtda qondirmasa, quality gate yoki coverage shartida yoki test fayllaridagi issue sababli yiqiladi. Bu bobda har bir mavzu ayni shu ikki tomon bilan bog'lanadi, test yozish asoslari esa [testlash qo'llanmasiga](../testing/README.md) qoldiriladi.
 
 ## 17.1 Test nimani qamrashi kerak: ishlab chiqarish kodining har bir yo'li

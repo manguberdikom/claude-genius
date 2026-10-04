@@ -24,6 +24,7 @@
 </details>
 
 
+
 PostgreSQL ning standart sozlamalari 1 GB operativ xotirali mashinada ishga tushsin degan maqsadda yozilgan, shuning uchun 16 GB li production serverda ular to'g'ridan to'g'ri zarar keltiradi. Arxitektorning vazifasi har bir parametrni server resursidan kelib chiqib hisoblash, keyin ulanishlar sonini pool orqali cheklab, oqibatini monitoring bilan o'lchab turishdir. Sozlash, pool va kuzatuv bir zanjir: noto'g'ri `work_mem` sekin so'rovga, noto'g'ri pool kattaligi timeout'ga olib keladi. Oxirida eng ko'p e'tibordan chetda qoladigan narsa bor: zaxira nusxa emas, balki tiklanishni sinab ko'rish.
 
 ## 27.1 Asosiy `postgresql.conf` parametrlari va ularni server resursidan kelib chiqib hisoblash

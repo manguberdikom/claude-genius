@@ -23,6 +23,7 @@
 </details>
 
 
+
 Sonar serveri kodni o'lchaydi, lekin o'zi ham ishlab chiqarish tizimi: unda hisob, guruh, token va sozlama bor. Kim quality gate shartini o'zgartira oladi va kim tahlil yuborishi mumkin degan savol texnik savol emas, boshqaruv savoli. Bu bo'limda huquqlar modeli, guruhlar, huquq shabloni, token turlari va tashqi autentifikatsiya mexanikasi ko'rsatiladi. Darhol bir ogohlantirish: huquqlarning interfeysdagi nomlari SonarQube versiyasiga qarab biroz farq qiladi, shuning uchun quyida har bir huquqning nomi bilan birga ma'nosi ham yoziladi, siz esa o'z serveringizdagi aniq yozuvni tekshirib oling.
 
 ## 35.1 Huquqlar modeli: global huquqlar va loyiha huquqlari

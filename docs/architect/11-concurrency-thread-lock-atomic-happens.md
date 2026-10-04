@@ -23,6 +23,7 @@
 </details>
 
 
+
 Konkurentlik kodni tezlashtirmaydi, u kodni qimmatlashtiradi. To'lov servisi sekundiga 2000 so'rovni ko'tarishi uchun ko'p oqimli bo'lishi shart, lekin har bir umumiy o'zgaruvchi, har bir singleton bean maydoni va har bir lock shu narxga qo'shimcha qator qo'shadi. Arxitektor uchun asosiy savol "qanday parallellashtiraman" emas, "qaysi holat umumiy va uni kim qanday tartibda ko'radi" degan savol. Bu bobda JVM ichida nima sodir bo'lishini, Java Memory Model qanday kafolat berishini va Spring konteynerida bu kafolatlar qanday buzilishini ko'rib chiqamiz.
 
 ## 11.1 Parallellik va konkurentlik farqi, qaysi muammoni hal qilamiz

@@ -26,11 +26,12 @@
 </details>
 
 
-Xavfsizlik, tranzaksiya, asinxronlik va konkurentlik — Spring ilovalarining eng ko'p buziladigan, ammo eng kam testlanadigan to'rt sohasi. Bu yerdagi xatolar kompilyatsiya vaqtida ko'rinmaydi: ular production'da noto'g'ri ruxsat, yarim commit bo'lgan ma'lumot yoki ikki marta yechilgan to'lov ko'rinishida chiqadi. Bobda har bir sohani Spring Security 6.x, Spring Boot 3.x/4.x, JUnit 5, Awaitility, Spring Retry va Resilience4j vositalari bilan deterministik testga qanday aylantirish mumkinligini ko'ramiz. Arxitektor uchun asosiy savol — qaysi qoida testga majburan qoplanishi kerak va qaysi chegaradan keyin test emas, boshqa vosita turi kerak.
+
+Xavfsizlik, tranzaksiya, asinxronlik va konkurentlik - Spring ilovalarining eng ko'p buziladigan, ammo eng kam testlanadigan to'rt sohasi. Bu yerdagi xatolar kompilyatsiya vaqtida ko'rinmaydi: ular production'da noto'g'ri ruxsat, yarim commit bo'lgan ma'lumot yoki ikki marta yechilgan to'lov ko'rinishida chiqadi. Bobda har bir sohani Spring Security 6.x, Spring Boot 3.x/4.x, JUnit 5, Awaitility, Spring Retry va Resilience4j vositalari bilan deterministik testga qanday aylantirish mumkinligini ko'ramiz. Arxitektor uchun asosiy savol - qaysi qoida testga majburan qoplanishi kerak va qaysi chegaradan keyin test emas, boshqa vosita turi kerak.
 
 ## 11.1 Spring Security'ni testlash asoslari
 
-`spring-security-test` moduli (`testImplementation 'org.springframework.security:spring-security-test'`) ikki xil mexanizm beradi. Birinchisi — annotatsiyalar: `@WithMockUser` soxta `Authentication` yaratadi, `@WithAnonymousUser` kontekstni anonim holatga qo'yadi, `@WithUserDetails` esa haqiqiy `UserDetailsService` bean'idan foydalanuvchini yuklaydi (shuning uchun u rol xaritalashdagi xatoni ham ushlaydi). Ikkinchisi — `SecurityMockMvcRequestPostProcessors`: `user()`, `jwt()`, `opaqueToken()`, `csrf()`. Post-processor'lar afzal, chunki ularni parametrlashtirilgan testga uzatish mumkin. `@WebMvcTest` sizning `SecurityFilterChain` konfiguratsiyangizni skan qilmaydi — uni `@Import` bilan qo'shish shart, aks holda test real qoidalarni emas, Boot'ning default himoyasini tekshiradi.
+`spring-security-test` moduli (`testImplementation 'org.springframework.security:spring-security-test'`) ikki xil mexanizm beradi. Birinchisi - annotatsiyalar: `@WithMockUser` soxta `Authentication` yaratadi, `@WithAnonymousUser` kontekstni anonim holatga qo'yadi, `@WithUserDetails` esa haqiqiy `UserDetailsService` bean'idan foydalanuvchini yuklaydi (shuning uchun u rol xaritalashdagi xatoni ham ushlaydi). Ikkinchisi - `SecurityMockMvcRequestPostProcessors`: `user()`, `jwt()`, `opaqueToken()`, `csrf()`. Post-processor'lar afzal, chunki ularni parametrlashtirilgan testga uzatish mumkin. `@WebMvcTest` sizning `SecurityFilterChain` konfiguratsiyangizni skan qilmaydi - uni `@Import` bilan qo'shish shart, aks holda test real qoidalarni emas, Boot'ning default himoyasini tekshiradi.
 
 ```java
 @WebMvcTest(OrderController.class)
@@ -83,7 +84,7 @@ class ReportApiSecurityTest {
 
 ## 11.2 Avtorizatsiya qoidalarini testlash
 
-Avtorizatsiya — bu matritsa, demak uni matritsa sifatida testlash kerak: rol x endpoint x kutilgan HTTP status. Bu jadval arxitektura artefakti bo'lib, kodda bitta joyda (test `@MethodSource`'ida yoki CSV faylda) yashashi va yangi endpoint qo'shilganda majburan to'ldirilishi lozim. Eng muhim qatorlar — ruxsat berilganlar emas, **rad etilganlar**: `403` kutilgan hollar regressiyani birinchi ushlaydi. `401` va `403` ni aralashtirib yubormang: autentifikatsiya yo'q — `401`, bor-u huquq yo'q — `403`.
+Avtorizatsiya - bu matritsa, demak uni matritsa sifatida testlash kerak: rol x endpoint x kutilgan HTTP status. Bu jadval arxitektura artefakti bo'lib, kodda bitta joyda (test `@MethodSource`'ida yoki CSV faylda) yashashi va yangi endpoint qo'shilganda majburan to'ldirilishi lozim. Eng muhim qatorlar - ruxsat berilganlar emas, **rad etilganlar**: `403` kutilgan hollar regressiyani birinchi ushlaydi. `401` va `403` ni aralashtirib yubormang: autentifikatsiya yo'q - `401`, bor-u huquq yo'q - `403`.
 
 | Endpoint | Metod | ANONYMOUS | ROLE_USER | ROLE_MANAGER | ROLE_ADMIN |
 |---|---|---|---|---|---|
@@ -128,7 +129,7 @@ Qo'shimcha nazorat: `RequestMappingHandlerMapping` bean'idan barcha mapping'larn
 
 ## 11.3 Method security'ni testlash
 
-`@EnableMethodSecurity` bilan `@PreAuthorize`/`@PostAuthorize` AOP proxy orqali ishlaydi, demak testda bean kontekstdan olinishi shart — `new AccountService()` hech narsani tekshirmaydi. `@WithMockUser` ishlaydi, chunki u `TestSecurityContextHolder` orqali `SecurityContextHolder`'ni to'ldiradi. Ba'zan rolni dinamik yasash kerak bo'ladi — o'shanda `SecurityContext`'ni qo'lda to'ldirib, `finally` blokida tozalash kerak. `@PostAuthorize` uchun yodda tuting: metod allaqachon bajarilib bo'lgan, shuning uchun test yon ta'sir (yozuv) rollback bo'lganini ham tekshirishi lozim.
+`@EnableMethodSecurity` bilan `@PreAuthorize`/`@PostAuthorize` AOP proxy orqali ishlaydi, demak testda bean kontekstdan olinishi shart - `new AccountService()` hech narsani tekshirmaydi. `@WithMockUser` ishlaydi, chunki u `TestSecurityContextHolder` orqali `SecurityContextHolder`'ni to'ldiradi. Ba'zan rolni dinamik yasash kerak bo'ladi - o'shanda `SecurityContext`'ni qo'lda to'ldirib, `finally` blokida tozalash kerak. `@PostAuthorize` uchun yodda tuting: metod allaqachon bajarilib bo'lgan, shuning uchun test yon ta'sir (yozuv) rollback bo'lganini ham tekshirishi lozim.
 
 ```java
 @SpringBootTest
@@ -158,11 +159,11 @@ class AccountServiceSecurityTest {
 }
 ```
 
-Spring Security 6.3+ da method security `AuthorizationDeniedException` tashlaydi — u `AccessDeniedException`'ning merosxo'ri, shuning uchun yuqoridagi assertion ikkala versiyada ham o'tadi.
+Spring Security 6.3+ da method security `AuthorizationDeniedException` tashlaydi - u `AccessDeniedException`'ning merosxo'ri, shuning uchun yuqoridagi assertion ikkala versiyada ham o'tadi.
 
 ## 11.4 OAuth2 va JWT: Resource Server'ni testlash
 
-Resource Server'da asosiy xavf — claim'dan authority'ga xaritalash. Default `JwtGrantedAuthoritiesConverter` `scope`/`scp` claim'ini `SCOPE_` prefiksi bilan authority'ga aylantiradi. `jwt()` post-processor'iga `.jwt(...)` bilan claim bersangiz, shu konverter ishga tushadi va siz real xaritalashni testlaysiz; `.authorities(...)` bersangiz esa konverterni chetlab o'tasiz va buzuq Keycloak `realm_access` parser'i testda ko'rinmay qoladi. Shuning uchun maxsus konverter uchun doim claim darajasidan boshlang.
+Resource Server'da asosiy xavf - claim'dan authority'ga xaritalash. Default `JwtGrantedAuthoritiesConverter` `scope`/`scp` claim'ini `SCOPE_` prefiksi bilan authority'ga aylantiradi. `jwt()` post-processor'iga `.jwt(...)` bilan claim bersangiz, shu konverter ishga tushadi va siz real xaritalashni testlaysiz; `.authorities(...)` bersangiz esa konverterni chetlab o'tasiz va buzuq Keycloak `realm_access` parser'i testda ko'rinmay qoladi. Shuning uchun maxsus konverter uchun doim claim darajasidan boshlang.
 
 ```java
 @Test
@@ -228,11 +229,11 @@ Sessiya boshqaruvi uchun ikki testni unutmang. Session fixation: `MockHttpSessio
 
 ## 11.6 Xavfsizlik testining chegarasi
 
-Unit va integration testlar faqat **siz yozgan qoidalarni** tekshiradi: matritsa bo'yicha endpoint himoyalanganmi, claim to'g'ri xaritalanganmi, CSRF yoqilganmi. Ular noma'lum zaifliklarni, dependency CVE'larini, noto'g'ri sozlangan infrastrukturani, SQL injection yoki IDOR'ni tizimli qidirmaydi. Bu ishlar uchun alohida qatlam kerak: SAST (kod tahlili), dependency scanning, DAST va qo'lda penetration test — ular [13-bobda](13-nofunksional-testlar-performance-resilience.md) ko'rilgan. Test strategiyasida bu chegarani yozib qo'ying, aks holda "100% security test qoplangan" degan yolg'on xotirjamlik paydo bo'ladi.
+Unit va integration testlar faqat **siz yozgan qoidalarni** tekshiradi: matritsa bo'yicha endpoint himoyalanganmi, claim to'g'ri xaritalanganmi, CSRF yoqilganmi. Ular noma'lum zaifliklarni, dependency CVE'larini, noto'g'ri sozlangan infrastrukturani, SQL injection yoki IDOR'ni tizimli qidirmaydi. Bu ishlar uchun alohida qatlam kerak: SAST (kod tahlili), dependency scanning, DAST va qo'lda penetration test - ular [13-bobda](13-nofunksional-testlar-performance-resilience.md) ko'rilgan. Test strategiyasida bu chegarani yozib qo'ying, aks holda "100% security test qoplangan" degan yolg'on xotirjamlik paydo bo'ladi.
 
 ## 11.7 Tranzaksiya chegaralarini testlash
 
-Tranzaksiya testida birinchi qoida: **test metodining o'ziga `@Transactional` qo'ymang**. Aks holda hamma narsa bitta tranzaksiyada bo'lib, oxirida rollback qilinadi — propagation va commit xatti-harakatini ko'rish imkonsiz. Haqiqiy baza (Testcontainers, [8-bob](08-testcontainers-bilan-real-infratuzilmada.md)) va yozuvlarni tashqaridan sanash kerak. `REQUIRES_NEW` yangi connection oladi, shuning uchun test profilida pool hajmi kamida 2 bo'lsin. `NESTED` savepoint talab qiladi: `JpaTransactionManager` uni faqat `setNestedTransactionAllowed(true)` bilan va dialekt qo'llab-quvvatlasa bajaradi. Eng ko'p uchraydigan tuzoq — checked exception default holda rollback qilmaydi.
+Tranzaksiya testida birinchi qoida: **test metodining o'ziga `@Transactional` qo'ymang**. Aks holda hamma narsa bitta tranzaksiyada bo'lib, oxirida rollback qilinadi - propagation va commit xatti-harakatini ko'rish imkonsiz. Haqiqiy baza (Testcontainers, [8-bob](08-testcontainers-bilan-real-infratuzilmada.md)) va yozuvlarni tashqaridan sanash kerak. `REQUIRES_NEW` yangi connection oladi, shuning uchun test profilida pool hajmi kamida 2 bo'lsin. `NESTED` savepoint talab qiladi: `JpaTransactionManager` uni faqat `setNestedTransactionAllowed(true)` bilan va dialekt qo'llab-quvvatlasa bajaradi. Eng ko'p uchraydigan tuzoq - checked exception default holda rollback qilmaydi.
 
 ```java
 @SpringBootTest                       // DIQQAT: test metodida @Transactional YO'Q
@@ -287,7 +288,7 @@ Oraliq holatni tekshirish uchun `TestTransaction.flagForCommit()` va `TestTransa
 
 ## 11.8 Optimistik va pessimistik lock'ni testlash
 
-`@Version` bilan to'qnashuvni thread'lar bilan yasash mumkin, lekin bu beqaror chiqadi. Deterministik yo'l — bitta thread'da ikkita `EntityManager` ochib, ikkisi ham bir xil versiyani o'qib, birin-ketin commit qilish: ikkinchi commit kafolatli yiqiladi.
+`@Version` bilan to'qnashuvni thread'lar bilan yasash mumkin, lekin bu beqaror chiqadi. Deterministik yo'l - bitta thread'da ikkita `EntityManager` ochib, ikkisi ham bir xil versiyani o'qib, birin-ketin commit qilish: ikkinchi commit kafolatli yiqiladi.
 
 ```java
 @SpringBootTest
@@ -319,7 +320,7 @@ class OptimisticLockTest {
 }
 ```
 
-Service qatlami orqali kelganda Spring bu xatoni `ObjectOptimisticLockingFailureException`'ga o'raydi — retry logikasi borligini ham shu turdagi assertion bilan tekshiring. Pessimistik lock uchun esa lock'ni ushlab turuvchi ikkinchi tranzaksiya kerak; `Thread.sleep` emas, `CountDownLatch` bilan koordinatsiya qiling. Lock timeout hint'i DB'ga bog'liq: PostgreSQL'da `0` qiymati `FOR UPDATE NOWAIT`ga aylanadi.
+Service qatlami orqali kelganda Spring bu xatoni `ObjectOptimisticLockingFailureException`'ga o'raydi - retry logikasi borligini ham shu turdagi assertion bilan tekshiring. Pessimistik lock uchun esa lock'ni ushlab turuvchi ikkinchi tranzaksiya kerak; `Thread.sleep` emas, `CountDownLatch` bilan koordinatsiya qiling. Lock timeout hint'i DB'ga bog'liq: PostgreSQL'da `0` qiymati `FOR UPDATE NOWAIT`ga aylanadi.
 
 ```java
 public interface SeatRepository extends JpaRepository<Seat, Long> {
@@ -353,7 +354,7 @@ void secondTransactionCannotTakeTheSameRowLock() throws Exception {
 
 ## 11.9 Asinxron kodni testlash
 
-`@Async` metod, `@EventListener` va `@TransactionalEventListener(phase = AFTER_COMMIT)` natijasini `Thread.sleep` bilan kutish — eng tez beqarorlashadigan naqsh. O'rniga Awaitility: `await().atMost(...).pollInterval(...).untilAsserted(...)` shart bajarilishi bilanoq davom etadi, bajarilmasa aniq xabar bilan yiqiladi. `AFTER_COMMIT` listener'i uchun yana bir shart bor: test metodi `@Transactional` bo'lmasligi kerak, aks holda commit umuman bo'lmaydi va listener hech qachon chaqirilmaydi. Determinizm kerak bo'lsa, `CountDownLatch` bilan aniq signal kutish eng ishonchli variant.
+`@Async` metod, `@EventListener` va `@TransactionalEventListener(phase = AFTER_COMMIT)` natijasini `Thread.sleep` bilan kutish - eng tez beqarorlashadigan naqsh. O'rniga Awaitility: `await().atMost(...).pollInterval(...).untilAsserted(...)` shart bajarilishi bilanoq davom etadi, bajarilmasa aniq xabar bilan yiqiladi. `AFTER_COMMIT` listener'i uchun yana bir shart bor: test metodi `@Transactional` bo'lmasligi kerak, aks holda commit umuman bo'lmaydi va listener hech qachon chaqirilmaydi. Determinizm kerak bo'lsa, `CountDownLatch` bilan aniq signal kutish eng ishonchli variant.
 
 ```java
 @SpringBootTest
@@ -387,7 +388,7 @@ class OrderEventFlowTest {
 
 ## 11.10 Spring event'larni testlash
 
-`@RecordApplicationEvents` test klassiga qo'yilsa, `ApplicationEvents` bean'ini inject qilib publish qilingan event'larni to'g'ridan-to'g'ri tasdiqlash mumkin — har bir test metodi uchun yozuv alohida. Bu modul chegarasini tekshirishning eng arzon usuli: service listener'ni emas, faqat event'ni publish qilganini tasdiqlaydi. Spring Modulith'da esa `Scenario` API modullar orasidagi oqimni to'liq kuzatadi — stimulni beradi, event kelishini kutadi va keyin yon modul holatini tekshiradi.
+`@RecordApplicationEvents` test klassiga qo'yilsa, `ApplicationEvents` bean'ini inject qilib publish qilingan event'larni to'g'ridan-to'g'ri tasdiqlash mumkin - har bir test metodi uchun yozuv alohida. Bu modul chegarasini tekshirishning eng arzon usuli: service listener'ni emas, faqat event'ni publish qilganini tasdiqlaydi. Spring Modulith'da esa `Scenario` API modullar orasidagi oqimni to'liq kuzatadi - stimulni beradi, event kelishini kutadi va keyin yon modul holatini tekshiradi.
 
 ```java
 @ApplicationModuleTest
@@ -406,7 +407,7 @@ class OrderModuleTest {
 
 ## 11.11 Scheduled task va job'larni testlash
 
-Scheduler'da "qachon" va "nima" ni ajratish kerak. "Nima" — oddiy service metodi, u odatdagicha testlanadi; `@Scheduled` metod esa to'g'ridan-to'g'ri chaqirilib tekshiriladi. "Qachon" — cron ifodasi, uni `CronExpression.parse(...).next(...)` bilan alohida testlash kerak, chunki `MON-FRI` yoki yil oxiri xatosi faqat shunda ko'rinadi. Testda scheduler umuman ishga tushmasligi uchun cron'ni property'dan oling va test profilida `Scheduled.CRON_DISABLED` (`"-"`) qiymatini bering yoki `@EnableScheduling`'ni `@Profile("!test")` konfiguratsiyaga chiqaring. ShedLock'li cluster xatti-harakati uchun real DB lock jadvali bilan `LockProvider`'ni ikki marta chaqirib, ikkinchi urinish `Optional.empty()` qaytarishini tasdiqlang.
+Scheduler'da "qachon" va "nima" ni ajratish kerak. "Nima" - oddiy service metodi, u odatdagicha testlanadi; `@Scheduled` metod esa to'g'ridan-to'g'ri chaqirilib tekshiriladi. "Qachon" - cron ifodasi, uni `CronExpression.parse(...).next(...)` bilan alohida testlash kerak, chunki `MON-FRI` yoki yil oxiri xatosi faqat shunda ko'rinadi. Testda scheduler umuman ishga tushmasligi uchun cron'ni property'dan oling va test profilida `Scheduled.CRON_DISABLED` (`"-"`) qiymatini bering yoki `@EnableScheduling`'ni `@Profile("!test")` konfiguratsiyaga chiqaring. ShedLock'li cluster xatti-harakati uchun real DB lock jadvali bilan `LockProvider`'ni ikki marta chaqirib, ikkinchi urinish `Optional.empty()` qaytarishini tasdiqlang.
 
 ```java
 @SpringBootTest
@@ -440,11 +441,11 @@ class NightlyReportJobTest {
 }
 ```
 
-`JobLauncherTestUtils.launchStep("stepName")` bitta step'ni izolyatsiyada ishga tushiradi — katta job'ning bir bosqichidagi reader/processor/writer mantiqini tez tekshirish uchun qulay.
+`JobLauncherTestUtils.launchStep("stepName")` bitta step'ni izolyatsiyada ishga tushiradi - katta job'ning bir bosqichidagi reader/processor/writer mantiqini tez tekshirish uchun qulay.
 
 ## 11.12 Konkurentlik va poyga holatini testlash
 
-Race condition testi ikkita narsani talab qiladi: yetarlicha parallellik va bir vaqtda urish. `ExecutorService` birinchisini, `CyclicBarrier` ikkinchisini beradi — barcha thread'lar barrier'da to'planib, keyin bir paytda kirishadi. Tekshiriladigan xossa odatda idempotentlik: bir xil idempotency key bilan N marta urilganda bazada aynan bitta yozuv qolishi kerak. Unique constraint bu yerda oxirgi himoya chizig'i, shuning uchun test uning haqiqatan ishlayotganini (va `DataIntegrityViolationException` to'g'ri ushlanayotganini) ham tasdiqlashi lozim.
+Race condition testi ikkita narsani talab qiladi: yetarlicha parallellik va bir vaqtda urish. `ExecutorService` birinchisini, `CyclicBarrier` ikkinchisini beradi - barcha thread'lar barrier'da to'planib, keyin bir paytda kirishadi. Tekshiriladigan xossa odatda idempotentlik: bir xil idempotency key bilan N marta urilganda bazada aynan bitta yozuv qolishi kerak. Unique constraint bu yerda oxirgi himoya chizig'i, shuning uchun test uning haqiqatan ishlayotganini (va `DataIntegrityViolationException` to'g'ri ushlanayotganini) ham tasdiqlashi lozim.
 
 ```java
 @SpringBootTest
@@ -475,11 +476,11 @@ class PaymentIdempotencyTest {
 }
 ```
 
-Bunday testlar tabiatan beqarorlikka moyil. Beqarorlikni kamaytirish uchun: har bir takrorlashda yangi kalit/ID ishlating, hech qachon `Thread.sleep` bilan sinxronlashtirmang, timeout'larni sahiy (lekin cheksiz emas) qo'ying, thread sonini CI mashinasining yadrolaridan kelib chiqib belgilang va bu testlarni `@Tag("concurrency")` bilan ajratib alohida CI job'da yurgizing. Beqaror testni "retry until green" bilan ko'mish — xatoni ko'mish; bu mavzu [16-bobda](16-flaky-testlar-test-qarzi-va-test-kodini.md) batafsil.
+Bunday testlar tabiatan beqarorlikka moyil. Beqarorlikni kamaytirish uchun: har bir takrorlashda yangi kalit/ID ishlating, hech qachon `Thread.sleep` bilan sinxronlashtirmang, timeout'larni sahiy (lekin cheksiz emas) qo'ying, thread sonini CI mashinasining yadrolaridan kelib chiqib belgilang va bu testlarni `@Tag("concurrency")` bilan ajratib alohida CI job'da yurgizing. Beqaror testni "retry until green" bilan ko'mish - xatoni ko'mish; bu mavzu [16-bobda](16-flaky-testlar-test-qarzi-va-test-kodini.md) batafsil.
 
 ## 11.13 Retry, timeout va circuit breaker'ni testlash
 
-`@Retryable` da eng muhim tekshiruv — urinishlar **soni**: mock gateway'ga `verify(gateway, times(3))` qo'ying, aks holda `maxAttempts` qiymatini o'zgartirgan refactoring sezilmay o'tadi. Test tezligi uchun backoff'ni property orqali kichraytiring. Resilience4j'da circuit breaker holatini kutib o'tirmasdan `transitionToOpenState()` bilan majburan oching va `@BeforeEach` da `reset()` qiling — aks holda testlar bir-biriga ta'sir qiladi. Kechikish va 5xx simulyatsiyasi uchun WireMock ([9-bob](09-tashqi-servislarni-taqlid-qilish-va.md)) ishlatiladi: `withFixedDelay` timeout'ni, `withFault` esa connection reset holatini tekshiradi.
+`@Retryable` da eng muhim tekshiruv - urinishlar **soni**: mock gateway'ga `verify(gateway, times(3))` qo'ying, aks holda `maxAttempts` qiymatini o'zgartirgan refactoring sezilmay o'tadi. Test tezligi uchun backoff'ni property orqali kichraytiring. Resilience4j'da circuit breaker holatini kutib o'tirmasdan `transitionToOpenState()` bilan majburan oching va `@BeforeEach` da `reset()` qiling - aks holda testlar bir-biriga ta'sir qiladi. Kechikish va 5xx simulyatsiyasi uchun WireMock ([9-bob](09-tashqi-servislarni-taqlid-qilish-va.md)) ishlatiladi: `withFixedDelay` timeout'ni, `withFault` esa connection reset holatini tekshiradi.
 
 ```java
 @SpringBootTest
@@ -510,7 +511,7 @@ class ResilienceTest {
 }
 ```
 
-Fallback'ni ham testlang: circuit ochiqligida ilova cache'dagi qiymatni qaytarishi kerakmi yoki `503` berishi kerakmi — bu mahsulot qarori va u test bilan muhrlanishi shart.
+Fallback'ni ham testlang: circuit ochiqligida ilova cache'dagi qiymatni qaytarishi kerakmi yoki `503` berishi kerakmi - bu mahsulot qarori va u test bilan muhrlanishi shart.
 
 ## 11.14 Anti-patternlar
 

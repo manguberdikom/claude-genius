@@ -22,6 +22,7 @@
 </details>
 
 
+
 Kod ikki marta ishlatiladi: bir marta kompilyator uchun, qolgan yuz marta odam uchun. Kompilyator uchun ishlaydigan kod yozish past bar, chunki buni statik tahlil ham tekshiradi. Arxitektor uchun asosiy savol boshqa: ertaga bu metodga kelgan, domenni bilmaydigan odam uni to'g'ri o'zgartira oladimi. Shu bobda kod yozishni muloqot kanali sifatida ko'rib chiqamiz, va shu kanalning o'tkazuvchanligini oshiradigan aniq qarorlarni sanab o'tamiz.
 
 ## 4.1 Kod yozishdan ko'ra o'qishga ko'p vaqt ketadi

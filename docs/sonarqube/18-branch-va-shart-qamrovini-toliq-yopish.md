@@ -26,6 +26,7 @@
 </details>
 
 
+
 Quality gate `coverage` raqamiga qaraydi, lekin bu raqam ikki xil o'lchovdan yasalgan: qator qamrovi va shart qamrovi. Ko'p jamoa faqat birinchisini quvadi va keyin gate nega qizil bo'lganini tushunmaydi. Bu bobda Sonar shart qamrovini qanday hisoblashini, bytecode da nechta tarmoq paydo bo'lishini va har bir tarmoqni yopish uchun qanday test kerakligini ko'rib chiqamiz.
 
 ## 18.1 Line coverage va branch coverage farqi aniq misolda

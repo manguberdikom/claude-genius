@@ -23,6 +23,7 @@
 </details>
 
 
+
 SonarQube ning UI si tahlil natijasini odam uchun ko'rsatadi, Web API esa aynan shu ma'lumotni mashina uchun beradi. Quality gate holatini CI da tekshirish, issue larni jamoaga tarqatish, metrikani o'z dashboard ingizga chiqarish va yangi loyihani sozlash bilan birga yaratish shu API orqali qilinadi. Muhim ogohlantirish: endpoint nomlari, parametrlar va javob shakli versiyalar orasida o'zgaradi, shuning uchun har bir skriptni yozishdan oldin aynan o'z serveringizning hujjatini ochish kerak. Quyida ishonchli va keng ishlatiladigan endpointlar nomi bilan, qolganlari esa "serverda topish" ko'rsatmasi bilan beriladi.
 
 ## 36.1 Web API qayerda hujjatlashtirilgan va uni serverdan qanday ochish

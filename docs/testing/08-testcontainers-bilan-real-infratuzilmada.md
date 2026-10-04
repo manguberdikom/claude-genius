@@ -24,35 +24,36 @@
 </details>
 
 
-Integratsion test faqat "ko'proq bean ko'tarish" degani emas — bu sizning kodingiz ishlab chiqarishda uchraydigan real infratuzilma bilan muloqotini tasdiqlash. Testcontainers (1.19+ va ayniqsa 1.20+) Docker konteynerlarini test hayot aylanishiga bog'laydi, Spring Boot 3.1+ esa `@ServiceConnection` orqali bu konteynerlarni avtomatik konfiguratsiya qiladi, ya'ni property'larni qo'lda yozish zaruriyati yo'qoladi. Bu bobda arxitektor nuqtai nazaridan qaror daraxti beriladi: qachon real konteyner kerak, qanday qilib uni tez va barqaror ushlab turish, va qaysi naqshlar test bazangizni sekin hamda ishonchsiz qiladi.
+
+Integratsion test faqat "ko'proq bean ko'tarish" degani emas - bu sizning kodingiz ishlab chiqarishda uchraydigan real infratuzilma bilan muloqotini tasdiqlash. Testcontainers (1.19+ va ayniqsa 1.20+) Docker konteynerlarini test hayot aylanishiga bog'laydi, Spring Boot 3.1+ esa `@ServiceConnection` orqali bu konteynerlarni avtomatik konfiguratsiya qiladi, ya'ni property'larni qo'lda yozish zaruriyati yo'qoladi. Bu bobda arxitektor nuqtai nazaridan qaror daraxti beriladi: qachon real konteyner kerak, qanday qilib uni tez va barqaror ushlab turish, va qaysi naqshlar test bazangizni sekin hamda ishonchsiz qiladi.
 
 ## 8.1 Nega H2 yoki in-memory baza yetarli emas
 
-H2 `MODE=PostgreSQL` rejimida ham PostgreSQL emulyatori bo'lib qolaveradi — u sintaksisning bir qismini qabul qiladi, lekin semantikasi boshqa. Natijada test yashil, prod qizil bo'ladi. Eng ko'p uchraydigan farqlar:
+H2 `MODE=PostgreSQL` rejimida ham PostgreSQL emulyatori bo'lib qolaveradi - u sintaksisning bir qismini qabul qiladi, lekin semantikasi boshqa. Natijada test yashil, prod qizil bo'ladi. Eng ko'p uchraydigan farqlar:
 
-**SQL dialekti va funksiyalar.** `INSERT ... ON CONFLICT (id) DO UPDATE`, `FILTER (WHERE ...)`, `DISTINCT ON`, `LATERAL JOIN`, window funksiyalarning ayrim shakllari, `generate_series`, `tsvector`/`to_tsquery` full-text izlash, `ILIKE`, massiv tiplari (`text[]`, `unnest`) — H2'da yo yo'q, yo boshqacha ishlaydi. Agar repository'da `@Query(nativeQuery = true)` bo'lsa, H2 testi faqat "metod chaqirildi"ni tasdiqlaydi.
+**SQL dialekti va funksiyalar.** `INSERT ... ON CONFLICT (id) DO UPDATE`, `FILTER (WHERE ...)`, `DISTINCT ON`, `LATERAL JOIN`, window funksiyalarning ayrim shakllari, `generate_series`, `tsvector`/`to_tsquery` full-text izlash, `ILIKE`, massiv tiplari (`text[]`, `unnest`) - H2'da yo yo'q, yo boshqacha ishlaydi. Agar repository'da `@Query(nativeQuery = true)` bo'lsa, H2 testi faqat "metod chaqirildi"ni tasdiqlaydi.
 
-**Tip tizimi.** PostgreSQL'da `jsonb` indekslanadigan va operatorlari (`->>`, `@>`, `jsonb_path_query`) bor haqiqiy tip; H2'da bu `CLOB`/`JSON` ko'rinishida taqlid qilinadi. `numeric` aniqligi, `timestamptz` va `timestamp` farqi, `interval`, `uuid`, `enum` tiplari, `citext` — barchasi xatti-harakat farqi manbai. Klassik bug: `timestamptz` ustunga `LocalDateTime` yozilib, prod'da server time zone UTC bo'lgani uchun soat siljiydi — H2'da bu hech qachon ko'rinmaydi.
+**Tip tizimi.** PostgreSQL'da `jsonb` indekslanadigan va operatorlari (`->>`, `@>`, `jsonb_path_query`) bor haqiqiy tip; H2'da bu `CLOB`/`JSON` ko'rinishida taqlid qilinadi. `numeric` aniqligi, `timestamptz` va `timestamp` farqi, `interval`, `uuid`, `enum` tiplari, `citext` - barchasi xatti-harakat farqi manbai. Klassik bug: `timestamptz` ustunga `LocalDateTime` yozilib, prod'da server time zone UTC bo'lgani uchun soat siljiydi - H2'da bu hech qachon ko'rinmaydi.
 
-**Locking va tranzaksiya izolyatsiyasi.** `SELECT ... FOR UPDATE SKIP LOCKED` (navbat/outbox naqshining asosi), `FOR UPDATE NOWAIT`, advisory lock'lar (`pg_advisory_xact_lock`), `REPEATABLE READ`da seriyalizatsiya xatosi (`40001`), deadlock aniqlanishi va `SQLState` kodlari — H2'da yoki yo'q, yoki boshqa xato kodi beradi. Optimistik/pessimistik locking retry logikasini H2'da sinash deyarli ma'nosiz.
+**Locking va tranzaksiya izolyatsiyasi.** `SELECT ... FOR UPDATE SKIP LOCKED` (navbat/outbox naqshining asosi), `FOR UPDATE NOWAIT`, advisory lock'lar (`pg_advisory_xact_lock`), `REPEATABLE READ`da seriyalizatsiya xatosi (`40001`), deadlock aniqlanishi va `SQLState` kodlari - H2'da yoki yo'q, yoki boshqa xato kodi beradi. Optimistik/pessimistik locking retry logikasini H2'da sinash deyarli ma'nosiz.
 
-**Sequence va identifier generatsiyasi.** Hibernate `SEQUENCE` strategiyasi, `allocationSize`, `IDENTITY` bilan batch insert o'chib qolishi, `nextval` keshlanishi — PostgreSQL'ga xos. H2'da sekvens raqamlari boshqa tartibda beriladi va "aynan shu ID" ga asoslangan assert'lar yolg'on ishonch beradi.
+**Sequence va identifier generatsiyasi.** Hibernate `SEQUENCE` strategiyasi, `allocationSize`, `IDENTITY` bilan batch insert o'chib qolishi, `nextval` keshlanishi - PostgreSQL'ga xos. H2'da sekvens raqamlari boshqa tartibda beriladi va "aynan shu ID" ga asoslangan assert'lar yolg'on ishonch beradi.
 
-**Index va constraint xatti-harakati.** Partial index (`WHERE deleted_at IS NULL`), `UNIQUE` index NULL'larni qanday ko'rishi, `GIN`/`GiST`, `CREATE INDEX CONCURRENTLY`, `DEFERRABLE` constraint'lar, `ON DELETE CASCADE` tartibi, unique violation'ning `23505` kodi — real bazada boshqacha. Unique constraint buzilishini "do'stona xato"ga aylantiruvchi handler faqat PostgreSQL'da to'g'ri sinaladi.
+**Index va constraint xatti-harakati.** Partial index (`WHERE deleted_at IS NULL`), `UNIQUE` index NULL'larni qanday ko'rishi, `GIN`/`GiST`, `CREATE INDEX CONCURRENTLY`, `DEFERRABLE` constraint'lar, `ON DELETE CASCADE` tartibi, unique violation'ning `23505` kodi - real bazada boshqacha. Unique constraint buzilishini "do'stona xato"ga aylantiruvchi handler faqat PostgreSQL'da to'g'ri sinaladi.
 
-**Migratsiya skriptlari.** Bu eng og'riqli nuqta: Flyway/Liquibase skriptlari `CREATE EXTENSION pgcrypto`, `ALTER TYPE ... ADD VALUE`, `CREATE INDEX CONCURRENTLY`, `jsonb_set` ishlatsa, H2 ularni umuman bajara olmaydi. Natijada jamoa "test uchun alohida schema.sql" yozadi — va shu lahzada test real DDL'ni tekshirishdan voz kechadi. Migratsiyani tekshirish qobiliyatini yo'qotish Testcontainers'ga o'tish uchun yetarli yakka sabab.
+**Migratsiya skriptlari.** Bu eng og'riqli nuqta: Flyway/Liquibase skriptlari `CREATE EXTENSION pgcrypto`, `ALTER TYPE ... ADD VALUE`, `CREATE INDEX CONCURRENTLY`, `jsonb_set` ishlatsa, H2 ularni umuman bajara olmaydi. Natijada jamoa "test uchun alohida schema.sql" yozadi - va shu lahzada test real DDL'ni tekshirishdan voz kechadi. Migratsiyani tekshirish qobiliyatini yo'qotish Testcontainers'ga o'tish uchun yetarli yakka sabab.
 
 ## 8.2 Testcontainers asoslari: Docker API ustida hayot aylanishi
 
-Testcontainers — Docker daemon'ning HTTP API'si ustidagi Java kutubxonasi. U `DOCKER_HOST`ni aniqlaydi (Docker Desktop, Colima, Podman, Rancher Desktop, Testcontainers Cloud), kerakli image'ni pull qiladi, konteynerni ko'taradi va tozalashni **Ryuk** nomli sidecar konteynerga topshiradi: JVM to'satdan o'lsa ham Ryuk label'i bo'yicha konteynerlarni o'chiradi, ya'ni "orfan" konteynerlar qolmaydi.
+Testcontainers - Docker daemon'ning HTTP API'si ustidagi Java kutubxonasi. U `DOCKER_HOST`ni aniqlaydi (Docker Desktop, Colima, Podman, Rancher Desktop, Testcontainers Cloud), kerakli image'ni pull qiladi, konteynerni ko'taradi va tozalashni **Ryuk** nomli sidecar konteynerga topshiradi: JVM to'satdan o'lsa ham Ryuk label'i bo'yicha konteynerlarni o'chiradi, ya'ni "orfan" konteynerlar qolmaydi.
 
 Hayot aylanishi: `start()` → image pull → create → start → wait strategy bajariladi → konteyner "ready" deb belgilanadi → test ishlaydi → `stop()`/Ryuk tozalaydi.
 
-**Port mapping muhim arxitektura detali.** Konteyner ichidagi port (masalan 5432) host'da **tasodifiy ephemeral portga** map qilinadi. Shuning uchun hech qachon `localhost:5432` deb qo'lda yozmaysiz — `container.getMappedPort(5432)`, `getHost()`, `getJdbcUrl()`, `getBootstrapServers()` metodlarini ishlatasiz. Bu random port parallel testlarda to'qnashuvni o'z-o'zidan hal qiladi.
+**Port mapping muhim arxitektura detali.** Konteyner ichidagi port (masalan 5432) host'da **tasodifiy ephemeral portga** map qilinadi. Shuning uchun hech qachon `localhost:5432` deb qo'lda yozmaysiz - `container.getMappedPort(5432)`, `getHost()`, `getJdbcUrl()`, `getBootstrapServers()` metodlarini ishlatasiz. Bu random port parallel testlarda to'qnashuvni o'z-o'zidan hal qiladi.
 
-JUnit 5 integratsiyasi `org.testcontainers:junit-jupiter` modulidan keladi: `@Testcontainers` annotatsiyasi extension'ni yoqadi, `@Container` esa maydonni boshqaradi — **instance** maydon har test metodidan oldin yangi konteyner ko'taradi, **static** maydon butun sinf uchun bir marta. Prodga yaqin loyihada deyarli hamma vaqt `static` to'g'ri javob.
+JUnit 5 integratsiyasi `org.testcontainers:junit-jupiter` modulidan keladi: `@Testcontainers` annotatsiyasi extension'ni yoqadi, `@Container` esa maydonni boshqaradi - **instance** maydon har test metodidan oldin yangi konteyner ko'taradi, **static** maydon butun sinf uchun bir marta. Prodga yaqin loyihada deyarli hamma vaqt `static` to'g'ri javob.
 
-Wait strategiyasi — barqarorlikning kaliti. Uch asosiy tur: `Wait.forListeningPort()` (TCP ochilishi — eng zaif, chunki port ochilishi "xizmat tayyor" degani emas), `Wait.forLogMessage(regex, times)` (log'dagi tayyorlik satrini kutish), `Wait.forHttp("/health").forStatusCode(200)` (HTTP probe). Qo'shimcha: `Wait.forHealthcheck()` agar image'da Docker HEALTHCHECK bo'lsa, va `Wait.forSuccessfulCommand(...)`. Modullarning o'z default strategiyasi bor (`PostgreSQLContainer` log'dagi tayyorlik xabarini ikki marta kutadi), lekin custom image yoki o'z app konteyneringiz uchun strategiyani ochiq yozish shart.
+Wait strategiyasi - barqarorlikning kaliti. Uch asosiy tur: `Wait.forListeningPort()` (TCP ochilishi - eng zaif, chunki port ochilishi "xizmat tayyor" degani emas), `Wait.forLogMessage(regex, times)` (log'dagi tayyorlik satrini kutish), `Wait.forHttp("/health").forStatusCode(200)` (HTTP probe). Qo'shimcha: `Wait.forHealthcheck()` agar image'da Docker HEALTHCHECK bo'lsa, va `Wait.forSuccessfulCommand(...)`. Modullarning o'z default strategiyasi bor (`PostgreSQLContainer` log'dagi tayyorlik xabarini ikki marta kutadi), lekin custom image yoki o'z app konteyneringiz uchun strategiyani ochiq yozish shart.
 
 ```xml
 <dependency>
@@ -81,7 +82,7 @@ Testcontainers versiyasini qo'lda yozmang: `spring-boot-dependencies` BOM uni bo
 
 ## 8.3 Spring Boot bilan integratsiya: @ServiceConnection va @DynamicPropertySource
 
-Spring Boot 3.1'dan beri eng toza usul — `@ServiceConnection`. U `ConnectionDetails` bean'ini yaratadi va auto-konfiguratsiya property'lar o'rniga shu bean'dan foydalanadi. Siz URL, username, password, driver nomini yozmaysiz; konteyner turiga qarab Boot o'zi aniqlaydi.
+Spring Boot 3.1'dan beri eng toza usul - `@ServiceConnection`. U `ConnectionDetails` bean'ini yaratadi va auto-konfiguratsiya property'lar o'rniga shu bean'dan foydalanadi. Siz URL, username, password, driver nomini yozmaysiz; konteyner turiga qarab Boot o'zi aniqlaydi.
 
 ```java
 @SpringBootTest
@@ -107,7 +108,7 @@ class OrderRepositoryIT {
 }
 ```
 
-Boot 3.1'dan oldingi (va hali ham qo'l keladigan) usul — `@DynamicPropertySource`: konteyner ko'tarilgandan keyin `Environment`ga property qo'shiladi. `Supplier` ishlatilgani uchun qiymat kech, ya'ni konteyner start bo'lgandan keyin o'qiladi.
+Boot 3.1'dan oldingi (va hali ham qo'l keladigan) usul - `@DynamicPropertySource`: konteyner ko'tarilgandan keyin `Environment`ga property qo'shiladi. `Supplier` ishlatilgani uchun qiymat kech, ya'ni konteyner start bo'lgandan keyin o'qiladi.
 
 ```java
 @SpringBootTest
@@ -128,11 +129,11 @@ class LegacyPropertiesIT {
 }
 ```
 
-Taqqoslash: `@ServiceConnection` kamroq kod, property nomini xato yozish imkoni yo'q, Boot qo'llab-quvvatlagan barcha xizmatlar uchun bir xil, va SSL/credential detallarini o'zi uzatadi. `@DynamicPropertySource` esa moslashuvchan — `@ServiceConnection` qo'llab-quvvatlamaydigan xizmatlar (masalan custom `app.external.base-url`, LocalStack endpoint'lari, Keycloak issuer URI) uchun hamon kerak. Amaliy qoida: **standart infratuzilma uchun `@ServiceConnection`, nostandart property'lar uchun `@DynamicPropertySource`** — ikkisi bir sinfda bemalol yashaydi.
+Taqqoslash: `@ServiceConnection` kamroq kod, property nomini xato yozish imkoni yo'q, Boot qo'llab-quvvatlagan barcha xizmatlar uchun bir xil, va SSL/credential detallarini o'zi uzatadi. `@DynamicPropertySource` esa moslashuvchan - `@ServiceConnection` qo'llab-quvvatlamaydigan xizmatlar (masalan custom `app.external.base-url`, LocalStack endpoint'lari, Keycloak issuer URI) uchun hamon kerak. Amaliy qoida: **standart infratuzilma uchun `@ServiceConnection`, nostandart property'lar uchun `@DynamicPropertySource`** - ikkisi bir sinfda bemalol yashaydi.
 
 ## 8.4 Singleton container pattern va kontekst keshi
 
-Agar har integratsion test sinfi o'z konteynerini ko'tarsa, 40 sinfli loyihada 40 marta PostgreSQL start bo'ladi. Singleton container pattern buni oldini oladi: konteyner `static final` maydonda, JVM ichida bir marta ko'tariladi va JVM tugashida Ryuk tozalaydi. `@Container` annotatsiyasi **ishlatilmaydi** — aks holda JUnit uni sinf oxirida to'xtatib qo'yadi.
+Agar har integratsion test sinfi o'z konteynerini ko'tarsa, 40 sinfli loyihada 40 marta PostgreSQL start bo'ladi. Singleton container pattern buni oldini oladi: konteyner `static final` maydonda, JVM ichida bir marta ko'tariladi va JVM tugashida Ryuk tozalaydi. `@Container` annotatsiyasi **ishlatilmaydi** - aks holda JUnit uni sinf oxirida to'xtatib qo'yadi.
 
 ```java
 @SpringBootTest
@@ -159,17 +160,17 @@ public abstract class AbstractIntegrationTest {
 }
 ```
 
-`Startables.deepStart(...)` konteynerlarni **parallel** ko'taradi — PostgreSQL va Kafka ketma-ket emas, bir vaqtda start bo'ladi.
+`Startables.deepStart(...)` konteynerlarni **parallel** ko'taradi - PostgreSQL va Kafka ketma-ket emas, bir vaqtda start bo'ladi.
 
-Bu naqsh Spring'ning kontekst keshi bilan birga ishlaganda haqiqiy samara beradi. Spring TestContext Framework kontekstni konfiguratsiya "kaliti" bo'yicha keshlaydi: bir xil `@SpringBootTest` atributlari, bir xil profil, bir xil `@MockitoBean` to'plami → **bitta kontekst**. Bazaviy sinfdan meros olgan barcha testlar ayni kalitni ulashadi, demak kontekst ham, konteyner ham bir marta ko'tariladi. Shuning uchun: bazaviy sinflar sonini minimal saqlang, test sinflarida qo'shimcha `@TestPropertySource` yoki ad-hoc mock qo'shib kalitni "sindirmang". `@DirtiesContext` ni esa integratsion testlarda umuman ishlatmang — u keshni tashlab, keyingi sinfga to'liq qayta start narxini yuklaydi.
+Bu naqsh Spring'ning kontekst keshi bilan birga ishlaganda haqiqiy samara beradi. Spring TestContext Framework kontekstni konfiguratsiya "kaliti" bo'yicha keshlaydi: bir xil `@SpringBootTest` atributlari, bir xil profil, bir xil `@MockitoBean` to'plami → **bitta kontekst**. Bazaviy sinfdan meros olgan barcha testlar ayni kalitni ulashadi, demak kontekst ham, konteyner ham bir marta ko'tariladi. Shuning uchun: bazaviy sinflar sonini minimal saqlang, test sinflarida qo'shimcha `@TestPropertySource` yoki ad-hoc mock qo'shib kalitni "sindirmang". `@DirtiesContext` ni esa integratsion testlarda umuman ishlatmang - u keshni tashlab, keyingi sinfga to'liq qayta start narxini yuklaydi.
 
 ## 8.5 Konteynerni qayta ishlatish (reuse)
 
-Reuse — JVM tugaganda ham konteynerni tirik qoldirish: keyingi test ishga tushganda tayyor konteyner topiladi va start vaqti nolga yaqinlashadi. Yoqish uchun ikki shart birga kerak: konteynerda `.withReuse(true)` va developer mashinasida `~/.testcontainers.properties` faylida `testcontainers.reuse.enable=true`. Bu fayl **repoga qo'shilmaydi** — bu developer'ning shaxsiy sozlamasi.
+Reuse - JVM tugaganda ham konteynerni tirik qoldirish: keyingi test ishga tushganda tayyor konteyner topiladi va start vaqti nolga yaqinlashadi. Yoqish uchun ikki shart birga kerak: konteynerda `.withReuse(true)` va developer mashinasida `~/.testcontainers.properties` faylida `testcontainers.reuse.enable=true`. Bu fayl **repoga qo'shilmaydi** - bu developer'ning shaxsiy sozlamasi.
 
 Reuse yoqilganda Ryuk o'sha konteynerni o'chirmaydi va Testcontainers konteyner konfiguratsiyasidan hash hisoblab mavjudini topadi; konfiguratsiyani o'zgartirsangiz (image tag, env, buyruq) yangi konteyner ko'tariladi.
 
-Muhim nozik jihat: reuse'da **ma'lumot ham saqlanadi**. Lokalda ketma-ket ishlatilgan testlar bir-birining qoldiqlarini ko'radi. Shuning uchun reuse strategiyasi albatta ishonchli tozalash bilan juftlanadi — har test uchun `@Transactional` rollback, yoki har klass oldidan `TRUNCATE ... RESTART IDENTITY CASCADE`, yoki har run uchun alohida schema. CI'da reuse **o'chirilgan** bo'lishi kerak: runner har safar yangi, hash topilmaydi, va "nopok holat" xavfini CI'ga olib kirish mantiqsiz. Natijada ikki rejim: lokal — tez va reuse'li, CI — toza va takrorlanadigan.
+Muhim nozik jihat: reuse'da **ma'lumot ham saqlanadi**. Lokalda ketma-ket ishlatilgan testlar bir-birining qoldiqlarini ko'radi. Shuning uchun reuse strategiyasi albatta ishonchli tozalash bilan juftlanadi - har test uchun `@Transactional` rollback, yoki har klass oldidan `TRUNCATE ... RESTART IDENTITY CASCADE`, yoki har run uchun alohida schema. CI'da reuse **o'chirilgan** bo'lishi kerak: runner har safar yangi, hash topilmaydi, va "nopok holat" xavfini CI'ga olib kirish mantiqsiz. Natijada ikki rejim: lokal - tez va reuse'li, CI - toza va takrorlanadigan.
 
 ## 8.6 Turli texnologiyalar uchun konteynerlar
 
@@ -190,7 +191,7 @@ Muhim nozik jihat: reuse'da **ma'lumot ham saqlanadi**. Lokalda ketma-ket ishlat
 
 `org.testcontainers.containers.KafkaContainer` (Confluent image'ga bog'langan eski sinf) 1.20'dan boshlab deprecated; yangi kodda `org.testcontainers.kafka.KafkaContainer` (apache/kafka image, KRaft rejimi) yoki `ConfluentKafkaContainer` ishlatiladi.
 
-LocalStack misoli — bu yerda `@ServiceConnection` yo'q, endpoint'ni o'zingiz uzatasiz:
+LocalStack misoli - bu yerda `@ServiceConnection` yo'q, endpoint'ni o'zingiz uzatasiz:
 
 ```java
 static final LocalStackContainer LOCALSTACK =
@@ -208,7 +209,7 @@ static void aws(DynamicPropertyRegistry registry) {
 
 ## 8.7 Spring Boot Docker Compose qo'llab-quvvatlashi va @TestConfiguration
 
-`spring-boot-docker-compose` moduli (3.1+) — bu **dev-time** qulayligi: `compose.yaml` loyiha ildizida bo'lsa, `bootRun`/`bootTestRun` ilovani ko'targanda `docker compose up` ni o'zi bajaradi va servislarni `ConnectionDetails` sifatida ulanadi, ilova to'xtaganda `down` qiladi.
+`spring-boot-docker-compose` moduli (3.1+) - bu **dev-time** qulayligi: `compose.yaml` loyiha ildizida bo'lsa, `bootRun`/`bootTestRun` ilovani ko'targanda `docker compose up` ni o'zi bajaradi va servislarni `ConnectionDetails` sifatida ulanadi, ilova to'xtaganda `down` qiladi.
 
 ```yaml
 services:
@@ -228,7 +229,7 @@ services:
 
 Farqi aniq: Docker Compose qo'llab-quvvatlashi **umumiy, uzoq yashovchi** muhit beradi (developer ilovani qo'lda ko'targanda), Testcontainers esa **test hayot aylanishiga bog'langan, izolyatsiyalangan** muhit beradi (har run uchun toza, random port, programmatik boshqaruv). Compose'ni avtomatik testlarga asos qilish xato: port fiksatsiyalangan, holat bo'linadi, CI'da fayl mavjudligiga bog'liq bo'ladi. Shuning uchun `spring.docker.compose.enabled: false` ni test profilida qo'yib, dev-time va test-time ni qat'iy ajratish tavsiya etiladi. Aksincha yo'nalish ham mumkin: Testcontainers'ni `compose.yaml` o'rniga dev rejimda ishlatish (`@TestConfiguration` + `SpringApplication.from(...).with(...)` bilan `TestMyApplication` klassi).
 
-Konteynerlarni bean sifatida e'lon qilish — eng qayta ishlatiladigan shakl:
+Konteynerlarni bean sifatida e'lon qilish - eng qayta ishlatiladigan shakl:
 
 ```java
 @TestConfiguration(proxyBeanMethods = false)
@@ -250,13 +251,13 @@ public class ContainersConfig {
 }
 ```
 
-Test sinfida `@Import(ContainersConfig.class)` yetarli. Bean bo'lgani uchun konteyner hayot aylanishi Spring kontekstiga bog'lanadi, ya'ni kontekst keshida qolgan ekan konteyner ham tirik — bu singleton pattern'ning idiomatik Spring varianti. `@ServiceConnection(name = "redis")` dagi `name` — image nomi emas, **connection detail turini** aniqlash uchun ishlatiladigan xizmat nomi; `GenericContainer` bilan ishlaganda shu sababli majburiy.
+Test sinfida `@Import(ContainersConfig.class)` yetarli. Bean bo'lgani uchun konteyner hayot aylanishi Spring kontekstiga bog'lanadi, ya'ni kontekst keshida qolgan ekan konteyner ham tirik - bu singleton pattern'ning idiomatik Spring varianti. `@ServiceConnection(name = "redis")` dagi `name` - image nomi emas, **connection detail turini** aniqlash uchun ishlatiladigan xizmat nomi; `GenericContainer` bilan ishlaganda shu sababli majburiy.
 
 ## 8.8 Ma'lumotlar bazasi migratsiyasini testlash
 
-Real bazadagi eng qimmatli test — migratsiyaning o'zi. Minimal daraja: ilova konteksti ko'tarilganda Flyway/Liquibase barcha skriptlarni real PostgreSQL'da bajaradi. Bu allaqachon H2 bermaydigan qiymat: noto'g'ri DDL, mavjud bo'lmagan extension, buzilgan checksum shu zahoti ko'rinadi.
+Real bazadagi eng qimmatli test - migratsiyaning o'zi. Minimal daraja: ilova konteksti ko'tarilganda Flyway/Liquibase barcha skriptlarni real PostgreSQL'da bajaradi. Bu allaqachon H2 bermaydigan qiymat: noto'g'ri DDL, mavjud bo'lmagan extension, buzilgan checksum shu zahoti ko'rinadi.
 
-Keyingi daraja — maqsadli migratsiya testlari:
+Keyingi daraja - maqsadli migratsiya testlari:
 
 ```java
 @Test
@@ -282,8 +283,8 @@ void migration_v12_backfills_legacy_rows() {
 Bu test eng muhim savolga javob beradi: **yangi migratsiya eski ma'lumot bilan ishlaydimi?** Bo'sh bazada o'tgan `ALTER TABLE ... SET NOT NULL` real tarixiy NULL'lar borida yiqiladi.
 
 Boshqa tekshiruvlar:
-- **Orqaga qaytmaslik prinsipi**: `flyway.validate()` va CI'da checksum tekshiruvi — allaqachon bajarilgan skriptni tahrirlash taqiqlanadi. Flyway'da `undo` faqat Teams'da, Liquibase'da `rollback` bloki bor, lekin arxitektura qarori sifatida "forward-only migration" tavsiya etiladi: orqaga qaytarish o'rniga tuzatuvchi yangi migratsiya.
-- **Zero-downtime**: expand/contract naqshi. Test N-1 versiya kodi N versiya schema'si bilan ishlashini tasdiqlaydi — eski entity mapping bilan yangi schema'ga `INSERT` qilib ko'ring. Yangi ustun `NOT NULL DEFAULT` bilan qo'shilgani, eski ustun darhol o'chirilmagani, rename o'rniga "yangi ustun + backfill + eski ustunni keyingi relizda o'chirish" ketma-ketligi bajarilgani shu testda ko'rinadi.
+- **Orqaga qaytmaslik prinsipi**: `flyway.validate()` va CI'da checksum tekshiruvi - allaqachon bajarilgan skriptni tahrirlash taqiqlanadi. Flyway'da `undo` faqat Teams'da, Liquibase'da `rollback` bloki bor, lekin arxitektura qarori sifatida "forward-only migration" tavsiya etiladi: orqaga qaytarish o'rniga tuzatuvchi yangi migratsiya.
+- **Zero-downtime**: expand/contract naqshi. Test N-1 versiya kodi N versiya schema'si bilan ishlashini tasdiqlaydi - eski entity mapping bilan yangi schema'ga `INSERT` qilib ko'ring. Yangi ustun `NOT NULL DEFAULT` bilan qo'shilgani, eski ustun darhol o'chirilmagani, rename o'rniga "yangi ustun + backfill + eski ustunni keyingi relizda o'chirish" ketma-ketligi bajarilgani shu testda ko'rinadi.
 - **Liquibase** uchun xuddi shu yondashuv: `SpringLiquibase` bean'ini sozlab `setChangeLog(...)`, yoki `liquibase.update(new Contexts(...))` bilan ma'lum tag'gacha yugurtirib, keyin qolganini bajarish.
 - **Idempotentlik**: migratsiyani ikki marta ishga tushirsangiz, ikkinchisi hech narsa qilmasligi kerak.
 
@@ -291,7 +292,7 @@ Boshqa tekshiruvlar:
 
 Kafka'da mock broker (`EmbeddedKafka`) mavjud, lekin real brokerda sinaladigan narsalar boshqa: serializer/deserializer xatolari, partition assignment, consumer group rebalansi, `auto.offset.reset` semantikasi, retry/backoff va dead letter topic marshrutizatsiyasi, transactional producer.
 
-Test dizaynining uch qoidasi. Birinchi: **consumer group'ni har test uchun unikal qiling** (`group-id: test-` + UUID) yoki topik nomini randomlashtiring — aks holda oldingi testning offset'i keyingisini "xabar yo'q" holatiga olib keladi. Ikkinchi: producer `send(...)` dan keyin **`get()` bilan metadata'ni kutib** olish — bu xabar brokerga yetganini tasdiqlaydi. Uchinchi: natijani Awaitility bilan kutish, hech qachon `Thread.sleep` bilan emas.
+Test dizaynining uch qoidasi. Birinchi: **consumer group'ni har test uchun unikal qiling** (`group-id: test-` + UUID) yoki topik nomini randomlashtiring - aks holda oldingi testning offset'i keyingisini "xabar yo'q" holatiga olib keladi. Ikkinchi: producer `send(...)` dan keyin **`get()` bilan metadata'ni kutib** olish - bu xabar brokerga yetganini tasdiqlaydi. Uchinchi: natijani Awaitility bilan kutish, hech qachon `Thread.sleep` bilan emas.
 
 ```java
 @Test
@@ -314,7 +315,7 @@ void failed_message_lands_in_dead_letter_topic() {
 }
 ```
 
-DLT xatti-harakatini tasdiqlash uchun `DefaultErrorHandler` + `DeadLetterPublishingRecoverer` konfiguratsiyasini test profilida ham yoqilgan holda qoldiring va `FixedBackOff` intervalini test uchun kichraytiring (masalan `new FixedBackOff(100L, 2L)`), aks holda prod'dagi 10 sekundlik backoff testni cho'zadi. Offset'ni tekshirish kerak bo'lsa `AdminClient.listConsumerGroupOffsets(groupId)` ishlatiladi — bu consumer kommit qilganini (ya'ni xabar qayta ishlangani) deklarativ tasdiqlaydi.
+DLT xatti-harakatini tasdiqlash uchun `DefaultErrorHandler` + `DeadLetterPublishingRecoverer` konfiguratsiyasini test profilida ham yoqilgan holda qoldiring va `FixedBackOff` intervalini test uchun kichraytiring (masalan `new FixedBackOff(100L, 2L)`), aks holda prod'dagi 10 sekundlik backoff testni cho'zadi. Offset'ni tekshirish kerak bo'lsa `AdminClient.listConsumerGroupOffsets(groupId)` ishlatiladi - bu consumer kommit qilganini (ya'ni xabar qayta ishlangani) deklarativ tasdiqlaydi.
 
 ## 8.10 Tezlik va resurs byudjeti
 
@@ -329,24 +330,24 @@ Optimizatsiya ro'yxati, ta'sir bo'yicha tartiblangan:
 4. **Yengil image**: `-alpine` variantlar, Elasticsearch o'rniga imkon bo'lsa yengil alternativ.
 5. **Reuse** lokalda.
 6. **Pre-pull** CI'da (keyingi bo'lim).
-7. **Parallel test**: JUnit 5 `junit-platform.properties` da `junit.jupiter.execution.parallel.enabled=true` va `...mode.default=same_thread`, `...mode.classes.default=concurrent`. Port to'qnashuvi random mapping tufayli bo'lmaydi — **agar** `FixedHostPortGenericContainer` yoki `withCreateContainerCmdModifier` bilan fiksatsiyalangan port ishlatmasangiz; ularni butunlay taqiqlash kerak. Haqiqiy xavf — umumiy baza ustida parallel yozuv, shuning uchun parallel rejimda har sinfga alohida schema yoki alohida tranzaksiya izolyatsiyasi kerak.
+7. **Parallel test**: JUnit 5 `junit-platform.properties` da `junit.jupiter.execution.parallel.enabled=true` va `...mode.default=same_thread`, `...mode.classes.default=concurrent`. Port to'qnashuvi random mapping tufayli bo'lmaydi - **agar** `FixedHostPortGenericContainer` yoki `withCreateContainerCmdModifier` bilan fiksatsiyalangan port ishlatmasangiz; ularni butunlay taqiqlash kerak. Haqiqiy xavf - umumiy baza ustida parallel yozuv, shuning uchun parallel rejimda har sinfga alohida schema yoki alohida tranzaksiya izolyatsiyasi kerak.
 8. **Testlarni ajratish**: `*Test` (unit, har commit'da) va `*IT` (integratsion, Maven `failsafe` yoki Gradle alohida `integrationTest` task'ida).
-9. **tmpfs**: `.withTmpFs(Map.of("/var/lib/postgresql/data", "rw"))` — disk I/O ni olib tashlaydi, baza ma'lumotini saqlash kerak bo'lmagan testlarda sezilarli tezlanish.
+9. **tmpfs**: `.withTmpFs(Map.of("/var/lib/postgresql/data", "rw"))` - disk I/O ni olib tashlaydi, baza ma'lumotini saqlash kerak bo'lmagan testlarda sezilarli tezlanish.
 10. **Resurs chegarasi**: Docker Desktop'ga kamida 4 CPU / 8 GB RAM; CI runner'da konteynerlar sonini xotiraga moslab cheklash.
 
 ## 8.11 Testcontainers'ni CI'da ishlatish
 
-Yagona qattiq talab — CI agent'ida ishlaydigan Docker daemon'ga kirish. Variantlar:
+Yagona qattiq talab - CI agent'ida ishlaydigan Docker daemon'ga kirish. Variantlar:
 
-**Docker socket (DooD)** — eng keng tarqalgan: agent konteyneriga `/var/run/docker.sock` mount qilinadi. Tez, lekin konteynerlar host daemon'da ko'tarilgani uchun izolyatsiya kamroq va `localhost` marshrutizatsiyasi nozik.
+**Docker socket (DooD)** - eng keng tarqalgan: agent konteyneriga `/var/run/docker.sock` mount qilinadi. Tez, lekin konteynerlar host daemon'da ko'tarilgani uchun izolyatsiya kamroq va `localhost` marshrutizatsiyasi nozik.
 
-**Docker-in-Docker (DinD)** — `docker:dind` service konteyneri, `privileged: true` kerak. To'liq izolyatsiya, lekin har job'da image keshini qaytadan to'ldiradi (sekinlashtiradi), ba'zi platformalarda privileged taqiqlangan.
+**Docker-in-Docker (DinD)** - `docker:dind` service konteyneri, `privileged: true` kerak. To'liq izolyatsiya, lekin har job'da image keshini qaytadan to'ldiradi (sekinlashtiradi), ba'zi platformalarda privileged taqiqlangan.
 
-**GitHub Actions** — `ubuntu-*` runner'larda Docker allaqachon o'rnatilgan, hech qanday qo'shimcha sozlash kerak emas: `./mvnw verify` shundayin ishlaydi. `macos-*` va `windows-*` runner'larda Linux konteynerlari uchun Docker **yo'q** — bu ko'p jamoalarni kutilmagan holda urgan fakt.
+**GitHub Actions** - `ubuntu-*` runner'larda Docker allaqachon o'rnatilgan, hech qanday qo'shimcha sozlash kerak emas: `./mvnw verify` shundayin ishlaydi. `macos-*` va `windows-*` runner'larda Linux konteynerlari uchun Docker **yo'q** - bu ko'p jamoalarni kutilmagan holda urgan fakt.
 
-**Testcontainers Cloud** — Docker daemon'ni masofaviy, boshqariladigan muhitga ko'chiradi (`DOCKER_HOST` ni agent o'rnatadi). Runner'da Docker bo'lmaganda, privileged ruxsat yo'q bo'lganda yoki parallellikni oshirish kerak bo'lganda yechim; narx va tashqi xizmatga bog'liqlik — kelishuv nuqtasi.
+**Testcontainers Cloud** - Docker daemon'ni masofaviy, boshqariladigan muhitga ko'chiradi (`DOCKER_HOST` ni agent o'rnatadi). Runner'da Docker bo'lmaganda, privileged ruxsat yo'q bo'lganda yoki parallellikni oshirish kerak bo'lganda yechim; narx va tashqi xizmatga bog'liqlik - kelishuv nuqtasi.
 
-**Pre-pull** — eng arzon optimizatsiya: image'larni test start bo'lishidan oldin, mustaqil step'da yuklab olish. Bu pull vaqtini wait strategiya timeout'idan chiqaradi va flaky "container did not start" xatolarini kamaytiradi.
+**Pre-pull** - eng arzon optimizatsiya: image'larni test start bo'lishidan oldin, mustaqil step'da yuklab olish. Bu pull vaqtini wait strategiya timeout'idan chiqaradi va flaky "container did not start" xatolarini kamaytiradi.
 
 ```yaml
 jobs:
@@ -367,19 +368,19 @@ jobs:
         run: ./mvnw -B verify -Pintegration
 ```
 
-Yana ikki amaliy nuqta: korporativ muhitda Docker Hub rate limit'ini chetlab o'tish uchun `testcontainers.properties` da `hub.image.name.prefix` bilan ichki registry prefiksini bering; va Ryuk'ni faqat u ishlamaydigan platformalarda (`TESTCONTAINERS_RYUK_DISABLED=true`) o'chiring — aks holda orfan konteynerlar CI agent'ini to'ldiradi.
+Yana ikki amaliy nuqta: korporativ muhitda Docker Hub rate limit'ini chetlab o'tish uchun `testcontainers.properties` da `hub.image.name.prefix` bilan ichki registry prefiksini bering; va Ryuk'ni faqat u ishlamaydigan platformalarda (`TESTCONTAINERS_RYUK_DISABLED=true`) o'chiring - aks holda orfan konteynerlar CI agent'ini to'ldiradi.
 
 ## 8.12 Anti-patternlar
 
-**Har test sinfida yangi konteyner.** `@Container` ni instance maydonda ishlatish yoki har sinfda alohida `PostgreSQLContainer` e'lon qilish. Natija: 40 sinf × 2 s = 80 s faqat start uchun, plus kontekst keshi buzilishi. Yechim — bitta abstract bazaviy sinf yoki `@TestConfiguration` bean'lari.
+**Har test sinfida yangi konteyner.** `@Container` ni instance maydonda ishlatish yoki har sinfda alohida `PostgreSQLContainer` e'lon qilish. Natija: 40 sinf × 2 s = 80 s faqat start uchun, plus kontekst keshi buzilishi. Yechim - bitta abstract bazaviy sinf yoki `@TestConfiguration` bean'lari.
 
 **Konteyner ichida ma'lumotni tozalamaslik.** Singleton konteyner + tozalash yo'q = testlar tartibiga bog'liq. "Lokalda o'tadi, CI'da yiqiladi" ning asosiy sababi. Yechim: `@Transactional` rollback o'qish-yozish testlari uchun, `TRUNCATE ... RESTART IDENTITY CASCADE` yoki schema-per-class aksincha holatlar uchun.
 
 **Testlar orasida umumiy holat.** Statik `List`da yig'ilgan event'lar, umumiy Kafka consumer group, umumiy Redis kalitlari, `@MockitoBean` ustiga oldingi testdan qolgan `when(...)`. Har test o'z nomlar maydonini (topic suffix, key prefix, tenant ID) olishi kerak.
 
-**`Thread.sleep` bilan kutish.** Asinxron natijani kutishda sleep ikki yo'l bilan yomon: sekin (har doim to'liq kutadi) va ishonchsiz (sekin CI'da yetmaydi). Awaitility `await().atMost(...).untilAsserted(...)` yagona to'g'ri javob — tez muhitda bir necha millisekundda tugaydi.
+**`Thread.sleep` bilan kutish.** Asinxron natijani kutishda sleep ikki yo'l bilan yomon: sekin (har doim to'liq kutadi) va ishonchsiz (sekin CI'da yetmaydi). Awaitility `await().atMost(...).untilAsserted(...)` yagona to'g'ri javob - tez muhitda bir necha millisekundda tugaydi.
 
-**`latest` tag.** `postgres:latest`, `confluentinc/cp-kafka:latest` — bu testlarni tashqi relizlarga bog'laydi: bir kun major versiya chiqadi va butun pipeline yiqiladi, kod o'zgarmagan holda. Har doim aniq versiyani (ideal holda digest'ni) yozing va prod versiyasiga mos qiling: prodda PostgreSQL 16 bo'lsa, testda ham 16.
+**`latest` tag.** `postgres:latest`, `confluentinc/cp-kafka:latest` - bu testlarni tashqi relizlarga bog'laydi: bir kun major versiya chiqadi va butun pipeline yiqiladi, kod o'zgarmagan holda. Har doim aniq versiyani (ideal holda digest'ni) yozing va prod versiyasiga mos qiling: prodda PostgreSQL 16 bo'lsa, testda ham 16.
 
 Qo'shimcha ikki xato: **`FixedHostPortGenericContainer`** (parallellikni o'ldiradi) va **mapped port'ni qo'lda yozish** (`localhost:5432`). Ikkisi ham `getMappedPort()`/`@ServiceConnection` bilan almashtiriladi.
 

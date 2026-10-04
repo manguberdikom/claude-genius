@@ -8,7 +8,7 @@
 <summary>Bu bobdagi 12 bo'lim</summary>
 
 - [6.1 Nega @SpringBootTest unit test uchun noto'g'ri tanlov](#61-nega-springboottest-unit-test-uchun-notogri-tanlov)
-- [6.2 Constructor injection — testlanadigan dizayn asosi](#62-constructor-injection--testlanadigan-dizayn-asosi)
+- [6.2 Constructor injection - testlanadigan dizayn asosi](#62-constructor-injection---testlanadigan-dizayn-asosi)
 - [6.3 Qaysi sinflar Spring kontekstisiz testlanadi](#63-qaysi-sinflar-spring-kontekstisiz-testlanadi)
 - [6.4 Service qatlamini mock repository bilan testlash](#64-service-qatlamini-mock-repository-bilan-testlash)
 - [6.5 Mapper va DTO konvertorlarni testlash](#65-mapper-va-dto-konvertorlarni-testlash)
@@ -23,27 +23,28 @@
 </details>
 
 
-Spring loyihasida yozilgan kodning katta qismi — biznes qoidalari, kalkulyatorlar, validatorlar, mapper'lar va domain modeli — Spring'ga umuman bog'liq emas va ularni tekshirish uchun ApplicationContext ko'tarish shart emas. Shunga qaramay ko'p jamoalarda har bir test `@SpringBootTest` bilan boshlanadi: natijada sekin, mo'rt va xato manbasini yashiradigan test to'plami paydo bo'ladi. Bu bobda qaysi kodni "konteynerdan tashqarida" — oddiy Java obyekti sifatida — testlash kerakligini, buning uchun kodni qanday yozishni va Spring'ning eng yengil test vositasi bo'lgan `ApplicationContextRunner` qachon o'rinli bo'lishini ko'rib chiqamiz. Oxirida kontekst haqiqatan zarur bo'ladigan chegarani aniq belgilaymiz.
+
+Spring loyihasida yozilgan kodning katta qismi - biznes qoidalari, kalkulyatorlar, validatorlar, mapper'lar va domain modeli - Spring'ga umuman bog'liq emas va ularni tekshirish uchun ApplicationContext ko'tarish shart emas. Shunga qaramay ko'p jamoalarda har bir test `@SpringBootTest` bilan boshlanadi: natijada sekin, mo'rt va xato manbasini yashiradigan test to'plami paydo bo'ladi. Bu bobda qaysi kodni "konteynerdan tashqarida" - oddiy Java obyekti sifatida - testlash kerakligini, buning uchun kodni qanday yozishni va Spring'ning eng yengil test vositasi bo'lgan `ApplicationContextRunner` qachon o'rinli bo'lishini ko'rib chiqamiz. Oxirida kontekst haqiqatan zarur bo'ladigan chegarani aniq belgilaymiz.
 
 ## 6.1 Nega @SpringBootTest unit test uchun noto'g'ri tanlov
 
-Birinchi sabab — vaqt. Toza unit test JVM ichida obyekt yaratib, metod chaqirib, natijani tekshiradi: bu millisekundlar tartibidagi ish. `@SpringBootTest` esa butun komponent skanerlashni, auto-configuration zanjirini, DataSource va EntityManagerFactory yaratishni, ba'zan embedded serverni ishga tushirishni talab qiladi — bu sekundlar tartibidagi ish. Quyidagi raqamlar o'rta kattalikdagi Spring Boot 3.x/4.x loyihasi uchun odatiy tartibni ko'rsatadi (aniq qiymat mashina va bean sonidan bog'liq):
+Birinchi sabab - vaqt. Toza unit test JVM ichida obyekt yaratib, metod chaqirib, natijani tekshiradi: bu millisekundlar tartibidagi ish. `@SpringBootTest` esa butun komponent skanerlashni, auto-configuration zanjirini, DataSource va EntityManagerFactory yaratishni, ba'zan embedded serverni ishga tushirishni talab qiladi - bu sekundlar tartibidagi ish. Quyidagi raqamlar o'rta kattalikdagi Spring Boot 3.x/4.x loyihasi uchun odatiy tartibni ko'rsatadi (aniq qiymat mashina va bean sonidan bog'liq):
 
 | Test uslubi | Kontekst ko'tarilishi | Bitta test metodi | Nimani kafolatlaydi |
 |---|---|---|---|
-| Toza JUnit 5 (`new`) | yo'q | ~0.1–2 ms | logika to'g'riligi |
-| `@ExtendWith(MockitoExtension.class)` | yo'q | ~1–5 ms | o'zaro ta'sir (interaction) |
-| `ApplicationContextRunner` (2–5 bean) | ~30–200 ms | ~30–200 ms | wiring, conditional, binding |
-| `@WebMvcTest` / `@DataJpaTest` (slice) | ~1–3 s | ~10–50 ms (kesh bilan) | qatlam kontrakti |
-| `@SpringBootTest` (to'liq) | ~3–15 s | ~20–100 ms (kesh bilan) | tizim yig'ilishi |
+| Toza JUnit 5 (`new`) | yo'q | ~0.1-2 ms | logika to'g'riligi |
+| `@ExtendWith(MockitoExtension.class)` | yo'q | ~1-5 ms | o'zaro ta'sir (interaction) |
+| `ApplicationContextRunner` (2-5 bean) | ~30-200 ms | ~30-200 ms | wiring, conditional, binding |
+| `@WebMvcTest` / `@DataJpaTest` (slice) | ~1-3 s | ~10-50 ms (kesh bilan) | qatlam kontrakti |
+| `@SpringBootTest` (to'liq) | ~3-15 s | ~20-100 ms (kesh bilan) | tizim yig'ilishi |
 
 Spring TestContext Framework kontekstni keshlaydi (`spring.test.context.cache.maxSize`, standart qiymati 32), shuning uchun ikkinchi testdan keyin narx kamayadi. Lekin kesh kaliti konfiguratsiyaga bog'liq: har bir yangi `@TestPropertySource`, `@ActiveProfiles` yoki `@MockitoBean` kombinatsiyasi yangi kontekst yaratadi, `@DirtiesContext` esa keshni buzadi. 300 ta unit testni `@SpringBootTest` bilan yozgan loyihada CI'da 20 daqiqalik to'plamlar normal holga aylanadi.
 
-Ikkinchi, muhimroq sabab — xato manbasining noaniqligi. To'liq kontekst ko'tarilganda `OrderServiceTest` qulashi mumkin, chunki boshqa jamoa `KafkaTemplate` bean'ini o'zgartirgan, Flyway migratsiyasi buzilgan yoki yangi `@Value` xossasi `application.yml`da yo'q. Test nomi "buyurtma chegirmasi" deydi, xato esa `BeanCreationException` bo'ladi. Unit test bitta sinfning bitta qoidasini tekshirsa, qulaganda sabab bir xil aniq bo'ladi.
+Ikkinchi, muhimroq sabab - xato manbasining noaniqligi. To'liq kontekst ko'tarilganda `OrderServiceTest` qulashi mumkin, chunki boshqa jamoa `KafkaTemplate` bean'ini o'zgartirgan, Flyway migratsiyasi buzilgan yoki yangi `@Value` xossasi `application.yml`da yo'q. Test nomi "buyurtma chegirmasi" deydi, xato esa `BeanCreationException` bo'ladi. Unit test bitta sinfning bitta qoidasini tekshirsa, qulaganda sabab bir xil aniq bo'ladi.
 
-Uchinchi sabab — feedback halqasi. TDD yoki refactoring jarayonida test 50 ms ichida javob bersa, developer kodni fikr tezligida o'zgartiradi; 15 sekund kutish kerak bo'lsa, testlar IDE'da emas, faqat CI'da ishlay boshlaydi.
+Uchinchi sabab - feedback halqasi. TDD yoki refactoring jarayonida test 50 ms ichida javob bersa, developer kodni fikr tezligida o'zgartiradi; 15 sekund kutish kerak bo'lsa, testlar IDE'da emas, faqat CI'da ishlay boshlaydi.
 
-## 6.2 Constructor injection — testlanadigan dizayn asosi
+## 6.2 Constructor injection - testlanadigan dizayn asosi
 
 Unit test imkoniyati arxitektura qarori natijasidir. Constructor injection sinfni `new` bilan yaratishga ruxsat beradi: bu Spring'ning o'zi ham rasman tavsiya qiladigan uslub. Shuningdek vaqtni `Clock` sifatida kiritish testni determinatsiyalashtiradi.
 
@@ -74,7 +75,7 @@ public class OrderService {
 }
 ```
 
-Field injection (`@Autowired private OrderRepository orders;`) bu imkoniyatni yo'q qiladi: maydonni `final` qilib bo'lmaydi, obyektni to'liq holatda `new` bilan yaratib bo'lmaydi, test esa `ReflectionTestUtils.setField(...)` yoki `@InjectMocks`ning reflection magiyasiga tayanadi. Bu ikki muammoni keltiradi: maydon nomini o'zgartirsangiz test kompilyatsiya xatosi bermaydi, shunchaki `null` bilan qulaydi; va konstruktor "bu sinfga 7 ta dependency kirgan" degan dizayn signalini yashiradi. Shu sababli `@InjectMocks`ni ham imkon qadar ishlatmaslik, `@Mock` bilan olingan obyektlarni konstruktorga qo'lda berish tavsiya etiladi — `new OrderServiceImpl(mockRepo, fixedClock)` shaklidagi chaqiruv kompilyator nazoratida bo'ladi.
+Field injection (`@Autowired private OrderRepository orders;`) bu imkoniyatni yo'q qiladi: maydonni `final` qilib bo'lmaydi, obyektni to'liq holatda `new` bilan yaratib bo'lmaydi, test esa `ReflectionTestUtils.setField(...)` yoki `@InjectMocks`ning reflection magiyasiga tayanadi. Bu ikki muammoni keltiradi: maydon nomini o'zgartirsangiz test kompilyatsiya xatosi bermaydi, shunchaki `null` bilan qulaydi; va konstruktor "bu sinfga 7 ta dependency kirgan" degan dizayn signalini yashiradi. Shu sababli `@InjectMocks`ni ham imkon qadar ishlatmaslik, `@Mock` bilan olingan obyektlarni konstruktorga qo'lda berish tavsiya etiladi - `new OrderServiceImpl(mockRepo, fixedClock)` shaklidagi chaqiruv kompilyator nazoratida bo'ladi.
 
 ## 6.3 Qaysi sinflar Spring kontekstisiz testlanadi
 
@@ -120,11 +121,11 @@ class MoneyTest {
 }
 ```
 
-SpEL ifodalari, `Environment`ga murojaat yoki `ApplicationEventPublisher` chaqiruvlari aralashgan sinflar bu ro'yxatdan chiqib ketadi — shuning uchun sof logikani alohida sinfga ajratish testlanuvchanlikni oshiradigan eng arzon refactoring.
+SpEL ifodalari, `Environment`ga murojaat yoki `ApplicationEventPublisher` chaqiruvlari aralashgan sinflar bu ro'yxatdan chiqib ketadi - shuning uchun sof logikani alohida sinfga ajratish testlanuvchanlikni oshiradigan eng arzon refactoring.
 
 ## 6.4 Service qatlamini mock repository bilan testlash
 
-Service qatlami odatda orkestratsiya qiladi: repository'dan ma'lumot oladi, policy'ni chaqiradi, natijani saqlaydi. Bularni Mockito 5.x bilan Spring'siz tekshirish mumkin. `MockitoExtension` standart holda `Strictness.STRICT_STUBS` rejimida ishlaydi — ishlatilmagan stub test qulashiga olib keladi, bu ortiqcha sozlamalarni erta ushlaydi.
+Service qatlami odatda orkestratsiya qiladi: repository'dan ma'lumot oladi, policy'ni chaqiradi, natijani saqlaydi. Bularni Mockito 5.x bilan Spring'siz tekshirish mumkin. `MockitoExtension` standart holda `Strictness.STRICT_STUBS` rejimida ishlaydi - ishlatilmagan stub test qulashiga olib keladi, bu ortiqcha sozlamalarni erta ushlaydi.
 
 ```java
 @ExtendWith(MockitoExtension.class)
@@ -154,7 +155,7 @@ class OrderServiceTest {
 }
 ```
 
-Diqqat qiling: `Clock.fixed(...)` tufayli `createdAt` aniq tekshiriladi — `LocalDateTime.now()`ni to'g'ridan-to'g'ri ishlatgan kodda bunday assert yozish mumkin emas. Agar repository interfeysi domain qatlamida (port sifatida) e'lon qilingan bo'lsa, mock'lash ham tabiiy ko'rinadi; Spring Data'ning `JpaRepository`sini to'g'ridan-to'g'ri mock'lash esa 20 dan ortiq metodli interfeysni soxtalashtirishga olib keladi.
+Diqqat qiling: `Clock.fixed(...)` tufayli `createdAt` aniq tekshiriladi - `LocalDateTime.now()`ni to'g'ridan-to'g'ri ishlatgan kodda bunday assert yozish mumkin emas. Agar repository interfeysi domain qatlamida (port sifatida) e'lon qilingan bo'lsa, mock'lash ham tabiiy ko'rinadi; Spring Data'ning `JpaRepository`sini to'g'ridan-to'g'ri mock'lash esa 20 dan ortiq metodli interfeysni soxtalashtirishga olib keladi.
 
 ## 6.5 Mapper va DTO konvertorlarni testlash
 
@@ -190,7 +191,7 @@ Qo'lda yozilgan konvertorlar uchun AssertJ'ning `usingRecursiveComparison()` usu
 
 ## 6.6 Validatsiyani Spring kontekstisiz testlash
 
-Jakarta Bean Validation 3.x implementatsiyasi (Hibernate Validator) Spring'dan mustaqil ishlaydi. `Validator`ni qo'lda yaratish kontekstdan taxminan 50–100 marta tezroq.
+Jakarta Bean Validation 3.x implementatsiyasi (Hibernate Validator) Spring'dan mustaqil ishlaydi. `Validator`ni qo'lda yaratish kontekstdan taxminan 50-100 marta tezroq.
 
 ```java
 class CreateOrderRequestValidationTest {
@@ -245,11 +246,11 @@ class InnValidatorTest {
 }
 ```
 
-Agar validator ichida repository yoki boshqa bean ishlatilsa (masalan noyoblikni DB'dan tekshirish), uni konstruktor orqali oling — shunda mock bilan Spring'siz testlash davom etadi. Faqat `@Valid` annotatsiyasi controller'da haqiqatan ishlab turganini tekshirish uchun slice test kerak bo'ladi ([7-bob](07-integratsion-test-spring-boot-slice-testlari.md)).
+Agar validator ichida repository yoki boshqa bean ishlatilsa (masalan noyoblikni DB'dan tekshirish), uni konstruktor orqali oling - shunda mock bilan Spring'siz testlash davom etadi. Faqat `@Valid` annotatsiyasi controller'da haqiqatan ishlab turganini tekshirish uchun slice test kerak bo'ladi ([7-bob](07-integratsion-test-spring-boot-slice-testlari.md)).
 
 ## 6.7 Domain event va aggregate'ni testlash
 
-Aggregate holat o'zgarishi natijasida event chiqarishi kerak. Spring Data Commons'ning `AbstractAggregateRoot` sinfi buni `registerEvent(...)` orqali qiladi, `@DomainEvents` bilan belgilangan `domainEvents()` metodi esa `protected` — shuning uchun testni aggregate bilan bir xil paketda joylashtiring yoki o'z domain qatlamingizda ochiq `List<DomainEvent> pullEvents()` metodini e'lon qiling. Ikkinchi variant Spring'ga bog'liqlikni butunlay yo'qotadi.
+Aggregate holat o'zgarishi natijasida event chiqarishi kerak. Spring Data Commons'ning `AbstractAggregateRoot` sinfi buni `registerEvent(...)` orqali qiladi, `@DomainEvents` bilan belgilangan `domainEvents()` metodi esa `protected` - shuning uchun testni aggregate bilan bir xil paketda joylashtiring yoki o'z domain qatlamingizda ochiq `List<DomainEvent> pullEvents()` metodini e'lon qiling. Ikkinchi variant Spring'ga bog'liqlikni butunlay yo'qotadi.
 
 ```java
 class OrderAggregateTest {
@@ -278,7 +279,7 @@ class OrderAggregateTest {
 }
 ```
 
-Muhim chegara: event'ning haqiqatan e'lon qilinishi (publish) aggregate Spring Data repository orqali saqlanganda `@AfterDomainEventPublication` mexanizmi bilan sodir bo'ladi. Ya'ni "event ro'yxatga olindi" — unit test mavzusi, "event listener chaqirildi" — integratsion test mavzusi.
+Muhim chegara: event'ning haqiqatan e'lon qilinishi (publish) aggregate Spring Data repository orqali saqlanganda `@AfterDomainEventPublication` mexanizmi bilan sodir bo'ladi. Ya'ni "event ro'yxatga olindi" - unit test mavzusi, "event listener chaqirildi" - integratsion test mavzusi.
 
 ## 6.8 Konfiguratsiya va @ConfigurationProperties: ApplicationContextRunner
 
@@ -310,11 +311,11 @@ class PaymentRetryConfigurationTest {
 }
 ```
 
-Bu runner yana: `withBean(...)` bilan soxta bean qo'shish, `withConfiguration(AutoConfigurations.of(...))` bilan auto-configuration zanjirini sinash, `assertThat(ctx).hasFailed()` va `getFailure().hasMessageContaining(...)` bilan noto'g'ri qiymatda kontekst qulashini tasdiqlash imkonini beradi. Bir test ~30–200 ms vaqt oladi — `@SpringBootTest`ga nisbatan o'nlab marta tez.
+Bu runner yana: `withBean(...)` bilan soxta bean qo'shish, `withConfiguration(AutoConfigurations.of(...))` bilan auto-configuration zanjirini sinash, `assertThat(ctx).hasFailed()` va `getFailure().hasMessageContaining(...)` bilan noto'g'ri qiymatda kontekst qulashini tasdiqlash imkonini beradi. Bir test ~30-200 ms vaqt oladi - `@SpringBootTest`ga nisbatan o'nlab marta tez.
 
 ## 6.9 AOP va proxy: unit testda ushlab bo'lmaydigan xatti-harakat
 
-Spring'ning `@Transactional`, `@Cacheable`, `@Async`, `@Retryable`, `@PreAuthorize` kabi annotatsiyalari proxy (JDK dynamic proxy yoki CGLIB) orqali ishlaydi. Unit testda obyekt `new` bilan yaratilganda proxy yo'q — annotatsiyalar shunchaki e'tiborsiz qoladi. Natijada quyidagi xato unit testda hech qachon ko'rinmaydi:
+Spring'ning `@Transactional`, `@Cacheable`, `@Async`, `@Retryable`, `@PreAuthorize` kabi annotatsiyalari proxy (JDK dynamic proxy yoki CGLIB) orqali ishlaydi. Unit testda obyekt `new` bilan yaratilganda proxy yo'q - annotatsiyalar shunchaki e'tiborsiz qoladi. Natijada quyidagi xato unit testda hech qachon ko'rinmaydi:
 
 ```java
 @Service
@@ -332,11 +333,11 @@ class ReportService {
 }
 ```
 
-Shuningdek `private` yoki `final` metodga qo'yilgan `@Cacheable` ishlamaydi, `@Async` metodining `void` qaytaradigan versiyasida istisno yo'qoladi, `@Retryable` self-invocation'da urinishlarni takrorlamaydi. Bu xatolar faqat haqiqiy kontekst bilan — `@DataJpaTest`, `@SpringBootTest` yoki `ApplicationContextRunner` + `@EnableTransactionManagement` muhitida ushlanadi. Shu sababli: proxy semantikasi unit testning mas'uliyati emas, u [7-bobda](07-integratsion-test-spring-boot-slice-testlari.md) ko'riladigan slice va integratsion testlarga tegishli. Unit testda esa bu metodlarning ichki logikasini proxy'siz tekshiring.
+Shuningdek `private` yoki `final` metodga qo'yilgan `@Cacheable` ishlamaydi, `@Async` metodining `void` qaytaradigan versiyasida istisno yo'qoladi, `@Retryable` self-invocation'da urinishlarni takrorlamaydi. Bu xatolar faqat haqiqiy kontekst bilan - `@DataJpaTest`, `@SpringBootTest` yoki `ApplicationContextRunner` + `@EnableTransactionManagement` muhitida ushlanadi. Shu sababli: proxy semantikasi unit testning mas'uliyati emas, u [7-bobda](07-integratsion-test-spring-boot-slice-testlari.md) ko'riladigan slice va integratsion testlarga tegishli. Unit testda esa bu metodlarning ichki logikasini proxy'siz tekshiring.
 
 ## 6.10 Spring'ga bog'liqlikni kamaytiruvchi arxitektura qarorlari
 
-Spring'siz testlash imkoniyati — paket tuzilishining natijasi. Hexagonal (ports and adapters) yondashuvida domain va application qatlamlari hech qanday Spring annotatsiyasini bilmaydi, infratuzilma esa adapterlarga chiqariladi:
+Spring'siz testlash imkoniyati - paket tuzilishining natijasi. Hexagonal (ports and adapters) yondashuvida domain va application qatlamlari hech qanday Spring annotatsiyasini bilmaydi, infratuzilma esa adapterlarga chiqariladi:
 
 ```text
 com.example.orders
@@ -352,13 +353,13 @@ com.example.orders
     └── config/OrderBeanConfiguration.java    // @Configuration, @Bean
 ```
 
-Amaliy qoidalar: domain qatlamida `org.springframework.*` import'i bo'lmasin (buni [14-bobdagi](14-arxitektura-testlari-va-kod-sifati.md) arxitektura testlari bilan majburlash mumkin); bean'larni `@Component` skanerlash orqali emas, `@Configuration` ichida aniq `@Bean` metodlari bilan e'lon qiling — shunda domain sinflari toza qoladi; `Clock`, `IdGenerator`, `EventPublisher` kabi infratuzilma ehtiyojlarini domain interfeyslari sifatida ifodalang; `@Value`ni service'larga sepish o'rniga `@ConfigurationProperties` record'ini yasab, uni konstruktorga uzatilgan oddiy qiymat obyekti sifatida bering.
+Amaliy qoidalar: domain qatlamida `org.springframework.*` import'i bo'lmasin (buni [14-bobdagi](14-arxitektura-testlari-va-kod-sifati.md) arxitektura testlari bilan majburlash mumkin); bean'larni `@Component` skanerlash orqali emas, `@Configuration` ichida aniq `@Bean` metodlari bilan e'lon qiling - shunda domain sinflari toza qoladi; `Clock`, `IdGenerator`, `EventPublisher` kabi infratuzilma ehtiyojlarini domain interfeyslari sifatida ifodalang; `@Value`ni service'larga sepish o'rniga `@ConfigurationProperties` record'ini yasab, uni konstruktorga uzatilgan oddiy qiymat obyekti sifatida bering.
 
 ## 6.11 Qachon kontekst haqiqatan kerak (chegara)
 
-Kontekstdan voz kechish — maqsad emas, vosita. Quyidagi besh holatda kontekst majburiy, chunki tekshirilayotgan narsa Spring'ning o'zi: birinchidan, bean wiring — bean'lar haqiqatan yaratiladimi, dependency'lar to'g'ri bog'lanadimi, circular dependency yo'qmi; ikkinchidan, konfiguratsiya va profil — xossalar bind bo'ladimi, `@Conditional` to'g'ri hal qiladimi, validatsiya cheklovlari ishlaydimi; uchinchidan, proxy xatti-harakati — tranzaksiya chegaralari, kesh, retry, security; to'rtinchidan, serialization — JSON yozish/o'qish, `ObjectMapper` sozlamalari, HTTP status va header'lar; beshinchidan, SQL — JPA mapping, generatsiya qilingan so'rovlar, migratsiyalar.
+Kontekstdan voz kechish - maqsad emas, vosita. Quyidagi besh holatda kontekst majburiy, chunki tekshirilayotgan narsa Spring'ning o'zi: birinchidan, bean wiring - bean'lar haqiqatan yaratiladimi, dependency'lar to'g'ri bog'lanadimi, circular dependency yo'qmi; ikkinchidan, konfiguratsiya va profil - xossalar bind bo'ladimi, `@Conditional` to'g'ri hal qiladimi, validatsiya cheklovlari ishlaydimi; uchinchidan, proxy xatti-harakati - tranzaksiya chegaralari, kesh, retry, security; to'rtinchidan, serialization - JSON yozish/o'qish, `ObjectMapper` sozlamalari, HTTP status va header'lar; beshinchidan, SQL - JPA mapping, generatsiya qilingan so'rovlar, migratsiyalar.
 
-Amaliy nisbat: test piramidasining pastki qatlamida (soni bo'yicha ~70–80%) Spring'siz unit testlar, o'rtada slice testlar, yuqorida kam sonli to'liq integratsion testlar bo'lishi kerak. Agar loyihada `@SpringBootTest` bilan yozilgan testlar soni unit testlardan ko'p bo'lsa, bu test strategiyasining emas, kod dizaynining muammosi — dependency'lar konstruktorga chiqarilmaganligi va biznes logikasi infratuzilmaga aralashib ketganligi belgisi.
+Amaliy nisbat: test piramidasining pastki qatlamida (soni bo'yicha ~70-80%) Spring'siz unit testlar, o'rtada slice testlar, yuqorida kam sonli to'liq integratsion testlar bo'lishi kerak. Agar loyihada `@SpringBootTest` bilan yozilgan testlar soni unit testlardan ko'p bo'lsa, bu test strategiyasining emas, kod dizaynining muammosi - dependency'lar konstruktorga chiqarilmaganligi va biznes logikasi infratuzilmaga aralashib ketganligi belgisi.
 
 ## 6.12 Arxitektor nazorat ro'yxati
 

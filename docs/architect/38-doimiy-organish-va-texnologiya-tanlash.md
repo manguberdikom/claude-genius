@@ -24,6 +24,7 @@
 </details>
 
 
+
 Arxitektorning bilimi ikki xil eskiradi. Birinchisi tezda chiriydi: kutubxona versiyasi, konfiguratsiya kaliti, bulut panelining joylashuvi. Ikkinchisi o'n yil yashaydi: tranzaksiya izolyatsiyasi, xotira modeli, indeks tanlash mexanikasi. Bu bob shu ikki qatlamni ajratish, yangi texnologiyani sovuq boshda baholash va o'rganishni chorakka bo'lingan o'lchovli rejaga aylantirish haqida.
 
 ## 38.1 Nimani chuqur o'rganish kerak va nimani yuzaki bilish yetarli

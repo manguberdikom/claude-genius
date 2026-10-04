@@ -24,6 +24,7 @@
 </details>
 
 
+
 Legacy loyihani Sonar ko'rsatkichlari bo'yicha "100% ga olib chiqish" degan gap ko'pincha noto'g'ri tushuniladi. Maqsad barcha issue ni nolga tushirish emas, balki quality gate ni barqaror yashil holatda tutib turish va yangi kodni toza yozish. Bu bob o'n ikki yillik kod bazasiga Sonar ni kiritishdan boshlab, bir yil ichida o'lchanadigan natijaga chiqishgacha bo'lgan rejani beradi. Refaktoring usullari [arxitektor hujjatida](../architect/README.md), bu yerda faqat ko'rsatkichlar va jarayon.
 
 ## 23.1 Birinchi tahlil: minglab issue chiqqanda vahimaga tushmaslik

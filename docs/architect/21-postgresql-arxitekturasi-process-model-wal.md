@@ -23,6 +23,7 @@
 </details>
 
 
+
 PostgreSQL ko'pchilik Java dasturchisi uchun "JDBC orqasidagi qora quti" bo'lib qoladi, lekin production muammolarining katta qismi aynan shu qutining ichidagi mexanikadan kelib chiqadi: ulanish narxi, WAL yozuvi, checkpoint I/O cho'qqisi, vacuum qarzi. Bu bobda PostgreSQL 15-17 ichida nima sodir bo'lishini qarab chiqamiz va har bir mexanizmdan arxitektor qanday qaror chiqarishini ko'rsatamiz. Misollar bitta tizim ustida boradi: to'lov servisi, buyurtma jadvali, ombor qoldig'i va kunlik hisobot. Har bir bo'limda sozlash parametrining haqiqiy nomi va uni kuzatadigan katalog so'rovi bor.
 
 ## 21.1 Protsess modeli: postmaster, backend protsess, fon ishchilari

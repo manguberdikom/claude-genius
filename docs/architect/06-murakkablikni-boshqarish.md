@@ -22,6 +22,7 @@
 </details>
 
 
+
 Arxitektorning asosiy ishi tezlik emas, murakkablikni boshqarish. Kod ishlayotgan holatda ham tizim o'lishi mumkin, chunki uni o'zgartirish narxi daromaddan oshib ketadi. Shu bobda murakkablik qayerdan kelib chiqadi, qanday o'lchanadi va uni kamaytiradigan qarorlar qanday himoya qilinadi degan savollarga javob beramiz. Misollar bitta tizimdan olinadi: to'lov servisi, buyurtma oqimi va ombor qoldig'i.
 
 ## 6.1 Muhim murakkablik va tasodifiy murakkablik farqi

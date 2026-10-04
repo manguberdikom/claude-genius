@@ -242,21 +242,21 @@
    },
    {
     "num": 3,
-    "title": "3. Kim nima yozadi: rollar va mas'uliyat (Who Writes What — Roles & Responsibilities)",
+    "title": "3. Kim nima yozadi: rollar va mas'uliyat (Who Writes What - Roles & Responsibilities)",
     "file": "03-kim-nima-yozadi-rollar-va-masuliyat.md",
     "part": null,
     "sections": 10
    },
    {
     "num": 4,
-    "title": "4. Testrovshik qanday ishlashi kerak: QA ish jarayoni (How a Tester Actually Works — The QA Workflow)",
+    "title": "4. Testrovshik qanday ishlashi kerak: QA ish jarayoni (How a Tester Actually Works - The QA Workflow)",
     "file": "04-testrovshik-qanday-ishlashi-kerak-qa-ish.md",
     "part": null,
     "sections": 12
    },
    {
     "num": 5,
-    "title": "5. Unit test: asoslar, qoidalar va JUnit 5 (Unit Testing — Foundations, Rules & JUnit 5)",
+    "title": "5. Unit test: asoslar, qoidalar va JUnit 5 (Unit Testing - Foundations, Rules & JUnit 5)",
     "file": "05-unit-test-asoslar-qoidalar-va-junit-5.md",
     "part": null,
     "sections": 14
@@ -270,7 +270,7 @@
    },
    {
     "num": 7,
-    "title": "7. Integratsion test: Spring Boot slice testlari (Integration Testing — Spring Boot Test Slices)",
+    "title": "7. Integratsion test: Spring Boot slice testlari (Integration Testing - Spring Boot Test Slices)",
     "file": "07-integratsion-test-spring-boot-slice-testlari.md",
     "part": null,
     "sections": 13
@@ -937,6 +937,669 @@
     "file": "43-tezkor-malumotnoma-parametrlar-buyruqlar.md",
     "part": "X. Amaliy ma'lumotnoma",
     "sections": 15
+   }
+  ]
+ },
+ "clean-code": {
+  "title": "Toza kod yozuvchining qoidalari: Java, Spring, PostgreSQL",
+  "label": "Toza kod qoidalari",
+  "chapters": [
+   {
+    "num": 1,
+    "title": "1. Toza kod nima va nega qimmat (What Clean Code Is)",
+    "file": "01-toza-kod-nima-va-nega-qimmat.md",
+    "part": "I. Toza kodning asosi",
+    "sections": 10
+   },
+   {
+    "num": 2,
+    "title": "2. Nomlash qoidalari: maqsadni ochib beruvchi nom (Naming: Intention-Revealing Names)",
+    "file": "02-nomlash-qoidalari-maqsadni-ochib-beruvchi.md",
+    "part": "I. Toza kodning asosi",
+    "sections": 16
+   },
+   {
+    "num": 3,
+    "title": "3. Nom turlari bo'yicha aniq konvensiyalar (Naming Conventions by Kind)",
+    "file": "03-nom-turlari-boyicha-aniq-konvensiyalar.md",
+    "part": "I. Toza kodning asosi",
+    "sections": 16
+   },
+   {
+    "num": 4,
+    "title": "4. Funksiya: kichiklik va bitta ish (Functions: Small and Doing One Thing)",
+    "file": "04-funksiya-kichiklik-va-bitta-ish.md",
+    "part": "II. Funksiya va boshqaruv oqimi",
+    "sections": 11
+   },
+   {
+    "num": 5,
+    "title": "5. Funksiya argumentlari (Function Arguments)",
+    "file": "05-funksiya-argumentlari.md",
+    "part": "II. Funksiya va boshqaruv oqimi",
+    "sections": 12
+   },
+   {
+    "num": 6,
+    "title": "6. Shart, mantiq va boshqaruv oqimi (Conditionals and Control Flow)",
+    "file": "06-shart-mantiq-va-boshqaruv-oqimi.md",
+    "part": "II. Funksiya va boshqaruv oqimi",
+    "sections": 11
+   },
+   {
+    "num": 7,
+    "title": "7. Sikl, iteratsiya va to'plam bilan ishlash (Loops and Iteration)",
+    "file": "07-sikl-iteratsiya-va-toplam-bilan-ishlash.md",
+    "part": "II. Funksiya va boshqaruv oqimi",
+    "sections": 10
+   },
+   {
+    "num": 8,
+    "title": "8. Izoh qoidalari: yaxshi izohlar (Comments: The Good Ones)",
+    "file": "08-izoh-qoidalari-yaxshi-izohlar.md",
+    "part": "III. Izoh va hujjat",
+    "sections": 10
+   },
+   {
+    "num": 9,
+    "title": "9. Yomon izohlar katalogi (Comments: The Bad Ones)",
+    "file": "09-yomon-izohlar-katalogi.md",
+    "part": "III. Izoh va hujjat",
+    "sections": 13
+   },
+   {
+    "num": 10,
+    "title": "10. Javadoc va API hujjati (Javadoc and API Documentation)",
+    "file": "10-javadoc-va-api-hujjati.md",
+    "part": "III. Izoh va hujjat",
+    "sections": 11
+   },
+   {
+    "num": 11,
+    "title": "11. Vertikal formatlash (Vertical Formatting)",
+    "file": "11-vertikal-formatlash.md",
+    "part": "IV. Formatlash va kod uslubi",
+    "sections": 10
+   },
+   {
+    "num": 12,
+    "title": "12. Gorizontal formatlash va kod uslubi (Horizontal Formatting and Style)",
+    "file": "12-gorizontal-formatlash-va-kod-uslubi.md",
+    "part": "IV. Formatlash va kod uslubi",
+    "sections": 11
+   },
+   {
+    "num": 13,
+    "title": "13. Formatlashni avtomatlashtirish va diff gigiyenasi (Automated Formatting and Diff Hygiene)",
+    "file": "13-formatlashni-avtomatlashtirish-va-diff.md",
+    "part": "IV. Formatlash va kod uslubi",
+    "sections": 9
+   },
+   {
+    "num": 14,
+    "title": "14. Obyekt va ma'lumot tuzilmasi: inkapsulyatsiya (Objects vs Data Structures)",
+    "file": "14-obyekt-va-malumot-tuzilmasi-inkapsulyatsiya.md",
+    "part": "V. Obyekt, ma'lumot va holat",
+    "sections": 11
+   },
+   {
+    "num": 15,
+    "title": "15. Tenglik, hash va obyekt shartnomalari (Equality, Hashing and Object Contracts)",
+    "file": "15-tenglik-hash-va-obyekt-shartnomalari.md",
+    "part": "V. Obyekt, ma'lumot va holat",
+    "sections": 11
+   },
+   {
+    "num": 16,
+    "title": "16. O'zgarmaslik va holat boshqaruvi kod darajasida (Immutability in Code)",
+    "file": "16-ozgarmaslik-va-holat-boshqaruvi-kod.md",
+    "part": "V. Obyekt, ma'lumot va holat",
+    "sections": 10
+   },
+   {
+    "num": 17,
+    "title": "17. Vorislik, kompozitsiya va polimorfizm mexanikasi (Inheritance Mechanics)",
+    "file": "17-vorislik-kompozitsiya-va-polimorfizm.md",
+    "part": "V. Obyekt, ma'lumot va holat",
+    "sections": 10
+   },
+   {
+    "num": 18,
+    "title": "18. Xato bilan ishlash qoidalari (Error Handling Rules)",
+    "file": "18-xato-bilan-ishlash-qoidalari.md",
+    "part": "VI. Xato bilan ishlash",
+    "sections": 11
+   },
+   {
+    "num": 19,
+    "title": "19. Istisno mexanikasi va resurslar (Exception Mechanics and Resources)",
+    "file": "19-istisno-mexanikasi-va-resurslar.md",
+    "part": "VI. Xato bilan ishlash",
+    "sections": 12
+   },
+   {
+    "num": 20,
+    "title": "20. Primitiv, son va pul (Primitives, Numbers and Money)",
+    "file": "20-primitiv-son-va-pul.md",
+    "part": "VII. Java tilining toza ishlatilishi",
+    "sections": 9
+   },
+   {
+    "num": 21,
+    "title": "21. Satr, matn va regex (Strings, Text and Regex)",
+    "file": "21-satr-matn-va-regex.md",
+    "part": "VII. Java tilining toza ishlatilishi",
+    "sections": 10
+   },
+   {
+    "num": 22,
+    "title": "22. Sana, vaqt va mintaqa (Date, Time and Zone)",
+    "file": "22-sana-vaqt-va-mintaqa.md",
+    "part": "VII. Java tilining toza ishlatilishi",
+    "sections": 10
+   },
+   {
+    "num": 23,
+    "title": "23. To'plamlar va generiklar gigiyenasi (Collections and Generics)",
+    "file": "23-toplamlar-va-generiklar-gigiyenasi.md",
+    "part": "VII. Java tilining toza ishlatilishi",
+    "sections": 12
+   },
+   {
+    "num": 24,
+    "title": "24. Lambda, oqim va funksional uslub tozaligi (Lambdas and Streams)",
+    "file": "24-lambda-oqim-va-funksional-uslub-tozaligi.md",
+    "part": "VII. Java tilining toza ishlatilishi",
+    "sections": 10
+   },
+   {
+    "num": 25,
+    "title": "25. Java kodidagi umumiy tuzoqlar (Common Java Pitfalls)",
+    "file": "25-java-kodidagi-umumiy-tuzoqlar.md",
+    "part": "VII. Java tilining toza ishlatilishi",
+    "sections": 11
+   },
+   {
+    "num": 26,
+    "title": "26. Spring kodining tozaligi (Clean Code in Spring)",
+    "file": "26-spring-kodining-tozaligi.md",
+    "part": "VIII. Spring va ma'lumot qatlamida toza kod",
+    "sections": 11
+   },
+   {
+    "num": 27,
+    "title": "27. REST API kodining o'qilishi (Readable REST Code)",
+    "file": "27-rest-api-kodining-oqilishi.md",
+    "part": "VIII. Spring va ma'lumot qatlamida toza kod",
+    "sections": 9
+   },
+   {
+    "num": 28,
+    "title": "28. JPA va SQL kodining tozaligi (Clean JPA and SQL)",
+    "file": "28-jpa-va-sql-kodining-tozaligi.md",
+    "part": "VIII. Spring va ma'lumot qatlamida toza kod",
+    "sections": 10
+   },
+   {
+    "num": 29,
+    "title": "29. Log kodining tozaligi (Clean Logging Code)",
+    "file": "29-log-kodining-tozaligi.md",
+    "part": "VIII. Spring va ma'lumot qatlamida toza kod",
+    "sections": 10
+   },
+   {
+    "num": 30,
+    "title": "30. Test kodi ham ishlab chiqarish kodi (Test Code Is Production Code)",
+    "file": "30-test-kodi-ham-ishlab-chiqarish-kodi.md",
+    "part": "IX. Test kodining tozaligi",
+    "sections": 10
+   },
+   {
+    "num": 31,
+    "title": "31. TDD intizomi va kod dizayniga ta'siri (TDD Discipline)",
+    "file": "31-tdd-intizomi-va-kod-dizayniga-tasiri.md",
+    "part": "IX. Test kodining tozaligi",
+    "sections": 8
+   },
+   {
+    "num": 32,
+    "title": "32. Kod hidlari katalogi I: nom, funksiya, ma'lumot (Code Smells I)",
+    "file": "32-kod-hidlari-katalogi-i-nom-funksiya-malumot.md",
+    "part": "X. Hid katalogi va refaktoring harakatlari",
+    "sections": 15
+   },
+   {
+    "num": 33,
+    "title": "33. Kod hidlari katalogi II: sinf, ierarxiya, bog'liqlik (Code Smells II)",
+    "file": "33-kod-hidlari-katalogi-ii-sinf-ierarxiya.md",
+    "part": "X. Hid katalogi va refaktoring harakatlari",
+    "sections": 17
+   },
+   {
+    "num": 34,
+    "title": "34. Toza kod evristikalarining to'liq ro'yxati (Clean Code Heuristics)",
+    "file": "34-toza-kod-evristikalarining-toliq-royxati.md",
+    "part": "X. Hid katalogi va refaktoring harakatlari",
+    "sections": 11
+   },
+   {
+    "num": 35,
+    "title": "35. Refaktoring harakatlari katalogi I: funksiya va o'zgaruvchi (Refactoring Moves I)",
+    "file": "35-refaktoring-harakatlari-katalogi-i-funksiya.md",
+    "part": "X. Hid katalogi va refaktoring harakatlari",
+    "sections": 21
+   },
+   {
+    "num": 36,
+    "title": "36. Refaktoring harakatlari katalogi II: ma'lumot va inkapsulyatsiya (Refactoring Moves II)",
+    "file": "36-refaktoring-harakatlari-katalogi-ii-malumot.md",
+    "part": "X. Hid katalogi va refaktoring harakatlari",
+    "sections": 16
+   },
+   {
+    "num": 37,
+    "title": "37. Refaktoring harakatlari katalogi III: shart, API va ierarxiya (Refactoring Moves III)",
+    "file": "37-refaktoring-harakatlari-katalogi-iii-shart.md",
+    "part": "X. Hid katalogi va refaktoring harakatlari",
+    "sections": 17
+   },
+   {
+    "num": 38,
+    "title": "38. Refaktoringni xavfsiz bajarish (Safe Refactoring Mechanics)",
+    "file": "38-refaktoringni-xavfsiz-bajarish.md",
+    "part": "X. Hid katalogi va refaktoring harakatlari",
+    "sections": 9
+   },
+   {
+    "num": 39,
+    "title": "39. Bir qadamli build va mahalliy qaytish halqasi (One-Step Build)",
+    "file": "39-bir-qadamli-build-va-mahalliy-qaytish.md",
+    "part": "XI. Kod bazasi va jarayon gigiyenasi",
+    "sections": 9
+   },
+   {
+    "num": 40,
+    "title": "40. Versiya nazorati gigiyenasi (Version Control Hygiene)",
+    "file": "40-versiya-nazorati-gigiyenasi.md",
+    "part": "XI. Kod bazasi va jarayon gigiyenasi",
+    "sections": 9
+   },
+   {
+    "num": 41,
+    "title": "41. O'zgarishni kiritish jarayoni: kichik qadamlar (Working in Small Steps)",
+    "file": "41-ozgarishni-kiritish-jarayoni-kichik-qadamlar.md",
+    "part": "XI. Kod bazasi va jarayon gigiyenasi",
+    "sections": 9
+   },
+   {
+    "num": 42,
+    "title": "42. Statik tahlil va avtomatik qoidalar (Static Analysis and Automated Rules)",
+    "file": "42-statik-tahlil-va-avtomatik-qoidalar.md",
+    "part": "XI. Kod bazasi va jarayon gigiyenasi",
+    "sections": 8
+   },
+   {
+    "num": 43,
+    "title": "43. Professional mas'uliyat (Professionalism)",
+    "file": "43-professional-masuliyat.md",
+    "part": "XII. Professional intizom",
+    "sections": 6
+   },
+   {
+    "num": 44,
+    "title": "44. \"Yo'q\" va \"ha\" deyish: majburiyat tili (Saying No and Saying Yes)",
+    "file": "44-yoq-va-ha-deyish-majburiyat-tili.md",
+    "part": "XII. Professional intizom",
+    "sections": 6
+   },
+   {
+    "num": 45,
+    "title": "45. Baholash, muddat va bosim (Estimation, Deadlines and Pressure)",
+    "file": "45-baholash-muddat-va-bosim.md",
+    "part": "XII. Professional intizom",
+    "sections": 8
+   },
+   {
+    "num": 46,
+    "title": "46. Vaqt, diqqat va mashq (Time, Focus and Practice)",
+    "file": "46-vaqt-diqqat-va-mashq.md",
+    "part": "XII. Professional intizom",
+    "sections": 9
+   },
+   {
+    "num": 47,
+    "title": "47. Birgalikda ishlash va o'rgatish (Collaboration and Mentoring)",
+    "file": "47-birgalikda-ishlash-va-orgatish.md",
+    "part": "XII. Professional intizom",
+    "sections": 6
+   },
+   {
+    "num": 48,
+    "title": "48. Tezkor ma'lumotnoma: qoidalar va tekshiruv ro'yxatlari (Quick Reference)",
+    "file": "48-tezkor-malumotnoma-qoidalar-va-tekshiruv.md",
+    "part": "XIII. Ma'lumotnoma",
+    "sections": 12
+   },
+   {
+    "num": 49,
+    "title": "49. O'z-o'zini baholash: toza kod yetukligi (Self-Assessment)",
+    "file": "49-oz-ozini-baholash-toza-kod-yetukligi.md",
+    "part": "XIII. Ma'lumotnoma",
+    "sections": 10
+   }
+  ]
+ },
+ "code-review": {
+  "title": "Kod review: diffni o'qish, xatoni ko'rish, qarorni tekshirish",
+  "label": "Kod review",
+  "chapters": [
+   {
+    "num": 1,
+    "title": "1. Review nima uchun bor va nimani haqiqatda beradi (Why Review Exists)",
+    "file": "01-review-nima-uchun-bor-va-nimani-haqiqatda.md",
+    "part": "I. Review ning mohiyati va iqtisodi",
+    "sections": 11
+   },
+   {
+    "num": 2,
+    "title": "2. Review iqtisodi: xato narxi, navbat va PR hajmi (The Economics of Review)",
+    "file": "02-review-iqtisodi-xato-narxi-navbat-va-pr.md",
+    "part": "I. Review ning mohiyati va iqtisodi",
+    "sections": 11
+   },
+   {
+    "num": 3,
+    "title": "3. Reviewer ning tahlil apparati: niyat, invariant, xavf yuzasi (The Reviewer's Analytical Apparatus)",
+    "file": "03-reviewer-ning-tahlil-apparati-niyat.md",
+    "part": "I. Review ning mohiyati va iqtisodi",
+    "sections": 11
+   },
+   {
+    "num": 4,
+    "title": "4. Diffni o'qish mexanikasi (Reading a Diff)",
+    "file": "04-diffni-oqish-mexanikasi.md",
+    "part": "I. Review ning mohiyati va iqtisodi",
+    "sections": 11
+   },
+   {
+    "num": 5,
+    "title": "5. Mashina va odam: SonarQube dan oldin topish (Beating the Tools)",
+    "file": "05-mashina-va-odam-sonarqube-dan-oldin-topish.md",
+    "part": "I. Review ning mohiyati va iqtisodi",
+    "sections": 11
+   },
+   {
+    "num": 6,
+    "title": "6. Arxitektura review: qatlam, chegara, bog'liqlik yo'nalishi (Architecture in a Diff)",
+    "file": "06-arxitektura-review-qatlam-chegara-bogliqlik.md",
+    "part": "II. Arxitektura, dizayn va clean code review",
+    "sections": 11
+   },
+   {
+    "num": 7,
+    "title": "7. Bog'liqlik, koheziya va abstraksiya review (Coupling, Cohesion, Abstraction)",
+    "file": "07-bogliqlik-koheziya-va-abstraksiya-review.md",
+    "part": "II. Arxitektura, dizayn va clean code review",
+    "sections": 11
+   },
+   {
+    "num": 8,
+    "title": "8. Clean code review: nomlash, kognitiv yuk, metod shakli (Clean Code at the Review Table)",
+    "file": "08-clean-code-review-nomlash-kognitiv-yuk.md",
+    "part": "II. Arxitektura, dizayn va clean code review",
+    "sections": 11
+   },
+   {
+    "num": 9,
+    "title": "9. SOLID va dizayn printsiplarini diffda tekshirish (Principles, Not Slogans)",
+    "file": "09-solid-va-dizayn-printsiplarini-diffda.md",
+    "part": "II. Arxitektura, dizayn va clean code review",
+    "sections": 11
+   },
+   {
+    "num": 10,
+    "title": "10. Dizayn pattern review I: yo'q patternni ko'rish (Missing Patterns)",
+    "file": "10-dizayn-pattern-review-i-yoq-patternni-korish.md",
+    "part": "II. Arxitektura, dizayn va clean code review",
+    "sections": 12
+   },
+   {
+    "num": 11,
+    "title": "11. Dizayn pattern review II: noto'g'ri va ortiqcha qo'llangan pattern (Misapplied and Over-Applied Patterns)",
+    "file": "11-dizayn-pattern-review-ii-notogri-va.md",
+    "part": "II. Arxitektura, dizayn va clean code review",
+    "sections": 12
+   },
+   {
+    "num": 12,
+    "title": "12. Code smell va anti-pattern katalogi diffda (Smells in a Diff)",
+    "file": "12-code-smell-va-anti-pattern-katalogi-diffda.md",
+    "part": "II. Arxitektura, dizayn va clean code review",
+    "sections": 11
+   },
+   {
+    "num": 13,
+    "title": "13. Domen modeli review: invariant, agregat, chegara (Reviewing the Domain Model)",
+    "file": "13-domen-modeli-review-invariant-agregat.md",
+    "part": "II. Arxitektura, dizayn va clean code review",
+    "sections": 11
+   },
+   {
+    "num": 14,
+    "title": "14. Java tili darajasidagi xatolar katalogi (Language-Level Defects)",
+    "file": "14-java-tili-darajasidagi-xatolar-katalogi.md",
+    "part": "III. Java kodini chuqur tahlil",
+    "sections": 11
+   },
+   {
+    "num": 15,
+    "title": "15. Holat, mutability va concurrency review (State and Concurrency)",
+    "file": "15-holat-mutability-va-concurrency-review.md",
+    "part": "III. Java kodini chuqur tahlil",
+    "sections": 12
+   },
+   {
+    "num": 16,
+    "title": "16. Resurs, xotira va GC bosimi review (Resources and Memory)",
+    "file": "16-resurs-xotira-va-gc-bosimi-review.md",
+    "part": "III. Java kodini chuqur tahlil",
+    "sections": 10
+   },
+   {
+    "num": 17,
+    "title": "17. Zamonaviy Java review: record, sealed, pattern matching, virtual thread (Modern Java)",
+    "file": "17-zamonaviy-java-review-record-sealed-pattern.md",
+    "part": "III. Java kodini chuqur tahlil",
+    "sections": 8
+   },
+   {
+    "num": 18,
+    "title": "18. Bean, kontekst va proxy mexanikasi review (Beans, Context and Proxies)",
+    "file": "18-bean-kontekst-va-proxy-mexanikasi-review.md",
+    "part": "IV. Spring kodini review qilish",
+    "sections": 10
+   },
+   {
+    "num": 19,
+    "title": "19. Tranzaksiya chegarasi review (Transaction Boundaries)",
+    "file": "19-tranzaksiya-chegarasi-review.md",
+    "part": "IV. Spring kodini review qilish",
+    "sections": 11
+   },
+   {
+    "num": 20,
+    "title": "20. Web qatlami review: DTO, validatsiya, xato javobi (The Web Layer)",
+    "file": "20-web-qatlami-review-dto-validatsiya-xato.md",
+    "part": "IV. Spring kodini review qilish",
+    "sections": 12
+   },
+   {
+    "num": 21,
+    "title": "21. Konfiguratsiya, profil va feature flag review (Configuration)",
+    "file": "21-konfiguratsiya-profil-va-feature-flag-review.md",
+    "part": "IV. Spring kodini review qilish",
+    "sections": 10
+   },
+   {
+    "num": 22,
+    "title": "22. Tashqi integratsiya review: timeout, retry, broker (Outbound Integration)",
+    "file": "22-tashqi-integratsiya-review-timeout-retry.md",
+    "part": "IV. Spring kodini review qilish",
+    "sections": 9
+   },
+   {
+    "num": 23,
+    "title": "23. JPA va Hibernate review (JPA and Hibernate)",
+    "file": "23-jpa-va-hibernate-review.md",
+    "part": "V. PostgreSQL va ma'lumot qatlami review",
+    "sections": 11
+   },
+   {
+    "num": 24,
+    "title": "24. SQL, so'rov rejasi va indeks review (SQL, Plans and Indexes)",
+    "file": "24-sql-sorov-rejasi-va-indeks-review.md",
+    "part": "V. PostgreSQL va ma'lumot qatlami review",
+    "sections": 10
+   },
+   {
+    "num": 25,
+    "title": "25. Migratsiya review: qulf, backfill, orqaga moslik (Reviewing Migrations)",
+    "file": "25-migratsiya-review-qulf-backfill-orqaga.md",
+    "part": "V. PostgreSQL va ma'lumot qatlami review",
+    "sections": 9
+   },
+   {
+    "num": 26,
+    "title": "26. Ma'lumot to'g'riligi va turlar review (Data Correctness)",
+    "file": "26-malumot-togriligi-va-turlar-review.md",
+    "part": "V. PostgreSQL va ma'lumot qatlami review",
+    "sections": 10
+   },
+   {
+    "num": 27,
+    "title": "27. Izolyatsiya, poyga holatlari va xabar yetkazish (Isolation, Races and Delivery)",
+    "file": "27-izolyatsiya-poyga-holatlari-va-xabar.md",
+    "part": "V. PostgreSQL va ma'lumot qatlami review",
+    "sections": 11
+   },
+   {
+    "num": 28,
+    "title": "28. Xavfsizlik review metodikasi (How to Review for Security)",
+    "file": "28-xavfsizlik-review-metodikasi.md",
+    "part": "VI. Xavfsizlik review",
+    "sections": 8
+   },
+   {
+    "num": 29,
+    "title": "29. Injection review: SQL va boshqalar (Injection)",
+    "file": "29-injection-review-sql-va-boshqalar.md",
+    "part": "VI. Xavfsizlik review",
+    "sections": 10
+   },
+   {
+    "num": 30,
+    "title": "30. Autentifikatsiya va avtorizatsiya review (Authentication and Authorization)",
+    "file": "30-autentifikatsiya-va-avtorizatsiya-review.md",
+    "part": "VI. Xavfsizlik review",
+    "sections": 10
+   },
+   {
+    "num": 31,
+    "title": "31. Kirish va chiqish xavfsizligi: SSRF, deserializatsiya, fayllar (Input and Output Safety)",
+    "file": "31-kirish-va-chiqish-xavfsizligi-ssrf.md",
+    "part": "VI. Xavfsizlik review",
+    "sections": 8
+   },
+   {
+    "num": 32,
+    "title": "32. Secret, maxfiy ma'lumot va kriptografiya review (Secrets, PII and Crypto)",
+    "file": "32-secret-maxfiy-malumot-va-kriptografiya.md",
+    "part": "VI. Xavfsizlik review",
+    "sections": 9
+   },
+   {
+    "num": 33,
+    "title": "33. Bog'liqlik va supply chain review (Dependencies and Supply Chain)",
+    "file": "33-bogliqlik-va-supply-chain-review.md",
+    "part": "VI. Xavfsizlik review",
+    "sections": 7
+   },
+   {
+    "num": 34,
+    "title": "34. Test to'liqligini review qilish (Test Case Completeness)",
+    "file": "34-test-toliqligini-review-qilish.md",
+    "part": "VII. Test review",
+    "sections": 11
+   },
+   {
+    "num": 35,
+    "title": "35. Test sifati review: assertion, izolyatsiya, beqarorlik (Test Quality)",
+    "file": "35-test-sifati-review-assertion-izolyatsiya.md",
+    "part": "VII. Test review",
+    "sections": 10
+   },
+   {
+    "num": 36,
+    "title": "36. Test turi va integratsion test review (Test Types and Integration Tests)",
+    "file": "36-test-turi-va-integratsion-test-review.md",
+    "part": "VII. Test review",
+    "sections": 9
+   },
+   {
+    "num": 37,
+    "title": "37. API moslik va breaking change review (API Compatibility)",
+    "file": "37-api-moslik-va-breaking-change-review.md",
+    "part": "VIII. Kesishgan sifat",
+    "sections": 9
+   },
+   {
+    "num": 38,
+    "title": "38. Performance review diffdan (Performance from a Diff)",
+    "file": "38-performance-review-diffdan.md",
+    "part": "VIII. Kesishgan sifat",
+    "sections": 10
+   },
+   {
+    "num": 39,
+    "title": "39. Observability review (Observability)",
+    "file": "39-observability-review.md",
+    "part": "VIII. Kesishgan sifat",
+    "sections": 9
+   },
+   {
+    "num": 40,
+    "title": "40. Review jarayonini qurish (Building the Process)",
+    "file": "40-review-jarayonini-qurish.md",
+    "part": "IX. Jarayon, madaniyat va o'lchov",
+    "sections": 12
+   },
+   {
+    "num": 41,
+    "title": "41. Review madaniyati, til va kelishmovchilik (Culture, Language, Disagreement)",
+    "file": "41-review-madaniyati-til-va-kelishmovchilik.md",
+    "part": "IX. Jarayon, madaniyat va o'lchov",
+    "sections": 15
+   },
+   {
+    "num": 42,
+    "title": "42. Review metrikalari (Measuring Review)",
+    "file": "42-review-metrikalari.md",
+    "part": "IX. Jarayon, madaniyat va o'lchov",
+    "sections": 8
+   },
+   {
+    "num": 43,
+    "title": "43. AI yozgan kodni review qilish va AI bilan review qilish (Reviewing AI-Generated Code)",
+    "file": "43-ai-yozgan-kodni-review-qilish-va-ai-bilan.md",
+    "part": "IX. Jarayon, madaniyat va o'lchov",
+    "sections": 9
+   },
+   {
+    "num": 44,
+    "title": "44. Shablonlar, checklistlar va reviewer yetukligi (Templates and Maturity)",
+    "file": "44-shablonlar-checklistlar-va-reviewer.md",
+    "part": "IX. Jarayon, madaniyat va o'lchov",
+    "sections": 9
    }
   ]
  }

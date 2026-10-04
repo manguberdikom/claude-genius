@@ -22,6 +22,7 @@
 </details>
 
 
+
 Quality gate Sonar tahlilining yakuniy hukmi. Analiz minglab issue va o'nlab metrikani hisoblaydi, lekin CI ga faqat bitta javob kerak: o'tdi yoki o'tmadi. Quality gate aynan shu javobni beradigan mexanizm, va u sehrli emas: bir nechta oddiy shartning mantiqiy VA (AND) birlashmasi. Shu bobda shart qanday tuzilishini, holat qachon hisoblanishini, CI uni qanday kutib olishini va qattiq sozlangan gate jamoani qanday buzishini ko'ramiz.
 
 ## 6.1 Quality gate nima: shartlar to'plami va ularning tekshirilishi

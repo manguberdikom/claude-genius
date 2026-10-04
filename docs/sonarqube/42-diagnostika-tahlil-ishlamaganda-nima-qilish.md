@@ -28,6 +28,7 @@
 </details>
 
 
+
 Sonar tahlili buzilganda ko'pchilik birinchi navbatda quality gate shartini o'zgartirishga urinadi. Bu xato yo'l, chunki aksariyat hollarda muammo gate da emas, balki scanner ga berilgan ma'lumotda yoki loyiha kalitida bo'ladi. Bu bob diagnostikani aniq tartibda olib borishni o'rgatadi: avval belgi, keyin sabab farazi, keyin tekshirish buyrug'i, keyin yechim. Har bir bo'limda log da nimani izlash kerakligi ko'rsatilgan, chunki scanner o'z ishini batafsil yozib boradi va javob deyarli har doim log ichida turadi.
 
 ## 42.1 Diagnostika tartibi

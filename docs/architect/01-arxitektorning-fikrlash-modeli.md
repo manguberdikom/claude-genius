@@ -22,6 +22,7 @@
 </details>
 
 
+
 Arxitektorning ishi diagramma chizish emas. Uning ishi noaniq biznes talabini o'lchanadigan texnik cheklovga aylantirish va har bir qarorning narxini oldindan aytib berish. Shu sababli arxitektorning fikrlash modeli kod yozish mahoratidan emas, kontekstni o'qish va trade-off ni raqamda ko'rsatish qobiliyatidan boshlanadi. Bu bobda shu model ichidan o'tamiz: kontekst, trade-off, sifat atributlari, qarorning qaytarilish darajasi va qarorning eskirishi.
 
 ## 1.1 Arxitektor va senior developer o'rtasidagi haqiqiy farq

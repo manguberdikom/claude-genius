@@ -22,6 +22,7 @@
 </details>
 
 
+
 Arxitektorni developerdan ajratadigan eng arzon ko'nikma: qog'oz burchagida hisoblash. Yuklamani, kechikishni va hajmni oldin hisoblab keyin kod yozish sprintni emas, yillarni tejaydi. Bu bobda to'lov servisi, buyurtma oqimi va ombor qoldig'i misolida aniq raqamlar bilan ishlaymiz. Maqsad formulani yodlash emas, kattalik tartibini (order of magnitude) sezish.
 
 ## 8.1 Har bir arxitektor yodda tutishi kerak bo'lgan kechikish raqamlari

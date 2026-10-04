@@ -23,6 +23,7 @@
 </details>
 
 
+
 Spring konteyneri sehr emas, u aniq tartibda ishlaydigan mexanizm. Arxitektor uchun bu mexanizmni bilish zarurati amaliy: ishga tushish vaqti, aylanma bog'liqlik xatosi, `@Transactional` ning jim turib ishlamasligi va event larning tranzaksiya bilan noto'g'ri bog'lanishi hammasi shu mexanizmdan kelib chiqadi. Quyida konteyner ichida nima sodir bo'lishini bosqichma-bosqich ko'rib chiqamiz va har bosqichga bog'langan tuzoqlarni ajratamiz. Misollar to'lov servisi, buyurtma va ombor qoldig'i domenidan olingan.
 
 ## 15.1 `ApplicationContext` ishga tushish bosqichlari: bean definition, post-processor, instantiation

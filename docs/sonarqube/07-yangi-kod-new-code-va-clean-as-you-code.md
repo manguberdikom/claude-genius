@@ -22,6 +22,7 @@
 </details>
 
 
+
 Sonar hisoblaydigan metrikalarning yarmi "yangi kod" ustida o'lchanadi. Bu bitta sozlama emas, balki butun bir ish uslubi: jamoa eski qarzni to'lamay turib ham sifatni oshira boradi. Lekin yangi kod chegarasi noto'g'ri qo'yilsa yoki git tarixi buzilgan bo'lsa, quality gate kutilmaganda qizil yonadi va hech kim nega qizil ekanini tushunmaydi. Bu bobda yangi kod qanday aniqlanishi, qaysi chegara usuli qaysi reliz jarayoniga mos kelishi va amalda eng ko'p uchraydigan tuzoqlar ko'rib chiqiladi.
 
 ## 7.1 Yangi kod nima: ta'rifi va u nega alohida o'lchanadi

@@ -25,6 +25,7 @@
 </details>
 
 
+
 Arxitektor yangi tizimga kelganda eng katta xatosi tezda foydali bo'lishga urinishdir. Haqiqatda esa birinchi uch oyda sizning asosiy mahsulotingiz kod emas, balki ishonchli xarita va ishonchli munosabatdir. Bu bob shu uch oyni haftalab bo'lib beradi, keyin esa diqqatni sizning o'zingizga qaratadi: bilimingizdagi bo'shliqni qanday topish va qaysi mavzuda qay darajada turganingizni qanday o'lchash. Hujjat shu bob bilan tugaydi, shuning uchun oxirida uchlikni birgalikda qanday ishlatish ham aytiladi.
 
 ## 39.1 Yangi loyihada birinchi hafta: nimani o'qish, kimdan so'rash, nima yozmaslik

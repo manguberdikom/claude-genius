@@ -38,11 +38,12 @@
 </details>
 
 
-Concurrency patternlari ko'p oqimli (multi-threaded) va asinxron tizimlarda ishni oqimlar o'rtasida taqsimlash, umumiy holatni (shared state) xavfsiz himoyalash va kutish/bloklanishni boshqarishning takrorlanuvchi yechimlarini beradi. Java va Spring ekosistemasi bu patternlarning ko'pini tilning o'zida (`java.util.concurrent`, virtual threadlar) yoki framework darajasida (`TaskExecutor`, `@Async`, WebFlux, Netty event loop) allaqachon amalga oshirgan — arxitektorning vazifasi ularni noldan yozish emas, balki to'g'ri qatlamda to'g'risini tanlash. Noto'g'ri tanlov odatda kompilyatsiya xatosi bilan emas, yuklama ostida thread pool tugashi, deadlock, latency dumining (tail latency) o'sishi yoki ma'lumot buzilishi bilan namoyon bo'ladi. Shuning uchun bu bo'lim arxitektor uchun eng "qimmat" bo'limlardan biri: bu yerdagi qarorlar tizimning throughput, barqarorlik va diagnostika qulayligini uzoq muddatga belgilaydi.
+
+Concurrency patternlari ko'p oqimli (multi-threaded) va asinxron tizimlarda ishni oqimlar o'rtasida taqsimlash, umumiy holatni (shared state) xavfsiz himoyalash va kutish/bloklanishni boshqarishning takrorlanuvchi yechimlarini beradi. Java va Spring ekosistemasi bu patternlarning ko'pini tilning o'zida (`java.util.concurrent`, virtual threadlar) yoki framework darajasida (`TaskExecutor`, `@Async`, WebFlux, Netty event loop) allaqachon amalga oshirgan - arxitektorning vazifasi ularni noldan yozish emas, balki to'g'ri qatlamda to'g'risini tanlash. Noto'g'ri tanlov odatda kompilyatsiya xatosi bilan emas, yuklama ostida thread pool tugashi, deadlock, latency dumining (tail latency) o'sishi yoki ma'lumot buzilishi bilan namoyon bo'ladi. Shuning uchun bu bo'lim arxitektor uchun eng "qimmat" bo'limlardan biri: bu yerdagi qarorlar tizimning throughput, barqarorlik va diagnostika qulayligini uzoq muddatga belgilaydi.
 
 ## 4.1 Oqimlar hovuzi / Bajaruvchi (Thread Pool / Executor)
 
-**Tavsif:** Har bir vazifa uchun yangi thread yaratish qimmat va cheklovsiz — bu pattern oldindan tayyorlangan oqimlar to'plamini saqlab, vazifalarni navbat orqali ularga topshiradi. Vazifani yuborish (submit) bajarilishdan ajratiladi, shu bilan thread yaratish narxi amortizatsiya qilinadi va parallellik darajasi yuqoridan cheklanadi. Hovuz o'lchami, navbat turi va to'lib qolgandagi rad etish siyosati (rejection policy) tizimning yuklama ostidagi xatti-harakatini belgilaydi.
+**Tavsif:** Har bir vazifa uchun yangi thread yaratish qimmat va cheklovsiz - bu pattern oldindan tayyorlangan oqimlar to'plamini saqlab, vazifalarni navbat orqali ularga topshiradi. Vazifani yuborish (submit) bajarilishdan ajratiladi, shu bilan thread yaratish narxi amortizatsiya qilinadi va parallellik darajasi yuqoridan cheklanadi. Hovuz o'lchami, navbat turi va to'lib qolgandagi rad etish siyosati (rejection policy) tizimning yuklama ostidagi xatti-harakatini belgilaydi.
 
 **Spring'da qayerda uchraydi:** Java tomonida `java.util.concurrent.ExecutorService`, `ThreadPoolExecutor`, `Executors`, `ForkJoinPool.commonPool()` va Java 21+ dagi `Executors.newVirtualThreadPerTaskExecutor()`. Spring Framework 6.x/7.x `org.springframework.core.task.TaskExecutor` abstraksiyasini, `ThreadPoolTaskExecutor`, `SimpleAsyncTaskExecutor` (virtual threadlarni `setVirtualThreads(true)` bilan qo'llaydi) va `ConcurrentTaskExecutor` implementatsiyalarini beradi; `@EnableAsync` + `@Async` proxy orqali metod chaqiruvini shu executorga uzatadi. Spring Boot 3.x/4.x `spring.task.execution.pool.core-size`, `max-size`, `queue-capacity` propertylari bilan `applicationTaskExecutor` beanini avtomatik sozlaydi, `spring.threads.virtual.enabled=true` esa web konteyner va task executorlarni virtual threadlarga o'tkazadi.
 
@@ -53,13 +54,13 @@ Concurrency patternlari ko'p oqimli (multi-threaded) va asinxron tizimlarda ishn
 - Tomcat/Jetty uchun `server.tomcat.threads.max` orqali request bajaruvchi hovuzini kapasitetga moslash.
 - Spring Batch'da `TaskExecutorPartitionHandler` bilan partition'larni parallel ishga tushirish.
 
-**Ehtiyot bo'ling:** Cheksiz `LinkedBlockingQueue` bilan `max-size` hech qachon ishlamaydi — navbat o'sib OOM'ga olib keladi va backpressure yo'qoladi; `CallerRunsPolicy` yoki chegaralangan navbat tanlang. Platform threadli hovuzda bloklanuvchi I/O'ni ko'paytirish thread starvation beradi: bunday ishni virtual threadlarga yoki alohida ajratilgan (bulkhead) hovuzga chiqarish kerak.
+**Ehtiyot bo'ling:** Cheksiz `LinkedBlockingQueue` bilan `max-size` hech qachon ishlamaydi - navbat o'sib OOM'ga olib keladi va backpressure yo'qoladi; `CallerRunsPolicy` yoki chegaralangan navbat tanlang. Platform threadli hovuzda bloklanuvchi I/O'ni ko'paytirish thread starvation beradi: bunday ishni virtual threadlarga yoki alohida ajratilgan (bulkhead) hovuzga chiqarish kerak.
 
 ## 4.2 Ishlab chiqaruvchi-Iste'molchi (Producer-Consumer)
 
 **Tavsif:** Ishni yaratuvchi va uni qayta ishlovchi komponentlar o'rtasiga navbat qo'yiladi, shu bilan ular bir-biridan vaqt va tezlik jihatidan ajratiladi. Chegaralangan navbat tabiiy backpressure beradi: navbat to'lsa producer sekinlashadi yoki rad etiladi. Iste'molchilar sonini o'zgartirib, qayta ishlash quvvatini yuklamaga moslash mumkin.
 
-**Spring'da qayerda uchraydi:** Java'da `BlockingQueue` ierarxiyasi — `ArrayBlockingQueue`, `LinkedBlockingQueue`, `SynchronousQueue`, `LinkedTransferQueue`, `DelayQueue`; yuqori throughput uchun LMAX Disruptor. Spring Integration'da `QueueChannel`, `PriorityChannel` va `PollerMetadata` bilan sozlanadigan polling consumer; Spring Kafka'da `@KafkaListener` + `ConcurrentMessageListenerContainer` (`concurrency` parametri), Spring AMQP'da `SimpleMessageListenerContainer`/`DirectMessageListenerContainer`. Reaktiv tomonda Project Reactor'ning `Sinks.many()` va `Flux.onBackpressureBuffer()` xuddi shu rolni bajaradi.
+**Spring'da qayerda uchraydi:** Java'da `BlockingQueue` ierarxiyasi - `ArrayBlockingQueue`, `LinkedBlockingQueue`, `SynchronousQueue`, `LinkedTransferQueue`, `DelayQueue`; yuqori throughput uchun LMAX Disruptor. Spring Integration'da `QueueChannel`, `PriorityChannel` va `PollerMetadata` bilan sozlanadigan polling consumer; Spring Kafka'da `@KafkaListener` + `ConcurrentMessageListenerContainer` (`concurrency` parametri), Spring AMQP'da `SimpleMessageListenerContainer`/`DirectMessageListenerContainer`. Reaktiv tomonda Project Reactor'ning `Sinks.many()` va `Flux.onBackpressureBuffer()` xuddi shu rolni bajaradi.
 
 **Qo'llanish keyslari:**
 - Fayl yuklash endpointi yuklangan faylni navbatga qo'yadi, alohida worker'lar uni parse qiladi.
@@ -68,13 +69,13 @@ Concurrency patternlari ko'p oqimli (multi-threaded) va asinxron tizimlarda ishn
 - Elektron pochta yoki push notification yuborishni navbat orqali rate'ga moslash.
 - ETL oqimida o'qish, transformatsiya va yozish bosqichlarini mustaqil tezlikda ishlatish.
 
-**Ehtiyot bo'ling:** Navbat ichidagi elementlar JVM o'chganda yo'qoladi — "ishonchli" yetkazib berish kerak bo'lsa in-memory queue emas, broker yoki transactional outbox ishlatilsin. Poison message yoki sekin consumer navbatni to'ldirib butun pipeline'ni to'xtatishi mumkin, shuning uchun dead-letter va timeout majburiy.
+**Ehtiyot bo'ling:** Navbat ichidagi elementlar JVM o'chganda yo'qoladi - "ishonchli" yetkazib berish kerak bo'lsa in-memory queue emas, broker yoki transactional outbox ishlatilsin. Poison message yoki sekin consumer navbatni to'ldirib butun pipeline'ni to'xtatishi mumkin, shuning uchun dead-letter va timeout majburiy.
 
 ## 4.3 Kelasi natija / Vada (Future / Promise / CompletableFuture)
 
 **Tavsif:** Asinxron hisoblashning natijasini hozir mavjud bo'lmagan, lekin keyin tayyor bo'ladigan obyekt sifatida ifodalaydi. `Future` faqat natijani kutish (pull) imkonini beradi, `CompletableFuture` esa callback va kompozitsiya (`thenApply`, `thenCompose`, `allOf`) orqali chaqiruvchini bloklamasdan quvur qurishga ruxsat beradi. Bu bir nechta mustaqil chaqiruvni parallel bajarib, umumiy latency'ni eng sekin chaqiruv darajasiga tushiradi.
 
-**Spring'da qayerda uchraydi:** `java.util.concurrent.Future`, `CompletableFuture`, `CompletionStage`. Spring 6.x'da `@Async` metodi `void`, `Future` yoki `CompletableFuture` qaytaradi — eski `ListenableFuture` va `AsyncResult` olib tashlangan/deprecated, o'rniga `CompletableFuture.completedFuture(...)` ishlatiladi. Spring MVC'da `Callable`, `DeferredResult` va `CompletableFuture` controller qaytaruv turi sifatida qo'llanadi; `WebClient` `Mono`/`Flux` qaytaradi va `toFuture()` bilan `CompletableFuture`'ga o'tadi; Reactor'ning `Mono` — promise'ning lazy va cancel qilinadigan muqobili. Java 21+ `StructuredTaskScope` (preview) bir nechta subtask'ni bitta scope ichida boshqarishni beradi.
+**Spring'da qayerda uchraydi:** `java.util.concurrent.Future`, `CompletableFuture`, `CompletionStage`. Spring 6.x'da `@Async` metodi `void`, `Future` yoki `CompletableFuture` qaytaradi - eski `ListenableFuture` va `AsyncResult` olib tashlangan/deprecated, o'rniga `CompletableFuture.completedFuture(...)` ishlatiladi. Spring MVC'da `Callable`, `DeferredResult` va `CompletableFuture` controller qaytaruv turi sifatida qo'llanadi; `WebClient` `Mono`/`Flux` qaytaradi va `toFuture()` bilan `CompletableFuture`'ga o'tadi; Reactor'ning `Mono` - promise'ning lazy va cancel qilinadigan muqobili. Java 21+ `StructuredTaskScope` (preview) bir nechta subtask'ni bitta scope ichida boshqarishni beradi.
 
 ```java
 CompletableFuture<User> u = CompletableFuture.supplyAsync(() -> userClient.find(id), executor);
@@ -97,7 +98,7 @@ return u.thenCombine(o, UserProfile::new)
 
 **Tavsif:** Metod chaqiruvini uning bajarilishidan ajratadi: client oddiy metod chaqiradi, lekin chaqiruv so'rov obyektiga aylanib navbatga tushadi va obyektning o'ziga tegishli bitta scheduler oqimida ketma-ket bajariladi. Natijada obyektning ichki holati faqat bitta oqim tomonidan o'zgartiriladi va lock'lar shart bo'lmaydi. Client natijani `Future` orqali oladi, shu bilan interfeys sinxron ko'rinishini saqlaydi.
 
-**Spring'da qayerda uchraydi:** Eng toza Java ko'rinishi — bitta oqimli `Executors.newSingleThreadExecutor()` ustida qurilgan fasad, `submit()` natijasini `Future` qilib qaytaradigan. Spring'da `@Async` + `AsyncAnnotationBeanPostProcessor` tomonidan yaratilgan proxy aynan shu ajratishni amalga oshiradi (lekin ketma-ketlikni kafolatlash uchun bitta oqimli executor berish kerak). Spring Integration'ning `@MessagingGateway` interfeysi POSA'dagi proxy + so'rov navbati rolini bajaradi; aktor modelidagi muqobillar — Akka/Apache Pekko `typed.ActorRef` yoki Vert.x verticle'lari. Reaktiv dunyoda `Flux` ni bitta `Schedulers.single()` ga `publishOn` qilish ham xuddi shu seriyalashtirishni beradi.
+**Spring'da qayerda uchraydi:** Eng toza Java ko'rinishi - bitta oqimli `Executors.newSingleThreadExecutor()` ustida qurilgan fasad, `submit()` natijasini `Future` qilib qaytaradigan. Spring'da `@Async` + `AsyncAnnotationBeanPostProcessor` tomonidan yaratilgan proxy aynan shu ajratishni amalga oshiradi (lekin ketma-ketlikni kafolatlash uchun bitta oqimli executor berish kerak). Spring Integration'ning `@MessagingGateway` interfeysi POSA'dagi proxy + so'rov navbati rolini bajaradi; aktor modelidagi muqobillar - Akka/Apache Pekko `typed.ActorRef` yoki Vert.x verticle'lari. Reaktiv dunyoda `Flux` ni bitta `Schedulers.single()` ga `publishOn` qilish ham xuddi shu seriyalashtirishni beradi.
 
 **Qo'llanish keyslari:**
 - Thread-safe bo'lmagan tashqi SDK klientini bitta oqim ortiga yashirish.
@@ -106,13 +107,13 @@ return u.thenCombine(o, UserProfile::new)
 - Narx jadvali kabi tez-tez yangilanadigan aggregatni seriyalashtirib yangilash.
 - Audit yoki hodisa jurnalini bitta writer orqali tartibda yozish.
 
-**Ehtiyot bo'ling:** Bitta oqim bo'g'iz (bottleneck) bo'lib qoladi — og'ir CPU ishi yoki bloklanuvchi chaqiruv butun navbatni to'xtatadi. Navbat chegarasiz bo'lsa yuklama ostida xotira o'sadi va latency ko'rinmas tarzda oshib ketadi.
+**Ehtiyot bo'ling:** Bitta oqim bo'g'iz (bottleneck) bo'lib qoladi - og'ir CPU ishi yoki bloklanuvchi chaqiruv butun navbatni to'xtatadi. Navbat chegarasiz bo'lsa yuklama ostida xotira o'sadi va latency ko'rinmas tarzda oshib ketadi.
 
 ## 4.5 Monitor obyekti (Monitor Object)
 
 **Tavsif:** Obyektning umumiy holatiga kirishni bitta mutex bilan seriyalashtiradi va shart bajarilmaganda oqimni shu monitor ichida kutishga qo'yadi. Ya'ni "o'zaro istisno" (mutual exclusion) va "shartli kutish" (condition wait) bir obyektda jamlanadi: bir vaqtda faqat bitta metod ishlaydi, kutayotgan oqim lock'ni bo'shatib turadi. Bu Java'ga tilning o'ziga singdirilgan eng asosiy sinxronlash patterni.
 
-**Spring'da qayerda uchraydi:** Java'da `synchronized` metod/blok, `Object.wait()/notifyAll()` va aniqroq muqobil — `java.util.concurrent.locks.ReentrantLock` + `Condition.await()/signalAll()`. Spring'ning o'zida `DefaultSingletonBeanRegistry` singleton registrini, `ConcurrentWebSocketSessionDecorator` esa session yozishni monitor orqali himoyalaydi; `@Scope("singleton")` beanlar bo'lsa, mutable maydonlari bo'lsa, shu patternni yoki `ConcurrentHashMap`/`Atomic*` ni talab qiladi. Spring Integration va Spring AMQP container'lari lifecycle (`start()/stop()`) ni `lifecycleMonitor` obyekti ustida synchronized qiladi.
+**Spring'da qayerda uchraydi:** Java'da `synchronized` metod/blok, `Object.wait()/notifyAll()` va aniqroq muqobil - `java.util.concurrent.locks.ReentrantLock` + `Condition.await()/signalAll()`. Spring'ning o'zida `DefaultSingletonBeanRegistry` singleton registrini, `ConcurrentWebSocketSessionDecorator` esa session yozishni monitor orqali himoyalaydi; `@Scope("singleton")` beanlar bo'lsa, mutable maydonlari bo'lsa, shu patternni yoki `ConcurrentHashMap`/`Atomic*` ni talab qiladi. Spring Integration va Spring AMQP container'lari lifecycle (`start()/stop()`) ni `lifecycleMonitor` obyekti ustida synchronized qiladi.
 
 **Qo'llanish keyslari:**
 - Singleton bean ichidagi mutable counter yoki konfiguratsiya snapshotini himoyalash.
@@ -121,13 +122,13 @@ return u.thenCombine(o, UserProfile::new)
 - Faylga yoki WebSocket session'ga yozishni bitta yozuvchiga seriyalashtirish.
 - Lazy ravishda yuklanadigan og'ir resursni bir marta initsializatsiya qilish.
 
-**Ehtiyot bo'ling:** `synchronized` blok ichida tashqi tarmoq chaqiruvi yoki boshqa lock olish deadlock va uzun lock contention manbai — kritik bo'limni minimal ushlang va lock'larni doim bir xil tartibda oling. Virtual threadlarda `synchronized` Java 24+ da endi carrier threadni pinlamaydi (JEP 491), lekin eski JDK'larda pinlaydi — bunday hollarda `ReentrantLock` xavfsizroq.
+**Ehtiyot bo'ling:** `synchronized` blok ichida tashqi tarmoq chaqiruvi yoki boshqa lock olish deadlock va uzun lock contention manbai - kritik bo'limni minimal ushlang va lock'larni doim bir xil tartibda oling. Virtual threadlarda `synchronized` Java 24+ da endi carrier threadni pinlamaydi (JEP 491), lekin eski JDK'larda pinlaydi - bunday hollarda `ReentrantLock` xavfsizroq.
 
 ## 4.6 Reaktor (Reactor)
 
-**Tavsif:** Bitta (yoki bir nechta) oqim ko'plab I/O manbalarini event demultiplexer orqali kuzatadi va tayyor bo'lgan hodisani mos handler'ga sinxron uzatadi. Ulanish soniga emas, hodisa soniga proporsional resurs ishlatilgani uchun o'n minglab bir vaqtli ulanishni kam thread bilan boshqarish mumkin. Handler'lar hech qachon bloklanmasligi — patternning asosiy shartidir.
+**Tavsif:** Bitta (yoki bir nechta) oqim ko'plab I/O manbalarini event demultiplexer orqali kuzatadi va tayyor bo'lgan hodisani mos handler'ga sinxron uzatadi. Ulanish soniga emas, hodisa soniga proporsional resurs ishlatilgani uchun o'n minglab bir vaqtli ulanishni kam thread bilan boshqarish mumkin. Handler'lar hech qachon bloklanmasligi - patternning asosiy shartidir.
 
-**Spring'da qayerda uchraydi:** Java NIO'dagi `Selector`, `SelectionKey`, `SocketChannel` — klassik reaktor mexanizmi. Netty'dagi `EventLoopGroup`/`NioEventLoop` va `ChannelPipeline` shu patternning sanoat standarti; Spring WebFlux standart holda Reactor Netty ustida ishlaydi va `HttpHandler`/`WebFilter` zanjirini event loop oqimlarida bajaradi. Project Reactor (`Mono`, `Flux`, `Schedulers`) hodisalarni kompozitsiya qilish qatlamini beradi; `WebClient`, Spring Data R2DBC va Spring Data Reactive Redis ham shu modelga tayanadi. Undertow (XNIO) va Tomcat'ning NIO connector'i ham reaktor yondashuvidan foydalanadi.
+**Spring'da qayerda uchraydi:** Java NIO'dagi `Selector`, `SelectionKey`, `SocketChannel` - klassik reaktor mexanizmi. Netty'dagi `EventLoopGroup`/`NioEventLoop` va `ChannelPipeline` shu patternning sanoat standarti; Spring WebFlux standart holda Reactor Netty ustida ishlaydi va `HttpHandler`/`WebFilter` zanjirini event loop oqimlarida bajaradi. Project Reactor (`Mono`, `Flux`, `Schedulers`) hodisalarni kompozitsiya qilish qatlamini beradi; `WebClient`, Spring Data R2DBC va Spring Data Reactive Redis ham shu modelga tayanadi. Undertow (XNIO) va Tomcat'ning NIO connector'i ham reaktor yondashuvidan foydalanadi.
 
 **Qo'llanish keyslari:**
 - Minglab SSE yoki WebSocket ulanishini kam thread bilan ushlab turadigan gateway.
@@ -136,13 +137,13 @@ return u.thenCombine(o, UserProfile::new)
 - Chat yoki real-time notification servisi.
 - IoT qurilmalaridan kelgan uzluksiz telemetriya oqimini qabul qilish.
 
-**Ehtiyot bo'ling:** Event loop oqimida bitta `Thread.sleep()`, JDBC chaqiruvi yoki `block()` butun serverni to'xtatadi — bloklanuvchi ishni `Schedulers.boundedElastic()` ga chiqarish shart. Agar domeningizda blocking kutubxonalar ko'p bo'lsa, WebFlux emas, virtual threadli MVC oddiyroq va diagnostikasi osonroq yechim bo'lishi mumkin.
+**Ehtiyot bo'ling:** Event loop oqimida bitta `Thread.sleep()`, JDBC chaqiruvi yoki `block()` butun serverni to'xtatadi - bloklanuvchi ishni `Schedulers.boundedElastic()` ga chiqarish shart. Agar domeningizda blocking kutubxonalar ko'p bo'lsa, WebFlux emas, virtual threadli MVC oddiyroq va diagnostikasi osonroq yechim bo'lishi mumkin.
 
 ## 4.7 Proaktor (Proactor)
 
 **Tavsif:** Reaktordan farqli ravishda operatsiyaning tayyorligi haqida emas, tugallanganligi haqida xabar beradi: dastur asinxron o'qish/yozishni boshlab yuboradi, OS uni bajaradi va natija bilan completion handler'ni chaqiradi. Shu bilan I/O'ni kutish to'liq operatsion tizimga o'tadi va foydalanuvchi kodida kutish nuqtasi qolmaydi. Juda yuqori throughputli I/O uchun samarali, lekin boshqaruv oqimi callback'larga bo'linib ketadi.
 
-**Spring'da qayerda uchraydi:** Java'da NIO.2 API — `AsynchronousSocketChannel`, `AsynchronousServerSocketChannel`, `AsynchronousFileChannel`, `AsynchronousChannelGroup` va `CompletionHandler<V, A>` interfeysi. OS darajasida Windows IOCP va Linux'dagi `io_uring` shu modelga mos; Netty'ning `IoUringEventLoopGroup` (netty-incubator-transport-io_uring) shunga yaqin. Spring Framework'ning o'zi proaktorni bevosita ochib bermaydi — Spring tomonida u Reactor/Netty qatlami ortida yashiringan bo'ladi, ya'ni arxitektor uni ko'proq transport tanlashda va mahalliy kutubxonalarni baholashda hisobga oladi.
+**Spring'da qayerda uchraydi:** Java'da NIO.2 API - `AsynchronousSocketChannel`, `AsynchronousServerSocketChannel`, `AsynchronousFileChannel`, `AsynchronousChannelGroup` va `CompletionHandler<V, A>` interfeysi. OS darajasida Windows IOCP va Linux'dagi `io_uring` shu modelga mos; Netty'ning `IoUringEventLoopGroup` (netty-incubator-transport-io_uring) shunga yaqin. Spring Framework'ning o'zi proaktorni bevosita ochib bermaydi - Spring tomonida u Reactor/Netty qatlami ortida yashiringan bo'ladi, ya'ni arxitektor uni ko'proq transport tanlashda va mahalliy kutubxonalarni baholashda hisobga oladi.
 
 **Qo'llanish keyslari:**
 - Katta fayllarni `AsynchronousFileChannel` bilan bloklanmasdan o'qib/yozish.
@@ -151,13 +152,13 @@ return u.thenCombine(o, UserProfile::new)
 - Media yoki backup servisida parallel ko'p streamli yozish.
 - Mavjud callback'li native kutubxonani `CompletionHandler` orqali JVM'ga integratsiya qilish.
 
-**Ehtiyot bo'ling:** Platformaga bog'liqlik yuqori — bir OS'da tezlik beradigan yechim boshqasida emulyatsiya orqali sekinlashadi, shuning uchun o'lchovsiz tanlamang. Callback zanjirlari xato va timeout boshqaruvini qiyinlashtiradi; aksariyat Spring loyihasi uchun `CompletableFuture`/Reactor abstraksiyasi ostida qolish to'g'ri qaror.
+**Ehtiyot bo'ling:** Platformaga bog'liqlik yuqori - bir OS'da tezlik beradigan yechim boshqasida emulyatsiya orqali sekinlashadi, shuning uchun o'lchovsiz tanlamang. Callback zanjirlari xato va timeout boshqaruvini qiyinlashtiradi; aksariyat Spring loyihasi uchun `CompletableFuture`/Reactor abstraksiyasi ostida qolish to'g'ri qaror.
 
 ## 4.8 Yarim-sinxron/Yarim-asinxron (Half-Sync/Half-Async)
 
 **Tavsif:** Tizimni ikki qatlamga bo'ladi: asinxron qatlam hodisalarni tez qabul qiladi va navbatga qo'yadi, sinxron qatlamdagi worker oqimlar esa ularni tushunarli, bloklanishi mumkin bo'lgan kod bilan qayta ishlaydi. Ikki qatlam o'rtasidagi navbat ularni ajratib, asinxron qismning tezligini yo'qotmasdan biznes mantiqni oddiy yozishga imkon beradi. Bu amaliyotdagi eng ko'p uchraydigan murosali pattern.
 
-**Spring'da qayerda uchraydi:** Servlet konteynerlari aynan shunday ishlaydi: Tomcat'ning NIO acceptor/poller oqimlari ulanishni asinxron qabul qiladi, so'ngra so'rovni `http-nio-*-exec-*` worker hovuziga topshiradi. Spring MVC'da `Callable`, `DeferredResult` va `WebAsyncTask` so'rovni servlet threadidan ajratib, `AsyncTaskExecutor` ga uzatadi (Servlet 3.1+ async). Spring WebFlux'da chegara `publishOn(Schedulers.boundedElastic())` yoki `Mono.fromCallable(...).subscribeOn(...)` orqali qo'yiladi — masalan reaktiv controller ichidan blocking JPA chaqirilganda. Spring Kafka/AMQP container'lari ham xabarni asinxron oladi, qayta ishlashni listener hovuziga beradi.
+**Spring'da qayerda uchraydi:** Servlet konteynerlari aynan shunday ishlaydi: Tomcat'ning NIO acceptor/poller oqimlari ulanishni asinxron qabul qiladi, so'ngra so'rovni `http-nio-*-exec-*` worker hovuziga topshiradi. Spring MVC'da `Callable`, `DeferredResult` va `WebAsyncTask` so'rovni servlet threadidan ajratib, `AsyncTaskExecutor` ga uzatadi (Servlet 3.1+ async). Spring WebFlux'da chegara `publishOn(Schedulers.boundedElastic())` yoki `Mono.fromCallable(...).subscribeOn(...)` orqali qo'yiladi - masalan reaktiv controller ichidan blocking JPA chaqirilganda. Spring Kafka/AMQP container'lari ham xabarni asinxron oladi, qayta ishlashni listener hovuziga beradi.
 
 **Qo'llanish keyslari:**
 - WebFlux endpointidan eski blocking JDBC repository'ni `boundedElastic` orqali chaqirish.
@@ -166,13 +167,13 @@ return u.thenCombine(o, UserProfile::new)
 - Message listener'da qabul qilishni tez tasdiqlab, og'ir ishni ichki navbatga uzatish.
 - Legacy SOAP klientini reaktiv pipeline ichiga ajratilgan scheduler bilan integratsiya qilish.
 
-**Ehtiyot bo'ling:** Ikki qatlam orasidagi navbat chegarasiz bo'lsa, asinxron qatlam sinxron qatlamdan tezroq ishlab xotirani to'ldiradi — chegara va rad etish siyosati majburiy. Shuningdek kontekst (SecurityContext, MDC, `@Transactional` transaksiyasi) chegaradan avtomatik o'tmaydi: `DelegatingSecurityContextAsyncTaskExecutor` yoki Micrometer `ContextPropagation` bilan ko'chirish kerak.
+**Ehtiyot bo'ling:** Ikki qatlam orasidagi navbat chegarasiz bo'lsa, asinxron qatlam sinxron qatlamdan tezroq ishlab xotirani to'ldiradi - chegara va rad etish siyosati majburiy. Shuningdek kontekst (SecurityContext, MDC, `@Transactional` transaksiyasi) chegaradan avtomatik o'tmaydi: `DelegatingSecurityContextAsyncTaskExecutor` yoki Micrometer `ContextPropagation` bilan ko'chirish kerak.
 
 ## 4.9 Yetakchi/Izdoshlar (Leader/Followers)
 
 **Tavsif:** Hovuzdagi oqimlardan faqat bittasi "yetakchi" bo'lib hodisa manbasini kuzatadi; hodisa kelganda u darhol yangi yetakchini tanlab, o'zi qayta ishlashga o'tadi. Shu bilan hodisani bir oqimdan boshqasiga uzatish (handoff) va navbat ustidagi kontekst almashinuvi yo'qoladi, ya'ni latency va lock contention kamayadi. Bu Half-Sync/Half-Async'ning yuqori samarali, lekin murakkabroq alternativasi.
 
-**Spring'da qayerda uchraydi:** Thread darajasida bu pattern asosan konteyner va transport ichida qoladi: Tomcat NIO/APR connector'larining acceptor-poller mexanizmi va Netty event loop'larining `SingleThreadEventExecutor` navbati shu g'oyaga yaqin, `ServerSocketChannel.accept()` ni navbatma-navbat chaqiradigan qo'lda yozilgan serverlar ham shunga kiradi. Taqsimlangan tizimda esa ayni nom boshqa, lekin tushunarli ma'noda ishlatiladi: Spring Integration'ning `LockRegistryLeaderInitiator`, `Candidate`/`DefaultCandidate` va `OnGrantedEvent`/`OnRevokedEvent` hodisalari, Spring Cloud Zookeeper/Kubernetes leader election starterlari — bu yerda "yetakchi" bitta instansiya bo'ladi. Arxitektor bu ikki qo'llanishni aralashtirmasligi kerak.
+**Spring'da qayerda uchraydi:** Thread darajasida bu pattern asosan konteyner va transport ichida qoladi: Tomcat NIO/APR connector'larining acceptor-poller mexanizmi va Netty event loop'larining `SingleThreadEventExecutor` navbati shu g'oyaga yaqin, `ServerSocketChannel.accept()` ni navbatma-navbat chaqiradigan qo'lda yozilgan serverlar ham shunga kiradi. Taqsimlangan tizimda esa ayni nom boshqa, lekin tushunarli ma'noda ishlatiladi: Spring Integration'ning `LockRegistryLeaderInitiator`, `Candidate`/`DefaultCandidate` va `OnGrantedEvent`/`OnRevokedEvent` hodisalari, Spring Cloud Zookeeper/Kubernetes leader election starterlari - bu yerda "yetakchi" bitta instansiya bo'ladi. Arxitektor bu ikki qo'llanishni aralashtirmasligi kerak.
 
 **Qo'llanish keyslari:**
 - Yuqori frekansli, qisqa so'rovlarni ishlovchi maxsus TCP serverida handoff narxini yo'qotish.
@@ -181,7 +182,7 @@ return u.thenCombine(o, UserProfile::new)
 - Spring Integration'da faqat yetakchi instansiya `inbound-channel-adapter`ni ishga tushirishi.
 - Kafka consumer group'da partition egasini aniqlash kabi "bitta egasi" semantikasi.
 
-**Ehtiyot bo'ling:** Thread-darajali Leader/Followers'ni qo'lda yozish deyarli hech qachon o'zini oqlamaydi — Netty yoki konteyner implementatsiyasidan foydalaning. Taqsimlangan leader election'da esa split-brain va fencing muammosi bor: yetakchilik yo'qolganda ishni darhol to'xtatish va token/fence bilan tekshirish logikasi bo'lmasa, ikki instansiya bir vaqtda "yetakchi" deb o'ylaydi.
+**Ehtiyot bo'ling:** Thread-darajali Leader/Followers'ni qo'lda yozish deyarli hech qachon o'zini oqlamaydi - Netty yoki konteyner implementatsiyasidan foydalaning. Taqsimlangan leader election'da esa split-brain va fencing muammosi bor: yetakchilik yo'qolganda ishni darhol to'xtatish va token/fence bilan tekshirish logikasi bo'lmasa, ikki instansiya bir vaqtda "yetakchi" deb o'ylaydi.
 
 ## 4.10 O'qish-yozish lock'i (Read-Write Lock)
 
@@ -196,13 +197,13 @@ return u.thenCombine(o, UserProfile::new)
 - Rate limiter yoki metrik agregatorining o'qish/reset bosqichlarini ajratish.
 - Fayl yoki hujjat keshini ko'p o'quvchi va bitta yangilovchi bilan boshqarish.
 
-**Ehtiyot bo'ling:** Lock olish va bo'shatish narxi oddiy `synchronized` dan yuqori — agar kritik bo'lim juda qisqa yoki yozish ulushi katta bo'lsa, read-write lock faqat sekinlashtiradi. `StampedLock` reentrant emas va `Condition` bermaydi; o'qish ichida yozish lock'iga "ko'tarilish" (upgrade) `ReentrantReadWriteLock` da deadlock keltiradi. Imkon bo'lsa umuman lock'siz immutable snapshot almashtirishni afzal ko'ring.
+**Ehtiyot bo'ling:** Lock olish va bo'shatish narxi oddiy `synchronized` dan yuqori - agar kritik bo'lim juda qisqa yoki yozish ulushi katta bo'lsa, read-write lock faqat sekinlashtiradi. `StampedLock` reentrant emas va `Condition` bermaydi; o'qish ichida yozish lock'iga "ko'tarilish" (upgrade) `ReentrantReadWriteLock` da deadlock keltiradi. Imkon bo'lsa umuman lock'siz immutable snapshot almashtirishni afzal ko'ring.
 
 ## 4.11 Ikki marta tekshirilgan lock (Double-Checked Locking)
 
 **Tavsif:** Lazy initsializatsiyada har safar lock olishning narxidan qutulish uchun maydon avval lock'siz tekshiriladi, faqat `null` bo'lsa lock olinadi va lock ichida qayta tekshiriladi. Java'da bu faqat maydon `volatile` bo'lganda to'g'ri ishlaydi, aks holda yarim qurilgan obyektni ko'rish mumkin (Java 5 dan keyingi memory model bilan `volatile` yetarli). Ko'p hollarda uning o'rniga oddiyroq va xatosiz muqobillar mavjud.
 
-**Spring'da qayerda uchraydi:** Spring Framework ichida `DefaultSingletonBeanRegistry.getSingleton(...)` singleton cache'ni avval lock'siz `singletonObjects.get(name)` bilan tekshiradi va faqat topilmasa lock ichida yaratadi — klassik ikki marta tekshirish; `AbstractBeanFactory` va `ConcurrentReferenceHashMap` ham shunga yaqin yondashadi. Ilova kodida ko'pincha kerak bo'lmaydi, chunki `@Lazy`, `ObjectProvider<T>`, `@Configuration` bean metodlari va `Suppliers.memoize` uslubidagi yordamchilar xuddi shu natijani beradi; eng xavfsiz Java idiomasi — initialization-on-demand holder yoki `AtomicReference.updateAndGet`.
+**Spring'da qayerda uchraydi:** Spring Framework ichida `DefaultSingletonBeanRegistry.getSingleton(...)` singleton cache'ni avval lock'siz `singletonObjects.get(name)` bilan tekshiradi va faqat topilmasa lock ichida yaratadi - klassik ikki marta tekshirish; `AbstractBeanFactory` va `ConcurrentReferenceHashMap` ham shunga yaqin yondashadi. Ilova kodida ko'pincha kerak bo'lmaydi, chunki `@Lazy`, `ObjectProvider<T>`, `@Configuration` bean metodlari va `Suppliers.memoize` uslubidagi yordamchilar xuddi shu natijani beradi; eng xavfsiz Java idiomasi - initialization-on-demand holder yoki `AtomicReference.updateAndGet`.
 
 ```java
 private volatile Config config;
@@ -229,7 +230,7 @@ public Config get() {
 - Framework ichidagi cache'da "yo'q bo'lsa yarat" semantikasini tezlashtirish.
 - Legacy singleton'larni thread-safe holatga keltirish.
 
-**Ehtiyot bo'ling:** `volatile` ni tushirib qoldirish — bu patternning eng mashhur va eng jim xatosi: test muhitida hech qachon ko'rinmaydi, prodda esa buzilgan obyekt beradi. Yangi kodda avval `@Lazy`/holder idiomasini ko'rib chiqing; shuningdek lock ichida tashqi chaqiruv qilish startup paytida barcha so'rovlarni to'xtatib qo'yishi mumkin.
+**Ehtiyot bo'ling:** `volatile` ni tushirib qoldirish - bu patternning eng mashhur va eng jim xatosi: test muhitida hech qachon ko'rinmaydi, prodda esa buzilgan obyekt beradi. Yangi kodda avval `@Lazy`/holder idiomasini ko'rib chiqing; shuningdek lock ichida tashqi chaqiruv qilish startup paytida barcha so'rovlarni to'xtatib qo'yishi mumkin.
 
 ## 4.12 Shart bilan to'xtatish (Guarded Suspension)
 
@@ -244,13 +245,13 @@ public Config get() {
 - `DeferredResult` bilan hodisa kelgunicha HTTP so'rovni ochiq ushlab turish.
 - Integratsion testda asinxron natija yozilishini latch orqali kutish.
 
-**Ehtiyot bo'ling:** Timeout'siz kutish — ishlab chiqarishdagi to'liq osilib qolishning (hang) eng oson yo'li; har bir `await`/`take` uchun chegara va ortga qaytish rejasi bo'lsin. `wait()` ni doim `while (!condition)` tsikli ichida ishlating, chunki spurious wakeup bor; `notify()` o'rniga `notifyAll()` ni afzal ko'ring, aks holda noto'g'ri oqim uyg'otiladi.
+**Ehtiyot bo'ling:** Timeout'siz kutish - ishlab chiqarishdagi to'liq osilib qolishning (hang) eng oson yo'li; har bir `await`/`take` uchun chegara va ortga qaytish rejasi bo'lsin. `wait()` ni doim `while (!condition)` tsikli ichida ishlating, chunki spurious wakeup bor; `notify()` o'rniga `notifyAll()` ni afzal ko'ring, aks holda noto'g'ri oqim uyg'otiladi.
 
 ## 4.13 Rad etib qaytish (Balking)
 
-**Tavsif:** Obyekt operatsiya uchun mos holatda bo'lmasa, kutmaydi ham, xato tashlamaydi ham — shunchaki hech narsa qilmasdan darhol qaytadi. Bu idempotent yoki "qayta urinish keyin ham bo'ladi" tabiatli ishlar uchun eng oddiy himoya: ikkinchi chaqiruv jim tashlab ketiladi. Guarded Suspension bilan tanlov: kutish arzonmi yoki o'tkazib yuborish xavfsizmi.
+**Tavsif:** Obyekt operatsiya uchun mos holatda bo'lmasa, kutmaydi ham, xato tashlamaydi ham - shunchaki hech narsa qilmasdan darhol qaytadi. Bu idempotent yoki "qayta urinish keyin ham bo'ladi" tabiatli ishlar uchun eng oddiy himoya: ikkinchi chaqiruv jim tashlab ketiladi. Guarded Suspension bilan tanlov: kutish arzonmi yoki o'tkazib yuborish xavfsizmi.
 
-**Spring'da qayerda uchraydi:** Java'da `AtomicBoolean.compareAndSet(false, true)`, `ReentrantLock.tryLock()`, `Lock.tryLock(0, unit)` va `ConcurrentHashMap.putIfAbsent(...)` — klassik balking vositalari. Spring'da `SmartLifecycle.isRunning()` tekshiruvi `start()` ni ikki marta bajarmaslik uchun ishlatiladi; `@Scheduled` metodlarida takroriy ishni oldini olish uchun ShedLock (`@SchedulerLock`) yoki Spring Integration'ning `LockRegistry.obtain(key).tryLock()` qo'llanadi. `MessageListener` larda `IdempotentReceiverInterceptor` (Spring Integration) takroriy xabarni jim tashlab ketadi; Resilience4j'ning Bulkhead va CircuitBreaker ham "hozir qabul qilmayman" semantikasida shunga yaqin.
+**Spring'da qayerda uchraydi:** Java'da `AtomicBoolean.compareAndSet(false, true)`, `ReentrantLock.tryLock()`, `Lock.tryLock(0, unit)` va `ConcurrentHashMap.putIfAbsent(...)` - klassik balking vositalari. Spring'da `SmartLifecycle.isRunning()` tekshiruvi `start()` ni ikki marta bajarmaslik uchun ishlatiladi; `@Scheduled` metodlarida takroriy ishni oldini olish uchun ShedLock (`@SchedulerLock`) yoki Spring Integration'ning `LockRegistry.obtain(key).tryLock()` qo'llanadi. `MessageListener` larda `IdempotentReceiverInterceptor` (Spring Integration) takroriy xabarni jim tashlab ketadi; Resilience4j'ning Bulkhead va CircuitBreaker ham "hozir qabul qilmayman" semantikasida shunga yaqin.
 
 **Qo'llanish keyslari:**
 - Klasterda `@Scheduled` ishni faqat lock'ni olgan instansiya bajarishi, qolganlari jim o'tishi.
@@ -259,7 +260,7 @@ public Config get() {
 - Foydalanuvchi "Saqlash" tugmasini ikki marta bosganda ikkinchi so'rovni e'tiborsiz qoldirish.
 - Lifecycle komponentini qayta `stop()` qilishda hech narsa qilmaslik.
 
-**Ehtiyot bo'ling:** Jim tashlab ketish kuzatuvchanlikni yo'qotadi — har bir balk hodisasini metrik yoki debug log bilan belgilab qo'ying, aks holda "ish bajarilmagani" sezilmaydi. Muhim biznes operatsiyasini balking bilan o'tkazib yuborish ma'lumot yo'qolishiga olib keladi: bunday joyda navbat, retry yoki aniq xato qaytarish to'g'riroq.
+**Ehtiyot bo'ling:** Jim tashlab ketish kuzatuvchanlikni yo'qotadi - har bir balk hodisasini metrik yoki debug log bilan belgilab qo'ying, aks holda "ish bajarilmagani" sezilmaydi. Muhim biznes operatsiyasini balking bilan o'tkazib yuborish ma'lumot yo'qolishiga olib keladi: bunday joyda navbat, retry yoki aniq xato qaytarish to'g'riroq.
 
 ## 4.14 Rejalashtiruvchi (Scheduler)
 
@@ -274,13 +275,13 @@ public Config get() {
 - Tashqi tizim bilan har 15 daqiqada inkremental sinxronizatsiya.
 - Retry navbatidagi muvaffaqiyatsiz operatsiyalarni eksponensial kechikish bilan qayta urinish.
 
-**Ehtiyot bo'ling:** Standart `ThreadPoolTaskScheduler` o'lchami 1 ga teng — bitta uzun vazifa boshqa barcha `@Scheduled` ishlarni kechiktiradi; pool o'lchamini oshiring va har bir vazifaga timeout qo'ying. `fixedRate` vazifa o'z intervalidan uzoq ishlasa navbat yig'iladi (odatda `fixedDelay` xavfsizroq), klasterda esa har bir instansiya ishni mustaqil bajaradi — leader election yoki ShedLock bo'lmasa, ish N marta takrorlanadi.
+**Ehtiyot bo'ling:** Standart `ThreadPoolTaskScheduler` o'lchami 1 ga teng - bitta uzun vazifa boshqa barcha `@Scheduled` ishlarni kechiktiradi; pool o'lchamini oshiring va har bir vazifaga timeout qo'ying. `fixedRate` vazifa o'z intervalidan uzoq ishlasa navbat yig'iladi (odatda `fixedDelay` xavfsizroq), klasterda esa har bir instansiya ishni mustaqil bajaradi - leader election yoki ShedLock bo'lmasa, ish N marta takrorlanadi.
 
 ## 4.15 Thread'ga xos saqlash (Thread-Specific Storage)
 
-**Tavsif:** Har bir thread o'ziga tegishli alohida qiymat nusxasiga ega bo'ladi, shu sababli umumiy o'zgaruvchini lock bilan himoyalash kerak emas. Kontekst (joriy foydalanuvchi, so'rov identifikatori, tranzaksiya) metod signaturalariga parametr qo'shmasdan chaqiruv stack'i bo'ylab "yashirin" tarzda uzatiladi. Amalda bu `ThreadLocal` orqali ro'yobga chiqadi: kalit — thread, qiymat — shu thread'ning xususiy holati. Kamchiligi shunda — kontekst thread bilan bog'langani uchun boshqa thread'ga avtomatik o'tmaydi va tozalanmasa leak beradi.
+**Tavsif:** Har bir thread o'ziga tegishli alohida qiymat nusxasiga ega bo'ladi, shu sababli umumiy o'zgaruvchini lock bilan himoyalash kerak emas. Kontekst (joriy foydalanuvchi, so'rov identifikatori, tranzaksiya) metod signaturalariga parametr qo'shmasdan chaqiruv stack'i bo'ylab "yashirin" tarzda uzatiladi. Amalda bu `ThreadLocal` orqali ro'yobga chiqadi: kalit - thread, qiymat - shu thread'ning xususiy holati. Kamchiligi shunda - kontekst thread bilan bog'langani uchun boshqa thread'ga avtomatik o'tmaydi va tozalanmasa leak beradi.
 
-**Spring'da qayerda uchraydi:** `java.lang.ThreadLocal` va `InheritableThreadLocal`; SLF4J/Logback `MDC` (`MDC.put("traceId", ...)`, `%X{traceId}` pattern bilan). Spring Framework 6.x/7.x'da bu pattern hamma joyda: `RequestContextHolder`, `LocaleContextHolder`, `TransactionSynchronizationManager`, `SecurityContextHolder` (`MODE_THREADLOCAL` — standart), Spring AOP'da `ThreadLocalTargetSource`. Thread pool'ga kontekstni ko'chirish uchun `TaskDecorator` (`ThreadPoolTaskExecutor.setTaskDecorator`) va `DelegatingSecurityContextAsyncTaskExecutor` ishlatiladi; Micrometer `ContextRegistry` / `ContextSnapshot` (`context-propagation` kutubxonasi) esa imperativ `ThreadLocal` bilan Reactor `Context` o'rtasida ko'prik bo'ladi.
+**Spring'da qayerda uchraydi:** `java.lang.ThreadLocal` va `InheritableThreadLocal`; SLF4J/Logback `MDC` (`MDC.put("traceId", ...)`, `%X{traceId}` pattern bilan). Spring Framework 6.x/7.x'da bu pattern hamma joyda: `RequestContextHolder`, `LocaleContextHolder`, `TransactionSynchronizationManager`, `SecurityContextHolder` (`MODE_THREADLOCAL` - standart), Spring AOP'da `ThreadLocalTargetSource`. Thread pool'ga kontekstni ko'chirish uchun `TaskDecorator` (`ThreadPoolTaskExecutor.setTaskDecorator`) va `DelegatingSecurityContextAsyncTaskExecutor` ishlatiladi; Micrometer `ContextRegistry` / `ContextSnapshot` (`context-propagation` kutubxonasi) esa imperativ `ThreadLocal` bilan Reactor `Context` o'rtasida ko'prik bo'ladi.
 
 **Qo'llanish keyslari:**
 - Barcha log satrlariga `traceId`/`correlationId` qo'shish uchun filter'da MDC'ni to'ldirish.
@@ -289,13 +290,13 @@ public Config get() {
 - Auditing uchun `AuditorAware` implementatsiyasida joriy operatorni olish.
 - Og'ir va thread-safe bo'lmagan obyektlarni (`SimpleDateFormat`, `Jackson ObjectWriter` ba'zi konfiguratsiyalari) thread bo'yicha keshlash.
 
-**Ehtiyot bo'ling:** Thread pool'da `remove()` chaqirilmasa qiymat keyingi so'rovga "sizib o'tadi" — bu xavfsizlik incident'i darajasidagi xato, shuning uchun har doim `finally` blokida tozalang. Reactive (WebFlux) va `@Async` kodda kontekst o'z-o'zidan ko'chmaydi, virtual thread'larda esa millionlab `ThreadLocal` nusxasi xotirani yeb qo'yadi — yangi kodda `ScopedValue` yoki Reactor `Context` afzal.
+**Ehtiyot bo'ling:** Thread pool'da `remove()` chaqirilmasa qiymat keyingi so'rovga "sizib o'tadi" - bu xavfsizlik incident'i darajasidagi xato, shuning uchun har doim `finally` blokida tozalang. Reactive (WebFlux) va `@Async` kodda kontekst o'z-o'zidan ko'chmaydi, virtual thread'larda esa millionlab `ThreadLocal` nusxasi xotirani yeb qo'yadi - yangi kodda `ScopedValue` yoki Reactor `Context` afzal.
 
 ## 4.16 O'zgarmas obyekt (Immutable Object)
 
-**Tavsif:** Obyekt yaratilgandan so'ng uning holati umuman o'zgarmaydi, shuning uchun uni istalgan sondagi thread bir vaqtda hech qanday sinxronizatsiyasiz o'qiy oladi. Holatni o'zgartirish o'rniga yangi nusxa qaytariladi (copy-on-write semantikasi). Bu concurrency'dagi eng arzon va eng ishonchli yechim: race condition texnik jihatdan imkonsiz bo'lib qoladi. Shart — barcha maydonlar `final`, mutable kolleksiyalar va massivlar konstruktorda hamda getter'da himoyalab nusxalanadi.
+**Tavsif:** Obyekt yaratilgandan so'ng uning holati umuman o'zgarmaydi, shuning uchun uni istalgan sondagi thread bir vaqtda hech qanday sinxronizatsiyasiz o'qiy oladi. Holatni o'zgartirish o'rniga yangi nusxa qaytariladi (copy-on-write semantikasi). Bu concurrency'dagi eng arzon va eng ishonchli yechim: race condition texnik jihatdan imkonsiz bo'lib qoladi. Shart - barcha maydonlar `final`, mutable kolleksiyalar va massivlar konstruktorda hamda getter'da himoyalab nusxalanadi.
 
-**Spring'da qayerda uchraydi:** Java 17+ `record` — DTO, event va value object uchun standart vosita; `java.time` turlari (`Instant`, `LocalDate`, `Duration`), `String`, `List.of`/`Map.of`, `Collections.unmodifiableList`. Spring'da: `@ConfigurationProperties` konstruktor binding (`@ConstructorBinding` bilan `record`), Spring Messaging'dagi `MessageHeaders` va `GenericMessage`, `HttpHeaders.readOnlyHttpHeaders(...)`, WebFlux functional endpoint'laridagi `ServerRequest`, `ResponseEntity` va `RequestEntity`, `MethodParameter`-ga o'xshash infratuzilma metadata obyektlari. Lombok `@Value` va Guava `ImmutableList` ham ko'p ishlatiladi.
+**Spring'da qayerda uchraydi:** Java 17+ `record` - DTO, event va value object uchun standart vosita; `java.time` turlari (`Instant`, `LocalDate`, `Duration`), `String`, `List.of`/`Map.of`, `Collections.unmodifiableList`. Spring'da: `@ConfigurationProperties` konstruktor binding (`@ConstructorBinding` bilan `record`), Spring Messaging'dagi `MessageHeaders` va `GenericMessage`, `HttpHeaders.readOnlyHttpHeaders(...)`, WebFlux functional endpoint'laridagi `ServerRequest`, `ResponseEntity` va `RequestEntity`, `MethodParameter`-ga o'xshash infratuzilma metadata obyektlari. Lombok `@Value` va Guava `ImmutableList` ham ko'p ishlatiladi.
 
 **Qo'llanish keyslari:**
 - REST API request/response DTO'larini `record` sifatida e'lon qilish va ularni bemalol thread'lar o'rtasida uzatish.
@@ -304,13 +305,13 @@ public Config get() {
 - Pul, koordinata, interval kabi value object'larni `equals`/`hashCode` bilan to'g'ri modellashtirish va cache kaliti sifatida ishlatish.
 - Hisoblash natijalari jadvalini `Map.copyOf` bilan immutable snapshot qilib e'lon qilish.
 
-**Ehtiyot bo'ling:** `record` faqat sayoz (shallow) immutability beradi — ichidagi `List` yoki massiv mutable bo'lsa, himoya buziladi, shuning uchun konstruktorda `List.copyOf` qiling. JPA entity'larni immutable qilish amalda qiyin (proxy va dirty checking talab qiladi), shuning uchun entity emas, DTO/projection darajasida qo'llang.
+**Ehtiyot bo'ling:** `record` faqat sayoz (shallow) immutability beradi - ichidagi `List` yoki massiv mutable bo'lsa, himoya buziladi, shuning uchun konstruktorda `List.copyOf` qiling. JPA entity'larni immutable qilish amalda qiyin (proxy va dirty checking talab qiladi), shuning uchun entity emas, DTO/projection darajasida qo'llang.
 
 ## 4.17 Barrier va sanoqli kutish (Barrier / CountDownLatch / Phaser)
 
-**Tavsif:** Bir nechta thread ma'lum nuqtaga yetib kelishini kutib, shundan keyingina davom etishni ta'minlaydigan koordinatsiya pattern'i. `CountDownLatch` bir martalik hisoblagich — N ta vazifa tugaganini kutish uchun; `CyclicBarrier` qayta ishlatiladigan to'siq — bir xil thread'lar har raundda uchrashib turadi; `Phaser` esa dinamik ravishda ro'yxatdan o'tadigan va chiqib ketadigan ishtirokchilar bilan ko'p fazali kutishni qo'llab-quvvatlaydi. Maqsad — "hammasi tayyor bo'lgandan keyin" semantikasini busy-wait qilmasdan ifodalash.
+**Tavsif:** Bir nechta thread ma'lum nuqtaga yetib kelishini kutib, shundan keyingina davom etishni ta'minlaydigan koordinatsiya pattern'i. `CountDownLatch` bir martalik hisoblagich - N ta vazifa tugaganini kutish uchun; `CyclicBarrier` qayta ishlatiladigan to'siq - bir xil thread'lar har raundda uchrashib turadi; `Phaser` esa dinamik ravishda ro'yxatdan o'tadigan va chiqib ketadigan ishtirokchilar bilan ko'p fazali kutishni qo'llab-quvvatlaydi. Maqsad - "hammasi tayyor bo'lgandan keyin" semantikasini busy-wait qilmasdan ifodalash.
 
-**Spring'da qayerda uchraydi:** `java.util.concurrent.CountDownLatch`, `CyclicBarrier`, `Phaser`, shuningdek `CompletableFuture.allOf(...)` va `ExecutorService.invokeAll(...)` — ko'p hollarda latch'ning yuqori darajadagi muqobili. Spring ekotizimida: integration test'larda `@KafkaListener`/`@RabbitListener` xabarni qabul qilganini `CountDownLatch` bilan kutish (Spring for Apache Kafka'ning o'z test utility'lari ham shu uslubda), `ApplicationReadyEvent`/`ContextRefreshedEvent` bilan start koordinatsiyasi, Spring Batch'da `TaskExecutorPartitionHandler` barcha partition step'lari tugashini kutishi, `DefaultLifecycleProcessor`'ning shutdown fazasida `CountDownLatch` ishlatishi. Test tomonida Awaitility ko'pincha latch o'rnini bosadi.
+**Spring'da qayerda uchraydi:** `java.util.concurrent.CountDownLatch`, `CyclicBarrier`, `Phaser`, shuningdek `CompletableFuture.allOf(...)` va `ExecutorService.invokeAll(...)` - ko'p hollarda latch'ning yuqori darajadagi muqobili. Spring ekotizimida: integration test'larda `@KafkaListener`/`@RabbitListener` xabarni qabul qilganini `CountDownLatch` bilan kutish (Spring for Apache Kafka'ning o'z test utility'lari ham shu uslubda), `ApplicationReadyEvent`/`ContextRefreshedEvent` bilan start koordinatsiyasi, Spring Batch'da `TaskExecutorPartitionHandler` barcha partition step'lari tugashini kutishi, `DefaultLifecycleProcessor`'ning shutdown fazasida `CountDownLatch` ishlatishi. Test tomonida Awaitility ko'pincha latch o'rnini bosadi.
 
 **Qo'llanish keyslari:**
 - Asinxron listener xabar qabul qilganini integration test'da deterministik kutish.
@@ -319,7 +320,7 @@ public Config get() {
 - Load test'da N ta thread'ni bir vaqtning o'zida "start" qilib, haqiqiy raqobatni modellashtirish.
 - Ko'p fazali ETL'da har bir faza oxirida barcha worker'larni `Phaser` bilan sinxronlash.
 
-**Ehtiyot bo'ling:** Latch'ni timeout'siz `await()` qilish ilovani butunlay muzlatib qo'yadi — har doim `await(timeout, unit)` ishlatib natijani tekshiring. Biznes-logikada bunday quyi darajali primitivlarni qo'lda yozish o'rniga `CompletableFuture`, Reactor yoki structured concurrency'ni afzal ko'ring; `CyclicBarrier` virtual thread'lar bilan ishlashda thread sonini chegaralab qo'yishi mumkin.
+**Ehtiyot bo'ling:** Latch'ni timeout'siz `await()` qilish ilovani butunlay muzlatib qo'yadi - har doim `await(timeout, unit)` ishlatib natijani tekshiring. Biznes-logikada bunday quyi darajali primitivlarni qo'lda yozish o'rniga `CompletableFuture`, Reactor yoki structured concurrency'ni afzal ko'ring; `CyclicBarrier` virtual thread'lar bilan ishlashda thread sonini chegaralab qo'yishi mumkin.
 
 ## 4.18 Fork-Join va ishni o'g'irlash (Fork-Join / Work Stealing)
 
@@ -334,13 +335,13 @@ public Config get() {
 - Katta matritsa ko'paytirish yoki Monte-Carlo simulyatsiyasi kabi sof CPU hisoblari.
 - Mustaqil validatsiya qoidalari to'plamini bir so'rov ichida parallel bajarish.
 
-**Ehtiyot bo'ling:** `commonPool` butun JVM uchun umumiy va sig'imi `CPU-1` ga teng — unda blocking I/O bajarish (JDBC, HTTP) butun ilovani, hatto boshqa parallel stream'larni ham to'xtatib qo'yadi; I/O uchun alohida pool yoki virtual thread ishlatilsin. Agar blocking muqarrar bo'lsa, `ForkJoinPool.ManagedBlocker` qo'llang va bo'lish chuqurligini ortiqcha mayda qilmang, aks holda koordinatsiya narxi foydadan oshadi.
+**Ehtiyot bo'ling:** `commonPool` butun JVM uchun umumiy va sig'imi `CPU-1` ga teng - unda blocking I/O bajarish (JDBC, HTTP) butun ilovani, hatto boshqa parallel stream'larni ham to'xtatib qo'yadi; I/O uchun alohida pool yoki virtual thread ishlatilsin. Agar blocking muqarrar bo'lsa, `ForkJoinPool.ManagedBlocker` qo'llang va bo'lish chuqurligini ortiqcha mayda qilmang, aks holda koordinatsiya narxi foydadan oshadi.
 
 ## 4.19 Actor modeli (Actor Model)
 
-**Tavsif:** Umumiy o'zgaruvchan holat butunlay yo'q qilinadi: har bir actor o'z xususiy holatiga ega va faqat asinxron xabarlar orqali muloqot qiladi. Actor o'zining mailbox'idagi xabarlarni ketma-ket, bittalab qayta ishlaganligi uchun uning ichida lock ham, race condition ham bo'lmaydi. Supervision ierarxiyasi xatolarni lokalizatsiya qiladi — "let it crash" tamoyili bilan actor qayta ishga tushiriladi. Natijada concurrency lock emas, balki xabar almashinuvi va joylashuv shaffofligi (location transparency) orqali boshqariladi.
+**Tavsif:** Umumiy o'zgaruvchan holat butunlay yo'q qilinadi: har bir actor o'z xususiy holatiga ega va faqat asinxron xabarlar orqali muloqot qiladi. Actor o'zining mailbox'idagi xabarlarni ketma-ket, bittalab qayta ishlaganligi uchun uning ichida lock ham, race condition ham bo'lmaydi. Supervision ierarxiyasi xatolarni lokalizatsiya qiladi - "let it crash" tamoyili bilan actor qayta ishga tushiriladi. Natijada concurrency lock emas, balki xabar almashinuvi va joylashuv shaffofligi (location transparency) orqali boshqariladi.
 
-**Spring'da qayerda uchraydi:** Spring Framework'ning o'zida actor runtime'i yo'q, shuning uchun u tashqi kutubxonalar bilan birga ishlatiladi: Apache Pekko (`org.apache.pekko`, Akka'ning Apache-litsenziyali davomchisi), Akka Typed (`ActorSystem`, `Behaviors.receive`) yoki Vert.x verticle'lari. Spring'da actor'ga eng yaqin amaliy yondashuv — bitta kalit (partition/aggregate id) uchun faqat bitta thread ishlashini kafolatlash: `@KafkaListener(concurrency = "N")` bilan partition-per-consumer modeli, Spring Integration'da single-threaded `QueueChannel` + `PollerMetadata` yoki `BlockingQueue`'ga asoslangan event loop bean'lari. `ActorSystem`'ni `@Bean` sifatida e'lon qilib, uning lifecycle'ini Spring konteyneriga bog'lash odatiy amaliyot.
+**Spring'da qayerda uchraydi:** Spring Framework'ning o'zida actor runtime'i yo'q, shuning uchun u tashqi kutubxonalar bilan birga ishlatiladi: Apache Pekko (`org.apache.pekko`, Akka'ning Apache-litsenziyali davomchisi), Akka Typed (`ActorSystem`, `Behaviors.receive`) yoki Vert.x verticle'lari. Spring'da actor'ga eng yaqin amaliy yondashuv - bitta kalit (partition/aggregate id) uchun faqat bitta thread ishlashini kafolatlash: `@KafkaListener(concurrency = "N")` bilan partition-per-consumer modeli, Spring Integration'da single-threaded `QueueChannel` + `PollerMetadata` yoki `BlockingQueue`'ga asoslangan event loop bean'lari. `ActorSystem`'ni `@Bean` sifatida e'lon qilib, uning lifecycle'ini Spring konteyneriga bog'lash odatiy amaliyot.
 
 **Qo'llanish keyslari:**
 - Trading yoki bank hisobi bo'yicha buyruqlarni aggregate-per-actor tarzida ketma-ket qayta ishlash.
@@ -349,13 +350,13 @@ public Config get() {
 - Workflow/saga orkestratsiyasida uzoq yashovchi, holatli jarayonlarni modellashtirish.
 - Chat yoki hamkorlikdagi tahrirlash sessiyalarini bitta "egasi" bo'lgan actor ichida tutish.
 
-**Ehtiyot bo'ling:** Actor modeli typesafe emas (xabar — odatda `Object`) va debug qilish qiyin: stack trace yo'qoladi, xabar yo'qolishi mumkin, mailbox cheklanmagan bo'lsa OutOfMemoryError beradi. Shuning uchun uni butun ilovaga tarqatmang — faqat haqiqatan holatli, yuqori raqobatli domen qismlarida qo'llang; oddiy CRUD servis uchun bu ortiqcha murakkablik.
+**Ehtiyot bo'ling:** Actor modeli typesafe emas (xabar - odatda `Object`) va debug qilish qiyin: stack trace yo'qoladi, xabar yo'qolishi mumkin, mailbox cheklanmagan bo'lsa OutOfMemoryError beradi. Shuning uchun uni butun ilovaga tarqatmang - faqat haqiqatan holatli, yuqori raqobatli domen qismlarida qo'llang; oddiy CRUD servis uchun bu ortiqcha murakkablik.
 
 ## 4.20 Lock'larni bo'lish (Lock Striping)
 
-**Tavsif:** Butun struktura uchun bitta global lock olish o'rniga, lock'lar massivi yaratiladi va kalitning hash qiymatiga qarab faqat bitta "stripe" bloklanadi. Shunda turli kalitlar bilan ishlayotgan thread'lar bir-birini kutmaydi va throughput lock sonining o'sishi bilan chiziqli yaqinlashadi. Bu — granularity'ni oshirish orqali contention'ni kamaytiruvchi klassik kelishuv: xotira biroz ko'p sarflanadi, lekin kutish keskin kamayadi.
+**Tavsif:** Butun struktura uchun bitta global lock olish o'rniga, lock'lar massivi yaratiladi va kalitning hash qiymatiga qarab faqat bitta "stripe" bloklanadi. Shunda turli kalitlar bilan ishlayotgan thread'lar bir-birini kutmaydi va throughput lock sonining o'sishi bilan chiziqli yaqinlashadi. Bu - granularity'ni oshirish orqali contention'ni kamaytiruvchi klassik kelishuv: xotira biroz ko'p sarflanadi, lekin kutish keskin kamayadi.
 
-**Spring'da qayerda uchraydi:** `ConcurrentHashMap` (Java 7'da segment'lar, Java 8+ da bin darajasidagi node lock va CAS), `LongAdder`/`DoubleAdder` (hisoblagichni cell'lar bo'yicha bo'lish), Guava `Striped.lock(n)` / `Striped.semaphore(n)`, Caffeine cache'ning ichki yuklash mexanizmi. Spring ekotizimida: Spring Integration'ning `LockRegistry` abstraksiyasi — `DefaultLockRegistry` aynan hash mask bo'yicha lock massivini ishlatadi, `JdbcLockRegistry` va `RedisLockRegistry` esa shu interfeysning taqsimlangan variantlari. `@Cacheable(sync = true)` ham kalit bo'yicha lokal lock'lar bilan bir kalitga faqat bitta yuklashni kafolatlaydi.
+**Spring'da qayerda uchraydi:** `ConcurrentHashMap` (Java 7'da segment'lar, Java 8+ da bin darajasidagi node lock va CAS), `LongAdder`/`DoubleAdder` (hisoblagichni cell'lar bo'yicha bo'lish), Guava `Striped.lock(n)` / `Striped.semaphore(n)`, Caffeine cache'ning ichki yuklash mexanizmi. Spring ekotizimida: Spring Integration'ning `LockRegistry` abstraksiyasi - `DefaultLockRegistry` aynan hash mask bo'yicha lock massivini ishlatadi, `JdbcLockRegistry` va `RedisLockRegistry` esa shu interfeysning taqsimlangan variantlari. `@Cacheable(sync = true)` ham kalit bo'yicha lokal lock'lar bilan bir kalitga faqat bitta yuklashni kafolatlaydi.
 
 **Qo'llanish keyslari:**
 - Account yoki order id bo'yicha kritik bo'limni global lock'siz himoyalash.
@@ -364,13 +365,13 @@ public Config get() {
 - Faylga yoki tashqi resursga kalit bo'yicha ketma-ket yozishni ta'minlash.
 - Bir instansiya ichida idempotentlikni kalit bo'yicha lock bilan kafolatlash.
 
-**Ehtiyot bo'ling:** Stripe soni kam bo'lsa turli kalitlar bitta lock'ga tushib "soxta" contention paydo bo'ladi, ko'p bo'lsa xotira va cache miss ortadi — odatda CPU sonidan bir necha baravar ko'p qilib tanlanadi. Eng muhimi: lokal lock striping bir nechta instansiyada ishlamaydi, klaster uchun `JdbcLockRegistry`/`RedisLockRegistry` yoki ShedLock kabi taqsimlangan yechim kerak.
+**Ehtiyot bo'ling:** Stripe soni kam bo'lsa turli kalitlar bitta lock'ga tushib "soxta" contention paydo bo'ladi, ko'p bo'lsa xotira va cache miss ortadi - odatda CPU sonidan bir necha baravar ko'p qilib tanlanadi. Eng muhimi: lokal lock striping bir nechta instansiyada ishlamaydi, klaster uchun `JdbcLockRegistry`/`RedisLockRegistry` yoki ShedLock kabi taqsimlangan yechim kerak.
 
 ## 4.21 Compare-And-Swap va lock-free algoritmlar (Compare-And-Swap / Lock-Free)
 
-**Tavsif:** Lock olish o'rniga protsessorning atomar CAS instruksiyasiga tayanadi: "qiymat hali ham kutganimdek bo'lsa, yangisiga almashtir, aks holda qaytadan urin". Muvaffaqiyatsiz urinish retry bilan davom etadi, shuning uchun hech bir thread boshqasini bloklamaydi — kontekst almashinuvi va deadlock yo'qoladi. Past contention'da bu lock'dan sezilarli tez, yuqori contention'da esa retry'lar soni ortib samaradorlik tushib ketishi mumkin.
+**Tavsif:** Lock olish o'rniga protsessorning atomar CAS instruksiyasiga tayanadi: "qiymat hali ham kutganimdek bo'lsa, yangisiga almashtir, aks holda qaytadan urin". Muvaffaqiyatsiz urinish retry bilan davom etadi, shuning uchun hech bir thread boshqasini bloklamaydi - kontekst almashinuvi va deadlock yo'qoladi. Past contention'da bu lock'dan sezilarli tez, yuqori contention'da esa retry'lar soni ortib samaradorlik tushib ketishi mumkin.
 
-**Spring'da qayerda uchraydi:** `java.util.concurrent.atomic` paketi — `AtomicInteger`, `AtomicLong`, `AtomicReference` (`compareAndSet`, `updateAndGet`, `accumulateAndGet`), `AtomicStampedReference` (ABA muammosiga qarshi), `LongAdder`; quyi darajada `java.lang.invoke.VarHandle` (`compareAndExchange`) — `sun.misc.Unsafe`ning qo'llab-quvvatlanadigan o'rnini bosuvchisi. Lock-free kolleksiyalar: `ConcurrentLinkedQueue`, `ConcurrentLinkedDeque`, `ConcurrentSkipListMap`. Spring ichida ham keng ishlatiladi: Reactor'ning `Operators`/`Subscription` request accounting mexanizmi `AtomicLongFieldUpdater` bilan qurilgan, Micrometer `Counter` implementatsiyalari `DoubleAdder`ga tayanadi, Spring'ning ko'p infratuzilma cache'lari `ConcurrentHashMap` + atomic'lardan iborat.
+**Spring'da qayerda uchraydi:** `java.util.concurrent.atomic` paketi - `AtomicInteger`, `AtomicLong`, `AtomicReference` (`compareAndSet`, `updateAndGet`, `accumulateAndGet`), `AtomicStampedReference` (ABA muammosiga qarshi), `LongAdder`; quyi darajada `java.lang.invoke.VarHandle` (`compareAndExchange`) - `sun.misc.Unsafe`ning qo'llab-quvvatlanadigan o'rnini bosuvchisi. Lock-free kolleksiyalar: `ConcurrentLinkedQueue`, `ConcurrentLinkedDeque`, `ConcurrentSkipListMap`. Spring ichida ham keng ishlatiladi: Reactor'ning `Operators`/`Subscription` request accounting mexanizmi `AtomicLongFieldUpdater` bilan qurilgan, Micrometer `Counter` implementatsiyalari `DoubleAdder`ga tayanadi, Spring'ning ko'p infratuzilma cache'lari `ConcurrentHashMap` + atomic'lardan iborat.
 
 **Qo'llanish keyslari:**
 - Har bir so'rovda inkrement bo'luvchi metrikalar va statistik hisoblagichlar.
@@ -379,13 +380,13 @@ public Config get() {
 - Circuit breaker holati kabi kichik holat mashinasini lock'siz boshqarish.
 - Yuqori throughput'li queue va ring buffer (LMAX Disruptor uslubi) implementatsiyalari.
 
-**Ehtiyot bo'ling:** CAS retry loop'i yuqori raqobatda CPU'ni behuda yoqadi va "livelock"ka olib kelishi mumkin; bir nechta o'zgaruvchini atomar o'zgartirish kerak bo'lsa CAS yetarli emas — immutable holatni bitta `AtomicReference`da almashtirish yoki lock ishlatish to'g'ri. Qo'lda lock-free struktura yozishdan saqlaning: memory model (`volatile`, happens-before) nozikliklari sabab JDK'dagi tayyor struktura deyarli har doim yaxshiroq.
+**Ehtiyot bo'ling:** CAS retry loop'i yuqori raqobatda CPU'ni behuda yoqadi va "livelock"ka olib kelishi mumkin; bir nechta o'zgaruvchini atomar o'zgartirish kerak bo'lsa CAS yetarli emas - immutable holatni bitta `AtomicReference`da almashtirish yoki lock ishlatish to'g'ri. Qo'lda lock-free struktura yozishdan saqlaning: memory model (`volatile`, happens-before) nozikliklari sabab JDK'dagi tayyor struktura deyarli har doim yaxshiroq.
 
 ## 4.22 So'rovga bitta thread va event loop (Thread-per-request vs Event Loop)
 
 **Tavsif:** Ikki qarama-qarshi server modeli. Thread-per-request'da har bir so'rov o'z thread'ini egallab turadi: kod oddiy, blocking chaqiruvlar tabiiy, lekin har bir thread stack uchun xotira yeydi va parallel so'rov soni pool hajmi bilan chegaralanadi. Event loop'da kichik sondagi thread (odatda CPU soniga teng) non-blocking I/O hodisalarini navbat bilan qayta ishlaydi: 10 ming ulanishni arzon ushlab turadi, biroq loop thread'ida bloklanish butun serverni to'xtatadi va kod callback/reactive uslubga o'tadi.
 
-**Spring'da qayerda uchraydi:** Thread-per-request: Spring MVC + Tomcat/Jetty/Undertow (`server.tomcat.threads.max`), Servlet async'ni qo'llab-quvvatlash — `Callable`, `DeferredResult`, `StreamingResponseBody`, `spring.mvc.async.request-timeout`. Event loop: Spring WebFlux + Reactor Netty (`LoopResources`, `reactor.netty.ioWorkerCount`), bloklanadigan kodni ko'chirish uchun `Schedulers.boundedElastic()`, `WebClient`, `R2DBC`. Noto'g'ri bloklanishni aniqlash uchun BlockHound ishlatiladi. Spring Boot 3.2+ da `spring.threads.virtual.enabled=true` uchinchi yo'lni beradi: kod thread-per-request ko'rinishida qoladi, lekin thread'lar virtual bo'ladi.
+**Spring'da qayerda uchraydi:** Thread-per-request: Spring MVC + Tomcat/Jetty/Undertow (`server.tomcat.threads.max`), Servlet async'ni qo'llab-quvvatlash - `Callable`, `DeferredResult`, `StreamingResponseBody`, `spring.mvc.async.request-timeout`. Event loop: Spring WebFlux + Reactor Netty (`LoopResources`, `reactor.netty.ioWorkerCount`), bloklanadigan kodni ko'chirish uchun `Schedulers.boundedElastic()`, `WebClient`, `R2DBC`. Noto'g'ri bloklanishni aniqlash uchun BlockHound ishlatiladi. Spring Boot 3.2+ da `spring.threads.virtual.enabled=true` uchinchi yo'lni beradi: kod thread-per-request ko'rinishida qoladi, lekin thread'lar virtual bo'ladi.
 
 **Qo'llanish keyslari:**
 - Klassik CRUD + JDBC monolit uchun Spring MVC (thread-per-request) tanlash.
@@ -395,13 +396,13 @@ public Config get() {
 - Mavjud blocking stack'da thread sonini oshirmasdan scalability olish uchun virtual thread'larni yoqish.
 - Sekin tashqi chaqiruvni MVC'da `DeferredResult` bilan thread'ni band qilmasdan kutish.
 
-**Ehtiyot bo'ling:** WebFlux'da event loop thread'ida JDBC, `Thread.sleep` yoki sinxron `RestTemplate` chaqirish eng ko'p uchraydigan halokatli xato — butun server kechikishi oshadi; bunday kodni albatta `boundedElastic`ga chiqaring. Shunchaki "tezroq bo'lsin" degan sabab bilan reactive stack'ga o'tmang: domen blocking bo'lsa, virtual thread'lar bir xil natijani ancha arzon murakkablikda beradi.
+**Ehtiyot bo'ling:** WebFlux'da event loop thread'ida JDBC, `Thread.sleep` yoki sinxron `RestTemplate` chaqirish eng ko'p uchraydigan halokatli xato - butun server kechikishi oshadi; bunday kodni albatta `boundedElastic`ga chiqaring. Shunchaki "tezroq bo'lsin" degan sabab bilan reactive stack'ga o'tmang: domen blocking bo'lsa, virtual thread'lar bir xil natijani ancha arzon murakkablikda beradi.
 
 ## 4.23 Virtual thread'lar (Virtual Threads)
 
-**Tavsif:** JVM tomonidan boshqariladigan juda yengil thread'lar: ular platform thread'larga ko'p-ga-oz (M:N) nisbatda mount qilinadi va blocking operatsiya paytida (socket, lock, `sleep`) carrier thread'ni bo'shatib, stack'ni heap'ga park qiladi. Natijada bir JVM'da millionlab thread yaratish mumkin bo'ladi va "blocking kod — qimmat" degan asosiy cheklov yo'qoladi. Bu thread-per-request modelining oddiyligini event loop'ning scalability'si bilan birlashtiradi; API o'zgarmaydi — `Thread` o'sha-o'sha.
+**Tavsif:** JVM tomonidan boshqariladigan juda yengil thread'lar: ular platform thread'larga ko'p-ga-oz (M:N) nisbatda mount qilinadi va blocking operatsiya paytida (socket, lock, `sleep`) carrier thread'ni bo'shatib, stack'ni heap'ga park qiladi. Natijada bir JVM'da millionlab thread yaratish mumkin bo'ladi va "blocking kod - qimmat" degan asosiy cheklov yo'qoladi. Bu thread-per-request modelining oddiyligini event loop'ning scalability'si bilan birlashtiradi; API o'zgarmaydi - `Thread` o'sha-o'sha.
 
-**Spring'da qayerda uchraydi:** Java 21'da yakuniy holatga keldi (JEP 444): `Thread.ofVirtual().start(...)`, `Executors.newVirtualThreadPerTaskExecutor()`. Spring Framework 6.1+ da `org.springframework.core.task.VirtualThreadTaskExecutor` va `SimpleAsyncTaskExecutor.setVirtualThreads(true)`. Spring Boot 3.2+ da bitta sozlama — `spring.threads.virtual.enabled=true` — Tomcat/Jetty request executor'ini, `@Async` uchun `applicationTaskExecutor`ni, `@Scheduled` uchun `taskScheduler`ni va Kafka/RabbitMQ listener container'larini virtual thread'larga o'tkazadi. JDK 24 (JEP 491) `synchronized` bloklardagi pinning muammosini hal qildi.
+**Spring'da qayerda uchraydi:** Java 21'da yakuniy holatga keldi (JEP 444): `Thread.ofVirtual().start(...)`, `Executors.newVirtualThreadPerTaskExecutor()`. Spring Framework 6.1+ da `org.springframework.core.task.VirtualThreadTaskExecutor` va `SimpleAsyncTaskExecutor.setVirtualThreads(true)`. Spring Boot 3.2+ da bitta sozlama - `spring.threads.virtual.enabled=true` - Tomcat/Jetty request executor'ini, `@Async` uchun `applicationTaskExecutor`ni, `@Scheduled` uchun `taskScheduler`ni va Kafka/RabbitMQ listener container'larini virtual thread'larga o'tkazadi. JDK 24 (JEP 491) `synchronized` bloklardagi pinning muammosini hal qildi.
 
 **Qo'llanish keyslari:**
 - Ko'p sonli sekin REST yoki gRPC chaqiruvlarini bajaruvchi "fan-out" API'larda throughput'ni oshirish.
@@ -410,13 +411,13 @@ public Config get() {
 - Har bir ulanish uchun bitta thread talab qiladigan legacy integratsiya kodini zamonaviylashtirish.
 - Test va yuklama generatorlarida minglab mijoz sessiyasini soddagina modellashtirish.
 
-**Ehtiyot bo'ling:** Virtual thread'larni pool qilmang — ular arzon, ularni cheklash kerak bo'lsa `Semaphore` ishlatilsin; `ThreadLocal`ga og'ir obyekt saqlash esa endi million nusxaga ko'payib xotirani yeb qo'yadi. Shuni ham yodda tuting: CPU-bound ish uchun hech qanday foyda bermaydi, JDBC pool (HikariCP) va downstream rate limit baribir haqiqiy bottleneck bo'lib qoladi, JDK 21-23 da `synchronized` ichidagi blocking carrier'ni pin qilib qo'yadi.
+**Ehtiyot bo'ling:** Virtual thread'larni pool qilmang - ular arzon, ularni cheklash kerak bo'lsa `Semaphore` ishlatilsin; `ThreadLocal`ga og'ir obyekt saqlash esa endi million nusxaga ko'payib xotirani yeb qo'yadi. Shuni ham yodda tuting: CPU-bound ish uchun hech qanday foyda bermaydi, JDBC pool (HikariCP) va downstream rate limit baribir haqiqiy bottleneck bo'lib qoladi, JDK 21-23 da `synchronized` ichidagi blocking carrier'ni pin qilib qo'yadi.
 
 ## 4.24 Strukturaviy concurrency (Structured Concurrency)
 
-**Tavsif:** Parallel vazifalarning hayot davrini kod blokining leksik chegarasiga bog'laydi: blokdan chiqishdan oldin barcha bola vazifalar albatta tugaydi, bekor qilinadi yoki xatosi tashlanadi. Shu bilan "orphan" thread'lar, yo'qolgan exception'lar va qo'lda cancellation tarqatish muammosi bartaraf bo'ladi — xatolik va bekor qilish ierarxiya bo'ylab avtomatik tarqaladi. Mohiyatan bu `try`-with-resources'ning concurrency uchun analogi va virtual thread'lar bilan birga ishlatish uchun mo'ljallangan.
+**Tavsif:** Parallel vazifalarning hayot davrini kod blokining leksik chegarasiga bog'laydi: blokdan chiqishdan oldin barcha bola vazifalar albatta tugaydi, bekor qilinadi yoki xatosi tashlanadi. Shu bilan "orphan" thread'lar, yo'qolgan exception'lar va qo'lda cancellation tarqatish muammosi bartaraf bo'ladi - xatolik va bekor qilish ierarxiya bo'ylab avtomatik tarqaladi. Mohiyatan bu `try`-with-resources'ning concurrency uchun analogi va virtual thread'lar bilan birga ishlatish uchun mo'ljallangan.
 
-**Spring'da qayerda uchraydi:** `java.util.concurrent.StructuredTaskScope` — Java 21-24 da preview sifatida `ShutdownOnFailure`/`ShutdownOnSuccess` subclass'lari bilan, Java 25 (JEP 505) da esa API `StructuredTaskScope.open(Joiner.allSuccessfulOrThrow())` ko'rinishiga o'zgargan va hamon preview (`--enable-preview` kerak). Spring Framework'da buning uchun maxsus abstraksiya yo'q, shuning uchun u service metodi ichida to'g'ridan-to'g'ri ishlatiladi; klassik muqobillari — `CompletableFuture.allOf(...)`, `ExecutorService.invokeAll(...)` va Reactor'ning `Mono.zip(...)`, ular hozirgacha production uchun xavfsizroq tanlov.
+**Spring'da qayerda uchraydi:** `java.util.concurrent.StructuredTaskScope` - Java 21-24 da preview sifatida `ShutdownOnFailure`/`ShutdownOnSuccess` subclass'lari bilan, Java 25 (JEP 505) da esa API `StructuredTaskScope.open(Joiner.allSuccessfulOrThrow())` ko'rinishiga o'zgargan va hamon preview (`--enable-preview` kerak). Spring Framework'da buning uchun maxsus abstraksiya yo'q, shuning uchun u service metodi ichida to'g'ridan-to'g'ri ishlatiladi; klassik muqobillari - `CompletableFuture.allOf(...)`, `ExecutorService.invokeAll(...)` va Reactor'ning `Mono.zip(...)`, ular hozirgacha production uchun xavfsizroq tanlov.
 
 ```java
 try (var scope = new StructuredTaskScope.ShutdownOnFailure()) { // Java 21-24 preview
@@ -434,13 +435,13 @@ try (var scope = new StructuredTaskScope.ShutdownOnFailure()) { // Java 21-24 pr
 - Batch ishida bola vazifalar ota vazifa to'xtaganda hech qachon "yetim" qolib ketmasligini ta'minlash.
 - Murakkab aggregation logikasini o'qiladigan, blok ko'rinishidagi kodda ifodalash.
 
-**Ehtiyot bo'ling:** API hali preview — relizlar o'rtasida o'zgaradi (Java 21 va Java 25 sintaksisi boshqa), shuning uchun uni ommaviy kutubxona yoki uzoq yashovchi production kodda ishlatishdan oldin yangilanish narxini hisobga oling. `scope`ni metoddan tashqariga chiqarmang yoki bean maydonida saqlamang — bu pattern'ning butun ma'nosini yo'q qiladi.
+**Ehtiyot bo'ling:** API hali preview - relizlar o'rtasida o'zgaradi (Java 21 va Java 25 sintaksisi boshqa), shuning uchun uni ommaviy kutubxona yoki uzoq yashovchi production kodda ishlatishdan oldin yangilanish narxini hisobga oling. `scope`ni metoddan tashqariga chiqarmang yoki bean maydonida saqlamang - bu pattern'ning butun ma'nosini yo'q qiladi.
 
 ## 4.25 Qamrovli qiymatlar (Scoped Values)
 
-**Tavsif:** `ThreadLocal`ning zamonaviy, o'zgarmas va qamrovga bog'langan o'rnini bosuvchisi: qiymat faqat ma'lum kod blokining bajarilish davrida ko'rinadi va blok tugashi bilan avtomatik "yo'qoladi". Qiymat o'zgartirilmaydi — faqat `where(...)` bilan yangi qamrov ochiladi, shuning uchun `remove()` qilishni unutish natijasidagi leak va kontekst "sizib o'tishi" imkonsiz. Structured concurrency bilan birga ishlaganda qiymat bola vazifalarga avtomatik, nusxa ko'chirmasdan meros bo'lib o'tadi — bu virtual thread'lar uchun juda muhim.
+**Tavsif:** `ThreadLocal`ning zamonaviy, o'zgarmas va qamrovga bog'langan o'rnini bosuvchisi: qiymat faqat ma'lum kod blokining bajarilish davrida ko'rinadi va blok tugashi bilan avtomatik "yo'qoladi". Qiymat o'zgartirilmaydi - faqat `where(...)` bilan yangi qamrov ochiladi, shuning uchun `remove()` qilishni unutish natijasidagi leak va kontekst "sizib o'tishi" imkonsiz. Structured concurrency bilan birga ishlaganda qiymat bola vazifalarga avtomatik, nusxa ko'chirmasdan meros bo'lib o'tadi - bu virtual thread'lar uchun juda muhim.
 
-**Spring'da qayerda uchraydi:** `java.lang.ScopedValue` — Java 20'da incubator, 21-24 da preview, Java 25 (JEP 506) da yakuniy holatga keldi: `ScopedValue.newInstance()`, `ScopedValue.where(KEY, value).run(...)` yoki `.call(...)`, `KEY.get()`, `KEY.isBound()`. Spring Framework hozircha ichki kontekst holderlarini (`RequestContextHolder`, `SecurityContextHolder`, `TransactionSynchronizationManager`) `ThreadLocal` asosida yuritadi, shuning uchun amalda `ScopedValue` o'z ilova kodingizdagi kontekst uzatish uchun qo'llaniladi — masalan `OncePerRequestFilter` ichida qamrov ochib, pastdagi barcha chaqiruvlarga tenant yoki trace ma'lumotini uzatish.
+**Spring'da qayerda uchraydi:** `java.lang.ScopedValue` - Java 20'da incubator, 21-24 da preview, Java 25 (JEP 506) da yakuniy holatga keldi: `ScopedValue.newInstance()`, `ScopedValue.where(KEY, value).run(...)` yoki `.call(...)`, `KEY.get()`, `KEY.isBound()`. Spring Framework hozircha ichki kontekst holderlarini (`RequestContextHolder`, `SecurityContextHolder`, `TransactionSynchronizationManager`) `ThreadLocal` asosida yuritadi, shuning uchun amalda `ScopedValue` o'z ilova kodingizdagi kontekst uzatish uchun qo'llaniladi - masalan `OncePerRequestFilter` ichida qamrov ochib, pastdagi barcha chaqiruvlarga tenant yoki trace ma'lumotini uzatish.
 
 ```java
 static final ScopedValue<String> TENANT = ScopedValue.newInstance();
@@ -460,7 +461,7 @@ String tenant = TENANT.orElse("default");
 - Faqat ma'lum bir blok davomida amal qiladigan audit yoki feature-flag kontekstini belgilash.
 - Immutable kontekst talab qilinadigan kutubxona API'larida `ThreadLocal`ni almashtirish.
 
-**Ehtiyot bo'ling:** Qiymat qamrov ichida o'zgartirilmaydi — "o'zgaruvchi holat" kerak bo'lsa bu pattern to'g'ri kelmaydi, immutable snapshotni qayta bind qilish kerak. Java 25'dan past versiyalarda `--enable-preview` talab qilinadi va `KEY.get()` bog'lanmagan qamrovda `NoSuchElementException` tashlaydi, shuning uchun `orElse`/`isBound` ishlatish xavfsizroq.
+**Ehtiyot bo'ling:** Qiymat qamrov ichida o'zgartirilmaydi - "o'zgaruvchi holat" kerak bo'lsa bu pattern to'g'ri kelmaydi, immutable snapshotni qayta bind qilish kerak. Java 25'dan past versiyalarda `--enable-preview` talab qilinadi va `KEY.get()` bog'lanmagan qamrovda `NoSuchElementException` tashlaydi, shuning uchun `orElse`/`isBound` ishlatish xavfsizroq.
 
 ## 4.26 Asinxron metod chaqiruvi (Asynchronous Method Invocation)
 
@@ -475,13 +476,13 @@ String tenant = TENANT.orElse("default");
 - Bir nechta tashqi API'ni `CompletableFuture` qaytaruvchi `@Async` metodlar bilan parallel chaqirish.
 - Cache'ni oldindan isitish (warm-up) yoki indeksni fonda qayta qurish.
 
-**Ehtiyot bo'ling:** `@Async` proxy orqali ishlaydi — xuddi shu bean ichidan o'zini chaqirsangiz (self-invocation) annotatsiya butunlay e'tiborsiz qoladi va metod sinxron bajariladi; shuningdek `private`/`final` metodlarda ishlamaydi. `@Async` yangi thread'da `@Transactional` tranzaksiyani meros qilmaydi (`ThreadLocal`dagi tranzaksiya ko'chmaydi) va standart `SimpleAsyncTaskExecutor` chegarasiz thread yaratadi — har doim queue va pool chegarasi aniq belgilangan `ThreadPoolTaskExecutor` ko'rsating.
+**Ehtiyot bo'ling:** `@Async` proxy orqali ishlaydi - xuddi shu bean ichidan o'zini chaqirsangiz (self-invocation) annotatsiya butunlay e'tiborsiz qoladi va metod sinxron bajariladi; shuningdek `private`/`final` metodlarda ishlamaydi. `@Async` yangi thread'da `@Transactional` tranzaksiyani meros qilmaydi (`ThreadLocal`dagi tranzaksiya ko'chmaydi) va standart `SimpleAsyncTaskExecutor` chegarasiz thread yaratadi - har doim queue va pool chegarasi aniq belgilangan `ThreadPoolTaskExecutor` ko'rsating.
 
 ## 4.27 Semaphore va concurrency chegarasi (Semaphore / Concurrency Limit)
 
-**Tavsif:** Bir vaqtning o'zida resursdan foydalanayotgan bajaruvchilar sonini ruxsatnomalar (permit) soni bilan chegaralaydi: permit bo'lmasa, thread kutadi yoki darhol rad etiladi. Bu bulkhead vazifasini bajaradi — bitta sekin downstream butun ilovaning barcha thread'larini yutib ketishiga yo'l qo'ymaydi va yukni bashorat qilinadigan darajada ushlab turadi. Rate limiting'dan farqi shunda: bu yerda "vaqt birligidagi so'rov soni" emas, balki "bir paytda ishlayotgan ish soni" chegaralanadi.
+**Tavsif:** Bir vaqtning o'zida resursdan foydalanayotgan bajaruvchilar sonini ruxsatnomalar (permit) soni bilan chegaralaydi: permit bo'lmasa, thread kutadi yoki darhol rad etiladi. Bu bulkhead vazifasini bajaradi - bitta sekin downstream butun ilovaning barcha thread'larini yutib ketishiga yo'l qo'ymaydi va yukni bashorat qilinadigan darajada ushlab turadi. Rate limiting'dan farqi shunda: bu yerda "vaqt birligidagi so'rov soni" emas, balki "bir paytda ishlayotgan ish soni" chegaralanadi.
 
-**Spring'da qayerda uchraydi:** `java.util.concurrent.Semaphore` (`tryAcquire(timeout, unit)`); Spring'da `SimpleAsyncTaskExecutor.setConcurrencyLimit(...)` va `ConcurrencyThrottleSupport`, AOP uchun `org.springframework.aop.interceptor.ConcurrencyThrottleInterceptor`. Resilience4j — `@Bulkhead` (SemaphoreBulkhead) va `@RateLimiter`, Spring Boot 3.x bilan `resilience4j-spring-boot3` orqali. Reactor'da `flatMap(mapper, concurrency)` va `limitRate(...)`. Infratuzilma darajasida: HikariCP `maximumPoolSize` aslida DB uchun semaphore, Tomcat `server.tomcat.threads.max` va `max-connections`, Spring Cloud Gateway'da `RequestRateLimiter` filter'i, Kafka'da `max.poll.records` va listener `concurrency`. Virtual thread'lar davrida chegaralash uchun asosiy vosita aynan `Semaphore`.
+**Spring'da qayerda uchraydi:** `java.util.concurrent.Semaphore` (`tryAcquire(timeout, unit)`); Spring'da `SimpleAsyncTaskExecutor.setConcurrencyLimit(...)` va `ConcurrencyThrottleSupport`, AOP uchun `org.springframework.aop.interceptor.ConcurrencyThrottleInterceptor`. Resilience4j - `@Bulkhead` (SemaphoreBulkhead) va `@RateLimiter`, Spring Boot 3.x bilan `resilience4j-spring-boot3` orqali. Reactor'da `flatMap(mapper, concurrency)` va `limitRate(...)`. Infratuzilma darajasida: HikariCP `maximumPoolSize` aslida DB uchun semaphore, Tomcat `server.tomcat.threads.max` va `max-connections`, Spring Cloud Gateway'da `RequestRateLimiter` filter'i, Kafka'da `max.poll.records` va listener `concurrency`. Virtual thread'lar davrida chegaralash uchun asosiy vosita aynan `Semaphore`.
 
 **Qo'llanish keyslari:**
 - Sekin yoki qimmat tashqi API'ga bir vaqtda ketadigan chaqiruvlar sonini 10 ta bilan chegaralash.
@@ -490,7 +491,7 @@ String tenant = TENANT.orElse("default");
 - Fayl yuklash yoki rasm konvertatsiyasi kabi xotira talab qiluvchi ishlarni cheklash.
 - Downstream partnyorning kontraktdagi concurrency limitiga rioya qilish.
 
-**Ehtiyot bo'ling:** `acquire()`ni timeout'siz chaqirish sekin downstream'da butun ilovani muzlatib qo'yadi — `tryAcquire(timeout, unit)` bilan tez fail qilish va fallback berish to'g'ri; `release()` har doim `finally` blokida bo'lsin, aks holda permit'lar asta-sekin "yo'qolib", tizim butunlay to'xtaydi. Lokal semaphore faqat bitta instansiyada amal qiladi: 10 ta pod'da chegara avtomatik 10 barobar oshadi, shuning uchun global limit uchun taqsimlangan rate limiter (masalan Redis asosidagi) kerak.
+**Ehtiyot bo'ling:** `acquire()`ni timeout'siz chaqirish sekin downstream'da butun ilovani muzlatib qo'yadi - `tryAcquire(timeout, unit)` bilan tez fail qilish va fallback berish to'g'ri; `release()` har doim `finally` blokida bo'lsin, aks holda permit'lar asta-sekin "yo'qolib", tizim butunlay to'xtaydi. Lokal semaphore faqat bitta instansiyada amal qiladi: 10 ta pod'da chegara avtomatik 10 barobar oshadi, shuning uchun global limit uchun taqsimlangan rate limiter (masalan Redis asosidagi) kerak.
 
 ---
 

@@ -7,7 +7,8 @@ Ogohlantirish: "har doim 100% o'tadigan" universal retsept yo'q. Quality gate
 shartlari har loyihada boshqacha sozlanadi, va 100% coverage sifatni kafolatlamaydi.
 Hujjat ikkalasini ham ko'rsatadi: shartni qanday qondirish, va qayerda bu raqam aldashi.
 
-**Bu hujjat to'rtlikning bir qismi.** Mavzular takrorlanmaydi; qolgan uchtasi: [Dizayn patternlar katalogi](../patterns/README.md), [Testlash qo'llanmasi](../testing/README.md), [Arxitektor miyyasi](../architect/README.md).
+
+**Bu hujjat oltilikning bir qismi.** Mavzular takrorlanmaydi; qolgan beshtasi: [Dizayn patternlar katalogi](../patterns/README.md), [Testlash qo'llanmasi](../testing/README.md), [Arxitektor miyyasi](../architect/README.md), [Toza kod qoidalari](../clean-code/README.md), [Kod review](../code-review/README.md).
 
 **Versiya bazasi:** Java 21 LTS (pol: 17, Java 25 eslatmalari bilan), Spring Boot 3.2-3.5 (4.0 eslatmalari bilan), PostgreSQL 16+ (15-18 havolalari bilan), JUnit 5, SonarQube 2025.x LTA (9.9 LTA merosiy eslatmalari bilan).
 

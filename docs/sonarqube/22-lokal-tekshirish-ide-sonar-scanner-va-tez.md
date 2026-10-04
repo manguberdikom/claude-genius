@@ -22,6 +22,7 @@
 </details>
 
 
+
 Sonar natijasini faqat CI da ko'rish eng qimmat yo'l. Kod yozilgan payt bilan xato ko'rilgan payt orasida qancha vaqt o'tsa, tuzatish shuncha qimmatga tushadi. Bu bobda xatoni IDE da, keyin lokal `sonar-scanner` da, keyin pre-commit hookda tutib olish yo'li ko'rsatiladi. Maqsad bitta: CI ga faqat allaqachon toza bo'lgan kod borishi.
 
 ## 22.1 Nega xatoni CI da emas, yozayotganda ko'rish arzonroq

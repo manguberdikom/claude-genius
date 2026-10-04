@@ -24,6 +24,7 @@
 </details>
 
 
+
 Arxitektorning har bir qarori oxir-oqibat pulga aylanadi. Qo'shimcha indeks disk bandini oshiradi, qo'shimcha replika hisoblash hisobini oshiradi, qo'shimcha abstraksiya esa odam vaqtini yeydi. Bu bob texnik qarorni pul va risk tilida gapirishga, mavjudlik maqsadini raqam bilan belgilashga va rahbar bilan bir xil lug'atda muloqot qilishga bag'ishlangan.
 
 ## 37.1 Arxitektura qarorining pul tarafi: server, litsenziya, odam vaqti

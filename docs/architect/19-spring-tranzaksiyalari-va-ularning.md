@@ -24,6 +24,7 @@
 </details>
 
 
+
 Tranzaksiya arxitektorning qo'lidagi eng arzon va eng xavfli asbob. Arzon, chunki bitta annotatsiya yozasan. Xavfli, chunki o'sha annotatsiya connection'ni egallaydi, PostgreSQL da lock ushlaydi va snapshot muzlatadi, buning hammasi kodda ko'rinmaydi. Bu bobda `@Transactional` ning ichki mexanikasi, uning chegaralari va o'sha chegaralarni qanday joylashtirish kerakligi haqida gaplashamiz.
 
 ## 19.1 `@Transactional` qanday ishlaydi: proxy, `TransactionInterceptor`, `PlatformTransactionManager`

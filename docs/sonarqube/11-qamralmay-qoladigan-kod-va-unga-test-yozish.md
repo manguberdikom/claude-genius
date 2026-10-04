@@ -26,6 +26,7 @@
 </details>
 
 
+
 Har bir loyihada coverage hisobotining pastida bir to'da klass turadi: ularga hech kim test yozmaydi, lekin ular quality gate raqamini pastga tortadi. Bu bobda shunday kodning har bir turini ko'ramiz: qayerda test kerak, qayerda dizaynni o'zgartirish arzonroq, qayerda esa eng to'g'ri yo'l kodni o'chirish. Asosiy qoida bitta: qamrash qiyin bo'lgan kod ko'pincha noto'g'ri joylashgan kod.
 
 ## 11.1 Private konstruktorli utility klass va unga test yozish

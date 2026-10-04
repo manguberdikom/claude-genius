@@ -24,6 +24,7 @@
 </details>
 
 
+
 Code review arxitektorning eng arzon va eng ta'sirli vositasi. U kod birlashishdan oldin ishlaydi, shuning uchun bitta izoh keyinchalik haftalarcha ketadigan migratsiyani to'xtatishi mumkin. Lekin ko'p jamoada review bo'sh marosimga aylanadi: odamlar probel va o'zgaruvchi nomi haqida bahslashadi, tranzaksiya chegarasi va pul turini esa hech kim ko'rmaydi. Bu bob review ichida nimani qidirish kerakligini, izohni qanday yozishni va texnik yetakchi o'z vaqtini qanday taqsimlashini ko'rsatadi.
 
 ## 36.1 Code review nimani topishi kerak: xatti-harakat, chegara, nom, xavfsizlik

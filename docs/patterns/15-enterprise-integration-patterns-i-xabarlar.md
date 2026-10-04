@@ -47,11 +47,12 @@
 </details>
 
 
-Enterprise Integration Patterns (EIP) — Gregor Hohpe va Bobby Woolf tomonidan kodlashtirilgan, asinxron xabar almashinuvga asoslangan tizimlar integratsiyasining umumiy lug'ati. Bu patternlar alohida deploy qilinadigan servislar bir-biriga to'g'ridan-to'g'ri RPC bilan bog'lanmasdan, kanal (channel) va xabar (message) abstraksiyalari orqali vaqt bo'yicha ajralgan (temporally decoupled) holda muloqot qilish usulini tasvirlaydi. Arxitektor uchun bu muhim, chunki Spring Integration, Spring Cloud Stream, Apache Camel va hatto Kafka/RabbitMQ bilan ishlashning zamonaviy API'lari aynan shu terminologiya ustiga qurilgan — pattern nomini bilish jamoa bilan bir tilda gaplashish va tayyor komponentni noldan yozib o'tirmaslik imkonini beradi. Quyidagi entry'lar messaging tizimining poydevorini, kanal turlarini va marshrutlash (routing) asoslarini qamrab oladi.
+
+Enterprise Integration Patterns (EIP) - Gregor Hohpe va Bobby Woolf tomonidan kodlashtirilgan, asinxron xabar almashinuvga asoslangan tizimlar integratsiyasining umumiy lug'ati. Bu patternlar alohida deploy qilinadigan servislar bir-biriga to'g'ridan-to'g'ri RPC bilan bog'lanmasdan, kanal (channel) va xabar (message) abstraksiyalari orqali vaqt bo'yicha ajralgan (temporally decoupled) holda muloqot qilish usulini tasvirlaydi. Arxitektor uchun bu muhim, chunki Spring Integration, Spring Cloud Stream, Apache Camel va hatto Kafka/RabbitMQ bilan ishlashning zamonaviy API'lari aynan shu terminologiya ustiga qurilgan - pattern nomini bilish jamoa bilan bir tilda gaplashish va tayyor komponentni noldan yozib o'tirmaslik imkonini beradi. Quyidagi entry'lar messaging tizimining poydevorini, kanal turlarini va marshrutlash (routing) asoslarini qamrab oladi.
 
 ## 15.1 Xabar kanali (Message Channel)
 
-**Tavsif:** Ikki ilova yoki komponent to'g'ridan-to'g'ri bir-birini chaqirmasligi uchun ular orasiga qo'yiladigan mantiqiy "quvur" (conduit). Jo'natuvchi (producer) xabarni kanalga yozadi, qabul qiluvchi (consumer) esa undan o'qiydi — natijada ikki tomon bir-birining manzilini, mavjudligini va ishlash tezligini bilishi shart emas. Kanal buffer vazifasini ham bajaradi: iste'molchi sekin bo'lsa, xabarlar navbatda turadi. Kanal — barcha boshqa EIP patternlarining asosiy qurilish bloki.
+**Tavsif:** Ikki ilova yoki komponent to'g'ridan-to'g'ri bir-birini chaqirmasligi uchun ular orasiga qo'yiladigan mantiqiy "quvur" (conduit). Jo'natuvchi (producer) xabarni kanalga yozadi, qabul qiluvchi (consumer) esa undan o'qiydi - natijada ikki tomon bir-birining manzilini, mavjudligini va ishlash tezligini bilishi shart emas. Kanal buffer vazifasini ham bajaradi: iste'molchi sekin bo'lsa, xabarlar navbatda turadi. Kanal - barcha boshqa EIP patternlarining asosiy qurilish bloki.
 
 **Spring'da qayerda uchraydi:** Spring Integration'da `org.springframework.messaging.MessageChannel` interfeysi va uning amalga oshirishlari: `DirectChannel` (default, chaqiruvchi thread'da sinxron), `QueueChannel` (in-memory buffer, pollerga muhtoj), `ExecutorChannel`, `PublishSubscribeChannel`, `FluxMessageChannel` (reactive). Java DSL'da `IntegrationFlow` ichida `.channel("orders")` yoki `MessageChannels.queue(100)` orqali e'lon qilinadi, `@ServiceActivator(inputChannel = "orders")` orqali iste'mol qilinadi. Spring Cloud Stream 4.x'da kanal roli `java.util.function.Function`/`Supplier`/`Consumer` bean'lari va binder (Kafka, RabbitMQ) destination'lari bilan almashtirilgan.
 
@@ -62,7 +63,7 @@ Enterprise Integration Patterns (EIP) — Gregor Hohpe va Bobby Woolf tomonidan 
 - Bir xil hodisani bir nechta iste'molchiga yetkazish uchun nomli kanal yaratish.
 - Test muhitida real broker o'rniga in-memory kanal bilan oqimni tekshirish.
 
-**Ehtiyot bo'ling:** `DirectChannel` nomi "kanal" bo'lsa ham asinxron emas — u chaqiruvchi thread'da ishlaydi, shuning uchun uni ishlatib "asinxron qildim" deb o'ylash eng keng tarqalgan xato. `QueueChannel` esa in-memory bo'lgani uchun JVM o'chsa xabarlar yo'qoladi — durability kerak bo'lsa broker-backed kanal (Kafka, Rabbit, JMS) ishlating.
+**Ehtiyot bo'ling:** `DirectChannel` nomi "kanal" bo'lsa ham asinxron emas - u chaqiruvchi thread'da ishlaydi, shuning uchun uni ishlatib "asinxron qildim" deb o'ylash eng keng tarqalgan xato. `QueueChannel` esa in-memory bo'lgani uchun JVM o'chsa xabarlar yo'qoladi - durability kerak bo'lsa broker-backed kanal (Kafka, Rabbit, JMS) ishlating.
 
 ## 15.2 Xabar (Message)
 
@@ -84,7 +85,7 @@ Message<Order> msg = MessageBuilder.withPayload(order)
 - Routing qarori uchun `eventType` header'idan foydalanish (payload'ni deserialize qilmasdan).
 - Retry hisobini `x-retry-count` header'ida saqlab, limitdan oshganda DLQ'ga yuborish.
 
-**Ehtiyot bo'ling:** `MessageHeaders` immutable — mavjud xabarni o'zgartirmoqchi bo'lsangiz `MessageBuilder.fromMessage(...)` bilan yangi nusxa yarating. Header'ga katta obyekt yoki maxfiy ma'lumot (token, parol) solish — broker log'lariga chiqib ketish va limitdan oshish xavfi; payload kattaligini header'ga ko'chirib hal qilmang, Claim Check patternidan foydalaning.
+**Ehtiyot bo'ling:** `MessageHeaders` immutable - mavjud xabarni o'zgartirmoqchi bo'lsangiz `MessageBuilder.fromMessage(...)` bilan yangi nusxa yarating. Header'ga katta obyekt yoki maxfiy ma'lumot (token, parol) solish - broker log'lariga chiqib ketish va limitdan oshish xavfi; payload kattaligini header'ga ko'chirib hal qilmang, Claim Check patternidan foydalaning.
 
 ## 15.3 Quvurlar va filtrlar (Pipes and Filters)
 
@@ -99,11 +100,11 @@ Message<Order> msg = MessageBuilder.withPayload(order)
 - Har bir bosqichni alohida unit test qilish va metrikalarini alohida o'lchash.
 - Log boyitish pipeline'i: parse → mask PII → enrich geo → sink.
 
-**Ehtiyot bo'ling:** Juda ko'p mayda bosqich serialize/deserialize va kanal hop xarajatini oshiradi — latency sezgir oqimda bosqichlarni birlashtirish yaxshiroq. Bosqichlar orasida yashirin umumiy mutable state (static map, shared bean field) paydo bo'lsa, pattern afzalligi yo'qoladi va parallel ishlaganda race condition chiqadi.
+**Ehtiyot bo'ling:** Juda ko'p mayda bosqich serialize/deserialize va kanal hop xarajatini oshiradi - latency sezgir oqimda bosqichlarni birlashtirish yaxshiroq. Bosqichlar orasida yashirin umumiy mutable state (static map, shared bean field) paydo bo'lsa, pattern afzalligi yo'qoladi va parallel ishlaganda race condition chiqadi.
 
 ## 15.4 Xabar marshrutlagich (Message Router)
 
-**Tavsif:** Bitta kirish kanalidan xabarni olib, uning mazmuni yoki header'iga qarab bir nechta chiqish kanalidan birini tanlaydi. Router xabarni o'zgartirmaydi — faqat "qayerga ketishi" qarorini qabul qiladi, shu bilan jo'natuvchini qabul qiluvchilar topologiyasidan ajratadi. Qoida o'zgarganda faqat router sozlamasi o'zgaradi, producer kodiga tegilmaydi.
+**Tavsif:** Bitta kirish kanalidan xabarni olib, uning mazmuni yoki header'iga qarab bir nechta chiqish kanalidan birini tanlaydi. Router xabarni o'zgartirmaydi - faqat "qayerga ketishi" qarorini qabul qiladi, shu bilan jo'natuvchini qabul qiluvchilar topologiyasidan ajratadi. Qoida o'zgarganda faqat router sozlamasi o'zgaradi, producer kodiga tegilmaydi.
 
 **Spring'da qayerda uchraydi:** `AbstractMessageRouter` va uning amalga oshirishlari: `HeaderValueRouter`, `PayloadTypeRouter`, `RecipientListRouter`, `ErrorMessageExceptionTypeRouter`, `ExpressionEvaluatingRouter`. Annotatsiya: `@Router`; Java DSL: `.route("headers['eventType']")` yoki `.<Order, Boolean>route(o -> o.getTotal() > 1000, m -> m.channelMapping(true, "manualReview").channelMapping(false, "autoApprove"))`. Apache Camel'da `choice().when(...).to(...)`; Kafka Streams'da `KStream.split().branch(...)`.
 
@@ -114,7 +115,7 @@ Message<Order> msg = MessageBuilder.withPayload(order)
 - Versiyalangan xabarlarni (`schemaVersion=1|2`) mos parserga yo'naltirish.
 - Xato turiga qarab retry kanali yoki DLQ orasida tanlov qilish.
 
-**Ehtiyot bo'ling:** Router tizimda markaziy "bilimli" nuqtaga aylanib ketishi mumkin — barcha biznes qoidalari unga yig'ilsa, bu yashirin monolit bo'ladi; qoidalar ko'paysa Publish-Subscribe + filter yoki Content-Based Router'ni servislarga tarqatishni ko'rib chiqing. `defaultOutputChannel` berilmasa, mos kanal topilmagan xabar exception bilan tushadi.
+**Ehtiyot bo'ling:** Router tizimda markaziy "bilimli" nuqtaga aylanib ketishi mumkin - barcha biznes qoidalari unga yig'ilsa, bu yashirin monolit bo'ladi; qoidalar ko'paysa Publish-Subscribe + filter yoki Content-Based Router'ni servislarga tarqatishni ko'rib chiqing. `defaultOutputChannel` berilmasa, mos kanal topilmagan xabar exception bilan tushadi.
 
 ## 15.5 Xabar tarjimoni (Message Translator)
 
@@ -129,11 +130,11 @@ Message<Order> msg = MessageBuilder.withPayload(order)
 - Maydon nomlari va o'lchov birliklarini normalizatsiya qilish (sent → dollar, epoch → ISO-8601).
 - Chiqish xabaridan maxfiy maydonlarni (PII) olib tashlab, auditga mos ko'rinish berish.
 
-**Ehtiyot bo'ling:** Transformer ichida I/O (DB yoki REST chaqiruvi) qilish — bu allaqachon Content Enricher vazifasi; ularni aralashtirsangiz test qilish qiyinlashadi va oqim latency'si ko'rinmas bo'lib qoladi. Qo'lda yozilgan mapping kodi sxema o'zgarganda sekin buziladi — MapStruct yoki sxema reestri (schema registry) bilan compile-time/contract tekshiruvini qo'shing.
+**Ehtiyot bo'ling:** Transformer ichida I/O (DB yoki REST chaqiruvi) qilish - bu allaqachon Content Enricher vazifasi; ularni aralashtirsangiz test qilish qiyinlashadi va oqim latency'si ko'rinmas bo'lib qoladi. Qo'lda yozilgan mapping kodi sxema o'zgarganda sekin buziladi - MapStruct yoki sxema reestri (schema registry) bilan compile-time/contract tekshiruvini qo'shing.
 
 ## 15.6 Xabar endpoint'i (Message Endpoint)
 
-**Tavsif:** Ilova kodi bilan messaging infrastrukturasi orasidagi ulanish nuqtasi: ilova messaging API'sini bilmaydi, endpoint uning o'rniga xabarni oladi/jo'natadi va metod chaqiruviga aylantiradi. Bu ikki yo'nalishda ishlaydi — kiruvchi xabarni POJO metodiga uzatadi (consumer endpoint) yoki metod chaqiruvini xabarga o'rab kanalga yozadi (producer/gateway). Natijada biznes logikasi broker turiga bog'lanmagan va alohida test qilinadigan bo'lib qoladi.
+**Tavsif:** Ilova kodi bilan messaging infrastrukturasi orasidagi ulanish nuqtasi: ilova messaging API'sini bilmaydi, endpoint uning o'rniga xabarni oladi/jo'natadi va metod chaqiruviga aylantiradi. Bu ikki yo'nalishda ishlaydi - kiruvchi xabarni POJO metodiga uzatadi (consumer endpoint) yoki metod chaqiruvini xabarga o'rab kanalga yozadi (producer/gateway). Natijada biznes logikasi broker turiga bog'lanmagan va alohida test qilinadigan bo'lib qoladi.
 
 **Spring'da qayerda uchraydi:** `@ServiceActivator`, `@MessagingGateway`, `@InboundChannelAdapter`, `@MessageEndpoint` annotatsiyalari; `MessageHandler`, `MessageProducer`, `SourcePollingChannelAdapter`, `EventDrivenConsumer`, `PollingConsumer`. Broker-maxsus endpoint'lar: `@KafkaListener` + `KafkaTemplate`, `@RabbitListener` + `RabbitTemplate`, `@JmsListener` + `JmsTemplate`, `@SqsListener` (Spring Cloud AWS). Spring Cloud Stream'da endpoint roli `Consumer<Message<T>>`/`Supplier<T>` funksional bean'lari bilan bajariladi.
 
@@ -144,13 +145,13 @@ Message<Order> msg = MessageBuilder.withPayload(order)
 - Tashqi SFTP/HTTP manbadan inbound adapter orqali xabar yaratish.
 - Biznes servisni messaging'dan mustaqil unit test qilish (endpoint'ni mocklab).
 
-**Ehtiyot bo'ling:** Biznes logikasini bevosita listener metodining ichiga yozish — endpoint'ni biznes qatlamiga aylantirib, uni brokersiz test qilishni imkonsiz qiladi; handler faqat delegatsiya qilsin. Listener metodida exception'ni jimgina yutib yuborish ack semantikasini buzadi: Kafka'da offset commit bo'lib xabar yo'qoladi.
+**Ehtiyot bo'ling:** Biznes logikasini bevosita listener metodining ichiga yozish - endpoint'ni biznes qatlamiga aylantirib, uni brokersiz test qilishni imkonsiz qiladi; handler faqat delegatsiya qilsin. Listener metodida exception'ni jimgina yutib yuborish ack semantikasini buzadi: Kafka'da offset commit bo'lib xabar yo'qoladi.
 
 ## 15.7 Nuqta-nuqta kanali (Point-to-Point Channel)
 
-**Tavsif:** Kanalga yozilgan har bir xabarni faqat BITTA iste'molchi oladi — bir nechta consumer ulansa ham, xabar ular orasida taqsimlanadi, nusxalanmaydi. Bu competing consumers orqali gorizontal masshtablash va ishni taqsimlashning asosiy mexanizmi. Semantikasi "ish buyrug'i" (command) uchun to'g'ri keladi: bir ishni ikki marta bajarish kerak emas.
+**Tavsif:** Kanalga yozilgan har bir xabarni faqat BITTA iste'molchi oladi - bir nechta consumer ulansa ham, xabar ular orasida taqsimlanadi, nusxalanmaydi. Bu competing consumers orqali gorizontal masshtablash va ishni taqsimlashning asosiy mexanizmi. Semantikasi "ish buyrug'i" (command) uchun to'g'ri keladi: bir ishni ikki marta bajarish kerak emas.
 
-**Spring'da qayerda uchraydi:** Spring Integration'da `DirectChannel` (round-robin `LoadBalancingStrategy` bilan), `QueueChannel`, `ExecutorChannel`. Broker darajasida: JMS `Queue` (`JmsTemplate`, `@JmsListener`), RabbitMQ'da bitta queue'ga bir nechta consumer (`SimpleMessageListenerContainer`, `concurrency`), Kafka'da bir xil `group.id` dagi consumer'lar (`@KafkaListener(groupId = "...")`) — partition'lar ular orasida bo'linadi. Spring Cloud Stream'da `spring.cloud.stream.bindings.<name>-in-0.group` berilishi aynan shu semantikani beradi.
+**Spring'da qayerda uchraydi:** Spring Integration'da `DirectChannel` (round-robin `LoadBalancingStrategy` bilan), `QueueChannel`, `ExecutorChannel`. Broker darajasida: JMS `Queue` (`JmsTemplate`, `@JmsListener`), RabbitMQ'da bitta queue'ga bir nechta consumer (`SimpleMessageListenerContainer`, `concurrency`), Kafka'da bir xil `group.id` dagi consumer'lar (`@KafkaListener(groupId = "...")`) - partition'lar ular orasida bo'linadi. Spring Cloud Stream'da `spring.cloud.stream.bindings.<name>-in-0.group` berilishi aynan shu semantikani beradi.
 
 **Qo'llanish keyslari:**
 - Buyurtmani ishlovchi worker'larni 10 ta instance'ga ko'paytirib throughput oshirish.
@@ -159,11 +160,11 @@ Message<Order> msg = MessageBuilder.withPayload(order)
 - Kafka'da consumer group bilan partition'larni avtomatik rebalance qilish.
 - Fon vazifalarini (image resize) navbat uzunligi bo'yicha autoscale qilish.
 
-**Ehtiyot bo'ling:** Point-to-point "bir marta yetkazish" degani emas — retry va rebalance paytida takroriy yetkazish bo'lishi mumkin, shuning uchun handler idempotent bo'lishi shart. Kafka'da parallelizm partition soni bilan cheklangan: consumer'ni partition'dan ko'p qilsangiz, ortiqchasi bo'sh turadi.
+**Ehtiyot bo'ling:** Point-to-point "bir marta yetkazish" degani emas - retry va rebalance paytida takroriy yetkazish bo'lishi mumkin, shuning uchun handler idempotent bo'lishi shart. Kafka'da parallelizm partition soni bilan cheklangan: consumer'ni partition'dan ko'p qilsangiz, ortiqchasi bo'sh turadi.
 
 ## 15.8 E'lon-obuna kanali (Publish-Subscribe Channel)
 
-**Tavsif:** Kanalga yozilgan xabarning nusxasi barcha obunachilarga (subscriber) yetkaziladi, ya'ni bir hodisaga bir nechta mustaqil reaksiya bo'lishi mumkin. Producer obunachilar kimligini va sonini bilmaydi — yangi obunachi qo'shilsa, jo'natuvchi kodi o'zgarmaydi. Bu "hodisa yuz berdi" (event) semantikasi uchun to'g'ri model.
+**Tavsif:** Kanalga yozilgan xabarning nusxasi barcha obunachilarga (subscriber) yetkaziladi, ya'ni bir hodisaga bir nechta mustaqil reaksiya bo'lishi mumkin. Producer obunachilar kimligini va sonini bilmaydi - yangi obunachi qo'shilsa, jo'natuvchi kodi o'zgarmaydi. Bu "hodisa yuz berdi" (event) semantikasi uchun to'g'ri model.
 
 **Spring'da qayerda uchraydi:** `PublishSubscribeChannel` (ixtiyoriy `TaskExecutor` bilan asinxron), Java DSL'da `.publishSubscribeChannel(s -> s.subscribe(f -> ...).subscribe(f -> ...))`. JVM ichida `ApplicationEventPublisher` + `@EventListener`/`@TransactionalEventListener`. Broker darajasida: JMS `Topic`, RabbitMQ `fanout`/`topic` exchange (`TopicExchange`, `FanoutExchange`, `Binding`), Kafka'da har bir iste'molchiga alohida `group.id`. Spring Cloud Stream'da bir destination'ga turli `group` qiymatlari bilan bir nechta app obuna bo'ladi.
 
@@ -174,13 +175,13 @@ Message<Order> msg = MessageBuilder.withPayload(order)
 - Notification (email + push + webhook) kanallarini bir-biridan mustaqil qo'shish.
 - Yangi analitik servisni ishlab chiqishda mavjud oqimga "tinglovchi" sifatida ulash.
 
-**Ehtiyot bo'ling:** Default `PublishSubscribeChannel` sinxron ishlaydi — bitta obunachi sekin yoki exception tashlasa, u butun chain'ni bloklaydi yoki buzadi; `TaskExecutor` va `ErrorHandler` sozlang. Pub-sub'ni command uchun ishlatish (masalan to'lovni olish) ikki marta bajarilish xatosiga olib keladi — command uchun point-to-point ishlating.
+**Ehtiyot bo'ling:** Default `PublishSubscribeChannel` sinxron ishlaydi - bitta obunachi sekin yoki exception tashlasa, u butun chain'ni bloklaydi yoki buzadi; `TaskExecutor` va `ErrorHandler` sozlang. Pub-sub'ni command uchun ishlatish (masalan to'lovni olish) ikki marta bajarilish xatosiga olib keladi - command uchun point-to-point ishlating.
 
 ## 15.9 Ma'lumot turi kanali (Datatype Channel)
 
 **Tavsif:** Har bir kanal faqat bitta aniq turdagi xabarni tashiydi, shunda iste'molchi payload turini tekshirish yoki `instanceof` zanjiri yozish zaruratidan xalos bo'ladi. Bu kanal nomining o'zini kontrakt (contract) ga aylantiradi: "`orders` kanalida faqat `Order` keladi". Turli turlar bir kanalda aralashsa, Message Router bilan ularni alohida datatype kanallarga ajratish kerak.
 
-**Spring'da qayerda uchraydi:** Spring Integration'da `AbstractMessageChannel.setDatatypes(Class<?>...)` (XML'da `datatype="com.acme.Order"`), kerak bo'lsa `MessageConverter` bilan birga — tur mos kelmasa `MessageDeliveryException` tashlanadi. Shuningdek `PayloadTypeRouter` va `PayloadTypeSelector` bilan ajratish; handler darajasida generic signature (`GenericTransformer<Order, OrderDto>`) va `@ServiceActivator` metod parametri turi ham de-fakto datatype kontraktini bildiradi. Kafka'da bu rol topic + schema registry (Avro/Protobuf) juftligi bilan bajariladi.
+**Spring'da qayerda uchraydi:** Spring Integration'da `AbstractMessageChannel.setDatatypes(Class<?>...)` (XML'da `datatype="com.acme.Order"`), kerak bo'lsa `MessageConverter` bilan birga - tur mos kelmasa `MessageDeliveryException` tashlanadi. Shuningdek `PayloadTypeRouter` va `PayloadTypeSelector` bilan ajratish; handler darajasida generic signature (`GenericTransformer<Order, OrderDto>`) va `@ServiceActivator` metod parametri turi ham de-fakto datatype kontraktini bildiradi. Kafka'da bu rol topic + schema registry (Avro/Protobuf) juftligi bilan bajariladi.
 
 **Qo'llanish keyslari:**
 - `payments` va `refunds` uchun alohida kanal ochib, handler'lardan tur tekshiruvini olib tashlash.
@@ -189,11 +190,11 @@ Message<Order> msg = MessageBuilder.withPayload(order)
 - Compile-time type safety uchun generic transformer zanjiri qurish.
 - Versiyalangan sxemalar uchun `orders.v1` / `orders.v2` kanallarini ajratish.
 
-**Ehtiyot bo'ling:** Har bir mayda tur uchun alohida kanal ochish topologiyani portlatib yuboradi — tur yaqin bo'lsa umumiy bazaviy tur yoki canonical data model bilan bitta kanalda qolish arzonroq. `setDatatypes` bilan qattiq cheklash evolyutsiyani qiyinlashtiradi: sxema o'zgarganda eski producer'lar birdan `MessageDeliveryException` ola boshlaydi.
+**Ehtiyot bo'ling:** Har bir mayda tur uchun alohida kanal ochish topologiyani portlatib yuboradi - tur yaqin bo'lsa umumiy bazaviy tur yoki canonical data model bilan bitta kanalda qolish arzonroq. `setDatatypes` bilan qattiq cheklash evolyutsiyani qiyinlashtiradi: sxema o'zgarganda eski producer'lar birdan `MessageDeliveryException` ola boshlaydi.
 
 ## 15.10 Noto'g'ri xabar kanali (Invalid Message Channel)
 
-**Tavsif:** Formati, turi yoki mazmuni kutilganiga mos kelmagan xabarlarni asosiy oqimdan chiqarib, alohida kanalga yuborish uchun ishlatiladi. Bu "poison message" bitta sekund ichida minglab marta qayta ishlanib oqimni to'xtatib qo'yishining oldini oladi va texnik jamoaga tahlil uchun material beradi. Muhim farqi: bu yetkazib berish muammosi emas — xabar keldi, lekin uni tushunib bo'lmadi.
+**Tavsif:** Formati, turi yoki mazmuni kutilganiga mos kelmagan xabarlarni asosiy oqimdan chiqarib, alohida kanalga yuborish uchun ishlatiladi. Bu "poison message" bitta sekund ichida minglab marta qayta ishlanib oqimni to'xtatib qo'yishining oldini oladi va texnik jamoaga tahlil uchun material beradi. Muhim farqi: bu yetkazib berish muammosi emas - xabar keldi, lekin uni tushunib bo'lmadi.
 
 **Spring'da qayerda uchraydi:** Spring Integration'da global `errorChannel` (default `PublishSubscribeChannel`) va endpoint darajasidagi `@ServiceActivator(inputChannel="...", ...)` bilan birga `MessageHeaders.ERROR_CHANNEL` header'i; xabar `ErrorMessage` ichida `MessagingException` (`getFailedMessage()`) bo'lib keladi. `ErrorMessageExceptionTypeRouter` bilan validatsiya xatolarini (`MessageConversionException`, `MessageHandlingException`) alohida kanalga ajratish mumkin. Kafka'da `DefaultErrorHandler` + `DeadLetterPublishingRecoverer`, `ErrorHandlingDeserializer` (deserialize xatosini listener'ga yetib bormasdan ushlaydi); Rabbit'da `RepublishMessageRecoverer`.
 
@@ -204,7 +205,7 @@ Message<Order> msg = MessageBuilder.withPayload(order)
 - Invalid xabarlar ratesini metrikaga chiqarib, upstream producer regressiyasini aniqlash.
 - Tahlil qilingan xabarlarni tuzatib, qayta oqimga qo'yish (replay) uchun saqlash.
 
-**Ehtiyot bo'ling:** Invalid message kanalini hech kim o'qimasa — u ko'rinmas ma'lumot qabristoniga aylanadi; alert, retention va replay protsedurasi bo'lishi shart. Bu kanalni infrastruktura xatolari (broker uzilishi, timeout) uchun ishlatmang — ular retry va Dead Letter Channel hududiga tegishli.
+**Ehtiyot bo'ling:** Invalid message kanalini hech kim o'qimasa - u ko'rinmas ma'lumot qabristoniga aylanadi; alert, retention va replay protsedurasi bo'lishi shart. Bu kanalni infrastruktura xatolari (broker uzilishi, timeout) uchun ishlatmang - ular retry va Dead Letter Channel hududiga tegishli.
 
 ## 15.11 O'lik xat kanali (Dead Letter Channel)
 
@@ -228,11 +229,11 @@ DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> template) {
 - DLQ hajmini SRE dashboard'ida SLO sifatida kuzatish va alert qo'yish.
 - TTL tugagan, eskirgan buyurtmalarni tahlil uchun saqlab qolish.
 
-**Ehtiyot bo'ling:** DLQ'ni "keyin ko'ramiz" qutisi sifatida qoldirish eng ko'p uchraydigan operatsion qarz — monitoring va retention siyosati bo'lmasa, ma'lumot jimgina yo'qoladi. Retry'ni cheksiz yoki juda tez (backoff'siz) qilib qo'ysangiz, poison message broker va downstream'ni DoS qiladi; shuningdek DLQ'ga qayta-qayta tushayotgan xabarlar uchun ikkinchi darajali tsikl (DLQ → retry → DLQ) hosil qilmang.
+**Ehtiyot bo'ling:** DLQ'ni "keyin ko'ramiz" qutisi sifatida qoldirish eng ko'p uchraydigan operatsion qarz - monitoring va retention siyosati bo'lmasa, ma'lumot jimgina yo'qoladi. Retry'ni cheksiz yoki juda tez (backoff'siz) qilib qo'ysangiz, poison message broker va downstream'ni DoS qiladi; shuningdek DLQ'ga qayta-qayta tushayotgan xabarlar uchun ikkinchi darajali tsikl (DLQ → retry → DLQ) hosil qilmang.
 
 ## 15.12 Kafolatlangan yetkazib berish (Guaranteed Delivery)
 
-**Tavsif:** Xabar jo'natuvchi va qabul qiluvchi JVM'lari yoki broker qayta ishga tushsa ham yo'qolmasligini ta'minlash uchun xabarni doimiy saqlash joyiga (disk, replikatsiya qilingan log) yozish. Producer tomonida xabar broker tomonidan qabul qilinganini tasdiqlash (ack/publisher confirm), consumer tomonida esa muvaffaqiyatli ishlov berilgandan keyingina ack berish kerak. Bu kafolat latency va throughput hisobiga keladi — har bir yozuv `fsync`/replikatsiya kutadi.
+**Tavsif:** Xabar jo'natuvchi va qabul qiluvchi JVM'lari yoki broker qayta ishga tushsa ham yo'qolmasligini ta'minlash uchun xabarni doimiy saqlash joyiga (disk, replikatsiya qilingan log) yozish. Producer tomonida xabar broker tomonidan qabul qilinganini tasdiqlash (ack/publisher confirm), consumer tomonida esa muvaffaqiyatli ishlov berilgandan keyingina ack berish kerak. Bu kafolat latency va throughput hisobiga keladi - har bir yozuv `fsync`/replikatsiya kutadi.
 
 **Spring'da qayerda uchraydi:** Kafka'da `acks=all`, `enable.idempotence=true`, `min.insync.replicas`, consumer tomonida `enable.auto.commit=false` + `AckMode.MANUAL_IMMEDIATE` (`ContainerProperties`), `KafkaTransactionManager`. RabbitMQ'da durable queue + `MessageDeliveryMode.PERSISTENT`, `CachingConnectionFactory.setPublisherConfirmType(CORRELATED)` va `RabbitTemplate#setConfirmCallback`/`setReturnsCallback`, consumer'da `AcknowledgeMode.MANUAL`. JMS'da `DeliveryMode.PERSISTENT` va `CLIENT_ACKNOWLEDGE`. DB-ga asoslangan yondashuv: Spring Integration `JdbcChannelMessageStore` bilan persistent `QueueChannel`, yoki transactional outbox jadvali (`@Transactional` + alohida publisher).
 
@@ -243,11 +244,11 @@ DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> template) {
 - Consumer deploy/rollout paytida in-flight xabarlarni saqlab qolish.
 - Multi-AZ replikatsiya bilan butun data center yo'qolishiga chidamlilik.
 
-**Ehtiyot bo'ling:** Persistence o'z-o'zidan "exactly-once" bermaydi — failover va retry paytida duplicate bo'ladi, shuning oqibatida iste'molchi idempotent bo'lishi yoki dedup store ishlatishi kerak. `acks=all` va `fsync` har bir xabar uchun latency'ni bir necha barobar oshiradi; past qiymatli telemetriya yoki metrika oqimida bu kafolatni talab qilish ortiqcha xarajat. Shuningdek DB va broker'ni bitta XA tranzaksiyaga bog'lashga urinmang — outbox pattern soddaroq va ishonchliroq.
+**Ehtiyot bo'ling:** Persistence o'z-o'zidan "exactly-once" bermaydi - failover va retry paytida duplicate bo'ladi, shuning oqibatida iste'molchi idempotent bo'lishi yoki dedup store ishlatishi kerak. `acks=all` va `fsync` har bir xabar uchun latency'ni bir necha barobar oshiradi; past qiymatli telemetriya yoki metrika oqimida bu kafolatni talab qilish ortiqcha xarajat. Shuningdek DB va broker'ni bitta XA tranzaksiyaga bog'lashga urinmang - outbox pattern soddaroq va ishonchliroq.
 
 ## 15.13 Kanal adapteri (Channel Adapter)
 
-**Tavsif:** Messaging tizimidan tashqarida turgan tizimni (fayl tizimi, baza, HTTP endpoint, SMTP, legacy API) messaging kanaliga ulaydigan ko'prikdir. Adapter bir tomonda domen/transport protokolini "gaplashadi", ikkinchi tomonda esa `Message<?>` bilan ishlaydi, shu bilan ilova kodi integratsiya mexanikasidan ajraladi. Inbound adapter tashqi tizimdan ma'lumot olib kanalga qo'yadi, outbound adapter kanaldan olib tashqi tizimga uzatadi. Natijada tashqi tizimni almashtirsangiz, faqat adapter o'zgaradi — oqimning qolgan qismi tegmaydi.
+**Tavsif:** Messaging tizimidan tashqarida turgan tizimni (fayl tizimi, baza, HTTP endpoint, SMTP, legacy API) messaging kanaliga ulaydigan ko'prikdir. Adapter bir tomonda domen/transport protokolini "gaplashadi", ikkinchi tomonda esa `Message<?>` bilan ishlaydi, shu bilan ilova kodi integratsiya mexanikasidan ajraladi. Inbound adapter tashqi tizimdan ma'lumot olib kanalga qo'yadi, outbound adapter kanaldan olib tashqi tizimga uzatadi. Natijada tashqi tizimni almashtirsangiz, faqat adapter o'zgaradi - oqimning qolgan qismi tegmaydi.
 
 **Spring'da qayerda uchraydi:** Spring Integration'ning asosiy qurilish bloki: polling inbound uchun `@InboundChannelAdapter` + `MessageSource` implementatsiyalari (`FileReadingMessageSource`, `JdbcPollingChannelAdapter`, `MailReceivingMessageSource`) `SourcePollingChannelAdapter` ichida ishlaydi; event-driven inbound uchun `MessageProducerSupport` merosxo'rlari (`JmsMessageDrivenEndpoint`, `KafkaMessageDrivenChannelAdapter`, `AmqpInboundChannelAdapter`). Outbound tomonda `@ServiceActivator` bilan ro'yxatga olingan `JmsSendingMessageHandler`, `KafkaProducerMessageHandler`, `FileWritingMessageHandler`. Java DSL'da `IntegrationFlow.from(Files.inboundAdapter(dir))`, `Kafka.messageDrivenChannelAdapter(cf, "topic")`, `.handle(Jms.outboundAdapter(jmsTemplate))`. Spring Cloud Stream 4.x/5.x da `Supplier<T>` va `Consumer<T>` bean'lari binder orqali aynan shu rolni bajaradi, Debezium esa baza uchun CDC inbound adapter sifatida ishlatiladi.
 
@@ -258,7 +259,7 @@ DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> template) {
 - IMAP pochta qutisidan kelgan murojaatlarni ticket tizimiga aylantirish.
 - Mikroservis chiqaradigan event'larni outbound adapter orqali RabbitMQ exchange'iga uzatish.
 
-**Ehtiyot bo'ling:** Polling adapter'da `poller` fixed-delay va `maxMessagesPerPoll` noto'g'ri sozlansa, baza yoki fayl tizimini "o'ldirib" qo'yadi; inbound adapter ichida biznes logika yozmang — adapter faqat tarjimon bo'lishi kerak. Shuningdek polling adapter bir nechta instance'da ishlasa, taqsimlangan lock (`JdbcLockRegistry`, `RedisLockRegistry`) yoki leader election bo'lmasa, bitta yozuv bir necha marta qayta ishlanadi.
+**Ehtiyot bo'ling:** Polling adapter'da `poller` fixed-delay va `maxMessagesPerPoll` noto'g'ri sozlansa, baza yoki fayl tizimini "o'ldirib" qo'yadi; inbound adapter ichida biznes logika yozmang - adapter faqat tarjimon bo'lishi kerak. Shuningdek polling adapter bir nechta instance'da ishlasa, taqsimlangan lock (`JdbcLockRegistry`, `RedisLockRegistry`) yoki leader election bo'lmasa, bitta yozuv bir necha marta qayta ishlanadi.
 
 ## 15.14 Xabar ko'prigi (Messaging Bridge)
 
@@ -273,11 +274,11 @@ DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> template) {
 - Hamkor tashkilotning brokeridan kelgan xabarlarni ichki korporativ kanalga o'tkazish.
 - Test kontur bilan prod kontur o'rtasida read-only trafik replikatsiyasi qilish.
 
-**Ehtiyot bo'ling:** Ko'prik ikki transportni bog'laganda yagona atomar transaksiya bo'lmaydi — ikki fazali commit o'rniga idempotentlik va duplikat bardoshligini loyihalash kerak, aks holda xabar yo'qoladi yoki ikkilanadi. Ko'prikni "vaqtinchalik" deb kiritib, keyin arxitekturada abadiy qoldirish ham tipik xato: migratsiya tugash muddatini boshidan belgilang.
+**Ehtiyot bo'ling:** Ko'prik ikki transportni bog'laganda yagona atomar transaksiya bo'lmaydi - ikki fazali commit o'rniga idempotentlik va duplikat bardoshligini loyihalash kerak, aks holda xabar yo'qoladi yoki ikkilanadi. Ko'prikni "vaqtinchalik" deb kiritib, keyin arxitekturada abadiy qoldirish ham tipik xato: migratsiya tugash muddatini boshidan belgilang.
 
 ## 15.15 Xabar sahnasi / Message Bus (Message Bus)
 
-**Tavsif:** Ko'plab ilovalarni bitta umumiy messaging infratuzilmasi, kelishilgan kanal nomlari va yagona kanonik ma'lumot modeli orqali birlashtiruvchi arxitektura uslubidir. Yangi ilova bus'ga "ulanadi" — qolgan tizimlar haqida hech narsa bilmaydi, faqat umumiy xabar formatini va adapter konvensiyasini biladi. Bu Message Channel, Message Router, Message Translator va Channel Adapter patternlarining birlashgan, tashkilot miqyosidagi ko'rinishi. Natijada integratsiya point-to-point ulanishlar o'rniga markazlashgan "orqa miya" ko'rinishini oladi.
+**Tavsif:** Ko'plab ilovalarni bitta umumiy messaging infratuzilmasi, kelishilgan kanal nomlari va yagona kanonik ma'lumot modeli orqali birlashtiruvchi arxitektura uslubidir. Yangi ilova bus'ga "ulanadi" - qolgan tizimlar haqida hech narsa bilmaydi, faqat umumiy xabar formatini va adapter konvensiyasini biladi. Bu Message Channel, Message Router, Message Translator va Channel Adapter patternlarining birlashgan, tashkilot miqyosidagi ko'rinishi. Natijada integratsiya point-to-point ulanishlar o'rniga markazlashgan "orqa miya" ko'rinishini oladi.
 
 **Spring'da qayerda uchraydi:** Spring Cloud Stream (binder abstraksiyasi + `spring.cloud.stream.bindings.*` destinatsiyalari) zamonaviy, yengil bus sifatida eng ko'p ishlatiladi; Spring Cloud Bus (`spring-cloud-bus`, `RemoteApplicationEvent`, `RefreshRemoteApplicationEvent`) esa konfiguratsiya va boshqaruv event'lari uchun maxsus bus. Yagona ilova doirasida Spring Integration kanallari + `PublishSubscribeChannel` "ichki bus" vazifasini bajaradi, Spring Framework'ning `ApplicationEventMulticaster`'i ham JVM ichidagi bus hisoblanadi. Kanonik model uchun odatda Avro/Protobuf sxemalari Confluent Schema Registry bilan yoki CloudEvents formati (`spring-cloud-function` ichidagi `CloudEventMessageUtils`) tanlanadi.
 
@@ -288,11 +289,11 @@ DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> template) {
 - Retail platformada buyurtma hodisalarini warehouse, billing va CRM'ga bir topic'dan tarqatish.
 - Monolitdan ajratilgan mikroservislarni umumiy event bus orqali bosqichma-bosqich ko'chirish.
 
-**Ehtiyot bo'ling:** Bus tez orada taqsimlangan monolitga aylanishi mumkin: kanonik model har bir yangi talabda o'sib, barcha consumer'larni bir vaqtda deploy qilishga majbur qiladi — shuning uchun sxema evolyutsiyasini (backward/forward compatibility) kun birinchi talabi qiling. Bus'ga biznes logika va marshrutlash qoidalarini yig'ish (klassik ESB anti-patterni) uni yagona nosozlik nuqtasi va tashkiliy "tirbandlik" ga aylantiradi.
+**Ehtiyot bo'ling:** Bus tez orada taqsimlangan monolitga aylanishi mumkin: kanonik model har bir yangi talabda o'sib, barcha consumer'larni bir vaqtda deploy qilishga majbur qiladi - shuning uchun sxema evolyutsiyasini (backward/forward compatibility) kun birinchi talabi qiling. Bus'ga biznes logika va marshrutlash qoidalarini yig'ish (klassik ESB anti-patterni) uni yagona nosozlik nuqtasi va tashkiliy "tirbandlik" ga aylantiradi.
 
 ## 15.16 Buyruq xabari (Command Message)
 
-**Tavsif:** Qabul qiluvchidan muayyan amalni bajarishni so'rovchi xabar turidir: payload'da bajarilishi kerak bo'lgan operatsiya nomi va parametrlar bo'ladi. Bu messaging orqali amalga oshirilgan asinxron RPC — jo'natuvchi kimga va nima qilish kerakligini biladi, shuning uchun bog'liqlik (coupling) event xabarga nisbatan yuqori. Odatda bitta aniq qabul qiluvchiga, point-to-point kanal orqali yuboriladi. Nomlash ham buyruq mayliga mos bo'ladi: `CreateInvoice`, `ReserveStock`.
+**Tavsif:** Qabul qiluvchidan muayyan amalni bajarishni so'rovchi xabar turidir: payload'da bajarilishi kerak bo'lgan operatsiya nomi va parametrlar bo'ladi. Bu messaging orqali amalga oshirilgan asinxron RPC - jo'natuvchi kimga va nima qilish kerakligini biladi, shuning uchun bog'liqlik (coupling) event xabarga nisbatan yuqori. Odatda bitta aniq qabul qiluvchiga, point-to-point kanal orqali yuboriladi. Nomlash ham buyruq mayliga mos bo'ladi: `CreateInvoice`, `ReserveStock`.
 
 **Spring'da qayerda uchraydi:** Spring Integration'da buyruq oddiy POJO payload bo'lib `Message<ReserveStockCommand>` ko'rinishida ketadi va `@ServiceActivator` yoki `@MessagingGateway` metodi uni qabul qiladi; `GenericMessage` va `MessageBuilder.withPayload(cmd).setHeader("commandType", ...)` bilan quriladi. `@KafkaListener`, `@RabbitListener`, `@JmsListener` metodlari buyruq handler'i sifatida eng ko'p uchraydigan shakl. Spring Integration'ning `ControlBus` (`Integration.controlBus()` / `ExpressionControlBusFactoryBean`) infratuzilma buyruqlari uchun maxsus misoldir. CQRS'ni to'liq qurmoqchi bo'lsangiz, Spring bilan ko'p ishlatiladigan Axon Framework'ning `CommandGateway`/`@CommandHandler` yoki Spring Modulith'ning event/komanda ajratish yondashuvi qo'llanadi.
 
@@ -303,11 +304,11 @@ DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> template) {
 - Control bus orqali ishlab turgan adapter'ni runtime'da `@adapterName.stop()` bilan to'xtatish.
 - Batch qayta hisoblashni admin paneldan buyruq xabari sifatida ishga tushirish.
 
-**Ehtiyot bo'ling:** Buyruq xabarini event bilan aralashtirmang — buyruqni `PublishSubscribeChannel` ga qo'ysangiz, bitta amal necha marta bajariladi; har doim point-to-point kanaldan foydalaning. Qayta yetkazish (at-least-once) tufayli har bir buyruq handler'i idempotent bo'lishi va buyruq `messageId` bo'yicha deduplikatsiya (`IdempotentReceiverInterceptor`, `MetadataStore`) qilinishi kerak.
+**Ehtiyot bo'ling:** Buyruq xabarini event bilan aralashtirmang - buyruqni `PublishSubscribeChannel` ga qo'ysangiz, bitta amal necha marta bajariladi; har doim point-to-point kanaldan foydalaning. Qayta yetkazish (at-least-once) tufayli har bir buyruq handler'i idempotent bo'lishi va buyruq `messageId` bo'yicha deduplikatsiya (`IdempotentReceiverInterceptor`, `MetadataStore`) qilinishi kerak.
 
 ## 15.17 Hujjat xabari (Document Message)
 
-**Tavsif:** Qabul qiluvchiga ma'lumotning o'zini — biznes hujjat yoki data strukturasini — uzatish uchun ishlatiladigan xabar turidir. Jo'natuvchi qabul qiluvchi bu ma'lumot bilan nima qilishini belgilamaydi va natijani kutmaydi; muhim bo'lgani — hujjatning yetib borishi. Buyruqdan farqi: niyat emas, mazmun uzatiladi; event'dan farqi: vaqt sezgirligi past va payload odatda to'liq va katta bo'ladi. Shuning uchun u ko'pincha "data transfer" integratsiyalarida asosiy shakl bo'ladi.
+**Tavsif:** Qabul qiluvchiga ma'lumotning o'zini - biznes hujjat yoki data strukturasini - uzatish uchun ishlatiladigan xabar turidir. Jo'natuvchi qabul qiluvchi bu ma'lumot bilan nima qilishini belgilamaydi va natijani kutmaydi; muhim bo'lgani - hujjatning yetib borishi. Buyruqdan farqi: niyat emas, mazmun uzatiladi; event'dan farqi: vaqt sezgirligi past va payload odatda to'liq va katta bo'ladi. Shuning uchun u ko'pincha "data transfer" integratsiyalarida asosiy shakl bo'ladi.
 
 **Spring'da qayerda uchraydi:** `Message<OrderDto>` yoki `Message<byte[]>` payload'i, `MessageBuilder` bilan quriladi va `MessageConverter` (`MappingJackson2MessageConverter`, Spring AMQP'ning `Jackson2JsonMessageConverter`, Spring AMQP 4.x/Boot 4 liniyasida Jackson 3 asosidagi `JacksonJsonMessageConverter`) orqali serializatsiya qilinadi. Spring Integration'da `ObjectToJsonTransformer`, `JsonToObjectTransformer`, fayl hujjatlari uchun `FileToByteArrayTransformer` ishlatiladi. Katta hujjatlar uchun `ClaimCheckInTransformer`/`ClaimCheckOutTransformer` + `MessageStore` (yoki S3) kombinatsiyasi standart yechim; `@Payload` va `@Headers` annotatsiyalari listener metodlarida hujjatni ajratib olishga xizmat qiladi.
 
@@ -318,7 +319,7 @@ DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> template) {
 - ETL oqimida normalizatsiya qilingan mijoz yozuvlarini data warehouse'ga yuborish.
 - Mikroservislar o'rtasida hisobot natijalarini JSON payload sifatida almashish.
 
-**Ehtiyot bo'ling:** Katta hujjatni to'g'ridan-to'g'ri payload qilib yuborish broker limitlarini (Kafka `max.message.bytes`, Rabbit frame o'lchami) va heap'ni buzadi — bunday holatda Claim Check yoki obyekt saqlovga havola ishlating. Shuningdek hujjat sxemasini versiyalamasdan o'zgartirish barcha consumer'larni sindiradi: yangi maydonlarni ixtiyoriy qilib qo'shing, mavjudlarini olib tashlamang.
+**Ehtiyot bo'ling:** Katta hujjatni to'g'ridan-to'g'ri payload qilib yuborish broker limitlarini (Kafka `max.message.bytes`, Rabbit frame o'lchami) va heap'ni buzadi - bunday holatda Claim Check yoki obyekt saqlovga havola ishlating. Shuningdek hujjat sxemasini versiyalamasdan o'zgartirish barcha consumer'larni sindiradi: yangi maydonlarni ixtiyoriy qilib qo'shing, mavjudlarini olib tashlamang.
 
 ## 15.18 Hodisa xabari (Event Message)
 
@@ -333,7 +334,7 @@ DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> template) {
 - Foydalanuvchi ro'yxatdan o'tgach analytics va onboarding oqimlarini ishga tushirish.
 - Event sourcing uchun audit qilinadigan o'zgarishlar jurnalini yuritish.
 
-**Ehtiyot bo'ling:** Event ichida javob yoki ko'rsatma kutish (aslida buyruq bo'lgan "event") arxitekturani yashirin bog'liqlik bilan to'ldiradi; event faqat fakt haqida xabar berishi kerak. Tranzaksiya commit bo'lmasdan event chiqarish esa consumer'ning mavjud bo'lmagan ma'lumotni o'qishiga olib keladi — `@TransactionalEventListener(AFTER_COMMIT)` yoki transactional outbox ishlating.
+**Ehtiyot bo'ling:** Event ichida javob yoki ko'rsatma kutish (aslida buyruq bo'lgan "event") arxitekturani yashirin bog'liqlik bilan to'ldiradi; event faqat fakt haqida xabar berishi kerak. Tranzaksiya commit bo'lmasdan event chiqarish esa consumer'ning mavjud bo'lmagan ma'lumotni o'qishiga olib keladi - `@TransactionalEventListener(AFTER_COMMIT)` yoki transactional outbox ishlating.
 
 ## 15.19 So'rov-javob (Request-Reply)
 
@@ -356,11 +357,11 @@ public interface PricingGateway {
 - Kafka asosidagi "enrichment" servisidan ma'lumot to'ldirish so'rovi.
 - Hamkor API'sidan hujjat statusini so'rab, javobni REST controller'ga qaytarish.
 
-**Ehtiyot bo'ling:** `replyTimeout` ni cheksiz yoki juda uzun qoldirish thread pool'ni band qilib ilovani muzlatadi; messaging ustida sinxron so'rov-javob qurishdan oldin oddiy HTTP yetarli emasligiga ishonch hosil qiling. Shuningdek har bir so'rov uchun yangi `TemporaryQueue` yaratish broker'da katta yuk tug'diradi — Rabbit'da direct reply-to, JMS'da esa correlation ID bilan umumiy reply queue'ni afzal ko'ring.
+**Ehtiyot bo'ling:** `replyTimeout` ni cheksiz yoki juda uzun qoldirish thread pool'ni band qilib ilovani muzlatadi; messaging ustida sinxron so'rov-javob qurishdan oldin oddiy HTTP yetarli emasligiga ishonch hosil qiling. Shuningdek har bir so'rov uchun yangi `TemporaryQueue` yaratish broker'da katta yuk tug'diradi - Rabbit'da direct reply-to, JMS'da esa correlation ID bilan umumiy reply queue'ni afzal ko'ring.
 
 ## 15.20 Qaytish manzili (Return Address)
 
-**Tavsif:** So'rov xabari ichida javob qaysi kanalga yuborilishi kerakligini ko'rsatuvchi header'dir. Shu bilan qabul qiluvchi javob manzilini hard-code qilmaydi va bitta servis turli chaqiruvchilarga xizmat qila oladi. Manzil odatda header'da bo'ladi, payload'da emas — chunki u marshrutlash metama'lumoti. Natijada request-reply dinamik, ko'p-chaqiruvchili muhitda ham ishlaydi.
+**Tavsif:** So'rov xabari ichida javob qaysi kanalga yuborilishi kerakligini ko'rsatuvchi header'dir. Shu bilan qabul qiluvchi javob manzilini hard-code qilmaydi va bitta servis turli chaqiruvchilarga xizmat qila oladi. Manzil odatda header'da bo'ladi, payload'da emas - chunki u marshrutlash metama'lumoti. Natijada request-reply dinamik, ko'p-chaqiruvchili muhitda ham ishlaydi.
 
 **Spring'da qayerda uchraydi:** Spring Integration'da `MessageHeaders.REPLY_CHANNEL` (ko'pincha `TemporaryReplyChannel` obyekti sifatida) va unga juft bo'lgan `MessageHeaders.ERROR_CHANNEL`; gateway javobni shu header asosida topadi. JMS'da `Message.setJMSReplyTo(Destination)` va `JmsHeaders.REPLY_TO`, AMQP'da `MessageProperties.setReplyTo` / `amqp_replyTo` header'i hamda `amq.rabbitmq.reply-to` pseudo-queue; Kafka'da `KafkaHeaders.REPLY_TOPIC` va `KafkaHeaders.REPLY_PARTITION`, ularni `ReplyingKafkaTemplate` to'ldiradi, `@SendTo` esa statik alternativa beradi. `HeaderEnricher` (`.enrichHeaders(h -> h.replyChannel(...))`) bilan qaytish manzilini oqim ichida o'rnatish mumkin.
 
@@ -371,11 +372,11 @@ public interface PricingGateway {
 - Saga qadamida javobni keyingi bosqich kanaliga to'g'ridan-to'g'ri yuborish.
 - Test muhitida javobni mock `QueueChannel` ga qaytarib tekshirish.
 
-**Ehtiyot bo'ling:** Qaytish manzilini tashqi, ishonchsiz chaqiruvchidan olingan header'dan ko'r-ko'rona ishlatish xavfli — zararli manzil bilan tizimingiz begona topic'ga yozishi mumkin, shuning uchun whitelist bilan validatsiya qiling. Splitter/aggregator orqali o'tganda `replyChannel` header'i yo'qolib qolishi mumkin: `HeaderEnricher` yoki `@Gateway` orqali uni ataylab saqlab o'tkazing.
+**Ehtiyot bo'ling:** Qaytish manzilini tashqi, ishonchsiz chaqiruvchidan olingan header'dan ko'r-ko'rona ishlatish xavfli - zararli manzil bilan tizimingiz begona topic'ga yozishi mumkin, shuning uchun whitelist bilan validatsiya qiling. Splitter/aggregator orqali o'tganda `replyChannel` header'i yo'qolib qolishi mumkin: `HeaderEnricher` yoki `@Gateway` orqali uni ataylab saqlab o'tkazing.
 
 ## 15.21 Korrelyatsiya identifikatori (Correlation Identifier)
 
-**Tavsif:** Javob xabarini uni keltirib chiqargan so'rov bilan (yoki bir guruhga tegishli xabarlarni bir-biri bilan) bog'lash uchun ishlatiladigan unikal qiymatdir. Qabul qiluvchi javobga shu identifikatorni ko'chirib qo'yadi, chaqiruvchi esa javoblarni to'g'ri so'rovga moslaydi — bu asinxron, ko'p so'rov parallel ketayotgan muhitda majburiy. Xuddi shu mexanizm aggregator'ning xabarlarni guruhlashi va taqsimlangan tracing uchun ham asos bo'ladi. Identifikator har doim header'da yuritiladi.
+**Tavsif:** Javob xabarini uni keltirib chiqargan so'rov bilan (yoki bir guruhga tegishli xabarlarni bir-biri bilan) bog'lash uchun ishlatiladigan unikal qiymatdir. Qabul qiluvchi javobga shu identifikatorni ko'chirib qo'yadi, chaqiruvchi esa javoblarni to'g'ri so'rovga moslaydi - bu asinxron, ko'p so'rov parallel ketayotgan muhitda majburiy. Xuddi shu mexanizm aggregator'ning xabarlarni guruhlashi va taqsimlangan tracing uchun ham asos bo'ladi. Identifikator har doim header'da yuritiladi.
 
 **Spring'da qayerda uchraydi:** Spring Integration'da `IntegrationMessageHeaderAccessor.CORRELATION_ID` ("correlationId") header'i, `CorrelationStrategy` interfeysi va uning implementatsiyalari `HeaderAttributeCorrelationStrategy`, `ExpressionEvaluatingCorrelationStrategy`; `AbstractCorrelatingMessageHandler` (aggregator/resequencer) shu asosda `MessageGroupStore` ichida guruh yig'adi. Transportda: JMS `JMSCorrelationID` (`JmsHeaders.CORRELATION_ID`), AMQP `MessageProperties.correlationId` / `amqp_correlationId`, Kafka `KafkaHeaders.CORRELATION_ID`. Kuzatuv tomonida Micrometer Tracing (Boot 3.x/4.x) `traceId`/`spanId` ni MDC'ga qo'yadi va bu log korrelyatsiyasining standart usulidir.
 
@@ -396,7 +397,7 @@ public IntegrationFlow aggregateFlow() {
 - Saga/process manager'da uzun ishlovchi tranzaksiya holatini kuzatish.
 - Support so'rovida mijoz operatsiyasini uchidan uchiga qayta tiklash.
 
-**Ehtiyot bo'ling:** Correlation ID ni biznes kaliti (masalan buyurtma raqami) bilan almashtirib yuborish takroriy va bir-biriga qo'shilib ketgan guruhlarga olib keladi — biznes kalit kerak bo'lsa alohida header'da yuboring. Aggregator'da `expireGroupsUponCompletion` va `MessageGroupStoreReaper` sozlanmasa, tugallanmagan guruhlar `MessageStore` da abadiy qolib memory leak yaratadi.
+**Ehtiyot bo'ling:** Correlation ID ni biznes kaliti (masalan buyurtma raqami) bilan almashtirib yuborish takroriy va bir-biriga qo'shilib ketgan guruhlarga olib keladi - biznes kalit kerak bo'lsa alohida header'da yuboring. Aggregator'da `expireGroupsUponCompletion` va `MessageGroupStoreReaper` sozlanmasa, tugallanmagan guruhlar `MessageStore` da abadiy qolib memory leak yaratadi.
 
 ## 15.22 Xabarlar ketma-ketligi (Message Sequence)
 
@@ -411,7 +412,7 @@ public IntegrationFlow aggregateFlow() {
 - Ko'p sahifali API natijasini bo'laklab qayta ishlab, oxirida yagona javob qaytarish.
 - Hujjat imzolash oqimida sahifalarni to'g'ri tartibda qayta birlashtirish.
 
-**Ehtiyot bo'ling:** Resequencer va aggregator holat saqlaydi — in-memory `SimpleMessageStore` bilan ilova restart bo'lsa yarim yig'ilgan guruhlar yo'qoladi, shuning uchun persistent store va `MessageGroupStoreReaper` timeout'ini sozlang. Agar oqim bir nechta instance'da parallel ishlasa, bitta guruh bo'laklari turli node'larga tushib hech qachon yopilmaydi: umumiy `JdbcMessageStore` + `LockRegistry` yoki partition-affinity (Kafka key) kerak.
+**Ehtiyot bo'ling:** Resequencer va aggregator holat saqlaydi - in-memory `SimpleMessageStore` bilan ilova restart bo'lsa yarim yig'ilgan guruhlar yo'qoladi, shuning uchun persistent store va `MessageGroupStoreReaper` timeout'ini sozlang. Agar oqim bir nechta instance'da parallel ishlasa, bitta guruh bo'laklari turli node'larga tushib hech qachon yopilmaydi: umumiy `JdbcMessageStore` + `LockRegistry` yoki partition-affinity (Kafka key) kerak.
 
 ## 15.23 Xabar amal qilish muddati (Message Expiration)
 
@@ -426,11 +427,11 @@ public IntegrationFlow aggregateFlow() {
 - Muddati o'tgan to'lov so'rovlarini DLQ'ga yo'naltirib qo'lda tekshirishga berish.
 - Consumer uzilganda eskirgan buyruqlarning qayta yetkazilishini oldini olish.
 
-**Ehtiyot bo'ling:** Muddat o'tgan xabarni jimgina tashlab yuborish ma'lumot yo'qolishiga teng — har doim dead letter kanalini va monitoring/alert'ni yoqib qo'ying. Rabbit'da klassik queue'da TTL faqat navbat boshidagi xabarga qo'llanishi (head-of-line effekti) va tarqoq server/klient soatlari (clock skew) absolyut `expirationDate` ni ishonchsiz qilishini hisobga oling.
+**Ehtiyot bo'ling:** Muddat o'tgan xabarni jimgina tashlab yuborish ma'lumot yo'qolishiga teng - har doim dead letter kanalini va monitoring/alert'ni yoqib qo'ying. Rabbit'da klassik queue'da TTL faqat navbat boshidagi xabarga qo'llanishi (head-of-line effekti) va tarqoq server/klient soatlari (clock skew) absolyut `expirationDate` ni ishonchsiz qilishini hisobga oling.
 
 ## 15.24 Format ko'rsatkichi (Format Indicator)
 
-**Tavsif:** Xabar payload'ining formatini yoki sxema versiyasini xabarning o'zida e'lon qilish patterni, shunda qabul qiluvchi uni qanday parse qilishni aniq biladi. Ko'rsatkich uchta shaklda bo'ladi: versiya raqami, format/kontent turi yoki tashqi sxemaga havola (schema registry ID). Bu producer va consumer'larni mustaqil rivojlantirishga, bitta kanalda bir necha versiyani birga yashashiga imkon beradi. Metama'lumot payload emas — u header'da turishi kerak.
+**Tavsif:** Xabar payload'ining formatini yoki sxema versiyasini xabarning o'zida e'lon qilish patterni, shunda qabul qiluvchi uni qanday parse qilishni aniq biladi. Ko'rsatkich uchta shaklda bo'ladi: versiya raqami, format/kontent turi yoki tashqi sxemaga havola (schema registry ID). Bu producer va consumer'larni mustaqil rivojlantirishga, bitta kanalda bir necha versiyani birga yashashiga imkon beradi. Metama'lumot payload emas - u header'da turishi kerak.
 
 **Spring'da qayerda uchraydi:** `MessageHeaders.CONTENT_TYPE` ("contentType") Spring Messaging'da standart ko'rsatkich, `MessageConverter` implementatsiyalari shu asosda tanlanadi. Spring AMQP'da `MessageProperties.contentType` va `__TypeId__` header'i (`DefaultJackson2JavaTypeMapper`, `Jackson2JsonMessageConverter`; Spring AMQP 4.x da Jackson 3 asosidagi `JacksonJsonMessageConverter`), `setTypePrecedence`/trusted packages bilan sozlanadi. Spring for Apache Kafka'da `JsonSerializer.ADD_TYPE_INFO_HEADERS`, `JsonDeserializer` ning `spring.json.type.mapping` va `spring.json.trusted.packages` xususiyatlari; Avro/Protobuf holatida Confluent `KafkaAvroSerializer` schema ID ni payload prefiksida yuboradi. Spring Cloud Stream'da `spring.cloud.stream.bindings.<name>.content-type`, CloudEvents uchun `ce-specversion`/`ce-type` header'lari va `CloudEventMessageUtils` mavjud.
 
@@ -441,11 +442,11 @@ public IntegrationFlow aggregateFlow() {
 - Hamkor integratsiyasida kelgan hujjat versiyasini header orqali aniqlab mos transformer'ga yo'naltirish.
 - Schema registry bilan consumer'ni producer deploy'iga bog'liq bo'lmagan holda rivojlantirish.
 
-**Ehtiyot bo'ling:** Java sinf nomini (`__TypeId__`, type info headers) format ko'rsatkichi sifatida ishlatish producer va consumer'ni bir xil paket strukturasiga bog'lab qo'yadi va ishonchsiz manbadan kelganda deserializatsiya zaifligiga yo'l ochadi — trusted packages/type mapping ni albatta cheklang. Versiyani faqat payload ichida yashirish esa marshrutlashni payload'ni to'liq parse qilishga majbur qiladi: ko'rsatkichni header'da saqlang.
+**Ehtiyot bo'ling:** Java sinf nomini (`__TypeId__`, type info headers) format ko'rsatkichi sifatida ishlatish producer va consumer'ni bir xil paket strukturasiga bog'lab qo'yadi va ishonchsiz manbadan kelganda deserializatsiya zaifligiga yo'l ochadi - trusted packages/type mapping ni albatta cheklang. Versiyani faqat payload ichida yashirish esa marshrutlashni payload'ni to'liq parse qilishga majbur qiladi: ko'rsatkichni header'da saqlang.
 
 ## 15.25 Kontent asosidagi marshrutizator (Content-Based Router)
 
-**Tavsif:** Xabarni uning mazmuni — payload turi, header qiymati yoki payload ichidagi maydon — asosida bir nechta mumkin bo'lgan kanaldan bittasiga yo'naltiradi. Jo'natuvchi qabul qiluvchini bilmaydi: u faqat routerning input kanaliga yozadi, qaror esa markazlashgan bir joyda qabul qilinadi. Bu `if/else` zanjirini biznes logikasidan ajratib, marshrutlash qoidalarini deklarativ qiladi. Router xabarni o'zgartirmaydi — faqat uni qayerga borishini hal qiladi.
+**Tavsif:** Xabarni uning mazmuni - payload turi, header qiymati yoki payload ichidagi maydon - asosida bir nechta mumkin bo'lgan kanaldan bittasiga yo'naltiradi. Jo'natuvchi qabul qiluvchini bilmaydi: u faqat routerning input kanaliga yozadi, qaror esa markazlashgan bir joyda qabul qilinadi. Bu `if/else` zanjirini biznes logikasidan ajratib, marshrutlash qoidalarini deklarativ qiladi. Router xabarni o'zgartirmaydi - faqat uni qayerga borishini hal qiladi.
 
 **Spring'da qayerda uchraydi:** Spring Integration'da `AbstractMessageRouter` ierarxiyasi: `PayloadTypeRouter`, `HeaderValueRouter`, `ExpressionEvaluatingRouter` (SpEL), `MethodInvokingRouter`. POJO metodiga `@Router` annotatsiyasini qo'yib, kanal nomi yoki `MessageChannel` qaytarish mumkin. Java DSL'da `.route(...)` operatori `RouterSpec` orqali `channelMapping(...)` va `subFlowMapping(...)` beradi. Apache Camel'da bu `choice().when(...).otherwise(...)`, Spring Cloud Stream'da esa `RoutingFunction` va `spring.cloud.stream.function.routing.enabled` bilan amalga oshiriladi.
 
@@ -456,7 +457,7 @@ public IntegrationFlow aggregateFlow() {
 - Hujjatni MIME turiga ko'ra PDF, XML va CSV parserlariga ajratish.
 - Mijoz segmentiga (VIP / standart) qarab turli SLA'li ishlov berish oqimini tanlash.
 
-**Ehtiyot bo'ling:** Routerning `channelMapping` xaritasi vaqt o'tib o'nlab tarmoqqa aylansa, u yashirin "god object"ga aylanadi — bunday holda mas'uliyatni bir nechta kichik routerga yoki qabul qiluvchining o'zidagi filterga bo'lish yaxshiroq. `defaultOutputChannel` berilmagan bo'lsa, mos kelmagan xabar `MessageDeliveryException` bilan yiqiladi, shuning uchun har doim default yoki `resolutionRequired=false` strategiyasini ongli tanlang.
+**Ehtiyot bo'ling:** Routerning `channelMapping` xaritasi vaqt o'tib o'nlab tarmoqqa aylansa, u yashirin "god object"ga aylanadi - bunday holda mas'uliyatni bir nechta kichik routerga yoki qabul qiluvchining o'zidagi filterga bo'lish yaxshiroq. `defaultOutputChannel` berilmagan bo'lsa, mos kelmagan xabar `MessageDeliveryException` bilan yiqiladi, shuning uchun har doim default yoki `resolutionRequired=false` strategiyasini ongli tanlang.
 
 ## 15.26 Xabar filtri (Message Filter)
 
@@ -471,11 +472,11 @@ public IntegrationFlow aggregateFlow() {
 - Fayl kataloglaridan faqat `.csv` kengaytmali va minimal hajmdan katta fayllarni olish.
 - Muddati o'tgan (TTL tugagan) xabarlarni `UnexpiredMessageSelector` bilan tashlab, downstream'ni bekor ishdan saqlash.
 
-**Ehtiyot bo'ling:** Default holatda rad etilgan xabar hech qanday iz qoldirmasdan yo'qoladi — bu production'da "xabar yo'qolgan" degan eng og'riqli debug keysini tug'diradi, shuning uchun `discardChannel`ni log yoki audit oqimiga ulang. Filterni biznes qoidasi uchun ishlatganda, "nega o'tmadi" savoliga javob beradigan sababni header'da saqlamasa, keyinchalik qoidani isbotlash imkonsiz bo'ladi.
+**Ehtiyot bo'ling:** Default holatda rad etilgan xabar hech qanday iz qoldirmasdan yo'qoladi - bu production'da "xabar yo'qolgan" degan eng og'riqli debug keysini tug'diradi, shuning uchun `discardChannel`ni log yoki audit oqimiga ulang. Filterni biznes qoidasi uchun ishlatganda, "nega o'tmadi" savoliga javob beradigan sababni header'da saqlamasa, keyinchalik qoidani isbotlash imkonsiz bo'ladi.
 
 ## 15.27 Dinamik marshrutizator (Dynamic Router)
 
-**Tavsif:** Marshrutlash qoidalari kod ichida qotib qolmaydi, balki runtime'da — qabul qiluvchilarning o'zlari tomonidan ro'yxatdan o'tish yoki tashqi konfiguratsiya orqali — o'zgaradi. Router "control channel" yoki tashqi manba orqali yangi kanal xaritasini oladi va keyingi xabarlarni unga ko'ra yuboradi. Bu yangi qabul qiluvchi qo'shilganda tizimni qayta deploy qilish zaruratini yo'q qiladi. Haqiqiy dinamikada har bir xabar uchun keyingi qadam alohida hisoblanadi.
+**Tavsif:** Marshrutlash qoidalari kod ichida qotib qolmaydi, balki runtime'da - qabul qiluvchilarning o'zlari tomonidan ro'yxatdan o'tish yoki tashqi konfiguratsiya orqali - o'zgaradi. Router "control channel" yoki tashqi manba orqali yangi kanal xaritasini oladi va keyingi xabarlarni unga ko'ra yuboradi. Bu yangi qabul qiluvchi qo'shilganda tizimni qayta deploy qilish zaruratini yo'q qiladi. Haqiqiy dinamikada har bir xabar uchun keyingi qadam alohida hisoblanadi.
 
 **Spring'da qayerda uchraydi:** `AbstractMappingMessageRouter` runtime'da `setChannelMapping(key, channelName)` va `removeChannelMapping(key)` metodlarini beradi; bu metodlar `@ManagedOperation` sifatida JMX'ga ham chiqariladi va Control Bus (`.controlBus()`) orqali xabar bilan chaqirilishi mumkin. Dinamik qarorni `@Router` qo'yilgan metodda `MessageChannel` yoki kanal nomini DB/`Environment`/Redis'dan o'qib qaytarish bilan yozish eng keng tarqalgan yo'l; kanal nomini `BeanFactoryChannelResolver` hal qiladi. Java DSL'da `.route(m -> resolver.next(m))` va `DynamicPeriodicTrigger`, Camel'da esa bevosita `dynamicRouter()` EIP mavjud.
 
@@ -486,11 +487,11 @@ public IntegrationFlow aggregateFlow() {
 - Admin UI'dan boshqariladigan biznes qoidalarini DB'da saqlab, marshrutni ular bo'yicha hisoblash.
 - Qabul qiluvchi servis sog'lig'i (health) yo'qolganda uni marshrut xaritasidan vaqtincha chiqarib tashlash.
 
-**Ehtiyot bo'ling:** Runtime'da o'zgaradigan marshrut — kuzatuvi eng qiyin holat: qaysi xabar qayerga ketgani hech qayerda yozilmasa, incident paytida tiklash imkonsiz, shuning uchun tanlangan marshrutni header va trace span attribute'iga yozing. Xarita mutable bo'lgani uchun uni bir nechta thread o'qiydi va yozadi — `ConcurrentHashMap` yoki `AbstractMappingMessageRouter`ning o'z API'sidan foydalaning, oddiy `HashMap`ni tashqaridan o'zgartirmang.
+**Ehtiyot bo'ling:** Runtime'da o'zgaradigan marshrut - kuzatuvi eng qiyin holat: qaysi xabar qayerga ketgani hech qayerda yozilmasa, incident paytida tiklash imkonsiz, shuning uchun tanlangan marshrutni header va trace span attribute'iga yozing. Xarita mutable bo'lgani uchun uni bir nechta thread o'qiydi va yozadi - `ConcurrentHashMap` yoki `AbstractMappingMessageRouter`ning o'z API'sidan foydalaning, oddiy `HashMap`ni tashqaridan o'zgartirmang.
 
 ## 15.28 Qabul qiluvchilar ro'yxati (Recipient List)
 
-**Tavsif:** Bitta xabarning nusxasini bir vaqtda bir nechta, dinamik hisoblangan qabul qiluvchiga yuboradi. Content-Based Routerdan farqi: bu "bittasini tanlash" emas, "bir nechtasini tanlash"; publish-subscribe kanaldan farqi esa — ro'yxat statik obuna emas, har bir xabar uchun hisoblanadi va shart bilan filtrlanishi mumkin. Shu tariqa jo'natuvchi obunachilar ro'yxatini bilmagan holda selektiv broadcast qiladi.
+**Tavsif:** Bitta xabarning nusxasini bir vaqtda bir nechta, dinamik hisoblangan qabul qiluvchiga yuboradi. Content-Based Routerdan farqi: bu "bittasini tanlash" emas, "bir nechtasini tanlash"; publish-subscribe kanaldan farqi esa - ro'yxat statik obuna emas, har bir xabar uchun hisoblanadi va shart bilan filtrlanishi mumkin. Shu tariqa jo'natuvchi obunachilar ro'yxatini bilmagan holda selektiv broadcast qiladi.
 
 **Spring'da qayerda uchraydi:** Spring Integration'da `RecipientListRouter` (va `RecipientListRouterManagement` interfeysi orqali JMX/Control Bus'dan `addRecipient`/`removeRecipient`) aynan shu patternni beradi. Har bir recipient'ga SpEL selektor berish mumkin, ya'ni shartli ro'yxat hosil bo'ladi. Java DSL'da `.routeToRecipients(r -> r.recipient("audit").recipientFlow("payload.vip", sf -> ...))` ishlatiladi; XML'da `<int:recipient-list-router>`. Oddiy statik broadcast uchun esa `PublishSubscribeChannel` (yoki `.publishSubscribeChannel(...)`) yetarli, Camel'da bu `recipientList()`.
 
@@ -501,11 +502,11 @@ public IntegrationFlow aggregateFlow() {
 - Barcha moliyaviy xabarlarning nusxasini asosiy oqim bilan birga audit/compliance oqimiga yuborish.
 - Migratsiya davrida xabarni eski va yangi tizimga parallel yozib, natijalarni taqqoslash (dual-write shadow).
 
-**Ehtiyot bo'ling:** Default holatda `RecipientListRouter` barcha recipient'larga bir xil thread'da ketma-ket yuboradi — bitta sekin yoki yiqilgan qabul qiluvchi butun yuborishni bloklaydi yoki yarim yo'lda to'xtatadi, shuning uchun kritik bo'lmagan tarmoqlarni `ExecutorChannel` yoki broker orqasiga oling. Payload mutable obyekt bo'lsa, barcha recipient'lar ayni bir instansiyani oladi va biri uni o'zgartirsa boshqalari buziladi — immutable payload ishlating.
+**Ehtiyot bo'ling:** Default holatda `RecipientListRouter` barcha recipient'larga bir xil thread'da ketma-ket yuboradi - bitta sekin yoki yiqilgan qabul qiluvchi butun yuborishni bloklaydi yoki yarim yo'lda to'xtatadi, shuning uchun kritik bo'lmagan tarmoqlarni `ExecutorChannel` yoki broker orqasiga oling. Payload mutable obyekt bo'lsa, barcha recipient'lar ayni bir instansiyani oladi va biri uni o'zgartirsa boshqalari buziladi - immutable payload ishlating.
 
 ## 15.29 Ajratuvchi (Splitter)
 
-**Tavsif:** Bir nechta element saqlagan kompozit xabarni mustaqil ishlov berilishi mumkin bo'lgan alohida xabarlarga bo'ladi. Har bir chiqish xabariga korrelyatsiya identifikatori, tartib raqami va umumiy soni (sequence details) qo'yiladi, shunda keyinchalik Aggregator yoki Resequencer ularni qayta yig'ishi mumkin. Bu katta batch'ni parallel va oqim (streaming) tarzda qayta ishlashga yo'l ochadi. Splitter — Composed Message Processor va Scatter-Gather'ning asosiy qurilish bloki.
+**Tavsif:** Bir nechta element saqlagan kompozit xabarni mustaqil ishlov berilishi mumkin bo'lgan alohida xabarlarga bo'ladi. Har bir chiqish xabariga korrelyatsiya identifikatori, tartib raqami va umumiy soni (sequence details) qo'yiladi, shunda keyinchalik Aggregator yoki Resequencer ularni qayta yig'ishi mumkin. Bu katta batch'ni parallel va oqim (streaming) tarzda qayta ishlashga yo'l ochadi. Splitter - Composed Message Processor va Scatter-Gather'ning asosiy qurilish bloki.
 
 **Spring'da qayerda uchraydi:** Spring Integration'da `AbstractMessageSplitter` va uning `DefaultMessageSplitter`, `ExpressionEvaluatingSplitter`, `MethodInvokingSplitter` implementatsiyalari; POJO uchun `@Splitter`, Java DSL'da `.split()`. Maxsus splitterlar: `FileSplitter` (fayl qatorlari bo'yicha, `markers` opsiyasi bilan), `XPathMessageSplitter`, `JsonToObjectTransformer` bilan birga ishlatiladigan SpEL `#jsonPath`. Splitter default holatda `applySequence=true` bo'lib `correlationId`, `sequenceNumber`, `sequenceSize` header'larini qo'yadi; `Iterator` yoki `Flux` qaytarish esa barcha elementni xotiraga yuklamaslikka imkon beradi. Camel'da bu `split().streaming()`.
 
@@ -516,11 +517,11 @@ public IntegrationFlow aggregateFlow() {
 - Ko'p sahifali hisobotni sahifalarga bo'lib parallel render qilish.
 - Katta XML batch hujjatini `XPathMessageSplitter` orqali tranzaksiyalarga ajratish.
 
-**Ehtiyot bo'ling:** Collection'ni to'liq xotiraga yuklab bo'lib tashlash katta fayllarda darhol `OutOfMemoryError` keltiradi — splitter metodidan `Iterator`/`Stream` qaytarib streaming rejimida ishlang va downstream'da backpressure yoki `QueueChannel` sig'imini hisobga oling. Tranzaksiya chegarasi ham o'zgaradi: bo'lingan xabarlar bir xil thread'da ketmasa, ularning muvaffaqiyati endi atomik emas, shuning uchun qisman muvaffaqiyat (partial failure) stsenariysini ongli loyihalash kerak.
+**Ehtiyot bo'ling:** Collection'ni to'liq xotiraga yuklab bo'lib tashlash katta fayllarda darhol `OutOfMemoryError` keltiradi - splitter metodidan `Iterator`/`Stream` qaytarib streaming rejimida ishlang va downstream'da backpressure yoki `QueueChannel` sig'imini hisobga oling. Tranzaksiya chegarasi ham o'zgaradi: bo'lingan xabarlar bir xil thread'da ketmasa, ularning muvaffaqiyati endi atomik emas, shuning uchun qisman muvaffaqiyat (partial failure) stsenariysini ongli loyihalash kerak.
 
 ## 15.30 Agregator (Aggregator)
 
-**Tavsif:** Bir-biriga bog'liq bir nechta xabarni to'plab, ular to'liq bo'lganda yagona natija xabari hosil qiladi — Splitter'ning teskarisi va Scatter-Gather'ning yig'ish qismi. Uchta qarorga tayanadi: xabarlarni qanday guruhlash (correlation), guruh qachon tugallangan deb hisoblash (release) va natijani qanday birlashtirish (aggregation). Guruhlar hali to'lmagan paytda saqlanishi kerak, shuning uchun agregator — stateful komponent. Timeout mexanizmi hech qachon to'lmaydigan guruhlar tizimda abadiy qolib ketishini oldini oladi.
+**Tavsif:** Bir-biriga bog'liq bir nechta xabarni to'plab, ular to'liq bo'lganda yagona natija xabari hosil qiladi - Splitter'ning teskarisi va Scatter-Gather'ning yig'ish qismi. Uchta qarorga tayanadi: xabarlarni qanday guruhlash (correlation), guruh qachon tugallangan deb hisoblash (release) va natijani qanday birlashtirish (aggregation). Guruhlar hali to'lmagan paytda saqlanishi kerak, shuning uchun agregator - stateful komponent. Timeout mexanizmi hech qachon to'lmaydigan guruhlar tizimda abadiy qolib ketishini oldini oladi.
 
 **Spring'da qayerda uchraydi:** Spring Integration'da `AggregatingMessageHandler` + `CorrelationStrategy` (`HeaderAttributeCorrelationStrategy`), `ReleaseStrategy` (`SequenceSizeReleaseStrategy`, `SimpleSequenceSizeReleaseStrategy`, `MessageCountReleaseStrategy`), `MessageGroupProcessor`. POJO uchun `@Aggregator`, `@CorrelationStrategy`, `@ReleaseStrategy` annotatsiyalari; Java DSL'da `.aggregate(a -> a.correlationStrategy(...).releaseStrategy(...).groupTimeout(5000))`. State uchun `MessageGroupStore`: `SimpleMessageStore` (xotira), `JdbcMessageStore`, `RedisMessageStore`, `MongoDbMessageStore`, `JpaMessageStore`. Muhim sozlamalar: `groupTimeout`, `sendPartialResultOnExpiry`, `expireGroupsUponCompletion`, `MessageGroupStoreReaper`.
 
@@ -546,11 +547,11 @@ IntegrationFlow aggregateOrderLines(JdbcMessageStore store) {
 - Mijozga bir nechta alohida bildirishnoma yuborish o'rniga ularni bitta digest email'ga birlashtirish.
 - Kafka'ga yozishdan oldin yozuvlarni 500 talik batch'larga yig'ib, I/O sonini kamaytirish.
 
-**Ehtiyot bo'ling:** Xotiradagi `SimpleMessageStore` bilan ishlagan agregator — instansiya restart bo'lganda yarim guruhlarni, ya'ni to'lovlarni va buyurtmalarni yo'qotadi; cluster'da esa bir xil correlation key'li xabarlar turli pod'larga tushib guruh hech qachon to'lmaydi, shuning uchun persistent `MessageGroupStore` va partitioning/ sticky routing shart. `groupTimeout` yoki reaper sozlanmagan bo'lsa, to'lmagan guruhlar sekin-asta store'ni to'ldirib, klassik xotira oqishiga (memory leak) aylanadi.
+**Ehtiyot bo'ling:** Xotiradagi `SimpleMessageStore` bilan ishlagan agregator - instansiya restart bo'lganda yarim guruhlarni, ya'ni to'lovlarni va buyurtmalarni yo'qotadi; cluster'da esa bir xil correlation key'li xabarlar turli pod'larga tushib guruh hech qachon to'lmaydi, shuning uchun persistent `MessageGroupStore` va partitioning/ sticky routing shart. `groupTimeout` yoki reaper sozlanmagan bo'lsa, to'lmagan guruhlar sekin-asta store'ni to'ldirib, klassik xotira oqishiga (memory leak) aylanadi.
 
 ## 15.31 Qayta tartiblovchi (Resequencer)
 
-**Tavsif:** Tartibi buzilib kelgan xabarlarni ularning tartib raqami bo'yicha qayta to'g'ri ketma-ketlikka keltirib chiqaradi. Agregatordan farqi: xabarlarni birlashtirmaydi — ularni bittalab, lekin to'g'ri tartibda chiqaradi. Buning uchun kutilayotgan raqam kelmaguncha keyingi xabarlarni buferda ushlab turadi. Parallel ishlov berish yoki bir nechta transport yo'li tartibni buzgan joylarda ketma-ketlikni tiklash uchun kerak.
+**Tavsif:** Tartibi buzilib kelgan xabarlarni ularning tartib raqami bo'yicha qayta to'g'ri ketma-ketlikka keltirib chiqaradi. Agregatordan farqi: xabarlarni birlashtirmaydi - ularni bittalab, lekin to'g'ri tartibda chiqaradi. Buning uchun kutilayotgan raqam kelmaguncha keyingi xabarlarni buferda ushlab turadi. Parallel ishlov berish yoki bir nechta transport yo'li tartibni buzgan joylarda ketma-ketlikni tiklash uchun kerak.
 
 **Spring'da qayerda uchraydi:** Spring Integration'da `ResequencingMessageHandler` va uning `ResequencingMessageGroupProcessor`'i; POJO darajasida `@Resequencer`, Java DSL'da `.resequence(r -> r.releasePartialSequences(true).messageStore(store))`, XML'da `<int:resequencer>`. U Splitter qo'ygan `correlationId`, `sequenceNumber`, `sequenceSize` header'laridan (`IntegrationMessageHeaderAccessor` konstantalari) foydalanadi va agregator bilan bir xil `MessageGroupStore` infratuzilmasiga tayanadi. Camel'da bu `resequence()` (batch yoki stream rejimi), Kafka'da esa tartib asosan partition kaliti bilan ta'minlanadi.
 
@@ -561,7 +562,7 @@ IntegrationFlow aggregateOrderLines(JdbcMessageStore store) {
 - Bir nechta yo'l (multi-route) orqali kelgan bank tranzaksiyalarini vaqt tamg'asi bo'yicha tiklash.
 - Replikatsiya oqimida CDC event'larini LSN raqami bo'yicha tartiblash.
 
-**Ehtiyot bo'ling:** Agar bitta xabar butunlay yo'qolsa, resequencer kutilayotgan raqamni abadiy kutib oqimni to'xtatib qo'yadi — `releasePartialSequences`, timeout va reaper'ni albatta sozlang. Shuningdek bu pattern tabiatan buferlaydi va ketma-ketlikni talab qiladi, ya'ni parallelizmni yo'q qiladi: kerakli tartibni transport darajasida (bir xil partition kaliti) ta'minlash ko'pincha arzonroq yechim.
+**Ehtiyot bo'ling:** Agar bitta xabar butunlay yo'qolsa, resequencer kutilayotgan raqamni abadiy kutib oqimni to'xtatib qo'yadi - `releasePartialSequences`, timeout va reaper'ni albatta sozlang. Shuningdek bu pattern tabiatan buferlaydi va ketma-ketlikni talab qiladi, ya'ni parallelizmni yo'q qiladi: kerakli tartibni transport darajasida (bir xil partition kaliti) ta'minlash ko'pincha arzonroq yechim.
 
 ## 15.32 Birlashtirilgan xabar protsessori (Composed Message Processor)
 
@@ -576,11 +577,11 @@ IntegrationFlow aggregateOrderLines(JdbcMessageStore store) {
 - Buyurtma validatsiyasini bir nechta mustaxassis qoidalar servisiga bo'lib, natijalardan yagona validatsiya hisobotini yig'ish.
 - Bir nechta tashqi API'dan olingan bo'laklardan mijozning 360-daraja profilini qurish.
 
-**Ehtiyot bo'ling:** Bu pattern asosan Splitter va Aggregator xatolarini meros qilib oladi: bitta bo'lak yiqilsa yoki kechiksa, butun kompozit javob osilib qoladi — har bir sub-flow uchun timeout, retry va `sendPartialResultOnExpiry` siyosatini oldindan belgilang. Ichida bir nechta EIP yashirinishi kuzatuvni qiyinlashtiradi, shuning uchun correlation id'ni uchidan uchiga olib o'tib, Micrometer Tracing bilan span'larni bog'lang.
+**Ehtiyot bo'ling:** Bu pattern asosan Splitter va Aggregator xatolarini meros qilib oladi: bitta bo'lak yiqilsa yoki kechiksa, butun kompozit javob osilib qoladi - har bir sub-flow uchun timeout, retry va `sendPartialResultOnExpiry` siyosatini oldindan belgilang. Ichida bir nechta EIP yashirinishi kuzatuvni qiyinlashtiradi, shuning uchun correlation id'ni uchidan uchiga olib o'tib, Micrometer Tracing bilan span'larni bog'lang.
 
 ## 15.33 Sochish-yig'ish (Scatter-Gather)
 
-**Tavsif:** So'rovni bir vaqtda bir nechta qabul qiluvchiga tarqatadi (scatter), ularning javoblarini kutadi va bitta natijaga yig'adi (gather). Scatter qismi publish-subscribe kanal yoki Recipient List bilan, gather qismi esa Aggregator bilan amalga oshiriladi. Asosiy qiymati — parallellik: eng sekin javob qancha bo'lsa, umumiy kechikish shunga teng, ketma-ket chaqiruvlar yig'indisiga emas. Javoblarning hammasini yoki eng yaxshisini, yoki timeout ichida kelganlarini olish strategiyasini tanlash mumkin.
+**Tavsif:** So'rovni bir vaqtda bir nechta qabul qiluvchiga tarqatadi (scatter), ularning javoblarini kutadi va bitta natijaga yig'adi (gather). Scatter qismi publish-subscribe kanal yoki Recipient List bilan, gather qismi esa Aggregator bilan amalga oshiriladi. Asosiy qiymati - parallellik: eng sekin javob qancha bo'lsa, umumiy kechikish shunga teng, ketma-ket chaqiruvlar yig'indisiga emas. Javoblarning hammasini yoki eng yaxshisini, yoki timeout ichida kelganlarini olish strategiyasini tanlash mumkin.
 
 **Spring'da qayerda uchraydi:** Spring Integration'da to'g'ridan-to'g'ri `ScatterGatherHandler` mavjud: Java DSL'da `.scatterGather(scatterer, gatherer, spec -> spec.gatherTimeout(3000))`, XML'da `<int:scatter-gather>`. Scatterer sifatida `RecipientListRouterSpec` yoki `PublishSubscribeChannel`, gatherer sifatida `AggregatorSpec` beriladi; `errorChannel` va `requiresReply` xatolarni boshqaradi. Reaktiv muhitda xuddi shu g'oya `Mono.zip(...)` / `Flux.merge(...)` bilan (Spring WebFlux `WebClient`), imperativ kodda esa `CompletableFuture.allOf(...)` yoki Java 21+ `StructuredTaskScope` bilan yozilishi mumkin; Resilience4j `TimeLimiter` esa timeout qismini qo'shadi.
 
@@ -605,11 +606,11 @@ IntegrationFlow quoteFlow() {
 - Fraud skoringni bir nechta mustaqil model/servisga parallel yuborib, ularning ovozini yig'ish (ensemble).
 - Mahsulot qoldig'ini bir nechta ombor tizimidan parallel so'rab, umumiy mavjudlikni hisoblash.
 
-**Ehtiyot bo'ling:** `gatherTimeout` berilmasa, bitta javob bermagan qabul qiluvchi chaqiruv thread'ini cheksiz ushlab, thread pool'ni tugatadi va kaskad nosozlikka olib keladi — timeout, circuit breaker va fallback majburiy. Shuningdek bu pattern yukni N barobar oshiradi: har bir so'rov barcha provayderni urgani uchun downstream rate limit va xarajatni hisoblab, kerak bo'lsa keshlash yoki qisman scatter qiling.
+**Ehtiyot bo'ling:** `gatherTimeout` berilmasa, bitta javob bermagan qabul qiluvchi chaqiruv thread'ini cheksiz ushlab, thread pool'ni tugatadi va kaskad nosozlikka olib keladi - timeout, circuit breaker va fallback majburiy. Shuningdek bu pattern yukni N barobar oshiradi: har bir so'rov barcha provayderni urgani uchun downstream rate limit va xarajatni hisoblab, kerak bo'lsa keshlash yoki qisman scatter qiling.
 
 ## 15.34 Marshrut varaqasi (Routing Slip)
 
-**Tavsif:** Xabarning o'ziga bosib o'tishi kerak bo'lgan qadamlar ro'yxatini (marshrut varaqasini) ilova qiladi; har bir qadam o'z ishini bajarib, ro'yxatdagi keyingi manzilga uzatadi. Shu bilan markazlashgan orkestrator ham, qadamlar orasidagi qattiq bog'lanish ham kerak bo'lmaydi — marshrut ma'lumot sifatida ko'chib yuradi. Ketma-ketlik har bir xabar uchun boshida (yoki yo'lda) dinamik hisoblanishi mumkin. Bu Process Manager'ga nisbatan yengilroq, lekin faqat chiziqli oqimlar uchun mos muqobil.
+**Tavsif:** Xabarning o'ziga bosib o'tishi kerak bo'lgan qadamlar ro'yxatini (marshrut varaqasini) ilova qiladi; har bir qadam o'z ishini bajarib, ro'yxatdagi keyingi manzilga uzatadi. Shu bilan markazlashgan orkestrator ham, qadamlar orasidagi qattiq bog'lanish ham kerak bo'lmaydi - marshrut ma'lumot sifatida ko'chib yuradi. Ketma-ketlik har bir xabar uchun boshida (yoki yo'lda) dinamik hisoblanishi mumkin. Bu Process Manager'ga nisbatan yengilroq, lekin faqat chiziqli oqimlar uchun mos muqobil.
 
 **Spring'da qayerda uchraydi:** Spring Integration patternni `IntegrationMessageHeaderAccessor.ROUTING_SLIP` header'i orqali qo'llab-quvvatlaydi: `HeaderEnricher`ning `<int:routing-slip>` sub-elementi yoki Java DSL'da `.enrichHeaders(h -> h.headerExpression(...))`/`.routingSlip(...)` bilan kanal nomlari va `RoutingSlipRouteStrategy` implementatsiyalari ro'yxati beriladi. `AbstractMessageProducingHandler` o'zining `outputChannel`i bo'lmaganda avval `routingSlip` header'ini, keyin `replyChannel`ni ko'radi, shuning uchun qadamlar bir-birini bilmasligi mumkin. Apache Camel'da bu bevosita `routingSlip(header("slip"))` EIP ko'rinishida mavjud.
 
@@ -620,13 +621,13 @@ IntegrationFlow quoteFlow() {
 - Bir martalik migratsiya yoki tuzatish oqimida qadamlar ketma-ketligini konfiguratsiyadan boshqarish.
 - Compliance talabiga ko'ra ma'lum mamlakat xabarlariga qo'shimcha tekshiruv qadamini kiritish.
 
-**Ehtiyot bo'ling:** Routing slip faqat chiziqli ketma-ketlik uchun: shartli tarmoqlanish, parallel qadamlar yoki compensation kerak bo'lsa, u tezda o'qib bo'lmas holatga keladi — bunday holda Process Manager yoki haqiqiy workflow engine tanlang. Marshrut xabar header'ida yurgani uchun uni tashqi manbadan (masalan foydalanuvchi so'rovidan) to'g'ridan-to'g'ri olish xavfli: ro'yxatni faqat ichki, oq ro'yxatdagi kanal nomlaridan yasang.
+**Ehtiyot bo'ling:** Routing slip faqat chiziqli ketma-ketlik uchun: shartli tarmoqlanish, parallel qadamlar yoki compensation kerak bo'lsa, u tezda o'qib bo'lmas holatga keladi - bunday holda Process Manager yoki haqiqiy workflow engine tanlang. Marshrut xabar header'ida yurgani uchun uni tashqi manbadan (masalan foydalanuvchi so'rovidan) to'g'ridan-to'g'ri olish xavfli: ro'yxatni faqat ichki, oq ro'yxatdagi kanal nomlaridan yasang.
 
 ## 15.35 Jarayon menejeri (Process Manager)
 
-**Tavsif:** Ko'p qadamli, uzoq davom etadigan jarayonni markazlashgan holda boshqaradigan stateful komponent: har bir qadam yakunlanganda kelgan xabarga qarab keyingi qadamni hal qiladi va jarayon holatini saqlaydi. Routing Slip'dan farqi — marshrut xabarda emas, menejerda; u shartli tarmoqlanish, parallel qadamlar, timeout va compensation (teskari amal) ni ham boshqaradi. Distributed tranzaksiyalarda bu orchestration-based Saga sifatida tanilgan. Jarayon holati davomli saqlangani uchun restart va qayta tiklash mumkin bo'ladi.
+**Tavsif:** Ko'p qadamli, uzoq davom etadigan jarayonni markazlashgan holda boshqaradigan stateful komponent: har bir qadam yakunlanganda kelgan xabarga qarab keyingi qadamni hal qiladi va jarayon holatini saqlaydi. Routing Slip'dan farqi - marshrut xabarda emas, menejerda; u shartli tarmoqlanish, parallel qadamlar, timeout va compensation (teskari amal) ni ham boshqaradi. Distributed tranzaksiyalarda bu orchestration-based Saga sifatida tanilgan. Jarayon holati davomli saqlangani uchun restart va qayta tiklash mumkin bo'ladi.
 
-**Spring'da qayerda uchraydi:** Spring Integration'da bu stateful router yoki `MessageStore`ga tayangan maxsus handler bilan yoziladi — tayyor `ProcessManager` sinfi yo'q. Odatda Spring Statemachine ishlatiladi (`@EnableStateMachine`, `StateMachineFactory`, `StateMachinePersister`, `StateMachineRuntimePersister` bilan JPA/Redis persistence) yoki Axon Framework'ning saga'si (`@Saga`, `@StartSaga`, `@SagaEventHandler`, `@EndSaga`, `DeadlineManager`). Og'irroq keyslarda BPMN engine'lar — Camunda 8 (Zeebe `spring-boot-starter-camunda-sdk`, `@JobWorker`), Flowable yoki Temporal'ning Java SDK'si Spring Boot bilan integratsiya qilinadi. Qadamlar orasidagi transport sifatida Kafka/AMQP va `@KafkaListener`/`@RabbitListener` qoladi.
+**Spring'da qayerda uchraydi:** Spring Integration'da bu stateful router yoki `MessageStore`ga tayangan maxsus handler bilan yoziladi - tayyor `ProcessManager` sinfi yo'q. Odatda Spring Statemachine ishlatiladi (`@EnableStateMachine`, `StateMachineFactory`, `StateMachinePersister`, `StateMachineRuntimePersister` bilan JPA/Redis persistence) yoki Axon Framework'ning saga'si (`@Saga`, `@StartSaga`, `@SagaEventHandler`, `@EndSaga`, `DeadlineManager`). Og'irroq keyslarda BPMN engine'lar - Camunda 8 (Zeebe `spring-boot-starter-camunda-sdk`, `@JobWorker`), Flowable yoki Temporal'ning Java SDK'si Spring Boot bilan integratsiya qilinadi. Qadamlar orasidagi transport sifatida Kafka/AMQP va `@KafkaListener`/`@RabbitListener` qoladi.
 
 **Qo'llanish keyslari:**
 - Buyurtma sagasi: to'lovni ushlash → omborni rezervlash → yetkazib berishni rejalashtirish, har bir qadam yiqilsa compensation bajarish.
@@ -635,13 +636,13 @@ IntegrationFlow quoteFlow() {
 - Abonementni bekor qilish oqimida qaytarish, resurslarni o'chirish va bildirishnomalarni muvofiqlashtirish.
 - Uzoq ETL pipeline'ida qadamlarni kuzatib, xatolikdan keyin aynan to'xtagan joydan davom etish.
 
-**Ehtiyot bo'ling:** Process Manager — tizimning markaziy nuqtasi: unga juda ko'p biznes qoida yuklansa, u taqsimlangan arxitekturadagi yangi monolitga va yagona nosozlik nuqtasiga aylanadi, shuning uchun unda faqat koordinatsiya qolsin, domen logikasi servislarda. Jarayon holatini davomli saqlamasdan va qadamlarni idempotent qilmasdan qurish — restart'dan keyin takroriy to'lov yoki yarim qolgan saga degani; shuningdek har bir uzoq qadam uchun timeout/deadline belgilash shart.
+**Ehtiyot bo'ling:** Process Manager - tizimning markaziy nuqtasi: unga juda ko'p biznes qoida yuklansa, u taqsimlangan arxitekturadagi yangi monolitga va yagona nosozlik nuqtasiga aylanadi, shuning uchun unda faqat koordinatsiya qolsin, domen logikasi servislarda. Jarayon holatini davomli saqlamasdan va qadamlarni idempotent qilmasdan qurish - restart'dan keyin takroriy to'lov yoki yarim qolgan saga degani; shuningdek har bir uzoq qadam uchun timeout/deadline belgilash shart.
 
 ## 15.36 Xabar brokeri (Message Broker)
 
 **Tavsif:** Ko'plab jo'natuvchi va qabul qiluvchi o'rtasida nuqta-nuqta ulanishlar o'rniga markaziy hub joylashtiradi: barcha xabarlar brokerga boradi, broker esa ularni obuna va marshrut qoidalariga ko'ra tarqatadi. Natijada N×M integratsiya bog'lanishlari N+M ga tushadi, jo'natuvchi qabul qiluvchining joylashuvi va hatto mavjudligini bilmaydi. Broker, shu bilan birga, xabarlarni davomli saqlash, qayta urinish, dead-letter va yukni tekislash (buffering) mas'uliyatini ham oladi. Bu EIP'ning "hub-and-spoke" asosiy infratuzilma patterni.
 
-**Spring'da qayerda uchraydi:** Spring Boot 3.x/4.x starter'lari brokerlar bilan ishlashni avtomatlashtiradi: `spring-boot-starter-amqp` (RabbitMQ — `RabbitTemplate`, `@RabbitListener`, `RabbitListenerContainerFactory`), `spring-kafka` (`KafkaTemplate`, `@KafkaListener`, `DefaultErrorHandler` + `DeadLetterPublishingRecoverer`), `spring-boot-starter-artemis`/`spring-jms` (`JmsTemplate`, `@JmsListener`), `spring-pulsar`. Spring Integration ularga adapter beradi: `Amqp.inboundAdapter(...)`, `Kafka.messageDrivenChannelAdapter(...)`, `Jms.inboundGateway(...)`; yuqori darajadagi abstraksiya — Spring Cloud Stream binder'lari. WebSocket/STOMP dunyosida esa `@EnableWebSocketMessageBroker` bilan `enableSimpleBroker()` (ichki broker) yoki `enableStompBrokerRelay()` (tashqi broker) ishlatiladi.
+**Spring'da qayerda uchraydi:** Spring Boot 3.x/4.x starter'lari brokerlar bilan ishlashni avtomatlashtiradi: `spring-boot-starter-amqp` (RabbitMQ - `RabbitTemplate`, `@RabbitListener`, `RabbitListenerContainerFactory`), `spring-kafka` (`KafkaTemplate`, `@KafkaListener`, `DefaultErrorHandler` + `DeadLetterPublishingRecoverer`), `spring-boot-starter-artemis`/`spring-jms` (`JmsTemplate`, `@JmsListener`), `spring-pulsar`. Spring Integration ularga adapter beradi: `Amqp.inboundAdapter(...)`, `Kafka.messageDrivenChannelAdapter(...)`, `Jms.inboundGateway(...)`; yuqori darajadagi abstraksiya - Spring Cloud Stream binder'lari. WebSocket/STOMP dunyosida esa `@EnableWebSocketMessageBroker` bilan `enableSimpleBroker()` (ichki broker) yoki `enableStompBrokerRelay()` (tashqi broker) ishlatiladi.
 
 **Qo'llanish keyslari:**
 - O'nlab microservis o'rtasidagi event almashinuvini Kafka topic'lari orqali markazlashtirish.
@@ -650,7 +651,7 @@ IntegrationFlow quoteFlow() {
 - Bitta domen event'ini bir nechta mustaqil obunachiga fan-out qilish (topic exchange yoki consumer group).
 - Legacy JMS tizimini yangi servislar bilan broker orqali, kodini o'zgartirmasdan bog'lash.
 
-**Ehtiyot bo'ling:** Broker kuchli bo'lgani uchun unga marshrutlash va transformatsiya logikasini ko'chirishga kuchli vasvasa bo'ladi — bu "aqlli broker, ahmoq servislar" anti-patternini va yagona nosozlik nuqtasini tug'diradi; biznes logikasi servislarda qolsin, broker esa transport bo'lib qolsin. Shuningdek broker avtomatik ravishda "exactly-once" yoki global tartib bermaydi: idempotent consumer, partition kaliti, dead-letter topic va retry siyosatini o'zingiz loyihalashingiz kerak, aks holda yo'qotilgan yoki takrorlangan xabarlar production'da chiqadi.
+**Ehtiyot bo'ling:** Broker kuchli bo'lgani uchun unga marshrutlash va transformatsiya logikasini ko'chirishga kuchli vasvasa bo'ladi - bu "aqlli broker, ahmoq servislar" anti-patternini va yagona nosozlik nuqtasini tug'diradi; biznes logikasi servislarda qolsin, broker esa transport bo'lib qolsin. Shuningdek broker avtomatik ravishda "exactly-once" yoki global tartib bermaydi: idempotent consumer, partition kaliti, dead-letter topic va retry siyosatini o'zingiz loyihalashingiz kerak, aks holda yo'qotilgan yoki takrorlangan xabarlar production'da chiqadi.
 
 ---
 

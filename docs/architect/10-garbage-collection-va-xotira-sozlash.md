@@ -23,6 +23,7 @@
 </details>
 
 
+
 Garbage collector JVM ning eng ko'p noto'g'ri sozlanadigan qismi. Ko'pchilik jamoa uni faqat `OutOfMemoryError` chiqqanda eslaydi, keyin `-Xmx` ni oshiradi va muammo yashiringanday bo'ladi. Arxitektor esa GC ni latency byudjetining bir qismi deb ko'radi: p99 200 ms bo'lsa, GC pauzasi uning qancha ulushini yeyishi oldindan hisoblangan bo'lishi shart.
 
 ## 10.1 GC nima uchun kerak va u qaysi muammoni hal qiladi

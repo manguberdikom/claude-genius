@@ -20,13 +20,14 @@
 </details>
 
 
-Test strategiyasi hujjat emas, byudjet taqsimotidir: har bir test darajasi pul, vaqt va ishonch o'rtasidagi muayyan kelishuvni ifodalaydi. Arxitektorning asosiy vazifasi — qaysi mantiq qaysi darajada tekshirilishini ongli ravishda belgilash va bu qarorni loyiha tuzilishi hamda build konfiguratsiyasida majburiy qilib qo'yish. Bu bobda klassik piramidadan zamonaviy shakllarga o'tish, test turlarining to'liq xaritasi, mantiq-daraja mosligi va Maven/Gradle darajasidagi amaliy konvensiyalar ko'rib chiqiladi. Maqsad — jamoada "bu testni qayerga yozaman?" savoliga bir xil javob beriladigan holatga erishish.
+
+Test strategiyasi hujjat emas, byudjet taqsimotidir: har bir test darajasi pul, vaqt va ishonch o'rtasidagi muayyan kelishuvni ifodalaydi. Arxitektorning asosiy vazifasi - qaysi mantiq qaysi darajada tekshirilishini ongli ravishda belgilash va bu qarorni loyiha tuzilishi hamda build konfiguratsiyasida majburiy qilib qo'yish. Bu bobda klassik piramidadan zamonaviy shakllarga o'tish, test turlarining to'liq xaritasi, mantiq-daraja mosligi va Maven/Gradle darajasidagi amaliy konvensiyalar ko'rib chiqiladi. Maqsad - jamoada "bu testni qayerga yozaman?" savoliga bir xil javob beriladigan holatga erishish.
 
 ## 2.1 Klassik test piramidasi (Cohn)
 
-Mike Cohn "Succeeding with Agile" (2009) kitobida test avtomatizatsiyasini uch qatlamli piramida sifatida tasvirlagan: keng asosda unit testlar, o'rtada service (integratsion) testlar, cho'qqida UI testlar. Shakl tasodifiy emas — u uchta o'zgaruvchining teskari proporsiyasini aks ettiradi: yuqoriga ko'tarilgan sari bitta testning ishga tushish vaqti, tiklash narxi va noaniqligi (flakiness) ortadi, lekin biznes ishonchi ham oshadi.
+Mike Cohn "Succeeding with Agile" (2009) kitobida test avtomatizatsiyasini uch qatlamli piramida sifatida tasvirlagan: keng asosda unit testlar, o'rtada service (integratsion) testlar, cho'qqida UI testlar. Shakl tasodifiy emas - u uchta o'zgaruvchining teskari proporsiyasini aks ettiradi: yuqoriga ko'tarilgan sari bitta testning ishga tushish vaqti, tiklash narxi va noaniqligi (flakiness) ortadi, lekin biznes ishonchi ham oshadi.
 
-Keng asos kerakligining sababi matematik: Spring loyihasida bitta `@SpringBootTest` konteksti ko'tarilishi odatda bir necha soniya, oddiy unit test esa millisekundlar oladi. Agar 2000 ta holatni faqat yuqori darajada tekshirsangiz, suite soatlab ishlaydi va developer uni mahalliy mashinada ishga tushirmay qo'yadi — ya'ni test fikr-mulohaza (feedback) vositasi bo'lishdan to'xtaydi. Ikkinchi sabab — diagnostika aniqligi: unit test yiqilganda xato manzili bitta metod, E2E test yiqilganda esa o'ntacha servis ichida qolgan ehtimolliklar to'plami.
+Keng asos kerakligining sababi matematik: Spring loyihasida bitta `@SpringBootTest` konteksti ko'tarilishi odatda bir necha soniya, oddiy unit test esa millisekundlar oladi. Agar 2000 ta holatni faqat yuqori darajada tekshirsangiz, suite soatlab ishlaydi va developer uni mahalliy mashinada ishga tushirmay qo'yadi - ya'ni test fikr-mulohaza (feedback) vositasi bo'lishdan to'xtaydi. Ikkinchi sabab - diagnostika aniqligi: unit test yiqilganda xato manzili bitta metod, E2E test yiqilganda esa o'ntacha servis ichida qolgan ehtimolliklar to'plami.
 
 Piramidaning muhim, lekin ko'pincha e'tibordan chetda qolgan sharti: pastdagi testlar ustidagi testlarni *takrorlamasligi* kerak. Piramida qatlamlar qalinligi haqida emas, javobgarlik bo'linishi haqidagi shartnoma.
 
@@ -34,11 +35,11 @@ Piramidaning muhim, lekin ko'pincha e'tibordan chetda qolgan sharti: pastdagi te
 
 Klassik piramida 2009-yilda, DI konteynerlari sekin va konteynerlashtirish mavjud emas paytda shakllangan. Testcontainers, tez Spring kontekst keshi va kuchli statik analiz piramidani qayta muvozanatlashtirishga imkon berdi.
 
-**Testing Trophy** (Kent C. Dodds) to'rt qatlamdan iborat: statik analiz (compiler, linter, null-check), unit, integration (eng keng qism), E2E. Asosiy g'oya — "integration" darajasi eng yaxshi ishonch/narx nisbatini beradi, chunki u real wiring'ni tekshiradi, lekin brauzer yoki to'liq muhitni talab qilmaydi. Java olamida bu Spring'ning slice testlari (`@WebMvcTest`, `@DataJpaTest`) va Testcontainers bilan ishlaydigan modul testlari.
+**Testing Trophy** (Kent C. Dodds) to'rt qatlamdan iborat: statik analiz (compiler, linter, null-check), unit, integration (eng keng qism), E2E. Asosiy g'oya - "integration" darajasi eng yaxshi ishonch/narx nisbatini beradi, chunki u real wiring'ni tekshiradi, lekin brauzer yoki to'liq muhitni talab qilmaydi. Java olamida bu Spring'ning slice testlari (`@WebMvcTest`, `@DataJpaTest`) va Testcontainers bilan ishlaydigan modul testlari.
 
-**Testing Honeycomb** (Spotify, 2018) microservice'lar uchun taklif qilingan: o'rtada keng "integration test" qatlami, ikki tomonda tor "integrated test" (boshqa real servislar bilan) va "implementation detail test" qatlamlari. Mantiq — microservice'da murakkablik kodning ichida emas, servis chegarasida: HTTP contract, serializatsiya, DB mapping, message broker. Shuning uchun ko'p unit test yozishdan ko'ra, servisni chegaralari bilan birga, lekin tashqi real servislarsiz testlash foydali.
+**Testing Honeycomb** (Spotify, 2018) microservice'lar uchun taklif qilingan: o'rtada keng "integration test" qatlami, ikki tomonda tor "integrated test" (boshqa real servislar bilan) va "implementation detail test" qatlamlari. Mantiq - microservice'da murakkablik kodning ichida emas, servis chegarasida: HTTP contract, serializatsiya, DB mapping, message broker. Shuning uchun ko'p unit test yozishdan ko'ra, servisni chegaralari bilan birga, lekin tashqi real servislarsiz testlash foydali.
 
-**Test Diamond** — yupqa unit, semiz integratsion va yupqa E2E qatlamlari. Bu shakl legacy modullarda yoki domain mantiqi kam bo'lgan, asosan orkestratsiya va mapping bilan shug'ullanadigan servislarda tabiiy yuzaga keladi.
+**Test Diamond** - yupqa unit, semiz integratsion va yupqa E2E qatlamlari. Bu shakl legacy modullarda yoki domain mantiqi kam bo'lgan, asosan orkestratsiya va mapping bilan shug'ullanadigan servislarda tabiiy yuzaga keladi.
 
 | Loyiha turi | To'g'ri shakl | Nega |
 |---|---|---|
@@ -48,11 +49,11 @@ Klassik piramida 2009-yilda, DI konteynerlari sekin va konteynerlashtirish mavju
 | Legacy, testsiz tizim | Diamond (vaqtincha) | Avval xatti-harakatni integratsiyada "qotirish", keyin pastga tushirish |
 | BFF / API gateway | Honeycomb | Deyarli butun qiymat serializatsiya va routing'da |
 
-Shaklni tanlash qarori ADR (Architecture Decision Record) sifatida yozilishi kerak — aks holda har bir jamoa a'zosi o'z piramidasini quradi.
+Shaklni tanlash qarori ADR (Architecture Decision Record) sifatida yozilishi kerak - aks holda har bir jamoa a'zosi o'z piramidasini quradi.
 
 ## 2.3 Teskari piramida (ice-cream cone) anti-patterni
 
-Ice-cream cone — asosi yupqa unit testlardan, tanasi integratsion testlardan va keng cho'qqisi E2E/manual testlardan iborat teskari shakl (atama Alister Scott tomonidan ommalashtirilgan). U hech qachon ongli tanlov natijasi bo'lmaydi: u "release oldidan QA hammasini bosib ko'radi" degan jarayonning avtomatizatsiyaga ko'chirilishidan kelib chiqadi.
+Ice-cream cone - asosi yupqa unit testlardan, tanasi integratsion testlardan va keng cho'qqisi E2E/manual testlardan iborat teskari shakl (atama Alister Scott tomonidan ommalashtirilgan). U hech qachon ongli tanlov natijasi bo'lmaydi: u "release oldidan QA hammasini bosib ko'radi" degan jarayonning avtomatizatsiyaga ko'chirilishidan kelib chiqadi.
 
 Narxi aniq o'lchanadi:
 
@@ -62,7 +63,7 @@ Narxi aniq o'lchanadi:
 - **Refactoring to'xtaydi.** Ichki tuzilma testlar bilan qoplanmagani uchun har qanday o'zgarish regressiya qo'rquvini keltiradi.
 - **Infrastruktura xarajati.** Har bir PR uchun to'liq muhit ko'tarish CI hisobining asosiy qismiga aylanadi.
 
-Tuzatish yo'li — testni o'chirish emas, **pastga ko'chirish**: yiqilgan E2E testdagi har bir assertion uchun "bu holat eng past qaysi darajada tasdiqlanishi mumkin?" savolini berib, mos darajada test yozib, keyin E2E'dan o'sha assertion'ni olib tashlash.
+Tuzatish yo'li - testni o'chirish emas, **pastga ko'chirish**: yiqilgan E2E testdagi har bir assertion uchun "bu holat eng past qaysi darajada tasdiqlanishi mumkin?" savolini berib, mos darajada test yozib, keyin E2E'dan o'sha assertion'ni olib tashlash.
 
 ## 2.4 Test turlari to'liq xaritasi
 
@@ -102,14 +103,14 @@ Jadvaldagi "qancha" ustuni mutlaq raqam emas, nisbat haqida: Spring loyihasida s
 
 ## 2.6 Test duplication: bir xil narsani ikki darajada testlash
 
-Duplication piramidani ichdan buzadi: suite o'sadi, lekin ishonch o'smaydi. Tipik ko'rinishlari — bir xil hisob-kitob unit va E2E'da; validatsiyaning har bir qoidasi uchun alohida controller testi; `@SpringBootTest` ichida mapper'ni tekshirish.
+Duplication piramidani ichdan buzadi: suite o'sadi, lekin ishonch o'smaydi. Tipik ko'rinishlari - bir xil hisob-kitob unit va E2E'da; validatsiyaning har bir qoidasi uchun alohida controller testi; `@SpringBootTest` ichida mapper'ni tekshirish.
 
-Kesish uchun amaliy qoida — **har bir assertion uchun bitta "egasi" daraja**:
+Kesish uchun amaliy qoida - **har bir assertion uchun bitta "egasi" daraja**:
 
 1. Har bir test holati uchun "eng past daraja, qaysiki bu xatoni tuta oladi" ni aniqlang va test shu yerda yashasin.
-2. Yuqori daraja faqat *integratsiya faktini* tasdiqlasin: "controller to'g'ri servisni chaqirdi va natijani JSON qildi", "xabar broker'ga yetib bordi" — qiymatlar to'g'riligini emas.
+2. Yuqori daraja faqat *integratsiya faktini* tasdiqlasin: "controller to'g'ri servisni chaqirdi va natijani JSON qildi", "xabar broker'ga yetib bordi" - qiymatlar to'g'riligini emas.
 3. E2E testlar uchun qattiq kvota belgilang (masalan, 15 ta) va yangi E2E qo'shish uchun eskisini olib tashlashni talab qiling.
-4. Bug uchun regression test faqat bitta darajada yoziladi — bug qaysi darajada tutilishi mumkin bo'lsa, o'sha yerda.
+4. Bug uchun regression test faqat bitta darajada yoziladi - bug qaysi darajada tutilishi mumkin bo'lsa, o'sha yerda.
 5. Mutation testing bilan tekshiring: agar unit testni o'chirganda mutation score o'zgarmasa, u duplication.
 
 ## 2.7 Microservice va modular monolit uchun test taqsimoti namunasi
@@ -123,7 +124,7 @@ Kesish uchun amaliy qoida — **har bir assertion uchun bitta "egasi" daraja**:
 | System / E2E | 1-3% | 3-5% | 0% |
 | Nofunksional (perf, security, chaos) | ~1%, alohida pipeline | ~1% | kam |
 
-Ishga tushish vaqti byudjeti — bu raqamlar CI'da gate sifatida majburlanishi kerak:
+Ishga tushish vaqti byudjeti - bu raqamlar CI'da gate sifatida majburlanishi kerak:
 
 | Suite | Byudjet | Qachon ishlaydi |
 |---|---|---|
@@ -138,7 +139,7 @@ Umumiy PR pipeline 15 daqiqadan oshmasligi maqsadli ko'rsatkich; oshsa, parallel
 
 ## 2.8 Test nomlash va joylashtirish konvensiyasi
 
-Konvensiya build vositasi tomonidan majburlansa ishlaydi. Maven Surefire sukut bo'yicha `**/Test*.java`, `**/*Test.java`, `**/*Tests.java`, `**/*TestCase.java` ni oladi; Failsafe esa `**/IT*.java`, `**/*IT.java`, `**/*ITCase.java` ni `integration-test` va `verify` fazalarida ishga tushiradi. Shuning uchun eng arzon ajratish — `*Test` = tez, `*IT` = sekin.
+Konvensiya build vositasi tomonidan majburlansa ishlaydi. Maven Surefire sukut bo'yicha `**/Test*.java`, `**/*Test.java`, `**/*Tests.java`, `**/*TestCase.java` ni oladi; Failsafe esa `**/IT*.java`, `**/*IT.java`, `**/*ITCase.java` ni `integration-test` va `verify` fazalarida ishga tushiradi. Shuning uchun eng arzon ajratish - `*Test` = tez, `*IT` = sekin.
 
 Tavsiya etilgan tuzilma (paket nomi production kodi bilan oynada bo'lsin, shunda package-private metodlar ham ko'rinadi):
 
@@ -152,7 +153,7 @@ src/test/java/com/acme/orders/
 src/test/resources/application-test.yml
 ```
 
-Maven konfiguratsiyasi — Surefire tezlarni, Failsafe sekinlarni oladi; `groups`/`excludedGroups` JUnit 5 tag ifodalariga o'tadi:
+Maven konfiguratsiyasi - Surefire tezlarni, Failsafe sekinlarni oladi; `groups`/`excludedGroups` JUnit 5 tag ifodalariga o'tadi:
 
 ```xml
 <plugin>
@@ -189,7 +190,7 @@ Maven konfiguratsiyasi — Surefire tezlarni, Failsafe sekinlarni oladi; `groups
 </plugin>
 ```
 
-Tag'larni har testda qo'lda yozish o'rniga, kompozit annotatsiya yaratish kerak — shunda semantika bitta joyda saqlanadi:
+Tag'larni har testda qo'lda yozish o'rniga, kompozit annotatsiya yaratish kerak - shunda semantika bitta joyda saqlanadi:
 
 ```java
 @Target(ElementType.TYPE)

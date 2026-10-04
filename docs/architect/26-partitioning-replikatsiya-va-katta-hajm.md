@@ -24,6 +24,7 @@
 </details>
 
 
+
 Katta hajm hech qachon bir kunda kelmaydi. Buyurtma jadvali ikki yil ichida 300 million qatorga chiqadi, hisobot so'rovi 40 ms dan 9 sekundga o'tadi, va kechagi `DELETE` tungi oynani to'ldirib qo'yadi. Bu bobda PostgreSQL ning partitioning va replikatsiya mexanikasi, uning ichida nima sodir bo'lishi va arxitektor shu bilimdan qanday raqamli qaror chiqarishi ko'rib chiqiladi. Taqsimlangan ma'lumot patternlari bu yerda emas, dizayn [patternlar hujjatida](../patterns/README.md).
 
 ## 26.1 Jadval qachon katta hisoblanadi: qaror uchun raqamlar

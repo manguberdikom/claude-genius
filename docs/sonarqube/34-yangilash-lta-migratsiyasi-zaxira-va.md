@@ -23,6 +23,7 @@
 </details>
 
 
+
 SonarQube serverni yangilash oddiy `docker pull` emas. Yangilash ma'lumotlar bazasi sxemasini migratsiya qiladi, qoida to'plamini almashtiradi va shu bilan birga butun jamoaning quality gate natijasini siljitadi. Shuning uchun yangilash texnik ish emas, balki rejalashtirilgan o'zgarish boshqaruvi hodisasi. Bu bo'limda yangilash yo'li, zaxira, migratsiya, qoida o'zgarishining ta'siri, housekeeping va orqaga qaytarish rejasi ko'rib chiqiladi.
 
 ## 34.1 LTA (uzoq muddatli) liniya va oraliq versiyalar farqi

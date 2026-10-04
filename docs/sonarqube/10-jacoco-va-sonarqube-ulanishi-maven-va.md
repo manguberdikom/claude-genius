@@ -23,6 +23,7 @@
 </details>
 
 
+
 Sonar coverage ni o'zi o'lchamaydi. U faqat JaCoCo tayyorlagan XML hisobotni o'qiydi va undagi raqamlarni quality gate shartlari bilan solishtiradi. Shuning uchun "coverage 0%" muammosining deyarli hammasi Sonar da emas, balki build sozlamasida: agent ulanmagan, XML yaratilmagan yoki yo'l noto'g'ri ko'rsatilgan. Bu bobda Maven va Gradle uchun to'liq ishlaydigan ulanish zanjiri va uni tekshirish tartibi beriladi.
 
 ## 10.1 Maven da JaCoCo plugin: `prepare-agent` va `report` bosqichlari

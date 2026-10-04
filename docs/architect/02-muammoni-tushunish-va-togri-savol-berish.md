@@ -22,6 +22,7 @@
 </details>
 
 
+
 Arxitektorning eng qimmat xatosi kod yozishda emas, talabni tushunishda sodir bo'ladi. Noto'g'ri tushunilgan talab asosida yozilgan toza, test bilan qoplangan, chiroyli kod ham yaroqsiz. Shuning uchun arxitektorning ishi klaviaturadan emas, savoldan boshlanadi. Bu bob savolni qanday berish, javobni qanday o'lchanadigan shaklga aylantirish va qachon talabni umuman rad etish kerakligi haqida.
 
 ## 2.1 Talab ortidagi haqiqiy ehtiyojni topish

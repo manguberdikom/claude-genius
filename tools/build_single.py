@@ -15,6 +15,8 @@ OUT = {
     'testing':   'java-spring-testing-handbook.md',
     'architect': 'java-spring-architect-mindset.md',
     'sonarqube': 'java-spring-sonarqube.md',
+    'clean-code': 'java-spring-clean-coder.md',
+    'code-review': 'java-spring-code-review.md',
 }
 RE_REMOVE = re.compile(r"[^\w\- ]", re.UNICODE)
 
@@ -50,22 +52,23 @@ def deepen(text):
 
 
 def flatten_links(text, files):
-    """`NN-slug.md#anchor` -> `#anchor`; hujjatlararo havolalar o'z holida qoladi."""
+    """`NN-slug.md#anchor` -> `#anchor`, `NN-slug.md` -> bob sarlavhasi anchori.
+
+    `files` - bob fayli nomi -> o'sha bobning sarlavha anchori. Hujjatlararo
+    havolalar (`../<hujjat>/...`) o'z holida qoladi.
+    """
     def repl(m):
-        tgt = m.group(1)
-        path, _, anc = tgt.partition('#')
-        if path in files and anc:
-            return f"](#{anc})"
-        if path in files and not anc:
-            return "](#mundarija)"
-        return m.group(0)
+        path, _, anc = m.group(1).partition('#')
+        if path not in files:
+            return m.group(0)
+        return f"](#{anc or files[path]})"
     return re.sub(r'\]\(([^)\s]+)\)', repl, text)
 
 
 def build(key):
     man = json.load(open(os.path.join(ROOT, 'docs', 'manifest.json'), encoding='utf-8'))[key]
     d = os.path.join(ROOT, 'docs', key)
-    files = {c['file'] for c in man['chapters']}
+    files = {c['file']: gh_slug(c['title']) for c in man['chapters']}
     readme = open(os.path.join(d, 'README.md'), encoding='utf-8').read()
     title = re.match(r'# ([^\n]*)', readme).group(1)
     preamble = readme.split('\n## Mundarija', 1)[0].split('\n', 1)[1].strip()

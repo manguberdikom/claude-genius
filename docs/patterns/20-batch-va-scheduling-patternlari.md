@@ -13,19 +13,19 @@
 - [20.4 Job / Step / Flow (Job / Step / Flow)](#204-job--step--flow-job--step--flow)
 - [20.5 JobRepository va restart imkoniyati (JobRepository & Restartability)](#205-jobrepository-va-restart-imkoniyati-jobrepository--restartability)
 - [20.6 Skip va retry siyosatlari (Skip / Retry Policies)](#206-skip-va-retry-siyosatlari-skip--retry-policies)
-- [20.7 Partitsiyalash (Partitioning — local, remote)](#207-partitsiyalash-partitioning--local-remote)
+- [20.7 Partitsiyalash (Partitioning - local, remote)](#207-partitsiyalash-partitioning---local-remote)
 - [20.8 Masofaviy chunking (Remote Chunking)](#208-masofaviy-chunking-remote-chunking)
 - [20.9 Parallel qadamlar va ko'p-thread'li qadam (Parallel Steps / Multi-threaded Step)](#209-parallel-qadamlar-va-kop-threadli-qadam-parallel-steps--multi-threaded-step)
 - [20.10 Job parametrlari va job identifikatori (Job Parameters & Job Identity)](#2010-job-parametrlari-va-job-identifikatori-job-parameters--job-identity)
 - [20.11 Step scope va kechiktirilgan binding (Step Scope / Late Binding)](#2011-step-scope-va-kechiktirilgan-binding-step-scope--late-binding)
-- [20.12 Listener'lar (Listeners — JobExecutionListener, StepExecutionListener)](#2012-listenerlar-listeners--jobexecutionlistener-stepexecutionlistener)
+- [20.12 Listener'lar (Listeners - JobExecutionListener, StepExecutionListener)](#2012-listenerlar-listeners---jobexecutionlistener-stepexecutionlistener)
 - [20.13 Kompozit ItemProcessor / ItemWriter (Composite ItemProcessor / ItemWriter)](#2013-kompozit-itemprocessor--itemwriter-composite-itemprocessor--itemwriter)
 - [20.14 Classifier bilan kompozit writer (Classifier Composite Writer)](#2014-classifier-bilan-kompozit-writer-classifier-composite-writer)
 - [20.15 Paging reader va cursor reader (Paging Reader vs Cursor Reader)](#2015-paging-reader-va-cursor-reader-paging-reader-vs-cursor-reader)
 - [20.16 Staging jadval (Staging Table)](#2016-staging-jadval-staging-table)
 - [20.17 Boshqaruvchi so'rov (Driving Query)](#2017-boshqaruvchi-sorov-driving-query)
 - [20.18 Process indikatori (Process Indicator)](#2018-process-indikatori-process-indicator)
-- [20.19 Extract-Transform-Load (Extract-Transform-Load — ETL)](#2019-extract-transform-load-extract-transform-load--etl)
+- [20.19 Extract-Transform-Load (Extract-Transform-Load - ETL)](#2019-extract-transform-load-extract-transform-load---etl)
 - [20.20 Backfill (Backfill)](#2020-backfill-backfill)
 - [20.21 Rejalashtirilgan vazifalar (Scheduled Tasks)](#2021-rejalashtirilgan-vazifalar-scheduled-tasks)
 - [20.22 Taqsimlangan scheduler lock (Distributed Scheduler Lock, ShedLock)](#2022-taqsimlangan-scheduler-lock-distributed-scheduler-lock-shedlock)
@@ -41,7 +41,8 @@
 </details>
 
 
-Batch va scheduling patternlari — bu katta hajmli, uzoq davom etadigan va vaqt bo'yicha ishga tushadigan ishlovlarni ishonchli bajarish uchun shakllangan yechimlar to'plami. Onlayn (request-response) dunyoda bir so'rov sekundlarda tugaydi, batch dunyosida esa bitta ish millionlab yozuvni soatlab qayta ishlaydi — shu sababli xotira sarfi, transaction chegaralari, restart (qayta ishga tushirish), idempotentlik va gorizontal masshtablash arxitektura darajasidagi qarorlarga aylanadi. Arxitektor uchun bu patternlar muhim, chunki ular "tungi hisob-kitob" yoki "ERP integratsiyasi" kabi biznes-kritik oqimlarning SLA'sini, xatolarga chidamliligini va kuzatiluvchanligini (observability) belgilaydi. Spring Batch bu patternlarni domen tilida kodlashtirgan: Job, Step, chunk, ItemReader/Writer, JobRepository — bular shunchaki API emas, balki umumiy so'zlashuv lug'ati.
+
+Batch va scheduling patternlari - bu katta hajmli, uzoq davom etadigan va vaqt bo'yicha ishga tushadigan ishlovlarni ishonchli bajarish uchun shakllangan yechimlar to'plami. Onlayn (request-response) dunyoda bir so'rov sekundlarda tugaydi, batch dunyosida esa bitta ish millionlab yozuvni soatlab qayta ishlaydi - shu sababli xotira sarfi, transaction chegaralari, restart (qayta ishga tushirish), idempotentlik va gorizontal masshtablash arxitektura darajasidagi qarorlarga aylanadi. Arxitektor uchun bu patternlar muhim, chunki ular "tungi hisob-kitob" yoki "ERP integratsiyasi" kabi biznes-kritik oqimlarning SLA'sini, xatolarga chidamliligini va kuzatiluvchanligini (observability) belgilaydi. Spring Batch bu patternlarni domen tilida kodlashtirgan: Job, Step, chunk, ItemReader/Writer, JobRepository - bular shunchaki API emas, balki umumiy so'zlashuv lug'ati.
 
 ## 20.1 Chunk'ga asoslangan ishlov (Chunk-Oriented Processing)
 
@@ -67,13 +68,13 @@ Step importStep(JobRepository repo, PlatformTransactionManager tx,
 - Oylik billing: har bir abonent uchun invoice generatsiya qilish va PDF navbatiga qo'yish.
 - Data warehouse uchun kunlik ETL: staging jadvallaridan fakt jadvallariga yuklash.
 
-**Ehtiyot bo'ling:** Chunk size'ni juda katta qilish (masalan 100 000) transaction'ni uzaytiradi, lock contention va undo/redo o'sishiga olib keladi; juda kichik qilish esa commit overhead'ini oshiradi — 100–1000 oralig'idan boshlab o'lchab tanlang. Bir chunk ichida tashqi REST chaqiruvlari qilish transaction'ni tashqi tizim latency'siga bog'lab qo'yadi, buni alohida qadamga yoki asinxron ishlovga chiqarish kerak.
+**Ehtiyot bo'ling:** Chunk size'ni juda katta qilish (masalan 100 000) transaction'ni uzaytiradi, lock contention va undo/redo o'sishiga olib keladi; juda kichik qilish esa commit overhead'ini oshiradi - 100-1000 oralig'idan boshlab o'lchab tanlang. Bir chunk ichida tashqi REST chaqiruvlari qilish transaction'ni tashqi tizim latency'siga bog'lab qo'yadi, buni alohida qadamga yoki asinxron ishlovga chiqarish kerak.
 
 ## 20.2 Tasklet (Tasklet)
 
 **Tavsif:** Qadamning (step) butun mantig'i bitta metodda bajariladigan, read-process-write tuzilishiga tushmaydigan oddiy pattern. `execute()` metodi `RepeatStatus.FINISHED` qaytarsa qadam tugaydi, `CONTINUABLE` qaytarsa yangi transaction bilan qayta chaqiriladi. Bu "atomik vazifa" uchun mo'ljallangan: fayl ko'chirish, jadvalni tozalash, stored procedure chaqirish, flag qo'yish.
 
-**Spring'da qayerda uchraydi:** `org.springframework.batch.core.step.tasklet.Tasklet` interfeysi va `StepBuilder.tasklet(Tasklet, PlatformTransactionManager)`; tayyor implementatsiyalar — `MethodInvokingTaskletAdapter` (mavjud bean metodini qadamga aylantirish), `SystemCommandTasklet` (OS buyrug'ini chaqirish) va `spring-batch-integration` dagi `JobStepBuilder` orqali boshqa Job'ni chaqirish. Tasklet ichida `ChunkContext` va `StepContribution` orqali `ExecutionContext` bilan ishlanadi.
+**Spring'da qayerda uchraydi:** `org.springframework.batch.core.step.tasklet.Tasklet` interfeysi va `StepBuilder.tasklet(Tasklet, PlatformTransactionManager)`; tayyor implementatsiyalar - `MethodInvokingTaskletAdapter` (mavjud bean metodini qadamga aylantirish), `SystemCommandTasklet` (OS buyrug'ini chaqirish) va `spring-batch-integration` dagi `JobStepBuilder` orqali boshqa Job'ni chaqirish. Tasklet ichida `ChunkContext` va `StepContribution` orqali `ExecutionContext` bilan ishlanadi.
 
 **Qo'llanish keyslari:**
 - Asosiy ishlovdan oldin staging jadvalini `TRUNCATE` qilish yoki indekslarni o'chirish.
@@ -82,13 +83,13 @@ Step importStep(JobRepository repo, PlatformTransactionManager tx,
 - Tashqi tizimga "batch yakunlandi" signalini (webhook yoki JMS xabari) yuborish.
 - Fayl mavjudligini va kutilgan hajmini tekshiruvchi pre-validation qadami.
 
-**Ehtiyot bo'ling:** Tasklet ichiga millionlab yozuvni o'qiydigan halqa yozish eng keng tarqalgan xato — bunda restartability, skip/retry va metrikalar yo'qoladi, xotira esa portlaydi. Agar vazifada "har bir element uchun" mantiq bo'lsa, bu chunk-oriented qadam bo'lishi kerak, Tasklet emas.
+**Ehtiyot bo'ling:** Tasklet ichiga millionlab yozuvni o'qiydigan halqa yozish eng keng tarqalgan xato - bunda restartability, skip/retry va metrikalar yo'qoladi, xotira esa portlaydi. Agar vazifada "har bir element uchun" mantiq bo'lsa, bu chunk-oriented qadam bo'lishi kerak, Tasklet emas.
 
 ## 20.3 ItemReader / ItemProcessor / ItemWriter (ItemReader / ItemProcessor / ItemWriter)
 
-**Tavsif:** Ishlov mantig'ini uch mas'uliyatga ajratuvchi pattern: manbadan bittadan o'qish (reader), transformatsiya yoki filtrlash (processor), to'plamni yozish (writer). Processor `null` qaytarsa element filtrlanadi va writer'ga yetib bormaydi. Bu ajratish har bir bo'lakni alohida unit-test qilish, qayta ishlatish va manba/maqsadni almashtirish imkonini beradi — masalan CSV reader'ni JDBC reader'ga o'zgartirish qolgan kodga ta'sir qilmaydi.
+**Tavsif:** Ishlov mantig'ini uch mas'uliyatga ajratuvchi pattern: manbadan bittadan o'qish (reader), transformatsiya yoki filtrlash (processor), to'plamni yozish (writer). Processor `null` qaytarsa element filtrlanadi va writer'ga yetib bormaydi. Bu ajratish har bir bo'lakni alohida unit-test qilish, qayta ishlatish va manba/maqsadni almashtirish imkonini beradi - masalan CSV reader'ni JDBC reader'ga o'zgartirish qolgan kodga ta'sir qilmaydi.
 
-**Spring'da qayerda uchraydi:** `ItemReader`, `ItemProcessor`, `ItemWriter` interfeyslari va holatni saqlash uchun `ItemStream` (`ItemStreamReader`/`ItemStreamWriter`). Tayyor implementatsiyalar: `FlatFileItemReader` + `DefaultLineMapper`/`DelimitedLineTokenizer`, `JsonItemReader`, `StaxEventItemReader`, `JdbcCursorItemReader`, `JdbcPagingItemReader`, `JpaPagingItemReader`, `MongoPagingItemReader`, `KafkaItemReader`; yozuvchilar — `FlatFileItemWriter`, `JdbcBatchItemWriter`, `JpaItemWriter`, `CompositeItemWriter`, `ClassifierCompositeItemWriter`. Processor tarafida `ValidatingItemProcessor` (Bean Validation bilan `BeanValidatingItemProcessor`), `CompositeItemProcessor`, `ClassifierCompositeItemProcessor`, `FunctionItemProcessor` va builder'lar (`FlatFileItemReaderBuilder` va h.k.).
+**Spring'da qayerda uchraydi:** `ItemReader`, `ItemProcessor`, `ItemWriter` interfeyslari va holatni saqlash uchun `ItemStream` (`ItemStreamReader`/`ItemStreamWriter`). Tayyor implementatsiyalar: `FlatFileItemReader` + `DefaultLineMapper`/`DelimitedLineTokenizer`, `JsonItemReader`, `StaxEventItemReader`, `JdbcCursorItemReader`, `JdbcPagingItemReader`, `JpaPagingItemReader`, `MongoPagingItemReader`, `KafkaItemReader`; yozuvchilar - `FlatFileItemWriter`, `JdbcBatchItemWriter`, `JpaItemWriter`, `CompositeItemWriter`, `ClassifierCompositeItemWriter`. Processor tarafida `ValidatingItemProcessor` (Bean Validation bilan `BeanValidatingItemProcessor`), `CompositeItemProcessor`, `ClassifierCompositeItemProcessor`, `FunctionItemProcessor` va builder'lar (`FlatFileItemReaderBuilder` va h.k.).
 
 **Qo'llanish keyslari:**
 - To'lov provayderidan kelgan kunlik settlement faylini o'qib, ichki formatga map qilib bazaga yozish.
@@ -97,13 +98,13 @@ Step importStep(JobRepository repo, PlatformTransactionManager tx,
 - Bir nechta turdagi yozuvni turli jadvallarga yo'naltirish (`ClassifierCompositeItemWriter`).
 - Validatsiyadan o'tmagan qatorlarni filtrlab, qolganini yuklash va rad etilganlarni alohida faylga chiqarish.
 
-**Ehtiyot bo'ling:** `JdbcCursorItemReader` bitta ochiq cursor va bitta connection ushlaydi — ko'p thread yoki uzoq ishlov uchun `JdbcPagingItemReader` ma'qul, lekin paging'da `ORDER BY` barqaror va unique bo'lishi shart, aks holda yozuvlar takrorlanadi yoki tushib qoladi. JPA reader'larda `EntityManager` cache'i o'sib ketadi, shuning uchun chunk oxirida flush/clear va `saveState` sozlamalariga e'tibor bering.
+**Ehtiyot bo'ling:** `JdbcCursorItemReader` bitta ochiq cursor va bitta connection ushlaydi - ko'p thread yoki uzoq ishlov uchun `JdbcPagingItemReader` ma'qul, lekin paging'da `ORDER BY` barqaror va unique bo'lishi shart, aks holda yozuvlar takrorlanadi yoki tushib qoladi. JPA reader'larda `EntityManager` cache'i o'sib ketadi, shuning uchun chunk oxirida flush/clear va `saveState` sozlamalariga e'tibor bering.
 
 ## 20.4 Job / Step / Flow (Job / Step / Flow)
 
-**Tavsif:** Batch ishini ierarxik modellashtirish patterni: Job — bitta biznes-ishning yuqori darajadagi birligi, Step — uning mustaqil, o'z transaction va metadata chegarasiga ega bosqichi, Flow — qadamlar o'rtasidagi o'tish grafigi (ketma-ketlik, shart, shoxlanish, parallel split). Qadamlar orasidagi o'tish exit status asosida aniqlanadi, shu sababli "xato bo'lsa tozalash qadamiga o't" yoki "fayl bo'sh bo'lsa o'tkazib yubor" kabi mantiqni deklarativ yozish mumkin.
+**Tavsif:** Batch ishini ierarxik modellashtirish patterni: Job - bitta biznes-ishning yuqori darajadagi birligi, Step - uning mustaqil, o'z transaction va metadata chegarasiga ega bosqichi, Flow - qadamlar o'rtasidagi o'tish grafigi (ketma-ketlik, shart, shoxlanish, parallel split). Qadamlar orasidagi o'tish exit status asosida aniqlanadi, shu sababli "xato bo'lsa tozalash qadamiga o't" yoki "fayl bo'sh bo'lsa o'tkazib yubor" kabi mantiqni deklarativ yozish mumkin.
 
-**Spring'da qayerda uchraydi:** `JobBuilder` va `StepBuilder` (Spring Batch 5+ da `JobBuilderFactory`/`StepBuilderFactory` olib tashlangan — `JobRepository` to'g'ridan-to'g'ri konstruktorga beriladi), `FlowBuilder` va `SimpleFlow`, `JobExecutionDecider` shartli o'tishlar uchun, `FlowBuilder.SplitBuilder` parallel shoxlar uchun, `JobStep` ichma-ich job'lar uchun. Ishga tushirish `JobLauncher`/`JobOperator` yoki Spring Boot'ning `JobLauncherApplicationRunner` orqali (`spring.batch.job.name` property bilan), konfiguratsiya esa `@EnableBatchProcessing` yoki `DefaultBatchConfiguration` subclass'i bilan qilinadi.
+**Spring'da qayerda uchraydi:** `JobBuilder` va `StepBuilder` (Spring Batch 5+ da `JobBuilderFactory`/`StepBuilderFactory` olib tashlangan - `JobRepository` to'g'ridan-to'g'ri konstruktorga beriladi), `FlowBuilder` va `SimpleFlow`, `JobExecutionDecider` shartli o'tishlar uchun, `FlowBuilder.SplitBuilder` parallel shoxlar uchun, `JobStep` ichma-ich job'lar uchun. Ishga tushirish `JobLauncher`/`JobOperator` yoki Spring Boot'ning `JobLauncherApplicationRunner` orqali (`spring.batch.job.name` property bilan), konfiguratsiya esa `@EnableBatchProcessing` yoki `DefaultBatchConfiguration` subclass'i bilan qilinadi.
 
 **Qo'llanish keyslari:**
 - Kechki oqim: "faylni yuklab ol → validatsiya → yuklash → hisobot → arxivlash" ketma-ketligi.
@@ -112,11 +113,11 @@ Step importStep(JobRepository repo, PlatformTransactionManager tx,
 - `JobExecutionDecider` yordamida oy oxirida qo'shimcha yopish qadamini bajarish.
 - Umumiy "reusable" qadamlarni bir nechta job'da qayta ishlatish (masalan arxivlash qadami).
 
-**Ehtiyot bo'ling:** Juda ko'p shartli o'tish va decider ishlatilgan flow'lar tezda o'qilmas "spagetti"ga aylanadi — murakkablik oshsa orkestratsiyani Job'dan tashqariga (Airflow, Argo Workflows, Spring Cloud Data Flow) chiqarish ma'qul. Shuningdek Step'lar orasida ma'lumotni `ExecutionContext` orqali uzatish vasvasasiga berilmang: u metadata uchun, katta payload uchun emas.
+**Ehtiyot bo'ling:** Juda ko'p shartli o'tish va decider ishlatilgan flow'lar tezda o'qilmas "spagetti"ga aylanadi - murakkablik oshsa orkestratsiyani Job'dan tashqariga (Airflow, Argo Workflows, Spring Cloud Data Flow) chiqarish ma'qul. Shuningdek Step'lar orasida ma'lumotni `ExecutionContext` orqali uzatish vasvasasiga berilmang: u metadata uchun, katta payload uchun emas.
 
 ## 20.5 JobRepository va restart imkoniyati (JobRepository & Restartability)
 
-**Tavsif:** Har bir job va step bajarilishining holatini turg'un omborga (odatda RDBMS) yozib borish patterni: qaysi chunk commit bo'lgan, reader qaysi qatorda to'xtagan, nechta yozuv o'qilgan/yozilgan/skip qilingan. Shu metadata hisobiga muvaffaqiyatsiz tugagan job qayta ishga tushirilganda noldan emas, oxirgi muvaffaqiyatli checkpoint'dan davom etadi. Checkpoint ma'lumoti `ExecutionContext` sifatida chunk commit'i bilan bitta transaction'da saqlanadi — shuning uchun holat va ma'lumot bir-biriga mos qoladi.
+**Tavsif:** Har bir job va step bajarilishining holatini turg'un omborga (odatda RDBMS) yozib borish patterni: qaysi chunk commit bo'lgan, reader qaysi qatorda to'xtagan, nechta yozuv o'qilgan/yozilgan/skip qilingan. Shu metadata hisobiga muvaffaqiyatsiz tugagan job qayta ishga tushirilganda noldan emas, oxirgi muvaffaqiyatli checkpoint'dan davom etadi. Checkpoint ma'lumoti `ExecutionContext` sifatida chunk commit'i bilan bitta transaction'da saqlanadi - shuning uchun holat va ma'lumot bir-biriga mos qoladi.
 
 **Spring'da qayerda uchraydi:** `JobRepository` interfeysi va `JdbcJobRepositoryFactoryBean`/`JobRepositoryFactoryBean` orqali quriladigan `SimpleJobRepository`; metadata jadvallari `BATCH_JOB_INSTANCE`, `BATCH_JOB_EXECUTION`, `BATCH_JOB_EXECUTION_PARAMS`, `BATCH_STEP_EXECUTION`, `BATCH_*_EXECUTION_CONTEXT` (DDL `org/springframework/batch/core/schema-*.sql` da, Spring Boot `spring.batch.jdbc.initialize-schema` bilan yaratadi). O'qish uchun `JobExplorer`, boshqarish uchun `JobOperator` (restart/stop/abandon), qadam darajasida `allowStartIfComplete(true)` va `startLimit(n)`; reader'lar `ItemStream.update()` orqali o'z pozitsiyasini shu kontekstga yozadi.
 
@@ -127,11 +128,11 @@ Step importStep(JobRepository repo, PlatformTransactionManager tx,
 - `BATCH_STEP_EXECUTION` metrikalarini Grafana'ga chiqarib SLA monitoringi qurish.
 - Idempotent bo'lmagan qadamni `allowStartIfComplete(false)` bilan ikki marta bajarilishidan saqlash.
 
-**Ehtiyot bo'ling:** In-memory yoki `ResourcelessJobRepository` tipidagi repository'da restart va audit umuman yo'q — productionda har doim turg'un JDBC repository ishlatilsin, sxema versiyasi esa Spring Batch versiyasiga mos migratsiya qilinsin. Restart faqat reader'ingiz holatini to'g'ri saqlasa ishlaydi: tartibsiz query, `saveState(false)` yoki tashqi navbatdan o'qish holatni buzadi va "qayta ishlov" dublikatlarga olib keladi.
+**Ehtiyot bo'ling:** In-memory yoki `ResourcelessJobRepository` tipidagi repository'da restart va audit umuman yo'q - productionda har doim turg'un JDBC repository ishlatilsin, sxema versiyasi esa Spring Batch versiyasiga mos migratsiya qilinsin. Restart faqat reader'ingiz holatini to'g'ri saqlasa ishlaydi: tartibsiz query, `saveState(false)` yoki tashqi navbatdan o'qish holatni buzadi va "qayta ishlov" dublikatlarga olib keladi.
 
 ## 20.6 Skip va retry siyosatlari (Skip / Retry Policies)
 
-**Tavsif:** Xatolarni ikki xil tabiatga ajratib ishlov berish patterni: vaqtinchalik (transient) xatolar qayta urinishga arziydi, "yomon ma'lumot" (deterministik) xatolar esa o'tkazib yuborilishi (skip) va alohida qayd etilishi kerak. Spring Batch bu ikkisini chunk darajasida birlashtiradi: retry tugamagach element skip qilinadi, skip limiti oshsa qadam fail bo'ladi. Skip paytida chunk "scan" rejimiga o'tib, elementlarni bittadan qayta ishlab aybdorni topadi — bu xatti-harakatni bilish performance uchun muhim.
+**Tavsif:** Xatolarni ikki xil tabiatga ajratib ishlov berish patterni: vaqtinchalik (transient) xatolar qayta urinishga arziydi, "yomon ma'lumot" (deterministik) xatolar esa o'tkazib yuborilishi (skip) va alohida qayd etilishi kerak. Spring Batch bu ikkisini chunk darajasida birlashtiradi: retry tugamagach element skip qilinadi, skip limiti oshsa qadam fail bo'ladi. Skip paytida chunk "scan" rejimiga o'tib, elementlarni bittadan qayta ishlab aybdorni topadi - bu xatti-harakatni bilish performance uchun muhim.
 
 **Spring'da qayerda uchraydi:** `SimpleStepBuilder.faultTolerant()` dan keyin `skip(Class)`, `noSkip(Class)`, `skipLimit(int)`, `skipPolicy(SkipPolicy)` (`LimitCheckingItemSkipPolicy`, `AlwaysSkipItemSkipPolicy`, `NeverSkipItemSkipPolicy`) va `retry(Class)`, `retryLimit(int)`, `retryPolicy(...)`, `backOffPolicy(...)`, `noRollback(Class)`. Ostida `spring-retry` (`RetryTemplate`, `SimpleRetryPolicy`, `ExponentialBackOffPolicy`) yotadi; kuzatish uchun `SkipListener`, `RetryListener`, `ItemReadListener`/`ItemWriteListener`. Batch tashqarisida xuddi shu g'oya `@Retryable`/`@Recover` (Spring Retry) yoki Resilience4j bilan qo'llanadi.
 
@@ -142,28 +143,28 @@ Step importStep(JobRepository repo, PlatformTransactionManager tx,
 - Kunlik yuklamada skip hisoblagichi chegaradan oshsa job'ni to'xtatib, operatorga alert yuborish.
 - Validatsiya xatolaridagi yozuvlarni `SkipListener` orqali dead-letter topic'ga yuborish.
 
-**Ehtiyot bo'ling:** Deterministik xatoni (masalan `NullPointerException` yoki unique constraint buzilishi) retry qilish faqat vaqt sarflaydi va retry limiti tugagach baribir fail bo'ladi — qaysi exception transient ekanini aniq ro'yxat bilan belgilang, `Exception.class` ni ko'r-ko'rona skip qilmang. Cheksiz yoki juda katta `skipLimit` esa "muvaffaqiyatli" tugagan, lekin yarmi yo'qolgan ishlovni yashiradi.
+**Ehtiyot bo'ling:** Deterministik xatoni (masalan `NullPointerException` yoki unique constraint buzilishi) retry qilish faqat vaqt sarflaydi va retry limiti tugagach baribir fail bo'ladi - qaysi exception transient ekanini aniq ro'yxat bilan belgilang, `Exception.class` ni ko'r-ko'rona skip qilmang. Cheksiz yoki juda katta `skipLimit` esa "muvaffaqiyatli" tugagan, lekin yarmi yo'qolgan ishlovni yashiradi.
 
-## 20.7 Partitsiyalash (Partitioning — local, remote)
+## 20.7 Partitsiyalash (Partitioning - local, remote)
 
-**Tavsif:** Katta ma'lumot to'plamini mustaqil bo'laklarga (partition) ajratib, har birini alohida step execution sifatida parallel bajarish patterni. Manager qadam `Partitioner` yordamida partition'lar va ularning `ExecutionContext` parametrlarini (masalan ID oralig'i yoki fayl nomi) yaratadi, `PartitionHandler` esa ularni thread'larga yoki boshqa JVM'larga tarqatadi. Har bir worker o'z partition'ini to'liq o'qiydi va yozadi — ya'ni faqat metadata tarmoq orqali ketadi, ma'lumotning o'zi emas.
+**Tavsif:** Katta ma'lumot to'plamini mustaqil bo'laklarga (partition) ajratib, har birini alohida step execution sifatida parallel bajarish patterni. Manager qadam `Partitioner` yordamida partition'lar va ularning `ExecutionContext` parametrlarini (masalan ID oralig'i yoki fayl nomi) yaratadi, `PartitionHandler` esa ularni thread'larga yoki boshqa JVM'larga tarqatadi. Har bir worker o'z partition'ini to'liq o'qiydi va yozadi - ya'ni faqat metadata tarmoq orqali ketadi, ma'lumotning o'zi emas.
 
 **Spring'da qayerda uchraydi:** `PartitionStep`, `Partitioner` (`SimplePartitioner`, `MultiResourcePartitioner`), `StepExecutionSplitter`, `PartitionHandler` implementatsiyalari: lokal uchun `TaskExecutorPartitionHandler` (`StepBuilder.partitioner(...).gridSize(n).taskExecutor(...)`), remote uchun `spring-batch-integration` dagi `MessageChannelPartitionHandler`, `RemotePartitioningManagerStepBuilder` va `RemotePartitioningWorkerStepBuilder` (`@EnableBatchIntegration` bilan, Kafka/RabbitMQ/JMS kanallari ustida). Worker tarafida partition parametrlari `@StepScope` bean'larga `#{stepExecutionContext['minId']}` ko'rinishida in'ektsiya qilinadi.
 
 **Qo'llanish keyslari:**
 - 50 mln qatorli jadvalni ID oralig'i bo'yicha 32 partition'ga bo'lib parallel qayta ishlash.
-- SFTP'dan kelgan 200 ta faylni `MultiResourcePartitioner` bilan har fayl — bitta partition qilib yuklash.
+- SFTP'dan kelgan 200 ta faylni `MultiResourcePartitioner` bilan har fayl - bitta partition qilib yuklash.
 - Ko'p-ijarachi (multi-tenant) tizimda har bir tenant uchun alohida partition ishga tushirish.
 - Kubernetes'da worker pod'larini remote partitioning bilan avtomatik masshtablash.
 - Mintaqa yoki filial bo'yicha bo'lingan oylik hisob-kitobni parallel bajarish.
 
-**Ehtiyot bo'ling:** Partitsiyalash faqat ma'lumot tabiiy ravishda bir-biriga bog'liq bo'lmagan bo'laklarga ajralsa ishlaydi; umumiy jadvalga yozadigan partition'lar lock contention va deadlock keltiradi, DB connection pool'i esa gridSize'dan kichik bo'lsa hamma worker navbatda qotib qoladi. Partition'lar notekis bo'lsa (bitta bo'lakda 90% ma'lumot) parallelizmdan foyda yo'q — kalit taqsimotini oldin o'lchang.
+**Ehtiyot bo'ling:** Partitsiyalash faqat ma'lumot tabiiy ravishda bir-biriga bog'liq bo'lmagan bo'laklarga ajralsa ishlaydi; umumiy jadvalga yozadigan partition'lar lock contention va deadlock keltiradi, DB connection pool'i esa gridSize'dan kichik bo'lsa hamma worker navbatda qotib qoladi. Partition'lar notekis bo'lsa (bitta bo'lakda 90% ma'lumot) parallelizmdan foyda yo'q - kalit taqsimotini oldin o'lchang.
 
 ## 20.8 Masofaviy chunking (Remote Chunking)
 
 **Tavsif:** Qadamning o'qish qismini manager node'da qoldirib, processing va yozishni masofadagi worker'larga uzatish patterni. Manager `ItemReader` bilan o'qigan chunk'larni xabar navbatiga (middleware) yuboradi, worker'lar ularni qabul qilib `ItemProcessor`/`ItemWriter` bilan qayta ishlaydi va natijani qaytaradi. Partitioning'dan farqi: bu yerda ma'lumotning o'zi tarmoq orqali uzatiladi, shuning uchun u faqat CPU-og'ir processing I/O xarajatidan ustun bo'lganda foyda beradi.
 
-**Spring'da qayerda uchraydi:** `spring-batch-integration` moduli: manager tarafda `RemoteChunkingManagerStepBuilderFactory`/`RemoteChunkingManagerStepBuilder` va `ChunkMessageChannelItemWriter`, worker tarafda `RemoteChunkingWorkerBuilder` va `ChunkProcessorChunkHandler`, ikkisi ham `@EnableBatchIntegration` bilan yoqiladi. Transport sifatida Spring Integration kanallari ishlatiladi — `spring-boot-starter-amqp` (RabbitMQ), Kafka yoki JMS; chunk'lar serializatsiya qilinadi, shuning uchun item'lar `Serializable` yoki JSON converter bilan mos bo'lishi kerak.
+**Spring'da qayerda uchraydi:** `spring-batch-integration` moduli: manager tarafda `RemoteChunkingManagerStepBuilderFactory`/`RemoteChunkingManagerStepBuilder` va `ChunkMessageChannelItemWriter`, worker tarafda `RemoteChunkingWorkerBuilder` va `ChunkProcessorChunkHandler`, ikkisi ham `@EnableBatchIntegration` bilan yoqiladi. Transport sifatida Spring Integration kanallari ishlatiladi - `spring-boot-starter-amqp` (RabbitMQ), Kafka yoki JMS; chunk'lar serializatsiya qilinadi, shuning uchun item'lar `Serializable` yoki JSON converter bilan mos bo'lishi kerak.
 
 **Qo'llanish keyslari:**
 - Har bir yozuv uchun og'ir skoring yoki ML inference hisoblanadigan risk-baholash ishlovi.
@@ -172,13 +173,13 @@ Step importStep(JobRepository repo, PlatformTransactionManager tx,
 - Yagona markaziy manbadan (bitta fayl yoki cursor) o'qib, ishlovni ko'p worker'ga yoyish.
 - Mavjud navbat infratuzilmasi bor tizimda worker'larni elastik masshtablash.
 
-**Ehtiyot bo'ling:** Ko'p holatda partitioning yaxshiroq tanlov — remote chunking serializatsiya, tarmoq va middleware ishonchliligi (at-least-once yetkazish, dublikatlar) muammolarini qo'shadi va manager'dagi reader bitta bo'g'iz (bottleneck) bo'lib qoladi. Agar worker'lar o'z ma'lumotini mustaqil o'qiy olsa, remote chunking'ni tanlamang.
+**Ehtiyot bo'ling:** Ko'p holatda partitioning yaxshiroq tanlov - remote chunking serializatsiya, tarmoq va middleware ishonchliligi (at-least-once yetkazish, dublikatlar) muammolarini qo'shadi va manager'dagi reader bitta bo'g'iz (bottleneck) bo'lib qoladi. Agar worker'lar o'z ma'lumotini mustaqil o'qiy olsa, remote chunking'ni tanlamang.
 
 ## 20.9 Parallel qadamlar va ko'p-thread'li qadam (Parallel Steps / Multi-threaded Step)
 
-**Tavsif:** Bitta JVM ichida parallelizmga erishishning ikki usuli: `split` bilan bir-biriga bog'liq bo'lmagan qadamlarni bir vaqtda bajarish, yoki bitta qadam ichida chunk'larni `TaskExecutor` orqali bir nechta thread'da qayta ishlash. Split qadam darajasida izolyatsiya beradi (har bir shox o'z `StepExecution`iga ega), multi-threaded step esa bitta reader/writer instance'ini thread'lar o'rtasida bo'lishadi — shu sababli ular thread-safe bo'lishi shart.
+**Tavsif:** Bitta JVM ichida parallelizmga erishishning ikki usuli: `split` bilan bir-biriga bog'liq bo'lmagan qadamlarni bir vaqtda bajarish, yoki bitta qadam ichida chunk'larni `TaskExecutor` orqali bir nechta thread'da qayta ishlash. Split qadam darajasida izolyatsiya beradi (har bir shox o'z `StepExecution`iga ega), multi-threaded step esa bitta reader/writer instance'ini thread'lar o'rtasida bo'lishadi - shu sababli ular thread-safe bo'lishi shart.
 
-**Spring'da qayerda uchraydi:** Flow darajasida `FlowBuilder.split(TaskExecutor)` va `SplitBuilder.add(Flow...)`; qadam darajasida `SimpleStepBuilder.taskExecutor(TaskExecutor)` (`ThreadPoolTaskExecutor`, `SimpleAsyncTaskExecutor`; Java 21+ da virtual thread'lar bilan `SimpleAsyncTaskExecutor.setVirtualThreads(true)`). Thread-safety uchun `SynchronizedItemStreamReader` va `SynchronizedItemStreamWriter` wrapper'lari, asinxron processing uchun `spring-batch-integration` dagi `AsyncItemProcessor` + `AsyncItemWriter`. Eski `throttleLimit(...)` Spring Batch 5 dan boshlab deprecated — parallelizm endi executor pool o'lchami bilan boshqariladi.
+**Spring'da qayerda uchraydi:** Flow darajasida `FlowBuilder.split(TaskExecutor)` va `SplitBuilder.add(Flow...)`; qadam darajasida `SimpleStepBuilder.taskExecutor(TaskExecutor)` (`ThreadPoolTaskExecutor`, `SimpleAsyncTaskExecutor`; Java 21+ da virtual thread'lar bilan `SimpleAsyncTaskExecutor.setVirtualThreads(true)`). Thread-safety uchun `SynchronizedItemStreamReader` va `SynchronizedItemStreamWriter` wrapper'lari, asinxron processing uchun `spring-batch-integration` dagi `AsyncItemProcessor` + `AsyncItemWriter`. Eski `throttleLimit(...)` Spring Batch 5 dan boshlab deprecated - parallelizm endi executor pool o'lchami bilan boshqariladi.
 
 **Qo'llanish keyslari:**
 - Bir-biridan mustaqil uchta fayl eksportini `split()` bilan bir vaqtda generatsiya qilish.
@@ -187,11 +188,11 @@ Step importStep(JobRepository repo, PlatformTransactionManager tx,
 - Virtual thread'lar yordamida minglab bir vaqtli HTTP chaqiruvi bo'lgan boyitish (enrichment) qadami.
 - Mustaqil hisobot va arxivlash qadamlarini parallel bajarib tungi oynani qisqartirish.
 
-**Ehtiyot bo'ling:** Ko'p-thread'li qadamda restartability odatda yo'qoladi — chunk'lar tartibsiz commit bo'lgani uchun reader pozitsiyasi ishonchli checkpoint bermaydi, shuning uchun `saveState(false)` qo'yib, restart strategiyasini (masalan to'liq qayta ishlov yoki partitioning) ongli tanlang. Shuningdek `FlatFileItemReader` kabi stateful reader'lar sinxronlashtirilmasa yozuvlar yo'qoladi yoki takrorlanadi, DB connection pool esa thread soniga mos kattalashtirilishi kerak.
+**Ehtiyot bo'ling:** Ko'p-thread'li qadamda restartability odatda yo'qoladi - chunk'lar tartibsiz commit bo'lgani uchun reader pozitsiyasi ishonchli checkpoint bermaydi, shuning uchun `saveState(false)` qo'yib, restart strategiyasini (masalan to'liq qayta ishlov yoki partitioning) ongli tanlang. Shuningdek `FlatFileItemReader` kabi stateful reader'lar sinxronlashtirilmasa yozuvlar yo'qoladi yoki takrorlanadi, DB connection pool esa thread soniga mos kattalashtirilishi kerak.
 
 ## 20.10 Job parametrlari va job identifikatori (Job Parameters & Job Identity)
 
-**Tavsif:** Job bajarilishini tashqi kirish qiymatlari bilan parametrlash va shu parametrlarning bir qismi orqali `JobInstance`ning yakkayu-yagona identifikatorini aniqlash patterni. Identifying parametrlar to'plami bir xil bo'lsa — bu bir xil mantiqiy ish, ya'ni muvaffaqiyatli tugagan instance'ni qaytadan ishga tushirish mumkin emas, muvaffaqiyatsiz tugagani esa restart qilinadi. Bu "bir kunlik ishlov kuniga faqat bir marta bajariladi" kafolatini infratuzilma darajasida beradi va tasodifiy ikki marta ishga tushirishdan saqlaydi.
+**Tavsif:** Job bajarilishini tashqi kirish qiymatlari bilan parametrlash va shu parametrlarning bir qismi orqali `JobInstance`ning yakkayu-yagona identifikatorini aniqlash patterni. Identifying parametrlar to'plami bir xil bo'lsa - bu bir xil mantiqiy ish, ya'ni muvaffaqiyatli tugagan instance'ni qaytadan ishga tushirish mumkin emas, muvaffaqiyatsiz tugagani esa restart qilinadi. Bu "bir kunlik ishlov kuniga faqat bir marta bajariladi" kafolatini infratuzilma darajasida beradi va tasodifiy ikki marta ishga tushirishdan saqlaydi.
 
 **Spring'da qayerda uchraydi:** `JobParameters`, `JobParametersBuilder` va Spring Batch 5 dan boshlab tiplangan `JobParameter<T>` (`identifying` flag bilan); identifikator hisobi `JobKeyGenerator`/`DefaultJobKeyGenerator` orqali, takrorlanadigan ishlar uchun `JobParametersIncrementer` (`RunIdIncrementer`), tekshirish uchun `JobParametersValidator`/`DefaultJobParametersValidator`. Qiymatlarni bean'larga olish uchun `@StepScope`/`@JobScope` va `@Value("#{jobParameters['runDate']}")`; CLI'dan uzatish Spring Boot'da `java -jar app.jar --spring.batch.job.name=dailyJob runDate=2026-10-04` ko'rinishida (`JobLauncherApplicationRunner` orqali). Qayta urinish holatida `JobInstanceAlreadyCompleteException` va `JobExecutionAlreadyRunningException` aynan shu patternning signalidir.
 
@@ -202,11 +203,11 @@ Step importStep(JobRepository repo, PlatformTransactionManager tx,
 - `RunIdIncrementer` bilan test yoki ad-hoc qayta ishga tushirishlarni cheklovsiz bajarish.
 - Chunk size yoki grid size kabi sozlamalarni non-identifying parametr sifatida uzatib, identifikatorga ta'sir qilmaslik.
 
-**Ehtiyot bo'ling:** `RunIdIncrementer` ni productionda ko'r-ko'rona qo'shish job identity'ning asosiy foydasini yo'q qiladi — har safar yangi instance yaratilib, bir xil kun ikki marta qayta ishlanishi va dublikat ma'lumot paydo bo'lishi mumkin. Parametr qiymatlari metadata jadvaliga yoziladi, shuning uchun parol, token yoki boshqa maxfiy ma'lumotni job parametri sifatida uzatmang.
+**Ehtiyot bo'ling:** `RunIdIncrementer` ni productionda ko'r-ko'rona qo'shish job identity'ning asosiy foydasini yo'q qiladi - har safar yangi instance yaratilib, bir xil kun ikki marta qayta ishlanishi va dublikat ma'lumot paydo bo'lishi mumkin. Parametr qiymatlari metadata jadvaliga yoziladi, shuning uchun parol, token yoki boshqa maxfiy ma'lumotni job parametri sifatida uzatmang.
 
 ## 20.11 Step scope va kechiktirilgan binding (Step Scope / Late Binding)
 
-**Tavsif:** Batch job parametrlari (masalan, fayl nomi, sana oralig'i) faqat job ishga tushgan paytda ma'lum bo'ladi, lekin reader/writer bean'lari Spring context ko'tarilayotganda yaratiladi. Step scope bean'ni singleton emas, balki har bir step execution uchun alohida yaratadi va SpEL ifodalarini step boshlanganda hal qiladi (late binding). Shu tarzda `JobParameters` yoki `ExecutionContext` qiymatlarini to'g'ridan-to'g'ri bean konfiguratsiyasiga in'ektsiya qilish mumkin bo'ladi. Qo'shimcha foyda — bean har safar yangi holatda yaratilganligi uchun restart va parallel step'lar xavfsiz ishlaydi.
+**Tavsif:** Batch job parametrlari (masalan, fayl nomi, sana oralig'i) faqat job ishga tushgan paytda ma'lum bo'ladi, lekin reader/writer bean'lari Spring context ko'tarilayotganda yaratiladi. Step scope bean'ni singleton emas, balki har bir step execution uchun alohida yaratadi va SpEL ifodalarini step boshlanganda hal qiladi (late binding). Shu tarzda `JobParameters` yoki `ExecutionContext` qiymatlarini to'g'ridan-to'g'ri bean konfiguratsiyasiga in'ektsiya qilish mumkin bo'ladi. Qo'shimcha foyda - bean har safar yangi holatda yaratilganligi uchun restart va parallel step'lar xavfsiz ishlaydi.
 
 **Spring'da qayerda uchraydi:** Spring Batch (`spring-boot-starter-batch`, Spring Batch 5.x/6.x) `@StepScope` va `@JobScope` annotatsiyalari; `org.springframework.batch.core.scope.StepScope` va `JobScope` scope implementatsiyalari; SpEL orqali `@Value("#{jobParameters['inputFile']}")`, `#{stepExecutionContext['partitionStart']}`, `#{jobExecutionContext['runId']}`. Konfiguratsiyada `@Bean @StepScope public FlatFileItemReader<Trade> reader(@Value("#{jobParameters['path']}") String path)` ko'rinishida yoziladi; Spring proxy orqali (`ScopedProxyMode.TARGET_CLASS`) singleton step'ga in'ektsiya qilinadi. `JobParametersIncrementer` (`RunIdIncrementer`) bilan birga tez-tez qo'llaniladi.
 
@@ -217,11 +218,11 @@ Step importStep(JobRepository repo, PlatformTransactionManager tx,
 - Bir xil job'ni turli mijoz (tenant) uchun `tenantId` parametri bilan qayta ishga tushirish.
 - Faylga yozuvchi `FlatFileItemWriter` uchun chiqish yo'lini run vaqtida aniqlash.
 
-**Ehtiyot bo'ling:** `@StepScope` bean'ni step kontekstidan tashqarida (masalan, oddiy `@Service` ichida yoki test'da step'siz) chaqirsangiz `ScopeNotActiveException` olasiz; shuningdek step-scoped bean'ni qo'lda `new` bilan yaratish late binding'ni butunlay o'chiradi. `@StepScope` ni `ItemReader` interfeysini qaytaruvchi metodda e'lon qilsangiz, Spring `ItemStream` metodlarini ko'rmay qolishi mumkin — qaytish turini aniq sinf (`FlatFileItemReader`) qilib yozing.
+**Ehtiyot bo'ling:** `@StepScope` bean'ni step kontekstidan tashqarida (masalan, oddiy `@Service` ichida yoki test'da step'siz) chaqirsangiz `ScopeNotActiveException` olasiz; shuningdek step-scoped bean'ni qo'lda `new` bilan yaratish late binding'ni butunlay o'chiradi. `@StepScope` ni `ItemReader` interfeysini qaytaruvchi metodda e'lon qilsangiz, Spring `ItemStream` metodlarini ko'rmay qolishi mumkin - qaytish turini aniq sinf (`FlatFileItemReader`) qilib yozing.
 
-## 20.12 Listener'lar (Listeners — JobExecutionListener, StepExecutionListener)
+## 20.12 Listener'lar (Listeners - JobExecutionListener, StepExecutionListener)
 
-**Tavsif:** Batch job'ning hayot tsiklidagi muhim nuqtalariga (job boshlanishi/tugashi, step boshlanishi/tugashi, chunk, har bir item o'qilishi/ishlanishi/yozilishi, xato) biznes mantiqdan ajratilgan callback'lar ulash patterni. Bu cross-cutting vazifalarni — audit, metrika, xabarnoma, resurs tozalash, xato hisobotini — reader/processor/writer kodiga aralashtirmasdan bajarishga imkon beradi. Listener'lar `ExecutionContext` orqali holatni o'qiydi va yozadi, shuning uchun restart mantiqi uchun ham qulay. Bir nechta listener zanjir bo'lib ro'yxatga olinadi va e'lon qilingan tartibda chaqiriladi.
+**Tavsif:** Batch job'ning hayot tsiklidagi muhim nuqtalariga (job boshlanishi/tugashi, step boshlanishi/tugashi, chunk, har bir item o'qilishi/ishlanishi/yozilishi, xato) biznes mantiqdan ajratilgan callback'lar ulash patterni. Bu cross-cutting vazifalarni - audit, metrika, xabarnoma, resurs tozalash, xato hisobotini - reader/processor/writer kodiga aralashtirmasdan bajarishga imkon beradi. Listener'lar `ExecutionContext` orqali holatni o'qiydi va yozadi, shuning uchun restart mantiqi uchun ham qulay. Bir nechta listener zanjir bo'lib ro'yxatga olinadi va e'lon qilingan tartibda chaqiriladi.
 
 **Spring'da qayerda uchraydi:** Spring Batch interfeyslari `JobExecutionListener`, `StepExecutionListener`, `ChunkListener`, `ItemReadListener`, `ItemProcessListener`, `ItemWriteListener`, `SkipListener`, `RetryListener`; annotatsiya variantlari `@BeforeJob`, `@AfterJob`, `@BeforeStep`, `@AfterStep`, `@AfterChunkError`, `@OnSkipInRead`, `@OnWriteError`. Ro'yxatga olish `JobBuilder.listener(...)` va `StepBuilder.listener(...)` orqali; `ExecutionContextPromotionListener` step context'dagi kalitlarni job context'ga ko'taradi. Spring Boot 3.x da `BatchMetrics`/Micrometer `spring.batch.*` metrikalarini avtomatik chiqaradi, `JobExecutionListener` esa Micrometer `Counter` yoki `MeterRegistry` bilan birga qo'llaniladi.
 
@@ -232,11 +233,11 @@ Step importStep(JobRepository repo, PlatformTransactionManager tx,
 - `StepExecutionListener` da staging jadvalni step boshida tozalash, oxirida indeks qayta qurish.
 - `ExecutionContextPromotionListener` orqali birinchi step hisoblagan `batchId` ni keyingi step'larga uzatish.
 
-**Ehtiyot bo'ling:** `@AfterStep` yoki `afterStep` ichida `ExitStatus` ni qaytarib step natijasini jimgina o'zgartirish flow mantiqini kutilmaganda buzadi — bu yerda faqat ataylab va hujjatlashtirilgan holda `ExitStatus` qaytaring. Item-level listener'lar (`ItemReadListener`) millionlab marta chaqiriladi, shuning uchun ularda log yozish yoki DB chaqirig'i qilish job'ni bir necha barobar sekinlashtiradi.
+**Ehtiyot bo'ling:** `@AfterStep` yoki `afterStep` ichida `ExitStatus` ni qaytarib step natijasini jimgina o'zgartirish flow mantiqini kutilmaganda buzadi - bu yerda faqat ataylab va hujjatlashtirilgan holda `ExitStatus` qaytaring. Item-level listener'lar (`ItemReadListener`) millionlab marta chaqiriladi, shuning uchun ularda log yozish yoki DB chaqirig'i qilish job'ni bir necha barobar sekinlashtiradi.
 
 ## 20.13 Kompozit ItemProcessor / ItemWriter (Composite ItemProcessor / ItemWriter)
 
-**Tavsif:** Bir nechta mayda, bir vazifani bajaruvchi processor yoki writer'ni ketma-ket zanjirga yig'ib, step'ga yagona komponent sifatida berish patterni. Processor zanjirida birinchisining chiqishi ikkinchisiga kirish bo'ladi (validatsiya → boyitish → mapping), writer kompozitida esa bir xil item to'plami har bir writer'ga navbat bilan yoziladi (DB + fayl + event). Bu Single Responsibility va qayta ishlatishni ta'minlaydi, chunki har bir bo'lak alohida test qilinadi. Chunk transaction chegarasi o'zgarmaydi — butun zanjir bitta chunk ichida bajariladi.
+**Tavsif:** Bir nechta mayda, bir vazifani bajaruvchi processor yoki writer'ni ketma-ket zanjirga yig'ib, step'ga yagona komponent sifatida berish patterni. Processor zanjirida birinchisining chiqishi ikkinchisiga kirish bo'ladi (validatsiya → boyitish → mapping), writer kompozitida esa bir xil item to'plami har bir writer'ga navbat bilan yoziladi (DB + fayl + event). Bu Single Responsibility va qayta ishlatishni ta'minlaydi, chunki har bir bo'lak alohida test qilinadi. Chunk transaction chegarasi o'zgarmaydi - butun zanjir bitta chunk ichida bajariladi.
 
 **Spring'da qayerda uchraydi:** `org.springframework.batch.item.support.CompositeItemProcessor` (`setDelegates(List)`) va `CompositeItemWriter` (`setDelegates(List)`); Spring Batch 5.x da builder'lar `CompositeItemProcessorBuilder` va `CompositeItemWriterBuilder`. Hamkor sinflar: `ValidatingItemProcessor`/`BeanValidatingItemProcessor` (Jakarta Bean Validation), `ScriptItemProcessor`, `FunctionItemProcessor` (Java `Function` ni o'rash), `ItemProcessorAdapter`. Writer tomonida `JdbcBatchItemWriter`, `JpaItemWriter`, `FlatFileItemWriter`, `KafkaItemWriter`, `MongoItemWriter` delegate sifatida ishlatiladi; `CompositeItemWriter` `ItemStream` bo'lgan delegate'larni avtomatik `open/update/close` qiladi.
 
@@ -247,7 +248,7 @@ Step importStep(JobRepository repo, PlatformTransactionManager tx,
 - Legacy va yangi jadvalga parallel yozish (dual-write) migratsiya davrida.
 - Umumiy maskalash/PII tozalash processor'ini bir nechta job'da qayta ishlatish.
 
-**Ehtiyot bo'ling:** `CompositeItemProcessor` da oraliq processor `null` qaytarsa, item filtrlanadi va zanjirning qolgan qismi umuman chaqirilmaydi — filtrlash qadamini ataylab oxirgi yoki birinchi o'ringa qo'ying. `CompositeItemWriter` atomar emas: ikkinchi writer xato bersa birinchisining yozgani (ayniqsa Kafka yoki tashqi API) qaytmaydi, shuning uchun non-transactional resurslarni oxiriga qo'yib, idempotentlikni ta'minlang.
+**Ehtiyot bo'ling:** `CompositeItemProcessor` da oraliq processor `null` qaytarsa, item filtrlanadi va zanjirning qolgan qismi umuman chaqirilmaydi - filtrlash qadamini ataylab oxirgi yoki birinchi o'ringa qo'ying. `CompositeItemWriter` atomar emas: ikkinchi writer xato bersa birinchisining yozgani (ayniqsa Kafka yoki tashqi API) qaytmaydi, shuning uchun non-transactional resurslarni oxiriga qo'yib, idempotentlikni ta'minlang.
 
 ## 20.14 Classifier bilan kompozit writer (Classifier Composite Writer)
 
@@ -271,22 +272,22 @@ ClassifierCompositeItemWriter<Txn> writer(ItemWriter<Txn> ok, ItemWriter<Txn> re
 - Mijoz segmentiga qarab item'ni turli Kafka topic'larga chiqarish.
 - Multi-tenant job'da tenant bo'yicha turli datasource writer'larini tanlash.
 
-**Ehtiyot bo'ling:** `ClassifierCompositeItemWriter` delegate'larining `ItemStream` metodlarini o'zi chaqirmaydi — har bir stateful writer'ni step'ga `StepBuilder.stream(writer)` orqali alohida ro'yxatdan o'tkazmasangiz, fayl ochilmaydi yoki restart holati yo'qoladi. Classifier hech qachon `null` qaytarmasligi kerak, aks holda item jimgina tushib qolishi yoki `NullPointerException` chiqishi mumkin.
+**Ehtiyot bo'ling:** `ClassifierCompositeItemWriter` delegate'larining `ItemStream` metodlarini o'zi chaqirmaydi - har bir stateful writer'ni step'ga `StepBuilder.stream(writer)` orqali alohida ro'yxatdan o'tkazmasangiz, fayl ochilmaydi yoki restart holati yo'qoladi. Classifier hech qachon `null` qaytarmasligi kerak, aks holda item jimgina tushib qolishi yoki `NullPointerException` chiqishi mumkin.
 
 ## 20.15 Paging reader va cursor reader (Paging Reader vs Cursor Reader)
 
-**Tavsif:** Katta hajmli DB natijalarini o'qishning ikki asosiy strategiyasi. Cursor reader bitta ochiq `ResultSet`/cursor ustida qatorlarni stream qilib oladi — bitta so'rov, kam overhead, lekin uzoq ochiq connection va non-restartable pozitsiya muammosi. Paging reader esa natijani `LIMIT/OFFSET` yoki keyset shartlari bilan bo'lib, har sahifa uchun yangi so'rov yuboradi — connection qisqa muddat ushlanadi, restart va multithreaded step uchun xavfsiz. Tanlov hajm, tranzaksiya davomiyligi va thread-safety talablaridan kelib chiqadi.
+**Tavsif:** Katta hajmli DB natijalarini o'qishning ikki asosiy strategiyasi. Cursor reader bitta ochiq `ResultSet`/cursor ustida qatorlarni stream qilib oladi - bitta so'rov, kam overhead, lekin uzoq ochiq connection va non-restartable pozitsiya muammosi. Paging reader esa natijani `LIMIT/OFFSET` yoki keyset shartlari bilan bo'lib, har sahifa uchun yangi so'rov yuboradi - connection qisqa muddat ushlanadi, restart va multithreaded step uchun xavfsiz. Tanlov hajm, tranzaksiya davomiyligi va thread-safety talablaridan kelib chiqadi.
 
 **Spring'da qayerda uchraydi:** Cursor tomoni: `JdbcCursorItemReader`, `StoredProcedureItemReader`, `HibernateCursorItemReader` (`spring-batch-infrastructure`). Paging tomoni: `JdbcPagingItemReader` + `SqlPagingQueryProviderFactoryBean` (yoki `PostgresPagingQueryProvider`, `OraclePagingQueryProvider`), `JpaPagingItemReader`, `HibernatePagingItemReader`, `RepositoryItemReader` (Spring Data `PagingAndSortingRepository` ustida), `MongoPagingItemReader`. Builder'lar: `JdbcPagingItemReaderBuilder`, `JpaPagingItemReaderBuilder`. Paging reader'da `setSortKeys()` majburiy, keyset-style pagination esa `SqlPagingQueryProvider` orqali `sortKey > :lastValue` shaklida generatsiya qilinadi.
 
 **Qo'llanish keyslari:**
-- 50 million qatorli jadvalni tungi ETL da o'qish — `JdbcPagingItemReader` bilan restartable qilish.
+- 50 million qatorli jadvalni tungi ETL da o'qish - `JdbcPagingItemReader` bilan restartable qilish.
 - Multithreaded step yoki partitioning'da thread-safe reader kerak bo'lganda paging reader tanlash.
 - Kichik-o'rta (bir necha yuz ming) va bir martalik o'qishda tezlik uchun `JdbcCursorItemReader` ishlatish.
 - Stored procedure natijasini stream qilib o'qish uchun `StoredProcedureItemReader`.
 - Spring Data entity'lari ustida tayyor repository metodidan `RepositoryItemReader` bilan o'qish.
 
-**Ehtiyot bo'ling:** `OFFSET` asosidagi paging chuqur sahifalarda kvadratik sekinlashadi va o'qish davomida ma'lumot o'zgarsa qatorlar takrorlanadi yoki tushib qoladi — barqaror, unikal `sortKey` (odatda primary key) ishlatib keyset pagination'ga o'ting. `JdbcCursorItemReader` va `HibernateCursorItemReader` thread-safe emas: ularni multithreaded step yoki parallel flow'da ishlatish ma'lumotni buzadi.
+**Ehtiyot bo'ling:** `OFFSET` asosidagi paging chuqur sahifalarda kvadratik sekinlashadi va o'qish davomida ma'lumot o'zgarsa qatorlar takrorlanadi yoki tushib qoladi - barqaror, unikal `sortKey` (odatda primary key) ishlatib keyset pagination'ga o'ting. `JdbcCursorItemReader` va `HibernateCursorItemReader` thread-safe emas: ularni multithreaded step yoki parallel flow'da ishlatish ma'lumotni buzadi.
 
 ## 20.16 Staging jadval (Staging Table)
 
@@ -301,11 +302,11 @@ ClassifierCompositeItemWriter<Txn> writer(ItemWriter<Txn> ok, ItemWriter<Txn> re
 - Legacy tizimdan migratsiyada xom ma'lumotni saqlab, transformatsiyani bir necha marta qayta ishga tushirish.
 - Juda katta hajmda row-by-row processing o'rniga set-based SQL transformatsiyaga o'tish.
 
-**Ehtiyot bo'ling:** Staging jadvalni tozalash siyosatini (partition drop yoki `TRUNCATE`) boshidan belgilamasang, jadval o'sib ketib DB ni bo'g'adi va indeks'lar yuklash tezligini keskin pasaytiradi. Bir vaqtda bir nechta job instansiyasi bir xil staging jadvalga yozishi mumkin bo'lsa, `batch_id` bo'yicha izolyatsiya qiling — aks holda bir job boshqasining ma'lumotini ko'chirib yuboradi.
+**Ehtiyot bo'ling:** Staging jadvalni tozalash siyosatini (partition drop yoki `TRUNCATE`) boshidan belgilamasang, jadval o'sib ketib DB ni bo'g'adi va indeks'lar yuklash tezligini keskin pasaytiradi. Bir vaqtda bir nechta job instansiyasi bir xil staging jadvalga yozishi mumkin bo'lsa, `batch_id` bo'yicha izolyatsiya qiling - aks holda bir job boshqasining ma'lumotini ko'chirib yuboradi.
 
 ## 20.17 Boshqaruvchi so'rov (Driving Query)
 
-**Tavsif:** Butun og'ir obyektni emas, faqat kalitlar (ID) ro'yxatini o'qib olib, har bir kalit uchun detallarni processor ichida alohida yuklash patterni. Reader yengil va kam xotira ishlatadigan bo'lib qoladi, cursor uzoq ushlanmaydi, ORM esa bitta katta join natijasi o'rniga aniq navigatsiya qiladi. Bu klassik "ID list + per-item fetch" yondashuvi bo'lib, murakkab obyekt graflarini batch qilishda ishlatiladi. Kamchiligi — N+1 so'rov, shuning uchun u ko'pincha chunk-level batch fetch bilan birlashtiriladi.
+**Tavsif:** Butun og'ir obyektni emas, faqat kalitlar (ID) ro'yxatini o'qib olib, har bir kalit uchun detallarni processor ichida alohida yuklash patterni. Reader yengil va kam xotira ishlatadigan bo'lib qoladi, cursor uzoq ushlanmaydi, ORM esa bitta katta join natijasi o'rniga aniq navigatsiya qiladi. Bu klassik "ID list + per-item fetch" yondashuvi bo'lib, murakkab obyekt graflarini batch qilishda ishlatiladi. Kamchiligi - N+1 so'rov, shuning uchun u ko'pincha chunk-level batch fetch bilan birlashtiriladi.
 
 **Spring'da qayerda uchraydi:** Reader sifatida `JdbcPagingItemReader` yoki `JdbcCursorItemReader` faqat `SELECT id FROM ...` qaytaradi (`SingleColumnRowMapper`); processor esa `ItemProcessor` ichida `JdbcTemplate`, Spring Data repository (`findById`, `findAllById`) yoki JPA `EntityManager` bilan to'liq obyektni yuklaydi. Chunk darajasida samaradorlik uchun `ItemProcessor` o'rniga `ItemWriter`/`ItemProcessor` ni `findAllById(ids)` bilan to'plab chaqirish, yoki Spring Batch 5.x `ItemProcessor` zanjiriga `RepositoryItemReader` qo'shish mumkin. `@StepScope` bilan birga ko'p ishlatiladi.
 
@@ -316,7 +317,7 @@ ClassifierCompositeItemWriter<Txn> writer(ItemWriter<Txn> ok, ItemWriter<Txn> re
 - Tashqi API dan boyitish kerak bo'lgan hollarda avval kalitlar ro'yxatini olish.
 - Katta jadvalda murakkab join'ni cursor'da uzoq ushlab turmaslik uchun.
 
-**Ehtiyot bo'ling:** Har bir item uchun alohida so'rov yuborish N+1 muammosini keltiradi va millionlab yozuvda job'ni soatlarga uzaytiradi — iloji bo'lsa chunk ichida `findAllById` yoki `IN (:ids)` bilan to'plab yuklang. Shuningdek kalitlar ro'yxati o'qilgandan keyin ma'lumot o'zgarishi mumkin, shuning uchun processor topilmagan ID larni (o'chirilgan yozuv) jimgina `null` qaytarib filtrlashi yoki aniq xato berishi kerakligini oldindan hal qiling.
+**Ehtiyot bo'ling:** Har bir item uchun alohida so'rov yuborish N+1 muammosini keltiradi va millionlab yozuvda job'ni soatlarga uzaytiradi - iloji bo'lsa chunk ichida `findAllById` yoki `IN (:ids)` bilan to'plab yuklang. Shuningdek kalitlar ro'yxati o'qilgandan keyin ma'lumot o'zgarishi mumkin, shuning uchun processor topilmagan ID larni (o'chirilgan yozuv) jimgina `null` qaytarib filtrlashi yoki aniq xato berishi kerakligini oldindan hal qiling.
 
 ## 20.18 Process indikatori (Process Indicator)
 
@@ -333,9 +334,9 @@ ClassifierCompositeItemWriter<Txn> writer(ItemWriter<Txn> ok, ItemWriter<Txn> re
 
 **Ehtiyot bo'ling:** Holat yangilanishi biznes yozuvi bilan bitta tranzaksiyada bo'lmasa (masalan avtokommit yoki boshqa datasource), crash paytida ikki marta ishlash yoki tushib qolish yuzaga keladi. Oddiy `WHERE status='NEW'` ni `SKIP LOCKED` yoki optimistik versiyalashsiz parallel worker'larda ishlatish lock kutish va duplikatlarga olib keladi; shuningdek holat ustuniga indeks qo'ymasang, jadval o'sgani sari har sahifa so'rovi sekinlashadi.
 
-## 20.19 Extract-Transform-Load (Extract-Transform-Load — ETL)
+## 20.19 Extract-Transform-Load (Extract-Transform-Load - ETL)
 
-**Tavsif:** Ma'lumotni manbadan ajratib olish (extract), biznes qoidalari bo'yicha o'zgartirish (transform) va maqsadli tizimga yuklash (load) bosqichlarini aniq ajratilgan fazalarga bo'lish patterni. Har bir faza alohida kuzatiladi, qayta ishga tushiriladi va masshtablanadi, shuning uchun xato qaysi bosqichda bo'lganini aniqlash oson. Spring Batch'ning chunk-oriented modeli aynan shu patternning to'g'ridan-to'g'ri ifodasi: reader = extract, processor = transform, writer = load. Zamonaviy variantda tartib ELT ga o'zgaradi — xom ma'lumot avval ombor'ga yuklanib, transformatsiya SQL da bajariladi.
+**Tavsif:** Ma'lumotni manbadan ajratib olish (extract), biznes qoidalari bo'yicha o'zgartirish (transform) va maqsadli tizimga yuklash (load) bosqichlarini aniq ajratilgan fazalarga bo'lish patterni. Har bir faza alohida kuzatiladi, qayta ishga tushiriladi va masshtablanadi, shuning uchun xato qaysi bosqichda bo'lganini aniqlash oson. Spring Batch'ning chunk-oriented modeli aynan shu patternning to'g'ridan-to'g'ri ifodasi: reader = extract, processor = transform, writer = load. Zamonaviy variantda tartib ELT ga o'zgaradi - xom ma'lumot avval ombor'ga yuklanib, transformatsiya SQL da bajariladi.
 
 **Spring'da qayerda uchraydi:** Chunk-oriented step: `StepBuilder.chunk(size, txManager).reader(...).processor(...).writer(...)` (Spring Batch 5.x/6.x da `StepBuilder` konstruktorga `JobRepository` oladi). Reader/writer implementatsiyalari: `FlatFileItemReader`, `StaxEventItemReader`, `JsonItemReader`, `JdbcPagingItemReader`, `KafkaItemReader`; `JdbcBatchItemWriter`, `JpaItemWriter`, `FlatFileItemWriter`, `AvroItemWriter`. Orkestratsiya uchun `JobLauncher`, `JobOperator`, `@EnableBatchProcessing` (yoki Spring Boot 3.x avtokonfiguratsiyasi), uzoq pipeline'lar uchun Spring Cloud Data Flow va Spring Cloud Task. Fayl yoki queue orqali kelgan oqim uchun Spring Integration (`spring-integration-file`) bilan birlashtiriladi.
 
@@ -346,7 +347,7 @@ ClassifierCompositeItemWriter<Txn> writer(ItemWriter<Txn> ok, ItemWriter<Txn> re
 - Moliyaviy hisobot uchun kunlik agregatlarni hisoblab, reporting jadvaliga yozish.
 - CRM va billing tizimlari o'rtasida tungi sinxronizatsiya.
 
-**Ehtiyot bo'ling:** Transformatsiyani writer yoki reader ichiga yashirish fazalar ajratilishini buzadi va job'ni test qilishni deyarli imkonsiz qiladi — biznes mantiqni `ItemProcessor` da saqlang. Juda katta hajmda row-by-row ETL tabiiy chegaraga uriladi: bunda set-based SQL (ELT) yoki partitioning'ga o'tishni oldindan rejalashtiring, va qayta yuklashda idempotentlikni (`MERGE`/upsert) ta'minlamasang duplikatlar paydo bo'ladi.
+**Ehtiyot bo'ling:** Transformatsiyani writer yoki reader ichiga yashirish fazalar ajratilishini buzadi va job'ni test qilishni deyarli imkonsiz qiladi - biznes mantiqni `ItemProcessor` da saqlang. Juda katta hajmda row-by-row ETL tabiiy chegaraga uriladi: bunda set-based SQL (ELT) yoki partitioning'ga o'tishni oldindan rejalashtiring, va qayta yuklashda idempotentlikni (`MERGE`/upsert) ta'minlamasang duplikatlar paydo bo'ladi.
 
 ## 20.20 Backfill (Backfill)
 
@@ -361,7 +362,7 @@ ClassifierCompositeItemWriter<Txn> writer(ItemWriter<Txn> ok, ItemWriter<Txn> re
 - Yangi mikroservis DB siga legacy monolitdan tarixni ko'chirish (dual-write davrida).
 - Yangi joriy qilingan audit/compliance maydonlarini eski yozuvlar uchun to'ldirish.
 
-**Ehtiyot bo'ling:** Throttling'siz backfill DB ni, replication lag'ni va connection pool'ni to'ldirib production'ni yiqitadi — chunk o'lchami, parallel worker soni va ish vaqti oynasini (off-peak) aniq cheklang. Backfill idempotent bo'lishi shart (`WHERE col IS NULL` yoki versiya tekshiruvi): aks holda qayta ishga tushirish qiymatlarni ikki marta o'zgartiradi, shuningdek bir vaqtda ishlayotgan ilova yozuvlari bilan yozish poygasiga tushib, yangi ma'lumotni eski qiymat bilan ustiga yozishi mumkin.
+**Ehtiyot bo'ling:** Throttling'siz backfill DB ni, replication lag'ni va connection pool'ni to'ldirib production'ni yiqitadi - chunk o'lchami, parallel worker soni va ish vaqti oynasini (off-peak) aniq cheklang. Backfill idempotent bo'lishi shart (`WHERE col IS NULL` yoki versiya tekshiruvi): aks holda qayta ishga tushirish qiymatlarni ikki marta o'zgartiradi, shuningdek bir vaqtda ishlayotgan ilova yozuvlari bilan yozish poygasiga tushib, yangi ma'lumotni eski qiymat bilan ustiga yozishi mumkin.
 
 ## 20.21 Rejalashtirilgan vazifalar (Scheduled Tasks)
 
@@ -376,13 +377,13 @@ ClassifierCompositeItemWriter<Txn> writer(ItemWriter<Txn> ok, ItemWriter<Txn> re
 - Har soatda sessiya jadvalidagi muddati o'tgan token'larni bekor qilish.
 - Har hafta dushanba kuni mijozlarga obuna muddati haqida eslatma tayyorlash.
 
-**Ehtiyot bo'ling:** Standart `ThreadPoolTaskScheduler` pool o'lchami birga teng, shuning uchun bitta sekin vazifa boshqa barcha jadvallarni kechiktiradi — pool'ni kattalashtiring yoki og'ir ishni `@Async`/alohida executor'ga chiqaring. Bir nechta instance'da deploy qilinganda `@Scheduled` har bir node'da mustaqil ishga tushadi, ya'ni bu pattern o'zi klaster uchun xavfsiz emas: lock yoki leader election bilan birga ishlatilishi shart.
+**Ehtiyot bo'ling:** Standart `ThreadPoolTaskScheduler` pool o'lchami birga teng, shuning uchun bitta sekin vazifa boshqa barcha jadvallarni kechiktiradi - pool'ni kattalashtiring yoki og'ir ishni `@Async`/alohida executor'ga chiqaring. Bir nechta instance'da deploy qilinganda `@Scheduled` har bir node'da mustaqil ishga tushadi, ya'ni bu pattern o'zi klaster uchun xavfsiz emas: lock yoki leader election bilan birga ishlatilishi shart.
 
 ## 20.22 Taqsimlangan scheduler lock (Distributed Scheduler Lock, ShedLock)
 
-**Tavsif:** Bir xil `@Scheduled` vazifa bir nechta instance'da bir vaqtda ishga tushib, ishni ikki marta bajarishini oldini oladi. Yechim — umumiy tashqi store'dagi (DB jadvali, Redis, Mongo, ZooKeeper) nomlangan lock: trigger vaqti kelganda faqat lock'ni egallagan node ishni bajaradi, qolganlari jimgina chiqib ketadi. Lock muddat bilan beriladi, shuning uchun node o'lsa ham lock avtomatik bo'shaydi.
+**Tavsif:** Bir xil `@Scheduled` vazifa bir nechta instance'da bir vaqtda ishga tushib, ishni ikki marta bajarishini oldini oladi. Yechim - umumiy tashqi store'dagi (DB jadvali, Redis, Mongo, ZooKeeper) nomlangan lock: trigger vaqti kelganda faqat lock'ni egallagan node ishni bajaradi, qolganlari jimgina chiqib ketadi. Lock muddat bilan beriladi, shuning uchun node o'lsa ham lock avtomatik bo'shaydi.
 
-**Spring'da qayerda uchraydi:** Eng keng tarqalgani ShedLock (`net.javacrumbs.shedlock:shedlock-spring`): `@EnableSchedulerLock(defaultLockAtMostFor = "PT10M")` va metod ustida `@SchedulerLock(name = "...", lockAtMostFor = "...", lockAtLeastFor = "...")`; store uchun `LockProvider` implementatsiyalari — `JdbcTemplateLockProvider` (`shedlock` jadvali), Redis, MongoDB, ZooKeeper, DynamoDB variantlari. Spring'ning o'z stack'ida muqobil sifatida Spring Integration `LockRegistry` (`JdbcLockRegistry`, `RedisLockRegistry`) yoki Redisson `RLock` ishlatiladi.
+**Spring'da qayerda uchraydi:** Eng keng tarqalgani ShedLock (`net.javacrumbs.shedlock:shedlock-spring`): `@EnableSchedulerLock(defaultLockAtMostFor = "PT10M")` va metod ustida `@SchedulerLock(name = "...", lockAtMostFor = "...", lockAtLeastFor = "...")`; store uchun `LockProvider` implementatsiyalari - `JdbcTemplateLockProvider` (`shedlock` jadvali), Redis, MongoDB, ZooKeeper, DynamoDB variantlari. Spring'ning o'z stack'ida muqobil sifatida Spring Integration `LockRegistry` (`JdbcLockRegistry`, `RedisLockRegistry`) yoki Redisson `RLock` ishlatiladi.
 
 ```java
 @Scheduled(cron = "0 0 2 * * *")
@@ -399,11 +400,11 @@ public void runDailySettlement() {
 - Kubernetes'da `replicas: 3` bo'lgan servisdagi cache warm-up vazifasini koordinatsiya qilish.
 - Blue-green deploy paytida eski va yangi versiya bir vaqtda ishlayotganda ikki marta bajarilishni to'sish.
 
-**Ehtiyot bo'ling:** `lockAtMostFor` vazifaning real maksimal davomiyligidan katta bo'lishi kerak, aks holda lock muddati tugab boshqa node ishni parallel boshlab yuboradi — bu eng ko'p uchraydigan xato. Lock "at most once" kafolatini bermaydi (node to'xtab qolsa ish yarim bajarilgan bo'lishi mumkin), shuning uchun vazifaning o'zi ham idempotent bo'lsin.
+**Ehtiyot bo'ling:** `lockAtMostFor` vazifaning real maksimal davomiyligidan katta bo'lishi kerak, aks holda lock muddati tugab boshqa node ishni parallel boshlab yuboradi - bu eng ko'p uchraydigan xato. Lock "at most once" kafolatini bermaydi (node to'xtab qolsa ish yarim bajarilgan bo'lishi mumkin), shuning uchun vazifaning o'zi ham idempotent bo'lsin.
 
 ## 20.23 Quartz klasterlash (Quartz Clustering)
 
-**Tavsif:** Quartz — persistent job store'ga ega to'laqonli scheduler: trigger'lar va job detail'lar bazada saqlanadi, shuning uchun ilova qayta ishga tushsa ham jadval yo'qolmaydi. Klaster rejimida bir nechta node bitta jadval to'plamini `SELECT ... FOR UPDATE` asosidagi lock bilan bo'lishadi va har bir trigger'ni faqat bitta node bajaradi. Misfire siyosati node o'lgan yoki kechikkan holatda nima qilishni belgilaydi.
+**Tavsif:** Quartz - persistent job store'ga ega to'laqonli scheduler: trigger'lar va job detail'lar bazada saqlanadi, shuning uchun ilova qayta ishga tushsa ham jadval yo'qolmaydi. Klaster rejimida bir nechta node bitta jadval to'plamini `SELECT ... FOR UPDATE` asosidagi lock bilan bo'lishadi va har bir trigger'ni faqat bitta node bajaradi. Misfire siyosati node o'lgan yoki kechikkan holatda nima qilishni belgilaydi.
 
 **Spring'da qayerda uchraydi:** `spring-boot-starter-quartz`, `SchedulerFactoryBean` auto-configuration, `JobDetail`/`Trigger` bean'lari (`JobBuilder`, `TriggerBuilder`, `CronScheduleBuilder`), Spring bean'larini inject qilish uchun `SpringBeanJobFactory`. Boot property'lari: `spring.quartz.job-store-type=jdbc`, `spring.quartz.jdbc.initialize-schema`, `spring.quartz.properties.org.quartz.jobStore.isClustered=true`, `...clusterCheckinInterval`, `...org.quartz.scheduler.instanceId=AUTO`. Job sinflari `QuartzJobBean`dan meros oladi yoki `org.quartz.Job`ni amalga oshiradi; konkurensiyani cheklash uchun `@DisallowConcurrentExecution` va `@PersistJobDataAfterExecution`. Bazada `QRTZ_*` jadvallari yaratiladi.
 
@@ -414,7 +415,7 @@ public void runDailySettlement() {
 - HA talab qiladigan integratsiya jadvallarini klasterda avtomatik failover bilan ishlatish.
 - Admin UI'dan jadvalni to'xtatish, pauza qilish va qayta ishga tushirish imkonini berish.
 
-**Ehtiyot bo'ling:** Klaster rejimida barcha node'lar bir xil `org.quartz.jobStore` sozlamalari, bir xil DB va sinxronlashgan tizim vaqtiga ega bo'lishi shart — clock drift trigger'larni ikki marta ishga tushirishga olib keladi. Oddiy "har 5 minutda bitta ish" uchun Quartz juda og'ir: `QRTZ_*` jadvallari, migratsiya va misfire semantikasini qo'shimcha yuk sifatida olib kelmaslik uchun bunday holatda `@Scheduled` + ShedLock yetarli.
+**Ehtiyot bo'ling:** Klaster rejimida barcha node'lar bir xil `org.quartz.jobStore` sozlamalari, bir xil DB va sinxronlashgan tizim vaqtiga ega bo'lishi shart - clock drift trigger'larni ikki marta ishga tushirishga olib keladi. Oddiy "har 5 minutda bitta ish" uchun Quartz juda og'ir: `QRTZ_*` jadvallari, migratsiya va misfire semantikasini qo'shimcha yuk sifatida olib kelmaslik uchun bunday holatda `@Scheduled` + ShedLock yetarli.
 
 ## 20.24 Joblar uchun leader election (Leader Election for Jobs)
 
@@ -429,13 +430,13 @@ public void runDailySettlement() {
 - Legacy fayl integratsiyasida umumiy katalogni faqat bitta node'ning poll qilishi.
 - In-memory holat (masalan, hisoblangan hisobot buffer'i) saqlaydigan komponentni faqat leader'da yoqish.
 
-**Ehtiyot bo'ling:** Split-brain real xavf: tarmoq uzilishida eski leader o'zini hali ham leader deb hisoblab ishni davom ettirishi mumkin, shuning uchun vazifalar idempotent bo'lishi va lock TTL qisqa bo'lishi kerak. Barcha yuklamani bitta node'ga yig'ish resurs nomutanosibligini keltiradi — CPU-og'ir batch uchun leader'ni faqat koordinator qilib, haqiqiy ishni worker'larga tarqatish to'g'riroq.
+**Ehtiyot bo'ling:** Split-brain real xavf: tarmoq uzilishida eski leader o'zini hali ham leader deb hisoblab ishni davom ettirishi mumkin, shuning uchun vazifalar idempotent bo'lishi va lock TTL qisqa bo'lishi kerak. Barcha yuklamani bitta node'ga yig'ish resurs nomutanosibligini keltiradi - CPU-og'ir batch uchun leader'ni faqat koordinator qilib, haqiqiy ishni worker'larga tarqatish to'g'riroq.
 
 ## 20.25 Spring Cloud Task
 
 **Tavsif:** Qisqa muddat ishlaydigan, boshlanib tugaydigan (short-lived) mikroservislar uchun hayot sikli va audit patterni. Ilova ishga tushganda ish boshlanish yozuvi, tugaganda tugash vaqti va exit kod bazaga yoziladi, so'ng JVM to'xtaydi. Bu uzluksiz ishlab turadigan servis emas, balki konteyner sifatida ishga tushirilib tugaydigan vazifa modelini Spring Boot ichida standartlashtiradi.
 
-**Spring'da qayerda uchraydi:** `spring-cloud-task-core` va `@EnableTask`; audit uchun `TaskRepository`, `TaskExplorer`, `TaskExecution` modeli va `TASK_EXECUTION`/`TASK_EXECUTION_PARAMS` jadvallari; hayot siklini boshqaruvchi `TaskLifecycleListener`, natijani belgilash uchun `ExitCodeGenerator`/`ExitCodeExceptionMapper`. Spring Batch bilan integratsiya `spring-cloud-task-batch` modulida: `TaskBatchExecutionListener` job execution'ni task execution'ga bog'laydi, remote partitioning uchun `DeployerPartitionHandler` va `DeployerStepExecutionHandler` worker'larni platformada (Kubernetes, Cloud Foundry) ishga tushiradi. Orkestratsiya va UI qatlami — Spring Cloud Data Flow.
+**Spring'da qayerda uchraydi:** `spring-cloud-task-core` va `@EnableTask`; audit uchun `TaskRepository`, `TaskExplorer`, `TaskExecution` modeli va `TASK_EXECUTION`/`TASK_EXECUTION_PARAMS` jadvallari; hayot siklini boshqaruvchi `TaskLifecycleListener`, natijani belgilash uchun `ExitCodeGenerator`/`ExitCodeExceptionMapper`. Spring Batch bilan integratsiya `spring-cloud-task-batch` modulida: `TaskBatchExecutionListener` job execution'ni task execution'ga bog'laydi, remote partitioning uchun `DeployerPartitionHandler` va `DeployerStepExecutionHandler` worker'larni platformada (Kubernetes, Cloud Foundry) ishga tushiradi. Orkestratsiya va UI qatlami - Spring Cloud Data Flow.
 
 **Qo'llanish keyslari:**
 - Kubernetes `CronJob` sifatida ishga tushirilib tugaydigan kechki ETL vazifasini auditi bilan yuritish.
@@ -444,11 +445,11 @@ public void runDailySettlement() {
 - Ma'lumotlar migratsiyasi yoki bir martalik backfill skriptini kuzatiladigan task sifatida rasmiylashtirish.
 - Spring Cloud Data Flow'da task'lar zanjirini (job A tugagach job B) qurish.
 
-**Ehtiyot bo'ling:** Task modeli doimiy ishlaydigan ilova uchun emas: `@EnableTask`ni web servisga qo'shib qo'ysangiz, ilova startup'dan keyin darhol tugash yozuvini yozib, kutilmagan holatga tushadi. Shuningdek `TASK_EXECUTION` jadvali vaqt o'tishi bilan o'sib boradi — retention/purge rejasi va DataSource izolyatsiyasini oldindan o'ylab qo'ying.
+**Ehtiyot bo'ling:** Task modeli doimiy ishlaydigan ilova uchun emas: `@EnableTask`ni web servisga qo'shib qo'ysangiz, ilova startup'dan keyin darhol tugash yozuvini yozib, kutilmagan holatga tushadi. Shuningdek `TASK_EXECUTION` jadvali vaqt o'tishi bilan o'sib boradi - retention/purge rejasi va DataSource izolyatsiyasini oldindan o'ylab qo'ying.
 
 ## 20.26 Solishtirish (reconciliation) joblari (Reconciliation Jobs)
 
-**Tavsif:** Ikki yoki undan ortiq tizimdagi ma'lumot holatini davriy solishtirib, nomuvofiqliklarni (yetishmayotgan, ortiqcha, qiymati farq qiladigan yozuvlarni) topadi va avtomatik tuzatadi yoki hisobot qiladi. Eventual consistency sharoitida xabar yo'qolishi, retry dublikatlari va qo'lda tuzatishlar sababli drift muqarrar — reconciliation shu drift uchun "oxirgi himoya chizig'i". Odatda ikki tomonni kalit bo'yicha saralangan holda stream qilib, merge-join algoritmi bilan farqlar aniqlanadi.
+**Tavsif:** Ikki yoki undan ortiq tizimdagi ma'lumot holatini davriy solishtirib, nomuvofiqliklarni (yetishmayotgan, ortiqcha, qiymati farq qiladigan yozuvlarni) topadi va avtomatik tuzatadi yoki hisobot qiladi. Eventual consistency sharoitida xabar yo'qolishi, retry dublikatlari va qo'lda tuzatishlar sababli drift muqarrar - reconciliation shu drift uchun "oxirgi himoya chizig'i". Odatda ikki tomonni kalit bo'yicha saralangan holda stream qilib, merge-join algoritmi bilan farqlar aniqlanadi.
 
 **Spring'da qayerda uchraydi:** Spring Batch (`spring-boot-starter-batch`) bilan: `JobRepository`, `StepBuilder`, `ItemStreamReader` implementatsiyalari (`JdbcCursorItemReader`, `JdbcPagingItemReader`, `FlatFileItemReader`), ikki manbani birga o'qish uchun o'z `ItemReader` wrapper'i, natijalarni ikki yo'nalishga yozish uchun `ClassifierCompositeItemWriter`. Tashqi tizimni so'rash uchun `RestClient`/`WebClient`, tuzatish event'larini yuborish uchun `KafkaTemplate`. Nomuvofiqlik metrikalari uchun Micrometer `Counter`/`Gauge` va `JobExecutionListener` ichida alert yuborish; kichik hajmlarda `@Scheduled` + `JdbcTemplate` ham yetarli.
 
@@ -459,11 +460,11 @@ public void runDailySettlement() {
 - Buxgalteriya ledger'i va bank ko'chirmasi o'rtasidagi farqlarni kunlik aniqlash.
 - Microservice'lar o'rtasida replikatsiya qilingan read-model'ni manba jadvali bilan tekshirish.
 
-**Ehtiyot bo'ling:** Tuzatishni ko'r-ko'rona avtomatlashtirish xavfli — ikki tomonning kesish vaqti (cut-off) bir xil bo'lmasa, "yetishmayotgan" deb topilgan yozuvlar aslida yo'lda bo'lgan tranzaksiyalar bo'lib chiqadi va job to'g'ri ma'lumotni buzadi. Avval faqat hisobot rejimida (dry-run) ishlatib, farq hajmi uchun chegara (threshold) qo'ying; chegaradan oshsa avtomatik tuzatishni to'xtatib, odamga eskalatsiya qiling.
+**Ehtiyot bo'ling:** Tuzatishni ko'r-ko'rona avtomatlashtirish xavfli - ikki tomonning kesish vaqti (cut-off) bir xil bo'lmasa, "yetishmayotgan" deb topilgan yozuvlar aslida yo'lda bo'lgan tranzaksiyalar bo'lib chiqadi va job to'g'ri ma'lumotni buzadi. Avval faqat hisobot rejimida (dry-run) ishlatib, farq hajmi uchun chegara (threshold) qo'ying; chegaradan oshsa avtomatik tuzatishni to'xtatib, odamga eskalatsiya qiling.
 
 ## 20.27 Arxivlash va tozalash joblari (Archive / Purge Jobs)
 
-**Tavsif:** Operatsion bazadagi eski ma'lumotni retention siyosatiga muvofiq arzon saqlash joyiga ko'chiradi yoki butunlay o'chiradi. Maqsad — jadval va indeks hajmini, shu orqali so'rov vaqtini va zaxira (backup) oynasini nazoratda tutish, hamda yuridik saqlash muddati talablariga rioya qilish. To'g'ri amalga oshirilganda ish kichik chunk'larga bo'linadi: har bir tranzaksiyada ma'lum sondagi qator ko'chiriladi/o'chiriladi va keyin pauza beriladi.
+**Tavsif:** Operatsion bazadagi eski ma'lumotni retention siyosatiga muvofiq arzon saqlash joyiga ko'chiradi yoki butunlay o'chiradi. Maqsad - jadval va indeks hajmini, shu orqali so'rov vaqtini va zaxira (backup) oynasini nazoratda tutish, hamda yuridik saqlash muddati talablariga rioya qilish. To'g'ri amalga oshirilganda ish kichik chunk'larga bo'linadi: har bir tranzaksiyada ma'lum sondagi qator ko'chiriladi/o'chiriladi va keyin pauza beriladi.
 
 **Spring'da qayerda uchraydi:** Spring Batch step'i `JdbcPagingItemReader` + `JdbcBatchItemWriter` yoki `FlatFileItemWriter` (CSV/JSONL eksport) bilan; `chunk(1000, transactionManager)` va `taskExecutor` orqali throttling. Arxivni obyekt saqlashga yuborish uchun Spring Cloud AWS `S3Template`/`S3Client`, yoki `spring-integration-sftp`. Oddiy holatlar uchun `@Scheduled` + `JdbcTemplate.update()` ni `LIMIT` bilan tsiklda chaqirish; jadval partition'larini DB darajasida drop qilish (PostgreSQL/Oracle partitioning) eng tez variant. Soft delete uchun Hibernate 6 `@SoftDelete` (Spring Boot 3.3+ da mavjud) va `@Where`/filter'lar.
 
@@ -474,11 +475,11 @@ public void runDailySettlement() {
 - `TASK_EXECUTION`, `BATCH_STEP_EXECUTION_CONTEXT` kabi metadata jadvallarini qisqartirish.
 - Vaqtinchalik fayl yuklash (upload staging) katalogini va unga mos DB yozuvlarini tozalash.
 
-**Ehtiyot bo'ling:** Bitta katta `DELETE` operatsiyasi million qatorni bir tranzaksiyada o'chirib, lock eskalatsiyasi, replikatsiya lag'i va WAL/undo portlashiga olib keladi — har doim chunk bilan va past yuklama oynasida ishlang. O'chirishdan oldin arxiv muvaffaqiyatli yozilganini tasdiqlang (avval yoz, keyin o'chir), aks holda tiklab bo'lmaydigan ma'lumot yo'qotiladi; yuridik saqlash (legal hold) ostidagi yozuvlar uchun istisno filtri bo'lishi shart.
+**Ehtiyot bo'ling:** Bitta katta `DELETE` operatsiyasi million qatorni bir tranzaksiyada o'chirib, lock eskalatsiyasi, replikatsiya lag'i va WAL/undo portlashiga olib keladi - har doim chunk bilan va past yuklama oynasida ishlang. O'chirishdan oldin arxiv muvaffaqiyatli yozilganini tasdiqlang (avval yoz, keyin o'chir), aks holda tiklab bo'lmaydigan ma'lumot yo'qotiladi; yuridik saqlash (legal hold) ostidagi yozuvlar uchun istisno filtri bo'lishi shart.
 
 ## 20.28 Batch oynasi va SLA (Batch Window & SLA)
 
-**Tavsif:** Batch ishlari uchun ruxsat etilgan vaqt oynasi (masalan, 01:00–05:00) va har bir job uchun tugash muddati shartnoma sifatida belgilanadi, so'ng real bajarilish vaqti kuzatilib, oynadan chiqish xavfi oldindan aniqlanadi. Oyna ichida joblar o'zaro bog'liqlik (dependency) grafi bo'yicha tartiblanadi, kritik yo'l (critical path) hisoblanadi va kechikish signal beradi. Oynadan oshib ketgan job operatsion yuklamaga va mijoz SLA'siga ta'sir qilgani uchun uni to'xtatish yoki qisqartirilgan rejimda davom etish qoidalari ham qismi hisoblanadi.
+**Tavsif:** Batch ishlari uchun ruxsat etilgan vaqt oynasi (masalan, 01:00-05:00) va har bir job uchun tugash muddati shartnoma sifatida belgilanadi, so'ng real bajarilish vaqti kuzatilib, oynadan chiqish xavfi oldindan aniqlanadi. Oyna ichida joblar o'zaro bog'liqlik (dependency) grafi bo'yicha tartiblanadi, kritik yo'l (critical path) hisoblanadi va kechikish signal beradi. Oynadan oshib ketgan job operatsion yuklamaga va mijoz SLA'siga ta'sir qilgani uchun uni to'xtatish yoki qisqartirilgan rejimda davom etish qoidalari ham qismi hisoblanadi.
 
 **Spring'da qayerda uchraydi:** Spring Batch'da `JobExecutionListener`/`StepExecutionListener` bilan boshlanish-tugash vaqtini o'lchash, `JobExplorer` va `JobOperator` (`stop(executionId)`) bilan ishlayotgan execution'larni kuzatish va to'xtatish, `StepExecution#setTerminateOnly()` bilan muloyim uzish. Micrometer avtomatik `spring.batch.job` va `spring.batch.step` timer metrikalarini chiqaradi (tag'lar: `name`, `status`), ularni Prometheus alert'lari bilan bog'lash mumkin; `management.endpoint.health` va Actuator orqali holat ko'rsatiladi. Tashqi orkestratsiyada Spring Cloud Data Flow yoki Airflow/Control-M oynani va dependency'ni boshqaradi, Boot ilovasi esa faqat o'z SLA metrikasini e'lon qiladi.
 
@@ -489,7 +490,7 @@ public void runDailySettlement() {
 - Job o'rtacha davomiyligi oshib borayotganini trend sifatida kuzatib, hajm o'sishiga oldindan tayyorlanish.
 - Oyna ichida bir vaqtda ishlaydigan joblar sonini cheklab, OLTP bazaga tushadigan yuklamani boshqarish.
 
-**Ehtiyot bo'ling:** Faqat "job muvaffaqiyatli tugadi" signalini kuzatish yetarli emas — oynadan chiqqan, lekin "SUCCESS" bilan tugagan job SLA buzilishini yashiradi, shuning uchun davomiylik va tugash vaqti bo'yicha alohida alert kerak. Oyna yetmay qolganda birinchi reaksiya parallelizmni oshirish bo'lmasin: parallel step'lar bir xil DB'ga urilib umumiy throughput'ni pasaytirishi mumkin, avval kritik yo'lni va eng sekin step'ni o'lchang.
+**Ehtiyot bo'ling:** Faqat "job muvaffaqiyatli tugadi" signalini kuzatish yetarli emas - oynadan chiqqan, lekin "SUCCESS" bilan tugagan job SLA buzilishini yashiradi, shuning uchun davomiylik va tugash vaqti bo'yicha alohida alert kerak. Oyna yetmay qolganda birinchi reaksiya parallelizmni oshirish bo'lmasin: parallel step'lar bir xil DB'ga urilib umumiy throughput'ni pasaytirishi mumkin, avval kritik yo'lni va eng sekin step'ni o'lchang.
 
 ## 20.29 Idempotent batch (Idempotent Batch)
 
@@ -504,7 +505,7 @@ public void runDailySettlement() {
 - Kunlik agregatni `MERGE`/upsert bilan qayta hisoblab, eski qiymat ustiga yozish.
 - Bildirishnoma yuborish step'ida `notification_sent` dedup jadvali bilan takroriy email'ni to'sish.
 
-**Ehtiyot bo'ling:** `ExecutionContext`ga tayangan restart faqat reader deterministik tartibda o'qiganda to'g'ri ishlaydi — `ORDER BY` bo'lmagan paging reader restart'da qatorlarni tashlab ketadi yoki takrorlaydi. Chunk ichidagi tashqi side-effect'lar (email, tashqi API chaqiruvi) DB tranzaksiyasiga kirmaydi, shuning uchun ularni alohida idempotentlik kaliti bilan himoyalang va "retry = xavfsiz" degan taxminni har bir writer uchun alohida tekshirib chiqing.
+**Ehtiyot bo'ling:** `ExecutionContext`ga tayangan restart faqat reader deterministik tartibda o'qiganda to'g'ri ishlaydi - `ORDER BY` bo'lmagan paging reader restart'da qatorlarni tashlab ketadi yoki takrorlaydi. Chunk ichidagi tashqi side-effect'lar (email, tashqi API chaqiruvi) DB tranzaksiyasiga kirmaydi, shuning uchun ularni alohida idempotentlik kaliti bilan himoyalang va "retry = xavfsiz" degan taxminni har bir writer uchun alohida tekshirib chiqing.
 
 ## 20.30 Batch'da dead-letter boshqaruvi (Dead-Letter Handling in Batch)
 
@@ -530,7 +531,7 @@ return new StepBuilder("importStep", jobRepository)
 - Kafka'dan o'qiydigan batch consumer'da deserializatsiya xatosi bo'lgan xabarlarni DLT topic'ga ko'chirish.
 - Tuzatilgan reject'larni qayta ishlash uchun alohida "replay" jobini ishga tushirish.
 
-**Ehtiyot bo'ling:** `skipLimit`ni juda katta (yoki `Integer.MAX_VALUE`) qilib qo'yish eng xavfli antipattern — manba tizimida global buzilish yuz berganda job "muvaffaqiyatli" tugab, ma'lumotning yarmi jimgina yo'qoladi; limitni biznes uchun qabul qilinadigan darajada past tutib, oshsa job'ni fail qildiring. Shuningdek `skip` bilan birga tranzaksiya rollback va chunk'ni element-element qayta ishlash yuz beradi, bu performansni sezilarli pasaytiradi, va dead-letter store'ni monitoring qilmasangiz u hech kim qaramaydigan "ma'lumot qabristoni"ga aylanadi.
+**Ehtiyot bo'ling:** `skipLimit`ni juda katta (yoki `Integer.MAX_VALUE`) qilib qo'yish eng xavfli antipattern - manba tizimida global buzilish yuz berganda job "muvaffaqiyatli" tugab, ma'lumotning yarmi jimgina yo'qoladi; limitni biznes uchun qabul qilinadigan darajada past tutib, oshsa job'ni fail qildiring. Shuningdek `skip` bilan birga tranzaksiya rollback va chunk'ni element-element qayta ishlash yuz beradi, bu performansni sezilarli pasaytiradi, va dead-letter store'ni monitoring qilmasangiz u hech kim qaramaydigan "ma'lumot qabristoni"ga aylanadi.
 
 ---
 
