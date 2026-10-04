@@ -20,6 +20,11 @@ qanday saqlanishini belgilaydi: qaysi bilim qaysi joyga boradi, qanday tartibda
 o'qiladi va yoziladi, nima umuman saqlanmaydi. Memory haqida gap boradigan
 boshqa fayllar qoidani nusxalamaydi, shu faylga havola qiladi.
 
+Filtrdan o'tgan bilimning o'zi [memory/](memory/) papkasida, proyekt bo'yicha
+yig'iladi: `memory/umumiy/` barcha proyektlarga tegishli bilim, `memory/<proyekt-slug>/`
+esa bitta proyektga tegishli bilim. Boshqa proyektda ishlayotgan sessiya o'sha
+proyekt papkasidan kerakligini o'qiydi. Ombor qoidasi [memory/README.md](memory/README.md) da.
+
 ## Qayerdan boshlash
 
 - **Kod yozyapsiz va Sonar shikoyat qilyapti** - SonarQube hujjatidagi xato katalogi

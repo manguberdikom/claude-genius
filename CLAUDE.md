@@ -22,6 +22,10 @@ juft, mundarijadagi havolalar ishlaydi.
 
 ## Memory
 
+Bu proyektning memoryasi `memory/claude-genius/` papkasida, barcha proyektlarga
+tegishli bilim `memory/umumiy/` da. Ish boshida o'sha ikki `MEMORY.md` indeksi
+o'qiladi, kerakli topic fayl indeksga qarab o'qiladi.
+
 Memoryga yozish yoki uni tozalash kerak bo'lganda `memory-protocol.md` o'qiladi:
-darvoza, marshrut jadvali va saqlash ketma-ketligi o'sha faylda. Bu yerda ular
-takrorlanmaydi.
+darvoza, marshrut jadvali va saqlash ketma-ketligi o'sha faylda. Ombor qoidasi
+`memory/README.md` da. Bu yerda ular takrorlanmaydi.

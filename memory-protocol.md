@@ -35,7 +35,8 @@ xususiyatlar yonida CLI versiyasi ko'rsatilgan.
 - [12. Memoryga yozilmaydigan narsalar](#12-memoryga-yozilmaydigan-narsalar)
 - [13. Tekshirish va audit](#13-tekshirish-va-audit)
 - [14. Boshqa MD lar uchun ulanish bloki](#14-boshqa-md-lar-uchun-ulanish-bloki)
-- [15. Amalda qo'llash](#15-amalda-qollash)
+- [15. Git memory ombori: proyekt bo'yicha saqlash](#15-git-memory-ombori-proyekt-boyicha-saqlash)
+- [16. Amalda qo'llash](#16-amalda-qollash)
 
 ---
 
@@ -182,6 +183,7 @@ kerak bo'lgan paytda ishlamaydi.
 | Faqat ma'lum fayllarga tegishli qoida | `.claude/rules/<mavzu>.md` + `paths:` | faqat o'sha fayl ochilganda yuklanadi, kontekst tejaladi |
 | Ko'p qadamli jarayon (deploy, release, hujjat yig'ish) | `.claude/skills/<nom>/SKILL.md` | faqat kerak bo'lganda yuklanadi |
 | Katta bilim bazasi, qo'llanma, katalog | repodagi oddiy `.md` fayl | hech qachon avtomatik yuklanmaydi, teskari apostrofda havola qilinadi |
+| Sessiyalar va mashinalar orasida saqlanishi kerak bilim | git memory ombori, `memory/<proyekt-slug>/` | auto memory mashinadan chiqmaydi, git chiqadi |
 | Foydalanuvchi afzalligi va roli | auto memory, `type: user` | Claude o'zi yozadi, odam yozishi shart emas |
 | Berilgan tuzatish, tasdiqlangan yondashuv | auto memory, `type: feedback` | ikkinchi marta aytilmasligi uchun |
 | Davom etayotgan ish holati, qaror, muddat | auto memory `type: project`, cloud'da repo hujjati | kodidan chiqarib bo'lmaydi |
@@ -482,10 +484,11 @@ qaytarib olinadi, auto memory papkasi u bilan ketadi.
 
 Shuning uchun cloud ish uslubida marshrut o'zgaradi:
 
-1. Jamoaga va kelajak sessiyalarga kerak bilim: `CLAUDE.md`, `.claude/rules/`,
-   `.claude/skills/` yoki repodagi hujjat. Hammasi commit qilinadi.
-2. Ishning yarim qolgan holati: repodagi hujjat (eski `HANDOFF.md` aynan shu
-   vazifani bajargan), auto memory emas.
+1. Proyektning o'z qoidasi: `CLAUDE.md`, `.claude/rules/`, `.claude/skills/`.
+   O'sha proyekt repositoriyasida turadi va commit qilinadi.
+2. Sessiyalar orasida saqlanishi kerak bilim va ishning yarim qolgan holati:
+   git memory ombori, `memory/<proyekt-slug>/`. Eski `HANDOFF.md` shu vazifani
+   qo'lda bajargan. Keyingi bo'lim shu haqda.
 3. Faqat bitta sessiyaga tegishli narsa: scratchpad, hech qayerga saqlanmaydi.
 
 Subagent uchun ham shu mantiq: asosiy suhbatning auto memory'si subagent'ga
@@ -624,7 +627,77 @@ o'qiladi.
 
 ---
 
-## 15. Amalda qo'llash
+## 15. Git memory ombori: proyekt bo'yicha saqlash
+
+Auto memory bitta mashinada yashaydi va cloud konteyneri bilan ketadi. Shu repo
+o'sha bo'shliqni to'ldiradi: `memory/` papkasi filtrdan o'tgan bilimni git'da,
+proyekt bo'yicha saqlaydi.
+
+### Vazifa taqsimoti
+
+| Qism | Roli |
+|---|---|
+| Protokol (shu fayl) | filtr: nima saqlanadi, qaysi joyga, qanday tartibda |
+| `memory/` papkasi | ombor: filtrdan o'tgan bilim git'da yig'iladi |
+| Auto memory | bitta mashinadagi tezkor qatlam, uzoq muddatli manba emas |
+
+Ombor tuzilishi, ulanish buyruqlari va proyektlar ro'yxati `memory/README.md`
+da. Bu bo'lim faqat qarorga tegishli qismni beradi.
+
+### Ikki daraja
+
+| Daraja | Nima turadi |
+|---|---|
+| `memory/umumiy/` | har qanday proyektda bir xil amal qiladigan bilim: til, uslub, umumiy afzallik |
+| `memory/<proyekt-slug>/` | faqat o'sha proyektga tegishli: tuzoq, qaror, tugallanmagan ish |
+
+Bitta gap ikki joyda turmaydi. Bilim ikkinchi proyektda ham kerak bo'lsa, nusxa
+olinmaydi: `umumiy/` ga ko'chiriladi va proyekt papkasidan o'chiriladi.
+
+### Papka nomi
+
+| Holat | Nom |
+|---|---|
+| GitHub repo bor | repo nomi, kichik harfda |
+| Ikki egada bir xil nom | `<egasi>__<repo>` |
+| GitHub repo yo'q | proyekt ildiz papkasining nomi |
+
+Nom qoidadan chiqadi, taxmin qilinmaydi. Papka yo'q bo'lsa, yangisi `MEMORY.md`
+indeksi bilan boshlanadi. Memory yo'qligi ishga to'siq emas.
+
+### Omborga qo'shilgan ketma-ketlik
+
+6-bo'limdagi umumiy ketma-ketlik o'zgarmaydi, uning ustiga ikki qadam qo'shiladi:
+
+- **O'qishdan oldin:** `git pull`. Eski clone eskirgan bilim beradi, bu
+  yozuvning umuman yo'qligidan xavfliroq.
+- **Yozgandan keyin:** commit va push. Push qilinmagan yozuv saqlanmagan
+  hisoblanadi, chunki cloud konteyneri qaytarib olinadi.
+
+### Boshqa proyekt qanday ulanadi
+
+O'sha proyektning `CLAUDE.md` fayliga manzil qo'yiladi, qoida emas:
+
+```markdown
+## Memory
+
+Bu proyektning memoryasi `manguberdikom/claude-genius` repodagi
+`memory/<proyekt-slug>/` papkasida, umumiy bilim `memory/umumiy/` da.
+Ish boshida o'sha ikki `MEMORY.md` indeksi o'qiladi, kerakli topic fayl
+indeksga qarab o'qiladi. Yozish qoidasi: o'sha repodagi `memory-protocol.md`.
+```
+
+Blok qisqa bo'lishi majburiy: u har sessiyada yuklanadi. Protokol va topic
+fayllar esa faqat kerak bo'lganda o'qiladi.
+
+### Ombor ochiq repoda turadi
+
+Sir, token, parol va shaxsiy ma'lumot masalasida istisno yo'q. Yozuvda kalitning
+qiymati emas, joyi ko'rsatiladi.
+
+---
+
+## 16. Amalda qo'llash
 
 - [ ] Loyiha `CLAUDE.md` da shu faylga bir qatorli havola bor, `@` import yo'q
 - [ ] `/context` ishlatib yuklanadigan memory fayllar ro'yxati bir marta ko'rilgan
@@ -642,3 +715,7 @@ o'qiladi.
 - [ ] Cloud sessiyada saqlanishi kerak bilim repoga commit qilingan
 - [ ] Memory haqida gap boradigan boshqa MD lar qoidani nusxalamaydi, havola qiladi
 - [ ] Oxirgi auditdan keyin `/doctor prompt-audit` bir marta ishlatilgan
+- [ ] Omborga yozishdan oldin `git pull`, yozgandan keyin commit va push qilingan
+- [ ] Umumiy bilim `memory/umumiy/` da, proyekt bilimi proyekt papkasida, nusxa yo'q
+- [ ] Yangi proyekt papkasi nomi slug qoidasiga mos
+- [ ] Proyekt `CLAUDE.md` idagi memory bloki qisqa: manzil bor, qoida nusxasi yo'q
