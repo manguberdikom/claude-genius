@@ -467,6 +467,183 @@ JVM, Spring va PostgreSQL mexanikasi `java-spring-architect-mindset.md` faylida.
   - [31.11 Sonar ni dushman emas, vosita sifatida ishlatish](#3111-sonar-ni-dushman-emas-vosita-sifatida-ishlatish)
   - [31.12 Amalda qo'llash](#3112-amalda-qollash)
 
+**[VIII. Server va tashkilot](#viii-server-va-tashkilot)**
+
+- [32. SonarQube nashrlari va ularning farqi (Editions)](#32-sonarqube-nashrlari-va-ularning-farqi-editions)
+  - [32.1 Nashrlar qatori: Community, Developer, Enterprise va Data Center yo'nalishi](#321-nashrlar-qatori-community-developer-enterprise-va-data-center-yonalishi)
+  - [32.2 Community nashrda nima bor va nima yo'q](#322-community-nashrda-nima-bor-va-nima-yoq)
+  - [32.3 Branch tahlili va pull request decoration qaysi nashrdan boshlab mavjud](#323-branch-tahlili-va-pull-request-decoration-qaysi-nashrdan-boshlab-mavjud)
+  - [32.4 Taint analysis (chuqur xavfsizlik tahlili) qaysi nashrda ishlaydi](#324-taint-analysis-chuqur-xavfsizlik-tahlili-qaysi-nashrda-ishlaydi)
+  - [32.5 Portfolio, umumiy hisobot va ko'p loyihali ko'rinish](#325-portfolio-umumiy-hisobot-va-kop-loyihali-korinish)
+  - [32.6 Qo'llab-quvvatlanadigan tillar soni nashrga qanday bog'liq](#326-qollab-quvvatlanadigan-tillar-soni-nashrga-qanday-bogliq)
+  - [32.7 SonarQube Cloud va o'zingizda joylashtirilgan server tanlovi](#327-sonarqube-cloud-va-ozingizda-joylashtirilgan-server-tanlovi)
+  - [32.8 Litsenziya qanday hisoblanadi va xarajat nimaga bog'liq](#328-litsenziya-qanday-hisoblanadi-va-xarajat-nimaga-bogliq)
+  - [32.9 Community nashrda chegaralarni qanday chetlab o'tish mumkin va buning narxi](#329-community-nashrda-chegaralarni-qanday-chetlab-otish-mumkin-va-buning-narxi)
+  - [32.10 Qaysi jamoaga qaysi nashr mos keladi: hajm va ehtiyojga qarab tavsiya](#3210-qaysi-jamoaga-qaysi-nashr-mos-keladi-hajm-va-ehtiyojga-qarab-tavsiya)
+  - [32.11 Nashrni tanlashdan oldin beriladigan savollar](#3211-nashrni-tanlashdan-oldin-beriladigan-savollar)
+  - [32.12 Amalda qo'llash](#3212-amalda-qollash)
+- [33. Serverni o'rnatish, sozlash va resurs rejalashtirish (Installing and Sizing the Server)](#33-serverni-ornatish-sozlash-va-resurs-rejalashtirish-installing-and-sizing-the-server)
+  - [33.1 Server tarkibi: web, compute engine, qidiruv indeksi va ma'lumotlar bazasi](#331-server-tarkibi-web-compute-engine-qidiruv-indeksi-va-malumotlar-bazasi)
+  - [33.2 Ma'lumotlar bazasi talablari va PostgreSQL ni tayyorlash](#332-malumotlar-bazasi-talablari-va-postgresql-ni-tayyorlash)
+  - [33.3 Docker va Docker Compose bilan ko'tarish](#333-docker-va-docker-compose-bilan-kotarish)
+  - [33.4 Kubernetes da ishga tushirish va doimiy saqlash](#334-kubernetes-da-ishga-tushirish-va-doimiy-saqlash)
+  - [33.5 Operatsion tizim talablari: `vm.max_map_count` va fayl deskriptorlari](#335-operatsion-tizim-talablari-vmmax_map_count-va-fayl-deskriptorlari)
+  - [33.6 Xotira taqsimoti: web, compute engine va qidiruv uchun alohida sozlash](#336-xotira-taqsimoti-web-compute-engine-va-qidiruv-uchun-alohida-sozlash)
+  - [33.7 Loyihalar soni va kod hajmiga qarab resurs rejalashtirish](#337-loyihalar-soni-va-kod-hajmiga-qarab-resurs-rejalashtirish)
+  - [33.8 Disk: ma'lumotlar bazasi, indeks va o'sish prognozi](#338-disk-malumotlar-bazasi-indeks-va-osish-prognozi)
+  - [33.9 Teskari proksi, HTTPS va tashqi manzil sozlash](#339-teskari-proksi-https-va-tashqi-manzil-sozlash)
+  - [33.10 Tahlil navbati uzayganda nima qilish](#3310-tahlil-navbati-uzayganda-nima-qilish)
+  - [33.11 Server loglarini o'qish va asosiy sog'liq tekshiruvlari](#3311-server-loglarini-oqish-va-asosiy-sogliq-tekshiruvlari)
+  - [33.12 Amalda qo'llash](#3312-amalda-qollash)
+- [34. Yangilash, LTA migratsiyasi, zaxira va housekeeping (Upgrades, Backup and Housekeeping)](#34-yangilash-lta-migratsiyasi-zaxira-va-housekeeping-upgrades-backup-and-housekeeping)
+  - [34.1 LTA (uzoq muddatli) liniya va oraliq versiyalar farqi](#341-lta-uzoq-muddatli-liniya-va-oraliq-versiyalar-farqi)
+  - [34.2 Yangilash yo'li: qaysi versiyadan qaysi versiyaga sakrash mumkin](#342-yangilash-yoli-qaysi-versiyadan-qaysi-versiyaga-sakrash-mumkin)
+  - [34.3 Yangilashdan oldin zaxira: ma'lumotlar bazasi va sozlamalar](#343-yangilashdan-oldin-zaxira-malumotlar-bazasi-va-sozlamalar)
+  - [34.4 Yangilash jarayoni va migratsiya sahifasi](#344-yangilash-jarayoni-va-migratsiya-sahifasi)
+  - [34.5 Yangilashdan keyin yangi qoidalar yuzlab issue chiqarishi va unga tayyorgarlik](#345-yangilashdan-keyin-yangi-qoidalar-yuzlab-issue-chiqarishi-va-unga-tayyorgarlik)
+  - [34.6 Qoida o'zgarishi natijalarni qanday siljitadi va qayta bazaviylashtirish (re-baseline)](#346-qoida-ozgarishi-natijalarni-qanday-siljitadi-va-qayta-bazaviylashtirish-re-baseline)
+  - [34.7 Plugin moslik masalasi va ularni tekshirish](#347-plugin-moslik-masalasi-va-ularni-tekshirish)
+  - [34.8 Housekeeping sozlamalari: eski tahlil, branch va PR ma'lumotlarini tozalash](#348-housekeeping-sozlamalari-eski-tahlil-branch-va-pr-malumotlarini-tozalash)
+  - [34.9 Ma'lumotlar bazasi hajmi o'sishi va uni jilovlash](#349-malumotlar-bazasi-hajmi-osishi-va-uni-jilovlash)
+  - [34.10 Yangilashni avval sinov muhitida o'tkazish tartibi](#3410-yangilashni-avval-sinov-muhitida-otkazish-tartibi)
+  - [34.11 Orqaga qaytarish rejasi: nega zaxirasiz yangilash xavfli](#3411-orqaga-qaytarish-rejasi-nega-zaxirasiz-yangilash-xavfli)
+  - [34.12 Amalda qo'llash](#3412-amalda-qollash)
+- [35. Foydalanuvchi, guruh, huquqlar, token va SSO (Users, Permissions and Tokens)](#35-foydalanuvchi-guruh-huquqlar-token-va-sso-users-permissions-and-tokens)
+  - [35.1 Huquqlar modeli: global huquqlar va loyiha huquqlari](#351-huquqlar-modeli-global-huquqlar-va-loyiha-huquqlari)
+  - [35.2 Asosiy loyiha huquqlari: ko'rish, tahlil yuritish, issue boshqarish, sozlash](#352-asosiy-loyiha-huquqlari-korish-tahlil-yuritish-issue-boshqarish-sozlash)
+  - [35.3 Guruhlar bilan ishlash va shaxsiy huquq bermaslik qoidasi](#353-guruhlar-bilan-ishlash-va-shaxsiy-huquq-bermaslik-qoidasi)
+  - [35.4 Huquq shabloni (permission template) va yangi loyihaga avtomatik qo'llash](#354-huquq-shabloni-permission-template-va-yangi-loyihaga-avtomatik-qollash)
+  - [35.5 Loyiha ko'rinuvchanligi: ochiq va yopiq loyihalar](#355-loyiha-korinuvchanligi-ochiq-va-yopiq-loyihalar)
+  - [35.6 Token turlari: foydalanuvchi, global tahlil, loyiha tahlili](#356-token-turlari-foydalanuvchi-global-tahlil-loyiha-tahlili)
+  - [35.7 Token ni CI da saqlash, aylantirish va muddatini belgilash](#357-token-ni-ci-da-saqlash-aylantirish-va-muddatini-belgilash)
+  - [35.8 LDAP, SAML va OAuth orqali kirishni ulash](#358-ldap-saml-va-oauth-orqali-kirishni-ulash)
+  - [35.9 Kim quality gate va profilni o'zgartira olishi kerak](#359-kim-quality-gate-va-profilni-ozgartira-olishi-kerak)
+  - [35.10 Audit: kim nimani o'zgartirganini kuzatish](#3510-audit-kim-nimani-ozgartirganini-kuzatish)
+  - [35.11 Xavfsizlik bo'yicha tez-tez uchraydigan xatolar: ochiq server, umumiy token](#3511-xavfsizlik-boyicha-tez-tez-uchraydigan-xatolar-ochiq-server-umumiy-token)
+  - [35.12 Amalda qo'llash](#3512-amalda-qollash)
+
+**[IX. Kengaytirish va integratsiya](#ix-kengaytirish-va-integratsiya)**
+
+- [36. Web API va avtomatlashtirish (Web API and Automation)](#36-web-api-va-avtomatlashtirish-web-api-and-automation)
+  - [36.1 Web API qayerda hujjatlashtirilgan va uni serverdan qanday ochish](#361-web-api-qayerda-hujjatlashtirilgan-va-uni-serverdan-qanday-ochish)
+  - [36.2 Autentifikatsiya: token bilan so'rov yuborish](#362-autentifikatsiya-token-bilan-sorov-yuborish)
+  - [36.3 Loyiha holatini olish va gate natijasini skript bilan tekshirish](#363-loyiha-holatini-olish-va-gate-natijasini-skript-bilan-tekshirish)
+  - [36.4 Issue larni ro'yxat sifatida olish va filtrlash](#364-issue-larni-royxat-sifatida-olish-va-filtrlash)
+  - [36.5 Metrikalarni o'qish va tarixiy qiymatlarni olish](#365-metrikalarni-oqish-va-tarixiy-qiymatlarni-olish)
+  - [36.6 Quality gate va profilni API orqali yaratish va tayinlash](#366-quality-gate-va-profilni-api-orqali-yaratish-va-tayinlash)
+  - [36.7 Yangi loyihani avtomatik yaratish va huquq shablonini qo'llash](#367-yangi-loyihani-avtomatik-yaratish-va-huquq-shablonini-qollash)
+  - [36.8 Natijalarni tashqi tizimga chiqarish: hisobot, dashboard, ogohlantirish](#368-natijalarni-tashqi-tizimga-chiqarish-hisobot-dashboard-ogohlantirish)
+  - [36.9 Sahifalash, chegaralar va ko'p so'rov yuborishda ehtiyotkorlik](#369-sahifalash-chegaralar-va-kop-sorov-yuborishda-ehtiyotkorlik)
+  - [36.10 API javobini CI da ishlatish: bloklash va hisobot yasash](#3610-api-javobini-ci-da-ishlatish-bloklash-va-hisobot-yasash)
+  - [36.11 API versiyasi o'zgarishi va skriptlarni himoyalash](#3611-api-versiyasi-ozgarishi-va-skriptlarni-himoyalash)
+  - [36.12 Amalda qo'llash](#3612-amalda-qollash)
+- [37. Taint analysis mexanikasi: source, sink, sanitizer (Taint Analysis Mechanics)](#37-taint-analysis-mexanikasi-source-sink-sanitizer-taint-analysis-mechanics)
+  - [37.1 Oddiy qoida va taint analysis farqi: bitta fayl va butun oqim](#371-oddiy-qoida-va-taint-analysis-farqi-bitta-fayl-va-butun-oqim)
+  - [37.2 Source nima: ishonchsiz ma'lumot kiradigan nuqtalar](#372-source-nima-ishonchsiz-malumot-kiradigan-nuqtalar)
+  - [37.3 Sink nima: ma'lumot xavfli joyga yetib boradigan nuqtalar](#373-sink-nima-malumot-xavfli-joyga-yetib-boradigan-nuqtalar)
+  - [37.4 Sanitizer va validator: oqimni to'xtatuvchi nuqtalar](#374-sanitizer-va-validator-oqimni-toxtatuvchi-nuqtalar)
+  - [37.5 Zanjir qanday quriladi: controller dan repository gacha misol](#375-zanjir-qanday-quriladi-controller-dan-repository-gacha-misol)
+  - [37.6 Nega taint analysis sekinroq va ko'proq resurs talab qiladi](#376-nega-taint-analysis-sekinroq-va-koproq-resurs-talab-qiladi)
+  - [37.7 Qaysi nashrda mavjud va Community nashrda nima qilish mumkin](#377-qaysi-nashrda-mavjud-va-community-nashrda-nima-qilish-mumkin)
+  - [37.8 Taint natijasini o'qish: Sonar ko'rsatadigan oqim qadamlari](#378-taint-natijasini-oqish-sonar-korsatadigan-oqim-qadamlari)
+  - [37.9 False positive sabablari: o'z validatoringizni Sonar tanimasligi](#379-false-positive-sabablari-oz-validatoringizni-sonar-tanimasligi)
+  - [37.10 Zanjirni uzish usullari: tur orqali, validatsiya orqali, repozitoriy chegarasida](#3710-zanjirni-uzish-usullari-tur-orqali-validatsiya-orqali-repozitoriy-chegarasida)
+  - [37.11 Spring loyihasida tipik oqimlar: so'rov parametri, header, fayl nomi, SQL](#3711-spring-loyihasida-tipik-oqimlar-sorov-parametri-header-fayl-nomi-sql)
+  - [37.12 Taint natijasini jamoada kim ko'rib chiqishi](#3712-taint-natijasini-jamoada-kim-korib-chiqishi)
+  - [37.13 Amalda qo'llash](#3713-amalda-qollash)
+- [38. Ko'p tilli loyiha: SQL, XML, YAML, Docker, Kubernetes, frontend (Multi-language Projects)](#38-kop-tilli-loyiha-sql-xml-yaml-docker-kubernetes-frontend-multi-language-projects)
+  - [38.1 Java loyihada aslida nechta til bor: manba, konfiguratsiya, migratsiya, skript](#381-java-loyihada-aslida-nechta-til-bor-manba-konfiguratsiya-migratsiya-skript)
+  - [38.2 Tahlilga qo'shiladigan fayl turlarini sozlash](#382-tahlilga-qoshiladigan-fayl-turlarini-sozlash)
+  - [38.3 SQL va migratsiya fayllari: nimaga e'tibor beriladi](#383-sql-va-migratsiya-fayllari-nimaga-etibor-beriladi)
+  - [38.4 XML va `pom.xml`: bog'liqlik va konfiguratsiya qoidalari](#384-xml-va-pomxml-bogliqlik-va-konfiguratsiya-qoidalari)
+  - [38.5 YAML va `application.yaml`: maxfiy ma'lumot va sozlama xatolari](#385-yaml-va-applicationyaml-maxfiy-malumot-va-sozlama-xatolari)
+  - [38.6 Dockerfile qoidalari: root foydalanuvchi, aniq versiya, keraksiz paket](#386-dockerfile-qoidalari-root-foydalanuvchi-aniq-versiya-keraksiz-paket)
+  - [38.7 Kubernetes manifesti: resurs limiti, probe, imtiyozli konteyner](#387-kubernetes-manifesti-resurs-limiti-probe-imtiyozli-konteyner)
+  - [38.8 Frontend (TypeScript va JavaScript) ni shu loyihaga qo'shish yoki ajratish](#388-frontend-typescript-va-javascript-ni-shu-loyihaga-qoshish-yoki-ajratish)
+  - [38.9 Frontend qamrovini ulash va alohida hisobot berish](#389-frontend-qamrovini-ulash-va-alohida-hisobot-berish)
+  - [38.10 Shell skriptlari va CI konfiguratsiyasi](#3810-shell-skriptlari-va-ci-konfiguratsiyasi)
+  - [38.11 Ko'p tilli loyihada quality gate ni adolatli qo'yish](#3811-kop-tilli-loyihada-quality-gate-ni-adolatli-qoyish)
+  - [38.12 Qaysi tilni tahlilga qo'shmaslik mantiqiy](#3812-qaysi-tilni-tahlilga-qoshmaslik-mantiqiy)
+  - [38.13 Amalda qo'llash](#3813-amalda-qollash)
+- [39. Bog'liqlik zaifliklari va litsenziya tekshiruvi (Dependency Risk and Licences)](#39-bogliqlik-zaifliklari-va-litsenziya-tekshiruvi-dependency-risk-and-licences)
+  - [39.1 Sonar kodingizni tekshiradi, bog'liqliklaringizni esa to'liq tekshirmaydi](#391-sonar-kodingizni-tekshiradi-bogliqliklaringizni-esa-toliq-tekshirmaydi)
+  - [39.2 Bog'liqlik zaifligi nima va u qanday aniqlanadi (ma'lum zaifliklar bazasi)](#392-bogliqlik-zaifligi-nima-va-u-qanday-aniqlanadi-malum-zaifliklar-bazasi)
+  - [39.3 Tranzitiv bog'liqlik: siz qo'shmagan kutubxona ham sizniki](#393-tranzitiv-bogliqlik-siz-qoshmagan-kutubxona-ham-sizniki)
+  - [39.4 Maven va Gradle da bog'liqlik daraxtini ko'rish](#394-maven-va-gradle-da-bogliqlik-daraxtini-korish)
+  - [39.5 Zaiflikni tekshiruvchi vositalar: OWASP Dependency-Check, Trivy, Grype, Dependabot](#395-zaiflikni-tekshiruvchi-vositalar-owasp-dependency-check-trivy-grype-dependabot)
+  - [39.6 Natijani CI ga ulash va qaysi daraja build ni bloklashi](#396-natijani-ci-ga-ulash-va-qaysi-daraja-build-ni-bloklashi)
+  - [39.7 False positive va zaiflikni asosli ravishda e'tiborsiz qoldirish](#397-false-positive-va-zaiflikni-asosli-ravishda-etiborsiz-qoldirish)
+  - [39.8 Yangilash siyosati: qachon darhol, qachon rejali](#398-yangilash-siyosati-qachon-darhol-qachon-rejali)
+  - [39.9 SBOM nima va u nimaga kerak](#399-sbom-nima-va-u-nimaga-kerak)
+  - [39.10 Litsenziya tekshiruvi: qaysi litsenziya xavfli bo'lishi mumkin](#3910-litsenziya-tekshiruvi-qaysi-litsenziya-xavfli-bolishi-mumkin)
+  - [39.11 Bog'liqliklarni kamaytirish: eng yaxshi himoya](#3911-bogliqliklarni-kamaytirish-eng-yaxshi-himoya)
+  - [39.12 Sonar natijasi bilan bog'liqlik hisobotini birga o'qish](#3912-sonar-natijasi-bilan-bogliqlik-hisobotini-birga-oqish)
+  - [39.13 Amalda qo'llash](#3913-amalda-qollash)
+- [40. Sonar va boshqa vositalar: qachon qaysi biri (Sonar and Other Tools)](#40-sonar-va-boshqa-vositalar-qachon-qaysi-biri-sonar-and-other-tools)
+  - [40.1 Sonar nimani yaxshi qiladi va nimani umuman qilmaydi](#401-sonar-nimani-yaxshi-qiladi-va-nimani-umuman-qilmaydi)
+  - [40.2 SpotBugs: bytecode darajasidagi tahlil va u qachon qo'shimcha qiymat beradi](#402-spotbugs-bytecode-darajasidagi-tahlil-va-u-qachon-qoshimcha-qiymat-beradi)
+  - [40.3 PMD va Checkstyle: uslub va qoidalar, Sonar bilan takrorlanishi](#403-pmd-va-checkstyle-uslub-va-qoidalar-sonar-bilan-takrorlanishi)
+  - [40.4 Error Prone va NullAway: kompilyatsiya paytida xato topish](#404-error-prone-va-nullaway-kompilyatsiya-paytida-xato-topish)
+  - [40.5 ArchUnit: arxitektura qoidalarini test sifatida yozish](#405-archunit-arxitektura-qoidalarini-test-sifatida-yozish)
+  - [40.6 Semgrep va shunga o'xshash qoida yozish vositalari](#406-semgrep-va-shunga-oxshash-qoida-yozish-vositalari)
+  - [40.7 Formatlash vositalari (Spotless kabi) va ularni bahsdan chiqarish](#407-formatlash-vositalari-spotless-kabi-va-ularni-bahsdan-chiqarish)
+  - [40.8 Vositalarni birlashtirish: qaysi biri bloklaydi, qaysi biri ogohlantiradi](#408-vositalarni-birlashtirish-qaysi-biri-bloklaydi-qaysi-biri-ogohlantiradi)
+  - [40.9 Takroriy ogohlantirishlarni kamaytirish: qoidalarni bo'lish](#409-takroriy-ogohlantirishlarni-kamaytirish-qoidalarni-bolish)
+  - [40.10 Pipeline da tartib va umumiy vaqt byudjeti](#4010-pipeline-da-tartib-va-umumiy-vaqt-byudjeti)
+  - [40.11 Kam vosita bilan ko'p foyda: minimal to'plam tavsiyasi](#4011-kam-vosita-bilan-kop-foyda-minimal-toplam-tavsiyasi)
+  - [40.12 Amalda qo'llash](#4012-amalda-qollash)
+
+**[X. Amaliy ma'lumotnoma](#x-amaliy-malumotnoma)**
+
+- [41. Lombok, record va generatsiya qilingan kod (Lombok, Records and Generated Code)](#41-lombok-record-va-generatsiya-qilingan-kod-lombok-records-and-generated-code)
+  - [41.1 Lombok qanday ishlaydi: annotatsiya ishlovchisi va yaratilgan bytecode](#411-lombok-qanday-ishlaydi-annotatsiya-ishlovchisi-va-yaratilgan-bytecode)
+  - [41.2 Lombok generatsiya qilgan metodlar qamrovga qanday tushadi](#412-lombok-generatsiya-qilgan-metodlar-qamrovga-qanday-tushadi)
+  - [41.3 `lombok.config` va generatsiya qilingan kodni belgilash](#413-lombokconfig-va-generatsiya-qilingan-kodni-belgilash)
+  - [41.4 JaCoCo generatsiya qilingan kodni filtrlash sharti](#414-jacoco-generatsiya-qilingan-kodni-filtrlash-sharti)
+  - [41.5 `@Data` ning yashirin xavflari: `equals`, `hashCode` va entity](#415-data-ning-yashirin-xavflari-equals-hashcode-va-entity)
+  - [41.6 `@Builder` va majburiy maydonlar tekshiruvi](#416-builder-va-majburiy-maydonlar-tekshiruvi)
+  - [41.7 `@Slf4j` va loglash qoidalari](#417-slf4j-va-loglash-qoidalari)
+  - [41.8 Java record: Lombok ga nisbatan afzalligi va qamrovdagi farqi](#418-java-record-lombok-ga-nisbatan-afzalligi-va-qamrovdagi-farqi)
+  - [41.9 MapStruct va boshqa generatorlar: chiqarilgan fayllarni tahlildan olib tashlash](#419-mapstruct-va-boshqa-generatorlar-chiqarilgan-fayllarni-tahlildan-olib-tashlash)
+  - [41.10 `target/generated-sources` ni to'g'ri sozlash](#4110-targetgenerated-sources-ni-togri-sozlash)
+  - [41.11 OpenAPI va protobuf dan yaratilgan klasslar](#4111-openapi-va-protobuf-dan-yaratilgan-klasslar)
+  - [41.12 Lombok dan voz kechish qarori: qachon mantiqiy](#4112-lombok-dan-voz-kechish-qarori-qachon-mantiqiy)
+  - [41.13 Amalda qo'llash](#4113-amalda-qollash)
+- [42. Diagnostika: tahlil ishlamaganda nima qilish (Troubleshooting)](#42-diagnostika-tahlil-ishlamaganda-nima-qilish-troubleshooting)
+  - [42.1 Diagnostika tartibi](#421-diagnostika-tartibi)
+  - [42.2 Belgi va sabab: umumiy jadval](#422-belgi-va-sabab-umumiy-jadval)
+  - [42.3 Coverage 0% ko'rinadi](#423-coverage-0-korinadi)
+  - [42.4 Yangi kod bo'sh yoki noto'g'ri aniqlanadi](#424-yangi-kod-bosh-yoki-notogri-aniqlanadi)
+  - [42.5 Tahlil "project not found" yoki kalit mos kelmasligi bilan tushadi](#425-tahlil-project-not-found-yoki-kalit-mos-kelmasligi-bilan-tushadi)
+  - [42.6 Scanner xotira yetishmasligidan tushadi](#426-scanner-xotira-yetishmasligidan-tushadi)
+  - [42.7 Tahlil juda uzoq davom etadi](#427-tahlil-juda-uzoq-davom-etadi)
+  - [42.8 Java versiyasi mos kelmasligi va kompilyatsiya qilingan klass topilmasligi](#428-java-versiyasi-mos-kelmasligi-va-kompilyatsiya-qilingan-klass-topilmasligi)
+  - [42.9 Pull request tahlili ko'rinmaydi yoki izohlar qo'yilmaydi](#429-pull-request-tahlili-korinmaydi-yoki-izohlar-qoyilmaydi)
+  - [42.10 Gate natijasi CI da kutilmaydi yoki noto'g'ri o'qiladi](#4210-gate-natijasi-ci-da-kutilmaydi-yoki-notogri-oqiladi)
+  - [42.11 Issue lar kutilmaganda ko'payib ketdi](#4211-issue-lar-kutilmaganda-kopayib-ketdi)
+  - [42.12 Fayllar tahlilga umuman kirmagan](#4212-fayllar-tahlilga-umuman-kirmagan)
+  - [42.13 Test fayllari manba sifatida hisoblangan](#4213-test-fayllari-manba-sifatida-hisoblangan)
+  - [42.14 Server javob bermaydi yoki navbat to'lib qolgan](#4214-server-javob-bermaydi-yoki-navbat-tolib-qolgan)
+  - [42.15 Tuzoq va yechim](#4215-tuzoq-va-yechim)
+  - [42.16 Oddiy yondashuv va arxitektor yondashuvi](#4216-oddiy-yondashuv-va-arxitektor-yondashuvi)
+  - [42.17 Amalda qo'llash](#4217-amalda-qollash)
+- [43. Tezkor ma'lumotnoma: parametrlar, buyruqlar, glossariy (Quick Reference and Glossary)](#43-tezkor-malumotnoma-parametrlar-buyruqlar-glossariy-quick-reference-and-glossary)
+  - [43.1 Eng ko'p ishlatiladigan `sonar.*` parametrlari](#431-eng-kop-ishlatiladigan-sonar-parametrlari)
+  - [43.2 Qamrov va hisobot yo'llari uchun parametrlar](#432-qamrov-va-hisobot-yollari-uchun-parametrlar)
+  - [43.3 Exclusion parametrlari va ularning farqi](#433-exclusion-parametrlari-va-ularning-farqi)
+  - [43.4 Pull request va branch parametrlari](#434-pull-request-va-branch-parametrlari)
+  - [43.5 Maven buyruqlari to'plami](#435-maven-buyruqlari-toplami)
+  - [43.6 Gradle buyruqlari to'plami](#436-gradle-buyruqlari-toplami)
+  - [43.7 Mustaqil scanner va Docker orqali ishga tushirish](#437-mustaqil-scanner-va-docker-orqali-ishga-tushirish)
+  - [43.8 Foydali `curl` so'rovlari](#438-foydali-curl-sorovlari)
+  - [43.9 Metrika kalitlari](#439-metrika-kalitlari)
+  - [43.10 Quality gate uchun boshlang'ich shartlar namunasi](#4310-quality-gate-uchun-boshlangich-shartlar-namunasi)
+  - [43.11 Yangi loyihani boshlash uchun qadamlar](#4311-yangi-loyihani-boshlash-uchun-qadamlar)
+  - [43.12 Oddiy yondashuv va arxitektor yondashuvi](#4312-oddiy-yondashuv-va-arxitektor-yondashuvi)
+  - [43.13 Tuzoq va yechim](#4313-tuzoq-va-yechim)
+  - [43.14 Glossariy](#4314-glossariy)
+  - [43.15 Amalda qo'llash](#4315-amalda-qollash)
+
 
 # I. SonarQube qanday ishlaydi
 
@@ -12406,3 +12583,4281 @@ Oxirgi fikr: o'lchovni maqsadga aylantirmang. Maqsad, o'zgartirish oson va buzil
 - [ ] Barcha ochiq security hotspot larni ko'rib chiqing va har biriga qarorni izoh bilan yozing.
 - [ ] Assertion siz va `@Disabled` holatidagi testlarni toping, har biriga qaror qabul qiling: to'ldirish yoki o'chirish.
 - [ ] Oylik bir marta trendga qarang: yangi kod issue zichligi kamayayotganini yoki o'sayotganini yozib boring.
+
+
+# VIII. Server va tashkilot
+
+## 32. SonarQube nashrlari va ularning farqi (Editions)
+
+SonarQube bitta mahsulot emas, balki bir nechta nashrdan iborat qator. Siz CI da ko'rgan xatti-harakat ko'p hollarda kod sifatiga emas, balki qaysi nashr litsenziyasi o'rnatilganiga bog'liq bo'ladi. Shu sababli "nega mening PR da Sonar hech narsa yozmadi" yoki "nega taint analysis topilmadi" degan savollarning javobi texnik emas, tijoriy bo'lishi mumkin. Bu bobda nashrlar farqi, ularning amaliy natijasi va tanlash mantiqini ko'rib chiqamiz, lekin nomlar va narx siyosati vaqt o'tishi bilan o'zgarganini doim yodda tutamiz.
+
+### 32.1 Nashrlar qatori: Community, Developer, Enterprise va Data Center yo'nalishi
+
+Qator to'rt bosqichdan iborat va har bir yuqori bosqich pastdagini to'liq o'z ichiga oladi. Community bepul va ochiq asosdagi nashr, u yakka dasturchi yoki kichik jamoa uchun yetarli. Developer nashri branch tahlili va chuqur xavfsizlik tahlilini qo'shadi, ya'ni kundalik PR ish oqimi shu yerdan boshlanadi. Enterprise nashri portfolio, umumiy boshqaruv hisobotlari va ko'p loyihali tashkilot ehtiyojlarini qo'shadi. Data Center yo'nalishi esa klaster, yuqori ishonchlilik va gorizontal masshtab uchun, ya'ni Sonar ishdan chiqsa butun CI to'xtab qolishi mumkin bo'lgan tashkilotlar uchun.
+
+Nomlar bilan ehtiyot bo'lish kerak. Sonar brendi bir necha marta qayta nomlangan va bugungi hujjatlarda "SonarQube Server", "SonarQube Cloud" va "SonarQube Community Build" kabi atamalar uchraydi, avvalroq esa "SonarQube" va "SonarCloud" ishlatilgan. Agar sizning jamoada eski atamalar yursa, bu qo'shimcha chalkashlik manbai bo'ladi. Hozirgi rasmiy nomlanishni va nashrlar ro'yxatini rasmiy saytdan tekshiring.
+
+### 32.2 Community nashrda nima bor va nima yo'q
+
+Community nashrda tahlil yadrosi to'liq ishlaydi. Siz quality profile sozlaysiz, quality gate yaratasiz, issue va code smell ko'rasiz, coverage hisobotini yuklaysiz va Web API orqali hammasini avtomatlashtirasiz. Ya'ni "Sonar o'tadigan kod yozish" mashqining 80 foizini bepul nashrda ham bajarish mumkin.
+
+Yo'q narsalar esa aniq va sezilarli. Odatda Community nashrda faqat bitta asosiy branch tahlil qilinadi, pull request uchun alohida tahlil va PR decoration bo'lmaydi, taint analysis ishlamaydi, portfolio darajasidagi ko'rinish yo'q va ba'zi tillar qo'llanmaydi. Bu taqsimot versiyaga qarab o'zgarishi mumkin, shuning uchun o'z versiyangiz hujjatiga qarab tasdiqlang.
+
+```bash
+# Community nashrni mahalliy sinash uchun eng tez yo'l
+# Diqqat: tashqi baza va hajm sozlamalari yo'q, faqat tajriba uchun
+docker run -d --name sonar-local \
+  -p 9000:9000 \
+  -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
+  sonarqube:lts-community
+
+# Konteyner tayyor bo'lganini kutish
+until curl -sf http://localhost:9000/api/system/status | grep -q '"UP"'; do
+  echo "Sonar hali ko'tarilmoqda..."
+  sleep 5
+done
+
+# Qaysi nashr va qaysi versiya ishlayotganini tekshirish
+curl -su admin:admin http://localhost:9000/api/server/version
+curl -su admin:admin http://localhost:9000/api/navigation/global \
+  | head -c 400
+```
+
+### 32.3 Branch tahlili va pull request decoration qaysi nashrdan boshlab mavjud
+
+Branch tahlili va PR decoration odatda Developer nashridan boshlab mavjud bo'ladi. Buning amaliy ma'nosi katta. Developer nashrida har bir feature branch va har bir pull request alohida tahlil qilinadi, "new code" faqat shu PR o'zgartirgan qatorlar bo'yicha hisoblanadi va quality gate natijasi to'g'ridan-to'g'ri GitHub yoki GitLab PR sahifasida ko'rinadi. Community nashrida esa bitta asosiy branch tahlil qilinadi va dasturchi fikr-mulohazani merge dan keyin oladi, ya'ni eng qimmat paytda.
+
+```yaml
+# GitHub Actions: branch va PR parametrlari
+# Bu parametrlar Developer nashri va yuqorisida kutilgan natija beradi
+name: sonar
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # new code aniqlanishi uchun to'liq tarix kerak
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      # PR konteksti avtomatik aniqlanadi, lekin token majburiy
+      - run: ./mvnw -B verify sonar:sonar
+        env:
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### 32.4 Taint analysis (chuqur xavfsizlik tahlili) qaysi nashrda ishlaydi
+
+Taint analysis ishonchsiz manbadan (masalan HTTP parametri) xavfli nuqtaga (masalan SQL so'rovi) qadar ma'lumot yo'lini kuzatadi. Bu oddiy pattern tekshiruvidan farq qiladi, chunki u metodlar orasidan o'tib yo'lni quradi. Odatda bu imkoniyat Developer nashridan boshlab ishlaydi va Community nashrida mavjud emas. Natijada bir xil kod Community da "toza", Developer da esa vulnerability sifatida ko'rinadi.
+
+```java
+// SHIKOYAT QILINADIGAN kod: so'rov HTTP parametridan to'g'ridan-to'g'ri yig'iladi
+@RestController
+class HisobotController {
+
+    private final JdbcTemplate jdbc;
+
+    HisobotController(JdbcTemplate jdbc) { this.jdbc = jdbc; }
+
+    @GetMapping("/hisobot")
+    List<Map<String, Object>> hisobot(@RequestParam String omborKodi) {
+        // Taint analysis bu yo'lni topadi: param -> konkatenatsiya -> SQL
+        String sql = "select * from qoldiq where ombor = '" + omborKodi + "'";
+        return jdbc.queryForList(sql);
+    }
+}
+
+// TUZATILGAN kod: parametr qiymat sifatida uzatiladi, SQL matni o'zgarmas
+@GetMapping("/hisobot-v2")
+List<Map<String, Object>> hisobotV2(@RequestParam String omborKodi) {
+    String sql = "select mahsulot, qoldiq from qoldiq where ombor = ?";
+    return jdbc.queryForList(sql, omborKodi);
+}
+```
+
+```sql
+-- Yuqoridagi konkatenatsiya nima hosil qilishini ko'rsatadigan misol
+-- Oddiy holat:
+select * from qoldiq where ombor = 'TOSHKENT-1';
+
+-- Hujum kiritilganda hosil bo'ladigan matn:
+select * from qoldiq where ombor = '' or '1'='1';
+
+-- Kerakli shakl: matn qat'iy, qiymat alohida uzatiladi
+-- PreparedStatement bilan plan ham qayta ishlatiladi
+select mahsulot, qoldiq from qoldiq where ombor = ?;
+```
+
+### 32.5 Portfolio, umumiy hisobot va ko'p loyihali ko'rinish
+
+Bitta loyiha sahifasi dasturchiga yetarli, lekin yetakchiga va arxitektorga yetmaydi. Enterprise yo'nalishida portfolio va application tushunchalari paydo bo'ladi, ya'ni o'nlab loyihani bitta ierarxiyaga yig'ib, umumiy reyting va tendentsiyani ko'rish mumkin. Bu, masalan, 40 ta mikroservisdan qaysi biri texnik qarzni tez to'playotganini bitta ekranda ko'rsatadi.
+
+Community yoki Developer nashrida ham bu savolga javob topish mumkin, lekin o'z kuchingiz bilan. Web API dan loyihalar ro'yxati va o'lchovlarni olib, o'zingizning jadvalingizni qurasiz. Bu ish bir kunlik, ammo uni saqlab turish uzoq muddatli majburiyat.
+
+```bash
+# Web API orqali o'z "mini portfolio" hisobotini yig'ish
+HOST="https://sonar.ichki.example"
+TOKEN="$SONAR_TOKEN"
+
+# Barcha loyihalar kalitini olish
+curl -su "$TOKEN:" "$HOST/api/projects/search?ps=500" \
+  | jq -r '.components[].key' > /tmp/loyihalar.txt
+
+# Har bir loyiha uchun asosiy o'lchovlar
+while read -r KEY; do
+  curl -su "$TOKEN:" \
+    "$HOST/api/measures/component?component=$KEY&metricKeys=ncloc,coverage,bugs,vulnerabilities,sqale_index" \
+    | jq -r --arg k "$KEY" \
+      '[$k, (.component.measures[] | .value)] | @tsv'
+done < /tmp/loyihalar.txt | sort -k2 -n -r
+```
+
+### 32.6 Qo'llab-quvvatlanadigan tillar soni nashrga qanday bog'liq
+
+Tillar ro'yxati nashrga bog'liq va bu ko'pchilik uchun kutilmagan cheklov bo'ladi. Umumiy qoida shunday: keng tarqalgan zamonaviy tillar Community nashrida ham bor, kompilyatsiya talab qiladigan mahalliy tillar va korporativ meros tillari esa yuqori nashrlarda paydo bo'ladi. Java, Kotlin, JavaScript, TypeScript, Python va shunga o'xshash tillar bilan ishlaydigan Spring jamoasi uchun Community nashrining til qamrovi odatda muammo emas.
+
+Agar sizda C yoki C++ komponenti, mobil native kod yoki mainframe merosi bo'lsa, tekshirish majburiy. Aniq taqsimot versiyadan versiyaga o'zgaradi, shuning uchun til ro'yxatini rasmiy saytdagi joriy matritsadan tasdiqlang va uni arxitektura qaroriga asos qilib olmang.
+
+| Imkoniyat | Community | Developer | Enterprise | Data Center |
+| --- | --- | --- | --- | --- |
+| Asosiy branch tahlili, issue, code smell | bor | bor | bor | bor |
+| Quality gate va quality profile | bor | bor | bor | bor |
+| Coverage hisobotini qabul qilish | bor | bor | bor | bor |
+| Feature branch tahlili | yo'q | bor | bor | bor |
+| Pull request tahlili va decoration | yo'q | bor | bor | bor |
+| Taint analysis (manba va nuqta yo'li) | yo'q | bor | bor | bor |
+| Xavfsizlik hisobotlari (OWASP kabi) | cheklangan | bor | bor | bor |
+| Portfolio va application ko'rinishi | yo'q | yo'q | bor | bor |
+| Tashkiliy boshqaruv hisobotlari | yo'q | yo'q | bor | bor |
+| Qo'shimcha tillar (native, meros) | cheklangan | kengayadi | yana kengayadi | yana kengayadi |
+| Klaster va yuqori ishonchlilik | yo'q | yo'q | yo'q | bor |
+
+Yuqoridagi taqsimot umumiy manzara uchun va versiyaga qarab o'zgarishi mumkin. Shartnoma yoki arxitektura qaroridan oldin joriy rasmiy jadval bilan solishtiring.
+
+### 32.7 SonarQube Cloud va o'zingizda joylashtirilgan server tanlovi
+
+Cloud variantida server, baza, yangilanish va zaxira nusxa Sonar tomonida bo'ladi, siz faqat CI dan tahlil yuborasiz. O'zingizda joylashtirilgan server esa to'liq nazorat beradi, lekin unga PostgreSQL, Elasticsearch xotirasi, disk, yangilanish oynasi va monitoring kerak. Tanlov ko'pincha texnik emas, tashkiliy: kod tashqariga chiqishi mumkinmi va kimda operatsion resurs bor.
+
+Yana bir farq ish oqimida. Cloud variantida PR integratsiyasi va branch tahlili odatda tarifga kiritilgan bo'ladi, ya'ni Community nashrining cheklovi bu yerda boshqacha ko'rinadi. O'z serveringizda esa bu imkoniyatlar nashr litsenziyasiga bog'liq.
+
+```properties
+# sonar-project.properties: ikki muhit uchun bitta fayl
+sonar.projectKey=tolov-servisi
+sonar.projectName=Tolov Servisi
+sonar.sources=src/main/java
+sonar.tests=src/test/java
+sonar.java.binaries=target/classes
+
+# Coverage: JaCoCo 0.8.x hisobot yo'li
+sonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+
+# Generatsiya qilingan kodni chiqarib tashlash
+# Bu LOC hisobini ham, shovqinni ham kamaytiradi
+sonar.exclusions=**/generated/**,**/*MapperImpl.java,**/db/migration/**
+
+# Branch nomi: Developer va yuqorisida ma'noga ega
+# Community nashrida bu parametr inkor qilinishi mumkin
+sonar.branch.name=${env.BRANCH_NAME}
+```
+
+### 32.8 Litsenziya qanday hisoblanadi va xarajat nimaga bog'liq
+
+Sonar litsenziyasi an'anaviy ravishda tahlil qilinadigan kod qatorlari soniga, ya'ni LOC ga bog'lanadi va yillik obuna shaklida sotiladi. Dasturchilar soni emas, kod hajmi asosiy o'lchov bo'lishi odatiy holat. Shu sababli xarajatni kamaytirishning eng halol yo'li keraksiz kodni tahlildan chiqarib tashlash, ya'ni generatsiya qilingan sinflar va migratsiya skriptlarini exclusions ga kiritish.
+
+Aniq narx yozmaymiz va u haqda taxmin qilmaymiz, chunki narx siyosati, bosqichlar va hisoblash qoidalari o'zgaradi. Hozirgi holatni rasmiy saytdan tekshiring va o'z LOC raqamingiz bilan hisoblang. LOC ni oldindan bilish uchun Community nashrida bir marta tahlil qilib, `ncloc` o'lchovini o'qib olish eng ishonchli usul.
+
+```xml
+<!-- Maven: tahlil va coverage uchun minimal, lekin to'g'ri sozlama -->
+<properties>
+  <!-- Versiyalarni o'zingizdagi joriy relizga moslang -->
+  <sonar.maven.plugin.version>4.0.0.4121</sonar.maven.plugin.version>
+  <jacoco.version>0.8.12</jacoco.version>
+  <!-- LOC hisobini va shovqinni kamaytirish -->
+  <sonar.exclusions>**/generated/**,**/config/OpenApiConfig.java</sonar.exclusions>
+</properties>
+
+<build>
+  <plugins>
+    <plugin>
+      <groupId>org.jacoco</groupId>
+      <artifactId>jacoco-maven-plugin</artifactId>
+      <version>${jacoco.version}</version>
+      <executions>
+        <execution><goals><goal>prepare-agent</goal></goals></execution>
+        <!-- XML hisobot majburiy: Sonar faqat uni o'qiydi -->
+        <execution>
+          <id>report</id><phase>verify</phase>
+          <goals><goal>report</goal></goals>
+        </execution>
+      </executions>
+    </plugin>
+  </plugins>
+</build>
+```
+
+### 32.9 Community nashrda chegaralarni qanday chetlab o'tish mumkin va buning narxi
+
+Birinchi usul: har bir branch uchun alohida loyiha kaliti yaratish. Bu ishlaydi, lekin tarix bo'linadi, loyihalar ro'yxati axlatga aylanadi va "new code" davri noto'g'ri hisoblanadi. Ikkinchi usul: PR da Sonar ko'rinishini emas, balki o'zingizning darvozangizni qurish. CI da tahlilni ishga tushirasiz, quality gate natijasini API dan o'qiysiz va build ni yiqitasiz.
+
+Uchinchi usul: PR ga izohni o'zingiz yozish. `git diff` dan o'zgargan qatorlarni olasiz, Sonar issue larini API dan so'raysiz va faqat tegishli qatorlarga tushganini chiqarasiz. Bu Developer nashrining PR decoration natijasiga uzoqdan o'xshaydi, ammo aniqligi pastroq.
+
+```bash
+#!/usr/bin/env bash
+# Community nashrda "o'z qo'lim bilan PR darvozasi"
+set -euo pipefail
+HOST="$SONAR_HOST_URL"; KEY="tolov-servisi"
+
+# 1) Tahlilni ishga tushirish va report-task faylini saqlash
+./mvnw -B verify sonar:sonar -Dsonar.host.url="$HOST"
+
+# 2) Tahlil navbatda tugashini kutish
+CE_URL=$(grep '^ceTaskUrl=' target/sonar/report-task.txt | cut -d= -f2-)
+until curl -su "$SONAR_TOKEN:" "$CE_URL" | grep -q '"status":"SUCCESS"'; do
+  echo "Tahlil hali hisoblanmoqda..."
+  sleep 5
+done
+
+# 3) Quality gate holatini o'qish va build ni shu asosda yiqitish
+STATUS=$(curl -su "$SONAR_TOKEN:" \
+  "$HOST/api/qualitygates/project_status?projectKey=$KEY" \
+  | jq -r '.projectStatus.status')
+echo "Quality gate: $STATUS"
+[ "$STATUS" = "OK" ] || { echo "Darvoza yopiq, PR to'xtatiladi"; exit 1; }
+```
+
+Bu yo'llarning umumiy narxi bor. Siz skript saqlashga, API o'zgarishini kuzatishga va yangi odamga buni tushuntirishga vaqt sarflaysiz. Taint analysis va portfolio kabi imkoniyatlarni esa hech qanaqa skript bilan qaytarib bo'lmaydi.
+
+| Tuzoq | Nega yuzaga keladi | Yechim |
+| --- | --- | --- |
+| PR da Sonar izohi yo'q | nashr branch tahlilini qo'llamaydi | nashrni tekshirish yoki API asosida o'z darvozani qurish |
+| Har branch alohida loyiha | Community cheklovini aylanib o'tish | vaqtinchalik kalitlarni avtomatik tozalash va faqat main ni saqlash |
+| Coverage 0 ko'rinadi | JaCoCo XML hisobot yaratilmagan | `verify` fazasida `report` goal ni yoqish |
+| New code noto'g'ri hisoblanadi | sayoz klon, tarix yo'q | CI da to'liq tarixni olish |
+| Xavfsizlik yo'li topilmaydi | taint analysis nashrda yo'q | sinkni parametrlashtirish va ko'rib chiqishni majburiy qilish |
+| Litsenziya kutilganidan qimmat | generatsiya qilingan kod ham hisoblangan | exclusions bilan haqiqiy kodni ajratish |
+| Sonar ishdan chiqsa CI to'xtaydi | bitta nusxa, zaxira yo'q | kritik bo'lsa klaster yo'nalishini baholash |
+| Nashr imkoniyati haqida bahs | eski hujjat va eski nomlar | joriy rasmiy matritsani manba qilib olish |
+
+### 32.10 Qaysi jamoaga qaysi nashr mos keladi: hajm va ehtiyojga qarab tavsiya
+
+Bitta yoki ikkita dasturchi va ichki loyiha uchun Community nashri yetarli. Siz quality gate ni o'rganasiz, coverage ni yig'asiz va kodni toza saqlash odatini shakllantirasiz. Kundalik PR oqimi bor 5 dan 50 gacha dasturchili jamoa uchun branch tahlili amalda majburiy bo'ladi, chunki fikr-mulohaza merge dan keyin kelsa hech kim uni tuzatmaydi. Moliyaviy yoki shaxsiy ma'lumot bilan ishlaydigan jamoa uchun taint analysis alohida qiymat beradi.
+
+Ko'p jamoali tashkilot uchun asosiy ehtiyoj ko'rinish bo'ladi, ya'ni o'nlab loyihani bitta ierarxiyada kuzatish. Sonar CI ning majburiy bo'g'iniga aylangan va to'xtashi qimmatga tushadigan tashkilotlar uchun esa klaster yo'nalishi muhokama qilinadi.
+
+| Savol | Oddiy yondashuv | Arxitektor yondashuvi |
+| --- | --- | --- |
+| Nashr tanlash | "bepulini olamiz, keyin ko'ramiz" | kerakli imkoniyatlar ro'yxatidan boshlanadi |
+| PR fikr-mulohazasi | merge dan keyin tekshiriladi | PR da bloklanadi, aks holda qiymat yo'qoladi |
+| Xavfsizlik | pattern tekshiruvga ishonadi | manba va nuqta yo'lini kuzatish talab qiladi |
+| LOC va xarajat | tahlildan keyin hayron bo'ladi | exclusions va `ncloc` oldindan o'lchanadi |
+| Cloud yoki o'z serveri | "o'zimizda ishonchliroq" | operatsion yuk va ma'lumot siyosati hisoblanadi |
+| Imkoniyat bahsi | eski blog postiga tayanadi | joriy rasmiy matritsani manba qiladi |
+| Community cheklovi | har branch uchun yangi loyiha ochadi | ongli ravishda API asosida darvoza quradi |
+| Ishonchlilik | bitta nusxa, zaxirasiz | to'xtash narxini hisoblab, klasterni baholaydi |
+| Yangilanish | tasodifan versiya oshiradi | LTA liniyasida qoladi va reja bilan ko'chadi |
+| Qaror hujjati | og'zaki kelishuv | tanlov sababi yozib qoldiriladi |
+
+### 32.11 Nashrni tanlashdan oldin beriladigan savollar
+
+Birinchi savol: fikr-mulohaza qachon kerak. Agar javob "PR da" bo'lsa, branch tahlili bo'lmagan nashr sizga mos kelmaydi. Ikkinchi savol: kodda ishonchsiz kiritma xavfli nuqtaga yetib boradigan joy bormi. Agar bor bo'lsa, taint analysis ni alohida baholang.
+
+Uchinchi savol: nechta loyiha va kim umumiy manzarani ko'rishi kerak. Agar javob "o'nlab loyiha va texnik direktor" bo'lsa, portfolio yo'nalishi muhokamaga kiradi. To'rtinchi savol: Sonar to'xtasa nima bo'ladi. Agar relizga chiqa olmasangiz, bu ishonchlilik masalasi va u pul bilan hal qilinadi. Beshinchi savol: haqiqiy LOC qancha va undan qancha qismi generatsiya qilingan. Bu raqam bevosita xarajatga ta'sir qiladi va uni oldindan o'lchash mumkin.
+
+Alohida eslatma: coverage, quality gate va yangi kod tamoyili bo'yicha kundalik ish uslubi barcha nashrlarda bir xil, bu masalalar bu hujjatning quality gate va yangi kod mavzularida yoritilgan. Test yozish uslubi esa testlash qo'llanmasiga tegishli.
+
+### 32.12 Amalda qo'llash
+
+- [ ] Hozirgi serveringizda qaysi nashr va qaysi versiya ishlayotganini `api/server/version` va UI orqali aniqlab, hujjatga yozib qo'ying.
+- [ ] Jamoaga kerakli imkoniyatlar ro'yxatini tuzing va uni joriy rasmiy nashr matritsasi bilan qator-qator solishtiring.
+- [ ] Bitta tahlil ishga tushirib `ncloc` qiymatini o'lchang va generatsiya qilingan kodni `sonar.exclusions` bilan chiqarib tashlagandan keyin qayta o'lchang.
+- [ ] Agar PR fikr-mulohazasi hozir yo'q bo'lsa, API asosidagi quality gate skriptini CI ga qo'shib, kamida bloklash mexanizmini yo'lga qo'ying.
+- [ ] CI da `fetch-depth: 0` o'rnatilganini tekshirib, new code hisobining to'g'riligini tasdiqlang.
+- [ ] Kodda ishonchsiz kiritmadan SQL yoki buyruq nuqtasiga boradigan yo'llarni qo'lda ro'yxatlab, taint analysis qancha qiymat berishini baholang.
+- [ ] Cloud va o'z serveri variantlarini operatsion yuk, ma'lumot siyosati va to'xtash narxi bo'yicha bitta sahifada taqqoslang.
+- [ ] Yakuniy tanlovni sababi bilan qaror hujjatiga yozib, narx va nashr nomlarini rasmiy saytdan tasdiqlangan sana bilan belgilang.
+
+## 33. Serverni o'rnatish, sozlash va resurs rejalashtirish (Installing and Sizing the Server)
+
+SonarQube server bitta jarayon emas. Uning ichida to'rtta mustaqil qism bor va ularning har biri boshqa resursni yeydi. Shuning uchun "serverni o'rnatish" aslida ikki ish: to'g'ri ko'tarish va to'g'ri o'lchamlash. Quyida versiyadan versiyaga o'zgarmaydigan mexanika, o'zgaradigan raqamlar esa aniq belgilangan holda beriladi.
+
+### 33.1 Server tarkibi: web, compute engine, qidiruv indeksi va ma'lumotlar bazasi
+
+SonarQube server bitta JVM jarayoni ichidan uchta bola jarayonni ko'taradi. Birinchisi web server: UI, REST API va scanner dan kelayotgan yuklamani qabul qiladi. Ikkinchisi compute engine (CE): scanner yuborgan tahlil hisobotini navbatdan olib, issue larni hisoblaydi, measure larni yozadi va quality gate ni baholaydi. Uchinchisi search: Elasticsearch asosidagi qidiruv indeksi, u issue va component larni tez filtrlash uchun ishlatiladi.
+
+To'rtinchi qism server ichida emas, tashqarida turadi: relyatsion ma'lumotlar bazasi. Haqiqat manbai bazada yashaydi. Qidiruv indeksi esa keltirilgan (derived) ma'lumot, uni bazadan qayta qurish mumkin.
+
+Bu taqsimotdan ikkita amaliy xulosa chiqadi. Birinchi: scanner tahlilni serverda bajarmaydi, u faqat hisobotni yuboradi, haqiqiy hisob CE da bo'ladi. Ikkinchi: zahira nusxa (backup) olishda ma'lumotlar bazasi va `extensions` katalogi majburiy, qidiruv indeksi esa shart emas.
+
+| Jarayon | Nima qiladi | Nimaga sezgir | Agar yetmasa |
+|---|---|---|---|
+| Web | UI, API, hisobot qabul qilish | CPU va JVM heap | UI sekinlashadi, 503 javob |
+| Compute engine | Hisobotni qayta ishlash, quality gate | CPU va heap | Navbat uzayadi, natija kechikadi |
+| Search | Issue va component qidiruvi | RAM va disk I/O | Qidiruv timeout, indeks qizil |
+| Ma'lumotlar bazasi | Haqiqat manbai | Disk IOPS va ulanishlar | Hamma joy sekinlashadi |
+
+### 33.2 Ma'lumotlar bazasi talablari va PostgreSQL ni tayyorlash
+
+PostgreSQL qo'llab-quvvatlanadigan versiyalar oynasi SonarQube versiyasiga qarab o'zgaradi va har yangi relizda eski PostgreSQL versiyalari ro'yxatdan chiqarib tashlanadi. Shuning uchun aniq raqamni bu yerdan emas, o'zingiz o'rnatayotgan versiyaning rasmiy talablar sahifasidan oling. Umumiy qoida: 9.9 LTA liniyasi uchun PostgreSQL 11 dan yuqori, 2025 LTA liniyasi uchun esa ancha yangi minimal versiya talab qilinadi. MySQL qo'llab-quvvatlanmaydi va bu qaytmaydigan qaror.
+
+Muhim nozik joy: bazani to'g'ri collation va encoding bilan yaratish kerak. UTF8 bo'lmasa, tahlil paytida matnli maydonlarda xato chiqadi. Sxema uchun alohida foydalanuvchi yarating va unga faqat o'z sxemasiga egalik bering.
+
+```sql
+-- Alohida rol va baza: SonarQube migratsiya uchun DDL huquqiga muhtoj
+CREATE ROLE sonarqube WITH LOGIN PASSWORD 'kuchli_parol_env_dan';
+
+CREATE DATABASE sonarqube
+  WITH OWNER = sonarqube
+       ENCODING = 'UTF8'
+       TEMPLATE = template0;
+
+\c sonarqube
+
+-- public sxemani ishlatmaslik tavsiya etiladi
+CREATE SCHEMA IF NOT EXISTS sonarqube AUTHORIZATION sonarqube;
+ALTER ROLE sonarqube SET search_path TO sonarqube;
+
+-- SonarQube o'z jadvallarini o'zi yaratadi, qo'lda DDL yozmang
+```
+
+Bazaga ulanishni `sonar.properties` da yoki muhit o'zgaruvchisi bilan beradi. Parolni fayl ichida ochiq saqlamang, uni secret manager yoki Kubernetes Secret dan oling. Baza bilan server bir xil ma'lumot markazida bo'lsin, chunki CE va web juda ko'p mayda so'rov yuboradi va kechikish (latency) to'g'ridan to'g'ri tahlil tezligiga ta'sir qiladi.
+
+### 33.3 Docker va Docker Compose bilan ko'tarish
+
+Docker eng tez yo'l, lekin ikkita xato ko'p uchraydi. Birinchi: volume ulanmagan holda ko'tarish, natijada konteyner yangilanganda plugin va indeks yo'qoladi. Ikkinchi: ichki (embedded) bazada ishlatish, u faqat sinov uchun va yangilanishni (upgrade) qo'llab-quvvatlamaydi.
+
+```yaml
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: sonarqube
+      POSTGRES_PASSWORD: kuchli_parol
+      POSTGRES_DB: sonarqube
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  sonarqube:
+    # Teg ni aniq qotirib qo'ying, "latest" ishlatmang
+    image: sonarqube:2025.1-community
+    depends_on: [db]
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://db:5432/sonarqube
+      SONAR_JDBC_USERNAME: sonarqube
+      SONAR_JDBC_PASSWORD: kuchli_parol
+    volumes:
+      - sq_data:/opt/sonarqube/data
+      - sq_extensions:/opt/sonarqube/extensions
+    ports:
+      - "9000:9000"
+
+volumes:
+  pg_data:
+  sq_data:
+  sq_extensions:
+```
+
+Image nomi va teg sxemasi vaqt o'tishi bilan o'zgargan: eski liniyada `sonarqube:9.9-community` ko'rinishida, yangi liniyada yil asosidagi teglar ishlatiladi va Community nashri "Community Build" deb nomlanadi. Shuning uchun teg nomini registry dan tekshirib oling, xotiradan yozmang. Konteyner ichida jarayon root bo'lmagan foydalanuvchi sifatida ishlaydi, demak volume lar egaligi to'g'ri bo'lishi kerak.
+
+### 33.4 Kubernetes da ishga tushirish va doimiy saqlash
+
+Kubernetes da SonarQube Deployment emas, StatefulSet sifatida yashashi qulay, chunki unga barqaror identifikator va doimiy disk kerak. Qidiruv indeksi `data` katalogida yashaydi va u yo'qolsa server ko'tarilishda indeksni qayta quradi, bu katta instansiyada uzoq vaqt oladi.
+
+```yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: sonarqube
+spec:
+  serviceName: sonarqube
+  replicas: 1          # Community va Developer da bitta replika
+  template:
+    spec:
+      securityContext:
+        fsGroup: 1000  # volume egaligi konteyner foydalanuvchisiga tegsin
+      initContainers:
+        - name: sysctl       # tugunda sysctl sozlanmagan bo'lsa
+          image: busybox:1.36
+          command: ["sh","-c","sysctl -w vm.max_map_count=524288"]
+          securityContext: { privileged: true }
+      containers:
+        - name: sonarqube
+          image: sonarqube:2025.1-community
+          readinessProbe:
+            httpGet: { path: /api/system/status, port: 9000 }
+            initialDelaySeconds: 60
+          volumeMounts:
+            - { name: data, mountPath: /opt/sonarqube/data }
+            - { name: ext,  mountPath: /opt/sonarqube/extensions }
+```
+
+Replikani ko'paytirish faqat Data Center nashrida ma'noga ega. Oddiy nashrda ikkinchi pod ko'tarilsa, ikkita CE bir xil navbatga va bir xil indeksga tegib buzilish keltiradi. Horizontal Pod Autoscaler ni bu ish yuklamasiga ulamang.
+
+### 33.5 Operatsion tizim talablari: `vm.max_map_count` va fayl deskriptorlari
+
+Eng ko'p uchraydigan "server ko'tarilmaydi" muammosi aslida OS sozlamasi. Elasticsearch mmap ishlatadi va yadroning xarita limiti kichik bo'lsa jarayon darhol o'ladi. Loglarda bu `max virtual memory areas vm.max_map_count ... is too low` ko'rinishida chiqadi. Fayl deskriptorlari limiti ham shunday: indeks ko'p fayl ochadi.
+
+```bash
+# Joriy qiymatlarni ko'rish
+sysctl vm.max_map_count fs.file-max
+ulimit -n && ulimit -u
+
+# Vaqtinchalik (restart dan keyin yo'qoladi)
+sudo sysctl -w vm.max_map_count=524288
+sudo sysctl -w fs.file-max=131072
+
+# Doimiy qilish
+echo 'vm.max_map_count=524288' | sudo tee /etc/sysctl.d/99-sonarqube.conf
+echo 'fs.file-max=131072'     | sudo tee -a /etc/sysctl.d/99-sonarqube.conf
+sudo sysctl --system
+
+# Foydalanuvchi limitlari: nofile va nproc
+printf 'sonarqube - nofile 131072\nsonarqube - nproc 8192\n' \
+  | sudo tee /etc/security/limits.d/99-sonarqube.conf
+```
+
+Yana ikki talab. Birinchi: SonarQube jarayoni root sifatida ishlamasligi kerak, aks holda ichki Elasticsearch ishga tushishni rad etadi. Ikkinchi: Java versiyasi. Har bir SonarQube liniyasi o'ziga xos minimal JDK talab qiladi va bu talab relizlar bilan oshib boradi, shuning uchun o'rnatishdan oldin aynan o'z versiyangiz uchun tekshiring. Scanner tomonidagi JDK talabi serverdan alohida va ko'pincha undan pastroq bo'ladi.
+
+### 33.6 Xotira taqsimoti: web, compute engine va qidiruv uchun alohida sozlash
+
+Bu bobning eng muhim joyi. Uchta jarayonning har biriga alohida JVM parametri beriladi va ularni birga "server xotirasi" deb o'ylash xato. Standart qiymatlar kichik va faqat kichik instansiya uchun mos, aniq standart raqam versiyaga qarab farq qiladi.
+
+```properties
+# $SONARQUBE_HOME/conf/sonar.properties
+# Web server: foydalanuvchi soni va API yuklamasiga bog'liq
+sonar.web.javaOpts=-Xmx2G -Xms1G -XX:+HeapDumpOnOutOfMemoryError
+
+# Compute engine: eng katta loyihaning hisobot hajmiga bog'liq
+sonar.ce.javaOpts=-Xmx4G -Xms1G -XX:+HeapDumpOnOutOfMemoryError
+
+# Search: Xms va Xmx TENG bo'lishi kerak, swap ni oldini oladi
+sonar.search.javaOpts=-Xmx4G -Xms4G -XX:MaxDirectMemorySize=256m
+
+# Search uchun OS da shuncha bo'sh RAM qoldiring: fayl keshi indeksni tezlashtiradi
+# Qoida: jami RAM ning yarmidan ko'pini bitta JVM ga bermang
+```
+
+Uch qoidani eslab qoling. Search uchun `Xms` va `Xmx` teng bo'lsin. CE heap i eng katta monorepo hisobotini sig'dirishi kerak, chunki `OutOfMemoryError` eng ko'p shu jarayonda chiqadi. Web heap i foydalanuvchi soniga qarab o'sadi, lekin odatda CE dan kichik qoladi.
+
+CE da parallel ishchi (worker) sonini oshirish `sonar.ce.workerCount` orqali bo'ladi, lekin bu imkoniyat tijorat nashrlarida mavjud. Community Build da navbat ketma-ket ishlanadi va uni tezlashtirish yo'li faqat CPU va heap ni oshirish.
+
+### 33.7 Loyihalar soni va kod hajmiga qarab resurs rejalashtirish
+
+Quyidagi raqamlar taxminiy va boshlang'ich nuqta sifatida beriladi. Haqiqiy ehtiyoj til soniga, test coverage hisobot hajmiga va kuniga necha marta tahlil ishga tushishiga bog'liq. Shuning uchun birinchi oyda monitoring yig'ing va keyin tuzating.
+
+| Hajm | Loyiha / LOC (taxminan) | RAM (taxminan) | vCPU (taxminan) |
+|---|---|---|---|
+| Kichik | 20 loyiha, 500k LOC gacha | 8 GB | 4 |
+| O'rta | 100 loyiha, 5M LOC gacha | 16 GB | 8 |
+| Katta | 300+ loyiha, 20M LOC gacha | 32 GB va yuqori | 16 |
+
+| Masala | Oddiy yondashuv | Arxitektor yondashuvi |
+|---|---|---|
+| O'lchamlash | "8 GB yetadi" deb boshlash | Eng katta loyihaning hisobot hajmini o'lchab CE heap ni tanlash |
+| Xotira | Bitta `JAVA_OPTS` ga hamma narsani berish | Web, CE va search ga alohida profil berish |
+| Baza | Server bilan bir xil diskda PostgreSQL | Alohida managed baza, IOPS kafolati bilan |
+| Yangilanish | Image tegini `latest` qoldirish | Tegni qotirib qo'yish, LTA liniyasida qolish |
+| Zahira | Faqat VM snapshot | Baza dump plus `extensions` katalogi, tiklanishni sinab ko'rish |
+| Indeks | Qidiruv indeksini ham backup qilish | Indeksni keltirilgan ma'lumot deb bilib, qayta qurishga tayanish |
+| Kuzatish | UI sekinlashganda qarash | CE navbat uzunligi va heap foydalanishiga alert qo'yish |
+| O'sish | Disk to'lganda kengaytirish | Housekeeping ni sozlab o'sish tezligini pasaytirish |
+| Masshtab | Replikani ikkiga chiqarish | Faqat Data Center nashrida klaster, aks holda vertikal o'sish |
+
+### 33.8 Disk: ma'lumotlar bazasi, indeks va o'sish prognozi
+
+Disk uch joyda sarflanadi: ma'lumotlar bazasi, qidiruv indeksi (`data` katalogi) va loglar. Bazada eng ko'p joy o'lchov tarixi va tahlil hisobotlari tomonidan egallanadi. Shuning uchun o'sishni boshqarishning asosiy vositasi housekeeping sozlamasi: eski snapshot larni qanchalik tez siqish va o'chirish.
+
+```sql
+-- Eng katta jadvallarni topish: o'sish manbaini ko'rish uchun
+SELECT relname AS jadval,
+       pg_size_pretty(pg_total_relation_size(c.oid)) AS hajm
+FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE c.relkind = 'r' AND n.nspname NOT IN ('pg_catalog','information_schema')
+ORDER BY pg_total_relation_size(c.oid) DESC
+LIMIT 10;
+
+-- Butun bazaning hajmi
+SELECT pg_size_pretty(pg_database_size('sonarqube')) AS baza_hajmi;
+
+-- Tahlil navbati tarixidagi muvaffaqiyatsizliklar nisbati
+SELECT status, count(*) FROM ce_activity GROUP BY status;
+```
+
+Odatda `project_measures`, `issues` va hisobot bilan bog'liq jadvallar ro'yxatning boshida turadi. Agar `project_measures` nomutanosib katta bo'lsa, demak tarix saqlash siyosati juda yumshoq yoki juda ko'p custom metrika yoziladi. Boshlang'ich disk sifatida o'rta instansiya uchun baza ostiga taxminan 50 GB, indeks ostiga taxminan 20 GB ajratish mantiqiy, lekin bu raqamlar faqat taxmin va birinchi chorakda real o'sish bo'yicha qayta ko'rilishi kerak.
+
+Loglarni rotatsiya qilishni yoqing. Aks holda `ce.log` va `es.log` oylar davomida o'sib diskni to'ldiradi va bu butun serverni to'xtatadi.
+
+### 33.9 Teskari proksi, HTTPS va tashqi manzil sozlash
+
+SonarQube ni to'g'ridan to'g'ri 9000 portda ochib qo'ymaslik kerak. Oldiga teskari proksi qo'yiladi va TLS shu yerda tugatiladi. Bunda ikkita sozlama majburiy bo'ladi.
+
+```properties
+# Tashqi manzil: UI havolalari, PR dekoratsiyasi va webhook shu manzilni ishlatadi
+sonar.core.serverBaseURL=https://sonar.kompaniya.uz
+
+# Agar ildiz yo'lida emas, subpath da turadigan bo'lsa
+# sonar.web.context=/sonar
+
+# Proksi orqasida ishlayotganini bildirish
+sonar.web.port=9000
+sonar.web.host=127.0.0.1
+```
+
+```bash
+# Proksi sozlamasini tekshirish: ikki narsa to'g'ri bo'lishi kerak
+curl -sI https://sonar.kompaniya.uz/ | head -5
+
+# Katta hisobotlar uchun proksi da yuklama limiti yetarli bo'lsin
+# (nginx: client_max_body_size, timeout: proxy_read_timeout)
+
+# Scanner tomonidan ulanishni tekshirish
+curl -s -u "$SONAR_TOKEN:" \
+  https://sonar.kompaniya.uz/api/system/status
+
+# Agar 413 yoki 504 chiqsa, muammo SonarQube da emas, proksida
+```
+
+`sonar.core.serverBaseURL` noto'g'ri bo'lsa, quality gate natijasi CI ga qaytadi, lekin pull request dagi havolalar ichki IP ga ketadi. Bu eng tez sezilmaydigan va eng ko'p vaqt yeydigan noto'g'ri sozlamalardan biri. Webhook va PR dekoratsiyasi CI bilan bog'langan joy, u haqida testlash qo'llanmasidagi CI/CD test pipeline mavzusiga qarang.
+
+### 33.10 Tahlil navbati uzayganda nima qilish
+
+CE navbati uzayishi deyarli har doim bitta sabab bilan bo'ladi: CE bitta hisobotni juda uzoq ishlayotgani yoki hisobotlar ketma-ket tez kelayotgani. Birinchi qadam diagnostika: UI dagi Administration bo'limida Background Tasks sahifasi har bir vazifaning davomiyligini ko'rsatadi. Eng uzoq vazifani topib, qaysi loyiha ekanini aniqlang.
+
+| Tuzoq | Belgisi | Yechim |
+|---|---|---|
+| CE heap kichik | `ce.log` da `OutOfMemoryError` | `sonar.ce.javaOpts` dagi `Xmx` ni oshirish |
+| Monorepo bitta loyiha sifatida | Bitta vazifa soatlab ishlaydi | Modullarga bo'lib alohida loyiha qilish |
+| Tahlil juda tez-tez | Navbat hech bo'shamaydi | Har push emas, PR va asosiy branch da ishga tushirish |
+| Generatsiya qilingan kod skanerlanadi | LOC sun'iy katta | `sonar.exclusions` bilan chiqarib tashlash |
+| Baza sekin | Vazifa CPU emas, I/O kutadi | Baza diskini IOPS bo'yicha kuchaytirish |
+| Indeks qizil | Qidiruv xato beradi | Disk bo'shatib server restart, indeks qayta qurilsin |
+| Housekeeping o'chirilgan | Baza va navbat sekinlashadi | Tarix saqlash siyosatini qisqartirish |
+| Bitta CE worker | Parallel ishlamaydi | CPU oshirish, yoki tijorat nashrida worker sonini ko'paytirish |
+
+Eng arzon g'alaba ko'pincha hisobot hajmini kamaytirish bo'ladi, ya'ni skanerlanadigan fayllarni toraytirish. Serverga RAM qo'shish keyingi qadam, birinchi qadam emas.
+
+### 33.11 Server loglarini o'qish va asosiy sog'liq tekshiruvlari
+
+Loglar `$SONARQUBE_HOME/logs` ichida va har jarayon o'z fayliga yozadi. `sonar.log` umumiy ko'tarilish jarayoni, `web.log` web server, `ce.log` compute engine, `es.log` qidiruv indeksi. Muammoni izlashda birinchi qaraladigan fayl aynan muammo chiqqan jarayonning fayli, `sonar.log` emas.
+
+```bash
+# Ko'tarilish muvaffaqiyatli tugaganini tasdiqlash
+grep -i "SonarQube is operational" logs/sonar.log
+
+# Autentifikatsiya talab qilmaydigan holat tekshiruvi
+curl -s http://localhost:9000/api/system/status
+# Kutilgan javob: {"status":"UP", ...}
+# STARTING yoki DB_MIGRATION_NEEDED bo'lsa hali tayyor emas
+
+# Batafsil sog'liq: admin token yoki system passcode kerak
+curl -s -u "$ADMIN_TOKEN:" http://localhost:9000/api/system/health
+
+# Konteynerda loglarni kuzatish
+docker compose logs -f sonarqube | grep -iE "error|warn|oom"
+
+# CE da uzoq ishlagan vazifalarni log dan ko'rish
+grep -i "executed task" logs/ce.log | tail -20
+```
+
+`/api/system/status` yengil va monitoring probe uchun mos. `/api/system/health` esa batafsil, lekin autentifikatsiya talab qiladi. Kubernetes readiness probe uchun birinchisini ishlatish amaliy. Alert qo'yishda uchta signal yetarli boshlanish beradi: `status` UP emasligi, CE navbat uzunligi ostonadan oshishi va disk bandligi 80 foizdan oshishi.
+
+### 33.12 Amalda qo'llash
+
+- [ ] O'rnatayotgan aniq SonarQube versiyasi uchun rasmiy talablar sahifasidan JDK va PostgreSQL minimal versiyasini tekshirib yozib qo'ying, xotiradan ishonmang.
+- [ ] PostgreSQL bazasini UTF8 encoding va alohida rol bilan yarating, parolni secret manager dan oling.
+- [ ] Image tegini aniq versiyaga qotirib qo'ying va `latest` dan voz kechib, volume larni `data`, `extensions`, `logs` uchun ulang.
+- [ ] Tugunda `vm.max_map_count=524288` va `nofile` limitini doimiy qilib qo'ying, keyin restart dan keyin qiymatlarni qayta tekshiring.
+- [ ] `sonar.web.javaOpts`, `sonar.ce.javaOpts` va `sonar.search.javaOpts` ni alohida sozlang, search da `Xms` va `Xmx` ni teng qiling.
+- [ ] `sonar.core.serverBaseURL` ni tashqi HTTPS manzilga qo'yib, PR dagi havolaning to'g'ri ochilishini bitta real PR da sinab ko'ring.
+- [ ] Baza hajmi bo'yicha so'rovni oyda bir marta ishlatib o'sish tezligini yozib boring va housekeeping siyosatini shunga qarab qisqartiring.
+- [ ] `/api/system/status`, CE navbat uzunligi va disk bandligi uchun uchta alert qo'ying, keyin baza dump dan tiklanishni sinov muhitida bir marta bajarib ko'ring.
+
+## 34. Yangilash, LTA migratsiyasi, zaxira va housekeeping (Upgrades, Backup and Housekeeping)
+
+SonarQube serverni yangilash oddiy `docker pull` emas. Yangilash ma'lumotlar bazasi sxemasini migratsiya qiladi, qoida to'plamini almashtiradi va shu bilan birga butun jamoaning quality gate natijasini siljitadi. Shuning uchun yangilash texnik ish emas, balki rejalashtirilgan o'zgarish boshqaruvi hodisasi. Bu bo'limda yangilash yo'li, zaxira, migratsiya, qoida o'zgarishining ta'siri, housekeeping va orqaga qaytarish rejasi ko'rib chiqiladi.
+
+### 34.1 LTA (uzoq muddatli) liniya va oraliq versiyalar farqi
+
+SonarQube ikki xil relizni chiqaradi. Oraliq (interim) versiyalar tez-tez chiqadi, yangi qoida olib keladi, lekin qisqa muddat qo'llab-quvvatlanadi. LTA, ya'ni uzoq muddatli faol liniya, kamdan-kam chiqadi va uzoq vaqt xavfsizlik hamda bug tuzatishlarini oladi.
+
+Amaliy qoida oddiy. Agar sizda ichki jamoa serveri bo'lsa va uni har oyda yangilashga odam ajratmagan bo'lsangiz, LTA liniyasida turish kerak. Oraliq versiyadan keyingi yangilash yo'li uzoqroq va sinovdan kamroq o'tgan bo'ladi.
+
+9.9 LTA liniyasi va undan keyingi 2025 LTA liniyasi mavjud. Aniq nuqtali versiya raqamini bu yerda yozmayman, chunki ular reliz jadvaliga qarab o'zgaradi. Har bir yangilashdan oldin rasmiy upgrade guide sahifasini va o'sha versiyaning release notes faylini o'qib, qo'llab-quvvatlanadigan Java va ma'lumotlar bazasi versiyalarini tekshiring.
+
+### 34.2 Yangilash yo'li: qaysi versiyadan qaysi versiyaga sakrash mumkin
+
+Asosiy tamoyil shunday: bir LTA liniyasidan keyingisiga to'g'ridan-to'g'ri o'tish qo'llab-quvvatlanadi, lekin ikki LTA ni oshirib tashlab o'tish mumkin emas. Ikki liniya ortda qolgan bo'lsangiz, o'rtadagi LTA ga ko'tarilib migratsiyani tugatasiz, keyin yana yangilaysiz.
+
+Yangilash yo'li faqat server versiyasi bilan cheklanmaydi. Uch narsa birga ko'tariladi: server, scanner (sonar-maven-plugin yoki Gradle sonarqube plugin), hamda ma'lumotlar bazasi va JVM.
+
+| Holat | Qanday yo'l tutish |
+|---|---|
+| Bir LTA liniyasidan keyingisiga | To'g'ridan-to'g'ri yangilash, bir martalik migratsiya |
+| Ikki yoki undan ko'p liniya ortda | O'rtadagi LTA da to'xtab, migratsiyani tugatib, keyin davom etish |
+| Oraliq versiyadan LTA ga | Avval release notes dagi breaking changes ro'yxatini o'qish |
+| Faqat patch (oxirgi raqam) | Odatda sxema o'zgarmaydi, lekin zaxira baribir olinadi |
+| Scanner eski, server yangi | Scanner ni ham ko'tarish, chunki eski scanner yangi qoidani bilmaydi |
+| JVM yoki PostgreSQL qo'llab-quvvatlanmaydigan versiyada | Avval platformani ko'tarish, keyin Sonar ni |
+
+Maven tomonida scanner versiyasini aniq qotirib qo'yish yangilashni oldindan aytib beradigan qiladi.
+
+```xml
+<!-- Scanner versiyasini aniq qotiramiz, LATEST ishlatmaymiz -->
+<properties>
+  <sonar.plugin.version>4.0.0.4121</sonar.plugin.version>
+</properties>
+<build>
+  <pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.sonarsource.scanner.maven</groupId>
+        <artifactId>sonar-maven-plugin</artifactId>
+        <!-- Versiyani bitta joyda boshqaramiz, barcha modul shundan oladi -->
+        <version>${sonar.plugin.version}</version>
+      </plugin>
+    </plugins>
+  </pluginManagement>
+</build>
+```
+
+Bu misoldagi raqam shunchaki namuna. Haqiqiy loyihada serveringiz qo'llab-quvvatlaydigan scanner versiyasini hujjatdan tekshirib yozing.
+
+### 34.3 Yangilashdan oldin zaxira: ma'lumotlar bazasi va sozlamalar
+
+SonarQube holati ikki joyda yashaydi. Birinchisi ma'lumotlar bazasi: loyihalar, issue tarixi, quality profile, quality gate, foydalanuvchi va token. Ikkinchisi data katalogi: qidiruv indeksi va yuklangan plugin fayllari. Qidiruv indeksi qayta qurilishi mumkin, lekin ma'lumotlar bazasi qayta qurilmaydi. Shuning uchun zaxiraning yuragi bu ma'lumotlar bazasi dump fayli.
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+TS=$(date +%Y%m%d-%H%M)
+OUT="/backup/sonar/${TS}"
+mkdir -p "${OUT}"
+
+# 1) Ma'lumotlar bazasi dump: custom format, keyin tiklash osonroq
+PGPASSWORD="${SONAR_DB_PASSWORD}" pg_dump \
+  --host="${SONAR_DB_HOST}" --username=sonar --dbname=sonarqube \
+  --format=custom --compress=6 --file="${OUT}/sonarqube.dump"
+
+# 2) Sozlama fayllari va plugin katalogi
+tar czf "${OUT}/conf-extensions.tgz" \
+  /opt/sonarqube/conf /opt/sonarqube/extensions
+
+# 3) Dump ni darhol tekshiramiz: ro'yxat chiqmasa zaxira yaroqsiz
+pg_restore --list "${OUT}/sonarqube.dump" > "${OUT}/manifest.txt"
+wc -l "${OUT}/manifest.txt"
+
+# 4) Checksum, chunki keyin "shu fayl o'shami" savoli chiqadi
+sha256sum "${OUT}"/* > "${OUT}/SHA256SUMS"
+echo "Zaxira tayyor: ${OUT}"
+```
+
+Dump ni olish bilan ish tugamaydi. Tiklashni sinab ko'rmagan zaxira zaxira emas, u faqat umid. Yangilashdan oldingi haftada dump ni bo'sh bazaga tiklab, Sonar ni o'sha bazaga ulab ko'ring. Quality profile va quality gate konfiguratsiyasini alohida eksport qilib git ga qo'yish ham foydali, chunki migratsiyadan keyin profil farqini ko'rish mumkin bo'ladi.
+
+### 34.4 Yangilash jarayoni va migratsiya sahifasi
+
+Yangilash tartibi qat'iy. Avval tahlil jo'natuvchi CI job larini to'xtatasiz, keyin serverni o'chirasiz, zaxira olasiz, so'ng yangi versiyani ishga tushirasiz. Yangi server darhol ishlashga tayyor bo'lmaydi. U migratsiya kutish holatiga o'tadi va web interfeys `/setup` sahifasiga yo'naltiradi, shu yerda migratsiyani boshlash tugmasi bosiladi.
+
+```bash
+# Yangilashdan keyin serverning holatini API orqali kuzatamiz
+# Status qiymatlari: STARTING, DB_MIGRATION_NEEDED, DB_MIGRATION_RUNNING, UP
+curl -s http://sonar.internal:9000/api/system/status
+
+# Migratsiyani boshlash (faqat DB_MIGRATION_NEEDED holatida)
+curl -s -X POST -u "${SONAR_ADMIN_TOKEN}:" \
+  http://sonar.internal:9000/api/system/migrate_db
+
+# Migratsiya tugashini kutamiz, loglarni parallel kuzatamiz
+until curl -s http://sonar.internal:9000/api/system/status | grep -q '"status":"UP"'; do
+  echo "migratsiya davom etmoqda..."
+  sleep 15
+done
+
+# Log ichida muvaffaqiyatsiz migratsiya qadami bormi
+grep -iE "migration|ERROR" /opt/sonarqube/logs/web.log | tail -n 40
+```
+
+Migratsiya davomida serverga tahlil jo'natish kerak emas. Katta bazada u o'n daqiqadan bir necha soatgacha davom etishi mumkin, chunki ba'zi qadamlar jadvallarga yangi ustun va indeks qo'shadi. Bu vaqtni oldindan bilishning yagona yo'li sinov muhitida haqiqiy hajmli dump bilan o'tkazib ko'rish.
+
+```yaml
+# docker-compose: versiya tegini aniq qotiramiz, latest emas
+services:
+  sonarqube:
+    image: sonarqube:${SONAR_IMAGE_TAG}   # masalan LTA community tegi
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://db:5432/sonarqube
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: ${SONAR_DB_PASSWORD}
+    volumes:
+      # Data va extensions nomli volume da, konteyner ichida emas
+      - sonar_data:/opt/sonarqube/data
+      - sonar_extensions:/opt/sonarqube/extensions
+      - sonar_logs:/opt/sonarqube/logs
+    ulimits:
+      nofile: { soft: 65536, hard: 65536 }
+volumes:
+  sonar_data:
+  sonar_extensions:
+  sonar_logs:
+```
+
+`latest` tegi yangilashni tasodifiy qiladi. Konteyner qayta ishga tushganda siz bilmagan versiya ko'tarilsa, migratsiya ham sizning ruxsatingizsiz boshlanadi.
+
+### 34.5 Yangilashdan keyin yangi qoidalar yuzlab issue chiqarishi va unga tayyorgarlik
+
+Yangi versiya yangi qoidalarni va yaxshilangan analizatorni olib keladi. Natijada ertalab quality gate qizil bo'lib turadi, garchi hech kim kodga tegmagan bo'lsa ham. Bu nosozlik emas. Yangi qoida eski kodni ham ko'radi, va eski kodda ilgari ko'rinmagan issue lar paydo bo'ladi.
+
+Muhim nuqta shu: yangi issue lar ko'pincha eski kodda topiladi, lekin ularning "yangi kod" sifatida hisoblanishi new code period qanday aniqlanganiga bog'liq. Agar new code period "oldingi versiyadan beri" deb sozlangan bo'lsa, yangilashdan keyin birinchi tahlil yuzlab issue ni yangi kod ustuniga qo'yib yuborishi mumkin. Shuning uchun yangilashni reliz oynasining o'rtasiga emas, oxiriga yoki boshiga rejalashtiring.
+
+Tayyorgarlik ikki qadamdan iborat. Birinchisi, yangilashni avval bitta vakil loyihada o'tkazib, qancha yangi issue chiqishini sanash. Ikkinchisi, gate ni o'chirish o'rniga jamoaga aniq muddat berish, chunki o'chirilgan gate keyin qayta yoqilmaydi.
+
+```java
+// Yomon: yangi qoida shikoyat qiladigan tipik joy.
+// Hisobot summasini qurganda null bo'lishi mumkin qiymat tekshirilmagan,
+// va Optional dan qiymat shartsiz olinyapti.
+public BigDecimal hisoblaJami(Buyurtma buyurtma) {
+    return buyurtma.getChegirma().get().qiymat()   // Optional shartsiz ochilgan
+            .add(buyurtma.getYetkazish().summa()); // null bo'lishi mumkin
+}
+
+// Sonar o'tadigan variant: null va bo'sh holat ochiq ifodalangan
+public BigDecimal hisoblaJami(Buyurtma buyurtma) {
+    BigDecimal chegirma = buyurtma.getChegirma()
+            .map(Chegirma::qiymat)
+            .orElse(BigDecimal.ZERO);
+    BigDecimal yetkazish = Optional.ofNullable(buyurtma.getYetkazish())
+            .map(Yetkazish::summa)
+            .orElse(BigDecimal.ZERO);
+    return chegirma.add(yetkazish);
+}
+```
+
+Birinchi variant eski versiyada e'tibordan chetda qolib, yangi versiyada belgilanishi mumkin. Tuzatish kodni ham xavfsizroq qiladi, ya'ni ish behuda ketmaydi.
+
+### 34.6 Qoida o'zgarishi natijalarni qanday siljitadi va qayta bazaviylashtirish (re-baseline)
+
+Yangi versiyada uch xil o'zgarish bo'ladi: qoida qo'shiladi, qoida olib tashlanadi yoki birlashtiriladi, va qoidaning jiddiyligi yoki toifasi o'zgaradi. Har uchi ham o'lchovni siljitadi. Qoida olib tashlanganda avvalgi issue lar yopiladi va texnik qarz raqami kamayadi, qoida qo'shilganda teskarisi bo'ladi.
+
+Baholash modeli ham versiyalar orasida o'zgarishi mumkin. Yangi liniyalarda issue lar bitta jiddiylik o'rniga sifat o'lchoviga bog'langan ko'p o'lchovli baholash bilan ko'rsatiladi. Bu gate shartlarining mazmunini o'zgartiradi, shuning uchun ularni yangilashdan keyin qaytadan o'qib chiqish kerak.
+
+Qayta bazaviylashtirish amaliy qadamlardan iborat. Yangilashdan keyin barcha asosiy branch larni bir marta to'liq qayta tahlil qilasiz. Keyin new code period ni yangi reference nuqtaga qo'yasiz, masalan yangilashdan keyingi birinchi reliz versiyasiga. Shundan keyin "yangi kod" o'lchovi yana ma'noli bo'ladi, chunki u yangilash shovqinini o'z ichiga olmaydi.
+
+```properties
+# Yangilashdan keyin referens nuqtani ataylab siljitamiz.
+# Shunda "yangi kod" yangilash shovqinini emas, haqiqiy yangi ishni o'lchaydi.
+sonar.projectKey=ombor-servis
+sonar.projectVersion=2026.10.0-post-upgrade
+
+# Scanner CI da gate natijasini kutsin, shunda qizil gate pipeline ni to'xtatadi
+sonar.qualitygate.wait=true
+sonar.qualitygate.timeout=600
+
+# JaCoCo hisobotining joyi, agregatsiya moduli ishlatilgan holat
+sonar.coverage.jacoco.xmlReportPaths=coverage-report/target/site/jacoco-aggregate/jacoco.xml
+
+# Yangilashdan keyin generatsiya qilingan kodni qaytadan chiqaramiz,
+# aks holda yangi qoidalar unga ham shikoyat qiladi
+sonar.exclusions=**/generated/**,**/*MapperImpl.java,**/target/**
+```
+
+Eski issue larni ommaviy "won't fix" qilib yopish yo'li ham bor, lekin u oxirgi chora. Ommaviy yopish odatga aylansa, Sonar natijasiga ishonch yo'qoladi.
+
+### 34.7 Plugin moslik masalasi va ularni tekshirish
+
+Har bir plugin ma'lum server versiya oralig'i bilan ishlaydi. Yangi serverga eski plugin mos kelmasa, server ishga tushmaydi yoki plugin yuklanmay qoladi. Eng ko'p muammo chiqaradigan toifalar: autentifikatsiya pluginlari, qo'shimcha til analizatorlari, va o'zingiz yozgan maxsus qoida pluginlari.
+
+```bash
+# O'rnatilgan pluginlar ro'yxati va versiyasi
+curl -s -u "${SONAR_ADMIN_TOKEN}:" \
+  http://sonar.internal:9000/api/plugins/installed | python3 -m json.tool
+
+# Yangilanishi kerak bo'lgan pluginlar
+curl -s -u "${SONAR_ADMIN_TOKEN}:" \
+  http://sonar.internal:9000/api/plugins/updates
+
+# Fayl darajasida: extensions katalogidagi jar lar
+ls -1 /opt/sonarqube/extensions/plugins/*.jar
+
+# Har bir jar ichidagi manifest qaysi server versiyasini talab qiladi
+for j in /opt/sonarqube/extensions/plugins/*.jar; do
+  echo "== ${j}"
+  unzip -p "${j}" META-INF/MANIFEST.MF | grep -iE "Plugin-Key|Plugin-Version|Sonar-Version"
+done
+```
+
+O'z maxsus qoida pluginingiz bo'lsa, u eng zaif nuqta. Plugin API versiyalar orasida o'zgaradi va deprecated API olib tashlanishi mumkin. Shu sababli rejada pluginni qayta kompilyatsiya qilish uchun alohida vaqt ajratiladi. Yangilashdan oldin har bir plugin uchun moslik holatini hujjatdan tekshirib jadvalga yozing. Mos kelmaydigan plugin topilsa, ikki variant qoladi: uni olib tashlash yoki yangilashni kutish.
+
+### 34.8 Housekeeping sozlamalari: eski tahlil, branch va PR ma'lumotlarini tozalash
+
+Housekeeping bu Sonar ning ichki tozalash siyosati. U tahlil tarixini qancha saqlashni, snapshot larni qanday birlashtirishni va o'lgan branch bilan yopilgan PR ma'lumotlarini qachon o'chirishni belgilaydi. Standart sozlamalar ko'p branch li loyihada tez yetmaydi.
+
+Eng foydali uchta sozlama shular. Birinchisi, yopilgan PR ma'lumotlarini bir necha kundan keyin o'chirish. Ikkinchisi, faol bo'lmagan feature branch ma'lumotlarini bir necha haftadan keyin o'chirish. Uchinchisi, kunlik snapshot larni haftalik va oylik darajaga birlashtirish. Housekeeping yangilashning bir qismi, chunki migratsiya vaqti baza hajmiga bog'liq. Yangilashdan bir hafta oldin uni qattiqlashtirib bir necha tozalash siklini o'tkazsangiz, migratsiya tezroq o'tadi.
+
+| Oddiy yondashuv | Arxitektor yondashuvi |
+|---|---|
+| `latest` konteyner tegi bilan ishlash | LTA tegini aniq qotirib, yangilashni ataylab boshlash |
+| Zaxirani "ehtimol kerak bo'lmaydi" deb o'tkazib yuborish | Dump olish va uni bo'sh bazaga tiklab sinab ko'rish |
+| To'g'ridan-to'g'ri produktsiyada yangilash | Haqiqiy dump nusxasi bilan sinov muhitida avval o'tkazish |
+| Yangi issue to'lqinini ko'rib gate ni o'chirib qo'yish | New code period ni qayta bazaviylashtirib, gate ni saqlash |
+| Pluginlarni yangilashdan keyin tekshirish | Yangilashdan oldin moslik matritsasini yozib chiqish |
+| Housekeeping ni standart holida qoldirish | Branch va PR saqlash muddatini loyiha oqimiga moslash |
+| Baza hajmini faqat disk to'lganda ko'rish | Jadval hajmini oyda bir marta o'lchab, trendni kuzatish |
+| Scanner versiyasini har modulda alohida yozish | Scanner versiyasini bitta `pluginManagement` da boshqarish |
+| Orqaga qaytarishni "serverni qaytaramiz" deb o'ylash | Baza dump ni tiklashni ham o'z ichiga olgan rollback rejasi |
+
+### 34.9 Ma'lumotlar bazasi hajmi o'sishi va uni jilovlash
+
+Sonar bazasi uch yo'nalishda o'sadi: issue jadvali, o'lchov va snapshot jadvallari, hamda fayl manbalari bilan duplikat ma'lumotlari. Eng tez o'sish sababi odatda bitta, ya'ni o'chirilmayotgan qisqa umrli branch va PR tahlillari.
+
+Hajmni o'lchash uchun faqat o'qish so'rovlari ishlatiladi. Sonar sxemasi ichki hisoblanadi va unga qo'lda yozish tavsiya etilmaydi, chunki migratsiya aynan shu sxemaga tayanadi. Jadval nomlari versiyalar orasida o'zgaradi, shuning uchun so'rovdan oldin jadval mavjudligini tekshiring.
+
+```sql
+-- Eng katta jadvallar: hajm o'sishining asosiy manbasini topish uchun
+SELECT relname AS jadval,
+       pg_size_pretty(pg_total_relation_size(c.oid)) AS umumiy_hajm,
+       pg_total_relation_size(c.oid) AS bayt
+FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public' AND c.relkind = 'r'
+ORDER BY bayt DESC
+LIMIT 15;
+
+-- Butun bazaning hajmi, trendni oyda bir marta yozib borish uchun
+SELECT pg_size_pretty(pg_database_size(current_database())) AS baza_hajmi;
+```
+
+Keyingi qadam sababni aniqlashtirish. Agar branch soni o'nlab emas, yuzlab bo'lsa, housekeeping sozlamasi ishlamayotganini ko'rsatadi.
+
+```sql
+-- Loyiha bo'yicha branch va PR soni: housekeeping ishlayaptimi
+-- Diqqat: jadval va ustun nomlari versiyaga qarab farq qiladi,
+-- shuning uchun avval \d project_branches bilan tekshirib oling.
+SELECT p.kee AS loyiha_kaliti,
+       b.branch_type AS turi,
+       count(*) AS soni
+FROM project_branches b
+JOIN projects p ON p.uuid = b.project_uuid
+GROUP BY p.kee, b.branch_type
+HAVING count(*) > 20
+ORDER BY soni DESC;
+```
+
+Hajmni jilovlashning uchta yo'li bor. Birinchisi housekeeping muddatini qisqartirish. Ikkinchisi tahlil qilinadigan fayllar doirasini `sonar.exclusions` bilan toraytirish, ayniqsa generatsiya qilingan kodni chiqarib tashlash. Uchinchisi keraksiz loyihalarni butunlay o'chirish, chunki arxivlangan loyiha ham joy egallab turadi. PostgreSQL darajasidagi `VACUUM` va indeks holati masalalari arxitektor mindset hujjatidagi PostgreSQL mavzusida yoritilgan.
+
+### 34.10 Yangilashni avval sinov muhitida o'tkazish tartibi
+
+Sinov muhitidagi yangilash bu repetisiya. Maqsadi uchta savolga javob olish: migratsiya qancha vaqt oladi, qaysi plugin sinadi, va qancha yangi issue paydo bo'ladi. Bu savollarga faqat produktsiya bazasining haqiqiy nusxasi javob beradi.
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+# 1) Produktsiya dump ini sinov bazasiga tiklaymiz
+createdb -h stage-db -U postgres sonarqube_stage
+pg_restore -h stage-db -U postgres -d sonarqube_stage \
+  --no-owner --no-privileges /backup/sonar/latest/sonarqube.dump
+
+# 2) Yangilashdan OLDIN o'lchovni yozib olamiz (keyin taqqoslaymiz)
+curl -s -u "${TOKEN}:" \
+  "http://sonar-stage:9000/api/measures/component?component=ombor-servis&metricKeys=violations,coverage,duplicated_lines_density" \
+  > /tmp/oldin.json
+
+# 3) Yangi versiyani ko'taramiz va migratsiya vaqtini o'lchaymiz
+START=$(date +%s)
+docker compose -f docker-compose.stage.yml up -d
+# ... status UP bo'lishini kutish ...
+echo "migratsiya sekund: $(( $(date +%s) - START ))"
+
+# 4) Vakil loyihani qayta tahlil qilib, yangi o'lchovni olamiz
+./mvnw -B clean verify sonar:sonar -Dsonar.host.url=http://sonar-stage:9000
+```
+
+Oldin va keyin o'lchovlarini yonma-yon qo'yib, yangi issue sonini sanaydigan hisobotni jamoaga tarqatish eng foydali qadam. Shunda yangilash kuni hech kim kutilmagan qizil gate dan hayratga tushmaydi. Pipeline ning o'zini tuzish testlash qo'llanmasidagi CI/CD test pipeline mavzusida bor.
+
+```yaml
+# CI da yangilashdan keyin birinchi ishga tushirish: gate ni kutadi,
+# lekin natijani bloklovchi emas, ogohlantiruvchi sifatida yozib boradi.
+name: sonar-post-upgrade-check
+on: { workflow_dispatch: {} }
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }   # blame uchun to'liq tarix kerak
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '21' }
+      - name: Server versiyasini yozib olamiz
+        run: curl -sf "${SONAR_HOST_URL}/api/server/version" | tee server-version.txt
+      - name: Tahlil
+        continue-on-error: true    # birinchi yugurishda pipeline ni yiqitmaymiz
+        run: ./mvnw -B clean verify sonar:sonar -Dsonar.qualitygate.wait=true
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+```
+
+### 34.11 Orqaga qaytarish rejasi: nega zaxirasiz yangilash xavfli
+
+Sonar yangilashida orqaga qaytarish oddiy emas, chunki migratsiya bir tomonlama. Yangi versiya ma'lumotlar bazasi sxemasini o'zgartiradi, va eski versiya o'zgargan sxemani o'qishni bilmaydi. Shuning uchun konteynerni eski tegga qaytarish yetarli emas: eski server yangi sxemaga ulansa ishga tushmaydi.
+
+Demak haqiqiy rollback faqat bitta: eski server versiyasini qaytarish va bazani yangilashdan oldingi dump dan tiklash. Bu migratsiyadan keyin kirgan barcha tahlillarni yo'qotishni bildiradi. Shuning uchun yangilash oynasida CI tahlillari to'xtatiladi.
+
+| Tuzoq | Yechim |
+|---|---|
+| `latest` teg bilan konteyner qayta ishga tushib, migratsiya o'z-o'zidan boshlanishi | Teg va versiyani aniq qotirish, avtomatik restart siyosatini nazorat qilish |
+| Zaxira olingan, lekin tiklash sinovdan o'tmagan | `pg_restore --list` va bo'sh bazaga to'liq tiklash mashqi |
+| Eski serverni qaytarib, baza yangi sxemada qolishi | Rollback ni server va baza juftligi sifatida bajarish |
+| Migratsiya vaqtida CI tahlil jo'natib turishi | Yangilash oynasida sonar bosqichini CI da o'chirish |
+| Yangi issue to'lqini uchun gate ni butunlay o'chirish | New code period ni qayta bazaviylashtirish va muddat belgilash |
+| Maxsus qoida plugini yangi API da kompilyatsiya qilinmasligi | Plugin ni yangilashdan oldin yangi API ga qarshi qurib ko'rish |
+| Housekeeping sozlanmaganidan baza o'sib, migratsiya cho'zilishi | Yangilashdan oldin tozalash siklini o'tkazish |
+| Data katalogi konteyner ichida qolib, plugin va indeks yo'qolishi | `data` va `extensions` ni nomli volume ga chiqarish |
+| Scanner eski qolib, yangi qoidalar ishlamasligi | Scanner versiyasini server bilan birga ko'tarish |
+| Yangilash reliz oynasining o'rtasida o'tkazilishi | Yangilashni reliz boshiga yoki tugaganiga rejalashtirish |
+
+Oxirgi gap eng muhimi: bu bo'limdagi tartib umumiy prinsip darajasida yozilgan. Aniq versiya raqamlari, qo'llab-quvvatlanadigan JVM va PostgreSQL oralig'i, hamda migratsiya qadamlari har bir reliz bilan o'zgaradi. Yangilashdan oldin o'sha versiyaning rasmiy upgrade guide sahifasini va release notes faylini o'qib, shu rejani unga solishtiring.
+
+### 34.12 Amalda qo'llash
+
+- [ ] Hozirgi server versiyasini `api/server/version` orqali aniqlang va u LTA liniyasidami yoki oraliq versiyadami degan savolga yozma javob bering.
+- [ ] Yangilash yo'lini rasmiy upgrade guide bo'yicha tekshirib, oraliq to'xtashlar kerakmi yoki yo'qmi degan qarorni hujjatlashtiring.
+- [ ] `pg_dump` zaxira skriptini yozib, uni bo'sh bazaga tiklash mashqini bir marta bajarib ko'ring va ketgan vaqtni yozib qo'ying.
+- [ ] O'rnatilgan pluginlar ro'yxatini `api/plugins/installed` dan chiqarib, har biri uchun moslik holatini jadvalga yozing.
+- [ ] Produktsiya dump nusxasi bilan sinov muhitida yangilashni o'tkazib, migratsiya vaqtini va yangi issue sonini o'lchab oling.
+- [ ] Housekeeping sozlamalarini loyiha branch oqimiga moslab qisqartiring va bir necha tozalash siklidan keyin baza hajmini qayta o'lchang.
+- [ ] Yangilashdan keyin new code period ni yangi referens versiyaga qo'yib, barcha asosiy branch larni bir marta to'liq qayta tahlil qiling.
+- [ ] Rollback rejasini bitta sahifada yozing: kim bajaradi, qaysi dump ishlatiladi, qancha ma'lumot yo'qoladi va qaror qanday mezon bilan qabul qilinadi.
+
+## 35. Foydalanuvchi, guruh, huquqlar, token va SSO (Users, Permissions and Tokens)
+
+Sonar serveri kodni o'lchaydi, lekin o'zi ham ishlab chiqarish tizimi: unda hisob, guruh, token va sozlama bor. Kim quality gate shartini o'zgartira oladi va kim tahlil yuborishi mumkin degan savol texnik savol emas, boshqaruv savoli. Bu bo'limda huquqlar modeli, guruhlar, huquq shabloni, token turlari va tashqi autentifikatsiya mexanikasi ko'rsatiladi. Darhol bir ogohlantirish: huquqlarning interfeysdagi nomlari SonarQube versiyasiga qarab biroz farq qiladi, shuning uchun quyida har bir huquqning nomi bilan birga ma'nosi ham yoziladi, siz esa o'z serveringizdagi aniq yozuvni tekshirib oling.
+
+### 35.1 Huquqlar modeli: global huquqlar va loyiha huquqlari
+
+Sonar da huquqlar ikki qatlamga bo'linadi. Global huquqlar butun serverga tegishli: tizim sozlamalari, quality profile va quality gate ni tahrirlash, yangi loyiha yaratish, global darajada tahlil yuritish. Loyiha huquqlari esa faqat bitta loyiha yoki uning portfeliga tegishli: loyihani ko'rish, manba kodini ko'rish, tahlil yuborish, issue bilan ishlash va loyiha sozlamalarini o'zgartirish.
+
+Bu ajratishning amaliy ma'nosi bor. Developer ga global `Administer System` bermaslik kerak, chunki u bilan birga serverning hamma sozlamasi ochiladi. Aksincha, CI ga faqat tahlil yuritish huquqi kerak, boshqa hech narsa kerak emas. Huquqni eng kichik to'plamdan boshlab berish, keyin kamligi aniqlansa qo'shish, teskarisidan ancha xavfsiz.
+
+| Rol | Global huquqlar | Loyiha huquqlari | Nega shunday |
+| --- | --- | --- | --- |
+| Tashqi kuzatuvchi (menejer) | hech qanday | Browse | faqat natijani ko'rishi kerak |
+| Developer | hech qanday | Browse, See Source Code, Administer Issues | issue ni false positive deb belgilashi kerak |
+| Texnik yetakchi | Administer Quality Profiles (ixtiyoriy) | yuqoridagi va Administer (loyiha) | profil va gate muhokamasini olib boradi |
+| CI servis hisobi | Execute Analysis (yoki Create Projects) | Execute Analysis | faqat tahlil yuboradi, hech narsani ko'rmaydi |
+| Xavfsizlik mas'uli | hech qanday | Browse, Administer Security Hotspots | hotspot ni ko'rib chiqadi va yopadi |
+| Platforma admini | Administer System, Administer Quality Gates | kerak bo'lsa hammasiga | server va integratsiyani boshqaradi |
+| Audit o'quvchisi | nashrga qarab alohida huquq | Browse | o'zgarishlar jurnalini o'qiydi |
+
+Jadvaldagi nomlar interfeysda biroz boshqacha yozilishi mumkin, masalan bir versiyada "Execute Analysis", boshqasida "Run Analysis" ko'rinishida. Ma'nosi bir xil qoladi: shu hisob scanner natijasini serverga yuborishi mumkinmi yoki yo'qmi.
+
+### 35.2 Asosiy loyiha huquqlari: ko'rish, tahlil yuritish, issue boshqarish, sozlash
+
+Browse huquqi loyihani ro'yxatda ko'rish va o'lchovlarni ochish imkonini beradi. Uning yonida alohida See Source Code huquqi turadi. Bu ikkisi ajratilgani tasodif emas: ba'zi jamoalarda tashqi auditor metrikani ko'rishi kerak, lekin manba kodini ko'rmasligi kerak. Browse ni olib qo'ysangiz, foydalanuvchi uchun loyiha umuman yo'q bo'lib ko'rinadi.
+
+Execute Analysis huquqi faqat CI uchun. Shaxsga berilsa, odam o'z mashinasidan tahlil yuborib, serverdagi natijani CI dagi natijadan farqli qilib qo'yadi.
+
+Administer Issues huquqi issue ni "Won't fix" yoki "False positive" deb belgilash, jiddiylikni o'zgartirish va boshqa odamga tayinlash imkonini beradi. Bu huquq xavfli, chunki u bilan quality gate ni kodni tuzatmasdan ham yashil qilish mumkin. Shuning uchun uni developer larga berish mumkin, lekin issue ni yopish qarorini code review da muhokama qilish qoidasi bo'lishi kerak.
+
+Administer (loyiha darajasida) huquqi loyiha sozlamalari, uning quality gate tanlovi va exclusion ro'yxatini o'zgartirishga ruxsat beradi. Eng ko'p suiiste'mol shu yerda sodir bo'ladi: kod tuzatilmaydi, `sonar.exclusions` ga katalog qo'shiladi va gate yashil bo'ladi. Bu huquqni loyihada ikki yoki uch odamda qoldirish kifoya.
+
+### 35.3 Guruhlar bilan ishlash va shaxsiy huquq bermaslik qoidasi
+
+Sonar huquqni ham foydalanuvchiga, ham guruhga berish imkonini beradi. Amalda faqat guruhga berish kerak. Sababi oddiy: odam jamoadan ketganda yoki boshqa loyihaga o'tganda uni bitta guruhdan chiqarish yetarli, aks holda o'nlab loyihaning huquq ro'yxatini qo'lda tozalash kerak bo'ladi.
+
+Serverda ikki sukutdagi guruh bor: hamma autentifikatsiya qilgan foydalanuvchini o'z ichiga oladigan `sonar-users` va administratorlar guruhi `sonar-administrators`. `sonar-users` ga keng huquq bermang, chunki unga LDAP dan kelgan har bir yangi xodim avtomatik tushadi. O'z guruhlaringizni loyiha yoki jamoa nomi bilan yarating, masalan `payment-dev`, `payment-lead`, `ci-scanner`.
+
+```bash
+# Guruh yaratish va unga loyiha huquqini berish (Web API orqali).
+# $SONAR_HOST va $SONAR_ADMIN_TOKEN oldindan muhit o'zgaruvchisida bo'lsin.
+curl -sS -u "$SONAR_ADMIN_TOKEN:" -X POST \
+  "$SONAR_HOST/api/user_groups/create" \
+  -d "name=payment-dev" -d "description=To'lov servisi developerlari"
+
+# Developer guruhiga ko'rish va issue boshqarish huquqi.
+for P in user codeviewer issueadmin; do
+  curl -sS -u "$SONAR_ADMIN_TOKEN:" -X POST \
+    "$SONAR_HOST/api/permissions/add_group" \
+    -d "groupName=payment-dev" \
+    -d "projectKey=com.example:payment-service" \
+    -d "permission=$P"
+done
+
+# CI guruhiga faqat tahlil yuritish huquqi.
+curl -sS -u "$SONAR_ADMIN_TOKEN:" -X POST \
+  "$SONAR_HOST/api/permissions/add_group" \
+  -d "groupName=ci-scanner" \
+  -d "projectKey=com.example:payment-service" \
+  -d "permission=scan"
+```
+
+E'tibor bering: API da huquqlar `user`, `codeviewer`, `issueadmin`, `scan`, `admin` kabi kalitlar bilan yuritiladi, interfeysda esa odamga tushunarli nom bilan ko'rsatiladi. Kalitlar ro'yxati versiyaga qarab to'ldirilgan, masalan security hotspot uchun alohida kalit keyinchalik qo'shilgan. Shuning uchun skript yozishdan oldin o'z serveringizdagi `api/permissions/*` javobini bir marta tekshirib ko'ring.
+
+### 35.4 Huquq shabloni (permission template) va yangi loyihaga avtomatik qo'llash
+
+Yangi loyiha birinchi tahlildan keyin avtomatik yaratiladi. Agar huquqlar qo'lda beriladigan bo'lsa, o'nta mikroservis bo'lgan tizimda admin har hafta bir xil ishni qiladi. Huquq shabloni shu muammoni yechadi: shablonda guruhlar va ularning huquqlari yozib qo'yiladi, keyin shablon loyiha kalitining namunasiga bog'lanadi.
+
+Masalan `com.example.payment:.*` namunasiga `payment-template` bog'langan bo'lsa, shu kalit bilan kelgan har bir yangi loyiha darhol to'g'ri guruhlarni oladi. Bu loyiha kaliti nomlash qoidasini talab qiladi, ya'ni kalitni tasodifiy emas, domen bo'yicha berish kerak.
+
+```bash
+# Shablon yaratish, unga guruh huquqlarini qo'shish va kalit namunasini bog'lash.
+curl -sS -u "$SONAR_ADMIN_TOKEN:" -X POST \
+  "$SONAR_HOST/api/permissions/create_template" \
+  -d "name=payment-template" \
+  -d "projectKeyPattern=com\.example\.payment:.*"
+
+curl -sS -u "$SONAR_ADMIN_TOKEN:" -X POST \
+  "$SONAR_HOST/api/permissions/add_group_to_template" \
+  -d "templateName=payment-template" \
+  -d "groupName=payment-dev" -d "permission=user"
+
+# Mavjud loyihaga shablonni majburan qo'llash (huquqlar qayta yoziladi).
+curl -sS -u "$SONAR_ADMIN_TOKEN:" -X POST \
+  "$SONAR_HOST/api/permissions/apply_template" \
+  -d "templateName=payment-template" \
+  -d "projectKey=com.example.payment:order-api"
+```
+
+Shablonni mavjud loyihaga qo'llash avvalgi huquqlarni almashtiradi. Shuning uchun bu buyruqni avval sinov loyihasida ishga tushiring. Shablonlarning o'zini ham versiyaga qo'shib o'zgartiring, ya'ni yuqoridagi buyruqlarni infratuzilma repozitoriyasida skript sifatida saqlang.
+
+### 35.5 Loyiha ko'rinuvchanligi: ochiq va yopiq loyihalar
+
+Har bir loyihaning ko'rinuvchanligi bor: public yoki private. Ochiq loyihani serverga kirgan har bir foydalanuvchi ko'radi, ba'zi sozlamalarda esa autentifikatsiyasiz mehmon ham ko'rishi mumkin. Yopiq loyihani faqat huquq berilgan guruhlar ko'radi.
+
+Ichki korporativ serverda sukutdagi ko'rinuvchanlikni private qilib qo'yish to'g'ri qaror. Buni global sozlamada bir marta o'zgartirsangiz, keyin yaratilgan har bir loyiha yopiq bo'lib tug'iladi. Mavjud loyihalarning ko'rinuvchanligi avtomatik o'zgarmaydi, ularni alohida ko'rib chiqish kerak.
+
+Ochiq loyiha ba'zan kerak bo'ladi, masalan ichki open source kutubxona uchun. Lekin u manba kodini ham ochadi, shuning uchun to'lov yoki shaxsiy ma'lumot bilan ishlaydigan servisni ochiq qoldirmang.
+
+| Masala | Oddiy yondashuv | Arxitektor yondashuvi |
+| --- | --- | --- |
+| Huquq berish | har bir odamga alohida beriladi | faqat guruhga beriladi, odam guruhga qo'shiladi |
+| Yangi loyiha | admin qo'lda huquq yozadi | kalit namunasiga bog'langan huquq shabloni ishlaydi |
+| Ko'rinuvchanlik | sukutdagi holat o'zgartirilmaydi | sukut private, ochiqlik alohida qarorga qo'yiladi |
+| Tahlil tokeni | developer o'z tokenini CI ga qo'yadi | alohida servis hisobi va project analysis token |
+| Token muddati | muddatsiz token yaratiladi | muddat belgilanadi va aylantirish taqvimi bor |
+| Quality gate | har jamoa o'zi uchun gate yaratadi | bitta umumiy gate, chetga chiqish yozilib qo'yiladi |
+| Kirish | lokal hisoblar qo'lda yaratiladi | LDAP yoki SAML, guruh mapping bilan |
+| Issue yopish | kim xohlasa "Won't fix" qiladi | huquq cheklangan, qaror review da qoladi |
+| Server kirishi | server hammaga ochiq turadi | force authentication yoqilgan, tarmoq cheklangan |
+| O'zgarish izi | hech kim kuzatmaydi | audit yoki kamida konfiguratsiya tarixi saqlanadi |
+
+### 35.6 Token turlari: foydalanuvchi, global tahlil, loyiha tahlili
+
+Sonar ga parol bilan emas, token bilan ulanish kerak. Tokenlarning bir nechta turi bor va ular bir xil emas. Foydalanuvchi tokeni (user token) o'z egasining hamma huquqini oladi, shuning uchun CI da ishlatilmaydi. Global tahlil tokeni (global analysis token) har qanday loyihaga tahlil yuborishi mumkin, u ko'p loyihali umumiy pipeline uchun qulay. Loyiha tahlil tokeni (project analysis token) faqat bitta loyihaga tahlil yuboradi va eng xavfsiz variant.
+
+Global va loyiha tahlil tokenlari SonarQube ning yangi liniyalarida paydo bo'lgan, eski o'rnatmalarda faqat user token bo'lishi mumkin. Agar interfeysda token turini tanlash maydoni ko'rinmasa, demak versiyangiz uni qo'llamaydi va siz servis hisobi ochib, unga faqat `scan` huquqini berib, uning user tokenini ishlatishingiz kerak.
+
+```bash
+# Loyiha tahlili uchun token yaratish (turni qo'llaydigan versiyalarda).
+curl -sS -u "$SONAR_ADMIN_TOKEN:" -X POST \
+  "$SONAR_HOST/api/user_tokens/generate" \
+  -d "name=ci-payment-2026Q1" \
+  -d "type=PROJECT_ANALYSIS_TOKEN" \
+  -d "projectKey=com.example.payment:order-api" \
+  -d "expirationDate=2026-07-01"
+
+# Tokenlar ro'yxati: muddati tugaganini topish uchun.
+curl -sS -u "$SONAR_ADMIN_TOKEN:" \
+  "$SONAR_HOST/api/user_tokens/search?login=svc-ci" | head -c 2000
+
+# Eski tokenni o'chirish (yangisini sinovdan o'tkazgandan keyin).
+curl -sS -u "$SONAR_ADMIN_TOKEN:" -X POST \
+  "$SONAR_HOST/api/user_tokens/revoke" -d "name=ci-payment-2025Q4"
+```
+
+Token nomiga maqsad va davrni yozish kichik, lekin foydali odat: `ci-payment-2026Q1` dan kim va nima uchun yaratganini tushunish mumkin, `token1` dan esa hech narsa tushunilmaydi.
+
+### 35.7 Token ni CI da saqlash, aylantirish va muddatini belgilash
+
+Token hech qachon repozitoriyaga, `pom.xml` ga yoki `sonar-project.properties` ga yozilmaydi. U CI tizimining secret omborida saqlanadi va muhit o'zgaruvchisi sifatida beriladi. Scanner yangi versiyalarda `sonar.token` xususiyatini va `SONAR_TOKEN` o'zgaruvchisini o'qiydi, eski versiyalarda `sonar.login` ishlatilgan va u endi tavsiya etilmaydi.
+
+```yaml
+# GitHub Actions: token secret dan keladi, log ga tushmaydi.
+name: sonar
+on:
+  push:
+    branches: [ main ]
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # new code uchun tarix kerak
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Test va tahlil
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: >
+          ./mvnw -B verify sonar:sonar
+          -Dsonar.host.url=$SONAR_HOST_URL
+          -Dsonar.projectKey=com.example.payment:order-api
+```
+
+Lokal mashinada esa tokenni Maven ning `settings.xml` fayliga profil sifatida qo'yish mumkin, lekin fayl foydalanuvchi uy katalogida qolishi kerak va repozitoriyaga tushmasligi kerak.
+
+```xml
+<!-- ~/.m2/settings.xml: token repozitoriyada emas, uy katalogida turadi -->
+<settings>
+  <profiles>
+    <profile>
+      <id>sonar-local</id>
+      <properties>
+        <!-- qiymatni fayldan emas, muhit o'zgaruvchisidan olish ham mumkin -->
+        <sonar.host.url>https://sonar.internal.example.com</sonar.host.url>
+        <sonar.token>${env.SONAR_TOKEN}</sonar.token>
+      </properties>
+    </profile>
+  </profiles>
+  <activeProfiles>
+    <activeProfile>sonar-local</activeProfile>
+  </activeProfiles>
+</settings>
+```
+
+Tokenga muddat qo'yish majburiy odat bo'lishi kerak. Muddat yo'q token yillar davomida yashaydi va kim ishlatayotgani esdan chiqadi. Choraklik muddat qulay: aylantirish taqvimga tushadi, yangi token yaratilib, pipeline bir marta o'tgandan keyin eskisi bekor qilinadi.
+
+Kod ichida ham xuddi shu qoida ishlaydi va Sonar buni o'zi tekshiradi. Qo'lda yozilgan parol yoki token security hotspot yoki vulnerability sifatida belgilanadi, chunki u manba kodda qoladi.
+
+```java
+// Yomon: sir kodda qoldi, Sonar bunga darhol shikoyat qiladi.
+class ReportUploader {
+    private static final String TOKEN = "sqa_8f21c0b4e9d1"; // sir kodda
+    void upload(String body) { send(TOKEN, body); }
+}
+
+// Sonar o'tadigan variant: sir tashqaridan keladi, kodda yo'q.
+@Component
+class ReportUploaderFixed {
+    private final String token;
+
+    ReportUploaderFixed(@Value("${report.api.token}") String token) {
+        // konfiguratsiya muhit o'zgaruvchisidan to'ldiriladi
+        if (token == null || token.isBlank()) {
+            throw new IllegalStateException("report.api.token berilmagan");
+        }
+        this.token = token;
+    }
+
+    void upload(String body) { send(token, body); }
+}
+```
+
+Testda esa haqiqiy token kerak emas. Konfiguratsiyaga sinov qiymatini bering, shunda test ham o'tadi, kodda ham sir qolmaydi. Testni qanday tuzish texnikasi testlash qo'llanmasidagi test konfiguratsiyasi mavzusida batafsil yozilgan.
+
+### 35.8 LDAP, SAML va OAuth orqali kirishni ulash
+
+Lokal hisoblarni qo'lda yaratish kichik serverda ishlaydi, lekin xodim ketganda uni o'chirishni hech kim eslamaydi. Shuning uchun kirishni korporativ katalogga ulash kerak. SonarQube LDAP ni server xususiyatlari orqali, SAML va OAuth provayderlarini esa yangi versiyalarda ko'proq interfeys orqali sozlaydi. Qaysi sozlama fayldan, qaysi biri interfeysdan kelishi versiyaga qarab farq qiladi, shuning uchun o'z versiyangiz hujjatidagi maydon nomlarini tekshiring.
+
+```properties
+# sonar.properties: LDAP orqali kirish va guruh mapping.
+sonar.security.realm=LDAP
+sonar.security.savePassword=false
+
+ldap.url=ldaps://ldap.internal.example.com:636
+ldap.bindDn=cn=sonar-bind,ou=service,dc=example,dc=com
+ldap.bindPassword=${env:LDAP_BIND_PASSWORD}
+
+# Foydalanuvchini qidirish
+ldap.user.baseDn=ou=people,dc=example,dc=com
+ldap.user.request=(&(objectClass=inetOrgPerson)(uid={login}))
+ldap.user.realNameAttribute=cn
+ldap.user.emailAttribute=mail
+
+# Guruhlarni olish: Sonar guruh nomi LDAP guruh nomiga mos bo'lishi kerak
+ldap.group.baseDn=ou=groups,dc=example,dc=com
+ldap.group.request=(&(objectClass=groupOfNames)(member={dn}))
+
+# Mehmon kirishini yopish: ichki serverda bu yoqilgan bo'lishi kerak
+sonar.forceAuthentication=true
+```
+
+`sonar.forceAuthentication` sozlamasi anonim ko'rishni butunlay yopadi. Yangi versiyalarda u sukut bo'yicha yoqilgan, eski versiyalarda esa o'chirilgan bo'lishi mumkin, shuning uchun uni ochiq yozib qo'yish xavfsizroq.
+
+Guruh mapping ning ma'nosi shu: LDAP yoki SAML dan kelgan guruh nomi Sonar dagi guruh nomi bilan bir xil bo'lsa, foydalanuvchi kirgan paytda avtomatik shu guruhga tushadi. Shunda huquq boshqarish katalogga ko'chadi va Sonar da qo'lda ish qolmaydi. Guruh nomlarini oldindan kelishib oling, aks holda LDAP da `PaymentDev`, Sonar da `payment-dev` bo'lib, mapping ishlamaydi.
+
+SAML da service provider va identity provider sertifikatlari muddati bor. Bu muddat tugaganda kirish to'liq to'xtaydi, shuning uchun sertifikat muddatini token aylantirish taqvimiga qo'shib qo'ying.
+
+### 35.9 Kim quality gate va profilni o'zgartira olishi kerak
+
+Quality gate va quality profile ni o'zgartirish huquqi global huquq. Bu to'g'ri, chunki gate shartini bir odam o'zgartirsa, u hamma loyihaga ta'sir qiladi. Amalda bu huquq platforma jamoasida va bir yoki ikki texnik yetakchida qolishi kerak.
+
+Sababi oddiy. Gate ni bo'shatish eng tez "yechim" bo'lib ko'rinadi: coverage shartini 80 dan 60 ga tushirsang, pipeline darhol yashil bo'ladi. Shu qarorni bosim ostida turgan odam qabul qilsa, standart sekin yemiriladi. Agar o'zgartirish faqat umumiy muhokamadan o'tsa, bosim gate ga emas, kodga boradi.
+
+Profil uchun ham xuddi shunday. Qoidani olib tashlashdan oldin uning nima uchun ishga tushganini aniqlash kerak, ba'zan qoida haqiqatan mos emas, lekin sababi yozilgan bo'lishi kerak. Qoidalar va gate shartlari mexanikasi quality gate va profil mavzularida alohida ko'rilgan.
+
+Amaliy tartib oddiy: umumiy gate bitta bo'ladi va uni platforma jamoasi saqlaydi. Loyiha chetga chiqishni so'rasa, so'rov repozitoriyadagi faylda yozilib ko'rib chiqiladi va muddat bilan beriladi.
+
+### 35.10 Audit: kim nimani o'zgartirganini kuzatish
+
+Huquq, token va gate o'zgarishini kuzatish kerak. To'liq audit jurnali, ya'ni kim qachon qaysi sozlamani o'zgartirganini ko'rsatadigan alohida bo'lim, nashrga qarab mavjud bo'ladi va bepul nashrda bo'lmasligi mumkin. Agar sizning serveringizda bu bo'lim yo'q bo'lsa, taslim bo'lish shart emas, bir nechta amaliy o'rinbosar bor.
+
+Birinchisi, huquqlarni qo'lda emas, skript bilan boshqarish: `curl` buyruqlari repozitoriyada tursa, har bir o'zgarish git tarixiga tushadi. Ikkinchisi, davriy snapshot, ya'ni huquq va token ro'yxatini API dan olib versiyalash. Uchinchisi, server loglarini markaziy log tizimiga yuborish.
+
+```sql
+-- Ma'lumotlar bazasiga to'g'ridan to'g'ri so'rov qo'yish QO'LLANMAYDI:
+-- sxema versiya orasida o'zgaradi va yangilanishda buziladi.
+-- Shuning uchun inventarizatsiyani API javobini saqlagan o'z jadvalingizda yuritish.
+CREATE TABLE sonar_access_snapshot (
+    taken_at     timestamptz NOT NULL DEFAULT now(),
+    subject_kind text        NOT NULL,   -- 'group' yoki 'user' yoki 'token'
+    subject_name text        NOT NULL,
+    project_key  text,                   -- global huquq uchun NULL
+    permission   text        NOT NULL,
+    expires_at   date                    -- token uchun muddat
+);
+
+-- Muddati yaqinlashgan tokenlar: aylantirish ro'yxati.
+SELECT subject_name, project_key, expires_at
+FROM sonar_access_snapshot
+WHERE subject_kind = 'token'
+  AND expires_at IS NOT NULL
+  AND expires_at < current_date + INTERVAL '30 days'
+ORDER BY expires_at;
+```
+
+Bu yondashuvning foydasi shundaki, u nashrdan mustaqil ishlaydi. Zarari shundaki, u faqat snapshot oralig'idagi holatni ko'rsatadi, ya'ni ikki snapshot orasida qilingan va qaytarilgan o'zgarish ko'rinmaydi. Shuning uchun imkoni bo'lsa, haqiqiy audit jurnalidan foydalanish afzal.
+
+### 35.11 Xavfsizlik bo'yicha tez-tez uchraydigan xatolar: ochiq server, umumiy token
+
+Eng ko'p uchraydigan xato: Sonar serveri ichki tarmoqda deb o'ylanadi, lekin aslida u internetdan ochiq turadi. Ikkinchi xato: bitta "umumiy" token yaratiladi va u hamma pipeline da, hamma loyihada ishlatiladi. Uchinchisi: admin paroli sukutdagi holatda qoladi.
+
+Oqibatlari bir xil emas. Ochiq server manba kodni oshkor qiladi, umumiy token esa bitta pipeline buzilganda hamma loyihaga tahlil yuborish imkonini beradi va izlanishni imkonsiz qiladi.
+
+| Tuzoq | Nega xavfli | Yechim |
+| --- | --- | --- |
+| Server internetdan ochiq | manba kod va metrikalar oshkor bo'ladi | tarmoq cheklovi va reverse proxy, faqat VPN dan kirish |
+| Sukutdagi admin paroli | serverni to'liq egallash mumkin | o'rnatishdan keyin darhol almashtirish, yangi admin hisob |
+| Bitta umumiy token | izlanish imkonsiz, ta'sir doirasi keng | loyiha yoki pipeline uchun alohida token |
+| Muddatsiz token | eski token yillar yashaydi | muddat belgilash va choraklik aylantirish |
+| Token log ga tushadi | log o'quvchi hamma sirni ko'radi | secret ni muhit o'zgaruvchisiga berish, `set -x` ni o'chirish |
+| Token repozitoriyada | tarixdan o'chirish qiyin | CI secret omboridan foydalanish, pre-commit scan |
+| `sonar-users` ga admin huquqi | har bir yangi xodim admin bo'ladi | huquqni alohida guruhlarga berish |
+| Shaxsiy token CI da | odam ketganda pipeline o'ladi | servis hisobi va uning tokeni |
+| HTTP orqali ulanish | token tarmoqda ochiq ketadi | faqat HTTPS, sertifikatni tekshirish |
+| Anonim ko'rish yoqilgan | autentifikatsiyasiz kirish mumkin | `sonar.forceAuthentication=true` |
+
+Alohida eslatma: `sonar.token` yoki parolni buyruq qatorida `-D` bilan uzatish xavfli, chunki u jarayonlar ro'yxatida va CI logida ko'rinib qolishi mumkin. Muhit o'zgaruvchisi bu jihatdan yaxshiroq. Agar scanner ni debug rejimida ishga tushirsangiz, chiqishni jamoatchi log ga yubormang.
+
+### 35.12 Amalda qo'llash
+
+- [ ] Loyihangizdagi hamma shaxsiy huquqni ko'rib chiqing va ularni guruh huquqiga ko'chiring, keyin shaxsiy huquqlarni olib tashlang.
+- [ ] `sonar-users` guruhida qanday huquq borligini tekshiring va keng huquqlarni undan olib, alohida guruhlarga bering.
+- [ ] Kalit namunasiga bog'langan huquq shabloni yaratib, sinov loyihasida tekshiring, keyin yangi loyihalar uchun yoqib qo'ying.
+- [ ] Global sukutdagi ko'rinuvchanlikni private qiling va mavjud ochiq loyihalar ro'yxatini ko'rib chiqing.
+- [ ] CI uchun alohida servis hisobi ochib, unga faqat tahlil yuritish huquqini bering, developer tokenini pipeline dan olib tashlang.
+- [ ] Hamma tokenni ro'yxatlab, muddatsizlarini muddatli yangisiga almashtiring va aylantirish sanasini taqvimga qo'ying.
+- [ ] Kirishni LDAP yoki SAML ga ulab, guruh nomlarini mapping uchun kelishib oling va anonim kirishni yopganingizni tasdiqlang.
+- [ ] Huquq va token inventarizatsiyasini API dan oladigan skript yozib, uning natijasini versiyalanadigan faylga yozishni avtomatlashtiring.
+
+
+# IX. Kengaytirish va integratsiya
+
+## 36. Web API va avtomatlashtirish (Web API and Automation)
+
+SonarQube ning UI si tahlil natijasini odam uchun ko'rsatadi, Web API esa aynan shu ma'lumotni mashina uchun beradi. Quality gate holatini CI da tekshirish, issue larni jamoaga tarqatish, metrikani o'z dashboard ingizga chiqarish va yangi loyihani sozlash bilan birga yaratish shu API orqali qilinadi. Muhim ogohlantirish: endpoint nomlari, parametrlar va javob shakli versiyalar orasida o'zgaradi, shuning uchun har bir skriptni yozishdan oldin aynan o'z serveringizning hujjatini ochish kerak. Quyida ishonchli va keng ishlatiladigan endpointlar nomi bilan, qolganlari esa "serverda topish" ko'rsatmasi bilan beriladi.
+
+### 36.1 Web API qayerda hujjatlashtirilgan va uni serverdan qanday ochish
+
+Eng ishonchli hujjat sizning serveringizning o'zida turadi. SonarQube ning har bir instansiyasi `/web_api` sahifasini beradi va u aynan o'rnatilgan versiyaning endpointlarini ko'rsatadi. Ya'ni `https://sonar.example.com/web_api` manzili sizdagi parametrlarni, majburiy maydonlarni va deprecated belgilarini aniq aytadi. Internetdagi eski blog postga emas, shu sahifaga ishoning.
+
+Bu sahifada har bir endpoint yonida qaysi versiyada paydo bo'lgani va qaysi versiyada deprecated qilingani yoziladi. "Show Internal API" tugmasi bor, u UI ning o'zi ishlatadigan ichki endpointlarni ham ko'rsatadi. Ichki endpointni skriptda ishlatish mumkin, lekin u ogohlantirishsiz o'zgaradi, shuning uchun uni faqat vaqtinchalik yechim sifatida oling.
+
+Yangi liniyalarda `/api/v2/...` ko'rinishidagi yangi API ham paydo bo'ldi. Eski `/api/...` endpointlari hali ishlaydi, lekin ularning bir qismi asta sekin v2 ga ko'chiriladi. Shu sababli skriptda bazaviy yo'lni o'zgaruvchi qilib saqlash foydali.
+
+```bash
+# Serverning o'z hujjatini brauzerda ochish uchun manzil
+echo "https://sonar.example.com/web_api"
+
+# Server tirikmi va versiyasi nima: eng oddiy tekshiruv
+curl -s "https://sonar.example.com/api/server/version"
+
+# Tizim holati: UP, DB_MIGRATION_NEEDED yoki boshqa holat
+curl -s "https://sonar.example.com/api/system/status" | jq .
+
+# Ba'zi versiyalarda hujjat ro'yxatini JSON sifatida ham olish mumkin,
+# lekin bu yo'lning mavjudligi versiyaga qarab farq qiladi.
+# Shuning uchun asosiy manba /web_api sahifasi bo'lib qoladi.
+```
+
+### 36.2 Autentifikatsiya: token bilan so'rov yuborish
+
+Parol bilan emas, token bilan ishlang. Token ni UI da foydalanuvchi profilidagi "Security" bo'limida yoki `api/user_tokens/generate` endpointi orqali yaratasiz. Tokenning turi muhim: global analysis token, project analysis token va user token har xil huquq doirasiga ega. CI uchun eng kichik huquqli variantni tanlang.
+
+Eski klassik usul: token ni HTTP Basic ning login qismiga qo'yish, parol qismini bo'sh qoldirish. Ya'ni `-u TOKEN:` ko'rinishi. Yangi versiyalarda `Authorization: Bearer TOKEN` sarlavhasi ham qo'llaniladi va u o'qishga osonroq. Ikkisi ham keng tarqalgan, lekin aynan sizning versiyangizda qaysi biri qo'llanishini `/web_api` dagi autentifikatsiya bo'limidan tekshiring.
+
+Token ni hech qachon repozitoriyga yozmang. CI secret yoki vault dan o'qing. Skriptda uni `echo` qilmang, chunki CI log i saqlanadi.
+
+```bash
+# Token ni muhit o'zgaruvchisidan olish, skriptga yozmaslik
+: "${SONAR_TOKEN:?SONAR_TOKEN belgilanmagan}"
+SONAR_URL="https://sonar.example.com"
+
+# 1-usul: Basic auth, parol bo'sh
+curl -s -u "${SONAR_TOKEN}:" "${SONAR_URL}/api/authentication/validate"
+
+# 2-usul: Bearer sarlavha (yangi versiyalarda)
+curl -s -H "Authorization: Bearer ${SONAR_TOKEN}" \
+  "${SONAR_URL}/api/authentication/validate"
+
+# Javob {"valid":true} bo'lsa token ishlayapti.
+# 401 qaytsa token xato, 403 qaytsa huquq yetishmaydi: ikkisi boshqa muammo.
+```
+
+Mahalliy tahlil uchun token ni `sonar-project.properties` ga yozish vasvasasi paydo bo'ladi. Bunga yo'l qo'ymang, chunki bu fayl repozitoriyda yotadi.
+
+```properties
+# sonar-project.properties: faqat sir bo'lmagan sozlamalar
+sonar.projectKey=payments-service
+sonar.projectName=Payments Service
+sonar.sources=src/main/java
+sonar.tests=src/test/java
+sonar.java.binaries=target/classes
+# Coverage hisoboti JaCoCo 0.8.x dan keladi
+sonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+# Token va host bu yerda EMAS: ular CI secret va -D parametri orqali uzatiladi
+# sonar.token=... <- bunday qatorni yozmang
+```
+
+### 36.3 Loyiha holatini olish va gate natijasini skript bilan tekshirish
+
+Gate natijasini olishning eng to'g'ri yo'li `api/qualitygates/project_status` endpointi. U `projectKey` parametri bilan loyihaning oxirgi tahlil natijasini qaytaradi. Javobda umumiy `status` maydoni bor va u `OK`, `ERROR` yoki ba'zi holatlarda `NONE` bo'ladi. Shu bilan birga har bir shart alohida ro'yxatda keladi: metrika kaliti, taqqoslash operatori, chegara va haqiqiy qiymat.
+
+Muhim nuqta: tahlil skaner tomonidan yuborilgandan keyin server uni navbatda qayta ishlaydi. Shu sababli skaner tugashi bilan darhol gate natijasini so'rash noto'g'ri javob berishi mumkin. Skaner `target/sonar/report-task.txt` faylini yozadi va unda `ceTaskId` hamda `dashboardUrl` bo'ladi. To'g'ri ketma ketlik: `api/ce/task` orqali vazifa `SUCCESS` bo'lishini kutish, keyin gate holatini so'rash.
+
+Shuning uchun `analysisId` yoki `ceTaskId` bo'yicha so'rash branch bo'yicha so'rashdan ishonchliroq. Branch yoki pull request uchun so'ralganda `branch` va `pullRequest` parametrlari ishlatiladi, ularning aniq nomini `/web_api` dan tasdiqlang.
+
+```bash
+set -euo pipefail
+SONAR_URL="https://sonar.example.com"
+TASK_URL=$(awk -F= '/^ceTaskUrl=/{sub(/^ceTaskUrl=/,""); print}' target/sonar/report-task.txt)
+
+# Vazifa tugashini kutish, cheksiz emas: 30 marta, har 5 sekundda
+for i in $(seq 1 30); do
+  STATUS=$(curl -s -u "${SONAR_TOKEN}:" "${TASK_URL}" | jq -r '.task.status')
+  [ "${STATUS}" = "SUCCESS" ] && break
+  [ "${STATUS}" = "FAILED" ] && { echo "Tahlil xato tugadi"; exit 1; }
+  sleep 5
+done
+
+# Endi gate holatini so'rash xavfsiz
+curl -s -u "${SONAR_TOKEN}:" \
+  "${SONAR_URL}/api/qualitygates/project_status?projectKey=payments-service" \
+  | jq -r '.projectStatus.status, (.projectStatus.conditions[]
+      | "\(.metricKey) \(.comparator) \(.errorThreshold) actual=\(.actualValue) \(.status)")'
+```
+
+### 36.4 Issue larni ro'yxat sifatida olish va filtrlash
+
+`api/issues/search` endpointi issue larni qidirish uchun ishlatiladi. U juda ko'p filtr qabul qiladi: loyiha kaliti, jiddiylik, turi, holat, tayinlangan odam, qoida kaliti, fayl va sana oralig'i. Filtr nomlari versiyalar orasida o'zgargan: eski liniyalarda `severities` va `types` ishlatilgan, yangi liniyalarda "clean code attribute" va "software quality" asosidagi yangi filtrlar qo'shilgan. Shuning uchun filtr nomini aynan o'z serveringizning hujjatidan oling.
+
+Amaliy maslahat: butun ro'yxatni tortib olish o'rniga `ps=1` va faqat `total` maydonini o'qish bilan sanashni bajarish mumkin. Bu tarmoqqa ham, serverga ham yengil. Hisobot uchun esa kerakli maydonlarni `jq` bilan tanlab oling, chunki to'liq javob katta bo'ladi.
+
+Yangi kod bo'yicha issue larni ajratish alohida qiymatga ega, chunki gate asosan yangi kodga qaraydi. Bunday filtr uchun "new code period" ga tegishli parametr bor, lekin uning nomi versiyaga qarab farq qiladi, shuning uchun uni hujjatdan tekshirib ishlating.
+
+```bash
+SONAR_URL="https://sonar.example.com"
+PROJECT="payments-service"
+
+# Ochiq issue larni faylga yozish, 100 tadan sahifa bilan
+curl -s -u "${SONAR_TOKEN}:" -G "${SONAR_URL}/api/issues/search" \
+  --data-urlencode "componentKeys=${PROJECT}" \
+  --data-urlencode "statuses=OPEN,CONFIRMED" \
+  --data-urlencode "ps=100" --data-urlencode "p=1" \
+  | jq -r '.issues[] | [.rule, .severity, .component, (.line//0), .message] | @tsv' \
+  > /tmp/sonar-issues.tsv
+
+# Faqat sanash: eng yengil so'rov, ps=1 va total ni o'qish
+curl -s -u "${SONAR_TOKEN}:" -G "${SONAR_URL}/api/issues/search" \
+  --data-urlencode "componentKeys=${PROJECT}" \
+  --data-urlencode "ps=1" | jq '.total'
+
+# Bitta qoida bo'yicha: masalan murakkablik qoidasi
+curl -s -u "${SONAR_TOKEN}:" -G "${SONAR_URL}/api/issues/search" \
+  --data-urlencode "componentKeys=${PROJECT}" \
+  --data-urlencode "rules=java:S3776" --data-urlencode "ps=1" | jq '.total'
+```
+
+Security hotspot lar issue lardan alohida ro'yxatda turadi. Ularni olish uchun hotspot larga tegishli qidiruv endpointi ishlatiladi, lekin uning parametrlari ancha o'zgargan, shuning uchun `/web_api` da "hotspots" bo'limini ochib tekshiring.
+
+### 36.5 Metrikalarni o'qish va tarixiy qiymatlarni olish
+
+Bir nuqtadagi qiymat uchun `api/measures/component` endpointi ishlatiladi. Unga `component` sifatida loyiha kaliti va `metricKeys` sifatida vergul bilan ajratilgan metrika kalitlari beriladi. Ishonchli va keng ishlatiladigan kalitlar: `coverage`, `new_coverage`, `bugs`, `vulnerabilities`, `code_smells`, `duplicated_lines_density`, `ncloc`. Boshqa kalitni o'ylab chiqarmang, mavjud kalitlar ro'yxatini metrikalar qidiruv endpointi yoki `/web_api` beradi.
+
+Modul va paket darajasida bo'lish uchun `api/measures/component_tree` qulay. U daraxt bo'ylab yurib har bir komponent uchun qiymat qaytaradi, shu bilan "qaysi paketda coverage past" degan savolga javob beradi.
+
+Tarix uchun `api/measures/search_history` ishlatiladi. U metrika kalitlari va sana oralig'i bo'yicha qiymatlar qatorini qaytaradi. Shu endpoint bilan "coverage oxirgi uch oyda qanday o'zgardi" grafigini o'zingizda yasashingiz mumkin. Tahlillar ro'yxati va ularning sanasi uchun esa loyiha tahlillari qidiruv endpointi bor, uning aniq nomini hujjatdan tasdiqlang.
+
+```bash
+SONAR_URL="https://sonar.example.com"
+PROJECT="payments-service"
+
+# Bir nuqtadagi asosiy metrikalar
+curl -s -u "${SONAR_TOKEN}:" -G "${SONAR_URL}/api/measures/component" \
+  --data-urlencode "component=${PROJECT}" \
+  --data-urlencode "metricKeys=coverage,new_coverage,bugs,vulnerabilities,code_smells,duplicated_lines_density" \
+  | jq -r '.component.measures[] | "\(.metric)=\(.value // .periods[0].value)"'
+
+# Tarix: coverage va duplication oxirgi 90 kun
+FROM=$(date -u -d '90 days ago' +%F)
+curl -s -u "${SONAR_TOKEN}:" -G "${SONAR_URL}/api/measures/search_history" \
+  --data-urlencode "component=${PROJECT}" \
+  --data-urlencode "metrics=coverage,duplicated_lines_density" \
+  --data-urlencode "from=${FROM}" --data-urlencode "ps=500" \
+  | jq -r '.measures[] | .metric as $m | .history[] | "\($m)\t\(.date)\t\(.value)"'
+```
+
+Olingan tarixni o'z bazangizda saqlash foydali, chunki Sonar eski tahlillarni housekeeping sozlamasiga qarab siqadi va tafsilotni yo'qotadi. Kichik jadval yetarli.
+
+```sql
+-- Metrika suratlarini o'z bazamizda saqlash: trend uchun ishonchli manba
+create table sonar_metric_snapshot (
+    id            bigserial primary key,
+    project_key   text        not null,
+    metric_key    text        not null,
+    measured_at   date        not null,
+    metric_value  numeric(12,4) not null,
+    -- Bitta kun, bitta loyiha, bitta metrika uchun bitta qator
+    constraint uq_snapshot unique (project_key, metric_key, measured_at)
+);
+
+-- Trend savoli: coverage oxirgi 30 kunda qanchaga o'zgardi
+select metric_value - lag(metric_value) over (order by measured_at) as delta,
+       measured_at
+from sonar_metric_snapshot
+where project_key = 'payments-service'
+  and metric_key = 'coverage'
+  and measured_at >= current_date - 30
+order by measured_at;
+```
+
+### 36.6 Quality gate va profilni API orqali yaratish va tayinlash
+
+Gate va quality profile ni qo'lda UI da sozlash kichik tashkilotda ishlaydi. Loyihalar soni oshganda bu qo'lda ish xatoga aylanadi, chunki har bir yangi loyiha tasodifiy sozlama bilan boshlanadi. Yechim: gate va profilni kod sifatida saqlash va API orqali qo'llash.
+
+Gate yaratish uchun `api/qualitygates/create` ishlatiladi, shartlarni qo'shish uchun shartga tegishli endpoint bor va u `gateName` yoki `gateId`, `metric`, `op`, `error` parametrlarini oladi. Parametr nomlari versiyalar orasida `gateId` dan `gateName` ga ko'chgan, shuning uchun bu yerda ayniqsa hujjatni tekshirish kerak. Gate ni loyihaga bog'lash endpointining nomi ham o'zgargan, uni `/web_api` da "qualitygates" bo'limidan toping.
+
+Quality profile uchun `api/qualityprofiles/create` va `api/qualityprofiles/add_project` keng ishlatiladi. Profilni backup qilish va tiklash uchun ham endpoint bor, u profilni XML sifatida chiqaradi. Shu XML ni repozitoriyda saqlash eng amaliy yo'l, chunki u review qilinadi va tarixi ko'rinadi.
+
+```bash
+SONAR_URL="https://sonar.example.com"
+GATE="Team Backend Gate"
+
+# 1. Gate yaratish (bir marta)
+curl -s -u "${SONAR_TOKEN}:" -X POST "${SONAR_URL}/api/qualitygates/create" \
+  --data-urlencode "name=${GATE}"
+
+# 2. Shart qo'shish: parametr nomlari versiyaga qarab gateId yoki gateName.
+# Avval /web_api dagi "qualitygates" bo'limida aniq nomni tekshiring.
+curl -s -u "${SONAR_TOKEN}:" -X POST \
+  "${SONAR_URL}/api/qualitygates/create_condition" \
+  --data-urlencode "gateName=${GATE}" \
+  --data-urlencode "metric=new_coverage" \
+  --data-urlencode "op=LT" --data-urlencode "error=80"
+
+# 3. Profilni XML sifatida saqlab, git ga qo'yish
+curl -s -u "${SONAR_TOKEN}:" -G "${SONAR_URL}/api/qualityprofiles/backup" \
+  --data-urlencode "language=java" \
+  --data-urlencode "qualityProfile=Backend Java" > profiles/backend-java.xml
+```
+
+### 36.7 Yangi loyihani avtomatik yaratish va huquq shablonini qo'llash
+
+Yangi mikroservis paydo bo'lganda uch ish birga bajarilishi kerak: loyiha yaratish, kerakli quality profile ni bog'lash va huquqlarni berish. Qo'lda bajarilsa ulardan biri doimo esdan chiqadi. Natijada loyiha "default" profil bilan ishlaydi yoki jamoa unga kira olmaydi.
+
+Loyiha yaratish uchun `api/projects/create` ishlatiladi, u `project` va `name` parametrlarini oladi. Mavjudligini tekshirish uchun `api/projects/search` qulay. Huquqlar uchun permission template tayinlanadi va buning endpointi `api/permissions/apply_template`. Bu uchtasini bitta skriptga yig'ish provizion vaqtini bir daqiqaga tushiradi.
+
+Agar monorepo ichida bir nechta modul alohida loyiha sifatida ko'rilsa, kalitlash qoidasini oldindan belgilang. Masalan `org.company:service-payments` ko'rinishi. Kalit keyin o'zgarsa, barcha tarix va trend uziladi.
+
+```bash
+set -euo pipefail
+SONAR_URL="https://sonar.example.com"
+KEY="org.company:service-inventory"
+NAME="Inventory Service"
+TEMPLATE="Backend Services"
+
+# Loyiha bormi: bo'lmasa yaratamiz (idempotent skript)
+EXISTS=$(curl -s -u "${SONAR_TOKEN}:" -G "${SONAR_URL}/api/projects/search" \
+  --data-urlencode "projects=${KEY}" | jq '.paging.total')
+
+if [ "${EXISTS}" = "0" ]; then
+  curl -s -u "${SONAR_TOKEN}:" -X POST "${SONAR_URL}/api/projects/create" \
+    --data-urlencode "project=${KEY}" --data-urlencode "name=${NAME}"
+fi
+
+# Java profilini bog'lash
+curl -s -u "${SONAR_TOKEN}:" -X POST "${SONAR_URL}/api/qualityprofiles/add_project" \
+  --data-urlencode "project=${KEY}" --data-urlencode "language=java" \
+  --data-urlencode "qualityProfile=Backend Java"
+
+# Huquq shablonini qo'llash
+curl -s -u "${SONAR_TOKEN}:" -X POST "${SONAR_URL}/api/permissions/apply_template" \
+  --data-urlencode "projectKey=${KEY}" --data-urlencode "templateName=${TEMPLATE}"
+```
+
+### 36.8 Natijalarni tashqi tizimga chiqarish: hisobot, dashboard, ogohlantirish
+
+Sonar ning UI si yaxshi, lekin u jamoaning kundalik oqimida emas. Shuning uchun uchta chiqish nuqtasi amalda qiymat beradi: haftalik hisobot, umumiy dashboard va darhol ogohlantirish. Uchtasi ham bir xil manbadan, ya'ni metrika va gate endpointlaridan oziqlanadi.
+
+Ogohlantirishda tanlov muhim. Har bir yangi code smell uchun xabar yuborish shovqin yaratadi va jamoa uni o'chirib qo'yadi. Faqat ikki holatda xabar yuboring: gate `ERROR` ga o'tganda va yangi security issue paydo bo'lganda. Qolgani haftalik hisobotda ko'rinsa yetarli.
+
+Java tarafida kichik Spring komponenti yozish qulay, chunki u scheduler, retry va o'z bazangizga yozishni bir joyda beradi. Quyidagi misol gate holatini o'qiydi va faqat buzilganda xabar yuboradi.
+
+```java
+// Gate holatini o'qiydigan kichik komponent: faqat buzilganda xabar yuboradi
+@Component
+class GateWatcher {
+    private final RestClient client;   // bazaviy URL va token bilan sozlangan
+    private final Notifier notifier;
+
+    GateWatcher(RestClient client, Notifier notifier) {
+        this.client = client; this.notifier = notifier;
+    }
+
+    @Scheduled(cron = "0 */15 * * * *")   // har 15 daqiqada, tez tez emas
+    void check() {
+        ProjectStatusResponse body = client.get()
+                .uri(b -> b.path("/api/qualitygates/project_status")
+                           .queryParam("projectKey", "payments-service").build())
+                .retrieve().body(ProjectStatusResponse.class);
+
+        // NONE holati "hali tahlil bo'lmagan" degani: bu xato emas
+        if (body == null || !"ERROR".equals(body.projectStatus().status())) {
+            return;
+        }
+        String buzilgan = body.projectStatus().conditions().stream()
+                .filter(c -> "ERROR".equals(c.status()))
+                .map(c -> c.metricKey() + "=" + c.actualValue())
+                .collect(Collectors.joining(", "));
+        notifier.send("Gate buzildi: " + buzilgan);
+    }
+}
+```
+
+Bu komponentning testi Sonar serveriga ulanmasligi kerak. HTTP javobini mock qilish usullari testlash qo'llanmasidagi tashqi servis mock mavzusida yoritilgan.
+
+### 36.9 Sahifalash, chegaralar va ko'p so'rov yuborishda ehtiyotkorlik
+
+Qidiruv endpointlari sahifalab javob beradi. `p` sahifa raqami, `ps` sahifadagi element soni. `ps` ning maksimumi odatda 500 atrofida va undan katta qiymat xato qaytaradi. Bundan muhimi: ko'plab qidiruv endpointlarida umumiy natija chuqurligi chegaralangan, ya'ni `p * ps` ma'lum sondan oshsa server xato beradi. Shu sababli "barcha issue larni tortib olaman" degan yondashuv katta loyihada ishlamaydi.
+
+To'g'ri yechim: natijani kichik bo'laklarga bo'lish. Masalan har bir fayl yoki har bir qoida bo'yicha alohida so'rash, yoki sana oralig'ini kichraytirish. Yana bir yo'l: issue larni emas, agregat metrikalarni o'qish, chunki sanoq uchun `total` maydoni yetarli.
+
+So'rovlar sonini ham cheklang. CI da yuzlab parallel job bitta Sonar serverga yopirilsa, server sekinlashadi va tahlil navbati o'sadi. Retry da eksponensial kutish ishlatish va 429 yoki 503 javobida darhol qayta urinmaslik kerak.
+
+| Tuzoq | Nima bo'ladi | Yechim |
+|---|---|---|
+| Skaner tugashi bilan gate so'raladi | Eski tahlil natijasi o'qiladi, CI yolg'on yashil | `report-task.txt` dagi `ceTaskUrl` ni `SUCCESS` bo'lgunicha kutish |
+| `ps=1000` berish | Xato javob yoki kesilgan ro'yxat | `ps` ni 500 dan oshirmaslik, sahifalab yurish |
+| Chuqur sahifalash, `p=200` | Server chegara xatosini qaytaradi | So'rovni qoida yoki fayl bo'yicha bo'lish |
+| Token repozitoriyda | Sir tarqaydi, token ni almashtirish kerak | CI secret yoki vault, token ni log ga chiqarmaslik |
+| Admin token CI da | Har qanday skript loyiha o'chirishi mumkin | Analysis token, eng kichik huquq doirasi |
+| Ichki API ga tayanish | Versiya yangilanganda skript jim o'ladi | Faqat hujjatlangan endpointlar, smoke test bilan tekshirish |
+| `jq` bo'lmasa grep bilan parsing | Javob shakli o'zgarsa noto'g'ri qiymat chiqadi | `jq` ni majburiy qilish, maydonni nomi bilan o'qish |
+| Har 10 sekundda polling | Server yuklanadi, navbat o'sadi | Interval ni kattalashtirish, eksponensial kutish |
+| Metrika kaliti o'ylab chiqarilgan | Javobda `null` keladi, hisobot bo'sh | Kalitni metrikalar qidiruvidan yoki `/web_api` dan olish |
+
+### 36.10 API javobini CI da ishlatish: bloklash va hisobot yasash
+
+CI da ikki xil qaror bor: bloklash va xabar berish. Maven plugin da `sonar.qualitygate.wait=true` parametri skanerni gate natijasini kutishga majbur qiladi va gate buzilsa build ni yiqitadi. Bu eng oddiy yo'l va ko'p holatda yetarli. Lekin u faqat "o'tdi yoki o'tmadi" deydi, qaysi shart buzilganini chiroyli ko'rsatmaydi.
+
+Shuning uchun amaliy sxema: skaner `wait` bilan ishlaydi, keyin alohida qadam `api/qualitygates/project_status` dan tafsilotni olib PR izohiga yozadi. Bloklash skaner tomonida, tushuntirish API tomonida bo'ladi.
+
+```xml
+<!-- Maven: skaner gate natijasini kutadi va buzilsa build yiqiladi -->
+<plugin>
+  <groupId>org.sonarsource.scanner.maven</groupId>
+  <artifactId>sonar-maven-plugin</artifactId>
+  <!-- Versiyani o'z loyihangizdagi qiymat bilan belgilang -->
+  <configuration>
+    <!-- Gate natijasini kutish: CI ni bloklash uchun eng oddiy yo'l -->
+    <sonar.qualitygate.wait>true</sonar.qualitygate.wait>
+    <!-- Kutish chegarasi sekundda: cheksiz kutmaslik uchun -->
+    <sonar.qualitygate.timeout>300</sonar.qualitygate.timeout>
+  </configuration>
+</plugin>
+```
+
+```yaml
+# CI: avval coverage, keyin tahlil, keyin API dan tafsilot
+steps:
+  - name: Test va coverage
+    run: ./mvnw -B verify   # JaCoCo 0.8.x xml hisobotini yozadi
+
+  - name: Sonar tahlili
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    run: >
+      ./mvnw -B sonar:sonar
+      -Dsonar.host.url=https://sonar.example.com
+      -Dsonar.qualitygate.wait=true
+
+  - name: Gate tafsilotini PR ga yozish
+    if: always()          # gate yiqilsa ham tafsilot kerak
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    run: ./ci/gate-report.sh payments-service
+```
+
+| Vazifa | Oddiy yondashuv | Arxitektor yondashuvi |
+|---|---|---|
+| Gate natijasini bilish | UI ni ochib ko'z bilan qarash | `project_status` javobini CI da o'qib qaror qilish |
+| Tahlil tugashini kutish | `sleep 60` qo'yish | `ceTaskUrl` ni `SUCCESS` bo'lgunicha polling qilish |
+| Token saqlash | `pom.xml` yoki properties faylida | CI secret, analysis token, aylantirish jadvali bilan |
+| Gate sozlamasi | UI da qo'lda, har loyihada boshqa | Gate va profil XML sifatida git da, API orqali qo'llanadi |
+| Yangi loyiha | Qo'lda yaratish, profil esdan chiqadi | Idempotent provizion skripti: yaratish, profil, huquq |
+| Issue larni tarqatish | Haftada bir UI dan eksport | Filtrlangan so'rov, faqat yangi kod, avtomatik izoh |
+| Trend kuzatish | Oxirgi qiymatga qarash | `search_history` dan o'qib o'z bazada saqlash |
+| Ogohlantirish | Har bir issue uchun xabar | Faqat gate `ERROR` va yangi security issue uchun |
+| API o'zgarishi | Yangilanishdan keyin skript jim o'ladi | Smoke test, versiya tekshiruvi, bitta klient qatlami |
+| Hisobot | Qo'lda skrinshot | Metrika endpointidan generatsiya qilingan hisobot |
+
+### 36.11 API versiyasi o'zgarishi va skriptlarni himoyalash
+
+Eng ko'p uchraydigan nosozlik: SonarQube yangilangandan keyin CI skripti xatoga tushadi yoki undan yomoni, jim jim noto'g'ri natija beradi. Sabab oddiy. Parametr nomi o'zgargan, endpoint deprecated bo'lgan yoki javobdagi maydon boshqa joyga ko'chgan. 9.9 LTA va 2025 LTA liniyalari orasida ayniqsa issue va jiddiylik modeli sezilarli o'zgargan.
+
+Himoya uchun to'rt oddiy qoida bor. Birinchi: barcha API chaqiruvlarini bitta joyda saqlang, masalan bitta `sonar-api.sh` yoki bitta Java klient klassi. Shunda o'zgarish bitta faylga tegadi. Ikkinchi: javobdan maydonni nomi bilan oling va uning yo'qligini xato deb hisoblang. Agar `status` maydoni `null` bo'lsa, skript yashil qaytarmasligi kerak.
+
+Uchinchi: serverning versiyasini `api/server/version` dan o'qib, kutilgan liniya bilan solishtiring va mos kelmasa ogohlantirish bering. To'rtinchi: kichik smoke test yozing va uni kunda bir marta ishlating. U faqat uch narsani tekshirsin: token ishlaydi, `project_status` javobida `status` bor, `measures/component` javobida kutilgan metrika bor.
+
+```bash
+#!/usr/bin/env bash
+# sonar-smoke.sh: API shartnomasi hali amal qilayotganini tekshiradi
+set -euo pipefail
+SONAR_URL="https://sonar.example.com"; PROJECT="payments-service"
+AUTH=(-u "${SONAR_TOKEN}:")
+
+# 1. Token amal qiladi
+curl -sf "${AUTH[@]}" "${SONAR_URL}/api/authentication/validate" | jq -e '.valid == true' >/dev/null
+
+# 2. Gate javobida status maydoni bor va u kutilgan qiymatlardan biri
+ST=$(curl -sf "${AUTH[@]}" -G "${SONAR_URL}/api/qualitygates/project_status" \
+      --data-urlencode "projectKey=${PROJECT}" | jq -r '.projectStatus.status')
+case "${ST}" in OK|ERROR|NONE) ;; *) echo "Kutilmagan status: ${ST}"; exit 1 ;; esac
+
+# 3. Metrika kaliti hali mavjud
+curl -sf "${AUTH[@]}" -G "${SONAR_URL}/api/measures/component" \
+  --data-urlencode "component=${PROJECT}" --data-urlencode "metricKeys=coverage" \
+  | jq -e '.component.measures | length > 0' >/dev/null
+
+echo "Smoke test o'tdi"
+```
+
+Yana bir muhim nuqta: `curl` da `-f` flagini ishlatish. Usiz HTTP 404 yoki 500 javobi ham `exit 0` bilan tugaydi va skript xato javobni ma'lumot deb qabul qiladi. Bu aynan "yashil CI, buzilgan tekshiruv" holatiga olib keladi.
+
+### 36.12 Amalda qo'llash
+
+- [ ] O'z serveringizning `/web_api` sahifasini ochib, skriptlarda ishlatayotgan har bir endpoint va parametr nomini tasdiqlang, deprecated belgisi borlarini ro'yxatga oling.
+- [ ] CI dagi Sonar token ni tekshirib ko'ring: u admin huquqli bo'lmasin, faqat analysis doirasida bo'lsin, va `pom.xml` yoki properties fayllarida saqlanmasin.
+- [ ] `report-task.txt` dagi `ceTaskUrl` ni kutadigan qadam qo'shing, `sleep` ga tayangan joylarni olib tashlang.
+- [ ] `gate-report.sh` skriptini yozing: `api/qualitygates/project_status` javobidan buzilgan shartlarni chiqarib PR izohiga yozsin.
+- [ ] Barcha API chaqiruvlarini bitta klient qatlamiga yig'ing, bir nechta joyda takrorlangan `curl` larni o'sha yerga ko'chiring.
+- [ ] `sonar-smoke.sh` ni kunda bir marta ishlatadigan CI job yarating, u token, gate javobi va metrika kalitini tekshirsin.
+- [ ] Yangi loyiha uchun idempotent provizion skripti yozing: `api/projects/create`, `api/qualityprofiles/add_project` va `api/permissions/apply_template` bitta qadamda bajarilsin.
+- [ ] `api/measures/search_history` dan coverage va duplication qiymatlarini haftada bir o'qib o'z bazangizga yozadigan ish qo'shing, trend uchun ishonchli manba shu bo'ladi.
+
+## 37. Taint analysis mexanikasi: source, sink, sanitizer (Taint Analysis Mechanics)
+
+Sonar qoidalarining kattaroq qismi bitta metod yoki bitta fayl ichida qaror qabul qiladi. Xavfsizlik qoidalarining eng qimmatli qismi esa boshqacha ishlaydi: u ma'lumotning kirish nuqtasidan xavfli chaqiruvgacha bo'lgan butun yo'lini kuzatadi. Bu mexanizm taint analysis deb ataladi va uning uchta asosiy tushunchasi bor: source, sink va sanitizer. Bu bobda shu uch tushuncha qanday ishlashini, zanjir qanday qurilishini, natijani qanday o'qishni va qaysi nashrda bu imkoniyat borligini ko'rib chiqamiz.
+
+### 37.1 Oddiy qoida va taint analysis farqi: bitta fayl va butun oqim
+
+Oddiy qoida sintaktik daraxt va bitta metod doirasidagi oqim bilan ishlaydi. Masalan `null` tekshiruvi yoki kognitiv murakkablik hisobi uchun Sonar metoddan tashqariga chiqishi shart emas. Bunday tahlil arzon, tez va deyarli har doim aniq javob beradi.
+
+Taint analysis boshqa masalani hal qiladi. U so'raydi: bu qiymat foydalanuvchidan keldimi, va u qayerga yetib bordi. Javob uchun metod chegarasidan oshib o'tish kerak, chunki controller qiymatni service ga, service repository ga uzatadi. Shuning uchun bu tahlil interprocedural, ya'ni bir nechta metod va bir nechta fayl bo'ylab ishlaydi.
+
+Farqning amaliy natijasi shu: oddiy qoida buzilishini kod ko'rinishidan topish mumkin, taint issue esa faqat butun chaqiruv zanjirini ko'rib tushuniladi. Shuning uchun taint natijasini bitta qatorga qarab "bu yerda hammasi joyida" deb yopib tashlash eng ko'p uchraydigan xato.
+
+### 37.2 Source nima: ishonchsiz ma'lumot kiradigan nuqtalar
+
+Source bu dasturga tashqaridan nazoratsiz ma'lumot kiradigan joy. Sonar uchun source ro'yxati oldindan belgilangan va u freymvorkni biladi. Spring loyihasida eng tipik source lar quyidagilar.
+
+`@RequestParam`, `@PathVariable`, `@RequestHeader`, `@CookieValue` bilan belgilangan metod argumentlari. `@RequestBody` orqali kelgan DTO ning maydonlari. `HttpServletRequest` dan o'qilgan parametr va header. `MultipartFile` ning `getOriginalFilename()` natijasi. Shuningdek message broker dan kelgan payload, tashqi HTTP javobi va ba'zi hollarda muhit o'zgaruvchilari ham source sifatida qaraladi.
+
+Muhim nuqta: source bo'lishning o'zi muammo emas. Dastur tashqi ma'lumot qabul qilishi normal holat. Issue faqat o'sha ma'lumot sanitizatsiyasiz sink ga yetib borsa paydo bo'ladi. Shuning uchun controller dagi `@RequestParam` ustida hech qachon "bu xavfli" degan belgi turmaydi.
+
+Amalda source ro'yxatini bilish diagnostika uchun kerak. Agar siz oqim qadamlarining birinchisini ko'rsangiz, Sonar sizga aynan qaysi kirish nuqtasini ishonchsiz deb hisoblaganini aytadi. Agar o'sha nuqta sizning arxitekturangizda allaqachon gateway darajasida tekshirilgan bo'lsa, buni Sonar bilmaydi va buni ayta olmaydi.
+
+### 37.3 Sink nima: ma'lumot xavfli joyga yetib boradigan nuqtalar
+
+Sink bu ishonchsiz qiymat zarar keltira oladigan chaqiruv. Har bir taint qoidasi aslida bitta source toifasi va bitta sink toifasi juftligi.
+
+Java uchun ishonchim komil bo'lgan taint qoidalari va ularning sink lari quyidagicha. `java:S3649` SQL so'rovi qurilishini kuzatadi, sink bu konkatenatsiya bilan yasalgan native query yoki JDBC `Statement`. `java:S2076` OS buyrug'i chaqiruvini kuzatadi, sink bu `Runtime.exec` yoki `ProcessBuilder`. `java:S2083` fayl yo'li qurilishini kuzatadi, sink bu `new File(...)` yoki `Paths.get(...)`. `java:S5131` javobga yozilgan qiymatni kuzatadi, sink bu HTTP response ga eskaplanmagan matn chiqarish. `java:S5146` qayta yo'naltirishni kuzatadi, sink bu `sendRedirect` yoki `redirect:` prefiksi bilan qaytarilgan view nomi.
+
+Bu ro'yxat to'liq emas va versiya bilan kengayadi. Shuning uchun amaliy tavsiya: sink ro'yxatini yodlab olish emas, balki o'z loyihangizdagi xavfli chaqiruvlarni bitta joyga yig'ish. Agar SQL faqat repository qatlamida yozilsa, fayl yo'li faqat bitta storage komponentida qurilsa, barcha taint oqimlari shu tor darvozadan o'tadi va ularni bir marta himoyalash yetarli bo'ladi.
+
+### 37.4 Sanitizer va validator: oqimni to'xtatuvchi nuqtalar
+
+Sanitizer bu Sonar "shu nuqtadan keyin qiymat xavfsiz" deb hisoblaydigan amal. Agar oqim yo'lida sanitizer bo'lsa, zanjir uziladi va issue yaratilmaydi.
+
+Sonar bir nechta xil to'xtatuvchini taniydi. Birinchisi tur o'zgarishi: `Integer.parseInt`, `Long.valueOf`, `UUID.fromString` yoki `enum` ga aylantirish natijasi endi ixtiyoriy matn emas. Ikkinchisi bog'lanish mexanizmi: `PreparedStatement` parametri yoki JPA ning nomlangan parametri qiymatni so'rov matniga qo'shmaydi, shuning uchun SQL injection zanjiri shu yerda tugaydi. Uchinchisi ma'lum eskaplash va tozalash kutubxonalari, masalan OWASP encoder yoki HTML sanitizer.
+
+Validatsiya esa murakkabroq holat. Agar siz qiymatni oq ro'yxat bilan tekshirib, mos kelmasa exception tashlasangiz, odam uchun bu yetarli dalil. Sonar buni faqat tekshiruv uning modeliga mos tushganda tan oladi. `equals` yoki `contains` bilan oq ro'yxatga solishtirish ko'p holatda tan olinadi, murakkab regex yoki boshqa klassdagi yordamchi metod esa ko'pincha tan olinmaydi.
+
+### 37.5 Zanjir qanday quriladi: controller dan repository gacha misol
+
+Quyida zaif zanjir. Oqim `@RequestParam` dan boshlanib, uch qatlam orqali native query ga yetib boradi.
+
+```java
+// 1-qadam: source. Sonar bu argumentni ishonchsiz deb belgilaydi.
+@GetMapping("/hisobot")
+public List<OrderRow> report(@RequestParam String sort) {
+    return reportService.load(sort);
+}
+
+// 2-qadam: qiymat o'zgarmasdan keyingi qatlamga uzatiladi.
+public List<OrderRow> load(String sort) {
+    return reportRepository.findSorted(sort);
+}
+
+// 3-qadam: sink. Matn to'g'ridan to'g'ri so'rovga qo'shilgan.
+public List<OrderRow> findSorted(String sort) {
+    String sql = "select id, total from orders order by " + sort;
+    return jdbcTemplate.query(sql, ROW_MAPPER);
+}
+```
+
+Sonar bu holatda SQL injection oqimini ko'rsatadi, chunki source dan sink gacha hech qanday to'xtatuvchi yo'q. Endi uzilgan zanjir. Bu yerda matn umuman so'rovga yetib bormaydi, chunki u `enum` ga aylantirilgan.
+
+```java
+public enum OrderSort {
+    ID("id"), TOTAL("total");
+    private final String column;
+    OrderSort(String column) { this.column = column; }
+    public String column() { return column; }
+}
+
+@GetMapping("/hisobot")
+public List<OrderRow> report(@RequestParam OrderSort sort) {
+    // Spring noto'g'ri qiymatda 400 qaytaradi, service ga faqat enum keladi.
+    return reportService.load(sort);
+}
+
+public List<OrderRow> findSorted(OrderSort sort) {
+    // Sink ga faqat enum ichidagi oldindan belgilangan ustun nomi boradi.
+    String sql = "select id, total from orders order by " + sort.column();
+    return jdbcTemplate.query(sql, ROW_MAPPER);
+}
+```
+
+Ikkinchi variantda zanjir ikki joyda uziladi: tur o'zgarishi va qiymatning oldindan belgilangan ro'yxatdan kelishi. Shuning uchun bu kod Sonar uchun ham, auditor uchun ham ishonchli.
+
+### 37.6 Nega taint analysis sekinroq va ko'proq resurs talab qiladi
+
+Oddiy qoida bitta metodni bir marta ko'rib chiqadi. Taint analysis esa chaqiruv grafini qurib, qiymatning mumkin bo'lgan barcha yo'llarini hisoblaydi. Yo'llar soni qatlamlar va shartlar soni bilan tez o'sadi, shuning uchun tahlil vaqti va xotira sarfi ham o'sadi.
+
+Amaliy ko'rinishi shu: `mvn verify sonar:sonar` bosqichi katta monolitda bir necha daqiqadan o'nlab daqiqaga cho'zilishi mumkin, va skanner `OutOfMemoryError` bilan tushishi mumkin. Birinchi yechim xotira berish.
+
+```bash
+# Skanner JVM ga xotira berish. Aniq qiymat loyiha hajmiga qarab tanlanadi.
+export SONAR_SCANNER_JAVA_OPTS="-Xmx4g"
+
+# Tahlilni alohida bosqichda yurgizish, test bosqichidan keyin.
+./mvnw -B clean verify
+./mvnw -B sonar:sonar -Dsonar.projectKey=payments-api
+```
+
+Ikkinchi yechim tahlil doirasini tozalash. Generatsiya qilingan kod va migratsiya skriptlarini chiqarib tashlash tahlil vaqtini sezilarli qisqartiradi.
+
+```properties
+# sonar-project.properties yoki pom.xml dagi xossalar
+sonar.sources=src/main/java
+sonar.tests=src/test/java
+# Generatsiya qilingan kodni tahlildan chiqarish.
+sonar.exclusions=**/generated/**,**/target/**,**/*MapperImpl.java
+# Coverage hisobotining joyi. Taint uchun emas, lekin bir joyda turadi.
+sonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+```
+
+CI da taint tahlilini har bir push da emas, pull request va asosiy branch da yurgizish ham keng tarqalgan murosa.
+
+```yaml
+# .github/workflows/sonar.yml dagi tahlil bosqichi
+name: sonar
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # yangi kod hisobi uchun tarix kerak
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+      - name: Tahlil
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_SCANNER_JAVA_OPTS: -Xmx4g
+        run: ./mvnw -B clean verify sonar:sonar
+```
+
+### 37.7 Qaysi nashrda mavjud va Community nashrda nima qilish mumkin
+
+Bu eng muhim halol gap: taint analysis SonarQube ning Community nashrida yo'q. U Developer Edition va yuqori nashrlarda, shuningdek SonarCloud ning mos rejalarida ishlaydi. Shuning uchun injection toifasidagi qoidalar Community nashrda hech qachon ishga tushmaydi, hatto profilda yoqilgan ko'rinsa ham natija bermaydi.
+
+Buning tashkiliy natijasi bor. Agar sizda Community nashr bo'lsa, SQL injection, path traversal va reflected XSS kabi muammolarni Sonar topib bermaydi. Bu "bizda bu muammolar yo'q" degani emas, "bizda bu tahlil yo'q" degani.
+
+Community nashrda qolgan vositalar. Birinchisi security hotspot qoidalari, ular bitta fayl doirasida ishlaydi va xavfli chaqiruvni odam ko'rib chiqishi uchun belgilaydi. Ikkinchisi oddiy qoidalar, masalan `PreparedStatement` o'rniga konkatenatsiya ishlatilganini bevosita ko'rsatadigan tekshiruvlar. Uchinchisi arxitektura orqali himoya: SQL ni faqat bitta qatlamda yozish va bunga ArchUnit testi bilan majburlash, bu usul testlash qo'llanmasidagi ArchUnit mavzusida batafsil yoritilgan. To'rtinchisi tashqi vositalar, masalan OWASP dependency tekshiruvi.
+
+### 37.8 Taint natijasini o'qish: Sonar ko'rsatadigan oqim qadamlari
+
+Taint issue ni ochganda Sonar bitta qator emas, qadamlar ketma-ketligini ko'rsatadi. Birinchi qadam source, oxirgi qadam sink, oradagi qadamlar qiymatning uzatilish nuqtalari.
+
+O'qish tartibi quyidagicha bo'lishi kerak. Avval oxirgi qadamga qarang va sink haqiqatan xavflimi deb so'rang. Keyin birinchi qadamga qarang va qiymat haqiqatan tashqaridan keladimi deb tekshiring. Shundan keyingina orada to'xtatuvchi bor yo'qligini ko'rib chiqing.
+
+Ko'p jamoa xatosi shu: oqimning o'rtasidagi bitta qatorga qarab "bu metod ichida hech narsa yo'q" deb issue ni yopadi. Taint natijasida o'rta qadamlar odatda butunlay begunoh ko'rinadi, chunki ular shunchaki argumentni uzatadi.
+
+Agar oqim haqiqatan yolg'on bo'lsa, uni issue sifatida "false positive" belgisi bilan yopish mumkin, lekin izoh yozish shart. Izohda nima uchun yolg'on ekani ko'rsatilsin, masalan qiymat gateway darajasida enum ga aylantirilgani. Izohsiz yopilgan xavfsizlik issue si keyingi auditda qayta ochiladi.
+
+### 37.9 False positive sabablari: o'z validatoringizni Sonar tanimasligi
+
+Eng ko'p uchraydigan sabab shu: siz validatsiyani o'z utilita klassingizda yozgansiz va Sonar uni sanitizer deb bilmaydi. Sonar faqat o'zi taniydigan to'xtatuvchilar ro'yxati bilan ishlaydi, sizning `SecurityUtils.checkColumn` metodingiz u ro'yxatda yo'q.
+
+| Tuzoq | Nega yuzaga keladi | Yechim |
+| --- | --- | --- |
+| O'z validator metodi tan olinmaydi | Sonar modelida bu metod sanitizer emas | Tur o'zgarishi yoki oq ro'yxatdan qaytarilgan konstanta ishlatish |
+| Regex bilan tekshirish yetarli deb o'ylash | Murakkab regex semantikasi hisoblanmaydi | Qiymatni emas, uning indeksini yoki enum ni uzatish |
+| `@Valid` annotatsiyasi zanjirni uzadi deb o'ylash | Bean validation qiymatni o'zgartirmaydi | Validatsiyadan keyin tur xavfsiz obyektga map qilish |
+| Issue izohsiz yopiladi | Keyingi analizda qayta ochiladi | Yopish izohida dalilni yozish |
+| Butun fayl exclusion ga tushadi | Kelajakdagi haqiqiy muammolar ham yashiriladi | Exclusion emas, nuqtaviy suppress ishlatish |
+| Sink ko'p joyda takrorlanadi | Har bir joyda alohida tekshiruv kerak bo'ladi | Sink ni bitta adapter klassga yig'ish |
+| DTO maydoni butunlay ishonchsiz sanaladi | `@RequestBody` ichidagi barcha maydon source | Domen obyektiga o'tishda aniq konvertatsiya qilish |
+
+Nuqtaviy bostirish kerak bo'lsa, qoida kaliti bilan yozing va yonida izoh qoldiring.
+
+```java
+public class ReportExport {
+
+    // Ustun nomi faqat shu klass ichidagi konstantalardan keladi,
+    // tashqi kirish yo'q. Shuning uchun oqim amalda uzilgan.
+    @SuppressWarnings("java:S3649")
+    public String buildOrderBy(ReportColumn column) {
+        return "order by " + column.sqlName();
+    }
+}
+```
+
+Developer Edition da taint tahlilining o'z konfiguratsiyasini JSON fayl orqali kengaytirish, ya'ni o'z sanitizeringizni e'lon qilish imkoniyati bor. Konfiguratsiya xossasining aniq nomi va formati versiyaga qarab farq qiladi, shuning uchun uni o'z serveringiz versiyasining hujjatidan tekshiring. Men bu yerda xossa nomini aniq yozmayman, chunki yanglish nom butun sozlamani ishlamaydigan qiladi.
+
+### 37.10 Zanjirni uzish usullari: tur orqali, validatsiya orqali, repozitoriy chegarasida
+
+Birinchi usul eng ishonchli: turni o'zgartirish. Matnni `enum`, `long`, `UUID` yoki `LocalDate` ga aylantirsangiz, qiymatning erkinligi yo'qoladi. Bu usul Sonar uchun ham tushunarli, odam uchun ham dalil.
+
+Ikkinchi usul validatsiya, lekin natijani qaytarish shaklida. Tekshirib `true` qaytargan metod zanjirni uzmaydi, chunki keyin yana o'sha ishonchsiz matn ishlatiladi. Tekshirib oq ro'yxatdagi konstantani qaytargan metod esa zanjirni uzadi, chunki sink ga sizning konstantangiz boradi.
+
+Uchinchi usul repozitoriy chegarasida bog'lanish. SQL ni parametr bilan yozsangiz, qiymat so'rov matniga umuman qo'shilmaydi.
+
+```sql
+-- Zaif: qiymat so'rov matniga konkatenatsiya qilinadi.
+-- select * from orders where customer_code = '<foydalanuvchi matni>'
+
+-- Xavfsiz: qiymat parametr sifatida uzatiladi, so'rov matni o'zgarmaydi.
+select id, total, status
+from orders
+where customer_code = ?
+  and created_at >= ?
+order by created_at desc
+limit 100;
+```
+
+Spring Data tomonida xuddi shu printsip nomlangan parametr bilan ifodalanadi. Dinamik `order by` kerak bo'lsa, ustun nomini matn sifatida emas, `Sort` obyekti yoki oldindan belgilangan ro'yxat orqali bering.
+
+```java
+public interface OrderRepository extends Repository<Order, Long> {
+
+    // Qiymat parametr sifatida bog'lanadi, so'rov matni statik.
+    @Query("select o from Order o where o.customerCode = :code and o.total >= :min")
+    List<Order> findByCustomer(@Param("code") String code,
+                               @Param("min") BigDecimal min);
+}
+
+@Service
+public class OrderQueryService {
+
+    private static final Set<String> ALLOWED = Set.of("createdAt", "total");
+
+    public Sort toSort(String raw) {
+        // Oq ro'yxatdagi konstanta qaytariladi, foydalanuvchi matni emas.
+        String column = ALLOWED.contains(raw) ? raw : "createdAt";
+        return Sort.by(Sort.Direction.DESC, column);
+    }
+}
+```
+
+| Savol | Oddiy yondashuv | Arxitektor yondashuvi |
+| --- | --- | --- |
+| Taint issue kelganda | Qatorga qarab yopadi | Butun oqim qadamlarini o'qiydi |
+| Zanjirni uzish | O'z utilita validatori yoziladi | Tur o'zgarishi va enum ishlatiladi |
+| SQL yozish joyi | Istalgan qatlamda | Faqat repository da, ArchUnit bilan majburlanadi |
+| Sink lar soni | Kod bo'ylab tarqalgan | Bitta adapter ichida to'plangan |
+| Community nashr cheklovi | Sezilmaydi, "muammo yo'q" deb o'ylanadi | Ochiq tan olinadi, tashqi vosita qo'shiladi |
+| Tahlil vaqti | Sekinlashsa e'tibor berilmaydi | Exclusion va xotira sozlanadi, vaqt kuzatiladi |
+| False positive | Exclusion bilan butun fayl yashiriladi | Nuqtaviy suppress va izoh yoziladi |
+| Mas'uliyat | Issue ni oxirgi tegingan odam yopadi | Xavfsizlik oqimlari uchun aniq egalik bor |
+| Yangi sink paydo bo'lganda | Hech kim bilmaydi | Review checklist da tekshiriladi |
+
+### 37.11 Spring loyihasida tipik oqimlar: so'rov parametri, header, fayl nomi, SQL
+
+Birinchi tipik oqim so'rov parametridan SQL gacha. Buni yuqorida ko'rdik, u eng ko'p uchraydigan holat va `order by`, `like` hamda dinamik filtr qurishda paydo bo'ladi.
+
+Ikkinchi oqim header dan log yoki javobga. `@RequestHeader` bilan olingan qiymat to'g'ridan to'g'ri javobga chiqsa, reflected XSS zanjiri hosil bo'ladi. Bu ayniqsa xato sahifalari va diagnostika endpointlarida uchraydi.
+
+Uchinchi oqim yuklangan fayl nomidan fayl yo'ligacha. `MultipartFile.getOriginalFilename()` natijasi butunlay mijoz nazoratida va u yo'l ajratuvchi belgilarni o'z ichiga olishi mumkin. Shuning uchun uni to'g'ridan to'g'ri `Paths.get` ga bermaslik kerak.
+
+```java
+@PostMapping("/hujjat")
+public String upload(@RequestParam MultipartFile file) throws IOException {
+    // Mijozdan kelgan nom ishlatilmaydi, server o'zi nom generatsiya qiladi.
+    String storedName = UUID.randomUUID() + ".bin";
+
+    Path base = storageRoot.toAbsolutePath().normalize();
+    Path target = base.resolve(storedName).normalize();
+
+    // Qo'shimcha himoya: natija baza katalogidan chiqib ketmasligi.
+    if (!target.startsWith(base)) {
+        throw new IllegalStateException("Yo'l baza katalogidan tashqarida");
+    }
+    file.transferTo(target);
+    return storedName;
+}
+```
+
+To'rtinchi oqim tashqi HTTP javobidan ichki chaqiruvgacha. Hamkor servisning javobi ham ishonchsiz manba, ayniqsa u fayl nomi yoki URL qaytarsa. Bu holat ombor qoldig'ini tashqi tizimdan olib keladigan integratsiyalarda tez-tez uchraydi.
+
+Taint tahlilini yoqish uchun maxsus plugin kerak emas, oddiy Sonar sozlamasi yetarli. Muhim shart faqat nashr va to'g'ri Java versiyasi.
+
+```xml
+<build>
+  <plugins>
+    <plugin>
+      <groupId>org.sonarsource.scanner.maven</groupId>
+      <artifactId>sonar-maven-plugin</artifactId>
+      <!-- Versiyani o'z serveringiz talabiga qarab tanlang. -->
+      <version>4.0.0.4121</version>
+    </plugin>
+    <plugin>
+      <groupId>org.jacoco</groupId>
+      <artifactId>jacoco-maven-plugin</artifactId>
+      <version>0.8.12</version>
+      <executions>
+        <execution>
+          <goals><goal>prepare-agent</goal></goals>
+        </execution>
+        <execution>
+          <id>report</id>
+          <phase>verify</phase>
+          <goals><goal>report</goal></goals>
+        </execution>
+      </executions>
+    </plugin>
+  </plugins>
+</build>
+```
+
+### 37.12 Taint natijasini jamoada kim ko'rib chiqishi
+
+Taint issue oddiy code smell emas, shuning uchun uni ixtiyoriy dasturchi yopmasligi kerak. Amalda ishlaydigan model quyidagicha.
+
+Kirish nuqtasining egasi birinchi javobgar. Agar oqim `OrderController` dan boshlangan bo'lsa, shu modulning jamoasi issue ni ko'rib chiqadi. Ular oqimni o'qiydi va uchta qarordan birini qabul qiladi: kodni tuzatish, zanjirni turga aylantirish bilan uzish, yoki dalil bilan false positive deb belgilash.
+
+Ikkinchi javobgar sink egasi. Repository yoki storage komponentini yuritadigan odam o'z sink ini bir marta himoyalab, o'nlab kelajakdagi oqimni yopishi mumkin. Bu eng foydali investitsiya, chunki u takrorlanadigan ishni yo'q qiladi.
+
+Uchinchi rol xavfsizlik yoki texnik yetakchi. U false positive deb yopilgan issue larni davriy ko'rib chiqadi va yopish izohlari haqiqatan dalil ekanini tekshiradi. Bu nazorat bo'lmasa, bir yil ichida barcha taint issue lar izohsiz yopilgan holatga keladi.
+
+Quality gate tomonida qattiq qoida saqlash mantiqan to'g'ri. Yangi kodda ochiq xavfsizlik issue si bo'lmasligi sharti ko'p loyihada asosli, chunki bu toifa soni kam va har biri jiddiy. Eski kod uchun esa alohida reja tuzish kerak, aks holda gate doimiy qizil turadi va jamoa unga ishonishni to'xtatadi.
+
+### 37.13 Amalda qo'llash
+
+- [ ] O'z SonarQube nashringizni aniqlang va taint analysis mavjudligini tasdiqlang, Community bo'lsa bu cheklovni jamoaga ochiq ayting.
+- [ ] Oxirgi tahlildagi barcha injection toifasidagi issue larni ochib, har birining oqim qadamlarini boshidan oxirigacha o'qib chiqing.
+- [ ] Loyihada SQL yoziladigan va fayl yo'li quriladigan barcha joylarni sanab chiqing, ularni bitta qatlamga yig'ish rejasini tuzing.
+- [ ] Dinamik `order by` va dinamik filtr ishlatilgan joylarda matn parametrini `enum` yoki oq ro'yxat konstantasiga almashtiring.
+- [ ] Yuklangan fayl nomini bevosita ishlatadigan kodni toping va server tomonida generatsiya qilingan nomga o'tkazing.
+- [ ] False positive deb yopilgan har bir xavfsizlik issue siga dalil izohi yozilganini tekshiring, izohsizlarini qayta oching.
+- [ ] CI da tahlil bosqichi uchun xotira limitini va exclusion ro'yxatini sozlab, tahlil vaqtini o'lchab yozib qo'ying.
+- [ ] Review checklist ga bitta band qo'shing: yangi xavfli chaqiruv qo'shilganda uning kirish nuqtasi qanday himoyalangani ko'rsatilsin.
+
+## 38. Ko'p tilli loyiha: SQL, XML, YAML, Docker, Kubernetes, frontend (Multi-language Projects)
+
+Ko'pchilik Java loyihani "Java loyiha" deb ataydi, lekin repozitoriyni ochib sanab chiqsang, odatda sakkiztadan o'n ikkitagacha til topiladi. Sonar bu tillarning hammasini birdan ko'rmaydi: bir qismini standart holatda tahlil qiladi, bir qismini sozlash kerak, bir qismi esa faqat tijorat nashrida mavjud. Bu bobda qaysi til qanday yo'l bilan tahlilga kiradi, qamrov va quality gate ko'p tilli loyihada qanday hisoblanadi, va nimani ataylab tahlildan chiqarib qo'yish mantiqiy ekanini ko'rib chiqamiz. Maqsad bitta: Sonar hisoboti loyihaning haqiqiy holatini ko'rsatsin, Java fayllarining yarmini emas.
+
+### 38.1 Java loyihada aslida nechta til bor: manba, konfiguratsiya, migratsiya, skript
+
+Oddiy Spring Boot monolitini oling. `src/main/java` da Java, `src/main/resources` da `application.yaml`, `logback-spring.xml` va `messages.properties`, `db/migration` da Flyway SQL migratsiyalari turadi. Ildizda `pom.xml`, `Dockerfile` va `docker-compose.yaml` bor. `deploy/` da Kubernetes manifestlari, `.github/workflows/ci.yaml` da CI, `scripts/` da bash skriptlar yotadi. Admin paneli shu repozitoriyda bo'lsa, `frontend/` da TypeScript, HTML va CSS ham bor.
+
+Bu fayllarning har biri ishlab chiqarishga ta'sir qiladi, va eng qimmat hodisalarning katta qismi Java kodidan emas, konfiguratsiyadan kelib chiqadi. Noto'g'ri connection pool o'lchami, `latest` tegi bilan qotib qolgan image, resurs limiti yo'q pod. Agar Sonar faqat Java ni ko'rsa, u loyihaning eng xatarli qismini tekshirmaydi.
+
+Shu sababli ko'p tilli tahlil bu "qo'shimcha imkoniyat" emas, balki asosiy ehtiyoj. Lekin halol gap shu: qo'llab-quvvatlash nashrga bog'liq. Java, XML, YAML, JSON, HTML, CSS, JavaScript, TypeScript, Python, Go, PHP, Kotlin, Ruby, Scala, shuningdek Docker, Kubernetes va Terraform kabi infratuzilma tillari bepul nashrda ham bor. Bir qator til esa faqat pullik nashrda ishlaydi: PL/SQL va T-SQL kabi maxsus SQL dialektlari, C va C++, Objective-C, Swift, Apex, ABAP, COBOL shu qatorga kiradi. Ro'yxat versiya bilan o'zgaradi va yangi tillar qo'shilib turadi, shuning uchun aniq ro'yxatni o'z versiyangiz hujjatidan yoki server UI dagi Rules bo'limidan tekshirish kerak. Men bu yerda ro'yxatni oxirgi haqiqat deb bermayman.
+
+### 38.2 Tahlilga qo'shiladigan fayl turlarini sozlash
+
+Sonar scanner ikki savolga javob izlaydi: qaysi fayllarni o'qiyman va ularni qaysi tilga tegishli deb hisoblayman. Birinchi savolga `sonar.sources` va `sonar.tests` javob beradi. Maven plugini bu ikkisini `pom.xml` dan avtomatik oladi, shu sababli Maven loyihada ularni qo'lda yozish ko'pincha kerak emas va hatto zarar keltiradi. Ikkinchi savolga har tilning fayl kengaytmasi va shu til uchun mavjud analizator javob beradi.
+
+Muammo odatda shu joyda tug'iladi: Maven avtomatik `sonar.sources` ni `src/main/java` ga tenglashtiradi, natijada ildizdagi `Dockerfile`, `deploy/` va `.github/` tahlilga kirmaydi. Yechim `sonar.sources` ni kengaytirish va shu bilan birga Java kompilyatsiya natijasi joyida qolishiga ishonch hosil qilish.
+
+```properties
+# Ildizdagi sonar-project.properties: ko'p tilli loyiha uchun asos
+sonar.projectKey=shop-backend
+sonar.projectName=Shop Backend
+sonar.sourceEncoding=UTF-8
+
+# Java manbasiga qo'shimcha ravishda infratuzilma va migratsiya papkalari
+sonar.sources=src/main/java,src/main/resources,deploy,scripts,Dockerfile,.github
+sonar.tests=src/test/java
+
+# Generatsiya qilingan va uchinchi tomon fayllari tahlilga kirmasin
+sonar.exclusions=**/generated/**,**/target/**,**/node_modules/**,**/*.min.js
+
+# Qamrov hisobidan chiqariladigan fayllar: konfiguratsiya va DTO
+sonar.coverage.exclusions=**/config/**,**/*Application.java,**/dto/**
+
+# Takroriylik tekshiruvidan migratsiyalarni chiqaramiz: ular ataylab o'xshash
+sonar.cpd.exclusions=src/main/resources/db/migration/**
+
+# JaCoCo XML hisobotining yo'li, agregator modulda birlashtirilgan fayl
+sonar.coverage.jacoco.xmlReportPaths=report/target/site/jacoco-aggregate/jacoco.xml
+```
+
+Bu yerda muhim nuqta bor: `sonar.exclusions` faylni butunlay tahlildan chiqaradi, `sonar.coverage.exclusions` esa faylni tahlilda qoldiradi, lekin qamrov hisobiga kiritmaydi. Ikkisini aralashtirib yuborish eng keng tarqalgan xato. Konfiguratsiya klassini `sonar.exclusions` ga yozsang, undagi maxfiy ma'lumot ham tekshirilmay qoladi.
+
+| Tuzoq | Nima sodir bo'ladi | Yechim |
+|---|---|---|
+| `sonar.sources` faqat `src/main/java` | Dockerfile va manifestlar hech qachon tekshirilmaydi | Sources ro'yxatiga infratuzilma papkalarini qo'shish |
+| Maven loyihada `sonar.sources` ni qo'lda qayta yozish | Java kompilyatsiya natijasi topilmaydi, Java tahlili buziladi | Maven da sources ni plugin hisoblashiga qoldirish yoki `sonar.java.binaries` ni aniq ko'rsatish |
+| `node_modules` exclusion ga kirmagan | Tahlil soatlab davom etadi, minglab soxta issue chiqadi | `sonar.exclusions` ga `**/node_modules/**` qo'shish |
+| Migratsiyalar takroriylik hisobiga kirgan | Duplication foizi sun'iy o'sadi, gate yiqiladi | `sonar.cpd.exclusions` ga migratsiya papkasini yozish |
+| Qamrov hisoboti yo'li noto'g'ri | Coverage nol ko'rinadi, gate "new code 0%" deb yiqitadi | Hisobot faylini scanner dan oldin generatsiya qilish va yo'lni tekshirish |
+| Frontend `lcov` fayli yuklanmagan | TypeScript kodi tahlil qilinadi, lekin qamrovsiz ko'rinadi | `sonar.javascript.lcov.reportPaths` ni ko'rsatish |
+
+### 38.3 SQL va migratsiya fayllari: nimaga e'tibor beriladi
+
+Bu yerda eng ko'p noto'g'ri tushuniladigan joy. Flyway migratsiyalaridagi `.sql` fayllari uchun chuqur tahlil, ya'ni so'rov mantiqini tekshiruvchi qoidalar, standart bepul nashrda mavjud emas. PL/SQL va T-SQL analizatorlari tijorat nashriga tegishli, va ular ham PostgreSQL dialektini emas, Oracle va SQL Server dialektini nazarda tutadi. Shuning uchun "Sonar mening PostgreSQL migratsiyamni tekshiradi" degan kutish ko'pincha asossiz.
+
+Amalda ikkita haqiqiy foyda bor. Birinchisi, `.sql` fayllaridagi maxfiy ma'lumot: parol, token, connection string. Maxfiy ma'lumotni aniqlash qoidalari matn analizatori orqali ishlaydi va u bepul nashrda ham mavjud. Ikkinchisi, Java tomondan SQL ga bo'lgan munosabat: satrlarni ulab so'rov yasash. Bu Java qoidasi bo'lib, injection xavfini ko'rsatadi.
+
+```sql
+-- Shikoyat chiqaradigan migratsiya: ishlab chiqarishda bloklanish xavfi
+-- V12__add_status_to_orders.sql
+ALTER TABLE orders ADD COLUMN status VARCHAR(32) NOT NULL DEFAULT 'NEW';
+
+-- Parol migratsiyada yozilgan: maxfiy ma'lumot qoidasi shikoyat qiladi
+CREATE USER report_reader WITH PASSWORD 'Sup3rSecret!';
+
+-- Tuzatilgan variant: ustun avval nullable qo'shiladi, keyin to'ldiriladi
+-- V12__add_status_to_orders.sql
+ALTER TABLE orders ADD COLUMN status VARCHAR(32);
+UPDATE orders SET status = 'NEW' WHERE status IS NULL;
+ALTER TABLE orders ALTER COLUMN status SET DEFAULT 'NEW';
+
+-- Parol o'rniga rol beriladi, parol tashqi secret store dan o'rnatiladi
+CREATE ROLE report_reader;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO report_reader;
+```
+
+Yuqoridagi bloklanish xavfi haqidagi mulohaza Sonar qoidasi emas, bu PostgreSQL mexanikasi, va uni arxitektor mindset hujjatidagi migratsiya va qulf mavzusida ko'rish kerak. Java tomonidagi SQL muammosi esa aniq Sonar hududi.
+
+```java
+// Shikoyat chiqaradigan kod: so'rov satr ulash bilan yasalgan
+public List<Order> findByStatus(String status) {
+    String sql = "SELECT * FROM orders WHERE status = '" + status + "'";
+    return jdbcTemplate.query(sql, orderRowMapper);
+}
+
+// Tuzatilgan variant: parametr bilan bog'langan so'rov
+private static final String FIND_BY_STATUS =
+        "SELECT id, status, total FROM orders WHERE status = ?";
+
+public List<Order> findByStatus(String status) {
+    // Parametr alohida uzatiladi, injection yo'li yopiladi
+    return jdbcTemplate.query(FIND_BY_STATUS, orderRowMapper, status);
+}
+```
+
+### 38.4 XML va `pom.xml`: bog'liqlik va konfiguratsiya qoidalari
+
+XML analizatori bepul nashrda bor va u `pom.xml`, `logback-spring.xml`, `web.xml` kabi fayllarni o'qiydi. Uning qoidalari ikki guruhga bo'linadi: umumiy XML gigiyenasi va Maven ga xos tekshiruvlar. Umumiy guruhda bo'sh element, takroriy atribut, kodlanish e'loni yo'qligi, DTD tashqi obyektini yuklash xavfi bor. Maven guruhida bog'liqlik versiyasi ko'rsatilmagani yoki `LATEST` va `RELEASE` kabi aniq bo'lmagan versiya ishlatilgani tekshiriladi.
+
+Aniq versiya masalasi real: versiyasi qotirilmagan build takrorlanmaydi, va bugun o'tgan test ertaga boshqa artefakt bilan ishga tushadi.
+
+```xml
+<!-- Shikoyat chiqaradigan qism: versiya aniq emas, scope yozilmagan -->
+<dependency>
+  <groupId>org.apache.commons</groupId>
+  <artifactId>commons-lang3</artifactId>
+  <version>RELEASE</version>
+</dependency>
+
+<!-- Tuzatilgan variant: versiya property orqali qotirilgan -->
+<properties>
+  <commons-lang3.version>3.17.0</commons-lang3.version>
+</properties>
+
+<dependency>
+  <groupId>org.apache.commons</groupId>
+  <artifactId>commons-lang3</artifactId>
+  <version>${commons-lang3.version}</version>
+</dependency>
+
+<!-- Qamrov hisobotini Sonar o'qiydigan XML formatda chiqarish -->
+<plugin>
+  <groupId>org.jacoco</groupId>
+  <artifactId>jacoco-maven-plugin</artifactId>
+  <version>0.8.12</version>
+  <executions>
+    <execution><id>report</id><goals><goal>report</goal></goals></execution>
+  </executions>
+</plugin>
+```
+
+JaCoCo 0.8.x liniyasida patch versiyasini Java versiyangizga qarab tanlang: yangi bytecode bilan eski patch sinishi mumkin, shuning uchun uni Java yangilanishi bilan birga ko'tarib borish kerak.
+
+### 38.5 YAML va `application.yaml`: maxfiy ma'lumot va sozlama xatolari
+
+YAML uchun ikki xil tahlil bor va ularni ajratish muhim. Birinchisi YAML ning o'zi sifatida tahlil: sintaksis, takroriy kalit, juda uzun qator. Ikkinchisi faylning mazmuniga qarab maxsus tahlil: agar fayl Kubernetes manifesti bo'lsa, infratuzilma qoidalari ishga tushadi, agar oddiy Spring konfiguratsiyasi bo'lsa, ishga tushmaydi. Sonar `application.yaml` ni Spring semantikasi bilan tushunmaydi, ya'ni `spring.datasource.hikari.maximum-pool-size` qiymati to'g'rimi yoki yo'qmi deb hukm chiqarmaydi.
+
+Shunga qaramay, bu faylda eng muhim tekshiruv ishlaydi: maxfiy ma'lumotni aniqlash. Parol, API kalit, bulut hisob ma'lumoti kodga tushib qolsa, u security kategoriyasida, odatda blocker yoki critical darajasida chiqadi.
+
+```yaml
+# Shikoyat chiqaradigan konfiguratsiya: parol va kalit kodda
+spring:
+  datasource:
+    url: jdbc:postgresql://db.prod.internal:5432/shop
+    username: shop_app
+    password: Pr0d-P@ssw0rd-2025   # maxfiy ma'lumot qoidasi shikoyat qiladi
+  jpa:
+    show-sql: true                 # ishlab chiqarishda log ni to'ldiradi
+payment:
+  api-key: sk_live_51Hx9kQ2eZvKYlo
+
+# Tuzatilgan variant: qiymatlar muhit o'zgaruvchisidan olinadi
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}       # qiymat secret store dan keladi
+  jpa:
+    show-sql: false
+payment:
+  api-key: ${PAYMENT_API_KEY}
+```
+
+Bir ogohlantirish: maxfiy ma'lumotni aniqlash qoidalari naqsh asosida ishlaydi. Ular keng tarqalgan formatdagi kalitlarni topadi, lekin ichki tizimingning o'ziga xos tokenini topmasligi mumkin. Sonar bu yerda qo'shimcha to'r, asosiy to'siq esa secret store va pre-commit hook.
+
+### 38.6 Dockerfile qoidalari: root foydalanuvchi, aniq versiya, keraksiz paket
+
+Dockerfile tahlili infratuzilma analizatori orqali keladi va bepul nashrda mavjud. Qoidalar mazmunan quyidagi masalalarni qamrab oladi: konteyner root sifatida ishga tushishi, base image tegining aniq bo'lmasligi, paket menejerining keshini tozalamaslik, `apt-get install` da versiya qotirilmagani, `COPY` o'rniga `ADD` ishlatilishi, sir qiymatini `ENV` orqali image ichiga joylash, va `RUN` ichida parol yozish. Qoida kalitlari `docker:` prefiksi bilan boshlanadi va aniq raqamni server UI dagi Rules bo'limidan ko'rish kerak, chunki ular versiya bilan qo'shilib boradi.
+
+```bash
+# Shikoyat chiqaradigan Dockerfile
+FROM eclipse-temurin:latest
+COPY target/shop.jar /app/shop.jar
+RUN apt-get update && apt-get install -y curl
+ENV PAYMENT_API_KEY=sk_live_51Hx9kQ2eZvKYlo
+ENTRYPOINT ["java","-jar","/app/shop.jar"]
+
+# Tuzatilgan Dockerfile: aniq teg, root dan voz kechish, kesh tozalash
+FROM eclipse-temurin:21.0.5_11-jre-alpine AS runtime
+
+# Alohida foydalanuvchi yaratamiz, konteyner root bo'lib ishlamaydi
+RUN addgroup -S app && adduser -S -G app app
+
+WORKDIR /app
+COPY --chown=app:app target/shop.jar /app/shop.jar
+
+# Sir qiymati image ichiga yozilmaydi, runtime da beriladi
+USER app
+EXPOSE 8080
+ENTRYPOINT ["java","-XX:MaxRAMPercentage=75","-jar","/app/shop.jar"]
+```
+
+Ikki eslatma. Faylni Sonar ko'rishi uchun u `sonar.sources` ichida bo'lishi kerak, aks holda ildizdagi Dockerfile tahlilga kirmaydi. Va Sonar image ichidagi CVE larni skanerlamaydi: bu boshqa vositaning ishi.
+
+### 38.7 Kubernetes manifesti: resurs limiti, probe, imtiyozli konteyner
+
+Kubernetes manifestlari ham infratuzilma analizatori hududiga kiradi. Qoidalar mazmuni: konteynerda CPU va memory limiti yo'qligi, readiness va liveness probe yo'qligi, `privileged: true` qo'yilgani, `allowPrivilegeEscalation` ni yopmaslik, host tarmog'i yoki host papkasini mount qilish, `latest` tegi bilan image ishlatish, `Secret` qiymatini manifest ichida ochiq yozish. Qoida kalitlari `kubernetes:` prefiksi bilan boshlanadi.
+
+Bu yerda Sonar ning kuchli tomoni shu: manifest odatda hech qanday testdan o'tmaydi, shuning uchun avtomatik tekshiruv bo'lmasa, xato faqat hodisadan keyin topiladi.
+
+```yaml
+# Tuzatilgan Deployment: limit, probe va xavfsizlik konteksti bor
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shop-backend
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+        - name: app
+          image: registry.internal/shop-backend:1.42.0  # latest emas
+          resources:
+            requests: { cpu: "250m", memory: "512Mi" }
+            limits: { cpu: "1", memory: "1Gi" }
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: 8080 }
+            initialDelaySeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8080 }
+            initialDelaySeconds: 30
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          envFrom:
+            - secretRef: { name: shop-db-credentials }
+```
+
+Helm chart da qiyinchilik bor: shablon ichidagi `{{ }}` ifodalari YAML ni yaroqsiz qiladi va analizator ba'zi fayllarni o'qiy olmaydi. Yechim: `helm template` natijasini alohida papkaga chiqarib, shu papkani Sonar ga berish.
+
+### 38.8 Frontend (TypeScript va JavaScript) ni shu loyihaga qo'shish yoki ajratish
+
+Monorepo da backend va frontend bir repozitoriyda yotsa, savol tug'iladi: bitta Sonar loyihasi bo'lsinmi yoki ikkita. Javob jamoa tuzilishiga bog'liq.
+
+Bitta loyiha qulay, chunki bitta quality gate, bitta hisobot va pull request da bitta tekshiruv bo'ladi. Lekin kamchiligi jiddiy: coverage bitta umumiy foizga aylanadi. Backend da 85 foiz, frontend da 20 foiz bo'lsa, umumiy raqam 60 atrofida chiqadi va u hech kimga haqiqatni aytmaydi. Bundan tashqari gate yiqilganda kim javobgar ekani darhol tushunarsiz bo'ladi.
+
+Ikkita loyiha ajratish aniqlik beradi: har jamoa o'z raqamiga, o'z gate iga va o'z profiliga ega bo'ladi. Narxi shu: CI da ikkita scanner ishlaydi va pull request da ikkita status chiqadi. Katta jamoada bu to'g'ri tanlov, kichik admin panel uchun bitta loyiha ham yetarli.
+
+Eslatma: eski versiyalardagi `sonar.modules` yondashuvi endi tavsiya etilmaydi, monorepo da ajratish har papkani alohida loyiha kaliti bilan skanerlash orqali qilinadi. Bu nuqtada versiyaga qarab farq bor.
+
+### 38.9 Frontend qamrovini ulash va alohida hisobot berish
+
+Frontend qamrovi Sonar ga LCOV formatida beriladi: Jest yoki Vitest `lcov` reporter ni yoqib, hisobotni `coverage/lcov.info` ga yozadi. TypeScript tahlili sifatli bo'lishi uchun `tsconfig` yo'lini ham berish kerak, aks holda tur ma'lumotisiz tahlil qilinadi va bir qancha qoida ishga tushmaydi.
+
+```bash
+# 1-qadam: backend testi va JaCoCo XML hisoboti
+./mvnw clean verify
+
+# 2-qadam: frontend testi va LCOV hisoboti
+npm --prefix frontend ci
+npm --prefix frontend run test -- --coverage --coverageReporters=lcov
+
+# 3-qadam: backend loyihasini skanerlash
+./mvnw sonar:sonar -Dsonar.projectKey=shop-backend -Dsonar.qualitygate.wait=true
+
+# 4-qadam: frontend loyihasini alohida kalit bilan skanerlash
+npx sonarqube-scanner \
+  -Dsonar.projectKey=shop-frontend \
+  -Dsonar.sources=frontend/src \
+  -Dsonar.tests=frontend/src \
+  -Dsonar.test.inclusions=**/*.test.ts,**/*.test.tsx \
+  -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info \
+  -Dsonar.typescript.tsconfigPaths=frontend/tsconfig.json \
+  -Dsonar.exclusions=**/node_modules/**,**/*.min.js,**/dist/** \
+  -Dsonar.qualitygate.wait=true
+```
+
+`sonar.qualitygate.wait=true` ni ikkala skanerlashda ham qo'yish muhim. Aks holda CI yashil bo'ladi, gate esa keyin yiqiladi va hech kim buni ko'rmaydi.
+
+### 38.10 Shell skriptlari va CI konfiguratsiyasi
+
+Shell skriptlari uchun Sonar da to'liq analizator yo'q. Buni aytib qo'yish kerak, chunki ko'p jamoa `scripts/deploy.sh` ni Sonar tekshirishini kutadi. Bash uchun to'g'ri vosita ShellCheck, va uni CI da alohida bosqich sifatida ushlab turish mumkin. Hamma narsa bitta joyda ko'rinishi talab bo'lsa, tashqi vosita natijasini SARIF formatida `sonar.sarifReportPaths` orqali yuklash yo'li bor, lekin issue lar tashqi qoida sifatida ko'rinadi va gate shartlariga ta'siri cheklangan.
+
+CI konfiguratsiyasi, masalan `.github/workflows/ci.yaml`, YAML sifatida tekshiriladi va undagi maxfiy ma'lumot aniqlanadi. Lekin workflow mantiqi, masalan action ni commit hash bilan pinlamaslik, Sonar qoidalari bilan to'liq qamrab olinmaydi.
+
+### 38.11 Ko'p tilli loyihada quality gate ni adolatli qo'yish
+
+Eng muhim qoida bitta: gate ni "new code" asosida qo'y. Ko'p tilli eski loyihada umumiy kod bo'yicha shart qo'yish amalda ishlamaydi, chunki o'n yillik qarz bir kechada to'lanmaydi. Yangi kod bo'yicha shart esa adolatli: bugun yozilgan har qanday tilga bir xil talab qo'yiladi.
+
+| Mavzu | Oddiy yondashuv | Arxitektor yondashuvi |
+|---|---|---|
+| Qamrab olinadigan tillar | Faqat Java tahlil qilinadi | Java, XML, YAML, Docker, Kubernetes, frontend birgalikda qamraladi |
+| `sonar.sources` | Maven avtomatik qiymatiga tashlab qo'yiladi | Infratuzilma papkalari ataylab qo'shiladi va tekshiriladi |
+| Coverage ko'rsatkichi | Backend va frontend bitta foizga qo'shiladi | Har til yoki har loyiha o'z qamrov raqamiga ega |
+| Gate shartlari | Umumiy kod bo'yicha 80 foiz talab qilinadi | New code bo'yicha shart, eski qarz alohida reja bilan kamaytiriladi |
+| Maxfiy ma'lumot | Faqat code review ga ishoniladi | Secret qoidasi gate da blocker, qo'shimcha pre-commit hook bor |
+| Dockerfile va manifest | Hech kim tekshirmaydi, hodisadan keyin tuzatiladi | Infratuzilma qoidalari CI da yiqitadi, PR o'tmaydi |
+| Shell skript | Sonar tekshiradi deb o'ylanadi | ShellCheck alohida bosqich, kerak bo'lsa SARIF orqali yuklanadi |
+| Exclusion siyosati | Gate yiqilganda shoshilib exclusion yoziladi | Exclusion lar ro'yxati sabab izohi bilan reviewdan o'tadi |
+| Nashr imkoniyatlari | "Sonar hammasini biladi" deb taxmin qilinadi | Qaysi til qaysi nashrda borligi oldin tekshiriladi, reja shunga moslanadi |
+| Hisobot egasi | Gate yiqilsa kim tuzatishi noma'lum | Har loyiha va har tilga egalik biriktirilgan |
+
+Amaliy taqsimot shunday bo'lishi mumkin: backend uchun new code coverage 80 foiz, frontend uchun 60 foizdan boshlab har chorakda ko'tarish, infratuzilma loyihasiga coverage sharti umuman yo'q, chunki Dockerfile ga test yozilmaydi. Uning o'rniga security rating va yangi issue soni sharti qo'yiladi. Qamrov sharti ma'nosiz bo'lgan tilga qamrov talab qilish gate ni soxta yiqitadi va jamoani uni chetlab o'tishga o'rgatadi.
+
+Qamrovni integratsion test bilan oshirish yo'llari testlash qo'llanmasidagi Testcontainers va CI test pipeline mavzularida yozilgan. Bu yerda faqat Sonar bu raqamni qanday o'qishi muhim.
+
+### 38.12 Qaysi tilni tahlilga qo'shmaslik mantiqiy
+
+Hammasini qo'shish to'g'ri strategiya emas. Quyidagilarni ataylab chiqarib qo'yish mantiqiy.
+
+Generatsiya qilingan kod: OpenAPI yoki Protobuf dan yasalgan klasslar, MapStruct chiqargan fayllar. Ularni sen tuzatmaysin, generator tuzatadi. Tahlilda qolsa, minglab issue paydo bo'ladi va haqiqiy muammolar shovqin ichida ko'rinmaydi.
+
+Minifikatsiya qilingan va vendor fayllar: `*.min.js`, `node_modules`, `dist`, `vendor`. Tahlilning qiymati nolga teng, sarflangan vaqt esa katta.
+
+Katta ma'lumot fayllari, masalan test fixture sifatidagi uzun JSON va CSV. Natija foydasiz, vaqt esa sarflanadi.
+
+Eski, muzlatilgan modul. Modul o'zgarmasa va o'chirilishi rejalashtirilgan bo'lsa, uni tahlilda ushlash faqat raqamni buzadi. Lekin "muzlatilgan" degani "xavfsiz" degani emas: security qoidalari uchun uni qoldirish to'g'riroq.
+
+Chiqarib qo'yishning har bir qatori sabab izohi bilan birga yozilishi kerak. Exclusion ro'yxati izohsiz o'sa boshlasa, bir yildan keyin Sonar hisoboti loyihaning uchdan birini ko'rsatadigan bezakka aylanadi.
+
+### 38.13 Amalda qo'llash
+
+- [ ] Repozitoriyni ochib, undagi barcha til va fayl turlarini sanab, ro'yxat tuz: qaysi biri hozir tahlilga kiradi va qaysi biri kirmaydi.
+- [ ] Server UI dagi Rules bo'limida til bo'yicha filtr qo'yib, o'z nashringizda qaysi til uchun qoida mavjudligini aniq tekshir, taxminga tayanma.
+- [ ] `sonar.sources` ga `Dockerfile`, `deploy` va `.github` papkalarini qo'shib, birinchi tahlildan keyin chiqqan infratuzilma issue larini ko'rib chiq.
+- [ ] `sonar.exclusions` va `sonar.coverage.exclusions` ni ajrat: generatsiya qilingan kodni birinchisiga, konfiguratsiya klasslarini ikkinchisiga yoz.
+- [ ] Frontend uchun alohida loyiha kaliti yaratib, LCOV va `tsconfig` yo'llarini ulab, backend bilan aralashtirmagan holda qamrovni o'lchang.
+- [ ] Quality gate ni new code asosiga o'tkaz va infratuzilma loyihasiga coverage sharti qo'ymasdan security rating sharti qo'y.
+- [ ] Shell skriptlar uchun CI ga ShellCheck bosqichini qo'shib, natijani majburiy qil, uni Sonar dan kutib o'tirma.
+- [ ] Exclusion faylidagi har bir qatorga bir qatorli izoh yozib, uni har chorakda qayta ko'rib chiqadigan vazifa yarat.
+
+## 39. Bog'liqlik zaifliklari va litsenziya tekshiruvi (Dependency Risk and Licences)
+
+Quality gate yashil bo'lishi loyihada xavf yo'q degani emas. Zamonaviy Spring Boot ilovasida yozilgan kod umumiy bayt hajmining juda kichik qismini tashkil qiladi, qolgani esa `pom.xml` yoki `build.gradle` orqali kelgan kutubxonalar. Shu bobda bog'liqlik zaifliklari qanday aniqlanishi, tranzitiv bog'liqlik nima uchun eng xavfli joy bo'lishi, zaiflik tekshiruvini CI ga qanday ulash va litsenziya masalasiga qanday qarash kerakligini ko'rib chiqamiz. Maqsad bitta: Sonar hisoboti bilan bog'liqlik hisobotini bir stolda o'qishni o'rganish.
+
+### 39.1 Sonar kodingizni tekshiradi, bog'liqliklaringizni esa to'liq tekshirmaydi
+
+SonarQube ning asosiy ishi statik analiz: sizning manba kodingizni parse qiladi, qoidalarni qo'llaydi, issue chiqaradi. U `OrderService.java` ichidagi null dereference yoki SQL konkatenatsiyasini ko'radi. Lekin `spring-boot-starter-web` orqali kelgan bironta JAR ichidagi ma'lum zaiflik Sonar ning klassik qoidalar to'plamida issue sifatida paydo bo'lmaydi.
+
+Bu yerda halol bo'lish kerak. SonarQube va SonarCloud oilasida bog'liqliklarni tekshirish imkoniyati vaqt o'tishi bilan qo'shilgan va o'zgargan. Qaysi nashrda (Community, Developer, Enterprise) va qaysi versiyada bu nima deb nomlanishi, nimani qamrab olishi va litsenziya tahlili bor-yo'qligi farq qiladi. Shuning uchun bu yerda aniq funksiya nomlarini sanab chiqarmaymiz. O'z o'rnatmangiz uchun rasmiy hujjatdan tekshiring: nashr, versiya va ulangan plugin ro'yxatiga qarab javob boshqacha chiqadi.
+
+Amaliy xulosa shu: bog'liqlik zaifligini alohida vosita bilan tekshirishni rejalashtiring. Agar Sonar o'rnatmangiz buni qamrab olsa, ikkinchi vosita ortiqcha ishonch bo'ladi. Agar qamrab olmasa, siz yagona himoyasiz qolmaysiz.
+
+### 39.2 Bog'liqlik zaifligi nima va u qanday aniqlanadi (ma'lum zaifliklar bazasi)
+
+Bog'liqlik zaifligi deganda ishlatayotgan kutubxonangizning ma'lum versiyasida topilgan va ommaga e'lon qilingan xavfsizlik nuqsoni tushuniladi. Har bir bunday nuqsonga CVE identifikatori beriladi, masalan `CVE-2021-44228`. Uning jiddiyligi CVSS ball bilan o'lchanadi, 0 dan 10 gacha.
+
+Aniqlash mexanizmi tasavvur qilgandan ancha soddaroq. Vosita sizning bog'liqliklar ro'yxatini yig'adi, har bir artifact uchun uning koordinatasini aniqlaydi (`groupId:artifactId:version`), keyin bu koordinatani ma'lum zaifliklar bazasidagi yozuvlar bilan solishtiradi. Baza sifatida ko'pincha NVD, GitHub Advisory Database yoki OSV ishlatiladi.
+
+Demak bu statik analiz emas, balki ro'yxatni ro'yxat bilan taqqoslash. Shundan ikkita muhim natija kelib chiqadi. Birinchisi: vosita kutubxona ichidagi kodni o'qimaydi, faqat versiya raqamiga qaraydi. Ikkinchisi: baza yangilanmasa, tekshiruv ham eskiradi. Offline rejimda ishlayotgan CI da baza keshini muntazam yangilash alohida vazifa bo'ladi.
+
+Yana bir nozik joy: vosita zaif funksiya sizning kodda chaqirilishini bilmaydi. Zaiflik bor, lekin siz unga tegadigan yo'ldan foydalanmasligingiz mumkin. Buni reachability tahlili deyiladi va u hamma vositada yo'q.
+
+### 39.3 Tranzitiv bog'liqlik: siz qo'shmagan kutubxona ham sizniki
+
+Siz `pom.xml` ga o'n qator qo'shasiz, natijada classpath da yuz ellik JAR paydo bo'ladi. Qolganlari tranzitiv bog'liqlik: sizning bog'liqliklaringizning bog'liqliklari. Xavfning katta qismi aynan shu yerda yashaydi, chunki bu artifactlarni siz tanlamadingiz va ularning versiyasini bilmaysiz.
+
+Log4Shell voqeasi buni yaxshi ko'rsatdi. Ko'p jamoalar `log4j-core` ni hech qachon o'z qo'li bilan qo'shmagan edi, u boshqa kutubxona orqali kelgan. Shuning uchun birinchi savol har doim bitta: bu artifact classpath ga kim orqali kirdi.
+
+Maven da versiya tanlash qoidasi "nearest definition wins", ya'ni daraxtda ildizga eng yaqin e'lon g'olib bo'ladi. Gradle da esa odatiy xulq boshqacha, u konflikt bo'lganda eng yuqori versiyani tanlaydi. Bu farqni bilish kerak, aks holda "nega men qo'ygan versiya qo'llanmadi" degan savol javobsiz qoladi.
+
+Spring Boot da eng toza yechim BOM orqali versiyani boshqarish. `spring-boot-dependencies` allaqachon yuzlab artifact versiyasini muvofiqlashtirib beradi. Bitta tranzitiv artifactni ko'tarish kerak bo'lsa, uni property orqali yoki `dependencyManagement` bo'limida bir joyda bosh.
+
+```xml
+<!-- Tranzitiv artifactni bir joyda boshqarish -->
+<dependencyManagement>
+  <dependencies>
+    <dependency>
+      <!-- Spring Boot BOM: yuzlab versiyani muvofiqlashtiradi -->
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-dependencies</artifactId>
+      <version>${spring-boot.version}</version>
+      <type>pom</type>
+      <scope>import</scope>
+    </dependency>
+    <dependency>
+      <!-- Zaif tranzitiv versiyani majburan ko'tarish -->
+      <groupId>com.example.lib</groupId>
+      <artifactId>json-utils</artifactId>
+      <version>2.14.3</version>
+    </dependency>
+  </dependencies>
+</dependencyManagement>
+```
+
+### 39.4 Maven va Gradle da bog'liqlik daraxtini ko'rish
+
+Har qanday muhokama shu buyruqdan boshlanadi. Hisobotda noma'lum artifact chiqdi, siz esa uning kelib chiqishini bilmaysiz. Daraxtni chiqarib, zanjirni ko'rasiz.
+
+```bash
+# Maven: butun daraxt faylga
+mvn -q dependency:tree -DoutputFile=target/deps.txt
+
+# Faqat kerakli artifact va uning ota-onasi
+mvn dependency:tree -Dincludes=com.fasterxml.jackson.core:jackson-databind
+
+# Yakuniy tanlangan versiyalar va konfliktlar
+mvn dependency:tree -Dverbose
+
+# Gradle: runtime classpath uchun daraxt
+./gradlew dependencies --configuration runtimeClasspath
+
+# Gradle: bitta artifact qaysi yo'l bilan kelgani
+./gradlew dependencyInsight \
+  --dependency jackson-databind \
+  --configuration runtimeClasspath
+```
+
+Ikkita maslahat. Birinchisi: `runtimeClasspath` ni tekshiring, `compileClasspath` ni emas. Ishlab turgan ilovaga nima yuklansa, xavf shundan keladi. Ikkinchisi: test uchun ishlatiladigan artifact prod ga chiqmaydi, shuning uchun uni ajratib qarang. `test` scope dagi zaiflik ham muhim, lekin ustuvorligi boshqacha.
+
+Daraxtni CI artifact sifatida saqlab qo'yish ham foydali. Keyinchalik "o'sha hafta qaysi versiya edi" degan savolga javob topish osonlashadi.
+
+### 39.5 Zaiflikni tekshiruvchi vositalar: OWASP Dependency-Check, Trivy, Grype, Dependabot
+
+To'rtta vosita to'rt xil o'rinda turadi va ular bir-birini almashtirmaydi.
+
+OWASP Dependency-Check build ichida ishlaydi, Maven va Gradle plugini bor, NVD ma'lumotlariga tayanadi va HTML yoki JSON hisobot beradi. Kuchli tomoni: build ga chuqur integratsiya. Og'ir tomoni: NVD bazasini yuklab olish va keshlash vaqt oladi, API kalit va kesh katalogini oldindan sozlash kerak.
+
+Trivy container image, filesystem va repository ni skanerlaydi. Agar siz Spring Boot ni Docker image sifatida chiqarsangiz, Trivy bitta o'tishda ham JAR larni, ham base image dagi OS paketlarni ko'radi. Grype shunga yaqin vazifani bajaradi va SBOM fayl bilan yaxshi ishlaydi, uning hamkori Syft SBOM yaratadi.
+
+Dependabot boshqa darajada ishlaydi. U sizning repository ni kuzatadi va zaiflik yoki yangi versiya chiqqanda avtomatik pull request ochadi. Ya'ni bu skaner emas, bu yangilash oqimi. Ikkisi birga eng yaxshi natija beradi: skaner xavfni ko'rsatadi, Dependabot uni yopadigan PR tayyorlaydi.
+
+```yaml
+# .github/dependabot.yml - haftalik yangilash PR lari
+version: 2
+updates:
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    # Mayda patch larni bitta PR ga yig'ish
+    groups:
+      spring-patches:
+        patterns:
+          - "org.springframework*"
+        update-types:
+          - "patch"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+```
+
+### 39.6 Natijani CI ga ulash va qaysi daraja build ni bloklashi
+
+Birinchi kundan boshlab build ni yiqitish eng tez-tez uchraydigan xato. Katta legacy loyihada skanerni yoqishingiz bilan yuzlab topilma chiqadi, pipeline qizil bo'ladi, jamoa esa bir hafta ichida tekshiruvni butunlay o'chirib tashlaydi.
+
+To'g'ri yo'l bosqichli. Avval skanerni hisobot rejimida ishlatasiz, build yiqilmaydi. Ikki hafta ichida mavjud topilmalarni ro'yxatga olasiz va baseline qilasiz. Keyin faqat yangi topilmalar uchun blok qo'yasiz. Bu Sonar ning "new code" falsafasiga aynan mos keladi va shu mantiqni bog'liqliklarga ham ko'chirish mumkin.
+
+Blok chegarasi haqida aniq qaror yozib qo'yilsin. Amaliyotda keng tarqalgan taqsimot: Critical darajasidagi topilma prod release ni bloklaydi, High darajasi asosli izoh talab qiladi, Medium va pastrog'i backlog ga tushadi. Raqam emas, qaror muhim: kim va qancha vaqt ichida javob beradi.
+
+```yaml
+# GitHub Actions: avval hisobot, keyin blok
+name: dependency-scan
+on: [pull_request]
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      # 1-bosqich: har qanday holatda hisobot yig'iladi
+      - name: Skaner
+        run: ./gradlew dependencyCheckAnalyze || true
+      - name: Hisobotni saqlash
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-report
+          path: build/reports/
+      # 2-bosqich: baseline tayyor bo'lgandan keyin yoqiladi
+      - name: Yangi topilmalar uchun blok
+        run: ./gradlew dependencyCheckAnalyze
+```
+
+### 39.7 False positive va zaiflikni asosli ravishda e'tiborsiz qoldirish
+
+Versiya taqqoslashga asoslangan tekshiruv noto'g'ri signal berishi tabiiy. Ikki xil loyiha bir xil nom bilan chiqishi mumkin, artifact ichidagi metadata chalg'itishi mumkin, yoki CVE sizning ishlatish rejimingizga tegishli bo'lmasligi mumkin.
+
+Bu yerda ikkita so'z aralashib ketadi. False positive: zaiflik umuman bu artifactga tegishli emas. Not applicable: zaiflik haqiqiy, lekin sizning kontekstingizda ekspluatatsiya qilinmaydi, masalan zaif komponent faqat test scope da yoki tashqi kirish yo'li yo'q.
+
+Ikkala holatda ham javob bitta: suppress qiling, lekin izoh va muddat bilan. Izohsiz suppress eng yomon qarz turi, chunki bir yildan keyin uni kim va nega yozganini hech kim bilmaydi.
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- dependency-check-suppressions.xml -->
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+  <suppress until="2026-01-31Z">
+    <notes><![CDATA[
+      Sabab: bu CVE faqat SSL server rejimida ta'sir qiladi.
+      Bizda kutubxona faqat client sifatida ishlatiladi.
+      Tekshirgan: platform-team, ticket PLAT-4412.
+      Muddatdan keyin qayta ko'rib chiqilsin.
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/com\.example/net\-client@.*$</packageUrl>
+    <cve>CVE-2024-11111</cve>
+  </suppress>
+</suppressions>
+```
+
+`until` atributi muhim. U suppress ni avtomatik eskiradigan qiladi, shuning uchun ro'yxat yildan yilga shishib ketmaydi.
+
+### 39.8 Yangilash siyosati: qachon darhol, qachon rejali
+
+Har bir zaiflikni o'sha kuni yopish real emas, hammasini keyinga qoldirish esa xavfli. Shuning uchun yozma siyosat kerak va u ikki o'qqa tayanadi: zaiflikning jiddiyligi va komponentning kirish yo'liga yaqinligi.
+
+Darhol yangilash talab qiladigan holat: tashqi trafik qabul qiluvchi komponentda remote code execution yoki autentifikatsiyani chetlab o'tish. Bunday holatda release jadvali kutilmaydi, hotfix branch ochiladi.
+
+Rejali yangilash: kutubxonaning minor versiyasi, test infratuzilmasidagi zaiflik, ichki tarmoqdan boshqa kirish yo'li bo'lmagan komponent. Bunday ishlar sprint ichidagi texnik ulushga kiradi.
+
+Alohida eslatma Spring Boot haqida. Boot ning patch versiyasini ko'tarish ko'pincha o'nlab tranzitiv artifactni bir yo'la yangilaydi. Shuning uchun "Boot ni oyda bir marta patch darajasida ko'tarish" odati alohida CVE lar bilan kurashishdan ko'ra arzonga tushadi. Java ning LTS versiyasi va JaCoCo 0.8.x kabi build vositalari uchun ham xuddi shu mantiq amal qiladi.
+
+Yangilashdan keyin regressiya testi majburiy. Bu yerda testlash qo'llanmasidagi Testcontainers va integratsion test mavzulari kerak bo'ladi, chunki kutubxona yangilanishini unit test yolg'iz qo'lga ilmaydi.
+
+### 39.9 SBOM nima va u nimaga kerak
+
+SBOM (Software Bill of Materials) ilovangiz ichida nima borligining mashina o'qiy oladigan ro'yxati. Har bir komponent nomi, versiyasi, koordinatasi va ko'pincha litsenziyasi yoziladi. Ikki keng tarqalgan format bor: CycloneDX va SPDX.
+
+Nima uchun kerak. Yangi CVE e'lon qilinganda savol bitta bo'ladi: bizda bormi va qaysi release da bor. SBOM bo'lsa, javobni daqiqalarda topasiz. SBOM bo'lmasa, har bir release ni qayta build qilib tekshirishga to'g'ri keladi.
+
+Shuning uchun SBOM ni release artifact qatorida saqlash kerak, build papkasida qoldirmaslik kerak. Har bir versiya uchun o'z SBOM fayli bo'lsin.
+
+```bash
+# CycloneDX plugin bilan SBOM yaratish (Maven)
+mvn org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom
+
+# Syft bilan image dan SBOM
+syft packages registry:myrepo/orders:1.4.2 -o cyclonedx-json > sbom.json
+
+# SBOM faylini zaiflikka tekshirish
+grype sbom:sbom.json
+
+# Container image ni to'g'ridan-to'g'ri skanerlash
+trivy image myrepo/orders:1.4.2
+```
+
+### 39.10 Litsenziya tekshiruvi: qaysi litsenziya xavfli bo'lishi mumkin
+
+Litsenziya xavfi texnik emas, huquqiy. Kod ishlaydi, test o'tadi, lekin kompaniya ustida majburiyat paydo bo'ladi. Shuning uchun bu masalani muhandis yolg'iz hal qilmaydi.
+
+Umumiy manzara shunday. Permissive litsenziyalar (Apache-2.0, MIT, BSD) tijorat mahsulotida odatda muammosiz ishlatiladi. Weak copyleft (LGPL, MPL, EPL) kutubxona sifatida ishlatishga ruxsat beradi, lekin o'zgartirish va bog'lash shartlari bor. Strong copyleft (GPL, AGPL) esa sizning mahsulotingizga ham o'z shartini yoyishi mumkin, AGPL bunda tarmoq orqali xizmat ko'rsatishni ham qamrab oladi.
+
+Eng xavfli holat: litsenziyasi noma'lum yoki ko'rsatilmagan artifact. Uni "ehtimol muammo yo'q" deb o'tkazib yuborish xato, chunki huquqiy maydonda sukut ruxsat degani emas.
+
+Amaliy yondashuv: yozma ruxsat ro'yxati tuzing, build vaqtida tekshiring. Yangi litsenziya chiqsa, build ogohlantirish beradi va qaror yuridik javobgar odam bilan birga qabul qilinadi. Bu yerda ham aniq huquqiy maslahat bermayman, bu kompaniyangiz yuristi ishi. Vositaning ishi faqat bitta: ro'yxatni ko'rinadigan qilish.
+
+### 39.11 Bog'liqliklarni kamaytirish: eng yaxshi himoya
+
+Skanerlash muhim, lekin eng arzon himoya kutubxonani umuman qo'shmaslik. Har bir yangi artifact uchta xarajat keltiradi: zaiflik maydoni kengayadi, yangilash yuki ortadi, litsenziya xavfi qo'shiladi.
+
+Shuning uchun yangi bog'liqlik qo'shishdan oldin uchta savol bering. Birinchisi: bu ishni standart kutubxona yoki Spring ning o'zi bajara oladimi. Ikkinchisi: biz uning necha foiz imkoniyatidan foydalanamiz. Uchinchisi: bu kutubxona faol qo'llab-quvvatlanadimi, oxirgi release qachon chiqqan.
+
+Amalda eng ko'p uchraydigan ortiqcha narsalar: faqat bitta yordamchi metod uchun qo'shilgan katta utility kutubxona, Java 17 dan keyin keraksiz bo'lib qolgan collection yoki date kutubxonalari, va ikki xil JSON kutubxonasini bir vaqtda ushlab turish.
+
+Bir nozik joy bor. Kutubxonani olib tashlab, o'rniga uning mantiqini o'zingiz yozsangiz, xavf statik analizga ko'chadi. Ya'ni Sonar sizdan kattaroq hisob so'raydi: cyclomatic complexity, coverage, duplication. Shuning uchun qaror "har doim o'zimiz yozamiz" emas, balki "kichik va tushunarli narsani o'zimiz, murakkab va xavfsizlikka tegishli narsani sinovdan o'tgan kutubxona bilan".
+
+| Masala | Oddiy yondashuv | Arxitektor yondashuvi |
+| --- | --- | --- |
+| Zaiflik tekshiruvi | Hujum bo'lgandan keyin qo'lda qarash | Har PR da avtomatik skaner, baseline bilan |
+| Tranzitiv artifact | Classpath da nima borligi noma'lum | Daraxt CI artifact sifatida saqlanadi |
+| Versiya boshqaruvi | Har modulda alohida versiya yozilgan | BOM va bitta `dependencyManagement` joyi |
+| Build ni bloklash | Birinchi kundan hammasini bloklash | Bosqichli: hisobot, baseline, yangi topilma |
+| False positive | Skanerni butunlay o'chirish | Izoh va `until` muddati bilan suppress |
+| Yangilash | Faqat majbur bo'lganda ko'tarish | Oylik patch oqimi, Dependabot PR lari |
+| Release tarkibi | Build qayta tiklanib tekshiriladi | Har release uchun saqlangan SBOM |
+| Litsenziya | Hech kim qaramaydi | Ruxsat ro'yxati build da tekshiriladi |
+| Yangi kutubxona | Birinchi topilgani qo'shiladi | Uchta savol va qo'llab-quvvatlanish tekshiruvi |
+| Javobgarlik | "Xavfsizlik jamoasi ko'radi" | Egasi va SLA yozma belgilangan |
+
+### 39.12 Sonar natijasi bilan bog'liqlik hisobotini birga o'qish
+
+Ikki hisobot ikki xil savolga javob beradi. Sonar: "men yozgan kodda qanday nuqson bor". Bog'liqlik skaneri: "men ishlatayotgan kodda qanday ma'lum nuqson bor". Qaror qabul qilish uchun ikkisini bir vaqtda ko'rish kerak.
+
+Eng foydali kesishma nuqtasi Sonar ning security hotspot tushunchasi. Hotspot o'zi xato emas, u insoniy ko'rikni talab qiladigan joy. Agar hotspot aynan zaif kutubxona ishlatiladigan joyda chiqsa, bu ikki signalning ustma-ust tushishi va u eng yuqori ustuvorlikka chiqadi.
+
+Teskari holat ham bor. Zaiflik hisobotida artifact qizil, lekin Sonar ko'rsatgan kod yo'llari u bilan hech qanday aloqada emas. Bu suppress uchun asos emas, lekin ustuvorlikni pasaytirish uchun argument bo'ladi.
+
+Bitta dashboard tuzish amalda yaxshi natija beradi: Sonar quality gate holati, yangi issue soni, coverage foizi, hamda Critical va High zaiflik soni va eng eski ochiq zaiflikning yoshi. Oxirgi raqam eng gapiradigan metrika, chunki u jamoaning javob tezligini ko'rsatadi.
+
+| Tuzoq | Yechim |
+| --- | --- |
+| Quality gate yashil, lekin classpath da zaif JAR bor | Zaiflik skanerini alohida pipeline bosqichi qilish |
+| Skaner `compileClasspath` ni tekshiradi | `runtimeClasspath` ni, ya'ni haqiqiy ishga tushadiganini tekshirish |
+| NVD bazasi CI da har safar qaytadan yuklanadi | Kesh katalogini saqlash va API kalitini sozlash |
+| Suppress ro'yxati yildan yilga o'sib boradi | Har yozuvga izoh va `until` muddati, choraklik ko'rik |
+| Zaiflik yopildi, lekin regressiya tekshirilmadi | Yangilash PR ida integratsion testlarni majburiy qilish |
+| Faqat JAR lar skanerlanadi, base image e'tibordan chetda | Container image ni ham skanerlash, SBOM ni image dan olish |
+| Litsenziyasi noma'lum artifact jimgina o'tib ketadi | Noma'lum litsenziyani build da ogohlantirish sifatida belgilash |
+| Zaiflik hisoboti hech kimga tegishli emas | Har komponentga egasi va javob muddati biriktirilgan |
+
+### 39.13 Amalda qo'llash
+
+- [ ] `mvn dependency:tree -DoutputFile=target/deps.txt` yoki `./gradlew dependencies --configuration runtimeClasspath` ni ishga tushirib, hozirgi classpath ro'yxatini faylga saqlang va repository ga qo'ying.
+- [ ] O'z SonarQube nashri va versiyasi bog'liqlik tahlilini qamrab oladimi degan savolni rasmiy hujjatdan tekshirib, javobni jamoa wiki siga bir paragraf qilib yozib qo'ying.
+- [ ] Bitta skanerni (OWASP Dependency-Check, Trivy yoki Grype) CI ga hisobot rejimida ulang, hozircha build ni bloklamasin, hisobot artifact sifatida saqlansin.
+- [ ] Ikki hafta ichida chiqqan topilmalardan baseline tuzing va shundan keyin faqat yangi Critical topilma uchun blok qoidasini yoqing.
+- [ ] Mavjud suppress yozuvlarini ko'rib chiqing, har biriga sabab izohi, mas'ul va `until` muddatini qo'shing, muddati o'tganini o'chiring.
+- [ ] CycloneDX yoki Syft bilan SBOM yaratishni release pipeline ga qo'shing va faylni har versiya uchun alohida saqlanadigan artifactga aylantiring.
+- [ ] Ruxsat berilgan litsenziyalar ro'yxatini yozma hujjat qilib tasdiqlang va noma'lum litsenziyali artifact chiqqanda ogohlantirish beradigan tekshiruv qo'shing.
+- [ ] Dependabot yoki shunga o'xshash yangilash oqimini yoqing, Spring Boot patch versiyasini oylik ko'tarish odatini sprint rejasiga kiritib, har yangilash PR ida integratsion testlar majburiy bo'lsin.
+
+## 40. Sonar va boshqa vositalar: qachon qaysi biri (Sonar and Other Tools)
+
+Sonar bitta vosita, u hamma narsani topmaydi. Ko'p jamoa shu yerda ikki xatodan birini qiladi: yoki Sonar dan boshqa hech narsani ishlatmaydi, yoki beshta vositani yoqib, bir xil ogohlantirishni uch joydan oladi. Bu bobda Sonar ning chegarasini chizib, qolgan vositalarni faqat ochiq qolgan bo'shliqqa qo'yamiz. Maqsad: eng kam vosita bilan eng ko'p haqiqiy xatoni topish, pipeline vaqtini esa o'stirmaslik.
+
+### 40.1 Sonar nimani yaxshi qiladi va nimani umuman qilmaydi
+
+Sonar ning asosiy kuchi uchta narsada. Birinchisi, markazlashgan tarix: issue, coverage, duplication va rating bir serverda saqlanadi. Ikkinchisi, "Clean as You Code" modeli: quality gate asosan new code ga qaraydi, shuning uchun eski loyihada ham joriy qilish mumkin. Uchinchisi, issue hayot sikli: false positive, won't fix, assignee, PR decoration.
+
+Sonar yaxshi topadigan narsalar: null dereference ehtimoli (`java:S2259`), haddan tashqari murakkab metod (`java:S3776`), takrorlangan string literal (`java:S1192`), resurs yopilmasligi, o'lik kod, noto'g'ri `equals` va `hashCode` juftligi, SQL injection yo'li, va xavfli joyni security hotspot sifatida belgilash.
+
+Sonar umuman qilmaydigan narsalar esa shu ro'yxat:
+
+- Arxitektura qoidalaringizni bilmaydi. `web` paketidan to'g'ridan to'g'ri `repository` ga murojaat qilish Sonar uchun oddiy kod.
+- Domen qoidasini tekshirmaydi. "Pul `BigDecimal` da bo'lsin" degan qoida tayyor emas.
+- Bytecode ni ko'rmaydi. Lombok yoki mapper generator yaratgan kodda nima borligini bilmaydi.
+- Kompilyatsiya paytida to'xtatmaydi. Siz xato kodni local da erkin kompilyatsiya qilasiz, Sonar faqat scanner ishlaganda gapiradi.
+- Formatlashni tuzatmaydi. U ba'zi uslub buzilishini aytadi, lekin faylni o'zi to'g'rilamaydi.
+- O'z qoidangizni oson qo'shib bo'lmaydi. Custom qoida uchun Java plugin va alohida release sikli kerak.
+
+Quyidagi jadval butun bobning xaritasi.
+
+| Vosita | Nimani topadi | Qachon ishlaydi | Narxi (vaqt va qo'llab-quvvatlash) |
+| --- | --- | --- | --- |
+| SonarQube / SonarCloud | Bug, code smell, vulnerability, hotspot, coverage, duplication, tarix | Scanner bosqichida, test va JaCoCo dan keyin | Server yoki obuna, scanner 1-5 daqiqa, profil boshqarish doimiy ish |
+| SpotBugs (+ find-sec-bugs) | Bytecode darajasidagi bug naqshlari, generated kod ichidagi muammo | `compile` dan keyin, class fayllar ustida | Tez (odatda 30-90 soniya), noise ko'p, filter fayli kerak |
+| PMD | Kod naqshlari, ortiqcha murakkablik, ishlatilmagan element | Source ustida, istalgan bosqichda | Tez, lekin Sonar bilan kuchli takrorlanadi |
+| Checkstyle | Uslub, nomlash, import tartibi, Javadoc | Source ustida, odatda `validate` | Juda tez, formatter bo'lsa ko'p qoidasi keraksiz |
+| Error Prone | Kompilyatsiya paytidagi xato naqshlari, tip bilan bog'liq xatolar | Aynan `javac` ichida | Kompilyatsiya 10-30% sekinlashadi, flag sozlash kerak |
+| NullAway | Null bilan bog'liq xatolar, annotatsiyaga asoslangan | Error Prone ichida | Boshlanishida annotatsiya qo'yish mehnati, keyin arzon |
+| ArchUnit | Arxitektura va paket qoidalari | Oddiy test sifatida, test bosqichida | Juda arzon, qoidani o'zingiz yozasiz |
+| Semgrep | Loyihaga xos naqsh, ko'p tilli, YAML qoida | Alohida qadam, source ustida | Tez, qoida yozish oson, qoida bazasini saqlash kerak |
+| Spotless | Formatlash va litsenziya sarlavhasi | `validate` da check, local da apply | Deyarli bepul, bir martalik katta diff |
+
+### 40.2 SpotBugs: bytecode darajasidagi tahlil va u qachon qo'shimcha qiymat beradi
+
+SpotBugs source ni emas, `.class` fayllarni o'qiydi. Shuning uchun u Sonar ko'rmaydigan qatlamga qaraydi: Lombok yaratgan `equals`, MapStruct yozgan mapper, record ning sintetik metodlari, kompilyator qo'shgan bridge metodlar. Agar loyihada kod generatsiyasi ko'p bo'lsa, SpotBugs haqiqiy qo'shimcha qiymat beradi.
+
+Amalda eng ko'p foyda beradigan detektorlar: `EI_EXPOSE_REP` (ichki massivni tashqariga berish), `RV_RETURN_VALUE_IGNORED`, `DM_DEFAULT_ENCODING` (platforma encoding iga ishonish), `NP_NULL_ON_SOME_PATH`. Bulardan ba'zilari Sonar da ham bor, lekin SpotBugs ularni generated kodda topadi.
+
+```java
+// Ombor qoldig'i servisi. Sonar bu yerda jim qolishi mumkin,
+// chunki muammo Lombok yaratgan getter ichida.
+@Getter
+public class StockSnapshot {
+    private final String warehouseCode;
+    // Massiv to'g'ridan to'g'ri qaytariladi: chaqiruvchi uni o'zgartira oladi.
+    private final int[] quantities;
+
+    public StockSnapshot(String warehouseCode, int[] quantities) {
+        this.warehouseCode = warehouseCode;
+        this.quantities = quantities; // EI_EXPOSE_REP2
+    }
+}
+```
+
+Tuzatilgan variant nusxa oladi: `this.quantities = quantities.clone()`, getter ham `clone()` qaytaradi. Yanada yaxshisi massiv o'rniga `List.copyOf` ishlatish.
+
+SpotBugs ni Maven ga qo'shish:
+
+```xml
+<plugin>
+  <groupId>com.github.spotbugs</groupId>
+  <artifactId>spotbugs-maven-plugin</artifactId>
+  <configuration>
+    <!-- Low ni yoqsangiz noise portlaydi, Medium dan boshlang -->
+    <threshold>Medium</threshold>
+    <effort>Max</effort>
+    <xmlOutput>true</xmlOutput>
+    <!-- Bilib turib qoldirilgan holatlar shu faylda -->
+    <excludeFilterFile>config/spotbugs-exclude.xml</excludeFilterFile>
+    <plugins>
+      <plugin>
+        <groupId>com.h3xstream.findsecbugs</groupId>
+        <artifactId>findsecbugs-plugin</artifactId>
+        <version>1.13.0</version>
+      </plugin>
+    </plugins>
+  </configuration>
+</plugin>
+```
+
+Ikki ogohlantirish. Birinchisi: SpotBugs yangi bytecode versiyasini o'qishi uchun o'zi ham yangi bo'lishi kerak. Java 21 dan yuqori maqsadga o'tganda uning versiyasini ko'tarmasangiz tahlil xato bilan to'xtaydi. Ikkinchisi: `excludeFilterFile` ni kod bilan birga review qiling, aks holda u sekin asta hamma narsani o'chiradigan faylga aylanadi.
+
+### 40.3 PMD va Checkstyle: uslub va qoidalar, Sonar bilan takrorlanishi
+
+PMD va Checkstyle Sonar dan oldin paydo bo'lgan. Sonar ning o'z Java analizatori bugun ularning ko'p qoidasini qamrab oladi, shuning uchun uchalasini to'liq yoqish eng ko'p takrorlanish beradigan konfiguratsiya. "Metod juda uzun", "ishlatilmagan o'zgaruvchi", "bo'sh `catch`", "ichma ich shart" turidagi qoidalar har uchtasida bor.
+
+Tavsiya: PMD ni yoqmang, uning o'rnini Sonar egallagan. Checkstyle ni faqat Sonar da yo'q narsa uchun qoldiring, amalda bu ikki-uchta modul: import tartibi, package nomining katalogga mosligi, litsenziya sarlavhasi. Qolganini formatter hal qiladi.
+
+Agar qoldirsangiz, hisobotni Sonar ga import qiling, shunda developer bitta joydan o'qiydi:
+
+```properties
+# sonar-project.properties: tashqi analizator hisobotlari
+sonar.java.checkstyle.reportPaths=target/checkstyle-result.xml
+sonar.java.spotbugs.reportPaths=target/spotbugsXml.xml
+# Umumiy format (Semgrep, o'z skriptingiz) shu kalit orqali keladi
+sonar.externalIssuesReportPaths=target/semgrep-sonar.json
+# Qoidani faqat ayrim fayllarda o'chirish
+sonar.issue.ignore.multicriteria=e1,e2
+sonar.issue.ignore.multicriteria.e1.ruleKey=java:S3776
+sonar.issue.ignore.multicriteria.e1.resourceKey=**/generated/**/*.java
+sonar.issue.ignore.multicriteria.e2.ruleKey=java:S1192
+sonar.issue.ignore.multicriteria.e2.resourceKey=**/*MigrationTest.java
+```
+
+Muhim halol nuqta: import qilingan tashqi issue lar Sonar ichida to'liq boshqarilmaydi. Severity ni o'zgartirish yoki false positive belgilash har doim ishlamaydi, va ularning quality gate shartiga qo'shilishi SonarQube versiyasiga qarab farq qiladi. Buni o'z serveringizda sinov PR bilan tekshirib ko'ring.
+
+### 40.4 Error Prone va NullAway: kompilyatsiya paytida xato topish
+
+Error Prone ning yutug'i joylashuvida: u `javac` ichida ishlaydi va xatoni kompilyatsiya paytida beradi. Developer feedback ni Sonar dan o'n daqiqa oldin, o'z IDE sida oladi. Sonar PR da gapirsa, Error Prone kod yozilayotganda gapiradi.
+
+NullAway esa Error Prone ustida ishlaydigan tekshiruv. U `@Nullable` annotatsiyasiga tayanadi va "annotatsiya qilingan paketda hamma narsa non-null" deb qabul qiladi. Sonar ning null tahlili bitta metod ichida kuchli, NullAway esa metodlar orasidagi shartnomani tekshiradi. Ikkisi bir birini almashtirmaydi.
+
+```xml
+<plugin>
+  <artifactId>maven-compiler-plugin</artifactId>
+  <configuration>
+    <compilerArgs>
+      <arg>-XDcompilePolicy=simple</arg>
+      <!-- Flag to'plami Error Prone va JDK versiyasiga qarab farq qiladi -->
+      <arg>--should-stop=ifError=FLOW</arg>
+      <arg>-Xplugin:ErrorProne \
+        -Xep:NullAway:ERROR \
+        -XepOpt:NullAway:AnnotatedPackages=uz.shop.payment</arg>
+    </compilerArgs>
+    <annotationProcessorPaths>
+      <path>
+        <groupId>com.google.errorprone</groupId>
+        <artifactId>error_prone_core</artifactId>
+        <version>2.36.0</version>
+      </path>
+      <path>
+        <groupId>com.uber.nullaway</groupId>
+        <artifactId>nullaway</artifactId>
+        <version>0.12.1</version>
+      </path>
+    </annotationProcessorPaths>
+  </configuration>
+</plugin>
+```
+
+To'lov servisidagi tipik holat: repository `Optional` emas, `null` qaytaradi, chaqiruvchi esa darhol metod chaqiradi. Sonar bunda ba'zan jim qoladi, chunki `null` boshqa klassdan keladi. NullAway uchun bu kompilyatsiya xatosi, chunki `@Nullable` qaytish tipi tekshirilmagan. Tuzatish: `Optional<Payment>` ga o'tish yoki `null` ni tekshirib, domen xatosini tashlash.
+
+Joriy qilish strategiyasi muhim. Hamma tekshiruvni darhol `ERROR` qilsangiz loyiha kompilyatsiya bo'lmaydi. Avval `-Xep:AllChecks:WARN` bilan ko'ring, keyin eng qimmat besh-o'n tekshiruvni `ERROR` ga ko'taring.
+
+### 40.5 ArchUnit: arxitektura qoidalarini test sifatida yozish
+
+ArchUnit shu bobda bitta sababdan turadi: u Sonar ning eng katta bo'shlig'ini yopadi. Sonar paket bog'liqligi haqidagi sizning qoidangizni bilmaydi, ArchUnit esa uni test sifatida yozib, build ni to'xtatadi. ArchUnit sintaksisi testlash qo'llanmasidagi ArchUnit mavzusida, bu yerda faqat ikkisining birga ishlashi.
+
+Birinchi masala: Sonar ArchUnit testlarini oddiy test deb ko'radi va ba'zan ularga shikoyat qiladi. `@ArchTest` maydon sifatida yozilganda metod ichida `assert` bo'lmaydi, Sonar esa "test assertion siz" qoidasini ishga tushirishi mumkin. Yechim: shu fayllar uchun qoidani `sonar.issue.ignore.multicriteria` bilan o'chirish, yoki qoidani metod ko'rinishida yozib, ichida `rule.check(classes)` chaqirish.
+
+```java
+// Arxitektura qoidasi: Sonar bilmaydi, ArchUnit bloklaydi.
+@AnalyzeClasses(packages = "uz.shop", importOptions = DoNotIncludeTests.class)
+class ArchitectureRulesTest {
+
+    @Test
+    void controllerRepositoryGaTogridanTogriMurojaatQilmasin() {
+        JavaClasses classes = new ClassFileImporter().importPackages("uz.shop");
+        // Web qatlami faqat application qatlami orqali ishlaydi
+        noClasses().that().resideInAPackage("..web..")
+            .should().dependOnClassesThat().resideInAPackage("..repository..")
+            .check(classes);
+    }
+
+    @Test
+    void pulniDoubleDaSaqlamaymiz() {
+        JavaClasses classes = new ClassFileImporter().importPackages("uz.shop.payment");
+        // Domen qoidasi: Sonar da bunday qoida yo'q
+        noFields().that().haveNameMatching(".*[Aa]mount.*")
+            .should().haveRawType(Double.class)
+            .check(classes);
+    }
+}
+```
+
+Ikkinchi masala: takrorlanish. ArchUnit bilan "`System.out` ishlatilmasin" degan qoidani yozish mumkin, lekin bu Sonar da allaqachon bor. Ikki joyda bir xil qoida bo'lsa, bittasi eskiradi va ikkisi bir biriga zid gapiradi. Taqsimot aniq bo'lsin: paket bog'liqligi, qatlam, nomlash va annotatsiya mavjudligi ArchUnit da; kod ichidagi mantiq va xavfsizlik Sonar da.
+
+Uchinchi masala: coverage. ArchUnit testlari JaCoCo hisobotiga tushadi va coverage raqamini oshiradi, lekin biznes mantiqni sinamaydi. Coverage pastligini ArchUnit testlari bilan "tuzatsangiz", quality gate o'tadi, sifat esa joyida qoladi.
+
+### 40.6 Semgrep va shunga o'xshash qoida yozish vositalari
+
+Semgrep ning qiymati bitta: o'z qoidangizni Java plugin yozmasdan, YAML da besh daqiqada yozasiz. Sonar da custom qoida uchun plugin loyihasi, versiyalash va deploy kerak. Semgrep da qoida repository dagi fayl bo'ladi va PR da review qilinadi.
+
+```yaml
+rules:
+  - id: hisobot-service-da-native-query
+    languages: [java]
+    severity: WARNING
+    message: >
+      Hisobot servisida native query ishlatilgan. Buyruq va o'qish
+      qatlamini aralashtirmang, read-model repository ga ko'chiring.
+    patterns:
+      - pattern: |
+          @Query(value = "...", nativeQuery = true)
+          $RET $METHOD(...);
+      - pattern-inside: |
+          interface $REPO { ... }
+    paths:
+      include:
+        - "**/report/**"
+  - id: tolov-logida-karta-raqami
+    languages: [java]
+    severity: ERROR
+    message: "Karta raqamini log ga yozish taqiqlangan."
+    pattern-either:
+      - pattern: $LOG.info(..., $X.getCardNumber(), ...)
+      - pattern: $LOG.debug(..., $X.getCardNumber(), ...)
+```
+
+Semgrep ni Sonar ning o'rniga qo'ymang. Uning data flow tahlili kuchsizroq va u tarix saqlamaydi. To'g'ri ishlatish: loyihaga xos uchta-o'nta qoida, natijani Sonar ga generic issue formatida import qilish. Shunga o'xshash vositalar: `jqassistant` (grafda so'rov) va OpenRewrite recipe lari, oxirgisi topish bilan birga tuzatib ham beradi.
+
+### 40.7 Formatlash vositalari (Spotless kabi) va ularni bahsdan chiqarish
+
+Formatlash haqidagi bahs eng arzon va eng ko'p vaqt yeydigan bahs. Uni kelishuv bilan emas, avtomatika bilan yo'q qilish kerak. Spotless google-java-format yoki palantir-java-format ni qo'llaydi, `apply` bilan tuzatadi, `check` bilan build ni to'xtatadi.
+
+```bash
+# Local da bir marta hammasini formatlash
+./mvnw spotless:apply
+
+# CI da faqat tekshirish, tuzatmaslik
+./mvnw -q spotless:check
+
+# Katta loyihada hamma faylni emas, faqat yangi o'zgarishni formatlash
+# (ratchetFrom sozlamasi bilan) va git tarixini buzmaslik
+./mvnw spotless:apply -Dspotless.ratchetFrom=origin/main
+
+# Pre-commit hook: kommitdan oldin formatlash
+printf '%s\n' '#!/bin/sh' './mvnw -q spotless:apply' > .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+Formatter yoqilgandan keyin Sonar profilidan va Checkstyle dan uslub qoidalarini o'chiring. Qavs joyi, qator uzunligi va import tartibi haqidagi qoidalar endi keraksiz, chunki kod formatter chiqargan ko'rinishda. Birinchi `apply` bitta katta commit beradi, uni `git blame` uchun `.git-blame-ignore-revs` fayliga qo'shing.
+
+### 40.8 Vositalarni birlashtirish: qaysi biri bloklaydi, qaysi biri ogohlantiradi
+
+Eng ko'p uchraydigan xato: hamma vosita build ni to'xtatadi. Natijada developer formatlash xatosi, uslub xatosi va haqiqiy bug ni bir xil qizil rang sifatida ko'radi, va uchalasiga bir xil e'tibor beradi, ya'ni e'tibor bermaydi.
+
+Qoida oddiy: tez, aniq va o'z o'zidan tuzatiladigan narsa bloklaydi. Sekin, taxminga asoslangan va muhokama talab qiladigan narsa ogohlantiradi. Bloklaydi: Spotless check, kompilyatsiya xatolari va Error Prone ning `ERROR` darajasi, ArchUnit testlari, Sonar quality gate ning new code shartlari. Ogohlantiradi: SpotBugs ning `Medium` topilmalari, Semgrep ning `WARNING` qoidalari, eski koddagi issue lar, coverage ning umumiy raqami.
+
+```yaml
+name: ci
+on: [pull_request]
+jobs:
+  fast:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }   # Sonar new code uchun to'liq tarix kerak
+      - uses: actions/setup-java@v4
+        with: { java-version: '21', distribution: 'temurin', cache: 'maven' }
+      # 1-qadam: eng tez va eng aniq tekshiruv, darhol to'xtatadi
+      - run: ./mvnw -q spotless:check
+      # 2-qadam: kompilyatsiya + Error Prone + NullAway
+      - run: ./mvnw -q -DskipTests compile
+      # 3-qadam: testlar, ArchUnit ham shu yerda, JaCoCo hisoboti bilan
+      - run: ./mvnw -q verify
+      # 4-qadam: bloklamaydigan tahlil
+      - run: ./mvnw -q spotbugs:spotbugs || echo "SpotBugs: ogohlantirish"
+      # 5-qadam: Sonar, test va coverage dan keyin
+      - run: ./mvnw -q sonar:sonar -Dsonar.qualitygate.wait=true
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+```
+
+### 40.9 Takroriy ogohlantirishlarni kamaytirish: qoidalarni bo'lish
+
+Yagona ishonchli usul bor: har bir qoida turi uchun bitta egani tanlash va qolganlarida o'chirish. Buni yozib qo'yish kerak, aks holda har yangi developer yana bitta vosita qo'shadi.
+
+Ishlaydigan taqsimot shunday. Formatlash: Spotless. Uslub va nomlash: Checkstyle, faqat Spotless qamramaydigan qism. Null shartnomasi: NullAway. Bytecode va generated kod: SpotBugs. Arxitektura: ArchUnit. Loyihaga xos naqsh: Semgrep. Qolgan hammasi, ya'ni kod mantiqi, xavfsizlik, murakkablik, duplication va coverage: Sonar.
+
+Takrorlanishni o'lchash mumkin. Bitta PR da hamma vositani yoqib, topilmalarni fayl va qator bo'yicha taqqoslang. Bir xil qator ikki vositada chiqsa, bittasi o'chirishga nomzod.
+
+| Tuzoq | Nima bo'ladi | Yechim |
+| --- | --- | --- |
+| Sonar, PMD va Checkstyle to'liq yoqilgan | Bir xil issue uch marta, developer uchalasiga ishonmaydi | PMD ni o'chirish, Checkstyle ni uchta modulga qisqartirish |
+| SpotBugs `Low` threshold | Minglab topilma, hech kim ko'rmaydi | `Medium` dan boshlash, exclude faylini review qilish |
+| Hamma vosita build ni to'xtatadi | Formatlash xatosi bug bilan bir darajada | Bloklash huquqini faqat tez va aniq tekshiruvga berish |
+| Error Prone darhol `ERROR` | Loyiha kompilyatsiya bo'lmaydi, rollback | Avval `WARN`, keyin tanlab `ERROR` ga ko'tarish |
+| ArchUnit qoidasi Sonar qoidasini takrorlaydi | Ikki joy bir biriga zid gapiradi | Qoida egasini aniq taqsimlash va hujjatlashtirish |
+| `@ArchTest` maydonlariga Sonar shikoyat qiladi | Keraksiz issue, gate buziladi | Shu fayllarda qoidani `multicriteria` bilan o'chirish |
+| Tashqi hisobot Sonar ga import qilingan, lekin gate ga qo'shilmagan | Topilma ko'rinadi, hech narsani to'xtatmaydi | Sinov PR bilan tekshirish, kerak bo'lsa alohida CI qadami bilan bloklash |
+| SpotBugs eski versiya, yangi bytecode | Tahlil xato bilan to'xtaydi, CI qizil | Java versiyasi ko'tarilganda SpotBugs ni ham ko'tarish |
+
+### 40.10 Pipeline da tartib va umumiy vaqt byudjeti
+
+Prinsip: eng arzon va eng ko'p xato topadigan tekshiruv birinchi bo'ladi. Spotless bir soniyada ishlaydi va diff ni darhol ko'rsatadi, uni oxirida qo'yish ma'nosiz.
+
+Vaqt byudjetini oldindan belgilang. Masalan PR pipeline uchun 12 daqiqa: formatlash va kompilyatsiya 2 daqiqa, unit test va ArchUnit 3 daqiqa, integratsion test 4 daqiqa, Sonar scanner 2 daqiqa, zahira 1 daqiqa. SpotBugs va Semgrep shu byudjetga sig'masa, ularni kechki `nightly` build ga ko'chiring.
+
+Sonar har doim test va JaCoCo dan keyin ishlashi kerak, aks holda coverage nol bo'lib keladi va quality gate yolg'on sababdan buziladi. Bu eng ko'p uchraydigan konfiguratsiya xatosi.
+
+```sql
+-- CI metrikasi uchun oddiy jadval: har bir qadam qancha vaqt oldi
+-- Vaqt byudjetini his bilan emas, raqam bilan boshqarish uchun
+SELECT step_name,
+       count(*)                                  AS yurishlar,
+       round(avg(duration_seconds))              AS ortacha_sek,
+       round(percentile_cont(0.95)
+             WITHIN GROUP (ORDER BY duration_seconds)) AS p95_sek,
+       sum(CASE WHEN status = 'FAILED' THEN 1 ELSE 0 END) AS xatolar
+FROM ci_step_run
+WHERE started_at > now() - interval '30 days'
+  AND branch_kind = 'pull_request'
+GROUP BY step_name
+ORDER BY p95_sek DESC;
+```
+
+Natija odatda bitta narsani ko'rsatadi: vaqtning yarmini bitta qadam yeydi. Ko'pincha bu integratsion testlar, ba'zan SpotBugs ning `effort=Max` sozlamasi. Qisqartirish shu qadamdan boshlanadi.
+
+### 40.11 Kam vosita bilan ko'p foyda: minimal to'plam tavsiyasi
+
+Nol dan boshlasangiz, to'rtta vosita yetarli: Spotless, Sonar, ArchUnit, va Error Prone bilan NullAway. Bu to'plam formatlash bahsini o'ldiradi, kod mantiqi va xavfsizlikni qoplaydi, arxitekturani qulflaydi, va null xatolarini kompilyatsiya paytida tutadi.
+
+SpotBugs ni faqat kod generatsiyasi ko'p bo'lsa qo'shing. Semgrep ni Sonar da yo'q, aniq nomlangan qoidaga ehtiyoj paydo bo'lganda qo'shing. PMD ni qo'shmang. Checkstyle ni Spotless qamramaydigan uch-to'rt qoida uchun qoldiring yoki undan ham voz keching.
+
+| Savol | Oddiy yondashuv | Arxitektor yondashuvi |
+| --- | --- | --- |
+| Qancha vosita yoqamiz | Topilgan hamma vositani yoqamiz | Har bir bo'shliq uchun bittasi, takrorlanish nolga yaqin |
+| Kim bloklaydi | Hammasi bloklaydi | Tez va aniq tekshiruv bloklaydi, taxminiy narsa ogohlantiradi |
+| Takroriy issue | "Ikki joydan ko'rish yaxshi" | Qoida egasini belgilab, boshqasida o'chiramiz |
+| Formatlash | Code review da muhokama qilamiz | Spotless `apply`, review da gapirmaymiz |
+| Arxitektura qoidasi | Hujjatga yozamiz va eslatamiz | ArchUnit testi, build ni to'xtatadi |
+| O'z qoidamiz kerak | Sonar plugin yozamiz | Semgrep YAML, repository da review qilinadi |
+| Null xatolari | Sonar PR da aytadi | NullAway kompilyatsiyada aytadi, Sonar zahira bo'ladi |
+| Pipeline vaqti | O'sib ketsa chidaymiz | Oldindan byudjet, p95 ni o'lchab qisqartiramiz |
+| Yangi vosita qo'shish | Qiziq ko'rinsa qo'shamiz | Qaysi bo'shliqni yopadi, qaysi vositani o'chiramiz, deb so'raymiz |
+| Noise ko'paysa | Hamma narsani exclude qilamiz | Qoida profilini qisqartiramiz, exclude ni review qilamiz |
+
+Eslatma, bu to'plam ham sifatni kafolatlamaydi. Vositalar faqat ma'lum naqshlarni topadi. Noto'g'ri domen mantiqi, yomon ma'lumot modeli va kerakmas murakkablik hech bir statik tahlilda ko'rinmaydi. Ular review va dizayn ishi bilan topiladi.
+
+### 40.12 Amalda qo'llash
+
+- [ ] Loyihadagi hamma statik tahlil vositasi uchun "qaysi bo'shliqni yopadi" degan bitta gap yozing. Javobi bo'lmagan vositani o'chiring.
+- [ ] Bitta sinov PR da hamma vositani yoqib, topilmalarni fayl va qator bo'yicha taqqoslang, ikki joyda chiqqan qoidalarning bittasini o'chiring.
+- [ ] Spotless ni qo'shib, `spotless:apply` ni alohida commit qiling va uni `.git-blame-ignore-revs` ga yozing. Keyin Sonar profilidan uslub qoidalarini olib tashlang.
+- [ ] Error Prone ni `AllChecks:WARN` bilan yoqing, eng ko'p takrorlangan beshta ogohlantirishni tuzatib, ularni `ERROR` ga ko'taring.
+- [ ] NullAway ni bitta modulda, masalan to'lov modulida yoqing. `AnnotatedPackages` ni faqat shu paketga bering va kompilyatsiya tozalanmaguncha kengaytirmang.
+- [ ] ArchUnit testlariga Sonar shikoyat qilayotganini tekshiring. Kerak bo'lsa `sonar.issue.ignore.multicriteria` bilan shu fayllarda qoidani o'chiring.
+- [ ] CI qadamlari vaqtini o'lchaydigan dashboard tuzing va PR pipeline uchun aniq daqiqa byudjetini yozib qo'ying. Byudjetdan chiqqan qadamni `nightly` ga ko'chiring.
+- [ ] Qaysi vosita bloklaydi va qaysi biri ogohlantiradi degan qarorni repository dagi bitta faylga yozing, yangi vosita qo'shishda shu faylni yangilash shart bo'lsin.
+
+
+# X. Amaliy ma'lumotnoma
+
+## 41. Lombok, record va generatsiya qilingan kod (Lombok, Records and Generated Code)
+
+Generatsiya qilingan kod Sonar hisobotida eng ko'p chalkashlik tug'diradigan joy. Developer `@Data` yozadi, keyin coverage hisobotida o'zi yozmagan o'nlab satr "qoplanmagan" deb turganini ko'radi. Buning sababi oddiy: JaCoCo bytecode ni o'lchaydi, Sonar esa manba kodni tahlil qiladi, va Lombok bu ikki qatlam orasiga tushadi. Bu bobda shu uzilishni qanday boshqarish, qaysi sozlama nimani hal qiladi va qaysi annotatsiya qamrovdan tashqari haqiqiy xavf olib kelishini ko'rib chiqamiz.
+
+### 41.1 Lombok qanday ishlaydi: annotatsiya ishlovchisi va yaratilgan bytecode
+
+Lombok oddiy annotatsiya ishlovchisi emas. Standart `javax.annotation.processing` ishlovchisi yangi fayl yaratadi, Lombok esa kompilyator ichidagi AST ni bevosita o'zgartiradi. Ya'ni `@Getter` yozilgan klassning manba fayli hech qachon o'zgarmaydi, lekin `javac` chiqargan `.class` faylida `getAmount()` metodi paydo bo'ladi.
+
+Bundan ikki muhim natija kelib chiqadi. Birinchisi: diskda ko'rib chiqadigan "generatsiya qilingan fayl" yo'q, shuning uchun `sonar.exclusions` bilan Lombok kodini chetlab o'tolmaysiz. Ikkinchisi: Lombok `javac` ning ichki API lariga tayanadi, shuning uchun har bir yangi JDK major versiyasi Lombok ning yangilanishini talab qiladi.
+
+```java
+// Manba kodda siz yozgan narsa: 4 qator
+@Getter
+@RequiredArgsConstructor
+public class PaymentRequest {
+    private final String orderId;
+    private final BigDecimal amount;
+}
+
+// Bytecode da kompilyatordan chiqqan narsa (delombok ko'rinishi):
+public class PaymentRequest {
+    private final String orderId;
+    private final BigDecimal amount;
+
+    public PaymentRequest(String orderId, BigDecimal amount) {
+        this.orderId = orderId;   // JaCoCo buni instrumentatsiya qiladi
+        this.amount = amount;
+    }
+
+    public String getOrderId() { return this.orderId; }       // alohida metod
+    public BigDecimal getAmount() { return this.amount; }     // alohida metod
+}
+```
+
+Haqiqiy bytecode ni ko'rish uchun `delombok` dan foydalanish eng ishonchli usul. Shubha tug'ilganda taxmin qilmasdan chiqishni ko'rib oling.
+
+```bash
+# Lombok nima generatsiya qilganini aynan ko'rish
+java -jar lombok.jar delombok src/main/java -d build/delomboked
+
+# Yoki bytecode darajasida tekshirish
+javap -p -c target/classes/com/shop/payment/PaymentRequest.class | head -40
+```
+
+### 41.2 Lombok generatsiya qilgan metodlar qamrovga qanday tushadi
+
+JaCoCo Java agenti sifatida ishlaydi va klasslar yuklanayotganda bytecode ga hisoblagich qo'yadi. Unga metod qo'lda yozilgani yoki Lombok tomonidan qo'shilgani ahamiyatsiz. Shuning uchun sozlamasiz holatda `@Data` bilan belgilangan DTO qamrov hisobotiga o'nlab branch bilan kiradi.
+
+Eng og'ir hissani `equals` va `hashCode` qo'shadi. Lombok generatsiya qilgan `equals` har bir maydon uchun `null` tekshiruvi va taqqoslash shoxlarini yozadi. Besh maydonli DTO da bu yigirmadan oshiq branch beradi va ularning hammasini test bilan qoplash uchun keraksiz mehnat ketadi.
+
+Natija shunday bo'ladi: loyihada mazmunli biznes mantiq yaxshi qoplangan, lekin umumiy coverage raqami past, chunki yuzlab DTO getter va `equals` shoxlari hisobni pasaytiradi. Aks holat ham xavfli: agar kimdir DTO lar uchun `equals` ni to'liq sinaydigan testlar yozsa, coverage ko'tariladi, lekin bu testlar bitta ham xatoni tutmaydi.
+
+```java
+// SONAR VA JACOCO UCHUN ZARARLI TEST: raqamni ko'taradi, qiymat bermaydi
+@Test
+void gettersAndEqualsWork() {
+    OrderDto a = new OrderDto("ORD-1", BigDecimal.TEN, "NEW");
+    OrderDto b = new OrderDto("ORD-1", BigDecimal.TEN, "NEW");
+    assertThat(a).isEqualTo(b);
+    assertThat(a.hashCode()).isEqualTo(b.hashCode());
+    assertThat(a.getOrderId()).isEqualTo("ORD-1");   // getter ni sinash
+    assertThat(a.toString()).contains("ORD-1");      // toString ni sinash
+}
+```
+
+To'g'ri yechim bu testni yozish emas, balki generatsiya qilingan kodni qamrov o'lchovidan chiqarib tashlash. Testni faqat o'zingiz yozgan mantiq uchun yozing.
+
+### 41.3 `lombok.config` va generatsiya qilingan kodni belgilash
+
+Lombok generatsiya qilgan a'zolarga maxsus annotatsiya qo'yishi mumkin. Bu `lombok.config` faylidagi bitta kalit bilan yoqiladi va keyinchalik barcha filtrlashning asosi bo'ladi. Fayl loyiha ildiziga qo'yiladi va papkalar ierarxiyasi bo'ylab pastga tarqaladi.
+
+```properties
+# Loyiha ildizidagi lombok.config
+# Yuqoridagi papkalardan sozlama qidirishni to'xtatish
+config.stopBubbling = true
+
+# Eng muhim kalit: generatsiya qilingan a'zolarga @lombok.Generated qo'yish
+lombok.addLombokGeneratedAnnotation = true
+
+# @Data ni butunlay taqiqlash yoki ogohlantirish berish
+lombok.data.flagUsage = WARNING
+
+# Entity da xavfli bo'lgan annotatsiyalarni cheklash
+lombok.allArgsConstructor.flagUsage = WARNING
+lombok.val.flagUsage = WARNING
+
+# equals/hashCode da ota klassni chaqirishni majburlash
+lombok.equalsAndHashCode.callSuper = CALL
+
+# Setter va getter uchun avtomatik @SuppressWarnings qo'yilishini boshqarish
+lombok.addSuppressWarnings = true
+```
+
+`lombok.addLombokGeneratedAnnotation = true` kalitini yoqmaguningizcha hech qanday filtr ishlamaydi. Ko'p loyihalarda coverage bilan muammo aynan shu bitta qatorning yo'qligidan kelib chiqadi.
+
+`flagUsage` kalitlari alohida e'tiborga loyiq. Ular Sonar qoidasi emas, balki kompilyator ogohlantirishi darajasida ishlaydi. Agar jamoada `@Data` ni entity da ishlatmaslik qarori bo'lsa, bu kalit o'sha qarorni code review ga tashlab qo'ymasdan avtomatlashtiradi.
+
+### 41.4 JaCoCo generatsiya qilingan kodni filtrlash sharti
+
+JaCoCo `@Generated` annotatsiyasi bilan belgilangan klass va metodlarni hisobotdan chiqarib tashlaydi. Filtr ishlashi uchun uch shart bir vaqtda bajarilishi kerak.
+
+Birinchi shart: annotatsiyaning oddiy nomi aynan `Generated` bo'lishi kerak. Paketi ahamiyatsiz, `lombok.Generated` ham, `javax.annotation.processing.Generated` ham ishlaydi. Ikkinchi shart: annotatsiyaning retention siyosati `CLASS` yoki `RUNTIME` bo'lishi kerak, chunki `SOURCE` retention bytecode ga yetib bormaydi. Uchinchi shart: JaCoCo versiyasi bu filtrni qo'llab-quvvatlashi kerak.
+
+Mana bu yerda halol bo'lish kerak. Bu filtr JaCoCo 0.8.x liniyasida mavjud, lekin aniq qaysi kichik versiyada qaysi holat qo'shilgani (Lombok, record, `switch` ustidagi sintetik kod) versiyadan versiyaga o'zgargan. Shuning uchun hujjatdagi raqamga ishonmasdan, o'z loyihangizda tekshirib ko'ring.
+
+```xml
+<!-- JaCoCo versiyasini aniq qotirish va hisobotni XML da chiqarish -->
+<plugin>
+    <groupId>org.jacoco</groupId>
+    <artifactId>jacoco-maven-plugin</artifactId>
+    <version>0.8.12</version>
+    <executions>
+        <execution>
+            <id>prepare-agent</id>
+            <goals><goal>prepare-agent</goal></goals>
+        </execution>
+        <execution>
+            <id>report</id>
+            <phase>verify</phase>
+            <!-- Sonar aynan XML hisobotni o'qiydi -->
+            <goals><goal>report</goal></goals>
+        </execution>
+    </executions>
+</plugin>
+```
+
+Tekshirish usuli juda sodda va men har bir loyihada shuni qilishni tavsiya qilaman. `mvn verify` dan keyin `target/site/jacoco/jacoco.xml` ichida DTO klassingiz nomini qidiring.
+
+```bash
+# @Data bilan belgilangan klass hisobotga tushgan yoki yo'q
+grep -c 'name="getOrderId"' target/site/jacoco/jacoco.xml
+# 0 chiqsa filtr ishlayapti, 1 chiqsa lombok.config yoki versiya muammosi bor
+
+# Sonar bu faylni ko'rishi uchun yo'l to'g'ri ko'rsatilganini tasdiqlash
+mvn -q sonar:sonar -Dsonar.verbose=true 2>&1 | grep -i jacoco
+```
+
+Sonar tomonidan ham shuni bilish kerak: Sonar coverage ni o'zi o'lchamaydi, faqat JaCoCo XML ni o'qiydi. Demak JaCoCo filtrladi degani Sonar ham ko'rmaydi degani. Buni `sonar.coverage.jacoco.xmlReportPaths` parametri bilan bog'laysiz.
+
+### 41.5 `@Data` ning yashirin xavflari: `equals`, `hashCode` va entity
+
+`@Data` qamrovdan ham kattaroq muammo olib keladi. U `equals`, `hashCode`, `toString`, barcha getter va setter larni birdan generatsiya qiladi. JPA entity da bu uchta alohida xatoga olib boradi.
+
+Birinchi xato: `hashCode` o'zgaruvchan maydonlarga tayanadi. Entity ni `HashSet` ga qo'shib, keyin maydonini o'zgartirsangiz, obyekt o'z to'plamida topilmay qoladi. Ikkinchi xato: `toString` bog'langan kolleksiyalarni chaqiradi va lazy yuklashni ishga tushiradi, ikki tomonlama bog'lanishda esa cheksiz rekursiyaga olib keladi. Uchinchi xato: `equals` barcha maydonni taqqoslaydi, bu esa proxy obyekt bilan noto'g'ri ishlaydi.
+
+```java
+// SONAR VA HIBERNATE SHIKOYAT QILADIGAN VARIANT
+@Entity
+@Data                       // equals/hashCode barcha maydon ustidan
+public class Order {
+    @Id @GeneratedValue
+    private Long id;
+    private String status;
+    @OneToMany(mappedBy = "order")
+    private List<OrderLine> lines;   // toString bu yerda lazy ni ochadi
+}
+```
+
+Tuzatilgan variantda generatsiyani faqat xavfsiz qismga cheklaymiz va tenglikni biznes kaliti ustiga qo'yamiz.
+
+```java
+@Entity
+@Getter
+@Setter
+@ToString(onlyExplicitlyIncluded = true)   // kolleksiya chiqmaydi
+public class Order {
+    @Id @GeneratedValue
+    private Long id;
+
+    @ToString.Include
+    @Column(nullable = false, unique = true)
+    private String orderNumber;             // o'zgarmas biznes kaliti
+
+    @OneToMany(mappedBy = "order")
+    private List<OrderLine> lines = new ArrayList<>();
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        // proxy bilan ishlash uchun getClass emas, instanceof
+        if (!(o instanceof Order other)) return false;
+        return orderNumber != null && orderNumber.equals(other.orderNumber);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(orderNumber);   // barqaror, o'zgarmaydi
+    }
+}
+```
+
+Bu variantda `equals` va `hashCode` qo'lda yozilgani uchun ular `@Generated` bilan belgilanmaydi va qamrovga tushadi. Bu to'g'ri, chunki ular endi sizning biznes qaroringiz va sinovga arziydi. Sonar ham merosxo'r klass maydon qo'shsa `equals` ni qayta aniqlashni talab qiladigan qoidani (`java:S2160`) shu holatda tinch qoldiradi.
+
+### 41.6 `@Builder` va majburiy maydonlar tekshiruvi
+
+`@Builder` hech qanday tekshiruv generatsiya qilmaydi. `Order.builder().build()` chaqirig'i barcha maydon `null` bo'lgan obyekt qaytaradi va kompilyator qarshilik ko'rsatmaydi. Sonar ham buni ko'rmaydi, chunki builder kodi manba faylda yo'q.
+
+Yana bir tuzoq: `@Builder` maydon initsializatorini e'tiborsiz qoldiradi. `private List<Item> items = new ArrayList<>();` yozsangiz ham builder orqali yaratilgan obyektda u `null` bo'ladi. Buni `@Builder.Default` hal qiladi.
+
+```java
+public class PaymentCommand {
+    private final String orderId;
+    private final BigDecimal amount;
+    private final Currency currency;
+
+    @Builder.Default                       // bo'lmasa builder da null bo'ladi
+    private final List<String> tags = List.of();
+
+    // Builder ni konstruktor ustiga qo'yamiz, tekshiruv shu yerda bajariladi
+    @Builder
+    private PaymentCommand(String orderId, BigDecimal amount,
+                           Currency currency, List<String> tags) {
+        this.orderId = Objects.requireNonNull(orderId, "orderId majburiy");
+        this.currency = Objects.requireNonNull(currency, "currency majburiy");
+        if (amount == null || amount.signum() <= 0) {
+            throw new IllegalArgumentException("amount musbat bo'lishi kerak");
+        }
+        this.amount = amount;
+        this.tags = List.copyOf(tags);
+    }
+}
+```
+
+Bu yondashuvning yana bir foydasi bor. Konstruktordagi tekshiruv shoxlari sizning kodingiz hisoblanadi va ularni test bilan qoplash mantiqiy. Ya'ni coverage raqami endi haqiqiy himoyani o'lchaydi.
+
+### 41.7 `@Slf4j` va loglash qoidalari
+
+`@Slf4j` `private static final Logger log` maydonini generatsiya qiladi. Bu Sonar ning logger uchun ko'rinish va modifikator talab qiladigan qoidasini (`java:S1312`) avtomatik qondiradi. Shuning uchun `@Slf4j` Sonar nuqtai nazaridan qo'lda yozilgan loggerdan xavfsizroq.
+
+Lekin `@Slf4j` loglash mazmunini tuzatmaydi. Sonar ikki narsaga e'tibor beradi: `System.out` ishlatilishiga (`java:S106`) va log argumentida qimmat hisoblash bajarilishiga (`java:S2629`). Ikkinchisi eng ko'p uchraydi.
+
+```java
+@Slf4j
+@Service
+public class StockService {
+
+    public void reserve(String sku, int qty) {
+        // YOMON: satr birlashtirish log o'chirilgan bo'lsa ham bajariladi
+        log.debug("Zaxira band qilinmoqda: " + sku + ", miqdor: " + qty);
+
+        // YOMON: metod chaqirig'i log darajasidan qat'i nazar ishlaydi
+        log.debug("Ombor holati: " + buildWarehouseSnapshot());
+
+        // TO'G'RI: placeholder, argument faqat kerak bo'lganda hisoblanadi
+        log.debug("Zaxira band qilinmoqda: sku={}, miqdor={}", sku, qty);
+
+        // TO'G'RI: qimmat hisoblash shart ostida
+        if (log.isDebugEnabled()) {
+            log.debug("Ombor holati: {}", buildWarehouseSnapshot());
+        }
+
+        // TO'G'RI: istisnoni oxirgi argument sifatida berish, konkatenatsiya yo'q
+        try {
+            applyReservation(sku, qty);
+        } catch (StockException e) {
+            log.error("Band qilish muvaffaqiyatsiz: sku={}", sku, e);
+        }
+    }
+}
+```
+
+Loggerni testda tekshirish kerak degan talab odatda noto'g'ri. Log chiqishi biznes shart emas, shuning uchun uni sinash coverage ni ko'taradi va boshqa hech narsa bermaydi. Istisno: audit log huquqiy talab bo'lsa, u holda u biznes mantiq va sinalishi kerak.
+
+### 41.8 Java record: Lombok ga nisbatan afzalligi va qamrovdagi farqi
+
+Record Java 16 dan beri til qismi. Uning `equals`, `hashCode`, `toString` va accessor metodlari Lombok emas, kompilyatorning o'zi tomonidan generatsiya qilinadi. Bu juda muhim farq: tashqi kutubxona kerak emas, IDE qo'shimcha plagin so'ramaydi va yangi JDK chiqqanda hech narsa buzilmaydi.
+
+Qamrov tomonidan ham record qulayroq. JaCoCo 0.8.x liniyasi record ning generatsiya qilingan metodlarini filtrlaydi, chunki kompilyator ularni sintetik sifatida belgilaydi. Bu yerda ham aniq versiyani tekshirish kerak, chunki qo'llab-quvvatlash bosqichma-bosqich qo'shilgan.
+
+```java
+// DTO uchun record: lombok.config kerak emas, filtr avtomatik ishlaydi
+public record OrderSummary(
+        String orderNumber,
+        BigDecimal total,
+        OrderStatus status) {
+
+    // Kompakt konstruktor: tekshiruv shu yerda, bu SIZNING kodingiz
+    public OrderSummary {
+        Objects.requireNonNull(orderNumber, "orderNumber majburiy");
+        if (total == null || total.signum() < 0) {
+            throw new IllegalArgumentException("total manfiy bo'lmasin");
+        }
+    }
+
+    // Hisoblangan qiymat: sinovga arziydigan yagona qism
+    public boolean isSettled() {
+        return status == OrderStatus.PAID || status == OrderStatus.REFUNDED;
+    }
+}
+```
+
+Record qaerda ishlamaydi: JPA entity sifatida. Entity ga argumentsiz konstruktor va o'zgaruvchan maydon kerak, record esa ikkisini ham bermaydi. Shuning uchun amaliy chiziq shunday: entity da Lombok ning tanlangan annotatsiyalari, DTO, command, event va projection da record.
+
+| Tuzoq | Nima bo'ladi | Yechim |
+| --- | --- | --- |
+| `lombok.config` da `addLombokGeneratedAnnotation` yo'q | JaCoCo getter va `equals` ni qoplanmagan deb sanaydi | Faylni loyiha ildiziga qo'yib kalitni `true` qilish |
+| JaCoCo versiyasi eski | Filtr umuman ishlamaydi, sozlama bekor | Versiyani 0.8.x da qotirish va `jacoco.xml` ni grep bilan tekshirish |
+| Entity ustida `@Data` | `HashSet` buziladi, lazy yuklash portlaydi | `@Getter`/`@Setter` va biznes kaliti ustida qo'lda `equals` |
+| `@Builder` da `@Builder.Default` yo'q | Kolleksiya maydoni `null` bo'ladi, `NullPointerException` | Initsializator bo'lgan har bir maydonga `@Builder.Default` |
+| Builder da tekshiruv yo'q | Yarim bo'sh obyekt bazagacha boradi | `@Builder` ni private konstruktor ustiga qo'yish |
+| `log.debug("x" + y)` | Log o'chirilgan bo'lsa ham hisoblash ketadi, Sonar issue beradi | Placeholder va `isDebugEnabled` shart |
+| `generated-sources` Sonar ga kirgan | MapStruct impl kodi smell va past qamrov beradi | `sonar.exclusions` va `sonar.coverage.exclusions` |
+| `sonar.exclusions` ga ishonib coverage kutish | Fayl tahlildan chiqadi, lekin eski coverage qoladi | Ikki parametrni alohida sozlash |
+| DTO uchun getter testi yozish | Coverage ko'tariladi, xato tutilmaydi | Generatsiyani filtrlab, testni mantiq uchun yozish |
+
+### 41.9 MapStruct va boshqa generatorlar: chiqarilgan fayllarni tahlildan olib tashlash
+
+MapStruct Lombok dan farq qiladi. U haqiqiy `.java` faylini `target/generated-sources/annotations` ichida yaratadi. Agar bu papka Sonar ga manba sifatida ko'rsatilgan bo'lsa, Sonar o'sha faylni oddiy kod deb tahlil qiladi va juda ko'p issue beradi.
+
+Yaxshi xabar shuki, MapStruct Java 9 dan boshlab generatsiya qilgan klassga `javax.annotation.processing.Generated` annotatsiyasini qo'yadi. Demak JaCoCo filtri uni ham tanib oladi. Yomon xabar shuki, Sonar ning o'z qoidalari annotatsiyaga qarab o'chmaydi, ular uchun chiqarib tashlash shablonini yozish kerak.
+
+```properties
+# sonar-project.properties yoki pom.xml dagi properties bo'limi
+
+# Tahlildan butunlay chiqarish: issue ham, duplication ham hisoblanmaydi
+sonar.exclusions=\
+  **/generated/**,\
+  **/generated-sources/**,\
+  **/*MapperImpl.java,\
+  **/com/shop/api/client/**,\
+  **/*OuterClass.java
+
+# Faqat qamrov o'lchovidan chiqarish, qoidalar baribir ishlaydi
+sonar.coverage.exclusions=\
+  **/dto/**,\
+  **/config/**,\
+  **/*Application.java,\
+  **/generated/**
+
+# Dublikat kod o'lchovidan chiqarish (protobuf uchun ayniqsa kerak)
+sonar.cpd.exclusions=**/generated/**,**/*OuterClass.java
+
+# JaCoCo hisobotining yo'li
+sonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+```
+
+Ikki parametr orasidagi farqni aniq tushunish kerak. `sonar.exclusions` faylni butunlay ko'rinmas qiladi. `sonar.coverage.exclusions` faylni tahlilda qoldiradi, lekin uning qamrovini hisobga olmaydi. Entity va DTO uchun ko'pincha ikkinchisi kerak, chunki Sonar ularda `null` xavfini topishi mumkin.
+
+MapStruct ning o'zini ham sozlash foydali. Timestamp ni o'chirish generatsiya chiqishini barqaror qiladi va keraksiz diff ni yo'qotadi.
+
+```xml
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <configuration>
+        <annotationProcessorPaths>
+            <!-- Tartib muhim: Lombok MapStruct dan oldin kelishi kerak -->
+            <path>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+            </path>
+            <path>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok-mapstruct-binding</artifactId>
+                <version>0.2.0</version>
+            </path>
+            <path>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct-processor</artifactId>
+                <version>${mapstruct.version}</version>
+            </path>
+        </annotationProcessorPaths>
+        <compilerArgs>
+            <arg>-Amapstruct.suppressGeneratorTimestamp=true</arg>
+            <arg>-Amapstruct.unmappedTargetPolicy=ERROR</arg>
+        </compilerArgs>
+    </configuration>
+</plugin>
+```
+
+`unmappedTargetPolicy=ERROR` alohida qimmatli. U Sonar qoidasi emas, lekin unutilgan maydon tufayli kelib chiqadigan xatoni build vaqtida tutadi. Bu Sonar dan ham kuchli himoya, chunki u statik tahlilga umuman yetib bormaydigan toifadagi xatoni to'xtatadi.
+
+### 41.10 `target/generated-sources` ni to'g'ri sozlash
+
+Maven standart holatda `target/generated-sources/annotations` ni kompilyatsiyaga qo'shadi, lekin uni `sonar.sources` ga qo'shmaydi. Shuning uchun ko'p loyihada MapStruct impl fayllari Sonar ga tushmaydi. Muammo odatda `build-helper-maven-plugin` yoki OpenAPI generator qo'lda qo'shgan manba papkasidan kelib chiqadi.
+
+Tekshirish usuli: Sonar skanerining log ida indekslangan fayl sonini ko'ring. Agar `target` ichidan fayl indekslanayotgan bo'lsa, sozlama noto'g'ri.
+
+```bash
+# Qaysi fayllar indekslanayotganini ko'rish
+mvn sonar:sonar -X 2>&1 | grep -E "Indexing|indexed" | head -20
+
+# target ichidan nimadir kirganini tekshirish
+mvn sonar:sonar -X 2>&1 | grep "target/generated"
+```
+
+Gradle da holat boshqacha. Gradle ning `sonarqube` yoki `sonar` plagini `sourceSets` dan manba papkalarini oladi, shuning uchun generatsiya qilingan papka ko'proq ehtimol bilan tahlilga tushadi. Buni aniq boshqarish kerak.
+
+```properties
+# gradle.properties yoki build skriptidagi sonar bloki uchun qiymatlar
+systemProp.sonar.sources=src/main/java
+systemProp.sonar.tests=src/test/java
+systemProp.sonar.exclusions=**/generated/**,**/build/generated/**
+systemProp.sonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTestReport.xml
+```
+
+Ikki qurilish tizimi orasidagi bu farq amalda juda ko'p chalkashlik tug'diradi. Maven uchun yozilgan maqolani Gradle loyihasiga ko'chirganda chiqarib tashlash ishlamay qolishi odatiy hol.
+
+### 41.11 OpenAPI va protobuf dan yaratilgan klasslar
+
+OpenAPI generator va `protoc` bir xil muammoni keltiradi, lekin kattaroq miqyosda. Ular generatsiya qiladigan klasslar o'nlab ming qatorga yetadi va ularda Sonar juda ko'p issue topadi: uzun metodlar, yuqori kognitiv murakkablik (`java:S3776`), takrorlangan satr literallari (`java:S1192`), ishlatilmagan maydonlar (`java:S1068`).
+
+Bu issue larni tuzatish mumkin emas, chunki kod har build da qaytadan yaratiladi. Shuning uchun yagona to'g'ri qaror ularni tahlildan chiqarish. Aytib o'tish kerak: bu halol qaror, "qoidani aylanib o'tish" emas, chunki siz o'zgartira olmaydigan kodga mas'ul emassiz.
+
+Protobuf da yana bir nuqta bor. `*OuterClass` fayllari ichida bir xil shablon yuzlab marta takrorlanadi va bu loyihaning duplication ko'rsatkichini keskin buzadi. `sonar.cpd.exclusions` aynan shu holat uchun kerak.
+
+Amaliy tavsiya: generatsiya chiqishini alohida Maven modulga yoki alohida paketga joylashtiring. Papka chizig'i aniq bo'lsa, chiqarib tashlash shabloni ham sodda va barqaror bo'ladi.
+
+```xml
+<!-- OpenAPI klientni alohida modulga chiqarish va uni Sonar dan olib tashlash -->
+<plugin>
+    <groupId>org.openapitools</groupId>
+    <artifactId>openapi-generator-maven-plugin</artifactId>
+    <configuration>
+        <inputSpec>${project.basedir}/src/main/resources/payment-api.yaml</inputSpec>
+        <generatorName>java</generatorName>
+        <!-- Aniq paket: chiqarib tashlash shabloni shu nomga tayanadi -->
+        <apiPackage>com.shop.generated.payment.api</apiPackage>
+        <modelPackage>com.shop.generated.payment.model</modelPackage>
+        <configOptions>
+            <useJakartaEe>true</useJakartaEe>
+            <library>resttemplate</library>
+        </configOptions>
+    </configuration>
+</plugin>
+```
+
+Shu modulning `pom.xml` ida `sonar.skip=true` qo'ysangiz, modul butunlay tahlildan chiqadi. Bu eng toza chiziq, chunki bitta shablon xatosi tufayli asosiy kod ham tasodifan chiqib ketmaydi.
+
+### 41.12 Lombok dan voz kechish qarori: qachon mantiqiy
+
+Lombok dan voz kechish mafkuraviy masala emas, muhandislik hisobi. Uning foydasi aniq: kamroq yozish, kamroq shovqin. Narxi ham aniq: tashqi kutubxonaga va kompilyatorning ichki API lariga bog'liqlik.
+
+Voz kechish mantiqiy bo'ladigan holatlar: kutubxona endi faqat `@Getter` va `@Slf4j` uchun ishlatilayotgan bo'lsa, loyiha har yili yangi JDK ga o'tadigan bo'lsa, yoki DTO larning katta qismi record ga aylantirilishi mumkin bo'lsa. Qolgan holatlarda Lombok ni tartibli sozlab ishlatish arzonroq.
+
+Oraliq qaror ham bor va u ko'pincha eng amaliy. Lombok ni qoldirib, faqat xavfli annotatsiyalarni `lombok.config` orqali taqiqlang. Shunda jamoa `@Getter` qulayligini yo'qotmaydi, lekin `@Data` entity ga kirmaydi.
+
+| Masala | Oddiy yondashuv | Arxitektor yondashuvi |
+| --- | --- | --- |
+| Lombok coverage ni pasaytirsa | DTO uchun getter testlari yoziladi | `lombok.config` va JaCoCo filtri sozlanadi, test yozilmaydi |
+| Entity uchun annotatsiya | `@Data` hamma joyda | `@Getter`/`@Setter`, `equals` biznes kaliti ustida qo'lda |
+| Lombok kalitlari | Faylsiz, har kim xohlaganini yozadi | `config.stopBubbling` bilan ildizda bitta `lombok.config` |
+| Builder tekshiruvi | Builder dan keyin servisda `null` tekshirish | `@Builder` private konstruktor ustida, tekshiruv bir joyda |
+| Generatsiya chiqishi | `target` ichida aralash turadi | Alohida modul yoki aniq paket, `sonar.skip` bilan ajratilgan |
+| Chiqarib tashlash | `sonar.exclusions` ga hamma narsa tashlanadi | `exclusions`, `coverage.exclusions`, `cpd.exclusions` alohida |
+| JaCoCo versiyasi | Parent pom dan nima kelsa shu | Versiya qotirilgan, filtr `jacoco.xml` da tasdiqlangan |
+| DTO tanlovi | Lombok bilan klass | Record, Lombok faqat entity va service uchun |
+| MapStruct xatosi | Issue Sonar dan kutiladi | `unmappedTargetPolicy=ERROR` bilan build da to'xtatiladi |
+| JDK yangilanishi | Lombok buzilgach shoshilib tuzatiladi | Lombok ga bog'liqlik ro'yxatga olingan, record ga ko'chish rejada |
+
+Oxirgi va eng muhim ogohlantirish. JaCoCo va Sonar ning Lombok hamda record ga munosabati versiyaga bog'liq, va bu bob yozilgandan keyin ham o'zgarishi mumkin. Shuning uchun bu yerdagi hech bir sozlamani ishonch asosida qabul qilmang. `jacoco.xml` ni ochib, o'z loyihangizda getter va `equals` metodlari hisobotga tushgan yoki tushmaganini o'z ko'zingiz bilan tekshiring.
+
+### 41.13 Amalda qo'llash
+
+- [ ] Loyiha ildiziga `lombok.config` yaratib, `config.stopBubbling = true` va `lombok.addLombokGeneratedAnnotation = true` kalitlarini qo'ying.
+- [ ] `mvn verify` dan keyin `target/site/jacoco/jacoco.xml` ichida bitta DTO ning getter nomini grep bilan qidirib, filtr ishlayotganini tasdiqlang.
+- [ ] JaCoCo plagin versiyasini pom da aniq qotiring va uni parent pom dan kelgan qiymatga tashlab qo'ymang.
+- [ ] Barcha JPA entity da `@Data` ishlatilganini qidirib, ularni `@Getter`/`@Setter` va biznes kaliti ustidagi qo'lda `equals`/`hashCode` ga o'tkazing.
+- [ ] `lombok.data.flagUsage = WARNING` kalitini yoqib, yangi `@Data` ishlatilishini build logida ko'rinadigan qiling.
+- [ ] Har bir `@Builder` ni private konstruktor ustiga ko'chirib, majburiy maydonlar uchun `Objects.requireNonNull` tekshiruvini qo'shing va initsializatorli maydonlarga `@Builder.Default` qo'ying.
+- [ ] `sonar.exclusions`, `sonar.coverage.exclusions` va `sonar.cpd.exclusions` ni alohida yozib, MapStruct, OpenAPI va protobuf chiqishini mos parametrga joylashtiring.
+- [ ] `log.debug` va `log.info` chaqiriqlarida satr birlashtirish qolganini qidirib, ularni placeholder shakliga o'tkazing.
+
+## 42. Diagnostika: tahlil ishlamaganda nima qilish (Troubleshooting)
+
+Sonar tahlili buzilganda ko'pchilik birinchi navbatda quality gate shartini o'zgartirishga urinadi. Bu xato yo'l, chunki aksariyat hollarda muammo gate da emas, balki scanner ga berilgan ma'lumotda yoki loyiha kalitida bo'ladi. Bu bob diagnostikani aniq tartibda olib borishni o'rgatadi: avval belgi, keyin sabab farazi, keyin tekshirish buyrug'i, keyin yechim. Har bir bo'limda log da nimani izlash kerakligi ko'rsatilgan, chunki scanner o'z ishini batafsil yozib boradi va javob deyarli har doim log ichida turadi.
+
+### 42.1 Diagnostika tartibi
+
+Tahlil natijasi kutilganidan farq qilganda tekshirishni pastdan yuqoriga olib boring. Pastda build turadi, yuqorida quality gate turadi. Agar build noto'g'ri bo'lsa, gate ni sozlash hech narsani tuzatmaydi.
+
+Tartib shunday bo'ladi. Birinchi qadam: build o'zi muvaffaqiyatli tugadimi va test lar haqiqatan ishga tushdimi. Ikkinchi qadam: coverage hisoboti fayl sifatida diskda mavjudmi va uning ichi bo'sh emasmi. Uchinchi qadam: scanner shu faylni ko'rdimi va o'qidimi. To'rtinchi qadam: scanner qaysi loyiha kalitiga va qaysi branch ga yozdi. Beshinchi qadam: server shu tahlilni qabul qildimi va navbatda qayta ishladimi. Oltinchi qadam: new code davri to'g'ri aniqlandimi. Yettinchi qadam: quality gate qaysi shartda qulab tushdi.
+
+Har bir qadamda bitta buyruq va bitta log so'zini izlang. Birinchi uchta qadamni mahalliy mashinada tekshirish mumkin, server kerak emas. Shuning uchun ularga ko'proq vaqt bering.
+
+```bash
+# Diagnostikaning birinchi uch qadami, serversiz
+# 1-qadam: test lar ishladimi va qancha test bajarildi
+mvn -q clean verify | tail -40
+ls -1 target/surefire-reports/*.xml | wc -l
+
+# 2-qadam: JaCoCo XML hisoboti bormi va bo'sh emasmi
+ls -la target/site/jacoco/jacoco.xml
+grep -c "<counter" target/site/jacoco/jacoco.xml
+
+# 3-qadam: scanner shu faylni ko'rdimi (batafsil log bilan)
+mvn sonar:sonar -Dsonar.verbose=true 2>&1 | tee /tmp/sonar.log
+grep -i -E "jacoco|coverage|report path" /tmp/sonar.log
+```
+
+### 42.2 Belgi va sabab: umumiy jadval
+
+Bu jadval diagnostikaning xaritasi. Belgini topib, eng ehtimolli sabablar ro'yxatini birinchi ustundan o'qing va shu tartibda tekshiring.
+
+| Belgi | Eng ehtimolli sabab | Birinchi tekshiruv | Qayerda hal qilinadi |
+|---|---|---|---|
+| Coverage 0% | XML hisobot yo'q yoki yo'li noto'g'ri | `ls target/site/jacoco/jacoco.xml` | build konfiguratsiyasi |
+| Coverage 0%, hisobot bor | scanner hisobot yo'lini bilmaydi | `grep -i jacoco` scanner log da | scanner xossasi |
+| Coverage past, lekin test bor | test lar skip bo'lgan yoki module boshqa | `mvn verify` chiqishidagi test soni | build buyrug'i |
+| New code bo'sh | reference branch server da topilmagan | loyiha New Code sozlamasi | server sozlamasi |
+| New code butun loyiha | SCM ma'lumoti yo'q, shallow clone | `git log --oneline -5` | CI checkout qadami |
+| "project not found" turidagi xato | `sonar.projectKey` mos emas | `grep projectKey` log da | scanner xossasi |
+| Avtorizatsiya rad etildi | token eskirgan yoki huquqi yetmaydi | token bilan `curl` tekshiruvi | server huquqlari |
+| Scanner OutOfMemory | heap kichik, loyiha katta | `SONAR_SCANNER_OPTS` qiymati | CI muhit o'zgaruvchisi |
+| Tahlil juda uzoq | ortiqcha fayl va generated kod kiritilgan | `sonar.exclusions` ro'yxati | scanner xossasi |
+| Klass topilmadi turidagi ogohlantirish | `verify` dan oldin tahlil ishga tushgan | build qadamlar ketma-ketligi | CI pipeline |
+| Java versiyasi mos emas | bytecode va `sonar.java.source` farqi | `java -version` va `mvn -v` | muhit va build |
+| PR tahlili ko'rinmaydi | PR xossalari berilmagan | `grep pullrequest` log da | CI pipeline |
+| Gate natijasi CI da o'qilmaydi | `sonar.qualitygate.wait` yoqilmagan | pipeline qadami chiqishi | CI pipeline |
+| Issue lar keskin ko'paydi | quality profile yoki Sonar versiyasi yangilangan | loyiha tarixidagi sana | server sozlamasi |
+| Fayllar tahlilga kirmagan | `sonar.sources` yoki exclusion xato | indekslangan fayl soni log da | scanner xossasi |
+| Test kodi manba sifatida | `sonar.tests` ko'rsatilmagan | log dagi indekslash bo'limi | scanner xossasi |
+| Server javob bermaydi | navbat to'lgan yoki resurs tugagan | server sog'ligi so'rovi | server infratuzilmasi |
+
+### 42.3 Coverage 0% ko'rinadi
+
+Belgi: tahlil muvaffaqiyatli tugaydi, issue lar ko'rinadi, lekin coverage ustuni 0.0% yoki bo'sh turadi. Bu eng ko'p uchraydigan muammo va uning sababi deyarli hamisha bitta: Sonar o'zi coverage ni o'lchamaydi, uni JaCoCo o'lchaydi, Sonar esa faqat tayyor XML hisobotni o'qiydi. Shuning uchun sabablarni shu zanjir bo'ylab ketma-ket tekshirish kerak.
+
+Sabablar ketma-ketligi shunday. Birinchi: JaCoCo agent umuman ulanmagan, ya'ni `prepare-agent` goal build da yo'q. Ikkinchi: agent ulangan, lekin `report` goal yo'q, shuning uchun `jacoco.exec` bor, XML yo'q. Uchinchi: XML bor, lekin scanner boshqa yo'lga qaraydi. To'rtinchi: test lar `-DskipTests` bilan o'tkazib yuborilgan, shuning uchun XML bo'sh counter lar bilan yozilgan. Beshinchi: multi module loyihada har bir module o'z hisobotini yozadi, scanner esa faqat bittasini ko'radi. Oltinchi: tahlil `verify` dan oldin, alohida buyruqda ishga tushgan va o'sha paytda hisobot hali yo'q edi. Yettinchi: coverage exclusion ro'yxati shunchalik keng ki, hisoblanadigan kod qolmagan.
+
+Tekshirish usuli oddiy. Avval faylning o'zi borligini va ichida haqiqiy raqamlar borligini ko'ring, keyin scanner log ida shu fayl yo'li aytilganini toping. Log da JaCoCo sensor ishga tushganini va hisobot yo'lini bildiradigan qatorlar bo'ladi, shunga o'xshash xabarni kalit so'z bilan izlang.
+
+```bash
+# JaCoCo exec va XML ikkisi ham bormi
+find . -name "jacoco.exec" -o -name "jacoco.xml" | head -20
+
+# XML ichida nol bo'lmagan qoplama bormi (covered atributi)
+grep -o 'covered="[0-9]*"' target/site/jacoco/jacoco.xml | sort -u | head
+
+# scanner log ida JaCoCo sensori va yo'l haqidagi qatorlarni izlash
+grep -n -i -E "jacoco|xmlReportPaths|no coverage" /tmp/sonar.log
+
+# test lar chindan ishladimi yoki skip bo'ldimi
+grep -n -i -E "Tests run|skipTests|No tests to run" /tmp/sonar.log
+```
+
+Yechim: `prepare-agent` va `report` goal larini bitta plugin ichida bog'lang, XML yo'lini scanner ga aniq aytib qo'ying va tahlilni `verify` fazasidan keyin ishga tushiring. Multi module loyihada barcha module hisobotlarini bitta ro'yxatda, vergul bilan sanab bering yoki aggregate hisobot yarating.
+
+```xml
+<!-- JaCoCo: agent va XML hisobot. Versiyani loyihangiz talabiga moslang -->
+<plugin>
+  <groupId>org.jacoco</groupId>
+  <artifactId>jacoco-maven-plugin</artifactId>
+  <version>0.8.12</version>
+  <executions>
+    <execution>
+      <!-- test lardan oldin agentni ulash -->
+      <id>agent</id>
+      <goals><goal>prepare-agent</goal></goals>
+    </execution>
+    <execution>
+      <!-- test lardan keyin XML hisobot yozish -->
+      <id>report</id>
+      <phase>verify</phase>
+      <goals><goal>report</goal></goals>
+    </execution>
+  </executions>
+</plugin>
+```
+
+```properties
+# Coverage hisobot yo'llari. Multi module da vergul bilan sanaladi
+sonar.coverage.jacoco.xmlReportPaths=\
+  payment-service/target/site/jacoco/jacoco.xml,\
+  order-service/target/site/jacoco/jacoco.xml
+# Generated kod coverage hisobidan chiqariladi, lekin issue lar qoladi
+sonar.coverage.exclusions=**/dto/**,**/config/**,**/*Application.java
+```
+
+Alohida holat: test lar bor, o'tadi, lekin coverage deyarli oshmaydi. Bunda tahlil buzilmagan, test haqiqiy kodni ishga tushirmayotgan bo'ladi.
+
+```java
+// Muammo: hamma narsa mock, shuning uchun haqiqiy kod bajarilmaydi
+@Test
+void limitTekshiruvi_mockBilan() {
+    PaymentService service = mock(PaymentService.class);   // tekshirilayotgan klass mock
+    when(service.pay(any())).thenReturn(Result.REJECTED);
+    assertEquals(Result.REJECTED, service.pay(request));   // mock ni tekshiradi
+}
+
+// Yechim: tekshirilayotgan klass haqiqiy, faqat tashqi bog'liqlik mock
+@Test
+void limitTekshiruvi_haqiqiyKodBilan() {
+    PaymentService service = new PaymentService(gatewayMock, limitPolicy);
+    Result result = service.pay(new PaymentRequest("ORD-1", new BigDecimal("1200")));
+    assertEquals(Result.REJECTED, result);                 // haqiqiy mantiq bajarildi
+}
+```
+
+### 42.4 Yangi kod bo'sh yoki noto'g'ri aniqlanadi
+
+Belgi: quality gate "New Code" shartlarini tekshiradi, lekin yangi kod qatorlari nol ko'rinadi yoki aksincha butun loyiha yangi deb hisoblanadi. Ikkinchi holatda gate butun tarixiy qarz uchun qulab tushadi va jamoa tahlilga ishonchini yo'qotadi.
+
+Sabab uchta joydan keladi. Birinchi: new code davri loyiha sozlamasida noto'g'ri tanlangan, masalan reference branch sifatida server da mavjud bo'lmagan branch ko'rsatilgan. Ikkinchi: CI shallow clone qiladi, shuning uchun git tarixi yo'q va Sonar qaysi qator qachon o'zgarganini aniqlay olmaydi. Uchinchi: SCM provider aniqlanmagan, masalan ishchi katalog git repository emas yoki `.git` papkasi konteynerga tushmagan.
+
+Tekshirish usuli: mahalliy git tarixi chuqurligini va scanner log idagi SCM bo'limini ko'ring. Log da blame ma'lumoti to'planayotgani yoki SCM ma'lumoti yo'qligi haqida shunga o'xshash ogohlantirish bo'ladi.
+
+```bash
+# Tarix chuqurligi: shallow clone bo'lsa bu fayl mavjud bo'ladi
+test -f .git/shallow && echo "SHALLOW clone, tarix to'liq emas"
+git rev-list --count HEAD
+
+# Reference branch mahalliy va remote da bormi
+git branch -r | grep -E "origin/(main|develop|release)"
+
+# scanner log ida SCM va blame bo'limi
+grep -n -i -E "scm|blame|shallow" /tmp/sonar.log
+```
+
+Yechim: CI da to'liq tarixni oling va reference branch ni server da mavjud branch ga qaratib qo'ying. Reference branch ni belgilash usuli Sonar versiyasiga qarab farq qiladi, shuning uchun avval loyihaning New Code sozlamalarini interfeysdan tasdiqlang.
+
+```yaml
+# GitHub Actions: Sonar uchun to'liq tarix shart
+- uses: actions/checkout@v4
+  with:
+    # 0 degani butun tarix, shallow clone o'chiriladi
+    fetch-depth: 0
+- name: Build va tahlil
+  run: mvn -B clean verify sonar:sonar
+  env:
+    SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+```
+
+### 42.5 Tahlil "project not found" yoki kalit mos kelmasligi bilan tushadi
+
+Belgi: scanner serverga ulanadi, lekin loyihani topa olmaydi yoki huquq yetmasligini aytadi. Xabar matni versiyaga qarab farq qiladi, shunga o'xshash "project not found" yoki "insufficient privileges" mazmunidagi qator bo'ladi.
+
+Sabab to'rtta. Birinchi: `sonar.projectKey` qiymati server dagi kalitdan farq qiladi, masalan `com.shop:payment` va `shop-payment` adashtirilgan. Ikkinchi: loyiha hali yaratilmagan va server da avtomatik yaratish o'chirilgan. Uchinchi: token boshqa loyihaga bog'langan project token. To'rtinchi: `sonar.host.url` noto'g'ri, masalan reverse proxy orqasidagi kontekst yo'li tushib qolgan.
+
+Tekshirish usuli: avval kalitni log dan o'qing, keyin shu kalitni server API orqali so'rang. Agar API javobi bo'sh bo'lsa, kalit mos emas. Agar javob huquq xatosi bo'lsa, muammo token da.
+
+```bash
+# scanner qaysi kalit va qaysi URL bilan ishlaganini log dan o'qish
+grep -n -E "projectKey|host.url|Project key" /tmp/sonar.log
+
+# server dagi loyiha haqiqatan shu kalit bilan mavjudmi
+curl -s -u "$SONAR_TOKEN:" \
+  "$SONAR_HOST/api/projects/search?projects=com.shop:payment-service" | head -c 400
+
+# token umuman ishlayaptimi (autentifikatsiya tekshiruvi)
+curl -s -o /dev/null -w "%{http_code}\n" -u "$SONAR_TOKEN:" \
+  "$SONAR_HOST/api/authentication/validate"
+```
+
+Yechim: kalitni bitta joyda, `pom.xml` yoki `sonar-project.properties` ichida saqlang va CI dan qayta bermang. Kalitni hech qachon branch nomi yoki build raqami bilan aralashtirmang, aks holda har build yangi loyiha yaratadi va new code tarixi yo'qoladi.
+
+### 42.6 Scanner xotira yetishmasligidan tushadi
+
+Belgi: tahlil o'rtasida jarayon `OutOfMemoryError` bilan to'xtaydi yoki CI konteyneri jarayonni o'ldiradi. Ko'pincha bu katta monolit loyihalarda, generated kod ko'p bo'lganda yoki juda uzun fayllar mavjud bo'lganda yuz beradi.
+
+Sabab ikkitadir. Birinchi: scanner JVM heap i kichik, chunki hech kim uni sozlamagan. Ikkinchi: konteynerning umumiy xotira limiti heap dan kichik, shuning uchun OS jarayonni o'ldiradi va log da hatto xato ham qolmaydi.
+
+Tekshirish usuli: log oxiridagi qatorni ko'ring. Agar `OutOfMemoryError` bo'lsa, heap kichik. Agar log hech qanday xatosiz kesilgan bo'lsa va exit kod 137 bo'lsa, konteyner limiti sabab.
+
+```bash
+# Oxirgi build ning chiqish kodi: 137 konteyner o'ldirganini bildiradi
+echo "exit code: $?"
+
+# log da xotira haqidagi qatorlar
+grep -n -E "OutOfMemory|GC overhead|Killed" /tmp/sonar.log
+
+# scanner uchun heap ni oshirish (Maven plugin orqali ishlaganda MAVEN_OPTS)
+export SONAR_SCANNER_OPTS="-Xmx4g"
+export MAVEN_OPTS="-Xmx4g"
+mvn -B clean verify sonar:sonar
+```
+
+Yechim: heap ni oshirish birinchi qadam, lekin yakuniy yechim emas. Tahlilga kiradigan fayl hajmini kamaytirish ko'proq foyda beradi, chunki generated kod va minifikatsiya qilingan resurslar tahlilga hech qanday qiymat qo'shmaydi. Konteyner limitini heap dan kamida 25 foiz kattaroq qilib qo'ying.
+
+### 42.7 Tahlil juda uzoq davom etadi
+
+Belgi: Sonar qadami butun pipeline vaqtining yarmidan ko'pini oladi. Jamoa buni sezadi va tahlilni faqat kechasi ishlaydigan qadamga ko'chirishni so'raydi, bu esa fikr qaytishini sekinlashtiradi.
+
+Sabab bir nechta. Birinchi: `node_modules`, `target`, `build` va generated manbalar indekslanmoqda. Ikkinchi: juda katta bitta fayl tahlilga kirgan, masalan SQL dump yoki minifikatsiya qilingan JS. Uchinchi: har build da butun tarix bo'yicha blame qayta o'qilmoqda, chunki SCM cache ishlamaydi. To'rtinchi: server navbati band va scanner javobni kutib turadi, ya'ni sekinlik scanner da emas.
+
+Tekshirish usuli: log dagi sensor vaqtlarini o'qing. Scanner har bir sensor uchun ketgan vaqtni yozadi, shuning uchun eng qimmat qadamni topish mumkin.
+
+```bash
+# Eng uzoq ishlagan sensorlarni topish
+grep -E "Sensor .* \(done\)" /tmp/sonar.log | sort -t= -k2 -rn | head -15
+
+# Indekslangan fayl soni: kutilganidan katta bo'lsa exclusion kerak
+grep -n -E "files indexed|indexing" /tmp/sonar.log
+
+# Eng katta manba fayllarni topish
+find src -type f -name "*.java" -size +200k -exec ls -lh {} \;
+```
+
+```properties
+# Tahlil hajmini kamaytirish: generated va qurilgan kod chiqariladi
+sonar.sources=src/main/java,src/main/resources
+sonar.exclusions=**/target/**,**/build/**,**/node_modules/**,\
+  **/generated/**,**/*.min.js,**/db/migration/**
+# Katta binar va dump fayllar
+sonar.exclusions=${sonar.exclusions},**/*.sql.gz,**/*.pdf
+```
+
+### 42.8 Java versiyasi mos kelmasligi va kompilyatsiya qilingan klass topilmasligi
+
+Belgi: tahlil tugaydi, lekin issue lar soni kutilganidan ancha kam. Log da bytecode topilmagani yoki tilning versiyasi mos emasligi haqida shunga o'xshash ogohlantirish bo'ladi. Bu holat xavfli, chunki tahlil "yashil" ko'rinadi, lekin aslida yarim ishlagan.
+
+Sabab uchta. Birinchi: tahlil `compile` dan oldin ishga tushgan, shuning uchun `target/classes` bo'sh. Ikkinchi: CI dagi JDK versiyasi loyiha talabidan past, masalan kod Java 21 xususiyatlaridan foydalanadi, JDK 17 bilan parsing xato beradi. Uchinchi: `sonar.java.source` qiymati haqiqiy kompilyatsiya versiyasiga mos emas. Sonar ning qaysi JDK versiyasida ishlashi va qaysi til versiyasini tahlil qila olishi server versiyasiga qarab farq qiladi, shuning uchun yangilanishdan oldin moslik jadvalini tekshirish kerak.
+
+Tekshirish usuli: JDK versiyalarini va `target/classes` ichidagi klass sonini ko'ring, keyin log dagi bytecode haqidagi ogohlantirishni izlang.
+
+```bash
+# Scanner qaysi JDK da ishlayapti va Maven qaysi JDK ni ko'radi
+java -version 2>&1 | head -2
+mvn -v | head -3
+
+# Kompilyatsiya qilingan klasslar bormi
+find . -path "*/target/classes" -name "*.class" | wc -l
+
+# log da bytecode va til versiyasi haqidagi ogohlantirishlar
+grep -n -i -E "bytecode|binaries|not compiled|source version|preview" /tmp/sonar.log
+```
+
+Yechim: tahlilni har doim `verify` yoki kamida `test-compile` dan keyin ishga tushiring va `sonar.java.binaries` ni aniq ko'rsating. Java versiyasini build fayli va CI muhitida bir xil qiymatda saqlang.
+
+```properties
+# Bytecode yo'llari: bularsiz ko'p qoida ishga tushmaydi
+sonar.java.binaries=target/classes
+sonar.java.test.binaries=target/test-classes
+sonar.java.libraries=target/dependency/*.jar
+# Til versiyasi kompilyatsiya versiyasiga teng bo'lishi kerak
+sonar.java.source=21
+```
+
+### 42.9 Pull request tahlili ko'rinmaydi yoki izohlar qo'yilmaydi
+
+Belgi: PR ochilgan, CI o'tgan, lekin Sonar da PR alohida ko'rinmaydi. Yoki PR ko'rinadi, ammo GitHub yoki GitLab ichida izoh va status yo'q.
+
+Sabab to'rtta. Birinchi: PR xossalari scanner ga berilmagan, shuning uchun tahlil branch tahlili sifatida yozilgan. Ikkinchi: CI "detached HEAD" holatida ishlaydi va branch nomi aniqlanmagan. Uchinchi: DevOps platforma integratsiyasi server da sozlanmagan yoki uning token i eskirgan. To'rtinchi: branch va PR tahlili litsenziya yoki edition cheklovi ostida, bu imkoniyat barcha edition larda mavjud emas.
+
+Tekshirish usuli: log da PR kaliti, source va target branch qiymatlari borligini ko'ring. Agar ular bo'sh bo'lsa, scanner PR ekanini bilmagan.
+
+```bash
+# PR xossalari scanner ga yetib bordimi
+grep -n -E "pullrequest|branch.name|Branch name" /tmp/sonar.log
+
+# Server da shu PR ro'yxatga olindimi
+curl -s -u "$SONAR_TOKEN:" \
+  "$SONAR_HOST/api/project_pull_requests/list?project=com.shop:payment-service" \
+  | head -c 400
+```
+
+```yaml
+# PR tahlili: kalit va branch nomlari aniq beriladi
+- name: Sonar PR tahlili
+  if: github.event_name == 'pull_request'
+  run: |
+    mvn -B clean verify sonar:sonar \
+      -Dsonar.pullrequest.key=${{ github.event.number }} \
+      -Dsonar.pullrequest.branch=${{ github.head_ref }} \
+      -Dsonar.pullrequest.base=${{ github.base_ref }}
+  env:
+    SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+```
+
+### 42.10 Gate natijasi CI da kutilmaydi yoki noto'g'ri o'qiladi
+
+Belgi: Sonar interfeysida quality gate qizil, lekin CI yashil tugaydi. Yoki aksincha, CI xato qaytaradi, lekin sababi tushunarsiz.
+
+Sabab ikkitadir. Birinchi: scanner tahlilni serverga yuborib, javobni kutmasdan chiqib ketadi, chunki kutish rejimi yoqilmagan. Tahlil server navbatida asinxron qayta ishlanadi, shuning uchun scanner ning muvaffaqiyatli chiqishi gate o'tganini bildirmaydi. Ikkinchi: pipeline gate natijasini o'qiydi, lekin branch yoki PR ni noto'g'ri ko'rsatadi, shuning uchun eski tahlil natijasini ko'radi.
+
+Tekshirish usuli: kutish rejimini yoqing va natijani alohida qadamda API dan o'qib ko'ring. Tahlil vazifasining holati `report-task.txt` faylida yozilgan bo'ladi.
+
+```bash
+# Scanner yozgan vazifa ma'lumoti
+cat target/sonar/report-task.txt
+
+# Vazifa holatini so'rash: SUCCESS bo'lgandan keyingina gate ni o'qish mantiqiy
+TASK_ID=$(grep '^ceTaskId=' target/sonar/report-task.txt | cut -d= -f2)
+curl -s -u "$SONAR_TOKEN:" "$SONAR_HOST/api/ce/task?id=$TASK_ID"
+
+# Gate holatini o'qish
+curl -s -u "$SONAR_TOKEN:" \
+  "$SONAR_HOST/api/qualitygates/project_status?projectKey=com.shop:payment-service"
+```
+
+Yechim: `sonar.qualitygate.wait=true` ni yoqing va timeout qiymatini CI qadami uchun aniq belgilang. Gate natijasini o'qiyotgan skript branch yoki PR parametrini scanner bilan bir xil berishi kerak.
+
+### 42.11 Issue lar kutilmaganda ko'payib ketdi
+
+Belgi: kod o'zgarmagan, lekin bir kunda issue soni yuzlab oshdi. Jamoa buni "Sonar buzildi" deb qabul qiladi, aslida sabab boshqa.
+
+Sabab uchta. Birinchi: quality profile yangilangan yoki yangi qoidalar yoqilgan. Ikkinchi: server yoki Java analyzer plugini yangi versiyaga o'tgan va mavjud qoidalar aniqroq ishlay boshlagan. Uchinchi: exclusion ro'yxati o'zgargan va ilgari tahlildan tashqarida bo'lgan katta modul ichkariga kirgan.
+
+Tekshirish usuli: loyiha tarixida sakrash sodir bo'lgan sanani toping, keyin shu sanadagi profile o'zgarishini va server yangilanishini solishtiring. Sonar profile o'zgarishlari tarixini saqlaydi, shuning uchun bu taqqoslash aniq javob beradi.
+
+```bash
+# Loyihada ishlatilgan profile va uning oxirgi o'zgarishi
+curl -s -u "$SONAR_TOKEN:" \
+  "$SONAR_HOST/api/qualityprofiles/search?project=com.shop:payment-service"
+
+# Issue larni yaratilgan sanaga ko'ra guruhlab ko'rish
+curl -s -u "$SONAR_TOKEN:" \
+  "$SONAR_HOST/api/issues/search?componentKeys=com.shop:payment-service&facets=createdAt&ps=1"
+```
+
+Yechim: profile o'zgarishini alohida, rejalashtirilgan ish sifatida qabul qiling. Yangi qoidalarni butun tarixga emas, new code ga qarshi qo'llang. Eski kod uchun qarzni alohida backlog da yuritish jamoani blok qilmaydi.
+
+### 42.12 Fayllar tahlilga umuman kirmagan
+
+Belgi: Sonar da loyiha bor, lekin fayl soni haqiqiy kodga mos kelmaydi. Masalan 400 ta Java faylli loyiha uchun 12 ta fayl ko'rsatiladi.
+
+Sabab to'rtta. Birinchi: `sonar.sources` noto'g'ri katalogga qaratilgan. Ikkinchi: exclusion pattern juda keng, masalan `**/*Service*` kabi ehtiyotsiz qoida. Uchinchi: multi module loyihada faqat ildiz module tahlil qilingan, chunki `mvn` buyrug'i submodule ichida ishga tushgan. To'rtinchi: fayl kodlash muammosi tufayli ba'zi fayllar o'qilmagan.
+
+Tekshirish usuli: scanner log ida indekslangan fayl sonini va ko'rib chiqilgan katalog ro'yxatini o'qing. Bu raqamni `find` natijasi bilan solishtiring.
+
+```bash
+# Haqiqiy fayl soni
+find src/main/java -name "*.java" | wc -l
+
+# Scanner nechta fayl indeksladi va qaysi katalogdan
+grep -n -E "indexed|Base dir|Source paths|Excluded" /tmp/sonar.log
+
+# Kodlash muammosi bo'lgan fayllarni qidirish
+grep -n -i -E "encoding|unsupported character" /tmp/sonar.log
+```
+
+### 42.13 Test fayllari manba sifatida hisoblangan
+
+Belgi: issue lar ichida test klasslari ko'rinadi, coverage past hisoblanadi va duplikatsiya ko'rsatkichi sun'iy ravishda oshib ketadi. Sababi oddiy: Sonar test kodini manba kod deb qabul qilgan.
+
+Sabab ikkitadir. Birinchi: `sonar.tests` ko'rsatilmagan, shuning uchun `src/test/java` ham manba sifatida indekslangan. Ikkinchi: test kodi manba katalogi ichida yotadi, masalan integratsion test lar `src/main` ostida qolib ketgan.
+
+Tekshirish usuli: Sonar interfeysida bitta test faylni oching va uning turini ko'ring. Log da manba va test katalogi ro'yxati alohida yoziladi, shuni solishtiring.
+
+```properties
+# Manba va test kodi aniq ajratiladi
+sonar.sources=src/main/java
+sonar.tests=src/test/java,src/integrationTest/java
+sonar.test.inclusions=**/*Test.java,**/*Tests.java,**/*IT.java
+# Test kodidagi duplikatsiya ko'pincha normal, shuning uchun chiqariladi
+sonar.cpd.exclusions=**/*Test.java,**/*IT.java
+```
+
+Yechim: test kodini alohida source set ga chiqaring va `sonar.tests` ni doim to'ldiring. Testlash qo'llanmasidagi integratsion test larni ajratish mavzusi bu ajratishni build darajasida qanday qilishni tushuntiradi.
+
+### 42.14 Server javob bermaydi yoki navbat to'lib qolgan
+
+Belgi: scanner tahlilni yuboradi, lekin natija interfeysda paydo bo'lmaydi. Yoki tahlil "pending" holatida uzoq turadi. Bu holat scanner muammosi emas, server muammosi.
+
+Sabab to'rtta. Birinchi: Compute Engine navbati band, chunki bir vaqtda juda ko'p katta tahlil kelgan. Ikkinchi: ma'lumotlar bazasi sekin yoki disk joy tugagan. Uchinchi: Elasticsearch indeksi buzilgan va server read-only rejimga o'tgan. To'rtinchi: reverse proxy so'rov hajmi limiti tufayli katta tahlil hisobotini o'tkazmagan.
+
+Tekshirish usuli: avval server sog'ligini va navbat holatini so'rang, keyin server log ini ko'ring. Javobda navbatdagi vazifalar soni va ularning kutish vaqti bo'ladi.
+
+```bash
+# Server sog'ligi va tizim holati
+curl -s -u "$SONAR_TOKEN:" "$SONAR_HOST/api/system/health"
+curl -s -u "$SONAR_TOKEN:" "$SONAR_HOST/api/system/status"
+
+# Navbatdagi va ishlayotgan tahlil vazifalari
+curl -s -u "$SONAR_TOKEN:" "$SONAR_HOST/api/ce/activity_status"
+
+# Server log larida xato darajasidagi qatorlar
+grep -n -E "ERROR|WARN" /opt/sonarqube/logs/ce.log | tail -30
+grep -n -E "ERROR|read-only|disk" /opt/sonarqube/logs/es.log | tail -20
+```
+
+Yechim: navbat muntazam to'lib turadigan bo'lsa, Compute Engine worker sonini va server resurslarini oshirish kerak. Tahlil hajmini kamaytirish ham yordam beradi, chunki kichik hisobot tezroq qayta ishlanadi. Ma'lumotlar bazasidagi eski tahlil snapshot larini tozalash siyosatini yoqib qo'ying.
+
+Ba'zan muammo ma'lumotlar bazasi darajasida bo'ladi. Bunda jadval hajmini ko'rish qaysi ma'lumot o'sib ketganini aytadi.
+
+```sql
+-- Eng katta jadvallarni topish: issue va snapshot tarixi odatda birinchi o'rinda
+SELECT relname AS jadval,
+       pg_size_pretty(pg_total_relation_size(relid)) AS hajm
+FROM pg_catalog.pg_statio_user_tables
+ORDER BY pg_total_relation_size(relid) DESC
+LIMIT 10;
+```
+
+### 42.15 Tuzoq va yechim
+
+| Tuzoq | Nima uchun xato | Yechim |
+|---|---|---|
+| Coverage 0% ni ko'rib gate chegarasini pasaytirish | sabab o'lchovda, chegarada emas | XML hisobot zanjirini tuzatish |
+| Tahlilni `verify` dan oldin ishga tushirish | bytecode va hisobot hali yo'q | tahlilni `verify` dan keyinga qo'yish |
+| Har branch uchun yangi projectKey | new code tarixi yo'qoladi | kalitni bitta joyda qotirish |
+| Shallow clone ni qoldirish | blame va new code ishlamaydi | `fetch-depth: 0` qo'yish |
+| Heap ni cheksiz oshirish | konteyner jarayonni o'ldiradi | exclusion bilan hajmni kamaytirish |
+| Issue ko'payganda qoidalarni o'chirish | real muammolar yashiriladi | new code ga qarshi qo'llash |
+| Test kodini exclusion bilan butunlay yashirish | test sifati ko'rinmay qoladi | `sonar.tests` bilan ajratish |
+| Gate natijasini kutmasdan CI ni yashil deb hisoblash | qizil gate sezilmay qoladi | `qualitygate.wait` yoqish |
+
+### 42.16 Oddiy yondashuv va arxitektor yondashuvi
+
+| Holat | Oddiy yondashuv | Arxitektor yondashuvi |
+|---|---|---|
+| Coverage 0% | gate shartini olib tashlash | hisobot zanjirini qadam bo'yicha tekshirish |
+| Diagnostika | log ni ko'zdan kechirish | aniq kalit so'z bilan grep qilish |
+| New code bo'sh | butun loyiha shartiga o'tish | reference branch va git tarixini tuzatish |
+| Sekin tahlil | tahlilni kechaga ko'chirish | exclusion bilan indeks hajmini kamaytirish |
+| Xotira xatosi | heap ni ikki barobar oshirish | konteyner limiti va fayl hajmini birga sozlash |
+| Issue portlashi | qoidalarni o'chirish | profile o'zgarishi sanasini aniqlash |
+| PR tahlili yo'q | qo'lda branch tahliliga qaytish | PR xossalarini pipeline da shartli berish |
+| Gate CI da o'qilmaydi | qadamni `continue-on-error` qilish | vazifa holatini API dan kutib o'qish |
+| Takrorlanuvchi muammo | har safar qo'lda tuzatish | diagnostika skriptini repository ga qo'shish |
+
+### 42.17 Amalda qo'llash
+
+- [ ] Loyihada `mvn clean verify sonar:sonar -Dsonar.verbose=true` ni ishga tushirib, log ni faylga saqlang va JaCoCo sensori qatorini toping.
+- [ ] `target/site/jacoco/jacoco.xml` faylida nol bo'lmagan `covered` qiymatlari borligini tasdiqlang.
+- [ ] CI checkout qadamida to'liq git tarixi olinayotganini tekshirib, shallow clone ni o'chiring.
+- [ ] `sonar.projectKey`, `sonar.sources`, `sonar.tests` va `sonar.java.binaries` qiymatlarini bitta konfiguratsiya faylida qotirib qo'ying.
+- [ ] `sonar.qualitygate.wait` ni yoqib, qizil gate da pipeline chindan ham to'xtashini atayin buzilgan commit bilan sinab ko'ring.
+- [ ] Indekslangan fayl sonini haqiqiy fayl soni bilan solishtirib, exclusion ro'yxatini qayta ko'rib chiqing.
+- [ ] Server sog'ligi va Compute Engine navbati holatini tekshiradigan kichik skript yozib, uni jamoa wiki siga qo'shing.
+- [ ] Shu bobdagi tekshiruv buyruqlarini `scripts/sonar-diagnose.sh` fayliga yig'ib, repository ga commit qiling.
+
+## 43. Tezkor ma'lumotnoma: parametrlar, buyruqlar, glossariy (Quick Reference and Glossary)
+
+Bu bob tushuntirish uchun emas, qarash uchun yozilgan. Unda eng ko'p ishlatiladigan parametrlar, buyruqlar, metrika kalitlari va atamalar bir joyda to'plangan. Har bir jadvalda faqat amalda tasdiqlangan nomlar bor, shubhali nom esa umuman kiritilmagan. Shuning uchun bu ro'yxatni to'liq deb hisoblamang va aniq versiyangizdagi to'liq ro'yxatni serverdagi `/web_api` sahifasidan oling.
+
+### 43.1 Eng ko'p ishlatiladigan `sonar.*` parametrlari
+
+| Parametr | Ma'nosi | Namuna qiymati |
+|---|---|---|
+| `sonar.projectKey` | Loyihaning server ichidagi yagona kaliti | `com.example:orders-service` |
+| `sonar.projectName` | Interfeysda ko'rinadigan nom | `Orders Service` |
+| `sonar.projectVersion` | Tahlilga yoziladigan versiya belgisi | `1.4.0` |
+| `sonar.sources` | Asosiy manba kataloglari | `src/main/java` |
+| `sonar.tests` | Test manbalari katalogi | `src/test/java` |
+| `sonar.sourceEncoding` | Fayllarning kodlashi | `UTF-8` |
+| `sonar.projectBaseDir` | Tahlil boshlanadigan ildiz katalog | `.` |
+| `sonar.host.url` | SonarQube server manzili | `https://sonar.example.com` |
+| `sonar.token` | Autentifikatsiya tokeni | `${SONAR_TOKEN}` |
+| `sonar.java.binaries` | Kompilyatsiya qilingan asosiy klasslar | `target/classes` |
+| `sonar.java.test.binaries` | Kompilyatsiya qilingan test klasslari | `target/test-classes` |
+| `sonar.java.libraries` | Bog'liqlik jar fayllari | `target/dependency/*.jar` |
+| `sonar.java.source` | Java til darajasi | `17` |
+| `sonar.java.jdkHome` | Tahlil uchun JDK yo'li | `/usr/lib/jvm/jdk-21` |
+| `sonar.qualitygate.wait` | Scanner gate natijasini kutadi | `true` |
+| `sonar.qualitygate.timeout` | Kutish chegarasi, sekund | `300` |
+| `sonar.scm.provider` | SCM turi, blame uchun | `git` |
+| `sonar.scm.disabled` | SCM o'qishini o'chirish | `false` |
+| `sonar.verbose` | Batafsil log | `true` |
+
+Token uchun eski `sonar.login` va `sonar.password` juftligi hali ishlashi mumkin, lekin yangi liniyalarda `sonar.token` tavsiya qilinadi. To'liq ro'yxatni serverdagi `/web_api` sahifasidan oling.
+
+### 43.2 Qamrov va hisobot yo'llari uchun parametrlar
+
+| Parametr | Ma'nosi | Namuna qiymati |
+|---|---|---|
+| `sonar.coverage.jacoco.xmlReportPaths` | JaCoCo XML hisobot yo'li yoki yo'llari | `target/site/jacoco/jacoco.xml` |
+| `sonar.junit.reportPaths` | Test natijalari XML katalogi | `target/surefire-reports` |
+| `sonar.coverage.exclusions` | Qamrov talabidan chiqariladigan fayllar | `**/config/**,**/dto/**` |
+
+Multi module loyihada har bir modulning XML hisobotini vergul bilan sanash yoki birlashtirilgan hisobot yaratish kerak. Sonar faqat XML ni o'qiydi, HTML va `exec` fayl unga yaramaydi.
+
+```properties
+# Loyiha identifikatori: server ichida yagona bo'lishi shart
+sonar.projectKey=com.example:orders-service
+sonar.projectName=Orders Service
+# Manba va test kataloglari
+sonar.sources=src/main/java
+sonar.tests=src/test/java
+# Java tahlili uchun kompilyatsiya natijasi majburiy
+sonar.java.binaries=target/classes
+sonar.java.test.binaries=target/test-classes
+sonar.java.source=17
+# Kodlash: aks holda o'zbek matni buzilib ko'rinadi
+sonar.sourceEncoding=UTF-8
+# Qamrov: faqat XML hisobot qabul qilinadi
+sonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+sonar.junit.reportPaths=target/surefire-reports
+# Generatsiya qilingan kod tahlildan chiqariladi
+sonar.exclusions=**/generated/**,**/*MapperImpl.java
+```
+
+### 43.3 Exclusion parametrlari va ularning farqi
+
+| Parametr | Nimaga ta'sir qiladi | Qachon ishlatiladi |
+|---|---|---|
+| `sonar.exclusions` | Fayl umuman tahlil qilinmaydi, metrikaga kirmaydi | Generatsiya qilingan va migratsiya kodi |
+| `sonar.inclusions` | Faqat sanalgan fayllar tahlil qilinadi | Katta repozitoriyning bir qismini olish |
+| `sonar.test.exclusions` | Test fayllari tahlildan chiqariladi | Katta avtogeneratsiya test to'plami |
+| `sonar.test.inclusions` | Faqat sanalgan test fayllari olinadi | Test papkasining bir qismini tahlil qilish |
+| `sonar.coverage.exclusions` | Fayl tahlil qilinadi, lekin qamrov talab qilinmaydi | DTO, konfiguratsiya, `main` klassi |
+| `sonar.cpd.exclusions` | Fayl dublikat tekshiruvidan chiqariladi | Takrorlanishi tabiiy bo'lgan sxema klasslari |
+| `sonar.issue.ignore.multicriteria` | Tanlangan qoida tanlangan faylda o'chiriladi | Bitta qoida bitta qatlamga mos kelmaganda |
+
+Eng ko'p uchraydigan xato `sonar.exclusions` ni qamrov uchun ishlatish. Agar maqsad faqat qamrov talabini yumshatish bo'lsa, `sonar.coverage.exclusions` ishlatiladi.
+
+```java
+// JaCoCo 0.8.x nomi "Generated" so'zini o'z ichiga olgan annotatsiyani
+// ko'rsa, o'sha klass yoki metodni qamrov hisobidan chiqarib tashlaydi.
+// Shart: annotatsiya retention CLASS yoki RUNTIME bo'lishi kerak.
+@Retention(RetentionPolicy.CLASS)
+@Target({ElementType.TYPE, ElementType.METHOD})
+public @interface GeneratedByBuild {
+}
+
+// Shu annotatsiya qo'yilgan klass qamrov raqamini pasaytirmaydi,
+// lekin Sonar qoidalari unga baribir qo'llanadi.
+@GeneratedByBuild
+public final class OrderRowMapperImpl {
+    // ombor qatorini obyektga o'girish uchun generatsiya qilingan kod
+}
+```
+
+### 43.4 Pull request va branch parametrlari
+
+| Parametr | Ma'nosi | Namuna qiymati |
+|---|---|---|
+| `sonar.branch.name` | Tahlil qilinayotgan branch nomi | `feature/payment-retry` |
+| `sonar.pullrequest.key` | Pull request raqami yoki identifikatori | `1428` |
+| `sonar.pullrequest.branch` | Manba branch nomi | `feature/payment-retry` |
+| `sonar.pullrequest.base` | Nishon branch nomi | `main` |
+| `sonar.newCode.referenceBranch` | New code uchun taqqoslash branchi | `main` |
+
+Ko'p CI integratsiyalarida bu parametrlar avtomatik aniqlanadi va ularni qo'lda berish shart emas. Qo'lda berish kerak bo'lgan holat: o'z skriptingiz yoki standart bo'lmagan CI. `sonar.branch.name` va pull request parametrlarini bir vaqtda berish xato hisoblanadi.
+
+```yaml
+# CI da tahlil: avval test va qamrov, keyin Sonar, keyin gate kutish
+analyze:
+  stage: verify
+  variables:
+    # shallow clone blame ma'lumotini buzadi, shuning uchun to'liq tarix
+    GIT_DEPTH: "0"
+  script:
+    - mvn -B clean verify
+    - >
+      mvn -B sonar:sonar
+      -Dsonar.host.url=$SONAR_HOST_URL
+      -Dsonar.token=$SONAR_TOKEN
+      -Dsonar.qualitygate.wait=true
+      -Dsonar.qualitygate.timeout=600
+  # gate yiqilsa quvur ham yiqiladi
+  allow_failure: false
+```
+
+### 43.5 Maven buyruqlari to'plami
+
+```bash
+# To'liq zanjir: test, qamrov hisoboti, keyin tahlil
+mvn -B clean verify sonar:sonar
+
+# Plugin versiyasini qat'iy ko'rsatib chaqirish
+mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+
+# Parametrlarni buyruq satridan berish
+mvn -B sonar:sonar -Dsonar.host.url=https://sonar.example.com \
+  -Dsonar.token="$SONAR_TOKEN" -Dsonar.projectKey=com.example:orders
+
+# Gate natijasini kutish: CI uchun asosiy shart
+mvn -B sonar:sonar -Dsonar.qualitygate.wait=true
+
+# Faqat qamrov hisobotini yangilash
+mvn -B test jacoco:report
+
+# Tahlilni muhokama qilish uchun batafsil log
+mvn -B sonar:sonar -Dsonar.verbose=true
+
+# Testni o'tkazib yuborish: qamrov nolga tushadi, ehtiyot bo'ling
+mvn -B clean install -DskipTests sonar:sonar
+```
+
+```xml
+<build>
+  <plugins>
+    <plugin>
+      <groupId>org.jacoco</groupId>
+      <artifactId>jacoco-maven-plugin</artifactId>
+      <version>0.8.12</version>
+      <executions>
+        <!-- agent testdan oldin ulanadi -->
+        <execution>
+          <goals><goal>prepare-agent</goal></goals>
+        </execution>
+        <!-- XML hisobot verify fazasida yoziladi -->
+        <execution>
+          <id>jacoco-report</id>
+          <phase>verify</phase>
+          <goals><goal>report</goal></goals>
+        </execution>
+      </executions>
+    </plugin>
+    <plugin>
+      <groupId>org.sonarsource.scanner.maven</groupId>
+      <artifactId>sonar-maven-plugin</artifactId>
+      <!-- aniq versiyani Maven Central dan tanlang -->
+      <version>${sonar-maven-plugin.version}</version>
+    </plugin>
+  </plugins>
+</build>
+```
+
+### 43.6 Gradle buyruqlari to'plami
+
+```bash
+# Plugin 4.x va yuqorisida vazifa nomi "sonar"
+./gradlew test jacocoTestReport sonar
+
+# Eski plugin liniyasida vazifa nomi "sonarqube"
+./gradlew test jacocoTestReport sonarqube
+
+# Parametrlarni buyruq satridan berish
+./gradlew sonar -Dsonar.host.url=https://sonar.example.com \
+  -Dsonar.token="$SONAR_TOKEN"
+
+# Gate natijasini kutish
+./gradlew sonar -Dsonar.qualitygate.wait=true
+
+# Ko'p modulli qurilmada bitta modulni tahlil qilish
+./gradlew :orders-service:test :orders-service:sonar
+
+# Nima bajarilishini oldin ko'rish
+./gradlew sonar --dry-run
+```
+
+Gradle da qamrov hisoboti XML ko'rinishida yoqilgan bo'lishi kerak. `jacocoTestReport` vazifasining `reports` blokida `xml.required` ni `true` qilish shart.
+
+### 43.7 Mustaqil scanner va Docker orqali ishga tushirish
+
+```bash
+# Mustaqil scanner: sonar-project.properties fayliga tayanadi
+sonar-scanner -Dsonar.host.url="$SONAR_HOST_URL" -Dsonar.token="$SONAR_TOKEN"
+
+# Scanner ni Docker ichida yuritish: joriy katalog ulanadi
+docker run --rm \
+  -e SONAR_HOST_URL="$SONAR_HOST_URL" \
+  -e SONAR_TOKEN="$SONAR_TOKEN" \
+  -v "$(pwd):/usr/src" \
+  sonarsource/sonar-scanner-cli
+
+# Mahalliy tajriba uchun server ko'tarish
+docker run -d --name sonarqube -p 9000:9000 sonarqube:community
+
+# Server tayyor bo'lganini tekshirish
+curl -s http://localhost:9000/api/system/status
+```
+
+Mahalliy serverda dastlabki kirish `admin` va `admin` juftligi bilan bo'ladi va parolni darhol almashtirish talab qilinadi. Docker da ko'tarilgan server ma'lumotlarini saqlash uchun `data`, `extensions` va `logs` kataloglarini volume qilish kerak.
+
+### 43.8 Foydali `curl` so'rovlari
+
+```bash
+# Token bilan autentifikatsiya: token foydalanuvchi nomi o'rnida
+AUTH="-u $SONAR_TOKEN:"
+
+# Server versiyasi
+curl -s "$SONAR_HOST_URL/api/server/version"
+
+# Token haqiqiyligini tekshirish
+curl -s $AUTH "$SONAR_HOST_URL/api/authentication/validate"
+
+# Quality gate natijasi: CI uchun eng kerakli so'rov
+curl -s $AUTH "$SONAR_HOST_URL/api/qualitygates/project_status?projectKey=com.example:orders"
+
+# Bir nechta metrikani birdan olish
+curl -s $AUTH "$SONAR_HOST_URL/api/measures/component?component=com.example:orders&metricKeys=coverage,ncloc,bugs"
+
+# Ochiq issue larni qidirish
+curl -s $AUTH "$SONAR_HOST_URL/api/issues/search?componentKeys=com.example:orders&severities=BLOCKER,CRITICAL"
+
+# Security hotspot ro'yxati
+curl -s $AUTH "$SONAR_HOST_URL/api/hotspots/search?projectKey=com.example:orders"
+
+# Tahlil vazifasi holati
+curl -s $AUTH "$SONAR_HOST_URL/api/ce/activity?component=com.example:orders"
+```
+
+Yangi liniyalarda `Authorization: Bearer <token>` sarlavhasi ham qabul qilinadi. Qaysi endpoint qanday parametr olishini aniq bilish uchun serverdagi `/web_api` sahifasini oching, chunki u aynan sizning versiyangiz uchun generatsiya qilinadi.
+
+### 43.9 Metrika kalitlari
+
+| Kalit | Ma'nosi |
+|---|---|
+| `ncloc` | Izoh va bo'sh qatorsiz kod qatorlari soni |
+| `lines` | Fayldagi barcha qatorlar soni |
+| `complexity` | Siklomatik murakkablik yig'indisi |
+| `cognitive_complexity` | Kognitiv murakkablik yig'indisi |
+| `coverage` | Umumiy qamrov, qator va shart birgalikda |
+| `line_coverage` | Qator qamrovi, foiz |
+| `branch_coverage` | Shart qamrovi, foiz |
+| `lines_to_cover` | Qamrashga tegishli qatorlar soni |
+| `uncovered_lines` | Qamrab olinmagan qatorlar soni |
+| `conditions_to_cover` | Qamrashga tegishli shartlar soni |
+| `uncovered_conditions` | Qamrab olinmagan shartlar soni |
+| `duplicated_lines` | Takrorlangan qatorlar soni |
+| `duplicated_lines_density` | Takrorlanish ulushi, foiz |
+| `duplicated_blocks` | Takrorlangan bloklar soni |
+| `violations` | Barcha issue soni |
+| `bugs` | Reliability toifasidagi issue soni |
+| `vulnerabilities` | Security toifasidagi issue soni |
+| `code_smells` | Maintainability toifasidagi issue soni |
+| `security_hotspots` | Qo'lda ko'rib chiqishga muhtoj joylar soni |
+| `sqale_index` | Technical debt, daqiqa hisobida |
+| `sqale_debt_ratio` | Debt ning taxminiy ishlab chiqish narxiga nisbati |
+| `sqale_rating` | Maintainability bahosi, A dan E gacha |
+| `reliability_rating` | Reliability bahosi |
+| `security_rating` | Security bahosi |
+| `security_review_rating` | Hotspot ko'rib chiqilganlik bahosi |
+| `alert_status` | Quality gate natijasi: `OK` yoki `ERROR` |
+| `tests` | Bajarilgan test soni |
+| `test_failures` | Muvaffaqiyatsiz test soni |
+
+Hajm metrikalari qatorida `files`, `classes`, `functions` va `statements` kalitlari ham bor. Test tomonida `test_errors`, `skipped_tests` va `test_execution_time` kalitlari ishlatiladi.
+
+New code uchun ko'p metrikaning `new_` prefiksli juftligi bor: `new_coverage`, `new_lines`, `new_bugs`, `new_vulnerabilities`, `new_code_smells`, `new_duplicated_lines_density`, `new_lines_to_cover`, `new_technical_debt`. To'liq ro'yxatni serverdagi `/web_api` sahifasidan, `api/metrics/search` bo'limidan oling.
+
+```sql
+-- Metrikani SonarQube ma'lumotlar bazasidan to'g'ridan to'g'ri o'qish
+-- qo'llab quvvatlanmaydi: jadval sxemasi versiyada ogohlantirishsiz o'zgaradi.
+-- Shuning uchun hisobotni Web API orqali oling va o'z bazangizga yozing.
+CREATE TABLE quality_snapshot (
+    project_key   VARCHAR(255) NOT NULL,
+    taken_at      TIMESTAMP    NOT NULL,
+    coverage      NUMERIC(5,2),
+    new_coverage  NUMERIC(5,2),
+    gate_status   VARCHAR(16)  NOT NULL,
+    CONSTRAINT pk_quality_snapshot PRIMARY KEY (project_key, taken_at)
+);
+
+-- Oxirgi o'n kunda gate necha marta yiqilgani
+SELECT project_key, COUNT(*) AS failures
+FROM quality_snapshot
+WHERE gate_status = 'ERROR'
+  AND taken_at >= now() - INTERVAL '10 days'
+GROUP BY project_key
+ORDER BY failures DESC;
+```
+
+### 43.10 Quality gate uchun boshlang'ich shartlar namunasi
+
+| Shart | Taklif qilinadigan chegara | Izoh |
+|---|---|---|
+| `new_coverage` | 80 foizdan kam bo'lsa yiqiladi | Yangi kodga nisbatan, eski kodga emas |
+| `new_duplicated_lines_density` | 3 foizdan oshsa yiqiladi | Nusxa ko'chirishni darhol ushlaydi |
+| `new_blocker_violations` yoki yangi issue soni | Noldan oshsa yiqiladi | Versiyaga qarab nom va shakl farq qiladi |
+| `new_security_hotspots_reviewed` | 100 foizdan kam bo'lsa yiqiladi | Hotspot ko'rib chiqilishi majburiy bo'ladi |
+| `new_reliability_rating` | A dan yomon bo'lsa yiqiladi | Yangi bug ga nol tolerantlik |
+| `new_security_rating` | A dan yomon bo'lsa yiqiladi | Yangi vulnerability ga nol tolerantlik |
+| `new_maintainability_rating` | A dan yomon bo'lsa yiqiladi | Yangi code smell ni cheklaydi |
+
+Standart `Sonar way` gate shu ruhda tuzilgan va u faqat new code ni tekshiradi. SonarQube 10 liniyasidan boshlab clean code taksonomiyasi joriy etilgani uchun ayrim shart nomlari o'zgargan, shuning uchun aniq nomni o'z serveringizdagi gate tahrirlash sahifasida tasdiqlang.
+
+### 43.11 Yangi loyihani boshlash uchun qadamlar
+
+1. Serverda loyiha yaratish va `projectKey` ni belgilash.
+2. CI uchun alohida token generatsiya qilish va uni secret sifatida saqlash.
+3. JaCoCo plugin ni qo'shish va XML hisobotni yoqish.
+4. `sonar.coverage.jacoco.xmlReportPaths` ni hisobot yo'liga moslash.
+5. Birinchi tahlilni mahalliy mashinada yuritib natijani ko'rish.
+6. Generatsiya qilingan kod va migratsiyalarni `sonar.exclusions` ga kiritish.
+7. DTO va konfiguratsiya klasslarini `sonar.coverage.exclusions` ga kiritish.
+8. New code definition ni tanlash: referens branch yoki oldingi versiya.
+9. Quality gate ni new code ga moslab sozlash.
+10. CI da `sonar.qualitygate.wait=true` ni yoqish, quvurni gate ga bog'lash va pull request tahlilini yoqish.
+
+### 43.12 Oddiy yondashuv va arxitektor yondashuvi
+
+| Mavzu | Oddiy yondashuv | Arxitektor yondashuvi |
+|---|---|---|
+| Gate sozlash | Umumiy qamrovga 80 foiz qo'yiladi | Faqat new code ga chegara qo'yiladi |
+| Exclusion | `sonar.exclusions` ga hammasi tashlanadi | Qamrov, dublikat va tahlil exclusion lari ajratiladi |
+| Token | Shaxsiy token CI ga yoziladi | CI uchun alohida texnik hisob tokeni ishlatiladi |
+| Qamrov hisoboti | `exec` fayl qoldiriladi va qamrov nol chiqadi | XML hisobot generatsiyasi qurilish qismiga kiritiladi |
+| CI xatti harakati | Tahlil yuboriladi va natija kutilmaydi | `qualitygate.wait` yoqiladi, quvur gate ga bog'lanadi |
+| Issue bilan ishlash | Qoidalar o'chiriladi | Qoida profilda muhokama qilinib moslanadi |
+| Dublikat | Nusxa ko'chirib qo'yiladi va exclusion yoziladi | Umumiy abstraksiya ajratiladi |
+| Hotspot | Hammasi `safe` deb yopiladi | Har biri sabab bilan hujjatlashtiriladi |
+| New code definition | Standart holda qoldiriladi | Relizlash modeliga mos tanlanadi |
+| Metrika kuzatuvi | Faqat gate rangiga qaraladi | `sqale_index` va `new_coverage` trendi kuzatiladi |
+| Multi module | Har bir modul alohida loyiha qilinadi | Bitta loyiha ichida modul tuzilmasi saqlanadi |
+
+### 43.13 Tuzoq va yechim
+
+| Tuzoq | Nima bo'ladi | Yechim |
+|---|---|---|
+| Qamrov nol ko'rsatadi | XML hisobot yo'li topilmadi | `xmlReportPaths` ni tekshirish va `jacoco:report` ni verify ga bog'lash |
+| Yangi kod butun loyiha deb ko'rinadi | Shallow clone, blame yo'q | CI da to'liq git tarixini olish |
+| Java qoidalari ishlamaydi | `sonar.java.binaries` berilmagan | Tahlildan oldin kompilyatsiya qilish |
+| Pull request tahlili xato beradi | Branch va PR parametrlari bir vaqtda berilgan | Faqat bittasini qoldirish |
+| Gate yashil, lekin xato ko'p | Shart faqat new code ga qo'yilgan | Eski debt uchun alohida reja tuzish |
+| Dublikat keskin oshdi | Generatsiya qilingan kod tahlilga kirdi | `sonar.cpd.exclusions` yoki `sonar.exclusions` qo'shish |
+| Tahlil juda sekin | Katta binar va resurs fayllar skanerlanadi | `sonar.exclusions` bilan ularni chiqarish |
+| Token ishlamay qoldi | Token muddati tugagan yoki bekor qilingan | Yangi token olish va secret ni yangilash |
+| Quvur gate ni kutmaydi | `qualitygate.wait` yoqilmagan | Parametrni yoqish va timeout berish |
+
+### 43.14 Glossariy
+
+- **issue**: Sonar topgan muammo yozuvi. Har bir issue bitta qoidaga va bitta joyga bog'langan.
+- **bug**: Reliability toifasidagi issue. Kodning kutilmagan natija berishi ehtimoli bor degan ma'noni beradi.
+- **vulnerability**: Security toifasidagi issue. Zaiflik mavjud deb baholangan joy.
+- **code smell**: Maintainability toifasidagi issue. Ishlaydi, lekin keyinchalik qimmatga tushadi.
+- **security hotspot**: Avtomatik hukm chiqarilmaydigan, qo'lda ko'rib chiqishni talab qiladigan joy. Natijasi `safe` yoki tasdiqlangan zaiflik bo'ladi.
+- **rule**: Bitta tekshiruv. Har bir qoida kalitga ega, masalan `java:S2259`.
+- **quality profile**: Tilga tegishli qoidalar to'plami. Loyihaga shu to'plam qo'llanadi.
+- **quality gate**: Tahlil natijasi uchun shartlar to'plami. Natija `OK` yoki `ERROR` bo'ladi.
+- **new code**: Taqqoslash nuqtasidan keyin o'zgargan kod. Gate shartlari asosan shunga qo'llanadi.
+- **new code definition**: New code ni qanday aniqlash qoidasi. Referens branch, versiya yoki kun soni bo'lishi mumkin.
+- **clean as you code**: Eski debt ni bir yo'la tozalamasdan, faqat yangi kodni toza saqlash yondashuvi.
+- **technical debt**: Issue larni tuzatishga ketadigan taxminiy vaqt. `sqale_index` metrikasi orqali o'lchanadi.
+- **SQALE**: Debt ni vaqt sifatida hisoblash va A dan E gacha baho berish modeli.
+- **severity**: Issue ning jiddiyligi. Profilga qarab o'zgaradi, shuning uchun uni mutlaq haqiqat deb olmaslik kerak.
+- **taint analysis**: Ishonchsiz manbadan kelgan ma'lumot xavfli joyga qanday yetib borishini kuzatuvchi tahlil. SQL injection va shunga o'xshash zaifliklarni topishda ishlatiladi.
+- **cyclomatic complexity**: Koddagi mustaqil yo'llar soni.
+- **cognitive complexity**: Kodni o'qib tushunish qiyinligini o'lchaydigan metrika. Ichma ich joylashish uni keskin oshiradi.
+- **coverage**: Testlar qamrab olgan kod ulushi. Sonar uni qamrov vositasining hisobotidan oladi.
+- **condition coverage**: Shart ifodalarining har bir natijasi sinalganlik ulushi.
+- **scanner**: Kodni o'qib ma'lumot yuboradigan mijoz. Maven plugin, Gradle plugin yoki mustaqil CLI shaklida bo'ladi.
+- **compute engine**: Serverda yuborilgan ma'lumotni qayta ishlab metrika va gate natijasini hisoblaydigan qism.
+- **false positive**: Noto'g'ri topilgan issue. Shu holatda issue sabab bilan yopiladi.
+- **accepted yoki won't fix**: Issue haqiqiy, lekin tuzatilmasligi qabul qilingan holat. Nom versiyaga qarab farq qiladi.
+- **exclusion**: Fayl yoki qoidani tahlilning bir qismidan chiqarib tashlash sozlamasi.
+- **SCM blame**: Har bir qatorni kim va qachon o'zgartirganini ko'rsatuvchi git ma'lumoti. New code aniqlash shunga tayanadi.
+- **ncloc**: Izohsiz va bo'sh qatorsiz kod qatorlari soni. Loyiha hajmini o'lchashda asosiy raqam.
+- **LTA**: Uzoq muddat qo'llab quvvatlanadigan reliz liniyasi. Ishlab chiqarish serveri uchun shu liniya tanlanadi.
+
+### 43.15 Amalda qo'llash
+
+- [ ] Loyihangizdagi barcha `sonar.*` sozlamalarini bitta `sonar-project.properties` yoki `pom.xml` bo'limiga yig'ib, tarqoq joylarni o'chiring.
+- [ ] `sonar.exclusions` ro'yxatini ko'rib chiqing va faqat qamrov uchun kerak bo'lgan yozuvlarni `sonar.coverage.exclusions` ga ko'chiring.
+- [ ] CI da `sonar.qualitygate.wait=true` ni yoqib, quvurni gate natijasiga bog'langanini bitta ataylab buzilgan commit bilan tekshiring.
+- [ ] `api/qualitygates/project_status` so'rovini CI log ida chop etadigan qadam qo'shib, yiqilish sababi darhol ko'rinadigan qiling.
+- [ ] Serveringizdagi `/web_api` sahifasini ochib, shu bobdagi parametr va metrika nomlarini o'z versiyangizda tasdiqlang.
+- [ ] New code definition ni relizlash modelingizga moslab tanlang va tanlov sababini repozitoriyda qisqa yozib qoldiring.
+- [ ] Glossariy atamalarini jamoa bilan bir marta ko'rib chiqing, chunki `bug`, `hotspot` va `debt` so'zlarini har kim boshqacha tushunadi.
+- [ ] Oyda bir marta `ncloc`, `new_coverage` va `sqale_index` qiymatlarini yozib boradigan oddiy jadval yuritib, trendni kuzating.

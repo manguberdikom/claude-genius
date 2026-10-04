@@ -6,7 +6,10 @@
   "kod": "IV. Sonar o'tadigan kod",
   "test": "V. Sonar o'tadigan test",
   "amaliyot": "VI. Amaliyot va jarayon",
-  "katalog": "VII. Xato katalogi: qanday kod qanday xato hisoblanadi"
+  "katalog": "VII. Xato katalogi: qanday kod qanday xato hisoblanadi",
+  "server": "VIII. Server va tashkilot",
+  "kengaytirish": "IX. Kengaytirish va integratsiya",
+  "malumotnoma": "X. Amaliy ma'lumotnoma"
  },
  "order": [
   "asos",
@@ -15,7 +18,10 @@
   "kod",
   "test",
   "amaliyot",
-  "katalog"
+  "katalog",
+  "server",
+  "kengaytirish",
+  "malumotnoma"
  ],
  "title": "SonarQube: qanday ishlaydi va qanday kod bilan test undan o'tadi",
  "chapters": [
@@ -204,6 +210,78 @@
    "part": "katalog",
    "title": "Xatolarga tushmaslik uchun yakuniy tavsiyalar",
    "en": "Preventive Checklist"
+  },
+  {
+   "n": 32,
+   "part": "server",
+   "title": "SonarQube nashrlari va ularning farqi",
+   "en": "Editions"
+  },
+  {
+   "n": 33,
+   "part": "server",
+   "title": "Serverni o'rnatish, sozlash va resurs rejalashtirish",
+   "en": "Installing and Sizing the Server"
+  },
+  {
+   "n": 34,
+   "part": "server",
+   "title": "Yangilash, LTA migratsiyasi, zaxira va housekeeping",
+   "en": "Upgrades, Backup and Housekeeping"
+  },
+  {
+   "n": 35,
+   "part": "server",
+   "title": "Foydalanuvchi, guruh, huquqlar, token va SSO",
+   "en": "Users, Permissions and Tokens"
+  },
+  {
+   "n": 36,
+   "part": "kengaytirish",
+   "title": "Web API va avtomatlashtirish",
+   "en": "Web API and Automation"
+  },
+  {
+   "n": 37,
+   "part": "kengaytirish",
+   "title": "Taint analysis mexanikasi: source, sink, sanitizer",
+   "en": "Taint Analysis Mechanics"
+  },
+  {
+   "n": 38,
+   "part": "kengaytirish",
+   "title": "Ko'p tilli loyiha: SQL, XML, YAML, Docker, Kubernetes, frontend",
+   "en": "Multi-language Projects"
+  },
+  {
+   "n": 39,
+   "part": "kengaytirish",
+   "title": "Bog'liqlik zaifliklari va litsenziya tekshiruvi",
+   "en": "Dependency Risk and Licences"
+  },
+  {
+   "n": 40,
+   "part": "kengaytirish",
+   "title": "Sonar va boshqa vositalar: qachon qaysi biri",
+   "en": "Sonar and Other Tools"
+  },
+  {
+   "n": 41,
+   "part": "malumotnoma",
+   "title": "Lombok, record va generatsiya qilingan kod",
+   "en": "Lombok, Records and Generated Code"
+  },
+  {
+   "n": 42,
+   "part": "malumotnoma",
+   "title": "Diagnostika: tahlil ishlamaganda nima qilish",
+   "en": "Troubleshooting"
+  },
+  {
+   "n": 43,
+   "part": "malumotnoma",
+   "title": "Tezkor ma'lumotnoma: parametrlar, buyruqlar, glossariy",
+   "en": "Quick Reference and Glossary"
   }
  ],
  "intro": "Bu hujjat SonarQube ning ichki ishlashini va undan o'tadigan kod bilan testni\nyozish yo'lini bir joyga yig'adi. Tayanch stek: Java, Spring va PostgreSQL.\n\nOgohlantirish: \"har doim 100% o'tadigan\" universal retsept yo'q. Quality gate\nshartlari har loyihada boshqacha sozlanadi, va 100% coverage sifatni kafolatlamaydi.\nHujjat ikkalasini ham ko'rsatadi: shartni qanday qondirish, va qayerda bu raqam aldashi.\n\nHujjat to'rtlikning bir qismi. Dizayn patternlar `java-spring-design-patterns.md`\nfaylida, testlashning butun sohasi `java-spring-testing-handbook.md` faylida,\nJVM, Spring va PostgreSQL mexanikasi `java-spring-architect-mindset.md` faylida."
