@@ -132,8 +132,8 @@ Xatosiz o'tishi shart. CI ham shuni ishlatadi.
 
 ## Ma'lum bo'shliq
 
-1007 patternning 498 tasida kod misoli bor, 509 tasida yo'q. 1-14
-bo'limlar tugatilgan, 15-30 bo'limlar qolgan.
+1007 patternning 528 tasida kod misoli bor, 479 tasida yo'q. 1-15
+bo'limlar tugatilgan, 16-30 bo'limlar qolgan.
 
 Pattern qo'shilsa yoki tahrirlansa, 5-15 qatorlik kod bloki qo'shiladi:
 Spring'dagi tayyor variantini yoki patternning eng kichik shaklini
