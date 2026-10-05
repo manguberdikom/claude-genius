@@ -417,7 +417,6 @@ function HookCmd([string]$script) {
 # PowerShell 5.1 da sintaksis xatosi bo'lardi.
 $settings = [ordered]@{
   '$schema' = 'https://json.schemastore.org/claude-code-settings.json'
-  bashOutputMaxChars = 12000
   env = [ordered]@{ GENIUS_PYTHON = $pyArg }
   permissions = [ordered]@{
     additionalDirectories = @($GeniusPath.Replace('\', '/'))

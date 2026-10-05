@@ -26,6 +26,12 @@ Birlashtirish:
 - `env`: yangi kalitlar ustun.
 - Boshqa kalitlar joyida qoladi, faqat yangi faylda bo'lganlari qo'shiladi.
 
+Migratsiya: `bashOutputMaxChars`. Avvalgi o'rnatuvchi bu kalitni yozardi,
+lekin u Claude Code sozlama sxemasida yo'q va jim e'tiborsiz qoladi.
+Qiymati aynan 12000 (o'rnatuvchi yozgan qiymat) bo'lsa olib tashlanadi va
+xulosa qatorida aytiladi. Boshqa qiymat foydalanuvchiniki, unga
+tegilmaydi: ehtimol u kalit kelajakda paydo bo'lishiga ishongan.
+
 Quruq yurish (`--yoz` siz) bir qatorlik xulosa chiqaradi va hech narsa
 yozmaydi. Mavjud fayl `utf-8-sig` bilan o'qiladi: PowerShell 5.1 dagi
 eski o'rnatuvchi BOM yozgan. Fayl yo'q bo'lsa `{}`. Buzuq JSON yoki obyekt
@@ -157,10 +163,28 @@ def merge_permissions(old, new, root, stats, path):
     return merged
 
 
+# Avvalgi o'rnatuvchi yozgan, sxemada yo'q kalitlar: (nom, o'rnatuvchi
+# yozgan qiymat). Faqat aynan shu qiymat olib tashlanadi.
+LEGACY = (("bashOutputMaxChars", 12000),)
+
+
+def drop_legacy(merged, stats):
+    """O'rnatuvchi yozgan, lekin sxemada yo'q kalitlarni oladi.
+
+    Boshqa qiymat foydalanuvchiniki: qoldiriladi. `merged` joyida
+    o'zgaradi, olib tashlanganlar nomi stats ga yoziladi.
+    """
+    for name, written in LEGACY:
+        if name in merged and merged[name] == written:
+            del merged[name]
+            stats["eskirgan"].append(name)
+
+
 def merge(old, new, root, path="mavjud"):
     """(birlashgan sozlama, sanoq). old va new o'zgarmaydi."""
     root = norm_root(root)
-    stats = {"eski": 0, "yangi": 0, "ruxsat_eski": 0, "ruxsat_yangi": 0}
+    stats = {"eski": 0, "yangi": 0, "ruxsat_eski": 0, "ruxsat_yangi": 0,
+             "eskirgan": []}
     hooks = merge_hooks(section(old, "hooks", dict, path),
                         section(new, "hooks", dict, "yangi"), root, stats)
     permissions = merge_permissions(
@@ -179,6 +203,7 @@ def merge(old, new, root, path="mavjud"):
             merged[key] = env
         else:
             merged[key] = old[key] if key in old else new[key]
+    drop_legacy(merged, stats)
     return merged, stats
 
 
@@ -197,6 +222,8 @@ def summary(stats, existed):
         parts.append("%d ruxsat qo'shildi" % (stats["ruxsat_yangi"] - rules))
     if stats["ruxsat_eski"] > rules:
         parts.append("%d ruxsat olib tashlandi" % (stats["ruxsat_eski"] - rules))
+    for name in stats.get("eskirgan", ()):
+        parts.append("%s olib tashlandi (sozlama sxemasida yo'q)" % name)
     return ", ".join(parts) + ", boshqa yozuvlar saqlandi"
 
 

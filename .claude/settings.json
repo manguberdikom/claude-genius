@@ -46,7 +46,6 @@
       "Glob"
     ]
   },
-  "bashOutputMaxChars": 12000,
   "hooks": {
     "UserPromptSubmit": [
       {

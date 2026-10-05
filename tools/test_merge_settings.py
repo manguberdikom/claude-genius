@@ -43,7 +43,6 @@ def fresh(root=GENIUS):
     """Toza o'rnatishning settings.json i (ps1 yasaydigan shakl)."""
     return {
         "$schema": "https://json.schemastore.org/claude-code-settings.json",
-        "bashOutputMaxChars": 12000,
         "env": {"GENIUS_PYTHON": WIN_PY.replace("\\", "/")},
         "permissions": {
             "additionalDirectories": [root],
@@ -213,7 +212,32 @@ def case_env_birlashadi():
                                    "MENING": "1"}
                 and got["model"] == "opus"
                 and list(got)[:3] == ["env", "model", "hooks"]
-                and got["bashOutputMaxChars"] == 12000)
+                and "bashOutputMaxChars" not in got)
+
+
+def case_eskirgan_kalit_olinadi():
+    """O'rnatuvchi yozgan bashOutputMaxChars=12000 olib tashlanadi.
+
+    Kalit Claude Code sozlama sxemasida yo'q (142 kalit ichida yo'q,
+    additionalProperties true, ya'ni jim e'tiborsiz qoladi).
+    """
+    existing = {"bashOutputMaxChars": 12000, "model": "opus", "hooks": {}}
+    with workdir() as tmp:
+        code, out, path = merge_files(tmp, existing)
+        got = load(path)
+        return (code == 0 and "bashOutputMaxChars" not in got
+                and got["model"] == "opus"
+                and "bashOutputMaxChars olib tashlandi" in out)
+
+
+def case_foydalanuvchi_qiymati_qoladi():
+    """Boshqa qiymat foydalanuvchiniki: tegilmaydi."""
+    existing = {"bashOutputMaxChars": 8000, "hooks": {}}
+    with workdir() as tmp:
+        code, out, path = merge_files(tmp, existing)
+        got = load(path)
+        return (code == 0 and got.get("bashOutputMaxChars") == 8000
+                and "bashOutputMaxChars olib tashlandi" not in out)
 
 
 def case_quruq_yurish_yozmaydi():
@@ -285,6 +309,8 @@ CASES = [
     ("bo'shab qolgan guruh tushadi", case_bosh_qolgan_guruh_tushadi),
     ("ruxsatlar takrorsiz birlashadi", case_ruxsat_birlashadi),
     ("env kalitlari birlashadi", case_env_birlashadi),
+    ("eskirgan bashOutputMaxChars=12000 olinadi", case_eskirgan_kalit_olinadi),
+    ("foydalanuvchining 8000 qiymati qoladi", case_foydalanuvchi_qiymati_qoladi),
     ("quruq yurish faylga tegmaydi", case_quruq_yurish_yozmaydi),
     ("buzuq JSON 1 qaytaradi, fayl tegilmaydi", case_buzuq_json_1),
     ("BOM siz yoziladi, ikkinchi yurish o'zgartirmaydi",
