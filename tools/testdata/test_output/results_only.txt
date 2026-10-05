@@ -1,0 +1,12 @@
+[ERROR] Failures: 
+[ERROR]   UserTest.name:12 
+expected: "Alice"
+ but was: "Bob"
+[ERROR]   UserTest.score:20 
+expected: 90
+ but was: 100
+[ERROR]   UserTest.hamcrest:31 
+Expected: is <90>
+     but: was <100>
+[INFO] 
+[ERROR] Tests run: 5, Failures: 3, Errors: 0, Skipped: 0

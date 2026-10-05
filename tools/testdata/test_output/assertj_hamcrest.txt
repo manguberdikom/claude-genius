@@ -1,0 +1,28 @@
+[INFO] Running shop.user.UserTest
+[ERROR] Tests run: 4, Failures: 3, Errors: 0, Skipped: 0, Time elapsed: 0.3 s <<< FAILURE! -- in shop.user.UserTest
+[ERROR] shop.user.UserTest.name -- Time elapsed: 0.01 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+expected: "Alice"
+ but was: "Bob"
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at shop.user.UserTest.name(UserTest.java:12)
+
+[ERROR] shop.user.UserTest.hamcrest -- Time elapsed: 0.01 s <<< FAILURE!
+java.lang.AssertionError: 
+
+Expected: is <90>
+     but: was <100>
+	at org.hamcrest.MatcherAssert.assertThat(MatcherAssert.java:20)
+	at shop.user.UserTest.hamcrest(UserTest.java:31)
+
+[ERROR] shop.user.UserTest.roles -- Time elapsed: 0.01 s <<< FAILURE!
+java.lang.AssertionError: 
+Expecting actual:
+  ["USER"]
+to contain:
+  ["ADMIN"]
+but could not find the following element(s):
+  ["ADMIN"]
+	at shop.user.UserTest.roles(UserTest.java:40)
+
+[ERROR] Tests run: 4, Failures: 3, Errors: 0, Skipped: 0

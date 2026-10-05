@@ -1,0 +1,15 @@
+> Task :compileJava FAILED
+/home/u/shop/src/main/java/shop/Legacy.java:10: warning: [deprecation] Date(int,int,int) in Date has been deprecated
+/home/u/shop/src/main/java/shop/web/OrderController.java:41: error: cannot find symbol
+        return order.lines();
+                    ^
+  symbol:   method lines()
+  location: variable order of type Order
+1 error
+1 warning
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':compileJava'.
+> Compilation failed; see the compiler error output for details.

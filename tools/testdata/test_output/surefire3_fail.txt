@@ -1,0 +1,46 @@
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running shop.domain.OrderServiceTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.412 s -- in shop.domain.OrderServiceTest
+[INFO] Running shop.web.OrderControllerTest
+[ERROR] Tests run: 3, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 1.204 s <<< FAILURE! -- in shop.web.OrderControllerTest
+[ERROR] shop.web.OrderControllerTest.createsOrder -- Time elapsed: 0.052 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: expected: <201> but was: <500>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:560)
+	at shop.web.OrderControllerTest.createsOrder(OrderControllerTest.java:58)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[INFO] Running shop.domain.PriceTest
+[ERROR] Tests run: 4, Failures: 1, Errors: 1, Skipped: 0, Time elapsed: 0.08 s <<< FAILURE! -- in shop.domain.PriceTest
+[ERROR] shop.domain.PriceTest.computes(int, String)[1] -- Time elapsed: 0.004 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: expected: <10> but was: <12>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:527)
+	at shop.domain.PriceTest.computes(PriceTest.java:24)
+
+[ERROR] shop.domain.PriceTest.computes(int, String)[3] -- Time elapsed: 0.002 s <<< ERROR!
+java.lang.IllegalArgumentException: currency must not be blank
+	at shop.domain.Price.of(Price.java:40)
+	at shop.domain.PriceTest.computes(PriceTest.java:22)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR]   OrderControllerTest.createsOrder:58 expected: <201> but was: <500>
+[ERROR]   PriceTest.computes:24 expected: <10> but was: <12>
+[ERROR] Errors: 
+[ERROR]   PriceTest.computes:22 » IllegalArgument currency must not be blank
+[INFO] 
+[ERROR] Tests run: 11, Failures: 2, Errors: 1, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.2.5:test (default-test) on project shop: There are test failures.
