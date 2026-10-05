@@ -8,6 +8,34 @@ Hamma o'zgarish bu yerga yozilmaydi. Yoziladigani: foydalanuvchi
 muhitiga tegadigan, ma'lumot yo'qotishi mumkin bo'lgan yoki ruxsat
 qarorini o'zgartiradigan o'zgarish.
 
+## 2026-10-05: Qidiruv dvigateli qayta yozilmaydi
+
+**Nima o'zgardi.** Hech narsa. Bu yozuv ataylab: qaror "tegmaslik".
+
+**Nega.** Soddalashtirish bo'yicha ko'rib chiqishda qidiruv qatlamini
+SQLite yoki FTS ga ko'chirish varianti ham bor edi. Rad etildi: mavjud
+dvigatel ishlaydi va o'lchangan (`eval_find.py`: taxallus bo'yicha
+top-3 98%, matn bo'yicha top-10 95%, median 24 ms). Ishlayotgan va
+o'lchangan qatlamni qayta yozish xavf keltiradi, foyda esa o'lchanmagan.
+
+**Rad etilgan variantlar.**
+
+- *SQLite FTS5 ga ko'chirish.* Rad etildi: indeks hozir TSV va u grep
+  qilinadi, ya'ni hech qanday bog'liqlik talab qilmaydi. SQLite Windows
+  da ham bor, lekin yangi sxema, migratsiya va yangi nosozlik turlari
+  qo'shiladi.
+- *`doc.sh show` chegarasini olib tashlash.* Rad etildi: 200 KB bobni
+  butun o'qish ~50k token turadi, chegara aynan shuni to'xtatadi.
+- *Katta bobni o'qish to'sig'ini `ask` ga o'tkazish.* Rad etildi: arzon
+  yo'l (`doc.sh show`) har doim bir xil, odam qarori kerak emas.
+
+**Xavf.** Yo'q: kod o'zgarmadi.
+
+**Qaysi tekshiruv o'tdi.** `eval_find.py` (A, B, C va yangi D sinovi),
+`eval_skill.py` 100%.
+
+**Orqaga qaytarish.** Mavzu emas: o'zgarish yo'q.
+
 ## 2026-10-05: O'rnatuvchi sukut bo'yicha qo'shuvchi bo'ldi
 
 **Nima o'zgardi.** `install/manguberdi.ps1` da `-Apply` ning sukut xulqi.

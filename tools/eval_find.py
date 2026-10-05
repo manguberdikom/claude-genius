@@ -220,6 +220,41 @@ def test_ranking():
     return ok and varied
 
 
+# `doc.sh rule <kalit>`: kalitni faqat o'tib ketgan eslatma sifatida
+# tilga olgan bo'lim (glossariy, kirish, kod izohi) birinchi javob
+# bo'lmasligi kerak. (kalit, pastda turishi kerak bo'lgan bo'limlar).
+RULE_QUERIES = (
+    ("java:S2259", ("sonarqube 43.14", "sonarqube 24.1", "sonarqube 1.4")),
+)
+
+
+def test_rule_ranking():
+    """doc.sh rule: illustrativ eslatma yuqoriga chiqmaydi."""
+    print("\n== D. doc.sh rule reytingi (%d ta kalit) ==" % len(RULE_QUERIES))
+    ok = True
+    for rule, demoted in RULE_QUERIES:
+        proc = subprocess.run(SHELL + [DOC, "rule", rule],
+                              capture_output=True, encoding="utf-8", cwd=ROOT)
+        order = []
+        for line in proc.stdout.splitlines():
+            parts = line.split()
+            if len(parts) >= 3 and parts[0].isalpha() and not line.startswith(">"):
+                order.append("%s %s" % (parts[0], parts[1]))
+        if not order:
+            print("  XATO %-14s chiqish bo'sh" % rule)
+            ok = False
+            continue
+        half = len(order) // 2
+        bad = [ref for ref in demoted
+               if ref in order and order.index(ref) < half]
+        good = not bad and order[0] not in demoted
+        ok = ok and good
+        print("  %-4s %-14s birinchi: %-16s pastda kutilgani: %s"
+              % ("OK" if good else "XATO", rule, order[0],
+                 ", ".join(bad) and "YUQORIDA: " + ", ".join(bad) or "joyida"))
+    return ok
+
+
 def main():
     # Topilmagan atama ro'yxati Windows quvuridagi kod sahifasida yo'q belgi
     # bilan yiqilmasin.
@@ -232,6 +267,7 @@ def main():
     ok_a, miss_a = test_aliases(sample_size)
     ok_b, miss_b = test_identifiers(sample_size)
     ok_c = test_ranking()
+    ok_d = test_rule_ranking()
 
     for label, misses in (("A", miss_a), ("B", miss_b)):
         if misses:
@@ -239,8 +275,8 @@ def main():
             for item in misses[:5]:
                 print("    %s -> %s %s" % item)
 
-    if ok_a and ok_b and ok_c:
-        print("\nUchala sinov ham joyida.")
+    if ok_a and ok_b and ok_c and ok_d:
+        print("\nTo'rtala sinov ham joyida.")
         return 0
     print("\nChegaradan pastga tushdi, yuqoriga qarang.")
     return 1

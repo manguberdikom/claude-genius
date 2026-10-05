@@ -59,6 +59,11 @@ CHECKBOX_RE = re.compile(r"^\s*- \[ \]\s+(.*?)\s*$")
 
 WORD_RE = re.compile(r"[a-z0-9_.@#]+(?:\+\+|\+\d+)?(?:'[a-z0-9]+)*")
 
+# Faqat illustrativ uchrashi bor bo'limning vazni. Noldan katta, ya'ni
+# bo'lim ro'yxatda qoladi; birdan kichik, ya'ni tushuntirgan bo'lim
+# har doim undan yuqori turadi.
+ILLUSTRATIVE_WEIGHT = 0.05
+
 
 def clean(text):
     """TSV ni buzmaydigan bir satrli matn."""
@@ -137,6 +142,59 @@ def parse_alias_file(path, doc_key, known_sections):
     return aliases
 
 
+# Kalitni ILLUSTRATSIYA sifatida tilga olish: "masalan `java:S2259`",
+# "`java:S2259` kabi qoida". Bunday bo'lim kalitni tushuntirmaydi, uni
+# misol qilib ko'rsatadi.
+ILLUSTRATIVE = re.compile(
+    r"(?:masalan|misol(?:i|iga|uchun)?|kabi|o'xshash|jumladan)[^.\n]{0,40}$")
+LIKE_AFTER = re.compile(r"^[`\s]{0,3}(?:kabi|ga o'xshash|turkumi|singari)\b")
+
+
+def prose_lines(body):
+    """Kod bloklaridan tashqaridagi satrlar.
+
+    Kod ichidagi kalit (`// java:S2259 shu qatorga tushadi`) bo'limni
+    kalit haqida qilmaydi: u misolni belgilaydi.
+    """
+    out, fence = [], False
+    for line in body:
+        if FENCE_RE.match(line):
+            fence = not fence
+            continue
+        if not fence:
+            out.append(line)
+    return out
+
+
+def explaining(prose, rule):
+    """Kalitni TUSHUNTIRGAN uchrashlar soni.
+
+    Nega kerak: `ulush = sanoq / turli kalit` reytingi glossariy va
+    kirish bo'limlarini yuqoriga chiqarardi. Ular kalitni bir marta,
+    misol sifatida tilga oladi va boshqa kalit aytmaydi, ya'ni ulush
+    1.00 chiqadi; mavzuli bo'lim esa yondosh kalitlarni ham aytgani
+    uchun pastga tushadi (S2259: glossariy 1.00, `null` va `Optional`
+    bo'limi 0.25).
+
+    Shuning uchun illustrativ uchrash sanalmaydi: kod bloki ichidagisi
+    va "masalan"/"kabi" bilan o'ralgani.
+    """
+    total = 0
+    for line in prose:
+        start = 0
+        while True:
+            at = line.find(rule, start)
+            if at < 0:
+                break
+            start = at + len(rule)
+            before = line[:at].rstrip("` ")
+            after = line[start:]
+            if ILLUSTRATIVE.search(before) or LIKE_AFTER.match(after):
+                continue
+            total += 1
+    return total
+
+
 def scan_body(doc_key, chapter, section, body, rows):
     """Bo'lim tanasidan Sonar qoida kalitlari va tekshiruv punktlarini oladi.
 
@@ -147,9 +205,11 @@ def scan_body(doc_key, chapter, section, body, rows):
     if not section and not chapter:
         return
     text = "\n".join(body)
+    prose = prose_lines(body)
     for rule in set(RULE_RE.findall(text)):
         rows["rules"].append(
-            (rule, doc_key, chapter, section, text.count(rule))
+            (rule, doc_key, chapter, section, text.count(rule),
+             explaining(prose, rule))
         )
     for line in body:
         match = CHECKBOX_RE.match(line)
@@ -278,13 +338,16 @@ def build():
     # da 3.0). Kalitni yo'l-yo'lakay eslatgan kichik bo'lim ham yuqori
     # chiqishi mumkin: docref.by_rule buni topilma so'zi bilan aniqlaydi.
     per_section = {}
-    for rule, doc, chapter, section, _ in set(rows["rules"]):
+    for rule, doc, chapter, section, _, _ in set(rows["rules"]):
         per_section.setdefault((doc, chapter, section), set()).add(rule)
     rules = []
-    for rule, doc, chapter, section, count in set(rows["rules"]):
+    for rule, doc, chapter, section, count, explain in set(rows["rules"]):
         distinct = len(per_section[(doc, chapter, section)])
-        rules.append((rule, doc, chapter, section, count,
-                      round(count / distinct, 3)))
+        # Tushuntirgan uchrash bo'lmasa bo'lim ro'yxatdan chiqmaydi, lekin
+        # pastga tushadi: `doc.sh rule` da u baribir foydali bo'lishi
+        # mumkin, faqat birinchi javob bo'lmasligi kerak.
+        share = (explain if explain else ILLUSTRATIVE_WEIGHT) / distinct
+        rules.append((rule, doc, chapter, section, count, round(share, 3)))
     rules.sort(key=lambda r: (r[0], -r[5], -r[4], r[1], r[2], r[3]))
     write("rules.tsv",
           ["rule", "doc", "chapter", "section", "marta", "ulush"], rules)

@@ -83,7 +83,10 @@ EXPECTED = [
     # Uzun raqam atama bo'lib qoladi, qisqasi esa yo'q (SILENT ga qarang).
     ("ProblemDetail RFC 9457 formatida xato qaytarish", "patterns", {"7.10"}),
     # Sonar kaliti index/rules.tsv orqali to'g'ridan bo'limga boradi.
-    ("java:S2259 ni tuzat", "sonarqube", {"1.4"}),
+    # Avval 1.4 (scanner mexanikasi) chiqardi: u kalitni misol sifatida
+    # tilga oladi. Illustrativ eslatma pastga tushgandan keyin kalitni
+    # TUSHUNTIRGAN bo'limlar qoldi (build_index.explaining).
+    ("java:S2259 ni tuzat", "sonarqube", {"3.1", "13.4", "40.1"}),
     ("squid:S1192 topildi", "sonarqube"),
     # Bob taxallusi bob raqamini beradi.
     ("API compatibility buzilmaydimi", "code-review", {"37"}),
@@ -263,7 +266,7 @@ def hook_cases():
         rc, stdout = run_hook(tmp, json.dumps({"prompt": "java:S2259 ni tuzat"}))
         _, text = context(stdout)
         out.append(("Sonar kaliti: bo'lim va doc.sh rule", rc == 0
-                    and output_shape_ok(stdout) and "1.4 " in text
+                    and output_shape_ok(stdout) and "3.1 " in text
                     and "doc.sh rule java:S2259" in text, "rc=%d" % rc))
 
         # Buyruq yo'li: klon ichida nisbiy (har navbat narxi o'zgarmaydi),
