@@ -272,7 +272,8 @@ $Required = @(
   'tools\budget.py', 'tools\suggest_sections.py', 'tools\usage.py',
   'tools\handoff.py', 'tools\state.py', 'tools\docref.py', 'tools\hookio.py',
   'tools\build_index.py', 'tools\check_docs.py',
-  'tools\review_status.py', 'install\rewrite_paths.py',
+  'tools\review_status.py', 'tools\sonar_snapshot.py',
+  'install\rewrite_paths.py',
   'docs\manifest.json', '.claude\skills\manguberdi\SKILL.md'
 )
 if ($Update) { $Required += 'install\merge_settings.py' }

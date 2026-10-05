@@ -1,0 +1,112 @@
+# sonar-java rule metadata snapshoti.
+# sana: 2026-10-05
+# manba: https://raw.githubusercontent.com/SonarSource/sonar-java/master/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/<kalit>.json
+#
+# tur    - CODE_SMELL | BUG | VULNERABILITY | SECURITY_HOTSPOT
+# daraja - defaultSeverity (legacy severity)
+# scope  - Main | Tests | All
+#
+# `tekshirilmadi` = qoida ochiq metadata da yo'q (symbolic execution va
+# shunga o'xshash yopiq qoidalar). check_docs ularni ogohlantirish
+# bilan o'tkazadi. Yangilash: python3 tools/sonar_snapshot.py
+kalit	tur	daraja	scope	sarlavha
+S100	CODE_SMELL	Minor	Main	Method names should comply with a naming convention
+S101	CODE_SMELL	Minor	Main	Class names should comply with a naming convention
+S106	CODE_SMELL	Major	Main	Standard outputs should not be used directly to log anything
+S107	CODE_SMELL	Major	Main	Methods should not have too many parameters
+S108	CODE_SMELL	Major	All	Nested blocks of code should not be left empty
+S109	CODE_SMELL	Major	Main	Magic numbers should not be used
+S112	CODE_SMELL	Major	Main	Generic exceptions should never be thrown
+S115	CODE_SMELL	Critical	All	Constant names should comply with a naming convention
+S116	CODE_SMELL	Minor	All	Field names should comply with a naming convention
+S117	CODE_SMELL	Minor	All	Local variable and method parameter names should comply with a naming convention
+S125	CODE_SMELL	Major	All	Sections of code should not be commented out
+S127	CODE_SMELL	Major	Main	"for" loop stop conditions should be invariant
+S131	CODE_SMELL	Critical	All	"switch" statements should have "default" clauses
+S134	CODE_SMELL	Critical	Main	Control flow statements "if", "for", "while", "switch" and "try" should not be nested too deeply
+S138	CODE_SMELL	Major	Main	Methods should not have too many lines
+S1066	CODE_SMELL	Major	All	Mergeable "if" statements should be combined
+S1068	CODE_SMELL	Major	All	Unused "private" fields should be removed
+S1104	CODE_SMELL	Minor	Main	Class variable fields should not have public accessibility
+S1116	CODE_SMELL	Minor	All	Empty statements should be removed
+S1118	CODE_SMELL	Major	Main	Utility classes should not have public constructors
+S1126	CODE_SMELL	Minor	Main	Return of boolean expressions should not be wrapped into an "if-then-else" statement
+S1128	CODE_SMELL	Minor	All	Unnecessary imports should be removed
+S1133	CODE_SMELL	Info	Main	Deprecated code should be removed
+S1134	CODE_SMELL	Major	All	Track uses of "FIXME" tags
+S1135	CODE_SMELL	Info	All	Track uses of "TODO" tags
+S1142	CODE_SMELL	Major	Main	Methods should not have too many return statements
+S1144	CODE_SMELL	Major	All	Unused "private" methods should be removed
+S1148	tekshirilmadi	tekshirilmadi	tekshirilmadi	
+S1153	CODE_SMELL	Minor	Main	"String.valueOf()" should not be appended to a "String"
+S1168	CODE_SMELL	Major	Main	Empty arrays and collections should be returned instead of null
+S1170	CODE_SMELL	Minor	Main	Public constants and fields initialized at declaration should be "static final" rather than merely "final"
+S1172	CODE_SMELL	Major	All	Unused method parameters should be removed
+S1181	CODE_SMELL	Major	Main	Throwable and Error should not be caught
+S1192	CODE_SMELL	Critical	Main	String literals should not be duplicated
+S1206	BUG	Minor	Main	"equals(Object obj)" and "hashCode()" should be overridden in pairs
+S1210	CODE_SMELL	Minor	Main	"equals(Object obj)" should be overridden along with the "compareTo(T obj)" method
+S1217	BUG	Major	Main	"Thread.run()" should not be called directly
+S1244	BUG	Major	Main	Floating point numbers should not be tested for equality
+S1312	CODE_SMELL	Minor	Main	Loggers should be "private static final" and should share a naming convention
+S1448	CODE_SMELL	Major	Main	Classes should not have too many methods
+S1481	CODE_SMELL	Minor	All	Unused local variables should be removed
+S1488	CODE_SMELL	Minor	All	Local variables should not be declared and then immediately returned or thrown
+S1607	CODE_SMELL	Major	Tests	JUnit4 @Ignored and JUnit5 @Disabled annotations should be used to disable tests and should provide a rationale
+S1643	CODE_SMELL	Minor	All	Strings should not be concatenated using '+' in a loop
+S1763	tekshirilmadi	tekshirilmadi	tekshirilmadi	
+S1854	CODE_SMELL	Major	All	Unused assignments should be removed
+S1858	CODE_SMELL	Minor	All	"toString()" should never be called on a String object
+S1874	CODE_SMELL	Minor	All	"@Deprecated" code should not be used
+S2068	VULNERABILITY	Major	Main	Credentials should not be hard-coded
+S2076	tekshirilmadi	tekshirilmadi	tekshirilmadi	
+S2077	VULNERABILITY	Major	Main	SQL queries should not be dynamically formatted
+S2083	tekshirilmadi	tekshirilmadi	tekshirilmadi	
+S2095	tekshirilmadi	tekshirilmadi	tekshirilmadi	
+S2111	BUG	Major	Main	"BigDecimal(double)" should not be used
+S2142	BUG	Major	Main	"InterruptedException" and "ThreadDeath" should not be ignored
+S2160	CODE_SMELL	Minor	Main	Subclasses that add fields to classes that override "equals" should also override "equals"
+S2187	CODE_SMELL	Blocker	Tests	TestCases should contain tests
+S2189	tekshirilmadi	tekshirilmadi	tekshirilmadi	
+S2201	BUG	Major	Main	Return values from functions without side effects should not be ignored
+S2221	CODE_SMELL	Minor	Main	"Exception" should not be caught when not required by called methods
+S2229	BUG	Blocker	Main	Methods should not call same-class methods with incompatible "@Transactional" values
+S2230	BUG	Major	Main	Methods with Spring proxying annotations should be public
+S2245	VULNERABILITY	Major	Main	Pseudorandom number generators (PRNGs) should not be used in security contexts
+S2259	tekshirilmadi	tekshirilmadi	tekshirilmadi	
+S2333	CODE_SMELL	Minor	Main	Redundant modifiers should not be used
+S2384	CODE_SMELL	Minor	Main	Private mutable members should not be stored or returned directly
+S2386	CODE_SMELL	Minor	Main	Mutable fields should not be "public static"
+S2583	tekshirilmadi	tekshirilmadi	tekshirilmadi	
+S2589	tekshirilmadi	tekshirilmadi	tekshirilmadi	
+S2629	CODE_SMELL	Major	Main	"Preconditions" and logging arguments should not require evaluation
+S2696	CODE_SMELL	Critical	Main	Instance methods should not write to "static" fields
+S2699	CODE_SMELL	Blocker	Tests	Tests should include assertions
+S2701	CODE_SMELL	Minor	Tests	Literal boolean values and nulls should not be used in assertions
+S2755	tekshirilmadi	tekshirilmadi	tekshirilmadi	
+S2789	BUG	Major	Main	"null" should not be used with "Optional"
+S2925	CODE_SMELL	Major	Tests	"Thread.sleep" should not be used in tests
+S2970	CODE_SMELL	Blocker	Tests	Assertions should be complete
+S3011	CODE_SMELL	Major	Main	Reflection should not be used to increase accessibility of classes, methods, or fields
+S3358	CODE_SMELL	Major	Main	Ternary operators should not be nested
+S3415	CODE_SMELL	Major	Tests	Assertion arguments should be passed in the correct order
+S3577	CODE_SMELL	Minor	Tests	Test classes should comply with a naming convention
+S3649	tekshirilmadi	tekshirilmadi	tekshirilmadi	
+S3655	tekshirilmadi	tekshirilmadi	tekshirilmadi	
+S3776	CODE_SMELL	Critical	Main	Cognitive Complexity of methods should not be too high
+S3864	CODE_SMELL	Major	Main	"Stream.peek" should be used with caution
+S4144	CODE_SMELL	Major	All	Methods should not have identical implementations
+S4502	VULNERABILITY	Critical	Main	CSRF protections should not be disabled
+S4790	VULNERABILITY	Critical	Main	Weak hashing algorithms should not be used
+S4830	VULNERABILITY	Critical	Main	Server certificates should be verified during SSL/TLS connections
+S4973	BUG	Major	Main	Strings and Boxed types should be compared using "equals()"
+S5122	VULNERABILITY	Major	Main	Cross-Origin Resource Sharing (CORS) policy should be restricted to trusted origins
+S5131	tekshirilmadi	tekshirilmadi	tekshirilmadi	
+S5135	tekshirilmadi	tekshirilmadi	tekshirilmadi	
+S5145	tekshirilmadi	tekshirilmadi	tekshirilmadi	
+S5146	tekshirilmadi	tekshirilmadi	tekshirilmadi	
+S5778	CODE_SMELL	Major	Tests	Only one method invocation is expected when testing runtime exceptions
+S5786	CODE_SMELL	Info	Tests	JUnit5 test methods should have default package visibility
+S5961	CODE_SMELL	Major	Tests	Test methods should not contain too many assertions
+S5976	CODE_SMELL	Major	Tests	Similar tests should be grouped in a single Parameterized test
+S6813	CODE_SMELL	Major	Main	Field dependency injection should be avoided

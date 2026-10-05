@@ -33,6 +33,10 @@ Tekshiradi:
                     yoziladi va shu yerda qo'riqlanadi.
  10. Tekshiruv    - docs/review.tsv da manifestdagi har bob bor va holati
                     ruxsat etilgan qiymatlardan biri.
+ 11. Sonar        - korpusdagi har `java:S` kaliti tools/sonar_rules.tsv
+                    snapshotida bor; jadval qatorida kalit yonida tur yoki
+                    daraja yozilgan bo'lsa, snapshotga mos. Ochiq metadata
+                    da yo'q kalitlar ogohlantirish bilan o'tadi.
   9. Sonlar       - README.md, CLAUDE.md va install/README.md da qo'lda
                     yozilgan "N bob" va "N bo'lim" manifestdan
                     hisoblangan songa mos. Qator hujjat nomini aytsa
@@ -43,6 +47,7 @@ import json, os, re, sys, unicodedata
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import review_status                                    # noqa: E402
+import sonar_snapshot                                   # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SIZE_LIMIT = 900_000          # GitHub chegarasi 1 048 576; zahira bilan
@@ -215,6 +220,68 @@ def check_counts(manifest):
                 elif value not in allowed[unit]:
                     err(f"{rel}:{number}: {value} {unit} hech bir hujjatga "
                         f"va jamiga ({totals[unit]}) mos emas")
+
+
+# 11. Jadval qatoridagi tur so'zlari -> metadata turi.
+SONAR_TYPE_WORDS = (
+    ("code smell", 'CODE_SMELL'), ("code_smell", 'CODE_SMELL'),
+    ("security hotspot", 'SECURITY_HOTSPOT'), ("hotspot", 'SECURITY_HOTSPOT'),
+    ("vulnerability", 'VULNERABILITY'), ("(bug)", 'BUG'),
+)
+SONAR_SEVS = ('Blocker', 'Critical', 'Major', 'Minor', 'Info')
+SONAR_KEY_RE = re.compile(r"java:(S\d+)")
+
+
+def check_sonar(files):
+    """11. java:S kalitlari snapshot bilan mos."""
+    snapshot, date = sonar_snapshot.read_snapshot(
+        os.path.join(ROOT, 'tools', 'sonar_rules.tsv'))
+    if not snapshot:
+        err("tools/sonar_rules.tsv yo'q yoki bo'sh: "
+            "`python3 tools/sonar_snapshot.py` yasaydi")
+        return
+    unchecked, unknown = set(), {}
+    for rel in files:
+        if scope_of(rel) not in ('docs', 'claude'):
+            continue
+        text = open(os.path.join(ROOT, rel), encoding='utf-8').read()
+        for number, line in enumerate(text.split('\n'), 1):
+            keys = SONAR_KEY_RE.findall(line)
+            for key in set(keys):
+                row = snapshot.get(key)
+                if row is None:
+                    unknown.setdefault(key, f"{rel}:{number}")
+                    continue
+                if row.get('tur') == sonar_snapshot.MISSING:
+                    unchecked.add(key)
+            # Jadval qatori va aynan bitta kalit: tur va daraja solishtiriladi.
+            if not line.lstrip().startswith('|') or len(keys) != 1:
+                continue
+            row = snapshot.get(keys[0])
+            if row is None or row.get('tur') == sonar_snapshot.MISSING:
+                continue
+            low = line.lower()
+            said_type = next((canon for word, canon in SONAR_TYPE_WORDS
+                              if word in low), None)
+            cells = [c.strip() for c in line.strip().strip('|').split('|')]
+            said_sev = next((c for c in cells if c in SONAR_SEVS), None)
+            if said_type and said_type != row['tur']:
+                err(f"{rel}:{number}: java:{keys[0]} turi {said_type}, "
+                    f"metadata da {row['tur']} (tools/sonar_rules.tsv)")
+            if said_sev and said_sev != row['daraja']:
+                err(f"{rel}:{number}: java:{keys[0]} darajasi {said_sev}, "
+                    f"metadata da {row['daraja']} (tools/sonar_rules.tsv)")
+    for key, where in sorted(unknown.items()):
+        err(f"{where}: java:{key} snapshotda yo'q -> "
+            f"`python3 tools/sonar_snapshot.py {key}`")
+    if unchecked:
+        warn("ochiq sonar-java metadata da yo'q, tur va daraja "
+             "tekshirilmadi (%d): %s"
+             % (len(unchecked), " ".join("java:" + k for k in
+                                         sorted(unchecked, key=lambda x: int(x[1:])))))
+    if not date:
+        warn("tools/sonar_rules.tsv da sana yo'q: snapshot qachon "
+             "olinganini bilib bo'lmaydi")
 
 
 def check_review(manifest, review_rows):
@@ -495,6 +562,9 @@ def main():
     if man is not None:
         check_counts(man)
         check_review(man, review_rows)
+
+    # 11. Sonar kalitlari snapshot bilan mos.
+    check_sonar(files)
 
     print(f"{len(files)} markdown fayl, {total} nisbiy havola tekshirildi")
     for w in warnings:

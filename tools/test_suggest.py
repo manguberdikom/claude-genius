@@ -197,7 +197,8 @@ DOUBLED_RE = re.compile(r"(\d+\.\d+)\s+\1\b")
 # Indekssiz nusxaga kerak fayllar: hook, indeks yasovchi va uning importi,
 # buyruq yo'lini beradigan docref.
 HOOK_FILES = ("suggest_sections.py", "build_index.py", "check_docs.py",
-              "review_status.py", "synonyms.tsv", "docref.py", "hookio.py")
+              "review_status.py", "sonar_snapshot.py", "synonyms.tsv",
+              "docref.py", "hookio.py")
 # Klondan tashqarida nisbiy buyruq: oldida `/` yo'q `tools/doc.sh`.
 RELATIVE_CMD_RE = re.compile(r"(?<![/\\\w])tools/doc\.sh")
 

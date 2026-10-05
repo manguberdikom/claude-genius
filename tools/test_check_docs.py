@@ -50,6 +50,10 @@ def chapter(n):
         "",
         "Matn.",
         "",
+        "| Holat | Qoida | Toifa | Jiddiylik |",
+        "| --- | --- | --- | --- |",
+        "| Magic number | `java:S109` | maintainability (code smell) | Major |",
+        "",
         "```markdown",
         "## Namuna sarlavha, bob bo'limi emas",
         "```",
@@ -86,6 +90,13 @@ FILES = {
     "docs/sinov/02-ikkinchi.md": chapter(2),
     # 8. Regressiya naqshlari. Fixture da ataylab ikki qator: biri oddiy
     # so'z, biri kontekstli (naqsh to'g'ri matnni tutmasligi sinaladi).
+    "tools/sonar_rules.tsv": ("# sana: 2026-01-01\n"
+                              "kalit\ttur\tdaraja\tscope\tsarlavha\n"
+                              "S109\tCODE_SMELL\tMajor\tMain\tMagic numbers\n"
+                              "S2259\ttekshirilmadi\ttekshirilmadi"
+                              "\ttekshirilmadi\t\n"
+                              "S9999\ttekshirilmadi\ttekshirilmadi"
+                              "\ttekshirilmadi\t\n"),
     "docs/review.tsv": ("hujjat\tbob\tholat\tsana\ttekshiruvchi"
                         "\tmanbalar\txatolar\tizoh\n"
                         "sinov\t1\tai-draft\t\t\t0\t0\t\n"
@@ -186,7 +197,7 @@ CASES = [
     ("doc.sh da yo'q subkomanda",
      expect(("CLAUDE.md", "doc.sh show", "doc.sh shw"), "subkomandasi yo'q")),
     ("docs/ da til belgisiz kod bloki",
-     expect((CH1, "```markdown", "```"), "01-birinchi.md:13: kod blokida til belgisi")),
+     expect((CH1, "```markdown", "```"), "01-birinchi.md:17: kod blokida til belgisi")),
     ("docs/ dan tashqarida belgisiz blok xato emas",
      lambda tmp: run(tmp, "tashqari", ("CLAUDE.md", "```bash", "```")) == []),
     ("bob hech qaysi skill jadvalida yo'q",
@@ -222,6 +233,19 @@ CASES = [
     ("jami bob soni hech narsaga mos emas",
      expect(("README.md", "Jami 2 bob", "Jami 5 bob"),
             "5 bob hech bir hujjatga va jamiga (2) mos emas")),
+    # 11. Sonar snapshot.
+    ("jadvaldagi tur metadata ga mos emas",
+     expect((CH1, "| maintainability (code smell) | Major |",
+             "| reliability (bug) | Major |"),
+            "java:S109 turi BUG, metadata da CODE_SMELL")),
+    ("jadvaldagi daraja metadata ga mos emas",
+     expect((CH1, "(code smell) | Major |", "(code smell) | Blocker |"),
+            "java:S109 darajasi Blocker, metadata da Major")),
+    ("snapshotda yo'q kalit xato beradi",
+     expect((CH1, "`java:S109`", "`java:S9998`"), "java:S9998 snapshotda yo'q")),
+    ("ochiq metadata da yo'q kalit xato emas",
+     lambda tmp: run(tmp, "tekshirilmadi_kaliti",
+                     (CH1, "`java:S109`", "`java:S2259`")) == []),
     ("kod bloki ichidagi son tekshirilmaydi",
      lambda tmp: run(tmp, "fence_ichida",
                      ("README.md", "Jami 2 bob, 4 bo'lim.",
