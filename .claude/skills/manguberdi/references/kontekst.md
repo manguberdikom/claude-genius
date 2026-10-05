@@ -77,7 +77,7 @@ Keyingi qadam: <aniq birinchi harakat>
 Qayerga yoziladi: to'ldirilgan beshta maydon (mashina bergan git
 qismisiz, u git dan olinadi) `memory/<proyekt-slug>/project_<vazifa>.md`
 ga yoziladi, `MEMORY.md` ga bir qator qo'shiladi, commit va push
-qilinadi (`memory-protocol.md` marshruti, `type: project`).
+qilinadi (`memory/README.md`, `type: project`).
 
 Keyin foydalanuvchiga `--prompt` matni beriladi (u `/manguberdi` bilan
 boshlanadi) va u matnni yangi sessiyaga yuboradi. Matn yo'qolsa ham

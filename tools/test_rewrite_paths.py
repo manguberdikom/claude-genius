@@ -95,29 +95,63 @@ def case_nuqta_slash():
             and n2 == 1 and py == "python3 %s/tools/rules_for.py x" % GENIUS)
 
 
-def case_memory_protocol():
-    """Klon ildizidagi qoida fayli ham mutlaq bo'ladi va qayta tutilmaydi."""
-    out, n = one("Qoida manbai `memory-protocol.md`.")
-    second, n2 = one(out)
-    return (n == 1 and out == "Qoida manbai `%s/memory-protocol.md`." % GENIUS
-            and n2 == 0 and second == out
-            and R.relative_left("`memory-protocol.md`") == ["memory-protocol.md"])
+# ROOT_FILES hozir bo'sh (memory qoidasi memory/README.md ga ko'chdi va
+# uni MEM_PATH almashtiradi), lekin mexanizm qoladi: ildizga yana shunday
+# fayl qo'shilishi mumkin. Shuning uchun quyidagi holatlar soxta nom
+# qo'yib mexanizmning o'zini sinaydi.
+import contextlib  # noqa: E402
 
 
-def case_memory_protocol_bosh_joyli():
+@contextlib.contextmanager
+def root_files(*names):
+    saved_names, saved_re = R.ROOT_FILES, R.ROOT_FILE
+    R.ROOT_FILES = names
+    R.ROOT_FILE = R.root_file_re(names)
+    try:
+        yield
+    finally:
+        R.ROOT_FILES, R.ROOT_FILE = saved_names, saved_re
+
+
+def case_root_file_bosh_royxat():
+    """Bo'sh ROOT_FILES hech narsani tutmaydi.
+
+    Avval naqsh `(%s)` bilan yasalardi: bo'sh ro'yxatda u bo'sh guruhga
+    aylanib matnning har joyida mos kelardi va rewrite() butun faylni
+    buzardi.
+    """
+    assert R.ROOT_FILES == ()
+    text = "qoida.md va memory-protocol.md va oddiy matn"
+    out, n = one(text)
+    return out == text and n == 0 and R.relative_left(text) == []
+
+
+def case_root_file():
+    """Ildizdagi qoida fayli mutlaq bo'ladi va qayta tutilmaydi."""
+    with root_files("qoida.md"):
+        out, n = one("Qoida manbai `qoida.md`.")
+        second, n2 = one(out)
+        return (n == 1 and out == "Qoida manbai `%s/qoida.md`." % GENIUS
+                and n2 == 0 and second == out
+                and R.relative_left("`qoida.md`") == ["qoida.md"])
+
+
+def case_root_file_bosh_joyli():
     """Fayl `awk '...' <fayl>` argumenti ham bo'ladi: bo'sh joyda qo'shtirnoq."""
-    out, _ = one("`awk '/x/' memory-protocol.md`", root="C:/Program Files/genius")
-    return out == "`awk '/x/' \"C:/Program Files/genius/memory-protocol.md\"`"
+    with root_files("qoida.md"):
+        out, _ = one("`awk '/x/' qoida.md`", root="C:/Program Files/genius")
+        return out == "`awk '/x/' \"C:/Program Files/genius/qoida.md\"`"
 
 
-def case_memory_protocol_chegarasi():
+def case_root_file_chegarasi():
     """Yalang nom almashadi; boshqa papkadagi yoki boshqa nomli fayl emas."""
-    out, n = one("`memory-protocol.md` dagi")
-    other = "`../memory-protocol.md` va `my-memory-protocol.md`"
-    kept, n2 = one(other)
-    return (n == 1 and out == "`%s/memory-protocol.md` dagi" % GENIUS
-            and n2 == 0 and kept == other
-            and R.relative_left(other) == [])
+    with root_files("qoida.md"):
+        out, n = one("`qoida.md` dagi")
+        other = "`../qoida.md` va `my-qoida.md`"
+        kept, n2 = one(other)
+        return (n == 1 and out == "`%s/qoida.md` dagi" % GENIUS
+                and n2 == 0 and kept == other
+                and R.relative_left(other) == [])
 
 
 def case_memory_yoli():
@@ -135,7 +169,7 @@ def case_mutlaq_yol_tegilmaydi():
 def case_idempotent():
     """Ikki marta yurgizish bir marta bilan bir xil natija beradi."""
     text = ("python3 tools/rules_for.py x va tools/doc.sh find y, "
-            "`memory/umumiy/` va `memory-protocol.md`")
+            "`memory/umumiy/` va `memory/README.md`")
     first, _ = one(text)
     second, n = one(first)
     spaced = dict(root="C:/Program Files/genius",
@@ -163,7 +197,7 @@ def case_quvur_ichida():
 
 def case_qolgani_sanaladi():
     left = R.relative_left("tools/doc.sh va python3 tools/x.py va memory/umumiy/")
-    more = R.relative_left("./tools/doc.sh, `memory-protocol.md` va "
+    more = R.relative_left("./tools/doc.sh, `memory/umumiy/` va "
                            "$CLAUDE_PROJECT_DIR/tools/guard.py")
     return len(left) == 3 and len(more) == 3
 
@@ -393,9 +427,10 @@ CASES = [
     ("bash prefiksi ikkilanmaydi", case_bash_prefiksi_ikkilanmaydi),
     ("python (3 siz) chaqiruvi", case_python_3siz_chaqiruv),
     ("./tools/ yo'li", case_nuqta_slash),
-    ("memory-protocol.md", case_memory_protocol),
-    ("bo'sh joyli memory-protocol.md qo'shtirnoqda", case_memory_protocol_bosh_joyli),
-    ("../ va boshqa nomli memory-protocol.md tegilmaydi", case_memory_protocol_chegarasi),
+    ("bo'sh ROOT_FILES hech narsa tutmaydi", case_root_file_bosh_royxat),
+    ("ildizdagi qoida fayli", case_root_file),
+    ("bo'sh joyli ildiz fayli qo'shtirnoqda", case_root_file_bosh_joyli),
+    ("../ va boshqa nomli ildiz fayli tegilmaydi", case_root_file_chegarasi),
     ("memory yo'li", case_memory_yoli),
     ("mutlaq yo'l tegilmaydi", case_mutlaq_yol_tegilmaydi),
     ("ikki marta yurgizish xavfsiz", case_idempotent),

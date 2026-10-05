@@ -72,26 +72,82 @@ tushunadi.
 
 ## Reja shakli
 
-Reja loyiha ildizidagi `REJA.md` ga yoziladi, `reja` skill bilan bir
-joyda (bir nechta reja bo'lsa `reja/<slug>-reja.md`). Yangilashda shu
-fayl o'qiladi.
+Reja loyiha ildizidagi `REJA.md` ga yoziladi (bir nechta reja bo'lsa
+`reja/<slug>-reja.md`). Yangilashda shu fayl o'qiladi.
+
+Avval hajm tanlanadi, u qaysi bo'limlar majburiy ekanini belgilaydi.
+Bo'limni bo'sh qoldirish o'rniga OLIB TASHLASH afzal, sababi kirishda
+bir qatorda aytiladi ("sxema o'zgarmaydi: migratsiya bo'limi yo'q").
+
+| Hajm | Qachon | Majburiy bo'limlar |
+|---|---|---|
+| S | bitta modul, 5 dan kam fayl, jadval tuzilishi va tashqi kontrakt o'zgarmaydi | 1-4, 7, 8, 11 |
+| M | bir nechta modul, yoki jadval tuzilishi o'zgaradi, yoki yangi tashqi chaqiruv | 1-9, 11 |
+| L | chegara o'zgaradi, migratsiya, yangi infratuzilma, ko'p relizli ish | hammasi |
 
 ```
 # Reja: <nom>
 
-Sana: <YYYY-MM-DD>
+Sana: <YYYY-MM-DD>   Hajm: S | M | L
 Holat: <qoralama | kelishilgan | bajarilmoqda>
-Maqsad: <bir jumla, tekshirib bo'ladigan>
-Doira: <nima kiradi>
-Kirmaydi: <nima kirmaydi va nega>
+Maqsad: <bir jumla, o'lchanadigan natija>
 
-## 1. <qadam nomi>
-- Fayl: <yo'l>
-- O'zgarish: <nima qilinadi>
-- Pattern: <nom> (qo'llanma: <hujjat> <raqam>)
-- Test: <qanday tekshiriladi>
-- Qabul mezoni: <qachon bajarilgan hisoblanadi>
+## 1. Qamrov
+Kiradi: <ro'yxat>
+Kirmaydi: <ro'yxat va nega; bu bo'lim kelishuvni soddalashtiradi>
+
+## 2. Aniqlangan haqiqatlar
+| Haqiqat | Qiymat | Manba |
+Versiya, baza, coverage gate, tegishli konfiguratsiya va qoidalar.
+Tasdiqlanmagan qator `TAXMIN:` bilan belgilanadi va 11-bo'limga chiqadi.
+
+## 3. Hozirgi holat
+| Joy (`fayl:qator`) | Simptom | Nega muhim | Qo'llanmadagi mavzu |
+
+## 4. Qadamlar
+### 1-qadam. <imperativ sarlavha>
+- Nega: <bir-ikki jumla>
+- Fayl: <yo'l> (yangi yoki o'zgaradi)
+- Qilinmaydi: <chegara: bu qadamda nimaga tegilmaydi>
+- Pattern: <nom> (asos: <hujjat> <raqam> yoki rasmiy hujjat)
+- Test: <daraja, fayl, oracle>
+- Qabul mezoni: `<buyruq>` -> `<kutilgan natija>`
 - Xavf: <nima noto'g'ri ketishi mumkin>
+
+Har qadam mustaqil tekshiriladi va loyihani yashil qoldiradi.
+
+## 5. Maqsadli dizayn
+Qatlamlar, yangi komponentlar va ma'lumot oqimi: matnli eskiz va 3-5
+qator izoh. Buzilgan yo'nalish `!` bilan belgilanadi.
+
+## 6. Arxitektura qarorlari
+### ADR-1: <sarlavha>
+Kontekst (o'lchov va `fayl:qator` bilan) | Qaror | Ko'rib chiqilgan
+variantlar (kamida ikkita, nega rad etilgani bilan) | Oqibatlar |
+Kuzatiladigan metrika.
+
+## 7. Test matritsasi
+| O'zgarish | Daraja | Joy | Ma'lumot | Oracle |
+Test qiyin joylar va ularning yechimi.
+
+## 8. Sifat darvozasi
+Coverage va boshqa shartlar, xavfdagi Sonar qoidalari
+(`sonarqube <raqam> (<mavzu>)`), exclusion qo'shilsa nega halol.
+
+## 9. Ma'lumot, migratsiya va reliz
+Expand/contract bosqichlari, migratsiya fayli va orqaga qaytarish yo'li,
+katta jadvalga `CONCURRENTLY` indeks, backfill hajmi va partiyasi,
+reliz tartibi, feature flag, kuzatiladigan signallar.
+
+## 10. Definition of Done
+- [ ] <buyruq bilan tekshiriladigan band>
+
+## 11. Ochiq savollar va taxminlar
+| # | Savol yoki taxmin | Kim javob beradi | Javobsiz ta'siri |
+
+## 12. Manbalar
+Kod (`fayl:qator`), config, qo'llanma bo'limlari
+(`<hujjat> <raqam> (<mavzu>)`), rasmiy hujjat havolalari, memory.
 ```
 
 Oxirida: ketma-ketlik va bog'liqlik, keyin "aniqlanishi kerak" ro'yxati

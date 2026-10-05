@@ -51,7 +51,8 @@ ketma-ket bajariladi, aralashtirilmaydi.
 | Qoida matnini keltirish, uchtadan ko'p bo'lim | `qidiruv` | bir-uch bo'lim bo'lsa `doc.sh show` asosiy sessiyada, aktyorsiz |
 | Chiqish yoki sxemani o'qish | `tahlil` | uzun log, entity, test chiqishi |
 
-`reja` skilli zanjirda chaqirilmaydi, uning o'rnini `rejalashtiruvchi` bosadi.
+Reja tuzish zanjirda `rejalashtiruvchi` aktyoriga boradi: alohida reja
+skilli yo'q.
 
 ## Hujjat berilgan bo'lsa
 
@@ -63,7 +64,7 @@ tushadi, o'ylab to'ldirilmaydi.
 Fayl bo'lib berilgan rasm, PDF yoki Word yo'li `rejalashtiruvchi` ga
 beriladi va uni aktyorning o'zi o'qiydi: PDF va rasm `Read` bilan, Word
 uchun buyruq agent faylida. Asosiy sessiya hujjatni oldindan o'qimaydi,
-`reja` skilliga ham tayanmaydi: global o'rnatishda u yo'q.
+marshrut skillariga ham tayanmaydi: global o'rnatishda ular yo'q.
 
 Rasm chatga qo'yilgan bo'lsa, aktyor uni ko'rmaydi: talablar asosiy
 sessiyada matnga aylantiriladi yoki fayl yo'li beriladi, keyin

@@ -352,7 +352,6 @@ nusxadagi yo'llarni mutlaq qiladi:
 python3 tools/rules_for.py   ->  C:/Python312/python.exe C:/src/claude-genius/tools/rules_for.py
 tools/doc.sh find            ->  bash C:/src/claude-genius/tools/doc.sh find
 memory/<proyekt-slug>/       ->  C:/src/claude-genius/memory/<proyekt-slug>/
-memory-protocol.md           ->  C:/src/claude-genius/memory-protocol.md
 ```
 
 `C:/Python312/python.exe` misol: o'rnatuvchi tanlagan Python ning to'liq

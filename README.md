@@ -31,15 +31,14 @@ render qilmaydi, monolit variant brauzerda ochilmaydi.
 
 ## Claude Code bilan ishlatish
 
-`.claude/skills/` ichida to'qqizta skill bor: sakkiztasi qo'llanmaga marshrut,
-`manguberdi` esa orkestrator. Repoda Claude Code ishga tushsa, sakkiztasi
+`.claude/skills/` ichida sakkizta skill bor: yettitasi qo'llanmaga marshrut,
+`manguberdi` esa orkestrator. Repoda Claude Code ishga tushsa, yettitasi
 avtomatik ko'rinadi va kerakli bobni o'zi topib o'qiydi, `manguberdi` esa
 sessiyada bir marta `/manguberdi` bilan chaqiriladi. U `.claude/agents/`
 dagi olti aktyorni yurgizadi.
 
 | Skill | Qachon ishga tushadi |
 |---|---|
-| `reja` | murakkab vazifa uchun bosqichli reja tuzish |
 | `design-patterns` | pattern tanlash, refaktoring, "bu yerga qaysi pattern to'g'ri keladi" |
 | `spring-testing` | test yozish, Testcontainers, flaky test, test strategiyasi |
 | `sonarqube-fix` | Sonar issue tuzatish, quality gate, coverage, exclusion |
@@ -66,7 +65,7 @@ Global o'rnatishda ular har proyektda yuradi, lekin boshqa joyda chiqishsiz
 `GENIUS_HOOKS=off` hammasini o'chiradi. Tafsiloti
 [install/README.md](install/README.md#hooklar-qaysi-proyektda-ishlaydi) da.
 
-Sakkizta marshrut skilli faqat shu repo ichida ishlaydi: ulardagi `docs/` va
+Yettita marshrut skilli faqat shu repo ichida ishlaydi: ulardagi `docs/` va
 `tools/` yo'llari joriy papkaga nisbatan hal qilinadi va boshqa proyektda
 topilmaydi, shuning uchun ularni boshqa joyga ko'chirmang. Boshqa Java
 proyektda `manguberdi` ishlatiladi. U olti aktyor va hooklar bilan birga
@@ -82,10 +81,8 @@ yurgiziladi: ro'yxat chiqadi, hech narsa o'zgarmaydi.
 
 `memory/` papkasida git ichida saqlanadigan memory ombori. Proyekt memoryasi
 `memory/claude-genius/`, barcha proyektlarga tegishli bilim `memory/umumiy/`
-da. Qoidalar: [memory-protocol.md](memory-protocol.md) va
-[memory/README.md](memory/README.md). Mexanika, yuklanish tartibi va
-audit (memory yuklanmasa qayerdan qarash):
-[memory-mexanika.md](memory-mexanika.md).
+da. Qoida bitta faylda: [memory/README.md](memory/README.md). Nima
+yoziladi, nima yozilmaydi, qayerga, qanday format va qachon o'chiriladi.
 
 ## Tez qidirish
 

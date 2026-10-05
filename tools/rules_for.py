@@ -382,7 +382,7 @@ def _index_notes(folder):
 def _topic(path):
     """Topic fayl: (modified, sarlavha, birinchi gap yoki punkt).
 
-    Fayl frontmatter bilan boshlanadi (memory-protocol.md), u tashlanadi:
+    Fayl frontmatter bilan boshlanadi (memory/README.md), u tashlanadi:
     aks holda aktyorga `---` yetib boradi.
     """
     with open(path, encoding="utf-8", errors="replace") as handle:

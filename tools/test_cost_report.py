@@ -38,10 +38,12 @@ def description(path):
 
 
 def case_skill_tavsiflari_inglizcha(_):
+    """Marshrut skilllari tavsifi inglizcha: trigger inglizcha promptga ham
+    tushsin. Soni faqat bo'sh ro'yxatdan yolg'on yashil chiqmasligi uchun."""
     names = [d for d in sorted(os.listdir(SKILLS))
              if os.path.exists(os.path.join(SKILLS, d, "SKILL.md"))
              and d != "manguberdi"]
-    return len(names) >= 8 and all(
+    return len(names) >= 7 and all(
         cost_report.lang_of(description(os.path.join(SKILLS, d, "SKILL.md")))
         == "en" for d in names)
 
@@ -169,7 +171,7 @@ def case_memory_papka_nomiga_bogliq_emas(tmp):
 
 
 CASES = [
-    ("8 skill tavsifi inglizcha", case_skill_tavsiflari_inglizcha),
+    ("marshrut skilllari tavsifi inglizcha", case_skill_tavsiflari_inglizcha),
     ("manguberdi, agentlar va CLAUDE.md o'zbekcha", case_ozbekcha_matnlar),
     ("ro'yxat qatori nom va tools bilan", case_royxat_qatori),
     ("taklif hooki indekssiz taxmin", case_taklif_indekssiz),

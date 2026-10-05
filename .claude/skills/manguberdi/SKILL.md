@@ -77,7 +77,7 @@ qaror, talab hujjatdan) yoki foydalanuvchi ochiq so'raganda tuziladi.
 Kichik bug va toza kod o'zgarishini `arxitektor` rejasiz bajaradi.
 
 Reja so'rovi har doim `rejalashtiruvchi` ga beriladi. Repoda reja
-tuzadigan skill bo'lsa ham (masalan `reja`), zanjirda u chaqirilmaydi: u
+tuzadigan skill bo'lsa ham, zanjirda u chaqirilmaydi: u
 asosiy sessiyada ~25k token o'qiydi va `budget.py` uni sanamaydi.
 
 ## Ketma-ketlik
@@ -118,9 +118,9 @@ qayta o'ylanmaydi.
 ## Memory
 
 Memory bosqichi har zanjir oxirida bajariladi: toza tugaganda ham,
-budjet tugab to'xtaganda ham. Nima yoziladi va nima **yozilmaydi** -
-`references/memory.md`. Qoida bitta: `memory-protocol.md` dagi yetti
-savol darvozasidan o'tmagan narsa yozilmaydi.
+budjet tugab to'xtaganda ham. Qoida bitta faylda: `memory/README.md`.
+Nima yoziladi, nima yozilmaydi, qayerga va qanday format. To'rt savol
+darvozasidan o'tmagan narsa yozilmaydi.
 
 ## Kontekst
 

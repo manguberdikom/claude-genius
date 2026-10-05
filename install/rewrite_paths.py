@@ -58,9 +58,27 @@ MEM_PATH = re.compile(r"(?<![\w/])memory/(?=[\w<])")
 # Klon ildizidagi, skill matni nomi bilan tilga oladigan fayllar. Ular
 # Read bilan ham, shell argumenti sifatida ham (`awk '...' <fayl>`)
 # o'qiladi, shuning uchun tools/ yo'li kabi qo'shtirnoqqa olinadi.
-ROOT_FILES = ("memory-protocol.md",)
-ROOT_FILE = re.compile(r"(?<![\w/.-])(%s)\b"
-                       % "|".join(re.escape(name) for name in ROOT_FILES))
+#
+# Hozir bo'sh: memory qoidasi `memory/README.md` ga ko'chdi va uni
+# MEM_PATH allaqachon almashtiradi. Mexanizm qoldirildi, chunki ildizga
+# yana shunday fayl qo'shilishi mumkin.
+ROOT_FILES = ()
+
+
+def root_file_re(names):
+    """Nomlarni tutadigan naqsh. Bo'sh ro'yxatda hech narsa tutmaydi.
+
+    Bo'sh ro'yxatda `(%s)` bo'sh guruhga aylanib, matnning har joyida
+    mos kelardi va rewrite() butun faylni buzardi. `(?!)` esa hech
+    qachon mos kelmaydi.
+    """
+    if not names:
+        return re.compile(r"(?!)")
+    return re.compile(r"(?<![\w/.-])(%s)\b"
+                      % "|".join(re.escape(name) for name in names))
+
+
+ROOT_FILE = root_file_re(ROOT_FILES)
 # Global o'rnatishda $CLAUDE_PROJECT_DIR foydalanuvchi proyekti, klon emas:
 # undagi tools/ yo'li ham noto'g'ri. Almashtirilmaydi, faqat sanaladi.
 PROJECT_TOOLS = re.compile(r"\$\{?CLAUDE_PROJECT_DIR\}?\"?/tools/")
