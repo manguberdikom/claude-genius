@@ -588,18 +588,18 @@ public record Money(BigDecimal amount, Currency currency) {
 
 ## 25.31 Public Bo'lmagan Metodda @Transactional (@Transactional on Non-Public Methods)
 
-**Tavsif:** Spring'ning standart proxy-asosidagi transaction rejimida faqat public metodlar interceptor bilan o'raladi; `private`, `protected` va package-private metodlardagi `@Transactional` jim e'tiborsiz qoldiriladi. JDK dynamic proxy faqat interface metodlarini ko'radi, CGLIB subclass esa `private`/`final` metodni override qila olmaydi. Natijada ishlab chiquvchi transaction mavjud deb o'ylaydi, lekin har bir repository chaqiruvi o'zining auto-commit konteksida bajariladi va rollback ishlamaydi. Bu xatolik kompilyatsiyada ham, startup'da ham ko'rinmaydi.
+**Tavsif:** Proxy-asosidagi transaction rejimida annotatsiya metodga uch sababdan tegmay qolishi mumkin. Birinchisi ko'rinish: Spring 6.0 dan beri class-based (CGLIB) proxy da `protected` va package-private metodlar ham tranzaksion bo'la oladi, lekin `private` va `final` metod hech qachon ishlamaydi, chunki CGLIB proxy target sinfning subclass'i va bu metodlarni override qila olmaydi. Ikkinchisi proxy turi: interface (JDK dynamic proxy) rejimida tranzaksion metod `public` bo'lishi va proxy qilinayotgan interface da e'lon qilinishi shart. Uchinchisi chaqiruv yo'li: ikki rejimda ham faqat proxy orqali kelgan tashqi chaqiruv ushlanadi, ya'ni `this` orqali self-invocation annotatsiyani chetlab o'tadi. Uchalasi ham kompilyatsiyada ham, startup'da ham ko'rinmaydi: ishlab chiquvchi transaction mavjud deb o'ylaydi, lekin har bir repository chaqiruvi o'zining auto-commit konteksida bajariladi va rollback ishlamaydi.
 
-**Spring'da qayerda uchraydi:** `AbstractFallbackTransactionAttributeSource` kodida `allowPublicMethodsOnly()` `true` qaytaradi, shuning uchun `AnnotationTransactionAttributeSource` public bo'lmagan metodni o'tkazib yuboradi. Spring Framework 6.x'da bu cheklov saqlanib qolgan; yagona chiqish yo'li - `@EnableTransactionManagement(mode = AdviceMode.ASPECTJ)` bilan AspectJ weaving (`spring-aspects` moduli va `AnnotationTransactionAspect`), bunda `protected`/package-private metodlar ham qo'llaniladi. Shunga o'xshash cheklov `@Cacheable` (`CacheInterceptor`) va `@Async` uchun ham amal qiladi.
+**Spring'da qayerda uchraydi:** `AbstractFallbackTransactionAttributeSource.computeTransactionAttribute()` `allowPublicMethodsOnly()` rost bo'lgan holatda public bo'lmagan metodni o'tkazib yuboradi. Bazaviy implementatsiya `false` qaytaradi, `AnnotationTransactionAttributeSource` esa uni `publicMethodsOnly` flagidan oladi, `@EnableTransactionManagement` (shu bilan Spring Boot ham) 6.0 dan beri bu bean'ni `new AnnotationTransactionAttributeSource(false)` bilan yasaydi. 5.3 gacha default public-only edi. Flagni orqaga qaytarish mumkin (`new AnnotationTransactionAttributeSource(true)` yoki `setPublicMethodsOnly(true)`), `private` va `final` uchun esa flagning ahamiyati yo'q: cheklov CGLIB ning o'zida. AspectJ weaving (`@EnableTransactionManagement(mode = AdviceMode.ASPECTJ)` bilan `spring-aspects` moduli va `AnnotationTransactionAspect`) `private` metodni va self-invocation ni ham qamraydi, lekin u yagona yo'l emas, eng qimmat yo'l. `@Cacheable` (`CacheInterceptor`) va `@Async` xuddi shu proxy mexanizmida ishlaydi, shuning uchun `private`, `final` va self-invocation cheklovi ularga ham tegishli.
 
 **Qo'llanish keyslari:**
 - Public `process()` metodi ichidan `private @Transactional void persist()` chaqirilgan va rollback kutilgan - aslida transaction hech qachon boshlanmaydi.
-- Legacy sinfda metodni `protected` qilib "incapsulyatsiya" qilish paytida transaction'ni tasodifan o'chirib qo'yish.
+- Interface'i bor bean (JDK dynamic proxy): tranzaksion metod proxy qilinayotgan interface da e'lon qilinmagan, shuning uchun proxy uni ko'rmaydi va chaqiruv to'g'ridan to'g'ri target'ga tushadi.
 - Kotlin yoki Lombok generatsiya qilgan metodlar `final` bo'lib, CGLIB proxy'ni buzishi.
-- `@Scheduled`+`@Transactional` birgalikda package-private metodga qo'yilib, cron ishlaydi-u, transaction yo'q bo'lishi.
-- Test uchun yozilgan `protected` helper metodga `@Transactional` qo'yib, test "yashil" bo'lgani holda ma'lumot commit bo'lib qolishi.
+- 5.x dan 6.x ga ko'tarilish: ilgari jim e'tiborsiz qolgan `protected` yoki package-private `@Transactional` endi kuchga kirib, kutilmagan joyda yangi transaction chegarasi paydo bo'lishi.
+- `TransactionAttributeSource` ni qo'lda bean qilib e'lon qilish: argumentsiz `new AnnotationTransactionAttributeSource()` da `publicMethodsOnly` `true` bo'ladi va `@EnableTransactionManagement` bergan default bosilib ketadi.
 
-**Ehtiyot bo'ling:** Statik analiz vositalari (SonarQube `java:S2230`, "Methods with Spring proxying annotations should be public", Spring IDE inspeksiyasi) bu holatni aniqlaydi - CI'da yoqib qo'ying. AspectJ rejimiga o'tish muammoni hal qiladi, lekin build murakkablashadi va weaving xatolari debug qilish qiyin, shuning uchun ko'pincha metodni public qilib alohida bean'ga ko'chirish arzonroq yechim.
+**Ehtiyot bo'ling:** SonarQube `java:S2230` ("Methods with Spring proxying annotations should be public") bu holatni aniqlaydi va CI'da yoqib qo'yishga arziydi, lekin qoida Spring versiyasiga bog'langan: o'z ta'rifiga ko'ra 5.x gacha har qanday public bo'lmagan metodni, 6.x da esa faqat `private` metodni belgilaydi. Shuning uchun topilmani loyihaning Spring versiyasi bilan birga o'qish kerak. Self-invocation ni bu qoida ko'rmaydi, u alohida qoida. Eng arzon yechim: transaction chegarasini interface dagi yoki sinfning ommaviy metodida aniq qilib qo'yish, self-invocation kerak bo'lsa metodni alohida bean'ga ko'chirish. AspectJ rejimiga o'tish `private` metodni ham qamraydi, lekin build murakkablashadi va weaving xatolari debug qilish qiyin, shuning uchun u oxirgi chora.
 
 ## 25.32 View Ichida Ochiq Sessiya (Open Session in View - anti-pattern)
 
@@ -1425,6 +1425,12 @@ public Rate fetch(String code) {
 - [ ] `catch (Exception e) {}` ko'rinishidagi yutilgan istisnolarni qidirib, hammasini ro'yxat qiling.
 - [ ] Open Session in View, Shared Database va Distributed Monolith holatlarini alohida tekshirib, natijani hujjatlashtiring.
 - [ ] Anti-pattern qarzini kamaytirish rejasini yozing: har chorakda qaysi biri yopiladi va buni qanday o'lchaysiz.
+
+## Manbalar
+
+- [Spring Framework, Declarative transaction annotations](https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/annotations.html) - 6.0 dan beri `protected` va package-visible metodlar class-based proxy da tranzaksion bo'ladi; interface proxy da metod `public` va proxy qilinayotgan interface da bo'lishi shart
+- [Spring Framework, Proxying mechanisms](https://docs.spring.io/spring-framework/reference/core/aop/proxying.html) - CGLIB `final` va `private` metodni advise qila olmaydi
+- [sonar-java, S2230](https://raw.githubusercontent.com/SonarSource/sonar-java/master/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S2230.html) - qoida 5.x gacha har qanday public bo'lmagan metodni, 6.x da faqat `private` ni belgilaydi
 
 ---
 
