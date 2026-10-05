@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 41 | part: IX. Jarayon, madaniyat va o'lchov -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 41. Review madaniyati, til va kelishmovchilik (Culture, Language, Disagreement)
 

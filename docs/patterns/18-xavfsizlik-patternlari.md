@@ -1,6 +1,6 @@
 <!-- doc: patterns | chapter: 18 | part:  -->
 
-[Java Spring arxitektori bilishi kerak bo'lgan barcha dizayn patternlar](../../README.md) / [Dizayn patternlar](README.md)
+[Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
 # 18. Xavfsizlik patternlari (Security Patterns)
 

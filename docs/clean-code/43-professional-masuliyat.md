@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 43 | part: XII. Professional intizom -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 43. Professional mas'uliyat (Professionalism)
 

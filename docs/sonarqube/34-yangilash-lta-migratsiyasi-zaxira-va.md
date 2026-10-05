@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 34 | part: VIII. Server va tashkilot -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 34. Yangilash, LTA migratsiyasi, zaxira va housekeeping (Upgrades, Backup and Housekeeping)
 

@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 22 | part: IV. Spring kodini review qilish -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 22. Tashqi integratsiya review: timeout, retry, broker (Outbound Integration)
 

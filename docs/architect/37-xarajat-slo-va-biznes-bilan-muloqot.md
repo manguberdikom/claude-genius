@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 37 | part: VI. Amaliyot va o'sish -->
 
-[Kod yozadigan arxitektorning miyyasi](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
 
 # 37. Xarajat, SLO va biznes bilan muloqot (Cost, SLO and Business Communication)
 

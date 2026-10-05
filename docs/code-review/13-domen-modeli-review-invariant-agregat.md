@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 13 | part: II. Arxitektura, dizayn va clean code review -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 13. Domen modeli review: invariant, agregat, chegara (Reviewing the Domain Model)
 

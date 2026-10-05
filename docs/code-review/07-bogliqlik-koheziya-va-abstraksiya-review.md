@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 7 | part: II. Arxitektura, dizayn va clean code review -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 7. Bog'liqlik, koheziya va abstraksiya review (Coupling, Cohesion, Abstraction)
 

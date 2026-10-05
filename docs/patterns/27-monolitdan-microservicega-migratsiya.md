@@ -1,6 +1,6 @@
 <!-- doc: patterns | chapter: 27 | part:  -->
 
-[Java Spring arxitektori bilishi kerak bo'lgan barcha dizayn patternlar](../../README.md) / [Dizayn patternlar](README.md)
+[Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
 # 27. Monolitdan microservice'ga migratsiya patternlari (Monolith to Microservices Migration Patterns)
 

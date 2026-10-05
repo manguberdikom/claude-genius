@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 1 | part: I. Toza kodning asosi -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 1. Toza kod nima va nega qimmat (What Clean Code Is)
 

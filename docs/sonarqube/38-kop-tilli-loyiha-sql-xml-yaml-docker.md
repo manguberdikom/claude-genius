@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 38 | part: IX. Kengaytirish va integratsiya -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 38. Ko'p tilli loyiha: SQL, XML, YAML, Docker, Kubernetes, frontend (Multi-language Projects)
 

@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 28 | part: VIII. Spring va ma'lumot qatlamida toza kod -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 28. JPA va SQL kodining tozaligi (Clean JPA and SQL)
 

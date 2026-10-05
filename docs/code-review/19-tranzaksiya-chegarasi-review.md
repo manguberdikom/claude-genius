@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 19 | part: IV. Spring kodini review qilish -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 19. Tranzaksiya chegarasi review (Transaction Boundaries)
 

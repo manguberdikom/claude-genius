@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 44 | part: XII. Professional intizom -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 44. "Yo'q" va "ha" deyish: majburiyat tili (Saying No and Saying Yes)
 

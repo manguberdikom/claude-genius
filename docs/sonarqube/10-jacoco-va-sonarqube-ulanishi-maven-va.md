@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 10 | part: III. Qamrov (coverage) -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 10. JaCoCo va SonarQube ulanishi: Maven va Gradle sozlash (Wiring JaCoCo to SonarQube)
 

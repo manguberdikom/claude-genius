@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 21 | part: IV. PostgreSQL chuqur bilim -->
 
-[Kod yozadigan arxitektorning miyyasi](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
 
 # 21. PostgreSQL arxitekturasi: process model, WAL, checkpoint, vacuum (PostgreSQL Architecture)
 

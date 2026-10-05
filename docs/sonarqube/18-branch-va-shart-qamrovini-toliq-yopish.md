@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 18 | part: V. Sonar o'tadigan test -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 18. Branch va shart qamrovini to'liq yopish usullari (Covering Every Branch)
 

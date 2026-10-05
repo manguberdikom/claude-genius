@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 34 | part: X. Hid katalogi va refaktoring harakatlari -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 34. Toza kod evristikalarining to'liq ro'yxati (Clean Code Heuristics)
 

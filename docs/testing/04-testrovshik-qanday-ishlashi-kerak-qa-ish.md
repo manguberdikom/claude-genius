@@ -1,6 +1,6 @@
 <!-- doc: testing | chapter: 4 | part:  -->
 
-[Java Spring loyihasida testlash](../../README.md) / [Testlash qo'llanmasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
 # 4. Testrovshik qanday ishlashi kerak: QA ish jarayoni (How a Tester Actually Works - The QA Workflow)
 

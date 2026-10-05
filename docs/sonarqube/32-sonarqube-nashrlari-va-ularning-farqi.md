@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 32 | part: VIII. Server va tashkilot -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 32. SonarQube nashrlari va ularning farqi (Editions)
 

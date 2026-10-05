@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 20 | part: III. Spring chuqur bilim -->
 
-[Kod yozadigan arxitektorning miyyasi](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
 
 # 20. Spring Security: filter chain, OAuth2, JWT (Spring Security)
 

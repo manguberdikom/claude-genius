@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 39 | part: VIII. Kesishgan sifat -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 39. Observability review (Observability)
 

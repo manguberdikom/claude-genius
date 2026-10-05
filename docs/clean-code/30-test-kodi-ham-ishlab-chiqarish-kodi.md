@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 30 | part: IX. Test kodining tozaligi -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 30. Test kodi ham ishlab chiqarish kodi (Test Code Is Production Code)
 

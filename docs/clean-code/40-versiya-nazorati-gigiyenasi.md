@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 40 | part: XI. Kod bazasi va jarayon gigiyenasi -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 40. Versiya nazorati gigiyenasi (Version Control Hygiene)
 

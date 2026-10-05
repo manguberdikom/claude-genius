@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 35 | part: X. Hid katalogi va refaktoring harakatlari -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 35. Refaktoring harakatlari katalogi I: funksiya va o'zgaruvchi (Refactoring Moves I)
 

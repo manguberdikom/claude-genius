@@ -1,6 +1,6 @@
 <!-- doc: testing | chapter: 7 | part:  -->
 
-[Java Spring loyihasida testlash](../../README.md) / [Testlash qo'llanmasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
 # 7. Integratsion test: Spring Boot slice testlari (Integration Testing - Spring Boot Test Slices)
 

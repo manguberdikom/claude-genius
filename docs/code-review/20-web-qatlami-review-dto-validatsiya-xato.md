@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 20 | part: IV. Spring kodini review qilish -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 20. Web qatlami review: DTO, validatsiya, xato javobi (The Web Layer)
 

@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 26 | part: VIII. Spring va ma'lumot qatlamida toza kod -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 26. Spring kodining tozaligi (Clean Code in Spring)
 

@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 16 | part: III. Java kodini chuqur tahlil -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 16. Resurs, xotira va GC bosimi review (Resources and Memory)
 

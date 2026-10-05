@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 42 | part: X. Amaliy ma'lumotnoma -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 42. Diagnostika: tahlil ishlamaganda nima qilish (Troubleshooting)
 

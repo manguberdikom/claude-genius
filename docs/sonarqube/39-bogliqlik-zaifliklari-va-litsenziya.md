@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 39 | part: IX. Kengaytirish va integratsiya -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 39. Bog'liqlik zaifliklari va litsenziya tekshiruvi (Dependency Risk and Licences)
 

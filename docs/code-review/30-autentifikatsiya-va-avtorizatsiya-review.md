@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 30 | part: VI. Xavfsizlik review -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 30. Autentifikatsiya va avtorizatsiya review (Authentication and Authorization)
 

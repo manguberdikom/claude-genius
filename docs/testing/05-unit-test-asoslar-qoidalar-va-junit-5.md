@@ -1,6 +1,6 @@
 <!-- doc: testing | chapter: 5 | part:  -->
 
-[Java Spring loyihasida testlash](../../README.md) / [Testlash qo'llanmasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
 # 5. Unit test: asoslar, qoidalar va JUnit 5 (Unit Testing - Foundations, Rules & JUnit 5)
 

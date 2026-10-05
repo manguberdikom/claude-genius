@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 10 | part: III. Izoh va hujjat -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 10. Javadoc va API hujjati (Javadoc and API Documentation)
 

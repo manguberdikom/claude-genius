@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 31 | part: V. Atrof ekotizim: operatsion haqiqat -->
 
-[Kod yozadigan arxitektorning miyyasi](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
 
 # 31. Deployment haqiqati: konteyner, cgroup, JVM va probe (Deployment Reality)
 

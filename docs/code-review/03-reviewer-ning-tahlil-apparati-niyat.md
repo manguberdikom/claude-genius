@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 3 | part: I. Review ning mohiyati va iqtisodi -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 3. Reviewer ning tahlil apparati: niyat, invariant, xavf yuzasi (The Reviewer's Analytical Apparatus)
 

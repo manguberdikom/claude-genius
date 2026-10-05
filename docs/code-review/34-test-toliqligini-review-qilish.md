@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 34 | part: VII. Test review -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 34. Test to'liqligini review qilish (Test Case Completeness)
 

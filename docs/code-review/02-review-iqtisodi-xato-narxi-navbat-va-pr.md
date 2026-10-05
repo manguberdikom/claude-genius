@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 2 | part: I. Review ning mohiyati va iqtisodi -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 2. Review iqtisodi: xato narxi, navbat va PR hajmi (The Economics of Review)
 

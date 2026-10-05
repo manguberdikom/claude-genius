@@ -1,6 +1,6 @@
 <!-- doc: testing | chapter: 12 | part:  -->
 
-[Java Spring loyihasida testlash](../../README.md) / [Testlash qo'llanmasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
 # 12. End-to-end va UI testlar (End-to-End & UI Testing)
 

@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 9 | part: II. Arxitektura, dizayn va clean code review -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 9. SOLID va dizayn printsiplarini diffda tekshirish (Principles, Not Slogans)
 

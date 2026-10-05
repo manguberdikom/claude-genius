@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 4 | part: I. Fikrlash va qarorlar -->
 
-[Kod yozadigan arxitektorning miyyasi](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
 
 # 4. Kod - muloqot vositasi: nomlash, aniqlik, kognitiv yuk (Code as Communication)
 

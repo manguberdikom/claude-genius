@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 43 | part: X. Amaliy ma'lumotnoma -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 43. Tezkor ma'lumotnoma: parametrlar, buyruqlar, glossariy (Quick Reference and Glossary)
 

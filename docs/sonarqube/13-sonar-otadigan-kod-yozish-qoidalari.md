@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 13 | part: IV. Sonar o'tadigan kod -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 13. Sonar o'tadigan kod yozish qoidalari (Writing Code That Passes)
 

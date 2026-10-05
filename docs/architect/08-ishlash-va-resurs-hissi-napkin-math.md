@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 8 | part: I. Fikrlash va qarorlar -->
 
-[Kod yozadigan arxitektorning miyyasi](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
 
 # 8. Ishlash va resurs hissi: napkin math (Performance Intuition and Napkin Math)
 

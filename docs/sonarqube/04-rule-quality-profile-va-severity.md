@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 4 | part: I. SonarQube qanday ishlaydi -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 4. Rule, quality profile va severity (Rules, Profiles and Severity)
 

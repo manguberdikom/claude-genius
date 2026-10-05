@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 45 | part: XII. Professional intizom -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 45. Baholash, muddat va bosim (Estimation, Deadlines and Pressure)
 

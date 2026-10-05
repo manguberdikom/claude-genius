@@ -1,6 +1,6 @@
 <!-- doc: patterns | chapter: 6 | part:  -->
 
-[Java Spring arxitektori bilishi kerak bo'lgan barcha dizayn patternlar](../../README.md) / [Dizayn patternlar](README.md)
+[Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
 # 6. Web va taqdimot qatlami patternlari (Web & Presentation Patterns)
 

@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 7 | part: I. Fikrlash va qarorlar -->
 
-[Kod yozadigan arxitektorning miyyasi](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
 
 # 7. Nosozlik haqida fikrlash (Thinking About Failure)
 

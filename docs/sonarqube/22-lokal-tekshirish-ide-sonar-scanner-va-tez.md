@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 22 | part: VI. Amaliyot va jarayon -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 22. Lokal tekshirish: IDE, sonar-scanner va tez qaytish (Local Feedback Loop)
 

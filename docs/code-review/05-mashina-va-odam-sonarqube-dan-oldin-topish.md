@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 5 | part: I. Review ning mohiyati va iqtisodi -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 5. Mashina va odam: SonarQube dan oldin topish (Beating the Tools)
 

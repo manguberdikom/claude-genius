@@ -1,6 +1,6 @@
 <!-- doc: testing | chapter: 18 | part:  -->
 
-[Java Spring loyihasida testlash](../../README.md) / [Testlash qo'llanmasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
 # 18. Shablonlar, checklistlar va ma'lumotnoma (Templates, Checklists & Reference)
 

@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 19 | part: III. Spring chuqur bilim -->
 
-[Kod yozadigan arxitektorning miyyasi](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
 
 # 19. Spring tranzaksiyalari va ularning chegaralari (Spring Transactions)
 

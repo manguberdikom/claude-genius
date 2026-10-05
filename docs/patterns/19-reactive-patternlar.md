@@ -1,6 +1,6 @@
 <!-- doc: patterns | chapter: 19 | part:  -->
 
-[Java Spring arxitektori bilishi kerak bo'lgan barcha dizayn patternlar](../../README.md) / [Dizayn patternlar](README.md)
+[Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
 # 19. Reactive patternlar (Reactive Patterns)
 

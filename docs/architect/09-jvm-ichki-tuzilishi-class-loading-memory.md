@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 9 | part: II. Java chuqur bilim -->
 
-[Kod yozadigan arxitektorning miyyasi](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
 
 # 9. JVM ichki tuzilishi: class loading, memory model, JIT (JVM Internals)
 

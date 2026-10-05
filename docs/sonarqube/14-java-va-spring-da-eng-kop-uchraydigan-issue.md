@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 14 | part: IV. Sonar o'tadigan kod -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 14. Java va Spring da eng ko'p uchraydigan issue va ularning yechimi (Common Java and Spring Issues)
 

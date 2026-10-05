@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 11 | part: II. Arxitektura, dizayn va clean code review -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 11. Dizayn pattern review II: noto'g'ri va ortiqcha qo'llangan pattern (Misapplied and Over-Applied Patterns)
 

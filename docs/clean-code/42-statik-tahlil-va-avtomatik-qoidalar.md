@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 42 | part: XI. Kod bazasi va jarayon gigiyenasi -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 42. Statik tahlil va avtomatik qoidalar (Static Analysis and Automated Rules)
 

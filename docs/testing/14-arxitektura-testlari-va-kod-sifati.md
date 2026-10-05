@@ -1,6 +1,6 @@
 <!-- doc: testing | chapter: 14 | part:  -->
 
-[Java Spring loyihasida testlash](../../README.md) / [Testlash qo'llanmasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
 # 14. Arxitektura testlari va kod sifati darvozalari (Architecture Tests & Code Quality Gates)
 

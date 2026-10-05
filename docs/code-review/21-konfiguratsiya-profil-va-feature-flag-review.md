@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 21 | part: IV. Spring kodini review qilish -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 21. Konfiguratsiya, profil va feature flag review (Configuration)
 

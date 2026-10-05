@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 43 | part: IX. Jarayon, madaniyat va o'lchov -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 43. AI yozgan kodni review qilish va AI bilan review qilish (Reviewing AI-Generated Code)
 

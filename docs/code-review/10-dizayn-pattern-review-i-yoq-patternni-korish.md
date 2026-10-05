@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 10 | part: II. Arxitektura, dizayn va clean code review -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 10. Dizayn pattern review I: yo'q patternni ko'rish (Missing Patterns)
 

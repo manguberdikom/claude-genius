@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 38 | part: VI. Amaliyot va o'sish -->
 
-[Kod yozadigan arxitektorning miyyasi](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
 
 # 38. Doimiy o'rganish va texnologiya tanlash (Continuous Learning and Technology Choice)
 

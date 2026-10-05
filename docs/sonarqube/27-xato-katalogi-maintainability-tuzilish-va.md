@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 27 | part: VII. Xato katalogi: qanday kod qanday xato hisoblanadi -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 27. Xato katalogi: maintainability, tuzilish va murakkablik (Catalog: Maintainability, Structure)
 

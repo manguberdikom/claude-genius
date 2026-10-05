@@ -1,6 +1,6 @@
 <!-- doc: testing | chapter: 17 | part:  -->
 
-[Java Spring loyihasida testlash](../../README.md) / [Testlash qo'llanmasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
 # 17. Metrikalar va test yetukligi modeli (Metrics & Testing Maturity)
 

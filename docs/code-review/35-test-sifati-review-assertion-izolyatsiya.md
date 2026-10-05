@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 35 | part: VII. Test review -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 35. Test sifati review: assertion, izolyatsiya, beqarorlik (Test Quality)
 

@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 37 | part: X. Hid katalogi va refaktoring harakatlari -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 37. Refaktoring harakatlari katalogi III: shart, API va ierarxiya (Refactoring Moves III)
 

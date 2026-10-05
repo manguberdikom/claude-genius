@@ -1,6 +1,6 @@
 <!-- doc: testing | chapter: 3 | part:  -->
 
-[Java Spring loyihasida testlash](../../README.md) / [Testlash qo'llanmasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
 # 3. Kim nima yozadi: rollar va mas'uliyat (Who Writes What - Roles & Responsibilities)
 

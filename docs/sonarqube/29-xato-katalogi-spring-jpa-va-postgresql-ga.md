@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 29 | part: VII. Xato katalogi: qanday kod qanday xato hisoblanadi -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 29. Xato katalogi: Spring, JPA va PostgreSQL ga xos xatolar (Catalog: Spring, JPA and PostgreSQL)
 

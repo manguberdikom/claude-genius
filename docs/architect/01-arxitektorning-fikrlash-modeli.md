@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 1 | part: I. Fikrlash va qarorlar -->
 
-[Kod yozadigan arxitektorning miyyasi](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
 
 # 1. Arxitektorning fikrlash modeli (The Architect's Mental Model)
 

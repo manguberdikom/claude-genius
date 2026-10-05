@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 39 | part: XI. Kod bazasi va jarayon gigiyenasi -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 39. Bir qadamli build va mahalliy qaytish halqasi (One-Step Build)
 

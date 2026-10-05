@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 12 | part: III. Qamrov (coverage) -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 12. Exclusion: nimani chiqarish halol, nimani chiqarish aldov (Exclusions, Honest and Dishonest)
 

@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 17 | part: V. Sonar o'tadigan test -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 17. Sonar talablarini qondiradigan test yozish (Writing Tests That Satisfy Sonar)
 

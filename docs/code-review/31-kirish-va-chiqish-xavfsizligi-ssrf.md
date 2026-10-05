@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 31 | part: VI. Xavfsizlik review -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 31. Kirish va chiqish xavfsizligi: SSRF, deserializatsiya, fayllar (Input and Output Safety)
 

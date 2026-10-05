@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 33 | part: VIII. Server va tashkilot -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 33. Serverni o'rnatish, sozlash va resurs rejalashtirish (Installing and Sizing the Server)
 

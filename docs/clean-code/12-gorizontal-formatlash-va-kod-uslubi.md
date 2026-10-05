@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 12 | part: IV. Formatlash va kod uslubi -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 12. Gorizontal formatlash va kod uslubi (Horizontal Formatting and Style)
 

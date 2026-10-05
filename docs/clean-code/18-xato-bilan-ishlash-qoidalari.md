@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 18 | part: VI. Xato bilan ishlash -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 18. Xato bilan ishlash qoidalari (Error Handling Rules)
 

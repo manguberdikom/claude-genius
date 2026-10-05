@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 49 | part: XIII. Ma'lumotnoma -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 49. O'z-o'zini baholash: toza kod yetukligi (Self-Assessment)
 

@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 16 | part: V. Obyekt, ma'lumot va holat -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 16. O'zgarmaslik va holat boshqaruvi kod darajasida (Immutability in Code)
 

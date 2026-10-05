@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 28 | part: VII. Xato katalogi: qanday kod qanday xato hisoblanadi -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 28. Xato katalogi: maintainability, nomlash, o'lik kod va uslub (Catalog: Maintainability, Naming)
 

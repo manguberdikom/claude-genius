@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 12 | part: II. Java chuqur bilim -->
 
-[Kod yozadigan arxitektorning miyyasi](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
 
 # 12. Virtual threads, structured concurrency va scoped values (Modern Concurrency)
 

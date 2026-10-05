@@ -1,6 +1,6 @@
 <!-- doc: patterns | chapter: 3 | part:  -->
 
-[Java Spring arxitektori bilishi kerak bo'lgan barcha dizayn patternlar](../../README.md) / [Dizayn patternlar](README.md)
+[Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
 # 3. Xulq-atvor patternlari (Behavioral Patterns)
 

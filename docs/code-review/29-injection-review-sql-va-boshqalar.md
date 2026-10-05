@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 29 | part: VI. Xavfsizlik review -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 29. Injection review: SQL va boshqalar (Injection)
 

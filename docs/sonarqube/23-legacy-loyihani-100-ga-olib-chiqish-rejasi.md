@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 23 | part: VI. Amaliyot va jarayon -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 23. Legacy loyihani 100% ga olib chiqish rejasi (Bringing a Legacy Project to 100)
 

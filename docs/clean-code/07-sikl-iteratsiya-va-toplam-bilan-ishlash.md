@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 7 | part: II. Funksiya va boshqaruv oqimi -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 7. Sikl, iteratsiya va to'plam bilan ishlash (Loops and Iteration)
 

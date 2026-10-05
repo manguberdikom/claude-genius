@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 13 | part: II. Java chuqur bilim -->
 
-[Kod yozadigan arxitektorning miyyasi](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
 
 # 13. Zamonaviy Java tili va API dizayni (Modern Java and API Design)
 

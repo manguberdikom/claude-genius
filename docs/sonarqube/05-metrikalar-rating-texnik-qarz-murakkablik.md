@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 5 | part: I. SonarQube qanday ishlaydi -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 5. Metrikalar: rating, texnik qarz, murakkablik, takrorlanish (Metrics and Ratings)
 

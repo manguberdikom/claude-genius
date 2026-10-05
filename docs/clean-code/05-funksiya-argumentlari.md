@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 5 | part: II. Funksiya va boshqaruv oqimi -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 5. Funksiya argumentlari (Function Arguments)
 

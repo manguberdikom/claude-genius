@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 22 | part: IV. PostgreSQL chuqur bilim -->
 
-[Kod yozadigan arxitektorning miyyasi](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
 
 # 22. MVCC, izolyatsiya darajalari, lock va deadlock (MVCC and Isolation)
 

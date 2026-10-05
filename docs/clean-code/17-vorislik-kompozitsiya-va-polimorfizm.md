@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 17 | part: V. Obyekt, ma'lumot va holat -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 17. Vorislik, kompozitsiya va polimorfizm mexanikasi (Inheritance Mechanics)
 

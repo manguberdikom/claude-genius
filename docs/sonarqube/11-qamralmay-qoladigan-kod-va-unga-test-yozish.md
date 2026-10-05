@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 11 | part: III. Qamrov (coverage) -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 11. Qamralmay qoladigan kod va unga test yozish (Code That Stays Uncovered)
 

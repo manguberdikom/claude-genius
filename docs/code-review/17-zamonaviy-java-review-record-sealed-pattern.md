@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 17 | part: III. Java kodini chuqur tahlil -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 17. Zamonaviy Java review: record, sealed, pattern matching, virtual thread (Modern Java)
 

@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 25 | part: IV. PostgreSQL chuqur bilim -->
 
-[Kod yozadigan arxitektorning miyyasi](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
 
 # 25. Sxema dizayni, ma'lumot turlari va cheklovlar (Schema Design and Data Types)
 

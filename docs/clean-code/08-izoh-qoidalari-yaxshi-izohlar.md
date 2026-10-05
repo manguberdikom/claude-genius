@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 8 | part: III. Izoh va hujjat -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 8. Izoh qoidalari: yaxshi izohlar (Comments: The Good Ones)
 

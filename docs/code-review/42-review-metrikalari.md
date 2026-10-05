@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 42 | part: IX. Jarayon, madaniyat va o'lchov -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 42. Review metrikalari (Measuring Review)
 

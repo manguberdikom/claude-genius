@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 8 | part: II. Arxitektura, dizayn va clean code review -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 8. Clean code review: nomlash, kognitiv yuk, metod shakli (Clean Code at the Review Table)
 

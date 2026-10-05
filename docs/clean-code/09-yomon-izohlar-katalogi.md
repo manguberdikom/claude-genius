@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 9 | part: III. Izoh va hujjat -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 9. Yomon izohlar katalogi (Comments: The Bad Ones)
 

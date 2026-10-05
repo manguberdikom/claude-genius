@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 30 | part: VII. Xato katalogi: qanday kod qanday xato hisoblanadi -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 30. Xato katalogi: test kodidagi xatolar (Catalog: Test Code)
 

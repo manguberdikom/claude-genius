@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 25 | part: VII. Xato katalogi: qanday kod qanday xato hisoblanadi -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 25. Xato katalogi: reliability (bug) toifasi (Catalog: Reliability)
 

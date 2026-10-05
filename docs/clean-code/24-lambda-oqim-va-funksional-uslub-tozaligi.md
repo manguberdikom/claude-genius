@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 24 | part: VII. Java tilining toza ishlatilishi -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 24. Lambda, oqim va funksional uslub tozaligi (Lambdas and Streams)
 

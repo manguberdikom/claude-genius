@@ -1,6 +1,6 @@
 <!-- doc: patterns | chapter: 9 | part:  -->
 
-[Java Spring arxitektori bilishi kerak bo'lgan barcha dizayn patternlar](../../README.md) / [Dizayn patternlar](README.md)
+[Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
 # 9. Ma'lumotlarga kirish va ORM patternlari (Data Access & ORM Patterns)
 

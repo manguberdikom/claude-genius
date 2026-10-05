@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 9 | part: III. Qamrov (coverage) -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 9. Coverage qanday o'lchanadi: JaCoCo mexanikasi (How Coverage Is Measured)
 

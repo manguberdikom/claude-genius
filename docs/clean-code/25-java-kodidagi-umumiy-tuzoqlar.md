@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 25 | part: VII. Java tilining toza ishlatilishi -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 25. Java kodidagi umumiy tuzoqlar (Common Java Pitfalls)
 

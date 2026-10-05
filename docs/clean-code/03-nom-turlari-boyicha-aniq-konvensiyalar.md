@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 3 | part: I. Toza kodning asosi -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 3. Nom turlari bo'yicha aniq konvensiyalar (Naming Conventions by Kind)
 

@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 41 | part: X. Amaliy ma'lumotnoma -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 41. Lombok, record va generatsiya qilingan kod (Lombok, Records and Generated Code)
 

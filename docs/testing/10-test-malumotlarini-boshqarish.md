@@ -1,6 +1,6 @@
 <!-- doc: testing | chapter: 10 | part:  -->
 
-[Java Spring loyihasida testlash](../../README.md) / [Testlash qo'llanmasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
 # 10. Test ma'lumotlarini boshqarish (Managing Test Data)
 

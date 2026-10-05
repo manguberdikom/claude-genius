@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 6 | part: II. Funksiya va boshqaruv oqimi -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 6. Shart, mantiq va boshqaruv oqimi (Conditionals and Control Flow)
 

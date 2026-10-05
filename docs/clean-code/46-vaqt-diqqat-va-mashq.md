@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 46 | part: XII. Professional intizom -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 46. Vaqt, diqqat va mashq (Time, Focus and Practice)
 

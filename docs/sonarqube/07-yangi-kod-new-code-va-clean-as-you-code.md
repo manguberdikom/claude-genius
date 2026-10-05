@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 7 | part: II. Quality gate -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 7. Yangi kod (new code) va "clean as you code" tamoyili (New Code and Clean as You Code)
 

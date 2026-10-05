@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 8 | part: II. Quality gate -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 8. 100% ga sozlangan gate: har bir shart nimani talab qiladi (A Gate Set to 100 Percent)
 

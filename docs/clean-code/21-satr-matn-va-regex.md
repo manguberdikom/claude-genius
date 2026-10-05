@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 21 | part: VII. Java tilining toza ishlatilishi -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 21. Satr, matn va regex (Strings, Text and Regex)
 

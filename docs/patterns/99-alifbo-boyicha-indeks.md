@@ -1,6 +1,6 @@
 <!-- doc: patterns | chapter:  | part:  -->
 
-[Java Spring arxitektori bilishi kerak bo'lgan barcha dizayn patternlar](../../README.md) / [Dizayn patternlar](README.md)
+[Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
 # Alifbo bo'yicha indeks
 

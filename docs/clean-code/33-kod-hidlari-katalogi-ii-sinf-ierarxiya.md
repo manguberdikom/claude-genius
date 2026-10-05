@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 33 | part: X. Hid katalogi va refaktoring harakatlari -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 33. Kod hidlari katalogi II: sinf, ierarxiya, bog'liqlik (Code Smells II)
 

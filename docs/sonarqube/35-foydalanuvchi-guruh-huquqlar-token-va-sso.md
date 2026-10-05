@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 35 | part: VIII. Server va tashkilot -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 35. Foydalanuvchi, guruh, huquqlar, token va SSO (Users, Permissions and Tokens)
 

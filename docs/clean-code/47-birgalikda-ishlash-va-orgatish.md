@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 47 | part: XII. Professional intizom -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 47. Birgalikda ishlash va o'rgatish (Collaboration and Mentoring)
 

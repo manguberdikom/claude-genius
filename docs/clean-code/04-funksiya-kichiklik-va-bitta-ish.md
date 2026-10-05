@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 4 | part: II. Funksiya va boshqaruv oqimi -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 4. Funksiya: kichiklik va bitta ish (Functions: Small and Doing One Thing)
 

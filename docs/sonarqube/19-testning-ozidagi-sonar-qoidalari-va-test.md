@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 19 | part: V. Sonar o'tadigan test -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 19. Testning o'zidagi Sonar qoidalari va test sifati (Sonar Rules on Test Code)
 

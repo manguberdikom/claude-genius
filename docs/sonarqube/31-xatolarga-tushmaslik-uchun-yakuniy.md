@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 31 | part: VII. Xato katalogi: qanday kod qanday xato hisoblanadi -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 31. Xatolarga tushmaslik uchun yakuniy tavsiyalar (Preventive Checklist)
 

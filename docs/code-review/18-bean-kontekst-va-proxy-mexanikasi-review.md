@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 18 | part: IV. Spring kodini review qilish -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 18. Bean, kontekst va proxy mexanikasi review (Beans, Context and Proxies)
 

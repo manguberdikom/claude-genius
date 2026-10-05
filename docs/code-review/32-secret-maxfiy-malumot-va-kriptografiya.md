@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 32 | part: VI. Xavfsizlik review -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 32. Secret, maxfiy ma'lumot va kriptografiya review (Secrets, PII and Crypto)
 

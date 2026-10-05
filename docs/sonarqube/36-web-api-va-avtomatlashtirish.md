@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 36 | part: IX. Kengaytirish va integratsiya -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 36. Web API va avtomatlashtirish (Web API and Automation)
 

@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 1 | part: I. SonarQube qanday ishlaydi -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 1. SonarQube arxitekturasi va tahlil oqimi (Architecture and Analysis Flow)
 

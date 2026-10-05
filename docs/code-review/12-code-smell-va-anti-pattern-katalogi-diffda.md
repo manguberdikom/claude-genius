@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 12 | part: II. Arxitektura, dizayn va clean code review -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 12. Code smell va anti-pattern katalogi diffda (Smells in a Diff)
 

@@ -1,6 +1,6 @@
 <!-- doc: testing | chapter: 1 | part:  -->
 
-[Java Spring loyihasida testlash](../../README.md) / [Testlash qo'llanmasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
 # 1. Sifat strategiyasi va arxitektorning roli (Quality Strategy & the Architect's Role)
 

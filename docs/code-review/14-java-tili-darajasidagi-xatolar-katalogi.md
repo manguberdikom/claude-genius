@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 14 | part: III. Java kodini chuqur tahlil -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 14. Java tili darajasidagi xatolar katalogi (Language-Level Defects)
 

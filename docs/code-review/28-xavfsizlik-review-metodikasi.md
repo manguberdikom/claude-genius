@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 28 | part: VI. Xavfsizlik review -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 28. Xavfsizlik review metodikasi (How to Review for Security)
 

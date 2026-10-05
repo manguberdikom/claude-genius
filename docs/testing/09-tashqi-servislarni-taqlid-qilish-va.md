@@ -1,6 +1,6 @@
 <!-- doc: testing | chapter: 9 | part:  -->
 
-[Java Spring loyihasida testlash](../../README.md) / [Testlash qo'llanmasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
 # 9. Tashqi servislarni taqlid qilish va contract testing (Faking External Services & Contract Testing)
 

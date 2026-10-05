@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 1 | part: I. Review ning mohiyati va iqtisodi -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 1. Review nima uchun bor va nimani haqiqatda beradi (Why Review Exists)
 

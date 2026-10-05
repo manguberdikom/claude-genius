@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 27 | part: V. PostgreSQL va ma'lumot qatlami review -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 27. Izolyatsiya, poyga holatlari va xabar yetkazish (Isolation, Races and Delivery)
 

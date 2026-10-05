@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 26 | part: IV. PostgreSQL chuqur bilim -->
 
-[Kod yozadigan arxitektorning miyyasi](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
 
 # 26. Partitioning, replikatsiya va katta hajm (Partitioning, Replication and Scale)
 

@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 15 | part: III. Java kodini chuqur tahlil -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 15. Holat, mutability va concurrency review (State and Concurrency)
 

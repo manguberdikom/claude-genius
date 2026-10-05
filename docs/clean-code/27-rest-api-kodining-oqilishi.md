@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 27 | part: VIII. Spring va ma'lumot qatlamida toza kod -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 27. REST API kodining o'qilishi (Readable REST Code)
 

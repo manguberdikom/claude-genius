@@ -1,6 +1,6 @@
 <!-- doc: testing | chapter: 8 | part:  -->
 
-[Java Spring loyihasida testlash](../../README.md) / [Testlash qo'llanmasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
 # 8. Testcontainers bilan real infratuzilmada test (Integration Testing with Testcontainers)
 

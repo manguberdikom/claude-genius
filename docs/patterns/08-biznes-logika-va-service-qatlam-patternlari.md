@@ -1,6 +1,6 @@
 <!-- doc: patterns | chapter: 8 | part:  -->
 
-[Java Spring arxitektori bilishi kerak bo'lgan barcha dizayn patternlar](../../README.md) / [Dizayn patternlar](README.md)
+[Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
 # 8. Biznes logika va Service qatlam patternlari (Business & Service Layer Patterns)
 

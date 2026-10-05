@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 36 | part: VII. Test review -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 36. Test turi va integratsion test review (Test Types and Integration Tests)
 

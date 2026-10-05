@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 19 | part: VI. Xato bilan ishlash -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 19. Istisno mexanikasi va resurslar (Exception Mechanics and Resources)
 

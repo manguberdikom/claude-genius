@@ -1,6 +1,6 @@
 <!-- doc: patterns | chapter: 5 | part:  -->
 
-[Java Spring arxitektori bilishi kerak bo'lgan barcha dizayn patternlar](../../README.md) / [Dizayn patternlar](README.md)
+[Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
 # 5. Spring Core ichidagi patternlar xaritasi (Patterns inside Spring Core)
 

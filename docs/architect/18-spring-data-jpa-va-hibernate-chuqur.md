@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 18 | part: III. Spring chuqur bilim -->
 
-[Kod yozadigan arxitektorning miyyasi](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
 
 # 18. Spring Data JPA va Hibernate chuqur (Spring Data JPA and Hibernate)
 

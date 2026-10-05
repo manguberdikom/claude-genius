@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 21 | part: VI. Amaliyot va jarayon -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 21. CI/CD ga ulash, PR decoration va blokirovka (CI/CD Integration)
 

@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 44 | part: IX. Jarayon, madaniyat va o'lchov -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 44. Shablonlar, checklistlar va reviewer yetukligi (Templates and Maturity)
 

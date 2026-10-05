@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 23 | part: V. PostgreSQL va ma'lumot qatlami review -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 23. JPA va Hibernate review (JPA and Hibernate)
 

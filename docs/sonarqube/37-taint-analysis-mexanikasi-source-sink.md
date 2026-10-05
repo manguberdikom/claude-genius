@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 37 | part: IX. Kengaytirish va integratsiya -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 37. Taint analysis mexanikasi: source, sink, sanitizer (Taint Analysis Mechanics)
 

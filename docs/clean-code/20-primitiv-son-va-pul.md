@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 20 | part: VII. Java tilining toza ishlatilishi -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 20. Primitiv, son va pul (Primitives, Numbers and Money)
 

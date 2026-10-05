@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 41 | part: XI. Kod bazasi va jarayon gigiyenasi -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 41. O'zgarishni kiritish jarayoni: kichik qadamlar (Working in Small Steps)
 

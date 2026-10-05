@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 4 | part: I. Review ning mohiyati va iqtisodi -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 4. Diffni o'qish mexanikasi (Reading a Diff)
 

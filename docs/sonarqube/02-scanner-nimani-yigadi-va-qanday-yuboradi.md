@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 2 | part: I. SonarQube qanday ishlaydi -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 2. Scanner nimani yig'adi va qanday yuboradi (What the Scanner Collects)
 

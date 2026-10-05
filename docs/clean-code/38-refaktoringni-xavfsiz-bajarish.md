@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 38 | part: X. Hid katalogi va refaktoring harakatlari -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 38. Refaktoringni xavfsiz bajarish (Safe Refactoring Mechanics)
 

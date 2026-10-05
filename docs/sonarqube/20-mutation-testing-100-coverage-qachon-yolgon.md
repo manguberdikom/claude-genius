@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 20 | part: V. Sonar o'tadigan test -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 20. Mutation testing: 100% coverage qachon yolg'on (Mutation Testing)
 

@@ -1,6 +1,6 @@
 <!-- doc: testing | chapter: 2 | part:  -->
 
-[Java Spring loyihasida testlash](../../README.md) / [Testlash qo'llanmasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
 # 2. Test piramidasi va test turlari xaritasi (Test Pyramid & the Map of Test Types)
 

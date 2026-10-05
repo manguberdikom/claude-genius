@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 24 | part: V. PostgreSQL va ma'lumot qatlami review -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 24. SQL, so'rov rejasi va indeks review (SQL, Plans and Indexes)
 

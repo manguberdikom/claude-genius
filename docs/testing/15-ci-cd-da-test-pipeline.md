@@ -1,6 +1,6 @@
 <!-- doc: testing | chapter: 15 | part:  -->
 
-[Java Spring loyihasida testlash](../../README.md) / [Testlash qo'llanmasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
 # 15. CI/CD da test pipeline (The Test Pipeline in CI/CD)
 

@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 40 | part: IX. Jarayon, madaniyat va o'lchov -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 40. Review jarayonini qurish (Building the Process)
 

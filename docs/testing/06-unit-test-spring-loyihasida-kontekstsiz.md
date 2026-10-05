@@ -1,6 +1,6 @@
 <!-- doc: testing | chapter: 6 | part:  -->
 
-[Java Spring loyihasida testlash](../../README.md) / [Testlash qo'llanmasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
 # 6. Unit test Spring loyihasida: kontekstsiz testlash (Unit Testing in a Spring Project)
 

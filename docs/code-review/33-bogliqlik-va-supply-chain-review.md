@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 33 | part: VI. Xavfsizlik review -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 33. Bog'liqlik va supply chain review (Dependencies and Supply Chain)
 

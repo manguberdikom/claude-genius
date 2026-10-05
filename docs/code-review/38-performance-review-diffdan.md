@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 38 | part: VIII. Kesishgan sifat -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 38. Performance review diffdan (Performance from a Diff)
 

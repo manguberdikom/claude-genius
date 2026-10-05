@@ -1,6 +1,6 @@
 <!-- doc: clean-code | chapter: 14 | part: V. Obyekt, ma'lumot va holat -->
 
-[Toza kod yozuvchining qoidalari](../../README.md) / [Toza kod qoidalari](README.md)
+[Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
 # 14. Obyekt va ma'lumot tuzilmasi: inkapsulyatsiya (Objects vs Data Structures)
 

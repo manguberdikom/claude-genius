@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 15 | part: IV. Sonar o'tadigan kod -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 15. Cognitive complexity va takrorlanishni kamaytirish (Cognitive Complexity and Duplication)
 
