@@ -274,13 +274,38 @@ def case_maven_spring_javaformat(_):
 # -- git va yurgizish ------------------------------------------------------------
 
 FAKE = r'''
-import sys, time
+import os, sys, time
 args = sys.argv[1:]
 mode = open(%r).read().strip()
+calls = %r
+with open(calls, "a") as handle:
+    handle.write(" ".join(args) + "\n")
+count = sum(1 for _ in open(calls))
 if mode == "sekin":
     time.sleep(30)
 print("$ " + " ".join(args))
-if mode == "yiqil":
+
+def report(failures):
+    folder = os.path.join("orders", "build", "test-results", "test")
+    os.makedirs(folder, exist_ok=True)
+    with open(os.path.join(folder, "TEST-shop.orders.OrderServiceTest.xml"), "w") as handle:
+        handle.write('<testsuite name="shop.orders.OrderServiceTest" tests="1" '
+                     'failures="%%d" errors="0" time="0.1"/>' %% failures)
+
+if mode == "kompil":
+    # Bir modulda test yiqilgan, boshqasida kompilyatsiya xatosi: XML bor,
+    # lekin qayta yurish kompilyatsiya xatosini "beqaror" deb yashirardi.
+    report(1)
+    print("OrderService.java:3: error: cannot find symbol")
+    print("BUILD FAILED in 1s")
+    sys.exit(1)
+if mode == "beqaror" or (mode == "yiqil" and "testClasses" not in args):
+    failing = mode == "yiqil" or count == 1
+    report(1 if failing else 0)
+    if not failing:
+        print("BUILD SUCCESSFUL in 1s")
+        sys.exit(0)
+if mode in ("yiqil", "beqaror"):
     print("> Task :orders:test FAILED")
     print("")
     print("OrderServiceTest > works() FAILED")
@@ -293,18 +318,31 @@ print("BUILD SUCCESSFUL in 2s")
 '''
 
 
+CALLS = os.path.join(TEMP, "fake_calls.txt")
+
+
 def fake_runner(mode):
     flag = os.path.join(TEMP, "fake_mode.txt")
     with open(flag, "w") as handle:
         handle.write(mode)
+    if os.path.exists(CALLS):
+        os.remove(CALLS)
     script = os.path.join(TEMP, "fake_gradle.py")
     with open(script, "w") as handle:
-        handle.write(FAKE % flag)
+        handle.write(FAKE % (flag, CALLS))
     return json.dumps([sys.executable, script])
 
 
+def calls():
+    with open(CALLS) as handle:
+        return [line.split() for line in handle]
+
+
+STATE = os.path.join(TEMP, "state")
+
+
 def run_cli(root, *args, mode="yashil"):
-    env = dict(os.environ, GENIUS_TEST_RUNNER=fake_runner(mode))
+    env = dict(os.environ, GENIUS_TEST_RUNNER=fake_runner(mode), GENIUS_STATE_DIR=STATE)
     proc = subprocess.run([sys.executable, TOOL] + list(args), cwd=root,
                           capture_output=True, text=True, encoding="utf-8", env=env)
     return proc.returncode, proc.stdout + proc.stderr
@@ -432,6 +470,167 @@ def case_tashxis_static_konteyner_toza(_):
     return not any("instance" in f[1] for f in run_tests.diagnose(project))
 
 
+# -- Spring orqali ta'sir -------------------------------------------------------
+
+def spring_shop():
+    files = gradle_shop()
+    files["orders/src/main/java/shop/orders/SecurityConfig.java"] = (
+        "package shop.orders;\n@Configuration\npublic class SecurityConfig { }\n")
+    files["orders/src/main/java/shop/orders/Order.java"] = (
+        "package shop.orders;\n@Entity\npublic class Order { }\n")
+    files["orders/src/test/java/shop/orders/AbstractIT.java"] = (
+        "package shop.orders;\n@SpringBootTest\npublic abstract class AbstractIT { }\n")
+    files["orders/src/test/java/shop/orders/CartIT.java"] = java(
+        "shop.orders", "CartIT", ext=" extends AbstractIT")
+    files["billing/src/main/java/shop/billing/BillingConfig.java"] = (
+        "package shop.billing;\n@Configuration\npublic class BillingConfig { }\n")
+    return files
+
+
+def case_spring_sozlamasi(_):
+    # SecurityConfig hech qaysi testda nomi bilan yo'q, lekin har Spring
+    # testining kontekstiga kiradi.
+    root = tree("wiring", spring_shop())
+    _, plan = plan_for(root, ["orders/src/main/java/shop/orders/SecurityConfig.java"])
+    picked = chosen(plan)
+    return ({"shop.orders.OrderApiTest", "shop.orders.OrderRepositoryIT",
+             "shop.orders.CartIT"} <= picked
+            and "shop.orders.OrderServiceTest" not in picked
+            and "shop.billing.InvoiceTest" not in picked)
+
+
+def case_kutubxona_sozlamasi(_):
+    # billing da Spring testi yo'q: uning sozlamasi ishlatuvchi modulda.
+    root = tree("kutubxona", spring_shop())
+    _, plan = plan_for(root, ["billing/src/main/java/shop/billing/BillingConfig.java"])
+    return "shop.orders.OrderApiTest" in chosen(plan)
+
+
+def case_entity_baza_testlari(_):
+    root = tree("entity", spring_shop())
+    _, plan = plan_for(root, ["orders/src/main/java/shop/orders/Order.java"])
+    picked = chosen(plan)
+    return ("shop.orders.OrderRepositoryIT" in picked and "shop.orders.CartIT" in picked
+            and "shop.orders.OrderServiceTest" not in picked)
+
+
+def case_sozlama_ota_sinf_orqali(_):
+    root = tree("ota_sinf", spring_shop())
+    _, plan = plan_for(root, ["orders/src/main/resources/application.yml"])
+    return "shop.orders.CartIT" in chosen(plan)
+
+
+# -- yiqilgan sinf, qayta yurish -------------------------------------------------
+
+def case_xml_dan_yiqilgan(_):
+    files = gradle_shop()
+    files["orders/build/test-results/test/TEST-shop.orders.OrderServiceTest.xml"] = (
+        '<testsuite name="shop.orders.OrderServiceTest" failures="1" errors="0"/>')
+    files["orders/build/test-results/test/TEST-shop.orders.OrderApiTest.xml"] = (
+        '<testsuite name="shop.orders.OrderApiTest" failures="0" errors="0"/>')
+    files["billing/target/surefire-reports/TEST-shop.billing.InvoiceTest.xml"] = (
+        '<testsuite name="shop.billing.InvoiceTest" failures="0" errors="2"/>')
+    root = tree("xml", files)
+    project = run_tests.Project(root, runner=["./gradlew"])
+    return run_tests.failed_classes(project, 0) == {
+        ("orders", "test"): ["shop.orders.OrderServiceTest"],
+        ("billing", "test"): ["shop.billing.InvoiceTest"]}
+
+
+def case_beqaror_exit_4(_):
+    root = git_shop("beqaror")
+    code, out = run_cli(root, "--diff", "--yurgiz", "--log", os.path.join(TEMP, "b.log"),
+                        mode="beqaror")
+    second = calls()[-1]
+    return (code == 4 and "beqaror" in out and len(calls()) == 2
+            and "shop.orders.OrderServiceTest" in second
+            and "shop.billing.InvoiceTest" not in second)
+
+
+def case_doimiy_yiqilish(_):
+    root = git_shop("doimiy")
+    code, out = run_cli(root, "--diff", "--yurgiz", "--log", os.path.join(TEMP, "d.log"),
+                        mode="yiqil")
+    return code == 1 and "qayta yurish:" in out and len(calls()) == 2
+
+
+def case_kompilyatsiya_qayta_yoq(_):
+    root = git_shop("kompil")
+    code, out = run_cli(root, "--diff", "--yurgiz", "--log", os.path.join(TEMP, "k.log"),
+                        mode="kompil")
+    return code == 1 and len(calls()) == 1 and "Kompilyatsiya" in out
+
+
+def case_qayta_ochiq(_):
+    root = git_shop("qayta0")
+    code, _ = run_cli(root, "--diff", "--yurgiz", "--qayta", "0",
+                      "--log", os.path.join(TEMP, "q.log"), mode="beqaror")
+    return code == 1 and len(calls()) == 1
+
+
+# -- isitish, jurnal, kontekst, bayroqlar ------------------------------------------
+
+def case_isit(_):
+    root = git_shop("isit")
+    code, out = run_cli(root, "--isit")
+    return code == 0 and "Isitish" in out and "testClasses" in calls()[0]
+
+
+def case_jurnal_hisobot(_):
+    root = git_shop("jurnal")
+    run_cli(root, "--diff", "--yurgiz", "--log", os.path.join(TEMP, "j.log"))
+    code, out = run_cli(root, "--hisobot")
+    return code == 0 and "maqsadli" in out and "Test yurishlari" in out
+
+
+def case_kontekst_ishga_tushishi(_):
+    root = tree("kontekst", gradle_shop())
+    log = run_tests.log_path(os.path.realpath(root), True)
+    with open(log, "w", encoding="utf-8") as handle:
+        handle.write("Started OrderApiTest in 4.2 seconds (process running for 9.1)\n"
+                     "x\nStarted CartIT in 3.0 seconds (process running for 12.0)\n")
+    try:
+        path, starts = run_tests.context_starts([log])
+        code, out = run_cli(root, "--tashxis")
+    finally:
+        os.remove(log)
+    return (starts == [("OrderApiTest", 4.2), ("CartIT", 3.0)]
+            and "Spring kontekst ishga tushishi" in out and "2 marta" in out)
+
+
+def case_maven_jacoco_maqsadlida(_):
+    root = tree("maven_jacoco", maven_shop())
+    project = run_tests.Project(root, runner=["mvn"])
+    plan = run_tests.select(project, ["orders/src/main/java/shop/orders/OrderService.java"])
+    target = run_tests.commands(project, plan)[-1][0]
+    full = run_tests.commands(project, run_tests.Plan(), everything=True)[-1][0]
+    return "-Djacoco.skip=true" in target and "-Djacoco.skip=true" not in full
+
+
+def case_qoshimcha_bayroqlar(_):
+    root = tree("bayroq", gradle_shop())
+    project, plan = plan_for(root, ["orders/src/main/java/shop/orders/OrderService.java"])
+    old = os.environ.get("GENIUS_TEST_FLAGS")
+    os.environ["GENIUS_TEST_FLAGS"] = "--build-cache --offline"
+    try:
+        argv = run_tests.commands(project, plan)[0][0]
+    finally:
+        if old is None:
+            os.environ.pop("GENIUS_TEST_FLAGS", None)
+        else:
+            os.environ["GENIUS_TEST_FLAGS"] = old
+    return argv[-2:] == ["--build-cache", "--offline"]
+
+
+def case_ildiz_qulfi(_):
+    root = tree("ildiz_qulfi", gradle_shop())
+    with run_tests.root_lock(root):
+        first = True
+    with run_tests.root_lock(root):
+        second = True
+    return first and second
+
+
 CASES = [
     ("settings.gradle: groovy, kotlin, projectDir", case_settings_groovy_va_kotlin),
     ("Gradle modul yo'li", case_modul_yoli_gradle),
@@ -460,6 +659,21 @@ CASES = [
     ("navbat qulfi yechiladi", case_navbat_qulfi),
     ("tashxis: daemon, forkEvery, konteyner, sleep, hisobot", case_tashxis),
     ("tashxis: static konteyner toza", case_tashxis_static_konteyner_toza),
+    ("Spring sozlamasi: barcha Spring testlari", case_spring_sozlamasi),
+    ("kutubxona modul sozlamasi", case_kutubxona_sozlamasi),
+    ("entity: baza testlari", case_entity_baza_testlari),
+    ("sozlama: ota sinf orqali Spring testi", case_sozlama_ota_sinf_orqali),
+    ("XML dan yiqilgan sinflar", case_xml_dan_yiqilgan),
+    ("beqaror: exit 4, faqat yiqilgani qayta", case_beqaror_exit_4),
+    ("doimiy yiqilish: exit 1", case_doimiy_yiqilish),
+    ("kompilyatsiya xatosida qayta yurish yo'q", case_kompilyatsiya_qayta_yoq),
+    ("--qayta 0: qayta yurish yo'q", case_qayta_ochiq),
+    ("--isit: testClasses", case_isit),
+    ("jurnal va --hisobot", case_jurnal_hisobot),
+    ("tashxis: kontekst ishga tushishi logdan", case_kontekst_ishga_tushishi),
+    ("Maven: jacoco faqat maqsadlida o'chadi", case_maven_jacoco_maqsadlida),
+    ("GENIUS_TEST_FLAGS", case_qoshimcha_bayroqlar),
+    ("ildiz qulfi yechiladi", case_ildiz_qulfi),
 ]
 
 

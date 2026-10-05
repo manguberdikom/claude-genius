@@ -8,6 +8,12 @@
     python3 tools/run_tests.py --modul orders --yurgiz # bitta modulning hammasi
     python3 tools/run_tests.py --hammasi --yurgiz      # to'liq suite: partiyada bir marta
     python3 tools/run_tests.py --tashxis               # suite nega sekin
+    python3 tools/run_tests.py --isit                  # fonda oldindan kompilyatsiya
+    python3 tools/run_tests.py --hisobot               # test vaqti jurnali, 7 kun
+
+Chiqish kodi: 0 yashil, 1 yiqildi, 3 vaqt tugadi, 4 beqaror (yiqilgan
+sinf qayta yurishda o'tdi: o'zgarish emas, flaky ehtimoli, lekin yashil
+ham emas).
 
 Nega: to'liq suite 5-8 daqiqa, aktyor esa uni 2-4 marta yurgizardi.
 Sabab faqat odat emas. Ko'p modulli Gradle da `test --tests X` X yo'q
@@ -75,8 +81,25 @@ DB_TEST_RE = re.compile(
     r"@(?:DataJpaTest|DataJdbcTest|DataR2dbcTest|JdbcTest|JooqTest"
     r"|SpringBootTest|Sql|Container|Testcontainers|AutoConfigureTestDatabase)\b")
 CONFIG_RE = re.compile(
-    r"(?:^|/)src/main/resources/(?:config/)?(?:application|bootstrap)"
-    r"[\w.-]*\.(?:ya?ml|properties)$")
+    r"(?:^|/)src/main/resources/(?:(?:config/)?(?:application|bootstrap)"
+    r"[\w.-]*\.(?:ya?ml|properties)|META-INF/spring\.factories"
+    r"|META-INF/spring/[\w.-]+\.imports)$")
+# Spring kontekstini butunlay o'zgartiradigan sinf: u hech qaysi testda nomi
+# bilan uchramaydi, lekin component scan orqali har Spring testiga kiradi.
+# Masalan SecurityConfig o'zgarsa barcha @WebMvcTest ta'sirlanadi.
+WIRING_RE = re.compile(
+    r"@(?:Configuration|AutoConfiguration|ControllerAdvice|RestControllerAdvice"
+    r"|Aspect|EnableWebSecurity|EnableMethodSecurity|EnableJpaRepositories"
+    r"|EnableScheduling|EnableAsync|EnableCaching|ConfigurationProperties"
+    r"|SpringBootApplication|ComponentScan)\b"
+    r"|\bimplements\s+[^{]*\b(?:Filter|WebMvcConfigurer|WebFluxConfigurer"
+    r"|HandlerInterceptor|BeanPostProcessor|BeanFactoryPostProcessor"
+    r"|AuthenticationProvider|UserDetailsService)\b"
+    r"|\bextends\s+(?:OncePerRequestFilter|GenericFilterBean)\b")
+# Entity sxemani belgilaydi: ddl-auto=validate va repository so'rovlari
+# orqali baza testlariga ta'sir qiladi, nomi bilan uchramasa ham.
+ENTITY_RE = re.compile(r"@(?:Entity|Embeddable|MappedSuperclass)\b")
+EXTENDS_RE = re.compile(r"\bclass\s+\w+(?:<[^>]*>)?\s+extends\s+(\w+)")
 MIGRATION_RE = re.compile(
     r"(?:^|/)src/main/resources/(?:db/|.*(?:migration|changelog|liquibase|flyway))"
     r".*\.(?:sql|xml|ya?ml|json)$")
@@ -106,6 +129,13 @@ MAX_DEPENDENTS = 25
 # yurgizadi.
 DEFAULT_TIMEOUT = 580
 MAX_SHOWN = 12
+# Yiqilgan sinflar shundan ko'p bo'lsa qayta yurgizilmaydi: bu flaky emas,
+# keng buzilish, qayta yurish faqat vaqt oladi.
+MAX_RERUN = 30
+STATE_DIR = (os.environ.get("GENIUS_STATE_DIR")
+             or os.path.join(os.path.dirname(HERE), ".claude", ".state"))
+JOURNAL = os.path.join(STATE_DIR, "run_tests.jsonl")
+STARTED_RE = re.compile(r"\bStarted (\S+) in ([\d.]+) seconds\b")
 
 REASONS = OrderedDict((
     ("test", "o'zgargan test"),
@@ -116,6 +146,8 @@ REASONS = OrderedDict((
     ("migration", "migratsiya"),
     ("resource", "test resursi"),
     ("helper", "test yordamchisi"),
+    ("wiring", "Spring sozlamasi"),
+    ("entity", "entity"),
 ))
 
 
@@ -418,6 +450,25 @@ class Plan:
         return sum(len(v) for v in self.targets.values())
 
 
+def ancestors(src, by_name, depth=5):
+    """Shu test va uning test to'plamidagi ota sinflari matni."""
+    seen, current = [src], src
+    for _ in range(depth):
+        parent = EXTENDS_RE.search(current.text)
+        bases = by_name.get(parent.group(1), ()) if parent else ()
+        if not bases:
+            break
+        current = bases[0]
+        seen.append(current)
+    return seen
+
+
+def matches_up(src, by_name, pattern):
+    """Test o'zi yoki abstrakt ota sinfi naqshga mos: `class X extends
+    AbstractIT` dagi @SpringBootTest AbstractIT da turadi."""
+    return any(pattern.search(s.text) for s in ancestors(src, by_name))
+
+
 def word_re(names):
     names = sorted(set(names), key=len, reverse=True)
     return re.compile(r"\b(%s)\b" % "|".join(re.escape(n) for n in names))
@@ -433,6 +484,20 @@ def select(project, existing, deleted=()):
     by_name = {}
     for test in tests:
         by_name.setdefault(test.name, []).append(test)
+    # Ota sinflar uchun: abstrakt bazaviy sinf runnable emas, lekin
+    # @SpringBootTest aynan unda turadi.
+    test_sources = {}
+    for src in project.sources:
+        if not src.is_main:
+            test_sources.setdefault(src.name, []).append(src)
+
+    def spring_tests(module):
+        return [t for t in tests if t.module == module
+                and matches_up(t, test_sources, SPRING_TEST_RE)]
+
+    def db_tests(module):
+        return [t for t in tests if t.module == module
+                and matches_up(t, test_sources, DB_TEST_RE)]
 
     main_names, helper_names, ignored = OrderedDict(), OrderedDict(), []
     for path in existing:
@@ -453,13 +518,11 @@ def select(project, existing, deleted=()):
             for sset in sorted({t.sset for t in tests if t.module == module}):
                 plan.add_whole(module, sset, "build fayli: %s" % path)
         elif CONFIG_RE.search(path):
-            for test in tests:
-                if test.module == module and SPRING_TEST_RE.search(test.text):
-                    plan.add(test, "config", os.path.basename(path))
+            for test in spring_tests(module):
+                plan.add(test, "config", os.path.basename(path))
         elif MIGRATION_RE.search(path):
-            for test in tests:
-                if test.module == module and DB_TEST_RE.search(test.text):
-                    plan.add(test, "migration", os.path.basename(path))
+            for test in db_tests(module):
+                plan.add(test, "migration", os.path.basename(path))
         elif re.search(r"(?:^|/)src/(?!main/)[^/]+/resources/", path):
             base = os.path.basename(path)
             hits = [t for t in tests if t.module == module and base in t.text]
@@ -479,6 +542,22 @@ def select(project, existing, deleted=()):
 
     if plan.everything:
         return plan
+
+    # 1b. Kontekstni o'zgartiradigan sinf va entity: nomi bilan emas, Spring
+    # orqali ta'sir qiladi. Modulda Spring testi bo'lmasa (kutubxona modul),
+    # uning sozlamasi ishlatuvchi modullarda kuchga kiradi: hamma modul.
+    for name, src in main_names.items():
+        if src is None:
+            continue
+        for regex, kind, pick in ((WIRING_RE, "wiring", spring_tests),
+                                  (ENTITY_RE, "entity", db_tests)):
+            if not regex.search(src.text):
+                continue
+            found = pick(src.module)
+            if not found:
+                found = [t for m in sorted({t.module for t in tests}) for t in pick(m)]
+            for test in found:
+                plan.add(test, kind, name)
 
     # 2. Nomi mos test.
     for name in main_names:
@@ -549,6 +628,14 @@ def select(project, existing, deleted=()):
 SENTINEL = "GeniusUnitTestYoq"
 
 
+def extra_flags():
+    """GENIUS_TEST_FLAGS: foydalanuvchi o'zi tanlagan qo'shimcha bayroqlar
+    (`--build-cache --parallel`, `-o -T 1C`). Build ga tegmasdan yoqiladi,
+    lekin ularning to'g'riligi build ning o'ziga bog'liq: shuning uchun
+    standart bo'sh."""
+    return shlex.split(os.environ.get("GENIUS_TEST_FLAGS", ""))
+
+
 def gradle_task(sset):
     return "test" if sset == "test" else sset
 
@@ -566,18 +653,23 @@ def gradle_commands(project, plan, everything):
     argv = list(project.runner)
     if everything or plan.everything:
         tasks = ["test"] + sorted({gradle_task(s.sset) for s in project.tests()} - {"test"})
-        return [(argv + tasks + ["--continue", "--console=plain"], "to'liq suite")]
+        return [(argv + tasks + ["--continue", "--console=plain"] + extra_flags(),
+                 "to'liq suite")]
     for (module, sset), reason in plan.whole.items():
         argv.append("%s:%s" % (project.gradle_path(module), gradle_task(sset)))
     for (module, sset), chosen in plan.targets.items():
         argv.append("%s:%s" % (project.gradle_path(module), gradle_task(sset)))
         for fqn in chosen:
             argv += ["--tests", fqn]
-    return [(argv + ["--continue", "--console=plain"], "maqsadli")]
+    return [(argv + ["--continue", "--console=plain"] + extra_flags(), "maqsadli")]
 
 
 def maven_commands(project, plan, everything):
     base = list(project.runner) + ["-B", "-fae"]
+    # Maqsadli yurishda jacoco yo'q: agent testni sekinlashtiradi, verify ga
+    # bog'langan jacoco:check esa bir nechta test bilan coverage chegarasiga
+    # yetmay yolg'on yiqiladi. Coverage to'liq suite va CI niki.
+    quick = ["-Djacoco.skip=true"]
     pre = []
     poms = project.pom_texts()
     failsafe = project.failsafe()
@@ -592,7 +684,7 @@ def maven_commands(project, plan, everything):
         if phase == "verify" and any("spotless-maven-plugin" in t for t in poms):
             pre.append((list(project.runner) + ["-B", "-q", "spotless:apply"],
                         "formatlash: spotless:check verify fazasida"))
-        return pre + [(base + [phase], "to'liq suite")]
+        return pre + [(base + [phase] + extra_flags(), "to'liq suite")]
 
     def module_args(modules):
         modules = sorted(m or "." for m in modules)
@@ -600,7 +692,8 @@ def maven_commands(project, plan, everything):
 
     out = list(pre)
     if plan.whole:
-        out.append((base + module_args({m for m, _ in plan.whole}) + ["test"],
+        out.append((base + module_args({m for m, _ in plan.whole}) + ["test"]
+                    + quick + extra_flags(),
                     "butun modul: " + "; ".join(plan.whole.values())))
     units, its = [], []
     for (module, sset), chosen in plan.targets.items():
@@ -616,12 +709,27 @@ def maven_commands(project, plan, everything):
             phase = "verify"
             props += ["-Dit.test=%s" % ",".join(its),
                       "-Dfailsafe.failIfNoSpecifiedTests=false",
-                      "-Dit.failIfNoSpecifiedTests=false"]
+                      "-Dit.failIfNoSpecifiedTests=false",
+                      # verify package ni ham quradi: javadoc va source jar
+                      # test natijasiga ta'sir qilmaydi, faqat vaqt oladi.
+                      "-Dmaven.javadoc.skip=true", "-Dmaven.source.skip=true"]
             if any("spotless-maven-plugin" in t for t in poms):
                 out.insert(len(pre), (list(project.runner) + ["-B", "-q", "spotless:apply"],
                                       "formatlash: spotless:check verify fazasida"))
-        out.append((base + module_args(modules) + [phase] + props, "maqsadli"))
+        out.append((base + module_args(modules) + [phase] + props + quick
+                    + extra_flags(), "maqsadli"))
     return out
+
+
+def warmup_commands(project):
+    """Fonda kompilyatsiya: guruh ochilgach aktyor kod o'qiyotgan paytda
+    yangi worktree ning birinchi to'liq kompilyatsiyasi tugaydi."""
+    if project.tool == "gradle":
+        return [(list(project.runner) + ["testClasses", "--console=plain", "-q"]
+                 + extra_flags(), "isitish")]
+    return [(list(project.runner) + ["-B", "-q", "test-compile", "-Djacoco.skip=true",
+                                     "-Dspring-javaformat.validate.skip=true"]
+             + extra_flags(), "isitish")]
 
 
 def show(argv):
@@ -668,18 +776,49 @@ def queue_lock(root):
         handle.close()
 
 
+@contextlib.contextmanager
+def root_lock(root):
+    """Bitta daraxtda bir vaqtda bitta build: fondagi --isit va aktyorning
+    --yurgiz i bir-birining build/ papkasiga yozmasin. Keyingisi kutadi."""
+    key = hashlib.sha1(os.path.realpath(root).encode("utf-8")).hexdigest()[:10]
+    path = os.path.join(tempfile.gettempdir(), "genius-root-%s.lock" % key)
+    handle = open(path, "a+")
+    try:
+        if os.name == "nt":
+            import msvcrt
+            while True:
+                try:
+                    msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)
+                    break
+                except OSError:
+                    time.sleep(1)
+        else:
+            import fcntl
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        yield
+    finally:
+        with contextlib.suppress(OSError):
+            if os.name == "nt":
+                import msvcrt
+                msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+        handle.close()
+
+
 def log_path(root, everything):
     name = "genius-test-%s%s.log" % (hashlib.sha1(root.encode("utf-8")).hexdigest()[:10],
                                      "-hammasi" if everything else "")
     return os.path.join(tempfile.gettempdir(), name)
 
 
-def execute(project, cmds, log, timeout, queue=False):
-    """(exit, soniya). exit 124: vaqt tugadi."""
+def execute(project, cmds, log, timeout, queue=False, mode="w"):
+    """(exit, soniya). exit 124: vaqt tugadi. Qulf tartibi doim bir xil
+    (avval repo, keyin ildiz): teskari tartib o'zaro kutib qolishga olib
+    kelardi."""
     start = time.time()
     code = 0
     lock = queue_lock(project.root) if queue else contextlib.nullcontext()
-    with lock, open(log, "w", encoding="utf-8", errors="replace") as out:
+    with lock, root_lock(project.root), \
+            open(log, mode, encoding="utf-8", errors="replace") as out:
         for argv, note in cmds:
             out.write("$ %s\n" % show(argv))
             out.flush()
@@ -700,6 +839,113 @@ def execute(project, cmds, log, timeout, queue=False):
             elif proc.returncode:
                 out.write("\n[run_tests] formatlash yiqildi, testlar baribir yuradi\n")
     return code, time.time() - start
+
+
+REPORT_DIR_RE = re.compile(
+    r"^(?:(.*)/)?(?:build/test-results/([^/]+)|target/(surefire|failsafe)-reports)$")
+
+
+def failed_classes(project, since):
+    """{(modul, to'plam): [fqn]}: shu yurishda yozilgan JUnit XML dagi
+    yiqilgan sinflar. Konsol chiqishi oddiy nomni beradi, XML esa to'liq
+    nom va modulni: qayta yurish aynan shu sinflarni oladi."""
+    found = OrderedDict()
+    for current, dirs, files in os.walk(project.root):
+        dirs[:] = [d for d in dirs if d not in (".git", ".gradle", "node_modules", "src")]
+        match = REPORT_DIR_RE.match(rel(os.path.relpath(current, project.root)))
+        if not match:
+            continue
+        module = match.group(1) or ""
+        sset = match.group(2) or "test"
+        for name in files:
+            if not (name.startswith("TEST-") and name.endswith(".xml")):
+                continue
+            path = os.path.join(current, name)
+            with contextlib.suppress(OSError, ET.ParseError, ValueError):
+                if os.path.getmtime(path) < since:
+                    continue
+                suite = ET.parse(path).getroot()
+                bad = int(suite.get("failures", "0") or 0) + int(suite.get("errors", "0") or 0)
+                if bad and suite.get("name"):
+                    found.setdefault((module, sset), []).append(suite.get("name"))
+    return found
+
+
+def has_compile_error(log):
+    try:
+        import parse_test_output as pto
+        with open(log, encoding="utf-8", errors="replace") as handle:
+            lines = pto.strip_ci_prefix(handle.read().split("\n"))
+        return bool(pto.compile_errors(lines))
+    except Exception:     # tasnif qo'shimcha: xatosi asosiy natijani buzmasin
+        return False
+
+
+def rerun_plan(failed):
+    plan = Plan()
+    for (module, sset), names in failed.items():
+        bucket = plan.targets.setdefault((module, sset), OrderedDict())
+        for fqn in names:
+            bucket[fqn] = ("test", "qayta")
+    return plan
+
+
+def record(root, mode, plan, code, seconds, flaky=0):
+    """Har yurish jurnalga: tezlashuv taxmin emas, o'lchov bo'lsin."""
+    entry = {"ts": int(time.time()), "root": root, "mode": mode,
+             "classes": plan.size(), "whole": len(plan.whole), "exit": code,
+             "seconds": round(seconds, 1), "flaky": flaky}
+    with contextlib.suppress(OSError):
+        os.makedirs(STATE_DIR, exist_ok=True)
+        with open(JOURNAL, "a", encoding="utf-8") as handle:
+            handle.write(json.dumps(entry) + "\n")
+
+
+def report(days):
+    since = time.time() - days * 86400
+    rows = []
+    with contextlib.suppress(OSError):
+        with open(JOURNAL, encoding="utf-8") as handle:
+            for line in handle:
+                with contextlib.suppress(ValueError):
+                    row = json.loads(line)
+                    if row.get("ts", 0) >= since:
+                        rows.append(row)
+    print("Test yurishlari, oxirgi %d kun: %d ta" % (days, len(rows)))
+    if not rows:
+        return 0
+    print("\n%-10s %6s %9s %9s %8s %8s" % ("rejim", "soni", "jami, daq", "median, s",
+                                          "yiqildi", "beqaror"))
+    for mode in ("maqsadli", "modul", "hammasi", "isitish"):
+        part = [r for r in rows if r.get("mode") == mode]
+        if not part:
+            continue
+        times = sorted(r.get("seconds", 0) for r in part)
+        print("%-10s %6d %9.1f %9.0f %8d %8d" % (
+            mode, len(part), sum(times) / 60, times[len(times) // 2],
+            sum(1 for r in part if r.get("exit") not in (0, 4)),
+            sum(1 for r in part if r.get("exit") == 4)))
+    full = [r for r in rows if r.get("mode") == "hammasi"]
+    print("\nTo'liq suite kuniga o'rtacha: %.1f marta. Maqsad: partiyada bir marta."
+          % (len(full) / float(days)))
+    return 0
+
+
+def context_starts(paths):
+    """Spring Boot har yangi test konteksti uchun `Started X in N seconds`
+    yozadi: kesh bo'linishining aniq o'lchovi, kalitni taxmin qilmasdan."""
+    for path in paths:
+        if not os.path.exists(path):
+            continue
+        starts = []
+        with open(path, encoding="utf-8", errors="replace") as handle:
+            for line in handle:
+                match = STARTED_RE.search(line)
+                if match:
+                    starts.append((match.group(1), float(match.group(2))))
+        if starts:
+            return path, starts
+    return None, []
 
 
 def summarize(log):
@@ -773,7 +1019,6 @@ CONTEXT_ANN_RE = re.compile(
     r"|JsonTest|RestClientTest|ActiveProfiles|TestPropertySource|Import"
     r"|ContextConfiguration|AutoConfigureMockMvc|AutoConfigureTestDatabase"
     r"|DirtiesContext)\b(?:\([^)]*\))?")
-EXTENDS_RE = re.compile(r"\bclass\s+\w+(?:<[^>]*>)?\s+extends\s+(\w+)")
 CONTAINER_RE = r"@(?:[\w.]+\.)?Container\b"
 CONTAINER_FIELD_RE = re.compile(CONTAINER_RE + r"\s*(?:@[\w.]+(?:\([^)]*\))?\s*)*([^;=\n]*?)\s\w+\s*=")
 
@@ -938,6 +1183,16 @@ def print_diagnosis(project):
         print("    qoida: %s" % ref)
     if not findings:
         print("\nBuild va test sozlamasida sekinlik belgisi topilmadi.")
+    log, starts = context_starts([log_path(project.root, True),
+                                  log_path(project.root, False)])
+    if starts:
+        total = sum(s for _, s in starts)
+        print("\nSpring kontekst ishga tushishi (%s): %d marta, jami %.0f s, "
+              "o'rtacha %.1f s" % (os.path.basename(log), len(starts), total,
+                                   total / len(starts)))
+        for name, seconds in sorted(starts, key=lambda x: -x[1])[:5]:
+            print("    %6.1f s  %s" % (seconds, name))
+        print("    har yangi kontekst kesh kaliti farqi: qoida testing 7.8")
     slow = slowest_reports(project.root)
     if slow:
         total = sum(t for _, t in slow)
@@ -966,6 +1221,12 @@ def main(argv=None):
     parser.add_argument("--hammasi", action="store_true", help="to'liq suite")
     parser.add_argument("--yurgiz", action="store_true", help="buyruqni yurgizish")
     parser.add_argument("--tashxis", action="store_true", help="suite nega sekin")
+    parser.add_argument("--isit", action="store_true",
+                        help="oldindan kompilyatsiya (fonda, guruh ochilgach)")
+    parser.add_argument("--hisobot", action="store_true", help="test vaqti jurnali")
+    parser.add_argument("--kun", type=int, default=7, help="--hisobot oralig'i")
+    parser.add_argument("--qayta", type=int, default=1, metavar="N",
+                        help="yiqilgan sinflarni N marta qayta yurgizish (beqarorni ajratadi)")
     parser.add_argument("--navbat", action="store_true",
                         help="worktree lar orasida ketma-ket (umumiy port yoki baza)")
     parser.add_argument("--ildiz", metavar="PAPKA", help="loyiha ildizi")
@@ -975,6 +1236,8 @@ def main(argv=None):
     args = parser.parse_args(argv)
     sys.stdout.reconfigure(encoding="utf-8")
 
+    if args.hisobot:
+        return report(max(1, args.kun))
     root = (os.path.realpath(os.path.abspath(args.ildiz)) if args.ildiz
             else project_root(os.getcwd()))
     project = Project(root)
@@ -983,6 +1246,14 @@ def main(argv=None):
         return 2
     if args.tashxis:
         return print_diagnosis(project)
+    if args.isit:
+        log = args.log or log_path(root, False).replace(".log", "-isit.log")
+        code, seconds = execute(project, warmup_commands(project), log, args.vaqt)
+        record(root, "isitish", Plan(), code, seconds)
+        print("Isitish: exit=%d, %d s, log: %s" % (code, seconds, log))
+        if code and code != 124:
+            print(summarize(log))
+        return 0 if code == 0 else (3 if code == 124 else 1)
 
     plan = Plan()
     if args.modul and not args.hammasi:
@@ -1026,16 +1297,52 @@ def main(argv=None):
         return 0
 
     log = args.log or log_path(root, everything)
+    summary_log = log
+    mode = "hammasi" if everything else ("modul" if args.modul else "maqsadli")
+    started = time.time()
     code, seconds = execute(project, cmds, log, args.vaqt, args.navbat)
-    state = {0: "yashil", 124: "vaqt tugadi", 127: "yurgizib bo'lmadi"}.get(code, "yiqildi")
-    print("\nNatija: %s, exit=%d, %d s, log: %s" % (state, code, seconds, log))
+    flaky = []
+    if code not in (0, 124, 127) and args.qayta > 0 and not has_compile_error(log):
+        failed = failed_classes(project, started)
+        count = sum(len(v) for v in failed.values())
+        if 0 < count <= MAX_RERUN:
+            again = [c for c in commands(project, rerun_plan(failed))
+                     if not c[1].startswith("formatlash")]
+            # Alohida log: bitta logda ikki yurish xulosani ikki marta sanaydi.
+            rerun_log = log[:-4] + "-qayta.log" if log.endswith(".log") else log + ".qayta"
+            for _ in range(args.qayta):
+                rerun_start = time.time()
+                code2, more = execute(project, again, rerun_log, args.vaqt, args.navbat)
+                seconds += more
+                if code2 == 0:
+                    break
+            still = failed_classes(project, rerun_start)
+            if code2 == 0:
+                flaky = [f for names in failed.values() for f in names]
+                code = 4
+            else:
+                flaky = [f for k, names in failed.items() for f in names
+                         if f not in still.get(k, ())]
+                summary_log = rerun_log
+    state = {0: "yashil", 4: "beqaror", 124: "vaqt tugadi",
+             127: "yurgizib bo'lmadi"}.get(code, "yiqildi")
+    record(root, mode, plan, code, seconds, len(flaky))
+    print("\nNatija: %s, exit=%d, %d s, log: %s%s" % (
+        state, code, seconds, log,
+        "" if summary_log == log else ", qayta yurish: %s" % summary_log))
     if code == 124:
         print("Vaqt chegarasi %d s. To'liq suite bo'lsa uni fonda yurgizing "
               "(Bash run_in_background) va --vaqt ni oshiring." % args.vaqt)
-    summary = summarize(log)
-    if summary:
-        print(summary)
-    return 0 if code == 0 else (3 if code == 124 else 1)
+    if flaky:
+        print("Beqaror (birinchi yurishda yiqildi, qayta yurishda o'tdi): %s"
+              % ", ".join(flaky[:10]))
+        print("O'zgarish bilan bog'liq bo'lsa (o'zgargan test yoki o'zgargan kodga "
+              "murojaat) bu poyga xatosi bo'lishi mumkin: egasi test-muhandis.")
+    if code != 4:
+        summary = summarize(summary_log)
+        if summary:
+            print(summary)
+    return {0: 0, 4: 4, 124: 3}.get(code, 1)
 
 
 if __name__ == "__main__":
