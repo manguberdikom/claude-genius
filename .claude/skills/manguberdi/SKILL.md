@@ -1,6 +1,6 @@
 ---
 name: manguberdi
-description: Java/Spring/PostgreSQL ishini boshidan oxirigacha olib boradigan orkestrator. Sessiyada bir marta chaqiriladi va keyingi vazifalarda o'zi ishlaydi. Prompt bo'yicha aktyor tanlaydi (rejalashtiruvchi, dasturchi, test muhandisi, reviewer), ularni ketma-ket yurgizadi, har qadamni qo'llanma bo'limi bilan asoslaydi va oxirida memoryga yozadi. Review, reja tuzish va yangilash, bug tuzatish, refaktoring, test qoplash uchun.
+description: Java/Spring/PostgreSQL ishini boshidan oxirigacha olib boradigan orkestrator. Sessiyada bir marta chaqiriladi va keyingi vazifalarda o'zi ishlaydi. Prompt bo'yicha aktyor tanlaydi (rejalashtiruvchi, dasturchi, test muhandisi, reviewer), ularni hajmga qarab ketma-ket yoki parallel yurgizadi, har qadamni qo'llanma bo'limi bilan asoslaydi va oxirida memoryga yozadi. Review, reja tuzish va yangilash, bug tuzatish, refaktoring, test qoplash uchun.
 ---
 
 # manguberdi
@@ -43,6 +43,14 @@ aytiladi.
    Kirish bir xil, chiqish bir xil: yozuvchi reviewer tekshiradigan
    aynan o'sha ro'yxat bilan ishlaydi. Ikkinchi aylana shundan
    kamayadi.
+5. **Test faqat asbob bilan.** Aktyor ish oxirida bir marta
+   `python3 tools/run_tests.py --diff --yurgiz`: o'zgarishga ta'sir
+   qilgan testlar, modul bilan, log faylda. To'liq suite partiyada bir
+   marta, asosiy sessiyada, fonda (`--hammasi`). Xom `./gradlew test`,
+   `clean`, `--rerun-tasks`, `--no-daemon` ni `guard.py` to'sadi.
+6. **Zanjir o'rtasida savol yo'q.** Qaytariladigan qarorda standart
+   tanlanadi va yoziladi; qaytarib bo'lmaydigani ish boshida, bitta
+   xabarda so'raladi (`references/marshrut.md`, `Ochiq qarorlar`).
 
 ## Marshrut
 
@@ -85,29 +93,26 @@ asosiy sessiyada ~25k token o'qiydi va `budget.py` uni sanamaydi.
 
 ## Ketma-ketlik
 
-Ish zanjiri va har aktyorning ikki chaqiruv chegarasi:
-`references/aktyorlar.md`. Qisqacha:
+Zanjir hajmga qarab (`references/aktyorlar.md`):
 
-```
-rejalashtiruvchi (zarur bo'lsa)
-      v
-  dasturchi  --kod muammosi--.
-      v                        |
- test-muhandis --test muammosi-+
-      v                        |
-    review  ---kamchilik-------'
-      v (toza yoki to'xtadi)
-   memory
-```
+| Hajm | Zanjir |
+|---|---|
+| S | `dasturchi` (o'zgarish va regressiya testi) -> `review` |
+| M | `dasturchi` -> `test-muhandis` va `review` parallel -> bitta tuzatish aylanasi |
+| L | `rejalashtiruvchi` -> har guruhga M, guruhlar parallel worktree da |
 
-`review` kamchilik topsa, u **egasiga** qaytadi: kod muammosi
-`dasturchi` ga, test muammosi `test-muhandis` ga, reja muammosi
-`rejalashtiruvchi` ga. Har aktyor bitta
-vazifada ko'pi bilan **ikki marta** chaqiriladi. Ikkinchidan keyin ham
-hal bo'lmasa, zanjir to'xtaydi va nima yetishmayotgani aytiladi. Buni
-hook sanaydi va har yangi so'rovda o'zi nolga tushiradi. Bitta so'rov
-ichida ikkinchi vazifa boshlansa:
+`review` kamchilik topsa u **egasiga** qaytadi, lekin faqat `yuqori`
+topilma ikkinchi aylanani ochadi; `o'rta` egasi baribir chaqirilsa
+qo'shiladi, `past` hisobotga. Ikkinchi chaqiruvdan keyin review to'liq
+qayta yurmaydi. Har aktyor bitta vazifada ko'pi bilan **ikki marta**
+chaqiriladi; buni hook sanaydi va har yangi so'rovda nolga tushiradi.
+Bitta so'rov ichida ikkinchi vazifa:
 `python3 tools/budget.py --yangi-vazifa "<nom>"`.
+
+Fayllari kesishmaydigan guruhlar parallel ishlaydi: har biriga o'z git
+worktree si (`python3 tools/guruh.py yarat <id>`), promptda `guruh:`
+kartasi, oxirida bitta birlashtirish va bitta to'liq suite
+(`references/parallel.md`).
 
 ## Model tanlash
 
@@ -139,6 +144,7 @@ Ish yakunida shular toza bo'lishi kerak:
 { git diff --name-only --diff-filter=d HEAD; git ls-files --others --exclude-standard; } \
   | grep '\.java$' | xargs python3 tools/check_code.py
 python3 tools/check_docs.py          # hujjat tegilgan bo'lsa
+python3 tools/run_tests.py --hammasi --yurgiz   # partiyada bir marta, fonda
 ```
 
 `xargs` 123 qaytarsa, kamida bitta faylda topilma bor.

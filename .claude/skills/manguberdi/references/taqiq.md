@@ -1,7 +1,8 @@
 # Qat'iy taqiqlar
 
-Uchta amal taqiqlangan. Ular shunchaki tavsiya emas: `tools/guard.py`
-ularni `PreToolUse` hook sifatida to'sadi. Bu odatga qarshi to'siq,
+To'rt toifa amal to'siladi. Ular shunchaki tavsiya emas: `tools/guard.py`
+ularni `PreToolUse` hook sifatida to'sadi. Birinchi uchtasi `ask`
+(qaror odamda), to'rtinchisi `deny` (arzon yo'l har doim bir xil). Bu odatga qarshi to'siq,
 xavfsizlik chegarasi emas: `bash -c` yoki skript ichidagi buyruqni
 ko'rmaydi. Hook o'tkazib yuborgani ruxsat degani emas.
 
@@ -47,9 +48,33 @@ Nega: bu muhitda ishlamaydi va yozilgan skript tekshirilmagan bo'lib
 qoladi. Shu ishni `bash` yoki `python3` bilan bajaring: ikkalasi ham
 shu yerda sinaladi.
 
+## 4. Test vaqti
+
+Xom to'liq suite (`./gradlew test`, `./gradlew check`, `mvn test`,
+`mvn verify`, `mvn install`), `clean`, `--rerun-tasks` va `--no-daemon`.
+
+Nega: to'liq suite 5-8 daqiqa va aktyor uni qayta-qayta yurgizardi.
+Ko'p modulli loyihada modulsiz `--tests X` va `-Dtest=X` X yo'q modulda
+yiqiladi, shundan keyin aktyor filtrsiz suite ga qaytardi. `clean` va
+`--rerun-tasks` inkremental build ni, `--no-daemon` esa daemon ni
+yo'qotadi: keyingi har yurish ham sekinlashadi.
+
+O'rniga:
+
+```bash
+python3 tools/run_tests.py --diff --yurgiz          # maqsadli, modul bilan
+python3 tools/run_tests.py --modul <papka> --yurgiz # bitta modul
+python3 tools/run_tests.py --hammasi --yurgiz       # to'liq: partiyada bir marta
+```
+
+Filtrli yurish (`:mod:test --tests X`, `-Dtest=X`) va testsiz build
+(`-x test`, `-DskipTests`) to'silmaydi. Bu `deny`, `ask` emas: `ask`
+zanjirni har safar odam javobini kutib to'xtatardi, holbuki bu yerda
+qaror yo'q, asbob hamma rejimni beradi.
+
 ## Qarorni kim qiladi
 
-Uchala holat ham **yopiq emas**: `guard.py` ularni `ask` bilan
+Birinchi uchta holat **yopiq emas**: `guard.py` ularni `ask` bilan
 foydalanuvchi qaroriga qo'yadi, ya'ni buyruq o'z-o'zidan bajarilmaydi
 va o'z-o'zidan rad etilmaydi ham.
 

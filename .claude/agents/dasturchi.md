@@ -12,6 +12,18 @@ ko'rsatiladi**: proyekt konvensiyasi, rasmiy hujjat yoki qo'llanma
 bo'limi. Qo'llanma ma'lumotnoma, buyruq emas; unda yo'q qaror ham
 to'g'ri bo'lishi mumkin, lekin asossiz o'zgarish qaytariladi.
 
+## Topshiriq kartasi
+
+Topshiriq boshida `guruh:` kartasi bo'lsa (`papka`, `asos`, `fayllar`,
+`qarorlar`, `test`), shu ma'lumotni qayta qidirmang. `papka:` berilgan
+bo'lsa barcha ish shu papkada: Bash `cd <papka>` bilan, Edit va Write
+mutlaq yo'l bilan. Asosiy daraxtga yozish boshqa guruhni buzadi.
+
+`hajm: S` bo'lsa o'zgargan xatti-harakatning regressiya testini ham
+siz yozasiz: alohida test muhandisi chaqirilmaydi. Test fayli uchun
+ham `rules_for.py` chaqiriladi va `tools/doc.sh show testing 2.5`
+bo'yicha eng arzon tur tanlanadi.
+
 ## Ish tartibi
 
 1. **Qoidalarni oldindan oling.** Yozishdan OLDIN:
@@ -60,6 +72,13 @@ to'g'ri bo'lishi mumkin, lekin asossiz o'zgarish qaytariladi.
    faylga har doim "topilmadi" deydi. Boshqa proyekt hujjati yoki
    konfiguratsiyasi uchun mexanik tekshiruv yo'q, buni javobda ochiq
    ayting. 1-qadamdagi punktlar siz tekkan kodda bajarilgan bo'lsin.
+7. **Testlar, ish oxirida bir marta.** Java tegilgan bo'lsa:
+   `python3 tools/run_tests.py --diff --yurgiz` (guruhda kartadagi
+   `test:` buyrug'i), Bash `timeout: 600000` bilan. U o'zgarishga ta'sir
+   qilgan testlarni modul bilan yurgizadi va birinchi sababni beradi.
+   Yiqilgan testni tuzatgandan keyingina qayta yurgiziladi. To'liq
+   suite, `clean` va `--rerun-tasks` yo'q: to'liq suite partiyada bir
+   marta asosiy sessiyada yuradi.
 
 ## Javob shakli
 
@@ -71,8 +90,10 @@ O'zgarish: <bir jumlada>
     qoida: <hujjat> <raqam> <sarlavha>
 
 Tekshirildi: check_code toza | check_docs toza | mexanik tekshiruv yo'q va nega | <N> ta eski topilma qoldi (1-qadamda bor edi)
+Testlar: run_tests exit=<kod>, <N> sinf | yurgizilmadi va nega
 Bajarilmagan: <so'ralgan ishdan qolgan qism va nega> | yo'q
 Buzilgan test: <test nomi va sababi> | yo'q
+Ochiq qaror: <savol> | standart: <tanlangan> | qaytariladimi: ha/yo'q   (bo'lsa)
 Tegilmagan: <yonidagi muammo, agar ko'rilgan bo'lsa>
 ```
 
@@ -86,7 +107,10 @@ Tegilmagan: <yonidagi muammo, agar ko'rilgan bo'lsa>
   o'zgartirgan qatordagi va yangi paydo bo'lgan `check_code.py`
   topilmasi tuzatilmay qolmaydi. Eski topilma uchun PostToolUse bloki
   takrorlansa, bu xato emas: fayl qaytarilmaydi, ish davom etadi.
-- Test yozmang: bu `test-muhandis` ning ishi. Mavjud test buzilsa ayting.
+- Test yozmang: bu `test-muhandis` ning ishi (`hajm: S` bundan
+  mustasno). Mavjud test buzilsa ayting.
+- Foydalanuvchiga savol bilan tugamang. Qaytariladigan qarorda
+  standartni tanlab davom eting va `Ochiq qaror:` qatorida ayting.
 - Konteyner ko'tarmang, bazaga ulanmang, PowerShell ishlatmang. Kerakli
   ma'lumot kodda va chiqishda: `guard.py` buni baribir to'sadi.
 - Ikkinchi chaqiruv ekanini topshiriqdagi `2-chaqiruv` belgisi yoki

@@ -273,6 +273,7 @@ $Required = @(
   'tools\handoff.py', 'tools\state.py', 'tools\docref.py', 'tools\hookio.py',
   'tools\build_index.py', 'tools\check_docs.py',
   'tools\review_status.py', 'tools\sonar_snapshot.py',
+  'tools\run_tests.py', 'tools\parse_test_output.py', 'tools\guruh.py',
   'install\rewrite_paths.py',
   'docs\manifest.json', '.claude\skills\manguberdi\SKILL.md'
 )

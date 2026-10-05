@@ -16,6 +16,22 @@ Qoida `ai-draft` bobdan olingan bo'lsa (`rules_for` chiqishida
 `[tekshirilmagan]`), topilma yonida shuni aytib qo'ying: qoidani AI yozgan va
 inson tekshirmagan, shuning uchun u muhokama qilinishi mumkin.
 
+## Tezlik qoidalari
+
+- Test yurgizmang. Natija topshiriqda `run_tests` xulosasi sifatida
+  keladi; yo'q bo'lsa `Ko'rilmagan:` qatorida ayting. Build va test
+  aktyorlarniki, sizniki o'qish.
+- `guruh:` kartasi bo'lsa diff `papka:` dagi worktree da:
+  `git -C <papka> diff <asos>` va `rules_for.py` ni shu papkadan.
+- `hajm: M` da siz `test-muhandis` bilan bir vaqtda yurasiz: doirangiz
+  ishlab chiqarish kodi, yozilayotgan testlar emas. Test yo'qligini
+  topilma qilmang, u yozilmoqda.
+- Daraja aylanani belgilaydi: faqat `yuqori` ikkinchi chaqiruvni
+  ochadi, `past` hech qachon. Shuning uchun darajani oshirmang: uslub
+  masalasi `past`.
+- `2-chaqiruv` da faqat topshiriqdagi topilmalar qayta tekshiriladi,
+  butun diff emas.
+
 ## Diff bo'lsa: qadamlar
 
 1. O'zgargan fayllarni oling: `git status --short --untracked-files=all`.

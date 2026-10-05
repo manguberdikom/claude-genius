@@ -1,114 +1,144 @@
 # Aktyorlar zanjiri
 
-Zanjir bitta yo'nalishda ishlaydi, orqaga qaytish faqat kamchilik
-topilganda bo'ladi va kamchilik **egasiga** qaytadi.
+Zanjir uzunligi vazifa hajmidan kelib chiqadi. Hammaga bir xil to'liq
+zanjir (dasturchi, test muhandisi, review, keyin ikkalasi yana) bitta
+guruhni 40-70 daqiqaga cho'zardi, holbuki kichik bugga u kerak emas.
+Hajm `references/marshrut.md` dagi qoida bilan aniqlanadi.
 
+| Hajm | Zanjir |
+|---|---|
+| S | `dasturchi` (o'zgarish va uning regressiya testi) -> `review` |
+| M | `dasturchi` -> `test-muhandis` va `review` **parallel** -> bitta tuzatish aylanasi |
+| L | `rejalashtiruvchi` -> har guruhga M zanjiri, guruhlar parallel (`references/parallel.md`) |
+
+S da alohida `test-muhandis` chaqirilmaydi: bitta xatti-harakatning
+regressiya testini o'zgarishni yozgan dasturchi yozadi. Topshiriqda
+`hajm: S` yoziladi va `dasturchi` shu belgidan test yozishga ruxsatni
+oladi. Qoplash so'ralgan bo'lsa yoki test ko'p darajali bo'lsa, bu S
+emas.
+
+M da `review` va `test-muhandis` bir xabarda ikki Agent chaqiruvi bilan
+yuradi. Review faqat ishlab chiqarish kodini o'qiydi, test muhandisi esa
+faqat test yozadi, shuning uchun ular bitta faylga yozmaydi va bir-birini
+kutmaydi. Testlarning o'zi review siz qolmaydi: `check_code.py` ularni
+mexanik tekshiradi, yiqilgani `run_tests.py` da chiqadi.
+
+## Ikkinchi aylana: faqat haqiqiy kamchilikda
+
+| Review topilmasi | Nima bo'ladi |
+|---|---|
+| `yuqori` (xato yoki xavf) | egasiga qaytadi, ikkinchi chaqiruv |
+| `o'rta` | egasi baribir chaqirilayotgan bo'lsa shu chaqiruvga qo'shiladi, aks holda hisobotga |
+| `past` (uslub) | faqat hisobotga |
+
+Bitta `past` yoki `o'rta` uchun butun aylana (aktyor, test, qayta
+review) ochilmaydi. Egasi ikkita bo'lsa (kod va test), ikkinchi
+chaqiruvlar parallel yuradi: ular har xil faylga yozadi.
+
+Ikkinchi chaqiruvdan keyin **review to'liq qayta yurmaydi**. Asosiy
+sessiya tuzatilgan topilmalarni o'zi tekshiradi: aytilgan `fayl:qator`
+ni o'qish, `check_code.py`, `run_tests.py --diff --yurgiz`. Review
+ikkinchi marta faqat mexanik tekshirib bo'lmaydigan `yuqori` mantiq
+topilmasi uchun chaqiriladi va promptida faqat o'sha topilmalar turadi.
+
+## Testlar qachon va qanday
+
+Har aktyor testni faqat asbob bilan yurgizadi:
+
+```bash
+python3 tools/run_tests.py --diff --yurgiz        # ish oxirida, bir marta
 ```
-rejalashtiruvchi  (faqat zarur bo'lsa)
-       |
-       v
-   dasturchi  <--- kod kamchiligi ----.
-       |                                |
-       v                                |
-  test-muhandis  <--- test kamchiligi --+
-       |                                |
-       v                                |
-     review  -------- kamchilik --------'
-       |
-       v (toza yoki to'xtadi)
-    memory
-```
+
+Asbob o'zgarishga ta'sir qilgan test sinflarini tanlaydi, modulni o'zi
+qo'yadi, logni faylga yozadi va birinchi sababni beradi. Bash chaqiruvi
+`timeout: 600000` bilan. Testni qayta yurgizish faqat kod o'zgargandan
+keyin: o'zgarmagan kirishda Gradle test vazifasi `UP-TO-DATE` bo'ladi va
+qayta yurish hech narsa bermaydi.
+
+| Kim | Test |
+|---|---|
+| `dasturchi` | o'z ishining oxirida bir marta, maqsadli |
+| `test-muhandis` | o'zi yozgan testlar va maqsadli tanlash, bir marta |
+| `review` | yurgizmaydi: topshiriqdagi `run_tests` xulosasini o'qiydi |
+| asosiy sessiya | partiya oxirida bir marta to'liq suite, fonda: `--hammasi` |
+
+Xom `./gradlew test`, `mvn verify`, `clean`, `--rerun-tasks` va
+`--no-daemon` ni `guard.py` to'sadi (`deny`) va shu asbobni ko'rsatadi.
 
 ## Chaqiruv budjeti
 
 Har aktyor bitta vazifada **ko'pi bilan ikki marta** chaqiriladi.
-Birinchi chaqiruv ishni bajaradi, ikkinchisi review topgan kamchilikni
-tuzatadi. Uchinchisi yo'q. Ikkinchi chaqiruv promptida `2-chaqiruv` deb
-yoziladi va kamchilikni qaytargan aktyorning (review yoki test-muhandis)
-topilmalari fayl, qator va qoidasi bilan to'liq ko'chiriladi.
+Birinchi chaqiruv ishni bajaradi, ikkinchisi topilmani tuzatadi.
+Uchinchisi yo'q. Ikkinchi chaqiruv promptida `2-chaqiruv` deb yoziladi
+va kamchilikni qaytargan aktyorning topilmalari fayl, qator va qoidasi
+bilan to'liq ko'chiriladi.
 
 Budjet tugaganda va muammo qolganda zanjir to'xtaydi. Shunda yoziladi:
 nima bajarildi, nima qolgan, nega ikki urinish yetmadi, nima
 yetishmayapti. Uchinchi urinish o'rniga aniq savol beriladi. Undan
 keyin memory bosqichi bajariladi: ikki urinishda ham qolgan kamchilik
-`feedback` nomzodi, yarim qolgan reja `project` nomzodi (`memory.md`).
+`feedback` nomzodi, yarim qolgan reja `project` nomzodi.
 
 Budjet **sanaladi**, yodda saqlanmaydi: hook uni har yangi so'rovda
 o'zi nolga tushiradi. Bitta so'rov ichida ikkinchi vazifa boshlansa:
 
 ```bash
 python3 tools/budget.py --yangi-vazifa "<vazifa nomi>"
-python3 tools/budget.py --holat          # jadval
+python3 tools/budget.py --holat          # jadval, guruhlar bilan
 ```
+
+Parallel guruhda prompt `guruh: <id>` qatori bilan boshlanadi va hisob
+guruh bo'yicha yuritiladi: ikki guruh bir-birining budjetini yemaydi.
+Qatorsiz chaqiruv bitta umumiy hisobga tushadi.
 
 `PreToolUse` hook har aktyor chaqiruvini hisoblaydi va uchinchisini
 **to'sadi**. `qidiruv` va `tahlil` sanalmaydi: ular zanjir qadami emas,
-o'qish asbobi, va ularni cheklash arzon yo'lni qimmat qiladi.
+o'qish asbobi.
 
-Chaqiruv behuda ketgan bo'lsa (aktyor boshqa sababdan yiqildi, xato
-bilan tugadi yoki foydalanuvchi to'xtatdi):
-`python3 tools/budget.py --tiklash <aktyor>`.
-
-Bir necha modulli ish (to'liq review, keng tuzatish) normallashtirishda
-modullarga bo'linadi va har qism
-`python3 tools/budget.py --yangi-vazifa "<ish>: <modul>"` bilan
-boshlanadi. Budjet aktyor bo'yicha alohida sanaladi, shuning uchun egasi
-bo'yicha bo'lish shart emas. Bo'lish ish boshida qilinadi: to'siqdan
-keyin yangi vazifa ochish uchinchi urinishni yashiradi.
+Chaqiruv behuda ketgan bo'lsa (aktyor boshqa sababdan yiqildi yoki
+foydalanuvchi to'xtatdi):
+`python3 tools/budget.py --tiklash <aktyor> [--guruh <id>]`.
 
 ## Ikkinchi chaqiruvning oldini olish
-
-Budjet ikkita, lekin maqsad bittasida tugatish. Ikkinchi chaqiruv
-deyarli har doim shu uch sababdan biri bilan keladi:
 
 | Sabab | Oldini olish |
 |---|---|
 | Aktyor qoidani bilmagan | `rules_for.py` ni ishdan oldin chaqirish |
 | Reviewer boshqa mezon bilan tekshirgan | ikkalasi bir xil ro'yxatni oladi |
 | "Bajarildi" nimaligi aytilmagan | qabul mezoni normalizatsiyada belgilanadi |
+| Kontekst qayta qidirildi | guruh kartasi har promptga ko'chiriladi |
 
-Shuning uchun `rules_for.py` tavsiya emas, zanjirning birinchi qadami,
-va u **majburlanadi**: `check_code.py` Java fayl yozilgandan keyin
-(`PostToolUse`) shu fayl uchun chaqiruv bo'lganini tekshiradi. Bo'lmasa
-modelga to'siq xabarini qaytaradi va shu fayl uchun `rules_for.py`
-chaqirilmaguncha uning har yozuvida takrorlaydi. Yozuv bekor
-qilinmaydi, fayl diskda qoladi, shuning uchun `rules_for.py` yozishdan
-OLDIN chaqiriladi. Zanjir sifati odamning yodida qolishiga tayanmaydi.
+`rules_for.py` zanjirning birinchi qadami va u **majburlanadi**:
+`check_code.py` Java fayl yozilgandan keyin (`PostToolUse`) shu fayl
+uchun chaqiruv bo'lganini tekshiradi. Bo'lmasa modelga to'siq xabarini
+qaytaradi. Shuning uchun `rules_for.py` yozishdan OLDIN chaqiriladi.
 
 ## Kamchilik kimga qaytadi
-
-`review` topilmasi turiga qarab yo'naltiriladi. Noto'g'ri aktyorga
-qaytarilgan kamchilik ikki chaqiruvni behuda sarflaydi.
 
 | Topilma turi | Egasi |
 |---|---|
 | Mantiq xatosi, pattern noto'g'ri qo'llangan, chegara buzilgan | `dasturchi` |
 | Tranzaksiya, N+1, resurs yopilmagan, xato yutilgan | `dasturchi` |
-| Test yo'q, assertion yo'q, test noto'g'ri turda, flaky | `test-muhandis` |
+| Test yo'q, assertion yo'q, test noto'g'ri turda, flaky | `test-muhandis` (S da `dasturchi`) |
 | Reja qadami bajarilmagan yoki reja noto'g'ri | `rejalashtiruvchi` |
 | Hujjat yoki havola buzilgan | `dasturchi` |
 
 ## Har aktyor nimani qaytaradi
 
-Qaytarilgan javob keyingi aktyor uchun **kirish** bo'ladi, shuning
-uchun shakli qat'iy. Har javobda bo'lishi shart:
-
-- bir jumlada natija,
-- har qaror yoki topilma yonida `<hujjat> <raqam>`,
-- nima **bajarilmagani** va nega,
-- keyingi aktyor uchun kerakli aniq ma'lumot (fayl, qator, buyruq).
-
-Javobda uzun log, to'liq fayl matni yoki stack trace bo'lmaydi: ular
-aktyorning o'z kontekstida qoladi.
+Qaytarilgan javob keyingi aktyor uchun **kirish**, shuning uchun shakli
+qat'iy: bir jumlada natija, har qaror yonida `<hujjat> <raqam>`, nima
+bajarilmagani va nega, keyingi aktyor uchun aniq ma'lumot (fayl, qator,
+buyruq) va `run_tests` natijasi. Javobda uzun log, to'liq fayl matni yoki
+stack trace bo'lmaydi. Javob savol bilan tugamaydi: ochiq qaror
+`Ochiq qaror:` qatorida standarti bilan beriladi (`references/marshrut.md`).
 
 ## Zanjir qachon qisqaradi
 
 - Faqat savol berilgan bo'lsa (`doc.sh show`, `qidiruv`, `tahlil`),
-  zanjir shu yerda tugaydi: kod o'zgarmaydi, review ishlamaydi. Memory
-  bosqichi faqat foydalanuvchi javobni tuzatgan yoki yondashuvni rad
-  etgan bo'lsa bajariladi.
+  zanjir shu yerda tugaydi: kod o'zgarmaydi, review ishlamaydi.
 - Faqat review so'ralgan bo'lsa, `dasturchi` va `test-muhandis`
-  chaqirilmaydi: topilmalar hisobot sifatida beriladi va memory
-  bosqichi bajariladi.
+  chaqirilmaydi: topilmalar hisobot sifatida beriladi.
 - Hujjat o'zgarishi kod emas: `check_docs.py` tekshiradi, test
   muhandisi chaqirilmaydi.
+- Bir necha modulli ish (to'liq review, keng tuzatish) ish boshida
+  modullarga bo'linadi; fayllari kesishmasa ular parallel guruh.

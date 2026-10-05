@@ -69,6 +69,7 @@ yaxshilamasa, u shunchaki pul va vaqt.
 | Kerak bo'lsa | Arzon yo'l |
 |---|---|
 | Baza tuzilishi | `python3 tools/schema_from_entities.py <src>` |
+| O'zgarish testlari | `python3 tools/run_tests.py --diff --yurgiz` |
 | Test nega yiqildi | chiqishdagi birinchi xatoni o'qish |
 | Qoida nima deydi | `tools/doc.sh show <hujjat> <raqam>` |
 | Diff to'g'rimi | `review` agenti, keyin maqsadli test |
@@ -77,7 +78,7 @@ yaxshilamasa, u shunchaki pul va vaqt.
 PowerShell `guard.py` tomonidan foydalanuvchi qaroriga qo'yiladi (`ask`):
 o'z-o'zidan yurgizilmaydi, nega arzon yo'l yetmagani aytib so'raladi.
 `docker ps`, `docker logs`, `psql --version` so'ralmaydi. Katta bobni
-butun o'qish esa to'siladi (`deny`).
+butun o'qish va xom to'liq test suite esa to'siladi (`deny`).
 
 Og'ir o'qish `qidiruv` va `tahlil` (haiku) da, diffni `review` (sonnet)
 tekshiradi, kod va testni `dasturchi` va `test-muhandis` (sonnet) yozadi.
@@ -89,6 +90,9 @@ Boshqa asboblar:
 - `doc.sh rule java:S3776` - Sonar kalitini izohlagan bo'lim.
 - `doc.sh checklist <hujjat> [bob]` - yozilgan tekshiruv punktlari.
 - `parse_test_output.py` - test chiqishidan birinchi haqiqiy sababni oladi.
+- `run_tests.py` - ta'sirlangan testlarni modul bilan yurgizadi;
+  `--hammasi` partiyada bir marta, `--tashxis` suite nega sekin.
+- `guruh.py` - parallel guruh uchun git worktree va birlashtirish.
 - `rules_for.py` - tegilayotgan fayllarga qaysi boblar, tekshiruv
   punktlari va avvalgi xatolar tegishli. Java yozishdan OLDIN majburiy.
 - `check_code.py` - Java fayl yozilgandan keyin `PostToolUse` hook

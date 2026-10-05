@@ -106,6 +106,7 @@ Tasdiqlanmagan qator `TAXMIN:` bilan belgilanadi va 11-bo'limga chiqadi.
 
 ## 4. Qadamlar
 ### 1-qadam. <imperativ sarlavha>
+- Guruh: <id> (fayllari boshqa guruh bilan kesishmaydi; parallel yuradi)
 - Nega: <bir-ikki jumla>
 - Fayl: <yo'l> (yangi yoki o'zgaradi)
 - Qilinmaydi: <chegara: bu qadamda nimaga tegilmaydi>
@@ -143,7 +144,10 @@ reliz tartibi, feature flag, kuzatiladigan signallar.
 - [ ] <buyruq bilan tekshiriladigan band>
 
 ## 11. Ochiq savollar va taxminlar
-| # | Savol yoki taxmin | Kim javob beradi | Javobsiz ta'siri |
+| # | Savol yoki taxmin | Standart (javobsiz shu bilan davom) | Qaytariladimi | Bog'liq guruh |
+Qaytariladigan savol uchun standart majburiy: ish javobni kutmaydi.
+Qaytarib bo'lmaydigani ish boshida bitta xabarda so'raladi va faqat
+bog'liq guruhni to'xtatadi.
 
 ## 12. Manbalar
 Kod (`fayl:qator`), config, qo'llanma bo'limlari
@@ -152,6 +156,12 @@ Kod (`fayl:qator`), config, qo'llanma bo'limlari
 
 Oxirida: ketma-ketlik va bog'liqlik, keyin "aniqlanishi kerak" ro'yxati
 va bo'lsa audit taklifi.
+
+Qadamlar guruhlarga bo'linadi: bir guruh bitta modul yoki fayli boshqa
+guruh bilan kesishmaydigan qadamlar to'plami. Kesishmaydigan guruhlar
+parallel worktree da bajariladi (`.claude/skills/manguberdi/references/parallel.md`),
+shuning uchun bo'linish tezlikni belgilaydi: bitta umumiy faylga
+tegadigan qadamlar bitta guruhda turadi, ular ketma-ket bajariladi.
 
 ## Yangilashda
 

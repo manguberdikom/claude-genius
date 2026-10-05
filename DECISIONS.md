@@ -8,6 +8,104 @@ Hamma o'zgarish bu yerga yozilmaydi. Yoziladigani: foydalanuvchi
 muhitiga tegadigan, ma'lumot yo'qotishi mumkin bo'lgan yoki ruxsat
 qarorini o'zgartiradigan o'zgarish.
 
+## 2026-10-05: Testlar maqsadli, to'liq suite partiyada bir marta
+
+**Nima o'zgardi.** `tools/run_tests.py` qo'shildi: o'zgarishga ta'sir
+qilgan test sinflarini tanlaydi (o'zgargan test, nomi mos, murojaat, bir
+qadam narida ishlatuvchi, sozlama va migratsiya), modulga bog'langan
+buyruq yasaydi va uni o'zi yurgizadi, log faylga, ekranga birinchi
+sabab. `guard.py` xom to'liq suite (`./gradlew test`, `mvn verify`),
+`clean`, `--rerun-tasks` va `--no-daemon` ni `deny` qiladi va shu
+asbobni ko'rsatadi. To'liq suite partiyada bir marta, asosiy sessiyada.
+
+**Nega.** Suite 5-8 daqiqa, aktyor uni 2-4 marta, guruhda 3-5 aktyor
+yurgizardi. Sabab faqat odat emas, tajribada tasdiqlandi: ko'p modulli
+Gradle da `test --tests X` X yo'q modulda "No tests found for given
+includes" bilan yiqiladi (`failOnNoMatchingTests` standarti true), Maven
+da `-Dtest=X` "No tests matching pattern" bilan. Aktyor shundan keyin
+filtrsiz suite ga qaytardi. Asbob modulni o'zi qo'yadi
+(`:orders:test --tests X`, `-pl orders -am -Dsurefire.failIfNoSpecifiedTests=false`),
+IT ni failsafe ga beradi (`-Dit.test`, `-Dfailsafe.failIfNoSpecifiedTests=false`),
+`--continue`/`-fae` bilan hamma modul yiqilishini bitta yurishda
+ko'rsatadi va Maven da validate fazasidagi spring-javaformat ni oldin
+qo'llaydi.
+
+**Rad etilgan variantlar.**
+
+- *Faqat ko'rsatma yozish ("to'liq suite yurgizmang").* Rad etildi:
+  test-muhandis agentida bu allaqachon yozilgan edi va baribir
+  yurgizilardi, chunki to'g'ri buyruqni yasash ko'p modulda qiyin.
+- *To'siqni `ask` qilish.* Rad etildi: `ask` zanjirni odam javobini
+  kutib to'xtatadi, holbuki arzon yo'l har doim bir xil.
+- *Build tool plaginiga asoslangan tanlash (Gradle test impact).*
+  Rad etildi: foydalanuvchi build iga tegadi. Asbob faqat manbani
+  o'qiydi; xatosini partiya oxiridagi to'liq suite tutadi.
+
+**Xavf.** Ikki. Birinchisi: tanlash taxminiy (nom va murojaat bo'yicha),
+uzoq bog'liqlik o'tkazib yuborilishi mumkin; xavfsizlik to'ri partiya
+oxiridagi to'liq suite. Ikkinchisi, ruxsat: o'rnatuvchi ruxsat
+ro'yxatini skill matnidagi asboblardan yasaydi, shuning uchun
+`run_tests.py` ham unga tushadi va u loyihaning build ini (ya'ni loyiha
+kodini) har yurishda ruxsat so'ramasdan ishga tushiradi. Bu ataylab:
+test yurishidagi har ruxsat so'rovi zanjirni to'xtatardi. Asbob faqat
+test vazifalarini yurgizadi, ixtiyoriy Gradle yoki Maven vazifasini
+emas. Testcontainers testlari konteyner ko'taradi va `guard.py` ularni
+ko'rmaydi: bu avval ham shunday edi, endi esa to'liq suite partiyada
+bir marta.
+
+**Qaysi tekshiruv o'tdi.** `tools/test_run_tests.py` 26/26 (to'rtta
+mutatsiya ham tutildi), `tools/test_guard.py` 138/138, haqiqiy Gradle
+8.14 va Maven 3.9 fixture larida qo'lda: maqsadli yurish, bir qadam
+tanlovi, ikki modul yiqilishi bitta yurishda, IT failsafe da.
+
+**Orqaga qaytarish.** `guard.py` dagi `check_build` chaqiruvini olib
+tashlash; ruxsatni olib tashlash uchun `~/.claude/settings.json` dagi
+`run_tests.py` qoidasini o'chirish yoki `GENIUS_HOOKS=off`.
+
+## 2026-10-05: Zanjir hajmga qarab, guruhlar parallel worktree da
+
+**Nima o'zgardi.** Zanjir hajmga bog'landi: S da dasturchi o'zi
+regressiya testini yozadi va review keladi; M da test muhandisi va
+review parallel; L da reja va guruhlar parallel. Ikkinchi aylana faqat
+`yuqori` topilmada, review to'liq qayta yurmaydi. Fayllari kesishmaydigan
+guruhlar o'z git worktree sida ishlaydi (`tools/guruh.py`), budjet
+`guruh: <id>` qatori bo'yicha guruhga ajratildi (`budget.py`). Zanjir
+o'rtasida savol berilmaydi: qaytariladigan qarorda standart tanlanadi va
+yoziladi, qaytarib bo'lmaydigani ish boshida bitta xabarda so'raladi.
+
+**Nega.** Bitta guruh dasturchi, test muhandisi, review, keyin ikkalasi
+yana bilan 40-70 daqiqa olardi va guruhlar bitta ishchi papka tufayli
+ketma-ket yurardi. Budjet sessiya bo'yicha sanalardi: ikki guruh parallel
+ishlasa, birinchisining ikkinchi aylanasi ikkinchisining birinchi
+chaqiruvi tufayli to'silardi. Savol esa ishni javobgacha to'xtatardi
+va har yangi so'rovda budjetni ham nolga tushirardi.
+
+**Rad etilgan variantlar.**
+
+- *Agent asbobining `isolation: worktree` i.* Rad etildi: u har
+  chaqiruvga alohida worktree beradi, guruhning dasturchisi va test
+  muhandisi esa bitta daraxtda ishlashi kerak.
+- *Guruh branchini `git merge` bilan birlashtirish.* Rad etildi: merge
+  commit foydalanuvchi branchiga tushadi. Patch (`git apply --index`)
+  ish bitta daraxtda bajarilgandek natija beradi, commit qilmaydi va
+  kesishganda asosiy daraxtga tegmaydi.
+- *Har qanday holatda parallel.* Rad etildi: asosiy daraxt iflos bo'lsa
+  guruh uni ko'rmaydi, mashina chegarasidan ortiq guruh esa hammani
+  sekinlashtiradi. Shunda ketma-ket ishlanadi, savolsiz.
+
+**Xavf.** Parallel testlar umumiy port yoki lokal bazaga tegsa bir-birini
+buzadi: `run_tests.py --navbat` ularni ketma-ket qiladi, `--tashxis`
+belgini ko'rsatadi. Standart bilan qabul qilingan qaror noto'g'ri
+bo'lishi mumkin: shuning uchun har biri hisobotda ro'yxat bo'lib
+chiqadi.
+
+**Qaysi tekshiruv o'tdi.** `tools/test_guruh.py` 9/9, `tools/test_budget.py`
+26/26, ikki worktree da parallel Gradle qo'lda.
+
+**Orqaga qaytarish.** `references/aktyorlar.md` dagi hajm jadvalini
+eski to'liq zanjirga qaytarish; guruh qatorisiz chaqiruv budjetni eski
+xulqda sanaydi.
+
 ## 2026-10-05: Qidiruv dvigateli qayta yozilmaydi
 
 **Nima o'zgardi.** Hech narsa. Bu yozuv ataylab: qaror "tegmaslik".
