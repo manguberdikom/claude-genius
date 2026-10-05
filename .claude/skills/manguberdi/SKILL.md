@@ -121,9 +121,9 @@ Uzun ishda kontekstni toza saqlash va ishni yangi sessiyaga uzatish:
 Ish yakunida shular toza bo'lishi kerak:
 
 ```bash
-# o'zgargan va yangi .java fayllar, har biri alohida tekshiriladi
+# o'zgargan va yangi .java fayllar, bitta chaqiruvda, oxirida yig'ma qator
 { git diff --name-only --diff-filter=d HEAD; git ls-files --others --exclude-standard; } \
-  | grep '\.java$' | xargs -n1 python3 tools/check_code.py
+  | grep '\.java$' | xargs python3 tools/check_code.py
 python3 tools/check_docs.py          # hujjat tegilgan bo'lsa
 ```
 

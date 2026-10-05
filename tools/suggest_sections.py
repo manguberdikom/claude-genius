@@ -241,7 +241,8 @@ def score_sections(wanted, sections, idf, term_vocab, direct=frozenset()):
         return {}
     scores = {}
     for row in sections:
-        if not row["section"]:
+        # Ishora-yozuv (`ishora` ustuni to'la) to'liq yozuvni takrorlaydi.
+        if not row["section"] or row.get("ishora"):
             continue
         shared = wanted & set(tokens(row["title"]))
         if not shared:

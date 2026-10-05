@@ -65,7 +65,8 @@ HOOK_TOOLS = {"Read", "Bash", "PowerShell", "Task", "Agent", "Write", "Edit",
 # tushirib qoldirish yo'q. Matcher faqat asbob hodisalarida bor:
 # UserPromptSubmit va Stop uni o'qimaydi, budget.py u yerda hisobni
 # nolga tushirish uchun ulangan.
-HOOK_MUST_MATCH = {"guard": {"Read", "Bash"}, "budget": {"Task", "Agent"},
+HOOK_MUST_MATCH = {"guard": {"Read", "Bash", "PowerShell"},
+                   "budget": {"Task", "Agent"},
                    "check_code": {"Write", "Edit"}}
 TOOL_EVENTS = {"PreToolUse", "PostToolUse"}
 

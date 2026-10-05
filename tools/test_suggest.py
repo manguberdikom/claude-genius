@@ -166,6 +166,14 @@ BORDERLINE = [
      {"code-review", "patterns"}, None),
 ]
 
+# Ishora-yozuv (sections.tsv `ishora` ustuni to'la) to'liq yozuvni
+# takrorlaydi: bitta mavzuga ikki raqam berilmasin, faqat to'liq yozuv.
+POINTERS = [
+    # (so'rov, hujjat, chiqishi shart bo'lim, chiqmasligi shart bo'lim)
+    ("memoization qanday qilinadi", "patterns", "11.17", "24.23"),
+    ("structured concurrency misol", "patterns", "4.24", "24.35"),
+]
+
 # Ma'lum bo'shliqlar: chop etiladi, lekin xato hisoblanmaydi.
 KNOWN_GAPS = [
     ("saga pattern kerakmi yoki outbox", "patterns 10.14 / 14.12",
@@ -287,8 +295,15 @@ def invariant_cases():
     missing = sorted("%s -> %s" % (key, target)
                      for key, targets in S.load_synonyms().items()
                      for target in targets if target not in vocab)
+    # Ishora-yozuv o'z sarlavhasi bilan so'ralganda ham taklif qilinmaydi.
+    leaked = sorted("%s %s" % (row["doc"], row["section"])
+                    for row in S.read_tsv("sections.tsv")
+                    if row.get("ishora") and (row["doc"], row["section"]) in
+                    {(h[0], h[1]) for h in S.suggest(row["title"])})
     return [("sinonim nishonlari sarlavhalarda bor", not missing,
-             ", ".join(missing[:5]) or "hammasi bor")]
+             ", ".join(missing[:5]) or "hammasi bor"),
+            ("ishora-yozuv taklif qilinmaydi", not leaked,
+             ", ".join(leaked) or "hech biri")]
 
 
 def main():
@@ -343,6 +358,16 @@ def main():
         print("%-4s %-58s -> %d ta (chegara %d) %s" % (
             "OK" if ok else "XATO", prompt[:58], len(hits), limit,
             ", ".join("%s %s" % (h[0], h[1]) for h in hits)))
+
+    print("\n== Ishora-yozuv o'rniga to'liq yozuv ==")
+    for prompt, doc, want, pointer in POINTERS:
+        keys = {(h[0], h[1]) for h in S.suggest(prompt)}
+        ok = (doc, want) in keys and (doc, pointer) not in keys
+        failures += not ok
+        total += 1
+        print("%-4s %-58s -> %s" % (
+            "OK" if ok else "XATO", prompt[:58],
+            ", ".join("%s %s" % k for k in sorted(keys)) or "(jim)"))
 
     print("\n== Invariantlar ==")
     for name, ok, note in invariant_cases():

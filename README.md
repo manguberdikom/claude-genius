@@ -72,7 +72,9 @@ o'chiradi, shuning uchun avval `-Apply` siz yurgiziladi.
 `memory/` papkasida git ichida saqlanadigan memory ombori. Proyekt memoryasi
 `memory/claude-genius/`, barcha proyektlarga tegishli bilim `memory/umumiy/`
 da. Qoidalar: [memory-protocol.md](memory-protocol.md) va
-[memory/README.md](memory/README.md).
+[memory/README.md](memory/README.md). Mexanika, yuklanish tartibi va
+audit (memory yuklanmasa qayerdan qarash):
+[memory-mexanika.md](memory-mexanika.md).
 
 ## Tez qidirish
 

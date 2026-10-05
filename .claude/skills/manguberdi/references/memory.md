@@ -14,7 +14,7 @@ matniga bog'langan, bo'limlar qayta raqamlansa ham ishlaydi:
 - darvoza va marshrut: `awk '/^## [0-9]+\. Marshrut/,/^## [0-9]+\. Saqlash/' memory-protocol.md`
 - yozish (D va E faza): `awk '/^### D faza/,/^### F faza/' memory-protocol.md`
 - yozuv formati: `awk '/^## [0-9]+\. Yozuv formati/,/^## [0-9]+\. Hajm/' memory-protocol.md`
-- yozilmaydigan narsalar: `awk '/^## [0-9]+\. Memoryga yozilmaydigan/,/^## [0-9]+\. Tekshirish/' memory-protocol.md`
+- yozilmaydigan narsalar: `awk '/^## [0-9]+\. Memoryga yozilmaydigan/,/^## [0-9]+\. Boshqa MD/' memory-protocol.md`
 - tozalash: `awk '/^## [0-9]+\. Eskirish/,/^## [0-9]+\. Cloud/' memory-protocol.md`
 
 ## Avval darvoza

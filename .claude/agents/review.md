@@ -54,12 +54,14 @@ o'qilmaydi: punkt shubha uyg'otsa `tools/doc.sh outline <hujjat> <bob>`,
 keyin faqat o'sha bo'lim `show` bilan.
 
 1. **Mexanik tekshiruv**, bir marta, butun review uchun asos:
-   `python3 tools/schema_from_entities.py <src> --only-findings`,
-   `find <src> -name '*.java' -print0 | xargs -0 -n1 python3 tools/check_code.py | grep -v ': qoida buzilishi topilmadi\.$'`
-   va `Ko'rildi` uchun fayl soni: `find <src> -name '*.java' | wc -l`.
-   Toza fayl qatori chiqarilmaydi: yuzlab faylda chiqish kesiladi va
-   topilma o'rtada yo'qoladi. xargs 123 qaytarsa, bu topilma borligini
-   bildiradi, xato emas.
+   `python3 tools/schema_from_entities.py <src> --only-findings` va
+   `find <src> -name '*.java' -print0 | xargs -0 python3 tools/check_code.py`.
+   Toza fayl qatori chiqarilmaydi, shuning uchun yuzlab faylda ham
+   topilma kesilib qolmaydi: faqat buzilishi bor fayl, oxirida
+   `check_code: N fayl, M buzilish`. N `Ko'rildi` uchun fayl soni; juda
+   ko'p faylda xargs bir necha chaqiruvga bo'ladi, har biri o'z yig'ma
+   qatorini beradi va N lar qo'shiladi. xargs 123 qaytarsa, bu topilma
+   borligini bildiradi, xato emas.
 2. **Mavjud signal.** Yangi tahlil yurgizilmaydi, konteyner
    ko'tarilmaydi, bor chiqish o'qiladi. Yiqilgan test (Maven yoki Gradle
    chiqishi): `python3 tools/parse_test_output.py <fayl>`. CI logida qator
@@ -86,7 +88,7 @@ keyin faqat o'sha bo'lim `show` bilan.
    `tools/doc.sh checklist sonarqube 25` dan `29` gacha (bug, security,
    tuzilish, nomlash, Spring, JPA va PostgreSQL) va anti-patternlar uchun
    `tools/doc.sh checklist patterns 25`. Bob raqamisiz
-   `doc.sh checklist <hujjat>` faqat bob bo'yicha punkt sonini beradi.
+   `tools/doc.sh checklist <hujjat>` faqat bob bo'yicha punkt sonini beradi.
    To'liq ro'yxat (`--all`) chegaradan katta, u chaqirilmaydi.
 6. **Qoplanish**: test turi mos keladimi, nima qoplanmagan.
    `tools/doc.sh show testing 2.5` va `tools/doc.sh checklist testing 2`,

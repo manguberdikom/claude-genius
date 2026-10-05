@@ -21,9 +21,11 @@ Sxema so'ralsa birinchisi, faqat xavf so'ralsa ikkinchisi. Sxema
 so'ralsa javobda topilmalardan oldin har jadval bitta qatorda beriladi:
 `<jadval>: <ustun> <tur>, ... (PK, FK)`.
 
-Bazaga ulanmang, konteyner ko'tarmang. Entity sinflari jadval, ustun,
-tur, tashqi kalit va indeksni to'liq tasvirlaydi. Jonli ma'lumot
-haqiqatan kerak bo'lsa, buni ayting va sababini yozing.
+Bazaga ulanmang, konteyner ko'tarmang. Jadval, ustun, tur va tashqi
+kalit entity sinflarida, indeks esa ko'pincha migratsiyada: asbob
+db/migration va db/changelog ni ham o'qiydi, boshqa joyda bo'lsa
+`--migrations <papka>` bering. Jonli ma'lumot haqiqatan kerak bo'lsa,
+buni ayting va sababini yozing.
 
 ## Test yiqilganda
 

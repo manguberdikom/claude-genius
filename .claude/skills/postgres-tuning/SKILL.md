@@ -72,7 +72,6 @@ tools/doc.sh show architect <raqam>          # butun bob emas, faqat o'sha bo'li
 ```
 
 Sxemani bilish uchun bazaga ulanish shart emas: entity sinflari uni
-to'liq tasvirlaydi. Host yoki URL bilan ulanish (`psql -h ...`)
-`tools/guard.py` tomonidan to'siladi. Chiqish yo'li `COST_OK=1`, lekin
-faqat foydalanuvchi bergan chiqish nega yetmagani aytilgandan keyin.
-Host'siz `psql` guard'dan o'tadi, lekin u ham ulanish: shart bir xil.
+to'liq tasvirlaydi. Har qanday ulanish, lokal va konteyner ichidagisi
+ham, `tools/guard.py` tomonidan to'siladi. Chiqish yo'li `COST_OK=1`,
+lekin faqat foydalanuvchi bergan chiqish nega yetmagani aytilgandan keyin.
