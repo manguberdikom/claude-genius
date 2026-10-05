@@ -1,0 +1,13 @@
+diff --git a/src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java b/src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java
+index db847c8..ca3bcda 100644
+--- a/src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java
++++ b/src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java
+@@ -40,7 +40,7 @@ public class PetValidator implements Validator {
+ 		Pet pet = (Pet) obj;
+ 		String name = pet.getName();
+ 		// name validation
+-		if (!StringUtils.hasText(name)) {
++		if (name == null) {
+ 			errors.rejectValue("name", REQUIRED, REQUIRED);
+ 		}
+ 		else if (name.length() > MAX_NAME_LENGTH) {

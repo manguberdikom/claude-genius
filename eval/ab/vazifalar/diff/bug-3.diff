@@ -1,0 +1,13 @@
+diff --git a/src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java b/src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java
+index e5edf5b..bc4eedb 100644
+--- a/src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java
++++ b/src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java
+@@ -141,7 +141,7 @@ class OwnerController {
+ 	private Page<Owner> findPaginatedForOwnersLastName(int page, String lastname) {
+ 		int pageSize = 5;
+ 		int validatedPage = Math.max(page, 1);
+-		Pageable pageable = PageRequest.of(validatedPage - 1, pageSize);
++		Pageable pageable = PageRequest.of(validatedPage, pageSize);
+ 		return owners.findByLastNameStartingWith(lastname, pageable);
+ 	}
+ 
