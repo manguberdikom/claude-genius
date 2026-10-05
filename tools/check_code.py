@@ -25,38 +25,83 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 
 from docref import hint  # noqa: E402
-from state import was_marked  # noqa: E402
+from state import marked_labels, was_marked  # noqa: E402
 
 MAX_SHOWN = 6
 
-STRING_RE = re.compile(r'"(?:\\.|[^"\\])*"')
-LINE_COMMENT_RE = re.compile(r"//[^\n]*")
-BLOCK_COMMENT_RE = re.compile(r"/\*.*?\*/", re.S)
+# Izoh va literallar bitta o'tishda: qaysi biri matnda oldin boshlansa,
+# o'sha yutadi. Avval uch regex ketma-ket yurardi va `"http://x"` ichidagi
+# `//` izoh deb, `"image/*"` ichidagi `/*` blok izoh deb olinardi: satr
+# qolgan qismi kod bo'lib qolar va toza kod to'silardi.
+NOISE_RE = re.compile(
+    r'"""(?:\\.|[^\\])*?"""'        # text block
+    r'|"(?:\\.|[^"\\\n])*"'          # satr
+    r"|'(?:\\.|[^'\\\n])+'"          # char
+    r"|//[^\n]*"
+    r"|/\*.*?\*/", re.S)
 
 HTTP_CLIENT_RE = re.compile(
     r"\b(restTemplate|webClient|restClient|httpClient|feignClient)\b", re.I)
+# Sinf darajasida faqat chaqiruv shakli olinadi: maydon e'loni
+# (`RestTemplate restTemplate;`) va statik fabrika (`RestClient.create()`)
+# tranzaksiya ichidagi tarmoq chaqiruvi emas.
+CLIENT_CALL_RE = re.compile(
+    r"\b(restTemplate|webClient|restClient|httpClient|feignClient)"
+    r"\s*\.\s*\w+\s*\(")
+TX_RE = re.compile(r"@Transactional\b")
+# Tranzaksiyani o'chiradigan propagation: tanasidagi chaqiruv bu qoidaga
+# tushmaydi.
+NO_TX_RE = re.compile(
+    r"propagation\s*=\s*(?:Propagation\s*\.\s*)?(?:NOT_SUPPORTED|NEVER)\b")
+# Annotatsiyadan keyin sinf e'lon qilinadimi. `.class` (rollbackFor) va
+# `record` nomli parametr e'lon emas.
+TYPE_DECL_RE = re.compile(
+    r"(?<![.\w])(?:class|interface|enum)\b|\brecord\s+\w+\s*[(<]")
 
 
 def strip_noise(text):
-    """Izoh va satr literallarini bo'sh joyga almashtiradi.
+    """Izoh, satr, char va text block literallarini bo'sh joyga almashtiradi.
 
-    Satr raqami saqlanishi kerak, shuning uchun o'chirilmaydi, balki
-    bir xil uzunlikdagi probel bilan almashtiriladi.
+    Satr raqami va pozitsiya saqlanishi kerak, shuning uchun o'chirilmaydi,
+    balki bir xil uzunlikdagi probel bilan almashtiriladi.
     """
-    def blank(match):
-        return "".join("\n" if c == "\n" else " " for c in match.group(0))
-    text = BLOCK_COMMENT_RE.sub(blank, text)
-    text = LINE_COMMENT_RE.sub(blank, text)
-    return STRING_RE.sub(blank, text)
+    return NOISE_RE.sub(
+        lambda m: "".join("\n" if c == "\n" else " " for c in m.group(0)), text)
+
+
+def quote(path):
+    """Bo'sh joy bo'lsa qo'shtirnoq (rewrite_paths.quote bilan bir xil)."""
+    return '"%s"' % path if " " in path else path
+
+
+def in_clone():
+    """Joriy papka qo'llanma klonining o'zimi."""
+    try:
+        here = os.path.realpath(os.getcwd())
+    except OSError:
+        return False
+    return os.path.normcase(here) == os.path.normcase(os.path.realpath(ROOT))
+
+
+def tool_cmd(name):
+    """Xabardagi buyruq. Klon ichida nisbiy, ya'ni allow ro'yxatiga mos;
+    boshqa proyektda mutlaq, aks holda u yerda "No such file" beradi."""
+    if in_clone():
+        return ("" if name.endswith(".sh") else "python3 ") + "tools/" + name
+    full = quote(os.path.join(ROOT, "tools", name).replace("\\", "/"))
+    return ("bash " if name.endswith(".sh") else "python3 ") + full
 
 
 class Finding:
-    def __init__(self, level, line, message, topic, rule=""):
+    def __init__(self, level, line, message, topic, rule="", ref=""):
         self.level = level
         self.line = line
         self.message = message
         self.topic = topic
         self.rule = rule
+        # Aniq bo'lim: kalit ham, taxallus ham mavzuga tushmasa. Indeksda
+        # yo'q bo'lsa docref keyingisiga (kalit, taxallus) o'tadi.
+        self.ref = ref
 
 
 def line_of(text, pos):
@@ -70,7 +115,12 @@ def check_text(text, path):
                or os.path.basename(path).endswith(("Test.java", "Tests.java", "IT.java")))
     out = []
 
-    for match in re.finditer(r"catch\s*\([^)]*\)\s*\{\s*\}", code):
+    for match in re.finditer(r"catch\s*\([^)]*\)\s*(\{\s*\})", code):
+        # Izohli blok Sonar uchun bo'sh emas (java:S108 istisnosi). Izoh
+        # strip_noise da o'chgan, shuning uchun asl matndan qaraladi:
+        # pozitsiyalar bir xil.
+        if re.search(r"//|/\*", text[match.start(1):match.end(1)]):
+            continue
         out.append(Finding(
             "yuqori", line_of(code, match.start()),
             "Bo'sh catch: xato yutiladi va hech qayerda ko'rinmaydi.",
@@ -98,12 +148,14 @@ def check_text(text, path):
             "Logging", "java:S1148"))
 
     # new BigDecimal(0.1) ikkilik kasrni aynan saqlamaydi; satr yoki valueOf kerak.
+    # "Money" taxallusi Money value object patterniga olib boradi, konstruktor
+    # tuzog'i esa clean-code dagi pul bo'limida.
     for match in re.finditer(r"new\s+BigDecimal\s*\(\s*[-+]?\d+\.\d+", code):
         out.append(Finding(
             "yuqori", line_of(code, match.start()),
             "`new BigDecimal(double)` aniq qiymat bermaydi: "
             "`new BigDecimal(\"0.1\")` yoki `BigDecimal.valueOf(0.1)` ishlatilsin.",
-            "Money", "java:S2111"))
+            "Money", "java:S2111", ref="clean-code 20.1"))
 
     if is_test:
         for match in re.finditer(r"\bThread\.sleep\s*\(", code):
@@ -117,39 +169,79 @@ def check_text(text, path):
     return out
 
 
+def _body_start(code, pos):
+    """Annotatsiyadan keyingi e'lon tanasining `{` i; tanasiz bo'lsa -1.
+
+    Qavs ichidagi `{` (masalan `rollbackFor = {IOException.class}`) tana
+    emas, shuning uchun qavs chuqurligi sanaladi.
+    """
+    depth = 0
+    for i in range(pos, len(code)):
+        c = code[i]
+        if c == "(":
+            depth += 1
+        elif c == ")":
+            depth -= 1
+        elif depth <= 0 and c in "{;":
+            return i if c == "{" else -1
+    return -1
+
+
+def _block_end(code, start):
+    """`start` dagi `{` ning jufti; qavslar teng bo'lmasa -1."""
+    depth = 0
+    for i in range(start, len(code)):
+        if code[i] == "{":
+            depth += 1
+        elif code[i] == "}":
+            depth -= 1
+            if depth == 0:
+                return i
+    return -1
+
+
 def check_transactions(code):
-    """@Transactional metod ichida tashqi HTTP chaqiruvi bormi.
+    """@Transactional ichida tashqi HTTP chaqiruvi bormi.
 
     Metod chegarasi jingalak qavslarni sanash bilan topiladi. Bu to'liq
     parser emas, lekin annotatsiyadan keyingi birinchi blok uchun yetarli
     va noto'g'ri ishga tushishi kam: qavslar soni teng bo'lmasa, tekshiruv
-    jim o'tadi.
+    jim o'tadi. Tanasiz metod (interfeys, abstract) o'tkaziladi. Sinf
+    darajasidagi annotatsiyada butun sinf tanasi ko'riladi, lekin faqat
+    chaqiruv shakli va NOT_SUPPORTED/NEVER metodlaridan tashqarida.
     """
-    out = []
-    for match in re.finditer(r"@Transactional\b", code):
-        start = code.find("{", match.end())
+    blocks = []
+    for match in TX_RE.finditer(code):
+        start = _body_start(code, match.end())
         if start == -1:
             continue
-        depth, end = 0, -1
-        for i in range(start, len(code)):
-            if code[i] == "{":
-                depth += 1
-            elif code[i] == "}":
-                depth -= 1
-                if depth == 0:
-                    end = i
-                    break
+        end = _block_end(code, start)
         if end == -1:
             continue
-        body = code[start:end]
-        call = HTTP_CLIENT_RE.search(body)
-        if call:
-            out.append(Finding(
-                "yuqori", line_of(code, start + call.start()),
-                "Tranzaksiya ichida tashqi chaqiruv (`%s`): ulanish tashqi "
-                "servis javobini kutib band turadi va pool tugaydi."
-                % call.group(0),
-                "Transaction Script"))
+        head = code[match.end():start]
+        blocks.append((start, end, bool(NO_TX_RE.search(head)),
+                       bool(TYPE_DECL_RE.search(head))))
+
+    excluded = [(s, e) for s, e, no_tx, _ in blocks if no_tx]
+    out, lines = [], set()
+    for start, end, no_tx, is_type in blocks:
+        if no_tx:
+            continue
+        if is_type:
+            call = next((m for m in CLIENT_CALL_RE.finditer(code, start, end)
+                         if not any(s <= m.start() < e for s, e in excluded)),
+                        None)
+        else:
+            call = HTTP_CLIENT_RE.search(code, start, end)
+        if not call or line_of(code, call.start()) in lines:
+            continue
+        lines.add(line_of(code, call.start()))
+        out.append(Finding(
+            "yuqori", line_of(code, call.start()),
+            "Tranzaksiya ichida tashqi chaqiruv (`%s`): ulanish tashqi "
+            "servis javobini kutib band turadi va pool tugaydi."
+            % call.group(1),
+            "Transaction Spanning Remote Calls"))
     return out
 
 
@@ -158,7 +250,7 @@ def render(path, findings):
     for f in findings[:MAX_SHOWN]:
         lines.append("[%s] %s:%d  %s" % (f.level, os.path.basename(path),
                                          f.line, f.message))
-        lines.append("    %s%s" % (hint(f.topic, f.rule),
+        lines.append("    %s%s" % (hint(f.topic, f.rule, f.ref),
                                    "  (%s)" % f.rule if f.rule else ""))
     if len(findings) > MAX_SHOWN:
         lines.append("... yana %d ta" % (len(findings) - MAX_SHOWN))
@@ -176,9 +268,32 @@ def analyse(path):
     return check_text(text, path)
 
 
+def new_signals(path):
+    """rules_for chaqirilganda bo'lmagan, yozilgandan keyin chiqqan belgilar.
+
+    Yozuvchi rules_for ni fayl hali yo'q yoki boshqacha paytda chaqiradi,
+    reviewer esa yozilgan mazmundan oladi. Farq shu yerda aytiladi, aks
+    holda reviewer ko'radigan bob yozuvchiga hech qachon yetmaydi.
+    """
+    known = marked_labels(path)
+    if known is None:
+        return ""
+    import rules_for   # kech: rules_for o'zi check_code ni import qiladi
+    fresh = [(label, chapters) for label, chapters, _ in rules_for.detect([path])
+             if label not in known]
+    if not fresh:
+        return ""
+    lines = ["Yozilgandan keyin yangi belgi chiqdi, uning boblari "
+             "yozuvchiga berilmagan:"]
+    for label, chapters in fresh:
+        lines.append("  %s -> %s" % (label, ", ".join("%s %s" % c for c in chapters)))
+    lines.append("Punktlar: %s %s" % (tool_cmd("rules_for.py"), quote(path)))
+    return "\n".join(lines)
+
+
 SKIPPED = (
     "Yozishdan oldin qoidalar olinmagan:\n"
-    "    python3 tools/rules_for.py %s\n"
+    "    %s %s\n"
     "U tegishli boblarni, tekshiruv punktlarini va avvalgi xatolarni\n"
     "beradi. Reviewer aynan shu ro'yxat bilan tekshiradi, shuning uchun\n"
     "uni o'tkazib yuborish ikkinchi aylanani keltiradi."
@@ -203,20 +318,23 @@ def main():
     response = payload.get("tool_response") or {}
     path = (response.get("filePath") or tool_input.get("file_path") or "")
     findings = analyse(path)
+    written = path.endswith(".java") and os.path.isfile(path)
 
     # Zanjir qoidasi: .java yozilishidan oldin rules_for chaqirilgan
     # bo'lishi kerak. Bu ko'rsatma emas, shart: aks holda u unutiladi.
-    if path.endswith(".java") and os.path.isfile(path) and not was_marked(path):
-        reason = SKIPPED % path
+    if written and not was_marked(path):
+        reason = SKIPPED % (tool_cmd("rules_for.py"), quote(path))
         if findings:
             reason = render(path, findings) + "\n\n" + reason
         json.dump({"decision": "block", "reason": reason}, sys.stdout)
         return 0
 
-    if not findings:
+    drift = new_signals(path) if written else ""
+    if not findings and not drift:
         return 0
 
-    text = render(path, findings)
+    text = "\n\n".join(x for x in (render(path, findings) if findings else "",
+                                   drift) if x)
     high = [f for f in findings if f.level == "yuqori"]
     if high:
         # block: sabab modelga qaytariladi va navbat davom etadi, ya'ni

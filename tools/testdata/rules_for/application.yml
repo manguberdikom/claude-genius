@@ -1,0 +1,8 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://db:5432/shop
+    hikari:
+      maximum-pool-size: 20
+  kafka:
+    consumer:
+      enable-auto-commit: false

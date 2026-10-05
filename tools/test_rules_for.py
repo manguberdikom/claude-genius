@@ -8,72 +8,159 @@ haqiqatan bormi. Jadval qo'lda yozilgan, boblar esa ko'chishi mumkin.
 Mos kelmagan bob jim yo'qoladi va aktyor qoidani ko'rmay qoladi, keyin
 reviewer uni topadi va ish ikkinchi aylanaga tushadi. Aynan shuning
 oldini olish uchun bu asbob yozilgan.
+
+Sinov umumiy narsaga tegmaydi: holat vaqtinchalik papkada
+(GENIUS_STATE_DIR), indekssiz holat esa repo nusxasida sinaladi. Avval
+haqiqiy index/ vaqtincha ko'chirilardi va shu oraliqda parallel sessiya,
+hook va boshqa agent indekssiz qolardi.
 """
 
 import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
+
+# rules_for (u orqali state) import qilinishidan OLDIN: subprocesslar ham
+# shu papkani meros oladi.
+STATE = tempfile.mkdtemp(prefix="genius-state-")
+os.environ["GENIUS_STATE_DIR"] = STATE
 sys.path.insert(0, HERE)
 
 import rules_for as R  # noqa: E402
+import state  # noqa: E402
 
-BAD = os.path.join("tools", "testdata", "java", "Bad.java")
-GOOD = os.path.join("tools", "testdata", "java", "Good.java")
-ENTITY = os.path.join("tools", "testdata", "entities", "Order.java")
-INSECURE = os.path.join("tools", "testdata", "java", "Insecure.java")
-POM = os.path.join("tools", "testdata", "java", "pom.xml")
+# Mutlaq yo'l: R.detect jarayon ichida chaqiriladi va nisbiy yo'lni joriy
+# papkaga nisbatan hal qiladi.
+DATA = os.path.join(ROOT, "tools", "testdata")
+BAD = os.path.join(DATA, "java", "Bad.java")
+GOOD = os.path.join(DATA, "java", "Good.java")
+ENTITY = os.path.join(DATA, "entities", "Order.java")
+INSECURE = os.path.join(DATA, "java", "Insecure.java")
+POM = os.path.join(DATA, "java", "pom.xml")
+SIG = os.path.join(DATA, "rules_for")
 
 
-def run(*args):
+def run(*args, cwd=ROOT):
     proc = subprocess.run([sys.executable, os.path.join(HERE, "rules_for.py")]
-                          + list(args), capture_output=True, text=True, cwd=ROOT)
+                          + list(args), capture_output=True, text=True, cwd=cwd)
     return proc.returncode, proc.stdout, proc.stderr
 
 
+def routed(out):
+    """"# Tegishli boblar" ostidagi qatorlar, keyingi sarlavhagacha.
+
+    Keyingi sarlavhada to'xtash SHART: belgi qatorida ham bob raqami bor
+    (`-> code-review 29`) va pastdagi "# Mashina topgani" ham, shuning
+    uchun butun chiqishdan qidirish buzuq holatda ham yashil berardi.
+    """
+    body = out.split("# Tegishli boblar", 1)[-1].split("\n#", 1)[0]
+    return [l for l in body.split("\n") if l.startswith("  ") and len(l.split()) >= 4]
+
+
+def has_chapter(out, doc, num):
+    return any(l.split()[:2] == [doc, num] for l in routed(out))
+
+
+def labels(paths):
+    return [l for l, _, _ in R.detect(paths)]
+
+
+def git(cwd, *args):
+    subprocess.run(["git", "-c", "user.name=sinov", "-c", "user.email=s@s",
+                    "-c", "init.defaultBranch=main"] + list(args),
+                   capture_output=True, text=True, cwd=cwd, check=True)
+
+
+def write(path, text):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as handle:
+        handle.write(text)
+
+
+def report(rows):
+    bad = 0
+    for label, ok in rows:
+        bad += not ok
+        print("%-4s %s" % ("OK" if ok else "XATO", label))
+    return bad
+
+
 def main():
-    failures = 0
+    failures = total = 0
     titles = R.chapter_titles()
 
     print("== Jadvaldagi boblar indeksda bormi ==")
     referenced = [ch for _, _, chapters in R.SIGNALS for ch in chapters] + R.ALWAYS
     missing = sorted({ch for ch in referenced if ch not in titles})
-    ok = not missing
-    failures += not ok
-    print("%-4s %d ta bob tekshirildi%s"
-          % ("OK" if ok else "XATO", len(set(referenced)),
-             "" if ok else ", yo'q: " + ", ".join("%s %s" % c for c in missing)))
+    unknown = sorted((set(R.NAME_SIGNALS) | set(R.PATH_SIGNALS) | R.BUILD_ONLY)
+                     - {l for l, _, _ in R.SIGNALS})
+    rows = [
+        ("%d ta bob tekshirildi%s" % (len(set(referenced)), "" if not missing
+                                      else ", yo'q: " + ", ".join("%s %s" % c for c in missing)),
+         not missing),
+        # Yo'l jadvallari SIGNALS dagi belgiga tayanadi: noma'lum belgi jim
+        # ishlamay qolardi.
+        ("yo'l jadvallaridagi belgilar SIGNALS da bor%s"
+         % ("" if not unknown else ": " + ", ".join(unknown)), not unknown),
+    ]
+    failures += report(rows)
+    total += len(rows)
 
     print("\n== Belgi aniqlash ==")
+    # (nom, fayl, bo'lishi kerak belgi, bo'lmasligi kerak belgi)
     cases = [
-        ("tranzaksiya", BAD, "tranzaksiya"),
-        ("tashqi chaqiruv", BAD, "tashqi chaqiruv"),
-        ("entity", ENTITY, "entity va ORM"),
-        ("loglash", GOOD, "loglash"),
+        ("tranzaksiya", BAD, "tranzaksiya", None),
+        ("tashqi chaqiruv", BAD, "tashqi chaqiruv", None),
+        ("entity", ENTITY, "entity va ORM", None),
+        ("loglash", GOOD, "loglash", None),
         # Xavfsizlik: avval faqat @PreAuthorize belgisi bor edi, shuning
         # uchun SQL injection, sir va fayl yuklash hech qayerga
         # yo'naltirilmasdi. Qamrov o'lchangandan keyin topilgan kamchilik.
-        ("SQL injection", INSECURE, "xavfsizlik: SQL"),
-        ("sir va kripto", INSECURE, "xavfsizlik: sir va kripto"),
-        ("tashqi kirish", INSECURE, "xavfsizlik: tashqi kirish"),
+        ("SQL injection", INSECURE, "xavfsizlik: SQL", None),
+        ("sir va kripto", INSECURE, "xavfsizlik: sir va kripto", None),
+        ("tashqi kirish", INSECURE, "xavfsizlik: tashqi kirish", None),
         # Build fayli ham ko'riladi: bog'liqlik qo'shish .java da
         # ko'rinmaydi, lekin uning o'z review bobi bor.
-        ("build fayli", POM, "bog'liqlik"),
+        ("build fayli", POM, "bog'liqlik", None),
+        # Oddiy Spring kodi: avval belgisiz yoki noto'g'ri belgi bilan qolardi.
+        ("repository", os.path.join(SIG, "OrderRepository.java"),
+         "ma'lumotga kirish", "vorislik"),
+        ("MapStruct", os.path.join(SIG, "OrderMapper.java"), "mapper", None),
+        ("@Value sozlama", os.path.join(SIG, "AppConfig.java"),
+         "konfiguratsiya", "Lombok"),
+        ("Spring Security", os.path.join(SIG, "WebSecurity.java"),
+         "xavfsizlik: ruxsat", None),
+        ("hodisa", os.path.join(SIG, "OrderEvents.java"), "hodisa", None),
+        ("retry", os.path.join(SIG, "OrderEvents.java"), "chidamlilik", None),
+        # Izoh va satr literali belgi emas, ularning orasidagi kod esa belgi.
+        ("izohdan keyingi kod", os.path.join(SIG, "Noise.java"), "tranzaksiya", "broker"),
+        ("izohdagi SQL", os.path.join(SIG, "Noise.java"), None, "xavfsizlik: SQL"),
+        # Migratsiya va sozlama fayllari: matni kichik harfli, ichma-ich.
+        ("Flyway sql", os.path.join(SIG, "db", "migration", "V2__add_status.sql"),
+         "sxema migratsiyasi", None),
+        ("application.yml", os.path.join(SIG, "application.yml"), "sozlama", None),
+        ("yml dagi kafka", os.path.join(SIG, "application.yml"), "broker", None),
     ]
-    for name, path, label in cases:
-        found = {l for l, _, _ in R.detect([path])}
-        ok = label in found
+    for name, path, want, forbid in cases:
+        found = set(labels([path]))
+        ok = (want is None or want in found) and (forbid is None or forbid not in found)
         failures += not ok
-        print("%-4s %-18s %s" % ("OK" if ok else "XATO", name, path.split("/")[-1]))
+        total += 1
+        print("%-4s %-20s %s" % ("OK" if ok else "XATO", name, os.path.basename(path)))
 
     print("\n== Chiqish tarkibi ==")
     code, out, _ = run(BAD)
-    checks = [
+    punkt = re.search(r"# Tekshiruv punktlari \((\d+) tadan (\d+) tasi\)", out)
+    rows = [
         ("tegishli boblar bor", "# Tegishli boblar" in out),
         ("punktlar bor", "- [ ] (" in out),
+        # Sarlavha regex bilan o'qiladi (eval_skill ham), shakli o'zgarmaydi.
+        ("punkt sarlavhasi shakli", bool(punkt)),
         ("mashina topilmasi bor", "[yuqori] Bad.java" in out),
         # Topilma yonida Sonar kaliti va bo'lim turishi shart. Avval
         # bu yerda faqat "[" bilan boshlangan qatorlar olinardi va
@@ -89,61 +176,208 @@ def main():
               if l.startswith("  - [ ] (")}) >= 3),
         ("chiqish kodi 0", code == 0),
     ]
-    for label, ok in checks:
-        failures += not ok
-        print("%-4s %s" % ("OK" if ok else "XATO", label))
+    failures += report(rows)
+    total += len(rows)
+
+    print("\n== Mashina topilmasi to'liq ==")
+    # check_code jarayon ichida chaqiriladi: MAX_SHOWN (6) dan ortig'i ham
+    # olinadi. Bad.java dagi 6 tasiga Tx.java dagi 3 tasi qo'shiladi.
+    tx = os.path.join(DATA, "check_code", "Tx.java")
+    found = R.mechanical([BAD, tx])
+    rows = [
+        ("ikki fayldan 9 ta topilma", len(found) == 9),
+        ("har topilma havolasi bilan", all(tail for _, tail in found)),
+        ("BigDecimal pul bo'limiga", any("java:S2111 -> clean-code 20.1" in t
+                                         for _, t in found)),
+    ]
+    failures += report(rows)
+    total += len(rows)
+
+    print("\n== Ko'p fayl: tartibga bog'liq emas ==")
+    # Belgilar fayl tartibida yig'ilsa, birinchi faylning umumiy belgilari
+    # MAX_CHAPTERS ni egallab, keyingisining xavfsizlik bobini siqib chiqarardi.
+    _, out_ab, _ = run(BAD, INSECURE)
+    _, out_ba, _ = run(INSECURE, BAD)
+    _, out_pom, _ = run(BAD, POM)
+    rows = [
+        ("detect fayl tartibiga bog'liq emas",
+         labels([BAD, INSECURE]) == labels([INSECURE, BAD])),
+        ("boblar fayl tartibiga bog'liq emas", routed(out_ab) == routed(out_ba)),
+        ("xavfsizlik boblari saqlanadi",
+         all(has_chapter(out_ab, d, n) for d, n in (("code-review", "29"),
+                                                    ("code-review", "31"),
+                                                    ("code-review", "32"),
+                                                    ("sonarqube", "26")))),
+        ("Java dan keyin build fayli ham", has_chapter(out_pom, "code-review", "33")),
+    ]
+    failures += report(rows)
+    total += len(rows)
 
     print("\n== Toza fayl ==")
     code_good, out_good, _ = run(GOOD)
-    for label, ok in (("chiqish kodi 0", code_good == 0),
-                      ("mashina topilmasi yo'q", "# Mashina topgani (0)" in out_good),
-                      ("baribir boblar beriladi", "# Tegishli boblar" in out_good)):
-        failures += not ok
-        print("%-4s %s" % ("OK" if ok else "XATO", label))
+    rows = [("chiqish kodi 0", code_good == 0),
+            ("mashina topilmasi yo'q", "# Mashina topgani (0)" in out_good),
+            ("baribir boblar beriladi", "# Tegishli boblar" in out_good)]
+    failures += report(rows)
+    total += len(rows)
+
+    print("\n== Boshqa papkadan va --diff ==")
+    # Global o'rnatishda skript klonda, ish boshqa proyektda: nisbiy yo'l
+    # va git joriy papkadan olinadi. Avval ikkalasi klonga bog'lanardi:
+    # 0 belgi, noto'g'ri belgi kaliti va klonning diffi.
+    tmp = tempfile.mkdtemp()
+    try:
+        shutil.copy(BAD, os.path.join(tmp, "A.java"))
+        code_rel, out_rel, _ = run("A.java", cwd=tmp)
+        new_test = os.path.join("src", "test", "java", "x", "NewThingTest.java")
+        _, out_new, _ = run(new_test, cwd=tmp)
+        marked = state.was_marked(os.path.join(tmp, "A.java"))
+        clone_key = state.was_marked(os.path.join(ROOT, "A.java"))
+
+        repo = os.path.join(tmp, "repo")
+        main_dir = os.path.join(repo, "src", "main", "java", "shop")
+        # Har faylda boshqa belgi: chiqishdagi belgi qatori qaysi fayl
+        # olinganini ko'rsatadi.
+        write(os.path.join(main_dir, "Kept.java"), "class Kept {}\n")
+        write(os.path.join(main_dir, "Gone.java"), "@Scheduled class Gone {}\n")
+        git(repo, "init", "-q")
+        git(repo, "add", "-A")
+        git(repo, "commit", "-qm", "boshlang'ich")
+        write(os.path.join(main_dir, "Kept.java"),
+              "class Kept { @Transactional void x() {} }\n")
+        os.remove(os.path.join(main_dir, "Gone.java"))
+        write(os.path.join(main_dir, "Staged.java"), "@Entity class Staged {}\n")
+        git(repo, "add", os.path.join(main_dir, "Staged.java"))
+        write(os.path.join(repo, "src", "test", "java", "shop", "ATest.java"),
+              "class ATest { @Test void t() {} }\n")
+        code_d, out_d, _ = run("--diff", cwd=repo)
+        _, out_sub, _ = run("--diff", cwd=os.path.join(repo, "src"))
+        _, out_c, _ = run("--diff", "--cached", cwd=repo)
+
+        nogit = os.path.join(tmp, "nogit")
+        os.makedirs(nogit)
+        code_n, _, err_n = run("--diff", cwd=nogit)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    rows = [
+        ("nisbiy yo'l: rc 0 va belgi topildi",
+         code_rel == 0 and "tranzaksiya" in out_rel),
+        ("nisbiy yo'l: mashina topgani to'liq", "# Mashina topgani (6)" in out_rel),
+        ("belgi joriy papkadagi faylga qo'yildi", marked and not clone_key),
+        # Hali yozilmagan test: belgi yo'ldan olinadi.
+        ("yozilmagan test test boblarini oladi",
+         has_chapter(out_new, "testing", "5") and "hali yo'q" in out_new),
+        ("nomdan belgi: Controller", "web qatlami" in labels(["/yoq/web/XController.java"])),
+        ("nomsiz yo'q fayl belgisiz", labels(["/yoq/A.java"]) == []),
+        ("--diff: rc 0", code_d == 0),
+        ("--diff: commit qilingan va o'zgargan", "Kept.java" in out_d),
+        ("--diff: staged yangi fayl", "Staged.java" in out_d),
+        ("--diff: untracked yangi fayl", "ATest.java" in out_d),
+        ("--diff: o'chirilgan fayl kirmaydi", "Gone.java" not in out_d
+         and "# 3 fayl" in out_d),
+        ("--diff ichki papkadan ham butun repo", "# 3 fayl" in out_sub),
+        ("--diff --cached: faqat staged",
+         "Staged.java" in out_c and "ATest.java" not in out_c
+         and "Kept.java" not in out_c),
+        ("git bo'lmagan papkada --diff: rc 2, traceback yo'q",
+         code_n == 2 and "Traceback" not in err_n),
+    ]
+    failures += report(rows)
+    total += len(rows)
+
+    print("\n== Avval yo'l qo'yilgan xatolar ==")
+    # Topic fayl frontmatter bilan boshlanadi: avval har yozuv `---` bo'lib
+    # chiqardi. Boshqa proyektning yozuvi esa bu yerda shovqin.
+    saved, mem = R.MEMORY, tempfile.mkdtemp()
+    try:
+        write(os.path.join(mem, "demo", "feedback_sinov.md"),
+              "---\ntype: feedback\nmodified: 2026-01-01T00:00:00Z\n---\n\n"
+              "# Sinov sarlavhasi\n\nBirinchi gap.\n\n- punkt\n")
+        write(os.path.join(mem, "demo", "feedback_yangi.md"),
+              "---\ntype: feedback\nmodified: 2026-02-01T00:00:00Z\n---\n\n"
+              "# Yangi sarlavha\n\n- **Punkt matni.** Davomi\n  ikkinchi qatorda.\n"
+              "- Ikkinchi punkt.\n")
+        write(os.path.join(mem, "demo", "MEMORY.md"),
+              "# demo\n\n- `feedback_yangi.md` - indeksdagi tavsif\n"
+              "  ikki qatorga o'ralgan\n")
+        write(os.path.join(mem, "boshqa", "feedback_begona.md"), "# Begona\n\nBegona gap.\n")
+        write(os.path.join(mem, "umumiy", "feedback_umumiy.md"), "# Umumiy\n\nUmumiy gap.\n")
+        R.MEMORY = mem
+        notes = R.past_mistakes(slug="demo")
+        _, note_of = zip(*notes) if notes else ((), ())
+        files = [os.path.basename(rel) for rel, _ in notes]
+
+        slug_repo = os.path.join(mem, "Shop-Api")
+        os.makedirs(os.path.join(mem, "acme__shop-api"))
+        os.makedirs(slug_repo)
+        git(slug_repo, "init", "-q")
+        here = os.getcwd()
+        try:
+            os.chdir(slug_repo)
+            slug_bare = R.project_slug()
+            git(slug_repo, "remote", "add", "origin", "git@github.com:acme/Shop-Api.git")
+            slug_owner = R.project_slug()
+            os.rmdir(os.path.join(mem, "acme__shop-api"))
+            slug_remote = R.project_slug()
+        finally:
+            os.chdir(here)
+    finally:
+        R.MEMORY = saved
+        shutil.rmtree(mem, ignore_errors=True)
+    rows = [
+        ("frontmatter chiqmaydi", bool(notes)
+         and not any(n.startswith("---") or "type:" in n for n in note_of)),
+        ("indeks yo'q: sarlavha va birinchi gap",
+         "Sinov sarlavhasi: Birinchi gap." in note_of),
+        ("indeks bor: sarlavha va o'ralgan tavsif",
+         "Yangi sarlavha: indeksdagi tavsif ikki qatorga o'ralgan" in note_of),
+        ("boshqa proyekt yozuvi chiqmaydi", "feedback_begona.md" not in files),
+        ("proyekt oldin, eng yangisi oldin, keyin umumiy",
+         files == ["feedback_yangi.md", "feedback_sinov.md", "feedback_umumiy.md"]),
+        ("slug: remote yo'q, papka nomi", slug_bare == "shop-api"),
+        ("slug: ikki ega bo'lsa egasi__repo", slug_owner == "acme__shop-api"),
+        ("slug: remote dagi repo nomi", slug_remote == "shop-api"),
+    ]
+    failures += report(rows)
+    total += len(rows)
 
     print("\n== Indekssiz ishlaydimi ==")
     # Indeks hosila va git ga kirmaydi, ya'ni toza klonda yo'q. Avval
     # rules_for jim turib bob raqamisiz chiqish berardi: topilma bor,
     # havola yo'q, sabab aytilmagan. Endi o'zi yasaydi. Bu sinov shuni
     # qo'riqlaydi, chunki xato ko'rinmaydigan turdan: hech narsa
-    # yiqilmaydi, faqat javob kambag'allashadi.
-    index_dir = os.path.join(ROOT, "index")
-    moved = index_dir + ".sinov"
+    # yiqilmaydi, faqat javob kambag'allashadi. Repo nusxasida yuradi:
+    # ROOT skript faylidan olinadi, shuning uchun nusxa faqat o'z
+    # index/ iga tegadi.
+    sandbox = tempfile.mkdtemp(prefix="rules_for_sinov_")
     index_checks = []
-    if os.path.isdir(index_dir):
-        os.rename(index_dir, moved)
     try:
-        code_i, out_i, err_i = run(BAD)
+        for name in ("tools", "docs", "memory"):
+            shutil.copytree(os.path.join(ROOT, name), os.path.join(sandbox, name),
+                            ignore=shutil.ignore_patterns("__pycache__"))
+        proc = subprocess.run(
+            [sys.executable, os.path.join(sandbox, "tools", "rules_for.py"), BAD],
+            capture_output=True, text=True, cwd=sandbox)
+        out_i, err_i = proc.stdout, proc.stderr
         # Indekssiz chiqish shakli saqlanadi, faqat ichi bo'shaydi:
         # "# Tegishli boblar" sarlavhasi baribir chiqadi, ostida esa hech
         # narsa bo'lmaydi. Shuning uchun sarlavhani sanash yetarli emas,
         # uning OSTIDAGI qatorlar sanaladi.
-        # Keyingi sarlavhada to'xtash SHART: aks holda pastdagi
-        # "# Mashina topgani" topilmalari ham bob deb sanaladi va sinov
-        # indekssiz holatda ham yashil beradi.
-        body = out_i.split("# Tegishli boblar", 1)[-1].split("\n#", 1)[0]
-        listed = [l for l in body.split("\n")
-                  if l.startswith("  ") and len(l.split()) >= 4]
         punkt = re.search(r"# Tekshiruv punktlari \((\d+) tadan", out_i)
         index_checks = [
-            ("indeks o'zi yasaladi", os.path.isdir(index_dir)),
-            ("boblar sarlavhasi bilan chiqdi", len(listed) >= 5),
+            ("indeks o'zi yasaladi", os.path.isdir(os.path.join(sandbox, "index"))),
+            ("boblar sarlavhasi bilan chiqdi", len(routed(out_i)) >= 5),
             ("tekshiruv punktlari topildi",
              bool(punkt) and int(punkt.group(1)) > 0),
             # Ogohlantirish stderr ga chiqadi, shuning uchun aynan
             # stderr tekshiriladi.
             ("ogohlantirish chiqmadi", "indeksda yo'q" not in err_i),
-            ("chiqish kodi 0", code_i == 0),
+            ("chiqish kodi 0", proc.returncode == 0),
         ]
     finally:
-        if os.path.isdir(moved) and not os.path.isdir(index_dir):
-            os.rename(moved, index_dir)
-        elif os.path.isdir(moved):
-            import shutil
-            shutil.rmtree(moved)
-    for label, ok in index_checks:
-        failures += not ok
-        print("%-4s %s" % ("OK" if ok else "XATO", label))
+        shutil.rmtree(sandbox, ignore_errors=True)
+    failures += report(index_checks)
+    total += len(index_checks)
 
     print("\n== Xato yo'llar ==")
     for label, args, want in (("fayl berilmadi", [], 2),
@@ -152,13 +386,16 @@ def main():
         code_e, _, _ = run(*args)
         ok = code_e == want
         failures += not ok
+        total += 1
         print("%-4s %-22s kutilgan=%d olingan=%d"
               % ("OK" if ok else "XATO", label, want, code_e))
 
-    total = 1 + len(cases) + len(checks) + 3 + len(index_checks) + 3
     print("\n%d/%d o'tdi" % (total - failures, total))
     return 1 if failures else 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    finally:
+        shutil.rmtree(STATE, ignore_errors=True)

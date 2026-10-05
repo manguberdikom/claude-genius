@@ -2,8 +2,8 @@
 """Tegilayotgan fayllarga qaysi qoidalar tegishli ekanini bir chaqiruvda beradi.
 
     python3 tools/rules_for.py src/main/java/shop/OrderService.java
-    python3 tools/rules_for.py --diff          # git diff dagi fayllar
-    python3 tools/rules_for.py --diff --cached
+    python3 tools/rules_for.py --diff           # staged, unstaged va yangi fayllar (joriy repo)
+    python3 tools/rules_for.py --diff --cached  # faqat staged
 
 Nega: aktyor ikkinchi marta chaqirilsa, sababi deyarli har doim bitta -
 qoidani oldindan bilmagan. Qidirib topish esa har aktyorda boshqacha
@@ -14,6 +14,9 @@ Bu asbob shu ikkisini bitta manbaga bog'laydi. Arxitektor YOZISHDAN
 OLDIN, reviewer esa TEKSHIRISHDA shu buyruqni chaqiradi: kirish bir xil,
 chiqish bir xil, kelishmovchilik qolmaydi.
 
+Nisbiy yo'l va `--diff` joriy papkadan olinadi, klondan emas: global
+o'rnatishda skript klonda turadi, ish esa boshqa proyektda boradi.
+
 Chiqish uch qism: tegishli boblar, ularning tekshiruv punktlari va
 mashina allaqachon topgan muammolar.
 """
@@ -22,12 +25,15 @@ import os
 import re
 import subprocess
 import sys
+import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 
-from docref import ensure_index  # noqa: E402
+import check_code  # noqa: E402
+from check_code import in_clone, strip_noise, tool_cmd  # noqa: E402
+from docref import ensure_index, resolve  # noqa: E402
 from state import mark  # noqa: E402
 
 CHAPTERS = os.path.join(ROOT, "index", "chapters.tsv")
@@ -43,14 +49,17 @@ MAX_ITEMS = 12
 # yigirmata bob ro'yxati yo'l ko'rsatmaydi, chalg'itadi. ALWAYS shundan
 # tashqarida: Java faylida nomlash va funksiya shakli har doim tegishli.
 MAX_CHAPTERS = 8
+# Avvalgi xatolardan shuncha, eng yangisi oldin: memory o'sgani sari
+# ro'yxat har chaqiruvda cho'zilmasin.
+MAX_MISTAKES = 5
 
 # Kod ichidagi belgi -> tegishli boblar. Jadval qo'lda tuzilgan, lekin
 # har bob ishga tushishdan oldin indeksda borligi tekshiriladi, shuning
 # uchun bob ko'chsa yoki o'chsa, jim xato bo'lmaydi.
-# Tartib muhim: aniqroq belgi oldinda, punktlar shu tartibda olinadi.
-# Tartib muhim: eng aniq belgi oldinda. Har chaqiruvda MAX_CHAPTERS ta
-# bob olinadi, shuning uchun umumiy belgi (`List<`, `->`) oxirida turadi
-# va aniqrog'i ishga tushganda u chiqib ketadi.
+# Tartib muhim: eng aniq belgi oldinda, boblar va punktlar shu tartibda
+# olinadi. Tartib fayllar bo'yicha emas, shu jadval bo'yicha: ko'p faylli
+# chaqiruvda ham xavfsizlik oldinda, umumiy belgi (`List<`, `->`) esa
+# oxirida turadi va MAX_CHAPTERS to'lganda u chiqib ketadi.
 SIGNALS = [
     # --- xavfsizlik: eng qimmat xato turi, shuning uchun birinchi ---
     ("xavfsizlik: SQL", r"createNativeQuery|createQuery|\bStatement\b|@Query\b|jdbcTemplate",
@@ -61,23 +70,49 @@ SIGNALS = [
     ("xavfsizlik: tashqi kirish",
      r"MultipartFile|ObjectInputStream|readObject\(|new\s+URL\(|URI\.create\(",
      [("code-review", "31")]),
-    ("xavfsizlik: ruxsat", r"@PreAuthorize\b|SecurityFilterChain|@Secured\b|@RolesAllowed\b",
-     [("patterns", "18"), ("code-review", "30"), ("code-review", "28")]),
+    ("xavfsizlik: ruxsat",
+     r"@PreAuthorize\b|SecurityFilterChain|@Secured\b|@RolesAllowed\b"
+     r"|@EnableWebSecurity\b|PasswordEncoder|JwtDecoder",
+     [("patterns", "18"), ("code-review", "30"), ("code-review", "28"),
+      ("architect", "20")]),
+    # Bog'liqlik qo'shish supply chain xavfi, shuning uchun shu blokda.
+    # Faqat build faylida qidiriladi (BUILD_ONLY): `implementation ` so'zi
+    # Java izohida ham uchraydi.
+    ("bog'liqlik", r"<dependency>|<artifactId>|implementation\s|api\s*[(']|plugins\s*\{",
+     [("code-review", "33"), ("sonarqube", "39")]),
 
     # --- ma'lumot va tranzaksiya ---
     ("entity va ORM", r"@Entity\b|@Table\b|@ManyToOne\b|@OneToMany\b|@Column\b",
      [("patterns", "9"), ("architect", "18"), ("sonarqube", "29"),
       ("code-review", "23"), ("clean-code", "28")]),
+    ("ma'lumotga kirish",
+     r"\b(?:JpaRepository|CrudRepository|ListCrudRepository|PagingAndSortingRepository)\b"
+     r"|@Repository\b",
+     [("patterns", "9"), ("architect", "18"), ("code-review", "23"),
+      ("code-review", "24")]),
     ("tranzaksiya", r"@Transactional\b",
      [("architect", "19"), ("code-review", "19")]),
-    ("sxema migratsiyasi", r"Flyway|Liquibase|\bV\d+__|changeSet",
+    ("hodisa", r"@(?:Transactional)?EventListener\b|ApplicationEventPublisher",
+     [("architect", "19"), ("patterns", "5")]),
+    ("sxema migratsiyasi",
+     r"Flyway|Liquibase|\bV\d+__|changeSet"
+     r"|(?i:\b(?:alter|create|drop)\s+(?:table|(?:unique\s+)?index)\b)",
      [("architect", "33"), ("code-review", "25")]),
 
     # --- integratsiya ---
     ("tashqi chaqiruv", r"\b(?:RestTemplate|WebClient|RestClient|FeignClient)\b",
      [("patterns", "17"), ("code-review", "22")]),
-    ("broker", r"@KafkaListener\b|@RabbitListener\b|KafkaTemplate|StreamBridge",
-     [("architect", "29"), ("patterns", "16")]),
+    ("chidamlilik", r"@(?:Retryable|CircuitBreaker|Bulkhead|RateLimiter|TimeLimiter)\b",
+     [("patterns", "17"), ("code-review", "22")]),
+    ("broker",
+     r"@KafkaListener\b|@RabbitListener\b|KafkaTemplate|StreamBridge"
+     r"|enable-auto-commit|auto-offset-reset|\bspring\.kafka\b|(?m:^\s*kafka:)",
+     [("architect", "29"), ("patterns", "16"), ("code-review", "22"),
+      ("code-review", "27")]),
+    ("sozlama",
+     r"\bhikari\b|\bdatasource\b|management\.endpoints|\bspring\.jpa\b"
+     r"|(?m:^\s*(?:jpa|management|hikari|datasource):)",
+     [("architect", "27"), ("code-review", "21")]),
 
     # --- test: turiga qarab ajratiladi ---
     ("test: Testcontainers", r"@Testcontainers\b|@Container\b|GenericContainer|PostgreSQLContainer",
@@ -102,6 +137,13 @@ SIGNALS = [
     ("web qatlami", r"@RestController\b|@Controller\b|@(?:Get|Post|Put|Delete|Request)Mapping\b",
      [("patterns", "7"), ("architect", "17"), ("code-review", "20"),
       ("clean-code", "27")]),
+    ("konfiguratsiya",
+     r"@Configuration\b|@ConfigurationProperties\b|@Profile\b|@ConditionalOn\w+|@Value\s*\(",
+     [("code-review", "21"), ("code-review", "18"), ("architect", "16")]),
+    # MapStruct. Yolg'iz `@Mapper` MyBatis da ma'lumotga kirish, shuning
+    # uchun paket nomi yoki `@Mapping` talab qilinadi.
+    ("mapper", r"\borg\.mapstruct\b|@Mapping\b",
+     [("patterns", "8"), ("sonarqube", "11")]),
     ("keshlash", r"@Cacheable\b|@CacheEvict\b|CacheManager",
      [("patterns", "11"), ("architect", "28")]),
     ("rejalashtirilgan ish", r"@Scheduled\b|JobBuilder|StepBuilder",
@@ -116,7 +158,8 @@ SIGNALS = [
      [("clean-code", "18"), ("clean-code", "19")]),
     ("tenglik shartnomasi", r"\bequals\s*\(|\bhashCode\s*\(|\bcompareTo\s*\(",
      [("clean-code", "15")]),
-    ("vorislik", r"\bextends\s+\w|\babstract\s+class\b|\bsuper\.",
+    # Sinf vorisligi. `interface X extends JpaRepository` vorislik emas.
+    ("vorislik", r"\bclass\s+\w+(?:<[^>]*>)?\s+extends\s+\w|\babstract\s+class\b|\bsuper\.",
      [("clean-code", "17")]),
     ("pul va son", r"\bBigDecimal\b|\bdouble\s+\w|\bfloat\s+\w",
      [("clean-code", "20")]),
@@ -126,7 +169,8 @@ SIGNALS = [
      [("clean-code", "21")]),
     ("o'zgarmaslik", r"\brecord\s+\w+\s*\(|\bfinal\s+class\b|List\.of\(|Map\.of\(",
      [("clean-code", "16")]),
-    ("Lombok", r"@Builder\b|@Data\b|@Getter\b|@Setter\b|@Slf4j\b|@Value\b",
+    # `@Value("${...}")` Spring sozlamasi, Lombok emas.
+    ("Lombok", r"@Builder\b|@Data\b|@Getter\b|@Setter\b|@Slf4j\b|@Value\b(?!\s*\()",
      [("sonarqube", "41"), ("clean-code", "26")]),
     ("loglash", r"\bLogger\b|\blog\.(?:info|warn|error|debug)\b",
      [("clean-code", "29")]),
@@ -137,19 +181,46 @@ SIGNALS = [
      [("clean-code", "24"), ("clean-code", "23")]),
     ("shart va sikl", r"\bswitch\s*\(|\belse\s+if\b|\bfor\s*\(|\bwhile\s*\(",
      [("clean-code", "6"), ("clean-code", "7")]),
-    # Build fayli: bog'liqlik qo'shish ham kod o'zgarishi, lekin uning
-    # qoidalari boshqa bobda va .java faylidan ko'rinmaydi.
-    ("bog'liqlik", r"<dependency>|<artifactId>|implementation\s|api\s*[(']|plugins\s*\{",
-     [("code-review", "33"), ("sonarqube", "39")]),
 ]
 
-# Qaysi fayllar ko'riladi. Build fayllari ham: ular kod kabi tekshiruvga
-# muhtoj, lekin .java emas.
-WATCHED = (".java", "pom.xml", "build.gradle", "build.gradle.kts",
-           "settings.gradle", "settings.gradle.kts")
+# Build fayllari. Ular kod kabi tekshiruvga muhtoj, lekin .java emas.
+BUILD_FILES = ("pom.xml", "build.gradle", "build.gradle.kts",
+               "settings.gradle", "settings.gradle.kts")
+BUILD_ONLY = {"bog'liqlik"}
+
+# Qaysi fayllar ko'riladi. Migratsiya (.sql, Liquibase .xml/.yaml) va
+# sozlama (application.yml) ham: ularning review bobi bor, .java dan esa
+# ko'rinmaydi.
+WATCHED = (".java", ".sql", ".yml", ".yaml", ".properties", ".xml") + BUILD_FILES
+
+# Yo'ldan aniqlanadigan belgi, mazmundan qat'i nazar: kichik harfli
+# Flyway SQL va ichma-ich YAML da matn regexi ishonchsiz.
+PATH_SIGNALS = {
+    "sxema migratsiyasi": r"(?:^|/)db/(?:migration|changelog)/|(?:^|/)[VUR]\d*__[^/]*\.sql$",
+    "sozlama": r"(?:^|/)(?:application|bootstrap)[^/]*\.(?:ya?ml|properties)$",
+}
+
+# Hali yozilmagan Java fayl: matn yo'q, belgi nomidan olinadi. Aks holda
+# yozuvchi faqat ALWAYS boblarini oladi, fayl nomi bilan chaqirgan reviewer
+# esa to'liq ro'yxatni, va zanjir ikkiga ajraladi. Test yo'li check_code
+# dagi is_test bilan bir xil.
+NAME_SIGNALS = {
+    "xavfsizlik: ruxsat": r"Security\w*\.java$",
+    "entity va ORM": r"/(?:entity|entities)/[^/]+\.java$|Entity\.java$",
+    "ma'lumotga kirish": r"Repository\.java$",
+    "broker": r"(?:Listener|Consumer)\.java$",
+    "test": r"/test/|(?:Test|Tests|IT)\.java$",
+    "web qatlami": r"Controller\.java$",
+    "konfiguratsiya": r"(?:Config|Configuration|Properties)\.java$",
+    "mapper": r"Mapper\.java$",
+    "rejalashtirilgan ish": r"(?:Job|Scheduler)\.java$",
+    "servis qatlami": r"Service\.java$",
+}
 
 # Har Java fayl uchun, belgisidan qat'i nazar.
 ALWAYS = [("clean-code", "2"), ("clean-code", "4"), ("code-review", "8")]
+
+NEVER = r"(?!)"
 
 
 def chapter_titles():
@@ -166,38 +237,101 @@ def chapter_titles():
     return titles
 
 
+def _full(path):
+    """Mutlaq yo'l. Nisbiy yo'l joriy papkaga nisbatan, klonga emas."""
+    return os.path.abspath(path)
+
+
+def _git(args, cwd):
+    try:
+        proc = subprocess.run(["git"] + args, capture_output=True,
+                              text=True, cwd=cwd)
+    except OSError:
+        return ""
+    return proc.stdout if proc.returncode == 0 else ""
+
+
 def changed_files(args):
+    """Ko'riladigan fayllar, mutlaq yo'l bilan."""
     if "--diff" in args:
-        cmd = ["git", "diff", "--name-only"]
+        # Diff joriy papkaning reposidan: global o'rnatishda klonning diffi
+        # ishga tegishli emas. Git yo'lni repo ildiziga nisbatan beradi,
+        # shuning uchun hammasi ildizda yurgiziladi va unga ulanadi.
+        top = _git(["rev-parse", "--show-toplevel"], os.getcwd()).strip()
+        if not top:
+            return []
+        diff = ["diff", "--name-only", "-z", "--diff-filter=d"]
         if "--cached" in args:
-            cmd.append("--cached")
-        out = subprocess.run(cmd, capture_output=True, text=True, cwd=ROOT).stdout
-        candidates = out.split("\n")
+            outs = [_git(diff + ["--cached"], top)]
+        else:
+            # Staged, unstaged va yangi (untracked) fayl birga: yangi sinf
+            # `git diff` da ko'rinmaydi, lekin review uni ko'rishi shart.
+            # HEAD hali yo'q repoda `diff HEAD` bo'sh, qolgan ikkitasi yopadi.
+            outs = [_git(diff + ["HEAD"], top), _git(diff + ["--cached"], top),
+                    _git(diff, top),
+                    _git(["ls-files", "-z", "--others", "--exclude-standard"], top)]
+        names = {n for out in outs for n in out.split("\0") if n.strip()}
+        candidates = sorted(os.path.normpath(os.path.join(top, n)) for n in names)
     else:
-        candidates = [a for a in args if not a.startswith("--")]
+        candidates = [_full(a) for a in args if not a.startswith("--")]
     # Faqat kuzatiladigan turlar. Boshqa faylni jim qabul qilish
     # chalg'itadi: javob beriladi, lekin u o'sha faylga tegishli emas.
-    return [f.strip() for f in candidates if f.strip().endswith(WATCHED)]
+    return [f for f in candidates if f.endswith(WATCHED)]
+
+
+def scan(paths):
+    """Har fayl uchun (nom, mavjudmi, belgilar to'plami).
+
+    Java da izoh va satr literali avval o'chiriladi: izohdagi `@KafkaListener`
+    yoki satrdagi `createQuery` belgi emas.
+    """
+    out = []
+    for path in paths:
+        full = _full(path)
+        slash = full.replace("\\", "/")
+        exists = os.path.isfile(full)
+        text = None
+        if exists:
+            try:
+                with open(full, encoding="utf-8", errors="replace") as handle:
+                    text = handle.read()
+            except OSError:
+                continue
+            if slash.endswith(".java"):
+                text = strip_noise(text)
+        labels = set()
+        for label, pattern, _ in SIGNALS:
+            if re.search(PATH_SIGNALS.get(label, NEVER), slash):
+                labels.add(label)
+            elif text is None:
+                if slash.endswith(".java") and re.search(
+                        NAME_SIGNALS.get(label, NEVER), slash):
+                    labels.add(label)
+            elif ((label not in BUILD_ONLY or slash.endswith(BUILD_FILES))
+                  and re.search(pattern, text)):
+                labels.add(label)
+        out.append((os.path.basename(full), exists, labels))
+    return out
+
+
+def ordered(scanned):
+    """Belgilar SIGNALS tartibida: (belgi, boblar, uni bergan birinchi fayl).
+
+    Tartib fayllar bo'yicha bo'lsa, birinchi faylning umumiy belgilari
+    MAX_CHAPTERS ni egallab, keyingi faylning xavfsizlik bobini siqib
+    chiqarardi va natija fayl tartibiga bog'liq bo'lardi.
+    """
+    found = []
+    for label, _, chapters in SIGNALS:
+        where = next((name for name, _, labels in scanned if label in labels), None)
+        if where is not None:
+            found.append((label, chapters, where))
+    return found
 
 
 def detect(paths):
-    """Fayllardan belgilarni topadi: (belgi, fayl) juftliklari."""
-    found = []
-    seen = set()
-    for path in paths:
-        full = path if os.path.isabs(path) else os.path.join(ROOT, path)
-        if not os.path.isfile(full):
-            continue
-        try:
-            with open(full, encoding="utf-8", errors="replace") as handle:
-                text = handle.read()
-        except OSError:
-            continue
-        for label, pattern, chapters in SIGNALS:
-            if re.search(pattern, text) and label not in seen:
-                seen.add(label)
-                found.append((label, chapters, os.path.basename(path)))
-    return found
+    """Fayllardan belgilarni topadi: (belgi, boblar, fayl)."""
+    return ordered(scan(paths))
 
 
 def checklist_for(wanted):
@@ -215,64 +349,142 @@ def checklist_for(wanted):
     return items
 
 
-def past_mistakes():
-    """Memorydagi feedback yozuvlari: avval nima noto'g'ri ketgan."""
+def project_slug():
+    """memory/README.md qoidasi: repo nomi kichik harfda, ikki egada bir
+    xil nom bo'lsa `<egasi>__<repo>`, repo yo'q bo'lsa ildiz papka nomi."""
+    here = os.getcwd()
+    top = _git(["rev-parse", "--show-toplevel"], here).strip() or here
+    url = _git(["remote", "get-url", "origin"], top).strip().rstrip("/")
+    parts = [p for p in re.split(r"[/:]", url) if p]
+    if not parts:
+        return os.path.basename(os.path.normpath(top)).lower()
+    repo = parts[-1].lower()
+    repo = repo[:-4] if repo.endswith(".git") else repo
+    if len(parts) > 1:
+        both = "%s__%s" % (parts[-2].lower(), repo)
+        if os.path.isdir(os.path.join(MEMORY, both)):
+            return both
+    return repo
+
+
+INDEX_ROW_RE = re.compile(r"^- `([^`]+\.md)` - (.+)$")
+
+
+def _index_notes(folder):
+    """MEMORY.md dagi bir qatorli tavsiflar, o'ralgan davomi bilan."""
+    notes, current = {}, None
+    try:
+        with open(os.path.join(folder, "MEMORY.md"), encoding="utf-8") as handle:
+            lines = handle.read().split("\n")
+    except OSError:
+        return notes
+    for line in lines:
+        match = INDEX_ROW_RE.match(line.rstrip())
+        if match:
+            current = match.group(1)
+            notes[current] = match.group(2).strip()
+        elif current and line.startswith("  ") and line.strip():
+            notes[current] += " " + line.strip()
+        else:
+            current = None
+    return notes
+
+
+def _topic(path):
+    """Topic fayl: (modified, sarlavha, birinchi gap yoki punkt).
+
+    Fayl frontmatter bilan boshlanadi (memory-protocol.md), u tashlanadi:
+    aks holda aktyorga `---` yetib boradi.
+    """
+    with open(path, encoding="utf-8", errors="replace") as handle:
+        lines = handle.read().split("\n")
+    modified = ""
+    if lines and lines[0].strip() == "---":
+        end = next((i for i, l in enumerate(lines[1:], 1) if l.strip() == "---"), 0)
+        for line in lines[1:end]:
+            if line.startswith("modified:"):
+                modified = line.split(":", 1)[1].strip()
+        lines = lines[end + 1:]
+    title = next((l.strip()[2:].strip() for l in lines
+                  if l.strip().startswith("# ")), "")
+    first = []
+    for line in lines:
+        text = line.strip()
+        if not text or text.startswith("#"):
+            if first:
+                break
+            continue
+        if first and text.startswith("- "):
+            break   # birinchi punkt tugadi
+        first.append(text[2:] if text.startswith("- ") else text)
+    return modified, title, " ".join(first).replace("**", "")
+
+
+def _short(text, limit=160):
+    if len(text) <= limit:
+        return text
+    return text[:limit - 3].rsplit(" ", 1)[0] + "..."
+
+
+def past_mistakes(slug=None):
+    """Memorydagi feedback yozuvlari: avval nima noto'g'ri ketgan.
+
+    Faqat joriy proyekt papkasi va `umumiy/` o'qiladi: global o'rnatishda
+    memory/ hamma proyektni saqlaydi, boshqasining tuzog'i bu yerda
+    shovqin. Proyekt yozuvi oldin, har papkada eng yangisi oldin. Tavsif
+    indeksdan (protokol bo'yicha bir qatorli tavsif aynan o'sha yerda),
+    u yo'q bo'lsa faylning birinchi gapidan.
+    """
     out = []
-    if not os.path.isdir(MEMORY):
-        return out
-    for dirpath, _, filenames in os.walk(MEMORY):
-        for name in sorted(filenames):
-            if name.startswith("feedback_") and name.endswith(".md"):
-                rel = os.path.relpath(os.path.join(dirpath, name), ROOT)
-                first = ""
-                with open(os.path.join(dirpath, name), encoding="utf-8") as handle:
-                    for line in handle:
-                        line = line.strip()
-                        if line and not line.startswith("#"):
-                            first = line
-                            break
-                out.append((rel, first[:110]))
+    for sub in dict.fromkeys((slug or project_slug(), "umumiy")):
+        folder = os.path.join(MEMORY, sub)
+        if not os.path.isdir(folder):
+            continue
+        index = _index_notes(folder)
+        rows = []
+        for name in os.listdir(folder):
+            if not (name.startswith("feedback_") and name.endswith(".md")):
+                continue
+            full = os.path.join(folder, name)
+            try:
+                modified, title, first = _topic(full)
+                stamp = modified or time.strftime(
+                    "%Y-%m-%dT%H:%M:%SZ", time.gmtime(os.path.getmtime(full)))
+            except OSError:
+                continue
+            text = index.get(name) or first
+            note = "%s: %s" % (title, text) if title and text else title or text
+            # Global rejimda `memory/...` proyekt papkasidan ochilmaydi.
+            rel = full
+            if in_clone():
+                try:
+                    rel = os.path.relpath(full, ROOT)
+                except ValueError:
+                    pass  # Windows: boshqa disk
+            rows.append((stamp, rel, _short(note or name)))
+        rows.sort(reverse=True)
+        out.extend((rel, note) for _, rel, note in rows)
     return out
 
 
-# check_code chiqishidagi havola qatori: "qo'llanma: ... show sonarqube
-# 13.5  (java:S108)". Shundan kalit va bo'lim ajratiladi.
-REF_RE = re.compile(r"show\s+(\S+)\s+(\S+)")
-KEY_RE = re.compile(r"\((java:S\d+)\)")
-
-
 def mechanical(paths):
-    """check_code topgan muammolar, har biri havolasi bilan.
+    """check_code topgan muammolar, har biri Sonar kaliti va bo'limi bilan.
 
-    Avval bu yerda faqat `[` bilan boshlanadigan qatorlar olinardi, ya'ni
-    check_code bergan Sonar kaliti va bo'lim raqami tashlab ketilardi.
-    Natijada aktyor "bo'sh catch yomon" degan gapni olardi, `java:S108`
-    va `sonarqube 13.5` ni esa olmasdi, holbuki skillning birinchi
-    qoidasi aynan shuni talab qiladi: qoidasiz topilma yo'q.
+    Kalit va bo'lim yonma-yon turadi: skillning birinchi qoidasi, qoidasiz
+    topilma yo'q. check_code jarayon ichida chaqiriladi. Avval u har fayl
+    uchun alohida jarayonda yurib, matn chiqishi qayta ajratilardi: har
+    faylga ~30 ms qo'shilardi va MAX_SHOWN dan keyingi topilmalar jim
+    tashlanardi.
     """
-    tool = os.path.join(HERE, "check_code.py")
     out = []
     for path in paths:
-        full = path if os.path.isabs(path) else os.path.join(ROOT, path)
-        if not os.path.isfile(full) or not full.endswith(".java"):
-            continue
-        proc = subprocess.run([sys.executable, tool, full],
-                              capture_output=True, text=True, cwd=ROOT)
-        if proc.returncode != 1:
-            continue
-        finding = None
-        for line in proc.stdout.split("\n"):
-            if line.startswith("["):
-                finding = line.strip()
-                out.append((finding, ""))
-            elif finding and "qo'llanma:" in line:
-                ref = REF_RE.search(line)
-                key = KEY_RE.search(line)
-                tail = " ".join(x for x in (
-                    key.group(1) if key else "",
-                    "-> %s %s" % ref.groups() if ref else "") if x)
-                out[-1] = (finding, tail)
-                finding = None
+        full = _full(path)
+        for f in check_code.analyse(full):
+            line = "[%s] %s:%d  %s" % (f.level, os.path.basename(full),
+                                      f.line, f.message)
+            ref = resolve(f.topic, f.rule, f.ref)
+            tail = " ".join(x for x in (f.rule, "-> " + ref if ref else "") if x)
+            out.append((line, tail))
     return out
 
 
@@ -283,17 +495,22 @@ def main():
         return 2
 
     paths = changed_files(args)
+    for name in args:
+        if not name.startswith("--") and not name.endswith(WATCHED):
+            print("ko'rilmadi: %s" % name, file=sys.stderr)
     if not paths:
-        print("Tekshiriladigan fayl berilmadi (.java yoki build fayli).",
+        print("Tekshiriladigan fayl berilmadi (.java, .sql, sozlama yoki build fayli).",
               file=sys.stderr)
         return 2
 
-    # Zanjirning birinchi qadami bajarilgani belgilanadi: check_code
-    # yozuvdan oldin shuni talab qiladi.
-    mark(paths)
-
     titles = chapter_titles()
-    signals = detect(paths)
+    scanned = scan(paths)
+    signals = ordered(scanned)
+    # Zanjirning birinchi qadami bajarilgani belgilanadi: check_code har
+    # Java yozuvidan keyin shuni tekshiradi. Belgilar ham saqlanadi:
+    # yozilgan fayldan yangi belgi chiqsa, check_code uni aytadi.
+    mark(paths, [label for label, _, _ in signals])
+
     wanted, order = set(), []
     for _, chapters, _ in signals:
         for ch in chapters:
@@ -312,20 +529,35 @@ def main():
               % ", ".join("%s %s" % c for c in missing), file=sys.stderr)
         order = [ch for ch in order if ch in titles]
 
+    for name, exists, labels in scanned:
+        if exists and not labels and not name.endswith(".java"):
+            print("belgi topilmadi: %s, %s find bilan qidiring"
+                  % (name, tool_cmd("doc.sh")), file=sys.stderr)
+
     print("# %d fayl, %d belgi\n" % (len(paths), len(signals)))
     for label, chapters, where in signals:
         print("%-22s %-14s -> %s" % (label, where,
                                      ", ".join("%s %s" % c for c in chapters)))
+    absent = [name for name, exists, _ in scanned if not exists]
+    if absent:
+        print("hali yo'q: %s (belgi fayl nomidan)" % ", ".join(absent))
     print()
 
     print("# Tegishli boblar\n")
     for ch in order:
         print("  %-11s %-4s %s" % (ch[0], ch[1], titles[ch]))
+    # MAX_CHAPTERS dan ortgani jim yo'qolmasin: kerak bo'lsa ochiq so'raladi.
+    dropped = list(dict.fromkeys(ch for _, chapters, _ in signals
+                                 for ch in chapters if ch not in wanted))
+    if dropped:
+        print("\n(sig'madi: %s)" % ", ".join("%s %s" % c for c in dropped))
 
     items = checklist_for(set(order))
     total = sum(len(v) for v in items.values())
     print("\n# Tekshiruv punktlari (%d tadan %d tasi)\n"
           % (total, min(total, MAX_ITEMS)))
+    print("  (punkt faqat tegilgan kodga nisbatan qo'llanadi; butun proyekt "
+          "auditi so'ralmagan bo'lsa bajarilmaydi)\n")
     shown = 0
     for round_no in range(MAX_ITEMS):
         progressed = False
@@ -338,7 +570,7 @@ def main():
         if shown >= MAX_ITEMS or not progressed:
             break
     if total > shown:
-        print("\n  qolgani: tools/doc.sh checklist <hujjat> <bob>")
+        print("\n  qolgani: %s checklist <hujjat> <bob>" % tool_cmd("doc.sh"))
 
     found = mechanical(paths)
     print("\n# Mashina topgani (%d)\n" % len(found))
@@ -351,8 +583,11 @@ def main():
 
     mistakes = past_mistakes()
     if mistakes:
-        print("\n# Avval yo'l qo'yilgan xatolar\n")
-        for rel, note in mistakes:
+        head = "# Avval yo'l qo'yilgan xatolar"
+        if len(mistakes) > MAX_MISTAKES:
+            head += " (%d tadan %d tasi)" % (len(mistakes), MAX_MISTAKES)
+        print("\n%s\n" % head)
+        for rel, note in mistakes[:MAX_MISTAKES]:
             print("  %s\n      %s" % (rel, note))
     return 0
 
