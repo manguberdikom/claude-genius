@@ -53,18 +53,18 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PROJECT_DIR}/tools/suggest_sections.py\"",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}/tools/suggest_sections.py\" || exit 0",
             "timeout": 10,
             "statusMessage": "Mos bo'limlar qidirilmoqda"
           },
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PROJECT_DIR}/tools/budget.py\"",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}/tools/budget.py\" || exit 0",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PROJECT_DIR}/tools/handoff.py\" --hook",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}/tools/handoff.py\" --hook || exit 0",
             "timeout": 10,
             "statusMessage": "Kontekst o'lchanmoqda"
           }
@@ -77,7 +77,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PROJECT_DIR}/tools/guard.py\"",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}/tools/guard.py\" || exit 0",
             "timeout": 10,
             "statusMessage": "Qimmat amal tekshirilmoqda"
           }
@@ -88,7 +88,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PROJECT_DIR}/tools/budget.py\"",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}/tools/budget.py\" || exit 0",
             "timeout": 10,
             "statusMessage": "Aktyor budjeti tekshirilmoqda"
           }
@@ -100,7 +100,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PROJECT_DIR}/tools/usage.py\" --saqlash",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}/tools/usage.py\" --saqlash || exit 0",
             "timeout": 20,
             "statusMessage": "Token sarfi yozilmoqda"
           }
@@ -113,7 +113,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PROJECT_DIR}/tools/check_code.py\"",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}/tools/check_code.py\" || exit 0",
             "timeout": 15,
             "statusMessage": "Java qoidalari tekshirilmoqda"
           }
