@@ -313,6 +313,14 @@ def main():
         print("SKIP index/sections.tsv yo'q")
     else:
         everything = [f for p in payloads.values() for f in p["findings"]]
+        # Bo'lim ko'chsa yoki o'chsa ref indeksdan tushadi va hint jim
+        # turib `find` ga o'tadi: har bir ref aynan (hujjat, bo'lim) satri.
+        refs = sorted({f["ref"] for f in everything if f.get("ref")})
+        stale = [r for r in refs if r not in titles]
+        report(bool(refs) and not stale,
+               "%d ta ref index/sections.tsv da %s" % (len(refs), stale or ""))
+        report("show code-review 14.8" in texts[ENT],
+               "%s matnida \"show code-review 14.8\"" % ENT)
         for part, keyword in REF_KEYWORDS:
             hits = [f for f in everything if part in f["message"]]
             bad = [f.get("ref", "") for f in hits

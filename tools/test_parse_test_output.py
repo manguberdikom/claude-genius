@@ -13,6 +13,11 @@ Results ro'yxati bitta yiqilishni ikki marta aytadi), parametrli test,
 Gradle JUnit 5 standart (SHORT) va to'liq formati, Maven va Gradle
 kompilyatsiya xatosi, Spring context yiqilishi, AssertJ va Hamcrest.
 Ularsiz asbob real chiqishda yiqilib, sinovda o'tib turardi.
+
+CI jurnali (`gh run view --log` va GitHub Actions xom logi) har qator
+boshiga vaqt qo'yadi. Uning uchun alohida fayl yo'q: real fixture har
+qatoriga prefiks qo'shib olinadi, natija prefikssiz bilan bir xil bo'lishi
+kerak.
 """
 
 import os
@@ -118,6 +123,26 @@ EXIT_CODES = [
     ("bo'sh kirish", None, "", 0, "Yiqilgan test topilmadi"),
 ]
 
+# (nom, fayl yoki None, matn, qator prefiksi, kutilgan kod, chiqishda bo'lishi kerak).
+# Xom log (job va step ustunlarisiz) birinchi qatori BOM bilan boshlanadi.
+STAMP = "2026-10-05T10:11:12.1234567Z "
+CI_LOGS = [
+    ("gh run view --log: surefire 3", SF3, None, "build\tRun tests\t" + STAMP, 1,
+     "Noyob sabab: 3 ta (jami 3 ta yiqilish)"),
+    ("xom log: gradle 5 short", G5_SHORT, None, STAMP, 1,
+     "Noyob sabab: 4 ta (jami 4 ta yiqilish)"),
+    ("xom log: toza build", None, CLEAN, STAMP, 0, "Yiqilgan test topilmadi"),
+]
+
+
+def ci_log(fixture, text, prefix):
+    """Har qatoriga CI prefiksi qo'yilgan nusxa."""
+    if fixture:
+        with open(os.path.join(DATA, fixture), encoding="utf-8") as handle:
+            text = handle.read()
+    bom = "" if "\t" in prefix else "\ufeff"
+    return bom + "\n".join(prefix + line for line in text.split("\n"))
+
 
 def run(path=None, text=None):
     args = [sys.executable, TOOL] + ([path] if path else [])
@@ -128,7 +153,7 @@ def run(path=None, text=None):
 
 def main():
     fixtures = ({f for _, f, _ in CASES} | {f for f, _ in ABSENT}
-                | {c[1] for c in EXIT_CODES if c[1]})
+                | {c[1] for c in EXIT_CODES if c[1]} | {c[1] for c in CI_LOGS if c[1]})
     missing = [f for f in fixtures if not os.path.exists(os.path.join(DATA, f))]
     if missing:
         print("sinov ma'lumoti yo'q: %s" % ", ".join(sorted(missing)))
@@ -168,7 +193,14 @@ def main():
         failures += not ok
         print("%-4s %-30s kutilgan=%d olingan=%d" % ("OK" if ok else "XATO", label, want, got))
 
-    total = len(CASES) + len(ABSENT) + 1 + len(EXIT_CODES)
+    print("\n== CI vaqt prefiksi ==")
+    for label, fixture, text, prefix, want, needle in CI_LOGS:
+        got, out = run(text=ci_log(fixture, text, prefix))
+        ok = got == want and needle in out and STAMP.strip() not in out
+        failures += not ok
+        print("%-4s %-30s kutilgan=%d olingan=%d" % ("OK" if ok else "XATO", label, want, got))
+
+    total = len(CASES) + len(ABSENT) + 1 + len(EXIT_CODES) + len(CI_LOGS)
     print("\n%d/%d o'tdi" % (total - failures, total))
     return 1 if failures else 0
 

@@ -386,35 +386,14 @@ private Price cachedPrice(String sku, Throwable ex) {
 
 ## 17.22 Asinxron so'rov-javob (Asynchronous Request-Reply)
 
-**Tavsif:** Client sinxron javob kutmasligi kerak bo'lgan uzoq operatsiyalarda server so'rovni qabul qilib `202 Accepted` va status resursiga havola qaytaradi, keyin client shu havolani polling qiladi yoki callback/webhook orqali xabardor qilinadi. Shu bilan HTTP ulanishi uzoq ushlanmaydi, timeout va proxy cheklovlari muammosi yo'qoladi. Cloud nuqtai nazaridan bu backend'ni gorizontal masshtablash va queue bilan birlashtirish uchun standart shakl.
+**Tavsif:** [API dizayn patternlari bobidagi asinxron so'rov-javob yozuvi](07-api-dizayn-patternlari.md#715-asinxron-sorov-javob-asynchronous-request-reply) bu patternning to'liq yozuvi, bu yerda faqat cloud nuqtai nazari: HTTP ulanishi uzoq ushlanmagani uchun timeout va proxy cheklovlari yo'qoladi, backend esa queue bilan birlashib gorizontal masshtablanadi.
 
-**Spring'da qayerda uchraydi:** Spring MVC'da `ResponseEntity.accepted().location(uri).build()` bilan 202 + `Location` header qaytariladi; uzoq so'rovlar uchun `DeferredResult<T>`, `Callable<T>`, `WebAsyncTask`, `StreamingResponseBody` va SSE uchun `SseEmitter` mavjud. Reactive tomonda `Mono`/`Flux` qaytaruvchi `@RestController` va `ServerSentEvent`; `@Async` + `CompletableFuture` (`AsyncConfigurer`, `ThreadPoolTaskExecutor`) fon bajarilishini beradi. Holatni saqlash uchun oddiy `JdbcTemplate`/JPA jadvali yoki Redis; ishni queue'ga uzatish uchun `KafkaTemplate`/`RabbitTemplate`. Callback yuborishda `RestClient` (Spring Framework 6.1+) yoki `WebClient` ishlatiladi; WebSocket orqali push uchun `SimpMessagingTemplate` (STOMP).
-
-```java
-@PostMapping("/reports")
-ResponseEntity<Void> create(@RequestBody ReportRequest req) {
-    String id = jobs.enqueue(req);              // queue + holat yozuvi
-    return ResponseEntity.accepted()
-            .location(URI.create("/reports/" + id))
-            .build();
-}
-
-@GetMapping("/reports/{id}")
-ResponseEntity<?> status(@PathVariable String id) {
-    Job job = jobs.find(id);
-    return job.done() ? ResponseEntity.ok(job.result())
-                      : ResponseEntity.accepted().body(job.progress());
-}
-```
+**Spring'da qayerda uchraydi:** Kanonik yozuvdagi 202 + `Location` va navbatdan tashqari Spring MVC'ning `DeferredResult<T>`, `Callable<T>`, `WebAsyncTask`, `StreamingResponseBody` va `SseEmitter`, reaktiv `ServerSentEvent`, holat uchun Redis, natijani callback bilan yuborish uchun `RestClient` yoki `WebClient` hamda STOMP push uchun `SimpMessagingTemplate`.
 
 **Qo'llanish keyslari:**
-- Katta hisobot yoki video transkodlash so'rovini 202 bilan qabul qilib, keyin yuklab olish havolasini berish.
-- Tashqi API gateway 30 soniyalik timeout'iga sig'maydigan operatsiyalarni polling modeliga o'tkazish.
-- To'lov provayderidan webhook callback kutib, buyurtma holatini keyinchalik yangilash.
-- Mobil ilovada uzoq import jarayonini progress bar bilan ko'rsatish (SSE yoki polling).
-- Bulk foydalanuvchi importini fon job'ga uzatib, natija faylini keyin taqdim etish.
+- Tashqi API gateway'ning 30 soniyalik timeout'iga sig'maydigan operatsiyani polling yoki webhook callback modeliga o'tkazish.
 
-**Ehtiyot bo'ling:** Polling intervalini client ixtiyoriga qoldirmang - `Retry-After` header bering, aks holda minglab client sekundiga bir marta so'rab status servisini yuklaydi. Holat resursi uchun TTL va tozalash siyosati bo'lmasa status jadvali cheksiz o'sadi; shuningdek status endpoint'i avtorizatsiyani tekshirmasa, ID taxmin qilib boshqa foydalanuvchi natijasini o'qish mumkin bo'ladi.
+**Ehtiyot bo'ling:** Status endpoint'i avtorizatsiyani tekshirmasa ID taxmin qilib boshqa foydalanuvchi natijasini o'qish mumkin, `Retry-After` va TTL tafsiloti esa kanonik yozuvda.
 
 ## 17.23 Statik kontentni hosting qilish (Static Content Hosting)
 
@@ -463,18 +442,14 @@ ResponseEntity<?> status(@PathVariable String id) {
 
 ## 17.26 Federatsiyalangan identifikatsiya (Federated Identity)
 
-**Tavsif:** Ilova foydalanuvchi parolini o'zi saqlamaydi va tekshirmaydi, balki autentifikatsiyani ishonchli tashqi identity provider'ga (IdP) topshiradi va undan kelgan token yoki assertion asosida qarorlar qabul qiladi. Cloud nuqtai nazaridan bu ko'p ilova va ko'p tenant bo'ylab SSO, markazlashgan MFA va xodim ketganda bir joydan bloklashni beradi. Protokollar: OpenID Connect (OAuth 2.x ustida), SAML 2.0, va servis-servis uchun client credentials.
+**Tavsif:** [Xavfsizlik patternlari bobidagi federatsiyalangan identifikatsiya yozuvi](18-xavfsizlik-patternlari.md#1820-federatsiyalangan-identifikatsiya-federated-identity) bu patternning to'liq yozuvi, bu yerda faqat cloud nuqtai nazari: ko'p ilova va ko'p tenant bo'ylab SSO, markazlashgan MFA, xodim ketganda bir joydan bloklash va servis-servis chaqiruvlari uchun client credentials.
 
-**Spring'da qayerda uchraydi:** Spring Security 6.x: `spring-boot-starter-oauth2-client` (`HttpSecurity#oauth2Login`, `ClientRegistrationRepository`, `OAuth2AuthorizedClientManager`, `spring.security.oauth2.client.registration.*`), `spring-boot-starter-oauth2-resource-server` (`oauth2ResourceServer(o -> o.jwt(...))`, `JwtDecoder`, `JwtAuthenticationConverter`, `issuer-uri` orqali JWKS discovery), va `spring-security-saml2-service-provider` (`saml2Login`, `RelyingPartyRegistrationRepository`). Servis-servis chaqiruvlarida `RestClient`/`WebClient` ga token qo'shish uchun `OAuth2ClientHttpRequestInterceptor` yoki `ServletOAuth2AuthorizedClientExchangeFilterFunction`. O'z IdP'ingizni qurish kerak bo'lsa Spring Authorization Server (`spring-boot-starter-oauth2-authorization-server`, `RegisteredClientRepository`) mavjud; amalda ko'proq Keycloak, Okta yoki Entra ID ishlatiladi. Rollar uchun `JwtGrantedAuthoritiesConverter` claim'larni `GrantedAuthority` ga aylantiradi.
+**Spring'da qayerda uchraydi:** Kanonik yozuvdagi `oauth2Login` va `saml2Login`dan tashqari resource server tomonda `JwtDecoder`, `issuer-uri` orqali JWKS discovery va claim'larni `GrantedAuthority` ga aylantiradigan `JwtGrantedAuthoritiesConverter`, servis-servis token uchun `OAuth2ClientHttpRequestInterceptor` yoki `ServletOAuth2AuthorizedClientExchangeFilterFunction`, o'z IdP kerak bo'lsa Spring Authorization Server (amalda ko'proq Keycloak, Okta yoki Entra ID).
 
 **Qo'llanish keyslari:**
-- Korporativ Entra ID/Okta bilan SSO qilib, xodimlar uchun alohida parol saqlamaslik.
-- Ko'p tenant'li SaaS'da har bir mijozga o'z IdP'si (SAML yoki OIDC) bilan ulanish imkonini berish.
-- Mobil va SPA client'lari uchun PKCE bilan Authorization Code flow'ni qo'llash.
-- Microservislar o'rtasida client credentials token bilan servis identifikatsiyasi.
-- MFA va shartli kirish siyosatini IdP darajasida markazlashtirib, ilova kodini o'zgartirmaslik.
+- Mobil va SPA client'lari uchun PKCE bilan Authorization Code flow, microservislar o'rtasida esa client credentials token bilan servis identifikatsiyasi.
 
-**Ehtiyot bo'ling:** Tokenni faqat imzo bo'yicha tekshirish yetarli emas - `iss`, `aud`, `exp` va kerakli `scope`/claim'larni albatta validatsiya qiling (`JwtValidators`, `audience` konfiguratsiyasi), aks holda boshqa tenant yoki boshqa ilova uchun berilgan token qabul qilinadi. IdP yagona ishdan chiqish nuqtasi bo'lgani uchun uning uzilishi hamma ilovani to'xtatadi: JWKS keshi, token muddati va graceful degradation rejasi bo'lsin; shuningdek IdP'dan kelgan rollarni ko'r-ko'rona avtorizatsiya qarori sifatida ishlatmang, muhim huquqlarni o'z tomoningizda ham tekshiring.
+**Ehtiyot bo'ling:** Token imzodan tashqari `iss`, `aud`, `exp` va kerakli claim'lar bo'yicha (`JwtValidators`) tekshirilmasa boshqa tenant uchun berilgan token qabul qilinadi, IdP uzilishiga qarshi esa JWKS keshi va graceful degradation rejasi bo'lsin.
 
 ## 17.27 Deploy shtamplari (Deployment Stamps)
 

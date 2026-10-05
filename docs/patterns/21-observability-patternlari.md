@@ -207,18 +207,14 @@ class CacheWarmupHealth implements HealthIndicator {
 
 ## 21.10 Audit loglash (Audit Logging)
 
-**Tavsif:** Audit log - "kim, qachon, nima qildi, qaysi natija bilan" savoliga javob beradigan biznes va xavfsizlik hodisalarining ishonchli yozuvi. Oddiy diagnostik logdan farqi: u strukturalangan, o'zgartirilmaydigan, uzoq saqlanadigan va yo'qolmasligi kafolatlangan bo'lishi kerak, shuning uchun ko'pincha alohida store (DB jadvali, append-only topic) ishlatiladi. Hodisaga aktor (user/service), subyekt (resurs), amal, vaqt, natija va kontekst (IP, tenant, correlation ID) kiradi. Bu pattern GDPR/SOX/PCI DSS kabi talablar va ichki tergovlar uchun asos bo'ladi.
+**Tavsif:** [Xavfsizlik patternlari bobidagi audit log yuritish yozuvi](18-xavfsizlik-patternlari.md#1834-audit-log-yuritish-audit-logging) bu patternning to'liq yozuvi, bu yerda faqat observability nuqtai nazari: audit yozuvi diagnostik logdan farqli ravishda namunalanmaydi, o'chmaydi va formati o'zgarmaydi, shuning uchun alohida store'ga (DB jadvali, append-only topic) yoziladi.
 
-**Spring'da qayerda uchraydi:** Spring Boot Actuator audit infratuzilmasi: `AuditEvent`, `AuditApplicationEvent`, `AuditEventRepository` (default `InMemoryAuditEventRepository`) va `/actuator/auditevents` endpointi; Spring Security bilan `AuthenticationAuditListener` va `AuthorizationAuditListener` login/ruxsat hodisalarini avtomatik chiqaradi. Ma'lumotlar darajasida Hibernate Envers (`@Audited`, `@AuditTable`, `AuditReader`) to'liq versiyalash beradi, Spring Data JPA auditing esa `@EnableJpaAuditing`, `AuditorAware<T>`, `@CreatedBy`/`@CreatedDate`/`@LastModifiedBy`/`@LastModifiedDate` bilan yengil variantni beradi. Ishonchli yetkazish uchun audit yozuvini domen tranzaksiyasi bilan bitta commitda yozib, keyin Transactional Outbox + Debezium/Kafka orqali tashqi tizimga uzatish keng tarqalgan; `@TransactionalEventListener` esa hodisani commitdan keyin chiqarish uchun ishlatiladi.
+**Spring'da qayerda uchraydi:** Kanonik yozuvdagidan tashqari Actuator'ning `AuthenticationAuditListener` va `AuthorizationAuditListener` login va ruxsat hodisalarini `AuditEvent` sifatida chiqaradi, Envers'da `@AuditTable` va tarixni o'qiydigan `AuditReader` bor, ishonchli yetkazish uchun esa audit yozuvi domen tranzaksiyasi bilan bitta commitda yozilib Transactional Outbox + Debezium/Kafka yoki `@TransactionalEventListener` orqali tashqariga uzatiladi.
 
 **Qo'llanish keyslari:**
-- Moliyaviy tranzaksiyalar va limit o'zgarishlari bo'yicha regulyator talab qiladigan iz qoldirish.
-- Admin panelda rol va ruxsat o'zgarishlarini (kim kimga admin berdi) qayd etish.
-- Shaxsiy ma'lumotga kirish (PII access) hodisalarini GDPR uchun hisobga olish.
-- Muvaffaqiyatsiz login va parol tiklash urinishlarini xavfsizlik tahlili uchun saqlash.
-- Mijoz shikoyatida buyurtma holati zanjirini versiyalar bo'yicha tiklash.
+- Shaxsiy ma'lumotga kirish (PII access) hodisalarini GDPR uchun hisobga olish va mijoz shikoyatida buyurtma holati zanjirini versiyalar bo'yicha tiklash.
 
-**Ehtiyot bo'ling:** Audit logni oddiy ilova logi bilan aralashtirmang - diagnostik loglar namunalanadi, o'chadi va formati o'zgaradi, audit esa yo'qolmasligi va o'zgarmasligi kerak; `InMemoryAuditEventRepository` faqat demo uchun, chunki restartda hammasi yo'qoladi. Audit yozuvi biznes amali bilan atomik bo'lishiga e'tibor bering (fire-and-forget async yuborish hodisani jimgina yo'qotadi) va unga maxfiy qiymatlarni (parol, to'liq karta raqami) emas, faqat identifikator va o'zgarish faktini yozing.
+**Ehtiyot bo'ling:** Default `InMemoryAuditEventRepository` restartda hammasini yo'qotadigan demo varianti, fire-and-forget async yuborish esa hodisani jimgina yo'qotadi, shuning uchun audit yozuvi biznes amali bilan atomik bo'lsin.
 
 ## 21.11 Xatolarni kuzatish (Exception Tracking)
 

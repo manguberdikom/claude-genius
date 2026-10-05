@@ -4,6 +4,7 @@
     mvn test 2>&1 | python3 tools/parse_test_output.py
     ./gradlew test 2>&1 | python3 tools/parse_test_output.py
     python3 tools/parse_test_output.py target/surefire-reports/out.txt
+    gh run view <id> --log-failed | python3 tools/parse_test_output.py
 
 Nega: yiqilgan test 200-2000 qator chiqish beradi, undan kerakli uchta
 qator: qaysi test, nima kutilgan edi, loyiha kodining qaysi qatorida.
@@ -90,6 +91,26 @@ BUILD_FAIL_RE = re.compile(
     r"BUILD FAILURE|BUILD FAILED|^\[ERROR\] Failed to execute goal"
     r"|^FAILURE: Build failed|^> Task \S+ FAILED|Execution failed for task")
 CLUE_RE = re.compile(r"^\[ERROR\]\s*\S|FAILED|What went wrong|Execution failed")
+# CI jurnali har qator boshiga vaqt qo'yadi: GitHub Actions xom logi
+# "2026-10-05T10:11:12.1234567Z [ERROR] ...", `gh run view --log` esa
+# oldiga yana "job<TAB>step<TAB>". Qator boshiga bog'langan regexlar
+# (test nomi, blok chegarasi, stack qatori) prefiksni ko'rmasin.
+CI_PREFIX_RE = re.compile(
+    r"^\ufeff?(?:[^\t\n]*\t[^\t\n]*\t)?\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z ?")
+
+
+def strip_ci_prefix(lines):
+    """Birinchi bo'sh bo'lmagan qatorda CI prefiksi bo'lsa, hamma qatordan
+    olinadi. Oddiy chiqishga tegilmaydi: ilova logidagi vaqt o'sha
+    qatorning bir qismi.
+
+    Prefiks qolsa Maven da xulosada yiqilish bor-u, test nomi
+    tanilmasdi; Gradle da vaqt test nomiga yopishib, `> Task :test
+    FAILED` qatori ham yiqilgan test deb sanalardi."""
+    first = next((line for line in lines if line.strip()), "")
+    if not CI_PREFIX_RE.match(first):
+        return lines
+    return [CI_PREFIX_RE.sub("", line, count=1) for line in lines]
 
 
 def bracketed(match):
@@ -380,6 +401,7 @@ def main():
             lines = handle.read().split("\n")
     else:
         lines = sys.stdin.read().split("\n")
+    lines = strip_ci_prefix(lines)
 
     totals = summarize(lines)
     compiled = compile_errors(lines)

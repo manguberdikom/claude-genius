@@ -69,28 +69,14 @@ Deployment va operatsion patternlar - bu kod yozilib bo'lgandan keyin boshlanadi
 
 ## 22.2 Tashqi konfiguratsiya (Externalized Configuration)
 
-**Tavsif:** Konfiguratsiyani (URL'lar, credential'lar, limitlar, toggle'lar) build artefaktidan butunlay ajratib, ishga tushish yoki ishlash vaqtida tashqi manbadan olish patterni. Bu bitta image'ni dev, staging va prod'ga o'zgartirmasdan chiqarish imkonini beradi va parollarni Git'dan olib tashlaydi. Manba sifatida muhit o'zgaruvchilari, fayl sifatida mount qilingan ConfigMap/Secret, markazlashgan Config Server yoki Vault/Secrets Manager xizmat qiladi. Qiyinligi - ustuvorlik tartibi (precedence) va runtime'da qayta yuklash semantikasi.
+**Tavsif:** [Microservices patternlari bobidagi tashqariga chiqarilgan konfiguratsiya yozuvi](14-microservices-patternlari.md#1430-tashqariga-chiqarilgan-konfiguratsiya-externalized-configuration) bu patternning to'liq yozuvi, bu yerda faqat deployment nuqtai nazari: bitta image o'zgartirilmasdan dev, staging va prod'ga chiqadi, konfiguratsiya esa muhit o'zgaruvchisi, mount qilingan ConfigMap/Secret fayli yoki Vault'dan keladi va asosiy qiyinlik ustuvorlik tartibi (precedence) hamda runtime'da qayta yuklash semantikasida.
 
-**Spring'da qayerda uchraydi:** Spring Boot'ning `Environment` abstraksiyasi va `PropertySource` iyerarxiyasi - asosiy mexanizm; qiymatlar `@Value` yoki type-safe `@ConfigurationProperties` + `@EnableConfigurationProperties` orqali bog'lanadi, relaxed binding tufayli `MY_APP_TIMEOUT` muhit o'zgaruvchisi `my.app.timeout`ga tushadi. Kubernetes Secret'larini fayl sifatida o'qish uchun `spring.config.import=configtree:/etc/secrets/` (config tree), ConfigMap/Secret'ni API orqali o'qish uchun `spring-cloud-starter-kubernetes-client-config` (`ConfigMapPropertySource`, `SecretsPropertySource`). Markazlashgan variant - Spring Cloud Config Server (`@EnableConfigServer`, Git backend) va client tomonda `spring.config.import=optional:configserver:`; dinamik yangilash `@RefreshScope` + `/actuator/refresh`, klaster bo'ylab esa Spring Cloud Bus. Maxfiy ma'lumot uchun Spring Cloud Vault (`spring-cloud-starter-vault-config`) yoki Spring Cloud AWS parameter store integratsiyasi.
-
-```java
-@ConfigurationProperties(prefix = "billing")
-@Validated
-public record BillingProperties(
-        @NotBlank String gatewayUrl,
-        @NotNull Duration timeout,
-        @NotBlank String apiKey) {}
-// application.yml: spring.config.import: configtree:/etc/secrets/
-```
+**Spring'da qayerda uchraydi:** Kanonik yozuvdagidan tashqari Kubernetes Secret'ni fayl sifatida o'qiydigan `spring.config.import=configtree:/etc/secrets/`, API orqali o'qishdagi `ConfigMapPropertySource` va `SecretsPropertySource`, server tomonda `@EnableConfigServer`, relaxed binding'da `MY_APP_TIMEOUT` ning `my.app.timeout` ga tushishi va Spring Cloud AWS parameter store integratsiyasi.
 
 **Qo'llanish keyslari:**
-- Bitta Docker image'ni dev/staging/prod'ga bir xil digest bilan chiqarish.
-- DB paroli va to'lov gateway kalitini Kubernetes Secret yoki Vault'dan olish, repository'da saqlamaslik.
-- Rate limit yoki timeout qiymatlarini restart qilmasdan Config Server orqali o'zgartirish.
-- Multi-tenant SaaS'da tenant'ga xos endpoint'lar va limitlarni markazdan boshqarish.
-- Legacy ilovaning `.properties` fayllarini bosqichma-bosqich ConfigMap'ga ko'chirish.
+- Bitta Docker image'ni dev, staging va prod'ga bir xil digest bilan chiqarib, DB paroli va to'lov gateway kalitini Kubernetes Secret yoki Vault'dan olish.
 
-**Ehtiyot bo'ling:** `@RefreshScope` har qanday bean'ni xavfsiz yangilamaydi - DataSource, connection pool va `@Scheduled` holatini runtime'da almashtirish yarim-ishlaydigan holatga olib keladi; shubha bo'lsa, pod'ni qayta ishga tushirish aniqroq. Shuningdek, Config Server'ni yagona nuqta (single point of failure) qilib qo'ymang: client tomonda `optional:` prefiksi, fail-fast siyosati va lokal fallback'ni ongli tanlang.
+**Ehtiyot bo'ling:** `@RefreshScope` bilan DataSource yoki `@Scheduled` holatini runtime'da almashtirish yarim-ishlaydigan holatga olib keladi, shubha bo'lsa pod qayta ishga tushiriladi, Config Server uzilishiga qarshi esa client'da `optional:` prefiksi yoki lokal fallback ongli tanlanadi.
 
 ## 22.3 O'zgarmas infratuzilma (Immutable Infrastructure)
 

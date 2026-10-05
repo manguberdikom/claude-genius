@@ -271,38 +271,14 @@ public class ReportKernel {
 
 ## 12.8 Quvurlar va filtrlar (Pipes and Filters)
 
-**Tavsif:** Ishlov berish mustaqil, holatsiz filter'lar ketma-ketligiga bo'linadi; har biri kirish oqimini o'zgartirib, natijani keyingi filter'ga quvur (pipe) orqali uzatadi. Filter'lar bir-biri haqida bilmaydi, faqat ma'lumot formatiga kelishadi, shuning uchun ularni qayta tartiblash, qayta ishlatish va parallellashtirish oson. Bu uslub ETL, media transkodlash va message transformation uchun tabiiy. Quvur in-memory kolleksiya, reactive stream yoki haqiqiy message queue bo'lishi mumkin.
+**Tavsif:** [Enterprise Integration Patterns I bobidagi quvurlar va filtrlar yozuvi](15-enterprise-integration-patterns-i-xabarlar.md#153-quvurlar-va-filtrlar-pipes-and-filters) bu patternning to'liq yozuvi, bu yerda faqat arxitektura uslubi nuqtai nazari: butun tizim holatsiz filter'lar zanjiri sifatida quriladi va quvur in-memory kolleksiya, reactive stream yoki haqiqiy message queue bo'lishi mumkin.
 
-**Spring'da qayerda uchraydi:** Spring Integration bevosita shu uslub ustiga qurilgan: `MessageChannel` (pipe), `@Transformer`, `@Filter`, `@ServiceActivator` (filterlar) va `IntegrationFlow` DSL (`IntegrationFlows.from(...).transform(...).filter(...).handle(...)`). Spring Batch'da `ItemReader → ItemProcessor → ItemWriter` zanjiri va `CompositeItemProcessor` aynan pipeline modelini beradi. Reactive stack'da Project Reactor `Flux` operatorlari (`map`, `filter`, `flatMap`, `buffer`) in-memory pipeline sifatida ishlaydi, Spring Cloud Stream esa Kafka/RabbitMQ orqali tarqatilgan quvurlarni `Function<Flux<T>, Flux<R>>` bean'lari bilan birlashtiradi. Servlet qatlamida `jakarta.servlet.Filter` va Spring Security'ning `SecurityFilterChain` ham shu patternning klassik ko'rinishi.
+**Spring'da qayerda uchraydi:** Kanonik yozuvdagi Spring Integration va Spring Cloud Stream'dan tashqari Spring Batch'ning `ItemReader → ItemProcessor → ItemWriter` zanjiri, in-memory pipeline sifatida Project Reactor `Flux` operatorlari (`map`, `filter`, `flatMap`, `buffer`), tarqatilgan quvur uchun reaktiv `Function<Flux<T>, Flux<R>>` bean'lari va Servlet qatlamidagi `jakarta.servlet.Filter` hamda Spring Security `SecurityFilterChain`.
 
 **Qo'llanish keyslari:**
-- Kunlik ETL: fayl o'qish → validatsiya → boyitish → DB'ga yozish (Spring Batch).
-- EDI/SWIFT/HL7 xabarlarini bosqichma-bosqich normalizatsiya qilish (Spring Integration).
-- Kafka'dagi event oqimini filtrlash va boyitib boshqa topic'ga chiqarish.
-- Rasm/video yuklash pipeline'i: virus skaner → o'lcham o'zgartirish → CDN'ga joylash.
-- HTTP so'rovlari uchun kesishgan mas'uliyatlar zanjiri: auth → rate limit → audit log.
+- Kunlik ETL (fayl o'qish, validatsiya, boyitish, DB'ga yozish) yoki HTTP so'rovidagi kesishgan mas'uliyatlar zanjiri (auth, rate limit, audit log) kabi bosqichlari mustaqil almashtiriladigan oqimni qurish.
 
-**Ehtiyot bo'ling:** Ko'p bosqichli quvurda xatolarni boshqarish va idempotentlik eng murakkab qism - qaysi bosqichda qayta urinish, qaysi birida dead-letter'ga yuborish aniq loyihalanmasa, ma'lumot yo'qolishi yoki dublikatlar paydo bo'ladi. Shuningdek har bir bosqich holatsiz bo'lishi kerak; filter'lar orasida yashirin umumiy mutable holat paydo bo'lsa, parallellashtirish va kuzatuvchanlik buziladi.
-
-```java
-// Pipes and filters: har filtr bitta ish, shakl bir xil
-public interface Filter<T> extends UnaryOperator<T> {}
-
-@Component @Order(10) class Normalize implements Filter<Record> { /* ... */ }
-@Component @Order(20) class Validate  implements Filter<Record> { /* ... */ }
-@Component @Order(30) class Enrich    implements Filter<Record> { /* ... */ }
-
-@Service
-public class ImportPipeline {
-    private final List<Filter<Record>> filters;       // tartib @Order bilan
-
-    public Record run(Record in) {
-        Record out = in;
-        for (Filter<Record> f : filters) out = f.apply(out);
-        return out;
-    }
-}
-```
+**Ehtiyot bo'ling:** Qaysi bosqichda qayta urinish, qaysi birida dead-letter'ga yuborish aniq loyihalanmasa ma'lumot yo'qoladi yoki dublikat paydo bo'ladi, holatsizlik va kanal hop xarajati tafsiloti esa kanonik yozuvda.
 
 ## 12.9 Hodisaga asoslangan arxitektura (Event-Driven Architecture - broker va mediator topologiyalari)
 
@@ -659,39 +635,14 @@ Config p2pConfig() {
 
 ## 12.20 Qoratakhta (Blackboard)
 
-**Tavsif:** Umumiy bilim omborida ("blackboard") muammoning joriy holati saqlanadi, mustaqil mutaxassis modullar ("knowledge sources") undan o'qib, o'z hissasini qo'shadi, controller esa qaysi modul keyingi navbatda ishlashini tanlaydi. Bu aniq algoritmi yo'q, bosqichma-bosqich gipotezalarni to'plash orqali hal qilinadigan masalalar (nutqni tanish, tasvirni tushunish, murakkab tashxis) uchun mo'ljallangan. Modullar bir-birini bilmaydi, faqat blackboard ustida bilvosita muloqot qiladi. Yakuniy natija - gipotezalar yetarli ishonch darajasiga yetganda qabul qilinadi.
+**Tavsif:** [Xulq-atvor patternlari bobidagi qora taxta yozuvi](03-xulq-atvor-patternlari.md#323-qora-taxta-blackboard) bu patternning to'liq yozuvi, bu yerda faqat arxitektura uslubi nuqtai nazari: butun tizim umumiy bilim ombori atrofida quriladi, knowledge source modullari bir-birini bilmasdan faqat blackboard orqali muloqot qiladi va gipotezalar yetarli ishonch darajasiga yetganda yakuniy natija qabul qilinadi.
 
-**Spring'da qayerda uchraydi:** Standart Spring moduli yo'q, lekin uslub tipik ravishda shunday quriladi: umumiy holat Redis (`RedisTemplate`) yoki Hazelcast `IMap`da saqlanadi; knowledge source'lar bitta interface'ni amalga oshiruvchi bean'lar bo'lib, Spring ularni `List<KnowledgeSource>` sifatida inject qiladi va `@Order` bilan tartiblaydi; controller `ApplicationEventPublisher`/`@EventListener` yoki Spring Integration `MessageChannel` orqali ishga tushirish siklini boshqaradi. Qoidalar dvigateli kerak bo'lsa Drools (`drools-core` + Spring Boot bilan `KieContainer` bean) ishlatiladi; parallel ishlash uchun `@Async` va `ThreadPoolTaskExecutor`.
+**Spring'da qayerda uchraydi:** Kanonik yozuvdagi `RedisTemplate`, `List<KnowledgeSource>` va event orqali boshqariladigan controller'dan tashqari umumiy holat uchun Hazelcast `IMap`, qoidalar dvigateli kerak bo'lsa Drools (`KieContainer` bean) va modullarni parallel ishlatish uchun `@Async` bilan `ThreadPoolTaskExecutor`.
 
 **Qo'llanish keyslari:**
-- Tibbiy tashxis yordamchisida laboratoriya, tasvir va anamnez modullari umumiy gipoteza to'plamini boyitadi.
-- Fraud scoring'da bir nechta mustaqil detektor bitta tranzaksiya bo'yicha signal qo'shadi va yakuniy qaror shundan chiqadi.
-- Hujjatni tushunish quvuri: OCR, til aniqlash, entity extraction va validatsiya modullari ketma-ket emas, ishonch darajasiga qarab ishlaydi.
-- Sensor fusion: bir nechta IoT manba ma'lumotidan qurilma holati haqida yagona xulosa qurish.
-- Reja/marshrut optimizatsiyasida turli evristikalar umumiy yechim nomzodlarini yaxshilab boradi.
+- Tibbiy tashxis yordamchisida laboratoriya, tasvir va anamnez modullari umumiy gipoteza to'plamini bosqichma-bosqich boyitadi.
 
-**Ehtiyot bo'ling:** Blackboard juda kam uchraydigan uslub - oddiy pipeline yoki qoidalar dvigateli yetarli bo'lgan joyda uni tanlash tizimni tushunarsiz va debug qilish qiyin qiladi. Umumiy holatga bir nechta modul parallel yozsa, race condition va aniqlanmagan yakuniy natija (nondeterminizm) paydo bo'ladi, shuning uchun versiyalash yoki optimistik lock majburiy.
-
-```java
-// Blackboard arxitekturasi: umumiy holat, mustaqil ekspertlar
-@Service
-public class RiskBlackboard {
-    private final Map<String, Object> facts = new ConcurrentHashMap<>();
-
-    public void put(String key, Object value) { facts.put(key, value); }
-    public Optional<Object> get(String key) { return Optional.ofNullable(facts.get(key)); }
-}
-
-@Component
-class VelocityExpert {
-    boolean contribute(RiskBlackboard board) {
-        if (board.get("velocity").isPresent()) return false;
-        board.put("velocity", computeVelocity(board));
-        return true;                                  // yangi fakt qo'shdim
-    }
-}
-// Faqat determinant algoritmi yo'q masalalar uchun: aks holda Pipeline arzon
-```
+**Ehtiyot bo'ling:** Umumiy holatga bir nechta modul parallel yozsa race condition va nondeterministik yakuniy natija paydo bo'ladi, shuning uchun versiyalash yoki optimistik lock majburiy, oddiy pipeline yetarli joyda esa bu uslub tanlanmaydi.
 
 ## 12.21 Reaktiv Arxitektura (Reactive Architecture)
 
