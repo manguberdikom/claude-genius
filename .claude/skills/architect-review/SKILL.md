@@ -96,7 +96,8 @@ tools/doc.sh show architect <bob.bo'lim>    # faqat o'sha bo'lim
 tools/doc.sh checklist architect <bob>      # tekshiruv punktlari
 ```
 
-Konteyner ko'tarish (`docker run/build/pull/start`, `docker compose up`) va
-bazaga ulanish `tools/guard.py` tomonidan to'siladi: sxemani entity
-sinflari, sababni esa chiqish aytadi. Haqiqatan kerak bo'lsa buyruq oldiga
-`COST_OK=1` qo'yiladi va sababi aytiladi.
+Konteyner ko'tarish (`docker run/build/pull/start`, `docker compose up`)
+va bazaga ulanish `tools/guard.py` tomonidan foydalanuvchi qaroriga
+qo'yiladi (`ask`): jadval va ustunni entity sinflari, sababni esa
+chiqish aytadi. Avval shularni sinang; kerak bo'lsa nega yetmaganini
+aytib so'rang.

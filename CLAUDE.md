@@ -71,9 +71,10 @@ yaxshilamasa, u shunchaki pul va vaqt.
 | Diff to'g'rimi | `review` agenti, keyin maqsadli test |
 
 `docker up/run/build/pull/start` (compose bilan ham), bazaga ulanish va
-PowerShell `tools/guard.py` tomonidan to'siladi. Haqiqatan kerak bo'lsa
-buyruq oldiga `COST_OK=1` qo'yiladi va sababi aytiladi. `docker ps`,
-`docker logs` to'silmaydi.
+PowerShell `guard.py` tomonidan foydalanuvchi qaroriga qo'yiladi (`ask`):
+o'z-o'zidan yurgizilmaydi, nega arzon yo'l yetmagani aytib so'raladi.
+`docker ps`, `docker logs`, `psql --version` so'ralmaydi. Katta bobni
+butun o'qish esa to'siladi (`deny`).
 
 Og'ir o'qish `qidiruv` va `tahlil` (haiku) da, diffni `review` (sonnet)
 tekshiradi, kod va testni `arxitektor` va `test-muhandis` (sonnet) yozadi.

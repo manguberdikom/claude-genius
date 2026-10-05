@@ -49,8 +49,8 @@ dagi olti aktyorni yurgizadi.
 
 Hooklar `.claude/settings.json` da turadi va repoda o'zi ishlaydi: har
 so'rovga mos bo'lim taklif qilinadi (`suggest_sections.py`); katta bobni
-butun o'qish, konteyner, bazaga ulanish va PowerShell to'siladi
-(`guard.py`); Java fayl yozilganda mexanik qoidalar tekshiriladi va
+butun o'qish to'siladi, konteyner, bazaga ulanish va PowerShell esa
+foydalanuvchi qaroriga qo'yiladi (`guard.py`); Java fayl yozilganda mexanik qoidalar tekshiriladi va
 `rules_for.py` chaqirilgani talab qilinadi (`check_code.py`); zanjir
 aktyorlari (`rejalashtiruvchi`, `arxitektor`, `test-muhandis`, `review`)
 bir vazifada ko'pi bilan ikki martadan chaqiriladi, `qidiruv` va `tahlil`

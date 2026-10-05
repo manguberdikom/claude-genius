@@ -28,8 +28,10 @@ aytiladi.
    proyekt konvensiyasi. Uchalasida ham yo'q bo'lsa, "qo'llanmada yo'q,
    asosim shu" deb belgilanadi: bu to'g'ri javob bo'lishi mumkin.
 2. **Arzon yo'l oldin.** Javob kodda yoki chiqishda bo'lsa, u o'qiladi.
-   Konteyner, baza ulanishi va PowerShell **taqiqlangan** va `guard.py`
-   tomonidan to'siladi. Batafsil: `references/taqiq.md`.
+   Konteyner, baza ulanishi va PowerShell `guard.py` tomonidan
+   **foydalanuvchi qaroriga** qo'yiladi (`ask`): ularni o'z-o'zidan
+   yurgizmang, nega arzon yo'l yetmaganini aytib so'rang. Batafsil:
+   `references/taqiq.md`.
 3. **Og'ir o'qish asosiy sessiyada emas.** Ko'p o'qib oz qaytaradigan ish
    aktyorga uzatiladi, uzun chiqish ularning kontekstida qoladi.
 4. **Mezon bitta.** Arxitektor, test muhandisi va reviewer ishni

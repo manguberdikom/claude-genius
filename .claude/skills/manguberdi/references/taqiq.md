@@ -47,18 +47,20 @@ Nega: bu muhitda ishlamaydi va yozilgan skript tekshirilmagan bo'lib
 qoladi. Shu ishni `bash` yoki `python3` bilan bajaring: ikkalasi ham
 shu yerda sinaladi.
 
-## Chiqish yo'li
+## Qarorni kim qiladi
 
-Uchala holat ham **yopiq emas**. Haqiqatan kerak bo'lsa buyruq oldiga
-`COST_OK=1` qo'yiladi:
+Uchala holat ham **yopiq emas**: `guard.py` ularni `ask` bilan
+foydalanuvchi qaroriga qo'yadi, ya'ni buyruq o'z-o'zidan bajarilmaydi
+va o'z-o'zidan rad etilmaydi ham.
 
-```bash
-COST_OK=1 docker compose up -d
-```
+Avvalgi `COST_OK=1` qochish yo'li olib tashlandi: prefiksni modelning
+o'zi qo'yardi, ya'ni to'siq o'zini-o'zi ochardi. Endi prefiks hech
+narsani o'zgartirmaydi.
 
-Lekin shart: nega arzon yo'l yetmagani **aytiladi**. "Shunchaki
-ishonmadim" sabab emas. Sabab aytilmasa, bu taqiqni aylanib o'tish
-bo'ladi, qaror emas.
+Shuning uchun tartib shunday: avval arzon yo'lni sinang. Yetmasa,
+nega yetmaganini **aytib** so'rang: "entity da indeks yo'q, haqiqiy
+plan kerak" sabab, "shunchaki ishonmadim" sabab emas. Qaror
+foydalanuvchida.
 
 ## Yana nimalar qilinmaydi
 
