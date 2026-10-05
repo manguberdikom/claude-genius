@@ -14,6 +14,7 @@ qilish emas.
 """
 
 import argparse
+import errno
 import importlib.util
 import os
 import re
@@ -232,9 +233,19 @@ def main(argv=None):
 if __name__ == "__main__":
     # `| head` quvuri yopilganda Python BrokenPipeError beradi. Hisobot
     # asbobi buning uchun qulamasligi kerak: standart xatti-harakat
-    # tiklanadi va jarayon jim tugaydi.
+    # tiklanadi va jarayon jim tugaydi. Windows da SIGPIPE yo'q: yopiq
+    # quvurga yozish OSError (EINVAL) beradi.
     try:
         signal.signal(signal.SIGPIPE, signal.SIG_DFL)
     except (AttributeError, ValueError):
         pass
-    sys.exit(main())
+    try:
+        code = main()
+        sys.stdout.flush()
+    except OSError as exc:
+        if not isinstance(exc, BrokenPipeError) and exc.errno != errno.EINVAL:
+            raise
+        # Chiqishdagi flush qayta yiqilmasin.
+        os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+        code = 1
+    sys.exit(code)

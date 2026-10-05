@@ -30,12 +30,15 @@ import collections
 import os
 import random
 import re
+import shutil
 import subprocess
 import sys
 import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOC = os.path.join(ROOT, "tools", "doc.sh")
+# Windows .sh ni o'zi yurgiza olmaydi: bash PATH tartibida (test_doc.py kabi).
+SHELL = [shutil.which("bash") or "bash"] if os.name == "nt" else []
 SECTIONS = os.path.join(ROOT, "index", "sections.tsv")
 ALIASES = os.path.join(ROOT, "index", "aliases.tsv")
 
@@ -74,9 +77,9 @@ def rows(path):
 
 
 def run_find(query, full):
-    args = [DOC, "find", "-n", str(TOP_N)] + (["-f"] if full else []) + [query]
+    args = SHELL + [DOC, "find", "-n", str(TOP_N)] + (["-f"] if full else []) + [query]
     start = time.perf_counter()
-    proc = subprocess.run(args, capture_output=True, text=True, cwd=ROOT)
+    proc = subprocess.run(args, capture_output=True, encoding="utf-8", cwd=ROOT)
     elapsed = time.perf_counter() - start
     hits = []
     for line in proc.stdout.splitlines():
@@ -203,8 +206,8 @@ def test_ranking():
     print("\n== C. find -f reytingi (%d ta so'rov) ==" % len(RANK_QUERIES))
     ok, varied = True, False
     for query in RANK_QUERIES:
-        proc = subprocess.run([DOC, "find", "-f", "-n", str(TOP_N), query],
-                              capture_output=True, text=True, cwd=ROOT)
+        proc = subprocess.run(SHELL + [DOC, "find", "-f", "-n", str(TOP_N), query],
+                              capture_output=True, encoding="utf-8", cwd=ROOT)
         counts = [int(m.group(1)) for m in
                   (COUNT_RE.search(l) for l in proc.stdout.splitlines()) if m]
         good = bool(counts) and counts == sorted(counts, reverse=True)
@@ -218,6 +221,9 @@ def test_ranking():
 
 
 def main():
+    # Topilmagan atama ro'yxati Windows quvuridagi kod sahifasida yo'q belgi
+    # bilan yiqilmasin.
+    sys.stdout.reconfigure(encoding="utf-8")
     sample_size = int(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_SAMPLE
     if not os.path.exists(SECTIONS):
         build = os.path.join(ROOT, "tools", "build_index.py")

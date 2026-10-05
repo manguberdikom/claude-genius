@@ -150,8 +150,10 @@ def ci_log(fixture, text, prefix):
 
 def run(path=None, text=None):
     args = [sys.executable, TOOL] + ([path] if path else [])
+    # Asbob UTF-8 o'qiydi va yozadi; locale kod sahifasi (cp1251) BOM ni
+    # yubora olmaydi.
     proc = subprocess.run(args, input=text, capture_output=True,
-                          text=True, cwd=ROOT)
+                          encoding="utf-8", cwd=ROOT)
     return proc.returncode, proc.stdout
 
 

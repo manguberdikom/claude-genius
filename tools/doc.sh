@@ -148,7 +148,10 @@ fulltext() {
   # lo/hi: bir faylning bo'limlari indeksda ketma-ket turadi, shuning uchun
   # har topilgan satr uchun 3293 ta emas, faqat shu fayl bo'limlari ko'riladi.
   # Oxirgi sort: topilish soni ko'p bo'lim yuqorida turadi.
-  { cd "$ROOT" && grep -rnFi --include='*.md' -- "$query" docs || true; } \
+  # LC_ALL: Git for Windows dagi grep 3.0 C locale da -F va -i birga
+  # kelsa har safar qulaydi (Aborted), `|| true` esa buni yashirardi.
+  # env orqali: locale yo'q tizimda bash ogohlantirish chiqarmasin.
+  { cd "$ROOT" && env LC_ALL=C.UTF-8 grep -rnFi --include='*.md' -- "$query" docs || true; } \
     | cut -d: -f1,2 \
     | awk -F'\t' '
         NR==FNR {

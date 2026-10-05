@@ -20,6 +20,11 @@ import time
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOC = os.path.join(ROOT, "tools", "doc.sh")
 INDEX = os.path.join(ROOT, "index")
+# Windows .sh ni o'zi yurgiza olmaydi (WinError 193), bash orqali beriladi.
+# Yalang `bash` ni CreateProcess PATH dan oldin System32 dan qidiradi (u
+# yerdagisi WSL), which esa PATH tartibida: Git Bash da Git ning bash'i.
+BASH = shutil.which("bash") or "bash"
+SHELL = [BASH] if os.name == "nt" else []
 
 
 def clean_env(**extra):
@@ -31,8 +36,9 @@ def clean_env(**extra):
 
 
 def run(*args, doc=DOC, env=None):
-    return subprocess.run([doc] + list(args), capture_output=True,
-                          text=True, cwd=os.path.dirname(os.path.dirname(doc)),
+    # doc.sh UTF-8 yozadi, locale kod sahifasi (cp1251) emas.
+    return subprocess.run(SHELL + [doc] + list(args), capture_output=True,
+                          encoding="utf-8", cwd=os.path.dirname(os.path.dirname(doc)),
                           env=clean_env() if env is None else env)
 
 
@@ -77,6 +83,8 @@ CASES = [
     ("find topilmadi", ["find", "zzqwertyuiop"], 1, ""),
     # Natija 64 KB dan katta: head bilan printf SIGPIPE olib 141 berardi.
     ("find ko'p natija", ["find", "-f", "spring"], 0, ""),
+    # Faqat matnda bor atama: taxallus qidiruvi topmaydi, grep topishi shart.
+    ("find -f matn ichidan", ["find", "-f", "testCreate1"], 0, r"^architect +4\.10 "),
     ("find -n manfiy", ["find", "-n", "-5", "va"], 1, ""),
     ("find -n nol", ["find", "-n", "0", "va"], 1, ""),
     ("find unicode apostrof", ["find", "oʻzgarmas"], 0, "4.16"),
@@ -156,7 +164,7 @@ def check_find_hint():
     if not hint:
         return False, "maslahat yo'q"
     command = hint[0].split(": ", 1)[1]
-    ok = subprocess.run(["bash", "-n", "-c", command],
+    ok = subprocess.run([BASH, "-n", "-c", command],
                         capture_output=True).returncode == 0
     return ok, "" if ok else command
 
@@ -317,6 +325,8 @@ CHECKS = [
 
 
 def main():
+    # Argumentdagi `ʻ` Windows quvuridagi kod sahifasida yo'q.
+    sys.stdout.reconfigure(encoding="utf-8")
     failures = 0
     for name, args, want_code, needle in CASES:
         proc = run(*args)
