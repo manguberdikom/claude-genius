@@ -38,7 +38,7 @@ Sonar test kodini ham production kod kabi tahlil qiladi, lekin boshqa qoida to'p
 | `Thread.sleep(2000)` test ichida | `java:S2925`: testda `Thread.sleep` ishlatilmasin | reliability (bug) | Critical | Flaky test va sekin CI |
 | `static` o'zgaruvchan maydonga yozish | `java:S2696`: instance metod static maydonga yozmasin | reliability (bug) | Major | Testlar bajarilish tartibiga bog'lanadi |
 | `void test1()` kabi nomlar | `java:S100`: metod nomi konventsiyaga mos bo'lsin | maintainability (code smell) | Minor | Buzilgan test nimani anglatishini hisobot ko'rsatmaydi |
-| Kutilgan natija `BigDecimal("1187.5")` | `java:S109`: magic number izohlanmagan | maintainability (code smell) | Minor | Qoida o'zgarganda raqam manbasi noma'lum |
+| Kutilgan natija `BigDecimal("1187.5")` | Sonar qoidasi yo'q: `java:S109` ning `scope` i `Main` | - | - | Qoida o'zgarganda raqam manbasi noma'lum |
 | Har testda takrorlangan setup | duplicated blocks, duplication density o'sadi | maintainability (code smell) | Major | Gate ning duplication sharti buziladi |
 | Bitta testda 20 dan ortiq assertion | `java:S5961`: testda juda ko'p assertion | maintainability (code smell) | Major | Birinchi xato qolganini yashiradi |
 | `...Test` klassida test metodi yo'q | `java:S2187`: test klassi test o'z ichiga olishi kerak | maintainability (code smell) | Blocker | Fayl test deb o'qiladi, hech narsa bajarilmaydi |
@@ -297,7 +297,7 @@ void calculateTotal_hammasini_hisoblaydi() {
 }
 ```
 
-`java:S109` izohlanmagan sonli konstantalarni belgilaydi va ko'p profilda bu qoida test fayllariga ham qo'llanadi. Asl muammo kengroq: `1285.20` qayerdan chiqqanini test tushuntirmaydi. QQS stavkasi o'zgarganda yangi developer raqamni qayta hisoblashni bilmaydi va testni shunchaki yangi natijaga moslashtiradi. Shu paytda test regressiyani ushlash qobiliyatini yo'qotadi.
+`java:S109` izohlanmagan sonli konstantalarni belgilaydi, lekin uning `scope` i `Main`: test fayllariga qo'llanmaydi, ya'ni bu yozuvda Sonar jim turadi (19.9 bilan bir xil). Muammo shunday ham qoladi: `1285.20` qayerdan chiqqanini test tushuntirmaydi. QQS stavkasi o'zgarganda yangi developer raqamni qayta hisoblashni bilmaydi va testni shunchaki yangi natijaga moslashtiradi. Shu paytda test regressiyani ushlash qobiliyatini yo'qotadi.
 
 ```java
 private static final BigDecimal BIRLIK_NARXI = new BigDecimal("450.00");
