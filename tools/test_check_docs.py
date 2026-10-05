@@ -64,7 +64,8 @@ def chapter(n):
 
 
 FILES = {
-    "README.md": "# Kitob\n\n[Sinov](docs/sinov/README.md)\n",
+    "README.md": ("# Kitob\n\nJami 2 bob, 4 bo'lim.\n\n"
+                  "| [Sinov](docs/sinov/README.md) | 2 bob, 4 bo'lim |\n"),
     "CLAUDE.md": ("# Ko'rsatma\n\n`tools/doc.sh show sinov 1.1`\n\n"
                   "```bash\npython3 tools/asbob.py\n```\n"),
     "tools/doc.sh": "case \"$1\" in\n  show) cmd_show ;;\n  find) cmd_find ;;\nesac\n",
@@ -191,6 +192,21 @@ CASES = [
     ("buzuq naqsh aytiladi",
      expect(("tools/known_errors.tsv", "xatoso'z\t", "[buzuq(\t"),
             "naqsh buzuq")),
+    # 9. Qo'lda yozilgan sonlar.
+    ("hujjat nomli qatorda bob soni eskirgan",
+     expect(("README.md", "| [Sinov](docs/sinov/README.md) | 2 bob",
+             "| [Sinov](docs/sinov/README.md) | 7 bob"),
+            "7 bob yozilgan, sinov da 2 ta")),
+    ("hujjat nomli qatorda bo'lim soni eskirgan",
+     expect(("README.md", "2 bob, 4 bo'lim |", "2 bob, 9 bo'lim |"),
+            "9 bo'lim yozilgan, sinov da 4 ta")),
+    ("jami bob soni hech narsaga mos emas",
+     expect(("README.md", "Jami 2 bob", "Jami 5 bob"),
+            "5 bob hech bir hujjatga va jamiga (2) mos emas")),
+    ("kod bloki ichidagi son tekshirilmaydi",
+     lambda tmp: run(tmp, "fence_ichida",
+                     ("README.md", "Jami 2 bob, 4 bo'lim.",
+                      "```text\nJami 99 bob\n```")) == []),
 ]
 
 

@@ -1,6 +1,6 @@
 # Java, Spring va PostgreSQL bo'yicha oltita qo'llanma
 
-O'zbek tilidagi oltita bir-birini to'ldiruvchi hujjat: 223 bob, 3293 bo'lim,
+O'zbek tilidagi oltita bir-birini to'ldiruvchi hujjat: 224 bob, 3293 bo'lim,
 2300 dan ortiq kod misoli. Har bir hujjat bir savolga javob beradi va
 qolganlariga mavzu nomi bilan havola qiladi. Ba'zi mavzular bir nechta
 hujjatda uchraydi, chunki ular har bir nuqtadan boshqacha ko'rinadi:
@@ -8,7 +8,7 @@ masalan N+1 so'rovi pattern, arxitektura, review va Sonar tomonidan.
 
 | Hujjat | Hajm | Qanday savolga javob beradi |
 |---|---|---|
-| [Dizayn patternlar](docs/patterns/README.md) | 30 bo'lim, 1007 yozuv (996 noyob pattern) | Bu muammoga qaysi pattern to'g'ri keladi |
+| [Dizayn patternlar](docs/patterns/README.md) | 31 bob, 1037 bo'lim | Bu muammoga qaysi pattern to'g'ri keladi |
 | [Testlash qo'llanmasi](docs/testing/README.md) | 18 bob, 239 bo'lim | Buni qanday test qilaman |
 | [Arxitektor miyasi](docs/architect/README.md) | 39 bob, 482 bo'lim | Ichkarida nima sodir bo'ladi va qanday qaror chiqaraman |
 | [SonarQube](docs/sonarqube/README.md) | 43 bob, 557 bo'lim | Statik tahlil nimadan shikoyat qilyapti va qanday tuzataman |
@@ -86,7 +86,7 @@ yoziladi, nima yozilmaydi, qayerga, qanday format va qachon o'chiriladi.
 
 ## Tez qidirish
 
-Korpus katta (~6.5 MB), shuning uchun bob fayli butunligicha emas,
+Korpus katta (~6.4 MB), shuning uchun bob fayli butunligicha emas,
 bo'lim darajasida o'qiladi:
 
 ```bash

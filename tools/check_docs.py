@@ -28,6 +28,11 @@ Tekshiradi:
                     Tuzatilgan mazmun xatosi keyingi tahrirda jim
                     qaytib kelishi mumkin, shuning uchun u naqsh bo'lib
                     yoziladi va shu yerda qo'riqlanadi.
+  9. Sonlar       - README.md, CLAUDE.md va install/README.md da qo'lda
+                    yozilgan "N bob" va "N bo'lim" manifestdan
+                    hisoblangan songa mos. Qator hujjat nomini aytsa
+                    aynan o'shasi, aytmasa hech bo'lmaganda biror
+                    hujjatning yoki jamining soni bo'lishi kerak.
 """
 import json, os, re, sys, unicodedata
 
@@ -163,6 +168,43 @@ def check_regression(files):
                 line = text[:match.start()].count('\n') + 1
                 err(f"{rel}:{line}: tuzatilgan xato qaytdi -> {pattern} "
                     f"({note})")
+
+
+# 9. Qo'lda yozilgan sonlar shu fayllarda tekshiriladi. docs/*/README.md
+# bu yerda yo'q: undagi bob bo'yicha sonlarni 6-tekshiruv solishtiradi.
+COUNT_DOCS = ('README.md', 'CLAUDE.md', 'install/README.md')
+COUNT_RE = re.compile(r"(\d+)\s+(bob|bo'lim)\b")
+
+
+def check_counts(manifest):
+    """9. "N bob" va "N bo'lim" manifestdan hisoblangan songa mos."""
+    chapters = {key: len(doc.get('chapters', [])) for key, doc in manifest.items()}
+    sections = {key: sum(c.get('sections', 0) for c in doc.get('chapters', []))
+                for key, doc in manifest.items()}
+    totals = {'bob': sum(chapters.values()), "bo'lim": sum(sections.values())}
+    allowed = {'bob': set(chapters.values()) | {totals['bob']},
+               "bo'lim": set(sections.values()) | {totals["bo'lim"]}}
+    per_doc = {'bob': chapters, "bo'lim": sections}
+
+    for rel in COUNT_DOCS:
+        path = os.path.join(ROOT, rel)
+        if not os.path.exists(path):
+            continue
+        text = strip_fences(open(path, encoding='utf-8').read())
+        for number, line in enumerate(text.split('\n'), 1):
+            # Qator qaysi hujjat haqida: `docs/<kalit>/` yoki `<kalit>`.
+            named = [k for k in manifest
+                     if 'docs/%s/' % k in line or '`%s`' % k in line]
+            for match in COUNT_RE.finditer(line):
+                value, unit = int(match.group(1)), match.group(2)
+                if len(named) == 1:
+                    want = per_doc[unit][named[0]]
+                    if value != want:
+                        err(f"{rel}:{number}: {value} {unit} yozilgan, "
+                            f"{named[0]} da {want} ta (manifestdan)")
+                elif value not in allowed[unit]:
+                    err(f"{rel}:{number}: {value} {unit} hech bir hujjatga "
+                        f"va jamiga ({totals[unit]}) mos emas")
 
 
 def main():
@@ -388,6 +430,13 @@ def main():
 
     # 8. Regressiya: tuzatilgan xato naqshi qaytib kelmaganmi.
     check_regression(files)
+
+    # 9. Qo'lda yozilgan bob va bo'lim sonlari.
+    try:
+        check_counts(json.load(open(os.path.join(ROOT, 'docs', 'manifest.json'),
+                                    encoding='utf-8')))
+    except (OSError, ValueError):
+        pass          # manifest muammosini 4-tekshiruv aytadi
 
     print(f"{len(files)} markdown fayl, {total} nisbiy havola tekshirildi")
     for w in warnings:

@@ -11,7 +11,7 @@
 ## Struktura
 
 Oltita hujjat, har biri `docs/<hujjat>/` papkasida, har bob alohida faylda:
-`patterns` (30 bob, 1007 yozuv), `testing` (18 bob), `architect` (39 bob),
+`patterns` (31 bob), `testing` (18 bob), `architect` (39 bob),
 `sonarqube` (43 bob), `clean-code` (49 bob), `code-review` (44 bob).
 
 - `docs/<hujjat>/README.md` - mundarija va kirish.
@@ -28,7 +28,7 @@ Oltita hujjat, har biri `docs/<hujjat>/` papkasida, har bob alohida faylda:
 
 ## Qidirish va o'qish
 
-Korpus ~6.5 MB, eng katta bob ~200 KB, bitta bo'lim esa ~1.7 KB. Shuning
+Korpus ~6.4 MB, eng katta bob ~200 KB, bitta bo'lim esa ~2 KB. Shuning
 uchun bob butunligicha emas, bo'lim darajasida o'qiladi.
 
 ```bash
