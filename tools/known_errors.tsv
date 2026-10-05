@@ -1,0 +1,21 @@
+# Tuzatilgan mazmun xatolari. Naqsh qaytib kelsa check_docs xato beradi.
+#
+# naqsh      - Python re sintaksisi. Registrga BEFARQ solishtiriladi.
+# izoh       - nega xato, bir qatorda. Hisobotda shu matn chiqadi.
+# qamrov     - vergul bilan: docs, claude, root. Bo'sh bo'lsa uchalasi.
+#
+# Qoida: xato tuzatilganda shu yerga naqsh bo'lib tushadi, aks holda u
+# keyingi tahrirda jim qaytib keladi. Naqsh faqat xatoni tutishi kerak:
+# to'g'ri matnni tutadigan naqsh butun tekshiruvni ishonchsiz qiladi.
+#
+# COST_OK ataylab yo'q: u olib tashlangan mexanizm, lekin taqiq.md
+# uni nega olib tashlangani uchun ataylab tilga oladi. Olib
+# tashlangan mexanizmni tools/test_guard.py qo'riqlaydi, naqsh emas.
+naqsh	izoh	qamrov
+miyyasi	hujjat nomi "Arxitektor miyasi", ikki y bilan emas	
+anti[ -]view	anti-pattern nomi; "Anti View" degan atama yo'q	docs
+CGLIQ	CGLIB nomi xato yozilgan	
+yakkalash	RoundingMode konteksida to'g'ri so'z "yaxlitlash"	docs
+to'liq tasvirlaydi	entity sinflari sxemani to'liq tasvirlamaydi: indeks, constraint va plan faqat bazada	
+bashOutputMaxChars	Claude Code sozlama sxemasida yo'q kalit; faqat migratsiya qoidasida uchraydi	docs,claude
+java:S2229[^\n]{0,200}public bo'lmagan	public bo'lmagan metod qoidasi java:S2230, S2229 esa mos kelmaydigan @Transactional qiymatlari	docs

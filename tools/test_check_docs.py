@@ -81,6 +81,12 @@ FILES = {
         "- **2.** [Ikkinchi bob](02-ikkinchi.md) - 2 bo'lim\n"),
     "docs/sinov/01-birinchi.md": chapter(1),
     "docs/sinov/02-ikkinchi.md": chapter(2),
+    # 8. Regressiya naqshlari. Fixture da ataylab ikki qator: biri oddiy
+    # so'z, biri kontekstli (naqsh to'g'ri matnni tutmasligi sinaladi).
+    "tools/known_errors.tsv": (
+        "naqsh\tizoh\tqamrov\n"
+        "xatoso'z\tsinov uchun naqsh\tdocs\n"
+        "java:S9999[^\\n]{0,80}public bo'lmagan\tkontekstli naqsh\tdocs\n"),
 }
 
 
@@ -167,6 +173,24 @@ CASES = [
      expect((SKILL, "`docs/sinov/02-ikkinchi.md`", "`docs/sinov/`"),
             "docs/sinov: 2-bob hech qaysi skill")),
     ("UNROUTED_OK dagi bob kechiriladi", excused),
+    # 8. Regressiya.
+    ("tuzatilgan xato qaytsa xato beradi",
+     expect((CH1, "Matn.", "Matn xatoso'z bilan."), "tuzatilgan xato qaytdi")),
+    ("naqsh qator raqamini beradi",
+     expect((CH1, "Matn.", "Matn xatoso'z bilan."), "01-birinchi.md:9")),
+    ("kontekstli naqsh mos kelsa tutadi",
+     expect((CH1, "Matn.", "`java:S9999` public bo'lmagan metod."),
+            "tuzatilgan xato qaytdi")),
+    ("kontekstli naqsh uzoq matnni tutmaydi",
+     lambda tmp: run(tmp, "uzoq_kontekst",
+                     (CH1, "Matn.", "`java:S9999` kaliti. " + "to'ldiruvchi " * 12
+                      + "public bo'lmagan metod.")) == []),
+    ("qamrovdan tashqari fayl tekshirilmaydi",
+     lambda tmp: run(tmp, "qamrov_tashqari",
+                     ("CLAUDE.md", "# Ko'rsatma", "# Ko'rsatma xatoso'z")) == []),
+    ("buzuq naqsh aytiladi",
+     expect(("tools/known_errors.tsv", "xatoso'z\t", "[buzuq(\t"),
+            "naqsh buzuq")),
 ]
 
 

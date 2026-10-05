@@ -24,6 +24,10 @@ Tekshiradi:
                     boblarga ishora qiladi va oxirida turadi.
   7. Konvensiya   - har bobning oxirgi `##` bo'limi `Amalda qo'llash` yoki
                     `Arxitektor nazorat ro'yxati`.
+  8. Regressiya   - tools/known_errors.tsv dagi naqsh qaytib kelmaganmi.
+                    Tuzatilgan mazmun xatosi keyingi tahrirda jim
+                    qaytib kelishi mumkin, shuning uchun u naqsh bo'lib
+                    yoziladi va shu yerda qo'riqlanadi.
 """
 import json, os, re, sys, unicodedata
 
@@ -89,6 +93,76 @@ def heading_anchors(text):
             seen[base] = n + 1
             anchors.add(base if n == 0 else f"{base}-{n}")
     return anchors
+
+
+def known_errors():
+    """known_errors.tsv dagi qatorlar: [(naqsh, regex, izoh, qamrov)]."""
+    path = os.path.join(ROOT, 'tools', 'known_errors.tsv')
+    if not os.path.exists(path):
+        return []
+    rows, header = [], None
+    with open(path, encoding='utf-8') as handle:
+        for line in handle:
+            line = line.rstrip('\n')
+            if not line.strip() or line.startswith('#'):
+                continue
+            parts = line.split('\t')
+            if header is None:
+                header = parts
+                continue
+            pattern = parts[0].strip()
+            note = parts[1].strip() if len(parts) > 1 else ''
+            scope = parts[2].strip() if len(parts) > 2 else ''
+            scopes = {s.strip() for s in scope.split(',') if s.strip()}
+            try:
+                rx = re.compile(pattern, re.I)
+            except re.error as exc:
+                err(f"tools/known_errors.tsv: naqsh buzuq -> {pattern} ({exc})")
+                continue
+            rows.append((pattern, rx, note, scopes or {'docs', 'claude', 'root'}))
+    return rows
+
+
+def scope_of(rel):
+    """Fayl qaysi qamrovga tegishli: docs, claude yoki root."""
+    head = rel.replace('\\', '/').split('/')[0]
+    if head == 'docs':
+        return 'docs'
+    if head == '.claude':
+        return 'claude'
+    return 'root'
+
+
+# Regressiya tekshiruvi o'z naqshlarini o'zi ham ushlab qolmasin.
+REGRESSION_SKIP = {'tools/known_errors.tsv'}
+
+
+def check_regression(files):
+    """8. known_errors.tsv dagi naqsh docs/, .claude/ yoki ildizda topilmasin."""
+    rows = known_errors()
+    if not rows:
+        return
+    # Ildizda faqat qoida matni o'qiladigan fayllar; butun repo emas.
+    root_docs = ('README.md', 'CONTRIBUTING.md', 'CLAUDE.md', 'DECISIONS.md',
+                 'GLOSSARY.md', 'install/README.md')
+    targets = [f for f in files if scope_of(f) in ('docs', 'claude')]
+    targets += [f for f in root_docs if os.path.exists(os.path.join(ROOT, f))]
+    for rel in sorted(set(targets)):
+        if rel in REGRESSION_SKIP:
+            continue
+        where = scope_of(rel)
+        try:
+            text = open(os.path.join(ROOT, rel), encoding='utf-8').read()
+        except OSError:
+            continue
+        for pattern, rx, note, scopes in rows:
+            if where not in scopes:
+                continue
+            match = rx.search(text)
+            if match:
+                line = text[:match.start()].count('\n') + 1
+                err(f"{rel}:{line}: tuzatilgan xato qaytdi -> {pattern} "
+                    f"({note})")
 
 
 def main():
@@ -311,6 +385,9 @@ def main():
                         f"`Arxitektor nazorat ro'yxati` bilan tugamaydi")
                 elif c['num'] and h2 and not re.match(closing, h2[-1]):
                     err(f"{where}: oxirgi bo'lim yopish bo'limi emas -> {h2[-1][:50]}")
+
+    # 8. Regressiya: tuzatilgan xato naqshi qaytib kelmaganmi.
+    check_regression(files)
 
     print(f"{len(files)} markdown fayl, {total} nisbiy havola tekshirildi")
     for w in warnings:
