@@ -5,6 +5,7 @@
     python3 tools/budget.py dasturchi               # +1, uchinchida xato
     python3 tools/budget.py --holat                  # jadval
     python3 tools/budget.py --tiklash dasturchi     # bitta qadamni qaytarish
+    python3 tools/budget.py --tiklash dasturchi --guruh orders
 
 `PreToolUse` hook sifatida ham ishlaydi: stdin ga JSON kelsa, `Task`
 yoki `Agent` chaqiruvidagi aktyorni o'zi oladi va uchinchisini to'sadi.
@@ -24,6 +25,12 @@ o'rnatishdagi proyektlar bir-birini to'smaydi. Holat
 `.claude/.state/budget.json` da (`GENIUS_STATE_DIR` bilan
 almashtiriladi), bir vaqtdagi hooklar qulf bilan navbatlashadi.
 
+Parallel guruhlar: aktyor promptidagi `guruh: <id>` qatori hisobni
+guruhga ajratadi. Ikki guruh bir sessiyada parallel ishlasa, ularning
+dasturchi chaqiruvlari bitta hisobga tushib, birinchi guruhning ikkinchi
+aylanasi ikkinchi guruhning birinchi chaqiruvi tufayli to'silardi.
+Qatorsiz chaqiruv eski xulqda: bitta umumiy hisob.
+
 Zanjirdagi to'rtta aktyor sanaladi. `qidiruv` va `tahlil` sanalmaydi:
 ular zanjir qadami emas, o'qish asbobi, va ularni cheklash arzon
 yo'lni qimmat qiladi.
@@ -32,6 +39,7 @@ yo'lni qimmat qiladi.
 import contextlib
 import json
 import os
+import re
 import sys
 import time
 
@@ -74,6 +82,19 @@ Nima bajarildi, nima qolgan va nima yetishmayotganini yozib, aniq
 savol bering. Foydalanuvchi javob bergach budjet o'zi yangilanadi.
 Keyin memory bosqichi: qolgan kamchilik feedback nomzodi.
 """
+
+
+GROUP_RE = re.compile(r"(?im)^\s*\[?guruh:\s*([\w.-]+)")
+
+
+def group_of(prompt):
+    """Aktyor promptidagi `guruh: <id>` qatori, yo'q bo'lsa ''."""
+    match = GROUP_RE.search(prompt or "")
+    return match.group(1) if match else ""
+
+
+def counter(actor, group=""):
+    return "%s/%s" % (group, actor) if group else actor
 
 
 @contextlib.contextmanager
@@ -218,30 +239,35 @@ def status():
     if note:
         print(note)
     print("Vazifa: %s" % (slot.get("task") or "nomsiz"))
-    print("\n%-18s %-10s %s" % ("aktyor", "chaqiruv", "holat"))
-    for actor in ACTORS:
-        used = slot["calls"].get(actor, 0)
-        state = "-" if not used else ("tugadi" if used >= LIMIT else "qoldi 1")
-        print("%-18s %-10s %s" % (actor, "%d/%d" % (used, LIMIT), state))
+    groups = sorted({key.split("/", 1)[0] for key in slot["calls"] if "/" in key})
+    for group in [""] + groups:
+        if group:
+            print("\nGuruh: %s" % group)
+        print("\n%-18s %-10s %s" % ("aktyor", "chaqiruv", "holat"))
+        for actor in ACTORS:
+            used = slot["calls"].get(counter(actor, group), 0)
+            state = "-" if not used else ("tugadi" if used >= LIMIT else "qoldi 1")
+            print("%-18s %-10s %s" % (actor, "%d/%d" % (used, LIMIT), state))
     return 0
 
 
-def restore(actor):
+def restore(actor, group=""):
+    name = counter(actor, group)
     with locked():
         data = load()
         key, note = cli_key(data)
         slot = slot_of(data, key, here())
-        used = slot["calls"].get(actor, 0)
+        used = slot["calls"].get(name, 0)
         if used:
-            slot["calls"][actor] = used - 1
+            slot["calls"][name] = used - 1
             save(data)
     if note:
         print(note)
-    print("%s: %d/%d" % (actor, slot["calls"].get(actor, 0), LIMIT))
+    print("%s: %d/%d" % (name, slot["calls"].get(name, 0), LIMIT))
     return 0
 
 
-def blocked(actor, used):
+def blocked(actor, used, group=""):
     """To'siq matni. Buyruq klon ichida nisbiy, boshqa proyektda mutlaq.
 
     Import xatosi to'siqni buzmasin: hook yiqilsa chaqiruv o'tib ketadi.
@@ -251,34 +277,36 @@ def blocked(actor, used):
         rules = tool_cmd("rules_for.py")
     except (ImportError, OSError):
         rules = "python3 tools/rules_for.py"
-    return BLOCKED % (actor, used, LIMIT, rules)
+    return BLOCKED % (counter(actor, group) if group else actor, used, LIMIT, rules)
 
 
-def take(actor, key=None, cwd="", call_id=None):
+def take(actor, key=None, cwd="", call_id=None, group=""):
     """Bitta chaqiruvni hisobga oladi. Chegara oshsa (xabar, False).
 
     key None bo'lsa CLI chaqiruvi: sessiya cli_key bilan tanlanadi.
+    group bo'lsa hisob shu guruhniki: parallel guruhlar bir-birini to'smaydi.
     """
     if actor not in ACTORS:
         return "", True            # sanalmaydigan aktyor erkin
+    name = counter(actor, group)
     with locked():
         data = load()
         if key is None:
             key, cwd = cli_key(data)[0], here()
         slot = slot_of(data, key, cwd)
-        used = slot["calls"].get(actor, 0)
+        used = slot["calls"].get(name, 0)
         ids = slot.setdefault("ids", [])
         if call_id and call_id in ids:
-            return "%s: %d/%d chaqiruv" % (actor, used, LIMIT), True
+            return "%s: %d/%d chaqiruv" % (name, used, LIMIT), True
         over = used >= LIMIT
         if not over:
-            slot["calls"][actor] = used + 1
+            slot["calls"][name] = used + 1
             if call_id:
                 slot["ids"] = (ids + [call_id])[-SEEN_IDS:]
             save(data)
     if over:                       # matn qulfdan tashqarida yasaladi
-        return blocked(actor, used), False
-    return "%s: %d/%d chaqiruv" % (actor, used + 1, LIMIT), True
+        return blocked(actor, used, group), False
+    return "%s: %d/%d chaqiruv" % (name, used + 1, LIMIT), True
 
 
 def hook(payload):
@@ -291,8 +319,10 @@ def hook(payload):
         return 0
     if payload.get("tool_name") not in ("Task", "Agent"):
         return 0
-    actor = (payload.get("tool_input") or {}).get("subagent_type") or ""
-    message, allowed = take(actor, key, cwd, payload.get("tool_use_id"))
+    tool_input = payload.get("tool_input") or {}
+    actor = tool_input.get("subagent_type") or ""
+    message, allowed = take(actor, key, cwd, payload.get("tool_use_id"),
+                            group_of(tool_input.get("prompt")))
     if not allowed:
         json.dump({"hookSpecificOutput": {
             "hookEventName": "PreToolUse",
@@ -316,12 +346,18 @@ def main():
         return status()
     if args[0] == "--yangi-vazifa":
         return new_task(args[1] if len(args) > 1 else "")
+    group = ""
+    if "--guruh" in args:
+        at = args.index("--guruh")
+        group = args[at + 1] if at + 1 < len(args) else ""
+        args = args[:at] + args[at + 2:]
     if args[0] == "--tiklash":
         if len(args) < 2:
-            print("foydalanish: budget.py --tiklash <aktyor>", file=sys.stderr)
+            print("foydalanish: budget.py --tiklash <aktyor> [--guruh <id>]",
+                  file=sys.stderr)
             return 2
-        return restore(args[1])
-    message, allowed = take(args[0])
+        return restore(args[1], group)
+    message, allowed = take(args[0], group=group)
     print(message or "%s sanalmaydi (zanjir aktyori emas)" % args[0])
     return 0 if allowed else 1
 

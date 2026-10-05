@@ -99,6 +99,19 @@ def parallel(payloads):
     return out
 
 
+def hook_group(actor, group, call_id=None):
+    """Aktyor prompti `guruh: <id>` qatori bilan, orkestrator yozgandek."""
+    data = {"hook_event_name": "PreToolUse", "tool_name": "Agent",
+            "tool_input": {"subagent_type": actor,
+                           "prompt": "guruh: %s\nVazifa: ..." % group},
+            "session_id": SESSION}
+    if call_id:
+        data["tool_use_id"] = call_id
+    proc = subprocess.run([sys.executable, TOOL], input=json.dumps(data),
+                          capture_output=True, text=True, cwd=STATE, env=env_for())
+    return decision(proc.stdout)
+
+
 def state():
     with open(LOG, encoding="utf-8") as handle:
         return json.load(handle)
@@ -331,6 +344,33 @@ def case_yangi_sorov_nolga(_):
             and hook("Agent", "dasturchi") == "allow")
 
 
+def case_guruhlar_bir_birini_tosmaydi(_):
+    """Ikki guruh parallel: har biri o'z ikki chaqiruvini oladi."""
+    run("--yangi-vazifa", "partiya")
+    got = [hook_group("dasturchi", "orders"), hook_group("dasturchi", "billing"),
+           hook_group("dasturchi", "orders"), hook_group("dasturchi", "billing")]
+    third = hook_group("dasturchi", "orders")
+    other = hook_group("test-muhandis", "orders")
+    return got == ["allow"] * 4 and third == "deny" and other == "allow"
+
+
+def case_guruhsiz_eski_xulq(_):
+    run("--yangi-vazifa", "bitta")
+    first = [hook("Agent", "review"), hook("Agent", "review")]
+    return first == ["allow", "allow"] and hook("Agent", "review") == "deny"
+
+
+def case_guruh_holat_va_tiklash(_):
+    run("--yangi-vazifa", "holat")
+    hook_group("dasturchi", "orders")
+    hook_group("dasturchi", "orders")
+    _, before = run("--holat")
+    code, out = run("--tiklash", "dasturchi", "--guruh", "orders")
+    after = hook_group("dasturchi", "orders")
+    return ("Guruh: orders" in before and code == 0
+            and "orders/dasturchi: 1/2" in out and after == "allow")
+
+
 CASES = [
     ("ikki chaqiruv o'tadi", case_ikki_marta),
     ("uchinchisi to'siladi", case_uchinchi_tosiladi),
@@ -356,6 +396,9 @@ CASES = [
     ("parallel aktyorlar saqlanadi", case_parallel_aktyorlar_saqlanadi),
     ("bitta chaqiruv bir marta sanaladi", case_bir_chaqiruv_bir_marta),
     ("yangi so'rov hisobni nolga tushiradi", case_yangi_sorov_nolga),
+    ("guruhlar bir-birini to'smaydi", case_guruhlar_bir_birini_tosmaydi),
+    ("guruhsiz chaqiruv eski xulqda", case_guruhsiz_eski_xulq),
+    ("guruh holati va tiklash", case_guruh_holat_va_tiklash),
 ]
 
 
