@@ -1,6 +1,7 @@
 <#
 .SYNOPSIS
-  Claude Code sozlamalarini tozalaydi va faqat manguberdi skillini o'rnatadi.
+  manguberdi skillini, olti aktyorni va hooklarni o'rnatadi. Sukut bo'yicha
+  boshqa Claude Code sozlamalariga TEGMAYDI.
 
 .DESCRIPTION
   Bu skript SIZNING Windows mashinangizda ishlaydi, agent sessiyasida
@@ -16,11 +17,18 @@
   sinaydi, keyin uni o'chiradi: nosozlik hech narsa o'chmasidan oldin
   chiqadi. Avval ro'yxatni o'qing.
 
-  Nima o'chiriladi (global, $HOME\.claude; -Update da faqat manguberdi
-  birliklari, pastda):
+  SUKUT (qo'shuvchi). Faqat shu birliklar almashadi:
+    skills\manguberdi, agents\ dagi olti aktyor fayli va settings.json
+    dagi shu klonning tools\ papkasiga ishora qilgan hook va ruxsatlar.
+  Boshqa skill, agent, CLAUDE.md, commands\, plugins\, hooks\, rules\,
+  output-styles\ va settings.json dagi begona yozuvlar JOYIDA QOLADI.
+  Birlashtirishni install\merge_settings.py qiladi.
+
+  -Reset bilan (faqat ataylab, -ConfirmReset ham kerak) global
+  $HOME\.claude dan quyidagilar o'chiriladi:
     settings.json, settings.local.json, CLAUDE.md,
     skills\, agents\, commands\, plugins\, hooks\, rules\, output-styles\
-  Nima QOLADI:
+  -Reset da ham nima QOLADI:
     projects\ (suhbat tarixi), todos\, history.jsonl, shell-snapshots\,
     statsig\, .credentials.json (kirish tokeni; Windows da Credential
     Manager da ham turishi mumkin) va $HOME\.claude.json (user MCP
@@ -41,12 +49,25 @@
   Haqiqatan bajarish. Bersiz faqat ro'yxat chiqadi.
 
 .PARAMETER Update
-  Yangilash (git pull dan keyin). Hamma sozlama tozalanmaydi: faqat
-  skills\manguberdi, olti aktyor fayli va settings.json dagi klon tools\
-  ga ishora qilgan hook va ruxsatlar zaxiralanib almashtiriladi. Boshqa
-  skill, agent, CLAUDE.md va sozlama yozuvlari joyida qoladi.
-  Birlashtirishni install\merge_settings.py qiladi. -Project va
-  -IncludeAuth bilan birga berilmaydi.
+  Eski nom, endi sukut xulq. Hech narsani o'zgartirmaydi va qabul
+  qilinaversin: avvalgi buyruqlar va hujjatlar buzilmaydi.
+
+.PARAMETER Reset
+  To'liq tozalash: yuqoridagi ro'yxat zaxiralanib o'chiriladi va toza
+  settings.json yoziladi. -Apply bilan birga -ConfirmReset ham talab
+  qiladi. -Project va -IncludeAuth faqat shu rejimda ruxsat.
+
+.PARAMETER ConfirmReset
+  -Reset -Apply uchun ikkinchi tasdiq. Interaktiv so'rov emas: CI va agent
+  sessiyasi interaktiv emas.
+
+.PARAMETER Uninstall
+  manguberdi birliklarini olib tashlaydi: settings.json dan buyrug'ida shu
+  ildiz bor hooklar, shu ildizga tegishli ruxsatlar va
+  additionalDirectories yozuvi, env.GENIUS_PYTHON, skills\manguberdi va
+  olti aktyor fayli. Begona yozuvlar qoladi. Klonning o'ziga bog'liq emas:
+  -GeniusPath oddiy satr sifatida olinadi, shuning uchun klon allaqachon
+  o'chirilgan bo'lsa ham ishlaydi.
 
 .PARAMETER IncludeAuth
   $HOME\.claude.json ham zaxiralanib o'chiriladi: user MCP serverlar,
@@ -70,7 +91,17 @@
 .EXAMPLE
   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
   .\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius -Update -Apply
-  git pull dan keyin faqat manguberdi birliklarini almashtiradi.
+  Sukut bilan bir xil: git pull dan keyin faqat manguberdi birliklari.
+
+.EXAMPLE
+  .\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius -Reset -Apply -ConfirmReset
+  Butun ~/.claude sozlamasini zaxiralab o'chiradi, keyin manguberdi ni
+  o'rnatadi. -ConfirmReset siz rad etiladi.
+
+.EXAMPLE
+  .\install\manguberdi.ps1 -GeniusPath C:\eski\claude-genius -Uninstall -Apply
+  manguberdi birliklarini olib tashlaydi. Klon o'chirilgan bo'lsa ham
+  ishlaydi: yo'l faqat settings.json dagi yozuvlarni tanish uchun kerak.
 #>
 
 [CmdletBinding()]
@@ -79,6 +110,9 @@ param(
   [string]$Project = "",
   [switch]$Apply,
   [switch]$Update,
+  [switch]$Reset,
+  [switch]$ConfirmReset,
+  [switch]$Uninstall,
   [switch]$IncludeAuth,
   [string]$BackupTo = ""
 )
@@ -86,9 +120,21 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+# Sukut qo'shuvchi: faqat o'z birliklari almashadi. Avval sukut TO'LIQ
+# TOZALASH edi va bitta skill uchun foydalanuvchining butun ~/.claude
+# sozlamasi ketardi (zaxira bilan, lekin baribir). To'liq tozalash endi
+# ataylab so'raladi: -Reset.
+#
+# -Update qabul qilinaversin va hech narsani o'zgartirmasin: eski
+# buyruqlar, hujjatlar va CI qadamlari buzilmaydi. Skriptning qolgan
+# qismi $Update ga qaraydi, shuning uchun u shu yerda hisoblanadi.
+$Update = -not $Reset
+
 $UserHome = [Environment]::GetFolderPath('UserProfile')
 $ClaudeDir = Join-Path $UserHome '.claude'
 $AuthFile = Join-Path $UserHome '.claude.json'
+# Bir joyda: -Uninstall bloki ham, o'rnatish ham shunga yozadi.
+$settingsPath = Join-Path $ClaudeDir 'settings.json'
 
 # O'chiriladigan sozlama birliklari. Tarix, todo va kirish bu yerda yo'q:
 # ular sozlama emas va ularni o'chirish ishni yo'qotadi.
@@ -172,10 +218,27 @@ function Find-Python {
 
 # --- 1. Manbani tekshirish -------------------------------------------------
 
-# -Update faqat o'z birliklarini almashtiradi, -Project va -IncludeAuth esa
-# to'liq tozalashning qismi: birga berilsa qaysi biri ustun ekani noaniq.
-if ($Update -and ($Project -or $IncludeAuth)) {
-  Fail "-Update bilan -Project yoki -IncludeAuth berilmaydi: ular to'liq tozalash uchun."
+# -Project va -IncludeAuth to'liq tozalashning qismi: qo'shuvchi rejimda
+# ularning ma'nosi yo'q, shuning uchun -Reset talab qiladi.
+if (-not $Reset -and ($Project -or $IncludeAuth)) {
+  Fail ("-Project va -IncludeAuth faqat -Reset bilan beriladi: ular to'liq " +
+        "tozalashning qismi. Sukut rejim esa faqat manguberdi birliklarini " +
+        "almashtiradi va boshqa hech narsaga tegmaydi.")
+}
+
+# To'liq tozalash ikkinchi marta ataylab aytilishini talab qiladi.
+# Interaktiv so'rov emas: CI va agent sessiyasi interaktiv emas, Read-Host
+# u yerda osilib qolardi yoki bo'sh javob olardi.
+if ($Reset -and $Apply -and -not $ConfirmReset) {
+  Fail ("-Reset -Apply ~/.claude dagi settings.json, settings.local.json, " +
+        "CLAUDE.md, skills\, agents\, commands\, plugins\, hooks\, rules\ " +
+        "va output-styles\ ni o'chiradi (zaxira bilan). Rozi bo'lsangiz " +
+        "-ConfirmReset ham qo'shing. Faqat manguberdi kerak bo'lsa -Reset " +
+        "bermang: sukut rejim qo'shuvchi.")
+}
+
+if ($Uninstall -and ($Project -or $IncludeAuth -or $Reset)) {
+  Fail "-Uninstall bilan -Reset, -Project yoki -IncludeAuth berilmaydi."
 }
 
 if ($env:CLAUDE_CONFIG_DIR) {
@@ -184,13 +247,24 @@ if ($env:CLAUDE_CONFIG_DIR) {
         "O'zgaruvchini olib tashlab qayta yurgizing.")
 }
 
-if (-not (Test-Path -LiteralPath $GeniusPath -PathType Container)) {
-  Fail "GeniusPath topilmadi: $GeniusPath"
+# -Uninstall da klon mavjud bo'lishi SHART EMAS: aynan shu holat uchun
+# kerak, ya'ni klon o'chirilgan yoki ko'chirilgan va settings.json da
+# uning yo'li qolgan. Shuning uchun yo'l Resolve-Path qilinmaydi, faqat
+# normallanadi: u settings.json dagi yozuvlarni tanish uchun satr.
+if ($Uninstall) {
+  $GeniusPath = $GeniusPath.Replace('\', '/').TrimEnd('/')
+  if (-not $GeniusPath.Trim('/').Trim()) {
+    Fail "-GeniusPath bo'sh: olib tashlanadigan yozuvlarni tanib bo'lmaydi."
+  }
+} else {
+  if (-not (Test-Path -LiteralPath $GeniusPath -PathType Container)) {
+    Fail "GeniusPath topilmadi: $GeniusPath"
+  }
+  # ProviderPath: PSDrive yoki provider-qualified yo'l Python ga tushunarli
+  # bo'ladi. Oxirgi slash kesiladi: bo'sh joyli yo'lda `"C:\a b\"` native
+  # argumentda `\"` qo'shtirnoqni ekranlab, keyingi argumentlarni yutadi.
+  $GeniusPath = (Resolve-Path -LiteralPath $GeniusPath).ProviderPath.TrimEnd('\', '/')
 }
-# ProviderPath: PSDrive yoki provider-qualified yo'l Python ga tushunarli
-# bo'ladi. Oxirgi slash kesiladi: bo'sh joyli yo'lda `"C:\a b\"` native
-# argumentda `\"` qo'shtirnoqni ekranlab, keyingi argumentlarni yutadi.
-$GeniusPath = (Resolve-Path -LiteralPath $GeniusPath).ProviderPath.TrimEnd('\', '/')
 $toolsDir = Join-Path $GeniusPath 'tools'
 
 $Required = @(
@@ -201,9 +275,13 @@ $Required = @(
   'docs\manifest.json', '.claude\skills\manguberdi\SKILL.md'
 )
 if ($Update) { $Required += 'install\merge_settings.py' }
-foreach ($rel in $Required) {
-  if (-not (Test-Path -LiteralPath (Join-Path $GeniusPath $rel))) {
-    Fail "klon to'liq emas, yo'q: $rel"
+# -Uninstall keyin kerak bo'ladi: klon to'liq emasligi hozir aytilsin.
+$Required += 'install\uninstall_settings.py'
+if (-not $Uninstall) {
+  foreach ($rel in $Required) {
+    if (-not (Test-Path -LiteralPath (Join-Path $GeniusPath $rel))) {
+      Fail "klon to'liq emas, yo'q: $rel"
+    }
   }
 }
 
@@ -239,6 +317,85 @@ if (-not $PythonExe) {
   Fail ("ishlaydigan Python 3.8+ topilmadi (py -3, python, python3 sinaldi; " +
         "WindowsApps dagi Microsoft Store stub'i hisoblanmaydi). Hooklar " +
         "Python bilan ishlaydi, usiz o'rnatish ma'nosiz.")
+}
+
+# --- 1b. -Uninstall: o'z birliklarini olib tashlash --------------------
+#
+# Bu yerda, bash talabidan OLDIN va klon tekshiruvidan keyin: olib
+# tashlash uchun bash ham, klon ham kerak emas. JSON jarrohligi
+# install\uninstall_settings.py da, chunki PowerShell 5.1 da
+# ConvertFrom-Json PSCustomObject beradi va bitta elementli massiv
+# skalyarga aylanadi; Python qismi esa tools\test_uninstall_settings.py
+# da sinaladi. Skript $PSScriptRoot dan olinadi, $GeniusPath dan EMAS:
+# aynan shu rejimda $GeniusPath mavjud bo'lmasligi mumkin.
+if ($Uninstall) {
+  $uninstaller = Join-Path $PSScriptRoot 'uninstall_settings.py'
+  if (-not (Test-Path -LiteralPath $uninstaller -PathType Leaf)) {
+    Fail ("$uninstaller topilmadi. -Uninstall shu fayl bilan birga ishlaydi: " +
+          "klonning install\ papkasidan yurgizing, yoki settings.json ni " +
+          "qo'lda tahrir qiling (install\README.md, 'Klon o'chsa yoki ko'chsa').")
+  }
+
+  Say ""
+  Say "manguberdi olib tashlanmoqda"
+  Say "Ildiz : $GeniusPath"
+  Say "Global: $ClaudeDir"
+  Say ("Rejim : " + $(if ($Apply) { 'BAJARILADI' } else { 'quruq yurish (-Apply bermadingiz)' }))
+
+  $skillDir = Join-Path $ClaudeDir 'skills\manguberdi'
+  $own = @()
+  if (Test-Path -LiteralPath $skillDir) { $own += $skillDir }
+  foreach ($actor in $Actors) {
+    $actorFile = Join-Path $ClaudeDir "agents\$actor.md"
+    if (Test-Path -LiteralPath $actorFile) { $own += $actorFile }
+  }
+
+  Say ""
+  Say "1. Zaxira -> $BackupTo"
+  $toBackup = @($own)
+  if (Test-Path -LiteralPath $settingsPath) { $toBackup += $settingsPath }
+  if ($toBackup.Count -eq 0) {
+    Step "zaxiraga narsa yo'q"
+  } else {
+    foreach ($path in $toBackup) { Step "$path" }
+    if ($Apply) {
+      New-Item -ItemType Directory -Path $BackupTo -Force | Out-Null
+      foreach ($path in $toBackup) {
+        $leaf = Split-Path -Leaf $path
+        $parent = Split-Path -Leaf (Split-Path -Parent $path)
+        Copy-Item -LiteralPath $path -Destination (Join-Path $BackupTo "$parent--$leaf") -Recurse -Force
+      }
+      Step "zaxira yozildi: $($toBackup.Count) birlik"
+    }
+  }
+
+  Say ""
+  Say "2. Skill va aktyorlar"
+  if ($own.Count -eq 0) { Step "manguberdi birliklari topilmadi" }
+  foreach ($path in $own) {
+    Step "o'chiriladi: $path"
+    if ($Apply) { Remove-Item -LiteralPath $path -Recurse -Force }
+  }
+
+  Say ""
+  Say "3. Sozlama -> $settingsPath"
+  $uninstArgs = @($uninstaller, $settingsPath, '--root', $GeniusPath)
+  if ($Apply) { $uninstArgs += '--yoz' }
+  $r = Invoke-Py $uninstArgs
+  if ($r.Code -ne 0) {
+    Fail "settings.json o'zgarmadi: $($r.Out)"
+  }
+  Step $r.Out
+
+  Say ""
+  if ($Apply) {
+    Say "Tayyor. manguberdi olib tashlandi, begona yozuvlar joyida."
+    Say "Zaxira: $BackupTo"
+    Say "Yangi sessiyada o'zgarish ko'rinadi."
+  } else {
+    Say "Quruq yurish tugadi. Bajarish uchun -Apply qo'shing."
+  }
+  exit 0
 }
 
 # doc.sh bash skripti va qidiruv qatlamining hammasi unga tayanadi.
@@ -296,7 +453,7 @@ Say ("Bash  : " + $(if ($BashExe) { $BashExe } else { "TOPILMADI" }))
 Say "Global: $ClaudeDir"
 if ($Project) { Say "Proyekt: $Project" }
 Say ("Rejim : " + $(if ($Apply) { 'BAJARILADI' } else { 'quruq yurish (-Apply bermadingiz)' }) +
-     $(if ($Update) { ', yangilash (-Update)' } else { '' }))
+     $(if ($Reset) { ", TO'LIQ TOZALASH (-Reset)" } else { ", qo'shuvchi: faqat manguberdi birliklari" }))
 
 # Managed sozlama hammadan ustun: skript unga tegmaydi, lekin u hooklarni
 # o'chirib qo'ysa o'rnatish jim ishlamaydi.
@@ -459,7 +616,6 @@ $settings = [ordered]@{
 # Windows PowerShell 5.1 da Set-Content -Encoding UTF8 BOM yozadi, Claude
 # Code va Python json.load esa BOM li faylda yiqiladi. Shuning uchun har
 # JSON yozuvi BOM siz UTF-8 bilan.
-$settingsPath = Join-Path $ClaudeDir 'settings.json'
 $stageSettings = Join-Path $Stage 'settings.json'
 $json = $settings | ConvertTo-Json -Depth 10
 [IO.File]::WriteAllText($stageSettings, $json, $Utf8NoBom)
