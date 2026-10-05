@@ -45,7 +45,7 @@ TEMP = tempfile.mkdtemp(prefix="run_tests_")
 # Mashinadagi ~/.gradle/gradle.properties (masalan org.gradle.caching) buyruqni
 # o'zgartirmasin: sinov har joyda bir xil natija bersin.
 os.environ["GRADLE_USER_HOME"] = os.path.join(TEMP, "gradle-home")
-for _name in ("GENIUS_GRADLE_INIT", "GENIUS_TEST_FLAGS"):
+for _name in ("GENIUS_GRADLE_INIT", "GENIUS_TEST_FLAGS", "GRADLE_OPTS", "JAVA_OPTS"):
     os.environ.pop(_name, None)
 
 TEST = """package %(pkg)s;
@@ -829,18 +829,112 @@ def case_boshqa_yiqilish(_):
     natija beqaror (4) emas, yiqildi (1)."""
     root = git_shop("boshqa_yiqilish")
     code, out = run_cli(root, "--diff", "--yurgiz", mode="beqaror_gate")
-    project = run_tests.Project(root, runner=["./gradlew"])
+    pom = "<project><parent><artifactId>shop</artifactId></parent><artifactId>%s</artifactId></project>"
+    maven_root = tree("boshqa_maven", {"pom.xml": pom % "shop", "a/pom.xml": pom % "a",
+                                       "b/pom.xml": pom % "b", "c/pom.xml": pom % "c"})
+    project = run_tests.Project(maven_root, runner=["mvn"])
     log = os.path.join(TEMP, "maven.log")
     with open(log, "w") as handle:
-        handle.write("[ERROR] Failed to execute goal org.apache.maven.plugins:"
-                     "maven-surefire-plugin:3.2.5:test (default-test) on project a\n"
-                     "[ERROR] Failed to execute goal org.jacoco:jacoco-maven-plugin:"
-                     "0.8.11:check (check) on project a: Coverage checks have not been met.\n")
-    project.tool = "maven"
-    maven = run_tests.other_failures(project, log, {})
+        handle.write(
+            "[INFO] a .................................................. FAILURE [  2.1 s]\n"
+            "[INFO] b .................................................. FAILURE [  1.0 s]\n"
+            "[INFO] c .................................................. SKIPPED\n"
+            "[ERROR] Failed to execute goal io.spring.javaformat:spring-javaformat-maven-plugin:"
+            "0.0.43:apply (default-cli) on project a: x\n"
+            "[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:"
+            "3.2.5:test (default-test) on project a: There are test failures.\n"
+            "[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:"
+            "3.2.5:test (default-test) on project b: The forked VM terminated\n"
+            "[ERROR] Failed to execute goal org.jacoco:jacoco-maven-plugin:"
+            "0.8.11:check (check) on project a: Coverage checks have not been met.\n")
+    maven = run_tests.other_failures(project, log, {("a", "test"): ["a.FlakyTest"]})
+    # a dagi surefire yiqilishini yiqilgan sinf izohlaydi; b dagi qulash,
+    # a dagi coverage va SKIPPED c izohlanmaydi; formatlash kechiriladi.
     return (code == 1 and "Beqaror" in out and "Boshqa yiqilish" in out
             and ":common:jacocoTestCoverageVerification" in out
-            and maven == ["org.jacoco:jacoco-maven-plugin"])
+            and maven == ["c: SKIPPED",
+                          "org.apache.maven.plugins:maven-surefire-plugin (b)",
+                          "org.jacoco:jacoco-maven-plugin (a)"])
+
+
+def case_composite_nomi_va_dinamik(_):
+    """Gradle included build ni papka nomi bilan chaqiradi; ildiz include lari
+    dinamik bo'lsa modul build fayli bo'yicha topiladi."""
+    files = gradle_shop()
+    files["settings.gradle.kts"] = (
+        "pluginManagement { includeBuild(\"build-logic\") }\n"
+        "listOf(\"orders\", \"billing\").forEach { include(it) }\n"
+        "includeBuild(\"libs/money\")\n"
+        "includeBuild(\"libs/legacy\") { name = \"old\" }\n")
+    del files["settings.gradle"]
+    files["orders/build.gradle.kts"] = "plugins { java }\n"
+    files["billing/build.gradle.kts"] = "plugins { java }\n"
+    files["libs/money/settings.gradle"] = ("// rootProject.name = 'eski'\n"
+                                           "rootProject.name = 'cash'\nincludeBuild '../nested'\n")
+    files["libs/money/src/test/java/money/MoneyTest.java"] = java("money", "MoneyTest")
+    files["libs/legacy/src/test/java/legacy/LegacyTest.java"] = java("legacy", "LegacyTest")
+    files["libs/nested/src/test/java/nested/NTest.java"] = java("nested", "NTest")
+    root = tree("composite_nom", files)
+    project = run_tests.Project(root, runner=["./gradlew"])
+    plan = run_tests.select(project, ["orders/src/main/java/shop/orders/OrderService.java"])
+    argv = run_tests.commands(project, plan)[-1][0]
+    money = run_tests.commands(project, run_tests.select(
+        project, ["libs/money/src/test/java/money/MoneyTest.java"]))[-1][0]
+    nested = run_tests.commands(project, run_tests.select(
+        project, ["libs/nested/src/test/java/nested/NTest.java"]))[-1][0]
+    legacy = run_tests.commands(project, run_tests.select(
+        project, ["libs/legacy/src/test/java/legacy/LegacyTest.java"]))[-1][0]
+    settings = run_tests.select(project, ["libs/money/settings.gradle"])
+    old = gradle_argv(files, version="6.7")
+    return (":orders:test" in argv and ":test" not in argv
+            and money[1] == ":money:test" and nested[1] == ":nested:test"
+            and legacy[1] == ":old:test" and bool(settings.everything)
+            and "libs/money" not in run_tests.Project(
+                os.path.join(TEMP, "gradle_init"), runner=["./gradlew"]).included
+            and old is not None)
+
+
+def case_soyabon_composite(_):
+    """Ildizda o'z testi yo'q, faqat includeBuild: `test` va `geniusIsit`
+    selektorlari ildizda yo'q, faqat `:<nom>:...` vazifalari."""
+    files = {"settings.gradle": "rootProject.name = 'umbrella'\nincludeBuild 'money'\n",
+             "gradle/wrapper/gradle-wrapper.properties": WRAPPER % "8.14.3",
+             "money/build.gradle": "apply plugin: 'java'\n",
+             "money/src/main/java/money/Money.java": main_class("money", "Money"),
+             "money/src/test/java/money/MoneyTest.java": java("money", "MoneyTest")}
+    root = tree("soyabon", files)
+    project = run_tests.Project(root, runner=["./gradlew"])
+    full = run_tests.commands(project, run_tests.Plan(), everything=True)[-1][0]
+    warm = run_tests.warmup_commands(project)[0][0]
+    return ("test" not in full and ":money:test" in full
+            and "geniusIsit" not in warm and ":money:geniusIsit" in warm)
+
+
+def case_source_set_nomi(_):
+    groovy = "sourceSets { integrationTest { java.srcDir 'src/integration-test/java' } }\n"
+    nested = ("sourceSets {\n  it {\n    java {\n      srcDirs = ['src/it-tests/java']\n"
+              "    }\n  }\n}\n")
+    kts = 'val functional by sourceSets.creating { java.srcDir("src/func-test/java") }\n'
+    suite = ('testing { suites { register<JvmTestSuite>("e2e") { sources { java {\n'
+             '  setSrcDirs(listOf("src/end-to-end/java")) } } } } }\n')
+    names = run_tests.source_set_names(groovy + nested + kts + suite)
+    files = gradle_shop()
+    files["orders/build.gradle"] = groovy
+    files["orders/src/integration-test/java/shop/orders/FlowIT.java"] = java("shop.orders", "FlowIT")
+    files["billing/src/contract-test/java/shop/billing/PactTest.java"] = java(
+        "shop.billing", "PactTest")
+    root = tree("sset_nomi", files)
+    project = run_tests.Project(root, runner=["./gradlew"])
+    flow = run_tests.commands(project, run_tests.select(
+        project, ["orders/src/integration-test/java/shop/orders/FlowIT.java"]))[-1][0]
+    pact = run_tests.commands(project, run_tests.select(
+        project, ["billing/src/contract-test/java/shop/billing/PactTest.java"]))[-1][0]
+    full = run_tests.commands(project, run_tests.Plan(), everything=True)[-1][0]
+    return (names == {"integration-test": "integrationTest", "it-tests": "it",
+                      "func-test": "functional", "end-to-end": "e2e"}
+            and flow[1] == ":orders:integrationTest" and pact[1] == ":billing:contractTest"
+            and "integrationTest" in full and "contractTest" in full
+            and "integration-test" not in full)
 
 
 def case_tashxis_gradle(_):
@@ -855,6 +949,12 @@ def case_tashxis_gradle(_):
     titles = " | ".join(f[1] for f in run_tests.diagnose(project))
     clean = run_tests.Project(tree("tashxis_gradle_toza", gradle_shop()), runner=["./gradlew"])
     clean_titles = " | ".join(f[1] for f in run_tests.diagnose(clean))
+    single = {"settings.gradle": "pluginManagement { includeBuild 'build-logic' }\n"
+                                 "rootProject.name = 'one'\n",
+              "build.gradle": "apply plugin: 'java'\n",
+              "src/test/java/one/OneTest.java": java("one", "OneTest")}
+    single_titles = " | ".join(f[1] for f in run_tests.diagnose(run_tests.Project(
+        tree("tashxis_bitta", single), runner=["./gradlew"])))
 
     def scan(settings):
         files = gradle_shop()
@@ -866,6 +966,7 @@ def case_tashxis_gradle(_):
             and "UP-TO-DATE" in titles and "Build scan" in titles
             and "Isolated projects" in titles
             and "build cache" not in clean_titles and "Build scan" not in clean_titles
+            and "ketma-ket" not in single_titles
             and not scan("plugins { id 'com.gradle.enterprise' version '3.16' }\n")
             and scan("plugins { id 'com.gradle.enterprise' version '3.16' }\n"
                      "gradleEnterprise { buildScan { publishAlways() } }\n")
@@ -933,6 +1034,9 @@ CASES = [
     ("describe: Gradle init satri", case_describe_init),
     ("composite build: :money:core:test, :test emas", case_composite_build),
     ("coverage ham yiqilgan bo'lsa beqaror emas, exit 1", case_boshqa_yiqilish),
+    ("composite: papka nomi, name=, nested, dinamik include", case_composite_nomi_va_dinamik),
+    ("soyabon composite: faqat :<nom>: vazifalari", case_soyabon_composite),
+    ("source set nomi: srcDir va camelCase", case_source_set_nomi),
     ("tashxis: Gradle cache, log, UP-TO-DATE, build scan, isolated", case_tashxis_gradle),
 ]
 
@@ -1166,14 +1270,30 @@ def gradle_e2e(gradle):
           code == 0 and "--build-cache" not in command and len(server.hits) > hits,
           "exit=%d murojaat=%d" % (code, len(server.hits) - hits))
 
-    edit(os.path.join(wc, "orders/build.gradle"),
-         "sourceSets { integrationTest { java.srcDir 'src/integration-test/java' } }\n")
-    edit(os.path.join(wc, "orders/src/integration-test/java/shop/orders/FlowIT.java"),
-         "package shop.orders;\nclass FlowIT { }\n")
+    edit(os.path.join(wc, "orders/build.gradle"), """
+sourceSets { integrationTest { java.srcDir 'src/integration-test/java' } }
+dependencies {
+    integrationTestImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    integrationTestRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+tasks.register('integrationTest', Test) {
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    useJUnitPlatform()
+}
+""")
+    flow = "orders/src/integration-test/java/shop/orders/FlowIT.java"
+    edit(os.path.join(wc, flow), "package shop.orders;\nimport org.junit.jupiter.api.Test;\n"
+                                 "class FlowIT { @Test void flow() { } }\n")
     code, log, _ = cli(wc, "--isit")
-    check("--isit: papka nomi source set nomidan farq qilsa ham hammasi kompilyatsiya",
+    check("--isit: papka nomi source set nomidan farq qilsa ham test sinflari quriladi",
           code == 0 and os.path.isdir(os.path.join(
               wc, "orders/build/classes/java/integrationTest")), "exit=%d" % code)
+    code, log, _ = cli(wc, flow, "--yurgiz")
+    check("src/integration-test dagi test :orders:integrationTest bilan yuradi",
+          code == 0 and os.path.exists(os.path.join(
+              wc, "orders/build/test-results/integrationTest/TEST-shop.orders.FlowIT.xml")),
+          "exit=%d %s" % (code, tail(log)))
 
     comp = os.path.join(TEMP, "e2e-composite")
     shutil.rmtree(comp, ignore_errors=True)
@@ -1200,6 +1320,11 @@ def gradle_e2e(gradle):
           code == 0 and os.path.exists(os.path.join(
               comp, "libs/money/build/test-results/test/TEST-money.MoneyTest.xml")),
           "exit=%d" % code)
+    isit, _, _ = cli(comp, "--isit")
+    code, log, _ = cli(comp, "--hammasi", "--yurgiz")
+    check("composite: ildizda testsiz --isit va --hammasi :money: vazifalari bilan",
+          isit == 0 and code == 0 and "> Task :money:test" in log,
+          "isit=%d hammasi=%d %s" % (isit, code, tail(log)))
 
     server.server.shutdown()
     subprocess.run([gradle, "--stop"], capture_output=True, env=env)

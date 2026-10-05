@@ -24,8 +24,9 @@ qiladi.
    `beforeSettings` ichidan o'chiriladi, shuning uchun
    `GRADLE_USER_HOME/init.d` sozlagan remote ham o'chadi.
 4. `--isit` skript ro'yxatga olgan `geniusIsit` vazifasini chaqiradi. U
-   har java loyihaning hamma source set ini kompilyatsiya qiladi, nomni
-   papkadan taxmin qilmaydi.
+   har Test vazifasining test sinflarini (va ular talab qilgan main ni)
+   quradi. Nom papkadan taxmin qilinmaydi; jmh yoki Spring AOT kabi test
+   emas source set qurilmaydi.
 
 Skript loyihaning `.gradle/genius/` papkasida turadi va nisbiy yo'l bilan
 beriladi. Init qo'shilmaydigan holatlar:
@@ -46,10 +47,24 @@ Yo'l-yo'lakay tuzatilganlar:
   emas.
 - `includeBuild` papkasi modul sifatida `:<nom>:test` ga bog'lanadi.
   Avval u ildizning `:test` iga tushardi: ildizda java bo'lsa yurish
-  testsiz "yashil" chiqardi.
+  testsiz "yashil" chiqardi. Nom papka nomidan (Gradle shunday chaqiradi,
+  `rootProject.name` dan emas) yoki `{ name = '...' }` dan olinadi.
+  Included build ichidagi included build ham hisobga olinadi, uning ildiz
+  fayllari (`settings.gradle`, `build.gradle`, `gradle.properties`)
+  o'zgarsa reja to'liq suite bo'ladi. Faqat included build li ildizda
+  `test` va `geniusIsit` selektori ishlatilmaydi. Gradle 6.8 dan eski
+  bo'lsa bog'lash yo'q.
+- Ildiz include lari dinamik bo'lsa (`listOf(...).forEach { include(it) }`)
+  modul avvalgidek eng yaqin build fayli bo'yicha topiladi.
+- `src/integration-test/java` kabi papkaning vazifa nomi build
+  skriptidagi `srcDir` ni o'rab turgan blokdan, topilmasa camelCase
+  dan olinadi (`integrationTest`). Avval `:orders:integration-test`
+  "Task not found" bilan yiqilardi.
 - Test emas vazifa (coverage, lint) yiqilgan bo'lsa, qayta yurishda
   o'tgan test natijani `4` qilmaydi: `exit=1` va `Boshqa yiqilish:`
-  qatori. Maven da surefire va failsafe dan boshqa goal ham shunday.
+  qatori. Maven da: surefire va failsafe dan boshqa goal; yiqilgan
+  sinfi yo'q moduldagi surefire yiqilishi (fork qulashi); `-fae` da
+  SKIPPED modul. Formatlash qadami yiqilishi hisobga olinmaydi.
 - `--tashxis` ga Gradle bandlari qo'shildi. Build scan bandi faqat
   yuklash haqiqatan yoqilganda chiqadi.
 
@@ -112,9 +127,9 @@ XML majburiy.
 
 **Qaysi tekshiruv o'tdi.**
 
-- `tools/test_run_tests.py`: 51/51.
+- `tools/test_run_tests.py`: 54/54.
 - `python3 tools/test_run_tests.py --gradle <gradle>` haqiqiy Gradle
-  7.6.4 (JDK 17), 8.14.3 va 9.8.0 (JDK 21) da 10/10:
+  7.6.4 (JDK 17), 8.14.3 va 9.8.0 (JDK 21) da 12/12:
   - init siz maqsadli yurish yiqiladi (nazorat);
   - init bilan, eski exec turganda ham, yashil: agent va HTML yo'q,
     XML bor;
@@ -126,9 +141,18 @@ XML majburiy.
     sozlagan remote ham o'chadi, nazoratda esa murojaat bor;
   - loyiha cache ni o'zi tanlaganda asbob unga tegmaydi;
   - `--isit` source set nomi papka nomidan farq qilganda ham ishlaydi;
-  - included build testi `:money:test` bilan yuradi.
-- Mustaqil review (5 yo'nalish, har topilmaga rad etuvchi tekshiruvchi)
-  29 topilmani tasdiqladi, hammasi shu yozuvdagi tuzatishlarda.
+  - `src/integration-test` dagi test `:orders:integrationTest` bilan
+    yuradi;
+  - included build testi `:money:test` bilan yuradi, ildizda testsiz
+    composite da `--isit` va `--hammasi` ham.
+- `geniusIsit` configuration cache bilan: entry saqlanadi va qayta
+  ishlatiladi (8.14, 9.8).
+- Mustaqil review ikki bosqichda o'tdi:
+  - birinchisi (5 yo'nalish, har topilmaga rad etuvchi tekshiruvchi)
+    29 topilmani tasdiqladi;
+  - tuzatishlarning qayta review i yana 19 tasini tasdiqladi.
+
+  Hammasi shu yozuvdagi tuzatishlarda.
 - Mutatsiya: remote o'chirish, `beforeSettings`, hisobot vazifasini
   o'chirish va XML majburiyligi olib tashlansa e2e yiqiladi.
 
