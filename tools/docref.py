@@ -5,9 +5,10 @@ Ikkita asbob buni talab qiladi (schema_from_entities.py va check_code.py),
 shuning uchun mantiq shu yerda: nusxa ko'chirilsa, biri tuzatilganda
 ikkinchisi eskirib qolardi.
 
-Topilma faqat "shunday qilma" desa, u shaxsiy did. Qo'llanmadagi bo'limni
-ko'rsatsa, uni tekshirish mumkin. Shuning uchun har bir topilma shu
-funksiyadan o'tadi.
+Topilma faqat "shunday qilma" desa, uni tekshirib bo'lmaydi. Bo'lim
+raqami bilan kelsa, o'qib solishtirish mumkin. Shuning uchun har bir
+topilma shu funksiyadan o'tadi. Bo'lim topilmasligi topilma noto'g'ri
+degani emas: qo'llanma ma'lumotnoma, hamma holatni qamramaydi.
 """
 
 import os

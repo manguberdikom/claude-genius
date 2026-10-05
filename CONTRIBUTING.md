@@ -15,7 +15,7 @@ tools/check_docs.py            tekshiruv (CI shuni ishlatadi)
 .claude/skills/                Claude Code skilllari
 ```
 
-`docs/` - yagona haqiqat manbasi. `dist/` generatsiya natijasi, git ga
+`docs/` - `dist/` ning manbasi. `dist/` generatsiya natijasi, git ga
 kirmaydi va qo'lda tahrir qilinmaydi.
 
 ### Bob fayli shakli

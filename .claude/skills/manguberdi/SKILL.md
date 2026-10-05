@@ -9,15 +9,24 @@ Bu skill sessiyada **bir marta** chaqiriladi. Shundan keyin har bir
 vazifa shu yerdagi tartib bo'yicha bajariladi, qayta chaqirish shart
 emas: vazifa kelganda avval `## Marshrut` ko'riladi.
 
-Skill ishning **qanday** bajarilishini belgilaydi. Qoidalar manbai bitta:
-`docs/` dagi oltita qo'llanma. Boshqa odat, boshqa did yoki boshqa
-yondashuv ularning o'rnini bosmaydi.
+Skill ishning **qanday** bajarilishini belgilaydi. Qo'llanma
+**ma'lumotnoma**, buyruq emas. Ustuvorlik tartibi:
+
+1. proyektning o'z konvensiyasi va `CLAUDE.md`;
+2. rasmiy hujjat (Spring, PostgreSQL, JDK, Sonar);
+3. `docs/` dagi qo'llanma bo'limi.
+
+Qo'llanmaga tayanilsa bo'lim raqami ko'rsatiladi. Qo'llanmada yo'q qaror
+ham to'g'ri bo'lishi mumkin: yo'qligi "noto'g'ri" degani emas. Qo'llanma
+rasmiy hujjatga zid bo'lsa rasmiy hujjat yutadi va zidlik hisobotda
+aytiladi.
 
 ## Har vazifadagi qoidalar
 
-1. **Qoidasiz qaror yo'q.** Har o'zgarish, har topilma, har reja qadami
-   yonida `<hujjat> <raqam>` turadi. Topilmasa, "qoidada yo'q, mening
-   asosim" deb belgilanadi.
+1. **Asos ko'rsatiladi.** Har o'zgarish, har topilma, har reja qadami
+   yonida asosi turadi: `<hujjat> <raqam>`, rasmiy hujjat havolasi yoki
+   proyekt konvensiyasi. Uchalasida ham yo'q bo'lsa, "qo'llanmada yo'q,
+   asosim shu" deb belgilanadi: bu to'g'ri javob bo'lishi mumkin.
 2. **Arzon yo'l oldin.** Javob kodda yoki chiqishda bo'lsa, u o'qiladi.
    Konteyner, baza ulanishi va PowerShell **taqiqlangan** va `guard.py`
    tomonidan to'siladi. Batafsil: `references/taqiq.md`.

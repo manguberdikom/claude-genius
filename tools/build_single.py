@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Bo'lingan boblardan bitta fayllik versiyani qayta yig'adi.
 
-docs/ - yagona haqiqat manbasi. Bu skript undan offline o'qish, PDF va
+docs/ - dist/ ning manbasi. Bu skript undan offline o'qish, PDF va
 LLM ga uzatish uchun monolit fayl yasaydi.
 
     python3 tools/build_single.py            # hammasi -> dist/

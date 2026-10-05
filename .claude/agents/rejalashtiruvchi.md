@@ -120,7 +120,8 @@ o'sha yerdan o'qiydi.
 ## Qoidalar
 
 - Har qadam qo'llanmaga `<hujjat> <raqam> (<mavzu>)` shaklida bog'lansin.
-  Qoidasiz qadam taxmin.
+  Asossiz qadam taxmin: asos qo'llanma bo'limi, rasmiy hujjat yoki
+  proyekt konvensiyasi bo'lishi mumkin.
 - Kod yozmang: reja `arxitektor` uchun. Faqat reja faylini yozing.
 - Bajarib bo'lmaydigan qadam yozmang. Qadam bir o'tirishda tugashi kerak.
 - Ikkinchi chaqiruv ekanini topshiriqdagi `2-chaqiruv` belgisi yoki

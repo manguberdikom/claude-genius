@@ -23,7 +23,7 @@ Oltita hujjat, har biri `docs/<hujjat>/` papkasida, har bob alohida faylda:
 - `.claude/skills/` - `docs/` ga marshrutlovchi skilllar va `manguberdi`
   orkestrator.
 
-`docs/` yagona haqiqat manbasi. Bitta fayllik variant kerak bo'lsa
+`docs/` - `dist/` ning manbasi. Bitta fayllik variant kerak bo'lsa
 `python3 tools/build_single.py` ishga tushiriladi.
 
 ## Qidirish va o'qish
