@@ -242,6 +242,11 @@ def index_chapter(doc_key, chapter, rel_path, rows):
                 rows["aliases"].append((clean(alias), doc_key, "chapter", num))
             scan_body(doc_key, num, "", lines[lineno:first_section - 1], rows)
         elif level == 2:
+            # Bob oxiridagi raqamsiz `## Manbalar` apparat: u bo'lim
+            # emas va `doc.sh show` bilan ochilmaydi, shuning uchun
+            # indeksga kirmaydi.
+            if title.strip() == "Manbalar":
+                continue
             match = SECTION_NUM_RE.match(title)
             section = match.group(1) if match else ""
             rows["sections"].append(

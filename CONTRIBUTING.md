@@ -32,6 +32,8 @@ va kirill yo'q, asbob havolalari mavjud.
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 7. Bob sarlavhasi (English Title)
 
 <details>
@@ -52,10 +54,69 @@ ro'yxatiga olib boradi, shuning uchun u har bobda `Barcha hujjatlar` deb
 yoziladi. Footer havolasida qo'shni bobning raqami va to'liq o'zbekcha
 sarlavhasi turadi.
 
+Holat qatori (5-qator) **qo'lda yozilmaydi**: u `docs/review.tsv` dan
+`python3 tools/review_status.py --yoz` bilan yasaladi.
+
 `tools/check_docs.py` shaklni tekshiradi: metadata izohi manifest bilan
-mos, breadcrumb 3-qatorda, H1 5-qatorda va manifest sarlavhasi bilan bir
-xil, bo'lim soni manifest, README va `<summary>` bilan mos, footer
-oxirida turadi va qo'shni boblarga ishora qiladi.
+mos, breadcrumb 3-qatorda, holat qatori 5-qatorda va `review.tsv` ga
+mos, H1 7-qatorda va manifest sarlavhasi bilan bir xil, bo'lim soni
+manifest, README va `<summary>` bilan mos, footer oxirida turadi va
+qo'shni boblarga ishora qiladi.
+
+### Manbalar
+
+Tekshirilgan bobda bob oxirida **raqamsiz** `## Manbalar` bo'limi
+turadi. Joyi qat'iy: yopish bo'limidan (`Amalda qo'llash` yoki
+`Arxitektor nazorat ro'yxati`) KEYIN, navigatsiya footeridan oldin.
+Raqamsiz, chunki u bob bo'limi emas, apparat: manifest sanog'iga
+kirmaydi va `doc.sh show` bilan ochilmaydi.
+
+```markdown
+## N.M Amalda qo'llash
+
+- Yopish bo'limi.
+
+## Manbalar
+
+- [Spring Framework, Declarative transaction annotations](https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/annotations.html) - 6.0 dan beri protected va package-visible metodlar
+- [PostgreSQL, Resource consumption](https://www.postgresql.org/docs/current/runtime-config-resource.html) - `work_mem` konteksti
+- [sonar-java, S109](https://raw.githubusercontent.com/SonarSource/sonar-java/master/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S109.json) - `scope: Main`
+- Robert C. Martin, *Clean Code*, 17-bob
+```
+
+Faqat **birlamchi** manba: `docs.spring.io`, `postgresql.org/docs`,
+`openjdk.org/jeps`, `docs.oracle.com/javase`, JLS, sonar-java rule
+metadata, kutubxonaning rasmiy hujjati (JUnit, Mockito, Testcontainers,
+Hibernate), yoki kitob nomi va bob raqami. Blog, Stack Overflow va
+qayta hikoya qilgan maqola manba emas.
+
+Qoidalar:
+
+- Tekshirilgan bobda kamida bitta manba bo'ladi.
+- Har **versiya** va **raqam** da'vosi uchun alohida manba: "Spring 7.0
+  da keldi" va "default 2.0" ikki alohida qator.
+- Har qator manbadan keyin qisqa izoh beradi: manba nimani tasdiqlaydi.
+- Havola bobning o'zidagi da'voga ishora qilishi kerak, umumiy sahifaga
+  emas: imkon bo'lsa aniq bo'lim anchori bilan.
+
+### Raqamlar
+
+Manbasiz foiz, millisekund, bayt yoki "N barobar" yozilmaydi. Uch yo'l
+bor va boshqasi yo'q:
+
+1. Manba bilan: raqam yonida yoki yuqoridagi uch qator ichida havola.
+2. Belgilangan taxmin: `o'lchanmagan taxmin` so'zi bilan.
+3. Olib tashlash: raqam gapning mohiyatini o'zgartirmasa, u ortiqcha.
+
+`python3 tools/claims_report.py` holatni hujjat va bob bo'yicha
+sanaydi. U faqat hisobot: CI ni yiqitmaydi, chunki qaysi raqam
+o'lchangan va qaysi biri taxmin ekanini odam biladi.
+
+```bash
+python3 tools/claims_report.py                   # hamma hujjat
+python3 tools/claims_report.py --bob architect 27
+python3 tools/claims_report.py --batafsil        # har da'voning qatori
+```
 
 ## Til
 

@@ -23,8 +23,10 @@ Tekshiradi:
                     H1 manifest sarlavhasi (7-qator), bo'lim soni
                     manifest, README va <summary> bilan mos, footer qo'shni
                     boblarga ishora qiladi va oxirida turadi.
-  7. Konvensiya   - har bobning oxirgi `##` bo'limi `Amalda qo'llash` yoki
-                    `Arxitektor nazorat ro'yxati`.
+  7. Konvensiya   - har bobning oxirgi raqamli `##` bo'limi
+                    `Amalda qo'llash` yoki `Arxitektor nazorat ro'yxati`.
+                    Raqamsiz `## Manbalar` undan keyin turishi mumkin va
+                    bo'lim sanog'iga kirmaydi.
   8. Regressiya   - tools/known_errors.tsv dagi naqsh qaytib kelmaganmi.
                     Tuzatilgan mazmun xatosi keyingi tahrirda jim
                     qaytib kelishi mumkin, shuning uchun u naqsh bo'lib
@@ -46,6 +48,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SIZE_LIMIT = 900_000          # GitHub chegarasi 1 048 576; zahira bilan
 RE_REMOVE = re.compile(r"[^\w\- ]", re.UNICODE)
 SKIP_DIRS = {'.git', 'dist', 'node_modules'}
+# Bob oxiridagi manbalar bo'limi. Raqamsiz: u bob bo'limi emas, apparat.
+SOURCES_RE = re.compile(r"^Manbalar\s*$")
 # Hech qaysi skill yoki agent jadvalida turmasligi ataylab bo'lgan boblar:
 # kalit (hujjat, bob raqami), qiymat sabab. Hozir bo'sh, ya'ni har bobga
 # marshrut bor; yangi bob yo'lsiz qolsa tekshiruv xato beradi.
@@ -426,7 +430,16 @@ def main():
                 # namunasidagi `## Hotfix` bob bo'limi emas.
                 plain = strip_fences(t).split('\n')
                 h1 = [l for l in plain if l.startswith('# ')]
-                h2 = [l[3:] for l in plain if l.startswith('## ')]
+                # `## Manbalar` apparat, bob bo'limi emas: u manifest
+                # sanog'iga kirmaydi va yopish bo'limidan KEYIN turadi.
+                # Qoida CONTRIBUTING.md dagi "Manbalar" bo'limida.
+                all_h2 = [l[3:] for l in plain if l.startswith('## ')]
+                h2 = [x for x in all_h2 if not SOURCES_RE.match(x)]
+                extra = [x for x in all_h2 if SOURCES_RE.match(x)]
+                if len(extra) > 1:
+                    err(f"{where}: {len(extra)} ta `## Manbalar`, bittasi bo'lsin")
+                if extra and not SOURCES_RE.match(all_h2[-1]):
+                    err(f"{where}: `## Manbalar` oxirgi bo'lim bo'lishi kerak")
                 if len(h1) > 1:
                     err(f"{where}: {len(h1)} ta H1, bitta bo'lsin")
                 if c.get('sections') is not None and len(h2) != c['sections']:
