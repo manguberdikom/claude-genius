@@ -199,7 +199,9 @@ spring:
         jdbc.batch_size: 50
         order_inserts: true              # bir xil jadval INSERT lari guruhlanadi
         order_updates: true
-        batch_versioned_data: true       # @Version bilan ham batch ishlaydi
+        # To'liq nomi hibernate.jdbc.batch_versioned_data. Standart qiymati
+        # odatda true, shuning uchun bu qator tekshirish uchun, qo'shish uchun emas.
+        jdbc.batch_versioned_data: true
   datasource:
     hikari:
       data-source-properties:

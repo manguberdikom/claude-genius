@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 18. Spring Data JPA va Hibernate chuqur (Spring Data JPA and Hibernate)
 
@@ -196,7 +196,7 @@ Ikkinchi tuzoq: to'plamni to'liq almashtirish. `setQatorlar(yangiRoyxat)` Hibern
 private Long id;
 ```
 
-Batch ishlashi uchun `jdbc.batch_size` dan tashqari `order_inserts` va `order_updates` ham kerak, aks holda turli entity turlari aralashganda batch uzilib ketadi. `@Version` ishlatilsa, versiyali qatorlarni batch qilish uchun `hibernate.batch_versioned_data` yoqiladi. Batch size uchun amaliy oraliq 50 dan 100 gacha, undan kattasida foyda yassilashadi.
+Batch ishlashi uchun `jdbc.batch_size` dan tashqari `order_inserts` va `order_updates` ham kerak, aks holda turli entity turlari aralashganda batch uzilib ketadi. `@Version` ishlatilsa, versiyali qatorlarni batch qilish sozlamasi `hibernate.jdbc.batch_versioned_data` deb nomlanadi va uni yoqish ko'pincha shart emas: Hibernate hujjatida uning standart qiymati "generally `true`, though can vary based on Dialect" deb yozilgan, ya'ni tekshirish kerak, qo'shish emas. Batch size uchun boshlang'ich nuqta 50 dan 100 gacha olinadi, lekin bu o'lchanmagan taxmin: chegarani o'z yuklamangizda o'lchab tanlang, chunki foydali qiymat qator kengligi va tarmoq kechikishiga bog'liq.
 
 ## 18.8 Optimistik va pessimistik lock: `@Version`, `PESSIMISTIC_WRITE` qachon
 
@@ -302,6 +302,13 @@ Shuning uchun qoida: ikkinchi daraja keshni butun ilovaga yoqmaslik. Faqat sanab
 - [ ] Pul va ombor qoldig'iga tegadigan metodlarda `@Version` yoki `PESSIMISTIC_WRITE` dan birini ongli tanlash va qarorni izoh bilan qoldirish.
 - [ ] Lock ushlaydigan tranzaksiyalarda tashqi HTTP chaqiruvi yo'qligini tekshirish va `lock_timeout` ni taxminan 3 sekundga belgilash.
 - [ ] Window funksiya yoki CTE talab qiladigan hisobotlarni `JdbcClient` ga chiqarib, read-only tranzaksiyada bajarish.
+
+## Manbalar
+
+- [hibernate-orm, `BatchSettings.java` (6.6)](https://raw.githubusercontent.com/hibernate/hibernate-orm/6.6/hibernate-core/src/main/java/org/hibernate/cfg/BatchSettings.java) - `hibernate.jdbc.batch_size` standarti 0, `hibernate.order_inserts` va `hibernate.order_updates` standarti `false`, `hibernate.jdbc.batch_versioned_data` standarti "generally `true`"
+- [Hibernate User Guide, Batching](https://raw.githubusercontent.com/hibernate/hibernate-orm/6.6/documentation/src/main/asciidoc/userguide/chapters/batch/Batching.adoc) - "Hibernate disables insert batching at the JDBC level transparently if you use an identity identifier generator"
+- [Hibernate User Guide, Identifiers](https://raw.githubusercontent.com/hibernate/hibernate-orm/6.6/documentation/src/main/asciidoc/userguide/chapters/domain/identifiers.adoc) - `allocation-size` aynan sequence ning "increment by" si; pooled va pooled-lo optimizerlari shu qiymatga tayanadi
+- [jakartaee/persistence, `SequenceGenerator.java`](https://raw.githubusercontent.com/jakartaee/persistence/master/api/src/main/java/jakarta/persistence/SequenceGenerator.java) - `allocationSize() default 50`
 
 ---
 
