@@ -38,10 +38,10 @@
 - [25.29 Maydonga Injeksiya (Field Injection)](#2529-maydonga-injeksiya-field-injection)
 - [25.30 O'z-o'ziga Chaqiruv Proxy'ni Buzishi (Self-invocation breaking @Transactional / @Cacheable)](#2530-oz-oziga-chaqiruv-proxyni-buzishi-self-invocation-breaking-transactional--cacheable)
 - [25.31 Public Bo'lmagan Metodda @Transactional (@Transactional on Non-Public Methods)](#2531-public-bolmagan-metodda-transactional-transactional-on-non-public-methods)
-- [25.32 View Ichida Ochiq Sessiya (Open Session in View - Anti View)](#2532-view-ichida-ochiq-sessiya-open-session-in-view---anti-view)
+- [25.32 View Ichida Ochiq Sessiya (Open Session in View - anti-pattern)](#2532-view-ichida-ochiq-sessiya-open-session-in-view---anti-pattern)
 - [25.33 API'da JPA Entity'larini Fosh Qilish (Exposing JPA Entities in API)](#2533-apida-jpa-entitylarini-fosh-qilish-exposing-jpa-entities-in-api)
 - [25.34 Semiz Controller (Fat Controller)](#2534-semiz-controller-fat-controller)
-- [25.35 Anemik Domen Modeli (Anemic Domain Model - Anti View)](#2535-anemik-domen-modeli-anemic-domain-model---anti-view)
+- [25.35 Anemik Domen Modeli (Anemic Domain Model - anti-pattern)](#2535-anemik-domen-modeli-anemic-domain-model---anti-pattern)
 - [25.36 ApplicationContext.getBean() Service Locator Sifatida (ApplicationContext.getBean() as Service Locator)](#2536-applicationcontextgetbean-service-locator-sifatida-applicationcontextgetbean-as-service-locator)
 - [25.37 Aylanali Bean Bog'liqliklari (Circular Bean Dependencies)](#2537-aylanali-bean-bogliqliklari-circular-bean-dependencies)
 - [25.38 Juda Keng Component Scanning (Over-broad Component Scanning)](#2538-juda-keng-component-scanning-over-broad-component-scanning)
@@ -67,7 +67,7 @@
 - [25.58 Nano-servislar (Nano-services)](#2558-nano-servislar-nano-services)
 - [25.59 Entitet-servislar (Entity Services)](#2559-entitet-servislar-entity-services)
 - [25.60 Sinxron chaqiruv zanjirlari (Synchronous call chains)](#2560-sinxron-chaqiruv-zanjirlari-synchronous-call-chains)
-- [25.61 Qayta urinish bo'roni (Retry Storm (anti view))](#2561-qayta-urinish-boroni-retry-storm-anti-view)
+- [25.61 Qayta urinish bo'roni (Retry Storm (anti-pattern))](#2561-qayta-urinish-boroni-retry-storm-anti-pattern)
 - [25.62 Band ma'lumotlar bazasi (Busy Database)](#2562-band-malumotlar-bazasi-busy-database)
 - [25.63 Noto'g'ri obyekt yaratish (Improper Instantiation)](#2563-notogri-obyekt-yaratish-improper-instantiation)
 - [25.64 Monolit saqlash qatlami (Monolithic Persistence)](#2564-monolit-saqlash-qatlami-monolithic-persistence)
@@ -586,7 +586,7 @@ public record Money(BigDecimal amount, Currency currency) {
 
 ## 25.31 Public Bo'lmagan Metodda @Transactional (@Transactional on Non-Public Methods)
 
-**Tavsif:** Spring'ning standart proxy-asosidagi transaction rejimida faqat public metodlar interceptor bilan o'raladi; `private`, `protected` va package-private metodlardagi `@Transactional` jim e'tiborsiz qoldiriladi. JDK dynamic proxy faqat interface metodlarini ko'radi, CGLIQ subclass esa `private`/`final` metodni override qila olmaydi. Natijada ishlab chiquvchi transaction mavjud deb o'ylaydi, lekin har bir repository chaqiruvi o'zining auto-commit konteksida bajariladi va rollback ishlamaydi. Bu xatolik kompilyatsiyada ham, startup'da ham ko'rinmaydi.
+**Tavsif:** Spring'ning standart proxy-asosidagi transaction rejimida faqat public metodlar interceptor bilan o'raladi; `private`, `protected` va package-private metodlardagi `@Transactional` jim e'tiborsiz qoldiriladi. JDK dynamic proxy faqat interface metodlarini ko'radi, CGLIB subclass esa `private`/`final` metodni override qila olmaydi. Natijada ishlab chiquvchi transaction mavjud deb o'ylaydi, lekin har bir repository chaqiruvi o'zining auto-commit konteksida bajariladi va rollback ishlamaydi. Bu xatolik kompilyatsiyada ham, startup'da ham ko'rinmaydi.
 
 **Spring'da qayerda uchraydi:** `AbstractFallbackTransactionAttributeSource` kodida `allowPublicMethodsOnly()` `true` qaytaradi, shuning uchun `AnnotationTransactionAttributeSource` public bo'lmagan metodni o'tkazib yuboradi. Spring Framework 6.x'da bu cheklov saqlanib qolgan; yagona chiqish yo'li - `@EnableTransactionManagement(mode = AdviceMode.ASPECTJ)` bilan AspectJ weaving (`spring-aspects` moduli va `AnnotationTransactionAspect`), bunda `protected`/package-private metodlar ham qo'llaniladi. Shunga o'xshash cheklov `@Cacheable` (`CacheInterceptor`) va `@Async` uchun ham amal qiladi.
 
@@ -597,9 +597,9 @@ public record Money(BigDecimal amount, Currency currency) {
 - `@Scheduled`+`@Transactional` birgalikda package-private metodga qo'yilib, cron ishlaydi-u, transaction yo'q bo'lishi.
 - Test uchun yozilgan `protected` helper metodga `@Transactional` qo'yib, test "yashil" bo'lgani holda ma'lumot commit bo'lib qolishi.
 
-**Ehtiyot bo'ling:** Statik analiz vositalari (SonarQube `java:S2229`, Spring IDE inspeksiyasi) bu holatni aniqlaydi - CI'da yoqib qo'ying. AspectJ rejimiga o'tish muammoni hal qiladi, lekin build murakkablashadi va weaving xatolari debug qilish qiyin, shuning uchun ko'pincha metodni public qilib alohida bean'ga ko'chirish arzonroq yechim.
+**Ehtiyot bo'ling:** Statik analiz vositalari (SonarQube `java:S2230`, "Methods with Spring proxying annotations should be public", Spring IDE inspeksiyasi) bu holatni aniqlaydi - CI'da yoqib qo'ying. AspectJ rejimiga o'tish muammoni hal qiladi, lekin build murakkablashadi va weaving xatolari debug qilish qiyin, shuning uchun ko'pincha metodni public qilib alohida bean'ga ko'chirish arzonroq yechim.
 
-## 25.32 View Ichida Ochiq Sessiya (Open Session in View - Anti View)
+## 25.32 View Ichida Ochiq Sessiya (Open Session in View - anti-pattern)
 
 **Tavsif:** Hibernate sessiyasi (yoki JPA `EntityManager`) HTTP so'rov tugaguniga qadar ochiq qoldiriladi, shunda view yoki serializer lazy collection'larni kerak bo'lganda yuklay oladi. Bu `LazyInitializationException`'ni "hal qiladi", lekin aslida uni yashiradi: DB chaqiruvlari service qatlamidan chiqib, rendering vaqtiga tarqaladi. Natijada N+1 so'rovlar nazoratdan chiqadi, DB connection har bir so'rov davomida ushlab turiladi va transaction chegaralari tushunarsiz bo'lib qoladi. Bugun bu Spring hamjamiyatida ochiq anti-pattern deb tan olingan.
 
@@ -644,7 +644,7 @@ public record Money(BigDecimal amount, Currency currency) {
 
 **Ehtiyot bo'ling:** Teskari tomonga o'tib ketmang - har bir controller metodi uchun bitta trivial "pass-through" service yaratish ham keraksiz qatlam (Lasagna code). Mantiq bor joyda service yoki domen obyektini ajratish kerak, shunchaki mapping bo'lsa controller ichida qoldirish to'g'ri.
 
-## 25.35 Anemik Domen Modeli (Anemic Domain Model - Anti View)
+## 25.35 Anemik Domen Modeli (Anemic Domain Model - anti-pattern)
 
 **Tavsif:** Domen sinflari faqat maydonlar, getter va setter'lardan iborat bo'lib, hech qanday xatti-harakatga ega bo'lmaydi; barcha qoidalar esa service sinflariga ko'chadi. Bu obyektga yo'naltirilgan dizaynning asosini - ma'lumot va uning ustidagi mantiqni birga saqlashni - buzadi. Natijada invariantlar hech qachon obyekt darajasida kafolatlanmaydi: har bir service o'zi tekshiruvni takrorlashi kerak, biri esa unutib qo'yadi. Martin Fowler bu holatni klassik anti-pattern deb ta'riflagan, garchi amalda u Spring loyihalarida eng keng tarqalgan uslub bo'lsa ham.
 
@@ -931,7 +931,7 @@ public record Money(BigDecimal amount, Currency currency) {
 
 ## 25.54 Katta loy to'p (Big Ball of Mud)
 
-**Tavsif:** Tizimda aniq chegaralar, qatlamlar va modullar yo'q: har narsa har narsaga bog'langan, bog'liqliklar aylanali, package'lar tasodifiy. Bu "anti view" - ya'ni arxitektura qarori emas, balki arxitektura yo'qligining natijasi. Har qanday o'zgarish kutilmagan joylarda buziladi, onboarding oylar oladi va refactoring deyarli imkonsiz bo'lib qoladi.
+**Tavsif:** Tizimda aniq chegaralar, qatlamlar va modullar yo'q: har narsa har narsaga bog'langan, bog'liqliklar aylanali, package'lar tasodifiy. Bu "anti-pattern" - ya'ni arxitektura qarori emas, balki arxitektura yo'qligining natijasi. Har qanday o'zgarish kutilmagan joylarda buziladi, onboarding oylar oladi va refactoring deyarli imkonsiz bo'lib qoladi.
 
 **Spring'da qayerda uchraydi:** Belgilari: `@Autowired` field injection bilan 15+ bog'liqlikka ega "God service", `util` package'da biznes mantiq, controller'dan to'g'ridan-to'g'ri repository chaqiruvi, entity'larning hamma qatlamda ishlatilishi, va aylanali bean bog'liqliklari (Spring Boot 2.6+ da `spring.main.allow-circular-references=false` default bo'lib, bu holda ishga tushish xato bilan to'xtaydi). Davolash vositalari: ArchUnit (`com.tngtech.archunit`) qoidalari, Spring Modulith (`@ApplicationModule`, `ApplicationModules.verify()`), constructor injection, Maven/Gradle multi-module ajratish va `spring-boot-starter` ichidagi package-by-feature tashkiloti.
 
@@ -946,7 +946,7 @@ public record Money(BigDecimal amount, Currency currency) {
 
 ## 25.55 Taqsimlangan monolit (Distributed Monolith)
 
-**Tavsif:** Tizim mikroservislarga bo'lingan, lekin ular sinxron chaqiruvlar zanjiri bilan qattiq bog'langan: bitta biznes amalini bajarish uchun 5-8 servis ketma-ket chaqiriladi va hammasi birga deploy qilinishi kerak. Natijada monolitning barcha bog'liqliklari saqlanadi, ustiga tarmoq latency'si, qisman nosozlik va distributed debugging murakkabligi qo'shiladi. Bu eng qimmat anti view: foyda yo'q, narx ikki barobar.
+**Tavsif:** Tizim mikroservislarga bo'lingan, lekin ular sinxron chaqiruvlar zanjiri bilan qattiq bog'langan: bitta biznes amalini bajarish uchun 5-8 servis ketma-ket chaqiriladi va hammasi birga deploy qilinishi kerak. Natijada monolitning barcha bog'liqliklari saqlanadi, ustiga tarmoq latency'si, qisman nosozlik va distributed debugging murakkabligi qo'shiladi. Bu eng qimmat anti-pattern: foyda yo'q, narx ikki barobar.
 
 **Spring'da qayerda uchraydi:** Belgilari: har bir service'da `RestClient`/`FeignClient` bilan sinxron zanjir, umumiy `shared-dto` kutubxonasi barcha servislarni bir versiyaga bog'laydi, va bitta release train. Diagnostika va davolash: Micrometer Tracing + OpenTelemetry bilan chaqiruv zanjirini o'lchash, Resilience4j (`@CircuitBreaker`, `@Bulkhead`, `@TimeLimiter`) bilan izolyatsiya, Spring for Apache Kafka / Spring Cloud Stream bilan asinxron event-driven integratsiya, Spring Cloud Contract bilan mustaqil deploy uchun consumer-driven kontraktlar, hamda Spring Modulith bilan avval modulli monolit qurish.
 
@@ -1034,7 +1034,7 @@ public record Money(BigDecimal amount, Currency currency) {
 
 **Ehtiyot bo'ling:** Parallelizatsiya (`CompletableFuture.allOf`, `Mono.zip`) lotentlikni kamaytiradi, lekin mavjudlik ko'paytmasi muammosini hal qilmaydi - bog'liqlik sonini kamaytirish kerak. Timeout'larni zanjir bo'ylab tanlashda tashqi timeout ichkisidan katta, lekin butun byudjetdan kichik bo'lishiga e'tibor bering, aks holda retry'lar bilan birga Retry Storm hosil bo'ladi.
 
-## 25.61 Qayta urinish bo'roni (Retry Storm (anti view))
+## 25.61 Qayta urinish bo'roni (Retry Storm (anti-pattern))
 
 **Tavsif:** Retry pattern to'g'ri qo'llanganda vaqtinchalik xatolarni yashiradi, ammo noto'g'ri sozlanganda nosozlikni kuchaytiradigan mexanizmga aylanadi. Downstream sekinlashganda har bir client 3 marta qayta urinadi, zanjirning har bir qatlami bu sonni ko'paytiradi (3×3×3 = 27 so'rov), natijada allaqachon qiynalgan servis yuki bir necha barobar oshadi. Jitter bo'lmaganda esa barcha client'lar bir vaqtda qayta uradi va to'lqinli yuk hosil bo'ladi. Bu metastabil nosozlik: sabab yo'qolgandan keyin ham tizim o'z-o'zini yuklab turadi.
 
