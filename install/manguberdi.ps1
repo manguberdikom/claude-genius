@@ -10,37 +10,46 @@
 
   Ochiq aytilsin: bu skript yozilgan muhitda SINALMAGAN, chunki u yerda
   PowerShell yo'q. Aynan shu sabab repo uni ish uchun taqiqlaydi. Shuning
-  uchun birinchi yurgizish quruq o'tadi: -Apply bermaguncha hech narsa
-  o'chirilmaydi va hech narsa yozilmaydi. Avval ro'yxatni o'qing.
+  uchun birinchi yurgizish quruq o'tadi: -Apply bermaguncha sozlamaga
+  tegilmaydi. Quruq yurish ham Python ni haqiqatan chaqiradi va skillni
+  vaqtinchalik papkada yig'ib sinaydi, keyin uni o'chiradi: nosozlik hech
+  narsa o'chmasidan oldin chiqadi. Avval ro'yxatni o'qing.
 
   Nima o'chiriladi (global, $HOME\.claude):
     settings.json, settings.local.json, CLAUDE.md,
     skills\, agents\, commands\, plugins\, hooks\, rules\, output-styles\
   Nima QOLADI:
     projects\ (suhbat tarixi), todos\, history.jsonl, shell-snapshots\,
-    statsig\ va $HOME\.claude.json (kirish ma'lumoti).
-    Kirishni ham o'chirish uchun -IncludeAuth, lekin shundan keyin
-    qaytadan login qilish kerak.
+    statsig\, .credentials.json (kirish tokeni; Windows da Credential
+    Manager da ham turishi mumkin) va $HOME\.claude.json (user MCP
+    serverlar, proyekt trust va ruxsatlari, onboarding holati).
+  Tegilmaydi: managed-settings.json, proyektdagi CLAUDE.md, CLAUDE.local.md
+    va .mcp.json, boshqa proyektlarning .claude\ papkasi.
 
 .PARAMETER GeniusPath
   claude-genius klonining yo'li. Skill qo'llanmasiz ishlamaydi: doc.sh,
   index va docs\ aynan shu yerdan olinadi.
 
 .PARAMETER Project
-  Qo'shimcha: shu proyektdagi .claude\ papkasi ham tozalanadi.
+  Qo'shimcha: shu proyektdagi .claude\ papkasi ham tozalanadi. Klon yoki
+  uy papkasi berilmaydi: skript buni rad etadi. .claude\ git da bo'lsa,
+  o'chirish keyingi commit ga tushadi: git status bilan tekshiring.
 
 .PARAMETER Apply
   Haqiqatan bajarish. Bersiz faqat ro'yxat chiqadi.
 
 .PARAMETER IncludeAuth
-  $HOME\.claude.json ham o'chiriladi. Login qaytadan talab qilinadi.
+  $HOME\.claude.json ham zaxiralanib o'chiriladi: user MCP serverlar,
+  proyekt trust va onboarding yo'qoladi. Login saqlanadi, chunki token
+  unda emas; chiqish kerak bo'lsa Claude Code ichida /logout.
 
 .PARAMETER BackupTo
   Zaxira papkasi. Berilmasa $HOME\.claude-backup-<vaqt> ishlatiladi.
+  Bo'sh bo'lmagan papka rad etiladi: avvalgi zaxira ustidan yozilmaydi.
 
 .EXAMPLE
   .\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius
-  Nima bo'lishini ko'rsatadi, hech narsaga tegmaydi.
+  Nima bo'lishini ko'rsatadi, sozlamaga tegmaydi.
 
 .EXAMPLE
   .\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius -Apply
@@ -73,24 +82,91 @@ $ConfigItems = @(
 $Actors = @('qidiruv', 'tahlil', 'review', 'arxitektor', 'test-muhandis',
             'rejalashtiruvchi')
 
-function Say([string]$text) { Write-Host $text }
+# Sinov yig'imi papkasi. Fail uni tozalaydi, shuning uchun oldindan e'lon.
+$Stage = $null
+
+function Say([string]$text, [string]$Color) {
+  if ($Color) { Write-Host $text -ForegroundColor $Color } else { Write-Host $text }
+}
 function Step([string]$text) { Write-Host "  $text" }
 
 function Fail([string]$text) {
   Write-Host "XATO: $text" -ForegroundColor Red
+  if ($script:Stage -and (Test-Path -LiteralPath $script:Stage)) {
+    Remove-Item -LiteralPath $script:Stage -Recurse -Force -ErrorAction SilentlyContinue
+  }
   exit 1
+}
+
+# Native buyruqni chaqiradi. Windows PowerShell 5.1 da `2>&1` bilan har
+# stderr qatori xato yozuviga aylanadi va 'Stop' ostida skript sababni
+# aytmay to'xtaydi. Shuning uchun chaqiruv vaqtida 'Continue', chiqish
+# esa matn: Out va Code.
+function Invoke-Native([string]$Exe, [string[]]$ArgList, [string]$InputText) {
+  $prev = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
+  try {
+    if ($InputText) {
+      $lines = $InputText | & $Exe @ArgList 2>&1 | ForEach-Object { "$_" }
+    } else {
+      $lines = & $Exe @ArgList 2>&1 | ForEach-Object { "$_" }
+    }
+    $code = $LASTEXITCODE
+  } catch {
+    $lines = @("$_")
+    $code = 1
+  } finally {
+    $ErrorActionPreference = $prev
+  }
+  return [pscustomobject]@{ Out = (@($lines) -join "`n").Trim(); Code = $code }
+}
+
+function Invoke-Py([string[]]$ArgList, [string]$InputText) {
+  return Invoke-Native $script:PythonExe $ArgList $InputText
+}
+
+# Python nomi bo'yicha emas, ishga tushirib tanlanadi. WindowsApps dagi
+# python.exe va python3.exe Microsoft Store stub'i: Get-Command ularni
+# topadi, lekin ular Python emas. `py -3` birinchi, chunki python.org
+# o'rnatuvchisi python3.exe bermaydi. Natija sys.executable: hook va skill
+# matniga aynan shu to'liq yo'l yoziladi.
+function Find-Python {
+  foreach ($c in @(@('py', '-3'), @('python'), @('python3'))) {
+    $cmd = Get-Command $c[0] -CommandType Application -ErrorAction SilentlyContinue |
+      Select-Object -First 1
+    if (-not $cmd) { continue }
+    $probe = @($c | Select-Object -Skip 1) +
+      @('-c', 'import sys; assert sys.version_info >= (3, 8); print(sys.executable)')
+    $r = Invoke-Native $cmd.Source $probe
+    if ($r.Code -ne 0 -or -not $r.Out) { continue }
+    $exe = ($r.Out -split "`n")[-1].Trim()
+    if (Test-Path -LiteralPath $exe -PathType Leaf) { return $exe }
+  }
+  return $null
 }
 
 # --- 1. Manbani tekshirish -------------------------------------------------
 
+if ($env:CLAUDE_CONFIG_DIR) {
+  Fail ("CLAUDE_CONFIG_DIR o'rnatilgan ($env:CLAUDE_CONFIG_DIR): Claude Code " +
+        "sozlamani o'sha yerdan o'qiydi, skript esa $ClaudeDir ni tozalaydi. " +
+        "O'zgaruvchini olib tashlab qayta yurgizing.")
+}
+
 if (-not (Test-Path -LiteralPath $GeniusPath -PathType Container)) {
   Fail "GeniusPath topilmadi: $GeniusPath"
 }
-$GeniusPath = (Resolve-Path -LiteralPath $GeniusPath).Path
+# ProviderPath: PSDrive yoki provider-qualified yo'l Python ga tushunarli
+# bo'ladi. Oxirgi slash kesiladi: bo'sh joyli yo'lda `"C:\a b\"` native
+# argumentda `\"` qo'shtirnoqni ekranlab, keyingi argumentlarni yutadi.
+$GeniusPath = (Resolve-Path -LiteralPath $GeniusPath).ProviderPath.TrimEnd('\', '/')
+$toolsDir = Join-Path $GeniusPath 'tools'
 
 $Required = @(
-  'tools\doc.sh', 'tools\guard.py', 'tools\check_code.py',
-  'tools\rules_for.py', 'tools\budget.py', 'tools\suggest_sections.py',
+  'tools\doc.sh', 'tools\guard.py', 'tools\check_code.py', 'tools\rules_for.py',
+  'tools\budget.py', 'tools\suggest_sections.py', 'tools\usage.py',
+  'tools\handoff.py', 'tools\state.py', 'tools\docref.py',
+  'tools\build_index.py', 'tools\check_docs.py', 'install\rewrite_paths.py',
   'docs\manifest.json', '.claude\skills\manguberdi\SKILL.md'
 )
 foreach ($rel in $Required) {
@@ -99,12 +175,39 @@ foreach ($rel in $Required) {
   }
 }
 
-$Python = Get-Command 'python3' -ErrorAction SilentlyContinue
-if (-not $Python) { $Python = Get-Command 'python' -ErrorAction SilentlyContinue }
-if (-not $Python) {
-  Fail "python3 topilmadi. Hooklar Python bilan ishlaydi, usiz o'rnatish ma'nosiz."
+# -Project ning .claude\ papkasi o'chiriladi. Uy papkasi berilsa bu global
+# papkaning o'zi (tarix va kirish ketadi), klon berilsa o'rnatish manbasi.
+# Shuning uchun bu hech narsa boshlanmasidan, quruq yurishda ham rad etiladi.
+$projClaude = $null
+if ($Project) {
+  if (-not (Test-Path -LiteralPath $Project -PathType Container)) {
+    Fail "Project topilmadi: $Project"
+  }
+  $Project = (Resolve-Path -LiteralPath $Project).ProviderPath.TrimEnd('\', '/')
+  $projClaude = Join-Path $Project '.claude'
+  $himoya = @($ClaudeDir, (Join-Path $GeniusPath '.claude'))
+  if ($himoya | Where-Object { $_.TrimEnd('\') -ieq $projClaude.TrimEnd('\') }) {
+    Fail "-Project klon yoki uy papkasi bo'la olmaydi: $Project"
+  }
 }
-$PythonExe = $Python.Source
+
+# Zaxira hech qachon avvalgisi ustidan yozilmaydi: qayta yurgizishda bir
+# xil -BackupTo asl settings.json nusxasini o'rnatilgani bilan bosardi.
+if (-not $BackupTo) {
+  $BackupTo = Join-Path $UserHome (".claude-backup-" + (Get-Date -Format 'yyyyMMdd-HHmmss'))
+}
+if ((Test-Path -LiteralPath $BackupTo) -and
+    @(Get-ChildItem -LiteralPath $BackupTo -Force).Count -gt 0) {
+  Fail ("zaxira papkasi bo'sh emas: $BackupTo. Avvalgi zaxira ustidan " +
+        "yozilmaydi: yangi yo'l bering yoki -BackupTo ni olib tashlang.")
+}
+
+$PythonExe = Find-Python
+if (-not $PythonExe) {
+  Fail ("ishlaydigan Python 3.8+ topilmadi (py -3, python, python3 sinaldi; " +
+        "WindowsApps dagi Microsoft Store stub'i hisoblanmaydi). Hooklar " +
+        "Python bilan ishlaydi, usiz o'rnatish ma'nosiz.")
+}
 
 # doc.sh bash skripti va qidiruv qatlamining hammasi unga tayanadi.
 # Windows da bash kafolatlanmagan: Git for Windows yoki WSL bilan keladi.
@@ -122,6 +225,20 @@ if (-not $BashExe) {
   }
 }
 
+# ~/.claude.json dagi user scope MCP serverlar har proyektda ishlaydi va
+# skript ularga tegmaydi, shuning uchun nomlari ochiq aytiladi. Fayl faqat
+# o'qiladi, joyida tahrirlanmaydi.
+$UserMcp = @()
+if (Test-Path -LiteralPath $AuthFile) {
+  try {
+    $cfg = Get-Content -LiteralPath $AuthFile -Raw | ConvertFrom-Json
+    $prop = $cfg.PSObject.Properties['mcpServers']
+    if ($prop -and $prop.Value) {
+      $UserMcp = @($prop.Value.PSObject.Properties | ForEach-Object { $_.Name })
+    }
+  } catch { $UserMcp = @() }
+}
+
 Say ""
 Say "Manba : $GeniusPath"
 Say "Python: $PythonExe"
@@ -130,9 +247,20 @@ Say "Global: $ClaudeDir"
 if ($Project) { Say "Proyekt: $Project" }
 Say ("Rejim : " + $(if ($Apply) { 'BAJARILADI' } else { 'quruq yurish (-Apply bermadingiz)' }))
 
+# Managed sozlama hammadan ustun: skript unga tegmaydi, lekin u hooklarni
+# o'chirib qo'ysa o'rnatish jim ishlamaydi.
+foreach ($m in @("$env:ProgramFiles\ClaudeCode\managed-settings.json",
+                 "$env:ProgramData\ClaudeCode\managed-settings.json")) {
+  if (Test-Path -LiteralPath $m) {
+    Say ""
+    Say ("DIQQAT: $m topildi. U eng ustun sozlama, skript unga tegmaydi; " +
+         "disableAllHooks yoki allowManagedHooksOnly bo'lsa hooklar ishlamaydi.") Yellow
+  }
+}
+
 if (-not $BashExe) {
   Say ""
-  Say "OGOHLANTIRISH: bash topilmadi." -ForegroundColor Yellow
+  Say "OGOHLANTIRISH: bash topilmadi." Yellow
   Say "  tools\doc.sh bash skripti, qidiruv qatlamining hammasi unga tayanadi:"
   Say "  find, show, rule, checklist, outline. Usiz skill qoida matnini"
   Say "  o'qiy olmaydi, faqat hooklar ishlaydi."
@@ -141,12 +269,78 @@ if (-not $BashExe) {
   Say ""
 }
 
-# --- 2. Zaxira ------------------------------------------------------------
+# --- 2. Sinov yig'imi ----------------------------------------------------
 
-if (-not $BackupTo) {
-  $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-  $BackupTo = Join-Path $UserHome ".claude-backup-$stamp"
+# Skill avval vaqtinchalik papkada yig'iladi va sinaladi, keyin o'rniga
+# ko'chadi. Yo'l almashtirish yoki indeks yiqilsa, hali hech narsa
+# o'chmagan bo'ladi. Quruq yurishda ham ishlaydi: faqat %TEMP% ga yozadi.
+#
+# Skill matnida buyruqlar `python3 tools/rules_for.py` ko'rinishida yozilgan
+# va bu yo'l JORIY papkaga nisbatan hal qilinadi. Global o'rnatilgan skill
+# boshqa proyektda ishlatilsa, ularning hammasi topilmaydi. Almashtirish
+# Python da, chunki bu qism sinaladi: tools/test_rewrite_paths.py.
+
+$skillSrc = Join-Path $GeniusPath '.claude\skills\manguberdi'
+$rewriter = Join-Path $GeniusPath 'install\rewrite_paths.py'
+$bashArg = if ($BashExe) { $BashExe.Replace('\', '/') } else { 'bash' }
+$pyArg = $PythonExe.Replace('\', '/')
+
+$Stage = Join-Path ([IO.Path]::GetTempPath()) ("manguberdi-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
+$stageSkill = Join-Path $Stage 'skills\manguberdi'
+$stageAgents = Join-Path $Stage 'agents'
+
+Say ""
+Say "0. Sinov yig'imi -> $Stage"
+Step "python: $pyArg"
+Step "bash  : $bashArg"
+
+New-Item -ItemType Directory -Path (Split-Path -Parent $stageSkill) -Force | Out-Null
+New-Item -ItemType Directory -Path $stageAgents -Force | Out-Null
+Copy-Item -LiteralPath $skillSrc -Destination $stageSkill -Recurse -Force
+foreach ($actor in $Actors) {
+  $src = Join-Path $GeniusPath ".claude\agents\$actor.md"
+  if (-not (Test-Path -LiteralPath $src)) {
+    Say "  OGOHLANTIRISH: aktyor fayli yo'q: $actor.md"
+    continue
+  }
+  Copy-Item -LiteralPath $src -Destination $stageAgents -Force
 }
+
+foreach ($target in @($stageSkill, $stageAgents)) {
+  $r = Invoke-Py @($rewriter, $target, '--root', $GeniusPath,
+                   '--python', $pyArg, '--bash', $bashArg)
+  if ($r.Code -ne 0) { Fail "yo'llarni almashtirish yiqildi, hech narsa o'chmadi: $($r.Out)" }
+  Step $r.Out
+  $r = Invoke-Py @($rewriter, $target, '--root', $GeniusPath, '--tekshir')
+  if ($r.Code -ne 0) { Fail "nisbiy yo'l qoldi, hech narsa o'chmadi: $($r.Out)" }
+}
+
+# Global ruxsat ro'yxati. Qoida buyruq matnining aynan boshlanishi bo'lishi
+# shart, aks holda mos kelmaydi; shuning uchun uni yo'llarni yozgan asbob
+# o'zi beradi, bu yerda qo'lda yig'ilmaydi.
+$r = Invoke-Py @($rewriter, $Stage, '--root', $GeniusPath,
+                 '--python', $pyArg, '--bash', $bashArg, '--allow')
+if ($r.Code -ne 0) { Fail "ruxsat ro'yxati yasalmadi, hech narsa o'chmadi: $($r.Out)" }
+$Allow = @()
+try {
+  foreach ($rule in ($r.Out | ConvertFrom-Json)) { $Allow += [string]$rule }
+} catch { Fail "ruxsat ro'yxati o'qilmadi: $($r.Out)" }
+Step "ruxsat qoidasi: $($Allow.Count) ta"
+
+# Indeks git da yo'q: toza klonda bo'lim taklifi hooki usiz jim bo'sh.
+# U klonga yoziladi, shuning uchun faqat -Apply bilan.
+$sections = Join-Path $GeniusPath 'index\sections.tsv'
+if ($Apply) {
+  $r = Invoke-Py @((Join-Path $toolsDir 'build_index.py'))
+  if ($r.Code -ne 0 -or -not (Test-Path -LiteralPath $sections)) {
+    Fail "indeks yasalmadi, hech narsa o'chmadi: $($r.Out)"
+  }
+  Step "indeks yasaldi: $(Split-Path -Parent $sections)"
+} else {
+  Step "indeks: $(Split-Path -Parent $sections) (-Apply bilan yasaladi)"
+}
+
+# --- 3. Zaxira ------------------------------------------------------------
 
 Say ""
 Say "1. Zaxira -> $BackupTo"
@@ -157,9 +351,9 @@ foreach ($name in $ConfigItems) {
   if (Test-Path -LiteralPath $path) { $ToRemove += $path }
 }
 if ($IncludeAuth -and (Test-Path -LiteralPath $AuthFile)) { $ToRemove += $AuthFile }
-if ($Project) {
-  $projClaude = Join-Path $Project '.claude'
+if ($projClaude) {
   if (Test-Path -LiteralPath $projClaude) { $ToRemove += $projClaude }
+  else { Step "proyektda .claude yo'q: $Project" }
 }
 
 if ($ToRemove.Count -eq 0) {
@@ -178,7 +372,7 @@ if ($ToRemove.Count -eq 0) {
   }
 }
 
-# --- 3. Tozalash ---------------------------------------------------------
+# --- 4. Tozalash ---------------------------------------------------------
 
 Say ""
 Say "2. Tozalash"
@@ -188,86 +382,70 @@ foreach ($path in $ToRemove) {
   if ($Apply) { Remove-Item -LiteralPath $path -Recurse -Force }
 }
 if (-not $IncludeAuth) {
-  Step "qoladi: $AuthFile (kirish ma'lumoti; -IncludeAuth bilan o'chadi)"
+  Step "qoladi: $AuthFile (user MCP serverlar, proyekt trust, onboarding; -IncludeAuth bilan o'chadi)"
+  foreach ($n in $UserMcp) {
+    Step "qoladi: user MCP server $n (olib tashlash: claude mcp remove $n -s user)"
+  }
 }
-Step "qoladi: projects\, todos\, history.jsonl (suhbat tarixi)"
+Step "qoladi: .credentials.json (kirish tokeni), projects\, todos\, history.jsonl (suhbat tarixi)"
 
-# --- 4. O'rnatish --------------------------------------------------------
+# --- 5. O'rnatish --------------------------------------------------------
 
 Say ""
 Say "3. manguberdi o'rnatilmoqda"
 
-$skillSrc = Join-Path $GeniusPath '.claude\skills\manguberdi'
 $skillDst = Join-Path $ClaudeDir 'skills\manguberdi'
 $agentsDst = Join-Path $ClaudeDir 'agents'
 
 Step "skill  -> $skillDst"
+Step "aktyorlar -> $agentsDst"
+foreach ($file in @(Get-ChildItem -LiteralPath $stageAgents -Filter '*.md')) {
+  Step "  $($file.BaseName)"
+}
 if ($Apply) {
   New-Item -ItemType Directory -Path (Split-Path -Parent $skillDst) -Force | Out-Null
-  Copy-Item -LiteralPath $skillSrc -Destination $skillDst -Recurse -Force
-}
-
-Step "aktyorlar -> $agentsDst"
-if ($Apply) { New-Item -ItemType Directory -Path $agentsDst -Force | Out-Null }
-foreach ($actor in $Actors) {
-  $src = Join-Path $GeniusPath ".claude\agents\$actor.md"
-  if (-not (Test-Path -LiteralPath $src)) {
-    Say "  OGOHLANTIRISH: aktyor fayli yo'q: $actor.md"
-    continue
-  }
-  Step "  $actor"
-  if ($Apply) { Copy-Item -LiteralPath $src -Destination $agentsDst -Force }
-}
-
-# --- 4b. Yo'llarni mutlaq qilish -----------------------------------------
-
-# Skill matnida buyruqlar `python3 tools/rules_for.py` ko'rinishida yozilgan
-# va bu yo'l JORIY papkaga nisbatan hal qilinadi. Global o'rnatilgan skill
-# boshqa proyektda ishlatilsa, ularning hammasi topilmaydi. Almashtirish
-# Python da, chunki bu qism sinaladi: tools/test_rewrite_paths.py.
-
-$rewriter = Join-Path $GeniusPath 'install\rewrite_paths.py'
-$bashArg = if ($BashExe) { $BashExe.Replace('\', '/') } else { 'bash' }
-
-Say ""
-Say "3b. Yo'llar mutlaq qilinmoqda"
-Step "manba: $GeniusPath"
-Step "bash : $bashArg"
-
-if ($Apply) {
-  foreach ($target in @($skillDst, $agentsDst)) {
-    $out = & $PythonExe $rewriter $target '--root' $GeniusPath '--bash' $bashArg 2>&1
-    if ($LASTEXITCODE -ne 0) {
-      Say "  XATO: yo'llarni almashtirish yiqildi: $out"
-      Say "  Zaxira: $BackupTo"
-      exit 1
-    }
-    Step "$out"
+  Copy-Item -LiteralPath $stageSkill -Destination $skillDst -Recurse -Force
+  New-Item -ItemType Directory -Path $agentsDst -Force | Out-Null
+  foreach ($file in @(Get-ChildItem -LiteralPath $stageAgents -Filter '*.md')) {
+    Copy-Item -LiteralPath $file.FullName -Destination $agentsDst -Force
   }
 }
+Remove-Item -LiteralPath $Stage -Recurse -Force
+$Stage = $null
 
-# --- 5. Sozlama ----------------------------------------------------------
+# --- 6. Sozlama ----------------------------------------------------------
 
 # Hook yo'llari MUTLAQ bo'ladi. Repodagi settings.json $CLAUDE_PROJECT_DIR
 # ishlatadi, u esa faol proyektni ko'rsatadi; global o'rnatishda asboblar
 # boshqa papkada turadi, shuning uchun yo'l aynan shu klonga bog'lanadi.
-$toolsDir = Join-Path $GeniusPath 'tools'
-
 function HookCmd([string]$script) {
   return ('"{0}" "{1}"' -f $PythonExe, (Join-Path $toolsDir $script))
 }
 
+# Klon additionalDirectories da: Read, Grep va Glob qo'llanmani har
+# proyektdan so'rovsiz o'qiydi. Asbob buyruqlari esa $Allow dan.
+# GENIUS_PYTHON: doc.sh indeksni qayta yasaganda nom bo'yicha qidirmasdan
+# aynan sinalgan Python ni oladi (python3 nomi Store stub'iga tushadi).
 $settings = [ordered]@{
   '$schema' = 'https://json.schemastore.org/claude-code-settings.json'
   bashOutputMaxChars = 12000
+  env = [ordered]@{ GENIUS_PYTHON = $pyArg }
+  permissions = [ordered]@{
+    additionalDirectories = @($GeniusPath.Replace('\', '/'))
+    allow = $Allow
+  }
   hooks = [ordered]@{
     UserPromptSubmit = @(
-      [ordered]@{ hooks = @([ordered]@{
-        type = 'command'; command = (HookCmd 'suggest_sections.py')
-        timeout = 10; statusMessage = "Mos bo'limlar qidirilmoqda" }) }
+      [ordered]@{ hooks = @(
+        [ordered]@{
+          type = 'command'; command = (HookCmd 'suggest_sections.py')
+          timeout = 10; statusMessage = "Mos bo'limlar qidirilmoqda" },
+        [ordered]@{
+          type = 'command'; command = ((HookCmd 'handoff.py') + ' --hook')
+          timeout = 10; statusMessage = "Kontekst o'lchanmoqda" }) }
     )
     PreToolUse = @(
-      [ordered]@{ matcher = 'Read|Bash'; hooks = @([ordered]@{
+      [ordered]@{ matcher = 'Read|Bash|PowerShell'; hooks = @([ordered]@{
         type = 'command'; command = (HookCmd 'guard.py')
         timeout = 10; statusMessage = 'Qimmat amal tekshirilmoqda' }) },
       [ordered]@{ matcher = 'Task|Agent'; hooks = @([ordered]@{
@@ -290,8 +468,9 @@ $settings = [ordered]@{
 $settingsPath = Join-Path $ClaudeDir 'settings.json'
 Say ""
 Say "4. Sozlama -> $settingsPath"
-Step "besh hook: bo'lim taklifi, qo'riqchi, budjet, kod tekshiruvi, sarf hisobi"
+Step "olti hook: bo'lim taklifi, kontekst o'lchovi, qo'riqchi, budjet, kod tekshiruvi, sarf hisobi"
 Step "yo'llar mutlaq, manba: $toolsDir"
+Step "ruxsat: klon additionalDirectories da, $($Allow.Count) ta asbob buyrug'i oldindan ruxsatli"
 
 if ($Apply) {
   New-Item -ItemType Directory -Path $ClaudeDir -Force | Out-Null
@@ -299,14 +478,14 @@ if ($Apply) {
   Set-Content -LiteralPath $settingsPath -Value $json -Encoding UTF8
 }
 
-# --- 6. Tekshirish -------------------------------------------------------
+# --- 7. Tekshirish -------------------------------------------------------
 
 Say ""
 Say "5. Tekshirish"
 
 if (-not $Apply) {
   Say ""
-  Say "Hech narsa o'zgarmadi. Bajarish uchun ayni buyruqqa -Apply qo'shing."
+  Say "Sozlama o'zgarmadi. Bajarish uchun ayni buyruqqa -Apply qo'shing."
   exit 0
 }
 
@@ -329,17 +508,25 @@ try {
 # Nisbiy yo'l qolmaganini tasdiqlash. Qolsa, skill boshqa proyektda
 # jim ishlamaydi: buyruq topilmaydi, sabab ko'rinmaydi.
 foreach ($target in @($skillDst, $agentsDst)) {
-  $check = & $PythonExe $rewriter $target '--root' $GeniusPath '--tekshir' 2>&1
-  if ($LASTEXITCODE -eq 0) { Step "nisbiy yo'l qolmadi: $(Split-Path -Leaf $target)" }
-  else { Step "XATO: $check"; $ok = $false }
+  $r = Invoke-Py @($rewriter, $target, '--root', $GeniusPath, '--tekshir')
+  if ($r.Code -eq 0) { Step "nisbiy yo'l qolmadi: $(Split-Path -Leaf $target)" }
+  else { Step "XATO: $($r.Out)"; $ok = $false }
 }
 
-# Asboblarning o'zi ishlayaptimi: bitta arzon chaqiruv yetadi.
-try {
-  $probe = & $PythonExe (Join-Path $toolsDir 'budget.py') '--holat' 2>&1
-  if ($LASTEXITCODE -eq 0) { Step "asboblar ishlayapti" }
-  else { Step "XATO: budget.py yiqildi: $probe"; $ok = $false }
-} catch { Step "XATO: Python asbobni yurgizmadi: $_"; $ok = $false }
+# Asboblarning o'zi ishlayaptimi: har qatlamdan bitta arzon chaqiruv.
+$r = Invoke-Py @((Join-Path $toolsDir 'budget.py'), '--holat')
+if ($r.Code -eq 0) { Step "asboblar ishlayapti" }
+else { Step "XATO: budget.py yiqildi: $($r.Out)"; $ok = $false }
+
+$r = Invoke-Py @((Join-Path $toolsDir 'suggest_sections.py')) '{"prompt":"circuit breaker"}'
+if ($r.Code -eq 0 -and $r.Out -match 'patterns') { Step "bo'lim taklifi ishlayapti" }
+else { Step "XATO: bo'lim taklifi bo'sh: $($r.Out)"; $ok = $false }
+
+if ($BashExe) {
+  $r = Invoke-Native $BashExe @((Join-Path $toolsDir 'doc.sh').Replace('\', '/'), 'find', 'circuit breaker')
+  if ($r.Code -eq 0) { Step "doc.sh ishlayapti" }
+  else { Step "XATO: doc.sh ishlamadi (bash ichida python3 yo'qmi?): $($r.Out)"; $ok = $false }
+}
 
 Say ""
 if ($ok) {
