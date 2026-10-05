@@ -105,3 +105,52 @@ jobs:
           if (Test-Path "$HOME/.claude/CLAUDE.md") { Write-Host "eski CLAUDE.md qoldi"; exit 1 }
           if (-not (Test-Path "$HOME/.claude/skills/manguberdi/SKILL.md")) { Write-Host "skill yo'q"; exit 1 }
           if (-not (Test-Path "$HOME/.claude-backup-*")) { Write-Host "zaxira yo'q"; exit 1 }
+
+      # -Update faqat o'z birliklarini almashtiradi. Begona skill va begona
+      # hook (o'z hooklari bilan bir guruhda) qolishi, o'z hooki
+      # ikkilanmasligi, BOM li eski settings.json o'qilib BOM siz yozilishi
+      # va skill ichida ikkinchi manguberdi\ ochilmasligi shu yerda sinaladi.
+      - name: Yangilash (-Update)
+        run: |
+          New-Item -ItemType Directory -Force "$HOME/.claude/skills/begona" | Out-Null
+          Set-Content "$HOME/.claude/skills/begona/SKILL.md" 'begona'
+          $tayyor = Join-Path $env:RUNNER_TEMP 'begona_qosh.py'
+          @'
+          import json, os
+          p = os.path.expanduser("~/.claude/settings.json")
+          d = json.load(open(p, encoding="utf-8"))
+          d["hooks"]["UserPromptSubmit"][0]["hooks"].append(
+              {"type": "command", "command": "echo begona-hook"})
+          d["permissions"]["allow"].append("Bash(git status:*)")
+          # Eski o'rnatuvchi PowerShell 5.1 da BOM yozgan: shuni takrorlaymiz.
+          json.dump(d, open(p, "w", encoding="utf-8-sig"), indent=2)
+          '@ | Set-Content -LiteralPath $tayyor
+          python $tayyor
+          if ($LASTEXITCODE) { exit 1 }
+          ./install/manguberdi.ps1 -GeniusPath $PWD -Update -Apply -BackupTo "$env:RUNNER_TEMP/yangilash-zaxira"
+          if ($LASTEXITCODE) { exit 1 }
+          $tekshir = Join-Path $env:RUNNER_TEMP 'yangilash_tekshir.py'
+          @'
+          import json, os, sys
+          p = os.path.expanduser("~/.claude/settings.json")
+          d = json.load(open(p, encoding="utf-8"))  # BOM bo'lsa yiqiladi
+          cmds = [h.get("command", "") for gs in d["hooks"].values()
+                  for g in gs for h in g.get("hooks", [])]
+          xato = []
+          if "echo begona-hook" not in cmds:
+              xato.append("begona hook yo'qoldi")
+          if sum("suggest_sections.py" in c for c in cmds) != 1:
+              xato.append("suggest_sections.py hooki bir marta emas")
+          if "Bash(git status:*)" not in d["permissions"]["allow"]:
+              xato.append("begona ruxsat yo'qoldi")
+          print("; ".join(xato) or "settings.json birlashdi")
+          sys.exit(1 if xato else 0)
+          '@ | Set-Content -LiteralPath $tekshir
+          python $tekshir
+          if ($LASTEXITCODE) { exit 1 }
+          if (-not (Test-Path "$HOME/.claude/skills/begona/SKILL.md")) { Write-Host "begona skill o'chdi"; exit 1 }
+          if (-not (Test-Path "$HOME/.claude/skills/manguberdi/SKILL.md")) { Write-Host "skill yo'q"; exit 1 }
+          if (Test-Path "$HOME/.claude/skills/manguberdi/manguberdi") { Write-Host "skill ichida ikkinchi manguberdi"; exit 1 }
+          foreach ($z in @('skills--manguberdi', '.claude--settings.json')) {
+            if (-not (Test-Path -LiteralPath "$env:RUNNER_TEMP/yangilash-zaxira/$z")) { Write-Host "zaxirada yo'q: $z"; exit 1 }
+          }

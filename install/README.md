@@ -13,7 +13,9 @@ Ikkalasi bitta mashinada bo'lishi mumkin. Lekin global o'rnatish bor
 mashinada klon ichida ishlansa, repo hooklari ham, global hooklar ham
 yuradi, ya'ni har hook ikki marta ishlaydi va bo'lim taklifi kontekstga
 ikki marta tushadi. `budget.py` bir chaqiruvni `tool_use_id` bo'yicha
-bir marta sanaydi, shuning uchun budjet ikki baravar tez tugamaydi.
+bir marta sanaydi, shuning uchun takror hook budjetni ikki baravar tez
+tugatmaydi. `budget.py --tiklash <aktyor>` esa bitta qadamni qo'lda
+qaytarish uchun qoladi.
 
 ## Nimaga tayanadi
 
@@ -45,9 +47,12 @@ Topilganining to'liq yo'li hook buyrug'iga va skill matniga yoziladi,
 shuning uchun B yo'lida `python3` nomi `PATH` da bo'lishi shart emas.
 
 Windows da bash odatda [Git for Windows](https://git-scm.com/download/win)
-bilan keladi. O'rnatuvchi uni o'zi izlaydi: `PATH` dan, keyin Git ning
-odatiy papkalaridan. Topilmasa aytadi va davom etadi, chunki hooklar
-baribir ishlaydi.
+bilan keladi. O'rnatuvchi uni o'zi izlaydi: avval Git ning odatiy
+papkalaridan (`Program Files\Git`, `Program Files (x86)\Git`,
+`%LOCALAPPDATA%\Programs\Git`), keyin `PATH` dan. `System32` va
+`WindowsApps` dagi `bash.exe` hisoblanmaydi: u WSL ishga tushirgichi va
+`C:\` yo'llarini boshqa fayl tizimida ochadi. Topilmasa aytadi va davom
+etadi, chunki hooklar baribir ishlaydi.
 
 Bashsiz faqat `doc.sh` buyruqlari yo'qoladi: `find`, `show`, `rule`,
 `checklist`, `outline`. `rules_for.py` boblari, `check_code.py` dagi
@@ -99,7 +104,9 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 `core.autocrlf=false` shart. Git for Windows odatda uni `true` qiladi va
 `tools/doc.sh` CRLF bilan yoziladi. Bash bunday faylni boshidayoq
 to'xtatadi (`set: pipefail: invalid option name`), qidiruv esa jim
-ishlamay qoladi.
+ishlamay qoladi. O'rnatuvchi CRLF li `tools/doc.sh` ni o'zi ham rad
+etadi, hech narsa o'chmasidan oldin, va [Muammolar](#muammolar) dagi
+yechimni aytadi.
 
 Oxirgi buyruq skript yurgizishga faqat shu oyna uchun ruxsat beradi,
 tizim sozlamasi o'zgarmaydi. Windows da standart siyosat `Restricted`
@@ -139,6 +146,11 @@ Chiqishdagi raqamlar shu tartibda keladi:
 5. **Tekshirish.** Faqat `-Apply` bilan: skill joyida, `settings.json`
    o'qiladi, nisbiy yo'l qolmagan, asboblar, bo'lim taklifi va `doc.sh`
    javob beradi.
+
+`-Update` da 0-qadam `settings.json` birlashtirishni ham quruq sinaydi,
+1-3 qadamlar faqat o'z birliklariga tegadi (2-qadam "Almashtirish" deb
+chiqadi), 4-qadamda esa `settings.json` bosilmaydi, birlashtiriladi.
+Tafsiloti [Yangilash](#yangilash) bo'limida.
 
 ### Nima o'chiriladi
 
@@ -210,7 +222,7 @@ Hooklar (hammasi tanlangan Python ning to'liq yo'li bilan):
 | Hodisa | Asbob | Nima qiladi |
 |---|---|---|
 | `UserPromptSubmit` | `suggest_sections.py` | so'rovga mos bo'lim raqamlarini beradi |
-| `UserPromptSubmit` | `budget.py` | yangi so'rovda aktyor budjetini nolga tushiradi |
+| `UserPromptSubmit` | `budget.py` | yangi so'rovda sessiya budjetini jim nolga tushiradi |
 | `UserPromptSubmit` | `handoff.py --hook` | kontekst chegaradan oshganda yangi sessiyaga uzatishni taklif qiladi |
 | `PreToolUse` (Read, Bash, PowerShell) | `guard.py` | katta faylni, konteynerni, bazani, PowerShell ni to'sadi |
 | `PreToolUse` (Task, Agent) | `budget.py` | aktyorning uchinchi chaqiruvini to'sadi |
@@ -312,20 +324,35 @@ oladi, chunki hook yo'li klonga bog'langan. `~/.claude` dagi skill va
 aktyorlar esa o'rnatish paytidagi nusxa: ular pull bilan yangilanmaydi,
 yangi hook ham `settings.json` ga o'zi qo'shilmaydi.
 
-Hozir ularni yangilashning yagona yo'li o'rnatuvchini qayta yurgizish.
-U birinchi o'rnatishdagidek ishlaydi: `~/.claude` dagi sozlamani yangi
-zaxiraga olib tozalaydi. O'rnatishdan keyin qo'shilgan skill, agent yoki
-`CLAUDE.md` ham zaxiraga ketadi, shuning uchun avval quruq yurgizib
-ro'yxatni o'qing. Buyruqlar 0-qadamdagidek, klon ildizida va ruxsat
-berilgan oynada yurgiziladi:
+Ularni `-Update` yangilaydi: avval quruq, keyin `-Apply` bilan.
+Buyruqlar 0-qadamdagidek, klon ildizida va ruxsat berilgan oynada
+yurgiziladi:
 
 ```powershell
 git -C C:\src\claude-genius pull
-.\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius
-.\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius -Apply
+.\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius -Update
+.\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius -Update -Apply
 ```
 
-Kerakli birlik keyin zaxiradan qaytariladi:
+`-Update` faqat uch narsani zaxiralab almashtiradi: `skills\manguberdi`,
+6 aktyor fayli va `settings.json` dagi o'z yozuvlari, ya'ni buyrug'i shu
+klonning `tools\` papkasiga ishora qilgan hook va ruxsatlar
+(`env.GENIUS_PYTHON` ham yangilanadi). Qolgani joyida turadi: boshqa
+skill va agentlar, `CLAUDE.md`, `plugins\`, `settings.json` dagi begona
+hook va ruxsatlar, `env` dagi boshqa o'zgaruvchilar va qolgan kalitlar.
+Birlashtirishni `install/merge_settings.py` qiladi: quruq yurish nechta
+hook va ruxsat almashishini bir qatorda aytadi, buzuq `settings.json` da
+esa hech narsa o'chmasidan oldin to'xtaydi. `-Update` bilan `-Project`
+va `-IncludeAuth` berilmaydi. Zaxirani qaytarish
+[Orqaga qaytarish](#orqaga-qaytarish) bo'limida.
+
+Klon ko'chgan bo'lsa `-Update` yetmaydi: eski yo'lga ishora qilgan
+hooklar o'zniki deb tanilmaydi va yangilari yonida qoladi. Unda
+o'rnatuvchi `-Update` siz yurgiziladi. U birinchi o'rnatishdagidek
+ishlaydi: `~/.claude` dagi sozlamani yangi zaxiraga olib tozalaydi,
+o'rnatishdan keyin qo'shilgan skill, agent yoki `CLAUDE.md` ham zaxiraga
+ketadi. Shuning uchun avval quruq yurgizib ro'yxatni o'qing. Kerakli
+birlik keyin zaxiradan qaytariladi:
 [Orqaga qaytarish](#orqaga-qaytarish) dagi sikl, faqat o'sha nom uchun.
 
 ## Muammolar
@@ -369,9 +396,29 @@ bo'lsa) `$env:USERPROFILE\.claude.json` ga, `<proyekt>--.claude` esa
 `<proyekt>\.claude` ga xuddi shunday, nomidagi qo'shimchasiz
 ko'chiriladi.
 
-Skript `-Apply` bilan bir necha marta yurgizilgan bo'lsa (masalan
-yangilashda), **eng eski** zaxirani tanlang: keyingilarida faqat
-manguberdi o'rnatgan sozlama turadi.
+Skript `-Update` siz, `-Apply` bilan bir necha marta yurgizilgan
+bo'lsa, **eng eski** zaxirani tanlang: keyingilarida faqat manguberdi
+o'rnatgan sozlama turadi.
+
+`-Update` zaxirasida faqat almashtirilgan birliklar turadi va ota papka
+boshqa: `skills--manguberdi` `~/.claude/skills/manguberdi` ga,
+`agents--<aktyor>.md` `~/.claude/agents/` ga, `.claude--settings.json`
+esa `~/.claude/settings.json` ga qaytadi:
+
+```powershell
+$b = "$env:USERPROFILE\.claude-backup-<vaqt>"
+$c = "$env:USERPROFILE\.claude"
+if (Test-Path -LiteralPath "$b\skills--manguberdi") {
+  if (Test-Path -LiteralPath "$c\skills\manguberdi") { Remove-Item -LiteralPath "$c\skills\manguberdi" -Recurse -Force }
+  Copy-Item -LiteralPath "$b\skills--manguberdi" -Destination "$c\skills\manguberdi" -Recurse
+}
+Get-ChildItem -LiteralPath $b -Force -Filter 'agents--*.md' | ForEach-Object {
+  Copy-Item -LiteralPath $_.FullName -Destination (Join-Path "$c\agents" $_.Name.Substring(8)) -Force
+}
+if (Test-Path -LiteralPath "$b\.claude--settings.json") {
+  Copy-Item -LiteralPath "$b\.claude--settings.json" -Destination "$c\settings.json" -Force
+}
+```
 
 ## Ochiq aytilgan chegara
 
@@ -381,12 +428,16 @@ CI: `.github/workflows/docs.yml` dagi `installer` job `windows-latest`
 da Windows PowerShell 5.1 va pwsh 7 bilan avval quruq yurish, keyin bir
 martalik runnerda `-Apply` yurgizadi. So'ng `settings.json` o'qilishini,
 eski sozlama o'chganini, skill joyida ekanini va zaxira borligini
-tekshiradi. Yo'llarni almashtirish esa alohida birlik testida
-(`tools/test_rewrite_paths.py`).
+tekshiradi. Keyin begona skill va begona hook qo'shib `-Update -Apply`
+yurgizadi: ular qolgani, o'z hooki bir marta turgani, `settings.json`
+BOM siz yozilgani va skill ichida ikkinchi `manguberdi\` ochilmagani
+tekshiriladi. `-Project` CI da yurmaydi. Yo'llarni almashtirish va
+`settings.json` ni birlashtirish alohida birlik testlarida
+(`tools/test_rewrite_paths.py`, `tools/test_merge_settings.py`).
 
-Haqiqiy foydalanuvchi mashinasidagi holatlar (boshqa `python3` stub'i,
-WSL bash) hali ham sinalmaydi. ps1
-yasaydigan hook jadvalining repodagi `.claude/settings.json` ga mosligi
-ham sinalmaydi: biri o'zgarsa, ikkinchisi qo'lda moslanadi. Shuning
-uchun birinchi yurgizish `-Apply` siz bo'ladi va hammasi zaxiraga
-olinadi.
+ps1 yasaydigan hook jadvalining repodagi `.claude/settings.json` ga
+mosligi `tools/test_rewrite_paths.py` dagi `case_ps1_hooklari_repoga_mos`
+da sinaladi: hodisa, matcher, skript, argument, timeout va
+statusMessage. Haqiqiy foydalanuvchi mashinasidagi holatlar (boshqa
+`python3` stub'i, WSL bash) esa hali ham sinalmaydi. Shuning uchun
+birinchi yurgizish `-Apply` siz bo'ladi va hammasi zaxiraga olinadi.

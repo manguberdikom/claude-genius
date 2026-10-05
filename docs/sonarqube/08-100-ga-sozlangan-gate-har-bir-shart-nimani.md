@@ -374,4 +374,4 @@ To'rtinchi bosqich: faqat yadro modullarda coverage 100 va issue 0. Bu bosqich b
 
 ---
 
-[&larr; 7. Yangi kod](07-yangi-kod-new-code-va-clean-as-you-code.md) · [Mundarija](README.md) · [9. Coverage qanday o'lchanadi: JaCoCo mexanikasi &rarr;](09-coverage-qanday-olchanadi-jacoco-mexanikasi.md)
+[&larr; 7. Yangi kod (new code) va "clean as you code" tamoyili](07-yangi-kod-new-code-va-clean-as-you-code.md) · [Mundarija](README.md) · [9. Coverage qanday o'lchanadi: JaCoCo mexanikasi &rarr;](09-coverage-qanday-olchanadi-jacoco-mexanikasi.md)

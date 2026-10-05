@@ -10,7 +10,7 @@
 
   Skript yozilgan muhitda PowerShell yo'q, shuning uchun uni CI sinaydi:
   windows-latest da powershell (5.1) va pwsh (7) bilan quruq yurish va
-  -Apply. -Update CI da yurmaydi. Baribir birinchi yurgizish quruq
+  -Apply. -Update ham CI da yuradi, faqat -Project yurmaydi. Baribir birinchi yurgizish quruq
   o'tadi: -Apply bermaguncha sozlamaga tegilmaydi. Quruq yurish ham
   Python ni haqiqatan chaqiradi va skillni vaqtinchalik papkada yig'ib
   sinaydi, keyin uni o'chiradi: nosozlik hech narsa o'chmasidan oldin
@@ -394,7 +394,8 @@ function HookCmd([string]$script) {
 # GENIUS_PYTHON: doc.sh indeksni qayta yasaganda nom bo'yicha qidirmasdan
 # aynan sinalgan Python ni oladi (python3 nomi Store stub'iga tushadi).
 # Hook jadvali repodagi .claude/settings.json bilan bir xil: biri
-# o'zgarsa, ikkinchisi qo'lda moslanadi.
+# o'zgarsa, ikkinchisi ham moslanadi: tools/test_rewrite_paths.py dagi
+# case_ps1_hooklari_repoga_mos nomuvofiqlikda CI ni yiqitadi.
 $settings = [ordered]@{
   '$schema' = 'https://json.schemastore.org/claude-code-settings.json'
   bashOutputMaxChars = 12000

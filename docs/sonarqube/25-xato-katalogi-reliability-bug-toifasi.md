@@ -491,4 +491,4 @@ Har bir tuzatishga test kerak, lekin test uslublari [testlash qo'llanmasidagi](.
 
 ---
 
-[&larr; 24. False positive, suppression va o'z qoidangiz](24-false-positive-suppression-va-oz-qoidangiz.md) · [Mundarija](README.md) · [26. Xato katalogi: security &rarr;](26-xato-katalogi-security-vulnerability-va.md)
+[&larr; 24. False positive, suppression va o'z qoidangiz](24-false-positive-suppression-va-oz-qoidangiz.md) · [Mundarija](README.md) · [26. Xato katalogi: security (vulnerability va hotspot) &rarr;](26-xato-katalogi-security-vulnerability-va.md)

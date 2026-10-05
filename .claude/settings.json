@@ -27,6 +27,7 @@
       "Bash(python3 tools/usage.py:*)",
       "Bash(python3 tools/test_usage.py:*)",
       "Bash(python3 tools/test_rewrite_paths.py:*)",
+      "Bash(python3 tools/test_merge_settings.py:*)",
       "Bash(python3 install/rewrite_paths.py:*)",
       "Bash(python3 tools/test_budget.py:*)",
       "Bash(python3 tools/handoff.py:*)",

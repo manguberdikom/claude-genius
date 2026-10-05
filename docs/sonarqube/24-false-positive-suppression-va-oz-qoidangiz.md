@@ -364,4 +364,4 @@ Oxirgi va eng muhim qadam: bostirishni oson, tuzatishni qiyin qilib qo'ymaslik. 
 
 ---
 
-[&larr; 23. Legacy loyihani 100% ga olib chiqish rejasi](23-legacy-loyihani-100-ga-olib-chiqish-rejasi.md) · [Mundarija](README.md) · [25. Xato katalogi: reliability &rarr;](25-xato-katalogi-reliability-bug-toifasi.md)
+[&larr; 23. Legacy loyihani 100% ga olib chiqish rejasi](23-legacy-loyihani-100-ga-olib-chiqish-rejasi.md) · [Mundarija](README.md) · [25. Xato katalogi: reliability (bug) toifasi &rarr;](25-xato-katalogi-reliability-bug-toifasi.md)

@@ -533,4 +533,4 @@ CI da gate natijasini kutish kerak, aks holda build yashil, gate esa qizil qolad
 
 ---
 
-[&larr; 26. Xato katalogi: security](26-xato-katalogi-security-vulnerability-va.md) · [Mundarija](README.md) · [28. Xato katalogi: maintainability, nomlash, o'lik kod va uslub &rarr;](28-xato-katalogi-maintainability-nomlash-olik.md)
+[&larr; 26. Xato katalogi: security (vulnerability va hotspot)](26-xato-katalogi-security-vulnerability-va.md) · [Mundarija](README.md) · [28. Xato katalogi: maintainability, nomlash, o'lik kod va uslub &rarr;](28-xato-katalogi-maintainability-nomlash-olik.md)
