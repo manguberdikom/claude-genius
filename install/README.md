@@ -11,9 +11,9 @@ turadi, lekin har buyruq "No such file or directory" beradi.
 
 Ikkalasi bitta mashinada bo'lishi mumkin. Lekin global o'rnatish bor
 mashinada klon ichida ishlansa, repo hooklari ham, global hooklar ham
-yuradi, ya'ni har hook ikki marta ishlaydi. Aktyor bir marta chaqirilgan
-bo'lsa-yu, ikkinchi chaqiruvi budjet tugadi deb to'silsa, sabab shu:
-`python3 tools/budget.py --tiklash <aktyor>` bitta qadamni qaytaradi.
+yuradi, ya'ni har hook ikki marta ishlaydi va bo'lim taklifi kontekstga
+ikki marta tushadi. `budget.py` bir chaqiruvni `tool_use_id` bo'yicha
+bir marta sanaydi, shuning uchun budjet ikki baravar tez tugamaydi.
 
 ## Nimaga tayanadi
 
@@ -23,7 +23,7 @@ qoladi:
 | Nima | Nega kerak |
 |---|---|
 | `docs/` | 6 qo'llanma, 224 bob. Qoida matni shu yerdan o'qiladi. |
-| `index/` | qidiruv indeksi. Yo'q bo'lsa `doc.sh` o'zi yasaydi. |
+| `index/` | qidiruv indeksi, git da yo'q. O'rnatuvchi `-Apply` da yasaydi. Yo'q yoki eskirgan bo'lsa `doc.sh`, `rules_for.py`, `check_code.py` va bo'lim taklifi hooki o'zi qayta yasaydi (`build_index.py`, bash shart emas). |
 | `tools/` | hooklar va asboblar: bo'lim taklifi, kontekst o'lchovi, qo'riqchi, budjet, kod tekshiruvi, sarf hisobi. |
 | `memory/` | sessiyalar orasida saqlanadigan bilim. |
 
@@ -35,18 +35,25 @@ yangi `-GeniusPath` bilan qayta yurgiziladi, uning oqibati
 
 | Nima | Nega | Yo'q bo'lsa |
 |---|---|---|
-| `python3` | Hooklar Python da yozilgan | o'rnatish to'xtaydi |
-| `bash` | `tools/doc.sh` bash skripti | B yo'lida hooklar ishlaydi, **qidiruv ishlamaydi** |
+| Python 3.8+ | hooklar va asboblar Python da yozilgan | o'rnatish to'xtaydi |
+| `bash` | `tools/doc.sh` bash skripti | B yo'lida hooklar ishlaydi, **`doc.sh` buyruqlari ishlamaydi** |
 | `git` | klonni olish va yangilash | qo'lda yuklab olinadi |
+
+Python nomi bo'yicha emas, ishga tushirib tanlanadi: `py -3`, `python`
+va `python3` shu tartibda sinaladi, Microsoft Store stub'i hisoblanmaydi.
+Topilganining to'liq yo'li hook buyrug'iga va skill matniga yoziladi,
+shuning uchun B yo'lida `python3` nomi `PATH` da bo'lishi shart emas.
 
 Windows da bash odatda [Git for Windows](https://git-scm.com/download/win)
 bilan keladi. O'rnatuvchi uni o'zi izlaydi: `PATH` dan, keyin Git ning
 odatiy papkalaridan. Topilmasa aytadi va davom etadi, chunki hooklar
 baribir ishlaydi.
 
-Bashsiz nima yo'qoladi: `find`, `show`, `rule`, `checklist`, `outline`.
-Ya'ni skill qoidani ko'rsata olmaydi, faqat mexanik tekshiruvlar qoladi.
-Bu skillning yarmi, shuning uchun bashni o'rnatish tavsiya qilinadi.
+Bashsiz faqat `doc.sh` buyruqlari yo'qoladi: `find`, `show`, `rule`,
+`checklist`, `outline`. `rules_for.py` boblari, `check_code.py` dagi
+bo'lim raqami va har navbatdagi bo'lim taklifi Python da, ular
+ishlayveradi. Lekin skill qoida matnini `show` bilan o'qiydi, shuning
+uchun bashni o'rnatish tavsiya qilinadi.
 
 ## A yo'li: shu repo ichida ishlash
 
@@ -105,14 +112,33 @@ rad etiladi. Keyingi buyruqlar shu oynada, klon ildizida yurgiziladi.
 .\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius
 ```
 
-`-Apply` bermaguncha **hech narsa o'chirilmaydi va yozilmaydi**. Chiqishda
-nima o'chirilishi va nima qolishi ro'yxat bo'lib turadi. O'qing.
+`-Apply` bermaguncha **sozlamaga tegilmaydi**: skript faqat `%TEMP%` dagi
+sinov yig'imiga yozadi va uni o'zi o'chiradi. Chiqishda nima o'chirilishi
+va nima qolishi ro'yxat bo'lib turadi. O'qing.
 
 ### 2. Bajaring
 
 ```powershell
 .\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius -Apply
 ```
+
+### Skript qadamlari
+
+Chiqishdagi raqamlar shu tartibda keladi:
+
+0. **Sinov yig'imi.** Zaxira va o'chirishdan OLDIN ishlaydi. Skill va
+   aktyorlar `%TEMP%` da yig'iladi, yo'llari almashtiriladi va
+   `--tekshir` bilan tekshiriladi, ruxsat ro'yxati yasaladi. `-Apply`
+   bo'lsa klonda indeks quriladi. Biror qadam yiqilsa skript shu yerda
+   to'xtaydi va hali hech narsa o'chmagan bo'ladi.
+1. **Zaxira.** O'chiriladigan birliklar zaxira papkasiga ko'chiriladi.
+2. **Tozalash.** O'sha birliklar o'chiriladi, qoladiganlari ro'yxatda
+   aytiladi.
+3. **O'rnatish.** Sinalgan nusxa `~/.claude` ga ko'chadi.
+4. **Sozlama.** `settings.json` yoziladi.
+5. **Tekshirish.** Faqat `-Apply` bilan: skill joyida, `settings.json`
+   o'qiladi, nisbiy yo'l qolmagan, asboblar, bo'lim taklifi va `doc.sh`
+   javob beradi.
 
 ### Nima o'chiriladi
 
@@ -123,15 +149,35 @@ nima o'chirilishi va nima qolishi ro'yxat bo'lib turadi. O'qing.
 ### Nima qoladi
 
 `projects\` (suhbat tarixi), `todos\`, `history.jsonl`,
-`shell-snapshots\`, `statsig\` va `~/.claude.json` (kirish ma'lumoti).
+`shell-snapshots\`, `statsig\`, `.credentials.json` va `~/.claude.json`.
 
-Kirishni ham o'chirish kerak bo'lsa `-IncludeAuth`, lekin shundan keyin
-qaytadan login qilinadi.
+`~/.claude.json` da user MCP serverlar, proyekt trust va ruxsatlar hamda
+onboarding holati turadi. Skript uni faqat o'qiydi: undagi MCP serverlar
+har proyektda ishlayveradi, shuning uchun quruq yurish ularning nomini va
+olib tashlash buyrug'ini chiqaradi. Kirish tokeni unda emas, u
+`~/.claude/.credentials.json` da yoki Windows Credential Manager da
+turadi va skript unga tegmaydi.
+
+`-IncludeAuth` bilan `~/.claude.json` ham zaxiralanib o'chiriladi: MCP
+serverlar, trust va onboarding yo'qoladi. Login saqlanadi, chunki token
+unda emas. Chiqish kerak bo'lsa Claude Code ichida `/logout`.
+
+Tegilmaydi: `managed-settings.json`, proyektdagi `CLAUDE.md`,
+`CLAUDE.local.md` va `.mcp.json`, boshqa proyektlarning `.claude\`
+papkasi. Managed sozlama topilsa skript ogohlantiradi: u eng ustun, unda
+`disableAllHooks` bo'lsa hooklar ishlamaydi.
+
+`CLAUDE_CONFIG_DIR` o'rnatilgan bo'lsa skript boshidayoq to'xtaydi:
+Claude Code sozlamani o'sha papkadan o'qiydi, skript esa `~/.claude` ni
+tozalaydi.
 
 ### Hammasi zaxiraga olinadi
 
 O'chirishdan oldin `~/.claude-backup-<vaqt>` ga ko'chiriladi. Boshqa joy
-kerak bo'lsa `-BackupTo <yo'l>`.
+kerak bo'lsa `-BackupTo <yo'l>`. Bo'sh bo'lmagan papka rad etiladi:
+avvalgi zaxira ustidan yozilmaydi. Har birlik `<ota>--<nom>` shaklida
+turadi (masalan `.claude--settings.json`), qaytarish
+[Orqaga qaytarish](#orqaga-qaytarish) bo'limida.
 
 ### Proyektning o'z sozlamasi ham tozalanishi kerak bo'lsa
 
@@ -139,21 +185,34 @@ kerak bo'lsa `-BackupTo <yo'l>`.
 .\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius -Project C:\ish\mening-proyektim -Apply
 ```
 
+Klon yoki uy papkasi berilmaydi: skript buni rad etadi. `.claude\` git
+da bo'lsa o'chirish keyingi commit ga tushadi, `git status` bilan
+tekshiring.
+
 ## Nima o'rnatiladi
 
 | Nima | Qayerga |
 |---|---|
 | `manguberdi` skilli (SKILL.md va reference fayllari) | `~/.claude/skills/manguberdi/` |
 | 6 aktyor | `~/.claude/agents/` |
-| Olti hook bilan `settings.json` | `~/.claude/settings.json` |
+| Yetti hook, ruxsatlar va `env` bilan `settings.json` | `~/.claude/settings.json` |
 
-Hooklar:
+`settings.json` da hooklardan tashqari:
+
+| Kalit | Qiymat | Nega |
+|---|---|---|
+| `permissions.additionalDirectories` | klon yo'li | Read, Grep va Glob qo'llanmani har proyektdan so'rovsiz o'qiydi |
+| `permissions.allow` | skill matnidagi asbob buyruqlari | skill buyruqlari har safar ruxsat so'ramaydi |
+| `env.GENIUS_PYTHON` | o'rnatuvchi sinagan Python yo'li | `doc.sh` indeksni qayta yasaganda Python ni nom bo'yicha qidirmaydi |
+
+Hooklar (hammasi tanlangan Python ning to'liq yo'li bilan):
 
 | Hodisa | Asbob | Nima qiladi |
 |---|---|---|
 | `UserPromptSubmit` | `suggest_sections.py` | so'rovga mos bo'lim raqamlarini beradi |
+| `UserPromptSubmit` | `budget.py` | yangi so'rovda aktyor budjetini nolga tushiradi |
 | `UserPromptSubmit` | `handoff.py --hook` | kontekst chegaradan oshganda yangi sessiyaga uzatishni taklif qiladi |
-| `PreToolUse` (Read, Bash) | `guard.py` | katta faylni, konteynerni, bazani, PowerShell ni to'sadi |
+| `PreToolUse` (Read, Bash, PowerShell) | `guard.py` | katta faylni, konteynerni, bazani, PowerShell ni to'sadi |
 | `PreToolUse` (Task, Agent) | `budget.py` | aktyorning uchinchi chaqiruvini to'sadi |
 | `PostToolUse` (Write, Edit) | `check_code.py` | Java qoidalarini tekshiradi |
 | `Stop` | `usage.py --saqlash` | kunlik token sarfini yozib boradi |
@@ -166,19 +225,27 @@ boshqa proyektda esa topilmaydi. Shuning uchun o'rnatuvchi ko'chirilgan
 nusxadagi yo'llarni mutlaq qiladi:
 
 ```text
-python3 tools/rules_for.py   ->  python3 C:/src/claude-genius/tools/rules_for.py
+python3 tools/rules_for.py   ->  C:/Python312/python.exe C:/src/claude-genius/tools/rules_for.py
 tools/doc.sh find            ->  bash C:/src/claude-genius/tools/doc.sh find
 memory/<proyekt-slug>/       ->  C:/src/claude-genius/memory/<proyekt-slug>/
+memory-protocol.md           ->  C:/src/claude-genius/memory-protocol.md
 ```
+
+`C:/Python312/python.exe` misol: o'rnatuvchi tanlagan Python ning to'liq
+yo'li yoziladi. `bash` o'rnida ham u topgan yo'l turadi. `--bash` yo'lida
+bo'sh joy bo'lsa u ham qo'shtirnoqqa olinadi:
+`"C:/Program Files/Git/bin/bash.exe" C:/src/claude-genius/tools/doc.sh find`.
 
 Asboblarning o'zi klonni o'z faylidan topadi, shuning uchun ularning
 ichida hech narsa almashtirilmaydi. Siz bergan nisbiy fayl yo'li va
 `rules_for.py --diff` dagi git o'zgarishlari esa joriy papkadan, ya'ni
 ish proyektidan olinadi.
 
-Almashtirish `install/rewrite_paths.py` da va u sinaladi
-(`tools/test_rewrite_paths.py`, CI da yuradi). PowerShell qismi
-sinalmaydi, shuning uchun mantiq imkon qadar Python tomonda turadi.
+Almashtirish `install/rewrite_paths.py` da va u birlik testida sinaladi
+(`tools/test_rewrite_paths.py`, CI da yuradi). PowerShell qismi faqat CI
+dagi bir martalik Windows runnerda yuradi
+([Ochiq aytilgan chegara](#ochiq-aytilgan-chegara)), shuning uchun mantiq
+imkon qadar Python tomonda turadi.
 
 Qo'lda tekshirish:
 
@@ -193,6 +260,9 @@ Chiqishda `0 nisbiy yo'l qoldi` bo'lishi kerak.
 
 `Stop` hook har navbat oxirida joriy sessiyaning sarfini, subagentlari
 bilan, `.claude/usage/<oy>/<proyekt-slug>/<sessiya>.json` ga yozadi.
+Hook faqat joriy sessiyani o'qiydi. Aktyor nomi subagentning
+`.meta.json` faylidan olinadi, workflow agentlari `workflow:<bosqich>`
+bo'lib chiqadi.
 Papka klon ichida turadi va git ga kirmaydi: u mashinaga tegishli,
 jamoaga emas. Global o'rnatishda ham har proyektning sarfi shu klonga,
 o'z proyekt papkasiga yoziladi.
@@ -224,13 +294,14 @@ O'rnatuvchi o'zi tekshiradi, lekin qo'lda ham ko'rish mumkin:
 ```bash
 python3 /yo/l/claude-genius/tools/budget.py --holat
 bash /yo/l/claude-genius/tools/doc.sh find "circuit breaker"
-python3 /yo/l/claude-genius/tools/handoff.py
+cd /yo/l/mening-proyektim && python3 /yo/l/claude-genius/tools/handoff.py
 ```
 
 Uchtasi ham javob bersa, uch qatlam ishlayapti: hisoblagich, qidiruv va
-kontekst o'lchovi. `handoff.py` proyekt papkasida, unda kamida bitta
-sessiya o'tgandan keyin yurgiziladi: u o'sha proyektning transkriptini
-o'lchaydi, transkript bo'lmasa shuni aytib chiqadi.
+kontekst o'lchovi. `handoff.py` proyekt papkasidan, unda kamida bitta
+sessiya o'tgandan keyin yurgiziladi. Transkript klondan emas, sessiya ID
+(`CLAUDE_CODE_SESSION_ID`) yoki proyekt papkasidan topiladi, bo'lmasa
+shuni aytib chiqadi.
 
 Keyin yangi sessiyada `/manguberdi`.
 
@@ -263,11 +334,11 @@ Kerakli birlik keyin zaxiradan qaytariladi:
 |---|---|---|
 | `running scripts is disabled on this system` | ExecutionPolicy `Restricted` | 0-qadamdagi `Set-ExecutionPolicy -Scope Process` buyrug'i |
 | `set: pipefail: invalid option name` | klon CRLF bilan olingan | `<klon>\tools\doc.sh` ni o'chirib `git -C <klon> -c core.autocrlf=false checkout -- tools/doc.sh`; doimiy yechim: klonni 0-qadamdagidek qayta olish |
-| `tools/doc.sh: No such file` | yo'llar almashmagan | `rewrite_paths.py` ni `--tekshir` bilan yurgizing |
+| `tools/doc.sh: No such file` | yo'llar almashmagan | `rewrite_paths.py --tekshir` bilan skill matnini tekshiring; nisbiy yo'l qolgan bo'lsa o'rnatuvchini qayta yurgizing |
 | `bash: command not found` | bash yo'q | Git for Windows o'rnatib skriptni qayta yurgizing |
 | Hooklar ishlamaydi | `settings.json` buzuq yoki klon ko'chgan | skriptni yangi `-GeniusPath` bilan qayta yurgizing |
 | Skill ko'rinmaydi | sessiya eski sozlamada | yangi sessiya oching |
-| Uchinchi aktyor chaqiruvi to'silgan | budjet tugagan, bu ataylab | `budget.py --yangi-vazifa "<nom>"` |
+| Uchinchi aktyor chaqiruvi to'silgan | budjet tugagan, bu ataylab | aniq savol bering: javobdan keyin budjet o'zi yangilanadi |
 
 ## Orqaga qaytarish
 
@@ -304,16 +375,18 @@ manguberdi o'rnatgan sozlama turadi.
 
 ## Ochiq aytilgan chegara
 
-`manguberdi.ps1` yozilgan muhitda **sinalmagan**: u yerda PowerShell yo'q,
-va aynan shu sabab repo PowerShell ni ish uchun taqiqlaydi
-(`tools/guard.py` uni to'sadi). Shu qo'llanmadagi PowerShell buyruqlari
-ham xuddi shunday sinalmagan.
+Agent sessiyasi `manguberdi.ps1` ni yurgiza olmaydi: repo PowerShell ni
+ish uchun taqiqlaydi (`tools/guard.py` uni to'sadi). Uni sinaydigan joy
+CI: `.github/workflows/docs.yml` dagi `installer` job `windows-latest`
+da Windows PowerShell 5.1 va pwsh 7 bilan avval quruq yurish, keyin bir
+martalik runnerda `-Apply` yurgizadi. So'ng `settings.json` o'qilishini,
+eski sozlama o'chganini, skill joyida ekanini va zaxira borligini
+tekshiradi. Yo'llarni almashtirish esa alohida birlik testida
+(`tools/test_rewrite_paths.py`).
 
-Avtomatik sinalgani faqat yo'llarni almashtirish
-(`tools/test_rewrite_paths.py`, CI da yuradi), chunki u Python da. Qavs
-balansi, kirill harf yo'qligi va ps1 yasaydigan hook jadvali repodagi
-`.claude/settings.json` ga mosligi bir marta qo'lda solishtirilgan,
-sinov emas: biri o'zgarsa, ikkinchisi qo'lda moslanadi.
-
-Sinalmagan narsalar: fayl ko'chirish va o'chirish. Shuning uchun
-birinchi yurgizish `-Apply` siz bo'ladi va hammasi zaxiraga olinadi.
+Haqiqiy foydalanuvchi mashinasidagi holatlar (boshqa `python3` stub'i,
+WSL bash) hali ham sinalmaydi. ps1
+yasaydigan hook jadvalining repodagi `.claude/settings.json` ga mosligi
+ham sinalmaydi: biri o'zgarsa, ikkinchisi qo'lda moslanadi. Shuning
+uchun birinchi yurgizish `-Apply` siz bo'ladi va hammasi zaxiraga
+olinadi.

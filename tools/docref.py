@@ -155,9 +155,37 @@ def resolve(topic, rule="", ref="", term=""):
             or by_topic(topic))
 
 
+def quote(path):
+    """Bo'sh joy bo'lsa qo'shtirnoq (rewrite_paths.quote bilan bir xil)."""
+    return '"%s"' % path if " " in path else path
+
+
+def in_clone():
+    """Joriy papka qo'llanma klonining o'zimi."""
+    try:
+        here = os.path.realpath(os.getcwd())
+    except OSError:
+        return False
+    return os.path.normcase(here) == os.path.normcase(os.path.realpath(ROOT))
+
+
+def tool_cmd(name):
+    """Xabardagi buyruq. Klon ichida nisbiy, ya'ni allow ro'yxatiga mos;
+    boshqa proyektda mutlaq, aks holda u yerda "No such file" beradi."""
+    if in_clone():
+        return ("" if name.endswith(".sh") else "python3 ") + "tools/" + name
+    full = quote(os.path.join(ROOT, "tools", name).replace("\\", "/"))
+    return ("bash " if name.endswith(".sh") else "python3 ") + full
+
+
 def hint(topic, rule="", ref="", term=""):
-    """Foydalanuvchiga ko'rsatiladigan bir qatorlik yo'l-yo'riq."""
+    """Foydalanuvchiga ko'rsatiladigan bir qatorlik yo'l-yo'riq.
+
+    Klon ichida chiqish o'zgarmaydi (`tools/doc.sh ...`), boshqa proyektda
+    esa mutlaq yo'l beriladi: nisbiy buyruq u yerda ishlamasdi.
+    """
     found = resolve(topic, rule, ref, term)
+    cmd = tool_cmd("doc.sh")
     if found:
-        return "qo'llanma: tools/doc.sh show %s" % found
-    return "qo'llanma: tools/doc.sh find \"%s\"" % topic
+        return "qo'llanma: %s show %s" % (cmd, found)
+    return "qo'llanma: %s find \"%s\"" % (cmd, topic)

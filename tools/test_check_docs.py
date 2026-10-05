@@ -67,6 +67,10 @@ FILES = {
                   "```bash\npython3 tools/asbob.py\n```\n"),
     "tools/doc.sh": "case \"$1\" in\n  show) cmd_show ;;\n  find) cmd_find ;;\nesac\n",
     "tools/asbob.py": "",
+    ".claude/skills/sinov/SKILL.md": (
+        "| Mavzu | Bo'lim |\n|---|---|\n"
+        "| Birinchi | `docs/sinov/01-birinchi.md#11-mavzu` |\n"
+        "| Ikkinchi | `docs/sinov/02-ikkinchi.md` |\n"),
     "docs/manifest.json": json.dumps({"sinov": {
         "title": "Sinov hujjati", "label": "Sinov", "chapters": CHAPTERS}}),
     "docs/sinov/README.md": (
@@ -105,6 +109,18 @@ def run(tmp, name, change=None):
     return list(check_docs.errors)
 
 
+def excused(tmp):
+    """UNROUTED_OK dagi bob marshrutsiz bo'lsa ham xato bermaydi."""
+    saved = dict(check_docs.UNROUTED_OK)
+    check_docs.UNROUTED_OK[("sinov", 2)] = "sinov uchun"
+    try:
+        errs = run(tmp, "uzrli", (SKILL, "| Ikkinchi | `docs/sinov/02-ikkinchi.md` |\n", ""))
+    finally:
+        check_docs.UNROUTED_OK.clear()
+        check_docs.UNROUTED_OK.update(saved)
+    return errs == []
+
+
 def expect(change, needle):
     def case(tmp):
         errs = run(tmp, needle[:20].replace(" ", "_").replace("'", ""), change)
@@ -114,6 +130,7 @@ def expect(change, needle):
 
 CH1 = "docs/sinov/01-birinchi.md"
 CH2 = "docs/sinov/02-ikkinchi.md"
+SKILL = ".claude/skills/sinov/SKILL.md"
 
 CASES = [
     ("toza nusxada xato yo'q", lambda tmp: run(tmp, "toza") == []),
@@ -139,6 +156,14 @@ CASES = [
      expect(("CLAUDE.md", "tools/asbob.py", "tools/asbobXX.py"), "asbob yo'q")),
     ("doc.sh da yo'q subkomanda",
      expect(("CLAUDE.md", "doc.sh show", "doc.sh shw"), "subkomandasi yo'q")),
+    ("docs/ da til belgisiz kod bloki",
+     expect((CH1, "```markdown", "```"), "01-birinchi.md:11: kod blokida til belgisi")),
+    ("docs/ dan tashqarida belgisiz blok xato emas",
+     lambda tmp: run(tmp, "tashqari", ("CLAUDE.md", "```bash", "```")) == []),
+    ("bob hech qaysi skill jadvalida yo'q",
+     expect((SKILL, "`docs/sinov/02-ikkinchi.md`", "`docs/sinov/`"),
+            "docs/sinov: 2-bob hech qaysi skill")),
+    ("UNROUTED_OK dagi bob kechiriladi", excused),
 ]
 
 

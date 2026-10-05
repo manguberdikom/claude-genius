@@ -8,12 +8,14 @@ Tekshiradi:
   2. Havolalar    - har bir nisbiy havola va anchor haqiqatan mavjudmi.
   3. Kirill       - hujjat o'zbek lotin yozuvida, kirill harf bo'lmasin.
   3b. Em-dash     - loyiha qoidasi: em-dash va en-dash ishlatilmaydi.
-  3c. Kod fence   - ``` soni juft bo'lishi kerak, aks holda render buziladi.
+  3c. Kod fence   - ``` soni juft bo'lishi kerak, aks holda render buziladi;
+                    docs/ da ochiluvchi fence til belgisiz bo'lmasin.
   4. Manifest     - docs/manifest.json diskdagi fayllar bilan mos.
   5. Skilllar     - .claude/ ichidagi docs/ havolalari haqiqiy; tools/
                     yo'llari (kod bloki ichida ham) skill, agent, CLAUDE.md,
                     README.md, CONTRIBUTING.md va install/README.md da
-                    mavjud, doc.sh subkomandasi doc.sh da bor.
+                    mavjud, doc.sh subkomandasi doc.sh da bor; har bob
+                    kamida bitta skill yoki agent jadvalida turadi.
   6. Struktura    - har bob faylida metadata manifest bilan mos, breadcrumb
                     (3-qator), H1 manifest sarlavhasi (5-qator), bo'lim soni
                     manifest, README va <summary> bilan mos, footer qo'shni
@@ -27,6 +29,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SIZE_LIMIT = 900_000          # GitHub chegarasi 1 048 576; zahira bilan
 RE_REMOVE = re.compile(r"[^\w\- ]", re.UNICODE)
 SKIP_DIRS = {'.git', 'dist', 'node_modules'}
+# Hech qaysi skill yoki agent jadvalida turmasligi ataylab bo'lgan boblar:
+# kalit (hujjat, bob raqami), qiymat sabab. Hozir bo'sh, ya'ni har bobga
+# marshrut bor; yangi bob yo'lsiz qolsa tekshiruv xato beradi.
+UNROUTED_OK = {}
 
 errors, warnings = [], []
 
@@ -100,8 +106,18 @@ def main():
         if cyr:
             err(f"{rel}: kirill harflar topildi: {''.join(cyr)}")
 
-        # 3c. kod fence juftligi
-        fences = sum(1 for l in text.split('\n') if l.startswith('```'))
+        # 3c. kod fence juftligi. docs/ da ochiluvchi fence til belgisiz
+        # bo'lmasin: belgisiz blokni GitHub rangsiz chiqaradi va o'quvchi
+        # u kodmi yoki matnmi bilmaydi.
+        fences, fence = 0, False
+        in_docs = rel.replace(os.sep, '/').startswith('docs/')
+        for n, l in enumerate(text.split('\n'), 1):
+            if not l.startswith('```'):
+                continue
+            fences += 1
+            if in_docs and not fence and l.rstrip() == '```':
+                err(f"{rel}:{n}: kod blokida til belgisi yo'q (text, java, sql, ...)")
+            fence = not fence
         if fences % 2:
             err(f"{rel}: kod fence soni juft emas ({fences} ta ```), render buziladi")
 
@@ -140,15 +156,17 @@ def main():
     # tahlil qilinadigan LOYIHA yo'llari ham uchraydi (`docs/adr/` kabi);
     # ular bu yerda bo'lmasligi xato emas. Manifest kalitlari chegara.
     try:
-        own = set(json.load(open(os.path.join(ROOT, 'docs', 'manifest.json'),
-                                 encoding='utf-8')))
+        manifest = json.load(open(os.path.join(ROOT, 'docs', 'manifest.json'),
+                                  encoding='utf-8'))
     except (OSError, ValueError):
-        own = set()
+        manifest = {}
+    own = set(manifest)
 
     def is_ours(path):
         parts = path.split('/')
         return len(parts) > 1 and parts[1] in own
 
+    seen = set()
     for sk in sorted(routed):
         rel_sk = os.path.relpath(sk, ROOT)
         body = open(sk, encoding='utf-8').read()
@@ -164,6 +182,17 @@ def main():
             if is_ours(m.group(1)) and not os.path.isdir(
                     os.path.join(ROOT, m.group(1))):
                 err(f"{rel_sk}: havola papkasi yo'q -> {m.group(1)}")
+        seen.update((d_, int(n_)) for d_, n_ in
+                    re.findall(r"docs/([a-z-]+)/(\d\d)-", body))
+
+    # Bob marshruti: har bob kamida bitta skill yoki agent jadvalida.
+    # Yo'lsiz bob faqat doc.sh find tasodifan topsa o'qiladi, skill uni
+    # hech qachon tavsiya qilmaydi. Raqamsiz bob (patterns indeksi) emas.
+    for key, doc in manifest.items():
+        for c in doc.get('chapters', []):
+            num = c.get('num')
+            if num and (key, num) not in seen and (key, num) not in UNROUTED_OK:
+                err(f"docs/{key}: {num}-bob hech qaysi skill jadvalida yo'q")
 
     # tools/ ga ishora: faqat fayl nomi, argumentlarsiz. Backtick talab
     # qilinmaydi, shuning uchun kod bloki ichidagi chaqiruv ham

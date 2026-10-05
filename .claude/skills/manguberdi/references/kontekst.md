@@ -20,8 +20,8 @@ Asosiy sessiyada faqat qaror, yo'naltirish va yakuniy javob qoladi.
 
 ## Ikkinchi himoya: o'qish chegarasi
 
-Bob fayli butunligicha o'qilmaydi, bo'lim o'qiladi (`doc.sh show`).
-1200 satrdan uzun faylni chegarasiz o'qish `guard.py` tomonidan
+Bob fayli butunligicha o'qilmaydi, bo'lim o'qiladi (`tools/doc.sh show`).
+16 KB dan katta bo'lakni o'qish `guard.py` tomonidan
 to'siladi. Bu qoida emas, mexanizm: uni unutib bo'lmaydi.
 
 ## Ish tugaganda
