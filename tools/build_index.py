@@ -214,12 +214,15 @@ def build():
     doc_rows = []
 
     for doc_key, doc in manifest.items():
-        doc_dir = os.path.join("docs", doc_key)
+        # Indeksdagi yo'l doim `/` bilan: doc.sh uni grep chiqishi bilan
+        # solishtiradi va `path` havola sifatida beradi. os.path.join
+        # Windows da `\` qo'yardi va `find -f` hech narsa topmasdi.
+        doc_dir = "docs/" + doc_key
         total_bytes = 0
         before = len(rows["sections"])
 
         for chapter in doc["chapters"]:
-            rel_path = os.path.join(doc_dir, chapter["file"])
+            rel_path = doc_dir + "/" + chapter["file"]
             full = os.path.join(ROOT, rel_path)
             if not os.path.exists(full):
                 sys.stderr.write("yo'q: %s\n" % rel_path)

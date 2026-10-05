@@ -25,6 +25,7 @@ ikkita: avval hamma sinf o'qiladi, keyin entity quriladi, chunki
 `@Id` turi boshqa faylda turadi.
 """
 
+import errno
 import json
 import os
 import re
@@ -1034,8 +1035,18 @@ def main():
 
 if __name__ == "__main__":
     # `| head` quvurni yopsa traceback emas, jim chiqish (cost_report bilan bir xil).
+    # Windows da SIGPIPE yo'q: yopiq quvurga yozish OSError (EINVAL) beradi.
     try:
         signal.signal(signal.SIGPIPE, signal.SIG_DFL)
     except (AttributeError, ValueError):
         pass
-    sys.exit(main())
+    try:
+        code = main()
+        sys.stdout.flush()
+    except OSError as exc:
+        if not isinstance(exc, BrokenPipeError) and exc.errno != errno.EINVAL:
+            raise
+        # Chiqishdagi flush qayta yiqilmasin.
+        os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+        code = 1
+    sys.exit(code)
