@@ -300,7 +300,8 @@ def case_prompt_transkriptsiz_ishlaydi(_):
     finally:
         handoff.transcript = saved
     text = out.getvalue()
-    return code == 0 and "/manguberdi" in text and "branch:" in text
+    return (code == 0 and "/manguberdi" in text and "branch:" in text
+            and "\"Kontekst to'lsa\"" in text)
 
 
 def case_hisobot_transkriptsiz_tavsiya_bermaydi(tmp):

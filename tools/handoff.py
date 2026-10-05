@@ -376,10 +376,10 @@ def prompt(override):
     for rel in memory_lines():
         print("  memory indeksi: %s" % rel)
     print("```")
-    print("\nUch burchakli joylarni to'ldiring: faqat siz bilasiz. "
+    print("\n`<...>` ichidagi joylarni to'ldiring: faqat siz bilasiz. "
           "Qolganini mashina yozdi.")
-    print("Topshiriqni saqlash kerak bo'lsa `references/kontekst.md` "
-          "marshrutiga qarang.")
+    print("Topshiriqni saqlash: manguberdi skillining "
+          "`references/kontekst.md`, \"Kontekst to'lsa\" bo'limi.")
     return 0
 
 

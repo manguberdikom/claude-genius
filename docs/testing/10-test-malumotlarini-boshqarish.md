@@ -322,7 +322,7 @@ Test interdependence - test B faqat test A'dan keyin ishlaganda o'tishi. JUnit 5
 
 Aniqlash uchun tartibni ataylab buzish kerak. `junit-platform.properties` faylida:
 
-```
+```properties
 junit.jupiter.testmethod.order.default=org.junit.jupiter.api.MethodOrderer$Random
 junit.jupiter.testclass.order.default=org.junit.jupiter.api.ClassOrderer$Random
 junit.jupiter.execution.order.random.seed=424242

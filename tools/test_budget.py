@@ -131,8 +131,23 @@ def case_sabab_aytiladi(_):
     run("review")
     run("review")
     _, out = run("review")
-    # To'siq sababni so'rashi kerak, shunchaki "yo'q" demasligi.
-    return "rules_for.py" in out and "qabul mezoni" in out
+    # To'siq sababni so'rashi kerak, shunchaki "yo'q" demasligi. Budjetni
+    # o'zi nolga tushirish yo'li aytilmaydi: aks holda to'siq aylanib o'tiladi.
+    return ("rules_for.py" in out and "qabul mezoni" in out
+            and "--yangi-vazifa" not in out)
+
+
+def case_tosiq_buyrugi_klonga_mos(_):
+    """Klon ichida buyruq nisbiy, boshqa proyektda mutlaq yo'l bilan."""
+    fresh()
+    for _ in range(3):
+        _, inside = run("review", cwd=os.path.dirname(HERE))
+    fresh()
+    for _ in range(3):
+        _, outside = run("review")
+    full = os.path.join(HERE, "rules_for.py").replace("\\", "/")
+    return ("-> python3 tools/rules_for.py" in inside
+            and full in outside and "-> python3 tools/" not in outside)
 
 
 def case_aktyorlar_mustaqil(_):
@@ -305,13 +320,15 @@ def case_yangi_sorov_nolga(_):
     calls = state()["sessions"]
     return (proc.returncode == 0 and proc.stdout == ""
             and calls[SESSION]["calls"] == {}
-            and calls["boshqa"]["calls"] == {"arxitektor": 1})
+            and calls["boshqa"]["calls"] == {"arxitektor": 1}
+            and hook("Agent", "arxitektor") == "allow")
 
 
 CASES = [
     ("ikki chaqiruv o'tadi", case_ikki_marta),
     ("uchinchisi to'siladi", case_uchinchi_tosiladi),
     ("to'siq sababni so'raydi", case_sabab_aytiladi),
+    ("to'siq buyrug'i klonga mos", case_tosiq_buyrugi_klonga_mos),
     ("aktyorlar alohida sanaladi", case_aktyorlar_mustaqil),
     ("yangi vazifa nolga tushiradi", case_yangi_vazifa_nolga),
     ("--tiklash bitta qadam qaytaradi", case_tiklash),

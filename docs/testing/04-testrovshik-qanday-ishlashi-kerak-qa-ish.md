@@ -119,7 +119,7 @@ Jadval sakkizta qatorni beradi va darhol ko'rinadi: KYC yo'q bo'lsa boshqa shart
 
 Test case - boshqa odam (yoki kelgusi yildagi o'zingiz) hech nima so'ramasdan bajara oladigan yozma ko'rsatma. Standart tuzilishi:
 
-```
+```text
 ID:            TC-CREDIT-014
 Sarlavha:      10 mln chegarasida limit x3 hisoblanadi
 Bog'liq talab: STORY-452 / AC-3
@@ -176,7 +176,7 @@ Bug report - developer uchun yozilgan texnik hujjat. Uning yagona vazifasi: muam
 
 Yomon bug report misoli:
 
-```
+```text
 Sarlavha: Limit ishlamaydi
 Tavsif:   Limitni tekshirdim, natija xato. Tuzatinglar.
 ```
@@ -185,7 +185,7 @@ Bu hisobotda muhit, qadamlar, ma'lumot, kutilgan natija va log yo'q - developer 
 
 Yaxshi bug report shabloni:
 
-```
+```text
 ID:        BUG-2291
 Sarlavha:  Kredit limiti: income = 10 000 000 da limit x1 hisoblanadi (x3 kutilgan)
 

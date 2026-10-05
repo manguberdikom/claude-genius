@@ -220,7 +220,8 @@ def test_ranking():
 def main():
     sample_size = int(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_SAMPLE
     if not os.path.exists(SECTIONS):
-        subprocess.run([DOC, "rebuild"], cwd=ROOT, check=True)
+        build = os.path.join(ROOT, "tools", "build_index.py")
+        subprocess.run([sys.executable, build], cwd=ROOT, check=True)
 
     ok_a, miss_a = test_aliases(sample_size)
     ok_b, miss_b = test_identifiers(sample_size)

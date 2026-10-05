@@ -62,15 +62,15 @@ BLOCKED = """%s uchun budjet tugadi: %d chaqiruv bo'ldi, chegara %d.
 
 Uchinchi urinish o'rniga sabab aytiladi. Odatda u uchtadan biri:
   1. Aktyor birinchi martada qoidani ko'rmagan
-     -> python3 tools/rules_for.py <fayllar> chiqishini tekshiring
+     -> %s <fayllar> chiqishini tekshiring
   2. Reviewer boshqa mezon bilan tekshirgan
      -> ikkalasi bir xil ro'yxatni olishi kerak
   3. "Bajarildi" nimaligi aytilmagan
      -> qabul mezoni normalizatsiyada belgilanadi
 
 Nima bajarildi, nima qolgan va nima yetishmayotganini yozib, aniq
-savol bering. Yangi vazifa boshlansa:
-  python3 tools/budget.py --yangi-vazifa "<nom>"
+savol bering. Foydalanuvchi javob bergach budjet o'zi yangilanadi.
+Keyin memory bosqichi: qolgan kamchilik feedback nomzodi.
 """
 
 
@@ -239,6 +239,19 @@ def restore(actor):
     return 0
 
 
+def blocked(actor, used):
+    """To'siq matni. Buyruq klon ichida nisbiy, boshqa proyektda mutlaq.
+
+    Import xatosi to'siqni buzmasin: hook yiqilsa chaqiruv o'tib ketadi.
+    """
+    try:
+        from check_code import tool_cmd
+        rules = tool_cmd("rules_for.py")
+    except (ImportError, OSError):
+        rules = "python3 tools/rules_for.py"
+    return BLOCKED % (actor, used, LIMIT, rules)
+
+
 def take(actor, key=None, cwd="", call_id=None):
     """Bitta chaqiruvni hisobga oladi. Chegara oshsa (xabar, False).
 
@@ -255,12 +268,14 @@ def take(actor, key=None, cwd="", call_id=None):
         ids = slot.setdefault("ids", [])
         if call_id and call_id in ids:
             return "%s: %d/%d chaqiruv" % (actor, used, LIMIT), True
-        if used >= LIMIT:
-            return BLOCKED % (actor, used, LIMIT), False
-        slot["calls"][actor] = used + 1
-        if call_id:
-            slot["ids"] = (ids + [call_id])[-SEEN_IDS:]
-        save(data)
+        over = used >= LIMIT
+        if not over:
+            slot["calls"][actor] = used + 1
+            if call_id:
+                slot["ids"] = (ids + [call_id])[-SEEN_IDS:]
+            save(data)
+    if over:                       # matn qulfdan tashqarida yasaladi
+        return blocked(actor, used), False
     return "%s: %d/%d chaqiruv" % (actor, used + 1, LIMIT), True
 
 

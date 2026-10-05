@@ -143,7 +143,7 @@ Konvensiya build vositasi tomonidan majburlansa ishlaydi. Maven Surefire sukut b
 
 Tavsiya etilgan tuzilma (paket nomi production kodi bilan oynada bo'lsin, shunda package-private metodlar ham ko'rinadi):
 
-```
+```text
 src/test/java/com/acme/orders/
   domain/OrderTest.java                 // sof unit
   application/PlaceOrderServiceTest.java // unit + Mockito

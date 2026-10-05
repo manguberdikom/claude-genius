@@ -40,7 +40,7 @@ BigDecimal total = new BigDecimal("0.10").add(new BigDecimal("0.20"));   // 0.30
 Money total = Money.of("0.10", UZS).plus(Money.of("0.20", UZS));
 ```
 
-Qo'shimcha muhim qoida: `new BigDecimal(0.1)` **xato** - u `double` ni oladi va noaniqlikni saqlab qoladi. Har doim `new BigDecimal("0.1")` yoki `BigDecimal.valueOf(0.1)` ishlatiladi.
+Qo'shimcha muhim qoida: `new BigDecimal(0.1)` **xato** - u `double` ni oladi va noaniqlikni saqlab qoladi. Har doim `new BigDecimal("0.1")` yoki `BigDecimal.valueOf(0.1)` ishlatiladi. SonarQube buni `java:S2111` qoidasi bilan ushlaydi.
 
 | Vazifa | To'g'ri tur |
 |---|---|

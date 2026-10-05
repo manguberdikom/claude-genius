@@ -27,9 +27,12 @@ bo'lishi shart. Qoidaga tayanmagan o'zgarish shaxsiy did, u qaytariladi.
    qayta nomlanmaydi. Tegadigan kodga aloqasi yo'q punkt (ro'yxatlash,
    grep, CI, siyosat, o'lchash) bajarilmaydi. Shunday audit haqiqatan
    kerak bo'lsa, `Tegilmagan` qatorida bir jumla bilan ayting.
-   `rules_for` faqat `.java` va build fayllarini ko'radi. Hujjat yoki
-   `application.yml` uchun 2 qaytaradi, bu xato emas: qoidani
-   `tools/doc.sh find` bilan oling.
+   `rules_for` `.java`, build fayli, `.sql`, `.yml`/`.yaml`, `.properties`
+   va `.xml` ni ko'radi: `application*.yml` dan `sozlama`,
+   `db/migration/*.sql` dan `sxema migratsiyasi` belgisi chiqadi. Hali
+   yozilmagan `.java` fayl belgisini nomidan oladi (`Controller`,
+   `Repository`, `*Test` va hokazo). Markdown hujjat uchun 2 qaytaradi,
+   bu xato emas: qoidani `tools/doc.sh find` bilan oling.
 2. **Doirani aniqlang.** Faqat so'ralgan ishni qiling. Yonidagi eski kod
    yomon bo'lsa, uni tuzatmang: oxirida alohida ayting.
 3. **Qoidani bo'lim darajasida tanlang.** Reja qadami bilan chaqirilgan
