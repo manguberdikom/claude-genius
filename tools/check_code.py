@@ -333,11 +333,23 @@ def main():
 
     # Zanjir qoidasi: .java yozilishidan oldin rules_for chaqirilgan
     # bo'lishi kerak. Bu ko'rsatma emas, shart: aks holda u unutiladi.
+    #
+    # Lekin shart faqat KLON ichida: u shu proyektning o'z konvensiyasi,
+    # boshqa repoda esa hech kim unga rozi bo'lmagan. Global o'rnatishda
+    # bu hook har Java proyektida yuradi va u yerda har birinchi .java
+    # yozuvini to'sardi. Shuning uchun klondan tashqarida bu eslatma:
+    # chaqiruv to'xtamaydi, ro'yxat esa taklif qilinadi.
     if written and not was_marked(path):
         reason = SKIPPED % (tool_cmd("rules_for.py"), quote(path))
         if findings:
             reason = render(path, findings) + "\n\n" + reason
-        json.dump({"decision": "block", "reason": reason}, sys.stdout)
+        if in_clone():
+            json.dump({"decision": "block", "reason": reason}, sys.stdout)
+        else:
+            json.dump({"hookSpecificOutput": {
+                "hookEventName": "PostToolUse",
+                "additionalContext": reason,
+            }}, sys.stdout)
         return 0
 
     drift = new_signals(path) if written else ""

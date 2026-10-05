@@ -111,6 +111,15 @@ def reason(raw):
     return json.loads(raw).get("reason", "") if raw else ""
 
 
+def context_of(raw):
+    """block sababi yoki additionalContext: ikkisidan qaysi biri bo'lsa."""
+    if not raw:
+        return ""
+    data = json.loads(raw)
+    return (data.get("reason")
+            or data.get("hookSpecificOutput", {}).get("additionalContext", ""))
+
+
 def section_titles():
     """index/sections.tsv: (hujjat, bo'lim) -> sarlavha."""
     titles = {}
@@ -315,16 +324,24 @@ def main():
     alien_cmd = os.path.join(ROOT, "tools", "rules_for.py").replace("\\", "/")
     rows = [
         ("rules_for chaqirilmasa block", decision(raw_skipped) == "block"),
+        # Zanjir qoidasi shu proyektning konvensiyasi: boshqa repoda hech
+        # kim unga rozi bo'lmagan, shuning uchun u yerda to'smaydi.
+        ("boshqa papkada block emas, eslatma",
+         decision(raw_alien) is None
+         and "Yozishdan oldin qoidalar olinmagan"
+         in json.loads(raw_alien)["hookSpecificOutput"]["additionalContext"]
+         and json.loads(raw_alien)["hookSpecificOutput"]["hookEventName"]
+         == "PostToolUse"),
         # Klon ichida nisbiy buyruq: allow ro'yxatiga mos.
         ("sabab rules_for buyrug'ini beradi",
          "python3 tools/rules_for.py " in reason(raw_skipped)),
         # Boshqa proyektda nisbiy buyruq "No such file" beradi.
         ("boshqa papkada sabab mutlaq yo'lni beradi",
-         decision(raw_alien) == "block" and alien_cmd in reason(raw_alien)
-         and os.path.isfile(alien_cmd)),
+         alien_cmd in context_of(raw_alien) and os.path.isfile(alien_cmd)),
         # Hint allow qoidasi bilan bir xil boshlanadi: rewrite_paths.tool_cmd.
         ("GENIUS_PYTHON: hint allow qoidasiga mos",
-         RP.tool_cmd(ROOT.replace("\\", "/"), win_py, "rules_for.py") in reason(raw_win)),
+         RP.tool_cmd(ROOT.replace("\\", "/"), win_py, "rules_for.py")
+         in context_of(raw_win)),
     ]
     failures += report(rows)
     total += len(rows)
@@ -417,7 +434,11 @@ def main():
         shutil.rmtree(tmp, ignore_errors=True)
     rows = [
         ("Java emas: belgisiz .java yozuvi block bermaydi", raw_plain == ""),
-        ("pom.xml li papkada avvalgidek block", decision(raw_maven) == "block"),
+        # Java proyektida hook ishlaydi. To'smaydi (klondan tashqarida
+        # zanjir qoidasi eslatma), lekin topilmalar va ro'yxat beriladi.
+        ("pom.xml li papkada hook ishlaydi",
+         raw_maven != "" and "Yozishdan oldin qoidalar olinmagan"
+         in context_of(raw_maven)),
         ("GENIUS_HOOKS=off: klonda ham jim", raw_off == ""),
     ]
     failures += report(rows)
