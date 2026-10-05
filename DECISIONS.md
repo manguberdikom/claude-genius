@@ -8,74 +8,135 @@ Hamma o'zgarish bu yerga yozilmaydi. Yoziladigani: foydalanuvchi
 muhitiga tegadigan, ma'lumot yo'qotishi mumkin bo'lgan yoki ruxsat
 qarorini o'zgartiradigan o'zgarish.
 
-## 2026-10-05: Gradle yurishiga init skript: jacoco, XML, kompilyatsiya keshi
+## 2026-10-05: Gradle yurishiga init skript: jacoco, XML, kompilyatsiya cache i
 
 **Nima o'zgardi.** `run_tests.py` har Gradle buyrug'iga `-I <init skript>`
 qo'shadi. Skript build fayllariga tegmaydi va faqat shu yurishga ta'sir
-qiladi. (1) Maqsadli yurishda (va qayta yurishda) jacoco agenti,
-`JacocoReport` va `JacocoCoverageVerification` vazifalari o'chadi, HTML
-test hisoboti yozilmaydi. (2) Har yurishda JUnit XML majburiy. (3) Loyiha
-`org.gradle.caching` ni tanlamagan bo'lsa asbob `--build-cache` ni
-yoqadi, lekin faqat kompilyatsiya vazifalari (`AbstractCompile`, Kotlin
-compile) keshlanadi, kesh faqat lokal: remote kesh shu yurish uchun
-o'chiriladi. (4) `--isit` hamma test to'plamini kompilyatsiya qiladi.
-(5) `--tashxis` ga Gradle bandlari: `org.gradle.caching=false`,
-configuration cache yo'qligi (10+ modul), `upToDateWhen { false }`,
-`showStandardStreams`, build scan plagini. `gradle.properties` ustunligi
-tuzatildi: `GRADLE_USER_HOME` dagi qiymat loyihanikidan ustun (Gradle ham
-shunday o'qiydi).
+qiladi.
+
+1. Maqsadli yurishda (va qayta yurishda) jacoco agenti, `JacocoReport`
+   va `JacocoCoverageVerification` vazifalari o'chadi, HTML test
+   hisoboti yozilmaydi.
+2. Har yurishda JUnit XML majburiy.
+3. Loyiha `org.gradle.caching` ni tanlamagan bo'lsa asbob `--build-cache`
+   ni yoqadi. Faqat kompilyatsiya vazifalari (`AbstractCompile`, Kotlin
+   compile) cache lanadi va faqat lokal. Remote cache shu yurish uchun
+   `beforeSettings` ichidan o'chiriladi, shuning uchun
+   `GRADLE_USER_HOME/init.d` sozlagan remote ham o'chadi.
+4. `--isit` skript ro'yxatga olgan `geniusIsit` vazifasini chaqiradi. U
+   har java loyihaning hamma source set ini kompilyatsiya qiladi, nomni
+   papkadan taxmin qilmaydi.
+
+Skript loyihaning `.gradle/genius/` papkasida turadi va nisbiy yo'l bilan
+beriladi. Init qo'shilmaydigan holatlar:
+
+- `GENIUS_GRADLE_INIT=0`;
+- wrapper Gradle 6.1 dan eski;
+- isolated projects yoqilgan.
+
+Wrapper versiyasi o'qilmasa init qo'shiladi, lekin cache yoqilmaydi.
+
+Yo'l-yo'lakay tuzatilganlar:
+
+- Kesh tanlovi `-Dorg.gradle.caching` ni (GENIUS_TEST_FLAGS, GRADLE_OPTS,
+  JAVA_OPTS) ham ko'radi.
+- `gradle.properties` da `:` va bo'shliq ajratgichi o'qiladi;
+  `GRADLE_USER_HOME` dagi qiymat loyihanikidan ustun.
+- Versiya faqat `distributionUrl` dan olinadi, izohdagi eski URL dan
+  emas.
+- `includeBuild` papkasi modul sifatida `:<nom>:test` ga bog'lanadi.
+  Avval u ildizning `:test` iga tushardi: ildizda java bo'lsa yurish
+  testsiz "yashil" chiqardi.
+- Test emas vazifa (coverage, lint) yiqilgan bo'lsa, qayta yurishda
+  o'tgan test natijani `4` qilmaydi: `exit=1` va `Boshqa yiqilish:`
+  qatori. Maven da surefire va failsafe dan boshqa goal ham shunday.
+- `--tashxis` ga Gradle bandlari qo'shildi. Build scan bandi faqat
+  yuklash haqiqatan yoqilganda chiqadi.
 
 **Nega.** Maven maqsadli yurishi `-Djacoco.skip=true` bilan tezlashgan
-edi, Gradle da esa bunday xossa yo'q: jacoco plagin va vazifa build
-faylida. Ko'p loyihada `test` ga `finalizedBy jacocoTestCoverageVerification`
-bog'langan va maqsadli yurish bir nechta test bilan coverage chegarasiga
-yetmay yolg'on yiqiladi: Gradle 7.6, 8.14 va 9.8 da tasdiqlandi. Yangi
-worktree birinchi yurishda hamma modulni noldan kompilyatsiya qilardi;
-endi boshqa daraxt kompilyatsiya qilgan modul keshdan olinadi (sintetik
-2500 sinfli loyihada 5.3 s dan 2.8 s ga, maqsadli yurish 3.0 s dan
-1.7 s ga). Qayta yurish va beqarorni ajratish JUnit XML ga tayanadi,
-build XML ni o'chirgan bo'lsa ular ishlamasdi.
+edi, Gradle da bunday xossa yo'q. Ko'p loyihada `test` ga
+`finalizedBy jacocoTestCoverageVerification` bog'langan. Shunda maqsadli
+yurish bir nechta test bilan coverage chegarasiga yetmay yolg'on
+yiqiladi. Buni Gradle 7.6, 8.14 va 9.8 da qayta hosil qildim. Eski exec
+fayli qolgan bo'lsa hisobot vazifasi agentsiz ham yiqitardi, shuning
+uchun vazifalarning o'zi o'chiriladi.
+
+Yangi worktree birinchi yurishda hamma modulni noldan kompilyatsiya
+qilardi. Endi boshqa daraxt kompilyatsiya qilgan modul cache dan
+olinadi. Sintetik 2500 sinfli loyihada:
+
+- yangi worktree kompilyatsiyasi 5.3 s dan 2.8 s ga tushdi;
+- maqsadli yurish 3.0 s dan 1.7 s ga tushdi.
+
+Qayta yurish va beqarorni ajratish JUnit XML ga tayanadi, shuning uchun
+XML majburiy.
 
 **Rad etilgan variantlar.**
 
 - *To'liq `--build-cache` (test vazifasi bilan).* Rad etildi: test
   vazifasi kirish sifatida muhit o'zgaruvchisi va tashqi holatni
-  bilmaydi, keshdan olingan "yashil" haqiqiy yurish emas. Oldingi
-  yozuvdagi rad etish shu sabab bilan qoladi; qabul qilingani torroq:
+  bilmaydi, cache dan olingan "yashil" haqiqiy yurish emas. Oldingi
+  yozuvdagi rad etish shu sabab bilan qoladi. Qabul qilingani torroq:
   kirish va chiqishini Gradle va JetBrains e'lon qilgan kompilyatsiya
-  vazifalari. Ularning kesh kaliti UP-TO-DATE tekshiruvi bilan bir xil
-  kirishlardan.
+  vazifalari. Ularning cache kaliti UP-TO-DATE tekshiruvi bilan bir xil
+  kirishlardan olinadi.
 - *Build fayliga `jacoco { enabled = false }` yozish.* Rad etildi: asbob
   foydalanuvchi kodini o'zgartirmaydi.
 - *`-x jacocoTestReport -x jacocoTestCoverageVerification`.* Rad etildi:
   vazifa yo'q loyihada `-x` "Task not found" bilan yiqiladi, agentni esa
   o'chirmaydi.
+- *Skript umumiy `/tmp` da.* Rad etildi:
+  - oldindan ma'lum nomli faylni boshqa lokal foydalanuvchi oldindan
+    qo'yib, Gradle orqali kod bajartirishi mumkin;
+  - Windows da TEMP dagi `&` yoki `^` `cmd /c` buyrug'ini bo'ladi.
 - *`--parallel`, `--configuration-cache` standart.* Rad etildi, oldingi
   yozuvdagi sabab bilan: to'g'riligi build ga bog'liq. `--tashxis` ularni
   tavsiya qiladi, yoqish `GENIUS_TEST_FLAGS` bilan.
 - *`--no-scan` standart.* Rad etildi: build scan tashkilot tanlovi.
-  `--tashxis` aytadi, yoqish `GENIUS_TEST_FLAGS=--no-scan`.
+  `--tashxis` aytadi, yoqish `GENIUS_TEST_FLAGS=--no-scan` bilan.
 
-**Xavf.** Kompilyatsiya keshi `.java` dan tashqari faylni (masalan
-`lombok.config`) o'qiydigan annotation processor da eskirgan sinf
-qaytarishi mumkin. Bu xavf UP-TO-DATE tekshiruvida ham bor, kesh uni
-worktree lar orasiga yoyadi. Keshni loyihaning `org.gradle.caching=false`
-qiymati to'liq o'chiradi. Gradle 6.1 dan eski versiyada skript hech narsa
-qilmaydi.
+**Xavf.**
 
-**Qaysi tekshiruv o'tdi.** `tools/test_run_tests.py` 47/47. Haqiqiy
-Gradle 7.6.4 (JDK 17), 8.14.3 va 9.8.0 (JDK 21) da: qo'lda matritsa
-(Groovy va Kotlin DSL, `tasks.named` bilan lazy vazifa, configuration
-cache bilan qayta ishlatish, `--warning-mode=all` da ogohlantirish yo'q)
-va `python3 tools/test_run_tests.py --gradle <gradle>` 6/6: init siz
-maqsadli yurish yiqiladi (nazorat), init bilan yashil va jacoco exec
-yo'q, to'liq suite da coverage tekshiruvi qoladi, yangi worktree
-kompilyatsiyani keshdan oladi va test keshdan emas, yiqilgan test XML dan
-qayta yuradi, remote keshga murojaat yo'q.
+- Kompilyatsiya cache i `.java` dan tashqari faylni (masalan
+  `lombok.config`) o'qiydigan annotation processor da eskirgan sinf
+  qaytarishi mumkin. Bu xavf UP-TO-DATE tekshiruvida ham bor, cache uni
+  worktree lar orasiga yoyadi. Loyihaning `org.gradle.caching=false`
+  qiymati uni to'liq o'chiradi.
+- Loyiha `org.gradle.caching=true` qilgan bo'lsa uning sozlamasi amal
+  qiladi: o'zgarmagan test natijasi ham cache dan keladi.
+- `.gradle/` gitignore da bo'lmasa skript fayli untracked ko'rinadi.
+  Gradle bu papkaga baribir yozadi.
+- Kotlin compile cache i faqat qo'lda tekshirildi (review agenti, KGP
+  2.0.21, Gradle 8.14.3: ikkinchi worktree da `compileKotlin FROM-CACHE`).
+  Avtomatik sinov yo'q.
 
-**Orqaga qaytarish.** `GENIUS_GRADLE_INIT=0` init skriptni butunlay
-o'chiradi. Faqat kesh: `org.gradle.caching=false` yoki
-`GENIUS_TEST_FLAGS=--no-build-cache`.
+**Qaysi tekshiruv o'tdi.**
+
+- `tools/test_run_tests.py`: 51/51.
+- `python3 tools/test_run_tests.py --gradle <gradle>` haqiqiy Gradle
+  7.6.4 (JDK 17), 8.14.3 va 9.8.0 (JDK 21) da 10/10:
+  - init siz maqsadli yurish yiqiladi (nazorat);
+  - init bilan, eski exec turganda ham, yashil: agent va HTML yo'q,
+    XML bor;
+  - to'liq suite da coverage tekshiruvi qoladi;
+  - yangi worktree kompilyatsiyani cache dan oladi, testni esa cache dan
+    olmaydi;
+  - build XML ni o'chirgan bo'lsa ham yiqilgan test qayta yuradi;
+  - lokal HTTP server bilan sanalganda remote ga murojaat yo'q, init.d
+    sozlagan remote ham o'chadi, nazoratda esa murojaat bor;
+  - loyiha cache ni o'zi tanlaganda asbob unga tegmaydi;
+  - `--isit` source set nomi papka nomidan farq qilganda ham ishlaydi;
+  - included build testi `:money:test` bilan yuradi.
+- Mustaqil review (5 yo'nalish, har topilmaga rad etuvchi tekshiruvchi)
+  29 topilmani tasdiqladi, hammasi shu yozuvdagi tuzatishlarda.
+- Mutatsiya: remote o'chirish, `beforeSettings`, hisobot vazifasini
+  o'chirish va XML majburiyligi olib tashlansa e2e yiqiladi.
+
+**Orqaga qaytarish.**
+
+- `GENIUS_GRADLE_INIT=0` init skriptni butunlay o'chiradi.
+- Faqat cache ni o'chirish uchun: `org.gradle.caching=false` yoki
+  `GENIUS_TEST_FLAGS=--no-build-cache`.
 
 ## 2026-10-05: Beqaror test ajratiladi, Spring orqali ta'sir tanlanadi
 
