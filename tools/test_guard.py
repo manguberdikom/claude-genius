@@ -7,6 +7,7 @@ Sinov matnlari shu faylda turadi, Bash buyrug'ida emas: aks holda guard
 o'z sinovini haqiqiy chaqiruv deb to'sib qo'yadi.
 """
 
+import io
 import json
 import os
 import re
@@ -18,6 +19,13 @@ import tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 GUARD = os.path.join(HERE, "guard.py")
+
+# Hook faqat Java proyektida yoki klonning o'zida ishlaydi
+# (hookio.active). Sinovlar vaqtinchalik papkada yuradi, shu yerda esa
+# tekshirilayotgan narsa gating emas: ildiz klonga qo'yiladi. Gating ning
+# o'z sinovlari tools/test_hookio.py da va shu fayldagi alohida
+# holatlarda.
+os.environ["CLAUDE_PROJECT_DIR"] = ROOT
 
 # Sinov standart chegarani o'lchaydi: muhitdagi DOC_MAX_* uni o'zgartirib,
 # o'nlab chalg'ituvchi XATO bermasin. guard subprocess i ham shu muhitni oladi.
@@ -344,11 +352,14 @@ HINT_PATH_RE = re.compile(r'"([^"]*(?:tools/[\w.-]+|CLAUDE\.md))"'
                           r'|([^\s"]*(?:tools/[\w.-]+|CLAUDE\.md))')
 
 
-def run_guard(payload, cwd):
+def run_guard(payload, cwd, root=None):
+    """`root` berilsa CLAUDE_PROJECT_DIR shunga qo'yiladi (hookio.active)."""
     raw = "not json" if payload is None else json.dumps(payload)
+    environ = os.environ if root is None else dict(os.environ,
+                                                   CLAUDE_PROJECT_DIR=root)
     out = subprocess.run(
         [sys.executable, GUARD], input=raw, capture_output=True, text=True,
-        cwd=cwd, timeout=20,
+        cwd=cwd, timeout=20, env=environ,
     ).stdout.strip()
     return json.loads(out)["hookSpecificOutput"] if out else {}
 
@@ -405,7 +416,52 @@ def main():
     finally:
         shutil.rmtree(other, ignore_errors=True)
 
-    total = len(CASES) + len(checks)
+    # Global o'rnatishda hook har proyektda yuradi. Java bo'lmagan
+    # proyektda docker va psql to'sig'i o'rinsiz: qo'riqchi jim o'tadi.
+    gating = [
+        ("Java emas: docker run o'tadi", ALLOW, ("main.py",),
+         {"tool_name": "Bash", "tool_input": {"command": "docker run x"}}),
+        ("Java emas: psql o'tadi", ALLOW, ("main.py",),
+         {"tool_name": "Bash", "tool_input": {"command": "psql db"}}),
+        ("Java emas: katta bob ham o'tadi", ALLOW, ("main.py",),
+         {"tool_name": "Read", "tool_input": {"file_path": BIG}}),
+        ("pom.xml: docker run to'siladi", DENY, ("pom.xml",),
+         {"tool_name": "Bash", "tool_input": {"command": "docker run x"}}),
+        ("pom.xml: psql to'siladi", DENY, ("pom.xml",),
+         {"tool_name": "Bash", "tool_input": {"command": "psql db"}}),
+        ("backend/pom.xml: to'siladi", DENY, ("backend/pom.xml",),
+         {"tool_name": "Bash", "tool_input": {"command": "docker run x"}}),
+    ]
+    for name, want, files, payload in gating:
+        tmp = tempfile.mkdtemp(prefix="guard_gate_")
+        try:
+            for rel in files:
+                full = os.path.join(tmp, rel.replace("/", os.sep))
+                os.makedirs(os.path.dirname(full), exist_ok=True)
+                io.open(full, "w", encoding="utf-8").write("")
+            got = run_guard(payload, ROOT, root=tmp).get(
+                "permissionDecision", ALLOW)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+        ok = got == want
+        failures += not ok
+        print("%-4s %-30s kutilgan=%-5s olingan=%s"
+              % ("OK" if ok else "XATO", name, want, got))
+
+    # GENIUS_HOOKS=off: klonda ham jim.
+    off = subprocess.run(
+        [sys.executable, GUARD],
+        input=json.dumps({"tool_name": "Bash",
+                          "tool_input": {"command": "docker run x"}}),
+        capture_output=True, text=True, cwd=ROOT, timeout=20,
+        env=dict(os.environ, GENIUS_HOOKS="off")).stdout.strip()
+    ok = off == ""
+    failures += not ok
+    print("%-4s %-30s kutilgan=%-5s olingan=%s"
+          % ("OK" if ok else "XATO", "GENIUS_HOOKS=off: jim", "bo'sh",
+             off[:40] or "bo'sh"))
+
+    total = len(CASES) + len(checks) + len(gating) + 1
     print("\n%d/%d o'tdi" % (total - failures, total))
     return 1 if failures else 0
 

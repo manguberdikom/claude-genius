@@ -43,6 +43,13 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import suggest_sections as S  # noqa: E402
 
+# Hook faqat Java proyektida yoki klonning o'zida ishlaydi
+# (hookio.active). Sinovlar vaqtinchalik papkada yuradi, shu yerda esa
+# tekshirilayotgan narsa gating emas: ildiz klonga qo'yiladi. Gating ning
+# o'z sinovlari tools/test_hookio.py da.
+ROOT = os.path.dirname(HERE)
+os.environ["CLAUDE_PROJECT_DIR"] = ROOT
+
 # So'rov -> kutilgan hujjat [, qabul qilinadigan bo'limlar]. Taklif
 # ro'yxatida o'sha hujjatdan kamida bitta bo'lim bo'lishi kerak; bo'limlar
 # berilgan bo'lsa, ulardan biri. Raqam to'liq solishtiriladi: prefiks
@@ -195,9 +202,13 @@ RELATIVE_CMD_RE = re.compile(r"(?<![/\\\w])tools/doc\.sh")
 def run_hook(root, raw, cwd=None):
     """raw str yoki bayt: bayt bilan BOM va UTF-8 aynan beriladi."""
     data = raw if isinstance(raw, bytes) else raw.encode("utf-8")
+    # Ko'chirilgan klon shu sinovda proyekt ildizi. hookio.active() uni
+    # tanimasa hook jim o'tib ketadi va har holat bo'sh chiqish bilan
+    # yiqilardi; `cwd` esa ataylab boshqa papka bo'lishi mumkin.
+    environ = dict(os.environ, CLAUDE_PROJECT_DIR=root)
     proc = subprocess.run(
         [sys.executable, os.path.join(root, "tools", "suggest_sections.py")],
-        input=data, capture_output=True, timeout=60, cwd=cwd)
+        input=data, capture_output=True, timeout=60, cwd=cwd, env=environ)
     return proc.returncode, proc.stdout.decode("utf-8", "replace")
 
 

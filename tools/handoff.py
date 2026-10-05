@@ -455,6 +455,8 @@ def _hook():
     payload = hookio.read_payload(blank={})
     if payload is None:
         return 0
+    if not hookio.active(payload):
+        return 0
     path = payload.get("transcript_path") or transcript()
     if not path or not os.path.isfile(path):
         return 0

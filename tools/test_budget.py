@@ -28,6 +28,13 @@ STATE = tempfile.mkdtemp(prefix="budget_")
 LOG = os.path.join(STATE, "budget.json")
 SESSION = "sinov"
 
+# Hook faqat Java proyektida yoki klonning o'zida ishlaydi
+# (hookio.active). Sinovlar vaqtinchalik papkada yuradi, shu yerda esa
+# tekshirilayotgan narsa gating emas: ildiz klonga qo'yiladi. Gating ning
+# o'z sinovlari tools/test_hookio.py da.
+ROOT = os.path.dirname(HERE)
+os.environ["CLAUDE_PROJECT_DIR"] = ROOT
+
 
 def env_for(session=SESSION):
     env = dict(os.environ, GENIUS_STATE_DIR=STATE)

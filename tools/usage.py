@@ -347,6 +347,8 @@ def read_payload():
 def save_hook():
     """--saqlash: hookda payloaddagi sessiya, qo'lda proyektning har sessiyasi."""
     payload = read_payload()
+    if not hookio.active(payload):
+        return 0
     path = payload.get("transcript_path")
     if path and path.endswith(".jsonl") and os.path.isfile(path):
         rows, _ = collect(session_files(path))

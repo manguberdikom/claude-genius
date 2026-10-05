@@ -290,6 +290,8 @@ def main():
     payload = hookio.read_payload()
     if payload is None:
         return  # hook hech qachon chaqiruvni o'z xatosi tufayli to'smaydi
+    if not hookio.active(payload):
+        return  # Java proyekti ham, klon ham emas: to'siq o'rinsiz
     tool_input = payload.get("tool_input") or {}
     name = payload.get("tool_name")
     if name == "Read":

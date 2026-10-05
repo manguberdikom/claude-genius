@@ -323,8 +323,16 @@ def run_hook(tmp, payload):
     sys.stdin = io.StringIO(payload if isinstance(payload, str)
                             else json.dumps(payload))
     out = io.StringIO()
+    # Hook faqat Java proyektida yoki klonda ishlaydi (hookio.active),
+    # shuning uchun soxta proyekt Maven proyekti qilinadi va ildiz aynan
+    # unga qo'yiladi: shunda sinalayotgani kontekst hisobi bo'ladi.
+    project = os.path.join(tmp, "hook", "my_proj.v2")
+    os.makedirs(project, exist_ok=True)
+    io.open(os.path.join(project, "pom.xml"), "w", encoding="utf-8").write(
+        "<project/>\n")
     try:
-        with isolated(tmp, "hook"), contextlib.redirect_stdout(out):
+        with isolated(tmp, "hook", CLAUDE_PROJECT_DIR=project), \
+                contextlib.redirect_stdout(out):
             code = handoff.hook()
     finally:
         handoff.STATE, sys.stdin = saved_state, saved_stdin

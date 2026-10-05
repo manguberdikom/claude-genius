@@ -309,7 +309,9 @@ def main():
             print(__doc__.strip().split("\n\n")[1].strip())
             return 2
         payload = hookio.read_payload()
-        return hook(payload) if payload is not None else 0  # hook o'z xatosi bilan ishni to'xtatmaydi
+        if payload is None or not hookio.active(payload):
+            return 0   # hook o'z xatosi yoki o'rinsizligi bilan ishni to'xtatmaydi
+        return hook(payload)
     if args[0] == "--holat":
         return status()
     if args[0] == "--yangi-vazifa":

@@ -13,6 +13,7 @@ Holat vaqtinchalik papkada (GENIUS_STATE_DIR): sinov jonli sessiyaning
 rules_for belgilarini o'chirmaydi, aks holda keyingi Java yozuvi to'siladi.
 """
 
+import io
 import json
 import os
 import shutil
@@ -36,6 +37,13 @@ LIVE_STATE = os.path.join(ROOT, ".claude", ".state")
 # state import qilinishidan OLDIN: subprocesslar ham shu papkani meros oladi.
 STATE = tempfile.mkdtemp(prefix="genius-state-")
 os.environ["GENIUS_STATE_DIR"] = STATE
+
+# Hook faqat Java proyektida yoki klonning o'zida ishlaydi
+# (hookio.active). Sinovlar vaqtinchalik papkada yuradi, shu yerda esa
+# tekshirilayotgan narsa gating emas: ildiz klonga qo'yiladi. Gating ning
+# o'z sinovlari tools/test_hookio.py da va shu fayldagi alohida
+# holatlarda.
+os.environ["CLAUDE_PROJECT_DIR"] = ROOT
 sys.path.insert(0, HERE)
 
 import check_code  # noqa: E402
@@ -381,6 +389,36 @@ def main():
         ("yozilgandan keyingi yangi belgi aytiladi",
          "tranzaksiya" in drift and "web qatlami" not in drift),
         ("qayta chaqirilgandan keyin jim", raw_same == ""),
+    ]
+    failures += report(rows)
+    total += len(rows)
+
+    print("\n== Java bo'lmagan proyektda jim ==")
+    # Global o'rnatishda PostToolUse hooki har proyektda yuradi. Python yoki
+    # JS proyektida .java yozuvi ham, zanjir qoidasi ham o'rinsiz: hook
+    # chiqishsiz o'tadi (hookio.active). Klon ichida avvalgidek qoladi.
+    tmp = tempfile.mkdtemp(prefix="cc_gate_")
+    try:
+        plain = os.path.join(tmp, "A.java")
+        shutil.copy(BAD, plain)                 # buzilishi ko'p fayl
+        io.open(os.path.join(tmp, "package.json"), "w",
+                encoding="utf-8").write("{}\n")
+        state.clear()                           # rules_for chaqirilmagan
+        raw_plain = run_hook(plain, cwd=tmp, env={"CLAUDE_PROJECT_DIR": tmp})
+        maven = os.path.join(tmp, "maven")
+        os.makedirs(maven)
+        java = os.path.join(maven, "A.java")
+        shutil.copy(BAD, java)
+        io.open(os.path.join(maven, "pom.xml"), "w",
+                encoding="utf-8").write("<project/>\n")
+        raw_maven = run_hook(java, cwd=maven, env={"CLAUDE_PROJECT_DIR": maven})
+        raw_off = run_hook(BAD, env={"GENIUS_HOOKS": "off"})
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    rows = [
+        ("Java emas: belgisiz .java yozuvi block bermaydi", raw_plain == ""),
+        ("pom.xml li papkada avvalgidek block", decision(raw_maven) == "block"),
+        ("GENIUS_HOOKS=off: klonda ham jim", raw_off == ""),
     ]
     failures += report(rows)
     total += len(rows)

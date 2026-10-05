@@ -323,6 +323,8 @@ def main():
     payload = hookio.read_payload()
     if payload is None:
         return 0
+    if not hookio.active(payload):
+        return 0   # CLI rejimi (argv) bu tekshiruvdan o'tmaydi
     tool_input = payload.get("tool_input") or {}
     response = payload.get("tool_response") or {}
     path = (response.get("filePath") or tool_input.get("file_path") or "")

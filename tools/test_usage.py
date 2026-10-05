@@ -26,6 +26,13 @@ import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
+
+# Hook faqat Java proyektida yoki klonning o'zida ishlaydi
+# (hookio.active). Sinovlar vaqtinchalik papkada yuradi, shu yerda esa
+# tekshirilayotgan narsa gating emas: ildiz klonga qo'yiladi. Gating ning
+# o'z sinovlari tools/test_hookio.py da va shu fayldagi alohida
+# holatlarda.
+os.environ["CLAUDE_PROJECT_DIR"] = ROOT
 sys.path.insert(0, HERE)
 
 import usage as U  # noqa: E402
@@ -100,11 +107,20 @@ def session(tmp, project, sid, main_rows, agents):
     return base, main
 
 
+def maven(folder):
+    """Papkani Java proyektiga aylantiradi: Stop hooki faqat shunda ishlaydi."""
+    os.makedirs(folder, exist_ok=True)
+    io.open(os.path.join(folder, "pom.xml"), "w", encoding="utf-8").write(
+        "<project/>\n")
+    return folder
+
+
 def hermetic_env(tmp, **extra):
     """Bolalar jarayoni haqiqiy ~/.claude va repo STORE ga tegmasin."""
-    env = dict(os.environ, HOME=tmp, USERPROFILE=tmp, **extra)
+    env = dict(os.environ, HOME=tmp, USERPROFILE=tmp)
     for name in ("CLAUDE_CONFIG_DIR", "CLAUDE_PROJECT_DIR"):
         env.pop(name, None)
+    env.update(extra)   # ataylab berilgani tozalashdan ustun
     return env
 
 
@@ -443,7 +459,8 @@ def case_saqlash_hook_payload(tmp):
         [sys.executable, os.path.join(HERE, "usage.py"), "--saqlash"],
         capture_output=True, text=True, cwd=tmp,
         input=json.dumps({"transcript_path": main, "session_id": "s1"}),
-        env=hermetic_env(tmp, USAGE_STORE=store))
+        env=hermetic_env(tmp, USAGE_STORE=store,
+                         CLAUDE_PROJECT_DIR=maven(tmp)))
     path = os.path.join(store, "2026-10", "p", "s1.json")
     if proc.returncode != 0 or proc.stdout.strip() or not os.path.isfile(path):
         return False
@@ -460,7 +477,8 @@ def case_saqlash_hook_jim(tmp):
     proc = subprocess.run(
         [sys.executable, os.path.join(HERE, "usage.py"), "--saqlash"],
         capture_output=True, text=True, cwd=tmp, input="",
-        env=hermetic_env(tmp, USAGE_STORE=store))
+        env=hermetic_env(tmp, USAGE_STORE=store,
+                         CLAUDE_PROJECT_DIR=maven(tmp)))
     return (proc.returncode == 0 and proc.stdout.strip() == ""
             and not os.path.exists(store))
 

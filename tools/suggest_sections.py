@@ -456,6 +456,8 @@ def quiet(reason):
 
 def main():
     payload = hookio.read_payload() or {}
+    if not hookio.active(payload):
+        return quiet("Java proyekti ham, klon ham emas")
     prompt = payload.get("prompt") or ""
     if not isinstance(prompt, str) or not prompt.strip():
         return quiet("stdin da prompt yo'q yoki JSON buzuq")
