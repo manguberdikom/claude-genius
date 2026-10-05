@@ -12,27 +12,37 @@ Ko'p o'qish shu yerda bo'ladi, asosiy sessiyaga esa qisqa javob boradi.
 
 ## Qadamlar
 
-1. `tools/doc.sh find "<mavzu>"` bilan bo'limlarni toping. Topilmasa
-   `tools/doc.sh find -f "<mavzu>"` bilan matn ichidan qidiring.
+1. Topshiriqda bo'lim raqami berilgan bo'lsa, qidirmang, to'g'ridan-to'g'ri
+   2-qadamga o'ting. Sonar kaliti bo'lsa `tools/doc.sh rule java:Sxxxx`:
+   u kalitni aniq moslaydi va bo'limlarni ko'zga tashlanish bo'yicha
+   saralaydi. `find -f` kalitni qism-satr sifatida qidiradi (`java:S112`
+   ga `java:S1128` ham chiqadi), shuning uchun kalit uchun faqat `rule`
+   bo'sh qaytganda ishlatiladi. Boshqa mavzu uchun
+   `tools/doc.sh find "<mavzu>"`, topilmasa `tools/doc.sh find -f "<mavzu>"`.
 2. Kerakli bo'limlarni `tools/doc.sh show <hujjat> <raqam>` bilan o'qing.
+   Bob katta bo'lsa avval `tools/doc.sh outline <hujjat> <bob>`.
 3. Javobni yig'ing.
 
 ## Javob shakli
 
-Har bir da'vo yonida manba turishi shart:
+Birinchi qatorda nima qayerda topilgani, keyin har bo'lim. Har bir
+da'vo yonida manba turishi shart:
 
 ```
+Topildi: <bir jumlada nima qayerda, masalan "retry patterns 17.1 da, timeout patterns 17.4 da">
+
 <hujjat> <raqam>  <sarlavha>
   <ikki-uch jumlada mohiyati yoki to'g'ridan-to'g'ri iqtibos>
 ```
 
-Oxirida bir qatorda umumiy xulosa.
+Hech narsa topilmasa birinchi qator `Topildi: hech narsa`, keyin
+sinalgan so'rovlar.
 
 ## Qoidalar
 
 - Bo'lim matnini **qayta yozmang**: qisqartiring yoki iqtibos keltiring.
   Xulosa chiqarish asosiy sessiyaning ishi, sizniki esa manba yetkazish.
 - Bob faylini butunligicha o'qimang. `show` bilan bo'lim oling.
-- Topilmasa, "topilmadi" deb ayting va qaysi so'rovlarni sinaganingizni
-  yozing. Taxmin qilib javob to'qimang.
+- Topilmasa taxmin qilib javob to'qimang: `Topildi: hech narsa` va
+  sinalgan so'rovlar yetadi.
 - Ko'pi bilan 8 ta bo'lim keltiring. Ko'proq kerak bo'lsa, shuni ayting.

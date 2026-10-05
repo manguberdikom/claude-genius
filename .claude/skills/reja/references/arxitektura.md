@@ -15,9 +15,9 @@ belgilaydi. Shu jadval rejada bo'lishi shart (noma'lum qiymat `?` bilan):
 
 | O'lchov | Qiymat | Manba / asos |
 |---|---|---|
-| So'rov hajmi (RPS, o'rtacha / peak) | 40 / 400 | Actuator metrikasi, log hajmi |
+| So'rov hajmi (RPS, o'rtacha / peak) | 40 / 400 | foydalanuvchi bergan monitoring paneli (Actuator, Grafana) |
 | Javob budjeti (p99) | 300 ms | mahsulot talabi / mavjud SLO |
-| Ma'lumot hajmi va o'sishi | 12M qator, +400k/oy | `count(*)`, jadval o'sishi |
+| Ma'lumot hajmi va o'sishi | 12M qator, +400k/oy | foydalanuvchi yoki DBA bergan raqam (sanasi bilan); sessiyada bazaga ulanilmaydi, yo'q bo'lsa `TAXMIN:` |
 | Konsistentlik talabi | to'lovda qat'iy, hisobotda 5 s kechikish mumkin | biznes qarori |
 | Nosozlikka chidamlilik | tashqi servis 1 daqiqa yo'q bo'lsa, buyruq yo'qolmasligi kerak | biznes qarori |
 | Ma'lumot yo'qolishi (RPO/RTO) | 0 / 5 daqiqa | operatsion talab |
@@ -126,8 +126,13 @@ bo'roni: patternlar: `Retry Storm`).
   to'ldirish, keyin kodni almashtirish, oxirida o'chirish. Har bosqich alohida
   reliz (patternlar: `Expand/Contract schema migration`;
   arxitektor: `Sxema migratsiyasi va to'xtashsiz reliz`).
-- Yangi so'rov bo'lsa: kutilgan plan aytiladi (`EXPLAIN ANALYZE` bilan
-  tekshirish qadami qo'yiladi) va kerakli indeks nomlanadi (arxitektor: `Indekslar`, `Planner, statistika va EXPLAIN ANALYZE o'qish`).
+- Yangi so'rov bo'lsa: kutilgan plan va kerakli indeks nomi rejaga yoziladi
+  (arxitektor: `Indekslar`, `Planner, statistika va EXPLAIN ANALYZE o'qish`).
+  Indeks borligi `MigrationIT` da `pg_indexes` orqali tekshiriladi.
+  `EXPLAIN (ANALYZE, BUFFERS)` esa haqiqiy hajmdagi staging da, sessiyadan
+  tashqarida olinadi (review: `Review paytida so'rovni o'lchash`). Kichik test
+  bazasida planner Seq Scan tanlashi mumkin, shuning uchun IT da `Index Scan`
+  assert qilinmaydi.
 - Katta jadvalga indeks: `CREATE INDEX CONCURRENTLY`, aks holda lock.
 - Izolyatsiya darajasi o'zgarishi - ADR, chunki u xulqni o'zgartiradi
   (arxitektor: `MVCC, izolyatsiya darajalari, lock va deadlock`).

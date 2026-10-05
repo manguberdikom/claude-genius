@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 39 | part: VI. Amaliyot va o'sish -->
 
-[Kod yozadigan arxitektorning miyyasi](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
 
 # 39. Birinchi 90 kun va o'z-o'zini baholash (First 90 Days and Self-Assessment)
 
@@ -19,14 +19,14 @@
 - [39.10 Spring: o'zingizni sinash savollari](#3910-spring-ozingizni-sinash-savollari)
 - [39.11 PostgreSQL: o'zingizni sinash savollari](#3911-postgresql-ozingizni-sinash-savollari)
 - [39.12 Operatsion tayyorlik: o'zingizni sinash savollari](#3912-operatsion-tayyorlik-ozingizni-sinash-savollari)
-- [39.13 Keyingi qadam: shu hujjatni va qolgan ikki hujjatni qanday ishlatish](#3913-keyingi-qadam-shu-hujjatni-va-qolgan-ikki-hujjatni-qanday-ishlatish)
+- [39.13 Keyingi qadam: shu hujjatni qolgan beshtasi bilan qanday ishlatish](#3913-keyingi-qadam-shu-hujjatni-qolgan-beshtasi-bilan-qanday-ishlatish)
 - [39.14 Amalda qo'llash](#3914-amalda-qollash)
 
 </details>
 
 
 
-Arxitektor yangi tizimga kelganda eng katta xatosi tezda foydali bo'lishga urinishdir. Haqiqatda esa birinchi uch oyda sizning asosiy mahsulotingiz kod emas, balki ishonchli xarita va ishonchli munosabatdir. Bu bob shu uch oyni haftalab bo'lib beradi, keyin esa diqqatni sizning o'zingizga qaratadi: bilimingizdagi bo'shliqni qanday topish va qaysi mavzuda qay darajada turganingizni qanday o'lchash. Hujjat shu bob bilan tugaydi, shuning uchun oxirida uchlikni birgalikda qanday ishlatish ham aytiladi.
+Arxitektor yangi tizimga kelganda eng katta xatosi tezda foydali bo'lishga urinishdir. Haqiqatda esa birinchi uch oyda sizning asosiy mahsulotingiz kod emas, balki ishonchli xarita va ishonchli munosabatdir. Bu bob shu uch oyni haftalab bo'lib beradi, keyin esa diqqatni sizning o'zingizga qaratadi: bilimingizdagi bo'shliqni qanday topish va qaysi mavzuda qay darajada turganingizni qanday o'lchash. Hujjat shu bob bilan tugaydi, shuning uchun oxirida oltita hujjatni birgalikda qanday ishlatish ham aytiladi.
 
 ## 39.1 Yangi loyihada birinchi hafta: nimani o'qish, kimdan so'rash, nima yozmaslik
 
@@ -306,11 +306,11 @@ management:
 
 Uchinchi savol: oxirgi migratsiyani orqaga qaytarish rejasi bormi va u sinalganmi. To'rtinchi savol: ma'lumotlar bazasidan tiklanish vaqti qancha va bu raqam o'lchanganmi yoki taxminmi. Beshinchi savol: to'lov provayderi 30 sekund javob bermasa, tizimingiz qanday yomonlashadi. Agar bu beshta savolga raqam bilan javob bera olsangiz, siz operatsion jihatdan tayyorsiz.
 
-## 39.13 Keyingi qadam: shu hujjatni va qolgan ikki hujjatni qanday ishlatish
+## 39.13 Keyingi qadam: shu hujjatni qolgan beshtasi bilan qanday ishlatish
 
-Uchlik bitta maqsadga xizmat qiladi, lekin uchta turli paytda ishlatiladi. Bu hujjat qaror paytida ochiladi: nima uchun shunday bo'ladi va qanday raqam bilan tanlanadi. Dizayn [patternlar hujjati](../patterns/README.md) loyihalash paytida ochiladi, chunki u shaklni beradi. Testlash qo'llanmasi esa ishonchni tekshirish paytida ochiladi.
+Oltita hujjat bitta maqsadga xizmat qiladi, lekin har biri boshqa paytda ochiladi; qaysi biri qaysi savolga javob berishi [umumiy README dagi jadvalda](../../README.md) bor. Bu hujjat qaror paytida ochiladi: nima uchun shunday bo'ladi va qanday raqam bilan tanlanadi. Dizayn [patternlar hujjati](../patterns/README.md) loyihalash paytida ochiladi, chunki u shaklni beradi. Testlash qo'llanmasi esa ishonchni tekshirish paytida ochiladi.
 
-Amaliy tartib shunday bo'lsin. Yangi talab kelganda avval bu hujjatdan tegishli mexanika bobini o'qing, chunki qaror cheklovdan chiqadi. Keyin dizayn [patternlar hujjatidan](../patterns/README.md) shaklni tanlang, masalan tashqi tizimga ishonchli xabar yuborish uchun outbox pattern. Undan keyin [testlash qo'llanmasidagi](../testing/README.md) contract testing va Testcontainers bo'limlaridan tekshirish rejasini oling.
+Amaliy tartib shunday bo'lsin. Yangi talab kelganda avval bu hujjatdan tegishli mexanika bobini o'qing, chunki qaror cheklovdan chiqadi. Keyin dizayn [patternlar hujjatidan](../patterns/README.md) shaklni tanlang, masalan tashqi tizimga ishonchli xabar yuborish uchun outbox pattern. Undan keyin [testlash qo'llanmasidagi](../testing/README.md) contract testing va Testcontainers bo'limlaridan tekshirish rejasini oling. Kod yozilayotganda [toza kod qoidalari](../clean-code/README.md), PR ochilganda [kod review hujjati](../code-review/README.md), CI quality gate yiqilganda esa [SonarQube hujjati](../sonarqube/README.md) ochiladi.
 
 Jamoada ishlatishning eng yaxshi usuli esa birgalikda o'qishdir. Haftada bitta bob tanlang, uni ikki kishi o'qib chiqsin, keyin 30 daqiqada jamoaga o'z tizimingiz misolida tushuntirsin. Shu tartib bilim tarqalishini tezlashtiradi, va eng muhimi, u hujjatni o'lik matndan jamoa tiliga aylantiradi.
 

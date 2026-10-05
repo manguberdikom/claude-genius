@@ -1,6 +1,6 @@
 <!-- doc: code-review | chapter: 26 | part: V. PostgreSQL va ma'lumot qatlami review -->
 
-[Kod review](../../README.md) / [Kod review](README.md)
+[Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
 # 26. Ma'lumot to'g'riligi va turlar review (Data Correctness)
 
@@ -213,24 +213,11 @@ SELECT c.conrelid::regclass AS jadval, a.attname AS ustun
 
 ## 26.7 Yumshoq o'chirish (soft delete)
 
-```sql
--- Yumshoq o'chirish review da uch savol tug'diradi.
-deleted_at timestamptz
+`deleted_at timestamptz` ustuni qo'shilgan diff review da uch savol tug'diradi. Mexanikasi, SQL va narxi [arxitektor hujjatidagi yumshoq o'chirish va uning yashirin narxi](../architect/25-sxema-dizayni-malumot-turlari-va-cheklovlar.md#259-yumshoq-ochirish-soft-delete-va-uning-yashirin-narxi) mavzusida, bu yerda faqat review savollari.
 
--- 1) Hamma so'rov bu shartni hisobga oladimi? Bitta esdan chiqsa,
---    o'chirilgan ma'lumot foydalanuvchiga ko'rinadi.
---    Himoya: view yoki RLS, @Where emas (23.8).
-CREATE VIEW active_customer AS SELECT * FROM customer WHERE deleted_at IS NULL;
-
--- 2) Unique constraint qanday ishlaydi? O'chirilgan va yangi qator
---    bir xil email bilan bo'lishi kerakmi?
-CREATE UNIQUE INDEX customer_email_active_uniq ON customer (lower(email))
-    WHERE deleted_at IS NULL;          -- faqat aktivlar orasida yagona
-
--- 3) GDPR yoki ma'lumotni haqiqatan o'chirish talabi bormi?
---    Yumshoq o'chirish "o'chirish huquqi" ni bajarmaydi - anonimlashtirish
---    yoki haqiqiy o'chirish kerak bo'lishi mumkin ([32-bob](32-secret-maxfiy-malumot-va-kriptografiya.md)).
-```
+1. **Hamma so'rov `deleted_at IS NULL` shartini hisobga oladimi?** Bitta so'rovda esdan chiqsa, o'chirilgan ma'lumot foydalanuvchiga ko'rinadi. Himoya ko'rinish (view) yoki RLS, `@Where` emas: sababi [Hibernate xulqini o'zgartiradigan nozik annotatsiyalar](23-jpa-va-hibernate-review.md#238-hibernate-xulqini-ozgartiradigan-nozik-annotatsiyalar) mavzusida.
+2. **Unique constraint qanday ishlaydi?** O'chirilgan va yangi qator bir xil email bilan turishi kerakmi? Kerak bo'lsa, unikallik faqat aktiv qatorlar orasida, `WHERE deleted_at IS NULL` li partial unique indeks bilan ta'minlanadi.
+3. **Ma'lumotni haqiqatan o'chirish talabi (GDPR) bormi?** Yumshoq o'chirish "o'chirish huquqi" ni bajarmaydi: anonimlashtirish yoki haqiqiy o'chirish kerak bo'lishi mumkin, bu [secret, maxfiy ma'lumot va kriptografiya review](32-secret-maxfiy-malumot-va-kriptografiya.md) mavzusida.
 
 ## 26.8 Ma'lumot migratsiyasidagi to'g'rilik
 

@@ -1,6 +1,6 @@
 <!-- doc: sonarqube | chapter: 6 | part: II. Quality gate -->
 
-[SonarQube](../../README.md) / [SonarQube](README.md)
+[Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
 # 6. Quality gate mexanikasi va shartlari (Quality Gate Mechanics)
 
@@ -373,4 +373,4 @@ New Code chegarasini o'zgartirish ham shunga o'xshash ta'sir beradi. Agar chegar
 
 ---
 
-[&larr; 5. Metrikalar: rating, texnik qarz, murakkablik, takrorlanish](05-metrikalar-rating-texnik-qarz-murakkablik.md) · [Mundarija](README.md) · [7. Yangi kod &rarr;](07-yangi-kod-new-code-va-clean-as-you-code.md)
+[&larr; 5. Metrikalar: rating, texnik qarz, murakkablik, takrorlanish](05-metrikalar-rating-texnik-qarz-murakkablik.md) · [Mundarija](README.md) · [7. Yangi kod (new code) va "clean as you code" tamoyili &rarr;](07-yangi-kod-new-code-va-clean-as-you-code.md)

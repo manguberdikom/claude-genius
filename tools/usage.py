@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Kunlik token sarfi va uni qaysi aktyor sarflagani.
 
-    python3 tools/usage.py                 # bugun
+    python3 tools/usage.py                 # bugun (mahalliy sana)
     python3 tools/usage.py --kun 2026-10-04
     python3 tools/usage.py --davr 7        # oxirgi 7 kun
     python3 tools/usage.py --saqlash       # jim: kunlik yig'mani yozadi
@@ -9,13 +9,20 @@
 
 Raqam transkriptdan olinadi, taxmin qilinmaydi: har javobning `usage`
 yozuvida to'rtta son turadi va ularning narxi boshqacha. Keshdan o'qish
-kirishdan o'n barobar arzon, keshga yozish esa chorak barobar qimmat,
-shuning uchun "token" deb bitta songa qo'shib yuborish narxni yashiradi.
+modelga qarab 10-20 barobar arzon; keshga yozish 5 daqiqalik keshda
+chorak barobar, 1 soatlikda 2 barobar qimmat, shuning uchun "token" deb
+bitta songa qo'shib yuborish narxni yashiradi. Bitta javob har content
+block uchun alohida qatorda bir xil `message.id` bilan takrorlanadi:
+har id bir marta, oxirgi qatoridan sanaladi.
 
-Aktyorga bo'lish: subagent javoblari transkriptda `isSidechain` bilan
-belgilanadi, lekin ularning o'zida aktyor nomi yo'q. Nom oldingi
-`Task`/`Agent` chaqiruvidan olinadi: `parentUuid` zanjiri bo'lsa shundan,
-bo'lmasa tartib bo'yicha. Tartib bo'yicha bo'lsa chiqishda shu aytiladi.
+Aktyorga bo'lish: subagent `<sessiya>/subagents/**/agent-<id>.jsonl`
+da yoziladi, aktyor nomi yonidagi `agent-<id>.meta.json` ning
+`agentType` maydonidan olinadi. Meta bo'lmasa eski yo'l: `isSidechain`
+qatori oldingi `Task`/`Agent` chaqiruviga `parentUuid` zanjiri bilan,
+bo'lmasa tartib bo'yicha bog'lanadi va chiqishda shu aytiladi.
+
+Stop hook faqat joriy sessiyani subagentlari bilan o'qiydi va
+`.claude/usage/<oy>/<proyekt-slug>/<sessiya>.json` ga yozadi.
 
 Narx jadvali o'zgaradi. U shu faylda ochiq turadi: eskirsa tahrirlanadi,
 va noma'lum model jim nolga aylanmaydi, alohida belgilanadi.
@@ -24,34 +31,38 @@ va noma'lum model jim nolga aylanmaydi, alohida belgilanadi.
 import argparse
 import collections
 import datetime
+import glob
 import json
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-STORE = os.path.join(ROOT, ".claude", "usage")
+STORE = os.environ.get("USAGE_STORE") or os.path.join(ROOT, ".claude", "usage")
 
-# Million token uchun dollar: (kirish, chiqish). 2026-10 holati.
+# Million token uchun dollar: (kirish, chiqish, keshdan o'qish). 2026-10 holati.
 PRICES = {
-    "opus-5-5": (4.0, 20.0),
-    "opus-5": (5.0, 25.0),
-    "sonnet-5-5": (2.0, 10.0),
-    "sonnet-5": (3.0, 15.0),
-    "haiku-4-5": (1.0, 5.0),
+    "opus-5-5": (4.0, 20.0, 0.20),
+    "opus-5": (5.0, 25.0, 0.50),
+    "sonnet-5-5": (2.0, 10.0, 0.20),
+    "sonnet-5": (2.0, 10.0, 0.20),
+    "haiku-4-5": (1.0, 5.0, 0.10),
 }
-# Keshga yozish kirishdan qimmat, keshdan o'qish ancha arzon.
-CACHE_WRITE = 1.25
-CACHE_READ = 0.10
+# Keshga yozish kirish narxidan qimmat: 5 daqiqalik va 1 soatlik kesh.
+CACHE_WRITE_5M = 1.25
+CACHE_WRITE_1H = 2.0
 
 MAIN = "asosiy sessiya"
 UNKNOWN = "noma'lum model"
 
 FIELDS = ("input_tokens", "cache_creation_input_tokens",
           "cache_read_input_tokens", "output_tokens")
+# cache_creation_input_tokens ichidagi 1 soatlik qism: narxi boshqa.
+WRITE_1H = "cache_write_1h"
 
 
 def price_for(model):
-    """(kirish, chiqish) narxi yoki None. Eng uzun mos kalit tanlanadi."""
+    """(kirish, chiqish, kesh o'qish) narxi yoki None. Eng uzun mos kalit tanlanadi."""
     if not model:
         return None
     best = None
@@ -65,26 +76,102 @@ def cost(model, counts):
     """Dollar. Narxi yo'q model uchun None: nol deb ko'rsatish yolg'on."""
     price = price_for(model)
     if price is None:
-        return None
-    rate_in, rate_out = price
+        # Nol token har qanday narxda nol (`<synthetic>` javoblari).
+        return 0.0 if not any(counts.get(f, 0) for f in FIELDS) else None
+    rate_in, rate_out, rate_read = price
+    write_1h = counts.get(WRITE_1H, 0)
+    write_5m = max(0, counts["cache_creation_input_tokens"] - write_1h)
     return (counts["input_tokens"] * rate_in
-            + counts["cache_creation_input_tokens"] * rate_in * CACHE_WRITE
-            + counts["cache_read_input_tokens"] * rate_in * CACHE_READ
+            + write_5m * rate_in * CACHE_WRITE_5M
+            + write_1h * rate_in * CACHE_WRITE_1H
+            + counts["cache_read_input_tokens"] * rate_read
             + counts["output_tokens"] * rate_out) / 1_000_000
 
 
-def transcripts():
-    """Shu proyektning barcha transkript fayllari."""
-    slug = ROOT.replace(os.sep, "-")
-    base = os.path.expanduser(os.path.join("~", ".claude", "projects", slug))
-    if not os.path.isdir(base):
-        return []
-    return sorted(os.path.join(base, f) for f in os.listdir(base)
-                  if f.endswith(".jsonl"))
+def config_dir():
+    return (os.environ.get("CLAUDE_CONFIG_DIR")
+            or os.path.join(os.path.expanduser("~"), ".claude"))
+
+
+def slug(path):
+    """Claude Code papka nomi: harf va raqamdan boshqa har belgi `-`."""
+    return re.sub(r"[^A-Za-z0-9]", "-", path)
+
+
+def project_base():
+    """Shu proyekt transkriptlari papkasi yoki None.
+
+    Asbob klonining emas, ish papkasining slugi olinadi: global
+    o'rnatishda klon bitta, proyekt esa ko'p.
+    """
+    projects = os.path.join(config_dir(), "projects")
+    candidates = [os.environ.get("CLAUDE_PROJECT_DIR")]
+    try:
+        here = os.getcwd()
+    except OSError:
+        here = ROOT
+    while True:
+        candidates.append(here)
+        parent = os.path.dirname(here)
+        if parent == here:
+            break
+        here = parent
+    candidates.append(ROOT)
+    for candidate in candidates:
+        if not candidate:
+            continue
+        name = slug(os.path.abspath(candidate))
+        path = os.path.join(projects, name)
+        if os.path.isdir(path):
+            return path
+        if len(name) > 200 and os.path.isdir(projects):
+            # Uzun nomni Claude Code kesadi: `<200 belgi>-<hash>`.
+            for entry in sorted(os.listdir(projects)):
+                if entry.startswith(name[:200] + "-"):
+                    return os.path.join(projects, entry)
+    return None
+
+
+def session_files(main):
+    """Sessiya fayli va uning subagentlari (`journal.jsonl` kirmaydi)."""
+    pattern = os.path.join(glob.escape(main[:-len(".jsonl")]), "subagents",
+                           "**", "agent-*.jsonl")
+    return [main] + sorted(glob.glob(pattern, recursive=True))
+
+
+def transcripts(base):
+    """Proyektdagi barcha sessiyalar, subagentlari bilan."""
+    out = []
+    for main in sorted(glob.glob(os.path.join(glob.escape(base), "*.jsonl"))):
+        out.extend(session_files(main))
+    return out
+
+
+def meta_actor(path):
+    """Subagent aktyori `agent-<id>.meta.json` dan; yo'q yoki buzuq bo'lsa None."""
+    try:
+        with open(path[:-len(".jsonl")] + ".meta.json", encoding="utf-8") as handle:
+            meta = json.load(handle)
+    except (OSError, ValueError):
+        return None
+    if not isinstance(meta, dict):
+        return None
+    actor = meta.get("agentType")
+    if actor == "workflow-subagent":
+        # Workflow agentlarining turi bitta, bosqichni description ajratadi.
+        phase = str(meta.get("description") or "").split(":")[0]
+        return "workflow:" + phase if phase else "workflow"
+    return actor or None
 
 
 def day_of(stamp):
-    return (stamp or "")[:10]
+    """Mahalliy sana: "bugun" va --davr ham mahalliy sanadan hisoblanadi."""
+    text = str(stamp or "")
+    try:
+        moment = datetime.datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return text[:10]
+    return moment.astimezone().date().isoformat()
 
 
 def blocks(message):
@@ -92,15 +179,29 @@ def blocks(message):
     return content if isinstance(content, list) else []
 
 
+def add(counts, usage):
+    for field in FIELDS:
+        counts[field] += usage.get(field, 0) or 0
+    created = usage.get("cache_creation")
+    if isinstance(created, dict):
+        counts[WRITE_1H] += created.get("ephemeral_1h_input_tokens", 0) or 0
+
+
 def collect(paths):
     """{(kun, aktyor, model): {maydon: son}} va atributsiya usuli."""
     rows = collections.defaultdict(lambda: collections.Counter())
     by_uuid = {}            # Task chiqargan javob uuid -> aktyor
-    ordered = None          # tartib bo'yicha oxirgi aktyor
     guessed = False
+    last = {}               # message.id -> (kalit, usage)
     for path in paths:
+        file_actor = meta_actor(path)
+        agent_file = os.path.basename(path).startswith("agent-")
+        ordered = None      # fayl ichida tartib bo'yicha oxirgi aktyor
         with open(path, encoding="utf-8", errors="replace") as handle:
             for line in handle:
+                # Na usage, na tool_use bo'lgan qatorni ochish behuda.
+                if '"usage"' not in line and '"tool_use"' not in line:
+                    continue
                 try:
                     row = json.loads(line)
                 except ValueError:
@@ -118,7 +219,9 @@ def collect(paths):
                 usage = message.get("usage")
                 if not usage:
                     continue
-                if row.get("isSidechain"):
+                if file_actor:
+                    actor = file_actor
+                elif row.get("isSidechain") or agent_file:
                     parent = row.get("parentUuid")
                     if parent in by_uuid:
                         actor = by_uuid[parent]
@@ -132,8 +235,15 @@ def collect(paths):
                     actor = MAIN
                 key = (day_of(row.get("timestamp")), actor,
                        message.get("model") or UNKNOWN)
-                for field in FIELDS:
-                    rows[key][field] += usage.get(field, 0)
+                mid = message.get("id")
+                if mid:
+                    # Bitta javob har content block uchun qayta yoziladi;
+                    # oqim o'rtasidagi qatorda chiqish hali to'liq emas.
+                    last[mid] = (key, usage)
+                else:
+                    add(rows[key], usage)
+    for key, usage in last.values():
+        add(rows[key], usage)
     return rows, guessed
 
 
@@ -189,17 +299,23 @@ def show(summary, guessed):
     return 0
 
 
-def save(rows):
-    """Kunlik yig'mani oy fayliga yozadi. Jim ishlaydi, hook uchun."""
+def save(rows, project, session):
+    """Sessiya yig'masini `<oy>/<proyekt>/<sessiya>.json` ga yozadi. Jim, hook uchun.
+
+    Sessiya har safar transkriptdan to'liq qayta hisoblanadi va fayl
+    butunligicha almashtiriladi: ikki marta qo'shilish yo'q, boshqa
+    sessiya va proyekt fayllariga tegilmaydi, qulf kerak emas.
+    """
     months = collections.defaultdict(dict)
     for (day, actor, model), counts in rows.items():
         if not day:
             continue
         entry = months[day[:7]].setdefault(day, {})
-        slot = entry.setdefault(actor, {"tokens": dict.fromkeys(FIELDS, 0),
-                                        "usd": 0.0, "models": []})
-        for field in FIELDS:
-            slot["tokens"][field] += counts[field]
+        slot = entry.setdefault(actor, {
+            "tokens": dict.fromkeys(FIELDS + (WRITE_1H,), 0),
+            "usd": 0.0, "models": []})
+        for field in slot["tokens"]:
+            slot["tokens"][field] += counts.get(field, 0)
         value = cost(model, counts)
         if value is None:
             slot.setdefault("narxsiz", []).append(model)
@@ -208,37 +324,61 @@ def save(rows):
         if model not in slot["models"]:
             slot["models"].append(model)
     try:
-        os.makedirs(STORE, exist_ok=True)
         for month, data in months.items():
-            path = os.path.join(STORE, "%s.json" % month)
-            old = {}
-            if os.path.isfile(path):
-                try:
-                    with open(path, encoding="utf-8") as handle:
-                        old = json.load(handle)
-                except ValueError:
-                    old = {}
-            # Qayta hisoblangan kun eskisini bosadi: transkript haqiqat
-            # manbasi, fayl esa uning nusxasi.
-            old.update(data)
-            tmp = path + ".tmp"
+            folder = os.path.join(STORE, month, project)
+            os.makedirs(folder, exist_ok=True)
+            path = os.path.join(folder, session + ".json")
+            tmp = "%s.%d.tmp" % (path, os.getpid())
             with open(tmp, "w", encoding="utf-8") as handle:
-                json.dump(old, handle, indent=1, sort_keys=True)
+                json.dump(data, handle, indent=1, sort_keys=True)
             os.replace(tmp, path)
     except OSError:
         return 0           # hook o'z xatosi bilan ishni to'xtatmaydi
     return 0
 
 
+def read_payload():
+    """Hook stdin dagi JSON. Terminal, bo'sh yoki buzuq bo'lsa {}."""
+    try:
+        if sys.stdin is None or sys.stdin.isatty():
+            return {}
+        raw = sys.stdin.read()
+        payload = json.loads(raw) if raw.strip() else {}
+    except (OSError, ValueError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def save_hook():
+    """--saqlash: hookda payloaddagi sessiya, qo'lda proyektning har sessiyasi."""
+    payload = read_payload()
+    path = payload.get("transcript_path")
+    if path and path.endswith(".jsonl") and os.path.isfile(path):
+        rows, _ = collect(session_files(path))
+        session = (payload.get("session_id")
+                   or os.path.basename(path)[:-len(".jsonl")])
+        return save(rows, os.path.basename(os.path.dirname(path)), session)
+    base = None if path else project_base()
+    if base is None:
+        print("usage.py: transkript topilmadi, sarf yozilmadi.", file=sys.stderr)
+        return 0
+    for main in sorted(glob.glob(os.path.join(glob.escape(base), "*.jsonl"))):
+        rows, _ = collect(session_files(main))
+        save(rows, os.path.basename(base),
+             os.path.basename(main)[:-len(".jsonl")])
+    return 0
+
+
 def table():
     print("Million token uchun dollar (%s dagi PRICES):" % os.path.basename(__file__))
-    print("\n%-14s %8s %8s %10s %10s" % ("model", "kirish", "chiqish",
-                                         "kesh yoz", "kesh o'qi"))
+    print("\n%-14s %8s %8s %12s %12s %10s"
+          % ("model", "kirish", "chiqish", "kesh yoz 5m", "kesh yoz 1h",
+             "kesh o'qi"))
     for key in sorted(PRICES):
-        rate_in, rate_out = PRICES[key]
-        print("%-14s %8.2f %8.2f %10.2f %10.2f"
-              % (key, rate_in, rate_out,
-                 rate_in * CACHE_WRITE, rate_in * CACHE_READ))
+        rate_in, rate_out, rate_read = PRICES[key]
+        print("%-14s %8.2f %8.2f %12.2f %12.2f %10.2f"
+              % (key, rate_in, rate_out, rate_in * CACHE_WRITE_5M,
+                 rate_in * CACHE_WRITE_1H, rate_read))
     print("\nNarx o'zgaradi. Eskirsa shu jadval tahrirlanadi; noma'lum "
           "model nolga aylanmaydi, belgilanadi.")
     return 0
@@ -255,18 +395,16 @@ def main():
 
     if args.jadval:
         return table()
+    if args.saqlash:
+        return save_hook()
 
-    paths = transcripts()
+    base = project_base()
+    paths = transcripts(base) if base else []
     if not paths:
-        if args.saqlash:
-            return 0
         print("Transkript topilmadi, sarf o'lchanmadi.")
         return 2
 
     rows, guessed = collect(paths)
-
-    if args.saqlash:
-        return save(rows)
 
     days = None
     if args.kun:

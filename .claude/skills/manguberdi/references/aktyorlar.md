@@ -15,7 +15,7 @@ rejalashtiruvchi  (faqat zarur bo'lsa)
        v                                |
      review  -------- kamchilik --------'
        |
-       v (toza)
+       v (toza yoki to'xtadi)
     memory
 ```
 
@@ -23,13 +23,18 @@ rejalashtiruvchi  (faqat zarur bo'lsa)
 
 Har aktyor bitta vazifada **ko'pi bilan ikki marta** chaqiriladi.
 Birinchi chaqiruv ishni bajaradi, ikkinchisi review topgan kamchilikni
-tuzatadi. Uchinchisi yo'q.
+tuzatadi. Uchinchisi yo'q. Ikkinchi chaqiruv promptida `2-chaqiruv` deb
+yoziladi va kamchilikni qaytargan aktyorning (review yoki test-muhandis)
+topilmalari fayl, qator va qoidasi bilan to'liq ko'chiriladi.
 
 Budjet tugaganda va muammo qolganda zanjir to'xtaydi. Shunda yoziladi:
 nima bajarildi, nima qolgan, nega ikki urinish yetmadi, nima
-yetishmayapti. Uchinchi urinish o'rniga aniq savol beriladi.
+yetishmayapti. Uchinchi urinish o'rniga aniq savol beriladi. Undan
+keyin memory bosqichi bajariladi: ikki urinishda ham qolgan kamchilik
+`feedback` nomzodi, yarim qolgan reja `project` nomzodi (`memory.md`).
 
-Budjet **sanaladi**, yodda saqlanmaydi. Vazifa boshida:
+Budjet **sanaladi**, yodda saqlanmaydi: hook uni har yangi so'rovda
+o'zi nolga tushiradi. Bitta so'rov ichida ikkinchi vazifa boshlansa:
 
 ```bash
 python3 tools/budget.py --yangi-vazifa "<vazifa nomi>"
@@ -40,8 +45,16 @@ python3 tools/budget.py --holat          # jadval
 **to'sadi**. `qidiruv` va `tahlil` sanalmaydi: ular zanjir qadami emas,
 o'qish asbobi, va ularni cheklash arzon yo'lni qimmat qiladi.
 
-Chaqiruv behuda ketgan bo'lsa (aktyor boshqa sababdan yiqildi):
+Chaqiruv behuda ketgan bo'lsa (aktyor boshqa sababdan yiqildi, xato
+bilan tugadi yoki foydalanuvchi to'xtatdi):
 `python3 tools/budget.py --tiklash <aktyor>`.
+
+Bir necha modulli ish (to'liq review, keng tuzatish) normallashtirishda
+modullarga bo'linadi va har qism
+`python3 tools/budget.py --yangi-vazifa "<ish>: <modul>"` bilan
+boshlanadi. Budjet aktyor bo'yicha alohida sanaladi, shuning uchun egasi
+bo'yicha bo'lish shart emas. Bo'lish ish boshida qilinadi: to'siqdan
+keyin yangi vazifa ochish uchinchi urinishni yashiradi.
 
 ## Ikkinchi chaqiruvning oldini olish
 
@@ -55,9 +68,12 @@ deyarli har doim shu uch sababdan biri bilan keladi:
 | "Bajarildi" nimaligi aytilmagan | qabul mezoni normalizatsiyada belgilanadi |
 
 Shuning uchun `rules_for.py` tavsiya emas, zanjirning birinchi qadami,
-va u **majburlanadi**: `check_code.py` Java fayl yozilganda shu
-chaqiruv bo'lganini tekshiradi va bo'lmasa yozuvni to'xtatadi.
-Zanjir sifati odamning yodida qolishiga tayanmaydi.
+va u **majburlanadi**: `check_code.py` Java fayl yozilgandan keyin
+(`PostToolUse`) shu fayl uchun chaqiruv bo'lganini tekshiradi. Bo'lmasa
+modelga to'siq xabarini qaytaradi va shu fayl uchun `rules_for.py`
+chaqirilmaguncha uning har yozuvida takrorlaydi. Yozuv bekor
+qilinmaydi, fayl diskda qoladi, shuning uchun `rules_for.py` yozishdan
+OLDIN chaqiriladi. Zanjir sifati odamning yodida qolishiga tayanmaydi.
 
 ## Kamchilik kimga qaytadi
 
@@ -87,8 +103,10 @@ aktyorning o'z kontekstida qoladi.
 
 ## Zanjir qachon qisqaradi
 
-- Faqat savol berilgan bo'lsa (`qidiruv`, `tahlil`), zanjir shu yerda
-  tugaydi: kod o'zgarmaydi, review va memory ishlamaydi.
+- Faqat savol berilgan bo'lsa (`doc.sh show`, `qidiruv`, `tahlil`),
+  zanjir shu yerda tugaydi: kod o'zgarmaydi, review ishlamaydi. Memory
+  bosqichi faqat foydalanuvchi javobni tuzatgan yoki yondashuvni rad
+  etgan bo'lsa bajariladi.
 - Faqat review so'ralgan bo'lsa, `arxitektor` va `test-muhandis`
   chaqirilmaydi: topilmalar hisobot sifatida beriladi va memory
   bosqichi bajariladi.

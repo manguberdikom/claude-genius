@@ -1,7 +1,9 @@
 # Qat'iy taqiqlar
 
 Uchta amal taqiqlangan. Ular shunchaki tavsiya emas: `tools/guard.py`
-ularni `PreToolUse` hook sifatida to'sadi, ya'ni unutib bo'lmaydi.
+ularni `PreToolUse` hook sifatida to'sadi. Bu odatga qarshi to'siq,
+xavfsizlik chegarasi emas: `bash -c` yoki skript ichidagi buyruqni
+ko'rmaydi. Hook o'tkazib yuborgani ruxsat degani emas.
 
 ## 1. Konteyner
 
@@ -22,8 +24,10 @@ tashxis va ko'pincha aynan kerak.
 
 ## 2. Bazaga ulanish
 
-`psql -h`, `mysql -h`, `mongosh`, `redis-cli` va shunga o'xshash
-ulanishlar.
+`psql`, `mysql`, `mongosh`, `redis-cli` va shunga o'xshash har qanday
+ulanish: host bilan ham, hostsiz (lokal) ham, `PGPASSWORD=...` yoki
+`sudo -u` bilan ham, `docker exec` va `kubectl exec` ichida ham. Faqat
+`--version` va `--help` ulanish emas.
 
 Nega: sxemani bilish uchun ulanish shart emas. Entity sinflari jadval,
 ustun, tur, tashqi kalit va indeksni to'liq tasvirlaydi. Ulanish esa
@@ -57,7 +61,12 @@ bo'ladi, qaror emas.
 Bular hook bilan to'silmaydi, lekin zanjir qoidasi:
 
 - Testni o'tkazish uchun assertionni bo'shatish yoki testni o'chirish.
-- `check_code.py` topilmasini e'tiborsiz qoldirish.
+- `check_code.py` ning yangi yoki tegilgan qatordagi topilmasini
+  e'tiborsiz qoldirish (ishdan oldin bor bo'lgani `Tegilmagan` da
+  aytiladi).
 - Qoida raqamisiz o'zgarish kiritish.
-- Ikki chaqiruvdan keyin uchinchi urinish.
+- Ikki chaqiruvdan keyin uchinchi urinishni boshqa yo'l bilan qilish:
+  asosiy sessiyada o'zi tuzatish yoki behuda ketmagan chaqiruvni
+  `budget.py --tiklash` yoki `--yangi-vazifa` bilan nolga tushirish.
+  Aktyorning uchinchi chaqiruvini esa `budget.py` hook o'zi to'sadi.
 - Foydalanuvchi so'ramagan faylni "yo'l-yo'lakay" tuzatish.

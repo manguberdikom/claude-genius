@@ -8,12 +8,18 @@ yuzinchi qatorda chiqsa, u amalda topilmagan bilan barobar. Shuning uchun
 topilish emas, O'RIN o'lchanadi. Hujjat o'zgarganda yoki find mantig'i
 tahrirlanganda qayta ishga tushiriladi: pasayish shu yerda ko'rinadi.
 
-Ikki sinov:
+Uch sinov:
   A. Taxallus bo'yicha - inglizcha nomni so'raydi. Oson yo'l, aliases.tsv
-     ni tekshiradi.
+     ni tekshiradi: taxallus yo'lining smoke testi.
   B. Matn ichidagi atama bo'yicha - bo'lim TANASIDAN kamyob atama olinadi
      va `find -f` bilan so'raladi. Real foydalanuvchi sarlavhani emas,
-     atamani yozadi, shuning uchun asosiy o'lchov shu.
+     atamani yozadi, shuning uchun asosiy o'lchov shu. 1-o'rin va top-3
+     faqat ma'lumot uchun: namuna shovqini (seed'lar orasida 1-o'rin
+     47-61%) reyting ta'siridan katta, ularga chegara qo'yilsa kod
+     o'zgarmasa ham qizil berardi.
+  C. Reyting - belgilangan so'rovlarda `find -f` chiqishidagi "(N marta)"
+     sonlari kamayib borishi kerak. Determinik: saralash olib tashlansa
+     yoki buzilsa A va B yashil qolardi, bu sinov esa yiqiladi.
 
 B uchun so'rov tanlash muhim: `kerak` yoki `spring` kabi korpusda mingdan
 ortiq uchraydigan so'z real so'rov emas va natijani buzadi, shuning uchun
@@ -51,6 +57,11 @@ FLOORS = {
 }
 
 random.seed(7)
+
+# C uchun so'rovlar: korpusda har xil sonda uchraydi, shuning uchun tartib
+# buzilsa ko'rinadi. Hammasi bir martadan uchrasa sinov bo'sh o'tardi.
+RANK_QUERIES = ("pg_stat_statements", "HikariCP", "outbox")
+COUNT_RE = re.compile(r"\((\d+) marta\)$")
 
 
 def rows(path):
@@ -187,6 +198,25 @@ def test_identifiers(sample_size):
                   len(sample), FLOORS["B"]), misses
 
 
+def test_ranking():
+    """find -f: ko'p uchragan bo'lim yuqorida turadimi."""
+    print("\n== C. find -f reytingi (%d ta so'rov) ==" % len(RANK_QUERIES))
+    ok, varied = True, False
+    for query in RANK_QUERIES:
+        proc = subprocess.run([DOC, "find", "-f", "-n", str(TOP_N), query],
+                              capture_output=True, text=True, cwd=ROOT)
+        counts = [int(m.group(1)) for m in
+                  (COUNT_RE.search(l) for l in proc.stdout.splitlines()) if m]
+        good = bool(counts) and counts == sorted(counts, reverse=True)
+        varied = varied or len(set(counts)) > 1
+        ok = ok and good
+        print("  %-4s %-20s %s" % ("OK" if good else "XATO", query,
+                                   " ".join(map(str, counts[:12])) or "-"))
+    if not varied:
+        print("  XATO: hech bir so'rovda son farq qilmadi, tartib sinalmadi")
+    return ok and varied
+
+
 def main():
     sample_size = int(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_SAMPLE
     if not os.path.exists(SECTIONS):
@@ -194,6 +224,7 @@ def main():
 
     ok_a, miss_a = test_aliases(sample_size)
     ok_b, miss_b = test_identifiers(sample_size)
+    ok_c = test_ranking()
 
     for label, misses in (("A", miss_a), ("B", miss_b)):
         if misses:
@@ -201,8 +232,8 @@ def main():
             for item in misses[:5]:
                 print("    %s -> %s %s" % item)
 
-    if ok_a and ok_b:
-        print("\nIkki sinov ham chegaradan yuqori.")
+    if ok_a and ok_b and ok_c:
+        print("\nUchala sinov ham joyida.")
         return 0
     print("\nChegaradan pastga tushdi, yuqoriga qarang.")
     return 1

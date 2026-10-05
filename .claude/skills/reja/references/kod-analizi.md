@@ -38,7 +38,8 @@ Har tashqi chaqiruv - keyinchalik timeout/retry/idempotentlik savoli.
 # controller to'g'ridan-to'g'ri repository ga tegyaptimi?
 grep -rn "Repository" src/main/java --include="*Controller.java" | head
 # domen paketidan infrastrukturaga import bormi?
-grep -rn "^import .*\(jpa\|hibernate\|kafka\|redis\|web\)" src/main/java/**/domain/ 2>/dev/null | head
+grep -rnE --include='*.java' '^import (static )?([a-z0-9_]+\.)*(persistence|jpa|hibernate|kafka|redis|web)\.' \
+  src/main/java | grep '/domain/' | head -20
 # entity tashqariga chiqyaptimi (controller qaytaradigan tur)?
 grep -rn "@Entity" src/main/java | wc -l
 ```

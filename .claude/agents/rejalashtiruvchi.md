@@ -26,6 +26,13 @@ yoki qaytarib bo'lmaydigan qaror bo'lganda kerak.
 4. **Berilgan hujjat.** Spetsifikatsiya, dizayn rasmi, PDF yoki Word
    bo'lsa, undagi talablarni qadamga aylantiring. Noaniq talabni
    o'ylab to'ldirmang: ro'yxatga "aniqlanishi kerak" deb yozing.
+   PDF va rasm fayli `Read` bilan o'qiladi (10 sahifadan katta PDF
+   `pages` bilan). Word (.docx) `Read` bilan o'qilmaydi, matni shunday
+   olinadi:
+   `python3 -c "import html,re,sys,zipfile; x=zipfile.ZipFile(sys.argv[1]).read('word/document.xml').decode('utf-8'); print(html.unescape(re.sub(r'<[^>]+>', '', x.replace('</w:p>', '\n'))))" <fayl.docx>`
+   Chatga qo'yilgan rasm sizga yetib kelmaydi: asosiy sessiya uni fayl
+   yo'li yoki matn ko'rinishida beradi. Berilmagan bo'lsa, buni
+   "aniqlanishi kerak" ga yozing.
 
 ## Qoidalarni oldindan olish
 
@@ -35,7 +42,10 @@ Tegiladigan fayllar ma'lum bo'lgach:
 python3 tools/rules_for.py <fayllar>
 ```
 
-Chiqqan punktlar rejadagi qadamlarning qabul mezoniga aylanadi.
+Chiqqan punktlardan qadam tegadigan kodga taalluqlisi qabul mezoniga
+aylanadi. Butun proyekt auditi (kod bazasini qidirish, CI ga qo'shish)
+so'ralgan bo'lsa alohida qadam bo'ladi, so'ralmagan bo'lsa rejaning
+oxirida bir qatorlik taklif bo'lib turadi.
 Arxitektor va reviewer ham shu ro'yxatni ko'radi, shuning uchun reja
 ular tekshiradigan narsa bilan bir xil bo'ladi.
 
@@ -44,7 +54,10 @@ ular tekshiradigan narsa bilan bir xil bo'ladi.
 Har qadam uchun qoidani qo'llanmadan oling:
 `tools/doc.sh find "<mavzu>"`, keyin `show`. Pattern tanlashda muammoni
 bir jumlada ayting, keyin mos patternni toping, teskarisini emas.
-Qaytarib bo'lmaydigan qaror uchun `doc.sh show architect 3.*` (ADR).
+Qaytarib bo'lmaydigan qaror uchun ADR: `tools/doc.sh show architect 3.1`
+(tuzilishi) va `tools/doc.sh show architect 3.2` (variantlarni
+taqqoslash), bobdagi qolgan bo'limlar `tools/doc.sh outline architect 3`
+da.
 
 Qabul mezoniga sifat darvozasi ham kiradi: `rules_for.py` chiqishidagi
 Sonar kalitlari va `tools/doc.sh rule java:Sxxxx` bilan ulangan bo'limlar.
@@ -53,6 +66,10 @@ tugaydi, aks holda uni test muhandisi ham, reviewer ham boshqacha
 tushunadi.
 
 ## Reja shakli
+
+Reja loyiha ildizidagi `REJA.md` ga yoziladi, `reja` skill bilan bir
+joyda (bir nechta reja bo'lsa `reja/<slug>-reja.md`). Yangilashda shu
+fayl o'qiladi.
 
 ```
 # Reja: <nom>
@@ -70,7 +87,8 @@ Kirmaydi: <nima kirmaydi va nega>
 - Xavf: <nima noto'g'ri ketishi mumkin>
 ```
 
-Oxirida: ketma-ketlik va bog'liqlik, keyin "aniqlanishi kerak" ro'yxati.
+Oxirida: ketma-ketlik va bog'liqlik, keyin "aniqlanishi kerak" ro'yxati
+va bo'lsa audit taklifi.
 
 ## Yangilashda
 
@@ -78,9 +96,25 @@ Mavjud rejani qayta yozmang: nima **o'zgarganini** ko'rsating. Bajarilgan
 qadam belgilanadi, o'zgargan qadam sababi bilan yangilanadi, yangi qadam
 qo'shiladi. Nega o'zgardi degan savol javobsiz qolmasin.
 
+## Javob shakli
+
+```
+Reja: <fayl yo'li>, <N> qadam
+1. <qadam nomi>: <fayl> (<hujjat> <raqam>)
+2. ...
+Aniqlanishi kerak: <ro'yxat> | yo'q
+```
+
+Qadam tafsiloti javobga ko'chirilmaydi: u faylda, `arxitektor` uni
+o'sha yerdan o'qiydi.
+
 ## Qoidalar
 
 - Har qadamda bo'lim raqami bo'lsin. Qoidasiz qadam taxmin.
-- Kod yozmang: reja `arxitektor` uchun. Faqat REJA faylini yozing.
+- Kod yozmang: reja `arxitektor` uchun. Faqat reja faylini yozing.
 - Bajarib bo'lmaydigan qadam yozmang. Qadam bir o'tirishda tugashi kerak.
-- Ikki marta chaqirilgandan keyin uchinchi urinish yo'q.
+- Ikkinchi chaqiruv ekanini topshiriqdagi `2-chaqiruv` belgisi yoki
+  `python3 tools/budget.py --holat` dagi qatoringiz (`2/2`) aytadi. Bu
+  oxirgi chaqiruv: faqat topshiriqda berilgan topilmalarni tuzating.
+  Muammo qolsa, uchinchi urinish so'ramang, nima yetishmayotganini
+  aniq ayting.

@@ -17,8 +17,13 @@ javob beradigan qism o'lchanadi.
 Har holat uchun uch o'lchov:
   marshrut  - kutilgan bob chiqdimi (eslab qolish)
   topilma   - kutilgan mexanik muammo topildimi
-  aniqlik   - kutilmagan bob chiqmadimi
-va bitta teskari tekshiruv: toza faylda shovqin bo'lmasin.
+  taqiqlangan bob chiqmadi - holatga qo'lda yozilgan ikki bob chiqmadimi.
+            Bu aniqlik (precision) emas: kutilgan ro'yxat ataylab minimal,
+            ALWAYS boblari esa loyiha qarori, shuning uchun foiz yolg'on
+            qizil berardi. Suyulishdan himoya alohida: marshrut
+            MAX_CHAPTERS + ALWAYS dan oshmaydi.
+va teskari tekshiruvlar: toza faylda shovqin bo'lmasin, "Avval yo'l
+qo'yilgan xatolar" bo'limidagi har tavsif bo'sh yoki `---` bo'lmasin.
 
 Kutilgan natijalar implementatsiya bilan birga yozilgan, shuning uchun
 bu avvalambor REGRESSIYA qo'riqchisi: bob ko'chsa, belgi buzilsa yoki
@@ -31,11 +36,17 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
+sys.path.insert(0, HERE)
+
+from rules_for import ALWAYS, MAX_CHAPTERS  # noqa: E402
+
+# Bitta fayl uchun marshrutning yuqori chegarasi: undan ko'pi suyulish.
+MAX_ROUTED = MAX_CHAPTERS + len(ALWAYS)
 JAVA = os.path.join("tools", "testdata", "java")
 ENT = os.path.join("tools", "testdata", "entities")
 
 # (nom, fayl, kutilgan boblar, kutilgan topilmalar, CHIQMASLIGI kerak boblar)
-# Oxirgi ustun aniqlikni o'lchaydi: pul bilan ishlaydigan faylga
+# Oxirgi ustun taqiqlangan boblar: pul bilan ishlaydigan faylga
 # injection review bobi chiqsa, bu marshrut suyulganini bildiradi.
 CASES = [
     ("tranzaksiya ichida HTTP", os.path.join(JAVA, "Bad.java"),
@@ -112,6 +123,32 @@ def findings(output):
     return [l for l in output.split("\n") if l.strip().startswith("[")]
 
 
+def bad_feedback(output):
+    """"# Avval yo'l qo'yilgan xatolar" dagi bo'sh yoki frontmatter tavsif.
+
+    Har yozuv ikki qator: yo'l (2 bo'shliq) va tavsif (6 bo'shliq).
+    Tavsif `---` bo'lsa, o'quvchi frontmatter chizig'ini oladi va aktyor
+    xato o'rniga bezakni ko'radi.
+    """
+    lines, inside = [], False
+    for line in output.split("\n"):
+        if line.startswith("# Avval yo'l qo'yilgan xatolar"):
+            inside = True
+            continue
+        if inside:
+            if line.startswith("#"):
+                break
+            if line.strip():
+                lines.append(line)
+    bad = []
+    for i, line in enumerate(lines):
+        if line.startswith("  ") and not line.startswith("      "):
+            note = lines[i + 1].strip() if i + 1 < len(lines) else ""
+            if not note or note.startswith("---") or not lines[i + 1].startswith("      "):
+                bad.append(line.strip())
+    return bad
+
+
 def main():
     missing = [c[1] for c in CASES if not os.path.exists(os.path.join(ROOT, c[1]))]
     if missing:
@@ -120,12 +157,15 @@ def main():
 
     route_hit = route_total = find_hit = find_total = 0
     prec_ok = prec_total = 0
-    rows = []
+    rows, wide, feedback = [], [], set()
 
     for name, path, want_ch, want_find, forbid_ch in CASES:
         out = rules_for(path)
         got_ch = routed(out)
         found = "\n".join(findings(out))
+        feedback.update(bad_feedback(out))
+        if len(got_ch) > MAX_ROUTED:
+            wide.append((name, len(got_ch)))
 
         ch_ok = [c for c in want_ch if c in got_ch]
         f_ok = [f for f in want_find if f in found]
@@ -157,21 +197,34 @@ def main():
     for path in CLEAN:
         out = rules_for(path)
         found = findings(out)
+        feedback.update(bad_feedback(out))
         ok = not found
         noise += not ok
         print("%-4s %-34s %d topilma" % ("OK" if ok else "XATO", path, len(found)))
 
+    print("\n== Avvalgi xatolar: tavsif bo'sh yoki frontmatter emas ==\n")
+    for rel in sorted(feedback):
+        print("XATO %s" % rel)
+    noise += len(feedback)
+    if not feedback:
+        print("OK")
+    for name, count in wide:
+        print("XATO %s: %d bob, chegara %d (marshrut suyulgan)"
+              % (name, count, MAX_ROUTED))
+
     print("\n== Natija ==\n")
     r = 100 * route_hit / route_total if route_total else 0
     f = 100 * find_hit / find_total if find_total else 0
-    print("  marshrut eslab qolish : %3d/%-3d  (%.0f%%)" % (route_hit, route_total, r))
-    print("  topilma eslab qolish  : %3d/%-3d  (%.0f%%)" % (find_hit, find_total, f))
+    print("  marshrut eslab qolish   : %3d/%-3d  (%.0f%%)" % (route_hit, route_total, r))
+    print("  topilma eslab qolish    : %3d/%-3d  (%.0f%%)" % (find_hit, find_total, f))
     pr = 100 * prec_ok / prec_total if prec_total else 0
-    print("  aniqlik, ortiqcha yo'q: %3d/%-3d  (%.0f%%)" % (prec_ok, prec_total, pr))
-    print("  toza faylda shovqin   : %d" % noise)
+    print("  taqiqlangan bob chiqmadi: %3d/%-3d  (%.0f%%)" % (prec_ok, prec_total, pr))
+    print("  marshrut chegarasida    : %3d/%-3d  (<= %d bob)"
+          % (len(CASES) - len(wide), len(CASES), MAX_ROUTED))
+    print("  shovqin                 : %d" % noise)
 
     failed = (route_hit < route_total or find_hit < find_total
-              or prec_ok < prec_total or noise)
+              or prec_ok < prec_total or noise or wide)
     print("\n%s" % ("Hammasi joyida." if not failed
                     else "Yetishmovchilik bor, yuqoriga qarang."))
     return 1 if failed else 0

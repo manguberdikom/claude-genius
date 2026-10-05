@@ -34,7 +34,8 @@ memory/
 ```
 
 Fayl nomlari va frontmatter formati protokolning `Yozuv formati va nomlash`
-bo'limida.
+bo'limida. Qaysi bilim `umumiy/` ga, qaysi biri proyekt papkasiga borishi va
+takrorlanmaslik qoidasi protokolning `Marshrut` bo'limidagi jadvalda.
 
 ## Papka nomi qanday aniqlanadi
 
@@ -48,16 +49,6 @@ Nom taxmin qilinmaydi, qoidadan chiqadi:
 
 Papka mavjud bo'lmasa, yangisi yaratiladi va `MEMORY.md` indeks bilan
 boshlanadi.
-
-## Ikki daraja va takrorlanmaslik qoidasi
-
-| Daraja | Nima turadi | Misol |
-|---|---|---|
-| `umumiy/` | har qanday proyektda bir xil amal qiladigan bilim | javob tili, yozuv uslubi, umumiy afzalliklar |
-| `<proyekt-slug>/` | faqat o'sha proyektga tegishli bilim | o'sha repodagi tuzoq, qaror, tugallanmagan ish |
-
-Bitta gap ikki joyda turmaydi. Agar bilim ikkinchi proyektda ham kerak bo'lsa,
-nusxa olinmaydi: `umumiy/` ga ko'chiriladi va proyekt papkasidan o'chiriladi.
 
 ## O'qish ketma-ketligi
 
@@ -129,4 +120,4 @@ uchun sir masalasida istisno yo'q.
 | Papka | Proyekt | Izoh |
 |---|---|---|
 | `umumiy/` | hammasi | til va uslub talablari |
-| `claude-genius/` | `manguberdikom/claude-genius` | hujjat yig'ish tuzoqlari |
+| `claude-genius/` | `manguberdikom/claude-genius` | parallel agentlar bilan hujjat yozish tuzoqlari |

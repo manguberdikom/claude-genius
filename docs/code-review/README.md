@@ -92,8 +92,8 @@ Review izohlari uchun tayyor iboralar oxirgi bobda.
 
 ### IX. Jarayon, madaniyat va o'lchov
 
-- **40.** [Review jarayonini qurish (Building the Process)](40-review-jarayonini-qurish.md) - 12 bo'lim
-- **41.** [Review madaniyati, til va kelishmovchilik (Culture, Language, Disagreement)](41-review-madaniyati-til-va-kelishmovchilik.md) - 15 bo'lim
+- **40.** [Review jarayonini qurish (Building the Process)](40-review-jarayonini-qurish.md) - 10 bo'lim
+- **41.** [Review madaniyati, til va kelishmovchilik (Culture, Language, Disagreement)](41-review-madaniyati-til-va-kelishmovchilik.md) - 10 bo'lim
 - **42.** [Review metrikalari (Measuring Review)](42-review-metrikalari.md) - 8 bo'lim
 - **43.** [AI yozgan kodni review qilish va AI bilan review qilish (Reviewing AI-Generated Code)](43-ai-yozgan-kodni-review-qilish-va-ai-bilan.md) - 9 bo'lim
 - **44.** [Shablonlar, checklistlar va reviewer yetukligi (Templates and Maturity)](44-shablonlar-checklistlar-va-reviewer.md) - 9 bo'lim

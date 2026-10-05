@@ -12,8 +12,8 @@ Sohaviy ma'lumotnomalar:
 
 ## Inglizcha qoladigan atamalar
 
-Bu so'zlar tarjima qilinmaydi, chunki jamoada va kod ichida inglizcha
-ishlatiladi, tarjimasi esa noaniqlik tug'diradi:
+Bu so'zlar yangi matnda inglizcha yoziladi, chunki jamoada va kod ichida
+shunday ishlatiladi, tarjimasi esa noaniqlik tug'diradi:
 
 `bean`, `proxy`, `thread`, `cache`, `latency`, `throughput`, `heap`, `stack`,
 `lock`, `deadlock`, `commit`, `rollback`, `branch`, `build`, `deploy`,
@@ -24,6 +24,10 @@ ishlatiladi, tarjimasi esa noaniqlik tug'diradi:
 `circuit breaker`, `idempotent`, `partition`, `offset`, `lag`, `rebalance`,
 `vacuum`, `bloat`, `planner`, `index`, `trace`, `span`, `metric`, `log`,
 `probe`, `sidecar`, `anti-pattern`, `record`, `sealed`, `virtual thread`.
+
+Ulardan ba'zilarining o'zbekcha shakli mavjud sarlavha va matnda ham uchraydi
+(`kesh`, `indeks`, `metrika`, `qamrov`, `qayta urinish`). Pastdagi jadval bu
+shakllarni faqat qidirish uchun beradi. Mavjud sarlavhalar o'zgartirilmaydi.
 
 Qo'shimcha qoida: annotatsiya, sinf, metod, parametr va konfiguratsiya
 kalitlari hech qachon tarjima qilinmaydi - `@Transactional`, `HikariCP`,
@@ -75,7 +79,7 @@ kalitlari hech qachon tarjima qilinmaydi - `@Transactional`, `HikariCP`,
 | oqim | stream, flow |
 | o'zgarmas | immutable |
 | o'zgaruvchan | mutable |
-| qamrov | coverage |
+| qamrov | coverage, scope |
 | qaror yozuvi | ADR, decision record |
 | qator | row (jadval), line (kod) |
 | qayta urinish | retry |
@@ -101,7 +105,6 @@ kalitlari hech qachon tarjima qilinmaydi - `@Transactional`, `HikariCP`,
 | ulanish | connection |
 | ulanishlar hovuzi | connection pool |
 | uzilish | outage, breaking change |
-| vaqt tugashi | timeout |
 | vositachi | mediator |
 | xato | error, bug, issue |
 | xotira | memory |

@@ -51,34 +51,63 @@ def deepen(text):
     return '\n'.join(out)
 
 
-def flatten_links(text, files):
+CROSS_RE = re.compile(r'^\.\./([\w-]+)/([^/#]+\.md)$')
+
+
+def flatten_links(text, files, key=None, others=None):
     """`NN-slug.md#anchor` -> `#anchor`, `NN-slug.md` -> bob sarlavhasi anchori.
 
     `files` - bob fayli nomi -> o'sha bobning sarlavha anchori. Hujjatlararo
-    havolalar (`../<hujjat>/...`) o'z holida qoladi.
+    havolalar dist/ dagi qo'shni monolitga yo'naltiriladi: `../<hujjat>/
+    README.md` -> `<monolit>`, `../<hujjat>/<bob>.md` -> `<monolit>#<bob>`
+    (`others` - hujjat -> {bob fayli: anchor}). Qolgan nisbiy yo'l
+    docs/<key>/ dan dist/ ga ko'chiriladi. Kod bloki ichiga tegilmaydi:
+    u yerdagi havola namuna. `build_single.py patterns` bitta faylni
+    yig'sa, qo'shni monolit dist/ da bo'lmaguncha havola ochilmaydi.
     """
     def repl(m):
         path, _, anc = m.group(1).partition('#')
-        if path not in files:
+        if path in files:
+            return f"](#{anc or files[path]})"
+        if not path or re.match(r'^[a-z]+:', path) or path.startswith('/'):
             return m.group(0)
-        return f"](#{anc or files[path]})"
-    return re.sub(r'\]\(([^)\s]+)\)', repl, text)
+        cross = CROSS_RE.match(path)
+        if cross and cross.group(1) in OUT:
+            other, name = cross.groups()
+            if name != 'README.md' and not anc:
+                anc = (others or {}).get(other, {}).get(name, '')
+            return f"]({OUT[other]}{'#' + anc if anc else ''})"
+        if key is None:
+            return m.group(0)
+        moved = os.path.relpath(os.path.normpath(os.path.join('docs', key, path)), 'dist')
+        return f"]({moved.replace(os.sep, '/')}{'#' + anc if anc else ''})"
+
+    out, fence = [], False
+    for l in text.split('\n'):
+        if l.startswith('```'):
+            fence = not fence
+        out.append(l if fence or l.startswith('```')
+                   else re.sub(r'\]\(([^)\s]+)\)', repl, l))
+    return '\n'.join(out)
 
 
-def build(key):
-    man = json.load(open(os.path.join(ROOT, 'docs', 'manifest.json'), encoding='utf-8'))[key]
+def build(key, out_dir=None):
+    manifest = json.load(open(os.path.join(ROOT, 'docs', 'manifest.json'), encoding='utf-8'))
+    man = manifest[key]
+    others = {k: {c['file']: gh_slug(c['title']) for c in v['chapters']}
+              for k, v in manifest.items() if k in OUT}
     d = os.path.join(ROOT, 'docs', key)
-    files = {c['file']: gh_slug(c['title']) for c in man['chapters']}
+    files = others[key]
     readme = open(os.path.join(d, 'README.md'), encoding='utf-8').read()
     title = re.match(r'# ([^\n]*)', readme).group(1)
     preamble = readme.split('\n## Mundarija', 1)[0].split('\n', 1)[1].strip()
-    preamble = flatten_links(preamble, files)
+    preamble = flatten_links(preamble, files, key, others)
 
     body, toc = [], []
     last_part = object()
     for c in man['chapters']:
         raw = open(os.path.join(d, c['file']), encoding='utf-8').read()
-        text = deepen(flatten_links(unwrap_chapter(raw), files))
+        text = deepen(flatten_links(unwrap_chapter(raw), files, key, others))
         if c['part'] != last_part:
             last_part = c['part']
             if c['part']:
@@ -86,14 +115,18 @@ def build(key):
                 toc += ['', f"**{c['part']}**", '']
         body += [f"## {c['title']}", '', text, '', '---', '']
         toc.append(f"- [{c['title']}](#{gh_slug(c['title'])})")
+        fence = False
         for l in text.split('\n'):
-            if re.match(r'^### ', l):
+            if l.startswith('```'):
+                fence = not fence   # deepen() kabi: ```markdown ichidagi ### sarlavha emas
+            elif not fence and re.match(r'^### ', l):
                 h = l[4:]
                 toc.append(f"  - [{h}](#{gh_slug(h)})")
 
     doc = [f"# {title}", '', preamble, '', '## Mundarija', ''] + toc + [''] + body
-    os.makedirs(os.path.join(ROOT, 'dist'), exist_ok=True)
-    path = os.path.join(ROOT, 'dist', OUT[key])
+    out_dir = out_dir or os.path.join(ROOT, 'dist')
+    os.makedirs(out_dir, exist_ok=True)
+    path = os.path.join(out_dir, OUT[key])
     open(path, 'w', encoding='utf-8').write('\n'.join(doc).rstrip('\n') + '\n')
     return path
 

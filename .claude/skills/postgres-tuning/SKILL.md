@@ -13,18 +13,28 @@ Mundarija: `docs/architect/README.md#iv-postgresql-chuqur-bilim`.
 O'lchamasdan sozlamang. Tartib har doim bir xil:
 
 1. **Qaysi so'rov** - `pg_stat_statements` dan eng qimmatini toping
-   (`docs/architect/27-...`).
+   (`architect 24`: "`pg_stat_statements` bilan eng qimmat so'rovlarni
+   topish"; yoqish `architect 27` da).
 2. **Nega qimmat** - `EXPLAIN (ANALYZE, BUFFERS)` o'qing, taxmin qilmang
-   (`docs/architect/24-...`). Rejadagi `rows` taxmini bilan haqiqiy
+   (`architect 24.6`, `24.7`). Rejadagi `rows` taxmini bilan haqiqiy
    `actual rows` farqi katta bo'lsa, muammo statistikada.
-3. **Indeks kerakmi yoki sxema noto'g'rimi** - `docs/architect/23-...`
-   va `docs/architect/25-...`.
-4. Faqat shundan keyin parametr tegiladi (`docs/architect/27-...`).
+3. **Indeks kerakmi yoki sxema noto'g'rimi** - `architect 23` (indeks
+   tanlash) va `architect 25` (sxema, turlar, cheklovlar).
+4. Faqat shundan keyin parametr tegiladi (`architect 27.2`, `27.3`, `27.8`).
+
+1-2 qadam ma'lumoti jonli serverdan keladi. Avval uni foydalanuvchidan
+so'rang: `pg_stat_statements` chiqishi, `EXPLAIN (ANALYZE, BUFFERS)` matni
+yoki sekin so'rov logi. Logni yig'ish `architect 27.11` da ("Sekin so'rov
+logi va `auto_explain` sozlash"). Lokal bazadagi `EXPLAIN ANALYZE` kichik
+ma'lumotda boshqa reja berishi mumkin.
 
 `shared_buffers` ni oshirish sekin so'rovni tezlashtirmaydi. Noto'g'ri
 indeks `work_mem` bilan tuzalmaydi.
 
 ## Vazifa - bob jadvali
+
+Jadvaldagi fayl butunligicha o'qilmaydi: avval `outline`, keyin kerakli
+bo'lim `show` bilan (Asboblar).
 
 | Vazifa | Fayl |
 |---|---|
@@ -45,7 +55,7 @@ PostgreSQL muammosi ko'pincha Java tomonda tug'iladi:
 |---|---|
 | N+1 so'rov, lazy load exception, flush tartibi | `docs/architect/18-spring-data-jpa-va-hibernate-chuqur.md` |
 | Uzun tranzaksiya, `readOnly`, propagation, `idle in transaction` | `docs/architect/19-spring-tranzaksiyalari-va-ularning.md` |
-| Pool tugadi, `pendingAcquireTimeout`, thread hisobi | `docs/architect/27-sozlash-connection-pool-va-monitoring.md`, `docs/architect/08-ishlash-va-resurs-hissi-napkin-math.md` |
+| JDBC pool tugadi (`Connection is not available, request timed out`), `connection-timeout`, thread hisobi | `docs/architect/27-sozlash-connection-pool-va-monitoring.md`, `docs/architect/08-ishlash-va-resurs-hissi-napkin-math.md` |
 | Repository/Specification/ID generatsiyasi patternlari | `docs/patterns/09-malumotlarga-kirish-va-orm-patternlari.md` |
 | Testda H2 emas, real PostgreSQL konteyner | `docs/testing/08-testcontainers-bilan-real-infratuzilmada.md` |
 | PostgreSQL ga xos Sonar issue'lari | `docs/sonarqube/29-xato-katalogi-spring-jpa-va-postgresql-ga.md` |
@@ -57,8 +67,13 @@ python3 tools/schema_from_entities.py <src>  # jadval, ustun, FK, indeks
 python3 tools/schema_from_entities.py <src> --only-findings  # EAGER, indekssiz
                                                    # FK, ORDINAL enum, precision
 tools/doc.sh find -f "pg_stat_statements"    # matn ichidan qidirish
+tools/doc.sh outline architect <bob>         # bobdagi bo'limlar
+tools/doc.sh show architect <raqam>          # butun bob emas, faqat o'sha bo'lim
 ```
 
 Sxemani bilish uchun bazaga ulanish shart emas: entity sinflari uni
-to'liq tasvirlaydi. `psql -h ...` `tools/guard.py` tomonidan to'siladi,
-jonli ma'lumot haqiqatan kerak bo'lsa buyruq oldiga `COST_OK=1` qo'yiladi.
+to'liq tasvirlaydi. Host yoki URL bilan ulanish (`psql -h ...`)
+`tools/guard.py` tomonidan to'siladi. Chiqish yo'li `COST_OK=1`, lekin
+faqat foydalanuvchi bergan chiqish nega yetmagani aytilgandan keyin.
+Host'siz `psql` va `docker exec ... psql` guard'dan o'tadi, lekin ular ham
+ulanish: shart bir xil.

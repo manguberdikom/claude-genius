@@ -1,6 +1,6 @@
 <!-- doc: patterns | chapter: 24 | part:  -->
 
-[Java Spring arxitektori bilishi kerak bo'lgan barcha dizayn patternlar](../../README.md) / [Dizayn patternlar](README.md)
+[Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
 # 24. Zamonaviy Java va funksional patternlar (Modern Java & Functional Patterns)
 
@@ -403,18 +403,14 @@ batches.forEach(orderRepository::saveAllAndFlush);
 
 ## 24.23 Memoizatsiya (Memoization)
 
-**Tavsif:** Toza (deterministik, yon ta'siri yo'q) funksiyaning natijasini argument bo'yicha eslab qolib, keyingi chaqiruvlarda qayta hisoblamaslik. Funksional uslubda bu funksiyani cache bilan o'raydigan dekorator ko'rinishida yoziladi: `Function<K,V>` ichida `Map<K,V>` saqlanadi va `computeIfAbsent` bilan faqat bir marta hisoblanadi. Qimmat hisoblash, I/O yoki regex kompilyatsiyasi takrorlanadigan joylarda eng arzon optimizatsiya.
+**Tavsif:** [Keshlash patternlari bobidagi memoizatsiya yozuvi](11-keshlash-patternlari.md#1117-memoizatsiya-memoization) bu patternning to'liq yozuvi, bu yerda faqat funksional uslubdagi ko'rinishi: toza `Function<K,V>` ni ichida `Map<K,V>` saqlaydigan dekorator bilan o'rab, natijani `computeIfAbsent` bilan bir marta hisoblash.
 
-**Spring'da qayerda uchraydi:** Deklarativ darajada `@Cacheable`, `@CachePut`, `@CacheEvict` va `@EnableCaching` (`spring-context-support`), `CacheManager` implementatsiyalari: `ConcurrentMapCacheManager` (oddiy, chegarasiz), `CaffeineCacheManager` (`com.github.ben-manes.caffeine`), `RedisCacheManager` (`spring-boot-starter-data-redis`). Qo'lda memoizatsiya uchun `ConcurrentHashMap.computeIfAbsent`, Caffeine `LoadingCache`, yoki `org.springframework.data.util.Lazy` (bitta qiymat uchun). Spring'ning o'zi ichida `AnnotationUtils`, `ResolvableType` va `CachedIntrospectionResults` reflection natijalarini memoize qiladi. `@Cacheable(sync = true)` bitta kalit uchun bir vaqtda faqat bitta hisoblash ketishini ta'minlaydi (cache stampede himoyasi).
+**Spring'da qayerda uchraydi:** Qo'lda `ConcurrentHashMap.computeIfAbsent` yoki Caffeine `LoadingCache`, bitta qiymat uchun `org.springframework.data.util.Lazy`, deklarativ darajada `@Cacheable(sync = true)`.
 
 **Qo'llanish keyslari:**
-- Kam o'zgaradigan referens ma'lumotlarni (valyuta kurslari, mamlakatlar ro'yxati) `@Cacheable` bilan keshlash.
-- Tashqi API'ga takroriy so'rovlarni Caffeine `LoadingCache` orqali TTL bilan kamaytirish.
-- Regex `Pattern` yoki `MessageDigest` kabi qimmat obyektlarni kalit bo'yicha bir marta qurish.
-- Permission/role hisoblashni request scope ichida memoize qilib, bir request'da N marta DB so'rovidan qutulish.
-- Hisobot uchun katta agregatni `@Cacheable(sync = true)` bilan keshlab, bir vaqtda kelgan so'rovlarni birlashtirish.
+- Toza funksiyani dekorator bilan o'rab, qimmat hisoblashni (regex kompilyatsiyasi, format parsing) argument bo'yicha bir martaga qisqartirish.
 
-**Ehtiyot bo'ling:** `ConcurrentHashMap.computeIfAbsent` ichida yana shu xaritaga yozishga urinish (rekursiv memoizatsiya) deadlock yoki `IllegalStateException` beradi; chegarasiz map yoki `ConcurrentMapCacheManager` esa xotira oqishiga olib keladi - production'da TTL va maksimal hajmli Caffeine/Redis ishlatish kerak. `@Cacheable` proxy orqali ishlagani uchun bitta bean ichidagi o'z-o'ziga chaqiruv (self-invocation) keshni butunlay chetlab o'tadi, shuningdek mutable obyektni keshdan qaytarib, chaqiruvchi uni o'zgartirsa, kesh buziladi.
+**Ehtiyot bo'ling:** Funksiya toza bo'lmasa yoki argument to'plami chegarasiz bo'lsa memoizatsiya bug va xotira oqishi beradi, tafsiloti kanonik yozuvda.
 
 ## 24.24 Kechiktirilgan hisoblash (Lazy evaluation / Supplier)
 
@@ -581,48 +577,36 @@ int code = switch (order.state()) {
 
 ## 24.34 Virtual thread'lar (Virtual Threads)
 
-**Tavsif:** Java 21 da stabillashgan virtual thread'lar - JVM boshqaradigan juda yengil thread'lar; bloklanganda ular platform (carrier) thread'ni bo'shatib beradi, shu sababli millionlab bir vaqtdagi bloklovchi operatsiyani ushlab turish mumkin. Bu "thread-per-request" modelini qaytaradi: oddiy imperativ, bloklovchi kod yozib, reaktiv kodning murakkabligisiz yuqori I/O concurrency olinadi. Virtual thread CPU parallelizmini oshirmaydi - faqat bloklanish narxini arzonlashtiradi.
+**Tavsif:** [Concurrency patternlari bobidagi virtual thread'lar yozuvi](04-concurrency-patternlari.md#423-virtual-threadlar-virtual-threads) bu patternning to'liq yozuvi, bu yerda faqat zamonaviy Java nuqtai nazari: Java 21 da stabillashgan yengil thread bloklanganda carrier thread'ni bo'shatadi va thread-per-request modelini reaktiv murakkabliksiz qaytaradi.
 
-**Spring'da qayerda uchraydi:** Spring Boot 3.2+ da `spring.threads.virtual.enabled=true` bitta sozlama bilan Tomcat/Jetty request thread'larini, `@Async` `SimpleAsyncTaskExecutor` ni (`setVirtualThreads(true)`), `@Scheduled` uchun `SimpleAsyncTaskScheduler` ni va Kafka/RabbitMQ listener container'larini virtual thread'ga o'tkazadi. Asosiy API: `Executors.newVirtualThreadPerTaskExecutor()`, `Thread.ofVirtual().start()`. `RestClient` va JDK `HttpClient` virtual thread bilan yaxshi ishlaydi; Spring Framework 6.1 da `AsyncTaskExecutor` abstraksiyasi virtual thread'ni rasman qo'llab-quvvatlaydi. Boot 4.x / Framework 7.x da bu yondashuv reaktiv stack'ga asosiy alternativa sifatida mavjud.
+**Spring'da qayerda uchraydi:** Spring Boot 3.2+ da `spring.threads.virtual.enabled=true`, qo'lda `Executors.newVirtualThreadPerTaskExecutor()` va `Thread.ofVirtual().start()`.
 
 **Qo'llanish keyslari:**
-- Ko'p sonli tashqi HTTP chaqiruvlar qiladigan API gateway yoki BFF servisini bloklovchi kod bilan yozib, throughput'ni oshirish.
-- JDBC'ga tayangan mavjud monolitda thread pool tanqisligini (thread starvation) yo'qotish.
-- Kafka consumer'da har bir xabarni alohida virtual thread'da ishlab, sekin downstream'ni parallellashtirish.
-- Legacy bloklovchi kodni WebFlux'ga ko'chirmasdan concurrency'ni oshirish.
-- Yuzlab parallel so'rov yuboradigan batch yoki migratsiya vositalarini sodda kod bilan yozish.
+- JDBC va tashqi HTTP chaqiruvlariga tayangan bloklovchi kodni WebFlux'ga ko'chirmasdan I/O concurrency'ni oshirish.
 
-**Ehtiyot bo'ling:** `synchronized` blok ichida bloklanish Java 21 da carrier thread'ni "pin" qiladi (Java 24+ da bu asosan tuzatilgan) - `ReentrantLock` ga o'tish xavfsizroq; shuningdek virtual thread'larni pool qilish ma'nosiz va zararli, har task uchun yangisi yaratilishi kerak. Eng katta tuzoq - bloklanish arzonlashgani uchun downstream'ga cheksiz so'rov yuborib yuborish; connection pool (HikariCP) hajmi va semaphore bilan aniq backpressure qo'yish shart, aks holda ma'lumotlar bazasi yoki tashqi servis birinchi bo'lib yiqiladi.
+**Ehtiyot bo'ling:** Virtual thread pool qilinmaydi va CPU-bound ishni tezlashtirmaydi, downstream (HikariCP, tashqi servis) uchun backpressure esa baribir aniq qo'yiladi.
 
 ## 24.35 Strukturalangan concurrency (Structured Concurrency)
 
-**Tavsif:** Bir vazifa uchun ochilgan barcha parallel subtask'larni yagona leksik qamrovda (try-with-resources blokida) tug'ilishi va tugashini kafolatlaydigan model. `StructuredTaskScope` subtask'lar hayot muddatini scope bilan bog'laydi: scope yopilganda hammasi tugagan yoki bekor qilingan bo'ladi, xato bir joyda to'planadi, cancellation avtomatik tarqaladi. Bu "orphan thread", yo'qolgan exception va qo'lda `Future.cancel()` boshqarishini yo'q qiladi.
+**Tavsif:** [Concurrency patternlari bobidagi strukturaviy concurrency yozuvi](04-concurrency-patternlari.md#424-strukturaviy-concurrency-structured-concurrency) bu patternning to'liq yozuvi, bu yerda faqat zamonaviy Java nuqtai nazari: `StructuredTaskScope` subtask'lar hayot muddatini try-with-resources blokiga bog'laydi, xato va cancellation bir joyda boshqariladi.
 
-**Spring'da qayerda uchraydi:** `java.util.concurrent.StructuredTaskScope` - Java 21/22/23 da preview, Java 25 da (JEP 505, to'rtinchi preview iteratsiyasidan keyin) `--enable-preview` bilan ishlatiladi; Java 25 API'sida `StructuredTaskScope.open(Joiner.allSuccessfulOrThrow())` va `Joiner.anySuccessfulResultOrThrow()` ko'rinishi qo'llaniladi. Spring Framework'da buning uchun maxsus abstraksiya hali yo'q - odatda servis metodi ichida to'g'ridan-to'g'ri ishlatiladi va `RestClient`/`JdbcClient` bloklovchi chaqiruvlari subtask sifatida beriladi. Muqobil, production uchun stabil variant: `CompletableFuture.allOf()` yoki Spring'ning `AsyncTaskExecutor`/`@Async` + `CompletableFuture` kombinatsiyasi.
+**Spring'da qayerda uchraydi:** Java 25 da ham preview (`StructuredTaskScope.open(Joiner.allSuccessfulOrThrow())`, `--enable-preview`), Spring'da maxsus abstraksiya yo'q, production uchun stabil muqobil `CompletableFuture.allOf()`.
 
 **Qo'llanish keyslari:**
-- Bitta sahifa uchun user, order va recommendation servislariga parallel so'rov yuborib, barchasi muvaffaqiyatli bo'lishini talab qilish (fan-out/fan-in).
-- Bir nechta replika yoki provayderga bir vaqtda murojaat qilib, birinchi javobni olish va qolganini avtomatik bekor qilish.
-- Umumiy deadline (`timeout`) qo'yib, muddat o'tganda barcha subtask'ni birdan to'xtatish.
-- Aggregator/BFF endpoint'da subtask xatolarini bitta joyda yig'ib, qisman natijani boshqarish.
-- Batch ishida har bir chunk'ni scope ichida parallel ishlab, xato bo'lsa butun chunk'ni toza bekor qilish.
+- Bitta so'rov uchun bir nechta servisga parallel murojaat qilib (fan-out/fan-in), biri yiqilsa qolganini avtomatik bekor qilish.
 
-**Ehtiyot bo'ling:** API hali preview bo'lgani uchun Java versiyalari orasida nomlar va `Joiner` shakli o'zgargan - production kodda `--enable-preview` ga bog'lanish migratsiya xarajati tug'diradi. Scope hech qachon metod chegarasidan tashqariga chiqarilmasligi va subtask ichida yana cheksiz nested scope ochilmasligi kerak; cancellation `InterruptedException` orqali ishlaydi, shuning uchun subtask kodi interrupt'ni yutib yubormasligi shart.
+**Ehtiyot bo'ling:** API preview bo'lgani uchun Java versiyalari orasida shakli o'zgaradi, scope esa metod chegarasidan tashqariga chiqarilmaydi.
 
 ## 24.36 Scoped Values (Scoped Values)
 
-**Tavsif:** Chaqiruv daraxti bo'ylab immutable kontekst ma'lumotini uzatishning `ThreadLocal` ga zamonaviy almashtiruvchisi. `ScopedValue.where(KEY, value).run(...)` qiymatni faqat shu dinamik qamrov davomida ko'rinadigan qiladi - qamrov tugashi bilan avtomatik tozalanadi, shu sababli thread pool'da "leak" bo'lmaydi. Virtual thread'lar uchun ayniqsa muhim: millionlab thread'da `ThreadLocal` xotira sarfi qimmat, scoped value esa qiymatni ko'chirmasdan child scope'larga meros beradi.
+**Tavsif:** [Concurrency patternlari bobidagi qamrovli qiymatlar yozuvi](04-concurrency-patternlari.md#425-qamrovli-qiymatlar-scoped-values) bu patternning to'liq yozuvi, bu yerda faqat zamonaviy Java nuqtai nazari: `ScopedValue` immutable kontekstni faqat dinamik qamrov davomida ko'rinadigan qilib, `ThreadLocal` ni almashtiradi.
 
-**Spring'da qayerda uchraydi:** `java.lang.ScopedValue` Java 21-24 da preview, Java 25 da JEP 506 bilan final bo'ldi (`ScopedValue.where(...).run/call`, `ScopedValue.orElse`). Spring ekotizimida kontekst tarqatish hozircha asosan `ThreadLocal` ga tayanadi: `RequestContextHolder`, `SecurityContextHolder` (`MODE_THREADLOCAL`/`MODE_INHERITABLETHREADLOCAL`), `TransactionSynchronizationManager`, Micrometer'ning `ContextRegistry`/`ContextSnapshot` (context-propagation kutubxonasi). Virtual thread bilan Spring Security'da kontekst yo'qolmasligi uchun `DelegatingSecurityContextExecutor` yoki Micrometer context propagation ishlatiladi; scoped value'ga o'tish Framework/Boot kelgusi versiyalarida kutilmoqda.
+**Spring'da qayerda uchraydi:** `java.lang.ScopedValue` Java 25 da final (JEP 506), Spring kontekst holderlari esa hali `ThreadLocal` da, shuning uchun virtual thread bilan Security kontekstini uzatishda `DelegatingSecurityContextExecutor` yoki Micrometer context propagation ishlatiladi.
 
 **Qo'llanish keyslari:**
-- Request'ga xos `traceId`/`correlationId` ni chaqiruv daraxti bo'ylab uzatib, log'larga avtomatik qo'shish.
-- Multi-tenant ilovada joriy tenant identifikatorini qatlamlar orasida arguments'siz tarqatish.
-- Joriy foydalanuvchi (principal) ni servis chuqurligigacha yetkazish, metod imzolarini ifloslantirmasdan.
-- Virtual thread'ga asoslangan yuqori concurrency'li servisda `ThreadLocal` xotira sarfini kamaytirish.
-- Strukturalangan concurrency subtask'lariga kontekstni avtomatik meros berish.
+- Tenant yoki `traceId` ni metod imzolarini ifloslantirmasdan chaqiruv daraxti bo'ylab uzatish.
 
-**Ehtiyot bo'ling:** Scoped value immutable va faqat o'z qamrovida amal qiladi - qamrovdan chiqqan kodda (masalan `@Async` ga uzatilgan task yoki keshlangan callback'da) qiymat yo'q bo'ladi, shuning uchun uni qamrovdan tashqariga "saqlab qo'yish" mumkin emas. Kontekstni yashirin kanal sifatida ortiqcha ishlatish kodni tushunarsiz qiladi; muhim business parametrni metod argumenti sifatida uzatish doim afzalroq.
+**Ehtiyot bo'ling:** Qamrovdan chiqqan kodda (`@Async` task, keshlangan callback) qiymat yo'q, muhim biznes parametri esa metod argumenti sifatida uzatiladi.
 
 ## 24.37 Moslashuvchan konstruktor tanalari (Flexible Constructor Bodies)
 

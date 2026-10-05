@@ -10,10 +10,16 @@ Tekshiradi:
   3b. Em-dash     - loyiha qoidasi: em-dash va en-dash ishlatilmaydi.
   3c. Kod fence   - ``` soni juft bo'lishi kerak, aks holda render buziladi.
   4. Manifest     - docs/manifest.json diskdagi fayllar bilan mos.
-  5. Skilllar     - .claude/skills/ ichidagi docs/ havolalari haqiqiy.
-  6. Struktura    - har bob faylida metadata va navigatsiya bor.
-  7. Konvensiya   - har bob `Amalda qo'llash` yoki `Arxitektor nazorat
-                    ro'yxati` bilan tugaydi.
+  5. Skilllar     - .claude/ ichidagi docs/ havolalari haqiqiy; tools/
+                    yo'llari (kod bloki ichida ham) skill, agent, CLAUDE.md,
+                    README.md, CONTRIBUTING.md va install/README.md da
+                    mavjud, doc.sh subkomandasi doc.sh da bor.
+  6. Struktura    - har bob faylida metadata manifest bilan mos, breadcrumb
+                    (3-qator), H1 manifest sarlavhasi (5-qator), bo'lim soni
+                    manifest, README va <summary> bilan mos, footer qo'shni
+                    boblarga ishora qiladi va oxirida turadi.
+  7. Konvensiya   - har bobning oxirgi `##` bo'limi `Amalda qo'llash` yoki
+                    `Arxitektor nazorat ro'yxati`.
 """
 import json, os, re, sys, unicodedata
 
@@ -158,10 +164,33 @@ def main():
             if is_ours(m.group(1)) and not os.path.isdir(
                     os.path.join(ROOT, m.group(1))):
                 err(f"{rel_sk}: havola papkasi yo'q -> {m.group(1)}")
-        # tools/ ga ishora: faqat fayl nomi, argumentlarsiz tekshiriladi.
-        for m in re.finditer(r'`(?:python3 )?(tools/[\w./-]+\.(?:py|sh))', body):
+
+    # tools/ ga ishora: faqat fayl nomi, argumentlarsiz. Backtick talab
+    # qilinmaydi, shuning uchun kod bloki ichidagi chaqiruv ham
+    # (`mvn test | python3 tools/parse_test_output.py`) tekshiriladi.
+    # Har navbatda o'qiladigan CLAUDE.md va o'rnatish hujjati ham kiradi.
+    tool_docs = sorted(routed) + [os.path.join(ROOT, f) for f in (
+        'CLAUDE.md', 'README.md', 'CONTRIBUTING.md', 'install/README.md')
+        if os.path.exists(os.path.join(ROOT, f))]
+    doc_sh = os.path.join(ROOT, 'tools', 'doc.sh')
+    subcommands = (set(re.findall(r'^\s+([a-z]+)\)', open(doc_sh, encoding='utf-8').read(), re.M))
+                   if os.path.exists(doc_sh) else set())
+    for path in tool_docs:
+        rel_t = os.path.relpath(path, ROOT)
+        body = open(path, encoding='utf-8').read()
+        for m in re.finditer(r'(?<![\w/])(tools/[\w./-]+\.(?:py|sh))', body):
             if not os.path.exists(os.path.join(ROOT, m.group(1))):
-                err(f"{rel_sk}: asbob yo'q -> {m.group(1)}")
+                err(f"{rel_t}: asbob yo'q -> {m.group(1)}")
+        # doc.sh subkomandasi: faqat kod ichida (inline yoki fence), nasrdagi
+        # "doc.sh bilan" kabi gap tutilmasin. Ro'yxat doc.sh ning case
+        # blokidan olinadi, qo'lda yozilgan ro'yxat eskirardi.
+        code = re.findall(r'`[^`\n]*`', body) + [
+            l for l, f in zip(body.split('\n'), strip_fences(body).split('\n'))
+            if l != f]
+        for span in code if subcommands else ():
+            for m in re.finditer(r'doc\.sh ([a-z][\w-]*)', span):
+                if m.group(1) not in subcommands:
+                    err(f"{rel_t}: doc.sh da '{m.group(1)}' subkomandasi yo'q")
 
     # 4. manifest
     mpath = os.path.join(ROOT, 'docs', 'manifest.json')
@@ -179,28 +208,76 @@ def main():
                 err(f"docs/{key}: diskda bor, manifest da yo'q -> {f}")
 
             # 5. struktura
-            for c in doc['chapters']:
+            readme_path = os.path.join(d, 'README.md')
+            readme = (open(readme_path, encoding='utf-8').read()
+                      if os.path.exists(readme_path) else '')
+            crumb = re.compile(r'^\[[^\]]+\]\(\.\./\.\./README\.md\) / \[%s\]\(README\.md\)$'
+                               % re.escape(doc.get('label', '')))
+            chapters = doc['chapters']
+            for i, c in enumerate(chapters):
                 p = os.path.join(d, c['file'])
                 if not os.path.exists(p):
                     continue
+                where = f"docs/{key}/{c['file']}"
                 t = open(p, encoding='utf-8').read()
+                lines = t.split('\n')
                 if not t.startswith('<!-- doc: '):
-                    err(f"docs/{key}/{c['file']}: metadata izohi yo'q")
+                    err(f"{where}: metadata izohi yo'q")
+                elif lines[0].rstrip() != (f"<!-- doc: {key} | chapter: {c['num'] or ''}"
+                                           f" | part: {c['part'] or ''} -->"):
+                    err(f"{where}: metadata manifest bilan mos emas -> {lines[0][:60]}")
+                if len(lines) < 5 or not crumb.match(lines[2]):
+                    err(f"{where}: breadcrumb yo'q yoki noto'g'ri (3-qator)")
+                if len(lines) < 5 or lines[4] != '# ' + c['title']:
+                    err(f"{where}: H1 manifest sarlavhasi bilan mos emas (5-qator)")
+
+                # Sarlavhalar fence tashqarisidan sanaladi: ```markdown
+                # namunasidagi `## Hotfix` bob bo'limi emas.
+                plain = strip_fences(t).split('\n')
+                h1 = [l for l in plain if l.startswith('# ')]
+                h2 = [l[3:] for l in plain if l.startswith('## ')]
+                if len(h1) > 1:
+                    err(f"{where}: {len(h1)} ta H1, bitta bo'lsin")
+                if c.get('sections') is not None and len(h2) != c['sections']:
+                    err(f"{where}: {len(h2)} bo'lim, manifestda {c['sections']}")
+                summary = re.search(r"<summary>Bu bobdagi (\d+) bo'lim</summary>", t)
+                if summary and int(summary.group(1)) != len(h2):
+                    err(f"{where}: <summary> da {summary.group(1)} bo'lim, "
+                        f"haqiqatda {len(h2)}")
+                if c['num'] and readme:
+                    # patterns README da yopish bo'limisiz "N pattern" yoziladi.
+                    unit, want = (('pattern', len(h2) - 1) if key == 'patterns'
+                                  else ("bo'lim", len(h2)))
+                    m = re.search(r'\]\(%s\) - (\d+) %s' % (re.escape(c['file']), unit),
+                                  readme)
+                    if not m:
+                        err(f"docs/{key}/README.md: {c['file']} uchun `- N {unit}` yo'q")
+                    elif int(m.group(1)) != want:
+                        err(f"docs/{key}/README.md: {c['file']} {m.group(1)} {unit}, "
+                            f"haqiqatda {want}")
                 if '[Mundarija](README.md)' not in t:
                     err(f"docs/{key}/{c['file']}: navigatsiya havolasi yo'q")
                 # Footer oxirida turishi kerak, shunchaki mavjud bo'lishi
                 # emas: add_code.py kabi yozuvchi asbob kod blokini uning
                 # ORQASIGA qo'yib yuborishi mumkin va bob shakli buziladi.
-                body = [l for l in t.split('\n') if l.strip()]
+                body = [l for l in lines if l.strip()]
                 if body and '[Mundarija](README.md)' not in body[-1]:
-                    err(f"docs/{key}/{c['file']}: navigatsiya footeridan keyin "
+                    err(f"{where}: navigatsiya footeridan keyin "
                         f"matn bor -> {body[-1][:50]}")
+                elif body:
+                    want = (([chapters[i - 1]['file']] if i else []) + ['README.md']
+                            + ([chapters[i + 1]['file']] if i + 1 < len(chapters) else []))
+                    if re.findall(r'\]\(([^)]+)\)', body[-1]) != want:
+                        err(f"{where}: footer qo'shni boblarga ishora qilmaydi "
+                            f"(kutilgan: {' · '.join(want)})")
 
-                # 7. bob-yopish konvensiyasi
-                if c['num'] and not re.search(
-                        r"^## [\d.]+ (Amalda qo'llash|Arxitektor nazorat ro'yxati)\s*$", t, re.M):
-                    err(f"docs/{key}/{c['file']}: bob `Amalda qo'llash` yoki "
+                # 7. bob-yopish konvensiyasi: yopuvchi bo'lim bor VA oxirgi.
+                closing = r"[\d.]+ (Amalda qo'llash|Arxitektor nazorat ro'yxati)\s*$"
+                if c['num'] and not re.search(r"^## " + closing, t, re.M):
+                    err(f"{where}: bob `Amalda qo'llash` yoki "
                         f"`Arxitektor nazorat ro'yxati` bilan tugamaydi")
+                elif c['num'] and h2 and not re.match(closing, h2[-1]):
+                    err(f"{where}: oxirgi bo'lim yopish bo'limi emas -> {h2[-1][:50]}")
 
     print(f"{len(files)} markdown fayl, {total} nisbiy havola tekshirildi")
     for w in warnings:

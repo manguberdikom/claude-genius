@@ -1,17 +1,17 @@
 # Java, Spring va PostgreSQL bo'yicha oltita qo'llanma
 
-O'zbek tilidagi oltita bir-birini to'ldiruvchi hujjat: 223 bob, 3300 bo'lim,
-1955 kod misoli. Mavzular takrorlanmaydi. Har bir hujjat bir savolga javob
-beradi, qolganlariga mavzu nomi bilan havola qiladi.
+O'zbek tilidagi oltita bir-birini to'ldiruvchi hujjat: 223 bob, 3293 bo'lim,
+2300 dan ortiq kod misoli. Mavzular takrorlanmaydi. Har bir hujjat bir
+savolga javob beradi, qolganlariga mavzu nomi bilan havola qiladi.
 
 | Hujjat | Hajm | Qanday savolga javob beradi |
 |---|---|---|
-| [Dizayn patternlar](docs/patterns/README.md) | 30 bo'lim, 1007 pattern | Bu muammoga qaysi pattern to'g'ri keladi |
+| [Dizayn patternlar](docs/patterns/README.md) | 30 bo'lim, 1007 yozuv (996 noyob pattern) | Bu muammoga qaysi pattern to'g'ri keladi |
 | [Testlash qo'llanmasi](docs/testing/README.md) | 18 bob, 239 bo'lim | Buni qanday test qilaman |
 | [Arxitektor miyyasi](docs/architect/README.md) | 39 bob, 482 bo'lim | Ichkarida nima sodir bo'ladi va qanday qaror chiqaraman |
 | [SonarQube](docs/sonarqube/README.md) | 43 bob, 557 bo'lim | Statik tahlil nimadan shikoyat qilyapti va qanday tuzataman |
 | [Toza kod qoidalari](docs/clean-code/README.md) | 49 bob, 533 bo'lim | Klaviatura ostidagi shu qator toza yoki yo'q |
-| [Kod review](docs/code-review/README.md) | 44 bob, 452 bo'lim | Diffda nimani ko'raman, nimani so'rayman, nimani to'xtataman |
+| [Kod review](docs/code-review/README.md) | 44 bob, 445 bo'lim | Diffda nimani ko'raman, nimani so'rayman, nimani to'xtataman |
 
 Har bob alohida faylda. Bu ataylab: GitHub 1 MB dan katta markdown faylni
 render qilmaydi, monolit variant brauzerda ochilmaydi.
@@ -29,8 +29,11 @@ render qilmaydi, monolit variant brauzerda ochilmaydi.
 
 ## Claude Code bilan ishlatish
 
-`.claude/skills/` ichida sakkizta skill bor. Repoda Claude Code ishga tushsa,
-ular avtomatik ko'rinadi va kerakli bobni o'zi topib o'qiydi.
+`.claude/skills/` ichida to'qqizta skill bor: sakkiztasi qo'llanmaga marshrut,
+`manguberdi` esa orkestrator. Repoda Claude Code ishga tushsa, sakkiztasi
+avtomatik ko'rinadi va kerakli bobni o'zi topib o'qiydi, `manguberdi` esa
+sessiyada bir marta `/manguberdi` bilan chaqiriladi. U `.claude/agents/`
+dagi olti aktyorni yurgizadi.
 
 | Skill | Qachon ishga tushadi |
 |---|---|
@@ -42,11 +45,27 @@ ular avtomatik ko'rinadi va kerakli bobni o'zi topib o'qiydi.
 | `postgres-tuning` | sekin so'rov, indeks, EXPLAIN, vacuum, connection pool |
 | `clean-code` | nomlash, funksiya uzunligi, izoh, kod hidi, refaktoring |
 | `code-review` | diffni o'qish, review izohi yozish, nimani to'xtatish |
+| `manguberdi` | katta ish: aktyor tanlab reja, kod, test va review ni ketma-ket yurgizadi, oxirida memoryga yozadi |
 
-Boshqa loyihada ishlatish uchun shu repo'ni klon qilib,
-`.claude/skills/*` ni o'z loyihangizning `.claude/skills/` ichiga
-ko'chiring yoki `~/.claude/skills/` ga qo'ying. Skilllar `docs/` ga
-havola qiladi, shuning uchun repo'ning o'zi ham qo'lda bo'lishi kerak.
+Hooklar `.claude/settings.json` da turadi va repoda o'zi ishlaydi: har
+so'rovga mos bo'lim taklif qilinadi (`suggest_sections.py`); katta bobni
+butun o'qish, konteyner, bazaga ulanish va PowerShell to'siladi
+(`guard.py`); Java fayl yozilganda mexanik qoidalar tekshiriladi va
+`rules_for.py` chaqirilgani talab qilinadi (`check_code.py`); zanjir
+aktyorlari (`rejalashtiruvchi`, `arxitektor`, `test-muhandis`, `review`)
+bir vazifada ko'pi bilan ikki martadan chaqiriladi, `qidiruv` va `tahlil`
+sanalmaydi (`budget.py`); token sarfi `.claude/usage/` ga yoziladi
+(`usage.py`).
+
+Sakkizta marshrut skilli faqat shu repo ichida ishlaydi: ulardagi `docs/` va
+`tools/` yo'llari joriy papkaga nisbatan hal qilinadi va boshqa proyektda
+topilmaydi, shuning uchun ularni boshqa joyga ko'chirmang. Boshqa Java
+proyektda `manguberdi` ishlatiladi. U olti aktyor va hooklar bilan birga
+[global o'rnatish](install/README.md#b-yoli-global-ornatish) yo'li bilan
+o'rnatiladi va o'rnatuvchi (hozircha PowerShell skripti) yo'llarni klonga
+mutlaq bog'laydi, shuning uchun klon o'chirilmaydi va ko'chirilmaydi. Bu
+yo'l `~/.claude/` dagi avvalgi skill, agent va sozlamalarni zaxiraga olib
+o'chiradi, shuning uchun avval `-Apply` siz yurgiziladi.
 
 ## Memory
 
@@ -89,8 +108,9 @@ python3 tools/check_docs.py
 
 Fayl hajmi, har bir havola va anchor, kirill harflar, em-dash, kod fence
 juftligi, manifest mosligi, bob strukturasi, bob-yopish konvensiyasi va
-skilllardagi havolalar tekshiriladi. CI da har
-push va PR da ishlaydi.
+skilllardagi havolalar tekshiriladi. CI buni `main` ga har push va har PR
+da ishlatadi. Alohida `tools` ishi asbob sinovlarini, `eval_skill.py`,
+`eval_find.py` va `cost_report.py` ni yurgizadi.
 
 ## Til va uslub
 
@@ -100,4 +120,6 @@ To'liq qoidalar: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Litsenziya
 
-Matn: [CC BY 4.0](LICENSE). Kod misollari va `tools/`: [MIT](LICENSE-CODE).
+Matn (.md fayllar): [CC BY 4.0](LICENSE). Kod misollari va .md bo'lmagan
+barcha fayllar (`tools/`, `install/`, `.claude/settings.json`):
+[MIT](LICENSE-CODE).

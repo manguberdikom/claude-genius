@@ -38,6 +38,7 @@ Har fayl nima beradi va rejani qanday cheklaydi:
 | `Dockerfile`, `docker-compose.yml` | base image, JVM flaglari, memory limiti, servislar | konteyner cgroup limiti heap rejasiga ta'sir qiladi |
 | k8s manifest / helm values | replica, resources, probe, HPA | stateless talabi, graceful shutdown, probe timeout |
 | `db/migration/*.sql` (Flyway) yoki changelog (Liquibase) | sxema tarixi, oxirgi versiya, nomlash konvensiyasi | yangi migratsiya nomi va expand/contract tartibi |
+| JPA entity sinflari | jadval, ustun, FK, `@Table(indexes)` | sxema bazaga ulanmasdan `python3 tools/schema_from_entities.py <src>` bilan olinadi; migratsiyadagi indeks u yerda ko'rinmaydi, shuning uchun `db/migration` bilan birga o'qiladi |
 | `checkstyle.xml`, `spotless`, `.editorconfig`, `archunit` testlari | uslub va arxitektura qoidalari | reja bu qoidalarni buzmasligi kerak |
 | `.env.example`, `secrets` shablonlari | kerakli konfiguratsiya kalitlari | yangi kalit qo'shilsa - hamma muhitga qo'shish qadami |
 
@@ -63,8 +64,8 @@ mvn -q dependency:tree -Dscope=compile 2>/dev/null | head -60
 
 | Manba | Nima izlanadi |
 |---|---|
-| Loyiha `CLAUDE.md` (va yuqori papkalardagisi) | kod uslubi, taqiqlar, buyruqlar, "bu yerda shunday qilamiz" qoidalari |
-| `~/.claude/CLAUDE.md` | foydalanuvchining doimiy talablari |
+| Loyiha `CLAUDE.md` (va yuqori papkalardagisi) | kod uslubi, taqiqlar, buyruqlar, "bu yerda shunday qilamiz" qoidalari; sessiya boshida kontekstga yuklangan, qayta o'qilmaydi |
+| `~/.claude/CLAUDE.md` | foydalanuvchining doimiy talablari; sessiya boshida yuklangan, qayta o'qilmaydi |
 | `memory/<proyekt-slug>/MEMORY.md` | shu proyektda avval uchragan tuzoq, qabul qilingan qaror, tugallanmagan ish |
 | `memory/umumiy/MEMORY.md` | har qanday proyektda amal qiladigan talab: til, uslub, hisobot shakli |
 | `.claude/settings.json`, `.claude/skills/`, `.claude/commands/` | ruxsat etilgan buyruqlar, mavjud skilllar (ishni takrorlamaslik uchun) |
@@ -73,11 +74,13 @@ mvn -q dependency:tree -Dscope=compile 2>/dev/null | head -60
 
 Memory ikki indeksdan boshlanadi: avval `MEMORY.md` o'qiladi, keyin indeks
 ko'rsatgan topic fayl. Hamma topic faylni o'qish kerak emas. Memory yo'qligi
-ishga to'siq emas: shunda reja faqat config va koddan quriladi.
+ishga to'siq emas: shunda reja faqat config va koddan quriladi. Maqsad proyekt
+ish papkasi yoki uning ota papkasi bo'lmasa, uning `CLAUDE.md` si avtomatik
+yuklanmaydi: faqat shu holda `<proyekt-yo'li>/CLAUDE.md` o'qiladi.
 
 ```bash
-ls -a | head -30; cat CLAUDE.md 2>/dev/null
-cat memory/umumiy/MEMORY.md memory/*/MEMORY.md 2>/dev/null
+ls -a | head -30
+cat memory/<proyekt-slug>/MEMORY.md memory/umumiy/MEMORY.md 2>/dev/null
 ls docs/adr/ docs/decisions/ adr/ 2>/dev/null
 git log --oneline -30
 git log --oneline --grep="revert\|rollback" -i | head
@@ -98,10 +101,11 @@ raqami bilan** sitata qilinadi.
 
 | Tur | Usul |
 |---|---|
-| PDF | `pdftotext -layout fayl.pdf -` ; murakkab bo'lsa `pdf` skill (jadval, forma, OCR) |
+| PDF | `Read` (`pages` bilan, bir so'rovda 20 sahifagacha); jadval yoki OCR kerak bo'lsa `pdftotext -layout` yoki `pdf` skill |
 | HTML (lokal) | teglarni tozalab matn chiqarish - pastdagi buyruq |
-| URL | `WebFetch` (aniq savol bilan) - butun sahifani emas, kerakli qismini so'rash |
-| DOCX / XLSX / PPTX | mos skill (`docx`, `xlsx`, `pptx`) |
+| URL | `WebFetch` (aniq savol bilan) - butun sahifani emas, kerakli qismini so'rash; u bo'lmasa `curl -sL` bilan faylga olib, HTML buyrug'i |
+| DOCX | matn `word/document.xml` dan, pastdagi buyruq (`Read` .docx ni ochmaydi) |
+| XLSX / PPTX | mos skill (`xlsx`, `pptx`) |
 | Rasm / skrinshot / diagramma | `Read` bilan ochiladi va ko'rinadigan narsa matnga yoziladi |
 | Markdown / kod namunasi | to'g'ridan-to'g'ri o'qiladi |
 
@@ -116,7 +120,18 @@ print(html.unescape(re.sub(r'<[^>]+>', ' ', t)))
 HTMLPY
 ```
 
-PDF dan faqat kerakli sahifalar:
+DOCX dan matn olish (faqat stdlib, bo'laklarga bo'lingan so'z butun qoladi):
+
+```bash
+python3 - "spec.docx" <<'DOCXPY'
+import html, re, sys, zipfile
+x = zipfile.ZipFile(sys.argv[1]).read('word/document.xml').decode('utf-8')
+x = re.sub(r'</w:p>', '\n', re.sub(r'<w:tab/>', '\t', x))
+print(html.unescape(re.sub(r'<[^>]+>', '', x)))
+DOCXPY
+```
+
+`pdftotext` bilan faqat kerakli sahifalar (`-layout` jadval ustunlarini saqlaydi):
 
 ```bash
 pdftotext -layout spec.pdf - | head -60     # mundarijani ko'rish

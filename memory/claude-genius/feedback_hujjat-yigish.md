@@ -1,26 +1,10 @@
 ---
 type: feedback
-modified: 2026-10-04T00:00:00Z
+modified: 2026-10-05T00:00:00Z
 ---
 
-# Hujjat yig'ishdagi tuzoqlar
+# Parallel agentlar bilan hujjat yozish
 
-To'rtta handbook parallel agentlar bilan bob-bob yozilib, keyin bitta faylga
-yig'ilgan. Shu ishda takrorlangan tuzoqlar:
-
-- **Kirill harflar.** Agentlar lotin so'z ichiga tasodifan kirill harf qo'yib
-  yuboradi (masalan "Monolitdan" so'zi ichida kirill `i`). Yig'ishdan oldin
-  tozalash qadami shart, ko'z bilan ko'rinmaydi.
-- **Kod bloki ichidagi sarlavhalar.** Sarlavhalarni filtrlash yoki raqamlashda
-  kod fence ichidagi `#`, `##`, `###` qatorlariga tegilmaydi. Shablon ichidagi
-  sarlavha o'chirilsa, hujjat buziladi. Fence holatini kuzatadigan mantiq kerak.
-- **Parallel agent yiqilishi.** Bir xabarda ko'p agent ishga tushganda
-  ba'zilari tarmoq xatosi bilan tugaydi. Yiqilganini aniqlash va qayta ishga
-  tushirish kerak, natijani tekshirmasdan yig'ishga o'tilmaydi.
-
-Yig'ishdan keyingi tekshiruv ro'yxati:
-
-- kirill harf soni 0
-- kod fence soni juft
-- mundarijadagi barcha havolalar ishlaydi
-- har bobda yakuniy ro'yxat bo'limi bor
+- Bir xabarda ko'p agent ishga tushsa, ba'zilari tarmoq xatosi bilan jim tugaydi. Har agent natijasi tekshiriladi, yiqilgani qayta yurgiziladi, shundan keyingina birlashtiriladi.
+- Agentlar lotin so'z ichiga ko'zga ko'rinmaydigan kirill harf qo'yadi. Birlashtirgandan keyin `python3 tools/check_docs.py` majburiy: kirill, fence, havola va bob-yopishni u tekshiradi.
+- Sarlavhani filtrlaydigan yoki raqamlaydigan skript fence holatini kuzatishi kerak: fence ichidagi `#` sarlavha emas.

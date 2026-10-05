@@ -5,15 +5,8 @@
 - Javob va hujjatlar o'zbek lotin yozuvida. Kirill yoki rus tili bo'lmaydi.
 - Texnik atamalar inglizcha qoladi: bean, proxy, thread, cache, latency,
   quality gate, coverage. To'liq ro'yxat `GLOSSARY.md` da.
-- Javob birinchi qatorida natija turadi, keyin tafsilot. Em-dash ishlatilmaydi.
-
-## Hujjat konvensiyasi
-
-- Har bir hujjat mundarija bilan boshlanadi, havolalar GitHub anchor formatida.
-- Har bob `Amalda qo'llash` yoki `Arxitektor nazorat ro'yxati` ro'yxati bilan
-  tugaydi.
-- Mavzu takrorlanmaydi: boshqa hujjatga bob raqami bilan emas, mavzu nomi bilan
-  havola qilinadi.
+- Javob birinchi qatorida natija turadi, keyin tafsilot. Em-dash va en-dash
+  ishlatilmaydi.
 
 ## Struktura
 
@@ -27,14 +20,15 @@ Oltita hujjat, har biri `docs/<hujjat>/` papkasida, har bob alohida faylda:
   yangilanadi, aks holda tekshiruv xato beradi.
 - `dist/` - `tools/build_single.py` natijasi. Git da yo'q, qo'lda tahrir
   qilinmaydi.
-- `.claude/skills/` - sakkizta skill, `docs/` ga marshrutlash jadvallari.
+- `.claude/skills/` - `docs/` ga marshrutlovchi skilllar va `manguberdi`
+  orkestrator.
 
 `docs/` yagona haqiqat manbasi. Bitta fayllik variant kerak bo'lsa
 `python3 tools/build_single.py` ishga tushiriladi.
 
 ## Qidirish va o'qish
 
-Korpus ~2.1M token, eng katta bob ~68k, bitta bo'lim esa ~700. Shuning
+Korpus ~6.5 MB, eng katta bob ~200 KB, bitta bo'lim esa ~1.7 KB. Shuning
 uchun bob butunligicha emas, bo'lim darajasida o'qiladi.
 
 ```bash
@@ -56,12 +50,10 @@ emas, `find` bilan qidiring.
   to'siladi. Havolani qo'lda yozmang, `doc.sh path` tayyor anchor beradi.
 - Indeks `index/` da, hosila. Bob yangiroq bo'lsa `doc.sh` o'zi qayta
   yasaydi. Indeks grep qilinadi, kontekstga olinmaydi.
-- O'lchov: `eval_find.py` (qidiruv o'rni), `test_suggest.py` (taklif
-  chegaralari), `cost_report.py` (har navbatdagi kontekst).
 
 ## Orkestrator
 
-Katta ish uchun `/manguberdi` sessiyada bir marta chaqiriladi: u promptni
+Java/Spring ishi uchun `/manguberdi` sessiyada bir marta chaqiriladi: u promptni
 normallashtiradi, aktyor tanlaydi (`rejalashtiruvchi`, `arxitektor`,
 `test-muhandis`, `review`), ularni ketma-ket yurgizadi va oxirida
 memoryga yozadi. Qoidalar `.claude/skills/manguberdi/` da.
@@ -78,13 +70,15 @@ yaxshilamasa, u shunchaki pul va vaqt.
 | Qoida nima deydi | `tools/doc.sh show <hujjat> <raqam>` |
 | Diff to'g'rimi | `review` agenti, keyin maqsadli test |
 
-`docker up/run/build/pull` va bazaga ulanish `tools/guard.py` tomonidan
-to'siladi. Haqiqatan kerak bo'lsa buyruq oldiga `COST_OK=1` qo'yiladi va
-sababi aytiladi. `docker ps`, `docker logs` to'silmaydi.
+`docker up/run/build/pull/start` (compose bilan ham), bazaga ulanish va
+PowerShell `tools/guard.py` tomonidan to'siladi. Haqiqatan kerak bo'lsa
+buyruq oldiga `COST_OK=1` qo'yiladi va sababi aytiladi. `docker ps`,
+`docker logs` to'silmaydi.
 
-Og'ir o'qishni arzon modelga bering: `qidiruv` va `tahlil` (haiku) ko'p
-o'qib oz qaytaradi, `review` (sonnet) diffni qoidaga solishtiradi. Uzun
-chiqish ularning kontekstida qoladi. Qaror va yozish asosiy sessiyada.
+Og'ir o'qish `qidiruv` va `tahlil` (haiku) da, diffni `review` (sonnet)
+tekshiradi, kod va testni `arxitektor` va `test-muhandis` (sonnet) yozadi.
+Uzun chiqish ularning kontekstida qoladi. Asosiy sessiyada qaror, marshrut
+va hujjat tahriri.
 
 Boshqa asboblar:
 
@@ -96,69 +90,17 @@ Boshqa asboblar:
 - `check_code.py` - Java fayl yozilgandan keyin `PostToolUse` hook
   sifatida mexanik qoidalarni tekshiradi va `rules_for` chaqirilganini
   talab qiladi. Faqat yolg'on ishga tushishi nol bo'lgan tekshiruvlar.
-- `eval_skill.py` - zanjirning determinik qismini o'lchaydi: marshrut,
-  topilma va aniqlik.
-- `budget.py` - aktyor chaqiruvlarini sanaydi va uchinchisini to'sadi
-  (`PreToolUse` hook). Vazifa boshida `--yangi-vazifa "<nom>"`.
-- `handoff.py` - sessiya kontekstini transkriptdan o'lchaydi, to'lsa
-  yangi sessiya uchun tayyor prompt beradi (`--prompt`).
-- `usage.py` - kunlik token sarfi va qaysi aktyor sarflagani, dollarda.
-  `Stop` hook har navbat oxirida `.claude/usage/<oy>.json` ga yozadi.
+- `budget.py`, `handoff.py`, `usage.py` - aktyor budjeti, kontekst uzatish
+  va token sarfi. Batafsil `manguberdi` skillida.
 
-## Tekshiruv
+## Hujjat yoki asbob o'zgarsa
 
-Hujjat o'zgartirilgandan keyin:
-
-```bash
-python3 tools/check_docs.py
-```
-
-Tekshiradi: fayl hajmi, har bir havola va anchor, kirill harf, em-dash, kod
-fence juftligi, manifest mosligi, bob strukturasi, bob-yopish konvensiyasi,
-skilllardagi havolalar.
-Xatosiz o'tishi shart. CI ham shuni ishlatadi.
-
-Asbob o'zgartirilsa uning `tools/test_<nom>.py` si, oxirida `eval_skill.py`,
-`eval_find.py` va `cost_report.py`. CI hammasini `tools` ishida yurgizadi.
-`eval_find` pastki chegara bilan o'lchaydi: so'rovlar tasodifiy olinadi,
-100% talab qilsa har safar qizil berib e'tibordan qolardi.
-
-## Qattiq qoidalar
-
-1. **Fayl 900 KB dan oshmaydi.** GitHub 1 MB dan katta markdown ni render
-   qilmaydi. Bob o'sib ketsa ikkiga bo'linadi.
-2. **Havolani qo'lda hisoblamang** - `tools/check_docs.py` ishlatilsin.
-3. **Bob fayl shakli buzilmaydi**: metadata izohi, breadcrumb, H1, kontent,
-   navigatsiya footer.
-4. **Mavzular takrorlanmaydi.** Bir mavzu ikki hujjatda yozilmaydi, havola
-   qilinadi.
-
-## Pattern yozuvi shakli
-
-`docs/patterns/` dagi har yozuv to'rt qismdan iborat, tartibi o'zgarmaydi:
-`**Tavsif:**`, `**Spring'da qayerda uchraydi:**`, `**Qo'llanish keyslari:**`,
-`**Ehtiyot bo'ling:**`.
-
-## Ma'lum bo'shliq
-
-1007 patternning 528 tasida kod misoli bor, 479 tasida yo'q. 1-15
-bo'limlar tugatilgan, 16-30 bo'limlar qolgan.
-
-Pattern qo'shilsa yoki tahrirlansa, 5-15 qatorlik kod bloki qo'shiladi:
-Spring'dagi tayyor variantini yoki patternning eng kichik shaklini
-ko'rsatadigan misol. Til snippet'ga mos bo'lsin (`java`, `yaml`, `sql`,
-`json`), `java` deb yozib qo'yilmasin.
-
-Holatni ko'rish va ish qo'shish:
-
-```bash
-python3 tools/code_gap.py                 # hujjat bo'yicha qolgan son
-python3 tools/code_gap.py patterns 17 -v  # bo'lim ro'yxati, Spring qatori bilan
-python3 tools/add_code.py snippets.json   # bloklarni bo'lim oxiriga joylashtiradi
-```
-
-`add_code.py` kirishi: `{"patterns": {"17.2": "<kod>", ...}}`. Boshqa til
-kerak bo'lsa qiymat `{"lang": "yaml", "code": "..."}` ko'rinishida beriladi.
+`docs/` tahririda `CONTRIBUTING.md` amal qiladi: bob shakli, pattern yozuvi
+va kod misoli tartibi, 900 KB chegara, havolalar. Mavzu ikki hujjatda
+yozilmaydi, boshqa hujjatga bob raqami bilan emas, mavzu nomi bilan havola
+qilinadi. Keyin `python3 tools/check_docs.py` xatosiz o'tishi shart, CI ham
+shuni ishlatadi. Asbob o'zgarsa uning `tools/test_<nom>.py` si, keyin
+`eval_skill.py`, `eval_find.py` va `cost_report.py`.
 
 ## Memory
 
@@ -166,6 +108,6 @@ Bu proyektning memoryasi `memory/claude-genius/` papkasida, barcha proyektlarga
 tegishli bilim `memory/umumiy/` da. Ish boshida o'sha ikki `MEMORY.md` indeksi
 o'qiladi, kerakli topic fayl indeksga qarab o'qiladi.
 
-Memoryga yozish yoki uni tozalash kerak bo'lganda `memory-protocol.md` o'qiladi:
-darvoza, marshrut jadvali va saqlash ketma-ketligi o'sha faylda. Ombor qoidasi
-`memory/README.md` da. Bu yerda ular takrorlanmaydi.
+Memoryga yozish yoki uni tozalash kerak bo'lganda `memory-protocol.md` bo'lim
+bo'yicha o'qiladi: darvoza, marshrut jadvali va saqlash ketma-ketligi o'sha
+faylda. Ombor qoidasi `memory/README.md` da. Bu yerda ular takrorlanmaydi.

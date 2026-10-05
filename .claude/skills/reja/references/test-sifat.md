@@ -13,12 +13,12 @@ xotirjamlik.
 | O'zgarish | Daraja | Joy | Ma'lumot | Oracle |
 |---|---|---|---|---|
 | `PaymentHandler` strategiya registri | unit | `PaymentHandlerRegistryTest` | har turga bitta stub handler | noma'lum tur -> `IllegalArgumentException`; `CARD` -> `CardHandler` |
-| Outbox yozuvi tranzaksiyada | integratsion (`@DataJpaTest`) | `OutboxRepositoryIT` | buyruq + rollback holati | commit -> 1 qator; rollback -> 0 qator |
+| Outbox yozuvi tranzaksiyada | integratsion (`@SpringBootTest` + Testcontainers, test metodida `@Transactional` yo'q) | `OutboxWriteIT` | buyruq + outbox yozilgandan keyin majburiy xato | muvaffaqiyat -> `orders` va `outbox` da 1 tadan qator; xato -> ikkalasida 0 qator (`JdbcTemplate` bilan tashqaridan sanaladi) |
 | Publisher Kafka ga jo'natadi | integratsion (Testcontainers) | `OutboxPublisherIT` | 2 jo'natilmagan qator | ikkisi ham topic'da; `sent_at` to'ldirilgan |
 | Takroriy xabar | integratsion | `OrderConsumerIT` | bir xil `request_id` bilan 2 xabar | DB da 1 buyruq; ikkinchisi e'tiborsiz |
-| Tashqi servis timeout | unit + WireMock | `PaymentClientTest` | 5 s kechikadigan stub | 3 s da `TimeoutException`, retry 2 marta |
+| Tashqi servis timeout | integratsion + WireMock | `PaymentClientIT` | read timeoutdan uzun `withFixedDelay` stub; test profilida timeout 200 ms, backoff 0 | `TimeoutException`; WireMock 3 so'rovni ko'rgan (1 + 2 retry) |
 | Yangi endpoint kontrakti | slice (`@WebMvcTest`) | `OrderControllerTest` | noto'g'ri body | 400 + xato formati o'zgarmagan |
-| Migratsiya | migratsiya testi | `MigrationIT` | bo'sh va to'liq baza | yuqoriga va orqaga qaytish ishlaydi |
+| Migratsiya | migratsiya testi | `MigrationIT` | bo'sh va to'liq baza | N-1 versiyagacha ko'tarilib ma'lumot qo'yilgan bazada yangi migratsiya o'tadi; N-1 kod yangi sxemada ishlaydi |
 
 ## 5.2 Daraja tanlash
 
@@ -33,6 +33,7 @@ yozilmaydi. Spring kontekstini ko'tarish - test sekinligining asosiy manbasi
 | Repository: so'rov, mapping, indeks ishlashi | slice + real DB | `@DataJpaTest` + Testcontainers | testlash: `Integratsion test`, `Testcontainers bilan real infratuzilmada test` |
 | Tranzaksiya chegarasi, rollback, lock | integratsion | `@SpringBootTest` + Testcontainers | testlash: `Xavfsizlik, tranzaksiya, asinxron va konkurentlik testlari` |
 | Broker bilan oqim (producer/consumer) | integratsion | Testcontainers Kafka | testlash: `Testcontainers bilan real infratuzilmada test` |
+| Migratsiya: N-1 dan ko'tarilish, eski kod yangi sxemada | migratsiya testi | Flyway + Testcontainers | testlash: `Ma'lumotlar bazasi migratsiyasini testlash` |
 | Tashqi HTTP servis xulqi (timeout, 500, sekinlik) | unit/integratsion | WireMock | testlash: `Tashqi servislarni taqlid qilish va contract testing` |
 | Tashqi kontrakt buzilmasligi | contract test | Spring Cloud Contract / Pact | testlash: `Tashqi servislarni taqlid qilish va contract testing`; patternlar: `Contract Testing` |
 | Foydalanuvchi oqimi | E2E (kam sonda) | REST-assured / Playwright | testlash: `End-to-end va UI testlar` |
@@ -52,7 +53,7 @@ qator bo'lib qoladi.
 ## 5.3 Test ma'lumoti
 
 - Qurilish takrorlanadigan bo'lsa - Test Data Builder (patternlar: `Test Data Builder`) yoki
-  Object Mother (23.6). Rejada builder qayerda turishi aytiladi.
+  Object Mother (patternlar: `Object Mother`). Rejada builder qayerda turishi aytiladi.
 - Umumiy mutable fixture ishlatilmaydi: test tartibiga bog'liqlik paydo bo'ladi
   (testlash: `Flaky testlar, test qarzi va test kodini saqlash`).
 - Real ma'lumot nusxasi ishlatilsa, shaxsiy ma'lumot maskalanadi (testlash: `Test ma'lumotlarini boshqarish`).
@@ -136,7 +137,11 @@ Reja oxiridagi DoD ga shular kiradi (testlash: `Shablonlar, checklistlar va ma'l
       qizil bo'lganini ko'rsatish)
 - [ ] `mvn verify` (yoki loyiha buyrug'i) lokalda yashil
 - [ ] Quality gate o'tdi (new code coverage, duplication, complexity)
-- [ ] Migratsiya yuqoriga va orqaga sinab ko'rilgan
+- [ ] `MigrationIT` migratsiyani N-1 holatidagi to'liq bazada o'tkazadi;
+      qaytarib bo'lmaydigan qadam (ustun yoki jadval o'chirish, tur
+      o'zgartirish) alohida relizda va rejaning Rollback bandida forward fix
+      bilan yozilgan (arxitektor:
+      `Orqaga qaytish (rollback) rejasi: sxemani qaytarish nega qiyin`)
 - [ ] Yangi konfiguratsiya kalitlari hamma muhitga qo'shilgan
 - [ ] Log/metrika qo'shilgan va dashboard/alert yangilangan
 - [ ] ADR yozilgan va reja fayliga havola qilingan

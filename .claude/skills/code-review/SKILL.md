@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Review a diff or pull request in a Java/Spring/PostgreSQL project - read the diff, find the defect, check the decision, and write the comment. Covers diff-reading mechanics, what machines catch before a human, architecture and dependency direction, clean-code and SOLID checks on a diff, missing or misapplied patterns, smells, domain invariants, Java language defects, concurrency and memory, Spring beans/proxies/transactions/web layer/config/outbound calls, JPA and SQL plans, migrations, isolation and races, security review (injection, auth, SSRF, secrets, supply chain), test review, API compatibility, performance and observability from a diff, review process and metrics, and reviewing AI-written code. Use when asked to review a PR or diff, to self-review before opening one, to decide whether to block or approve, or to phrase a review comment.
+description: Review a diff or pull request in a Java/Spring/PostgreSQL project - find the defect, decide block or approve, and word the comment with the rule behind it. Covers design and dependency direction, clean code and patterns on a diff, Java and concurrency defects, Spring proxies and transactions, JPA/SQL, migrations and races, security, tests, API compatibility, performance, review process and AI-written code. Use when asked to review a PR or diff ("PR ni ko'rib chiq", "diffni tekshir"), to self-review before opening one, or to phrase a review comment.
 ---
 
 # Kod review
@@ -16,17 +16,24 @@ Review tartibi:
 1. **Niyat** - bu o'zgarish nimani hal qilmoqchi? PR tavsifi va kod bir
    narsani aytyaptimi?
 2. **Mashina topadiganini qidirmang** - avval statik tahlil va test nima
-   deganini ko'ring (`docs/code-review/05-...`).
+   deganini ko'ring (`tools/doc.sh show code-review 5.2`).
 3. **Invariant** - diff qanday qoidani buzishi mumkin?
 4. **Xavf yuzasi** - qayerga tegdi: pul, autentifikatsiya, migratsiya,
    tashqi chaqiruv? Shu joylarda sinchkovlik oshadi.
 5. **To'xtatish yoki o'tkazish** - blocker va nit ni aralashtirmang.
 
 Review izohi kodga emas, qoidaga ishora qilishi kerak: nima buzilgan, nega
-muhim, qanday tuzatish mumkin. Tayyor iboralar oxirgi bobda
-(`docs/code-review/44-shablonlar-checklistlar-va-reviewer.md`).
+muhim, qanday tuzatish mumkin. Tayyor iboralar: `tools/doc.sh show code-review 44.3`,
+xulosa shablonlari `44.4`, izoh prefikslari (blocker, suggest, nit) `4.9`.
+
+`/manguberdi` shu sessiyada chaqirilgan bo'lsa review `review` aktyoriga
+beriladi va yuqoridagi tartib asosiy sessiyada alohida yurgizilmaydi; bu
+skill o'shanda faqat bob jadvali.
 
 ## Vazifa - bob jadvali
+
+Jadval bobni topadi. Bobni butun o'qimang: `tools/doc.sh outline code-review <bob>`
+bilan bo'limni tanlab, `tools/doc.sh show code-review <bob.bo'lim>` bilan o'qing.
 
 | Vazifa | Bob fayli |
 |---|---|
@@ -48,10 +55,11 @@ muhim, qanday tuzatish mumkin. Tayyor iboralar oxirgi bobda
 | Tashqi integratsiya: timeout, retry, broker | `docs/code-review/22-tashqi-integratsiya-review-timeout-retry.md` |
 | JPA/Hibernate, SQL va indeks, migratsiya | `docs/code-review/23-jpa-va-hibernate-review.md`, `docs/code-review/24-sql-sorov-rejasi-va-indeks-review.md`, `docs/code-review/25-migratsiya-review-qulf-backfill-orqaga.md` |
 | Ma'lumot to'g'riligi, izolyatsiya va poyga holatlari | `docs/code-review/26-malumot-togriligi-va-turlar-review.md`, `docs/code-review/27-izolyatsiya-poyga-holatlari-va-xabar.md` |
-| **Xavfsizlik review** | 28-33 boblar: metodika, injection, authn/authz, SSRF va deserializatsiya, secret va kripto, supply chain |
-| Test to'liqligi, test sifati, test turi | 34-36 boblar |
+| **Xavfsizlik review**: metodika, injection, authn/authz | `docs/code-review/28-xavfsizlik-review-metodikasi.md`, `docs/code-review/29-injection-review-sql-va-boshqalar.md`, `docs/code-review/30-autentifikatsiya-va-avtorizatsiya-review.md` |
+| SSRF, deserializatsiya, fayl; secret va kripto; supply chain | `docs/code-review/31-kirish-va-chiqish-xavfsizligi-ssrf.md`, `docs/code-review/32-secret-maxfiy-malumot-va-kriptografiya.md`, `docs/code-review/33-bogliqlik-va-supply-chain-review.md` |
+| Test to'liqligi, test sifati, test turi | `docs/code-review/34-test-toliqligini-review-qilish.md`, `docs/code-review/35-test-sifati-review-assertion-izolyatsiya.md`, `docs/code-review/36-test-turi-va-integratsion-test-review.md` |
 | API moslik, performance, observability diffdan | `docs/code-review/37-api-moslik-va-breaking-change-review.md`, `docs/code-review/38-performance-review-diffdan.md`, `docs/code-review/39-observability-review.md` |
-| Jarayon, madaniyat, metrikalar | 40-42 boblar |
+| Jarayon, madaniyat va kelishmovchilik, metrikalar | `docs/code-review/40-review-jarayonini-qurish.md`, `docs/code-review/41-review-madaniyati-til-va-kelishmovchilik.md`, `docs/code-review/42-review-metrikalari.md` |
 | AI yozgan kodni review qilish | `docs/code-review/43-ai-yozgan-kodni-review-qilish-va-ai-bilan.md` |
 | Shablonlar, checklistlar, reviewer yetukligi | `docs/code-review/44-shablonlar-checklistlar-va-reviewer.md` |
 
@@ -69,8 +77,14 @@ Diffni o'qishdan oldin mexanik qismni mashinaga bering, ko'z faqat
 qolganiga qarasin:
 
 ```bash
-python3 tools/rules_for.py <o'zgargan fayllar>  # qaysi boblar tegishli
-python3 tools/check_code.py <fayl>              # bo'sh catch, keng catch,
-                                                # System.out, BigDecimal(double)
-tools/doc.sh checklist code-review <bob>        # yozilgan tekshiruv punktlari
+python3 tools/rules_for.py --diff [--cached]    # yoki <o'zgargan fayllar>; boblar, punktlar va check_code topilmalari
+python3 tools/schema_from_entities.py <src> --only-findings  # entity o'zgargan bo'lsa
+tools/doc.sh outline code-review <bob>          # bobdagi bo'limlar
+tools/doc.sh show code-review <bob.bo'lim>      # butun bob emas, faqat o'sha bo'lim
+tools/doc.sh checklist code-review <bob>        # qolgan tekshiruv punktlari
 ```
+
+`check_code.py` alohida yurgizilmaydi: uning topilmalari Sonar kaliti bilan
+`rules_for` chiqishidagi `# Mashina topgani` bo'limida turadi. Ro'yxat
+kesilgan bo'lsa (sarlavhadagi son ko'rsatilganidan ko'p), qolganini
+`python3 tools/check_code.py <fayl>` bilan fayl bo'yicha oling.

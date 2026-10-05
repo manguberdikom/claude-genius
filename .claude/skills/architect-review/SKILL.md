@@ -14,15 +14,20 @@ bilimdan qanday qaror chiqadi**. Ko'rik berganda ikkinchisini tashlab
 ketmang - mexanikani aytib, qarorni aytmaslik yarim javob.
 
 Qaror tavsiya qilganda:
-1. Muammoni va kontekstni aniqlang (`docs/architect/02-...`).
+1. Muammoni va kontekstni aniqlang (`architect 2`: o'lchanadigan talab,
+   hajm va o'sish taxmini).
 2. Ikkita-uchta variantni taqqoslang, har birining narxi bilan.
-3. Raqam bilan tekshiring - napkin math (`docs/architect/08-...`).
-   "Tezroq bo'ladi" o'lchovsiz gap.
+3. Raqam bilan tekshiring - napkin math (`architect 8`: Little qonuni,
+   pool kattaligi). "Tezroq bo'ladi" o'lchovsiz gap.
 4. Nosozlik rejimini ayting: bu nima buzilganda qanday o'ladi
-   (`docs/architect/07-...`).
-5. Qaror muhim bo'lsa, ADR yozing (`docs/architect/03-...`).
+   (`architect 7`: nosozlik turlari, ssenariylar jadvali).
+5. Qaror muhim bo'lsa, ADR yozing (`architect 3`: ADR tuzilishi).
 
 ## Mavzu - bob jadvali
+
+Fayl ustuni bob qayerdaligini ko'rsatadi. Bob butunligicha o'qilmaydi
+(~8k token): avval `tools/doc.sh outline architect <bob>`, keyin kerakli
+bo'lim `tools/doc.sh show architect <bob.bo'lim>` bilan (~700 token).
 
 ### I. Fikrlash va qarorlar
 | Mavzu | Fayl |
@@ -86,7 +91,12 @@ Bob jadvali mavzuni topadi, bu asboblar esa ish oldidan faktni beradi:
 python3 tools/rules_for.py <fayl>...        # tegilayotgan faylga qaysi boblar
 python3 tools/schema_from_entities.py <src> # baza tuzilishi, ulanmasdan
 tools/doc.sh find -f "<so'rov>"             # matn ichidan qidirish
+tools/doc.sh outline architect <bob>        # bobdagi bo'limlar
+tools/doc.sh show architect <bob.bo'lim>    # faqat o'sha bo'lim
+tools/doc.sh checklist architect <bob>      # tekshiruv punktlari
 ```
 
-`docker up/run/build` va bazaga ulanish `tools/guard.py` tomonidan
-to'siladi: sxemani entity sinflari, sababni esa chiqish aytadi.
+Konteyner ko'tarish (`docker run/build/pull/start`, `docker compose up`) va
+bazaga ulanish `tools/guard.py` tomonidan to'siladi: sxemani entity
+sinflari, sababni esa chiqish aytadi. Haqiqatan kerak bo'lsa buyruq oldiga
+`COST_OK=1` qo'yiladi va sababi aytiladi.

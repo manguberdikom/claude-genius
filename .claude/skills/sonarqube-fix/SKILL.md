@@ -26,6 +26,9 @@ Sonar issue'si - bug hisoboti, uni yopish usuli emas. Tartib:
 
 ## Vazifa - bob jadvali
 
+Jadval bobni topadi, fayl butunligicha o'qilmaydi: `rule` yoki `outline`,
+keyin `show` (Asboblar).
+
 | Vazifa | Bob fayli |
 |---|---|
 | Tahlil qanday ishlaydi, scanner nima yuboradi | `docs/sonarqube/01-sonarqube-arxitekturasi-va-tahlil-oqimi.md`, `docs/sonarqube/02-scanner-nimani-yigadi-va-qanday-yuboradi.md` |
@@ -45,9 +48,10 @@ Sonar issue'si - bug hisoboti, uni yopish usuli emas. Tartib:
 | CI/CD ga ulash, PR decoration, blokirovka | `docs/sonarqube/21-ci-cd-ga-ulash-pr-decoration-va-blokirovka.md` |
 | Lokal tekshirish, IDE, sonar-scanner | `docs/sonarqube/22-lokal-tekshirish-ide-sonar-scanner-va-tez.md` |
 | Legacy loyihani 100% ga olib chiqish rejasi | `docs/sonarqube/23-legacy-loyihani-100-ga-olib-chiqish-rejasi.md` |
-| **Xato katalogi** - qoida kalitidan yechimga | 25-30 boblar (quyida) |
-| Server o'rnatish, yangilash, huquqlar, Web API | 32-36 boblar |
+| **Xato katalogi** - qoida kalitidan yechimga | quyidagi `Xato katalogi` jadvali |
+| Server o'rnatish, nashrlar, yangilash, huquqlar va token, Web API | `docs/sonarqube/32-sonarqube-nashrlari-va-ularning-farqi.md`, `docs/sonarqube/33-serverni-ornatish-sozlash-va-resurs.md`, `docs/sonarqube/34-yangilash-lta-migratsiyasi-zaxira-va.md`, `docs/sonarqube/35-foydalanuvchi-guruh-huquqlar-token-va-sso.md`, `docs/sonarqube/36-web-api-va-avtomatlashtirish.md` |
 | Taint analysis, ko'p tilli loyiha, bog'liqlik zaifliklari | `docs/sonarqube/37-taint-analysis-mexanikasi-source-sink.md`, `docs/sonarqube/38-kop-tilli-loyiha-sql-xml-yaml-docker.md`, `docs/sonarqube/39-bogliqlik-zaifliklari-va-litsenziya.md` |
+| Sonar yoki SpotBugs/PMD/Checkstyle/Error Prone/ArchUnit: qaysi vosita qachon, qaysi biri bloklaydi, pipeline tartibi | `docs/sonarqube/40-sonar-va-boshqa-vositalar-qachon-qaysi-biri.md` |
 | Lombok, record, generatsiya qilingan kod | `docs/sonarqube/41-lombok-record-va-generatsiya-qilingan-kod.md` |
 | Tahlil ishlamadi, natija yo'q, 0 fayl indekslandi | `docs/sonarqube/42-diagnostika-tahlil-ishlamaganda-nima-qilish.md` |
 
@@ -67,11 +71,18 @@ Issue toifasiga qarab:
 
 ## Asboblar
 
-Kalitdan bo'limga to'g'ridan-to'g'ri o'tish mumkin, katalogni varaqlash
-shart emas:
-
 ```bash
-tools/doc.sh rule java:S3776        # shu kalitni izohlagan bo'lim
-python3 tools/check_code.py <fayl>  # S108, S2221, S106, S1148, S2111, S2925
+python3 tools/rules_for.py <fayl>...  # Java tuzatishdan OLDIN majburiy: boblar, punktlar, avvalgi xatolar
+tools/doc.sh rule java:S3776          # shu kalit tilga olingan bo'limlar
+tools/doc.sh outline sonarqube <bob>  # bobdagi bo'limlar ro'yxati
+tools/doc.sh show sonarqube <raqam>   # faqat o'sha bo'lim, butun bob emas
+python3 tools/check_code.py <fayl>    # S108, S2221, S106, S1148, S2111, S2925
 tools/doc.sh checklist sonarqube <bob>
 ```
+
+`doc.sh rule` kalit tilga olingan bo'limlarni ko'zga tashlanish bo'yicha
+beradi. Ba'zi katalog boblari (masalan 25 va 27) kalitni faqat bob
+kirishidagi jadvalda nomlaydi, tuzatish turgan bo'limda emas. Ro'yxatda
+raqamsiz katalog bobi chiqsa (masalan `sonarqube 25`), butun bobni `show`
+qilmang: `tools/doc.sh outline sonarqube 25` dan jadval qatoriga mos
+bo'limni tanlab, o'shani `show` bilan oching.

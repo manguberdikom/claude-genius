@@ -1,6 +1,6 @@
 <!-- doc: patterns | chapter: 11 | part:  -->
 
-[Java Spring arxitektori bilishi kerak bo'lgan barcha dizayn patternlar](../../README.md) / [Dizayn patternlar](README.md)
+[Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
 # 11. Keshlash patternlari (Caching Patterns)
 
@@ -453,14 +453,14 @@ String key = "product:%d:v%d".formatted(id, product.version());
 
 **Spring'da qayerda uchraydi:** SpEL bilan aniq kalit: `@Cacheable(value = "report", key = "#tenantId + ':' + #from + ':' + #to")`; umumiy qoida uchun `KeyGenerator` bean'i (`SimpleKeyGenerator` default bo'lib, bir nechta argumentni `SimpleKey`ga o'raydi va `toString()` barqarorligiga tayanadi); Redis uchun `CacheKeyPrefix` va `RedisCacheConfiguration.computePrefixWith(...)`. Spring Security konteksti kalitga `@Cacheable(key = "#root.methodName + ':' + authentication.name")` yoki `SecurityContextHolder` orqali kiritiladi. HTTP darajasida `Vary` header bilan bir xil g'oya CDN tomonida takrorlanadi.
 
-**Ehtiyot bo'ling:** Default `SimpleKeyGenerator` argument sinflarining `equals`/`hashCode`iga tayanadi - DTO'da ularni yozmagan bo'lsangiz kesh deyarli hech qachon hit bermaydi yoki kutilmagan to'qnashuv beradi. Kalitga tenant yoki foydalanuvchi scope'ini qo'shishni unutish - eng ko'p uchraydigan va eng xavfli kesh bug'i (ma'lumot oqishi); mutable obyektni kalit sifatida ishlatish ham yozuvni "yo'qotadi".
-
 **Qo'llanish keyslari:**
 - Multi-tenant SaaS'da har bir kalitga `tenantId` prefiksini majburiy kiritish.
 - Lokalizatsiyalangan kontentni `locale` o'lchami bilan ajratib keshlash.
 - API `v2`/`v3` javob shakllarini kalitdagi versiya segmenti bilan izolyatsiya qilish.
 - Qidiruv filtri kombinatsiyasini normalizatsiya qilib (tartiblangan parametrlar) bitta kalitga keltirish.
 - Rolga bog'liq ko'rinishlarni `role` segmenti bilan ajratib, permission oqishini oldini olish.
+
+**Ehtiyot bo'ling:** Default `SimpleKeyGenerator` argument sinflarining `equals`/`hashCode`iga tayanadi - DTO'da ularni yozmagan bo'lsangiz kesh deyarli hech qachon hit bermaydi yoki kutilmagan to'qnashuv beradi. Kalitga tenant yoki foydalanuvchi scope'ini qo'shishni unutish - eng ko'p uchraydigan va eng xavfli kesh bug'i (ma'lumot oqishi); mutable obyektni kalit sifatida ishlatish ham yozuvni "yo'qotadi".
 
 ```java
 // Kalit tarkibi: kim, nima, qanday ko'rinishda
@@ -519,7 +519,7 @@ ResponseEntity<ProductDto> get(@PathVariable long id) {
 - Grafdagi takrorlanuvchi yo'l hisob-kitobini (shortest path, dependency resolution) rekursiv memoizatsiya bilan tezlashtirish.
 - Jackson `ObjectWriter` yoki `JavaType` instance'larini tip bo'yicha keshlash.
 
-**Ehtiyot bo'ling:** Chegarasiz `HashMap` bilan memoizatsiya - klassik xotira oqishi (memory leak), ayniqsa kalit foydalanuvchi kiritmasidan kelsa; har doim `maximumSize` yoki weak/soft referens ishlating. Natija deterministik bo'lmasa (vaqt, random, tashqi holatga bog'liq) memoizatsiya nozik, takrorlanmaydigan bug'lar keltiradi.
+**Ehtiyot bo'ling:** Chegarasiz `HashMap` bilan memoizatsiya - klassik xotira oqishi (memory leak), ayniqsa kalit foydalanuvchi kiritmasidan kelsa; har doim `maximumSize` yoki weak/soft referens ishlating. Natija deterministik bo'lmasa (vaqt, random, tashqi holatga bog'liq) memoizatsiya nozik, takrorlanmaydigan bug'lar keltiradi. Rekursiv memoizatsiyada `computeIfAbsent` ichidan yana shu xaritaga yozilmaydi: `ConcurrentHashMap` `IllegalStateException` beradi yoki osilib qoladi, `HashMap` esa `ConcurrentModificationException` tashlaydi, shuning uchun bunday joyda `get` va `put` alohida chaqiriladi.
 
 ```java
 // Memoizatsiya: bir xil argument uchun natija qayta hisoblanmaydi

@@ -9,6 +9,9 @@ natija git tarixiga tushadi. Sinovlar vaqtinchalik faylda ishlaydi,
 docs/ ga tegmaydi.
 """
 
+import contextlib
+import io
+import json
 import os
 import shutil
 import sys
@@ -57,6 +60,29 @@ def write(tmp, text=CHAPTER):
 def lines_of(path):
     with open(path, encoding="utf-8") as handle:
         return handle.read().split("\n")
+
+
+def run_main(tmp, data):
+    """main() ni soxta omborda yurgizadi: ROOT vaqtincha shu yerga buriladi.
+
+    (chiqish kodi, stderr, bob yo'li) qaytaradi. Haqiqiy docs/ ga tegmaydi.
+    """
+    root = os.path.join(tmp, "root")
+    os.makedirs(os.path.join(root, "docs", "sinov"), exist_ok=True)
+    with open(os.path.join(root, "docs", "manifest.json"), "w", encoding="utf-8") as handle:
+        json.dump({"sinov": {"chapters": [{"num": 17, "file": "17-sinov.md"}]}}, handle)
+    path = write(os.path.join(root, "docs", "sinov"))
+    spec = os.path.join(tmp, "snippets.json")
+    with open(spec, "w", encoding="utf-8") as handle:
+        json.dump(data, handle)
+    old, add_code.ROOT = add_code.ROOT, root
+    err = io.StringIO()
+    try:
+        with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+            code = add_code.main([spec])
+    finally:
+        add_code.ROOT = old
+    return code, err.getvalue(), path
 
 
 def case_oddiy_boshqa(tmp):
@@ -117,6 +143,30 @@ def case_footersiz_fayl(tmp):
     return added == {"17.3"} and "int v = 6;" in lines_of(path)
 
 
+def case_skipped_toplami(tmp):
+    """Kodi bor bo'lim skipped ga tushadi, yo'q raqam tushmaydi."""
+    path = write(tmp)
+    skipped = set()
+    added = add_code.insert(path, {"17.2": "int z = 3;", "17.9": "int q = 4;"}, skipped)
+    return added == set() and skipped == {"17.2"}
+
+
+def case_main_ogohlantirishlar(tmp):
+    """Kodi bor va mavjud bo'lmagan bo'lim alohida xabar oladi."""
+    code, err, path = run_main(tmp, {"sinov": {
+        "17.1": "int x = 1;", "17.2": "int z = 3;", "17.9": "int q = 4;"}})
+    return (code == 0 and "int x = 1;" in lines_of(path)
+            and "kod allaqachon bor -> ['17.2']" in err
+            and "bunday bo'lim yo'q -> ['17.9']" in err)
+
+
+def case_nomalum_hujjat(tmp):
+    """Noma'lum hujjat kaliti: 2 bilan chiqadi, to'g'ri kalit ham yozilmaydi."""
+    code, err, path = run_main(tmp, {"sinov": {"17.1": "int x = 1;"},
+                                     "sinovv": {"1.1": "int y = 2;"}})
+    return code == 2 and "sinovv" in err and "int x = 1;" not in lines_of(path)
+
+
 CASES = [
     ("o'rtadagi bo'limga qo'shadi", case_oddiy_boshqa),
     ("oxirgi bo'lim: footerdan oldin", case_footerdan_oldin),
@@ -125,6 +175,9 @@ CASES = [
     ("boshqa til fence'i", case_boshqa_til),
     ("fence ichidagi sarlavha sanalmaydi", case_fence_ichidagi_sarlavha),
     ("footersiz fayl", case_footersiz_fayl),
+    ("kodi bor bo'lim skipped ga tushadi", case_skipped_toplami),
+    ("main: ikki ogohlantirish alohida", case_main_ogohlantirishlar),
+    ("noma'lum hujjat: 2, hech narsa yozilmaydi", case_nomalum_hujjat),
 ]
 
 

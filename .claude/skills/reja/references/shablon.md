@@ -8,9 +8,9 @@ o'qiydigan joyda bo'lishi shart.
 
 | Hajm | Qachon | Majburiy bo'limlar |
 |---|---|---|
-| **S** | bitta modul, < 5 fayl, sxema o'zgarmaydi, yangi dependency yo'q | 1, 2, 4, 7, 8, 9, 14 |
-| **M** | bir nechta modul yoki sxema o'zgaradi yoki yangi tashqi chaqiruv | 1-9, 11, 13, 14 |
-| **L** | chegara o'zgaradi, migratsiya, yangi infratuzilma, ko'p relizli ish | hammasi (1-15) |
+| **S** | bitta modul, < 5 fayl, jadval tuzilishi o'zgarmaydi (indeks qo'shish mumkin), tashqi kontrakt buzilmaydi, yangi dependency yo'q | 1, 2, 3, 4, 7, 8, 9, 14, 16 |
+| **M** | bir nechta modul yoki jadval tuzilishi o'zgaradi yoki yangi tashqi chaqiruv | 1-9, 11, 13, 14, 16 |
+| **L** | chegara o'zgaradi, migratsiya, yangi infratuzilma, ko'p relizli ish | hammasi (1-16) |
 
 Bo'limni bo'sh qoldirish o'rniga olib tashlash afzal. Olib tashlangan bo'lim
 sababini kirishda bir qatorda aytish kerak ("sxema o'zgarmaydi - 12-bo'lim yo'q").
@@ -24,7 +24,7 @@ sababini kirishda bir qatorda aytish kerak ("sxema o'zgarmaydi - 12-bo'lim yo'q"
 |---|---|
 | **Maqsad** | <bitta jumla, o'lchanadigan natija> |
 | **Hajm** | S / M / L |
-| **Vazifa turi** | yangi funksiya / refaktoring / bug / migratsiya / performance / integratsiya / xavfsizlik |
+| **Vazifa turi** | yangi funksiya / refaktoring / bug / migratsiya / performance / integratsiya / xavfsizlik / test qarzi |
 | **Sana** | YYYY-MM-DD |
 | **Holat** | qoralama / kelishilgan / bajarilmoqda |
 | **Taxminiy ish** | <qadamlar soni va qo'pol baho> |
@@ -56,7 +56,7 @@ Nima uchun bu ish qilinadi, hozir nima og'riyapti (bir-ikki abzats, har da'vo
 
 | Joy | Simptom | Nega muhim | Qo'llanmadagi mavzu |
 |---|---|---|---|
-| `X.java:120-180` | | | patternlar: `God Object` |
+| `X.java:120-180` | | | `patterns 25.1 (God Object)` |
 
 Bog'liqlik eskizi (buzilgan yo'nalish `!` bilan):
 
@@ -91,7 +91,7 @@ turishi aytiladi.
 
 | Joy | Hozir | Pattern | Nega | Narxi | Qo'llanmada qidirish |
 |---|---|---|---|---|---|
-| `OrderService.java:142-198` | uch joyda bir xil `switch` | Strategy + registry | yangi tur mavjud kodga tegmaydi | +1 interfeys, +3 sinf | `Strategy`, `Strategy Registry via Map<String, Bean>` |
+| `OrderService.java:142-198` | uch joyda bir xil `switch` | Strategy + registry | yangi tur mavjud kodga tegmaydi | +1 interfeys, +3 sinf | `patterns 8.21 (Strategy Registry via Map<String, Bean>)` |
 
 Tekshirilgan anti-patternlar: <nomlari va nega tushmaydi>.
 
@@ -110,7 +110,7 @@ Har qadam mustaqil tekshiriladi va loyihani yashil qoldiradi.
 
 **Test.** <daraja, fayl, oracle>
 
-**Tekshirish.** `<buyruq>` -> `<kutilgan natija>`
+**Qabul mezoni.** `<buyruq>` -> `<kutilgan natija>`
 
 ### 2-qadam. ...
 
@@ -129,7 +129,7 @@ Test qiyin joylar va ularning yechimi:
 | Shart | Talab | Reja uchun ma'nosi |
 |---|---|---|
 
-Xavfdagi Sonar qoidalari: <o'zgarish turiga qarab, sonarqube bo'lim raqami bilan>.
+Xavfdagi Sonar qoidalari: <o'zgarish turiga qarab, `sonarqube <raqam> (<mavzu>)` shaklida>.
 
 Exclusion qo'shilsa: qaysi fayl, nega halol.
 
@@ -166,12 +166,12 @@ Exclusion qo'shilsa: qaysi fayl, nega halol.
 
 - Kod: `fayl:qator` ro'yxati
 - Config: `pom.xml`, `application.yml:22`, `sonar-project.properties:12`
-- Qo'llanmalar (mavzu nomi bilan):
-  - patternlar: `Strategy`, `Strategy Registry via Map<String, Bean>`, `Transactional Outbox`
-  - arxitektor: `Spring tranzaksiyalari va ularning chegaralari`
-  - testlash: `Testcontainers bilan real infratuzilmada test`
-  - sonarqube: `Coverage qanday o'lchanadi`
-  - review: `Dizayn pattern review II: noto'g'ri va ortiqcha qo'llangan pattern`
+- Qo'llanmalar (`<hujjat> <raqam> (<mavzu>)` shaklida):
+  - `patterns 8.21 (Strategy Registry via Map<String, Bean>)`, `patterns 10.14 (Transactional Outbox)`
+  - `architect 19 (Spring tranzaksiyalari va ularning chegaralari)`
+  - `testing 8 (Testcontainers bilan real infratuzilmada test)`
+  - `sonarqube 9 (Coverage qanday o'lchanadi)`
+  - `code-review 11 (Dizayn pattern review II: noto'g'ri va ortiqcha qo'llangan pattern)`
 - Hujjatlar: `spec.pdf` s.14, 22; `prompt-design.pdf` s.3-7
 - Memory: `CLAUDE.md` (Lombok taqiqi), `memory/<proyekt-slug>/MEMORY.md`, `docs/adr/0004-*.md`
 ````
@@ -179,13 +179,16 @@ Exclusion qo'shilsa: qaysi fayl, nega halol.
 ## To'ldirilgan mikro-namuna (S hajm)
 
 ````markdown
-# Reja: buyruq ro'yxatini keyset pagination ga o'tkazish
+# Reja: buyruq ro'yxatiga keyset pagination qo'shish
 
 | | |
 |---|---|
-| **Maqsad** | `/api/orders` p99 1.8 s -> 300 ms (10k+ offset holatida) |
+| **Maqsad** | `/api/orders` chuqur sahifa (10k+ qator) p99 1.8 s -> 300 ms, `cursor` bilan |
 | **Hajm** | S |
 | **Vazifa turi** | performance |
+
+S hajm: 5, 6, 10-13 bo'limlar yo'q - jadval tuzilishi va kontrakt o'zgarmaydi,
+indeks 1-qadamda.
 
 ## 1. Maqsad va kontekst
 `OrderController.java:38` `PageRequest.of(page, size)` bilan ishlaydi; 50k
@@ -193,18 +196,25 @@ offsetda PostgreSQL 50k qatorni tashlab o'tadi (`EXPLAIN` da
 `Rows Removed by Offset`). Kunlik 4k so'rovning ~12% i 10k dan katta offset.
 
 ## 2. Qamrov
-Kiradi: `GET /api/orders` ro'yxati. Kirmaydi: boshqa endpointlar, UI o'zgarishi.
+Kiradi: `GET /api/orders` ro'yxati. Kirmaydi: boshqa endpointlar, UI ni
+`cursor` ga o'tkazish (alohida ish).
+
+## 3. Aniqlangan haqiqatlar
+| Haqiqat | Qiymat | Manba |
+|---|---|---|
+| Spring Boot | 3.3.4 | `pom.xml:9` |
+| Migratsiya | Flyway, oxirgisi `V11` | `db/migration/` |
 
 ## 4. Hozirgi holat
-| Joy | Simptom | Qo'llanmadagi mavzu |
-|---|---|---|
-| `OrderRepository.java:21` | `findAll(Pageable)` offset asosida | patternlar: `Keyset / Cursor Pagination` |
-| `orders` jadvali | `(created_at, id)` indeksi yo'q | arxitektor: `Indekslar` |
+| Joy | Simptom | Nega muhim | Qo'llanmadagi mavzu |
+|---|---|---|---|
+| `OrderRepository.java:21` | `findAll(Pageable)` offset asosida | offset o'sgani sari so'rov sekinlashadi | `patterns 7.7 (Keyset / Cursor Pagination)` |
+| `orders` jadvali | `(created_at, id)` indeksi yo'q | keyset so'rovi indekssiz butun jadvalni saralaydi | `architect 23 (Indekslar)` |
 
 ## 7. Pattern tayinlash
 | Joy | Hozir | Pattern | Nega | Narxi | Qo'llanmada qidirish |
 |---|---|---|---|---|---|
-| `OrderRepository.java:21` | offset pagination | Keyset / cursor pagination | offset o'smaydi, indeks bo'yicha o'qish | klient `page` emas, `cursor` yuboradi (API o'zgaradi) | 7.7 |
+| `OrderRepository.java:21` | offset pagination | Keyset / cursor pagination | offset o'smaydi, indeks bo'yicha o'qish | API ga ixtiyoriy `cursor` parametri qo'shiladi, `page` eski klientlar uchun qoladi | `patterns 7.7 (Keyset / Cursor Pagination)` |
 
 ## 8. Qadamlar
 ### 1-qadam. Indeks qo'shish
@@ -212,8 +222,10 @@ Kiradi: `GET /api/orders` ro'yxati. Kirmaydi: boshqa endpointlar, UI o'zgarishi.
 **Nima qilinadi.** `db/migration/V12__orders_created_at_id_idx.sql`:
 `CREATE INDEX CONCURRENTLY idx_orders_created_at_id ON orders (created_at DESC, id DESC);`
 **Qilinmaydi.** Kod o'zgarmaydi.
-**Test.** `MigrationIT` - migratsiya yuqoriga va orqaga o'tadi.
-**Tekshirish.** `EXPLAIN (ANALYZE) SELECT ... ORDER BY created_at DESC, id DESC LIMIT 20`
+**Test.** `MigrationIT` - migratsiya bo'sh va to'liq bazada o'tadi, indeks `indisvalid = true`.
+**Qabul mezoni.** `mvn -q verify` -> yashil; `MigrationIT` `pg_indexes` da
+`idx_orders_created_at_id` ni topadi. Sessiyadan tashqari, staging da:
+`EXPLAIN (ANALYZE, BUFFERS) SELECT ... ORDER BY created_at DESC, id DESC LIMIT 20`
 -> `Index Scan`, `Seq Scan` emas.
 
 ### 2-qadam. Repository metodi
@@ -225,9 +237,15 @@ Kiradi: `GET /api/orders` ro'yxati. Kirmaydi: boshqa endpointlar, UI o'zgarishi.
 | keyset so'rovi | slice (`@DataJpaTest` + Testcontainers) | `OrderRepositoryIT` | 50 buyruq, bir xil `created_at` li 3 ta | cursor bilan sahifalar kesishmaydi va qator tushib qolmaydi |
 
 ## 14. Definition of Done
-- [ ] `mvn -q verify` yashil
-- [ ] `EXPLAIN` da `Index Scan`
-- [ ] p99 `/actuator/metrics/http.server.requests` da < 300 ms
+- [ ] `mvn -q verify` yashil (`MigrationIT`, `OrderRepositoryIT`)
+
+Relizdan keyin kuzatiladi, DoD ga kirmaydi (sessiyada tekshirilmaydi): staging
+`EXPLAIN` da `Index Scan`, p99 `http.server.requests` < 300 ms.
+
+## 16. Manbalar
+- Kod: `OrderController.java:38`, `OrderRepository.java:21`
+- Config: `pom.xml:9`, `db/migration/`
+- Qo'llanmalar: `patterns 7.7 (Keyset / Cursor Pagination)`, `architect 23 (Indekslar)`
 ````
 
 ## Yakuniy shakl talablari

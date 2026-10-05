@@ -183,16 +183,18 @@ kerak bo'lgan paytda ishlamaydi.
 | Faqat ma'lum fayllarga tegishli qoida | `.claude/rules/<mavzu>.md` + `paths:` | faqat o'sha fayl ochilganda yuklanadi, kontekst tejaladi |
 | Ko'p qadamli jarayon (deploy, release, hujjat yig'ish) | `.claude/skills/<nom>/SKILL.md` | faqat kerak bo'lganda yuklanadi |
 | Katta bilim bazasi, qo'llanma, katalog | repodagi oddiy `.md` fayl | hech qachon avtomatik yuklanmaydi, teskari apostrofda havola qilinadi |
-| Sessiyalar va mashinalar orasida saqlanishi kerak bilim | git memory ombori, `memory/<proyekt-slug>/` | auto memory mashinadan chiqmaydi, git chiqadi |
-| Foydalanuvchi afzalligi va roli | auto memory, `type: user` | Claude o'zi yozadi, odam yozishi shart emas |
-| Berilgan tuzatish, tasdiqlangan yondashuv | auto memory, `type: feedback` | ikkinchi marta aytilmasligi uchun |
-| Davom etayotgan ish holati, qaror, muddat | auto memory `type: project`, cloud'da repo hujjati | kodidan chiqarib bo'lmaydi |
-| Tashqi manba manzili | auto memory, `type: reference` | |
+| Sessiyalar va mashinalar orasida saqlanishi kerak bilim | git memory ombori: faqat shu proyektga tegishlisi `memory/<proyekt-slug>/`, har proyektda bir xil amal qiladigani `memory/umumiy/` | auto memory mashinadan chiqmaydi, git chiqadi; bitta gap ikki darajada turmaydi, ikkinchi proyektga kerak bo'lsa nusxa emas, `umumiy/` ga ko'chiriladi |
+| Foydalanuvchi afzalligi va roli, barcha loyihalarda amal qiladigan uslub | `memory/umumiy/user_<mavzu>.md` | git orqali hamma mashina va proyektga yetadi; `~/.claude/CLAUDE.md` ni o'rnatuvchi tozalaydi |
+| Berilgan tuzatish, tasdiqlangan yondashuv | `memory/<proyekt-slug>/feedback_<mavzu>.md`, hamma proyektga tegishli bo'lsa `memory/umumiy/` | `rules_for.py` feedback ni faqat `memory/` ostidan o'qiydi |
+| Davom etayotgan ish holati, qaror, muddat | `memory/<proyekt-slug>/project_<mavzu>.md` | kodidan chiqarib bo'lmaydi |
+| Tashqi manba manzili | `memory/<proyekt-slug>/reference_<mavzu>.md` | |
 | Shaxsiy, commit qilinmaydigan sozlama | `./CLAUDE.local.md` + `.gitignore` | jamoaga tegishli emas |
-| Barcha loyihalardagi shaxsiy afzallik | `~/.claude/CLAUDE.md`, `~/.claude/rules/` | bitta joyda, hamma repo uchun |
 | Majburiy bajarilishi yoki bloklanishi shart | hook (`PreToolUse`, `PostToolUse`) | memory kafolat bermaydi, hook beradi |
 | Sir, token, parol, maxfiy manzil | hech qayerga | joyi aytiladi, qiymati emas |
 | Bir martalik vazifa tafsiloti | hech qayerga | sessiya bilan tugaydi |
+
+Auto memory faqat zaxira: ombor ulanmagan sessiyada ishlatiladi, ombor
+ulanganda yozuv `memory/` ga ko'chiriladi.
 
 ### Ikki chalkash holat
 
@@ -280,7 +282,7 @@ xil ko'rinishi paydo bo'ladi.
 4. **Faqat kerakligini o'qi.** Topic fayllar avtomatik yuklanmaydi. Hammasini
    o'qish - kontekstni behuda yoqish. Vazifaga tegishlisini o'qi, qolganini yo'q.
 5. **Repo hujjatini faqat talab bo'lsa o'qi.** Katta qo'llanmalar (masalan shu
-   repodagi to'rtta handbook) hech qachon avtomatik yuklanmaydi va shunday
+   repodagi `docs/` hujjatlari) hech qachon avtomatik yuklanmaydi va shunday
    qolishi kerak.
 
 ### B faza. Ish davomida: nomzod to'plash
@@ -294,9 +296,9 @@ xil ko'rinishi paydo bo'ladi.
 
 ### C faza. Yozishdan oldin: filtr
 
-8. **Darvozadan o'tkaz.** 5-bo'limdagi yetti savol. To'xtagan nomzod tashlanadi,
+8. **Darvozadan o'tkaz.** `Darvoza` bo'limidagi yetti savol. To'xtagan nomzod tashlanadi,
    "ehtimol keyin kerak bo'ladi" degan zaxiraga olinmaydi.
-9. **Marshrutni tanla.** 4-bo'limdagi jadval. Joy noto'g'ri bo'lsa, qolgan
+9. **Marshrutni tanla.** `Marshrut` bo'limidagi jadval. Joy noto'g'ri bo'lsa, qolgan
    hamma qadam behuda.
 
 ### D faza. Yozish
@@ -319,7 +321,8 @@ xil ko'rinishi paydo bo'ladi.
 14. **Natijani tasdiqla.** Claude memoryga yozganda yoki undan o'qiganda
     interfeysda "Saved N memories" yoki "Recalled N memories" chiqadi. Bu
     signal, dalil emas: yozuv haqiqatan tushganini `/memory` bilan papkani
-    ochib ko'rish tasdiqlaydi.
+    ochib ko'rish tasdiqlaydi. Yozuv git memory omboriga tushgan bo'lsa,
+    tasdiq commit va push: `Git memory ombori` bo'limidagi qo'shimcha qadam.
 
 ### F faza. Vaqti-vaqti bilan: tozalash
 
@@ -334,7 +337,7 @@ xil ko'rinishi paydo bo'ladi.
 O'QISH:  /context -> index -> faqat kerakli topic fayl
 NOMZOD:  signal bor? (tuzatish | ikkinchi xato | yashirin kontekst)
 DARVOZA: 7 savol -> bittasi "yo'q" bo'lsa, tashlanadi
-MARSHRUT: CLAUDE.md | rules+paths | skill | auto memory | repo doc | hook | hech qayerga
+MARSHRUT: CLAUDE.md | rules+paths | skill | memory/ ombori | repo doc | hook | hech qayerga
 YOZISH:  qidir -> yangila (qo'shma) -> index bir qator + topic tafsilot
 KEYIN:   hajm -> ziddiyat -> eskirganini o'chir
 ```
@@ -356,7 +359,7 @@ Qator mazmunni **tasvirlaydi**, o'zida saqlamaydi.
 
 - `user_til.md` - javob tili va yozuv uslubi talablari
 - `feedback_hujjat_formati.md` - hujjat yig'ishdagi format qoidalari va tuzoqlar
-- `project_handbook_holati.md` - to'rtta handbook'ning hozirgi holati
+- `project_handbook_holati.md` - handbook'larning hozirgi holati
 - `reference_manbalar.md` - tashqi hujjat va manzillar
 ```
 
@@ -641,59 +644,19 @@ proyekt bo'yicha saqlaydi.
 | `memory/` papkasi | ombor: filtrdan o'tgan bilim git'da yig'iladi |
 | Auto memory | bitta mashinadagi tezkor qatlam, uzoq muddatli manba emas |
 
-Ombor tuzilishi, ulanish buyruqlari va proyektlar ro'yxati `memory/README.md`
-da. Bu bo'lim faqat qarorga tegishli qismni beradi.
-
-### Ikki daraja
-
-| Daraja | Nima turadi |
-|---|---|
-| `memory/umumiy/` | har qanday proyektda bir xil amal qiladigan bilim: til, uslub, umumiy afzallik |
-| `memory/<proyekt-slug>/` | faqat o'sha proyektga tegishli: tuzoq, qaror, tugallanmagan ish |
-
-Bitta gap ikki joyda turmaydi. Bilim ikkinchi proyektda ham kerak bo'lsa, nusxa
-olinmaydi: `umumiy/` ga ko'chiriladi va proyekt papkasidan o'chiriladi.
-
-### Papka nomi
-
-| Holat | Nom |
-|---|---|
-| GitHub repo bor | repo nomi, kichik harfda |
-| Ikki egada bir xil nom | `<egasi>__<repo>` |
-| GitHub repo yo'q | proyekt ildiz papkasining nomi |
-
-Nom qoidadan chiqadi, taxmin qilinmaydi. Papka yo'q bo'lsa, yangisi `MEMORY.md`
-indeksi bilan boshlanadi. Memory yo'qligi ishga to'siq emas.
+Ikki daraja (`umumiy/` va proyekt papkasi) `Marshrut` bo'limidagi jadvalda.
+Papka nomi, ulanish bloki va proyektlar ro'yxati `memory/README.md` da. Bu
+bo'lim faqat qarorga tegishli qismni beradi.
 
 ### Omborga qo'shilgan ketma-ketlik
 
-6-bo'limdagi umumiy ketma-ketlik o'zgarmaydi, uning ustiga ikki qadam qo'shiladi:
+`Saqlash ketma-ketligi` bo'limidagi umumiy ketma-ketlik o'zgarmaydi, uning
+ustiga ikki qadam qo'shiladi:
 
 - **O'qishdan oldin:** `git pull`. Eski clone eskirgan bilim beradi, bu
   yozuvning umuman yo'qligidan xavfliroq.
 - **Yozgandan keyin:** commit va push. Push qilinmagan yozuv saqlanmagan
   hisoblanadi, chunki cloud konteyneri qaytarib olinadi.
-
-### Boshqa proyekt qanday ulanadi
-
-O'sha proyektning `CLAUDE.md` fayliga manzil qo'yiladi, qoida emas:
-
-```markdown
-## Memory
-
-Bu proyektning memoryasi `manguberdikom/claude-genius` repodagi
-`memory/<proyekt-slug>/` papkasida, umumiy bilim `memory/umumiy/` da.
-Ish boshida o'sha ikki `MEMORY.md` indeksi o'qiladi, kerakli topic fayl
-indeksga qarab o'qiladi. Yozish qoidasi: o'sha repodagi `memory-protocol.md`.
-```
-
-Blok qisqa bo'lishi majburiy: u har sessiyada yuklanadi. Protokol va topic
-fayllar esa faqat kerak bo'lganda o'qiladi.
-
-### Ombor ochiq repoda turadi
-
-Sir, token, parol va shaxsiy ma'lumot masalasida istisno yo'q. Yozuvda kalitning
-qiymati emas, joyi ko'rsatiladi.
 
 ---
 
@@ -701,7 +664,7 @@ qiymati emas, joyi ko'rsatiladi.
 
 - [ ] Loyiha `CLAUDE.md` da shu faylga bir qatorli havola bor, `@` import yo'q
 - [ ] `/context` ishlatib yuklanadigan memory fayllar ro'yxati bir marta ko'rilgan
-- [ ] Auto memory index'da har yozuv bitta qator, tafsilot topic fayllarda
+- [ ] `MEMORY.md` index'da har yozuv bitta qator, tafsilot topic fayllarda
 - [ ] Topic fayllar `<type>_<mavzu>.md` ko'rinishida nomlangan va frontmatter'da
       `type` bor
 - [ ] Index 200 qator va 25KB chegarasidan uzoq
@@ -717,5 +680,5 @@ qiymati emas, joyi ko'rsatiladi.
 - [ ] Oxirgi auditdan keyin `/doctor prompt-audit` bir marta ishlatilgan
 - [ ] Omborga yozishdan oldin `git pull`, yozgandan keyin commit va push qilingan
 - [ ] Umumiy bilim `memory/umumiy/` da, proyekt bilimi proyekt papkasida, nusxa yo'q
-- [ ] Yangi proyekt papkasi nomi slug qoidasiga mos
+- [ ] Yangi proyekt papkasi nomi `memory/README.md` dagi slug qoidasiga mos
 - [ ] Proyekt `CLAUDE.md` idagi memory bloki qisqa: manzil bor, qoida nusxasi yo'q

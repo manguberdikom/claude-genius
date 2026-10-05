@@ -4,10 +4,15 @@
     python3 tools/code_gap.py                 # hujjat bo'yicha yig'indi
     python3 tools/code_gap.py patterns 3      # 3-bo'limdagi bo'sh patternlar
     python3 tools/code_gap.py patterns 3 -v   # Spring qatori bilan
+    python3 tools/code_gap.py patterns 17.2   # faqat shu yozuv, kodsiz bo'lsa
+
+Maxraj yopish bo'limlarisiz sanaladi (`Amalda qo'llash`, `Arxitektor
+nazorat ro'yxati`): ular pattern emas va surat ham ularni tashlaydi.
 """
 import json, os, re, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CLOSING = ("Amalda qo'llash", 'Arxitektor nazorat')
 
 
 def sections(path):
@@ -30,15 +35,21 @@ def sections(path):
 
 
 def gaps(key, num=None):
+    """(kodsiz bo'limlar, jami bo'lim). Surat va maxraj bitta filtrdan.
+
+    Maxraj manifestdagi `sections` dan emas, fayldan sanaladi: unda
+    yopish bo'limi ham bor va u eskirishi mumkin.
+    """
     man = json.load(open(os.path.join(ROOT, 'docs/manifest.json'), encoding='utf-8'))[key]
-    res = []
+    res, total = [], 0
     for ch in man['chapters']:
         if not ch['num'] or (num and ch['num'] != num):
             continue
         path = os.path.join(ROOT, 'docs', key, ch['file'])
         for h, body in sections(path):
-            if "Amalda qo'llash" in h or 'Arxitektor nazorat' in h:
+            if any(c in h for c in CLOSING):
                 continue
+            total += 1
             if '```' in body:
                 continue
             spring = ''
@@ -46,7 +57,7 @@ def gaps(key, num=None):
             if m:
                 spring = m.group(1)
             res.append((ch['num'], ch['file'], h, spring))
-    return res
+    return res, total
 
 
 if __name__ == '__main__':
@@ -55,14 +66,19 @@ if __name__ == '__main__':
     if not args:
         man = json.load(open(os.path.join(ROOT, 'docs/manifest.json'), encoding='utf-8'))
         for key in man:
-            g = gaps(key)
-            tot = sum(1 for ch in man[key]['chapters'] for _ in [0] if ch['num'])
-            allsec = sum(ch['sections'] for ch in man[key]['chapters'])
-            print(f"{key:12} kodsiz bo'lim: {len(g):4} / {allsec}")
+            g, total = gaps(key)
+            print(f"{key:12} kodsiz bo'lim: {len(g):4} / {total}")
         sys.exit()
     key = args[0]
-    num = int(args[1]) if len(args) > 1 else None
-    g = gaps(key, num)
+    arg = args[1] if len(args) > 1 else None
+    if arg and not re.fullmatch(r'\d+(\.\d+)?', arg):
+        sys.exit(f"bob yoki bo'lim raqami kerak, masalan: code_gap.py {key} 17 "
+                 f"yoki {key} 17.2 (berildi: {arg})")
+    num = int(arg.split('.')[0]) if arg else None
+    g, _ = gaps(key, num)
+    if arg and '.' in arg:
+        # Bo'lim so'ralsa butun bobga kengaytirilmaydi, faqat o'sha yozuv.
+        g = [row for row in g if row[2].startswith(arg + ' ')]
     for n, f, h, spring in g:
         print(f"{h}")
         if verbose and spring:

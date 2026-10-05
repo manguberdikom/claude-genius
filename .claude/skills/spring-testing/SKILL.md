@@ -18,10 +18,14 @@ Test yozishdan oldin uchta savolga javob bering:
 3. Bu test nima buzilganda qizil bo'ladi? Javob "har qanday refaktoringda"
    bo'lsa, test yomon.
 
-Har bob oxirida `Arxitektor nazorat ro'yxati` bor - tavsiya berishdan
-oldin shuni o'qing.
+Har bob oxirida `Arxitektor nazorat ro'yxati` bor. Tavsiya berishdan oldin
+uni `tools/doc.sh checklist testing <bob>` bilan oling, bobni oxirigacha
+o'qimang.
 
 ## Vazifa - bob jadvali
+
+Jadval bobni topadi. Bob fayli butunligicha o'qilmaydi: avval `outline`,
+keyin kerakli bo'lim `show` bilan (Asboblar).
 
 | Vazifa | Bob fayli |
 |---|---|
@@ -29,8 +33,8 @@ oldin shuni o'qing.
 | Qaysi darajada test yozish, piramida vs trophy, test turlari xaritasi | `docs/testing/02-test-piramidasi-va-test-turlari-xaritasi.md` |
 | Kim nima yozadi: dev, QA, automation muhandisi mas'uliyati | `docs/testing/03-kim-nima-yozadi-rollar-va-masuliyat.md` |
 | QA ish jarayoni, test dizayni, riskka asoslangan ustuvorlik, bug hisoboti | `docs/testing/04-testrovshik-qanday-ishlashi-kerak-qa-ish.md` |
-| JUnit 5, AssertJ, Mockito `STRICT_STUBS`, parametrlangan test, nomlash | `docs/testing/05-unit-test-asoslar-qoidalar-va-junit-5.md` |
-| Spring'siz unit test, constructor injection, `Clock` va `Supplier` in'ektsiyasi | `docs/testing/06-unit-test-spring-loyihasida-kontekstsiz.md` |
+| JUnit 5, AssertJ, Mockito `STRICT_STUBS`, parametrlangan test, nomlash, vaqt, tasodif va UUID'ni testlash | `docs/testing/05-unit-test-asoslar-qoidalar-va-junit-5.md` |
+| Spring'siz unit test, constructor injection, `Clock` va ID generator dependency sifatida | `docs/testing/06-unit-test-spring-loyihasida-kontekstsiz.md` |
 | `@WebMvcTest`, `@DataJpaTest`, `@JsonTest`, `@RestClientTest`, kontekst keshi | `docs/testing/07-integratsion-test-spring-boot-slice-testlari.md` |
 | Testcontainers, `@ServiceConnection`, reuse, PostgreSQL/Kafka/Redis konteyner | `docs/testing/08-testcontainers-bilan-real-infratuzilmada.md` |
 | WireMock, MockWebServer, Pact/Spring Cloud Contract, consumer-driven kontrakt | `docs/testing/09-tashqi-servislarni-taqlid-qilish-va.md` |
@@ -48,9 +52,12 @@ oldin shuni o'qing.
 
 - H2 ni PostgreSQL o'rniga ishlatmang - dialekt farqi testni yolg'onchi
   qiladi. Testcontainers ishlating (8-bob).
-- `Thread.sleep` test ichida yo'q. Awaitility yoki deterministik soat.
+- `Thread.sleep` test ichida yo'q. Awaitility yoki deterministik soat
+  (5-bob "Vaqt, tasodif va UUID'ni testlash", 11-bob "Asinxron kodni
+  testlash").
 - `Instant.now()` va `UUID.randomUUID()` to'g'ridan-to'g'ri chaqirilmaydi -
-  `Clock` va `Supplier` orqali in'ektsiya qilinadi (6-bob).
+  `Clock` va `Supplier<UUID>` orqali in'ektsiya qilinadi (5-bob "Vaqt,
+  tasodif va UUID'ni testlash"; Spring'siz dizayn: 6-bob).
 - Value object, DTO va JDK sinflari mock qilinmaydi.
 - Coverage foizi yagona sifat mezoni emas; domen paketlari uchun mutation
   score o'lchanadi (17-bob).
@@ -62,13 +69,17 @@ Sonar coverage talablari va JaCoCo mexanikasi boshqa hujjatda:
 ## Asboblar
 
 ```bash
-mvn -q test | python3 tools/parse_test_output.py  # qaysi test, nima kutilgan
-                                                  # edi, loyiha kodining qaysi
-                                                  # qatorida
+mvn test -Dtest=<Sinf> 2>&1 | python3 tools/parse_test_output.py  # qaysi test, nima kutilgan
+                                                                  # edi, loyiha kodining qaysi
+                                                                  # qatorida; sinfsiz to'plam konteyner ko'taradi
 python3 tools/rules_for.py <test fayli>
+tools/doc.sh outline testing <bob>     # bobdagi bo'limlar ro'yxati
+tools/doc.sh show testing <raqam>      # butun bob emas, faqat o'sha bo'lim
 tools/doc.sh checklist testing <bob>
 ```
 
 Testni ikkinchi marta yurgizish sababni ko'rsatmaydi, chiqishni o'qish
-ko'rsatadi. Testcontainers kerak bo'lgan bobda ham avval chiqish o'qiladi:
-`docker run` `tools/guard.py` tomonidan to'siladi.
+ko'rsatadi. Testcontainers konteynerni `mvn` ichidan Docker API orqali
+ko'taradi va `tools/guard.py` buni ko'rmaydi: qo'lda `docker run` to'siladi,
+lekin bunday testning narxi u bilan bir xil. Shuning uchun Testcontainers
+ishlatadigan test faqat kerakli sinf bilan va sababi aytilib yurgiziladi.

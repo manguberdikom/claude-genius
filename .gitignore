@@ -15,8 +15,12 @@ __pycache__/
 *.pyc
 .venv/
 
-# tools/state.py: sessiya holati, jamoaga tegishli emas
+# tools/state.py va tools/budget.py: sessiya holati, jamoaga tegishli emas
 .claude/.state/
 
 # tools/usage.py: kunlik token sarfi, mashinaga tegishli
 .claude/usage/
+
+# shaxsiy, commit qilinmaydi (memory-protocol.md: Qatlamlar va yuklanish tartibi)
+CLAUDE.local.md
+.claude/settings.local.json

@@ -1,6 +1,6 @@
 ---
 name: clean-code
-description: Decide whether the line being written is clean, and fix it when it is not - naming, function size and arguments, conditionals and loops, comments and Javadoc, formatting, encapsulation, equals/hashCode contracts, immutability, inheritance vs composition, error handling, Java pitfalls (numbers and money, strings and regex, date and time, collections and generics, lambdas and streams), clean Spring/JPA/SQL/logging code, test-code cleanliness, the code-smell catalogue and refactoring moves. Use when naming something, when a method or class has grown, when a comment is being added, when reviewing one's own code before a PR, when the user asks "bu nom to'g'rimi", "buni qanday refaktoring qilaman", or names a smell (long method, god class, feature envy, primitive obsession, shotgun surgery).
+description: Decide whether the line being written is clean and fix it when it is not - naming, function size and arguments, conditionals, comments and Javadoc, formatting, encapsulation, equals/hashCode, immutability, inheritance vs composition, error handling, Java pitfalls (money, strings, dates, collections, streams), clean Spring/JPA/logging and test code, code smells and refactoring moves. Use when naming something, when a method or class has grown, when a comment is being added, when the user asks "bu nom to'g'rimi", "buni qanday refaktoring qilaman", or names a smell (long method, god class, feature envy, primitive obsession).
 ---
 
 # Toza kod qoidalari
@@ -23,6 +23,9 @@ Toza kod tekshiruvi tartibi:
 Har bob `Amalda qo'llash` tekshiruv ro'yxati bilan tugaydi.
 
 ## Vazifa - bob jadvali
+
+Jadval bobni topadi. Bobni butun o'qimang: `tools/doc.sh outline clean-code <bob>`
+bilan bo'limni tanlab, `tools/doc.sh show clean-code <bob.bo'lim>` bilan o'qing.
 
 | Vazifa | Bob fayli |
 |---|---|
@@ -47,17 +50,20 @@ Har bob `Amalda qo'llash` tekshiruv ro'yxati bilan tugaydi.
 | Evristikalarning to'liq ro'yxati | `docs/clean-code/34-toza-kod-evristikalarining-toliq-royxati.md` |
 | **Refaktoring harakatlari katalogi** | `docs/clean-code/35-refaktoring-harakatlari-katalogi-i-funksiya.md`, `docs/clean-code/36-refaktoring-harakatlari-katalogi-ii-malumot.md`, `docs/clean-code/37-refaktoring-harakatlari-katalogi-iii-shart.md` |
 | Refaktoringni xavfsiz bajarish | `docs/clean-code/38-refaktoringni-xavfsiz-bajarish.md` |
-| Build, versiya nazorati, kichik qadamlar, statik tahlil | 39-42 boblar |
-| Professional intizom, "yo'q" deyish, baholash, mentorlik | 43-47 boblar |
+| Bir qadamli build, mahalliy qaytish halqasi | `docs/clean-code/39-bir-qadamli-build-va-mahalliy-qaytish.md` |
+| Versiya nazorati gigiyenasi, commit | `docs/clean-code/40-versiya-nazorati-gigiyenasi.md` |
+| Kichik qadamlar bilan o'zgartirish | `docs/clean-code/41-ozgarishni-kiritish-jarayoni-kichik-qadamlar.md` |
+| Statik tahlil va avtomatik qoidalar | `docs/clean-code/42-statik-tahlil-va-avtomatik-qoidalar.md` |
+| Professional mas'uliyat, "yo'q" deyish, baholash va muddat, vaqt va diqqat, mentorlik | `docs/clean-code/43-professional-masuliyat.md`, `docs/clean-code/44-yoq-va-ha-deyish-majburiyat-tili.md`, `docs/clean-code/45-baholash-muddat-va-bosim.md`, `docs/clean-code/46-vaqt-diqqat-va-mashq.md`, `docs/clean-code/47-birgalikda-ishlash-va-orgatish.md` |
 | Tezkor ma'lumotnoma va o'z-o'zini baholash | `docs/clean-code/48-tezkor-malumotnoma-qoidalar-va-tekshiruv.md`, `docs/clean-code/49-oz-ozini-baholash-toza-kod-yetukligi.md` |
 
 ## Chegara
 
 Bu hujjat qoida beradi, arxitektura qarori bermaydi:
 
-- SOLID, GRASP, anti-pattern katalogi - `docs/patterns/README.md`
+- SOLID, GRASP - `docs/patterns/26-dizayn-printsiplari-solid-grasp-va-umumiy.md`; anti-pattern katalogi - `docs/patterns/25-anti-patternlar.md` (1429 satr, `tools/doc.sh outline patterns 25` bilan oching)
 - chegara, abstraksiya, murakkablik qarori - `docs/architect/README.md`
-- diffni review qilish - `docs/code-review/README.md`
+- diffni review qilish, PR dan oldin o'z diffini ko'rish - `code-review` skilli (`docs/code-review/README.md`)
 - Sonar qoidasi va uning kalitlari - `docs/sonarqube/README.md`
 
 ## Asboblar
@@ -65,8 +71,13 @@ Bu hujjat qoida beradi, arxitektura qarori bermaydi:
 ```bash
 python3 tools/rules_for.py <fayl>      # Java yozishdan OLDIN majburiy
 python3 tools/check_code.py <fayl>     # yozgandan keyin mexanik qoidalar
+tools/doc.sh outline clean-code <bob>    # bobdagi bo'limlar
+tools/doc.sh show clean-code <bob.bo'lim> # faqat o'sha bo'lim
 tools/doc.sh checklist clean-code <bob>  # shu bobning tekshiruv punktlari
 ```
 
-`check_code.py` `PostToolUse` hook sifatida ham ishlaydi va `rules_for`
-chaqirilganini talab qiladi, ya'ni qoidani ko'rmay yozib bo'lmaydi.
+`check_code.py` `PostToolUse` hook sifatida har `.java` yozuvidan keyin
+ishlaydi va topilmani modelga qaytaradi. `rules_for` chaqirilmagan bo'lsa
+yoki `yuqori` topilma bo'lsa `block` bilan qaytaradi, ya'ni tuzatish shu
+navbatda qilinadi. Yozuvning o'zini to'xtatmaydi, fayl diskda qoladi,
+shuning uchun `rules_for` ni yozishdan OLDIN chaqirish arzonroq.

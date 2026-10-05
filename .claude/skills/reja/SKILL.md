@@ -1,6 +1,6 @@
 ---
 name: reja
-description: Build one complete, grounded implementation plan (REJA.md) before any code is written - architecture decisions, per-location design-pattern assignment, test strategy and quality gate in a single document. Use when the user asks for a reja, plan, "reja tuz", "plan ber", "qanday qilaman", "qaysi pattern", a design or refactoring plan, a migration or performance plan, an architecture review before implementation, or hands over a spec as PDF, HTML, DOCX, image or URL. Harvests project configs, CLAUDE.md memories and prompt-design material, analyses the real code structure, then assigns every change a pattern, a test and an acceptance check, citing by topic name the five Java/Spring/PostgreSQL handbooks in this repository.
+description: Build one complete, grounded implementation plan (REJA.md) before any code is written - architecture decisions, per-location design-pattern assignment, test strategy and quality gate in a single document. Use when the user asks for a reja, plan, "reja tuz", "plan ber", a design or refactoring plan, a migration or performance plan, an architecture review before implementation, or hands over a spec as PDF, HTML, DOCX, image or URL.
 ---
 
 # Reja - aqlli implementatsiya rejasi
@@ -15,13 +15,24 @@ bajaradigan agentga. Shu sababli u ham izohlovchi, ham buyruq beruvchi bo'ladi.
 
 ## Qachon ishlatiladi
 
-- "reja tuz", "plan ber", "qanday qilaman", "qaysi pattern mos" so'rovlari
+- "reja tuz", "plan ber", "rejani yangila" so'rovlari, katta ish uchun reja
+  so'ralganda
 - yangi funksiya, refaktoring, migratsiya, performance, integratsiya ishlari
 - spetsifikatsiya PDF / HTML / DOCX / rasm / URL ko'rinishida berilganda
 - katta o'zgarishdan oldin arxitektura va test strategiyasini kelishish kerak
 
 **Ishlatilmaydi:** bir qatorli tuzatish, typo, versiya ko'tarish, formatlash -
-bular darhol bajariladi. Reja yozish bajarishdan qimmatga tushmasligi kerak.
+bular darhol bajariladi. Bitta joy uchun "qaysi pattern" savoli ham reja emas:
+u `design-patterns` skilliga tegishli. Reja yozish bajarishdan qimmatga
+tushmasligi kerak.
+
+## manguberdi faol bo'lsa
+
+Shu sessiyada `manguberdi` chaqirilgan bo'lsa, bu skill bajarilmaydi va
+`references/` o'qilmaydi: reja `rejalashtiruvchi` agentiga uzatiladi. Reja
+kerakmi yoki yo'qmi manguberdi marshrutidagi `Hajm: reja kerakmi` qoidasi hal
+qiladi. Bu skill manguberdisiz sessiyada, foydalanuvchi rejani to'g'ridan-to'g'ri
+so'raganda ishlaydi.
 
 ## Qattiq qoidalar
 
@@ -43,7 +54,7 @@ bular darhol bajariladi. Reja yozish bajarishdan qimmatga tushmasligi kerak.
    ishlatilmaydi; kerak bo'lsa, uni qo'shish alohida qadam bo'ladi. Java va Spring
    versiyasi, DB, coverage chegarasi - hammasi loyiha faylidan o'qiladi.
 8. **Hajm vazifaga mos.** S / M / L o'lchov `references/shablon.md` da; kichik
-   ishga 15 bo'limli hujjat yozish - zarar.
+   ishga shablonning hamma bo'limini yozish - zarar.
 9. **Reja o'zini bajarmaydi.** Bu skill faqat rejani yozadi va foydalanuvchiga
    beradi. Kod o'zgartirish - alohida, aniq ruxsatdan keyin.
 
@@ -54,7 +65,7 @@ bosqichga o'tilmaydi.
 
 | # | Bosqich | O'qiladi | Artefakt | O'tish sharti |
 |---|---|---|---|---|
-| 0 | Vazifani aniqlash | - | vazifa turi + hajm (S/M/L) | bitta jumlada maqsad yozildi |
+| 0 | Vazifani aniqlash | `references/shablon.md` (`Hajm matritsasi`) | vazifa turi + hajm (S/M/L) | bitta jumlada maqsad yozildi |
 | 1 | Manba yig'ish | `references/manbalar.md` | "Aniqlangan haqiqatlar" jadvali | config, memory va berilgan hujjatlar o'qildi |
 | 2 | Kod analizi | `references/kod-analizi.md` | inventar + bog'liqlik eskizi + simptomlar | har bir simptom `fayl:qator` ga bog'landi |
 | 3 | Arxitektura qarori | `references/arxitektura.md` | NFR budjeti + ADR(lar) + risk ro'yxati | qaytarib bo'lmaydigan har qarorga ADR bor |
@@ -67,6 +78,22 @@ bosqichga o'tilmaydi.
 og'irlashadi: `yangi funksiya`, `refaktoring`, `bug`, `migratsiya`,
 `performance`, `integratsiya`, `xavfsizlik`, `test qarzi`.
 
+**S hajmda qisqa yo'l.** S rejada 5, 6, 10-13 bo'limlar yo'q, shuning uchun
+ularning artefakti ham tayyorlanmaydi: 3-bosqich o'tkazib yuboriladi va
+`references/arxitektura.md` o'qilmaydi. Boshqa reference'lardan faqat S
+chiqishiga kiradigan qism o'qiladi (joy `grep -n '^## '` bilan topiladi, keyin
+chegarali o'qiladi):
+
+- `manbalar.md`: `Config inventari`, hujjat berilgan bo'lsa `PDF, HTML va boshqa kontent` ham
+- `kod-analizi.md`: to'liq, kichik ish budjeti shu faylda
+- `pattern-tanlash.md`: 4.1, 4.3, 4.4, 4.5, 4.6
+- `test-sifat.md`: 5.1-5.3
+- `prompt-dizayn.md`: 6.3, 6.4
+- `shablon.md`: to'liq
+
+Qaytarib bo'lmaydigan qaror (jadval tuzilishi, tashqi kontrakt, ma'lumot
+formati) chiqib qolsa, reja S emas: hajm M ga ko'tariladi.
+
 Blokirovchi savol faqat bitta holatda beriladi: javobsiz har qanday taxmin
 rejani bekor qiladi (masalan, "yangi servis mikroservis bo'ladimi yoki
 monolitda qoladimi" ma'lum bo'lmasa). Qolgan noaniqliklar `TAXMIN:` qatori
@@ -74,9 +101,14 @@ bilan yozib ketiladi va rejaning oxirida "Ochiq savollar" ga qo'yiladi.
 
 ## Qo'llanmaga yo'naltirish
 
-Bu repozitoriyda oltita qo'llanma bor. Reja ularga **mavzu nomi bilan** havola
-qiladi, bob raqami bilan emas (raqam hujjat o'sganda siljiydi) va mazmunini
-ko'chirmaydi.
+Bu repozitoriyda oltita qo'llanma bor. Reja ularga
+`<hujjat> <raqam> (<mavzu nomi>)` shaklida havola qiladi, masalan
+`patterns 10.14 (Transactional Outbox)`, va mazmunini ko'chirmaydi. `<hujjat>` - `tools/doc.sh toc` dagi kalit. Raqam
+`doc.sh show` ga to'g'ridan-to'g'ri beriladi va zanjirdagi boshqa aktyorlar shu
+shaklni kutadi; mavzu nomi raqam siljiganda `doc.sh find` bilan qayta topish
+uchun turadi. Raqam faqat mavzu nomi yonida keladi, uning o'rnida emas.
+Pastdagi jadval va reference'lardagi `patternlar: X` ko'rinishidagi ishoralar
+qidirish uchun: raqam `doc.sh find` bilan olinadi.
 
 | Savol | Hujjat | Mavzu |
 |---|---|---|
@@ -106,16 +138,13 @@ ko'chirmaydi.
 | Xato yo'li va istisno qanday yozilsin? | toza kod | `Xato bilan ishlash qoidalari`, `Istisno mexanikasi va resurslar` |
 | Qoida qanday majburlanadi (lint, ArchUnit)? | toza kod | `Statik tahlil va avtomatik qoidalar`, `Formatlashni avtomatlashtirish` |
 
-Mavzu nomidan bobni topish:
-
-Har hujjat `docs/<hujjat>/` papkasida, har bob alohida faylda. Mundarija
-`docs/<hujjat>/README.md` da, pattern nomlari indeksi
-`docs/patterns/99-alifbo-boyicha-indeks.md` da.
+Mavzu nomidan bo'limni topish (jadvaldagi bob nomi yoki patternning inglizcha
+nomi bilan, oltita hujjatdan birdaniga):
 
 ```bash
-grep -n "^- " docs/architect/README.md | grep -i "tranzaksiya"   # bob -> fayl
-grep -rn "^## " docs/patterns/ | grep -i "outbox"                # bo'lim -> fayl:qator
-grep -n "\[Strategy" docs/patterns/99-alifbo-boyicha-indeks.md   # indeks: nom -> bo'lim
+tools/doc.sh find "Transactional Outbox"   # nom yoki mavzu -> hujjat va bo'lim raqami
+tools/doc.sh show patterns 10.14           # faqat o'sha bo'lim, butun bob emas
+tools/doc.sh outline architect 19          # bobdagi bo'limlar ro'yxati
 ```
 
 Pattern nomi indeksda inglizcha turadi, shuning uchun reja patternni **inglizcha
@@ -134,10 +163,20 @@ nomi bilan** ataydi: `Transactional Outbox`, `Keyset / Cursor Pagination`.
   tayyor va fayl yo'li), keyin 5-10 qator tafsilot: eng muhim qaror, eng katta
   risk, ochiq savollar.
 
+## Yangilash
+
+Mavjud `REJA.md` qayta yozilmaydi. Bajarilgan qadam sarlavhasi oldiga `[x]`
+qo'yiladi, o'zgargan qadam sababi bilan yangilanadi, yangi qadam qo'shiladi.
+Sarlavha jadvalidagi **Sana** va **Holat** yangilanadi, uning ostiga sana bilan
+bir qatorlik o'zgarishlar ro'yxati qo'shiladi. Nega o'zgardi degan savol
+javobsiz qolmaydi.
+
 ## Yakuniy tekshiruv (7-bosqich)
 
 Rejani berishdan oldin 13 banddan har biriga "ha" deb javob berilishi kerak.
-Bitta "yo'q" bo'lsa, reja tuzatiladi, keyin beriladi.
+Bitta "yo'q" bo'lsa, reja tuzatiladi, keyin beriladi. Hajm matritsasida yo'q
+bo'limga tegishli band (5, 10, 11, 12) "ha" hisoblanadi, agar bo'limni olib
+tashlash sababi rejaning kirishida bir qatorda yozilgan bo'lsa.
 
 1. Maqsad bitta jumlada yozilganmi va o'lchanadiganmi?
 2. Qamrovdan tashqari (non-goals) ro'yxati bormi?
@@ -146,7 +185,8 @@ Bitta "yo'q" bo'lsa, reja tuzatiladi, keyin beriladi.
 5. Qaytarib bo'lmaydigan har qarorga ADR bormi (kontekst, qaror, variantlar, oqibat)?
 6. Har bir pattern uchun: joyi, hal qiladigan muammosi, qo'llanma bo'limi va
    narxi (indirection) yozilganmi?
-7. Tanlangan patternlar 25-bo'limdagi anti-patternlarga tushmaydimi?
+7. Tanlangan patternlar `patterns 25 (Anti-patternlar)` dagi anti-patternlarga
+   tushmaydimi?
 8. Har bir qadam mustaqil tekshiriladimi (buyruq + kutilgan natija)?
 9. Har bir xulq o'zgarishiga test darajasi, joyi, ma'lumoti va oracle bormi?
 10. Quality gate talablari loyiha konfiguratsiyasidan olinganmi (new code
@@ -186,7 +226,11 @@ memoryga ko'chirilmaydi, u `REJA.md` da va git tarixida qoladi.
 Reja qadami qaysi qoidaga tegishini qo'lda eslash shart emas:
 
 ```bash
-python3 tools/rules_for.py <qadam tegadigan fayllar>  # boblar va punktlar
-tools/doc.sh checklist <hujjat> <bob>                 # qabul mezoni uchun
-python3 tools/schema_from_entities.py <src>           # mavjud sxema
+python3 tools/rules_for.py --no-mark <qadam tegadigan fayllar>  # boblar va punktlar
+tools/doc.sh checklist <hujjat> <bob>                           # qabul mezoni uchun
+python3 tools/schema_from_entities.py <src>                     # mavjud sxema
 ```
+
+Rejani tuzuvchi `rules_for.py` ni `--no-mark` bilan chaqiradi: belgini kodni
+yozadigan o'zi qo'yadi. Aks holda `check_code.py` darvozasi yozuvchini
+qoidalarni ko'rmasdan o'tkazib yuboradi.
