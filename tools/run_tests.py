@@ -186,10 +186,10 @@ def project_root(start):
         if any(os.path.exists(os.path.join(path, n)) for n in
                ("settings.gradle", "settings.gradle.kts", "pom.xml",
                 "build.gradle", "build.gradle.kts")):
-            return path
+            return os.path.realpath(path)
         parent = os.path.dirname(path)
         if parent == path:
-            return os.path.abspath(start)
+            return os.path.realpath(os.path.abspath(start))
         path = parent
 
 
@@ -805,7 +805,10 @@ def root_lock(root):
 
 
 def log_path(root, everything):
-    name = "genius-test-%s%s.log" % (hashlib.sha1(root.encode("utf-8")).hexdigest()[:10],
+    """Bitta loyiha uchun bitta nom: Windows da qisqa (8.3) yo'l va
+    harf registri boshqa hash bermasin."""
+    key = os.path.normcase(os.path.realpath(root))
+    name = "genius-test-%s%s.log" % (hashlib.sha1(key.encode("utf-8")).hexdigest()[:10],
                                      "-hammasi" if everything else "")
     return os.path.join(tempfile.gettempdir(), name)
 
