@@ -33,6 +33,8 @@ Tekshiradi:
                     yoziladi va shu yerda qo'riqlanadi.
  10. Tekshiruv    - docs/review.tsv da manifestdagi har bob bor va holati
                     ruxsat etilgan qiymatlardan biri.
+ 12. Uy-bob       - docs/OWNERS.tsv dagi mavzu uy-bobdan tashqarida
+                    SARLAVHA bo'lib uchrasa ogohlantirish (xato emas).
  11. Sonar        - korpusdagi har `java:S` kaliti tools/sonar_rules.tsv
                     snapshotida bor; jadval qatorida kalit yonida tur yoki
                     daraja yozilgan bo'lsa, snapshotga mos. Ochiq metadata
@@ -282,6 +284,77 @@ def check_sonar(files):
     if not date:
         warn("tools/sonar_rules.tsv da sana yo'q: snapshot qachon "
              "olinganini bilib bo'lmaydi")
+
+
+def read_owners():
+    """docs/OWNERS.tsv: [(mavzu, uy_bob, dalil)]."""
+    path = os.path.join(ROOT, 'docs', 'OWNERS.tsv')
+    rows, header = [], None
+    if not os.path.exists(path):
+        return rows
+    with open(path, encoding='utf-8') as handle:
+        for line in handle:
+            line = line.rstrip('\n')
+            if not line.strip() or line.startswith('#'):
+                continue
+            parts = line.split('\t')
+            if header is None:
+                header = parts
+                continue
+            if len(parts) < 2:
+                err(f"docs/OWNERS.tsv: qator uch ustunli emas -> {line[:50]}")
+                continue
+            rows.append((parts[0].strip(), parts[1].strip(),
+                         parts[2].strip() if len(parts) > 2 else ''))
+    return rows
+
+
+def check_owners(manifest, files):
+    """12. Mavzu uy-bobdan tashqarida sarlavha bo'lib uchramasin."""
+    owners = read_owners()
+    if not owners:
+        return
+    # Uy-bob haqiqatan mavjudmi.
+    refs = set()
+    for key, doc in manifest.items():
+        for c in doc.get('chapters', []):
+            refs.add(f"{key} {c['num'] or ''}")
+            for n in range(1, (c.get('sections') or 0) + 1):
+                refs.add(f"{key} {c['num']}.{n}")
+    for topic, home, _ in owners:
+        doc_key = home.split(' ')[0]
+        if doc_key not in manifest:
+            err(f"docs/OWNERS.tsv: '{topic}' uy-bobi noma'lum hujjat -> {home}")
+        elif home not in refs:
+            warn(f"docs/OWNERS.tsv: '{topic}' uy-bobi indeksda topilmadi "
+                 f"-> {home} (bo'lim raqami o'zgargan bo'lishi mumkin)")
+    # Sarlavhada mavzu: uy-bobdan tashqarida ogohlantirish.
+    words = {topic: re.compile(r'\b' + re.escape(topic).replace(r'\ ', r'\s+')
+                               + r'\b', re.I) for topic, _, _ in owners}
+    homes = {topic: home for topic, home, _ in owners}
+    for rel in sorted(files):
+        if scope_of(rel) != 'docs':
+            continue
+        parts = rel.replace('\\', '/').split('/')
+        if len(parts) < 3 or parts[2] == 'README.md':
+            continue
+        doc_key = parts[1]
+        text = open(os.path.join(ROOT, rel), encoding='utf-8').read()
+        chapter = re.search(r'<!-- doc: \S+ \| chapter: (\S*)', text)
+        chapter = chapter.group(1).strip() if chapter else ''
+        for line in strip_fences(text).split('\n'):
+            if not line.startswith('## '):
+                continue
+            number = re.match(r'## ([\d.]+)', line)
+            here = f"{doc_key} {number.group(1)}" if number else f"{doc_key} {chapter}"
+            for topic, regex in words.items():
+                if not regex.search(line):
+                    continue
+                home = homes[topic]
+                if here == home or here.startswith(home + '.'):
+                    continue
+                warn(f"{rel}: '{topic}' sarlavhasi {here} da, uy-bob "
+                     f"{home} (OWNERS.tsv): qisqa xulosa va havola qoldirilsin")
 
 
 def check_review(manifest, review_rows):
@@ -562,6 +635,7 @@ def main():
     if man is not None:
         check_counts(man)
         check_review(man, review_rows)
+        check_owners(man, files)
 
     # 11. Sonar kalitlari snapshot bilan mos.
     check_sonar(files)

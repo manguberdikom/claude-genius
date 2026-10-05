@@ -1,0 +1,29 @@
+# Mavzuning uy-bobi: qaysi bob mavzuni TO'LIQ yozadi.
+#
+# Mavzu bir nechta hujjatda uchrashi mumkin va bu to'g'ri: har hujjat
+# boshqa nuqtadan qaraydi (pattern katalogi, mexanika, review, Sonar).
+# Lekin TO'LIQ tavsif bitta joyda turadi, qolganlari qisqa xulosa
+# berib uy-bobga mavzu nomi bilan havola qiladi (CONTRIBUTING.md,
+# "Havolalar"). Shunda bir xil narsa besh joyda bir-biridan farq
+# qilib ketmaydi.
+#
+# mavzu   - qidirish uchun atama, kichik harfda
+# uy_bob  - `<hujjat> <raqam>`
+# dalil   - nega aynan shu bob: nimasi bilan eng to'liq
+#
+# check_docs: uy-bobdan tashqarida shu mavzu SARLAVHASI bo'lsa
+# ogohlantirish beradi, xato emas. Birlashtirish ishi 8-promptda,
+# bob tekshirilganda bajariladi.
+mavzu	uy_bob	dalil
+n+1	architect 18.4	mexanizmni va to'rt xil yechimni birga beradi; patterns 9.27 va 25.43 katalog yozuvi, code-review 23.1 diffdan ko'rish, sonarqube 29.7 faqat EAGER xavfi
+circuit breaker	patterns 17.2	pattern katalogining o'z yozuvi: holat mashinasi va chegaralar; 17.39 Resilience4j sozlamasi
+idempotency	patterns 7.9	API darajasidagi idempotentlik kaliti to'liq; architect 7.5 nosozlik nuqtasidan, patterns 10.30 ombor, clean-code 27.7 kod shakli
+transactional outbox	patterns 10.14	kanonik yozuv: jadval, poller va kafolat; patterns 14.12 microservices nuqtasidan takrorlaydi
+optimistic locking	patterns 9.23	Optimistik Oflayn Qulf yozuvi to'liq; testing 11.8 uni testlash, patterns 28.11 taqsimlangan holat
+transactional self-invocation	architect 19	Spring tranzaksiya mexanikasi bobida proxy va chaqiruv yo'li tushuntiriladi; patterns 25.30 anti-pattern yozuvi, sonarqube 14 Sonar kaliti
+testcontainers	testing 8	butun bob shu haqda; patterns 23.15 katalog yozuvi
+archunit	testing 14	14.2 asoslari va 14.3 amaliy qoidalar to'plami; patterns 23.21 katalog yozuvi, architect 36.9 standart o'rnatish
+field injection	patterns 25.29	anti-pattern yozuvi sabab va yechim bilan; sonarqube 14.1 Sonar kaliti nuqtasidan
+entity equals hashCode	clean-code 15	obyekt shartnomalari bobi: equals, hashCode va JPA identifikatori birga; sonarqube 29 entity xatolari, code-review 13 domen modeli
+magic number	clean-code 20	primitiv son va pul bobi sababni beradi; patterns 25.8 anti-pattern yozuvi, sonarqube 13.8 va 27.9 Sonar nuqtasidan
+cognitive complexity	sonarqube 15	butun bob o'lchov va kamaytirish usullari haqida; clean-code 4 funksiya kichikligi nuqtasidan
