@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 27. Xato katalogi: maintainability, tuzilish va murakkablik (Catalog: Maintainability, Structure)
 
 <details>

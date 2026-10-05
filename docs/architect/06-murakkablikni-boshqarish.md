@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 6. Murakkablikni boshqarish (Managing Complexity)
 
 <details>

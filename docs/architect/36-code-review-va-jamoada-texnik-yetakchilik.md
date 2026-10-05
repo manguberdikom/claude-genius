@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 36. Code review va jamoada texnik yetakchilik (Code Review and Technical Leadership)
 
 <details>

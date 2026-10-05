@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 13. Zamonaviy Java tili va API dizayni (Modern Java and API Design)
 
 <details>

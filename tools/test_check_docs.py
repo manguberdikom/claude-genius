@@ -42,6 +42,8 @@ def chapter(n):
         "",
         "[Sinov hujjati](../../README.md) / [Sinov](README.md)",
         "",
+        "> Holat: AI yozgan, inson tekshirmagan.",
+        "",
         "# %s" % CHAPTERS[n - 1]["title"],
         "",
         "## %d.1 Mavzu" % n,
@@ -84,6 +86,10 @@ FILES = {
     "docs/sinov/02-ikkinchi.md": chapter(2),
     # 8. Regressiya naqshlari. Fixture da ataylab ikki qator: biri oddiy
     # so'z, biri kontekstli (naqsh to'g'ri matnni tutmasligi sinaladi).
+    "docs/review.tsv": ("hujjat\tbob\tholat\tsana\ttekshiruvchi"
+                        "\tmanbalar\txatolar\tizoh\n"
+                        "sinov\t1\tai-draft\t\t\t0\t0\t\n"
+                        "sinov\t2\tai-draft\t\t\t0\t0\t\n"),
     "tools/known_errors.tsv": (
         "naqsh\tizoh\tqamrov\n"
         "xatoso'z\tsinov uchun naqsh\tdocs\n"
@@ -146,6 +152,19 @@ CASES = [
     ("toza nusxada xato yo'q", lambda tmp: run(tmp, "toza") == []),
     ("H1 manifestdan farq qiladi",
      expect((CH1, "# 1. Birinchi bob", "# 1. Boshqa sarlavha"), "H1 manifest")),
+    # 10. Tekshiruv holati.
+    ("holat qatori yo'q",
+     expect((CH1, "> Holat: AI yozgan, inson tekshirmagan.\n\n", ""),
+            "holat qatori yo'q")),
+    ("holat qatori review.tsv ga mos emas",
+     expect(("docs/review.tsv", "sinov\t1\tai-draft", "sinov\t1\ttekshirilgan"),
+            "holat qatori review.tsv ga mos emas")),
+    ("review.tsv da bob yo'q",
+     expect(("docs/review.tsv", "sinov\t2\tai-draft\t\t\t0\t0\t\n", ""),
+            "2-bob yo'q")),
+    ("review.tsv da noma'lum holat",
+     expect(("docs/review.tsv", "sinov\t1\tai-draft", "sinov\t1\tqoralama"),
+            "holati noma'lum")),
     ("metadata manifestdan farq qiladi",
      expect((CH1, "chapter: 1 |", "chapter: 7 |"), "metadata manifest")),
     ("breadcrumb yo'q",
@@ -167,7 +186,7 @@ CASES = [
     ("doc.sh da yo'q subkomanda",
      expect(("CLAUDE.md", "doc.sh show", "doc.sh shw"), "subkomandasi yo'q")),
     ("docs/ da til belgisiz kod bloki",
-     expect((CH1, "```markdown", "```"), "01-birinchi.md:11: kod blokida til belgisi")),
+     expect((CH1, "```markdown", "```"), "01-birinchi.md:13: kod blokida til belgisi")),
     ("docs/ dan tashqarida belgisiz blok xato emas",
      lambda tmp: run(tmp, "tashqari", ("CLAUDE.md", "```bash", "```")) == []),
     ("bob hech qaysi skill jadvalida yo'q",
@@ -178,7 +197,7 @@ CASES = [
     ("tuzatilgan xato qaytsa xato beradi",
      expect((CH1, "Matn.", "Matn xatoso'z bilan."), "tuzatilgan xato qaytdi")),
     ("naqsh qator raqamini beradi",
-     expect((CH1, "Matn.", "Matn xatoso'z bilan."), "01-birinchi.md:9")),
+     expect((CH1, "Matn.", "Matn xatoso'z bilan."), "01-birinchi.md:11")),
     ("kontekstli naqsh mos kelsa tutadi",
      expect((CH1, "Matn.", "`java:S9999` public bo'lmagan metod."),
             "tuzatilgan xato qaytdi")),

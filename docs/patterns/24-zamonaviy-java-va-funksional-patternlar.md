@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 24. Zamonaviy Java va funksional patternlar (Modern Java & Functional Patterns)
 
 <details>

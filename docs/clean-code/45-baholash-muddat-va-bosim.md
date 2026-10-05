@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 45. Baholash, muddat va bosim (Estimation, Deadlines and Pressure)
 
 <details>

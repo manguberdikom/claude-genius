@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 9. Ma'lumotlarga kirish va ORM patternlari (Data Access & ORM Patterns)
 
 <details>

@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 22. Deployment va operatsion patternlar (Deployment & Operations Patterns)
 
 <details>

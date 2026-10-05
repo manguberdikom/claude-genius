@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 17. Resilience va cloud dizayn patternlari (Resilience & Cloud Design Patterns)
 
 <details>

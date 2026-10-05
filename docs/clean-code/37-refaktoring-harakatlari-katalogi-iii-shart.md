@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 37. Refaktoring harakatlari katalogi III: shart, API va ierarxiya (Refactoring Moves III)
 
 <details>

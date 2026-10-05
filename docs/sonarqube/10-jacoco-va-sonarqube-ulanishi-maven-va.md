@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 10. JaCoCo va SonarQube ulanishi: Maven va Gradle sozlash (Wiring JaCoCo to SonarQube)
 
 <details>

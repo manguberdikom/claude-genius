@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 1. Arxitektorning fikrlash modeli (The Architect's Mental Model)
 
 <details>

@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 13. Sonar o'tadigan kod yozish qoidalari (Writing Code That Passes)
 
 <details>

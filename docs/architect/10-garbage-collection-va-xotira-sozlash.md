@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 10. Garbage collection va xotira sozlash (Garbage Collection and Memory Tuning)
 
 <details>

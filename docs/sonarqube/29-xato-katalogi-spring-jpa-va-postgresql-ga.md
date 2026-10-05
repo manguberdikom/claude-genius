@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 29. Xato katalogi: Spring, JPA va PostgreSQL ga xos xatolar (Catalog: Spring, JPA and PostgreSQL)
 
 <details>

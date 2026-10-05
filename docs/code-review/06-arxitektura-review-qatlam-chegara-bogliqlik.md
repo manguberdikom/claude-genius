@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 6. Arxitektura review: qatlam, chegara, bog'liqlik yo'nalishi (Architecture in a Diff)
 
 <details>

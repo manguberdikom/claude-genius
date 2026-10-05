@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 18. Shablonlar, checklistlar va ma'lumotnoma (Templates, Checklists & Reference)
 
 <details>

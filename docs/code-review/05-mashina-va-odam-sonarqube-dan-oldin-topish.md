@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 5. Mashina va odam: SonarQube dan oldin topish (Beating the Tools)
 
 <details>

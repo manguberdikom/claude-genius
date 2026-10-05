@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 38. Doimiy o'rganish va texnologiya tanlash (Continuous Learning and Technology Choice)
 
 <details>

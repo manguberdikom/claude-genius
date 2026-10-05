@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 35. Test sifati review: assertion, izolyatsiya, beqarorlik (Test Quality)
 
 <details>

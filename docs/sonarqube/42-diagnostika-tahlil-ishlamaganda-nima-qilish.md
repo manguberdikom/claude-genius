@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 42. Diagnostika: tahlil ishlamaganda nima qilish (Troubleshooting)
 
 <details>

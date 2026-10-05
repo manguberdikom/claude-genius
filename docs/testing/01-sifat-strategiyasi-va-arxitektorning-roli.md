@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 1. Sifat strategiyasi va arxitektorning roli (Quality Strategy & the Architect's Role)
 
 <details>

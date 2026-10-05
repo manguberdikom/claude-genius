@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 6. Web va taqdimot qatlami patternlari (Web & Presentation Patterns)
 
 <details>

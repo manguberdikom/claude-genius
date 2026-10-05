@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 44. Shablonlar, checklistlar va reviewer yetukligi (Templates and Maturity)
 
 <details>

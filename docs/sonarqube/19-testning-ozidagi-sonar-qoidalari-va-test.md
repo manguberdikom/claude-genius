@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 19. Testning o'zidagi Sonar qoidalari va test sifati (Sonar Rules on Test Code)
 
 <details>

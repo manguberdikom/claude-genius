@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 25. Sxema dizayni, ma'lumot turlari va cheklovlar (Schema Design and Data Types)
 
 <details>

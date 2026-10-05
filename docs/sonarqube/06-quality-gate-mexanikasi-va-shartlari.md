@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 6. Quality gate mexanikasi va shartlari (Quality Gate Mechanics)
 
 <details>

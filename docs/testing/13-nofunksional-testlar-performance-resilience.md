@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 13. Nofunksional testlar: performance, resilience, xavfsizlik (Non-Functional Testing)
 
 <details>

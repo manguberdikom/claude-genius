@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 24. Lambda, oqim va funksional uslub tozaligi (Lambdas and Streams)
 
 <details>

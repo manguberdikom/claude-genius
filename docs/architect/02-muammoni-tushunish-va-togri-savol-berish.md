@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 2. Muammoni tushunish va to'g'ri savol berish (Understanding the Problem)
 
 <details>

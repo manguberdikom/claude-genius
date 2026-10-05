@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 32. Secret, maxfiy ma'lumot va kriptografiya review (Secrets, PII and Crypto)
 
 <details>

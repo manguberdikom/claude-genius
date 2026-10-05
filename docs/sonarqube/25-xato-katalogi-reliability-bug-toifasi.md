@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 25. Xato katalogi: reliability (bug) toifasi (Catalog: Reliability)
 
 <details>

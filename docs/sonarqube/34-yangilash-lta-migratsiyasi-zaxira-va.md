@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 34. Yangilash, LTA migratsiyasi, zaxira va housekeeping (Upgrades, Backup and Housekeeping)
 
 <details>

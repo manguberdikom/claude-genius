@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 40. Sonar va boshqa vositalar: qachon qaysi biri (Sonar and Other Tools)
 
 <details>

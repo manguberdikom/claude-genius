@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 39. Bog'liqlik zaifliklari va litsenziya tekshiruvi (Dependency Risk and Licences)
 
 <details>

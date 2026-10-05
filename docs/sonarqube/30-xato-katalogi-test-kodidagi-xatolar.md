@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 30. Xato katalogi: test kodidagi xatolar (Catalog: Test Code)
 
 <details>

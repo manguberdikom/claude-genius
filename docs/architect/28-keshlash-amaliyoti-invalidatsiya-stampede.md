@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 28. Keshlash amaliyoti: invalidatsiya, stampede, Redis haqiqati (Caching in Practice)
 
 <details>

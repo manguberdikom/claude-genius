@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 14. Arxitektura testlari va kod sifati darvozalari (Architecture Tests & Code Quality Gates)
 
 <details>

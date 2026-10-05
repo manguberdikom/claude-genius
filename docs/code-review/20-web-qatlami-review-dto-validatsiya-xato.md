@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 20. Web qatlami review: DTO, validatsiya, xato javobi (The Web Layer)
 
 <details>

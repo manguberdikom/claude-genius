@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 41. Review madaniyati, til va kelishmovchilik (Culture, Language, Disagreement)
 
 <details>

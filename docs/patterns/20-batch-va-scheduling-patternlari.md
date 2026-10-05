@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 20. Batch va scheduling patternlari (Batch & Scheduling Patterns)
 
 <details>

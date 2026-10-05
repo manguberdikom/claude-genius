@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 34. Legacy kod va bosqichma-bosqich refaktoring (Legacy Code and Refactoring)
 
 <details>

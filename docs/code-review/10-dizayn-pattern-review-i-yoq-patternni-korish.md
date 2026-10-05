@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 10. Dizayn pattern review I: yo'q patternni ko'rish (Missing Patterns)
 
 <details>

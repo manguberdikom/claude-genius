@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 18. Bean, kontekst va proxy mexanikasi review (Beans, Context and Proxies)
 
 <details>

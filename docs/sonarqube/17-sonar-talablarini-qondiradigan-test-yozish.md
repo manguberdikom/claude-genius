@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 17. Sonar talablarini qondiradigan test yozish (Writing Tests That Satisfy Sonar)
 
 <details>

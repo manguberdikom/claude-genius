@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 8. Testcontainers bilan real infratuzilmada test (Integration Testing with Testcontainers)
 
 <details>

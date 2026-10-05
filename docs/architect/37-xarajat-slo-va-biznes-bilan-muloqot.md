@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 37. Xarajat, SLO va biznes bilan muloqot (Cost, SLO and Business Communication)
 
 <details>

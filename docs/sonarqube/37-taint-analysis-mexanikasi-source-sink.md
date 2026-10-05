@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 37. Taint analysis mexanikasi: source, sink, sanitizer (Taint Analysis Mechanics)
 
 <details>

@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 22. Lokal tekshirish: IDE, sonar-scanner va tez qaytish (Local Feedback Loop)
 
 <details>

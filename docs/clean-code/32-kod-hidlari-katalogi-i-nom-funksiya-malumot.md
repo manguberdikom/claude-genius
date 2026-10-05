@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 32. Kod hidlari katalogi I: nom, funksiya, ma'lumot (Code Smells I)
 
 <details>

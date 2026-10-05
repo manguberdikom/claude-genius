@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 4. Funksiya: kichiklik va bitta ish (Functions: Small and Doing One Thing)
 
 <details>

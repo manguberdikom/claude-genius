@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 30. Spring AI va LLM integratsiya patternlari (Spring AI & LLM Integration Patterns)
 
 <details>

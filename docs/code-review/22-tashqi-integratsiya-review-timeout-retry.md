@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 22. Tashqi integratsiya review: timeout, retry, broker (Outbound Integration)
 
 <details>

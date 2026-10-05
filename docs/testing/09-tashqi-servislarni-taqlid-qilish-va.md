@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 9. Tashqi servislarni taqlid qilish va contract testing (Faking External Services & Contract Testing)
 
 <details>

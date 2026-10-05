@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 24. SQL, so'rov rejasi va indeks review (SQL, Plans and Indexes)
 
 <details>

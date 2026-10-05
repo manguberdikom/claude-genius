@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 32. Tarmoq, timeout va integratsiya haqiqati (Network, Timeouts and Integration)
 
 <details>

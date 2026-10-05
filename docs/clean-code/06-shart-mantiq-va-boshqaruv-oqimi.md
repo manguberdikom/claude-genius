@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 6. Shart, mantiq va boshqaruv oqimi (Conditionals and Control Flow)
 
 <details>

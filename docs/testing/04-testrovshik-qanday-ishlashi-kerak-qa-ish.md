@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 4. Testrovshik qanday ishlashi kerak: QA ish jarayoni (How a Tester Actually Works - The QA Workflow)
 
 <details>

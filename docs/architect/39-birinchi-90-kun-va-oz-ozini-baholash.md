@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 39. Birinchi 90 kun va o'z-o'zini baholash (First 90 Days and Self-Assessment)
 
 <details>

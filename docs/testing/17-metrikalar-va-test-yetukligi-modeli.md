@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 17. Metrikalar va test yetukligi modeli (Metrics & Testing Maturity)
 
 <details>

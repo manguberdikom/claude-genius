@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 28. Xato katalogi: maintainability, nomlash, o'lik kod va uslub (Catalog: Maintainability, Naming)
 
 <details>

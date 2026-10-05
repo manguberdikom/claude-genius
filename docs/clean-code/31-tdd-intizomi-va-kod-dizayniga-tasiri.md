@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 31. TDD intizomi va kod dizayniga ta'siri (TDD Discipline)
 
 <details>

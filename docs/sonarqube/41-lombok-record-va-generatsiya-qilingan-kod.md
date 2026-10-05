@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 41. Lombok, record va generatsiya qilingan kod (Lombok, Records and Generated Code)
 
 <details>

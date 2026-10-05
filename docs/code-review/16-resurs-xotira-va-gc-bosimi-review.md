@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 16. Resurs, xotira va GC bosimi review (Resources and Memory)
 
 <details>

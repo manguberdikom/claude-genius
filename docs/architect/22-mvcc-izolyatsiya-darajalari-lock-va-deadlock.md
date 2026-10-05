@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 22. MVCC, izolyatsiya darajalari, lock va deadlock (MVCC and Isolation)
 
 <details>

@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 3. Kim nima yozadi: rollar va mas'uliyat (Who Writes What - Roles & Responsibilities)
 
 <details>

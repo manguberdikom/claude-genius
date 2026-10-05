@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 43. AI yozgan kodni review qilish va AI bilan review qilish (Reviewing AI-Generated Code)
 
 <details>

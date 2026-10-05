@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 33. Kod hidlari katalogi II: sinf, ierarxiya, bog'liqlik (Code Smells II)
 
 <details>

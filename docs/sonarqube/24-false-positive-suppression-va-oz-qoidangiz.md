@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 24. False positive, suppression va o'z qoidangiz (False Positives and Custom Rules)
 
 <details>

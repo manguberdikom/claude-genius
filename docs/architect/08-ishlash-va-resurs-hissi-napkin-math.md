@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 8. Ishlash va resurs hissi: napkin math (Performance Intuition and Napkin Math)
 
 <details>

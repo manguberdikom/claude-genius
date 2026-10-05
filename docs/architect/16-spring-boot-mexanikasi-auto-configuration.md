@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 16. Spring Boot mexanikasi: auto-configuration, starter, Actuator (Spring Boot Mechanics)
 
 <details>

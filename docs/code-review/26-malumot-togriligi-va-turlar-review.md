@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 26. Ma'lumot to'g'riligi va turlar review (Data Correctness)
 
 <details>

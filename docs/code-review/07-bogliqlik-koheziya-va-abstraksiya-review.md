@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 7. Bog'liqlik, koheziya va abstraksiya review (Coupling, Cohesion, Abstraction)
 
 <details>

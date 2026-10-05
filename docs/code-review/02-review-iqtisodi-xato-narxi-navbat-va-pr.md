@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 2. Review iqtisodi: xato narxi, navbat va PR hajmi (The Economics of Review)
 
 <details>

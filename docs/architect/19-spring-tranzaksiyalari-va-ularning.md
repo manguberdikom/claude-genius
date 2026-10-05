@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 19. Spring tranzaksiyalari va ularning chegaralari (Spring Transactions)
 
 <details>

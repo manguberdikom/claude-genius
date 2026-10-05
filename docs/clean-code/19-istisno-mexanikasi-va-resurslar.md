@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 19. Istisno mexanikasi va resurslar (Exception Mechanics and Resources)
 
 <details>

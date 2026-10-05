@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 38. Refaktoringni xavfsiz bajarish (Safe Refactoring Mechanics)
 
 <details>

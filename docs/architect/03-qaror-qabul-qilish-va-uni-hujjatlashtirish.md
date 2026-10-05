@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 3. Qaror qabul qilish va uni hujjatlashtirish (Decisions and ADRs)
 
 <details>

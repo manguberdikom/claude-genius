@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 31. Deployment haqiqati: konteyner, cgroup, JVM va probe (Deployment Reality)
 
 <details>

@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 4. Kod - muloqot vositasi: nomlash, aniqlik, kognitiv yuk (Code as Communication)
 
 <details>

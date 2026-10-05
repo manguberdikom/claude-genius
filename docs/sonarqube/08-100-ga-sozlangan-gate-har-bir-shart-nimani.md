@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 8. 100% ga sozlangan gate: har bir shart nimani talab qiladi (A Gate Set to 100 Percent)
 
 <details>

@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 20. Mutation testing: 100% coverage qachon yolg'on (Mutation Testing)
 
 <details>

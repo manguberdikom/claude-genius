@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 8. Biznes logika va Service qatlam patternlari (Business & Service Layer Patterns)
 
 <details>

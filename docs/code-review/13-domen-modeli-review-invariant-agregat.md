@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 13. Domen modeli review: invariant, agregat, chegara (Reviewing the Domain Model)
 
 <details>

@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 14. Java tili darajasidagi xatolar katalogi (Language-Level Defects)
 
 <details>

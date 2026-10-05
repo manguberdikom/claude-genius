@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 9. JVM ichki tuzilishi: class loading, memory model, JIT (JVM Internals)
 
 <details>

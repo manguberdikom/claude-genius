@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 25. Java kodidagi umumiy tuzoqlar (Common Java Pitfalls)
 
 <details>

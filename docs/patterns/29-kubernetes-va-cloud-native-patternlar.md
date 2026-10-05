@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 29. Kubernetes va cloud-native patternlar (Kubernetes & Cloud-Native Patterns)
 
 <details>

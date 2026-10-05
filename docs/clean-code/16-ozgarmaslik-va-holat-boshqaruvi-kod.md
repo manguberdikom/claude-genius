@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 16. O'zgarmaslik va holat boshqaruvi kod darajasida (Immutability in Code)
 
 <details>

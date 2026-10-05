@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 26. Partitioning, replikatsiya va katta hajm (Partitioning, Replication and Scale)
 
 <details>

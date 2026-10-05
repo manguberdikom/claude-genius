@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 29. Kafka operatsion haqiqati: partition, lag, rebalance, idempotentlik (Kafka in Production)
 
 <details>

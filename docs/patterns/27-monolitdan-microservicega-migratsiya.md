@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 27. Monolitdan microservice'ga migratsiya patternlari (Monolith to Microservices Migration Patterns)
 
 <details>

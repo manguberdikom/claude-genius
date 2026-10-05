@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 5. Spring Core ichidagi patternlar xaritasi (Patterns inside Spring Core)
 
 <details>

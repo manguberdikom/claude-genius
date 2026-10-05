@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 19. Tranzaksiya chegarasi review (Transaction Boundaries)
 
 <details>

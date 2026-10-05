@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 5. Metrikalar: rating, texnik qarz, murakkablik, takrorlanish (Metrics and Ratings)
 
 <details>

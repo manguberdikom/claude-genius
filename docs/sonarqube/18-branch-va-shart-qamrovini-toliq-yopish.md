@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 18. Branch va shart qamrovini to'liq yopish usullari (Covering Every Branch)
 
 <details>

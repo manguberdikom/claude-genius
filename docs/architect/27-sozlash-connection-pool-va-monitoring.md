@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 27. Sozlash, connection pool va monitoring (Configuration, Pooling and Monitoring)
 
 <details>

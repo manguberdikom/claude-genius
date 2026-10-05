@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 2. Scanner nimani yig'adi va qanday yuboradi (What the Scanner Collects)
 
 <details>

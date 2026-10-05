@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 1. Review nima uchun bor va nimani haqiqatda beradi (Why Review Exists)
 
 <details>

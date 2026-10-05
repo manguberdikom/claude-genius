@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 9. Coverage qanday o'lchanadi: JaCoCo mexanikasi (How Coverage Is Measured)
 
 <details>

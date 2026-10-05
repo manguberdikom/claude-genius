@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 12. Gorizontal formatlash va kod uslubi (Horizontal Formatting and Style)
 
 <details>

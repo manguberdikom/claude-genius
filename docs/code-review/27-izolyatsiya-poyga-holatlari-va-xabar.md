@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 27. Izolyatsiya, poyga holatlari va xabar yetkazish (Isolation, Races and Delivery)
 
 <details>

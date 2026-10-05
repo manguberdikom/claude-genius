@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 34. Toza kod evristikalarining to'liq ro'yxati (Clean Code Heuristics)
 
 <details>

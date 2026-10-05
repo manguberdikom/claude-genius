@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 14. Java va Spring da eng ko'p uchraydigan issue va ularning yechimi (Common Java and Spring Issues)
 
 <details>

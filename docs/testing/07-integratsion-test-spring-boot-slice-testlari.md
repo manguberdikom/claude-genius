@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 7. Integratsion test: Spring Boot slice testlari (Integration Testing - Spring Boot Test Slices)
 
 <details>

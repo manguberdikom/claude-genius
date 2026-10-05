@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 18. Spring Data JPA va Hibernate chuqur (Spring Data JPA and Hibernate)
 
 <details>

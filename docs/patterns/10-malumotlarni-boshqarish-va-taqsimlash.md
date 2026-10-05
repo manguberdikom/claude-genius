@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 10. Ma'lumotlarni boshqarish va taqsimlash patternlari (Data Management & Distribution Patterns)
 
 <details>

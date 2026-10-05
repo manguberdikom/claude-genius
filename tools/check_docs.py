@@ -19,7 +19,8 @@ Tekshiradi:
                     mavjud, doc.sh subkomandasi doc.sh da bor; har bob
                     kamida bitta skill yoki agent jadvalida turadi.
   6. Struktura    - har bob faylida metadata manifest bilan mos, breadcrumb
-                    (3-qator), H1 manifest sarlavhasi (5-qator), bo'lim soni
+                    (3-qator), docs/review.tsv dagi holat qatori (5-qator),
+                    H1 manifest sarlavhasi (7-qator), bo'lim soni
                     manifest, README va <summary> bilan mos, footer qo'shni
                     boblarga ishora qiladi va oxirida turadi.
   7. Konvensiya   - har bobning oxirgi `##` bo'limi `Amalda qo'llash` yoki
@@ -28,6 +29,8 @@ Tekshiradi:
                     Tuzatilgan mazmun xatosi keyingi tahrirda jim
                     qaytib kelishi mumkin, shuning uchun u naqsh bo'lib
                     yoziladi va shu yerda qo'riqlanadi.
+ 10. Tekshiruv    - docs/review.tsv da manifestdagi har bob bor va holati
+                    ruxsat etilgan qiymatlardan biri.
   9. Sonlar       - README.md, CLAUDE.md va install/README.md da qo'lda
                     yozilgan "N bob" va "N bo'lim" manifestdan
                     hisoblangan songa mos. Qator hujjat nomini aytsa
@@ -35,6 +38,9 @@ Tekshiradi:
                     hujjatning yoki jamining soni bo'lishi kerak.
 """
 import json, os, re, sys, unicodedata
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import review_status                                    # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SIZE_LIMIT = 900_000          # GitHub chegarasi 1 048 576; zahira bilan
@@ -207,8 +213,35 @@ def check_counts(manifest):
                         f"va jamiga ({totals[unit]}) mos emas")
 
 
+def check_review(manifest, review_rows):
+    """10. docs/review.tsv manifest bilan mos va holatlari to'g'ri."""
+    if not review_rows:
+        err("docs/review.tsv yo'q yoki bo'sh: bob holatini hech narsa aytmaydi")
+        return
+    seen = set()
+    for key, doc in manifest.items():
+        for c in doc.get('chapters', []):
+            ref = (key, str(c['num'] or ''))
+            seen.add(ref)
+            row = review_rows.get(ref)
+            if row is None:
+                err(f"docs/review.tsv: {key} {ref[1]}-bob yo'q")
+                continue
+            if row.get('holat') not in review_status.HOLATLAR:
+                err(f"docs/review.tsv: {key} {ref[1]} holati noma'lum "
+                    f"-> {row.get('holat')!r} "
+                    f"(ruxsat: {', '.join(review_status.HOLATLAR)})")
+    for ref in sorted(review_rows):
+        if ref not in seen:
+            err(f"docs/review.tsv: {ref[0]} {ref[1]} manifestda yo'q")
+
+
 def main():
     files = list(md_files())
+    # Yo'l ROOT dan: sinov ROOT ni vaqtinchalik papkaga almashtiradi,
+    # modul darajasidagi doimiy esa haqiqiy repoga qarab turardi.
+    review_rows = review_status.read_review(
+        os.path.join(ROOT, 'docs', 'review.tsv'))
     anchors = {}
     for rel in files:
         text = open(os.path.join(ROOT, rel), encoding='utf-8').read()
@@ -375,10 +408,19 @@ def main():
                 elif lines[0].rstrip() != (f"<!-- doc: {key} | chapter: {c['num'] or ''}"
                                            f" | part: {c['part'] or ''} -->"):
                     err(f"{where}: metadata manifest bilan mos emas -> {lines[0][:60]}")
-                if len(lines) < 5 or not crumb.match(lines[2]):
+                if len(lines) < 7 or not crumb.match(lines[2]):
                     err(f"{where}: breadcrumb yo'q yoki noto'g'ri (3-qator)")
-                if len(lines) < 5 or lines[4] != '# ' + c['title']:
-                    err(f"{where}: H1 manifest sarlavhasi bilan mos emas (5-qator)")
+                # 5-qator: review.tsv dagi holat. 7-qator: H1.
+                row = review_rows.get((key, str(c['num'] or '')))
+                want_status = review_status.status_line(row)
+                if len(lines) < 7 or not lines[4].startswith(review_status.MARKER):
+                    err(f"{where}: holat qatori yo'q (5-qator). "
+                        f"`python3 tools/review_status.py --yoz` yozadi")
+                elif lines[4] != want_status:
+                    err(f"{where}: holat qatori review.tsv ga mos emas "
+                        f"(5-qator). `python3 tools/review_status.py --yoz`")
+                if len(lines) < 7 or lines[6] != '# ' + c['title']:
+                    err(f"{where}: H1 manifest sarlavhasi bilan mos emas (7-qator)")
 
                 # Sarlavhalar fence tashqarisidan sanaladi: ```markdown
                 # namunasidagi `## Hotfix` bob bo'limi emas.
@@ -431,12 +473,15 @@ def main():
     # 8. Regressiya: tuzatilgan xato naqshi qaytib kelmaganmi.
     check_regression(files)
 
-    # 9. Qo'lda yozilgan bob va bo'lim sonlari.
+    # 9. Qo'lda yozilgan bob va bo'lim sonlari, 10. review.tsv.
     try:
-        check_counts(json.load(open(os.path.join(ROOT, 'docs', 'manifest.json'),
-                                    encoding='utf-8')))
+        man = json.load(open(os.path.join(ROOT, 'docs', 'manifest.json'),
+                             encoding='utf-8'))
     except (OSError, ValueError):
-        pass          # manifest muammosini 4-tekshiruv aytadi
+        man = None    # manifest muammosini 4-tekshiruv aytadi
+    if man is not None:
+        check_counts(man)
+        check_review(man, review_rows)
 
     print(f"{len(files)} markdown fayl, {total} nisbiy havola tekshirildi")
     for w in warnings:

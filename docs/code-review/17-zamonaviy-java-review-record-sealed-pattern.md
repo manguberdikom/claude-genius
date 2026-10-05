@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 17. Zamonaviy Java review: record, sealed, pattern matching, virtual thread (Modern Java)
 
 <details>
