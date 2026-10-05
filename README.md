@@ -57,6 +57,13 @@ bir vazifada ko'pi bilan ikki martadan chaqiriladi, `qidiruv` va `tahlil`
 sanalmaydi (`budget.py`); token sarfi `.claude/usage/` ga yoziladi
 (`usage.py`).
 
+Hooklar faqat ikki joyda ish qiladi: shu klonda va Java proyektida (ildizida
+yoki birinchi darajali papkasida `pom.xml` yoki Gradle fayli bo'lgan repo).
+Global o'rnatishda ular har proyektda yuradi, lekin boshqa joyda chiqishsiz
+0 bilan chiqadi, ya'ni Python yoki JS proyektida hech narsa to'smaydi.
+`GENIUS_HOOKS=off` hammasini o'chiradi. Tafsiloti
+[install/README.md](install/README.md#hooklar-qaysi-proyektda-ishlaydi) da.
+
 Sakkizta marshrut skilli faqat shu repo ichida ishlaydi: ulardagi `docs/` va
 `tools/` yo'llari joriy papkaga nisbatan hal qilinadi va boshqa proyektda
 topilmaydi, shuning uchun ularni boshqa joyga ko'chirmang. Boshqa Java

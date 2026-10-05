@@ -227,6 +227,71 @@ Hooklar (hammasi tanlangan Python ning to'liq yo'li bilan):
 | `PostToolUse` (Write, Edit) | `check_code.py` | Java qoidalarini tekshiradi |
 | `Stop` | `usage.py --saqlash` | kunlik token sarfini yozib boradi |
 
+### Hooklar qaysi proyektda ishlaydi
+
+Global o'rnatishda hooklar har proyektda yuradi, lekin ular faqat ikki
+joyda ish qiladi:
+
+- qo'llanma klonining o'zida;
+- Java proyektida, ya'ni ildizida yoki birinchi darajali papkasida
+  `pom.xml`, `build.gradle`, `build.gradle.kts`, `settings.gradle` yoki
+  `settings.gradle.kts` bo'lgan repoda (ko'p modulli repoda
+  `backend/pom.xml` ham sanaladi).
+
+Boshqa joyda har hook chiqishsiz 0 bilan chiqadi: Python yoki JS
+proyektida `docker` va `psql` to'silmaydi, Java bo'limlari taklif
+qilinmaydi va `.java` yozuvi tekshirilmaydi. Proyekt ildizi aniqlanmasa
+ham hook jim o'tadi: hook o'z noaniqligi tufayli hech qachon to'smaydi.
+Qoida `tools/hookio.py` dagi `active()` da, sinovlari
+`tools/test_hookio.py` da.
+
+### Hooklarni butunlay o'chirish
+
+`GENIUS_HOOKS=off` bo'lsa har hook, klon ichida ham, darhol 0 bilan
+chiqadi. `0`, `false` va `no` ham shunday ishlaydi, registr ahamiyatsiz.
+
+```powershell
+$env:GENIUS_HOOKS = 'off'     # shu sessiya uchun
+setx GENIUS_HOOKS off         # doimiy
+```
+
+Bu `settings.json` ga tegmaydi, shuning uchun qaytarish uchun
+o'zgaruvchini o'chirish kifoya. Skill va aktyorlar ishlashda davom
+etadi: o'chadigani faqat hooklar.
+
+## Klon o'chsa yoki ko'chsa
+
+`settings.json` dagi hook buyruqlari aynan shu klonga mutlaq yo'l bilan
+bog'langan. Klon o'chirilsa yoki boshqa nomga ko'chirilsa:
+
+- **hooklar jim o'tadi.** Har buyruq oxirida `|| exit 0` turadi, shuning
+  uchun Python ning "can't open file" xatosi 0 ga aylanadi. Bu muhim:
+  Claude Code hookdan kelgan 2 kodini TO'SIQ deb oladi, ya'ni `|| exit 0`
+  bo'lmasa o'chgan klon `PreToolUse` da har `Read` va `Bash` ni to'sib,
+  Claude Code ni hamma proyektda ishlatmay qo'yardi. Hooklarning o'zi
+  to'siqni faqat JSON orqali beradi, shuning uchun bu hech qanday
+  tekshiruvni yo'qotmaydi.
+- **skill ishlamaydi.** `manguberdi` matnidagi buyruqlar va qo'llanma
+  yo'llari o'sha klonga qaraydi, ularni hech narsa almashtirmaydi.
+
+Ikki yo'l bor. Klon kerak bo'lsa, yangi joyda saqlab o'rnatuvchini yangi
+`-GeniusPath` bilan qayta yurgizing: hooklar va skill yangi yo'lga
+bog'lanadi.
+
+Kerak bo'lmasa, klon yozuvlarini `~/.claude/settings.json` dan olib
+tashlang. Zaxira bo'lsa, [Orqaga qaytarish](#orqaga-qaytarish) dagi
+buyruqlar shuni qiladi. Zaxira ham yo'q bo'lsa faylni qo'lda tahrir
+qiling va eski klon yo'li uchragan to'rt joyni oling:
+
+- `hooks` ichidan buyrug'ida o'sha yo'l turgan yozuvlar (hodisa guruhi
+  bo'shab qolsa, guruhning o'zi ham);
+- `permissions.allow` dan o'sha yo'l bilan boshlanadigan qoidalar;
+- `permissions.additionalDirectories` dan o'sha yo'l;
+- `env.GENIUS_PYTHON`.
+
+Begona yozuvlarga tegilmaydi. Faylni BOM siz UTF-8 bilan saqlang: Claude
+Code va Python `json.load` BOM li faylda yiqiladi.
+
 ## Yo'llar nega almashtiriladi
 
 Skill matnida buyruqlar `python3 tools/rules_for.py` deb yozilgan. Bu
