@@ -71,7 +71,12 @@ tools/doc.sh outline architect <bob>         # bobdagi bo'limlar
 tools/doc.sh show architect <raqam>          # butun bob emas, faqat o'sha bo'lim
 ```
 
-Sxemani bilish uchun bazaga ulanish shart emas: entity sinflari uni
-to'liq tasvirlaydi. Har qanday ulanish, lokal va konteyner ichidagisi
-ham, `tools/guard.py` tomonidan to'siladi. Chiqish yo'li `COST_OK=1`,
-lekin faqat foydalanuvchi bergan chiqish nega yetmagani aytilgandan keyin.
+Jadval, ustun, tur va FK ni bilish uchun bazaga ulanish shart emas:
+ularni entity sinflari va migratsiyalar beradi. Indeks, constraint,
+trigger, statistika va haqiqiy plan esa faqat bazada: tuning uchun
+`EXPLAIN (ANALYZE, BUFFERS)` chiqishi kerak, uni kod bermaydi.
+
+Har qanday ulanish, lokal va konteyner ichidagisi ham, `tools/guard.py`
+tomonidan `ask` bilan foydalanuvchi qaroriga qo'yiladi. Avval
+foydalanuvchidan chiqishni so'rang: u bergan `EXPLAIN` natijasi ulanishdan
+arzonroq va aniqroq.

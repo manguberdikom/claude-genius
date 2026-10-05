@@ -29,11 +29,15 @@ ulanish: host bilan ham, hostsiz (lokal) ham, `PGPASSWORD=...` yoki
 `sudo -u` bilan ham, `docker exec` va `kubectl exec` ichida ham. Faqat
 `--version` va `--help` ulanish emas.
 
-Nega: sxemani bilish uchun ulanish shart emas. Entity sinflari jadval,
-ustun, tur, tashqi kalit va indeksni to'liq tasvirlaydi. Ulanish esa
-muhit, parol va ruxsat talab qiladi.
+Nega: jadval, ustun, tur va tashqi kalitni bilish uchun ulanish shart
+emas, ularni entity sinflari va migratsiyalar beradi. Ulanish esa muhit,
+parol va ruxsat talab qiladi.
 
-O'rniga: `python3 tools/schema_from_entities.py <src>`.
+Chegarasi: indeks, constraint, trigger va statistika faqat bazada
+turadi, haqiqiy plan ham. Tuning uchun shular kerak bo'lsa ulanish
+o'rinli: `EXPLAIN (ANALYZE, BUFFERS)` chiqishini kod bermaydi.
+
+O'rniga (sxema uchun): `python3 tools/schema_from_entities.py <src>`.
 
 ## 3. PowerShell
 
