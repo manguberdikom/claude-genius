@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 22. Tashqi integratsiya review: timeout, retry, broker (Outbound Integration)
 
@@ -32,23 +32,30 @@ Har bir tashqi chaqiruv - tizimingizga kirgan begona nosozlik manbasi. Review ni
 RestClient paymentClient() {
     return RestClient.create("https://api.provider.io");   // timeout yo'q!
 }
-// Standart holatda JDK HttpClient da ulanish timeout i cheksiz bo'lishi
-// mumkin. Provayder TCP ulanishni qabul qilib, javob bermasa, thread
-// abadiy kutadi. 200 thread li ilovada 200 sekin so'rov butun ilovani
-// to'xtatadi - klassik kaskadli nosozlik.
+// RestClient.create() hech qanday timeout qo'ymaydi: qaysi mijoz
+// ishlatilishi classpath ga qarab aniqlanadi (Apache HttpComponents,
+// Jetty, Reactor, JDK HttpClient yoki oddiy mijoz) va ularning hech
+// biri sizning o'rningizga byudjet tanlamaydi. Provayder TCP ulanishni
+// qabul qilib, javob bermasa, thread abadiy kutadi. 200 thread li
+// ilovada 200 sekin so'rov butun ilovani to'xtatadi - klassik
+// kaskadli nosozlik.
 
 // To'g'ri: har bir mijoz uchun aniq timeout va o'lchov.
 @Bean
 RestClient paymentClient(RestClient.Builder builder,
                          PaymentProperties props,
                          MeterRegistry registry) {
-    ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.DEFAULTS
+    // Spring Boot 4.x: HttpClientSettings + ClientHttpRequestFactoryBuilder.
+    // Eski ClientHttpRequestFactories 3.4 da deprecate qilingan va
+    // 4.0 da olib tashlangan, ClientHttpRequestFactorySettings esa
+    // HttpClientSettings ga aylangan.
+    HttpClientSettings settings = HttpClientSettings.defaults()
         .withConnectTimeout(Duration.ofMillis(500))     // ulanish: tez xato
         .withReadTimeout(props.timeout());              // o'qish: byudjetdan
 
     return builder
         .baseUrl(props.baseUrl().toString())
-        .requestFactory(ClientHttpRequestFactories.get(settings))
+        .requestFactory(ClientHttpRequestFactoryBuilder.detect().build(settings))
         .requestInterceptor(new MetricsInterceptor(registry, "payment"))
         .defaultStatusHandler(HttpStatusCode::isError, (req, res) -> {
             // Xato javobini domen istisnosiga aylantirish (7.6).
@@ -56,6 +63,16 @@ RestClient paymentClient(RestClient.Builder builder,
         })
         .build();
 }
+```
+
+Butun ilova uchun bitta standart byudjet kerak bo'lsa, kod emas, sozlama yoziladi: Spring Boot 4.0 dan `spring.http.clients` prefiksi `connect-timeout` va `read-timeout` ni barcha avtomatik sozlangan mijozlarga qo'yadi. Kod darajasidagi `HttpClientSettings` esa bitta integratsiyaning byudjeti boshqalardan farq qilganda kerak bo'ladi.
+
+```yaml
+spring:
+  http:
+    clients:
+      connect-timeout: 500ms
+      read-timeout: 2s
 ```
 
 Review savollari har bir yangi HTTP mijoz uchun: ulanish timeout i, o'qish timeout i, umumiy byudjet, retry siyosati, circuit breaker, metrika, va xato javobining aylantirilishi.
@@ -196,8 +213,13 @@ spring:
         max.poll.interval.ms: 300000       # ishlov vaqtidan katta bo'lsin
     producer:
       acks: all                            # yetkazish kafolati
-      enable-idempotence: true             # dublikatsiz yozish
       properties:
+        # Spring Boot da `enable-idempotence` degan alohida kalit YO'Q:
+        # u Kafka ning o'z nomi bilan properties ichiga yoziladi.
+        # Kafka 3.0 dan beri standart holatda allaqachon true, shuning
+        # uchun bu qator aniqlik uchun. Idempotentlik acks=all,
+        # retries>0 va in-flight <= 5 ni talab qiladi.
+        enable.idempotence: true
         max.in.flight.requests.per.connection: 5
     listener:
       ack-mode: manual_immediate
@@ -290,6 +312,18 @@ Review da bu naqsh ko'pincha e'tibordan chetda qoladi, chunki "o'z provayderimiz
 - [ ] Kafka iste'molchilarida `enable-auto-commit: false`, DLQ va deserializatsiya xatosi uchun `addNotRetryableExceptions` borligini tekshiring.
 - [ ] DLQ uchun alert va uni o'qish jarayonini belgilang.
 - [ ] Consumer lag va circuit breaker holati uchun dashboard paneli va alert qo'shing.
+
+## Manbalar
+
+- [spring-boot, `ClientHttpRequestFactories.java` (3.4.x)](https://raw.githubusercontent.com/spring-projects/spring-boot/3.4.x/spring-boot-project/spring-boot/src/main/java/org/springframework/boot/web/client/ClientHttpRequestFactories.java) - `@Deprecated(since = "3.4.0", forRemoval = true)`, o'rniga `ClientHttpRequestFactoryBuilder`
+- [spring-boot, `ClientHttpRequestFactoryBuilder.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/main/module/spring-boot-http-client/src/main/java/org/springframework/boot/http/client/ClientHttpRequestFactoryBuilder.java) - `detect()` va `build(HttpClientSettings)`; mijoz classpath dan aniqlanadi
+- [spring-boot, `HttpClientSettings.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/main/module/spring-boot-http-client/src/main/java/org/springframework/boot/http/client/HttpClientSettings.java) - `defaults()`, `withConnectTimeout`, `withReadTimeout`
+- [spring-boot, `HttpClientsProperties.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/main/module/spring-boot-http-client/src/main/java/org/springframework/boot/http/client/autoconfigure/HttpClientsProperties.java) - prefiks `spring.http.clients`, `@since 4.0.0`
+- [spring-boot, `KafkaProperties.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/main/module/spring-boot-kafka/src/main/java/org/springframework/boot/kafka/autoconfigure/KafkaProperties.java) - producer da `idempotence` maydoni yo'q; `acks`, `properties` bor
+- [kafka, `ProducerConfig.java`](https://raw.githubusercontent.com/apache/kafka/trunk/clients/src/main/java/org/apache/kafka/clients/producer/ProducerConfig.java) - `enable.idempotence` standarti `true`; acks=all, retries>0 va in-flight <= 5 talabi
+- [spring-retry, `Backoff.java`](https://raw.githubusercontent.com/spring-projects/spring-retry/main/src/main/java/org/springframework/retry/annotation/Backoff.java) - `delay`, `multiplier`, `random` atributlari
+- [resilience4j, `CommonCircuitBreakerConfigurationProperties.java`](https://raw.githubusercontent.com/resilience4j/resilience4j/master/resilience4j-framework-common/src/main/java/io/github/resilience4j/common/circuitbreaker/configuration/CommonCircuitBreakerConfigurationProperties.java) - `slidingWindowType`, `minimumNumberOfCalls`, `waitDurationInOpenState`, `recordExceptions`, `ignoreExceptions` nomlari
+- [resilience4j, bulkhead va timelimiter sozlamalari](https://raw.githubusercontent.com/resilience4j/resilience4j/master/resilience4j-framework-common/src/main/java/io/github/resilience4j/common/timelimiter/configuration/CommonTimeLimiterConfigurationProperties.java) - `timeoutDuration`, `cancelRunningFuture`
 
 ---
 
