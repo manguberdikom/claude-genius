@@ -47,9 +47,10 @@ POM = os.path.join(DATA, "java", "pom.xml")
 SIG = os.path.join(DATA, "rules_for")
 
 
-def run(*args, cwd=ROOT):
+def run(*args, cwd=ROOT, env=None):
     proc = subprocess.run([sys.executable, os.path.join(HERE, "rules_for.py")]
-                          + list(args), capture_output=True, text=True, cwd=cwd)
+                          + list(args), capture_output=True, text=True, cwd=cwd,
+                          env=env)
     return proc.returncode, proc.stdout, proc.stderr
 
 
@@ -341,7 +342,10 @@ def main():
 
         nogit = os.path.join(tmp, "nogit")
         os.makedirs(nogit)
-        code_n, _, err_n = run("--diff", cwd=nogit)
+        # tmp ning o'zi git ichida bo'lishi mumkin (uy papkasi repo bo'lsa):
+        # git tmp dan yuqoriga qaramasin.
+        code_n, _, err_n = run("--diff", cwd=nogit,
+                               env=dict(os.environ, GIT_CEILING_DIRECTORIES=tmp))
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     rows = [

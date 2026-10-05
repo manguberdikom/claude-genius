@@ -402,6 +402,10 @@ def unrecognised(lines, totals):
 
 
 def main():
+    # Windows da quvurli stdin ANSI kod sahifasida (cp1251, cp1252) o'qiydi:
+    # UTF-8 log buziladi, BOM tanilmay xom CI logida vaqt prefiksi qoladi.
+    # Stdin fayl kabi UTF-8; chiqish ham, aks holda sahifada yo'q belgi yiqitadi.
+    sys.stdout.reconfigure(encoding="utf-8")
     if len(sys.argv) > 1:
         path = sys.argv[1]
         if not os.path.exists(path):
@@ -410,7 +414,9 @@ def main():
         with open(path, encoding="utf-8", errors="replace") as handle:
             lines = handle.read().split("\n")
     else:
-        lines = sys.stdin.read().split("\n")
+        with open(sys.stdin.fileno(), encoding="utf-8", errors="replace",
+                  closefd=False) as handle:
+            lines = handle.read().split("\n")
     lines = strip_ci_prefix(lines)
 
     totals = summarize(lines)

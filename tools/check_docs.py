@@ -176,7 +176,8 @@ def main():
                 continue
             if not os.path.exists(os.path.join(ROOT, p_)):
                 err(f"{rel_sk}: havola fayli yo'q -> {p_}")
-            elif a_ and a_ not in anchors.get(p_, set()):
+            # anchors kaliti relpath: Windows da `\` bilan, p_ esa `/` bilan.
+            elif a_ and a_ not in anchors.get(os.path.normpath(p_), set()):
                 err(f"{rel_sk}: havola anchori yo'q -> {p_}#{a_}")
         for m in re.finditer(r'`(docs/[^`\s<>]+/)`', body):
             if is_ours(m.group(1)) and not os.path.isdir(

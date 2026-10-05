@@ -13,6 +13,7 @@ import contextlib
 import io
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -124,7 +125,8 @@ def excused(tmp):
 
 def expect(change, needle):
     def case(tmp):
-        errs = run(tmp, needle[:20].replace(" ", "_").replace("'", ""), change)
+        # Papka nomi: needle dagi `:` va `/` Windows da nomga sig'maydi.
+        errs = run(tmp, re.sub(r"\W", "_", needle[:20]), change)
         return any(needle in e for e in errs)
     return case
 
