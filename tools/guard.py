@@ -11,9 +11,18 @@ alohida hook har Bash chaqiruvida ikkinchi marta Python ishga tushirardi.
 
 2. Pul va vaqt qimmatligi. Konteyner ko'tarish yoki bazaga ulanish bir
    necha daqiqa va katta chiqish beradi, holbuki kerakli javob ko'pincha
-   kodning o'zida: entity sinflari sxemani to'liq tasvirlaydi, test
-   chiqishi esa xatoni aytib turadi. Bu amallar to'siladi, lekin yo'l
-   yopiq emas: buyruq oldiga COST_OK=1 qo'yilsa o'tadi.
+   kodning yoki test chiqishining o'zida. Bu amallar `ask` bilan odam
+   qaroriga qo'yiladi: sabab matnida nega qimmatligi va arzon yo'l
+   yoziladi, ruxsat berishni esa foydalanuvchi o'zi hal qiladi.
+
+Nega `deny` emas: qaysi biri haqiqatan kerakligini faqat odam biladi.
+Avval `COST_OK=1` qochish yo'li bor edi, lekin uni modelning o'zi
+qo'yardi, ya'ni to'siq amalda o'zini-o'zi ochadigan to'siq edi. `ask`
+bilan qaror egasi almashadi va qochish yo'li kerak bo'lmaydi.
+
+Katta bo'lakni o'qish esa `deny` bo'lib qoladi: u kontekstni himoya
+qiladi va odam qarorini talab qilmaydi, arzon yo'l (`doc.sh show`)
+har doim bir xil.
 
 Chegaralangan o'qish o'tadi: kichik bo'lakli Read, sed oralig'i, grep, head,
 `Get-Content -TotalCount`. Tashxis buyruqlari ham o'tadi: docker ps,
@@ -69,9 +78,6 @@ PS_BOUNDED_RE = re.compile(r"(?:^|\s)-(?:TotalCount|Head|Tail|First|Last)\b", re
 HEREDOC_RE = re.compile(
     r"<<-?\s*(['\"]?)(\w+)\1[^\n]*(?:\n.*?)??(?:\n[ \t]*\2[ \t]*(?=\n|$)|\Z)", re.S)
 
-# Buyruq oldiga qo'yilsa, qimmat amal baribir bajariladi.
-ESCAPE = "COST_OK=1"
-
 # docker fe'li. Fe'ldan keyin yo'l yoki fayl nomi belgisi kelmasin:
 # `-f build/compose.yml ps` dagi "build" fe'l emas.
 VERB = r"(?:up|run|build|pull|start|create)(?![\w./-])"
@@ -91,10 +97,8 @@ EXPENSIVE = (
     (re.compile(CMD + r"(?:docker|podman)(?:-compose|\s+compose)?(?:" + DOCKER_FLAG
                 + r")*\s+(?:container\s+|image\s+)?" + VERB),
      "Konteyner ko'tarish yoki yig'ish",
-     "Avval arzon yo'lni sinang: test chiqishidagi xato odatda sababni "
-     "aytadi, baza tuzilishini esa entity sinflari ko'rsatadi:\n"
-     "  {schema} <src>\n"
-     "Konteyner haqiqatan kerak bo'lsa: COST_OK=1 <buyruq>"),
+     "Daqiqalar va katta chiqish. Arzon yo'l: test chiqishidagi birinchi "
+     "xato\nsababni aytadi, jadval va ustun uchun esa {schema} <src>."),
     # Skript nomi buyruq o'rnida turishi shart. Aks holda uni shunchaki
     # ATAGAN buyruq ham to'siladi: `wc -l install/x.ps1`, `git add x.ps1`.
     # Bu amalda uchradi, o'rnatuvchi faylni yozayotganda.
@@ -104,9 +108,8 @@ EXPENSIVE = (
     (re.compile(CMD + r"(?:pwsh|powershell(?:\.exe)?)\b"
                 r"|" + CMD + r"(?:[.]{1,2}[/\\])?(?:[\w.:~-]+[/\\])*[\w.-]*\.ps1\b"),
      "PowerShell skripti",
-     "PowerShell skripti yurgizilmaydi: u boshqa mashinada tekshirilmagan\n"
-     "bo'ladi. Shu ishni python3 (yoki bash) bilan bajaring, ular shu yerda\n"
-     "sinaladi."),
+     "Boshqa mashinada tekshirilmagan bo'ladi va shu yerda sinalmaydi.\n"
+     "Arzon yo'l: shu ishni python3 yoki bash bilan bajarish."),
     # Har qanday ulanish, lokal ham: hostsiz `psql shop` ham jonli bazani
     # ochadi. Faqat versiya va yordam o'tadi. Konteyner yoki pod ichidagi
     # klient ham ulanish. Naqsh qo'shtirnoq olib tashlangandan keyin
@@ -115,10 +118,9 @@ EXPENSIVE = (
     (re.compile(CMD + DB_CLIENT + r"(?!\s+(?:--version|--help|-V)\b)"
                 r"|" + CMD + EXEC + r"[^|;&\n]*?\s" + DB_CLIENT),
      "Bazaga ulanish",
-     "Sxemani bilish uchun ulanish shart emas, entity sinflari uni "
-     "to'liq tasvirlaydi:\n"
-     "  {schema} <src>\n"
-     "Jonli ma'lumot haqiqatan kerak bo'lsa: COST_OK=1 <buyruq>"),
+     "Sekin va jonli bazaga tegadi. Jadval, ustun va FK uchun ulanish\n"
+     "shart emas: {schema} <src>. Indeks, constraint va plan esa faqat\n"
+     "bazada, ularni bilish kerak bo'lsa ulanish o'rinli."),
 )
 
 # Maslahat matnlari shablon: yo'llar to'siq paytida qo'yiladi (commands).
@@ -149,22 +151,28 @@ def commands():
             "claude_md": claude_md}
 
 
-def deny(reason):
-    deny_with(reason, HINT)
-
-
-def deny_with(reason, hint):
+def decide(decision, reason, hint):
     json.dump(
         {
             "hookSpecificOutput": {
                 "hookEventName": "PreToolUse",
-                "permissionDecision": "deny",
+                "permissionDecision": decision,
                 "permissionDecisionReason": reason + "\n" + hint.format(**commands()),
             }
         },
         sys.stdout,
     )
     sys.exit(0)
+
+
+def deny(reason):
+    """Kontekstni himoya qiladi: arzon yo'l bir xil, qaror kerak emas."""
+    decide("deny", reason, HINT)
+
+
+def ask(reason, hint):
+    """Pul va vaqt sarflaydi: qarorni odam qiladi."""
+    decide("ask", reason, hint)
 
 
 def watched_path(candidate):
@@ -238,19 +246,19 @@ def strip_heredoc(command):
 
 
 def check_cost(command):
-    """Konteyner va baza chaqiruvlari: arzon yo'l bor ekan, to'xtatiladi.
+    """Konteyner, baza va PowerShell: qarorni odamga qo'yadi.
 
     Bu odatga qarshi to'siq, xavfsizlik chegarasi emas: `bash -c` ichiga
-    yashirilgan buyruqni u ko'rmaydi va ko'rishga urinmaydi ham.
+    yashirilgan buyruqni u ko'rmaydi va ko'rishga urinmaydi ham. Shuning
+    uchun ham `deny` emas `ask`: chetlab o'tish oson ekan, qat'iy to'siq
+    faqat arzon yo'lni yashirardi.
     """
-    if ESCAPE in command:
-        return
     command = strip_quoted(strip_heredoc(command))
     for pattern, what, hint in EXPENSIVE:
         match = pattern.search(command)
         if match:
             found = match.group(0).lstrip(" \t\n|;&(`$").strip()
-            deny_with("%s qimmat amal: %s" % (what, found), hint)
+            ask("%s qimmat amal: %s" % (what, found), hint)
 
 
 def slurped(arg):

@@ -52,7 +52,9 @@ def line_count(path):
         return 0  # main() yo'q fixture ni alohida aytadi
 
 
-DENY, ALLOW = "deny", "allow"
+# ask: pul va vaqt sarflaydigan amal, qarorni odam qiladi.
+# deny: kontekstni himoya qiladi, arzon yo'l har doim bir xil.
+DENY, ALLOW, ASK = "deny", "allow", "ask"
 
 # (nom, kutilgan, payload [, cwd]). cwd berilmasa ROOT.
 CASES = [
@@ -135,7 +137,7 @@ CASES = [
      {"tool_name": "Bash", "tool_input":
       {"command": "cat > notes <<'EOF'\ndocker run x\ncat " + BIG
                   + "\nEOF\necho ok"}}),
-    ("heredoc tugagach konteyner", DENY,
+    ("heredoc tugagach konteyner", ASK,
      {"tool_name": "Bash", "tool_input":
       {"command": "cat > notes <<EOF\nmatn\nEOF\ndocker run x"}}),
     ("boshqa faylni cat", ALLOW,
@@ -145,60 +147,60 @@ CASES = [
     ("buzuq JSON", ALLOW, None),
 
     # Pul va vaqt sarflaydigan amallar.
-    ("docker compose up", DENY,
+    ("docker compose up", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "docker compose up -d"}}),
-    ("docker run", DENY,
+    ("docker run", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "docker run -it pg:16"}}),
-    ("docker build", DENY,
+    ("docker build", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "docker build -t app ."}}),
-    ("docker-compose up (eski)", DENY,
+    ("docker-compose up (eski)", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "docker-compose up"}}),
-    ("psql uzoq hostga", DENY,
+    ("psql uzoq hostga", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "psql -h db.local -U u app"}}),
-    ("mongosh URI bilan", DENY,
+    ("mongosh URI bilan", ASK,
      {"tool_name": "Bash", "tool_input":
       {"command": "mongosh mongodb://localhost:27017/app"}}),
     # Amalda eng ko'p uchraydigan shakllar: bayroq, prefiks, yangi satr,
     # container/image kichik buyrug'i, konteyner ichidagi klient.
-    ("compose -f bilan up", DENY,
+    ("compose -f bilan up", ASK,
      {"tool_name": "Bash", "tool_input":
       {"command": "docker compose -f docker-compose.dev.yml up -d"}}),
-    ("compose bir nechta -f bilan up", DENY,
+    ("compose bir nechta -f bilan up", ASK,
      {"tool_name": "Bash", "tool_input":
       {"command": "docker compose -f a.yml -f b.yml up --build"}}),
-    ("compose --profile bilan up", DENY,
+    ("compose --profile bilan up", ASK,
      {"tool_name": "Bash", "tool_input":
       {"command": "docker compose --profile dev up -d"}}),
-    ("eski compose -f bilan up", DENY,
+    ("eski compose -f bilan up", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "docker-compose -f x.yml up"}}),
-    ("eski compose run", DENY,
+    ("eski compose run", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "docker-compose run app"}}),
-    ("sudo bilan run", DENY,
+    ("sudo bilan run", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "sudo docker run -d pg:16"}}),
-    ("sudo -E bilan run", DENY,
+    ("sudo -E bilan run", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "sudo -E docker run x"}}),
-    ("time bilan build", DENY,
+    ("time bilan build", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "time docker build ."}}),
-    ("VAR= bilan build", DENY,
+    ("VAR= bilan build", ASK,
      {"tool_name": "Bash", "tool_input":
       {"command": "DOCKER_BUILDKIT=1 docker build ."}}),
-    ("container run", DENY,
+    ("container run", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "docker container run pg"}}),
-    ("image pull", DENY,
+    ("image pull", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "docker image pull pg"}}),
-    ("yangi satrdan keyingi compose up", DENY,
+    ("yangi satrdan keyingi compose up", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "cd /app\ndocker compose up -d"}}),
-    ("subshell ichida compose up", DENY,
+    ("subshell ichida compose up", ASK,
      {"tool_name": "Bash", "tool_input":
       {"command": "(cd infra && docker compose up -d)"}}),
-    ("backtick ichida run", DENY,
+    ("backtick ichida run", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "echo `docker run x`"}}),
-    ("VAR= bilan baza", DENY,
+    ("VAR= bilan baza", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "PGPASSWORD=x psql -h db -U u"}}),
-    ("env bilan baza", DENY,
+    ("env bilan baza", ASK,
      {"tool_name": "Bash", "tool_input":
       {"command": "env PGPASSWORD=x psql -h db -U u"}}),
-    ("konteyner ichidagi klient", DENY,
+    ("konteyner ichidagi klient", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "docker exec -it db psql -U app"}}),
     # Tekshiruv keyingi buyruqqa o'tib ketmaydi.
     ("exec, keyingi buyruqda klient nomi", ALLOW,
@@ -219,31 +221,31 @@ CASES = [
     ("psql -V", ALLOW,
      {"tool_name": "Bash", "tool_input": {"command": "psql -V"}}),
     # Lokal ulanish ham ulanish: host sharti endi yo'q.
-    ("mongosh, hostsiz", DENY,
+    ("mongosh, hostsiz", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "mongosh"}}),
-    ("redis-cli, hostsiz", DENY,
+    ("redis-cli, hostsiz", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "redis-cli"}}),
-    ("psql lokal baza", DENY,
+    ("psql lokal baza", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "psql -U postgres shop"}}),
     # Qo'shtirnoq olib tashlansa ham klient nomi buyruq o'rnida qoladi.
-    ("psql qo'shtirnoqli URI", DENY,
+    ("psql qo'shtirnoqli URI", ASK,
      {"tool_name": "Bash", "tool_input":
       {"command": 'psql "postgresql://u:p@db/shop"'}}),
-    ("VAR= bilan lokal psql", DENY,
+    ("VAR= bilan lokal psql", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "PGPASSWORD=x psql -U u shop"}}),
     # Prefiks bayrog'ining qiymati ("postgres") buyruq emas.
-    ("sudo -u postgres psql", DENY,
+    ("sudo -u postgres psql", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "sudo -u postgres psql"}}),
-    ("docker exec ichida psql", DENY,
+    ("docker exec ichida psql", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "docker exec -it pg psql -U postgres"}}),
-    ("compose exec ichida psql", DENY,
+    ("compose exec ichida psql", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "docker compose exec db psql -U u"}}),
-    ("compose -f bilan exec", DENY,
+    ("compose -f bilan exec", ASK,
      {"tool_name": "Bash", "tool_input":
       {"command": "docker compose -f x.yml exec db psql -U u"}}),
-    ("kubectl exec ichida psql", DENY,
+    ("kubectl exec ichida psql", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "kubectl exec pod -- psql"}}),
-    ("kubectl -n bilan exec", DENY,
+    ("kubectl -n bilan exec", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "kubectl -n prod exec pod -- psql"}}),
     ("naqsh ichida klient nomlari", ALLOW,
      {"tool_name": "Bash", "tool_input":
@@ -263,11 +265,11 @@ CASES = [
      {"tool_name": "Bash", "tool_input": {"command": "psql --version"}}),
     ("mvn test to'silmaydi", ALLOW,
      {"tool_name": "Bash", "tool_input": {"command": "mvn -q test -Dtest=OrderTest"}}),
-    ("powershell", DENY,
+    ("powershell", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "powershell -c ls"}}),
-    ("pwsh", DENY,
+    ("pwsh", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "pwsh ./build.ps1"}}),
-    (".ps1 skript", DENY,
+    (".ps1 skript", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "./deploy.ps1 -Env prod"}}),
     # "powershell" so'zi matn ichida: to'silmasligi kerak.
     ("matndagi powershell", ALLOW,
@@ -298,29 +300,30 @@ CASES = [
     ("ps1 ni cat qilish", ALLOW,
      {"tool_name": "Bash", "tool_input":
       {"command": "head -20 install/x" + ".ps1"}}),
-    ("pwsh bilan yurgizish to'siladi", DENY,
+    ("pwsh bilan yurgizish to'siladi", ASK,
      {"tool_name": "Bash", "tool_input":
       {"command": "pwsh install/x" + ".ps1"}}),
-    # Ataylab ruxsat berilgan holat.
-    ("COST_OK bilan docker", ALLOW,
+    # COST_OK endi qochish yo'li emas: qarorni odam qiladi, shuning uchun
+    # prefiks hech narsani o'zgartirmaydi.
+    ("COST_OK prefiksi ham ask", ASK,
      {"tool_name": "Bash", "tool_input":
       {"command": "COST_OK=1 docker compose up -d"}}),
 
     # Windows da Git Bash bo'lmasa PowerShell asbobi yoqiladi: to'siqlar
     # unda ham ishlashi kerak.
     # Papkali yo'l: avval `[\w.-]*\.ps1` faqat joriy papkani ko'rardi.
-    ("PowerShell: papkadagi .ps1", DENY,
+    ("PowerShell: papkadagi .ps1", ASK,
      {"tool_name": "PowerShell", "tool_input":
       {"command": "& .\\install\\manguberdi" + ".ps1 -Update"}}),
-    ("PowerShell: joriy papkadagi .ps1", DENY,
+    ("PowerShell: joriy papkadagi .ps1", ASK,
      {"tool_name": "PowerShell", "tool_input": {"command": ".\\build" + ".ps1 -Task test"}}),
-    ("Bash: mutlaq yo'ldagi .ps1", DENY,
+    ("Bash: mutlaq yo'ldagi .ps1", ASK,
      {"tool_name": "Bash", "tool_input": {"command": "C:/src/tools/x" + ".ps1"}}),
     ("PowerShell: oddiy buyruq", ALLOW,
      {"tool_name": "PowerShell", "tool_input": {"command": "Get-ChildItem install"}}),
-    ("PowerShell: compose up", DENY,
+    ("PowerShell: compose up", ASK,
      {"tool_name": "PowerShell", "tool_input": {"command": "docker compose up -d"}}),
-    ("PowerShell: lokal psql", DENY,
+    ("PowerShell: lokal psql", ASK,
      {"tool_name": "PowerShell", "tool_input": {"command": "psql -U postgres shop"}}),
     ("PowerShell: Get-Content katta bob", DENY,
      {"tool_name": "PowerShell", "tool_input": {"command": "Get-Content " + BIG}}),
@@ -425,11 +428,11 @@ def main():
          {"tool_name": "Bash", "tool_input": {"command": "psql db"}}),
         ("Java emas: katta bob ham o'tadi", ALLOW, ("main.py",),
          {"tool_name": "Read", "tool_input": {"file_path": BIG}}),
-        ("pom.xml: docker run to'siladi", DENY, ("pom.xml",),
+        ("pom.xml: docker run ask beradi", ASK, ("pom.xml",),
          {"tool_name": "Bash", "tool_input": {"command": "docker run x"}}),
-        ("pom.xml: psql to'siladi", DENY, ("pom.xml",),
+        ("pom.xml: psql ask beradi", ASK, ("pom.xml",),
          {"tool_name": "Bash", "tool_input": {"command": "psql db"}}),
-        ("backend/pom.xml: to'siladi", DENY, ("backend/pom.xml",),
+        ("backend/pom.xml: ask beradi", ASK, ("backend/pom.xml",),
          {"tool_name": "Bash", "tool_input": {"command": "docker run x"}}),
     ]
     for name, want, files, payload in gating:
