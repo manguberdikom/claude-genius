@@ -127,6 +127,12 @@ va nima qolishi ro'yxat bo'lib turadi. O'qing.
 .\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius -Apply
 ```
 
+**`-Reset` siz hech narsa o'chirilmaydi.** Sukut rejim qo'shuvchi: faqat
+`skills\manguberdi`, olti aktyor fayli va `settings.json` dagi shu klonga
+ishora qilgan hook va ruxsatlar almashadi. Boshqa skill, agent,
+`CLAUDE.md`, `commands\`, `plugins\`, `hooks\`, `rules\`,
+`output-styles\` va `settings.json` dagi begona yozuvlar joyida qoladi.
+
 ### Skript qadamlari
 
 Chiqishdagi raqamlar shu tartibda keladi:
@@ -152,9 +158,25 @@ Tafsiloti [Yangilash](#yangilash) bo'limida.
 
 ### Nima o'chiriladi
 
-`~/.claude/` dan: `settings.json`, `settings.local.json`, `CLAUDE.md`,
-`skills\`, `agents\`, `commands\`, `plugins\`, `hooks\`, `rules\`,
-`output-styles\`.
+Sukut rejimda **hech narsa**. Almashadigani faqat o'z birliklari:
+`skills\manguberdi`, olti aktyor fayli va `settings.json` dagi shu klonga
+ishora qilgan yozuvlar.
+
+To'liq tozalash faqat `-Reset` bilan, va `-Apply` bilan birga
+`-ConfirmReset` ham talab qiladi:
+
+```powershell
+.\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius -Reset -Apply -ConfirmReset
+```
+
+Shundagina `~/.claude/` dan quyidagilar o'chiriladi: `settings.json`,
+`settings.local.json`, `CLAUDE.md`, `skills\`, `agents\`, `commands\`,
+`plugins\`, `hooks\`, `rules\`, `output-styles\`.
+
+`-ConfirmReset` interaktiv so'rov emas: CI va agent sessiyasi interaktiv
+emas, shuning uchun tasdiq bayroq bilan beriladi. `-Reset` ni `-Apply`
+siz yurgizish esa odatdagidek quruq yurish: ro'yxat chiqadi, hech narsa
+o'chmaydi.
 
 ### Nima qoladi
 
@@ -171,6 +193,8 @@ turadi va skript unga tegmaydi.
 `-IncludeAuth` bilan `~/.claude.json` ham zaxiralanib o'chiriladi: MCP
 serverlar, trust va onboarding yo'qoladi. Login saqlanadi, chunki token
 unda emas. Chiqish kerak bo'lsa Claude Code ichida `/logout`.
+`-IncludeAuth` va `-Project` faqat `-Reset` bilan beriladi: qo'shuvchi
+rejimda ularning ma'nosi yo'q va skript ularni rad etadi.
 
 Tegilmaydi: `managed-settings.json`, proyektdagi `CLAUDE.md`,
 `CLAUDE.local.md` va `.mcp.json`, boshqa proyektlarning `.claude\`
@@ -192,7 +216,7 @@ turadi (masalan `.claude--settings.json`), qaytarish
 ### Proyektning o'z sozlamasi ham tozalanishi kerak bo'lsa
 
 ```powershell
-.\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius -Project C:\ish\mening-proyektim -Apply
+.\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius -Reset -Project C:\ish\mening-proyektim -Apply -ConfirmReset
 ```
 
 Klon yoki uy papkasi berilmaydi: skript buni rad etadi. `.claude\` git
@@ -278,10 +302,29 @@ Ikki yo'l bor. Klon kerak bo'lsa, yangi joyda saqlab o'rnatuvchini yangi
 `-GeniusPath` bilan qayta yurgizing: hooklar va skill yangi yo'lga
 bog'lanadi.
 
-Kerak bo'lmasa, klon yozuvlarini `~/.claude/settings.json` dan olib
-tashlang. Zaxira bo'lsa, [Orqaga qaytarish](#orqaga-qaytarish) dagi
-buyruqlar shuni qiladi. Zaxira ham yo'q bo'lsa faylni qo'lda tahrir
-qiling va eski klon yo'li uchragan to'rt joyni oling:
+Kerak bo'lmasa, `-Uninstall` bilan olib tashlang:
+
+```powershell
+.\install\manguberdi.ps1 -GeniusPath "C:\eski\claude-genius" -Uninstall -Apply
+```
+
+`-GeniusPath` bu yerda **mavjud bo'lishi shart emas**: u faqat
+`settings.json` dagi yozuvlarni tanish uchun satr sifatida
+solishtiriladi, `Resolve-Path` qilinmaydi va klon tekshiruvi o'tkazib
+yuboriladi. Skriptning o'zi esa kerak, shuning uchun klonning yangi
+nusxasidan (yoki `git clone` dan) yurgizing. `-Apply` siz quruq yurish.
+
+Nimalar olinadi: `settings.json` dan buyrug'ida shu ildiz bor hooklar
+(shundan bo'shab qolgan guruh va hodisa ham), shu ildizga tegishli
+ruxsatlar va `additionalDirectories` yozuvi, `env.GENIUS_PYTHON`, hamda
+`skills\manguberdi` va olti aktyor fayli. Begona yozuvlar qoladi:
+`<ildiz>-eski` kabi boshqa klonning yozuvlari ham begona hisoblanadi.
+Avval zaxira olinadi.
+
+Skript ham yo'q bo'lsa, klon yozuvlarini qo'lda oling. Zaxira bo'lsa,
+[Orqaga qaytarish](#orqaga-qaytarish) dagi buyruqlar shuni qiladi.
+Zaxira ham yo'q bo'lsa `~/.claude/settings.json` ni tahrir qiling va
+eski klon yo'li uchragan to'rt joyni oling:
 
 - `hooks` ichidan buyrug'ida o'sha yo'l turgan yozuvlar (hodisa guruhi
   bo'shab qolsa, guruhning o'zi ham);
@@ -387,36 +430,43 @@ oladi, chunki hook yo'li klonga bog'langan. `~/.claude` dagi skill va
 aktyorlar esa o'rnatish paytidagi nusxa: ular pull bilan yangilanmaydi,
 yangi hook ham `settings.json` ga o'zi qo'shilmaydi.
 
-Ularni `-Update` yangilaydi: avval quruq, keyin `-Apply` bilan.
-Buyruqlar 0-qadamdagidek, klon ildizida va ruxsat berilgan oynada
-yurgiziladi:
+Ularni o'rnatuvchini qayta yurgizish yangilaydi: avval quruq, keyin
+`-Apply` bilan. Sukut rejim allaqachon qo'shuvchi, shuning uchun
+qo'shimcha bayroq kerak emas. Buyruqlar 0-qadamdagidek, klon ildizida va
+ruxsat berilgan oynada yurgiziladi:
 
 ```powershell
 git -C C:\src\claude-genius pull
-.\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius -Update
-.\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius -Update -Apply
+.\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius
+.\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius -Apply
 ```
 
-`-Update` faqat uch narsani zaxiralab almashtiradi: `skills\manguberdi`,
-6 aktyor fayli va `settings.json` dagi o'z yozuvlari, ya'ni buyrug'i shu
-klonning `tools\` papkasiga ishora qilgan hook va ruxsatlar
+`-Update` ham ishlayveradi va aynan shu ishni qiladi: u eski nom, sukut
+xulqqa aylangan.
+
+Faqat uch narsa zaxiralanib almashadi: `skills\manguberdi`, 6 aktyor
+fayli va `settings.json` dagi o'z yozuvlari, ya'ni buyrug'i shu klonning
+`tools\` papkasiga ishora qilgan hook va ruxsatlar
 (`env.GENIUS_PYTHON` ham yangilanadi). Qolgani joyida turadi: boshqa
 skill va agentlar, `CLAUDE.md`, `plugins\`, `settings.json` dagi begona
 hook va ruxsatlar, `env` dagi boshqa o'zgaruvchilar va qolgan kalitlar.
 Birlashtirishni `install/merge_settings.py` qiladi: quruq yurish nechta
 hook va ruxsat almashishini bir qatorda aytadi, buzuq `settings.json` da
-esa hech narsa o'chmasidan oldin to'xtaydi. `-Update` bilan `-Project`
-va `-IncludeAuth` berilmaydi. Zaxirani qaytarish
+esa hech narsa o'chmasidan oldin to'xtaydi. Zaxirani qaytarish
 [Orqaga qaytarish](#orqaga-qaytarish) bo'limida.
 
-Klon ko'chgan bo'lsa `-Update` yetmaydi: eski yo'lga ishora qilgan
-hooklar o'zniki deb tanilmaydi va yangilari yonida qoladi. Unda
-o'rnatuvchi `-Update` siz yurgiziladi. U birinchi o'rnatishdagidek
-ishlaydi: `~/.claude` dagi sozlamani yangi zaxiraga olib tozalaydi,
-o'rnatishdan keyin qo'shilgan skill, agent yoki `CLAUDE.md` ham zaxiraga
-ketadi. Shuning uchun avval quruq yurgizib ro'yxatni o'qing. Kerakli
-birlik keyin zaxiradan qaytariladi:
-[Orqaga qaytarish](#orqaga-qaytarish) dagi sikl, faqat o'sha nom uchun.
+Klon KO'CHGAN bo'lsa qayta o'rnatish yetmaydi: eski yo'lga ishora qilgan
+hooklar o'zniki deb tanilmaydi va yangilari yonida qoladi. Ikki buyruq
+kerak: avval eski yo'l uchun `-Uninstall`, keyin yangi yo'l uchun
+odatdagi o'rnatish.
+
+```powershell
+.\install\manguberdi.ps1 -GeniusPath C:\eski\claude-genius -Uninstall -Apply
+.\install\manguberdi.ps1 -GeniusPath C:\yangi\claude-genius -Apply
+```
+
+Avval buning uchun `-Update` siz yurgizish tavsiya qilinardi, lekin u
+butun sozlamani tozalardi: endi unday emas va kerak ham emas.
 
 ## Muammolar
 
@@ -426,7 +476,10 @@ birlik keyin zaxiradan qaytariladi:
 | `set: pipefail: invalid option name` | klon CRLF bilan olingan | `<klon>\tools\doc.sh` ni o'chirib `git -C <klon> -c core.autocrlf=false checkout -- tools/doc.sh`; doimiy yechim: klonni 0-qadamdagidek qayta olish |
 | `tools/doc.sh: No such file` | yo'llar almashmagan | `rewrite_paths.py --tekshir` bilan skill matnini tekshiring; nisbiy yo'l qolgan bo'lsa o'rnatuvchini qayta yurgizing |
 | `bash: command not found` | bash yo'q | Git for Windows o'rnatib skriptni qayta yurgizing |
-| Hooklar ishlamaydi | `settings.json` buzuq yoki klon ko'chgan | skriptni yangi `-GeniusPath` bilan qayta yurgizing |
+| Hooklar ishlamaydi | `settings.json` buzuq yoki klon ko'chgan | eski yo'l uchun `-Uninstall`, keyin yangi `-GeniusPath` bilan o'rnating |
+| Hooklar jim, xato ham yo'q | proyekt Java emas yoki `GENIUS_HOOKS=off` | [Hooklar qaysi proyektda ishlaydi](#hooklar-qaysi-proyektda-ishlaydi) |
+| `-Reset -Apply` rad etildi | `-ConfirmReset` berilmagan, bu ataylab | rozi bo'lsangiz `-ConfirmReset` qo'shing |
+| Eski o'rnatuvchi sozlamani o'chirgan | `-Update` siz `-Apply` avval to'liq tozalardi | [Eski o'rnatuvchidan keyin tiklash](#eski-ornatuvchidan-keyin-tiklash) |
 | Skill ko'rinmaydi | sessiya eski sozlamada | yangi sessiya oching |
 | Uchinchi aktyor chaqiruvi to'silgan | budjet tugagan, bu ataylab | aniq savol bering: javobdan keyin budjet o'zi yangilanadi |
 
@@ -483,20 +536,76 @@ if (Test-Path -LiteralPath "$b\.claude--settings.json") {
 }
 ```
 
+## Eski o'rnatuvchidan keyin tiklash
+
+O'rnatuvchining avvalgi versiyasi `-Update` siz `-Apply` berilganda
+`~/.claude` dagi `settings.json`, `settings.local.json`, `CLAUDE.md`,
+`skills\`, `agents\`, `commands\`, `plugins\`, `hooks\`, `rules\` va
+`output-styles\` ni o'chirardi. Endi unday emas: tozalash faqat `-Reset`
+bilan. Lekin eski versiyani yurgizgan bo'lsangiz, o'chirilgan narsa
+zaxirada turadi.
+
+Zaxira qayerda: `~/.claude-backup-<vaqt>` (yoki siz bergan `-BackupTo`
+yo'li). O'rnatuvchi chiqishining 1-qadamida ham, oxirgi qatorida ham
+aniq yo'l yozilgan. Bir nechta bo'lsa, sanasi eng eskisi birinchi
+o'rnatishdan qolgani.
+
+Qaytarish:
+
+```powershell
+python3 install\restore_backup.py $env:USERPROFILE\.claude-backup-20260101-120000
+python3 install\restore_backup.py $env:USERPROFILE\.claude-backup-20260101-120000 --yoz
+```
+
+Birinchi buyruq quruq yurish: nima qaytishini va nima o'tkazib
+yuborilishini ro'yxat qilib chiqaradi, hech narsa yozmaydi. `--yoz`
+bilan qaytaradi.
+
+Qoida: **faqat hozir yo'q bo'lgan narsa qaytariladi.** Hozir turgan fayl
+sizning joriy holatingiz va ustidan yozilmaydi.
+
+| Birlik | Nima bo'ladi |
+|---|---|
+| `CLAUDE.md`, `settings.local.json`, `commands\`, `plugins\`, `hooks\`, `rules\`, `output-styles\` | butunligicha, faqat hozir yo'q bo'lsa |
+| `skills\`, `agents\` | ichidagi faqat yo'q bolalar |
+| `skills\manguberdi` va olti aktyor fayli | ataylab tashlanadi: ularni o'rnatuvchi boshqaradi, zaxiradagisi eski versiya |
+| `settings.json` | birlashtiriladi: zaxiradagi sizning yozuvlaringiz qaytadi, hozirgi fayldagilar ustun turadi |
+
+`settings.json` da hozirgisi ustun turishi muhim: shunday qilinmasa
+yangi o'rnatishning hooklari va ruxsatlari eski nusxasi bilan
+almashinardi. `permissions` ro'yxatlarida ikkisi qo'shiladi, takrorsiz.
+
+Zaxirani qo'lda ham qaytarish mumkin, lekin birliklar `<ota>--<nom>`
+nomi bilan yotadi, shuning uchun butun papkani ko'chirish ishlamaydi:
+[Orqaga qaytarish](#orqaga-qaytarish) dagi sikl har birlikni o'z nomi
+bilan joyiga qo'yadi.
+
 ## Ochiq aytilgan chegara
 
 Agent sessiyasi `manguberdi.ps1` ni yurgiza olmaydi: repo PowerShell ni
 ish uchun taqiqlaydi (`tools/guard.py` uni to'sadi). Uni sinaydigan joy
 CI: `.github/workflows/docs.yml` dagi `installer` job `windows-latest`
-da Windows PowerShell 5.1 va pwsh 7 bilan avval quruq yurish, keyin bir
-martalik runnerda `-Apply` yurgizadi. So'ng `settings.json` o'qilishini,
-eski sozlama o'chganini, skill joyida ekanini va zaxira borligini
-tekshiradi. Keyin begona skill va begona hook qo'shib `-Update -Apply`
-yurgizadi: ular qolgani, o'z hooki bir marta turgani, `settings.json`
-BOM siz yozilgani va skill ichida ikkinchi `manguberdi\` ochilmagani
-tekshiriladi. `-Project` CI da yurmaydi. Yo'llarni almashtirish va
-`settings.json` ni birlashtirish alohida birlik testlarida
-(`tools/test_rewrite_paths.py`, `tools/test_merge_settings.py`).
+da Windows PowerShell 5.1 va pwsh 7 bilan to'rt qadam yurgizadi.
+
+1. Quruq yurish.
+2. `-Apply` (sukut, qo'shuvchi): begona `CLAUDE.md`, `skills\eski`,
+   `plugins\p`, `rules\r` va `settings.json` dagi begona hook, ruxsat
+   va kalit ekiladi; hammasi saqlangani, manguberdi va olti aktyor
+   borligi, o'z hooki bir marta turgani va `settings.json` BOM siz
+   yozilgani tekshiriladi.
+3. `-Update -Apply`: eski nom bilan ham xuddi shu xulq.
+4. `-Reset`: `-ConfirmReset` siz rad etilishi va hech narsa o'chmasligi,
+   `-IncludeAuth` ni `-Reset` siz berish rad etilishi, tasdiq bilan esa
+   o'chishi va zaxira yozilishi.
+5. `-Uninstall`: klon nusxasidan o'rnatiladi, nusxa o'chiriladi, keyin
+   mavjud bo'lmagan shu yo'l bilan `-Uninstall -Apply` yuradi; o'z
+   yozuvlari ketgani va begonalari qolgani tekshiriladi.
+
+`-Project` CI da yurmaydi. Yo'llarni almashtirish, `settings.json` ni
+birlashtirish, olib tashlash va zaxiradan tiklash alohida birlik
+testlarida: `tools/test_rewrite_paths.py`,
+`tools/test_merge_settings.py`, `tools/test_uninstall_settings.py`,
+`tools/test_restore_backup.py`.
 
 ps1 yasaydigan hook jadvalining repodagi `.claude/settings.json` ga
 mosligi `tools/test_rewrite_paths.py` dagi `case_ps1_hooklari_repoga_mos`

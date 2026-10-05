@@ -71,8 +71,10 @@ proyektda `manguberdi` ishlatiladi. U olti aktyor va hooklar bilan birga
 [global o'rnatish](install/README.md#b-yoli-global-ornatish) yo'li bilan
 o'rnatiladi va o'rnatuvchi (hozircha PowerShell skripti) yo'llarni klonga
 mutlaq bog'laydi, shuning uchun klon o'chirilmaydi va ko'chirilmaydi. Bu
-yo'l `~/.claude/` dagi avvalgi skill, agent va sozlamalarni zaxiraga olib
-o'chiradi, shuning uchun avval `-Apply` siz yurgiziladi.
+yo'l qo'shuvchi: faqat `manguberdi` birliklari almashadi, `~/.claude/`
+dagi boshqa skill, agent va sozlamalarga tegilmaydi. To'liq tozalash
+faqat `-Reset -ConfirmReset` bilan. Baribir avval `-Apply` siz
+yurgiziladi: ro'yxat chiqadi, hech narsa o'zgarmaydi.
 
 ## Memory
 
