@@ -1,28 +1,31 @@
 terim	moslik
 # So'rovda ishlatiladigan so'z -> korpus sarlavhalarida turgan so'z.
-# Faqat lug'at farqi uchun: qo'shimchani kesishni stem() bajaradi, uni
-# bu yerda takrorlamang. Har bir juft sarlavhalarda haqiqatan mavjud
-# so'zga olib borishi kerak, aks holda u shunchaki shovqin qo'shadi.
+# Faqat lug'at farqi uchun: so'rovdagi qo'shimchani roots() kesadi, uni
+# bu yerda takrorlamang. Sarlavhadagi qo'shimchali shaklni (izolyatsiyasi)
+# roots() topmaydi, uni nishon qilib yozish mumkin. Kalitning o'zi baribir
+# qidiriladi. Har bir nishon sarlavhalarda haqiqatan mavjud so'z bo'lsin,
+# aks holda u shunchaki shovqin qo'shadi. Umumiy so'zni (javob, tekshiruv)
+# kamyob atamaga (endpoint, assertion) bog'lamang: u har oddiy so'rovga
+# begona bo'limlarni itaradi.
 #
 # Kod tuzilishi
 metod	funksiya metod
 funksya	funksiya
 bolaklash	ajratish chiqarish
-boglash	bogliqlik
+boglash	bog'lash bog'liqlik
 qisqartirish	kichik ajratish
 uzunlik	kichik uzun
 # Baza
 baza	postgresql jadval
 jadval	jadval sxema
-sorov	sorov query
+sorov	so'rov query
 sekinlashdi	sekin ishlash
 qotib	qulf lock deadlock
 # Tarmoq va integratsiya
 tashqi	integratsiya tashqi
 uzilish	nosozlik timeout
-javob	javob endpoint
 # Test
-tekshiruv	test assertion
+tekshiruv	test
 sinov	test
 yiqildi	nosozlik xato
 # So'z yasalishi: o'zak va undan yasalgan ot bir xil mavzuni bildiradi,
@@ -32,8 +35,8 @@ kesh	kesh keshlash
 test	test testlash
 log	log loglash
 nom	nom nomlash
-indeks	indeks indekslash
-izolyatsiya	izolyatsiya izolyatsiyalash
+indeks	indeksi indekslar
+izolyatsiya	izolyatsiyasi
 tranzaksiya	tranzaksiya tranzaksiyalar
 # Sifat
 chiroyli	toza nomlash

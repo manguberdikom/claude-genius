@@ -12,12 +12,18 @@ Hook har bir so'rovda ishlaydi, shuning uchun ikki xato ham qimmat:
 
 Shuning uchun ikkala tomon ham sinaladi. suggest_sections.py dagi
 MIN_SCORE, MIN_RARE_IDF va MIN_SPECIFIC_LEN shu ro'yxatda sozlangan.
+Hookning o'zi (stdin JSON, chiqish shakli, indekssiz klon) ham sinaladi:
+suggest() to'g'ri bo'lsa ham, buzuq chiqish CI dan yashil o'tib ketardi.
 
-Ma'lum cheklov: bitta texnik atama va to'ldiruvchi so'zlardan iborat
+Ma'lum cheklov: bitta mavhum so'z va to'ldiruvchi so'zlardan iborat
 so'rov ("tranzaksiyani qayerda ochaman") jim qoladi, chunki bitta mos
 so'z dalil uchun yetarli emas. Bu ataylab: shu shartni yumshatish
 "tezlik", "aniqlik" kabi mavhum otlarni ham o'tkazib yuboradi, ular bu
-korpusda texnik atamalardan ham kamyobroq. Bunday so'rov uchun
+korpusda texnik atamalardan ham kamyobroq. Yolg'iz o'zi yetadigan so'z
+atama lug'atidan bo'lishi kerak: taxallus so'zi, GLOSSARY.md dagi bir
+so'zli atama (deadlock, heap, latency) yoki sarlavhada CamelCase yoki
+kamida 4 harfli qisqartma bilan yozilgan nom (StampedLock, OSIV). Uch
+harfli qisqartma (ZGC, JVM, DTO) bunga kirmaydi. Bunday so'rov uchun
 `doc.sh find` bor va u bir so'zli so'rovni mukammal bajaradi.
 
 Bo'lim tanasining kalit so'zlarini indekslash ham sinab ko'rildi va
@@ -25,24 +31,32 @@ natijani o'zgartirmadi, shuning uchun olib tashlandi: indeks 304 KB ga,
 build uch barobarga oshar edi.
 """
 
+import json
 import os
+import re
+import shutil
 import subprocess
 import sys
+import tempfile
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
 import suggest_sections as S  # noqa: E402
 
-# So'rov -> kutilgan hujjat. Taklif ro'yxatida o'sha hujjatdan kamida
-# bitta bo'lim bo'lishi kerak.
+# So'rov -> kutilgan hujjat [, qabul qilinadigan bo'limlar]. Taklif
+# ro'yxatida o'sha hujjatdan kamida bitta bo'lim bo'lishi kerak; bo'limlar
+# berilgan bo'lsa, ulardan biri. Raqam to'liq solishtiriladi: prefiks
+# bo'yicha '1' '10.x' ga ham mos kelib qolardi.
 EXPECTED = [
     ("tashqi servisga chaqiruvni ishonchli qilish kerak, timeout va qayta urinish",
      "patterns"),
-    ("circuit breaker qo'yaymi yoki bulkhead", "patterns"),
-    ("Testcontainers bilan PostgreSQL test yozmoqchiman", "testing"),
+    ("circuit breaker qo'yaymi yoki bulkhead", "patterns", {"17.2", "17.3"}),
+    ("Testcontainers bilan PostgreSQL test yozmoqchiman", "testing", {"8.2"}),
     ("test flaky bo'lib qoldi, nima qilaman", "testing"),
     ("Sonar cognitive complexity dan shikoyat qilyapti", "sonarqube"),
     ("quality gate o'tmayapti, coverage past", "sonarqube"),
-    ("deadlock chiqdi, izolyatsiya darajasini qanday tanlayman", "architect"),
+    ("deadlock chiqdi, izolyatsiya darajasini qanday tanlayman", "architect",
+     {"19.3"}),
     ("connection pool kattaligini qanday hisoblayman", "architect"),
     ("bu funksiya nomi to'g'rimi", "clean-code"),
     # Qo'shimcha kesish va sinonim jadvali bilan ishlaydigan holatlar.
@@ -50,7 +64,41 @@ EXPECTED = [
     ("keshni qachon invalidatsiya qilaman", "architect"),
     ("saga pattern kerakmi yoki outbox", "patterns"),
     ("N+1 so'rov muammosi", "patterns"),
+    # GLOSSARY.md dagi bir so'zli atama yolg'iz o'zi dalil.
+    ("postgresda deadlock bo'lyapti, ikki tranzaksiya bir-birini kutyapti",
+     "architect", {"11.10", "19.10", "22.8"}),
+    ("heap to'lib OutOfMemoryError beryapti", "architect", {"10.7", "10.9"}),
+    ("API sekin, latency 2 soniya", "architect"),
+    # Sarlavhadagi texnik nom (CamelCase, 4 harfli qisqartma) ham dalil.
+    ("OSIV yoqilganmi tekshir", "code-review", {"19.8"}),
+    ("StampedLock ishlatsam bo'ladimi", "architect", {"11.4"}),
+    ("DataJpaTest qanday yoziladi", "testing", {"7.4"}),
+    # Uzun raqam atama bo'lib qoladi, qisqasi esa yo'q (SILENT ga qarang).
+    ("ProblemDetail RFC 9457 formatida xato qaytarish", "patterns", {"7.10"}),
+    # Sonar kaliti index/rules.tsv orqali to'g'ridan bo'limga boradi.
+    ("java:S2259 ni tuzat", "sonarqube", {"1.4"}),
+    ("squid:S1192 topildi", "sonarqube"),
+    # Bob taxallusi bob raqamini beradi.
+    ("API compatibility buzilmaydimi", "code-review", {"37"}),
+    # Regressiya qo'riqchilari: stack trace va memory tozalashi bir
+    # qatorlik exception nomiga va "in-memory" ga tegmasligi kerak.
+    ("LazyInitializationException chiqyapti, qanday tuzataman", "patterns"),
+    ("DataAccessException hierarchy nima", "patterns"),
+    ("in-memory baza bilan test yozsam bo'ladimi", "testing"),
 ]
+
+# Ko'p qatorli stack trace: frame, paket nomlari va xabar mavzu emas.
+STACK_TRACE = "\n".join([
+    "test yiqildi, nega?",
+    "org.springframework.dao.DataIntegrityViolationException: "
+    "could not execute statement",
+    "\tat org.hibernate.exception.internal.SQLStateConversionDelegate"
+    ".convert(SQLStateConversionDelegate.java:97)",
+    "\tat com.example.order.OrderService.save(OrderService.java:42)",
+    "Caused by: org.postgresql.util.PSQLException: ERROR: duplicate key",
+    "  Detail: Key (email)=(a@b) already exists.",
+    "\t... 42 more",
+])
 
 # Mavzusiz so'rovlar: hook butunlay jim turishi shart.
 SILENT = [
@@ -69,24 +117,134 @@ SILENT = [
     "bu qoida qanday ishlaydi",
     "sifat yaxshimi yoki yo'q",
     "qidiruv qanchalik aniq ishlayapti",
+    # GLOSSARY atamasi buyruq ichida: "stack" chiqarilgan, "commit" va
+    # "rule" esa yolg'iz yetarlicha kamyob emas.
+    "yaxshi, endi stack ni yangila",
+    "rahmat, endi commit qilib push qil",
+    "bu rule nima deydi",
+    # Asbobning o'ziga buyruq, qo'llanma mavzusi emas.
+    "memory ga yozib qo'y",
+    "memoryni tozala",
+    # Yolg'iz domen oti va stack trace.
+    "Notification yuborishni qo'sh",
+    "OrderService da NullPointerException chiqyapti, customer null",
+    STACK_TRACE,
+    # Qisqa raqam: qator raqami, son, foiz.
+    "OrderService.java:90 qatorda NPE, 30 ta so'rovdan 60 tasi yiqildi",
+    "7 ta test yiqildi",
+    # Sarlavha atamalari faqat texnik nomdan olinadi, oddiy inglizcha
+    # so'z (debug, create, info, target, this) lug'atga kirmaydi.
+    "debug qilib ko'r",
+    "create qil yangi fayl",
+    "info ber",
+    "target papkani o'chir",
+    "this nima",
 ]
 
 # Chegaradagi so'rovlar: buyruq shaklida, lekin ichida haqiqiy mavzu so'zi
 # bor ("test", "git", "nom"). Bu yerda jimlikni talab qilish noto'g'ri
 # bo'lardi: "testni ishga tushir" uchun "Testni tanlab ishga tushirish"
-# bo'limi aynan mos keladi. Talab - natija chegaralangan bo'lsin, shunda
-# noto'g'ri taklifning narxi bir necha qatordan oshmaydi.
+# bo'limi aynan mos keladi. Talab - har so'rov uchun yozilgan son va
+# hujjatlardan oshmasin, shunda noto'g'ri taklifning narxi bir necha
+# qatordan oshmaydi. Chegara S.MAX_SUGGESTIONS ga bog'lanmaydi: aks holda
+# konstanta ko'tarilsa chegara ham o'zi ko'tarilib, sinov doim o'tardi.
 BORDERLINE = [
-    "git push qilib qoy",
-    "fayl nomini o'zgartir",
-    "testni ishga tushir",
+    # (so'rov, ko'pi bilan nechta, qaysi hujjatlardan, chiqishi shart bo'lim)
+    ("git push qilib qoy", 1, {"clean-code"}, None),
+    ("fayl nomini o'zgartir", 1, {"clean-code"}, None),
+    ("testni ishga tushir", 1, {"testing"}, ("testing", "15.5")),
     # "performance" bu korpusda haqiqiy atama: "Performance regressiyasini
     # diffdan ko'rish" degan bob bor. So'rov asbob tezligi haqida bo'lsa
     # ham, so'z darajasidagi moslik buni ajrata olmaydi. Qoidani shu
     # holat uchun burish haqiqiy atamalarni yo'qotardi, shuning uchun
     # taklif chiqishi qabul qilinadi, faqat soni chegaralanadi.
-    "performance, tezlik, aniqlik haqida nima deysan",
+    ("performance, tezlik, aniqlik haqida nima deysan", 4,
+     {"code-review", "patterns"}, None),
 ]
+
+# Ma'lum bo'shliqlar: chop etiladi, lekin xato hisoblanmaydi.
+KNOWN_GAPS = [
+    ("saga pattern kerakmi yoki outbox", "patterns 10.14 / 14.12",
+     "outbox bo'limi chiqmaydi, saga bo'limlari to'rt o'rinni egallaydi"),
+    ("ZGC qachon kerak", "architect 10.4",
+     "uch harfli qisqartma ataylab dalil emas, aks holda 'JVM nima' ham ochiladi"),
+]
+
+# Hook chiqishida bo'lim raqami ikki marta: "17.2    17.2 Zanjirni ...".
+DOUBLED_RE = re.compile(r"(\d+\.\d+)\s+\1\b")
+# Indekssiz nusxaga kerak fayllar: hook, indeks yasovchi va uning importi.
+HOOK_FILES = ("suggest_sections.py", "build_index.py", "check_docs.py",
+              "synonyms.tsv")
+
+
+def run_hook(root, raw):
+    proc = subprocess.run(
+        [sys.executable, os.path.join(root, "tools", "suggest_sections.py")],
+        input=raw, capture_output=True, text=True, timeout=60)
+    return proc.returncode, proc.stdout
+
+
+def context(stdout):
+    """(hookEventName, additionalContext) yoki JSON buzuq bo'lsa (None, '')."""
+    try:
+        data = json.loads(stdout)["hookSpecificOutput"]
+        return data["hookEventName"], data["additionalContext"]
+    except (ValueError, KeyError, TypeError):
+        return None, ""
+
+
+def output_shape_ok(stdout):
+    event, text = context(stdout)
+    lines = text.splitlines()
+    return (event == "UserPromptSubmit" and len(lines) > 1
+            and lines[0].startswith("Mos bo'limlar") and "doc.sh show" in lines[0]
+            and not any(DOUBLED_RE.search(line) for line in lines[1:])
+            and "majburiyat emas" not in text)
+
+
+def hook_cases():
+    """Hookni subprocess bilan yurgizadi, (nom, ok, izoh) ro'yxatini beradi.
+
+    Hammasi vaqtinchalik nusxada: indekssiz klon holatini sinash uchun
+    index/ yo'q bo'lishi kerak, haqiqiy index/ dan esa boshqa jarayonlar
+    shu payt o'qiyotgan bo'lishi mumkin.
+    """
+    out = []
+    with tempfile.TemporaryDirectory() as tmp:
+        os.makedirs(os.path.join(tmp, "tools"))
+        for name in HOOK_FILES:
+            shutil.copy2(os.path.join(HERE, name), os.path.join(tmp, "tools", name))
+        shutil.copy2(os.path.join(S.ROOT, "GLOSSARY.md"), tmp)
+        shutil.copytree(os.path.join(S.ROOT, "docs"), os.path.join(tmp, "docs"))
+        sections = os.path.join(tmp, "index", "sections.tsv")
+        prompt = EXPECTED[1][0]
+
+        rc, stdout = run_hook(tmp, json.dumps({"prompt": prompt}))
+        out.append(("indekssiz klon: o'zi yasaydi", rc == 0
+                    and os.path.exists(sections) and output_shape_ok(stdout),
+                    "rc=%d, %d belgi" % (rc, len(stdout))))
+
+        index = os.path.dirname(sections)
+        for name in (os.listdir(index) if os.path.isdir(index) else ()):
+            os.utime(os.path.join(index, name), (1, 1))   # har qanday bobdan eski
+        rc, stdout = run_hook(tmp, json.dumps({"prompt": prompt}))
+        fresh = os.path.exists(sections) and os.path.getmtime(sections) > 1
+        out.append(("eskirgan indeks qayta yasaladi", rc == 0 and fresh
+                    and output_shape_ok(stdout), "rc=%d" % rc))
+
+        rc, stdout = run_hook(tmp, json.dumps({"prompt": "java:S2259 ni tuzat"}))
+        _, text = context(stdout)
+        out.append(("Sonar kaliti: bo'lim va doc.sh rule", rc == 0
+                    and output_shape_ok(stdout) and "1.4 " in text
+                    and "doc.sh rule java:S2259" in text, "rc=%d" % rc))
+
+        for name, raw in (("mavzusiz so'rov", json.dumps({"prompt": "salom"})),
+                          ("buzuq JSON", "not json"),
+                          ("obyekt emas", "[]")):
+            rc, stdout = run_hook(tmp, raw)
+            out.append((name + ": jim", rc == 0 and stdout == "",
+                        "rc=%d, %d belgi" % (rc, len(stdout))))
+    return out
 
 
 def main():
@@ -96,41 +254,64 @@ def main():
     # yurgizishda qizil berardi. Endi o'zi yasaydi, eval_find kabi.
     if not os.path.exists(os.path.join(S.INDEX, "df.tsv")):
         print("indeks yo'q, yasalmoqda: tools/doc.sh rebuild")
-        subprocess.run([os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                     "doc.sh"), "rebuild"],
+        subprocess.run([os.path.join(HERE, "doc.sh"), "rebuild"],
                        capture_output=True, check=True)
 
     failures = 0
+    total = 0
 
     print("== Taklif berishi kerak ==")
-    for prompt, want_doc in EXPECTED:
+    for prompt, want_doc, *rest in EXPECTED:
+        secs = rest[0] if rest else None
         hits = S.suggest(prompt)
-        docs = {h[0] for h in hits}
-        ok = want_doc in docs
+        ok = any(h[0] == want_doc and (not secs or h[1] in secs) for h in hits)
         failures += not ok
+        total += 1
         print("%-4s %-58s -> %s" % (
             "OK" if ok else "XATO", prompt[:58],
-            ", ".join(sorted(docs)) if docs else "(jim)"))
+            ", ".join("%s %s" % (h[0], h[1]) for h in hits) if hits else "(jim)"))
 
     print("\n== Jim turishi kerak ==")
     for prompt in SILENT:
         hits = S.suggest(prompt)
         ok = not hits
         failures += not ok
+        total += 1
         print("%-4s %-58s -> %s" % (
-            "OK" if ok else "XATO", prompt[:58],
+            "OK" if ok else "XATO", prompt.replace("\n", " | ")[:58],
             "(jim)" if ok else "%d ta taklif: %s" % (
                 len(hits), hits[0][2][:40])))
 
-    print("\n== Chegarada: ko'pi bilan %d ta ==" % S.MAX_SUGGESTIONS)
-    for prompt in BORDERLINE:
+    print("\n== Chegarada: so'rov bo'yicha chegara ==")
+    ok = S.MAX_SUGGESTIONS <= 4
+    failures += not ok
+    total += 1
+    print("%-4s %-58s -> %d" % ("OK" if ok else "XATO",
+                                "MAX_SUGGESTIONS <= 4", S.MAX_SUGGESTIONS))
+    for prompt, limit, docs, must in BORDERLINE:
         hits = S.suggest(prompt)
-        ok = len(hits) <= S.MAX_SUGGESTIONS
+        got = {h[0] for h in hits}
+        ok = (len(hits) <= limit and got <= docs
+              and (must is None or any((h[0], h[1]) == must for h in hits)))
         failures += not ok
-        print("%-4s %-58s -> %d ta" % (
-            "OK" if ok else "XATO", prompt[:58], len(hits)))
+        total += 1
+        print("%-4s %-58s -> %d ta (chegara %d) %s" % (
+            "OK" if ok else "XATO", prompt[:58], len(hits), limit,
+            ", ".join("%s %s" % (h[0], h[1]) for h in hits)))
 
-    total = len(EXPECTED) + len(SILENT) + len(BORDERLINE)
+    print("\n== Hookning o'zi ==")
+    for name, ok, note in hook_cases():
+        failures += not ok
+        total += 1
+        print("%-4s %-58s -> %s" % ("OK" if ok else "XATO", name, note))
+
+    print("\n== Ma'lum bo'shliqlar (xato hisoblanmaydi) ==")
+    for prompt, want, why in KNOWN_GAPS:
+        hits = S.suggest(prompt)
+        print("     %-58s -> %s (kutilgan %s: %s)" % (
+            prompt[:58],
+            ", ".join("%s %s" % (h[0], h[1]) for h in hits) or "(jim)", want, why))
+
     print("\n%d/%d o'tdi" % (total - failures, total))
     return 1 if failures else 0
 

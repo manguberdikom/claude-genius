@@ -4,7 +4,8 @@
     python3 tools/build_index.py
 
 Manba - docs/manifest.json va undagi bob fayllari. Chiqish - index/ dagi
-to'rtta TSV. Hujjatlarga tegilmaydi, indeks butunlay hosila.
+TSV fayllar va oxirida yoziladigan `.stamp` belgisi. Hujjatlarga
+tegilmaydi, indeks butunlay hosila.
 
 Nega kerak: manifest har bob uchun faqat bo'lim SONINI saqlaydi, nomini emas.
 Bo'limni nomi yoki inglizcha atamasi bo'yicha topish uchun alohida indeks
@@ -16,6 +17,7 @@ import json
 import os
 import re
 import sys
+import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -36,6 +38,14 @@ ALIAS_RE = re.compile(r"^- \[(.+?)\]\([^)]*\)\s*-\s*(\d+\.\d+)\s*$")
 PAREN_RE = re.compile(r"\(([^()]*(?:\([^()]*\)[^()]*)*)\)\s*$")
 
 ALIAS_FILE = "99-alifbo-boyicha-indeks.md"
+
+# build() yozadigan fayllar: is_fresh() hammasi borligini talab qiladi.
+OUTPUTS = ("docs.tsv", "chapters.tsv", "sections.tsv", "aliases.tsv",
+           "rules.tsv", "checklist.tsv", "df.tsv")
+# Hamma fayldan keyin yoziladi: u bor bo'lsa indeks to'liq. Vaqti build
+# BOSHLANGAN payt, shuning uchun build paytida tahrirlangan bob keyingi
+# chaqiruvda baribir qayta yasaladi. doc.sh ensure_index ham shunga qaraydi.
+STAMP = ".stamp"
 
 # `n+1`, `c++` kabi atamalar bitta token bo'lib qolishi kerak.
 RULE_RE = re.compile(r"\bjava:S\d+\b")
@@ -170,6 +180,7 @@ def index_chapter(doc_key, chapter, rel_path, rows):
 
 
 def build():
+    started = time.time()
     manifest = json.load(open(os.path.join(DOCS_DIR, "manifest.json"), encoding="utf-8"))
     rows = {"chapters": [], "sections": [], "aliases": [], "known": set(),
             "rules": [], "checklist": []}
@@ -224,8 +235,10 @@ def build():
     # tushuntirgan bo'lim, bir marta uchragani esa ro'yxatda eslatilgan.
     # Reyting: sanoqning o'zi aldaydi. Yigirmata kalit sanab o'tgan
     # katalog qatori ham, bitta kalitni tushuntirgan bo'lim ham kalitni
-    # bir necha marta tilga oladi. Ko'zga tashlanish kerak: shu bo'limdagi
-    # BARCHA kalitlarga nisbatan shu kalitning ulushi.
+    # bir necha marta tilga oladi. Shuning uchun ulush = sanoq / bo'limdagi
+    # turli kalitlar soni. Bu nisbat emas, 1 dan oshishi mumkin (S2925 19.4
+    # da 3.0). Kalitni yo'l-yo'lakay eslatgan kichik bo'lim ham yuqori
+    # chiqishi mumkin: docref.by_rule buni topilma so'zi bilan aniqlaydi.
     per_section = {}
     for rule, doc, chapter, section, _ in set(rows["rules"]):
         per_section.setdefault((doc, chapter, section), set()).add(rule)
@@ -244,12 +257,13 @@ def build():
     write("df.tsv", ["token", "sections"],
           sorted(df.items(), key=lambda kv: (-kv[1], kv[0])))
 
-
-    print("index: %d hujjat, %d bob, %d bo'lim, %d taxallus, %d so'z, "
-          "%d qoida kaliti, %d tekshiruv punkti"
-          % (len(doc_rows), len(rows["chapters"]), len(rows["sections"]),
-             len(aliases), len(df), len({r[0] for r in rules}),
-             len(rows["checklist"])))
+    summary = ("index: %d hujjat, %d bob, %d bo'lim, %d taxallus, %d so'z, "
+               "%d qoida kaliti, %d tekshiruv punkti"
+               % (len(doc_rows), len(rows["chapters"]), len(rows["sections"]),
+                  len(aliases), len(df), len({r[0] for r in rules}),
+                  len(rows["checklist"])))
+    write(STAMP, [], [(summary,)], mtime=started)
+    return summary
 
 
 def word_tokens(text):
@@ -281,12 +295,52 @@ def build_df(section_rows):
     return df
 
 
-def write(name, header, data):
-    with open(os.path.join(INDEX_DIR, name), "w", encoding="utf-8") as handle:
-        handle.write("\t".join(header) + "\n")
-        for row in data:
-            handle.write("\t".join(str(cell) for cell in row) + "\n")
+def write(name, header, data, mtime=None):
+    """Faylni atomik almashtiradi: avval vaqtinchalik nusxa, keyin os.replace.
+
+    Joyida qayta yozilganda rebuild paytida parallel o'quvchi (boshqa
+    doc.sh yoki hook) bo'sh yoki yarim faylni ko'rardi.
+    """
+    path = os.path.join(INDEX_DIR, name)
+    tmp = "%s.%d.tmp" % (path, os.getpid())
+    try:
+        with open(tmp, "w", encoding="utf-8") as handle:
+            if header:
+                handle.write("\t".join(header) + "\n")
+            for row in data:
+                handle.write("\t".join(str(cell) for cell in row) + "\n")
+        if mtime is not None:
+            os.utime(tmp, (mtime, mtime))
+        os.replace(tmp, path)
+    finally:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+
+
+def sources():
+    """Indeks tayanadigan fayllar: bob matnlari, manifest va shu skript."""
+    yield os.path.abspath(__file__)
+    for folder, _, names in os.walk(DOCS_DIR):
+        for name in names:
+            if name.endswith(".md") or name == "manifest.json":
+                yield os.path.join(folder, name)
+
+
+def is_fresh():
+    """Indeks to'liq va hech bir manbadan eski emas.
+
+    Faqat fayl borligiga qarash yetmaydi: eski klonda keyin qo'shilgan
+    rules.tsv yoki df.tsv yo'q, bob tahrirlangandan keyin esa satr
+    raqamlari jimgina noto'g'ri bo'ladi.
+    """
+    try:
+        built = os.path.getmtime(os.path.join(INDEX_DIR, STAMP))
+    except OSError:
+        return False
+    if not all(os.path.exists(os.path.join(INDEX_DIR, n)) for n in OUTPUTS):
+        return False
+    return all(os.path.getmtime(path) <= built for path in sources())
 
 
 if __name__ == "__main__":
-    build()
+    print(build())
