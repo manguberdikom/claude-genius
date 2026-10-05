@@ -769,14 +769,26 @@ try (var scope = new StructuredTaskScope.ShutdownOnFailure()) { // Java 21-24 pr
 
 **Tavsif:** `ThreadLocal`ning zamonaviy, o'zgarmas va qamrovga bog'langan o'rnini bosuvchisi: qiymat faqat ma'lum kod blokining bajarilish davrida ko'rinadi va blok tugashi bilan avtomatik "yo'qoladi". Qiymat o'zgartirilmaydi - faqat `where(...)` bilan yangi qamrov ochiladi, shuning uchun `remove()` qilishni unutish natijasidagi leak va kontekst "sizib o'tishi" imkonsiz. Structured concurrency bilan birga ishlaganda qiymat bola vazifalarga avtomatik, nusxa ko'chirmasdan meros bo'lib o'tadi - bu virtual thread'lar uchun juda muhim.
 
-**Spring'da qayerda uchraydi:** `java.lang.ScopedValue` - Java 20'da incubator, 21-24 da preview, Java 25 (JEP 506) da yakuniy holatga keldi: `ScopedValue.newInstance()`, `ScopedValue.where(KEY, value).run(...)` yoki `.call(...)`, `KEY.get()`, `KEY.isBound()`. Spring Framework hozircha ichki kontekst holderlarini (`RequestContextHolder`, `SecurityContextHolder`, `TransactionSynchronizationManager`) `ThreadLocal` asosida yuritadi, shuning uchun amalda `ScopedValue` o'z ilova kodingizdagi kontekst uzatish uchun qo'llaniladi - masalan `OncePerRequestFilter` ichida qamrov ochib, pastdagi barcha chaqiruvlarga tenant yoki trace ma'lumotini uzatish.
+**Spring'da qayerda uchraydi:** `java.lang.ScopedValue` - Java 20'da incubator, 21-24 da preview, Java 25 (JEP 506) da yakuniy holatga keldi: `ScopedValue.newInstance()`, `ScopedValue.where(KEY, value)` bilan `Carrier` olinadi, undan `run(Runnable)` yoki `call(CallableOp)`, keyin `KEY.get()`, `KEY.isBound()`. `run` faqat checked istisno tashlamaydigan blok uchun; `CallableOp<T, X extends Throwable>` esa natija qaytaradi va checked istisnoni o'tkazib yuboradi. Spring Framework hozircha ichki kontekst holderlarini (`RequestContextHolder`, `SecurityContextHolder`, `TransactionSynchronizationManager`) `ThreadLocal` asosida yuritadi, shuning uchun amalda `ScopedValue` o'z ilova kodingizdagi kontekst uzatish uchun qo'llaniladi - masalan `OncePerRequestFilter` ichida qamrov ochib, pastdagi barcha chaqiruvlarga tenant yoki trace ma'lumotini uzatish.
 
 ```java
 static final ScopedValue<String> TENANT = ScopedValue.newInstance();
 
-// filter yoki interceptor ichida:
-ScopedValue.where(TENANT, resolveTenant(request))
-           .run(() -> chain.doFilter(request, response));
+// Filter ichida. run(Runnable) bu yerda kompilyatsiya bo'lmaydi:
+// doFilter checked IOException va ServletException tashlaydi,
+// Runnable.run() esa hech qanday checked istisnoni e'lon qilmaydi.
+try {
+    ScopedValue.where(TENANT, resolveTenant(request)).call(() -> {
+        chain.doFilter(request, response);
+        return null;                      // CallableOp natija qaytaradi
+    });
+}
+catch (IOException | ServletException | RuntimeException | Error e) {
+    throw e;                              // aniq qayta tashlash
+}
+catch (Exception e) {
+    throw new IllegalStateException(e);   // yetib bo'lmaydigan shox
+}
 
 // chuqur qatlamda:
 String tenant = TENANT.orElse("default");
@@ -789,7 +801,7 @@ String tenant = TENANT.orElse("default");
 - Faqat ma'lum bir blok davomida amal qiladigan audit yoki feature-flag kontekstini belgilash.
 - Immutable kontekst talab qilinadigan kutubxona API'larida `ThreadLocal`ni almashtirish.
 
-**Ehtiyot bo'ling:** Qiymat qamrov ichida o'zgartirilmaydi - "o'zgaruvchi holat" kerak bo'lsa bu pattern to'g'ri kelmaydi, immutable snapshotni qayta bind qilish kerak. Java 25'dan past versiyalarda `--enable-preview` talab qilinadi va `KEY.get()` bog'lanmagan qamrovda `NoSuchElementException` tashlaydi, shuning uchun `orElse`/`isBound` ishlatish xavfsizroq.
+**Ehtiyot bo'ling:** Qiymat qamrov ichida o'zgartirilmaydi - "o'zgaruvchi holat" kerak bo'lsa bu pattern to'g'ri kelmaydi, immutable snapshotni qayta bind qilish kerak. Java 25'dan past versiyalarda `--enable-preview` talab qilinadi va `KEY.get()` bog'lanmagan qamrovda `NoSuchElementException` tashlaydi, shuning uchun `orElse`/`isBound` ishlatish xavfsizroq. `call` ning `X` turi lambda tashlagan istisnolardan chiqariladi: ikki xil checked istisno bo'lsa `X` ularning umumiy ota sinfiga, ya'ni `Exception` ga keng tortiladi va chaqiruvchi `throws IOException, ServletException` deb e'lon qilgan bo'lsa ham kod kompilyatsiya bo'lmaydi. Shuning uchun yuqoridagi misolda aniq qayta tashlash (precise rethrow) bor. Bitta checked istisno bo'lganda bunday o'ram kerak emas.
 
 ## 4.26 Asinxron metod chaqiruvi (Asynchronous Method Invocation)
 
@@ -862,6 +874,12 @@ public Quote fetch(QuoteRequest r) throws InterruptedException {
 - [ ] Virtual thread'ga o'tish nomzodlarini belgilang va ularda `synchronized` o'rniga `ReentrantLock` ishlatilganini tekshiring.
 - [ ] Tashqi chaqiruvlar uchun `Semaphore` yoki bulkhead chegarasi borligini tekshiring; chegarasiz parallellik tashqi tizimni yiqitadi.
 - [ ] O'zgarmas bo'lishi mumkin bo'lgan domen obyektlarini toping va ularni `record` yoki `final` maydonlarga o'tkazish rejasini tuzing.
+
+## Manbalar
+
+- [JEP 506: Scoped Values](https://openjdk.org/jeps/506) - `ScopedValue` Java 25 da yakuniy holat
+- [openjdk/jdk, `java/lang/ScopedValue.java` (jdk-25-ga)](https://raw.githubusercontent.com/openjdk/jdk/jdk-25-ga/src/java.base/share/classes/java/lang/ScopedValue.java) - `Carrier.run(Runnable)`, `Carrier.call(CallableOp)` va `CallableOp<T, X extends Throwable>`
+- [JLS 18.4, Resolution](https://docs.oracle.com/javase/specs/jls/se25/html/jls-18.html#jls-18.4) - lambda tashlagan istisnolardan `X` ning chiqarilishi
 
 ---
 

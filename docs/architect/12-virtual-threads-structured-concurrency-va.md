@@ -218,6 +218,9 @@ public final class Kontekst {
 }
 
 // Filter yoki interceptor ichida
+// run(Runnable) checked istisno tashlamaydigan blok uchun. Agar blok
+// ichida chain.doFilter kabi checked istisno tashlovchi chaqiruv bo'lsa,
+// call(CallableOp) kerak: patterns 4.25 da to'liq misol bor.
 ScopedValue.where(Kontekst.SOROV, new SorovId(traceId)).run(() -> {
     // Bu blok ichidagi butun chaqiruv zanjiri qiymatni ko'radi
     tolovServisi.bajar(buyurtma);
