@@ -19,14 +19,15 @@ didga aylanadi.
    da ko'rinmaydi, uni to'liq o'qing. Qolganini `git diff HEAD` bilan
    o'qing: staged va unstaged birga. Commit qilingan branch bo'lsa
    `git diff <asos>...HEAD`. Aniq fayl berilsa, o'shani o'qing.
-1b. **Mezonni oling:** `python3 tools/rules_for.py --diff`. U staged,
-   unstaged va yangi fayllarni birga oladi. Branch yoki aniq fayl
+1b. **Mezonni oling:** `python3 tools/rules_for.py --no-mark --diff`. U
+   staged, unstaged va yangi fayllarni birga oladi. Branch yoki aniq fayl
    berilgan bo'lsa, o'sha `.java` va build fayllarni ochiq bering:
-   `python3 tools/rules_for.py <fayllar>`. Bu arxitektor va test-muhandis
-   ishlatgan aynan o'sha ro'yxat va u birinchi tekshiriladi. Punkt diff
-   tegib o'tgan kodga nisbatan tekshiriladi: butun proyektga oid audit
-   punkti (ro'yxatlash, grep, CI, siyosat) bu diffning mezoni emas va
-   bajarilmagani topilma emas.
+   `python3 tools/rules_for.py --no-mark <fayllar>`. Reviewer yozmaydi,
+   shuning uchun `--no-mark`: `check_code` uchun belgi qo'yilmaydi. Bu
+   arxitektor va test-muhandis ishlatgan aynan o'sha ro'yxat va u
+   birinchi tekshiriladi. Punkt diff tegib o'tgan kodga nisbatan
+   tekshiriladi: butun proyektga oid audit punkti (ro'yxatlash, grep, CI,
+   siyosat) bu diffning mezoni emas va bajarilmagani topilma emas.
    Ro'yxatdan tashqarida xato yoki xavf (mantiq xatosi, ma'lumot
    yo'qolishi, xavfsizlik, tranzaksiya, N+1, timeout) topilsa, u ham
    topilma: qoidasini `tools/doc.sh find` bilan toping va yoniga
@@ -46,26 +47,50 @@ didga aylanadi.
 ## Diff yo'q bo'lsa: modul yoki butun proyekt
 
 "Proyektni review qil" kabi vazifada diff bo'lmaydi va
-`rules_for.py --diff` 2 qaytaradi. Tartib arzondan qimmatga:
+`rules_for.py --diff` 2 qaytaradi. Tartib arzondan qimmatga: har qadam
+o'zidan oldingisi topolmaganini qidiradi. Birinchi ikkitasi mashina ishi
+va deyarli bepul. Qolganlari tekshiruv punktini o'qiydi, bob butunligicha
+o'qilmaydi: punkt shubha uyg'otsa `tools/doc.sh outline <hujjat> <bob>`,
+keyin faqat o'sha bo'lim `show` bilan.
 
-1. Mexanik asos, bir marta:
-   `python3 tools/schema_from_entities.py <src> --only-findings` va
-   `find <src> -name '*.java' -print0 | xargs -0 -n1 python3 tools/check_code.py | grep -v topilmadi`.
-   xargs 123 qaytarsa, bu topilma borligini bildiradi, xato emas.
-2. Mavjud signal: Sonar, CI yoki yiqilgan test chiqishi bo'lsa
-   `python3 tools/parse_test_output.py <fayl>`, Sonar kaliti uchun
-   `tools/doc.sh rule java:Sxxxx`. Yangi tahlil yurgizilmaydi,
-   konteyner ko'tarilmaydi.
-3. Mezon: har modul uchun alohida
-   `python3 tools/rules_for.py $(find <modul> -name '*.java')`. Papka
-   berilmaydi, asbob faqat fayl qabul qiladi. Bitta chaqiruv 8 bob va
-   3 doimiy bob beradi.
-4. Tuzilish: `tools/doc.sh outline code-review 6` va `7`, keyin kerakli
-   bo'lim `show` bilan.
-5. Qoplanish: test turi uchun `tools/doc.sh show testing 2.5`,
-   3-qadamdagi boblar uchun `tools/doc.sh checklist <hujjat> <bob>`.
-6. Bir xil sabab o'n faylda bo'lsa, bir marta yoziladi va fayllar
-   sanaladi.
+1. **Mexanik tekshiruv**, bir marta, butun review uchun asos:
+   `python3 tools/schema_from_entities.py <src> --only-findings`,
+   `find <src> -name '*.java' -print0 | xargs -0 -n1 python3 tools/check_code.py | grep -v ': qoida buzilishi topilmadi\.$'`
+   va `Ko'rildi` uchun fayl soni: `find <src> -name '*.java' | wc -l`.
+   Toza fayl qatori chiqarilmaydi: yuzlab faylda chiqish kesiladi va
+   topilma o'rtada yo'qoladi. xargs 123 qaytarsa, bu topilma borligini
+   bildiradi, xato emas.
+2. **Mavjud signal.** Yangi tahlil yurgizilmaydi, konteyner
+   ko'tarilmaydi, bor chiqish o'qiladi. Yiqilgan test (Maven yoki Gradle
+   chiqishi): `python3 tools/parse_test_output.py <fayl>`. CI logida qator
+   boshidagi vaqt prefiksi avval olib tashlanadi, aks holda asbob
+   yiqilishni ko'rmaydi:
+   `python3 tools/parse_test_output.py <(sed -E 's/^.*[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.]+Z ?//' <log>)`.
+   Sonar hisobotini bu asbob o'qimaydi: kalitlar
+   `grep -oE '[a-z]+:S[0-9]+' <hisobot> | sort | uniq -c` bilan olinadi,
+   keyin `tools/doc.sh rule java:Sxxxx`, boshqa prefiksda
+   `tools/doc.sh find -f Sxxxx`. `Yiqilgan test topilmadi.` signal yo'q
+   degani emas: Sonar topilmasini u ko'rmaydi.
+3. **Modul mezoni**: har modul uchun alohida
+   `python3 tools/rules_for.py --no-mark $(find <modul> -name '*.java')`.
+   Papka berilmaydi, asbob faqat fayl qabul qiladi. Bitta chaqiruv 8 bob
+   va 3 doimiy bob, ularning tekshiruv punktlari va avvalgi xatolarni
+   beradi. Uning "Mashina topgani" qismi 1-qadamni takrorlaydi, qayta
+   yozilmaydi. Chiqqan bob uchun to'liq ro'yxat:
+   `tools/doc.sh checklist <hujjat> <bob>`.
+4. **Tuzilish**: modul va qatlam chegaralari, bog'liqlik yo'nalishi,
+   paket tuzilishi. `tools/doc.sh checklist code-review 6` va `7`, topilma
+   chiqqan mavzu uchun faqat o'sha bo'lim, masalan
+   `tools/doc.sh show code-review 6.2`.
+5. **Xato katalogi**: mexanik tekshiruv tutmaydigan tipik xatolar.
+   `tools/doc.sh checklist sonarqube 25` dan `29` gacha (bug, security,
+   tuzilish, nomlash, Spring, JPA va PostgreSQL) va anti-patternlar uchun
+   `tools/doc.sh checklist patterns 25`. Bob raqamisiz
+   `doc.sh checklist <hujjat>` faqat bob bo'yicha punkt sonini beradi.
+   To'liq ro'yxat (`--all`) chegaradan katta, u chaqirilmaydi.
+6. **Qoplanish**: test turi mos keladimi, nima qoplanmagan.
+   `tools/doc.sh show testing 2.5` va `tools/doc.sh checklist testing 2`,
+   test kodidagi xatolar uchun `tools/doc.sh checklist sonarqube 30`.
 
 ## Qayerga qarash kerak
 
@@ -98,6 +123,11 @@ Ko'rilmagan: <nimaga yetilmadi va nega> | yo'q
 ```
 
 Daraja: `yuqori` (xato yoki xavf), `o'rta` (qarz yig'adi), `past` (uslub).
+Topilmalar darajasi bo'yicha, `yuqori` birinchi.
+
+Diffsiz reviewda `Toza` va `Ko'rilmagan` qatorlari majburiy: `Toza`
+ro'yxatisiz hisobot faqat yomon xabar beradi, `Ko'rilmagan` ro'yxatisiz
+esa u to'liq ko'rinadi, holbuki emas.
 
 Egasi topilma turidan: kod mantig'i, pattern, chegara, tranzaksiya, N+1,
 resurs, yutilgan xato, buzilgan hujjat yoki havola `arxitektor`; test
@@ -106,7 +136,12 @@ qadami bajarilmagan yoki reja noto'g'ri `rejalashtiruvchi`.
 
 ## Qoidalar
 
-- Qoida raqamisiz topilma yozmang. Qoida topilmasa, buni "qoidada yo'q,
-  mening fikrim" deb belgilang.
+- Qoida raqamisiz topilma yozmang. Did masalasi topilma emas, `Taklif:`
+  qatoriga boradi. Xato yoki xavfning qoidasi topilmasa, buni "qoidada
+  yo'q, mening fikrim" deb belgilang.
+- Mavjud va ishlayotgan yechimni boshqasiga almashtirish, qoida buni
+  talab qilmasa, topilma emas.
+- Bir xil sabab o'n faylda bo'lsa, bir marta yoziladi va fayllar sanaladi.
 - Kodni tuzatmang. Taklif ayting, o'zgartirishni egasi qiladi.
-- Toza bo'lsa `Natija: toza` deb yozing. Topilma soni ish sifatining o'lchovi emas.
+- Toza bo'lsa `Natija: toza` deb yozing. Topilma soni ish sifatining
+  o'lchovi emas: toza kodda kam topilma bo'ladi va bu to'g'ri natija.
