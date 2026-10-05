@@ -309,15 +309,14 @@ foreach ($m in @("$env:ProgramFiles\ClaudeCode\managed-settings.json",
   }
 }
 
+# Git Bash shart. Usiz Claude Code hookni PowerShell bilan yurgizadi va
+# `"python.exe" "skript.py"` shakli u yerda sintaksis xatosi: guard, budget
+# va check_code jim ishlamay qolardi. tools\doc.sh ham bash skripti.
 if (-not $BashExe) {
-  Say ""
-  Say "OGOHLANTIRISH: bash topilmadi." Yellow
-  Say "  tools\doc.sh bash skripti, qidiruv qatlamining hammasi unga tayanadi:"
-  Say "  find, show, rule, checklist, outline. Usiz skill qoida matnini"
-  Say "  o'qiy olmaydi, faqat hooklar ishlaydi."
-  Say "  Yechim: Git for Windows o'rnating (https://git-scm.com/download/win),"
-  Say "  keyin shu skriptni qayta yurgizing. WSL dagi bash hisoblanmaydi."
-  Say ""
+  Fail ("bash topilmadi, hech narsa o'zgarmadi. Usiz hooklar PowerShell da " +
+        "yurib yiqiladi, tools\doc.sh (find, show, rule) ham ishlamaydi. " +
+        "Git for Windows o'rnating (https://git-scm.com/download/win), keyin " +
+        "skriptni qayta yurgizing. WSL dagi bash hisoblanmaydi.")
 }
 
 # --- 2. Sinov yig'imi ----------------------------------------------------

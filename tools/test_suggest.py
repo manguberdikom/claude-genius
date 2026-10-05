@@ -282,13 +282,7 @@ def hook_cases():
         rc, stdout = run_hook(tmp, raw)
         out.append(("BOM va CRLF li stdin", rc == 0 and output_shape_ok(stdout),
                     "rc=%d, %d belgi" % (rc, len(stdout))))
-        # Matnli stdin Windows da cp1252: ruscha harf buzilib, so'rov
-        # boshqa so'zga aylanardi. Bayt UTF-8 bilan ochiladi.
-        raw = json.dumps({"prompt": "\u0441\u0445\u0435\u043c\u0430 " + prompt},
-                         ensure_ascii=False).encode("utf-8")
-        rc, stdout = run_hook(tmp, raw)
-        out.append(("UTF-8 prompt (ASCII emas)", rc == 0 and output_shape_ok(stdout),
-                    "rc=%d" % rc))
+        # UTF-8 dekodlashni test_hookio.py qo'riqlaydi (cp1252 oqim taqlidi).
 
         for name, raw in (("mavzusiz so'rov", json.dumps({"prompt": "salom"})),
                           ("buzuq JSON", "not json"),

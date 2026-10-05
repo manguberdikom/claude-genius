@@ -11,6 +11,7 @@ funksiyadan o'tadi.
 """
 
 import os
+import re
 import subprocess
 import sys
 
@@ -160,6 +161,38 @@ def quote(path):
     return '"%s"' % path if " " in path else path
 
 
+def _git(args, cwd):
+    try:
+        proc = subprocess.run(["git"] + args, capture_output=True,
+                              text=True, cwd=cwd, timeout=20)
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    return proc.stdout if proc.returncode == 0 else ""
+
+
+def project_slug(cwd=None, memory=None):
+    """memory/README.md qoidasi: repo nomi kichik harfda, ikki egada bir
+    xil nom bo'lsa `<egasi>__<repo>`, repo yo'q bo'lsa ildiz papka nomi.
+
+    rules_for va handoff shu bitta funksiyani ishlatadi: avval handoff
+    `<egasi>__<repo>` ni bilmas, proyekt indeksini topshiriqdan tushirardi.
+    """
+    here = cwd or os.getcwd()
+    memory = memory or os.path.join(ROOT, "memory")
+    top = _git(["rev-parse", "--show-toplevel"], here).strip() or here
+    url = _git(["remote", "get-url", "origin"], top).strip().rstrip("/")
+    parts = [p for p in re.split(r"[/:]", url) if p]
+    if not parts:
+        return os.path.basename(os.path.normpath(top)).lower()
+    repo = parts[-1].lower()
+    repo = repo[:-4] if repo.endswith(".git") else repo
+    if len(parts) > 1:
+        both = "%s__%s" % (parts[-2].lower(), repo)
+        if os.path.isdir(os.path.join(memory, both)):
+            return both
+    return repo
+
+
 def in_clone():
     """Joriy papka qo'llanma klonining o'zimi."""
     try:
@@ -171,11 +204,19 @@ def in_clone():
 
 def tool_cmd(name):
     """Xabardagi buyruq. Klon ichida nisbiy, ya'ni allow ro'yxatiga mos;
-    boshqa proyektda mutlaq, aks holda u yerda "No such file" beradi."""
+    boshqa proyektda mutlaq, aks holda u yerda "No such file" beradi.
+
+    Klondan tashqarida Python o'rnatuvchi settings.json env ga yozgan
+    GENIUS_PYTHON bilan: Windows da `python3` Store stub'i bo'lishi mumkin,
+    allow qoidasi ham aynan shu yo'l bilan yozilgan (rewrite_paths.tool_cmd).
+    """
     if in_clone():
         return ("" if name.endswith(".sh") else "python3 ") + "tools/" + name
     full = quote(os.path.join(ROOT, "tools", name).replace("\\", "/"))
-    return ("bash " if name.endswith(".sh") else "python3 ") + full
+    if name.endswith(".sh"):
+        return "bash " + full
+    runner = os.environ.get("GENIUS_PYTHON") or "python3"
+    return quote(runner.replace("\\", "/")) + " " + full
 
 
 def hint(topic, rule="", ref="", term=""):

@@ -89,5 +89,6 @@ tools/doc.sh outline patterns <bob>      # bobdagi bo'limlar ro'yxati
 tools/doc.sh show patterns <bob.bo'lim>  # faqat o'sha bo'lim (masalan 17.2)
 ```
 
-`show` ga faqat bob raqami berilsa kichik bob butunligicha chiqadi, 1200
-satrdan uzuni esa outline bo'lib qaytadi.
+`show` ga faqat bob raqami berilsa, 1200 satr yoki 16 KB dan katta bob
+outline bo'lib qaytadi. Patterns da bu har bob, shuning uchun doim
+`<bob.bo'lim>` bering.

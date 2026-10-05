@@ -13,6 +13,7 @@ tekshiriladi (kod bloki va inline kod hisobga olinmaydi).
 
 import os
 import re
+import shutil
 import sys
 import tempfile
 
@@ -89,13 +90,16 @@ CASES = [
 def main():
     tmp = tempfile.mkdtemp(prefix="build_single_")
     failures = 0
-    for name, fn in CASES:
-        try:
-            ok = bool(fn(tmp))
-        except Exception as exc:
-            ok, name = False, "%s (%s)" % (name, exc)
-        failures += not ok
-        print("%-4s %s" % ("OK" if ok else "XATO", name))
+    try:
+        for name, fn in CASES:
+            try:
+                ok = bool(fn(tmp))
+            except Exception as exc:
+                ok, name = False, "%s (%s)" % (name, exc)
+            failures += not ok
+            print("%-4s %s" % ("OK" if ok else "XATO", name))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
     print("\n%d/%d o'tdi" % (len(CASES) - failures, len(CASES)))
     return 1 if failures else 0
 

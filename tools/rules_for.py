@@ -35,6 +35,7 @@ sys.path.insert(0, HERE)
 import check_code  # noqa: E402
 from check_code import in_clone, strip_noise, tool_cmd  # noqa: E402
 from docref import ensure_index, resolve  # noqa: E402
+from docref import project_slug as docref_slug  # noqa: E402
 from state import mark  # noqa: E402
 
 CHAPTERS = os.path.join(ROOT, "index", "chapters.tsv")
@@ -181,7 +182,7 @@ SIGNALS = [
     ("oqim va lambda", r"\.stream\s*\(\)|Collectors\.|\bOptional<",
      [("clean-code", "24"), ("clean-code", "23")]),
     ("shart va sikl", r"\bswitch\s*\(|\belse\s+if\b|\bfor\s*\(|\bwhile\s*\(",
-     [("clean-code", "6"), ("clean-code", "7")]),
+     [("clean-code", "6"), ("clean-code", "7"), ("sonarqube", "15")]),
 ]
 
 # Build fayllari. Ular kod kabi tekshiruvga muhtoj, lekin .java emas.
@@ -351,21 +352,8 @@ def checklist_for(wanted):
 
 
 def project_slug():
-    """memory/README.md qoidasi: repo nomi kichik harfda, ikki egada bir
-    xil nom bo'lsa `<egasi>__<repo>`, repo yo'q bo'lsa ildiz papka nomi."""
-    here = os.getcwd()
-    top = _git(["rev-parse", "--show-toplevel"], here).strip() or here
-    url = _git(["remote", "get-url", "origin"], top).strip().rstrip("/")
-    parts = [p for p in re.split(r"[/:]", url) if p]
-    if not parts:
-        return os.path.basename(os.path.normpath(top)).lower()
-    repo = parts[-1].lower()
-    repo = repo[:-4] if repo.endswith(".git") else repo
-    if len(parts) > 1:
-        both = "%s__%s" % (parts[-2].lower(), repo)
-        if os.path.isdir(os.path.join(MEMORY, both)):
-            return both
-    return repo
+    """memory slugi (docref.project_slug); MEMORY sinovda almashtiriladi."""
+    return docref_slug(memory=MEMORY)
 
 
 INDEX_ROW_RE = re.compile(r"^- `([^`]+\.md)` - (.+)$")
@@ -469,7 +457,11 @@ def past_mistakes(slug=None):
 
 
 def mechanical(paths):
-    """check_code topgan muammolar, har biri Sonar kaliti va bo'limi bilan.
+    """check_code topgan muammolar: (qator, kalit va bo'lim, fayl, qisqa).
+
+    Qisqa shakl (`qator kalit`) MAX_ITEMS dan keyingilar uchun: arxitektor
+    eski topilmani yangisidan shu ro'yxat bo'yicha ajratadi, kesilgan
+    ro'yxatda esa eskisi yangi bo'lib ko'rinardi.
 
     Kalit va bo'lim yonma-yon turadi: skillning birinchi qoidasi, qoidasiz
     topilma yo'q. check_code jarayon ichida chaqiriladi. Avval u har fayl
@@ -485,7 +477,8 @@ def mechanical(paths):
                                       f.line, f.message)
             ref = resolve(f.topic, f.rule, f.ref, getattr(f, "term", ""))
             tail = " ".join(x for x in (f.rule, "-> " + ref if ref else "") if x)
-            out.append((line, tail))
+            out.append((line, tail, os.path.basename(full),
+                        "%d %s" % (f.line, f.rule or f.topic)))
     return out
 
 
@@ -521,6 +514,15 @@ def main():
             if ch not in wanted and len(order) < MAX_CHAPTERS:
                 wanted.add(ch)
                 order.append(ch)
+    # Test fayli berilsa uning testing boblari chegaradan tashqarida:
+    # aks holda sinalayotgan kodning entity, tranzaksiya va HTTP belgilari
+    # MAX_CHAPTERS ni to'ldirib, test-muhandis birorta test bobini olmasdi.
+    if any(re.search(NAME_SIGNALS["test"], "/" + p.replace("\\", "/")) for p in paths):
+        for label, chapters, _ in signals:
+            for ch in chapters:
+                if label.startswith("test") and ch[0] == "testing" and ch not in wanted:
+                    wanted.add(ch)
+                    order.append(ch)
     if any(p.endswith(".java") for p in paths):
         for ch in ALWAYS:
             if ch not in wanted:
@@ -583,12 +585,20 @@ def main():
 
     found = mechanical(paths)
     print("\n# Mashina topgani (%d)\n" % len(found))
-    for line, ref in found[:MAX_ITEMS]:
+    for line, ref, _, _ in found[:MAX_ITEMS]:
         print("  " + line)
         if ref:
             print("    " + ref)
     if not found:
         print("  yo'q")
+    rest = {}
+    for _, _, name, short in found[MAX_ITEMS:]:
+        rest.setdefault(name, []).append(short)
+    if rest:
+        print("\n  qolgani %d ta (matni: %s <fayl>):"
+              % (len(found) - MAX_ITEMS, tool_cmd("check_code.py")))
+        for name, shorts in rest.items():
+            print("    %s: %s" % (name, ", ".join(shorts)))
 
     mistakes = past_mistakes()
     if mistakes:

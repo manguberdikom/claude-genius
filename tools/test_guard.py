@@ -300,6 +300,16 @@ CASES = [
 
     # Windows da Git Bash bo'lmasa PowerShell asbobi yoqiladi: to'siqlar
     # unda ham ishlashi kerak.
+    # Papkali yo'l: avval `[\w.-]*\.ps1` faqat joriy papkani ko'rardi.
+    ("PowerShell: papkadagi .ps1", DENY,
+     {"tool_name": "PowerShell", "tool_input":
+      {"command": "& .\\install\\manguberdi" + ".ps1 -Update"}}),
+    ("PowerShell: joriy papkadagi .ps1", DENY,
+     {"tool_name": "PowerShell", "tool_input": {"command": ".\\build" + ".ps1 -Task test"}}),
+    ("Bash: mutlaq yo'ldagi .ps1", DENY,
+     {"tool_name": "Bash", "tool_input": {"command": "C:/src/tools/x" + ".ps1"}}),
+    ("PowerShell: oddiy buyruq", ALLOW,
+     {"tool_name": "PowerShell", "tool_input": {"command": "Get-ChildItem install"}}),
     ("PowerShell: compose up", DENY,
      {"tool_name": "PowerShell", "tool_input": {"command": "docker compose up -d"}}),
     ("PowerShell: lokal psql", DENY,

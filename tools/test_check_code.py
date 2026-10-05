@@ -40,6 +40,8 @@ sys.path.insert(0, HERE)
 
 import check_code  # noqa: E402
 import state  # noqa: E402
+sys.path.insert(0, os.path.join(ROOT, "install"))
+import rewrite_paths as RP  # noqa: E402
 
 # (nom, daraja, satr, matn bo'lagi)
 EXPECT = [
@@ -83,12 +85,13 @@ def prepare(path, cwd=ROOT):
                           capture_output=True, text=True, cwd=cwd)
 
 
-def run_hook(path, tool_name="Write", cwd=ROOT, response=None):
+def run_hook(path, tool_name="Write", cwd=ROOT, response=None, env=None):
     payload = {"tool_name": tool_name, "tool_input": {"file_path": path}}
     if response is not None:
         payload["tool_response"] = {"filePath": response}
     proc = subprocess.run([sys.executable, TOOL], input=json.dumps(payload),
-                          capture_output=True, text=True, cwd=cwd)
+                          capture_output=True, text=True, cwd=cwd,
+                          env=None if env is None else dict(os.environ, **env))
     return proc.stdout.strip()
 
 
@@ -296,6 +299,9 @@ def main():
         alien = os.path.join(tmp, "Unmarked.java")
         shutil.copy(GOOD, alien)
         raw_alien = run_hook(alien, cwd=tmp)
+        # Windows o'rnatishi: Python o'rnatuvchi tanlagan to'liq yo'l bilan.
+        win_py = "C:\\Program Files\\Python312\\python.exe"
+        raw_win = run_hook(alien, cwd=tmp, env={"GENIUS_PYTHON": win_py})
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     alien_cmd = os.path.join(ROOT, "tools", "rules_for.py").replace("\\", "/")
@@ -308,6 +314,9 @@ def main():
         ("boshqa papkada sabab mutlaq yo'lni beradi",
          decision(raw_alien) == "block" and alien_cmd in reason(raw_alien)
          and os.path.isfile(alien_cmd)),
+        # Hint allow qoidasi bilan bir xil boshlanadi: rewrite_paths.tool_cmd.
+        ("GENIUS_PYTHON: hint allow qoidasiga mos",
+         RP.tool_cmd(ROOT.replace("\\", "/"), win_py, "rules_for.py") in reason(raw_win)),
     ]
     failures += report(rows)
     total += len(rows)

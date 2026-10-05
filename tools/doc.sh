@@ -21,7 +21,7 @@ STAMP="$IDX/.stamp"
 # Eng katta bo'lim ~6 KB: bayt chegarasi faqat bobni to'sadi. Qiymat va
 # o'zgaruvchi guard.py dagi Read chegarasi bilan bir xil.
 MAX_LINES="${DOC_MAX_LINES:-1200}"
-MAX_BYTES="${DOC_MAX_BYTES:-20000}"
+MAX_BYTES="${DOC_MAX_BYTES:-16000}"
 LIMIT_DEFAULT=20
 RULE_LIMIT=8
 
@@ -276,12 +276,16 @@ cmd_rule() {
   fi
   # Ro'yxat ko'zga tashlanish bo'yicha saralangan, boshidagilar yetadi:
   # ko'p bo'limda eslatilgan kalit (S3776) aks holda 29 qator beradi.
-  local total
+  # Katalog bobi (25-30) har doim ko'rinadi: kalit uning jadvalida
+  # tuzatish bo'limiga bog'langan, bali esa past (S3776 da 29-o'rin).
+  local total top shown
   total="$(printf '%s\n' "$out" | wc -l)"
   if [ "$all" -eq 0 ] && [ "$total" -gt "$RULE_LIMIT" ]; then
-    printf '%s\n' "$out" | awk -v n="$RULE_LIMIT" 'NR <= n'
-    printf "... yana %d ta (hammasi: doc.sh rule --all %s)\n" \
-      "$((total - RULE_LIMIT))" "$key"
+    top="$(printf '%s\n' "$out" | awk -v n="$RULE_LIMIT" 'NR <= n || /\[katalog: outline\]$/')"
+    shown="$(printf '%s\n' "$top" | wc -l)"
+    printf '%s\n' "$top"
+    [ "$total" -gt "$shown" ] && printf "... yana %d ta (hammasi: doc.sh rule --all %s)\n" \
+      "$((total - shown))" "$key"
   else
     printf '%s\n' "$out"
   fi

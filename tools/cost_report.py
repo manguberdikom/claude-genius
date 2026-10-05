@@ -97,9 +97,14 @@ def listing_row(label, paths, kind, note):
 
 
 def memory_indexes():
-    """CLAUDE.md talabi bilan sessiya boshida o'qiladigan ikki indeks."""
+    """CLAUDE.md talabi bilan sessiya boshida o'qiladigan ikki indeks.
+
+    Slug doimiy: CLAUDE.md `memory/claude-genius/` deb yozadi. Papka nomidan
+    olinganda boshqa nomli klonda (ZIP dan `claude-genius-main`) proyekt
+    indeksi sanalmay, byudjet ~200 token kam chiqardi.
+    """
     out = []
-    for slug in ("umumiy", os.path.basename(ROOT).lower()):
+    for slug in ("umumiy", "claude-genius"):
         path = os.path.join(ROOT, "memory", slug, "MEMORY.md")
         if os.path.exists(path):
             out.append(read(path))

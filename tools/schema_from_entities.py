@@ -451,6 +451,15 @@ def migration_files(src, explicit=None):
     return files
 
 
+def table_key(name):
+    """Jadval nomi solishtirish uchun: qo'shtirnoq, ekran va sxemasiz.
+
+    `@Table(name = "\\"order\\"")` va migratsiyadagi `"order"` bitta kalit:
+    band so'zli jadval (order, user) aynan shunday qo'shtirnoqqa olinadi.
+    """
+    return re.sub(r'[\\"`]', "", name or "").split(".")[-1].lower()
+
+
 def read_migrations(files):
     """(migratsiya bormi, {jadval: {indeks bosh ustunlari}}).
 
@@ -463,7 +472,7 @@ def read_migrations(files):
     def add(table, columns):
         column = leading(columns)
         if column:
-            key = table.replace('"', "").split(".")[-1].lower()
+            key = table_key(table)
             indexes.setdefault(key, set()).add(column)
 
     for path in files:
@@ -638,7 +647,7 @@ def build(name, ctx):
     head = info["head"]
     entity = {
         "class": name, "file": info["file"], "head": head,
-        "table": (top_arg(first(find_annotations(head, "Table")), "name")
+        "table": (re.sub(r'[\\"`]', "", top_arg(first(find_annotations(head, "Table")), "name") or "")
                   or snake(top_arg(first(find_annotations(head, "Entity")), "name")
                            or name)),
         "entries": entries, "indexed": declared_indexes(head),
@@ -848,7 +857,7 @@ def index_finding(entity, entry, ctx):
                  for a in ("Column", "JoinColumn"))
     found, indexes = ctx.migrations
     if (unique or low in entity["indexed"]
-            or low in indexes.get(table.lower(), ())):
+            or low in indexes.get(table_key(table), ())):
         return None
     if found:
         return Finding(

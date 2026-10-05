@@ -34,6 +34,7 @@ SF3 = os.path.join("test_output", "surefire3_fail.txt")
 SPRING = os.path.join("test_output", "surefire3_spring.txt")
 G5_SHORT = os.path.join("test_output", "gradle_junit5_short.txt")
 G5_FULL = os.path.join("test_output", "gradle_junit5_full.txt")
+G5_LIB = os.path.join("test_output", "gradle_junit5_library.txt")
 MVN_COMPILE = os.path.join("test_output", "maven_compile.txt")
 GRADLE_COMPILE = os.path.join("test_output", "gradle_compile.txt")
 ASSERTJ = os.path.join("test_output", "assertj_hamcrest.txt")
@@ -68,6 +69,9 @@ CASES = [
     ("gradle 5 short: asl sabab", G5_SHORT, "asl sabab: ConnectException"),
     ("gradle 5 full: kutilgan qiymat", G5_FULL, "kutilgan: 10.00"),
     ("gradle 5 full: loyiha qatori", G5_FULL, "MoneyTest.addsAmounts(MoneyTest.java:24)"),
+    # Paketsiz Gradle sarlavhasi: prefiks test sinfi kadridan, Guava emas.
+    ("gradle 5 full: kutubxona qatori kod emas", G5_LIB,
+     "kod     : OrderService.place(OrderService.java:42)"),
     ("maven compile: soni takrorsiz", MVN_COMPILE, "Kompilyatsiya xatosi: 2 ta"),
     ("maven compile: xabar", MVN_COMPILE, "cannot find symbol"),
     ("maven compile: symbol", MVN_COMPILE, "symbol  : method lines()"),

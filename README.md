@@ -45,7 +45,7 @@ dagi olti aktyorni yurgizadi.
 | `postgres-tuning` | sekin so'rov, indeks, EXPLAIN, vacuum, connection pool |
 | `clean-code` | nomlash, funksiya uzunligi, izoh, kod hidi, refaktoring |
 | `code-review` | diffni o'qish, review izohi yozish, nimani to'xtatish |
-| `manguberdi` | katta ish: aktyor tanlab reja, kod, test va review ni ketma-ket yurgizadi, oxirida memoryga yozadi |
+| `manguberdi` | Java/Spring ishi, kichik vazifa ham: aktyor tanlab reja, kod, test va review ni ketma-ket yurgizadi, oxirida memoryga yozadi |
 
 Hooklar `.claude/settings.json` da turadi va repoda o'zi ishlaydi: har
 so'rovga mos bo'lim taklif qilinadi (`suggest_sections.py`); katta bobni
@@ -87,7 +87,7 @@ tools/doc.sh show patterns 17.2       # faqat o'sha bo'limni chiqarish
 tools/doc.sh toc                      # hujjatlar va boblar
 ```
 
-Qidiruv inglizcha atama bo'yicha ham ishlaydi: 1380 ta inglizcha nom bo'lim
+Qidiruv inglizcha atama bo'yicha ham ishlaydi: 1300 dan ortiq inglizcha nom bo'lim
 raqamiga bog'langan. Indeks `index/` da turadi va bob o'zgarganda o'zini
 yangilaydi. Qoidalar: [CLAUDE.md](CLAUDE.md).
 

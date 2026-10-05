@@ -294,6 +294,15 @@ def main():
                      for t, c, m in found[folder])
         report(ok, "%s.%s  %s" % (table, column, needle))
 
+    # Qo'shtirnoqli jadval (@Table(name = "\\"order\\"")): migratsiyadagi
+    # `"order"` indeksi topiladi va nom ekran belgisiz ko'rsatiladi. Avval
+    # `\\"order\\".depot_id` uchun yolg'on "indeks topilmadi" chiqardi.
+    quoted = [(t, c) for t, c, m in found[MIG] if "order" in t]
+    report(not any(c == "depot_id" for _, c in quoted),
+           "qo'shtirnoqli jadval: migratsiyadagi indeks topildi")
+    report(not any('"' in t or "\\" in t for t, _ in quoted),
+           "qo'shtirnoqli jadval nomi tozalangan")
+
     print("\n== Takrorlanish yo'q ==")
     for folder in DIRS:
         items = found[folder]

@@ -31,7 +31,7 @@ hujjatdan) yoki foydalanuvchi ochiq so'raganda chaqiradi.
    PDF va rasm fayli `Read` bilan o'qiladi (10 sahifadan katta PDF
    `pages` bilan). Word (.docx) `Read` bilan o'qilmaydi, matni shunday
    olinadi:
-   `python3 -c "import html,re,sys,zipfile; x=zipfile.ZipFile(sys.argv[1]).read('word/document.xml').decode('utf-8'); print(html.unescape(re.sub(r'<[^>]+>', '', x.replace('</w:p>', '\n'))))" <fayl.docx>`
+   `python3 -c "import html,re,sys,zipfile; x=zipfile.ZipFile(sys.argv[1]).read('word/document.xml').decode('utf-8'); print(html.unescape(re.sub(r'<[^>]+>', '', x.replace('<w:tab/>', '\t').replace('</w:p>', '\n'))))" <fayl.docx>`
    Chatga qo'yilgan rasm sizga yetib kelmaydi: asosiy sessiya uni fayl
    yo'li yoki matn ko'rinishida beradi. URL berilsa, asosiy sessiya
    kerakli qismini `WebFetch` bilan olib matn sifatida beradi. Berilmagan

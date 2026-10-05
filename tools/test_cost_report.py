@@ -149,6 +149,25 @@ def case_argumentsiz(_):
     return code == 0 and "Joyida" in out
 
 
+def case_memory_papka_nomiga_bogliq_emas(tmp):
+    """Klon boshqa nomli papkada (ZIP dan claude-genius-main): ikki indeks.
+
+    Slug avval papka nomidan olinardi va proyekt indeksi sanalmasdi.
+    """
+    root = os.path.join(tmp, "claude-genius-main")
+    for slug in ("umumiy", "claude-genius"):
+        os.makedirs(os.path.join(root, "memory", slug))
+        with open(os.path.join(root, "memory", slug, "MEMORY.md"), "w",
+                  encoding="utf-8") as handle:
+            handle.write("# %s\n" % slug)
+    old = cost_report.ROOT
+    cost_report.ROOT = root
+    try:
+        return len(cost_report.memory_indexes()) == 2
+    finally:
+        cost_report.ROOT = old
+
+
 CASES = [
     ("8 skill tavsifi inglizcha", case_skill_tavsiflari_inglizcha),
     ("manguberdi, agentlar va CLAUDE.md o'zbekcha", case_ozbekcha_matnlar),
@@ -158,19 +177,23 @@ CASES = [
     ("--budget qiymatsiz rc 2", case_budget_qiymatsiz),
     ("--budget 1 oshib ketadi", case_budget_oshdi),
     ("argumentsiz byudjet ichida", case_argumentsiz),
+    ("memory indeksi papka nomiga bog'liq emas", case_memory_papka_nomiga_bogliq_emas),
 ]
 
 
 def main():
     tmp = tempfile.mkdtemp(prefix="cost_report_")
     failures = 0
-    for name, fn in CASES:
-        try:
-            ok = bool(fn(tmp))
-        except Exception as exc:
-            ok, name = False, "%s (%s)" % (name, exc)
-        failures += not ok
-        print("%-4s %s" % ("OK" if ok else "XATO", name))
+    try:
+        for name, fn in CASES:
+            try:
+                ok = bool(fn(tmp))
+            except Exception as exc:
+                ok, name = False, "%s (%s)" % (name, exc)
+            failures += not ok
+            print("%-4s %s" % ("OK" if ok else "XATO", name))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
     print("\n%d/%d o'tdi" % (len(CASES) - failures, len(CASES)))
     return 1 if failures else 0
 

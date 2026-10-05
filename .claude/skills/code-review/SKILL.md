@@ -77,12 +77,15 @@ Diffni o'qishdan oldin mexanik qismni mashinaga bering, ko'z faqat
 qolganiga qarasin:
 
 ```bash
-python3 tools/rules_for.py --diff [--cached]    # yoki <o'zgargan fayllar>; boblar, punktlar va check_code topilmalari
+python3 tools/rules_for.py --no-mark --diff [--cached]  # yoki --no-mark <fayllar>; boblar, punktlar, check_code topilmalari
 python3 tools/schema_from_entities.py <src> --only-findings  # entity o'zgargan bo'lsa
 tools/doc.sh outline code-review <bob>          # bobdagi bo'limlar
 tools/doc.sh show code-review <bob.bo'lim>      # butun bob emas, faqat o'sha bo'lim
 tools/doc.sh checklist code-review <bob>        # qolgan tekshiruv punktlari
 ```
+
+Reviewer yozmaydi, shuning uchun `--no-mark`: belgini kodni yozadigan
+aktyor o'zi qo'yadi, aks holda `check_code` darvozasi o'chadi.
 
 `check_code.py` alohida yurgizilmaydi: uning topilmalari Sonar kaliti bilan
 `rules_for` chiqishidagi `# Mashina topgani` bo'limida turadi. Ro'yxat

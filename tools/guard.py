@@ -98,12 +98,15 @@ EXPENSIVE = (
     # Skript nomi buyruq o'rnida turishi shart. Aks holda uni shunchaki
     # ATAGAN buyruq ham to'siladi: `wc -l install/x.ps1`, `git add x.ps1`.
     # Bu amalda uchradi, o'rnatuvchi faylni yozayotganda.
+    # Papkali yo'l ham: `.\\install\\x.ps1`, `C:/a/x.ps1`. PowerShell
+    # asbobida ham to'siladi: proyekt qoidasi skript yurgizishni taqiqlaydi,
+    # oddiy PowerShell buyrug'i (Get-ChildItem) esa o'tadi.
     (re.compile(CMD + r"(?:pwsh|powershell(?:\.exe)?)\b"
-                r"|" + CMD + r"(?:[.]{1,2}[/\\])?[\w.-]*\.ps1\b"),
+                r"|" + CMD + r"(?:[.]{1,2}[/\\])?(?:[\w.:~-]+[/\\])*[\w.-]*\.ps1\b"),
      "PowerShell skripti",
-     "Bu muhitda PowerShell ishlatilmaydi va u yozilgan skript boshqa\n"
-     "mashinada tekshirilmagan bo'ladi. Shu ishni bash yoki python3 bilan\n"
-     "bajaring; ikkalasi ham shu yerda sinaladi."),
+     "PowerShell skripti yurgizilmaydi: u boshqa mashinada tekshirilmagan\n"
+     "bo'ladi. Shu ishni python3 (yoki bash) bilan bajaring, ular shu yerda\n"
+     "sinaladi."),
     # Har qanday ulanish, lokal ham: hostsiz `psql shop` ham jonli bazani
     # ochadi. Faqat versiya va yordam o'tadi. Konteyner yoki pod ichidagi
     # klient ham ulanish. Naqsh qo'shtirnoq olib tashlangandan keyin

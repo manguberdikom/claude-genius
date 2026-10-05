@@ -38,7 +38,7 @@ yangi `-GeniusPath` bilan qayta yurgiziladi, uning oqibati
 | Nima | Nega | Yo'q bo'lsa |
 |---|---|---|
 | Python 3.8+ | hooklar va asboblar Python da yozilgan | o'rnatish to'xtaydi |
-| `bash` | `tools/doc.sh` bash skripti | B yo'lida hooklar ishlaydi, **`doc.sh` buyruqlari ishlamaydi** |
+| `bash` | `tools/doc.sh` bash skripti; Windows da hooklar ham Git Bash da yuradi | o'rnatish to'xtaydi |
 | `git` | klonni olish va yangilash | qo'lda yuklab olinadi |
 
 Python nomi bo'yicha emas, ishga tushirib tanlanadi: `py -3`, `python`
@@ -51,14 +51,12 @@ bilan keladi. O'rnatuvchi uni o'zi izlaydi: avval Git ning odatiy
 papkalaridan (`Program Files\Git`, `Program Files (x86)\Git`,
 `%LOCALAPPDATA%\Programs\Git`), keyin `PATH` dan. `System32` va
 `WindowsApps` dagi `bash.exe` hisoblanmaydi: u WSL ishga tushirgichi va
-`C:\` yo'llarini boshqa fayl tizimida ochadi. Topilmasa aytadi va davom
-etadi, chunki hooklar baribir ishlaydi.
-
-Bashsiz faqat `doc.sh` buyruqlari yo'qoladi: `find`, `show`, `rule`,
-`checklist`, `outline`. `rules_for.py` boblari, `check_code.py` dagi
-bo'lim raqami va har navbatdagi bo'lim taklifi Python da, ular
-ishlayveradi. Lekin skill qoida matnini `show` bilan o'qiydi, shuning
-uchun bashni o'rnatish tavsiya qilinadi.
+`C:\` yo'llarini boshqa fayl tizimida ochadi. Topilmasa o'rnatuvchi hech
+narsaga tegmasdan to'xtaydi: Git Bash bo'lmasa Claude Code hookni
+PowerShell bilan yurgizadi, `"python.exe" "skript.py"` shakli esa u yerda
+sintaksis xatosi, ya'ni guard, budget va check_code jim ishlamay qoladi.
+`doc.sh` buyruqlari (`find`, `show`, `rule`, `checklist`, `outline`) ham
+bashsiz yo'q.
 
 ## A yo'li: shu repo ichida ishlash
 
@@ -79,8 +77,8 @@ Linux va macOS da u hech narsani o'zgartirmaydi.
 Windows da yana ikki shart bor:
 
 - Git for Windows o'rnatilgan bo'lsin. Claude Code hookni Git Bash bilan,
-  u yo'q bo'lsa PowerShell bilan yurgizadi, `doc.sh` esa bashsiz umuman
-  ishlamaydi.
+  u yo'q bo'lsa PowerShell bilan yurgizadi va hook buyrug'i u yerda
+  yiqiladi, `doc.sh` esa bashsiz umuman ishlamaydi.
 - `python3 --version` haqiqiy Python versiyasini ko'rsatsin. Hook
   buyrug'i `python3` ni chaqiradi. python.org o'rnatuvchisi faqat
   `python` va `py` beradi, `python3` esa Microsoft Store yorlig'i bo'lib
@@ -244,9 +242,9 @@ memory-protocol.md           ->  C:/src/claude-genius/memory-protocol.md
 ```
 
 `C:/Python312/python.exe` misol: o'rnatuvchi tanlagan Python ning to'liq
-yo'li yoziladi. `bash` o'rnida ham u topgan yo'l turadi. `--bash` yo'lida
-bo'sh joy bo'lsa u ham qo'shtirnoqqa olinadi:
-`"C:/Program Files/Git/bin/bash.exe" C:/src/claude-genius/tools/doc.sh find`.
+yo'li yoziladi. `bash` esa nomicha qoladi: Claude Code ning Bash vositasi
+Git Bash ichida yuradi va u yerda `bash` o'sha o'rnatishning bash iga
+tushadi. O'rnatuvchi topgan to'liq yo'l faqat o'zining tekshiruvi uchun.
 
 Asboblarning o'zi klonni o'z faylidan topadi, shuning uchun ularning
 ichida hech narsa almashtirilmaydi. Siz bergan nisbiy fayl yo'li va

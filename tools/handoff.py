@@ -275,15 +275,19 @@ def git(*args):
 
 
 def memory_slug():
-    """memory/README.md qoidasi: GitHub repo nomi, yo'q bo'lsa ildiz papka."""
-    url = git("remote", "get-url", "origin")
-    name = re.split(r"[/:]", url.rstrip("/"))[-1] if url else ""
-    if name.endswith(".git"):
-        name = name[:-4]
-    if not name:
-        top = git("rev-parse", "--show-toplevel") or project_dir()
-        name = os.path.basename(top.rstrip("/\\"))
-    return name.lower()
+    """memory/README.md qoidasi (docref.project_slug, rules_for bilan bitta):
+    repo nomi, ikki egada bir xil nom bo'lsa `<egasi>__<repo>`."""
+    try:
+        from docref import project_slug
+        return project_slug(cwd=project_dir())
+    except (ImportError, SyntaxError, OSError):
+        url = git("remote", "get-url", "origin")
+        name = re.split(r"[/:]", url.rstrip("/"))[-1] if url else ""
+        name = name[:-4] if name.endswith(".git") else name
+        if not name:
+            top = git("rev-parse", "--show-toplevel") or project_dir()
+            name = os.path.basename(top.rstrip("/\\"))
+        return name.lower()
 
 
 def memory_lines():
@@ -434,6 +438,17 @@ def hook():
         return 0
 
 
+def own_cmd():
+    """Shu asbob buyrug'i: klon ichida nisbiy, boshqa proyektda mutlaq va
+    GENIUS_PYTHON bilan (docref.tool_cmd). docref yuklanmasa mutlaq yo'l."""
+    try:
+        from docref import tool_cmd
+        return tool_cmd("handoff.py")
+    except (ImportError, SyntaxError, OSError):
+        script = os.path.join(ROOT, "tools", "handoff.py").replace(os.sep, "/")
+        return 'python3 "%s"' % script
+
+
 def _hook():
     if sys.stdin.isatty():
         return 0
@@ -465,10 +480,9 @@ def _hook():
     state[sid] = [level, now]
     save_state(state)
 
-    script = os.path.join(ROOT, "tools", "handoff.py").replace(os.sep, "/")
-    text = ("Kontekst %dK / %dK token (%d%%). Ishni yakunlab, python3 \"%s\" "
-            "--prompt bilan yangi sessiyaga uzating."
-            % (current // 1000, limit // 1000, 100 * current // limit, script))
+    text = ("Kontekst %dK / %dK token (%d%%). Ishni yakunlab, %s --prompt "
+            "bilan yangi sessiyaga uzating."
+            % (current // 1000, limit // 1000, 100 * current // limit, own_cmd()))
     print(json.dumps({"hookSpecificOutput": {
         "hookEventName": "UserPromptSubmit",
         "additionalContext": text}}, ensure_ascii=False))

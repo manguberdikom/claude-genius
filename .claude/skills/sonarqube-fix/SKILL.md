@@ -83,6 +83,7 @@ tools/doc.sh checklist sonarqube <bob>
 `doc.sh rule` kalit tilga olingan bo'limlarni ko'zga tashlanish bo'yicha
 beradi. Ba'zi katalog boblari (masalan 25 va 27) kalitni faqat bob
 kirishidagi jadvalda nomlaydi, tuzatish turgan bo'limda emas. Ro'yxatda
-raqamsiz katalog bobi chiqsa (masalan `sonarqube 25`), butun bobni `show`
+raqamsiz katalog bobi chiqsa (bali past bo'lsa ham qisqa ro'yxatda doim
+turadi, masalan `sonarqube 25`), butun bobni `show`
 qilmang: `tools/doc.sh outline sonarqube 25` dan jadval qatoriga mos
 bo'limni tanlab, o'shani `show` bilan oching.

@@ -12,13 +12,14 @@ Vazifa: o'zgarishni test bilan qoplash. Qamrov foizi maqsad emas,
 
 ## Ish tartibi
 
-1. **Qoidalarni oldindan oling.** Yoziladigan test hali yo'q, shuning
-   uchun fayllar ochiq beriladi, test fayli birinchi:
-   `python3 tools/rules_for.py <test-fayli> <sinalayotgan-kod>`. Boblar
-   soni cheklangan, test boblari ro'yxatdan chiqib ketmasin. Mavjud
-   yiqilgan testni tuzatishda `python3 tools/rules_for.py --diff` ham
-   yetadi. Punktlar faqat siz yozadigan testga nisbatan qo'llanadi.
-   Reviewer shu ro'yxat bilan tekshiradi.
+1. **Qoidalarni oldindan oling.** Yoziladigan yoki tuzatiladigan test
+   fayli ochiq beriladi, hali yo'q bo'lsa ham (belgi yo'ldan olinadi):
+   `python3 tools/rules_for.py <test-fayli> <sinalayotgan-kod>`. Tartib
+   muhim emas: test fayli berilsa testing boblari bob chegarasidan
+   tashqarida qo'shiladi. `--diff` yetmaydi: o'zgarmagan test fayli
+   diffda yo'q, belgilanmaydi va `check_code` uning yozilishini to'sadi.
+   Punktlar faqat siz yozadigan testga nisbatan qo'llanadi. Reviewer shu
+   ro'yxat bilan tekshiradi.
 2. **Nima o'zgarganini o'qing.** `git status --short --untracked-files=all`
    va `git diff HEAD`, yoki berilgan fayllar. `??` belgili yangi sinf
    `git diff` da ko'rinmaydi, uni to'liq o'qing.

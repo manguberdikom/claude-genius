@@ -230,7 +230,7 @@ void jsonRoundTripPreservesOrder(@ForAll("orders") Order order) throws Exception
 
 **Tavsif:** Test suite'ning haqiqiy sifatini o'lchash usuli: tool production bytecode'ga kichik "mutatsiyalar" kiritadi (`>` ni `>=` ga almashtirish, return qiymatini o'zgartirish, shartni inkor qilish) va testlarni yurgizadi. Agar testlar sinsa - mutant "o'ldirildi" (yaxshi), agar o'tsa - mutant tirik qoldi, ya'ni o'sha kod yo'li hech qanday real tasdiq bilan qo'riqlanmagan. Bu line coverage'dan ancha ishonchli metrika, chunki "kod bajarildi" bilan "kod tekshirildi" farqini ko'rsatadi.
 
-**Spring'da qayerda uchraydi:** PIT (`org.pitest:pitest-maven`, `info.solidsoft.pitest` Gradle plugin) `mutationCoverage` goal'i bilan; `pitest-junit5-plugin` JUnit 5 uchun shart. Konfiguratsiyada `targetClasses`, `targetTests`, `mutationThreshold`, `timestampedReports`, `excludedClasses` (DTO, config, generated kod uchun) ishlatiladi; `DEFAULTS` va `STRONGER` mutator to'plamlari mavjud. Odatda faqat domain/service paketlariga qaratiladi, `@Configuration` va entity'lar chiqarib tashlanadi.
+**Spring'da qayerda uchraydi:** PIT (`pitest-maven` yoki Gradle plugin) odatda faqat domain va service paketlariga qaratiladi, `@Configuration` va entity'lar chiqarib tashlanadi. Maven va Gradle sozlamasi, `mutationThreshold` va mutator to'plamlari SonarQube hujjatidagi [PIT ni Maven va Gradle da ishga tushirish](../sonarqube/20-mutation-testing-100-coverage-qachon-yolgon.md#205-pit-pitest-ni-maven-va-gradle-da-ishga-tushirish) mavzusida.
 
 **Qo'llanish keyslari:**
 - Narx hisoblash yoki chegirma domain paketida test sifatini obyektiv o'lchash.
@@ -239,7 +239,7 @@ void jsonRoundTripPreservesOrder(@ForAll("orders") Order order) throws Exception
 - Legacy modulni refactoring qilishdan oldin mavjud testlar yetarliligini tekshirish.
 - Code review'da "bu test nimani himoya qiladi?" savoliga faktik javob olish.
 
-**Ehtiyot bo'ling:** Mutation testing hisoblash jihatidan juda qimmat (suite'ni yuzlab marta yurgizadi) - butun codebase uchun har PR'da emas, balki tanlangan paketlar uchun va nightly build'da yurgizing. Spring context ko'targan integration testlarni mutation target qilish timeout'lar va "false survivor"larga olib keladi; `incrementalAnalysis` va `historyInputLocation` bilan vaqtni qisqartirish mumkin.
+**Ehtiyot bo'ling:** Mutation testing qimmat (suite yuzlab marta yuradi): butun codebase uchun har PR'da emas, tanlangan paketlar uchun va nightly build'da yurgiziladi. Spring context ko'taradigan integration testlar timeout va "false survivor" beradi. Vaqtni qisqartirish usullari: [mutation testing narxi va uni qisqartirish](../sonarqube/20-mutation-testing-100-coverage-qachon-yolgon.md#208-mutation-testing-narxi-vaqt-va-uni-qisqartirish-usullari).
 
 ## 23.11 Test bo'laklari (Test Slices - @WebMvcTest, @DataJpaTest, @JsonTest, @RestClientTest)
 

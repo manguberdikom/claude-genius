@@ -57,6 +57,8 @@ CASES = [
     ("rule --all to'liq", ["rule", "--all", "java:S3776"], 0, "!... yana"),
     # Bob darajasidagi qator (katalog jadvali) butun bob emas, outline.
     ("rule katalog belgisi", ["rule", "java:S2259"], 0, "[katalog: outline]"),
+    # Katalog bobi bali past bo'lsa ham qisqa ro'yxatda: S3776 da 29-o'rin.
+    ("rule katalog doim ko'rinadi", ["rule", "java:S3776"], 0, "\nsonarqube   27 "),
     ("rule yo'q kalit", ["rule", "S99999"], 1, ""),
     ("rule raqamsiz", ["rule", "abc"], 1, ""),
 
@@ -289,7 +291,23 @@ def check_python_stub():
     return not failed, ", ".join(failed)
 
 
+def check_byte_limit():
+    """doc.sh show va guard.py Read chegarasi bitta qiymat.
+
+    Avval 20000 va 16000 edi: 16-20 KB lik bob show bilan butun chiqar,
+    xuddi shu oraliqni Read qilish esa to'silardi.
+    """
+    with open(os.path.join(ROOT, "tools", "doc.sh"), encoding="utf-8") as h:
+        sh = re.search(r"DOC_MAX_BYTES:-(\d+)", h.read())
+    with open(os.path.join(ROOT, "tools", "guard.py"), encoding="utf-8") as h:
+        py = re.search(r"\"DOC_MAX_BYTES\", \"(\d+)\"", h.read())
+    if not sh or not py:
+        return False, "standart qiymat topilmadi"
+    return sh.group(1) == py.group(1), "doc.sh %s, guard.py %s" % (sh.group(1), py.group(1))
+
+
 CHECKS = [
+    ("show va Read chegarasi teng", check_byte_limit),
     ("X.10 butun sinf", check_exact_refs),
     ("find maslahati apostrofda", check_find_hint),
     ("bash 3.2 sintaksisi", check_bash32),

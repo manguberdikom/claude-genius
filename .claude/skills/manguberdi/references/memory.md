@@ -7,7 +7,7 @@ narsani saqlab qo'yish.
 Qoida manbai `memory-protocol.md`. Bu yerda u takrorlanmaydi, faqat
 shu zanjirga tegishli qismi.
 
-Protokol katta (~33 KB), butunligicha o'qilmaydi. Nomzod bo'lmasa umuman
+Protokol katta (~24 KB), butunligicha o'qilmaydi. Nomzod bo'lmasa umuman
 ochilmaydi. Nomzod bo'lsa faqat kerakli bo'lim o'qiladi. Oraliq sarlavha
 matniga bog'langan, bo'limlar qayta raqamlansa ham ishlaydi:
 

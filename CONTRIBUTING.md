@@ -154,10 +154,10 @@ Havolani qo'lda hisoblamang - `python3 tools/check_docs.py` ishga tushiring.
    `sections`).
 4. Qo'shni boblarning navigatsiya footer'ini yangilang.
 5. Bobni marshrutga qo'shing: tegishli `.claude/skills/<skill>/SKILL.md`
-   jadvaliga va kerak bo'lsa `tools/rules_for.py` dagi `SIGNALS` ga. Buni
-   hech bir tekshiruv ushlamaydi: `doc.sh find` bobni indeks orqali baribir
-   topadi, lekin skill jadvalida yo'q bob skill ishga tushganda
-   ko'rsatilmaydi.
+   jadvaliga va kerak bo'lsa `tools/rules_for.py` dagi `SIGNALS` ga. Skill
+   jadvalida yo'q bobni `tools/check_docs.py` xato deb chiqaradi
+   (`UNROUTED_OK` istisno), `SIGNALS` ni esa hech bir tekshiruv
+   ushlamaydi.
 6. Bob sonini yangilang: `README.md` jadvali, `CLAUDE.md` dagi `Struktura`
    qatori va skill boshidagi `N bob, M bo'lim` qatori.
 7. `python3 tools/check_docs.py` - xatosiz o'tishi shart.
@@ -176,8 +176,9 @@ python3 tools/build_single.py    # monolit qayta yig'ilishini sinash
 ```
 
 `check_docs.py` tekshiradi: fayl hajmi, har bir havola va anchor, kirill
-harf, em-dash, kod fence juftligi, manifest mosligi, bob strukturasi,
-bob-yopish konvensiyasi, skilllardagi havolalar. Xatosiz o'tishi shart.
+harf, em-dash, kod fence juftligi va til belgisi, manifest mosligi, bob
+strukturasi, bob-yopish konvensiyasi, skilllardagi havolalar, har bob
+kamida bitta skill jadvalida. Xatosiz o'tishi shart.
 
 Ikkisi CI ning `check` ishida `main` ga har push va har PR da yuradi.
 `tools` ishi esa asbob testlarini, `eval_skill.py`, `eval_find.py` va

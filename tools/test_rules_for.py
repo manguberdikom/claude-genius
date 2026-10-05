@@ -188,9 +188,58 @@ def main():
     found = R.mechanical([BAD, tx])
     rows = [
         ("ikki fayldan 9 ta topilma", len(found) == 9),
-        ("har topilma havolasi bilan", all(tail for _, tail in found)),
+        ("har topilma havolasi bilan", all(tail for _, tail, _, _ in found)),
         ("BigDecimal pul bo'limiga", any("java:S2111 -> clean-code 20.1" in t
-                                         for _, t in found)),
+                                         for _, t, _, _ in found)),
+    ]
+    # MAX_ITEMS dan ortig'i ham qator va kalit bilan: kesilgan ro'yxatda
+    # eski topilma yangi bo'lib ko'rinib, arxitektor tegilmagan qatorni
+    # tuzatishga majbur bo'lardi.
+    tmp = tempfile.mkdtemp()
+    try:
+        legacy = os.path.join(tmp, "Legacy.java")
+        body = "".join("    void m%d() { try { x(); } catch (Exception e) { } }\n" % i
+                       for i in range(15))
+        write(legacy, "class Legacy {\n%s}\n" % body)
+        _, out_many, _ = run("--no-mark", legacy)
+        many = len(R.mechanical([legacy]))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    rest = out_many.split("qolgani %d ta" % (many - R.MAX_ITEMS), 1)[-1]
+    rows += [
+        ("%d topilma: qolgani ham ko'rinadi" % many,
+         many > R.MAX_ITEMS and "qolgani %d ta" % (many - R.MAX_ITEMS) in out_many),
+        ("qolganida fayl, qator va kalit",
+         "Legacy.java: " in rest and re.search(r"Legacy\.java: \d+ \S+", rest) is not None),
+    ]
+    failures += report(rows)
+    total += len(rows)
+
+    print("\n== Test fayli va oddiy Java ==")
+    # Test fayli berilsa testing boblari chegaradan tashqarida: avval
+    # entity, tranzaksiya va HTTP belgilari MAX_CHAPTERS ni to'ldirib,
+    # test-muhandis birorta test bobini olmasdi.
+    new_test = os.path.join("src", "test", "java", "x", "OrderTest.java")
+    _, out_mix, _ = run("--no-mark", new_test, BAD, ENTITY, INSECURE)
+    _, out_mix2, _ = run("--no-mark", BAD, ENTITY, INSECURE, new_test)
+    _, out_prod, _ = run("--no-mark", BAD, ENTITY, INSECURE)
+    tmp = tempfile.mkdtemp()
+    try:
+        calc = os.path.join(tmp, "Calc.java")
+        write(calc, "class Calc { int f(int[] a) { int s = 0;\n"
+                    "  for (int x : a) { while (x > 0) { if (x > 5) { s++; }"
+                    " else if (x > 2) { s--; } x--; } }\n  return s; } }\n")
+        _, out_calc, _ = run("--no-mark", calc)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    rows = [
+        ("test fayli bilan testing 5 saqlanadi", has_chapter(out_mix, "testing", "5")),
+        ("test fayli oxirida ham", routed(out_mix) == routed(out_mix2)),
+        ("test faylisiz chegara o'zgarmaydi",
+         len(routed(out_prod)) <= R.MAX_CHAPTERS + len(R.ALWAYS)
+         and not has_chapter(out_prod, "testing", "5")),
+        ("sikl va shart: Sonar cognitive complexity",
+         has_chapter(out_calc, "sonarqube", "15")),
     ]
     failures += report(rows)
     total += len(rows)

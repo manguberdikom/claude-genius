@@ -15,3 +15,12 @@ CREATE TABLE delivery (
 );
 
 CREATE INDEX IF NOT EXISTS ix_delivery_depot ON public.delivery USING btree (depot_id);
+
+-- Qo'shtirnoqli jadval: entity da @Table(name = "\"order\"").
+CREATE TABLE "order" (
+    id bigint PRIMARY KEY,
+    version bigint,
+    depot_id bigint REFERENCES depot (id)
+);
+
+CREATE INDEX ix_order_depot ON "order" (depot_id);

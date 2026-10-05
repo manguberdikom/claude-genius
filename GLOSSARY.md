@@ -25,6 +25,9 @@ shunday ishlatiladi, tarjimasi esa noaniqlik tug'diradi:
 `vacuum`, `bloat`, `planner`, `index`, `trace`, `span`, `metric`, `log`,
 `probe`, `sidecar`, `anti-pattern`, `record`, `sealed`, `virtual thread`.
 
+Claude Code va asboblar atamalari ham inglizcha qoladi: `hook`, `skill`,
+`agent`, `subagent`, `token`, `frontmatter`, `transcript`, `prompt`.
+
 Ulardan ba'zilarining o'zbekcha shakli mavjud sarlavha va matnda ham uchraydi
 (`kesh`, `indeks`, `metrika`, `qamrov`, `qayta urinish`). Pastdagi jadval bu
 shakllarni faqat qidirish uchun beradi. Mavjud sarlavhalar o'zgartirilmaydi.
@@ -38,6 +41,7 @@ kalitlari hech qachon tarjima qilinmaydi - `@Transactional`, `HikariCP`,
 | O'zbekcha | Inglizcha |
 |---|---|
 | abstraksiya | abstraction |
+| aktyor | agent (subagent) |
 | alohida ajratish | isolation |
 | arxitektura uslubi | architectural style |
 | baho (A-E) | rating |

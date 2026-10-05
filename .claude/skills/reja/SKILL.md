@@ -78,7 +78,8 @@ bosqichga o'tilmaydi.
 og'irlashadi: `yangi funksiya`, `refaktoring`, `bug`, `migratsiya`,
 `performance`, `integratsiya`, `xavfsizlik`, `test qarzi`.
 
-**S hajmda qisqa yo'l.** S rejada 5, 6, 10-13 bo'limlar yo'q, shuning uchun
+**S hajmda qisqa yo'l.** S rejada 5, 6, 10-13 bo'limlar yo'q (15 faqat taxmin
+yoki ochiq savol bo'lsa), shuning uchun
 ularning artefakti ham tayyorlanmaydi: 3-bosqich o'tkazib yuboriladi va
 `references/arxitektura.md` o'qilmaydi. Boshqa reference'lardan faqat S
 chiqishiga kiradigan qism o'qiladi (joy `grep -n '^## '` bilan topiladi, keyin

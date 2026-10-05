@@ -267,6 +267,16 @@ def parse_block(test, body):
     failure = Failure(test)
     failure.expected, failure.actual = expected_actual("\n".join(body))
     prefix = project_prefix(test)
+    if not prefix:
+        # Gradle sarlavhasida paket yo'q (`OrderServiceTest > m() FAILED`):
+        # prefiks test sinfining o'z kadridan. Aks holda FRAMEWORK da yo'q
+        # birinchi kutubxona qatori (Guava) "kod" deb ko'rsatilardi.
+        test_cls = identity(test)[0]
+        for line in body:
+            frame = FRAME_RE.match(line)
+            if frame and simple(frame.group(1)) == test_cls:
+                prefix = project_prefix(frame.group(1) + ".m")
+                break
     fallback = short_frame = ""
     wants_message = False
 

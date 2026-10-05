@@ -64,18 +64,18 @@ keyin faqat o'sha bo'lim `show` bilan.
    borligini bildiradi, xato emas.
 2. **Mavjud signal.** Yangi tahlil yurgizilmaydi, konteyner
    ko'tarilmaydi, bor chiqish o'qiladi. Yiqilgan test (Maven yoki Gradle
-   chiqishi): `python3 tools/parse_test_output.py <fayl>`. CI logida qator
-   boshidagi vaqt prefiksi avval olib tashlanadi, aks holda asbob
-   yiqilishni ko'rmaydi:
-   `python3 tools/parse_test_output.py <(sed -E 's/^.*[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.]+Z ?//' <log>)`.
+   chiqishi): `python3 tools/parse_test_output.py <fayl>`. CI logi ham
+   to'g'ridan beriladi: qator boshidagi vaqt prefiksini asbob o'zi
+   olib tashlaydi.
    Sonar hisobotini bu asbob o'qimaydi: kalitlar
    `grep -oE '[a-z]+:S[0-9]+' <hisobot> | sort | uniq -c` bilan olinadi,
    keyin `tools/doc.sh rule java:Sxxxx`, boshqa prefiksda
    `tools/doc.sh find -f Sxxxx`. `Yiqilgan test topilmadi.` signal yo'q
    degani emas: Sonar topilmasini u ko'rmaydi.
 3. **Modul mezoni**: har modul uchun alohida
-   `python3 tools/rules_for.py --no-mark $(find <modul> -name '*.java')`.
-   Papka berilmaydi, asbob faqat fayl qabul qiladi. Bitta chaqiruv 8 bob
+   `python3 tools/rules_for.py --no-mark $(find <modul> -type f \( -name '*.java' -o -name '*.sql' -o -name 'application*.y*ml' -o -name 'application*.properties' -o -name 'pom.xml' -o -name 'build.gradle*' \))`.
+   Papka berilmaydi, asbob faqat fayl qabul qiladi. Migratsiya, sozlama
+   va build fayli ham beriladi: ularning boblari `.java` dan ko'rinmaydi. Bitta chaqiruv 8 bob
    va 3 doimiy bob, ularning tekshiruv punktlari va avvalgi xatolarni
    beradi. Uning "Mashina topgani" qismi 1-qadamni takrorlaydi, qayta
    yozilmaydi. Chiqqan bob uchun to'liq ro'yxat:

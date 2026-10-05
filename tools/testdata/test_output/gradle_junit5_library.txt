@@ -1,0 +1,11 @@
+> Task :test
+
+OrderServiceTest > rejectsNegative() FAILED
+    java.lang.IllegalArgumentException: amount < 0
+        at app//com.google.common.base.Preconditions.checkArgument(Preconditions.java:143)
+        at app//com.acme.shop.OrderService.place(OrderService.java:42)
+        at app//com.acme.shop.OrderServiceTest.rejectsNegative(OrderServiceTest.java:18)
+
+3 tests completed, 1 failed
+
+> Task :test FAILED

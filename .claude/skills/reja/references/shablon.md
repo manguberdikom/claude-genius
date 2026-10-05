@@ -8,8 +8,8 @@ o'qiydigan joyda bo'lishi shart.
 
 | Hajm | Qachon | Majburiy bo'limlar |
 |---|---|---|
-| **S** | bitta modul, < 5 fayl, jadval tuzilishi o'zgarmaydi (indeks qo'shish mumkin), tashqi kontrakt buzilmaydi, yangi dependency yo'q | 1, 2, 3, 4, 7, 8, 9, 14, 16 |
-| **M** | bir nechta modul yoki jadval tuzilishi o'zgaradi yoki yangi tashqi chaqiruv | 1-9, 11, 13, 14, 16 |
+| **S** | bitta modul, < 5 fayl, jadval tuzilishi o'zgarmaydi (indeks qo'shish mumkin), tashqi kontrakt buzilmaydi, yangi dependency yo'q | 1, 2, 3, 4, 7, 8, 9, 14, 16; 15 taxmin yoki ochiq savol bo'lsa |
+| **M** | bir nechta modul yoki jadval tuzilishi o'zgaradi yoki yangi tashqi chaqiruv | 1-9, 11, 13, 14, 16; 15 taxmin yoki ochiq savol bo'lsa |
 | **L** | chegara o'zgaradi, migratsiya, yangi infratuzilma, ko'p relizli ish | hammasi (1-16) |
 
 Bo'limni bo'sh qoldirish o'rniga olib tashlash afzal. Olib tashlangan bo'lim
@@ -188,7 +188,7 @@ Exclusion qo'shilsa: qaysi fayl, nega halol.
 | **Vazifa turi** | performance |
 
 S hajm: 5, 6, 10-13 bo'limlar yo'q - jadval tuzilishi va kontrakt o'zgarmaydi,
-indeks 1-qadamda.
+indeks 1-qadamda. 15-bo'lim yo'q: taxmin va ochiq savol qolmadi.
 
 ## 1. Maqsad va kontekst
 `OrderController.java:38` `PageRequest.of(page, size)` bilan ishlaydi; 50k
