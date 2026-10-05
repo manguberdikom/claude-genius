@@ -82,14 +82,17 @@ mumkin va partiya oxirida yana tekshiriladi.
 Tanlov Spring orqali ta'sirni ham oladi: `@Configuration`, filter,
 `@ControllerAdvice` kabi sinf o'zgarsa modulning barcha Spring testlari,
 `@Entity` o'zgarsa baza testlari, abstrakt bazaviy sinfdagi
-`@SpringBootTest` ham hisobga olinadi. Maven maqsadli yurishida jacoco
-o'chadi: verify dagi coverage chegarasi bir nechta test bilan yolg'on
-yiqilardi.
+`@SpringBootTest` ham hisobga olinadi. Maqsadli yurishda jacoco o'chadi:
+coverage chegarasi bir nechta test bilan yolg'on yiqilardi. Maven da
+`-Djacoco.skip=true`, Gradle da init skript (`-I`, build fayliga
+tegmaydi): agent, hisobot va coverage tekshiruvi o'chadi. Gradle da
+kompilyatsiya natijasi lokal build cache ga tushadi, test natijasi
+tushmaydi; loyihaning `org.gradle.caching` qiymati ustun.
 
 Tezlik o'lchanadi, taxmin qilinmaydi: har yurish jurnalga tushadi,
 `python3 tools/run_tests.py --hisobot` rejim bo'yicha soni va vaqtini,
 kuniga to'liq suite sonini beradi. Build ga tegmaydigan qo'shimcha
-bayroqlar (`--build-cache --parallel`, Maven da `-o -T 1C`) faqat
+bayroqlar (`--parallel --configuration-cache`, Maven da `-o -T 1C`) faqat
 foydalanuvchi tanlasa: `GENIUS_TEST_FLAGS` muhit o'zgaruvchisi. Ularning
 to'g'riligi build ning o'ziga bog'liq, shuning uchun standart bo'sh.
 

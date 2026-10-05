@@ -28,12 +28,15 @@ python3 tools/guruh.py yarat billing
 python3 tools/guruh.py royxat                # papka, branch, fayl soni
 ```
 
-Har `yarat` dan keyin darhol, fonda (Bash `run_in_background`):
+`yarat` lardan keyin darhol, fonda (Bash `run_in_background`):
 `python3 tools/run_tests.py --ildiz <papka> --isit`. Yangi worktree da
 `build/` yo'q va birinchi yurish hammasini kompilyatsiya qiladi; aktyor
-kod o'qiyotgan daqiqalarda shu kompilyatsiya tugaydi. Isitish va
-aktyorning `--yurgiz` i bitta daraxtda hech qachon bir vaqtda yurmaydi:
-ildiz qulfi keyingisini kutdiradi.
+kod o'qiyotgan daqiqalarda shu kompilyatsiya tugaydi. Maven da har guruh
+o'z fon buyrug'i bilan. Gradle da hammasi bitta fon buyrug'ida ketma-ket
+(`...--ildiz <A> --isit; ...--ildiz <B> --isit`): birinchisi
+kompilyatsiyani lokal keshga yozadi, keyingilari keshdan oladi. Isitish
+va aktyorning `--yurgiz` i bitta daraxtda hech qachon bir vaqtda
+yurmaydi: ildiz qulfi keyingisini kutdiradi.
 
 Har aktyor promptining boshida **guruh kartasi** turadi. Uni asosiy
 sessiya bir marta yozadi va guruhning har chaqiruviga aynan ko'chiradi,
@@ -88,7 +91,8 @@ bo'yicha aniqroq bo'linadi.
   `run_tests.py ... --navbat` ularni ketma-ket qiladi, kod yozish esa
   parallel qoladi. `run_tests.py --tashxis` buni ko'rsatadi.
 - **Birinchi build.** Yangi worktree da `build/` yo'q: birinchi yurish
-  to'liq kompilyatsiya. Gradle build cache (`org.gradle.caching=true`)
-  bo'lsa natija boshqa worktree dan olinadi.
+  to'liq kompilyatsiya. Gradle da `run_tests.py` kompilyatsiyani lokal
+  keshga yozadi (test natijasini emas) va keyingi worktree uni keshdan
+  oladi. Loyihada `org.gradle.caching=false` bo'lsa bu yo'q.
 - **Git da yo'q fayl.** `.env` yoki lokal sozlama worktree ga
   tushmaydi: `guruh.py yarat <id> --nusxa .env`.

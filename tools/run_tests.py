@@ -30,6 +30,13 @@ yurishda ruxsat so'ralmaydi. Har yurish to'g'ri buyruq bilan bo'ladi:
 `clean`, `--rerun-tasks` va `--no-daemon` yo'q, chunki ular inkremental
 build va daemon ni yo'qotadi.
 
+Gradle buyrug'iga init skript qo'shiladi (`-I`, build fayllariga
+tegmaydi): maqsadli yurishda jacoco agenti, hisobot va coverage
+tekshiruvi o'chadi, HTML hisobot yozilmaydi; har yurishda JUnit XML
+majburiy. Loyiha keshni tanlamagan bo'lsa faqat kompilyatsiya lokal
+keshlanadi: yangi worktree boshqa daraxt kompilyatsiya qilgan modulni
+qayta kompilyatsiya qilmaydi, test esa har gal haqiqatan yuradi.
+
 Tanlash, eng aniqdan kengiga:
   1. o'zgargan test sinfi;
   2. o'zgargan sinf nomiga mos test (FooTest, FooIT, ...);
@@ -640,6 +647,133 @@ def gradle_task(sset):
     return "test" if sset == "test" else sset
 
 
+# Gradle da `-Djacoco.skip` yo'q: jacoco plagin, agent va hisobot vazifasi
+# build faylida. Init skript faqat shu yurishga qo'shiladi, build fayllariga
+# tegmaydi. projectsEvaluated: plaginlar va build skriptining o'z sozlamasidan
+# keyin ishlaydi. Gradle 7.6, 8.14, 9.8 da tekshirilgan (DECISIONS.md).
+GRADLE_INIT = r"""// claude-genius run_tests.py: faqat shu yurish uchun, build fayllariga tegmaydi.
+import org.gradle.util.GradleVersion
+
+def geniusMaqsadli = %(maqsadli)s
+def geniusKesh = %(kesh)s
+
+if (GradleVersion.current() < GradleVersion.version('6.1')) {
+    return
+}
+
+if (geniusKesh) {
+    // Keshni asbob yoqdi: faqat lokal, loyihaning remote keshiga tegilmaydi.
+    settingsEvaluated { settings ->
+        def remote = settings.buildCache.remote
+        if (remote != null) {
+            remote.enabled = false
+        }
+    }
+}
+
+projectsEvaluated { gradle ->
+    gradle.rootProject.allprojects { project ->
+        project.tasks.withType(Test).configureEach { task ->
+            task.reports.junitXml.required.set(true)
+            if (geniusMaqsadli) {
+                task.reports.html.required.set(false)
+                def jacoco = task.extensions.findByName('jacoco')
+                if (jacoco != null) {
+                    jacoco.enabled = false
+                }
+            }
+        }
+        if (geniusMaqsadli) {
+            project.tasks.withType(org.gradle.testing.jacoco.tasks.JacocoReportBase).configureEach { task ->
+                task.enabled = false
+            }
+        }
+        if (geniusKesh) {
+            project.tasks.configureEach { task ->
+                def kompilyatsiya = task instanceof org.gradle.api.tasks.compile.AbstractCompile ||
+                    task.class.name.startsWith('org.jetbrains.kotlin.gradle.tasks.KotlinCompile')
+                if (!kompilyatsiya) {
+                    task.outputs.doNotCacheIf('claude-genius: faqat kompilyatsiya keshlanadi',
+                        org.gradle.api.specs.Specs.SATISFIES_ALL)
+                }
+            }
+        }
+    }
+}
+"""
+
+
+def gradle_props(root):
+    """gradle.properties: loyiha, keyin GRADLE_USER_HOME. Gradle ham shu
+    tartibda o'qiydi, foydalanuvchi faylidagi qiymat ustun."""
+    home = os.environ.get("GRADLE_USER_HOME") or os.path.join(os.path.expanduser("~"), ".gradle")
+    props = properties(read(os.path.join(root, "gradle.properties")))
+    props.update(properties(read(os.path.join(home, "gradle.properties"))))
+    return props
+
+
+def gradle_version(root):
+    text = read(os.path.join(root, "gradle", "wrapper", "gradle-wrapper.properties"))
+    match = re.search(r"gradle-(\d+)\.(\d+)", text)
+    return (int(match.group(1)), int(match.group(2))) if match else None
+
+
+def gradle_cache_ours(root, flags):
+    """Kompilyatsiya keshini asbob yoqadimi. Loyiha yoki foydalanuvchi
+    keshni o'zi tanlagan bo'lsa (yoqilgan ham, o'chirilgan ham) uning
+    qarori qoladi va asbob unga tegmaydi."""
+    if "--build-cache" in flags or "--no-build-cache" in flags:
+        return False
+    return gradle_props(root).get("org.gradle.caching", "").lower() not in ("true", "false")
+
+
+def init_script(targeted, cache):
+    text = GRADLE_INIT % {"maqsadli": "true" if targeted else "false",
+                          "kesh": "true" if cache else "false"}
+    path = os.path.join(tempfile.gettempdir(), "genius-gradle-%s.gradle"
+                        % hashlib.sha1(text.encode("utf-8")).hexdigest()[:10])
+    if read(path) != text:
+        tmp = "%s.%d.tmp" % (path, os.getpid())
+        with open(tmp, "w", encoding="utf-8") as handle:
+            handle.write(text)
+        try:
+            os.replace(tmp, path)
+        except OSError:
+            # Windows: parallel yurishning Gradle i faylni o'qiyotgan bo'lsa
+            # almashtirib bo'lmaydi; nomi mazmundan, demak u allaqachon to'g'ri.
+            with contextlib.suppress(OSError):
+                os.remove(tmp)
+            if read(path) != text:
+                raise
+    return path
+
+
+def gradle_init(project, targeted):
+    """Gradle yurishiga init skript va kesh bayrog'i.
+
+    Maqsadli yurishda (targeted): jacoco agenti va jacoco hisobot,
+    coverage tekshiruvi vazifalari o'chadi, HTML hisobot yozilmaydi.
+    `test` ga finalizedBy bilan bog'langan coverage tekshiruvi bir nechta
+    test bilan chegaraga yetmay yolg'on yiqilardi: Maven dagi jacoco:check
+    bilan bir xil. To'liq suite da jacoco qoladi, coverage CI bilan bir xil.
+
+    Har yurishda: JUnit XML majburiy (qayta yurish va beqarorni ajratish
+    shunga tayanadi). Kesh asbobniki bo'lsa: faqat kompilyatsiya, faqat
+    lokal. Yangi worktree boshqa daraxt kompilyatsiya qilgan modulni keshdan
+    oladi. Test natijasi keshlanmaydi: test har gal haqiqatan yuradi.
+
+    O'chirish: GENIUS_GRADLE_INIT=0; faqat kesh: org.gradle.caching=false
+    yoki GENIUS_TEST_FLAGS=--no-build-cache.
+    """
+    if os.environ.get("GENIUS_GRADLE_INIT", "").strip() == "0":
+        return []
+    version = gradle_version(project.root)
+    if version and version < (6, 1):
+        return []
+    cache = gradle_cache_ours(project.root, extra_flags())
+    return ["-I", init_script(targeted, cache)] + (["--build-cache"] if cache else [])
+
+
 def commands(project, plan, everything=False):
     """[(argv, izoh)]: ketma-ket yurgiziladigan buyruqlar."""
     if project.tool == "gradle":
@@ -653,15 +787,16 @@ def gradle_commands(project, plan, everything):
     argv = list(project.runner)
     if everything or plan.everything:
         tasks = ["test"] + sorted({gradle_task(s.sset) for s in project.tests()} - {"test"})
-        return [(argv + tasks + ["--continue", "--console=plain"] + extra_flags(),
-                 "to'liq suite")]
+        return [(argv + tasks + ["--continue", "--console=plain"]
+                 + gradle_init(project, False) + extra_flags(), "to'liq suite")]
     for (module, sset), reason in plan.whole.items():
         argv.append("%s:%s" % (project.gradle_path(module), gradle_task(sset)))
     for (module, sset), chosen in plan.targets.items():
         argv.append("%s:%s" % (project.gradle_path(module), gradle_task(sset)))
         for fqn in chosen:
             argv += ["--tests", fqn]
-    return [(argv + ["--continue", "--console=plain"] + extra_flags(), "maqsadli")]
+    return [(argv + ["--continue", "--console=plain"] + gradle_init(project, True)
+             + extra_flags(), "maqsadli")]
 
 
 def maven_commands(project, plan, everything):
@@ -725,8 +860,10 @@ def warmup_commands(project):
     """Fonda kompilyatsiya: guruh ochilgach aktyor kod o'qiyotgan paytda
     yangi worktree ning birinchi to'liq kompilyatsiyasi tugaydi."""
     if project.tool == "gradle":
-        return [(list(project.runner) + ["testClasses", "--console=plain", "-q"]
-                 + extra_flags(), "isitish")]
+        tasks = sorted({gradle_task(s.sset) + "Classes" for s in project.tests()}
+                       | {"testClasses"})
+        return [(list(project.runner) + tasks + ["--console=plain", "-q"]
+                 + gradle_init(project, False) + extra_flags(), "isitish")]
     return [(list(project.runner) + ["-B", "-q", "test-compile", "-Djacoco.skip=true",
                                      "-Dspring-javaformat.validate.skip=true"]
              + extra_flags(), "isitish")]
@@ -985,6 +1122,11 @@ def describe(project, plan, cmds, everything):
             lines.append("  ... yana %d ta" % (len(rows) - MAX_SHOWN))
     for argv, note in cmds:
         lines.append("Buyruq (%s): %s" % (note, show(argv)))
+    init = next((read(a[a.index("-I") + 1]) for a, _ in cmds if "-I" in a), "")
+    parts = (["jacoco va HTML hisobot o'chiq"] if "geniusMaqsadli = true" in init else []) + \
+        (["kesh faqat kompilyatsiya, lokal"] if "geniusKesh = true" in init else [])
+    if parts:
+        lines.append("Gradle init: %s (GENIUS_GRADLE_INIT=0 o'chiradi)" % ", ".join(parts))
     for note in plan.notes:
         lines.append("Eslatma: %s" % note)
     return "\n".join(lines)
@@ -1065,9 +1207,7 @@ def diagnose(project):
     tests = project.tests()
     test_files = [s for s in project.sources if not s.is_main]
     if project.tool == "gradle":
-        home = os.environ.get("GRADLE_USER_HOME") or os.path.join(os.path.expanduser("~"), ".gradle")
-        props = properties(read(os.path.join(home, "gradle.properties")))
-        props.update(properties(read(os.path.join(project.root, "gradle.properties"))))
+        props = gradle_props(project.root)
         multi = len(project.gradle_projects) > 0
         if props.get("org.gradle.daemon", "").lower() == "false":
             add("yuqori", "Gradle daemon o'chirilgan",
@@ -1077,11 +1217,36 @@ def diagnose(project):
             add("o'rta", "Gradle modullari ketma-ket yig'iladi",
                 "%d modul bor, org.gradle.parallel yoqilmagan" % len(project.gradle_projects),
                 "gradle.properties: org.gradle.parallel=true", "testing 15.3")
-        if props.get("org.gradle.caching", "").lower() != "true":
-            add("o'rta", "Gradle build cache o'chiq",
-                "o'zgarmagan modulning testi boshqa worktree da qayta yuradi",
-                "gradle.properties: org.gradle.caching=true", "testing 16.10")
+        if props.get("org.gradle.caching", "").lower() == "false":
+            add("o'rta", "Gradle build cache o'chirilgan",
+                "run_tests ham keshni yoqmaydi: yangi worktree har modulni noldan "
+                "kompilyatsiya qiladi",
+                "org.gradle.caching=false ni olib tashlash: run_tests o'zi faqat "
+                "kompilyatsiyani lokal keshlaydi, test natijasini emas", "testing 16.10")
+        cc = props.get("org.gradle.configuration-cache",
+                       props.get("org.gradle.unsafe.configuration-cache", ""))
+        if len(project.gradle_projects) >= 10 and cc.lower() != "true":
+            add("past", "Har yurish %d modulni qayta konfiguratsiya qiladi"
+                % len(project.gradle_projects),
+                "configuration cache yo'q: build skriptlari har buyruqda qayta bajariladi",
+                "avval GENIUS_TEST_FLAGS=--configuration-cache bilan sinash, muammosiz "
+                "bo'lsa gradle.properties: org.gradle.configuration-cache=true", "testing 16.10")
         builds = "\n".join(read(os.path.join(project.root, p)) for p in project.build_files)
+        if re.search(r"upToDateWhen\s*\{\s*false\s*\}", builds):
+            add("past", "Vazifa hech qachon UP-TO-DATE emas",
+                "outputs.upToDateWhen { false }: o'zgarmagan kodda ham qayta yuradi",
+                "test tashqi holatga bog'liq bo'lmasa olib tashlash", "testing 16.10")
+        if re.search(r"showStandardStreams\s*=\s*true", builds):
+            add("past", "testLogging.showStandardStreams yoqilgan",
+                "har testning stdout va stderr i konsolga: log katta, yurish sekinroq",
+                "faqat yiqilganda: events 'failed', exceptionFormat 'full'", "testing 16.10")
+        scans = builds + "".join(read(os.path.join(project.root, n)) for n in
+                                 ("settings.gradle", "settings.gradle.kts"))
+        if re.search(r"com\.gradle\.(?:develocity|enterprise|build-scan)\b", scans) and \
+                "--no-scan" not in extra_flags():
+            add("past", "Build scan har yurishda yuklanadi",
+                "Develocity yoki build scan plagini: yurish oxirida natija serverga yuboriladi",
+                "agent yurishida kerak bo'lmasa GENIUS_TEST_FLAGS=--no-scan", "testing 16.10")
         if re.search(r"\bforkEvery\b", builds):
             add("yuqori", "forkEvery yoqilgan",
                 "har N sinfda yangi JVM: Spring kontekst keshi har gal yo'qoladi",

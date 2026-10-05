@@ -8,6 +8,75 @@ Hamma o'zgarish bu yerga yozilmaydi. Yoziladigani: foydalanuvchi
 muhitiga tegadigan, ma'lumot yo'qotishi mumkin bo'lgan yoki ruxsat
 qarorini o'zgartiradigan o'zgarish.
 
+## 2026-10-05: Gradle yurishiga init skript: jacoco, XML, kompilyatsiya keshi
+
+**Nima o'zgardi.** `run_tests.py` har Gradle buyrug'iga `-I <init skript>`
+qo'shadi. Skript build fayllariga tegmaydi va faqat shu yurishga ta'sir
+qiladi. (1) Maqsadli yurishda (va qayta yurishda) jacoco agenti,
+`JacocoReport` va `JacocoCoverageVerification` vazifalari o'chadi, HTML
+test hisoboti yozilmaydi. (2) Har yurishda JUnit XML majburiy. (3) Loyiha
+`org.gradle.caching` ni tanlamagan bo'lsa asbob `--build-cache` ni
+yoqadi, lekin faqat kompilyatsiya vazifalari (`AbstractCompile`, Kotlin
+compile) keshlanadi, kesh faqat lokal: remote kesh shu yurish uchun
+o'chiriladi. (4) `--isit` hamma test to'plamini kompilyatsiya qiladi.
+(5) `--tashxis` ga Gradle bandlari: `org.gradle.caching=false`,
+configuration cache yo'qligi (10+ modul), `upToDateWhen { false }`,
+`showStandardStreams`, build scan plagini. `gradle.properties` ustunligi
+tuzatildi: `GRADLE_USER_HOME` dagi qiymat loyihanikidan ustun (Gradle ham
+shunday o'qiydi).
+
+**Nega.** Maven maqsadli yurishi `-Djacoco.skip=true` bilan tezlashgan
+edi, Gradle da esa bunday xossa yo'q: jacoco plagin va vazifa build
+faylida. Ko'p loyihada `test` ga `finalizedBy jacocoTestCoverageVerification`
+bog'langan va maqsadli yurish bir nechta test bilan coverage chegarasiga
+yetmay yolg'on yiqiladi: Gradle 7.6, 8.14 va 9.8 da tasdiqlandi. Yangi
+worktree birinchi yurishda hamma modulni noldan kompilyatsiya qilardi;
+endi boshqa daraxt kompilyatsiya qilgan modul keshdan olinadi (sintetik
+2500 sinfli loyihada 5.3 s dan 2.8 s ga, maqsadli yurish 3.0 s dan
+1.7 s ga). Qayta yurish va beqarorni ajratish JUnit XML ga tayanadi,
+build XML ni o'chirgan bo'lsa ular ishlamasdi.
+
+**Rad etilgan variantlar.**
+
+- *To'liq `--build-cache` (test vazifasi bilan).* Rad etildi: test
+  vazifasi kirish sifatida muhit o'zgaruvchisi va tashqi holatni
+  bilmaydi, keshdan olingan "yashil" haqiqiy yurish emas. Oldingi
+  yozuvdagi rad etish shu sabab bilan qoladi; qabul qilingani torroq:
+  kirish va chiqishini Gradle va JetBrains e'lon qilgan kompilyatsiya
+  vazifalari. Ularning kesh kaliti UP-TO-DATE tekshiruvi bilan bir xil
+  kirishlardan.
+- *Build fayliga `jacoco { enabled = false }` yozish.* Rad etildi: asbob
+  foydalanuvchi kodini o'zgartirmaydi.
+- *`-x jacocoTestReport -x jacocoTestCoverageVerification`.* Rad etildi:
+  vazifa yo'q loyihada `-x` "Task not found" bilan yiqiladi, agentni esa
+  o'chirmaydi.
+- *`--parallel`, `--configuration-cache` standart.* Rad etildi, oldingi
+  yozuvdagi sabab bilan: to'g'riligi build ga bog'liq. `--tashxis` ularni
+  tavsiya qiladi, yoqish `GENIUS_TEST_FLAGS` bilan.
+- *`--no-scan` standart.* Rad etildi: build scan tashkilot tanlovi.
+  `--tashxis` aytadi, yoqish `GENIUS_TEST_FLAGS=--no-scan`.
+
+**Xavf.** Kompilyatsiya keshi `.java` dan tashqari faylni (masalan
+`lombok.config`) o'qiydigan annotation processor da eskirgan sinf
+qaytarishi mumkin. Bu xavf UP-TO-DATE tekshiruvida ham bor, kesh uni
+worktree lar orasiga yoyadi. Keshni loyihaning `org.gradle.caching=false`
+qiymati to'liq o'chiradi. Gradle 6.1 dan eski versiyada skript hech narsa
+qilmaydi.
+
+**Qaysi tekshiruv o'tdi.** `tools/test_run_tests.py` 47/47. Haqiqiy
+Gradle 7.6.4 (JDK 17), 8.14.3 va 9.8.0 (JDK 21) da: qo'lda matritsa
+(Groovy va Kotlin DSL, `tasks.named` bilan lazy vazifa, configuration
+cache bilan qayta ishlatish, `--warning-mode=all` da ogohlantirish yo'q)
+va `python3 tools/test_run_tests.py --gradle <gradle>` 6/6: init siz
+maqsadli yurish yiqiladi (nazorat), init bilan yashil va jacoco exec
+yo'q, to'liq suite da coverage tekshiruvi qoladi, yangi worktree
+kompilyatsiyani keshdan oladi va test keshdan emas, yiqilgan test XML dan
+qayta yuradi, remote keshga murojaat yo'q.
+
+**Orqaga qaytarish.** `GENIUS_GRADLE_INIT=0` init skriptni butunlay
+o'chiradi. Faqat kesh: `org.gradle.caching=false` yoki
+`GENIUS_TEST_FLAGS=--no-build-cache`.
+
 ## 2026-10-05: Beqaror test ajratiladi, Spring orqali ta'sir tanlanadi
 
 **Nima o'zgardi.** `run_tests.py`: (1) yiqilgan sinflar JUnit XML dan
@@ -41,7 +110,8 @@ qatoridan olish aniqroq.
 - *Gradle `--build-cache`, `--configuration-cache`, `--parallel` ni
   standart yoqish.* Rad etildi: to'g'riligi build dagi vazifalar
   kirish-chiqishni to'g'ri e'lon qilganiga bog'liq, bu foydalanuvchi
-  qarori. `GENIUS_TEST_FLAGS` bilan bir qatorda yoqiladi.
+  qarori. `GENIUS_TEST_FLAGS` bilan bir qatorda yoqiladi. (Keyingi
+  yozuvda torroq shakli qabul qilindi: kesh faqat kompilyatsiya uchun.)
 - *pmd va spotbugs ni ham o'chirish.* Rad etildi: skip kalitlarini
   manbadan tasdiqlay olmadim. Checkstyle va enforcer ataylab qoladi:
   ular arzon va xatoni erta ko'rsatadi.
