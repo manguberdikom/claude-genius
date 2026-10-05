@@ -17,26 +17,24 @@ egallamaydi, balki kerakli yozuvni sessiyadan **chiqarib tashlaydi**. Shu sababl
 "yozmaslik" qarori bu hujjatda "yozish" qaroridan ko'proq joy oladi.
 
 Tayanch holat: Claude Code memory mexanikasi, 2026-10. Versiyaga bog'liq
-xususiyatlar yonida CLI versiyasi ko'rsatilgan.
+xususiyatlar yonida CLI versiyasi ko'rsatilgan. Mexanikaning o'zi (ikki tizim,
+qatlamlar, yuklanish tartibi, audit) `memory-mexanika.md` da, bu fayl faqat
+yozish qoidasini beradi.
 
 ## Mundarija
 
 - [1. Nega bu fayl bor va u qanday ishlatiladi](#1-nega-bu-fayl-bor-va-u-qanday-ishlatiladi)
-- [2. Ikki tizim: CLAUDE.md va auto memory](#2-ikki-tizim-claudemd-va-auto-memory)
-- [3. Qatlamlar va yuklanish tartibi](#3-qatlamlar-va-yuklanish-tartibi)
-- [4. Marshrut: qaysi bilim qayerga boradi](#4-marshrut-qaysi-bilim-qayerga-boradi)
-- [5. Darvoza: yozishdan oldingi yetti savol](#5-darvoza-yozishdan-oldingi-yetti-savol)
-- [6. Saqlash ketma-ketligi](#6-saqlash-ketma-ketligi)
-- [7. Yozuv formati va nomlash](#7-yozuv-formati-va-nomlash)
-- [8. Hajm budjeti va qattiq chegaralar](#8-hajm-budjeti-va-qattiq-chegaralar)
-- [9. Eskirish, ziddiyat va o'chirish](#9-eskirish-ziddiyat-va-ochirish)
-- [10. Cloud va lokal sessiya farqi](#10-cloud-va-lokal-sessiya-farqi)
-- [11. Kelajakda inobatga olinadigan narsalar](#11-kelajakda-inobatga-olinadigan-narsalar)
-- [12. Memoryga yozilmaydigan narsalar](#12-memoryga-yozilmaydigan-narsalar)
-- [13. Tekshirish va audit](#13-tekshirish-va-audit)
-- [14. Boshqa MD lar uchun ulanish bloki](#14-boshqa-md-lar-uchun-ulanish-bloki)
-- [15. Git memory ombori: proyekt bo'yicha saqlash](#15-git-memory-ombori-proyekt-boyicha-saqlash)
-- [16. Amalda qo'llash](#16-amalda-qollash)
+- [2. Marshrut: qaysi bilim qayerga boradi](#2-marshrut-qaysi-bilim-qayerga-boradi)
+- [3. Darvoza: yozishdan oldingi yetti savol](#3-darvoza-yozishdan-oldingi-yetti-savol)
+- [4. Saqlash ketma-ketligi](#4-saqlash-ketma-ketligi)
+- [5. Yozuv formati va nomlash](#5-yozuv-formati-va-nomlash)
+- [6. Hajm budjeti va qattiq chegaralar](#6-hajm-budjeti-va-qattiq-chegaralar)
+- [7. Eskirish, ziddiyat va o'chirish](#7-eskirish-ziddiyat-va-ochirish)
+- [8. Cloud va lokal sessiya farqi](#8-cloud-va-lokal-sessiya-farqi)
+- [9. Memoryga yozilmaydigan narsalar](#9-memoryga-yozilmaydigan-narsalar)
+- [10. Boshqa MD lar uchun ulanish bloki](#10-boshqa-md-lar-uchun-ulanish-bloki)
+- [11. Git memory ombori: proyekt bo'yicha saqlash](#11-git-memory-ombori-proyekt-boyicha-saqlash)
+- [12. Amalda qo'llash](#12-amalda-qollash)
 
 ---
 
@@ -57,7 +55,7 @@ emas, **budjet**. Bu hujjat o'sha budjetni boshqarish qoidasi.
 |---|---|---|
 | Claude | memoryga yozish yoki uni tozalash kerak bo'lganda | darvoza, marshrut, format |
 | Boshqa MD fayllar | o'zida memory haqida gap bo'lsa | havola, qoidaning nusxasi emas |
-| Loyiha egasi | memory to'lib ketganda yoki qoida ishlamaganda | audit va chegaralar bo'limi |
+| Loyiha egasi | memory to'lib ketganda, yuklanmaganda yoki qoida ishlamaganda | to'lib ketsa: `Hajm budjeti va qattiq chegaralar` bo'limi; memory yuklanmasa yoki qoida ishlamasa: `memory-mexanika.md` |
 
 ### Qanday havola qilinadi
 
@@ -75,102 +73,7 @@ Import tahlili kod bloklari va kod span larini o'tkazib yuboradi.
 
 ---
 
-## 2. Ikki tizim: CLAUDE.md va auto memory
-
-Memory bitta narsa emas, ikkita mustaqil tizim. Ikkalasi ham har sessiya boshida
-yuklanadi, lekin boshqa maqsad uchun xizmat qiladi. Ularni aralashtirib yuborish
-eng ko'p uchraydigan xato.
-
-| | CLAUDE.md fayllar | Auto memory |
-|---|---|---|
-| Kim yozadi | odam | Claude o'zi |
-| Nima turadi | ko'rsatma va qoida | o'rganilgan narsa va afzallik |
-| Qamrov | loyiha, foydalanuvchi, tashkilot | bitta repo, barcha worktree uchun umumiy |
-| Yuklanish | har sessiyada to'liq | har sessiyada index ning birinchi 200 qatori yoki 25KB |
-| Nimaga mos | build buyruqlari, konvensiya, arxitektura, "har doim X" | foydalanuvchi afzalligi, tuzatishlar, kod'dan chiqarib bo'lmaydigan kontekst |
-| Qayerda yashaydi | repo va `~/.claude/` | `~/.claude/projects/<project>/memory/` |
-| Git | commit qilinadi (local variantidan tashqari) | commit qilinmaydi, mashinaga bog'langan |
-
-Uchinchi mexanizm ham bor va u memory emas: **hook**. CLAUDE.md va auto memory
-kontekst, ya'ni ta'sir qiladi lekin kafolat bermaydi. Bir ish **albatta**
-bajarilishi yoki bloklanishi kerak bo'lsa, u memoryga emas, `PreToolUse` hook'iga
-yoziladi. "Claude qoidani bajarmadi" degan shikoyatning yarmi shu chalkashlikdan
-kelib chiqadi: majburiy shart kontekstga yozilgan.
-
-### Auto memory nimani o'zi yozadi
-
-Claude o'zi yozadigan yozuvlar to'rt turga bo'linadi. Tur `type` maydonida,
-fayl frontmatter'ida turadi:
-
-| `type` | Mazmuni | Misol |
-|---|---|---|
-| `user` | roli, tajribasi, ish uslubi | "O'zbek lotin yozuvida javob kutadi" |
-| `feedback` | tuzatishlar va tasdiqlangan yondashuv | "Em-dash ishlatmaslik so'raldi" |
-| `project` | davom etayotgan ish, qaror, muddat | "Mindset hujjati 39 bobga rejalashtirilgan" |
-| `reference` | loyihadan tashqaridagi manba | "Issue tracker manzili" |
-
-Claude kodidan, fayl yo'llaridan yoki git tarixidan chiqarib olinadigan narsani
-yozmaydi. CLAUDE.md allaqachon aytgan narsani ham yozmaydi. Har sessiyada biror
-narsa yozilishi shart emas: yozuv faqat kelajakdagi suhbatga foyda bersa paydo
-bo'ladi.
-
----
-
-## 3. Qatlamlar va yuklanish tartibi
-
-Qatlamlar bir-birini **bekor qilmaydi**, ketma-ket ulanadi. Bu muhim: pastdagi
-qatlam yuqoridagini o'chirmaydi, shuning uchun ikki qatlamda qarama-qarshi qoida
-bo'lsa, Claude ulardan birini tasodifiy tanlashi mumkin. Yechim ustuvorlikni
-o'rganish emas, **ziddiyatni yo'qotish**.
-
-### CLAUDE.md qatlamlari, yuklanish tartibida
-
-| Qatlam | Joy | Kim ko'radi |
-|---|---|---|
-| Boshqariladigan siyosat | Linux/WSL: `/etc/claude-code/CLAUDE.md`, macOS: `/Library/Application Support/ClaudeCode/CLAUDE.md`, Windows: `C:\Program Files\ClaudeCode\CLAUDE.md` | mashinadagi barcha foydalanuvchi |
-| Foydalanuvchi | `~/.claude/CLAUDE.md` | faqat o'zi, barcha loyihada |
-| Loyiha | `./CLAUDE.md` yoki `./.claude/CLAUDE.md` | jamoa, git orqali |
-| Lokal | `./CLAUDE.local.md` | faqat o'zi, shu loyihada (`.gitignore` ga qo'shiladi) |
-
-Daraxt bo'yicha tartib: fayl tizimi ildizidan ish papkasiga qarab. Ya'ni
-`foo/CLAUDE.md` kontekstda `foo/bar/CLAUDE.md` dan oldin turadi, ish papkasiga
-yaqin ko'rsatma **oxirgi** o'qiladi. Har bir papka ichida `CLAUDE.local.md`
-`CLAUDE.md` dan keyin qo'shiladi.
-
-Ish papkasi ostidagi papkalardagi `CLAUDE.md` sessiya boshida yuklanmaydi,
-Claude o'sha papkadagi faylni o'qiganda qo'shiladi.
-
-### Qolgan yuklanadigan narsalar
-
-| Narsa | Joy | Qachon yuklanadi |
-|---|---|---|
-| Umumiy rules | `.claude/rules/*.md` (`paths` siz) | har sessiyada, `.claude/CLAUDE.md` bilan teng ustuvorlikda |
-| Yo'lga bog'langan rules | `.claude/rules/*.md` (`paths:` bilan) | mos faylda Read, Write yoki Edit ishlatilganda |
-| Foydalanuvchi rules | `~/.claude/rules/*.md` | har sessiyada, loyiha rules'idan oldin |
-| Auto memory index | `~/.claude/projects/<project>/memory/MEMORY.md` | har sessiyada, birinchi 200 qator yoki 25KB |
-| Auto memory topic fayllar | o'sha papkadagi `*.md` | yuklanmaydi, Claude kerak bo'lganda o'qiydi |
-| Skill | `.claude/skills/<nom>/SKILL.md` | chaqirilganda yoki vazifaga mos kelganda |
-
-`AGENTS.md` ham o'qilishi mumkin: ish papkasida va undan yuqorida hech qanday
-`CLAUDE.md`, `.claude/CLAUDE.md` yoki `CLAUDE.local.md` bo'lmasa (CLI v2.1.277+).
-Tuzoq: shaxsiy `CLAUDE.local.md` qo'shilishi `AGENTS.md` ning o'qilishini
-to'xtatadi. Ikkalasini ham o'qitish kerak bo'lsa, `/config` dagi **Project
-instructions** ni `claude-md-and-agents-md` ga qo'yiladi.
-
-### Nimani esda tutish kerak
-
-- Qatlam qo'shilganda kontekst o'sadi, hech narsa ozaymaydi.
-- `@path` import tashkil qilishga yordam beradi, kontekstni **tejamaydi**:
-  import qilingan fayl ham sessiya boshida yuklanadi. Maksimal chuqurlik: 4 qadam.
-- Loyiha memory faylidagi import ish papkasidan tashqariga chiqsa, Claude Code
-  bir marta tasdiq so'raydi. Rad etilsa, import o'chib qoladi va dialog
-  qaytarilmaydi.
-- Blok darajasidagi HTML izoh (`<!-- ... -->`) kontekstga kirmaydi, o'chiriladi.
-  Odam uchun izohni shunday yozish tokenga tushmaydi.
-
----
-
-## 4. Marshrut: qaysi bilim qayerga boradi
+## 2. Marshrut: qaysi bilim qayerga boradi
 
 Yozishdan oldin javob beriladigan birinchi savol "yozamanmi?" emas, **"qayerga?"**.
 Noto'g'ri joyga yozilgan to'g'ri bilim ham zarar: har sessiyada yuklanadi, lekin
@@ -218,7 +121,7 @@ bo'lsa ham.
 
 ---
 
-## 5. Darvoza: yozishdan oldingi yetti savol
+## 3. Darvoza: yozishdan oldingi yetti savol
 
 Har bir nomzod yozuv shu yetti savoldan o'tadi. **Bittasida to'xtasa, yozilmaydi.**
 Tartib muhim: arzon savol oldinda, shunda ko'p nomzod birinchi uch savolda
@@ -262,7 +165,7 @@ Signal bo'lmasa, nomzod ham yo'q. "Foydali bo'lishi mumkin" - signal emas.
 
 ---
 
-## 6. Saqlash ketma-ketligi
+## 4. Saqlash ketma-ketligi
 
 Bu bo'lim hujjatning o'zagi. Ketma-ketlik olti fazadan iborat va faza tartibi
 buzilmaydi. Eng ko'p uchraydigan xato: **4-fazani 2-fazadan oldin
@@ -329,7 +232,8 @@ xil ko'rinishi paydo bo'ladi.
 15. **Eskirganini o'chir.** Tugagan ish, bekor qilingan qaror, o'zgargan
     afzallik. O'chirish ham memory ishining bir qismi, qo'shimcha emas.
 16. **Audit qil.** `/memory` papkani ochadi, `/doctor prompt-audit` ziddiyatli va
-    eskirgan ko'rsatmalarni topadi (CLI v2.1.283+).
+    eskirgan ko'rsatmalarni topadi (CLI v2.1.283+). Qolgan vositalar
+    `memory-mexanika.md` dagi `Tekshirish va audit` bo'limida.
 
 ### Qisqa karta
 
@@ -344,7 +248,7 @@ KEYIN:   hajm -> ziddiyat -> eskirganini o'chir
 
 ---
 
-## 7. Yozuv formati va nomlash
+## 5. Yozuv formati va nomlash
 
 Format erkin bo'lsa, memory bir yildan keyin o'qib bo'lmaydigan holga keladi.
 Shuning uchun yozuvning shakli qat'iy.
@@ -399,13 +303,13 @@ Yozuv **tekshirib bo'ladigan** gap bo'lishi kerak:
 
 | Yomon | Yaxshi |
 |---|---|
-| "Hujjatlar sifatli bo'lsin" | "Har bob oxirida `### Amalda qo'llash` bo'limi bo'ladi" |
+| "Hujjatlar sifatli bo'lsin" | "Har bob oxirida `## N.M Amalda qo'llash` bo'limi bo'ladi" |
 | "Testlarni unutmang" | "Commit'dan oldin `mvn verify` ishlatiladi" |
 | "Foydalanuvchi aniqlikni yaxshi ko'radi" | "Javob birinchi qatorida natija turadi, keyin tafsilot" |
 
 ---
 
-## 8. Hajm budjeti va qattiq chegaralar
+## 6. Hajm budjeti va qattiq chegaralar
 
 Chegaralar taxminiy emas, aniq raqamlar. Ularni bilmaslik memoryning jim
 yo'qolishiga olib keladi.
@@ -431,7 +335,7 @@ yo'qolishiga olib keladi.
 
 ---
 
-## 9. Eskirish, ziddiyat va o'chirish
+## 7. Eskirish, ziddiyat va o'chirish
 
 Memoryning eng katta xavfi to'lib ketish emas, **noto'g'ri bo'lib qolish**.
 Eskirgan yozuv Claude'ni ishonch bilan xato yo'lga boshlaydi, chunki u yozuvni
@@ -469,7 +373,7 @@ Shuning uchun ziddiyat "ustuvorlik bilan hal qilinadi" degan fikr xato. U
 
 ---
 
-## 10. Cloud va lokal sessiya farqi
+## 8. Cloud va lokal sessiya farqi
 
 Bu bo'lim shu repo uchun eng amaliy bo'limi, chunki ish cloud sessiyalarda
 ketmoqda.
@@ -491,7 +395,7 @@ Shuning uchun cloud ish uslubida marshrut o'zgaradi:
    O'sha proyekt repositoriyasida turadi va commit qilinadi.
 2. Sessiyalar orasida saqlanishi kerak bilim va ishning yarim qolgan holati:
    git memory ombori, `memory/<proyekt-slug>/`. Eski `HANDOFF.md` shu vazifani
-   qo'lda bajargan. Keyingi bo'lim shu haqda.
+   qo'lda bajargan. `Git memory ombori` bo'limi shu haqda.
 3. Faqat bitta sessiyaga tegishli narsa: scratchpad, hech qayerga saqlanmaydi.
 
 Subagent uchun ham shu mantiq: asosiy suhbatning auto memory'si subagent'ga
@@ -500,57 +404,7 @@ kontekst **prompt ichida** beriladi, "memoryda bor" deb o'ylab bo'lmaydi.
 
 ---
 
-## 11. Kelajakda inobatga olinadigan narsalar
-
-Quyidagilar vaqt o'tishi bilan memoryni buzadigan narsalar. Har biri bir marta
-hisobga olinsa, keyin muammo bo'lmaydi.
-
-### Mexanika o'zgaradi
-
-- Memory xususiyatlari CLI versiyasiga bog'langan (`modified` maydoni v2.1.214+,
-  `AGENTS.md` o'qish v2.1.277+, `/doctor prompt-audit` v2.1.283+). Mexanika
-  haqidagi yozuvga versiya raqami qo'shiladi, aks holda u bir yildan keyin
-  noto'g'ri bo'ladi.
-- Yo'l va sozlama nomlari ham o'zgarishi mumkin. Shu hujjat o'zi ham audit
-  obyekti: har yirik yangilanishdan keyin tekshiriladi.
-
-### Memory o'zi ishlamay qolishi mumkin
-
-- Auto memory o'chirilgan bo'lishi mumkin (`autoMemoryEnabled`,
-  `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`, self-hosted muhitda default o'chiq).
-  Muhim bilim faqat auto memoryda qolmasin.
-- Background sessiyada yoki Claude Code ichidan ishga tushgan sessiyada toggle
-  qayta yoqilmaydi.
-- `permissions.blockReadsOutsideWorkingDirectories` yoqilgan bo'lsa, repo bergan
-  settings fayli ko'rsatgan memory papkasidan hech narsa o'qilmaydi va yozilmaydi.
-
-### Kontekst va compaction
-
-- Loyiha ildizidagi `CLAUDE.md` compaction'dan keyin qayta o'qiladi va kontekstga
-  qaytariladi. Ichki papkadagi `CLAUDE.md` va `paths:` li rules esa faqat mos
-  fayl ochilganda qaytadi.
-- Faqat suhbatda aytilgan ko'rsatma compaction'dan keyin qolmaydi. Saqlanishi
-  kerak bo'lsa, faylga yoziladi.
-
-### O'sish bilan keladigan muammolar
-
-- Yozuv soni o'sgani sayin index chegaraga yaqinlashadi. Chegara jim ishlaydi:
-  xato chiqmaydi, shunchaki oshgan qator yuklanmaydi.
-- Monorepo'da boshqa jamoaning `CLAUDE.md` fayllari ham ko'tariladi.
-  `claudeMdExcludes` bilan chiqarib tashlanadi.
-- Yozuvlar soni o'sganda ziddiyat ehtimoli ham o'sadi. Davriy audit shart.
-
-### Yangi MD qo'shilganda
-
-- Yangi memory bilan ishlaydigan fayl qoidani **nusxalamaydi**, shu faylga havola
-  qiladi.
-- Havola teskari apostrof ichida beriladi, `@` bilan import qilinmaydi.
-- Qoida o'zgarsa, faqat shu fayl o'zgaradi. Ikkinchi joyda nusxasi bo'lsa,
-  o'zgarish bir joyda qolib ketadi va ziddiyat tug'iladi.
-
----
-
-## 12. Memoryga yozilmaydigan narsalar
+## 9. Memoryga yozilmaydigan narsalar
 
 Darvozadan o'tmaydigan narsalarning aniq ro'yxati. Bu bo'lim "ortiqcha narsa
 saqlanmasin" talabining to'g'ridan-to'g'ri javobi.
@@ -576,33 +430,7 @@ Memoryda bir mavzu bitta joyda yashaydi.
 
 ---
 
-## 13. Tekshirish va audit
-
-Memory "yozdim" bilan tugamaydi. Yozuv yuklanganini va hali to'g'ri turganini
-tekshirish kerak.
-
-| Vosita | Nima qiladi | Qachon |
-|---|---|---|
-| `/context` | sessiyaga qaysi memory fayllar yuklanganini ko'rsatadi | qoida ishlamaganda birinchi qadam |
-| `/memory` | CLAUDE.md, CLAUDE.local.md va auto memory papkasini ochadi, toggle beradi | yozuvni ko'rish va qo'lda tuzatish |
-| `/doctor prompt-audit` | eskirgan, mavjud bo'lmagan faylga havola qiladigan va ziddiyatli ko'rsatmalarni topadi (v2.1.283+) | davriy audit |
-| `/doctor` | commit qilingan `CLAUDE.md` uchun qisqartirish taklif qiladi (v2.1.206+) | fayl uzayib ketganda |
-| `/status` | uzunlik ogohlantirishlarini ko'rsatadi | startda ogohlantirish chiqqanda |
-| `InstructionsLoaded` hook | qaysi fayl qachon va nega yuklanganini log qiladi | `paths:` li rules nosozligini topishda |
-
-### "Claude qoidani bajarmadi" tartibi
-
-1. `/context` - fayl yuklanganmi? Yo'q bo'lsa, boshqa hech narsani tekshirmang,
-   fayl joyi noto'g'ri.
-2. Gap aniqmi? Mavhum ko'rsatma ishlamaydi.
-3. Boshqa qatlamda qarama-qarshi gap bormi?
-4. Ko'rsatma Claude Code o'zi qo'shadigan yo'riqnomaga qarshi chiqmaydimi
-   (masalan commit qoidalari: `includeGitInstructions`, `attribution`).
-5. Shart **majburiy** bo'lsa, u memoryda emas, hook'da bo'lishi kerak.
-
----
-
-## 14. Boshqa MD lar uchun ulanish bloki
+## 10. Boshqa MD lar uchun ulanish bloki
 
 Memory bilan ishlaydigan har qanday fayl quyidagi blokni qo'yadi va memory
 qoidalarini o'zida takrorlamaydi. Blok qisqa, chunki uning vazifasi qoidani
@@ -630,7 +458,7 @@ o'qiladi.
 
 ---
 
-## 15. Git memory ombori: proyekt bo'yicha saqlash
+## 11. Git memory ombori: proyekt bo'yicha saqlash
 
 Auto memory bitta mashinada yashaydi va cloud konteyneri bilan ketadi. Shu repo
 o'sha bo'shliqni to'ldiradi: `memory/` papkasi filtrdan o'tgan bilimni git'da,
@@ -660,7 +488,7 @@ ustiga ikki qadam qo'shiladi:
 
 ---
 
-## 16. Amalda qo'llash
+## 12. Amalda qo'llash
 
 - [ ] Loyiha `CLAUDE.md` da shu faylga bir qatorli havola bor, `@` import yo'q
 - [ ] `/context` ishlatib yuklanadigan memory fayllar ro'yxati bir marta ko'rilgan

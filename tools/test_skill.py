@@ -51,15 +51,23 @@ BARE_DOC_RE = re.compile(
 # Sonar qo'llanmasiga ishlaydigan yo'l: rule yoki sonarqube bobi.
 SONAR_RE = re.compile(r"doc\.sh (?:rule java:|(?:show|outline|checklist) sonarqube\b)")
 
+# references/ havolasi: nisbiy (o'z skilli) va to'liq (istalgan skill).
+LOCAL_REF_RE = re.compile(r"(?<![\w/.-])references/([\w-]+\.md)")
+FULL_REF_RE = re.compile(r"\.claude/skills/([\w-]+)/references/([\w-]+\.md)")
+
 MODEL_RE = re.compile(r"\b(haiku|sonnet|opus|fable)\b")
 # Hook matcher qismlari shu nomlardan bo'lsin: "Taskk" kabi xato jim
 # o'tsa, hook hech qachon ishga tushmaydi.
-HOOK_TOOLS = {"Read", "Bash", "Task", "Agent", "Write", "Edit", "MultiEdit",
-              "NotebookEdit", "Grep", "Glob", "WebFetch", "WebSearch"}
+HOOK_TOOLS = {"Read", "Bash", "PowerShell", "Task", "Agent", "Write", "Edit",
+              "MultiEdit", "NotebookEdit", "Grep", "Glob", "WebFetch",
+              "WebSearch"}
 # Hook skripti o'z asboblarini ushlashi shart: kengaytirish mumkin,
-# tushirib qoldirish yo'q.
+# tushirib qoldirish yo'q. Matcher faqat asbob hodisalarida bor:
+# UserPromptSubmit va Stop uni o'qimaydi, budget.py u yerda hisobni
+# nolga tushirish uchun ulangan.
 HOOK_MUST_MATCH = {"guard": {"Read", "Bash"}, "budget": {"Task", "Agent"},
                    "check_code": {"Write", "Edit"}}
+TOOL_EVENTS = {"PreToolUse", "PostToolUse"}
 
 errors = []
 
@@ -123,11 +131,27 @@ def check(path, kind):
         err(rel, "%d satr, chegara %d: tafsilot references ga chiqarilsin"
             % (lines, MAX_SKILL_LINES))
 
-    # references/ ga havola qilingan fayl mavjudmi
+    # references/ ga havola qilingan fayl mavjudmi. Nisbiy yo'l o'z
+    # skilliga, `.claude/skills/<skill>/references/...` esa o'sha skillga.
     base = os.path.dirname(path)
-    for ref in set(re.findall(r"`?references/([\w-]+\.md)`?", text)):
+    own = os.path.basename(base)
+    linked = set(LOCAL_REF_RE.findall(text))
+    for ref in linked:
         if not os.path.exists(os.path.join(base, "references", ref)):
             err(rel, "references/%s yo'q" % ref)
+    for skill, ref in set(FULL_REF_RE.findall(text)):
+        if not os.path.exists(os.path.join(SKILLS, skill, "references", ref)):
+            err(rel, "skills/%s/references/%s yo'q" % (skill, ref))
+        elif kind == "skill" and skill == own:
+            linked.add(ref)
+
+    # Teskari yo'nalish: SKILL.md tilga olmagan reference faylni model
+    # hech qachon ochmaydi. U jim eskiradi va qoidasi ikki joyda yashaydi.
+    refdir = os.path.join(base, "references")
+    if kind == "skill" and os.path.isdir(refdir):
+        for ref in sorted(os.listdir(refdir)):
+            if ref.endswith(".md") and ref not in linked:
+                err(rel, "references/%s hech qayerdan havola qilinmagan" % ref)
 
 
 def known_refs():
@@ -201,16 +225,24 @@ def check_models(agents):
 
 
 def check_tool_sections(skills):
-    """manguberdi dan boshqa skill `## Asboblar` da doc.sh ni biladi."""
+    """manguberdi dan boshqa skill `## Asboblar` da doc.sh ni biladi.
+
+    Bob jadvali bor skill bo'limni o'qish yo'lini ham beradi: jadval
+    faqat bob nomini aytadi, `doc.sh show` siz model butun bobni ochadi.
+    """
     for path in skills:
         if os.path.basename(os.path.dirname(path)) == "manguberdi":
             continue
         rel = os.path.relpath(path, ROOT)
-        sec = section(open(path, encoding="utf-8").read(), "Asboblar")
+        text = open(path, encoding="utf-8").read()
+        sec = section(text, "Asboblar")
         if sec is None:
             err(rel, "`## Asboblar` bo'limi yo'q: skill asboblarni bilmaydi")
         elif "doc.sh" not in sec:
             err(rel, "`## Asboblar` da doc.sh yo'q")
+        elif (re.search(r"^## [^\n]*bob jadvali", text, re.M | re.I)
+              and "doc.sh show" not in sec):
+            err(rel, "bob jadvali bor, lekin `## Asboblar` da doc.sh show yo'q")
 
 
 def check_hooks():
@@ -223,6 +255,7 @@ def check_hooks():
     except ValueError as exc:
         err(rel, "JSON buzuq: %s" % exc)
         return
+    wired = set()
     for event, groups in hooks.items():
         for group in groups:
             matcher = group.get("matcher", "")
@@ -234,10 +267,15 @@ def check_hooks():
                                          hook.get("command", "")):
                     if not os.path.exists(os.path.join(HERE, script + ".py")):
                         err(rel, "%s: tools/%s.py yo'q" % (event, script))
+                    if event not in TOOL_EVENTS:
+                        continue
+                    wired.add(script)
                     missing = HOOK_MUST_MATCH.get(script, set()) - parts
                     if missing:
                         err(rel, "%s: %s matcher'ida %s yo'q"
                             % (event, script, ", ".join(sorted(missing))))
+    for script in sorted(set(HOOK_MUST_MATCH) - wired):
+        err(rel, "tools/%s.py hech bir asbob hodisasiga ulanmagan" % script)
 
 
 def main():

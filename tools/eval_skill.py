@@ -24,18 +24,33 @@ Har holat uchun uch o'lchov:
             MAX_CHAPTERS + ALWAYS dan oshmaydi.
 va teskari tekshiruvlar: toza faylda shovqin bo'lmasin, "Avval yo'l
 qo'yilgan xatolar" bo'limidagi har tavsif bo'sh yoki `---` bo'lmasin.
+Bir nechta fayl berilgan holat teskari tartibda ham yurgiziladi: marshrut
+fayllar tartibiga bog'liq bo'lmasin.
+
+rules_for har chaqiruvda "o'qildi" belgisini qo'yadi. Belgilar vaqtinchalik
+papkaga yoziladi (GENIUS_STATE_DIR), jonli `.claude/.state` ga sinov
+fayllari tushmaydi.
 
 Kutilgan natijalar implementatsiya bilan birga yozilgan, shuning uchun
 bu avvalambor REGRESSIYA qo'riqchisi: bob ko'chsa, belgi buzilsa yoki
 marshrut suyulsa, shu yerda ko'rinadi. Mutlaq sifat o'lchovi emas.
 """
 
+import atexit
 import os
+import shutil
 import subprocess
 import sys
+import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
+
+# rules_for (u orqali state) import qilinishidan OLDIN: subprocesslar ham
+# shu papkani meros oladi.
+STATE = tempfile.mkdtemp(prefix="genius-state-")
+os.environ["GENIUS_STATE_DIR"] = STATE
+atexit.register(shutil.rmtree, STATE, True)
 sys.path.insert(0, HERE)
 
 from rules_for import ALWAYS, MAX_CHAPTERS  # noqa: E402
@@ -44,10 +59,12 @@ from rules_for import ALWAYS, MAX_CHAPTERS  # noqa: E402
 MAX_ROUTED = MAX_CHAPTERS + len(ALWAYS)
 JAVA = os.path.join("tools", "testdata", "java")
 ENT = os.path.join("tools", "testdata", "entities")
+SIG = os.path.join("tools", "testdata", "rules_for")
 
 # (nom, fayl, kutilgan boblar, kutilgan topilmalar, CHIQMASLIGI kerak boblar)
 # Oxirgi ustun taqiqlangan boblar: pul bilan ishlaydigan faylga
 # injection review bobi chiqsa, bu marshrut suyulganini bildiradi.
+# Fayl o'rnida tuple bo'lsa, rules_for hammasini birga oladi.
 CASES = [
     ("tranzaksiya ichida HTTP", os.path.join(JAVA, "Bad.java"),
      [("architect", "19"), ("code-review", "19"),
@@ -90,22 +107,48 @@ CASES = [
      [("code-review", "33"), ("sonarqube", "39")],
      [],
      [("clean-code", "2"), ("code-review", "29")]),
+
+    ("repository", os.path.join(SIG, "OrderRepository.java"),
+     [("patterns", "9"), ("code-review", "24")],
+     [],
+     [("clean-code", "17")]),
+
+    ("konfiguratsiya", os.path.join(SIG, "application.yml"),
+     [("architect", "27"), ("code-review", "21")],
+     [],
+     [("clean-code", "2")]),
+
+    ("migratsiya", os.path.join(SIG, "db", "migration", "V2__add_status.sql"),
+     [("architect", "33"), ("code-review", "25")],
+     [],
+     [("clean-code", "2")]),
+
+    ("ikki fayl", (os.path.join(JAVA, "Bad.java"),
+                   os.path.join(JAVA, "Insecure.java")),
+     [("code-review", "29"), ("code-review", "31"), ("code-review", "32"),
+      ("sonarqube", "26")],
+     [],
+     []),
 ]
 
 # Toza fayl: marshrut bo'lsin, lekin mexanik topilma bo'lmasin.
 CLEAN = [os.path.join(JAVA, "Good.java"), os.path.join(ENT, "Customer.java")]
 
 
-def rules_for(path):
+def paths_of(case_path):
+    return case_path if isinstance(case_path, tuple) else (case_path,)
+
+
+def rules_for(*paths):
     proc = subprocess.run(
-        [sys.executable, os.path.join(HERE, "rules_for.py"), path],
+        [sys.executable, os.path.join(HERE, "rules_for.py")] + list(paths),
         capture_output=True, text=True, cwd=ROOT)
     return proc.stdout
 
 
-def routed(output):
-    """Chiqishdagi "# Tegishli boblar" ro'yxati."""
-    out, inside = set(), False
+def routed_list(output):
+    """Chiqishdagi "# Tegishli boblar" ro'yxati, chiqish tartibida."""
+    out, inside = [], False
     for line in output.split("\n"):
         if line.startswith("# Tegishli boblar"):
             inside = True
@@ -115,8 +158,12 @@ def routed(output):
                 break
             parts = line.split()
             if len(parts) >= 2 and parts[1].isdigit():
-                out.add((parts[0], parts[1]))
+                out.append((parts[0], parts[1]))
     return out
+
+
+def routed(output):
+    return set(routed_list(output))
 
 
 def findings(output):
@@ -150,18 +197,22 @@ def bad_feedback(output):
 
 
 def main():
-    missing = [c[1] for c in CASES if not os.path.exists(os.path.join(ROOT, c[1]))]
+    missing = [p for c in CASES for p in paths_of(c[1])
+               if not os.path.exists(os.path.join(ROOT, p))]
     if missing:
         print("sinov fayllari yo'q: %s" % ", ".join(missing))
         return 1
 
     route_hit = route_total = find_hit = find_total = 0
     prec_ok = prec_total = 0
-    rows, wide, feedback = [], [], set()
+    rows, wide, feedback, order = [], [], set(), []
 
     for name, path, want_ch, want_find, forbid_ch in CASES:
-        out = rules_for(path)
+        paths = paths_of(path)
+        out = rules_for(*paths)
         got_ch = routed(out)
+        if len(paths) > 1 and routed_list(rules_for(*paths[::-1])) != routed_list(out):
+            order.append(name)
         found = "\n".join(findings(out))
         feedback.update(bad_feedback(out))
         if len(got_ch) > MAX_ROUTED:
@@ -211,6 +262,8 @@ def main():
     for name, count in wide:
         print("XATO %s: %d bob, chegara %d (marshrut suyulgan)"
               % (name, count, MAX_ROUTED))
+    for name in order:
+        print("XATO %s: fayllar tartibi almashsa marshrut o'zgaradi" % name)
 
     print("\n== Natija ==\n")
     r = 100 * route_hit / route_total if route_total else 0
@@ -222,9 +275,11 @@ def main():
     print("  marshrut chegarasida    : %3d/%-3d  (<= %d bob)"
           % (len(CASES) - len(wide), len(CASES), MAX_ROUTED))
     print("  shovqin                 : %d" % noise)
+    print("  tartibga bog'liq emas   : %s" % ("ha" if not order else
+                                            ", ".join(order)))
 
     failed = (route_hit < route_total or find_hit < find_total
-              or prec_ok < prec_total or noise or wide)
+              or prec_ok < prec_total or noise or wide or order)
     print("\n%s" % ("Hammasi joyida." if not failed
                     else "Yetishmovchilik bor, yuqoriga qarang."))
     return 1 if failed else 0

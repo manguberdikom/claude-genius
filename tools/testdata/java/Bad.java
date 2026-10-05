@@ -37,5 +37,5 @@ public class Bad {
     }
 
     // Izohdagi System.out.println va "catch (Exception e) {}" sanalmasligi kerak.
-    private String note = "printStackTrace() satr ichida";
+    private String note = "e.printStackTrace() satr ichida";
 }

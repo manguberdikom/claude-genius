@@ -8,14 +8,16 @@
   uni yurgizishga urinishni to'sadi: taqiq o'z o'rnida qoladi, bu fayl esa
   o'rnatuvchi, ish asbobi emas.
 
-  Ochiq aytilsin: bu skript yozilgan muhitda SINALMAGAN, chunki u yerda
-  PowerShell yo'q. Aynan shu sabab repo uni ish uchun taqiqlaydi. Shuning
-  uchun birinchi yurgizish quruq o'tadi: -Apply bermaguncha sozlamaga
-  tegilmaydi. Quruq yurish ham Python ni haqiqatan chaqiradi va skillni
-  vaqtinchalik papkada yig'ib sinaydi, keyin uni o'chiradi: nosozlik hech
-  narsa o'chmasidan oldin chiqadi. Avval ro'yxatni o'qing.
+  Skript yozilgan muhitda PowerShell yo'q, shuning uchun uni CI sinaydi:
+  windows-latest da powershell (5.1) va pwsh (7) bilan quruq yurish va
+  -Apply. -Update CI da yurmaydi. Baribir birinchi yurgizish quruq
+  o'tadi: -Apply bermaguncha sozlamaga tegilmaydi. Quruq yurish ham
+  Python ni haqiqatan chaqiradi va skillni vaqtinchalik papkada yig'ib
+  sinaydi, keyin uni o'chiradi: nosozlik hech narsa o'chmasidan oldin
+  chiqadi. Avval ro'yxatni o'qing.
 
-  Nima o'chiriladi (global, $HOME\.claude):
+  Nima o'chiriladi (global, $HOME\.claude; -Update da faqat manguberdi
+  birliklari, pastda):
     settings.json, settings.local.json, CLAUDE.md,
     skills\, agents\, commands\, plugins\, hooks\, rules\, output-styles\
   Nima QOLADI:
@@ -38,6 +40,14 @@
 .PARAMETER Apply
   Haqiqatan bajarish. Bersiz faqat ro'yxat chiqadi.
 
+.PARAMETER Update
+  Yangilash (git pull dan keyin). Hamma sozlama tozalanmaydi: faqat
+  skills\manguberdi, olti aktyor fayli va settings.json dagi klon tools\
+  ga ishora qilgan hook va ruxsatlar zaxiralanib almashtiriladi. Boshqa
+  skill, agent, CLAUDE.md va sozlama yozuvlari joyida qoladi.
+  Birlashtirishni install\merge_settings.py qiladi. -Project va
+  -IncludeAuth bilan birga berilmaydi.
+
 .PARAMETER IncludeAuth
   $HOME\.claude.json ham zaxiralanib o'chiriladi: user MCP serverlar,
   proyekt trust va onboarding yo'qoladi. Login saqlanadi, chunki token
@@ -48,11 +58,19 @@
   Bo'sh bo'lmagan papka rad etiladi: avvalgi zaxira ustidan yozilmaydi.
 
 .EXAMPLE
+  Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
   .\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius
-  Nima bo'lishini ko'rsatadi, sozlamaga tegmaydi.
+  Nima bo'lishini ko'rsatadi, sozlamaga tegmaydi. Birinchi qator skript
+  yurgizishga faqat shu oyna uchun ruxsat beradi.
 
 .EXAMPLE
+  Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
   .\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius -Apply
+
+.EXAMPLE
+  Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+  .\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius -Update -Apply
+  git pull dan keyin faqat manguberdi birliklarini almashtiradi.
 #>
 
 [CmdletBinding()]
@@ -60,6 +78,7 @@ param(
   [Parameter(Mandatory = $true)][string]$GeniusPath,
   [string]$Project = "",
   [switch]$Apply,
+  [switch]$Update,
   [switch]$IncludeAuth,
   [string]$BackupTo = ""
 )
@@ -147,6 +166,12 @@ function Find-Python {
 
 # --- 1. Manbani tekshirish -------------------------------------------------
 
+# -Update faqat o'z birliklarini almashtiradi, -Project va -IncludeAuth esa
+# to'liq tozalashning qismi: birga berilsa qaysi biri ustun ekani noaniq.
+if ($Update -and ($Project -or $IncludeAuth)) {
+  Fail "-Update bilan -Project yoki -IncludeAuth berilmaydi: ular to'liq tozalash uchun."
+}
+
 if ($env:CLAUDE_CONFIG_DIR) {
   Fail ("CLAUDE_CONFIG_DIR o'rnatilgan ($env:CLAUDE_CONFIG_DIR): Claude Code " +
         "sozlamani o'sha yerdan o'qiydi, skript esa $ClaudeDir ni tozalaydi. " +
@@ -169,6 +194,7 @@ $Required = @(
   'tools\build_index.py', 'tools\check_docs.py', 'install\rewrite_paths.py',
   'docs\manifest.json', '.claude\skills\manguberdi\SKILL.md'
 )
+if ($Update) { $Required += 'install\merge_settings.py' }
 foreach ($rel in $Required) {
   if (-not (Test-Path -LiteralPath (Join-Path $GeniusPath $rel))) {
     Fail "klon to'liq emas, yo'q: $rel"
@@ -210,19 +236,37 @@ if (-not $PythonExe) {
 }
 
 # doc.sh bash skripti va qidiruv qatlamining hammasi unga tayanadi.
-# Windows da bash kafolatlanmagan: Git for Windows yoki WSL bilan keladi.
-$BashCmd = Get-Command 'bash' -ErrorAction SilentlyContinue
-$BashExe = if ($BashCmd) { $BashCmd.Source } else { $null }
-if (-not $BashExe) {
-  foreach ($candidate in @(
-      "$env:ProgramFiles\Git\bin\bash.exe",
-      "${env:ProgramFiles(x86)}\Git\bin\bash.exe",
-      "$env:LOCALAPPDATA\Programs\Git\bin\bash.exe")) {
-    if ($candidate -and (Test-Path -LiteralPath $candidate)) {
-      $BashExe = $candidate
-      break
-    }
+# Windows da bash kafolatlanmagan: Git for Windows bilan keladi. Git ning
+# odatiy papkalari PATH dan oldin qaraladi, chunki Claude Code ning Bash
+# vositasi ham Git Bash. System32 dagi bash.exe WSL ishga tushirgichi
+# (WindowsApps dagisi uning yorlig'i): u C:\ yo'llarini boshqa fayl
+# tizimida ochadi, shuning uchun bash hisoblanmaydi.
+$BashExe = $null
+foreach ($candidate in @(
+    "$env:ProgramFiles\Git\bin\bash.exe",
+    "${env:ProgramFiles(x86)}\Git\bin\bash.exe",
+    "$env:LOCALAPPDATA\Programs\Git\bin\bash.exe")) {
+  if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+    $BashExe = $candidate
+    break
   }
+}
+if (-not $BashExe) {
+  $BashExe = Get-Command 'bash' -CommandType Application -All -ErrorAction SilentlyContinue |
+    Where-Object { $_.Source -notmatch '\\(System32|WindowsApps)\\bash\.exe$' } |
+    Select-Object -First 1 -ExpandProperty Source
+}
+
+# Git for Windows odatda core.autocrlf=true bilan klonlaydi va doc.sh CRLF
+# bilan yoziladi. Bash uni birinchi qatordayoq to'xtatadi (set: pipefail:
+# invalid option name) va qidiruv jim ishlamay qoladi. Bash hali yo'q
+# bo'lsa ham rad etiladi: keyin o'rnatilganda xuddi shu yiqiladi.
+$docSh = Join-Path $toolsDir 'doc.sh'
+if ([IO.File]::ReadAllText($docSh).Contains("`r`n")) {
+  Fail ("tools\doc.sh CRLF bilan olingan, bash uni yurgizmaydi. Yechim: " +
+        "$docSh ni o'chirib 'git -C `"$GeniusPath`" -c core.autocrlf=false " +
+        "checkout -- tools/doc.sh', yoki klonni 'git clone -c " +
+        "core.autocrlf=false' bilan qayta oling. Hech narsa o'chmadi.")
 }
 
 # ~/.claude.json dagi user scope MCP serverlar har proyektda ishlaydi va
@@ -245,7 +289,8 @@ Say "Python: $PythonExe"
 Say ("Bash  : " + $(if ($BashExe) { $BashExe } else { "TOPILMADI" }))
 Say "Global: $ClaudeDir"
 if ($Project) { Say "Proyekt: $Project" }
-Say ("Rejim : " + $(if ($Apply) { 'BAJARILADI' } else { 'quruq yurish (-Apply bermadingiz)' }))
+Say ("Rejim : " + $(if ($Apply) { 'BAJARILADI' } else { 'quruq yurish (-Apply bermadingiz)' }) +
+     $(if ($Update) { ', yangilash (-Update)' } else { '' }))
 
 # Managed sozlama hammadan ustun: skript unga tegmaydi, lekin u hooklarni
 # o'chirib qo'ysa o'rnatish jim ishlamaydi.
@@ -264,8 +309,8 @@ if (-not $BashExe) {
   Say "  tools\doc.sh bash skripti, qidiruv qatlamining hammasi unga tayanadi:"
   Say "  find, show, rule, checklist, outline. Usiz skill qoida matnini"
   Say "  o'qiy olmaydi, faqat hooklar ishlaydi."
-  Say "  Yechim: Git for Windows o'rnating (https://git-scm.com/download/win)"
-  Say "  yoki WSL dan bash bering, keyin shu skriptni qayta yurgizing."
+  Say "  Yechim: Git for Windows o'rnating (https://git-scm.com/download/win),"
+  Say "  keyin shu skriptni qayta yurgizing. WSL dagi bash hisoblanmaydi."
   Say ""
 }
 
@@ -282,8 +327,14 @@ if (-not $BashExe) {
 
 $skillSrc = Join-Path $GeniusPath '.claude\skills\manguberdi'
 $rewriter = Join-Path $GeniusPath 'install\rewrite_paths.py'
-$bashArg = if ($BashExe) { $BashExe.Replace('\', '/') } else { 'bash' }
+$merger = Join-Path $GeniusPath 'install\merge_settings.py'
+# Skill matniga topilgan to'liq yo'l emas, `bash` nomi yoziladi: Claude
+# Code ning Bash vositasi Git Bash ichida yuradi va u yerda `bash` o'sha
+# o'rnatishning /usr/bin/bash ga tushadi. $BashExe faqat shu skriptning
+# o'z ogohlantirishi va tekshiruvi uchun.
+$bashArg = 'bash'
 $pyArg = $PythonExe.Replace('\', '/')
+$Utf8NoBom = New-Object Text.UTF8Encoding $false
 
 $Stage = Join-Path ([IO.Path]::GetTempPath()) ("manguberdi-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
 $stageSkill = Join-Path $Stage 'skills\manguberdi'
@@ -292,7 +343,7 @@ $stageAgents = Join-Path $Stage 'agents'
 Say ""
 Say "0. Sinov yig'imi -> $Stage"
 Step "python: $pyArg"
-Step "bash  : $bashArg"
+Step "bash  : $bashArg (skill matnida shu nom)"
 
 New-Item -ItemType Directory -Path (Split-Path -Parent $stageSkill) -Force | Out-Null
 New-Item -ItemType Directory -Path $stageAgents -Force | Out-Null
@@ -327,95 +378,11 @@ try {
 } catch { Fail "ruxsat ro'yxati o'qilmadi: $($r.Out)" }
 Step "ruxsat qoidasi: $($Allow.Count) ta"
 
-# Indeks git da yo'q: toza klonda bo'lim taklifi hooki usiz jim bo'sh.
-# U klonga yoziladi, shuning uchun faqat -Apply bilan.
-$sections = Join-Path $GeniusPath 'index\sections.tsv'
-if ($Apply) {
-  $r = Invoke-Py @((Join-Path $toolsDir 'build_index.py'))
-  if ($r.Code -ne 0 -or -not (Test-Path -LiteralPath $sections)) {
-    Fail "indeks yasalmadi, hech narsa o'chmadi: $($r.Out)"
-  }
-  Step "indeks yasaldi: $(Split-Path -Parent $sections)"
-} else {
-  Step "indeks: $(Split-Path -Parent $sections) (-Apply bilan yasaladi)"
-}
-
-# --- 3. Zaxira ------------------------------------------------------------
-
-Say ""
-Say "1. Zaxira -> $BackupTo"
-
-$ToRemove = @()
-foreach ($name in $ConfigItems) {
-  $path = Join-Path $ClaudeDir $name
-  if (Test-Path -LiteralPath $path) { $ToRemove += $path }
-}
-if ($IncludeAuth -and (Test-Path -LiteralPath $AuthFile)) { $ToRemove += $AuthFile }
-if ($projClaude) {
-  if (Test-Path -LiteralPath $projClaude) { $ToRemove += $projClaude }
-  else { Step "proyektda .claude yo'q: $Project" }
-}
-
-if ($ToRemove.Count -eq 0) {
-  Step "zaxiraga narsa yo'q, sozlama topilmadi"
-} else {
-  foreach ($path in $ToRemove) { Step "$path" }
-  if ($Apply) {
-    New-Item -ItemType Directory -Path $BackupTo -Force | Out-Null
-    foreach ($path in $ToRemove) {
-      $leaf = Split-Path -Leaf $path
-      $parent = Split-Path -Leaf (Split-Path -Parent $path)
-      $dest = Join-Path $BackupTo "$parent--$leaf"
-      Copy-Item -LiteralPath $path -Destination $dest -Recurse -Force
-    }
-    Step "zaxira yozildi: $($ToRemove.Count) birlik"
-  }
-}
-
-# --- 4. Tozalash ---------------------------------------------------------
-
-Say ""
-Say "2. Tozalash"
-
-foreach ($path in $ToRemove) {
-  Step "o'chiriladi: $path"
-  if ($Apply) { Remove-Item -LiteralPath $path -Recurse -Force }
-}
-if (-not $IncludeAuth) {
-  Step "qoladi: $AuthFile (user MCP serverlar, proyekt trust, onboarding; -IncludeAuth bilan o'chadi)"
-  foreach ($n in $UserMcp) {
-    Step "qoladi: user MCP server $n (olib tashlash: claude mcp remove $n -s user)"
-  }
-}
-Step "qoladi: .credentials.json (kirish tokeni), projects\, todos\, history.jsonl (suhbat tarixi)"
-
-# --- 5. O'rnatish --------------------------------------------------------
-
-Say ""
-Say "3. manguberdi o'rnatilmoqda"
-
-$skillDst = Join-Path $ClaudeDir 'skills\manguberdi'
-$agentsDst = Join-Path $ClaudeDir 'agents'
-
-Step "skill  -> $skillDst"
-Step "aktyorlar -> $agentsDst"
-foreach ($file in @(Get-ChildItem -LiteralPath $stageAgents -Filter '*.md')) {
-  Step "  $($file.BaseName)"
-}
-if ($Apply) {
-  New-Item -ItemType Directory -Path (Split-Path -Parent $skillDst) -Force | Out-Null
-  Copy-Item -LiteralPath $stageSkill -Destination $skillDst -Recurse -Force
-  New-Item -ItemType Directory -Path $agentsDst -Force | Out-Null
-  foreach ($file in @(Get-ChildItem -LiteralPath $stageAgents -Filter '*.md')) {
-    Copy-Item -LiteralPath $file.FullName -Destination $agentsDst -Force
-  }
-}
-Remove-Item -LiteralPath $Stage -Recurse -Force
-$Stage = $null
-
-# --- 6. Sozlama ----------------------------------------------------------
-
-# Hook yo'llari MUTLAQ bo'ladi. Repodagi settings.json $CLAUDE_PROJECT_DIR
+# Sozlama shu yerda yig'iladi, yoziladi esa 6-bo'limda: -Update da eski
+# settings.json bilan birlashtirish shu yerda quruq sinaladi va buzuq fayl
+# hech narsa o'chmasidan oldin chiqadi.
+#
+# Hook yo'llari MUTLAQ bo'ladi. Repodagi settings.json ${CLAUDE_PROJECT_DIR}
 # ishlatadi, u esa faol proyektni ko'rsatadi; global o'rnatishda asboblar
 # boshqa papkada turadi, shuning uchun yo'l aynan shu klonga bog'lanadi.
 function HookCmd([string]$script) {
@@ -426,6 +393,8 @@ function HookCmd([string]$script) {
 # proyektdan so'rovsiz o'qiydi. Asbob buyruqlari esa $Allow dan.
 # GENIUS_PYTHON: doc.sh indeksni qayta yasaganda nom bo'yicha qidirmasdan
 # aynan sinalgan Python ni oladi (python3 nomi Store stub'iga tushadi).
+# Hook jadvali repodagi .claude/settings.json bilan bir xil: biri
+# o'zgarsa, ikkinchisi qo'lda moslanadi.
 $settings = [ordered]@{
   '$schema' = 'https://json.schemastore.org/claude-code-settings.json'
   bashOutputMaxChars = 12000
@@ -440,6 +409,7 @@ $settings = [ordered]@{
         [ordered]@{
           type = 'command'; command = (HookCmd 'suggest_sections.py')
           timeout = 10; statusMessage = "Mos bo'limlar qidirilmoqda" },
+        [ordered]@{ type = 'command'; command = (HookCmd 'budget.py'); timeout = 10 },
         [ordered]@{
           type = 'command'; command = ((HookCmd 'handoff.py') + ' --hook')
           timeout = 10; statusMessage = "Kontekst o'lchanmoqda" }) }
@@ -465,18 +435,151 @@ $settings = [ordered]@{
   }
 }
 
+# Windows PowerShell 5.1 da Set-Content -Encoding UTF8 BOM yozadi, Claude
+# Code va Python json.load esa BOM li faylda yiqiladi. Shuning uchun har
+# JSON yozuvi BOM siz UTF-8 bilan.
 $settingsPath = Join-Path $ClaudeDir 'settings.json'
+$stageSettings = Join-Path $Stage 'settings.json'
+$json = $settings | ConvertTo-Json -Depth 10
+[IO.File]::WriteAllText($stageSettings, $json, $Utf8NoBom)
+
+# -Update: settings.json ga yozmasdan, nima almashishini aytadi. Faqat
+# buyrug'i shu klonning tools\ papkasiga ishora qilgan yozuvlar almashadi.
+if ($Update) {
+  $r = Invoke-Py @($merger, $settingsPath, $stageSettings, '--root', $GeniusPath)
+  if ($r.Code -ne 0) { Fail "settings.json birlashtirilmadi, hech narsa o'chmadi: $($r.Out)" }
+  Step $r.Out
+}
+
+# Indeks git da yo'q: toza klonda bo'lim taklifi hooki usiz jim bo'sh.
+# U klonga yoziladi, shuning uchun faqat -Apply bilan.
+$sections = Join-Path $GeniusPath 'index\sections.tsv'
+if ($Apply) {
+  $r = Invoke-Py @((Join-Path $toolsDir 'build_index.py'))
+  if ($r.Code -ne 0 -or -not (Test-Path -LiteralPath $sections)) {
+    Fail "indeks yasalmadi, hech narsa o'chmadi: $($r.Out)"
+  }
+  Step "indeks yasaldi: $(Split-Path -Parent $sections)"
+} else {
+  Step "indeks: $(Split-Path -Parent $sections) (-Apply bilan yasaladi)"
+}
+
+# --- 3. Zaxira ------------------------------------------------------------
+
+Say ""
+Say "1. Zaxira -> $BackupTo"
+
+# $ToRemove o'chiriladi, $ToBackup zaxiraga olinadi. -Update da ular farq
+# qiladi: settings.json zaxiralanadi, lekin o'chmaydi, 6-bo'limda joyida
+# birlashtiriladi.
+$ToRemove = @()
+if ($Update) {
+  $own = @(Join-Path $ClaudeDir 'skills\manguberdi')
+  foreach ($actor in $Actors) { $own += (Join-Path $ClaudeDir "agents\$actor.md") }
+  foreach ($path in $own) {
+    if (Test-Path -LiteralPath $path) { $ToRemove += $path }
+  }
+  $ToBackup = @($ToRemove)
+  if (Test-Path -LiteralPath $settingsPath) { $ToBackup += $settingsPath }
+} else {
+  foreach ($name in $ConfigItems) {
+    $path = Join-Path $ClaudeDir $name
+    if (Test-Path -LiteralPath $path) { $ToRemove += $path }
+  }
+  if ($IncludeAuth -and (Test-Path -LiteralPath $AuthFile)) { $ToRemove += $AuthFile }
+  if ($projClaude) {
+    if (Test-Path -LiteralPath $projClaude) { $ToRemove += $projClaude }
+    else { Step "proyektda .claude yo'q: $Project" }
+  }
+  $ToBackup = @($ToRemove)
+}
+
+if ($ToBackup.Count -eq 0) {
+  Step "zaxiraga narsa yo'q, sozlama topilmadi"
+} else {
+  foreach ($path in $ToBackup) { Step "$path" }
+  if ($Apply) {
+    New-Item -ItemType Directory -Path $BackupTo -Force | Out-Null
+    foreach ($path in $ToBackup) {
+      $leaf = Split-Path -Leaf $path
+      $parent = Split-Path -Leaf (Split-Path -Parent $path)
+      $dest = Join-Path $BackupTo "$parent--$leaf"
+      Copy-Item -LiteralPath $path -Destination $dest -Recurse -Force
+    }
+    Step "zaxira yozildi: $($ToBackup.Count) birlik"
+  }
+}
+
+# --- 4. Tozalash ---------------------------------------------------------
+
+Say ""
+if ($Update) { Say "2. Almashtirish" } else { Say "2. Tozalash" }
+
+foreach ($path in $ToRemove) {
+  if ($Update) { Step "almashtiriladi: $path" } else { Step "o'chiriladi: $path" }
+  if ($Apply) { Remove-Item -LiteralPath $path -Recurse -Force }
+}
+if ($Update) {
+  Step "qoladi: boshqa skill va agentlar, CLAUDE.md, plugins\, settings.json dagi boshqa yozuvlar"
+}
+if (-not $IncludeAuth) {
+  Step "qoladi: $AuthFile (user MCP serverlar, proyekt trust, onboarding; -IncludeAuth bilan o'chadi)"
+  foreach ($n in $UserMcp) {
+    Step "qoladi: user MCP server $n (olib tashlash: claude mcp remove $n -s user)"
+  }
+}
+Step "qoladi: .credentials.json (kirish tokeni), projects\, todos\, history.jsonl (suhbat tarixi)"
+
+# --- 5. O'rnatish --------------------------------------------------------
+
+Say ""
+Say "3. manguberdi o'rnatilmoqda"
+
+$skillDst = Join-Path $ClaudeDir 'skills\manguberdi'
+$agentsDst = Join-Path $ClaudeDir 'agents'
+
+Step "skill  -> $skillDst"
+Step "aktyorlar -> $agentsDst"
+foreach ($file in @(Get-ChildItem -LiteralPath $stageAgents -Filter '*.md')) {
+  Step "  $($file.BaseName)"
+}
+if ($Apply) {
+  # Copy-Item mavjud papkaga ko'chirsa ichida ikkinchi manguberdi\ ochadi.
+  # Shuning uchun eski skill avval o'chiriladi, keyin nusxalanadi.
+  if (Test-Path -LiteralPath $skillDst) { Remove-Item -LiteralPath $skillDst -Recurse -Force }
+  New-Item -ItemType Directory -Path (Split-Path -Parent $skillDst) -Force | Out-Null
+  Copy-Item -LiteralPath $stageSkill -Destination $skillDst -Recurse -Force
+  New-Item -ItemType Directory -Path $agentsDst -Force | Out-Null
+  foreach ($file in @(Get-ChildItem -LiteralPath $stageAgents -Filter '*.md')) {
+    Copy-Item -LiteralPath $file.FullName -Destination $agentsDst -Force
+  }
+}
+
+# --- 6. Sozlama ----------------------------------------------------------
+
 Say ""
 Say "4. Sozlama -> $settingsPath"
-Step "olti hook: bo'lim taklifi, kontekst o'lchovi, qo'riqchi, budjet, kod tekshiruvi, sarf hisobi"
+Step ("yetti hook: bo'lim taklifi, budjetni nolga tushirish, kontekst o'lchovi, " +
+      "qo'riqchi, aktyor budjeti, kod tekshiruvi, sarf hisobi")
 Step "yo'llar mutlaq, manba: $toolsDir"
 Step "ruxsat: klon additionalDirectories da, $($Allow.Count) ta asbob buyrug'i oldindan ruxsatli"
+if ($Update) { Step "birlashtiriladi: klon tools\ papkasiga ishora qilmagan hook va ruxsatlar saqlanadi" }
 
 if ($Apply) {
   New-Item -ItemType Directory -Path $ClaudeDir -Force | Out-Null
-  $json = $settings | ConvertTo-Json -Depth 10
-  Set-Content -LiteralPath $settingsPath -Value $json -Encoding UTF8
+  if ($Update) {
+    $r = Invoke-Py @($merger, $settingsPath, $stageSettings, '--root', $GeniusPath, '--yoz')
+    if ($r.Code -ne 0) {
+      Fail ("settings.json birlashtirilmadi va o'zgarmadi, skill va aktyorlar esa " +
+            "yangilandi. Zaxira: $BackupTo. $($r.Out)")
+    }
+    Step $r.Out
+  } else {
+    [IO.File]::WriteAllText($settingsPath, $json, $Utf8NoBom)
+  }
 }
+Remove-Item -LiteralPath $Stage -Recurse -Force
+$Stage = $null
 
 # --- 7. Tekshirish -------------------------------------------------------
 

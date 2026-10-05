@@ -21,6 +21,6 @@ __pycache__/
 # tools/usage.py: kunlik token sarfi, mashinaga tegishli
 .claude/usage/
 
-# shaxsiy, commit qilinmaydi (memory-protocol.md: Qatlamlar va yuklanish tartibi)
+# shaxsiy, commit qilinmaydi (memory-mexanika.md: Qatlamlar va yuklanish tartibi)
 CLAUDE.local.md
 .claude/settings.local.json

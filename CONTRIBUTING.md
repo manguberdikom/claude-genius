@@ -23,7 +23,7 @@ kirmaydi va qo'lda tahrir qilinmaydi.
 ```markdown
 <!-- doc: patterns | chapter: 7 | part:  -->
 
-[Hujjat nomi](../../README.md) / [Dizayn patternlar](README.md)
+[Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
 # 7. Bob sarlavhasi (English Title)
 
@@ -36,12 +36,19 @@ Bob matni.
 
 ---
 
-[&larr; Oldingi](06-...md) · [Mundarija](README.md) · [Keyingi &rarr;](08-...md)
+[&larr; 6. Oldingi bob sarlavhasi](06-...md) · [Mundarija](README.md) · [8. Keyingi bob sarlavhasi &rarr;](08-...md)
 ```
 
 Metadata izohi, breadcrumb, H1 va navigatsiya footer majburiy.
-`tools/check_docs.py` metadata izohini, footer oxirida turishini va yopish
-bo'limi borligini tekshiradi; breadcrumb va H1 hozircha qo'lda kuzatiladi.
+Breadcrumb ning birinchi havolasi ildiz README ga, ya'ni oltita hujjat
+ro'yxatiga olib boradi, shuning uchun u har bobda `Barcha hujjatlar` deb
+yoziladi. Footer havolasida qo'shni bobning raqami va to'liq o'zbekcha
+sarlavhasi turadi.
+
+`tools/check_docs.py` shaklni tekshiradi: metadata izohi manifest bilan
+mos, breadcrumb 3-qatorda, H1 5-qatorda va manifest sarlavhasi bilan bir
+xil, bo'lim soni manifest, README va `<summary>` bilan mos, footer
+oxirida turadi va qo'shni boblarga ishora qiladi.
 
 ## Til
 
@@ -65,8 +72,10 @@ Har hujjatning o'z bob-yopish konvensiyasi bor; buzmang:
 | `docs/clean-code/` | `## N.M Amalda qo'llash` |
 | `docs/code-review/` | `## N.M Amalda qo'llash` |
 
-Loyiha qoidasi: har bob `Amalda qo'llash` yoki `Arxitektor nazorat ro'yxati`
-bilan tugaydi. `tools/check_docs.py` buni tekshiradi.
+Loyiha qoidasi: har bobning oxirgi `##` bo'limi `Amalda qo'llash` yoki
+`Arxitektor nazorat ro'yxati` bo'ladi. `tools/check_docs.py` buni
+tekshiradi: yopish bo'limi borligi yetmaydi, undan keyin boshqa `##`
+bo'lim kelmaydi.
 
 Bo'lim sarlavhasi doim raqamli H2 (`## N.M ...`) bo'ladi.
 `tools/check_docs.py` yopish bo'limini shu shaklda qidiradi, indeks faqat
