@@ -1,0 +1,11 @@
+> Task :test
+
+MoneyTest > addsAmounts() FAILED
+    org.opentest4j.AssertionFailedError: expected: <10.00> but was: <10.0>
+        at app//org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+        at app//org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1152)
+        at app//shop.domain.MoneyTest.addsAmounts(MoneyTest.java:24)
+
+2 tests completed, 1 failed
+
+> Task :test FAILED

@@ -1,0 +1,3 @@
+// schema_from_entities sinovi: loyiha ildizi shu fayl bilan topiladi,
+// migratsiya esa src/main/resources/db/migration dan o'qiladi.
+rootProject.name = 'migration-fixture'

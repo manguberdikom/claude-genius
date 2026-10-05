@@ -1,0 +1,18 @@
+[INFO] Running shop.domain.OrderServiceTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.4 s
+[INFO] Running shop.web.OrderControllerTest
+[ERROR] Tests run: 3, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 1.2 s <<< FAILURE!
+[ERROR] shop.web.OrderControllerTest.createsOrder:58 expected: <201> but was: <500>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1152)
+	at shop.web.OrderControllerTest.createsOrder(OrderControllerTest.java:58)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+[ERROR] shop.web.OrderControllerTest.rejectsEmptyCart:71 expected: <400> but was: <500>
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1152)
+	at shop.web.OrderControllerTest.rejectsEmptyCart(OrderControllerTest.java:71)
+[ERROR] shop.repo.OrderRepositoryTest.findsByCustomer:33
+	java.lang.NullPointerException: Cannot invoke "shop.domain.Customer.getId()" because "customer" is null
+	at shop.repo.OrderRepositoryTest.findsByCustomer(OrderRepositoryTest.java:33)
+	at org.springframework.test.context.junit.jupiter.SpringExtension.invoke(SpringExtension.java:217)
+[ERROR] Tests run: 24, Failures: 3, Errors: 0, Skipped: 1
+[INFO] BUILD FAILURE

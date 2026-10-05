@@ -1,0 +1,13 @@
+> Task :test FAILED
+
+shop.domain.MoneyTest > addsAmounts FAILED
+    org.opentest4j.AssertionFailedError: expected: <10.00> but was: <10.0>
+        at app//org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1152)
+        at app//shop.domain.MoneyTest.addsAmounts(MoneyTest.java:24)
+
+shop.domain.MoneyTest > rejectsNegative FAILED
+    java.lang.IllegalArgumentException: amount must not be negative
+        at app//shop.domain.Money.<init>(Money.java:17)
+        at app//shop.domain.MoneyTest.rejectsNegative(MoneyTest.java:31)
+
+2 tests completed, 2 failed

@@ -1,0 +1,156 @@
+name: docs
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Hujjatlarni tekshirish
+        run: python3 tools/check_docs.py
+
+      - name: Monolit qayta yig'ilishini sinash
+        run: |
+          python3 tools/build_single.py
+          for f in dist/*.md; do
+            test -s "$f" || { echo "bo'sh fayl: $f"; exit 1; }
+          done
+          ls -la dist/
+
+  tools:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Nega alohida ish: yuqoridagi `check` hujjatni tekshiradi, bu esa
+      # asboblarni. Ular mustaqil yiqiladi, shuning uchun qaysi biri
+      # buzilganini loglardan izlash kerak bo'lmasin.
+      #
+      # Ro'yxat qo'lda yozilmaydi: yangi test_*.py o'zi qo'shiladi. Bitta
+      # suite yiqilsa qolganlari baribir yuradi, yiqilganlar oxirida
+      # bitta qatorda chiqadi.
+      - name: Asbob sinovlari
+        run: |
+          failed=""
+          for f in tools/test_*.py; do
+            echo "::group::$f"
+            python3 "$f" || failed="$failed $f"
+            echo "::endgroup::"
+          done
+          if [ -n "$failed" ]; then echo "yiqilgan:$failed"; exit 1; fi
+
+      # Oldingi qadam yiqilsa ham o'lchovlar yuradi: bitta xato qolgan
+      # signallarni yashirmasin.
+      - name: Zanjir o'lchovi
+        if: ${{ !cancelled() }}
+        run: python3 tools/eval_skill.py
+
+      - name: Qidiruv o'rni
+        if: ${{ !cancelled() }}
+        run: python3 tools/eval_find.py
+
+      - name: Har navbatdagi kontekst byudjeti
+        if: ${{ !cancelled() }}
+        run: python3 tools/cost_report.py
+
+  # O'rnatuvchi agent sessiyasida yurgizilmaydi (PowerShell taqiqlangan),
+  # shuning uchun uni sinaydigan yagona joy shu. Runner bir martalik,
+  # demak -Apply xavfsiz. Ikki shell: Windows PowerShell 5.1 va pwsh 7
+  # fayl kodirovkasida farq qiladi.
+  installer:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        shell: [powershell, pwsh]
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Quruq yurish
+        run: ./install/manguberdi.ps1 -GeniusPath $PWD
+
+      - name: Haqiqiy o'rnatish
+        run: |
+          New-Item -ItemType Directory -Force "$HOME/.claude/skills/eski" | Out-Null
+          Set-Content "$HOME/.claude/CLAUDE.md" 'eski'
+          ./install/manguberdi.ps1 -GeniusPath $PWD -Apply
+          if ($LASTEXITCODE) { exit 1 }
+          # Claude Code settings.json ni BOM siz kutadi; json.load BOM da yiqiladi.
+          python -c "import json,os;json.load(open(os.path.expanduser('~/.claude/settings.json'),encoding='utf-8'))"
+          if ($LASTEXITCODE) { exit 1 }
+          if (Test-Path "$HOME/.claude/skills/eski") { Write-Host "eski skill qoldi"; exit 1 }
+          if (Test-Path "$HOME/.claude/CLAUDE.md") { Write-Host "eski CLAUDE.md qoldi"; exit 1 }
+          if (-not (Test-Path "$HOME/.claude/skills/manguberdi/SKILL.md")) { Write-Host "skill yo'q"; exit 1 }
+          if (-not (Test-Path "$HOME/.claude-backup-*")) { Write-Host "zaxira yo'q"; exit 1 }
+
+      # -Update faqat o'z birliklarini almashtiradi. Begona skill va begona
+      # hook (o'z hooklari bilan bir guruhda) qolishi, o'z hooki
+      # ikkilanmasligi, BOM li eski settings.json o'qilib BOM siz yozilishi
+      # va skill ichida ikkinchi manguberdi\ ochilmasligi shu yerda sinaladi.
+      - name: Yangilash (-Update)
+        run: |
+          New-Item -ItemType Directory -Force "$HOME/.claude/skills/begona" | Out-Null
+          Set-Content "$HOME/.claude/skills/begona/SKILL.md" 'begona'
+          $tayyor = Join-Path $env:RUNNER_TEMP 'begona_qosh.py'
+          @'
+          import json, os
+          p = os.path.expanduser("~/.claude/settings.json")
+          d = json.load(open(p, encoding="utf-8"))
+          d["hooks"]["UserPromptSubmit"][0]["hooks"].append(
+              {"type": "command", "command": "echo begona-hook"})
+          d["permissions"]["allow"].append("Bash(git status:*)")
+          # Eski o'rnatuvchi PowerShell 5.1 da BOM yozgan: shuni takrorlaymiz.
+          json.dump(d, open(p, "w", encoding="utf-8-sig"), indent=2)
+          '@ | Set-Content -LiteralPath $tayyor
+          python $tayyor
+          if ($LASTEXITCODE) { exit 1 }
+          ./install/manguberdi.ps1 -GeniusPath $PWD -Update -Apply -BackupTo "$env:RUNNER_TEMP/yangilash-zaxira"
+          if ($LASTEXITCODE) { exit 1 }
+          $tekshir = Join-Path $env:RUNNER_TEMP 'yangilash_tekshir.py'
+          @'
+          import json, os, sys
+          p = os.path.expanduser("~/.claude/settings.json")
+          d = json.load(open(p, encoding="utf-8"))  # BOM bo'lsa yiqiladi
+          cmds = [h.get("command", "") for gs in d["hooks"].values()
+                  for g in gs for h in g.get("hooks", [])]
+          xato = []
+          if "echo begona-hook" not in cmds:
+              xato.append("begona hook yo'qoldi")
+          if sum("suggest_sections.py" in c for c in cmds) != 1:
+              xato.append("suggest_sections.py hooki bir marta emas")
+          if "Bash(git status:*)" not in d["permissions"]["allow"]:
+              xato.append("begona ruxsat yo'qoldi")
+          print("; ".join(xato) or "settings.json birlashdi")
+          sys.exit(1 if xato else 0)
+          '@ | Set-Content -LiteralPath $tekshir
+          python $tekshir
+          if ($LASTEXITCODE) { exit 1 }
+          if (-not (Test-Path "$HOME/.claude/skills/begona/SKILL.md")) { Write-Host "begona skill o'chdi"; exit 1 }
+          if (-not (Test-Path "$HOME/.claude/skills/manguberdi/SKILL.md")) { Write-Host "skill yo'q"; exit 1 }
+          if (Test-Path "$HOME/.claude/skills/manguberdi/manguberdi") { Write-Host "skill ichida ikkinchi manguberdi"; exit 1 }
+          foreach ($z in @('skills--manguberdi', '.claude--settings.json')) {
+            if (-not (Test-Path -LiteralPath "$env:RUNNER_TEMP/yangilash-zaxira/$z")) { Write-Host "zaxirada yo'q: $z"; exit 1 }
+          }

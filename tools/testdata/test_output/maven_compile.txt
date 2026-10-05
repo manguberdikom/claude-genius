@@ -1,0 +1,14 @@
+[WARNING] /home/u/shop/src/main/java/shop/Legacy.java:[10,5] [deprecation] Date(int,int,int) in java.util.Date has been deprecated
+[ERROR] COMPILATION ERROR : 
+[ERROR] /home/u/shop/src/main/java/shop/web/OrderController.java:[41,17] cannot find symbol
+  symbol:   method lines()
+  location: variable order of type shop.domain.Order
+[ERROR] /home/u/shop/src/test/java/shop/web/OrderControllerTest.java:[12,8] class OrderControllerTests is public, should be declared in a file named OrderControllerTests.java
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.11.0:compile (default-compile) on project shop: Compilation failure: Compilation failure: 
+[ERROR] /home/u/shop/src/main/java/shop/web/OrderController.java:[41,17] cannot find symbol
+[ERROR]   symbol:   method lines()
+[ERROR]   location: variable order of type shop.domain.Order
+[ERROR] /home/u/shop/src/test/java/shop/web/OrderControllerTest.java:[12,8] class OrderControllerTests is public, should be declared in a file named OrderControllerTests.java
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.

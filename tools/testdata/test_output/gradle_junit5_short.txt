@@ -1,0 +1,26 @@
+> Task :compileJava UP-TO-DATE
+> Task :compileTestJava
+> Task :test
+
+MoneyTest > addsAmounts() FAILED
+    org.opentest4j.AssertionFailedError at MoneyTest.java:24
+
+OrderServiceTest > places order when stock available FAILED
+    org.mockito.exceptions.verification.WantedButNotInvoked at OrderServiceTest.java:57
+
+OrderServiceTest > WhenPaymentDown > retries() FAILED
+    java.lang.IllegalStateException at OrderServiceTest.java:88
+        Caused by: java.net.ConnectException at Net.java:-2
+
+PriceTest > discount(int, int) > [2] 50, 25 FAILED
+    org.opentest4j.AssertionFailedError at PriceTest.java:31
+
+12 tests completed, 4 failed
+
+> Task :test FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':test'.
+> There were failing tests. See the report at: file:///home/u/shop/build/reports/tests/test/index.html
