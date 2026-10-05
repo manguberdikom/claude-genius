@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 9. Ma'lumotlarga kirish va ORM patternlari (Data Access & ORM Patterns)
 
@@ -1173,6 +1173,16 @@ while (rs.next()) {                         // connection allaqachon yopilgan
 - [ ] `equals` va `hashCode` ni ID bo'yicha yozgan entity'larni tekshiring: ID generatsiyadan oldin `null` bo'lsa, xatti-harakat buziladi.
 - [ ] Har bir repository metodi uchun uning chiqargan SQL rejasini `EXPLAIN (ANALYZE, BUFFERS)` bilan bir marta ko'rib, natijani yozib qo'ying.
 - [ ] Connection pool kattaligini real yuk ostida o'lchab, Little qonuni bilan hisoblangan qiymat bilan solishtiring.
+
+## Manbalar
+
+- [jakartaee/persistence, `ManyToOne.java`, `OneToOne.java`, `OneToMany.java`, `ManyToMany.java`](https://raw.githubusercontent.com/jakartaee/persistence/master/api/src/main/java/jakarta/persistence/OneToMany.java) - `@ManyToOne` va `@OneToOne` default `EAGER`, `@OneToMany` va `@ManyToMany` default `LAZY`
+- [jakartaee/persistence, `GenerationType.java`](https://raw.githubusercontent.com/jakartaee/persistence/master/api/src/main/java/jakarta/persistence/GenerationType.java) - `TABLE`, `SEQUENCE`, `IDENTITY`, `UUID`, `AUTO` qiymatlari
+- [jakartaee/persistence, `SequenceGenerator.java`](https://raw.githubusercontent.com/jakartaee/persistence/master/api/src/main/java/jakarta/persistence/SequenceGenerator.java) - `allocationSize() default 50`
+- [jakartaee/persistence, `Inheritance.java`](https://raw.githubusercontent.com/jakartaee/persistence/master/api/src/main/java/jakarta/persistence/Inheritance.java) - `strategy() default InheritanceType.SINGLE_TABLE`
+- [spring-boot, `JpaBaseConfiguration.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/main/module/spring-boot-jpa/src/main/java/org/springframework/boot/jpa/autoconfigure/JpaBaseConfiguration.java) - "spring.jpa.open-in-view is enabled by default" ogohlantirish matni
+- [hibernate-orm, `SqlTypes.java`](https://raw.githubusercontent.com/hibernate/hibernate-orm/main/hibernate-core/src/main/java/org/hibernate/type/SqlTypes.java) - `JSON` va `JSON_ARRAY` doimiylari
+- [mapstruct, `SubclassMapping.java`](https://raw.githubusercontent.com/mapstruct/mapstruct/main/core/src/main/java/org/mapstruct/SubclassMapping.java) - `@since 1.5`
 
 ---
 

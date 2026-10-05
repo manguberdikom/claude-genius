@@ -175,8 +175,13 @@ public Rate rate(String currency) {
 // Review izohi: `block()` ni reaktiv thread da chaqirish ilovani
 // qotirishi mumkin. Agar reaktiv stek kerak bo'lmasa, RestClient
 // ishlatish kerak - u sinxron va shu maqsad uchun.
-// Qo'shimcha: block() da timeout yo'q - cheksiz kutish.
-.block(Duration.ofSeconds(2));                  // minimal tuzatish
+
+// Minimal tuzatish: argumentsiz block() cheksiz kutadi, timeout beriladi.
+public Rate rateChegaraBilan(String currency) {
+    return webClient.get().uri("/rates/{c}", currency)
+                    .retrieve().bodyToMono(Rate.class)
+                    .block(Duration.ofSeconds(2));
+}
 ```
 
 ## 22.5 Kafka va xabar brokerlari review
