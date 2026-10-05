@@ -2,9 +2,9 @@
 """Aktyor chaqiruv budjeti: bitta vazifada ko'pi bilan ikki marta.
 
     python3 tools/budget.py --yangi-vazifa "<nom>"   # hisoblagich nolga
-    python3 tools/budget.py arxitektor               # +1, uchinchida xato
+    python3 tools/budget.py dasturchi               # +1, uchinchida xato
     python3 tools/budget.py --holat                  # jadval
-    python3 tools/budget.py --tiklash arxitektor     # bitta qadamni qaytarish
+    python3 tools/budget.py --tiklash dasturchi     # bitta qadamni qaytarish
 
 `PreToolUse` hook sifatida ham ishlaydi: stdin ga JSON kelsa, `Task`
 yoki `Agent` chaqiruvidagi aktyorni o'zi oladi va uchinchisini to'sadi.
@@ -43,7 +43,7 @@ STATE_DIR = (os.environ.get("GENIUS_STATE_DIR")
 LOG = os.path.join(STATE_DIR, "budget.json")
 
 # Zanjir aktyorlari. Tartib chiqishdagi jadval tartibi.
-ACTORS = ("rejalashtiruvchi", "arxitektor", "test-muhandis", "review")
+ACTORS = ("rejalashtiruvchi", "dasturchi", "test-muhandis", "review")
 LIMIT = 2
 
 # Vazifa belgilanmagan bo'lsa hisoblagich shu muddatdan keyin o'zi

@@ -33,7 +33,7 @@ so'rasa tuziladi:
   tashqi bog'liqlik, ma'lumot formati.
 - Talab **hujjatdan keladi**: spetsifikatsiya, dizayn rasmi, PDF, Word.
 
-Qolgan hammasi rejasiz: `arxitektor` toza kod va dizayn pattern
+Qolgan hammasi rejasiz: `dasturchi` toza kod va dizayn pattern
 qoidalari asosida o'zi bajaradi. Bitta bug uchun reja yozish ishni
 sekinlashtiradi va hech narsa qo'shmaydi.
 
@@ -46,7 +46,7 @@ ketma-ket bajariladi, aralashtirilmaydi.
 |---|---|---|
 | Holatni bilish, kamchilik topish | `review` | kod o'zgarmaydi; diff bo'lmasa doira va modul ro'yxati beriladi |
 | Yo'lni belgilash | `rejalashtiruvchi` | yuqoridagi uch shartda yoki ochiq so'ralganda |
-| Kodni o'zgartirish | `arxitektor` | bug, pattern, refaktoring, reja qadami |
+| Kodni o'zgartirish | `dasturchi` | bug, pattern, refaktoring, reja qadami |
 | Testlar | `test-muhandis` | qoplash yoki yiqilgan testni tuzatish |
 | Qoida matnini keltirish, uchtadan ko'p bo'lim | `qidiruv` | bir-uch bo'lim bo'lsa `doc.sh show` asosiy sessiyada, aktyorsiz |
 | Chiqish yoki sxemani o'qish | `tahlil` | uzun log, entity, test chiqishi |

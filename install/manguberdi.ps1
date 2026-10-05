@@ -144,7 +144,7 @@ $ConfigItems = @(
 )
 
 # O'rnatiladigan aktyorlar. Skill shu nomlar bilan chaqiradi.
-$Actors = @('qidiruv', 'tahlil', 'review', 'arxitektor', 'test-muhandis',
+$Actors = @('qidiruv', 'tahlil', 'review', 'dasturchi', 'test-muhandis',
             'rejalashtiruvchi')
 
 # Sinov yig'imi papkasi. Fail uni tozalaydi, shuning uchun oldindan e'lon.

@@ -24,7 +24,7 @@ didga aylanadi.
    berilgan bo'lsa, o'sha `.java` va build fayllarni ochiq bering:
    `python3 tools/rules_for.py --no-mark <fayllar>`. Reviewer yozmaydi,
    shuning uchun `--no-mark`: `check_code` uchun belgi qo'yilmaydi. Bu
-   arxitektor va test-muhandis ishlatgan aynan o'sha ro'yxat va u
+   dasturchi va test-muhandis ishlatgan aynan o'sha ro'yxat va u
    birinchi tekshiriladi. Punkt diff tegib o'tgan kodga nisbatan
    tekshiriladi: butun proyektga oid audit punkti (ro'yxatlash, grep, CI,
    siyosat) bu diffning mezoni emas va bajarilmagani topilma emas.
@@ -116,7 +116,7 @@ Ko'rildi: <N> fayl, <M> entity, <K> test     (faqat diffsiz reviewda)
     <nima noto'g'ri>
     qoida: <hujjat> <raqam> <sarlavha>
     tuzatish: <aniq taklif>
-    egasi: arxitektor | test-muhandis | rejalashtiruvchi
+    egasi: dasturchi | test-muhandis | rejalashtiruvchi
 
 Taklif: <ro'yxatdan tashqari did masalasi yoki qoidasiz kuzatuv> | yo'q
 Diffdan tashqari: <yonidagi eski muammo> | yo'q
@@ -132,7 +132,7 @@ ro'yxatisiz hisobot faqat yomon xabar beradi, `Ko'rilmagan` ro'yxatisiz
 esa u to'liq ko'rinadi, holbuki emas.
 
 Egasi topilma turidan: kod mantig'i, pattern, chegara, tranzaksiya, N+1,
-resurs, yutilgan xato, buzilgan hujjat yoki havola `arxitektor`; test
+resurs, yutilgan xato, buzilgan hujjat yoki havola `dasturchi`; test
 yo'q, assertion yo'q, test turi noto'g'ri, flaky `test-muhandis`; reja
 qadami bajarilmagan yoki reja noto'g'ri `rejalashtiruvchi`.
 

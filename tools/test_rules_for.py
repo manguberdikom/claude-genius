@@ -194,7 +194,7 @@ def main():
                                          for _, t, _, _ in found)),
     ]
     # MAX_ITEMS dan ortig'i ham qator va kalit bilan: kesilgan ro'yxatda
-    # eski topilma yangi bo'lib ko'rinib, arxitektor tegilmagan qatorni
+    # eski topilma yangi bo'lib ko'rinib, dasturchi tegilmagan qatorni
     # tuzatishga majbur bo'lardi.
     tmp = tempfile.mkdtemp()
     try:
@@ -275,7 +275,7 @@ def main():
 
     print("\n== --no-mark ==")
     # Belgini faqat yozuvchi qo'yadi. Rejalashtiruvchi yoki reviewer
-    # belgilasa, arxitektor rules_for ni chaqirmay yozsa ham check_code
+    # belgilasa, dasturchi rules_for ni chaqirmay yozsa ham check_code
     # uni to'smasdi: darvoza jim o'chardi.
     state.clear()
     code_nm, _, _ = run("--no-mark", GOOD)

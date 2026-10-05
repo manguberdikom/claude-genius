@@ -1,6 +1,6 @@
 ---
 name: manguberdi
-description: Java/Spring/PostgreSQL ishini boshidan oxirigacha olib boradigan orkestrator. Sessiyada bir marta chaqiriladi va keyingi vazifalarda o'zi ishlaydi. Prompt bo'yicha aktyor tanlaydi (rejalashtiruvchi, arxitektor, test muhandisi, reviewer), ularni ketma-ket yurgizadi, har qadamni qo'llanma bo'limi bilan asoslaydi va oxirida memoryga yozadi. Review, reja tuzish va yangilash, bug tuzatish, refaktoring, test qoplash uchun.
+description: Java/Spring/PostgreSQL ishini boshidan oxirigacha olib boradigan orkestrator. Sessiyada bir marta chaqiriladi va keyingi vazifalarda o'zi ishlaydi. Prompt bo'yicha aktyor tanlaydi (rejalashtiruvchi, dasturchi, test muhandisi, reviewer), ularni ketma-ket yurgizadi, har qadamni qo'llanma bo'limi bilan asoslaydi va oxirida memoryga yozadi. Review, reja tuzish va yangilash, bug tuzatish, refaktoring, test qoplash uchun.
 ---
 
 # manguberdi
@@ -34,7 +34,7 @@ aytiladi.
    `references/taqiq.md`.
 3. **Og'ir o'qish asosiy sessiyada emas.** Ko'p o'qib oz qaytaradigan ish
    aktyorga uzatiladi, uzun chiqish ularning kontekstida qoladi.
-4. **Mezon bitta.** Arxitektor, test muhandisi va reviewer ishni
+4. **Mezon bitta.** Dasturchi, test muhandisi va reviewer ishni
    boshlashdan oldin `python3 tools/rules_for.py <fayllar>` chaqiradi
    (reviewer `--no-mark` bilan: belgini faqat yozuvchi qo'yadi).
    Kirish bir xil, chiqish bir xil: yozuvchi reviewer tekshiradigan
@@ -50,7 +50,7 @@ tanlanadi:
 |---|---|
 | "review qil", "tekshir", "nima kamchilik bor" | `review` |
 | "reja tuz", "reja yangila", spetsifikatsiya yoki hujjat berildi | `rejalashtiruvchi` |
-| "tuzat", "qo'sh", "refaktoring qil", bug, kichik vazifa | `arxitektor` |
+| "tuzat", "qo'sh", "refaktoring qil", bug, kichik vazifa | `dasturchi` |
 | "test yoz", "qoplash", test yiqildi | `test-muhandis` |
 | "qayerda yozilgan", "qoida nima deydi" (bir-uch bo'lim) | aktyor yo'q: taklif hookidagi raqam yoki `tools/doc.sh find`, keyin `tools/doc.sh show` |
 | ko'p bo'limni o'qib taqqoslash (uchtadan ko'p) | `qidiruv` |
@@ -74,7 +74,7 @@ bo'lib xizmat qiladi. Topilma darajasi `review` aktyori shkalasida
 Reja faqat `references/marshrut.md` dagi `Hajm: reja kerakmi` shartlaridan
 birida (uch fayldan ko'proq yoki bir necha qatlam, qaytarib bo'lmaydigan
 qaror, talab hujjatdan) yoki foydalanuvchi ochiq so'raganda tuziladi.
-Kichik bug va toza kod o'zgarishini `arxitektor` rejasiz bajaradi.
+Kichik bug va toza kod o'zgarishini `dasturchi` rejasiz bajaradi.
 
 Reja so'rovi har doim `rejalashtiruvchi` ga beriladi. Repoda reja
 tuzadigan skill bo'lsa ham, zanjirda u chaqirilmaydi: u
@@ -88,7 +88,7 @@ Ish zanjiri va har aktyorning ikki chaqiruv chegarasi:
 ```
 rejalashtiruvchi (zarur bo'lsa)
       v
-  arxitektor  --kod muammosi--.
+  dasturchi  --kod muammosi--.
       v                        |
  test-muhandis --test muammosi-+
       v                        |
@@ -98,7 +98,7 @@ rejalashtiruvchi (zarur bo'lsa)
 ```
 
 `review` kamchilik topsa, u **egasiga** qaytadi: kod muammosi
-`arxitektor` ga, test muammosi `test-muhandis` ga, reja muammosi
+`dasturchi` ga, test muammosi `test-muhandis` ga, reja muammosi
 `rejalashtiruvchi` ga. Har aktyor bitta
 vazifada ko'pi bilan **ikki marta** chaqiriladi. Ikkinchidan keyin ham
 hal bo'lmasa, zanjir to'xtaydi va nima yetishmayotgani aytiladi. Buni
@@ -109,7 +109,7 @@ ichida ikkinchi vazifa boshlansa:
 ## Model tanlash
 
 Aktyorlar o'z modelini olib yuradi va u vazifaga qarab tanlangan:
-`qidiruv` va `tahlil` haiku (ko'p o'qiydi, oz qaytaradi), `arxitektor`
+`qidiruv` va `tahlil` haiku (ko'p o'qiydi, oz qaytaradi), `dasturchi`
 va `test-muhandis` sonnet (amalga oshirish), `review` sonnet (diffni
 qoidaga solishtiradi), `rejalashtiruvchi` opus (qaytarib bo'lmaydigan
 qarorlar). Bu taqsimot `.claude/agents/` da yozilgan, har vazifada
@@ -141,7 +141,7 @@ python3 tools/check_docs.py          # hujjat tegilgan bo'lsa
 `xargs` 123 qaytarsa, kamida bitta faylda topilma bor.
 
 `check_code.py` dagi eski topilma (ishdan oldin bor bo'lgan, `rules_for`
-ning "Mashina topgani" ro'yxatida chiqqan) arxitektorga qaytarilmaydi:
+ning "Mashina topgani" ro'yxatida chiqqan) dasturchiga qaytarilmaydi:
 u `Tegilmagan` qatorida aytiladi. Toza bo'lishi kerak bo'lgani yangi
 yoki tegilgan qatordagi topilma.
 

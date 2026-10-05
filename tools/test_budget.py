@@ -120,16 +120,16 @@ def fresh(name="sinov"):
 
 def case_ikki_marta(_):
     fresh()
-    first, _ = run("arxitektor")
-    second, _ = run("arxitektor")
+    first, _ = run("dasturchi")
+    second, _ = run("dasturchi")
     return first == 0 and second == 0
 
 
 def case_uchinchi_tosiladi(_):
     fresh()
-    run("arxitektor")
-    run("arxitektor")
-    code, out = run("arxitektor")
+    run("dasturchi")
+    run("dasturchi")
+    code, out = run("dasturchi")
     return code == 1 and "budjet tugadi" in out
 
 
@@ -159,42 +159,42 @@ def case_tosiq_buyrugi_klonga_mos(_):
 
 def case_aktyorlar_mustaqil(_):
     fresh()
-    run("arxitektor")
-    run("arxitektor")
+    run("dasturchi")
+    run("dasturchi")
     code, _ = run("test-muhandis")
     return code == 0
 
 
 def case_yangi_vazifa_nolga(_):
     fresh()
-    run("arxitektor")
-    run("arxitektor")
+    run("dasturchi")
+    run("dasturchi")
     fresh("boshqa vazifa")
-    code, _ = run("arxitektor")
+    code, _ = run("dasturchi")
     return code == 0
 
 
 def case_tiklash(_):
     fresh()
-    run("arxitektor")
-    run("arxitektor")
-    run("--tiklash", "arxitektor")
-    code, _ = run("arxitektor")
+    run("dasturchi")
+    run("dasturchi")
+    run("--tiklash", "dasturchi")
+    code, _ = run("dasturchi")
     return code == 0
 
 
 def case_holat_jadvali(_):
     fresh()
-    run("arxitektor")
+    run("dasturchi")
     _, out = run("--holat")
-    return "arxitektor" in out and "1/2" in out and "rejalashtiruvchi" in out
+    return "dasturchi" in out and "1/2" in out and "rejalashtiruvchi" in out
 
 
 def case_hook_tosadi(_):
     fresh()
-    return (hook("Task", "arxitektor") == "allow"
-            and hook("Task", "arxitektor") == "allow"
-            and hook("Task", "arxitektor") == "deny")
+    return (hook("Task", "dasturchi") == "allow"
+            and hook("Task", "dasturchi") == "allow"
+            and hook("Task", "dasturchi") == "deny")
 
 
 def case_hook_agent_nomi(_):
@@ -214,8 +214,8 @@ def case_oqish_asbobi_erkin(_):
 
 def case_boshqa_asbob_tegilmaydi(_):
     fresh()
-    run("arxitektor")
-    run("arxitektor")
+    run("dasturchi")
+    run("dasturchi")
     # Read chaqiruvi hisobga olinmaydi va to'silmaydi.
     before = run("--holat")[1]
     ok = hook("Read", "") == "allow"
@@ -240,32 +240,32 @@ def case_eskirgan_nolga(_):
     old = time.time() - 7 * 3600
     write_state({"sessions": {SESSION: {
         "task": "eski", "started": old, "seen": old,
-        "calls": {"arxitektor": 2}}}})
-    return run("arxitektor")[0] == 0
+        "calls": {"dasturchi": 2}}}})
+    return run("dasturchi")[0] == 0
 
 
 def case_eski_shakl_toza(_):
     """Sessiyasiz eski tekis fayl yangi sessiyani to'smaydi."""
     write_state({"task": "x", "started": time.time(),
-                 "calls": {"arxitektor": 2}})
-    return run("arxitektor")[0] == 0
+                 "calls": {"dasturchi": 2}})
+    return run("dasturchi")[0] == 0
 
 
 def case_ikki_sessiya_tosmaydi(_):
     """Parallel sessiya yoki boshqa proyekt hisobi aralashmaydi."""
     clean()
-    return (hook("Agent", "arxitektor", "s-a") == "allow"
-            and hook("Agent", "arxitektor", "s-a") == "allow"
-            and hook("Agent", "arxitektor", "s-b") == "allow"
-            and hook("Agent", "arxitektor", "s-a") == "deny")
+    return (hook("Agent", "dasturchi", "s-a") == "allow"
+            and hook("Agent", "dasturchi", "s-a") == "allow"
+            and hook("Agent", "dasturchi", "s-b") == "allow"
+            and hook("Agent", "dasturchi", "s-a") == "deny")
 
 
 def case_yangi_vazifa_boshqasiga_tegmaydi(_):
     clean()
-    hook("Agent", "arxitektor", "s-a")
-    hook("Agent", "arxitektor", "s-a")
+    hook("Agent", "dasturchi", "s-a")
+    hook("Agent", "dasturchi", "s-a")
     run("--yangi-vazifa", "B", session="s-b")
-    return hook("Agent", "arxitektor", "s-a") == "deny"
+    return hook("Agent", "dasturchi", "s-a") == "deny"
 
 
 def case_envsiz_cli_oz_proyektini_oladi(_):
@@ -275,9 +275,9 @@ def case_envsiz_cli_oz_proyektini_oladi(_):
     proj_b = os.path.join(STATE, "projB")
     os.makedirs(os.path.join(proj_a, "src"), exist_ok=True)
     os.makedirs(proj_b, exist_ok=True)
-    hook("Agent", "arxitektor", "s-p", cwd=proj_a)
-    hook("Agent", "arxitektor", "s-q", cwd=proj_b)
-    hook("Agent", "arxitektor", "s-q", cwd=proj_b)
+    hook("Agent", "dasturchi", "s-p", cwd=proj_a)
+    hook("Agent", "dasturchi", "s-q", cwd=proj_b)
+    hook("Agent", "dasturchi", "s-q", cwd=proj_b)
     _, in_a = run("--holat", session=None, cwd=os.path.join(proj_a, "src"))
     _, elsewhere = run("--holat", session=None, cwd=STATE)
     return ("Sessiya: s-p" in in_a and "1/2" in in_a
@@ -288,7 +288,7 @@ def case_parallel_hisob_yoqolmaydi(_):
     """Bir xabardagi 6 ta Agent: har turda aynan 2 o'tadi, 4 to'siladi."""
     for _ in range(5):
         fresh()
-        got = parallel([payload("Agent", "arxitektor")] * 6)
+        got = parallel([payload("Agent", "dasturchi")] * 6)
         if got.count("deny") != 4:
             return False
     return True
@@ -298,28 +298,28 @@ def case_parallel_aktyorlar_saqlanadi(_):
     """4 xil aktyor parallel: fayl buzilmaydi, har biri 1 ga teng."""
     fresh()
     parallel([payload("Agent", actor) for actor in
-              ("rejalashtiruvchi", "arxitektor", "test-muhandis", "review")])
+              ("rejalashtiruvchi", "dasturchi", "test-muhandis", "review")])
     calls = state()["sessions"][SESSION]["calls"]
-    return calls == {"rejalashtiruvchi": 1, "arxitektor": 1,
+    return calls == {"rejalashtiruvchi": 1, "dasturchi": 1,
                      "test-muhandis": 1, "review": 1}
 
 
 def case_bir_chaqiruv_bir_marta(_):
     """Repo va global hook birga yursa ham bitta tool_use_id bir marta."""
     fresh()
-    first = hook("Agent", "arxitektor", call_id="toolu_1")
-    again = hook("Agent", "arxitektor", call_id="toolu_1")
-    second = hook("Agent", "arxitektor", call_id="toolu_2")
-    third = hook("Agent", "arxitektor", call_id="toolu_3")
+    first = hook("Agent", "dasturchi", call_id="toolu_1")
+    again = hook("Agent", "dasturchi", call_id="toolu_1")
+    second = hook("Agent", "dasturchi", call_id="toolu_2")
+    third = hook("Agent", "dasturchi", call_id="toolu_3")
     return (first, again, second, third) == ("allow", "allow", "allow", "deny")
 
 
 def case_yangi_sorov_nolga(_):
     """UserPromptSubmit payloadi shu sessiyani jim nolga tushiradi."""
     fresh()
-    hook("Agent", "arxitektor")
-    hook("Agent", "arxitektor")
-    hook("Agent", "arxitektor", "boshqa")
+    hook("Agent", "dasturchi")
+    hook("Agent", "dasturchi")
+    hook("Agent", "dasturchi", "boshqa")
     proc = subprocess.run(
         [sys.executable, TOOL], capture_output=True, text=True, cwd=STATE,
         env=env_for(), input=json.dumps({"hook_event_name": "UserPromptSubmit",
@@ -327,8 +327,8 @@ def case_yangi_sorov_nolga(_):
     calls = state()["sessions"]
     return (proc.returncode == 0 and proc.stdout == ""
             and calls[SESSION]["calls"] == {}
-            and calls["boshqa"]["calls"] == {"arxitektor": 1}
-            and hook("Agent", "arxitektor") == "allow")
+            and calls["boshqa"]["calls"] == {"dasturchi": 1}
+            and hook("Agent", "dasturchi") == "allow")
 
 
 CASES = [

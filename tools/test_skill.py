@@ -322,7 +322,7 @@ def main():
                 continue
             if actor in {"docs", "memory"} or actor in have:
                 continue
-            if actor in {"rejalashtiruvchi", "arxitektor", "test-muhandis",
+            if actor in {"rejalashtiruvchi", "dasturchi", "test-muhandis",
                          "review", "qidiruv", "tahlil"}:
                 err("manguberdi/SKILL.md", "aktyor yo'q: %s" % actor)
 
@@ -330,7 +330,7 @@ def main():
     # o'z-o'zidan ko'rinmaydi, chunki hech narsa yiqilmaydi: aktyor
     # shunchaki sifat darvozasini bilmay ishlaydi va kamchilik keyin
     # chiqadi. Ikkitasi aynan shu holatda topildi.
-    sonar_actors = ("arxitektor", "test-muhandis", "rejalashtiruvchi", "review")
+    sonar_actors = ("dasturchi", "test-muhandis", "rejalashtiruvchi", "review")
     for name in sonar_actors:
         path = os.path.join(AGENTS, name + ".md")
         if not os.path.exists(path):

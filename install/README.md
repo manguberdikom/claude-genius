@@ -500,7 +500,7 @@ qaytaradi:
 ```powershell
 $b = "$env:USERPROFILE\.claude-backup-<vaqt>"
 $c = "$env:USERPROFILE\.claude"
-$aktyorlar = 'qidiruv', 'tahlil', 'review', 'arxitektor', 'test-muhandis', 'rejalashtiruvchi'
+$aktyorlar = 'qidiruv', 'tahlil', 'review', 'dasturchi', 'test-muhandis', 'rejalashtiruvchi'
 $ornatilgan = @("$c\skills\manguberdi", "$c\settings.json") + ($aktyorlar | ForEach-Object { "$c\agents\$_.md" })
 foreach ($x in $ornatilgan) {
   if (Test-Path -LiteralPath $x) { Remove-Item -LiteralPath $x -Recurse -Force }

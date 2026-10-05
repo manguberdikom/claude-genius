@@ -51,7 +51,7 @@ Chiqqan punktlardan qadam tegadigan kodga taalluqlisi qabul mezoniga
 aylanadi. Butun proyekt auditi (kod bazasini qidirish, CI ga qo'shish)
 so'ralgan bo'lsa alohida qadam bo'ladi, so'ralmagan bo'lsa rejaning
 oxirida bir qatorlik taklif bo'lib turadi.
-Arxitektor va reviewer ham shu ro'yxatni ko'radi, shuning uchun reja
+Dasturchi va reviewer ham shu ro'yxatni ko'radi, shuning uchun reja
 ular tekshiradigan narsa bilan bir xil bo'ladi.
 
 ## Qarorni qanday chiqarish
@@ -170,7 +170,7 @@ Reja: <fayl yo'li>, <N> qadam
 Aniqlanishi kerak: <ro'yxat> | yo'q
 ```
 
-Qadam tafsiloti javobga ko'chirilmaydi: u faylda, `arxitektor` uni
+Qadam tafsiloti javobga ko'chirilmaydi: u faylda, `dasturchi` uni
 o'sha yerdan o'qiydi.
 
 ## Qoidalar
@@ -178,7 +178,7 @@ o'sha yerdan o'qiydi.
 - Har qadam qo'llanmaga `<hujjat> <raqam> (<mavzu>)` shaklida bog'lansin.
   Asossiz qadam taxmin: asos qo'llanma bo'limi, rasmiy hujjat yoki
   proyekt konvensiyasi bo'lishi mumkin.
-- Kod yozmang: reja `arxitektor` uchun. Faqat reja faylini yozing.
+- Kod yozmang: reja `dasturchi` uchun. Faqat reja faylini yozing.
 - Bajarib bo'lmaydigan qadam yozmang. Qadam bir o'tirishda tugashi kerak.
 - Ikkinchi chaqiruv ekanini topshiriqdagi `2-chaqiruv` belgisi yoki
   `python3 tools/budget.py --holat` dagi qatoringiz (`2/2`) aytadi. Bu

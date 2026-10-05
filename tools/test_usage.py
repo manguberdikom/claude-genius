@@ -196,11 +196,11 @@ def case_asosiy_sessiya(tmp):
 def case_aktyor_parent_boyicha(tmp):
     """parentUuid zanjiri bo'lsa aktyor aniq, taxmin qilinmaydi."""
     rows, guessed = collect(tmp, [
-        task_row("arxitektor", "t1"),
+        task_row("dasturchi", "t1"),
         row(total_read=500, out=50, side=True, uuid="s1", parent="t1"),
     ], "b.jsonl")
     actors = {k[1] for k in rows}
-    return actors == {"arxitektor"} and not guessed
+    return actors == {"dasturchi"} and not guessed
 
 
 def case_zanjir_davomi(tmp):
@@ -226,24 +226,24 @@ def case_tartib_boyicha_belgilanadi(tmp):
 
 def case_ikki_aktyor_aralashmaydi(tmp):
     rows, _ = collect(tmp, [
-        task_row("arxitektor", "t1"),
+        task_row("dasturchi", "t1"),
         row(total_read=100, side=True, uuid="s1", parent="t1"),
         task_row("review", "t2"),
         row(total_read=900, side=True, uuid="s2", parent="t2"),
     ], "e.jsonl")
     got = {k[1]: c["cache_read_input_tokens"] for k, c in rows.items()}
-    return got.get("arxitektor") == 100 and got.get("review") == 900
+    return got.get("dasturchi") == 100 and got.get("review") == 900
 
 
 def case_subagent_meta_dan(tmp):
     """Subagent alohida faylda, aktyor nomi meta dagi agentType dan."""
     _, main = session(tmp, "pa", "s1", [row(total_read=10)], {
         "agent-a.jsonl": ([row(total_read=500, side=True)],
-                          {"agentType": "arxitektor"}),
+                          {"agentType": "dasturchi"}),
     })
     rows, guessed = U.collect(U.session_files(main))
     got = {k[1]: c["cache_read_input_tokens"] for k, c in rows.items()}
-    return got == {U.MAIN: 10, "arxitektor": 500} and not guessed
+    return got == {U.MAIN: 10, "dasturchi": 500} and not guessed
 
 
 def case_workflow_bosqichi(tmp):
@@ -260,7 +260,7 @@ def case_workflow_bosqichi(tmp):
 def case_meta_yoq_asosiyga_tushmaydi(tmp):
     """Meta yo'q subagent fayli asosiy sessiyaga yozilmaydi va bu aytiladi."""
     _, main = session(tmp, "pc", "s1", [
-        task_row("arxitektor", "t1"), row(total_read=10)], {
+        task_row("dasturchi", "t1"), row(total_read=10)], {
         "agent-m.jsonl": ([row(total_read=300, side=True)], None),
     })
     rows, guessed = U.collect(U.session_files(main))
@@ -299,13 +299,13 @@ def case_takrordagi_task_yoqolmaydi(tmp):
     text["message"]["content"] = [{"type": "text", "text": "x"}]
     task = row(total_read=100, mid="msg_t", uuid="u3")
     task["message"]["content"] = [{"type": "tool_use", "name": "Task",
-                                   "input": {"subagent_type": "arxitektor"}}]
+                                   "input": {"subagent_type": "dasturchi"}}]
     rows, guessed = collect(tmp, [
         text, row(total_read=100, mid="msg_t", uuid="u2"), task,
         row(total_read=900, side=True, uuid="s1", parent="u3"),
     ], "duptask.jsonl")
     got = {k[1]: c["cache_read_input_tokens"] for k, c in rows.items()}
-    return got == {U.MAIN: 100, "arxitektor": 900} and not guessed
+    return got == {U.MAIN: 100, "dasturchi": 900} and not guessed
 
 
 def case_kun_boyicha_bolinadi(tmp):
@@ -393,7 +393,7 @@ def case_proyekt_papkasi_topiladi(tmp):
 
 def case_saqlash_fayl_yozadi(tmp):
     rows, _ = collect(tmp, [
-        task_row("arxitektor", "t1"),
+        task_row("dasturchi", "t1"),
         row(total_read=1_000_000, out=1000, side=True, uuid="s1", parent="t1"),
         row(total_read=2_000_000, out=2000),
     ], "j.jsonl")
@@ -406,9 +406,9 @@ def case_saqlash_fayl_yozadi(tmp):
             return False
         data = json.load(io.open(path, encoding="utf-8"))
         day = data.get(DAY, {})
-        return ("arxitektor" in day and U.MAIN in day
-                and day["arxitektor"]["tokens"]["cache_read_input_tokens"] == 1_000_000
-                and day["arxitektor"]["usd"] > 0)
+        return ("dasturchi" in day and U.MAIN in day
+                and day["dasturchi"]["tokens"]["cache_read_input_tokens"] == 1_000_000
+                and day["dasturchi"]["usd"] > 0)
     finally:
         U.STORE = old_store
 
@@ -452,7 +452,7 @@ def case_saqlash_hook_payload(tmp):
     """Stop hook payloadidagi sessiya subagentlari bilan yoziladi."""
     _, main = session(tmp, "p", "s1", [row(total_read=10)], {
         "agent-a.jsonl": ([row(total_read=500, side=True)],
-                          {"agentType": "arxitektor"}),
+                          {"agentType": "dasturchi"}),
     })
     store = os.path.join(tmp, "st_payload")
     proc = subprocess.run(
@@ -465,7 +465,7 @@ def case_saqlash_hook_payload(tmp):
     if proc.returncode != 0 or proc.stdout.strip() or not os.path.isfile(path):
         return False
     day = json.load(io.open(path, encoding="utf-8")).get(DAY, {})
-    return set(day) == {U.MAIN, "arxitektor"}
+    return set(day) == {U.MAIN, "dasturchi"}
 
 
 def case_saqlash_hook_jim(tmp):

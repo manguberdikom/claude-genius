@@ -55,7 +55,7 @@ WHOLE = ("CLAUDE.md", "settings.local.json", "commands", "plugins", "hooks",
 MERGED_DIRS = ("skills", "agents")
 # O'rnatuvchi boshqaradigan birliklar: zaxiradagisi eski versiya.
 OWN_SKILL = "manguberdi"
-OWN_AGENTS = ("qidiruv", "tahlil", "review", "arxitektor", "test-muhandis",
+OWN_AGENTS = ("qidiruv", "tahlil", "review", "dasturchi", "test-muhandis",
               "rejalashtiruvchi")
 
 

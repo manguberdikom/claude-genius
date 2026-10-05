@@ -54,7 +54,7 @@ emas, `find` bilan qidiring.
 ## Orkestrator
 
 Java/Spring ishi uchun `/manguberdi` sessiyada bir marta chaqiriladi: u promptni
-normallashtiradi, aktyor tanlaydi (`rejalashtiruvchi`, `arxitektor`,
+normallashtiradi, aktyor tanlaydi (`rejalashtiruvchi`, `dasturchi`,
 `test-muhandis`, `review`), ularni ketma-ket yurgizadi va oxirida
 memoryga yozadi. Qoidalar `.claude/skills/manguberdi/` da.
 
@@ -77,7 +77,7 @@ o'z-o'zidan yurgizilmaydi, nega arzon yo'l yetmagani aytib so'raladi.
 butun o'qish esa to'siladi (`deny`).
 
 Og'ir o'qish `qidiruv` va `tahlil` (haiku) da, diffni `review` (sonnet)
-tekshiradi, kod va testni `arxitektor` va `test-muhandis` (sonnet) yozadi.
+tekshiradi, kod va testni `dasturchi` va `test-muhandis` (sonnet) yozadi.
 Uzun chiqish ularning kontekstida qoladi. Asosiy sessiyada qaror, marshrut
 va hujjat tahriri.
 

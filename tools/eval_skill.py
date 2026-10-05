@@ -9,7 +9,7 @@ poydevori: noto'g'ri ro'yxat bergan holda yaxshi natija kutib bo'lmaydi,
 va reviewer topadigan narsa yozuvchiga oldindan berilmasa, ikkinchi
 chaqiruv muqarrar.
 
-Nima o'lchanmaydi, ochiq aytilsin: arxitektor yozgan kodning sifati.
+Nima o'lchanmaydi, ochiq aytilsin: dasturchi yozgan kodning sifati.
 Buning uchun modelni yurgizish kerak, u esa har safar boshqacha natija
 beradi va pul turadi. Shu sababli bu yerda faqat har safar bir xil
 javob beradigan qism o'lchanadi.

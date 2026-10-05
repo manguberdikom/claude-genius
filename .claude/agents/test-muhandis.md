@@ -73,7 +73,7 @@ Qoplanmagan: <nima qolgani va nega>
 ## Qoidalar
 
 - Ishlab chiqarish kodini **o'zgartirmang**. Kodda muammo bo'lsa,
-  `arxitektor` ga qaytarilishi uchun aniq ayting.
+  `dasturchi` ga qaytarilishi uchun aniq ayting.
 - Testni o'tkazish uchun assertionni bo'shatmang.
 - Konteyner ko'tarmang: Testcontainers kerak bo'lsa buni ayting va
   nega mavjud test turi yetmasligini yozing.

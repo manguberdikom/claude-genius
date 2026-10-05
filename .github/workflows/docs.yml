@@ -140,7 +140,7 @@ jobs:
           }
           if ((Get-Content "$HOME/.claude/CLAUDE.md" -Raw).Trim() -ne 'eski') { Write-Host "CLAUDE.md o'zgardi"; exit 1 }
           if (-not (Test-Path "$HOME/.claude/skills/manguberdi/SKILL.md")) { Write-Host "skill yo'q"; exit 1 }
-          $aktyorlar = 'qidiruv', 'tahlil', 'review', 'arxitektor', 'test-muhandis', 'rejalashtiruvchi'
+          $aktyorlar = 'qidiruv', 'tahlil', 'review', 'dasturchi', 'test-muhandis', 'rejalashtiruvchi'
           foreach ($a in $aktyorlar) {
             if (-not (Test-Path "$HOME/.claude/agents/$a.md")) { Write-Host "aktyor yo'q: $a"; exit 1 }
           }

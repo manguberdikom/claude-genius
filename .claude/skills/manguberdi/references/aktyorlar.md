@@ -7,7 +7,7 @@ topilganda bo'ladi va kamchilik **egasiga** qaytadi.
 rejalashtiruvchi  (faqat zarur bo'lsa)
        |
        v
-   arxitektor  <--- kod kamchiligi ----.
+   dasturchi  <--- kod kamchiligi ----.
        |                                |
        v                                |
   test-muhandis  <--- test kamchiligi --+
@@ -82,11 +82,11 @@ qaytarilgan kamchilik ikki chaqiruvni behuda sarflaydi.
 
 | Topilma turi | Egasi |
 |---|---|
-| Mantiq xatosi, pattern noto'g'ri qo'llangan, chegara buzilgan | `arxitektor` |
-| Tranzaksiya, N+1, resurs yopilmagan, xato yutilgan | `arxitektor` |
+| Mantiq xatosi, pattern noto'g'ri qo'llangan, chegara buzilgan | `dasturchi` |
+| Tranzaksiya, N+1, resurs yopilmagan, xato yutilgan | `dasturchi` |
 | Test yo'q, assertion yo'q, test noto'g'ri turda, flaky | `test-muhandis` |
 | Reja qadami bajarilmagan yoki reja noto'g'ri | `rejalashtiruvchi` |
-| Hujjat yoki havola buzilgan | `arxitektor` |
+| Hujjat yoki havola buzilgan | `dasturchi` |
 
 ## Har aktyor nimani qaytaradi
 
@@ -107,7 +107,7 @@ aktyorning o'z kontekstida qoladi.
   zanjir shu yerda tugaydi: kod o'zgarmaydi, review ishlamaydi. Memory
   bosqichi faqat foydalanuvchi javobni tuzatgan yoki yondashuvni rad
   etgan bo'lsa bajariladi.
-- Faqat review so'ralgan bo'lsa, `arxitektor` va `test-muhandis`
+- Faqat review so'ralgan bo'lsa, `dasturchi` va `test-muhandis`
   chaqirilmaydi: topilmalar hisobot sifatida beriladi va memory
   bosqichi bajariladi.
 - Hujjat o'zgarishi kod emas: `check_docs.py` tekshiradi, test

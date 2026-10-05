@@ -8,10 +8,10 @@
 
 Nega: aktyor ikkinchi marta chaqirilsa, sababi deyarli har doim bitta -
 qoidani oldindan bilmagan. Qidirib topish esa har aktyorda boshqacha
-chiqadi, shuning uchun arxitektor yozgan narsani reviewer boshqa
+chiqadi, shuning uchun dasturchi yozgan narsani reviewer boshqa
 mezon bilan tekshiradi va ish ikkinchi aylanaga tushadi.
 
-Bu asbob shu ikkisini bitta manbaga bog'laydi. Arxitektor YOZISHDAN
+Bu asbob shu ikkisini bitta manbaga bog'laydi. Dasturchi YOZISHDAN
 OLDIN, reviewer esa TEKSHIRISHDA shu buyruqni chaqiradi: kirish bir xil,
 chiqish bir xil, kelishmovchilik qolmaydi.
 
@@ -459,7 +459,7 @@ def past_mistakes(slug=None):
 def mechanical(paths):
     """check_code topgan muammolar: (qator, kalit va bo'lim, fayl, qisqa).
 
-    Qisqa shakl (`qator kalit`) MAX_ITEMS dan keyingilar uchun: arxitektor
+    Qisqa shakl (`qator kalit`) MAX_ITEMS dan keyingilar uchun: dasturchi
     eski topilmani yangisidan shu ro'yxat bo'yicha ajratadi, kesilgan
     ro'yxatda esa eskisi yangi bo'lib ko'rinardi.
 
@@ -504,7 +504,7 @@ def main():
     # yozuvidan keyin shu belgini tekshiradi. Belgilar ham saqlanadi:
     # yozilgan fayldan yangi belgi chiqsa, check_code uni aytadi.
     # Belgini faqat yozuvchi qo'yadi. Rejalashtiruvchi va reviewer
-    # --no-mark bilan chaqiradi, aks holda arxitektor uchun darvoza o'chadi.
+    # --no-mark bilan chaqiradi, aks holda dasturchi uchun darvoza o'chadi.
     if "--no-mark" not in args:
         mark(paths, [label for label, _, _ in signals])
 
