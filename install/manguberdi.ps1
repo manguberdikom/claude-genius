@@ -643,9 +643,18 @@ if ($r.Code -eq 0) { Step "asboblar ishlayapti" }
 else { Step "XATO: budget.py yiqildi: $($r.Out)"; $ok = $false }
 
 # GENIUS_HOOK_DEBUG: bo'sh chiqsa hook sababini stderr ga yozadi.
+# CLAUDE_PROJECT_DIR ni Claude Code har hook jarayoniga beradi va hook
+# faqat klonda yoki Java proyektida ishlaydi (tools/hookio.py active()).
+# Shu yerda u klonga qo'yiladi, aks holda tekshiruv hookning o'rinsiz
+# bo'lganini "bo'sh chiqish" deb o'qib, o'rnatishni yiqitardi.
 $env:GENIUS_HOOK_DEBUG = '1'
+$savedProjectDir = $env:CLAUDE_PROJECT_DIR
+$env:CLAUDE_PROJECT_DIR = $GeniusPath
 $r = Invoke-Py @((Join-Path $toolsDir 'suggest_sections.py')) '{"prompt":"circuit breaker"}'
 Remove-Item Env:GENIUS_HOOK_DEBUG -ErrorAction SilentlyContinue
+if ($null -eq $savedProjectDir) {
+  Remove-Item Env:CLAUDE_PROJECT_DIR -ErrorAction SilentlyContinue
+} else { $env:CLAUDE_PROJECT_DIR = $savedProjectDir }
 if ($r.Code -eq 0 -and $r.Out -match 'patterns') { Step "bo'lim taklifi ishlayapti" }
 else { Step "XATO: bo'lim taklifi bo'sh: $($r.Out)"; $ok = $false }
 
