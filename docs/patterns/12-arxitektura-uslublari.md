@@ -565,8 +565,9 @@ Config hazelcastConfig() {
 RestClient pspClient(RestClient.Builder builder, PspProperties props) {
     return builder
             .baseUrl(props.url())
-            .requestFactory(ClientHttpRequestFactories.get(
-                    ClientHttpRequestFactorySettings.DEFAULTS
+            // Boot 4.x: HttpClientSettings + ClientHttpRequestFactoryBuilder
+            .requestFactory(ClientHttpRequestFactoryBuilder.detect().build(
+                    HttpClientSettings.defaults()
                             .withConnectTimeout(Duration.ofSeconds(2))   // 1) timeout
                             .withReadTimeout(Duration.ofSeconds(5))))
             .defaultStatusHandler(HttpStatusCode::isError,
@@ -763,7 +764,7 @@ qayta birlashtirish. Microservice nomi natijani o'zgartirmaydi.
 
 **Tavsif:** Tizim bir-biridan to'liq izolyatsiya qilingan "hujayra"larga (cell) bo'linadi, har bir hujayra butun stack'ning mustaqil nusxasi bo'lib, foydalanuvchilarning aniq bir qismiga xizmat qiladi. Trafik cell router orqali shard kaliti (tenant ID, foydalanuvchi ID) bo'yicha yo'naltiriladi. Bitta hujayra ishdan chiqsa, faqat o'sha hujayradagi foydalanuvchilar ta'sirlanadi - bu "blast radius" ni cheklash usuli. AWS va Slack kabi yirik SaaS platformalari aynan shu model bilan ishlaydi.
 
-**Spring'da qayerda uchraydi:** Spring'da maxsus annotatsiya yo'q - bu infratuzilma va routing darajasidagi pattern. Amalda: har bir cell alohida Kubernetes namespace yoki alohida AWS region/AZ guruhida ishlaydigan bir xil Spring Boot 3.x image; routing Spring Cloud Gateway (`spring-cloud-starter-gateway`) ichida `RoutePredicateFactory` yoki custom `GlobalFilter` bilan tenant kaliti bo'yicha amalga oshiriladi; cell ichida konfiguratsiya Spring Cloud Config yoki Kubernetes ConfigMap orqali profile (`spring.profiles.active=cell-eu-1`) bilan beriladi. Multi-tenant ma'lumot izolyatsiyasi uchun `AbstractRoutingDataSource` yoki Hibernate 6 `MultiTenantConnectionProvider` + `CurrentTenantIdentifierResolver` ishlatiladi; har bir cell uchun Micrometer tag (`cell=eu-1`) bilan alohida metrikalar yig'iladi.
+**Spring'da qayerda uchraydi:** Spring'da maxsus annotatsiya yo'q - bu infratuzilma va routing darajasidagi pattern. Amalda: har bir cell alohida Kubernetes namespace yoki alohida AWS region/AZ guruhida ishlaydigan bir xil Spring Boot 3.x image; routing Spring Cloud Gateway (`spring-cloud-starter-gateway-server-webflux`) ichida `RoutePredicateFactory` yoki custom `GlobalFilter` bilan tenant kaliti bo'yicha amalga oshiriladi; cell ichida konfiguratsiya Spring Cloud Config yoki Kubernetes ConfigMap orqali profile (`spring.profiles.active=cell-eu-1`) bilan beriladi. Multi-tenant ma'lumot izolyatsiyasi uchun `AbstractRoutingDataSource` yoki Hibernate 6 `MultiTenantConnectionProvider` + `CurrentTenantIdentifierResolver` ishlatiladi; har bir cell uchun Micrometer tag (`cell=eu-1`) bilan alohida metrikalar yig'iladi.
 
 **Qo'llanish keyslari:**
 - Yirik B2B SaaS: har bir enterprise tenant guruhi o'z hujayrasida, shovqinli qo'shni (noisy neighbour) ta'sirini yo'qotish.

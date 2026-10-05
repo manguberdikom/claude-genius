@@ -26,3 +26,8 @@ resilience\.annotation[^\n]{0,100}maxAttempts	yadrodagi @Retryable atributi maxR
 sighup[^\n]{0,80}work_mem|work_mem[^\n]{0,80}sighup	work_mem konteksti user (PGC_USERSET), sighup emas	docs
 huge_pages\s*=\s*try	try allaqachon standart qiymat; maslahat sifatida u hech narsa bermaydi, on kerak	docs
 2-5 foiz CPU	huge_pages foydasiga birlamchi manba foiz bermaydi, faqat sifat jihatidan gapiradi	docs
+ClientHttpRequestFactories\.get	Spring Boot 3.4 da deprecate, 4.0 da olib tashlangan; ClientHttpRequestFactoryBuilder ishlatiladi	docs
+ClientHttpRequestFactorySettings\.(DEFAULTS|defaults)	4.0 da bu tur HttpClientSettings deb nomlanadi; DEFAULTS doimiysi 3.4 dan beri yo'q	docs
+spring-cloud-starter-gateway(-mvc)?[`,)\s]	starter nomlari -server-webflux va -server-webmvc qo'shimchasini oldi	docs
+spring\.cloud\.gateway\.(routes|httpclient|globalcors|default-filters|discovery)	prefiks spring.cloud.gateway.server.webflux ga o'zgargan	docs
+Java 21\+[^\n]{0,60}ShutdownOn	ShutdownOnSuccess/Failure faqat 21-24 preview da; JDK 25 da Joiner bilan open(...)	docs

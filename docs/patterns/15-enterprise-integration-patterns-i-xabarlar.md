@@ -1052,6 +1052,8 @@ public class Resequencer {
 public class OrderValidationProcessor {
 
     public ValidationReport validate(Order order) throws InterruptedException {
+        // Java 21-24 preview; Java 25 (JEP 505) da ShutdownOnFailure yo'q,
+        // o'rniga open(Joiner.awaitAllSuccessfulOrThrow()).
         try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
             // Bo'lish: har tekshiruv mustaqil va parallel ketadi
             var stock  = scope.fork(() -> inventory.check(order.items()));

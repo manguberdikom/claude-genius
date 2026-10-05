@@ -217,6 +217,8 @@ CompletableFuture.allOf(mijoz, limit).join();
 // Yangi hisob: 1 + 1 + max(1 ta parallel safar) + 80 ms = taxminan 82 ms
 
 // Java 21+ da strukturali variant (virtual thread'lar bilan):
+// Java 21-24 preview; Java 25 (JEP 505) da ShutdownOnFailure yo'q,
+// o'rniga open(Joiner.awaitAllSuccessfulOrThrow()).
 try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
     var m = scope.fork(() -> mijozRepo.topish(id));
     var l = scope.fork(() -> limitClient.olish(id));

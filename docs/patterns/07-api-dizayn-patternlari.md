@@ -570,7 +570,7 @@ public class WebhookSender {
 
 **Tavsif:** [Microservices patternlari bobidagi API Gateway yozuvi](14-microservices-patternlari.md#1427-api-gateway-api-gateway) bu patternning to'liq yozuvi, bu yerda faqat API dizayn nuqtai nazari: client ichki topologiyani bilmasdan yagona domen va barqaror shartnomani ko'radi, gateway esa protokol tarjimasi (HTTP dan gRPC ga), versiyalash va kanareyka routing uchun bitta nuqta beradi.
 
-**Spring'da qayerda uchraydi:** Kanonik yozuvdagi Spring Cloud Gateway'dan tashqari Servlet varianti `spring-cloud-starter-gateway-mvc`, OAuth2 token'ni downstream'ga uzatadigan `TokenRelay` filtri (`oauth2-client` bilan), Eureka discovery orqali `lb://ORDER-SERVICE` sxemasi va platforma darajasidagi alternativ sifatida Kubernetes Gateway API yoki Envoy.
+**Spring'da qayerda uchraydi:** Kanonik yozuvdagi Spring Cloud Gateway'dan tashqari Servlet varianti `spring-cloud-starter-gateway-server-webmvc`, OAuth2 token'ni downstream'ga uzatadigan `TokenRelay` filtri (`oauth2-client` bilan), Eureka discovery orqali `lb://ORDER-SERVICE` sxemasi va platforma darajasidagi alternativ sifatida Kubernetes Gateway API yoki Envoy.
 
 **Qo'llanish keyslari:**
 - Legacy SOAP yoki gRPC backend'ni tashqariga REST sifatida ko'rsatish va API versiyalarini gateway marshrutida ajratish.
@@ -629,6 +629,8 @@ class MobileHomeController {
 // API composition: bir nechta servisdan parallel yig'ish
 @GetMapping("/customers/{id}/overview")
 CustomerOverview overview(@PathVariable long id) throws InterruptedException {
+    // Java 21-24 preview. Java 25 (JEP 505): StructuredTaskScope.open(
+    // Joiner.awaitAllSuccessfulOrThrow()), ShutdownOnFailure olib tashlangan.
     try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
         var profile = scope.fork(() -> profiles.get(id));
         var orders  = scope.fork(() -> orderClient.recent(id));

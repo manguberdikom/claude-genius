@@ -255,7 +255,8 @@ Eng xavfli default: timeout yo'q. JDK'ning `HttpClient` da connect timeout o'rna
 ```java
 @Bean
 RestClient paymentClient(RestClient.Builder builder) {
-    var settings = ClientHttpRequestFactorySettings.defaults()
+    // Boot 4.0 da bu tur HttpClientSettings deb nomlanadi
+    var settings = HttpClientSettings.defaults()
             .withConnectTimeout(Duration.ofSeconds(2))   // TCP + TLS uchun
             .withReadTimeout(Duration.ofSeconds(3));     // javob baytlarini kutish
     return builder
