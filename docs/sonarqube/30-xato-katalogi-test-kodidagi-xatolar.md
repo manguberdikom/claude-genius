@@ -27,7 +27,7 @@
 
 
 
-Sonar test kodini ham production kod kabi tahlil qiladi, lekin boshqa qoida to'plamini qo'llaydi. Asosiy savol "bu metod ishlaydimi" emas, balki "bu test haqiqatan biror narsani tekshiradimi". Quyidagi katalog test kodida eng ko'p uchraydigan shikoyatlarni, toifasini va tuzatilgan variantini yig'adi. Jiddiylik "taxminan", chunki u quality profile sozlamasiga qarab o'zgaradi.
+Sonar test kodini ham production kod kabi tahlil qiladi, lekin boshqa qoida to'plamini qo'llaydi. Asosiy savol "bu metod ishlaydimi" emas, balki "bu test haqiqatan biror narsani tekshiradimi". Quyidagi katalog test kodida eng ko'p uchraydigan shikoyatlarni, toifasini va tuzatilgan variantini yig'adi. Jiddiylik ustuni sonar-java rule metadata dagi `defaultSeverity` (legacy severity): quality profile va Sonar versiyasiga qarab farq qilishi mumkin.
 
 | Kod holati | Sonar nima deydi | Toifa | Jiddiylik (taxminan) | Ta'siri |
 | --- | --- | --- | --- | --- |
@@ -35,15 +35,15 @@ Sonar test kodini ham production kod kabi tahlil qiladi, lekin boshqa qoida to'p
 | `try { ... fail(); } catch (Ex e) {}` | eskirgan usul, `assertThrows` tavsiya qilinadi | maintainability (code smell) | Major | Noto'g'ri joyda tashlangan istisno ham testni o'tkazadi |
 | `assertThrows` lambdasida bir nechta chaqiruv | `java:S5778`: faqat bitta metod chaqirig'i kutiladi | maintainability (code smell) | Major | Qaysi chaqiruv istisno tashlaganini bilib bo'lmaydi |
 | `@Disabled` izohsiz qoldirilgan | `java:S1607`: tuzatilishi yoki olib tashlanishi kerak | maintainability (code smell) | Major | Yashirin regressiya, sababi esda qolmaydi |
-| `Thread.sleep(2000)` test ichida | `java:S2925`: testda `Thread.sleep` ishlatilmasin | reliability (bug) | Critical | Flaky test va sekin CI |
-| `static` o'zgaruvchan maydonga yozish | `java:S2696`: instance metod static maydonga yozmasin | reliability (bug) | Major | Testlar bajarilish tartibiga bog'lanadi |
+| `Thread.sleep(2000)` test ichida | `java:S2925`: testda `Thread.sleep` ishlatilmasin | maintainability (code smell) | Major | Flaky test va sekin CI |
+| `static` o'zgaruvchan maydonga yozish | `java:S2696`: instance metod static maydonga yozmasin | maintainability (code smell) | Critical | Testlar bajarilish tartibiga bog'lanadi |
 | `void test1()` kabi nomlar | `java:S100`: metod nomi konventsiyaga mos bo'lsin | maintainability (code smell) | Minor | Buzilgan test nimani anglatishini hisobot ko'rsatmaydi |
 | Kutilgan natija `BigDecimal("1187.5")` | Sonar qoidasi yo'q: `java:S109` ning `scope` i `Main` | - | - | Qoida o'zgarganda raqam manbasi noma'lum |
 | Har testda takrorlangan setup | duplicated blocks, duplication density o'sadi | maintainability (code smell) | Major | Gate ning duplication sharti buziladi |
 | Bitta testda 20 dan ortiq assertion | `java:S5961`: testda juda ko'p assertion | maintainability (code smell) | Major | Birinchi xato qolganini yashiradi |
 | `...Test` klassida test metodi yo'q | `java:S2187`: test klassi test o'z ichiga olishi kerak | maintainability (code smell) | Blocker | Fayl test deb o'qiladi, hech narsa bajarilmaydi |
-| `assertThat(total)` oxirigacha yozilmagan | `java:S2970`: assertion tugallanmagan | reliability (bug) | Blocker | Shart tekshirilmaydi, test doim yashil |
-| `assertTrue(true)` yoki `assertNotNull(new Order())` | `java:S2701` va o'xshash qoidalar | maintainability (code smell) | Major | Soxta tekshiruv, aslida assertion yo'q |
+| `assertThat(total)` oxirigacha yozilmagan | `java:S2970`: assertion tugallanmagan | maintainability (code smell) | Blocker | Shart tekshirilmaydi, test doim yashil |
+| `assertTrue(true)` yoki `assertNotNull(new Order())` | `java:S2701` va o'xshash qoidalar | maintainability (code smell) | Minor | Soxta tekshiruv, aslida assertion yo'q |
 | Faqat metodni chaqiradigan coverage testi | `java:S2699`, coverage ko'rsatkichi buziladi | maintainability (code smell) | Blocker | Coverage raqami haqiqatdan uzoqlashadi |
 
 ## 30.1 Assertion siz test metodi

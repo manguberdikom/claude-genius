@@ -29,7 +29,7 @@
 
 
 
-Spring va JPA loyihalarida Sonar shikoyatlarining katta qismi bir necha o'nlab takrorlanuvchi holatdan kelib chiqadi. Bu bob shu holatlarni katalog sifatida yig'adi: avval qisqa xulosa jadvali, keyin har bir holat uchun shikoyat qilinadigan kod va tuzatilgan variant. Bu yerda faqat bitta savolga javob bor: Sonar nima deydi va kodni qanday o'zgartirsak shikoyat yo'qoladi.
+Spring va JPA loyihalarida Sonar shikoyatlarining katta qismi bir necha o'nlab takrorlanuvchi holatdan kelib chiqadi. Bu bob shu holatlarni katalog sifatida yig'adi: avval qisqa xulosa jadvali, keyin har bir holat uchun shikoyat qilinadigan kod va tuzatilgan variant. Bu yerda faqat bitta savolga javob bor: Sonar nima deydi va kodni qanday o'zgartirsak shikoyat yo'qoladi. Jiddiylik ustuni sonar-java rule metadata dagi `defaultSeverity` (legacy severity): quality profile va Sonar versiyasiga qarab farq qilishi mumkin.
 
 | Kod holati | Sonar nima deydi | Toifa | Jiddiylik (taxminan) | Ta'siri |
 |---|---|---|---|---|
@@ -41,11 +41,12 @@ Spring va JPA loyihalarida Sonar shikoyatlarining katta qismi bir necha o'nlab t
 | Entity da `equals` faqat `id` bo'yicha emas | `equals` va `hashCode` kelishmaydi, shartnoma buzildi | reliability (bug) | Critical | `Set` ichida dublikat, collection da element topilmaydi |
 | `@OneToMany(fetch = EAGER)` | Eager yuklash keraksiz so'rovlarni keltiradi | maintainability (code smell) | Major | N+1 so'rov, javob vaqti o'sadi |
 | `findAll()` ni cheklovsiz chaqirish | Natija hajmi cheklanmagan, sahifalash yo'q | reliability (bug) | Major | Katta jadvalda xotira tugaydi |
-| Native query da satr birlashtirish | SQL ni dinamik qurish, injection xavfi (`java:S2077`) | security (vulnerability) | Blocker | Tashqi kiritish bilan baza o'qiladi yoki o'zgartiriladi |
-| `@Value` da maxfiy standart qiymat | Kodda qattiq yozilgan parol yoki kalit (`java:S2068`) | security (vulnerability) | Blocker | Kalit git tarixida qoladi, rotatsiya qilinmaydi |
-| `application.yml` da ochiq parol | Konfiguratsiyada credential saqlanmoqda (`java:S2068`) | security (vulnerability) | Blocker | Artifact ichida parol tarqaladi |
+| Native query da satr birlashtirish | SQL ni dinamik qurish, injection xavfi (`java:S2077`) | security (vulnerability) | Major | Tashqi kiritish bilan baza o'qiladi yoki o'zgartiriladi |
+| `@Value` da maxfiy standart qiymat | Kodda qattiq yozilgan parol yoki kalit (`java:S2068`) | security (vulnerability) | Major | Kalit git tarixida qoladi, rotatsiya qilinmaydi |
+| `application.yml` da ochiq parol | Konfiguratsiyada credential saqlanmoqda (`java:S2068`) | security (vulnerability) | Major | Artifact ichida parol tarqaladi |
 | 40 ta bean li `@Configuration` | Klass juda katta, javobgarlik aralashgan | maintainability (code smell) | Major | O'zgarish narxi oshadi, kontekst sekin ko'tariladi |
-| `catch (Exception e)` va stack trace javobda | Umumiy istisno ushlanmoqda (`java:S2221`), ichki ma'lumot oshkor | security hotspot va code smell | Critical | Ichki tuzilma tashqariga chiqadi, xato yashiriladi |
+| `catch (Exception e)` | Umumiy istisno ushlanmoqda (`java:S2221`) | maintainability (code smell) | Minor | Xato yashiriladi, sabab yo'qoladi |
+| Javobda stack trace qaytarish | Sonar kaliti bu yerda ko'rsatilmaydi: qoida profilga va versiyaga bog'liq | - | - | Ichki tuzilma va yo'llar tashqariga chiqadi |
 | `RestTemplate` timeout siz | Tashqi chaqiruv cheksiz kutishi mumkin | reliability (bug) | Major | Thread pool to'ladi, servis javob bermaydi |
 
 ## 29.1 Maydonga `@Autowired` qo'yish

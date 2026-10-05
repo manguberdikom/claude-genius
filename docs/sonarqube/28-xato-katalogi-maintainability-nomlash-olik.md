@@ -29,7 +29,7 @@
 
 
 
-Bu bob Sonar hisobotida eng ko'p uchraydigan, lekin eng arzon tuzatiladigan shikoyatlar katalogi. Bu yerdagi deyarli hamma narsa `maintainability` toifasiga tushadi, ya'ni code smell, va ko'pchiligi dastur ishlashiga bugun ta'sir qilmaydi. Shuning uchun ularni e'tiborsiz qoldirish oson, keyin esa ular technical debt ratio va `Maintainability Rating` orqali quality gate ni yiqitadi. Katalog Spring servis va repository klasslari ustida qurilgan, chunki real loyihada bu shikoyatlarning asosiy qismi aynan shu ikki qatlamda yig'iladi.
+Bu bob Sonar hisobotida eng ko'p uchraydigan, lekin eng arzon tuzatiladigan shikoyatlar katalogi. Bu yerdagi deyarli hamma narsa `maintainability` toifasiga tushadi, ya'ni code smell, va ko'pchiligi dastur ishlashiga bugun ta'sir qilmaydi. Shuning uchun ularni e'tiborsiz qoldirish oson, keyin esa ular technical debt ratio va `Maintainability Rating` orqali quality gate ni yiqitadi. Katalog Spring servis va repository klasslari ustida qurilgan, chunki real loyihada bu shikoyatlarning asosiy qismi aynan shu ikki qatlamda yig'iladi. Jiddiylik ustuni sonar-java rule metadata dagi `defaultSeverity` (legacy severity): quality profile va Sonar versiyasiga qarab farq qilishi mumkin.
 
 | Kod holati | Sonar nima deydi | Toifa | Jiddiylik (taxminan) | Ta'siri |
 |---|---|---|---|---|
@@ -48,11 +48,11 @@ Bu bob Sonar hisobotida eng ko'p uchraydigan, lekin eng arzon tuzatiladigan shik
 | `// FIXME` izohi | tuzatilmagan nuqson belgisi (`java:S1134`) | maintainability | major | Ma'lum xato release ga ketadi |
 | Eskirgan API chaqiruvi | deprecated element ishlatilgan (`java:S1874`) | maintainability | major | Keyingi major versiyada kod buziladi |
 | `public BigDecimal balance` | maydon public bo'lmasligi kerak (`java:S1104`) | maintainability | major | Invariantni hech kim himoya qilmaydi |
-| `public static Map CACHE` | public static o'zgaruvchan maydon (`java:S2386`) | maintainability (ba'zi profilda vulnerability) | critical | Tashqaridan holatni buzish mumkin |
+| `public static Map CACHE` | public static o'zgaruvchan maydon (`java:S2386`) | maintainability (code smell) | Minor | Tashqaridan holatni buzish mumkin |
 | Konstruktorda bir marta beriladigan maydon `final` emas | o'zgarmas maydon `final` bo'lsin | maintainability | minor | Tasodifiy qayta tayinlash xavfi |
 | Interfeysda `public abstract` | ortiqcha modifikator (`java:S2333`) | maintainability | minor | Shovqin, uslub nomuvofiqligi |
 | Sikl ichida `str += x` | siklda satr birlashtirish (`java:S1643`) | maintainability | major | O(n^2) xotira va vaqt |
-| `log.debug("id=" + id)` | argument har safar hisoblanadi (`java:S2629`) | maintainability | major | O'chirilgan log darajasida ham CPU sarfi |
+| `log.debug("id=" + id)` | argument har safar hisoblanadi (`java:S2629`) | maintainability (code smell) | Major | O'chirilgan log darajasida ham CPU sarfi |
 | `name.toString()` | `String` ustida `toString()` (`java:S1858`) | maintainability | minor | Ma'nosiz chaqiruv, noto'g'ri tasavvur |
 | `"x" + String.valueOf(n)` | ortiqcha `String.valueOf` (`java:S1153`) | maintainability | minor | Kod shovqini |
 | Ikki metod bir xil tanaga ega | identik implementatsiya (`java:S4144`) | maintainability | major | Tuzatish bitta joyda qoladi |

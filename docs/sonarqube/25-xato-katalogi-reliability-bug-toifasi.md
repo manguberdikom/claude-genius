@@ -31,14 +31,14 @@
 
 
 
-Reliability toifasi Sonar uchun eng qattiq toifa, chunki bu yerdagi issue "kod ishlamaydi yoki kutilmagan holatda sinadi" degan ma'noni bildiradi. Quality gate ko'pincha aynan yangi bug soniga nol chek qo'yadi, shuning uchun bu katalogdagi holatlar birinchi navbatda tuzatiladi. Quyida har bir holat uchun shikoyat qilinadigan kod, shikoyat sababi va tuzatilgan variant berilgan. Misollar to'lov servisi, buyurtma va ombor qoldig'i ustida.
+Reliability toifasi Sonar uchun eng qattiq toifa, chunki bu yerdagi issue "kod ishlamaydi yoki kutilmagan holatda sinadi" degan ma'noni bildiradi. Quality gate ko'pincha aynan yangi bug soniga nol chek qo'yadi, shuning uchun bu katalogdagi holatlar birinchi navbatda tuzatiladi. Quyida har bir holat uchun shikoyat qilinadigan kod, shikoyat sababi va tuzatilgan variant berilgan. Misollar to'lov servisi, buyurtma va ombor qoldig'i ustida. Jiddiylik ustuni sonar-java rule metadata dagi `defaultSeverity` (legacy severity): quality profile va Sonar versiyasiga qarab farq qilishi mumkin.
 
 | Kod holati | Sonar nima deydi | Toifa | Jiddiylik (taxminan) | Ta'siri |
 |---|---|---|---|---|
 | `null` qaytishi mumkin metod natijasini tekshirmasdan ishlatish | null dereference xavfi (`java:S2259`) | reliability (bug) | Major yoki Blocker | So'rov `NullPointerException` bilan tushadi |
 | `Optional.get()` ni `isPresent()` dan oldin chaqirish | Optional qiymati tekshirilmagan (`java:S3655`) | reliability (bug) | Major | `NoSuchElementException` |
 | `InputStream`, `Connection`, `Statement` yopilmaydi | resurs yopilishi shart (`java:S2095`) | reliability (bug) | Blocker yoki Major | Connection pool tugaydi, servis muzlaydi |
-| `equals` bor, `hashCode` yo'q | ikkisi birga qayta yozilishi kerak (`java:S1206`) | reliability (bug) | Blocker | `HashMap` va `HashSet` da yozuv yo'qoladi |
+| `equals` bor, `hashCode` yo'q | ikkisi birga qayta yozilishi kerak (`java:S1206`) | reliability (bug) | Minor | `HashMap` va `HashSet` da yozuv yo'qoladi |
 | `Long` yoki `Integer` ni `==` bilan solishtirish | obyekt havolasi solishtirilmoqda | reliability (bug) | Major | 127 dan katta ID lar teng emas deb chiqadi |
 | `double` ni `==` bilan solishtirish | suzuvchi nuqta tengligi (`java:S1244`) | reliability (bug) | Major | Pul summasi hech qachon teng kelmaydi |
 | Pul uchun `double` maydon | aniqlik yo'qolishi, `BigDecimal` kerak | reliability (bug) yoki code smell | Major | Hisob-kitobda tiyin yo'qoladi |
@@ -49,8 +49,8 @@ Reliability toifasi Sonar uchun eng qattiq toifa, chunki bu yerdagi issue "kod i
 | `for-each` ichida `list.remove(...)` | to'plam iteratsiya paytida o'zgartirilgan | reliability (bug) | Major | `ConcurrentModificationException` |
 | `Collectors.toMap` da takroriy kalit | merge funksiyasi berilmagan | reliability (bug) | Major | `IllegalStateException`, hisobot tushadi |
 | `static SimpleDateFormat` ni baham ko'rish | thread-safe bo'lmagan maydon static | reliability (bug) | Blocker yoki Major | Yuk ostida sana buzilib chiqadi |
-| `compareTo` bor, `equals` moslanmagan | ikkisi mos kelishi kerak (`java:S1210`) | reliability (bug) | Major | `TreeSet` va `List.contains` turlicha javob beradi |
-| Sikl o'zgaruvchisi tanada o'zgartirilgan (`java:S127`) | counter tanada o'zgartirilmasin | reliability (bug) | Major | Qatorlar o'tkazib yuboriladi |
+| `compareTo` bor, `equals` moslanmagan | ikkisi mos kelishi kerak (`java:S1210`) | maintainability (code smell) | Minor | `TreeSet` va `List.contains` turlicha javob beradi |
+| Sikl o'zgaruvchisi tanada o'zgartirilgan (`java:S127`) | counter tanada o'zgartirilmasin | maintainability (code smell) | Major | Qatorlar o'tkazib yuboriladi |
 | Sikl shartiga ta'sir qilmaydigan tana (`java:S2189`) | cheksiz sikl | reliability (bug) | Blocker | CPU 100 foiz, pod restart |
 
 ## 25.1 Toifa va jiddiylik qanday o'qiladi

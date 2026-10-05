@@ -40,7 +40,7 @@ Natijada test fayli Sonar hisobotida ikki marta ko'rinadi. Birinchi marta covera
 | Testdagi issue gate'ni buzadi | New Code'dagi issue manba turini ajratmaydi | Qoidani profil darajasida test uchun o'chir, faylni emas |
 | Coverage 0% ko'rinadi | JaCoCo report yo'li noto'g'ri | `sonar.coverage.jacoco.xmlReportPaths` ni tekshir |
 | Test fayli coverage'ni "suyultiradi" | Test papkasi sources deb belgilangan | Papkalarni to'g'ri ajrat |
-| Testda hardcoded parol hotspot beradi | `java:S2068` test kodida ham ishlaydi | Aniq qoida uchun `issue.ignore` yoz, izoh bilan |
+| Testda hardcoded parol issue beradi | `java:S2068` (vulnerability) `scope` i `Main`, ya'ni test papkasi sources deb sanalganda ishga tushadi | Avval `sonar.tests` ni to'g'rila; kerak bo'lsa aniq qoida uchun `issue.ignore`, izoh bilan |
 | Testdagi smell abadiy qoladi | Hech kim test faylini refaktor qilmaydi | Test kodini ham Definition of Done'ga kirit |
 
 ## 19.2 Assertion siz test va u nega buzilgan hisoblanadi
