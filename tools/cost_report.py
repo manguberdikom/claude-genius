@@ -14,6 +14,7 @@ qilish emas.
 """
 
 import argparse
+import importlib.util
 import os
 import re
 import signal
@@ -105,6 +106,26 @@ def memory_indexes():
     return out
 
 
+def suggest_worst(path, count):
+    """Taklif hooki matnining eng uzun holati, belgida.
+
+    Indeks bo'lsa hookning o'z render() i eng uzun `count` sarlavha bilan
+    chaqiriladi: nomzodlar hook ishlatadigan titles_by_key dan, bob
+    sarlavhasi ham (ko'p so'zli bob taxallusi bob raqamini beradi). Modul
+    ROOT dagi fayldan yuklanadi, shunda u indeksni ham o'sha ROOT dan
+    o'qiydi. Indekssiz: sarlavha ~55, qator ~150 belgi.
+    """
+    if not os.path.exists(os.path.join(ROOT, "index", "sections.tsv")):
+        return 55 + count * 150
+    spec = importlib.util.spec_from_file_location("suggest_sections", path)
+    S = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(S)
+    titles = S.titles_by_key(S.read_tsv("sections.tsv"))
+    hits = [(doc, num, title, 0) for (doc, num), title in titles.items()]
+    hits.sort(key=lambda hit: len(S.render([hit])), reverse=True)
+    return len(S.render(hits[:count]))
+
+
 def collect():
     """(nom, belgi, token, izoh) to'rtliklari: har navbatda ketadigan narsalar."""
     rows = []
@@ -134,13 +155,16 @@ def collect():
 
     suggest = os.path.join(ROOT, "tools", "suggest_sections.py")
     if os.path.exists(suggest):
-        # Taklif hooki: sarlavha ~51 belgi, qator p90 ~90 belgi.
+        # Taklif hooki: eng uzun MAX_SUGGESTIONS sarlavha bilan render()
+        # natijasi (suggest_worst). Promptda Sonar kaliti bo'lsa har kalitga
+        # yana bitta ~45 belgilik qator qo'shiladi ("To'liq ro'yxat: ...
+        # rule java:Sxxxx"); u kamdan-kam, shuning uchun bu yerda sanalmaydi.
         match = re.search(r"^MAX_SUGGESTIONS = (\d+)", read(suggest), re.M)
         count = int(match.group(1)) if match else 4
-        size = 60 + count * 87
+        size = suggest_worst(suggest, count)
         rows.append(("taklif hooki (eng ko'pi)", size,
                      int(size / CHARS_PER_TOKEN["uz"]),
-                     "sarlavha va %d qatorgacha, mavzusiz so'rovda 0" % count))
+                     "eng uzun %d qator; Sonar kaliti +45, mavzusiz 0" % count))
 
     handoff = os.path.join(ROOT, "tools", "handoff.py")
     if os.path.exists(handoff) and '"--hook"' in read(handoff):

@@ -217,6 +217,9 @@ Bu faylda memory qoidalari takrorlanmaydi. Ish boshida proyekt va umumiy
 - marshrut jadvali - qaysi joyga yozish kerak
 - ketma-ketlik - qanday tartibda o'qish va yozish
 
+Protokol butunligicha o'qilmaydi: kerakli bo'limlarni ochadigan buyruqlar
+ro'yxati `.claude/skills/manguberdi/references/memory.md` boshida.
+
 Rejadan keyin memoryga faqat qaytariladigan bilim tushadi: shu proyektda
 takrorlangan tuzoq, qabul qilingan qaror va uning sababi. Rejaning o'zi
 memoryga ko'chirilmaydi, u `REJA.md` da va git tarixida qoladi.

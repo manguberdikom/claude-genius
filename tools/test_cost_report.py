@@ -9,6 +9,7 @@ oshib ketadi. Shuning uchun haqiqiy fayllarning tili tekshiriladi.
 """
 
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -19,6 +20,7 @@ TOOL = os.path.join(HERE, "cost_report.py")
 sys.path.insert(0, HERE)
 
 import cost_report  # noqa: E402
+import suggest_sections  # noqa: E402
 
 SKILLS = os.path.join(ROOT, ".claude", "skills")
 AGENTS = os.path.join(ROOT, ".claude", "agents")
@@ -85,6 +87,53 @@ def case_royxat_qatori(tmp):
             and "CLAUDE.md" not in rows)
 
 
+def taklif_row(root):
+    old = cost_report.ROOT
+    cost_report.ROOT = root
+    try:
+        rows = {r[0]: r for r in cost_report.collect()}
+    finally:
+        cost_report.ROOT = old
+    return rows["taklif hooki (eng ko'pi)"]
+
+
+def write_tsv(path, header, rows):
+    with open(path, "w", encoding="utf-8") as handle:
+        for row in [header] + rows:
+            handle.write("\t".join(row) + "\n")
+
+
+def case_taklif_indekssiz(tmp):
+    """Indeks yo'q: sarlavha 55 + har qator 150 belgi."""
+    root = os.path.join(tmp, "taklif_bosh")
+    os.makedirs(os.path.join(root, "tools"))
+    with open(os.path.join(root, "tools", "suggest_sections.py"), "w",
+              encoding="utf-8") as handle:
+        handle.write("MAX_SUGGESTIONS = 3\n")
+    return taklif_row(root)[1] == 55 + 3 * 150
+
+
+def case_taklif_eng_uzun(tmp):
+    """Indeks bor: hookning render() i eng uzun sarlavhalar bilan, bob ham."""
+    root = os.path.join(tmp, "taklif_indeks")
+    os.makedirs(os.path.join(root, "tools"))
+    os.makedirs(os.path.join(root, "index"))
+    shutil.copy(os.path.join(HERE, "suggest_sections.py"),
+                os.path.join(root, "tools"))
+    sections = [("patterns", "1.%d" % n, "1.%d %s" % (n, "x" * n * 10))
+                for n in range(1, 7)]
+    write_tsv(os.path.join(root, "index", "sections.tsv"),
+              ("doc", "section", "chapter", "title"),
+              [(d, s, "1", t) for d, s, t in sections])
+    chapter = ("testing", "2", "2. " + "y" * 200)
+    write_tsv(os.path.join(root, "index", "chapters.tsv"),
+              ("doc", "chapter", "title"), [chapter])
+    count = suggest_sections.MAX_SUGGESTIONS
+    longest = [chapter] + sections[::-1][:count - 1]
+    expected = suggest_sections.render([h + (0,) for h in longest])
+    return taklif_row(root)[1] == len(expected)
+
+
 def case_budget_qiymatsiz(_):
     code, _ = run("--budget")
     return code == 2
@@ -104,6 +153,8 @@ CASES = [
     ("8 skill tavsifi inglizcha", case_skill_tavsiflari_inglizcha),
     ("manguberdi, agentlar va CLAUDE.md o'zbekcha", case_ozbekcha_matnlar),
     ("ro'yxat qatori nom va tools bilan", case_royxat_qatori),
+    ("taklif hooki indekssiz taxmin", case_taklif_indekssiz),
+    ("taklif hooki eng uzun sarlavhalar bilan", case_taklif_eng_uzun),
     ("--budget qiymatsiz rc 2", case_budget_qiymatsiz),
     ("--budget 1 oshib ketadi", case_budget_oshdi),
     ("argumentsiz byudjet ichida", case_argumentsiz),

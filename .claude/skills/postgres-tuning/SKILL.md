@@ -75,5 +75,4 @@ Sxemani bilish uchun bazaga ulanish shart emas: entity sinflari uni
 to'liq tasvirlaydi. Host yoki URL bilan ulanish (`psql -h ...`)
 `tools/guard.py` tomonidan to'siladi. Chiqish yo'li `COST_OK=1`, lekin
 faqat foydalanuvchi bergan chiqish nega yetmagani aytilgandan keyin.
-Host'siz `psql` va `docker exec ... psql` guard'dan o'tadi, lekin ular ham
-ulanish: shart bir xil.
+Host'siz `psql` guard'dan o'tadi, lekin u ham ulanish: shart bir xil.

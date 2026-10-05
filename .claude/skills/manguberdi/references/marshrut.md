@@ -51,6 +51,8 @@ ketma-ket bajariladi, aralashtirilmaydi.
 | Qoida matnini keltirish, uchtadan ko'p bo'lim | `qidiruv` | bir-uch bo'lim bo'lsa `doc.sh show` asosiy sessiyada, aktyorsiz |
 | Chiqish yoki sxemani o'qish | `tahlil` | uzun log, entity, test chiqishi |
 
+`reja` skilli zanjirda chaqirilmaydi, uning o'rnini `rejalashtiruvchi` bosadi.
+
 ## Hujjat berilgan bo'lsa
 
 Rasm, PDF yoki Word berilsa, u **talab manbai**, qaror emas. Undan

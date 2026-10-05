@@ -64,7 +64,7 @@ o'zgartirilmaydi - ular keyingi qadamlarda.
 noma'lum tur uchun istisno. Mavjud `OrderServiceTest` o'zgarmasligi kerak -
 bu refaktoring to'g'riligining asosiy dalili.
 
-**Tekshirish.** `mvn -q test -Dtest='OrderServiceTest,PaymentHandlerRegistryTest'`
+**Qabul mezoni.** `mvn -q test -Dtest='OrderServiceTest,PaymentHandlerRegistryTest'`
 -> hammasi yashil; `git diff --stat` -> faqat yuqoridagi fayllar.
 ```
 
@@ -75,7 +75,7 @@ bu refaktoring to'g'riligining asosiy dalili.
 | "kodni yaxshilaymiz", "optimallashtiramiz" | "`findAll` o'rniga `findByStatus` - 12k qator o'rniga ~40" |
 | "kerak bo'lsa test qo'shiladi" | test matritsasidagi aniq qator |
 | "A yoki B qilish mumkin" | tanlangan variant + ADR da qolganlari |
-| "best practice shuni talab qiladi" | qo'llanma bo'limi raqami yoki o'lchov |
+| "best practice shuni talab qiladi" | `<hujjat> <raqam> (<mavzu>)` havolasi yoki o'lchov |
 | "refaktoring qilinadi" | qaysi fayl, qaysi metod, qaysi pattern |
 | "performance oshadi" | "p99 420 ms -> maqsad 300 ms, o'lchash: `/actuator/metrics`" |
 | "xatolar to'g'ri ishlanadi" | qaysi istisno, qaysi status, qaysi log |
@@ -84,7 +84,7 @@ bu refaktoring to'g'riligining asosiy dalili.
 
 Uzun reja o'qilmaydi. Hajmni kamaytirish tartibi:
 
-1. Qo'llanma mazmunini ko'chirish o'rniga bo'lim raqamiga havola.
+1. Qo'llanma mazmunini ko'chirish o'rniga `<hujjat> <raqam> (<mavzu>)` havolasi.
 2. Kod eskizi 10 qatordan oshmaydi - shakl ko'rsatiladi, implementatsiya emas.
 3. Takrorlanadigan narsa jadvalga yig'iladi.
 4. "Umumiy maslahatlar" bo'limi o'chiriladi - reja aniq ishga tegishli.
@@ -99,7 +99,7 @@ chiqadigan narsa rejaga faqat "Ochiq savollar" bo'limida savol sifatida kiradi.
 
 ## Bosqich tugaganini qanday bilamiz
 
-- Har qadamda beshlik (nega / nima / qilinmaydi / test / tekshirish) to'liq
+- Har qadamda beshlik (nega / nima / qilinmaydi / test / qabul mezoni) to'liq
 - Taqiqlangan iboralar yo'q
 - Reja hajmi vazifa o'lchamiga mos
 - Berilgan prompt dizayn hujjati talablari qo'llangan va manbada ko'rsatilgan

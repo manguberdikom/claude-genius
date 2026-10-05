@@ -28,16 +28,15 @@ Javoblar rejada ko'rinmaydi, lekin "Nega" ustuni shu javoblardan tug'iladi.
 ## 4.2 Qo'llanmadan qidirish tartibi
 
 ```bash
-# 1. Alifbo indeksidan pattern nomini, bo'limini va fayl havolasini topish
-grep -n "\[Strategy" docs/patterns/99-alifbo-boyicha-indeks.md
-# -> 3.9 (GoF), 8.21 (Spring registry), 24.11 (lambda bilan)
+# 1. Pattern nomini va bo'lim raqamini topish (sarlavha va inglizcha taxalluslar)
+tools/doc.sh find "Strategy"
+# -> 3.9 (GoF), 8.21 (Spring registry), 24.11 (lambda bilan); boshqa 'Strategy' nomlilar boshqa mavzu
 
-# 2. Bo'limni o'qish (Tavsif / Spring'da qayerda / Keyslar / Ehtiyot bo'ling)
-grep -n "^## 8\.21 " docs/patterns/08-biznes-logika-va-service-qatlam-patternlari.md
-sed -n '<topilgan qator>,+40p' docs/patterns/08-biznes-logika-va-service-qatlam-patternlari.md
+# 2. Faqat o'sha bo'limni o'qish (Tavsif / Spring'da qayerda / Keyslar / Ehtiyot bo'ling)
+tools/doc.sh show patterns 8.21
 
 # 3. Anti-pattern tomonini tekshirish
-grep -n "^## " docs/patterns/25-anti-patternlar.md | head -90
+tools/doc.sh outline patterns 25
 ```
 
 Bir nomning bir nechta varianti bo'lsa (`Strategy`, `Strategy Registry via
@@ -206,9 +205,9 @@ uchraydiganlari:
 
 | Joy | Hozir | Pattern | Nega | Narxi | Qo'llanmada qidirish |
 |---|---|---|---|---|---|
-| `OrderService.java:142-198` | `if (type==CARD/CASH/CRYPTO)` uch joyda takrorlangan | Strategy, `Map<PaymentType, PaymentHandler>` registri | yangi to'lov turi faqat yangi bean qo'shadi, mavjud kod o'zgarmaydi | +1 interfeys, +3 sinf; stack trace bir qatlam uzayadi | `Strategy` / `Strategy Registry via Map<String, Bean>` |
-| `OrderService.java:214` | tranzaksiya ichida `kafkaTemplate.send` | Transactional Outbox | broker yo'q bo'lsa tranzaksiya qaytmaydi, hodisa yo'qolmaydi | +1 jadval, +publisher, ~1 s kechikish | `Transactional Outbox` |
-| `PaymentClient.java:30` | timeout yo'q `RestTemplate` | Timeout + Retry(jitter) + Circuit Breaker | tashqi servis sekinlashganda thread pool to'lmaydi | +Resilience4j dependency, +konfiguratsiya | `Retry` / `Circuit Breaker` |
+| `OrderService.java:142-198` | `if (type==CARD/CASH/CRYPTO)` uch joyda takrorlangan | Strategy, `Map<PaymentType, PaymentHandler>` registri | yangi to'lov turi faqat yangi bean qo'shadi, mavjud kod o'zgarmaydi | +1 interfeys, +3 sinf; stack trace bir qatlam uzayadi | `patterns 8.21 (Strategy Registry via Map<String, Bean>)` |
+| `OrderService.java:214` | tranzaksiya ichida `kafkaTemplate.send` | Transactional Outbox | broker yo'q bo'lsa tranzaksiya qaytmaydi, hodisa yo'qolmaydi | +1 jadval, +publisher, ~1 s kechikish | `patterns 10.14 (Transactional Outbox)` |
+| `PaymentClient.java:30` | timeout yo'q `RestTemplate` | Timeout + Retry(jitter) + Circuit Breaker | tashqi servis sekinlashganda thread pool to'lmaydi | +Resilience4j dependency, +konfiguratsiya | `patterns 17.1 (Retry)` / `patterns 17.2 (Circuit Breaker)` |
 
 "Narxi" ustuni majburiy: narxi yozilmagan pattern - sotuv, qaror emas.
 

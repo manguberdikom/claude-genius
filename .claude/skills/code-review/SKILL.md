@@ -5,7 +5,7 @@ description: Review a diff or pull request in a Java/Spring/PostgreSQL project -
 
 # Kod review
 
-44 bob, 452 bo'lim. To'liq hujjat: `docs/code-review/README.md`.
+44 bob, 445 bo'lim. To'liq hujjat: `docs/code-review/README.md`.
 
 ## Qoida
 
