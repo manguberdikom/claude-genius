@@ -10,7 +10,7 @@ Bu ma'lumotnoma Java va Spring ekotizimida ishlaydigan arxitektor bilishi kerak 
 Barcha patternlarning inglizcha nomi bo'yicha [alifbo indeksi](99-alifbo-boyicha-indeks.md) alohida faylda.
 
 
-**Bu hujjat oltilikning bir qismi.** Mavzular takrorlanmaydi; qolgan beshtasi: [Testlash qo'llanmasi](../testing/README.md), [Arxitektor miyasi](../architect/README.md), [SonarQube hujjati](../sonarqube/README.md), [Toza kod qoidalari](../clean-code/README.md), [Kod review](../code-review/README.md).
+**Bu hujjat oltilikning bir qismi.** Har biri boshqa savolga javob beradi; qolgan beshtasi: [Testlash qo'llanmasi](../testing/README.md), [Arxitektor miyasi](../architect/README.md), [SonarQube hujjati](../sonarqube/README.md), [Toza kod qoidalari](../clean-code/README.md), [Kod review](../code-review/README.md).
 
 **Versiya bazasi:** Java 21 LTS (pol: 17, Java 25 eslatmalari bilan), Spring Boot 3.2-3.5 (4.0 eslatmalari bilan), PostgreSQL 16+ (15-18 havolalari bilan), JUnit 5.
 

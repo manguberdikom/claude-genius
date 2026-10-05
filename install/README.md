@@ -70,9 +70,10 @@ python3 tools/check_docs.py      # hujjat butunmi
 python3 tools/budget.py --holat  # asboblar ishlayaptimi
 ```
 
-`-c core.autocrlf=false` Windows uchun, sababi
+`-c core.autocrlf=false` Windows uchun ikkinchi himoya, sababi
 [B yo'lining 0-qadamida](#0-klonni-oling-va-skriptga-ruxsat-bering).
-Linux va macOS da u hech narsani o'zgartirmaydi.
+Majburiy emas: `.gitattributes` allaqachon LF ni talab qiladi. Linux va
+macOS da u hech narsani o'zgartirmaydi.
 
 Windows da yana ikki shart bor:
 
@@ -99,9 +100,14 @@ cd C:\src\claude-genius
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 ```
 
-`core.autocrlf=false` shart. Git for Windows odatda uni `true` qiladi va
-`tools/doc.sh` CRLF bilan yoziladi. Bash bunday faylni boshidayoq
-to'xtatadi (`set: pipefail: invalid option name`), qidiruv esa jim
+`core.autocrlf=false` **ixtiyoriy**: repo ildizidagi `.gitattributes`
+da `* text=auto eol=lf` turadi va u `core.autocrlf` dan ustun, ya'ni
+`tools/doc.sh` Windows da ham LF bilan yoziladi. Bayroq zarar qilmaydi,
+shuning uchun buyruqda qoldirilgan: u `.gitattributes` ga ishonmagan
+yoki eski klonni ko'chirib kelgan holat uchun ikkinchi himoya.
+
+Nega bu muhim: `tools/doc.sh` CRLF bilan yozilsa bash uni boshidayoq
+to'xtatadi (`set: pipefail: invalid option name`) va qidiruv jim
 ishlamay qoladi. O'rnatuvchi CRLF li `tools/doc.sh` ni o'zi ham rad
 etadi, hech narsa o'chmasidan oldin, va [Muammolar](#muammolar) dagi
 yechimni aytadi.

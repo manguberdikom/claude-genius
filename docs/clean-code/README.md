@@ -4,7 +4,7 @@ Bu hujjat toza kodning **qoidalar to'plami**. Arxitektura qarorlari, pattern kat
 test texnikasi boshqa hujjatlarda turadi; bu yerda faqat bitta savolga javob beriladi:
 klaviatura ostida tug'ilayotgan shu qator toza yoki yo'q.
 
-Hujjat oltilikning bir qismi va qasddan takrorlanmaydi:
+Hujjat oltilikning bir qismi, har biri boshqa savolga javob beradi:
 
 - [Dizayn patternlar](../patterns/README.md) - pattern katalogi, SOLID va GRASP printsiplari, 83 ta anti-pattern.
 - [Arxitektor miyasi](../architect/README.md) - qaror, abstraksiya, chegara, murakkablik, JVM va PostgreSQL mexanikasi.

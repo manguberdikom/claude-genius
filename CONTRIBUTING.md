@@ -111,11 +111,11 @@ Pattern yozuvi to'rt qismdan iborat va tartibi o'zgarmaydi:
 
 ## Kod misollari
 
-Hozircha kod misoli qo'shilmaydi: foydalanuvchi buni xarajat sababli
-keyinga qoldirgan. Pattern qo'shilsa yoki tahrirlansa ham kod bloki
-qo'shilmaydi, ish foydalanuvchi alohida so'raganda boshlanadi.
+Korpusda hozir 2300 dan ortiq kod bloki bor (ochuvchi fence qatorlari
+soni bo'yicha). Ya'ni kod misoli qo'shiladi va yangi bo'lim uchun u
+kutiladi.
 
-Ish qayta boshlanganda har pattern uchun 5-15 qatorlik blok yoziladi:
+Har pattern uchun 5-15 qatorlik blok yoziladi:
 Spring'dagi tayyor variant yoki patternning eng kichik shakli. Til belgisi
 snippetga mos bo'ladi (`java`, `yaml`, `sql`, `json`), hammasiga `java` deb
 yozib qo'yilmaydi.
