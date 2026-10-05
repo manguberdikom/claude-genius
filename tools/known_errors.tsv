@@ -19,3 +19,10 @@ yakkalash	RoundingMode konteksida to'g'ri so'z "yaxlitlash"	docs
 to'liq tasvirlaydi	entity sinflari sxemani to'liq tasvirlamaydi: indeks, constraint va plan faqat bazada	
 bashOutputMaxChars	Claude Code sozlama sxemasida yo'q kalit; faqat migratsiya qoidasida uchraydi	docs,claude
 java:S2229[^\n]{0,200}public bo'lmagan	public bo'lmagan metod qoidasi java:S2230, S2229 esa mos kelmaydigan @Transactional qiymatlari	docs
+allowPublicMethodsOnly\(\)[^\n]{0,40}`true`	bazada u false qaytaradi; EnableTransactionManagement 6.0 dan beri publicMethodsOnly=false beradi	docs
+6\.1[^\n]{0,60}core\.retry|core\.retry[^\n]{0,60}6\.1	yadrodagi core.retry.RetryTemplate va RetryPolicy 7.0 da keldi, 6.1 da emas	docs
+resilience\.annotation[^\n]{0,100}maxAttempts	yadrodagi @Retryable atributi maxRetries; maxAttempts alohida spring-retry kutubxonasida	docs
+\.run\([^\n]{0,60}doFilter	ScopedValue.run(Runnable) doFilter ning checked istisnolarini o'tkazmaydi, call(CallableOp) kerak	docs
+sighup[^\n]{0,80}work_mem|work_mem[^\n]{0,80}sighup	work_mem konteksti user (PGC_USERSET), sighup emas	docs
+huge_pages\s*=\s*try	try allaqachon standart qiymat; maslahat sifatida u hech narsa bermaydi, on kerak	docs
+2-5 foiz CPU	huge_pages foydasiga birlamchi manba foiz bermaydi, faqat sifat jihatidan gapiradi	docs
