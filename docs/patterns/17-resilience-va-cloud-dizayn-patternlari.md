@@ -63,7 +63,7 @@ Taqsimlangan tizimlarda nosozlik istisno emas, balki normal holat: tarmoq kechik
 
 **Tavsif:** Vaqtinchalik (transient) nosozliklar - tarmoq paketining yo'qolishi, qisqa muddatli DB deadlock, HTTP 503 - ko'pincha o'z-o'zidan tuzaladi, shuning uchun operatsiyani bir necha marta qayta bajarish muvaffaqiyat ehtimolini oshiradi. Exponential backoff har urinish orasidagi kutish vaqtini geometrik ravishda oshiradi (100ms, 200ms, 400ms...), bu downstream servisga tiklanish uchun vaqt beradi. Jitter - kutish vaqtiga tasodifiy og'ish qo'shish - ko'p mijozning bir vaqtda qayta urinishidan kelib chiqadigan "thundering herd" effektini yo'q qiladi. Retry faqat idempotent yoki xavfsiz qayta bajarilishi mumkin bo'lgan operatsiyalar uchun qo'llanadi.
 
-**Spring'da qayerda uchraydi:** Spring Retry kutubxonasi `@EnableRetry` va `@Retryable`/`@Recover` annotatsiyalarini beradi, programmatik yondashuv uchun `RetryTemplate` bilan `ExponentialBackOffPolicy` va `ExponentialRandomBackOffPolicy` (jitter) mavjud. Spring Framework 6.1+ o'zining `org.springframework.core.retry.RetryTemplate` va `RetryPolicy` abstraksiyasini kiritdi, shuningdek `@Retryable` Spring Framework 7.x'da core'ga ko'chirildi. Resilience4j'da `io.github.resilience4j.retry.Retry` va `RetryConfig` (`intervalFunction(IntervalFunction.ofExponentialRandomBackoff(...))`), Spring Boot 3.x uchun `resilience4j-spring-boot3` starter'i `@Retry(name = "...")` annotatsiyasini taqdim etadi. Kafka tomonida `DefaultErrorHandler` + `ExponentialBackOffWithMaxRetries` va `@RetryableTopic`, JDBC uchun `spring.datasource.hikari` darajasida emas, balki `TransactionTemplate` ustida retry qo'llanadi.
+**Spring'da qayerda uchraydi:** Spring Retry kutubxonasi `@EnableRetry` va `@Retryable`/`@Recover` annotatsiyalarini beradi, programmatik yondashuv uchun `RetryTemplate` bilan `ExponentialBackOffPolicy` va `ExponentialRandomBackOffPolicy` (jitter) mavjud. Spring Framework 7.0 yadroga `org.springframework.core.retry.RetryTemplate` va `RetryPolicy` abstraksiyasini hamda `@Retryable` annotatsiyasini qo'shdi; 6.x da ularning hech biri yo'q edi va retry uchun faqat tashqi kutubxona bor edi. `RetryTemplate` ning ikki xili bir xil nomda, turli paketda: `org.springframework.core.retry` (yadro, 7.0) va `org.springframework.retry` (`spring-retry` kutubxonasi). Resilience4j'da `io.github.resilience4j.retry.Retry` va `RetryConfig` (`intervalFunction(IntervalFunction.ofExponentialRandomBackoff(...))`), Spring Boot 3.x uchun `resilience4j-spring-boot3` starter'i `@Retry(name = "...")` annotatsiyasini taqdim etadi. Kafka tomonida `DefaultErrorHandler` + `ExponentialBackOffWithMaxRetries` va `@RetryableTopic`, JDBC uchun `spring.datasource.hikari` darajasida emas, balki `TransactionTemplate` ustida retry qo'llanadi.
 
 **Qo'llanish keyslari:**
 - To'lov provayderining REST API'si 503 qaytarganda buyurtmani tasdiqlash chaqiruvini 3 marta exponential backoff bilan qayta yuborish.
@@ -671,14 +671,15 @@ resilience4j.circuitbreaker.instances.pricing:
 
 ## 17.40 Spring Framework 7 yadrosidagi resilience (Spring Framework 7 core resilience: @Retryable, @ConcurrencyLimit)
 
-**Tavsif:** Spring Framework 7 resilience'ning eng asosiy ikki primitivini yadroga olib kirdi: deklarativ retry va deklarativ concurrency cheklovi. Endi oddiy retry yoki bulkhead uchun tashqi kutubxona (Spring Retry, Resilience4j) qo'shish shart emas - `spring-core`/`spring-context` ichidagi annotatsiyalar va `@EnableResilientMethods` kifoya. Bu "yengil" ehtiyojlarni qoplaydi; murakkab circuit breaker, rate limiter va metrikalar uchun baribir Resilience4j o'z o'rnida qoladi.
+**Tavsif:** Spring Framework 7 resilience'ning eng asosiy ikki primitivini yadroga olib kirdi: deklarativ retry va deklarativ concurrency cheklovi. Endi oddiy retry yoki bulkhead uchun tashqi kutubxona (Spring Retry, Resilience4j) qo'shish shart emas - `spring-context` ichidagi annotatsiyalar va `@EnableResilientMethods` kifoya. Bu "yengil" ehtiyojlarni qoplaydi; murakkab circuit breaker, rate limiter va metrikalar uchun baribir Resilience4j o'z o'rnida qoladi.
 
-**Spring'da qayerda uchraydi:** `org.springframework.resilience.annotation.@Retryable` (atributlari: `maxAttempts`, `delay`, `multiplier`, `maxDelay`, `jitter`, `includes`, `excludes`, `predicate`) va `@ConcurrencyLimit(int)` - ikkisi ham `@EnableResilientMethods` bilan yoqiladi (Spring Boot 4.x bu infrastrukturani avtomatik sozlaydi). Ular ostida `RetryTemplate`/`RetryPolicy` (`org.springframework.core.retry`) va `ConcurrencyThrottleInterceptor` turadi; reaktiv qaytish turlari (`Mono`, `Flux`) ham qo'llab-quvvatlanadi. `@Retryable` metod darajasida ham, sinf darajasida ham qo'yiladi; eski `spring-retry` modulining `@Retryable`/`@Recover` annotatsiyalari bilan aralashtirib yubormaslik kerak - bular turli paketlarda.
+**Spring'da qayerda uchraydi:** `org.springframework.resilience.annotation.@Retryable` (atributlari: `maxRetries`, `delay`, `multiplier`, `maxDelay`, `jitter`, `timeout`, `includes`, `excludes`, `predicate`, har biriga `...String` juftligi bilan) va `@ConcurrencyLimit(int)` - ikkisi ham `@EnableResilientMethods` bilan yoqiladi (Spring Boot 4.x bu infrastrukturani avtomatik sozlaydi). Annotatsiyalar `spring-context` da, ular ostidagi `RetryTemplate`/`RetryPolicy` esa `spring-core` ning `org.springframework.core.retry` paketida; concurrency cheklovi `ConcurrencyThrottleInterceptor` ustida ishlaydi. Reaktiv qaytish turlari (`Mono`, `Flux`) ham qo'llab-quvvatlanadi. `@Retryable` metod darajasida ham, sinf darajasida ham qo'yiladi; eski `spring-retry` modulining `@Retryable`/`@Recover` annotatsiyalari bilan aralashtirib yubormaslik kerak - bular turli paketlarda va atribut nomlari ham boshqa: yadroda `maxRetries` (default 3) BIRINCHI urinishdan KEYINGI urinishlar soni, ya'ni jami urinish `1 + maxRetries`; `spring-retry` dagi `maxAttempts` (default 3) esa jami urinish soni. Ikkisida ham default 3, lekin yadroda bu 4 ta chaqiruv, `spring-retry` da 3 ta.
 
 ```java
 @Service
 public class RatesClient {
-    @Retryable(maxAttempts = 4, delay = 200, multiplier = 2.0, jitter = 100,
+    // maxRetries = 3, ya'ni jami 4 chaqiruv: 1 asosiy + 3 qayta urinish
+    @Retryable(maxRetries = 3, delay = 200, multiplier = 2.0, jitter = 100,
                includes = ResourceAccessException.class)
     @ConcurrencyLimit(10)
     public Rate fetch(String pair) {
@@ -736,6 +737,12 @@ public class RatesClient {
 - [ ] Tashqi tizim bo'yicha bulkhead yoki `Semaphore` chegarasi borligini tasdiqlang.
 - [ ] Har bir xato holati uchun fallback xatti-harakatini yozing: kesh, bo'sh javob yoki aniq xato.
 - [ ] Resilience sozlamalarini chaos yoki nosozlik testi bilan bir marta tekshirib, natijani hujjatlashtiring.
+
+## Manbalar
+
+- [Spring Framework, Resilience features](https://docs.spring.io/spring-framework/reference/core/resilience.html) - "As of 7.0, the core Spring Framework includes common resilience features": `@Retryable`, `@ConcurrencyLimit` va `RetryTemplate`
+- [spring-framework, `resilience/annotation/Retryable.java`](https://raw.githubusercontent.com/spring-projects/spring-framework/main/spring-context/src/main/java/org/springframework/resilience/annotation/Retryable.java) - atribut nomlari va `maxRetries() default 3`
+- [spring-retry, `retry/annotation/Retryable.java`](https://raw.githubusercontent.com/spring-projects/spring-retry/main/src/main/java/org/springframework/retry/annotation/Retryable.java) - alohida kutubxonada atribut `maxAttempts() default 3`
 
 ---
 
