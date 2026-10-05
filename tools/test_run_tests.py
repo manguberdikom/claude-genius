@@ -373,6 +373,23 @@ def case_modul(_):
             and ":orders:test" not in out and bad == 2)
 
 
+def case_symlink_orqali_yol(_):
+    """Ildizga boshqa nom bilan yetib kelgan yo'l (POSIX da symlink,
+    Windows da qisqa 8.3 nom) modulini yo'qotmasin."""
+    root = tree("symlink", gradle_shop())
+    commit(root)
+    link = os.path.join(TEMP, "symlink_havola")
+    try:
+        os.symlink(root, link, target_is_directory=True)
+    except (OSError, NotImplementedError, AttributeError):
+        return True        # symlink yo'q (Windows): case_modul shu yo'lni sinaydi
+    code, out = run_cli(root, "--modul", os.path.join(link, "billing"))
+    fcode, fout = run_cli(root, os.path.join(
+        link, "orders", "src", "main", "java", "shop", "orders", "OrderService.java"))
+    return (code == 0 and ":billing:test" in out
+            and fcode == 0 and "shop.orders.OrderServiceTest" in fout)
+
+
 def case_navbat_qulfi(_):
     root = tree("navbat", gradle_shop())
     with run_tests.queue_lock(root):
@@ -439,6 +456,7 @@ CASES = [
     ("ta'sir yo'q: yurmaydi", case_tasir_yoq),
     ("--hammasi filtrsiz", case_hammasi),
     ("--modul: butun modul, boshqasi yo'q", case_modul),
+    ("symlink yoki qisqa nom orqali yo'l", case_symlink_orqali_yol),
     ("navbat qulfi yechiladi", case_navbat_qulfi),
     ("tashxis: daemon, forkEvery, konteyner, sleep, hisobot", case_tashxis),
     ("tashxis: static konteyner toza", case_tashxis_static_konteyner_toza),

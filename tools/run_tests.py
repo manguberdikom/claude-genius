@@ -123,6 +123,18 @@ def rel(path):
     return path.replace("\\", "/")
 
 
+def relative_to(path, root):
+    """Ildizga nisbatan yo'l, ikkalasi ham realpath dan o'tib.
+
+    Windows da temp va uy papkasi qisqa 8.3 nom bilan kelishi mumkin
+    (`RUNNER~1`), git esa ildizni uzun nom bilan beradi; POSIX da esa
+    symlink orqali berilgan yo'l. realpath siz relpath `../..` bilan
+    boshqa daraxtga chiqib, fayl modulsiz qolardi.
+    """
+    full = os.path.realpath(os.path.abspath(path))
+    return rel(os.path.relpath(full, os.path.realpath(root)))
+
+
 def run_git(root, *args):
     try:
         out = subprocess.run(["git", "-C", root] + list(args),
@@ -136,7 +148,7 @@ def project_root(start):
     """Git ildizi yoki build fayli bor eng yaqin yuqori papka."""
     top = run_git(start, "rev-parse", "--show-toplevel")
     if top and top.strip():
-        return os.path.normpath(top.strip())
+        return os.path.realpath(os.path.normpath(top.strip()))
     path = os.path.abspath(start)
     while True:
         if any(os.path.exists(os.path.join(path, n)) for n in
@@ -963,7 +975,8 @@ def main(argv=None):
     args = parser.parse_args(argv)
     sys.stdout.reconfigure(encoding="utf-8")
 
-    root = os.path.abspath(args.ildiz) if args.ildiz else project_root(os.getcwd())
+    root = (os.path.realpath(os.path.abspath(args.ildiz)) if args.ildiz
+            else project_root(os.getcwd()))
     project = Project(root)
     if project.tool is None:
         print("Gradle yoki Maven loyihasi topilmadi: %s" % root)
@@ -975,9 +988,9 @@ def main(argv=None):
     if args.modul and not args.hammasi:
         tests = project.tests()
         for folder in args.modul:
-            folder = rel(os.path.relpath(os.path.abspath(folder), root)).strip("./") \
-                if os.path.isdir(folder) else folder.strip("/")
-            module = "" if folder in ("", ".") else folder
+            folder = relative_to(folder, root) if os.path.isdir(folder) \
+                else rel(folder).strip("/")
+            module = "" if folder in ("", ".") else folder.strip("/")
             sets = sorted({s.sset for s in tests if s.module == module})
             if not sets:
                 print("Modulda test yo'q: %s" % (module or "."))
@@ -986,10 +999,7 @@ def main(argv=None):
                 plan.add_whole(module, sset, "--modul %s" % (module or "."))
     elif not args.hammasi:
         if args.files:
-            existing = []
-            for path in args.files:
-                full = os.path.abspath(path)
-                existing.append(rel(os.path.relpath(full, root)))
+            existing = [relative_to(path, root) for path in args.files]
             deleted = [p for p in existing if not os.path.exists(os.path.join(root, p))]
             existing = [p for p in existing if p not in deleted]
         elif args.diff or args.asos:
