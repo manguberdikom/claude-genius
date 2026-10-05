@@ -1,6 +1,6 @@
 # Java Spring arxitektori bilishi kerak bo'lgan barcha dizayn patternlar
 
-Bu ma'lumotnoma Java va Spring ekotizimida ishlaydigan arxitektor bilishi kerak bo'lgan **1007 ta** dizayn pattern, arxitektura uslubi, integratsiya, resilience, xavfsizlik, testing va anti-patternni **30 ta bo'limda** qamrab oladi. Har bir pattern uchun to'rt qism berilgan:
+Bu ma'lumotnoma Java va Spring ekotizimida ishlaydigan arxitektor bilishi kerak bo'lgan dizayn pattern, arxitektura uslubi, integratsiya, resilience, xavfsizlik, testing va anti-patternni **30 ta bo'limda**, **1007 ta** yozuv (996 noyob pattern) bilan qamrab oladi. Har bir pattern uchun to'rt qism berilgan:
 
 - **Tavsif** - pattern qanday muammoni hal qiladi va qanday ishlaydi.
 - **Spring'da qayerda uchraydi** - Spring Framework, Spring Boot va ekotizimdagi aniq sinflar, annotatsiyalar, kutubxonalar.

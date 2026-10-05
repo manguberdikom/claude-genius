@@ -22,9 +22,18 @@ DOC = os.path.join(ROOT, "tools", "doc.sh")
 INDEX = os.path.join(ROOT, "index")
 
 
-def run(*args, doc=DOC):
+def clean_env(**extra):
+    """Shell dagi DOC_MAX_LINES/DOC_MAX_BYTES show chegarasini o'zgartirib,
+    chalg'ituvchi xato bermasin."""
+    env = {k: v for k, v in os.environ.items() if not k.startswith("DOC_MAX_")}
+    env.update(extra)
+    return env
+
+
+def run(*args, doc=DOC, env=None):
     return subprocess.run([doc] + list(args), capture_output=True,
-                          text=True, cwd=os.path.dirname(os.path.dirname(doc)))
+                          text=True, cwd=os.path.dirname(os.path.dirname(doc)),
+                          env=clean_env() if env is None else env)
 
 
 # (nom, argumentlar, kutilgan chiqish kodi, chiqishga shart)
@@ -46,6 +55,8 @@ CASES = [
      r"^sonarqube +\d+\.\d+ +[1-9]"),
     ("rule uzun ro'yxat qisqa", ["rule", "java:S3776"], 0, "rule --all"),
     ("rule --all to'liq", ["rule", "--all", "java:S3776"], 0, "!... yana"),
+    # Bob darajasidagi qator (katalog jadvali) butun bob emas, outline.
+    ("rule katalog belgisi", ["rule", "java:S2259"], 0, "[katalog: outline]"),
     ("rule yo'q kalit", ["rule", "S99999"], 1, ""),
     ("rule raqamsiz", ["rule", "abc"], 1, ""),
 
@@ -68,11 +79,17 @@ CASES = [
     ("find -n nol", ["find", "-n", "0", "va"], 1, ""),
     ("find unicode apostrof", ["find", "oʻzgarmas"], 0, "4.16"),
     ("find -- bilan", ["find", "--", "-Xmx"], 0, "10.7"),
+    # Ishora-yozuv to'liq yozuv raqamini ko'rsatadi.
+    ("find ishora-yozuv", ["find", "memoizatsiya"], 0, "[ishora: 11.17]"),
     ("find bo'sh so'rov", ["find", " "], 1, ""),
 
     # show va path: X.10 X.1 ga tushmasin (awk son solishtirsa 24.10 == 24.1).
     ("show bo'lim", ["show", "patterns", "17.2"], 0, "Circuit Breaker"),
     ("show X.10", ["show", "patterns", "24.10"], 0, r"^## 24\.10 "),
+    ("show testing 5.10", ["show", "testing", "5.10"], 0, r"^## 5\.10 "),
+    ("show testing 5.1", ["show", "testing", "5.1"], 0, r"^## 5\.1 "),
+    ("show 14.30 14.3 emas", ["show", "patterns", "14.30"], 0, r"^## 14\.30 "),
+    ("show 21.10 21.1 emas", ["show", "patterns", "21.10"], 0, r"^## 21\.10 "),
     ("show kichik bob", ["show", "clean-code", "43"], 0, r"^# 43\. "),
     ("show bob nol bilan", ["show", "clean-code", "01"], 0, r"^# 1\. "),
     ("show katta bob to'siladi", ["show", "patterns", "25"], 1, "25.1"),
@@ -82,6 +99,7 @@ CASES = [
     ("show --force", ["show", "--force", "patterns", "23"], 0, r"^# 23\. "),
     ("path anchor", ["path", "patterns", "17.2"], 0, "#172-"),
     ("path X.10", ["path", "sonarqube", "29.10"], 0, "#2910-"),
+    ("path 14.30", ["path", "patterns", "14.30"], 0, "#1430-"),
     ("toc", ["toc"], 0, "patterns"),
     ("outline", ["outline", "testing", "8"], 0, "8.1"),
     ("outline nol bilan", ["outline", "patterns", "017"], 0, "17.1 "),
@@ -226,11 +244,57 @@ def check_index_freshness():
     return not failed, ", ".join(failed)
 
 
+def check_python_stub():
+    """PATH dagi birinchi python3 Windows stub'i bo'lsa ham rebuild ishlaydi.
+
+    WindowsApps stub'i PATH da bor, lekin hech narsa yurgizmaydi. doc.sh
+    Python ni nom bo'yicha emas, ishga tushirib tanlaydi: avval
+    GENIUS_PYTHON, keyin python3, python, py. Hech biri ishlamasa aniq xabar.
+    """
+    tmp = sandbox()
+    doc = os.path.join(tmp, "tools", "doc.sh")
+    stubs = os.path.join(tmp, "stubs")
+    os.makedirs(stubs)
+
+    def put(name, body):
+        path = os.path.join(stubs, name)
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write("#!/bin/sh\n%s\n" % body)
+        os.chmod(path, 0o755)
+
+    for name in ("python3", "python", "py"):
+        put(name, "echo 'Python was not found; run without arguments to "
+                  "install from the Microsoft Store' >&2\nexit 49")
+    env = clean_env(PATH=stubs + os.pathsep + os.environ.get("PATH", ""))
+    env.pop("GENIUS_PYTHON", None)
+
+    def rebuilt(proc):
+        return proc.returncode == 0 and "index:" in proc.stderr
+
+    steps = []
+    try:
+        proc = run("toc", doc=doc, env=env)
+        steps.append(("hammasi stub: aniq xabar", proc.returncode == 1
+                      and "ishlaydigan Python topilmadi" in proc.stderr))
+        proc = run("toc", doc=doc, env=dict(env, GENIUS_PYTHON=sys.executable))
+        steps.append(("GENIUS_PYTHON", rebuilt(proc)))
+        shutil.rmtree(os.path.join(tmp, "index"))
+        put("python", 'exec "%s" "$@"' % sys.executable)
+        steps.append(("python3 stub birinchi", rebuilt(run("toc", doc=doc, env=env))))
+    except OSError as error:
+        steps.append(("istisno: %s" % error, False))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    failed = [name for name, ok in steps if not ok]
+    return not failed, ", ".join(failed)
+
+
 CHECKS = [
     ("X.10 butun sinf", check_exact_refs),
     ("find maslahati apostrofda", check_find_hint),
     ("bash 3.2 sintaksisi", check_bash32),
     ("indeks eskirishi", check_index_freshness),
+    ("python3 stub PATH da", check_python_stub),
 ]
 
 

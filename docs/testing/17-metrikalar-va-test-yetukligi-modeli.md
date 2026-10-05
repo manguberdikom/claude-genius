@@ -167,16 +167,6 @@ Diff coverage va mutation darvozasining minimal konfiguratsiyasi:
     </execution>
   </executions>
 </plugin>
-<plugin>
-  <groupId>org.pitest</groupId>
-  <artifactId>pitest-maven</artifactId>
-  <version>1.17.0</version>
-  <configuration>
-    <targetClasses><param>com.acme.billing.*</param></targetClasses>
-    <mutationThreshold>60</mutationThreshold>
-    <withHistory>true</withHistory>
-  </configuration>
-</plugin>
 ```
 
 ```yaml
@@ -199,6 +189,8 @@ jobs:
       - name: Mutation testing on changed files
         run: ./mvnw -B org.pitest:pitest-maven:scmMutationCoverage
 ```
+
+Oxirgi qadam tayanadigan PIT plugin'ining `pom.xml` dagi sozlamasi [SonarQube hujjatidagi PIT ni Maven va Gradle da ishga tushirish](../sonarqube/20-mutation-testing-100-coverage-qachon-yolgon.md#205-pit-pitest-ni-maven-va-gradle-da-ishga-tushirish) bo'limida.
 
 ## 17.10 Legacy kodga test yozish strategiyasi
 

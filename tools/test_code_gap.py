@@ -76,6 +76,23 @@ def case_bolim_raqami(_):
             and all(l.startswith("17.2 ") for l in lines))
 
 
+def case_ishora_backlogda_yoq(_):
+    """Ishora-yozuv (Tavsif boshqa bo'limga havola bilan boshlanadi)
+    maxrajda qoladi, lekin kodsizlar ro'yxatiga tushmaydi."""
+    pointers = set()
+    for ch in MANIFEST["patterns"]["chapters"]:
+        if not ch["num"]:
+            continue
+        path = os.path.join(ROOT, "docs", "patterns", ch["file"])
+        pointers |= {h for h, body in code_gap.sections(path)
+                     if code_gap.pointer_link(body)}
+    backlog = {row[2] for row in code_gap.gaps("patterns")[0]}
+    link = "**Tavsif:** [To'liq yozuv](11-keshlash-patternlari.md#1117-x) bu ..."
+    plain = "**Tavsif:** Oddiy matn, [havola](#1117-x) o'rtada."
+    return (pointers and not pointers & backlog
+            and code_gap.pointer_link(link) and not code_gap.pointer_link(plain))
+
+
 def case_notogri_argument(_):
     code, _, err = run("patterns", "abc")
     return code != 0 and "Traceback" not in err and "raqami kerak" in err
@@ -87,6 +104,7 @@ CASES = [
     ("yig'indi o'sha maxrajni chiqaradi", case_yigindi_chiqishi),
     ("bob rejimi ishlaydi", case_bob_rejimi),
     ("bo'lim raqami faqat o'sha yozuv", case_bolim_raqami),
+    ("ishora-yozuv backlog'da yo'q", case_ishora_backlogda_yoq),
     ("noto'g'ri argument xabar beradi", case_notogri_argument),
 ]
 

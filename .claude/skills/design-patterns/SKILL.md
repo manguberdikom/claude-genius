@@ -5,7 +5,7 @@ description: Pick and apply a design pattern for Java/Spring code - GoF, Spring 
 
 # Dizayn patternlar
 
-1007 pattern, 30 bob. To'liq katalog: `docs/patterns/README.md`.
+1007 yozuv (996 noyob pattern), 30 bob. To'liq katalog: `docs/patterns/README.md`.
 Inglizcha nom bo'yicha qidirish: `tools/doc.sh find "<nom>"` (alifbo indeksi
 shu buyruq ichida; `99-alifbo-boyicha-indeks.md` faylini o'qimang, u ~42k token).
 

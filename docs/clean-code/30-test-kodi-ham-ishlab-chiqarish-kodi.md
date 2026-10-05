@@ -61,7 +61,7 @@ Qoida: testga **ta'sir qiladigan** qiymatlar testda ko'rinadi; ahamiyatsiz qiyma
 
 Test ma'lumotini qurish takrorlanishi eng katta test qarzi manbai. Ikki pattern ishlaydi va ularni birga ishlatish mumkin.
 
-**Test data builder** - standart qiymatlar bilan to'ldirilgan builder, testda faqat muhim maydon o'zgartiriladi. **Object mother** - nomlangan tipik holatlar fabrikasi (`aSettledPayment()`, `anExpiredOrder()`).
+**Test data builder** - standart qiymatlar bilan to'ldirilgan builder, testda faqat muhim maydon o'zgartiriladi. **Object mother** - nomlangan tipik holatlar fabrikasi (`aSettledPayment()`, `anExpiredOrder()`). Builder'ning to'liq shakli, nested builder va Lombok `@Builder` bilan farqi testing hujjatidagi [Test Data Builder pattern](../testing/10-test-malumotlarini-boshqarish.md#103-test-data-builder-pattern) mavzusida.
 
 ```java
 // Test data builder: standart qiymatlar + nuqtali o'zgartirish

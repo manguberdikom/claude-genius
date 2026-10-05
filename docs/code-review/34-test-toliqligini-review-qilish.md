@@ -297,22 +297,7 @@ Eng kuchli review texnikasi: "bu kodni qanday buzsam, testlar hali ham o'tadi" d
 // testlar tutmaydi. Bu coverage dan ancha ishonchli ko'rsatkich.
 ```
 
-```xml
-<!-- Mutatsion testlash: eng muhim paketlar uchun, butun loyihaga emas
-     (u sekin ishlaydi). -->
-<plugin>
-  <groupId>org.pitest</groupId>
-  <artifactId>pitest-maven</artifactId>
-  <configuration>
-    <targetClasses>
-      <param>com.acme.order.domain.*</param>      <!-- faqat domen -->
-      <param>com.acme.pricing.*</param>
-    </targetClasses>
-    <mutationThreshold>80</mutationThreshold>     <!-- domen uchun yuqori talab -->
-    <timestampedReports>false</timestampedReports>
-  </configuration>
-</plugin>
-```
+PIT butun loyihaga emas, faqat domen va narxlash kabi muhim paketlarga yo'naltiriladi, chunki u sekin ishlaydi, domen uchun `mutationThreshold` esa boshqa paketlardan yuqoriroq qo'yiladi. Plugin sozlamasi [SonarQube hujjatidagi PIT ni Maven va Gradle da ishga tushirish](../sonarqube/20-mutation-testing-100-coverage-qachon-yolgon.md#205-pit-pitest-ni-maven-va-gradle-da-ishga-tushirish) bo'limida.
 
 ## 34.8 Ma'lumotga bog'liq holatlar
 

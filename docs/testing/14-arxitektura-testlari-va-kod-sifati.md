@@ -252,31 +252,7 @@ Uchinchi va eng xatarli - coverage'ni KPI yoki bonus mezoni qilish. Goodhart qon
 
 PIT (pitest) bayt-kodga kichik o'zgartirishlar - mutatsiyalar - kiritadi va testlarni qayta ishga tushiradi. Mutatsiyadan keyin ham barcha test yashil bo'lsa, mutatsiya "tirik qoldi" (survived): test suite o'sha xatti-harakatni tekshirmaydi. Mutation score = o'ldirilgan mutatsiyalar / jami mutatsiyalar. Coverage "bu qator bajarildimi?" deb so'raydi, PIT "bu qatorni buzsam, testlar sezadimi?" deb - bu ancha qimmatli savol.
 
-```xml
-<plugin>
-  <groupId>org.pitest</groupId>
-  <artifactId>pitest-maven</artifactId>
-  <version>1.17.0</version>
-  <dependencies>
-    <dependency>
-      <groupId>org.pitest</groupId>
-      <artifactId>pitest-junit5-plugin</artifactId>
-      <version>1.2.1</version>
-    </dependency>
-  </dependencies>
-  <configuration>
-    <targetClasses><param>com.example.shop.domain.*</param></targetClasses>
-    <targetTests><param>com.example.shop.*Test</param></targetTests>
-    <mutators><mutator>STRONGER</mutator></mutators>
-    <mutationThreshold>70</mutationThreshold>
-    <coverageThreshold>75</coverageThreshold>
-    <timeoutConstant>5000</timeoutConstant>
-    <threads>4</threads>
-    <withHistory>true</withHistory>
-    <outputFormats><format>HTML</format><format>XML</format></outputFormats>
-  </configuration>
-</plugin>
-```
+`pitest-maven` va `pitest-junit5-plugin` ni ulash, `targetClasses`, `mutationThreshold` va Gradle varianti [SonarQube hujjatidagi PIT ni Maven va Gradle da ishga tushirish](../sonarqube/20-mutation-testing-100-coverage-qachon-yolgon.md#205-pit-pitest-ni-maven-va-gradle-da-ishga-tushirish) bo'limida yozilgan, bu yerda faqat mutator tanlovi va CI darvozasidagi o'rni ko'riladi.
 
 Mutator guruhlari: `DEFAULTS` (shart inkori, matematik amallar, `void` chaqiruvni o'chirish, return qiymatini almashtirish), `STRONGER` (ustiga `REMOVE_CONDITIONALS` va `EXPERIMENTAL_*` qismi) va `ALL`. Boshlash uchun `DEFAULTS` yetarli, domain yadrosi uchun `STRONGER` oqlanadi.
 

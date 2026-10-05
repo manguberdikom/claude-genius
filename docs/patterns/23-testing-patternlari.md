@@ -156,7 +156,7 @@ Order order = anOrder()
 - Noto'g'ri (invalid) holatlarni ataylab yasab, validatsiya testlarini yozish.
 - Integration testda DB'ga yozish uchun realistik entity to'plamini tez generatsiya qilish.
 
-**Ehtiyot bo'ling:** Builder'ni production kodga qo'shib, API'ni invalid holatlarga ochib qo'yish xato - test builder'lar `src/test/java`da (yoki alohida test-fixtures modulida) yashashi kerak. Default qiymatlar "sirli" bo'lib qolmasligi uchun ularni testda muhim bo'lgan joyda har doim aniq override qiling.
+**Ehtiyot bo'ling:** Builder'ni production kodga qo'shib, API'ni invalid holatlarga ochib qo'yish xato - test builder'lar `src/test/java`da (yoki alohida test-fixtures modulida) yashashi kerak. Default qiymatlar "sirli" bo'lib qolmasligi uchun ularni testda muhim bo'lgan joyda har doim aniq override qiling. To'liq misol, nested builder va Lombok `@Builder` bilan farqi testing hujjatidagi [Test Data Builder pattern](../testing/10-test-malumotlarini-boshqarish.md#103-test-data-builder-pattern) mavzusida.
 
 ## 23.6 Obyekt-ona (Object Mother)
 

@@ -39,6 +39,12 @@ PAREN_RE = re.compile(r"\(([^()]*(?:\([^()]*\)[^()]*)*)\)\s*$")
 
 ALIAS_FILE = "99-alifbo-boyicha-indeks.md"
 
+# Ishora-yozuv: Tavsif boshqa patterns bo'limiga havola bilan boshlanadi
+# ("[... yozuvi](11-...md#1117-...) bu patternning to'liq yozuvi"). Mavzu
+# o'sha yerda yozilgan, bu yerda faqat boshqa nuqtai nazar. code_gap.py
+# ham shu funksiyani ishlatadi.
+POINTER_RE = re.compile(r"^\*\*Tavsif:\*\*\s*\[[^\]]+\]\(([\w.-]+\.md)?#([^)\s]+)\)")
+
 # build() yozadigan fayllar: is_fresh() hammasi borligini talab qiladi.
 OUTPUTS = ("docs.tsv", "chapters.tsv", "sections.tsv", "aliases.tsv",
            "rules.tsv", "checklist.tsv", "df.tsv")
@@ -106,6 +112,21 @@ def english_alias(title):
     return candidate
 
 
+def pointer_link(body):
+    """Ishora-yozuv bo'lsa (fayl, anchor), aks holda None.
+
+    Faqat birinchi Tavsif satri qaraladi. Fayl bo'sh bo'lsa havola shu
+    bobning o'ziga. `body` - satrlar ro'yxati yoki bitta matn.
+    """
+    if isinstance(body, str):
+        body = body.split("\n")
+    for line in body:
+        if line.startswith("**Tavsif:**"):
+            match = POINTER_RE.match(line)
+            return (match.group(1) or "", match.group(2)) if match else None
+    return None
+
+
 def parse_alias_file(path, doc_key, known_sections):
     """Alifbo indeksidagi inglizcha nomlarni bo'lim raqamiga bog'laydi."""
     aliases = []
@@ -167,9 +188,15 @@ def index_chapter(doc_key, chapter, rel_path, rows):
                 (doc_key, section, num, clean(title), rel_path,
                  lineno, end, gh_slug(title))
             )
+            # Ishora-yozuv taxallus olmaydi: aks holda hook bitta mavzuga
+            # ikki raqam taklif qiladi (4.24 va 24.35 Structured Concurrency).
+            pointer = pointer_link(lines[lineno:end]) if section else None
+            if pointer:
+                target = pointer[0] or os.path.basename(rel_path)
+                rows["pointers"][(doc_key, section)] = (target, pointer[1])
             if section:
                 rows["known"].add((doc_key, section))
-                alias = english_alias(title)
+                alias = None if pointer else english_alias(title)
                 if alias:
                     rows["aliases"].append(
                         (clean(alias), doc_key, "section", section)
@@ -183,7 +210,7 @@ def build():
     started = time.time()
     manifest = json.load(open(os.path.join(DOCS_DIR, "manifest.json"), encoding="utf-8"))
     rows = {"chapters": [], "sections": [], "aliases": [], "known": set(),
-            "rules": [], "checklist": []}
+            "rules": [], "checklist": [], "pointers": {}}
     doc_rows = []
 
     for doc_key, doc in manifest.items():
@@ -212,7 +239,8 @@ def build():
 
         alias_path = os.path.join(ROOT, doc_dir, ALIAS_FILE)
         if os.path.exists(alias_path):
-            known = {s for d, s in rows["known"] if d == doc_key}
+            known = {s for d, s in rows["known"] - rows["pointers"].keys()
+                     if d == doc_key}
             rows["aliases"].extend(parse_alias_file(alias_path, doc_key, known))
 
     aliases = sorted(
@@ -226,9 +254,16 @@ def build():
     write("chapters.tsv",
           ["doc", "chapter", "title", "file", "start", "end", "anchor"],
           rows["chapters"])
+    # Oxirgi ustun: ishora-yozuv bo'lsa to'liq yozuvning raqami, aks holda
+    # bo'sh. Taklif qiluvchi hook va `find` shunga qarab ishorani ajratadi.
+    by_anchor = {(r[0], os.path.basename(r[4]), r[7]): r[1]
+                 for r in rows["sections"] if r[1]}
+    ishora = {key: by_anchor.get((key[0],) + link, "#" + link[1])
+              for key, link in rows["pointers"].items()}
     write("sections.tsv",
-          ["doc", "section", "chapter", "title", "file", "start", "end", "anchor"],
-          rows["sections"])
+          ["doc", "section", "chapter", "title", "file", "start", "end",
+           "anchor", "ishora"],
+          [r + (ishora.get((r[0], r[1]), ""),) for r in rows["sections"]])
     write("aliases.tsv", ["alias", "doc", "kind", "ref"], aliases)
 
     # Bir kalit bir necha bo'limda uchraydi. Ko'p uchragani odatda uni
@@ -253,7 +288,10 @@ def build():
     write("checklist.tsv", ["doc", "chapter", "section", "item"],
           rows["checklist"])
 
-    df = build_df(rows["sections"])
+    # Ishora-yozuv tanasi to'liq yozuvni qisqa takrorlaydi: sanalsa o'sha
+    # mavzu so'zlari ikki bo'limda uchragan bo'lib, kamyobligi pasayardi.
+    df = build_df([r for r in rows["sections"]
+                   if (r[0], r[1]) not in rows["pointers"]])
     write("df.tsv", ["token", "sections"],
           sorted(df.items(), key=lambda kv: (-kv[1], kv[0])))
 
@@ -299,12 +337,14 @@ def write(name, header, data, mtime=None):
     """Faylni atomik almashtiradi: avval vaqtinchalik nusxa, keyin os.replace.
 
     Joyida qayta yozilganda rebuild paytida parallel o'quvchi (boshqa
-    doc.sh yoki hook) bo'sh yoki yarim faylni ko'rardi.
+    doc.sh yoki hook) bo'sh yoki yarim faylni ko'rardi. newline="\\n":
+    Windows Python aks holda CRLF yozadi, awk esa `17.2\\r` ni alohida
+    raqam deb oladi va anchor oxiriga \\r tushadi.
     """
     path = os.path.join(INDEX_DIR, name)
     tmp = "%s.%d.tmp" % (path, os.getpid())
     try:
-        with open(tmp, "w", encoding="utf-8") as handle:
+        with open(tmp, "w", encoding="utf-8", newline="\n") as handle:
             if header:
                 handle.write("\t".join(header) + "\n")
             for row in data:

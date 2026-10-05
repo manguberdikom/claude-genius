@@ -8,10 +8,15 @@
 
 Maxraj yopish bo'limlarisiz sanaladi (`Amalda qo'llash`, `Arxitektor
 nazorat ro'yxati`): ular pattern emas va surat ham ularni tashlaydi.
+Ishora-yozuv (Tavsif boshqa bo'limga havola bilan boshlanadi) maxrajda
+qoladi, lekin backlog'ga tushmaydi: kodi to'liq yozuvda bo'ladi.
 """
 import json, os, re, sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)
+sys.path.insert(0, HERE)
+from build_index import pointer_link  # noqa: E402  (indeks bilan bitta ta'rif)
 CLOSING = ("Amalda qo'llash", 'Arxitektor nazorat')
 
 
@@ -35,7 +40,8 @@ def sections(path):
 
 
 def gaps(key, num=None):
-    """(kodsiz bo'limlar, jami bo'lim). Surat va maxraj bitta filtrdan.
+    """(kodsiz bo'limlar, jami bo'lim). Yopish filtri ikkalasida bir xil,
+    ishora-yozuv esa faqat suratdan chiqadi.
 
     Maxraj manifestdagi `sections` dan emas, fayldan sanaladi: unda
     yopish bo'limi ham bor va u eskirishi mumkin.
@@ -50,7 +56,7 @@ def gaps(key, num=None):
             if any(c in h for c in CLOSING):
                 continue
             total += 1
-            if '```' in body:
+            if '```' in body or pointer_link(body):
                 continue
             spring = ''
             m = re.search(r"\*\*Spring'da qayerda uchraydi:\*\*\s*(.+)", body)

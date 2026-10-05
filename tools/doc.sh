@@ -27,10 +27,26 @@ RULE_LIMIT=8
 
 die() { printf '%s\n' "$*" >&2; exit 1; }
 
-# Git Bash va python.org juftligida python3 yo'q, faqat python bor.
+# Python nom bo'yicha emas, ishga tushirib tanlanadi: Windows da PATH dagi
+# python3 ko'pincha WindowsApps stub'i, u bor, lekin hech narsa yurgizmaydi.
+# Git Bash va python.org juftligida esa python3 umuman yo'q, faqat python.
+# GENIUS_PYTHON ni o'rnatuvchi settings.json env ga yozadi.
+pick_python() {
+  local c
+  for c in "${GENIUS_PYTHON:-}" python3 python py; do
+    [ -n "$c" ] || continue
+    if "$c" -c 'import sys' >/dev/null 2>&1; then
+      printf '%s\n' "$c"
+      return 0
+    fi
+  done
+  return 1
+}
+
 rebuild() {
-  "$(command -v python3 || command -v python || echo python3)" \
-    "$ROOT/tools/build_index.py" >&2
+  local py
+  py="$(pick_python)" || die "ishlaydigan Python topilmadi (GENIUS_PYTHON bilan ko'rsating)"
+  "$py" "$ROOT/tools/build_index.py" >&2
 }
 
 # Indeks yo'q, chala yoki biror manbadan eski bo'lsa qayta yasaladi.
@@ -83,13 +99,15 @@ cmd_find() {
   # Uch bosqich: inglizcha taxalluslar (eng aniq urinish), bo'lim
   # sarlavhalari, bob sarlavhalari. Izoh shu yerda, chunki bash 3.2 (macOS
   # standarti) buyruq o'rnidagi izohni sintaksis deb o'qiydi. Kichik harfga
-  # awk o'tkazadi: bash dagi kengaytmasi bash 4 talab qiladi.
+  # awk o'tkazadi: bash dagi kengaytmasi bash 4 talab qiladi. Ishora-yozuv
+  # (sections.tsv 9-ustuni) to'liq yozuv raqami bilan belgilanadi.
   local raw
   raw="$(
     awk -F'\t' -v q="$query" 'BEGIN { q = tolower(q) }
       NR>1 && index(tolower($1), q) { print $2"\t"$4"\t"$1" [taxallus]" }' "$ALIASES"
     awk -F'\t' -v q="$query" 'BEGIN { q = tolower(q) }
-      NR>1 && index(tolower($4), q) { print $1"\t"$2"\t"$4 }' "$SECTIONS"
+      NR>1 && index(tolower($4), q) {
+        print $1"\t"$2"\t"$4 ($9 != "" ? " [ishora: "$9"]" : "") }' "$SECTIONS"
     awk -F'\t' -v q="$query" 'BEGIN { q = tolower(q) }
       NR>1 && $2 != "" && index(tolower($3), q) { print $1"\t"$2"\t"$3 }' "$CHAPTERS"
   )"
@@ -238,13 +256,15 @@ cmd_rule() {
   [ -n "$digits" ] || die "kalitda raqam yo'q: $1"
   key="java:S$digits"
 
+  # Bo'lim ustuni bo'sh qator: kalit bob muqaddimasidagi katalog jadvalida.
+  # Butun bob o'qilmasin, belgi outline ga yo'naltiradi.
   local out
   out="$(awk -F'\t' -v k="$key" '
     FILENAME ~ /sections\.tsv$/ { if (FNR > 1) st[$1"|"$2] = $4; next }
     FILENAME ~ /chapters\.tsv$/ { if (FNR > 1) ch[$1"|"$2] = $3; next }
     FNR > 1 && $1 == k {
       if ($4 != "") { ref = $4; title = st[$2"|"$4] }
-      else          { ref = $3; title = ch[$2"|"$3] }
+      else          { ref = $3; title = ch[$2"|"$3] " [katalog: outline]" }
       printf "%-11s %-7s %5.2f  %s\n", $2, ref, $6, title
     }
   ' "$SECTIONS" "$CHAPTERS" "$RULES")"

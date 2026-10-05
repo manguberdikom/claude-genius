@@ -566,37 +566,14 @@ public class WebhookSender {
 
 ## 7.18 API Gateway (API Gateway)
 
-**Tavsif:** API Gateway - barcha tashqi so'rovlar o'tadigan yakka kirish nuqtasi; u routing, TLS termination, autentifikatsiya, rate limiting, logging, retry va circuit breaking kabi cross-cutting vazifalarni servislardan tashqariga chiqaradi. Natijada har bir microservice biznes logikaga e'tibor qaratadi, client esa ichki topologiyani bilmaydi va servislarni erkin bo'laklashga yo'l ochiladi. Shuningdek protokol tarjimasi (HTTP → gRPC) va versiyalash/kanareyka routing uchun qulay nuqta.
+**Tavsif:** [Microservices patternlari bobidagi API Gateway yozuvi](14-microservices-patternlari.md#1427-api-gateway-api-gateway) bu patternning to'liq yozuvi, bu yerda faqat API dizayn nuqtai nazari: client ichki topologiyani bilmasdan yagona domen va barqaror shartnomani ko'radi, gateway esa protokol tarjimasi (HTTP dan gRPC ga), versiyalash va kanareyka routing uchun bitta nuqta beradi.
 
-**Spring'da qayerda uchraydi:** Spring Cloud Gateway - reaktiv `spring-cloud-starter-gateway` (Netty + WebFlux) yoki Servlet varianti `spring-cloud-starter-gateway-mvc`. Marshrutlar `application.yml` da yoki `RouteLocatorBuilder` bilan Java DSL'da tuziladi; `Predicate`'lar: `Path`, `Host`, `Method`, `Header`, `Weight`; `GatewayFilter`'lar: `RewritePath`, `StripPrefix`, `CircuitBreaker` (Resilience4j bilan), `RequestRateLimiter`, `Retry`, `TokenRelay`. Global kesishuvlar uchun `GlobalFilter` + `Ordered` interfeysi. Service discovery `spring-cloud-starter-netflix-eureka-client` yoki Kubernetes discovery bilan `lb://ORDER-SERVICE` sxemasida; xavfsizlik `spring-boot-starter-oauth2-resource-server` (JWT validatsiya) yoki `oauth2-client` + `TokenRelayGatewayFilterFactory`. Alternativ sifatida platforma darajasida Kubernetes Gateway API / Envoy ishlatiladi.
+**Spring'da qayerda uchraydi:** Kanonik yozuvdagi Spring Cloud Gateway'dan tashqari Servlet varianti `spring-cloud-starter-gateway-mvc`, OAuth2 token'ni downstream'ga uzatadigan `TokenRelay` filtri (`oauth2-client` bilan), Eureka discovery orqali `lb://ORDER-SERVICE` sxemasi va platforma darajasidagi alternativ sifatida Kubernetes Gateway API yoki Envoy.
 
 **Qo'llanish keyslari:**
-- Mobil va web client'lar uchun 20+ microservice oldiga yagona `api.example.com` domeni.
-- JWT ni gateway'da bir marta validatsiya qilib, ichkariga faqat ishonchli claim'larni uzatish.
-- Monolitdan microservice'ga strangler fig migratsiyasida trafikni yo'l bo'yicha bo'lish.
-- Kanareyka deploy: `Weight` predicate bilan trafikning 5%ini yangi versiyaga yuborish.
-- Legacy SOAP yoki gRPC backend'ni tashqariga REST sifatida ko'rsatish.
+- Legacy SOAP yoki gRPC backend'ni tashqariga REST sifatida ko'rsatish va API versiyalarini gateway marshrutida ajratish.
 
-**Ehtiyot bo'ling:** Gateway'ga biznes logika, ma'lumot transformatsiyasi va orkestratsiyani yiqib qo'ysangiz, u yangi distributed monolit va yakka failure point'ga aylanadi - logika servislarda yoki alohida BFF'da qolishi kerak. Reaktiv Gateway'da blocking kod yozish (JDBC, `RestTemplate`, `block()`) event loop thread'ini to'sib butun gateway throughput'ini yo'q qiladi.
-
-```yaml
-spring:
-  cloud:
-    gateway:
-      routes:
-        - id: orders
-          uri: lb://orders-service
-          predicates:
-            - Path=/api/orders/**
-          filters:
-            - StripPrefix=1
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 100
-                redis-rate-limiter.burstCapacity: 200
-            - name: CircuitBreaker
-              args: { name: ordersCb, fallbackUri: 'forward:/fallback/orders' }
-```
+**Ehtiyot bo'ling:** Ma'lumot transformatsiyasi va orkestratsiya gateway'ga yuklansa u distributed monolit va yakka failure point'ga aylanadi, client'ga moslangan javob esa [Frontend uchun backend](#719-frontend-uchun-backend-backend-for-frontend-bff) da quriladi.
 
 ## 7.19 Frontend uchun backend (Backend for Frontend, BFF)
 

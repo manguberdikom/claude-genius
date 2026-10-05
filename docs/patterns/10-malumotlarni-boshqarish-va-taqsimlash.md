@@ -59,7 +59,7 @@ Ma'lumotlarni boshqarish va taqsimlash patternlari ma'lumotning hayot davri - ya
 - CMS'da kontentni arxivlash, lekin eski URL'larga ishlovchi redirect'ni saqlash.
 - Katalog mahsulotini sotuvdan chiqarib, eski buyurtmalardagi havolani buzmaslik.
 
-**Ehtiyot bo'ling:** Unique index'lar soft delete bilan ziddiyatga kiradi - o'chirilgan `email` yangi ro'yxatdan o'tishni bloklaydi, shuning uchun partial/filtered index yoki `deleted_at` ni kalitga qo'shish kerak. Native query, `JOIN`, reporting va `COUNT` joylarida filtr esdan chiqsa "o'chirilgan" ma'lumot ko'rinib qoladi; GDPR "o'chirish huquqi" talab qilsa soft delete yetarli emas - haqiqiy anonimlashtirish yoki hard delete kerak.
+**Ehtiyot bo'ling:** Unique index'lar soft delete bilan ziddiyatga kiradi - o'chirilgan `email` yangi ro'yxatdan o'tishni bloklaydi, shuning uchun partial/filtered index yoki `deleted_at` ni kalitga qo'shish kerak. Native query, `JOIN`, reporting va `COUNT` joylarida filtr esdan chiqsa "o'chirilgan" ma'lumot ko'rinib qoladi; GDPR "o'chirish huquqi" talab qilsa soft delete yetarli emas - haqiqiy anonimlashtirish yoki hard delete kerak. Sxema darajasidagi narxi (partial unique index, tashqi kalit, jadval o'sishi) va qaror mezoni architect hujjatidagi [yumshoq o'chirish va uning yashirin narxi](../architect/25-sxema-dizayni-malumot-turlari-va-cheklovlar.md#259-yumshoq-ochirish-soft-delete-va-uning-yashirin-narxi) mavzusida.
 
 ```java
 // Soft delete: qator qolaveradi, filtr avtomatik qo'llanadi
