@@ -37,6 +37,8 @@ import os
 import re
 import sys
 
+import hookio
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STORE = os.environ.get("USAGE_STORE") or os.path.join(ROOT, ".claude", "usage")
 
@@ -339,14 +341,7 @@ def save(rows, project, session):
 
 def read_payload():
     """Hook stdin dagi JSON. Terminal, bo'sh yoki buzuq bo'lsa {}."""
-    try:
-        if sys.stdin is None or sys.stdin.isatty():
-            return {}
-        raw = sys.stdin.read()
-        payload = json.loads(raw) if raw.strip() else {}
-    except (OSError, ValueError):
-        return {}
-    return payload if isinstance(payload, dict) else {}
+    return hookio.read_payload() or {}
 
 
 def save_hook():

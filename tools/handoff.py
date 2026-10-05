@@ -30,6 +30,8 @@ import subprocess
 import sys
 import time
 
+import hookio
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATE = os.path.join(ROOT, ".claude", ".state", "handoff.json")
 
@@ -435,11 +437,8 @@ def hook():
 def _hook():
     if sys.stdin.isatty():
         return 0
-    try:
-        payload = json.loads(sys.stdin.read() or "{}")
-    except ValueError:
-        return 0
-    if not isinstance(payload, dict):
+    payload = hookio.read_payload(blank={})
+    if payload is None:
         return 0
     path = payload.get("transcript_path") or transcript()
     if not path or not os.path.isfile(path):

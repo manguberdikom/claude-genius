@@ -30,6 +30,8 @@ import os
 import re
 import sys
 
+import hookio
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Shu papkalardagi markdown fayllar kuzatiladi.
@@ -282,12 +284,9 @@ def check_bash(tool_input, powershell=False):
 
 
 def main():
-    try:
-        payload = json.load(sys.stdin)
-    except (json.JSONDecodeError, ValueError):
+    payload = hookio.read_payload()
+    if payload is None:
         return  # hook hech qachon chaqiruvni o'z xatosi tufayli to'smaydi
-    if not isinstance(payload, dict):
-        return
     tool_input = payload.get("tool_input") or {}
     name = payload.get("tool_name")
     if name == "Read":

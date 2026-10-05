@@ -35,6 +35,8 @@ import os
 import sys
 import time
 
+import hookio
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATE_DIR = (os.environ.get("GENIUS_STATE_DIR")
              or os.path.join(ROOT, ".claude", ".state"))
@@ -306,11 +308,8 @@ def main():
         if sys.stdin.isatty():
             print(__doc__.strip().split("\n\n")[1].strip())
             return 2
-        try:
-            payload = json.load(sys.stdin)
-        except (OSError, ValueError):
-            return 0           # hook o'z xatosi bilan ishni to'xtatmaydi
-        return hook(payload) if isinstance(payload, dict) else 0
+        payload = hookio.read_payload()
+        return hook(payload) if payload is not None else 0  # hook o'z xatosi bilan ishni to'xtatmaydi
     if args[0] == "--holat":
         return status()
     if args[0] == "--yangi-vazifa":

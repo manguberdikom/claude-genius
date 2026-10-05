@@ -121,9 +121,14 @@ function Fail([string]$text) {
 # stderr qatori xato yozuviga aylanadi va 'Stop' ostida skript sababni
 # aytmay to'xtaydi. Shuning uchun chaqiruv vaqtida 'Continue', chiqish
 # esa matn: Out va Code.
+# Pipe qilinadigan matn $OutputEncoding bilan yoziladi. Windows PowerShell
+# 5.1 da u ASCII yoki BOM li UTF-8 bo'lishi mumkin: BOM dan JSON yiqiladi
+# va hook jim qoladi. Shuning uchun chaqiruv davomida BOM siz UTF-8.
 function Invoke-Native([string]$Exe, [string[]]$ArgList, [string]$InputText) {
   $prev = $ErrorActionPreference
+  $prevEnc = $OutputEncoding
   $ErrorActionPreference = 'Continue'
+  $OutputEncoding = New-Object Text.UTF8Encoding $false
   try {
     if ($InputText) {
       $lines = $InputText | & $Exe @ArgList 2>&1 | ForEach-Object { "$_" }
@@ -136,6 +141,7 @@ function Invoke-Native([string]$Exe, [string[]]$ArgList, [string]$InputText) {
     $code = 1
   } finally {
     $ErrorActionPreference = $prev
+    $OutputEncoding = $prevEnc
   }
   return [pscustomobject]@{ Out = (@($lines) -join "`n").Trim(); Code = $code }
 }
@@ -190,7 +196,7 @@ $toolsDir = Join-Path $GeniusPath 'tools'
 $Required = @(
   'tools\doc.sh', 'tools\guard.py', 'tools\check_code.py', 'tools\rules_for.py',
   'tools\budget.py', 'tools\suggest_sections.py', 'tools\usage.py',
-  'tools\handoff.py', 'tools\state.py', 'tools\docref.py',
+  'tools\handoff.py', 'tools\state.py', 'tools\docref.py', 'tools\hookio.py',
   'tools\build_index.py', 'tools\check_docs.py', 'install\rewrite_paths.py',
   'docs\manifest.json', '.claude\skills\manguberdi\SKILL.md'
 )
@@ -622,7 +628,10 @@ $r = Invoke-Py @((Join-Path $toolsDir 'budget.py'), '--holat')
 if ($r.Code -eq 0) { Step "asboblar ishlayapti" }
 else { Step "XATO: budget.py yiqildi: $($r.Out)"; $ok = $false }
 
+# GENIUS_HOOK_DEBUG: bo'sh chiqsa hook sababini stderr ga yozadi.
+$env:GENIUS_HOOK_DEBUG = '1'
 $r = Invoke-Py @((Join-Path $toolsDir 'suggest_sections.py')) '{"prompt":"circuit breaker"}'
+Remove-Item Env:GENIUS_HOOK_DEBUG -ErrorAction SilentlyContinue
 if ($r.Code -eq 0 -and $r.Out -match 'patterns') { Step "bo'lim taklifi ishlayapti" }
 else { Step "XATO: bo'lim taklifi bo'sh: $($r.Out)"; $ok = $false }
 

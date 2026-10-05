@@ -32,6 +32,8 @@ import re
 import subprocess
 import sys
 
+import hookio
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 INDEX = os.path.join(ROOT, "index")
@@ -446,14 +448,17 @@ def render(hits, rules=(), cmd="tools/doc.sh"):
     return "\n".join(lines)
 
 
+def quiet(reason):
+    """Hook jim qoladi. GENIUS_HOOK_DEBUG=1 da sababi stderr ga (o'rnatuvchi sinovi)."""
+    if os.environ.get("GENIUS_HOOK_DEBUG"):
+        sys.stderr.write("suggest_sections: %s\n" % reason)
+
+
 def main():
-    try:
-        payload = json.load(sys.stdin)
-    except (json.JSONDecodeError, ValueError):
-        return
-    prompt = (payload.get("prompt") if isinstance(payload, dict) else None) or ""
+    payload = hookio.read_payload() or {}
+    prompt = payload.get("prompt") or ""
     if not isinstance(prompt, str) or not prompt.strip():
-        return
+        return quiet("stdin da prompt yo'q yoki JSON buzuq")
 
     try:
         ensure_fresh()
@@ -463,10 +468,10 @@ def main():
             known = {row["rule"] for row in read_tsv("rules.tsv")}
             rules = [key for key in rules if key in known]
         text = render(hits, rules, doc_cmd()) if hits else ""
-    except Exception:
-        return  # hook hech qachon navbatni o'z xatosi tufayli buzmaydi
+    except Exception as exc:  # hook hech qachon navbatni o'z xatosi tufayli buzmaydi
+        return quiet("%s: %s" % (type(exc).__name__, exc))
     if not hits:
-        return
+        return quiet("mos bo'lim topilmadi (indeks: %s)" % INDEX)
 
     json.dump(
         {

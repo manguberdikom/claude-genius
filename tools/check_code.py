@@ -30,6 +30,7 @@ sys.path.insert(0, HERE)
 
 # in_clone, quote va tool_cmd docref da: rules_for ularni shu moduldan
 # oladi, shuning uchun bu yerda qayta eksport qilinadi.
+import hookio  # noqa: E402
 from docref import hint, in_clone, quote, tool_cmd  # noqa: E402,F401
 from state import marked_labels, was_marked  # noqa: E402
 
@@ -319,9 +320,8 @@ def main():
     if len(sys.argv) > 1:
         return check_paths(sys.argv[1:])
 
-    try:
-        payload = json.load(sys.stdin)
-    except (json.JSONDecodeError, ValueError):
+    payload = hookio.read_payload()
+    if payload is None:
         return 0
     tool_input = payload.get("tool_input") or {}
     response = payload.get("tool_response") or {}

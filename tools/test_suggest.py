@@ -187,16 +187,18 @@ DOUBLED_RE = re.compile(r"(\d+\.\d+)\s+\1\b")
 # Indekssiz nusxaga kerak fayllar: hook, indeks yasovchi va uning importi,
 # buyruq yo'lini beradigan docref.
 HOOK_FILES = ("suggest_sections.py", "build_index.py", "check_docs.py",
-              "synonyms.tsv", "docref.py")
+              "synonyms.tsv", "docref.py", "hookio.py")
 # Klondan tashqarida nisbiy buyruq: oldida `/` yo'q `tools/doc.sh`.
 RELATIVE_CMD_RE = re.compile(r"(?<![/\\\w])tools/doc\.sh")
 
 
 def run_hook(root, raw, cwd=None):
+    """raw str yoki bayt: bayt bilan BOM va UTF-8 aynan beriladi."""
+    data = raw if isinstance(raw, bytes) else raw.encode("utf-8")
     proc = subprocess.run(
         [sys.executable, os.path.join(root, "tools", "suggest_sections.py")],
-        input=raw, capture_output=True, text=True, timeout=60, cwd=cwd)
-    return proc.returncode, proc.stdout
+        input=data, capture_output=True, timeout=60, cwd=cwd)
+    return proc.returncode, proc.stdout.decode("utf-8", "replace")
 
 
 def context(stdout):
@@ -273,6 +275,20 @@ def hook_cases():
                     and output_shape_ok(stdout) and full in text
                     and not RELATIVE_CMD_RE.search(text),
                     text.splitlines()[0] if text else "rc=%d" % rc))
+
+        # Windows PowerShell 5.1 pipe boshiga BOM qo'yadi, satr oxiri CRLF.
+        # Avval json.load undan yiqilib, o'rnatuvchi sinovi bo'sh qolardi.
+        raw = b"\xef\xbb\xbf" + json.dumps({"prompt": prompt}).encode() + b"\r\n"
+        rc, stdout = run_hook(tmp, raw)
+        out.append(("BOM va CRLF li stdin", rc == 0 and output_shape_ok(stdout),
+                    "rc=%d, %d belgi" % (rc, len(stdout))))
+        # Matnli stdin Windows da cp1252: ruscha harf buzilib, so'rov
+        # boshqa so'zga aylanardi. Bayt UTF-8 bilan ochiladi.
+        raw = json.dumps({"prompt": "\u0441\u0445\u0435\u043c\u0430 " + prompt},
+                         ensure_ascii=False).encode("utf-8")
+        rc, stdout = run_hook(tmp, raw)
+        out.append(("UTF-8 prompt (ASCII emas)", rc == 0 and output_shape_ok(stdout),
+                    "rc=%d" % rc))
 
         for name, raw in (("mavzusiz so'rov", json.dumps({"prompt": "salom"})),
                           ("buzuq JSON", "not json"),
