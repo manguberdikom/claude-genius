@@ -40,7 +40,7 @@ Bitta son bilan baholash ma'lumot yo'qotadi. Uch nuqtali baho noaniqlikni ham uz
 
 Kutilgan qiymat va standart chetlanish:
 
-```
+```text
 μ = (O + 4M + P) / 6
 σ = (P - O) / 6
 ```
@@ -91,7 +91,7 @@ Kechikish haqida iloji boricha ertaroq xabar berish professionalizmning asosiy b
 
 "90% tayyor" degan hisobot eng ko'p uchraydigan yashirin kechikish shakli: qolgan 10% odatda ishning yarmini oladi (integratsiya, xato tuzatish, chegaraviy holatlar). Yechim: foiz emas, **tugallangan qismlar** bilan hisobot berish.
 
-```
+```text
 Yomon: "90% tayyor"
 Yaxshi: "Qaytarish oqimi tugadi va testlari o'tyapti. Bank integratsiyasi
          yozilgan, lekin sandbox'da hali sinalmagan. Xato oqimi va

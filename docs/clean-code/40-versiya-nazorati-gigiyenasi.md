@@ -49,7 +49,7 @@ git commit -m "feat: ..."
 
 Commit xabari ikki qismdan iborat: sarlavha (nima qilindi) va tana (nega qilindi). Tana eng qimmatli qism, chunki "nima" ni diff ham ko'rsatadi, "nega" ni esa faqat muallif biladi.
 
-```
+```text
 feat: hisob-kitob faylida valyuta tekshiruvini qo'shish
 
 Bank fayli ba'zan USD yozuvlarini UZS hisobiga qo'shib yuboradi

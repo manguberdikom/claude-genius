@@ -25,7 +25,7 @@ Toza kod jamoaviy natija: bir odam yolg'iz uni saqlab qola olmaydi. Bu bobda jam
 
 Jamoaviy egalik amaliy qoidalarga tayanadi: har bir fayl har qanday jamoa a'zosi tomonidan o'zgartirilishi mumkin; `@author` tegi ishlatilmaydi (9.5); va review izohlari kodga, odamga emas, qaratiladi.
 
-```
+```text
 Yomon: "Nega sen bu yerda Optional ishlatmagansan?"
 Yaxshi: "Bu metod null qaytarishi mumkinmi? Optional aniqroq bo'lardi."
 ```

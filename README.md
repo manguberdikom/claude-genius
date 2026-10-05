@@ -76,7 +76,7 @@ da. Qoidalar: [memory-protocol.md](memory-protocol.md) va
 
 ## Tez qidirish
 
-Korpus katta (~2.1M token), shuning uchun bob fayli butunligicha emas,
+Korpus katta (~6.5 MB), shuning uchun bob fayli butunligicha emas,
 bo'lim darajasida o'qiladi:
 
 ```bash

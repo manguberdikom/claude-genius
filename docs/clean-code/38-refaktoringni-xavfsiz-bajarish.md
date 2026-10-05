@@ -107,7 +107,7 @@ Qoida: refaktoringni o'qilishi uchun bajarish, keyin o'lchash. Agar o'lchov muam
 
 Refaktoring tarixi keyinchalik o'qiladi: "bu sinf nega shunday bo'lgan?" savoliga javob beradi. Shu sababli commit xabari harakat nomini ishlatishi kerak (40.2).
 
-```
+```text
 refactor: Payment dan TelephoneNumber value object ini ajratish
 
 Extract Class: officeAreaCode va officeNumber maydonlari birga sayohat

@@ -225,7 +225,7 @@ CREATE INDEX CONCURRENTLY idx_orders_channel ON orders (channel);
 
 Shart bitta: ikki tranzaksiya resurslarni teskari tartibda lock qiladi. PostgreSQL buni o'zi topadi: `deadlock_timeout` (default 1 soniya) o'tgach kutish grafigini tekshiradi, tsikl topsa biror tranzaksiyani `40P01` bilan o'ldiradi.
 
-```
+```text
 ERROR:  deadlock detected
 DETAIL:  Process 2841 waits for ShareLock on transaction 9123; blocked by process 2902.
          Process 2902 waits for ShareLock on transaction 9124; blocked by process 2841.

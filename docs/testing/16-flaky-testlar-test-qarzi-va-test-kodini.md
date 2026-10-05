@@ -148,7 +148,7 @@ void shouldSummarizeCart() {
 
 Flaky testni "sezish" emas, o'lchash kerak. Surefire/Failsafe har bir modulda `target/surefire-reports/*.xml` (JUnit XML) hosil qiladi. Bu fayllarni build artefakti sifatida saqlab, markaziy joyga yuklash kerak: `commit_sha`, `branch`, `test_class`, `test_method`, `status`, `duration_ms`, `build_id`. Shundan keyin:
 
-```
+```text
 flake_rate(test) = (bir xil commit'da ham pass, ham fail bo'lgan run'lar) / (umumiy run)
 ```
 

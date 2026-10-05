@@ -25,7 +25,7 @@ Professionalizmning eng aniq belgisi - bajarilmaydigan ishga "yo'q" deyish qobil
 
 "Yo'q" aytishning ishlaydigan shakli uchta elementdan iborat: aniq javob, sabab, va muqobil taklif.
 
-```
+```text
 Yomon: "Harakat qilaman" (majburiyat yo'q, umid bor)
 Yomon: "Mumkin emas" (sabab yo'q, muqobil yo'q)
 

@@ -9,6 +9,8 @@ o'z sinovini haqiqiy chaqiruv deb to'sib qo'yadi.
 
 import json
 import os
+import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -206,6 +208,40 @@ CASES = [
       {"command": "docker compose -f run-dev.yml logs -f"}}),
     ("psql --help", ALLOW,
      {"tool_name": "Bash", "tool_input": {"command": "psql --help"}}),
+    ("psql -V", ALLOW,
+     {"tool_name": "Bash", "tool_input": {"command": "psql -V"}}),
+    # Lokal ulanish ham ulanish: host sharti endi yo'q.
+    ("mongosh, hostsiz", DENY,
+     {"tool_name": "Bash", "tool_input": {"command": "mongosh"}}),
+    ("redis-cli, hostsiz", DENY,
+     {"tool_name": "Bash", "tool_input": {"command": "redis-cli"}}),
+    ("psql lokal baza", DENY,
+     {"tool_name": "Bash", "tool_input": {"command": "psql -U postgres shop"}}),
+    # Qo'shtirnoq olib tashlansa ham klient nomi buyruq o'rnida qoladi.
+    ("psql qo'shtirnoqli URI", DENY,
+     {"tool_name": "Bash", "tool_input":
+      {"command": 'psql "postgresql://u:p@db/shop"'}}),
+    ("VAR= bilan lokal psql", DENY,
+     {"tool_name": "Bash", "tool_input": {"command": "PGPASSWORD=x psql -U u shop"}}),
+    # Prefiks bayrog'ining qiymati ("postgres") buyruq emas.
+    ("sudo -u postgres psql", DENY,
+     {"tool_name": "Bash", "tool_input": {"command": "sudo -u postgres psql"}}),
+    ("docker exec ichida psql", DENY,
+     {"tool_name": "Bash", "tool_input": {"command": "docker exec -it pg psql -U postgres"}}),
+    ("compose exec ichida psql", DENY,
+     {"tool_name": "Bash", "tool_input": {"command": "docker compose exec db psql -U u"}}),
+    ("compose -f bilan exec", DENY,
+     {"tool_name": "Bash", "tool_input":
+      {"command": "docker compose -f x.yml exec db psql -U u"}}),
+    ("kubectl exec ichida psql", DENY,
+     {"tool_name": "Bash", "tool_input": {"command": "kubectl exec pod -- psql"}}),
+    ("kubectl -n bilan exec", DENY,
+     {"tool_name": "Bash", "tool_input": {"command": "kubectl -n prod exec pod -- psql"}}),
+    ("naqsh ichida klient nomlari", ALLOW,
+     {"tool_name": "Bash", "tool_input":
+      {"command": "grep -rnE 'mongosh|redis-cli' ."}}),
+    ("which psql", ALLOW,
+     {"tool_name": "Bash", "tool_input": {"command": "which psql"}}),
     # Regex qaytishi (backtracking) bilan osilib qolmasin.
     ("ko'p bayroqli compose logs", ALLOW,
      {"tool_name": "Bash", "tool_input":
@@ -261,18 +297,67 @@ CASES = [
     ("COST_OK bilan docker", ALLOW,
      {"tool_name": "Bash", "tool_input":
       {"command": "COST_OK=1 docker compose up -d"}}),
+
+    # Windows da Git Bash bo'lmasa PowerShell asbobi yoqiladi: to'siqlar
+    # unda ham ishlashi kerak.
+    ("PowerShell: compose up", DENY,
+     {"tool_name": "PowerShell", "tool_input": {"command": "docker compose up -d"}}),
+    ("PowerShell: lokal psql", DENY,
+     {"tool_name": "PowerShell", "tool_input": {"command": "psql -U postgres shop"}}),
+    ("PowerShell: Get-Content katta bob", DENY,
+     {"tool_name": "PowerShell", "tool_input": {"command": "Get-Content " + BIG}}),
+    ("PowerShell: Get-Content -TotalCount", ALLOW,
+     {"tool_name": "PowerShell", "tool_input":
+      {"command": "Get-Content -TotalCount 80 " + BIG}}),
+    ("PowerShell: cat -Tail", ALLOW,
+     {"tool_name": "PowerShell", "tool_input": {"command": "cat " + BIG + " -Tail 30"}}),
+    ("PowerShell: gc, teskari slash", DENY,
+     {"tool_name": "PowerShell", "tool_input":
+      {"command": "gc " + BIG.replace("/", chr(92))}}),
+    ("PowerShell: type, katta harf", DENY,
+     {"tool_name": "PowerShell", "tool_input": {"command": "TYPE " + BIG}}),
+    ("PowerShell: kichik bob", ALLOW,
+     {"tool_name": "PowerShell", "tool_input": {"command": "Get-Content " + SMALL}}),
+    # Bash da `type` faylni o'qimaydi: PowerShell fe'llari unga qo'llanmaydi.
+    ("Bash: type", ALLOW,
+     {"tool_name": "Bash", "tool_input": {"command": "type " + BIG}}),
 ]
 
+# To'siq maslahatidagi `tools/` yo'llari va CLAUDE.md. Global o'rnatishda
+# hook boshqa proyektda yuradi: nisbiy `tools/doc.sh` u yerda yo'q.
+HINT_PAYLOADS = [
+    {"tool_name": "Read", "tool_input": {"file_path": os.path.join(ROOT, BIG)}},
+    {"tool_name": "Bash", "tool_input": {"command": "docker compose up -d"}},
+    {"tool_name": "Bash", "tool_input": {"command": "psql -U u shop"}},
+]
+HINT_PATH_RE = re.compile(r'"([^"]*(?:tools/[\w.-]+|CLAUDE\.md))"'
+                          r'|([^\s"]*(?:tools/[\w.-]+|CLAUDE\.md))')
 
-def verdict(payload, cwd=ROOT):
+
+def run_guard(payload, cwd):
     raw = "not json" if payload is None else json.dumps(payload)
     out = subprocess.run(
         [sys.executable, GUARD], input=raw, capture_output=True, text=True,
         cwd=cwd, timeout=20,
     ).stdout.strip()
-    if not out:
-        return ALLOW
-    return json.loads(out)["hookSpecificOutput"]["permissionDecision"]
+    return json.loads(out)["hookSpecificOutput"] if out else {}
+
+
+def verdict(payload, cwd=ROOT):
+    return run_guard(payload, cwd).get("permissionDecision", ALLOW)
+
+
+def hint_paths(cwd):
+    """(topilgan yo'llar soni, shu cwd dan ochilmaydiganlari)."""
+    seen, broken = 0, []
+    for payload in HINT_PAYLOADS:
+        reason = run_guard(payload, cwd).get("permissionDecisionReason", "")
+        for quoted, bare in HINT_PATH_RE.findall(reason):
+            seen += 1
+            path = quoted or bare
+            if not os.path.exists(os.path.join(cwd, path)):
+                broken.append(path)
+    return seen, broken
 
 
 def main():
@@ -295,7 +380,23 @@ def main():
         failures += not ok
         print("%-4s %-30s kutilgan=%-5s olingan=%s"
               % ("OK" if ok else "XATO", name, want, got))
-    print("\n%d/%d o'tdi" % (len(CASES) - failures, len(CASES)))
+
+    # Maslahatdagi har yo'l chaqiruvchi turgan papkadan ochilishi kerak.
+    other = tempfile.mkdtemp()
+    try:
+        checks = [("maslahat yo'llari, klon", ROOT),
+                  ("maslahat yo'llari, boshqa proyekt", other)]
+        for name, cwd in checks:
+            seen, broken = hint_paths(cwd)
+            ok = seen > 0 and not broken
+            failures += not ok
+            print("%-4s %-30s yo'l=%d ochilmaydi=%s"
+                  % ("OK" if ok else "XATO", name, seen, ", ".join(broken) or "-"))
+    finally:
+        shutil.rmtree(other, ignore_errors=True)
+
+    total = len(CASES) + len(checks)
+    print("\n%d/%d o'tdi" % (total - failures, total))
     return 1 if failures else 0
 
 
