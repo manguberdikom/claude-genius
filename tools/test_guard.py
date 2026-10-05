@@ -52,6 +52,10 @@ def line_count(path):
         return 0  # main() yo'q fixture ni alohida aytadi
 
 
+def bash(command):
+    return {"tool_name": "Bash", "tool_input": {"command": command}}
+
+
 # ask: pul va vaqt sarflaydigan amal, qarorni odam qiladi.
 # deny: kontekstni himoya qiladi, arzon yo'l har doim bir xil.
 DENY, ALLOW, ASK = "deny", "allow", "ask"
@@ -342,6 +346,32 @@ CASES = [
     # Bash da `type` faylni o'qimaydi: PowerShell fe'llari unga qo'llanmaydi.
     ("Bash: type", ALLOW,
      {"tool_name": "Bash", "tool_input": {"command": "type " + BIG}}),
+    # Test vaqti: to'liq suite, clean, --rerun-tasks, --no-daemon deny.
+    # Arzon yo'l bir xil (run_tests.py), shuning uchun ask emas: ask
+    # zanjirni odamni kutib to'xtatardi.
+    ("gradle: filtrsiz test", DENY, bash("./gradlew test")),
+    ("gradle: check", DENY, bash("./gradlew check")),
+    ("gradle: integrationTest", DENY, bash("./gradlew integrationTest")),
+    ("gradle: && dan keyin test", DENY, bash("cd app && ./gradlew test")),
+    ("gradle: modulli --tests", ALLOW,
+     bash("./gradlew :orders:test --tests 'shop.orders.OrderServiceTest'")),
+    ("gradle: --console qiymati vazifa emas", ALLOW,
+     bash("gradle --console plain :a:test --tests A")),
+    ("gradle: build -x test", ALLOW, bash("./gradlew build -x test")),
+    ("gradle: compileJava", ALLOW, bash("./gradlew compileJava compileTestJava")),
+    ("gradle: clean", DENY, bash("./gradlew clean :a:test --tests A")),
+    ("gradle: --rerun-tasks", DENY, bash("./gradlew :a:test --tests A --rerun-tasks")),
+    ("gradle: --no-daemon", DENY, bash("./gradlew --no-daemon :a:test --tests A")),
+    ("maven: filtrsiz test", DENY, bash("./mvnw -B test")),
+    ("maven: verify", DENY, bash("cd app; mvn verify")),
+    ("maven: clean install", DENY, bash("mvn clean install")),
+    ("maven: -Dtest qo'shtirnoqda", ALLOW,
+     bash("./mvnw -pl orders -am test -Dtest='A,B' "
+          "-Dsurefire.failIfNoSpecifiedTests=false")),
+    ("maven: -Dit.test", ALLOW, bash("mvn verify -Dit.test=OrderIT")),
+    ("maven: -DskipTests", ALLOW, bash("mvn package -DskipTests")),
+    ("maven: dependency:tree", ALLOW, bash("mvn -q dependency:tree")),
+    ("grep ichidagi 'gradle test'", ALLOW, bash("grep -rn 'gradle test' .")),
 ]
 
 # To'siq maslahatidagi `tools/` yo'llari va CLAUDE.md. Global o'rnatishda
@@ -350,6 +380,7 @@ HINT_PAYLOADS = [
     {"tool_name": "Read", "tool_input": {"file_path": os.path.join(ROOT, BIG)}},
     {"tool_name": "Bash", "tool_input": {"command": "docker compose up -d"}},
     {"tool_name": "Bash", "tool_input": {"command": "psql -U u shop"}},
+    {"tool_name": "Bash", "tool_input": {"command": "./gradlew test"}},
 ]
 HINT_PATH_RE = re.compile(r'"([^"]*(?:tools/[\w.-]+|CLAUDE\.md))"'
                           r'|([^\s"]*(?:tools/[\w.-]+|CLAUDE\.md))')

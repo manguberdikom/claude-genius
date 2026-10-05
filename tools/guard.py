@@ -24,6 +24,15 @@ Katta bo'lakni o'qish esa `deny` bo'lib qoladi: u kontekstni himoya
 qiladi va odam qarorini talab qilmaydi, arzon yo'l (`doc.sh show`)
 har doim bir xil.
 
+3. Test vaqti. To'liq suite (`./gradlew test`, `mvn verify`) 5-8 daqiqa,
+   `clean`, `--rerun-tasks` va `--no-daemon` esa inkremental build va
+   daemon ni yo'qotib, keyingi har yurishni ham sekinlashtiradi. Bular
+   ham `deny`: arzon yo'l har doim bir xil (`run_tests.py`), u
+   maqsadli, modul va to'liq rejimni ham beradi. `ask` bo'lsa zanjir
+   har safar odamni kutib to'xtardi, holbuki bu yerda qaror yo'q.
+   Filtrli yurish (`--tests`, `-Dtest=`) va testsiz build (`-x test`,
+   `-DskipTests`) o'tadi.
+
 Chegaralangan o'qish o'tadi: kichik bo'lakli Read, sed oralig'i, grep, head,
 `Get-Content -TotalCount`. Tashxis buyruqlari ham o'tadi: docker ps,
 docker logs, docker images, psql --version.
@@ -37,6 +46,7 @@ import glob
 import json
 import os
 import re
+import shlex
 import sys
 
 import hookio
@@ -123,6 +133,99 @@ EXPENSIVE = (
      "bazada, ularni bilish kerak bo'lsa ulanish o'rinli."),
 )
 
+# Gradle va Maven chaqiruvi: bajariluvchi nom va shu buyruqning qolgani.
+BUILD_RE = re.compile(
+    CMD + r"((?:[\w.~-]*[/\\])*(?:gradlew(?:\.bat)?|gradle|mvnw(?:\.cmd)?|mvn))"
+    r"(?![\w.-])([^|;&\n]*)")
+# Gradle da test yurgizadigan vazifa: test, check, build, *Test (integrationTest).
+GRADLE_TEST_TASK = re.compile(r"(?:^|:)(?:test|check|build|\w+Test)$")
+# Qiymat oladigan bayroqlar: qiymati vazifa nomi deb o'qilmasin.
+GRADLE_VALUED = {"--tests", "-x", "--exclude-task", "--console", "--warning-mode",
+                 "-p", "--project-dir", "-c", "--settings-file", "-I",
+                 "--init-script", "--max-workers", "-g", "--gradle-user-home",
+                 "--priority", "--include-build"}
+MAVEN_VALUED = {"-pl", "--projects", "-rf", "--resume-from", "-f", "--file",
+                "-s", "--settings", "-gs", "--global-settings", "-t",
+                "--toolchains", "-T", "--threads", "-P", "--activate-profiles",
+                "-l", "--log-file", "-b", "--builder"}
+MAVEN_TEST_PHASES = {"test", "integration-test", "verify", "install",
+                     "package", "deploy"}
+MAVEN_SKIP_RE = re.compile(r"^-D(?:skipTests(?:=true)?|maven\.test\.skip=true)$")
+MAVEN_FILTER_RE = re.compile(r"^-D(?:it\.)?test=\S+")
+
+BUILD_HINT = (
+    "Arzon yo'l bitta asbob, u modulni o'zi qo'yadi va logni faylga yozadi:\n"
+    "  {run_tests} --diff --yurgiz          - o'zgarishga ta'sir qilgan testlar\n"
+    "  {run_tests} --modul <papka> --yurgiz - bitta modulning hammasi\n"
+    "  {run_tests} --hammasi --yurgiz       - to'liq suite: partiya oxirida bir marta, fonda"
+)
+
+
+def split_args(text):
+    try:
+        return shlex.split(text)
+    except ValueError:
+        return text.split()
+
+
+def build_problem(tool, args):
+    """(nima, nega) yoki None. tool: gradle yoki maven."""
+    words, i = [], 0
+    filtered = skipped = False
+    while i < len(args):
+        arg = args[i]
+        if arg in ("--rerun-tasks", "--no-daemon") or arg == "-Dorg.gradle.daemon=false":
+            return (arg, "%s inkremental build va daemon ni yo'qotadi: keyingi har "
+                         "yurish hammasini qaytadan kompilyatsiya qiladi" % arg)
+        if tool == "gradle" and arg == "--tests":
+            filtered = True
+        if tool == "gradle" and arg in ("-x", "--exclude-task") and i + 1 < len(args):
+            skipped = skipped or bool(GRADLE_TEST_TASK.search(args[i + 1]))
+        if tool == "maven" and (MAVEN_FILTER_RE.match(arg)):
+            filtered = True
+        if tool == "maven" and MAVEN_SKIP_RE.match(arg):
+            skipped = True
+        valued = GRADLE_VALUED if tool == "gradle" else MAVEN_VALUED
+        if arg in valued:
+            i += 2
+            continue
+        if not arg.startswith("-"):
+            words.append(arg)
+        i += 1
+    if any(w == "clean" or w.endswith(":clean") for w in words):
+        return ("clean", "clean inkremental build ni o'chiradi: keyingi har yurish "
+                         "hammasini qaytadan kompilyatsiya qiladi. Gradle va Maven "
+                         "o'zgargan faylni o'zi kuzatadi; build holati haqiqatan "
+                         "buzilgan bo'lsa, buni foydalanuvchiga ayting")
+    if tool == "gradle":
+        runs = [w for w in words if GRADLE_TEST_TASK.search(w)]
+    else:
+        runs = [w for w in words if w in MAVEN_TEST_PHASES
+                or w.endswith(("surefire:test", "failsafe:integration-test"))]
+    if runs and not filtered and not skipped:
+        return ("filtrsiz test: %s" % " ".join(runs),
+                "to'liq suite 5-8 daqiqa; aktyor uni qayta-qayta yurgizsa guruh "
+                "soatga cho'ziladi. Ko'p modulli loyihada modulsiz --tests ham "
+                "yiqiladi, asbob esa modulni o'zi qo'yadi")
+    return None
+
+
+def check_build(command):
+    """Buyruq o'rni qo'shtirnoqsiz matndan topiladi (`grep 'gradle test'`
+    chaqiruv emas), argumentlar esa asl matndan o'qiladi: `-Dtest='A,B'`
+    filtri bo'shatilsa, maqsadli yurish filtrsiz deb to'silardi.
+    strip_quoted uzunlikni saqlaydi, shuning uchun oraliq bir xil."""
+    base = strip_heredoc(command)
+    for match in BUILD_RE.finditer(strip_quoted(base)):
+        exe = os.path.basename(match.group(1).replace("\\", "/")).lower()
+        tool = "gradle" if exe.startswith("gradle") else "maven"
+        args = base[match.start(2):match.end(2)]
+        problem = build_problem(tool, split_args(args))
+        if problem:
+            what, why = problem
+            decide("deny", "Test vaqti: %s.\n%s." % (what, why), BUILD_HINT)
+
+
 # Maslahat matnlari shablon: yo'llar to'siq paytida qo'yiladi (commands).
 HINT = (
     "Butun faylni o'qish o'rniga indeksdan foydalaning:\n"
@@ -148,6 +251,7 @@ def commands():
         claude_md = os.path.join(ROOT, claude_md).replace("\\", "/")
     return {"doc": tool_cmd("doc.sh"),
             "schema": tool_cmd("schema_from_entities.py"),
+            "run_tests": tool_cmd("run_tests.py"),
             "claude_md": claude_md}
 
 
@@ -279,6 +383,7 @@ def slurped(arg):
 def check_bash(tool_input, powershell=False):
     command = tool_input.get("command") or ""
     check_cost(command)
+    check_build(command)
     regex = PS_SLURP_RE if powershell else SLURP_RE
     for match in regex.finditer(strip_heredoc(command)):
         args = match.group(1)
