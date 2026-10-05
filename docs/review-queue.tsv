@@ -7,7 +7,7 @@
 # oxiriga tushadi (vazn -1).
 tartib	vazn	hujjat	bob	holat	rules_for	eval	sonar	bolim	sarlavha
 1	5.107	code-review	22	tekshirilmoqda	3	0	0	9	22. Tashqi integratsiya review: timeout, retry, broker (Outbound Integration)
-2	3.845	patterns	17	ai-draft	2	0	0	43	17. Resilience va cloud dizayn patternlari (Resilience & Cloud Design Patterns)
+2	3.845	patterns	17	tekshirilmoqda	2	0	0	43	17. Resilience va cloud dizayn patternlari (Resilience & Cloud Design Patterns)
 3	3.786	patterns	9	ai-draft	2	0	0	38	9. Ma'lumotlarga kirish va ORM patternlari (Data Access & ORM Patterns)
 4	3.655	patterns	8	ai-draft	2	0	0	27	8. Biznes logika va Service qatlam patternlari (Business & Service Layer Patterns)
 5	3.488	architect	18	ai-draft	2	0	0	13	18. Spring Data JPA va Hibernate chuqur (Spring Data JPA and Hibernate)
