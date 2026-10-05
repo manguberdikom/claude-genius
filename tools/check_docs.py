@@ -7,6 +7,8 @@ Tekshiradi:
   1. Fayl hajmi   - GitHub 1 MB dan katta markdown ni render qilmaydi.
   2. Havolalar    - har bir nisbiy havola va anchor haqiqatan mavjudmi.
   3. Kirill       - hujjat o'zbek lotin yozuvida, kirill harf bo'lmasin.
+                    Ildizdagi DECISIONS.md ham shu tekshiruvdan o'tadi:
+                    u har .md fayl kabi md_files() ga tushadi.
   3b. Em-dash     - loyiha qoidasi: em-dash va en-dash ishlatilmaydi.
   3c. Kod fence   - ``` soni juft bo'lishi kerak, aks holda render buziladi;
                     docs/ da ochiluvchi fence til belgisiz bo'lmasin.
@@ -200,7 +202,8 @@ def main():
     # (`mvn test | python3 tools/parse_test_output.py`) tekshiriladi.
     # Har navbatda o'qiladigan CLAUDE.md va o'rnatish hujjati ham kiradi.
     tool_docs = sorted(routed) + [os.path.join(ROOT, f) for f in (
-        'CLAUDE.md', 'README.md', 'CONTRIBUTING.md', 'install/README.md')
+        'CLAUDE.md', 'README.md', 'CONTRIBUTING.md', 'install/README.md',
+        'DECISIONS.md')
         if os.path.exists(os.path.join(ROOT, f))]
     doc_sh = os.path.join(ROOT, 'tools', 'doc.sh')
     subcommands = (set(re.findall(r'^\s+([a-z]+)\)', open(doc_sh, encoding='utf-8').read(), re.M))

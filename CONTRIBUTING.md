@@ -18,6 +18,13 @@ tools/check_docs.py            tekshiruv (CI shuni ishlatadi)
 `docs/` - `dist/` ning manbasi. `dist/` generatsiya natijasi, git ga
 kirmaydi va qo'lda tahrir qilinmaydi.
 
+Ildizdagi `DECISIONS.md` xulqni o'zgartirgan qarorlarni yozadi: nima
+o'zgardi, nega, rad etilgan variantlar, xavf, qaysi tekshiruv o'tdi va
+orqaga qaytarish yo'li. Hamma o'zgarish emas, faqat foydalanuvchi
+muhitiga tegadigan, ma'lumot yo'qotishi mumkin bo'lgan yoki ruxsat
+qarorini o'zgartiradigani. `check_docs.py` uni ham tekshiradi: em-dash
+va kirill yo'q, asbob havolalari mavjud.
+
 ### Bob fayli shakli
 
 ```markdown
