@@ -31,7 +31,7 @@ PostgreSQL ning standart sozlamalari 1 GB operativ xotirali mashinada ishga tush
 
 ## 27.1 Asosiy `postgresql.conf` parametrlari va ularni server resursidan kelib chiqib hisoblash
 
-Har bir parametrning `context` xossasi uni qanday o'zgartirish mumkinligini belgilaydi. `postmaster` kontekstidagi parametr (`shared_buffers`, `max_connections`, `shared_preload_libraries`) faqat restart bilan kuchga kiradi. `sighup` kontekstidagi parametr (`work_mem`, `log_min_duration_statement`) konfiguratsiyani qayta yuklash bilan yetadi. `user` kontekstidagi parametrni esa tranzaksiya ichida o'zgartirish mumkin, bu hisobot so'rovlari uchun eng kuchli vosita.
+Har bir parametrning `context` xossasi uni qanday o'zgartirish mumkinligini belgilaydi va bu qiymat `pg_settings.context` da turadi. `postmaster` kontekstidagi parametr (`shared_buffers`, `max_connections`, `shared_preload_libraries`) faqat restart bilan kuchga kiradi. `sighup` kontekstidagi parametr (`max_wal_size`, `checkpoint_timeout`, `autovacuum_naptime`, `log_line_prefix`) konfiguratsiyani qayta yuklash bilan yetadi. `superuser` kontekstidagisini (`log_min_duration_statement`) superuser o'z sessiyasida ham o'zgartira oladi. `user` kontekstidagi parametrni (`work_mem`, `maintenance_work_mem`, `hash_mem_multiplier`, `effective_cache_size`, `random_page_cost`, `statement_timeout`) esa har qanday sessiya va tranzaksiya ichida o'zgartirish mumkin, bu hisobot so'rovlari uchun eng kuchli vosita. Ya'ni `work_mem` ni o'zgartirish uchun qayta yuklash kutib turish shart emas: u `user` kontekstida.
 
 ```sql
 -- Qaysi parametr restart talab qiladi, qaysi biri yo'q: shuni avval tekshir
@@ -44,7 +44,8 @@ ORDER BY context, name;
 -- ALTER SYSTEM postgresql.auto.conf ga yozadi, asl faylga tegmaydi
 ALTER SYSTEM SET work_mem = '32MB';
 ALTER SYSTEM SET effective_cache_size = '12GB';
-SELECT pg_reload_conf();            -- sighup parametrlari darhol kuchga kiradi
+SELECT pg_reload_conf();            -- sighup va user kontekstidagi yangi standart
+                                    -- darhol kuchga kiradi, restart kerak emas
 ```
 
 16 GB RAM, 4 vCPU va SSD li OLTP server uchun boshlang'ich nuqta quyidagicha.
@@ -103,7 +104,8 @@ SET LOCAL statement_timeout = '120s';  -- hisobot uzoq, lekin cheksiz emas
 COMMIT;
 
 -- Hash operatsiyalari uchun alohida koeffitsient bor (PostgreSQL 13+)
-SHOW hash_mem_multiplier;   -- standart 2.0, ya'ni hash node 2 x work_mem oladi
+SHOW hash_mem_multiplier;   -- PostgreSQL 15+ da standart 2.0, 13-14 da 1.0
+                            -- 2.0 da hash node 2 x work_mem oladi
 ```
 
 Arxitektorning qarori shu: global `work_mem` ni past tut (16 MB dan 32 MB), hisobot va batch uchun alohida role yaratib, unga `ALTER ROLE ... SET work_mem` bilan katta qiymat ber. Shunda kechqurungi hisobot kunduzgi to'lov oqimining xotirasini o'g'irlamaydi.
@@ -318,6 +320,12 @@ Raqamlarni oldindan belgilash kerak. WAL arxivini har 60 sekundda yuborsang, RPO
 - [ ] `pg_stat_statements` va `auto_explain` ni yoq, kunlik snapshot yig'adigan ish qo'y, top 10 so'rovni haftalik ko'rikka kirit.
 - [ ] Kesh hit nisbati, `temp_bytes`, `deadlocks`, eng uzun tranzaksiya yoshi va pool kutish vaqti uchun alert qoidalarini yoz.
 - [ ] Chorakda bir marta `pg_basebackup` dan PITR mashqini o'tkaz, RTO va RPO ni o'lchab hujjatga yoz.
+
+## Manbalar
+
+- [PostgreSQL, Resource consumption](https://www.postgresql.org/docs/current/runtime-config-resource.html) - `work_mem` va `hash_mem_multiplier` ning ta'rifi va standart qiymati
+- [postgres, `guc.c` (REL_15_STABLE)](https://raw.githubusercontent.com/postgres/postgres/REL_15_STABLE/src/backend/utils/misc/guc.c) - `work_mem` va `hash_mem_multiplier` `PGC_USERSET`, `log_min_duration_statement` `PGC_SUSET`, `max_wal_size` `PGC_SIGHUP`; `GucContext_Names[]` da `PGC_USERSET` -> `"user"`; `hash_mem_multiplier` standarti 2.0
+- [postgres, `guc.c` (REL_14_STABLE)](https://raw.githubusercontent.com/postgres/postgres/REL_14_STABLE/src/backend/utils/misc/guc.c) - 14 da `hash_mem_multiplier` standarti 1.0
 
 ---
 
