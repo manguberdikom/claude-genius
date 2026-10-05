@@ -8,6 +8,58 @@ Hamma o'zgarish bu yerga yozilmaydi. Yoziladigani: foydalanuvchi
 muhitiga tegadigan, ma'lumot yo'qotishi mumkin bo'lgan yoki ruxsat
 qarorini o'zgartiradigan o'zgarish.
 
+## 2026-10-05: Beqaror test ajratiladi, Spring orqali ta'sir tanlanadi
+
+**Nima o'zgardi.** `run_tests.py`: (1) yiqilgan sinflar JUnit XML dan
+olinadi va bir marta qayta yurgiziladi; qayta o'tsa natija `exit=4`
+(beqaror), kompilyatsiya xatosida qayta yurish yo'q. (2) `@Configuration`,
+filter, `@ControllerAdvice` kabi sinf o'zgarsa modulning barcha Spring
+testlari, `@Entity` o'zgarsa baza testlari tanlanadi; abstrakt bazaviy
+sinfdagi `@SpringBootTest` hisobga olinadi. (3) Maven maqsadli yurishida
+`-Djacoco.skip=true`, verify da javadoc va source jar o'chadi. (4)
+`--isit`: guruh ochilgach fonda kompilyatsiya, ildiz qulfi bilan. (5) Har
+yurish jurnalga, `--hisobot` uni jamlaydi. (6) `--tashxis` Spring
+kontekst ishga tushishini logdagi `Started X in N seconds` dan sanaydi.
+(7) `GENIUS_TEST_FLAGS`: build ga tegmaydigan ixtiyoriy bayroqlar.
+
+**Nega.** Tezlik va to'g'rilik bir-biriga bog'liq. Flaky test o'zgarishga
+yopishtirilsa dasturchi yo'q xatoni qidiradi: bu ham sekin, ham noto'g'ri.
+SecurityConfig kabi sinf hech qaysi testda nomi bilan uchramaydi, lekin
+har Spring testining kontekstiga kiradi: tanlov uni o'tkazib yuborsa xato
+partiya oxirida chiqadi va qo'shimcha aylana ochadi. Verify ga bog'langan
+`jacoco:check` bir nechta test bilan coverage chegarasiga yetmay yolg'on
+yiqilardi. Kontekst sonini taxminiy kalitdan emas, Spring Boot ning o'z
+qatoridan olish aniqroq.
+
+**Rad etilgan variantlar.**
+
+- *Surefire `rerunFailingTestsCount`.* Rad etildi: faqat Maven da bor,
+  Gradle da esa test-retry plaginini build ga qo'shish kerak. XML orqali
+  ikkala asbobda bir xil xulq.
+- *Beqarorni yashil deb qaytarish.* Rad etildi: o'zgargan kodga tegadigan
+  beqaror test poyga xatosi bo'lishi mumkin. Kod 4 ko'rinib turadi.
+- *Gradle `--build-cache`, `--configuration-cache`, `--parallel` ni
+  standart yoqish.* Rad etildi: to'g'riligi build dagi vazifalar
+  kirish-chiqishni to'g'ri e'lon qilganiga bog'liq, bu foydalanuvchi
+  qarori. `GENIUS_TEST_FLAGS` bilan bir qatorda yoqiladi.
+- *pmd va spotbugs ni ham o'chirish.* Rad etildi: skip kalitlarini
+  manbadan tasdiqlay olmadim. Checkstyle va enforcer ataylab qoladi:
+  ular arzon va xatoni erta ko'rsatadi.
+
+**Xavf.** Qayta yurish flaky ni tasniflaydi, lekin tuzatmaydi: egasi
+test-muhandis. Spring tanlovi kengroq: Spring testi ko'p modulda maqsadli
+yurish modul yurishiga yaqinlashadi (filtr cheklovi uni butun vazifaga
+o'tkazadi).
+
+**Qaysi tekshiruv o'tdi.** `tools/test_run_tests.py` 42/42, beshta
+mutatsiya tutildi (Spring tanlovi, ota sinf, kompilyatsiya to'sig'i,
+qayta yurish doirasi, symlink yo'li). Gradle 8.14 da qo'lda: beqaror
+test `exit=4`, doimiy yiqilish `exit=1` va xulosa takrorsiz, `--isit`,
+`--hisobot`.
+
+**Orqaga qaytarish.** `--qayta 0` qayta yurishni o'chiradi; qolganlari
+`run_tests.py` dagi tegishli funksiyani olib tashlash bilan.
+
 ## 2026-10-05: Testlar maqsadli, to'liq suite partiyada bir marta
 
 **Nima o'zgardi.** `tools/run_tests.py` qo'shildi: o'zgarishga ta'sir

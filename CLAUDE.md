@@ -91,7 +91,8 @@ Boshqa asboblar:
 - `doc.sh checklist <hujjat> [bob]` - yozilgan tekshiruv punktlari.
 - `parse_test_output.py` - test chiqishidan birinchi haqiqiy sababni oladi.
 - `run_tests.py` - ta'sirlangan testlarni modul bilan yurgizadi;
-  `--hammasi` partiyada bir marta, `--tashxis` suite nega sekin.
+  `--hammasi` partiyada bir marta, `--tashxis` suite nega sekin,
+  `--hisobot` test vaqti jurnali.
 - `guruh.py` - parallel guruh uchun git worktree va birlashtirish.
 - `rules_for.py` - tegilayotgan fayllarga qaysi boblar, tekshiruv
   punktlari va avvalgi xatolar tegishli. Java yozishdan OLDIN majburiy.

@@ -65,6 +65,34 @@ qayta yurish hech narsa bermaydi.
 Xom `./gradlew test`, `mvn verify`, `clean`, `--rerun-tasks` va
 `--no-daemon` ni `guard.py` to'sadi (`deny`) va shu asbobni ko'rsatadi.
 
+Chiqish kodi zanjirni belgilaydi:
+
+| Kod | Ma'nosi | Nima qilinadi |
+|---|---|---|
+| 0 | yashil | davom |
+| 1 | yiqildi: qayta yurishda ham, yoki kompilyatsiya | egasiga qaytadi |
+| 3 | vaqt tugadi | to'liq suite bo'lsa fonda, aks holda tanlov juda keng: modul bo'yicha bo'lish |
+| 4 | beqaror: yiqilgan sinf qayta yurishda o'tdi | kod tuzatilmaydi; `Beqaror:` qatori hisobotga, egasi `test-muhandis` |
+
+Asbob yiqilgan sinflarni bir marta qayta yurgizadi (`--qayta`): flaky
+test o'zgarishga yopishtirilib, dasturchi yo'q xatoni qidirmasin. Kod 4
+yashil emas: o'zgargan kodga tegadigan beqaror test poyga xatosi bo'lishi
+mumkin va partiya oxirida yana tekshiriladi.
+
+Tanlov Spring orqali ta'sirni ham oladi: `@Configuration`, filter,
+`@ControllerAdvice` kabi sinf o'zgarsa modulning barcha Spring testlari,
+`@Entity` o'zgarsa baza testlari, abstrakt bazaviy sinfdagi
+`@SpringBootTest` ham hisobga olinadi. Maven maqsadli yurishida jacoco
+o'chadi: verify dagi coverage chegarasi bir nechta test bilan yolg'on
+yiqilardi.
+
+Tezlik o'lchanadi, taxmin qilinmaydi: har yurish jurnalga tushadi,
+`python3 tools/run_tests.py --hisobot` rejim bo'yicha soni va vaqtini,
+kuniga to'liq suite sonini beradi. Build ga tegmaydigan qo'shimcha
+bayroqlar (`--build-cache --parallel`, Maven da `-o -T 1C`) faqat
+foydalanuvchi tanlasa: `GENIUS_TEST_FLAGS` muhit o'zgaruvchisi. Ularning
+to'g'riligi build ning o'ziga bog'liq, shuning uchun standart bo'sh.
+
 ## Chaqiruv budjeti
 
 Har aktyor bitta vazifada **ko'pi bilan ikki marta** chaqiriladi.

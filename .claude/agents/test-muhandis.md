@@ -43,7 +43,9 @@ yozasiz, bir faylga ikkovingiz yozmaysiz.
    yozadi va birinchi haqiqiy sababni beradi. Qayta yurgizish faqat
    test yoki kod o'zgargandan keyin. Xom `mvn test`, `mvn verify`,
    `gradle test`, `clean` yo'q: `guard.py` ularni to'sadi, to'liq suite
-   esa partiyada bir marta asosiy sessiyada yuradi.
+   esa partiyada bir marta asosiy sessiyada yuradi. `exit=4` (beqaror)
+   flaky test belgisi: sababi (vaqt, tartib, umumiy holat) topiladi va
+   test barqaror qilinadi, `@Disabled` yoki qayta urinish qo'shilmaydi.
 6. **O'zingizni tekshiring.** `python3 tools/check_code.py <test-fayl>`:
    testdagi `Thread.sleep` va bo'sh `catch` ham qoida buzilishi.
 

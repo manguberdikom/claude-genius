@@ -78,7 +78,9 @@ bo'yicha eng arzon tur tanlanadi.
    qilgan testlarni modul bilan yurgizadi va birinchi sababni beradi.
    Yiqilgan testni tuzatgandan keyingina qayta yurgiziladi. To'liq
    suite, `clean` va `--rerun-tasks` yo'q: to'liq suite partiyada bir
-   marta asosiy sessiyada yuradi.
+   marta asosiy sessiyada yuradi. `exit=4` (beqaror) kod xatosi emas:
+   ishlab chiqarish kodini unga qarab o'zgartirmang, `Testlar:` qatorida
+   beqaror sinflarni ayting.
 
 ## Javob shakli
 

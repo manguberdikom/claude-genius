@@ -28,6 +28,13 @@ python3 tools/guruh.py yarat billing
 python3 tools/guruh.py royxat                # papka, branch, fayl soni
 ```
 
+Har `yarat` dan keyin darhol, fonda (Bash `run_in_background`):
+`python3 tools/run_tests.py --ildiz <papka> --isit`. Yangi worktree da
+`build/` yo'q va birinchi yurish hammasini kompilyatsiya qiladi; aktyor
+kod o'qiyotgan daqiqalarda shu kompilyatsiya tugaydi. Isitish va
+aktyorning `--yurgiz` i bitta daraxtda hech qachon bir vaqtda yurmaydi:
+ildiz qulfi keyingisini kutdiradi.
+
 Har aktyor promptining boshida **guruh kartasi** turadi. Uni asosiy
 sessiya bir marta yozadi va guruhning har chaqiruviga aynan ko'chiradi,
 aktyor buni qayta qidirmaydi:
