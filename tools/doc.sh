@@ -8,6 +8,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 IDX="$ROOT/index"
 SECTIONS="$IDX/sections.tsv"
 CHAPTERS="$IDX/chapters.tsv"
+# Bob tekshiruvi holati. Indeksda emas, chunki u hosila emas: odam yozadi.
+REVIEW="$ROOT/docs/review.tsv"
 ALIASES="$IDX/aliases.tsv"
 DOCS="$IDX/docs.tsv"
 RULES="$IDX/rules.tsv"
@@ -182,6 +184,26 @@ fulltext() {
 
 # ---------------------------------------------------------------- show
 
+# Bobning tekshiruv holati, bitta qator. Tekshirilgan bobda jim turadi:
+# ogohlantirish faqat ishonib bo'lmaydigan holat uchun chiqadi, aks holda
+# u har chaqiruvda shovqin bo'lardi.
+review_note() {
+  local doc="$1" ref="$2" chapter holat
+  chapter="${ref%%.*}"
+  [ -f "$REVIEW" ] || return 0
+  holat="$(awk -F'\t' -v d="$doc" -v c="$chapter" \
+    '$1==d && $2==c { print $3; exit }' "$REVIEW")"
+  case "$holat" in
+    ai-draft)
+      printf '[%s %s: tekshirilmagan bob (AI yozgan). Texnik da%svoni\n' \
+        "$doc" "$chapter" "'" >&2
+      printf ' birlamchi manbaga solishtiring.]\n' >&2 ;;
+    tekshirilmoqda)
+      printf '[%s %s: tekshirilmoqda, da%svolar hali tasdiqlanmagan.]\n' \
+        "$doc" "$chapter" "'" >&2 ;;
+  esac
+}
+
 cmd_show() {
   local force=0
   while [ $# -gt 0 ]; do
@@ -221,6 +243,7 @@ cmd_show() {
     printf "\nto'liq chiqarish: doc.sh show --force %s %s\n" "$doc" "$ref" >&2
     return 1
   fi
+  review_note "$doc" "$ref"
   sed -n "${start},${end}p;${end}q" "$ROOT/$file"
 }
 

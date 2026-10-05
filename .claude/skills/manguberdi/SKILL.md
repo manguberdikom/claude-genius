@@ -27,6 +27,9 @@ aytiladi.
    yonida asosi turadi: `<hujjat> <raqam>`, rasmiy hujjat havolasi yoki
    proyekt konvensiyasi. Uchalasida ham yo'q bo'lsa, "qo'llanmada yo'q,
    asosim shu" deb belgilanadi: bu to'g'ri javob bo'lishi mumkin.
+   Bob `ai-draft` bo'lsa (`rules_for` da `[tekshirilmagan]`, `doc.sh show` da
+   ogohlantirish), javobda "tekshirilmagan bob" deb aytiladi: qoida
+   AI yozgan va inson tasdiqlamagan.
 2. **Arzon yo'l oldin.** Javob kodda yoki chiqishda bo'lsa, u o'qiladi.
    Konteyner, baza ulanishi va PowerShell `guard.py` tomonidan
    **foydalanuvchi qaroriga** qo'yiladi (`ask`): ularni o'z-o'zidan

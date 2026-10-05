@@ -214,6 +214,38 @@ chiqadi; kodi bor va topilmagan bo'lim alohida ogohlantirish oladi.
 
 Havolani qo'lda hisoblamang - `python3 tools/check_docs.py` ishga tushiring.
 
+## Tekshiruv tartibi
+
+Korpus AI tomonidan yozilgan va `docs/review.tsv` har bobning holatini
+aytib turadi: `ai-draft`, `tekshirilmoqda` yoki `tekshirilgan`.
+Navbat `docs/review-queue.tsv` da: agentlar eng ko'p tayanadigan
+boblar oldinda.
+
+Qoidalar:
+
+1. **Bobni yozgan sessiya uni tekshirmaydi.** O'z ishini tekshirgan
+   sessiya o'z xatosini topa olmaydi: u xuddi shu bilimdan chiqqan.
+2. **Mustaqil sessiya har texnik da'voni birlamchi manbaga
+   solishtiradi** va URL ni bobning `## Manbalar` bo'limiga qo'yadi.
+   "Tasdiqlandi" faqat manba OCHIB KO'RILGAN bo'lsa yoziladi;
+   xotiradan tasdiqlash tekshiruv emas.
+3. **Odam har 10 bobdan kamida 3 tasini tanlab o'qiydi.** Tanlash
+   tasodifiy bo'ladi, eng oson bob emas.
+4. **`tekshirilgan` holatini faqat ODAM qo'yadi.** Sessiya ko'pi bilan
+   `tekshirilmoqda` ga o'tkazadi va topilmalarini hisobotda beradi.
+5. **Yangi bob faqat tekshirilgan holatda qo'shiladi.** Yangi
+   `ai-draft` bob qo'shilsa, qarz o'sadi.
+6. **Tuzatilgan xato `tools/known_errors.tsv` ga naqsh bo'lib
+   tushadi**, aks holda u keyingi tahrirda jim qaytib keladi.
+
+Holat o'zgargandan keyin qator ham, bob fayllari ham yangilanadi:
+
+```bash
+python3 tools/review_status.py --yoz     # bob fayllaridagi holat qatori
+python3 tools/review_queue.py --yoz      # navbat
+python3 tools/check_docs.py              # ikkisi mos ekanini tekshiradi
+```
+
 ## Yangi bob qo'shish
 
 1. `docs/<hujjat>/NN-slug.md` yarating, yuqoridagi shaklga rioya qiling.

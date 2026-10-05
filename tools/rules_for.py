@@ -37,6 +37,7 @@ from check_code import in_clone, strip_noise, tool_cmd  # noqa: E402
 from docref import ensure_index, resolve  # noqa: E402
 from docref import project_slug as docref_slug  # noqa: E402
 from state import mark  # noqa: E402
+import review_status  # noqa: E402
 
 CHAPTERS = os.path.join(ROOT, "index", "chapters.tsv")
 CHECKLIST = os.path.join(ROOT, "index", "checklist.tsv")
@@ -555,8 +556,28 @@ def main():
     print()
 
     print("# Tegishli boblar\n")
+    # Holat belgisi: `!` tekshirilmagan bob (AI yozgan), `?`
+    # tekshirilmoqda. Tekshirilgan bobda belgi yo'q. Nega kerak: qoida
+    # noto'g'ri bo'lsa, xato yozilayotgan kodga darhol o'tadi.
+    # Belgi qator OXIRIDA: boshida bo'lsa `<hujjat> <raqam>` ustunlari
+    # siljib ketardi va chiqishni o'qiydiganlar (eval_skill, test) ni
+    # buzardi. Tekshirilgan bobda belgi yo'q.
+    review = review_status.read_review()
+    marks = {"ai-draft": "  [tekshirilmagan]",
+             "tekshirilmoqda": "  [tekshirilmoqda]"}
+    unverified = 0
     for ch in order:
-        print("  %-11s %-4s %s" % (ch[0], ch[1], titles[ch]))
+        holat = (review.get((ch[0], str(ch[1]))) or {}).get("holat", "")
+        suffix = marks.get(holat, "")
+        unverified += holat == "ai-draft"
+        print("  %-11s %-4s %s%s" % (ch[0], ch[1], titles[ch], suffix))
+    if unverified:
+        # Chapdan bo'sh joysiz: ro'yxat qatorlari ikki bo'sh joy bilan
+        # boshlanadi va chiqishni o'qiydiganlar shuni ajratgich sifatida
+        # ishlatadi (eval_skill, test_rules_for).
+        print("\n(%d bob [tekshirilmagan]: AI yozgan, inson tekshirmagan.\n"
+              "Qoidaga tayanganda shuni aytib o'ting va imkon bo'lsa\n"
+              "birlamchi manbaga solishtiring: docs/review.tsv)" % unverified)
     # MAX_CHAPTERS dan ortgani jim yo'qolmasin: kerak bo'lsa ochiq so'raladi.
     dropped = list(dict.fromkeys(ch for _, chapters, _ in signals
                                  for ch in chapters if ch not in wanted))

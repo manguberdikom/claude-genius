@@ -50,6 +50,9 @@ emas, `find` bilan qidiring.
   to'siladi. Havolani qo'lda yozmang, `doc.sh path` tayyor anchor beradi.
 - Indeks `index/` da, hosila. Bob yangiroq bo'lsa `doc.sh` o'zi qayta
   yasaydi. Indeks grep qilinadi, kontekstga olinmaydi.
+- Bob holati `docs/review.tsv` da. `ai-draft` bob AI yozgan va inson
+  tekshirmagan: unga tayangan javobda shu aytiladi. `doc.sh show` va
+  `rules_for` holatni o'zi ko'rsatadi.
 
 ## Orkestrator
 

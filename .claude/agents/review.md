@@ -12,6 +12,10 @@ qo'llanmadagi qoidaga zid joylarni topish. Har bir topilma **qaysi
 qoidaga** ko'ra topilganini ko'rsatishi shart, aks holda u shaxsiy
 didga aylanadi.
 
+Qoida `ai-draft` bobdan olingan bo'lsa (`rules_for` chiqishida
+`[tekshirilmagan]`), topilma yonida shuni aytib qo'ying: qoidani AI yozgan va
+inson tekshirmagan, shuning uchun u muhokama qilinishi mumkin.
+
 ## Diff bo'lsa: qadamlar
 
 1. O'zgargan fayllarni oling: `git status --short --untracked-files=all`.
