@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 8. Biznes logika va Service qatlam patternlari (Business & Service Layer Patterns)
 
@@ -625,7 +625,7 @@ public Notification validate(TransferRequest r) {
 
 **Tavsif:** Kutilgan biznes muvaffaqiyatsizligi (balans yetarli emas, kod muddati o'tgan) exception emas - u metodning normal natijalaridan biri. Result obyekti muvaffaqiyat qiymatini yoki xato sababini explicit tarzda qaytaradi, shuning uchun chaqiruvchi uni ignore qila olmaydi va control flow o'qilishi oson bo'ladi. Exception'lar esa haqiqiy anomal holatlar uchun qoldiriladi: DB uzilishi, bug, invariant buzilishi. Bu ayirma performance (stack trace qimmat) va API kontraktining ravshanligi uchun ham muhim.
 
-**Spring'da qayerda uchraydi:** Java'da Result'ni `sealed interface` + `record` bilan yozish Java 17+ `switch` pattern matching bilan juda qulay; kutubxonalar - Vavr `Either<L,R>`/`Try<T>`, `io.vavr.control.Validation`. Spring ekosistemasida Result obyekti controller qatlamida `ResponseEntity` yoki `ProblemDetail`ga aylantiriladi. Exception yo'li esa Spring'ning `@RestControllerAdvice`, `ResponseStatusException`, `ErrorResponseException` va `@ExceptionHandler` infratuzilmasi bilan yaxshi integratsiyalashgan; Spring'ning o'zi `DataAccessException` ierarxiyasida unchecked exception'larni afzal ko'radi. Diqqat: `@Transactional` rollback exception'ga bog'langani uchun Result qaytarilganda tranzaksiya commit bo'ladi.
+**Spring'da qayerda uchraydi:** Java'da Result'ni `sealed interface` + `record` bilan yozish (ikkisi ham Java 17 da yakuniy) `switch` pattern matching bilan juda qulay, lekin pattern matching Java 21 da yakuniy holatga keldi: 17-20 da u preview va `--enable-preview` talab qiladi; kutubxonalar - Vavr `Either<L,R>`/`Try<T>`, `io.vavr.control.Validation`. Spring ekosistemasida Result obyekti controller qatlamida `ResponseEntity` yoki `ProblemDetail`ga aylantiriladi. Exception yo'li esa Spring'ning `@RestControllerAdvice`, `ResponseStatusException`, `ErrorResponseException` va `@ExceptionHandler` infratuzilmasi bilan yaxshi integratsiyalashgan; Spring'ning o'zi `DataAccessException` ierarxiyasida unchecked exception'larni afzal ko'radi. Diqqat: `@Transactional` rollback exception'ga bog'langani uchun Result qaytarilganda tranzaksiya commit bo'ladi.
 
 **Qo'llanish keyslari:**
 - To'lov provayderidan "insufficient funds" javobi - Result bilan, tarmoq uzilishi - exception bilan.
@@ -863,7 +863,7 @@ class CheckoutOrchestrator {
 
 **Tavsif:** Biznes amali yakunlangach, service "nima sodir bo'ldi" faktini event sifatida e'lon qiladi (`OrderPlaced`, `PaymentCaptured`), yon ta'sirlarni esa tinglovchilar bajaradi. Bu service'ni email yuborish, cache tozalash, analitika kabi vazifalardan ajratadi va yangi reaksiya qo'shishni asosiy kodga tegmasdan imkonli qiladi. Eng muhim nuqta - event'ni commit bilan to'g'ri bog'lash: tranzaksiya rollback bo'lsa, event chiqmasligi kerak. Shu sababli `AFTER_COMMIT` fazasi va outbox pattern birgalikda ishlatiladi.
 
-**Spring'da qayerda uchraydi:** `ApplicationEventPublisher.publishEvent(...)` (yoki Spring Framework 6'dan oddiy POJO event'lar, `ApplicationEvent`dan meros shart emas), tinglovchilar `@EventListener` va `@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)`; asinxron ishlash uchun `@Async` + `@EnableAsync` yoki `@EventListener` ustida `ApplicationEventMulticaster` sozlamasi. Spring Data JPA tomonida `AbstractAggregateRoot.registerEvent(...)` va `@DomainEvents`/`@AfterDomainEventPublication` event'ni `save()` vaqtida chiqaradi. Ishonchli yetkazish uchun Spring Modulith `spring-modulith-events-jpa`/`-kafka` event publication registry'sini beradi (nashr etilmagan event'lar jadvalda saqlanib, qayta urinib ko'riladi); Kafka/RabbitMQ'ga chiqarish `KafkaTemplate`/`RabbitTemplate` bilan.
+**Spring'da qayerda uchraydi:** `ApplicationEventPublisher.publishEvent(...)` (oddiy POJO event yetarli, `ApplicationEvent`dan meros shart emas: `publishEvent(Object)` Spring Framework 4.2 dan beri bor), tinglovchilar `@EventListener` va `@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)`; asinxron ishlash uchun `@Async` + `@EnableAsync` yoki `@EventListener` ustida `ApplicationEventMulticaster` sozlamasi. Spring Data JPA tomonida `AbstractAggregateRoot.registerEvent(...)` va `@DomainEvents`/`@AfterDomainEventPublication` event'ni `save()` vaqtida chiqaradi. Ishonchli yetkazish uchun Spring Modulith `spring-modulith-events-jpa`/`-kafka` event publication registry'sini beradi (nashr etilmagan event'lar jadvalda saqlanib, qayta urinib ko'riladi); Kafka/RabbitMQ'ga chiqarish `KafkaTemplate`/`RabbitTemplate` bilan.
 
 **Qo'llanish keyslari:**
 - `OrderPlaced` event'idan keyin tasdiq email va push notifikatsiya yuborish.
@@ -904,6 +904,13 @@ class WarehouseNotifier {
 - [ ] Validatsiya qayerda bajarilayotganini xaritalang: DTO da, servisda yoki domenda. Takrorlanganlarini bitta joyga yig'ing.
 - [ ] Bir nechta xatoni yig'ib qaytarishi kerak bo'lgan oqimlarni toping va ularga Notification patternini qo'llang.
 - [ ] Har bir servis metodi uchun savolga javob yozing: u nima qaytaradi, xato holatida nima bo'ladi, qayta chaqirilsa xavfsizmi.
+
+## Manbalar
+
+- [spring-framework, `JdbcClient.java`](https://raw.githubusercontent.com/spring-projects/spring-framework/main/spring-jdbc/src/main/java/org/springframework/jdbc/core/simple/JdbcClient.java) - `@since 6.1`
+- [spring-framework, `ApplicationEventPublisher.java`](https://raw.githubusercontent.com/spring-projects/spring-framework/main/spring-context/src/main/java/org/springframework/context/ApplicationEventPublisher.java) - `publishEvent(Object)` `@since 4.2`
+- [JEP 441: Pattern Matching for switch](https://openjdk.org/jeps/441) - Java 21 da yakuniy holat; `javac --release 17` "patterns in switch statements are not supported in -source 17" deydi
+- [jakartaee/persistence, `SequenceGenerator.java`](https://raw.githubusercontent.com/jakartaee/persistence/master/api/src/main/java/jakarta/persistence/SequenceGenerator.java) - `allocationSize() default 50`
 
 ---
 

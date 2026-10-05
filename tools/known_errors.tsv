@@ -31,3 +31,5 @@ ClientHttpRequestFactorySettings\.(DEFAULTS|defaults)	4.0 da bu tur HttpClientSe
 spring-cloud-starter-gateway(-mvc)?[`,)\s]	starter nomlari -server-webflux va -server-webmvc qo'shimchasini oldi	docs
 spring\.cloud\.gateway\.(routes|httpclient|globalcors|default-filters|discovery)	prefiks spring.cloud.gateway.server.webflux ga o'zgargan	docs
 Java 21\+[^\n]{0,60}ShutdownOn	ShutdownOnSuccess/Failure faqat 21-24 preview da; JDK 25 da Joiner bilan open(...)	docs
+Spring Framework 6[^\n]{0,60}(publishEvent|POJO event)	publishEvent(Object) va POJO event Spring Framework 4.2 dan beri bor, 6 dan emas	docs
+Java 17\+ `?switch`? pattern matching	switch pattern matching Java 21 da yakuniy; 17-20 da preview	docs
