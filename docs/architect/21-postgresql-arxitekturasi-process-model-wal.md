@@ -109,7 +109,7 @@ SELECT sum(heap_blks_hit) * 100.0 / nullif(sum(heap_blks_hit + heap_blks_read), 
 FROM pg_statio_user_tables;
 ```
 
-16 GB dan katta `shared_buffers` da `huge_pages = try` qo'yish TLB bosimini kamaytiradi va taxminan 2-5 foiz CPU tejaydi. PostgreSQL 16 dan boshlab `pg_stat_io` ko'rinishi o'qish va yozishni kontekst bo'yicha ajratib beradi, bu checkpoint va vacuum I/O sini aralashtirmasdan o'lchash imkonini beradi.
+`huge_pages` ning standart qiymati allaqachon `try`, shuning uchun uni `try` ga qo'yish hech narsani o'zgartirmaydi: `try` da server huge page so'raydi, olmasa oddiy sahifaga jim qaytadi va sozlama ishlamaganini hech kim bilmaydi. 16 GB dan katta `shared_buffers` da haqiqiy qadam ikki bosqichli: avval OS da huge page hovuzini sozlash, keyin `huge_pages = on` qo'yish. Kerakli sahifa sonini PostgreSQL o'zi hisoblaydi, serverni ko'tarmasdan ham: `postgres -D $PGDATA -C shared_memory_size_in_huge_pages` chiqargan sonni `sysctl -w vm.nr_hugepages=<son>` ga berib, `/etc/sysctl.conf` ga yozib qo'yiladi. `on` da huge page olinmasa server ishga tushmaydi va bu aynan kerakli xulq: xato startupda ko'rinadi, prodda tushunarsiz sekinlashuv bo'lib emas. Parametr `postmaster` kontekstida, ya'ni restart talab qiladi, va faqat Linux bilan Windows da ishlaydi. Foyda tomoni: huge page sahifa jadvalini kichraytiradi va xotira boshqaruviga ketadigan CPU vaqtini kamaytiradi; rasmiy hujjat aniq foiz bermaydi, shuning uchun yutuqni o'z yuklamangizda o'lchash kerak. PostgreSQL 16 dan boshlab `pg_stat_io` ko'rinishi o'qish va yozishni kontekst bo'yicha ajratib beradi, bu checkpoint va vacuum I/O sini aralashtirmasdan o'lchash imkonini beradi.
 
 ## 21.4 Sahifa (page) tuzilishi, tuple va `ctid`
 
@@ -356,6 +356,13 @@ Quyidagi jadval butun bob bo'yicha ikki xil fikrlashni qiyoslaydi.
 - [ ] Index-only scan kutilgan so'rovlarda `EXPLAIN (ANALYZE, BUFFERS)` dagi `Heap Fetches` ni tekshirib, `pg_visibility_map_summary` bilan vacuum qarzini tasdiqlang.
 - [ ] `pgstattuple_approx` bilan top 10 jadvalning bloat foizini o'lchab, 30 foizdan oshganlar uchun `pg_repack` yoki partitioning rejasini yozing.
 - [ ] Katta JSONB yoki matn ustunlari uchun `pg_column_size` ni o'lchab, `lz4` siqish va lazy fetch ni joriy qiling.
+
+## Manbalar
+
+- [PostgreSQL, Resource consumption: `huge_pages`](https://www.postgresql.org/docs/current/runtime-config-resource.html#GUC-HUGE-PAGES) - "Valid values are `try` (the default), `on`, and `off`"; `on` da huge page olinmasa server ishga tushmaydi; faqat Linux va Windows
+- [PostgreSQL, Linux Huge Pages](https://www.postgresql.org/docs/current/kernel-resources.html#LINUX-HUGE-PAGES) - `shared_memory_size_in_huge_pages` va `vm.nr_hugepages` bilan hovuzni sozlash
+- [postgres, `guc.c` (REL_15_STABLE)](https://raw.githubusercontent.com/postgres/postgres/REL_15_STABLE/src/backend/utils/misc/guc.c) - `huge_pages` `PGC_POSTMASTER`, standarti `HUGE_PAGES_TRY`
+- [postgres, `system_views.sql`](https://raw.githubusercontent.com/postgres/postgres/REL_16_STABLE/src/backend/catalog/system_views.sql) - `pg_stat_io` 16 da bor, 15 da yo'q
 
 ---
 
