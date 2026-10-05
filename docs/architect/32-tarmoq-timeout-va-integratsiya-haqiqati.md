@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 32 | part: V. Atrof ekotizim: operatsion haqiqat -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
 # 32. Tarmoq, timeout va integratsiya haqiqati (Network, Timeouts and Integration)
 

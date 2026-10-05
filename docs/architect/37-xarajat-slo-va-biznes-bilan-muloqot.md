@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 37 | part: VI. Amaliyot va o'sish -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
 # 37. Xarajat, SLO va biznes bilan muloqot (Cost, SLO and Business Communication)
 

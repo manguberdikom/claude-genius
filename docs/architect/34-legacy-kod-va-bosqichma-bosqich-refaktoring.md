@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 34 | part: VI. Amaliyot va o'sish -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
 # 34. Legacy kod va bosqichma-bosqich refaktoring (Legacy Code and Refactoring)
 

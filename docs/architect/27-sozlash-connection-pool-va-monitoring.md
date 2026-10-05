@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 27 | part: IV. PostgreSQL chuqur bilim -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
 # 27. Sozlash, connection pool va monitoring (Configuration, Pooling and Monitoring)
 

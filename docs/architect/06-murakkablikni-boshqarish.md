@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 6 | part: I. Fikrlash va qarorlar -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
 # 6. Murakkablikni boshqarish (Managing Complexity)
 

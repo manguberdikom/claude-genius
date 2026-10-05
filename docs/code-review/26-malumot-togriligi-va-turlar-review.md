@@ -69,7 +69,7 @@ Oxirgi indeks - review da kam uchraydigan, lekin juda kuchli vosita: partial uni
 | --- | --- | --- |
 | Java turi | `BigDecimal` + valyuta (`Money`) | `double`, `float` |
 | PostgreSQL turi | `numeric(19,4)` yoki butun son (tiyin) | `float8`, `money` |
-| Yakkalash | Aniq `RoundingMode`, biznes bilan kelishilgan | Standartga tashlab qo'yish |
+| Yaxlitlash | Aniq `RoundingMode`, biznes bilan kelishilgan | Standartga tashlab qo'yish |
 | Valyuta | Alohida ustun, har summa bilan | Taxmin qilish |
 | Taqqoslash | `compareTo` | `equals` |
 | Yig'indi | SQL `sum(numeric)` yoki `Money::plus` | `double` yig'indisi |

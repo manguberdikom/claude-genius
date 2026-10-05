@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 36 | part: VI. Amaliyot va o'sish -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
 # 36. Code review va jamoada texnik yetakchilik (Code Review and Technical Leadership)
 

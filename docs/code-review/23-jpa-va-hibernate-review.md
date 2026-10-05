@@ -22,7 +22,7 @@
 </details>
 
 
-JPA ning xavfi shundaki, u yozgan SQL ni ko'rsatmaydi. Diffda bitta annotatsiya o'zgaradi, prodda esa so'rovlar soni yuzga ko'payadi. Shu sababli JPA kodini review qilish bitta malakani talab qiladi: annotatsiyadan SQL ni tiklab ko'rish. Hibernate ichki mexanikasi (dirty checking, flush tartibi, ikkinchi daraja kesh) [Arxitektor miyyasi](../architect/README.md) da; bu yerda diffdan so'rovlar sonini baholash.
+JPA ning xavfi shundaki, u yozgan SQL ni ko'rsatmaydi. Diffda bitta annotatsiya o'zgaradi, prodda esa so'rovlar soni yuzga ko'payadi. Shu sababli JPA kodini review qilish bitta malakani talab qiladi: annotatsiyadan SQL ni tiklab ko'rish. Hibernate ichki mexanikasi (dirty checking, flush tartibi, ikkinchi daraja kesh) [Arxitektor miyasi](../architect/README.md) da; bu yerda diffdan so'rovlar sonini baholash.
 
 ## 23.1 N+1: diffdan ko'rish
 

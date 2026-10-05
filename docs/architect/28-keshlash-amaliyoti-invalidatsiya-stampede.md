@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 28 | part: V. Atrof ekotizim: operatsion haqiqat -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
 # 28. Keshlash amaliyoti: invalidatsiya, stampede, Redis haqiqati (Caching in Practice)
 

@@ -22,7 +22,7 @@
 </details>
 
 
-Domen modeli - tizimning eng uzoq yashaydigan qismi. Controller qayta yoziladi, ORM almashtiriladi, lekin "buyurtma nima" degan savolning javobi yillar davomida qoladi. Shu sababli domen modeliga tegadigan PR boshqa PR lardan chuqurroq o'qiladi: bu yerdagi xato keyinchalik yuzta joyda ko'rinadi. DDD atamalarining ta'rifi [Dizayn patternlar](../patterns/README.md) va [Arxitektor miyyasi](../architect/README.md) da; bu yerda faqat review savollari.
+Domen modeli - tizimning eng uzoq yashaydigan qismi. Controller qayta yoziladi, ORM almashtiriladi, lekin "buyurtma nima" degan savolning javobi yillar davomida qoladi. Shu sababli domen modeliga tegadigan PR boshqa PR lardan chuqurroq o'qiladi: bu yerdagi xato keyinchalik yuzta joyda ko'rinadi. DDD atamalarining ta'rifi [Dizayn patternlar](../patterns/README.md) va [Arxitektor miyasi](../architect/README.md) da; bu yerda faqat review savollari.
 
 ## 13.1 Modelning asosiy savoli: invariant kim tomonidan himoyalangan
 

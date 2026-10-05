@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 2 | part: I. Fikrlash va qarorlar -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
 # 2. Muammoni tushunish va to'g'ri savol berish (Understanding the Problem)
 

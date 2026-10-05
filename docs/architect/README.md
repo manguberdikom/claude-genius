@@ -1,4 +1,4 @@
-# Kod yozadigan arxitektorning miyyasi: Java, Spring, PostgreSQL
+# Kod yozadigan arxitektorning miyasi: Java, Spring, PostgreSQL
 
 Bu hujjat kod yozadigan arxitektorning bilimi va fikrlash tarzini yig'adi.
 Tayanch stek: Java, Spring va PostgreSQL. Har bob ikki narsani beradi: ichkarida nima

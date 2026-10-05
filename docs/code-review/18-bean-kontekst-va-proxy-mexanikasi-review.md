@@ -21,7 +21,7 @@
 </details>
 
 
-Spring kodidagi eng jim xatolar annotatsiya ishlamaganda paydo bo'ladi: `@Transactional` qo'yilgan, lekin tranzaksiya yo'q; `@Cacheable` bor, lekin kesh ishlamaydi; `@Async` yozilgan, lekin kod sinxron ketadi. Kompilyator jim, test ko'pincha o'tadi, va xato prodda yuk ostida chiqadi. Sababi bitta: proxy mexanikasi. Shu sababli bu bob review ning Spring bo'limida birinchi turadi. Proxy ichki tuzilishi [Arxitektor miyyasi](../architect/README.md) da; bu yerda diffda ko'rinadigan buzilishlar.
+Spring kodidagi eng jim xatolar annotatsiya ishlamaganda paydo bo'ladi: `@Transactional` qo'yilgan, lekin tranzaksiya yo'q; `@Cacheable` bor, lekin kesh ishlamaydi; `@Async` yozilgan, lekin kod sinxron ketadi. Kompilyator jim, test ko'pincha o'tadi, va xato prodda yuk ostida chiqadi. Sababi bitta: proxy mexanikasi. Shu sababli bu bob review ning Spring bo'limida birinchi turadi. Proxy ichki tuzilishi [Arxitektor miyasi](../architect/README.md) da; bu yerda diffda ko'rinadigan buzilishlar.
 
 ## 18.1 Proxy ishlamaydigan to'rt holat
 

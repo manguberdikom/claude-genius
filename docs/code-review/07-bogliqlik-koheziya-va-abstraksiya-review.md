@@ -22,7 +22,7 @@
 </details>
 
 
-Arxitektura buzilishi odatda bitta klassning ichida boshlanadi: klass o'ziga tegishli bo'lmagan narsani bilib qoladi, yoki bir-biriga aloqasi yo'q ikki narsa bir joyga tushadi. Bu bob shu ikki kuchni - bog'liqlik va koheziyani - diffdan o'qishni beradi. Nazariy ta'rif [Arxitektor miyyasi](../architect/README.md) da, bu yerda faqat ko'rinadigan belgilar va review javoblari.
+Arxitektura buzilishi odatda bitta klassning ichida boshlanadi: klass o'ziga tegishli bo'lmagan narsani bilib qoladi, yoki bir-biriga aloqasi yo'q ikki narsa bir joyga tushadi. Bu bob shu ikki kuchni - bog'liqlik va koheziyani - diffdan o'qishni beradi. Nazariy ta'rif [Arxitektor miyasi](../architect/README.md) da, bu yerda faqat ko'rinadigan belgilar va review javoblari.
 
 ## 7.1 Bog'liqlik turlarini diffda aniqlash
 

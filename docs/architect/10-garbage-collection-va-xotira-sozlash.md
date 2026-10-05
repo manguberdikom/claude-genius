@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 10 | part: II. Java chuqur bilim -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
 # 10. Garbage collection va xotira sozlash (Garbage Collection and Memory Tuning)
 

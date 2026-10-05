@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 7 | part: I. Fikrlash va qarorlar -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
 # 7. Nosozlik haqida fikrlash (Thinking About Failure)
 

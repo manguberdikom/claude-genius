@@ -114,11 +114,11 @@ BigDecimal total = new BigDecimal("0.1").add(new BigDecimal("0.2"));   // 0.3
 // Diqqat: BigDecimal.valueOf(0.1) ham xavfli - double dan o'tadi.
 // new BigDecimal("0.1") - satr orqali, aniq.
 
-// Xato 4: BigDecimal da scale va yakkalash e'lon qilinmagan.
+// Xato 4: BigDecimal da scale va yaxlitlash e'lon qilinmagan.
 BigDecimal vat = total.multiply(new BigDecimal("0.12"));   // scale o'sadi
 BigDecimal vat = total.multiply(new BigDecimal("0.12"))
                       .setScale(2, RoundingMode.HALF_UP);  // qoida aniq
-// Review savoli: yakkalash qoidasi biznes bilan kelishilganmi? Soliq
+// Review savoli: yaxlitlash qoidasi biznes bilan kelishilganmi? Soliq
 // hisobida HALF_UP va HALF_EVEN farqi yiliga sezilarli summa beradi.
 
 // Xato 5: BigDecimal taqqoslashda equals.
@@ -374,7 +374,7 @@ Bu skriptni CI da ogohlantirish sifatida ishlatish mumkin, lekin bloklamaslik ke
 
 - [ ] `scripts/review-java-scan.sh` skriptini qo'shing va uni PR da o'zgargan fayllarga ishlatishni review oqimiga kiriting.
 - [ ] Loyihadagi pul maydonlarini tekshirib, `double`/`float` ishlatilgan joylarni `BigDecimal` yoki `Money` ga o'tkazish tiketini ochingg.
-- [ ] `setScale` va `RoundingMode` ko'rsatilmagan pul hisoblarini toping va yakkalash qoidasini biznes bilan kelishib yozib qo'ying.
+- [ ] `setScale` va `RoundingMode` ko'rsatilmagan pul hisoblarini toping va yaxlitlash qoidasini biznes bilan kelishib yozib qo'ying.
 - [ ] `@Enumerated(EnumType.ORDINAL)` ishlatilgan joylarni toping - har biri kelajakdagi ma'lumot buzilishi.
 - [ ] `Instant.now()` va `LocalDateTime.now()` to'g'ridan-to'g'ri ishlatilgan domen kodini `Clock` inyeksiyasiga o'tkazing.
 - [ ] `LocalDateTime` saqlanadigan ustunlarni aniqlab, PostgreSQL da `timestamptz` ga o'tish rejasini tuzing.

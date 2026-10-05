@@ -21,7 +21,7 @@
 </details>
 
 
-Reviewer yuk sinovini o'tkaza olmaydi, lekin ikki narsani qila oladi: operatsiyalar sonini sanash va hajmni chamalash. Performance xatolarining katta qismi aynan shu ikki o'lchovda ko'rinadi - kod N marta ko'p ish qiladi yoki N marta ko'p ma'lumot tashiydi. Ishlash mexanikasi va napkin math [Arxitektor miyyasi](../architect/README.md) da; bu yerda diffdan baholash.
+Reviewer yuk sinovini o'tkaza olmaydi, lekin ikki narsani qila oladi: operatsiyalar sonini sanash va hajmni chamalash. Performance xatolarining katta qismi aynan shu ikki o'lchovda ko'rinadi - kod N marta ko'p ish qiladi yoki N marta ko'p ma'lumot tashiydi. Ishlash mexanikasi va napkin math [Arxitektor miyasi](../architect/README.md) da; bu yerda diffdan baholash.
 
 ## 38.1 Asosiy usul: operatsiyalarni sanash
 

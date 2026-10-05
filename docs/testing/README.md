@@ -7,7 +7,7 @@ Qo'llanma kimga: arxitektor, tech lead, QA lead, backend developer va automation
 Har bir bob oxirida `Arxitektor nazorat ro'yxati` bor: loyihada darhol tekshirish mumkin bo'lgan amaliy bandlar.
 
 
-**Bu hujjat oltilikning bir qismi.** Mavzular takrorlanmaydi; qolgan beshtasi: [Dizayn patternlar katalogi](../patterns/README.md), [Arxitektor miyyasi](../architect/README.md), [SonarQube hujjati](../sonarqube/README.md), [Toza kod qoidalari](../clean-code/README.md), [Kod review](../code-review/README.md).
+**Bu hujjat oltilikning bir qismi.** Mavzular takrorlanmaydi; qolgan beshtasi: [Dizayn patternlar katalogi](../patterns/README.md), [Arxitektor miyasi](../architect/README.md), [SonarQube hujjati](../sonarqube/README.md), [Toza kod qoidalari](../clean-code/README.md), [Kod review](../code-review/README.md).
 
 **Versiya bazasi:** Java 21 LTS (pol: 17, Java 25 eslatmalari bilan), Spring Boot 3.2-3.5 (4.0 eslatmalari bilan), PostgreSQL 16+ (15-18 havolalari bilan), JUnit 5.
 

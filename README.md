@@ -8,7 +8,7 @@ savolga javob beradi, qolganlariga mavzu nomi bilan havola qiladi.
 |---|---|---|
 | [Dizayn patternlar](docs/patterns/README.md) | 30 bo'lim, 1007 yozuv (996 noyob pattern) | Bu muammoga qaysi pattern to'g'ri keladi |
 | [Testlash qo'llanmasi](docs/testing/README.md) | 18 bob, 239 bo'lim | Buni qanday test qilaman |
-| [Arxitektor miyyasi](docs/architect/README.md) | 39 bob, 482 bo'lim | Ichkarida nima sodir bo'ladi va qanday qaror chiqaraman |
+| [Arxitektor miyasi](docs/architect/README.md) | 39 bob, 482 bo'lim | Ichkarida nima sodir bo'ladi va qanday qaror chiqaraman |
 | [SonarQube](docs/sonarqube/README.md) | 43 bob, 557 bo'lim | Statik tahlil nimadan shikoyat qilyapti va qanday tuzataman |
 | [Toza kod qoidalari](docs/clean-code/README.md) | 49 bob, 533 bo'lim | Klaviatura ostidagi shu qator toza yoki yo'q |
 | [Kod review](docs/code-review/README.md) | 44 bob, 445 bo'lim | Diffda nimani ko'raman, nimani so'rayman, nimani to'xtataman |

@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 16 | part: III. Spring chuqur bilim -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
 # 16. Spring Boot mexanikasi: auto-configuration, starter, Actuator (Spring Boot Mechanics)
 

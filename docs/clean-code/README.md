@@ -7,7 +7,7 @@ klaviatura ostida tug'ilayotgan shu qator toza yoki yo'q.
 Hujjat oltilikning bir qismi va qasddan takrorlanmaydi:
 
 - [Dizayn patternlar](../patterns/README.md) - pattern katalogi, SOLID va GRASP printsiplari, 83 ta anti-pattern.
-- [Arxitektor miyyasi](../architect/README.md) - qaror, abstraksiya, chegara, murakkablik, JVM va PostgreSQL mexanikasi.
+- [Arxitektor miyasi](../architect/README.md) - qaror, abstraksiya, chegara, murakkablik, JVM va PostgreSQL mexanikasi.
 - [Testlash qo'llanmasi](../testing/README.md) - test strategiyasi, piramida, Testcontainers, CI pipeline.
 - [SonarQube](../sonarqube/README.md) - statik tahlil, quality gate, coverage, Sonar xato katalogi.
 - [Kod review](../code-review/README.md) - diffni o'qish, review stolida nimani ko'rish va nimani to'xtatish.

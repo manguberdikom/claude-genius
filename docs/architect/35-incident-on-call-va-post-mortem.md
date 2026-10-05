@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 35 | part: VI. Amaliyot va o'sish -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
 # 35. Incident, on-call va post-mortem (Incidents and Post-mortems)
 

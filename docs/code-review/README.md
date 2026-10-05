@@ -8,7 +8,7 @@ Hujjat oltilikning bir qismi va qolganlari bilan kesishmaydi:
 
 - pattern katalogi - [Dizayn patternlar](../patterns/README.md)
 - test yozish texnikasi - [Testlash qo'llanmasi](../testing/README.md)
-- JVM, Spring va PostgreSQL ichki mexanikasi - [Arxitektor miyyasi](../architect/README.md)
+- JVM, Spring va PostgreSQL ichki mexanikasi - [Arxitektor miyasi](../architect/README.md)
 - statik tahlil qoidalari va quality gate - [SonarQube](../sonarqube/README.md)
 - toza kod qoidalari - [Toza kod qoidalari](../clean-code/README.md)
 

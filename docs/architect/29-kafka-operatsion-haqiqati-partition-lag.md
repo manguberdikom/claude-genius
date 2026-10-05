@@ -1,6 +1,6 @@
 <!-- doc: architect | chapter: 29 | part: V. Atrof ekotizim: operatsion haqiqat -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
 # 29. Kafka operatsion haqiqati: partition, lag, rebalance, idempotentlik (Kafka in Production)
 
