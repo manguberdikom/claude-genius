@@ -15,6 +15,8 @@ haqiqiy index/ vaqtincha ko'chirilardi va shu oraliqda parallel sessiya,
 hook va boshqa agent indekssiz qolardi.
 """
 
+import contextlib
+import io
 import os
 import re
 import shutil
@@ -218,6 +220,40 @@ def main():
     rows = [("chiqish kodi 0", code_good == 0),
             ("mashina topilmasi yo'q", "# Mashina topgani (0)" in out_good),
             ("baribir boblar beriladi", "# Tegishli boblar" in out_good)]
+    failures += report(rows)
+    total += len(rows)
+
+    print("\n== --no-mark ==")
+    # Belgini faqat yozuvchi qo'yadi. Rejalashtiruvchi yoki reviewer
+    # belgilasa, arxitektor rules_for ni chaqirmay yozsa ham check_code
+    # uni to'smasdi: darvoza jim o'chardi.
+    state.clear()
+    code_nm, _, _ = run("--no-mark", GOOD)
+    unmarked = not state.was_marked(GOOD)
+    run(GOOD)
+    rows = [("--no-mark: rc 0", code_nm == 0),
+            ("--no-mark belgilamaydi", unmarked),
+            ("--no-mark siz belgilaydi", state.was_marked(GOOD))]
+    failures += report(rows)
+    total += len(rows)
+
+    print("\n== Indeks yo'q: bitta ogohlantirish ==")
+    # Indeks yasalmasa har bob "jadvaldagi bob indeksda yo'q" bo'lib
+    # chiqardi: jadval aybdordek ko'rinar, haqiqiy sabab yashirinardi.
+    saved_titles, saved_argv = R.chapter_titles, sys.argv
+    out_buf, err_buf = io.StringIO(), io.StringIO()
+    try:
+        R.chapter_titles = lambda: {}
+        sys.argv = ["rules_for.py", "--no-mark", BAD]
+        with contextlib.redirect_stdout(out_buf), contextlib.redirect_stderr(err_buf):
+            code_ni = R.main()
+    finally:
+        R.chapter_titles, sys.argv = saved_titles, saved_argv
+    err_ni = err_buf.getvalue()
+    rows = [("rc 0", code_ni == 0),
+            ("bitta sabab aytildi", err_ni.count("indeks yo'q va yasab bo'lmadi") == 1),
+            ("jadval aybdor qilinmadi", "jadvaldagi bob indeksda yo'q" not in err_ni),
+            ("bob ro'yxati bo'sh", routed(out_buf.getvalue()) == [])]
     failures += report(rows)
     total += len(rows)
 

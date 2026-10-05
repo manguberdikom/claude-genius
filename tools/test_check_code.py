@@ -71,8 +71,8 @@ ONE_FINDING = [
 ]
 
 
-def run_file(path):
-    proc = subprocess.run([sys.executable, TOOL, path],
+def run_file(*paths):
+    proc = subprocess.run([sys.executable, TOOL] + list(paths),
                           capture_output=True, text=True, cwd=ROOT)
     return proc.returncode, proc.stdout
 
@@ -112,6 +112,14 @@ def section_titles():
                 if len(parts) >= 4:
                     titles[(parts[0], parts[1])] = parts[3]
     return titles
+
+
+def rule_ref(out, rule):
+    """`(java:Sxxxx)` bilan tugagan hint qatoridagi `<hujjat> <raqam>`."""
+    for line in out.split("\n"):
+        if line.rstrip().endswith("(%s)" % rule) and "show " in line:
+            return " ".join(line.split("show ", 1)[1].split()[:2])
+    return ""
 
 
 def ref_title(out, needle, titles):
@@ -180,6 +188,28 @@ def main():
     failures += report(rows)
     total += len(rows)
 
+    print("\n== Kalit bir nechta bo'limda ==")
+    # S1148 va S2221 ulush bo'yicha yo'l-yo'lakay eslatgan bo'limga (26.14,
+    # 29.13) ketardi. term topilmadagi so'z bo'yicha tanlaydi va ikkalasi
+    # S108 kabi istisnolarni ushlash bo'limiga boradi. printStackTrace
+    # bo'yicha farq 3:2, ya'ni jim teskari ketish shu yerda ushlanadi.
+    snippet = ("class A { void f() { try { g(); } "
+               "catch (Exception e) { e.printStackTrace(); } "
+               "try { g(); } catch (IllegalStateException e) {} } }")
+    out_term = check_code.render("A.java", check_code.check_text(snippet, "A.java"))
+    empty_ref = rule_ref(out_term, "java:S108")
+    catch_title = titles.get(tuple(empty_ref.split()), "").lower()
+    rows = [
+        ("S108 istisnolarni ushlash bo'limiga",
+         "istisno" in catch_title and "ushla" in catch_title),
+        ("S2221 S108 bilan bir bo'limga (%s)" % rule_ref(out_term, "java:S2221"),
+         bool(empty_ref) and rule_ref(out_term, "java:S2221") == empty_ref),
+        ("S1148 S108 bilan bir bo'limga (%s)" % rule_ref(out_term, "java:S1148"),
+         bool(empty_ref) and rule_ref(out_term, "java:S1148") == empty_ref),
+    ]
+    failures += report(rows)
+    total += len(rows)
+
     print("\n== Yolg'on ishga tushish bo'lmasligi kerak ==")
     # Bad.java da izoh ichida System.out.println va catch (Exception e) {}
     # bor. Ular sanalmasligi kerak: har biri aynan bir marta topilishi
@@ -226,6 +256,35 @@ def main():
     code_good, out_good = run_file(GOOD)
     rows = [("chiqish kodi 0", code_good == 0),
             ("topilma yo'q", "topilmadi" in out_good)]
+    failures += report(rows)
+    total += len(rows)
+
+    print("\n== Ko'p fayl ==")
+    # Avval faqat argv[1] tekshirilardi: qolganlari jim tashlanib rc 0
+    # chiqardi. Toza fayl qatori chiqmaydi (800 faylda shovqin), yig'ma
+    # qatordagi fayl soni esa tekshiruv birinchi topilmada to'xtamaganini
+    # ko'rsatadi.
+    code_gb, out_gb = run_file(GOOD, BAD)
+    code_bg, out_bg = run_file(BAD, GOOD)
+    code_clean, out_clean = run_file(GOOD, TX_OK)
+    code_mix, out_mix = run_file(BAD, os.path.join(ROOT, "README.md"), LITERALS, GOOD)
+    rows = [
+        ("Good Bad: rc 1, Bad.java ning 6 ta buzilishi",
+         code_gb == 1 and "Bad.java: 6 ta qoida buzilishi" in out_gb),
+        ("Good Bad: yig'ma qator ikkala faylni sanaydi",
+         "check_code: 2 fayl, 6 buzilish" in out_gb),
+        ("Bad Good: Good.java ham tekshirildi",
+         code_bg == 1 and "Bad.java: 6 ta qoida buzilishi" in out_bg
+         and "check_code: 2 fayl, 6 buzilish" in out_bg),
+        ("toza fayl qatori chiqmaydi",
+         "topilmadi" not in out_gb + out_bg and "Good.java" not in out_gb + out_bg),
+        ("hammasi toza: rc 0, faqat yig'ma qator",
+         code_clean == 0 and out_clean.strip() == "check_code: 2 fayl, 0 buzilish"),
+        ("yig'ma qator oxirida, java bo'lmagan fayl sanalmaydi",
+         code_mix == 1
+         and out_mix.strip().split("\n")[-1] == "check_code: 3 fayl, 7 buzilish"
+         and "Literals.java: 1 ta qoida buzilishi" in out_mix),
+    ]
     failures += report(rows)
     total += len(rows)
 

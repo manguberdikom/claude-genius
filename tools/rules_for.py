@@ -4,6 +4,7 @@
     python3 tools/rules_for.py src/main/java/shop/OrderService.java
     python3 tools/rules_for.py --diff           # staged, unstaged va yangi fayllar (joriy repo)
     python3 tools/rules_for.py --diff --cached  # faqat staged
+    python3 tools/rules_for.py --no-mark <fayllar>   # o'qish uchun, belgilamaydi
 
 Nega: aktyor ikkinchi marta chaqirilsa, sababi deyarli har doim bitta -
 qoidani oldindan bilmagan. Qidirib topish esa har aktyorda boshqacha
@@ -482,7 +483,7 @@ def mechanical(paths):
         for f in check_code.analyse(full):
             line = "[%s] %s:%d  %s" % (f.level, os.path.basename(full),
                                       f.line, f.message)
-            ref = resolve(f.topic, f.rule, f.ref)
+            ref = resolve(f.topic, f.rule, f.ref, getattr(f, "term", ""))
             tail = " ".join(x for x in (f.rule, "-> " + ref if ref else "") if x)
             out.append((line, tail))
     return out
@@ -506,10 +507,13 @@ def main():
     titles = chapter_titles()
     scanned = scan(paths)
     signals = ordered(scanned)
-    # Zanjirning birinchi qadami bajarilgani belgilanadi: check_code har
-    # Java yozuvidan keyin shuni tekshiradi. Belgilar ham saqlanadi:
+    # Zanjirning birinchi qadami bajarilgani belgilanadi: check_code Java
+    # yozuvidan keyin shu belgini tekshiradi. Belgilar ham saqlanadi:
     # yozilgan fayldan yangi belgi chiqsa, check_code uni aytadi.
-    mark(paths, [label for label, _, _ in signals])
+    # Belgini faqat yozuvchi qo'yadi. Rejalashtiruvchi va reviewer
+    # --no-mark bilan chaqiradi, aks holda arxitektor uchun darvoza o'chadi.
+    if "--no-mark" not in args:
+        mark(paths, [label for label, _, _ in signals])
 
     wanted, order = set(), []
     for _, chapters, _ in signals:
@@ -523,11 +527,16 @@ def main():
                 wanted.add(ch)
                 order.append(ch)
 
+    # Indeks umuman yo'q bo'lsa sabab bitta: har bob uchun "indeksda yo'q"
+    # deyish jadvalni aybdor qilib ko'rsatadi va haqiqiy sababni yashiradi.
     missing = [ch for ch in order if ch not in titles]
-    if missing:
+    if not titles:
+        print("OGOHLANTIRISH: indeks yo'q va yasab bo'lmadi: %s"
+              % tool_cmd("build_index.py"), file=sys.stderr)
+    elif missing:
         print("OGOHLANTIRISH: jadvaldagi bob indeksda yo'q: %s"
               % ", ".join("%s %s" % c for c in missing), file=sys.stderr)
-        order = [ch for ch in order if ch in titles]
+    order = [ch for ch in order if ch in titles]
 
     for name, exists, labels in scanned:
         if exists and not labels and not name.endswith(".java"):

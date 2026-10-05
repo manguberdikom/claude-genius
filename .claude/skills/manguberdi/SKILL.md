@@ -24,7 +24,8 @@ yondashuv ularning o'rnini bosmaydi.
 3. **Og'ir o'qish asosiy sessiyada emas.** Ko'p o'qib oz qaytaradigan ish
    aktyorga uzatiladi, uzun chiqish ularning kontekstida qoladi.
 4. **Mezon bitta.** Arxitektor, test muhandisi va reviewer ishni
-   boshlashdan oldin `python3 tools/rules_for.py <fayllar>` chaqiradi.
+   boshlashdan oldin `python3 tools/rules_for.py <fayllar>` chaqiradi
+   (reviewer `--no-mark` bilan: belgini faqat yozuvchi qo'yadi).
    Kirish bir xil, chiqish bir xil: yozuvchi reviewer tekshiradigan
    aynan o'sha ro'yxat bilan ishlaydi. Ikkinchi aylana shundan
    kamayadi.
@@ -64,6 +65,10 @@ birida (uch fayldan ko'proq yoki bir necha qatlam, qaytarib bo'lmaydigan
 qaror, talab hujjatdan) yoki foydalanuvchi ochiq so'raganda tuziladi.
 Kichik bug va toza kod o'zgarishini `arxitektor` rejasiz bajaradi.
 
+Reja so'rovi har doim `rejalashtiruvchi` ga beriladi. Repoda reja
+tuzadigan skill bo'lsa ham (masalan `reja`), zanjirda u chaqirilmaydi: u
+asosiy sessiyada ~25k token o'qiydi va `budget.py` uni sanamaydi.
+
 ## Ketma-ketlik
 
 Ish zanjiri va har aktyorning ikki chaqiruv chegarasi:
@@ -82,7 +87,8 @@ rejalashtiruvchi (zarur bo'lsa)
 ```
 
 `review` kamchilik topsa, u **egasiga** qaytadi: kod muammosi
-`arxitektor` ga, test muammosi `test-muhandis` ga. Har aktyor bitta
+`arxitektor` ga, test muammosi `test-muhandis` ga, reja muammosi
+`rejalashtiruvchi` ga. Har aktyor bitta
 vazifada ko'pi bilan **ikki marta** chaqiriladi. Ikkinchidan keyin ham
 hal bo'lmasa, zanjir to'xtaydi va nima yetishmayotgani aytiladi. Buni
 hook sanaydi va har yangi so'rovda o'zi nolga tushiradi. Bitta so'rov

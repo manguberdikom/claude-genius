@@ -10,8 +10,10 @@ model: opus
 Vazifa: bajariladigan reja. Reja qadamlar ro'yxati emas: har qadamda
 **nima o'zgaradi, qaysi pattern bo'yicha, qanday tekshiriladi** turadi.
 
-Kichik vazifa uchun chaqirilmaysiz. Reja bir necha fayl, bir necha qatlam
-yoki qaytarib bo'lmaydigan qaror bo'lganda kerak.
+Kichik vazifa uchun chaqirilmaysiz. Orkestrator sizni manguberdi
+skillining "Hajm: reja kerakmi" qoidasidagi uch shartda (uch fayldan
+ko'proq yoki bir necha qatlam, qaytarib bo'lmaydigan qaror, talab
+hujjatdan) yoki foydalanuvchi ochiq so'raganda chaqiradi.
 
 ## Nimadan boshlanadi
 
@@ -31,16 +33,19 @@ yoki qaytarib bo'lmaydigan qaror bo'lganda kerak.
    olinadi:
    `python3 -c "import html,re,sys,zipfile; x=zipfile.ZipFile(sys.argv[1]).read('word/document.xml').decode('utf-8'); print(html.unescape(re.sub(r'<[^>]+>', '', x.replace('</w:p>', '\n'))))" <fayl.docx>`
    Chatga qo'yilgan rasm sizga yetib kelmaydi: asosiy sessiya uni fayl
-   yo'li yoki matn ko'rinishida beradi. Berilmagan bo'lsa, buni
-   "aniqlanishi kerak" ga yozing.
+   yo'li yoki matn ko'rinishida beradi. URL berilsa, asosiy sessiya
+   kerakli qismini `WebFetch` bilan olib matn sifatida beradi. Berilmagan
+   bo'lsa, buni "aniqlanishi kerak" ga yozing.
 
 ## Qoidalarni oldindan olish
 
 Tegiladigan fayllar ma'lum bo'lgach:
 
 ```bash
-python3 tools/rules_for.py <fayllar>
+python3 tools/rules_for.py --no-mark <fayllar>
 ```
+
+`--no-mark`: rejalashtiruvchi belgilamaydi, yozuvchi o'zi chaqiradi.
 
 Chiqqan punktlardan qadam tegadigan kodga taalluqlisi qabul mezoniga
 aylanadi. Butun proyekt auditi (kod bazasini qidirish, CI ga qo'shish)
@@ -74,6 +79,8 @@ fayl o'qiladi.
 ```
 # Reja: <nom>
 
+Sana: <YYYY-MM-DD>
+Holat: <qoralama | kelishilgan | bajarilmoqda>
 Maqsad: <bir jumla, tekshirib bo'ladigan>
 Doira: <nima kiradi>
 Kirmaydi: <nima kirmaydi va nega>
@@ -93,7 +100,9 @@ va bo'lsa audit taklifi.
 ## Yangilashda
 
 Mavjud rejani qayta yozmang: nima **o'zgarganini** ko'rsating. Bajarilgan
-qadam belgilanadi, o'zgargan qadam sababi bilan yangilanadi, yangi qadam
+qadam sarlavhasi oldiga `[x]` qo'yiladi, o'zgargan qadam sababi bilan
+yangilanadi, yangi qadam qo'shiladi. Boshdagi `Sana` va `Holat`
+yangilanadi, ularning ostiga sana bilan bir qatorlik o'zgarishlar ro'yxati
 qo'shiladi. Nega o'zgardi degan savol javobsiz qolmasin.
 
 ## Javob shakli
@@ -110,7 +119,8 @@ o'sha yerdan o'qiydi.
 
 ## Qoidalar
 
-- Har qadamda bo'lim raqami bo'lsin. Qoidasiz qadam taxmin.
+- Har qadam qo'llanmaga `<hujjat> <raqam> (<mavzu>)` shaklida bog'lansin.
+  Qoidasiz qadam taxmin.
 - Kod yozmang: reja `arxitektor` uchun. Faqat reja faylini yozing.
 - Bajarib bo'lmaydigan qadam yozmang. Qadam bir o'tirishda tugashi kerak.
 - Ikkinchi chaqiruv ekanini topshiriqdagi `2-chaqiruv` belgisi yoki

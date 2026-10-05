@@ -109,6 +109,10 @@ SILENT = [
     "yana bir marta ko'rib chiq",
     "bu qatorni o'chir",
     "yuqoridagini tushuntirib ber",
+    "qisqa javob ber",
+    "tekshiruv qil",
+    # Sinonim nishoni (chiroyli -> toza nomlash) yolg'iz dalil emas.
+    "chiroyli qil",
     # Asboblarning o'zi haqidagi meta-savollar. Bular amalda uchradi va
     # eng yomon turdagi shovqinni berdi: "tezlik", "aniqlik", "sifat"
     # kabi mavhum otlar bu korpusda kamyob (aniqlik IDF 5.1, deadlock
@@ -172,15 +176,18 @@ KNOWN_GAPS = [
 
 # Hook chiqishida bo'lim raqami ikki marta: "17.2    17.2 Zanjirni ...".
 DOUBLED_RE = re.compile(r"(\d+\.\d+)\s+\1\b")
-# Indekssiz nusxaga kerak fayllar: hook, indeks yasovchi va uning importi.
+# Indekssiz nusxaga kerak fayllar: hook, indeks yasovchi va uning importi,
+# buyruq yo'lini beradigan docref.
 HOOK_FILES = ("suggest_sections.py", "build_index.py", "check_docs.py",
-              "synonyms.tsv")
+              "synonyms.tsv", "docref.py")
+# Klondan tashqarida nisbiy buyruq: oldida `/` yo'q `tools/doc.sh`.
+RELATIVE_CMD_RE = re.compile(r"(?<![/\\\w])tools/doc\.sh")
 
 
-def run_hook(root, raw):
+def run_hook(root, raw, cwd=None):
     proc = subprocess.run(
         [sys.executable, os.path.join(root, "tools", "suggest_sections.py")],
-        input=raw, capture_output=True, text=True, timeout=60)
+        input=raw, capture_output=True, text=True, timeout=60, cwd=cwd)
     return proc.returncode, proc.stdout
 
 
@@ -238,6 +245,27 @@ def hook_cases():
                     and output_shape_ok(stdout) and "1.4 " in text
                     and "doc.sh rule java:S2259" in text, "rc=%d" % rc))
 
+        # Buyruq yo'li: klon ichida nisbiy (har navbat narxi o'zgarmaydi),
+        # boshqa proyektda mutlaq, aks holda u yerda "No such file".
+        rc, stdout = run_hook(tmp, json.dumps({"prompt": prompt}), cwd=tmp)
+        _, text = context(stdout)
+        out.append(("klon ichida: nisbiy tools/doc.sh", rc == 0
+                    and output_shape_ok(stdout)
+                    and text.startswith("Mos bo'limlar (tools/doc.sh show "),
+                    text.splitlines()[0] if text else "rc=%d" % rc))
+        other = tempfile.mkdtemp()
+        try:
+            rc, stdout = run_hook(tmp, json.dumps({"prompt": "java:S2259 ni tuzat"}),
+                                  cwd=other)
+        finally:
+            shutil.rmtree(other, ignore_errors=True)
+        _, text = context(stdout)
+        full = os.path.join(tmp, "tools", "doc.sh").replace("\\", "/")
+        out.append(("boshqa proyekt: mutlaq doc.sh", rc == 0
+                    and output_shape_ok(stdout) and full in text
+                    and not RELATIVE_CMD_RE.search(text),
+                    text.splitlines()[0] if text else "rc=%d" % rc))
+
         for name, raw in (("mavzusiz so'rov", json.dumps({"prompt": "salom"})),
                           ("buzuq JSON", "not json"),
                           ("obyekt emas", "[]")):
@@ -247,14 +275,31 @@ def hook_cases():
     return out
 
 
+def invariant_cases():
+    """Jadval va indeks orasidagi shartlar, (nom, ok, izoh) ro'yxati.
+
+    Sinonim nishoni sarlavhalarda yo'q so'z bo'lsa, u hech qachon mos
+    kelmaydi va shunchaki shovqin: synonyms.tsv boshidagi qoida shu.
+    """
+    vocab = set()
+    for row in S.read_tsv("sections.tsv"):
+        vocab.update(S.tokens(row["title"]))
+    missing = sorted("%s -> %s" % (key, target)
+                     for key, targets in S.load_synonyms().items()
+                     for target in targets if target not in vocab)
+    return [("sinonim nishonlari sarlavhalarda bor", not missing,
+             ", ".join(missing[:5]) or "hammasi bor")]
+
+
 def main():
     # Indeks hosila va git ga kirmaydi, ya'ni toza checkout da yo'q.
     # Avval bu yerda "yo'q, qo'lda yasang" deb yiqilardi: lokalda indeks
     # allaqachon turgani uchun sezilmay qolgan, CI da esa birinchi
     # yurgizishda qizil berardi. Endi o'zi yasaydi, eval_find kabi.
+    # build_index.py to'g'ridan: doc.sh orqali bash siz muhitda yiqilardi.
     if not os.path.exists(os.path.join(S.INDEX, "df.tsv")):
-        print("indeks yo'q, yasalmoqda: tools/doc.sh rebuild")
-        subprocess.run([os.path.join(HERE, "doc.sh"), "rebuild"],
+        print("indeks yo'q, yasalmoqda: tools/build_index.py")
+        subprocess.run([sys.executable, os.path.join(HERE, "build_index.py")],
                        capture_output=True, check=True)
 
     failures = 0
@@ -298,6 +343,12 @@ def main():
         print("%-4s %-58s -> %d ta (chegara %d) %s" % (
             "OK" if ok else "XATO", prompt[:58], len(hits), limit,
             ", ".join("%s %s" % (h[0], h[1]) for h in hits)))
+
+    print("\n== Invariantlar ==")
+    for name, ok, note in invariant_cases():
+        failures += not ok
+        total += 1
+        print("%-4s %-58s -> %s" % ("OK" if ok else "XATO", name, note))
 
     print("\n== Hookning o'zi ==")
     for name, ok, note in hook_cases():

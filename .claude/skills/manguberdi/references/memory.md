@@ -1,7 +1,8 @@
 # Memory bosqichi
 
-Ish toza tugagandan keyin bajariladi. Maqsad: keyingi sessiyada
-takrorlanmasligi kerak bo'lgan narsani saqlab qo'yish.
+Zanjir oxirida bajariladi: u toza tugadimi yoki budjet tugab to'xtadimi,
+farqi yo'q. Maqsad: keyingi sessiyada takrorlanmasligi kerak bo'lgan
+narsani saqlab qo'yish.
 
 Qoida manbai `memory-protocol.md`. Bu yerda u takrorlanmaydi, faqat
 shu zanjirga tegishli qismi.
@@ -13,6 +14,7 @@ matniga bog'langan, bo'limlar qayta raqamlansa ham ishlaydi:
 - darvoza va marshrut: `awk '/^## [0-9]+\. Marshrut/,/^## [0-9]+\. Saqlash/' memory-protocol.md`
 - yozish (D va E faza): `awk '/^### D faza/,/^### F faza/' memory-protocol.md`
 - yozuv formati: `awk '/^## [0-9]+\. Yozuv formati/,/^## [0-9]+\. Hajm/' memory-protocol.md`
+- yozilmaydigan narsalar: `awk '/^## [0-9]+\. Memoryga yozilmaydigan/,/^## [0-9]+\. Tekshirish/' memory-protocol.md`
 - tozalash: `awk '/^## [0-9]+\. Eskirish/,/^## [0-9]+\. Cloud/' memory-protocol.md`
 
 ## Avval darvoza
@@ -26,12 +28,12 @@ o'tadi. Bittasida to'xtasa, yozilmaydi. Eng ko'p to'xtatadigan uchtasi:
 
 ## Nomzod qayerdan chiqadi
 
-Zanjir uchta joyda nomzod beradi:
+Zanjir quyidagi holatlarda nomzod beradi:
 
 | Qayerda | Nomzod turi |
 |---|---|
 | Foydalanuvchi tuzatdi yoki yondashuvni rad etdi | `feedback` |
-| `review` bir xil kamchilikni ikkinchi marta topdi | `feedback` |
+| `review` bir xil kamchilikni ikkinchi marta topdi (zanjir shu yerda to'xtaydi) | `feedback` |
 | Qaror sababi kodda ko'rinmaydi (nega shunday tanlandi) | `project` |
 | Reja yarim qoldi, holati saqlanishi kerak | `project` |
 
@@ -71,25 +73,28 @@ nomi va nima haqida ekani.
 Yozuv o'zi qisqa: nima aniqlandi, qachon, qanday tekshiriladi. Uzun
 tushuntirish qo'llanmada, memoryda emas.
 
-Yozgandan keyin commit va push kerak: push qilinmagan yozuv cloud
-konteyneri bilan yo'qoladi. Ikkalasi foydalanuvchi ruxsati bilan
-qilinadi. Ruxsat bo'lmasa yakunda "push qilinmagan" deb aytiladi. To'liq
-tartib `memory/README.md` dagi `Yozish ketma-ketligi` da.
-
 ## Yozilmaydigan narsalar
 
 - Sir, token, parol. Faqat joyi aytiladi, qiymati emas.
 - Bir martalik vazifa tafsiloti.
 - Qo'llanmada allaqachon yozilgan qoida. Memory qo'llanmaning nusxasi
-  emas: o'rniga bo'lim raqami keltiriladi.
+  emas: o'rniga havola `<hujjat> <raqam> (<mavzu>)` shaklida keltiriladi,
+  raqam siljisa bo'lim mavzu nomi bilan topiladi.
 - Bugungi ish hisoboti. U git tarixida.
 
 ## Oxirida
+
+Yozuv ombor qoidasidagi yozish ketma-ketligi bilan yakunlanadi
+(`memory/README.md`, `Yozish ketma-ketligi`): commit va push qilinadi,
+ikkalasi foydalanuvchi ruxsati bilan. Push qilinmagan yozuv cloud
+konteyneri bilan yo'qoladi. Push qilinmagan bo'lsa yoki yozuv default
+bo'lmagan branch'da tursa, hisobotda shu ochiq aytiladi, chunki keyingi
+sessiya uni ko'rmaydi.
 
 Memoryga yozilgan yoki yozilmagani **aytiladi**. Jim o'tish yomon:
 foydalanuvchi nima saqlanganini bilishi kerak. Ikki shakldan biri:
 
 ```text
-Memory: <N> qo'shildi, <M> yangilandi (<fayl nomlari>), push: qilindi | qilinmadi, sababi: <...>
+Memory: <N> qo'shildi, <M> yangilandi (<fayl nomlari>), commit <qisqa hash>, push: qilindi <branch> | kutilmoqda, sababi: <...>
 Memory: yangi yozuv yo'q, sababi: <...>
 ```

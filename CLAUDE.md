@@ -46,7 +46,7 @@ joy ko'rsatiladi. Taklif chiqqan bo'lsa javob unga tayanadi: `show` bilan
 o'qing yoki nega mos emasligini ayting. Taklif yo'qligi mavzu yo'q degani
 emas, `find` bilan qidiring.
 
-- 1200 satrdan uzun faylni chegarasiz o'qish `tools/guard.py` tomonidan
+- 16 KB dan katta bo'lakni o'qish `tools/guard.py` tomonidan
   to'siladi. Havolani qo'lda yozmang, `doc.sh path` tayyor anchor beradi.
 - Indeks `index/` da, hosila. Bob yangiroq bo'lsa `doc.sh` o'zi qayta
   yasaydi. Indeks grep qilinadi, kontekstga olinmaydi.

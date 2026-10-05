@@ -3,6 +3,11 @@
 
     echo '<hook json>' | python3 tools/check_code.py
     python3 tools/check_code.py <fayl.java>     # qo'lda tekshirish
+    find src -name '*.java' -print0 | xargs -0 python3 tools/check_code.py
+
+Bir nechta fayl bitta chaqiruvda: 800 faylda Python 800 marta emas, bir
+marta ishga tushadi. Faqat buzilishi bor fayllar chiqadi, oxirida yig'ma
+qator `check_code: N fayl, M buzilish`, shuning uchun grep kerak emas.
 
 Nega hook: qoidani CLAUDE.md da yozib qo'yish maslahat beradi, tekshirish
 esa majburlaydi. Fayl yozilgandan keyin bu hook uni o'qiydi va qoidaga zid
@@ -21,10 +26,11 @@ import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 
-from docref import hint  # noqa: E402
+# in_clone, quote va tool_cmd docref da: rules_for ularni shu moduldan
+# oladi, shuning uchun bu yerda qayta eksport qilinadi.
+from docref import hint, in_clone, quote, tool_cmd  # noqa: E402,F401
 from state import marked_labels, was_marked  # noqa: E402
 
 MAX_SHOWN = 6
@@ -69,31 +75,8 @@ def strip_noise(text):
         lambda m: "".join("\n" if c == "\n" else " " for c in m.group(0)), text)
 
 
-def quote(path):
-    """Bo'sh joy bo'lsa qo'shtirnoq (rewrite_paths.quote bilan bir xil)."""
-    return '"%s"' % path if " " in path else path
-
-
-def in_clone():
-    """Joriy papka qo'llanma klonining o'zimi."""
-    try:
-        here = os.path.realpath(os.getcwd())
-    except OSError:
-        return False
-    return os.path.normcase(here) == os.path.normcase(os.path.realpath(ROOT))
-
-
-def tool_cmd(name):
-    """Xabardagi buyruq. Klon ichida nisbiy, ya'ni allow ro'yxatiga mos;
-    boshqa proyektda mutlaq, aks holda u yerda "No such file" beradi."""
-    if in_clone():
-        return ("" if name.endswith(".sh") else "python3 ") + "tools/" + name
-    full = quote(os.path.join(ROOT, "tools", name).replace("\\", "/"))
-    return ("bash " if name.endswith(".sh") else "python3 ") + full
-
-
 class Finding:
-    def __init__(self, level, line, message, topic, rule="", ref=""):
+    def __init__(self, level, line, message, topic, rule="", ref="", term=""):
         self.level = level
         self.line = line
         self.message = message
@@ -102,6 +85,10 @@ class Finding:
         # Aniq bo'lim: kalit ham, taxallus ham mavzuga tushmasa. Indeksda
         # yo'q bo'lsa docref keyingisiga (kalit, taxallus) o'tadi.
         self.ref = ref
+        # Kalit bir nechta bo'limda bo'lsa, tanasida shu so'z ko'p
+        # uchragani olinadi (docref.by_rule). Usiz ulush kalitni
+        # yo'l-yo'lakay eslatgan bo'limni tanlaydi.
+        self.term = term
 
 
 def line_of(text, pos):
@@ -131,7 +118,7 @@ def check_text(text, path):
             "o'rta", line_of(code, match.start()),
             "`catch (%s)` kutilmagan xatolarni ham yutadi; aniq tur tutilsin."
             % match.group(1),
-            "Error Handling", "java:S2221"))
+            "Error Handling", "java:S2221", term="catch"))
 
     for match in re.finditer(r"\bSystem\.(?:out|err)\.print", code):
         out.append(Finding(
@@ -145,7 +132,7 @@ def check_text(text, path):
             "yuqori", line_of(code, match.start()),
             "`printStackTrace()` xatoni stderr ga tashlaydi va log tizimidan "
             "chetda qoladi.",
-            "Logging", "java:S1148"))
+            "Logging", "java:S1148", term="printStackTrace"))
 
     # new BigDecimal(0.1) ikkilik kasrni aynan saqlamaydi; satr yoki valueOf kerak.
     # "Money" taxallusi Money value object patterniga olib boradi, konstruktor
@@ -250,7 +237,7 @@ def render(path, findings):
     for f in findings[:MAX_SHOWN]:
         lines.append("[%s] %s:%d  %s" % (f.level, os.path.basename(path),
                                          f.line, f.message))
-        lines.append("    %s%s" % (hint(f.topic, f.rule, f.ref),
+        lines.append("    %s%s" % (hint(f.topic, f.rule, f.ref, f.term),
                                    "  (%s)" % f.rule if f.rule else ""))
     if len(findings) > MAX_SHOWN:
         lines.append("... yana %d ta" % (len(findings) - MAX_SHOWN))
@@ -300,15 +287,37 @@ SKIPPED = (
 )
 
 
+def check_paths(paths):
+    """CLI: har fayl tekshiriladi, buzilish bo'lsa 1.
+
+    Avval faqat argv[1] olinardi: qolganlari jim tashlanar va rc 0 chiqardi.
+    Bitta fayl uchun eski javob qoladi (toza fayl ham aytiladi). Ko'p
+    faylda toza fayl qatori shovqin, o'rniga yig'ma qator bor: undagi
+    fayl soni tekshiruv oxirigacha borganini ko'rsatadi.
+    """
+    if len(paths) == 1:
+        findings = analyse(paths[0])
+        if not findings:
+            print("%s: qoida buzilishi topilmadi." % paths[0])
+            return 0
+        print(render(paths[0], findings))
+        return 1
+    files = total = 0
+    for path in paths:
+        if not path.endswith(".java") or not os.path.isfile(path):
+            continue
+        files += 1
+        findings = analyse(path)
+        if findings:
+            total += len(findings)
+            print(render(path, findings))
+    print("check_code: %d fayl, %d buzilish" % (files, total))
+    return 1 if total else 0
+
+
 def main():
     if len(sys.argv) > 1:
-        path = sys.argv[1]
-        findings = analyse(path)
-        if not findings:
-            print("%s: qoida buzilishi topilmadi." % path)
-            return 0
-        print(render(path, findings))
-        return 1
+        return check_paths(sys.argv[1:])
 
     try:
         payload = json.load(sys.stdin)

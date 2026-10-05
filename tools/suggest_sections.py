@@ -32,8 +32,13 @@ import re
 import subprocess
 import sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)
 INDEX = os.path.join(ROOT, "index")
+# build_index va docref shu papkadan yuklanadi, skript qayerdan
+# chaqirilmasin.
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
 
 MAX_SUGGESTIONS = 4
 # Ikki shart birgalikda ishlaydi. MIN_SCORE umumiy moslikni, MIN_RARE_IDF
@@ -51,8 +56,7 @@ MIN_EVIDENCE = 2
 SUFFIXES = ("larini", "lariga", "larida", "lardan", "ningiz", "larni", "larga",
             "larda", "lari", "ning", "dagi", "gacha", "siz", "dan", "lar",
             "ini", "iga", "ida", "ni", "ga", "da", "ta", "si", "i")
-SYNONYMS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                             "synonyms.tsv")
+SYNONYMS_FILE = os.path.join(HERE, "synonyms.tsv")
 # Dalil bo'lish uchun so'z shunchaki uzun emas, kamyob ham bo'lsin:
 # `bilan` besh harfli, lekin 2480 bo'limda uchraydi.
 EVIDENCE_MIN_IDF = 2.0
@@ -125,7 +129,7 @@ def ensure_fresh():
     except Exception:
         return  # yasovchi yuklanmasa, yasash ham yiqilardi
     try:
-        subprocess.run([sys.executable, os.path.join(ROOT, "tools", "build_index.py")],
+        subprocess.run([sys.executable, os.path.join(HERE, "build_index.py")],
                        stdin=subprocess.DEVNULL, capture_output=True,
                        timeout=REBUILD_TIMEOUT, check=False)
     except (OSError, subprocess.SubprocessError):
@@ -217,7 +221,7 @@ def load_idf(total_sections):
     return idf
 
 
-def score_sections(wanted, sections, idf, term_vocab):
+def score_sections(wanted, sections, idf, term_vocab, direct=frozenset()):
     """Har bir bo'lim uchun uchta son: ball, kamyoblik, dalil kuchi.
 
     Uchinchisi kerak bo'lib qoldi, chunki chastota atamani mavhum so'zdan
@@ -229,7 +233,9 @@ def score_sections(wanted, sections, idf, term_vocab):
     atamalar lug'atida bo'lsa (ya'ni biror inglizcha texnik nomning qismi)
     dalil hisoblanadi. Aks holda kamida ikkita aniq so'z mos kelishi
     kerak: "tezlik" yolg'iz o'zi hech narsani ko'rsatmaydi, "funksiya
-    nomi" esa ko'rsatadi.
+    nomi" esa ko'rsatadi. Sinonim orqali kelgan atama yolg'iz o'zi dalil
+    bo'lmaydi, u faqat boshqa dalilni kuchaytiradi: `direct` so'rovda
+    to'g'ridan yozilgan shakllar (o'zagi bilan).
     """
     if not wanted:
         return {}
@@ -243,7 +249,7 @@ def score_sections(wanted, sections, idf, term_vocab):
         specific = [t for t in shared if is_specific(t)]
         carrying = [t for t in specific if idf.get(t, 0.0) >= EVIDENCE_MIN_IDF]
         evidence = len(carrying)
-        if evidence == 1 and carrying[0] in term_vocab:
+        if evidence == 1 and carrying[0] in term_vocab and carrying[0] in direct:
             evidence = 2
         scores[(row["doc"], row["section"])] = [
             sum(idf.get(t, 0.0) for t in shared),
@@ -400,7 +406,8 @@ def suggest(prompt):
     aliases = read_tsv("aliases.tsv")
     term_vocab = (term_vocabulary(aliases) | title_terms(sections)) - DOMAIN_NOUNS
     wanted = expand(prompt, idf, load_synonyms())
-    scores = score_sections(wanted, sections, idf, term_vocab)
+    direct = set().union(*(roots(t, idf) for t in tokens(prompt)))
+    scores = score_sections(wanted, sections, idf, term_vocab, direct)
     scores = score_aliases(prompt, aliases, scores)
 
     keep = {k: v for k, v in scores.items()
@@ -414,15 +421,27 @@ def suggest(prompt):
     return hits[:MAX_SUGGESTIONS]
 
 
-def render(hits, rules=()):
+def doc_cmd():
+    """`doc.sh` buyrug'i: klon ichida nisbiy (matn va narx o'zgarmaydi),
+    boshqa proyektda mutlaq, aks holda u yerda "No such file" beradi.
+    docref yuklanmasa, taklifni yo'qotgandan nisbiy buyruq afzal.
+    """
+    try:
+        from docref import tool_cmd
+    except (ImportError, SyntaxError):
+        return "tools/doc.sh"
+    return tool_cmd("doc.sh")
+
+
+def render(hits, rules=(), cmd="tools/doc.sh"):
     """Hook matni. Sarlavha raqam bilan boshlanadi, raqam qayta yozilmaydi."""
-    lines = ["Mos bo'limlar (tools/doc.sh show <hujjat> <raqam>):"]
+    lines = ["Mos bo'limlar (%s show <hujjat> <raqam>):" % cmd]
     for doc, section, title, _ in hits:
         head = title.split(" ", 1)[0].rstrip(".")
         label = title if head == section else ("%s %s" % (section, title)).strip()
         lines.append("  %-11s %s" % (doc, label))
     for key in rules:
-        lines.append("To'liq ro'yxat: tools/doc.sh rule %s" % key)
+        lines.append("To'liq ro'yxat: %s rule %s" % (cmd, key))
     return "\n".join(lines)
 
 
@@ -442,6 +461,7 @@ def main():
         if rules:
             known = {row["rule"] for row in read_tsv("rules.tsv")}
             rules = [key for key in rules if key in known]
+        text = render(hits, rules, doc_cmd()) if hits else ""
     except Exception:
         return  # hook hech qachon navbatni o'z xatosi tufayli buzmaydi
     if not hits:
@@ -451,7 +471,7 @@ def main():
         {
             "hookSpecificOutput": {
                 "hookEventName": "UserPromptSubmit",
-                "additionalContext": render(hits, rules),
+                "additionalContext": text,
             }
         },
         sys.stdout,

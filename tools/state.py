@@ -4,7 +4,7 @@
 `rules_for.py` chaqirilishi ko'rsatma bo'lsa, u unutiladi va hech kim
 sezmaydi: aktyor qoidani ko'rmay yozadi, reviewer topadi, ish ikkinchi
 aylanaga tushadi. Shuning uchun chaqiruv belgilanadi va `check_code.py`
-har Java yozuvidan keyin shu belgi bormi deb tekshiradi.
+har Java yozuvidan keyin (`PostToolUse`) shu belgini tekshiradi.
 
 Holat `.claude/.state/` da, git ga kirmaydi: u sessiyaga tegishli,
 jamoaga emas. `GENIUS_STATE_DIR` berilsa, holat o'sha papkada turadi:
