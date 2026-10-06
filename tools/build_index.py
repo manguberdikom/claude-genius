@@ -56,6 +56,20 @@ STAMP = ".stamp"
 # `n+1`, `c++` kabi atamalar bitta token bo'lib qolishi kerak.
 RULE_RE = re.compile(r"\bjava:S\d+\b")
 CHECKBOX_RE = re.compile(r"^\s*- \[ \]\s+(.*?)\s*$")
+# Punkt doirasi: `loyiha` butun proyekt auditi ("Loyihadagi barcha ...",
+# "eng uzun 20 ta metod", "CI ga qo'shing"), `kod` esa tegilgan kodga
+# qo'llanadigan punkt. rules_for faqat `kod` ni beradi, `doc.sh checklist`
+# hammasini. Naqsh qo'pol: "Barcha o'qish metodlariga readOnly" ham
+# loyiha bo'ladi. Xato tomoni xavfsiz: punkt yo'qolmaydi, `doc.sh
+# checklist` da qoladi.
+SCOPE_RE = re.compile(
+    r"Loyihada|Kod bazasi|Barcha|Hamma|CI ga|eng uzun \d+|eng yuqori \d+"
+    r"|ro['\u02bb\u02bc\u2019]yxatga oling|sanab", re.IGNORECASE)
+
+
+def scope(item):
+    """Punkt doirasi: `loyiha` yoki `kod` (SCOPE_RE)."""
+    return "loyiha" if SCOPE_RE.search(item) else "kod"
 
 WORD_RE = re.compile(r"[a-z0-9_.@#]+(?:\+\+|\+\d+)?(?:'[a-z0-9]+)*")
 
@@ -214,8 +228,9 @@ def scan_body(doc_key, chapter, section, body, rows):
     for line in body:
         match = CHECKBOX_RE.match(line)
         if match:
+            item = clean(match.group(1))
             rows["checklist"].append(
-                (doc_key, chapter, section, clean(match.group(1)))
+                (doc_key, chapter, section, item, scope(item))
             )
 
 
@@ -356,7 +371,8 @@ def build():
     rules.sort(key=lambda r: (r[0], -r[5], -r[4], r[1], r[2], r[3]))
     write("rules.tsv",
           ["rule", "doc", "chapter", "section", "marta", "ulush"], rules)
-    write("checklist.tsv", ["doc", "chapter", "section", "item"],
+    # `doira` oxirida: doc.sh va boshqa o'quvchilar ustunni o'rni bilan oladi.
+    write("checklist.tsv", ["doc", "chapter", "section", "item", "doira"],
           rows["checklist"])
 
     # Ishora-yozuv tanasi to'liq yozuvni qisqa takrorlaydi: sanalsa o'sha

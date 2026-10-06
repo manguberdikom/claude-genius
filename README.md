@@ -62,9 +62,11 @@ sanalmaydi (`budget.py`); token sarfi `.claude/usage/` ga yoziladi
 Hooklar faqat ikki joyda ish qiladi: shu klonda va Java proyektida (ildizida
 yoki birinchi darajali papkasida `pom.xml` yoki Gradle fayli bo'lgan repo).
 Global o'rnatishda ular har proyektda yuradi, lekin boshqa joyda chiqishsiz
-0 bilan chiqadi, ya'ni Python yoki JS proyektida hech narsa to'smaydi.
-`GENIUS_HOOKS=off` hammasini o'chiradi. Tafsiloti
-[install/README.md](install/README.md#hooklar-qaysi-proyektda-ishlaydi) da.
+0 bilan chiqadi, ya'ni Python, JS, React Native, Flutter yoki Android
+proyektida hech narsa to'smaydi (`android/build.gradle` Java belgisi
+sanalmaydi). `GENIUS_HOOKS=off` hammasini o'chiradi, `on` chuqur monorepoda
+yoqadi. Qaysi proyekt to'liq, qisman yoki umuman qo'llab-quvvatlanmasligi
+[install/README.md](install/README.md#hooklar-qaysi-proyektda-ishlaydi) dagi jadvalda.
 
 Yettita marshrut skilli faqat shu repo ichida ishlaydi: ulardagi `docs/` va
 `tools/` yo'llari joriy papkaga nisbatan hal qilinadi va boshqa proyektda

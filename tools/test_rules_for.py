@@ -468,6 +468,213 @@ def main():
     failures += report(index_checks)
     total += len(index_checks)
 
+    print("\n== SIGNALS bo'shliqlari (held-out petclinic) ==")
+    # Petclinic da topilgan bo'shliqlar: `extends Repository<Vet, Integer>`,
+    # @MappedSuperclass li BaseEntity, FQN annotatsiya va static kesh
+    # hech qanday belgi bermasdi.
+    tmp = tempfile.mkdtemp()
+    try:
+        def sig(name, body):
+            path = os.path.join(tmp, name)
+            write(path, body)
+            return set(labels([path]))
+        gaps = [
+            ("Repository<", "ma'lumotga kirish", sig(
+                "VetRepository.java",
+                "interface VetRepository extends Repository<Vet, Integer> {}\n")),
+            ("@RepositoryDefinition", "ma'lumotga kirish", sig(
+                "Vets.java", "@RepositoryDefinition(domainClass = Vet.class)\n"
+                             "interface Vets {}\n")),
+            ("@MappedSuperclass", "entity va ORM", sig(
+                "BaseEntity.java", "@MappedSuperclass\nclass BaseEntity {}\n")),
+            ("@Embeddable", "entity va ORM", sig(
+                "Address.java", "@Embeddable\nclass Address { String city; }\n")),
+            ("@Id", "entity va ORM", sig(
+                "Plain.java", "class Plain { @Id Long id; }\n")),
+            ("FQN @Transactional", "tranzaksiya", sig(
+                "Fqn.java", "class Fqn {\n  @org.springframework.transaction."
+                            "annotation.Transactional\n  void x() {}\n}\n")),
+            ("FQN @Entity", "entity va ORM", sig(
+                "FqnEntity.java", "@jakarta.persistence.Entity class FqnEntity {}\n")),
+            ("static HashMap", "konkurentlik", sig(
+                "Cache.java", "class Cache {\n  private static final Map<String, Long> "
+                              "SEEN = new HashMap<>();\n}\n")),
+            ("static SimpleDateFormat", "konkurentlik", sig(
+                "Fmt.java", "class Fmt {\n  static SimpleDateFormat F = "
+                            "new SimpleDateFormat(\"yyyy\");\n}\n")),
+            ("static ArrayList", "konkurentlik", sig(
+                "Reg.java", "class Reg { static List<String> ALL = new ArrayList<>(); }\n")),
+        ]
+        local_map = sig("Local.java", "class Local {\n  static int f() {\n"
+                                      "    Map<String, Long> m = new HashMap<>();\n"
+                                      "    return m.size();\n  }\n}\n")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    rows = [("%s -> %s" % (name, want), want in got) for name, want, got in gaps]
+    rows.append(("metod ichidagi HashMap konkurentlik emas",
+                 "konkurentlik" not in local_map))
+    failures += report(rows)
+    total += len(rows)
+
+    print("\n== Kotlin va version catalog ==")
+    tmp = tempfile.mkdtemp()
+    try:
+        repo = os.path.join(tmp, "repo")
+        kt = os.path.join(repo, "src", "main", "kotlin", "shop", "OrderService.kt")
+        write(kt, "package shop\n\n@Service\nclass OrderService {\n"
+                  "  @Transactional\n  fun place() {}\n}\n")
+        catalog = os.path.join(repo, "gradle", "libs.versions.toml")
+        write(catalog, '[versions]\nspring-boot = "3.3.4"\n\n[libraries]\n'
+                       'jackson = { module = "com.fasterxml.jackson.core:jackson-databind",'
+                       ' version = "2.17.0" }\n')
+        git(repo, "init", "-q")
+        git(repo, "add", "-A")
+        git(repo, "commit", "-qm", "boshlang'ich")
+        code_kt, out_kt, _ = run("--no-mark", kt)
+        write(kt, "package shop\n\n@Service\nclass OrderService {\n"
+                  "  @Transactional(readOnly = true)\n  fun find() {}\n}\n")
+        code_ktd, out_ktd, _ = run("--no-mark", "--diff", cwd=repo)
+        git(repo, "checkout", "-q", "--", ".")
+        write(catalog, '[versions]\nspring-boot = "3.3.4"\n\n[libraries]\n'
+                       'jackson = { module = "com.fasterxml.jackson.core:jackson-databind",'
+                       ' version = "2.9.0" }\n')
+        code_cat, out_cat, _ = run("--no-mark", "--diff", cwd=repo)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    rows = [
+        (".kt: rc 0", code_kt == 0),
+        (".kt: Kotlin ogohlantirishi", R.KOTLIN_NOTE in out_kt),
+        (".kt: @Transactional -> architect 19", has_chapter(out_kt, "architect", "19")),
+        (".kt: ALWAYS boblari", has_chapter(out_kt, "clean-code", "2")),
+        (".kt diff: rc 0 (2 emas)", code_ktd == 0 and "OrderService.kt" in out_ktd),
+        ("nomdan belgi .kt da ham",
+         "web qatlami" in labels(["/yoq/web/XController.kt"])),
+        ("faqat libs.versions.toml diff: rc 0", code_cat == 0),
+        ("catalog: bog'liqlik va code-review 33",
+         "bog'liqlik" in out_cat and has_chapter(out_cat, "code-review", "33")),
+        ("catalog: Kotlin ogohlantirishi yo'q", R.KOTLIN_NOTE not in out_cat),
+    ]
+    failures += report(rows)
+    total += len(rows)
+
+    print("\n== Proyekt versiyasi va framework ==")
+    tmp = tempfile.mkdtemp()
+    try:
+        def project(name, files):
+            base = os.path.join(tmp, name)
+            os.makedirs(os.path.join(base, ".git"))
+            for rel, text in files.items():
+                write(os.path.join(base, rel), text)
+            src = os.path.join(base, "src", "main", "java", "shop", "A.java")
+            write(src, "class A { @Autowired Repo r; @Transactional void x() {} }\n")
+            return src
+        boot27 = project("boot27", {"pom.xml": (
+            "<project><parent><groupId>org.springframework.boot</groupId>"
+            "<artifactId>spring-boot-starter-parent</artifactId>"
+            "<version>2.7.18</version></parent>"
+            "<properties><java.version>11</java.version></properties></project>")})
+        boot33 = project("boot33", {"pom.xml": (
+            "<project><parent><groupId>org.springframework.boot</groupId>"
+            "<artifactId>spring-boot-starter-parent</artifactId>"
+            "<version>3.3.4</version></parent>"
+            "<properties><java.version>21</java.version></properties></project>")})
+        prop = project("prop", {"pom.xml": (
+            "<project><properties><spring-boot.version>2.6.1</spring-boot.version>"
+            "</properties><dependencyManagement><dependencies><dependency>"
+            "<artifactId>spring-boot-dependencies</artifactId>"
+            "<version>${spring-boot.version}</version></dependency></dependencies>"
+            "</dependencyManagement></project>")})
+        gradle = project("gradle", {"build.gradle": (
+            "plugins {\n  id 'org.springframework.boot' version '2.7.0'\n}\n"
+            "java { sourceCompatibility = JavaVersion.VERSION_1_8 }\n")})
+        kts = project("kts", {"build.gradle.kts": (
+            'plugins {\n  id("org.springframework.boot") version "3.4.1"\n}\n'
+            "java { toolchain { languageVersion = JavaLanguageVersion.of(17) } }\n")})
+        cat = project("cat", {
+            "build.gradle.kts": "plugins { alias(libs.plugins.spring.boot) }\n",
+            "gradle/libs.versions.toml": (
+                '[versions]\nboot = "3.1.5"\njava = "17"\n\n[plugins]\n'
+                'spring-boot = { id = "org.springframework.boot", version.ref = "boot" }\n')})
+        modul = project("modul", {
+            "pom.xml": ("<project><parent><groupId>org.springframework.boot</groupId>"
+                        "<version>2.7.18</version></parent></project>")})
+        # Ko'p modulli Maven: versiya ildizdagi ota pom da, modul pom ida yo'q.
+        sub = os.path.join(tmp, "modul", "orders", "src", "main", "java", "B.java")
+        write(os.path.join(tmp, "modul", "orders", "pom.xml"), "<project/>")
+        write(sub, "class B {}\n")
+        quarkus = project("quarkus", {"pom.xml": (
+            "<project><dependencyManagement><dependencies><dependency>"
+            "<groupId>io.quarkus.platform</groupId><artifactId>quarkus-bom</artifactId>"
+            "</dependency></dependencies></dependencyManagement></project>")})
+        code_old, out_old, _ = run("--no-mark", boot27)
+        _, out_new, _ = run("--no-mark", boot33)
+        code_q, out_q, _ = run("--no-mark", quarkus)
+        prof = {name: R.project_profile([path]) for name, path in (
+            ("boot27", boot27), ("boot33", boot33), ("prop", prop), ("gradle", gradle),
+            ("kts", kts), ("cat", cat), ("sub", sub), ("quarkus", quarkus))}
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    rows = [
+        ("Maven parent: 2.7.18, Java 11", prof["boot27"][:2] == ("2.7.18", "11")),
+        ("Maven xossa va ${...}: 2.6.1", prof["prop"][0] == "2.6.1"),
+        ("Gradle plagin va VERSION_1_8", prof["gradle"][:2] == ("2.7.0", "8")),
+        ("kts plagin va toolchain", prof["kts"][:2] == ("3.4.1", "17")),
+        ("version catalog: version.ref", prof["cat"][:2] == ("3.1.5", "17")),
+        ("modul ota pom dan oladi", prof["sub"][0] == "2.7.18"),
+        ("boot27: banner, versiya va architect 16.11",
+         code_old == 0 and "ESKI VERSIYA" in out_old and "2.7.18" in out_old
+         and "Java 11" in out_old and R.MIGRATION_REF in out_old),
+        ("Boot 3.3: banner yo'q", "ESKI VERSIYA" not in out_new),
+        ("Quarkus: 'Spring emas' qatori", prof["quarkus"][2] == "Quarkus"
+         and "Spring emas (Quarkus)" in out_q and code_q == 0),
+        ("Quarkus: spring. va @Autowired punktlari yo'q",
+         not any(re.search(R.SPRING_ONLY_RE, l) for l in out_q.split("\n")
+                 if l.startswith("  - [ ] ("))),
+        ("Spring: profil None", prof["boot33"][2] is None),
+    ]
+    failures += report(rows)
+    total += len(rows)
+
+    print("\n== Punkt doirasi va memory filtri ==")
+    import build_index  # noqa: E402
+    wanted = {("architect", "19"), ("code-review", "19"), ("clean-code", "2"),
+              ("clean-code", "4"), ("code-review", "8"), ("code-review", "22")}
+    kept, dropped = R.checklist_for(wanted)
+    flat = [i for bucket in kept.values() for i in bucket]
+    _, out_bad, _ = run("--no-mark", BAD)
+    shown = [l for l in out_bad.split("\n") if l.startswith("  - [ ] (")]
+    saved, mem = R.MEMORY, tempfile.mkdtemp()
+    try:
+        write(os.path.join(mem, "demo", "feedback_hujjat.md"),
+              "# Hujjat yig'ish\n\nParallel agentlar kirill harf qo'yadi.\n")
+        write(os.path.join(mem, "demo", "feedback_tx.md"),
+              "# Tranzaksiya\n\n`@Transactional` ichida HTTP chaqirilmaydi.\n")
+        write(os.path.join(mem, "demo", "feedback_fayl.md"),
+              "# OrderService\n\nOrderService da narx keshlanmaydi.\n")
+        R.MEMORY = mem
+        all_notes = [os.path.basename(r) for r, _ in R.past_mistakes(slug="demo")]
+        tx_notes = [os.path.basename(r) for r, _ in R.past_mistakes(
+            slug="demo", labels={"tranzaksiya"}, names=["Bad.java"])]
+        file_notes = [os.path.basename(r) for r, _ in R.past_mistakes(
+            slug="demo", labels={"loglash"}, names=["OrderService.java"])]
+    finally:
+        R.MEMORY = saved
+        shutil.rmtree(mem, ignore_errors=True)
+    rows = [
+        ("checklist.tsv da doira ustuni: loyiha punktlari sanaldi", dropped > 0),
+        ("rules_for loyiha punktini olmaydi",
+         flat and not any(build_index.SCOPE_RE.search(i) for i in flat)),
+        ("chiqishda loyiha punkti yo'q",
+         shown and not any(build_index.SCOPE_RE.search(l) for l in shown)),
+        ("punkt chegarasi MAX_POINTS", len(shown) <= R.MAX_POINTS),
+        ("loyiha punktlari doc.sh ga yo'naltiriladi", "loyiha auditi punktlari" in out_bad),
+        ("filtrsiz: hamma feedback", len(all_notes) == 3),
+        ("belgi bo'yicha: faqat tranzaksiya yozuvi", tx_notes == ["feedback_tx.md"]),
+        ("fayl nomi bo'yicha", file_notes == ["feedback_fayl.md"]),
+    ]
+    failures += report(rows)
+    total += len(rows)
+
     print("\n== Xato yo'llar ==")
     for label, args, want in (("fayl berilmadi", [], 2),
                               ("ko'rilmaydigan fayl", ["README.md"], 2),

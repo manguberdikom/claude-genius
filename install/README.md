@@ -326,6 +326,27 @@ ham hook jim o'tadi: hook o'z noaniqligi tufayli hech qachon to'smaydi.
 Qoida `tools/hookio.py` dagi `active()` da, sinovlari
 `tools/test_hookio.py` da.
 
+Qo'llanma bazasi Java 17+ va Spring Boot 3.2+. Boshqa proyekt turlari
+shunday:
+
+| Daraja | Proyekt | Nima bo'ladi | `GENIUS_HOOKS` |
+|---|---|---|---|
+| To'liq | Spring Boot 3.2+, Java 17+, Maven yoki Gradle (version catalog ham), build fayli ildizda yoki birinchi darajali papkada | hamma hook, `rules_for`, `check_code`, `run_tests` | kerak emas |
+| Qisman | Kotlin (Spring) | boblar va punktlar beriladi; `check_code` `.kt` ni tekshirmaydi, `rules_for` buni chiqishning boshida aytadi | kerak emas |
+| Qisman | Spring Boot 2.x yoki Java 17 dan eski | boblar Boot 3 uchun yozilgan; `rules_for` "ESKI VERSIYA" bannerini va Boot 3 ga o'tish bo'limini (`architect 16.11`) beradi | kerak emas |
+| Qisman | Quarkus, Micronaut | `rules_for` "Spring emas" deydi va `spring.*`, `@Autowired` punktlarini olib tashlaydi; Spring boblari baribir chiqadi | maslahat xalaqit bersa `off` |
+| Qisman | Monorepo, Spring moduli ikkinchi darajada (`backend/services/orders/pom.xml`) | hooklar o'zi yoqilmaydi | `on` |
+| Qo'llab-quvvatlanmaydi | React Native, Expo, Capacitor, Cordova, Flutter: ildizda `package.json`, `app.json` yoki `pubspec.yaml`, Gradle esa `android/` da | hooklar nofaol, `docker` va `psql` to'silmaydi | kerak emas |
+| Qo'llab-quvvatlanmaydi | Android ilova: modulda `src/main/AndroidManifest.xml` yoki `gradle/libs.versions.toml` da `com.android` | hooklar nofaol | kerak emas |
+| Qo'llab-quvvatlanmaydi | Python, JS, Go va boshqa Java bo'lmagan proyekt | hooklar nofaol | kerak emas |
+
+`GENIUS_HOOKS=on` (yoki `1`, `true`, `yes`) markerdan qat'i nazar
+hooklarni yoqadi: chuqur monorepo uchun. Avtomatik chuqur skan yo'q,
+chunki u har `Read` va `Bash` ga papka aylanishini qo'shardi. `on` ni
+faqat o'sha proyekt sessiyasida qo'ying, `setx` bilan emas: aks holda
+hooklar har proyektda, Java bo'lmaganida ham yoqiladi. `off` hammasini
+o'chiradi (pastda).
+
 ### Hooklarni butunlay o'chirish
 
 `GENIUS_HOOKS=off` bo'lsa har hook, klon ichida ham, darhol 0 bilan
