@@ -32,6 +32,10 @@ LITERALS = os.path.join(CASES, "Literals.java")
 TX_OK = os.path.join(CASES, "TxOk.java")
 TX = os.path.join(CASES, "Tx.java")
 MEDIUM = os.path.join(CASES, "Medium.java")
+TX_AFTER = os.path.join(CASES, "TxAfterCommit.java")
+TX_VERSION = os.path.join(CASES, "TxHttpVersion.java")
+TX_FACTORY = os.path.join(CASES, "TxStaticFactory.java")
+SUPPRESSED = os.path.join(CASES, "Suppressed.java")
 LIVE_STATE = os.path.join(ROOT, ".claude", ".state")
 
 # state import qilinishidan OLDIN: subprocesslar ham shu papkani meros oladi.
@@ -93,10 +97,15 @@ def prepare(path, cwd=ROOT):
                           capture_output=True, text=True, cwd=cwd)
 
 
-def run_hook(path, tool_name="Write", cwd=ROOT, response=None, env=None):
+def run_hook(path, tool_name="Write", cwd=ROOT, response=None, env=None,
+             original=False):
+    """`original` berilsa tool_response.originalFile (None ham qiymat)."""
     payload = {"tool_name": tool_name, "tool_input": {"file_path": path}}
     if response is not None:
         payload["tool_response"] = {"filePath": response}
+    if original is not False:
+        payload.setdefault("tool_response", {"filePath": path})
+        payload["tool_response"]["originalFile"] = original
     proc = subprocess.run([sys.executable, TOOL], input=json.dumps(payload),
                           capture_output=True, text=True, cwd=cwd,
                           env=None if env is None else dict(os.environ, **env))
@@ -173,7 +182,8 @@ def report(rows):
 
 
 def main():
-    for path in (BAD, GOOD, LITERALS, TX_OK, TX, MEDIUM):
+    for path in (BAD, GOOD, LITERALS, TX_OK, TX, MEDIUM, TX_AFTER, TX_VERSION,
+                 TX_FACTORY, SUPPRESSED):
         if not os.path.exists(path):
             print("sinov fayli yo'q: %s" % path)
             return 1
@@ -272,6 +282,78 @@ def main():
     failures += report(rows)
     total += len(rows)
 
+    print("\n== Commit dan keyingi chaqiruv va tur nomi ==")
+    # Qo'llanma tashqi chaqiruvni afterCommit ga yoki AFTER_COMMIT
+    # listeneriga ko'chirishni tavsiya qiladi: hook o'z maslahatini
+    # to'smasligi kerak. `HttpClient.Version` tur nomi, chaqiruv emas;
+    # metod ichidagi `RestClient.create().get()` esa haqiqiy chaqiruv.
+    code_after, out_after = run_file(TX_AFTER)
+    code_ver, out_ver = run_file(TX_VERSION)
+    code_fac, out_fac = run_file(TX_FACTORY)
+    listener_tx = ("@Transactional\nclass A {\n"
+                   "  @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)\n"
+                   "  void on(E e) { restTemplate.postForObject(\"/x\", e, Void.class); }\n"
+                   "  @TransactionalEventListener\n"
+                   "  @Transactional(propagation = Propagation.REQUIRES_NEW)\n"
+                   "  void again(E e) { restTemplate.postForObject(\"/y\", e, Void.class); }\n}\n")
+    after_call = ("class A {\n  @Transactional\n  void f() {\n"
+                  "    restClient.post().retrieve();\n"
+                  "    sync.afterCommit();\n  }\n}\n")
+    rows = [
+        ("TxAfterCommit.java: 0 topilma (afterCommit, afterCompletion, listener)",
+         code_after == 0 and "topilmadi" in out_after),
+        ("TxHttpVersion.java: 0 topilma (tur nomi chaqiruv emas)",
+         code_ver == 0 and "topilmadi" in out_ver),
+        ("TxStaticFactory.java: metod ichidagi statik fabrika 1 yuqori",
+         code_fac == 1 and "1 ta qoida" in out_fac
+         and "[yuqori] TxStaticFactory.java:13" in out_fac),
+        ("BEFORE_COMMIT va REQUIRES_NEW listener istisno emas",
+         [f.line for f in check_code.check_text(listener_tx, "A.java")] == [4, 7]),
+        ("`sync.afterCommit();` chaqiruvi tana emas: oldingi chaqiruv topiladi",
+         [f.line for f in check_code.check_text(after_call, "A.java")] == [4]),
+    ]
+    failures += report(rows)
+    total += len(rows)
+
+    print("\n== NOSONAR, @SuppressWarnings va test kodi ==")
+    code_sup, out_sup = run_file(SUPPRESSED)
+    test_out = ("class OrderServiceTest { void t() { System.out.println(1); "
+                "Thread.sleep(10); } }")
+    rows = [
+        # Kalit mos kelgan e'londa va NOSONAR satrida o'tkaziladi; boshqa
+        # kalit, izohdagi annotatsiya va satrdagi "NOSONAR" o'tkazmaydi.
+        ("Suppressed.java: aynan 3 ta qolgan", code_sup == 1 and "3 ta qoida" in out_sup),
+        ("@SuppressWarnings boshqa kalitni o'tkazmaydi (S2221)",
+         "[o'rta] Suppressed.java:10" in out_sup),
+        ("satr literalidagi NOSONAR hisoblanmaydi",
+         "[yuqori] Suppressed.java:23" in out_sup),
+        ("izohdagi @SuppressWarnings hisoblanmaydi",
+         "[o'rta] Suppressed.java:32" in out_sup),
+        ("S106 kaliti, NOSONAR va bo'sh catch NOSONAR o'tkazildi",
+         all("Suppressed.java:%d " % n not in out_sup for n in (7, 16, 19))),
+        ("test kodida System.out belgilanmaydi, Thread.sleep qoladi",
+         [f.rule for f in check_code.check_text(
+             test_out, "src/test/java/shop/OrderServiceTest.java")] == ["java:S2925"]),
+    ]
+    failures += report(rows)
+    total += len(rows)
+
+    print("\n== Keng catch xabari ==")
+    rethrow = ("class A { void f() throws Exception { try { g(); } "
+               "catch (Exception ex) { log.error(\"x\", ex); throw ex; } } }")
+    throwable = ("class A { void f() { try { g(); } "
+                 "catch (Throwable t) { throw new IllegalStateException(t); } } }")
+    out_re = check_code.render("A.java", check_code.check_text(rethrow, "A.java"))
+    found_t = check_code.check_text(throwable, "A.java")
+    rows = [
+        ("log va qayta otish: xabarda \"yut\" so'zi yo'q",
+         "java:S2221" in out_re and "yut" not in out_re),
+        ("catch (Throwable): java:S1181, java:S2221 emas",
+         [f.rule for f in found_t] == ["java:S1181"]),
+    ]
+    failures += report(rows)
+    total += len(rows)
+
     print("\n== Toza fayl ==")
     code_good, out_good = run_file(GOOD)
     rows = [("chiqish kodi 0", code_good == 0),
@@ -288,6 +370,9 @@ def main():
     code_bg, out_bg = run_file(BAD, GOOD)
     code_clean, out_clean = run_file(GOOD, TX_OK)
     code_mix, out_mix = run_file(BAD, os.path.join(ROOT, "README.md"), LITERALS, GOOD)
+    # Kotlin fayl tekshirilmaydi: "topilmadi" deyish yolg'on hisobot.
+    code_kt, out_kt = run_file("src/main/kotlin/shop/Bad.kt")
+    code_kt2, out_kt2 = run_file(GOOD, "Bad.kt")
     rows = [
         ("Good Bad: rc 1, Bad.java ning 6 ta buzilishi",
          code_gb == 1 and "Bad.java: 6 ta qoida buzilishi" in out_gb),
@@ -304,6 +389,14 @@ def main():
          code_mix == 1
          and out_mix.strip().split("\n")[-1] == "check_code: 3 fayl, 7 buzilish"
          and "Literals.java: 1 ta qoida buzilishi" in out_mix),
+        (".kt: tekshirilmadi va rc 3",
+         code_kt == 3 and out_kt.strip()
+         == "src/main/kotlin/shop/Bad.kt: tekshirilmadi (faqat .java)"),
+        ("ko'p faylda .kt: qator, yig'ma va rc 3",
+         code_kt2 == 3 and "Bad.kt: tekshirilmadi (faqat .java)" in out_kt2
+         and out_kt2.strip().split("\n")[-1] == "check_code: 1 fayl, 0 buzilish"),
+        ("buzilish bo'lsa .kt bilan ham rc 1",
+         code_mix == 1 and "README.md: tekshirilmadi" in out_mix),
     ]
     failures += report(rows)
     total += len(rows)
@@ -347,16 +440,18 @@ def main():
     total += len(rows)
 
     print("\n== Hook javobi (zanjir bajarilgan) ==")
-    for path in (BAD, GOOD, MEDIUM):
+    for path in (BAD, GOOD, MEDIUM, TX_AFTER):
         prepare(path)
     raw_bad = run_hook(BAD)
     raw_good = run_hook(GOOD)
     raw_medium = run_hook(MEDIUM)
+    raw_after = run_hook(TX_AFTER)
     medium = json.loads(raw_medium).get("hookSpecificOutput", {}) if raw_medium else {}
     rows = [
         ("yuqori daraja block qaytaradi", decision(raw_bad) == "block"),
         ("block sababida bo'lim raqami bor", "doc.sh show" in reason(raw_bad)),
         ("toza faylda jim", raw_good == ""),
+        ("afterCommit fixture da jim", raw_after == ""),
         # O'rta daraja to'smaydi, kontekst sifatida qaytadi.
         ("o'rta daraja additionalContext beradi",
          medium.get("hookEventName") == "PostToolUse"
@@ -370,6 +465,74 @@ def main():
         ("tool_response toza faylda jim",
          run_hook(os.path.join(ROOT, "README.md"), tool_name="Edit",
                   response=GOOD) == ""),
+    ]
+    failures += report(rows)
+    total += len(rows)
+
+    print("\n== Edit: faqat yangi topilma ==")
+    # Eski kodga har Edit da block modelni tegilmagan qatorni tuzatishga
+    # undaydi. originalFile bilan solishtiriladi: mazmun bo'yicha, shuning
+    # uchun yuqorida satr qo'shilsa ham eski topilma eski bo'lib qoladi.
+    with open(BAD, encoding="utf-8") as handle:
+        bad_text = handle.read()
+    with open(MEDIUM, encoding="utf-8") as handle:
+        medium_text = handle.read()
+    unrelated = bad_text.replace('"e.printStackTrace() satr ichida"', '"boshqa matn"')
+    shifted = "// sarlavha\n\n" + bad_text
+    no_trace = bad_text.replace("e.printStackTrace();", 'log.warn("x", e);')
+    twice = bad_text.replace("e.printStackTrace();",
+                             "e.printStackTrace();\n            e.printStackTrace();")
+    raw_unrel = run_hook(BAD, tool_name="Edit", original=unrelated)
+    raw_shift = run_hook(BAD, tool_name="Edit", original=shifted)
+    raw_new = run_hook(BAD, tool_name="Edit", original=no_trace)
+    raw_null = run_hook(BAD, tool_name="Write", original=None)
+    raw_med = run_hook(MEDIUM, tool_name="Edit", original=medium_text)
+    raw_med_new = run_hook(MEDIUM, tool_name="Edit",
+                           original=medium_text.replace('System.out.println("x");', ""))
+    rows = [
+        ("aloqasiz Edit: block yo'q, jim", raw_unrel == ""),
+        ("satrlar surilgan: baribir jim", raw_shift == ""),
+        ("printStackTrace qo'shgan Edit: block",
+         decision(raw_new) == "block" and "printStackTrace" in reason(raw_new)),
+        ("block da faqat yangi topilma",
+         "1 ta qoida buzilishi" in reason(raw_new)
+         and "Bo'sh catch" not in reason(raw_new)),
+        ("originalFile null (yangi fayl): hammasi", decision(raw_null) == "block"
+         and "6 ta qoida buzilishi" in reason(raw_null)),
+        ("o'rta daraja eski: additionalContext ham yo'q", raw_med == ""),
+        ("o'rta daraja yangi: additionalContext",
+         "System.out" in context_of(raw_med_new) and decision(raw_med_new) is None),
+        # Eski faylda ikkita bir xil satr, yangisida bitta: hech biri yangi
+        # emas. Teskarisi: bittasi bor joyga ikkinchisi qo'shilsa, bittasi yangi.
+        ("multiset: bir xil satrdan biri o'chsa yangi topilma yo'q",
+         check_code.only_new(check_code.check_text(bad_text, BAD), bad_text,
+                             twice, BAD) == []),
+        ("multiset: bir xil satr qo'shilsa bittasi yangi",
+         len(check_code.only_new(check_code.check_text(twice, BAD), twice,
+                                 bad_text, BAD)) == 1),
+    ]
+    failures += report(rows)
+    total += len(rows)
+
+    print("\n== Java bo'lmagan yo'l: erta chiqish ==")
+    # .md, .py yozuvi ko'pchilik: docref va state yuklanmasdan chiqiladi.
+    probe = ("import sys; sys.path.insert(0, %r); sys.argv = ['check_code.py']; "
+             "import check_code; rc = check_code.main(); "
+             "print(rc, 'docref' in sys.modules, 'state' in sys.modules)" % HERE)
+    payload = json.dumps({"tool_name": "Edit",
+                          "tool_input": {"file_path": os.path.join(ROOT, "README.md")}})
+    proc = subprocess.run([sys.executable, "-c", probe], input=payload,
+                          capture_output=True, text=True, cwd=ROOT)
+    reexport = subprocess.run(
+        [sys.executable, "-c", "import sys; sys.path.insert(0, %r); "
+         "from check_code import hint, in_clone, quote, tool_cmd; "
+         "print(callable(tool_cmd) and callable(hint))" % HERE],
+        capture_output=True, text=True, cwd=ROOT)
+    rows = [
+        (".md yozuvi: chiqish yo'q, docref va state yuklanmadi",
+         proc.stdout.strip() == "0 False False"),
+        ("docref nomlari check_code dan import qilinadi (rules_for, budget)",
+         reexport.stdout.strip() == "True"),
     ]
     failures += report(rows)
     total += len(rows)
