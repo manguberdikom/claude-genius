@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """guard.py uchun sinovlar.
 
-    python3 tools/test_guard.py
+    python3 tools/test_guard.py [-k matn] [--vaqt [ms]]
 
 Sinov matnlari shu faylda turadi, Bash buyrug'ida emas: aks holda guard
 o'z sinovini haqiqiy chaqiruv deb to'sib qo'yadi.
@@ -33,6 +33,7 @@ for _key in [k for k in os.environ if k.startswith("DOC_MAX_")]:
     del os.environ[_key]
 sys.path.insert(0, HERE)
 import guard as G  # noqa: E402
+import testkit  # noqa: E402
 
 # Chegaradan ancha katta bob (guard.py MAX_BYTES).
 BIG = "docs/patterns/25-anti-patternlar.md"
@@ -459,20 +460,60 @@ HINT_PATH_RE = re.compile(r'"([^"]*(?:tools/[\w.-]+|CLAUDE\.md))"'
                           r'|([^\s"]*(?:tools/[\w.-]+|CLAUDE\.md))')
 
 
-def run_guard(payload, cwd, root=None):
-    """`root` berilsa CLAUDE_PROJECT_DIR shunga qo'yiladi (hookio.active)."""
-    raw = "not json" if payload is None else json.dumps(payload)
-    environ = os.environ if root is None else dict(os.environ,
-                                                   CLAUDE_PROJECT_DIR=root)
+# Jarayon chegarasini sinaydigan holatlar subprocess bilan yuradi, qolgani
+# jarayon ichida (testkit.call_main): har holatga Python ishga tushirish
+# suite vaqtining deyarli hammasi edi. Holat nomi -> uzatish usuli.
+# Qator matni va natijasi jarayon ichidagi holatlar bilan bir xil.
+E2E = {
+    # Buzuq kirish: hook jim, chaqiruvni to'smaydi.
+    "buzuq JSON": {},
+    # To'siq va maslahat matni haqiqiy stdout orqali JSON bo'lib chiqadi.
+    "katta bob, chegarasiz Read": {},
+    # Nisbiy yo'l jarayonning o'z papkasidan, ROOT zaxirasi bilan topiladi.
+    "boshqa cwd, nisbiy yo'l": {},
+    # PowerShell 5.1 pipe boshiga BOM qo'yadi.
+    "docker compose up": {"bom": True},
+    # Windows da matnli stdin cp1252: hookio baytlarni o'qishi kerak.
+    # U+014D ning UTF-8 baytida 0x8D bor, cp1252 uni o'qiy olmaydi.
+    "docker run": {"env": {"PYTHONIOENCODING": "cp1252"},
+                   "extra": {"description": "Konteyner ō"}},
+    # CLAUDE_PROJECT_DIR berilmasa ildiz payload dagi cwd dan olinadi.
+    "psql uzoq hostga": {"env": {"CLAUDE_PROJECT_DIR": None},
+                         "extra": {"cwd": ROOT}},
+}
+
+
+def run_guard(payload, cwd, root=None, e2e=None):
+    """`root` berilsa CLAUDE_PROJECT_DIR shunga qo'yiladi (hookio.active).
+
+    `e2e` berilsa (E2E qiymati) guard alohida jarayonda yuradi.
+    """
+    env = {} if root is None else {"CLAUDE_PROJECT_DIR": root}
+    if e2e is None:
+        raw = "not json" if payload is None else json.dumps(payload)
+        out = testkit.call_main(G.main, raw, cwd=cwd, env=env).stdout.strip()
+        return json.loads(out)["hookSpecificOutput"] if out else {}
+    if payload is not None:
+        payload = dict(payload, **e2e.get("extra", {}))
+    raw = (b"not json" if payload is None
+           else json.dumps(payload, ensure_ascii=False).encode("utf-8"))
+    if e2e.get("bom"):
+        raw = b"\xef\xbb\xbf" + raw
+    environ = dict(os.environ, **env)
+    for key, value in e2e.get("env", {}).items():
+        if value is None:
+            environ.pop(key, None)
+        else:
+            environ[key] = value
     out = subprocess.run(
-        [sys.executable, GUARD], input=raw, capture_output=True, text=True,
+        [sys.executable, GUARD], input=raw, capture_output=True,
         cwd=cwd, timeout=20, env=environ,
-    ).stdout.strip()
+    ).stdout.decode("utf-8").strip()
     return json.loads(out)["hookSpecificOutput"] if out else {}
 
 
-def verdict(payload, cwd=ROOT):
-    return run_guard(payload, cwd).get("permissionDecision", ALLOW)
+def verdict(payload, cwd=ROOT, e2e=None):
+    return run_guard(payload, cwd, e2e=e2e).get("permissionDecision", ALLOW)
 
 
 def hint_paths(cwd):
@@ -488,7 +529,106 @@ def hint_paths(cwd):
     return seen, broken
 
 
-def main():
+def verdict_line(name, want, got):
+    return [("%-30s kutilgan=%-5s olingan=%s" % (name, want, got), got == want)]
+
+
+def decision_case(name, want, payload, cwd=ROOT):
+    return name, lambda: verdict_line(name, want, verdict(payload, cwd, E2E.get(name)))
+
+
+# Qaror to'g'ri bo'lsa ham sabab noto'g'ri bo'lishi mumkin: flyway:clean
+# avval 'Test vaqti: clean' bilan to'silardi.
+REASONS = [
+    ("subagent sababi", sub("psql shop"), G.SUBAGENT_NOTE, None),
+    ("asosiy oqimda subagent sababi yo'q", bash("psql shop"), None, G.SUBAGENT_NOTE),
+    ("flyway:clean sababi", bash("./mvnw flyway:clean"),
+     "Jonli bazani o'chiradi", "Test vaqti"),
+    ("java yozish sababi", bash("sed -i s/a/b/ Foo.java"),
+     "Java faylni Edit yoki Write bilan yozing: check_code va rules_for "
+     "faqat shu asboblarda ishlaydi", None),
+]
+
+
+def reason_case(name, payload, need, avoid):
+    def run():
+        reason = run_guard(payload, ROOT).get("permissionDecisionReason", "")
+        ok = (need is None or need in reason) and (avoid is None or avoid not in reason)
+        return [("%-30s %s" % (name, reason.split("\n")[0][:60]), ok)]
+    return name, run
+
+
+def hint_case(name, other):
+    """Maslahatdagi har yo'l chaqiruvchi turgan papkadan ochilishi kerak."""
+    def run():
+        cwd = tempfile.mkdtemp() if other else ROOT
+        try:
+            seen, broken = hint_paths(cwd)
+        finally:
+            if other:
+                shutil.rmtree(cwd, ignore_errors=True)
+        return [("%-30s yo'l=%d ochilmaydi=%s" % (name, seen, ", ".join(broken) or "-"),
+                 seen > 0 and not broken)]
+    return name, run
+
+
+# Global o'rnatishda hook har proyektda yuradi. Java bo'lmagan
+# proyektda docker va psql to'sig'i o'rinsiz: qo'riqchi jim o'tadi.
+GATING = [
+    ("Java emas: docker run o'tadi", ALLOW, ("main.py",),
+     {"tool_name": "Bash", "tool_input": {"command": "docker run x"}}),
+    ("Java emas: psql o'tadi", ALLOW, ("main.py",),
+     {"tool_name": "Bash", "tool_input": {"command": "psql db"}}),
+    ("Java emas: katta bob ham o'tadi", ALLOW, ("main.py",),
+     {"tool_name": "Read", "tool_input": {"file_path": BIG}}),
+    ("pom.xml: docker run ask beradi", ASK, ("pom.xml",),
+     {"tool_name": "Bash", "tool_input": {"command": "docker run x"}}),
+    ("pom.xml: psql ask beradi", ASK, ("pom.xml",),
+     {"tool_name": "Bash", "tool_input": {"command": "psql db"}}),
+    ("backend/pom.xml: ask beradi", ASK, ("backend/pom.xml",),
+     {"tool_name": "Bash", "tool_input": {"command": "docker run x"}}),
+]
+
+
+def gating_case(name, want, files, payload):
+    def run():
+        tmp = tempfile.mkdtemp(prefix="guard_gate_")
+        try:
+            for rel in files:
+                full = os.path.join(tmp, rel.replace("/", os.sep))
+                os.makedirs(os.path.dirname(full), exist_ok=True)
+                io.open(full, "w", encoding="utf-8").write("")
+            got = run_guard(payload, ROOT, root=tmp).get(
+                "permissionDecision", ALLOW)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+        return verdict_line(name, want, got)
+    return name, run
+
+
+def case_hooks_off():
+    """GENIUS_HOOKS=off: klonda ham jim. Muhit jarayonga meros o'tadi."""
+    off = subprocess.run(
+        [sys.executable, GUARD],
+        input=json.dumps({"tool_name": "Bash",
+                          "tool_input": {"command": "docker run x"}}),
+        capture_output=True, text=True, cwd=ROOT, timeout=20,
+        env=dict(os.environ, GENIUS_HOOKS="off")).stdout.strip()
+    return [("%-30s kutilgan=%-5s olingan=%s"
+             % ("GENIUS_HOOKS=off: jim", "bo'sh", off[:40] or "bo'sh"), off == "")]
+
+
+ALL_CASES = (
+    [decision_case(name, want, payload, *rest) for name, want, payload, *rest in CASES]
+    + [reason_case(*row) for row in REASONS]
+    + [hint_case("maslahat yo'llari, klon", False),
+       hint_case("maslahat yo'llari, boshqa proyekt", True)]
+    + [gating_case(*row) for row in GATING]
+    + [("GENIUS_HOOKS=off: jim", case_hooks_off)]
+)
+
+
+def main(argv=()):
     missing = [p for p in (BIG, MID, SMALL) if not os.path.exists(os.path.join(ROOT, p))]
     if missing:
         print("sinov fayllari yo'q: %s" % ", ".join(missing))
@@ -504,95 +644,8 @@ def main():
     if not os.path.exists(os.path.join(ROOT, "index", "sections.tsv")):
         subprocess.run([sys.executable, os.path.join(HERE, "build_index.py")],
                        capture_output=True, timeout=300)
-
-    failures = 0
-    for name, want, payload, *rest in CASES:
-        got = verdict(payload, rest[0] if rest else ROOT)
-        ok = got == want
-        failures += not ok
-        print("%-4s %-30s kutilgan=%-5s olingan=%s"
-              % ("OK" if ok else "XATO", name, want, got))
-
-    # Qaror to'g'ri bo'lsa ham sabab noto'g'ri bo'lishi mumkin: flyway:clean
-    # avval 'Test vaqti: clean' bilan to'silardi.
-    reasons = [
-        ("subagent sababi", sub("psql shop"), G.SUBAGENT_NOTE, None),
-        ("asosiy oqimda subagent sababi yo'q", bash("psql shop"), None, G.SUBAGENT_NOTE),
-        ("flyway:clean sababi", bash("./mvnw flyway:clean"),
-         "Jonli bazani o'chiradi", "Test vaqti"),
-        ("java yozish sababi", bash("sed -i s/a/b/ Foo.java"),
-         "Java faylni Edit yoki Write bilan yozing: check_code va rules_for "
-         "faqat shu asboblarda ishlaydi", None),
-    ]
-    for name, payload, need, avoid in reasons:
-        reason = run_guard(payload, ROOT).get("permissionDecisionReason", "")
-        ok = (need is None or need in reason) and (avoid is None or avoid not in reason)
-        failures += not ok
-        print("%-4s %-30s %s" % ("OK" if ok else "XATO", name, reason.split("\n")[0][:60]))
-
-    # Maslahatdagi har yo'l chaqiruvchi turgan papkadan ochilishi kerak.
-    other = tempfile.mkdtemp()
-    try:
-        checks = [("maslahat yo'llari, klon", ROOT),
-                  ("maslahat yo'llari, boshqa proyekt", other)]
-        for name, cwd in checks:
-            seen, broken = hint_paths(cwd)
-            ok = seen > 0 and not broken
-            failures += not ok
-            print("%-4s %-30s yo'l=%d ochilmaydi=%s"
-                  % ("OK" if ok else "XATO", name, seen, ", ".join(broken) or "-"))
-    finally:
-        shutil.rmtree(other, ignore_errors=True)
-
-    # Global o'rnatishda hook har proyektda yuradi. Java bo'lmagan
-    # proyektda docker va psql to'sig'i o'rinsiz: qo'riqchi jim o'tadi.
-    gating = [
-        ("Java emas: docker run o'tadi", ALLOW, ("main.py",),
-         {"tool_name": "Bash", "tool_input": {"command": "docker run x"}}),
-        ("Java emas: psql o'tadi", ALLOW, ("main.py",),
-         {"tool_name": "Bash", "tool_input": {"command": "psql db"}}),
-        ("Java emas: katta bob ham o'tadi", ALLOW, ("main.py",),
-         {"tool_name": "Read", "tool_input": {"file_path": BIG}}),
-        ("pom.xml: docker run ask beradi", ASK, ("pom.xml",),
-         {"tool_name": "Bash", "tool_input": {"command": "docker run x"}}),
-        ("pom.xml: psql ask beradi", ASK, ("pom.xml",),
-         {"tool_name": "Bash", "tool_input": {"command": "psql db"}}),
-        ("backend/pom.xml: ask beradi", ASK, ("backend/pom.xml",),
-         {"tool_name": "Bash", "tool_input": {"command": "docker run x"}}),
-    ]
-    for name, want, files, payload in gating:
-        tmp = tempfile.mkdtemp(prefix="guard_gate_")
-        try:
-            for rel in files:
-                full = os.path.join(tmp, rel.replace("/", os.sep))
-                os.makedirs(os.path.dirname(full), exist_ok=True)
-                io.open(full, "w", encoding="utf-8").write("")
-            got = run_guard(payload, ROOT, root=tmp).get(
-                "permissionDecision", ALLOW)
-        finally:
-            shutil.rmtree(tmp, ignore_errors=True)
-        ok = got == want
-        failures += not ok
-        print("%-4s %-30s kutilgan=%-5s olingan=%s"
-              % ("OK" if ok else "XATO", name, want, got))
-
-    # GENIUS_HOOKS=off: klonda ham jim.
-    off = subprocess.run(
-        [sys.executable, GUARD],
-        input=json.dumps({"tool_name": "Bash",
-                          "tool_input": {"command": "docker run x"}}),
-        capture_output=True, text=True, cwd=ROOT, timeout=20,
-        env=dict(os.environ, GENIUS_HOOKS="off")).stdout.strip()
-    ok = off == ""
-    failures += not ok
-    print("%-4s %-30s kutilgan=%-5s olingan=%s"
-          % ("OK" if ok else "XATO", "GENIUS_HOOKS=off: jim", "bo'sh",
-             off[:40] or "bo'sh"))
-
-    total = len(CASES) + len(reasons) + len(checks) + len(gating) + 1
-    print("\n%d/%d o'tdi" % (total - failures, total))
-    return 1 if failures else 0
+    return testkit.run_cases(ALL_CASES, argv)
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))

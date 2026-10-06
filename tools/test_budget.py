@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """budget.py uchun sinovlar.
 
-    python3 tools/test_budget.py
+    python3 tools/test_budget.py [-k matn] [--vaqt [ms]]
 
 Hisoblagich ishlashi yetarli emas: u sanamasligi kerak bo'lgan narsani
 sanab qo'ysa (o'qish asbobini yoki boshqa hook chaqiruvini), zanjir
@@ -34,6 +34,19 @@ SESSION = "sinov"
 # o'z sinovlari tools/test_hookio.py da.
 ROOT = os.path.dirname(HERE)
 os.environ["CLAUDE_PROJECT_DIR"] = ROOT
+# budget import qilinishidan OLDIN: modul holat papkasini importda oladi,
+# parallel holatdagi jarayonlar ham shu papkani meros oladi.
+os.environ["GENIUS_STATE_DIR"] = STATE
+sys.path.insert(0, HERE)
+import budget  # noqa: E402
+import testkit  # noqa: E402
+
+budget.STATE_DIR, budget.LOG = STATE, LOG
+
+# Parallel holatdagi jarayon: import tugagach "R" qatorini chiqaradi, keyin
+# stdin ni kutadi. Ota jarayon hamma "R" ni o'qigach payloadlarni beradi.
+READY = ("import sys; sys.path.insert(0, %r); import budget; "
+         "print('R', flush=True); sys.exit(budget.main())" % HERE)
 
 
 def env_for(session=SESSION):
@@ -44,11 +57,16 @@ def env_for(session=SESSION):
     return env
 
 
+def call(args=(), stdin="", session=SESSION, cwd=None):
+    """budget.main() jarayon ichida. session None bo'lsa muhitda sessiya yo'q."""
+    return testkit.call_main(budget.main, stdin, argv=["budget.py"] + list(args),
+                             cwd=cwd or STATE,
+                             env={"CLAUDE_CODE_SESSION_ID": session})
+
+
 def run(*args, session=SESSION, cwd=None):
-    proc = subprocess.run([sys.executable, TOOL] + list(args),
-                          capture_output=True, text=True,
-                          cwd=cwd or STATE, env=env_for(session))
-    return proc.returncode, proc.stdout
+    res = call(args, session=session, cwd=cwd)
+    return res.returncode, res.stdout
 
 
 def payload(tool_name, actor, session=SESSION, cwd=None, call_id=None):
@@ -69,24 +87,24 @@ def decision(out):
 
 
 def hook(tool_name, actor, session=SESSION, cwd=None, call_id=None):
-    proc = subprocess.run([sys.executable, TOOL],
-                          input=payload(tool_name, actor, session, cwd, call_id),
-                          capture_output=True, text=True, cwd=STATE,
-                          env=env_for())
-    return decision(proc.stdout)
+    return decision(call(stdin=payload(tool_name, actor, session, cwd, call_id)).stdout)
 
 
 def parallel(payloads):
     """Hamma jarayon stdin ni kutib turganda payload bir vaqtda beriladi.
 
     Kutishsiz jarayonlar ishga tushish vaqti bilan navbatlashib qoladi va
-    qulfsiz kod ham sinovdan o'tib ketadi.
+    qulfsiz kod ham sinovdan o'tib ketadi. Tayyorlik qat'iy kutish bilan
+    emas, har jarayonning "R" qatori bilan aniqlanadi: sekin runnerda ham
+    payload hamma jarayon importni tugatgandan keyin beriladi.
     """
-    procs = [subprocess.Popen([sys.executable, TOOL], stdin=subprocess.PIPE,
+    procs = [subprocess.Popen([sys.executable, "-c", READY], stdin=subprocess.PIPE,
                               stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                               text=True, cwd=STATE, env=env_for())
              for _ in payloads]
-    time.sleep(0.3)
+    for proc in procs:
+        if proc.stdout.readline().strip() != "R":
+            raise RuntimeError("budget jarayoni tayyor emas")
     for proc, data in zip(procs, payloads):
         proc.stdin.write(data)
         proc.stdin.close()
@@ -107,9 +125,7 @@ def hook_group(actor, group, call_id=None):
             "session_id": SESSION}
     if call_id:
         data["tool_use_id"] = call_id
-    proc = subprocess.run([sys.executable, TOOL], input=json.dumps(data),
-                          capture_output=True, text=True, cwd=STATE, env=env_for())
-    return decision(proc.stdout)
+    return decision(call(stdin=json.dumps(data)).stdout)
 
 
 def state():
@@ -242,6 +258,7 @@ def case_notanish_aktyor(_):
 
 
 def case_buzuq_json(_):
+    """E2E: alohida jarayon, chiqish kodi haqiqiy sys.exit dan."""
     proc = subprocess.run([sys.executable, TOOL], input="not json",
                           capture_output=True, text=True, cwd=STATE,
                           env=env_for())
@@ -333,10 +350,8 @@ def case_yangi_sorov_nolga(_):
     hook("Agent", "dasturchi")
     hook("Agent", "dasturchi")
     hook("Agent", "dasturchi", "boshqa")
-    proc = subprocess.run(
-        [sys.executable, TOOL], capture_output=True, text=True, cwd=STATE,
-        env=env_for(), input=json.dumps({"hook_event_name": "UserPromptSubmit",
-                                         "session_id": SESSION, "prompt": "x"}))
+    proc = call(stdin=json.dumps({"hook_event_name": "UserPromptSubmit",
+                                  "session_id": SESSION, "prompt": "x"}))
     calls = state()["sessions"]
     return (proc.returncode == 0 and proc.stdout == ""
             and calls[SESSION]["calls"] == {}
@@ -402,21 +417,13 @@ CASES = [
 ]
 
 
-def main():
-    failures = 0
+def main(argv=()):
     try:
-        for name, fn in CASES:
-            try:
-                ok = bool(fn(None))
-            except Exception as exc:
-                ok, name = False, "%s (%s)" % (name, exc)
-            failures += not ok
-            print("%-4s %s" % ("OK" if ok else "XATO", name))
+        return testkit.run_cases(
+            [(name, lambda fn=fn: bool(fn(None))) for name, fn in CASES], argv)
     finally:
         shutil.rmtree(STATE, ignore_errors=True)
-    print("\n%d/%d o'tdi" % (len(CASES) - failures, len(CASES)))
-    return 1 if failures else 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))
