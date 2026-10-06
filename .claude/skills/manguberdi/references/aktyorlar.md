@@ -199,7 +199,8 @@ sanaydi, hook matcher'i `SendMessage` ni ushlagan o'rnatishda.
 
 Chaqiruv behuda ketgan bo'lsa (aktyor boshqa sababdan yiqildi yoki
 foydalanuvchi to'xtatdi):
-`python3 tools/budget.py --tiklash <aktyor> [--guruh <id>]`.
+`python3 tools/budget.py --tiklash <aktyor> [--guruh <id>]`. guard buni
+foydalanuvchidan so'raydi.
 
 ## Ikkinchi chaqiruvning oldini olish
 

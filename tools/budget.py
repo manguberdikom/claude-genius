@@ -196,8 +196,31 @@ def here():
         return ""
 
 
+def _number(value):
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _sound(slot):
+    """Slot ishlatsa bo'ladigan shaklda bo'lsa o'zi (calls tuzatilgan), aks
+    holda None. `seen: null` yoki `started: "x"` keyingi `now - ...` da
+    TypeError berardi va budjet hooki HAMMA sessiyada jim o'chardi (KD-K2)."""
+    if not isinstance(slot, dict):
+        return None
+    if any(key in slot and not _number(slot[key]) for key in ("started", "seen")):
+        return None
+    calls = slot.get("calls")
+    slot["calls"] = ({k: v for k, v in calls.items() if _number(v)}
+                     if isinstance(calls, dict) else {})
+    if not isinstance(slot.get("ids", []), list):
+        slot["ids"] = []
+    return slot
+
+
 def load():
-    """{"sessions": {kalit: hisob}}. Eski tekis shakl bo'sh holat deb olinadi."""
+    """{"sessions": {kalit: hisob}}. Eski tekis shakl bo'sh holat deb olinadi.
+
+    Buzuq slot shu yerda bir marta tashlanadi: save, fresh, cli_key va
+    slot_of undan keyin faqat son va dict ko'radi."""
     try:
         with open(LOG, encoding="utf-8") as handle:
             data = json.load(handle)
@@ -205,6 +228,12 @@ def load():
         data = None
     if not isinstance(data, dict) or not isinstance(data.get("sessions"), dict):
         data = {"sessions": {}}
+    sessions = {}
+    for key, slot in data["sessions"].items():
+        slot = _sound(slot)
+        if slot is not None:
+            sessions[key] = slot
+    data["sessions"] = sessions
     return data
 
 

@@ -46,17 +46,31 @@ klon ochiq repo, boshqa proyekt memorysi esa uning tashqarisida turadi
 (GENIUS_MEMORY_DIR, R0.5).
 
 3. Test vaqti. To'liq suite (`./gradlew test`, `mvn verify`) 5-8 daqiqa,
-   `clean`, `--rerun-tasks` va `--no-daemon` esa inkremental build va
-   daemon ni yo'qotib, keyingi har yurishni ham sekinlashtiradi. Bular
-   ham `deny`: arzon yo'l har doim bir xil (`run_tests.py`), u
-   maqsadli, modul va to'liq rejimni ham beradi. `ask` bo'lsa zanjir
-   har safar odamni kutib to'xtardi, holbuki bu yerda qaror yo'q.
-   Filtrli yurish (`--tests`, `-Dtest=`) va testsiz build (`-x test`,
-   `-DskipTests`) o'tadi.
+   `--rerun-tasks` va `--no-daemon` esa inkremental build va daemon ni
+   yo'qotib, keyingi har yurishni ham sekinlashtiradi. Bular `deny`:
+   arzon yo'l har doim bir xil (`run_tests.py`), u maqsadli, modul va
+   to'liq rejimni ham beradi. `ask` bo'lsa zanjir har safar odamni
+   kutib to'xtardi, holbuki bu yerda qaror yo'q. Filtrli yurish
+   (`--tests`, `-Dtest=`) va testsiz build (`-x test`, `-DskipTests`)
+   o'tadi. Yagona vazifa sifatidagi `clean` (`./gradlew clean`,
+   `mvn clean`) esa `ask`: generatsiya qilingan kod eskirganda u
+   haqiqatan kerak va buni faqat odam biladi. `clean` test, build yoki
+   install bilan birga bo'lsa `deny` qoladi, test sharti undan oldin
+   tekshiriladi: aks holda `mvn clean install` bir bosish bilan to'liq
+   suite ni ochardi (HK-H12).
 
-Chegaralangan o'qish o'tadi: kichik bo'lakli Read, sed oralig'i, grep, head,
-`Get-Content -TotalCount`. Tashxis buyruqlari ham o'tadi: docker ps,
-docker logs, docker images, psql --version.
+Chegaralangan o'qish o'lchanadi, sanalmaydi: `head -n N`, `head -c N`,
+`tail -n +K`, `sed -n 'A,Bp'` va `Get-Content -TotalCount N` qaytaradigan
+bayt Read dagi kabi hisoblanadi, ya'ni bir xil bo'lakka bir xil qaror.
+Quvurda oxirgi bosqich hal qiladi: `cat BIG | wc -l`, `cat BIG | head`,
+`nl BIG | sed -n '200,240p'` va `cat BIG > nusxa` o'tadi, `grep ''`,
+`awk '1'` va `sed ''` esa butun fayl (HK-H3). Oddiy `grep naqsh` filtr
+deb o'tadi. Tashxis buyruqlari ham o'tadi: docker ps, docker logs,
+docker images, psql --version.
+
+`budget.py --tiklash` `ask` (subagentda `deny`): u aktyor chegarasini
+ochadi va buni model o'zi qilmasligi kerak. `--holat` va
+`--yangi-vazifa` erkin (XV-O3).
 
 Bash va PowerShell asboblari bir xil tekshiriladi: Windows da Git Bash
 bo'lmasa PowerShell asbobi yoqiladi, va faqat Bash tekshirilsa docker,
@@ -102,17 +116,8 @@ CMD = (r"(?:^|[|;&\n(]\s*|\$\(\s*|`\s*)"
        r"|command\s+"
        r"|[A-Za-z_]\w*=\S*\s+)*")
 
-# Faylni boshdan oxirigacha oqizadigan buyruqlar. Argumentlar oralig'ida
-# '>' bo'lishi mumkin emas: shunda `cat > fayl <<EOF ...` kabi YOZISH
-# buyrug'i noto'g'ri to'silmaydi.
-SLURP_RE = re.compile(CMD + r"(?:cat|bat|less|more|most|view|tac|nl)\s+([^|;&\n>]*)")
-# PowerShell da o'qish fe'li registrga befarq; `cat` va `type` ham
-# Get-Content taxallusi. Bash da `type` faylni o'qimaydi, shuning uchun bu
-# naqsh faqat PowerShell asbobiga qo'llanadi.
-PS_SLURP_RE = re.compile(CMD + r"(?:get-content|gc|type|cat)\s+([^|;&\n>]*)", re.I)
-# Get-Content ning satr chegarasi (First va Head TotalCount taxallusi,
-# Last esa Tail taxallusi): bo'lak cheklangan, o'qish o'tadi.
-PS_BOUNDED_RE = re.compile(r"(?:^|\s)-(?:TotalCount|Head|Tail|First|Last)\b", re.I)
+# Buyruq boshidagi prefiks (sudo, timeout, VAR=...): bosqich matnida.
+PREFIX_RE = re.compile(CMD)
 
 # Bash orqali .java ga yozish: qayta yo'naltirish, tee, joyida sed/perl.
 # Nom oxirida `(?![\w.])`: `Foo.java.txt` va `Foo.javadoc` Java fayl emas.
@@ -223,14 +228,32 @@ def split_args(text):
         return text.split()
 
 
+CLEAN_WHY = ("clean inkremental build ni o'chiradi: keyingi har yurish hammasini "
+             "qaytadan kompilyatsiya qiladi. Gradle va Maven o'zgargan faylni o'zi "
+             "kuzatadi")
+CLEAN_HINT = (
+    "Generatsiya qilingan kod yoki annotation processor natijasi eskirgan\n"
+    "bo'lsa o'rinli. Keyin test maqsadli yuradi:\n"
+    "  {run_tests} --diff --yurgiz")
+
+
+def is_clean(word):
+    return word == "clean" or word.endswith(":clean")
+
+
 def build_problem(tool, args):
-    """(nima, nega) yoki None. tool: gradle yoki maven."""
+    """(qaror, nima, nega) yoki None. tool: gradle yoki maven.
+
+    Test sharti `clean` dan oldin: `mvn clean install` to'liq suite, va
+    clean ning `ask` i uni ochib yubormasligi kerak (HK-H12). Yagona
+    vazifa sifatidagi clean `ask`, boshqa vazifa bilan birga `deny`.
+    """
     words, i = [], 0
     filtered = skipped = False
     while i < len(args):
         arg = args[i]
         if arg in ("--rerun-tasks", "--no-daemon") or arg == "-Dorg.gradle.daemon=false":
-            return (arg, "%s inkremental build va daemon ni yo'qotadi: keyingi har "
+            return ("deny", arg, "%s inkremental build va daemon ni yo'qotadi: keyingi har "
                          "yurish hammasini qaytadan kompilyatsiya qiladi" % arg)
         if tool == "gradle" and arg == "--tests":
             filtered = True
@@ -247,11 +270,6 @@ def build_problem(tool, args):
         if not arg.startswith("-") and arg not in DB_WIPE_TASKS:
             words.append(arg)
         i += 1
-    if any(w == "clean" or w.endswith(":clean") for w in words):
-        return ("clean", "clean inkremental build ni o'chiradi: keyingi har yurish "
-                         "hammasini qaytadan kompilyatsiya qiladi. Gradle va Maven "
-                         "o'zgargan faylni o'zi kuzatadi; build holati haqiqatan "
-                         "buzilgan bo'lsa, buni foydalanuvchiga ayting")
     if tool == "gradle":
         runs = [w for w in words if GRADLE_TEST_TASK.search(w)]
     else:
@@ -265,7 +283,13 @@ def build_problem(tool, args):
                      else any(w in MAVEN_PACKAGE_PHASES for w in runs))
         if packaging:
             why += ".\n" + PACKAGE_NOTE
-        return ("filtrsiz test: %s" % " ".join(runs), why)
+        return ("deny", "filtrsiz test: %s" % " ".join(runs), why)
+    if any(is_clean(w) for w in words):
+        if all(is_clean(w) for w in words):
+            return ("ask", "clean", CLEAN_WHY)
+        return ("deny", "clean boshqa vazifa bilan birga",
+                CLEAN_WHY + ". Build holati haqiqatan buzilgan bo'lsa clean ni "
+                "alohida buyruq qiling (foydalanuvchi tasdiqlaydi), keyin vazifani")
     return None
 
 
@@ -273,9 +297,13 @@ def check_build(command):
     """Buyruq o'rni qo'shtirnoqsiz matndan topiladi (`grep 'gradle test'`
     chaqiruv emas), argumentlar esa asl matndan o'qiladi: `-Dtest='A,B'`
     filtri bo'shatilsa, maqsadli yurish filtrsiz deb to'silardi.
-    strip_quoted uzunlikni saqlaydi, shuning uchun oraliq bir xil."""
+    strip_quoted uzunlikni saqlaydi, shuning uchun oraliq bir xil.
+
+    deny shu yerda beriladi, `ask` lar esa (sabab, maslahat) ro'yxati
+    bo'lib qaytadi: ular boshqa deny tekshiruvlaridan keyin so'raladi,
+    aks holda ruxsat to'liq suite yoki katta o'qishni ochib yuborardi."""
     base = strip_heredoc(command)
-    wipes = []
+    asks, wipes = [], []
     for match in BUILD_RE.finditer(strip_quoted(base)):
         exe = os.path.basename(match.group(1).replace("\\", "/")).lower()
         tool = "gradle" if exe.startswith("gradle") else "maven"
@@ -283,12 +311,15 @@ def check_build(command):
         args = split_args(base[match.start(2):match.end(2)].rstrip().rstrip(")`"))
         problem = build_problem(tool, args)
         if problem:
-            what, why = problem
-            decide("deny", "Test vaqti: %s.\n%s." % (what, why), BUILD_HINT)
+            verdict, what, why = problem
+            reason = "Test vaqti: %s.\n%s." % (what, why)
+            if verdict == "deny":
+                decide("deny", reason, BUILD_HINT)
+            asks.append((reason, CLEAN_HINT))
         wipes += [a for a in args if a in DB_WIPE_TASKS]
-    # deny dan keyin: to'liq suite ham bo'lsa, ruxsat uni ochib yubormasin.
     if wipes:
-        ask("Jonli bazani o'chiradi: %s." % ", ".join(wipes), DB_WIPE_HINT)
+        asks.append(("Jonli bazani o'chiradi: %s." % ", ".join(wipes), DB_WIPE_HINT))
+    return asks
 
 
 # Maslahat matnlari shablon: yo'llar to'siq paytida qo'yiladi (commands).
@@ -318,6 +349,7 @@ def commands():
             "schema": tool_cmd("schema_from_entities.py"),
             "run_tests": tool_cmd("run_tests.py"),
             "rules_for": tool_cmd("rules_for.py"),
+            "budget": tool_cmd("budget.py"),
             "claude_md": claude_md}
 
 
@@ -374,21 +406,26 @@ def watched_path(candidate):
     return None
 
 
+_LINES = {}
+
+
+def file_lines(path):
+    """Fayl satrlarining bayt uzunligi (satr oxiri bilan). Read va Bash
+    o'lchovi shu bitta ro'yxatdan: bir xil bo'lak bir xil bayt."""
+    if path not in _LINES:
+        try:
+            with open(path, "rb") as handle:
+                _LINES[path] = [len(line) for line in handle]
+        except OSError:
+            _LINES[path] = []
+    return _LINES[path]
+
+
 def slice_bytes(path, offset=None, limit=None):
     """Read qaytaradigan bo'lakning bayt hajmi: offset dan limit satr."""
     start = max(offset if isinstance(offset, int) else 1, 1) - 1
     stop = start + (limit if isinstance(limit, int) and limit > 0 else READ_DEFAULT_LINES)
-    total = 0
-    try:
-        with open(path, "rb") as handle:
-            for number, line in enumerate(handle):
-                if number >= stop:
-                    break
-                if number >= start:
-                    total += len(line)
-    except OSError:
-        return 0
-    return total
+    return sum(file_lines(path)[start:stop])
 
 
 def check_read(tool_input):
@@ -587,25 +624,586 @@ def check_memory_git(command):
                 % (verb, ", memory/".join(sorted(found))), MEMORY_HINT)
 
 
+# --- Bash va PowerShell da o'qish hajmi (HK-H3) -------------------------
+#
+# Oqim kuzatiladigan fayllar satrlarining bayt uzunligi ro'yxati, bosqich
+# uni o'zgartiradi: `head -n 40` boshidagi 40 tasini qoldiradi, `wc` va
+# oddiy `grep` uni None ga (kichik yoki noma'lum) aylantiradi. Quvurning
+# oxirgi bosqichidan chiqqan oqim kontekstga tushadi va o'shaning bayti
+# MAX_BYTES bilan solishtiriladi, Read dagi slice_bytes kabi.
+
+# Buyruqlar va quvur bosqichlari orasidagi ajratgich (qo'shtirnoq
+# niqoblangan matnda). `2>&1`, `&>` va `>&2` dagi `&` ajratgich emas.
+SPLIT_RE = re.compile(r"\|\||&&|\|&?|[;\n()`]|(?<![<>&])&(?![>&])")
+# Qayta yo'naltirish: [fd]op[&fd] [nishon]. fd faqat so'z boshida:
+# `a2>x` dagi 2 fayl nomining qismi.
+REDIRECT_RE = re.compile(r"(?:(?<![^\s])(\d+|&))?(>>|>\||>|<<<|<<-?|<)(&[\d-]*)?"
+                         r"[ \t]*([^\s<>]*)")
+# Fayl o'rniga stdout: yo'naltirilgan bo'lsa ham kontekstga tushadi.
+STDOUT_FILES = ("/dev/stdout", "/dev/stderr", "/dev/tty", "/dev/fd/1", "/dev/fd/2")
+
+# Faylni boshdan oxirigacha chiqaradigan o'quvchilar. tee argumenti esa
+# CHIQISH fayli, u oqimni o'zgartirmaydi.
+WHOLE_READERS = {"cat", "bat", "batcat", "less", "more", "most", "view", "nl", "tac"}
+# Chiqishi kichik: oqim kontekstga tushmaydi.
+SMALL_OUTPUT = {"wc", "md5sum", "sha1sum", "sha256sum", "sha512sum", "b2sum",
+                "cksum", "file", "stat", "du", "ls", "test", "[", "true", "false"}
+GREP_FAMILY = {"grep", "egrep", "fgrep", "rg"}
+AWK_FAMILY = {"awk", "gawk", "mawk", "nawk"}
+# Butun faylga mos keladigan naqsh: `grep ''` cat bilan bir xil.
+GREP_WHOLE = {"", "^", "$", ".*", "^.*", ".*$", "."}
+GREP_SMALL_FLAGS = set("clLq")
+GREP_SHORT_VALUED = set("mABCdD")
+GREP_LONG_SMALL = {"count", "files-with-matches", "files-without-match", "quiet",
+                   "silent"}
+GREP_LONG_VALUED = {"max-count", "after-context", "before-context", "context",
+                    "include", "exclude", "exclude-dir", "label", "devices",
+                    "directories", "binary-files", "color", "colour"}
+# awk dasturi butun satrni chiqaradi: `awk 1`, `awk '{print}'`.
+AWK_WHOLE = {"1", "1;", "{print}", "{print;}", "{print$0}", "{print$0;}", "NR"}
+AWK_RANGE_RE = re.compile(r"NR(>=?)(\d+)&&NR(<=?)(\d+)(?:\{print(?:\$0)?;?\})?")
+AWK_LINE_RE = re.compile(r"NR==(\d+)(?:\{print(?:\$0)?;?\})?")
+# sed buyrug'i: [manzil[,manzil]]buyruq. Manzil son, `$` yoki `+N`.
+SED_CMD_RE = re.compile(r"(?:(?<![\d$+])(\d+|\$)(?:,(\d+|\$|\+\d+))?)?([pdqQ=])")
+SED_MAX_COMMANDS = 64
+COUNT_RE = re.compile(r"([+-]?)(\d+)([a-zA-Z]{0,2})")
+COUNT_UNITS = {"": 1, "b": 512, "k": 1024, "kb": 1000, "kib": 1024,
+               "m": 1024 ** 2, "mb": 1000 ** 2, "g": 1024 ** 3, "gb": 1000 ** 3}
+# PowerShell: o'qish fe'li va quvur cmdlet lari (registrga befarq).
+PS_READERS = {"get-content", "gc", "type", "cat"}
+PS_GC_VALUED = {"-path", "-literalpath", "-pspath", "-encoding", "-readcount",
+                "-delimiter", "-stream", "-filter", "-include", "-exclude"}
+PS_PATH_FLAGS = {"-path", "-literalpath", "-pspath"}
+PS_HEAD_FLAGS = {"-totalcount", "-head", "-first"}
+PS_TAIL_FLAGS = {"-tail", "-last"}
+PS_SELECT = {"select-object", "select"}
+PS_SMALL = {"select-string", "sls", "where-object", "where", "?", "findstr",
+            "measure-object", "measure", "out-null", "out-file", "set-content",
+            "add-content"}
+
+
+def parse_count(value):
+    """`40`, `+5`, `-5`, `300k` -> (ishora, son) yoki None."""
+    match = COUNT_RE.fullmatch(value or "")
+    if not match or match.group(3).lower() not in COUNT_UNITS:
+        return None
+    return match.group(1), int(match.group(2)) * COUNT_UNITS[match.group(3).lower()]
+
+
+def clip_head(lines, size):
+    """Boshidagi `size` bayt, satr tuzilishi bilan."""
+    out, left = [], size
+    for length in lines:
+        if left <= 0:
+            break
+        out.append(min(length, left))
+        left -= length
+    return out
+
+
+def clip_tail(lines, size):
+    return clip_head(lines[::-1], size)[::-1]
+
+
+def watched_args(args):
+    """Argumentlardagi kuzatiladigan fayllar, tartib bilan, takrorsiz."""
+    found = []
+    for arg in args:
+        for path in sorted(slurped(arg)):
+            if path not in found:
+                found.append(path)
+    return found
+
+
+def source(files):
+    """Fayllardan oqim: (satrlar, fayllar) yoki None."""
+    if not files:
+        return None
+    return [n for path in files for n in file_lines(path)], set(files)
+
+
+def head_tail(args, tail):
+    """(qism, ishora, son, fayl argumentlari). qism: 'n' satr yoki 'c' bayt.
+
+    Son o'qilmasa (`-n $N`) son None: oqim butunligicha qoladi.
+    """
+    part, sign, count, files, i = "n", "", 10, [], 0
+    while i < len(args):
+        arg = args[i]
+        i += 1
+        value = None
+        if arg == "--":
+            files += args[i:]
+            break
+        if re.fullmatch(r"-\d+", arg):
+            part, value = "n", arg[1:]
+        elif tail and not files and re.fullmatch(r"\+\d+", arg):
+            part, value = "n", arg
+        elif arg in ("-n", "-c", "--lines", "--bytes"):
+            part = "c" if arg in ("-c", "--bytes") else "n"
+            value = args[i] if i < len(args) else ""
+            i += 1
+        elif arg[:2] in ("-n", "-c") and len(arg) > 2:
+            part, value = arg[1], arg[2:]
+        elif arg.startswith(("--lines=", "--bytes=")):
+            part = "c" if arg.startswith("--bytes") else "n"
+            value = arg.split("=", 1)[1]
+        elif arg in ("-s", "--sleep-interval", "--pid", "--max-unchanged-stats"):
+            i += 1
+            continue
+        elif arg.startswith("-") and arg != "-":
+            continue
+        else:
+            files.append(arg)
+            continue
+        parsed = parse_count(value)
+        sign, count = parsed if parsed else ("", None)
+    return part, sign, count, files
+
+
+def apply_head_tail(lines, part, sign, count, tail):
+    if count is None:
+        return lines
+    if part == "c":
+        if tail and sign == "+":
+            return clip_tail(lines, max(sum(lines) - max(count - 1, 0), 0))
+        if not tail and sign == "-":
+            return clip_head(lines, max(sum(lines) - count, 0))
+        return clip_tail(lines, count) if tail else clip_head(lines, count)
+    if tail and sign == "+":
+        return lines[max(count - 1, 0):]
+    if not tail and sign == "-":
+        return lines[:len(lines) - count] if count else lines
+    if tail:
+        return lines[len(lines) - count:] if count else []
+    return lines[:count]
+
+
+def stage_head_tail(args, stdin, tail):
+    part, sign, count, names = head_tail(args, tail)
+    files = watched_args(names)
+    if files:   # har fayl alohida kesiladi
+        out = [n for path in files
+               for n in apply_head_tail(file_lines(path), part, sign, count, tail)]
+        return out, set(files)
+    if names or stdin is None:
+        return None
+    return apply_head_tail(stdin[0], part, sign, count, tail), stdin[1]
+
+
+def sed_parts(args):
+    """(jim, skript yoki None, fayl argumentlari, joyida). Skript None:
+    `-f` bilan fayldan, ya'ni o'qib bo'lmaydi."""
+    quiet = inplace = False
+    scripts, names, i = [], [], 0
+    while i < len(args):
+        arg = args[i]
+        i += 1
+        if arg == "--":
+            names += args[i:]
+            break
+        if arg in ("-n", "--quiet", "--silent"):
+            quiet = True
+        elif arg in ("-e", "--expression"):
+            scripts.append(args[i] if i < len(args) else "")
+            i += 1
+        elif arg.startswith("--expression="):
+            scripts.append(arg.split("=", 1)[1])
+        elif arg in ("-f", "--file") or arg.startswith("--file="):
+            return quiet, None, names, inplace
+        elif arg.startswith("--in-place"):
+            inplace = True
+        elif arg in ("-l", "--line-length"):
+            i += 1
+        elif arg.startswith("--"):
+            continue
+        elif arg.startswith("-") and len(arg) > 1:
+            flags = arg[1:]
+            if flags.startswith("i"):
+                inplace = True
+                continue   # `-i.bak`: qolgani kengaytma
+            quiet = quiet or "n" in flags
+            inplace = inplace or "i" in flags
+            if "f" in flags:
+                return quiet, None, names, inplace
+            if flags.endswith("e"):
+                scripts.append(args[i] if i < len(args) else "")
+                i += 1
+        elif not scripts:
+            scripts.append(arg)
+        else:
+            names.append(arg)
+    return quiet, "\n".join(scripts), names, inplace
+
+
+def sed_substitution(cmd):
+    """`s/a/b/g`: satrni almashtiradi, sonini emas. `p` va `w` bayrog'i yo'q."""
+    if len(cmd) < 4 or cmd[0] != "s" or cmd[1].isalnum() or cmd[1] in " \\\n":
+        return False
+    parts = cmd[2:].split(cmd[1])
+    return len(parts) == 3 and not set(parts[2]) & set("pwe")
+
+
+def sed_select(lines, quiet, script):
+    """sed chiqishidagi satrlar. Raqamli manzil, p/d/q/Q/= va
+    almashtirish tushuniladi; boshqasi (regex manzil, `y`, guruh) None,
+    ya'ni filtr deb olinadi, `grep naqsh` kabi."""
+    commands = []
+    for raw in re.split(r"[;\n]", script):
+        cmd = raw.replace(" ", "").replace("\t", "")
+        if not cmd:
+            continue
+        match = SED_CMD_RE.fullmatch(cmd)
+        if match:
+            commands.append(match.groups())
+        elif sed_substitution(cmd):
+            continue
+        else:
+            return None
+    if len(commands) > SED_MAX_COMMANDS:
+        return None   # bunday skript o'qish emas, dastur
+    last = len(lines)
+
+    def address(value, start=0):
+        if value == "$":
+            return last
+        if value.startswith("+"):
+            return start + int(value[1:])
+        return int(value)
+
+    ranges = []
+    for first, second, verb in commands:
+        low = 1 if first is None else address(first)
+        high = (last if first is None else
+                max(low, address(second, low)) if second else low)
+        ranges.append((low, high, verb))
+    if not any(verb in "dqQ" for _, _, verb in ranges):
+        out = [] if quiet else list(lines)
+        for low, high, verb in ranges:
+            part = lines[low - 1:high]
+            out += part if verb == "p" else [len(str(high)) + 1] * len(part)
+        return out
+    out = []
+    for number, length in enumerate(lines, 1):
+        printed, stop = not quiet, False
+        for low, high, verb in ranges:
+            if not low <= number <= high:
+                continue
+            if verb == "p":
+                out.append(length)
+            elif verb == "=":
+                out.append(len(str(number)) + 1)
+            elif verb == "d":
+                printed = False
+                break
+            else:
+                printed = printed and verb == "q"
+                stop = True
+                break
+        if printed:
+            out.append(length)
+        if stop:
+            break
+    return out
+
+
+def stage_sed(args, stdin):
+    quiet, script, names, inplace = sed_parts(args)
+    if inplace or script is None:
+        return None
+    files = watched_args(names)
+    flow = source(files) if files else (None if names else stdin)
+    if flow is None:
+        return None
+    lines = sed_select(flow[0], quiet, script)
+    return None if lines is None else (lines, flow[1])
+
+
+def stage_grep(args, stdin):
+    """`grep ''`, `grep ^` butun oqim; boshqa naqsh filtr (None)."""
+    patterns, positional, small, invert, i = [], [], False, False, 0
+    while i < len(args):
+        arg = args[i]
+        i += 1
+        if arg == "--":
+            positional += args[i:]
+            break
+        if arg.startswith("--"):
+            key, _, value = arg[2:].partition("=")
+            if key == "regexp":
+                patterns.append(value if "=" in arg else (args[i] if i < len(args) else ""))
+                i += "=" not in arg
+            elif key == "file":
+                return None
+            elif key in GREP_LONG_SMALL:
+                small = True
+            elif key == "invert-match":
+                invert = True
+            elif key in GREP_LONG_VALUED and "=" not in arg:
+                i += 1
+            continue
+        if arg.startswith("-") and len(arg) > 1:
+            for at, flag in enumerate(arg[1:], 1):
+                if flag in "ef" or flag in GREP_SHORT_VALUED:
+                    value = arg[at + 1:]
+                    if not value:
+                        value = args[i] if i < len(args) else ""
+                        i += 1
+                    if flag == "f":
+                        return None
+                    if flag == "e":
+                        patterns.append(value)
+                    break
+                small = small or flag in GREP_SMALL_FLAGS
+                invert = invert or flag == "v"
+            continue
+        positional.append(arg)
+    if not patterns:
+        if not positional:
+            return None
+        patterns, positional = [positional[0]], positional[1:]
+    if small or invert or not any(p in GREP_WHOLE for p in patterns):
+        return None
+    files = watched_args(positional)
+    return source(files) if files else (None if positional else stdin)
+
+
+def stage_awk(args, stdin):
+    """`awk 1` va `awk '{print}'` butun oqim, `NR>=A&&NR<=B` oraliq."""
+    program, names, i = None, [], 0
+    while i < len(args):
+        arg = args[i]
+        i += 1
+        if arg == "--":
+            names += args[i:]
+            break
+        if arg in ("-F", "-v"):
+            i += 1
+        elif arg == "-f" or arg.startswith("-f"):
+            return None
+        elif arg.startswith("-") and len(arg) > 1:
+            continue
+        elif program is None:
+            program = arg
+        else:
+            names.append(arg)
+    if program is None:
+        return None
+    files = watched_args(names)
+    flow = source(files) if files else (None if names else stdin)
+    if flow is None:
+        return None
+    code = re.sub(r"\s+", "", program)
+    lines = flow[0]
+    if code in AWK_WHOLE:
+        return flow
+    match = AWK_RANGE_RE.fullmatch(code)
+    if match:
+        low = int(match.group(2)) + (match.group(1) == ">")
+        high = int(match.group(4)) - (match.group(3) == "<")
+        return lines[max(low - 1, 0):max(high, 0)], flow[1]
+    match = AWK_LINE_RE.fullmatch(code)
+    if match:
+        number = int(match.group(1))
+        return lines[number - 1:number] if number else [], flow[1]
+    return None
+
+
+def stage_bash(argv, stdin):
+    name = os.path.basename(argv[0])
+    args = argv[1:]
+    if name in WHOLE_READERS:
+        files = watched_args(a for a in args if a != "-")
+        if not files:
+            return None if [a for a in args if not a.startswith("-")] else stdin
+        flow = source(files)
+        if "-" in args and stdin is not None:
+            flow = (stdin[0] + flow[0], stdin[1] | flow[1])
+        return flow
+    if name in ("head", "tail"):
+        return stage_head_tail(args, stdin, name == "tail")
+    if name == "sed":
+        return stage_sed(args, stdin)
+    if name in GREP_FAMILY:
+        return stage_grep(args, stdin)
+    if name in AWK_FAMILY:
+        return stage_awk(args, stdin)
+    if name in SMALL_OUTPUT:
+        return None
+    # Noma'lum buyruq (sort, tee, uniq): oqimni o'zgartirmaydi deb olinadi,
+    # avvalgi `cat BIG | ...` to'sig'i kabi. Fayl argumenti esa uning
+    # ishi, kontekstga tushishi noma'lum.
+    return stdin
+
+
+def ps_flag(arg):
+    """`-TotalCount:80` -> ('-totalcount', '80'), `-Raw` -> ('-raw', None)."""
+    name, colon, value = arg.partition(":")
+    return name.lower(), (value if colon else None)
+
+
+def stage_powershell(argv, stdin):
+    name = argv[0].lower()
+    args = argv[1:]
+    if name in PS_READERS:
+        names, cut, i = [], None, 0
+        while i < len(args):
+            flag, value = ps_flag(args[i])
+            i += 1
+            if not flag.startswith("-"):
+                names.append(args[i - 1])
+                continue
+            if flag in PS_GC_VALUED | PS_HEAD_FLAGS | PS_TAIL_FLAGS and value is None:
+                value = args[i] if i < len(args) else ""
+                i += 1
+            if flag in PS_PATH_FLAGS:
+                names.append(value)
+            elif flag in PS_HEAD_FLAGS | PS_TAIL_FLAGS:
+                parsed = parse_count(value)
+                cut = (flag in PS_TAIL_FLAGS, parsed[1] if parsed else None)
+        files = watched_args(names)
+        if not files:
+            return None
+        if cut is None:
+            return source(files)
+        tail, count = cut
+        lines = [n for path in files
+                 for n in apply_head_tail(file_lines(path), "n", "", count, tail)]
+        return lines, set(files)
+    if stdin is None or name in PS_SMALL:
+        return None
+    if name in PS_SELECT:
+        lines, i = stdin[0], 0
+        while i < len(args):
+            flag, value = ps_flag(args[i])
+            i += 1
+            if flag in ("-first", "-last", "-skip") and value is None:
+                value = args[i] if i < len(args) else ""
+                i += 1
+            parsed = parse_count(value) if flag in ("-first", "-last", "-skip") else None
+            if parsed is None:
+                continue
+            count = parsed[1]
+            if flag == "-skip":
+                lines = lines[count:]
+            else:
+                lines = apply_head_tail(lines, "n", "", count, flag == "-last")
+        return lines, stdin[1]
+    return stdin
+
+
+def unquote(word):
+    return split_args(word)[0] if word.strip() else ""
+
+
+def parse_stage(text, powershell):
+    """(argv, kirish fayli, stdout faylga, stdin boshqa narsadan) yoki None."""
+    text = text.strip()
+    masked = mask_quoted(text)
+    prefix = PREFIX_RE.match(masked)
+    start = prefix.end() if prefix else 0
+    infile, to_file, other_stdin = None, False, False
+    pieces, last = [], start
+    for match in REDIRECT_RE.finditer(masked, start):
+        fd, op, dup, target = match.groups()
+        pieces.append(text[last:match.start()])
+        last = match.end()
+        word = unquote(text[match.start(4):match.end(4)])
+        if op.startswith("<<"):
+            other_stdin = True
+        elif op == "<":
+            infile = word
+        elif fd in (None, "1", "&") and not dup and word not in STDOUT_FILES:
+            to_file = True
+    pieces.append(text[last:])
+    rest = " ".join(pieces)
+    if powershell:
+        # `docs\patterns\x.md` va vergul bilan bir nechta yo'l.
+        argv = [w.strip("'\"") for w in rest.replace("\\", "/").replace(",", " ").split()]
+    else:
+        argv = split_args(rest)
+    if not argv:
+        return None
+    return argv, infile, to_file, other_stdin
+
+
+def pipelines(command):
+    """Buyruq -> [[bosqich matni, ...], ...]. Heredoc tanasi matn, u olinadi."""
+    base = strip_heredoc(command)
+    masked = mask_quoted(base)
+    out, stages, start = [], [], 0
+    for match in SPLIT_RE.finditer(masked):
+        stages.append(base[start:match.start()])
+        start = match.end()
+        if match.group(0) not in ("|", "|&"):
+            out.append(stages)
+            stages = []
+    stages.append(base[start:])
+    out.append(stages)
+    return out
+
+
+def read_volume(command, powershell=False):
+    """(bayt, fayllar): buyruq kontekstga chiqaradigan kuzatiladigan bo'lak."""
+    total, files = 0, set()
+    for stages in pipelines(command):
+        flow = None
+        for text in stages:
+            stage = parse_stage(text, powershell) if text.strip() else None
+            if stage is None:
+                flow = None
+                continue
+            argv, infile, to_file, other_stdin = stage
+            stdin = None if other_stdin else flow
+            if infile is not None:
+                stdin = source(watched_args([infile]))
+            flow = (stage_powershell if powershell else stage_bash)(argv, stdin)
+            if to_file:
+                flow = None
+        if flow is not None:
+            total += sum(flow[0])
+            files |= flow[1]
+    return total, sorted(files)
+
+
+def check_reads(command, powershell=False):
+    size, files = read_volume(command, powershell)
+    if size > MAX_BYTES:
+        deny("Bu buyruq %d KB qaytaradi (chegara %d KB): %s"
+             % (size // 1000, MAX_BYTES // 1000,
+                ", ".join(os.path.relpath(f, ROOT) for f in files[:3])))
+
+
+# `budget.py --tiklash`: aktyor chegarasini ochadi. Nom so'z boshida:
+# `xbudget.py` emas. Qo'shtirnoq ichidagi matn (commit xabari) niqoblanadi.
+# Qidiruv keyingi `budget.py` dan o'tmaydi: takror nomli 10 KB kirishda
+# kvadratik qaytish bo'lmasin.
+BUDGET_RESET_RE = re.compile(r"(?<![\w.-])budget\.py['\"]?(?=\s)"
+                             r"(?:(?!budget\.py)[^|;&\n])*?\s--tiklash(?![\w-])")
+BUDGET_HINT = (
+    "Budjet aktyorni bitta vazifada 2 marta chaqirishga ruxsat beradi.\n"
+    "Tiklash chaqiruv behuda ketganda o'rinli (aktyor boshqa sababdan\n"
+    "yiqildi yoki foydalanuvchi to'xtatdi). Aks holda uchinchi urinish\n"
+    "o'rniga sababni ayting. Holat: {budget} --holat")
+
+
+def check_budget_reset(command):
+    match = BUDGET_RESET_RE.search(mask_quoted(strip_heredoc(command)))
+    if match:
+        ask("Aktyor budjetini qo'lda tiklash: %s." % match.group(0).strip(), BUDGET_HINT)
+
+
 def check_bash(tool_input, powershell=False):
+    """Avval deny lar, keyin ask lar: ruxsat deny ni ochib yubormasin."""
     command = tool_input.get("command") or ""
     check_java_write(command)
+    asks = check_build(command)
+    check_reads(command, powershell)
     check_memory_git(command)
     check_cost(command)
-    check_build(command)
-    regex = PS_SLURP_RE if powershell else SLURP_RE
-    for match in regex.finditer(strip_heredoc(command)):
-        args = match.group(1)
-        if powershell:
-            if PS_BOUNDED_RE.search(args):
-                continue
-            # `docs\patterns\x.md` va vergul bilan bir nechta yo'l.
-            args = args.replace("\\", "/").replace(",", " ")
-        files = sorted({f for arg in args.split() for f in slurped(arg)})
-        size = sum(os.path.getsize(f) for f in files)
-        if size > MAX_BYTES:
-            deny("Bu buyruq %d KB ni butunligicha oqizadi: %s"
-                 % (size // 1000, ", ".join(os.path.relpath(f, ROOT) for f in files[:3])))
+    check_budget_reset(command)
+    for reason, hint in asks:
+        ask(reason, hint)
 
 
 def main():

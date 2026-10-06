@@ -159,7 +159,8 @@ def ensure_fresh():
         import build_index
         if build_index.is_fresh():
             return
-    except Exception:
+    except Exception as exc:  # noqa: BLE001
+        hookio.fail_open("suggest_sections", exc)
         return  # yasovchi yuklanmasa, yasash ham yiqilardi
     try:
         subprocess.run([sys.executable, os.path.join(HERE, "build_index.py")],
@@ -515,6 +516,49 @@ def render(hits, rules=(), cmd="tools/doc.sh"):
     return "\n".join(lines)
 
 
+FORMAT_FILE = "format.json"
+FORMAT_SHOWN = "format.korsatildi"
+
+
+def format_notice(session):
+    """usage.py transkript formati o'zgarganini yozgan bo'lsa bitta qator.
+
+    usage.py hookda stderr ga yoza olmaydi (uni hech kim ko'rmaydi), shuning
+    uchun sababni holat papkasidagi format.json ga qo'yadi. Bu yerda u
+    sessiyada BIR MARTA aytiladi: har navbatda takrorlansa tarixda
+    to'planadi. Belgi alohida faylda, chunki usage.py format.json ni har
+    Stop da qayta yozadi.
+    """
+    folder = hookio.state_dir()
+    try:
+        with open(os.path.join(folder, FORMAT_FILE), encoding="utf-8") as handle:
+            data = json.load(handle)
+    except (OSError, ValueError):
+        return ""
+    reason = data.get("sabab") if isinstance(data, dict) else None
+    if not isinstance(reason, str) or not reason.strip():
+        return ""
+    mark = "%s\t%s" % (session, reason)
+    shown = os.path.join(folder, FORMAT_SHOWN)
+    try:
+        with open(shown, encoding="utf-8") as handle:
+            if handle.read() == mark:
+                return ""
+    except OSError:
+        pass
+    try:
+        with open(shown, "w", encoding="utf-8") as handle:
+            handle.write(mark)
+    except OSError:
+        pass   # belgi yozilmasa ham ogohlantirish beriladi
+    try:
+        from docref import tool_cmd
+        doctor = tool_cmd("doctor.py")
+    except (ImportError, SyntaxError, OSError):
+        doctor = "python3 tools/doctor.py"
+    return "usage: transkript formati o'zgargan (%s), %s" % (reason.strip(), doctor)
+
+
 def quiet(reason):
     """Hook jim qoladi. GENIUS_HOOK_DEBUG=1 da sababi stderr ga (o'rnatuvchi sinovi)."""
     if os.environ.get("GENIUS_HOOK_DEBUG"):
@@ -530,6 +574,11 @@ def main():
         return quiet("stdin da prompt yo'q yoki JSON buzuq")
 
     try:
+        notice = format_notice(str(payload.get("session_id") or ""))
+    except Exception as exc:  # noqa: BLE001
+        hookio.fail_open("suggest_sections", exc)
+        notice = ""
+    try:
         ensure_fresh()
         hits = suggest(prompt)
         rules = rule_keys(prompt)
@@ -538,9 +587,14 @@ def main():
             rules = [key for key in rules if key in known]
         text = render(hits, rules, doc_cmd()) if hits else ""
     except Exception as exc:  # hook hech qachon navbatni o'z xatosi tufayli buzmaydi
-        return quiet("%s: %s" % (type(exc).__name__, exc))
+        hookio.fail_open("suggest_sections", exc)
+        hits, text = [], ""
+        quiet("%s: %s" % (type(exc).__name__, exc))
     if not hits:
-        return quiet("mos bo'lim topilmadi (indeks: %s)" % INDEX)
+        quiet("mos bo'lim topilmadi (indeks: %s)" % INDEX)
+    text = "\n".join(part for part in (notice, text) if part)
+    if not text:
+        return None
 
     json.dump(
         {

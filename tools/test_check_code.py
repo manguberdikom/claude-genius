@@ -412,7 +412,18 @@ def case_kop_fayl():
 
 def case_zanjir():
     state.clear()
-    raw_skipped = run_hook(GOOD)
+    # Klondagi oddiy .java: shart shu yerda. testdata/ dagi fixture undan
+    # tashqarida (HK-H5), shuning uchun nusxa klon ildizidagi vaqtinchalik
+    # papkada.
+    inside = tempfile.mkdtemp(prefix=".tmp-zanjir-", dir=ROOT)
+    try:
+        own = os.path.join(inside, "Unmarked.java")
+        shutil.copy(GOOD, own)
+        raw_skipped = run_hook(own)
+    finally:
+        shutil.rmtree(inside, ignore_errors=True)
+    raw_fixture = run_hook(GOOD)
+    raw_fixture_bad = run_hook(BAD)
     tmp = tempfile.mkdtemp()
     try:
         alien = os.path.join(tmp, "Unmarked.java")
@@ -426,6 +437,12 @@ def case_zanjir():
     alien_cmd = os.path.join(ROOT, "tools", "rules_for.py").replace("\\", "/")
     return [
         ("rules_for chaqirilmasa block", decision(raw_skipped) == "block"),
+        # Fixture rules_for shartidan tashqarida: toza fixture jim, buzug'i
+        # esa mexanik tekshiruvdan o'tmaydi.
+        ("testdata fixture: rules_for sharti yo'q", raw_fixture == ""),
+        ("testdata fixture: mexanik block qoladi",
+         decision(raw_fixture_bad) == "block"
+         and "Yozishdan oldin qoidalar olinmagan" not in reason(raw_fixture_bad)),
         # Zanjir qoidasi shu proyektning konvensiyasi: boshqa repoda hech
         # kim unga rozi bo'lmagan, shuning uchun u yerda to'smaydi.
         ("boshqa papkada block emas, eslatma",

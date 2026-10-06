@@ -12,6 +12,7 @@ baytlar o'qiladi va `utf-8-sig` bilan ochiladi.
 import json
 import os
 import sys
+import time
 
 
 def read_text(stream=None):
@@ -158,6 +159,49 @@ def active(payload=None):
         subs = [s for s in subs
                 if os.path.basename(s).lower() not in MOBILE_DIRS]
     return any(_marked(sub) for sub in subs)
+
+
+# --- Hook xatosi izi ----------------------------------------------------
+
+ERRORS_LOG = "hook_errors.log"
+ERRORS_KEEP = 200
+
+
+def state_dir():
+    """Holat papkasi: GENIUS_STATE_DIR, aks holda klondagi `.claude/.state`
+    (budget, state va handoff bilan bir xil). Har chaqiruvda o'qiladi."""
+    return (os.environ.get("GENIUS_STATE_DIR")
+            or os.path.join(ROOT, ".claude", ".state"))
+
+
+def fail_open(name, exc):
+    """Hook kutilmagan xatoda jim o'tadi (fail-open), lekin iz qoldiradi.
+
+    Holat papkasidagi `hook_errors.log` ga bitta qator: vaqt, hook nomi,
+    istisno turi va xabari. Fayl oxirgi ERRORS_KEEP qatorda kesiladi.
+    Hook stderr i hech kimga ko'rinmaydi, shuning uchun usiz buzilgan
+    hook oylar davomida sezilmasdi. Yozib bo'lmasa ham jim: bu funksiya
+    hookni hech qachon yiqitmaydi.
+    """
+    try:
+        message = " ".join(str(exc).split())[:300]
+        line = "%s\t%s\t%s: %s\n" % (time.strftime("%Y-%m-%dT%H:%M:%S"), name,
+                                      type(exc).__name__, message)
+        folder = state_dir()
+        os.makedirs(folder, exist_ok=True)
+        path = os.path.join(folder, ERRORS_LOG)
+        try:
+            with open(path, encoding="utf-8", errors="replace") as handle:
+                lines = handle.readlines()
+        except OSError:
+            lines = []
+        lines = (lines + [line])[-ERRORS_KEEP:]
+        tmp = "%s.%d.tmp" % (path, os.getpid())
+        with open(tmp, "w", encoding="utf-8") as handle:
+            handle.writelines(lines)
+        os.replace(tmp, path)
+    except Exception:  # noqa: BLE001 - iz yozilmasa ham hook o'tadi
+        pass
 
 
 def _android(root, subs):

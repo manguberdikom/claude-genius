@@ -116,8 +116,9 @@ To'liq qoida [memory/README.md](memory/README.md) da.
 ## Budjet xavfsizlik emas
 
 `budget.py` aktyor chaqiruvini sanaydi, ruxsatni emas. U global
-ruxsatda, `--tiklash` va `--yangi-vazifa` so'rovsiz yuradi va hisob har
-yangi so'rovda o'zi nolga tushadi. Ya'ni budjet sarfni cheklaydigan
+ruxsatda, `--yangi-vazifa` so'rovsiz yuradi va hisob har yangi so'rovda
+o'zi nolga tushadi. `--tiklash` ni guard foydalanuvchidan so'raydi
+(subagentda to'sadi), lekin bu ham odatga qarshi to'siq. Ya'ni budjet sarfni cheklaydigan
 intizom: uni chetlab o'tish ma'lumot yo'qotmaydi, faqat token sarfini
 oshiradi. Xavfsizlik qarori unga yuklanmaydi.
 
