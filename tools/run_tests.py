@@ -52,7 +52,6 @@ yuborsa, u o'sha yerda chiqadi va egasiga qaytadi.
 import argparse
 import contextlib
 import hashlib
-import io
 import json
 import os
 import re
@@ -867,7 +866,7 @@ def gradle_commands(project, plan, everything):
         tasks = ["test"] + sorted({gradle_task(s.sset) for s in project.tests()} - {"test"})
         return [(argv + tasks + ["--continue", "--console=plain"]
                  + gradle_init(project, False) + extra_flags(), "to'liq suite")]
-    for (module, sset), reason in plan.whole.items():
+    for module, sset in plan.whole:
         argv.append("%s:%s" % (project.gradle_path(module), gradle_task(sset)))
     for (module, sset), chosen in plan.targets.items():
         argv.append("%s:%s" % (project.gradle_path(module), gradle_task(sset)))
@@ -909,7 +908,7 @@ def maven_commands(project, plan, everything):
                     + quick + extra_flags(),
                     "butun modul: " + "; ".join(plan.whole.values())))
     units, its = [], []
-    for (module, sset), chosen in plan.targets.items():
+    for chosen in plan.targets.values():
         for fqn in chosen:
             simple = fqn.rsplit(".", 1)[-1]
             (its if failsafe and IT_NAME_RE.match(simple) else units).append(fqn)

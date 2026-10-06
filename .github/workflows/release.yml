@@ -1,0 +1,76 @@
+name: release
+
+# `v*` tag push qilinganda: hujjat tekshiriladi, bitta fayllik variant
+# yig'iladi, zip qilinadi va GitHub release ga qo'yiladi. O'quvchi klon
+# va Python siz offline nusxa oladi va qaysi versiyani o'qiyotganini
+# biladi.
+#
+# CHANGELOG bu yerda yozilmaydi: release main ga commit qilmaydi
+# (himoyalangan main bilan to'qnashardi). CHANGELOG.md tag oldidan
+# release commitida qo'lda yoziladi, release tanasi esa avtomatik.
+on:
+  push:
+    tags: ['v*']
+
+# Sukut: hech narsa yozilmaydi. Yozish huquqi faqat release jobida.
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Hujjatlarni tekshirish
+        run: python3 tools/check_docs.py
+
+      - name: Bitta fayllik variantni yig'ish
+        run: |
+          python3 tools/build_single.py
+          for f in dist/*.md; do
+            test -s "$f" || { echo "bo'sh fayl: $f"; exit 1; }
+          done
+
+      # Zip ichida litsenziya fayllari ham: CC BY atribut va litsenziya
+      # nusxasini talab qiladi.
+      - name: Zip
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          nom="claude-genius-$TAG"
+          mkdir -p "out/$nom"
+          cp dist/*.md LICENSE LICENSE-CODE "out/$nom/"
+          (cd out && zip -qr "$nom.zip" "$nom")
+          ls -la out/
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+        run: |
+          {
+            echo "Bitta fayllik variant: oltita hujjat, har biri bitta .md fayl."
+            echo
+            echo "Commit: $SHA"
+            echo "Matn CC BY 4.0, kod misollari MIT (LICENSE, LICENSE-CODE)."
+          } > notes.md
+          gh release create "$TAG" "out/claude-genius-$TAG.zip" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$TAG" \
+            --notes-file notes.md \
+            --verify-tag
