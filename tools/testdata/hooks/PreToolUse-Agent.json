@@ -1,0 +1,10 @@
+{
+  "session_id": "doctor-namuna",
+  "transcript_path": "${HOOKS_DIR}/transcript.jsonl",
+  "cwd": "${CLAUDE_PROJECT_DIR}",
+  "permission_mode": "default",
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Agent",
+  "tool_input": {"subagent_type": "qidiruv", "description": "namuna", "prompt": "circuit breaker bo'limini top"},
+  "tool_use_id": "toolu_doctor_agent"
+}

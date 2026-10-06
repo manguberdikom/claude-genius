@@ -232,10 +232,44 @@ def reset(key, cwd=""):
         save(data)
 
 
+def installed_line():
+    """`o'rnatilgan: <sha>, klon: <sha>` yoki None (global o'rnatish yo'q).
+
+    O'rnatuvchi `~/.claude/skills/manguberdi/.genius.json` ga commitni
+    yozadi. Skill va aktyorlar o'rnatish paytidagi nusxa, asboblar esa
+    klondan jonli: `git pull` dan keyin ular ajraladi va buni shu qator
+    aytadi.
+    """
+    config = (os.environ.get("CLAUDE_CONFIG_DIR")
+              or os.path.join(os.path.expanduser("~"), ".claude"))
+    try:
+        with open(os.path.join(config, "skills", "manguberdi", ".genius.json"),
+                  encoding="utf-8-sig") as handle:
+            manifest = json.load(handle)
+        installed = str(manifest.get("commit") or "")
+    except (OSError, ValueError, AttributeError):
+        return None
+    root = manifest.get("root") or ROOT
+    try:
+        import subprocess
+        clone = subprocess.run(["git", "-C", root, "rev-parse", "HEAD"],
+                               capture_output=True, text=True,
+                               timeout=5).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        clone = ""
+    line = "o'rnatilgan: %s, klon: %s" % (installed[:12] or "?", clone[:12] or "?")
+    if installed and clone and installed != clone:
+        line += " (farq bor: o'rnatuvchini qayta yurgizing, install/README.md 'Yangilash')"
+    return line
+
+
 def status():
     data = load()
     key, note = cli_key(data)
     slot = slot_of(data, key)
+    version = installed_line()
+    if version:
+        print(version)
     if note:
         print(note)
     print("Vazifa: %s" % (slot.get("task") or "nomsiz"))

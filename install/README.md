@@ -40,6 +40,13 @@ yangi `-GeniusPath` bilan qayta yurgiziladi, uning oqibati
 | Python 3.8+ | hooklar va asboblar Python da yozilgan | o'rnatish to'xtaydi |
 | `bash` | `tools/doc.sh` bash skripti; Windows da hooklar ham Git Bash da yuradi | o'rnatish to'xtaydi |
 | `git` | klonni olish va yangilash | qo'lda yuklab olinadi |
+| Claude Code 2.1.289+ | hook payloadi, transkript tuzilishi va ruxsat xulqi shu versiyada sinalgan | eskisida hook maydonlari yetishmasligi mumkin; boshqa versiyada `tools/doctor.py` ogohlantiradi |
+
+Sinalgan minimal Claude Code versiyasi: **2.1.289** (`claude --version`).
+Qiymat `tools/doctor.py` dagi `SINALGAN_CLAUDE_CODE` bilan bir xil va
+ikkalasi bitta commitda yangilanadi. Claude Code yangilangan kuni
+`tools/doctor.py` yurgiziladi: hook qatorlari OK bo'lsa shartnoma
+o'z kuchida.
 
 Python nomi bo'yicha emas, ishga tushirib tanlanadi: `py -3`, `python`
 va `python3` shu tartibda sinaladi, Microsoft Store stub'i hisoblanmaydi.
@@ -466,6 +473,23 @@ tokenlari sanaladi va "narxsiz model bor" deb belgilanadi.
 
 ## O'rnatilganini tekshirish
 
+Bitta buyruq, har band bir qator (`OK`, `OGOH`, `XATO`, `O'TK`), kod 1
+faqat XATO bo'lsa:
+
+```bash
+python3 /yo/l/claude-genius/tools/doctor.py                                     # repo sozlamasi
+python3 /yo/l/claude-genius/tools/doctor.py --settings ~/.claude/settings.json  # global o'rnatish
+```
+
+U `claude --version` ni sinalgan versiya bilan, Python (`GENIUS_PYTHON`
+yoki `python3`) va klon yo'lini, `.genius.json` dagi o'rnatilgan commitni
+klon bilan solishtiradi. Har hook buyrug'ini `|| exit 0` siz,
+`tools/testdata/hooks/<event>.json` namunasi bilan yurgizadi: exit 0,
+bo'sh stderr va to'g'ri `hookEventName` kutiladi. Klon ko'chgan yoki
+`python3` yo'q bo'lsa hook jim o'chadi, doctor esa shu yerda XATO
+beradi. Oxirida oxirgi 30 kun transkriptidan aktyor qaysi modelda
+yurgani chiqadi.
+
 O'rnatuvchi o'zi tekshiradi, lekin qo'lda ham ko'rish mumkin:
 
 ```bash
@@ -481,6 +505,27 @@ sessiya o'tgandan keyin yurgiziladi. Transkript klondan emas, sessiya ID
 shuni aytib chiqadi.
 
 Keyin yangi sessiyada `/manguberdi`.
+
+### Aktyor modelini pinlash
+
+Aktyor fayllarida model alias bilan yozilgan (`sonnet`, `opus`, `haiku`).
+Alias provayderga qarab va vaqt o'tib boshqa modelga bog'lanadi: Bedrock
+va Google Cloud da `sonnet` Sonnet 4.5 ga, Foundry da `opus` Opus 4.6 ga
+tushadi. Aktyor narxi va sifati boshqa bo'ladi, `usage.py` da esa model
+"narxsiz" chiqadi. Doctor buni aktyor -> model qatorida OGOH bilan
+ko'rsatadi. Aniq modelda qolish uchun `settings.json` dagi `env` ga:
+
+```json
+{
+  "env": {
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-5-5",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-5-5"
+  }
+}
+```
+
+Qiymat provayderning o'z model id si bo'ladi. Pinlangan id
+`tools/usage.py` dagi `PRICES` da bo'lmasa sarf "narxsiz" deb belgilanadi.
 
 ## Yangilash
 

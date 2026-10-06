@@ -418,6 +418,33 @@ def case_ps1_papkalar_va_opt_in():
             and "Test-SafePath 'Python' $PythonExe" in text)
 
 
+def case_ps1_manifest_va_eski_aktyor():
+    """ps1 matni (OC-K5): .genius.json budget.py o'qiydigan joyga va
+    kalitlar bilan yoziladi; $Retired dagi nom hozirgi aktyor emas va
+    yangilash hamda -Uninstall ikkalasida olinadi."""
+    text = ps1_text()
+    budget = io.open(os.path.join(ROOT, "tools", "budget.py"),
+                     encoding="utf-8").read()
+    actors = re.search(r"\$Actors = @\(([^)]*)\)", text)
+    retired = re.search(r"\$Retired = @\(([^)]*)\)", text)
+    manifest = re.search(r"\$manifest = \[ordered\]@\{(.*?)\n  \}", text, re.S)
+    if not (actors and retired and manifest):
+        raise AssertionError("ps1 da $Actors, $Retired yoki $manifest topilmadi")
+    current = re.findall(r"'([\w-]+)'", actors.group(1))
+    old = re.findall(r"'([\w-]+)'", retired.group(1))
+    keys = re.findall(r"^\s*(\w+)\s*=", manifest.group(1), re.M)
+    agents = {name[:-3] for name in os.listdir(os.path.join(ROOT, ".claude", "agents"))}
+    return ("arxitektor" in old and not set(old) & set(current)
+            and not set(old) & agents and set(current) <= agents
+            and keys == ["versiya", "commit", "sana", "root", "python", "actors"]
+            and "skills\\manguberdi\\.genius.json" in text
+            and '"manguberdi", ".genius.json"' in budget
+            and 'manifest.get("commit")' in budget
+            and 'manifest.get("root")' in budget
+            # ta'rif, -Uninstall va yangilash
+            and text.count("Get-StaleActors") >= 3)
+
+
 # PowerShell sinalmaydi, lekin u yasaydigan hook jadvali matndan o'qiladi
 # va repodagi .claude/settings.json ga solishtiriladi: biri o'zgarib
 # ikkinchisi unutilsa, global o'rnatish jim boshqacha ishlaydi.
@@ -581,6 +608,7 @@ CASES = [
     ("$, backtick yoki qo'shtirnoqli yo'l 2 qaytaradi", case_xavfli_belgili_yol_2),
     ("ps1: docs va memory papkasi, opt-in, xavfli belgi", case_ps1_papkalar_va_opt_in),
     ("ps1 hook jadvali settings.json ga mos", case_ps1_hooklari_repoga_mos),
+    ("ps1: .genius.json manifesti va eski aktyor", case_ps1_manifest_va_eski_aktyor),
     ("papka bo'ylab yuradi, .md dan boshqasi tegilmaydi", case_papkani_yuradi),
     ("haqiqiy skillda nol nisbiy yo'l", case_haqiqiy_skill_toza_qoladi),
 ]
