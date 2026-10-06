@@ -70,7 +70,8 @@ Hamma guruh o'z zanjirini tugatgach:
 python3 tools/guruh.py birlashtir orders     # patch indeksga, commit yo'q
 python3 tools/guruh.py birlashtir billing
 python3 tools/run_tests.py --hammasi --yurgiz   # fonda: Bash run_in_background
-python3 tools/guruh.py tozala --hammasi
+# suite natijasi kelgach, faqat birlashtir 0 qaytargan guruh:
+python3 tools/guruh.py tozala orders
 ```
 
 To'liq suite **partiyada bir marta** yuradi, guruh yoki aktyor
@@ -78,10 +79,27 @@ bo'yicha emas. U maqsadli tanlashning xavfsizlik to'ri: yiqilgan test
 fayli qaysi guruhniki ekani `guruh.py royxat` dagi fayllardan topiladi
 va kamchilik shu guruh egasiga qaytadi (budjetning ikkinchi chaqiruvi).
 
+Tozalash ikki shartdan keyin: guruhning `birlashtir` i 0 qaytargan va
+to'liq suite natijasi kelgan. Suite dan oldin tozalansa yiqilgan testni
+guruhga bog'laydigan worktree va holat yozuvi yo'qoladi. `birlashtir` 1
+qaytargan, ziddiyatda qolgan yoki budjeti tugab to'xtagan guruh
+tozalanmaydi: uning ishi faqat o'z worktree sida.
+
+`guruh.py` buni o'zi ham ushlaydi. Birlashtirilmagan va o'zgarishi bor
+guruhni `tozala` rc=1 bilan rad etadi va fayllarini aytadi, `tozala
+--hammasi` faqat birlashgan yoki o'zgarishsiz guruhlarni oladi va
+qolganini sanab rc=1 qaytaradi. `tozala <id> --majburiy` ishni
+o'chiradi: faqat u boshqa yo'l bilan asosiy daraxtga tushgani aniq
+bo'lganda (masalan `--3way` ziddiyati hal qilingach) yoki foydalanuvchi
+qarori bilan. Holat fayli buzilgan bo'lsa (yo'l guruhning o'z worktree si
+emas yoki branch `genius/<id>` emas) rc=2 qaytadi va hech narsa
+o'chmaydi: yozuvni foydalanuvchi qo'lda tekshiradi.
+
 Kesishgan guruh asosiy daraxtga tegmaydi: `birlashtir` kesishgan
 fayllarni aytadi. Ikki yo'l: `--3way` bilan qo'llab ziddiyatni egasi
 asosiy daraxtda hal qiladi, yoki shu guruh boshqalaridan keyin ketma-ket
-bajariladi. Kesishish reja xatosi: keyingi partiyada guruhlar fayl
+bajariladi. `--3way` ziddiyat bilan tugasa guruh birlashgan
+hisoblanmaydi: ziddiyat hal qilingach `tozala <id> --majburiy`. Kesishish reja xatosi: keyingi partiyada guruhlar fayl
 bo'yicha aniqroq bo'linadi.
 
 ## Tezlikni yeydigan narsalar
