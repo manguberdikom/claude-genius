@@ -7,7 +7,7 @@
 # 25. Anti-patternlar (Anti-Patterns)
 
 <details>
-<summary>Bu bo'limdagi 84 bo'lim</summary>
+<summary>Bu bobdagi 84 bo'lim</summary>
 
 - [25.1 Xudo obyekt (God Object)](#251-xudo-obyekt-god-object)
 - [25.2 Spagetti kod (Spaghetti Code)](#252-spagetti-kod-spaghetti-code)
@@ -434,7 +434,7 @@ public record Money(BigDecimal amount, Currency currency) {
 - Status o'tishlarini `if (order.getStatus() == NEW) order.setStatus(PAID)` o'rniga `order.markPaid()` bilan ifodalash.
 - Spring Modulith'da domen logikasini modul ichidagi agregatga to'plab, servisni faqat orkestratsiya va transaction chegarasi uchun qoldirish.
 
-**Ehtiyot bo'ling:** Hamma narsani entity'ga ko'chirish entity'ni "god object"ga aylantiradi va JPA entity'siga infratuzilma bog'liqliklarini (repository, HTTP client) injektsiya qilish vasvasasi paydo bo'ladi. Bir necha agregat ustida ishlaydigan koordinatsiya, transaction va tashqi integratsiya `@Service`da qolishi to'g'ri; mapper va serializatsiya kodida feature envy normal hol.
+**Ehtiyot bo'ling:** Hamma narsani entity'ga ko'chirish entity'ni "god object"ga aylantiradi va JPA entity'siga infratuzilma bog'liqliklarini (repository, HTTP client) inyeksiya qilish vasvasasi paydo bo'ladi. Bir necha agregat ustida ishlaydigan koordinatsiya, transaction va tashqi integratsiya `@Service`da qolishi to'g'ri; mapper va serializatsiya kodida feature envy normal hol.
 
 ## 25.21 Sochma Jarrohlik (Shotgun Surgery)
 
@@ -515,7 +515,7 @@ public record Money(BigDecimal amount, Currency currency) {
 
 **Tavsif:** Global holat va statik metodlarga tayanish: `MyUtil.getInstance()`, statik mutable maydonlar, statik servis lokatori. Bu bog'liqliklarni yashiradi (konstruktorda ko'rinmaydi), test izolyatsiyasini buzadi (testlar bir-biriga holat orqali ta'sir qiladi), mock qilishni qiyinlashtiradi va konkurensiya xatolarini keltiradi. "Static cling" - kod statik chaqiruvga shunday mahkam yopishib qolgani sababli uni almashtirib bo'lmasligi. Yechim - Dependency Injection: bog'liqlikni konstruktor orqali oshkor qilish.
 
-**Spring'da qayerda uchraydi:** Spring'ning bean'lari default `singleton` scope'da - bu GoF Singleton pattern'i emas, balki konteyner boshqaradigan, injektsiya qilinadigan va test'da almashtiriladigan nusxa; shuning uchun o'z `getInstance()`ingiz kerak emas. Xavfli naqshlar: statik `ApplicationContextProvider implements ApplicationContextAware` orqali `context.getBean(...)` chaqirish (Service Locator anti-pattern), `SecurityContextHolder.getContext()`ni domen qatlamida to'g'ridan-to'g'ri ishlatish (`ThreadLocal`ga bog'lanish, virtual thread va reaktiv kontekstda muammoli - reaktivda `ReactiveSecurityContextHolder`), singleton bean ichida mutable instance maydon saqlash (thread-safety buzilishi; `@Scope("prototype")`, `@RequestScope` yoki stateless dizayn kerak). Statik vaqt uchun `LocalDate.now()` o'rniga `java.time.Clock` bean'ini injektsiya qilish test qilishni osonlashtiradi (`Clock.fixed(...)`). Statik yordamchilar faqat toza funksiya bo'lsa maqbul: `StringUtils`, `Objects.requireNonNull`, `Assert.notNull`.
+**Spring'da qayerda uchraydi:** Spring'ning bean'lari default `singleton` scope'da - bu GoF Singleton pattern'i emas, balki konteyner boshqaradigan, inyeksiya qilinadigan va test'da almashtiriladigan nusxa; shuning uchun o'z `getInstance()`ingiz kerak emas. Xavfli naqshlar: statik `ApplicationContextProvider implements ApplicationContextAware` orqali `context.getBean(...)` chaqirish (Service Locator anti-pattern), `SecurityContextHolder.getContext()`ni domen qatlamida to'g'ridan-to'g'ri ishlatish (`ThreadLocal`ga bog'lanish, virtual thread va reaktiv kontekstda muammoli - reaktivda `ReactiveSecurityContextHolder`), singleton bean ichida mutable instance maydon saqlash (thread-safety buzilishi; `@Scope("prototype")`, `@RequestScope` yoki stateless dizayn kerak). Statik vaqt uchun `LocalDate.now()` o'rniga `java.time.Clock` bean'ini inyeksiya qilish test qilishni osonlashtiradi (`Clock.fixed(...)`). Statik yordamchilar faqat toza funksiya bo'lsa maqbul: `StringUtils`, `Objects.requireNonNull`, `Assert.notNull`.
 
 **Qo'llanish keyslari:**
 - `ApplicationContextProvider.getBean(X.class)` statik yordamchisini konstruktor injection bilan almashtirish.
@@ -560,16 +560,16 @@ public record Money(BigDecimal amount, Currency currency) {
 
 **Tavsif:** Dependency'lar konstruktor orqali emas, balki bevosita maydonga `@Autowired` qo'yish bilan kiritiladi va Spring reflection yordamida private maydonni to'ldiradi. Bu kod yozishda qisqa ko'rinadi, lekin obyektning o'zi to'liq tuzilgan (fully constructed) bo'lishini kafolatlamaydi - bean yaratilgandan keyingina maydonlar to'ladi. Natijada sinf o'z dependency'larini yashiradi: tashqaridan qaraganda u hech narsaga bog'liq emasdek ko'rinadi. Shuningdek maydonni `final` qilib bo'lmaydi, ya'ni o'zgarmaslik (immutability) yo'qoladi.
 
-**Spring'da qayerda uchraydi:** `@Autowired` annotatsiyasi maydon ustida, `AutowiredAnnotationBeanPostProcessor` orqali reflection bilan `Field.set()` chaqiriladi; `@Value`, `@Inject` (JSR-330), `@PersistenceContext` ham shu yo'l bilan ishlatiladi. Spring Framework 4.3'dan boshlab bitta konstruktorli bean uchun `@Autowired` shart emas, Spring Boot 3.x/4.x'da esa konstruktor injeksiyasi rasmiy tavsiya; Lombok'ning `@RequiredArgsConstructor` bilan birgalikda `private final` maydonlar standart yondashuvga aylangan. IntelliJ IDEA va SonarQube (`java:S6813` qoidasi) maydonga injeksiyani ogohlantirish sifatida belgilaydi.
+**Spring'da qayerda uchraydi:** `@Autowired` annotatsiyasi maydon ustida, `AutowiredAnnotationBeanPostProcessor` orqali reflection bilan `Field.set()` chaqiriladi; `@Value`, `@Inject` (JSR-330), `@PersistenceContext` ham shu yo'l bilan ishlatiladi. Spring Framework 4.3'dan boshlab bitta konstruktorli bean uchun `@Autowired` shart emas, Spring Boot 3.x/4.x'da esa konstruktor inyeksiyasi rasmiy tavsiya; Lombok'ning `@RequiredArgsConstructor` bilan birgalikda `private final` maydonlar standart yondashuvga aylangan. IntelliJ IDEA va SonarQube (`java:S6813` qoidasi) maydonga inyeksiyani ogohlantirish sifatida belgilaydi.
 
 **Qo'llanish keyslari:**
-- Legacy XML-asosli loyihada ko'p dependency'li `@Service` sinflari konstruktorni "og'ir" qilmaslik uchun maydonga injeksiya qilingan.
+- Legacy XML-asosli loyihada ko'p dependency'li `@Service` sinflari konstruktorni "og'ir" qilmaslik uchun maydonga inyeksiya qilingan.
 - Abstract base sinfda `protected @Autowired` maydon qo'yilib, barcha subclass'lar undan foydalanishi (konstruktor zanjirini yozmaslik uchun).
 - `@Configuration` sinfida `@Value` bilan property'larni to'g'ridan-to'g'ri maydonga olish.
 - Test sinfida `@Autowired` maydon - bu yerda `@SpringBootTest` kontekst o'zi to'ldirgani uchun odatda qabul qilinadi.
 - Circular dependency'ni "yashirish" uchun maydonga o'tish - bu muammoni tuzatmaydi, faqat ko'rinmas qiladi.
 
-**Ehtiyot bo'ling:** Maydonga injeksiya qilingan sinfni oddiy `new` bilan unit test qilib bo'lmaydi - yoki reflection, yoki `ReflectionTestUtils`, yoki butun Spring kontekst kerak bo'ladi. Bundan tashqari u ko'p dependency'ni osonlik bilan "yopib" tashlaydi, shuning uchun 10 ta maydonli God Service paydo bo'lishini sezmasdan qolasiz; konstruktor injeksiyasida bunday sinf parametr ro'yxati bilan o'zini darhol fosh qiladi.
+**Ehtiyot bo'ling:** Maydonga inyeksiya qilingan sinfni oddiy `new` bilan unit test qilib bo'lmaydi - yoki reflection, yoki `ReflectionTestUtils`, yoki butun Spring kontekst kerak bo'ladi. Bundan tashqari u ko'p dependency'ni osonlik bilan "yopib" tashlaydi, shuning uchun 10 ta maydonli God Service paydo bo'lishini sezmasdan qolasiz; konstruktor inyeksiyasida bunday sinf parametr ro'yxati bilan o'zini darhol fosh qiladi.
 
 ## 25.30 O'z-o'ziga Chaqiruv Proxy'ni Buzishi (Self-invocation breaking @Transactional / @Cacheable)
 
@@ -659,18 +659,18 @@ public record Money(BigDecimal amount, Currency currency) {
 - Oddiy CRUD mikroservis - bu yerda anemik model aslida yetarli va "boylashtirish" keraksiz murakkablik.
 - Report/read-only model - projection DTO'lar tabiiy ravishda xatti-harakatsiz bo'ladi va bu normal.
 
-**Ehtiyot bo'ling:** Anemik modelni har joyda "kasallik" deb hisoblamang: sodda CRUD va read-model uchun u to'g'ri tanlov, DDD'ni majburlash esa keraksiz murakkablik keltiradi. Boyitilgan entity'ga esa infrastruktura (repository, HTTP client) injeksiya qilmang - domen obyekti faqat o'ziga berilgan argumentlar bilan ishlashi kerak, aks holda testlanmaydigan chalkashlik paydo bo'ladi.
+**Ehtiyot bo'ling:** Anemik modelni har joyda "kasallik" deb hisoblamang: sodda CRUD va read-model uchun u to'g'ri tanlov, DDD'ni majburlash esa keraksiz murakkablik keltiradi. Boyitilgan entity'ga esa infrastruktura (repository, HTTP client) inyeksiya qilmang - domen obyekti faqat o'ziga berilgan argumentlar bilan ishlashi kerak, aks holda testlanmaydigan chalkashlik paydo bo'ladi.
 
 ## 25.36 ApplicationContext.getBean() Service Locator Sifatida (ApplicationContext.getBean() as Service Locator)
 
 **Tavsif:** Bean'lar dependency injection orqali olinmay, kod ichida `applicationContext.getBean(Foo.class)` chaqiruvi bilan runtime'da izlanadi. Bu dependency inversion printsipini teskari aylantiradi: sinf o'z bog'liqliklarini o'zi "tortib oladi" va Spring konteyneriga qattiq bog'lanadi. Bog'liqliklar kompilyatsiya vaqtida ko'rinmaydi, shuning uchun yo'q bean faqat ishlash paytida `NoSuchBeanDefinitionException` bilan fosh bo'ladi. Testda esa butun kontekstni yoki mock `ApplicationContext`'ni qurishga majbur bo'lasiz.
 
-**Spring'da qayerda uchraydi:** `ApplicationContextAware`, `BeanFactoryAware` interface'lari, statik holder sinflari (`SpringContextHolder`), `ServiceLocatorFactoryBean` (eski, 6.x'da hali bor lekin tavsiya etilmaydi). Zamonaviy alternativalar: `ObjectProvider<T>` (lazy va optional dependency uchun), `ObjectFactory<T>`, `List<Strategy>`/`Map<String, Strategy>` injeksiyasi bilan strategiya tanlash, `@Lookup` metodi prototype bean uchun, va `Supplier<T>` bilan kechiktirilgan yaratish. Spring Framework 6.x AOT/native-image rejimida `getBean()` bilan dinamik izlash reflection metadata muammosiga ham olib keladi.
+**Spring'da qayerda uchraydi:** `ApplicationContextAware`, `BeanFactoryAware` interface'lari, statik holder sinflari (`SpringContextHolder`), `ServiceLocatorFactoryBean` (eski, 6.x'da hali bor lekin tavsiya etilmaydi). Zamonaviy alternativalar: `ObjectProvider<T>` (lazy va optional dependency uchun), `ObjectFactory<T>`, `List<Strategy>`/`Map<String, Strategy>` inyeksiyasi bilan strategiya tanlash, `@Lookup` metodi prototype bean uchun, va `Supplier<T>` bilan kechiktirilgan yaratish. Spring Framework 6.x AOT/native-image rejimida `getBean()` bilan dinamik izlash reflection metadata muammosiga ham olib keladi.
 
 **Qo'llanish keyslari:**
 - Framework yoki kutubxona kodi Spring'dan mustaqil bo'lishi kerak bo'lganda vaqtinchalik ko'prik sifatida.
 - Legacy static utility sinfidan Spring bean'ga murojaat qilish (`SpringContextHolder.getBean(...)`) - ko'chirish davrida.
-- Runtime'da nom bo'yicha strategiya tanlash - buning o'rniga `Map<String, PaymentHandler>` injeksiyasi to'g'ri yechim.
+- Runtime'da nom bo'yicha strategiya tanlash - buning o'rniga `Map<String, PaymentHandler>` inyeksiyasi to'g'ri yechim.
 - Singleton service'dan prototype bean'ni har safar yangisini olish - bu yerda `@Lookup` yoki `ObjectProvider` to'g'ri vositadir.
 - Circular dependency'ni "aylanib o'tish" uchun `getBean()` ishlatish - bu dizayn muammosini yashiradi.
 
@@ -680,7 +680,7 @@ public record Money(BigDecimal amount, Currency currency) {
 
 **Tavsif:** A bean B'ga, B esa A'ga bog'liq bo'lib, konteyner ularni qaysi tartibda yaratishni aniqlay olmaydi. Spring buni ilgari uchinchi darajali cache va yarim tuzilgan obyektlarga reference berish bilan "hal qilardi", lekin bu nozik xatoliklar manbai. Aylana deyarli har doim mas'uliyatlar noto'g'ri taqsimlanganini bildiradi: ikkita sinf bir-birining ishini bajarmoqda yoki umumiy mantiq uchinchi sinfga ajratilmagan. Spring Boot 2.6'dan boshlab bu holat standart tarzda startup'da taqiqlangan.
 
-**Spring'da qayerda uchraydi:** `BeanCurrentlyInCreationException` xatoligi; `spring.main.allow-circular-references` property'si (standart holda `false`, Spring Boot 2.6+ va 3.x/4.x'da); vaqtinchalik "yamoq" sifatida `@Lazy` qo'yish yoki setter/field injeksiyaga o'tish. To'g'ri yechimlar: umumiy mantiqni uchinchi bean'ga ajratish, bog'liqlikni event'ga aylantirish (`ApplicationEventPublisher` va `@EventListener`), interface segregatsiyasi, yoki `ObjectProvider` bilan kechiktirish. Konstruktor injeksiyasi aylanani darhol fosh qiladi - bu uning afzalligi, kamchiligi emas.
+**Spring'da qayerda uchraydi:** `BeanCurrentlyInCreationException` xatoligi; `spring.main.allow-circular-references` property'si (standart holda `false`, Spring Boot 2.6+ va 3.x/4.x'da); vaqtinchalik "yamoq" sifatida `@Lazy` qo'yish yoki setter/field inyeksiyaga o'tish. To'g'ri yechimlar: umumiy mantiqni uchinchi bean'ga ajratish, bog'liqlikni event'ga aylantirish (`ApplicationEventPublisher` va `@EventListener`), interface segregatsiyasi, yoki `ObjectProvider` bilan kechiktirish. Konstruktor inyeksiyasi aylanani darhol fosh qiladi - bu uning afzalligi, kamchiligi emas.
 
 **Qo'llanish keyslari:**
 - `UserService` ↔ `NotificationService` bir-birini chaqirib, startup'da `BeanCurrentlyInCreationException` berishi.
@@ -780,6 +780,8 @@ public record Money(BigDecimal amount, Currency currency) {
 - Audit yoki hisobot job'i millionlab satrni iteratsiya qilganda N+1 batch oynasini bir necha soatga uzaytiradi.
 
 **Ehtiyot bo'ling:** Hammasini `FetchType.EAGER` qilib "tuzatish" yanada yomon - bu Cartesian product va keraksiz katta natijalarga olib keladi. Bir nechta `join fetch` bilan ikkita kolleksiyani birga olish `MultipleBagFetchException` beradi; bunda `Set` ishlatish yoki ikki bosqichli yuklash kerak.
+
+Mavzuning to'liq yozuvi arxitektor hujjatidagi [N+1 so'rov muammosi](../architect/18-spring-data-jpa-va-hibernate-chuqur.md#184-n1-sorov-muammosi-topish-usuli-va-tort-xil-yechim) bo'limida; bu yerda faqat pattern katalogi nuqtai nazari.
 
 ## 25.44 Yo'q @Version (Missing @Version)
 
@@ -1334,7 +1336,7 @@ void on(OrderCompleted event) {
 
 ## 25.79 Komissiya bilan loyihalash (Design by Committee)
 
-**Tavsif:** Dizayn qarori ko'p sonli manfaatdor tomonlarning har biri o'z talabini kiritishi natijasida shakllanadi va yagona izchil tasavvurga ega bo'lmaydi. Har kimning fikri hisobga olinadi, hech kim "yo'q" deyishga vakolatli bo'lmaydi, natijada API yoki arxitektura kompromislar to'plamiga aylanadi. Bunday tizim barcha stsenariylarni qisman qoplaydi, lekin birortasini yaxshi bajarmaydi. Belgisi - bir xil ishni bajaradigan bir nechta parallel mexanizm bir vaqtda mavjud bo'lishi.
+**Tavsif:** Dizayn qarori ko'p sonli manfaatdor tomonlarning har biri o'z talabini kiritishi natijasida shakllanadi va yagona izchil tasavvurga ega bo'lmaydi. Har kimning fikri hisobga olinadi, hech kim "yo'q" deyishga vakolatli bo'lmaydi, natijada API yoki arxitektura kompromislar to'plamiga aylanadi. Bunday tizim barcha ssenariylarni qisman qoplaydi, lekin birortasini yaxshi bajarmaydi. Belgisi - bir xil ishni bajaradigan bir nechta parallel mexanizm bir vaqtda mavjud bo'lishi.
 
 **Spring'da qayerda uchraydi:** Har bir jamoaning talabini qo'shgan OpenAPI kontrakti 300 ta ixtiyoriy maydonga ega bo'lishi va `@Validated` qoidalari bir-biriga zid kelishi; umumiy ichki "platform starter" har bir jamoaning iltimosi bilan o'sib, 40 ta `@ConditionalOnProperty` shartiga ega auto-configuration'ga aylanishi; Spring Security konfiguratsiyasida bir nechta `SecurityFilterChain` bean'lari turli jamoalar tomonidan qo'shilib, `@Order` qiymatlari ziddiyatga kirishi; umumiy `application.yml` har bir mahsulot egasi qo'shgan flag bilan to'lib ketishi. Spring Modulith yoki ArchUnit bilan modul egaligini (ownership) kodda majburiy qilish va har bir modulga aniq mas'ul belgilash kompromis dizaynga qarshi eng ishonchli himoya.
 
@@ -1431,7 +1433,7 @@ public Rate fetch(String code) {
 - [Spring Framework, Declarative transaction annotations](https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/annotations.html) - 6.0 dan beri `protected` va package-visible metodlar class-based proxy da tranzaksion bo'ladi; interface proxy da metod `public` va proxy qilinayotgan interface da bo'lishi shart
 - [Spring Framework, Proxying mechanisms](https://docs.spring.io/spring-framework/reference/core/aop/proxying.html) - CGLIB `final` va `private` metodni advise qila olmaydi
 - [Spring Framework v6.2.0, Spring projects in Kotlin: Final by Default](https://github.com/spring-projects/spring-framework/blob/v6.2.0/framework-docs/modules/ROOT/pages/languages/kotlin/spring-projects-in.adoc#final-by-default) - Kotlin sinf va metodlari standart `final`, yechim `kotlin-spring` (allopen) plugini
-- [sonar-java, S2230](https://raw.githubusercontent.com/SonarSource/sonar-java/master/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S2230.html) - qoida 5.x gacha har qanday public bo'lmagan metodni, 6.x da faqat `private` ni belgilaydi
+- [sonar-java, S2230](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S2230.html) - qoida 5.x gacha har qanday public bo'lmagan metodni, 6.x da faqat `private` ni belgilaydi
 
 ---
 

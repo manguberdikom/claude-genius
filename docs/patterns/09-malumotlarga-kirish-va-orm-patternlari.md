@@ -7,7 +7,7 @@
 # 9. Ma'lumotlarga kirish va ORM patternlari (Data Access & ORM Patterns)
 
 <details>
-<summary>Bu bo'limdagi 38 bo'lim</summary>
+<summary>Bu bobdagi 38 bo'lim</summary>
 
 - [9.1 Ma'lumotlarga kirish obyekti (Data Access Object - DAO)](#91-malumotlarga-kirish-obyekti-data-access-object---dao)
 - [9.2 Repository (Repository - Spring Data)](#92-repository-repository---spring-data)
@@ -880,6 +880,8 @@ List<Order> findByStatus(OrderStatus s);
 List<OrderRow> rows();
 ```
 
+Mavzuning to'liq yozuvi arxitektor hujjatidagi [N+1 so'rov muammosi](../architect/18-spring-data-jpa-va-hibernate-chuqur.md#184-n1-sorov-muammosi-topish-usuli-va-tort-xil-yechim) bo'limida; bu yerda faqat pattern katalogi nuqtai nazari.
+
 ## 9.28 View ichida ochiq sessiya - antipattern (Open Session in View)
 
 **Tavsif:** Hibernate `Session` (yoki JPA `EntityManager`) HTTP so'rov oxirigacha, ya'ni view render qilinishigacha ochiq qoldiriladi, shunda template lazy assotsiatsiyalarni erkin yuklay oladi. Bu `LazyInitializationException`ni yo'qotadi, lekin ma'lumotlarga kirishni prezentatsiya qatlamiga sizdiradi: so'rovlar nazoratsiz joyda, tranzaksiyadan tashqarida va ko'pincha N+1 shaklida ketadi. Shu sababli zamonaviy arxitekturalarda antipattern hisoblanadi.
@@ -1176,13 +1178,13 @@ while (rs.next()) {                         // connection allaqachon yopilgan
 
 ## Manbalar
 
-- [jakartaee/persistence, `ManyToOne.java`, `OneToOne.java`, `OneToMany.java`, `ManyToMany.java`](https://raw.githubusercontent.com/jakartaee/persistence/master/api/src/main/java/jakarta/persistence/OneToMany.java) - `@ManyToOne` va `@OneToOne` default `EAGER`, `@OneToMany` va `@ManyToMany` default `LAZY`
-- [jakartaee/persistence, `GenerationType.java`](https://raw.githubusercontent.com/jakartaee/persistence/master/api/src/main/java/jakarta/persistence/GenerationType.java) - `TABLE`, `SEQUENCE`, `IDENTITY`, `UUID`, `AUTO` qiymatlari
-- [jakartaee/persistence, `SequenceGenerator.java`](https://raw.githubusercontent.com/jakartaee/persistence/master/api/src/main/java/jakarta/persistence/SequenceGenerator.java) - `allocationSize() default 50`
-- [jakartaee/persistence, `Inheritance.java`](https://raw.githubusercontent.com/jakartaee/persistence/master/api/src/main/java/jakarta/persistence/Inheritance.java) - `strategy() default InheritanceType.SINGLE_TABLE`
-- [spring-boot, `JpaBaseConfiguration.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/main/module/spring-boot-jpa/src/main/java/org/springframework/boot/jpa/autoconfigure/JpaBaseConfiguration.java) - "spring.jpa.open-in-view is enabled by default" ogohlantirish matni
-- [hibernate-orm, `SqlTypes.java`](https://raw.githubusercontent.com/hibernate/hibernate-orm/main/hibernate-core/src/main/java/org/hibernate/type/SqlTypes.java) - `JSON` va `JSON_ARRAY` doimiylari
-- [mapstruct, `SubclassMapping.java`](https://raw.githubusercontent.com/mapstruct/mapstruct/main/core/src/main/java/org/mapstruct/SubclassMapping.java) - `@since 1.5`
+- [jakartaee/persistence, `ManyToOne.java`, `OneToOne.java`, `OneToMany.java`, `ManyToMany.java`](https://raw.githubusercontent.com/jakartaee/persistence/3.2-3.2.0-RELEASE/api/src/main/java/jakarta/persistence/OneToMany.java) - `@ManyToOne` va `@OneToOne` default `EAGER`, `@OneToMany` va `@ManyToMany` default `LAZY`
+- [jakartaee/persistence, `GenerationType.java`](https://raw.githubusercontent.com/jakartaee/persistence/3.2-3.2.0-RELEASE/api/src/main/java/jakarta/persistence/GenerationType.java) - `TABLE`, `SEQUENCE`, `IDENTITY`, `UUID`, `AUTO` qiymatlari
+- [jakartaee/persistence, `SequenceGenerator.java`](https://raw.githubusercontent.com/jakartaee/persistence/3.2-3.2.0-RELEASE/api/src/main/java/jakarta/persistence/SequenceGenerator.java) - `allocationSize() default 50`
+- [jakartaee/persistence, `Inheritance.java`](https://raw.githubusercontent.com/jakartaee/persistence/3.2-3.2.0-RELEASE/api/src/main/java/jakarta/persistence/Inheritance.java) - `strategy() default InheritanceType.SINGLE_TABLE`
+- [spring-boot, `JpaBaseConfiguration.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/module/spring-boot-jpa/src/main/java/org/springframework/boot/jpa/autoconfigure/JpaBaseConfiguration.java) - "spring.jpa.open-in-view is enabled by default" ogohlantirish matni
+- [hibernate-orm, `SqlTypes.java`](https://raw.githubusercontent.com/hibernate/hibernate-orm/7.0.0/hibernate-core/src/main/java/org/hibernate/type/SqlTypes.java) - `JSON` va `JSON_ARRAY` doimiylari
+- [mapstruct, `SubclassMapping.java`](https://raw.githubusercontent.com/mapstruct/mapstruct/1.6.3/core/src/main/java/org/mapstruct/SubclassMapping.java) - `@since 1.5`
 
 ---
 

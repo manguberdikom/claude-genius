@@ -243,7 +243,7 @@ assertThat(order.total())
 | --- | --- |
 | Testdagi mantiq (`if`, sikl) | Test o'zi xato bo'lishi mumkin |
 | Kutilgan qiymatni hisoblash | Kod bilan bir xil xatoni takrorlaydi |
-| Bitta testda ko'p stsenariy | Yiqilganda joy noaniq |
+| Bitta testda ko'p ssenariy | Yiqilganda joy noaniq |
 | Tasodifiy ma'lumot (seed siz) | Takrorlanmaydigan yiqilish |
 | `@Disabled` izohsiz | Abadiy o'chirilgan test |
 | `try/catch` bilan istisnoni yutish | Test har doim o'tadi |

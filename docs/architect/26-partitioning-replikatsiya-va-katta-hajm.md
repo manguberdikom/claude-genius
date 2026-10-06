@@ -263,7 +263,7 @@ spring.datasource.hikari.validation-timeout=2000
 spring.datasource.hikari.keepalive-time=120000
 ```
 
-Failover testi ishlab chiqarishga chiqishdan oldin bajarilishi kerak: [testlash qo'llanmasidagi](../testing/README.md) resilience testlari bo'limida standby ni promote qilib tiklanish vaqtini o'lchash stsenariysi bor.
+Failover testi ishlab chiqarishga chiqishdan oldin bajarilishi kerak: [testlash qo'llanmasidagi](../testing/README.md) resilience testlari bo'limida standby ni promote qilib tiklanish vaqtini o'lchash ssenariysi bor.
 
 ## 26.11 Spring da o'qish va yozish uchun alohida DataSource sozlash
 
@@ -324,7 +324,7 @@ Sharding dan oldin to'rtta arzon qadam bor: partitioning, read replica, arxivlas
 - [ ] `pg_stat_replication` dagi `replay_lag` va `pg_replication_slots` dagi slot lag uchun alert qo'ying, `max_slot_wal_keep_size` ni belgilang.
 - [ ] `synchronous_standby_names` ni `ANY 1 (a, b)` shaklida kvorumga o'tkazing va bitta standby o'chganda yozish to'xtamasligini sinab ko'ring.
 - [ ] O'qish uchun alohida DataSource ni `LazyConnectionDataSourceProxy` bilan sozlang, pool o'lchamlarini yozish uchun 10, o'qish uchun 20 qilib ajratib qo'ying.
-- [ ] Yozishdan keyingi o'qishni primary ga yo'naltiruvchi qoida kiritib, lag sababli ko'rinmagan yozuv stsenariysini testda qayd eting.
+- [ ] Yozishdan keyingi o'qishni primary ga yo'naltiruvchi qoida kiritib, lag sababli ko'rinmagan yozuv ssenariysini testda qayd eting.
 
 ---
 

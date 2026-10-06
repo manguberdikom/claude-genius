@@ -168,7 +168,7 @@ tartib	vazn	hujjat	bob	holat	rules_for	eval	sonar	bolim	sarlavha
 160	0.143	sonarqube	33	ai-draft	0	0	0	12	33. Serverni o'rnatish, sozlash va resurs rejalashtirish (Installing and Sizing the Server)
 161	0.143	sonarqube	34	ai-draft	0	0	0	12	34. Yangilash, LTA migratsiyasi, zaxira va housekeeping (Upgrades, Backup and Housekeeping)
 162	0.143	sonarqube	35	ai-draft	0	0	0	12	35. Foydalanuvchi, guruh, huquqlar, token va SSO (Users, Permissions and Tokens)
-163	0.143	testing	4	ai-draft	0	0	0	12	4. Testrovshik qanday ishlashi kerak: QA ish jarayoni (How a Tester Actually Works - The QA Workflow)
+163	0.143	testing	4	ai-draft	0	0	0	12	4. Tester qanday ishlashi kerak: QA ish jarayoni (How a Tester Actually Works - The QA Workflow)
 164	0.131	architect	1	ai-draft	0	0	0	11	1. Arxitektorning fikrlash modeli (The Architect's Mental Model)
 165	0.131	architect	2	ai-draft	0	0	0	11	2. Muammoni tushunish va to'g'ri savol berish (Understanding the Problem)
 166	0.131	architect	3	ai-draft	0	0	0	11	3. Qaror qabul qilish va uni hujjatlashtirish (Decisions and ADRs)

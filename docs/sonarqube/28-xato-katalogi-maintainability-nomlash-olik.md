@@ -380,7 +380,7 @@ Tavsiya: `public` maydonni faqat `record` ichida yoki `static final` immutable q
 
 ## 28.9 `final` qo'yilmagan o'zgarmas maydon
 
-Sonar da bu holat bir nechta qoida orqali ko'rinadi, shuning uchun aniq kalitni faqat profilda ko'rganingizda yozing. Eng ishonchlisi `java:S1170`: deklaratsiyada qiymat beriladigan `public` maydon `static final` bo'lishi kerak. Konstruktor orqali injeksiya qilingan Spring bog'liqliklari esa `final` bo'lmasa, Sonar odatda minor code smell beradi va ba'zi profilda bu qoida o'chirilgan bo'ladi.
+Sonar da bu holat bir nechta qoida orqali ko'rinadi, shuning uchun aniq kalitni faqat profilda ko'rganingizda yozing. Eng ishonchlisi `java:S1170`: deklaratsiyada qiymat beriladigan `public` maydon `static final` bo'lishi kerak. Konstruktor orqali inyeksiya qilingan Spring bog'liqliklari esa `final` bo'lmasa, Sonar odatda minor code smell beradi va ba'zi profilda bu qoida o'chirilgan bo'ladi.
 
 ```java
 @Service
@@ -412,7 +412,7 @@ public class ShipmentService {
 }
 ```
 
-Tavsiya: barcha konstruktor injeksiyasi maydonlarini `final` qiling, bu bir vaqtning o'zida Sonar shikoyatini ham, kelajakdagi `@Autowired` setter vasvasasini ham yopadi.
+Tavsiya: barcha konstruktor inyeksiyasi maydonlarini `final` qiling, bu bir vaqtning o'zida Sonar shikoyatini ham, kelajakdagi `@Autowired` setter vasvasasini ham yopadi.
 
 ## 28.10 Ortiqcha modifikator (interfeysda `public abstract`)
 
@@ -623,7 +623,7 @@ CI da esa yangi kod uchun qattiq, eski kod uchun yumshoq siyosat yuritish mumkin
 - [ ] Quality profile da `java:S100`, `java:S101`, `java:S115`, `java:S116`, `java:S117` yoqilganini tekshiring va `format` parametrini jamoa konvensiyasiga moslang.
 - [ ] `java:S1068`, `java:S1128`, `java:S1172`, `java:S1481`, `java:S1144` bo'yicha hozirgi issue sonini yozib oling, bu sizning boshlang'ich nuqtangiz.
 - [ ] Har bir `java:S1481` shikoyatini qo'lda ko'rib chiqing va yozilmay qolgan tekshiruv bor-yo'qligini aniqlang.
-- [ ] Barcha konstruktor injeksiyasi maydonlarini `final` qilib, `public` nostatik maydonlarni `private` ga o'tkazing.
+- [ ] Barcha konstruktor inyeksiyasi maydonlarini `final` qilib, `public` nostatik maydonlarni `private` ga o'tkazing.
 - [ ] Loglardagi `+` birlashtirishlarni `{}` shabloniga ko'chiring va qimmat argumentlarni `isDebugEnabled` ichiga oling.
 - [ ] `FIXME` sonini CI da nolga majburlang va mavjud `FIXME` larni issue tracker ga ko'chirib, havolasini `TODO` ga yozing.
 - [ ] `sonar.exclusions` va `sonar.java.binaries` ni to'g'rilab, generatsiya qilingan kod shikoyatlarini yo'q qiling.

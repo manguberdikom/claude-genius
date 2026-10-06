@@ -7,7 +7,7 @@
 # 15. Enterprise Integration Patterns I: xabarlar, kanallar, marshrutlash (EIP I: Messaging Systems, Channels, Construction, Routing)
 
 <details>
-<summary>Bu bo'limdagi 37 bo'lim</summary>
+<summary>Bu bobdagi 37 bo'lim</summary>
 
 - [15.1 Xabar kanali (Message Channel)](#151-xabar-kanali-message-channel)
 - [15.2 Xabar (Message)](#152-xabar-message)
@@ -938,7 +938,7 @@ public class NotificationFanout {
 - Ko'p sahifali hisobotni sahifalarga bo'lib parallel render qilish.
 - Katta XML batch hujjatini `XPathMessageSplitter` orqali tranzaksiyalarga ajratish.
 
-**Ehtiyot bo'ling:** Collection'ni to'liq xotiraga yuklab bo'lib tashlash katta fayllarda darhol `OutOfMemoryError` keltiradi - splitter metodidan `Iterator`/`Stream` qaytarib streaming rejimida ishlang va downstream'da backpressure yoki `QueueChannel` sig'imini hisobga oling. Tranzaksiya chegarasi ham o'zgaradi: bo'lingan xabarlar bir xil thread'da ketmasa, ularning muvaffaqiyati endi atomik emas, shuning uchun qisman muvaffaqiyat (partial failure) stsenariysini ongli loyihalash kerak.
+**Ehtiyot bo'ling:** Collection'ni to'liq xotiraga yuklab bo'lib tashlash katta fayllarda darhol `OutOfMemoryError` keltiradi - splitter metodidan `Iterator`/`Stream` qaytarib streaming rejimida ishlang va downstream'da backpressure yoki `QueueChannel` sig'imini hisobga oling. Tranzaksiya chegarasi ham o'zgaradi: bo'lingan xabarlar bir xil thread'da ketmasa, ularning muvaffaqiyati endi atomik emas, shuning uchun qisman muvaffaqiyat (partial failure) ssenariysini ongli loyihalash kerak.
 
 ```java
 // Splitter: bitta xabar bir nechta xabarga bo'linadi
@@ -1091,7 +1091,7 @@ IntegrationFlow quoteFlow() {
 ```
 
 **Qo'llanish keyslari:**
-- Bir nechta bank yoki sug'urta kompaniyasidan narx taklifi so'rab, eng arzonini tanlash (auktsion stsenariysi).
+- Bir nechta bank yoki sug'urta kompaniyasidan narx taklifi so'rab, eng arzonini tanlash (auktsion ssenariysi).
 - Aviachipta qidiruvini bir vaqtda bir nechta GDS provayderiga yuborib, natijalarni birlashtirish.
 - Dashboard uchun 5 ta turli microservisdan ma'lumot olib, bitta javob qurish.
 - Fraud skoringni bir nechta mustaqil model/servisga parallel yuborib, ularning ovozini yig'ish (ensemble).

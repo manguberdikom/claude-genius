@@ -116,7 +116,7 @@ record Organization(String name, CountryCode country) { }
 
 ## 36.8 Primitivni obyektga almashtirish (Replace Primitive with Object)
 
-**Qachon**: primitiv qiymat atrofida mantiq paydo bo'ladi - validatsiya, formatlash, solishtirish ([patternlar hujjatidagi](../patterns/README.md) primitivlarga berilish anti-patterni ; 21.8).
+**Qachon**: primitiv qiymat atrofida mantiq paydo bo'ladi - validatsiya, formatlash, solishtirish (patternlar hujjatidagi [primitivlarga berilish anti-patterni](../patterns/25-anti-patternlar.md#2519-primitivlarga-berilish-primitive-obsession); [satr bilan tiplash o'rniga tur](21-satr-matn-va-regex.md#218-satr-bilan-tiplash-orniga-tur)).
 
 **Mexanika**: yangi `record` yaratish → maydon turini almashtirish → getter ni yangi tur qaytaradigan qilish → chaqiruvchilarni bosqichma-bosqich ko'chirish → mantiqni yangi turga ko'chirish.
 

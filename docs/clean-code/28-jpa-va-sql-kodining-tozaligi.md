@@ -238,7 +238,7 @@ order by o.created_at desc;
 
 ## 28.9 Migratsiya fayli nomlanishi va mazmuni
 
-Migratsiya strategiyasi va to'xtashsiz reliz [arxitektor hujjatidagi](../architect/README.md) sxema migratsiyasi va to'xtashsiz reliz bo'limida. Bu yerda fayl darajasidagi qoidalar: nomlanish (3.13), bir migratsiya bir maqsad, va orqaga qaytarish imkoni.
+Migratsiya strategiyasi va to'xtashsiz reliz arxitektor hujjatidagi [sxema migratsiyasi va to'xtashsiz reliz](../architect/33-sxema-migratsiyasi-va-toxtashsiz-reliz.md) bobida. Bu yerda fayl darajasidagi qoidalar: [nomlanish](03-nom-turlari-boyicha-aniq-konvensiyalar.md#313-fayl-resurs-va-konfiguratsiya-kaliti-nomlari), bir migratsiya bir maqsad, va orqaga qaytarish imkoni.
 
 ```sql
 -- V12__add_settled_at_to_payment.sql

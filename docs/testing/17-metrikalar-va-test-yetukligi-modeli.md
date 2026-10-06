@@ -137,7 +137,7 @@ Keyingi darajaga o'tish qadamlari:
 
 **2 → 3:** test darajalarini Maven/Gradle profillariga ajratish; Testcontainers bilan real PostgreSQL/Kafka'ga o'tish; Spring test kontekstlarini birlashtirib cache'dan foydalanish; tashqi HTTP'ni WireMock bilan izolyatsiya qilish; eng sekin 20 testni har hafta ko'rib chiqish.
 
-**3 → 4:** consumer-driven contract testlarni kiritish; diff coverage darvozasini yoqish; o'zgargan fayllar uchun mutation testlashni (PIT `scmMutationCoverage`) qo'shish; asosiy ikki-uch scenariyga yuklama testi va baseline; flaky testlar uchun karantin va SLA jarayoni.
+**3 → 4:** consumer-driven contract testlarni kiritish; diff coverage darvozasini yoqish; o'zgargan fayllar uchun mutation testlashni (PIT `scmMutationCoverage`) qo'shish; asosiy ikki-uch ssenariyga yuklama testi va baseline; flaky testlar uchun karantin va SLA jarayoni.
 
 **4 → 5:** feature flag bilan deploy va release'ni ajratish; canary va avtomatik rollback; SLO va error budget joriy qilish; muhim foydalanuvchi yo'llariga synthetic test; nazorat ostidagi fault injection tajribalari.
 

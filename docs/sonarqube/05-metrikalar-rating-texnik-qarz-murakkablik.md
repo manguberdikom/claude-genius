@@ -142,6 +142,8 @@ BigDecimal hisobla(Buyurtma b) {
 
 Ikkinchi variantda chegirma shartini `Qator` ga ko'chirish tasodifiy emas. Murakkablikni kamaytirishning ishonchli yo'li uni bo'lish emas, balki qarorni ma'lumot egasiga berish. Shunchaki metodni ikkiga bo'lsangiz, umumiy cognitive yig'indisi saqlanib qolishi mumkin, faqat chegaradan o'tib ketadi.
 
+Mavzuning to'liq yozuvi shu hujjatdagi [cognitive complexity va takrorlanishni kamaytirish](15-cognitive-complexity-va-takrorlanishni.md) bobida; bu yerda faqat Sonar qoidasi nuqtai nazari.
+
 ## 5.5 Takrorlanish (duplication): blok qanday aniqlanadi va foiz qanday hisoblanadi
 
 Sonar takrorlanishni o'zining CPD (copy paste detector) mexanizmi bilan topadi va Java uchun chegara ketma ket 10 ta bayonot (statement). Ya'ni o'ntadan kam qatorli bir xil nusxa hisobga olinmaydi. Taqqoslash tokenlar darajasida ketadi, shuning uchun o'zgaruvchi nomini almashtirish takrorlanishni yashirmaydi, formatlash va izohlar esa ahamiyatsiz.

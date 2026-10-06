@@ -171,6 +171,8 @@ Amaliy mezon: bitta ekranga sig'maydigan va uch darajadan chuqur ichma-ich shart
 
 Muhim nuans: murakkablikni kamaytirish uchun metodni ikkiga bo'lish ko'rsatkichni yaxshilaydi, lekin tushunarlilikni yaxshilamasligi mumkin. Agar ajratilgan metod `part1`, `part2` deb nomlangan bo'lsa, bu ko'rsatkichni aldash. To'g'ri yechim - domen tilidagi nom bilan ajratish yoki shoxlanishni polimorfizm bilan almashtirish ([10-bobga](10-dizayn-pattern-review-i-yoq-patternni-korish.md) qarang).
 
+Mavzuning to'liq yozuvi SonarQube hujjatidagi [cognitive complexity va takrorlanishni kamaytirish](../sonarqube/15-cognitive-complexity-va-takrorlanishni.md) bobida; bu yerda faqat diffda ko'rish nuqtai nazari.
+
 ## 5.6 Null yo'lini qo'lda kuzatish
 
 Statik tahlil null ni faqat bitta metod ichida ishonchli kuzatadi. Metoddan metodga o'tgan null uchun annotatsiya kerak. Shu sababli reviewer null ni chegaralarda kuzatadi.

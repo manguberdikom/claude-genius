@@ -238,7 +238,7 @@ Qat'iy qoida: retry yoqilgan bo'lsa, `flakyFailure` soni dashboard'da ko'rsatila
 
 ## 16.6 Test qarzi (test debt)
 
-Test qarzi - suite'ning kelajakdagi o'zgarishlarni qo'llab-quvvatlash qobiliyatini kamaytiruvchi har qanday holat. Turlari: **eskirgan test** (o'zgargan talabni tekshiradi, lekin mock'lar shunchalik chuqur ki real xatti-harakat ko'rinmaydi); **assertion'siz test** (faqat metodni chaqiradi - mutation testing bunday testlarni darhol ochadi); **abadiy `@Disabled`** (sababi yozilmagan, hech kim tegishga qo'rqadi); **takrorlangan test** (bir scenariyni uch darajada tekshiradi, qo'shimcha xavf qoplamaydi); **tushunarsiz test** (80 qatorli setup, nomi `test1`).
+Test qarzi - suite'ning kelajakdagi o'zgarishlarni qo'llab-quvvatlash qobiliyatini kamaytiruvchi har qanday holat. Turlari: **eskirgan test** (o'zgargan talabni tekshiradi, lekin mock'lar shunchalik chuqur ki real xatti-harakat ko'rinmaydi); **assertion'siz test** (faqat metodni chaqiradi - mutation testing bunday testlarni darhol ochadi); **abadiy `@Disabled`** (sababi yozilmagan, hech kim tegishga qo'rqadi); **takrorlangan test** (bir ssenariyni uch darajada tekshiradi, qo'shimcha xavf qoplamaydi); **tushunarsiz test** (80 qatorli setup, nomi `test1`).
 
 Inventarizatsiya qilmasdan qarzni to'lash mumkin emas:
 
@@ -292,7 +292,7 @@ void shouldRejectOrderOverCreditLimit() {
 }
 ```
 
-Amaliy ro'yxat: nomlarni biznes tilida yozish (`shouldRejectOrderOverCreditLimit`, `testSubmit` emas); `@DisplayName` bilan scenariyni to'liq ifodalash; assertion'ni mazmunli qilish (`hasSize(3)` o'rniga `containsExactly(...)`); `assertTrue(x.equals(y))` ni AssertJ'ning tipga xos matcher'lariga o'tkazish - xato xabari ancha ma'lumotli bo'ladi; bir testda bir mantiqiy tasdiq, kerak bo'lsa `assertAll` yoki `SoftAssertions` bilan guruhlash. Test source'lariga ham code review va static analysis qo'llanadi.
+Amaliy ro'yxat: nomlarni biznes tilida yozish (`shouldRejectOrderOverCreditLimit`, `testSubmit` emas); `@DisplayName` bilan ssenariyni to'liq ifodalash; assertion'ni mazmunli qilish (`hasSize(3)` o'rniga `containsExactly(...)`); `assertTrue(x.equals(y))` ni AssertJ'ning tipga xos matcher'lariga o'tkazish - xato xabari ancha ma'lumotli bo'ladi; bir testda bir mantiqiy tasdiq, kerak bo'lsa `assertAll` yoki `SoftAssertions` bilan guruhlash. Test source'lariga ham code review va static analysis qo'llanadi.
 
 ## 16.9 Test smell'lar katalogi
 
@@ -309,7 +309,7 @@ Amaliy ro'yxat: nomlarni biznes tilida yozish (`shouldRejectOrderOverCreditLimit
 | Sleepy Test | `Thread.sleep` bilan kutish | `Awaitility`, `CountDownLatch`, deterministik `TaskExecutor` |
 | Indirect Testing | A klassi B orqali bilvosita tekshiriladi | A ni to'g'ridan-to'g'ri test qilish |
 | Excessive Setup | Testni ishga tushirish uchun o'nlab obyekt va mock kerak | Dizayn signali: bog'liqlikni kamaytirish, domenni ajratish |
-| General Fixture | Bitta katta umumiy fixture hammaga xizmat qiladi, har biri 10% ini ishlatadi | Scenariy bo'yicha kichik fixture'lar; `@Nested` ichida lokal setup |
+| General Fixture | Bitta katta umumiy fixture hammaga xizmat qiladi, har biri 10% ini ishlatadi | Ssenariy bo'yicha kichik fixture'lar; `@Nested` ichida lokal setup |
 
 Katalog PR review checklist'i sifatida eng samarali: review'chi smell nomini aytadi, muallif tuzatish yo'lini biladi.
 
@@ -330,7 +330,7 @@ Asosiy vositalar:
 
 1. **Spring context sonini kamaytirish.** Har bir noyob konfiguratsiya - alohida yuklanish (5-20 s). `logging.level.org.springframework.test.context.cache=DEBUG` bilan kesh hit/miss statistikasini va `spring.test.context.cache.maxSize` (standart 32) chegarasini ko'rish mumkin. Maqsad: 3-5 ta standart test konfiguratsiyasi, mock bean'larni ad-hoc qo'shishdan voz kechish - har bir yangi kombinatsiya yangi context yaratadi.
 2. **Konteynerni qayta ishlatish.** Testcontainers'da `@Container` ni `static` qilish, butun suite uchun singleton container pattern'i, lokal ishlab chiqishda `testcontainers.reuse.enable=true`. CI'da reuse o'chiriladi, chunki runner har safar toza.
-3. **Testni past darajaga tushirish.** Eng samarali optimallashtirish - testni piramidaning pastki qatlamiga ko'chirish: E2E'dagi validatsiya scenariysi → `@WebMvcTest`; integration'dagi hisob-kitob mantiqi → toza unit test. Bitta E2E testni unit testga aylantirish odatda 30-60 sekundni millisekundlarga tushiradi.
+3. **Testni past darajaga tushirish.** Eng samarali optimallashtirish - testni piramidaning pastki qatlamiga ko'chirish: E2E'dagi validatsiya ssenariysi → `@WebMvcTest`; integration'dagi hisob-kitob mantiqi → toza unit test. Bitta E2E testni unit testga aylantirish odatda 30-60 sekundni millisekundlarga tushiradi.
 4. **Parallelism.** `mode.default=same_thread` + `mode.classes.default=concurrent` eng xavfsiz boshlang'ich konfiguratsiya; Surefire `forkCount=1C` modul darajasida parallelism beradi. Parallelismni yoqishdan oldin tartib bog'liqligi tozalanishi shart, aks holda flake rate oshadi.
 
 ## 16.11 Testlar egaligi va madaniyat

@@ -7,7 +7,7 @@
 # 14. Microservices patternlari (Microservices Patterns)
 
 <details>
-<summary>Bu bo'limdagi 40 bo'lim</summary>
+<summary>Bu bobdagi 40 bo'lim</summary>
 
 - [14.1 Monolitik arxitektura va mikroservis arxitekturasi qarori (Monolithic Architecture vs Microservice Architecture (decision))](#141-monolitik-arxitektura-va-mikroservis-arxitekturasi-qarori-monolithic-architecture-vs-microservice-architecture-decision)
 - [14.2 Biznes imkoniyati bo'yicha dekompozitsiya (Decompose by Business Capability)](#142-biznes-imkoniyati-boyicha-dekompozitsiya-decompose-by-business-capability)
@@ -428,6 +428,8 @@ record OrderPlaced(String orderId, BigDecimal total) {}
 - Audit va analitika oqimining hech bir hodisani yo'qotmasligini ta'minlash.
 
 **Ehtiyot bo'ling:** Outbox jadvalini tozalashni (archival/partition) oldindan rejalashtirmaslik DB o'sishi va vacuum muammolariga olib keladi. At-least-once sababli dublikatlar bo'ladi: iste'molchida dedup kaliti (message id) va idempotent handler bo'lmasa, ikki marta to'lov yoki ikki marta email yuborilishi real risk.
+
+Mavzuning to'liq yozuvi shu hujjatdagi [tranzaksion Outbox](10-malumotlarni-boshqarish-va-taqsimlash.md#1014-tranzaksion-outbox-transactional-outbox) bo'limida; bu yerda faqat pattern katalogi nuqtai nazari.
 
 ## 14.13 Tranzaksiya logini kuzatish (Transaction Log Tailing)
 

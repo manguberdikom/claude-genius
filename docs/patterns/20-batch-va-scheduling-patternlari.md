@@ -7,7 +7,7 @@
 # 20. Batch va scheduling patternlari (Batch & Scheduling Patterns)
 
 <details>
-<summary>Bu bo'limdagi 31 bo'lim</summary>
+<summary>Bu bobdagi 31 bo'lim</summary>
 
 - [20.1 Chunk'ga asoslangan ishlov (Chunk-Oriented Processing)](#201-chunkga-asoslangan-ishlov-chunk-oriented-processing)
 - [20.2 Tasklet (Tasklet)](#202-tasklet-tasklet)
@@ -152,7 +152,7 @@ Step importStep(JobRepository repo, PlatformTransactionManager tx,
 
 **Tavsif:** Katta ma'lumot to'plamini mustaqil bo'laklarga (partition) ajratib, har birini alohida step execution sifatida parallel bajarish patterni. Manager qadam `Partitioner` yordamida partition'lar va ularning `ExecutionContext` parametrlarini (masalan ID oralig'i yoki fayl nomi) yaratadi, `PartitionHandler` esa ularni thread'larga yoki boshqa JVM'larga tarqatadi. Har bir worker o'z partition'ini to'liq o'qiydi va yozadi - ya'ni faqat metadata tarmoq orqali ketadi, ma'lumotning o'zi emas.
 
-**Spring'da qayerda uchraydi:** `PartitionStep`, `Partitioner` (`SimplePartitioner`, `MultiResourcePartitioner`), `StepExecutionSplitter`, `PartitionHandler` implementatsiyalari: lokal uchun `TaskExecutorPartitionHandler` (`StepBuilder.partitioner(...).gridSize(n).taskExecutor(...)`), remote uchun `spring-batch-integration` dagi `MessageChannelPartitionHandler`, `RemotePartitioningManagerStepBuilder` va `RemotePartitioningWorkerStepBuilder` (`@EnableBatchIntegration` bilan, Kafka/RabbitMQ/JMS kanallari ustida). Worker tarafida partition parametrlari `@StepScope` bean'larga `#{stepExecutionContext['minId']}` ko'rinishida in'ektsiya qilinadi.
+**Spring'da qayerda uchraydi:** `PartitionStep`, `Partitioner` (`SimplePartitioner`, `MultiResourcePartitioner`), `StepExecutionSplitter`, `PartitionHandler` implementatsiyalari: lokal uchun `TaskExecutorPartitionHandler` (`StepBuilder.partitioner(...).gridSize(n).taskExecutor(...)`), remote uchun `spring-batch-integration` dagi `MessageChannelPartitionHandler`, `RemotePartitioningManagerStepBuilder` va `RemotePartitioningWorkerStepBuilder` (`@EnableBatchIntegration` bilan, Kafka/RabbitMQ/JMS kanallari ustida). Worker tarafida partition parametrlari `@StepScope` bean'larga `#{stepExecutionContext['minId']}` ko'rinishida inyeksiya qilinadi.
 
 **Qo'llanish keyslari:**
 - 50 mln qatorli jadvalni ID oralig'i bo'yicha 32 partition'ga bo'lib parallel qayta ishlash.
@@ -210,9 +210,9 @@ Step importStep(JobRepository repo, PlatformTransactionManager tx,
 
 ## 20.11 Step scope va kechiktirilgan binding (Step Scope / Late Binding)
 
-**Tavsif:** Batch job parametrlari (masalan, fayl nomi, sana oralig'i) faqat job ishga tushgan paytda ma'lum bo'ladi, lekin reader/writer bean'lari Spring context ko'tarilayotganda yaratiladi. Step scope bean'ni singleton emas, balki har bir step execution uchun alohida yaratadi va SpEL ifodalarini step boshlanganda hal qiladi (late binding). Shu tarzda `JobParameters` yoki `ExecutionContext` qiymatlarini to'g'ridan-to'g'ri bean konfiguratsiyasiga in'ektsiya qilish mumkin bo'ladi. Qo'shimcha foyda - bean har safar yangi holatda yaratilganligi uchun restart va parallel step'lar xavfsiz ishlaydi.
+**Tavsif:** Batch job parametrlari (masalan, fayl nomi, sana oralig'i) faqat job ishga tushgan paytda ma'lum bo'ladi, lekin reader/writer bean'lari Spring context ko'tarilayotganda yaratiladi. Step scope bean'ni singleton emas, balki har bir step execution uchun alohida yaratadi va SpEL ifodalarini step boshlanganda hal qiladi (late binding). Shu tarzda `JobParameters` yoki `ExecutionContext` qiymatlarini to'g'ridan-to'g'ri bean konfiguratsiyasiga inyeksiya qilish mumkin bo'ladi. Qo'shimcha foyda - bean har safar yangi holatda yaratilganligi uchun restart va parallel step'lar xavfsiz ishlaydi.
 
-**Spring'da qayerda uchraydi:** Spring Batch (`spring-boot-starter-batch`, Spring Batch 5.x/6.x) `@StepScope` va `@JobScope` annotatsiyalari; `org.springframework.batch.core.scope.StepScope` va `JobScope` scope implementatsiyalari; SpEL orqali `@Value("#{jobParameters['inputFile']}")`, `#{stepExecutionContext['partitionStart']}`, `#{jobExecutionContext['runId']}`. Konfiguratsiyada `@Bean @StepScope public FlatFileItemReader<Trade> reader(@Value("#{jobParameters['path']}") String path)` ko'rinishida yoziladi; Spring proxy orqali (`ScopedProxyMode.TARGET_CLASS`) singleton step'ga in'ektsiya qilinadi. `JobParametersIncrementer` (`RunIdIncrementer`) bilan birga tez-tez qo'llaniladi.
+**Spring'da qayerda uchraydi:** Spring Batch (`spring-boot-starter-batch`, Spring Batch 5.x/6.x) `@StepScope` va `@JobScope` annotatsiyalari; `org.springframework.batch.core.scope.StepScope` va `JobScope` scope implementatsiyalari; SpEL orqali `@Value("#{jobParameters['inputFile']}")`, `#{stepExecutionContext['partitionStart']}`, `#{jobExecutionContext['runId']}`. Konfiguratsiyada `@Bean @StepScope public FlatFileItemReader<Trade> reader(@Value("#{jobParameters['path']}") String path)` ko'rinishida yoziladi; Spring proxy orqali (`ScopedProxyMode.TARGET_CLASS`) singleton step'ga inyeksiya qilinadi. `JobParametersIncrementer` (`RunIdIncrementer`) bilan birga tez-tez qo'llaniladi.
 
 **Qo'llanish keyslari:**
 - Har kecha keladigan CSV faylni nomidagi sana bo'yicha o'qish: `#{jobParameters['businessDate']}`.

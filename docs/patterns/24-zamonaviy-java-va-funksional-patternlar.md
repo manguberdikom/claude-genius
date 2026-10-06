@@ -7,7 +7,7 @@
 # 24. Zamonaviy Java va funksional patternlar (Modern Java & Functional Patterns)
 
 <details>
-<summary>Bu bo'limdagi 41 bo'lim</summary>
+<summary>Bu bobdagi 41 bo'lim</summary>
 
 - [24.1 Records qiymat obyekti va DTO sifatida (Records as Value Objects / DTOs)](#241-records-qiymat-obyekti-va-dto-sifatida-records-as-value-objects--dtos)
 - [24.2 Sealed interfeyslar va pattern matching (Sealed Interfaces + Pattern Matching / Algebraic Data Types)](#242-sealed-interfeyslar-va-pattern-matching-sealed-interfaces--pattern-matching--algebraic-data-types)

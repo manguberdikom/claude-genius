@@ -7,7 +7,7 @@
 # 17. Resilience va cloud dizayn patternlari (Resilience & Cloud Design Patterns)
 
 <details>
-<summary>Bu bo'limdagi 43 bo'lim</summary>
+<summary>Bu bobdagi 43 bo'lim</summary>
 
 - [17.1 Qayta urinish (Retry - exponential backoff, jitter)](#171-qayta-urinish-retry---exponential-backoff-jitter)
 - [17.2 Zanjirni uzgich (Circuit Breaker)](#172-zanjirni-uzgich-circuit-breaker)
@@ -637,7 +637,7 @@ Mono<Dashboard> load(String userId) {
 **Qo'llanish keyslari:**
 - Staging'da DB latency'ni 500 ms oshirib, connection pool to'lib ketishini va timeout'lar yetarliligini tekshirish.
 - Kafka broker'ni o'chirib, consumer lag va DLT mexanizmining ishlashini tasdiqlash.
-- Testcontainers + Toxiproxy bilan CI'da "downstream 3 s javob bermaydi" senariysini doimiy regress test qilish.
+- Testcontainers + Toxiproxy bilan CI'da "downstream 3 s javob bermaydi" ssenariysini doimiy regress test qilish.
 - Kubernetes'da tasodifiy pod o'chirib, readiness/liveness probe va graceful shutdown (`server.shutdown=graceful`) to'g'riligini sinash.
 - GameDay mashqlarida on-call jamoasining runbook va alertlarini real sharoitda tekshirish.
 
@@ -668,6 +668,8 @@ resilience4j.circuitbreaker.instances.pricing:
 - `@TimeLimiter` + `CompletableFuture` bilan majburiy timeout joriy etish.
 
 **Ehtiyot bo'ling:** Annotatsiyalar Spring AOP proxy orqali ishlaydi - bir sinf ichidagi self-invocation (`this.method()`) chetlab o'tiladi, shuning uchun chaqiruv boshqa bean orqali kelishi kerak. Retry va circuit breaker tartibini e'tiborsiz qoldirmang (aspect order: `Retry` tashqarida, `CircuitBreaker` ichkarida bo'lsa retry'lar circuit'ni tez ochadi) va circuit breaker'ni biznes xatolari (`validation`, `404`) uchun ochilmasligi uchun `ignoreExceptions` sozlang.
+
+Mavzuning to'liq yozuvi shu bobdagi [zanjirni uzgich](#172-zanjirni-uzgich-circuit-breaker) bo'limida; bu yerda faqat pattern katalogi nuqtai nazari.
 
 ## 17.40 Spring Framework 7 yadrosidagi resilience (Spring Framework 7 core resilience: @Retryable, @ConcurrencyLimit)
 
@@ -739,16 +741,16 @@ public class RatesClient {
 - [ ] Resilience sozlamalarini chaos yoki nosozlik testi bilan bir marta tekshirib, natijani hujjatlashtiring.
 
 ## Manbalar
-- [spring-cloud-gateway, `pom.xml`](https://raw.githubusercontent.com/spring-cloud/spring-cloud-gateway/main/pom.xml) - starter modullari `spring-cloud-starter-gateway-server-webflux` va `-server-webmvc`
+- [spring-cloud-gateway, `pom.xml`](https://raw.githubusercontent.com/spring-cloud/spring-cloud-gateway/v4.3.0/pom.xml) - starter modullari `spring-cloud-starter-gateway-server-webflux` va `-server-webmvc`
 
 - [Spring Framework, Resilience features](https://docs.spring.io/spring-framework/reference/core/resilience.html) - "As of 7.0, the core Spring Framework includes common resilience features": `@Retryable`, `@ConcurrencyLimit` va `RetryTemplate`
-- [spring-framework, `resilience/annotation/Retryable.java`](https://raw.githubusercontent.com/spring-projects/spring-framework/main/spring-context/src/main/java/org/springframework/resilience/annotation/Retryable.java) - atribut nomlari va `maxRetries() default 3`
-- [spring-retry, `retry/annotation/Retryable.java`](https://raw.githubusercontent.com/spring-projects/spring-retry/main/src/main/java/org/springframework/retry/annotation/Retryable.java) - alohida kutubxonada atribut `maxAttempts() default 3`
-- [spring-boot, `HttpClientSettings.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/main/module/spring-boot-http-client/src/main/java/org/springframework/boot/http/client/HttpClientSettings.java) - 4.0 da `ClientHttpRequestFactorySettings` o'rnini bosgan tur
+- [spring-framework, `resilience/annotation/Retryable.java`](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/spring-context/src/main/java/org/springframework/resilience/annotation/Retryable.java) - atribut nomlari va `maxRetries() default 3`
+- [spring-retry, `retry/annotation/Retryable.java`](https://raw.githubusercontent.com/spring-projects/spring-retry/v2.0.12/src/main/java/org/springframework/retry/annotation/Retryable.java) - alohida kutubxonada atribut `maxAttempts() default 3`
+- [spring-boot, `HttpClientSettings.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/module/spring-boot-http-client/src/main/java/org/springframework/boot/http/client/HttpClientSettings.java) - 4.0 da `ClientHttpRequestFactorySettings` o'rnini bosgan tur
 - [spring-boot, `HttpClientProperties.java` (3.4.x)](https://raw.githubusercontent.com/spring-projects/spring-boot/3.4.x/spring-boot-project/spring-boot-autoconfigure/src/main/java/org/springframework/boot/autoconfigure/http/client/HttpClientProperties.java) - `spring.http.client` prefiksi, `@since 3.4.0`
-- [spring-boot, `HttpClientsProperties.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/main/module/spring-boot-http-client/src/main/java/org/springframework/boot/http/client/autoconfigure/HttpClientsProperties.java) - 4.0 da prefiks `spring.http.clients`
+- [spring-boot, `HttpClientsProperties.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/module/spring-boot-http-client/src/main/java/org/springframework/boot/http/client/autoconfigure/HttpClientsProperties.java) - 4.0 da prefiks `spring.http.clients`
 - [openjdk/jdk, `StructuredTaskScope.java` (jdk-25-ga)](https://raw.githubusercontent.com/openjdk/jdk/jdk-25-ga/src/java.base/share/classes/java/util/concurrent/StructuredTaskScope.java) - `ShutdownOnSuccess` yo'q; `open(Joiner.anySuccessfulResultOrThrow())`
-- [resilience4j, `README.adoc`](https://raw.githubusercontent.com/resilience4j/resilience4j/master/README.adoc) - "Resilience4j 3 requires Java 21"
+- [resilience4j, `README.adoc`](https://raw.githubusercontent.com/resilience4j/resilience4j/v2.4.0/README.adoc) - "Resilience4j 3 requires Java 21"
 
 ---
 

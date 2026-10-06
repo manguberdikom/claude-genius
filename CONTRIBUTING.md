@@ -37,7 +37,7 @@ va kirill yo'q, asbob havolalari mavjud.
 # 7. Bob sarlavhasi (English Title)
 
 <details>
-<summary>Bu bo'limdagi 33 bo'lim</summary>
+<summary>Bu bobdagi 33 bo'lim</summary>
 ...
 </details>
 
@@ -80,7 +80,7 @@ kirmaydi va `doc.sh show` bilan ochilmaydi.
 
 - [Spring Framework, Declarative transaction annotations](https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/annotations.html) - 6.0 dan beri protected va package-visible metodlar
 - [PostgreSQL, Resource consumption](https://www.postgresql.org/docs/current/runtime-config-resource.html) - `work_mem` konteksti
-- [sonar-java, S109](https://raw.githubusercontent.com/SonarSource/sonar-java/master/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S109.json) - `scope: Main`
+- [sonar-java, S109](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S109.json) - `scope: Main`
 - Robert C. Martin, *Clean Code*, 17-bob
 ```
 
@@ -126,6 +126,15 @@ python3 tools/claims_report.py --batafsil        # har da'voning qatori
 - Annotatsiya, sinf, metod va konfiguratsiya kaliti hech qachon tarjima
   qilinmaydi: `@Transactional`, `HikariCP`, `spring.datasource.url`.
 - Yangi atama tarjima qilinsa, GLOSSARY.md ga qo'shiladi.
+- **Bo'lim ichida bitta tushuncha bitta nom bilan.** Bo'limda
+  "consistency" bir joyda "izchillik", boshqa joyda "konsistensiya"
+  bo'lmaydi: o'quvchi ularni ikki narsa deb o'ylaydi. Sarlavhadagi
+  `(English Name)` bundan mustasno.
+- Imlo shakli bitta: `ssenariy`, `inyeksiya`, `obyekt`. Boshqa
+  variantlarni `tools/known_errors.tsv` nasrda (`nasr` qamrovi: kod,
+  sarlavha va havola chiqarib tashlanadi) ushlaydi. Sarlavhadagi eski
+  shakl anchor bilan bog'langan, u alohida commitda mundarija va
+  indeks bilan birga o'zgartiriladi.
 
 ## Hujjat konvensiyalari
 
@@ -180,6 +189,14 @@ Spring'dagi tayyor variant yoki patternning eng kichik shakli. Til belgisi
 snippetga mos bo'ladi (`java`, `yaml`, `sql`, `json`), hammasiga `java` deb
 yozib qo'yilmaydi.
 
+- **Bo'lim 1-2 gap nasr bilan boshlanadi**: nima xato yoki nima
+  ko'rsatilyapti va nega. Faqat koddan iborat bo'lim tushuntirishni kod
+  izohiga yashiradi va telefonda o'qilmaydi.
+- **Identifikatorlar inglizcha, izohlar o'zbekcha.** Sinf, metod va
+  o'zgaruvchi nomi inglizcha (`OrderService`, `calculateTotal`), izoh
+  va test `@DisplayName` matni o'zbekcha. `TolovService` kabi aralash
+  nom clean-code nomlash qoidalariga zid namuna bo'ladi.
+
 ```bash
 python3 tools/code_gap.py                 # hujjat bo'yicha qolgan son
 python3 tools/code_gap.py patterns 17 -v  # bo'lim ro'yxati, Spring qatori bilan
@@ -207,13 +224,23 @@ Mavzuning to'liq yozuvi bitta uy bo'limda (`docs/OWNERS.tsv`), boshqa hujjat o'z
 
 - Bob ichida: `](#anchor)`.
 - Bir hujjatning boshqa bobiga: `](NN-slug.md#anchor)`.
-- Boshqa hujjatga: `](../<hujjat>/README.md)` yoki aniq bobga
-  `](../<hujjat>/NN-slug.md#anchor)`.
+- Boshqa hujjatning bobiga: `](../<hujjat>/NN-slug.md#anchor)`.
+  `](../<hujjat>/README.md)` faqat butun hujjat nazarda tutilganda
+  ("patternlar hujjati"), aniq mavzu uchun emas.
+- Havola yonida yalang bo'lim raqami (`(25.22)`, `13.5 da`) yozilmaydi:
+  raqam renumberda jim eskiradi va qaysi hujjatniki ekani noaniq.
+- Uy-bobdan tashqaridagi mavzu bo'limi (`docs/OWNERS.tsv`) uy bo'limga
+  havola beradi; shunda `check_docs` ogohlantirmaydi.
 - Anchor GitHub qoidasiga ko'ra hisoblanadi: kichik harf, `'` olib
   tashlanadi, `\w`, `-` va bo'shliqdan boshqa belgi olib tashlanadi,
   bo'shliq `-` ga aylanadi.
 
-Havolani qo'lda hisoblamang - `python3 tools/check_docs.py` ishga tushiring.
+Havolani qo'lda hisoblamang: `tools/doc.sh path <hujjat> <raqam>` tayyor
+anchor beradi, `python3 tools/check_docs.py` esa har havolani tekshiradi.
+Bob tanasidagi `](../<hujjat>/README.md)` havolalari soni
+`README_LINK_BASE` dan oshsa `check_docs` xato beradi (ratchet): eski
+havolalar bob tekshiruvi paytida aniq anchorga aylantiriladi va chegara
+pasaytiriladi.
 
 ## Tekshiruv tartibi
 
@@ -238,13 +265,54 @@ Qoidalar:
    `ai-draft` bob qo'shilsa, qarz o'sadi.
 6. **Tuzatilgan xato `tools/known_errors.tsv` ga naqsh bo'lib
    tushadi**, aks holda u keyingi tahrirda jim qaytib keladi.
+7. **Manba tag yoki commit SHA ga qadaladi.** `main`, `master` va
+   `trunk` dagi fayl o'zgaradi yoki ko'chadi, versiya da'vosi esa aniq
+   versiyaga tegishli. Masalan
+   `raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/...`,
+   Maven Central dagi pom va sources jar ham birlamchi manba.
+
+Da'vo turi bo'yicha kim tekshiradi. Uch qatlam bor: mashina har
+commitda yuradi, agent faqat mashina hal qilmagan da'voni oladi, odam
+esa mashina ham, agent ham ishonchli hal qila olmaydigan da'voni ko'radi.
+
+| Da'vo turi | Kim | Qanday |
+|---|---|---|
+| Havola, anchor, bo'lim soni, bob shakli | mashina | `tools/check_docs.py` |
+| `java:S` kaliti mavjudligi, turi va darajasi | mashina | `tools/check_docs.py` va `tools/sonar_rules.tsv` |
+| Avval tuzatilgan xatoning qaytishi | mashina | `tools/known_errors.tsv` |
+| Sozlama kaliti, annotatsiya, FQN, Maven koordinata, API mavjudligi | agent (mashina tekshiruvi tayyor bo'lguncha) | tagga qadalgan manba kodi yoki Maven Central |
+| Versiya da'vosi ("7.0 da keldi") va default qiymat | agent | tagdagi manba kodi, changelog |
+| Empirik taqqoslash ("2-4 barobar tez", "15 foiz yo'qotish", "G1 ga nisbatan") | agent, keyin odam | manba yoki `o'lchanmagan taxmin`; `python3 tools/claims_report.py --empirik` |
+| Xulq da'vosi (`readOnly` nima qiladi, `ScopedValue` merosi), dialektga bog'liq default | odam | manbani o'qib, kerak bo'lsa sinab ko'rib |
+| Sonar kaliti matndagi ma'noga mosmi | odam | qoida tavsifini o'qib |
+| Maslahat to'g'ri va o'quvchiga tushunarlimi | odam | tasodifiy bo'lim namunasi, bobga 20 daqiqa |
+
+Navbatni har qatlam o'z holati bo'yicha oladi:
+
+```bash
+python3 tools/review_queue.py --holat ai-draft         # agent: hali tekshirilmagan bob
+python3 tools/review_queue.py --holat tekshirilmoqda   # odam: imzo kutayotgan bob
+```
+
+Haftalik maqsad: 15-20 bob agent tekshiruvidan o'tadi (`tekshirilmoqda`),
+5 bob odam imzosini oladi (`tekshirilgan`). O'lchov `docs/review.tsv`
+dagi holat soni va README dagi holat qatori.
+
+`tools/check_docs.py` `docs/review.tsv` ni qat'iy tekshiradi: holat
+`ai-draft` bo'lmasa `sana` va `tekshiruvchi` bo'sh emas, `manbalar`
+bobdagi `## Manbalar` ro'yxati soniga teng, `tekshirilgan` bobda kamida
+bitta manba bor. `tekshirilgan` qatorini oxirgi o'zgartirgan commit
+Claude nomidan bo'lsa yoki `Co-Authored-By: Claude` qatori bo'lsa xato
+(git tarixi bo'lmasa bu tekshiruv o'tkaziladi, sayoz klonda
+ogohlantirish beradi). `## Manbalar` dagi `main`, `master` yoki `trunk`
+havolasi ogohlantirish oladi.
 
 Holat o'zgargandan keyin qator ham, bob fayllari ham yangilanadi:
 
 ```bash
-python3 tools/review_status.py --yoz     # bob fayllaridagi holat qatori
+python3 tools/review_status.py --yoz     # bob va README lardagi holat qatori
 python3 tools/review_queue.py --yoz      # navbat
-python3 tools/check_docs.py              # ikkisi mos ekanini tekshiradi
+python3 tools/check_docs.py              # hammasi mos ekanini tekshiradi
 ```
 
 ## Yangi bob qo'shish

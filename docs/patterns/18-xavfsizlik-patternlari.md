@@ -7,7 +7,7 @@
 # 18. Xavfsizlik patternlari (Security Patterns)
 
 <details>
-<summary>Bu bo'limdagi 49 bo'lim</summary>
+<summary>Bu bobdagi 49 bo'lim</summary>
 
 - [18.1 Autentifikatsiya va avtorizatsiya ajratilishi (Authentication vs Authorization)](#181-autentifikatsiya-va-avtorizatsiya-ajratilishi-authentication-vs-authorization)
 - [18.2 Xavfsizlik filtrlar zanjiri (SecurityFilterChain - Chain of Responsibility)](#182-xavfsizlik-filtrlar-zanjiri-securityfilterchain---chain-of-responsibility)

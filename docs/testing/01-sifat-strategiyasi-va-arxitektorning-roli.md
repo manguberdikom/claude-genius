@@ -33,7 +33,7 @@ Bu farq amaliy natijalarga olib keladi. Agar maqsad xato topish bo'lsa, jamoa to
 
 Ikkinchi muhim tamoyil - sifat butun jamoaning mas'uliyati. QA mustaqil "tekshiruvchi devor" emas; u sifat bo'yicha ekspert va jarayon dizayneri. Agar developer "men kod yozaman, QA sinaydi" deb o'ylasa, siz allaqachon arxitektura muammosiga egasiz: feedback loop uzun, mas'uliyat tarqoq, sifat esa oxirgi bosqichga surilgan. Arxitektor sifatida siz bu modelni buzishingiz kerak - kod yozgan odam o'z kodining testini ham yozadi, QA esa risk tahlili, test dizayni va avtomatlashtirish strategiyasiga javob beradi (batafsil taqsimot - [3-bobga](03-kim-nima-yozadi-rollar-va-masuliyat.md) qarang).
 
-Shuni ham aytib o'tish kerak: testlar hech qachon xatolar yo'qligini isbotlay olmaydi. Ular faqat tekshirilgan stsenariylarda tizim kutilgandek ishlashini ko'rsatadi. Shuning uchun "100% coverage" maqsad emas - bu ko'rsatkichni maqsadga aylantirish (Goodhart qonuni) test sifatini pasaytiradi.
+Shuni ham aytib o'tish kerak: testlar hech qachon xatolar yo'qligini isbotlay olmaydi. Ular faqat tekshirilgan ssenariylarda tizim kutilgandek ishlashini ko'rsatadi. Shuning uchun "100% coverage" maqsad emas - bu ko'rsatkichni maqsadga aylantirish (Goodhart qonuni) test sifatini pasaytiradi.
 
 ## 1.2 Shift-left va shift-right
 
@@ -51,7 +51,7 @@ Xatoni dizayn bosqichida tuzatish arzon, production'da esa qimmat - bu eski, lek
 - Health check va readiness probe'lar (`spring-boot-starter-actuator` orqali `/actuator/health`, `/actuator/metrics`).
 - Micrometer orqali biznes metrikalari: muvaffaqiyatsiz to'lovlar foizi, retry soni, latency percentile'lari.
 - Feature flag bilan canary release: yangi kod avval 1% trafikka ochiladi.
-- Synthetic monitoring: production'da doimiy ishlab turadigan smoke stsenariylari.
+- Synthetic monitoring: production'da doimiy ishlab turadigan smoke ssenariylari.
 - Chaos testing: tashqi servis javob bermaganida tizim qanday ishlashini real sharoitda tekshirish.
 
 Shift-left va shift-right bir-birini almashtirmaydi, balki to'ldiradi. Shift-left xatoni oldini oladi, shift-right esa oldini olinmagan xatoni tez aniqlaydi.
@@ -90,7 +90,7 @@ Ko'p jamoalar "test strategiyasi" va "test rejasi" ni aralashtirib yuboradi. Far
 | Umr muddati | 6-12 oy, kamdan-kam o'zgaradi | Sprint yoki release davomida |
 | Muallif | Arxitektor + QA lead | QA engineer / feature lead |
 | Tasdiqlovchi | Engineering manager / CTO | Tech lead + product owner |
-| Mazmuni | Tamoyillar, darajalar, vositalar, darvozalar | Konkret stsenariylar, muhitlar, jadval |
+| Mazmuni | Tamoyillar, darajalar, vositalar, darvozalar | Konkret ssenariylar, muhitlar, jadval |
 
 Strategiya hujjatiga kiritiladigan minimal bo'limlar:
 
@@ -159,7 +159,7 @@ public class PaymentService {
 
 **Port va adapter (hexagonal).** Domain logikasi infratuzilmani bilmasligi kerak. `PaymentGateway` - port (domain paketidagi interfeys), `StripePaymentAdapter` - adapter (infrastructure paketida). Natijada domain testlari HTTP, DB yoki broker'siz, millisekundlarda ishlaydi. ArchUnit bilan bu qoidani majburlash mumkin ([14-bobga](14-arxitektura-testlari-va-kod-sifati.md) qarang).
 
-**Vaqtni tashqaridan bering.** `LocalDateTime.now()` va `Instant.now()` to'g'ridan-to'g'ri chaqirilsa, "oyning oxirgi kuni" yoki "sertifikat muddati tugashi" stsenariysini sinash imkonsiz bo'ladi. Yechim - `java.time.Clock` bean:
+**Vaqtni tashqaridan bering.** `LocalDateTime.now()` va `Instant.now()` to'g'ridan-to'g'ri chaqirilsa, "oyning oxirgi kuni" yoki "sertifikat muddati tugashi" ssenariysini sinash imkonsiz bo'ladi. Yechim - `java.time.Clock` bean:
 
 ```java
 @Bean

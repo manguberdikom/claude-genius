@@ -58,8 +58,8 @@ Amaliy tartib: avval capacity (bitta instance qancha), keyin load (SLO), keyin s
 
 | Mezon | Gatling | k6 | JMeter | Locust |
 |---|---|---|---|---|
-| Senariy tili | Java/Kotlin/Scala DSL | JavaScript (ES6) | XML + GUI | Python |
-| Yozish qulayligi (Java jamoa) | Juda yuqori, IDE va refactoring | Yuqori, lekin JS bilim kerak | O'rtacha, GUI'da katta senariy og'ir | O'rtacha |
+| Ssenariy tili | Java/Kotlin/Scala DSL | JavaScript (ES6) | XML + GUI | Python |
+| Yozish qulayligi (Java jamoa) | Juda yuqori, IDE va refactoring | Yuqori, lekin JS bilim kerak | O'rtacha, GUI'da katta ssenariy og'ir | O'rtacha |
 | Version control'ga mosligi | Yaxshi (oddiy kod) | Yaxshi | Yomon (katta XML diff) | Yaxshi |
 | CI integratsiyasi | Maven/Gradle plugin, exit code | CLI, Docker, exit code | CLI (non-GUI), plugin | CLI |
 | Resurs sarfi (1 injector) | Past (Netty, async) | Juda past (Go runtime) | Yuqori (thread-per-user) | O'rtacha (gevent) |
@@ -67,7 +67,7 @@ Amaliy tartib: avval capacity (bitta instance qancha), keyin load (SLO), keyin s
 | Hisobot | HTML report, assertion natijasi | Summary, Prometheus remote write, JSON | HTML dashboard | Web UI, CSV |
 | Protokollar | HTTP, WebSocket, JMS, gRPC | HTTP, WebSocket, gRPC | Juda ko'p (JDBC, JMS, LDAP) | HTTP asosan |
 
-Tavsiya: Java/Spring jamoasi uchun **Gatling** birinchi tanlov - senariy bir xil tilda yoziladi, domain kodini (DTO, test fixture, signature generator) qayta ishlatish mumkin va Maven/Gradle orqali CI'ga tabiiy tushadi. **k6** platforma/SRE jamoasi senariylarni ilova repozitoriyasidan ajratib, Kubernetes'da ko'p injector bilan ishlatmoqchi bo'lsa yaxshi. **JMeter**ni faqat eski senariylar merosi yoki HTTP'dan tashqari ekzotik protokol kerak bo'lsa saqlang. **Locust** jamoa allaqachon Python bilan ishlayotgan joyda o'rinli.
+Tavsiya: Java/Spring jamoasi uchun **Gatling** birinchi tanlov - ssenariy bir xil tilda yoziladi, domain kodini (DTO, test fixture, signature generator) qayta ishlatish mumkin va Maven/Gradle orqali CI'ga tabiiy tushadi. **k6** platforma/SRE jamoasi ssenariylarni ilova repozitoriyasidan ajratib, Kubernetes'da ko'p injector bilan ishlatmoqchi bo'lsa yaxshi. **JMeter**ni faqat eski ssenariylar merosi yoki HTTP'dan tashqari ekzotik protokol kerak bo'lsa saqlang. **Locust** jamoa allaqachon Python bilan ishlayotgan joyda o'rinli.
 
 ## 13.4 Amaliy senariy: Gatling va k6
 
@@ -173,7 +173,7 @@ Muhim detal: yuklama generatori alohida, band bo'lmagan runner'da ishlashi kerak
 
 ## 13.5 To'g'ri o'lchash metodikasi
 
-Noto'g'ri o'lchov noto'g'ri qarorga olib keladi, shuning uchun metodika vositadan muhimroq. Birinchi qoida - **warm-up**. JVM C2 kompilyatori qaynoq kodni optimizatsiya qilishi uchun minglab chaqiruv kerak; shuningdek connection pool to'ladi, Hibernate metadata va cache isiydi. Shu sababli birinchi 1-3 daqiqa natijasini hisobdan chiqaring (Gatling'da alohida warm-up senariysi, k6'da `--no-summary` bilan oldindan yuritish yoki natijani time range bo'yicha kesish).
+Noto'g'ri o'lchov noto'g'ri qarorga olib keladi, shuning uchun metodika vositadan muhimroq. Birinchi qoida - **warm-up**. JVM C2 kompilyatori qaynoq kodni optimizatsiya qilishi uchun minglab chaqiruv kerak; shuningdek connection pool to'ladi, Hibernate metadata va cache isiydi. Shu sababli birinchi 1-3 daqiqa natijasini hisobdan chiqaring (Gatling'da alohida warm-up ssenariysi, k6'da `--no-summary` bilan oldindan yuritish yoki natijani time range bo'yicha kesish).
 
 Ikkinchi qoida - **o'rtacha qiymatni unutish**. O'rtacha 120 ms bo'lgan tizimda p99 4 sekund bo'lishi mumkin va aynan shu 1% foydalanuvchi shikoyat qiladi. p50/p95/p99 va maksimum birga ko'riladi; persentillarni bir nechta injector natijasida "o'rtalashtirish" matematik jihatdan xato - HdrHistogram kabi birlashtiriladigan histogram ishlating yoki serverdagi Micrometer histogramiga tayaning.
 
@@ -245,7 +245,7 @@ Java 21'dan virtual thread (`spring.threads.virtual.enabled=true`, Spring Boot 3
 
 O'lchash kerak bo'lgan narsalar: bir xil SLO ostida maksimal throughput; p99 (o'rtacha emas); CPU va xotira birligiga to'g'ri keladigan RPS; thread/stack xotirasi; ulanish pool'ining to'yinish nuqtasi; downstream sekinlashganda tizim xatti-harakati (bu eng muhimi). Virtual thread downstream sekinlashganda ko'p "arzon" thread yaratadi, lekin ma'lumotlar bazasi pool'i hali ham 20 ta ulanish bilan cheklangan - ya'ni bottleneck ko'chadi, yo'qolmaydi. Reactive stack'da esa backpressure to'g'ri sozlanmagan bo'lsa queue cheksiz o'sadi.
 
-Odatiy xatolar: (1) virtual thread testida `synchronized` bloklar sababli pinning - Java 21-23'da bu carrier thread'ni band qiladi; JDK 24'dan (JEP 491) `synchronized` endi pinning qilmaydi, lekin native/JNI chaqiruv va `Object.wait` hali ham muammo bo'lishi mumkin. Pinning'ni JFR'dagi `jdk.VirtualThreadPinned` hodisasi bilan tekshiring, taxmin qilmang. (2) Reactive zanjirning o'rtasida blocking JDBC chaqiruvi - event loop thread bloklanadi va butun tizim qulaydi; `BlockHound` bilan test muhitida aniqlash mumkin. (3) Thread pool o'lchamlarini bir xil qoldirib taqqoslash. (4) Faqat "salom dunyo" endpoint'ida o'lchash - real senariyda ma'lumotlar bazasi va tashqi servis bo'lishi shart. Arxitektorning xulosasi ko'pincha shunday bo'ladi: ikkala stack ham yetarli, tanlov jamoaning tajribasi, debug qulayligi va kutubxona ekosistemasiga bog'liq - raqamlar farqi esa bottleneck ma'lumotlar bazasida bo'lganda deyarli ko'rinmaydi.
+Odatiy xatolar: (1) virtual thread testida `synchronized` bloklar sababli pinning - Java 21-23'da bu carrier thread'ni band qiladi; JDK 24'dan (JEP 491) `synchronized` endi pinning qilmaydi, lekin native/JNI chaqiruv va `Object.wait` hali ham muammo bo'lishi mumkin. Pinning'ni JFR'dagi `jdk.VirtualThreadPinned` hodisasi bilan tekshiring, taxmin qilmang. (2) Reactive zanjirning o'rtasida blocking JDBC chaqiruvi - event loop thread bloklanadi va butun tizim qulaydi; `BlockHound` bilan test muhitida aniqlash mumkin. (3) Thread pool o'lchamlarini bir xil qoldirib taqqoslash. (4) Faqat "salom dunyo" endpoint'ida o'lchash - real ssenariyda ma'lumotlar bazasi va tashqi servis bo'lishi shart. Arxitektorning xulosasi ko'pincha shunday bo'ladi: ikkala stack ham yetarli, tanlov jamoaning tajribasi, debug qulayligi va kutubxona ekosistemasiga bog'liq - raqamlar farqi esa bottleneck ma'lumotlar bazasida bo'lganda deyarli ko'rinmaydi.
 
 ## 13.9 Resilience va chaos testing
 

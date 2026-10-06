@@ -68,6 +68,21 @@ CASES = [
     ("Manbalar dan keyingi bo'lim yana sanaladi",
      "## Manbalar\n\n- https://x.org/a\n\n## 1.2 Yana\n\nBu 5 foiz.", (1, 1, 0)),
     ("bo'lim raqami da'vo emas", "Bo'lim 25.31 da aytilgan.", (0, 0, 0)),
+    # Empirik taqqoslash: bitta da'vo, ichidagi raqam qayta sanalmaydi.
+    ("oraliqli barobar bitta da'vo", "lz4 pglz dan 2-4 barobar tez.", (1, 1, 0)),
+    ("X ga nisbatan foiz bitta da'vo",
+     "ZGC G1 ga nisbatan 5 dan 15 foizgacha yo'qotish beradi.", (1, 1, 0)),
+    ("marta sekin ham sanaladi", "Offset 3 marta sekin.", (1, 1, 0)),
+]
+
+# (matn, kutilgan turlar ro'yxati): empirik sinf to'g'ri ajraladimi.
+KIND_CASES = [
+    ("barobar tez empirik", "Keyset 3 barobar tez.", ["empirik"]),
+    ("foiz yo'qotish empirik", "Bu 15 foiz yo'qotish beradi.", ["empirik"]),
+    ("X ga nisbatan empirik", "G1 ga nisbatan 10 foiz kam pauza.", ["empirik"]),
+    ("foizdan kam chegara, empirik emas", "Xato 2 foizdan kam bo'lsin.", ["foiz"]),
+    ("oddiy foiz empirik emas", "GC pauzasi 5 foiz CPU oladi.", ["foiz"]),
+    ("oddiy ms empirik emas", "So'rov 200 ms davom etadi.", ["vaqt"]),
 ]
 
 
@@ -79,7 +94,14 @@ def main():
         failures += not ok
         print("%-4s %-44s %s" % ("OK" if ok else "XATO", name,
                                  "" if ok else "%s != %s" % (got, want)))
-    print("\n%d/%d o'tdi" % (len(CASES) - failures, len(CASES)))
+    for name, text, want in KIND_CASES:
+        got = [h[1] for h in scan_text(text)]
+        ok = got == want
+        failures += not ok
+        print("%-4s %-44s %s" % ("OK" if ok else "XATO", name,
+                                 "" if ok else "%s != %s" % (got, want)))
+    total = len(CASES) + len(KIND_CASES)
+    print("\n%d/%d o'tdi" % (total - failures, total))
     return 1 if failures else 0
 
 

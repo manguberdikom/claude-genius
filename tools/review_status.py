@@ -2,7 +2,7 @@
 """Bob fayllariga `docs/review.tsv` dagi holat qatorini yozadi.
 
     python3 tools/review_status.py            # quruq: nima o'zgaradi
-    python3 tools/review_status.py --yoz      # yozadi
+    python3 tools/review_status.py --yoz      # yozadi (boblar va README lar)
 
 Nega skript: holat 224 bobda turadi va `review.tsv` o'zgarganda
 hammasi birga yangilanishi kerak. Qo'lda yozilsa ikkisi darhol
@@ -21,12 +21,21 @@ Shuning uchun bob boshi shunday bo'ladi:
 
 Matn qisqa: u har `doc.sh show` chiqishiga emas, bob faylining boshiga
 tushadi, lekin `build_single.py` yig'masida 224 marta takrorlanadi.
+
+Kirish sahifalari ham bitta holat qatorini oladi (TZ-T8): ildiz
+`README.md` da hujjatlar jadvali ostida, har `docs/<hujjat>/README.md`
+da `**Versiya bazasi:**` qatoridan keyin. Mundarijadan to'g'ridan
+bo'limga kirgan o'quvchi bob boshini ko'rmaydi, shuning uchun holat
+kirish sahifasida ham aytiladi. Qator `- N bo'lim` shaklida emas va
+"N bobdan" deb yoziladi: `check_docs` dagi mundarija va son regexlari
+uni ushlamaydi.
 """
 
 import argparse
 import io
 import json
 import os
+import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -98,6 +107,64 @@ def apply_to(text, line):
     return "\n".join(lines), True
 
 
+def tally(review, keys):
+    """(jami, tekshirilgan, tekshirilmoqda) berilgan (hujjat, bob) lar uchun."""
+    states = [(review.get(k) or {}).get("holat", "ai-draft") for k in keys]
+    return (len(states), states.count("tekshirilgan"),
+            states.count("tekshirilmoqda"))
+
+
+def readme_line(total, done, doing, tsv_link):
+    """Kirish sahifasidagi bitta holat qatori."""
+    rest = total - done - doing
+    return ("%s %d bobdan %d tasi odam tekshirgan, %d tasi tekshirilmoqda, "
+            "qolgan %d tasi AI yozgan va inson tekshirmagan. Har bob holati: "
+            "[docs/review.tsv](%s)." % (MARKER, total, done, doing, rest, tsv_link))
+
+
+def readme_targets(review, root=None):
+    """[(fayl_yo'li, kutilgan_qator, langar_regex)]: ildiz README va hujjat README lari.
+
+    Langar - qator yo'q bo'lganda u qaysi qatordan keyin qo'yilishi.
+    """
+    root = root or ROOT
+    with io.open(os.path.join(root, "docs", "manifest.json"), encoding="utf-8") as handle:
+        man = json.load(handle)
+    out, every = [], []
+    for key in sorted(man):
+        keys = [(key, str(c["num"] or "")) for c in man[key]["chapters"]]
+        every += keys
+        out.append((os.path.join(root, "docs", key, "README.md"),
+                    readme_line(*tally(review, keys), tsv_link="../review.tsv"),
+                    r"^\*\*Versiya bazasi:\*\*"))
+    out.insert(0, (os.path.join(root, "README.md"),
+                   readme_line(*tally(review, every), tsv_link="docs/review.tsv"),
+                   r"^\| \[.*\]\(docs/[a-z-]+/README\.md\) \|"))
+    return out
+
+
+def apply_readme(text, line, anchor):
+    """Holat qatorini README ga qo'yadi. (yangi matn, o'zgardimi).
+
+    Bor bo'lsa almashtiriladi. Yo'q bo'lsa langarga mos OXIRGI qatordan
+    keyin bo'sh qator bilan qo'shiladi (jadval bo'lsa uning ostiga).
+    Langar topilmasa matn o'zgarmaydi: check_docs buni aytadi.
+    """
+    lines = text.split("\n")
+    for i, cur in enumerate(lines):
+        if cur.startswith(MARKER):
+            if cur == line:
+                return text, False
+            lines[i] = line
+            return "\n".join(lines), True
+    hits = [i for i, cur in enumerate(lines) if re.match(anchor, cur)]
+    if not hits:
+        return text, False
+    at = hits[-1] + 1
+    lines[at:at] = ["", line]
+    return "\n".join(lines), True
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(add_help=True)
     parser.add_argument("--yoz", action="store_true")
@@ -105,6 +172,18 @@ def main(argv=None):
 
     review = read_review()
     changed = missing = 0
+    for path, line, anchor in readme_targets(review):
+        if not os.path.exists(path):
+            continue
+        text = io.open(path, encoding="utf-8").read()
+        new, did = apply_readme(text, line, anchor)
+        if not did and MARKER not in text:
+            print("holat qatori uchun joy topilmadi: %s" % os.path.relpath(path, ROOT))
+            missing += 1
+        if did:
+            changed += 1
+            if args.yoz:
+                io.open(path, "w", encoding="utf-8").write(new)
     for doc, num, path in chapters():
         if not os.path.exists(path):
             print("bob fayli yo'q: %s" % os.path.relpath(path, ROOT))
@@ -129,9 +208,9 @@ def main(argv=None):
         print("%d muammo: holat qatori to'liq yozilmadi" % missing)
         return 1
     if args.yoz:
-        print("%d bobda holat qatori yangilandi" % changed)
+        print("%d faylda holat qatori yangilandi" % changed)
     else:
-        print("%d bobda holat qatori o'zgaradi (--yoz bilan yoziladi)" % changed)
+        print("%d faylda holat qatori o'zgaradi (--yoz bilan yoziladi)" % changed)
     return 0
 
 

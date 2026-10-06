@@ -3,6 +3,8 @@
 
     python3 tools/review_queue.py              # quruq: navbatni chiqaradi
     python3 tools/review_queue.py --yoz        # docs/review-queue.tsv ga yozadi
+    python3 tools/review_queue.py --holat ai-draft         # agent navbati
+    python3 tools/review_queue.py --holat tekshirilmoqda   # odam navbati
 
 Nega navbat kerak: 224 bob bor, hammasini birdan tekshirib bo'lmaydi.
 Noto'g'ri bob qanchalik qimmat ekanini uning NIMAGA ishlatilishi
@@ -27,6 +29,13 @@ Vazn uchta dalildan yig'iladi, hammasi mashina o'qiydigan manbadan:
 
 Holat `docs/review.tsv` dan olinadi: `tekshirilgan` boblar navbat
 oxiriga tushadi, chunki ularni qayta tekshirish kutib turishi mumkin.
+
+`--holat` navbatni bitta holatga toraytiradi, vazn o'zgarmaydi (KR-Q12).
+Agent sessiyasi `ai-draft` ro'yxatidan oladi: `tekshirilmoqda` bob uning
+ishi emas, u odam imzosini kutadi. Odam esa `tekshirilmoqda` ro'yxatidan
+oladi. Filtrsiz navbat boshida `tekshirilmoqda` boblar turadi va agent
+ularni qo'lda tashlab o'tishi kerak bo'lardi. Fayl (`--yoz`) doim to'liq
+yoziladi, filtr faqat ekrandagi ro'yxatga ta'sir qiladi.
 """
 
 import argparse
@@ -132,14 +141,28 @@ def build():
     return rows
 
 
+def filter_rows(rows, holat=None):
+    """Faqat berilgan holatdagi qatorlar; tartib va vazn o'zgarmaydi."""
+    if not holat:
+        return list(rows)
+    return [r for r in rows if r[3] == holat]
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(add_help=True)
     parser.add_argument("--yoz", action="store_true")
     parser.add_argument("-n", type=int, default=20,
                         help="quruq yurishda ko'rsatiladigan qator soni")
+    parser.add_argument("--holat", choices=review_status.HOLATLAR,
+                        help="faqat shu holatdagi boblar: agent uchun ai-draft, "
+                             "odam uchun tekshirilmoqda")
     args = parser.parse_args(argv)
 
     rows = build()
+    if args.yoz and args.holat:
+        print("--holat faqat ekrandagi ro'yxat uchun: navbat fayli doim to'liq "
+              "yoziladi. --yoz ni --holat siz chaqiring.")
+        return 2
     if args.yoz:
         head = ("# Bob tekshiruvi navbati. Vazn: agentlar bobga qancha\n"
                 "# tayanadi. Yasaladi: python3 tools/review_queue.py --yoz\n"
@@ -162,10 +185,14 @@ def main(argv=None):
 
     print("%-4s %-6s %-12s %-5s %-15s %4s %4s %5s %6s"
           % ("#", "vazn", "hujjat", "bob", "holat", "r_f", "eval", "sonar", "bo'lim"))
-    for i, r in enumerate(rows[:args.n], 1):
+    shown = filter_rows(rows, args.holat)
+    for i, r in enumerate(shown[:args.n], 1):
         print("%-4d %-6s %-12s %-5s %-15s %4d %4d %5d %6d"
               % (i, r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7]))
-    print("\njami %d bob. --yoz bilan docs/review-queue.tsv ga yoziladi." % len(rows))
+    if args.holat:
+        print("\n%s: %d bob (jami %d)." % (args.holat, len(shown), len(rows)))
+    else:
+        print("\njami %d bob. --yoz bilan docs/review-queue.tsv ga yoziladi." % len(rows))
     return 0
 
 

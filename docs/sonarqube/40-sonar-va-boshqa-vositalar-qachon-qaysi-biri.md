@@ -206,6 +206,8 @@ Ikkinchi masala: takrorlanish. ArchUnit bilan "`System.out` ishlatilmasin" degan
 
 Uchinchi masala: coverage. ArchUnit testlari JaCoCo hisobotiga tushadi va coverage raqamini oshiradi, lekin biznes mantiqni sinamaydi. Coverage pastligini ArchUnit testlari bilan "tuzatsangiz", quality gate o'tadi, sifat esa joyida qoladi.
 
+Mavzuning to'liq yozuvi testlash qo'llanmasidagi [arxitektura testlari va kod sifati darvozalari](../testing/14-arxitektura-testlari-va-kod-sifati.md) bobida; bu yerda faqat Sonar qoidasi nuqtai nazari.
+
 ## 40.6 Semgrep va shunga o'xshash qoida yozish vositalari
 
 Semgrep ning qiymati bitta: o'z qoidangizni Java plugin yozmasdan, YAML da besh daqiqada yozasiz. Sonar da custom qoida uchun plugin loyihasi, versiyalash va deploy kerak. Semgrep da qoida repository dagi fayl bo'ladi va PR da review qilinadi.

@@ -136,6 +136,8 @@ class CleanCodeRulesTest {
 }
 ```
 
+Mavzuning to'liq yozuvi testlash qo'llanmasidagi [arxitektura testlari va kod sifati darvozalari](../testing/14-arxitektura-testlari-va-kod-sifati.md) bobida; bu yerda faqat kod shakli nuqtai nazari.
+
 ## 42.5 Maxsus lint qoidasi yozish
 
 Review da bir xil izoh har haftada qaytsa, u qoidaga aylanishi kerak ([arxitektor hujjatidagi](../architect/README.md) standart o'rnatish bo'limi). ArchUnit ko'p holatni qoplaydi, lekin ba'zi qoidalar AST darajasini talab qiladi - bunda Error Prone ning maxsus tekshiruvi yoziladi.
