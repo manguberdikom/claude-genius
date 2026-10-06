@@ -320,7 +320,7 @@ $toolsDir = Join-Path $GeniusPath 'tools'
 
 $Required = @(
   'tools\doc.sh', 'tools\guard.py', 'tools\check_code.py', 'tools\rules_for.py',
-  'tools\budget.py', 'tools\suggest_sections.py', 'tools\usage.py',
+  'tools\budget.py', 'tools\suggest_sections.py', 'tools\usage.py', 'tools\actor_check.py',
   'tools\handoff.py', 'tools\state.py', 'tools\docref.py', 'tools\hookio.py',
   'tools\build_index.py', 'tools\check_docs.py',
   'tools\review_status.py', 'tools\sonar_snapshot.py',
@@ -680,9 +680,14 @@ $settings = [ordered]@{
       [ordered]@{ matcher = 'Read|Bash|PowerShell'; hooks = @([ordered]@{
         type = 'command'; command = ((HookCmd 'guard.py') + ' || exit 1')
         timeout = 10; statusMessage = 'Qimmat amal tekshirilmoqda' }) },
-      [ordered]@{ matcher = 'Task|Agent'; hooks = @([ordered]@{
+      [ordered]@{ matcher = 'Task|Agent|SendMessage'; hooks = @([ordered]@{
         type = 'command'; command = ((HookCmd 'budget.py') + ' || exit 1')
         timeout = 10; statusMessage = 'Aktyor budjeti tekshirilmoqda' }) }
+    )
+    SubagentStop = @(
+      [ordered]@{ hooks = @([ordered]@{
+        type = 'command'; command = ((HookCmd 'actor_check.py') + ' || exit 1')
+        timeout = 10; statusMessage = 'Aktyor natijasi tekshirilmoqda' }) }
     )
     PostToolUse = @(
       [ordered]@{ matcher = 'Write|Edit'; hooks = @([ordered]@{

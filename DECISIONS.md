@@ -8,6 +8,113 @@ Hamma o'zgarish bu yerga yozilmaydi. Yoziladigani: foydalanuvchi
 muhitiga tegadigan, ma'lumot yo'qotishi mumkin bo'lgan yoki ruxsat
 qarorini o'zgartiradigan o'zgarish.
 
+## 2026-10-06: Aktyor javobi SubagentStop hooki bilan tekshiriladi
+
+**Nima o'zgardi.** Yangi `tools/actor_check.py` `SubagentStop` hookiga
+ulandi (`.claude/settings.json` va `install/manguberdi.ps1`, matcher
+siz). Aktyor turi `dasturchi` yoki `test-muhandis` bo'lsa va u kod
+fayliga Edit/Write qilgan bo'lsa, ikki narsa talab qilinadi: javobda
+`run_tests exit=<kod>` qatori va oxirgi tahrirdan keyin `run_tests.py`
+jurnalida (`<holat>/run_tests.jsonl`) tahrirlangan fayl turgan ildiz
+uchun yozuv (guruhda worktree papkasi; `isitish` sanalmaydi). Biri
+bo'lmasa `{"decision": "block", "reason": ...}`: aktyor shu chaqiruv
+ichida davom etadi. Shu bilan PreToolUse budjet matcheri
+`Task|Agent|SendMessage` bo'ldi (PL-CC7 qolgani).
+
+**Nega.** Aktyor ish oxirida test yurgizishi va javob shakli faqat
+matnda yozilgan edi. Test yurgizmay "bajarildi" degan aktyorning xatosi
+partiya oxiridagi to'liq suite gacha ko'rinmasdi, u yerda esa egasining
+budjeti tugagan bo'lishi mumkin (OK-O14). `block` yangi Agent chaqiruvi
+emas, ya'ni budjetga tushmaydi. SendMessage tugagan aktyorni yangi Agent
+chaqiruvisiz qayta yurgizadi, matcher uni ushlamasa budget.py dagi
+SendMessage qismi hech qachon ishga tushmasdi.
+
+**Rad etilgan variantlar.**
+
+- *Matcher `dasturchi|test-muhandis`.* Rad etildi: payloadda
+  `agent_type` bo'lmagan versiyada hook umuman chaqirilmasligi mumkin
+  edi, skript esa turni `agent-<id>.meta.json` va asosiy transkriptdagi
+  oxirgi Agent chaqiruvidan ham oladi. Narxi: har subagent to'xtashida
+  ~40 ms Python.
+- *Budjetni PostToolUseFailure bilan avtomatik qaytarish.* Rad etildi:
+  yomon natija qaytargan aktyor asbob nuqtai nazaridan muvaffaqiyatli,
+  foydalanuvchi to'xtatgan holatni ham qamramaydi; `--tiklash` qo'lda
+  qoladi.
+- *Faqat javob qatorini tekshirish.* Rad etildi: qatorni yozish arzon,
+  jurnal yozuvi esa `run_tests.py` haqiqatan yurganini ko'rsatadi.
+
+**Xavf.** Yolg'on to'siq bitta qo'shimcha navbat narxida:
+`stop_hook_active` bo'lsa hook jim, ikkinchi to'xtash o'tadi. Faqat
+hujjat (`.md`, `.txt`, `.rst`, `.adoc`) tegilgan, tahrir yo'q,
+transkript o'qilmagan yoki `run_tests` "Ta'sirlangan test yo'q" degan
+(jurnalga yozuv tushmaydi) holatlarda jim. `hookio.active()` false
+bo'lsa, ya'ni Java proyekti emas, jim. Jurnal klon holat papkasida:
+`GENIUS_STATE_DIR` hook va aktyor Bash ida bir xil bo'lishi kerak.
+
+**Qaysi tekshiruv o'tdi.** `tools/test_actor_check.py` 31/31 (block,
+o'tish, eski va begona ildiz yozuvi, isitish, worktree ildizi,
+test-muhandis, boshqa aktyor, prefiks, `stop_hook_active`, nofaol,
+hujjat, tahrirsiz, fail-open, maydon zaxiralari, jarayon chegarasi),
+`tools/test_skill.py` (SubagentStop matcheri agent nomi, actor_check
+ulangan, budget matcherida SendMessage), `tools/test_rewrite_paths.py`
+(ps1 paritet), `tools/doctor.py` (yangi `SubagentStop.json` namunasi).
+
+**Orqaga qaytarish.** Ikkala fayldan `SubagentStop` blokini olib
+tashlash (paritet testi ikkalasini birga talab qiladi); `test_skill.py`
+dagi `EVENT_MUST_WIRE` yozuvi ham. Vaqtincha: `GENIUS_HOOKS=off`.
+
+## 2026-10-06: Guruh joriy holatdan, worktree loyiha ichida
+
+**Nima o'zgardi.** `guruh.py yarat` asos sifatida HEAD o'rniga joriy
+holatning vaqtinchalik commitini oladi: alohida `GIT_INDEX_FILE` (asosiy
+indeks nusxasi) bilan `git add -A`, `write-tree`, `commit-tree <tree> -p
+HEAD`. Asosiy branch, indeks va ishchi daraxt o'zgarmaydi; daraxt HEAD
+niki bilan bir xil bo'lsa HEAD ning o'zi asos. Iflos daraxt endi rad
+etilmaydi. Sukut worktree joyi `<root>/.claude/worktrees/genius-<id>`;
+`yarat` birinchi marta `<git-common-dir>/info/exclude` ga
+`.claude/worktrees/` qatorini qo'shadi. `GENIUS_GURUH_DIR` berilsa eski
+`<papka>/<repo>.guruh-<id>` nomi. `birlashtir` qo'llagan fayllarini holat
+faylida `files` sifatida saqlaydi, `royxat --fayllar` har guruh ostida
+fayllarini beradi. `parallel.md` tartibi: birlashtir, to'liq suite
+(fonda), egani `royxat --fayllar` bo'yicha topish, keyin tozala.
+
+**Nega.** Rejalashtiruvchi REJA.md ni commit qilmaydi va birlashtirish
+commit qilmaydi, ya'ni L zanjirida va har ikkinchi partiyada daraxt
+iflos edi va `yarat` rad etardi: parallel rejim amalda hech qachon
+yoqilmasdi (OK-T-K4). Qo'shni papkadagi worktree ga Edit va Write
+ishchi papkadan tashqarida, Claude Code ruxsat so'raydi va "savolsiz
+zanjir" to'xtaydi (OK-O13). `royxat` fayl nomini bermasdi, yiqilgan
+testni guruhga bog'lab bo'lmasdi (OK-T-K1).
+
+**Rad etilgan variantlar.**
+
+- *`.gitignore` ga `.claude/worktrees/`.* Rad etildi: proyekt faylini
+  o'zgartirish daraxtni o'zi iflos qiladi va foydalanuvchi reposiga
+  tushadi. `info/exclude` lokal va commit qilinmaydi.
+- *Asosiy daraxtda `git stash` yoki vaqtinchalik commit.* Rad etildi:
+  foydalanuvchi branchi va stash steki o'zgaradi, parallel sessiyalar
+  bilan to'qnashadi.
+- *`additionalDirectories` ga qo'shni papka.* Rad etildi: o'rnatuvchi va
+  har proyekt sozlamasiga tegadi, loyiha ichidagi joy bunga hojat
+  qoldirmaydi.
+
+**Xavf.** Vaqtinchalik commit `genius/<id>` branchida; `tozala` dan
+keyin u yetim va `git gc` uni oladi. Asosiy daraxtda untracked bo'lgan
+faylni guruh o'zgartirsa `apply --index` uni qo'llay olmaydi va kesishish
+deb aytadi (`--3way` yo'li). Katta repoda `add -A` asosiy indeks
+nusxasidan boshlanadi, shuning uchun faqat o'zgargan fayllar xeshlanadi.
+Ichki worktree papkasini `.claude/worktrees/` ni bilmaydigan boshqa
+vosita (masalan IDE indeksi) ko'rishi mumkin.
+
+**Qaysi tekshiruv o'tdi.** `tools/test_guruh.py` 29/29, yangi: untracked
+REJA.md va commit qilinmagan tahrir bilan `yarat` (asosiy HEAD va indeks
+o'zgarmaydi), birlashtirilgan partiyadan keyingi ikkinchi partiya, ikki
+guruh ichki papkada (`info/exclude` bir marta, `.gitignore` yo'q),
+`royxat --fayllar`.
+
+**Orqaga qaytarish.** `git revert`. Vaqtincha eski joy:
+`GENIUS_GURUH_DIR=<repo ota papkasi>`.
+
 ## 2026-10-06: Boshqa proyekt memorysi klondan tashqarida, handoff lokal
 
 **Nima o'zgardi.** Global o'rnatishda (joriy proyekt klonning o'zi

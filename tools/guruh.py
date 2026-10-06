@@ -2,7 +2,7 @@
 """Parallel guruhlar uchun git worktree: yaratish, holat, birlashtirish.
 
     python3 tools/guruh.py yarat orders [--nusxa .env]   # worktree va branch
-    python3 tools/guruh.py royxat                        # faol guruhlar
+    python3 tools/guruh.py royxat [--fayllar]            # faol guruhlar, fayllari bilan
     python3 tools/guruh.py birlashtir orders [--3way]    # o'zgarishni asosiy daraxtga
     python3 tools/guruh.py tozala orders [--majburiy]    # worktree va branch ni o'chirish
     python3 tools/guruh.py tozala --hammasi              # birlashgan va bo'sh guruhlar
@@ -13,9 +13,24 @@ ketma-ket yurardi. Har guruhning o'z worktree si bor: o'z build papkasi,
 o'z test yurishi. `~/.gradle` va `~/.m2` keshlari umumiy va bir vaqtda
 o'qishga chidaydi.
 
-Guruh asosiy daraxtning HEAD idan boshlanadi. Asosiy daraxtda commit
-qilinmagan o'zgarish bo'lsa guruh uni ko'rmaydi, shuning uchun `yarat`
-rad etadi: bunday holatda guruhlar ketma-ket ishlaydi, savol berilmaydi.
+Guruh asosiy daraxtning JORIY holatidan boshlanadi, HEAD dan emas:
+`yarat` alohida indeks fayli bilan (`GIT_INDEX_FILE`) `git add -A`,
+`write-tree` va `commit-tree <tree> -p HEAD` qilib vaqtinchalik commit
+oladi. Asosiy branch, indeks va ishchi daraxt o'zgarmaydi. Shunda
+commit qilinmagan REJA.md va oldingi partiyaning birlashtirilgan
+(indeksdagi) natijasi guruhga tushadi, iflos daraxt rad etilmaydi.
+Commit ni `genius/<id>` branch i ushlab turadi, `tozala` dan keyin git
+uni o'zi yig'ib oladi. `birlashtir` diffni shu asosdan oladi: faqat
+guruhning o'z o'zgarishi qo'llanadi.
+
+Worktree sukut bo'yicha `<root>/.claude/worktrees/genius-<id>` da:
+loyiha papkasi ichida, shuning uchun Claude Code Edit va Write uchun
+ruxsat so'ramaydi. `yarat` birinchi marta `<git-common-dir>/info/exclude`
+ga `.claude/worktrees/` qatorini qo'shadi. `.gitignore` ga tegilmaydi:
+u proyekt fayli, unga yozish daraxtni o'zgartirardi. Exclude siz guruh
+papkasi `git status` da ko'rinardi va keyingi guruhning asosiga ichki
+repo bo'lib tushardi. `GENIUS_GURUH_DIR` berilsa eskicha
+`<papka>/<repo>.guruh-<id>`.
 
 Birlashtirish commit qilmaydi: guruhning butun o'zgarishi (yangi
 fayllar bilan) patch bo'lib asosiy daraxtga qo'llanadi va indeksga
@@ -33,21 +48,27 @@ si bo'lmasa yoki branch `genius/<id>` bo'lmasa rc=2: hech narsa o'chmaydi.
 """
 
 import argparse
+import contextlib
 import json
 import os
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 
 ID_RE = re.compile(r"^[A-Za-z0-9][\w.-]{0,39}$")
 BRANCH_RE = re.compile(r"^genius/[\w.-]{1,40}$")
+# Sukut worktree joyi, ildizga nisbiy; info/exclude qatori ham shu.
+WORKTREES = ".claude/worktrees"
+EXCLUDE_LINE = WORKTREES + "/"
 
 
-def git(cwd, *args, check=False, data=None):
+def git(cwd, *args, check=False, data=None, env=None):
     proc = subprocess.run(["git", "-C", cwd] + list(args), capture_output=True,
-                          input=data, timeout=120)
+                          input=data, timeout=120,
+                          env=dict(os.environ, **env) if env else None)
     if check and proc.returncode:
         raise RuntimeError((proc.stderr or proc.stdout).decode("utf-8", "replace").strip())
     return proc
@@ -113,12 +134,74 @@ def limit():
 
 
 def worktree_path(root, gid):
-    base = os.environ.get("GENIUS_GURUH_DIR") or os.path.dirname(root)
-    return os.path.join(base, "%s.guruh-%s" % (os.path.basename(root), gid))
+    base = os.environ.get("GENIUS_GURUH_DIR")
+    if base:
+        return os.path.join(base, "%s.guruh-%s" % (os.path.basename(root), gid))
+    return os.path.join(root, *WORKTREES.split("/"), "genius-" + gid)
 
 
-def dirty(root):
-    return out(root, "status", "--porcelain", "--untracked-files=normal")
+def exclude_worktrees(root):
+    """`.claude/worktrees/` ni `<git-common-dir>/info/exclude` ga, bir marta."""
+    path = os.path.join(common_dir(root), "info", "exclude")
+    try:
+        with open(path, encoding="utf-8") as handle:
+            text = handle.read()
+    except OSError:
+        text = ""
+    if any(line.strip() in (EXCLUDE_LINE, "/" + EXCLUDE_LINE)
+           for line in text.splitlines()):
+        return
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "a", encoding="utf-8") as handle:
+        if text and not text.endswith("\n"):
+            handle.write("\n")
+        handle.write("# guruh.py: parallel guruh worktree lari\n%s\n" % EXCLUDE_LINE)
+
+
+def git_text(proc):
+    return (proc.stderr or proc.stdout).decode("utf-8", "replace").strip()
+
+
+def snapshot(root, gid):
+    """Joriy holatning commit i: (sha, None) yoki (None, xato).
+
+    Alohida indeks faylida `add -A` -> `write-tree` -> `commit-tree`.
+    Asosiy indeks nusxa qilinadi: o'zgarmagan fayl qayta xeshlanmaydi.
+    Daraxt HEAD niki bilan bir xil bo'lsa HEAD ning o'zi qaytadi.
+    """
+    head = out(root, "rev-parse", "--verify", "-q", "HEAD")
+    index = out(root, "rev-parse", "--git-path", "index")
+    if index and not os.path.isabs(index):
+        index = os.path.join(root, index)
+    fd, tmp = tempfile.mkstemp(prefix="genius-index-", dir=common_dir(root))
+    os.close(fd)
+    try:
+        if index and os.path.isfile(index):
+            shutil.copyfile(index, tmp)
+        else:
+            os.remove(tmp)      # bo'sh fayl buzuq indeks: git yangisini yozadi
+        env = {"GIT_INDEX_FILE": tmp}
+        added = git(root, "add", "-A", env=env)
+        if added.returncode:
+            return None, git_text(added)
+        tree = git(root, "write-tree", env=env)
+        if tree.returncode:
+            return None, git_text(tree)
+        tree = tree.stdout.decode().strip()
+    finally:
+        with contextlib.suppress(OSError):
+            os.remove(tmp)
+    if head and out(root, "rev-parse", head + "^{tree}") == tree:
+        return head, None
+    ident = []
+    if not out(root, "config", "user.email"):
+        ident = ["-c", "user.name=genius", "-c", "user.email=genius@localhost"]
+    parent = ["-p", head] if head else []
+    made = git(root, *(ident + ["commit-tree", tree] + parent
+                       + ["-m", "genius: guruh %s asosi (joriy holat)" % gid]))
+    if made.returncode:
+        return None, git_text(made)
+    return made.stdout.decode().strip(), None
 
 
 def same(a, b):
@@ -147,12 +230,14 @@ def create(root, gid, copies):
         print("Faol guruh %d ta, chegara %d (GENIUS_GURUH_MAX). Avval birini "
               "birlashtiring yoki ketma-ket ishlang." % (len(active), limit()))
         return 1
-    if dirty(root):
-        print("Asosiy daraxtda commit qilinmagan o'zgarish bor: guruh HEAD dan "
-              "boshlanadi va uni ko'rmaydi. Parallel rejim yo'q, ketma-ket ishlang.")
-        return 1
-    base = out(root, "rev-parse", "HEAD")
     path = worktree_path(root, gid)
+    if not os.environ.get("GENIUS_GURUH_DIR"):
+        exclude_worktrees(root)      # snapshot dan OLDIN: boshqa guruh asosga tushmasin
+    base, error = snapshot(root, gid)
+    if not base:
+        print("Asos commit i olinmadi: %s. Parallel rejim yo'q, ketma-ket ishlang."
+              % (error or "noma'lum"))
+        return 1
     branch = "genius/%s" % gid
     try:
         git(root, "worktree", "add", "-q", "-b", branch, path, base, check=True)
@@ -207,6 +292,7 @@ def merge(root, gid, three_way):
     if check.returncode == 0:
         git(root, "apply", "--index", data=patch, check=True)
         group["merged"] = True
+        group["files"] = files
         save(root, data)
         print("Birlashtirildi: %s, %d fayl (indeksda, commit qilinmagan)" % (gid, len(files)))
         for name in files[:15]:
@@ -236,6 +322,7 @@ def merge(root, gid, three_way):
               "qilingach: guruh.py tozala %s --majburiy" % gid)
         return 1
     group["merged"] = True
+    group["files"] = files
     save(root, data)
     print("Birlashtirildi (3way): %s, %d fayl" % (gid, len(files)))
     return 0
@@ -339,7 +426,19 @@ def remove_all(root):
     return 1
 
 
-def listing(root):
+def group_files(group):
+    """Guruh fayllari: birlashganda qo'llangani (holat faylidagi `files`),
+    aks holda worktree dagi o'zgarish."""
+    if group.get("merged") and isinstance(group.get("files"), list):
+        return [str(name) for name in group["files"]]
+    if os.path.isdir(group["path"]):
+        return changed(group["path"], group["base"])
+    return []
+
+
+def listing(root, with_files=False):
+    """`--fayllar` bilan har guruh ostida fayllari: to'liq suite yiqilsa
+    test fayli shu ro'yxat orqali guruh egasiga bog'lanadi."""
     data = load(root)
     if not data:
         print("Faol guruh yo'q. Chegara: %d" % limit())
@@ -347,9 +446,12 @@ def listing(root):
     print("%-14s %-8s %-6s %s" % ("guruh", "holat", "fayl", "papka"))
     for gid, group in data.items():
         exists = os.path.isdir(group["path"])
-        count = len(changed(group["path"], group["base"])) if exists else 0
+        files = group_files(group)
         state = "birlashgan" if group.get("merged") else ("ishda" if exists else "yo'q")
-        print("%-14s %-8s %-6d %s" % (gid, state, count, group["path"]))
+        print("%-14s %-8s %-6d %s" % (gid, state, len(files), group["path"]))
+        if with_files:
+            for name in files:
+                print("    " + name)
     print("Chegara: %d" % limit())
     return 0
 
@@ -367,6 +469,8 @@ def main(argv=None):
                         help="birlashgan va o'zgarishsiz hamma guruh (tozala)")
     parser.add_argument("--majburiy", action="store_true",
                         help="birlashtirilmagan ishi bilan o'chirish (tozala <id>)")
+    parser.add_argument("--fayllar", action="store_true",
+                        help="har guruhning o'zgargan fayllari (royxat)")
     args = parser.parse_args(argv)
     sys.stdout.reconfigure(encoding="utf-8")
 
@@ -375,7 +479,7 @@ def main(argv=None):
         print("git repo emas: %s" % os.getcwd())
         return 2
     if args.buyruq == "royxat":
-        return listing(root)
+        return listing(root, args.fayllar)
     if args.buyruq == "tozala" and args.hammasi:
         if args.majburiy:
             print("--majburiy faqat bitta guruh uchun: guruh.py tozala <id> --majburiy")

@@ -6,19 +6,27 @@ yurardi. Har guruhga o'z git worktree si beriladi: o'z build papkasi,
 o'z test yurishi. `~/.gradle` va `~/.m2` keshlari umumiy, bir vaqtda
 ishlatishga chidaydi.
 
+Guruh asosiy daraxtning **joriy holatidan** boshlanadi, HEAD dan emas:
+`yarat` vaqtinchalik commit oladi (alohida indeks bilan `add -A`,
+`write-tree`, `commit-tree -p HEAD`), asosiy branch va indeks
+o'zgarmaydi. Shuning uchun commit qilinmagan REJA.md va oldingi
+partiyaning birlashtirilgan natijasi guruhda bor, iflos daraxt to'siq
+emas. Worktree `<root>/.claude/worktrees/genius-<id>` da, loyiha ichida:
+Edit va Write ruxsat so'ramaydi. Papka `.git/info/exclude` orqali
+yashiriladi, `.gitignore` ga tegilmaydi.
+
 ## Qachon parallel
 
-Uchala shart bir vaqtda bo'lsa:
+Ikkala shart bir vaqtda bo'lsa:
 
 - ish ikki va undan ko'p guruhga bo'linadi va guruhlarning **fayllari
   kesishmaydi** (odatda modul bo'yicha; rejada `Guruh:` qatori);
-- asosiy daraxt toza: commit qilinmagan o'zgarish yo'q (guruh HEAD dan
-  boshlanadi va uni ko'rmaydi);
 - guruh soni chegaradan oshmaydi (`GENIUS_GURUH_MAX`, standart CPU dan:
   2 dan 4 gacha). Ortiqchasi navbatda turadi.
 
-Biror shart bajarilmasa guruhlar ketma-ket ishlaydi. Bu savol emas:
-foydalanuvchidan so'ralmaydi, hisobotda bir qator bilan aytiladi.
+Biror shart bajarilmasa yoki `yarat` 0 dan boshqa qaytarsa guruhlar
+ketma-ket ishlaydi. Bu savol emas: foydalanuvchidan so'ralmaydi,
+hisobotda bir qator bilan aytiladi.
 
 ## Tartib
 
@@ -44,7 +52,7 @@ aktyor buni qayta qidirmaydi:
 
 ```
 guruh: orders
-papka: /abs/yo'l/app.guruh-orders
+papka: /abs/yo'l/app/.claude/worktrees/genius-orders
 asos: 3f2a1c9e7b10
 vazifa: <normallashtirilgan bir jumla>
 hajm: M
@@ -75,15 +83,20 @@ Hamma guruh o'z zanjirini tugatgach:
 python3 tools/guruh.py birlashtir orders     # patch indeksga, commit yo'q
 python3 tools/guruh.py birlashtir billing
 python3 tools/run_tests.py --hammasi --yurgiz   # fonda: Bash run_in_background
-# suite natijasi kelgach, faqat birlashtir 0 qaytargan guruh:
+# suite natijasi kelgach: yiqilgan test qaysi guruhniki
+python3 tools/guruh.py royxat --fayllar      # har guruh ostida o'z fayllari
+# faqat shundan keyin, birlashtir 0 qaytargan guruh:
 python3 tools/guruh.py tozala orders
 ```
 
-To'liq suite **partiyada bir marta** yuradi, guruh yoki aktyor
-bo'yicha emas. U maqsadli tanlashning xavfsizlik to'ri: yiqilgan test
-fayli qaysi guruhniki ekani `guruh.py royxat` dagi fayllardan topiladi
-va kamchilik shu guruh egasiga qaytadi, agar egasining budjeti qolgan
-bo'lsa (ikkinchi chaqiruv). Budjeti tugagan bo'lsa (M zanjiridagi
+Tartib qat'iy: birlashtir, to'liq suite (fonda), natija kelgach egani
+topish, keyin tozala. To'liq suite **partiyada bir marta** yuradi, guruh
+yoki aktyor bo'yicha emas. U maqsadli tanlashning xavfsizlik to'ri:
+yiqilgan test fayli (yoki u sinaydigan kod fayli) qaysi guruhniki ekani
+`guruh.py royxat --fayllar` dan topiladi. Birlashgan guruhning fayllari
+`birlashtir` holat fayliga yozgan `files` ro'yxatidan, qolganiniki
+worktree dan. Kamchilik shu guruh egasiga qaytadi, agar egasining
+budjeti qolgan bo'lsa (ikkinchi chaqiruv, o'sha `guruh:` kartasi bilan). Budjeti tugagan bo'lsa (M zanjiridagi
 tuzatish aylanasi uni ishlatgan bo'lishi mumkin) yiqilgan test va
 sababi hisobotga yoziladi va shu guruh zanjiri to'xtaydi.
 

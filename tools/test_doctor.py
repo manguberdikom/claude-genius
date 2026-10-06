@@ -128,7 +128,7 @@ def case_repo_hooklari_shartnomada():
     bad = [text for status, text in results if status != D.OK]
     if bad:
         raise AssertionError("; ".join(bad))
-    return len(results) == 7
+    return len(results) == 8
 
 
 def case_exit_0_yutmaydi(tmp):

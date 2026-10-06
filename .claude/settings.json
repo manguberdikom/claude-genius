@@ -83,13 +83,25 @@
         ]
       },
       {
-        "matcher": "Task|Agent",
+        "matcher": "Task|Agent|SendMessage",
         "hooks": [
           {
             "type": "command",
             "command": "python3 \"${CLAUDE_PROJECT_DIR}/tools/budget.py\" || exit 1",
             "timeout": 10,
             "statusMessage": "Aktyor budjeti tekshirilmoqda"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR}/tools/actor_check.py\" || exit 1",
+            "timeout": 10,
+            "statusMessage": "Aktyor natijasi tekshirilmoqda"
           }
         ]
       }

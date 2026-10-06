@@ -102,6 +102,7 @@ Chiqish kodi zanjirni belgilaydi:
 |---|---|---|
 | 0 | yashil | davom |
 | 1 | yiqildi: qayta yurishda ham, yoki kompilyatsiya | egasiga qaytadi |
+| 2 | asbob so'radi: bir nechta build ildizi (`--ildiz <papka>`), ikki build fayli (`--asbob gradle\|maven`) yoki build yo'q | aktyor chiqishdagi ro'yxatdan o'zgargan fayl turgan ildizni, wrapperi bor asbobni tanlab bir marta qayta yurgizadi; tanlab bo'lmasa `Testlar: yurgizilmadi, rc 2: <sabab>` deb yozadi, taxmin qilmaydi |
 | 3 | vaqt tugadi | to'liq suite bo'lsa fonda, aks holda tanlov juda keng: modul bo'yicha bo'lish |
 | 4 | beqaror: yiqilgan sinf qayta yurishda o'tdi | kod tuzatilmaydi; `Beqaror:` qatori hisobotga, egasi `test-muhandis` |
 
@@ -233,6 +234,14 @@ buyruq) va `run_tests` natijasi. Javobda uzun log, to'liq fayl matni yoki
 stack trace bo'lmaydi. Javob savol bilan tugamaydi: ochiq qaror
 `Ochiq qaror:` qatorida standarti bilan beriladi (`references/marshrut.md`).
 
+`dasturchi` va `test-muhandis` uchun buni `SubagentStop` hooki
+(`tools/actor_check.py`) mexanik tekshiradi. Aktyor kod faylini
+o'zgartirgan bo'lsa, javobida `run_tests exit=` qatori va oxirgi
+Edit/Write dan keyin shu ildiz (guruhda worktree) uchun `run_tests`
+jurnal yozuvi bo'lmasa, hook aktyorning to'xtashini to'sadi: u shu
+chaqiruv ichida testni yurgizadi yoki sababini yozadi. Yangi chaqiruv
+yo'q, budjet sarflanmaydi. Ikkinchi marta to'smaydi.
+
 ## Zanjir qachon qisqaradi
 
 - Faqat savol berilgan bo'lsa (`doc.sh show`, `qidiruv`, `tahlil`),
@@ -256,6 +265,8 @@ Qisqa ro'yxat; har asbobning to'liq qoidasi tegishli bo'limda.
   `--hisobot` test vaqti jurnali (`Testlar qachon va qanday`).
 - `tools/guruh.py` - parallel guruh uchun git worktree va birlashtirish
   (`references/parallel.md`).
+- `tools/actor_check.py` - `SubagentStop` hooki: aktyor javobida
+  `run_tests` natijasi bormi (`Har aktyor nimani qaytaradi`).
 - `tools/rules_for.py` - tegilayotgan fayllarga qaysi boblar, tekshiruv
   punktlari va avvalgi xatolar tegishli. Java yozishdan oldin majburiy.
 - `tools/check_code.py` - Java fayl yozilgandan keyin `PostToolUse` hooki:

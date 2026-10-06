@@ -66,11 +66,19 @@ HOOK_TOOLS = {"Read", "Bash", "PowerShell", "Task", "Agent", "SendMessage",
 # Hook skripti o'z asboblarini ushlashi shart: kengaytirish mumkin,
 # tushirib qoldirish yo'q. Matcher faqat asbob hodisalarida bor:
 # UserPromptSubmit va Stop uni o'qimaydi, budget.py u yerda hisobni
-# nolga tushirish uchun ulangan.
+# nolga tushirish uchun ulangan. SendMessage tugagan aktyorni yangi Agent
+# chaqiruvisiz qayta yurgizadi: matcher siz u budjetdan o'tib ketardi.
 HOOK_MUST_MATCH = {"guard": {"Read", "Bash", "PowerShell"},
-                   "budget": {"Task", "Agent"},
+                   "budget": {"Task", "Agent", "SendMessage"},
                    "check_code": {"Write", "Edit"}}
 TOOL_EVENTS = {"PreToolUse", "PostToolUse"}
+# Subagent hodisalarida matcher asbob emas, agent turi. Qismlar
+# .claude/agents dagi nomlar yoki o'rnatilgan turlardan bo'lsin.
+AGENT_EVENTS = {"SubagentStart", "SubagentStop"}
+BUILTIN_AGENTS = {"general-purpose", "Explore", "Plan"}
+# Skript shu hodisaga ulangan bo'lishi va matcher bo'lsa shu aktyorlarni
+# ushlashi shart: aks holda aktyor javobi jim tekshirilmay qoladi.
+EVENT_MUST_WIRE = {"actor_check": ("SubagentStop", {"dasturchi", "test-muhandis"})}
 
 # Hajm (S, M, L) faqat shu faylda ta'riflanadi. Ikkinchi joydagi jadval
 # avval uch xil ta'rifga olib kelgan: bir vazifa ham "M, rejasiz", ham
@@ -301,18 +309,29 @@ def check_hooks():
     except ValueError as exc:
         err(rel, "JSON buzuq: %s" % exc)
         return
+    agents = BUILTIN_AGENTS | {
+        os.path.splitext(f)[0] for f in os.listdir(AGENTS) if f.endswith(".md")
+    } if os.path.isdir(AGENTS) else set(BUILTIN_AGENTS)
     wired = set()
     for event, groups in hooks.items():
         for group in groups:
             matcher = group.get("matcher", "")
             parts = set(matcher.split("|")) if matcher else set()
-            for part in parts - HOOK_TOOLS:
+            known = agents if event in AGENT_EVENTS else HOOK_TOOLS
+            for part in parts - known:
                 err(rel, "%s: noma'lum matcher qismi '%s'" % (event, part))
             for hook in group.get("hooks", []):
                 for script in re.findall(r"tools/(\w+)\.py",
                                          hook.get("command", "")):
                     if not os.path.exists(os.path.join(HERE, script + ".py")):
                         err(rel, "%s: tools/%s.py yo'q" % (event, script))
+                    must = EVENT_MUST_WIRE.get(script)
+                    if must and event == must[0]:
+                        wired.add(script)
+                        missing = must[1] - parts if parts else set()
+                        if missing:
+                            err(rel, "%s: %s matcher'ida %s yo'q"
+                                % (event, script, ", ".join(sorted(missing))))
                     if event not in TOOL_EVENTS:
                         continue
                     wired.add(script)
@@ -322,6 +341,8 @@ def check_hooks():
                             % (event, script, ", ".join(sorted(missing))))
     for script in sorted(set(HOOK_MUST_MATCH) - wired):
         err(rel, "tools/%s.py hech bir asbob hodisasiga ulanmagan" % script)
+    for script in sorted(set(EVENT_MUST_WIRE) - wired):
+        err(rel, "tools/%s.py %s ga ulanmagan" % (script, EVENT_MUST_WIRE[script][0]))
 
 
 def main():
