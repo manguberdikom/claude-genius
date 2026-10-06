@@ -276,6 +276,28 @@ o'zgarish esa keyingi promptda hamma proyektda bajarilardi. Skill
 klondan faqat `docs/` (Read orqali) va `memory/` ni o'qiydi, asboblar
 Bash orqali yuradi.
 
+### Memory qayerda
+
+Klon ochiq repo, shuning uchun unga faqat `memory/umumiy/` va
+`memory/claude-genius/` yoziladi. Siz ishlayotgan har boshqa proyektning
+memorysi va bulut sessiyasidagi topshirig'i (handoff) klondan tashqarida:
+
+| O'zgaruvchi | Sukut | Push |
+|---|---|---|
+| `GENIUS_MEMORY_DIR` | `~/.claude/genius-memory`, ichida `<slug>/` | yo'q |
+
+Boshqa joy kerak bo'lsa (masalan xususiy git repo) `settings.json` dagi
+`env` ga `GENIUS_MEMORY_DIR` ni yozing. Lokal sessiyadagi topshiriq esa
+memoryga umuman tushmaydi: `<klon>/.claude/.state/handoff/` da, git siz.
+Klondagi begona `memory/<slug>/` ni `git add` yoki `git commit` qilishni
+`guard.py` so'raydi.
+
+Memory B yo'lida skill orqali o'qiladi: `manguberdi` ish boshida
+`handoff.py --memory` bilan ikki indeksni bitta Bash chaqiruvida oladi,
+shuning uchun `CLAUDE.md` ga qo'lda ulanish yozish shart emas.
+`GENIUS_MEMORY_DIR` dagi topic faylni Read bilan ochish ruxsat so'rashi
+mumkin: u `additionalDirectories` da emas.
+
 **Ishonchli proyekt uchun opt-in.** O'rnatuvchi oxirida tayyor bo'lak
 chiqaradi (uni `rewrite_paths.py --opt-in` yasaydi, hech qayerga
 yozilmaydi):
@@ -428,8 +450,11 @@ nusxadagi yo'llarni mutlaq qiladi:
 ```text
 python3 tools/rules_for.py   ->  C:/Python312/python.exe C:/src/claude-genius/tools/rules_for.py
 tools/doc.sh find            ->  bash C:/src/claude-genius/tools/doc.sh find
-memory/<proyekt-slug>/       ->  C:/src/claude-genius/memory/<proyekt-slug>/
+memory/umumiy/MEMORY.md      ->  C:/src/claude-genius/memory/umumiy/MEMORY.md
 ```
+
+Skill matnida proyekt memorysi yo'li yo'q: u klonda emas (pastda,
+"Memory qayerda").
 
 `C:/Python312/python.exe` misol: o'rnatuvchi tanlagan Python ning to'liq
 yo'li yoziladi. `bash` esa nomicha qoladi: Claude Code ning Bash vositasi

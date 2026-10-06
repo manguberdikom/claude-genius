@@ -171,16 +171,64 @@ def _git(args, cwd):
     return proc.stdout if proc.returncode == 0 else ""
 
 
+# Klonda turadigan memory papkalari. Klon ochiq repo, shuning uchun unga
+# faqat hammaga tegishli bilim (`umumiy`) va klonning o'z proyekti
+# (`claude-genius`) yoziladi. guard.SHARED_MEMORY shu ro'yxat bilan bir xil.
+SHARED_MEMORY = ("umumiy", "claude-genius")
+
+
+def _top(here):
+    """Proyekt ildizi: git daraxtining tepasi, git bo'lmasa papkaning o'zi."""
+    return _git(["rev-parse", "--show-toplevel"], here).strip() or here
+
+
+def memory_home():
+    """Klondan tashqari proyektlar memorysi: GENIUS_MEMORY_DIR, sukut
+    `~/.claude/genius-memory`. Har chaqiruvda o'qiladi, import paytida emas.
+
+    Global o'rnatishda boshqa proyektning vazifa, qaror va fayl nomlari
+    ochiq klon reposiga tushmasligi uchun (R0.5). Bu papka push qilinmaydi;
+    xususiy git repo bo'lsa, uni foydalanuvchi o'zi boshqaradi.
+    """
+    given = os.environ.get("GENIUS_MEMORY_DIR", "").strip()
+    if given:
+        return os.path.abspath(os.path.expanduser(given))
+    return os.path.join(os.path.expanduser("~"), ".claude", "genius-memory")
+
+
+def is_clone_project(cwd=None):
+    """Joriy proyekt qo'llanma klonining o'zimi (pastki papkasi ham)."""
+    top = _top(cwd or os.getcwd())
+    return (os.path.normcase(os.path.realpath(top))
+            == os.path.normcase(os.path.realpath(ROOT)))
+
+
+def memory_root(cwd=None):
+    """Proyekt memorysi ildizi: klonda `memory/`, boshqa proyektda
+    memory_home()."""
+    if is_clone_project(cwd):
+        return os.path.join(ROOT, "memory")
+    return memory_home()
+
+
+def memory_dir(slug, cwd=None):
+    """Bitta slug papkasi. `umumiy` va `claude-genius` har doim klonda."""
+    if slug in SHARED_MEMORY:
+        return os.path.join(ROOT, "memory", slug)
+    return os.path.join(memory_root(cwd), slug)
+
+
 def project_slug(cwd=None, memory=None):
     """memory/README.md qoidasi: repo nomi kichik harfda, ikki egada bir
     xil nom bo'lsa `<egasi>__<repo>`, repo yo'q bo'lsa ildiz papka nomi.
 
     rules_for va handoff shu bitta funksiyani ishlatadi: avval handoff
     `<egasi>__<repo>` ni bilmas, proyekt indeksini topshiriqdan tushirardi.
+    `<egasi>__<repo>` papkasi proyekt memorysi turgan joyda qidiriladi
+    (memory_root), `memory` berilsa o'sha yerda.
     """
     here = cwd or os.getcwd()
-    memory = memory or os.path.join(ROOT, "memory")
-    top = _git(["rev-parse", "--show-toplevel"], here).strip() or here
+    top = _top(here)
     url = _git(["remote", "get-url", "origin"], top).strip().rstrip("/")
     parts = [p for p in re.split(r"[/:]", url) if p]
     if not parts:
@@ -189,7 +237,7 @@ def project_slug(cwd=None, memory=None):
     repo = repo[:-4] if repo.endswith(".git") else repo
     if len(parts) > 1:
         both = "%s__%s" % (parts[-2].lower(), repo)
-        if os.path.isdir(os.path.join(memory, both)):
+        if os.path.isdir(os.path.join(memory or memory_root(top), both)):
             return both
     return repo
 

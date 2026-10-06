@@ -38,11 +38,14 @@ import check_code  # noqa: E402
 from check_code import in_clone, strip_noise, tool_cmd  # noqa: E402
 from docref import ensure_index, resolve  # noqa: E402
 from docref import project_slug as docref_slug  # noqa: E402
+from docref import SHARED_MEMORY, is_clone_project, memory_home  # noqa: E402
 from state import mark  # noqa: E402
 import review_status  # noqa: E402
 
 CHAPTERS = os.path.join(ROOT, "index", "chapters.tsv")
 CHECKLIST = os.path.join(ROOT, "index", "checklist.tsv")
+# Klondagi memory. Boshqa proyekt memorysi klondan tashqarida
+# (docref.memory_home, GENIUS_MEMORY_DIR): memory_base() tanlaydi.
 MEMORY = os.path.join(ROOT, "memory")
 
 # Mashina topilmalaridan shuncha to'liq matn bilan, qolgani qisqa shaklda.
@@ -529,9 +532,20 @@ def profile_notes(paths):
     return notes, other
 
 
+def memory_base():
+    """Proyekt memorysi ildizi: klonning o'zida MEMORY (sinovda
+    almashtiriladi), boshqa proyektda docref.memory_home()."""
+    return MEMORY if is_clone_project() else memory_home()
+
+
+def memory_folder(sub):
+    """`umumiy` va `claude-genius` har doim klonda, qolgani memory_base da."""
+    return os.path.join(MEMORY if sub in SHARED_MEMORY else memory_base(), sub)
+
+
 def project_slug():
-    """memory slugi (docref.project_slug); MEMORY sinovda almashtiriladi."""
-    return docref_slug(memory=MEMORY)
+    """memory slugi (docref.project_slug), memory_base ga nisbatan."""
+    return docref_slug(memory=memory_base())
 
 
 INDEX_ROW_RE = re.compile(r"^- `([^`]+\.md)` - (.+)$")
@@ -626,9 +640,9 @@ def _related(path, labels, names):
 def past_mistakes(slug=None, labels=None, names=()):
     """Memorydagi feedback yozuvlari: avval nima noto'g'ri ketgan.
 
-    Faqat joriy proyekt papkasi va `umumiy/` o'qiladi: global o'rnatishda
-    memory/ hamma proyektni saqlaydi, boshqasining tuzog'i bu yerda
-    shovqin. Proyekt yozuvi oldin, har papkada eng yangisi oldin. Tavsif
+    Faqat joriy proyekt papkasi va `umumiy/` o'qiladi: boshqa proyektning
+    tuzog'i bu yerda shovqin. Global o'rnatishda proyekt papkasi klonda
+    emas, GENIUS_MEMORY_DIR da (memory_folder). Proyekt yozuvi oldin, har papkada eng yangisi oldin. Tavsif
     indeksdan (protokol bo'yicha bir qatorli tavsif aynan o'sha yerda),
     u yo'q bo'lsa faylning birinchi gapidan.
 
@@ -637,7 +651,7 @@ def past_mistakes(slug=None, labels=None, names=()):
     """
     out = []
     for sub in dict.fromkeys((slug or project_slug(), "umumiy")):
-        folder = os.path.join(MEMORY, sub)
+        folder = memory_folder(sub)
         if not os.path.isdir(folder):
             continue
         index = _index_notes(folder)

@@ -378,7 +378,14 @@ def main():
     # Topic fayl frontmatter bilan boshlanadi: avval har yozuv `---` bo'lib
     # chiqardi. Boshqa proyektning yozuvi esa bu yerda shovqin.
     saved, mem = R.MEMORY, tempfile.mkdtemp()
+    # Klondan tashqari proyekt memorysi (R0.5): GENIUS_MEMORY_DIR.
+    ext = tempfile.mkdtemp(prefix="genius_memory_")
+    proj_tmp = tempfile.mkdtemp(prefix="proyekt_")
+    saved_env = os.environ.get("GENIUS_MEMORY_DIR")
+    os.environ["GENIUS_MEMORY_DIR"] = ext
+    here = os.getcwd()
     try:
+        os.chdir(ROOT)   # klonning o'zi: proyekt memorysi R.MEMORY da
         write(os.path.join(mem, "demo", "feedback_sinov.md"),
               "---\ntype: feedback\nmodified: 2026-01-01T00:00:00Z\n---\n\n"
               "# Sinov sarlavhasi\n\nBirinchi gap.\n\n- punkt\n")
@@ -396,23 +403,34 @@ def main():
         _, note_of = zip(*notes) if notes else ((), ())
         files = [os.path.basename(rel) for rel, _ in notes]
 
-        slug_repo = os.path.join(mem, "Shop-Api")
-        os.makedirs(os.path.join(mem, "acme__shop-api"))
+        # Boshqa proyekt: `<egasi>__<repo>` papkasi ham, feedback ham
+        # GENIUS_MEMORY_DIR da qidiriladi, klondagi shu nomli papka o'qilmaydi.
+        slug_repo = os.path.join(proj_tmp, "Shop-Api")
+        os.makedirs(os.path.join(ext, "acme__shop-api"))
+        os.makedirs(os.path.join(mem, "acme__shop-api"), exist_ok=True)
         os.makedirs(slug_repo)
         git(slug_repo, "init", "-q")
-        here = os.getcwd()
-        try:
-            os.chdir(slug_repo)
-            slug_bare = R.project_slug()
-            git(slug_repo, "remote", "add", "origin", "git@github.com:acme/Shop-Api.git")
-            slug_owner = R.project_slug()
-            os.rmdir(os.path.join(mem, "acme__shop-api"))
-            slug_remote = R.project_slug()
-        finally:
-            os.chdir(here)
+        os.chdir(slug_repo)
+        slug_bare = R.project_slug()
+        git(slug_repo, "remote", "add", "origin", "git@github.com:acme/Shop-Api.git")
+        slug_owner = R.project_slug()
+        os.rmdir(os.path.join(ext, "acme__shop-api"))
+        slug_remote = R.project_slug()
+        write(os.path.join(ext, "shop-api", "feedback_tashqi.md"),
+              "# Tashqi\n\nGENIUS_MEMORY_DIR dagi gap.\n")
+        write(os.path.join(mem, "shop-api", "feedback_klonda.md"),
+              "# Klonda\n\nKlondagi eski gap.\n")
+        outside = [os.path.basename(rel) for rel, _ in R.past_mistakes()]
     finally:
+        os.chdir(here)
         R.MEMORY = saved
+        if saved_env is None:
+            os.environ.pop("GENIUS_MEMORY_DIR", None)
+        else:
+            os.environ["GENIUS_MEMORY_DIR"] = saved_env
         shutil.rmtree(mem, ignore_errors=True)
+        shutil.rmtree(ext, ignore_errors=True)
+        shutil.rmtree(proj_tmp, ignore_errors=True)
     rows = [
         ("frontmatter chiqmaydi", bool(notes)
          and not any(n.startswith("---") or "type:" in n for n in note_of)),
@@ -426,6 +444,8 @@ def main():
         ("slug: remote yo'q, papka nomi", slug_bare == "shop-api"),
         ("slug: ikki ega bo'lsa egasi__repo", slug_owner == "acme__shop-api"),
         ("slug: remote dagi repo nomi", slug_remote == "shop-api"),
+        ("boshqa proyekt: memory GENIUS_MEMORY_DIR dan, klondan emas",
+         outside == ["feedback_tashqi.md", "feedback_umumiy.md"]),
     ]
     failures += report(rows)
     total += len(rows)

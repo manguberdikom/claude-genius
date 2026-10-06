@@ -22,6 +22,12 @@ ham to'g'ri bo'lishi mumkin: yo'qligi "noto'g'ri" degani emas. Qo'llanma
 rasmiy hujjatga zid bo'lsa rasmiy hujjat yutadi va zidlik hisobotda
 aytiladi.
 
+## Ish boshida
+
+Ikki indeks o'qiladi: `memory/umumiy/MEMORY.md` va proyektniki (klonda `memory/claude-genius/`, boshqa proyektda `GENIUS_MEMORY_DIR`, sukut `~/.claude/genius-memory`).
+Ikkalasini bitta chaqiruv beradi: `python3 tools/handoff.py --memory`. Yo'q indeks to'siq emas.
+`user_*` yozuvlari javob uslubiga qo'llanadi, topic fayl indeksdagi tavsifga qarab faqat keragi o'qiladi.
+
 ## Har vazifadagi qoidalar
 
 1. **Asos ko'rsatiladi.** Har o'zgarish, har topilma, har reja qadami
