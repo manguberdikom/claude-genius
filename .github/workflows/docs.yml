@@ -165,14 +165,9 @@ jobs:
       # bitta qatorda chiqadi.
       - name: Asbob sinovlari
         if: env.ISHLA == 'true'
-        run: |
-          failed=""
-          for f in tools/test_*.py; do
-            echo "::group::$f"
-            python "$f" || failed="$failed $f"
-            echo "::endgroup::"
-          done
-          if [ -n "$failed" ]; then echo "yiqilgan:$failed"; exit 1; fi
+        # Suitelar parallel yuradi: indeks avval bir marta yasaladi, chiqish
+        # tartib bilan ::group:: ichida, oxirida "yiqilgan:" qatori.
+        run: python tools/run_all_tests.py
 
       # Oldingi qadam yiqilsa ham o'lchovlar yuradi: bitta xato qolgan
       # signallarni yashirmasin.
