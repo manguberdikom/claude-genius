@@ -10,8 +10,10 @@ yo'nalish ham sinaladi: muammoni ko'rish va toza kodni tinch qo'yish.
 Qolgan papkalar avvalgi regex parserni sindirgan real idiomalar:
 entities_inherit (meros, @EmbeddedId, package-private maydon),
 entities_nested (ichma-ich annotatsiya, Javadoc, static va transient),
-entities_types (izohsiz enum, UUID FK, @Embedded, mappedBy, unique) va
-entities_migration (indeks migratsiyada yozilgan loyiha).
+entities_types (izohsiz enum, UUID FK, @Embedded, mappedBy, unique),
+entities_migration (indeks migratsiyada yozilgan loyiha) va
+entities_petclinic (spring-petclinic 500158f dan qisqartirilgan,
+Apache-2.0: @OneToMany + @JoinColumn FK ni element jadvaliga beradi).
 """
 
 import json
@@ -32,7 +34,8 @@ TYPES = "entities_types"
 MIG = os.path.join("entities_migration", "src", "main", "java")
 MIG_SQL = os.path.join(DATA, "entities_migration", "src", "main", "resources",
                        "db", "migration")
-DIRS = [ENT, INH, NEST, TYPES, MIG]
+PC = "entities_petclinic"
+DIRS = [ENT, INH, NEST, TYPES, MIG, PC]
 
 # (papka, nom, matn): sxema matnida bo'lishi shart.
 SCHEMA_EXPECT = [
@@ -95,6 +98,10 @@ COLUMNS = [
     (TYPES, "shipment", "total", "numeric"),
     (TYPES, "shipment", "payload", "jsonb"),
     (TYPES, "label", "shipment_id", "bigint"),
+    # petclinic schema.sql: pets.owner_id va visits.pet_id INT REFERENCES.
+    (PC, "pets", "owner_id", "integer"),
+    (PC, "pets", "type_id", "integer"),
+    (PC, "visits", "pet_id", "integer"),
 ]
 NO_COLUMNS = [
     (INH, "vehicle", "code"),                  # ichki enum maydoni
@@ -112,6 +119,9 @@ NO_COLUMNS = [
     (TYPES, "shipment", "warehouse"),
     (TYPES, "shipment", "origin"),
     (TYPES, "shipment", "label_id"),           # mappedBy: ustun yo'q
+    (PC, "owners", "owner_id"),                # FK egasida emas, elementda
+    (PC, "owners", "pets"),
+    (PC, "pets", "pet_id"),
 ]
 PRIMARY = [
     (INH, "order_lines", "order_id"),
@@ -142,6 +152,8 @@ FINDING_EXPECT = [
     (TYPES, "shipment", "label", "default EAGER"),       # teskari @OneToOne
     (TYPES, "Address", "city", "varchar(255)"),          # @Embeddable bir marta
     (MIG, "delivery", "courier_id", "migratsiyada"),
+    (PC, "pets", "owner_id", "indeks"),                  # @JoinColumn FK
+    (PC, "owners", "pets", "EAGER yuklanadi"),
 ]
 
 # Toza yoki tuzatilgan holat uchun bular CHIQMASLIGI kerak.
@@ -176,6 +188,9 @@ FINDING_ABSENT = [
     (MIG, "delivery", "depot_id", "indeks"),             # CREATE INDEX
     (MIG, "delivery", "backup_id", "indeks"),            # UNIQUE (backup_id, id)
     (MIG, "delivery", "courier_id", "e'lon qilinmagan"),  # yuqori emas, o'rta
+    (PC, "owners", "pets", "mappedBy"),          # @JoinColumn: jadval yo'q
+    (PC, "pets", "visits", "mappedBy"),
+    (PC, "pets", "owner_id", "default EAGER"),   # @ManyToOne emas
 ]
 
 # Topilma matni -> qo'llanma bo'limi sarlavhasida bo'lishi kerak so'z.

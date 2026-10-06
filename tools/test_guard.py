@@ -520,6 +520,15 @@ def main():
         ("asosiy oqimda subagent sababi yo'q", bash("psql shop"), None, G.SUBAGENT_NOTE),
         ("flyway:clean sababi", bash("./mvnw flyway:clean"),
          "Jonli bazani o'chiradi", "Test vaqti"),
+        # Paketlash: test emas, artefakt maqsad bo'lishi mumkin (QC-Q13).
+        ("maven package sababi", bash("./mvnw package -Pnative"),
+         G.PACKAGE_NOTE, None),
+        ("maven install sababi", bash("mvn -B install"), G.PACKAGE_NOTE, None),
+        ("maven deploy sababi", bash("mvn deploy"), "-DskipTests bilan package", None),
+        ("gradle build sababi", bash("./gradlew build"), "assemble yoki bootJar", None),
+        ("filtrsiz test: paketlash yo'q", bash("./mvnw test"), None, "Maqsad artefakt"),
+        # Build ichki papkada bo'lsa (backend/pom.xml) yo'l --ildiz (QC-K2).
+        ("maslahatda --ildiz", bash("./mvnw test"), "--ildiz <papka> --diff --yurgiz", None),
         ("java yozish sababi", bash("sed -i s/a/b/ Foo.java"),
          "Java faylni Edit yoki Write bilan yozing: check_code va rules_for "
          "faqat shu asboblarda ishlaydi", None),

@@ -1,0 +1,22 @@
+# Manba: haqiqiy yurish, 2026-10-06. spring-petclinic 500158f (Apache-2.0),
+# Gradle 8.14.3, OpenJDK 21: toolchain 17 yo'q, auto-provisioning sozlanmagan.
+# Buyruq: gradle :test --tests org.springframework.samples.petclinic.owner.PetValidatorTests
+# O'zgartirish: muhitning 'Picked up JAVA_TOOL_OPTIONS' qatori olib tashlandi.
+Starting a Gradle Daemon (subsequent builds will be faster)
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+A problem occurred configuring root project 'spring-petclinic'.
+> Failed to calculate the value of task ':compileTestJava' property 'javaCompiler'.
+   > Cannot find a Java installation on your machine (Linux 6.18.44-fc-v70 amd64) matching: {languageVersion=17, vendor=any vendor, implementation=vendor-specific, nativeImageCapable=false}. Toolchain download repositories have not been configured.
+
+* Try:
+> Learn more about toolchain auto-detection and auto-provisioning at https://docs.gradle.org/8.14.3/userguide/toolchains.html#sec:auto_detection.
+> Learn more about toolchain repositories at https://docs.gradle.org/8.14.3/userguide/toolchains.html#sub:download_repositories.
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 17s
