@@ -1,0 +1,84 @@
+# doc.sh find uchun oltin to'plam: model yozadigan kalit so'rov va qabul
+# qilinadigan bo'limlar. tools/eval_find.py E sinovi o'qiydi.
+#
+# Ustunlar: id, toplam (dev | holdout), kategoriya, sorov, qabul.
+# qabul: bo'shliq bilan ajratilgan `hujjat:raqam`, har biri `doc.sh show`
+# bilan o'qib tekshirilgan. Mavzu bir necha hujjatda yozilgan bo'lsa,
+# hammasi qabul qilinadi.
+#
+# toplam qo'lda emas, o'lchovdan OLDIN xesh bilan berilgan:
+# sha1(sorov) toq bo'lsa holdout. Holdout ga qarab hech narsa sozlanmaydi:
+# u faqat o'zgarish yomonlashtirmaganini ko'rsatadi. Yangi qator ham shu
+# qoida bilan belgilanadi.
+#
+# Kategoriyalar: uz (o'zbekcha kalit), en (inglizcha atama), aralash,
+# xato (xato yozilgan), sonar (kalit yoki atama), stack (exception nomi),
+# kod (identifikator yoki annotatsiya).
+id	toplam	kategoriya	sorov	qabul
+fu01	dev	uz	yo'qolgan yangilanish	architect:22.5
+fu02	holdout	uz	optimistik lock	architect:18.8 testing:11.8 patterns:9.23 code-review:27.4
+fu03	dev	uz	kesh	patterns:11.1 patterns:11.7 patterns:11.8 patterns:11.9 patterns:11.10 patterns:11.11 patterns:11.14 patterns:11.15 patterns:11.16 patterns:11.18 patterns:11.19 patterns:11.21 architect:28.1 architect:28.2 architect:28.3 architect:28.4 architect:28.5 architect:28.6 architect:28.7 architect:28.8 architect:28.12 testing:7.8
+fu04	holdout	uz	qayta urinish	patterns:17.1 architect:7.4 patterns:19.10 architect:32.8 architect:29.9 architect:17.10 patterns:25.61
+fu05	holdout	uz	zanjirni uzgich	patterns:17.2
+fu06	holdout	uz	aylanma bog'liqlik	architect:15.6 patterns:25.37 patterns:25.18
+fu07	dev	uz	sehrli son	patterns:25.8 sonarqube:27.9 sonarqube:13.8
+fu08	dev	uz	parol	patterns:18.7 architect:20.11 sonarqube:26.4 code-review:32.3 sonarqube:26.3 sonarqube:16.5 sonarqube:29.11
+fu09	holdout	uz	pul	clean-code:20.1 architect:25.2 patterns:13.35 clean-code:20.7 sonarqube:25.7 code-review:14.3
+fu10	holdout	uz	kontekst keshi	testing:7.8 testing:8.4 patterns:23.12
+fu11	dev	uz	sahifalash	architect:17.9 clean-code:27.5 sonarqube:29.8 sonarqube:36.9 patterns:7.6 patterns:7.7 code-review:20.5
+fu12	dev	uz	xotira sizishi	architect:10.9 architect:14.3
+fe01	holdout	en	optimistic locking	architect:18.8 patterns:9.23 testing:11.8 code-review:27.4
+fe02	dev	en	transaction propagation	architect:19.2 code-review:19.4
+fe03	holdout	en	thread safety	architect:11.7 architect:11.3 architect:11.4
+fe04	dev	en	self invocation	architect:15.9 architect:19.6 patterns:25.30
+fe05	holdout	en	lost update	architect:22.5
+fe06	dev	en	serialization	architect:22.3 architect:22.4 architect:8.8 architect:28.11 patterns:9.15 patterns:28.19 sonarqube:16.7 sonarqube:26.8
+fe07	holdout	en	isolation level	architect:19.3 code-review:27.1 patterns:28.18 architect:22.4
+fe08	holdout	en	connection pool	architect:8.4 architect:27.5 patterns:9.30 patterns:25.46 code-review:16.8 architect:12.6
+fe09	dev	en	index bloat	architect:21.10 architect:23.12
+fe10	dev	en	god class	patterns:25.1 sonarqube:27.2
+fe11	holdout	en	long method	clean-code:32.3 sonarqube:27.2
+fe12	dev	en	equals hashCode	clean-code:15.1 clean-code:15.2 sonarqube:25.5 sonarqube:11.2 sonarqube:29.6
+fe13	dev	en	virtual threads pinning	architect:12.4 code-review:15.10
+fe14	holdout	en	retry backoff	patterns:17.1 architect:32.8
+fe15	dev	en	deadlock	architect:11.10 architect:19.10 architect:22.8 code-review:15.4
+fe16	holdout	en	flaky test	testing:16.1 testing:16.2 testing:16.3 code-review:35.3 patterns:23.32
+fe17	dev	en	mutation testing	testing:5.12 testing:14.7 patterns:23.10 sonarqube:20.2
+fe18	holdout	en	Pact	testing:9.9
+fe19	dev	en	validation	architect:17.8 testing:6.6 architect:16.6 patterns:18.35 patterns:5.29
+fe20	dev	en	migration	architect:33.1 architect:33.2 patterns:10.4 patterns:10.5 testing:8.8 patterns:27.22
+fe21	holdout	en	State	patterns:3.8
+fa01	holdout	aralash	@Transactional private	sonarqube:29.3 patterns:25.31
+fa02	holdout	aralash	kesh stampede	patterns:11.11 architect:28.6
+fa03	dev	aralash	deadlock log	architect:22.8
+fa04	dev	aralash	pool o'lchami	patterns:25.46 architect:8.4 architect:27.5
+fa05	holdout	aralash	Kafka rebalance	architect:29.5
+fa06	holdout	aralash	flaky testlar	testing:16.1 testing:16.2 testing:16.3 code-review:35.3 patterns:23.32
+fa07	holdout	aralash	N+1 testda	testing:7.5
+fx01	holdout	xato	izolyatsia darajasi	architect:19.3 code-review:27.1
+fx02	dev	xato	deadlok	architect:11.10 architect:19.10 architect:22.8 code-review:15.4
+fx03	dev	xato	idempotentlk	patterns:7.9 architect:7.5 clean-code:27.7 code-review:10.9 patterns:10.30
+fx04	dev	xato	circut breaker	patterns:17.2 patterns:17.39 code-review:22.3 testing:11.13
+fx05	dev	xato	optimistik loking	architect:18.8 testing:11.8 patterns:9.23 code-review:27.4
+fx06	holdout	xato	testcontainer	testing:8.2 patterns:23.15 testing:8.3
+fx07	dev	xato	kesh invalidatsya	patterns:11.14 architect:28.5
+fs01	holdout	sonar	S1192	sonarqube:27.8 sonarqube:13.8
+fs02	holdout	sonar	java:S3776	sonarqube:27.1 sonarqube:15.1
+fs03	holdout	sonar	cognitive complexity	sonarqube:15.1 sonarqube:27.1 sonarqube:5.4 code-review:5.5
+fs04	holdout	sonar	quality gate	sonarqube:6.1 testing:14.9 sonarqube:43.10 sonarqube:6.2
+fs05	holdout	sonar	S2095	sonarqube:13.6 sonarqube:25.4
+ft01	dev	stack	LazyInitializationException	patterns:25.52 architect:18.3
+ft02	dev	stack	NoUniqueBeanDefinitionException	patterns:5.8 architect:15.7
+ft03	holdout	stack	OutOfMemoryError	architect:10.7 architect:10.9 architect:14.3 clean-code:19.6
+ft04	holdout	stack	ObjectOptimisticLockingFailureException	architect:18.8 patterns:9.23
+ft05	holdout	stack	BeanCurrentlyInCreationException	architect:15.6 patterns:25.37
+ft06	holdout	stack	InterruptedException	sonarqube:25.9 clean-code:19.5
+ft07	dev	stack	ConcurrentModificationException	sonarqube:25.11
+fk01	holdout	kod	@Version	architect:18.8
+fk02	dev	kod	SimpleDateFormat	sonarqube:25.13 clean-code:22.1
+fk03	dev	kod	ThreadLocal	code-review:15.9 architect:12.8 patterns:21.17
+fk04	holdout	kod	@Cacheable	patterns:5.34 patterns:11.10 architect:15.9 patterns:25.30 architect:28.4
+fk05	holdout	kod	Thread.sleep	sonarqube:19.4 sonarqube:30.5
+fk06	dev	kod	@DataJpaTest	testing:7.4
+fk07	dev	kod	@Autowired	patterns:25.29 sonarqube:14.1 sonarqube:29.1
+fk08	dev	kod	@MockitoBean	patterns:23.13
