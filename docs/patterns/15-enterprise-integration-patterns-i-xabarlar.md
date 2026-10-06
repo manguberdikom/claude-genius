@@ -7,7 +7,7 @@
 # 15. Enterprise Integration Patterns I: xabarlar, kanallar, marshrutlash (EIP I: Messaging Systems, Channels, Construction, Routing)
 
 <details>
-<summary>Bu bo'limdagi 37 bo'lim</summary>
+<summary>Bu bobdagi 37 bo'lim</summary>
 
 - [15.1 Xabar kanali (Message Channel)](#151-xabar-kanali-message-channel)
 - [15.2 Xabar (Message)](#152-xabar-message)
@@ -396,7 +396,7 @@ DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> template) {
 **Ehtiyot bo'ling:** Persistence o'z-o'zidan "exactly-once" bermaydi - failover va retry paytida duplicate bo'ladi, shuning oqibatida iste'molchi idempotent bo'lishi yoki dedup store ishlatishi kerak. `acks=all` va `fsync` har bir xabar uchun latency'ni bir necha barobar oshiradi; past qiymatli telemetriya yoki metrika oqimida bu kafolatni talab qilish ortiqcha xarajat. Shuningdek DB va broker'ni bitta XA tranzaksiyaga bog'lashga urinmang - outbox pattern soddaroq va ishonchliroq.
 
 ```yaml
-// Kafolat uch tomondan ta'minlanadi: producer, broker va consumer
+# Kafolat uch tomondan ta'minlanadi: producer, broker va consumer
 spring:
   kafka:
     producer:
@@ -938,7 +938,7 @@ public class NotificationFanout {
 - Ko'p sahifali hisobotni sahifalarga bo'lib parallel render qilish.
 - Katta XML batch hujjatini `XPathMessageSplitter` orqali tranzaksiyalarga ajratish.
 
-**Ehtiyot bo'ling:** Collection'ni to'liq xotiraga yuklab bo'lib tashlash katta fayllarda darhol `OutOfMemoryError` keltiradi - splitter metodidan `Iterator`/`Stream` qaytarib streaming rejimida ishlang va downstream'da backpressure yoki `QueueChannel` sig'imini hisobga oling. Tranzaksiya chegarasi ham o'zgaradi: bo'lingan xabarlar bir xil thread'da ketmasa, ularning muvaffaqiyati endi atomik emas, shuning uchun qisman muvaffaqiyat (partial failure) stsenariysini ongli loyihalash kerak.
+**Ehtiyot bo'ling:** Collection'ni to'liq xotiraga yuklab bo'lib tashlash katta fayllarda darhol `OutOfMemoryError` keltiradi - splitter metodidan `Iterator`/`Stream` qaytarib streaming rejimida ishlang va downstream'da backpressure yoki `QueueChannel` sig'imini hisobga oling. Tranzaksiya chegarasi ham o'zgaradi: bo'lingan xabarlar bir xil thread'da ketmasa, ularning muvaffaqiyati endi atomik emas, shuning uchun qisman muvaffaqiyat (partial failure) ssenariysini ongli loyihalash kerak.
 
 ```java
 // Splitter: bitta xabar bir nechta xabarga bo'linadi
@@ -1091,7 +1091,7 @@ IntegrationFlow quoteFlow() {
 ```
 
 **Qo'llanish keyslari:**
-- Bir nechta bank yoki sug'urta kompaniyasidan narx taklifi so'rab, eng arzonini tanlash (auktsion stsenariysi).
+- Bir nechta bank yoki sug'urta kompaniyasidan narx taklifi so'rab, eng arzonini tanlash (auktsion ssenariysi).
 - Aviachipta qidiruvini bir vaqtda bir nechta GDS provayderiga yuborib, natijalarni birlashtirish.
 - Dashboard uchun 5 ta turli microservisdan ma'lumot olib, bitta javob qurish.
 - Fraud skoringni bir nechta mustaqil model/servisga parallel yuborib, ularning ovozini yig'ish (ensemble).

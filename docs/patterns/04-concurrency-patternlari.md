@@ -7,7 +7,7 @@
 # 4. Concurrency patternlari (Concurrency Patterns)
 
 <details>
-<summary>Bu bo'limdagi 28 bo'lim</summary>
+<summary>Bu bobdagi 28 bo'lim</summary>
 
 - [4.1 Oqimlar hovuzi / Bajaruvchi (Thread Pool / Executor)](#41-oqimlar-hovuzi--bajaruvchi-thread-pool--executor)
 - [4.2 Ishlab chiqaruvchi-Iste'molchi (Producer-Consumer)](#42-ishlab-chiqaruvchi-istemolchi-producer-consumer)
@@ -305,7 +305,7 @@ public void settle() {
 
 ## 4.10 O'qish-yozish lock'i (Read-Write Lock)
 
-**Tavsif:** Umumiy resursga bir vaqtda ko'p o'quvchiga ruxsat beradi, lekin yozuvchini yakka (exclusive) qo'yib, o'qish bilan birga kelmasligini kafolatlaydi. O'qish yozishdan ancha ko'p bo'lgan stsenariylarda oddiy mutexga nisbatan sezilarli parallellik beradi. Lock'ning adolatlilik (fairness) siyosati o'quvchilar yozuvchini "ochdan o'ldirmasligi" uchun muhim.
+**Tavsif:** Umumiy resursga bir vaqtda ko'p o'quvchiga ruxsat beradi, lekin yozuvchini yakka (exclusive) qo'yib, o'qish bilan birga kelmasligini kafolatlaydi. O'qish yozishdan ancha ko'p bo'lgan ssenariylarda oddiy mutexga nisbatan sezilarli parallellik beradi. Lock'ning adolatlilik (fairness) siyosati o'quvchilar yozuvchini "ochdan o'ldirmasligi" uchun muhim.
 
 **Spring'da qayerda uchraydi:** Java'da `ReentrantReadWriteLock` (`readLock()`/`writeLock()`, `tryLock`, fair rejim) va optimistik o'qishni qo'llovchi, lekin reentrant bo'lmagan `StampedLock` (`tryOptimisticRead`/`validate`). Ko'p holatda lock'siz muqobil afzal: `ConcurrentHashMap`, `CopyOnWriteArrayList`, `AtomicReference` bilan immutable snapshotni almashtirish. Spring kodbazasida `ConcurrentReferenceHashMap` va `ReloadableResourceBundleMessageSource` kabi cache'li komponentlar shu yondashuvlarni ishlatadi; Spring Integration'ning `LockRegistry` esa taqsimlangan lock uchun shunga o'xshash abstraksiyani (masalan `RedisLockRegistry`, `JdbcLockRegistry`) beradi.
 
@@ -703,7 +703,7 @@ public void onRecord() { processed.incrementAndGet(); }
 **Ehtiyot bo'ling:** WebFlux'da event loop thread'ida JDBC, `Thread.sleep` yoki sinxron `RestTemplate` chaqirish eng ko'p uchraydigan halokatli xato - butun server kechikishi oshadi; bunday kodni albatta `boundedElastic`ga chiqaring. Shunchaki "tezroq bo'lsin" degan sabab bilan reactive stack'ga o'tmang: domen blocking bo'lsa, virtual thread'lar bir xil natijani ancha arzon murakkablikda beradi.
 
 ```yaml
-// Thread-per-request: har so'rov o'z thread'ida, blocking ruxsat
+# Thread-per-request: har so'rov o'z thread'ida, blocking ruxsat
 spring:
   threads:
     virtual:

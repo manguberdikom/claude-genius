@@ -7,7 +7,7 @@
 # 8. Biznes logika va Service qatlam patternlari (Business & Service Layer Patterns)
 
 <details>
-<summary>Bu bo'limdagi 27 bo'lim</summary>
+<summary>Bu bobdagi 27 bo'lim</summary>
 
 - [8.1 Tranzaksiya skripti (Transaction Script)](#81-tranzaksiya-skripti-transaction-script)
 - [8.2 Domen modeli (Domain Model)](#82-domen-modeli-domain-model)
@@ -907,10 +907,10 @@ class WarehouseNotifier {
 
 ## Manbalar
 
-- [spring-framework, `JdbcClient.java`](https://raw.githubusercontent.com/spring-projects/spring-framework/main/spring-jdbc/src/main/java/org/springframework/jdbc/core/simple/JdbcClient.java) - `@since 6.1`
-- [spring-framework, `ApplicationEventPublisher.java`](https://raw.githubusercontent.com/spring-projects/spring-framework/main/spring-context/src/main/java/org/springframework/context/ApplicationEventPublisher.java) - `publishEvent(Object)` `@since 4.2`
+- [spring-framework, `JdbcClient.java`](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/spring-jdbc/src/main/java/org/springframework/jdbc/core/simple/JdbcClient.java) - `@since 6.1`
+- [spring-framework, `ApplicationEventPublisher.java`](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/spring-context/src/main/java/org/springframework/context/ApplicationEventPublisher.java) - `publishEvent(Object)` `@since 4.2`
 - [JEP 441: Pattern Matching for switch](https://openjdk.org/jeps/441) - Java 21 da yakuniy holat; `javac --release 17` "patterns in switch statements are not supported in -source 17" deydi
-- [jakartaee/persistence, `SequenceGenerator.java`](https://raw.githubusercontent.com/jakartaee/persistence/master/api/src/main/java/jakarta/persistence/SequenceGenerator.java) - `allocationSize() default 50`
+- [jakartaee/persistence, `SequenceGenerator.java`](https://raw.githubusercontent.com/jakartaee/persistence/3.2-3.2.0-RELEASE/api/src/main/java/jakarta/persistence/SequenceGenerator.java) - `allocationSize() default 50`
 
 ---
 

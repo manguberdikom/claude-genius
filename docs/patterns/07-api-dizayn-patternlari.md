@@ -7,7 +7,7 @@
 # 7. API dizayn patternlari (API Design Patterns)
 
 <details>
-<summary>Bu bo'limdagi 34 bo'lim</summary>
+<summary>Bu bobdagi 34 bo'lim</summary>
 
 - [7.1 Resurs-yo'naltirilgan REST (Resource-oriented REST)](#71-resurs-yonaltirilgan-rest-resource-oriented-rest)
 - [7.2 Richardson yetuklik modeli (Richardson Maturity Model)](#72-richardson-yetuklik-modeli-richardson-maturity-model)
@@ -771,7 +771,7 @@ Envelope<List<OrderDto>> list(Pageable p) {
 
 **Tavsif:** Barcha xatolarni bitta mashina o'qiy oladigan, barqaror formatga keltirish patterni: bir xil media type, bir xil maydonlar, stabil xato kodi va tashxis uchun korrelyatsiya ID'si. Maqsad - client'ning `instanceof`-ga o'xshash matn parsing qilishiga yo'l qo'ymaslik va stack trace kabi ichki ma'lumotni tashqariga chiqarmaslik. Hozirgi standart - RFC 9457 (ilgari RFC 7807) `application/problem+json`: `type`, `title`, `status`, `detail`, `instance` va ixtiyoriy kengaytmalar.
 
-**Spring'da qayerda uchraydi:** Spring Framework 6.0 dan `org.springframework.http.ProblemDetail`, `ErrorResponse` va `ErrorResponseException` mavjud; built-in Spring MVC/WebFlux istisnolari uchun problem detail'ni yoqish `spring.mvc.problemdetails.enabled=true` (WebFlux'da `spring.webflux.problemdetails.enabled=true`). Markazlashgan handling `@RestControllerAdvice` + `@ExceptionHandler` yoki `ResponseEntityExceptionHandler`dan meros olish bilan qilinadi; validatsiya xatolari `MethodArgumentNotValidException`, `HandlerMethodValidationException` (6.1+) va `ConstraintViolationException`dan keladi. Spring Boot'ning eski "whitelabel" JSON formati `DefaultErrorAttributes`/`BasicErrorController` orqali ishlaydi va `server.error.include-stacktrace=never` bo'lishi kerak. Trace ID'ni qo'shish uchun Micrometer Tracing'ning `Tracer.currentSpan()` qiymati `ProblemDetail#setProperty` bilan beriladi.
+**Spring'da qayerda uchraydi:** Spring Framework 6.0 dan `org.springframework.http.ProblemDetail`, `ErrorResponse` va `ErrorResponseException` mavjud; built-in Spring MVC/WebFlux istisnolari uchun problem detail'ni yoqish `spring.mvc.problemdetails.enabled=true` (WebFlux'da `spring.webflux.problemdetails.enabled=true`). Markazlashgan handling `@RestControllerAdvice` + `@ExceptionHandler` yoki `ResponseEntityExceptionHandler`dan meros olish bilan qilinadi; validatsiya xatolari `MethodArgumentNotValidException`, `HandlerMethodValidationException` (6.1+) va `ConstraintViolationException`dan keladi. Spring Boot'ning eski "whitelabel" JSON formati `DefaultErrorAttributes`/`BasicErrorController` orqali ishlaydi va `server.error.include-stacktrace=never` (Boot 4 da `spring.web.error.include-stacktrace`, eski kalit ulanmaydi) bo'lishi kerak. Trace ID'ni qo'shish uchun Micrometer Tracing'ning `Tracer.currentSpan()` qiymati `ProblemDetail#setProperty` bilan beriladi.
 
 ```java
 @RestControllerAdvice

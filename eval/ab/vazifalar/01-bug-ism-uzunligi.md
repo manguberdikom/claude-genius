@@ -6,10 +6,16 @@
 
 ```bash
 git checkout 500158f732419217507c7656904b8e6aa1bcc0d6 -- src
-git apply eval/ab/vazifalar/diff/bug-1.diff
+git apply <genius>/eval/ab/vazifalar/diff/bug-1.diff
+rm -rf .git && git init -q && git add -A && git commit -qm "boshlang'ich"
+rsync -a --exclude=.git ./ ../asl/   # baholovchi uchun asl holat
 ```
 
-Bu haqda modelga aytilmaydi.
+Diff `.git` qayta yaratilishidan OLDIN qo'llanadi: bug boshlang'ich
+commit ichida, ya'ni `git status` va `git diff` toza va javobni
+ko'rsatmaydi (OL-O6). Bu haqda modelga aytilmaydi.
+Buni `eval/ab/yurgiz.py` o'zi qiladi, yuqoridagi buyruqlar qo'lda
+takrorlash uchun.
 
 ## Prompt (ikkala holatda aynan bir xil)
 
@@ -31,7 +37,7 @@ o'zgartirmang.
 ```bash
 ./mvnw -B test -Dtest='PetValidatorTests' -DfailIfNoSpecifiedTests=false
 ./mvnw -B test -Dtest='!MySqlIntegrationTests,!PostgresIntegrationTests,!PetClinicConcurrencyTests' -DfailIfNoSpecifiedTests=false
-git diff --stat   # faqat PetValidator.java bitta qatori kutiladi
+git diff --stat   # faqat PetValidator.java bitta qatori (HEAD da bug bor)
 ```
 
 ## Kiritilgan nuqson (baholovchi uchun, modelga berilmaydi)

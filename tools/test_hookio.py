@@ -65,13 +65,18 @@ def cases():
 
 @contextlib.contextmanager
 def folder(*files):
-    """Vaqtinchalik papka; har `files` yo'li bo'sh fayl bo'lib yaratiladi."""
+    """Vaqtinchalik papka; har `files` yo'li bo'sh fayl bo'lib yaratiladi.
+
+    `(yo'l, matn)` juftligi berilsa fayl o'sha matn bilan yoziladi.
+    """
     tmp = tempfile.mkdtemp(prefix="hookio_")
     try:
-        for rel in files:
+        for item in files:
+            rel, text = item if isinstance(item, tuple) else (item, "")
             path = os.path.join(tmp, rel.replace("/", os.sep))
             os.makedirs(os.path.dirname(path), exist_ok=True)
-            io.open(path, "w", encoding="utf-8").write("")
+            with io.open(path, "w", encoding="utf-8") as handle:
+                handle.write(text)
         yield tmp
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
@@ -124,6 +129,39 @@ def gating_cases():
         # Ikkinchi daraja sanalmaydi: aks holda har monorepo faol bo'lardi.
     with folder("a/b/pom.xml") as deep:
         check("ikkinchi darajadagi pom.xml: nofaol", False, deep)
+        # Chuqur monorepo uchun qo'lda yoqish: skan o'rniga shu.
+        check("GENIUS_HOOKS=on: chuqur modul faol", True, deep, hooks="on")
+        check("GENIUS_HOOKS=true ham yoqadi", True, deep, hooks="true")
+    with folder("main.py") as plain:
+        check("GENIUS_HOOKS=on: Java emas ham faol", True, plain, hooks="on")
+    check("GENIUS_HOOKS=on: ildiz yo'q ham faol", True, "", hooks="on")
+
+    # Mobil va Android: android/build.gradle Java proyekti belgisi emas.
+    with folder("package.json", "android/build.gradle",
+                "android/app/build.gradle") as rn:
+        check("React Native: nofaol", False, rn)
+        check("React Native, GENIUS_HOOKS=on: faol", True, rn, hooks="on")
+    with folder("pubspec.yaml", "android/build.gradle.kts") as flutter:
+        check("Flutter: nofaol", False, flutter)
+    with folder("app.json", "android/settings.gradle") as expo:
+        check("Expo (app.json): nofaol", False, expo)
+    with folder("package.json", "backend/pom.xml", "frontend/index.js") as mono:
+        check("backend/pom.xml + ildizda package.json: faol", True, mono)
+    with folder("package.json", "pom.xml") as rootjs:
+        check("ildizda pom.xml + package.json: faol", True, rootjs)
+    with folder("build.gradle", "settings.gradle",
+                "app/build.gradle", "app/src/main/AndroidManifest.xml") as android:
+        check("Android (AndroidManifest.xml): nofaol", False, android)
+    with folder("build.gradle.kts", "settings.gradle.kts", "app/build.gradle.kts",
+                ("gradle/libs.versions.toml",
+                 '[plugins]\nandroid-application = { id = "com.android.application",'
+                 ' version.ref = "agp" }\n')) as catalog:
+        check("Android (version catalog): nofaol", False, catalog)
+    with folder("build.gradle.kts",
+                ("gradle/libs.versions.toml",
+                 '[plugins]\nspring-boot = { id = "org.springframework.boot",'
+                 ' version = "3.3.4" }\n')) as spring_catalog:
+        check("Spring (version catalog): faol", True, spring_catalog)
 
     check("klonning o'zi: faol", True, ROOT)
     check("ildiz yo'q (bo'sh): nofaol", False, "")

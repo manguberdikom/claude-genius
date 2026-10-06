@@ -85,7 +85,7 @@ Nomlash konvensiyalari, afzalliklari bilan:
 
 ## 5.4 JUnit 5 asoslari: lifecycle va tuzilma
 
-`@Test` - `void`, parametrsiz (yoki in'ektsiya qilinadigan parametrlar bilan), `public` bo'lishi shart emas. Lifecycle: `@BeforeEach`/`@AfterEach` har bir testdan oldin/keyin, `@BeforeAll`/`@AfterAll` esa sinf darajasida bir marta ishlaydi va standart holatda `static` bo'lishi kerak. `@Nested` ichki sinflar bilan testlarni kontekst bo'yicha guruhlash - eng kuchli o'qiluvchanlik vositasi: tashqi `@BeforeEach` ichki sinflarda ham ishlaydi.
+`@Test` - `void`, parametrsiz (yoki inyeksiya qilinadigan parametrlar bilan), `public` bo'lishi shart emas. Lifecycle: `@BeforeEach`/`@AfterEach` har bir testdan oldin/keyin, `@BeforeAll`/`@AfterAll` esa sinf darajasida bir marta ishlaydi va standart holatda `static` bo'lishi kerak. `@Nested` ichki sinflar bilan testlarni kontekst bo'yicha guruhlash - eng kuchli o'qiluvchanlik vositasi: tashqi `@BeforeEach` ichki sinflarda ham ishlaydi.
 
 ```java
 @DisplayName("CartService")
@@ -313,7 +313,7 @@ Null-safety uchun eng samarali strategiya - null'ni API chegarasida taqiqlash (`
 
 ## 5.10 Vaqt, tasodif va UUID'ni testlash
 
-`Instant.now()` ni to'g'ridan-to'g'ri chaqirgan kodni determinizm bilan testlash mumkin emas. Yechim - vaqtni dependency qilish: `java.time.Clock` ni Spring bean sifatida e'lon qilib (`@Bean Clock clock() { return Clock.systemUTC(); }`) konstruktor orqali in'ektsiya qiling, testda esa `Clock.fixed(...)` yoki `Clock.offset(...)` bering.
+`Instant.now()` ni to'g'ridan-to'g'ri chaqirgan kodni determinizm bilan testlash mumkin emas. Yechim - vaqtni dependency qilish: `java.time.Clock` ni Spring bean sifatida e'lon qilib (`@Bean Clock clock() { return Clock.systemUTC(); }`) konstruktor orqali inyeksiya qiling, testda esa `Clock.fixed(...)` yoki `Clock.offset(...)` bering.
 
 ```java
 // Yomon: test tizim soatiga bog'langan, chegarani tekshirib bo'lmaydi
@@ -428,10 +428,10 @@ void processesOrderByTotal(BigDecimal total, OrderStatus expected) {
 - [ ] Barcha assertion'lar AssertJ orqali; takrorlanuvchi domen tekshiruvlari uchun custom assertion yoki `usingRecursiveComparison` ishlatiladi
 - [ ] Mockito `STRICT_STUBS` rejimida; `LENIENT` va `@Spy` ishlatilishi istisno sifatida asoslanadi; value object, DTO va JDK sinflari mock qilinmaydi
 - [ ] Repository, cache va event publisher uchun in-memory fake'lar mavjud va mock zanjirlari o'rniga ishlatiladi
-- [ ] Vaqt `Clock` bean orqali, tasodif va UUID `Supplier` ortida in'ektsiya qilinadi; kod bazasida `Thread.sleep` va `Instant.now()` to'g'ridan-to'g'ri chaqiruvi yo'q
+- [ ] Vaqt `Clock` bean orqali, tasodif va UUID `Supplier` ortida inyeksiya qilinadi; kod bazasida `Thread.sleep` va `Instant.now()` to'g'ridan-to'g'ri chaqiruvi yo'q
 - [ ] `@Disabled` testlar sabab va issue havolasi bilan; ularning soni CI'da kuzatiladi va nolga intiladi
 - [ ] Domen va hisob-kitob paketlari uchun mutation score o'lchanadi (PIT) va coverage foizi yagona sifat mezoni sifatida ishlatilmaydi
 
 ---
 
-[&larr; 4. Testrovshik qanday ishlashi kerak: QA ish jarayoni](04-testrovshik-qanday-ishlashi-kerak-qa-ish.md) · [Mundarija](README.md) · [6. Unit test Spring loyihasida: kontekstsiz testlash &rarr;](06-unit-test-spring-loyihasida-kontekstsiz.md)
+[&larr; 4. Tester qanday ishlashi kerak: QA ish jarayoni](04-testrovshik-qanday-ishlashi-kerak-qa-ish.md) · [Mundarija](README.md) · [6. Unit test Spring loyihasida: kontekstsiz testlash &rarr;](06-unit-test-spring-loyihasida-kontekstsiz.md)

@@ -74,6 +74,8 @@ logging:
     org.hibernate.orm.jdbc.bind: trace      # parametr qiymatlari
 ```
 
+Mavzuning to'liq yozuvi arxitektor hujjatidagi [N+1 so'rov muammosi](../architect/18-spring-data-jpa-va-hibernate-chuqur.md#184-n1-sorov-muammosi-topish-usuli-va-tort-xil-yechim) bo'limida; bu yerda faqat diffda ko'rish nuqtai nazari.
+
 ## 23.2 So'rovlar sonini test bilan qulflash
 
 Review izohida "N+1 bor" degan gapni dalil bilan quvvatlash va kelajakda regressiyani oldini olish usuli - so'rovlar sonini test bilan belgilash.
@@ -275,19 +277,20 @@ Review qoidasi: ma'lumot o'zgartirilmasa, entity kerak emas. Projection kamroq u
 | `@NaturalId` | Tabiiy kalit bo'yicha kesh | Kalit o'zgarmasligi kafolatlanganmi |
 | `@BatchSize` | Lazy yuklashni guruhlash | N+1 ni N/batch ga kamaytiradi |
 | `@Formula` | Hisoblangan maydon SQL da | Har o'qishda hisob, indekssiz |
-| `@Where` | Global filtr | Jim yashirin shart - juda xavfli |
+| `@SQLRestriction` (Hibernate 6.3+; 6.3 gacha `@Where`, u 7.0 da olib tashlangan) | Global filtr | Jim yashirin shart - juda xavfli |
+| `@SoftDelete` (Hibernate 6.4+) | Yumshoq o'chirish va avtomatik filtr birga | Xuddi shu yashirin shart: o'chirilgan qator entity orqali umuman ko'rinmaydi |
 | `@SQLDelete` | Yumshoq o'chirish | O'chirilgan qatorlar hamma joyda filtrlanadimi |
 | `@Cacheable` (2-daraja) | Klaster bo'ylab kesh | Invalidatsiya, klasterda mos kelish |
-| `@LazyCollection(EXTRA)` | `size()` uchun alohida so'rov | Ko'pincha noto'g'ri qo'llanadi |
+| `@LazyCollection(EXTRA)` (6.2 dan deprecated, 7.0 da olib tashlangan) | `size()` uchun alohida so'rov | Diffda ko'rinsa: Hibernate 7 (Boot 4) da kompilyatsiya bo'lmaydi |
 | `@OrderBy` vs `@OrderColumn` | SQL tartibi vs saqlangan indeks | `@OrderColumn` qo'shimcha UPDATE lar beradi |
 
 ```java
-// @Where - eng xavfli: shart hamma so'rovga jim qo'shiladi.
+// @SQLRestriction (ilgari @Where) - eng xavfli: shart hamma so'rovga jim qo'shiladi.
 @Entity
-@Where(clause = "deleted = false")
+@SQLRestriction("deleted = false")
 public class Customer { }
-// Oqibati: (1) o'chirilgan mijozni hech qanday so'rov bilan ola olmaysiz
-// (hatto admin paneldan ham); (2) native so'rovlarga bu shart qo'shilmaydi,
+// Oqibati: (1) o'chirilgan mijozni hech qanday JPQL yoki Criteria so'rovi
+// bilan ola olmaysiz (hatto admin paneldan ham); (2) native so'rovlarga bu shart qo'shilmaydi,
 // shuning uchun JPQL va SQL natijalari farq qiladi; (3) JOIN larda
 // kutilmagan natija. Review tavsiyasi: shartni aniq so'rovlarda yozish.
 ```
@@ -326,7 +329,7 @@ public void update(OrderDto dto) {
 | Batch sozlangan va IDENTITY ishlatilmaganmi | Sekin import |
 | Ro'yxat uchun projection ishlatilganmi | Ortiqcha ustun va xotira |
 | Detached entity `save` qilinmaydimi | Maydon yo'qolishi |
-| `@Where`, `@SQLDelete` kabi global filtrlar bormi | Jim yashirin shart |
+| `@SQLRestriction`, `@SoftDelete`, `@Filter`, `@SQLDelete` kabi global shartlar bormi (eski kodda `@Where`) | Jim yashirin shart |
 | Katta natijalar oqim yoki bo'lak bilan o'qiladimi | OOM |
 | `@Version` kerakli joyda bormi | Yo'qolgan yangilanish |
 | So'rov soni test bilan qulflangangmi | Regressiya |
@@ -340,7 +343,7 @@ public void update(OrderDto dto) {
 - [ ] `cascade = ALL` va `orphanRemoval = true` ishlatilgan joylarni ko'rib, agregat chegarasini qayta baholang.
 - [ ] Batch sozlamalarini (`batch_size`, `order_inserts`, `reWriteBatchedInserts`) qo'shing va `IDENTITY` ishlatadigan entity larni sequence ga o'tkazishni rejalashtiring.
 - [ ] Ro'yxat qaytaradigan so'rovlarni projection ga o'tkazib, o'qilayotgan ustun sonini kamaytiring.
-- [ ] `@Where` va `@SQLDelete` ishlatilgan joylarni aniq so'rov shartlariga o'tkazishni ko'rib chiqing.
+- [ ] `@SQLRestriction` (eski kodda `@Where`), `@SoftDelete` va `@SQLDelete` ishlatilgan joylarni aniq so'rov shartlariga o'tkazishni ko'rib chiqing.
 - [ ] `new Entity()` + `setId()` + `save()` naqshini grep bilan topib, barchasini tuzating.
 
 ---

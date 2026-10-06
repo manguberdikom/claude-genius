@@ -28,7 +28,9 @@ import handoff  # noqa: E402
 # Natijaga ta'sir qiladigan muhit. Sinov ichida tozalanadi va tiklanadi.
 ENV_KEYS = ("CONTEXT_LIMIT", "CLAUDE_CODE_AUTO_COMPACT_WINDOW", "CONTEXT_WARN",
             "CLAUDE_PROJECT_DIR", "CLAUDE_CODE_SESSION_ID", "CLAUDE_CONFIG_DIR",
-            "HOME", "USERPROFILE")
+            "HOME", "USERPROFILE", "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE",
+            "CLAUDE_CODE_REMOTE", "GENIUS_STATE_DIR", "GENIUS_MEMORY_DIR",
+            "GENIUS_CLONE")
 
 
 def write_transcript(path, rows):
@@ -316,10 +318,13 @@ def case_hisobot_transkriptsiz_tavsiya_bermaydi(tmp):
     return proc.returncode == 2 and "topilmadi" in proc.stdout
 
 
-def run_hook(tmp, payload):
-    """hook() ni jarayon ichida chaqiradi: (qaytgan kod, stdout)."""
-    saved_state, saved_stdin = handoff.STATE, sys.stdin
-    handoff.STATE = os.path.join(tmp, "holat", "handoff.json")
+def run_hook(tmp, payload, **env):
+    """hook() ni jarayon ichida chaqiradi: (qaytgan kod, stdout).
+
+    Holat GENIUS_STATE_DIR orqali sinov papkasida (HK-H14): klondagi
+    `.claude/.state/handoff.json` ga tegilmaydi."""
+    saved_stdin = sys.stdin
+    env.setdefault("GENIUS_STATE_DIR", os.path.join(tmp, "holat"))
     sys.stdin = io.StringIO(payload if isinstance(payload, str)
                             else json.dumps(payload))
     out = io.StringIO()
@@ -331,11 +336,11 @@ def run_hook(tmp, payload):
     io.open(os.path.join(project, "pom.xml"), "w", encoding="utf-8").write(
         "<project/>\n")
     try:
-        with isolated(tmp, "hook", CLAUDE_PROJECT_DIR=project), \
+        with isolated(tmp, "hook", CLAUDE_PROJECT_DIR=project, **env), \
                 contextlib.redirect_stdout(out):
             code = handoff.hook()
     finally:
-        handoff.STATE, sys.stdin = saved_state, saved_stdin
+        sys.stdin = saved_stdin
     return code, out.getvalue()
 
 
@@ -364,6 +369,173 @@ def case_hook(tmp):
             and {code_a, code_b, code_c, code_d, code_e} == {0})
 
 
+def case_pct_override(tmp):
+    """PL-CC8: oyna shu foizda siqiladi; sukutdan kattasi e'tiborsiz,
+    o'lchangan siqish nuqtasi va CONTEXT_LIMIT ga qo'llanmaydi."""
+    with isolated(tmp, "pct80", CLAUDE_AUTOCOMPACT_PCT_OVERRIDE="80"):
+        opus = handoff.limit_for(0, "claude-opus-5", 0)
+        measured = handoff.limit_for(850000, "claude-opus-5", 0)
+    with isolated(tmp, "pct80b", CLAUDE_AUTOCOMPACT_PCT_OVERRIDE="80",
+                  CONTEXT_LIMIT="500000"):
+        given = handoff.limit_for(0, "claude-opus-5", 0)
+    with isolated(tmp, "pct99", CLAUDE_AUTOCOMPACT_PCT_OVERRIDE="99"):
+        high = handoff.limit_for(0, "claude-opus-5", 0)
+    with isolated(tmp, "pctxx", CLAUDE_AUTOCOMPACT_PCT_OVERRIDE="abc"):
+        junk = handoff.limit_for(0, "claude-opus-5", 0)
+    return (opus[0] == 800000 and "PCT_OVERRIDE=80%" in opus[1]
+            and measured[0] == 850000 and given[0] == 500000
+            and high[0] == 1000000 and junk[0] == 1000000)
+
+
+def case_pct_hook_ikkinchi_pogona(tmp):
+    """PCT=80, 1M oyna: 2-pog'ona 720K da (avval 900K da, siqishdan keyin)."""
+    path = hook_transcript(tmp, "pct", 750000, "claude-opus-5")
+    _, out = run_hook(tmp, {"transcript_path": path, "session_id": "pct"},
+                      CLAUDE_AUTOCOMPACT_PCT_OVERRIDE="80",
+                      GENIUS_STATE_DIR=os.path.join(tmp, "holat_pct"))
+    state = os.path.join(tmp, "holat_pct", "handoff.json")
+    with io.open(state, encoding="utf-8") as handle:
+        level = json.load(handle)["pct"][0]
+    return "/ 800K" in out and level == 2
+
+
+def case_holat_genius_state_dir(tmp):
+    """HK-H14: holat GENIUS_STATE_DIR da, tmp nomida pid, tmp qolmaydi."""
+    state_dir = os.path.join(tmp, "holat_h14")
+    clone_state = os.path.join(ROOT, ".claude", ".state", "handoff.json")
+    before = os.path.getmtime(clone_state) if os.path.exists(clone_state) else None
+    seen = []
+    real_replace = os.replace
+
+    def spy(src, dst):
+        seen.append(src)
+        return real_replace(src, dst)
+
+    big = hook_transcript(tmp, "h14", 450000, "claude-opus-5")
+    handoff.os.replace = spy
+    try:
+        run_hook(tmp, {"transcript_path": big, "session_id": "h14"},
+                 GENIUS_STATE_DIR=state_dir)
+    finally:
+        handoff.os.replace = real_replace
+    after = os.path.getmtime(clone_state) if os.path.exists(clone_state) else None
+    return (os.path.isfile(os.path.join(state_dir, "handoff.json"))
+            and before == after
+            and seen and seen[0].endswith(".%d.tmp" % os.getpid())
+            and not [f for f in os.listdir(state_dir) if f.endswith(".tmp")])
+
+
+def git_in(path, *args):
+    return subprocess.run(["git", "-c", "user.email=sinov@example.com",
+                           "-c", "user.name=sinov", "-c", "commit.gpgsign=false"]
+                          + list(args), cwd=path, capture_output=True, text=True)
+
+
+def fact_repo(project):
+    """Soxta proyekt: commit, o'zgargan va yangi fayl, REJA.md qadamlari."""
+    git_in(project, "init", "-q")
+    with io.open(os.path.join(project, "Eski.java"), "w", encoding="utf-8") as h:
+        h.write("class Eski {}\n")
+    git_in(project, "add", "Eski.java")
+    git_in(project, "commit", "-q", "-m", "boshlang'ich")
+    with io.open(os.path.join(project, "Eski.java"), "a", encoding="utf-8") as h:
+        h.write("// o'zgardi\n")
+    with io.open(os.path.join(project, "Yangi.java"), "w", encoding="utf-8") as h:
+        h.write("class Yangi {}\n")
+    with io.open(os.path.join(project, "REJA.md"), "w", encoding="utf-8") as h:
+        h.write("# Reja: sinov\n\n## 4. Qadamlar\n### [x] 1-qadam. Entity qo'shish\n"
+                "- Fayl: Eski.java\n### 2-qadam. Servisni yozish\n\n"
+                "## 10. Definition of Done\n- [x] testlar yashil\n- [ ] review\n")
+
+
+def run_prompt(vazifa=None):
+    saved = handoff.transcript
+    handoff.transcript = lambda: None
+    out = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(out):
+            code = handoff.prompt(0, vazifa)
+    finally:
+        handoff.transcript = saved
+    return code, out.getvalue()
+
+
+def case_fakt_avtomatik(tmp):
+    """OK-O17: diff --stat, kuzatilmagan fayllar va REJA.md [x] mashinadan."""
+    with isolated(tmp, "fakt") as (_, project):
+        fact_repo(project)
+        code, text = run_prompt()
+    done = text.split("Bajarildi", 1)[-1].split("Qolgan", 1)[0]
+    left = text.split("Qolgan", 1)[-1].split("Qarorlar", 1)[0]
+    return (code == 0 and "git diff --stat HEAD" in text and "Eski.java" in text
+            and "1 file changed" in text and "Yangi.java" in text
+            and "1-qadam. Entity qo'shish" in done and "testlar yashil" in done
+            and "2-qadam. Servisni yozish" in left and "review" in left
+            and "Maqsad: <" in text)
+
+
+def case_lokal_vazifa_faylga_git_siz(tmp):
+    """Lokal sessiyada topshiriq holat papkasining handoff/ iga: proyekt
+    daraxti va klon o'zgarmaydi."""
+    state_dir = os.path.join(tmp, "holat_lokal")
+    with isolated(tmp, "lokal", GENIUS_STATE_DIR=state_dir) as (_, project):
+        fact_repo(project)
+        status_before = git_in(project, "status", "--porcelain").stdout
+        code, text = run_prompt("Buyurtma Servisi!")
+        status_after = git_in(project, "status", "--porcelain").stdout
+    target = os.path.join(state_dir, "handoff", "buyurtma-servisi.md")
+    body = io.open(target, encoding="utf-8").read() if os.path.isfile(target) else ""
+    return (code == 0 and "Maqsad: <" in body and "Yangi.java" in body
+            and status_before == status_after and "git ga kirmaydi" in text
+            and "buyurtma-servisi.md faylida" in text)
+
+
+def case_bulut_vazifa_memoryga(tmp):
+    """Bulut sessiyasida topshiriq proyekt memorysiga, klonga emas."""
+    memory = os.path.join(tmp, "bulut_mem")
+    with isolated(tmp, "bulut", CLAUDE_CODE_REMOTE="true",
+                  GENIUS_MEMORY_DIR=memory) as (_, project):
+        git_in(project, "init", "-q")
+        code, text = run_prompt("x")
+    target = os.path.join(memory, "my_proj.v2", "project_x.md")
+    return code == 0 and os.path.isfile(target) and "git da emas" in text
+
+
+def case_memory_klondan_tashqarida(tmp):
+    """R0.5: boshqa proyekt memorysi GENIUS_MEMORY_DIR da (sukut
+    ~/.claude/genius-memory), umumiy esa klonda."""
+    memory = os.path.join(tmp, "xususiy_mem")
+    os.makedirs(os.path.join(memory, "shop-api"))
+    with io.open(os.path.join(memory, "shop-api", "MEMORY.md"), "w",
+                 encoding="utf-8") as handle:
+        handle.write("# shop-api\n\n- `project_x.md` - sinov yozuvi\n")
+    with isolated(tmp, "mem_env", GENIUS_MEMORY_DIR=memory) as (_, project):
+        git_in(project, "init", "-q")
+        git_in(project, "remote", "add", "origin", "git@github.com:acme/Shop-Api.git")
+        paths = dict(handoff.memory_paths())
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = handoff.memory_report()
+    with isolated(tmp, "mem_uy") as (home, project):
+        git_in(project, "init", "-q")
+        default = dict(handoff.memory_paths())
+    clone = os.path.realpath(ROOT) + os.sep
+    return (code == 0 and paths["shop-api"].startswith(memory)
+            and not os.path.realpath(paths["shop-api"]).startswith(clone)
+            and paths["umumiy"] == os.path.join(ROOT, "memory", "umumiy", "MEMORY.md")
+            and "sinov yozuvi" in out.getvalue()
+            and default["my_proj.v2"].startswith(
+                os.path.join(home, ".claude", "genius-memory") + os.sep))
+
+
+def case_memory_klonning_ozida(tmp):
+    """Klonning o'zida proyekt memorysi klondagi memory/ da qoladi."""
+    with isolated(tmp, "mem_klon", GENIUS_MEMORY_DIR=os.path.join(tmp, "yoq")):
+        os.chdir(ROOT)
+        paths = handoff.memory_paths()
+    return all(p.startswith(os.path.join(ROOT, "memory") + os.sep) for _, p in paths)
+
+
 CASES = [
     ("current, peak, navbat va model", case_olchov),
     ("siqish ikki qator, bitta sanaladi", case_siqish_sanaladi),
@@ -390,6 +562,14 @@ CASES = [
     ("transkriptsiz tavsiya berilmaydi",
      case_hisobot_transkriptsiz_tavsiya_bermaydi),
     ("hook: chegara, takror va buzuq kirish", case_hook),
+    ("CLAUDE_AUTOCOMPACT_PCT_OVERRIDE chegarani tushiradi", case_pct_override),
+    ("PCT=80: 2-pog'ona 720K da", case_pct_hook_ikkinchi_pogona),
+    ("holat GENIUS_STATE_DIR da, tmp nomida pid", case_holat_genius_state_dir),
+    ("fakt qismi: diff --stat, yangi fayl, REJA.md", case_fakt_avtomatik),
+    ("lokal topshiriq handoff/ ga, git siz", case_lokal_vazifa_faylga_git_siz),
+    ("bulut topshirig'i proyekt memorysiga", case_bulut_vazifa_memoryga),
+    ("boshqa proyekt memorysi klondan tashqarida", case_memory_klondan_tashqarida),
+    ("klonning o'z memorysi klonda", case_memory_klonning_ozida),
 ]
 
 

@@ -1,0 +1,9 @@
+# Inglizcha taxalluslar: bo'lim raqami va inglizcha nom.
+# Shakli va qoidalari docs/architect/aliases.tsv boshida.
+bolim	nom
+7.8	Spring context caching
+8.4	Singleton container
+8.5	Container reuse
+16.3	Flaky test detection
+16.4	Test quarantine
+16.10	Speeding up slow tests

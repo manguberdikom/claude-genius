@@ -10,6 +10,8 @@ yuklanmaydi yoki agent boshqa modelda ishlaydi va hech kim bilmaydi.
 Matndagi doc.sh raqami indeksda borligi va `tools/` prefiksi, agent
 modeli manguberdi/SKILL.md dagi taqsimotga mosligi, `## Asboblar`
 bo'limlari va settings.json dagi hook ulanishi ham tekshiriladi.
+Hajm (S, M, L) jadvali faqat marshrut.md da ekani va `references/` ga
+havoladagi bo'lim nomi haqiqiy sarlavhaga mosligi ham.
 """
 
 import glob
@@ -58,17 +60,37 @@ FULL_REF_RE = re.compile(r"\.claude/skills/([\w-]+)/references/([\w-]+\.md)")
 MODEL_RE = re.compile(r"\b(haiku|sonnet|opus|fable)\b")
 # Hook matcher qismlari shu nomlardan bo'lsin: "Taskk" kabi xato jim
 # o'tsa, hook hech qachon ishga tushmaydi.
-HOOK_TOOLS = {"Read", "Bash", "PowerShell", "Task", "Agent", "Write", "Edit",
-              "MultiEdit", "NotebookEdit", "Grep", "Glob", "WebFetch",
-              "WebSearch"}
+HOOK_TOOLS = {"Read", "Bash", "PowerShell", "Task", "Agent", "SendMessage",
+              "Write", "Edit", "MultiEdit", "NotebookEdit", "Grep", "Glob",
+              "WebFetch", "WebSearch"}
 # Hook skripti o'z asboblarini ushlashi shart: kengaytirish mumkin,
 # tushirib qoldirish yo'q. Matcher faqat asbob hodisalarida bor:
 # UserPromptSubmit va Stop uni o'qimaydi, budget.py u yerda hisobni
-# nolga tushirish uchun ulangan.
+# nolga tushirish uchun ulangan. SendMessage tugagan aktyorni yangi Agent
+# chaqiruvisiz qayta yurgizadi: matcher siz u budjetdan o'tib ketardi.
 HOOK_MUST_MATCH = {"guard": {"Read", "Bash", "PowerShell"},
-                   "budget": {"Task", "Agent"},
+                   "budget": {"Task", "Agent", "SendMessage"},
                    "check_code": {"Write", "Edit"}}
 TOOL_EVENTS = {"PreToolUse", "PostToolUse"}
+# Subagent hodisalarida matcher asbob emas, agent turi. Qismlar
+# .claude/agents dagi nomlar yoki o'rnatilgan turlardan bo'lsin.
+AGENT_EVENTS = {"SubagentStart", "SubagentStop"}
+BUILTIN_AGENTS = {"general-purpose", "Explore", "Plan"}
+# Skript shu hodisaga ulangan bo'lishi va matcher bo'lsa shu aktyorlarni
+# ushlashi shart: aks holda aktyor javobi jim tekshirilmay qoladi.
+EVENT_MUST_WIRE = {"actor_check": ("SubagentStop", {"dasturchi", "test-muhandis"})}
+
+# Hajm (S, M, L) faqat shu faylda ta'riflanadi. Ikkinchi joydagi jadval
+# avval uch xil ta'rifga olib kelgan: bir vazifa ham "M, rejasiz", ham
+# "reja kerak" shartiga tushardi.
+SIZE_HOME = os.path.join(SKILLS, "manguberdi", "references", "marshrut.md")
+SIZE_ROW_RE = re.compile(r"^\|\s*`?([SML])`?\s*\|", re.M)
+# `references/x.md` dan keyingi `Bo'lim nomi` (backtick yoki qo'shtirnoq)
+# o'sha fayldagi sarlavha boshi bo'lishi shart: o'lik nom model uchun
+# yo'q qoidaga havola.
+REF_SECTION_RE = re.compile(
+    r"references/([\w-]+\.md)`?(?:,| dagi| da|\s)*[`\"]([^`\"\n]{3,60})[`\"]")
+HEADING_RE = re.compile(r"^#{2,3} +(.+?)\s*$", re.M)
 
 errors = []
 
@@ -246,6 +268,56 @@ def check_tool_sections(skills):
             err(rel, "bob jadvali bor, lekin `## Asboblar` da doc.sh show yo'q")
 
 
+def claude_md_files():
+    """`.claude/**/*.md`, lekin ichki worktree larsiz.
+
+    Guruh worktree lari `.claude/worktrees/` ichida turadi (guruh.py):
+    ularni skanerlash har faylni ikki marta sanaydi va boshqa branchning
+    yarim tahrirlangan matniga yolg'on xato beradi. Qoida check_docs ning
+    `foreign_tree` i bilan bir joyda turadi.
+    """
+    import check_docs
+    out = []
+    for dirpath, dirnames, filenames in os.walk(os.path.join(ROOT, ".claude")):
+        dirnames[:] = sorted(
+            d for d in dirnames
+            if not check_docs.foreign_tree(os.path.join(dirpath, d), ROOT))
+        out.extend(os.path.join(dirpath, f) for f in filenames
+                   if f.endswith(".md"))
+    return sorted(out)
+
+
+def check_size_table(paths):
+    """S/M/L jadvali faqat marshrut.md da va u yerda to'liq."""
+    for path in paths:
+        rows = set(SIZE_ROW_RE.findall(open(path, encoding="utf-8").read()))
+        rel = os.path.relpath(path, ROOT)
+        if os.path.normcase(path) == os.path.normcase(SIZE_HOME):
+            if rows != {"S", "M", "L"}:
+                err(rel, "hajm jadvalida S, M, L qatorlari to'liq emas")
+        elif rows:
+            err(rel, "hajm (%s) ta'rifi faqat %s da bo'ladi, bu yerda havola"
+                % (", ".join(sorted(rows)), os.path.relpath(SIZE_HOME, ROOT)))
+
+
+def check_ref_sections(paths):
+    """`references/x.md` dagi `Bo'lim` nomi haqiqiy sarlavhaga mos."""
+    headings = {}
+    for ref in glob.glob(os.path.join(SKILLS, "*", "references", "*.md")):
+        text = open(ref, encoding="utf-8").read()
+        headings.setdefault(os.path.basename(ref), []).extend(
+            h.casefold() for h in HEADING_RE.findall(text))
+    for path in paths:
+        rel = os.path.relpath(path, ROOT)
+        for m in REF_SECTION_RE.finditer(open(path, encoding="utf-8").read()):
+            ref, name = m.group(1), m.group(2).strip().casefold()
+            if ref not in headings:
+                continue    # fayl yo'qligini check() aytadi
+            if not any(h.startswith(name) for h in headings[ref]):
+                err(rel, "references/%s da '%s' sarlavhasi yo'q"
+                    % (ref, m.group(2).strip()))
+
+
 def check_hooks():
     """settings.json dagi har hook skripti bor va matcher to'g'ri."""
     if not os.path.exists(SETTINGS):
@@ -256,18 +328,29 @@ def check_hooks():
     except ValueError as exc:
         err(rel, "JSON buzuq: %s" % exc)
         return
+    agents = BUILTIN_AGENTS | {
+        os.path.splitext(f)[0] for f in os.listdir(AGENTS) if f.endswith(".md")
+    } if os.path.isdir(AGENTS) else set(BUILTIN_AGENTS)
     wired = set()
     for event, groups in hooks.items():
         for group in groups:
             matcher = group.get("matcher", "")
             parts = set(matcher.split("|")) if matcher else set()
-            for part in parts - HOOK_TOOLS:
+            known = agents if event in AGENT_EVENTS else HOOK_TOOLS
+            for part in parts - known:
                 err(rel, "%s: noma'lum matcher qismi '%s'" % (event, part))
             for hook in group.get("hooks", []):
                 for script in re.findall(r"tools/(\w+)\.py",
                                          hook.get("command", "")):
                     if not os.path.exists(os.path.join(HERE, script + ".py")):
                         err(rel, "%s: tools/%s.py yo'q" % (event, script))
+                    must = EVENT_MUST_WIRE.get(script)
+                    if must and event == must[0]:
+                        wired.add(script)
+                        missing = must[1] - parts if parts else set()
+                        if missing:
+                            err(rel, "%s: %s matcher'ida %s yo'q"
+                                % (event, script, ", ".join(sorted(missing))))
                     if event not in TOOL_EVENTS:
                         continue
                     wired.add(script)
@@ -277,6 +360,8 @@ def check_hooks():
                             % (event, script, ", ".join(sorted(missing))))
     for script in sorted(set(HOOK_MUST_MATCH) - wired):
         err(rel, "tools/%s.py hech bir asbob hodisasiga ulanmagan" % script)
+    for script in sorted(set(EVENT_MUST_WIRE) - wired):
+        err(rel, "tools/%s.py %s ga ulanmagan" % (script, EVENT_MUST_WIRE[script][0]))
 
 
 def main():
@@ -299,13 +384,15 @@ def main():
     check_models(agents)
     check_tool_sections(skills)
     check_hooks()
+    claude_docs = claude_md_files()
+    check_size_table(claude_docs)
+    check_ref_sections(claude_docs)
 
     secs, chs = known_refs()
     if not secs or not chs:
         err("index", "indeks yasalmadi: doc.sh havolalari tekshirilmadi")
     else:
-        for path in sorted(glob.glob(os.path.join(ROOT, ".claude", "**", "*.md"),
-                                     recursive=True)):
+        for path in claude_docs:
             check_doc_refs(path, secs, chs)
         claude_md = os.path.join(ROOT, "CLAUDE.md")
         if os.path.exists(claude_md):

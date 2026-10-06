@@ -3,9 +3,9 @@
 
     python3 tools/test_rewrite_paths.py
 
-Nega bu asbobga sinov kerak: o'rnatuvchining PowerShell qismi sinalmaydi,
-shuning uchun u iloji boricha ozroq ish qilishi va asosiy mantiq shu
-yerda, sinaladigan joyda turishi kerak. Noto'g'ri almashtirish jim
+Nega bu asbobga sinov kerak: o'rnatuvchining PowerShell qismi sinalmaydi
+(R7.2: u install.py ustidagi yupqa o'ram), shuning uchun asosiy mantiq
+shu yerda va install.py da, sinaladigan joyda turishi kerak. Noto'g'ri almashtirish jim
 o'tadi: skill o'rnatiladi, ko'rinishidan joyida, lekin har buyruq
 "No such file or directory" beradi.
 """
@@ -99,7 +99,6 @@ def case_nuqta_slash():
 # uni MEM_PATH almashtiradi), lekin mexanizm qoladi: ildizga yana shunday
 # fayl qo'shilishi mumkin. Shuning uchun quyidagi holatlar soxta nom
 # qo'yib mexanizmning o'zini sinaydi.
-import contextlib  # noqa: E402
 
 
 @contextlib.contextmanager
@@ -157,6 +156,54 @@ def case_root_file_chegarasi():
 def case_memory_yoli():
     out, n = one("`memory/<proyekt-slug>/MEMORY.md` indeksini o'qing")
     return n == 1 and "%s/memory/<proyekt-slug>/" % GENIUS in out
+
+
+def case_memory_klonga_tools_snapshotga():
+    """R7.8 XV-Y1: `--clone` berilsa `memory/` klonga, `tools/` snapshotga ketadi;
+    `--clone` siz klon ichidagi xulq o'zgarmaydi."""
+    snap = "C:/Users/a/.claude/genius/0123456789ab"
+    out, n = R.rewrite("python3 tools/rules_for.py x; `memory/umumiy/MEMORY.md`; tools/doc.sh toc",
+                       snap, "bash", "python3", clone=GENIUS)
+    plain, _ = R.rewrite("memory/umumiy/", GENIUS)
+    return (n == 3 and "python3 %s/tools/rules_for.py" % snap in out
+            and "%s/memory/umumiy/MEMORY.md" % GENIUS in out
+            and "bash %s/tools/doc.sh" % snap in out
+            and snap + "/memory" not in out
+            and plain == "%s/memory/" % GENIUS + "umumiy/")
+
+
+def case_clone_va_root_keyin_papkada():
+    """`--clone` fayl tizimida: skill matni snapshot va klon yo'llari bilan
+    yoziladi; `--root-keyin` bilan snapshot hali yo'q bo'lsa 2 qaytmaydi, lekin
+    klon yo'q bo'lsa 2; `--root-keyin` siz yo'q snapshot 2."""
+    tmp = tempfile.mkdtemp(prefix="rw_snap_")
+    try:
+        clone = os.path.join(tmp, "klon")
+        snap = os.path.join(tmp, "genius", "0123456789ab")
+        os.makedirs(clone)
+        skill = os.path.join(tmp, "SKILL.md")
+        io.open(skill, "w", encoding="utf-8").write(
+            "python3 tools/budget.py; `memory/umumiy/MEMORY.md`")
+        rows = []
+        code, _ = run_main([tmp, "--root", snap, "--clone", clone])
+        rows.append(code == 2)
+        code, _ = run_main([tmp, "--root", snap, "--clone", os.path.join(tmp, "yoq"),
+                            "--root-keyin"])
+        rows.append(code == 2)
+        code, _ = run_main([tmp, "--root", snap, "--clone", clone, "--root-keyin"])
+        text = io.open(skill, encoding="utf-8").read()
+        rows.append(code == 0 and "%s/tools/budget.py" % snap.replace(os.sep, "/") in text
+                    and "%s/memory/umumiy/MEMORY.md" % clone.replace(os.sep, "/") in text)
+        code, out = run_main([tmp, "--root", snap, "--clone", clone, "--root-keyin",
+                              "--tekshir"])
+        rows.append(code == 0)
+        code, out = run_main([tmp, "--root", snap, "--clone", clone, "--root-keyin",
+                              "--allow"])
+        rows.append(code == 0 and "%s/tools/budget.py" % snap.replace(os.sep, "/")
+                    in json.loads(out)[0])
+        return all(rows) and len(rows) == 5
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
 
 
 def case_mutlaq_yol_tegilmaydi():
@@ -287,38 +334,225 @@ def case_root_yoq_bolsa_2():
         shutil.rmtree(tmp, ignore_errors=True)
 
 
-# PowerShell sinalmaydi, lekin u yasaydigan hook jadvali matndan o'qiladi
-# va repodagi .claude/settings.json ga solishtiriladi: biri o'zgarib
-# ikkinchisi unutilsa, global o'rnatish jim boshqacha ishlaydi.
-PS_HOOK_TOKEN = re.compile(
-    r"^\s*(?P<event>\w+) = @\("
-    r"|(?P<group>\[ordered\]@\{ (?:matcher = '(?P<matcher>[^']*)'; )?hooks = @\()"
-    r"|HookCmd '(?P<script>[^']+)'\)(?: \+ '(?P<arg>[^']*)')?"
-    r"|timeout = (?P<timeout>\d+)"
-    r"|statusMessage = (?:\"(?P<dq>[^\"]*)\"|'(?P<sq>[^']*)')", re.M)
+def real_stage(tmp, root, python="python3"):
+    """Haqiqiy skill va aktyorlar nusxasi, yo'llari mutlaq qilingan."""
+    stage = os.path.join(tmp, "stage")
+    shutil.copytree(os.path.join(ROOT, ".claude", "skills", "manguberdi"),
+                    os.path.join(stage, "manguberdi"))
+    agents = os.path.join(stage, "agents")
+    os.makedirs(agents)
+    src = os.path.join(ROOT, ".claude", "agents")
+    for name in os.listdir(src):
+        if name.endswith(".md"):
+            shutil.copy(os.path.join(src, name), agents)
+    code, _ = run_main([stage, "--root", root, "--python", python])
+    if code != 0:
+        raise AssertionError("rewrite yiqildi: %d" % code)
+    return stage
+
+
+def case_allow_run_tests_va_guruh_cheklangan():
+    """Haqiqiy skillning --allow chiqishida run_tests.py yo'q (fork PR da
+    build kodi so'rovsiz bajarilardi, XV-K1). guruh.py uchun faqat yarat va
+    royxat: birlashtir va tozala so'raladi (XV-T1). Yon ta'sirsiz asboblar
+    joyida qoladi."""
+    tmp = tempfile.mkdtemp(prefix="rw_allow_real_")
+    try:
+        root = os.path.join(tmp, "genius")
+        os.makedirs(root)
+        stage = real_stage(tmp, root)
+        code, out = run_main([stage, "--root", root, "--allow"])
+        rules = json.loads(out)
+        guruh = sorted(r for r in rules if "/tools/guruh.py" in r)
+        prefix = R.tool_cmd(R.clean_root(root), "python3", "guruh.py")
+        return (code == 0 and len(rules) >= 8
+                and not any("run_tests.py" in r for r in rules)
+                and guruh == ["Bash(%s royxat:*)" % prefix,
+                              "Bash(%s yarat:*)" % prefix]
+                and "Bash(%s:*)" % R.tool_cmd(R.clean_root(root), "python3",
+                                               "rules_for.py") in rules
+                and any("/tools/doc.sh:*)" in r for r in rules))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def case_allow_aniq_royxat():
+    """Sintetik matnda --allow aniq ro'yxat beradi: run_tests tushadi,
+    guruh ikki subbuyruqqa bo'linadi, qolgani bitta qoidadan."""
+    text = "\n".join(R.rewrite(c, GENIUS)[0] for c in (
+        "python3 tools/run_tests.py --diff --yurgiz",
+        "python3 tools/guruh.py tozala --hammasi",
+        "python3 tools/budget.py --holat",
+        "tools/doc.sh find saga"))
+    py = "python3 %s/tools/" % GENIUS
+    return R.allow_rules(text, GENIUS) == sorted([
+        "Bash(bash %s/tools/doc.sh:*)" % GENIUS,
+        "Bash(%sbudget.py:*)" % py,
+        "Bash(%sguruh.py royxat:*)" % py,
+        "Bash(%sguruh.py yarat:*)" % py,
+    ]) and R.opt_in_rules(text, GENIUS) == ["Bash(%srun_tests.py:*)" % py]
+
+
+def case_opt_in_bolagi():
+    """--opt-in settings.local.json bo'lagini beradi: ichida faqat
+    run_tests qoidasi, u esa skill yozgan buyruqning aynan boshlanishi."""
+    tmp = tempfile.mkdtemp(prefix="rw_optin_")
+    try:
+        root = os.path.join(tmp, "Program Files", "genius")
+        os.makedirs(root)
+        stage = real_stage(tmp, root, python=PY_SPACED)
+        code, out = run_main([stage, "--root", root, "--python", PY_SPACED,
+                              "--opt-in"])
+        data = json.loads(out)
+        rules = data["permissions"]["allow"]
+        prefix = R.tool_cmd(R.clean_root(root), PY_SPACED, "run_tests.py")
+        texts = [io.open(p, encoding="utf-8").read() for p in R.walk(stage)]
+        return (code == 0 and list(data) == ["permissions"]
+                and rules == ["Bash(%s:*)" % prefix]
+                and any(prefix + " " in t for t in texts))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def case_xavfli_belgili_yol_2():
+    """`$`, backtick yoki qo'sh qo'shtirnoq bor --root yoki --python: hook
+    buyrug'i bash da "..." ichida yuradi va bu belgi u yerda kengayadi
+    (XV-P2). 2 qaytadi va fayl tegilmaydi."""
+    tmp = tempfile.mkdtemp(prefix="rw_unsafe_")
+    try:
+        skill = os.path.join(tmp, "SKILL.md")
+        io.open(skill, "w", encoding="utf-8").write("tools/doc.sh toc")
+        results = []
+        for char in ("$", "`", '"'):
+            bad = os.path.join(tmp, "g%sx" % char)
+            try:
+                os.makedirs(bad)
+            except OSError:
+                pass  # Windows da " papka nomida bo'lmaydi: matn baribir sinaladi
+            for argv in ([tmp, "--root", bad],
+                         [tmp, "--root", tmp, "--python", "C:/py%s/python.exe" % char],
+                         [tmp, "--root", bad, "--allow"]):
+                code, out = run_main(argv)
+                results.append(code == 2 and out == "")
+        untouched = io.open(skill, encoding="utf-8").read() == "tools/doc.sh toc"
+        return all(results) and len(results) == 9 and untouched
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def load_install():
+    """install/install.py ni modul sifatida: o'rnatuvchi mantig'i bitta joyda
+    (R7.2, ps1 yupqa o'ram), shuning uchun hook jadvali, manifest va xavfsiz
+    belgilar shu yerdan sinaladi."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "install_py", os.path.join(ROOT, "install", "install.py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def case_install_papkalar_va_opt_in():
+    """additionalDirectories da butun klon emas, faqat snapshotning docs va
+    klonning memory papkasi (XV-Y4, XV-Y1); opt-in bo'lagi rewrite_paths dan
+    olinadi va ko'rsatiladi; GeniusPath, Snapshot va Python yo'li xavfli
+    belgida to'xtatiladi (XV-P2). Ikkala platforma shaklida ham."""
+    mod = load_install()
+    src = io.open(os.path.join(ROOT, "install", "install.py"), encoding="utf-8").read()
+    snap, clone = "C:/Users/u/.claude/genius/0123456789ab", "C:/src/claude-genius"
+    for py, py_env in ((sys.executable, None), (r"C:\Python312\python.exe", "C:/Python312/python.exe")):
+        got = mod.sozlama_yasa(py, snap, [], clone, py_env)
+        if got["permissions"]["additionalDirectories"] != [snap + "/docs", clone + "/memory"]:
+            return False
+        if got["env"] != {"GENIUS_PYTHON": py_env or py, "GENIUS_CLONE": clone}:
+            return False
+    rejected = []
+    for char in R.UNSAFE_CHARS:
+        try:
+            mod.xavfsiz_yol("GeniusPath", "C:/a%sb" % char)
+            rejected.append(False)
+        except mod.Xato:
+            rejected.append(True)
+    return (all(rejected) and sorted(mod.UNSAFE_CHARS) == sorted(R.UNSAFE_CHARS)
+            and '"--opt-in"' in src and src.count("opt_in_korsat") >= 3
+            and 'xavfsiz_yol("GeniusPath", root)' in src
+            and 'xavfsiz_yol("Snapshot", ctx.root)' in src
+            and 'xavfsiz_yol("Python", ctx.python)' in src)
+
+
+def case_install_manifest_va_eski_aktyor():
+    """install.py (OC-K5): .genius.json budget.py o'qiydigan joyga va
+    kalitlar bilan yoziladi; RETIRED dagi nom hozirgi aktyor emas va
+    yangilash hamda --uninstall ikkalasida olinadi."""
+    import types
+    mod = load_install()
+    src = io.open(os.path.join(ROOT, "install", "install.py"), encoding="utf-8").read()
+    budget = io.open(os.path.join(ROOT, "tools", "budget.py"),
+                     encoding="utf-8").read()
+    tmp = tempfile.mkdtemp(prefix="rw_")
+    try:
+        ctx = types.SimpleNamespace(sha="a" * 40, root=tmp, clone_fwd="C:/src/k",
+                                    python_fwd="C:/Python312/python.exe")
+        keys = list(mod.manifest_yasa(ctx))
+        opts = mod.parser_yasa().parse_args([])
+        manifest_path = mod.Ctx(opts, mod.Platforma("posix")).manifest_path
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    agents = {name[:-3] for name in os.listdir(os.path.join(ROOT, ".claude", "agents"))}
+    old, current = set(mod.RETIRED), set(mod.ACTORS)
+    return ("arxitektor" in old and not old & current
+            and not old & agents and current <= agents
+            and keys == ["versiya", "commit", "sana", "root", "clone", "python", "actors"]
+            and manifest_path.replace("\\", "/").endswith("skills/manguberdi/.genius.json")
+            and '"manguberdi", ".genius.json"' in budget
+            and 'manifest.get("commit")' in budget
+            and 'manifest.get("root")' in budget
+            # ta'rif, yangilash va --uninstall
+            and src.count("eski_aktyorlar(") >= 3)
+
+
+def case_install_hook_yoli_snapshotga():
+    """R7.8 XV-Y1: hook buyrug'i klonning tools/ iga emas, snapshotga ishora
+    qiladi (ikkala platforma shaklida), GENIUS_CLONE env ga yoziladi; snapshot
+    joyini va git mantig'ini barcha platformada bitta snapshot.py beradi;
+    sinov va yangi sinov `--clone` bilan yuradi."""
+    mod = load_install()
+    src = io.open(os.path.join(ROOT, "install", "install.py"), encoding="utf-8").read()
+    snap, clone = "C:/Users/u/.claude/genius/0123456789ab", "C:/src/claude-genius"
+    rows = []
+    for py in (sys.executable, r"C:\Python312\python.exe"):
+        got = mod.sozlama_yasa(py, snap, [], clone)
+        cmds = [h["command"] for groups in got["hooks"].values()
+                for g in groups for h in g["hooks"]]
+        rows.append(len(cmds) >= 7
+                    and all(('"%s" "%s/tools/' % (py, snap)) in c and c.endswith(" || exit 1")
+                            for c in cmds)
+                    and not any(clone + "/tools/" in c for c in cmds)
+                    and got["env"]["GENIUS_CLONE"] == clone)
+    return (all(rows)
+            and 'snapshot.sha_ol(root)' in src and "snapshot.yarat(" in src
+            and "snapshot.arxiv(" in src and "snapshot.farq_matn(" in src
+            and '"--root", root, "--clone", ctx.clone, "--root-keyin"' in src)
+
+
+# install.py yasaydigan hook jadvali repodagi .claude/settings.json ga
+# solishtiriladi: biri o'zgarib ikkinchisi unutilsa, global o'rnatish jim
+# boshqacha ishlaydi. Ikkala platforma shaklida (Windows: teskari slashli Python).
 SETTINGS_CMD = re.compile(r'tools/(\w+\.py)"?\s*(.*)')
 
 
-def ps1_hooks():
-    """manguberdi.ps1 dagi `hooks = [ordered]@{` dan `$settingsPath` gacha."""
-    text = io.open(os.path.join(ROOT, "install", "manguberdi.ps1"),
-                   encoding="utf-8").read()
-    start = text.index("hooks = [ordered]@{")
-    block = text[start:text.index("$settingsPath", start)]
-    hooks, event, matcher = [], "", ""
-    for m in PS_HOOK_TOKEN.finditer(block):
-        if m.group("event"):
-            event, matcher = m.group("event"), ""
-        elif m.group("group"):
-            matcher = m.group("matcher") or ""
-        elif m.group("script"):
-            hooks.append([event, matcher, m.group("script"),
-                          (m.group("arg") or "").strip(), None, ""])
-        elif m.group("timeout") and hooks:
-            hooks[-1][4] = int(m.group("timeout"))
-        elif hooks:
-            hooks[-1][5] = m.group("dq") if m.group("dq") is not None else m.group("sq")
-    return sorted(tuple(h) for h in hooks)
+def install_hooks(python):
+    mod = load_install()
+    got = mod.sozlama_yasa(python, "C:/Users/u/.claude/genius/0123456789ab", [], GENIUS)
+    hooks = []
+    for event, groups in got["hooks"].items():
+        for group in groups:
+            for hook in group["hooks"]:
+                m = SETTINGS_CMD.search(hook["command"])
+                script, arg = (m.group(1), m.group(2).strip()) if m else (hook["command"], "")
+                hooks.append((event, group.get("matcher", ""), script, arg,
+                              hook.get("timeout"), hook.get("statusMessage", "")))
+    return sorted(hooks)
 
 
 def settings_hooks():
@@ -336,18 +570,18 @@ def settings_hooks():
     return sorted(hooks)
 
 
-def case_ps1_hooklari_repoga_mos():
-    ps, repo = ps1_hooks(), settings_hooks()
+def case_install_hooklari_repoga_mos():
+    repo = settings_hooks()
     # Naqsh hech narsani tutmasa ikki bo'sh ro'yxat teng chiqadi: yolg'on
     # yashil bo'lmasin.
-    if len(ps) < 5 or len(repo) < 5:
-        raise AssertionError("hook kam o'qildi: ps1 %d, settings.json %d"
-                             % (len(ps), len(repo)))
-    if ps != repo:
-        only_ps = [h for h in ps if h not in repo]
-        only_repo = [h for h in repo if h not in ps]
-        raise AssertionError("faqat ps1 da: %s; faqat settings.json da: %s"
-                             % (only_ps, only_repo))
+    if len(repo) < 5:
+        raise AssertionError("hook kam o'qildi: settings.json %d" % len(repo))
+    for python in (sys.executable, r"C:\Python312\python.exe"):
+        mine = install_hooks(python)
+        if mine != repo:
+            raise AssertionError("faqat install.py da (%s): %s; faqat settings.json da: %s"
+                                 % (python, [h for h in mine if h not in repo],
+                                    [h for h in repo if h not in mine]))
     return True
 
 
@@ -432,6 +666,8 @@ CASES = [
     ("bo'sh joyli ildiz fayli qo'shtirnoqda", case_root_file_bosh_joyli),
     ("../ va boshqa nomli ildiz fayli tegilmaydi", case_root_file_chegarasi),
     ("memory yo'li", case_memory_yoli),
+    ("--clone: memory klonga, tools snapshotga", case_memory_klonga_tools_snapshotga),
+    ("--clone va --root-keyin fayl tizimida", case_clone_va_root_keyin_papkada),
     ("mutlaq yo'l tegilmaydi", case_mutlaq_yol_tegilmaydi),
     ("ikki marta yurgizish xavfsiz", case_idempotent),
     ("teskari slash to'g'rilanadi", case_teskari_slash_tozalanadi),
@@ -443,7 +679,16 @@ CASES = [
     ("python yo'li berilsa ishlatiladi", case_python_yoli_beriladi),
     ("--allow qoidasi buyruqning aynan boshlanishi", case_allow_qoidasi_buyruq_boshlanishi),
     ("mavjud bo'lmagan --root 2 qaytaradi", case_root_yoq_bolsa_2),
-    ("ps1 hook jadvali settings.json ga mos", case_ps1_hooklari_repoga_mos),
+    ("--allow da run_tests yo'q, guruh faqat yarat va royxat",
+     case_allow_run_tests_va_guruh_cheklangan),
+    ("--allow aniq ro'yxat, run_tests opt-in da", case_allow_aniq_royxat),
+    ("--opt-in settings.local.json bo'lagi", case_opt_in_bolagi),
+    ("$, backtick yoki qo'shtirnoqli yo'l 2 qaytaradi", case_xavfli_belgili_yol_2),
+    ("install.py: docs va memory papkasi, opt-in, xavfli belgi", case_install_papkalar_va_opt_in),
+    ("install.py hook jadvali settings.json ga mos (ikki platforma)",
+     case_install_hooklari_repoga_mos),
+    ("install.py: hook yo'li snapshotga ishora qiladi (XV-Y1)", case_install_hook_yoli_snapshotga),
+    ("install.py: .genius.json manifesti va eski aktyor", case_install_manifest_va_eski_aktyor),
     ("papka bo'ylab yuradi, .md dan boshqasi tegilmaydi", case_papkani_yuradi),
     ("haqiqiy skillda nol nisbiy yo'l", case_haqiqiy_skill_toza_qoladi),
 ]

@@ -89,6 +89,43 @@ def case_royxat_qatori(tmp):
             and "CLAUDE.md" not in rows)
 
 
+def case_qolda_chaqiriladigan_skill_sanalmaydi(tmp):
+    """`disable-model-invocation: true`: skill ro'yxatga kirmaydi, 0 token.
+
+    Ikkinchi skill sanaladi: bo'sh ro'yxatdan yolg'on yashil chiqmasin.
+    """
+    root = os.path.join(tmp, "qolda")
+    for name, extra in (("qolda", "disable-model-invocation: true\n"),
+                        ("oddiy", "")):
+        os.makedirs(os.path.join(root, ".claude", "skills", name))
+        with open(os.path.join(root, ".claude", "skills", name, "SKILL.md"),
+                  "w", encoding="utf-8") as handle:
+            handle.write("---\nname: %s\ndescription: Use it when testing.\n"
+                         "%s---\n\nTana.\n" % (name, extra))
+    old = cost_report.ROOT
+    cost_report.ROOT = root
+    try:
+        rows = {r[0]: r for r in cost_report.collect()}
+    finally:
+        cost_report.ROOT = old
+    row = rows.get("1 skill qatori")
+    return (row is not None
+            and row[1] == len("- oddiy: Use it when testing.\n")
+            and cost_report.listing_text(
+                os.path.join(root, ".claude", "skills", "qolda", "SKILL.md"),
+                "skill")[0] == "")
+
+
+def case_byudjet_zahirasi(_):
+    """DEFAULT_BUDGET - JAMI 200-400 oralig'ida (cost_report.py izohi).
+
+    Kam bo'lsa bitta tavsif qo'shilishi CI ni yiqitadi, ko'p bo'lsa o'sish
+    sezilmay qoladi. JAMI ancha kamaysa byudjet ham tushiriladi.
+    """
+    total = sum(row[2] for row in cost_report.collect())
+    return 200 <= cost_report.DEFAULT_BUDGET - total <= 400
+
+
 def taklif_row(root):
     old = cost_report.ROOT
     cost_report.ROOT = root
@@ -174,6 +211,9 @@ CASES = [
     ("marshrut skilllari tavsifi inglizcha", case_skill_tavsiflari_inglizcha),
     ("manguberdi, agentlar va CLAUDE.md o'zbekcha", case_ozbekcha_matnlar),
     ("ro'yxat qatori nom va tools bilan", case_royxat_qatori),
+    ("disable-model-invocation li skill 0 sanaladi",
+     case_qolda_chaqiriladigan_skill_sanalmaydi),
+    ("byudjet zahirasi 200-400", case_byudjet_zahirasi),
     ("taklif hooki indekssiz taxmin", case_taklif_indekssiz),
     ("taklif hooki eng uzun sarlavhalar bilan", case_taklif_eng_uzun),
     ("--budget qiymatsiz rc 2", case_budget_qiymatsiz),

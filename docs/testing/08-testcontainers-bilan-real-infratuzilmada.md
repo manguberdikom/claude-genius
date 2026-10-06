@@ -53,9 +53,13 @@ Hayot aylanishi: `start()` → image pull → create → start → wait strategy
 
 **Port mapping muhim arxitektura detali.** Konteyner ichidagi port (masalan 5432) host'da **tasodifiy ephemeral portga** map qilinadi. Shuning uchun hech qachon `localhost:5432` deb qo'lda yozmaysiz - `container.getMappedPort(5432)`, `getHost()`, `getJdbcUrl()`, `getBootstrapServers()` metodlarini ishlatasiz. Bu random port parallel testlarda to'qnashuvni o'z-o'zidan hal qiladi.
 
-JUnit 5 integratsiyasi `org.testcontainers:junit-jupiter` modulidan keladi: `@Testcontainers` annotatsiyasi extension'ni yoqadi, `@Container` esa maydonni boshqaradi - **instance** maydon har test metodidan oldin yangi konteyner ko'taradi, **static** maydon butun sinf uchun bir marta. Prodga yaqin loyihada deyarli hamma vaqt `static` to'g'ri javob.
+JUnit 5 integratsiyasi Testcontainers ning JUnit Jupiter modulidan keladi (artifactId versiyaga bog'liq, pastdagi pom ga qarang): `@Testcontainers` annotatsiyasi extension'ni yoqadi, `@Container` esa maydonni boshqaradi - **instance** maydon har test metodidan oldin yangi konteyner ko'taradi, **static** maydon butun sinf uchun bir marta. Prodga yaqin loyihada deyarli hamma vaqt `static` to'g'ri javob.
 
 Wait strategiyasi - barqarorlikning kaliti. Uch asosiy tur: `Wait.forListeningPort()` (TCP ochilishi - eng zaif, chunki port ochilishi "xizmat tayyor" degani emas), `Wait.forLogMessage(regex, times)` (log'dagi tayyorlik satrini kutish), `Wait.forHttp("/health").forStatusCode(200)` (HTTP probe). Qo'shimcha: `Wait.forHealthcheck()` agar image'da Docker HEALTHCHECK bo'lsa, va `Wait.forSuccessfulCommand(...)`. Modullarning o'z default strategiyasi bor (`PostgreSQLContainer` log'dagi tayyorlik xabarini ikki marta kutadi), lekin custom image yoki o'z app konteyneringiz uchun strategiyani ochiq yozish shart.
+
+Modul nomi Testcontainers versiyasiga bog'liq. Spring Boot 3.5 Testcontainers 1.21 ni boshqaradi, Spring Boot 4 esa 2.x ni ([spring-boot-dependencies 3.5.0](https://repo1.maven.org/maven2/org/springframework/boot/spring-boot-dependencies/3.5.0/spring-boot-dependencies-3.5.0.pom) da `1.21.0`, [4.0.0](https://repo1.maven.org/maven2/org/springframework/boot/spring-boot-dependencies/4.0.0/spring-boot-dependencies-4.0.0.pom) da `2.0.2`). 2.x da har modul `testcontainers-` prefiksini oldi ([testcontainers-bom 2.0.5](https://repo1.maven.org/maven2/org/testcontainers/testcontainers-bom/2.0.5/testcontainers-bom-2.0.5.pom) da eski `postgresql`, `junit-jupiter`, `kafka` nomlari yo'q). Boot 4 loyihasiga eski nom ko'chirilsa Maven versiyasi yo'q dependency deb build ni to'xtatadi.
+
+Spring Boot 3.5 (Testcontainers 1.21):
 
 ```xml
 <dependency>
@@ -79,6 +83,23 @@ Wait strategiyasi - barqarorlikning kaliti. Uch asosiy tur: `Wait.forListeningPo
   <scope>test</scope>
 </dependency>
 ```
+
+Spring Boot 4 (Testcontainers 2.x), farq faqat ikki artifactId da:
+
+```xml
+<dependency>
+  <groupId>org.testcontainers</groupId>
+  <artifactId>testcontainers-junit-jupiter</artifactId>
+  <scope>test</scope>
+</dependency>
+<dependency>
+  <groupId>org.testcontainers</groupId>
+  <artifactId>testcontainers-postgresql</artifactId>
+  <scope>test</scope>
+</dependency>
+```
+
+Testcontainers 2.x da modul sinflari ham o'z paketiga ko'chdi: yangi kodda generiksiz `org.testcontainers.postgresql.PostgreSQLContainer` ishlatiladi. Eski generik `org.testcontainers.containers.PostgreSQLContainer<SELF>` 2.x jar ida `@Deprecated` bo'lib qolgan, ya'ni bu bobdagi `PostgreSQLContainer<?>` misollari 2.x da deprecation ogohlantirishi bilan kompilyatsiya bo'ladi. `-Xlint:all -Werror` yoqilgan loyihada esa yangi sinfga o'tish kerak.
 
 Testcontainers versiyasini qo'lda yozmang: `spring-boot-dependencies` BOM uni boshqaradi, aks holda `org.testcontainers:testcontainers-bom` import qiling.
 
@@ -176,20 +197,22 @@ Muhim nozik jihat: reuse'da **ma'lumot ham saqlanadi**. Lokalda ketma-ket ishlat
 
 ## 8.6 Turli texnologiyalar uchun konteynerlar
 
-| Texnologiya | Testcontainers moduli | Konteyner sinfi | Spring'da ulash usuli |
-|---|---|---|---|
-| PostgreSQL | org.testcontainers:postgresql | `PostgreSQLContainer` | `@ServiceConnection` |
-| MySQL / MariaDB | mysql, mariadb | `MySQLContainer`, `MariaDBContainer` | `@ServiceConnection` |
-| Kafka (apache/kafka) | org.testcontainers:kafka | `org.testcontainers.kafka.KafkaContainer` | `@ServiceConnection` |
-| Kafka (Confluent) | org.testcontainers:kafka | `ConfluentKafkaContainer` | `@ServiceConnection` |
-| Redis | GenericContainer yoki com.redis:testcontainers-redis | `GenericContainer`, `RedisContainer` | `@ServiceConnection(name = "redis")` |
-| MongoDB | org.testcontainers:mongodb | `MongoDBContainer` | `@ServiceConnection` |
-| Elasticsearch | org.testcontainers:elasticsearch | `ElasticsearchContainer` | `@ServiceConnection` |
-| OpenSearch | org.opensearch:opensearch-testcontainers | `OpensearchContainer` | `@DynamicPropertySource` |
-| RabbitMQ | org.testcontainers:rabbitmq | `RabbitMQContainer` | `@ServiceConnection` |
-| LocalStack (S3, SQS) | org.testcontainers:localstack | `LocalStackContainer` | `@DynamicPropertySource` |
-| Keycloak | com.github.dasniko:testcontainers-keycloak | `KeycloakContainer` | `@DynamicPropertySource` (issuer-uri) |
-| Ixtiyoriy image | org.testcontainers:testcontainers | `GenericContainer` | `@DynamicPropertySource` |
+| Texnologiya | Modul, TC 1.x (Boot 3.5) | Modul, TC 2.x (Boot 4) | Konteyner sinfi | Spring'da ulash usuli |
+|---|---|---|---|---|
+| PostgreSQL | `org.testcontainers:postgresql` | `org.testcontainers:testcontainers-postgresql` | `PostgreSQLContainer` | `@ServiceConnection` |
+| MySQL / MariaDB | `mysql`, `mariadb` | `testcontainers-mysql`, `testcontainers-mariadb` | `MySQLContainer`, `MariaDBContainer` | `@ServiceConnection` |
+| Kafka (apache/kafka) | `org.testcontainers:kafka` | `org.testcontainers:testcontainers-kafka` | `org.testcontainers.kafka.KafkaContainer` | `@ServiceConnection` |
+| Kafka (Confluent) | `org.testcontainers:kafka` | `org.testcontainers:testcontainers-kafka` | `ConfluentKafkaContainer` | `@ServiceConnection` |
+| Redis | `GenericContainer` yoki `com.redis:testcontainers-redis` | ikkalasida bir xil | `GenericContainer`, `RedisContainer` | `@ServiceConnection(name = "redis")` |
+| MongoDB | `org.testcontainers:mongodb` | `org.testcontainers:testcontainers-mongodb` | `MongoDBContainer` | `@ServiceConnection` |
+| Elasticsearch | `org.testcontainers:elasticsearch` | `org.testcontainers:testcontainers-elasticsearch` | `ElasticsearchContainer` | `@ServiceConnection` |
+| OpenSearch | `org.opensearch:opensearch-testcontainers` | ikkalasida bir xil | `OpensearchContainer` | `@DynamicPropertySource` |
+| RabbitMQ | `org.testcontainers:rabbitmq` | `org.testcontainers:testcontainers-rabbitmq` | `RabbitMQContainer` | `@ServiceConnection` |
+| LocalStack (S3, SQS) | `org.testcontainers:localstack` | `org.testcontainers:testcontainers-localstack` | `LocalStackContainer` | `@DynamicPropertySource` |
+| Keycloak | `com.github.dasniko:testcontainers-keycloak` | ikkalasida bir xil | `KeycloakContainer` | `@DynamicPropertySource` (issuer-uri) |
+| Ixtiyoriy image | `org.testcontainers:testcontainers` | ikkalasida bir xil | `GenericContainer` | `@DynamicPropertySource` |
+
+TC 2.x ustunidagi nomlar [testcontainers-bom 2.0.5](https://repo1.maven.org/maven2/org/testcontainers/testcontainers-bom/2.0.5/testcontainers-bom-2.0.5.pom) dan olingan. 2.x da sinflar ham modul paketiga ko'chgan (`org.testcontainers.postgresql.PostgreSQLContainer`, `org.testcontainers.mysql.MySQLContainer`, `org.testcontainers.localstack.LocalStackContainer`), `org.testcontainers.containers` dagi eski nomlar esa `@Deprecated` bo'lib qolgan.
 
 `org.testcontainers.containers.KafkaContainer` (Confluent image'ga bog'langan eski sinf) 1.20'dan boshlab deprecated; yangi kodda `org.testcontainers.kafka.KafkaContainer` (apache/kafka image, KRaft rejimi) yoki `ConfluentKafkaContainer` ishlatiladi.
 
@@ -371,6 +394,8 @@ jobs:
 ```
 
 Yana ikki amaliy nuqta: korporativ muhitda Docker Hub rate limit'ini chetlab o'tish uchun `testcontainers.properties` da `hub.image.name.prefix` bilan ichki registry prefiksini bering; va Ryuk'ni faqat u ishlamaydigan platformalarda (`TESTCONTAINERS_RYUK_DISABLED=true`) o'chiring - aks holda orfan konteynerlar CI agent'ini to'ldiradi.
+
+Mavzuning to'liq yozuvi [Testcontainers](#82-testcontainers-asoslari-docker-api-ustida-hayot-aylanishi) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
 
 ## 8.12 Anti-patternlar
 

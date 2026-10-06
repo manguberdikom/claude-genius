@@ -7,7 +7,7 @@
 # 22. Deployment va operatsion patternlar (Deployment & Operations Patterns)
 
 <details>
-<summary>Bu bo'limdagi 38 bo'lim</summary>
+<summary>Bu bobdagi 38 bo'lim</summary>
 
 - [22.1 O'n ikki faktorli ilova (Twelve-Factor App)](#221-on-ikki-faktorli-ilova-twelve-factor-app)
 - [22.2 Tashqi konfiguratsiya (Externalized Configuration)](#222-tashqi-konfiguratsiya-externalized-configuration)
@@ -91,7 +91,7 @@ Deployment va operatsion patternlar - bu kod yozilib bo'lgandan keyin boshlanadi
 - Xavfsizlik patch'ini SSH bilan emas, yangi base image qurib butun flot'ni almashtirish orqali yopish.
 - Incident paytida orqaga qaytishni bir buyruqqa (`kubectl rollout undo`) keltirish.
 - Compliance auditida "prod'da qanday aniq artefakt ishlayapti" savoliga digest bilan javob berish.
-- Native image bilan sovuq ishga tushish vaqtini qisqartirib, serverless/scale-to-zero stsenariylarini qo'llab-quvvatlash.
+- Native image bilan sovuq ishga tushish vaqtini qisqartirib, serverless/scale-to-zero ssenariylarini qo'llab-quvvatlash.
 
 **Ehtiyot bo'ling:** `latest` tegidan foydalanish immutable modelni butunlay buzadi - bir xil teg turli vaqtda turli image'ni bildiradi, shu bilan rollback ham ishonchsiz bo'ladi. Shuningdek, ishlash vaqtida pod ichiga `exec` bilan kirib fayl tuzatish yoki konfiguratsiyani qo'lda o'zgartirish - keyingi deploy'da "sirli regressiya" sifatida qaytadi.
 
@@ -535,7 +535,7 @@ class PaymentHints implements RuntimeHintsRegistrar {
 
 **Tavsif:** Yangi versiyani chiqarishda hech bir request yo'qolmasligi uchun eski va yangi instance'lar qisqa vaqt birga yashaydi, trafik esa faqat haqiqatan tayyor bo'lgan instance'ga yuboriladi. Buning uchun uch mexanizm kerak: aniq readiness signali, graceful shutdown (in-flight request'larni tugatish) va orqaga mos (backward-compatible) ma'lumotlar bazasi migratsiyasi. Shakllari - rolling update, blue/green va canary; ularning har biri rollback tezligi va infratuzilma narxi bo'yicha farq qiladi.
 
-**Spring'da qayerda uchraydi:** `spring-boot-starter-actuator` `LivenessState` va `ReadinessState` ni `ApplicationAvailability` orqali beradi; `AvailabilityChangeEvent.publish(...)` bilan ilova o'zini vaqtincha `REFUSING_TRAFFIC` deb belgilashi mumkin. Graceful shutdown `server.shutdown=graceful` va `spring.lifecycle.timeout-per-shutdown-phase=30s` bilan yoqiladi (Tomcat, Jetty, Undertow, Netty - hammasida ishlaydi), Kubernetes tomonida `preStop` hook va `terminationGracePeriodSeconds` bu bilan muvofiqlashtiriladi. Schema migratsiyasi uchun Flyway (`spring-boot-starter-flyway` / `FlywayMigrationStrategy`) yoki Liquibase expand-and-contract uslubida ishlatiladi; canary/blue-green esa Argo Rollouts, Flagger yoki Spring Cloud Gateway'ning weighted routing'i bilan amalga oshiriladi.
+**Spring'da qayerda uchraydi:** `spring-boot-starter-actuator` `LivenessState` va `ReadinessState` ni `ApplicationAvailability` orqali beradi; `AvailabilityChangeEvent.publish(...)` bilan ilova o'zini vaqtincha `REFUSING_TRAFFIC` deb belgilashi mumkin. Graceful shutdown `server.shutdown=graceful` va `spring.lifecycle.timeout-per-shutdown-phase=30s` bilan yoqiladi (Tomcat, Jetty, Netty, Boot 3.x da Undertow ham: hammasida ishlaydi), Kubernetes tomonida `preStop` hook va `terminationGracePeriodSeconds` bu bilan muvofiqlashtiriladi. Schema migratsiyasi uchun Flyway (`spring-boot-starter-flyway` / `FlywayMigrationStrategy`) yoki Liquibase expand-and-contract uslubida ishlatiladi; canary/blue-green esa Argo Rollouts, Flagger yoki Spring Cloud Gateway'ning weighted routing'i bilan amalga oshiriladi.
 
 ```java
 @Component
@@ -656,7 +656,7 @@ class DrainOnShutdown {
 **Qo'llanish keyslari:**
 - Kubernetes'da har bir mikroservis `Deployment` sifatida ishlaydi, har bir pod ichida bitta Spring Boot container bo'ladi va HPA CPU bo'yicha replica sonini o'zgartiradi.
 - CI pipeline'da `bootBuildImage` bilan bitta image build qilinadi va aynan o'sha digest dev, stage, prod'ga ketadi, farq faqat environment variable'larda bo'ladi.
-- Serverless yoki scale-to-zero stsenariylarida GraalVM native image'li container 100 ms ichida ko'tarilib, sovuq start muammosini kamaytiradi.
+- Serverless yoki scale-to-zero ssenariylarida GraalVM native image'li container 100 ms ichida ko'tarilib, sovuq start muammosini kamaytiradi.
 - Bir xil kodbazaning turli versiyalari (v1 va v2 API) bir vaqtda alohida container sifatida ishlab, canary yoki blue-green release amalga oshiriladi.
 - Lokal integratsiya testlarida Testcontainers (`@ServiceConnection`, `PostgreSQLContainer`) servis va bog'liqliklarini real container'larda ko'taradi.
 

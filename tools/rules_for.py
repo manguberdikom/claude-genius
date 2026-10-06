@@ -19,12 +19,13 @@ Nisbiy yo'l va `--diff` joriy papkadan olinadi, klondan emas: global
 o'rnatishda skript klonda turadi, ish esa boshqa proyektda boradi.
 
 Chiqish uch qism: tegishli boblar, ularning tekshiruv punktlari va
-mashina allaqachon topgan muammolar.
+mashina allaqachon topgan muammolar. Kerak bo'lsa boshida ogohlantirish:
+Kotlin fayl (mexanik tekshiruv yo'q), Spring bo'lmagan JVM proyekt
+(Quarkus, Micronaut) yoki qo'llanma bazasidan eski Boot va Java.
 """
 
 import os
 import re
-import subprocess
 import sys
 import time
 
@@ -33,21 +34,28 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 
 import check_code  # noqa: E402
+import geniuslib  # noqa: E402
 from check_code import in_clone, strip_noise, tool_cmd  # noqa: E402
 from docref import ensure_index, resolve  # noqa: E402
 from docref import project_slug as docref_slug  # noqa: E402
+from docref import SHARED_MEMORY, is_clone_project, memory_home  # noqa: E402
 from state import mark  # noqa: E402
 import review_status  # noqa: E402
 
 CHAPTERS = os.path.join(ROOT, "index", "chapters.tsv")
 CHECKLIST = os.path.join(ROOT, "index", "checklist.tsv")
-MEMORY = os.path.join(ROOT, "memory")
+# Klondagi memory. Boshqa proyekt memorysi klondan tashqarida
+# (docref.memory_home, GENIUS_MEMORY_DIR): memory_base() tanlaydi.
+MEMORY = os.path.join(geniuslib.clone_root(ROOT), "memory")
 
-# Punktlar audit uchun yozilgan: ularning ko'pi butun proyektga tegishli
-# ("ro'yxatla", "bir hafta kuzat"). Bitta o'zgarish uchun o'ttiztasi
-# shovqin bo'ladi va o'qilmay o'tiladi. Shuning uchun kam olinadi va
-# boblar bo'ylab navbatma-navbat: har mavzudan birinchi punktlar.
+# Mashina topilmalaridan shuncha to'liq matn bilan, qolgani qisqa shaklda.
 MAX_ITEMS = 12
+# Tekshiruv punktlaridan shuncha. Punktlar audit uchun yozilgan: butun
+# proyektga tegishlisi (`loyiha` doirasi) olib tashlanadi, qolgani ham
+# bitta o'zgarish uchun ko'p. O'ttiztasi shovqin bo'ladi va o'qilmay
+# o'tiladi, shuning uchun kam olinadi va boblar bo'ylab navbatma-navbat:
+# har mavzudan birinchi punktlar.
+MAX_POINTS = 8
 # Bir chaqiruvda shuncha bob. Belgilar ko'p, lekin bitta o'zgarish uchun
 # yigirmata bob ro'yxati yo'l ko'rsatmaydi, chalg'itadi. ALWAYS shundan
 # tashqarida: Java faylida nomlash va funksiya shakli har doim tegishli.
@@ -81,19 +89,23 @@ SIGNALS = [
     # Bog'liqlik qo'shish supply chain xavfi, shuning uchun shu blokda.
     # Faqat build faylida qidiriladi (BUILD_ONLY): `implementation ` so'zi
     # Java izohida ham uchraydi.
-    ("bog'liqlik", r"<dependency>|<artifactId>|implementation\s|api\s*[(']|plugins\s*\{",
+    # TOML shakli Gradle version catalog uchun (gradle/libs.versions.toml):
+    # bog'liqlik PR i ko'pincha faqat shu faylga tegadi.
+    ("bog'liqlik", r"<dependency>|<artifactId>|implementation\s|api\s*[(']|plugins\s*\{"
+     r"|\[libraries\]|\[plugins\]|\bmodule\s*=|version\.ref",
      [("code-review", "33"), ("sonarqube", "39")]),
 
     # --- ma'lumot va tranzaksiya ---
-    ("entity va ORM", r"@Entity\b|@Table\b|@ManyToOne\b|@OneToMany\b|@Column\b",
+    ("entity va ORM", r"@Entity\b|@Table\b|@ManyToOne\b|@OneToMany\b|@Column\b"
+     r"|@MappedSuperclass\b|@Embeddable\b|@Id\b",
      [("patterns", "9"), ("architect", "18"), ("sonarqube", "29"),
       ("code-review", "23"), ("clean-code", "28")]),
     ("ma'lumotga kirish",
      r"\b(?:JpaRepository|CrudRepository|ListCrudRepository|PagingAndSortingRepository)\b"
-     r"|@Repository\b",
+     r"|@Repository\b|\bRepository<|@RepositoryDefinition\b",
      [("patterns", "9"), ("architect", "18"), ("code-review", "23"),
       ("code-review", "24")]),
-    ("tranzaksiya", r"@Transactional\b",
+    ("tranzaksiya", r"@(?:[\w.]+\.)?Transactional\b",
      [("architect", "19"), ("code-review", "19")]),
     ("hodisa", r"@(?:Transactional)?EventListener\b|ApplicationEventPublisher",
      [("architect", "19"), ("patterns", "5")]),
@@ -151,7 +163,10 @@ SIGNALS = [
      [("patterns", "11"), ("architect", "28")]),
     ("rejalashtirilgan ish", r"@Scheduled\b|JobBuilder|StepBuilder",
      [("patterns", "20")]),
-    ("konkurentlik", r"\bsynchronized\b|ReentrantLock|AtomicInteger|AtomicLong|ExecutorService",
+    # Static o'zgaruvchan kolleksiya va SimpleDateFormat: bean singleton,
+    # ya'ni bir nechta thread bitta obyektga yozadi.
+    ("konkurentlik", r"\bsynchronized\b|ReentrantLock|AtomicInteger|AtomicLong|ExecutorService"
+     r"|\bstatic\b[^;(){}]*\b(?:HashMap|ArrayList|SimpleDateFormat)\b",
      [("architect", "11"), ("architect", "12")]),
     ("asinxron", r"@Async\b|CompletableFuture",
      [("architect", "12"), ("patterns", "19")]),
@@ -187,14 +202,20 @@ SIGNALS = [
 ]
 
 # Build fayllari. Ular kod kabi tekshiruvga muhtoj, lekin .java emas.
+# `.versions.toml` Gradle version catalog: bog'liqlik versiyasi u yerda.
 BUILD_FILES = ("pom.xml", "build.gradle", "build.gradle.kts",
-               "settings.gradle", "settings.gradle.kts")
+               "settings.gradle", "settings.gradle.kts", ".versions.toml")
 BUILD_ONLY = {"bog'liqlik"}
+
+# Manba kodi. Kotlin boblar va punktlar uchun ko'riladi, lekin check_code
+# uni tekshirmaydi: chiqishda shu ochiq aytiladi (KOTLIN_NOTE).
+SOURCES = (".java", ".kt")
+KOTLIN_NOTE = "Kotlin: mexanik tekshiruv yo'q (check_code faqat .java ni ko'radi)."
 
 # Qaysi fayllar ko'riladi. Migratsiya (.sql, Liquibase .xml/.yaml) va
 # sozlama (application.yml) ham: ularning review bobi bor, .java dan esa
 # ko'rinmaydi.
-WATCHED = (".java", ".sql", ".yml", ".yaml", ".properties", ".xml") + BUILD_FILES
+WATCHED = SOURCES + (".sql", ".yml", ".yaml", ".properties", ".xml") + BUILD_FILES
 
 # Yo'ldan aniqlanadigan belgi, mazmundan qat'i nazar: kichik harfli
 # Flyway SQL va ichma-ich YAML da matn regexi ishonchsiz.
@@ -208,20 +229,24 @@ PATH_SIGNALS = {
 # esa to'liq ro'yxatni, va zanjir ikkiga ajraladi. Test yo'li check_code
 # dagi is_test bilan bir xil.
 NAME_SIGNALS = {
-    "xavfsizlik: ruxsat": r"Security\w*\.java$",
-    "entity va ORM": r"/(?:entity|entities)/[^/]+\.java$|Entity\.java$",
-    "ma'lumotga kirish": r"Repository\.java$",
-    "broker": r"(?:Listener|Consumer)\.java$",
-    "test": r"/test/|(?:Test|Tests|IT)\.java$",
-    "web qatlami": r"Controller\.java$",
-    "konfiguratsiya": r"(?:Config|Configuration|Properties)\.java$",
-    "mapper": r"Mapper\.java$",
-    "rejalashtirilgan ish": r"(?:Job|Scheduler)\.java$",
-    "servis qatlami": r"Service\.java$",
+    "xavfsizlik: ruxsat": r"Security\w*\.(?:java|kt)$",
+    "entity va ORM": r"/(?:entity|entities)/[^/]+\.(?:java|kt)$|Entity\.(?:java|kt)$",
+    "ma'lumotga kirish": r"Repository\.(?:java|kt)$",
+    "broker": r"(?:Listener|Consumer)\.(?:java|kt)$",
+    "test": r"/test/|(?:Test|Tests|IT)\.(?:java|kt)$",
+    "web qatlami": r"Controller\.(?:java|kt)$",
+    "konfiguratsiya": r"(?:Config|Configuration|Properties)\.(?:java|kt)$",
+    "mapper": r"Mapper\.(?:java|kt)$",
+    "rejalashtirilgan ish": r"(?:Job|Scheduler)\.(?:java|kt)$",
+    "servis qatlami": r"Service\.(?:java|kt)$",
 }
 
 # Har Java fayl uchun, belgisidan qat'i nazar.
 ALWAYS = [("clean-code", "2"), ("clean-code", "4"), ("code-review", "8")]
+
+# `@org.springframework...Transactional` kabi to'liq nomli annotatsiya
+# qisqa shaklga keltiriladi: aks holda har `@X\b` naqshi uni ko'rmaydi.
+FQN_ANNOTATION_RE = re.compile(r"@(?:[a-z_]\w*\.)+(?=[A-Z])")
 
 NEVER = r"(?!)"
 
@@ -246,12 +271,8 @@ def _full(path):
 
 
 def _git(args, cwd):
-    try:
-        proc = subprocess.run(["git"] + args, capture_output=True,
-                              text=True, cwd=cwd)
-    except OSError:
-        return ""
-    return proc.stdout if proc.returncode == 0 else ""
+    proc = geniuslib.run_git(args, cwd=cwd, timeout=None)
+    return proc.stdout if proc and proc.returncode == 0 else ""
 
 
 def changed_files(args):
@@ -300,14 +321,14 @@ def scan(paths):
                     text = handle.read()
             except OSError:
                 continue
-            if slash.endswith(".java"):
-                text = strip_noise(text)
+            if slash.endswith(SOURCES):
+                text = FQN_ANNOTATION_RE.sub("@", strip_noise(text))
         labels = set()
         for label, pattern, _ in SIGNALS:
             if re.search(PATH_SIGNALS.get(label, NEVER), slash):
                 labels.add(label)
             elif text is None:
-                if slash.endswith(".java") and re.search(
+                if slash.endswith(SOURCES) and re.search(
                         NAME_SIGNALS.get(label, NEVER), slash):
                     labels.add(label)
             elif ((label not in BUILD_ONLY or slash.endswith(BUILD_FILES))
@@ -337,24 +358,190 @@ def detect(paths):
     return ordered(scan(paths))
 
 
-def checklist_for(wanted):
-    """Berilgan boblarning tekshiruv punktlari, bob tartibida."""
-    items = {}
+def checklist_for(wanted, skip=None):
+    """Berilgan boblarning `kod` doirasidagi punktlari, bob tartibida.
+
+    Qaytaradi: (punktlar, tashlangan loyiha punktlari soni). `loyiha`
+    punkti butun proyekt auditi (build_index.SCOPE_RE): bitta o'zgarishda
+    u bajarilmaydi, faqat diff punktini ko'mib qo'yadi. U `doc.sh
+    checklist` da qoladi. `skip` naqshiga mos punkt ham tashlanadi
+    (Spring bo'lmagan proyektda `spring.` va `@Autowired`).
+    """
+    items, project = {}, 0
     ensure_index("checklist.tsv")
     if not os.path.exists(CHECKLIST):
-        return items
+        return items, project
     with open(CHECKLIST, encoding="utf-8") as handle:
         handle.readline()
         for line in handle:
             parts = line.rstrip("\n").split("\t")
-            if len(parts) == 4 and (parts[0], parts[1]) in wanted:
-                items.setdefault((parts[0], parts[1]), []).append(parts[3])
-    return items
+            if len(parts) < 4 or (parts[0], parts[1]) not in wanted:
+                continue
+            if len(parts) > 4 and parts[4] == "loyiha":
+                project += 1
+                continue
+            if skip and re.search(skip, parts[3]):
+                continue
+            items.setdefault((parts[0], parts[1]), []).append(parts[3])
+    return items, project
+
+
+# --- Proyekt versiyasi va framework ------------------------------------
+
+# Qo'llanma bazasi (docs/<hujjat>/README.md): Boot 3.2+ va Java 17+.
+# Undan eski proyektda Boot 3.4+ API (`@MockitoBean`) kompilyatsiya
+# bo'lmaydi, shuning uchun banner va ko'chish bo'limi beriladi.
+BOOT_FLOOR, JAVA_FLOOR = (3, 2), 17
+MIGRATION_REF = "architect 16.11"
+PROJECT_FILES = ("pom.xml", "build.gradle", "build.gradle.kts",
+                 os.path.join("gradle", "libs.versions.toml"))
+BOOT_RES = (
+    # Maven: parent, xossa va BOM
+    r"<parent>(?:(?!</parent>).)*?org\.springframework\.boot(?:(?!</parent>).)*?"
+    r"<version>\s*([^<\s]+)\s*</version>",
+    r"<spring-boot\.version>\s*([^<\s]+)\s*<",
+    r"<artifactId>spring-boot-dependencies</artifactId>\s*<version>\s*([^<\s]+)",
+    # Gradle: plagin, buildscript classpath, ext
+    r"""id\s*\(?\s*["']org\.springframework\.boot["']\s*\)?\s*version\s*\(?\s*["']([^"']+)""",
+    r"spring-boot-gradle-plugin:([\w.\-]+)",
+    r"""springBootVersion\s*=\s*["']([^"']+)""",
+)
+JAVA_RES = (
+    r"<java\.version>\s*([\d.]+)\s*<",
+    r"<maven\.compiler\.(?:release|source)>\s*([\d.]+)\s*<",
+    r"<release>\s*(\d+)\s*</release>",
+    r"JavaVersion\.VERSION_(\d+(?:_\d+)?)",
+    r"JavaLanguageVersion\.of\(\s*(\d+)",
+    r"jvmToolchain\(\s*(\d+)",
+    r"""sourceCompatibility\s*=\s*['"]?([\d.]+)""",
+)
+OTHER_JVM = (("io.quarkus", "Quarkus"), ("io.micronaut", "Micronaut"))
+# Spring bo'lmagan proyektda shu punktlar boshqa framework uchun.
+SPRING_ONLY_RE = r"\bspring\.|@Autowired\b"
+
+
+def _numbers(text):
+    """"2.7.18" -> (2, 7, 18); "1.8" Java da 8. Raqam yo'q bo'lsa None."""
+    nums = tuple(int(n) for n in re.findall(r"\d+", text.split("-")[0])[:3])
+    return nums or None
+
+
+def _catalog(text):
+    """libs.versions.toml: (Boot versiyasi, Java versiyasi) yoki None."""
+    versions, table = {}, ""
+    for raw in text.split("\n"):
+        line = raw.split("#", 1)[0].strip()
+        head = re.match(r"\[([\w.-]+)\]$", line)
+        if head:
+            table = head.group(1)
+            continue
+        pair = re.match(r"""([\w.-]+)\s*=\s*["']([^"']+)["']$""", line)
+        if table == "versions" and pair:
+            versions[pair.group(1)] = pair.group(2)
+    boot = None
+    for line in text.split("\n"):
+        if "org.springframework.boot" not in line:
+            continue
+        direct = re.search(r"""\bversion\s*=\s*["']([^"']+)""", line)
+        ref = re.search(r"""version\.ref\s*=\s*["']([^"']+)""", line)
+        boot = direct.group(1) if direct else versions.get(ref.group(1)) if ref else None
+        if boot:
+            break
+    norm = {re.sub(r"[-_.]", "", k).lower(): v for k, v in versions.items()}
+    boot = boot or norm.get("springboot")
+    java = norm.get("java") or norm.get("jdk")
+    return boot, java
+
+
+def _resolve(value, text):
+    """Maven `${xossa}` qiymatini o'sha fayldan oladi."""
+    ref = re.match(r"\$\{([\w.-]+)\}$", value or "")
+    if not ref:
+        return value
+    found = re.search(r"<%s>\s*([^<\s]+)\s*<" % re.escape(ref.group(1)), text)
+    return found.group(1) if found else None
+
+
+def _project_texts(paths):
+    """Fayllardan yuqoriga, git ildizigacha: build fayllar matni, yaqini oldin."""
+    texts, seen = [], set()
+    for path in paths:
+        folder = os.path.dirname(_full(path))
+        while folder not in seen:
+            seen.add(folder)
+            for name in PROJECT_FILES:
+                full = os.path.join(folder, name)
+                try:
+                    with open(full, encoding="utf-8", errors="replace") as handle:
+                        texts.append((name, handle.read(262144)))
+                except OSError:
+                    continue
+            parent = os.path.dirname(folder)
+            if os.path.exists(os.path.join(folder, ".git")) or parent == folder:
+                break
+            folder = parent
+    return texts
+
+
+def project_profile(paths):
+    """(Boot versiyasi, Java versiyasi, Spring bo'lmagan framework nomi).
+
+    Har biri topilmasa None: noma'lum versiya eski deb hisoblanmaydi.
+    """
+    boot = java = other = None
+    for name, text in _project_texts(paths):
+        if name.endswith(".toml"):
+            cat_boot, cat_java = _catalog(text)
+        else:
+            cat_boot = next((_resolve(m.group(1), text) for m in
+                             (re.search(r, text, re.S) for r in BOOT_RES) if m), None)
+            cat_java = next((_resolve(m.group(1), text) for m in
+                             (re.search(r, text) for r in JAVA_RES) if m), None)
+        boot = boot or (cat_boot if cat_boot and _numbers(cat_boot) else None)
+        java = java or (cat_java if cat_java and _numbers(cat_java) else None)
+        other = other or next((label for key, label in OTHER_JVM if key in text), None)
+    if java:
+        nums = _numbers(java.replace("_", "."))
+        java = str(nums[1] if nums[0] == 1 and len(nums) > 1 else nums[0])
+    return boot, java, other
+
+
+def profile_notes(paths):
+    """Chiqish boshidagi ogohlantirishlar: Kotlin, Spring emas, eski versiya."""
+    notes = []
+    if any(p.endswith(".kt") for p in paths):
+        notes.append(KOTLIN_NOTE)
+    boot, java, other = project_profile(paths)
+    if other:
+        notes.append("Spring emas (%s): Spring boblari bu proyektga to'g'ridan-to'g'ri "
+                     "qo'llanmaydi, `spring.*` va `@Autowired` punktlari olib "
+                     "tashlandi." % other)
+    old = []
+    if boot and _numbers(boot) < BOOT_FLOOR:
+        old.append("Spring Boot %s" % boot)
+    if java and int(java) < JAVA_FLOOR:
+        old.append("Java %s" % java)
+    if old:
+        notes.append("ESKI VERSIYA: %s. Qo'llanma bazasi Boot 3.2+ va Java 17+: "
+                     "undan yangi API (masalan `@MockitoBean`, Boot 3.4+) bu yerda "
+                     "yo'q. Ko'chish: %s." % (", ".join(old), MIGRATION_REF))
+    return notes, other
+
+
+def memory_base():
+    """Proyekt memorysi ildizi: klonning o'zida MEMORY (sinovda
+    almashtiriladi), boshqa proyektda docref.memory_home()."""
+    return MEMORY if is_clone_project() else memory_home()
+
+
+def memory_folder(sub):
+    """`umumiy` va `claude-genius` har doim klonda, qolgani memory_base da."""
+    return os.path.join(MEMORY if sub in SHARED_MEMORY else memory_base(), sub)
 
 
 def project_slug():
-    """memory slugi (docref.project_slug); MEMORY sinovda almashtiriladi."""
-    return docref_slug(memory=MEMORY)
+    """memory slugi (docref.project_slug), memory_base ga nisbatan."""
+    return docref_slug(memory=memory_base())
 
 
 INDEX_ROW_RE = re.compile(r"^- `([^`]+\.md)` - (.+)$")
@@ -416,18 +603,51 @@ def _short(text, limit=160):
     return text[:limit - 3].rsplit(" ", 1)[0] + "..."
 
 
-def past_mistakes(slug=None):
+def relevant(text, labels, names=()):
+    """Feedback matni shu chaqiruv belgilariga tegadimi.
+
+    Uch yo'l: belgi naqshi matnda uchraydi (`@Transactional`), belgi nomi
+    so'z sifatida uchraydi ("tranzaksiya", "test") yoki tegilgan fayl nomi
+    tilga olingan. Hech biri bo'lmasa yozuv boshqa mavzuda: Java faylga
+    hujjat yig'ish tuzog'i chiqmasin.
+    """
+    low = text.lower()
+    for label, pattern, _ in SIGNALS:
+        if label not in labels:
+            continue
+        if re.search(pattern, text):
+            return True
+        words = [w.strip() for w in label.split(":")]
+        if any(w and re.search(r"(?<!\w)%s(?!\w)" % re.escape(w), low) for w in words):
+            return True
+    stems = {os.path.splitext(n)[0].lower() for n in names}
+    return any(len(s) > 2 and re.search(r"(?<!\w)%s(?!\w)" % re.escape(s), low)
+               for s in stems)
+
+
+def _related(path, labels, names):
+    try:
+        with open(path, encoding="utf-8", errors="replace") as handle:
+            return relevant(handle.read(), labels, names)
+    except OSError:
+        return False
+
+
+def past_mistakes(slug=None, labels=None, names=()):
     """Memorydagi feedback yozuvlari: avval nima noto'g'ri ketgan.
 
-    Faqat joriy proyekt papkasi va `umumiy/` o'qiladi: global o'rnatishda
-    memory/ hamma proyektni saqlaydi, boshqasining tuzog'i bu yerda
-    shovqin. Proyekt yozuvi oldin, har papkada eng yangisi oldin. Tavsif
+    Faqat joriy proyekt papkasi va `umumiy/` o'qiladi: boshqa proyektning
+    tuzog'i bu yerda shovqin. Global o'rnatishda proyekt papkasi klonda
+    emas, GENIUS_MEMORY_DIR da (memory_folder). Proyekt yozuvi oldin, har papkada eng yangisi oldin. Tavsif
     indeksdan (protokol bo'yicha bir qatorli tavsif aynan o'sha yerda),
     u yo'q bo'lsa faylning birinchi gapidan.
+
+    `labels` berilsa faqat shu belgilarga tegadigan yozuv olinadi
+    (relevant): sarlavha va butun matn tekshiriladi.
     """
     out = []
     for sub in dict.fromkeys((slug or project_slug(), "umumiy")):
-        folder = os.path.join(MEMORY, sub)
+        folder = memory_folder(sub)
         if not os.path.isdir(folder):
             continue
         index = _index_notes(folder)
@@ -442,13 +662,16 @@ def past_mistakes(slug=None):
                     "%Y-%m-%dT%H:%M:%SZ", time.gmtime(os.path.getmtime(full)))
             except OSError:
                 continue
+            if labels is not None and not _related(full, labels, names):
+                continue
             text = index.get(name) or first
-            note = "%s: %s" % (title, text) if title and text else title or text
+            note ="%s: %s" % (title, text) if title and text else title or text
             # Global rejimda `memory/...` proyekt papkasidan ochilmaydi.
             rel = full
             if in_clone():
                 try:
-                    rel = os.path.relpath(full, ROOT)
+                    # Klonga nisbatan: global o'rnatishda ROOT snapshot, memory klonda.
+                    rel = os.path.relpath(full, geniuslib.clone_root(ROOT))
                 except ValueError:
                     pass  # Windows: boshqa disk
             rows.append((stamp, rel, _short(note or name)))
@@ -494,7 +717,7 @@ def main():
         if not name.startswith("--") and not name.endswith(WATCHED):
             print("ko'rilmadi: %s" % name, file=sys.stderr)
     if not paths:
-        print("Tekshiriladigan fayl berilmadi (.java, .sql, sozlama yoki build fayli).",
+        print("Tekshiriladigan fayl berilmadi (.java, .kt, .sql, sozlama yoki build fayli).",
               file=sys.stderr)
         return 2
 
@@ -524,7 +747,7 @@ def main():
                 if label.startswith("test") and ch[0] == "testing" and ch not in wanted:
                     wanted.add(ch)
                     order.append(ch)
-    if any(p.endswith(".java") for p in paths):
+    if any(p.endswith(SOURCES) for p in paths):
         for ch in ALWAYS:
             if ch not in wanted:
                 wanted.add(ch)
@@ -542,10 +765,15 @@ def main():
     order = [ch for ch in order if ch in titles]
 
     for name, exists, labels in scanned:
-        if exists and not labels and not name.endswith(".java"):
+        if exists and not labels and not name.endswith(SOURCES):
             print("belgi topilmadi: %s, %s find bilan qidiring"
                   % (name, tool_cmd("doc.sh")), file=sys.stderr)
 
+    notes, other = profile_notes(paths)
+    for note in notes:
+        print(note)
+    if notes:
+        print()
     print("# %d fayl, %d belgi\n" % (len(paths), len(signals)))
     for label, chapters, where in signals:
         print("%-22s %-14s -> %s" % (label, where,
@@ -584,25 +812,25 @@ def main():
     if dropped:
         print("\n(sig'madi: %s)" % ", ".join("%s %s" % c for c in dropped))
 
-    items = checklist_for(set(order))
+    items, project = checklist_for(set(order), SPRING_ONLY_RE if other else None)
     total = sum(len(v) for v in items.values())
     print("\n# Tekshiruv punktlari (%d tadan %d tasi)\n"
-          % (total, min(total, MAX_ITEMS)))
-    print("  (punkt faqat tegilgan kodga nisbatan qo'llanadi; butun proyekt "
-          "auditi so'ralmagan bo'lsa bajarilmaydi)\n")
+          % (total, min(total, MAX_POINTS)))
+    print("  (faqat tegilgan kodga qo'llanadi)\n")
     shown = 0
-    for round_no in range(MAX_ITEMS):
+    for round_no in range(MAX_POINTS):
         progressed = False
         for ch in order:
             bucket = items.get(ch, [])
-            if round_no < len(bucket) and shown < MAX_ITEMS:
+            if round_no < len(bucket) and shown < MAX_POINTS:
                 print("  - [ ] (%s %s) %s" % (ch[0], ch[1], bucket[round_no]))
                 shown += 1
                 progressed = True
-        if shown >= MAX_ITEMS or not progressed:
+        if shown >= MAX_POINTS or not progressed:
             break
-    if total > shown:
-        print("\n  qolgani: %s checklist <hujjat> <bob>" % tool_cmd("doc.sh"))
+    if total > shown or project:
+        print("\n  qolgani va loyiha auditi punktlari (%d): %s checklist <hujjat> <bob>"
+              % (project, tool_cmd("doc.sh")))
 
     found = mechanical(paths)
     print("\n# Mashina topgani (%d)\n" % len(found))
@@ -621,7 +849,8 @@ def main():
         for name, shorts in rest.items():
             print("    %s: %s" % (name, ", ".join(shorts)))
 
-    mistakes = past_mistakes()
+    mistakes = past_mistakes(labels={label for label, _, _ in signals},
+                             names=[name for name, _, _ in scanned])
     if mistakes:
         head = "# Avval yo'l qo'yilgan xatolar"
         if len(mistakes) > MAX_MISTAKES:

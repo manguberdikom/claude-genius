@@ -6,7 +6,14 @@
 
 ```bash
 git checkout 500158f732419217507c7656904b8e6aa1bcc0d6 -- src
+rm -rf .git && git init -q && git add -A && git commit -qm "boshlang'ich"
+rsync -a --exclude=.git ./ ../asl/   # baholovchi uchun asl holat
 ```
+
+Diff qo'llanmaydi: kod toza holatda. `.git` hamma vazifadagidek bitta
+commit bilan qayta yaratiladi.
+Buni `eval/ab/yurgiz.py` o'zi qiladi, yuqoridagi buyruqlar qo'lda
+takrorlash uchun.
 
 ## Prompt (ikkala holatda aynan bir xil)
 
@@ -29,7 +36,14 @@ qoplangan. addPet ning hamma shoxini test bilan yoping.
 ./mvnw -B test -Dtest='OwnerTests' -DfailIfNoSpecifiedTests=false
 ./mvnw -B test -Dtest='!MySqlIntegrationTests,!PostgresIntegrationTests,!PetClinicConcurrencyTests' -DfailIfNoSpecifiedTests=false
 git diff --stat src/main
+./mvnw -B test -Dtest='OwnerTests' -DfailIfNoSpecifiedTests=false jacoco:report
 ```
+
+Mexanik tekshiruv (`baho.py`): faqat `OwnerTests` bilan yig'ilgan
+JaCoCo da `addPet` ning `pet == null` va `contains(pet)` qatorlarida
+o'tkazilgan shox yo'q, `Objects.equals` qatorida kamida 4 shox
+qoplangan (bir xil `id` va yangi hayvon). Bazaviy holatda null shoxi
+ochiq va id sharti umuman yurmaydi.
 
 ## Baholovchi uchun
 

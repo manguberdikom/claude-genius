@@ -1,0 +1,51 @@
+name: Bob xatosi
+description: Qo'llanmadagi noto'g'ri yoki eskirgan texnik da'vo haqida xabar
+title: "[bob-xatosi] "
+labels: ["bob-xatosi"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Boblarning ko'pi AI yozgan va inson hali tekshirmagan (`ai-draft`).
+        Xato topsangiz shu yerda yozing: tuzatish `tools/known_errors.tsv`
+        ga naqsh bo'lib tushadi va qaytib kelmaydi.
+
+  - type: dropdown
+    id: hujjat
+    attributes:
+      label: Hujjat
+      options:
+        - patterns
+        - testing
+        - architect
+        - sonarqube
+        - clean-code
+        - code-review
+    validations:
+      required: true
+
+  - type: input
+    id: bolim
+    attributes:
+      label: Bo'lim (N.M)
+      description: Bob va bo'lim raqami, masalan 17.2. Bo'lim sarlavhasining boshida turadi.
+      placeholder: "17.2"
+    validations:
+      required: true
+
+  - type: textarea
+    id: dava
+    attributes:
+      label: Da'vo
+      description: Bobda nima deyilgan (iqtibos) va nega u noto'g'ri yoki eskirgan.
+    validations:
+      required: true
+
+  - type: input
+    id: manba
+    attributes:
+      label: Manba URL
+      description: To'g'ri javobni ko'rsatadigan birlamchi manba (rasmiy hujjat, spetsifikatsiya, manba kodi).
+      placeholder: https://docs.spring.io/...
+    validations:
+      required: true

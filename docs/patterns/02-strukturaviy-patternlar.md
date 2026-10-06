@@ -7,7 +7,7 @@
 # 2. Strukturaviy patternlar (Structural Patterns)
 
 <details>
-<summary>Bu bo'limdagi 18 bo'lim</summary>
+<summary>Bu bobdagi 18 bo'lim</summary>
 
 - [2.1 Adapter (Adapter)](#21-adapter-adapter)
 - [2.2 Ko'prik (Bridge)](#22-koprik-bridge)

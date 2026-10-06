@@ -150,6 +150,8 @@ static final ArchRule test_nomlari = methods()
         .because("test nomi kutilgan xatti-harakatni aytishi kerak");
 ```
 
+Mavzuning to'liq yozuvi [ArchUnit](#142-archunit-asoslari) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 14.4 Spring Modulith bilan modul chegaralarini tekshirish
 
 Spring Modulith 1.x paketni modul deb qabul qiladi: application klassining to'g'ridan-to'g'ri ost-paketlari - modullar, ularning ichki ost-paketlari esa modulning yopiq qismi. Boshqa moduldan faqat modulning yuqori darajadagi tipiga yoki `@NamedInterface` bilan belgilangan paketga murojaat qilish mumkin. Bu modular monolitni saqlashning eng arzon yo'li: paket qoidalarini qo'lda yozish o'rniga bitta `verify()` barcha chegarani tekshiradi.
@@ -303,6 +305,8 @@ Amaliy tanlov: minimal to'plam - Spotless (format), Error Prone + NullAway (komp
   </configuration>
 </plugin>
 ```
+
+JDK 16+ da bu blokning o'zi yetmaydi: Error Prone `jdk.compiler` ning yopiq ichki paketlariga murojaat qiladi va `.mvn/jvm.config` dagi `--add-exports`/`--add-opens` qatorlarisiz build `IllegalAccessError` bilan yiqiladi. Qatorlar ro'yxati, fork rejimidagi `-J` varianti va Error Prone ning JDK talabi [toza kod hujjatidagi kompilyator ogohlantirishlari va Error Prone bo'limida](../clean-code/25-java-kodidagi-umumiy-tuzoqlar.md#2510-kompilyator-ogohlantirishlari--xlint--werror-error-prone-nullaway).
 
 Qoidalarni bosqichma-bosqich kiriting: avval hammasini `WARN` darajasida yoqing, ogohlantirishlar sonini baseline qilib oling, so'ng eng ko'p real xato beradigan 10-15 qoidani `ERROR` ga ko'taring. NullAway'ni esa butun kodga birdan emas, `AnnotatedPackages` ni bitta moduldan boshlab kengaytiring.
 

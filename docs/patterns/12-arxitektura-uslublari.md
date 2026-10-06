@@ -7,7 +7,7 @@
 # 12. Arxitektura uslublari (Architectural Styles)
 
 <details>
-<summary>Bu bo'limdagi 34 bo'lim</summary>
+<summary>Bu bobdagi 34 bo'lim</summary>
 
 - [12.1 Qatlamli arxitektura (Layered / N-tier Architecture)](#121-qatlamli-arxitektura-layered--n-tier-architecture)
 - [12.2 Olti burchakli arxitektura (Hexagonal Architecture / Ports & Adapters)](#122-olti-burchakli-arxitektura-hexagonal-architecture--ports--adapters)
@@ -808,10 +808,9 @@ router:
 **Ehtiyot bo'ling:** "Stateless" degan ilovalar amalda yashirin holat saqlaydi - lokal fayl cache, static mutable field, in-memory rate limiter yoki scheduler lock - va bu faqat ikkinchi instance qo'shilganda ko'rinadi. Ma'lumotlar bazasi hamon umumiy resurs bo'lib qolgani uchun, shared-nothing application layer DB bottleneck'ini hal qilmaydi: sharding yoki read replica alohida qaror talab qiladi.
 
 ```yaml
-# Shared-nothing: nusxalar hech narsani bo'lishmaydi
+# Shared-nothing: nusxalar hech narsani bo'lishmaydi.
+# Sessiya ilovada saqlanmaydi (Spring Security da SessionCreationPolicy.STATELESS).
 spring:
-  session:
-    store-type: none          # sessiya ilovada saqlanmaydi
   jpa:
     open-in-view: false
 
@@ -848,7 +847,7 @@ serving_layer: {query: "batch UNION ALL speed"}
 
 # Kappa: faqat oqim. Tarixni qayta hisoblash kerak bo'lsa,
 # hodisalar boshidan qayta o'qiladi.
-kappa: {input: kafka://events (retention: infinite), reprocess: "offset 0 dan"}
+kappa: {input: "kafka://events (retention: infinite)", reprocess: "offset 0 dan"}
 ```
 
 ## 12.28 Feature Bo'yicha vs Qatlam Bo'yicha Paketlash (Package-by-feature vs Package-by-layer)

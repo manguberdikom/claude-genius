@@ -6,8 +6,15 @@
 
 ```bash
 git checkout 500158f732419217507c7656904b8e6aa1bcc0d6 -- src
-git apply eval/ab/vazifalar/diff/review-1.diff
+rm -rf .git && git init -q && git add -A && git commit -qm "boshlang'ich"
+git apply <genius>/eval/ab/vazifalar/diff/review-1.diff
+rsync -a --exclude=.git ./ ../asl/   # baholovchi uchun asl holat
 ```
+
+Diff `.git` qayta yaratilgandan KEYIN qo'llanadi: review qilinadigan
+o'zgarish `git diff` da ataylab ko'rinadi.
+Buni `eval/ab/yurgiz.py` o'zi qiladi, yuqoridagi buyruqlar qo'lda
+takrorlash uchun.
 
 ## Prompt (ikkala holatda aynan bir xil)
 
@@ -16,8 +23,8 @@ Bu diffni review qil. Nimani to'xtatasan va nega. Kodni o'zgartirmang,
 faqat topilmalarni yoz.
 ```
 
-(Diff `git diff` bilan ko'rsatiladi yoki
-`eval/ab/vazifalar/diff/review-1.diff` fayli beriladi.)
+Diff faqat `git diff` orqali ko'rinadi. Fayl yo'li berilmaydi: u
+javob kaliti yonida turadi va sessiyaga ochilmaydi (OL-T-M2).
 
 ## Qabul mezoni
 

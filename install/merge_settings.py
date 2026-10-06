@@ -3,12 +3,20 @@
 
     python3 install/merge_settings.py <mavjud> <yangi> --root <klon>
     python3 install/merge_settings.py <mavjud> <yangi> --root <klon> --yoz
+    python3 install/merge_settings.py <mavjud> <yangi> --root <klon> \
+        --root <eski-snapshot> --root <yangi-snapshot> --yoz
 
-Nega kerak: `manguberdi.ps1 -Update` git pull dan keyin faqat o'z
+Nega kerak: `manguberdi.ps1 -Update` qayta o'rnatishda faqat o'z
 birliklarini almashtiradi. settings.json da esa foydalanuvchining o'z
 hooklari, ruxsatlari va boshqa kalitlari ham turadi: faylni butunligicha
 yangisi bilan bosish ularni o'chirardi. Shuning uchun faqat shu klonning
 `tools/` papkasiga ishora qilgan yozuvlar almashadi.
+
+`--root` bir necha marta beriladi (R7.8, XV-Y1): global o'rnatishda hooklar
+klonning o'zida emas, pin qilingan snapshotda (`~/.claude/genius/<sha12>`)
+turadi. O'zniki: klon, uning avvalgi va yangi snapshotlari. Yangilashda
+eski snapshotga ishora qilgan hook shu yo'l bilan olib tashlanadi, aks
+holda eski va yangi hook birga yurardi.
 
 O'zniki: buyrug'i (teskari slash `/` ga, harflar kichikka o'girilgach)
 `<root>/tools/` ni o'z ichiga olgan hook. Root ham xuddi shunday
@@ -20,9 +28,15 @@ Birlashtirish:
 - `hooks`: har hodisada mavjud guruhlardan o'z hooklari olib tashlanadi,
   shundan bo'shab qolgan guruh tushadi, keyin yangi fayldagi shu hodisa
   guruhlari oxiriga qo'shiladi. Qolgani o'z tartibida turadi.
-- `permissions.allow`: o'z qoidalari tushadi, yangilari qo'shiladi,
-  takror olib tashlanadi, tartib saqlanadi.
-- `permissions.additionalDirectories`: birlashma, tartib saqlanadi.
+- `permissions.allow`, `ask` va `deny`: uchalasida bir xil qoida. O'z
+  qoidalari tushadi, yangilari qo'shiladi, takror olib tashlanadi, tartib
+  saqlanadi. Avval faqat `allow` shunday edi, `ask` va `deny` esa
+  foydalanuvchida bo'lsa eski holicha qolardi: o'rnatuvchining yangi
+  qoidasi -Update da jim tushib qolardi.
+- `permissions.additionalDirectories`: root ning o'zi va `<root>/`
+  ostidagi yozuvlar o'ziniki, ular tushadi, keyin yangilari qo'shiladi.
+  Shunda butun klon yozuvi `<root>/docs` va `<root>/memory` ga
+  almashganda eskisi qolib ketmaydi.
 - `env`: yangi kalitlar ustun.
 - Boshqa kalitlar joyida qoladi, faqat yangi faylda bo'lganlari qo'shiladi.
 
@@ -63,16 +77,46 @@ def norm_root(root):
     return norm(root).rstrip("/")
 
 
+def norm_roots(root):
+    """Bitta yo'l yoki yo'llar ro'yxati -> normallangan, bo'shsiz, takrorsiz tuple."""
+    items = [root] if isinstance(root, str) else list(root)
+    out = []
+    for item in items:
+        value = norm_root(item)
+        if value and value not in out:
+            out.append(value)
+    return tuple(out)
+
+
+def _roots(root):
+    """Allaqachon normallangan bitta yo'l yoki tuple."""
+    return (root,) if isinstance(root, str) else tuple(root)
+
+
 def is_own_hook(hook, root):
     command = hook.get("command") if isinstance(hook, dict) else None
-    return isinstance(command, str) and (root + "/tools/") in norm(command)
+    return isinstance(command, str) and any(
+        (one + "/tools/") in norm(command) for one in _roots(root) if one)
 
 
 def is_own_rule(rule, root):
     """Root dan keyin yo'l nomi davom etmasa: `<root>-eski` boshqa klon."""
-    if not isinstance(rule, str) or not root:
+    if not isinstance(rule, str):
         return False
-    return re.search(re.escape(root) + r"(?![\w.-])", norm(rule)) is not None
+    text = norm(rule)
+    return any(re.search(re.escape(one) + r"(?![\w.-])", text) is not None
+               for one in _roots(root) if one)
+
+
+def is_own_dir(entry, root):
+    """additionalDirectories yozuvi: root ning o'zi yoki uning ostida.
+
+    `<root>-eski` boshqa klon: root dan keyin `/` kelishi shart."""
+    if not isinstance(entry, str):
+        return False
+    path = norm_root(entry)
+    return any(path == one or path.startswith(one + "/")
+               for one in _roots(root) if one)
 
 
 def read_settings(path, must_exist):
@@ -85,9 +129,9 @@ def read_settings(path, must_exist):
         with open(path, encoding="utf-8-sig") as handle:
             data = json.load(handle)
     except ValueError as exc:
-        raise SozlamaXato("JSON buzuq: %s (%s)" % (path, exc))
+        raise SozlamaXato("JSON buzuq: %s (%s)" % (path, exc)) from exc
     except OSError as exc:
-        raise SozlamaXato("o'qilmadi: %s (%s)" % (path, exc))
+        raise SozlamaXato("o'qilmadi: %s (%s)" % (path, exc)) from exc
     if not isinstance(data, dict):
         raise SozlamaXato("JSON obyekt emas: %s" % path)
     return data
@@ -143,21 +187,29 @@ def dedupe(items):
     return out
 
 
+# Ruxsat ro'yxatlari: uchalasi bir xil qoida bilan birlashadi.
+RULE_LISTS = ("allow", "ask", "deny")
+
+
 def merge_permissions(old, new, root, stats, path):
-    allow_old = section(old, "allow", list, path + " permissions")
-    allow_new = section(new, "allow", list, "yangi permissions")
-    kept = [r for r in allow_old if not is_own_rule(r, root)]
-    stats["ruxsat_eski"] = len(allow_old) - len(kept)
-    stats["ruxsat_yangi"] = len(allow_new)
+    lists = {}
+    for key in RULE_LISTS:
+        rules_old = section(old, key, list, path + " permissions")
+        rules_new = section(new, key, list, "yangi permissions")
+        kept = [r for r in rules_old if not is_own_rule(r, root)]
+        stats["ruxsat_eski"] += len(rules_old) - len(kept)
+        stats["ruxsat_yangi"] += len(rules_new)
+        lists[key] = dedupe(kept + rules_new)
     dirs_old = section(old, "additionalDirectories", list, path + " permissions")
     dirs_new = section(new, "additionalDirectories", list, "yangi permissions")
+    dirs = dedupe([d for d in dirs_old if not is_own_dir(d, root)] + dirs_new)
 
     merged = {}
     for key in list(old) + [k for k in new if k not in old]:
-        if key == "allow":
-            merged[key] = dedupe(kept + allow_new)
+        if key in lists:
+            merged[key] = lists[key]
         elif key == "additionalDirectories":
-            merged[key] = dedupe(dirs_old + dirs_new)
+            merged[key] = dirs
         else:
             merged[key] = old[key] if key in old else new[key]
     return merged
@@ -182,7 +234,7 @@ def drop_legacy(merged, stats):
 
 def merge(old, new, root, path="mavjud"):
     """(birlashgan sozlama, sanoq). old va new o'zgarmaydi."""
-    root = norm_root(root)
+    root = norm_roots(root)
     stats = {"eski": 0, "yangi": 0, "ruxsat_eski": 0, "ruxsat_yangi": 0,
              "eskirgan": []}
     hooks = merge_hooks(section(old, "hooks", dict, path),
@@ -250,7 +302,9 @@ def main(argv=None):
     parser = argparse.ArgumentParser(add_help=True)
     parser.add_argument("mavjud", help="hozirgi settings.json (yo'q bo'lsa {})")
     parser.add_argument("yangi", help="toza o'rnatishning to'liq settings.json i")
-    parser.add_argument("--root", required=True, help="claude-genius klonining yo'li")
+    parser.add_argument("--root", required=True, action="append",
+                        help="claude-genius klonining yo'li; snapshot yo'llari uchun "
+                             "takroran beriladi")
     parser.add_argument("--yoz", action="store_true",
                         help="mavjud faylga yozadi; bersiz faqat xulosa")
     args = parser.parse_args(argv)

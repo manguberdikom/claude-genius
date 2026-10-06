@@ -234,10 +234,13 @@ management:
   endpoints:
     web:
       exposure:
-        include: "*"              # env, configprops, heapdump, threaddump!
+        include: "*"              # env, configprops, threaddump, ...
+  endpoint:
+    env:
+      show-values: always         # asl xavf: hamma qiymat, secret ham ochiq
 ```
 
-Review izohi: `/actuator/env` va `/actuator/configprops` konfiguratsiya qiymatlarini, jumladan secret larni ko'rsatadi (maskalash to'liq emas); `/actuator/heapdump` butun xotirani fayl sifatida beradi - unda tokenlar va foydalanuvchi ma'lumotlari bo'ladi; `/actuator/threaddump` ichki tuzilishni oshkor qiladi.
+Review izohi: Spring Boot 3.0 dan beri `/actuator/env` va `/actuator/configprops` kalitlarni ko'rsatadi, qiymatlar esa standart holatda `******` bo'lib chiqadi (`management.endpoint.env.show-values` va `management.endpoint.configprops.show-values` standarti `never`). Shuning uchun `include: "*"` ning o'zi secret ni ochmaydi, u faqat kalitlar ro'yxati va ichki tuzilishni oshkor qiladi. Asl xavf diffda `show-values: always` paydo bo'lganda, yoki `when-authorized` keng rolga (masalan har qanday autentifikatsiyadan o'tgan foydalanuvchiga) berilganda boshlanadi: shu paytdan secret lar ochiq matnda ko'rinadi. `/actuator/heapdump` butun xotirani fayl sifatida beradi, unda tokenlar va foydalanuvchi ma'lumotlari bo'ladi. Uning standarti versiyaga bog'liq: Boot 3.4 gacha `include: "*"` uni ochadi, Boot 3.5 dan beri `management.endpoint.heapdump.access` standarti `none`, ya'ni uni alohida ochish kerak. Review da diffdagi `heapdump.access` qiymati ham qidiriladi. `/actuator/threaddump` ichki tuzilishni oshkor qiladi.
 
 ```yaml
 # To'g'ri: minimal ro'yxat, alohida port, himoyalangan.
@@ -270,6 +273,9 @@ for env in dev staging prod; do
 done
 
 # Prodda haqiqatda qanday qiymat ishlayotganini tekshirish (secret siz).
+# Standart holatda (show-values: never) har qiymat "******" bo'lib chiqadi.
+# Qiymat faqat show-values: when-authorized va ruxsatli rol bilan, ichki
+# portda ochilgan configprops orqali ko'rinadi.
 curl -s localhost:9090/actuator/configprops | jq '.contexts.application.beans
   | to_entries[] | select(.key | test("Hikari|Payment|Resilience"))
   | {key, properties: .value.properties}'
@@ -292,6 +298,7 @@ Oxirgi buyruq muhim: `application.yml` dagi qiymat prodda ishlamasligi mumkin, c
 | `@Value` o'rniga tipli obyekt ishlatilganmi | Ishga tushishda tekshirish |
 | Flag ning egasi va o'chirish sanasi bormi | Doimiy shoxlar |
 | Actuator ro'yxati minimalmi | Ma'lumot oqishi |
+| `show-values` va `heapdump.access` qiymati o'zgarganmi, `when-authorized` qaysi rolga berilgan | Secret va xotira nusxasi ochiq matnda |
 | K8s env qiymatni bosib ketmaydimi | O'zgarish ta'sir qilmasligi |
 | Sozlama ta'siri o'lchanadimi | Natijani ko'rish |
 

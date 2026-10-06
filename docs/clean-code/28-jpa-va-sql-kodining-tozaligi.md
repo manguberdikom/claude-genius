@@ -61,6 +61,8 @@ public class Payment {
 }
 ```
 
+Mavzuning to'liq yozuvi [entity da equals va hashCode](15-tenglik-hash-va-obyekt-shartnomalari.md#155-entitet-va-value-object-tengligi-farqi) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 28.2 Lombok va entitet: nimani ishlatmaslik
 
 Lombok ning ba'zi annotatsiyalari entitetda nozik xato beradi va ularning hammasi 26.10 siyosatida taqiqlangan. Sabablarini bilish muhim, chunki xato jim o'tadi.
@@ -238,7 +240,7 @@ order by o.created_at desc;
 
 ## 28.9 Migratsiya fayli nomlanishi va mazmuni
 
-Migratsiya strategiyasi va to'xtashsiz reliz [arxitektor hujjatidagi](../architect/README.md) sxema migratsiyasi va to'xtashsiz reliz bo'limida. Bu yerda fayl darajasidagi qoidalar: nomlanish (3.13), bir migratsiya bir maqsad, va orqaga qaytarish imkoni.
+Migratsiya strategiyasi va to'xtashsiz reliz arxitektor hujjatidagi [sxema migratsiyasi va to'xtashsiz reliz](../architect/33-sxema-migratsiyasi-va-toxtashsiz-reliz.md) bobida. Bu yerda fayl darajasidagi qoidalar: [nomlanish](03-nom-turlari-boyicha-aniq-konvensiyalar.md#313-fayl-resurs-va-konfiguratsiya-kaliti-nomlari), bir migratsiya bir maqsad, va orqaga qaytarish imkoni.
 
 ```sql
 -- V12__add_settled_at_to_payment.sql

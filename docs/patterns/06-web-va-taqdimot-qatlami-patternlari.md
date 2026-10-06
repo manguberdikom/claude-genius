@@ -7,7 +7,7 @@
 # 6. Web va taqdimot qatlami patternlari (Web & Presentation Patterns)
 
 <details>
-<summary>Bu bo'limdagi 35 bo'lim</summary>
+<summary>Bu bobdagi 35 bo'lim</summary>
 
 - [6.1 Model-Ko'rinish-Boshqaruvchi (Model-View-Controller, MVC)](#61-model-korinish-boshqaruvchi-model-view-controller-mvc)
 - [6.2 Old boshqaruvchi (Front Controller - DispatcherServlet)](#62-old-boshqaruvchi-front-controller---dispatcherservlet)
@@ -89,7 +89,7 @@ class OrderPageController {
 **Spring'da qayerda uchraydi:** `org.springframework.web.servlet.DispatcherServlet` (`FrameworkServlet` vorisi) - Spring MVC'ning yuragi; uning `doDispatch` siklida `getHandler` → `getHandlerAdapter` → `handle` → `processDispatchResult` → `render` bosqichlari bor. Spring Boot uni `DispatcherServletAutoConfiguration` orqali `/` ga ro'yxatdan o'tkazadi (`DispatcherServletRegistrationBean`, `spring.mvc.servlet.path`). WebFlux'dagi muqobili - `DispatcherHandler` (`WebHandler` amalga oshirilishi) va uni o'rab turgan `HttpHandler`/`WebHttpHandlerBuilder`. Bir ilovada bir nechta `DispatcherServlet` (masalan, `/api/*` va `/admin/*` uchun alohida kontekstlar bilan) ro'yxatdan o'tkazish mumkin.
 
 **Qo'llanish keyslari:**
-- Har qanday Spring MVC ilovasi - pattern avtomatik qo'llaniladi, lekin uni bilish `DispatcherServlet` xususiyatlarini (`throwExceptionIfNoHandlerFound`, `enableLoggingRequestDetails`) ongli sozlash imkonini beradi.
+- Har qanday Spring MVC ilovasi - pattern avtomatik qo'llaniladi, lekin uni bilish `DispatcherServlet` xususiyatlarini (`enableLoggingRequestDetails`, `detectAllHandlerMappings`) ongli sozlash imkonini beradi. `throwExceptionIfNoHandlerFound` Spring Framework 6.1 dan standart `true` va deprecated, uni sozlash kerak emas.
 - Monolit ichida API va admin UI'ni alohida `DispatcherServlet` + alohida `WebApplicationContext` bilan izolyatsiya qilish.
 - Legacy servlet ilovasini bosqichma-bosqich Spring MVC'ga ko'chirish: avval `DispatcherServlet` ni bitta prefiksga ulash, keyin yo'llarni ko'chirish.
 - Yagona kirish nuqtasida kuzatuv (`ServerHttpObservationFilter`) va xatolarni yagona formatga keltirish.
@@ -97,12 +97,11 @@ class OrderPageController {
 **Ehtiyot bo'ling:** Front Controller'ning o'zini `extends DispatcherServlet` qilib o'zgartirish deyarli hech qachon kerak emas - kengaytirish nuqtalari `HandlerInterceptor`, `HandlerExceptionResolver`, `HandlerMethodArgumentResolver` va `WebMvcConfigurer` orqali beriladi. `DispatcherServlet` servlet konteyner `Filter` zanjiridan keyin ishlaydi, shuning uchun Security filtrlarida yuzaga kelgan istisnolar `@ControllerAdvice` ga yetib bormaydi.
 
 ```yaml
-// Front Controller: barcha so'rov bitta kirish nuqtasidan o'tadi
+# Front Controller: barcha so'rov bitta kirish nuqtasidan o'tadi
 spring:
   mvc:
     servlet:
       path: /                 # DispatcherServlet qayerga ulanadi
-    throw-exception-if-no-handler-found: true
   web:
     resources:
       add-mappings: false     # 404 ni handler yo'qligidan ajratish uchun
@@ -111,9 +110,11 @@ spring:
 # -> HandlerInterceptor -> controller -> ViewResolver -> View
 ```
 
+`spring.mvc.throw-exception-if-no-handler-found` bu yerda ataylab yo'q: Spring Boot 3.2.0 da u deprecated ([WebMvcProperties, v3.2.0](https://github.com/spring-projects/spring-boot/blob/v3.2.0/spring-boot-project/spring-boot-autoconfigure/src/main/java/org/springframework/boot/autoconfigure/web/servlet/WebMvcProperties.java)), chunki Spring Framework 6.1 dan `DispatcherServlet` handler topilmasa `NoHandlerFoundException` ni o'zi tashlaydi ([DispatcherServlet, v6.1.0](https://github.com/spring-projects/spring-framework/blob/v6.1.0/spring-webmvc/src/main/java/org/springframework/web/servlet/DispatcherServlet.java)). Boot 4 metadata sida kalit `level: error` bilan belgilangan, ya'ni u endi umuman ulanmaydi.
+
 ## 6.3 Sahifa boshqaruvchisi (Page Controller)
 
-**Tavsif:** Fowler tasniflagan Page Controller - har bir mantiqiy sahifa yoki amal uchun alohida ishlovchi ob'ekt (yoki metod) bo'lib, u shu sahifaga tegishli kirishni qabul qiladi, modelni tayyorlaydi va view'ni tanlaydi. Front Controller "qayerga yo'naltirish" ni hal qilsa, Page Controller "shu sahifa uchun nima qilish" ni hal qiladi; ikkalasi birgalikda ishlaydi. Pattern oddiy: har bir URL - bir controller metodi, mantiq lokal va tushunarli.
+**Tavsif:** Fowler tasniflagan Page Controller - har bir mantiqiy sahifa yoki amal uchun alohida ishlovchi obyekt (yoki metod) bo'lib, u shu sahifaga tegishli kirishni qabul qiladi, modelni tayyorlaydi va view'ni tanlaydi. Front Controller "qayerga yo'naltirish" ni hal qilsa, Page Controller "shu sahifa uchun nima qilish" ni hal qiladi; ikkalasi birgalikda ishlaydi. Pattern oddiy: har bir URL - bir controller metodi, mantiq lokal va tushunarli.
 
 **Spring'da qayerda uchraydi:** `@Controller` klassining har bir `@GetMapping`/`@PostMapping` metodi - bu Page Controller; `HandlerMethod` abstraksiyasi aynan shu birlikni ifodalaydi. Interfeys asosidagi eski uslub: `org.springframework.web.servlet.mvc.Controller` (`handleRequest`), `AbstractController`, `ParameterizableViewController`, `HttpRequestHandler` (`HttpRequestHandlerAdapter` orqali). JSF (JoinFaces orqali Spring Boot bilan) dagi backing bean ham Page Controller'ning timsoli. WebMvc.fn da `HandlerFunction<ServerResponse>` - bitta sahifa/endpoint uchun funksional Page Controller.
 
@@ -211,7 +212,7 @@ public class TenantInterceptor implements HandlerInterceptor {
 
 ## 6.6 Kontekst ob'ekti (Context Object)
 
-**Tavsif:** Muammo - `HttpServletRequest`, `HttpSession`, header'lar va cookie'lar kabi protokolga bog'liq ob'ektlar servis va domen qatlamiga "sizib" kirsa, kod servlet API'ga bog'lanib qoladi, testlash va qayta ishlatish qiyinlashadi. Context Object protokolga xos holatni protokoldan mustaqil ob'ektga o'rab beradi: foydalanuvchi, tenant, lokal, trace ID, so'rov atributlari - hammasi yagona kontekst orqali olinadi. Shu bilan birga, kontekst so'rov davomida (yoki thread/scope davomida) hamma joydan erishiladigan bo'ladi.
+**Tavsif:** Muammo - `HttpServletRequest`, `HttpSession`, header'lar va cookie'lar kabi protokolga bog'liq obyektlar servis va domen qatlamiga "sizib" kirsa, kod servlet API'ga bog'lanib qoladi, testlash va qayta ishlatish qiyinlashadi. Context Object protokolga xos holatni protokoldan mustaqil obyektga o'rab beradi: foydalanuvchi, tenant, lokal, trace ID, so'rov atributlari - hammasi yagona kontekst orqali olinadi. Shu bilan birga, kontekst so'rov davomida (yoki thread/scope davomida) hamma joydan erishiladigan bo'ladi.
 
 **Spring'da qayerda uchraydi:** `WebRequest` va `NativeWebRequest` (servlet API'dan abstraksiya, `@ModelAttribute`/`@InitBinder` metodlarida parametr sifatida), `RequestAttributes`/`ServletRequestAttributes` va `RequestContextHolder.currentRequestAttributes()`, `RequestContextUtils`, `LocaleContextHolder`, `ServerWebExchange` (WebFlux'da so'rov+javob+sessiya+atributlar konteksti - eslatma: bu yerda `exchange.getAttributes()` orqali handler'lar o'rtasida ma'lumot uzatiladi), funksional uslubda `ServerRequest#attributes()`, Spring Security'dagi `SecurityContextHolder` (qarang: [18-bo'lim](18-xavfsizlik-patternlari.md)) va `RequestContextFilter`. Thread'ga bog'langan tashuvchilar `ThreadLocal` va `ScopedValue` asosida qurilgan - qarang: [4-bo'lim](04-concurrency-patternlari.md) (Thread-Specific Storage, Scoped Values). Request scope bean'lar (`@RequestScope`) - qarang: [5-bo'lim](05-spring-core-ichidagi-patternlar-xaritasi.md) (Bean scopes).
 
@@ -243,9 +244,9 @@ class RequestContextResolver implements HandlerMethodArgumentResolver {
 
 ## 6.7 Ko'rinish yordamchisi (View Helper)
 
-**Tavsif:** Muammo - shablon ichida formatlash, hisoblash, lokalizatsiya va shartli ko'rsatish mantig'i to'planib, view'ni sinab bo'lmaydigan va dizaynerlar uchun tushunarsiz qiladi. View Helper bu mantiqni alohida yordamchi komponentlarga (teglar, utility ob'ektlar, formatlovchilar, model tayyorlovchilar) ko'chiradi; shablon faqat ularni chaqiradi. Natijada view "yupqa", yordamchilar esa birlik testlar bilan qoplangan bo'ladi.
+**Tavsif:** Muammo - shablon ichida formatlash, hisoblash, lokalizatsiya va shartli ko'rsatish mantig'i to'planib, view'ni sinab bo'lmaydigan va dizaynerlar uchun tushunarsiz qiladi. View Helper bu mantiqni alohida yordamchi komponentlarga (teglar, utility obyektlar, formatlovchilar, model tayyorlovchilar) ko'chiradi; shablon faqat ularni chaqiradi. Natijada view "yupqa", yordamchilar esa birlik testlar bilan qoplangan bo'ladi.
 
-**Spring'da qayerda uchraydi:** Thymeleaf'da ifoda utility ob'ektlari (`#dates`, `#temporals`, `#numbers`, `#strings`, `#fields`, `#messages`), `#{...}` xabar ifodalari (`MessageSource` orqali - qarang: [5-bo'lim](05-spring-core-ichidagi-patternlar-xaritasi.md)), SpEL orqali bean'ga murojaat (`${@priceFormatter.format(order.total)}`), shaxsiy dialect va `IProcessor` lar; JSP'da `spring:message`, `spring:url`, `form:input` teg kutubxonalari; FreeMarker'da `spring.ftl` makrolari. Model tomonida - `@ControllerAdvice` ichidagi `@ModelAttribute` metodlar (barcha view'lar uchun umumiy atributlar), `Formatter`/`Printer` (qarang: [5-bo'lim](05-spring-core-ichidagi-patternlar-xaritasi.md), ConversionService) va `RequestContext` (`spring.ftl`/JSP'da `requestContext`).
+**Spring'da qayerda uchraydi:** Thymeleaf'da ifoda utility obyektlari (`#dates`, `#temporals`, `#numbers`, `#strings`, `#fields`, `#messages`), `#{...}` xabar ifodalari (`MessageSource` orqali - qarang: [5-bo'lim](05-spring-core-ichidagi-patternlar-xaritasi.md)), SpEL orqali bean'ga murojaat (`${@priceFormatter.format(order.total)}`), shaxsiy dialect va `IProcessor` lar; JSP'da `spring:message`, `spring:url`, `form:input` teg kutubxonalari; FreeMarker'da `spring.ftl` makrolari. Model tomonida - `@ControllerAdvice` ichidagi `@ModelAttribute` metodlar (barcha view'lar uchun umumiy atributlar), `Formatter`/`Printer` (qarang: [5-bo'lim](05-spring-core-ichidagi-patternlar-xaritasi.md), ConversionService) va `RequestContext` (`spring.ftl`/JSP'da `requestContext`).
 
 **Qo'llanish keyslari:**
 - Pul, sana va foizlarni lokalga mos formatlash - shablonda emas, `Formatter` yoki Thymeleaf utility'da.
@@ -494,7 +495,7 @@ public class OrderPresenter {
 
 **Tavsif:** MVVM - view va model orasiga ViewModel joylashtiradi: ViewModel view uchun tayyor, bog'lanadigan (bindable) holat va buyruqlarni beradi, view esa deklarativ data binding orqali avtomatik yangilanadi (ikki tomonlama bog'lanish). Presenter'dan farqi - ViewModel view'ni bilmaydi, u shunchaki kuzatiladigan holat; bog'lanishni framework bajaradi. Bu reaktiv frontend framework'lari (Vue, Angular, Knockout), WPF, JavaFX properties va Android ViewModel asosidagi pattern.
 
-**Spring'da qayerda uchraydi:** Spring backend'da MVVM'ning o'zi emas, uning "serverdagi yarmi" uchraydi: ViewModel'ga mos keladigan ekran-markaziy DTO'lar (`OrderPageViewModel` record'i - faqat shu ekran uchun kerak maydonlar), ularni tayyorlovchi BFF endpointlari (qarang: [7-bo'lim](07-api-dizayn-patternlari.md), Backend for Frontend) va Transfer Object Assembler (qarang: [8-bo'lim](08-biznes-logika-va-service-qatlam-patternlari.md)). Server tomonidagi "yaqin qarindoshlar": Thymeleaf `th:object`/`th:field` bilan forma ob'ektiga bog'lanish (6.28), Vaadin `Binder<T>` (ikki tomonlama binding), Hilla (Vaadin) - Spring `@BrowserCallable` servislarini TypeScript tiplari bilan React/Lit'ga ulaydi, JavaFX `Property` lar Spring Boot ichida.
+**Spring'da qayerda uchraydi:** Spring backend'da MVVM'ning o'zi emas, uning "serverdagi yarmi" uchraydi: ViewModel'ga mos keladigan ekran-markaziy DTO'lar (`OrderPageViewModel` record'i - faqat shu ekran uchun kerak maydonlar), ularni tayyorlovchi BFF endpointlari (qarang: [7-bo'lim](07-api-dizayn-patternlari.md), Backend for Frontend) va Transfer Object Assembler (qarang: [8-bo'lim](08-biznes-logika-va-service-qatlam-patternlari.md)). Server tomonidagi "yaqin qarindoshlar": Thymeleaf `th:object`/`th:field` bilan forma obyektiga bog'lanish (6.28), Vaadin `Binder<T>` (ikki tomonlama binding), Hilla (Vaadin) - Spring `@BrowserCallable` servislarini TypeScript tiplari bilan React/Lit'ga ulaydi, JavaFX `Property` lar Spring Boot ichida.
 
 **Qo'llanish keyslari:**
 - SPA (Angular/Vue/React) frontend uchun ekran-markaziy DTO'lar beradigan Spring BFF.
@@ -561,11 +562,11 @@ public String create(@Valid @ModelAttribute OrderForm form, BindingResult errors
 **Qo'llanish keyslari:**
 - PRG'dan keyin "muvaffaqiyat/xato" bildirishnomasini bir marta ko'rsatish.
 - Shaklni qayta ishlashda yuzaga kelgan tashqi xizmat xatosini redirect orqali forma sahifasiga qaytarish.
-- Yaratilgan ob'ekt identifikatorini keyingi sahifada "yangi" sifatida ajratib ko'rsatish.
+- Yaratilgan obyekt identifikatorini keyingi sahifada "yangi" sifatida ajratib ko'rsatish.
 - Ko'p qadamli wizard'da keyingi qadamga kichik kontekst (tanlangan tarif) uzatish.
 - Login'dan keyin bir martalik "xush kelibsiz" yoki parol muddati haqida ogohlantirish.
 
-**Ehtiyot bo'ling:** Flash atributlar sessiyaga tayanadi - stateless REST API'da yoki sessiya yo'q muhitda ishlamaydi va bir nechta instance bo'lsa Spring Session kabi tarqatilgan sessiya saqlash kerak. Katta ob'ektlarni (butun entity) flash'ga joylash sessiyani shishiradi va seriyalashtirish muammolariga olib keladi - faqat kichik, `Serializable` qiymatlar. Parallel tab'lar flash xabarni "noto'g'ri" sahifada ko'rsatishi mumkin; `FlashMap` ni maqsadli yo'lga bog'lang.
+**Ehtiyot bo'ling:** Flash atributlar sessiyaga tayanadi - stateless REST API'da yoki sessiya yo'q muhitda ishlamaydi va bir nechta instance bo'lsa Spring Session kabi tarqatilgan sessiya saqlash kerak. Katta obyektlarni (butun entity) flash'ga joylash sessiyani shishiradi va seriyalashtirish muammolariga olib keladi - faqat kichik, `Serializable` qiymatlar. Parallel tab'lar flash xabarni "noto'g'ri" sahifada ko'rsatishi mumkin; `FlashMap` ni maqsadli yo'lga bog'lang.
 
 ```java
 // Flash atributlar: redirect orqali bir martalik xabar uzatish
@@ -587,7 +588,7 @@ String list(@ModelAttribute("notice") String notice, Model model) {
 
 **Tavsif:** Muammo - har bir controller o'z try/catch'ini yozsa, xato javoblari formati, status kodlari va log'lash tarqoq va nomuvofiq bo'ladi. Pattern istisnolarni web-qatlam chegarasida markazlashgan ishlovchiga yo'naltiradi: istisno turi → HTTP status + yagona xato tanasi (va log darajasi) xaritasi bir joyda. Domen qatlami o'z istisnolarini tashlaydi, HTTP'ga tarjima faqat web-qatlamda bo'ladi; controller'lar xato kodidan xoli qoladi.
 
-**Spring'da qayerda uchraydi:** `@ExceptionHandler` (controller ichida - lokal, `@ControllerAdvice`/`@RestControllerAdvice` ichida - global; `basePackages`, `assignableTypes`, `annotations` bilan cheklash, `@Order` bilan tartib); `ResponseEntityExceptionHandler` (Spring MVC'ning standart istisnolarini `ProblemDetail` ga tarjima qiladigan bazaviy klass, `spring.mvc.problemdetails.enabled=true` bilan Boot'da yoqiladi); `HandlerExceptionResolver` zanjiri - `ExceptionHandlerExceptionResolver`, `ResponseStatusExceptionResolver` (`@ResponseStatus`, `ResponseStatusException`), `DefaultHandlerExceptionResolver`, `HandlerExceptionResolverComposite`; `ErrorResponse`/`ErrorResponseException` va `ProblemDetail` (RFC 9457 - qarang: [7-bo'lim](07-api-dizayn-patternlari.md), Problem Details); Spring Boot: `BasicErrorController`, `ErrorAttributes`/`DefaultErrorAttributes`, `ErrorViewResolver`, `server.error.include-message/include-stacktrace/include-binding-errors`, `/error` yo'li. WebFlux: `@ExceptionHandler` ham ishlaydi, pastki daraja - `WebExceptionHandler`, `ErrorWebExceptionHandler`.
+**Spring'da qayerda uchraydi:** `@ExceptionHandler` (controller ichida - lokal, `@ControllerAdvice`/`@RestControllerAdvice` ichida - global; `basePackages`, `assignableTypes`, `annotations` bilan cheklash, `@Order` bilan tartib); `ResponseEntityExceptionHandler` (Spring MVC'ning standart istisnolarini `ProblemDetail` ga tarjima qiladigan bazaviy klass, `spring.mvc.problemdetails.enabled=true` bilan Boot'da yoqiladi); `HandlerExceptionResolver` zanjiri - `ExceptionHandlerExceptionResolver`, `ResponseStatusExceptionResolver` (`@ResponseStatus`, `ResponseStatusException`), `DefaultHandlerExceptionResolver`, `HandlerExceptionResolverComposite`; `ErrorResponse`/`ErrorResponseException` va `ProblemDetail` (RFC 9457 - qarang: [7-bo'lim](07-api-dizayn-patternlari.md), Problem Details); Spring Boot: `BasicErrorController`, `ErrorAttributes`/`DefaultErrorAttributes`, `ErrorViewResolver`, `server.error.include-message/include-stacktrace/include-binding-errors` (Boot 4 da `spring.web.error.*`, eski kalit ulanmaydi), `/error` yo'li. WebFlux: `@ExceptionHandler` ham ishlaydi, pastki daraja - `WebExceptionHandler`, `ErrorWebExceptionHandler`.
 
 **Qo'llanish keyslari:**
 - Domen istisnolarini (`OrderNotFoundException` → 404, `InsufficientStockException` → 409) `ProblemDetail` ga xaritalash.
@@ -640,7 +641,7 @@ OrderDto get(@PathVariable long id) { return service.view(id); }
 
 ## 6.20 HTTP xabar konvertori (HttpMessageConverter)
 
-**Tavsif:** Muammo - controller HTTP tanasini baytlardan Java ob'ektiga va aksincha o'zi aylantirsa, format mantiqi hamma joyga tarqaladi. HttpMessageConverter - Strategy patternining (qarang: [3-bo'lim](03-xulq-atvor-patternlari.md)) web ko'rinishi: har bir converter "men ushbu Java turini ushbu media type'da o'qiy/yoza olaman" deb e'lon qiladi, framework esa tur + media type juftligi uchun mos converter'ni tanlaydi. Controller faqat tiplangan ob'ektlar bilan ishlaydi; serializatsiya to'liq almashtiriladigan komponentda.
+**Tavsif:** Muammo - controller HTTP tanasini baytlardan Java obyektiga va aksincha o'zi aylantirsa, format mantiqi hamma joyga tarqaladi. HttpMessageConverter - Strategy patternining (qarang: [3-bo'lim](03-xulq-atvor-patternlari.md)) web ko'rinishi: har bir converter "men ushbu Java turini ushbu media type'da o'qiy/yoza olaman" deb e'lon qiladi, framework esa tur + media type juftligi uchun mos converter'ni tanlaydi. Controller faqat tiplangan obyektlar bilan ishlaydi; serializatsiya to'liq almashtiriladigan komponentda.
 
 **Spring'da qayerda uchraydi:** `HttpMessageConverter<T>` (`canRead/canWrite/read/write`), `GenericHttpMessageConverter`; tayyorlari - `MappingJackson2HttpMessageConverter` (Jackson 2; Spring Framework 7 / Boot 4 da Jackson 3 asosidagi `JacksonJsonHttpMessageConverter` birlamchi), `MappingJackson2XmlHttpMessageConverter`, `StringHttpMessageConverter`, `ByteArrayHttpMessageConverter`, `FormHttpMessageConverter` (`application/x-www-form-urlencoded` va multipart), `ResourceHttpMessageConverter`, `ResourceRegionHttpMessageConverter` (Range so'rovlari), `ProtobufHttpMessageConverter`, `GsonHttpMessageConverter`, `JsonbHttpMessageConverter`, `KotlinSerializationJsonHttpMessageConverter`, `Jaxb2RootElementHttpMessageConverter`. Ulanish nuqtalari: `@RequestBody`/`@ResponseBody`/`@RestController`, `HttpEntity`/`ResponseEntity`, `RequestResponseBodyMethodProcessor`; sozlash - `WebMvcConfigurer#extendMessageConverters` (mavjudlarini saqlab qo'shish) va `configureMessageConverters` (to'liq almashtirish), Boot'ning `HttpMessageConverters` bean'i, `Jackson2ObjectMapperBuilderCustomizer` (Boot 3) / Jackson 3 uchun `JsonMapper` customizer'lari (Boot 4); `RequestBodyAdvice`/`ResponseBodyAdvice` (`@JsonView`, `MappingJacksonValue`, javobni o'rash). Mijoz tomonida xuddi shu converter'lar `RestTemplate`/`RestClient` da ishlaydi. WebFlux: `Encoder`/`Decoder`, `HttpMessageReader`/`HttpMessageWriter`, `ServerCodecConfigurer`.
 
@@ -680,7 +681,7 @@ class WebConfig implements WebMvcConfigurer {
 - `@CurrentTenant TenantId tenant` - header yoki subdomen asosida tenant'ni hal qilish.
 - `@CurrentUser UserProfile user` - Security principal'dan domen foydalanuvchisini yuklab berish.
 - `@ClientInfo ClientInfo info` - IP, user-agent, trace ID ni record'ga yig'ish.
-- Shaxsiy query parametr sintaksisini (`?filter=status:eq:ACTIVE`) `Specification`/`Filter` ob'ektiga aylantirish.
+- Shaxsiy query parametr sintaksisini (`?filter=status:eq:ACTIVE`) `Specification`/`Filter` obyektiga aylantirish.
 - Shaxsiy return handler: `Result<T>` yoki `Either<Error, T>` qaytargan controller'ni avtomatik `ResponseEntity`/`ProblemDetail` ga xaritalash.
 
 **Ehtiyot bo'ling:** Shaxsiy resolver'lar standartlardan keyin tekshiriladi - `@RequestParam` kabi o'rnatilgan annotatsiya bilan to'qnashsa sizniki ishlamaydi; shaxsiy annotatsiya yoki noyob tur ishlating. Resolver ichida ma'lumotlar bazasiga murojaat (har so'rovda foydalanuvchini yuklash) yashirin I/O va N+1 ga olib keladi - natijani so'rov atributida keshlang yoki yengil identifikator qaytaring. Resolver'larning tartibi va `supportsParameter` shartlari testlar bilan qoplanishi kerak.
@@ -825,7 +826,7 @@ JwtDecoder jwtDecoder(@Value("${auth.jwk-set-uri}") String jwkSetUri) {
 
 ## 6.26 Server tomonidagi sessiya holati (Server Session State)
 
-**Tavsif:** Holat server xotirasida (yoki serverga yaqin saqlashda) ushlanadi, mijoz faqat sessiya identifikatorini (cookie) tashiydi. Dasturlash eng sodda - ob'ektni sessiyaga joylash kifoya - va mijozga ishonish shart emas. Narxi: server endi stateful; instance ishdan chiqsa holat yo'qoladi, gorizontal masshtablash sticky session yoki sessiya replikatsiyasini talab qiladi, xotira iste'moli faol foydalanuvchilar soniga proporsional o'sadi.
+**Tavsif:** Holat server xotirasida (yoki serverga yaqin saqlashda) ushlanadi, mijoz faqat sessiya identifikatorini (cookie) tashiydi. Dasturlash eng sodda - obyektni sessiyaga joylash kifoya - va mijozga ishonish shart emas. Narxi: server endi stateful; instance ishdan chiqsa holat yo'qoladi, gorizontal masshtablash sticky session yoki sessiya replikatsiyasini talab qiladi, xotira iste'moli faol foydalanuvchilar soniga proporsional o'sadi.
 
 **Spring'da qayerda uchraydi:** `HttpSession` (`@SessionAttribute` o'qish, `@SessionAttributes` + `SessionStatus` - controller darajasidagi "conversation" scope), `@SessionScope` bean'lar (qarang: [5-bo'lim](05-spring-core-ichidagi-patternlar-xaritasi.md), Bean scopes & scoped proxy), `HttpSessionListener`, `server.servlet.session.timeout`, `server.servlet.session.cookie.*` (`name`, `http-only`, `secure`, `same-site`), `server.servlet.session.tracking-modes=cookie` (URL rewriting'ni o'chirish); Spring Security - `SecurityContext` sukut bo'yicha sessiyada (`HttpSessionSecurityContextRepository`), sessiya fiksatsiyasi himoyasi va parallel sessiyalarni cheklash (qarang: [18-bo'lim](18-xavfsizlik-patternlari.md), Session Management). Tarqatilgan sessiya: Spring Session (`spring-session-data-redis`, `@EnableRedisHttpSession`, `SessionRepository`, `SessionRepositoryFilter`, `FindByIndexNameSessionRepository` - foydalanuvchi bo'yicha sessiyalarni topish), Hazelcast, Tomcat `DeltaManager` (kam ishlatiladi). WebFlux: `WebSession`, `WebSessionManager`, `WebSessionStore` (`InMemoryWebSessionStore` sukut, Spring Session reaktiv Redis). Flash scope (6.17) ham sessiyaga tayanadi.
 
@@ -836,15 +837,18 @@ JwtDecoder jwtDecoder(@Value("${auth.jwk-set-uri}") String jwkSetUri) {
 - OAuth2 login oqimida `state`/PKCE verifier'ini sessiyada saqlash (`spring-security-oauth2-client`).
 - Server tomonidagi UI framework'lar (Vaadin) - komponent daraxti to'liq sessiyada yashaydi.
 
-**Ehtiyot bo'ling:** Sessiyaga katta ob'ektlar (entity grafigi, hisobot natijalari) joylash xotirani to'ldiradi va Redis'ga seriyalashtirish narxini oshiradi - faqat identifikator va kichik DTO. Sessiyadagi ob'ektlar `Serializable` bo'lishi va versiya o'zgarishida (deploy) deseriyalanishi kerak - JSON seriyalashtirish (`GenericJackson2JsonRedisSerializer`) klass versiyasiga kamroq bog'liq. Sticky session'ga tayanish nol-uzilishli deploy va autoscaling'ni murakkablashtiradi; API uchun stateless (6.25), UI uchun Spring Session afzal. `@SessionAttributes` ni `setComplete()` siz qoldirish sessiyada "eskirgan" holat qoldiradi.
+**Ehtiyot bo'ling:** Sessiyaga katta obyektlar (entity grafigi, hisobot natijalari) joylash xotirani to'ldiradi va Redis'ga seriyalashtirish narxini oshiradi - faqat identifikator va kichik DTO. Sessiyadagi obyektlar `Serializable` bo'lishi va versiya o'zgarishida (deploy) deseriyalanishi kerak - JSON seriyalashtirish (`GenericJackson2JsonRedisSerializer`) klass versiyasiga kamroq bog'liq. Sticky session'ga tayanish nol-uzilishli deploy va autoscaling'ni murakkablashtiradi; API uchun stateless (6.25), UI uchun Spring Session afzal. `@SessionAttributes` ni `setComplete()` siz qoldirish sessiyada "eskirgan" holat qoldiradi.
 
 ```yaml
-// Server sessiyasi: oddiy, lekin stateless deploy'ni buzadi
+# Server sessiyasi: oddiy, lekin stateless deploy'ni buzadi
 spring:
   session:
-    store-type: redis        # sessiya tashqi omborda: podlar almashtirilsa yo'qolmaydi
-    redis:
-      namespace: payments:session
+    # Saqlash turi classpath dagi spring-session-data-redis dan aniqlanadi (Boot 3.0+):
+    # sessiya tashqi omborda, podlar almashtirilsa yo'qolmaydi.
+    data:
+      redis:
+        # Boot 4 da shu kalit; Boot 3.x da: spring.session.redis.namespace
+        namespace: payments:session
   servlet:
     session:
       timeout: 30m
@@ -889,18 +893,18 @@ class CheckoutSession {
 
 ## 6.28 Ma'lumotlarni bog'lash va forma ob'ekti (Data Binding / Form Backing Object)
 
-**Tavsif:** Muammo - HTTP so'rov parametrlari matn ko'rinishida keladi; ularni tiplangan ob'ektga aylantirish, konvertatsiya xatolarini yig'ish va validatsiya qilish qo'lda yozilsa zerikarli va xatoga moyil. Data Binding so'rov parametrlarini nomlari bo'yicha ob'ekt xususiyatlariga avtomatik bog'laydi, konvertatsiya va validatsiya xatolarini `Errors` ob'ektida to'playdi; Form Backing Object - shu bog'lanish uchun maxsus yaratilgan, faqat formani ifodalovchi ob'ekt (domen entity'si emas). Shablon (`th:object`/`th:field`) ham ayni ob'ektdan qiymat va xatolarni o'qiydi - ikki tomonlama forma bog'lanishi.
+**Tavsif:** Muammo - HTTP so'rov parametrlari matn ko'rinishida keladi; ularni tiplangan obyektga aylantirish, konvertatsiya xatolarini yig'ish va validatsiya qilish qo'lda yozilsa zerikarli va xatoga moyil. Data Binding so'rov parametrlarini nomlari bo'yicha obyekt xususiyatlariga avtomatik bog'laydi, konvertatsiya va validatsiya xatolarini `Errors` obyektida to'playdi; Form Backing Object - shu bog'lanish uchun maxsus yaratilgan, faqat formani ifodalovchi obyekt (domen entity'si emas). Shablon (`th:object`/`th:field`) ham ayni obyektdan qiymat va xatolarni o'qiydi - ikki tomonlama forma bog'lanishi.
 
 **Spring'da qayerda uchraydi:** `WebDataBinder`/`DataBinder`, `@ModelAttribute` (parametr - bog'lash, metod - model tayyorlash), `@InitBinder` (`setAllowedFields`, `setDisallowedFields`, `registerCustomEditor`, `addValidators`), `BindingResult`/`Errors`/`FieldError`, `@Valid`/`@Validated` (Bean Validation), `BindException`, `MethodArgumentNotValidException`, Spring 6.1+ o'rnatilgan metod validatsiyasi `HandlerMethodValidationException`; record va konstruktor asosida bog'lash (Spring 6.1+, `@BindParam` bilan parametr nomini o'zgartirish); `ConversionService`/`Formatter`/`@DateTimeFormat`/`@NumberFormat` (qarang: [5-bo'lim](05-spring-core-ichidagi-patternlar-xaritasi.md), ConversionService); Thymeleaf `th:object`, `th:field`, `#fields.hasErrors('email')`, `th:errors`; `@RequestBody` uchun bog'lash `HttpMessageConverter` orqali bo'lib, `WebDataBinder` qatnashmaydi (lekin `@Valid` ishlaydi). `@ConfigurationProperties` ham xuddi shu `Binder` g'oyasining konfiguratsiya varianti (qarang: [5-bo'lim](05-spring-core-ichidagi-patternlar-xaritasi.md)). WebFlux: `WebExchangeDataBinder`, `WebExchangeBindException`.
 
 **Qo'llanish keyslari:**
 - Ro'yxatdan o'tish shakli: `RegistrationForm` record'i, `@Valid`, xatolar `th:errors` bilan maydon yonida.
-- Qidiruv filtrlari (`?status=ACTIVE&from=2026-01-01`) ni `SearchCriteria` ob'ektiga bog'lash, `@DateTimeFormat` bilan.
-- Ichki ob'ektlar va ro'yxatlar (`items[0].quantity`, `address.city`) bilan murakkab shakllar.
+- Qidiruv filtrlari (`?status=ACTIVE&from=2026-01-01`) ni `SearchCriteria` obyektiga bog'lash, `@DateTimeFormat` bilan.
+- Ichki obyektlar va ro'yxatlar (`items[0].quantity`, `address.city`) bilan murakkab shakllar.
 - Admin panelda tahrirlash shakli: entity → form DTO → bog'lash → validatsiya → servis orqali yangilash.
 - `@InitBinder` bilan kirish matnlarini trim qilish (`StringTrimmerEditor`) va sana formatini jamoa standartiga keltirish.
 
-**Ehtiyot bo'ling:** JPA entity'ni to'g'ridan-to'g'ri `@ModelAttribute` qilish mass-assignment zaifligini tug'diradi - foydalanuvchi `role=ADMIN` yoki `balance=...` yubora oladi; alohida form ob'ekti yoki `setAllowedFields` shart (qarang: [25-bo'lim](25-anti-patternlar.md), Exposing JPA entities in API). Bog'lash xatolarini `BindingResult` siz qoldirish 400 o'rniga istisno beradi - forma handler'larida `BindingResult` ni darhol `@ModelAttribute` dan keyin qo'ying. Validatsiya annotatsiyalari biznes qoidalarini (unikal email) o'rnini bosmaydi - ularni servis qatlamida tekshirib, `errors.rejectValue` bilan formaga qaytaring.
+**Ehtiyot bo'ling:** JPA entity'ni to'g'ridan-to'g'ri `@ModelAttribute` qilish mass-assignment zaifligini tug'diradi - foydalanuvchi `role=ADMIN` yoki `balance=...` yubora oladi; alohida form obyekti yoki `setAllowedFields` shart (qarang: [25-bo'lim](25-anti-patternlar.md), Exposing JPA entities in API). Bog'lash xatolarini `BindingResult` siz qoldirish 400 o'rniga istisno beradi - forma handler'larida `BindingResult` ni darhol `@ModelAttribute` dan keyin qo'ying. Validatsiya annotatsiyalari biznes qoidalarini (unikal email) o'rnini bosmaydi - ularni servis qatlamida tekshirib, `errors.rejectValue` bilan formaga qaytaring.
 
 ```java
 // Form backing object: validatsiya va bog'lanish bitta joyda
@@ -971,7 +975,7 @@ WebMvcConfigurer localeInterceptor() {
 **Ehtiyot bo'ling:** Katta trafikli statik kontentni JVM'dan xizmat qilish CPU va ulanishlarni isrof qiladi - ishlab chiqarishda CDN yoki reverse proxy (Nginx) oldinga qo'yiladi, Spring faqat fallback. Versiyalash yoqilganda shablonlardagi URL'lar `ResourceUrlProvider`/`@{...}` orqali yaratilishi kerak, aks holda eski (keshdagi) nomlar 404 beradi. `addResourceLocations("file:" + userPath)` da yo'l tekshiruvisiz (`PathResourceResolver` saqlab qolinmasa) directory traversal xavfi bor. `index.html` fallback'ini `/api/**` ga ham qo'llash API 404'larini HTML'ga aylantiradi - namunalarni ajrating.
 
 ```yaml
-// Statik resurslar: kesh va versiyalash
+# Statik resurslar: kesh va versiyalash
 spring:
   web:
     resources:
@@ -990,7 +994,7 @@ spring:
 
 ## 6.31 Multipart (fayl yuklash) ishlovi (Multipart Handling)
 
-**Tavsif:** Muammo - fayl yuklash (`multipart/form-data`) oddiy forma parametrlaridan farq qiladi: tana katta, bir nechta qism (part) dan iborat, har biri o'z `Content-Type` va nomiga ega, xotiraga to'liq yuklab bo'lmaydi. Pattern multipart tahlilini almashtiriladigan resolver'ga topshiradi: u so'rovni qismlarga ajratadi, kichik qismlarni xotirada, kattalarini vaqtinchalik faylda saqlaydi (yoki stream qiladi), hajm chegaralarini tekshiradi va controller'ga tiplangan `MultipartFile`/`Part` ob'ektlarini beradi.
+**Tavsif:** Muammo - fayl yuklash (`multipart/form-data`) oddiy forma parametrlaridan farq qiladi: tana katta, bir nechta qism (part) dan iborat, har biri o'z `Content-Type` va nomiga ega, xotiraga to'liq yuklab bo'lmaydi. Pattern multipart tahlilini almashtiriladigan resolver'ga topshiradi: u so'rovni qismlarga ajratadi, kichik qismlarni xotirada, kattalarini vaqtinchalik faylda saqlaydi (yoki stream qiladi), hajm chegaralarini tekshiradi va controller'ga tiplangan `MultipartFile`/`Part` obyektlarini beradi.
 
 **Spring'da qayerda uchraydi:** `MultipartResolver` - `StandardServletMultipartResolver` (Servlet 3.0+ API asosida, sukut; `CommonsMultipartResolver` Spring Framework 6.0 da olib tashlangan), `MultipartHttpServletRequest`, `MultipartFile` (`getInputStream`, `transferTo(Path)`, `getOriginalFilename`, `getContentType`), `@RequestParam MultipartFile file`, `@RequestPart` (JSON qism + fayl qism birgalikda, `HttpMessageConverter` orqali), `jakarta.servlet.http.Part`, `MultipartConfigElement`; Boot: `spring.servlet.multipart.enabled`, `max-file-size`, `max-request-size`, `file-size-threshold`, `location`, `resolve-lazily`; `MaxUploadSizeExceededException` (odatda 413 ga xaritalanadi); mijoz tomonida `MultipartBodyBuilder`, `RestClient`/`RestTemplate` + `MultiValueMap<String, Object>` va `FileSystemResource`/`ByteArrayResource`. WebFlux: `FilePart`, `Part`, `Flux<DataBuffer>`, `PartEvent` (Spring 6.0+, to'liq stream'li ishlov), `DefaultPartHttpMessageReader`, `spring.webflux.multipart.*`. Fayllarni yuklab berish uchun `Resource`/`StreamingResponseBody` va `Content-Disposition` (`ContentDisposition.attachment().filename(...)`).
 
@@ -1004,7 +1008,7 @@ spring:
 **Ehtiyot bo'ling:** Hajm chegaralari ikki darajada ishlaydi - Spring/Boot xususiyatlari va oldingi proxy (Nginx `client_max_body_size`, Gateway) - ikkalasini muvofiqlashtiring, aks holda foydalanuvchi tushunarsiz 413/502 oladi. `getOriginalFilename()` va `getContentType()` mijozdan keladi - ularga ishonmang: fayl nomini qayta nomlang (UUID), MIME'ni tarkib bo'yicha aniqlang (Apache Tika), zarur bo'lsa antivirus tekshiruvi. Faylni bazaga BLOB sifatida saqlash o'rniga obyekt saqlash + Valet Key (qarang: [17-bo'lim](17-resilience-va-cloud-dizayn-patternlari.md)) orqali to'g'ridan-to'g'ri yuklashni ko'rib chiqing. Vaqtinchalik `location` katalogi konteynerda to'lib ketmasligi uchun diskni kuzating.
 
 ```yaml
-// Multipart: chegara qo'yish majburiy
+# Multipart: chegara qo'yish majburiy
 spring:
   servlet:
     multipart:
@@ -1018,7 +1022,7 @@ spring:
 
 ## 6.32 Ko'rinish aniqlovchi (View Resolver)
 
-**Tavsif:** Muammo - controller qaysi shablon texnologiyasi (Thymeleaf, FreeMarker, PDF, JSON) ishlatilishini bilmasligi kerak; u faqat mantiqiy view nomini qaytaradi. View Resolver mantiqiy nomni (va lokalni) konkret `View` ob'ektiga aylantiradigan strategiya: bir nechta resolver tartib bilan so'raladi, birinchi topgani g'olib. Shu tufayli shablon dvigatelini almashtirish, lokalga xos view'lar, bean nomi bo'yicha maxsus view'lar va kontent muzokarasi controller'ga tegmasdan amalga oshiriladi. Bu GoF Strategy + Chain of Responsibility'ning taqdimot qatlamidagi kombinatsiyasi.
+**Tavsif:** Muammo - controller qaysi shablon texnologiyasi (Thymeleaf, FreeMarker, PDF, JSON) ishlatilishini bilmasligi kerak; u faqat mantiqiy view nomini qaytaradi. View Resolver mantiqiy nomni (va lokalni) konkret `View` obyektiga aylantiradigan strategiya: bir nechta resolver tartib bilan so'raladi, birinchi topgani g'olib. Shu tufayli shablon dvigatelini almashtirish, lokalga xos view'lar, bean nomi bo'yicha maxsus view'lar va kontent muzokarasi controller'ga tegmasdan amalga oshiriladi. Bu GoF Strategy + Chain of Responsibility'ning taqdimot qatlamidagi kombinatsiyasi.
 
 **Spring'da qayerda uchraydi:** `ViewResolver#resolveViewName(name, locale)` va `View#render(model, request, response)`; amalga oshirishlar - `ThymeleafViewResolver`, `FreeMarkerViewResolver`, `GroovyMarkupViewResolver`, `MustacheViewResolver`, `InternalResourceViewResolver` (JSP), `XsltViewResolver`, `BeanNameViewResolver` (view nomi = bean nomi; PDF/Excel view'lar uchun qulay), `ContentNegotiatingViewResolver` (6.19), `ViewResolverComposite`; `UrlBasedViewResolver` ning `redirect:` va `forward:` prefikslari, `setViewNames`/`setOrder` bilan cheklash va tartib; `WebMvcConfigurer#configureViewResolvers` → `ViewResolverRegistry`; `ModelAndView`, `SmartView` (`isRedirectView`), `RequestToViewNameTranslator`; `AbstractCachingViewResolver` - hal qilingan view'larni keshlaydi. Boot har shablon dvigateli uchun resolver'ni avtomatik sozlaydi (`spring.thymeleaf.*`, `spring.freemarker.*`). WebFlux: reaktiv `ViewResolver`, `ViewResolutionResultHandler`, `Rendering`.
 

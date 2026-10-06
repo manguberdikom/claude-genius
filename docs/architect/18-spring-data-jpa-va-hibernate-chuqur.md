@@ -27,7 +27,7 @@
 
 
 
-Hibernate bilan ishlashdagi eng keng tarqalgan xato uni "ob'ektni jadvalga saqlaydigan kutubxona" deb tushunishdir. Aslida u tranzaksiya davomida yashaydigan holat mashinasi: o'zi ushlab turgan ob'ektlarni kuzatadi, o'zgarishlarni to'playdi va qat'iy belgilangan paytda SQL ga aylantiradi. Arxitektor uchun asosiy savol "qanday annotatsiya qo'yaman" emas, "bu kod oxirida PostgreSQL ga nechta va qanday so'rov ketadi" degan savol. Bob shu savol atrofida quriladi.
+Hibernate bilan ishlashdagi eng keng tarqalgan xato uni "obyektni jadvalga saqlaydigan kutubxona" deb tushunishdir. Aslida u tranzaksiya davomida yashaydigan holat mashinasi: o'zi ushlab turgan obyektlarni kuzatadi, o'zgarishlarni to'playdi va qat'iy belgilangan paytda SQL ga aylantiradi. Arxitektor uchun asosiy savol "qanday annotatsiya qo'yaman" emas, "bu kod oxirida PostgreSQL ga nechta va qanday so'rov ketadi" degan savol. Bob shu savol atrofida quriladi.
 
 ## 18.1 Persistence context: birinchi daraja kesh, dirty checking, flush tartibi
 
@@ -56,7 +56,7 @@ Shu tartib bitta klassik xatoni tug'diradi: unique constraint ostidagi qatorni o
 
 Transient: `new` qilingan, identifikatori yo'q. Managed: persistence context ichida, dirty checking ostida. Detached: ilgari managed bo'lgan, identifikatori bor, lekin o'zgarishlari kuzatilmaydi. Removed: `remove` chaqirilgan, flush da DELETE ketadi.
 
-Eng ko'p xato detached bilan bo'ladi. Controller ga kelgan JSON dan `Tolov` yasalib `save()` chaqirilsa, Spring Data `isNew()` ni tekshiradi: identifikator bo'sh bo'lsa `persist`, aks holda `merge`. `merge` esa avval bazadan shu id ni SELECT qiladi, qiymatlarni managed nusxaga ko'chiradi va MANAGED NUSXANI qaytaradi. Siz uzatgan ob'ekt detached bo'lib qoladi.
+Eng ko'p xato detached bilan bo'ladi. Controller ga kelgan JSON dan `Tolov` yasalib `save()` chaqirilsa, Spring Data `isNew()` ni tekshiradi: identifikator bo'sh bo'lsa `persist`, aks holda `merge`. `merge` esa avval bazadan shu id ni SELECT qiladi, qiymatlarni managed nusxaga ko'chiradi va MANAGED NUSXANI qaytaradi. Siz uzatgan obyekt detached bo'lib qoladi.
 
 ```java
 // XATO: natija tashlab yuborilgan, tolov hali ham detached
@@ -74,7 +74,7 @@ managed.applyFrom(dto);
 
 Lazy bog'lanish proxy orqali ishlaydi. Hibernate bayt-kod darajasida entity sinfidan voris yasaydi, uning ichida faqat identifikator to'ldirilgan bo'ladi. Birinchi metod chaqirilganda proxy o'z session iga murojaat qilib SELECT yuboradi va o'zini to'ldiradi. To'plamlar uchun `PersistentBag` yoki `PersistentSet` xuddi shunday kechiktirilgan.
 
-`LazyInitializationException` proxy o'z session ini topolmaganda tashlanadi: tranzaksiya yopilgan, lekin ob'ekt hali hayot va kimdir uning to'ldirilmagan qismini so'rayapti. Bu entity ni DTO ga aylantirmasdan controller ga qaytarganda yuz beradi.
+`LazyInitializationException` proxy o'z session ini topolmaganda tashlanadi: tranzaksiya yopilgan, lekin obyekt hali hayot va kimdir uning to'ldirilmagan qismini so'rayapti. Bu entity ni DTO ga aylantirmasdan controller ga qaytarganda yuz beradi.
 
 Bu yerda `spring.jpa.open-in-view` haqida aniq pozitsiya kerak. Spring Boot da u sukut bo'yicha yoqilgan va session ni HTTP javob yozilib bo'lguncha ochiq ushlaydi. Xato "yo'qoladi", o'rniga ikki yomonroq narsa keladi: serializatsiya paytidagi kutilmagan SELECT lar va connection ning javob tugaguncha pool da band turishi. 10 connection li pool da bu throughput ni sezilarli pasaytiradi.
 
@@ -123,7 +123,7 @@ Page<Buyurtma> findByHolat(Holat holat, Pageable pageable);
 private Set<BuyurtmaQatori> qatorlar;
 ```
 
-Tanlash qoidasi: ro'yxat ekrani uchun proyeksiya, bitta ob'ektni tahrirlash uchun entity graph, oldindan bilinmaydigan navigatsiya uchun global batch fetch size.
+Tanlash qoidasi: ro'yxat ekrani uchun proyeksiya, bitta obyektni tahrirlash uchun entity graph, oldindan bilinmaydigan navigatsiya uchun global batch fetch size.
 
 | Tuzoq | Nega yuz beradi | Yechim |
 | --- | --- | --- |
@@ -132,7 +132,7 @@ Tanlash qoidasi: ro'yxat ekrani uchun proyeksiya, bitta ob'ektni tahrirlash uchu
 | Takroriy qatorlar | `join fetch` dekart ko'paytmasi | `Set` ishlatish yoki `distinct` |
 | `List` dan bitta element o'chirishda hamma qator qayta yozilishi | bag semantikasi | `Set` yoki `@OrderColumn` |
 | `IDENTITY` da batch insert ishlamasligi | har insert dan keyin id o'qilishi shart | `SEQUENCE` ga o'tish |
-| Importda har `save` da SELECT | detached ob'ekt uchun `merge` | yangi ob'ektlarda id ni bo'sh qoldirish |
+| Importda har `save` da SELECT | detached obyekt uchun `merge` | yangi obyektlarda id ni bo'sh qoldirish |
 
 ## 18.5 Faqat kerakli ustunni olish: interfeys va record proyeksiyasi
 
@@ -179,7 +179,7 @@ delete from buyurtma_qatori where id = 7781;
 
 `Set` da bu muammo yo'q, sharti `equals` va `hashCode` ni to'g'ri yozish. Ularni `id` ustiga qurish xato: yangi element hali id siz bo'lganda hashCode o'zgarib ketadi va `Set` buziladi. To'g'ri yo'l biznes kaliti yoki ilova tomonida yasalgan UUID.
 
-Ikkinchi tuzoq: to'plamni to'liq almashtirish. `setQatorlar(yangiRoyxat)` Hibernate kuzatayotgan to'plam ob'ektini tashlab yuboradi va butun to'plam qayta yoziladi. To'g'ri usul ichini o'zgartirish, yaxshisi `addQator` va `removeQator` metodlari orqali ikki tomonni sinxron ushlash. `orphanRemoval = true` bo'lsa, to'plamdan chiqarilgan element bazadan ham o'chadi va buyurtma qatorlari uchun bu aynan kerakli xatti-harakat.
+Ikkinchi tuzoq: to'plamni to'liq almashtirish. `setQatorlar(yangiRoyxat)` Hibernate kuzatayotgan to'plam obyektini tashlab yuboradi va butun to'plam qayta yoziladi. To'g'ri usul ichini o'zgartirish, yaxshisi `addQator` va `removeQator` metodlari orqali ikki tomonni sinxron ushlash. `orphanRemoval = true` bo'lsa, to'plamdan chiqarilgan element bazadan ham o'chadi va buyurtma qatorlari uchun bu aynan kerakli xatti-harakat.
 
 ## 18.7 Identifikator strategiyalari: `IDENTITY`, `SEQUENCE` va batch insert ga ta'siri
 
@@ -226,6 +226,8 @@ List<TolovVazifa> navbatdanOl(@Param("n") int n);
 
 Pessimistik lock da ikki raqamni oldindan belgilash kerak: lock kutish vaqti va tranzaksiya uzunligi. PostgreSQL da `lock_timeout` ni tranzaksiya boshida taxminan 3 sekundga qo'yish xavfsiz amaliyot. Lock ushlab turgan tranzaksiya ichida tashqi HTTP chaqiruv qilish esa jiddiy xato: tashqi servis sekinlashsa, hamma qoldiq yangilash navbatga tizilib qoladi.
 
+Mavzuning to'liq yozuvi [optimistic locking](../patterns/09-malumotlarga-kirish-va-orm-patternlari.md#923-optimistik-oflayn-qulf-optimistic-offline-lock) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 18.9 Hibernate statistikasi va yozilgan SQL ni ko'rish sozlamalari
 
 `spring.jpa.show-sql=true` ni lokalda ham ishlatmaslik kerak: u System.out ga yozadi, parametrlarni ko'rsatmaydi va log tizimidan tashqarida qoladi. To'g'ri sozlama logger lar orqali.
@@ -240,7 +242,7 @@ logging.level.org.hibernate.stat=DEBUG
 spring.jpa.properties.hibernate.session.events.log.LOG_QUERIES_SLOWER_THAN_MS=100
 ```
 
-`generate_statistics` yoqilganda har session tugaganda qisqa hisobot chiqadi: nechta JDBC statement, nechta so'rov, nechta collection fetch, qancha vaqt. Shu raqam N+1 ni ob'ektiv aniqlaydi. Uni production da doimiy yoqmaslik kerak, lekin yuklama va integratsiya testlarida yoqish kerak. Eng foydali qoida: muhim use case uchun so'rov sonini test bilan qotirib qo'yish, ya'ni "buyurtma ro'yxati 3 so'rovdan oshmaydi". Buni qanday yozish [testlash qo'llanmasidagi](../testing/README.md) Spring slice testlari bo'limiga tegishli.
+`generate_statistics` yoqilganda har session tugaganda qisqa hisobot chiqadi: nechta JDBC statement, nechta so'rov, nechta collection fetch, qancha vaqt. Shu raqam N+1 ni obyektiv aniqlaydi. Uni production da doimiy yoqmaslik kerak, lekin yuklama va integratsiya testlarida yoqish kerak. Eng foydali qoida: muhim use case uchun so'rov sonini test bilan qotirib qo'yish, ya'ni "buyurtma ro'yxati 3 so'rovdan oshmaydi". Buni qanday yozish [testlash qo'llanmasidagi](../testing/README.md) Spring slice testlari bo'limiga tegishli.
 
 ## 18.10 Spring Data metod nomlari, `@Query`, `Specification` va ularning chegarasi
 
@@ -265,7 +267,7 @@ Eng muhim chegara shu: JPQL ham, Criteria ham PostgreSQL ning kuchli qismini ifo
 
 ## 18.11 Qachon JPA dan voz kechib `JdbcClient` yoki to'g'ridan-to'g'ri SQL yozish kerak
 
-JPA ning kuchi domen ob'ektining hayot aylanishini boshqarishda: bitta buyurtmani yuklash, tahrirlash, saqlash. Kuchsiz joyi ommaviy o'qish va ommaviy yozish. Spring Framework 6.1 dan beri `JdbcClient` mavjud va shu bo'shliqni toza to'ldiradi: nomli parametrlar, record ga mapping.
+JPA ning kuchi domen obyektining hayot aylanishini boshqarishda: bitta buyurtmani yuklash, tahrirlash, saqlash. Kuchsiz joyi ommaviy o'qish va ommaviy yozish. Spring Framework 6.1 dan beri `JdbcClient` mavjud va shu bo'shliqni toza to'ldiradi: nomli parametrlar, record ga mapping.
 
 ```java
 public List<KunlikTushum> kunlikTushum(LocalDate dan, LocalDate gacha) {
@@ -282,7 +284,7 @@ public List<KunlikTushum> kunlikTushum(LocalDate dan, LocalDate gacha) {
 }
 ```
 
-Qaror mezoni sodda. Natija domen ob'ekti bo'lmasa va o'zgartirilmasa, JPA shart emas. So'rov aniq SQL konstruksiyasiga tayansa, JPA shart emas. Bir operatsiya 10 mingdan ortiq qatorga tegsa, `update ... from` yoki `insert ... on conflict` shaklidagi bitta SQL deyarli har doim entity sikldan tez. Shu paytda ikki narsa esda bo'lsin: bunday SQL persistence context ni bilmaydi, shuning uchun bir tranzaksiyada entity bilan aralashtirmaslik yaxshi, va u keshni ham chetlab o'tadi.
+Qaror mezoni sodda. Natija domen obyekti bo'lmasa va o'zgartirilmasa, JPA shart emas. So'rov aniq SQL konstruksiyasiga tayansa, JPA shart emas. Bir operatsiya 10 mingdan ortiq qatorga tegsa, `update ... from` yoki `insert ... on conflict` shaklidagi bitta SQL deyarli har doim entity sikldan tez. Shu paytda ikki narsa esda bo'lsin: bunday SQL persistence context ni bilmaydi, shuning uchun bir tranzaksiyada entity bilan aralashtirmaslik yaxshi, va u keshni ham chetlab o'tadi.
 
 ## 18.12 Ikkinchi daraja kesh: foydasi va xavfi
 
@@ -308,7 +310,7 @@ Shuning uchun qoida: ikkinchi daraja keshni butun ilovaga yoqmaslik. Faqat sanab
 - [hibernate-orm, `BatchSettings.java` (6.6)](https://raw.githubusercontent.com/hibernate/hibernate-orm/6.6/hibernate-core/src/main/java/org/hibernate/cfg/BatchSettings.java) - `hibernate.jdbc.batch_size` standarti 0, `hibernate.order_inserts` va `hibernate.order_updates` standarti `false`, `hibernate.jdbc.batch_versioned_data` standarti "generally `true`"
 - [Hibernate User Guide, Batching](https://raw.githubusercontent.com/hibernate/hibernate-orm/6.6/documentation/src/main/asciidoc/userguide/chapters/batch/Batching.adoc) - "Hibernate disables insert batching at the JDBC level transparently if you use an identity identifier generator"
 - [Hibernate User Guide, Identifiers](https://raw.githubusercontent.com/hibernate/hibernate-orm/6.6/documentation/src/main/asciidoc/userguide/chapters/domain/identifiers.adoc) - `allocation-size` aynan sequence ning "increment by" si; pooled va pooled-lo optimizerlari shu qiymatga tayanadi
-- [jakartaee/persistence, `SequenceGenerator.java`](https://raw.githubusercontent.com/jakartaee/persistence/master/api/src/main/java/jakarta/persistence/SequenceGenerator.java) - `allocationSize() default 50`
+- [jakartaee/persistence, `SequenceGenerator.java`](https://raw.githubusercontent.com/jakartaee/persistence/3.2-3.2.0-RELEASE/api/src/main/java/jakarta/persistence/SequenceGenerator.java) - `allocationSize() default 50`
 
 ---
 

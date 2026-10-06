@@ -156,11 +156,14 @@ public class ApiExceptionHandler {
 
 ```properties
 # Standart Spring xato javobidan ichki detallarni olib tashlash.
+# Boot 3.x kalitlari; Boot 4 da spring.web.error.include-* (pastga qarang).
 server.error.include-message=never
 server.error.include-stacktrace=never
 server.error.include-binding-errors=never
 server.error.include-exception=false
 ```
+
+Bu to'rt qiymat Boot standarti bilan bir xil, ularni ochiq yozish standartni kimdir profil orqali o'zgartirmasligini hujjatlaydi. Boot 4 da kalitlar `spring.web.error.include-*` ga ko'chgan: [Boot 4.1.0 metadata](https://github.com/spring-projects/spring-boot/blob/v4.1.0/module/spring-boot-web-server/src/main/resources/META-INF/additional-spring-configuration-metadata.json) da `server.error.include-*` uchun `level=error` (4.0.0 dan) va `replacement` yangi kalit. Ya'ni Boot 4 da eski kalit umuman ulanmaydi: standartdan farqli qiymat (masalan dev profilida `include-message=always`) jim e'tiborsiz qoladi, review da kalit nomi Boot versiyasiga solishtiriladi.
 
 ## 20.4 HTTP semantikasi
 
@@ -321,6 +324,8 @@ Web qatlamida idempotentlik ikki joyda kerak: mijoz retry qilganda va foydalanuv
 - Takroriy so'rovga qanday javob qaytadi (bir xil natija, 409 emas, agar tana bir xil bo'lsa).
 - Kalit qancha saqlanadi va kim tozalaydi.
 
+Mavzuning to'liq yozuvi [idempotency](../patterns/07-api-dizayn-patternlari.md#79-idempotentlik-kaliti-idempotency-key) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 20.10 CORS, header va kesh sozlamalari
 
 ```java
@@ -367,7 +372,7 @@ Keshlash header lari uchun review savoli: maxfiy ma'lumot qaytaradigan javobda `
 
 - [ ] Barcha controller metodlarini skanerlab, JPA entity kirish yoki chiqish turi sifatida ishlatilgan joylarni toping.
 - [ ] `@RequestBody` parametrlarida `@Valid` yo'q joylarni va ichki obyektlarda `@Valid` tarqalmagan joylarni aniqlang.
-- [ ] `server.error.include-*` sozlamalarini `never` qilib qo'ying va xato javoblarini `ProblemDetail` ga o'tkazing.
+- [ ] `server.error.include-*` (Boot 4 da `spring.web.error.include-*`) sozlamalarini `never` qilib qo'ying va xato javoblarini `ProblemDetail` ga o'tkazing.
 - [ ] Ro'yxat qaytaradigan endpointlarni sanab, `size` uchun maksimal chegara va barqaror tartib borligini tekshiring.
 - [ ] Chuqur pagination ishlatiladigan joylarni keyset pagination ga o'tkazishni rejalashtiring.
 - [ ] Pul maydonlarining JSON dagi ko'rinishini real javob namunasida tekshirib, satr sifatida yuborishni ko'rib chiqing.

@@ -14,6 +14,8 @@ ALIASES="$IDX/aliases.tsv"
 DOCS="$IDX/docs.tsv"
 RULES="$IDX/rules.tsv"
 CHECKLIST="$IDX/checklist.tsv"
+# Inglizcha-o'zbekcha jadval (find varianti), suggest_sections ham o'qiydi.
+SYNONYMS="$ROOT/tools/synonyms.tsv"
 # build_index.py uni hamma fayldan keyin yozadi, vaqti build boshlangan payt.
 STAMP="$IDX/.stamp"
 
@@ -62,7 +64,8 @@ ensure_index() {
     [ -f "$f" ] || { rebuild; return; }
   done
   if [ -n "$(find "$ROOT/docs" "$ROOT/tools/build_index.py" \
-      \( -name '*.md' -o -name manifest.json -o -name build_index.py \) \
+      \( -name '*.md' -o -name manifest.json -o -name build_index.py \
+         -o -name aliases.tsv -o -name OWNERS.tsv \) \
       -newer "$STAMP" -print -quit)" ]; then
     printf 'indeks eskirgan, qayta yasalmoqda...\n' >&2
     rebuild
@@ -70,6 +73,21 @@ ensure_index() {
 }
 
 # ---------------------------------------------------------------- find
+
+# Ko'p so'zli so'rovda synonyms.tsv [xabar] bloki bo'lagidan biri bor
+# bo'lsagina Python chaqiriladi: har ibora so'rovi (circuit breaker) ~80 ms
+# qo'shimcha to'lamasin. Qo'pol tekshiruv (kichik harf, qism satr): oxirgi
+# so'zni findlib.py o'zi tokenlab hal qiladi, bu yerda faqat prefiltr.
+message_cue() {
+  [ -f "$SYNONYMS" ] || return 1
+  awk -F'\t' -v q="$1" '
+    BEGIN { q = tolower(q) }
+    index($0, "# [xabar]") == 1 { inside = 1; next }
+    index($0, "# [/xabar]") == 1 { inside = 0; next }
+    inside && NF == 2 && substr($0, 1, 1) != "#" && index(q, $1) > 0 { found = 1; exit }
+    END { exit found ? 0 : 1 }
+  ' "$SYNONYMS"
+}
 
 cmd_find() {
   local full=0 limit=$LIMIT_DEFAULT
@@ -98,21 +116,26 @@ cmd_find() {
   for a in 'ʻ' '’' '‘' 'ʼ'; do query="${query//"$a"/$apos}"; done
   [ -n "${query//[[:space:]]/}" ] || die "bo'sh so'rov: doc.sh find [-f] [-n N] [--] <so'rov>"
 
-  # Uch bosqich: inglizcha taxalluslar (eng aniq urinish), bo'lim
-  # sarlavhalari, bob sarlavhalari. Izoh shu yerda, chunki bash 3.2 (macOS
-  # standarti) buyruq o'rnidagi izohni sintaksis deb o'qiydi. Kichik harfga
-  # awk o'tkazadi: bash dagi kengaytmasi bash 4 talab qiladi. Ishora-yozuv
-  # (sections.tsv 9-ustuni) to'liq yozuv raqami bilan belgilanadi.
+  # Nom bo'yicha qidiruv (name_hits), kerak bo'lsa matn ichidan ham.
+  # Izoh shu yerda, chunki bash 3.2 (macOS standarti) buyruq o'rnidagi
+  # izohni sintaksis deb o'qiydi.
+  # Exception nomi yoki xabar bo'lagi (index/exceptions.tsv) natija
+  # boshida: nom Sonar kaliti kabi aniq signal, shuning uchun uni umumiy
+  # nom moslig'i (taxallus, "Lock" ichidagi "ReentrantLock") siqib
+  # chiqarmasin. Python faqat nom (Exception/Error) yoki ko'p so'zli
+  # so'rovda (xabar bo'lagi) chaqiriladi: bir so'zli oddiy qidiruv
+  # tezligi o'zgarmaydi. Python yo'q yoki yiqilsa, avvalgidek.
+  local exc="" py_exc query_has_no_cue=""
+  case "$query" in
+    *[Ee]xception*|*[Ee]rror*) ;;
+    *" "*) message_cue "$query" || query_has_no_cue=1 ;;
+    *) query_has_no_cue=1 ;;
+  esac
+  if [ -z "${query_has_no_cue:-}" ] && py_exc="$(pick_python)"; then
+    exc="$("$py_exc" "$ROOT/tools/findlib.py" --exceptions "$query" 2>/dev/null || true)"
+  fi
   local raw
-  raw="$(
-    awk -F'\t' -v q="$query" 'BEGIN { q = tolower(q) }
-      NR>1 && index(tolower($1), q) { print $2"\t"$4"\t"$1" [taxallus]" }' "$ALIASES"
-    awk -F'\t' -v q="$query" 'BEGIN { q = tolower(q) }
-      NR>1 && index(tolower($4), q) {
-        print $1"\t"$2"\t"$4 ($9 != "" ? " [ishora: "$9"]" : "") }' "$SECTIONS"
-    awk -F'\t' -v q="$query" 'BEGIN { q = tolower(q) }
-      NR>1 && $2 != "" && index(tolower($3), q) { print $1"\t"$2"\t"$3 }' "$CHAPTERS"
-  )"
+  raw="$(name_hits "$query")"
 
   if [ "$full" -eq 1 ]; then
     raw="$raw
@@ -121,6 +144,37 @@ $(fulltext "$query")"
 
   local out
   out="$(printf '%s\n' "$raw" | awk -F'\t' 'NF && !seen[$1"\t"$2]++')"
+
+  # Ibora hech qayerda aynan yo'q, lekin so'zlari bor bo'lishi mumkin:
+  # "optimistic locking" -> 18.8 "Optimistik va pessimistik lock".
+  # Faqat uy-bob topilgan bo'lsa ham shunday: qolgan hujjatlarning nuqtai
+  # nazari so'zlar bo'yicha qo'shiladi. Naqshga to'liq mos uy-bob
+  # birinchi qoladi, qisman mos kelgani (4-ustun `qisman`: "N+1 testda")
+  # so'zlar natijasidan keyin, chunki ortiqcha so'z mavzuni toraytiradi.
+  # Exception topilgan bo'lsa zaxira ishlamaydi: nom aniq signal, so'zlar
+  # bo'yicha qo'shilgan begona bo'limlar uni suyultirardi.
+  # Python topilmasa yoki yiqilsa, avvalgidek "topilmadi".
+  local py extra
+  if [ -z "$exc" ] \
+      && [ -z "$(printf '%s\n' "$out" | cut -f3 | grep -v '\[uy-bob\]$' || true)" ] \
+      && [ "$(printf '%s\n' "$query" | awk '{ print NF }')" -ge 2 ] \
+      && py="$(pick_python)"; then
+    extra="$("$py" "$ROOT/tools/findlib.py" "$query" 2>/dev/null || true)"
+    if [ -n "$extra" ]; then
+      [ -n "$out" ] || printf "ibora topilmadi, so'zlar bo'yicha:\n" >&2
+      out="$( { printf '%s\n' "$out" | awk -F'\t' '$4 != "qisman"'
+                printf '%s\n' "$extra"
+                printf '%s\n' "$out" | awk -F'\t' '$4 == "qisman"'; } \
+              | awk -F'\t' 'NF && !seen[$1"\t"$2]++')"
+    fi
+  fi
+
+  # Exception qatorlari hammadan oldin; ular yuqoridagi so'zlar zaxirasiga
+  # xalaqit bermaydi (xabar bo'lagi bo'yicha topilgan bitta bo'lim butun
+  # so'rovni yopib qo'ymasin).
+  if [ -n "$exc" ]; then
+    out="$(printf '%s\n%s\n' "$exc" "$out" | awk -F'\t' 'NF && !seen[$1"\t"$2]++')"
+  fi
 
   if [ -z "$out" ]; then
     printf 'topilmadi: %s\n' "$query" >&2
@@ -140,6 +194,125 @@ $(fulltext "$query")"
       "$((total - limit))" "$((limit * 3))" >&2
   fi
   printf "> doc.sh show <hujjat> <raqam>\n" >&2
+}
+
+# Nom bo'yicha qidiruv: taxallus, bo'lim va bob sarlavhasi bitta
+# o'tishda. Har mos qatorga daraja beriladi: 4 aniq moslik (taxallus,
+# sarlavha, ikki nuqtagacha qism, qavsdagi nom yoki backtick ichidagi
+# identifikatorning o'zi), 3 butun so'z, 2 so'z boshi, 1 so'z ichida.
+# So'z ichidagi moslik olib tashlanmaydi (find Lock ReentrantLock ni ham
+# topsin), faqat pastga tushadi: "kesh" da Bikeshedding birinchi emas.
+# Bir daraja ichida tartib avvalgidek: taxallus, bo'lim, bob (NR).
+# Kichik harfga awk o'tkazadi: bash dagi kengaytmasi bash 4 talab qiladi.
+# Ishora-yozuv (sections.tsv 9-ustuni) to'liq yozuv raqami bilan belgilanadi.
+# Uy-bob (aliases.tsv kind=uy, docs/OWNERS.tsv dan): alias ustunidagi
+# naqsh so'rovga qo'llanadi. To'liq mos kelsa daraja 5, ya'ni hammadan
+# oldin; qisman mos kelsa 3 va o'sha daraja oxirida: "Idempotent
+# Consumer" taxallusi o'z bo'limini idempotentlik uy-bobidan oldin beradi.
+# Bitta so'zli ASCII so'rovga transliteratsiya varianti (tools/findlib.py
+# translit bilan bir xil) va synonyms.tsv [inglizcha] bloki qo'shiladi:
+# migration -> migratsiya, isolation -> izolyatsiya.
+# Faqat POSIX awk: mawk va macOS awk da regex interval va gawk
+# kengaytmalari yo'q, shuning uchun so'z chegarasi index/substr bilan.
+# awk bloki single-quote ichida, u yerda apostrof ishlatilmaydi.
+name_hits() {
+  local syn="$SYNONYMS" tab
+  tab="$(printf '\t')"
+  [ -f "$syn" ] || syn=/dev/null
+  awk -F'\t' -v q="$1" -v syn="$syn" -v al="$ALIASES" -v se="$SECTIONS" \
+      -v ch="$CHAPTERS" '
+    function wordch(c) { return c != "" && index("abcdefghijklmnopqrstuvwxyz0123456789_", c) > 0 }
+    function tier(s, x,    p, off, b, a, t, best) {
+      best = 0; off = 0
+      while ((p = index(substr(s, off + 1), x)) > 0) {
+        p += off
+        b = (p > 1) ? substr(s, p - 1, 1) : ""
+        a = substr(s, p + length(x), 1)
+        t = wordch(b) ? 1 : (wordch(a) ? 2 : 3)
+        if (t > best) best = t
+        if (best == 3) break
+        off = p
+      }
+      return best
+    }
+    function bare(w) { sub(/^@/, "", w); return w }
+    function exact(s, x,    t, i, j, w, rest) {
+      if (s == x) return 1
+      t = s
+      sub(/^[0-9][0-9.]* /, "", t)
+      if (t == x) return 1
+      i = index(t, ": ")
+      if (i > 1 && substr(t, 1, i - 1) == x) return 1
+      if (match(t, / \([^()]*\)$/)) {
+        if (substr(t, 1, RSTART - 1) == x) return 1
+        if (substr(t, RSTART + 2, RLENGTH - 3) == x) return 1
+      }
+      rest = t
+      while ((i = index(rest, "`")) > 0) {
+        rest = substr(rest, i + 1)
+        j = index(rest, "`")
+        if (j == 0) break
+        w = substr(rest, 1, j - 1)
+        if (w == x || bare(w) == bare(x)) return 1
+        rest = substr(rest, j + 1)
+      }
+      return 0
+    }
+    function score(s,    k, t, best) {
+      s = tolower(s); best = 0
+      for (k = 1; k <= nv; k++) {
+        if (index(s, v[k]) == 0) continue
+        t = exact(s, v[k]) ? 4 : tier(s, v[k])
+        if (t > best) best = t
+      }
+      return best
+    }
+    function emit(t, line) { if (t > 0) print t "\t" NR "\t" line }
+    function owner(re,    t) {
+      if (match(q, "^(" re ")$")) return 5
+      if (match(q, re)) return 3
+      return 0
+    }
+    BEGIN {
+      q = tolower(q); nv = 1; v[1] = q
+      if (q ~ /^[a-z]+$/) {
+        single = 1; t = q
+        gsub(/ction/, "ksiya", t); gsub(/tion/, "tsiya", t); gsub(/sion/, "siya", t)
+        sub(/ic$/, "ik", t); gsub(/c/, "k", t)
+        if (t != q) v[++nv] = t
+      }
+    }
+    FILENAME == syn {
+      if (index($0, "# [inglizcha]") == 1) inside = 1
+      else if (index($0, "# [/inglizcha]") == 1) inside = 0
+      else if (inside && single && $1 == q) {
+        n = split($2, parts, " ")
+        for (i = 1; i <= n; i++) v[++nv] = parts[i]
+      }
+      next
+    }
+    FNR == 1 { next }
+    FILENAME == al && $3 == "uy" {
+      t = owner($1)
+      if (t > uy[$2 "\t" $4]) uy[$2 "\t" $4] = t
+      next
+    }
+    FILENAME == al { emit(score($1), $2 "\t" $4 "\t" $1 " [taxallus]"); next }
+    FILENAME == se {
+      if (($1 "\t" $2) in uy) uytitle[$1 "\t" $2] = $4
+      emit(score($4), $1 "\t" $2 "\t" $4 ($9 != "" ? " [ishora: " $9 "]" : "")); next
+    }
+    FILENAME == ch && $2 != "" {
+      if (($1 "\t" $2) in uy) uytitle[$1 "\t" $2] = $3
+      emit(score($3), $1 "\t" $2 "\t" $3)
+    }
+    END {
+      for (k in uy) if (uy[k] > 0)
+        print uy[k] "\t" (uy[k] == 5 ? 0 : 999999999) "\t" k "\t" uytitle[k] \
+          " [uy-bob]" (uy[k] == 5 ? "" : "\tqisman")
+    }
+  ' "$syn" "$ALIASES" "$SECTIONS" "$CHAPTERS" \
+    | sort -t "$tab" -k1,1nr -k2,2n | cut -f3-
 }
 
 # To'liq matn qidiruvi: topilgan satrni egasi bo'lgan bo'limga bog'laydi.
@@ -284,16 +457,22 @@ cmd_rule() {
 
   # Bo'lim ustuni bo'sh qator: kalit bob muqaddimasidagi katalog jadvalida.
   # Butun bob o'qilmasin, belgi outline ga yo'naltiradi.
-  local out
+  # 7-ustun `qoida`: bo'lim "Qoida: `java:S1192`" bilan boshlanadi, ya'ni
+  # katalogdagi tuzatish retsepti. U birinchi turadi va uchinchi ustunda
+  # ulush o'rniga `qoida` yoziladi, qolgani ulush tartibida (sort -s
+  # barqaror).
+  local out tab
+  tab="$(printf '\t')"
   out="$(awk -F'\t' -v k="$key" '
     FILENAME ~ /sections\.tsv$/ { if (FNR > 1) st[$1"|"$2] = $4; next }
     FILENAME ~ /chapters\.tsv$/ { if (FNR > 1) ch[$1"|"$2] = $3; next }
     FNR > 1 && $1 == k {
       if ($4 != "") { ref = $4; title = st[$2"|"$4] }
       else          { ref = $3; title = ch[$2"|"$3] " [katalog: outline]" }
-      printf "%-11s %-7s %5.2f  %s\n", $2, ref, $6, title
+      share = ($7 + 0) ? "qoida" : sprintf("%5.2f", $6)
+      printf "%d\t%-11s %-7s %5s  %s\n", $7 + 0, $2, ref, share, title
     }
-  ' "$SECTIONS" "$CHAPTERS" "$RULES")"
+  ' "$SECTIONS" "$CHAPTERS" "$RULES" | sort -s -t "$tab" -k1,1nr | cut -f2-)"
 
   if [ -z "$out" ]; then
     printf '%s qo%sllanmada izohlanmagan.\n' "$key" "'" >&2
@@ -315,7 +494,7 @@ cmd_rule() {
   else
     printf '%s\n' "$out"
   fi
-  printf "> doc.sh show <hujjat> <raqam>   (uchinchi ustun: ko'zga tashlanish)\n" >&2
+  printf "> doc.sh show <hujjat> <raqam>   (uchinchi ustun: ko'zga tashlanish yoki qoida)\n" >&2
 }
 
 # Bo'lim yoki bobning tekshiruv punktlari. Korpusda 2000 dan ortiq punkt

@@ -171,6 +171,8 @@ Amaliy mezon: bitta ekranga sig'maydigan va uch darajadan chuqur ichma-ich shart
 
 Muhim nuans: murakkablikni kamaytirish uchun metodni ikkiga bo'lish ko'rsatkichni yaxshilaydi, lekin tushunarlilikni yaxshilamasligi mumkin. Agar ajratilgan metod `part1`, `part2` deb nomlangan bo'lsa, bu ko'rsatkichni aldash. To'g'ri yechim - domen tilidagi nom bilan ajratish yoki shoxlanishni polimorfizm bilan almashtirish ([10-bobga](10-dizayn-pattern-review-i-yoq-patternni-korish.md) qarang).
 
+Mavzuning to'liq yozuvi SonarQube hujjatidagi [cognitive complexity va takrorlanishni kamaytirish](../sonarqube/15-cognitive-complexity-va-takrorlanishni.md#151-cognitive-complexity-qanday-hisoblanadi-ortish-va-chuqurlik-jarimasi) bo'limida; bu yerda faqat diffda ko'rish nuqtai nazari.
+
 ## 5.6 Null yo'lini qo'lda kuzatish
 
 Statik tahlil null ni faqat bitta metod ichida ishonchli kuzatadi. Metoddan metodga o'tgan null uchun annotatsiya kerak. Shu sababli reviewer null ni chegaralarda kuzatadi.
@@ -331,9 +333,19 @@ class ArchitectureRulesTest {
            -Xep:OptionalGetWithoutIsPresent:ERROR
            -Xep:StreamResourceLeak:ERROR</arg>
     </compilerArgs>
+    <!-- Plugin shu yo'ldan yuklanadi, usiz javac "plug-in not found: ErrorProne" deydi -->
+    <annotationProcessorPaths>
+      <path>
+        <groupId>com.google.errorprone</groupId>
+        <artifactId>error_prone_core</artifactId>
+        <version>2.42.0</version>
+      </path>
+    </annotationProcessorPaths>
   </configuration>
 </plugin>
 ```
+
+Bu konfiguratsiya JDK 16+ da yolg'iz ishlamaydi: Error Prone `jdk.compiler` ning yopiq ichki paketlariga murojaat qiladi, shuning uchun loyiha ildizidagi `.mvn/jvm.config` ga `--add-exports` va `--add-opens` qatorlari yoziladi, aks holda build `IllegalAccessError` bilan yiqiladi. To'liq ro'yxat, `<fork>true</fork>` dagi `-J` varianti va JDK talabi [toza kod hujjatidagi kompilyator ogohlantirishlari va Error Prone bo'limida](../clean-code/25-java-kodidagi-umumiy-tuzoqlar.md#2510-kompilyator-ogohlantirishlari--xlint--werror-error-prone-nullaway).
 
 Qoidaga aylantirishning chegarasi ham bor: kontekstga bog'liq qarorni qoida qilib qo'yish shovqin keltiradi va jamoa qoidani o'chirib tashlaydi. Mezon oddiy - agar istisno 10 foizdan ko'p holatda kerak bo'lsa, bu qoida emas, muhokama mavzusi.
 

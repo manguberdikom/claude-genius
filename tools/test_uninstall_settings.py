@@ -21,8 +21,6 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 INSTALL = os.path.join(ROOT, "install")
 TOOL = os.path.join(INSTALL, "uninstall_settings.py")
-sys.path.insert(0, INSTALL)
-import uninstall_settings as U  # noqa: E402
 
 GENIUS = "C:/src/claude-genius"
 PY = "C:/Python312/python.exe"
@@ -38,7 +36,8 @@ def installed():
         "$schema": "https://json.schemastore.org/claude-code-settings.json",
         "env": {"GENIUS_PYTHON": PY, "MENING": "1"},
         "permissions": {
-            "additionalDirectories": [GENIUS, "D:/mening"],
+            "additionalDirectories": [GENIUS + "/docs", GENIUS + "/memory",
+                                      "D:/mening"],
             "allow": ["Bash(%s:*)" % own_cmd("budget.py"),
                       "Bash(bash %s/tools/doc.sh:*)" % GENIUS,
                       "Bash(npm test:*)", "Read"],
@@ -154,6 +153,28 @@ def case_teskari_slash_va_registr():
         return code == 0 and not any("claude-genius" in c for c in commands)
 
 
+def case_ask_deny_va_ichki_papkalar_ketadi():
+    """ask va deny dagi o'z qoidalari, butun klon yozuvi va `<root>/`
+    ostidagi papkalar ham olinadi. Avval faqat allow va ildizning o'zi
+    olinardi, `<root>/docs` qolib ketardi (XV-T-M1). Boshqa klon qoladi."""
+    data = {"permissions": {
+        "additionalDirectories": [GENIUS, GENIUS + "/docs", "C:\\SRC\\Claude-Genius\\memory",
+                                  GENIUS + "-eski/docs", "D:/mening"],
+        "ask": ["Bash(%s tozala:*)" % own_cmd("guruh.py"), "Bash(git push:*)"],
+        "deny": ["Edit(%s/tools/**)" % GENIUS, "Read(~/.ssh/**)"]}}
+    with workdir() as tmp:
+        code, out, path = run(tmp, data)
+        perm = load(path)["permissions"]
+        under = [d for d in perm["additionalDirectories"]
+                 if d.replace("\\", "/").lower().startswith(GENIUS.lower() + "/")
+                 or d == GENIUS]
+        return (code == 0 and under == []
+                and perm["additionalDirectories"] == [GENIUS + "-eski/docs", "D:/mening"]
+                and perm["ask"] == ["Bash(git push:*)"]
+                and perm["deny"] == ["Read(~/.ssh/**)"]
+                and "2 ruxsat" in out and "3 additionalDirectories" in out)
+
+
 def case_mavjud_bolmagan_ildiz():
     """Klon o'chirilgan bo'lsa ham yozuvlar olinadi: yo'l tekshirilmaydi."""
     missing = "C:/yoq/papka/claude-genius"
@@ -182,6 +203,33 @@ def case_bom_oqiladi_bomsiz_yoziladi():
         with open(path, "rb") as handle:
             raw = handle.read()
         return code == 0 and not raw.startswith(b"\xef\xbb\xbf")
+
+
+def case_snapshot_va_klon_ildizlari():
+    """R7.8 XV-Y1: klon va snapshot yo'llari `--root` takroran beriladi: hooklar,
+    ruxsat, docs (snapshot) va memory (klon) yozuvlari, env.GENIUS_CLONE ketadi;
+    boshqa klonning snapshoti va begona yozuv qoladi."""
+    snap = "C:/Users/a/.claude/genius/0123456789ab"
+    boshqa = "C:/Users/a/.claude/genius/ffffffffffff"
+    data = installed()
+    data["env"]["GENIUS_CLONE"] = GENIUS
+    data["hooks"]["UserPromptSubmit"][0]["hooks"] = [
+        {"type": "command", "command": '"%s" "%s/tools/suggest_sections.py"' % (PY, snap)},
+        {"type": "command", "command": '"%s" "%s/tools/budget.py"' % (PY, boshqa)}]
+    data["permissions"]["additionalDirectories"] = [
+        snap + "/docs", GENIUS + "/memory", boshqa + "/docs", "D:/mening"]
+    with workdir() as tmp:
+        path = os.path.join(tmp, "settings.json")
+        write_json(path, data)
+        proc = subprocess.run([sys.executable, TOOL, path, "--root", GENIUS,
+                               "--root", snap, "--yoz"], capture_output=True, text=True)
+        got = load(path)
+        cmds = [h["command"] for gs in got["hooks"].values() for g in gs for h in g["hooks"]]
+        return (proc.returncode == 0
+                and not any(snap in c or GENIUS in c for c in cmds)
+                and any(boshqa in c for c in cmds)
+                and got["permissions"]["additionalDirectories"] == [boshqa + "/docs", "D:/mening"]
+                and got["env"] == {"MENING": "1"})
 
 
 def case_fayl_yoq():
@@ -220,11 +268,14 @@ def case_ikkinchi_yurish_ozgartirmaydi():
 
 
 CASES = [
+    ("snapshot va klon ildizlari (--root takroran)", case_snapshot_va_klon_ildizlari),
     ("o'z yozuvlari ketadi, begonalari qoladi", case_oz_yozuvlari_ketadi),
     ("bo'shab qolgan guruh va hodisa tushadi", case_bosh_guruh_va_hodisa_tushadi),
     ("env bo'sh qolsa env ham tushadi", case_env_bosh_qolsa_tushadi),
     ("`<root>-eski` boshqa klon, tegilmaydi", case_boshqa_klon_tegilmaydi),
     ("teskari slash va katta harfli ildiz", case_teskari_slash_va_registr),
+    ("ask, deny va ildiz ostidagi papkalar ham olinadi",
+     case_ask_deny_va_ichki_papkalar_ketadi),
     ("mavjud bo'lmagan ildiz ham ishlaydi", case_mavjud_bolmagan_ildiz),
     ("quruq yurish faylga tegmaydi", case_quruq_yurish_yozmaydi),
     ("BOM o'qiladi, BOM siz yoziladi", case_bom_oqiladi_bomsiz_yoziladi),

@@ -8,7 +8,274 @@ Hamma o'zgarish bu yerga yozilmaydi. Yoziladigani: foydalanuvchi
 muhitiga tegadigan, ma'lumot yo'qotishi mumkin bo'lgan yoki ruxsat
 qarorini o'zgartiradigan o'zgarish.
 
-## 2026-10-05: Gradle yurishiga init skript: jacoco, XML, kompilyatsiya cache i
+## 2026-10-06: Global o'rnatishda hooklar pin qilingan snapshotdan yuradi, yangilash tasdiq bilan
+
+**Nima o'zgardi.** Hook buyruqlari, `permissions.allow`, `<docs>`
+`additionalDirectories` yozuvi va skill matnidagi `tools/` yo'llari klonning
+ishchi daraxtiga emas, `~/.claude/genius/<sha12>/` ga ishora qiladi. U
+`git worktree add --detach` bilan HEAD commitdan yasaladi (butun daraxt,
+`install/snapshot.py`; `install.py` va `manguberdi.ps1` bir xil joy va bir
+xil buyruqni undan oladi), indeks unda bir marta quriladi. Yoziladigan
+narsa snapshotga emas, klonga ketadi: o'rnatuvchi `settings.json` `env` ga
+`GENIUS_CLONE` yozadi va `geniuslib.clone_root` / `state_dir` shuni
+o'qiydi, faqat ROOT `~/.claude/genius/<12 hex>` bo'lsa (klonning o'zi va
+`.claude/worktrees/genius-x` o'z daraxtiga yozadi). `<klon>/memory` `additionalDirectories` da qoladi. Yangi
+`tools/yangilash.py`: `git fetch`, `git log --oneline` va hookka tegadigan
+yo'llar (`tools install .claude .github`) uchun `git diff --stat`, so'rov
+(`--ha` so'ramaydi, `--faqat-korsat` hech narsa qilmaydi), tasdiqdan
+keyin `merge --ff-only` va o'rnatuvchining mavjud yo'li bilan yangi
+snapshot; eski snapshot bittasi qoladi, qolgani `git worktree remove`
+bilan ketadi. `yangilash.py` ning o'zi ham pin qilingan: snapshotdagi
+nusxa bilan yuradi (klondagi nusxa manifest bor bo'lsa to'xtaydi,
+`--klondan` bilan ataylab), klon manifestdagi `clone` dan olinadi va
+env yoki skript joyi undan farq qilsa xato. O'rnatuvchi o'rnatilgan
+commitdan farqli sha ga o'tayotganda `log --oneline` ro'yxatini
+ko'rsatadi (tasdiqsiz qo'lda yo'l ochiq qoldirilgan, SECURITY.md). `--uninstall` snapshotlarni ham olib tashlaydi (faqat
+`~/.claude/genius/<12 hex>`). `merge_settings.py` va
+`uninstall_settings.py` `--root` ni takroran qabul qiladi (klon va uning
+snapshotlari o'zniki). Klon `.claude/settings.json` (A yo'li) o'zgarmadi.
+
+**Nega.** Audit XV-Y1: hook yo'li klonning `tools/` iga bog'langan edi,
+shuning uchun `main` ga tushgan bitta yomon commit `git pull` dan keyingi
+birinchi promptdayoq, hech kim ko'rmasdan, har Java proyektda
+foydalanuvchi huquqi bilan bajarilardi (34 soatda 40 commit hook
+fayllariga tekkan, tashqi PR 74 daqiqada merge qilingan, tag va imzo yo'q).
+Hook yangilash siyosati (audit 9-bo'lim, 12-savol): faqat tasdiq bilan.
+`<asos>` sifatida klon HEAD emas, hozir ishlayotgan snapshot commiti
+olinadi: aks holda qo'lda `git pull` qilingan commitlar ro'yxatda
+ko'rinmay hookka o'tardi.
+
+**Rad etilgan variantlar.**
+
+- *Faqat `tools/` ni nusxalash.* Rad etildi: asboblar `ROOT` ni `tools/` ning
+  ota papkasidan oladi va `index/`, `docs/`, `GLOSSARY.md`, `.claude/.state`
+  ni shu yerdan o'qiydi, nusxa hooklarni buzardi.
+- *Memory uchun `git checkout origin/main -- memory/`.* Rad etildi: lokal
+  `main` origin dan orqada qolsa push rad etiladi, baribir pull kerak
+  bo'ladi. Memory klonda, push shu yerdan.
+- *`git archive` nusxasi worktree o'rniga.* Rad etildi: git bilan aloqasiz
+  papka o'chirishda `worktree remove` qilmaydi, reestr eskirgan yozuv
+  qoldiradi va doctor commitni solishtira olmaydi. (Archive faqat
+  quruq yurishda, git ga yozmaslik uchun ishlatiladi.)
+- *Barqaror `~/.claude/genius/current` symlinki.* Rad etildi: hook yo'li
+  o'zgarmasa o'zgarish `settings.json` da ko'rinmaydi, almashtirish esa
+  tasdiqsiz bo'lib qolishi mumkin; sha yo'li o'zi tasdiq izi. Narxi: `run_tests.py`
+  opt-in qoidasi har yangilashdan keyin qayta qo'shiladi.
+- *Avtomatik yangilash.* Rad etildi (12-savol qarori: faqat tasdiq bilan).
+- *Klondan yurgan `yangilash.py` ni snapshotdan qayta exec qilish.* Rad
+  etildi: stdin va argumentlarni ko'chirish nozik, to'xtatib yo'lni
+  aytish soddaroq va xavfsizroq.
+- *Ikki klon uchun sha ga klon identifikatori qo'shish (`<sha12>-<klon>`).*
+  Rad etildi: spetsifikatsiya joyi `<sha12>`; boshqa klon yasagan snapshotga
+  `yarat` xato beradi.
+- *`GENIUS_CLONE` o'rniga `GENIUS_STATE_DIR` va `GENIUS_MEMORY_DIR` ni
+  alohida yozish.* Rad etildi: memory yo'li (`umumiy`, `claude-genius`)
+  klondan olinadi, uchta o'zgaruvchi esa har yangilashda uch joyda
+  mos kelishi kerak bo'lardi. `GENIUS_STATE_DIR` baribir ustun.
+
+**Xavf.** Yozuvchilar ro'yxati: holat papkasi (`budget.py`, `state.py`,
+`usage.py` ham `.claude/usage`, `handoff.py`, `hookio.py`, `actor_check.py`,
+`run_tests.py`), memory (`docref.py`, `rules_for.py`, `guard.py` ning git
+tekshiruvi, `handoff.py`), `hookio.active()`. Shulardan biri `ROOT` ga
+tushib qolsa snapshotga yozilardi: `tools/test_yangilash.py` snapshotda
+`.claude/.state`, `usage` va memory yo'qligini tekshiradi. Klon o'chsa
+`GENIUS_CLONE` e'tiborsiz qolib yozuv snapshotga tushadi (doctor
+ogohlantiradi). Snapshot HEAD dan olinadi, commit qilinmagan o'zgarish
+kirmaydi (o'rnatuvchi ogohlantiradi). Ikki klon bir sha da bitta
+snapshotni ulasha olmaydi: ikkinchisining `yarat` i xato beradi. Tasdiq odam o'qishiga tayanadi: `--ha`
+himoyani olib tashlaydi. ps1 va Windows dagi `yangilash.py` yo'li agent
+sessiyasida yurmaydi, faqat CI va matn paritet testlari.
+
+**Qaysi tekshiruv o'tdi.** `tools/test_yangilash.py` 64/64 (o'rnatish
+snapshot yasaydi, `git pull` dan keyin `sha256sum snapshot/tools/*.py`
+o'zgarmaydi, `--faqat-korsat` va rad etish hech narsa o'zgartirmaydi,
+tasdiqda ff-merge va yangi snapshot va settings, eski bittasi qoladi va
+keyingisida tozalanadi, iflos klon, detached HEAD va ajralgan tarixda
+to'xtaydi, memory va holat klonga tushadi, snapshot o'zgartirilgan yoki
+qo'lda o'chirilgan holat), `tools/test_install.py` 126/126 (snapshot,
+paritet snapshot joyi, eski o'rnatishdan o'tish, yetim snapshot,
+`--uninstall`), `tools/test_rewrite_paths.py` 39/39 (ps1 hook yo'li
+snapshotga, `--clone` va `--root-keyin`), `test_merge_settings` 19/19,
+`test_uninstall_settings` 14/14, `test_doctor` 12/12, `test_budget` 40/40,
+`run_all_tests.py` (32 suite), `check_docs.py`, `eval_skill.py`. CI
+`-Uninstall` qadamlari snapshot yozuvi qolmaganini ham tekshiradi.
+
+**Orqaga qaytarish.** Avval joriy kod bilan `python3 install/install.py
+--uninstall --apply` (u snapshot yozuvlari va worktree larni oladi:
+eski kod ularni o'zniki deb tanimaydi), so'ng `git revert` va o'rnatuvchini
+qayta yurgizish: hook yo'llari klonga qaytadi. Faqat shu yangilanishdan
+keyin nimadir buzilsa: o'rnatuvchi zaxirasidagi `.claude--settings.json`
+ni qaytaring, u qoldirilgan eski snapshotga ishora qiladi.
+
+## 2026-10-06: Aktyor javobi SubagentStop hooki bilan tekshiriladi
+
+**Nima o'zgardi.** Yangi `tools/actor_check.py` `SubagentStop` hookiga
+ulandi (`.claude/settings.json` va `install/manguberdi.ps1`, matcher
+siz). Aktyor turi `dasturchi` yoki `test-muhandis` bo'lsa va u kod
+fayliga Edit/Write qilgan bo'lsa, ikki narsa talab qilinadi: javobda
+`run_tests exit=<kod>` qatori va oxirgi tahrirdan keyin `run_tests.py`
+jurnalida (`<holat>/run_tests.jsonl`) tahrirlangan fayl turgan ildiz
+uchun yozuv (guruhda worktree papkasi; `isitish` sanalmaydi). Biri
+bo'lmasa `{"decision": "block", "reason": ...}`: aktyor shu chaqiruv
+ichida davom etadi. Shu bilan PreToolUse budjet matcheri
+`Task|Agent|SendMessage` bo'ldi (PL-CC7 qolgani).
+
+**Nega.** Aktyor ish oxirida test yurgizishi va javob shakli faqat
+matnda yozilgan edi. Test yurgizmay "bajarildi" degan aktyorning xatosi
+partiya oxiridagi to'liq suite gacha ko'rinmasdi, u yerda esa egasining
+budjeti tugagan bo'lishi mumkin (OK-O14). `block` yangi Agent chaqiruvi
+emas, ya'ni budjetga tushmaydi. SendMessage tugagan aktyorni yangi Agent
+chaqiruvisiz qayta yurgizadi, matcher uni ushlamasa budget.py dagi
+SendMessage qismi hech qachon ishga tushmasdi.
+
+**Rad etilgan variantlar.**
+
+- *Matcher `dasturchi|test-muhandis`.* Rad etildi: payloadda
+  `agent_type` bo'lmagan versiyada hook umuman chaqirilmasligi mumkin
+  edi, skript esa turni `agent-<id>.meta.json` va asosiy transkriptdagi
+  oxirgi Agent chaqiruvidan ham oladi. Narxi: har subagent to'xtashida
+  ~40 ms Python.
+- *Budjetni PostToolUseFailure bilan avtomatik qaytarish.* Rad etildi:
+  yomon natija qaytargan aktyor asbob nuqtai nazaridan muvaffaqiyatli,
+  foydalanuvchi to'xtatgan holatni ham qamramaydi; `--tiklash` qo'lda
+  qoladi.
+- *Faqat javob qatorini tekshirish.* Rad etildi: qatorni yozish arzon,
+  jurnal yozuvi esa `run_tests.py` haqiqatan yurganini ko'rsatadi.
+
+**Xavf.** Yolg'on to'siq bitta qo'shimcha navbat narxida:
+`stop_hook_active` bo'lsa hook jim, ikkinchi to'xtash o'tadi. Faqat
+hujjat (`.md`, `.txt`, `.rst`, `.adoc`) tegilgan, tahrir yo'q,
+transkript o'qilmagan yoki `run_tests` "Ta'sirlangan test yo'q" degan
+(jurnalga yozuv tushmaydi) holatlarda jim. `hookio.active()` false
+bo'lsa, ya'ni Java proyekti emas, jim. Jurnal klon holat papkasida:
+`GENIUS_STATE_DIR` hook va aktyor Bash ida bir xil bo'lishi kerak.
+
+**Qaysi tekshiruv o'tdi.** `tools/test_actor_check.py` 31/31 (block,
+o'tish, eski va begona ildiz yozuvi, isitish, worktree ildizi,
+test-muhandis, boshqa aktyor, prefiks, `stop_hook_active`, nofaol,
+hujjat, tahrirsiz, fail-open, maydon zaxiralari, jarayon chegarasi),
+`tools/test_skill.py` (SubagentStop matcheri agent nomi, actor_check
+ulangan, budget matcherida SendMessage), `tools/test_rewrite_paths.py`
+(ps1 paritet), `tools/doctor.py` (yangi `SubagentStop.json` namunasi).
+
+**Orqaga qaytarish.** Ikkala fayldan `SubagentStop` blokini olib
+tashlash (paritet testi ikkalasini birga talab qiladi); `test_skill.py`
+dagi `EVENT_MUST_WIRE` yozuvi ham. Vaqtincha: `GENIUS_HOOKS=off`.
+
+## 2026-10-06: Guruh joriy holatdan, worktree loyiha ichida
+
+**Nima o'zgardi.** `guruh.py yarat` asos sifatida HEAD o'rniga joriy
+holatning vaqtinchalik commitini oladi: alohida `GIT_INDEX_FILE` (asosiy
+indeks nusxasi) bilan `git add -A`, `write-tree`, `commit-tree <tree> -p
+HEAD`. Asosiy branch, indeks va ishchi daraxt o'zgarmaydi; daraxt HEAD
+niki bilan bir xil bo'lsa HEAD ning o'zi asos. Iflos daraxt endi rad
+etilmaydi. Sukut worktree joyi `<root>/.claude/worktrees/genius-<id>`;
+`yarat` birinchi marta `<git-common-dir>/info/exclude` ga
+`.claude/worktrees/` qatorini qo'shadi. `GENIUS_GURUH_DIR` berilsa eski
+`<papka>/<repo>.guruh-<id>` nomi. `birlashtir` qo'llagan fayllarini holat
+faylida `files` sifatida saqlaydi, `royxat --fayllar` har guruh ostida
+fayllarini beradi. `parallel.md` tartibi: birlashtir, to'liq suite
+(fonda), egani `royxat --fayllar` bo'yicha topish, keyin tozala.
+
+**Nega.** Rejalashtiruvchi REJA.md ni commit qilmaydi va birlashtirish
+commit qilmaydi, ya'ni L zanjirida va har ikkinchi partiyada daraxt
+iflos edi va `yarat` rad etardi: parallel rejim amalda hech qachon
+yoqilmasdi (OK-T-K4). Qo'shni papkadagi worktree ga Edit va Write
+ishchi papkadan tashqarida, Claude Code ruxsat so'raydi va "savolsiz
+zanjir" to'xtaydi (OK-O13). `royxat` fayl nomini bermasdi, yiqilgan
+testni guruhga bog'lab bo'lmasdi (OK-T-K1).
+
+**Rad etilgan variantlar.**
+
+- *`.gitignore` ga `.claude/worktrees/`.* Rad etildi: proyekt faylini
+  o'zgartirish daraxtni o'zi iflos qiladi va foydalanuvchi reposiga
+  tushadi. `info/exclude` lokal va commit qilinmaydi.
+- *Asosiy daraxtda `git stash` yoki vaqtinchalik commit.* Rad etildi:
+  foydalanuvchi branchi va stash steki o'zgaradi, parallel sessiyalar
+  bilan to'qnashadi.
+- *`additionalDirectories` ga qo'shni papka.* Rad etildi: o'rnatuvchi va
+  har proyekt sozlamasiga tegadi, loyiha ichidagi joy bunga hojat
+  qoldirmaydi.
+
+**Xavf.** Vaqtinchalik commit `genius/<id>` branchida; `tozala` dan
+keyin u yetim va `git gc` uni oladi. Asosiy daraxtda untracked bo'lgan
+faylni guruh o'zgartirsa `apply --index` uni qo'llay olmaydi va kesishish
+deb aytadi (`--3way` yo'li). Katta repoda `add -A` asosiy indeks
+nusxasidan boshlanadi, shuning uchun faqat o'zgargan fayllar xeshlanadi.
+Ichki worktree papkasini `.claude/worktrees/` ni bilmaydigan boshqa
+vosita (masalan IDE indeksi) ko'rishi mumkin.
+
+**Qaysi tekshiruv o'tdi.** `tools/test_guruh.py` 29/29, yangi: untracked
+REJA.md va commit qilinmagan tahrir bilan `yarat` (asosiy HEAD va indeks
+o'zgarmaydi), birlashtirilgan partiyadan keyingi ikkinchi partiya, ikki
+guruh ichki papkada (`info/exclude` bir marta, `.gitignore` yo'q),
+`royxat --fayllar`.
+
+**Orqaga qaytarish.** `git revert`. Vaqtincha eski joy:
+`GENIUS_GURUH_DIR=<repo ota papkasi>`.
+
+## 2026-10-06: Boshqa proyekt memorysi klondan tashqarida, handoff lokal
+
+**Nima o'zgardi.** Global o'rnatishda (joriy proyekt klonning o'zi
+bo'lmasa) proyekt memorysi `GENIUS_MEMORY_DIR` da, sukut bo'yicha
+`~/.claude/genius-memory/<slug>/`, push siz. Klonga faqat
+`memory/umumiy/` va `memory/claude-genius/` yoziladi. Joyni
+`docref.memory_dir` hal qiladi, `rules_for.past_mistakes` va `handoff`
+shu funksiyani ishlatadi. `guard.py`: klondagi begona `memory/<slug>/`
+ga tegadigan `git add` yoki `git commit` (`add -A`, `add .`,
+`commit -a` ham, klonda begona papka bo'lsa) `ask`. `handoff.py
+--prompt` fakt qismini o'zi yig'adi (`git diff --stat HEAD`, git da yo'q
+fayllar, REJA.md `[x]` va `[ ]`); `--vazifa <nom>` topshiriqni lokal
+sessiyada `.claude/.state/handoff/<nom>.md` ga git siz yozadi, bulut
+sessiyasida (`CLAUDE_CODE_REMOTE`) proyekt memorysiga. `--memory` ikki
+indeksni bitta chaqiruvda beradi, manguberdi uni ish boshida o'qiydi.
+`memory/README.md` dagi git buyruqlari `git -C <memory ildizi>` bilan.
+Mayda: handoff holati `GENIUS_STATE_DIR` ni hurmat qiladi, tmp nomida
+pid; `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` chegarani siqish nuqtasiga
+tushiradi.
+
+**Nega.** Klon ochiq GitHub repo, global o'rnatishda esa hamma Java
+proyekt shu klonni ishlatadi. Eski qoida topshiriqning Maqsad, Qarorlar
+maydonlarini `memory/<proyekt-slug>/` ga yozib push qilardi: xususiy
+proyekt nomi, qarorlari va fayl yo'llari ochiq tarixga tushardi va
+o'chirish qimmat (JR-J6, OC-K4, OK-T-K3, XV-Y3). Git buyruqlari `-C`
+siz edi, ya'ni ish proyektida yurardi (OC-T-Q2). Handoff har uzatishda
+memory fayl, indeks, commit, push va o'chirishga 4-6 navbat sarflardi
+(OK-O17).
+
+**Rad etilgan variantlar.**
+
+- *`.gitignore` da `memory/*/`.* Rad etildi: yozuv jim lokal qolardi,
+  foydalanuvchi buni bilmasdi, `umumiy/` uchun istisno ham mo'rt.
+- *Proyekt memorysini proyektning o'zida (`<proyekt>/.claude/memory/`)
+  saqlash.* Rad etildi: u proyekt reposiga tushishi mumkin, jamoa
+  reposida esa shaxsiy eslatma begona.
+- *Push ni butunlay olib tashlash.* Rad etildi: cloud sessiyasida klon
+  memorysi yo'qolardi. Push klondagi ikki papka uchun qoladi.
+- *Handoff ni har doim memoryga yozish.* Rad etildi: bu bir martalik
+  vazifa tafsiloti, memory darvozasining 1-savoliga zid.
+
+**Xavf.** Ma'lumot joyi o'zgaradi. Oldin klonda `memory/<slug>/` bo'lsa,
+endi u boshqa proyektdan o'qilmaydi: uni qo'lda
+`~/.claude/genius-memory/` ga ko'chirish kerak. Bulut sessiyasida
+`GENIUS_MEMORY_DIR` git da bo'lmasa yozuv konteyner bilan yo'qoladi,
+asbob buni aytadi. `GENIUS_MEMORY_DIR` dagi topic faylni Read bilan
+ochish ruxsat so'rashi mumkin (`additionalDirectories` da emas).
+Guard to'sig'i odatga qarshi: `bash -c` ichini ko'rmaydi.
+
+**Qaysi tekshiruv o'tdi.** `tools/test_handoff.py` 29/29 (8 yangi:
+PCT, GENIUS_STATE_DIR va pid, fakt qismi, lokal va bulut topshirig'i,
+memory joyi), `tools/test_rules_for.py` 84/84 (GENIUS_MEMORY_DIR),
+`tools/test_guard.py` 209/209 (begona slug `add` va `commit` -> `ask`,
+umumiy va claude-genius -> o'tadi). O'rnatilgan `manguberdi` skill
+matnida `<klon>/memory/<proyekt-slug>` yo'q (`rewrite_paths` bilan
+sinaldi). Aktyor fayli `rejalashtiruvchi.md` dagi o'qish qatori bu
+o'zgarishga kirmadi.
+
+**Orqaga qaytarish.** `git revert`. Vaqtincha: `GENIUS_MEMORY_DIR` ni
+`<klon>/memory` ga qo'yish eski joyni qaytaradi (push qoidasisiz).
+
+## 2026-10-05: Gradle yurishiga init skript: jacoco, XML, kompilyatsiya keshi
 
 **Nima o'zgardi.** `run_tests.py` har Gradle buyrug'iga `-I <init skript>`
 qo'shadi. Skript build fayllariga tegmaydi va faqat shu yurishga ta'sir
@@ -502,3 +769,89 @@ ga o'tdi, 21 ta `deny` bo'lib qoldi). Mezonlar qo'lda tekshirildi:
 **Orqaga qaytarish.** `git revert`. Qarorni qaytarish uchun `ask()`
 chaqiruvlarini `deny()` ga almashtirish ham yetadi, lekin unda `COST_OK`
 ham qaytarilishi kerak, aks holda yo'l butunlay yopiladi.
+
+## 2026-10-06: Hook xatosi jim o'tmaydi: `|| exit 0` o'rniga `|| exit 1`
+
+**Nima o'zgardi.** `.claude/settings.json` va `install/manguberdi.ps1`
+dagi yetti hook buyrug'ining oxiri ` || exit 0` dan ` || exit 1` ga
+almashdi. "Hooklar faqat Java proyektida va klonda ishlaydi" yozuvidagi
+qolgan qism (`active()`, `GENIUS_HOOKS=off`) o'zgarmaydi.
+
+**Nega.** `|| exit 0` hook ishga tushmaganini butunlay yashirardi: klon
+ko'chsa, Python almashsa yoki import xatosi bo'lsa guard, budget,
+check_code va usage birga jim o'chardi, foydalanuvchi esa himoya bor deb
+ishlardi. Claude Code 0 dagi stderr ni ko'p eventlarda faqat debug logga
+yozadi. 2 dan boshqa nol bo'lmagan kod to'smaydi, lekin transkriptda
+"hook error" bo'lib ko'rinadi (PL-CC11). Avvalgi yozuvdagi asos, ya'ni
+Python ning "can't open file" kodi 2 to'siq bo'lmasin, 1 bilan ham
+saqlanadi.
+
+**Rad etilgan variantlar.**
+
+- *`hookio` ichida `run_hook` o'rami va xato logi.* Rad etildi: skript
+  umuman ishga tushmasa (yo'l yo'q, Python yo'q) o'ram ham yurmaydi, ya'ni
+  aynan shu holatni ushlay olmaydi; uchta faylga tegadi.
+- *`|| exit 0` ni qoldirib, faqat `doctor` tekshiruvi.* Rad etildi:
+  tekshiruv qo'lda yurgiziladi, xato esa har sessiyada ko'rinishi kerak.
+
+**Xavf.** Hook xulqi. O'chgan yoki ko'chgan klon endi har chaqiruvda
+"hook error" xabarini beradi (to'smaydi). Hookning o'zi kutilmagan
+istisno bilan yiqilsa Python 1 qaytaradi va bu ham ko'rinadi; ichida
+istisnoni ushlab 0 qaytaradigan hooklar (`suggest_sections`, `handoff`)
+avvalgidek jim. To'siq faqat JSON orqali beriladi: hook rejimida hamma
+skript 0 qaytaradi, shuning uchun normal ishda xabar chiqmaydi.
+
+**Qaysi tekshiruv o'tdi.** `tools/test_rewrite_paths.py` (ps1 va
+settings.json hook jadvali paritet holati bilan), `tools/test_skill.py`.
+Qo'lda: `CLAUDE_PROJECT_DIR=/yoq` bilan `settings.json` dagi yetti
+buyruqning har biri rc=1 va bo'sh stdout.
+
+**Orqaga qaytarish.** `git revert`, yoki ikkala fayldagi ` || exit 1` ni
+` || exit 0` ga qaytarish (paritet testi ikkalasini birga talab qiladi).
+Global o'rnatishda `-Update` eski buyruqni yo'l bo'yicha almashtiradi.
+
+## 2026-10-06: guard o'qishni o'lchaydi, yagona clean va budjet tiklash so'raladi
+
+**Nima o'zgardi.** `tools/guard.py`:
+
+- Bash va PowerShell dagi o'qish bayt bilan o'lchanadi, Read dagi
+  `slice_bytes` kabi: `head -n N`, `head -c N`, `tail -n +K`,
+  `sed -n 'A,Bp'`, `awk 'NR>=A && NR<=B'`, `Get-Content -TotalCount N`.
+  `grep ''`, `awk '1'`, `sed ''`, `sed -n p` butun fayl. Quvurda oxirgi
+  bosqich hal qiladi: `cat BIG | wc -l`, `| head`, `| grep naqsh`,
+  `| tail -n N`, `| Select-Object -First N` va `> fayl` o'tadi. Bitta
+  chaqiruvdagi bo'laklar qo'shiladi (HK-H3).
+- Yagona vazifa sifatidagi `clean` (`./gradlew clean`, `mvn clean`)
+  `deny` emas `ask`. Test sharti undan oldin tekshiriladi, shuning uchun
+  `mvn clean install`, `./gradlew clean test` va `clean build` `deny`
+  qoladi. `clean` boshqa vazifa bilan birga ham `deny` (HK-H12).
+- `budget.py --tiklash` asosiy oqimda `ask`, subagentda `deny`.
+  `--holat` va `--yangi-vazifa` erkin (XV-O3).
+- Tekshiruv tartibi: avval hamma `deny`, keyin `ask`. Ruxsat berilgan
+  so'rov endi shu buyruqdagi to'liq suite yoki katta o'qishni ochmaydi.
+
+**Nega.** O'qish to'sig'i tasodifiy edi: `sed -n '1,400p' BIG` 54 KB
+o'tardi, `cat BIG | head -40` esa to'silardi va butun zanjirli buyruq
+qayta yuborilardi. `./gradlew clean` foydalanuvchi aniq so'raganda ham
+bajarilmasdi, lekin umumiy `ask` `mvn clean install` ni ham ochardi
+(tekshiruvchi varianti). `--tiklash` chegarani bitta buyruq bilan
+ochardi.
+
+**Rad etilgan variantlar.**
+
+- *`clean` ni umumiy `ask`.* Rad etildi: yuqoridagi sabab.
+- *Satr soni bilan o'lchash.* Rad etildi: zich bobda 300 satr 40 KB.
+- *`--yangi-vazifa` ni ham `ask`.* Rad etildi: SKILL.md dagi qonuniy
+  oqim zanjir o'rtasida to'xtardi.
+
+**Xavf.** Ruxsat qarori. Oddiy `grep naqsh` va `sed -n '/re/p'` filtr
+deb o'tadi: natija katta bo'lishi mumkin, lekin bu avval ham shunday
+edi. Noma'lum buyruq (`sort`, `tee`) oqimni kesmaydi deb olinadi, ya'ni
+`cat BIG | sort` avvalgidek `deny`.
+
+**Qaysi tekshiruv o'tdi.** `tools/test_guard.py` 272/272: 31 yangi
+o'lchov va quvur holati, Read va Bash ning chegaraning ikki yonida bir
+xil qarori, 8 clean, 8 budjet holati, yangi regexlar 10 KB patologik
+kirishda 0.2 s dan tez.
+
+**Orqaga qaytarish.** `git revert`.

@@ -9,6 +9,8 @@ sodir bo'lishining mexanikasi, va shu bilimdan qanday qaror chiqarish.
 
 **Versiya bazasi:** Java 21 LTS (pol: 17, Java 25 eslatmalari bilan), Spring Boot 3.2-3.5 (4.0 eslatmalari bilan), PostgreSQL 16+ (15-18 havolalari bilan), JUnit 5.
 
+> Holat: 39 bobdan 0 tasi odam tekshirgan, 1 tasi tekshirilmoqda, qolgan 38 tasi AI yozgan va inson tekshirmagan. Har bob holati: [docs/review.tsv](../review.tsv).
+
 ## Mundarija
 
 ### I. Fikrlash va qarorlar

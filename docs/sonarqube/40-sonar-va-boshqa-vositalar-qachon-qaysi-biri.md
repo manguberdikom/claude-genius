@@ -165,6 +165,8 @@ NullAway esa Error Prone ustida ishlaydigan tekshiruv. U `@Nullable` annotatsiya
 </plugin>
 ```
 
+JDK 16+ da bu blokning o'zi yetmaydi: Error Prone `jdk.compiler` ning yopiq ichki paketlariga murojaat qiladi va `.mvn/jvm.config` dagi `--add-exports`/`--add-opens` qatorlarisiz build `IllegalAccessError` bilan yiqiladi. Qatorlar ro'yxati, fork rejimidagi `-J` varianti va Error Prone ning JDK talabi [toza kod hujjatidagi kompilyator ogohlantirishlari va Error Prone bo'limida](../clean-code/25-java-kodidagi-umumiy-tuzoqlar.md#2510-kompilyator-ogohlantirishlari--xlint--werror-error-prone-nullaway).
+
 To'lov servisidagi tipik holat: repository `Optional` emas, `null` qaytaradi, chaqiruvchi esa darhol metod chaqiradi. Sonar bunda ba'zan jim qoladi, chunki `null` boshqa klassdan keladi. NullAway uchun bu kompilyatsiya xatosi, chunki `@Nullable` qaytish tipi tekshirilmagan. Tuzatish: `Optional<Payment>` ga o'tish yoki `null` ni tekshirib, domen xatosini tashlash.
 
 Joriy qilish strategiyasi muhim. Hamma tekshiruvni darhol `ERROR` qilsangiz loyiha kompilyatsiya bo'lmaydi. Avval `-Xep:AllChecks:WARN` bilan ko'ring, keyin eng qimmat besh-o'n tekshiruvni `ERROR` ga ko'taring.
@@ -203,6 +205,8 @@ class ArchitectureRulesTest {
 Ikkinchi masala: takrorlanish. ArchUnit bilan "`System.out` ishlatilmasin" degan qoidani yozish mumkin, lekin bu Sonar da allaqachon bor. Ikki joyda bir xil qoida bo'lsa, bittasi eskiradi va ikkisi bir biriga zid gapiradi. Taqsimot aniq bo'lsin: paket bog'liqligi, qatlam, nomlash va annotatsiya mavjudligi ArchUnit da; kod ichidagi mantiq va xavfsizlik Sonar da.
 
 Uchinchi masala: coverage. ArchUnit testlari JaCoCo hisobotiga tushadi va coverage raqamini oshiradi, lekin biznes mantiqni sinamaydi. Coverage pastligini ArchUnit testlari bilan "tuzatsangiz", quality gate o'tadi, sifat esa joyida qoladi.
+
+Mavzuning to'liq yozuvi testlash qo'llanmasidagi [arxitektura testlari va kod sifati darvozalari](../testing/14-arxitektura-testlari-va-kod-sifati.md#142-archunit-asoslari) bo'limida; bu yerda faqat Sonar qoidasi nuqtai nazari.
 
 ## 40.6 Semgrep va shunga o'xshash qoida yozish vositalari
 

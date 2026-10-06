@@ -243,7 +243,7 @@ assertThat(order.total())
 | --- | --- |
 | Testdagi mantiq (`if`, sikl) | Test o'zi xato bo'lishi mumkin |
 | Kutilgan qiymatni hisoblash | Kod bilan bir xil xatoni takrorlaydi |
-| Bitta testda ko'p stsenariy | Yiqilganda joy noaniq |
+| Bitta testda ko'p ssenariy | Yiqilganda joy noaniq |
 | Tasodifiy ma'lumot (seed siz) | Takrorlanmaydigan yiqilish |
 | `@Disabled` izohsiz | Abadiy o'chirilgan test |
 | `try/catch` bilan istisnoni yutish | Test har doim o'tadi |
@@ -285,9 +285,9 @@ done | sort -rn | head -15
 # Spring kontekst necha marta qurilgan (eng katta sekinlik manbasi).
 grep -rc 'Starting .*Test' target/surefire-reports/*.txt 2>/dev/null | head
 
-# Review izohi: har xil @MockBean kombinatsiyasi YANGI kontekst yaratadi.
+# Review izohi: har xil @MockitoBean kombinatsiyasi YANGI kontekst yaratadi.
 # 20 xil kombinatsiya = 20 kontekst = 20 x ishga tushish vaqti.
-# Yechim: @MockBean larni umumiy bazaviy klassga yig'ish.
+# Yechim: @MockitoBean larni umumiy bazaviy klassga yig'ish.
 ```
 
 | Test turi | Maqbul vaqt | Chegara |

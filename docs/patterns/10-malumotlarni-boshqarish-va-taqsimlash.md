@@ -7,7 +7,7 @@
 # 10. Ma'lumotlarni boshqarish va taqsimlash patternlari (Data Management & Distribution Patterns)
 
 <details>
-<summary>Bu bo'limdagi 32 bo'lim</summary>
+<summary>Bu bobdagi 32 bo'lim</summary>
 
 - [10.1 Yumshoq o'chirish (Soft Delete)](#101-yumshoq-ochirish-soft-delete)
 - [10.2 Audit izi / Auditlash (Audit Trail / Auditing)](#102-audit-izi--auditlash-audit-trail--auditing)
@@ -52,7 +52,7 @@ Ma'lumotlarni boshqarish va taqsimlash patternlari ma'lumotning hayot davri - ya
 
 **Tavsif:** Yozuvni jadvaldan jismoniy `DELETE` qilish o'rniga uni `deleted`/`deleted_at` kabi flag bilan belgilab, barcha o'qish so'rovlarida filtrlab chiqarib tashlash. Bu ma'lumotni tiklash imkonini beradi, foreign key'lar va tarixiy hisobotlar buzilmaydi, "kim nimani o'chirdi" savoliga javob qoladi. Buning narxi - har bir so'rovga qo'shimcha predikat va "o'lik" qatorlarning to'planishi.
 
-**Spring'da qayerda uchraydi:** Hibernate 6.4+ dagi `@SoftDelete` annotatsiyasi (entity yoki field ustida, `SoftDeleteType.DELETED`/`ACTIVE`, `converter` bilan), yoki klassik yondashuv - `@SQLDelete(sql = "update ... set deleted = true where id = ?")` plus `@SQLRestriction("deleted = false")` (ilgari `@Where`, Hibernate 6.3'dan deprecated). Spring Data JPA tomonida `deleteById` ni override qilish yoki repository'da `findAllByDeletedFalse` / `@Query` bilan aniq filtr. Multi-tenant yoki global filtr kerak bo'lsa Hibernate `@FilterDef`/`@Filter` va `Session#enableFilter` ishlatiladi. Spring Modulith / event'lar bilan birga `ApplicationEventPublisher` orqali `EntityDeletedEvent` chiqarish keng tarqalgan.
+**Spring'da qayerda uchraydi:** Hibernate 6.4+ dagi `@SoftDelete` annotatsiyasi (entity yoki field ustida, `SoftDeleteType.DELETED`/`ACTIVE`, `converter` bilan), yoki klassik yondashuv - `@SQLDelete(sql = "update ... set deleted = true where id = ?")` plus `@SQLRestriction("deleted = false")` (ilgari `@Where`, Hibernate 6.3'dan deprecated va 7.0 da olib tashlangan). Spring Data JPA tomonida `deleteById` ni override qilish yoki repository'da `findAllByDeletedFalse` / `@Query` bilan aniq filtr. Multi-tenant yoki global filtr kerak bo'lsa Hibernate `@FilterDef`/`@Filter` va `Session#enableFilter` ishlatiladi. Spring Modulith / event'lar bilan birga `ApplicationEventPublisher` orqali `EntityDeletedEvent` chiqarish keng tarqalgan.
 
 **Qo'llanish keyslari:**
 - Foydalanuvchi akkauntini "deaktivatsiya" qilish, 30 kunlik tiklash oynasi bilan.
@@ -503,6 +503,8 @@ CREATE TABLE inbox (
 -- Eski yozuvlar muntazam tozalanadi (handled_at bo'yicha).
 ```
 
+Mavzuning to'liq yozuvi [idempotency](07-api-dizayn-patternlari.md#79-idempotentlik-kaliti-idempotency-key) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 10.16 Ma'lumot o'zgarishini ushlash (Change Data Capture / Debezium)
 
 **Tavsif:** Ilova kodini o'zgartirmasdan, ma'lumotlar bazasidagi har bir INSERT/UPDATE/DELETE ni event oqimiga aylantiradi. Debezium bazaning tranzaksion log'ini (PostgreSQL logical replication slot va WAL, MySQL binlog, MongoDB oplog, Oracle LogMiner) o'qiydi va o'zgarishlarni Kafka topic'lariga `before`/`after` tasvirlari bilan yuboradi. Bu polling'ga qaraganda arzon va ishonchli: bazaga qo'shimcha query yuklanmaydi, o'chirishlar ham ko'rinadi, tartib tranzaksion log tartibida saqlanadi. Odatda legacy bazadan event-driven dunyoga ko'prik yoki read model'ni yangilash uchun ishlatiladi.
@@ -881,7 +883,7 @@ public class EncryptedStringConverter implements AttributeConverter<String, Stri
 - Mobil ilova uchun feed/listing endpoint'larini replikadan xizmat qilish.
 - Ko'p regionli deploy'da foydalanuvchiga eng yaqin replikadan o'qib, latency'ni kamaytirish.
 
-**Ehtiyot bo'ling:** "Write-then-read" senariysi (yozgandan keyin darhol o'qish) replikatsiya lag'i sababli eski ma'lumot qaytaradi - bunday oqimlarda majburan primary'dan o'qing yoki read-your-writes uchun sticky routing qo'llang. `@Transactional(readOnly = true)` ni faqat optimizatsiya deb o'ylab qo'yish xavfli: routing sozlanmagan bo'lsa u hech narsani ajratmaydi, sozlangan bo'lsa esa kutilmaganda yozuvni `SQLException` bilan yiqitadi.
+**Ehtiyot bo'ling:** "Write-then-read" ssenariysi (yozgandan keyin darhol o'qish) replikatsiya lag'i sababli eski ma'lumot qaytaradi - bunday oqimlarda majburan primary'dan o'qing yoki read-your-writes uchun sticky routing qo'llang. `@Transactional(readOnly = true)` ni faqat optimizatsiya deb o'ylab qo'yish xavfli: routing sozlanmagan bo'lsa u hech narsani ajratmaydi, sozlangan bo'lsa esa kutilmaganda yozuvni `SQLException` bilan yiqitadi.
 
 ```java
 // O'qish replika'ga, yozish primary'ga
@@ -962,6 +964,8 @@ CREATE TABLE idempotency_keys (
 -- request_hash: bir xil kalit bilan boshqa tana kelsa 422 qaytarish uchun.
 -- created_at bo'yicha eski kalitlar tozalanadi.
 ```
+
+Mavzuning to'liq yozuvi shu hujjatdagi [idempotentlik kaliti](07-api-dizayn-patternlari.md#79-idempotentlik-kaliti-idempotency-key) bo'limida; bu yerda faqat pattern katalogi nuqtai nazari.
 
 ## 10.31 Dual Write muammosi (Dual Write Problem)
 

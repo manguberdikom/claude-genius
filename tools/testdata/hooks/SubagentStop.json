@@ -1,0 +1,12 @@
+{
+  "session_id": "doctor-namuna",
+  "transcript_path": "${HOOKS_DIR}/transcript.jsonl",
+  "cwd": "${CLAUDE_PROJECT_DIR}",
+  "permission_mode": "default",
+  "hook_event_name": "SubagentStop",
+  "stop_hook_active": false,
+  "agent_id": "doctor-agent",
+  "agent_type": "dasturchi",
+  "agent_transcript_path": "${HOOKS_DIR}/transcript.jsonl",
+  "last_assistant_message": "O'zgarish: namuna\nTestlar: run_tests exit=0, 1 sinf"
+}

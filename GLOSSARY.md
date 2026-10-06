@@ -58,9 +58,9 @@ kalitlari hech qachon tarjima qilinmaydi - `@Transactional`, `HikariCP`,
 | fabrika | factory |
 | hodisa | event |
 | holat | state |
-| hayot tsikli | lifecycle |
-| in'ektsiya | injection |
+| hayot sikli | lifecycle |
 | indeks | index |
+| inyeksiya | injection |
 | izchillik | consistency |
 | izolyatsiya darajasi | isolation level |
 | jadval | table |

@@ -173,7 +173,7 @@ class StockServiceTest {
 }
 ```
 
-Spring kontekstidagi varianti ham bor: `@MockBean` yoki `@SpyBean` orqali sozlangan stub kontekst keshida qoladi va keyingi test klassiga o'tadi. Sonar bunga qoida bermaydi, lekin `@DirtiesContext` ning ko'payishi loyihada muammo borligini bildiradi. Bu holatda arxitektura darajasidagi qarorni [testlash qo'llanmasidagi](../testing/README.md) test izolyatsiyasi mavzusidan oling.
+Spring kontekstidagi varianti ham bor: `@MockitoBean` yoki `@MockitoSpyBean` orqali sozlangan stub kontekst keshida qoladi va keyingi test klassiga o'tadi. Sonar bunga qoida bermaydi, lekin `@DirtiesContext` ning ko'payishi loyihada muammo borligini bildiradi. Bu holatda arxitektura darajasidagi qarorni [testlash qo'llanmasidagi](../testing/README.md) test izolyatsiyasi mavzusidan oling.
 
 ## 19.6 Juda ko'p mock va haddan tashqari bog'langan test
 
@@ -259,6 +259,8 @@ void shouldAddVatToLineTotalForTwoUnits() {
 ```
 
 Testda hardcoded ma'lumotning yana bir turi Sonar'ni chindan ham qo'zg'atadi: `java:S2068`, kodga yozilgan parol. Test resource'laridagi `spring.datasource.password=test` qatori security hotspot sifatida chiqadi. Buni fayl bo'yicha exclude qilmang, aniq qoida va aniq yo'l bo'yicha `issue.ignore` yozib, sababini izohda qoldiring.
+
+Mavzuning to'liq yozuvi [magic number](../patterns/25-anti-patternlar.md#258-sehrli-sonlar-va-satrlar-magic-numbers--strings) bo'limida; son va pul qiymatlari toza kod hujjatidagi [primitiv, son va pul](../clean-code/20-primitiv-son-va-pul.md) bobida ham bor; bu yerda faqat Sonar qoidasi nuqtai nazari.
 
 ## 19.10 Test fayllarini Sonar uchun to'g'ri belgilash (`sonar.tests`)
 

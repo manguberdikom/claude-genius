@@ -76,7 +76,8 @@ HttpRequest req = HttpRequest.newBuilder(URI.create(baseUrl + "/payments"))
 ```
 
 ```properties
-# Spring Boot 3.4+ markazlashgan HTTP client sozlamasi
+# Spring Boot 3.4-3.5 markazlashgan HTTP client sozlamasi
+# (Boot 4 da: spring.http.clients.imperative.factory, spring.http.clients.*)
 spring.http.client.factory=jdk
 spring.http.client.connect-timeout=2s
 spring.http.client.read-timeout=1200ms
@@ -84,6 +85,8 @@ spring.http.client.read-timeout=1200ms
 # Tomcat tomoni: osilgan ulanishni ushlab turmaslik
 server.tomcat.connection-timeout=5s
 ```
+
+Spring Boot 4.0 da `spring.http.client.*` kalitlari deprecated: ular hali ulanadi va ogohlantirish beradi, o'rnini `spring.http.clients.connect-timeout`, `spring.http.clients.read-timeout` va `spring.http.clients.imperative.factory` egallaydi ([spring-boot v4.0.0, http-client metadata](https://github.com/spring-projects/spring-boot/blob/v4.0.0/module/spring-boot-http-client/src/main/resources/META-INF/additional-spring-configuration-metadata.json)).
 
 ## 32.3 Timeout qiymatini qanday tanlash: yuqori qatlam quyi qatlamdan uzunroq bo'lsin
 
@@ -244,6 +247,8 @@ private boolean retryable(Exception e, HttpMethod m, Integer status) {
     return status != null && (status == 429 || status == 503 || status == 504);
 }
 ```
+
+Mavzuning to'liq yozuvi [idempotency](../patterns/07-api-dizayn-patternlari.md#79-idempotentlik-kaliti-idempotency-key) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
 
 ## 32.9 Orqaga bosim (backpressure) va navbat chuqurligini cheklash
 

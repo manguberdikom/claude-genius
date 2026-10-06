@@ -15,7 +15,8 @@ Tekshiradi:
   4. Manifest     - docs/manifest.json diskdagi fayllar bilan mos.
   5. Skilllar     - .claude/ ichidagi docs/ havolalari haqiqiy; tools/
                     yo'llari (kod bloki ichida ham) skill, agent, CLAUDE.md,
-                    README.md, CONTRIBUTING.md va install/README.md da
+                    README.md, CONTRIBUTING.md, SECURITY.md va
+                    install/README.md da
                     mavjud, doc.sh subkomandasi doc.sh da bor; har bob
                     kamida bitta skill yoki agent jadvalida turadi.
   6. Struktura    - har bob faylida metadata manifest bilan mos, breadcrumb
@@ -30,11 +31,28 @@ Tekshiradi:
   8. Regressiya   - tools/known_errors.tsv dagi naqsh qaytib kelmaganmi.
                     Tuzatilgan mazmun xatosi keyingi tahrirda jim
                     qaytib kelishi mumkin, shuning uchun u naqsh bo'lib
-                    yoziladi va shu yerda qo'riqlanadi.
+                    yoziladi va shu yerda qo'riqlanadi. `nasr` qamrovli
+                    naqsh faqat nasrda qidiriladi: kod bloki, inline kod,
+                    sarlavha va ichki havola chiqarib tashlanadi.
  10. Tekshiruv    - docs/review.tsv da manifestdagi har bob bor va holati
-                    ruxsat etilgan qiymatlardan biri.
- 12. Uy-bob       - docs/OWNERS.tsv dagi mavzu uy-bobdan tashqarida
-                    SARLAVHA bo'lib uchrasa ogohlantirish (xato emas).
+                    ruxsat etilgan qiymatlardan biri. Holat ai-draft
+                    bo'lmasa sana va tekshiruvchi bo'sh emas, manbalar
+                    soni bobdagi `## Manbalar` ro'yxatiga teng.
+                    `tekshirilgan` qatorini oxirgi o'zgartirgan commit
+                    Claude nomidan yoki `Co-Authored-By: Claude` bilan
+                    bo'lsa xato (git yo'q bo'lsa o'tkaziladi). README.md
+                    va docs/<hujjat>/README.md dagi holat qatori
+                    review.tsv dan hisoblangan matnga teng.
+                    `## Manbalar` dagi main/master/trunk ga bog'langan
+                    GitHub havolasi ogohlantirish oladi.
+ 12. Uy-bob       - docs/OWNERS.tsv dagi mavzu (nomi yoki naqsh ustuni)
+                    uy bo'limdan tashqarida SARLAVHA bo'lib uchrasa xato.
+                    Bo'lim tanasida uy bo'limga havola bo'lsa xato
+                    chiqmaydi.
+ 13. Havola sanog'i - bob tanasidagi `](../<hujjat>/README.md)` havolalari
+                    soni README_LINK_BASE dan oshmaydi (ratchet).
+ 14. Summary      - har raqamli bobda `<summary>Bu bobdagi N bo'lim`
+                    bor va N haqiqiy bo'lim soniga teng.
  11. Sonar        - korpusdagi har `java:S` kaliti tools/sonar_rules.tsv
                     snapshotida bor; jadval qatorida kalit yonida tur yoki
                     daraja yozilgan bo'lsa, snapshotga mos. Ochiq metadata
@@ -45,7 +63,7 @@ Tekshiradi:
                     aynan o'shasi, aytmasa hech bo'lmaganda biror
                     hujjatning yoki jamining soni bo'lishi kerak.
 """
-import json, os, re, sys, unicodedata
+import json, os, re, subprocess, sys, unicodedata
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import review_status                                    # noqa: E402
@@ -55,12 +73,30 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SIZE_LIMIT = 900_000          # GitHub chegarasi 1 048 576; zahira bilan
 RE_REMOVE = re.compile(r"[^\w\- ]", re.UNICODE)
 SKIP_DIRS = {'.git', 'dist', 'node_modules'}
+WORKTREES_DIR = '.claude/worktrees'
 # Bob oxiridagi manbalar bo'limi. Raqamsiz: u bob bo'limi emas, apparat.
 SOURCES_RE = re.compile(r"^Manbalar\s*$")
 # Hech qaysi skill yoki agent jadvalida turmasligi ataylab bo'lgan boblar:
 # kalit (hujjat, bob raqami), qiymat sabab. Hozir bo'sh, ya'ni har bobga
 # marshrut bor; yangi bob yo'lsiz qolsa tekshiruv xato beradi.
 UNROUTED_OK = {}
+
+# 13. Bob tanasidagi boshqa hujjat README siga havolalar soni. Yangi
+# havola aniq bob anchoriga beriladi (CONTRIBUTING.md, Havolalar), shuning
+# uchun son faqat kamayadi. Kamaysa bu qiymat ham pasaytiriladi.
+README_LINK_BASE = 209
+README_LINK_RE = re.compile(r'\]\(\.\./[a-z-]+/README\.md(?:#[^)\s]*)?\)')
+# `## Manbalar` dagi ko'chib yuradigan branchga bog'langan havola: fayl
+# o'zgaradi yoki ko'chadi, versiya da'vosi esa aniq versiyaga tegishli.
+BRANCH_URL_RE = re.compile(
+    r'https://(?:raw\.githubusercontent\.com/[^/\s)]+/[^/\s)]+'
+    r'|github\.com/[^/\s)]+/[^/\s)]+/(?:blob|tree))/(main|master|trunk)/')
+# Ichki markdown havola: matni ko'pincha sarlavhaning nusxasi (mundarija,
+# footer), shuning uchun nasr tekshiruvida butunligicha chiqariladi.
+INTERNAL_LINK_RE = re.compile(r'\[[^\]\n]*\]\((?!https?://|mailto:)[^)\s]*\)')
+EXTERNAL_URL_RE = re.compile(r'\]\((https?://[^)\s]*)\)')
+CLAUDE_AUTHOR_RE = re.compile(r'noreply@anthropic\.com', re.I)
+CLAUDE_COAUTHOR_RE = re.compile(r'^Co-Authored-By:\s*Claude\b', re.I | re.M)
 
 errors, warnings = [], []
 
@@ -81,9 +117,28 @@ def gh_slug(text):
     return RE_REMOVE.sub('', t).replace(' ', '-')
 
 
+def foreign_tree(path, root=None):
+    """Ichki worktree yoki alohida repo: `.claude/worktrees/` yoki o'z `.git` i bor papka.
+
+    Guruh worktree lari `<ildiz>/.claude/worktrees/` ichida turadi
+    (guruh.py): ularni skanerlash har faylni ikki marta ko'rsatadi va
+    boshqa branchning yarim tahrirlangan matniga yolg'on xato beradi.
+    `root` berilmasa ROOT; test_skill.py o'z ildizini beradi. Ildizning
+    o'zi hisobga olinmaydi.
+    """
+    root = ROOT if root is None else root
+    rel = os.path.relpath(path, root).replace(os.sep, '/')
+    if rel == '.':
+        return False
+    if rel == WORKTREES_DIR or rel.startswith(WORKTREES_DIR + '/'):
+        return True
+    return os.path.exists(os.path.join(path, '.git'))
+
+
 def md_files():
     for dirpath, dirnames, filenames in os.walk(ROOT):
-        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS
+                       and not foreign_tree(os.path.join(dirpath, d))]
         for fn in sorted(filenames):
             if fn.endswith('.md'):
                 yield os.path.relpath(os.path.join(dirpath, fn), ROOT)
@@ -104,6 +159,21 @@ def strip_fences(text):
 def strip_inline_code(text):
     """`...` ichidagi matn markdown da havola emas - havola tekshiruvida o'tkazib yuboriladi."""
     return re.sub(r'`[^`\n]*`', lambda m: ' ' * len(m.group(0)), text)
+
+
+def prose(text):
+    """Nasr: kod bloki, inline kod, sarlavha, ichki havola va URL bo'sh joy.
+
+    Qator raqamlari saqlanadi, shuning uchun xato asl matndagi qatorni
+    ko'rsatadi. Sarlavha chiqariladi, chunki uning matni anchor
+    bo'lib mundarija va indeksda ishlatiladi: imlo tuzatishi u yerga
+    tegmaydi (GLOSSARY: mavjud sarlavhalar o'zgartirilmaydi).
+    """
+    t = strip_inline_code(strip_fences(text))
+    t = '\n'.join(' ' * len(l) if re.match(r'^#{1,6} ', l) else l
+                  for l in t.split('\n'))
+    t = INTERNAL_LINK_RE.sub(lambda m: ' ' * len(m.group(0)), t)
+    return EXTERNAL_URL_RE.sub(lambda m: '](' + ' ' * len(m.group(1)) + ')', t)
 
 
 def heading_anchors(text):
@@ -141,6 +211,8 @@ def known_errors():
             except re.error as exc:
                 err(f"tools/known_errors.tsv: naqsh buzuq -> {pattern} ({exc})")
                 continue
+            if scopes == {'nasr'}:
+                scopes = {'docs', 'nasr'}      # yolg'iz `nasr` = docs nasri
             rows.append((pattern, rx, note, scopes or {'docs', 'claude', 'root'}))
     return rows
 
@@ -177,10 +249,15 @@ def check_regression(files):
             text = open(os.path.join(ROOT, rel), encoding='utf-8').read()
         except OSError:
             continue
+        plain = None
         for pattern, rx, note, scopes in rows:
             if where not in scopes:
                 continue
-            match = rx.search(text)
+            if 'nasr' in scopes:
+                plain = prose(text) if plain is None else plain
+                match = rx.search(plain)
+            else:
+                match = rx.search(text)
             if match:
                 line = text[:match.start()].count('\n') + 1
                 err(f"{rel}:{line}: tuzatilgan xato qaytdi -> {pattern} "
@@ -287,7 +364,7 @@ def check_sonar(files):
 
 
 def read_owners():
-    """docs/OWNERS.tsv: [(mavzu, uy_bob, dalil)]."""
+    """docs/OWNERS.tsv: [(mavzu, uy_bob, dalil, naqsh)]. Naqsh bo'sh bo'lishi mumkin."""
     path = os.path.join(ROOT, 'docs', 'OWNERS.tsv')
     rows, header = [], None
     if not os.path.exists(path):
@@ -305,12 +382,89 @@ def read_owners():
                 err(f"docs/OWNERS.tsv: qator uch ustunli emas -> {line[:50]}")
                 continue
             rows.append((parts[0].strip(), parts[1].strip(),
-                         parts[2].strip() if len(parts) > 2 else ''))
+                         parts[2].strip() if len(parts) > 2 else '',
+                         parts[3].strip() if len(parts) > 3 else ''))
     return rows
 
 
+def home_target(manifest, home):
+    """Uy-bob yozuvi (`patterns 17.2`) -> (fayl yo'li, bo'lim anchori yoki None)."""
+    doc_key, _, ref = home.partition(' ')
+    chap, _, sec = ref.partition('.')
+    doc = manifest.get(doc_key) or {}
+    found = [c['file'] for c in doc.get('chapters', []) if str(c.get('num')) == chap]
+    if not found:
+        return None, None
+    path = os.path.join('docs', doc_key, found[0])
+    if not sec:
+        return path, None
+    try:
+        text = open(os.path.join(ROOT, path), encoding='utf-8').read()
+    except OSError:
+        return path, None
+    for line in strip_fences(text).split('\n'):
+        if line.startswith('## %s ' % ref):
+            return path, gh_slug(line[3:])
+    return path, None
+
+
+def links_to(rel, body, path, anchor):
+    """Bo'lim tanasida `path` ga (anchor berilgan bo'lsa aynan unga) havola bormi."""
+    want = os.path.normpath(path)
+    for m in re.finditer(r'\]\(([^)\s]+)\)', strip_inline_code(body)):
+        tgt, _, anc = m.group(1).partition('#')
+        if tgt.startswith(('http://', 'https://', 'mailto:')):
+            continue
+        # `](#anchor)` shu faylning o'zi: uy bo'lim shu bobda bo'lishi mumkin.
+        here = rel if not tgt else os.path.join(os.path.dirname(rel), tgt)
+        if os.path.normpath(here) != want:
+            continue
+        if anchor is None or anc == anchor:
+            return True
+    return False
+
+
+def owner_regex(topic, pattern):
+    """Sarlavhada mavzuni taniydigan regex: mavzuning o'zi yoki OWNERS naqshi.
+
+    Naqsh (POSIX ERE, kichik harf) o'zbekcha shakllarni ushlaydi
+    (`archunit'ni`, `kognitiv murakkablik`), shuning uchun mavzu nomi
+    bilan birga u ham olinadi. So'z chegarasi `\\b` emas: naqsh `+` bilan
+    tugashi mumkin (`n+1`). Mavzu nomining o'ziga yopishgan bo'lak mavzu
+    emas: `-` yoki `.` dan keyin (`spring-boot-testcontainers`,
+    `idempotency.key`) va `-` yoki `.harf` dan oldin
+    (`circuit-breaker`, `testcontainers.reuse.enable`) sarlavha jim.
+    `@Testcontainers` kabi annotatsiya mavzuning API si: tanilaveradi.
+    """
+    alts = [re.escape(topic).replace(r'\ ', r'\s+')]
+    if pattern:
+        try:
+            re.compile(pattern)
+            alts.append(pattern)
+        except re.error:
+            err(f"docs/OWNERS.tsv: '{topic}' naqshi regex emas -> {pattern}")
+    return re.compile(r'(?<![\w.-])(?:' + '|'.join(f'(?:{a})' for a in alts)
+                      + r')(?![\w-]|\.\w)', re.I)
+
+
 def check_owners(manifest, files):
-    """12. Mavzu uy-bobdan tashqarida sarlavha bo'lib uchramasin."""
+    """12. Mavzu uy-bobdan tashqarida sarlavha bo'lib uchramasin.
+
+    Bo'lim tanasida uy-bobga havola bo'lsa (uy bo'lim raqami berilgan
+    bo'lsa, aynan o'sha bo'lim anchoriga), mavzu "o'z nuqtai nazari va
+    uyga havola" qoidasiga amal qilgan va ogohlantirish chiqmaydi.
+
+    Sarlavhadagi mavzu OWNERS.tsv dagi mavzu nomi yoki naqsh ustuni
+    bilan taniladi (o'zbekcha shakllar: `idempotentlik`, `archunit'ni`).
+    Uy bo'lim `<hujjat> <bob>.<bo'lim>` darajasida: uy bo'limning o'zi va
+    uning ichki bo'limlari ogohlantirilmaydi, uy bob ichidagi boshqa
+    bo'lim esa boshqa hujjatdagi bo'lim kabi uyga havola beradi
+    (bob ichida `](#anchor)`).
+
+    Bu xato, ogohlantirish emas: ogohlantirish 0 ga tushgach warn()
+    err() ga o'tkazildi (audit 2026-10-05, 12-bo'lim). Yangi takror
+    CI ni qizil qiladi.
+    """
     owners = read_owners()
     if not owners:
         return
@@ -321,17 +475,18 @@ def check_owners(manifest, files):
             refs.add(f"{key} {c['num'] or ''}")
             for n in range(1, (c.get('sections') or 0) + 1):
                 refs.add(f"{key} {c['num']}.{n}")
-    for topic, home, _ in owners:
+    for topic, home, _, _ in owners:
         doc_key = home.split(' ')[0]
         if doc_key not in manifest:
             err(f"docs/OWNERS.tsv: '{topic}' uy-bobi noma'lum hujjat -> {home}")
         elif home not in refs:
-            warn(f"docs/OWNERS.tsv: '{topic}' uy-bobi indeksda topilmadi "
+            err(f"docs/OWNERS.tsv: '{topic}' uy-bobi indeksda topilmadi "
                  f"-> {home} (bo'lim raqami o'zgargan bo'lishi mumkin)")
     # Sarlavhada mavzu: uy-bobdan tashqarida ogohlantirish.
-    words = {topic: re.compile(r'\b' + re.escape(topic).replace(r'\ ', r'\s+')
-                               + r'\b', re.I) for topic, _, _ in owners}
-    homes = {topic: home for topic, home, _ in owners}
+    words = {topic: owner_regex(topic, pattern)
+             for topic, _, _, pattern in owners}
+    homes = {topic: home for topic, home, _, _ in owners}
+    targets = {home: home_target(manifest, home) for _, home, _, _ in owners}
     for rel in sorted(files):
         if scope_of(rel) != 'docs':
             continue
@@ -342,9 +497,11 @@ def check_owners(manifest, files):
         text = open(os.path.join(ROOT, rel), encoding='utf-8').read()
         chapter = re.search(r'<!-- doc: \S+ \| chapter: (\S*)', text)
         chapter = chapter.group(1).strip() if chapter else ''
-        for line in strip_fences(text).split('\n'):
-            if not line.startswith('## '):
-                continue
+        plain = strip_fences(text).split('\n')
+        heads = [i for i, l in enumerate(plain) if l.startswith('## ')] + [len(plain)]
+        for at, end in zip(heads, heads[1:]):
+            line = plain[at]
+            body = '\n'.join(plain[at + 1:end])
             number = re.match(r'## ([\d.]+)', line)
             here = f"{doc_key} {number.group(1)}" if number else f"{doc_key} {chapter}"
             for topic, regex in words.items():
@@ -353,8 +510,84 @@ def check_owners(manifest, files):
                 home = homes[topic]
                 if here == home or here.startswith(home + '.'):
                     continue
-                warn(f"{rel}: '{topic}' sarlavhasi {here} da, uy-bob "
+                path, anchor = targets[home]
+                if path and links_to(rel, body, path, anchor):
+                    continue
+                err(f"{rel}: '{topic}' sarlavhasi {here} da, uy-bob "
                      f"{home} (OWNERS.tsv): qisqa xulosa va havola qoldirilsin")
+
+
+def count_sources(text):
+    """Bobdagi `## Manbalar` ro'yxatining `- ` bandlari soni (bo'lim yo'q: 0)."""
+    n, inside = 0, False
+    for line in strip_fences(text).split('\n'):
+        if line.startswith('## '):
+            inside = bool(SOURCES_RE.match(line[3:]))
+            continue
+        if inside and line.strip() == '---':
+            break
+        if inside and line.startswith('- '):
+            n += 1
+    return n
+
+
+def git_out(*args):
+    """`git -C ROOT ...` chiqishi yoki None (git yo'q, repo emas, xato)."""
+    try:
+        out = subprocess.run(['git', '-C', ROOT] + list(args), capture_output=True,
+                             text=True, encoding='utf-8', timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return out.stdout if out.returncode == 0 else None
+
+
+def check_signoff(review_rows):
+    """10. `tekshirilgan` ni Claude qo'ymagan: CONTRIBUTING, Tekshiruv tartibi, 4-qoida.
+
+    Qatorni oxirgi o'zgartirgan commit olinadi (`git blame`). U Claude
+    nomidan bo'lsa yoki `Co-Authored-By: Claude` qatori bo'lsa xato.
+    Odam imzolagan qatorni keyin sessiya tahrirlasa ham xato: imzo
+    qaytadan odamdan olinadi. Git yo'q yoki ROOT repo ildizi bo'lmasa
+    (sinov papkasi) tekshiruv o'tkaziladi. Commit qilinmagan va sayoz
+    tarix (shallow clone) chegarasidagi qator ogohlantirish oladi:
+    muallifni bilib bo'lmaydi.
+    """
+    done = sorted(ref for ref, row in review_rows.items()
+                  if row.get('holat') == 'tekshirilgan')
+    if not done:
+        return
+    top = git_out('rev-parse', '--show-toplevel')
+    if top is None or (os.path.normcase(os.path.realpath(top.strip()))
+                       != os.path.normcase(os.path.realpath(ROOT))):
+        return
+    lines = open(os.path.join(ROOT, 'docs', 'review.tsv'), encoding='utf-8').read().split('\n')
+    for doc, num in done:
+        where = next((i for i, l in enumerate(lines, 1)
+                      if l.startswith(f"{doc}\t{num}\t")), None)
+        if where is None:
+            continue
+        blame = git_out('blame', '--porcelain', '-L', f"{where},{where}",
+                        '--', 'docs/review.tsv')
+        if not blame:
+            warn(f"docs/review.tsv:{where}: {doc} {num} tekshirilgan, lekin "
+                 f"git blame ishlamadi: imzo tekshirilmadi")
+            continue
+        sha = blame.split(' ', 1)[0]
+        if set(sha) == {'0'}:
+            warn(f"docs/review.tsv:{where}: {doc} {num} tekshirilgan, commit "
+                 f"qilinmagan: imzo commitdan keyin tekshiriladi")
+            continue
+        if re.search(r'^boundary$', blame, re.M):
+            warn(f"docs/review.tsv:{where}: {doc} {num} tekshirilgan, tarix "
+                 f"sayoz (fetch-depth): imzo commiti ko'rinmaydi")
+            continue
+        info = git_out('log', '-1', '--format=%an <%ae>%n%B', sha) or ''
+        author = info.split('\n', 1)[0]
+        if (CLAUDE_AUTHOR_RE.search(author) or re.match(r'Claude\b', author)
+                or CLAUDE_COAUTHOR_RE.search(info)):
+            err(f"docs/review.tsv:{where}: {doc} {num} ni `tekshirilgan` ga "
+                f"{sha[:10]} commiti o'tkazgan, u Claude muallifligida: bu "
+                f"holatni faqat odam qo'yadi (CONTRIBUTING.md, Tekshiruv tartibi)")
 
 
 def check_review(manifest, review_rows):
@@ -371,13 +604,76 @@ def check_review(manifest, review_rows):
             if row is None:
                 err(f"docs/review.tsv: {key} {ref[1]}-bob yo'q")
                 continue
-            if row.get('holat') not in review_status.HOLATLAR:
+            holat = row.get('holat')
+            if holat not in review_status.HOLATLAR:
                 err(f"docs/review.tsv: {key} {ref[1]} holati noma'lum "
-                    f"-> {row.get('holat')!r} "
+                    f"-> {holat!r} "
                     f"(ruxsat: {', '.join(review_status.HOLATLAR)})")
+                continue
+            if holat == 'ai-draft':
+                continue
+            # Tekshirilmoqda va tekshirilgan: kim, qachon va nechta manba.
+            for field in ('sana', 'tekshiruvchi'):
+                if not (row.get(field) or '').strip():
+                    err(f"docs/review.tsv: {key} {ref[1]} holati {holat}, "
+                        f"lekin `{field}` bo'sh")
+            path = os.path.join(ROOT, 'docs', key, c['file'])
+            if not os.path.exists(path):
+                continue
+            have = count_sources(open(path, encoding='utf-8').read())
+            said = (row.get('manbalar') or '').strip()
+            if not said.isdigit() or int(said) != have:
+                err(f"docs/review.tsv: {key} {ref[1]} manbalar={said or 'bo`sh'}, "
+                    f"bobning `## Manbalar` ro'yxatida {have} ta")
+            if holat == 'tekshirilgan' and have == 0:
+                err(f"docs/review.tsv: {key} {ref[1]} tekshirilgan, lekin bobda "
+                    f"`## Manbalar` yo'q: kamida bitta birlamchi manba kerak")
     for ref in sorted(review_rows):
         if ref not in seen:
             err(f"docs/review.tsv: {ref[0]} {ref[1]} manifestda yo'q")
+    check_signoff(review_rows)
+
+
+def check_readme_status(review_rows):
+    """10. README.md va docs/<hujjat>/README.md dagi holat qatori review.tsv ga mos."""
+    try:
+        targets = review_status.readme_targets(review_rows, ROOT)
+    except (OSError, ValueError, KeyError):
+        return      # manifest muammosini 4-tekshiruv aytadi
+    for path, want, _ in targets:
+        if not os.path.exists(path):
+            continue
+        rel = os.path.relpath(path, ROOT)
+        have = [l for l in open(path, encoding='utf-8').read().split('\n')
+                if l.startswith(review_status.MARKER)]
+        if not have:
+            err(f"{rel}: holat qatori yo'q. `python3 tools/review_status.py --yoz` yozadi")
+        elif len(have) > 1:
+            err(f"{rel}: {len(have)} ta holat qatori, bittasi bo'lsin")
+        elif have[0] != want:
+            err(f"{rel}: holat qatori review.tsv ga mos emas. "
+                f"`python3 tools/review_status.py --yoz`")
+
+
+def check_pinned_sources(files):
+    """10. `## Manbalar` dagi GitHub havolasi tag yoki commit SHA ga qadalgan."""
+    for rel in sorted(files):
+        if scope_of(rel) != 'docs' or os.path.basename(rel) == 'README.md':
+            continue
+        text = open(os.path.join(ROOT, rel), encoding='utf-8').read()
+        if '## Manbalar' not in text:
+            continue
+        inside, moving = False, []
+        for number, line in enumerate(strip_fences(text).split('\n'), 1):
+            if line.startswith('## '):
+                inside = bool(SOURCES_RE.match(line[3:]))
+                continue
+            if inside:
+                moving += [f"{number}:{m.group(1)}" for m in BRANCH_URL_RE.finditer(line)]
+        if moving:
+            warn(f"{rel}: `## Manbalar` da {len(moving)} ta havola ko'chib "
+                 f"yuradigan branchga bog'langan ({', '.join(moving)}): tag "
+                 f"yoki commit SHA ga qadang")
 
 
 def main():
@@ -397,7 +693,7 @@ def main():
             err(f"{rel}: {size} bayt > {SIZE_LIMIT} - GitHub bu faylni render qilmaydi, bo'lish kerak")
 
         # 3. kirill
-        cyr = sorted({c for c in text if 'CYRILLIC' in unicodedata.name(c, '')})
+        cyr = sorted({c for c in set(text) if 'CYRILLIC' in unicodedata.name(c, '')})
         if cyr:
             err(f"{rel}: kirill harflar topildi: {''.join(cyr)}")
 
@@ -422,10 +718,12 @@ def main():
             err(f"{rel}: {dashes} ta em-dash/en-dash topildi, oddiy tire (-) ishlatilsin")
 
     # 2. havolalar
-    total = 0
+    total = readme_links = 0
     for rel in files:
         text = strip_inline_code(strip_fences(open(os.path.join(ROOT, rel), encoding='utf-8').read()))
         base = os.path.dirname(rel)
+        if scope_of(rel) == 'docs' and os.path.basename(rel) != 'README.md':
+            readme_links += len(README_LINK_RE.findall(text))
         for m in re.finditer(r'\]\(([^)\s]+)\)', text):
             tgt = m.group(1)
             if tgt.startswith(('http://', 'https://', 'mailto:')):
@@ -438,6 +736,13 @@ def main():
                 continue
             if anc and key in anchors and anc not in anchors[key]:
                 err(f"{rel}: anchor topilmadi -> {tgt}")
+
+    # 13. Ratchet: bob tanasidagi README havolalari bazaviydan oshmasin.
+    # Har havola uchun ogohlantirish emas, bitta qator (TZ-T5).
+    if readme_links > README_LINK_BASE:
+        err(f"bob tanasida boshqa hujjat README siga {readme_links} havola, "
+            f"chegara {README_LINK_BASE}: yangi havola aniq bob anchoriga "
+            f"beriladi (CONTRIBUTING.md, Havolalar)")
 
     # 3b. skill va agent havolalari.
     # Agentlar ham skilllar kabi docs/ ga va tools/ ga yo'naltiradi, lekin
@@ -496,7 +801,7 @@ def main():
     # Har navbatda o'qiladigan CLAUDE.md va o'rnatish hujjati ham kiradi.
     tool_docs = sorted(routed) + [os.path.join(ROOT, f) for f in (
         'CLAUDE.md', 'README.md', 'CONTRIBUTING.md', 'install/README.md',
-        'DECISIONS.md')
+        'DECISIONS.md', 'SECURITY.md')
         if os.path.exists(os.path.join(ROOT, f))]
     doc_sh = os.path.join(ROOT, 'tools', 'doc.sh')
     subcommands = (set(re.findall(r'^\s+([a-z]+)\)', open(doc_sh, encoding='utf-8').read(), re.M))
@@ -585,7 +890,9 @@ def main():
                 if c.get('sections') is not None and len(h2) != c['sections']:
                     err(f"{where}: {len(h2)} bo'lim, manifestda {c['sections']}")
                 summary = re.search(r"<summary>Bu bobdagi (\d+) bo'lim</summary>", t)
-                if summary and int(summary.group(1)) != len(h2):
+                if c['num'] and not summary:
+                    err(f"{where}: `<summary>Bu bobdagi N bo'lim</summary>` yo'q")
+                elif summary and int(summary.group(1)) != len(h2):
                     err(f"{where}: <summary> da {summary.group(1)} bo'lim, "
                         f"haqiqatda {len(h2)}")
                 if c['num'] and readme:
@@ -635,14 +942,24 @@ def main():
     if man is not None:
         check_counts(man)
         check_review(man, review_rows)
+        check_readme_status(review_rows)
         check_owners(man, files)
+    check_pinned_sources(files)
 
     # 11. Sonar kalitlari snapshot bilan mos.
     check_sonar(files)
 
+    # 13. Da'volar: tools/verify_claims.py (Boot kalit, olib tashlangan API,
+    # BOM, YAML/XML). Hozircha faqat ogohlantirish; javac qismi bu yerda
+    # yurmaydi, u `verify_claims.py --java` bilan alohida.
+    import verify_claims
+    for found in verify_claims.collect(ROOT):
+        warn("da'vo: " + verify_claims.fmt(found))
+
     print(f"{len(files)} markdown fayl, {total} nisbiy havola tekshirildi")
     for w in warnings:
         print(f"OGOHLANTIRISH: {w}")
+    print(f"{len(warnings)} ogohlantirish")
     if errors:
         print(f"\n{len(errors)} XATO:")
         for e in errors:

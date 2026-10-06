@@ -1,0 +1,95 @@
+# suggest_sections hooki uchun oltin to'plam: foydalanuvchi prompti va
+# qabul qilinadigan bo'limlar. tools/eval_find.py E sinovi o'qiydi.
+#
+# Ustunlar: id, toplam (dev | holdout), kategoriya, prompt, qabul.
+# qabul: bo'shliq bilan ajratilgan `hujjat:raqam` (har biri `doc.sh show`
+# bilan o'qib tekshirilgan) yoki `-`: hook jim qolishi kerak.
+# promptda `\n` yangi qator, `\t` tab.
+#
+# toplam qo'lda emas, o'lchovdan OLDIN xesh bilan berilgan:
+# sha1(prompt) toq bo'lsa holdout. Holdout ga qarab hech narsa
+# sozlanmaydi. Yangi qator ham shu qoida bilan belgilanadi.
+#
+# Kategoriyalar: uz-erkin (o'zbekcha erkin gap), en (inglizcha), aralash,
+# xato (xato yozilgan), sonar, stack (stack trace yoki exception xabari),
+# kod (yopishtirilgan Java kodi), mavzusiz (jim qolishi kerak).
+id	toplam	kategoriya	prompt	qabul
+u01	holdout	uz-erkin	ikki foydalanuvchi bir vaqtda bitta yozuvni yangilasa biri yo'qolib qolyapti	architect:22.5 architect:18.8 patterns:9.23 testing:11.8 code-review:27.4 code-review:27.2 code-review:15.3
+u02	dev	uz-erkin	jadval hajmi o'sib ketdi, o'chirilgan qatorlar joy egallab yotibdi	architect:21.10 architect:21.7 architect:21.8 architect:22.9
+u03	dev	uz-erkin	tashqi servis sekin javob bersa bizning servis ham qotib qolyapti	patterns:17.2 patterns:17.3 patterns:17.4 patterns:19.10 architect:7.8 architect:17.10 code-review:22.3 code-review:19.2 architect:19.7 architect:32.2 architect:32.3 architect:32.4 code-review:22.1 code-review:21.2 sonarqube:29.14 patterns:17.41
+u04	dev	uz-erkin	bir xil buyurtma ikki marta yaratilib qolyapti, nima qilish kerak	patterns:7.9 patterns:10.30 architect:7.5 clean-code:27.7 code-review:10.9 patterns:14.18 patterns:16.16 architect:29.7 code-review:20.9
+u05	holdout	uz-erkin	testlar juda sekin, har test klassida Spring konteksti qaytadan ko'tarilyapti	testing:7.8 patterns:23.12 testing:8.4 testing:7.7
+u06	dev	uz-erkin	bazaga ulanishlar tugab qolyapti, so'rovlar navbatda kutib turibdi	architect:8.4 architect:27.5 patterns:9.30 patterns:25.46 code-review:16.8 architect:12.6 architect:27.6
+u07	holdout	uz-erkin	sinflar bir-biriga aylanma bog'lanib qoldi, ilova ishga tushmayapti	architect:15.6 patterns:25.37 patterns:25.18
+u08	holdout	uz-erkin	xotira asta-sekin to'lib boryapti, bir necha kundan keyin ilova yiqiladi	architect:10.9 architect:14.3 architect:10.7 architect:10.10
+u09	holdout	uz-erkin	foydalanuvchi parolini bazada qanday saqlash kerak	patterns:18.7 architect:20.11 sonarqube:26.4 code-review:32.3
+u10	holdout	uz-erkin	pul summasini hisoblashda tiyinlar yo'qolib ketyapti	clean-code:20.1 clean-code:20.2 sonarqube:25.7 architect:25.2 patterns:13.35 code-review:14.3 clean-code:20.7
+u11	holdout	uz-erkin	metod ichida juda ko'p ichma-ich if bor, o'qish qiyin	sonarqube:27.4 sonarqube:27.1 sonarqube:27.11 clean-code:6.3 clean-code:6.4 code-review:5.5 sonarqube:15.1
+u12	dev	uz-erkin	servislar orasida bitta so'rovni kuzatish uchun umumiy id kerak	patterns:21.3 patterns:15.21 clean-code:29.7 patterns:21.17
+u13	dev	uz-erkin	broker xabarni ikki marta keldi, qayta ishlanib ketyapti, nima qilish kerak	patterns:14.18 architect:29.7
+u15	dev	uz-erkin	bitta sahifa ochilganda har qatorga alohida so'rov ketyapti	architect:18.4 patterns:25.43 patterns:9.27
+u16	dev	uz-erkin	baza sekin ishlayapti, qayerdan boshlayman	architect:24.12 architect:27.11 architect:14.11
+e01	holdout	en	how to size HikariCP maximum pool size	architect:27.5 architect:8.4 patterns:9.30 patterns:25.46 code-review:16.8 architect:27.6
+e02	dev	en	optimistic locking with @Version in JPA	architect:18.8 patterns:9.23 testing:11.8 code-review:27.4
+e03	dev	en	when should I use REQUIRES_NEW propagation	architect:19.2 code-review:19.4
+e04	holdout	en	self invocation breaks @Transactional	architect:15.9 patterns:25.30 architect:19.6 sonarqube:29.3
+e05	dev	en	cache stampede protection	patterns:11.11 architect:28.6
+e06	holdout	en	virtual threads pinning with synchronized blocks	architect:12.4 code-review:15.10
+e07	dev	en	consumer driven contract testing with Pact	testing:9.9 testing:9.7 patterns:23.17 patterns:7.22 patterns:23.20 patterns:23.19 testing:9.12 code-review:36.5
+e08	dev	en	mutation testing with PIT	testing:5.12 testing:14.7 patterns:23.10 sonarqube:20.2 sonarqube:20.4 sonarqube:20.5 sonarqube:20.8 sonarqube:20.9
+e09	dev	en	transactional outbox with Kafka	patterns:10.14 patterns:14.12 code-review:10.8 code-review:27.9 architect:29.11
+e10	dev	en	G1 or ZGC, which garbage collector to choose	architect:10.6 architect:10.3 architect:10.4
+a01	holdout	aralash	@Transactional private metodda ishlaydimi	sonarqube:29.3 patterns:25.31 architect:15.9 sonarqube:14.5 architect:19.1
+a02	holdout	aralash	Kafka consumer rebalance paytida xabar ikki marta kelyapti	architect:29.5 architect:29.7 patterns:14.18 patterns:16.16 code-review:27.7
+a03	dev	aralash	Testcontainers har test klassida yangi container ko'taryapti, sekin	testing:8.4 testing:8.5 testing:8.10 patterns:23.15 testing:7.8
+a04	dev	aralash	N+1 muammosini testda qanday ushlayman	testing:7.5 architect:18.4 patterns:25.43 patterns:9.27 code-review:23.1
+a05	holdout	aralash	HikariCP connection-timeout xatosi chiqyapti	architect:27.5 code-review:16.8 architect:8.4 patterns:25.46 patterns:9.30 architect:27.6
+a06	dev	aralash	WebMvcTest da security filter ishlamayapti	testing:7.2 testing:11.1 testing:11.5
+a07	holdout	aralash	Redis keshda TTL ni qanday tanlash kerak	patterns:11.12 patterns:11.8 architect:28.5 architect:28.9 architect:28.7
+a08	holdout	aralash	REST API versiyalashning qaysi usuli yaxshi	patterns:7.5 architect:17.6 architect:32.10
+a09	dev	aralash	PostgreSQL da deadlock log da qanday ko'rinadi	architect:22.8 architect:19.10 architect:11.10 code-review:15.4
+a10	dev	aralash	MDC dagi correlation id async thread ga o'tmayapti	patterns:21.17 clean-code:29.7 patterns:21.3 code-review:15.9
+x01	dev	xato	tranzaksia propogation turlari qanday farq qiladi	architect:19.2 code-review:19.4
+x02	dev	xato	optimistik loking qanday ishlaydi	architect:18.8 patterns:9.23 testing:11.8 code-review:27.4
+x03	holdout	xato	circut breaker qachon ochiladi	patterns:17.2 patterns:17.39 code-review:22.3 testing:11.13
+x04	dev	xato	testcontainer bilan postgress testi yozish	testing:8.2 testing:8.3 patterns:23.15 testing:8.1
+x05	holdout	xato	dedlok chiqdi postgresda	architect:22.8 architect:19.10 architect:11.10 code-review:15.4
+x06	holdout	xato	keshni invalidatsya qilish strategiyasi	patterns:11.14 architect:28.5
+x07	dev	xato	conection pool timeout xatosi	architect:27.5 architect:8.4 code-review:16.8 patterns:9.30 patterns:25.46 architect:27.6
+x08	holdout	xato	idempotentlk kaliti qanday ishlaydi	patterns:7.9 clean-code:27.7 architect:7.5 patterns:10.30 code-review:20.9 code-review:10.9
+s01	dev	sonar	S1192 string literal takrorlanyapti	sonarqube:27.8 sonarqube:13.8
+s02	holdout	sonar	java:S3776 cognitive complexity 25 bo'ldi	sonarqube:27.1 sonarqube:15.1 sonarqube:5.4 code-review:5.5
+s03	dev	sonar	S2259 null pointer ogohlantirishi chiqdi	sonarqube:3.1 sonarqube:13.4 sonarqube:25.2
+s04	holdout	sonar	quality gate yiqildi, yangi kodda coverage 80% dan past	sonarqube:6.1 sonarqube:8.2 testing:14.9 sonarqube:43.10 sonarqube:6.8 sonarqube:5.7
+s05	dev	sonar	Sonar S2095 resurs yopilmagan deyapti	sonarqube:13.6 sonarqube:25.4 clean-code:19.4 code-review:16.3 sonarqube:18.9
+s06	dev	sonar	java:S1068 ishlatilmagan private maydon	sonarqube:28.3
+t01	dev	stack	org.hibernate.LazyInitializationException: failed to lazily initialize a collection of role: com.example.order.Order.items, could not initialize proxy - no Session	patterns:25.52 architect:18.3 code-review:19.8 patterns:9.9
+t02	dev	stack	java.lang.OutOfMemoryError: Java heap space\n\tat java.base/java.util.Arrays.copyOf(Arrays.java:3512)\n\tat com.example.report.ReportService.build(ReportService.java:88)	architect:10.7 architect:10.9 architect:14.3 clean-code:19.6
+t03	dev	stack	org.springframework.beans.factory.NoUniqueBeanDefinitionException: No qualifying bean of type 'com.example.pay.PaymentGateway' available: expected single matching bean but found 2: stripeGateway,paymeGateway	patterns:5.8 architect:15.7 clean-code:26.8
+t04	holdout	stack	org.springframework.orm.ObjectOptimisticLockingFailureException: Row was updated or deleted by another transaction (or unsaved-value mapping was incorrect)	architect:18.8 patterns:9.23 testing:11.8 architect:22.5 code-review:27.4 code-review:15.3
+t05	holdout	stack	org.springframework.beans.factory.BeanCurrentlyInCreationException: Error creating bean with name 'orderService': Requested bean is currently in creation: Is there an unresolvable circular reference?	architect:15.6 patterns:25.37 patterns:25.18
+t06	dev	stack	so'rov yiqildi:\norg.postgresql.util.PSQLException: ERROR: deadlock detected\n  Detail: Process 4711 waits for ShareLock on transaction 99812; blocked by process 4712.\n\tat org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2713)	architect:22.8 architect:19.10 architect:11.10 code-review:15.4
+t07	dev	stack	java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30000ms.	architect:27.5 architect:8.4 code-review:16.8 patterns:25.46 patterns:9.30 architect:27.6
+t08	dev	stack	java.util.ConcurrentModificationException\n\tat java.base/java.util.ArrayList$Itr.checkForComodification(ArrayList.java:1095)\n\tat com.example.cart.CartService.removeExpired(CartService.java:41)	sonarqube:25.11
+k01	dev	kod	shu kodni review qil:\n@Service\npublic class OrderService {\n    @Transactional\n    private void save(Order order) {\n        repository.save(order);\n    }\n}	sonarqube:29.3 patterns:25.31 architect:15.9 sonarqube:14.5 architect:19.1 architect:19.6
+k02	holdout	kod	private static final SimpleDateFormat FORMAT = new SimpleDateFormat("yyyy-MM-dd");	sonarqube:25.13 clean-code:22.1
+k03	holdout	kod	try {\n    Thread.sleep(1000);\n} catch (InterruptedException e) {\n}	sonarqube:25.9 clean-code:19.5 sonarqube:27.6 patterns:25.14
+k04	dev	kod	@Test\nvoid sendsEmail() throws Exception {\n    service.sendAsync(order);\n    Thread.sleep(2000);\n    assertTrue(mailbox.hasMail());\n}	sonarqube:19.4 sonarqube:30.5 testing:16.2
+k05	holdout	kod	public enum OrderStatus { NEW, PAID, SHIPPED }	-
+k06	dev	kod	for (Order order : orderRepository.findAll()) {\n    total += order.getItems().size();\n}	architect:18.4 patterns:25.43 patterns:9.27 code-review:23.1 testing:7.5 sonarqube:29.8 sonarqube:29.7
+k07	holdout	kod	} catch (Exception e) {\n    e.printStackTrace();\n}	patterns:25.14 sonarqube:13.5 sonarqube:27.14 sonarqube:27.6 clean-code:18.2
+k08	holdout	kod	@Autowired\nprivate OrderRepository repository;	patterns:25.29 sonarqube:14.1 sonarqube:29.1
+m01	holdout	mavzusiz	salom, ishlar qalay	-
+m02	dev	mavzusiz	davom et	-
+m03	dev	mavzusiz	PR ochib ber	-
+m04	dev	mavzusiz	README ni yangila	-
+m05	dev	mavzusiz	o'zbekchaga tarjima qil	-
+m06	holdout	mavzusiz	bu faylni o'qib chiq va xulosa ber	-
+m07	dev	mavzusiz	rahmat, hammasi joyida	-
+m08	dev	mavzusiz	branch nomini o'zgartir	-
+m09	holdout	mavzusiz	oxirgi commitni ko'rsat	-
+m10	dev	mavzusiz	kecha qayerda to'xtagan edik	-
+m11	holdout	mavzusiz	javobni qisqaroq yoz	-
+m12	dev	mavzusiz	shu ikki faylni solishtir	-
+m13	dev	mavzusiz	yaxshi, keyingi qadamga o't	-
+m14	holdout	mavzusiz	ekranga nima chiqdi, ko'rsat	-

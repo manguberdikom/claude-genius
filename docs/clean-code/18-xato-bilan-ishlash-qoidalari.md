@@ -24,7 +24,7 @@
 </details>
 
 
-Istisno dizayni, tekshiriladigan va tekshirilmaydigan istisnolar tanlovi [arxitektor hujjatidagi](../architect/README.md) istisnolar dizayni bo'limida, istisno orqali muloqot esa 4.6 da ko'rilgan. Bu bobda qolgan qoidalar: xato kodidan voz kechish, `try` blokini ajratish, normal oqimni aniqlash, `null` siyosati, va chegarada tez to'xtash.
+Istisno dizayni, tekshiriladigan va tekshirilmaydigan istisnolar tanlovi arxitektor hujjatidagi [istisnolar dizayni](../architect/13-zamonaviy-java-tili-va-api-dizayni.md#137-istisnolar-dizayni-tekshiriladigan-va-tekshirilmaydigan-oz-ierarxiyangiz) bo'limida, [istisno orqali muloqot](../architect/04-kod-muloqot-vositasi-nomlash-aniqlik.md#46-xato-va-istisnolar-orqali-muloqot) esa o'sha hujjatning nomlash bobida ko'rilgan. Bu bobda qolgan qoidalar: xato kodidan voz kechish, `try` blokini ajratish, normal oqimni aniqlash, `null` siyosati, va chegarada tez to'xtash.
 
 ## 18.1 Xato kodi emas, istisno
 

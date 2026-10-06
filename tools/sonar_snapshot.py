@@ -37,7 +37,10 @@ URL = ("https://raw.githubusercontent.com/SonarSource/sonar-java/master/"
        "sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/"
        "%s.json")
 RULE_RE = re.compile(r"\bjava:(S\d+)\b")
-HEADER = ("kalit", "tur", "daraja", "scope", "sarlavha")
+# Qoida sarlavhasi (`title`) olinmaydi: u sonar-java ning SSALv1 ostidagi
+# matni, bu fayl esa MIT ostida. Uni hech bir asbob o'qimaydi, check_docs
+# faqat tur va darajaga qaraydi.
+HEADER = ("kalit", "tur", "daraja", "scope")
 MISSING = "tekshirilmadi"
 SCAN_DIRS = ("docs", ".claude")
 SCAN_EXT = (".md", ".tsv")
@@ -62,7 +65,10 @@ def corpus_keys():
 
 
 def read_snapshot(path=SNAPSHOT):
-    """{kalit: {tur, daraja, scope, sarlavha}} va sana."""
+    """{kalit: {tur, daraja, scope}} va sana.
+
+    Ustunlar sarlavha qatori bo'yicha olinadi, shuning uchun eski
+    5 ustunli fayl ham o'qiladi: ortiqcha ustun e'tiborsiz qoladi."""
     rows, date, header = {}, "", None
     if not os.path.exists(path):
         return rows, date
@@ -117,8 +123,7 @@ def write_snapshot(rows, path=SNAPSHOT):
         row = rows[key]
         lines.append("\t".join([key, row.get("tur", MISSING),
                                 row.get("daraja", MISSING),
-                                row.get("scope", MISSING),
-                                row.get("sarlavha", "")]))
+                                row.get("scope", MISSING)]))
     io.open(path, "w", encoding="utf-8").write("\n".join(lines) + "\n")
     return today
 
@@ -155,13 +160,12 @@ def main(argv=None):
         data = fetch(key)
         if data is None:
             rows[key] = {"tur": MISSING, "daraja": MISSING,
-                         "scope": MISSING, "sarlavha": ""}
+                         "scope": MISSING}
             unchecked += 1
             continue
         rows[key] = {"tur": data.get("type", MISSING),
                      "daraja": data.get("defaultSeverity", MISSING),
-                     "scope": data.get("scope", MISSING),
-                     "sarlavha": (data.get("title") or "").replace("\t", " ")}
+                     "scope": data.get("scope", MISSING)}
         added += 1
     today = write_snapshot(rows)
     print("snapshot yozildi: %d kalit, %d yangi olindi, %d tekshirilmadi, "

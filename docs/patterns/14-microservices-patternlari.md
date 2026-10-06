@@ -7,7 +7,7 @@
 # 14. Microservices patternlari (Microservices Patterns)
 
 <details>
-<summary>Bu bo'limdagi 40 bo'lim</summary>
+<summary>Bu bobdagi 40 bo'lim</summary>
 
 - [14.1 Monolitik arxitektura va mikroservis arxitekturasi qarori (Monolithic Architecture vs Microservice Architecture (decision))](#141-monolitik-arxitektura-va-mikroservis-arxitekturasi-qarori-monolithic-architecture-vs-microservice-architecture-decision)
 - [14.2 Biznes imkoniyati bo'yicha dekompozitsiya (Decompose by Business Capability)](#142-biznes-imkoniyati-boyicha-dekompozitsiya-decompose-by-business-capability)
@@ -429,6 +429,8 @@ record OrderPlaced(String orderId, BigDecimal total) {}
 
 **Ehtiyot bo'ling:** Outbox jadvalini tozalashni (archival/partition) oldindan rejalashtirmaslik DB o'sishi va vacuum muammolariga olib keladi. At-least-once sababli dublikatlar bo'ladi: iste'molchida dedup kaliti (message id) va idempotent handler bo'lmasa, ikki marta to'lov yoki ikki marta email yuborilishi real risk.
 
+Mavzuning to'liq yozuvi shu hujjatdagi [tranzaksion Outbox](10-malumotlarni-boshqarish-va-taqsimlash.md#1014-tranzaksion-outbox-transactional-outbox) bo'limida; bu yerda faqat pattern katalogi nuqtai nazari.
+
 ## 14.13 Tranzaksiya logini kuzatish (Transaction Log Tailing)
 
 **Tavsif:** Hodisalarni ilova kodidan emas, ma'lumotlar bazasining tranzaksiya logidan (PostgreSQL WAL, MySQL binlog, MongoDB oplog) o'qib chiqarish usuli - CDC (Change Data Capture). Tailer log'ni ketma-ket o'qiydi, har bir commit qilingan o'zgarishni hodisaga aylantirib broker'ga yuboradi; polling yo'q, latency past va ilovaga qo'shimcha yuk tushmaydi. Ko'pincha outbox bilan birga ishlatiladi: faqat `outbox` jadvalidagi insert'lar kuzatiladi va shu bilan hodisa sxemasi ichki jadval strukturasidan ajratiladi. Eng ko'p ishlatiladigan vosita - Debezium.
@@ -619,6 +621,8 @@ public void on(OrderPlaced e) {
 // Inbox yozuvi va biznes o'zgarishi bitta tranzaksiyada bo'lishi shart,
 // aks holda ikkisi orasida yiqilish takroriy ishlovga olib keladi.
 ```
+
+Mavzuning to'liq yozuvi [idempotency](07-api-dizayn-patternlari.md#79-idempotentlik-kaliti-idempotency-key) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
 
 ## 14.19 Klient tomonda aniqlash (Client-Side Discovery)
 
@@ -933,7 +937,7 @@ class MobileHomeController {
 
 **Tavsif:** Har bir microservice'ga kerak bo'ladigan infratuzilma imkoniyatlari - configuration, logging, metrics, health check, tracing, security, exception handling - qayta-qayta yozilmasligi uchun yagona asos (chassis) sifatida tayyorlanadi. Jamoa yangi service boshlaganda bu chassis'ni olib, faqat business logikani yozadi. Natijada cross-cutting masalalar bir joyda standartlashadi va butun landscape bo'ylab bir xil ishlaydi. Chassis odatda kutubxona (starter) yoki template ko'rinishida yetkaziladi.
 
-**Spring'da qayerda uchraydi:** Spring Boot'ning o'zi de-facto chassis: auto-configuration, `spring-boot-starter-actuator` (health, metrics, `/actuator/prometheus`), Micrometer + Micrometer Tracing (OpenTelemetry/Brave bridge), `spring-boot-starter-validation`, Spring Cloud Config/Consul client, Resilience4j. Tashkilot darajasida o'z chassis'ingiz custom starter sifatida qilinadi: `spring.factories` o'rniga Boot 3.x da `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` fayliga `@AutoConfiguration` sinflari yoziladi, `@ConditionalOnMissingBean`/`@ConditionalOnProperty` bilan override imkoniyati qoldiriladi, `@ConfigurationProperties` bilan sozlamalar e'lon qilinadi. Umumiy xato formati `@ControllerAdvice` + `ProblemDetail` (RFC 7807) orqali, correlation ID `ObservationRegistry` yoki MDC filter orqali markazlashtiriladi.
+**Spring'da qayerda uchraydi:** Spring Boot'ning o'zi de-facto chassis: auto-configuration, `spring-boot-starter-actuator` (health, metrics, `/actuator/prometheus`), Micrometer + Micrometer Tracing (OpenTelemetry/Brave bridge), `spring-boot-starter-validation`, Spring Cloud Config/Consul client, Resilience4j. Tashkilot darajasida o'z chassis'ingiz custom starter sifatida qilinadi: `spring.factories` o'rniga Boot 3.x da `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` fayliga `@AutoConfiguration` sinflari yoziladi, `@ConditionalOnMissingBean`/`@ConditionalOnProperty` bilan override imkoniyati qoldiriladi, `@ConfigurationProperties` bilan sozlamalar e'lon qilinadi. Umumiy xato formati `@ControllerAdvice` + `ProblemDetail` (RFC 9457, 7807 ni almashtirgan) orqali, correlation ID `ObservationRegistry` yoki MDC filter orqali markazlashtiriladi.
 
 **Qo'llanish keyslari:**
 - Barcha service'larda bir xil `ProblemDetail` xato formati va error code taksonomiyasini majburlash.

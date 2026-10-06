@@ -27,6 +27,7 @@ DOCS_DIR = os.path.join(ROOT, "docs")
 # Anchor hisoblash mantig'i check_docs.py da. Nusxa ko'chirilsa ikkisi
 # vaqt o'tib bir-biridan uzoqlashadi, shuning uchun import qilinadi.
 sys.path.insert(0, HERE)
+import geniuslib  # noqa: E402
 from check_docs import gh_slug  # noqa: E402
 
 FENCE_RE = re.compile(r"^\s*(```|~~~)")
@@ -38,6 +39,14 @@ ALIAS_RE = re.compile(r"^- \[(.+?)\]\([^)]*\)\s*-\s*(\d+\.\d+)\s*$")
 PAREN_RE = re.compile(r"\(([^()]*(?:\([^()]*\)[^()]*)*)\)\s*$")
 
 ALIAS_FILE = "99-alifbo-boyicha-indeks.md"
+# Hujjat bo'yicha qo'lda yozilgan inglizcha taxalluslar: `bolim<TAB>nom`.
+# Markdown bob emas, ma'lumot fayli: manifestga kirmaydi. patterns dan
+# tashqari hujjatlarda sarlavhada qavsli inglizcha nom deyarli yo'q,
+# shuning uchun "connection pool size" kabi so'rov ularni topmasdi.
+DOC_ALIASES = "aliases.tsv"
+# Mavzuning uy-bobi (docs/OWNERS.tsv). aliases.tsv ga kind=uy bilan
+# yoziladi: alias ustunida izlash naqshi, `find` uni birinchi qo'yadi.
+OWNERS = os.path.join(DOCS_DIR, "OWNERS.tsv")
 
 # Ishora-yozuv: Tavsif boshqa patterns bo'limiga havola bilan boshlanadi
 # ("[... yozuvi](11-...md#1117-...) bu patternning to'liq yozuvi"). Mavzu
@@ -47,7 +56,7 @@ POINTER_RE = re.compile(r"^\*\*Tavsif:\*\*\s*\[[^\]]+\]\(([\w.-]+\.md)?#([^)\s]+
 
 # build() yozadigan fayllar: is_fresh() hammasi borligini talab qiladi.
 OUTPUTS = ("docs.tsv", "chapters.tsv", "sections.tsv", "aliases.tsv",
-           "rules.tsv", "checklist.tsv", "df.tsv")
+           "rules.tsv", "checklist.tsv", "df.tsv", "exceptions.tsv")
 # Hamma fayldan keyin yoziladi: u bor bo'lsa indeks to'liq. Vaqti build
 # BOSHLANGAN payt, shuning uchun build paytida tahrirlangan bob keyingi
 # chaqiruvda baribir qayta yasaladi. doc.sh ensure_index ham shunga qaraydi.
@@ -55,7 +64,45 @@ STAMP = ".stamp"
 
 # `n+1`, `c++` kabi atamalar bitta token bo'lib qolishi kerak.
 RULE_RE = re.compile(r"\bjava:S\d+\b")
+# Sonar katalog bo'limining birinchi qatori: "Qoida: `java:S1192`". Bo'lim
+# kalitning tuzatish retsepti, shuning uchun rules.tsv da shu kalitning
+# boshqa hamma bo'limidan oldin turadi (`qoida` ustuni).
+DECLARED_RE = re.compile(r"^Qoida:\s")
+
+# Exception va Error nomlari: stack trace dagi sinf nomini bo'limga
+# bog'lash uchun (index/exceptions.tsv). Oldida `+` (-XX:+HeapDumpOn...
+# bayrog'i) yoki `@` (@AfterChunkError annotatsiyasi) bo'lsa nom emas.
+EXC_RE = re.compile(r"(?<![\w+@$])([A-Z]\w+(?:Exception|Error))\b")
+# Shuncha bo'limdan ko'pida uchragan nom umumiy (RuntimeException,
+# IllegalStateException): u mavzuni ko'rsatmaydi. Bunday nomdan faqat
+# sarlavhadagi uchrashi qoladi.
+EXC_MAX_SECTIONS = 5
+# Mavzu emas, har qanday JDBC xatosining umumiy turi.
+EXC_GENERIC = {"SQLException"}
+# Misol domenidagi o'ylab topilgan nomlar (OrderNotFoundException,
+# InsufficientFundsException): ular istisno dizayni bo'limlariga olib
+# boradi, foydalanuvchining xatosiga emas. Korpusda `class X extends`
+# bilan e'lon qilingan nom ham shu turdan.
+EXC_EXAMPLE_RE = re.compile(
+    r"^(?:Order|Payment|Refund|Insufficient|Email|Cart|Customer|Account|"
+    r"Settlement|Gateway|Domain|Integration|Specific|My|Currency|Product|"
+    r"Stock|Invoice|Business|NotFound)")
+DECL_EXC_RE = re.compile(r"\b(?:class|record)\s+([A-Z]\w*(?:Exception|Error))\b")
 CHECKBOX_RE = re.compile(r"^\s*- \[ \]\s+(.*?)\s*$")
+# Punkt doirasi: `loyiha` butun proyekt auditi ("Loyihadagi barcha ...",
+# "eng uzun 20 ta metod", "CI ga qo'shing"), `kod` esa tegilgan kodga
+# qo'llanadigan punkt. rules_for faqat `kod` ni beradi, `doc.sh checklist`
+# hammasini. Naqsh qo'pol: "Barcha o'qish metodlariga readOnly" ham
+# loyiha bo'ladi. Xato tomoni xavfsiz: punkt yo'qolmaydi, `doc.sh
+# checklist` da qoladi.
+SCOPE_RE = re.compile(
+    r"Loyihada|Kod bazasi|Barcha|Hamma|CI ga|eng uzun \d+|eng yuqori \d+"
+    r"|ro['\u02bb\u02bc\u2019]yxatga oling|sanab", re.IGNORECASE)
+
+
+def scope(item):
+    """Punkt doirasi: `loyiha` yoki `kod` (SCOPE_RE)."""
+    return "loyiha" if SCOPE_RE.search(item) else "kod"
 
 WORD_RE = re.compile(r"[a-z0-9_.@#]+(?:\+\+|\+\d+)?(?:'[a-z0-9]+)*")
 
@@ -204,19 +251,130 @@ def scan_body(doc_key, chapter, section, body, rows):
     """
     if not section and not chapter:
         return
+    first = next((i for i, line in enumerate(body) if line.strip()), None)
+    declared = set()
+    if section and first is not None and DECLARED_RE.match(body[first]):
+        declared = set(RULE_RE.findall(body[first]))
+        # Qoida qatorining o'zi sanoq va ulushga kirmaydi: aks holda
+        # docref.by_rule (check_code havolasi) birinchi qatorni olib,
+        # mavzuli bo'lim o'rniga katalog bo'limiga o'tib ketardi.
+        body = body[:first] + body[first + 1:]
     text = "\n".join(body)
     prose = prose_lines(body)
-    for rule in set(RULE_RE.findall(text)):
+    for rule in set(RULE_RE.findall(text)) | declared:
         rows["rules"].append(
             (rule, doc_key, chapter, section, text.count(rule),
-             explaining(prose, rule))
+             explaining(prose, rule), int(rule in declared))
         )
     for line in body:
         match = CHECKBOX_RE.match(line)
         if match:
+            item = clean(match.group(1))
             rows["checklist"].append(
-                (doc_key, chapter, section, clean(match.group(1)))
+                (doc_key, chapter, section, item, scope(item))
             )
+
+
+def scan_exceptions(doc_key, section, title, body, rows):
+    """Bo'lim sarlavhasi va nasridagi exception nomlari.
+
+    Kod bloki ichidagi nom olinmaydi: u misolning bir qismi, bo'lim esa
+    ko'pincha boshqa narsa haqida. Kodda `class X extends` bilan e'lon
+    qilingan nom esa misol nomi sifatida eslab qolinadi.
+    """
+    for match in DECL_EXC_RE.finditer("\n".join(body)):
+        rows["exc_declared"].add(match.group(1))
+    if not section:
+        return
+    counts = {}
+    in_title = set(EXC_RE.findall(title))
+    for name in in_title:
+        counts[name] = counts.get(name, 0) + 1
+    for line in prose_lines(body):
+        for name in EXC_RE.findall(line):
+            counts[name] = counts.get(name, 0) + 1
+    for name, count in counts.items():
+        rows["exceptions"].append(
+            (name, doc_key, section, count, int(name in in_title)))
+
+
+def exception_rows(found, declared):
+    """exceptions.tsv qatorlari: misol va umumiy nomlarsiz.
+
+    Umumiy nom (EXC_MAX_SECTIONS dan ko'p bo'limda) butunlay tashlanmaydi:
+    sarlavhasida turgan bo'lim (`InterruptedException ni yutib yuborish`)
+    uni haqiqatan tushuntiradi.
+    """
+    spread = {}
+    for name, doc, section, _, _ in found:
+        spread.setdefault(name, set()).add((doc, section))
+    out = []
+    for row in found:
+        name, title_hit = row[0], row[4]
+        if name in EXC_GENERIC or name in declared or EXC_EXAMPLE_RE.match(name):
+            continue
+        if len(spread[name]) > EXC_MAX_SECTIONS and not title_hit:
+            continue
+        out.append(row)
+    out.sort(key=lambda r: (r[0], -r[4], -r[3], r[1], r[2]))
+    return out
+
+
+def read_doc_aliases(path, doc_key, known_sections):
+    """docs/<hujjat>/aliases.tsv: (taxallus, hujjat, "section", raqam).
+
+    Indeksda yo'q bo'lim raqami stderr ga yoziladi va tashlanadi: eskirgan
+    raqam jimgina noto'g'ri bo'limga olib bormasin.
+    """
+    out = []
+    rel = os.path.relpath(path, ROOT).replace(os.sep, "/")
+    for lineno, line in enumerate(read_lines(path), 1):
+        if not line.strip() or line.startswith("#"):
+            continue
+        parts = [p.strip() for p in line.split("\t")]
+        if len(parts) < 2 or parts[0] == "bolim":
+            continue
+        section, name = parts[0], clean(parts[1])
+        if section not in known_sections:
+            sys.stderr.write("%s:%d: bo'lim yo'q: %s\n" % (rel, lineno, section))
+            continue
+        if name:
+            out.append((name, doc_key, "section", section))
+    return out
+
+
+def owner_pattern(topic):
+    """Naqsh ustuni bo'sh bo'lsa mavzuning o'zi, regex belgilari qochirilgan."""
+    return re.sub(r"([.+*?()\[\]{}|^$\\])", r"\\\1", topic)
+
+
+def read_owner_rows(path=None):
+    """docs/OWNERS.tsv -> (naqsh, hujjat, "uy", raqam) qatorlari.
+
+    alias ustunida izlash naqshi turadi: OWNERS dagi `naqsh` (POSIX ERE,
+    kichik harf, o'zbekcha shakllar bilan) yoki u bo'lmasa mavzuning
+    o'zi. doc.sh find uni so'rovga qo'llaydi.
+    """
+    out, header = [], None
+    try:
+        lines = read_lines(path or OWNERS)
+    except OSError:
+        return out
+    for line in lines:
+        if not line.strip() or line.startswith("#"):
+            continue
+        parts = [p.strip() for p in line.split("\t")]
+        if header is None:
+            header = parts
+            continue
+        row = dict(zip(header, parts))
+        home = row.get("uy_bob", "").split()
+        topic = row.get("mavzu", "").lower()
+        if len(home) != 2 or not topic:
+            continue
+        pattern = row.get("naqsh") or owner_pattern(topic)
+        out.append((clean(pattern), home[0], "uy", home[1]))
+    return out
 
 
 def index_chapter(doc_key, chapter, rel_path, rows):
@@ -269,13 +427,16 @@ def index_chapter(doc_key, chapter, rel_path, rows):
             # Tana shu yerda qo'lda, chunki satrlar allaqachon o'qilgan:
             # alohida yurish fayllarni ikkinchi marta ochishni talab qilardi.
             scan_body(doc_key, num, section, lines[lineno:end], rows)
+            scan_exceptions(doc_key, "" if pointer else section, title,
+                            lines[lineno:end], rows)
 
 
 def build():
     started = time.time()
     manifest = json.load(open(os.path.join(DOCS_DIR, "manifest.json"), encoding="utf-8"))
     rows = {"chapters": [], "sections": [], "aliases": [], "known": set(),
-            "rules": [], "checklist": [], "pointers": {}}
+            "rules": [], "checklist": [], "pointers": {},
+            "exceptions": [], "exc_declared": set()}
     doc_rows = []
 
     for doc_key, doc in manifest.items():
@@ -305,11 +466,16 @@ def build():
             total_bytes,
         ))
 
+        known = {s for d, s in rows["known"] - rows["pointers"].keys()
+                 if d == doc_key}
         alias_path = os.path.join(ROOT, doc_dir, ALIAS_FILE)
         if os.path.exists(alias_path):
-            known = {s for d, s in rows["known"] - rows["pointers"].keys()
-                     if d == doc_key}
             rows["aliases"].extend(parse_alias_file(alias_path, doc_key, known))
+        own_path = os.path.join(ROOT, doc_dir, DOC_ALIASES)
+        if os.path.exists(own_path):
+            rows["aliases"].extend(read_doc_aliases(own_path, doc_key, known))
+
+    rows["aliases"].extend(read_owner_rows())
 
     aliases = sorted(
         set(rows["aliases"]), key=lambda r: (r[0].lower(), r[1], r[2], r[3])
@@ -343,20 +509,31 @@ def build():
     # da 3.0). Kalitni yo'l-yo'lakay eslatgan kichik bo'lim ham yuqori
     # chiqishi mumkin: docref.by_rule buni topilma so'zi bilan aniqlaydi.
     per_section = {}
-    for rule, doc, chapter, section, _, _ in set(rows["rules"]):
+    for rule, doc, chapter, section, _, _, _ in set(rows["rules"]):
         per_section.setdefault((doc, chapter, section), set()).add(rule)
     rules = []
-    for rule, doc, chapter, section, count, explain in set(rows["rules"]):
+    for rule, doc, chapter, section, count, explain, declared in set(rows["rules"]):
         distinct = len(per_section[(doc, chapter, section)])
         # Tushuntirgan uchrash bo'lmasa bo'lim ro'yxatdan chiqmaydi, lekin
         # pastga tushadi: `doc.sh rule` da u baribir foydali bo'lishi
         # mumkin, faqat birinchi javob bo'lmasligi kerak.
         share = (explain if explain else ILLUSTRATIVE_WEIGHT) / distinct
-        rules.append((rule, doc, chapter, section, count, round(share, 3)))
+        rules.append((rule, doc, chapter, section, count, round(share, 3),
+                      declared))
+    # `qoida`: bo'lim "Qoida: `java:Sxxxx`" bilan boshlanadi, ya'ni u
+    # kalitning katalogdagi tuzatish retsepti. Tartib ulush bo'yicha
+    # qoladi (docref.by_rule topilma so'zi bilan o'zi tanlaydi), `qoida`
+    # ni birinchi qo'yish `doc.sh rule` va taklif hookining ishi: S1192
+    # da ulush tushuntirish bo'limini (3.10) retseptdan (27.8) yuqori
+    # qo'yardi. Ustun oxirida: o'quvchilar avvalgilarini o'rni bilan oladi.
     rules.sort(key=lambda r: (r[0], -r[5], -r[4], r[1], r[2], r[3]))
     write("rules.tsv",
-          ["rule", "doc", "chapter", "section", "marta", "ulush"], rules)
-    write("checklist.tsv", ["doc", "chapter", "section", "item"],
+          ["rule", "doc", "chapter", "section", "marta", "ulush", "qoida"],
+          rules)
+    write("exceptions.tsv", ["nom", "doc", "section", "marta", "sarlavha"],
+          exception_rows(rows["exceptions"], rows["exc_declared"]))
+    # `doira` oxirida: doc.sh va boshqa o'quvchilar ustunni o'rni bilan oladi.
+    write("checklist.tsv", ["doc", "chapter", "section", "item", "doira"],
           rows["checklist"])
 
     # Ishora-yozuv tanasi to'liq yozuvni qisqa takrorlaydi: sanalsa o'sha
@@ -413,27 +590,20 @@ def write(name, header, data, mtime=None):
     raqam deb oladi va anchor oxiriga \\r tushadi.
     """
     path = os.path.join(INDEX_DIR, name)
-    tmp = "%s.%d.tmp" % (path, os.getpid())
-    try:
-        with open(tmp, "w", encoding="utf-8", newline="\n") as handle:
-            if header:
-                handle.write("\t".join(header) + "\n")
-            for row in data:
-                handle.write("\t".join(str(cell) for cell in row) + "\n")
-        if mtime is not None:
-            os.utime(tmp, (mtime, mtime))
-        os.replace(tmp, path)
-    finally:
-        if os.path.exists(tmp):
-            os.remove(tmp)
+    lines = ["\t".join(header)] if header else []
+    lines.extend("\t".join(str(cell) for cell in row) for row in data)
+    geniuslib.atomic_write_text(
+        path, "".join(line + "\n" for line in lines), newline="\n", mtime=mtime)
 
 
 def sources():
-    """Indeks tayanadigan fayllar: bob matnlari, manifest va shu skript."""
+    """Indeks tayanadigan fayllar: bob matnlari, manifest, taxallus
+    fayllari, OWNERS.tsv va shu skript."""
     yield os.path.abspath(__file__)
+    own = os.path.basename(OWNERS)
     for folder, _, names in os.walk(DOCS_DIR):
         for name in names:
-            if name.endswith(".md") or name == "manifest.json":
+            if name.endswith(".md") or name in ("manifest.json", DOC_ALIASES, own):
                 yield os.path.join(folder, name)
 
 

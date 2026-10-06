@@ -25,7 +25,9 @@ Har holat uchun uch o'lchov:
 va teskari tekshiruvlar: toza faylda shovqin bo'lmasin, "Avval yo'l
 qo'yilgan xatolar" bo'limidagi har tavsif bo'sh yoki `---` bo'lmasin.
 Bir nechta fayl berilgan holat teskari tartibda ham yurgiziladi: marshrut
-fayllar tartibiga bog'liq bo'lmasin.
+fayllar tartibiga bog'liq bo'lmasin. Punkt doirasi: besh faylda butun
+proyekt auditi uslubidagi punkt AUDIT_MAX dan oshmasin. Kotlin: .kt
+fayl boblarni oladi va mexanik tekshiruv yo'qligi ochiq aytiladi.
 
 rules_for har chaqiruvda "o'qildi" belgisini qo'yadi. Belgilar vaqtinchalik
 papkaga yoziladi (GENIUS_STATE_DIR), jonli `.claude/.state` ga sinov
@@ -38,6 +40,7 @@ marshrut suyulsa, shu yerda ko'rinadi. Mutlaq sifat o'lchovi emas.
 
 import atexit
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -53,7 +56,7 @@ os.environ["GENIUS_STATE_DIR"] = STATE
 atexit.register(shutil.rmtree, STATE, True)
 sys.path.insert(0, HERE)
 
-from rules_for import ALWAYS, MAX_CHAPTERS  # noqa: E402
+from rules_for import ALWAYS, KOTLIN_NOTE, MAX_CHAPTERS, MAX_POINTS  # noqa: E402
 
 # Bitta fayl uchun marshrutning yuqori chegarasi: undan ko'pi suyulish.
 MAX_ROUTED = MAX_CHAPTERS + len(ALWAYS)
@@ -133,6 +136,24 @@ CASES = [
 
 # Toza fayl: marshrut bo'lsin, lekin mexanik topilma bo'lmasin.
 CLEAN = [os.path.join(JAVA, "Good.java"), os.path.join(ENT, "Customer.java")]
+
+# Punkt doirasi: shu fayllarda loyiha (butun proyekt auditi) uslubidagi
+# punkt AUDIT_MAX dan oshmasin. Naqsh build_index.SCOPE_RE dan kengroq va
+# undan mustaqil: o'sha naqsh bilan o'lchash har doim 0 berardi.
+SCOPE_FILES = [os.path.join(JAVA, "Bad.java"), os.path.join(JAVA, "Insecure.java"),
+               os.path.join(ENT, "Order.java"), os.path.join(JAVA, "FlakyTest.java"),
+               os.path.join("tools", "testdata", "entities_nested", "PurchaseOrder.java")]
+AUDIT_RE = re.compile(
+    r"\b(?:barcha|hamma\w*|loyiha\w*|kod bazasi\w*|grep|ro'yxat\w*|sanab|CI ga"
+    r"|eng uzun \d+|eng yuqori \d+)\b", re.IGNORECASE)
+AUDIT_MAX = 2
+# Bad.java chiqishi hajmi: faqat ko'rsatiladi (R2.6 maqsadi 2600 bayt).
+SIZE_GOAL = 2600
+
+# Kotlin: boblar beriladi, mexanik tekshiruv yo'qligi ochiq aytiladi.
+KOTLIN = ("package shop\n\n@Service\nclass OrderService(private val client: RestClient) {\n"
+          "    @Transactional\n    fun place() { client.post() }\n}\n")
+KOTLIN_WANT = [("architect", "19"), ("code-review", "19"), ("clean-code", "2")]
 
 
 def paths_of(case_path):
@@ -253,6 +274,41 @@ def main():
         noise += not ok
         print("%-4s %-34s %d topilma" % ("OK" if ok else "XATO", path, len(found)))
 
+    print("\n== Punkt doirasi: loyiha uslubidagi punkt <= %d ==\n" % AUDIT_MAX)
+    scope_bad = 0
+    for path in SCOPE_FILES:
+        out = rules_for(path)
+        items = [l for l in out.split("\n") if l.startswith("  - [ ] (")]
+        audit = [l for l in items if AUDIT_RE.search(l)]
+        ok = len(audit) <= AUDIT_MAX and len(items) <= MAX_POINTS
+        scope_bad += not ok
+        print("%-4s %-46s %d/%d punkt" % ("OK" if ok else "XATO", path, len(audit),
+                                          len(items)))
+    size = len(rules_for(os.path.join(JAVA, "Bad.java")).encode("utf-8"))
+    print("info Bad.java chiqishi %d bayt (maqsad <= %d)" % (size, SIZE_GOAL))
+
+    print("\n== Kotlin ==\n")
+    tmp = tempfile.mkdtemp(prefix="eval-kt-")
+    try:
+        kt = os.path.join(tmp, "OrderService.kt")
+        with open(kt, "w", encoding="utf-8") as handle:
+            handle.write(KOTLIN)
+        proc = subprocess.run(
+            [sys.executable, os.path.join(HERE, "rules_for.py"), kt],
+            capture_output=True, text=True, cwd=ROOT)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    got_kt = routed(proc.stdout)
+    kt_checks = [("rc 0", proc.returncode == 0),
+                 ("'Kotlin: mexanik tekshiruv yo'q'", KOTLIN_NOTE in proc.stdout),
+                 ("boblar: %s" % ", ".join("%s %s" % c for c in KOTLIN_WANT),
+                  all(c in got_kt for c in KOTLIN_WANT)),
+                 ("yolg'on topilma yo'q", not findings(proc.stdout))]
+    kt_bad = 0
+    for label, ok in kt_checks:
+        kt_bad += not ok
+        print("%-4s %s" % ("OK" if ok else "XATO", label))
+
     print("\n== Avvalgi xatolar: tavsif bo'sh yoki frontmatter emas ==\n")
     for rel in sorted(feedback):
         print("XATO %s" % rel)
@@ -275,11 +331,16 @@ def main():
     print("  marshrut chegarasida    : %3d/%-3d  (<= %d bob)"
           % (len(CASES) - len(wide), len(CASES), MAX_ROUTED))
     print("  shovqin                 : %d" % noise)
+    print("  punkt doirasi           : %3d/%-3d  (loyiha punkti <= %d)"
+          % (len(SCOPE_FILES) - scope_bad, len(SCOPE_FILES), AUDIT_MAX))
+    print("  Kotlin                  : %3d/%-3d"
+          % (len(kt_checks) - kt_bad, len(kt_checks)))
     print("  tartibga bog'liq emas   : %s" % ("ha" if not order else
                                             ", ".join(order)))
 
     failed = (route_hit < route_total or find_hit < find_total
-              or prec_ok < prec_total or noise or wide or order)
+              or prec_ok < prec_total or noise or wide or order
+              or scope_bad or kt_bad)
     print("\n%s" % ("Hammasi joyida." if not failed
                     else "Yetishmovchilik bor, yuqoriga qarang."))
     return 1 if failed else 0

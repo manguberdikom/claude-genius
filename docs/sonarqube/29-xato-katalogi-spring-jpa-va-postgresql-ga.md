@@ -53,6 +53,8 @@ Spring va JPA loyihalarida Sonar shikoyatlarining katta qismi bir necha o'nlab t
 
 ## 29.1 Maydonga `@Autowired` qo'yish
 
+Qoida: `java:S6813`
+
 Shikoyat qilinadigan kod:
 
 ```java
@@ -271,6 +273,8 @@ public class Mahsulot {
 
 Tavsiya: entity da `equals` ni faqat `id` bo'yicha yoz, `hashCode` ni esa o'zgarmaydigan qiymatga bog'la.
 
+Mavzuning to'liq yozuvi [entity da equals va hashCode](../clean-code/15-tenglik-hash-va-obyekt-shartnomalari.md#155-entitet-va-value-object-tengligi-farqi) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 29.7 `@OneToMany` da `FetchType.EAGER` va N+1 xavfi
 
 Shikoyat qilinadigan kod:
@@ -303,6 +307,8 @@ public interface BuyurtmaRepository extends JpaRepository<Buyurtma, Long> {
 ```
 
 Tavsiya: barcha bog'lanishni `LAZY` qoldir va kerak bo'lgan joyda `@EntityGraph` yoki `join fetch` bilan aniq yukla.
+
+Mavzuning to'liq yozuvi [N+1 muammosi](../architect/18-spring-data-jpa-va-hibernate-chuqur.md#184-n1-sorov-muammosi-topish-usuli-va-tort-xil-yechim) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
 
 ## 29.8 Repository metodida barcha qatorlarni olish va sahifalashsiz ishlash
 
@@ -337,6 +343,8 @@ spring.data.web.pageable.max-page-size=100
 Tavsiya: tashqariga chiqadigan har bir ro'yxat `Pageable` qabul qilsin va maksimal sahifa hajmi konfiguratsiyada cheklansin.
 
 ## 29.9 Native query da satr birlashtirish
+
+Qoida: `java:S2077`
 
 Shikoyat qilinadigan kod:
 
@@ -376,6 +384,8 @@ Tavsiya: qiymatni har doim nomli parametr bilan uzat, identifikatorni esa qattiq
 
 ## 29.10 `@Value` bilan maxfiy ma'lumotni standart qiymat sifatida yozish
 
+Qoida: `java:S2068`
+
 Shikoyat qilinadigan kod:
 
 ```java
@@ -406,6 +416,8 @@ public class ToLovShlyuzi {
 Tavsiya: maxfiy qiymatga standart berma, u yo'q bo'lsa ilova ishga tushmasligi to'g'ri xatti harakat.
 
 ## 29.11 Konfiguratsiyada parol va kalitni ochiq saqlash
+
+Qoida: `java:S2068`
 
 Shikoyat qilinadigan kod:
 
@@ -472,6 +484,8 @@ class KeshKonfiguratsiyasi { /* faqat kesh bean lari */ }
 Tavsiya: konfiguratsiyani mavzu bo'yicha bo'l va Boot auto configuration bergan bean ni qo'lda qayta e'lon qilma.
 
 ## 29.13 Istisnolarni controller da umumiy ushlash va ma'lumotni oshkor qilish
+
+Qoida: `java:S2221`
 
 Shikoyat qilinadigan kod:
 

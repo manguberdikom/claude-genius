@@ -10,10 +10,13 @@
     python3 tools/run_tests.py --tashxis               # suite nega sekin
     python3 tools/run_tests.py --isit                  # fonda oldindan kompilyatsiya
     python3 tools/run_tests.py --hisobot               # test vaqti jurnali, 7 kun
+    python3 tools/run_tests.py --diff --asbob maven    # Maven va Gradle ikkalasi bo'lsa
+    python3 tools/run_tests.py --ildiz backend --diff  # build ichki papkada, bir nechta
 
-Chiqish kodi: 0 yashil, 1 yiqildi, 3 vaqt tugadi, 4 beqaror (yiqilgan
-sinf qayta yurishda o'tdi: o'zgarish emas, flaky ehtimoli, lekin yashil
-ham emas).
+Chiqish kodi: 0 yashil, 1 yiqildi, 2 noto'g'ri kirish (loyiha yo'q,
+build ildizi yoki asbob noaniq, `--asos` commit emas, `--log` temp yoki
+loyihadan tashqarida), 3 vaqt tugadi, 4 beqaror (yiqilgan sinf qayta
+yurishda o'tdi: o'zgarish emas, flaky ehtimoli, lekin yashil ham emas).
 
 Nega: to'liq suite 5-8 daqiqa, aktyor esa uni 2-4 marta yurgizardi.
 Sabab faqat odat emas. Ko'p modulli Gradle da `test --tests X` X yo'q
@@ -52,17 +55,20 @@ yuborsa, u o'sha yerda chiqadi va egasiga qaytadi.
 import argparse
 import contextlib
 import hashlib
-import io
 import json
 import os
 import re
 import shlex
+import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
+
+import geniuslib
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PARSER = os.path.join(HERE, "parse_test_output.py")
@@ -84,10 +90,13 @@ SPRING_TEST_RE = re.compile(
     r"@(?:SpringBootTest|WebMvcTest|WebFluxTest|DataJpaTest|DataJdbcTest"
     r"|DataR2dbcTest|JdbcTest|JooqTest|JsonTest|RestClientTest|DataMongoTest"
     r"|DataRedisTest|GraphQlTest|SpringJUnitConfig|SpringJUnitWebConfig"
-    r"|ContextConfiguration)\b")
+    r"|ContextConfiguration"
+    # Spring siz JVM: ilova konteynerini ko'taradigan test ham sozlamaga bog'liq.
+    r"|QuarkusTest|QuarkusIntegrationTest|MicronautTest)\b")
 DB_TEST_RE = re.compile(
     r"@(?:DataJpaTest|DataJdbcTest|DataR2dbcTest|JdbcTest|JooqTest"
-    r"|SpringBootTest|Sql|Container|Testcontainers|AutoConfigureTestDatabase)\b")
+    r"|SpringBootTest|Sql|Container|Testcontainers|AutoConfigureTestDatabase"
+    r"|QuarkusTest|QuarkusIntegrationTest|MicronautTest)\b")
 CONFIG_RE = re.compile(
     r"(?:^|/)src/main/resources/(?:(?:config/)?(?:application|bootstrap)"
     r"[\w.-]*\.(?:ya?ml|properties)|META-INF/spring\.factories"
@@ -122,6 +131,17 @@ ROOT_BUILD_RE = re.compile(
     r"^(?:settings\.gradle(?:\.kts)?|gradle\.properties|gradle/[^/]+\.toml"
     r"|gradle/wrapper/.*|\.mvn/.*|buildSrc/.*|build-logic/.*)$")
 
+# Ildiz belgisi va har asbobning fayllari. Wrapper jamoa tanlagan asbobni
+# bildiradi: ikki build fayli bo'lsa (ko'chish davri) shu hal qiladi.
+BUILD_MARKERS = ("settings.gradle", "settings.gradle.kts", "pom.xml",
+                 "build.gradle", "build.gradle.kts")
+TOOL_FILES = OrderedDict((
+    ("gradle", ("gradlew", "gradlew.bat", "settings.gradle", "settings.gradle.kts",
+                "build.gradle", "build.gradle.kts")),
+    ("maven", ("mvnw", "mvnw.cmd", "pom.xml")),
+))
+WRAPPERS = {"gradle": ("gradlew", "gradlew.bat"), "maven": ("mvnw", "mvnw.cmd")}
+
 # Kataloglar faqat `src/` dan TASHQARIDA tashlanadi: `src/main/java/x/bin`
 # paketi build chiqishi emas.
 OUTPUT_DIRS = {".git", ".gradle", "build", "target", "out", "bin",
@@ -145,8 +165,7 @@ MAX_SHOWN = 12
 # Yiqilgan sinflar shundan ko'p bo'lsa qayta yurgizilmaydi: bu flaky emas,
 # keng buzilish, qayta yurish faqat vaqt oladi.
 MAX_RERUN = 30
-STATE_DIR = (os.environ.get("GENIUS_STATE_DIR")
-             or os.path.join(os.path.dirname(HERE), ".claude", ".state"))
+STATE_DIR = geniuslib.state_dir(os.path.dirname(HERE))
 JOURNAL = os.path.join(STATE_DIR, "run_tests.jsonl")
 STARTED_RE = re.compile(r"\bStarted (\S+) in ([\d.]+) seconds\b")
 
@@ -181,29 +200,109 @@ def relative_to(path, root):
 
 
 def run_git(root, *args):
+    """git chiqishi yoki None. Kodirovka aniq: Windows da sukut cp1252
+    non-ASCII yo'lni buzar yoki UnicodeDecodeError berardi;
+    surrogateescape UTF-8 bo'lmagan nomni ham yo'qotmaydi."""
     try:
         out = subprocess.run(["git", "-C", root] + list(args),
-                             capture_output=True, text=True, timeout=60)
+                             capture_output=True, text=True, encoding="utf-8",
+                             errors="surrogateescape", timeout=60)
     except (OSError, subprocess.SubprocessError):
         return None
     return out.stdout if out.returncode == 0 else None
 
 
-def project_root(start):
-    """Git ildizi yoki build fayli bor eng yaqin yuqori papka."""
+def has_marker(path):
+    return any(os.path.exists(os.path.join(path, n)) for n in BUILD_MARKERS)
+
+
+def locate_root(start):
+    """(ildiz, nomzodlar). Nomzodlar bo'sh bo'lmasa ildiz noaniq.
+
+    Git ichida: cwd dan git ildizigacha build fayli bor ENG YUQORI papka.
+    Eng yaqini emas: `backend/services/orders` ning o'z pom.xml i bor,
+    lekin reaktor (yoki settings.gradle) `backend/` da, submodul ildiz
+    bo'lsa build reaktorsiz qoladi. Git ildizida build fayli bo'lsa u.
+    Yo'lda hech biri bo'lmasa (`backend/pom.xml`, cwd ildizda) git
+    ildizining birinchi darajasidagi yagona build papka; bir nechta
+    bo'lsa tanlov foydalanuvchiniki (`--ildiz`).
+
+    Git siz: build fayli bor eng yaqin yuqori papka (chegara yo'q).
+    Yuqoriga realpath dan yuriladi: symlink yoki Windows qisqa nomi
+    orqali kirilganda ham ildiz (demak log_path kaliti) bitta bo'lsin.
+    """
+    here = os.path.realpath(os.path.abspath(start))
     top = run_git(start, "rev-parse", "--show-toplevel")
-    if top and top.strip():
-        return os.path.realpath(os.path.normpath(top.strip()))
-    path = os.path.abspath(start)
+    top = os.path.realpath(os.path.normpath(top.strip())) if top and top.strip() else None
+    if top is None or not inside(here, top):
+        path = here
+        while True:
+            if has_marker(path):
+                return path, []
+            parent = os.path.dirname(path)
+            if parent == path:
+                return here, []
+            path = parent
+    highest, path = None, here
     while True:
-        if any(os.path.exists(os.path.join(path, n)) for n in
-               ("settings.gradle", "settings.gradle.kts", "pom.xml",
-                "build.gradle", "build.gradle.kts")):
-            return os.path.realpath(path)
+        if has_marker(path):
+            highest = path
         parent = os.path.dirname(path)
-        if parent == path:
-            return os.path.realpath(os.path.abspath(start))
+        if os.path.normcase(path) == os.path.normcase(top) or parent == path:
+            break
         path = parent
+    if highest:
+        return highest, []
+    try:
+        names = sorted(os.listdir(top))
+    except OSError:
+        names = []
+    found = [n for n in names if not n.startswith(".") and n not in OUTPUT_DIRS
+             and os.path.isdir(os.path.join(top, n)) and has_marker(os.path.join(top, n))]
+    if len(found) == 1:
+        return os.path.join(top, found[0]), []
+    return top, found
+
+
+def project_root(start):
+    """Loyiha ildizi (noaniq bo'lsa git ildizi): locate_root ga qarang."""
+    return locate_root(start)[0]
+
+
+def choose_tool(root, requested=None):
+    """(asbob, izoh, xato). Tanlov: --asbob, keyin GENIUS_BUILD_TOOL.
+
+    Ikki build fayli bo'lsa wrapperi bor asbob ustun: jamoa shuni
+    ishlatadi, ikkinchisi ko'pincha ko'chishdan qolgan. Wrapper ikkalasida
+    bor yoki ikkalasida yo'q bo'lsa taxmin qilinmaydi: boshqa build
+    konfiguratsiyasidagi natija yiqilishdan ham yomon (rc 2, so'rov).
+    `izoh` reja qatoriga chiqadi: qaysi asbob va nega."""
+    has = lambda n: os.path.exists(os.path.join(root, n))
+    present = [t for t, names in TOOL_FILES.items() if any(has(n) for n in names)]
+    source = "--asbob %s" % requested if requested else ""
+    if not requested:
+        requested = os.environ.get("GENIUS_BUILD_TOOL", "").strip().lower() or None
+        source = "GENIUS_BUILD_TOOL=%s" % requested if requested else ""
+    both = len(present) == 2
+    if requested:
+        if requested not in TOOL_FILES:
+            return None, "", "%s: maven yoki gradle bo'ladi" % source
+        if requested not in present:
+            return None, "", "%s: %s da %s fayli yo'q" % (
+                source, root, "pom.xml" if requested == "maven" else "build.gradle")
+        return requested, "%s (%s%s)" % (
+            requested, source, "; Maven va Gradle ikkalasi bor" if both else ""), None
+    if not both:
+        return (present[0] if present else None), "", None
+    wrapped = [t for t in present if any(has(n) for n in WRAPPERS[t])]
+    if len(wrapped) == 1:
+        return wrapped[0], "%s (Maven va Gradle ikkalasi bor, wrapper %s faqat shunda)" % (
+            wrapped[0], WRAPPERS[wrapped[0]][0]), None
+    return None, "", (
+        "Maven va Gradle ikkalasi bor, wrapper %s: qaysi biri ishlatilishini "
+        "foydalanuvchidan so'rang va --asbob maven|gradle yoki "
+        "GENIUS_BUILD_TOOL=maven|gradle bilan bering" % (
+            "ikkalasida bor" if wrapped else "hech birida yo'q"))
 
 
 class Source:
@@ -331,9 +430,9 @@ def settings_text(folder):
 
 
 class Project:
-    def __init__(self, root, runner=None):
+    def __init__(self, root, runner=None, tool=None):
         self.root = os.path.abspath(root)
-        self.tool = self._tool()
+        self.tool, self.tool_note, self.tool_error = choose_tool(self.root, tool)
         self.runner = runner or self._runner()
         self.gradle_projects = OrderedDict()     # papka -> ":a:b"
         self.maven_modules = set()
@@ -372,16 +471,6 @@ class Project:
             self._include_builds(inner, folder)
 
     # -- loyiha turi -------------------------------------------------------
-
-    def _tool(self):
-        has = lambda n: os.path.exists(os.path.join(self.root, n))
-        if any(has(n) for n in ("gradlew", "gradlew.bat", "settings.gradle",
-                                "settings.gradle.kts", "build.gradle",
-                                "build.gradle.kts")):
-            return "gradle"
-        if any(has(n) for n in ("mvnw", "mvnw.cmd", "pom.xml")):
-            return "maven"
-        return None
 
     def _runner(self):
         """Buyruq boshi. Wrapper bo'lsa u, bo'lmasa PATH dagi asbob.
@@ -506,35 +595,106 @@ def is_output(path):
     return any(part in OUTPUT_DIRS for part in parts)
 
 
+def name_status(output):
+    """`diff --name-status -z` chiqishi: (status, [yo'l]) juftlari.
+
+    NUL bo'yicha: status tokeni, keyin R va C uchun 2 yo'l (eski, yangi),
+    qolganlariga 1 yo'l. -z siz git non-ASCII nomni qo'shtirnoq va oktal
+    bilan berardi va fayl os.path.exists filtrida jim tushib qolardi.
+    """
+    tokens = (output or "").split("\0")
+    pairs, i = [], 0
+    while i < len(tokens):
+        status = tokens[i]
+        if not status:
+            i += 1
+            continue
+        count = 2 if status[:1] in ("R", "C") else 1
+        paths = [p for p in tokens[i + 1:i + 1 + count] if p]
+        i += 1 + count
+        if paths:
+            pairs.append((status, paths))
+    return pairs
+
+
+def git_changes(root, base, relative):
+    """([(status, yo'llar)], [untracked]): base...HEAD, HEAD va yangi fayllar.
+
+    relative=True: faqat ildiz ichi, yo'l ildizga nisbatan. False: butun
+    repo, yo'l git ildiziga nisbatan.
+    """
+    scope = ["--relative"] if relative else []
+    pairs = []
+    for spec in (["%s...HEAD" % base] if base else []) + ["HEAD"]:
+        pairs += name_status(run_git(root, "diff", "--name-status", "-z", *(scope + [spec])))
+    untracked = run_git(root, "ls-files", "-z", "--others", "--exclude-standard",
+                        *([] if relative else ["--full-name", ":/"]))
+    return pairs, [p for p in (untracked or "").split("\0") if p]
+
+
+def outside_root(root, base=None):
+    """Diffdagi, lekin --ildiz dan tashqaridagi fayllar soni.
+
+    Build ildizi git ildizidan pastda bo'lsa (monorepo, `--ildiz backend`)
+    `--relative` faqat ildiz ichini beradi; qolgani shu yerda sanaladi.
+    Ildiz git ildizining o'zi bo'lsa tashqari yo'q, diff qayta olinmaydi.
+    """
+    prefix = (run_git(root, "rev-parse", "--show-prefix") or "").strip()
+    if not prefix:
+        return 0
+    pairs, untracked = git_changes(root, base, relative=False)
+    paths = {p for _, items in pairs for p in items} | set(untracked)
+    return sum(1 for p in paths if not p.startswith(prefix))
+
+
 def changed_files(root, base=None):
-    """(bor fayllar, o'chirilganlar), ildizga nisbatan."""
+    """(bor fayllar, o'chirilganlar), ildizga nisbatan.
+
+    `--relative`: build ildizi git ildizidan pastda bo'lsa ham yo'l ildizga
+    nisbatan keladi. Busiz `backend/...` yo'li ildizga ulanib yo'q fayl
+    bo'lardi va o'zgarish "yo'q" deb rc 0 qaytardi. `base` verify_base dan
+    o'tgan commit: git ga bayroq bo'lib o'tolmaydi.
+    """
     existing, deleted = [], []
-
-    def add(output):
-        for line in (output or "").splitlines():
-            parts = line.split("\t")
-            if len(parts) < 2:
-                continue
-            status, paths = parts[0], parts[1:]
-            if status.startswith("D"):
-                deleted.append(rel(paths[-1]))
-            elif status.startswith("R"):
-                deleted.append(rel(paths[0]))
-                existing.append(rel(paths[-1]))
-            else:
-                existing.append(rel(paths[-1]))
-
-    if base:
-        add(run_git(root, "diff", "--name-status", "%s...HEAD" % base))
-    add(run_git(root, "diff", "--name-status", "HEAD"))
-    for line in (run_git(root, "ls-files", "--others", "--exclude-standard") or "").splitlines():
-        if line.strip():
-            existing.append(rel(line.strip()))
+    pairs, untracked = git_changes(root, base, relative=True)
+    for status, paths in pairs:
+        if status.startswith("D"):
+            deleted.append(rel(paths[-1]))
+        elif status.startswith("R"):
+            deleted.append(rel(paths[0]))
+            existing.append(rel(paths[-1]))
+        else:
+            existing.append(rel(paths[-1]))
+    existing += [rel(p) for p in untracked]
     keep = lambda items: list(OrderedDict.fromkeys(
         p for p in items if not is_output(p)))
     existing = keep(p for p in existing if os.path.exists(os.path.join(root, p)))
     deleted = keep(p for p in deleted if p not in existing)
     return existing, deleted
+
+
+def verify_base(root, base):
+    """--asos ni commit hash iga aylantiradi, bo'lmasa None.
+
+    `-` bilan boshlangan qiymat git ga bayroq bo'lib o'tardi
+    (`--asos=--output=<fayl>` fayl yaratardi), shuning uchun rad etiladi.
+    `--end-of-options` qolganini ham faqat ref deb o'qitadi (git 2.24+).
+    """
+    if not base or base.startswith("-"):
+        return None
+    out = run_git(root, "rev-parse", "--verify", "--quiet", "--end-of-options",
+                  "%s^{commit}" % base)
+    return out.strip() if out and out.strip() else None
+
+
+def inside(path, folder):
+    """`path` realpath bo'yicha `folder` ichidami (Windows da registrsiz)."""
+    full = os.path.normcase(os.path.realpath(os.path.abspath(path)))
+    top = os.path.normcase(os.path.realpath(folder))
+    try:
+        return os.path.commonpath([full, top]) == top
+    except ValueError:          # Windows: boshqa disk
+        return False
 
 
 # -- tanlash -------------------------------------------------------------------
@@ -966,7 +1126,7 @@ def gradle_commands(project, plan, everything):
                          for s in tests if project.in_included(s.module)})
         return [(argv + tasks + ["--continue", "--console=plain"]
                  + gradle_init(project, False) + extra_flags(), "to'liq suite")]
-    for (module, sset), reason in plan.whole.items():
+    for module, sset in plan.whole:
         argv.append("%s:%s" % (project.gradle_path(module), project.test_task(module, sset)))
     for (module, sset), chosen in plan.targets.items():
         argv.append("%s:%s" % (project.gradle_path(module), project.test_task(module, sset)))
@@ -1008,7 +1168,7 @@ def maven_commands(project, plan, everything):
                     + quick + extra_flags(),
                     "butun modul: " + "; ".join(plan.whole.values())))
     units, its = [], []
-    for (module, sset), chosen in plan.targets.items():
+    for chosen in plan.targets.values():
         for fqn in chosen:
             simple = fqn.rsplit(".", 1)[-1]
             (its if failsafe and IT_NAME_RE.match(simple) else units).append(fqn)
@@ -1132,6 +1292,184 @@ def log_path(root, everything):
     return os.path.join(tempfile.gettempdir(), name)
 
 
+KILL_GRACE = 5  # soniya: SIGTERM dan keyin SIGKILL gacha
+
+
+def process_table():
+    """{pid: ppid} butun mashina bo'yicha. Linux da /proc, boshqa joyda
+    `ps -A -o pid=,ppid=`. Jarayon guruhiga tegilmaydi: bola ota bilan bitta
+    guruhda qoladi (Ctrl+C va Bash vositasi guruhni to'xtatganda build ham
+    to'xtasin), shuning uchun avlodlar faqat ota-bola zanjiridan topiladi."""
+    table = {}
+    if os.path.isdir("/proc/self"):
+        for name in os.listdir("/proc"):
+            if not name.isdigit():
+                continue
+            try:
+                with open("/proc/%s/stat" % name, encoding="utf-8", errors="replace") as handle:
+                    text = handle.read()
+                # Nom qavs ichida va bo'sh joy yoki ')' bo'lishi mumkin: oxirgi ')' dan keyin.
+                table[int(name)] = int(text.rsplit(")", 1)[1].split()[1])
+            except (OSError, ValueError, IndexError):
+                continue
+        return table
+    try:
+        out = subprocess.run(["ps", "-A", "-o", "pid=,ppid="], capture_output=True,
+                             text=True, timeout=10).stdout
+    except (OSError, subprocess.SubprocessError):
+        return table
+    for line in out.splitlines():
+        parts = line.split()
+        if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+            table[int(parts[0])] = int(parts[1])
+    return table
+
+
+def descendants(pids, table=None):
+    """pids ning barcha avlodlari (bolalar, nevaralar, ...), pidlarning o'zisiz."""
+    table = process_table() if table is None else table
+    found, frontier = [], list(pids)
+    while frontier:
+        parent = frontier.pop()
+        for child, ppid in table.items():
+            if ppid == parent and child not in found and child not in pids:
+                found.append(child)
+                frontier.append(child)
+    return found
+
+
+def pid_alive(pid):
+    """Zombi (o'lgan, lekin ota hali yig'ib olmagan) tirik hisoblanmaydi."""
+    try:
+        with open("/proc/%d/stat" % pid, encoding="utf-8", errors="replace") as handle:
+            return handle.read().rsplit(")", 1)[1].split()[0] != "Z"
+    except (OSError, IndexError):
+        pass
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except OSError:
+        return True  # PermissionError: jarayon bor
+    return True
+
+
+@contextlib.contextmanager
+def sigterm_ignored():
+    """Tozalash vaqtida ikkinchi SIGTERM uni yarim qoldirmasin. Faqat asosiy thread da."""
+    if threading.current_thread() is not threading.main_thread():
+        yield
+        return
+    try:
+        before = signal.signal(signal.SIGTERM, signal.SIG_IGN)
+    except (ValueError, OSError):
+        yield
+        return
+    try:
+        yield
+    finally:
+        signal.signal(signal.SIGTERM, signal.SIG_DFL if before is None else before)
+
+
+def kill_tree(proc):
+    """Bolani va uning butun daraxtini to'xtatadi. Xatolar jim: jarayon
+    allaqachon yo'q bo'lishi mumkin. Tozalash davomida SIGTERM e'tiborsiz.
+    Windows da `taskkill` topilmasa faqat bola o'ladi (nevara qoladi).
+    Gradle daemon bola daraxtida bo'lsa (ota-bola zanjiri uzilmagan) u ham
+    to'xtaydi: build shu orqali yuradi."""
+    with sigterm_ignored():
+        if os.name == "nt":
+            # `cmd /c gradlew.bat` ostidagi java nevara faqat /T bilan to'xtaydi.
+            with contextlib.suppress(OSError, subprocess.SubprocessError):
+                subprocess.run(["taskkill", "/T", "/F", "/PID", str(proc.pid)],
+                               capture_output=True, timeout=30)
+            with contextlib.suppress(OSError, subprocess.SubprocessError):
+                proc.wait(timeout=KILL_GRACE)
+            with contextlib.suppress(OSError):
+                proc.kill()
+            return
+        kill_posix_tree(proc)
+
+
+def kill_posix_tree(proc):
+    # Avlodlar bolani o'ldirishdan OLDIN yig'iladi: keyin ular init ga o'tib ketadi.
+    known = descendants([proc.pid]) + [proc.pid]
+
+    def send(pids, sig):
+        for pid in pids:
+            with contextlib.suppress(OSError):
+                os.kill(pid, sig)
+
+    def absorb(sig):
+        """SIGTERM va kutish oralig'ida tug'ilgan yangi avlodlar (surefire fork,
+        Gradle worker) ham ro'yxatga qo'shiladi va signal oladi."""
+        alive = [p for p in known if p == proc.pid or pid_alive(p)]
+        fresh = descendants(alive)
+        fresh = [p for p in fresh if p not in known]
+        known.extend(fresh)
+        send(fresh, sig)
+
+    send(known, signal.SIGTERM)
+    deadline = time.time() + KILL_GRACE
+    while time.time() < deadline:
+        absorb(signal.SIGTERM)
+        if proc.poll() is not None and not any(pid_alive(p) for p in known if p != proc.pid):
+            break
+        time.sleep(0.1)
+    absorb(signal.SIGKILL)
+    send([p for p in known if p != proc.pid and pid_alive(p)], signal.SIGKILL)
+    if proc.poll() is None:
+        with contextlib.suppress(OSError):
+            proc.kill()
+    with contextlib.suppress(OSError, subprocess.SubprocessError):
+        proc.wait(timeout=KILL_GRACE)
+
+
+def run_command(argv, cwd, out, timeout):
+    """Bola jarayonni yurgizadi, chiqish kodini qaytaradi; vaqt tugasa
+    TimeoutExpired. TimeoutExpired, KeyboardInterrupt va SIGTERM (execute
+    uni SystemExit ga aylantiradi) da bola tirik bo'lsa butun daraxt
+    to'xtatiladi: subprocess.run faqat bevosita bolani o'ldirardi, Windows da
+    `cmd /c gradlew.bat` ostidagi java esa yetim qolardi. Yangi sessiya yoki
+    jarayon guruhi ISHLATILMAYDI: build terminaldagi Ctrl+C va guruh signalidan
+    chiqib ketardi."""
+    proc = subprocess.Popen(argv, cwd=cwd, stdout=out, stderr=subprocess.STDOUT)
+    try:
+        return proc.wait(timeout=timeout)
+    finally:
+        if proc.poll() is None:
+            kill_tree(proc)
+
+
+@contextlib.contextmanager
+def sigterm_as_exit():
+    """SIGTERM Python ni finally larsiz o'ldiradi; SystemExit qilsak
+    run_command bola daraxtini to'xtatadi va qulflar bo'shaydi. Faqat asosiy
+    thread da (signal.signal boshqa joyda ValueError beradi)."""
+    if threading.current_thread() is not threading.main_thread():
+        yield
+        return
+
+    def handler(signum, _frame):
+        raise SystemExit(128 + signum)
+
+    try:
+        before = signal.getsignal(signal.SIGTERM)
+        if before == signal.SIG_IGN:
+            # Chaqiruvchi SIGTERM ni ataylab e'tiborsiz qoldirgan (masalan nohup): tegmaymiz.
+            yield
+            return
+        signal.signal(signal.SIGTERM, handler)
+    except (ValueError, OSError):
+        yield
+        return
+    try:
+        yield
+    finally:
+        # getsignal None: handler Python dan o'rnatilmagan, standartga qaytariladi.
+        signal.signal(signal.SIGTERM, signal.SIG_DFL if before is None else before)
+
+
 def execute(project, cmds, log, timeout, queue=False, mode="w"):
     """(exit, soniya). exit 124: vaqt tugadi. Qulf tartibi doim bir xil
     (avval repo, keyin ildiz): teskari tartib o'zaro kutib qolishga olib
@@ -1139,7 +1477,7 @@ def execute(project, cmds, log, timeout, queue=False, mode="w"):
     start = time.time()
     code = 0
     lock = queue_lock(project.root) if queue else contextlib.nullcontext()
-    with lock, root_lock(project.root), \
+    with lock, root_lock(project.root), sigterm_as_exit(), \
             open(log, mode, encoding="utf-8", errors="replace") as out:
         for argv, note in cmds:
             out.write("$ %s\n" % show(argv))
@@ -1148,17 +1486,21 @@ def execute(project, cmds, log, timeout, queue=False, mode="w"):
             if left <= 0:
                 return 124, time.time() - start
             try:
-                proc = subprocess.run(argv, cwd=project.root, stdout=out,
-                                      stderr=subprocess.STDOUT, timeout=left)
+                returncode = run_command(argv, project.root, out, left)
             except subprocess.TimeoutExpired:
-                out.write("\n[run_tests] vaqt tugadi: %d s\n" % timeout)
+                out.write("\n[run_tests] vaqt tugadi: %g s\n" % timeout)
                 return 124, time.time() - start
             except OSError as exc:
                 out.write("\n[run_tests] yurgizib bo'lmadi: %s\n" % exc)
                 return 127, time.time() - start
-            if proc.returncode and not note.startswith("formatlash"):
-                code = code or proc.returncode
-            elif proc.returncode:
+            except (KeyboardInterrupt, SystemExit):
+                # Daraxt run_command da to'xtatildi; log da sabab qolsin, signal esa davom etadi.
+                out.write("\n[run_tests] to'xtatildi\n")
+                out.flush()
+                raise
+            if returncode and not note.startswith("formatlash"):
+                code = code or returncode
+            elif returncode:
                 out.write("\n[run_tests] formatlash yiqildi, testlar baribir yuradi\n")
     return code, time.time() - start
 
@@ -1319,6 +1661,26 @@ def summarize(log):
     return (out.stdout or out.stderr).strip()
 
 
+def first_run_totals(log, summary):
+    """Qayta yurish logi faqat yiqilgan sinflarni yurgizadi: uning
+    "Tests: 7" i butun yurish soni emas (petclinic: birinchi yurishda 21).
+    Xulosaning test soni birinchi yurish logidan olinadi."""
+    try:
+        import parse_test_output
+        with open(log, encoding="utf-8", errors="replace") as handle:
+            lines = parse_test_output.strip_ci_prefix(handle.read().split("\n"))
+        totals = parse_test_output.summarize(lines)
+    except (OSError, ImportError):
+        return summary
+    if not totals:
+        return summary
+    line = ("Tests: %d, yiqildi: %d, xato: %d, o'tkazildi: %d" % tuple(totals)
+            + " (birinchi yurish; sabablar qayta yurishdan)")
+    if re.match(r"Tests: [^\n]*", summary or ""):
+        return re.sub(r"^Tests: [^\n]*", lambda _: line, summary, count=1)
+    return line + ("\n" + summary if summary else "")
+
+
 # -- chiqish -------------------------------------------------------------------
 
 def describe(project, plan, cmds, everything):
@@ -1342,6 +1704,8 @@ def describe(project, plan, cmds, everything):
         lines += rows[:MAX_SHOWN]
         if len(rows) > MAX_SHOWN:
             lines.append("  ... yana %d ta" % (len(rows) - MAX_SHOWN))
+    if project.tool_note:
+        lines.append("Asbob: %s" % project.tool_note)
     for argv, note in cmds:
         lines.append("Buyruq (%s): %s" % (note, show(argv)))
     init = next((read(os.path.join(project.root, a[a.index("-I") + 1]))
@@ -1643,7 +2007,9 @@ def main(argv=None):
     parser.add_argument("--navbat", action="store_true",
                         help="worktree lar orasida ketma-ket (umumiy port yoki baza)")
     parser.add_argument("--ildiz", metavar="PAPKA", help="loyiha ildizi")
-    parser.add_argument("--vaqt", type=int, default=DEFAULT_TIMEOUT, metavar="S",
+    parser.add_argument("--asbob", choices=sorted(TOOL_FILES),
+                        help="ikki build fayli bo'lsa tanlov (yoki GENIUS_BUILD_TOOL)")
+    parser.add_argument("--vaqt", type=float, default=DEFAULT_TIMEOUT, metavar="S",
                         help="yurish chegarasi, soniya (standart %d)" % DEFAULT_TIMEOUT)
     parser.add_argument("--log", metavar="FAYL", help="log fayli")
     args = parser.parse_args(argv)
@@ -1651,9 +2017,23 @@ def main(argv=None):
 
     if args.hisobot:
         return report(max(1, args.kun))
-    root = (os.path.realpath(os.path.abspath(args.ildiz)) if args.ildiz
-            else project_root(os.getcwd()))
-    project = Project(root)
+    if args.ildiz:
+        root = os.path.realpath(os.path.abspath(args.ildiz))
+    else:
+        root, candidates = locate_root(os.getcwd())
+        if candidates:
+            print("Build ildizlari: %s; --ildiz <papka>" % ", ".join(candidates))
+            return 2
+    # Log build chiqishi bilan qayta yoziladi: ixtiyoriy yo'l (~/.bashrc,
+    # manba fayl) shu chiqish bilan almashardi. Faqat temp yoki loyiha.
+    if args.log and not (inside(args.log, tempfile.gettempdir()) or inside(args.log, root)):
+        print("--log faqat temp papka (%s) yoki loyiha (%s) ichida bo'ladi: %s"
+              % (tempfile.gettempdir(), root, args.log), file=sys.stderr)
+        return 2
+    project = Project(root, tool=args.asbob)
+    if project.tool_error:
+        print(project.tool_error)
+        return 2
     if project.tool is None:
         print("Gradle yoki Maven loyihasi topilmadi: %s" % root)
         return 2
@@ -1687,7 +2067,17 @@ def main(argv=None):
             deleted = [p for p in existing if not os.path.exists(os.path.join(root, p))]
             existing = [p for p in existing if p not in deleted]
         elif args.diff or args.asos:
-            existing, deleted = changed_files(root, args.asos)
+            base = None
+            if args.asos:
+                base = verify_base(root, args.asos)
+                if base is None:
+                    print("--asos commit emas yoki '-' bilan boshlanadi: %s" % args.asos,
+                          file=sys.stderr)
+                    return 2
+            existing, deleted = changed_files(root, base)
+            outside = outside_root(root, base)
+            if outside:
+                print("Eslatma: %d fayl --ildiz dan tashqarida, hisobga olinmadi" % outside)
         else:
             parser.print_usage()
             print("fayl, --diff, --asos yoki --hammasi kerak", file=sys.stderr)
@@ -1745,7 +2135,7 @@ def main(argv=None):
         state, code, seconds, log,
         "" if summary_log == log else ", qayta yurish: %s" % summary_log))
     if code == 124:
-        print("Vaqt chegarasi %d s. To'liq suite bo'lsa uni fonda yurgizing "
+        print("Vaqt chegarasi %g s. To'liq suite bo'lsa uni fonda yurgizing "
               "(Bash run_in_background) va --vaqt ni oshiring." % args.vaqt)
     if flaky:
         print("Beqaror (birinchi yurishda yiqildi, qayta yurishda o'tdi): %s"
@@ -1757,6 +2147,8 @@ def main(argv=None):
               % ", ".join(other[:10]))
     if code != 4:
         summary = summarize(summary_log)
+        if summary_log != log:
+            summary = first_run_totals(log, summary)
         if summary:
             print(summary)
     return {0: 0, 4: 4, 124: 3}.get(code, 1)

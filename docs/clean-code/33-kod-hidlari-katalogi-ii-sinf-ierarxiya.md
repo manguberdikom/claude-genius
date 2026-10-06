@@ -66,7 +66,7 @@ Bu bob sinf darajasidagi va sinflar orasidagi hidlarni qamrab oladi. God Object,
 
 ## 33.5 Rad etilgan meros (Refused Bequest)
 
-17.6 da ko'rilgan. Hid sifatida belgisi: voris sinf meros olgan metodlarning bir qismini ishlatmaydi yoki `UnsupportedOperationException` tashlaydi.
+[Rad etilgan meros va interfeysni bo'lish](17-vorislik-kompozitsiya-va-polimorfizm.md#176-rad-etilgan-meros-va-interfeysni-bolish) bo'limida ko'rilgan. Hid sifatida belgisi: voris sinf meros olgan metodlarning bir qismini ishlatmaydi yoki `UnsupportedOperationException` tashlaydi.
 
 **Tuzatish**: Push Down Method / Push Down Field (keraksizni pastga tushirish), Replace Superclass with Delegate (17.9), yoki interfeysni bo'lish.
 
@@ -136,7 +136,7 @@ Bu bob sinf darajasidagi va sinflar orasidagi hidlarni qamrab oladi. God Object,
 
 ## 33.14 Bazaviy sinf vorisga bog'liq (Base Class Depending on Derivatives)
 
-17.5 da ko'rilgan. Hid sifatida belgisi: bazaviy sinfda voris sinf nomlari, `instanceof` tekshiruvlari yoki voris sinflarga mos `switch`.
+[Bazaviy sinfning voris sinfga bog'liqligi](17-vorislik-kompozitsiya-va-polimorfizm.md#175-bazaviy-sinfning-voris-sinfga-bogliqligi) bo'limida ko'rilgan. Hid sifatida belgisi: bazaviy sinfda voris sinf nomlari, `instanceof` tekshiruvlari yoki voris sinflarga mos `switch`.
 
 **Tuzatish**: abstrakt metod kiritish (Replace Conditional with Polymorphism), yoki bazaviy sinfni interfeysga aylantirish.
 

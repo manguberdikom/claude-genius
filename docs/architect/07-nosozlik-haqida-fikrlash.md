@@ -153,6 +153,8 @@ Idempotentlikning ikkinchi shakli natural kalitlar orqali keladi. Ombor qoldig'i
 
 Tashqi tizim o'zi idempotent bo'lmasa, uni siz idempotent qilasiz: har chaqiruvga `request_id` saqlab, javobni yozib, retry'ni o'sha saqlangan natija orqali boshqarasiz.
 
+Mavzuning to'liq yozuvi [idempotency](../patterns/07-api-dizayn-patternlari.md#79-idempotentlik-kaliti-idempotency-key) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 7.6 Qisman nosozlikda nima qilish: degradatsiya rejasi va zaxira javob
 
 Degradatsiya texnik masala emas, biznes qaror. Arxitektorning ishi har bir funksiya uchun "bu yo'q bo'lsa nima ko'rsatamiz" javobini product egasidan yozma olish, va buni insidentdan oldin qilish.

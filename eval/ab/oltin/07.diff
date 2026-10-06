@@ -1,0 +1,76 @@
+diff --git a/src/test/java/org/springframework/samples/petclinic/owner/OwnerTests.java b/src/test/java/org/springframework/samples/petclinic/owner/OwnerTests.java
+index 79ad591..3d09694 100644
+--- a/src/test/java/org/springframework/samples/petclinic/owner/OwnerTests.java
++++ b/src/test/java/org/springframework/samples/petclinic/owner/OwnerTests.java
+@@ -18,6 +18,7 @@ package org.springframework.samples.petclinic.owner;
+ import org.junit.jupiter.api.Test;
+ 
+ import static org.junit.jupiter.api.Assertions.assertEquals;
++import static org.junit.jupiter.api.Assertions.assertSame;
+ import static org.junit.jupiter.api.Assertions.assertTrue;
+ 
+ class OwnerTests {
+@@ -48,4 +49,63 @@ class OwnerTests {
+ 		assertEquals(1, owner.getPets().size());
+ 	}
+ 
++	@Test
++	void addPetIgnoresNull() {
++		Owner owner = new Owner();
++
++		owner.addPet(null);
++
++		assertEquals(0, owner.getPets().size());
++	}
++
++	@Test
++	void addPetDoesNotAddDifferentPetWithSameId() {
++		Owner owner = new Owner();
++		Pet first = pet(5, "Buddy");
++		Pet second = pet(5, "Max");
++
++		owner.addPet(first);
++		owner.addPet(second);
++
++		assertEquals(1, owner.getPets().size());
++		assertSame(first, owner.getPets().get(0));
++	}
++
++	@Test
++	void addPetAddsPetsWithDifferentIds() {
++		Owner owner = new Owner();
++
++		owner.addPet(pet(5, "Buddy"));
++		owner.addPet(pet(6, "Max"));
++
++		assertEquals(2, owner.getPets().size());
++	}
++
++	@Test
++	void addPetAddsNewPetNextToPersistedPet() {
++		Owner owner = new Owner();
++		owner.addPet(pet(5, "Buddy"));
++
++		owner.addPet(pet(null, "Max"));
++
++		assertEquals(2, owner.getPets().size());
++	}
++
++	@Test
++	void addPetAddsPersistedPetNextToNewPet() {
++		Owner owner = new Owner();
++		owner.addPet(pet(null, "Max"));
++
++		owner.addPet(pet(5, "Buddy"));
++
++		assertEquals(2, owner.getPets().size());
++	}
++
++	private static Pet pet(Integer id, String name) {
++		Pet pet = new Pet();
++		pet.setId(id);
++		pet.setName(name);
++		return pet;
++	}
++
+ }

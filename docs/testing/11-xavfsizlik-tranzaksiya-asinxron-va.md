@@ -354,6 +354,8 @@ void secondTransactionCannotTakeTheSameRowLock() throws Exception {
 }
 ```
 
+Mavzuning to'liq yozuvi [optimistic locking](../patterns/09-malumotlarga-kirish-va-orm-patternlari.md#923-optimistik-oflayn-qulf-optimistic-offline-lock) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 11.9 Asinxron kodni testlash
 
 `@Async` metod, `@EventListener` va `@TransactionalEventListener(phase = AFTER_COMMIT)` natijasini `Thread.sleep` bilan kutish - eng tez beqarorlashadigan naqsh. O'rniga Awaitility: `await().atMost(...).pollInterval(...).untilAsserted(...)` shart bajarilishi bilanoq davom etadi, bajarilmasa aniq xabar bilan yiqiladi. `AFTER_COMMIT` listener'i uchun yana bir shart bor: test metodi `@Transactional` bo'lmasligi kerak, aks holda commit umuman bo'lmaydi va listener hech qachon chaqirilmaydi. Determinizm kerak bo'lsa, `CountDownLatch` bilan aniq signal kutish eng ishonchli variant.
@@ -514,6 +516,8 @@ class ResilienceTest {
 ```
 
 Fallback'ni ham testlang: circuit ochiqligida ilova cache'dagi qiymatni qaytarishi kerakmi yoki `503` berishi kerakmi - bu mahsulot qarori va u test bilan muhrlanishi shart.
+
+Mavzuning to'liq yozuvi patternlar hujjatidagi [zanjirni uzgich](../patterns/17-resilience-va-cloud-dizayn-patternlari.md#172-zanjirni-uzgich-circuit-breaker) bo'limida; bu yerda faqat test nuqtai nazari.
 
 ## 11.14 Anti-patternlar
 
