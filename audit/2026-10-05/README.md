@@ -34,6 +34,7 @@ Sana: 2026-10-05. Baholangan commit: `8f47f42`, branch `ccr-bbd7652b-066u0n`. To
 - [9. Egasining qarori kerak bo'lgan joylar](#9-egasining-qarori-kerak-bolgan-joylar)
 - [10. Muvaffaqiyat ko'rsatkichlari](#10-muvaffaqiyat-korsatkichlari)
 - [11. Qamrov tanqidchisi topgan bo'shliqlar](#11-qamrov-tanqidchisi-topgan-boshliqlar)
+- [12. Bajarilish holati (2026-10-06)](#12-bajarilish-holati-2026-10-06)
 - [Ilova: topilmalar yo'nalish bo'yicha](#ilova-topilmalar-yonalish-boyicha)
 
 ## 1. Qanday baholandi
@@ -840,3 +841,54 @@ Har faylda kuchli tomonlar, o'lchovlar, har topilmaning dalili, ta'siri, tavsiya
 | PL | Claude Code ichki tuzilishi va narxlarga bog'liqlik | [platforma.md](topilmalar/platforma.md) |
 | QC | Qo'llanish chegarasi: Spring bo'lmagan va nostandart JVM proyektlar | [qollanish.md](topilmalar/qollanish.md) |
 | TL | O'zbek tili sifati, o'quvchi tajribasi va kontent kelib chiqishi | [oquvchi.md](topilmalar/oquvchi.md) |
+
+## 12. Bajarilish holati (2026-10-06)
+
+Reja `ccr-bbd7652b-066u0n` branchida bajarildi. Har o'zgarish toza nusxada `run_all_tests.py` (28 suite), `check_docs`, `eval_skill` va `eval_find` dan o'tgandan keyin push qilingan.
+
+**Bajarildi:**
+
+- **Bosqich 0:**
+  - R0.1, R0.3, R0.4, R0.5, R0.6, R0.7 to'liq.
+  - R0.9, R0.10 to'liq.
+  - R0.7 ning korpus bo'ylab o'xshash xatolari ham tuzatildi.
+- **Bosqich 1:**
+  - R1.1 va R1.2: tayyorlov tuzatildi, runner, baholovchi va tahlil yozildi. Baholovchi kalibrlangan: oltin 10/10, bo'sh 0/10.
+  - R1.3: SIGNALS, oltin va holdout to'plamlar, xesh asosidagi B namunasi.
+  - R1.5: petclinic dogfood.
+  - R1.6.
+- **Bosqich 2:**
+  - R2.1 va R2.2: suite 49-52 s dan 14-16 s ga tushdi, parallel, CI runner bilan.
+  - R2.3, R2.4: qat'iy kontekst 6346 tokendan 4987 ga.
+  - R2.5 ning qoida qismi, R2.6.
+- **Bosqich 3:** R3.1, R3.2 va R3.6. Holdout da find 1-o'rin 13 dan 22 ga chiqdi.
+- **Bosqich 4:** R4.3, R4.5, R4.6, R4.7. check_docs ogohlantirishlari 26 dan 5 ga tushdi.
+- **Bosqich 5:** R5.1, R5.2, R5.3 (SubagentStop hooki), R5.4, R5.5, R5.6.
+- **Bosqich 6:** R6.1-R6.6.
+- **Bosqich 7:** R7.1, R7.3, R7.4, R7.6, R7.7, R7.8 (SECURITY.md, CI ruxsatlari, CODEOWNERS), R7.9.
+- **Bosqich 8:** qoidalar CONTRIBUTING "Ish tartibi" bo'limida.
+
+**Ishlab turgan, birlashtirilmagan** (`.claude/worktrees/` dagi agent branchlari, keyingi sessiyada natijasi tekshirilib birlashtiriladi):
+
+- R4.2 `verify_claims.py`: Boot deprecation, olib tashlangan API, Maven koordinata, Java, YAML va XML parse.
+- R3.3-R3.5: exception indeksi, Sonar katalog kalitlari, OWNERS uy-bob taxalluslari, sinonimlar, README tipik savollari.
+
+**Qolgan, agent qila oladi:**
+
+- R7.2 POSIX o'rnatuvchisi (`install/install.py`) va CI ga ubuntu va macos installer matritsasi.
+- R7.5 umumiy yordamchi (`run_git`, `atomic_write_text`).
+- R7.8 `yangilash.py` va hooklarni commit ga pin qilish.
+- KD-Q10: vaqt tugaganda nevara jarayonlarni o'ldirish.
+- `.claude/worktrees` ni check_docs va test_skill skanidan chiqarish. Guruh worktree lari endi loyiha ichida turadi.
+- `doctor` ning `hook_errors.log` ni o'qishi va `install/README.md` dagi SubagentStop va worktree tavsifi.
+- CI `check` ishiga `fetch-depth: 0`: usiz `check_review` imzo tekshiruvi to'liq ishlamaydi.
+- OWNERS ning qolgan 4 ogohlantirishi (sonarqube 27.1, 27.9, 29.7, 30.8). Keyin warn dan err ga o'tish.
+- `.claude` dagi 2 imlo varianti: `agents/review.md` va `spring-testing/SKILL.md`.
+
+**Egasining qarori yoki qo'li kerak:**
+
+- GitHub: sukut branchni `main` qilish, branch protection, "Require review from Code Owners", Private vulnerability reporting, `bob-xatosi` label, Actions runner va billing.
+- A/B smoke va to'liq yurish: API kaliti va byudjet. Smoke da `/manguberdi` print rejimidagi izi va `--resume` tekshiriladi.
+- Odam tekshiruvi: "tekshirilgan" holatini faqat odam qo'yadi. Haftalik maqsad CONTRIBUTING da.
+- `doctor` ni `settings.json` allow ro'yxatiga qo'shish, qo'llab-quvvatlash jadvali (Kotlin va Quarkus qisman, Android yo'q), guard da bir buyruqdagi o'qish bo'laklari yig'indisi qoidasi.
+- `v0.1.0` tag.
