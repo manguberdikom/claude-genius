@@ -10,11 +10,13 @@
     python3 tools/run_tests.py --tashxis               # suite nega sekin
     python3 tools/run_tests.py --isit                  # fonda oldindan kompilyatsiya
     python3 tools/run_tests.py --hisobot               # test vaqti jurnali, 7 kun
+    python3 tools/run_tests.py --diff --asbob maven    # Maven va Gradle ikkalasi bo'lsa
+    python3 tools/run_tests.py --ildiz backend --diff  # build ichki papkada, bir nechta
 
 Chiqish kodi: 0 yashil, 1 yiqildi, 2 noto'g'ri kirish (loyiha yo'q,
-`--asos` commit emas, `--log` temp yoki loyihadan tashqarida), 3 vaqt
-tugadi, 4 beqaror (yiqilgan sinf qayta yurishda o'tdi: o'zgarish emas,
-flaky ehtimoli, lekin yashil ham emas).
+build ildizi yoki asbob noaniq, `--asos` commit emas, `--log` temp yoki
+loyihadan tashqarida), 3 vaqt tugadi, 4 beqaror (yiqilgan sinf qayta
+yurishda o'tdi: o'zgarish emas, flaky ehtimoli, lekin yashil ham emas).
 
 Nega: to'liq suite 5-8 daqiqa, aktyor esa uni 2-4 marta yurgizardi.
 Sabab faqat odat emas. Ko'p modulli Gradle da `test --tests X` X yo'q
@@ -84,10 +86,13 @@ SPRING_TEST_RE = re.compile(
     r"@(?:SpringBootTest|WebMvcTest|WebFluxTest|DataJpaTest|DataJdbcTest"
     r"|DataR2dbcTest|JdbcTest|JooqTest|JsonTest|RestClientTest|DataMongoTest"
     r"|DataRedisTest|GraphQlTest|SpringJUnitConfig|SpringJUnitWebConfig"
-    r"|ContextConfiguration)\b")
+    r"|ContextConfiguration"
+    # Spring siz JVM: ilova konteynerini ko'taradigan test ham sozlamaga bog'liq.
+    r"|QuarkusTest|QuarkusIntegrationTest|MicronautTest)\b")
 DB_TEST_RE = re.compile(
     r"@(?:DataJpaTest|DataJdbcTest|DataR2dbcTest|JdbcTest|JooqTest"
-    r"|SpringBootTest|Sql|Container|Testcontainers|AutoConfigureTestDatabase)\b")
+    r"|SpringBootTest|Sql|Container|Testcontainers|AutoConfigureTestDatabase"
+    r"|QuarkusTest|QuarkusIntegrationTest|MicronautTest)\b")
 CONFIG_RE = re.compile(
     r"(?:^|/)src/main/resources/(?:(?:config/)?(?:application|bootstrap)"
     r"[\w.-]*\.(?:ya?ml|properties)|META-INF/spring\.factories"
@@ -116,6 +121,17 @@ BUILD_FILE_RE = re.compile(
 ROOT_BUILD_RE = re.compile(
     r"^(?:settings\.gradle(?:\.kts)?|gradle\.properties|gradle/[^/]+\.toml"
     r"|gradle/wrapper/.*|\.mvn/.*|buildSrc/.*|build-logic/.*)$")
+
+# Ildiz belgisi va har asbobning fayllari. Wrapper jamoa tanlagan asbobni
+# bildiradi: ikki build fayli bo'lsa (ko'chish davri) shu hal qiladi.
+BUILD_MARKERS = ("settings.gradle", "settings.gradle.kts", "pom.xml",
+                 "build.gradle", "build.gradle.kts")
+TOOL_FILES = OrderedDict((
+    ("gradle", ("gradlew", "gradlew.bat", "settings.gradle", "settings.gradle.kts",
+                "build.gradle", "build.gradle.kts")),
+    ("maven", ("mvnw", "mvnw.cmd", "pom.xml")),
+))
+WRAPPERS = {"gradle": ("gradlew", "gradlew.bat"), "maven": ("mvnw", "mvnw.cmd")}
 
 # Kataloglar faqat `src/` dan TASHQARIDA tashlanadi: `src/main/java/x/bin`
 # paketi build chiqishi emas.
@@ -188,23 +204,97 @@ def run_git(root, *args):
     return out.stdout if out.returncode == 0 else None
 
 
-def project_root(start):
-    """Git ildizi yoki build fayli bor eng yaqin yuqori papka."""
+def has_marker(path):
+    return any(os.path.exists(os.path.join(path, n)) for n in BUILD_MARKERS)
+
+
+def locate_root(start):
+    """(ildiz, nomzodlar). Nomzodlar bo'sh bo'lmasa ildiz noaniq.
+
+    Git ichida: cwd dan git ildizigacha build fayli bor ENG YUQORI papka.
+    Eng yaqini emas: `backend/services/orders` ning o'z pom.xml i bor,
+    lekin reaktor (yoki settings.gradle) `backend/` da, submodul ildiz
+    bo'lsa build reaktorsiz qoladi. Git ildizida build fayli bo'lsa u.
+    Yo'lda hech biri bo'lmasa (`backend/pom.xml`, cwd ildizda) git
+    ildizining birinchi darajasidagi yagona build papka; bir nechta
+    bo'lsa tanlov foydalanuvchiniki (`--ildiz`).
+
+    Git siz: build fayli bor eng yaqin yuqori papka (chegara yo'q).
+    Yuqoriga realpath dan yuriladi: symlink yoki Windows qisqa nomi
+    orqali kirilganda ham ildiz (demak log_path kaliti) bitta bo'lsin.
+    """
+    here = os.path.realpath(os.path.abspath(start))
     top = run_git(start, "rev-parse", "--show-toplevel")
-    if top and top.strip():
-        return os.path.realpath(os.path.normpath(top.strip()))
-    # Yuqoriga realpath dan yuriladi: symlink yoki Windows qisqa nomi
-    # orqali kirilganda ham ildiz (demak log_path kaliti) bitta bo'lsin.
-    path = os.path.realpath(os.path.abspath(start))
+    top = os.path.realpath(os.path.normpath(top.strip())) if top and top.strip() else None
+    if top is None or not inside(here, top):
+        path = here
+        while True:
+            if has_marker(path):
+                return path, []
+            parent = os.path.dirname(path)
+            if parent == path:
+                return here, []
+            path = parent
+    highest, path = None, here
     while True:
-        if any(os.path.exists(os.path.join(path, n)) for n in
-               ("settings.gradle", "settings.gradle.kts", "pom.xml",
-                "build.gradle", "build.gradle.kts")):
-            return os.path.realpath(path)
+        if has_marker(path):
+            highest = path
         parent = os.path.dirname(path)
-        if parent == path:
-            return os.path.realpath(os.path.abspath(start))
+        if os.path.normcase(path) == os.path.normcase(top) or parent == path:
+            break
         path = parent
+    if highest:
+        return highest, []
+    try:
+        names = sorted(os.listdir(top))
+    except OSError:
+        names = []
+    found = [n for n in names if not n.startswith(".") and n not in OUTPUT_DIRS
+             and os.path.isdir(os.path.join(top, n)) and has_marker(os.path.join(top, n))]
+    if len(found) == 1:
+        return os.path.join(top, found[0]), []
+    return top, found
+
+
+def project_root(start):
+    """Loyiha ildizi (noaniq bo'lsa git ildizi): locate_root ga qarang."""
+    return locate_root(start)[0]
+
+
+def choose_tool(root, requested=None):
+    """(asbob, izoh, xato). Tanlov: --asbob, keyin GENIUS_BUILD_TOOL.
+
+    Ikki build fayli bo'lsa wrapperi bor asbob ustun: jamoa shuni
+    ishlatadi, ikkinchisi ko'pincha ko'chishdan qolgan. Wrapper ikkalasida
+    bor yoki ikkalasida yo'q bo'lsa taxmin qilinmaydi: boshqa build
+    konfiguratsiyasidagi natija yiqilishdan ham yomon (rc 2, so'rov).
+    `izoh` reja qatoriga chiqadi: qaysi asbob va nega."""
+    has = lambda n: os.path.exists(os.path.join(root, n))
+    present = [t for t, names in TOOL_FILES.items() if any(has(n) for n in names)]
+    source = "--asbob %s" % requested if requested else ""
+    if not requested:
+        requested = os.environ.get("GENIUS_BUILD_TOOL", "").strip().lower() or None
+        source = "GENIUS_BUILD_TOOL=%s" % requested if requested else ""
+    both = len(present) == 2
+    if requested:
+        if requested not in TOOL_FILES:
+            return None, "", "%s: maven yoki gradle bo'ladi" % source
+        if requested not in present:
+            return None, "", "%s: %s da %s fayli yo'q" % (
+                source, root, "pom.xml" if requested == "maven" else "build.gradle")
+        return requested, "%s (%s%s)" % (
+            requested, source, "; Maven va Gradle ikkalasi bor" if both else ""), None
+    if not both:
+        return (present[0] if present else None), "", None
+    wrapped = [t for t in present if any(has(n) for n in WRAPPERS[t])]
+    if len(wrapped) == 1:
+        return wrapped[0], "%s (Maven va Gradle ikkalasi bor, wrapper %s faqat shunda)" % (
+            wrapped[0], WRAPPERS[wrapped[0]][0]), None
+    return None, "", (
+        "Maven va Gradle ikkalasi bor, wrapper %s: qaysi biri ishlatilishini "
+        "foydalanuvchidan so'rang va --asbob maven|gradle yoki "
+        "GENIUS_BUILD_TOOL=maven|gradle bilan bering" % (
+            "ikkalasida bor" if wrapped else "hech birida yo'q"))
 
 
 class Source:
@@ -271,9 +361,9 @@ def parse_settings(text):
 
 
 class Project:
-    def __init__(self, root, runner=None):
+    def __init__(self, root, runner=None, tool=None):
         self.root = os.path.abspath(root)
-        self.tool = self._tool()
+        self.tool, self.tool_note, self.tool_error = choose_tool(self.root, tool)
         self.runner = runner or self._runner()
         self.gradle_projects = OrderedDict()     # papka -> ":a:b"
         self.maven_modules = set()
@@ -291,16 +381,6 @@ class Project:
         self._index()
 
     # -- loyiha turi -------------------------------------------------------
-
-    def _tool(self):
-        has = lambda n: os.path.exists(os.path.join(self.root, n))
-        if any(has(n) for n in ("gradlew", "gradlew.bat", "settings.gradle",
-                                "settings.gradle.kts", "build.gradle",
-                                "build.gradle.kts")):
-            return "gradle"
-        if any(has(n) for n in ("mvnw", "mvnw.cmd", "pom.xml")):
-            return "maven"
-        return None
 
     def _runner(self):
         """Buyruq boshi. Wrapper bo'lsa u, bo'lmasa PATH dagi asbob.
@@ -1047,7 +1127,7 @@ def execute(project, cmds, log, timeout, queue=False, mode="w"):
                 proc = subprocess.run(argv, cwd=project.root, stdout=out,
                                       stderr=subprocess.STDOUT, timeout=left)
             except subprocess.TimeoutExpired:
-                out.write("\n[run_tests] vaqt tugadi: %d s\n" % timeout)
+                out.write("\n[run_tests] vaqt tugadi: %g s\n" % timeout)
                 return 124, time.time() - start
             except OSError as exc:
                 out.write("\n[run_tests] yurgizib bo'lmadi: %s\n" % exc)
@@ -1175,6 +1255,26 @@ def summarize(log):
     return (out.stdout or out.stderr).strip()
 
 
+def first_run_totals(log, summary):
+    """Qayta yurish logi faqat yiqilgan sinflarni yurgizadi: uning
+    "Tests: 7" i butun yurish soni emas (petclinic: birinchi yurishda 21).
+    Xulosaning test soni birinchi yurish logidan olinadi."""
+    try:
+        import parse_test_output
+        with open(log, encoding="utf-8", errors="replace") as handle:
+            lines = parse_test_output.strip_ci_prefix(handle.read().split("\n"))
+        totals = parse_test_output.summarize(lines)
+    except (OSError, ImportError):
+        return summary
+    if not totals:
+        return summary
+    line = ("Tests: %d, yiqildi: %d, xato: %d, o'tkazildi: %d" % tuple(totals)
+            + " (birinchi yurish; sabablar qayta yurishdan)")
+    if re.match(r"Tests: [^\n]*", summary or ""):
+        return re.sub(r"^Tests: [^\n]*", lambda _: line, summary, count=1)
+    return line + ("\n" + summary if summary else "")
+
+
 # -- chiqish -------------------------------------------------------------------
 
 def describe(project, plan, cmds, everything):
@@ -1198,6 +1298,8 @@ def describe(project, plan, cmds, everything):
         lines += rows[:MAX_SHOWN]
         if len(rows) > MAX_SHOWN:
             lines.append("  ... yana %d ta" % (len(rows) - MAX_SHOWN))
+    if project.tool_note:
+        lines.append("Asbob: %s" % project.tool_note)
     for argv, note in cmds:
         lines.append("Buyruq (%s): %s" % (note, show(argv)))
     init = next((read(a[a.index("-I") + 1]) for a, _ in cmds if "-I" in a), "")
@@ -1476,7 +1578,9 @@ def main(argv=None):
     parser.add_argument("--navbat", action="store_true",
                         help="worktree lar orasida ketma-ket (umumiy port yoki baza)")
     parser.add_argument("--ildiz", metavar="PAPKA", help="loyiha ildizi")
-    parser.add_argument("--vaqt", type=int, default=DEFAULT_TIMEOUT, metavar="S",
+    parser.add_argument("--asbob", choices=sorted(TOOL_FILES),
+                        help="ikki build fayli bo'lsa tanlov (yoki GENIUS_BUILD_TOOL)")
+    parser.add_argument("--vaqt", type=float, default=DEFAULT_TIMEOUT, metavar="S",
                         help="yurish chegarasi, soniya (standart %d)" % DEFAULT_TIMEOUT)
     parser.add_argument("--log", metavar="FAYL", help="log fayli")
     args = parser.parse_args(argv)
@@ -1484,15 +1588,23 @@ def main(argv=None):
 
     if args.hisobot:
         return report(max(1, args.kun))
-    root = (os.path.realpath(os.path.abspath(args.ildiz)) if args.ildiz
-            else project_root(os.getcwd()))
+    if args.ildiz:
+        root = os.path.realpath(os.path.abspath(args.ildiz))
+    else:
+        root, candidates = locate_root(os.getcwd())
+        if candidates:
+            print("Build ildizlari: %s; --ildiz <papka>" % ", ".join(candidates))
+            return 2
     # Log build chiqishi bilan qayta yoziladi: ixtiyoriy yo'l (~/.bashrc,
     # manba fayl) shu chiqish bilan almashardi. Faqat temp yoki loyiha.
     if args.log and not (inside(args.log, tempfile.gettempdir()) or inside(args.log, root)):
         print("--log faqat temp papka (%s) yoki loyiha (%s) ichida bo'ladi: %s"
               % (tempfile.gettempdir(), root, args.log), file=sys.stderr)
         return 2
-    project = Project(root)
+    project = Project(root, tool=args.asbob)
+    if project.tool_error:
+        print(project.tool_error)
+        return 2
     if project.tool is None:
         print("Gradle yoki Maven loyihasi topilmadi: %s" % root)
         return 2
@@ -1593,7 +1705,7 @@ def main(argv=None):
         state, code, seconds, log,
         "" if summary_log == log else ", qayta yurish: %s" % summary_log))
     if code == 124:
-        print("Vaqt chegarasi %d s. To'liq suite bo'lsa uni fonda yurgizing "
+        print("Vaqt chegarasi %g s. To'liq suite bo'lsa uni fonda yurgizing "
               "(Bash run_in_background) va --vaqt ni oshiring." % args.vaqt)
     if flaky:
         print("Beqaror (birinchi yurishda yiqildi, qayta yurishda o'tdi): %s"
@@ -1602,6 +1714,8 @@ def main(argv=None):
               "murojaat) bu poyga xatosi bo'lishi mumkin: egasi test-muhandis.")
     if code != 4:
         summary = summarize(summary_log)
+        if summary_log != log:
+            summary = first_run_totals(log, summary)
         if summary:
             print(summary)
     return {0: 0, 4: 4, 124: 3}.get(code, 1)

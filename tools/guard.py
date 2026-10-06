@@ -193,6 +193,11 @@ MAVEN_VALUED = {"-pl", "--projects", "-rf", "--resume-from", "-f", "--file",
                 "-l", "--log-file", "-b", "--builder"}
 MAVEN_TEST_PHASES = {"test", "integration-test", "verify", "install",
                      "package", "deploy"}
+# Artefakt yig'adigan buyruq: maqsad test emas, paket bo'lishi mumkin.
+MAVEN_PACKAGE_PHASES = {"package", "install", "deploy"}
+GRADLE_PACKAGE_TASK = re.compile(r"(?:^|:)build$")
+PACKAGE_NOTE = ("Maqsad artefakt bo'lsa: testlar run_tests bilan o'tgan bo'lsa "
+                "-DskipTests bilan package (Gradle: assemble yoki bootJar)")
 MAVEN_SKIP_RE = re.compile(r"^-D(?:skipTests(?:=true)?|maven\.test\.skip=true)$")
 MAVEN_FILTER_RE = re.compile(r"^-D(?:it\.)?test=\S+")
 # Migratsiya asbobining bazani tozalovchi vazifasi. Bu `clean` emas:
@@ -206,6 +211,7 @@ BUILD_HINT = (
     "Arzon yo'l bitta asbob, u modulni o'zi qo'yadi va logni faylga yozadi:\n"
     "  {run_tests} --diff --yurgiz          - o'zgarishga ta'sir qilgan testlar\n"
     "  {run_tests} --modul <papka> --yurgiz - bitta modulning hammasi\n"
+    "  {run_tests} --ildiz <papka> --diff --yurgiz - build ichki papkada (backend/pom.xml)\n"
     "  {run_tests} --hammasi --yurgiz       - to'liq suite: partiya oxirida bir marta, fonda"
 )
 
@@ -252,10 +258,14 @@ def build_problem(tool, args):
         runs = [w for w in words if w in MAVEN_TEST_PHASES
                 or w.endswith(("surefire:test", "failsafe:integration-test"))]
     if runs and not filtered and not skipped:
-        return ("filtrsiz test: %s" % " ".join(runs),
-                "to'liq suite 5-8 daqiqa; aktyor uni qayta-qayta yurgizsa guruh "
-                "soatga cho'ziladi. Ko'p modulli loyihada modulsiz --tests ham "
-                "yiqiladi, asbob esa modulni o'zi qo'yadi")
+        why = ("to'liq suite 5-8 daqiqa; aktyor uni qayta-qayta yurgizsa guruh "
+               "soatga cho'ziladi. Ko'p modulli loyihada modulsiz --tests ham "
+               "yiqiladi, asbob esa modulni o'zi qo'yadi")
+        packaging = (any(GRADLE_PACKAGE_TASK.search(w) for w in runs) if tool == "gradle"
+                     else any(w in MAVEN_PACKAGE_PHASES for w in runs))
+        if packaging:
+            why += ".\n" + PACKAGE_NOTE
+        return ("filtrsiz test: %s" % " ".join(runs), why)
     return None
 
 

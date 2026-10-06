@@ -684,6 +684,54 @@ def build(name, ctx):
     return entity
 
 
+def element_type(entry):
+    """Kolleksiya elementi: `targetEntity`, aks holda oxirgi generik
+    argument (`List<Pet>` -> Pet, `Map<String, Pet>` -> Pet)."""
+    relation = entry["anns"].get("OneToMany") or ""
+    target = re.search(r"targetEntity\s*=\s*([\w$.]+)\.class", relation)
+    if target:
+        return target.group(1).rsplit(".", 1)[-1]
+    inner = re.search(r"<(.*)>", entry["java"])
+    if not inner:
+        return None
+    last = re.sub(r"^\?\s*extends\s+", "", inner.group(1).split(",")[-1].strip())
+    return last.split("<")[0].rsplit(".", 1)[-1]
+
+
+def joins_by_column(entry):
+    """`@OneToMany` + `@JoinColumn` (mappedBy siz): bog'lovchi jadval
+    yo'q, FK ustuni element jadvalida turadi (petclinic Owner.pets)."""
+    ann = entry["ann"]
+    return (entry["kind"] == "collection" and has(ann, "OneToMany")
+            and "mappedBy" not in ann and not has(ann, "JoinTable")
+            and (has(ann, "JoinColumn") or has(ann, "JoinColumns")))
+
+
+def add_join_column_fks(entities, ctx):
+    """Bir tomonlama `@OneToMany @JoinColumn(name = X)` ning X ustunini
+    nishon jadvalga FK sifatida qo'shadi. Nishon manbada bo'lmasa yoki
+    ustun u yerda allaqachon bo'lsa (ikki tomonlama xarita) tegilmaydi."""
+    for entity in entities:
+        for entry in list(entity["entries"]):
+            if not joins_by_column(entry):
+                continue
+            target = ctx.built.get(element_type(entry))
+            if not target:
+                continue
+            table = target["root"] if target["merged"] else target
+            args = entry["anns"].get("JoinColumn") or ""
+            name = top_arg(args, "name") or snake(entry["field"]) + "_id"
+            if any(e["name"].lower() == name.lower() for e in table["entries"]
+                   if e["kind"] in ("column", "fk", "pkjoin")):
+                continue
+            source = entry.get("owner") or entity["class"]
+            table["entries"].append({
+                "field": "%s.%s" % (source, entry["field"]), "java": source,
+                "ann": "@JoinColumn" + args, "anns": {"JoinColumn": args},
+                "origin": source, "kind": "fk", "pk": False, "name": name,
+                "target": source, "via": "%s.%s" % (source, entry["field"])})
+
+
 def has_version(entity):
     return entity["inherits_version"] or any(
         has(e["ann"], "Version") for e in entity["entries"])
@@ -798,7 +846,8 @@ def column_findings(table, entry):
                 "Kolleksiya EAGER yuklanadi. Ikkita EAGER kolleksiya "
                 "MultipleBagFetchException yoki dekart ko'paytmasini beradi.",
                 "N+1 Queries"))
-        if has(ann, "OneToMany") and "mappedBy" not in ann:
+        if (has(ann, "OneToMany") and "mappedBy" not in ann
+                and not joins_by_column(entry)):
             out.append(Finding(
                 "o'rta", table, entry["field"],
                 "@OneToMany da mappedBy yo'q: Hibernate kutilmaganda "
@@ -961,6 +1010,7 @@ def analyse(src, migrations=None):
         if types[name]["kind"] == "entity":
             build(name, ctx)
     entities = [e for e in ctx.built.values() if e and not e["merged"]]
+    add_join_column_fks(entities, ctx)
     for entity in entities:
         add_discriminator(entity)
         for entry in entity["entries"]:
@@ -1015,6 +1065,8 @@ def main():
             for col in columns_of(entity):
                 mark = "PK" if col.get("pk") else ("FK" if col["kind"] == "fk" else "  ")
                 owner = "  [%s]" % col["owner"] if col.get("owner") else ""
+                if col.get("via"):
+                    owner += "  (%s @JoinColumn)" % col["via"]
                 print("    %-2s %-26s %s%s" % (mark, col["name"], sql_type(col), owner))
             for rel in relations_of(entity):
                 if rel["kind"] == "collection":
