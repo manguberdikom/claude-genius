@@ -618,7 +618,7 @@ def main():
             "gradle/libs.versions.toml": (
                 '[versions]\nboot = "3.1.5"\njava = "17"\n\n[plugins]\n'
                 'spring-boot = { id = "org.springframework.boot", version.ref = "boot" }\n')})
-        modul = project("modul", {
+        project("modul", {
             "pom.xml": ("<project><parent><groupId>org.springframework.boot</groupId>"
                         "<version>2.7.18</version></parent></project>")})
         # Ko'p modulli Maven: versiya ildizdagi ota pom da, modul pom ida yo'q.
