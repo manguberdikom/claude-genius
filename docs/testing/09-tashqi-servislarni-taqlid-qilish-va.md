@@ -163,7 +163,7 @@ Xavfi: fayllarda token, karta raqami, shaxsiy ma'lumot qolib ketadi va repo'ga t
 
 ## 9.6 Stub drift muammosi
 
-Stub drift - integratsion testlashning markaziy nosozligi. Provider `status` maydonini `state` ga o'zgartiradi, `201` o'rniga `200` qaytaradi, xato formatini RFC 7807 `problem+json` ga ko'chiradi yoki enum'ga yangi qiymat qo'shadi. Consumer tomonidagi stub buni bilmaydi: eski shaklni qaytaradi, testlar yashil, deploy o'tadi, production'da esa deserializatsiya sinadi. Ko'proq stub yozish muammoni yomonlashtiradi - har bir yangi stub provider haqida yana bir tasdiqlanmagan taxmin.
+Stub drift - integratsion testlashning markaziy nosozligi. Provider `status` maydonini `state` ga o'zgartiradi, `201` o'rniga `200` qaytaradi, xato formatini RFC 9457 (7807 ni almashtirgan) `problem+json` ga ko'chiradi yoki enum'ga yangi qiymat qo'shadi. Consumer tomonidagi stub buni bilmaydi: eski shaklni qaytaradi, testlar yashil, deploy o'tadi, production'da esa deserializatsiya sinadi. Ko'proq stub yozish muammoni yomonlashtiradi - har bir yangi stub provider haqida yana bir tasdiqlanmagan taxmin.
 
 Sabab arxitektura darajasida: stub consumer repo'sida yashaydi, haqiqat esa provider repo'sida o'zgaradi va ikkisi o'rtasida avtomatik bog'lanish yo'q. Nightly sandbox smoke bu bog'lanishni kech va noaniq signal bilan beradi. To'g'ri yechim - stub'ni tasdiqlangan contract'dan olish: provider contract'ni buzsa, provider'ning o'z build'i qizil bo'ladi. Aynan shu contract testing'ning mavjudlik sababi.
 

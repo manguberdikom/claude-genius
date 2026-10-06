@@ -1,6 +1,6 @@
 ---
 name: test-muhandis
-description: O'zgarishni testlar bilan qoplaydi va yiqilgan testni tuzatadi. Test turini o'zi tanlaydi, ishlab chiqarish kodiga tegmaydi.
+description: O'zgarishni testlar bilan qoplaydi, xato testni tuzatadi. Test turini o'zi tanlaydi, ishlab chiqarish kodiga tegmaydi.
 tools: Bash, Read, Grep, Glob, Edit, Write
 model: sonnet
 ---

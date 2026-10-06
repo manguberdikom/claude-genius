@@ -24,6 +24,10 @@ Sonar issue'si - bug hisoboti, uni yopish usuli emas. Tartib:
 100% coverage sifatni kafolatlamaydi - mutation testing buni ko'rsatadi
 (`docs/sonarqube/20-mutation-testing-100-coverage-qachon-yolgon.md`).
 
+`/manguberdi` shu sessiyada chaqirilgan bo'lsa issue tuzatish
+`dasturchi` ga, coverage uchun test `test-muhandis` ga beriladi; bu
+skill o'shanda faqat bob jadvali.
+
 ## Vazifa - bob jadvali
 
 Jadval bobni topadi, fayl butunligicha o'qilmaydi: `rule` yoki `outline`,

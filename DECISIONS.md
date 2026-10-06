@@ -8,6 +8,67 @@ Hamma o'zgarish bu yerga yozilmaydi. Yoziladigani: foydalanuvchi
 muhitiga tegadigan, ma'lumot yo'qotishi mumkin bo'lgan yoki ruxsat
 qarorini o'zgartiradigan o'zgarish.
 
+## 2026-10-06: Boshqa proyekt memorysi klondan tashqarida, handoff lokal
+
+**Nima o'zgardi.** Global o'rnatishda (joriy proyekt klonning o'zi
+bo'lmasa) proyekt memorysi `GENIUS_MEMORY_DIR` da, sukut bo'yicha
+`~/.claude/genius-memory/<slug>/`, push siz. Klonga faqat
+`memory/umumiy/` va `memory/claude-genius/` yoziladi. Joyni
+`docref.memory_dir` hal qiladi, `rules_for.past_mistakes` va `handoff`
+shu funksiyani ishlatadi. `guard.py`: klondagi begona `memory/<slug>/`
+ga tegadigan `git add` yoki `git commit` (`add -A`, `add .`,
+`commit -a` ham, klonda begona papka bo'lsa) `ask`. `handoff.py
+--prompt` fakt qismini o'zi yig'adi (`git diff --stat HEAD`, git da yo'q
+fayllar, REJA.md `[x]` va `[ ]`); `--vazifa <nom>` topshiriqni lokal
+sessiyada `.claude/.state/handoff/<nom>.md` ga git siz yozadi, bulut
+sessiyasida (`CLAUDE_CODE_REMOTE`) proyekt memorysiga. `--memory` ikki
+indeksni bitta chaqiruvda beradi, manguberdi uni ish boshida o'qiydi.
+`memory/README.md` dagi git buyruqlari `git -C <memory ildizi>` bilan.
+Mayda: handoff holati `GENIUS_STATE_DIR` ni hurmat qiladi, tmp nomida
+pid; `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` chegarani siqish nuqtasiga
+tushiradi.
+
+**Nega.** Klon ochiq GitHub repo, global o'rnatishda esa hamma Java
+proyekt shu klonni ishlatadi. Eski qoida topshiriqning Maqsad, Qarorlar
+maydonlarini `memory/<proyekt-slug>/` ga yozib push qilardi: xususiy
+proyekt nomi, qarorlari va fayl yo'llari ochiq tarixga tushardi va
+o'chirish qimmat (JR-J6, OC-K4, OK-T-K3, XV-Y3). Git buyruqlari `-C`
+siz edi, ya'ni ish proyektida yurardi (OC-T-Q2). Handoff har uzatishda
+memory fayl, indeks, commit, push va o'chirishga 4-6 navbat sarflardi
+(OK-O17).
+
+**Rad etilgan variantlar.**
+
+- *`.gitignore` da `memory/*/`.* Rad etildi: yozuv jim lokal qolardi,
+  foydalanuvchi buni bilmasdi, `umumiy/` uchun istisno ham mo'rt.
+- *Proyekt memorysini proyektning o'zida (`<proyekt>/.claude/memory/`)
+  saqlash.* Rad etildi: u proyekt reposiga tushishi mumkin, jamoa
+  reposida esa shaxsiy eslatma begona.
+- *Push ni butunlay olib tashlash.* Rad etildi: cloud sessiyasida klon
+  memorysi yo'qolardi. Push klondagi ikki papka uchun qoladi.
+- *Handoff ni har doim memoryga yozish.* Rad etildi: bu bir martalik
+  vazifa tafsiloti, memory darvozasining 1-savoliga zid.
+
+**Xavf.** Ma'lumot joyi o'zgaradi. Oldin klonda `memory/<slug>/` bo'lsa,
+endi u boshqa proyektdan o'qilmaydi: uni qo'lda
+`~/.claude/genius-memory/` ga ko'chirish kerak. Bulut sessiyasida
+`GENIUS_MEMORY_DIR` git da bo'lmasa yozuv konteyner bilan yo'qoladi,
+asbob buni aytadi. `GENIUS_MEMORY_DIR` dagi topic faylni Read bilan
+ochish ruxsat so'rashi mumkin (`additionalDirectories` da emas).
+Guard to'sig'i odatga qarshi: `bash -c` ichini ko'rmaydi.
+
+**Qaysi tekshiruv o'tdi.** `tools/test_handoff.py` 29/29 (8 yangi:
+PCT, GENIUS_STATE_DIR va pid, fakt qismi, lokal va bulut topshirig'i,
+memory joyi), `tools/test_rules_for.py` 84/84 (GENIUS_MEMORY_DIR),
+`tools/test_guard.py` 209/209 (begona slug `add` va `commit` -> `ask`,
+umumiy va claude-genius -> o'tadi). O'rnatilgan `manguberdi` skill
+matnida `<klon>/memory/<proyekt-slug>` yo'q (`rewrite_paths` bilan
+sinaldi). Aktyor fayli `rejalashtiruvchi.md` dagi o'qish qatori bu
+o'zgarishga kirmadi.
+
+**Orqaga qaytarish.** `git revert`. Vaqtincha: `GENIUS_MEMORY_DIR` ni
+`<klon>/memory` ga qo'yish eski joyni qaytaradi (push qoidasisiz).
+
 ## 2026-10-05: Gradle yurishiga init skript: jacoco, XML, kompilyatsiya keshi
 
 **Nima o'zgardi.** `run_tests.py` har Gradle buyrug'iga `-I <init skript>`
@@ -417,3 +478,43 @@ ga o'tdi, 21 ta `deny` bo'lib qoldi). Mezonlar qo'lda tekshirildi:
 **Orqaga qaytarish.** `git revert`. Qarorni qaytarish uchun `ask()`
 chaqiruvlarini `deny()` ga almashtirish ham yetadi, lekin unda `COST_OK`
 ham qaytarilishi kerak, aks holda yo'l butunlay yopiladi.
+
+## 2026-10-06: Hook xatosi jim o'tmaydi: `|| exit 0` o'rniga `|| exit 1`
+
+**Nima o'zgardi.** `.claude/settings.json` va `install/manguberdi.ps1`
+dagi yetti hook buyrug'ining oxiri ` || exit 0` dan ` || exit 1` ga
+almashdi. "Hooklar faqat Java proyektida va klonda ishlaydi" yozuvidagi
+qolgan qism (`active()`, `GENIUS_HOOKS=off`) o'zgarmaydi.
+
+**Nega.** `|| exit 0` hook ishga tushmaganini butunlay yashirardi: klon
+ko'chsa, Python almashsa yoki import xatosi bo'lsa guard, budget,
+check_code va usage birga jim o'chardi, foydalanuvchi esa himoya bor deb
+ishlardi. Claude Code 0 dagi stderr ni ko'p eventlarda faqat debug logga
+yozadi. 2 dan boshqa nol bo'lmagan kod to'smaydi, lekin transkriptda
+"hook error" bo'lib ko'rinadi (PL-CC11). Avvalgi yozuvdagi asos, ya'ni
+Python ning "can't open file" kodi 2 to'siq bo'lmasin, 1 bilan ham
+saqlanadi.
+
+**Rad etilgan variantlar.**
+
+- *`hookio` ichida `run_hook` o'rami va xato logi.* Rad etildi: skript
+  umuman ishga tushmasa (yo'l yo'q, Python yo'q) o'ram ham yurmaydi, ya'ni
+  aynan shu holatni ushlay olmaydi; uchta faylga tegadi.
+- *`|| exit 0` ni qoldirib, faqat `doctor` tekshiruvi.* Rad etildi:
+  tekshiruv qo'lda yurgiziladi, xato esa har sessiyada ko'rinishi kerak.
+
+**Xavf.** Hook xulqi. O'chgan yoki ko'chgan klon endi har chaqiruvda
+"hook error" xabarini beradi (to'smaydi). Hookning o'zi kutilmagan
+istisno bilan yiqilsa Python 1 qaytaradi va bu ham ko'rinadi; ichida
+istisnoni ushlab 0 qaytaradigan hooklar (`suggest_sections`, `handoff`)
+avvalgidek jim. To'siq faqat JSON orqali beriladi: hook rejimida hamma
+skript 0 qaytaradi, shuning uchun normal ishda xabar chiqmaydi.
+
+**Qaysi tekshiruv o'tdi.** `tools/test_rewrite_paths.py` (ps1 va
+settings.json hook jadvali paritet holati bilan), `tools/test_skill.py`.
+Qo'lda: `CLAUDE_PROJECT_DIR=/yoq` bilan `settings.json` dagi yetti
+buyruqning har biri rc=1 va bo'sh stdout.
+
+**Orqaga qaytarish.** `git revert`, yoki ikkala fayldagi ` || exit 1` ni
+` || exit 0` ga qaytarish (paritet testi ikkalasini birga talab qiladi).
+Global o'rnatishda `-Update` eski buyruqni yo'l bo'yicha almashtiradi.

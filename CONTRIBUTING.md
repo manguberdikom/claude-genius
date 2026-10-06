@@ -152,8 +152,7 @@ Bo'lim sarlavhasi doim raqamli H2 (`## N.M ...`) bo'ladi.
 `doc.sh show` va `find` uni ko'rmaydi.
 
 Har bir hujjat mundarija bilan boshlanadi, havolalar GitHub anchor
-formatida. Mavzu takrorlanmaydi: bir mavzu ikki hujjatda yozilmaydi,
-boshqa hujjatga bob raqami bilan emas, mavzu nomi bilan havola qilinadi.
+formatida (`Havolalar` bo'limi).
 
 Pattern yozuvi to'rt qismdan iborat va tartibi o'zgarmaydi:
 
@@ -203,6 +202,8 @@ chiqadi; kodi bor va topilmagan bo'lim alohida ogohlantirish oladi.
   shart emas, lekin sinf va metod nomi real bo'lsin.
 
 ## Havolalar
+
+Mavzuning to'liq yozuvi bitta uy bo'limda (`docs/OWNERS.tsv`), boshqa hujjat o'z nuqtai nazarini yozadi va uyga mavzu nomi bilan havola beradi. Havola matni bob raqami emas, mavzu nomi.
 
 - Bob ichida: `](#anchor)`.
 - Bir hujjatning boshqa bobiga: `](NN-slug.md#anchor)`.

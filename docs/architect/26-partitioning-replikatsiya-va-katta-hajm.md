@@ -152,7 +152,7 @@ BEGIN;
 COMMIT;
 ```
 
-Nom almashtirish tranzaksiyasi millisekundlar ichida tugaydi, lekin ACCESS EXCLUSIVE lock talab qiladi. Shuning uchun `lock_timeout` qo'yiladi va buyruq yuklama past paytda takroriy urinish bilan bajariladi. PostgreSQL 17 da `SPLIT PARTITION` va `MERGE PARTITIONS` buyruqlari bor, lekin ular ham kuchli lock oladi, ya'ni ularni onlayn migratsiya vositasi deb hisoblash xato.
+Nom almashtirish tranzaksiyasi millisekundlar ichida tugaydi, lekin ACCESS EXCLUSIVE lock talab qiladi. Shuning uchun `lock_timeout` qo'yiladi va buyruq yuklama past paytda takroriy urinish bilan bajariladi. `SPLIT PARTITION` va `MERGE PARTITIONS` buyruqlari PostgreSQL 17 ishlab chiqish davrida qo'shilgan, lekin chiqarilishdan oldin qaytarib olingan: 17 va 18 ning `ALTER TABLE` sintaksisida ular yo'q, faqat `ATTACH PARTITION` va `DETACH PARTITION` bor ([REL_17_0](https://github.com/postgres/postgres/blob/REL_17_0/doc/src/sgml/ref/alter_table.sgml), [REL_18_0](https://github.com/postgres/postgres/blob/REL_18_0/doc/src/sgml/ref/alter_table.sgml)). Shuning uchun partitsiyani bo'lish yoki birlashtirish yangi partitsiya yaratish, ma'lumotni ko'chirish va `DETACH`/`ATTACH` bilan qilinadi.
 
 ## 26.6 Streaming replikatsiya: primary va standby, lag o'lchash
 

@@ -1,10 +1,11 @@
 # Java, Spring va PostgreSQL bo'yicha oltita qo'llanma
 
 O'zbek tilidagi oltita bir-birini to'ldiruvchi hujjat: 224 bob, 3293 bo'lim,
-2300 dan ortiq kod misoli. Har bir hujjat bir savolga javob beradi va
-qolganlariga mavzu nomi bilan havola qiladi. Ba'zi mavzular bir nechta
-hujjatda uchraydi, chunki ular har bir nuqtadan boshqacha ko'rinadi:
-masalan N+1 so'rovi pattern, arxitektura, review va Sonar tomonidan.
+2300 dan ortiq kod misoli. Har bir hujjat bir savolga javob beradi. Ba'zi
+mavzular bir nechta hujjatda uchraydi, chunki ular har bir nuqtadan
+boshqacha ko'rinadi: masalan N+1 so'rovi pattern, arxitektura, review va
+Sonar tomonidan.
+Mavzuning to'liq yozuvi bitta uy bo'limda (`docs/OWNERS.tsv`), boshqa hujjat o'z nuqtai nazarini yozadi va uyga mavzu nomi bilan havola beradi.
 
 | Hujjat | Hajm | Qanday savolga javob beradi |
 |---|---|---|
@@ -61,9 +62,11 @@ sanalmaydi (`budget.py`); token sarfi `.claude/usage/` ga yoziladi
 Hooklar faqat ikki joyda ish qiladi: shu klonda va Java proyektida (ildizida
 yoki birinchi darajali papkasida `pom.xml` yoki Gradle fayli bo'lgan repo).
 Global o'rnatishda ular har proyektda yuradi, lekin boshqa joyda chiqishsiz
-0 bilan chiqadi, ya'ni Python yoki JS proyektida hech narsa to'smaydi.
-`GENIUS_HOOKS=off` hammasini o'chiradi. Tafsiloti
-[install/README.md](install/README.md#hooklar-qaysi-proyektda-ishlaydi) da.
+0 bilan chiqadi, ya'ni Python, JS, React Native, Flutter yoki Android
+proyektida hech narsa to'smaydi (`android/build.gradle` Java belgisi
+sanalmaydi). `GENIUS_HOOKS=off` hammasini o'chiradi, `on` chuqur monorepoda
+yoqadi. Qaysi proyekt to'liq, qisman yoki umuman qo'llab-quvvatlanmasligi
+[install/README.md](install/README.md#hooklar-qaysi-proyektda-ishlaydi) dagi jadvalda.
 
 Yettita marshrut skilli faqat shu repo ichida ishlaydi: ulardagi `docs/` va
 `tools/` yo'llari joriy papkaga nisbatan hal qilinadi va boshqa proyektda

@@ -183,7 +183,7 @@ Pool o'lchamini tanlash qoidasi ham o'zgarmadi: CPU yadro soniga bog'lab, taxmin
 
 Oddiy `ExecutorService` bilan parallel chaqiruvlarda uch muammo doim takrorlanadi: biri xato berganda qolganlar behuda ishlashda davom etadi, timeout'ni har biri uchun alohida boshqarish kerak, va stack trace'da ota vazifa ko'rinmaydi. Structured concurrency shu uchtasini tilga olib kiradi: parallel vazifalar ota vazifaning leksik blokida tug'iladi va o'sha blokdan tashqariga chiqmaydi.
 
-Java 25 da bu API beshinchi preview holatida, ya'ni `--enable-preview` kerak va imzolar hali o'zgarishi mumkin. Java 21-23 dagi shakl (`new StructuredTaskScope<>()`, `ShutdownOnFailure`, `throwIfFailed`) Java 25 da `StructuredTaskScope.open(...)` va `Joiner` ko'rinishiga almashtirildi. Arxitektor uchun xulosa: mexanikani o'zlashtirish arziydi, lekin production kodni preview API ga bog'lashdan oldin migratsiya narxini hisoblash kerak.
+Java 25 da bu API beshinchi preview holatida ([JEP 505](https://openjdk.org/jeps/505)), ya'ni `--enable-preview` kerak va imzolar hali o'zgarishi mumkin. Java 21-24 dagi shakl (`new StructuredTaskScope<>()`, `ShutdownOnFailure`, `throwIfFailed`; 24 da [JEP 499](https://openjdk.org/jeps/499) bilan o'zgarishsiz qayta preview) Java 25 da `StructuredTaskScope.open(...)` va `Joiner` ko'rinishiga almashtirildi. Arxitektor uchun xulosa: mexanikani o'zlashtirish arziydi, lekin production kodni preview API ga bog'lashdan oldin migratsiya narxini hisoblash kerak.
 
 ```java
 // Java 25, preview: buyurtma sahifasi uchun uch chaqiruvni parallel bajarish
@@ -209,7 +209,7 @@ Bekor qilish `Thread.interrupt` orqali ishlaydi, shuning uchun vazifa ichidagi k
 
 `ThreadLocal` ikki muammo keltiradi. Birinchisi: uning qiymati thread yashash davomida qoladi, shuning uchun uni tozalashni eslab qolish kerak va pool'da `remove()` qilinmasa ma'lumot oqib ketadi. Ikkinchisi: inheritable variant yaratilganda qiymat har bir child thread'ga nusxalanadi va million virtual thread'da bu xotirada sezilarli bo'ladi.
 
-`ScopedValue` Java 25 da final bo'ldi. U immutable va uning amal qilish doirasi leksik blok bilan belgilanadi: blok tugashi bilan bog'lanish o'z-o'zidan yo'qoladi, tozalash kerak emas. Child virtual thread'lar qiymatni nusxalamaydi, ota'ning bog'lanishiga murojaat qiladi.
+`ScopedValue` Java 25 da final bo'ldi. U immutable va uning amal qilish doirasi leksik blok bilan belgilanadi: blok tugashi bilan bog'lanish o'z-o'zidan yo'qoladi, tozalash kerak emas. Meros faqat `StructuredTaskScope.fork(...)` bilan tug'ilgan child thread larda ishlaydi: ular qiymatni nusxalamaydi, ota bog'lanishini ko'radi ([JEP 506](https://openjdk.org/jeps/506)). Oddiy `Thread.ofVirtual().start(...)` yoki executor ga uzatilgan vazifada qiymat bog'lanmagan bo'ladi (`isBound()` false), shuning uchun kontekst u yerga alohida uzatiladi.
 
 ```java
 // Request kontekstini ThreadLocal o'rniga ScopedValue da uzatish

@@ -12,8 +12,8 @@
 # dalil   - nega aynan shu bob: nimasi bilan eng to'liq
 #
 # check_docs: uy-bobdan tashqarida shu mavzu SARLAVHASI bo'lsa
-# ogohlantirish beradi, xato emas. Birlashtirish ishi 8-promptda,
-# bob tekshirilganda bajariladi.
+# ogohlantirish beradi, xato emas. Birlashtirish ishi bob
+# tekshirilganda bajariladi.
 mavzu	uy_bob	dalil
 n+1	architect 18.4	mexanizmni va to'rt xil yechimni birga beradi; patterns 9.27 va 25.43 katalog yozuvi, code-review 23.1 diffdan ko'rish, sonarqube 29.7 faqat EAGER xavfi
 circuit breaker	patterns 17.2	pattern katalogining o'z yozuvi: holat mashinasi va chegaralar; 17.39 Resilience4j sozlamasi

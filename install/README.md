@@ -276,6 +276,28 @@ o'zgarish esa keyingi promptda hamma proyektda bajarilardi. Skill
 klondan faqat `docs/` (Read orqali) va `memory/` ni o'qiydi, asboblar
 Bash orqali yuradi.
 
+### Memory qayerda
+
+Klon ochiq repo, shuning uchun unga faqat `memory/umumiy/` va
+`memory/claude-genius/` yoziladi. Siz ishlayotgan har boshqa proyektning
+memorysi va bulut sessiyasidagi topshirig'i (handoff) klondan tashqarida:
+
+| O'zgaruvchi | Sukut | Push |
+|---|---|---|
+| `GENIUS_MEMORY_DIR` | `~/.claude/genius-memory`, ichida `<slug>/` | yo'q |
+
+Boshqa joy kerak bo'lsa (masalan xususiy git repo) `settings.json` dagi
+`env` ga `GENIUS_MEMORY_DIR` ni yozing. Lokal sessiyadagi topshiriq esa
+memoryga umuman tushmaydi: `<klon>/.claude/.state/handoff/` da, git siz.
+Klondagi begona `memory/<slug>/` ni `git add` yoki `git commit` qilishni
+`guard.py` so'raydi.
+
+Memory B yo'lida skill orqali o'qiladi: `manguberdi` ish boshida
+`handoff.py --memory` bilan ikki indeksni bitta Bash chaqiruvida oladi,
+shuning uchun `CLAUDE.md` ga qo'lda ulanish yozish shart emas.
+`GENIUS_MEMORY_DIR` dagi topic faylni Read bilan ochish ruxsat so'rashi
+mumkin: u `additionalDirectories` da emas.
+
 **Ishonchli proyekt uchun opt-in.** O'rnatuvchi oxirida tayyor bo'lak
 chiqaradi (uni `rewrite_paths.py --opt-in` yasaydi, hech qayerga
 yozilmaydi):
@@ -326,6 +348,27 @@ ham hook jim o'tadi: hook o'z noaniqligi tufayli hech qachon to'smaydi.
 Qoida `tools/hookio.py` dagi `active()` da, sinovlari
 `tools/test_hookio.py` da.
 
+Qo'llanma bazasi Java 17+ va Spring Boot 3.2+. Boshqa proyekt turlari
+shunday:
+
+| Daraja | Proyekt | Nima bo'ladi | `GENIUS_HOOKS` |
+|---|---|---|---|
+| To'liq | Spring Boot 3.2+, Java 17+, Maven yoki Gradle (version catalog ham), build fayli ildizda yoki birinchi darajali papkada | hamma hook, `rules_for`, `check_code`, `run_tests` | kerak emas |
+| Qisman | Kotlin (Spring) | boblar va punktlar beriladi; `check_code` `.kt` ni tekshirmaydi, `rules_for` buni chiqishning boshida aytadi | kerak emas |
+| Qisman | Spring Boot 2.x yoki Java 17 dan eski | boblar Boot 3 uchun yozilgan; `rules_for` "ESKI VERSIYA" bannerini va Boot 3 ga o'tish bo'limini (`architect 16.11`) beradi | kerak emas |
+| Qisman | Quarkus, Micronaut | `rules_for` "Spring emas" deydi va `spring.*`, `@Autowired` punktlarini olib tashlaydi; Spring boblari baribir chiqadi | maslahat xalaqit bersa `off` |
+| Qisman | Monorepo, Spring moduli ikkinchi darajada (`backend/services/orders/pom.xml`) | hooklar o'zi yoqilmaydi | `on` |
+| Qo'llab-quvvatlanmaydi | React Native, Expo, Capacitor, Cordova, Flutter: ildizda `package.json`, `app.json` yoki `pubspec.yaml`, Gradle esa `android/` da | hooklar nofaol, `docker` va `psql` to'silmaydi | kerak emas |
+| Qo'llab-quvvatlanmaydi | Android ilova: modulda `src/main/AndroidManifest.xml` yoki `gradle/libs.versions.toml` da `com.android` | hooklar nofaol | kerak emas |
+| Qo'llab-quvvatlanmaydi | Python, JS, Go va boshqa Java bo'lmagan proyekt | hooklar nofaol | kerak emas |
+
+`GENIUS_HOOKS=on` (yoki `1`, `true`, `yes`) markerdan qat'i nazar
+hooklarni yoqadi: chuqur monorepo uchun. Avtomatik chuqur skan yo'q,
+chunki u har `Read` va `Bash` ga papka aylanishini qo'shardi. `on` ni
+faqat o'sha proyekt sessiyasida qo'ying, `setx` bilan emas: aks holda
+hooklar har proyektda, Java bo'lmaganida ham yoqiladi. `off` hammasini
+o'chiradi (pastda).
+
 ### Hooklarni butunlay o'chirish
 
 `GENIUS_HOOKS=off` bo'lsa har hook, klon ichida ham, darhol 0 bilan
@@ -345,11 +388,13 @@ etadi: o'chadigani faqat hooklar.
 `settings.json` dagi hook buyruqlari aynan shu klonga mutlaq yo'l bilan
 bog'langan. Klon o'chirilsa yoki boshqa nomga ko'chirilsa:
 
-- **hooklar jim o'tadi.** Har buyruq oxirida `|| exit 0` turadi, shuning
-  uchun Python ning "can't open file" xatosi 0 ga aylanadi. Bu muhim:
-  Claude Code hookdan kelgan 2 kodini TO'SIQ deb oladi, ya'ni `|| exit 0`
-  bo'lmasa o'chgan klon `PreToolUse` da har `Read` va `Bash` ni to'sib,
-  Claude Code ni hamma proyektda ishlatmay qo'yardi. Hooklarning o'zi
+- **hooklar to'smaydi, lekin "hook error" ko'rinadi.** Har buyruq
+  oxirida `|| exit 1` turadi, shuning uchun Python ning "can't open file"
+  xatosi (kodi 2) 1 ga aylanadi. Bu muhim: Claude Code hookdan kelgan 2
+  kodini TO'SIQ deb oladi, ya'ni usiz o'chgan klon `PreToolUse` da har
+  `Read` va `Bash` ni to'sib, Claude Code ni hamma proyektda ishlatmay
+  qo'yardi. 1 to'smaydi, lekin Claude Code har chaqiruvda "hook error"
+  xabarini ko'rsatadi: himoya o'chgani jim qolmaydi. Hooklarning o'zi
   to'siqni faqat JSON orqali beradi, shuning uchun bu hech qanday
   tekshiruvni yo'qotmaydi.
 - **skill ishlamaydi.** `manguberdi` matnidagi buyruqlar va qo'llanma
@@ -405,8 +450,11 @@ nusxadagi yo'llarni mutlaq qiladi:
 ```text
 python3 tools/rules_for.py   ->  C:/Python312/python.exe C:/src/claude-genius/tools/rules_for.py
 tools/doc.sh find            ->  bash C:/src/claude-genius/tools/doc.sh find
-memory/<proyekt-slug>/       ->  C:/src/claude-genius/memory/<proyekt-slug>/
+memory/umumiy/MEMORY.md      ->  C:/src/claude-genius/memory/umumiy/MEMORY.md
 ```
+
+Skill matnida proyekt memorysi yo'li yo'q: u klonda emas (pastda,
+"Memory qayerda").
 
 `C:/Python312/python.exe` misol: o'rnatuvchi tanlagan Python ning to'liq
 yo'li yoziladi. `bash` esa nomicha qoladi: Claude Code ning Bash vositasi

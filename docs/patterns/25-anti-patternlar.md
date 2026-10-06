@@ -595,7 +595,7 @@ public record Money(BigDecimal amount, Currency currency) {
 **Qo'llanish keyslari:**
 - Public `process()` metodi ichidan `private @Transactional void persist()` chaqirilgan va rollback kutilgan - aslida transaction hech qachon boshlanmaydi.
 - Interface'i bor bean (JDK dynamic proxy): tranzaksion metod proxy qilinayotgan interface da e'lon qilinmagan, shuning uchun proxy uni ko'rmaydi va chaqiruv to'g'ridan to'g'ri target'ga tushadi.
-- Kotlin yoki Lombok generatsiya qilgan metodlar `final` bo'lib, CGLIB proxy'ni buzishi.
+- Kotlin da sinf va metod standart `final`: `kotlin("plugin.spring")` (allopen) ulanmasa, ochiq sinfdagi `final` metodga `@Transactional` qo'llanmaydi: chaqiruv proxy nusxasining o'zida bajariladi, u yerda injekt qilingan maydonlar `null`, natija tranzaksiyasiz ish yoki `NullPointerException`; `final` sinf esa startup da CGLIB xatosi bilan yiqiladi.
 - 5.x dan 6.x ga ko'tarilish: ilgari jim e'tiborsiz qolgan `protected` yoki package-private `@Transactional` endi kuchga kirib, kutilmagan joyda yangi transaction chegarasi paydo bo'lishi.
 - `TransactionAttributeSource` ni qo'lda bean qilib e'lon qilish: argumentsiz `new AnnotationTransactionAttributeSource()` da `publicMethodsOnly` `true` bo'ladi va `@EnableTransactionManagement` bergan default bosilib ketadi.
 
@@ -800,7 +800,7 @@ public record Money(BigDecimal amount, Currency currency) {
 
 **Tavsif:** Testlar in-memory H2 da (yoki HSQLDB da) ishlatiladi, production esa PostgreSQL yoki Oracle da turadi. H2 ning SQL dialekti, tip tizimi, locking semantikasi va index xatti-harakati boshqa - shuning uchun testlar yashil bo'lsa ham production'da xato chiqadi. Bu yolg'on ishonch beradigan anti-pattern: migratsiyalar, JSON/array ustunlar, window funksiyalar va `ON CONFLICT` kabi narsalar hech qachon haqiqiy DB'da sinalmaydi.
 
-**Spring'da qayerda uchraydi:** `@DataJpaTest` ning default `@AutoConfigureTestDatabase(replace = ANY)` xatti-harakati H2 ga almashtiradi. To'g'ri yondashuv - Testcontainers (`org.testcontainers:postgresql`) bilan `@Testcontainers` + `@Container PostgreSQLContainer<?>` va Spring Boot 3.1+ dagi `@ServiceConnection` annotatsiyasi, yoki `spring-boot-testcontainers` moduli hamda `@DynamicPropertySource`. Shuningdek `@AutoConfigureTestDatabase(replace = NONE)` bilan real DB'ga ulanib, Flyway/Liquibase migratsiyalarini tekshirish mumkin.
+**Spring'da qayerda uchraydi:** `@DataJpaTest` ning default `@AutoConfigureTestDatabase(replace = ANY)` xatti-harakati H2 ga almashtiradi. To'g'ri yondashuv - Testcontainers (Boot 3.5 / TC 1.x da `org.testcontainers:postgresql`, Boot 4 / TC 2.x da `org.testcontainers:testcontainers-postgresql`, qarang: [testlash hujjatidagi Testcontainers asoslari](../testing/08-testcontainers-bilan-real-infratuzilmada.md#82-testcontainers-asoslari-docker-api-ustida-hayot-aylanishi)) bilan `@Testcontainers` + `@Container PostgreSQLContainer<?>` (TC 2.x da generiksiz `org.testcontainers.postgresql.PostgreSQLContainer`) va Spring Boot 3.1+ dagi `@ServiceConnection` annotatsiyasi, yoki `spring-boot-testcontainers` moduli hamda `@DynamicPropertySource`. Shuningdek `@AutoConfigureTestDatabase(replace = NONE)` bilan real DB'ga ulanib, Flyway/Liquibase migratsiyalarini tekshirish mumkin.
 
 **Qo'llanish keyslari:**
 - PostgreSQL `jsonb` ustuni yoki `text[]` massiv mapping'i H2 da umuman ishlamaydi, Testcontainers'da esa real tekshiriladi.
@@ -1430,6 +1430,7 @@ public Rate fetch(String code) {
 
 - [Spring Framework, Declarative transaction annotations](https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/annotations.html) - 6.0 dan beri `protected` va package-visible metodlar class-based proxy da tranzaksion bo'ladi; interface proxy da metod `public` va proxy qilinayotgan interface da bo'lishi shart
 - [Spring Framework, Proxying mechanisms](https://docs.spring.io/spring-framework/reference/core/aop/proxying.html) - CGLIB `final` va `private` metodni advise qila olmaydi
+- [Spring Framework v6.2.0, Spring projects in Kotlin: Final by Default](https://github.com/spring-projects/spring-framework/blob/v6.2.0/framework-docs/modules/ROOT/pages/languages/kotlin/spring-projects-in.adoc#final-by-default) - Kotlin sinf va metodlari standart `final`, yechim `kotlin-spring` (allopen) plugini
 - [sonar-java, S2230](https://raw.githubusercontent.com/SonarSource/sonar-java/master/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S2230.html) - qoida 5.x gacha har qanday public bo'lmagan metodni, 6.x da faqat `private` ni belgilaydi
 
 ---

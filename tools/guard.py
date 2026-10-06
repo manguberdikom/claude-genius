@@ -40,6 +40,11 @@ ishlaydi, Bash bilan yozilgan kod undan jim o'tib ketardi. Heredoc
 tanasidagi Java matni, faylni o'qish va `> Foo.java.txt` o'tadi. Bu ham
 odatga qarshi to'siq: `python -c` bilan yozish ushlanmaydi.
 
+Klondagi begona memory papkasini (`memory/<slug>/`, `umumiy` va
+`claude-genius` dan boshqa) `git add` yoki `git commit` qilish `ask`:
+klon ochiq repo, boshqa proyekt memorysi esa uning tashqarisida turadi
+(GENIUS_MEMORY_DIR, R0.5).
+
 3. Test vaqti. To'liq suite (`./gradlew test`, `mvn verify`) 5-8 daqiqa,
    `clean`, `--rerun-tasks` va `--no-daemon` esa inkremental build va
    daemon ni yo'qotib, keyingi har yurishni ham sekinlashtiradi. Bular
@@ -468,9 +473,114 @@ def check_java_write(command):
                % match.group(0).lstrip(" \t\n|;&(`$").strip(), JAVA_WRITE_HINT)
 
 
+# Ochiq klonga yoziladigan memory papkalari (docref.SHARED_MEMORY bilan bir
+# xil, test_guard solishtiradi). Boshqa proyekt memorysi klondan tashqarida
+# turadi: GENIUS_MEMORY_DIR, sukut ~/.claude/genius-memory (R0.5).
+SHARED_MEMORY = ("umumiy", "claude-genius")
+# `git [-C yo'l] [-c k=v] add|commit ...`. Global bayroqlar va argumentlar
+# asl matndan olinadi, o'rni esa niqoblangan matndan (mask_quoted).
+GIT_STAGE_RE = re.compile(
+    CMD + r"git((?:\s+(?:-[Cc]\s+[^\s|;&]+|--[\w-]+(?:=[^\s|;&]+)?|-[pP]))*)"
+    r"\s+(add|commit)(?![\w-])([^|;&\n]*)")
+# commit bayroqlari, qiymat oladigani: xabar matni yo'l deb o'qilmasin.
+COMMIT_VALUED = {"-m", "-F", "-c", "-C", "-t", "--message", "--file",
+                 "--reuse-message", "--reedit-message", "--author", "--date",
+                 "--fixup", "--squash", "--cleanup", "--template", "--trailer",
+                 "--pathspec-from-file"}
+MEMORY_HINT = (
+    "Klon ochiq repo: boshqa proyektning vazifa, qaror va fayl nomlari\n"
+    "unga yozilmaydi (memory/README.md, \"Qayerga va qanday\"). Proyekt\n"
+    "memorysi klondan tashqarida: GENIUS_MEMORY_DIR, sukut\n"
+    "~/.claude/genius-memory/<slug>/, push siz. Klonga faqat memory/umumiy/\n"
+    "va memory/claude-genius/ yoziladi.")
+
+
+def foreign_memory_dirs():
+    """Klondagi `memory/` ostidagi begona slug papkalari."""
+    base = os.path.join(ROOT, "memory")
+    try:
+        names = os.listdir(base)
+    except OSError:
+        return set()
+    return {n for n in names if n not in SHARED_MEMORY and not n.startswith(".")
+            and os.path.isdir(os.path.join(base, n))}
+
+
+def staged_targets(args, verb):
+    """(yo'llar, butun daraxtmi). `add -A`, `add .`, `commit -a` butun daraxt."""
+    paths, broad, i, only_paths = [], False, 0, False
+    while i < len(args):
+        arg = args[i]
+        i += 1
+        if only_paths or not arg.startswith("-") or arg == "-":
+            paths.append(arg)
+            continue
+        if arg == "--":
+            only_paths = True
+        elif arg in ("-A", "--all") or (verb == "commit" and arg == "-a"):
+            broad = True
+        elif verb == "commit" and arg in COMMIT_VALUED:
+            i += 1
+        elif verb == "commit" and not arg.startswith("--") and len(arg) > 2:
+            # `-am "xabar"`: birlashgan bayroqlar, oxirgisi qiymat olishi mumkin.
+            broad = broad or "a" in arg[1:]
+            i += arg[-1] in "mFcCt"
+    return paths, broad
+
+
+def check_memory_git(command):
+    """Klondagi begona memory papkasini git ga qo'shish yoki commit: `ask`.
+
+    Global o'rnatishda har proyekt shu klonni ishlatadi, klon esa ochiq
+    repo: xususiy proyekt nomi, qarorlari va fayl yo'llari uning tarixiga
+    tushsa, o'chirish qimmat. Faqat aniq ko'ringan yo'l tekshiriladi:
+    `memory/<slug>`, shuningdek `add -A`, `add .` va `commit -a` klonda
+    begona papka bo'lsa. Bu ham odatga qarshi to'siq, `bash -c` ichini
+    ko'rmaydi.
+    """
+    if "git" not in command:
+        return
+    base_cmd = strip_heredoc(command)
+    for match in GIT_STAGE_RE.finditer(mask_quoted(base_cmd)):
+        base = os.getcwd()
+        flags = split_args(base_cmd[match.start(1):match.end(1)])
+        for flag, value in zip(flags, flags[1:]):
+            if flag == "-C":
+                base = os.path.join(base, os.path.expanduser(value))
+        verb = match.group(2)
+        args = split_args(base_cmd[match.start(3):match.end(3)].rstrip().rstrip(")`"))
+        paths, broad = staged_targets(args, verb)
+        found = set()
+        for path in paths:
+            full = os.path.normpath(os.path.join(base, os.path.expanduser(path)))
+            try:
+                rel = os.path.relpath(full, ROOT)
+            except ValueError:
+                continue   # Windows: boshqa disk
+            parts = rel.split(os.sep)
+            if parts[0] == "..":
+                continue
+            if rel == "." or parts == ["memory"]:
+                broad = True   # klon ildizi yoki butun memory/
+            elif (parts[0] == "memory" and parts[1] not in SHARED_MEMORY
+                  and not (len(parts) == 2 and os.path.isfile(full))):
+                found.add(parts[1])
+        try:
+            in_clone = not os.path.relpath(
+                os.path.normpath(base), ROOT).split(os.sep)[0] == ".."
+        except ValueError:
+            in_clone = False
+        if broad and in_clone:
+            found |= foreign_memory_dirs()
+        if found:
+            ask("Begona memory ochiq klonga: git %s, memory/%s."
+                % (verb, ", memory/".join(sorted(found))), MEMORY_HINT)
+
+
 def check_bash(tool_input, powershell=False):
     command = tool_input.get("command") or ""
     check_java_write(command)
+    check_memory_git(command)
     check_cost(command)
     check_build(command)
     regex = PS_SLURP_RE if powershell else SLURP_RE

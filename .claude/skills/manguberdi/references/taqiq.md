@@ -99,5 +99,7 @@ Bular hook bilan to'silmaydi, lekin zanjir qoidasi:
 - Ikki chaqiruvdan keyin uchinchi urinishni boshqa yo'l bilan qilish:
   asosiy sessiyada o'zi tuzatish yoki behuda ketmagan chaqiruvni
   `budget.py --tiklash` yoki `--yangi-vazifa` bilan nolga tushirish.
-  Aktyorning uchinchi chaqiruvini esa `budget.py` hook o'zi to'sadi.
+  Aktyorning uchinchi chaqiruvini esa `budget.py` hook o'zi to'sadi:
+  ishni boshqa subagentga berish `boshqa` hisobiga, ro'yxatdan
+  o'tmagan `guruh:` id esa umumiy hisobga tushadi.
 - Foydalanuvchi so'ramagan faylni "yo'l-yo'lakay" tuzatish.

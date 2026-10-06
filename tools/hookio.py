@@ -63,6 +63,17 @@ MARKERS = ("pom.xml", "build.gradle", "build.gradle.kts",
 # GENIUS_HOOKS shu qiymatlardan biri bo'lsa hooklar o'chadi. Hujjatdagi
 # nomi `off`, qolganlari odatiy "yo'q" yozilishlari.
 OFF = ("off", "0", "false", "no")
+# `on` esa markerdan qat'i nazar yoqadi: Spring moduli ikkinchi darajada
+# turgan monorepo (`backend/services/orders/pom.xml`) uchun. Chuqur skan
+# o'rniga shu: har Read va Bash da papka aylanish narxi to'lanmaydi.
+ON = ("on", "1", "true", "yes")
+
+# Ildizda shulardan biri bo'lsa repo mobil yoki JS ilova: React Native,
+# Expo, Capacitor, Cordova (package.json, app.json) yoki Flutter
+# (pubspec.yaml). Ularning `android/build.gradle` i Java proyekti belgisi
+# emas, Gradle u yerda faqat mobil yig'uvchi.
+MOBILE_ROOT = ("package.json", "pubspec.yaml", "app.json")
+MOBILE_DIRS = ("android",)
 
 
 def _same(left, right):
@@ -115,21 +126,54 @@ def active(payload=None):
       Maven yoki Gradle yig'uvchisi bo'lgan repoda (ko'p modulli repoda
       `pom.xml` ildizda emas, `backend/pom.xml` da turishi mumkin).
 
+    Istisnolar: Android ilova (`_android`) nofaol; ildizda MOBILE_ROOT
+    bo'lsa `android/` dagi marker sanalmaydi (React Native, Flutter),
+    lekin `backend/pom.xml` sanaladi. `GENIUS_HOOKS=on` hammasidan ustun.
+
     Ildiz aniqlanmasa NOFAOL: hook o'z noaniqligi tufayli hech qachon
     to'smaydi. docref.in_clone() bu yerda yaramaydi, u JORIY papkaga
     qaraydi, hook jarayonining papkasi esa proyekt ildizi bo'lishi shart
     emas.
     """
-    if os.environ.get("GENIUS_HOOKS", "").strip().lower() in OFF:
+    flag = os.environ.get("GENIUS_HOOKS", "").strip().lower()
+    if flag in OFF:
         return False
+    if flag in ON:
+        return True
     root = project_root(payload)
     if root is None:
         return False
-    if _same(root, ROOT) or _marked(root):
+    if _same(root, ROOT):
         return True
     try:
         with os.scandir(root) as entries:
             subs = [e.path for e in entries if e.is_dir()]
     except OSError:
         return False
+    if _android(root, subs):
+        return False
+    if _marked(root):
+        return True
+    if any(os.path.isfile(os.path.join(root, n)) for n in MOBILE_ROOT):
+        subs = [s for s in subs
+                if os.path.basename(s).lower() not in MOBILE_DIRS]
     return any(_marked(sub) for sub in subs)
+
+
+def _android(root, subs):
+    """Android ilova: qo'llanma server tomoni uchun, maslahati o'rinsiz.
+
+    Ikki belgi. Modulda `src/main/AndroidManifest.xml` (AGP tuzilishi),
+    yoki version catalog da `com.android` plagini: yangi Android Studio
+    shabloni build faylida `alias(libs.plugins.android.application)`
+    yozadi va `com.android` matni faqat catalog da qoladi.
+    """
+    manifest = os.path.join("src", "main", "AndroidManifest.xml")
+    if any(os.path.isfile(os.path.join(d, manifest)) for d in [root] + subs):
+        return True
+    catalog = os.path.join(root, "gradle", "libs.versions.toml")
+    try:
+        with open(catalog, encoding="utf-8", errors="replace") as handle:
+            return "com.android" in handle.read(65536)
+    except OSError:
+        return False

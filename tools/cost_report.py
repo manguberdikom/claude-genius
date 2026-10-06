@@ -32,11 +32,15 @@ EN_SHARE = 0.08
 # Byudjet joriy JAMI ustiga ~300 token zahira, taxminan bitta skill
 # tavsifi. Teng qilib qo'yilmaydi, aks holda har kichik tahrir yolg'on
 # signal beradi. Shundan oshsa, yangi narsa qo'shishdan oldin eskisi
-# qisqartiriladi yoki birlashtiriladi. 2026-10-05 da o'lchangan JAMI 6106.
-DEFAULT_BUDGET = 6500
+# qisqartiriladi yoki birlashtiriladi. 2026-10-06 da o'lchangan JAMI 4990
+# (CLAUDE.md qisqardi, manguberdi ro'yxatdan chiqdi). Zahira 200-400
+# oralig'ida bo'lishini test_cost_report tekshiradi: JAMI ancha kamaysa
+# byudjet ham tushiriladi, aks holda o'sish yana sezilmay qoladi.
+DEFAULT_BUDGET = 5290
 
 FRONT_RE = re.compile(r"\A---\n(.*?)\n---\n", re.S)
-FIELD_RE = re.compile(r"^(\w+):\s*(.*)$", re.M)
+# Kalitda `-` bo'ladi: `disable-model-invocation`.
+FIELD_RE = re.compile(r"^([\w-]+):\s*(.*)$", re.M)
 # Read natijasi har qatorga raqam prefiksi qo'shadi (`     1<TAB>`).
 READ_PREFIX = 7
 
@@ -61,11 +65,16 @@ def listing_text(path, kind):
 
     Skill `- nom: tavsif`, agent `- nom: tavsif (Tools: ...)` bo'lib
     kiradi. model qatori ro'yxatda chiqmaydi, shuning uchun sanalmaydi.
+    `disable-model-invocation: true` li skillni faqat foydalanuvchi
+    `/nom` bilan chaqiradi: u ro'yxatga kirmaydi va 0 sanaladi.
     """
     match = FRONT_RE.match(read(path))
     if not match:
         return "", "uz"
     front = dict(FIELD_RE.findall(match.group(1)))
+    if (kind == "skill"
+            and front.get("disable-model-invocation", "").strip().lower() == "true"):
+        return "", "uz"
     default = (os.path.basename(os.path.dirname(path)) if kind == "skill"
                else os.path.splitext(os.path.basename(path))[0])
     name = front.get("name") or default
@@ -91,9 +100,14 @@ def glob_sorted(pattern_dir, name):
 
 
 def listing_row(label, paths, kind, note):
-    """Har fayl o'z tilida sanaladi, keyin yig'iladi."""
+    """Har fayl o'z tilida sanaladi, keyin yig'iladi.
+
+    Sonda faqat ro'yxatga kirgan qatorlar: listingdan chiqqan skill
+    (bo'sh qator) sanalmaydi.
+    """
     lines = [listing_text(p, kind) for p in paths]
-    return (label % len(paths), sum(len(t) for t, _ in lines),
+    return (label % sum(1 for t, _ in lines if t),
+            sum(len(t) for t, _ in lines),
             sum(tokens(t, lang) for t, lang in lines), note)
 
 

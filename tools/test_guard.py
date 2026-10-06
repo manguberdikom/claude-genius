@@ -444,6 +444,26 @@ CASES = [
     ("index: grep o'tadi", ALLOW, bash("grep -n circuit index/sections.tsv")),
     ("index: Read limit=20 o'tadi", ALLOW,
      {"tool_name": "Read", "tool_input": {"file_path": "index/sections.tsv", "limit": 20}}),
+
+    # R0.5: klon ochiq repo, begona slug memorysi unga commit qilinmaydi.
+    ("memory: begona slug add", ASK, bash("git add memory/acme__billing/project_x.md")),
+    ("memory: begona slug commit", ASK,
+     bash("git commit -m 'handoff' memory/shop-api/MEMORY.md")),
+    ("memory: -C klon, boshqa cwd", ASK,
+     bash('git -C "%s" add memory/shop-api' % ROOT), OTHER_CWD),
+    ("memory: mutlaq yo'l, boshqa cwd", ASK,
+     bash("git add %s/memory/shop-api/MEMORY.md" % ROOT), OTHER_CWD),
+    ("memory: zanjir ichida", ASK,
+     bash("cd x && git add memory/shop-api && git commit -m x")),
+    ("memory: subagent deny", DENY, sub("git add memory/shop-api/x.md")),
+    ("memory: umumiy o'tadi", ALLOW, bash("git add memory/umumiy/MEMORY.md")),
+    ("memory: claude-genius, xabarda slug", ALLOW,
+     bash("git add memory/claude-genius/ && git commit -m 'memory/acme haqida'")),
+    ("memory: README o'tadi", ALLOW, bash("git add memory/README.md")),
+    ("memory: boshqa proyektning memory/ i", ALLOW,
+     bash("git add memory/acme/x.md"), OTHER_CWD),
+    ("memory: git log o'tadi", ALLOW, bash("git log -- memory/acme")),
+    ("memory: qo'shtirnoq ichida o'tadi", ALLOW, bash("grep -rn 'git add memory/acme' .")),
 ]
 
 # To'siq maslahatidagi `tools/` yo'llari va CLAUDE.md. Global o'rnatishda
@@ -606,6 +626,26 @@ def gating_case(name, want, files, payload):
     return name, run
 
 
+def case_memory_tree():
+    """Butun daraxtni qo'shish: klonda begona memory papkasi bo'lsa ask,
+    bo'lmasa o'tadi. Ro'yxat docref bilan bir xil."""
+    import docref
+    foreign = os.path.join(ROOT, "memory", "sinov__begona")
+    broad_cmds = ("git add -A", "git add .", "git commit -am 'x'", "git add memory")
+    rows = [("memory: SHARED_MEMORY docref bilan bir xil",
+             G.SHARED_MEMORY == docref.SHARED_MEMORY)]
+    os.makedirs(foreign)
+    try:
+        for command in broad_cmds:
+            rows.append(("memory: begona papka bor, %s" % command,
+                         verdict(bash(command)) == ASK))
+    finally:
+        shutil.rmtree(foreign, ignore_errors=True)
+    rows.append(("memory: begona papka yo'q, git add -A",
+                 verdict(bash("git add -A")) == ALLOW))
+    return rows
+
+
 def case_hooks_off():
     """GENIUS_HOOKS=off: klonda ham jim. Muhit jarayonga meros o'tadi."""
     off = subprocess.run(
@@ -624,6 +664,7 @@ ALL_CASES = (
     + [hint_case("maslahat yo'llari, klon", False),
        hint_case("maslahat yo'llari, boshqa proyekt", True)]
     + [gating_case(*row) for row in GATING]
+    + [("memory: butun daraxtni qo'shish", case_memory_tree)]
     + [("GENIUS_HOOKS=off: jim", case_hooks_off)]
 )
 

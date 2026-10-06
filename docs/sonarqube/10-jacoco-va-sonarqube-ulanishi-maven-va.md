@@ -65,7 +65,17 @@ Muhim nuqta: `prepare-agent` odatda `initialize` fazasiga, `report` esa `verify`
 </plugin>
 ```
 
-JaCoCo versiyasini Java versiyasiga qarab tanlang. Yangi JDK chiqqanda JaCoCo ning eski versiyasi yangi class file major version ni tanimaydi va `Unsupported class file major version` xatosini beradi. Java 21 va undan yuqorisida 0.8.11 dan boshlab yuqori versiyalardan foydalanish xavfsizroq, aniq moslik jadvalini JaCoCo release yozuvlaridan tekshirish kerak.
+JaCoCo versiyasini Java versiyasiga qarab tanlang. Yangi JDK chiqqanda JaCoCo ning eski versiyasi yangi class file major version ni tanimaydi va `Unsupported class file major version` xatosini beradi. Rasmiy qo'llab-quvvatlash shu versiyalardan boshlanadi ([JaCoCo changelog, v0.8.14](https://github.com/jacoco/jacoco/blob/v0.8.14/org.jacoco.doc/docroot/doc/changes.html)):
+
+| Java | Eng past JaCoCo |
+|---|---|
+| 17 | 0.8.8 |
+| 21 | 0.8.11 |
+| 22 | 0.8.12 |
+| 23, 24 | 0.8.13 |
+| 25 | 0.8.14 |
+
+Bu hujjat misollaridagi 0.8.12 Java 21 bazasi uchun yetarli. Java 25 da u class faylni tanimaydi, versiyani 0.8.14 ga ko'taring.
 
 ## 10.2 Hisobot yo'lini Sonar ga ko'rsatish: `sonar.coverage.jacoco.xmlReportPaths`
 
@@ -234,7 +244,7 @@ Integratsion testlar Failsafe orqali `integration-test` fazasida ishlaydi. Agar 
   <execution>
     <id>it-agent</id>
     <phase>pre-integration-test</phase>
-    <goals><goal>prepare-agent-integration-test</goal></goals>
+    <goals><goal>prepare-agent-integration</goal></goals>
     <configuration>
       <destFile>${project.build.directory}/jacoco-it.exec</destFile>
       <propertyName>failsafeArgLine</propertyName>
@@ -242,6 +252,8 @@ Integratsion testlar Failsafe orqali `integration-test` fazasida ishlaydi. Agar 
   </execution>
 </executions>
 ```
+
+Integratsion agent goal i `prepare-agent-integration` deb ataladi, uning standart fazasi ham `pre-integration-test` ([jacoco v0.8.12, AgentITMojo](https://github.com/jacoco/jacoco/blob/v0.8.12/jacoco-maven-plugin/src/org/jacoco/maven/AgentITMojo.java)); `-test` qo'shimchali goal yo'q va build "Could not find goal" bilan yiqiladi.
 
 Birlashtirish va yakuniy hisobot `verify` fazasida bajariladi. `merge` goal `fileSets` ichidagi barcha `exec` fayllarni bitta faylga qo'shadi, keyin `report` shu birlashgan fayldan XML chiqaradi.
 
