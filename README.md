@@ -29,6 +29,7 @@ render qilmaydi, monolit variant brauzerda ochilmaydi.
 - **Ichkarida nima sodir bo'layotganini bilmoqchisiz** - [arxitektor hujjati](docs/architect/README.md)
 - **O'zingizni baholamoqchisiz** - [Birinchi 90 kun va o'z-o'zini baholash](docs/architect/39-birinchi-90-kun-va-oz-ozini-baholash.md)
 - **Atama tushunarsiz** - [GLOSSARY.md](GLOSSARY.md)
+- **Bobda xato topdingiz** - [bob xatosi haqida xabar](https://github.com/manguberdikom/claude-genius/issues/new?template=bob-xatosi.yml) (hujjat, bo'lim raqami, da'vo va manba)
 
 ## Claude Code bilan ishlatish
 
@@ -133,6 +134,16 @@ To'liq qoidalar: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Litsenziya
 
-Matn (.md fayllar): [CC BY 4.0](LICENSE). Kod misollari va .md bo'lmagan
-barcha fayllar (`tools/`, `install/`, `.claude/settings.json`):
-[MIT](LICENSE-CODE).
+SPDX: `CC-BY-4.0 AND MIT`. Ikki litsenziya, qamrovi fayl turi bo'yicha:
+
+| Nima | Litsenziya |
+|---|---|
+| Hujjat matni: `docs/` dagi boblar, ildizdagi va `install/` dagi `.md` hujjatlar | [CC BY 4.0](LICENSE) |
+| `.md` ichidagi kod misollari (kod bloki, undagi izoh ham) | [MIT](LICENSE-CODE) |
+| `.md` bo'lmagan barcha fayllar: `tools/`, `install/`, `.github/`, `.claude/settings.json` | [MIT](LICENSE-CODE) |
+| Funksional `.md`: `.claude/skills/`, `.claude/agents/`, `memory/`, `CLAUDE.md` | [MIT](LICENSE-CODE) |
+
+`LICENSE` va `LICENSE-CODE` litsenziyaning kanonik matnini saqlaydi,
+qamrov faqat shu jadvalda. Bo'limni nusxalaganda nasr uchun CC BY
+atributi (manba va litsenziya havolasi) yetadi, kod bloki esa MIT
+bildirishnomasi bilan olinadi.

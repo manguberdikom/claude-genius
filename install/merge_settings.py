@@ -101,9 +101,9 @@ def read_settings(path, must_exist):
         with open(path, encoding="utf-8-sig") as handle:
             data = json.load(handle)
     except ValueError as exc:
-        raise SozlamaXato("JSON buzuq: %s (%s)" % (path, exc))
+        raise SozlamaXato("JSON buzuq: %s (%s)" % (path, exc)) from exc
     except OSError as exc:
-        raise SozlamaXato("o'qilmadi: %s (%s)" % (path, exc))
+        raise SozlamaXato("o'qilmadi: %s (%s)" % (path, exc)) from exc
     if not isinstance(data, dict):
         raise SozlamaXato("JSON obyekt emas: %s" % path)
     return data

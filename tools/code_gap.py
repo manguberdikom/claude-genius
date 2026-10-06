@@ -85,7 +85,7 @@ if __name__ == '__main__':
     if arg and '.' in arg:
         # Bo'lim so'ralsa butun bobga kengaytirilmaydi, faqat o'sha yozuv.
         g = [row for row in g if row[2].startswith(arg + ' ')]
-    for n, f, h, spring in g:
+    for _, _, h, spring in g:
         print(f"{h}")
         if verbose and spring:
             print(f"    SPRING: {spring[:240]}")

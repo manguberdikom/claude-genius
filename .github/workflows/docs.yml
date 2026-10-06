@@ -6,14 +6,88 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Token faqat o'qiydi: workflow hech narsa yozmaydi, secrets ishlatmaydi.
+# Yozish kerak bo'lgan yagona joy release.yml, u ham faqat o'z jobida.
+permissions:
+  contents: read
+
+# Bir branch ga ketma-ket push qilinsa eski run bekor bo'ladi: navbatni
+# keraksiz yurish band qilmasin.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Actions commit SHA ga qadalgan, tag ko'chirilsa ham kod o'zgarmaydi.
+# Yangilashni .github/dependabot.yml haftalik taklif qiladi.
 jobs:
+  # Nima o'zgarganini bir marta aniqlaydi. Windows joblari shunga qarab
+  # qisqa yo'ldan o'tadi, lekin JOB darajasida emas, QADAM darajasida:
+  # job darajasidagi `if` matritsali jobni "skipped" qiladi va required
+  # check nomi ("tools (windows-latest)") hisobot bermay qoladi.
+  # Har noaniqlikda (birinchi push, force push, workflow_dispatch) to'liq
+  # yo'l tanlanadi: ortiqcha yurish tushib qolgan tekshiruvdan arzon.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      kod: ${{ steps.f.outputs.kod }}
+      qidiruv: ${{ steps.f.outputs.qidiruv }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+
+      - name: O'zgargan fayllar
+        id: f
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set +e
+          base=""
+          case "$EVENT" in
+            pull_request)
+              # Merge commit: birinchi ota-ona base branch boshi.
+              base=$(git rev-parse -q --verify HEAD^1) ;;
+            push)
+              if [ -n "${BEFORE//0/}" ] \
+                  && git fetch -q --no-tags --depth=1 origin "$BEFORE"; then
+                base="$BEFORE"
+              fi ;;
+          esac
+          files=""
+          [ -n "$base" ] && files=$(git diff --name-only "$base" HEAD)
+          echo "o'zgargan fayllar:"
+          echo "${files:-(aniqlanmadi, to'liq yo'l)}"
+          kod=true
+          qidiruv=true
+          if [ -n "$files" ]; then
+            # Faqat hujjat: hamma fayl .md va asbob, skill yoki
+            # o'rnatuvchi papkasida emas.
+            if ! printf '%s\n' "$files" | grep -Ev '\.md$' | grep -q . \
+                && ! printf '%s\n' "$files" | grep -Eq '^(\.claude|install|tools)/'; then
+              kod=false
+            fi
+            # Qidiruv fayllari: doc.sh find shu fayllarga tayanadi.
+            if ! printf '%s\n' "$files" | grep -Eq \
+                '^(tools/(doc\.sh|build_index\.py|eval_find\.py|check_docs\.py)|\.github/workflows/)'; then
+              qidiruv=false
+            fi
+          fi
+          echo "kod=$kod qidiruv=$qidiruv"
+          echo "kod=$kod" >> "$GITHUB_OUTPUT"
+          echo "qidiruv=$qidiruv" >> "$GITHUB_OUTPUT"
+          exit 0
+
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.12'
 
@@ -31,24 +105,56 @@ jobs:
   # Windows da ham: asboblar u yerda Claude Code ning Git Bash'ida yuradi.
   # Faqat Linux da yo'l ajratgichi (`\`), kod sahifasi (cp1252) va Git for
   # Windows dagi grep 3.0 xatolari CI dan yashirin qolardi.
+  #
+  # ubuntu-22.04 + 3.8 qatori o'rnatuvchining "Python 3.8+" va'dasini
+  # sinaydi: 3.9+ API (removeprefix, dict | dict) kirib qolsa shu yerda
+  # yiqiladi. `include` bilan qo'shilgan, shuning uchun mavjud required
+  # check nomlari ("tools (ubuntu-latest)", "tools (windows-latest)")
+  # o'zgarmaydi.
   tools:
+    needs: changes
+    # changes yiqilsa ham yuradi: chiqish bo'sh bo'lsa to'liq yo'l.
+    if: ${{ !cancelled() }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
+        include:
+          - os: ubuntu-22.04
+            python: '3.8'
+    # Linux har doim to'liq yuradi. Windows faqat hujjat o'zgarganda
+    # qisqa yo'ldan o'tadi, eval_find esa u yerda faqat qidiruv fayllari
+    # o'zgarganda (Git Bash da har `doc.sh find` ~0.3 s, 240 so'rov).
+    env:
+      ISHLA: ${{ needs.changes.outputs.kod != 'false' || !startsWith(matrix.os, 'windows') }}
+      QIDIRUV: ${{ needs.changes.outputs.qidiruv != 'false' || !startsWith(matrix.os, 'windows') }}
     # Windows da bash = Git Bash. `python3` u yerda Store stub'i bo'lishi
     # mumkin, shuning uchun `python`: setup-python ikkalasida ham beradi.
     defaults:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - name: Qisqa yo'l
+        if: env.ISHLA != 'true'
+        run: echo "Faqat hujjat o'zgardi, Windows asbob sinovlari o'tkazildi."
 
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: env.ISHLA == 'true'
         with:
-          python-version: '3.12'
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        if: env.ISHLA == 'true'
+        with:
+          python-version: ${{ matrix.python || '3.12' }}
+
+      # Statik darvoza: sintaksis, pyflakes va bugbear (ruff.toml).
+      # Versiya qadalgan, yangi ruff qoidasi CI ni jim qizil qilmasin.
+      - name: Ruff
+        if: matrix.os == 'ubuntu-latest'
+        run: pipx run ruff==0.15.20 check tools install
 
       # Nega alohida ish: yuqoridagi `check` hujjatni tekshiradi, bu esa
       # asboblarni. Ular mustaqil yiqiladi, shuning uchun qaysi biri
@@ -58,6 +164,7 @@ jobs:
       # suite yiqilsa qolganlari baribir yuradi, yiqilganlar oxirida
       # bitta qatorda chiqadi.
       - name: Asbob sinovlari
+        if: env.ISHLA == 'true'
         run: |
           failed=""
           for f in tools/test_*.py; do
@@ -70,45 +177,60 @@ jobs:
       # Oldingi qadam yiqilsa ham o'lchovlar yuradi: bitta xato qolgan
       # signallarni yashirmasin.
       - name: Zanjir o'lchovi
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && env.ISHLA == 'true' }}
         run: python tools/eval_skill.py
 
       - name: Qidiruv o'rni
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && env.ISHLA == 'true' && env.QIDIRUV == 'true' }}
         run: python tools/eval_find.py
 
       - name: Har navbatdagi kontekst byudjeti
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && env.ISHLA == 'true' }}
         run: python tools/cost_report.py
 
   # O'rnatuvchi agent sessiyasida yurgizilmaydi (PowerShell taqiqlangan),
   # shuning uchun uni sinaydigan yagona joy shu. Runner bir martalik,
   # demak -Apply xavfsiz. Ikki shell: Windows PowerShell 5.1 va pwsh 7
-  # fayl kodirovkasida farq qiladi.
+  # fayl kodirovkasida farq qiladi. Faqat hujjat o'zgarsa qadamlar
+  # o'tkaziladi, job esa o'z nomi bilan yashil hisobot beradi.
   installer:
+    needs: changes
+    if: ${{ !cancelled() }}
     runs-on: windows-latest
     timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
         shell: [powershell, pwsh]
+    env:
+      ISHLA: ${{ needs.changes.outputs.kod != 'false' }}
     defaults:
       run:
         shell: ${{ matrix.shell }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Qisqa yo'l
+        if: env.ISHLA != 'true'
+        run: echo "Faqat hujjat o'zgardi, o'rnatuvchi sinovlari o'tkazildi."
 
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: env.ISHLA == 'true'
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        if: env.ISHLA == 'true'
         with:
           python-version: '3.12'
 
       - name: Quruq yurish
+        if: env.ISHLA == 'true'
         run: ./install/manguberdi.ps1 -GeniusPath $PWD
 
       # Sukut xulq QO'SHUVCHI: begona sozlamalar saqlanishi kerak. Avval
       # bu qadam teskarisini talab qilardi (eski CLAUDE.md o'chgan bo'lsin),
       # ya'ni CI foydalanuvchi sozlamasini o'chirishni qo'riqlayotgan edi.
       - name: Haqiqiy o'rnatish (qo'shuvchi, sukut)
+        if: env.ISHLA == 'true'
         run: |
           New-Item -ItemType Directory -Force "$HOME/.claude/skills/eski" | Out-Null
           Set-Content "$HOME/.claude/skills/eski/SKILL.md" 'eski'
@@ -173,6 +295,7 @@ jobs:
       # ikkilanmasligi, BOM li eski settings.json o'qilib BOM siz yozilishi
       # va skill ichida ikkinchi manguberdi\ ochilmasligi shu yerda sinaladi.
       - name: Yangilash (-Update)
+        if: env.ISHLA == 'true'
         run: |
           New-Item -ItemType Directory -Force "$HOME/.claude/skills/begona" | Out-Null
           Set-Content "$HOME/.claude/skills/begona/SKILL.md" 'begona'
@@ -221,6 +344,7 @@ jobs:
       # sukut xulq edi, shuning uchun uni ataylab so'rash shu yerda
       # qo'riqlanadi: tasdiqsiz chaqiruv hech narsaga tegmasligi kerak.
       - name: To'liq tozalash (-Reset)
+        if: env.ISHLA == 'true'
         run: |
           Set-Content "$HOME/.claude/CLAUDE.md" 'reset-sinovi'
           New-Item -ItemType Directory -Force "$HOME/.claude/skills/begona2" | Out-Null
@@ -250,6 +374,7 @@ jobs:
       # -GeniusPath endi mavjud bo'lmagan yo'lni ko'rsatadi. Asl checkout
       # (joriy papka) tegilmaydi: skript shu yerdan yuradi.
       - name: Olib tashlash (-Uninstall)
+        if: env.ISHLA == 'true'
         run: |
           $asl = $PWD.Path
           $nusxa = Join-Path $env:RUNNER_TEMP 'kochirilgan-klon'

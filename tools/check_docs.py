@@ -15,7 +15,8 @@ Tekshiradi:
   4. Manifest     - docs/manifest.json diskdagi fayllar bilan mos.
   5. Skilllar     - .claude/ ichidagi docs/ havolalari haqiqiy; tools/
                     yo'llari (kod bloki ichida ham) skill, agent, CLAUDE.md,
-                    README.md, CONTRIBUTING.md va install/README.md da
+                    README.md, CONTRIBUTING.md, SECURITY.md va
+                    install/README.md da
                     mavjud, doc.sh subkomandasi doc.sh da bor; har bob
                     kamida bitta skill yoki agent jadvalida turadi.
   6. Struktura    - har bob faylida metadata manifest bilan mos, breadcrumb
@@ -496,7 +497,7 @@ def main():
     # Har navbatda o'qiladigan CLAUDE.md va o'rnatish hujjati ham kiradi.
     tool_docs = sorted(routed) + [os.path.join(ROOT, f) for f in (
         'CLAUDE.md', 'README.md', 'CONTRIBUTING.md', 'install/README.md',
-        'DECISIONS.md')
+        'DECISIONS.md', 'SECURITY.md')
         if os.path.exists(os.path.join(ROOT, f))]
     doc_sh = os.path.join(ROOT, 'tools', 'doc.sh')
     subcommands = (set(re.findall(r'^\s+([a-z]+)\)', open(doc_sh, encoding='utf-8').read(), re.M))

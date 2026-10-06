@@ -99,7 +99,6 @@ def case_nuqta_slash():
 # uni MEM_PATH almashtiradi), lekin mexanizm qoladi: ildizga yana shunday
 # fayl qo'shilishi mumkin. Shuning uchun quyidagi holatlar soxta nom
 # qo'yib mexanizmning o'zini sinaydi.
-import contextlib  # noqa: E402
 
 
 @contextlib.contextmanager

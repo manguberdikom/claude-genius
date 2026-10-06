@@ -1,0 +1,12 @@
+# Statik darvoza: CI ning tools ishida `pipx run ruff==0.15.20 check tools install`.
+# Faqat yolg'on ishga tushishi deyarli nol bo'lgan qoidalar: sintaksis (E9),
+# pyflakes (F) va bugbear (B). Uslub qoidalari darvoza emas.
+#
+# target-version o'rnatuvchi va'dasiga teng: Python 3.8+ (install/README.md).
+target-version = "py38"
+
+[lint]
+select = ["F", "E9", "B"]
+# B905: zip(strict=) 3.10 dan, 3.8 da yo'q.
+# E741: `l` kabi qisqa nomlar asboblarda ataylab ishlatiladi.
+ignore = ["B905", "E741"]

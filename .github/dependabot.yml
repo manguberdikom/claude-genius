@@ -1,0 +1,12 @@
+# Actions SHA ga qadalgan (docs.yml, release.yml). Dependabot haftalik
+# yangi versiyani PR qilib taklif qiladi va SHA yonidagi `# vX.Y.Z`
+# izohini ham yangilaydi. PR odatdagidek CI dan o'tadi.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']

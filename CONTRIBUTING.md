@@ -296,3 +296,48 @@ maydoni har navbatda kontekstga kiradi. `python3 tools/cost_report.py`
 byudjetdan oshsa CI qizil beradi: yangi matn qo'shishdan oldin mavjudi
 qisqartiriladi. Bitta `description` 900 baytdan, skill tanasi 500 satrdan
 oshmaydi (`tools/test_skill.py`).
+
+## Ish tartibi
+
+Bu qoidalar hamma ishga tegishli, ham korpusga, ham asboblarga.
+
+1. **Sof asbob soni o'smaydi.** Yangi asbob faqat mavjudini almashtirsa
+   yoki uning subbuyrug'i bo'lsa qo'shiladi. Avval savol: bu mavjud
+   asbobning subbuyrug'i bo'la oladimi?
+2. **Branch, PR va yashil CI.** `main` ga to'g'ridan-to'g'ri push yo'q.
+   Push dan keyin CI natijasi kutiladi, qizil holda keyingi ishga
+   o'tilmaydi.
+3. **A/B tugaguncha muzlatish.** `manguberdi` skilli, `budget.py`,
+   `guruh.py` va `check_code.py` dagi zanjir shartiga faqat xato
+   tuzatish kiradi.
+4. **Mustaqil tekshiruv.** 200 satrdan katta asbob o'zgarishi `review`
+   aktyoridan o'tadi. Tashqi chiqishni o'qiydigan asbob (test logi,
+   build chiqishi, Java manbasi) sintetik emas, haqiqiy fixture bilan
+   sinaladi.
+5. **Commit bitta asbob yoki qaror.** Kod, uning testi va hujjati bitta
+   commitda, `docs/` mazmuni alohida commitda.
+6. **Korpus ulushi.** Har ish kunida vaqtning kamida yarmi korpus
+   tekshiruviga beriladi ("Tekshiruv tartibi" bo'limi).
+
+### Windows saboqlari
+
+Asosiy foydalanuvchi Windows da, Claude Code ning Git Bash ida ishlaydi.
+Quyidagilar bir necha marta qaytgan, asbob o'zgarsa ular tekshiriladi:
+
+- **Yo'l ajratgich.** `os.path` Windows da `\` beradi. Kalit, indeks va
+  havola uchun yo'l `/` ga keltiriladi, solishtirishda ikkala tomon bir
+  xil shaklda bo'ladi.
+- **BOM siz UTF-8.** PowerShell 5.1 fayl va pipe ga BOM yozadi, stdin esa
+  ANSI kod sahifasida o'qiladi. JSON va stdin `utf-8-sig` bilan
+  o'qiladi, `settings.json` BOM siz yoziladi.
+- **SIGPIPE yo'q.** `| head` yopgan quvurga yozish Windows da signal
+  emas, `OSError` (EINVAL) traceback beradi. Chiqish yozadigan asbob uni
+  ushlaydi.
+- **8.3 qisqa nom va realpath.** Temp papka `RUNNER~1` kabi qisqa nom
+  bilan keladi, git esa uzun nom beradi. Yo'l solishtirish yoki kalit
+  qilishdan oldin ikkala tomon `os.path.realpath` dan o'tadi. Linux da
+  shu holat symlink bilan sinaladi.
+- **Linux CI yashilligi yetmaydi.** `tools (windows-latest)` ham yashil
+  bo'lishi kerak. Agent sessiyasi Windows ni ko'rmaydi, shuning uchun
+  yo'l, kodirovka yoki jarayon bilan ishlaydigan o'zgarishda Windows
+  natijasi kutiladi.

@@ -21,8 +21,6 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 INSTALL = os.path.join(ROOT, "install")
 TOOL = os.path.join(INSTALL, "uninstall_settings.py")
-sys.path.insert(0, INSTALL)
-import uninstall_settings as U  # noqa: E402
 
 GENIUS = "C:/src/claude-genius"
 PY = "C:/Python312/python.exe"
