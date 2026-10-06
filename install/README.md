@@ -101,6 +101,8 @@ yo'llari klonga **mutlaq** bog'lanadi.
 
 ### 0. Klonni oling va skriptga ruxsat bering
 
+Avval [SECURITY.md](../SECURITY.md): qaysi qatlam nimani to'xtatadi va global ruxsatlarning yon ta'siri.
+
 ```powershell
 git clone -c core.autocrlf=false https://github.com/manguberdikom/claude-genius C:\src\claude-genius
 cd C:\src\claude-genius
