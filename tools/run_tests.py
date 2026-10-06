@@ -59,9 +59,11 @@ import json
 import os
 import re
 import shlex
+import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
@@ -1289,6 +1291,184 @@ def log_path(root, everything):
     return os.path.join(tempfile.gettempdir(), name)
 
 
+KILL_GRACE = 5  # soniya: SIGTERM dan keyin SIGKILL gacha
+
+
+def process_table():
+    """{pid: ppid} butun mashina bo'yicha. Linux da /proc, boshqa joyda
+    `ps -A -o pid=,ppid=`. Jarayon guruhiga tegilmaydi: bola ota bilan bitta
+    guruhda qoladi (Ctrl+C va Bash vositasi guruhni to'xtatganda build ham
+    to'xtasin), shuning uchun avlodlar faqat ota-bola zanjiridan topiladi."""
+    table = {}
+    if os.path.isdir("/proc/self"):
+        for name in os.listdir("/proc"):
+            if not name.isdigit():
+                continue
+            try:
+                with open("/proc/%s/stat" % name, encoding="utf-8", errors="replace") as handle:
+                    text = handle.read()
+                # Nom qavs ichida va bo'sh joy yoki ')' bo'lishi mumkin: oxirgi ')' dan keyin.
+                table[int(name)] = int(text.rsplit(")", 1)[1].split()[1])
+            except (OSError, ValueError, IndexError):
+                continue
+        return table
+    try:
+        out = subprocess.run(["ps", "-A", "-o", "pid=,ppid="], capture_output=True,
+                             text=True, timeout=10).stdout
+    except (OSError, subprocess.SubprocessError):
+        return table
+    for line in out.splitlines():
+        parts = line.split()
+        if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+            table[int(parts[0])] = int(parts[1])
+    return table
+
+
+def descendants(pids, table=None):
+    """pids ning barcha avlodlari (bolalar, nevaralar, ...), pidlarning o'zisiz."""
+    table = process_table() if table is None else table
+    found, frontier = [], list(pids)
+    while frontier:
+        parent = frontier.pop()
+        for child, ppid in table.items():
+            if ppid == parent and child not in found and child not in pids:
+                found.append(child)
+                frontier.append(child)
+    return found
+
+
+def pid_alive(pid):
+    """Zombi (o'lgan, lekin ota hali yig'ib olmagan) tirik hisoblanmaydi."""
+    try:
+        with open("/proc/%d/stat" % pid, encoding="utf-8", errors="replace") as handle:
+            return handle.read().rsplit(")", 1)[1].split()[0] != "Z"
+    except (OSError, IndexError):
+        pass
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except OSError:
+        return True  # PermissionError: jarayon bor
+    return True
+
+
+@contextlib.contextmanager
+def sigterm_ignored():
+    """Tozalash vaqtida ikkinchi SIGTERM uni yarim qoldirmasin. Faqat asosiy thread da."""
+    if threading.current_thread() is not threading.main_thread():
+        yield
+        return
+    try:
+        before = signal.signal(signal.SIGTERM, signal.SIG_IGN)
+    except (ValueError, OSError):
+        yield
+        return
+    try:
+        yield
+    finally:
+        signal.signal(signal.SIGTERM, signal.SIG_DFL if before is None else before)
+
+
+def kill_tree(proc):
+    """Bolani va uning butun daraxtini to'xtatadi. Xatolar jim: jarayon
+    allaqachon yo'q bo'lishi mumkin. Tozalash davomida SIGTERM e'tiborsiz.
+    Windows da `taskkill` topilmasa faqat bola o'ladi (nevara qoladi).
+    Gradle daemon bola daraxtida bo'lsa (ota-bola zanjiri uzilmagan) u ham
+    to'xtaydi: build shu orqali yuradi."""
+    with sigterm_ignored():
+        if os.name == "nt":
+            # `cmd /c gradlew.bat` ostidagi java nevara faqat /T bilan to'xtaydi.
+            with contextlib.suppress(OSError, subprocess.SubprocessError):
+                subprocess.run(["taskkill", "/T", "/F", "/PID", str(proc.pid)],
+                               capture_output=True, timeout=30)
+            with contextlib.suppress(OSError, subprocess.SubprocessError):
+                proc.wait(timeout=KILL_GRACE)
+            with contextlib.suppress(OSError):
+                proc.kill()
+            return
+        kill_posix_tree(proc)
+
+
+def kill_posix_tree(proc):
+    # Avlodlar bolani o'ldirishdan OLDIN yig'iladi: keyin ular init ga o'tib ketadi.
+    known = descendants([proc.pid]) + [proc.pid]
+
+    def send(pids, sig):
+        for pid in pids:
+            with contextlib.suppress(OSError):
+                os.kill(pid, sig)
+
+    def absorb(sig):
+        """SIGTERM va kutish oralig'ida tug'ilgan yangi avlodlar (surefire fork,
+        Gradle worker) ham ro'yxatga qo'shiladi va signal oladi."""
+        alive = [p for p in known if p == proc.pid or pid_alive(p)]
+        fresh = descendants(alive)
+        fresh = [p for p in fresh if p not in known]
+        known.extend(fresh)
+        send(fresh, sig)
+
+    send(known, signal.SIGTERM)
+    deadline = time.time() + KILL_GRACE
+    while time.time() < deadline:
+        absorb(signal.SIGTERM)
+        if proc.poll() is not None and not any(pid_alive(p) for p in known if p != proc.pid):
+            break
+        time.sleep(0.1)
+    absorb(signal.SIGKILL)
+    send([p for p in known if p != proc.pid and pid_alive(p)], signal.SIGKILL)
+    if proc.poll() is None:
+        with contextlib.suppress(OSError):
+            proc.kill()
+    with contextlib.suppress(OSError, subprocess.SubprocessError):
+        proc.wait(timeout=KILL_GRACE)
+
+
+def run_command(argv, cwd, out, timeout):
+    """Bola jarayonni yurgizadi, chiqish kodini qaytaradi; vaqt tugasa
+    TimeoutExpired. TimeoutExpired, KeyboardInterrupt va SIGTERM (execute
+    uni SystemExit ga aylantiradi) da bola tirik bo'lsa butun daraxt
+    to'xtatiladi: subprocess.run faqat bevosita bolani o'ldirardi, Windows da
+    `cmd /c gradlew.bat` ostidagi java esa yetim qolardi. Yangi sessiya yoki
+    jarayon guruhi ISHLATILMAYDI: build terminaldagi Ctrl+C va guruh signalidan
+    chiqib ketardi."""
+    proc = subprocess.Popen(argv, cwd=cwd, stdout=out, stderr=subprocess.STDOUT)
+    try:
+        return proc.wait(timeout=timeout)
+    finally:
+        if proc.poll() is None:
+            kill_tree(proc)
+
+
+@contextlib.contextmanager
+def sigterm_as_exit():
+    """SIGTERM Python ni finally larsiz o'ldiradi; SystemExit qilsak
+    run_command bola daraxtini to'xtatadi va qulflar bo'shaydi. Faqat asosiy
+    thread da (signal.signal boshqa joyda ValueError beradi)."""
+    if threading.current_thread() is not threading.main_thread():
+        yield
+        return
+
+    def handler(signum, _frame):
+        raise SystemExit(128 + signum)
+
+    try:
+        before = signal.getsignal(signal.SIGTERM)
+        if before == signal.SIG_IGN:
+            # Chaqiruvchi SIGTERM ni ataylab e'tiborsiz qoldirgan (masalan nohup): tegmaymiz.
+            yield
+            return
+        signal.signal(signal.SIGTERM, handler)
+    except (ValueError, OSError):
+        yield
+        return
+    try:
+        yield
+    finally:
+        # getsignal None: handler Python dan o'rnatilmagan, standartga qaytariladi.
+        signal.signal(signal.SIGTERM, signal.SIG_DFL if before is None else before)
+
+
 def execute(project, cmds, log, timeout, queue=False, mode="w"):
     """(exit, soniya). exit 124: vaqt tugadi. Qulf tartibi doim bir xil
     (avval repo, keyin ildiz): teskari tartib o'zaro kutib qolishga olib
@@ -1296,7 +1476,7 @@ def execute(project, cmds, log, timeout, queue=False, mode="w"):
     start = time.time()
     code = 0
     lock = queue_lock(project.root) if queue else contextlib.nullcontext()
-    with lock, root_lock(project.root), \
+    with lock, root_lock(project.root), sigterm_as_exit(), \
             open(log, mode, encoding="utf-8", errors="replace") as out:
         for argv, note in cmds:
             out.write("$ %s\n" % show(argv))
@@ -1305,17 +1485,21 @@ def execute(project, cmds, log, timeout, queue=False, mode="w"):
             if left <= 0:
                 return 124, time.time() - start
             try:
-                proc = subprocess.run(argv, cwd=project.root, stdout=out,
-                                      stderr=subprocess.STDOUT, timeout=left)
+                returncode = run_command(argv, project.root, out, left)
             except subprocess.TimeoutExpired:
                 out.write("\n[run_tests] vaqt tugadi: %g s\n" % timeout)
                 return 124, time.time() - start
             except OSError as exc:
                 out.write("\n[run_tests] yurgizib bo'lmadi: %s\n" % exc)
                 return 127, time.time() - start
-            if proc.returncode and not note.startswith("formatlash"):
-                code = code or proc.returncode
-            elif proc.returncode:
+            except (KeyboardInterrupt, SystemExit):
+                # Daraxt run_command da to'xtatildi; log da sabab qolsin, signal esa davom etadi.
+                out.write("\n[run_tests] to'xtatildi\n")
+                out.flush()
+                raise
+            if returncode and not note.startswith("formatlash"):
+                code = code or returncode
+            elif returncode:
                 out.write("\n[run_tests] formatlash yiqildi, testlar baribir yuradi\n")
     return code, time.time() - start
 

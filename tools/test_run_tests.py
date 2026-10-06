@@ -29,11 +29,14 @@ tekshiradi. Gradle versiyasi o'zgarganda shu yurgiziladi.
 
 import json
 import os
+import _thread
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -402,6 +405,15 @@ with open(calls, "a") as handle:
 count = sum(1 for _ in open(calls))
 if mode == "sekin":
     time.sleep(30)
+if mode == "nevara":
+    # O'zi uxlaydigan nevara ochadi (Windows da `cmd /c gradlew.bat` ostidagi java kabi).
+    import subprocess
+    grandchild = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
+    pidfile = os.path.join(os.path.dirname(calls), "nevara.pid")
+    with open(pidfile + ".tmp", "w") as handle:
+        handle.write(str(grandchild.pid))
+    os.replace(pidfile + ".tmp", pidfile)
+    time.sleep(30)
 print("$ " + " ".join(args))
 
 def report(failures):
@@ -507,6 +519,127 @@ def case_vaqt_tugadi(_):
     code, out = run_cli(root, "--diff", "--yurgiz", "--vaqt", "0.3",
                         "--log", os.path.join(TEMP, "v.log"), mode="sekin")
     return code == 3 and "vaqt tugadi" in out
+
+
+NEVARA = os.path.join(TEMP, "nevara.pid")
+
+
+class Skip(Exception):
+    pass
+
+
+def skip_on_windows():
+    """POSIX avlod yo'li: Windows da taskkill /T yo'li bu yerda sinalmaydi."""
+    if os.name == "nt":
+        raise Skip("nt")
+
+
+def read_pid(wait=5.0):
+    deadline = time.time() + wait
+    while time.time() < deadline:
+        if os.path.exists(NEVARA):
+            with open(NEVARA) as handle:
+                text = handle.read().strip()
+            if text:
+                return int(text)
+        time.sleep(0.05)
+    return 0
+
+
+def gone(pid, wait=2.0):
+    """pid 2 s ichida yo'q bo'ladimi (zombi ham yo'q hisoblanadi)."""
+    deadline = time.time() + wait
+    while time.time() < deadline:
+        if not run_tests.pid_alive(pid):
+            return True
+        time.sleep(0.05)
+    return False
+
+
+def reap(pid):
+    if pid:
+        try:
+            os.kill(pid, 9)
+        except OSError:
+            pass
+
+
+def case_vaqt_tugadi_nevara(_):
+    # Timeout da faqat bola emas, nevara ham to'xtaydi; chiqish kodi 3 va log saqlanadi.
+    skip_on_windows()
+    root = git_shop("vaqt_nevara")
+    log = os.path.join(TEMP, "vn.log")
+    if os.path.exists(NEVARA):
+        os.remove(NEVARA)
+    code, out = run_cli(root, "--diff", "--yurgiz", "--vaqt", "6", "--log", log, mode="nevara")
+    pid = read_pid(1)
+    try:
+        with open(log, encoding="utf-8") as handle:
+            written = handle.read()
+        return (code == 3 and "vaqt tugadi" in out and "vaqt tugadi" in written
+                and pid > 0 and gone(pid))
+    finally:
+        reap(pid)
+
+
+def case_keyboard_interrupt_nevara(_):
+    # KeyboardInterrupt da ham daraxt to'xtaydi va istisno yutilmaydi.
+    skip_on_windows()
+    if os.path.exists(NEVARA):
+        os.remove(NEVARA)
+    script = ("import os, subprocess, sys, time\n"
+              "g = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(60)'])\n"
+              "open(%r, 'w').write(str(g.pid))\n"
+              "time.sleep(30)\n" % NEVARA)
+    interrupted = False
+
+    def interrupt_when_ready():
+        # Qat'iy kutish emas: nevara pid fayli paydo bo'lguncha kutiladi.
+        if read_pid(15):
+            _thread.interrupt_main()
+
+    timer = threading.Thread(target=interrupt_when_ready, daemon=True)
+    timer.start()
+    try:
+        with open(os.path.join(TEMP, "ki.log"), "w") as out:
+            run_tests.run_command([sys.executable, "-c", script], TEMP, out, 60)
+    except KeyboardInterrupt:
+        interrupted = True
+    timer.join(5)
+    pid = read_pid(1)
+    try:
+        return interrupted and pid > 0 and gone(pid)
+    finally:
+        reap(pid)
+
+
+def case_sigterm_nevara(_):
+    # Asbobning o'ziga SIGTERM: nevara yetim qolmaydi va root_lock bo'shaydi.
+    skip_on_windows()
+    root = git_shop("sigterm_nevara")
+    if os.path.exists(NEVARA):
+        os.remove(NEVARA)
+    env = dict(os.environ, GENIUS_TEST_RUNNER=fake_runner("nevara"), GENIUS_STATE_DIR=STATE)
+    proc = subprocess.Popen([sys.executable, TOOL, "--diff", "--yurgiz",
+                             "--log", os.path.join(TEMP, "st.log")], cwd=root, env=env,
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    pid = read_pid()
+    try:
+        if not pid:
+            return False
+        os.kill(proc.pid, signal.SIGTERM)
+        try:
+            proc.wait(timeout=15)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            return False
+        with open(os.path.join(TEMP, "st.log"), encoding="utf-8") as handle:
+            stopped = "[run_tests] to'xtatildi" in handle.read()
+        return gone(pid) and stopped and proc.returncode == 128 + signal.SIGTERM
+    finally:
+        reap(pid)
+        if proc.poll() is None:
+            proc.kill()
 
 
 def case_tasir_yoq(_):
@@ -1266,6 +1399,9 @@ CASES = [
     ("--yurgiz yashil, log yoziladi", case_yurgiz_yashil),
     ("--yurgiz yiqildi, sabab chiqadi", case_yurgiz_yiqildi),
     ("vaqt tugasa 3", case_vaqt_tugadi),
+    ("vaqt tugasa nevara ham to'xtaydi", case_vaqt_tugadi_nevara),
+    ("KeyboardInterrupt da nevara to'xtaydi", case_keyboard_interrupt_nevara),
+    ("SIGTERM da nevara to'xtaydi", case_sigterm_nevara),
     ("ta'sir yo'q: yurmaydi", case_tasir_yoq),
     ("--hammasi filtrsiz", case_hammasi),
     ("--modul: butun modul, boshqasi yo'q", case_modul),
@@ -1620,18 +1756,23 @@ def main():
             return gradle_e2e(gradle)
         finally:
             shutil.rmtree(TEMP, ignore_errors=True)
-    failures = 0
+    failures = skipped = 0
     try:
         for name, fn in CASES:
             try:
                 ok = bool(fn(None))
+            except Skip as exc:
+                skipped += 1
+                print("%-4s %s" % ("SKIP", "%s (%s)" % (name, exc)))
+                continue
             except Exception as exc:
                 ok, name = False, "%s (%s: %s)" % (name, type(exc).__name__, exc)
             failures += not ok
             print("%-4s %s" % ("OK" if ok else "XATO", name))
     finally:
         shutil.rmtree(TEMP, ignore_errors=True)
-    print("\n%d/%d o'tdi" % (len(CASES) - failures, len(CASES)))
+    print("\n%d/%d o'tdi%s" % (len(CASES) - failures - skipped, len(CASES) - skipped,
+                              ", %d o'tkazildi" % skipped if skipped else ""))
     return 1 if failures else 0
 
 
