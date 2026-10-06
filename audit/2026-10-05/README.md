@@ -874,12 +874,10 @@ Reja `ccr-bbd7652b-066u0n` branchida bajarildi. Har o'zgarish toza nusxada `run_
 
 **Qolgan, agent qila oladi:**
 
-- verify_claims topgan 15 haqiqiy korpus kamchiligini tuzatish (code-review 39, patterns 06/25/01, `@MockBean` izohlari) va CI ga `verify_claims --java --diff` qadami (setup-java bilan).
-- `doctor` ning `hook_errors.log` ni o'qishi va `install/README.md` dagi SubagentStop va worktree tavsifi.
-- `doc.sh find` exceptions indeksini ishlatsin; o'zbekcha erkin gap uchun ibora sinonimlari (hozir 12 dan 2).
-- ps1 ni `install.py` ustidagi yupqa o'ramga qisqartirish (R7.2 ning oxirgi qadami).
-- `ruff --select E9,F`: `tools/test_rules_for.py` dagi bitta eski F841.
-- Windows va macOS da sinalmagan yo'llar: KD-Q10 `taskkill /T`, macOS `ps` zaxirasi, ps1 snapshot qadamlari, yangi CI ishlari (`installer (bash, ubuntu-latest)`, `installer (bash, macos-latest)`). Birinchi CI yurishida tekshiriladi.
+- Windows va macOS da sinalmagan yo'llar: ps1 o'rami va install.py ning Windows rejimi, KD-Q10 `taskkill /T`, macOS `ps` zaxirasi, yangi CI ishlari. Birinchi CI yurishida tekshiriladi, qizil bo'lsa tuzatiladi.
+- uz-erkin holdout 1/7: ibora sinonimlari dev to'plamda yordam berdi (1/5 dan 8/8), holdout da emas.
+
+**2026-10-06 uchinchi partiya (bajarildi):** verify_claims topgan 15 da'vo va korpusdagi 2 javac xatosi tuzatildi, CI da `verify_claims --java --diff` (ogohlantirish); `doctor` hook_errors.log bandi, install/README da SubagentStop va guruh worktree; `doc.sh find` exceptions indeksini ishlatadi va 14 ibora sinonimi; ps1 install.py ustidagi yupqa o'ramga qisqardi (1109 dan 277 qatorga); ruff F841. check_docs jami 1 ogohlantirish (sonar metadata).
 
 **2026-10-06 ikkinchi partiya (bajarildi):** main birlashtirildi; R7.2, R7.5, R7.8, KD-Q10; `.claude/worktrees` check_docs va test_skill skanidan chiqdi; CI `check` ishida `fetch-depth: 0`; `check_owners` naqsh ustuni bilan, uyga havola bermagan 36 bo'limga havola qo'shildi, OWNERS ogohlantirishi 0 va endi xato (check_docs jami 31 dan 15 ga); `.claude` dagi 2 imlo varianti tuzatildi va `known_errors.tsv` endi `.claude` ni ham tekshiradi. Har guruh alohida worktree da, review dan keyin bitta tuzatish aylanasi, birlashtirishdan keyin `run_all_tests`, `check_docs`, `eval_skill`, `eval_find` toza.
 
