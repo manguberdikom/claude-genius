@@ -619,6 +619,24 @@ def case_jami_chegara_tasdiq(_):
             and more == ["allow"] * 2 and seventh == "ask")
 
 
+def case_jami_model_override(_):
+    """Agent chaqiruvidagi `model` narx taxminida aktyor faylidan ustun."""
+    saved = budget.AGENT_MAX
+    budget.AGENT_MAX = 1
+    try:
+        call(stdin=json.dumps({"hook_event_name": "UserPromptSubmit",
+                               "session_id": SESSION, "prompt": "x"}))
+        hook("Agent", "dasturchi")
+        data = {"hook_event_name": "PreToolUse", "tool_name": "Agent",
+                "tool_input": {"subagent_type": "rejalashtiruvchi", "model": "opus"},
+                "session_id": SESSION}
+        out = call(stdin=json.dumps(data)).stdout
+    finally:
+        budget.AGENT_MAX = saved
+    reason = json.loads(out)["hookSpecificOutput"]["permissionDecisionReason"]
+    return "model opus" in reason and "~$28" in reason
+
+
 def case_jami_oqish_asbobi_sanalmaydi(_):
     """qidiruv, tahlil va Explore jami songa ham kirmaydi."""
     saved = budget.AGENT_MAX
@@ -656,6 +674,7 @@ def case_jami_yangi_sorovda_nolga(_):
 CASES = [
     ("jami agent chegarasi: tasdiq va narx", case_jami_chegara_tasdiq),
     ("jami: o'qish asbobi sanalmaydi", case_jami_oqish_asbobi_sanalmaydi),
+    ("jami: model override narxda", case_jami_model_override),
     ("jami: yangi so'rovda nolga, yangi vazifada emas", case_jami_yangi_sorovda_nolga),
     ("ikki chaqiruv o'tadi", case_ikki_marta),
     ("uchinchisi to'siladi", case_uchinchi_tosiladi),

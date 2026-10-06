@@ -130,9 +130,18 @@ chaqiriladi.
 Aktyorlar o'z modelini olib yuradi va u vazifaga qarab tanlangan:
 `qidiruv` va `tahlil` haiku (ko'p o'qiydi, oz qaytaradi), `dasturchi`
 va `test-muhandis` sonnet (amalga oshirish), `review` sonnet (diffni
-qoidaga solishtiradi), `rejalashtiruvchi` ham sonnet: opus da 7 ta
-reja guruhi $199 turdi (2026-10-06), farqi narxga arzimadi. Bu taqsimot
-`.claude/agents/` da yozilgan, har vazifada qayta o'ylanmaydi.
+qoidaga solishtiradi), `rejalashtiruvchi` sukut bo'yicha sonnet. Bu
+taqsimot `.claude/agents/` da yozilgan, har vazifada qayta o'ylanmaydi.
+
+Istisno, sifat uchun: reja `references/marshrut.md` dagi qaytarib
+bo'lmaydigan qarorni o'z ichiga olsa (sxema migratsiyasi, API
+shartnomasi, tashqi bog'liqlik, ma'lumot formati) `rejalashtiruvchi`
+Agent chaqiruvida `model: "opus"` bilan, lekin **bitta** marta
+chaqiriladi: butun reja bitta opus chaqiruvida, guruhlarga bo'lish
+shu rejaning ichida. Guruh bo'yicha qayta rejalashtirish va oddiy reja
+sonnet da. Sabab: 2026-10-06 da har guruhga alohida opus
+rejalashtiruvchi (7 ta) $199 turdi; qimmat model faqat qaytarib
+bo'lmaydigan qarorda o'zini oqlaydi.
 
 Bitta so'rovda 5 tadan ko'p agent (`qidiruv`, `tahlil`, `Explore`
 sanalmaydi) bo'lsa `budget.py` har 5-chaqiruvdan keyin narx taxmini

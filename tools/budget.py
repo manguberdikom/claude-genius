@@ -440,8 +440,8 @@ def model_of(actor):
     return "sonnet"
 
 
-def ask_text(actor, total, spent):
-    model = model_of(actor)
+def ask_text(actor, total, spent, model=""):
+    model = model or model_of(actor)
     cost = AGENT_COST.get(model, AGENT_COST["sonnet"])
     return ASK % (total, actor, model, AGENT_MAX, cost, spent + cost)
 
@@ -451,7 +451,7 @@ def chain_active(slot, group=""):
     return any(slot["calls"].get(counter(a, group)) for a in ACTORS)
 
 
-def take(actor, key=None, cwd="", call_id=None, group=""):
+def take(actor, key=None, cwd="", call_id=None, group="", model=""):
     """Bitta chaqiruvni hisobga oladi: (xabar, ruxsat, tasdiq matni).
 
     Aktyor chegarasi oshsa ruxsat False. Jami agent AGENT_MAX dan oshib,
@@ -481,8 +481,8 @@ def take(actor, key=None, cwd="", call_id=None, group=""):
             total = _count(slot.get("total")) + 1
             spent = _count(slot.get("spent"))
             if total > AGENT_MAX and (total - AGENT_MAX - 1) % AGENT_MAX == 0:
-                ask = ask_text(raw or actor, total, spent)
-            model = model_of(raw) if raw else "sonnet"
+                ask = ask_text(raw or actor, total, spent, model)
+            model = model or (model_of(raw) if raw else "sonnet")
             slot["total"] = total
             slot["spent"] = spent + AGENT_COST.get(model, AGENT_COST["sonnet"])
             if call_id:
@@ -515,8 +515,10 @@ def hook(payload):
         text = tool_input.get("message")
     else:
         return 0
+    override = tool_input.get("model") if tool in ("Task", "Agent") else ""
     message, allowed, ask = take(actor, key, cwd, payload.get("tool_use_id"),
-                                 group_of(text, cwd))
+                                 group_of(text, cwd),
+                                 override if isinstance(override, str) else "")
     if not allowed or ask:
         json.dump({"hookSpecificOutput": {
             "hookEventName": "PreToolUse",
