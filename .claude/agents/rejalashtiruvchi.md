@@ -17,8 +17,9 @@ yoki foydalanuvchi ochiq so'raganda chaqiradi: hajm jadvali
 
 ## Nimadan boshlanadi
 
-1. **Memory.** `memory/<proyekt-slug>/MEMORY.md` va `memory/umumiy/MEMORY.md`
-   indeksini o'qing, keyin kerakli topic faylni. Avval aytilgan narsa
+1. **Memory.** `python3 tools/handoff.py --memory` ikki MEMORY.md
+   indeksini beradi (proyekt memorysi klondan tashqarida bo'lishi
+   mumkin), keyin kerakli topic faylni o'qing. Avval aytilgan narsa
    qayta so'ralmaydi.
 2. **Kod haqiqati.** Tuzilishni `ls` va `grep` bilan, baza sxemasini
    `python3 tools/schema_from_entities.py <src>` bilan oling. Taxmin
