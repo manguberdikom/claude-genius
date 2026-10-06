@@ -1,0 +1,13 @@
+# Inglizcha taxalluslar: bo'lim raqami va inglizcha nom.
+# Shakli va qoidalari docs/architect/aliases.tsv boshida.
+bolim	nom
+15.3	Splitting a complex method
+25.4	Unclosed resource
+25.9	Swallowed InterruptedException
+25.11	Collection modified during iteration
+27.8	Duplicated string literal
+28.3	Unused private field
+28.5	Commented-out code
+28.7	Deprecated API usage
+28.11	String concatenation in loop
+28.12	String concatenation in logging

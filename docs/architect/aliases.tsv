@@ -1,0 +1,45 @@
+# Inglizcha taxalluslar: bo'lim raqami va inglizcha nom.
+#
+# tools/build_index.py index/aliases.tsv ga kind=section bilan yozadi,
+# `doc.sh find` va taklif hooki shu nom bilan bo'limni topadi. Bob emas,
+# ma'lumot fayli: manifestga kirmaydi.
+#
+# Qoidalar:
+# - Faqat sarlavhasida qavsli inglizcha nom bo'lmagan bo'lim uchun.
+# - Bitta nom bitta bo'limga: bir xil nom ikki bo'limda bo'lsa `find`
+#   ularni ajrata olmaydi. Boshqa hujjatdagi taxallusni takrorlamang.
+# - docs/OWNERS.tsv naqshiga to'liq mos keladigan nom faqat o'sha
+#   uy-bobga yoziladi (masalan "optimistic locking" bu yerga emas).
+# - Bo'lim raqami o'zgarsa build_index uni stderr ga yozib tashlaydi.
+bolim	nom
+7.4	Retry storm
+10.6	Choosing a garbage collector
+10.7	Heap sizing
+10.9	Memory leak
+12.4	Virtual thread pinning
+12.6	Connection pool with virtual threads
+13.5	Optional as return type
+15.4	Bean scopes
+15.5	Constructor injection
+15.9	Proxy self-invocation
+18.1	Dirty checking
+18.3	Lazy loading
+18.7	Batch insert
+18.8	Pessimistic locking
+18.12	Second-level cache
+19.2	Transaction propagation
+19.5	Read-only transaction
+19.6	Self-invocation
+21.10	Table bloat
+22.3	Serialization failure
+22.4	Serializable isolation
+22.6	Row-level locking
+22.8	Deadlock detection
+22.10	Lock monitoring
+24.6	EXPLAIN ANALYZE
+24.12	Slow query
+27.5	HikariCP configuration
+27.6	Connection pool size
+28.6	Cache stampede
+32.2	Timeout types
+32.4	Timeout budget
