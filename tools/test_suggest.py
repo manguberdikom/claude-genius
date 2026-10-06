@@ -28,7 +28,8 @@ harfli qisqartma (ZGC, JVM, DTO) bunga kirmaydi. Bunday so'rov uchun
 
 Bo'lim tanasining kalit so'zlarini indekslash ham sinab ko'rildi va
 natijani o'zgartirmadi, shuning uchun olib tashlandi: indeks 304 KB ga,
-build uch barobarga oshar edi.
+build uch barobarga oshar edi. index/exceptions.tsv boshqa, tor g'oya:
+faqat exception nomlari, nasr va sarlavhadan, misol va umumiy nomlarsiz.
 """
 
 import json
@@ -116,6 +117,20 @@ EXPECTED = [
      "    Thread.sleep(500);\n}", "sonarqube", {"19.4", "30.5"}),
     # Prefikssiz Sonar kaliti ham kalit.
     ("S2095 resurs yopilmagan deyapti", "sonarqube", {"13.6"}),
+    # Katalog bo'limi "Qoida: `java:S1192`" bilan boshlanadi va kalitning
+    # boshqa bo'limlaridan oldin turadi (avval 3.10 va 23.5 chiqardi).
+    ("java:S1192 ni tuzat", "sonarqube", {"27.8"}),
+    # Exception nomi index/exceptions.tsv orqali: xabar so'zlari ("single",
+    # "of") avval patterns 26.28 ni birinchi qo'yardi.
+    ("NoUniqueBeanDefinitionException: No qualifying bean of type "
+     "'PaymentGateway' available: expected single matching bean but found 2",
+     "patterns", {"5.8"}),
+    ("ObjectOptimisticLockingFailureException tushdi, nima qilaman",
+     "patterns", {"9.23"}),
+    # Korpusda yo'q exception (PSQLException): ildiz sabab xabari qoladi.
+    ("saqlashda xato:\norg.postgresql.util.PSQLException: ERROR: deadlock "
+     "detected\n\tat org.postgresql.core.v3.QueryExecutorImpl.receive"
+     "(QueryExecutorImpl.java:2713)", "architect", {"22.8", "19.10", "11.10"}),
 ]
 
 # Ko'p qatorli stack trace: frame, paket nomlari va xabar mavzu emas.
@@ -197,6 +212,49 @@ BORDERLINE = [
     # (avval hujjat alifbosi testing ni chetda qoldirardi).
     ("performance, tezlik, aniqlik haqida nima deysan", 4,
      {"code-review", "patterns", "testing"}, None),
+]
+
+# synonyms.tsv dagi har juftlik uchun musbat va manfiy holat (TZ-T6, QD-Q10).
+# (kalit, so'rov, shu bo'limlardan biri bo'lsin yoki None, bo'lmasin).
+# Musbat holat sinonimsiz o'tmaydi (sinonim olib tashlanib tekshirilgan).
+# Manfiy holat: sinonim yolg'iz dalil emas va begona mavzuni tortmaydi.
+SYNONYM_CASES = [
+    ("entity", "entity tengligi qanday ta'minlanadi",
+     {("clean-code", "15.5")}, set()),
+    ("entity", "entity yarat", None, {("clean-code", "15.5")}),
+    ("entitet", "entitet holatlari detached managed",
+     {("code-review", "23.9")}, set()),
+    ("entitet", "entitet klassini yarat", None,
+     {("architect", "18.2"), ("code-review", "23.9")}),
+    ("qulf", "pessimistik qulf qachon kerak", {("architect", "18.8")}, set()),
+    ("qulf", "qulfni och", None, {("architect", "18.8"), ("architect", "22.6")}),
+    ("lock", "lock tartibi qanday bo'lishi kerak", {("code-review", "15.4")}, set()),
+    ("lock", "lock faylini o'chir", None, "jim"),
+    ("inyeksiya", "field inyeksiya nega yomon",
+     {("sonarqube", "14.1"), ("patterns", "25.29")}, set()),
+    ("inyeksiya", "SQL inyeksiya xavfi", None,
+     {("sonarqube", "14.1"), ("patterns", "25.29")}),
+    # Ikki tilli sarlavha ("Maydonga Injeksiya (Field Injection)") bitta
+    # tushunchani ikki marta sanamaydi.
+    ("injection", "SQL injection review", None, {("patterns", "25.29")}),
+    ("izchillik", "yakuniy izchillik qachon yetarli", {("patterns", "28.17")}, set()),
+    ("izchillik", "kod uslubida izchillik", None, "jim"),
+    ("consistency", "consistency va availability tanlovi", None,
+     {("clean-code", "15.6")}),
+    ("o'chirilgan qator", "jadvalda o'chirilgan qatorlar ko'p joy egallayapti",
+     {("architect", "21.10")}, set()),
+    # Ibora so'zlari ketma-ket bo'lishi shart.
+    ("o'chirilgan qator", "qatorlar o'chirilgan", None, "jim"),
+]
+# Sinonim faqat qidiruvni kengaytiradi: kengaytma darajasidagi holatlar
+# (so'rov, kutilgan nishon, bo'lmasligi kerak nishon).
+EXPAND_CASES = [
+    ("injection", "inyeksiya", None),
+    ("consistency", "izchillik", None),
+    ("izchillik", "consistency", None),
+    ("o'chirilgan qatorlar", "bloat", None),
+    ("o'chirilgan fayl", None, "bloat"),
+    ("qatorlar o'chirilgan", None, "bloat"),
 ]
 
 # Ishora-yozuv (sections.tsv `ishora` ustuni to'la) to'liq yozuvni
@@ -489,6 +547,28 @@ def clean_cases():
            if S.rule_keys(p) != want]
     out.append(("prefikssiz Sonar kaliti", not bad, "; ".join(bad) or "uchala holat"))
 
+    table = S.exception_rows()
+    leaked = [name for name in ("runtimeexception", "illegalstateexception",
+                                "sqlexception", "ordernotfoundexception",
+                                "insufficientfundsexception")
+              if name in table]
+    kept = all(name in table for name in ("nouniquebeandefinitionexception",
+                                          "lazyinitializationexception"))
+    out.append(("exceptions.tsv: umumiy va misol nomlarsiz",
+                not leaked and kept, ", ".join(leaked) or "toza"))
+
+    # Bo'lim qatori yo'q kalit: bob qatori (katalog jadvali) qaytadi.
+    fake = [{"rule": "java:S9", "doc": "sonarqube", "chapter": "27",
+             "section": "", "marta": "1", "ulush": "0.1", "qoida": "0"}]
+    real = S.read_tsv
+    S.read_tsv = lambda name: fake if name == "rules.tsv" else real(name)
+    try:
+        hits = S.rule_hits(["java:S9"], {("sonarqube", "27"): "27. Katalog"})
+    finally:
+        S.read_tsv = real
+    out.append(("bo'limsiz kalit: bob qatori", [h[:2] for h in hits]
+                == [("sonarqube", "27")], str(hits)))
+
     items = [(("architect", "2.10"), [5.0, 3.0, 2]),
              (("testing", "2.9"), [5.0, 3.0, 2]),
              (("patterns", "1.1"), [5.0, 4.0, 2]),
@@ -552,6 +632,29 @@ def main():
         print("%-4s %-58s -> %d ta (chegara %d) %s" % (
             "OK" if ok else "XATO", prompt[:58], len(hits), limit,
             ", ".join("%s %s" % (h[0], h[1]) for h in hits)))
+
+    print("\n== Sinonimlar: musbat va manfiy ==")
+    for key, prompt, want, banned in SYNONYM_CASES:
+        keys = [(h[0], h[1]) for h in S.suggest(prompt)]
+        if banned == "jim":
+            ok = not keys
+        else:
+            ok = ((want is None or bool(want & set(keys)))
+                  and not banned & set(keys))
+        failures += not ok
+        total += 1
+        print("%-4s %-16s %-41s -> %s" % (
+            "OK" if ok else "XATO", key, prompt[:41],
+            ", ".join("%s %s" % k for k in keys) or "(jim)"))
+    idf = S.load_idf(len(S.read_tsv("sections.tsv")))
+    synonyms = S.load_synonyms()
+    for prompt, want, banned in EXPAND_CASES:
+        words = S.expand(prompt, idf, synonyms)
+        ok = (want is None or want in words) and (banned is None or banned not in words)
+        failures += not ok
+        total += 1
+        print("%-4s %-58s -> %s" % ("OK" if ok else "XATO", "kengaytma: " + prompt,
+                                    "+%s" % want if want else "-%s" % banned))
 
     print("\n== Ishora-yozuv o'rniga to'liq yozuv ==")
     for prompt, doc, want, pointer in POINTERS:

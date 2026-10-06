@@ -42,6 +42,20 @@ tranzaksiya	tranzaksiya tranzaksiyalar
 chiroyli	toza nomlash
 tartib	tuzilish tartib
 nusxa	takrorlanish nusxa
+# Bir tushuncha hujjatlarda ikki nom bilan yozilgan (GLOSSARY, TZ-T6):
+# clean-code "entitet", qolganlari "entity"; architect "lock",
+# code-review "qulf". Teskari yo'nalish [inglizcha] blokida. Har juftlik
+# uchun tools/test_suggest.py SYNONYM_CASES da musbat va manfiy holat.
+entitet	entity
+qulf	lock
+inyeksiya	injection
+injeksiya	injection
+izchillik	consistency
+konsistentlik	consistency
+# Ibora: kalitda bo'shliq bor, so'zlari so'rovda ketma-ket (o'zagi bilan)
+# turgandagina ishlaydi. Yolg'iz "qator" yoki "o'chirilgan" hech narsaga
+# bog'lanmaydi, shuning uchun umumiy so'z qoidasi buzilmaydi.
+o'chirilgan qator	bloat
 # [inglizcha] Inglizcha atama -> korpus sarlavhasidagi o'zbekcha yozilishi.
 # Bu blokni doc.sh find ham o'qiydi: bitta so'zli so'rovga variant
 # qo'shadi, ko'p so'zli bo'sh natijada esa tools/findlib.py ishlatadi.
@@ -63,4 +77,7 @@ pagination	sahifalash
 retry	urinish
 memory	xotira
 index	indeks indekslar
+entity	entitet
+injection	inyeksiya injeksiya
+consistency	izchillik konsistentlik
 # [/inglizcha]

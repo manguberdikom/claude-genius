@@ -61,6 +61,8 @@ Bu bob Sonar hisobotida eng ko'p uchraydigan, lekin eng arzon tuzatiladigan shik
 
 ## 28.1 Nomlash shabloniga mos kelmaydigan klass, metod, maydon va konstanta
 
+Qoida: `java:S101`, `java:S100`, `java:S115`, `java:S116`
+
 Sonar nomlashni to'rtta alohida qoida bilan tekshiradi va har biri o'z regex parametriga ega. Klass uchun `java:S101`, metod uchun `java:S100`, konstanta uchun `java:S115`, oddiy maydon uchun `java:S116`, mahalliy o'zgaruvchi va parametr uchun `java:S117`. Shikoyat qilinadigan servis odatda shunday ko'rinadi.
 
 ```java
@@ -103,6 +105,8 @@ public class PaymentService {
 Tavsiya: nomlash qoidalarini birinchi kunda yoqing, chunki keyin minglab qatorni qayta nomlash review ni bo'g'ib qo'yadi.
 
 ## 28.2 Bitta harfli va ma'nosiz nomlar
+
+Qoida: `java:S117`
 
 Bu yerda halol bo'lish kerak. Standart `java:S117` regex `^[a-z][a-zA-Z0-9]*$` ko'rinishida bo'lgani uchun `s`, `l`, `x` kabi nomlar odatda shikoyatga tushmaydi. Ya'ni pastdagi kod default profilda nomlash bo'yicha toza ko'rinadi, lekin o'qishga og'ir.
 
@@ -160,6 +164,8 @@ Tavsiya: sikl indeksi uchun `i` ni qoldiring, qolgan hamma joyda nomni domen ata
 
 ## 28.3 Ishlatilmaydigan import, maydon, parametr va mahalliy o'zgaruvchi
 
+Qoida: `java:S1128`, `java:S1068`, `java:S1172`, `java:S1481`
+
 To'rtta alohida qoida bir xil muammoni ko'rsatadi: kod o'quvchiga yolg'on ma'lumot beradi. `java:S1128` keraksiz import, `java:S1068` foydalanilmagan private maydon, `java:S1172` foydalanilmagan parametr, `java:S1481` qiymati o'qilmagan mahalliy o'zgaruvchi.
 
 ```java
@@ -200,6 +206,8 @@ public class StockService {
 Tavsiya: `java:S1481` chiqsa birinchi savol "o'chiramanmi" emas, "qanday tekshiruv yozilmay qolgan" bo'lsin.
 
 ## 28.4 Ishlatilmaydigan private metod va o'lik kod
+
+Qoida: `java:S1144`
 
 `java:S1144` hech qayerdan chaqirilmaydigan `private` metodni belgilaydi. Bu Sonar eng ishonchli topadigan o'lik kod turi, chunki `private` ko'rinish doirasi fayl bilan chegaralangan.
 
@@ -251,6 +259,8 @@ Tavsiya: o'lik kodni o'chirishni alohida commit qiling, shunda review diff da ma
 
 ## 28.5 Kommentariyaga olingan kod bloki
 
+Qoida: `java:S125`
+
 `java:S125` kommentariya ichidagi kodni aniqlaydi. Parser kommentni tahlil qiladi va u Java sintaksisiga o'xshasa shikoyat yozadi. Bu qoida major darajada bo'ladi, chunki o'quvchi qaysi variant haqiqiy ekanini bilmaydi.
 
 ```java
@@ -278,6 +288,8 @@ public void refund(long paymentId, BigDecimal amount) {
 Tavsiya: kommentda kod saqlashni taqiqlang, chunki versiya nazorati buni sizdan yaxshiroq bajaradi.
 
 ## 28.6 `TODO` va `FIXME` izohlari va ularning hisobi
+
+Qoida: `java:S1135`, `java:S1134`
 
 `java:S1135` `TODO` ni, `java:S1134` esa `FIXME` ni belgilaydi. Ikkisining farqi muhim: `TODO` odatda info darajasida va quality gate ga kirmaydi, `FIXME` esa major bo'ladi va `Maintainability Rating` ga ta'sir qiladi.
 
@@ -310,6 +322,8 @@ fi
 Tavsiya: `TODO` ni issue tracker raqami bilan yozishni majburiy qiling va `FIXME` ni release bloklovchi belgi deb kelishib oling.
 
 ## 28.7 Eskirgan (deprecated) API ishlatish
+
+Qoida: `java:S1874`
 
 Sonar bu mavzuda ikki tomondan yuradi. `java:S1874` eskirgan elementni chaqirgan kodni, `java:S1133` esa o'zingiz `@Deprecated` deb belgilagan va hali o'chirmagan kodni ko'rsatadi.
 
@@ -345,6 +359,8 @@ public BigDecimal fee(BigDecimal amount) {
 Tavsiya: har bir `@Deprecated` ga `forRemoval` va o'chirish versiyasini yozing, aks holda eskirgan kod abadiy yashaydi.
 
 ## 28.8 `public` maydon va kapsullashning buzilishi
+
+Qoida: `java:S1104`, `java:S2386`
 
 `java:S1104` har qanday `public` nostatik maydonni belgilaydi. `java:S2386` esa alohida va og'irroq holat: `public static` o'zgaruvchan kolleksiya yoki massiv. Ikkinchisi ba'zi profilda security tomonga ham tortiladi, chunki tashqi kod global holatni almashtirib yuborishi mumkin.
 
@@ -416,6 +432,8 @@ Tavsiya: barcha konstruktor inyeksiyasi maydonlarini `final` qiling, bu bir vaqt
 
 ## 28.10 Ortiqcha modifikator (interfeysda `public abstract`)
 
+Qoida: `java:S2333`
+
 `java:S2333` kontekstdan kelib chiqib ortiqcha bo'lgan modifikatorni belgilaydi. Interfeys metodi allaqachon `public abstract`, interfeys maydoni allaqachon `public static final`, `final` klass metodiga `final` qo'yish ham ortiqcha.
 
 ```java
@@ -446,6 +464,8 @@ Tavsiya: bu qoidani IDE ning save action yoki `spotless` formatlovchisi bilan av
 
 ## 28.11 Satr birlashtirishni sikl ichida bajarish
 
+Qoida: `java:S1643`
+
 `java:S1643` siklda `+` bilan satr yig'ishni belgilaydi. Sababi aniq: har iteratsiyada yangi `String` obyekti yaratiladi, natijada murakkablik elementlar soniga kvadratik bog'lanadi. Hisobot generatsiyasida bu eng tez sezilaradigan muammo.
 
 ```java
@@ -472,6 +492,8 @@ Tavsiya: siklda satr yig'ish ko'rsangiz darhol `StringBuilder` yoki `joining` ga
 
 ## 28.12 Loglashda satr birlashtirish va formatlangan xabarga o'tish
 
+Qoida: `java:S2629`
+
 `java:S2629` log chaqiruvining argumenti chaqiruvdan oldin hisoblanishini belgilaydi. Ya'ni `log.debug("id=" + id)` da satr birlashtirish `debug` darajasi o'chirilgan bo'lsa ham bajariladi. Issiq kod yo'lida bu real CPU sarfi.
 
 ```java
@@ -497,6 +519,8 @@ Tavsiya: loglarda `+` ni butunlay taqiqlang va `{}` shablonini jamoa standarti q
 
 ## 28.13 Ortiqcha `toString` va `String.valueOf` chaqiruvi
 
+Qoida: `java:S1858`, `java:S1153`
+
 Ikki alohida qoida bir xil odatdan kelib chiqadi. `java:S1858` allaqachon `String` bo'lgan qiymatda `toString()` chaqirilganini belgilaydi. `java:S1153` esa satr birlashtirish ichida `String.valueOf` ishlatilganini ko'rsatadi, chunki `+` operatori konvertatsiyani o'zi bajaradi.
 
 ```java
@@ -520,6 +544,8 @@ public String describe(Order order) {
 Tavsiya: bu ikki qoidani avtomatik tuzatish ro'yxatiga qo'ying, lekin tuzatish paytida o'zgaruvchi turi aniq ko'rinishiga ham e'tibor bering.
 
 ## 28.14 Bir xil ishni bajaradigan ikkita metod
+
+Qoida: `java:S4144`
 
 `java:S4144` tanasi identik bo'lgan ikki metodni belgilaydi. Bu Sonar ning duplication o'lchovidan boshqa narsa: `Duplications` metrikasi blok darajasida ishlaydi, `java:S4144` esa metod darajasida ishlaydi va kichik metodlarda ham chiqadi.
 

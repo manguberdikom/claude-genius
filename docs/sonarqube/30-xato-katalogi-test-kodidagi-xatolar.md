@@ -50,6 +50,8 @@ Sonar test kodini ham production kod kabi tahlil qiladi, lekin boshqa qoida to'p
 
 ## 30.1 Assertion siz test metodi
 
+Qoida: `java:S2699`
+
 Eng ko'p uchraydigan shikoyat shu: test servisni chaqiradi, natijani o'zgaruvchiga yozadi va tugaydi.
 
 ```java
@@ -120,6 +122,8 @@ Tavsiya: istisnoni `assertThrows` bilan tuting va qaytgan obyektning xabarini ha
 
 ## 30.3 Juda keng qamrovli assertThrows bloki
 
+Qoida: `java:S5778`
+
 `assertThrows` ga o'tish yetarli emas, lambda ichiga nima yozilgani ham muhim.
 
 ```java
@@ -153,6 +157,8 @@ Tavsiya: tayyorlash qadamlarini lambdadan tashqariga chiqarib, blokda bitta chaq
 
 ## 30.4 @Disabled qoldirilgan test va sababsiz o'chirish
 
+Qoida: `java:S1607`
+
 O'chirilgan test vaqtinchalik qaror bo'lib tug'iladi va doimiy qarz bo'lib qoladi.
 
 ```java
@@ -183,6 +189,8 @@ Tavsiya: `@Disabled` ga sabab va ticket raqamini yozing, sonini CI da chegaralan
 
 ## 30.5 Thread.sleep bilan kutish va uni almashtirish
 
+Qoida: `java:S2925`
+
 Asinxron kodni tekshirishda birinchi xayolga kelgan yechim eng yomoni.
 
 ```java
@@ -212,6 +220,8 @@ void tolov_tasdiqlangandan_keyin_buyurtma_PAID_bolishi_kerak() {
 Tavsiya: belgilangan vaqt kutish o'rniga shartni poll qiladigan kutishni ishlatib, timeout ni himoya chegarasi qilib qoldiring.
 
 ## 30.6 Testlar orasida umumiy o'zgaruvchan holat
+
+Qoida: `java:S2696`
 
 Bu xato Sonar hisobotida ikki xil qoida ostida chiqadi.
 
@@ -260,6 +270,8 @@ Tavsiya: holatni `@BeforeEach` da noldan tiklang va o'zgaruvchan `static` maydon
 
 ## 30.7 Test metodining ma'nosiz nomi
 
+Qoida: `java:S100`
+
 Nom testning hisobotdagi yuzi: buzilganda siz birinchi shu satrni ko'rasiz.
 
 ```java
@@ -285,6 +297,8 @@ void cancel_tolangan_buyurtmani_bekor_qilmaydi() { /* ... */ }
 Tavsiya: nomni "metod_shart_natija" shaklida yozing, murakkab holatni `@DisplayName` bilan to'ldiring.
 
 ## 30.8 Testda magic number va tushunarsiz ma'lumot
+
+Qoida: `java:S109`
 
 To'lov hisoblashda raqamlar ko'p va ularning kelib chiqishi tez yo'qoladi.
 
@@ -381,6 +395,8 @@ Tavsiya: takrorlangan tayyorlashni builder yoki fixture fayliga chiqarib, testda
 
 ## 30.10 Bir testda juda ko'p assertion va aralash maqsad
 
+Qoida: `java:S5961`
+
 Bitta test butun jarayonni qamrasa, buzilganda sabab noaniq bo'ladi.
 
 ```java
@@ -420,6 +436,8 @@ Tavsiya: bitta testda bitta xatti-harakatni tekshiring va bog'liq tekshiruvlarni
 
 ## 30.11 Test klassida test metodi yo'qligi
 
+Qoida: `java:S2187`
+
 Bu shikoyat ko'pincha refaktoringdan keyin qoladi.
 
 ```java
@@ -455,6 +473,8 @@ sonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
 Tavsiya: yordamchi klass nomida `Test` so'zini qoldirmang va `sonar.test.inclusions` ni aniq belgilang.
 
 ## 30.12 Faqat qamrov uchun yozilgan, natijani tekshirmaydigan test
+
+Qoida: `java:S2701`, `java:S2699`
 
 Katalogdagi eng xavfli holat, chunki u metrikani yaxshilab ko'rsatadi.
 

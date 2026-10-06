@@ -61,6 +61,8 @@ Toifa qoidaga biriktirilgan va o'zgarmaydi, jiddiylik esa faol quality profile d
 
 ## 25.2 null bo'lishi mumkin bo'lgan qiymatga murojaat qilish
 
+Qoida: `java:S2259`
+
 ```java
 // SHIKOYAT: findByOrderId null qaytarishi mumkin
 public BigDecimal paidAmount(String orderId) {
@@ -84,6 +86,8 @@ Repository metodlari `Optional` qaytarsin, shunda yo'qlik holati kompilyatsiya d
 
 ## 25.3 Optional ni tekshirmasdan get() chaqirish
 
+Qoida: `java:S3655`
+
 ```java
 // SHIKOYAT: get() himoyalanmagan
 Optional<Order> found = orderRepository.findById(id);
@@ -101,6 +105,8 @@ Order order = orderRepository.findById(id)
 `get()` ni loyiha bo'ylab taqiqlang va `orElseThrow` ni standart qiling.
 
 ## 25.4 Yopilmagan resurs: InputStream, Connection, Statement
+
+Qoida: `java:S2095`
 
 ```java
 // SHIKOYAT: istisno bo'lsa resurs ochiq qoladi
@@ -141,6 +147,8 @@ WHERE sku = ?
 Har qanday `AutoCloseable` ni faqat try-with-resources ichida yarating.
 
 ## 25.5 equals va hashCode ni birgalikda yozmaslik
+
+Qoida: `java:S1206`
 
 ```java
 // SHIKOYAT: hashCode yo'q
@@ -190,6 +198,8 @@ Boxed turlar uchun har doim `Objects.equals`, primitive uchun `==` ishlating.
 
 ## 25.7 Suzuvchi nuqtali sonlarni == bilan solishtirish va pul uchun double
 
+Qoida: `java:S1244`
+
 ```java
 // SHIKOYAT: pul double da va tenglik aniq emas
 double total = 0.1 + 0.2;
@@ -211,6 +221,8 @@ if (total.compareTo(new BigDecimal("0.30")) == 0) {
 Pulni `BigDecimal` da, bazada `numeric(19,4)` da saqlang va `equals` emas `compareTo` bilan solishtiring.
 
 ## 25.8 Metod natijasini e'tiborsiz qoldirish
+
+Qoida: `java:S2201`
 
 ```java
 // SHIKOYAT: natija tashlab ketilgan
@@ -234,6 +246,8 @@ public PaymentRequest normalize(PaymentRequest request) {
 Immutable turlar bilan ishlaganda har bir chaqiruv natijasini o'zlashtiring yoki qaytaring.
 
 ## 25.9 InterruptedException ni yutib yuborish
+
+Qoida: `java:S2142`
 
 ```java
 // SHIKOYAT: interrupt holati yo'qotilgan
@@ -259,6 +273,8 @@ try {
 `InterruptedException` ni ushlasangiz, `Thread.currentThread().interrupt()` ni chaqirib keyin chiqib keting.
 
 ## 25.10 Har doim bir xil natija beradigan shart va yetib bo'lmaydigan kod
+
+Qoida: `java:S2583`, `java:S1763`
 
 ```java
 // SHIKOYAT: ikkinchi tekshiruv har doim false, keyingi qator yetib bo'lmaydi
@@ -353,6 +369,8 @@ public String settlementDay(LocalDate d) {
 
 ## 25.14 compareTo va equals nomuvofiqligi
 
+Qoida: `java:S1210`
+
 ```java
 // SHIKOYAT: compareTo faqat summani, equals esa id ni solishtiradi
 public int compareTo(Payment other) {
@@ -376,6 +394,8 @@ public int compareTo(Payment other) {
 Tartiblash kaliti oxirida identifikatorni qo'shib, nol faqat haqiqiy tenglikda chiqishini ta'minlang.
 
 ## 25.15 Sikl o'zgaruvchisini ichkarida o'zgartirish yoki cheksiz sikl xavfi
+
+Qoida: `java:S127`, `java:S2189`
 
 ```java
 // SHIKOYAT: counter tanada o'zgartirilgan, shart esa o'zgarmaydi

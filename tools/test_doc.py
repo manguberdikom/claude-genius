@@ -54,17 +54,24 @@ CASES = [
     ("rule kichik harf", ["rule", "java:s2095"], 0, "try-with-resources"),
     # Reyting: tushuntirgan bo'lim yuqorida turishi kerak, shunchaki
     # tilga olgan katalog qatori emas. S3776 da birinchi qator bo'lim
-    # (raqamida nuqta bor) va ulushi 1 dan kam emas: katalog bobi
-    # (29, ulush 0.20) yuqoriga chiqsa yiqiladi.
+    # (raqamida nuqta bor) va ulushi 1 dan kam emas yoki `qoida` (katalog
+    # bo'limining birinchi qatori): katalog bobi (29, ulush 0.20) yuqoriga
+    # chiqsa yiqiladi.
     ("rule S106 loglash", ["rule", "java:S106"], 0, r"^sonarqube +41\.7 "),
     ("rule S3776 bo'lim yuqorida", ["rule", "java:S3776"], 0,
-     r"^sonarqube +\d+\.\d+ +[1-9]"),
+     r"^sonarqube +\d+\.\d+ +(qoida|[1-9])"),
     ("rule uzun ro'yxat qisqa", ["rule", "java:S3776"], 0, "rule --all"),
     ("rule --all to'liq", ["rule", "--all", "java:S3776"], 0, "!... yana"),
     # Bob darajasidagi qator (katalog jadvali) butun bob emas, outline.
     ("rule katalog belgisi", ["rule", "java:S2259"], 0, "[katalog: outline]"),
     # Katalog bobi bali past bo'lsa ham qisqa ro'yxatda: S3776 da 29-o'rin.
     ("rule katalog doim ko'rinadi", ["rule", "java:S3776"], 0, "\nsonarqube   27 "),
+    # Katalog bo'limining birinchi qatori "Qoida: `java:S1192`": tuzatish
+    # retsepti ulushi baland tushuntirish bo'limidan (3.10) oldin.
+    ("rule S1192 katalog bo'limi", ["rule", "S1192"], 0, r"^sonarqube +27\.8 "),
+    ("rule S3776 katalog bo'limi", ["rule", "S3776"], 0, r"^sonarqube +27\.1 "),
+    # Avval bo'lim qatori umuman yo'q edi, faqat bob jadvali.
+    ("rule S1488 bo'limi bor", ["rule", "S1488"], 0, r"^sonarqube +27\.10 "),
     ("rule yo'q kalit", ["rule", "S99999"], 1, ""),
     ("rule raqamsiz", ["rule", "abc"], 1, ""),
 
@@ -109,6 +116,32 @@ CASES = [
     ("find tion -> tsiya", ["find", "-n", "60", "serialization"], 0, "Serializatsiya"),
     ("find ic -> ik", ["find", "optimistic"], 0, "18.8 Optimistik"),
     ("find jadval: isolation", ["find", "-n", "60", "isolation"], 0, "izolyatsiya"),
+    # Uy-bob (docs/OWNERS.tsv): naqshga to'liq mos so'rovda birinchi,
+    # o'zbekcha shakl bilan ham. 12 mavzuning hammasi check_owner_homes da.
+    ("find uy-bob belgisi", ["find", "n+1"], 0, r"^architect +18\.4 .*\[uy-bob\]$"),
+    ("find uy-bob: o'zbekcha", ["find", "ichki metod chaqiruvi"], 0,
+     r"^architect +19\.6 .*\[uy-bob\]$"),
+    ("find uy-bob: sehrli son", ["find", "sehrli son"], 0, r"^patterns +25\.8 "),
+    ("find uy-bob: optimistik lock", ["find", "optimistik lock"], 0,
+     r"^patterns +9\.23 .*\[uy-bob\]$"),
+    # Uy-bobdan keyin boshqa hujjatlar ham qoladi (so'zlar bo'yicha).
+    ("find uy-bob va 18.8", ["find", "optimistic locking"], 0, "18.8 Optimistik"),
+    # Qisman moslik: ortiqcha so'z mavzuni toraytiradi, aniq natija oldin.
+    ("find uy-bob qisman", ["find", "N+1 testda"], 0, r"^testing +7\.5 "),
+    ("find taxallus oldin, uy-bob keyin", ["find", "Idempotent Consumer"], 0,
+     r"^patterns +14\.18 "),
+    # Naqsh "equals hashCode" ni emas, entity ni talab qiladi.
+    ("find equals hashCode: uy emas", ["find", "equals hashCode"], 0, "![uy-bob]"),
+    # docs/<hujjat>/aliases.tsv: avval "topilmadi" yoki begona birinchi.
+    ("find taxallus: pool size", ["find", "connection pool size"], 0,
+     r"^architect +27\.6 "),
+    ("find taxallus: Optional field", ["find", "Optional field"], 0,
+     r"^clean-code +25\.1 "),
+    ("find taxallus: deadlock detection", ["find", "deadlock detection"], 0,
+     r"^architect +22\.8 "),
+    ("find taxallus: long method", ["find", "long method"], 0, r"^clean-code +32\.3 "),
+    # synonyms.tsv [inglizcha]: entity -> entitet.
+    ("find jadval: entity", ["find", "-n", "60", "entity"], 0, "28.1 Entitet"),
 
     # show va path: X.10 X.1 ga tushmasin (awk son solishtirsa 24.10 == 24.1).
     ("show bo'lim", ["show", "patterns", "17.2"], 0, "Circuit Breaker"),
@@ -223,6 +256,37 @@ def check_find_rank():
     ok = "architect 19.1" in keys[:5]
     return ok, "" if ok else "19.1 o'rni: %s" % (
         keys.index("architect 19.1") + 1 if "architect 19.1" in keys else "yo'q")
+
+
+def owner_rows():
+    """docs/OWNERS.tsv: (mavzu, uy_bob) ro'yxati."""
+    out, header = [], None
+    with open(os.path.join(ROOT, "docs", "OWNERS.tsv"), encoding="utf-8") as handle:
+        for line in handle:
+            line = line.rstrip("\n")
+            if not line.strip() or line.startswith("#"):
+                continue
+            parts = line.split("\t")
+            if header is None:
+                header = parts
+                continue
+            out.append((parts[0], parts[1]))
+    return out
+
+
+def check_owner_homes():
+    """OWNERS dagi har mavzu `find` da uy-bobni top-3 da beradi.
+
+    Avval 12 mavzudan 6 tasida uy-bob 1-o'rinda edi, 3 tasi "topilmadi".
+    """
+    bad = []
+    rows = owner_rows()
+    for topic, home in rows:
+        out = run("find", "-n", "3", topic).stdout
+        keys = [" ".join(line.split()[:2]) for line in out.split("\n") if line.strip()]
+        if home not in keys:
+            bad.append("%s -> %s" % (topic, ", ".join(keys) or "topilmadi"))
+    return not bad and len(rows) >= 12, "; ".join(bad) or "%d qator" % len(rows)
 
 
 def check_translit_same():
@@ -393,6 +457,7 @@ CHECKS = [
     ("find maslahati apostrofda", check_find_hint),
     ("bash 3.2 sintaksisi", check_bash32),
     ("find Transactional: 19.1 top-5", check_find_rank),
+    ("OWNERS: uy-bob top-3 da", check_owner_homes),
     ("transliteratsiya awk = Python", check_translit_same),
     ("awk: gawk kengaytmasi yo'q", check_posix_awk),
     ("indeks eskirishi", check_index_freshness),

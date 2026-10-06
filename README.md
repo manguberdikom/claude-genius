@@ -33,6 +33,17 @@ render qilmaydi, monolit variant brauzerda ochilmaydi.
 - **Atama tushunarsiz** - [GLOSSARY.md](GLOSSARY.md)
 - **Bobda xato topdingiz** - [bob xatosi haqida xabar](https://github.com/manguberdikom/claude-genius/issues/new?template=bob-xatosi.yml) (hujjat, bo'lim raqami, da'vo va manba)
 
+Tipik savollar, javob turgan bo'limga to'g'ridan:
+
+- **N+1 so'rov: qanday topaman va tuzataman?** - [N+1 so'rov muammosi va to'rt xil yechim](docs/architect/18-spring-data-jpa-va-hibernate-chuqur.md#184-n1-sorov-muammosi-topish-usuli-va-tort-xil-yechim)
+- **Sonar `java:S3776`: cognitive complexity oshdi** - hisoblash qoidasi [cognitive complexity qanday hisoblanadi](docs/sonarqube/15-cognitive-complexity-va-takrorlanishni.md#151-cognitive-complexity-qanday-hisoblanadi-ortish-va-chuqurlik-jarimasi), tuzatish namunasi [katalogdagi S3776 yozuvi](docs/sonarqube/27-xato-katalogi-maintainability-tuzilish-va.md#271-cognitive-complexity-chegarasidan-oshgan-metod)
+- **`LazyInitializationException` chiqyapti** - [lazy loading mexanikasi va proxy](docs/architect/18-spring-data-jpa-va-hibernate-chuqur.md#183-lazy-loading-mexanikasi-proxy-va-lazyinitializationexception-sababi)
+- **`@Transactional` ichki metod chaqiruvida ishlamayapti** - [ichki metod chaqiruvi tuzog'i](docs/architect/19-spring-tranzaksiyalari-va-ularning.md#196-ichki-metod-chaqiruvi-tuzogi-va-undan-chiqish-yollari)
+- **PostgreSQL da deadlock** - [deadlock: sababi, log va oldini olish](docs/architect/22-mvcc-izolyatsiya-darajalari-lock-va-deadlock.md#228-deadlock-qanday-yuzaga-keladi-log-da-qanday-korinadi-qanday-oldini-olinadi)
+- **HikariCP pool kattaligi qancha bo'lsin** - [pool kattaligini hisoblash formulasi](docs/architect/27-sozlash-connection-pool-va-monitoring.md#276-pool-kattaligini-hisoblash-formulasi-va-amaliy-raqamlar)
+- **Test goh o'tadi, goh yiqiladi (flaky)** - [flaky testni aniqlash](docs/testing/16-flaky-testlar-test-qarzi-va-test-kodini.md#163-flaky-testni-aniqlash)
+- **Testcontainers bilan real PostgreSQL da test** - [Testcontainers asoslari](docs/testing/08-testcontainers-bilan-real-infratuzilmada.md#82-testcontainers-asoslari-docker-api-ustida-hayot-aylanishi)
+
 ## Claude Code bilan ishlatish
 
 `.claude/skills/` ichida sakkizta skill bor: yettitasi qo'llanmaga marshrut,
