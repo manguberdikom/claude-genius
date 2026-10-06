@@ -14,6 +14,17 @@ Haqiqiy Gradle va Maven yurmaydi: CI da ular bo'lmasligi mumkin va
 sinov daqiqalar emas, soniyalar olishi kerak. Yurgizish yo'li soxta
 runner bilan sinaladi (GENIUS_TEST_RUNNER), u Gradle chiqishiga
 o'xshash log yozadi.
+
+Gradle init skriptining haqiqiy xulqi alohida, qo'lda sinaladi (tarmoq
+kerak: JUnit va jacoco Maven Central dan):
+
+    python3 tools/test_run_tests.py --gradle [gradle-binar]
+
+U jacoco va coverage tekshiruvi `test` ga bog'langan loyihada maqsadli
+yurish yolg'on yiqilmasligini, to'liq suite da coverage saqlanishini,
+yangi worktree kompilyatsiyani keshdan olib testni keshdan olmasligini,
+yiqilgan test qayta yurishini va remote keshga murojaat yo'qligini
+tekshiradi. Gradle versiyasi o'zgarganda shu yurgiziladi.
 """
 
 import json
@@ -29,6 +40,11 @@ sys.path.insert(0, HERE)
 import run_tests  # noqa: E402
 
 TEMP = tempfile.mkdtemp(prefix="run_tests_")
+# Mashinadagi ~/.gradle/gradle.properties (masalan org.gradle.caching) buyruqni
+# o'zgartirmasin: sinov har joyda bir xil natija bersin.
+os.environ["GRADLE_USER_HOME"] = os.path.join(TEMP, "gradle-home")
+for _name in ("GENIUS_GRADLE_INIT", "GENIUS_TEST_FLAGS"):
+    os.environ.pop(_name, None)
 
 TEST = """package %(pkg)s;
 import org.junit.jupiter.api.Test;
@@ -622,6 +638,122 @@ def case_qoshimcha_bayroqlar(_):
     return argv[-2:] == ["--build-cache", "--offline"]
 
 
+class Env:
+    """Muhit o'zgaruvchisini vaqtincha qo'yish va qaytarish."""
+
+    def __init__(self, **values):
+        self.values, self.old = values, {}
+
+    def __enter__(self):
+        for key, value in self.values.items():
+            self.old[key] = os.environ.get(key)
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+
+    def __exit__(self, *exc):
+        for key, value in self.old.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+
+
+def init_of(argv):
+    """Buyruqdagi init skript matni, yo'q bo'lsa ''."""
+    if "-I" not in argv:
+        return ""
+    with open(argv[argv.index("-I") + 1], encoding="utf-8") as handle:
+        return handle.read()
+
+
+def gradle_argv(files, everything=False):
+    root = tree("gradle_init", files)
+    project, plan = plan_for(root, ["orders/src/main/java/shop/orders/OrderService.java"])
+    if everything:
+        plan = run_tests.Plan()
+    return run_tests.commands(project, plan, everything=everything)[-1][0]
+
+
+def case_gradle_init(_):
+    target = gradle_argv(gradle_shop())
+    full = gradle_argv(gradle_shop(), everything=True)
+    text, full_text = init_of(target), init_of(full)
+    return ("geniusMaqsadli = true" in text and "geniusKesh = true" in text
+            and "--build-cache" in target and target.count("--build-cache") == 1
+            and "geniusMaqsadli = false" in full_text and "geniusKesh = true" in full_text
+            and "JacocoReportBase" in text and "doNotCacheIf" in text
+            and init_of(gradle_argv(gradle_shop())) == text)
+
+
+def case_gradle_kesh_qarori(_):
+    """Loyiha yoki foydalanuvchi keshni o'zi tanlagan bo'lsa asbob unga tegmaydi."""
+    results = []
+    for value in ("false", "true"):
+        files = gradle_shop()
+        files["gradle.properties"] = "org.gradle.caching=%s\n" % value
+        argv = gradle_argv(files)
+        results.append("--build-cache" not in argv and "geniusKesh = false" in init_of(argv)
+                       and "geniusMaqsadli = true" in init_of(argv))
+    home = os.environ["GRADLE_USER_HOME"]
+    os.makedirs(home, exist_ok=True)
+    with open(os.path.join(home, "gradle.properties"), "w") as handle:
+        handle.write("org.gradle.caching=false\n")
+    try:
+        results.append("--build-cache" not in gradle_argv(gradle_shop()))
+    finally:
+        os.remove(os.path.join(home, "gradle.properties"))
+    with Env(GENIUS_TEST_FLAGS="--no-build-cache"):
+        argv = gradle_argv(gradle_shop())
+        results.append("--build-cache" not in argv and argv[-1] == "--no-build-cache")
+    with Env(GENIUS_TEST_FLAGS="--build-cache"):
+        argv = gradle_argv(gradle_shop())
+        results.append(argv.count("--build-cache") == 1
+                       and "geniusKesh = false" in init_of(argv))
+    return all(results)
+
+
+def case_gradle_init_ochirish(_):
+    with Env(GENIUS_GRADLE_INIT="0"):
+        off = gradle_argv(gradle_shop())
+    files = gradle_shop()
+    files["gradle/wrapper/gradle-wrapper.properties"] = (
+        "distributionUrl=https\\://services.gradle.org/distributions/gradle-6.0-bin.zip\n")
+    old = gradle_argv(files)
+    files["gradle/wrapper/gradle-wrapper.properties"] = (
+        "distributionUrl=https\\://services.gradle.org/distributions/gradle-8.14.3-bin.zip\n")
+    new = gradle_argv(files)
+    return ("-I" not in off and "--build-cache" not in off and "-I" not in old
+            and "-I" in new and run_tests.gradle_version(tree("v", files)) == (8, 14))
+
+
+def case_isit_hamma_toplam(_):
+    files = gradle_shop()
+    files["orders/src/integrationTest/java/shop/orders/OrderFlowIT.java"] = java(
+        "shop.orders", "OrderFlowIT")
+    project = run_tests.Project(tree("isit_toplam", files), runner=["./gradlew"])
+    argv = run_tests.warmup_commands(project)[0][0]
+    return ("testClasses" in argv and "integrationTestClasses" in argv
+            and "geniusMaqsadli = false" in init_of(argv))
+
+
+def case_tashxis_gradle(_):
+    files = gradle_shop()
+    files["gradle.properties"] = "org.gradle.caching=false\n"
+    files["build.gradle"] += ("test { testLogging { showStandardStreams = true }\n"
+                              "       outputs.upToDateWhen { false } }\n")
+    files["settings.gradle"] = "plugins { id 'com.gradle.develocity' version '3.18' }\n" + \
+        files["settings.gradle"]
+    project = run_tests.Project(tree("tashxis_gradle", files), runner=["./gradlew"])
+    titles = " | ".join(f[1] for f in run_tests.diagnose(project))
+    clean = run_tests.Project(tree("tashxis_gradle_toza", gradle_shop()), runner=["./gradlew"])
+    clean_titles = " | ".join(f[1] for f in run_tests.diagnose(clean))
+    return ("build cache o'chirilgan" in titles and "showStandardStreams" in titles
+            and "UP-TO-DATE" in titles and "Build scan" in titles
+            and "build cache" not in clean_titles and "Build scan" not in clean_titles)
+
+
 def case_ildiz_qulfi(_):
     root = tree("ildiz_qulfi", gradle_shop())
     with run_tests.root_lock(root):
@@ -674,10 +806,159 @@ CASES = [
     ("Maven: jacoco faqat maqsadlida o'chadi", case_maven_jacoco_maqsadlida),
     ("GENIUS_TEST_FLAGS", case_qoshimcha_bayroqlar),
     ("ildiz qulfi yechiladi", case_ildiz_qulfi),
+    ("Gradle init: maqsadlida jacoco o'chadi, kesh faqat kompilyatsiya", case_gradle_init),
+    ("Gradle kesh: loyiha va foydalanuvchi qarori ustun", case_gradle_kesh_qarori),
+    ("Gradle init: GENIUS_GRADLE_INIT=0 va Gradle 6.0 da yo'q", case_gradle_init_ochirish),
+    ("isitish: har test to'plami kompilyatsiyasi", case_isit_hamma_toplam),
+    ("tashxis: Gradle kesh, log, UP-TO-DATE, build scan", case_tashxis_gradle),
 ]
 
 
+# -- haqiqiy Gradle (qo'lda: --gradle) ---------------------------------------
+
+E2E_BUILD = """
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'jacoco'
+    repositories { mavenCentral() }
+    dependencies {
+        testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    }
+    test {
+        useJUnitPlatform()
+        finalizedBy jacocoTestReport, jacocoTestCoverageVerification
+    }
+    jacocoTestCoverageVerification {
+        violationRules { rule { limit { minimum = 0.9 } } }
+    }
+}
+project(':orders') { dependencies { implementation project(':common') } }
+"""
+
+E2E_TEST = """package shop.orders;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+class OrderServiceTest { @Test void total() { assertEquals(%d, new OrderService().total(2)); } }
+"""
+
+
+def e2e_project(root):
+    files = {
+        "settings.gradle": "rootProject.name = 'shop'\ninclude 'common', 'orders'\n",
+        "build.gradle": E2E_BUILD,
+        "common/src/test/java/shop/common/Gen0Test.java":
+            "package shop.common;\nimport org.junit.jupiter.api.Test;\n"
+            "class Gen0Test { @Test void works() { new Gen0().m0(1); } }\n",
+        "orders/src/main/java/shop/orders/OrderService.java":
+            "package shop.orders;\npublic class OrderService {\n"
+            "    public int total(int x) { return new shop.common.Gen1().m0(x); }\n}\n",
+        "orders/src/test/java/shop/orders/OrderServiceTest.java": E2E_TEST % 2,
+        # Refund ni faqat OtherTest qoplaydi: OrderServiceTest yolg'iz
+        # yursa modul coverage 0.9 dan past.
+        "orders/src/main/java/shop/orders/Refund.java":
+            "package shop.orders;\npublic class Refund {\n" + "".join(
+                "    public int r%d(int x) { if (x > %d) { return x - %d; } return x + %d; }\n"
+                % (j, j, j, j) for j in range(30)) + "}\n",
+        "orders/src/test/java/shop/orders/OtherTest.java":
+            "package shop.orders;\nimport org.junit.jupiter.api.Test;\n"
+            "class OtherTest { @Test void other() { Refund r = new Refund();\n" + "".join(
+                "  r.r%d(100); r.r%d(-100);\n" % (j, j) for j in range(30)) + "} }\n",
+    }
+    for i in range(40):
+        files["common/src/main/java/shop/common/Gen%d.java" % i] = (
+            "package shop.common;\npublic class Gen%d {\n" % i + "".join(
+                "    public int m%d(int x) { return x * %d + %d; }\n" % (j, i, j)
+                for j in range(10)) + "}\n")
+    shutil.rmtree(root, ignore_errors=True)
+    for path, text in files.items():
+        full = os.path.join(root, path)
+        os.makedirs(os.path.dirname(full), exist_ok=True)
+        with open(full, "w", encoding="utf-8") as handle:
+            handle.write(text)
+    commit(root)
+
+
+def gradle_e2e(gradle):
+    env = dict(os.environ, GENIUS_TEST_RUNNER=json.dumps([gradle]), GENIUS_STATE_DIR=STATE)
+    root = os.path.join(TEMP, "e2e")
+    e2e_project(root)
+    results = []
+
+    def cli(cwd, *args, **extra):
+        log = os.path.join(TEMP, "e2e-%d.log" % len(results))
+        proc = subprocess.run([sys.executable, TOOL] + list(args) + ["--log", log], cwd=cwd,
+                              capture_output=True, text=True, encoding="utf-8",
+                              env=dict(env, **extra), timeout=900)
+        with open(log, encoding="utf-8", errors="replace") as handle:
+            return proc.returncode, handle.read(), proc.stdout
+
+    def check(name, ok, detail=""):
+        results.append(bool(ok))
+        print("%-4s %s%s" % ("OK" if ok else "XATO", name, "" if ok else "  :: " + detail))
+
+    def edit(path, text, append=False):
+        with open(path, "a" if append else "w", encoding="utf-8") as handle:
+            handle.write(text)
+
+    exec_file = os.path.join(root, "orders", "build", "jacoco", "test.exec")
+    edit(os.path.join(root, "orders/src/main/java/shop/orders/OrderService.java"),
+         "// o'zgarish\n", append=True)
+    code, log, _ = cli(root, "--diff", "--yurgiz", GENIUS_GRADLE_INIT="0")
+    check("init siz: maqsadli yurish coverage tufayli yiqiladi (nazorat)",
+          code == 1 and "Rule violated" in log, "exit=%d" % code)
+    shutil.rmtree(os.path.dirname(exec_file), ignore_errors=True)
+    code, log, out = cli(root, "--diff", "--yurgiz")
+    xml = os.path.join(root, "orders/build/test-results/test/TEST-shop.orders.OrderServiceTest.xml")
+    check("init bilan: maqsadli yurish yashil, jacoco agenti yo'q",
+          code == 0 and not os.path.exists(exec_file) and os.path.exists(xml),
+          "exit=%d %s" % (code, out[-300:]))
+    code, log, _ = cli(root, "--hammasi", "--yurgiz")
+    check("to'liq suite: coverage tekshiruvi saqlanadi",
+          code == 1 and "Rule violated" in log and os.path.exists(exec_file), "exit=%d" % code)
+
+    worktrees = []
+    for name in ("wa", "wb"):
+        path = os.path.join(TEMP, "e2e-" + name)
+        git(root, "worktree", "add", "-q", path, "HEAD")
+        worktrees.append(path)
+    target = "orders/src/test/java/shop/orders/OrderServiceTest.java"
+    cli(worktrees[0], target, "--yurgiz")
+    code, log, _ = cli(worktrees[1], target, "--yurgiz")
+    check("yangi worktree: kompilyatsiya keshdan, test keshdan emas",
+          code == 0 and ":common:compileJava FROM-CACHE" in log
+          and "> Task :orders:test\n" in log and ":orders:test FROM-CACHE" not in log,
+          "exit=%d" % code)
+
+    edit(os.path.join(worktrees[1], target), E2E_TEST % 3)
+    code, log, out = cli(worktrees[1], target, "--yurgiz")
+    check("yiqilgan test: exit 1, XML dan qayta yurish",
+          code == 1 and "OrderServiceTest" in out and "qayta yurish:" in out, "exit=%d" % code)
+
+    edit(os.path.join(worktrees[1], "settings.gradle"),
+         "buildCache { remote(HttpBuildCache) { url = 'http://127.0.0.1:9/cache/'\n"
+         "    push = true; allowInsecureProtocol = true } }\n", append=True)
+    edit(os.path.join(worktrees[1], target), E2E_TEST % 2)
+    code, log, _ = cli(worktrees[1], target, "--yurgiz")
+    check("remote kesh: asbob yoqqan keshda murojaat yo'q",
+          code == 0 and "remote build cache" not in log.lower(), "exit=%d" % code)
+
+    subprocess.run([gradle, "--stop"], capture_output=True, env=env)
+    print("\n%d/%d o'tdi (Gradle e2e)" % (sum(results), len(results)))
+    return 0 if all(results) else 1
+
+
 def main():
+    if "--gradle" in sys.argv:
+        rest = sys.argv[sys.argv.index("--gradle") + 1:]
+        gradle = rest[0] if rest else shutil.which("gradle")
+        if not gradle:
+            print("gradle topilmadi: yo'lini bering, `--gradle /yo'l/gradle`")
+            return 2
+        try:
+            return gradle_e2e(gradle)
+        finally:
+            shutil.rmtree(TEMP, ignore_errors=True)
     failures = 0
     try:
         for name, fn in CASES:
