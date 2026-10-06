@@ -7,7 +7,7 @@
 # 27. Monolitdan microservice'ga migratsiya patternlari (Monolith to Microservices Migration Patterns)
 
 <details>
-<summary>Bu bo'limdagi 23 bo'lim</summary>
+<summary>Bu bobdagi 23 bo'lim</summary>
 
 - [27.1 Bo'g'uvchi Anjir Ilovasi (Strangler Fig Application)](#271-boguvchi-anjir-ilovasi-strangler-fig-application)
 - [27.2 UI Kompozitsiyasi (UI Composition)](#272-ui-kompozitsiyasi-ui-composition)

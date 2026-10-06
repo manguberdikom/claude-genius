@@ -7,7 +7,7 @@
 # 7. API dizayn patternlari (API Design Patterns)
 
 <details>
-<summary>Bu bo'limdagi 34 bo'lim</summary>
+<summary>Bu bobdagi 34 bo'lim</summary>
 
 - [7.1 Resurs-yo'naltirilgan REST (Resource-oriented REST)](#71-resurs-yonaltirilgan-rest-resource-oriented-rest)
 - [7.2 Richardson yetuklik modeli (Richardson Maturity Model)](#72-richardson-yetuklik-modeli-richardson-maturity-model)

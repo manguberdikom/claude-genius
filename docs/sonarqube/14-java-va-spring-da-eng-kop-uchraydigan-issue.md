@@ -59,6 +59,8 @@ public class PaymentService {
 }
 ```
 
+Mavzuning to'liq yozuvi patternlar hujjatidagi [maydonga inyeksiya](../patterns/25-anti-patternlar.md#2529-maydonga-injeksiya-field-injection) bo'limida; bu yerda faqat Sonar qoidasi nuqtai nazari.
+
 ## 14.2 Katta controller metodi va uni servisga bo'lish
 
 Controller ichida validatsiya, biznes qoida, baza bilan ishlash va javob yig'ish bir joyda bo'lsa, Sonar bir vaqtda bir necha qoidani ishga tushiradi. Eng muhimi cognitive complexity, kaliti `java:S3776`, standart chegara metod uchun 15. Yana `java:S138` metod qatorlari soni uchun va `java:S107` parametrlar soni uchun ishlaydi. Cognitive complexity har bir `if`, `for`, `catch` va ichki joylashuv uchun ball qo'shadi, shuning uchun ichma-ich shartlar jarimani tez oshiradi. Yechim kodni qisqartirish emas, balki mas'uliyatni ko'chirish. Controller HTTP ni biznesga tarjima qiladi va boshqa hech narsa qilmaydi. Shunda coverage ham osonlashadi: biznes qoidani servis testida yopasiz, controller uchun `@WebMvcTest` yetadi.

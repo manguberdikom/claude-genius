@@ -74,6 +74,8 @@ logging:
     org.hibernate.orm.jdbc.bind: trace      # parametr qiymatlari
 ```
 
+Mavzuning to'liq yozuvi arxitektor hujjatidagi [N+1 so'rov muammosi](../architect/18-spring-data-jpa-va-hibernate-chuqur.md#184-n1-sorov-muammosi-topish-usuli-va-tort-xil-yechim) bo'limida; bu yerda faqat diffda ko'rish nuqtai nazari.
+
 ## 23.2 So'rovlar sonini test bilan qulflash
 
 Review izohida "N+1 bor" degan gapni dalil bilan quvvatlash va kelajakda regressiyani oldini olish usuli - so'rovlar sonini test bilan belgilash.

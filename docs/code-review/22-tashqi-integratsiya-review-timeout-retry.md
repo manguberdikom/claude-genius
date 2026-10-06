@@ -163,6 +163,8 @@ private PaymentResult chargeFallback(ChargeCommand cmd, Exception e) {
 }
 ```
 
+Mavzuning to'liq yozuvi patternlar hujjatidagi [zanjirni uzgich](../patterns/17-resilience-va-cloud-dizayn-patternlari.md#172-zanjirni-uzgich-circuit-breaker) bo'limida; bu yerda faqat diffda ko'rish nuqtai nazari.
+
 ## 22.4 WebClient va reaktiv kod aralashuvi
 
 ```java
@@ -321,14 +323,14 @@ Review da bu naqsh ko'pincha e'tibordan chetda qoladi, chunki "o'z provayderimiz
 ## Manbalar
 
 - [spring-boot, `ClientHttpRequestFactories.java` (3.4.x)](https://raw.githubusercontent.com/spring-projects/spring-boot/3.4.x/spring-boot-project/spring-boot/src/main/java/org/springframework/boot/web/client/ClientHttpRequestFactories.java) - `@Deprecated(since = "3.4.0", forRemoval = true)`, o'rniga `ClientHttpRequestFactoryBuilder`
-- [spring-boot, `ClientHttpRequestFactoryBuilder.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/main/module/spring-boot-http-client/src/main/java/org/springframework/boot/http/client/ClientHttpRequestFactoryBuilder.java) - `detect()` va `build(HttpClientSettings)`; mijoz classpath dan aniqlanadi
-- [spring-boot, `HttpClientSettings.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/main/module/spring-boot-http-client/src/main/java/org/springframework/boot/http/client/HttpClientSettings.java) - `defaults()`, `withConnectTimeout`, `withReadTimeout`
-- [spring-boot, `HttpClientsProperties.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/main/module/spring-boot-http-client/src/main/java/org/springframework/boot/http/client/autoconfigure/HttpClientsProperties.java) - prefiks `spring.http.clients`, `@since 4.0.0`
-- [spring-boot, `KafkaProperties.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/main/module/spring-boot-kafka/src/main/java/org/springframework/boot/kafka/autoconfigure/KafkaProperties.java) - producer da `idempotence` maydoni yo'q; `acks`, `properties` bor
-- [kafka, `ProducerConfig.java`](https://raw.githubusercontent.com/apache/kafka/trunk/clients/src/main/java/org/apache/kafka/clients/producer/ProducerConfig.java) - `enable.idempotence` standarti `true`; acks=all, retries>0 va in-flight <= 5 talabi
-- [spring-retry, `Backoff.java`](https://raw.githubusercontent.com/spring-projects/spring-retry/main/src/main/java/org/springframework/retry/annotation/Backoff.java) - `delay`, `multiplier`, `random` atributlari
-- [resilience4j, `CommonCircuitBreakerConfigurationProperties.java`](https://raw.githubusercontent.com/resilience4j/resilience4j/master/resilience4j-framework-common/src/main/java/io/github/resilience4j/common/circuitbreaker/configuration/CommonCircuitBreakerConfigurationProperties.java) - `slidingWindowType`, `minimumNumberOfCalls`, `waitDurationInOpenState`, `recordExceptions`, `ignoreExceptions` nomlari
-- [resilience4j, bulkhead va timelimiter sozlamalari](https://raw.githubusercontent.com/resilience4j/resilience4j/master/resilience4j-framework-common/src/main/java/io/github/resilience4j/common/timelimiter/configuration/CommonTimeLimiterConfigurationProperties.java) - `timeoutDuration`, `cancelRunningFuture`
+- [spring-boot, `ClientHttpRequestFactoryBuilder.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/module/spring-boot-http-client/src/main/java/org/springframework/boot/http/client/ClientHttpRequestFactoryBuilder.java) - `detect()` va `build(HttpClientSettings)`; mijoz classpath dan aniqlanadi
+- [spring-boot, `HttpClientSettings.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/module/spring-boot-http-client/src/main/java/org/springframework/boot/http/client/HttpClientSettings.java) - `defaults()`, `withConnectTimeout`, `withReadTimeout`
+- [spring-boot, `HttpClientsProperties.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/module/spring-boot-http-client/src/main/java/org/springframework/boot/http/client/autoconfigure/HttpClientsProperties.java) - prefiks `spring.http.clients`, `@since 4.0.0`
+- [spring-boot, `KafkaProperties.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/module/spring-boot-kafka/src/main/java/org/springframework/boot/kafka/autoconfigure/KafkaProperties.java) - producer da `idempotence` maydoni yo'q; `acks`, `properties` bor
+- [kafka, `ProducerConfig.java`](https://raw.githubusercontent.com/apache/kafka/4.0.0/clients/src/main/java/org/apache/kafka/clients/producer/ProducerConfig.java) - `enable.idempotence` standarti `true`; acks=all, retries>0 va in-flight <= 5 talabi
+- [spring-retry, `Backoff.java`](https://raw.githubusercontent.com/spring-projects/spring-retry/v2.0.12/src/main/java/org/springframework/retry/annotation/Backoff.java) - `delay`, `multiplier`, `random` atributlari
+- [resilience4j, `CommonCircuitBreakerConfigurationProperties.java`](https://raw.githubusercontent.com/resilience4j/resilience4j/v2.4.0/resilience4j-framework-common/src/main/java/io/github/resilience4j/common/circuitbreaker/configuration/CommonCircuitBreakerConfigurationProperties.java) - `slidingWindowType`, `minimumNumberOfCalls`, `waitDurationInOpenState`, `recordExceptions`, `ignoreExceptions` nomlari
+- [resilience4j, bulkhead va timelimiter sozlamalari](https://raw.githubusercontent.com/resilience4j/resilience4j/v2.4.0/resilience4j-framework-common/src/main/java/io/github/resilience4j/common/timelimiter/configuration/CommonTimeLimiterConfigurationProperties.java) - `timeoutDuration`, `cancelRunningFuture`
 
 ---
 

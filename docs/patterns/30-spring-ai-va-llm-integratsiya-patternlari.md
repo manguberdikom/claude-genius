@@ -7,7 +7,7 @@
 # 30. Spring AI va LLM integratsiya patternlari (Spring AI & LLM Integration Patterns)
 
 <details>
-<summary>Bu bo'limdagi 21 bo'lim</summary>
+<summary>Bu bobdagi 21 bo'lim</summary>
 
 - [30.1 ChatClient abstraksiyasi (ChatClient abstraction - Bridge over model providers)](#301-chatclient-abstraksiyasi-chatclient-abstraction---bridge-over-model-providers)
 - [30.2 Prompt shabloni (Prompt Template)](#302-prompt-shabloni-prompt-template)

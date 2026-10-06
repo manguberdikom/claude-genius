@@ -7,7 +7,7 @@
 # 13. Domain-Driven Design patternlari (DDD Patterns)
 
 <details>
-<summary>Bu bo'limdagi 36 bo'lim</summary>
+<summary>Bu bobdagi 36 bo'lim</summary>
 
 - [13.1 Umumiy til (Ubiquitous Language)](#131-umumiy-til-ubiquitous-language)
 - [13.2 Chegaralangan kontekst (Bounded Context)](#132-chegaralangan-kontekst-bounded-context)
@@ -1021,7 +1021,7 @@ public final class DateRange {
 - Takrorlangan validatsiyani uchta servisdan bitta agregat metodiga birlashtirish.
 - CRUD-ga yaqin supporting modulni ataylab anemik qoldirib, core domain'ni boyitishga kuch yo'naltirish.
 
-**Ehtiyot bo'ling:** Teskari chetga chiqmang: agregatga repository, HTTP client yoki tashqi servis in'ektsiya qilib, uni "boy" qilishga urinish bog'liqliklarni domenga tortadi - bunday mantiq application servisga yoki domain service'ga tegishli. Shuningdek DTO va API modellari ataylab anemik bo'ladi; anemiklik muammosi faqat domen modeliga tegishli.
+**Ehtiyot bo'ling:** Teskari chetga chiqmang: agregatga repository, HTTP client yoki tashqi servis inyeksiya qilib, uni "boy" qilishga urinish bog'liqliklarni domenga tortadi - bunday mantiq application servisga yoki domain service'ga tegishli. Shuningdek DTO va API modellari ataylab anemik bo'ladi; anemiklik muammosi faqat domen modeliga tegishli.
 
 ```java
 // Anemik: qoida servisda, obyekt faqat ma'lumot tashiydi

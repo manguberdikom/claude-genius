@@ -354,6 +354,8 @@ public void tekshir(Tolov t) {
 
 Agar qiymat muhitga qarab o'zgarsa, konstanta emas, konfiguratsiya kerak: `@ConfigurationProperties` yoki `application.yaml`. Konstantaga chiqarish faqat kod uchun haqiqatan o'zgarmas qiymatlarga tegishli.
 
+Mavzuning to'liq yozuvi toza kod hujjatidagi [primitiv, son va pul](../clean-code/20-primitiv-son-va-pul.md) bobida; bu yerda faqat Sonar qoidasi nuqtai nazari.
+
 ## 13.9 To'g'ri taqqoslash: `equals`, `compareTo`, suzuvchi nuqta, `BigDecimal`
 
 Taqqoslash qoidalari Sonar da bug kategoriyasida turadi, ya'ni ular quality gate ning yangi kod shartini eng tez buzadigan guruh. Eng ko'p uchraydiganlari: obyektlarni `==` bilan solishtirish (`java:S4973`), suzuvchi nuqta sonlarini tenglikka tekshirish (`java:S1244`), `equals` ni `hashCode` siz override qilish (`java:S1206`).

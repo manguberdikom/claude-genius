@@ -7,7 +7,7 @@
 # 26. Dizayn printsiplari: SOLID, GRASP va umumiy qoidalar (Design Principles: SOLID, GRASP & General Rules)
 
 <details>
-<summary>Bu bo'limdagi 30 bo'lim</summary>
+<summary>Bu bobdagi 30 bo'lim</summary>
 
 - [26.1 Yagona javobgarlik printsipi (Single Responsibility Principle)](#261-yagona-javobgarlik-printsipi-single-responsibility-principle)
 - [26.2 Ochiq/yopiq printsipi (Open/Closed Principle)](#262-ochiqyopiq-printsipi-openclosed-principle)
@@ -104,7 +104,7 @@ Dizayn printsiplari - bu aniq sinf tuzilmasi beruvchi pattern emas, balki patter
 - Testlarda tor port uchun bir necha qatorli fake yozib, Mockito'siz ishlash.
 - Modul chegaralarida faqat kerakli metodlarni ko'rsatuvchi "client-owned" interfeys e'lon qilish (interface segregation by consumer).
 
-**Ehtiyot bo'ling:** Har bir metod uchun alohida interfeys yaratish navigatsiyani buzadi va "interface explosion" ga olib keladi - interfeysni rol bo'yicha, ya'ni mijoz guruhi bo'yicha ajratish kerak. Shuningdek, tor interfeyslarni keyinroq birlashtirish qiyin, shuning uchun public API'da ularni e'lon qilishdan oldin iste'molchi senariylarini aniqlang.
+**Ehtiyot bo'ling:** Har bir metod uchun alohida interfeys yaratish navigatsiyani buzadi va "interface explosion" ga olib keladi - interfeysni rol bo'yicha, ya'ni mijoz guruhi bo'yicha ajratish kerak. Shuningdek, tor interfeyslarni keyinroq birlashtirish qiyin, shuning uchun public API'da ularni e'lon qilishdan oldin iste'molchi ssenariylarini aniqlang.
 
 ## 26.5 Bog'liqliklarni teskari aylantirish printsipi (Dependency Inversion Principle)
 
@@ -179,7 +179,7 @@ class Order extends AbstractAggregateRoot<Order> {
 
 ## 26.8 Boshqaruvchi (Controller (GRASP))
 
-**Tavsif:** Tizimga tushadigan har bir hodisa (HTTP so'rov, xabar, timer) uchun uni qabul qilib, keyingi ishni delegatsiya qiladigan birinchi obyektni aniqlang. Controller biznes mantiqni o'zi bajarmaydi - u faqat kirishni tarjima qiladi, tranzaksiya chegarasini belgilaydigan use case xizmatini chaqiradi va natijani protokol formatiga o'giradi. Shu tufayli bitta biznes senariy bir nechta transport orqali (REST, Kafka, CLI) ishlatilishi mumkin.
+**Tavsif:** Tizimga tushadigan har bir hodisa (HTTP so'rov, xabar, timer) uchun uni qabul qilib, keyingi ishni delegatsiya qiladigan birinchi obyektni aniqlang. Controller biznes mantiqni o'zi bajarmaydi - u faqat kirishni tarjima qiladi, tranzaksiya chegarasini belgilaydigan use case xizmatini chaqiradi va natijani protokol formatiga o'giradi. Shu tufayli bitta biznes ssenariy bir nechta transport orqali (REST, Kafka, CLI) ishlatilishi mumkin.
 
 **Spring'da qayerda uchraydi:** Spring MVC'da `DispatcherServlet` front controller rolini bajaradi, undan keyin `@RestController`/`@Controller` metodlari use case controller bo'ladi; WebFlux'da `@Controller` yoki funksional `RouterFunction` ishlatiladi. Boshqa transportlar uchun ekvivalentlar mavjud: `@KafkaListener` (Spring for Apache Kafka), `@RabbitListener`, `@JmsListener`, `@MessageMapping` (STOMP/RSocket), `@SqsListener` (Spring Cloud AWS), `@Scheduled` va `@EventListener`. Haqiqiy use case esa odatda `@Service` + `@Transactional` sinfida yashaydi; umumiy xato ishlovi `@ControllerAdvice` va `ProblemDetail` (RFC 9457, Spring Framework 6.x) orqali markazlashtiriladi.
 

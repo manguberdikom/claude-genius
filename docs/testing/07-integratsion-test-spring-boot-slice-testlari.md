@@ -233,6 +233,8 @@ class OrderFetchPlanTest {
 
 Ikkinchi variant - `net.ttddyy:datasource-proxy` bilan DataSource'ni o'rab, `QueryCountHolder` orqali SELECT/INSERT/UPDATE sonini alohida tekshirish; u JPA'siz (`@JdbcTest`, `@DataJdbcTest`) ham ishlaydi va SQL matnini ham ko'rsatadi. Qaysi vositani tanlasangiz ham, qoida bitta: query sonini **aniq raqam** bilan tasdiqlang, "ko'p emas" deb emas.
 
+Mavzuning to'liq yozuvi arxitektor hujjatidagi [N+1 so'rov muammosi](../architect/18-spring-data-jpa-va-hibernate-chuqur.md#184-n1-sorov-muammosi-topish-usuli-va-tort-xil-yechim) bo'limida; bu yerda faqat test nuqtai nazari.
+
 ## 7.6 @JdbcTest, @DataJdbcTest, @JsonTest, @RestClientTest
 
 `@JdbcTest` faqat `DataSource` + `JdbcTemplate` + tranzaksiya beradi, bean skanerlash yo'q - qo'lda yozilgan SQL va DAO uchun ideal. `@DataJdbcTest` bunga Spring Data JDBC repository va aggregate mapping'ni qo'shadi. Ikkisi ham `@AutoConfigureTestDatabase`'ni `@DataJpaTest` kabi qo'llaydi, demak H2 xavfi aynan shu yerda ham bor.

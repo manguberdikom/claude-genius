@@ -1,6 +1,6 @@
 # Java Spring arxitektori bilishi kerak bo'lgan barcha dizayn patternlar
 
-Bu ma'lumotnoma Java va Spring ekotizimida ishlaydigan arxitektor bilishi kerak bo'lgan dizayn pattern, arxitektura uslubi, integratsiya, resilience, xavfsizlik, testing va anti-patternni **30 ta bo'limda**, **1007 ta** yozuv (996 noyob pattern) bilan qamrab oladi. Har bir pattern uchun to'rt qism berilgan:
+Bu ma'lumotnoma Java va Spring ekotizimida ishlaydigan arxitektor bilishi kerak bo'lgan dizayn pattern, arxitektura uslubi, integratsiya, resilience, xavfsizlik, testing va anti-patternni **30 ta bobda**, **1007 ta** yozuv (996 noyob pattern) bilan qamrab oladi. Har bir pattern uchun to'rt qism berilgan:
 
 - **Tavsif** - pattern qanday muammoni hal qiladi va qanday ishlaydi.
 - **Spring'da qayerda uchraydi** - Spring Framework, Spring Boot va ekotizimdagi aniq sinflar, annotatsiyalar, kutubxonalar.
@@ -13,6 +13,8 @@ Barcha patternlarning inglizcha nomi bo'yicha [alifbo indeksi](99-alifbo-boyicha
 **Bu hujjat oltilikning bir qismi.** Har biri boshqa savolga javob beradi; qolgan beshtasi: [Testlash qo'llanmasi](../testing/README.md), [Arxitektor miyasi](../architect/README.md), [SonarQube hujjati](../sonarqube/README.md), [Toza kod qoidalari](../clean-code/README.md), [Kod review](../code-review/README.md).
 
 **Versiya bazasi:** Java 21 LTS (pol: 17, Java 25 eslatmalari bilan), Spring Boot 3.2-3.5 (4.0 eslatmalari bilan), PostgreSQL 16+ (15-18 havolalari bilan), JUnit 5.
+
+> Holat: 31 bobdan 0 tasi odam tekshirgan, 3 tasi tekshirilmoqda, qolgan 28 tasi AI yozgan va inson tekshirmagan. Har bob holati: [docs/review.tsv](../review.tsv).
 
 ## Mundarija
 

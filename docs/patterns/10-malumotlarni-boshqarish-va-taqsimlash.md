@@ -7,7 +7,7 @@
 # 10. Ma'lumotlarni boshqarish va taqsimlash patternlari (Data Management & Distribution Patterns)
 
 <details>
-<summary>Bu bo'limdagi 32 bo'lim</summary>
+<summary>Bu bobdagi 32 bo'lim</summary>
 
 - [10.1 Yumshoq o'chirish (Soft Delete)](#101-yumshoq-ochirish-soft-delete)
 - [10.2 Audit izi / Auditlash (Audit Trail / Auditing)](#102-audit-izi--auditlash-audit-trail--auditing)
@@ -881,7 +881,7 @@ public class EncryptedStringConverter implements AttributeConverter<String, Stri
 - Mobil ilova uchun feed/listing endpoint'larini replikadan xizmat qilish.
 - Ko'p regionli deploy'da foydalanuvchiga eng yaqin replikadan o'qib, latency'ni kamaytirish.
 
-**Ehtiyot bo'ling:** "Write-then-read" senariysi (yozgandan keyin darhol o'qish) replikatsiya lag'i sababli eski ma'lumot qaytaradi - bunday oqimlarda majburan primary'dan o'qing yoki read-your-writes uchun sticky routing qo'llang. `@Transactional(readOnly = true)` ni faqat optimizatsiya deb o'ylab qo'yish xavfli: routing sozlanmagan bo'lsa u hech narsani ajratmaydi, sozlangan bo'lsa esa kutilmaganda yozuvni `SQLException` bilan yiqitadi.
+**Ehtiyot bo'ling:** "Write-then-read" ssenariysi (yozgandan keyin darhol o'qish) replikatsiya lag'i sababli eski ma'lumot qaytaradi - bunday oqimlarda majburan primary'dan o'qing yoki read-your-writes uchun sticky routing qo'llang. `@Transactional(readOnly = true)` ni faqat optimizatsiya deb o'ylab qo'yish xavfli: routing sozlanmagan bo'lsa u hech narsani ajratmaydi, sozlangan bo'lsa esa kutilmaganda yozuvni `SQLException` bilan yiqitadi.
 
 ```java
 // O'qish replika'ga, yozish primary'ga
@@ -962,6 +962,8 @@ CREATE TABLE idempotency_keys (
 -- request_hash: bir xil kalit bilan boshqa tana kelsa 422 qaytarish uchun.
 -- created_at bo'yicha eski kalitlar tozalanadi.
 ```
+
+Mavzuning to'liq yozuvi shu hujjatdagi [idempotentlik kaliti](07-api-dizayn-patternlari.md#79-idempotentlik-kaliti-idempotency-key) bo'limida; bu yerda faqat pattern katalogi nuqtai nazari.
 
 ## 10.31 Dual Write muammosi (Dual Write Problem)
 

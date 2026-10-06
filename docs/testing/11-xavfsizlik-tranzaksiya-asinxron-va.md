@@ -515,6 +515,8 @@ class ResilienceTest {
 
 Fallback'ni ham testlang: circuit ochiqligida ilova cache'dagi qiymatni qaytarishi kerakmi yoki `503` berishi kerakmi - bu mahsulot qarori va u test bilan muhrlanishi shart.
 
+Mavzuning to'liq yozuvi patternlar hujjatidagi [zanjirni uzgich](../patterns/17-resilience-va-cloud-dizayn-patternlari.md#172-zanjirni-uzgich-circuit-breaker) bo'limida; bu yerda faqat test nuqtai nazari.
+
 ## 11.14 Anti-patternlar
 
 - Xavfsizlikni faqat qo'lda, brauzerda "ishladi" deb tekshirish; rad etilish (`403`) holatlari uchun bitta ham avtomatik test yo'q.

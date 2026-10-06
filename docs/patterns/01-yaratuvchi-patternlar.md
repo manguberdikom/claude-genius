@@ -7,7 +7,7 @@
 # 1. Yaratuvchi patternlar (Creational Patterns)
 
 <details>
-<summary>Bu bo'limdagi 18 bo'lim</summary>
+<summary>Bu bobdagi 18 bo'lim</summary>
 
 - [1.1 Yagona nusxa (Singleton)](#11-yagona-nusxa-singleton)
 - [1.2 Kalit bo'yicha yagona nusxalar (Multiton)](#12-kalit-boyicha-yagona-nusxalar-multiton)
@@ -587,7 +587,7 @@ public class PaymentHandlerRegistry {
 - [ ] Prototype bean'lar singleton ichiga to'g'ridan-to'g'ri inject qilingan joylarni qidiring va `ObjectProvider` yoki scoped proxy ga o'tkazing.
 - [ ] Kalit bo'yicha nusxa saqlaydigan har bir `Map` ni tekshiring: kalitlar to'plami chegaralanganmi, eviction bormi, nusxalar yopiladimi.
 - [ ] `spring.main.lazy-initialization` qiymatini muhitlar bo'yicha tekshiring va production'da `false` turganini tasdiqlang.
-- [ ] Service Locator ko'rinishidagi kodni (`applicationContext.getBean(...)`) qidirib, har bir chaqiruvni konstruktor injeksiyasiga aylantirish rejasini yozing.
+- [ ] Service Locator ko'rinishidagi kodni (`applicationContext.getBean(...)`) qidirib, har bir chaqiruvni konstruktor inyeksiyasiga aylantirish rejasini yozing.
 
 ---
 

@@ -7,7 +7,7 @@
 # 22. Deployment va operatsion patternlar (Deployment & Operations Patterns)
 
 <details>
-<summary>Bu bo'limdagi 38 bo'lim</summary>
+<summary>Bu bobdagi 38 bo'lim</summary>
 
 - [22.1 O'n ikki faktorli ilova (Twelve-Factor App)](#221-on-ikki-faktorli-ilova-twelve-factor-app)
 - [22.2 Tashqi konfiguratsiya (Externalized Configuration)](#222-tashqi-konfiguratsiya-externalized-configuration)
@@ -91,7 +91,7 @@ Deployment va operatsion patternlar - bu kod yozilib bo'lgandan keyin boshlanadi
 - Xavfsizlik patch'ini SSH bilan emas, yangi base image qurib butun flot'ni almashtirish orqali yopish.
 - Incident paytida orqaga qaytishni bir buyruqqa (`kubectl rollout undo`) keltirish.
 - Compliance auditida "prod'da qanday aniq artefakt ishlayapti" savoliga digest bilan javob berish.
-- Native image bilan sovuq ishga tushish vaqtini qisqartirib, serverless/scale-to-zero stsenariylarini qo'llab-quvvatlash.
+- Native image bilan sovuq ishga tushish vaqtini qisqartirib, serverless/scale-to-zero ssenariylarini qo'llab-quvvatlash.
 
 **Ehtiyot bo'ling:** `latest` tegidan foydalanish immutable modelni butunlay buzadi - bir xil teg turli vaqtda turli image'ni bildiradi, shu bilan rollback ham ishonchsiz bo'ladi. Shuningdek, ishlash vaqtida pod ichiga `exec` bilan kirib fayl tuzatish yoki konfiguratsiyani qo'lda o'zgartirish - keyingi deploy'da "sirli regressiya" sifatida qaytadi.
 
@@ -656,7 +656,7 @@ class DrainOnShutdown {
 **Qo'llanish keyslari:**
 - Kubernetes'da har bir mikroservis `Deployment` sifatida ishlaydi, har bir pod ichida bitta Spring Boot container bo'ladi va HPA CPU bo'yicha replica sonini o'zgartiradi.
 - CI pipeline'da `bootBuildImage` bilan bitta image build qilinadi va aynan o'sha digest dev, stage, prod'ga ketadi, farq faqat environment variable'larda bo'ladi.
-- Serverless yoki scale-to-zero stsenariylarida GraalVM native image'li container 100 ms ichida ko'tarilib, sovuq start muammosini kamaytiradi.
+- Serverless yoki scale-to-zero ssenariylarida GraalVM native image'li container 100 ms ichida ko'tarilib, sovuq start muammosini kamaytiradi.
 - Bir xil kodbazaning turli versiyalari (v1 va v2 API) bir vaqtda alohida container sifatida ishlab, canary yoki blue-green release amalga oshiriladi.
 - Lokal integratsiya testlarida Testcontainers (`@ServiceConnection`, `PostgreSQLContainer`) servis va bog'liqliklarini real container'larda ko'taradi.
 

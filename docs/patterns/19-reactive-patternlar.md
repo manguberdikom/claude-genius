@@ -7,7 +7,7 @@
 # 19. Reactive patternlar (Reactive Patterns)
 
 <details>
-<summary>Bu bo'limdagi 26 bo'lim</summary>
+<summary>Bu bobdagi 26 bo'lim</summary>
 
 - [19.1 Reactive Streams (Reactive Streams)](#191-reactive-streams-reactive-streams)
 - [19.2 Backpressure strategiyalari (Backpressure Strategies)](#192-backpressure-strategiyalari-backpressure-strategies)

@@ -7,7 +7,7 @@
 # 3. Xulq-atvor patternlari (Behavioral Patterns)
 
 <details>
-<summary>Bu bo'limdagi 24 bo'lim</summary>
+<summary>Bu bobdagi 24 bo'lim</summary>
 
 - [3.1 Mas'uliyat zanjiri (Chain of Responsibility)](#31-masuliyat-zanjiri-chain-of-responsibility)
 - [3.2 Buyruq (Command)](#32-buyruq-command)
