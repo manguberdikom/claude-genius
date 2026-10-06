@@ -18,8 +18,10 @@ sinalmaydi ham. Bu yerda esa sinaladi: tools/test_uninstall_settings.py.
 Nima olinadi:
 - `hooks`: buyrug'ida `<root>/tools/` bor hooklar; shundan bo'shab qolgan
   guruh va bo'shab qolgan hodisa ham tushadi;
-- `permissions.allow`: shu ildizga tegishli qoidalar;
-- `permissions.additionalDirectories`: shu ildizning o'zi;
+- `permissions.allow`, `ask` va `deny`: shu ildizga tegishli qoidalar
+  (merge_settings bilan bir xil qoida);
+- `permissions.additionalDirectories`: shu ildizning o'zi va `<root>/`
+  ostidagi yozuvlar (`<root>/docs`, `<root>/memory`);
 - `env.GENIUS_PYTHON`, va `env` shundan bo'shab qolsa `env` ham.
 
 Begona yozuvlarga tegilmaydi: boshqa klonning (`<root>-eski`) hooki ham
@@ -39,9 +41,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
-from merge_settings import (SozlamaXato, is_own_hook, is_own_rule, norm,  # noqa: E402
-                            norm_root, read_settings, render, section,
-                            write_atomic)
+from merge_settings import (RULE_LISTS, SozlamaXato, is_own_dir,  # noqa: E402
+                            is_own_hook, is_own_rule, norm_root,
+                            read_settings, render, section, write_atomic)
 
 
 def strip_hooks(hooks, root, stats):
@@ -76,13 +78,12 @@ def strip(data, root):
 
     permissions = {}
     for key, value in section(data, "permissions", dict, "mavjud").items():
-        if key == "allow" and isinstance(value, list):
+        if key in RULE_LISTS and isinstance(value, list):
             kept = [r for r in value if not is_own_rule(r, root)]
-            stats["ruxsat"] = len(value) - len(kept)
+            stats["ruxsat"] += len(value) - len(kept)
             permissions[key] = kept
         elif key == "additionalDirectories" and isinstance(value, list):
-            kept = [d for d in value
-                    if not (isinstance(d, str) and norm_root(d) == root)]
+            kept = [d for d in value if not is_own_dir(d, root)]
             stats["papka"] = len(value) - len(kept)
             permissions[key] = kept
         else:
@@ -118,7 +119,7 @@ def summary(stats, existed):
     if stats["ruxsat"]:
         parts.append("%d ruxsat" % stats["ruxsat"])
     if stats["papka"]:
-        parts.append("additionalDirectories yozuvi")
+        parts.append("%d additionalDirectories yozuvi" % stats["papka"])
     if stats["env"]:
         parts.append("env.GENIUS_PYTHON")
     if not parts:

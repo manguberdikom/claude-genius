@@ -45,7 +45,7 @@ def fresh(root=GENIUS):
         "$schema": "https://json.schemastore.org/claude-code-settings.json",
         "env": {"GENIUS_PYTHON": WIN_PY.replace("\\", "/")},
         "permissions": {
-            "additionalDirectories": [root],
+            "additionalDirectories": [root + "/docs", root + "/memory"],
             "allow": ['Bash("%s" "%s/tools/budget.py":*)'
                       % (WIN_PY.replace("\\", "/"), root),
                       "Bash(bash %s/tools/doc.sh:*)" % root],
@@ -198,7 +198,66 @@ def case_ruxsat_birlashadi():
                 and allow == [foreign, other_clone] + fresh()["permissions"]["allow"]
                 and len(allow) == len(set(allow))
                 and perm["deny"] == ["Read(.env)"]
-                and perm["additionalDirectories"] == ["D:/boshqa", GENIUS])
+                and perm["additionalDirectories"]
+                == ["D:/boshqa"] + fresh()["permissions"]["additionalDirectories"])
+
+
+def case_butun_klon_papkasi_toraydi():
+    """Eski butun klon yozuvi va `<root>/` ostidagilar o'ziniki: ular
+    tushadi va faqat docs bilan memory qoladi. Begona papka va boshqa klon
+    (`<root>-eski`) qoladi. Avval birlashma edi va -Update dan keyin butun
+    klon yozuvi joyida qolardi (XV-T-M1)."""
+    existing = {"permissions": {"additionalDirectories": [
+        "D:/boshqa", GENIUS, "C:\\SRC\\Claude-Genius\\tools",
+        GENIUS + "-eski"]}}
+    with workdir() as tmp:
+        code, _, path = merge_files(tmp, existing)
+        dirs = load(path)["permissions"]["additionalDirectories"]
+        return (code == 0
+                and dirs == ["D:/boshqa", GENIUS + "-eski",
+                             GENIUS + "/docs", GENIUS + "/memory"])
+
+
+def case_foydalanuvchi_deny_va_ask_saqlanadi():
+    """Foydalanuvchining deny va ask qoidasi qoladi, o'rnatuvchinikisi
+    qo'shiladi. Avval foydalanuvchida shu nomli ro'yxat bo'lsa yangisi jim
+    tushib qolardi."""
+    existing = {"permissions": {"deny": ["Read(~/.foo)"], "ask": ["Bash(git push:*)"]}}
+    new = fresh()
+    new["permissions"]["deny"] = ["Read(~/.ssh/**)"]
+    new["permissions"]["ask"] = ["Bash(git push:*)", "Bash(rm:*)"]
+    with workdir() as tmp:
+        old = os.path.join(tmp, "settings.json")
+        yangi = os.path.join(tmp, "yangi.json")
+        write_json(old, existing)
+        write_json(yangi, new)
+        code, _ = run_main([old, yangi, "--root", GENIUS, "--yoz"])
+        perm = load(old)["permissions"]
+        return (code == 0
+                and perm["deny"] == ["Read(~/.foo)", "Read(~/.ssh/**)"]
+                and perm["ask"] == ["Bash(git push:*)", "Bash(rm:*)"])
+
+
+def case_oz_ask_deny_qoidasi_almashadi():
+    """Root bor ask va deny qoidasi o'ziniki: eskisi tushadi, yangisi
+    keladi. Begona qoida joyida qoladi."""
+    py = WIN_PY.replace("\\", "/")
+    stale = "Bash(%s %s/tools/guruh.py tozala:*)" % (py, GENIUS)
+    fresh_rule = "Bash(%s %s/tools/budget.py --tiklash:*)" % (py, GENIUS)
+    existing = {"permissions": {"ask": ["Bash(rm:*)", stale],
+                                "deny": ["Edit(%s/tools/**)" % GENIUS]}}
+    new = fresh()
+    new["permissions"]["ask"] = [fresh_rule]
+    with workdir() as tmp:
+        old = os.path.join(tmp, "settings.json")
+        yangi = os.path.join(tmp, "yangi.json")
+        write_json(old, existing)
+        write_json(yangi, new)
+        code, out = run_main([old, yangi, "--root", GENIUS, "--yoz"])
+        perm = load(old)["permissions"]
+        return (code == 0 and perm["ask"] == ["Bash(rm:*)", fresh_rule]
+                and perm["deny"] == []
+                and "ruxsat olib tashlandi" not in out)
 
 
 def case_env_birlashadi():
@@ -308,6 +367,11 @@ CASES = [
      case_windows_buyruq_katta_harf_bilan_oziniki),
     ("bo'shab qolgan guruh tushadi", case_bosh_qolgan_guruh_tushadi),
     ("ruxsatlar takrorsiz birlashadi", case_ruxsat_birlashadi),
+    ("butun klon papkasi docs va memory ga almashadi",
+     case_butun_klon_papkasi_toraydi),
+    ("foydalanuvchi deny va ask qoidasi saqlanadi, yangisi qo'shiladi",
+     case_foydalanuvchi_deny_va_ask_saqlanadi),
+    ("o'z ask va deny qoidasi almashadi", case_oz_ask_deny_qoidasi_almashadi),
     ("env kalitlari birlashadi", case_env_birlashadi),
     ("eskirgan bashOutputMaxChars=12000 olinadi", case_eskirgan_kalit_olinadi),
     ("foydalanuvchining 8000 qiymati qoladi", case_foydalanuvchi_qiymati_qoladi),

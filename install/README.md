@@ -58,6 +58,13 @@ sintaksis xatosi, ya'ni guard, budget va check_code jim ishlamay qoladi.
 `doc.sh` buyruqlari (`find`, `show`, `rule`, `checklist`, `outline`) ham
 bashsiz yo'q.
 
+Klon yo'lida va Python yo'lida `$`, backtick yoki qo'sh qo'shtirnoq
+bo'lmasligi kerak. Hook buyrug'i bash da `"python.exe" "<klon>/tools/x.py"`
+shaklida yuradi va bu belgilar qo'sh qo'shtirnoq ichida kengayadi yoki
+qo'shtirnoqni yopadi. O'rnatuvchi bunday yo'lda hech narsaga tegmasdan
+to'xtaydi (`install/rewrite_paths.py` ham 2 qaytaradi): klonni boshqa
+papkaga oling.
+
 ## A yo'li: shu repo ichida ishlash
 
 Hech narsa o'rnatilmaydi. `.claude/settings.json` allaqachon shu repoda
@@ -157,6 +164,10 @@ Chiqishdagi raqamlar shu tartibda keladi:
    o'qiladi, nisbiy yo'l qolmagan, asboblar, bo'lim taklifi va `doc.sh`
    javob beradi.
 
+Oxirida (quruq yurishda ham) ishonchli proyekt uchun `run_tests.py`
+ruxsati bo'lagi chiqadi, u hech qayerga yozilmaydi:
+[Nima so'rovsiz, nima so'rov bilan](#nima-sorovsiz-nima-sorov-bilan).
+
 `-Update` da 0-qadam `settings.json` birlashtirishni ham quruq sinaydi,
 1-3 qadamlar faqat o'z birliklariga tegadi (2-qadam "Almashtirish" deb
 chiqadi), 4-qadamda esa `settings.json` bosilmaydi, birlashtiriladi.
@@ -241,9 +252,49 @@ tekshiring.
 
 | Kalit | Qiymat | Nega |
 |---|---|---|
-| `permissions.additionalDirectories` | klon yo'li | Read, Grep va Glob qo'llanmani har proyektdan so'rovsiz o'qiydi |
-| `permissions.allow` | skill matnidagi asbob buyruqlari | skill buyruqlari har safar ruxsat so'ramaydi |
+| `permissions.additionalDirectories` | `<klon>/docs` va `<klon>/memory` | Read, Grep va Glob qo'llanma va memoryni har proyektdan so'rovsiz o'qiydi |
+| `permissions.allow` | skill matnidagi yon ta'sirsiz asbob buyruqlari | skill buyruqlari har safar ruxsat so'ramaydi |
 | `env.GENIUS_PYTHON` | o'rnatuvchi sinagan Python yo'li | `doc.sh` indeksni qayta yasaganda Python ni nom bo'yicha qidirmaydi |
+
+### Nima so'rovsiz, nima so'rov bilan
+
+Global ruxsat hamma proyektga, shu jumladan fork PR, namuna repo va
+begona klonga ham tegadi. Shuning uchun unga faqat yon ta'siri yo'q
+asboblar kiradi (`doc.sh`, `rules_for.py`, `check_code.py`, `guard.py`,
+`budget.py`, `handoff.py`, `usage.py` va boshqalar). Ro'yxatni
+`install/rewrite_paths.py --allow` skill matnidan yasaydi.
+
+| Buyruq | Global ruxsatda | Nega |
+|---|---|---|
+| `run_tests.py` | yo'q | proyektning build kodini (gradlew, build.gradle, pom plaginlari) bajaradi: begona klonda bu so'rovsiz kod bajarish bo'lardi |
+| `guruh.py yarat`, `guruh.py royxat` | bor | worktree yaratadi yoki ro'yxat beradi, hech narsa o'chmaydi |
+| `guruh.py birlashtir`, `guruh.py tozala` | yo'q | worktree, branch va papkani o'zgartiradi yoki o'chiradi |
+
+Butun klon `additionalDirectories` da emas: unda `tools\` ham bo'lardi va
+`acceptEdits` rejimida aktyor hook skriptini so'rovsiz tahrirlay olardi,
+o'zgarish esa keyingi promptda hamma proyektda bajarilardi. Skill
+klondan faqat `docs/` (Read orqali) va `memory/` ni o'qiydi, asboblar
+Bash orqali yuradi.
+
+**Ishonchli proyekt uchun opt-in.** O'rnatuvchi oxirida tayyor bo'lak
+chiqaradi (uni `rewrite_paths.py --opt-in` yasaydi, hech qayerga
+yozilmaydi):
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(<python> <klon>/tools/run_tests.py:*)"
+    ]
+  }
+}
+```
+
+O'zingiz yozgan va ishonadigan proyektda `run_tests.py` so'rovsiz yursin
+desangiz, shu qatorni `<proyekt>\.claude\settings.local.json` ga
+qo'shing. Fork PR, namuna repo yoki begona klonda qo'shmang. Aktyorlar
+tashqi PR da `run_tests` ni baribir chaqirmaydi (skilldagi
+`references/aktyorlar.md`, "Ishonchsiz kirish").
 
 Hooklar (hammasi tanlangan Python ning to'liq yo'li bilan):
 
@@ -322,7 +373,9 @@ nusxasidan (yoki `git clone` dan) yurgizing. `-Apply` siz quruq yurish.
 
 Nimalar olinadi: `settings.json` dan buyrug'ida shu ildiz bor hooklar
 (shundan bo'shab qolgan guruh va hodisa ham), shu ildizga tegishli
-ruxsatlar va `additionalDirectories` yozuvi, `env.GENIUS_PYTHON`, hamda
+`allow`, `ask` va `deny` qoidalari, `additionalDirectories` dagi ildizning
+o'zi va uning ostidagi yozuvlar (`<ildiz>/docs`, `<ildiz>/memory`),
+`env.GENIUS_PYTHON`, hamda
 `skills\manguberdi` va olti aktyor fayli. Begona yozuvlar qoladi:
 `<ildiz>-eski` kabi boshqa klonning yozuvlari ham begona hisoblanadi.
 Avval zaxira olinadi.
@@ -334,8 +387,9 @@ eski klon yo'li uchragan to'rt joyni oling:
 
 - `hooks` ichidan buyrug'ida o'sha yo'l turgan yozuvlar (hodisa guruhi
   bo'shab qolsa, guruhning o'zi ham);
-- `permissions.allow` dan o'sha yo'l bilan boshlanadigan qoidalar;
-- `permissions.additionalDirectories` dan o'sha yo'l;
+- `permissions.allow`, `ask` va `deny` dan o'sha yo'l uchragan qoidalar;
+- `permissions.additionalDirectories` dan o'sha yo'l va uning ostidagi
+  yo'llar (`<yo'l>/docs`, `<yo'l>/memory`);
 - `env.GENIUS_PYTHON`.
 
 Begona yozuvlarga tegilmaydi. Faylni BOM siz UTF-8 bilan saqlang: Claude
@@ -451,10 +505,17 @@ xulqqa aylangan.
 
 Faqat uch narsa zaxiralanib almashadi: `skills\manguberdi`, 6 aktyor
 fayli va `settings.json` dagi o'z yozuvlari, ya'ni buyrug'i shu klonning
-`tools\` papkasiga ishora qilgan hook va ruxsatlar
-(`env.GENIUS_PYTHON` ham yangilanadi). Qolgani joyida turadi: boshqa
-skill va agentlar, `CLAUDE.md`, `plugins\`, `settings.json` dagi begona
-hook va ruxsatlar, `env` dagi boshqa o'zgaruvchilar va qolgan kalitlar.
+`tools\` papkasiga ishora qilgan hooklar, shu klon yo'li uchragan
+`allow`, `ask` va `deny` qoidalari, `additionalDirectories` dagi klon
+ildizi va uning ostidagi yozuvlar (`env.GENIUS_PYTHON` ham yangilanadi).
+Uchala ruxsat ro'yxati bir xil qoida bilan birlashadi: eski o'z
+qoidalari tushadi, yangilari qo'shiladi, foydalanuvchining qoidasi
+qoladi. Shuning uchun eski o'rnatishdagi butun klon yozuvi yangilashda
+`<klon>/docs` va `<klon>/memory` ga almashadi, global ruxsatdagi eski
+`run_tests.py:*` va `guruh.py:*` qoidalari esa tushadi. Qolgani joyida
+turadi: boshqa skill va agentlar, `CLAUDE.md`, `plugins\`,
+`settings.json` dagi begona hook va ruxsatlar, `env` dagi boshqa
+o'zgaruvchilar va qolgan kalitlar.
 Birlashtirishni `install/merge_settings.py` qiladi: quruq yurish nechta
 hook va ruxsat almashishini bir qatorda aytadi, buzuq `settings.json` da
 esa hech narsa o'chmasidan oldin to'xtaydi. Zaxirani qaytarish
@@ -487,6 +548,8 @@ butun sozlamani tozalardi: endi unday emas va kerak ham emas.
 | Eski o'rnatuvchi sozlamani o'chirgan | `-Update` siz `-Apply` avval to'liq tozalardi | [Eski o'rnatuvchidan keyin tiklash](#eski-ornatuvchidan-keyin-tiklash) |
 | Skill ko'rinmaydi | sessiya eski sozlamada | yangi sessiya oching |
 | Uchinchi aktyor chaqiruvi to'silgan | budjet tugagan, bu ataylab | aniq savol bering: javobdan keyin budjet o'zi yangilanadi |
+| `run_tests.py` har safar ruxsat so'raydi | u global ruxsatda yo'q, bu ataylab | ishonchli proyektda o'rnatuvchi oxirida chiqargan qatorni `settings.local.json` ga qo'shing ([Nima so'rovsiz, nima so'rov bilan](#nima-sorovsiz-nima-sorov-bilan)) |
+| O'rnatish "yo'lida `$`, backtick yoki qo'sh qo'shtirnoq bor" bilan to'xtadi | hook buyrug'i bash da qo'sh qo'shtirnoqda yuradi | klonni yoki Python ni bunday belgisiz papkaga oling |
 
 ## Orqaga qaytarish
 

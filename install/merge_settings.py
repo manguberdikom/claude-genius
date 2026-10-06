@@ -20,9 +20,15 @@ Birlashtirish:
 - `hooks`: har hodisada mavjud guruhlardan o'z hooklari olib tashlanadi,
   shundan bo'shab qolgan guruh tushadi, keyin yangi fayldagi shu hodisa
   guruhlari oxiriga qo'shiladi. Qolgani o'z tartibida turadi.
-- `permissions.allow`: o'z qoidalari tushadi, yangilari qo'shiladi,
-  takror olib tashlanadi, tartib saqlanadi.
-- `permissions.additionalDirectories`: birlashma, tartib saqlanadi.
+- `permissions.allow`, `ask` va `deny`: uchalasida bir xil qoida. O'z
+  qoidalari tushadi, yangilari qo'shiladi, takror olib tashlanadi, tartib
+  saqlanadi. Avval faqat `allow` shunday edi, `ask` va `deny` esa
+  foydalanuvchida bo'lsa eski holicha qolardi: o'rnatuvchining yangi
+  qoidasi -Update da jim tushib qolardi.
+- `permissions.additionalDirectories`: root ning o'zi va `<root>/`
+  ostidagi yozuvlar o'ziniki, ular tushadi, keyin yangilari qo'shiladi.
+  Shunda butun klon yozuvi `<root>/docs` va `<root>/memory` ga
+  almashganda eskisi qolib ketmaydi.
 - `env`: yangi kalitlar ustun.
 - Boshqa kalitlar joyida qoladi, faqat yangi faylda bo'lganlari qo'shiladi.
 
@@ -73,6 +79,16 @@ def is_own_rule(rule, root):
     if not isinstance(rule, str) or not root:
         return False
     return re.search(re.escape(root) + r"(?![\w.-])", norm(rule)) is not None
+
+
+def is_own_dir(entry, root):
+    """additionalDirectories yozuvi: root ning o'zi yoki uning ostida.
+
+    `<root>-eski` boshqa klon: root dan keyin `/` kelishi shart."""
+    if not isinstance(entry, str) or not root:
+        return False
+    path = norm_root(entry)
+    return path == root or path.startswith(root + "/")
 
 
 def read_settings(path, must_exist):
@@ -143,21 +159,29 @@ def dedupe(items):
     return out
 
 
+# Ruxsat ro'yxatlari: uchalasi bir xil qoida bilan birlashadi.
+RULE_LISTS = ("allow", "ask", "deny")
+
+
 def merge_permissions(old, new, root, stats, path):
-    allow_old = section(old, "allow", list, path + " permissions")
-    allow_new = section(new, "allow", list, "yangi permissions")
-    kept = [r for r in allow_old if not is_own_rule(r, root)]
-    stats["ruxsat_eski"] = len(allow_old) - len(kept)
-    stats["ruxsat_yangi"] = len(allow_new)
+    lists = {}
+    for key in RULE_LISTS:
+        rules_old = section(old, key, list, path + " permissions")
+        rules_new = section(new, key, list, "yangi permissions")
+        kept = [r for r in rules_old if not is_own_rule(r, root)]
+        stats["ruxsat_eski"] += len(rules_old) - len(kept)
+        stats["ruxsat_yangi"] += len(rules_new)
+        lists[key] = dedupe(kept + rules_new)
     dirs_old = section(old, "additionalDirectories", list, path + " permissions")
     dirs_new = section(new, "additionalDirectories", list, "yangi permissions")
+    dirs = dedupe([d for d in dirs_old if not is_own_dir(d, root)] + dirs_new)
 
     merged = {}
     for key in list(old) + [k for k in new if k not in old]:
-        if key == "allow":
-            merged[key] = dedupe(kept + allow_new)
+        if key in lists:
+            merged[key] = lists[key]
         elif key == "additionalDirectories":
-            merged[key] = dedupe(dirs_old + dirs_new)
+            merged[key] = dirs
         else:
             merged[key] = old[key] if key in old else new[key]
     return merged

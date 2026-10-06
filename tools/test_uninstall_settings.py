@@ -38,7 +38,8 @@ def installed():
         "$schema": "https://json.schemastore.org/claude-code-settings.json",
         "env": {"GENIUS_PYTHON": PY, "MENING": "1"},
         "permissions": {
-            "additionalDirectories": [GENIUS, "D:/mening"],
+            "additionalDirectories": [GENIUS + "/docs", GENIUS + "/memory",
+                                      "D:/mening"],
             "allow": ["Bash(%s:*)" % own_cmd("budget.py"),
                       "Bash(bash %s/tools/doc.sh:*)" % GENIUS,
                       "Bash(npm test:*)", "Read"],
@@ -154,6 +155,28 @@ def case_teskari_slash_va_registr():
         return code == 0 and not any("claude-genius" in c for c in commands)
 
 
+def case_ask_deny_va_ichki_papkalar_ketadi():
+    """ask va deny dagi o'z qoidalari, butun klon yozuvi va `<root>/`
+    ostidagi papkalar ham olinadi. Avval faqat allow va ildizning o'zi
+    olinardi, `<root>/docs` qolib ketardi (XV-T-M1). Boshqa klon qoladi."""
+    data = {"permissions": {
+        "additionalDirectories": [GENIUS, GENIUS + "/docs", "C:\\SRC\\Claude-Genius\\memory",
+                                  GENIUS + "-eski/docs", "D:/mening"],
+        "ask": ["Bash(%s tozala:*)" % own_cmd("guruh.py"), "Bash(git push:*)"],
+        "deny": ["Edit(%s/tools/**)" % GENIUS, "Read(~/.ssh/**)"]}}
+    with workdir() as tmp:
+        code, out, path = run(tmp, data)
+        perm = load(path)["permissions"]
+        under = [d for d in perm["additionalDirectories"]
+                 if d.replace("\\", "/").lower().startswith(GENIUS.lower() + "/")
+                 or d == GENIUS]
+        return (code == 0 and under == []
+                and perm["additionalDirectories"] == [GENIUS + "-eski/docs", "D:/mening"]
+                and perm["ask"] == ["Bash(git push:*)"]
+                and perm["deny"] == ["Read(~/.ssh/**)"]
+                and "2 ruxsat" in out and "3 additionalDirectories" in out)
+
+
 def case_mavjud_bolmagan_ildiz():
     """Klon o'chirilgan bo'lsa ham yozuvlar olinadi: yo'l tekshirilmaydi."""
     missing = "C:/yoq/papka/claude-genius"
@@ -225,6 +248,8 @@ CASES = [
     ("env bo'sh qolsa env ham tushadi", case_env_bosh_qolsa_tushadi),
     ("`<root>-eski` boshqa klon, tegilmaydi", case_boshqa_klon_tegilmaydi),
     ("teskari slash va katta harfli ildiz", case_teskari_slash_va_registr),
+    ("ask, deny va ildiz ostidagi papkalar ham olinadi",
+     case_ask_deny_va_ichki_papkalar_ketadi),
     ("mavjud bo'lmagan ildiz ham ishlaydi", case_mavjud_bolmagan_ildiz),
     ("quruq yurish faylga tegmaydi", case_quruq_yurish_yozmaydi),
     ("BOM o'qiladi, BOM siz yoziladi", case_bom_oqiladi_bomsiz_yoziladi),
