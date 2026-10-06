@@ -56,6 +56,11 @@ def bash(command):
     return {"tool_name": "Bash", "tool_input": {"command": command}}
 
 
+def sub(command):
+    """Subagent ichidagi chaqiruv: payloadda agent_id bor."""
+    return dict(bash(command), agent_id="a0637d1b6b9967aea")
+
+
 # ask: pul va vaqt sarflaydigan amal, qarorni odam qiladi.
 # deny: kontekstni himoya qiladi, arzon yo'l har doim bir xil.
 DENY, ALLOW, ASK = "deny", "allow", "ask"
@@ -372,6 +377,72 @@ CASES = [
     ("maven: -DskipTests", ALLOW, bash("mvn package -DskipTests")),
     ("maven: dependency:tree", ALLOW, bash("mvn -q dependency:tree")),
     ("grep ichidagi 'gradle test'", ALLOW, bash("grep -rn 'gradle test' .")),
+
+    # Subagentda ask muddatsiz kutadi: u yerda deny, asosiy oqimda ask.
+    ("subagent: psql deny", DENY, sub("psql -U postgres shop")),
+    ("subagent: compose up deny", DENY, sub("docker compose up -d")),
+    ("subagent: docker ps o'tadi", ALLOW, sub("docker ps -a")),
+    ("asosiy oqim: psql ask", ASK, bash("psql -U postgres shop")),
+    ("asosiy oqim: compose up ask", ASK, bash("docker compose up -d")),
+
+    # Tabiiy prefikslar: timeout (bayroqlari bilan), command, sh/bash, subshell.
+    ("timeout: gradle test", DENY, bash("timeout 900 ./gradlew test")),
+    ("timeout -s KILL: gradle test", DENY, bash("timeout -s KILL 900 ./gradlew test")),
+    ("timeout -k 5 --preserve-status", DENY,
+     bash("timeout -k 5 --preserve-status 10m mvn verify")),
+    ("timeout: docker run", ASK, bash("timeout 60 docker run postgres")),
+    ("timeout: katta bobni cat", DENY, bash("timeout 5 cat " + BIG)),
+    ("timeout: filtrli test o'tadi", ALLOW,
+     bash("timeout 900 mvn -q test -Dtest=OrderTest")),
+    ("cd && timeout mvn verify", DENY, bash("cd x && timeout 600 mvn verify")),
+    ("command cat katta bob", DENY, bash("command cat " + BIG)),
+    ("command docker run", ASK, bash("command docker run postgres")),
+    ("command -v psql o'tadi", ALLOW, bash("command -v psql")),
+    ("sh gradlew test", DENY, bash("sh gradlew test")),
+    ("bash ./gradlew check", DENY, bash("bash ./gradlew check")),
+    ("bash gradlew compileJava o'tadi", ALLOW, bash("bash gradlew compileJava")),
+    ("subshell: cat katta bob", DENY, bash("(cat " + BIG + ")")),
+    ("$(): cat katta bob", DENY, bash("x=$(cat " + BIG + ")")),
+    ("subshell: kichik bob o'tadi", ALLOW, bash("(cat " + SMALL + ")")),
+    ("subshell: gradle test", DENY, bash("(cd app && ./gradlew test)")),
+    ("xargs qo'shilmagan", ALLOW, bash("xargs -a /dev/null ./gradlew test")),
+
+    # .java ga Bash bilan yozish: check_code va rules_for undan o'tib ketardi.
+    ("java: heredoc bilan yozish", DENY,
+     bash("cat > src/main/java/Foo.java <<'EOF'\nclass Foo {}\nEOF")),
+    ("java: qo'shtirnoqli nomga yozish", DENY,
+     bash("cat > \"src/Foo.java\" <<EOF\nclass Foo {}\nEOF")),
+    ("java: >> qo'shish", DENY, bash("echo '}' >> src/Foo.java")),
+    ("java: tee", DENY, bash("printf x | tee src/Foo.java")),
+    ("java: tee -a", DENY, bash("echo x | tee -a Foo.java > /dev/null")),
+    ("java: sed -i", DENY, bash("sed -i 's/a/b/;s/c/d/' src/main/java/demo/Foo.java")),
+    ("java: sed -i.bak", DENY, bash("sed -i.bak -e s/a/b/ Foo.java")),
+    ("java: perl -pi", DENY, bash("perl -pi -e 's/a/b/' Foo.java")),
+    ("java: grep o'tadi", ALLOW, bash("grep -n x Foo.java")),
+    ("java: cat | head o'tadi", ALLOW, bash("cat Foo.java | head")),
+    ("java: sed -n o'tadi", ALLOW, bash("sed -n 1,20p Foo.java")),
+    ("java: perl -Mstrict o'tadi", ALLOW, bash("perl -Mstrict -ne 'print' Foo.java")),
+    ("java: Foo.java.txt o'tadi", ALLOW, bash("git log > Foo.java.txt")),
+    ("java: 2>&1 o'tadi", ALLOW, bash("javac Foo.java 2>&1 | head")),
+    ("java: heredoc tanasidagi Java", ALLOW,
+     bash("cat > notes.md <<'EOF'\nsed -i s/a/b/ Foo.java\necho x > Bar.java\nEOF")),
+    ("java: qo'shtirnoq ichidagi >", ALLOW, bash("echo 'x > Foo.java' >> notes.txt")),
+
+    # Jonli bazani o'chirish: Test vaqti emas, alohida sabab bilan ask.
+    ("flyway:clean ask", ASK, bash("./mvnw flyway:clean")),
+    ("flywayClean ask", ASK, bash("./gradlew flywayClean")),
+    ("liquibase:dropAll ask", ASK, bash("mvn liquibase:dropAll")),
+    ("subagent: flywayClean deny", DENY, sub("./gradlew flywayClean")),
+    ("flyway:migrate o'tadi", ALLOW, bash("./mvnw flyway:migrate")),
+    ("flyway:clean + to'liq suite deny", DENY, bash("mvn flyway:clean verify")),
+
+    # index/ ham kuzatuvda: grep qilinadi, kontekstga olinmaydi.
+    ("index: cat sections.tsv", DENY, bash("cat index/sections.tsv")),
+    ("index: chegarasiz Read", DENY,
+     {"tool_name": "Read", "tool_input": {"file_path": "index/sections.tsv"}}),
+    ("index: grep o'tadi", ALLOW, bash("grep -n circuit index/sections.tsv")),
+    ("index: Read limit=20 o'tadi", ALLOW,
+     {"tool_name": "Read", "tool_input": {"file_path": "index/sections.tsv", "limit": 20}}),
 ]
 
 # To'siq maslahatidagi `tools/` yo'llari va CLAUDE.md. Global o'rnatishda
@@ -381,6 +452,8 @@ HINT_PAYLOADS = [
     {"tool_name": "Bash", "tool_input": {"command": "docker compose up -d"}},
     {"tool_name": "Bash", "tool_input": {"command": "psql -U u shop"}},
     {"tool_name": "Bash", "tool_input": {"command": "./gradlew test"}},
+    {"tool_name": "Bash", "tool_input": {"command": "sed -i s/a/b/ Foo.java"}},
+    {"tool_name": "Bash", "tool_input": {"command": "./gradlew flywayClean"}},
 ]
 HINT_PATH_RE = re.compile(r'"([^"]*(?:tools/[\w.-]+|CLAUDE\.md))"'
                           r'|([^\s"]*(?:tools/[\w.-]+|CLAUDE\.md))')
@@ -427,6 +500,10 @@ def main():
         print("sinov fayli chegaradan o'tdi (chegara %d bayt): %s" % (
             G.MAX_BYTES, ", ".join("%s=%d" % (p, n) for p, n in size.items())))
         return 1
+    # index/ hosila va git da yo'q: toza klonda index holatlari uchun yasaladi.
+    if not os.path.exists(os.path.join(ROOT, "index", "sections.tsv")):
+        subprocess.run([sys.executable, os.path.join(HERE, "build_index.py")],
+                       capture_output=True, timeout=300)
 
     failures = 0
     for name, want, payload, *rest in CASES:
@@ -435,6 +512,23 @@ def main():
         failures += not ok
         print("%-4s %-30s kutilgan=%-5s olingan=%s"
               % ("OK" if ok else "XATO", name, want, got))
+
+    # Qaror to'g'ri bo'lsa ham sabab noto'g'ri bo'lishi mumkin: flyway:clean
+    # avval 'Test vaqti: clean' bilan to'silardi.
+    reasons = [
+        ("subagent sababi", sub("psql shop"), G.SUBAGENT_NOTE, None),
+        ("asosiy oqimda subagent sababi yo'q", bash("psql shop"), None, G.SUBAGENT_NOTE),
+        ("flyway:clean sababi", bash("./mvnw flyway:clean"),
+         "Jonli bazani o'chiradi", "Test vaqti"),
+        ("java yozish sababi", bash("sed -i s/a/b/ Foo.java"),
+         "Java faylni Edit yoki Write bilan yozing: check_code va rules_for "
+         "faqat shu asboblarda ishlaydi", None),
+    ]
+    for name, payload, need, avoid in reasons:
+        reason = run_guard(payload, ROOT).get("permissionDecisionReason", "")
+        ok = (need is None or need in reason) and (avoid is None or avoid not in reason)
+        failures += not ok
+        print("%-4s %-30s %s" % ("OK" if ok else "XATO", name, reason.split("\n")[0][:60]))
 
     # Maslahatdagi har yo'l chaqiruvchi turgan papkadan ochilishi kerak.
     other = tempfile.mkdtemp()
@@ -495,7 +589,7 @@ def main():
           % ("OK" if ok else "XATO", "GENIUS_HOOKS=off: jim", "bo'sh",
              off[:40] or "bo'sh"))
 
-    total = len(CASES) + len(checks) + len(gating) + 1
+    total = len(CASES) + len(reasons) + len(checks) + len(gating) + 1
     print("\n%d/%d o'tdi" % (total - failures, total))
     return 1 if failures else 0
 

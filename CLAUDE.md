@@ -74,11 +74,13 @@ yaxshilamasa, u shunchaki pul va vaqt.
 | Qoida nima deydi | `tools/doc.sh show <hujjat> <raqam>` |
 | Diff to'g'rimi | `review` agenti, keyin maqsadli test |
 
-`docker up/run/build/pull/start` (compose bilan ham), bazaga ulanish va
-PowerShell `guard.py` tomonidan foydalanuvchi qaroriga qo'yiladi (`ask`):
-o'z-o'zidan yurgizilmaydi, nega arzon yo'l yetmagani aytib so'raladi.
-`docker ps`, `docker logs`, `psql --version` so'ralmaydi. Katta bobni
-butun o'qish va xom to'liq test suite esa to'siladi (`deny`).
+`docker up/run/build/pull/start` (compose bilan ham), bazaga ulanish,
+`flyway:clean` va PowerShell `guard.py` tomonidan foydalanuvchi qaroriga
+qo'yiladi (`ask`): nega arzon yo'l yetmagani aytib so'raladi. Subagentda
+`ask` o'rniga `deny`: agent to'xtab, nima kerakligini asosiy sessiyaga
+qaytaradi. `docker ps`, `docker logs`, `psql --version` so'ralmaydi. Katta
+bobni butun o'qish, xom to'liq test suite va `.java` ga Bash bilan yozish
+to'siladi (`deny`).
 
 Og'ir o'qish `qidiruv` va `tahlil` (haiku) da, diffni `review` (sonnet)
 tekshiradi, kod va testni `dasturchi` va `test-muhandis` (sonnet) yozadi.
