@@ -135,7 +135,10 @@ etadi, hech narsa o'chmasidan oldin, va [Muammolar](#muammolar) dagi
 yechimni aytadi.
 
 Oxirgi buyruq skript yurgizishga faqat shu oyna uchun ruxsat beradi,
-tizim sozlamasi o'zgarmaydi. Windows da standart siyosat `Restricted`
+tizim sozlamasi o'zgarmaydi. `manguberdi.ps1` yupqa o'ram: Python va Git
+Bash ni topadi, yo'llarni to'liq yo'lga o'giradi va `install\install.py`
+ni chaqirib uning chiqish kodini qaytaradi; o'rnatish mantig'i bitta joyda
+([Linux va macOS](#linux-va-macos) dagi bilan bir xil kod). Windows da standart siyosat `Restricted`
 va usiz `.\install\manguberdi.ps1` "running scripts is disabled" bilan
 rad etiladi. Keyingi buyruqlar shu oynada, klon ildizida yurgiziladi.
 
@@ -261,16 +264,20 @@ tekshiring.
 
 ## Linux va macOS
 
-Windows da `manguberdi.ps1`, Linux va macOS da `install/install.py`:
-POSIX, faqat standart kutubxona, Python 3.8+. Mantiq bir xil: sukut
+Windows da `manguberdi.ps1` (u `install/install.py` ni chaqiradi), Linux va
+macOS da to'g'ridan-to'g'ri `install/install.py`: POSIX va Windows uchun
+bitta kod, faqat standart kutubxona, Python 3.8+. Windows ga xos farqlar
+(uy papkasi `USERPROFILE`, hook buyrug'ida teskari slashli Python, managed
+yo'llari, tashqaridan berilgan bash) `install.py` dagi `Platforma` sinfida
+bitta joyda va `--platforma nt` bilan Linux da ham sinaladi
+(`tools/test_install.py`). Mantiq bir xil: sukut
 qo'shuvchi, faqat `skills/manguberdi`, olti aktyor fayli va
 `settings.json` dagi shu klonga ishora qilgan hook va ruxsatlar
 almashadi, begona yozuvlar joyida qoladi. Yo'llarni almashtirish,
-`settings.json` ni birlashtirish va olib tashlashni ps1 dagi o'sha
-yordamchilar qiladi (`rewrite_paths.py`, `merge_settings.py`,
-`uninstall_settings.py`), shuning uchun ikki o'rnatuvchi bir xil hook
-buyruqlari va ruxsat ro'yxatini beradi (`tools/test_install.py`
-paritet holatlari).
+`settings.json` ni birlashtirish va olib tashlashni umumiy yordamchilar
+qiladi (`rewrite_paths.py`, `merge_settings.py`, `uninstall_settings.py`),
+shuning uchun hamma platforma bir xil hook buyruqlari va ruxsat ro'yxatini
+beradi (`tools/test_install.py` paritet holatlari).
 
 ```bash
 git clone https://github.com/manguberdikom/claude-genius ~/src/claude-genius
@@ -288,7 +295,8 @@ ko'chsa](#klon-ochsa-yoki-kochsa) bilan bir xil): klonni o'chirgan bo'lsangiz
 skriptni boshqa nusxadan yurgizib, eski yo'lni `--genius-path` bilan
 bering.
 
-Switchlar ps1 bilan bir xil ma'noda: `-Apply` `--apply`, `-Update`
+Switchlar ps1 bayroqlari bilan bir xil ma'noda (ps1 ularni shu bayroqlarga
+o'giradi; `-Update` uzatilmaydi, u eski nom): `-Apply` `--apply`, `-Update`
 `--update`, `-Uninstall` `--uninstall`, `-Reset` `--reset`, `-ConfirmReset`
 `--confirm-reset`, `-IncludeAuth` `--include-auth`, `-Project` `--project`,
 `-BackupTo` `--backup-to`, `-GeniusPath` `--genius-path`. `--reset --apply`
@@ -299,30 +307,34 @@ Farqlar:
 
 | Mavzu | Windows (ps1) | Linux va macOS (install.py) |
 |---|---|---|
-| Python | `py -3`, `python`, `python3` sinaladi, Store stub'i hisoblanmaydi | `python3 install/install.py` ni yurgizgan interpreter (`sys.executable`) hook buyrug'iga yoziladi |
-| bash | Git Bash izlanadi, WSL ishga tushirgichi rad etiladi | `PATH` dagi `bash`, topilmasa o'rnatish to'xtaydi |
+| Python | ps1: `py -3`, `python`, `python3` sinaladi, Store stub'i hisoblanmaydi; install.py shu Python bilan yuradi | `python3 install/install.py` ni yurgizgan interpreter (`sys.executable`) hook buyrug'iga yoziladi |
+| Hook buyrug'idagi Python | `"C:\Python312\python.exe"` (teskari slash), `env.GENIUS_PYTHON` va manifestda `/` bilan | `/` bilan, hammasida bir xil |
+| bash | ps1 Git Bash ni izlaydi, WSL ishga tushirgichi rad etiladi va `--bash` bilan beradi | `PATH` dagi `bash`, topilmasa o'rnatish to'xtaydi |
 | Skript yurgizish ruxsati | `Set-ExecutionPolicy -Scope Process` kerak | kerak emas |
-| Kodirovka | BOM siz UTF-8 maxsus ta'minlanadi | har fayl BOM siz UTF-8 |
+| Kodirovka | BOM siz UTF-8 (install.py yozadi) | har fayl BOM siz UTF-8 |
+| Uy papkasi | `USERPROFILE` | `HOME` |
 | Managed sozlama ogohlantirishi | `%ProgramFiles%\ClaudeCode`, `%ProgramData%\ClaudeCode` | `/etc/claude-code`, `/Library/Application Support/ClaudeCode` |
-| `--update` bilan `--reset` | `-Reset` ustun, `-Update` jim o'tadi | ikkalasi birga rad etiladi: ma'nosi ikki xil |
-| `--update` bilan `--uninstall` | `-Update` e'tiborsiz | rad etiladi |
-| `HOME` bo'sh yoki `/` | ildizga tegishi mumkin | rad etiladi |
-| `--uninstall` da aktyor fayllari | nom bo'yicha | manifest bo'lsa faqat undagi `actors`, yo'q bo'lsa nom bo'yicha va ogohlantirish |
-| Symlink | tekshirilmaydi | klon ichiga ishora qilsa rad etiladi, zaxirada symlink bo'lib qoladi |
+| `-Update` bilan `-Reset` | ps1 da `-Reset` ustun, `-Update` jim o'tadi (uzatilmaydi) | `install.py` da ikkalasi birga rad etiladi: ma'nosi ikki xil |
+| `-Update` bilan `-Uninstall` | ps1 da `-Update` e'tiborsiz | `install.py` da rad etiladi |
+| `-ConfirmReset` `-Reset` siz | ps1 da e'tiborsiz | `install.py` da rad etiladi |
+| Xabarlarda bayroq nomi | `-ConfirmReset` (ps1 `--ps1` beradi) | `--confirm-reset` |
+| Uy papkasi bo'sh yoki ildiz | rad etiladi | rad etiladi |
+| `--uninstall` da aktyor fayllari | manifest bo'lsa faqat undagi `actors`, yo'q bo'lsa nom bo'yicha va ogohlantirish | xuddi shunday |
+| Symlink | klon ichiga ishora qilsa rad etiladi, zaxirada symlink bo'lib qoladi | klon ichiga ishora qilsa rad etiladi, zaxirada symlink bo'lib qoladi |
 
 `$`, backtick yoki qo'sh qo'shtirnoq bo'lgan klon yoki Python yo'lida
-o'rnatish ps1 dagidek hech narsaga tegmasdan to'xtaydi ([Talablar](#talablar)).
+o'rnatish (ps1 orqali ham) hech narsaga tegmasdan to'xtaydi ([Talablar](#talablar)).
 Quruq yurish ham skillni vaqtinchalik papkada (`$TMPDIR`) yig'ib sinaydi
 va uni o'chiradi: `~/.claude`, klon va `index/` ga yozilmaydi.
 `CLAUDE_CONFIG_DIR` o'rnatilgan bo'lsa o'rnatish rad etiladi.
 
-Egalik. O'rnatish ps1 dagidek `skills/manguberdi` va olti aktyor fayli
+Egalik. O'rnatish `skills/manguberdi` va olti aktyor fayli
 (`qidiruv`, `tahlil`, `review`, `dasturchi`, `test-muhandis`,
 `rejalashtiruvchi`) ustidan nom bo'yicha yozadi: shu nomli begona fayl
 bo'lsa u almashadi, lekin avval zaxiraga tushadi. `--uninstall` esa
 manifest (`skills/manguberdi/.genius.json`) bo'lsa faqat undagi
 `actors` va skillni oladi, begona `review.md` qoladi. Manifest yo'q
-bo'lsa manguberdi o'rnatganini tasdiqlab bo'lmaydi: ps1 kabi nom
+bo'lsa manguberdi o'rnatganini tasdiqlab bo'lmaydi: nom
 bo'yicha olinadi, lekin har fayl uchun ogohlantirish qatori chiqadi.
 
 Xavfsizlik rad etishlari (hech narsa o'zgarmasdan, quruq yurishda ham):
@@ -332,7 +344,7 @@ bo'lsa va `--backup-to` o'chiriladigan birlik ichida bo'lsa. Zaxirada
 symlink symlink bo'lib turadi (singani ham), nishon nusxalanmaydi va
 o'chmaydi. `HOME` bo'sh yoki `/` bo'lsa o'rnatish rad etiladi.
 
-Zaxira ps1 dagidek `~/.claude-backup-<vaqt>` (yoki `--backup-to`) ga
+Zaxira `~/.claude-backup-<vaqt>` (yoki `--backup-to`) ga
 `<ota>--<nom>` nomi bilan yoziladi. Qaytarish ([Orqaga qaytarish](#orqaga-qaytarish)
 dagi PowerShell buyruqlarining POSIX nusxasi, `<z>` zaxira papkasi):
 

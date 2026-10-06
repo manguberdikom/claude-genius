@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""manguberdi skillini Linux va macOS da o'rnatadi (POSIX, faqat stdlib, Python 3.8+).
+"""manguberdi skillini Linux, macOS va Windows da o'rnatadi (faqat stdlib, Python 3.8+).
 
     python3 install/install.py                      # quruq yurish: ro'yxat, hech narsa yozilmaydi
     python3 install/install.py --apply              # o'rnatadi (qo'shuvchi)
@@ -7,8 +7,14 @@
     python3 install/install.py --uninstall --apply  # faqat o'zi qo'shganini olib tashlaydi
     python3 install/install.py --reset --apply --confirm-reset   # to'liq tozalash
 
-Windows da `install/manguberdi.ps1` ishlatiladi: bu skript `nt` da to'xtaydi.
-Mantiq ps1 bilan bir xil: sukut QO'SHUVCHI, faqat `skills/manguberdi`, olti
+Windows da odatda `install/manguberdi.ps1` ishlatiladi: u yupqa o'ram (R7.2,
+OC-K3). O'rnatish mantig'i BITTA joyda, shu faylda; ps1 faqat Windows ga xos
+ishni qiladi (Python va Git Bash izlash, yo'llarni to'liq yo'lga o'girish) va
+shu skriptni `--bash`, `--ps1` bilan chaqirib chiqish kodini qaytaradi.
+Platformaga bog'liq barcha farq `Platforma` sinfida (`--platforma auto|posix|nt`,
+sukut `os.name`): sinov shu bilan Windows shaklini Linux da ham yurgizadi.
+
+Mantiq: sukut QO'SHUVCHI, faqat `skills/manguberdi`, olti
 aktyor fayli va settings.json dagi shu klonga ishora qilgan hook va
 ruxsatlar almashadi. Boshqa skill, agent, CLAUDE.md, commands/, plugins/,
 hooks/, rules/, output-styles/ va settings.json dagi begona yozuvlar
@@ -37,9 +43,9 @@ almashtirish, ruxsat ro'yxati, opt-in bo'lagi), `merge_settings.py`
 `restore_backup.py` o'rnatishda chaqirilmaydi: u zaxirani qaytaradi
 (install/README.md, "Orqaga qaytarish").
 
-manguberdi.ps1 qadamlari va ularning shu yerdagi o'rni:
+Eski manguberdi.ps1 qadamlari endi shu yerda (Windows shakli `Platforma.nt`):
 
-    ps1 qadami                                  install.py
+    eski ps1 qadami                             install.py
     ------------------------------------------  ---------------------------------
     -Reset/-Project/-IncludeAuth/-ConfirmReset  tekshir_argumentlar (--reset, ...)
     CLAUDE_CONFIG_DIR rad etish                 tekshir_argumentlar
@@ -47,26 +53,29 @@ manguberdi.ps1 qadamlari va ularning shu yerdagi o'rni:
     $Required fayllari                          REQUIRED, klon_tekshir
     -Project himoyasi (klon, uy papkasi)        project_tekshir
     zaxira papkasi bo'sh emas                   zaxira_tekshir
-    Find-Python (py -3, Store stub'i)           POSIX da kerak emas: sys.executable
-    Invoke-Native (stderr, BOM, kodirovka)      POSIX da kerak emas: subprocess,
-                                                UTF-8 BOM siz
-    Set-ExecutionPolicy                         POSIX da kerak emas
-    Git Bash izlash (System32/WSL)              POSIX da PATH dagi bash yetadi
-    managed-settings.json ogohlantirishi        managed_ogohlantirish (POSIX yo'llari)
+    $UserProfile                                Platforma.uy (USERPROFILE)
+    managed-settings.json ogohlantirishi        managed_ogohlantirish, Platforma.managed
     CRLF li doc.sh rad etish                    klon_tekshir
     user MCP serverlar ro'yxati                 user_mcp
     0. sinov yig'imi, --tekshir, --allow,       sinov_yigimi
        --opt-in
     hook jadvali, settings.json                 sozlama_yasa, HOOKS
+    HookCmd (python teskari slash bilan)        Ctx.python; env va manifest: python_fwd
     -Update: merge_settings (quruq)             ornatish
     1. zaxira                                   zaxira_ol
     snapshot (worktree) va indeks               ornatish, snapshot.yarat
     2. almashtirish yoki tozalash               ornatish
-    3. skill, aktyorlar, .genius.json           ornatish, manifest_yoz
+    3. skill, aktyorlar, .genius.json           ornatish, manifest_yasa, manifest_yoz
     4. sozlama (--yoz yoki toza yozuv)          ornatish
     5. tekshirish                               tekshirish
     -Uninstall                                  olib_tashlash
     Get-StaleActors                             eski_aktyorlar
+
+manguberdi.ps1 da faqat Windows ga xos ish qoladi: Find-Python (`py -3`,
+Microsoft Store stub'ini rad etish), Git Bash izlash (System32 va WindowsApps
+dagi WSL ishga tushirgichini rad etish), PowerShell yo'llarini to'liq yo'lga
+o'girish va native chaqiruv. `-Update` ps1 da hech narsa o'zgartirmaydi va
+shu skriptga uzatilmaydi (u eski nom, sukut allaqachon qo'shuvchi).
 
 Chiqish kodi: 0 muvaffaqiyat, 1 xato (hech narsa o'chmaganini matn aytadi).
 """
@@ -77,6 +86,7 @@ import json
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -86,7 +96,7 @@ CLONE = os.path.dirname(HERE)
 if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
-import snapshot  # noqa: E402  (snapshot joyi va git mantig'i: ps1 bilan bitta)
+import snapshot  # noqa: E402  (snapshot joyi va git mantig'i: barcha platformada bitta)
 
 # O'rnatiladigan aktyorlar. Skill shu nomlar bilan chaqiradi.
 ACTORS = ("qidiruv", "tahlil", "review", "dasturchi", "test-muhandis",
@@ -102,9 +112,8 @@ CONFIG_ITEMS = ("settings.json", "settings.local.json", "CLAUDE.md",
                 "skills", "agents", "commands", "plugins", "hooks", "rules",
                 "output-styles")
 
-# Klon to'liqligi (ps1 dagi $Required bilan bir xil, `/` ajratgich bilan).
-# install/merge_settings.py (--reset siz) va install/uninstall_settings.py
-# ni kod o'zi qo'shadi, xuddi ps1 kabi.
+# Klon to'liqligi (`/` ajratgich bilan). install/merge_settings.py (--reset
+# siz) va install/uninstall_settings.py ni kod o'zi qo'shadi.
 REQUIRED = (
     "tools/doc.sh", "tools/guard.py", "tools/check_code.py", "tools/rules_for.py",
     "tools/budget.py", "tools/suggest_sections.py", "tools/usage.py", "tools/actor_check.py",
@@ -121,11 +130,17 @@ UNSAFE_CHARS = ("$", "`", '"')
 SCHEMA = "https://json.schemastore.org/claude-code-settings.json"
 
 # Hook jadvali: (hodisa, matcher, [(skript, argument, timeout, statusMessage)]).
-# Repodagi .claude/settings.json va manguberdi.ps1 bilan bir xil bo'lishi
-# shart: tools/test_install.py (hook jadvali ps1 ga mos) nomuvofiqlikda CI
-# ni yiqitadi. Har buyruq oxirida `|| exit 1` (sababi manguberdi.ps1 dagi
-# izohda: o'chgan klon hookdan 2 qaytarib Claude Code ni hamma proyektda
-# to'sib qo'ymasligi uchun). `||` argumentdan keyin turadi, shuning uchun
+# Repodagi .claude/settings.json bilan bir xil bo'lishi shart:
+# tools/test_rewrite_paths.py (hook jadvali settings.json ga mos) nomuvofiqlikda
+# CI ni yiqitadi. Har buyruq oxirida `|| exit 1`: yo'l aynan shu snapshotga
+# bog'langan, snapshot o'chsa yoki ko'chsa Python "can't open file" bilan 2
+# beradi, Claude Code esa hookdan kelgan 2 ni TO'SIQ deb oladi: PreToolUse da
+# Read va Bash to'siladi, UserPromptSubmit da prompt modelga yetmaydi, Stop da
+# sessiya tugamaydi. 1 esa to'smaydi, lekin "hook error" deb ko'rinadi: hook
+# ishlamay qolgani jim o'tmaydi. Hooklarning o'zi to'siqni faqat JSON orqali
+# beradi, shuning uchun 1 ga aylantirish hech qanday to'siqni yo'qotmaydi.
+# Hook bash ichida yuradi (Windows da Git Bash), `||` PowerShell 5.1 da
+# sintaksis xatosi bo'lardi. `||` argumentdan keyin turadi, shuning uchun
 # handoff va usage argumenti buyruqqa shu yerda biriktiriladi.
 HOOKS = (
     ("UserPromptSubmit", "", (
@@ -145,16 +160,119 @@ HOOKS = (
 )
 
 
+# System32 va WindowsApps dagi bash.exe WSL ishga tushirgichi: u C:\ yo'llarini
+# boshqa fayl tizimida ochadi, shuning uchun bash hisoblanmaydi.
+WSL_BASH = re.compile(r"[\\/](system32|windowsapps)[\\/]bash\.exe\Z", re.I)
+
+# --ps1 bilan chaqirilganda xabarlardagi bayroq nomlari PowerShell shaklida:
+# foydalanuvchi `-ConfirmReset` yozgan, `--confirm-reset` ni emas.
+PS_BAYROQ = {"--apply": "-Apply", "--update": "-Update", "--uninstall": "-Uninstall",
+             "--reset": "-Reset", "--confirm-reset": "-ConfirmReset",
+             "--include-auth": "-IncludeAuth", "--project": "-Project",
+             "--backup-to": "-BackupTo", "--genius-path": "-GeniusPath"}
+PS_BAYROQ_RE = re.compile(r"(?<![\w-])(%s)(?![\w-])" % "|".join(
+    sorted((re.escape(k) for k in PS_BAYROQ), key=len, reverse=True)))
+CHIQISH = {"ps1": False}
+
+
+class Platforma(object):
+    """Platformaga bog'liq BARCHA farq shu yerda (R7.2: ps1 yupqa o'ram).
+
+    `nom`: `auto` (os.name bo'yicha), `posix` yoki `nt`. `nt` Linux da ham
+    tanlanadi: sinov Windows shaklini (hook buyrug'ida teskari slashli Python,
+    USERPROFILE, managed yo'llari) shu bilan yurgizadi. Yo'l funksiyalari
+    (os.path) haqiqiy platformaniki: ular Windows shaklini taqlid qilmaydi.
+    """
+
+    def __init__(self, nom="auto"):
+        self.nt = (os.name == "nt") if nom == "auto" else nom == "nt"
+        self.seps = "/\\" if self.nt else "/"
+
+    def fwd(self, path):
+        """Windows da `\\` ni `/` ga: settings.json, manifest va bash argumenti
+        shu shaklni oladi (eski ps1: `.Replace('\\', '/')`). POSIX da o'zgarmaydi."""
+        return path.replace("\\", "/") if self.nt else path
+
+    def kes(self, path):
+        """Oxirgi ajratgichlar kesiladi, ildiz (`/`, `C:\\`) saqlanadi."""
+        stripped = path.rstrip(self.seps)
+        if not stripped:
+            return self.seps[0]
+        if self.nt and stripped.endswith(":"):
+            return path
+        return stripped
+
+    def uy(self):
+        """Uy papkasi. Windows da USERPROFILE (eski ps1: GetFolderPath('UserProfile')),
+        POSIX da `~` (HOME)."""
+        if self.nt:
+            home = os.environ.get("USERPROFILE", "")
+            if not home and os.environ.get("HOMEPATH"):
+                home = os.environ.get("HOMEDRIVE", "") + os.environ["HOMEPATH"]
+            if home:
+                return home
+        return os.path.expanduser("~")
+
+    def uy_yaroqli(self, home):
+        """Bo'sh, nisbiy yoki ildiz papka bo'lsa ~/.claude o'rniga /.claude yoki
+        C:\\.claude ga tegilardi."""
+        return bool(home) and home != "~" and os.path.isabs(home) and bool(
+            os.path.splitdrive(home)[1].strip(self.seps))
+
+    def managed_yollar(self):
+        """Managed-settings.json mumkin bo'lgan joylar (hammadan ustun sozlama)."""
+        if self.nt:
+            return [os.path.join(base, "ClaudeCode", "managed-settings.json")
+                    for base in (os.environ.get("ProgramFiles"), os.environ.get("ProgramData"))
+                    if base]
+        return ["/etc/claude-code/managed-settings.json",
+                "/Library/Application Support/ClaudeCode/managed-settings.json"]
+
+    def bash_top(self, bergan=""):
+        """bash yo'li yoki None. `bergan` (ps1 Git Bash ni izlab topadi) bo'lsa o'sha;
+        aks holda PATH: Windows da System32 va WindowsApps dagi bash.exe WSL
+        ishga tushirgichi (C:\\ yo'llarini boshqa fayl tizimida ochadi), bash emas."""
+        if bergan:
+            return bergan
+        if not self.nt:
+            return shutil.which("bash")
+        for folder in os.environ.get("PATH", "").split(os.pathsep):
+            path = os.path.join(folder, "bash.exe") if folder else ""
+            if path and os.path.isfile(path) and not WSL_BASH.search(path):
+                return path
+        return None
+
+    def bash_yoq(self):
+        if self.nt:
+            return ("bash topilmadi, hech narsa o'zgarmadi. Usiz hooklar PowerShell da "
+                    "yurib yiqiladi, tools/doc.sh (find, show, rule) ham ishlamaydi. "
+                    "Git for Windows o'rnating (https://git-scm.com/download/win), keyin "
+                    "qayta yurgizing. WSL dagi bash hisoblanmaydi.")
+        return ("bash topilmadi, hech narsa o'zgarmadi. tools/doc.sh (find, show, "
+                "rule) usiz ishlamaydi: bash o'rnating va qayta yurgizing.")
+
+    def python_nomi(self):
+        """Foydalanuvchiga ko'rsatiladigan buyruqda: Windows da `python3` Store stub'i."""
+        return "python" if self.nt else "python3"
+
+
+def matn(text):
+    """Xabar matni: --ps1 bo'lsa bayroqlar PowerShell nomi bilan."""
+    if CHIQISH["ps1"]:
+        return PS_BAYROQ_RE.sub(lambda m: PS_BAYROQ[m.group(1)], text)
+    return text
+
+
 class Xato(Exception):
     """O'rnatish to'xtaydi: sabab matnda."""
 
 
 def say(text=""):
-    print(text)
+    print(matn(text))
 
 
 def step(text):
-    print("  " + text)
+    print("  " + matn(text))
 
 
 def run_py(args, input_text=None, env=None):
@@ -224,11 +342,11 @@ def klon_tekshir(root, reset, nom="klon"):
                        "(avval faylni o'chiring). Hech narsa o'chmadi." % root)
 
 
-def project_tekshir(project, claude_dir, root):
+def project_tekshir(project, claude_dir, root, plat):
     """--project ning .claude/ papkasi o'chiriladi: uy papkasi va klon rad etiladi."""
     if not os.path.isdir(project):
         raise Xato("Project topilmadi: %s" % project)
-    project = os.path.abspath(project).rstrip("/") or "/"
+    project = plat.kes(os.path.abspath(project))
     proj_claude = os.path.join(project, ".claude")
     for guarded in (claude_dir, os.path.join(root, ".claude")):
         if os.path.normcase(os.path.realpath(guarded)) == \
@@ -244,10 +362,9 @@ def zaxira_tekshir(path):
                    "yangi yo'l bering yoki --backup-to ni olib tashlang." % path)
 
 
-def managed_ogohlantirish():
+def managed_ogohlantirish(plat):
     """Managed sozlama hammadan ustun: unga tegilmaydi, lekin hooklarni o'chirishi mumkin."""
-    for path in ("/etc/claude-code/managed-settings.json",
-                 "/Library/Application Support/ClaudeCode/managed-settings.json"):
+    for path in plat.managed_yollar():
         if os.path.exists(path):
             say()
             say("DIQQAT: %s topildi. U eng ustun sozlama, skript unga tegmaydi; "
@@ -305,11 +422,15 @@ def hook_buyruq(python, tools_dir, script, suffix=""):
                                          " " + suffix if suffix else "")
 
 
-def sozlama_yasa(python, root, allow, clone):
+def sozlama_yasa(python, root, allow, clone, python_env=None):
     """Global settings.json. Hook yo'llari MUTLAQ: global o'rnatishda asboblar
     boshqa papkada turadi. `root` pin qilingan snapshot (`~/.claude/genius/
     <sha12>`), `clone` esa klon: hook va docs snapshotdan, memory klondan
-    (R7.8 XV-Y1).
+    (R7.8 XV-Y1). `root` va `clone` `/` ajratgichli.
+
+    `python`: hook buyrug'idagi yo'l (Windows da `C:\\Python312\\python.exe`,
+    eski ps1 HookCmd shunday yozgan), `python_env`: env.GENIUS_PYTHON uchun
+    (Windows da `/` bilan; berilmasa `python`).
 
     additionalDirectories da butun klon EMAS, faqat `<snapshot>/docs` va
     `<klon>/memory` (XV-Y4): butun daraxt berilsa aktyor hook skriptini
@@ -333,7 +454,7 @@ def sozlama_yasa(python, root, allow, clone):
         hooks.setdefault(event, []).append(group)
     return {
         "$schema": SCHEMA,
-        "env": {"GENIUS_PYTHON": python, "GENIUS_CLONE": clone},
+        "env": {"GENIUS_PYTHON": python_env or python, "GENIUS_CLONE": clone},
         "permissions": {
             "additionalDirectories": [root + "/docs", clone + "/memory"],
             "allow": allow,
@@ -360,11 +481,24 @@ def yoz_atomik(path, text):
             os.remove(tmp)
 
 
+def yozishga_och(func, path, _exc):
+    """rmtree onerror: Windows da faqat o'qish uchun fayl o'chmaydi (eski ps1 da
+    `Remove-Item -Force` uni o'chirardi)."""
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
+
+
 def olib_tashla(path):
-    if os.path.islink(path) or os.path.isfile(path):
+    if os.path.islink(path):
         os.remove(path)
+    elif os.path.isfile(path):
+        try:
+            os.remove(path)
+        except PermissionError:
+            os.chmod(path, stat.S_IWRITE)
+            os.remove(path)
     elif os.path.isdir(path):
-        shutil.rmtree(path)
+        shutil.rmtree(path, onerror=yozishga_och)
 
 
 def nusxa(src, dst):
@@ -437,16 +571,18 @@ def zaxira_ol(paths, backup_to):
 class Ctx(object):
     """Bir yurish uchun yo'llar va tanlangan rejim."""
 
-    def __init__(self, opts):
-        home = os.path.expanduser("~")
+    def __init__(self, opts, plat):
+        home = plat.uy()
         # HOME="" yoki "/" bo'lsa expanduser "/" beradi va ~/.claude o'rniga
         # /.claude ga tegilardi.
-        if not home or home == "~" or not os.path.isabs(home) or not home.strip("/"):
-            raise Xato("uy papkasi aniqlanmadi yoki ildiz papka (HOME=%r)." % home)
+        if not plat.uy_yaroqli(home):
+            raise Xato("uy papkasi aniqlanmadi yoki ildiz papka (%s=%r)."
+                       % ("USERPROFILE" if plat.nt else "HOME", home))
         self.opts = opts
+        self.plat = plat
         self.apply = opts.apply
         self.reset = opts.reset
-        self.update = not opts.reset      # sukut qo'shuvchi (ps1: $Update = -not $Reset)
+        self.update = not opts.reset      # sukut qo'shuvchi (--update shunchaki eski nom)
         self.home = home
         self.claude = os.path.join(home, ".claude")
         self.auth = os.path.join(home, ".claude.json")
@@ -462,9 +598,21 @@ class Ctx(object):
         self.root = None                  # asboblar turadigan joy: snapshot
         self.clone = None                 # klon: memory, holat va o'rnatuvchi manbasi
         self.sha = ""                     # snapshot olingan commit (to'liq)
-        self.python = sys.executable
+        self.python = opts.python or sys.executable   # hook buyrug'idagi yo'l (Windows: `\\`)
+        self.bash = None
         self.proj_claude = None
         self.backup_to = None
+
+    @property
+    def python_fwd(self):
+        """env.GENIUS_PYTHON, manifest va `--python` uchun (Windows da `/` bilan)."""
+        return self.plat.fwd(self.python)
+
+    @property
+    def clone_fwd(self):
+        """settings.json (GENIUS_CLONE, memory papkasi) va manifest uchun. Yordamchi
+        asboblarga (`--clone`) klon o'z shaklida beriladi."""
+        return self.plat.fwd(self.clone)
 
     def rejim(self):
         return "BAJARILADI" if self.apply else "quruq yurish (--apply bermadingiz)"
@@ -490,7 +638,7 @@ def sinov_yigimi(ctx):
 
     say()
     say("0. Sinov yig'imi -> %s" % ctx.stage)
-    step("python: %s" % ctx.python)
+    step("python: %s" % ctx.python_fwd)
     step("bash  : bash (skill matnida shu nom)")
     step("manba : commit %s (klonning ishchi daraxti emas)" % ctx.sha[:snapshot.SHA_UZUNLIK])
 
@@ -516,7 +664,7 @@ def sinov_yigimi(ctx):
         shutil.copy2(src, stage_agents)
 
     common = ["--root", root, "--clone", ctx.clone, "--root-keyin",
-              "--python", ctx.python, "--bash", "bash"]
+              "--python", ctx.python_fwd, "--bash", "bash"]
     for target in (stage_skill, stage_agents):
         code, out = run_py([rewriter, target] + common)
         if code:
@@ -557,28 +705,37 @@ def opt_in_korsat(opt_in):
     say(opt_in)
 
 
-def manifest_yoz(ctx):
+def manifest_yasa(ctx):
     """Manifest skill nusxasi bilan birga: qaysi commit o'rnatilgani saqlanadi.
 
     `commit` va `root` snapshotniki (hooklar yuradigan joy), `clone` klonniki:
     budget.py va doctor.py o'rnatilgan commitni klon HEAD bilan solishtiradi,
-    tools/yangilash.py klonni shu yerdan topadi."""
+    tools/yangilash.py klonni shu yerdan topadi. Yo'llar `/` ajratgichli."""
     commit = ctx.sha
     version = ""
     version_file = os.path.join(ctx.root, "VERSION")
     if os.path.isfile(version_file):
         with open(version_file, encoding="utf-8") as handle:
             version = handle.read().strip()
-    manifest = {
+    return {
         "versiya": version,
         "commit": commit,
         "sana": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
         "root": ctx.root,
-        "clone": ctx.clone,
-        "python": ctx.python,
+        "clone": ctx.clone_fwd,
+        "python": ctx.python_fwd,
         "actors": list(ACTORS),
     }
-    yoz_atomik(ctx.manifest_path, json_matn(manifest))
+
+
+def manifest_yoz(ctx):
+    yoz_atomik(ctx.manifest_path, json_matn(manifest_yasa(ctx)))
+
+
+def snapshots(ctx):
+    """Shu klonning mavjud snapshotlari (klon o'chgan bo'lsa yetimi ham)."""
+    return [ctx.plat.fwd(path)
+            for path in snapshot.royxat(ctx.clone, ctx.claude, yetim=True)]
 
 
 def own_roots(ctx):
@@ -588,7 +745,7 @@ def own_roots(ctx):
     Yangilashda eski snapshotga ishora qilgan hook shu yo'l bilan almashadi,
     aks holda eski va yangi hook birga yurardi. Boshqa klonning snapshoti
     begona: u `snapshot.royxat` ga kirmaydi."""
-    roots = [ctx.clone] + snapshot.royxat(ctx.clone, ctx.claude, yetim=True) + [ctx.root]
+    roots = [ctx.clone] + snapshots(ctx) + [ctx.root]
     out = []
     for item in roots:
         if item not in out:
@@ -630,11 +787,11 @@ def snapshot_yarat(ctx):
 
 def ornatish(ctx, allow):
     root, apply = ctx.root, ctx.apply
-    tools_dir = os.path.join(root, "tools")
+    tools_dir = root + "/tools"
     merger = os.path.join(ctx.clone, "install", "merge_settings.py")
 
     stage_settings = os.path.join(ctx.stage, "settings.json")
-    text = json_matn(sozlama_yasa(ctx.python, root, allow, ctx.clone))
+    text = json_matn(sozlama_yasa(ctx.python, root, allow, ctx.clone_fwd, ctx.python_fwd))
     with open(stage_settings, "w", encoding="utf-8", newline="\n") as handle:
         handle.write(text)
     roots = root_args(own_roots(ctx))
@@ -767,7 +924,7 @@ def tekshirish(ctx):
     ok = True
     # Hooklar settings.json env ni oladi: yoziladigan narsa klonga tushsin,
     # sinov snapshotga `.claude/.state` yaratmasin.
-    hook_env = {"GENIUS_CLONE": ctx.clone}
+    hook_env = {"GENIUS_CLONE": ctx.clone_fwd}
 
     if os.path.isfile(os.path.join(ctx.skill_dst, "SKILL.md")):
         step("skill joyida")
@@ -841,11 +998,12 @@ def tekshirish(ctx):
         step("XATO: bo'lim taklifi bo'sh: %s" % out)
         ok = False
 
-    bash = shutil.which("bash")
-    if bash:
-        env = dict(os.environ, GENIUS_PYTHON=ctx.python, PYTHONIOENCODING="utf-8",
+    if ctx.bash:
+        env = dict(os.environ, GENIUS_PYTHON=ctx.python_fwd, PYTHONIOENCODING="utf-8",
                    **hook_env)
-        proc = subprocess.run([bash, os.path.join(tools_dir, "doc.sh"), "find",
+        # Bash `\\` ni qochirish belgisi deb oladi: yo'l `/` bilan.
+        doc_sh = ctx.plat.fwd(os.path.join(tools_dir, "doc.sh"))
+        proc = subprocess.run([ctx.bash, doc_sh, "find",
                                "circuit breaker"], stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT, env=env,
                               encoding="utf-8", errors="replace")
@@ -900,7 +1058,7 @@ def olib_tashlash(ctx):
                      "manguberdi o'rnatganini tasdiqlab bo'lmaydi" % path)
     # Snapshotlar: shu klonniki (klon o'chgan bo'lsa yetimlari ham), faqat
     # ~/.claude/genius ostida. Ular zaxiralanmaydi: git dan qayta yasaladi.
-    snaps = snapshot.royxat(ctx.clone, ctx.claude, yetim=True)
+    snaps = snapshots(ctx)
     xavfsiz_joylashuv(ctx, own + snaps)
 
     say()
@@ -959,7 +1117,7 @@ def olib_tashlash(ctx):
 
 def parser_yasa():
     parser = argparse.ArgumentParser(
-        description="manguberdi skillini Linux va macOS da o'rnatadi. Sukut quruq "
+        description="manguberdi skillini o'rnatadi (Linux, macOS, Windows). Sukut quruq "
                     "yurish: --apply bermaguncha ~/.claude ga tegilmaydi.")
     parser.add_argument("--genius-path", default=CLONE,
                         help="claude-genius klonining yo'li (sukut: shu fayl turgan klon)")
@@ -979,18 +1137,21 @@ def parser_yasa():
                         help="--reset bilan shu proyektdagi .claude/ ham tozalanadi")
     parser.add_argument("--backup-to", default="",
                         help="zaxira papkasi (sukut ~/.claude-backup-<vaqt>), bo'sh bo'lmasa rad etiladi")
+    # Quyidagilar manguberdi.ps1 va sinov uchun: oddiy foydalanuvchiga kerak emas.
+    parser.add_argument("--platforma", choices=("auto", "posix", "nt"), default="auto",
+                        help=argparse.SUPPRESS)
+    parser.add_argument("--bash", default="", help=argparse.SUPPRESS)
+    parser.add_argument("--python", default="", help=argparse.SUPPRESS)
+    parser.add_argument("--ps1", action="store_true", help=argparse.SUPPRESS)
     return parser
 
 
 def run(opts):
-    if os.name == "nt":
-        raise Xato("install.py faqat Linux va macOS uchun. Windows da "
-                   "install/manguberdi.ps1 ishlatiladi.")
     if sys.version_info < (3, 8):
         raise Xato("Python 3.8+ kerak, hozir %d.%d: hooklar shu versiyaga yozilgan."
                    % sys.version_info[:2])
     tekshir_argumentlar(opts)
-    ctx = Ctx(opts)
+    ctx = Ctx(opts, Platforma(opts.platforma))
     try:
         return ish(ctx, opts)
     except (OSError, shutil.Error) as exc:
@@ -1008,10 +1169,11 @@ def ish(ctx, opts):
 
     # --uninstall da klon mavjud bo'lishi shart emas: yo'l faqat settings.json
     # dagi yozuvlarni tanish uchun satr, shuning uchun faqat normallanadi.
-    root = os.path.abspath(opts.genius_path).rstrip("/")
+    plat = ctx.plat
+    root = plat.kes(os.path.abspath(opts.genius_path))
     ctx.clone = root
     if opts.uninstall:
-        if not root.strip("/").strip():
+        if not root.strip(plat.seps).strip():
             raise Xato("--genius-path bo'sh: olib tashlanadigan yozuvlarni tanib bo'lmaydi.")
     else:
         if not os.path.isdir(root):
@@ -1030,7 +1192,7 @@ def ish(ctx, opts):
         xavfsiz_yol("Snapshot", ctx.root)
 
     if opts.project:
-        project, ctx.proj_claude = project_tekshir(opts.project, ctx.claude, root)
+        project, ctx.proj_claude = project_tekshir(opts.project, ctx.claude, root, plat)
         opts.project = project
 
     ctx.backup_to = opts.backup_to or os.path.join(
@@ -1042,7 +1204,9 @@ def ish(ctx, opts):
     else:
         return olib_tashlash(ctx)
 
-    bash = shutil.which("bash")
+    if opts.bash and not os.path.isfile(opts.bash):
+        raise Xato("--bash fayli topilmadi: %s" % opts.bash)
+    bash = ctx.bash = plat.bash_top(opts.bash)
     say()
     say("Manba : %s" % root)
     say("Snapshot: %s (commit %s)" % (ctx.root, ctx.sha[:snapshot.SHA_UZUNLIK]))
@@ -1069,12 +1233,14 @@ def ish(ctx, opts):
         say("Proyekt: %s" % opts.project)
     say("Rejim : %s, %s" % (ctx.rejim(), "TO'LIQ TOZALASH (--reset)" if opts.reset
                             else "qo'shuvchi: faqat manguberdi birliklari"))
-    managed_ogohlantirish()
+    managed_ogohlantirish(plat)
 
     # tools/doc.sh bash skripti va qidiruv qatlamining hammasi unga tayanadi.
+    # Windows da usiz Claude Code hookni PowerShell bilan yurgizadi va
+    # `"python.exe" "skript.py"` shakli u yerda sintaksis xatosi: guard, budget
+    # va check_code jim ishlamay qolardi.
     if not bash:
-        raise Xato("bash topilmadi, hech narsa o'zgarmadi. tools/doc.sh (find, show, "
-                   "rule) usiz ishlamaydi: bash o'rnating va qayta yurgizing.")
+        raise Xato(plat.bash_yoq())
 
     try:
         allow, opt_in = sinov_yigimi(ctx)
@@ -1099,8 +1265,8 @@ def ish(ctx, opts):
         say()
         say("Hooklar va qo'llanma snapshotdan o'qiladi: %s" % ctx.root)
         say("(commit %s). Klondagi `git pull` ularni O'ZGARTIRMAYDI." % ctx.sha[:snapshot.SHA_UZUNLIK])
-        say("Yangilash (snapshotdagi nusxa, klondagi emas): python3 %s/tools/yangilash.py "
-            "(ro'yxatni ko'rsatadi, tasdiq so'raydi)." % ctx.root)
+        say("Yangilash (snapshotdagi nusxa, klondagi emas): %s %s/tools/yangilash.py "
+            "(ro'yxatni ko'rsatadi, tasdiq so'raydi)." % (plat.python_nomi(), ctx.root))
         say("Memory va holat klonda: %s. Klon ko'chirilsa skriptni yangi yo'l bilan qayta "
             "yurgizing." % ctx.clone)
         opt_in_korsat(opt_in)
@@ -1112,10 +1278,11 @@ def ish(ctx, opts):
 
 def main(argv=None):
     opts = parser_yasa().parse_args(argv)
+    CHIQISH["ps1"] = opts.ps1
     try:
         return run(opts)
     except Xato as exc:
-        print("XATO: %s" % exc)
+        print("XATO: %s" % matn(str(exc)))
         return 1
 
 

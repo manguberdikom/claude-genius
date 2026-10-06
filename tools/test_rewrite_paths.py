@@ -3,9 +3,9 @@
 
     python3 tools/test_rewrite_paths.py
 
-Nega bu asbobga sinov kerak: o'rnatuvchining PowerShell qismi sinalmaydi,
-shuning uchun u iloji boricha ozroq ish qilishi va asosiy mantiq shu
-yerda, sinaladigan joyda turishi kerak. Noto'g'ri almashtirish jim
+Nega bu asbobga sinov kerak: o'rnatuvchining PowerShell qismi sinalmaydi
+(R7.2: u install.py ustidagi yupqa o'ram), shuning uchun asosiy mantiq
+shu yerda va install.py da, sinaladigan joyda turishi kerak. Noto'g'ri almashtirish jim
 o'tadi: skill o'rnatiladi, ko'rinishidan joyida, lekin har buyruq
 "No such file or directory" beradi.
 """
@@ -440,112 +440,119 @@ def case_xavfli_belgili_yol_2():
         shutil.rmtree(tmp, ignore_errors=True)
 
 
-def ps1_text():
-    return io.open(os.path.join(ROOT, "install", "manguberdi.ps1"),
-                   encoding="utf-8").read()
+def load_install():
+    """install/install.py ni modul sifatida: o'rnatuvchi mantig'i bitta joyda
+    (R7.2, ps1 yupqa o'ram), shuning uchun hook jadvali, manifest va xavfsiz
+    belgilar shu yerdan sinaladi."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "install_py", os.path.join(ROOT, "install", "install.py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
-def case_ps1_papkalar_va_opt_in():
-    """ps1 sinalmaydi, matni tekshiriladi: additionalDirectories da butun
-    klon emas, faqat snapshotning docs va klonning memory papkasi (XV-Y4,
-    XV-Y1); opt-in bo'lagi rewrite_paths dan olinadi va ko'rsatiladi;
-    GeniusPath, Snapshot va Python yo'li xavfli belgida to'xtatiladi (XV-P2)."""
-    text = ps1_text()
-    dirs = re.search(r"additionalDirectories = @\(([^)]*)\)", text)
-    if not dirs:
-        raise AssertionError("ps1 da additionalDirectories topilmadi")
-    entries = re.findall(r'"([^"]*)"', dirs.group(1))
-    unsafe = re.search(r"\$UnsafeChars = \[char\[\]\]@\(([^)]*)\)", text)
-    return (entries == ["$sg/docs", "$g/memory"]
-            and "'--opt-in'" in text
-            and text.count("Show-OptIn") >= 3
-            and unsafe is not None
-            and sorted(re.findall(r"'(.)'", unsafe.group(1))) == sorted(R.UNSAFE_CHARS)
-            and "Test-SafePath 'GeniusPath' $GeniusPath" in text
-            and "Test-SafePath 'Snapshot' $SnapRoot" in text
-            and "Test-SafePath 'Python' $PythonExe" in text)
+def case_install_papkalar_va_opt_in():
+    """additionalDirectories da butun klon emas, faqat snapshotning docs va
+    klonning memory papkasi (XV-Y4, XV-Y1); opt-in bo'lagi rewrite_paths dan
+    olinadi va ko'rsatiladi; GeniusPath, Snapshot va Python yo'li xavfli
+    belgida to'xtatiladi (XV-P2). Ikkala platforma shaklida ham."""
+    mod = load_install()
+    src = io.open(os.path.join(ROOT, "install", "install.py"), encoding="utf-8").read()
+    snap, clone = "C:/Users/u/.claude/genius/0123456789ab", "C:/src/claude-genius"
+    for py, py_env in ((sys.executable, None), (r"C:\Python312\python.exe", "C:/Python312/python.exe")):
+        got = mod.sozlama_yasa(py, snap, [], clone, py_env)
+        if got["permissions"]["additionalDirectories"] != [snap + "/docs", clone + "/memory"]:
+            return False
+        if got["env"] != {"GENIUS_PYTHON": py_env or py, "GENIUS_CLONE": clone}:
+            return False
+    rejected = []
+    for char in R.UNSAFE_CHARS:
+        try:
+            mod.xavfsiz_yol("GeniusPath", "C:/a%sb" % char)
+            rejected.append(False)
+        except mod.Xato:
+            rejected.append(True)
+    return (all(rejected) and sorted(mod.UNSAFE_CHARS) == sorted(R.UNSAFE_CHARS)
+            and '"--opt-in"' in src and src.count("opt_in_korsat") >= 3
+            and 'xavfsiz_yol("GeniusPath", root)' in src
+            and 'xavfsiz_yol("Snapshot", ctx.root)' in src
+            and 'xavfsiz_yol("Python", ctx.python)' in src)
 
 
-def case_ps1_manifest_va_eski_aktyor():
-    """ps1 matni (OC-K5): .genius.json budget.py o'qiydigan joyga va
-    kalitlar bilan yoziladi; $Retired dagi nom hozirgi aktyor emas va
-    yangilash hamda -Uninstall ikkalasida olinadi."""
-    text = ps1_text()
+def case_install_manifest_va_eski_aktyor():
+    """install.py (OC-K5): .genius.json budget.py o'qiydigan joyga va
+    kalitlar bilan yoziladi; RETIRED dagi nom hozirgi aktyor emas va
+    yangilash hamda --uninstall ikkalasida olinadi."""
+    import types
+    mod = load_install()
+    src = io.open(os.path.join(ROOT, "install", "install.py"), encoding="utf-8").read()
     budget = io.open(os.path.join(ROOT, "tools", "budget.py"),
                      encoding="utf-8").read()
-    actors = re.search(r"\$Actors = @\(([^)]*)\)", text)
-    retired = re.search(r"\$Retired = @\(([^)]*)\)", text)
-    manifest = re.search(r"\$manifest = \[ordered\]@\{(.*?)\n  \}", text, re.S)
-    if not (actors and retired and manifest):
-        raise AssertionError("ps1 da $Actors, $Retired yoki $manifest topilmadi")
-    current = re.findall(r"'([\w-]+)'", actors.group(1))
-    old = re.findall(r"'([\w-]+)'", retired.group(1))
-    keys = re.findall(r"^\s*(\w+)\s*=", manifest.group(1), re.M)
+    tmp = tempfile.mkdtemp(prefix="rw_")
+    try:
+        ctx = types.SimpleNamespace(sha="a" * 40, root=tmp, clone_fwd="C:/src/k",
+                                    python_fwd="C:/Python312/python.exe")
+        keys = list(mod.manifest_yasa(ctx))
+        opts = mod.parser_yasa().parse_args([])
+        manifest_path = mod.Ctx(opts, mod.Platforma("posix")).manifest_path
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
     agents = {name[:-3] for name in os.listdir(os.path.join(ROOT, ".claude", "agents"))}
-    return ("arxitektor" in old and not set(old) & set(current)
-            and not set(old) & agents and set(current) <= agents
+    old, current = set(mod.RETIRED), set(mod.ACTORS)
+    return ("arxitektor" in old and not old & current
+            and not old & agents and current <= agents
             and keys == ["versiya", "commit", "sana", "root", "clone", "python", "actors"]
-            and "skills\\manguberdi\\.genius.json" in text
+            and manifest_path.replace("\\", "/").endswith("skills/manguberdi/.genius.json")
             and '"manguberdi", ".genius.json"' in budget
             and 'manifest.get("commit")' in budget
             and 'manifest.get("root")' in budget
-            # ta'rif, -Uninstall va yangilash
-            and text.count("Get-StaleActors") >= 3)
+            # ta'rif, yangilash va --uninstall
+            and src.count("eski_aktyorlar(") >= 3)
 
 
-def case_ps1_hook_yoli_snapshotga():
-    """R7.8 XV-Y1 (ps1 CI quruq yurishi o'rniga matn): hook buyrug'i klonning
-    tools\\ iga emas, snapshot (`$snapTools`) ga ishora qiladi; snapshot joyini va
-    git mantig'ini install.py bilan bir xil snapshot.py beradi; GENIUS_CLONE
-    env ga yoziladi; sinov va yangi sinov `--clone` bilan yuradi."""
-    text = ps1_text()
-    return ("""'"{0}" "{1}/{2}"' -f $PythonExe, $snapTools, $script""" in text
-            and '$snapTools = "$SnapRoot/tools"' in text
-            and "Join-Path $SnapRoot 'tools'" not in text
-            and "ConvertFrom-Json" in text and "$hookCmds" in text
-            and ".Contains(\"$snapTools/\")" in text
-            and "'farq', '--clone'" in text
-            and "-Raw).Contains(" not in text
-            and "'install\\snapshot.py'" in text
-            and "'yol', '--clone'" in text and "'yarat', '--clone'" in text
-            and "'arxiv', '--clone'" in text and "'royxat', '--clone'" in text
-            and "GENIUS_CLONE = $g" in text
-            and "'--root', $SnapRoot, '--clone', $GeniusPath, '--root-keyin'" in text
-            and "HookCmd" in text)
+def case_install_hook_yoli_snapshotga():
+    """R7.8 XV-Y1: hook buyrug'i klonning tools/ iga emas, snapshotga ishora
+    qiladi (ikkala platforma shaklida), GENIUS_CLONE env ga yoziladi; snapshot
+    joyini va git mantig'ini barcha platformada bitta snapshot.py beradi;
+    sinov va yangi sinov `--clone` bilan yuradi."""
+    mod = load_install()
+    src = io.open(os.path.join(ROOT, "install", "install.py"), encoding="utf-8").read()
+    snap, clone = "C:/Users/u/.claude/genius/0123456789ab", "C:/src/claude-genius"
+    rows = []
+    for py in (sys.executable, r"C:\Python312\python.exe"):
+        got = mod.sozlama_yasa(py, snap, [], clone)
+        cmds = [h["command"] for groups in got["hooks"].values()
+                for g in groups for h in g["hooks"]]
+        rows.append(len(cmds) >= 7
+                    and all(('"%s" "%s/tools/' % (py, snap)) in c and c.endswith(" || exit 1")
+                            for c in cmds)
+                    and not any(clone + "/tools/" in c for c in cmds)
+                    and got["env"]["GENIUS_CLONE"] == clone)
+    return (all(rows)
+            and 'snapshot.sha_ol(root)' in src and "snapshot.yarat(" in src
+            and "snapshot.arxiv(" in src and "snapshot.farq_matn(" in src
+            and '"--root", root, "--clone", ctx.clone, "--root-keyin"' in src)
 
 
-# PowerShell sinalmaydi, lekin u yasaydigan hook jadvali matndan o'qiladi
-# va repodagi .claude/settings.json ga solishtiriladi: biri o'zgarib
-# ikkinchisi unutilsa, global o'rnatish jim boshqacha ishlaydi.
-PS_HOOK_TOKEN = re.compile(
-    r"^\s*(?P<event>\w+) = @\("
-    r"|(?P<group>\[ordered\]@\{ (?:matcher = '(?P<matcher>[^']*)'; )?hooks = @\()"
-    r"|HookCmd '(?P<script>[^']+)'\)(?: \+ '(?P<arg>[^']*)')?"
-    r"|timeout = (?P<timeout>\d+)"
-    r"|statusMessage = (?:\"(?P<dq>[^\"]*)\"|'(?P<sq>[^']*)')", re.M)
+# install.py yasaydigan hook jadvali repodagi .claude/settings.json ga
+# solishtiriladi: biri o'zgarib ikkinchisi unutilsa, global o'rnatish jim
+# boshqacha ishlaydi. Ikkala platforma shaklida (Windows: teskari slashli Python).
 SETTINGS_CMD = re.compile(r'tools/(\w+\.py)"?\s*(.*)')
 
 
-def ps1_hooks():
-    """manguberdi.ps1 dagi `hooks = [ordered]@{` dan `$settingsPath` gacha."""
-    text = io.open(os.path.join(ROOT, "install", "manguberdi.ps1"),
-                   encoding="utf-8").read()
-    start = text.index("hooks = [ordered]@{")
-    block = text[start:text.index("$settingsPath", start)]
-    hooks, event, matcher = [], "", ""
-    for m in PS_HOOK_TOKEN.finditer(block):
-        if m.group("event"):
-            event, matcher = m.group("event"), ""
-        elif m.group("group"):
-            matcher = m.group("matcher") or ""
-        elif m.group("script"):
-            hooks.append([event, matcher, m.group("script"),
-                          (m.group("arg") or "").strip(), None, ""])
-        elif m.group("timeout") and hooks:
-            hooks[-1][4] = int(m.group("timeout"))
-        elif hooks:
-            hooks[-1][5] = m.group("dq") if m.group("dq") is not None else m.group("sq")
-    return sorted(tuple(h) for h in hooks)
+def install_hooks(python):
+    mod = load_install()
+    got = mod.sozlama_yasa(python, "C:/Users/u/.claude/genius/0123456789ab", [], GENIUS)
+    hooks = []
+    for event, groups in got["hooks"].items():
+        for group in groups:
+            for hook in group["hooks"]:
+                m = SETTINGS_CMD.search(hook["command"])
+                script, arg = (m.group(1), m.group(2).strip()) if m else (hook["command"], "")
+                hooks.append((event, group.get("matcher", ""), script, arg,
+                              hook.get("timeout"), hook.get("statusMessage", "")))
+    return sorted(hooks)
 
 
 def settings_hooks():
@@ -563,18 +570,18 @@ def settings_hooks():
     return sorted(hooks)
 
 
-def case_ps1_hooklari_repoga_mos():
-    ps, repo = ps1_hooks(), settings_hooks()
+def case_install_hooklari_repoga_mos():
+    repo = settings_hooks()
     # Naqsh hech narsani tutmasa ikki bo'sh ro'yxat teng chiqadi: yolg'on
     # yashil bo'lmasin.
-    if len(ps) < 5 or len(repo) < 5:
-        raise AssertionError("hook kam o'qildi: ps1 %d, settings.json %d"
-                             % (len(ps), len(repo)))
-    if ps != repo:
-        only_ps = [h for h in ps if h not in repo]
-        only_repo = [h for h in repo if h not in ps]
-        raise AssertionError("faqat ps1 da: %s; faqat settings.json da: %s"
-                             % (only_ps, only_repo))
+    if len(repo) < 5:
+        raise AssertionError("hook kam o'qildi: settings.json %d" % len(repo))
+    for python in (sys.executable, r"C:\Python312\python.exe"):
+        mine = install_hooks(python)
+        if mine != repo:
+            raise AssertionError("faqat install.py da (%s): %s; faqat settings.json da: %s"
+                                 % (python, [h for h in mine if h not in repo],
+                                    [h for h in repo if h not in mine]))
     return True
 
 
@@ -677,10 +684,11 @@ CASES = [
     ("--allow aniq ro'yxat, run_tests opt-in da", case_allow_aniq_royxat),
     ("--opt-in settings.local.json bo'lagi", case_opt_in_bolagi),
     ("$, backtick yoki qo'shtirnoqli yo'l 2 qaytaradi", case_xavfli_belgili_yol_2),
-    ("ps1: docs va memory papkasi, opt-in, xavfli belgi", case_ps1_papkalar_va_opt_in),
-    ("ps1 hook jadvali settings.json ga mos", case_ps1_hooklari_repoga_mos),
-    ("ps1: hook yo'li snapshotga ishora qiladi (XV-Y1)", case_ps1_hook_yoli_snapshotga),
-    ("ps1: .genius.json manifesti va eski aktyor", case_ps1_manifest_va_eski_aktyor),
+    ("install.py: docs va memory papkasi, opt-in, xavfli belgi", case_install_papkalar_va_opt_in),
+    ("install.py hook jadvali settings.json ga mos (ikki platforma)",
+     case_install_hooklari_repoga_mos),
+    ("install.py: hook yo'li snapshotga ishora qiladi (XV-Y1)", case_install_hook_yoli_snapshotga),
+    ("install.py: .genius.json manifesti va eski aktyor", case_install_manifest_va_eski_aktyor),
     ("papka bo'ylab yuradi, .md dan boshqasi tegilmaydi", case_papkani_yuradi),
     ("haqiqiy skillda nol nisbiy yo'l", case_haqiqiy_skill_toza_qoladi),
 ]

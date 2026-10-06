@@ -19,9 +19,10 @@ papkasidan oladi va `index/`, `docs/`, `GLOSSARY.md` ni shu yerdan o'qiydi.
 Yoziladigan narsa (memory, holat) snapshotga emas, klonga tushadi: o'rnatuvchi
 settings.json `env` ga `GENIUS_CLONE` yozadi (tools/geniuslib.py clone_root).
 
-Bu mantiq install.py va manguberdi.ps1 uchun BITTA: ikkalasi snapshot joyini
-va git buyrug'ini shu yerdan oladi, shuning uchun paritet tasodif emas va
-PowerShell qismi sinalmaydigan git mantig'ini o'zida tutmaydi.
+Bu mantiq barcha platforma uchun BITTA: install.py (Linux, macOS va Windows)
+snapshot joyini va git buyrug'ini shu yerdan oladi. manguberdi.ps1 yupqa
+o'ram (R7.2) va sinalmaydigan git mantig'ini o'zida tutmaydi; CLI amallari
+(`yol`, `royxat`, `tozala`, ...) qo'lda tekshirish va yangilash.py uchun qoldi.
 
 Xavfsizlik: o'chirish faqat `<claude-dir>/genius/<12 ta hex>` papkalarini
 oladi (symlink emas, haqiqiy yo'li shu papka ichida), boshqa hech narsani.

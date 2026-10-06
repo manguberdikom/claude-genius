@@ -1,20 +1,26 @@
 #!/usr/bin/env python3
-"""install/install.py uchun sinovlar (Linux va macOS o'rnatuvchisi).
+"""install/install.py uchun sinovlar (Linux, macOS va Windows o'rnatuvchisi).
 
     python3 tools/test_install.py
     python3 tools/test_install.py -k paritet
+    python3 tools/test_install.py -k windows
 
 Haqiqiy ~/.claude ga tegilmaydi: har holat vaqtinchalik HOME (`HOME` env,
 tmp papka) bilan yuradi. Quruq yurish, --apply, --update, --uninstall bitta
 ketma-ketlikda (`stsenariy`) bir marta yuradi va holatlar uning natijasini
 tekshiradi: har --apply indeksni qayta yasaydi va asboblarni chaqiradi.
 
-Paritet: manguberdi.ps1 sinalmaydi, shuning uchun uning matni
-tools/test_rewrite_paths.py dagi usul bilan o'qiladi (hook jadvali,
-aktyorlar, eski aktyorlar, klon fayllari, manifest kalitlari) va install.py
-bilan solishtiriladi. Windows da install.py ishlamaydi (u yerda ps1), shuning
-uchun ish yuradigan holatlar o'tkazib yuboriladi, matnga oid paritet esa
-yuradi.
+Windows (R7.2): manguberdi.ps1 yupqa o'ram, o'rnatish mantig'i install.py da
+va PowerShell bu muhitda yurmaydi. Windows shakli `--platforma nt` bilan Linux
+da ham yuradi (USERPROFILE, teskari slashli Python, managed yo'llari, bash
+tashqaridan): ikkinchi stsenariy (`stsenariy(nt=True)`) shu rejimda dry,
+apply, update va uninstall ni yurgizadi. Paritet ps1 matnini emas, install.py
+ning ikki platforma uchun chiqishini solishtiradi; Windows shaklining ilgari
+ps1 bergan natijaga tengligi OLTIN qiymat bilan tekshiriladi (asos commit
+89133b10982c dagi manguberdi.ps1 matnidan bir marta chiqarilgan). ps1 ning
+o'zi uchun faqat "yupqa o'ram" matn tekshiruvi: haqiqiy sinov CI Windows
+ishida (powershell va pwsh). Ish yuradigan holatlar POSIX da; Windows da
+install.py ni ps1 CI qadamlari sinaydi.
 """
 
 import atexit
@@ -34,7 +40,7 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(ROOT, "install"))
 
 import testkit  # noqa: E402
-import test_rewrite_paths as T  # noqa: E402  (ps1 matnini o'qish usuli)
+import test_rewrite_paths as T  # noqa: E402  (settings.json hook jadvalini o'qish usuli)
 
 INSTALL_PY = os.path.join(ROOT, "install", "install.py")
 spec = importlib.util.spec_from_file_location("install_py", INSTALL_PY)
@@ -42,7 +48,12 @@ I = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(I)
 
 POSIX = os.name != "nt"
-SKIP = [("o'tkazildi: Windows da install.py yo'q (ps1 ishlaydi)", True)]
+SKIP = [("o'tkazildi: Windows da ish yuradigan holatlar yo'q (ps1 CI qadamlari sinaydi)", True)]
+
+# Windows shakli (`--platforma nt`): hook buyrug'ida teskari slashli Python, env
+# va manifestda `/` bilan.
+WIN_PY = "C:\\Python312\\python.exe"
+WIN_PY_FWD = "C:/Python312/python.exe"
 
 _TMP = []
 
@@ -114,17 +125,41 @@ def snap_of(home, klon):
     return os.path.join(home, ".claude", "genius", head_of(klon)[:12])
 
 
-def run_install(home, *args):
+_NT = {}
+
+
+def nt_muhit(home):
+    """Windows rejimi muhiti: uy USERPROFILE dan (HOME esa boshqa, bo'sh papka:
+    unga tegilsa sinov ko'radi), managed yo'llari ProgramFiles va ProgramData dan."""
+    if "decoy" not in _NT:
+        _NT["decoy"] = tmpdir("decoy_home_")
+        _NT["pf"] = tmpdir("programfiles_")
+        _NT["pd"] = tmpdir("programdata_")
+    return {"HOME": _NT["decoy"], "USERPROFILE": home, "CLAUDE_CONFIG_DIR": None,
+            "ProgramFiles": _NT["pf"], "ProgramData": _NT["pd"]}
+
+
+def nt_argv():
+    """ps1 o'ramning chaqiruvi: --platforma nt, bash tashqaridan (Git Bash o'rnida
+    shu mashinaning bashi), `--python` Windows shaklida."""
+    return ["--platforma", "nt", "--ps1", "--python", WIN_PY, "--bash",
+            shutil.which("bash") or "/bin/bash"]
+
+
+def run_install(home, *args, **kw):
     """install.main() ni vaqtinchalik HOME bilan yurgizadi: Result(rc, out, err).
 
     `--genius-path` berilmasa git_klon(): ishchi daraxtning o'zi emas, uning
-    commit qilingan nusxasi (snapshot reponing o'ziga tegmasin)."""
+    commit qilingan nusxasi (snapshot reponing o'ziga tegmasin). `nt=True` bo'lsa
+    Windows rejimi (nt_argv, USERPROFILE)."""
     args = list(args)
     if "--genius-path" not in args:
         args += ["--genius-path", git_klon()]
-    return testkit.call_main(
-        I.main, argv=["install.py"] + args,
-        env={"HOME": home, "CLAUDE_CONFIG_DIR": None})
+    env = {"HOME": home, "CLAUDE_CONFIG_DIR": None}
+    if kw.get("nt"):
+        args += nt_argv()
+        env = nt_muhit(home)
+    return testkit.call_main(I.main, argv=["install.py"] + args, env=env)
 
 
 def hooks_of(settings):
@@ -138,7 +173,7 @@ def commands_of(settings):
 
 # --- stsenariy: foydalanuvchi sozlamasi, dry, apply, update, uninstall ----
 
-_STATE = {}
+_STATES = {}
 _CLONE = []
 
 FOREIGN_SETTINGS = {
@@ -149,9 +184,34 @@ FOREIGN_SETTINGS = {
 }
 
 
-def stsenariy():
-    if _STATE:
-        return _STATE
+def oz_tmp(func):
+    """Stsenariy o'z vaqtinchalik papkasida yuradi: `manguberdi-*` papkalar soni
+    ("qolmadi" tekshiruvi) umumiy /tmp dagi boshqa jarayonlarga (parallel
+    worktree larning o'rnatuvchi sinovlariga) bog'liq bo'lmasin."""
+    def wrapper(*args, **kw):
+        private = tmpdir("tmp_")
+        saved = tempfile.tempdir, os.environ.get("TMPDIR")
+        # tempfile.tempdir: jarayon ichidagi mkdtemp (install.main), TMPDIR: uning
+        # subprocess lari (run_py).
+        tempfile.tempdir, os.environ["TMPDIR"] = private, private
+        try:
+            return func(*args, **kw)
+        finally:
+            tempfile.tempdir = saved[0]
+            if saved[1] is None:
+                os.environ.pop("TMPDIR", None)
+            else:
+                os.environ["TMPDIR"] = saved[1]
+    wrapper.__name__ = func.__name__
+    wrapper.__doc__ = func.__doc__
+    return wrapper
+
+
+@oz_tmp
+def stsenariy(nt=False):
+    st = _STATES.setdefault(nt, {})
+    if st:
+        return st
     home = tmpdir("uy_")
     claude = os.path.join(home, ".claude")
     put(os.path.join(claude, "skills", "eski", "SKILL.md"), "eski")
@@ -163,8 +223,12 @@ def stsenariy():
     put(os.path.join(claude, "agents", "arxitektor.md"), "eski aktyor")
     put(os.path.join(claude, "agents", "begona.md"), "begona aktyor")
 
-    st = _STATE
     st["home"], st["claude"] = home, claude
+    py = WIN_PY_FWD if nt else sys.executable
+    if nt:
+        # Managed sozlama: ogohlantirish Windows yo'llaridan chiqadi.
+        nt_muhit(home)
+        put(os.path.join(_NT["pf"], "ClaudeCode", "managed-settings.json"), "{}")
     klon = git_klon()
     st["klon"], st["snap"] = klon, snap_of(home, klon)
     st["head"] = head_of(klon)
@@ -174,7 +238,7 @@ def stsenariy():
     git_before = (testkit.git(klon, "status", "--porcelain"),
                   testkit.git(klon, "worktree", "list"))
     before = snapshot(home), snapshot(index), temp_stages(), snapshot(os.path.join(klon, ".git"))
-    st["dry"] = run_install(home)
+    st["dry"] = run_install(home, nt=nt)
     st["dry_same"] = before == (snapshot(home), snapshot(index), temp_stages(),
                                 snapshot(os.path.join(klon, ".git")))
     st["dry_git_same"] = git_before == (testkit.git(klon, "status", "--porcelain"),
@@ -182,7 +246,7 @@ def stsenariy():
     st["dry_no_genius"] = not os.path.exists(os.path.join(claude, "genius"))
 
     st["apply"] = run_install(home, "--apply", "--backup-to",
-                              os.path.join(home, "zaxira-1"))
+                              os.path.join(home, "zaxira-1"), nt=nt)
     path = os.path.join(claude, "settings.json")
     st["stages_after"] = temp_stages()
     st["after_apply_raw"] = open(path, "rb").read()
@@ -197,11 +261,11 @@ def stsenariy():
     st["snap_index_apply"] = os.path.isfile(os.path.join(st["snap"], "index", "sections.tsv"))
     st["opt_in_cli"] = I.run_py(
         [os.path.join(ROOT, "install", "rewrite_paths.py"), claude, "--root", st["snap"],
-         "--clone", klon, "--python", sys.executable, "--bash", "bash", "--opt-in"])
+         "--clone", klon, "--python", py, "--bash", "bash", "--opt-in"])
     # ps1 ham, install.py ham ruxsatni shu asbobdan oladi: shu holatdagi chiqishi.
     st["allow_cli"] = I.run_py(
         [os.path.join(ROOT, "install", "rewrite_paths.py"), claude, "--root", st["snap"],
-         "--clone", klon, "--python", sys.executable, "--bash", "bash", "--allow"])
+         "--clone", klon, "--python", py, "--bash", "bash", "--allow"])
 
     # Yangilash: begona skill, begona hook (o'z hooklari bilan bir guruhda),
     # begona ruxsat va ikkinchi marta o'rnatish.
@@ -212,16 +276,16 @@ def stsenariy():
     data["permissions"]["allow"].append("Bash(ls:*)")
     put(path, json.dumps(data))
     st["update"] = run_install(home, "--update", "--apply", "--backup-to",
-                               os.path.join(home, "zaxira-2"))
+                               os.path.join(home, "zaxira-2"), nt=nt)
     st["after_update"] = jget(path)
     st["update_agents"] = sorted(os.listdir(os.path.join(claude, "agents")))
     st["fs_update"] = set(snapshot(claude))
 
     before = snapshot(home)
-    st["uninstall_dry"] = run_install(home, "--uninstall")
+    st["uninstall_dry"] = run_install(home, "--uninstall", nt=nt)
     st["uninstall_dry_same"] = before == snapshot(home)
     st["uninstall"] = run_install(home, "--uninstall", "--apply", "--backup-to",
-                                  os.path.join(home, "zaxira-3"))
+                                  os.path.join(home, "zaxira-3"), nt=nt)
     st["fs_uninstall"] = set(snapshot(claude))
     st["after_uninstall"] = jget(path)
     st["worktrees_uninstall"] = testkit.git(klon, "worktree", "list")
@@ -796,141 +860,551 @@ def case_reset_include_auth_va_project_apply():
     ]
 
 
-# --- paritet: manguberdi.ps1 bilan --------------------------------------
+# --- Windows rejimi (`--platforma nt`) -----------------------------------
 
-def ps1_text():
-    return T.ps1_text()
+# OLTIN qiymat: asos commit 89133b10982c dagi manguberdi.ps1 matnidan bir marta
+# chiqarilgan. Kirish: Python `C:\Python312\python.exe`, snapshot
+# `C:/Users/u/.claude/genius/0123456789ab`, klon `C:/src/claude-genius`. ps1
+# HookCmd: `'"{0}" "{1}/{2}"' -f $PythonExe, $snapTools, $script` va oxirida
+# ` || exit 1` (handoff va usage argumenti suffiksdan oldin). Hook buyrug'ida
+# Python teskari slash bilan, env.GENIUS_PYTHON va manifestda `/` bilan.
+GOLDEN_SNAP = "C:/Users/u/.claude/genius/0123456789ab"
+GOLDEN_CLONE = "C:/src/claude-genius"
+GOLDEN_TOP = ["$schema", "env", "permissions", "hooks"]
+GOLDEN_ENV = {"GENIUS_PYTHON": "C:/Python312/python.exe", "GENIUS_CLONE": "C:/src/claude-genius"}
+GOLDEN_DIRS = ["C:/Users/u/.claude/genius/0123456789ab/docs", "C:/src/claude-genius/memory"]
+GOLDEN_HOOKS = [
+    ('UserPromptSubmit', '',
+     '"C:\\Python312\\python.exe" "C:/Users/u/.claude/genius/0123456789ab/tools/suggest_sections.py" || exit 1',
+     10, "Mos bo'limlar qidirilmoqda"),
+    ('UserPromptSubmit', '',
+     '"C:\\Python312\\python.exe" "C:/Users/u/.claude/genius/0123456789ab/tools/budget.py" || exit 1',
+     10, ''),
+    ('UserPromptSubmit', '',
+     '"C:\\Python312\\python.exe" "C:/Users/u/.claude/genius/0123456789ab/tools/handoff.py" --hook || exit 1',
+     10, "Kontekst o'lchanmoqda"),
+    ('PreToolUse', 'Read|Bash|PowerShell',
+     '"C:\\Python312\\python.exe" "C:/Users/u/.claude/genius/0123456789ab/tools/guard.py" || exit 1',
+     10, 'Qimmat amal tekshirilmoqda'),
+    ('PreToolUse', 'Task|Agent|SendMessage',
+     '"C:\\Python312\\python.exe" "C:/Users/u/.claude/genius/0123456789ab/tools/budget.py" || exit 1',
+     10, 'Aktyor budjeti tekshirilmoqda'),
+    ('SubagentStop', '',
+     '"C:\\Python312\\python.exe" "C:/Users/u/.claude/genius/0123456789ab/tools/actor_check.py" || exit 1',
+     10, 'Aktyor natijasi tekshirilmoqda'),
+    ('PostToolUse', 'Write|Edit',
+     '"C:\\Python312\\python.exe" "C:/Users/u/.claude/genius/0123456789ab/tools/check_code.py" || exit 1',
+     15, 'Java qoidalari tekshirilmoqda'),
+    ('Stop', '',
+     '"C:\\Python312\\python.exe" "C:/Users/u/.claude/genius/0123456789ab/tools/usage.py" --saqlash || exit 1',
+     20, 'Token sarfi yozilmoqda'),
+]
+GOLDEN_MANIFEST_KEYS = ["versiya", "commit", "sana", "root", "clone", "python", "actors"]
 
 
-def ps1_list(name):
-    """`$Name = @( 'a', 'b' )` ro'yxati (ko'p qatorli ham)."""
-    m = re.search(r"\$%s = @\((.*?)\)\s*\n" % name, ps1_text(), re.S)
-    if not m:
-        raise AssertionError("ps1 da $%s topilmadi" % name)
-    return re.findall(r"'([^']+)'", m.group(1))
+def flat_hooks(settings):
+    return [(event, group.get("matcher", ""), hook["command"], hook.get("timeout"),
+             hook.get("statusMessage", ""))
+            for event, groups in settings["hooks"].items()
+            for group in groups for hook in group["hooks"]]
 
 
-def case_paritet_hook_jadvali():
-    """install.py yozgan hook jadvali ps1 yasaydiganiga teng (hodisa, matcher,
-    skript, argument, timeout, statusMessage) va buyruq shakli bir xil."""
-    if not POSIX:
-        return SKIP
-    snap = "/uy/.claude/genius/0123456789ab"
-    settings = I.sozlama_yasa(sys.executable, snap, [], ROOT)
-    got = []
-    shape_ok = True
-    for event, groups in settings["hooks"].items():
-        for group in groups:
-            for hook in group["hooks"]:
-                m = T.SETTINGS_CMD.search(hook["command"])
-                script, arg = (m.group(1), m.group(2).strip()) if m else (hook["command"], "")
-                got.append((event, group.get("matcher", ""), script, arg,
-                            hook.get("timeout"), hook.get("statusMessage", "")))
-                shape_ok = shape_ok and re.match(
-                    r'^"%s" "%s/tools/%s"( [^|]+)? \|\| exit 1$' % (
-                        re.escape(sys.executable), re.escape(snap), re.escape(script)),
-                    hook["command"]) is not None
-    got.sort()
-    want = T.ps1_hooks()
-    if len(got) < 5 or len(want) < 5:
-        raise AssertionError("hook kam o'qildi: install %d, ps1 %d" % (len(got), len(want)))
+def case_windows_oltin_qiymat():
+    """Windows shakli (Python teskari slashli, env `/` bilan) ilgari ps1 bergan
+    settings.json ga teng: hook buyruqlari, tartib, env, papkalar, kalit tartibi."""
+    got = I.sozlama_yasa(WIN_PY, GOLDEN_SNAP, ["Bash(x)"], GOLDEN_CLONE, WIN_PY_FWD)
+    hooks = flat_hooks(got)
     return [
-        ("paritet: hook jadvali ps1 bilan bir xil (faqat install: %s; faqat ps1: %s)"
-         % ([h for h in got if h not in want], [h for h in want if h not in got]),
-         got == want),
-        ("paritet: buyruq shakli `\"python\" \"<snapshot>/tools/x.py\" [arg] || exit 1`",
-         shape_ok),
-        ("paritet: env, papkalar, schema (ps1 matnida ham shunday)",
-         settings["env"] == {"GENIUS_PYTHON": sys.executable, "GENIUS_CLONE": ROOT}
-         and settings["permissions"]["additionalDirectories"]
-         == [snap + "/docs", ROOT + "/memory"]
-         and "schemastore" in settings["$schema"]
-         and '"$sg/docs", "$g/memory"' in ps1_text()
-         and "GENIUS_PYTHON = $pyArg; GENIUS_CLONE = $g" in ps1_text()),
+        ("oltin: hook buyruqlari ps1 ning HookCmd shakli va tartibi bilan bir xil "
+         "(farq: %s)" % [h for h in hooks if h not in GOLDEN_HOOKS],
+         hooks == GOLDEN_HOOKS),
+        ("oltin: env.GENIUS_PYTHON `/` bilan, GENIUS_CLONE klon", got["env"] == GOLDEN_ENV),
+        ("oltin: additionalDirectories snapshot docs va klon memory",
+         got["permissions"]["additionalDirectories"] == GOLDEN_DIRS
+         and got["permissions"]["allow"] == ["Bash(x)"]),
+        ("oltin: yuqori kalitlar tartibi", list(got) == GOLDEN_TOP
+         and got["$schema"] == "https://json.schemastore.org/claude-code-settings.json"),
     ]
 
 
+def case_windows_platforma_funksiyalari():
+    """Platforma: ajratgich, uy papkasi, managed yo'llari, bash izlash."""
+    nt, posix = I.Platforma("nt"), I.Platforma("posix")
+    saved = {k: os.environ.get(k) for k in
+             ("USERPROFILE", "HOMEDRIVE", "HOMEPATH", "ProgramFiles", "ProgramData")}
+    try:
+        os.environ["USERPROFILE"] = "C:\\Users\\u"
+        home = nt.uy()
+        os.environ.pop("USERPROFILE")
+        os.environ["HOMEDRIVE"], os.environ["HOMEPATH"] = "D:", "\\h"
+        home2 = nt.uy()
+        os.environ["ProgramFiles"], os.environ["ProgramData"] = "C:\\PF", "C:\\PD"
+        managed = [m.replace("\\", "/") for m in nt.managed_yollar()]
+        os.environ.pop("ProgramFiles")
+        managed2 = [m.replace("\\", "/") for m in nt.managed_yollar()]
+    finally:
+        for key, value in saved.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+    return [
+        ("platforma: fwd Windows da `\\` ni `/` ga, POSIX da tegmaydi",
+         nt.fwd("C:\\a\\b") == "C:/a/b" and posix.fwd("/a\\b") == "/a\\b"),
+        ("platforma: kes ildizni saqlaydi", nt.kes("C:\\a\\b\\") == "C:\\a\\b"
+         and nt.kes("C:\\") == "C:\\" and nt.kes("C:/a//") == "C:/a"
+         and posix.kes("/a/b/") == "/a/b" and posix.kes("/") == "/"),
+        ("platforma: uy USERPROFILE, bo'lmasa HOMEDRIVE+HOMEPATH",
+         home == "C:\\Users\\u" and home2 == "D:\\h"),
+        ("platforma: uy ildiz papka rad", not nt.uy_yaroqli("") and not posix.uy_yaroqli("/")
+         and not posix.uy_yaroqli("rel") and not nt.uy_yaroqli("/")
+         and posix.uy_yaroqli("/home/u")),
+        ("platforma: managed yo'llari ProgramFiles va ProgramData",
+         managed == ["C:/PF/ClaudeCode/managed-settings.json",
+                     "C:/PD/ClaudeCode/managed-settings.json"]
+         and managed2 == ["C:/PD/ClaudeCode/managed-settings.json"]
+         and all(m.startswith("/") for m in posix.managed_yollar())),
+        ("platforma: bash tashqaridan berilsa o'sha", nt.bash_top("D:/Git/bin/bash.exe")
+         == "D:/Git/bin/bash.exe"),
+        ("platforma: Python nomi", nt.python_nomi() == "python" and posix.python_nomi() == "python3"),
+    ]
+
+
+def case_windows_bash_izlash():
+    """Windows da PATH dagi bash: System32 va WindowsApps (WSL) rad, boshqasi olinadi."""
+    if not POSIX:
+        return SKIP
+    nt = I.Platforma("nt")
+    base = tmpdir("bash_")
+    wsl = os.path.join(base, "Windows", "System32")
+    store = os.path.join(base, "WindowsApps")
+    git = os.path.join(base, "Git", "usr", "bin")
+    for folder in (wsl, store, git):
+        put(os.path.join(folder, "bash.exe"), "x")
+    saved = os.environ.get("PATH")
+    try:
+        os.environ["PATH"] = os.pathsep.join([wsl, store])
+        only_wsl = nt.bash_top()
+        os.environ["PATH"] = os.pathsep.join([wsl, store, git])
+        found = nt.bash_top()
+    finally:
+        os.environ["PATH"] = saved
+    return [
+        ("bash izlash: faqat System32 va WindowsApps bo'lsa topilmadi", only_wsl is None),
+        ("bash izlash: WSL dan keyingi haqiqiy bash olinadi",
+         found == os.path.join(git, "bash.exe")),
+    ]
+
+
+def case_windows_ps1_xabar_bayroqlari():
+    """--ps1 bilan xabarlarda PowerShell bayroqlari; ps1 siz o'z shakli."""
+    if not POSIX:
+        return SKIP
+    home = tmpdir("uy_")
+    rows = []
+    for ps1, want, not_want in ((True, "-ConfirmReset", "--confirm-reset"),
+                                (False, "--confirm-reset", "-ConfirmReset")):
+        argv = ["--reset", "--apply", "--platforma", "nt"] + (["--ps1"] if ps1 else [])
+        res = testkit.call_main(I.main, argv=["install.py"] + argv + ["--genius-path", git_klon()],
+                                env=nt_muhit(home))
+        rows.append(("xabar %s: rc 1, %s bor, %s yo'q" % ("ps1" if ps1 else "oddiy", want, not_want),
+                     res.returncode == 1 and want in res.stdout
+                     and not_want not in res.stdout.replace("-" + want.lstrip("-"), "")
+                     if ps1 else res.returncode == 1 and want in res.stdout))
+    rows.append(("xabar: uy papkasi yozilmadi", not os.path.exists(os.path.join(home, ".claude"))))
+    return rows
+
+
+def case_windows_rad_etiladigan_birikmalar():
+    """ps1 dagi rad etishlar Windows rejimida ham: CI Windows qadamlari shunga tayanadi."""
+    if not POSIX:
+        return SKIP
+    home = tmpdir("uy_")
+    rows = []
+    for args, text in (((["--reset", "--apply"]), "-ConfirmReset"),
+                       ((["--include-auth"]), "faqat -Reset bilan"),
+                       ((["--uninstall", "--reset"]), "berilmaydi")):
+        res = run_install(home, *args, nt=True)
+        rows.append(("windows rad: %s" % " ".join(args),
+                     res.returncode == 1 and text in res.stdout))
+    saved = os.environ.get("CLAUDE_CONFIG_DIR")
+    env = nt_muhit(home)
+    env["CLAUDE_CONFIG_DIR"] = "C:\\boshqa"
+    res = testkit.call_main(I.main, argv=["install.py", "--genius-path", git_klon()] + nt_argv(),
+                            env=env)
+    rows.append(("windows rad: CLAUDE_CONFIG_DIR", res.returncode == 1
+                 and "CLAUDE_CONFIG_DIR" in res.stdout
+                 and os.environ.get("CLAUDE_CONFIG_DIR") == saved))
+    for value in ("", "/", "\\"):
+        env = nt_muhit(home)
+        env["USERPROFILE"] = value
+        env["HOME"] = value
+        env.update({"HOMEPATH": None, "HOMEDRIVE": None})
+        res = testkit.call_main(I.main, argv=["install.py", "--apply", "--genius-path", git_klon()]
+                                + nt_argv(), env=env)
+        rows.append(("windows uy=%r: rad, traceback yo'q" % value, res.returncode == 1
+                     and "uy papkasi" in res.stdout and "USERPROFILE" in res.stdout))
+    res = run_install(home, "--apply", nt=True, **{}) if False else None
+    bad = os.path.join(tmpdir("klon_"), "a$b")
+    os.makedirs(bad)
+    res = run_install(home, "--genius-path", bad, nt=True)
+    rows.append(("windows xavfli yo'l: rc 1", res.returncode == 1 and "$, backtick" in res.stdout))
+    res = testkit.call_main(
+        I.main, argv=["install.py", "--genius-path", git_klon(), "--platforma", "nt",
+                      "--bash", os.path.join(home, "yoq-bash.exe")], env=nt_muhit(home))
+    rows.append(("windows: berilgan --bash fayli yo'q: rad", res.returncode == 1
+                 and "--bash fayli topilmadi" in res.stdout))
+    rows.append(("windows rad: uy papkasi yozilmadi", not os.path.exists(os.path.join(home, ".claude"))))
+    return rows
+
+
+def case_windows_quruq_yurish():
+    if not POSIX:
+        return SKIP
+    st = stsenariy(nt=True)
+    out = st["dry"].stdout
+    pf_managed = os.path.join(_NT["pf"], "ClaudeCode", "managed-settings.json")
+    return [
+        ("windows quruq: rc 0, ro'yxat chiqdi",
+         st["dry"].returncode == 0 and "quruq yurish" in out and "o'rnatilmoqda" in out),
+        ("windows quruq: bayroq PowerShell shaklida (-Apply)",
+         "-Apply bermadingiz" in out and "--apply" not in out),
+        ("windows quruq: uy, indeks, vaqtinchalik papka, klonning .git i o'zgarmadi",
+         st["dry_same"] and st["dry_git_same"] and st["dry_no_genius"]),
+        ("windows quruq: uy USERPROFILE dan (HOME dagi boshqa papkaga tegilmadi)",
+         ("Global: %s" % st["claude"]) in out and os.listdir(_NT["decoy"]) == []),
+        ("windows quruq: managed sozlama ogohlantirishi ProgramFiles dan",
+         "DIQQAT: %s topildi" % pf_managed in out),
+        ("windows quruq: python Windows shaklida, bash tashqaridan",
+         ("Python: %s" % WIN_PY) in out and ("Bash  : %s" % nt_argv()[-1]) in out
+         and ("python: %s" % WIN_PY_FWD) in out),
+    ]
+
+
+def case_windows_apply_ornatadi():
+    if not POSIX:
+        return SKIP
+    st = stsenariy(nt=True)
+    claude, after = st["claude"], st["after_apply"]
+    cmds = commands_of(after)
+    own = [c for c in cmds if "begona" not in c]
+    manifest = st["manifest"]
+    return [
+        ("windows apply: rc 0", st["apply"].returncode == 0),
+        ("windows apply: hook buyrug'i Python teskari slash bilan, yo'l snapshotga `/` bilan",
+         len(own) >= 7 and all(c.startswith('"%s" "%s/tools/' % (WIN_PY, st["snap"]))
+                               and c.endswith(" || exit 1") for c in own)),
+        ("windows apply: env.GENIUS_PYTHON `/` bilan, GENIUS_CLONE klon",
+         after["env"] == {"GENIUS_PYTHON": WIN_PY_FWD, "GENIUS_CLONE": st["klon"]}),
+        ("windows apply: manifest kalitlari, root snapshot, python `/` bilan",
+         list(manifest) == GOLDEN_MANIFEST_KEYS and manifest["root"] == st["snap"]
+         and manifest["clone"] == st["klon"] and manifest["python"] == WIN_PY_FWD
+         and manifest["commit"] == st["head"]),
+        ("windows apply: skill matni Pythonni `/` bilan, tools/ snapshotga, memory/ klonga",
+         ("%s %s/tools/rules_for.py" % (WIN_PY_FWD, st["snap"])) in st["skill_text"]
+         and ("%s/memory/" % st["klon"]) in st["skill_text"]),
+        ("windows apply: snapshot, indeks, begona yozuvlar, BOM yo'q",
+         st["snap_index_apply"] and "guard.py" in st["snap_tools_apply"]
+         and os.path.join(claude, "CLAUDE.md") in st["fs_apply"] and st["claude_md"] == "eski"
+         and "echo begona-hook" in cmds and after.get("model") == "opus"
+         and not st["after_apply_raw"].startswith(b"\xef\xbb\xbf")),
+        ("windows apply: eski aktyor olindi, begonasi qoldi",
+         "arxitektor.md" not in st["apply_agents"] and "begona.md" in st["apply_agents"]
+         and all(a + ".md" in st["apply_agents"] for a in I.ACTORS)),
+        ("windows apply: vaqtinchalik papka qolmadi, HOME dagi boshqa papkaga tegilmadi",
+         st["stages_after"] == st["stages_before"] and os.listdir(_NT["decoy"]) == []),
+        ("windows apply: oxirida PowerShell shaklidagi yangilash buyrug'i `python`",
+         ("python %s/tools/yangilash.py" % st["snap"]) in st["apply"].stdout),
+    ]
+
+
+def case_windows_update_va_uninstall():
+    if not POSIX:
+        return SKIP
+    st = stsenariy(nt=True)
+    after, gone = st["after_update"], st["after_uninstall"]
+    cmds, fs = commands_of(after), st["fs_uninstall"]
+    claude = st["claude"]
+    root = st["snap"].lower()
+    return [
+        ("windows update: rc 0, begona hooklar va ruxsat saqlandi, o'z hooki ikkilanmadi",
+         st["update"].returncode == 0 and "echo begona-hook" in cmds
+         and "echo begona-hook-2" in cmds and "Bash(ls:*)" in after["permissions"]["allow"]
+         and sum("suggest_sections.py" in c for c in cmds) == 1),
+        ("windows update: Windows shaklidagi hook qayta yozildi",
+         all(c.startswith('"%s" "%s/tools/' % (WIN_PY, st["snap"]))
+             for c in cmds if "begona" not in c and "tools/" in c)),
+        ("windows uninstall: quruq yurish va haqiqiy rc 0",
+         st["uninstall_dry"].returncode == 0 and st["uninstall_dry_same"]
+         and st["uninstall"].returncode == 0),
+        ("windows uninstall: skill, aktyorlar va snapshot ketdi, begona qoldi",
+         os.path.join(claude, "skills", "manguberdi") not in fs
+         and not any(os.path.join(claude, "agents", a + ".md") in fs for a in I.ACTORS)
+         and os.path.join(claude, "skills", "begona", "SKILL.md") in fs
+         and os.path.join(claude, "CLAUDE.md") in fs
+         and st["genius_after_uninstall"] == [] and not os.path.exists(st["snap"])),
+        ("windows uninstall: o'z hooki, env, papkalar ketdi, begonasi qoldi",
+         not any(root in c.lower() for c in commands_of(gone))
+         and "GENIUS_PYTHON" not in gone.get("env", {}) and "GENIUS_CLONE" not in gone.get("env", {})
+         and not gone.get("permissions", {}).get("additionalDirectories")
+         and "echo begona-hook" in commands_of(gone) and gone.get("model") == "opus"),
+        ("windows: HOME dagi boshqa papkaga tegilmadi", os.listdir(_NT["decoy"]) == []),
+    ]
+
+
+def norm_settings(st, py_text):
+    """Ikki stsenariyning farqli yo'llari (uy, Python) bir xil belgiga."""
+    text = json.dumps(st["after_apply"], sort_keys=True)
+    for value, mark in ((json.dumps(py_text)[1:-1], "<PY>"), (py_text, "<PY>"),
+                        (st["home"], "<UY>")):
+        text = text.replace(value, mark)
+    return text
+
+
+def case_paritet_ikki_platforma():
+    """install.py ning ikki platforma uchun chiqishi: Python va uy yo'lini
+    belgilab qo'ysak settings.json, manifest va skill matni bir xil; hook buyrug'idagi
+    Python ham ikkala shaklda o'sha yo'l (POSIX da farq yo'q, Windows da faqat ajratgich)."""
+    if not POSIX:
+        return SKIP
+    posix, nt = stsenariy(), stsenariy(nt=True)
+
+    def mark(text, st, py):
+        for value, label in ((json.dumps(py)[1:-1], "<PY>"), (py, "<PY>"),
+                             (st["home"], "<UY>")):
+            text = text.replace(value, label)
+        return text
+
+    nt_settings = json.dumps(nt["after_apply"], sort_keys=True).replace(
+        json.dumps(WIN_PY)[1:-1], WIN_PY_FWD)
+    same_settings = mark(json.dumps(posix["after_apply"], sort_keys=True), posix, sys.executable) \
+        == mark(nt_settings, nt, WIN_PY_FWD)
+    same_skill = mark(posix["skill_text"], posix, sys.executable) \
+        == mark(nt["skill_text"], nt, WIN_PY_FWD)
+    pm, nm = dict(posix["manifest"]), dict(nt["manifest"])
+    for m in (pm, nm):
+        m.pop("sana")
+    same_manifest = mark(json.dumps(pm, sort_keys=True), posix, sys.executable) \
+        == mark(json.dumps(nm, sort_keys=True), nt, WIN_PY_FWD)
+    return [
+        ("paritet: settings.json ikki platformada bir xil (Python, uy belgilanganda)", same_settings),
+        ("paritet: skill matni bir xil", same_skill),
+        ("paritet: manifest bir xil (sana bundan mustasno)", same_manifest),
+        ("paritet: ruxsat qoidalari bir xil",
+         mark(json.dumps(posix["after_apply"]["permissions"], sort_keys=True), posix,
+              sys.executable)
+         == mark(json.dumps(nt["after_apply"]["permissions"], sort_keys=True), nt, WIN_PY_FWD)),
+        ("paritet: oldingi aktyorlar va fayl daraxti bir xil", posix["apply_agents"]
+         == nt["apply_agents"] and len(posix["fs_apply"]) == len(nt["fs_apply"])),
+    ]
+
+
+def case_windows_rewrite_chaqiruvlari():
+    """Yo'l almashtirish asbobiga Windows shaklida beriladigan argumentlar eski ps1
+    bilan bir xil: `--root <snapshot> --clone <klon> --root-keyin --python <py `/`>
+    --bash bash`; `--clone` klon o'z shaklida."""
+    if not POSIX:
+        return SKIP
+    calls = []
+    real = I.run_py
+
+    def spy(args, input_text=None, env=None):
+        calls.append(list(args))
+        return real(args, input_text, env)
+
+    home = tmpdir("uy_")
+    I.run_py = spy
+    try:
+        res = run_install(home, nt=True)
+    finally:
+        I.run_py = real
+    rewriter = [c for c in calls if os.path.basename(c[0]) == "rewrite_paths.py"]
+    snap = snap_of(home, git_klon())
+    want = ["--root", snap, "--clone", git_klon(), "--root-keyin",
+            "--python", WIN_PY_FWD, "--bash", "bash"]
+    return [
+        ("rewrite: rc 0", res.returncode == 0),
+        ("rewrite: beshta chaqiruv (2 papka x 2, --allow, --opt-in: jami 6)", len(rewriter) == 6),
+        ("rewrite: --python `/` bilan, --bash nomi, --clone klon, --root snapshot",
+         bool(rewriter) and all(c[2:2 + len(want)] == want for c in rewriter
+                                if "--tekshir" not in c)),
+        ("rewrite: --tekshir chaqiruvi ham --root va --clone bilan",
+         any(c[2:7] == want[:5] and c[-1] == "--tekshir" for c in rewriter)),
+        ("rewrite: --allow va --opt-in", any(c[-1] == "--allow" for c in rewriter)
+         and any(c[-1] == "--opt-in" for c in rewriter)),
+    ]
+
+
+# --- ps1 yupqa o'ram: faqat matn ------------------------------------------
+
+def ps1_text():
+    return get(os.path.join(ROOT, "install", "manguberdi.ps1"))
+
+
+def ps1_code():
+    """Izoh bloki (`<# ... #>`) va `#` izohlarsiz kod qatorlari."""
+    text = re.sub(r"<#.*?#>", "", ps1_text(), flags=re.S)
+    return [ln for ln in text.splitlines() if ln.strip() and not ln.strip().startswith("#")]
+
+
+def case_ps1_yupqa_oram():
+    """R7.2: ps1 faqat Windows ga xos ish qiladi va install.py ni chaqiradi.
+    O'rnatish mantig'i (hook jadvali, JSON, snapshot, birlashtirish, zaxira) unda yo'q."""
+    text, lines = ps1_text(), ps1_code()
+    code = "\n".join(lines)
+    logic = ("ConvertTo-Json", "ConvertFrom-Json", "HookCmd", "merge_settings", "rewrite_paths",
+             "snapshot.py", "uninstall_settings", "Remove-Item", "Copy-Item", "WriteAllText",
+             "$ConfigItems", "$Actors", "$Retired", "$Required", "Test-SafePath", "git ")
+    windows = ("'py', '-3'", "System32|WindowsApps", "\\Git\\bin\\bash.exe",
+               "Find-Python", "Find-GitBash", "'--bash'", "'--ps1'", "$LASTEXITCODE",
+               "$PSScriptRoot", "GetUnresolvedProviderPathFromPSPath", "Set-ExecutionPolicy")
+    return [
+        ("ps1 o'ram: o'rnatish mantig'i yo'q (%s)" % [w for w in logic if w in code],
+         not any(w in code for w in logic)),
+        ("ps1 o'ram: Windows ga xos qismlar qoldi (yo'q: %s)" % [w for w in windows if w not in text],
+         all(w in text for w in windows)),
+        ("ps1 o'ram: install.py ni chaqiradi va chiqish kodini qaytaradi",
+         "& $PythonExe @pyArgs" in code and "exit $LASTEXITCODE" in code
+         and "'install.py'" in code),
+        ("ps1 o'ram: 300 qatordan oshmaydi (jami %d, kod %d)" % (len(text.splitlines()), len(lines)),
+         len(text.splitlines()) < 300 and len(lines) < 150),
+        ("ps1 o'ram: faqat ASCII (Windows PowerShell 5.1 BOM siz faylni ANSI deb o'qiydi)",
+         all(ord(ch) < 128 for ch in text)),
+    ]
+
+
+def case_ps1_parametrlari_install_pyga_uzatiladi():
+    """Har ps1 parametri install.py bayrog'iga uzatiladi (-Update bundan mustasno:
+    u eski nom), uzatiladigan har bayroqni install.py taniydi."""
+    text = ps1_text()
+    block = re.search(r"\bparam\((.*?)\n\)", re.sub(r"<#.*?#>", "", text, flags=re.S), re.S)
+    names = re.findall(r"\[(?:string|switch)\]\$(\w+)", block.group(1) if block else "")
+    flags = {n: "--" + re.sub(r"(?<!^)(?=[A-Z])", "-", n).lower() for n in names}
+    known = set(I.parser_yasa()._option_string_actions)
+    used = set(re.findall(r"'(--[a-z0-9-]+)'", "\n".join(ps1_code())))
+    missing = [n for n, f in flags.items() if n != "Update" and f not in used]
+    unknown = sorted(used - known)
+    return [
+        ("ps1 parametrlari topildi: %s" % names, len(names) == 9 and "Update" in names),
+        ("ps1 -> install.py: har parametr uzatiladi (yo'q: %s)" % missing, not missing),
+        ("ps1 -> install.py: -Update uzatilmaydi (eski nom, hech narsa o'zgartirmaydi)",
+         "'--update'" not in text),
+        ("ps1 -> install.py: uzatiladigan bayroqlarni install.py taniydi (noma'lum: %s)" % unknown,
+         not unknown and {"--bash", "--ps1", "--genius-path"} <= used),
+        ("ps1 -> install.py: -ConfirmReset faqat -Reset bilan uzatiladi",
+         "if ($Reset -and $ConfirmReset)" in text),
+    ]
+
+
+def case_paritet_hook_jadvali():
+    """install.py hook jadvali ikkala platforma shaklida repodagi
+    .claude/settings.json ga teng (tools/test_rewrite_paths.py ham shuni qo'riqlaydi)
+    va buyruq shakli `"python" "<snapshot>/tools/x.py" [arg] || exit 1`."""
+    snap = "/uy/.claude/genius/0123456789ab"
+    rows = []
+    for label, py in (("posix", sys.executable), ("windows", WIN_PY)):
+        settings = I.sozlama_yasa(py, snap, [], ROOT, py.replace("\\", "/"))
+        got, shape_ok = [], True
+        for event, groups in settings["hooks"].items():
+            for group in groups:
+                for hook in group["hooks"]:
+                    m = T.SETTINGS_CMD.search(hook["command"])
+                    script, arg = (m.group(1), m.group(2).strip()) if m else (hook["command"], "")
+                    got.append((event, group.get("matcher", ""), script, arg,
+                                hook.get("timeout"), hook.get("statusMessage", "")))
+                    shape_ok = shape_ok and re.match(
+                        r'^"%s" "%s/tools/%s"( [^|]+)? \|\| exit 1$' % (
+                            re.escape(py), re.escape(snap), re.escape(script)),
+                        hook["command"]) is not None
+        got.sort()
+        want = T.settings_hooks()
+        if len(got) < 5 or len(want) < 5:
+            raise AssertionError("hook kam o'qildi: install %d, settings.json %d"
+                                 % (len(got), len(want)))
+        rows += [
+            ("paritet (%s): hook jadvali repo settings.json bilan bir xil (faqat install: %s; "
+             "faqat repo: %s)" % (label, [h for h in got if h not in want],
+                                  [h for h in want if h not in got]), got == want),
+            ("paritet (%s): buyruq shakli" % label, shape_ok),
+            ("paritet (%s): env, papkalar, schema" % label,
+             settings["env"] == {"GENIUS_PYTHON": py.replace("\\", "/"), "GENIUS_CLONE": ROOT}
+             and settings["permissions"]["additionalDirectories"]
+             == [snap + "/docs", ROOT + "/memory"]
+             and "schemastore" in settings["$schema"]),
+        ]
+    return rows
+
+
 def case_paritet_snapshot_joyi():
-    """Snapshot joyi va git mantig'i bitta: install.py ham, ps1 ham
-    install/snapshot.py dan oladi. CLI `yol` install.py yozgan manifestdagi
-    root bilan bir xil joyni beradi."""
+    """Snapshot joyi va git mantig'i bitta: install.py ham, ps1 o'rami ham
+    install/snapshot.py dan oladi (ps1 unga umuman tegmaydi, git ni o'zi chaqirmaydi).
+    CLI `yol` install.py yozgan manifestdagi root bilan bir xil joyni beradi."""
     if not POSIX:
         return SKIP
     st = stsenariy()
     code, out = I.run_py([os.path.join(ROOT, "install", "snapshot.py"), "yol",
                           "--clone", st["klon"], "--claude-dir", st["claude"]])
     info = json.loads(out) if code == 0 else {}
-    text = ps1_text()
+    snap_py = get(os.path.join(ROOT, "install", "snapshot.py"))
+    inst = get(INSTALL_PY)
     return [
         ("paritet: snapshot.py yol == manifestdagi root",
          info.get("path") == st["manifest"]["root"] == st["snap"]
          and info.get("sha") == st["manifest"]["commit"]),
         ("paritet: joy `<claude>/genius/<sha12>`",
          st["snap"] == os.path.join(st["claude"], "genius", st["head"][:12])),
-        ("paritet: ps1 snapshot.py ning yol, arxiv, yarat, royxat, tozala amallarini chaqiradi",
-         all(("'%s'" % act) in text for act in ("yol", "arxiv", "yarat", "royxat", "tozala"))),
-        ("paritet: install.py va ps1 `-c core.autocrlf=false` ni snapshot.py orqali oladi",
-         "core.autocrlf=false" in get(os.path.join(ROOT, "install", "snapshot.py"))
-         and "'worktree'" not in text and "'add', '--detach'" not in text),
+        ("paritet: install.py snapshot.py ning yarat, arxiv, royxat, olib_tashla, farq_matn, "
+         "sha_ol amallarini chaqiradi",
+         all(("snapshot.%s(" % fn) in inst for fn in (
+             "yarat", "arxiv", "royxat", "olib_tashla", "farq_matn", "sha_ol"))),
+        ("paritet: `-c core.autocrlf=false` snapshot.py da, ps1 da git yo'q",
+         "core.autocrlf=false" in snap_py and "worktree" not in "\n".join(ps1_code())
+         and "'git'" not in "\n".join(ps1_code())),
     ]
 
 
 def case_paritet_ruxsat_royxati():
-    """Ruxsat ro'yxatini ikkala o'rnatuvchi ham rewrite_paths.py --allow dan
-    oladi: install.py ning ro'yxati shu asbobning ko'chirilgan skill va
-    aktyorlardagi chiqishiga teng, qo'lda yig'ilmagan."""
+    """Ruxsat ro'yxatini install.py rewrite_paths.py --allow dan oladi: uning ro'yxati
+    shu asbobning ko'chirilgan skill va aktyorlardagi chiqishiga teng, qo'lda
+    yig'ilmagan (ikkala platforma shaklida)."""
     if not POSIX:
         return SKIP
-    st = stsenariy()
-    code, out = st["allow_cli"]
-    want = json.loads(out)
-    allow = st["after_apply"]["permissions"]["allow"]
-    own = [r for r in allow if r != "Bash(git status:*)"]
-    text = ps1_text()
-    return [
-        ("paritet: --allow chiqishi o'qildi", code == 0 and len(want) >= 5),
-        ("paritet: install.py ruxsati rewrite_paths --allow ga teng", sorted(own) == sorted(want)),
-        ("paritet: run_tests global ruxsatda yo'q",
-         not any("run_tests.py" in r for r in allow)),
-        ("paritet: opt-in bo'lagi (run_tests) --opt-in chiqishi bilan bir xil va oxirida ko'rsatildi",
-         st["opt_in_cli"][0] == 0 and "run_tests.py" in st["opt_in_cli"][1]
-         and st["opt_in_cli"][1] in st["apply"].stdout),
-        ("paritet: ps1 ham ruxsat va opt-in ni shu asbobdan oladi",
-         "'--allow'" in text and "'--opt-in'" in text),
-    ]
-
-
-def case_paritet_ps1_doimiylari():
-    ps1 = {
-        "aktyorlar": ps1_list("Actors"),
-        "eski aktyorlar": ps1_list("Retired"),
-        "tozalash birliklari": ps1_list("ConfigItems"),
-        "klon fayllari": [r.replace("\\", "/") for r in ps1_list("Required")],
-    }
-    mine = {
-        "aktyorlar": list(I.ACTORS),
-        "eski aktyorlar": list(I.RETIRED),
-        "tozalash birliklari": list(I.CONFIG_ITEMS),
-        "klon fayllari": list(I.REQUIRED),
-    }
-    rows = [("paritet: %s ps1 bilan bir xil (%d)" % (key, len(ps1[key])),
-             ps1[key] == mine[key] and len(ps1[key]) > 0) for key in ps1]
-    keys = re.search(r"\$manifest = \[ordered\]@\{(.*?)\n  \}", ps1_text(), re.S)
-    ps1_keys = re.findall(r"^\s*(\w+)\s*=", keys.group(1), re.M) if keys else []
-    if POSIX:
-        st = stsenariy()
-        manifest = st["manifest"]
-        rows.append(("paritet: manifest kalitlari ps1 bilan bir xil %s" % ps1_keys,
-                     bool(ps1_keys) and sorted(manifest) == sorted(ps1_keys)))
+    rows = []
+    for label, nt in (("posix", False), ("windows", True)):
+        st = stsenariy(nt=nt)
+        code, out = st["allow_cli"]
+        want = json.loads(out)
+        allow = st["after_apply"]["permissions"]["allow"]
+        own = [r for r in allow if r != "Bash(git status:*)"]
+        rows += [
+            ("paritet (%s): --allow chiqishi o'qildi" % label, code == 0 and len(want) >= 5),
+            ("paritet (%s): install.py ruxsati rewrite_paths --allow ga teng" % label,
+             sorted(own) == sorted(want)),
+            ("paritet (%s): run_tests global ruxsatda yo'q" % label,
+             not any("run_tests.py" in r for r in allow)),
+            ("paritet (%s): opt-in bo'lagi (run_tests) --opt-in chiqishi bilan bir xil va "
+             "oxirida ko'rsatildi" % label,
+             st["opt_in_cli"][0] == 0 and "run_tests.py" in st["opt_in_cli"][1]
+             and st["opt_in_cli"][1] in st["apply"].stdout),
+        ]
     return rows
 
 
-def case_paritet_ps1_xavfsiz_belgilar():
-    """ps1 va install.py bir xil belgilarni rad etadi (R7.8 XV-P2)."""
-    text = ps1_text()
-    m = re.search(r"\$UnsafeChars = \[char\[\]\]@\((.*?)\)", text)
-    ps1_chars = re.findall(r"'([^']+)'", m.group(1)) if m else []
-    return sorted(ps1_chars) == sorted(I.UNSAFE_CHARS) and len(ps1_chars) == 3
+def case_paritet_doimiylar():
+    """Doimiylar: aktyorlar skill va .claude/agents bilan, eski nom hozirgi emas,
+    klon fayllari mavjud, xavfsiz belgilar rewrite_paths bilan bir xil (XV-P2)."""
+    agents = {name[:-3] for name in os.listdir(os.path.join(ROOT, ".claude", "agents"))}
+    return [
+        ("doimiylar: aktyorlar .claude/agents da bor (%d)" % len(I.ACTORS),
+         set(I.ACTORS) <= agents and len(I.ACTORS) == 6),
+        ("doimiylar: eski aktyor hozirgi ro'yxatda va fayllarda yo'q",
+         not set(I.RETIRED) & (set(I.ACTORS) | agents)),
+        ("doimiylar: klon fayllari (%d) mavjud va `/` ajratgichli" % len(I.REQUIRED),
+         all(os.path.exists(os.path.join(ROOT, rel)) for rel in I.REQUIRED)
+         and not any("\\" in rel for rel in I.REQUIRED)),
+        ("doimiylar: xavfsiz belgilar rewrite_paths bilan bir xil",
+         sorted(I.UNSAFE_CHARS) == sorted(T.R.UNSAFE_CHARS) and len(I.UNSAFE_CHARS) == 3),
+    ]
 
 
 def case_run_all_tests_topadi():
@@ -963,11 +1437,22 @@ CASES = [
     ("--uninstall manifest bo'yicha", case_uninstall_manifest_boyicha),
     ("HOME bo'sh yoki / rad etiladi", case_uy_papka_rad),
     ("--reset --include-auth --project --apply", case_reset_include_auth_va_project_apply),
-    ("paritet: hook jadvali ps1 ga teng", case_paritet_hook_jadvali),
+    ("paritet: hook jadvali repo settings.json ga teng (ikki platforma)", case_paritet_hook_jadvali),
     ("paritet: snapshot joyi va git mantig'i bitta", case_paritet_snapshot_joyi),
-    ("paritet: ruxsat ro'yxati", case_paritet_ruxsat_royxati),
-    ("paritet: ps1 doimiylari", case_paritet_ps1_doimiylari),
-    ("paritet: xavfsiz belgilar", case_paritet_ps1_xavfsiz_belgilar),
+    ("paritet: ruxsat ro'yxati (ikki platforma)", case_paritet_ruxsat_royxati),
+    ("paritet: doimiylar", case_paritet_doimiylar),
+    ("paritet: install.py chiqishi ikki platformada bir xil", case_paritet_ikki_platforma),
+    ("windows: ps1 ilgari bergan natijaga teng (oltin qiymat)", case_windows_oltin_qiymat),
+    ("windows: Platforma funksiyalari", case_windows_platforma_funksiyalari),
+    ("windows: PATH dagi bash, WSL rad", case_windows_bash_izlash),
+    ("windows: --ps1 xabarlarda PowerShell bayroqlari", case_windows_ps1_xabar_bayroqlari),
+    ("windows: rad etiladigan birikmalar", case_windows_rad_etiladigan_birikmalar),
+    ("windows: quruq yurish", case_windows_quruq_yurish),
+    ("windows: --apply o'rnatadi", case_windows_apply_ornatadi),
+    ("windows: --update va --uninstall", case_windows_update_va_uninstall),
+    ("windows: yo'l almashtirish chaqiruvlari ps1 bilan bir xil", case_windows_rewrite_chaqiruvlari),
+    ("ps1: yupqa o'ram", case_ps1_yupqa_oram),
+    ("ps1: parametrlar install.py ga uzatiladi", case_ps1_parametrlari_install_pyga_uzatiladi),
     ("run_all_tests yangi suiteni topadi", case_run_all_tests_topadi),
 ]
 
