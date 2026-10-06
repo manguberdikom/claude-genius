@@ -420,6 +420,29 @@ def case_eskirgan_nolga(_):
     return run("dasturchi")[0] == 0
 
 
+def case_buzuq_slot(_):
+    """Qo'shni sessiyaning buzuq sloti budjetni o'chirmaydi (KD-K2).
+
+    Avval `seen: null` save() da TypeError berardi: hook yiqilib, uchinchi
+    chaqiruv ham o'tib ketardi."""
+    write_state({"sessions": {
+        "a": {"seen": None, "calls": {}},
+        "b": {"started": "x", "calls": {}},
+        "c": [],
+        "d": {"started": time.time(), "seen": time.time(), "calls": [],
+              "ids": "x"},
+        "e": {"started": time.time(), "calls": {"dasturchi": "ikki"}}}})
+    results = [call(stdin=payload("Agent", "dasturchi", session="buzuq"))
+               for _ in range(3)]
+    clean_run = all(r.returncode == 0 and r.stderr == "" for r in results)
+    decisions = [decision(r.stdout) for r in results]
+    kept = state()["sessions"]
+    return (clean_run and decisions == ["allow", "allow", "deny"]
+            and "a" not in kept and "b" not in kept and "c" not in kept
+            and kept["d"]["calls"] == {} and kept["e"]["calls"] == {}
+            and run("--holat", session="d")[0] == 0)
+
+
 def case_eski_shakl_toza(_):
     """Sessiyasiz eski tekis fayl yangi sessiyani to'smaydi."""
     write_state({"task": "x", "started": time.time(),
@@ -561,6 +584,7 @@ CASES = [
     ("buzuq JSON to'smaydi", case_buzuq_json),
     ("eskirgan hisob nolga tushadi", case_eskirgan_nolga),
     ("eski tekis fayl to'smaydi", case_eski_shakl_toza),
+    ("buzuq qo'shni slot budjetni o'chirmaydi", case_buzuq_slot),
     ("ikki sessiya bir-birini to'smaydi", case_ikki_sessiya_tosmaydi),
     ("--yangi-vazifa boshqa sessiyaga tegmaydi",
      case_yangi_vazifa_boshqasiga_tegmaydi),
