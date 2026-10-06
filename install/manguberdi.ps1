@@ -63,8 +63,9 @@
 
 .PARAMETER Uninstall
   manguberdi birliklarini olib tashlaydi: settings.json dan buyrug'ida shu
-  ildiz bor hooklar, shu ildizga tegishli ruxsatlar va
-  additionalDirectories yozuvi, env.GENIUS_PYTHON, skills\manguberdi va
+  ildiz bor hooklar, shu ildizga tegishli allow, ask va deny qoidalari,
+  ildiz va uning ostidagi additionalDirectories yozuvlari,
+  env.GENIUS_PYTHON, skills\manguberdi va
   olti aktyor fayli. Begona yozuvlar qoladi. Klonning o'ziga bog'liq emas:
   -GeniusPath oddiy satr sifatida olinadi, shuning uchun klon allaqachon
   o'chirilgan bo'lsa ham ishlaydi.
@@ -265,6 +266,22 @@ if ($Uninstall) {
   # argumentda `\"` qo'shtirnoqni ekranlab, keyingi argumentlarni yutadi.
   $GeniusPath = (Resolve-Path -LiteralPath $GeniusPath).ProviderPath.TrimEnd('\', '/')
 }
+
+# Hook buyrug'i Git Bash da `"python" "<klon>/tools/x.py"` shaklida yuradi:
+# qo'sh qo'shtirnoq ichida `$` va backtick kengayadi, `"` esa qo'shtirnoqni
+# yopadi. Bunday yo'lda har hook buziladi yoki yo'ldagi matn bajariladi,
+# shuning uchun o'rnatish boshlanmaydi. install\rewrite_paths.py ham xuddi
+# shu belgilarda 2 qaytaradi. -Uninstall da tekshirilmaydi: u faqat eski
+# yozuvni tanish uchun satr.
+$UnsafeChars = [char[]]@('$', '`', '"')
+function Test-SafePath([string]$what, [string]$value) {
+  if ($value.IndexOfAny($UnsafeChars) -ge 0) {
+    Fail ("$what yo'lida `$, backtick yoki qo'sh qo'shtirnoq bor: $value. " +
+          "Hook buyrug'i bash da qo'sh qo'shtirnoq ichida yuradi va bu belgi " +
+          "u yerda kengayadi yoki bajariladi. Boshqa papka tanlang.")
+  }
+}
+if (-not $Uninstall) { Test-SafePath 'GeniusPath' $GeniusPath }
 $toolsDir = Join-Path $GeniusPath 'tools'
 
 $Required = @(
@@ -321,6 +338,7 @@ if (-not $PythonExe) {
         "WindowsApps dagi Microsoft Store stub'i hisoblanmaydi). Hooklar " +
         "Python bilan ishlaydi, usiz o'rnatish ma'nosiz.")
 }
+if (-not $Uninstall) { Test-SafePath 'Python' $PythonExe }
 
 # --- 1b. -Uninstall: o'z birliklarini olib tashlash --------------------
 #
@@ -543,6 +561,27 @@ try {
 } catch { Fail "ruxsat ro'yxati o'qilmadi: $($r.Out)" }
 Step "ruxsat qoidasi: $($Allow.Count) ta"
 
+# run_tests.py global ruxsatga kirmaydi: u proyektning build kodini
+# (gradlew, build.gradle, pom plaginlari) bajaradi, fork PR yoki begona
+# klonda bu so'rovsiz kod bajarish bo'lardi. Ishonchli proyekt uchun tayyor
+# settings.local.json bo'lagini ham rewrite_paths beradi: qoida buyruqning
+# aynan boshlanishi bo'lishi shart. Oxirida ko'rsatiladi, hech qayerga
+# yozilmaydi.
+$r = Invoke-Py @($rewriter, $Stage, '--root', $GeniusPath,
+                 '--python', $pyArg, '--bash', $bashArg, '--opt-in')
+if ($r.Code -ne 0) { Fail "opt-in ruxsat bo'lagi yasalmadi, hech narsa o'chmadi: $($r.Out)" }
+$OptIn = $r.Out
+
+function Show-OptIn {
+  if (-not $OptIn) { return }
+  Say ""
+  Say ("Ixtiyoriy: run_tests.py global ruxsatda yo'q, chunki u proyektning " +
+       "build kodini bajaradi. Faqat O'ZINGIZ ishonadigan proyektda u " +
+       "so'rovsiz yursin desangiz, shu bo'lakni <proyekt>\.claude\settings.local.json " +
+       "ga qo'shing. Fork PR, namuna repo yoki begona klonda qo'shmang.")
+  Say $OptIn
+}
+
 # Sozlama shu yerda yig'iladi, yoziladi esa 6-bo'limda: -Update da eski
 # settings.json bilan birlashtirish shu yerda quruq sinaladi va buzuq fayl
 # hech narsa o'chmasidan oldin chiqadi.
@@ -558,8 +597,11 @@ function HookCmd([string]$script) {
   return ('"{0}" "{1}"' -f $PythonExe, (Join-Path $toolsDir $script))
 }
 
-# Klon additionalDirectories da: Read, Grep va Glob qo'llanmani har
-# proyektdan so'rovsiz o'qiydi. Asbob buyruqlari esa $Allow dan.
+# additionalDirectories da butun klon EMAS, faqat docs va memory: Read,
+# Grep va Glob qo'llanma va memoryni har proyektdan so'rovsiz o'qiydi.
+# Butun klon berilsa, acceptEdits rejimida aktyor tools\ dagi hook
+# skriptini so'rovsiz tahrirlay olardi va o'zgarish keyingi promptda hamma
+# proyektda bajarilardi (XV-Y4). Asbob buyruqlari esa $Allow dan.
 # GENIUS_PYTHON: doc.sh indeksni qayta yasaganda nom bo'yicha qidirmasdan
 # aynan sinalgan Python ni oladi (python3 nomi Store stub'iga tushadi).
 # Hook jadvali repodagi .claude/settings.json bilan bir xil: biri
@@ -575,11 +617,12 @@ function HookCmd([string]$script) {
 # shuning uchun 0 ga aylantirish hech qanday to'siqni yo'qotmaydi.
 # Hook bash ichida yuradi (yuqorida $BashExe talab qilinadi), `||` esa
 # PowerShell 5.1 da sintaksis xatosi bo'lardi.
+$g = $GeniusPath.Replace('\', '/')
 $settings = [ordered]@{
   '$schema' = 'https://json.schemastore.org/claude-code-settings.json'
   env = [ordered]@{ GENIUS_PYTHON = $pyArg }
   permissions = [ordered]@{
-    additionalDirectories = @($GeniusPath.Replace('\', '/'))
+    additionalDirectories = @("$g/docs", "$g/memory")
     allow = $Allow
   }
   hooks = [ordered]@{
@@ -742,8 +785,9 @@ Say "4. Sozlama -> $settingsPath"
 Step ("yetti hook: bo'lim taklifi, budjetni nolga tushirish, kontekst o'lchovi, " +
       "qo'riqchi, aktyor budjeti, kod tekshiruvi, sarf hisobi")
 Step "yo'llar mutlaq, manba: $toolsDir"
-Step "ruxsat: klon additionalDirectories da, $($Allow.Count) ta asbob buyrug'i oldindan ruxsatli"
-if ($Update) { Step "birlashtiriladi: klon tools\ papkasiga ishora qilmagan hook va ruxsatlar saqlanadi" }
+Step "ruxsat: klonning docs va memory papkalari additionalDirectories da, $($Allow.Count) ta asbob buyrug'i oldindan ruxsatli"
+Step "so'raladi: run_tests.py, guruh.py birlashtir va tozala (yon ta'siri bor)"
+if ($Update) { Step "birlashtiriladi: klonga ishora qilmagan hook, ruxsat (allow, ask, deny) va papkalar saqlanadi" }
 
 if ($Apply) {
   New-Item -ItemType Directory -Path $ClaudeDir -Force | Out-Null
@@ -769,6 +813,7 @@ Say "5. Tekshirish"
 if (-not $Apply) {
   Say ""
   Say "Sozlama o'zgarmadi. Bajarish uchun ayni buyruqqa -Apply qo'shing."
+  Show-OptIn
   exit 0
 }
 
@@ -831,6 +876,7 @@ if ($ok) {
   Say "Diqqat: skill qo'llanmani shu klondan o'qiydi."
   Say "$GeniusPath ko'chirilsa yoki o'chirilsa, hooklar ishlamay qoladi:"
   Say "skriptni yangi yo'l bilan qayta yurgizing."
+  Show-OptIn
 } else {
   Say "O'rnatish to'liq emas, yuqoriga qarang. Zaxira: $BackupTo"
   exit 1

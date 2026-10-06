@@ -287,6 +287,137 @@ def case_root_yoq_bolsa_2():
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def real_stage(tmp, root, python="python3"):
+    """Haqiqiy skill va aktyorlar nusxasi, yo'llari mutlaq qilingan."""
+    stage = os.path.join(tmp, "stage")
+    shutil.copytree(os.path.join(ROOT, ".claude", "skills", "manguberdi"),
+                    os.path.join(stage, "manguberdi"))
+    agents = os.path.join(stage, "agents")
+    os.makedirs(agents)
+    src = os.path.join(ROOT, ".claude", "agents")
+    for name in os.listdir(src):
+        if name.endswith(".md"):
+            shutil.copy(os.path.join(src, name), agents)
+    code, _ = run_main([stage, "--root", root, "--python", python])
+    if code != 0:
+        raise AssertionError("rewrite yiqildi: %d" % code)
+    return stage
+
+
+def case_allow_run_tests_va_guruh_cheklangan():
+    """Haqiqiy skillning --allow chiqishida run_tests.py yo'q (fork PR da
+    build kodi so'rovsiz bajarilardi, XV-K1). guruh.py uchun faqat yarat va
+    royxat: birlashtir va tozala so'raladi (XV-T1). Yon ta'sirsiz asboblar
+    joyida qoladi."""
+    tmp = tempfile.mkdtemp(prefix="rw_allow_real_")
+    try:
+        root = os.path.join(tmp, "genius")
+        os.makedirs(root)
+        stage = real_stage(tmp, root)
+        code, out = run_main([stage, "--root", root, "--allow"])
+        rules = json.loads(out)
+        guruh = sorted(r for r in rules if "/tools/guruh.py" in r)
+        prefix = R.tool_cmd(R.clean_root(root), "python3", "guruh.py")
+        return (code == 0 and len(rules) >= 8
+                and not any("run_tests.py" in r for r in rules)
+                and guruh == ["Bash(%s royxat:*)" % prefix,
+                              "Bash(%s yarat:*)" % prefix]
+                and "Bash(%s:*)" % R.tool_cmd(R.clean_root(root), "python3",
+                                               "rules_for.py") in rules
+                and any("/tools/doc.sh:*)" in r for r in rules))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def case_allow_aniq_royxat():
+    """Sintetik matnda --allow aniq ro'yxat beradi: run_tests tushadi,
+    guruh ikki subbuyruqqa bo'linadi, qolgani bitta qoidadan."""
+    text = "\n".join(R.rewrite(c, GENIUS)[0] for c in (
+        "python3 tools/run_tests.py --diff --yurgiz",
+        "python3 tools/guruh.py tozala --hammasi",
+        "python3 tools/budget.py --holat",
+        "tools/doc.sh find saga"))
+    py = "python3 %s/tools/" % GENIUS
+    return R.allow_rules(text, GENIUS) == sorted([
+        "Bash(bash %s/tools/doc.sh:*)" % GENIUS,
+        "Bash(%sbudget.py:*)" % py,
+        "Bash(%sguruh.py royxat:*)" % py,
+        "Bash(%sguruh.py yarat:*)" % py,
+    ]) and R.opt_in_rules(text, GENIUS) == ["Bash(%srun_tests.py:*)" % py]
+
+
+def case_opt_in_bolagi():
+    """--opt-in settings.local.json bo'lagini beradi: ichida faqat
+    run_tests qoidasi, u esa skill yozgan buyruqning aynan boshlanishi."""
+    tmp = tempfile.mkdtemp(prefix="rw_optin_")
+    try:
+        root = os.path.join(tmp, "Program Files", "genius")
+        os.makedirs(root)
+        stage = real_stage(tmp, root, python=PY_SPACED)
+        code, out = run_main([stage, "--root", root, "--python", PY_SPACED,
+                              "--opt-in"])
+        data = json.loads(out)
+        rules = data["permissions"]["allow"]
+        prefix = R.tool_cmd(R.clean_root(root), PY_SPACED, "run_tests.py")
+        texts = [io.open(p, encoding="utf-8").read() for p in R.walk(stage)]
+        return (code == 0 and list(data) == ["permissions"]
+                and rules == ["Bash(%s:*)" % prefix]
+                and any(prefix + " " in t for t in texts))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def case_xavfli_belgili_yol_2():
+    """`$`, backtick yoki qo'sh qo'shtirnoq bor --root yoki --python: hook
+    buyrug'i bash da "..." ichida yuradi va bu belgi u yerda kengayadi
+    (XV-P2). 2 qaytadi va fayl tegilmaydi."""
+    tmp = tempfile.mkdtemp(prefix="rw_unsafe_")
+    try:
+        skill = os.path.join(tmp, "SKILL.md")
+        io.open(skill, "w", encoding="utf-8").write("tools/doc.sh toc")
+        results = []
+        for char in ("$", "`", '"'):
+            bad = os.path.join(tmp, "g%sx" % char)
+            try:
+                os.makedirs(bad)
+            except OSError:
+                pass  # Windows da " papka nomida bo'lmaydi: matn baribir sinaladi
+            for argv in ([tmp, "--root", bad],
+                         [tmp, "--root", tmp, "--python", "C:/py%s/python.exe" % char],
+                         [tmp, "--root", bad, "--allow"]):
+                code, out = run_main(argv)
+                results.append(code == 2 and out == "")
+        untouched = io.open(skill, encoding="utf-8").read() == "tools/doc.sh toc"
+        return all(results) and len(results) == 9 and untouched
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def ps1_text():
+    return io.open(os.path.join(ROOT, "install", "manguberdi.ps1"),
+                   encoding="utf-8").read()
+
+
+def case_ps1_papkalar_va_opt_in():
+    """ps1 sinalmaydi, matni tekshiriladi: additionalDirectories da butun
+    klon emas, faqat docs va memory (XV-Y4); opt-in bo'lagi rewrite_paths
+    dan olinadi va ko'rsatiladi; GeniusPath va Python yo'li xavfli belgida
+    to'xtatiladi (XV-P2)."""
+    text = ps1_text()
+    dirs = re.search(r"additionalDirectories = @\(([^)]*)\)", text)
+    if not dirs:
+        raise AssertionError("ps1 da additionalDirectories topilmadi")
+    entries = re.findall(r'"([^"]*)"', dirs.group(1))
+    unsafe = re.search(r"\$UnsafeChars = \[char\[\]\]@\(([^)]*)\)", text)
+    return (entries == ["$g/docs", "$g/memory"]
+            and "'--opt-in')" in text
+            and text.count("Show-OptIn") >= 3
+            and unsafe is not None
+            and sorted(re.findall(r"'(.)'", unsafe.group(1))) == sorted(R.UNSAFE_CHARS)
+            and "Test-SafePath 'GeniusPath' $GeniusPath" in text
+            and "Test-SafePath 'Python' $PythonExe" in text)
+
+
 # PowerShell sinalmaydi, lekin u yasaydigan hook jadvali matndan o'qiladi
 # va repodagi .claude/settings.json ga solishtiriladi: biri o'zgarib
 # ikkinchisi unutilsa, global o'rnatish jim boshqacha ishlaydi.
@@ -443,6 +574,12 @@ CASES = [
     ("python yo'li berilsa ishlatiladi", case_python_yoli_beriladi),
     ("--allow qoidasi buyruqning aynan boshlanishi", case_allow_qoidasi_buyruq_boshlanishi),
     ("mavjud bo'lmagan --root 2 qaytaradi", case_root_yoq_bolsa_2),
+    ("--allow da run_tests yo'q, guruh faqat yarat va royxat",
+     case_allow_run_tests_va_guruh_cheklangan),
+    ("--allow aniq ro'yxat, run_tests opt-in da", case_allow_aniq_royxat),
+    ("--opt-in settings.local.json bo'lagi", case_opt_in_bolagi),
+    ("$, backtick yoki qo'shtirnoqli yo'l 2 qaytaradi", case_xavfli_belgili_yol_2),
+    ("ps1: docs va memory papkasi, opt-in, xavfli belgi", case_ps1_papkalar_va_opt_in),
     ("ps1 hook jadvali settings.json ga mos", case_ps1_hooklari_repoga_mos),
     ("papka bo'ylab yuradi, .md dan boshqasi tegilmaydi", case_papkani_yuradi),
     ("haqiqiy skillda nol nisbiy yo'l", case_haqiqiy_skill_toza_qoladi),
