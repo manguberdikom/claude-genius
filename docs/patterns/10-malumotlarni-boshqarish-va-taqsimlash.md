@@ -503,6 +503,8 @@ CREATE TABLE inbox (
 -- Eski yozuvlar muntazam tozalanadi (handled_at bo'yicha).
 ```
 
+Mavzuning to'liq yozuvi [idempotency](07-api-dizayn-patternlari.md#79-idempotentlik-kaliti-idempotency-key) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 10.16 Ma'lumot o'zgarishini ushlash (Change Data Capture / Debezium)
 
 **Tavsif:** Ilova kodini o'zgartirmasdan, ma'lumotlar bazasidagi har bir INSERT/UPDATE/DELETE ni event oqimiga aylantiradi. Debezium bazaning tranzaksion log'ini (PostgreSQL logical replication slot va WAL, MySQL binlog, MongoDB oplog, Oracle LogMiner) o'qiydi va o'zgarishlarni Kafka topic'lariga `before`/`after` tasvirlari bilan yuboradi. Bu polling'ga qaraganda arzon va ishonchli: bazaga qo'shimcha query yuklanmaydi, o'chirishlar ham ko'rinadi, tartib tranzaksion log tartibida saqlanadi. Odatda legacy bazadan event-driven dunyoga ko'prik yoki read model'ni yangilash uchun ishlatiladi.

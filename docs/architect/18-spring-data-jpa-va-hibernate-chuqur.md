@@ -226,6 +226,8 @@ List<TolovVazifa> navbatdanOl(@Param("n") int n);
 
 Pessimistik lock da ikki raqamni oldindan belgilash kerak: lock kutish vaqti va tranzaksiya uzunligi. PostgreSQL da `lock_timeout` ni tranzaksiya boshida taxminan 3 sekundga qo'yish xavfsiz amaliyot. Lock ushlab turgan tranzaksiya ichida tashqi HTTP chaqiruv qilish esa jiddiy xato: tashqi servis sekinlashsa, hamma qoldiq yangilash navbatga tizilib qoladi.
 
+Mavzuning to'liq yozuvi [optimistic locking](../patterns/09-malumotlarga-kirish-va-orm-patternlari.md#923-optimistik-oflayn-qulf-optimistic-offline-lock) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 18.9 Hibernate statistikasi va yozilgan SQL ni ko'rish sozlamalari
 
 `spring.jpa.show-sql=true` ni lokalda ham ishlatmaslik kerak: u System.out ga yozadi, parametrlarni ko'rsatmaydi va log tizimidan tashqarida qoladi. To'g'ri sozlama logger lar orqali.

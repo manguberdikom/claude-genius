@@ -246,7 +246,7 @@ spring.lifecycle.timeout-per-shutdown-phase=25s
 | Migratsiya yarim yo'lda qoladi | Eski yo'l o'chirilmagan | Oxirgi PR da eski kodni o'chirish sharti |
 | Faqat bitta odam domenni biladi | Review doim bir odamda | Juftlik review va rotatsiya |
 
-Mavzuning to'liq yozuvi testlash qo'llanmasidagi [arxitektura testlari va kod sifati darvozalari](../testing/14-arxitektura-testlari-va-kod-sifati.md) bobida; bu yerda faqat arxitektura nuqtai nazari.
+Mavzuning to'liq yozuvi testlash qo'llanmasidagi [arxitektura testlari va kod sifati darvozalari](../testing/14-arxitektura-testlari-va-kod-sifati.md#142-archunit-asoslari) bo'limida; bu yerda faqat arxitektura nuqtai nazari.
 
 ## 36.10 Jamoaning bilim xaritasi va bitta odamga bog'liqlikni kamaytirish
 

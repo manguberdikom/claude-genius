@@ -155,7 +155,7 @@ Testlar: mexanik tekshirildi, semantik review qilinmadi   (faqat hajm: M)
 ```
 
 Daraja: `yuqori` (xato yoki xavf), `o'rta` (qarz yig'adi), `past` (uslub).
-`yuqori` faqat ikki dalildan biri bilan: aniq buzilish stsenariysi
+`yuqori` faqat ikki dalildan biri bilan: aniq buzilish ssenariysi
 (qaysi kirish qanday noto'g'ri natija beradi) yoki mexanik kalit
 (`check_code` topilmasi, Sonar `java:Sxxxx`). Dalilsiz xavf `o'rta`.
 Topilmalar darajasi bo'yicha, `yuqori` birinchi.

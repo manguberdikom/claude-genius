@@ -290,7 +290,7 @@ Formatlash va import tartibi uchun Spotless yoki Checkstyle arzonroq, chunki ula
 | Qoida juda keng yozilgan, shovqin beradi | qoida tor shartdan boshlanadi, keyin asta kengaytiriladi |
 | Legacy kod yangi qoidani darhol buzadi | qoida faqat yangi kodga qo'llanadi yoki legacy paket vaqtincha chiqariladi |
 
-Mavzuning to'liq yozuvi testlash qo'llanmasidagi [arxitektura testlari va kod sifati darvozalari](../testing/14-arxitektura-testlari-va-kod-sifati.md) bobida; bu yerda faqat Sonar qoidasi nuqtai nazari.
+Mavzuning to'liq yozuvi testlash qo'llanmasidagi [arxitektura testlari va kod sifati darvozalari](../testing/14-arxitektura-testlari-va-kod-sifati.md#142-archunit-asoslari) bo'limida; bu yerda faqat Sonar qoidasi nuqtai nazari.
 
 ## 24.9 Jamoaviy kelishuv: kim belgilaydi, kim tasdiqlaydi
 

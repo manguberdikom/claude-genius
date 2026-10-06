@@ -510,6 +510,8 @@ public void runDailySettlement() {
 
 **Ehtiyot bo'ling:** `ExecutionContext`ga tayangan restart faqat reader deterministik tartibda o'qiganda to'g'ri ishlaydi - `ORDER BY` bo'lmagan paging reader restart'da qatorlarni tashlab ketadi yoki takrorlaydi. Chunk ichidagi tashqi side-effect'lar (email, tashqi API chaqiruvi) DB tranzaksiyasiga kirmaydi, shuning uchun ularni alohida idempotentlik kaliti bilan himoyalang va "retry = xavfsiz" degan taxminni har bir writer uchun alohida tekshirib chiqing.
 
+Mavzuning to'liq yozuvi [idempotency](07-api-dizayn-patternlari.md#79-idempotentlik-kaliti-idempotency-key) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 20.30 Batch'da dead-letter boshqaruvi (Dead-Letter Handling in Batch)
 
 **Tavsif:** Bitta buzuq yozuv butun jobni to'xtatib qo'yishining oldini oladi: qayta urinib bo'lmaydigan (non-transient) xatolikka uchragan element asosiy oqimdan chiqarilib, sababi bilan alohida "rad etilganlar" joyiga (error jadvali, reject fayli, DLQ topic) yoziladi, job esa qolgan ma'lumot bilan davom etadi. Keyin shu rad etilganlar alohida tahlil qilinadi, tuzatiladi va qayta ishlash jobi bilan oqimga qaytariladi. Bu xatolik tasnifiga tayanadi: transient xato uchun retry, doimiy xato uchun skip va dead-letter.

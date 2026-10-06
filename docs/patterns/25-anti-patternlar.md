@@ -586,6 +586,8 @@ public record Money(BigDecimal amount, Currency currency) {
 
 **Ehtiyot bo'ling:** `AopContext.currentProxy()` ishlaydi, lekin kodni Spring'ga qattiq bog'laydi va testni qiyinlashtiradi - buning o'rniga mantiqni alohida bean'ga ko'chirish toza yechim. Integration testda `TransactionSynchronizationManager.isActualTransactionActive()` yoki log'da `TransactionInterceptor` DEBUG darajasini yoqib, transaction chindan ham boshlanganini tekshirib ko'ring.
 
+Mavzuning to'liq yozuvi [transactional self-invocation](../architect/19-spring-tranzaksiyalari-va-ularning.md#196-ichki-metod-chaqiruvi-tuzogi-va-undan-chiqish-yollari) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 25.31 Public Bo'lmagan Metodda @Transactional (@Transactional on Non-Public Methods)
 
 **Tavsif:** Proxy-asosidagi transaction rejimida annotatsiya metodga uch sababdan tegmay qolishi mumkin. Birinchisi ko'rinish: Spring 6.0 dan beri class-based (CGLIB) proxy da `protected` va package-private metodlar ham tranzaksion bo'la oladi, lekin `private` va `final` metod hech qachon ishlamaydi, chunki CGLIB proxy target sinfning subclass'i va bu metodlarni override qila olmaydi. Ikkinchisi proxy turi: interface (JDK dynamic proxy) rejimida tranzaksion metod `public` bo'lishi va proxy qilinayotgan interface da e'lon qilinishi shart. Uchinchisi chaqiruv yo'li: ikki rejimda ham faqat proxy orqali kelgan tashqi chaqiruv ushlanadi, ya'ni `this` orqali self-invocation annotatsiyani chetlab o'tadi. Uchalasi ham kompilyatsiyada ham, startup'da ham ko'rinmaydi: ishlab chiquvchi transaction mavjud deb o'ylaydi, lekin har bir repository chaqiruvi o'zining auto-commit konteksida bajariladi va rollback ishlamaydi.

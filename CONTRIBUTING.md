@@ -230,7 +230,10 @@ Mavzuning to'liq yozuvi bitta uy bo'limda (`docs/OWNERS.tsv`), boshqa hujjat o'z
 - Havola yonida yalang bo'lim raqami (`(25.22)`, `13.5 da`) yozilmaydi:
   raqam renumberda jim eskiradi va qaysi hujjatniki ekani noaniq.
 - Uy-bobdan tashqaridagi mavzu bo'limi (`docs/OWNERS.tsv`) uy bo'limga
-  havola beradi; shunda `check_docs` ogohlantirmaydi.
+  havola beradi; aks holda `check_docs` xato beradi. Sarlavhadagi mavzu
+  OWNERS.tsv dagi mavzu nomi yoki naqsh ustuni (`naqsh`, o'zbekcha
+  shakllar) bilan taniladi; sozlama kaliti (`a.b.c`) va defisli nom
+  (`spring-boot-testcontainers`) mavzu hisoblanmaydi.
 - Anchor GitHub qoidasiga ko'ra hisoblanadi: kichik harf, `'` olib
   tashlanadi, `\w`, `-` va bo'shliqdan boshqa belgi olib tashlanadi,
   bo'shliq `-` ga aylanadi.

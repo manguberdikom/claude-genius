@@ -14,16 +14,21 @@
 #           kichik harf), o'zbekcha shakllar bilan. Bo'sh bo'lsa mavzuning
 #           o'zi. awk ham o'qiydi: `{n}` oralig'i va `\b`, `\d` yo'q.
 #
+# Sarlavhada ham shu naqsh ishlaydi (check_docs), shuning uchun u
+# umumiy matnni ushlamasin: `n + 1` yolg'iz emas (`Sahifa n + 1`),
+# faqat `n+1` yoki `n + 1 so'rov` shaklida tanilsin.
+#
 # build_index bu qatorlarni index/aliases.tsv ga kind=uy bilan yozadi.
 # `doc.sh find` so'rov naqshga to'liq mos kelsa uy-bobni `[uy-bob]`
 # belgisi bilan birinchi qo'yadi, qisman mos kelsa aniq mosliklardan
 # keyin.
 #
-# check_docs: uy-bobdan tashqarida shu mavzu SARLAVHASI bo'lsa
-# ogohlantirish beradi, xato emas. Birlashtirish ishi bob
-# tekshirilganda bajariladi.
+# check_docs: uy bo'limdan tashqarida shu mavzu SARLAVHASI bo'lsa
+# (mavzu nomi yoki naqsh bo'yicha) xato beradi. Bo'lim o'z nuqtai
+# nazarini yozadi va tanasida uy bo'limga mavzu nomi bilan havola
+# beradi (bob ichida `](#anchor)`); shunda xato chiqmaydi.
 mavzu	uy_bob	dalil	naqsh
-n+1	architect 18.4	mexanizmni va to'rt xil yechimni birga beradi; patterns 9.27 va 25.43 katalog yozuvi, code-review 23.1 diffdan ko'rish, sonarqube 29.7 faqat EAGER xavfi	n ?\+ ?1( (so'rov|muammo|problem|query)[a-z']*)?
+n+1	architect 18.4	mexanizmni va to'rt xil yechimni birga beradi; patterns 9.27 va 25.43 katalog yozuvi, code-review 23.1 diffdan ko'rish, sonarqube 29.7 faqat EAGER xavfi	n\+1|n ?\+ ?1 (so'rov|muammo|problem|query)[a-z']*
 circuit breaker	patterns 17.2	pattern katalogining o'z yozuvi: holat mashinasi va chegaralar; 17.39 Resilience4j sozlamasi	circuit[ -]?breaker
 idempotency	patterns 7.9	API darajasidagi idempotentlik kaliti to'liq; architect 7.5 nosozlik nuqtasidan, patterns 10.30 ombor, clean-code 27.7 kod shakli	idempoten[a-z']*( kalit[a-z']*| key)?
 transactional outbox	patterns 10.14	kanonik yozuv: jadval, poller va kafolat; patterns 14.12 microservices nuqtasidan takrorlaydi	(transactional )?outbox( pattern)?

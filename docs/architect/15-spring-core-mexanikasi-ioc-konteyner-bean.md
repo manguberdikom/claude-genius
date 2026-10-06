@@ -311,6 +311,8 @@ Uch yechim bor va ularning narxi farq qiladi. Eng toza yechim mas'uliyatni ikki 
 | Prototype singleton ichida | bir marta olinadi | `ObjectProvider` |
 | Request scope `@Async` ichida | `BeanCreationException` | qiymatni oldin DTO ga ko'chirish |
 
+Mavzuning to'liq yozuvi [transactional self-invocation](19-spring-tranzaksiyalari-va-ularning.md#196-ichki-metod-chaqiruvi-tuzogi-va-undan-chiqish-yollari) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 15.10 `ApplicationEvent` va `@EventListener`: sinxron tabiati va tranzaksiya bilan bog'liqligi
 
 `ApplicationEventPublisher.publishEvent()` default holda SINXRON. `SimpleApplicationEventMulticaster` listener larni chaqiruvchi thread da ketma-ket ishga tushiradi. Demak event yuborish "fire and forget" emas: listener sekin bo'lsa publisher kutadi, listener exception tashlasa publisher ham yiqiladi. Bu ko'pincha noto'g'ri tushuniladi va event lar yengil deb o'ylanadi.

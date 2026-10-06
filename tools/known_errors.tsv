@@ -77,7 +77,9 @@ mapConcurrent[^\n]{0,200}`synchronized` blok yoki pinning	JEP 491 dan (Java 24, 
 # inline kod, sarlavha, ichki havola va URL chiqariladi). Sarlavhadagi
 # variant anchor bilan bog'langan va GLOSSARY ga ko'ra o'zgarmaydi.
 # Yolg'iz `nasr` docs nasri degani; boshqa qamrov bilan birga ham yoziladi.
-stsenariy|scenariy|\bsenariy	imlo: scenario o'zbekchada "ssenariy" (TL-TL4)	docs,root,nasr
-in['’]ektsiya|injeksiya|injektsiya	imlo: injection o'zbekchada "inyeksiya", GLOSSARY bilan bir xil (TL-TL4)	docs,root,nasr
-ob['’]ekt	imlo: "obyekt", korpusda 750 marta shu shakl (TL-TL4)	docs,root,nasr
+# Imlo qatorlari `.claude` ni ham qamraydi: skill va agent matni ham o'quvchiga
+# (modelga) shu imloda ko'rinadi (audit 2026-10-05, R4.7).
+stsenariy|scenariy|\bsenariy	imlo: scenario o'zbekchada "ssenariy" (TL-TL4)	docs,claude,root,nasr
+in['’]ektsiya|injeksiya|injektsiya	imlo: injection o'zbekchada "inyeksiya", GLOSSARY bilan bir xil (TL-TL4)	docs,claude,root,nasr
+ob['’]ekt	imlo: "obyekt", korpusda 750 marta shu shakl (TL-TL4)	docs,claude,root,nasr
 testrovshik(?![\w-]*\.md)	rus so'zi, o'rnida "tester" (TZ-T12); 04-testrovshik-... fayl nomi havolalar uchun qoldirilgan

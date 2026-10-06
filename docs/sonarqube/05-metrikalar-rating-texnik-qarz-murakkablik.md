@@ -142,7 +142,7 @@ BigDecimal hisobla(Buyurtma b) {
 
 Ikkinchi variantda chegirma shartini `Qator` ga ko'chirish tasodifiy emas. Murakkablikni kamaytirishning ishonchli yo'li uni bo'lish emas, balki qarorni ma'lumot egasiga berish. Shunchaki metodni ikkiga bo'lsangiz, umumiy cognitive yig'indisi saqlanib qolishi mumkin, faqat chegaradan o'tib ketadi.
 
-Mavzuning to'liq yozuvi shu hujjatdagi [cognitive complexity va takrorlanishni kamaytirish](15-cognitive-complexity-va-takrorlanishni.md) bobida; bu yerda faqat Sonar qoidasi nuqtai nazari.
+Mavzuning to'liq yozuvi shu hujjatdagi [cognitive complexity va takrorlanishni kamaytirish](15-cognitive-complexity-va-takrorlanishni.md#151-cognitive-complexity-qanday-hisoblanadi-ortish-va-chuqurlik-jarimasi) bo'limida; bu yerda faqat Sonar qoidasi nuqtai nazari.
 
 ## 5.5 Takrorlanish (duplication): blok qanday aniqlanadi va foiz qanday hisoblanadi
 

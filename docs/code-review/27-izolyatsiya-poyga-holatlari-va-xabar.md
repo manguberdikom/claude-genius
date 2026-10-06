@@ -137,6 +137,8 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
 
 Review qoidasi: foydalanuvchi formasi orqali tahrirlash - optimistik; pul va qoldiq hisobi - atomik `UPDATE` yoki pessimistik qulf; navbat va worker - `SKIP LOCKED`.
 
+Mavzuning to'liq yozuvi [optimistic locking](../patterns/09-malumotlarga-kirish-va-orm-patternlari.md#923-optimistik-oflayn-qulf-optimistic-offline-lock) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 27.5 Write skew: eng jim poyga
 
 Write skew - ikki tranzaksiya turli qatorlarni o'zgartiradi, lekin birgalikda biznes qoidasini buzadi. `FOR UPDATE` ham bu holda yordam bermaydi, chunki qulflanadigan qator yo'q.
@@ -306,6 +308,8 @@ SELECT count(*) AS kutayotgan,
   FROM outbox_message WHERE published_at IS NULL;
 -- Alert: eng_qadimgi > 5 daqiqa yoki muammoli > 0.
 ```
+
+Mavzuning to'liq yozuvi [transactional outbox](../patterns/10-malumotlarni-boshqarish-va-taqsimlash.md#1014-tranzaksion-outbox-transactional-outbox) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
 
 ## 27.10 Review checklisti: izolyatsiya va yetkazish
 

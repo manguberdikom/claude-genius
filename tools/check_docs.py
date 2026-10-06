@@ -45,9 +45,9 @@ Tekshiradi:
                     review.tsv dan hisoblangan matnga teng.
                     `## Manbalar` dagi main/master/trunk ga bog'langan
                     GitHub havolasi ogohlantirish oladi.
- 12. Uy-bob       - docs/OWNERS.tsv dagi mavzu uy-bobdan tashqarida
-                    SARLAVHA bo'lib uchrasa ogohlantirish (xato emas).
-                    Bo'lim tanasida uy-bobga havola bo'lsa ogohlantirish
+ 12. Uy-bob       - docs/OWNERS.tsv dagi mavzu (nomi yoki naqsh ustuni)
+                    uy bo'limdan tashqarida SARLAVHA bo'lib uchrasa xato.
+                    Bo'lim tanasida uy bo'limga havola bo'lsa xato
                     chiqmaydi.
  13. Havola sanog'i - bob tanasidagi `](../<hujjat>/README.md)` havolalari
                     soni README_LINK_BASE dan oshmaydi (ratchet).
@@ -73,6 +73,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SIZE_LIMIT = 900_000          # GitHub chegarasi 1 048 576; zahira bilan
 RE_REMOVE = re.compile(r"[^\w\- ]", re.UNICODE)
 SKIP_DIRS = {'.git', 'dist', 'node_modules'}
+WORKTREES_DIR = '.claude/worktrees'
 # Bob oxiridagi manbalar bo'limi. Raqamsiz: u bob bo'limi emas, apparat.
 SOURCES_RE = re.compile(r"^Manbalar\s*$")
 # Hech qaysi skill yoki agent jadvalida turmasligi ataylab bo'lgan boblar:
@@ -116,9 +117,28 @@ def gh_slug(text):
     return RE_REMOVE.sub('', t).replace(' ', '-')
 
 
+def foreign_tree(path, root=None):
+    """Ichki worktree yoki alohida repo: `.claude/worktrees/` yoki o'z `.git` i bor papka.
+
+    Guruh worktree lari `<ildiz>/.claude/worktrees/` ichida turadi
+    (guruh.py): ularni skanerlash har faylni ikki marta ko'rsatadi va
+    boshqa branchning yarim tahrirlangan matniga yolg'on xato beradi.
+    `root` berilmasa ROOT; test_skill.py o'z ildizini beradi. Ildizning
+    o'zi hisobga olinmaydi.
+    """
+    root = ROOT if root is None else root
+    rel = os.path.relpath(path, root).replace(os.sep, '/')
+    if rel == '.':
+        return False
+    if rel == WORKTREES_DIR or rel.startswith(WORKTREES_DIR + '/'):
+        return True
+    return os.path.exists(os.path.join(path, '.git'))
+
+
 def md_files():
     for dirpath, dirnames, filenames in os.walk(ROOT):
-        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS
+                       and not foreign_tree(os.path.join(dirpath, d))]
         for fn in sorted(filenames):
             if fn.endswith('.md'):
                 yield os.path.relpath(os.path.join(dirpath, fn), ROOT)
@@ -344,7 +364,7 @@ def check_sonar(files):
 
 
 def read_owners():
-    """docs/OWNERS.tsv: [(mavzu, uy_bob, dalil)]."""
+    """docs/OWNERS.tsv: [(mavzu, uy_bob, dalil, naqsh)]. Naqsh bo'sh bo'lishi mumkin."""
     path = os.path.join(ROOT, 'docs', 'OWNERS.tsv')
     rows, header = [], None
     if not os.path.exists(path):
@@ -362,7 +382,8 @@ def read_owners():
                 err(f"docs/OWNERS.tsv: qator uch ustunli emas -> {line[:50]}")
                 continue
             rows.append((parts[0].strip(), parts[1].strip(),
-                         parts[2].strip() if len(parts) > 2 else ''))
+                         parts[2].strip() if len(parts) > 2 else '',
+                         parts[3].strip() if len(parts) > 3 else ''))
     return rows
 
 
@@ -403,6 +424,29 @@ def links_to(rel, body, path, anchor):
     return False
 
 
+def owner_regex(topic, pattern):
+    """Sarlavhada mavzuni taniydigan regex: mavzuning o'zi yoki OWNERS naqshi.
+
+    Naqsh (POSIX ERE, kichik harf) o'zbekcha shakllarni ushlaydi
+    (`archunit'ni`, `kognitiv murakkablik`), shuning uchun mavzu nomi
+    bilan birga u ham olinadi. So'z chegarasi `\\b` emas: naqsh `+` bilan
+    tugashi mumkin (`n+1`). Mavzu nomining o'ziga yopishgan bo'lak mavzu
+    emas: `-` yoki `.` dan keyin (`spring-boot-testcontainers`,
+    `idempotency.key`) va `-` yoki `.harf` dan oldin
+    (`circuit-breaker`, `testcontainers.reuse.enable`) sarlavha jim.
+    `@Testcontainers` kabi annotatsiya mavzuning API si: tanilaveradi.
+    """
+    alts = [re.escape(topic).replace(r'\ ', r'\s+')]
+    if pattern:
+        try:
+            re.compile(pattern)
+            alts.append(pattern)
+        except re.error:
+            err(f"docs/OWNERS.tsv: '{topic}' naqshi regex emas -> {pattern}")
+    return re.compile(r'(?<![\w.-])(?:' + '|'.join(f'(?:{a})' for a in alts)
+                      + r')(?![\w-]|\.\w)', re.I)
+
+
 def check_owners(manifest, files):
     """12. Mavzu uy-bobdan tashqarida sarlavha bo'lib uchramasin.
 
@@ -410,12 +454,16 @@ def check_owners(manifest, files):
     bo'lsa, aynan o'sha bo'lim anchoriga), mavzu "o'z nuqtai nazari va
     uyga havola" qoidasiga amal qilgan va ogohlantirish chiqmaydi.
 
-    Nega hali warn, err emas (TZ-T4): OWNERS.tsv va sonarqube 25-30
-    katalog boblari boshqa ish oqimida tahrirlanmoqda, ularning
-    bo'limlariga havola hali qo'shilmagan. err bo'lsa o'sha ish birlashguncha
-    CI qizil turadi. Ogohlantirish 0 ga tushgach warn() err() ga
-    o'tkaziladi; shungacha check_docs oxiridagi ogohlantirish soni yangi
-    takrorni ko'rsatadi.
+    Sarlavhadagi mavzu OWNERS.tsv dagi mavzu nomi yoki naqsh ustuni
+    bilan taniladi (o'zbekcha shakllar: `idempotentlik`, `archunit'ni`).
+    Uy bo'lim `<hujjat> <bob>.<bo'lim>` darajasida: uy bo'limning o'zi va
+    uning ichki bo'limlari ogohlantirilmaydi, uy bob ichidagi boshqa
+    bo'lim esa boshqa hujjatdagi bo'lim kabi uyga havola beradi
+    (bob ichida `](#anchor)`).
+
+    Bu xato, ogohlantirish emas: ogohlantirish 0 ga tushgach warn()
+    err() ga o'tkazildi (audit 2026-10-05, 12-bo'lim). Yangi takror
+    CI ni qizil qiladi.
     """
     owners = read_owners()
     if not owners:
@@ -427,18 +475,18 @@ def check_owners(manifest, files):
             refs.add(f"{key} {c['num'] or ''}")
             for n in range(1, (c.get('sections') or 0) + 1):
                 refs.add(f"{key} {c['num']}.{n}")
-    for topic, home, _ in owners:
+    for topic, home, _, _ in owners:
         doc_key = home.split(' ')[0]
         if doc_key not in manifest:
             err(f"docs/OWNERS.tsv: '{topic}' uy-bobi noma'lum hujjat -> {home}")
         elif home not in refs:
-            warn(f"docs/OWNERS.tsv: '{topic}' uy-bobi indeksda topilmadi "
+            err(f"docs/OWNERS.tsv: '{topic}' uy-bobi indeksda topilmadi "
                  f"-> {home} (bo'lim raqami o'zgargan bo'lishi mumkin)")
     # Sarlavhada mavzu: uy-bobdan tashqarida ogohlantirish.
-    words = {topic: re.compile(r'\b' + re.escape(topic).replace(r'\ ', r'\s+')
-                               + r'\b', re.I) for topic, _, _ in owners}
-    homes = {topic: home for topic, home, _ in owners}
-    targets = {home: home_target(manifest, home) for _, home, _ in owners}
+    words = {topic: owner_regex(topic, pattern)
+             for topic, _, _, pattern in owners}
+    homes = {topic: home for topic, home, _, _ in owners}
+    targets = {home: home_target(manifest, home) for _, home, _, _ in owners}
     for rel in sorted(files):
         if scope_of(rel) != 'docs':
             continue
@@ -465,7 +513,7 @@ def check_owners(manifest, files):
                 path, anchor = targets[home]
                 if path and links_to(rel, body, path, anchor):
                     continue
-                warn(f"{rel}: '{topic}' sarlavhasi {here} da, uy-bob "
+                err(f"{rel}: '{topic}' sarlavhasi {here} da, uy-bob "
                      f"{home} (OWNERS.tsv): qisqa xulosa va havola qoldirilsin")
 
 

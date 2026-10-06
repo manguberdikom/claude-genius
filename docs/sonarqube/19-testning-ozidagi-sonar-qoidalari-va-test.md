@@ -260,7 +260,7 @@ void shouldAddVatToLineTotalForTwoUnits() {
 
 Testda hardcoded ma'lumotning yana bir turi Sonar'ni chindan ham qo'zg'atadi: `java:S2068`, kodga yozilgan parol. Test resource'laridagi `spring.datasource.password=test` qatori security hotspot sifatida chiqadi. Buni fayl bo'yicha exclude qilmang, aniq qoida va aniq yo'l bo'yicha `issue.ignore` yozib, sababini izohda qoldiring.
 
-Mavzuning to'liq yozuvi toza kod hujjatidagi [primitiv, son va pul](../clean-code/20-primitiv-son-va-pul.md) bobida; bu yerda faqat Sonar qoidasi nuqtai nazari.
+Mavzuning to'liq yozuvi [magic number](../patterns/25-anti-patternlar.md#258-sehrli-sonlar-va-satrlar-magic-numbers--strings) bo'limida; son va pul qiymatlari toza kod hujjatidagi [primitiv, son va pul](../clean-code/20-primitiv-son-va-pul.md) bobida ham bor; bu yerda faqat Sonar qoidasi nuqtai nazari.
 
 ## 19.10 Test fayllarini Sonar uchun to'g'ri belgilash (`sonar.tests`)
 

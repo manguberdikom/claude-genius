@@ -395,6 +395,8 @@ jobs:
 
 Yana ikki amaliy nuqta: korporativ muhitda Docker Hub rate limit'ini chetlab o'tish uchun `testcontainers.properties` da `hub.image.name.prefix` bilan ichki registry prefiksini bering; va Ryuk'ni faqat u ishlamaydigan platformalarda (`TESTCONTAINERS_RYUK_DISABLED=true`) o'chiring - aks holda orfan konteynerlar CI agent'ini to'ldiradi.
 
+Mavzuning to'liq yozuvi [Testcontainers](#82-testcontainers-asoslari-docker-api-ustida-hayot-aylanishi) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 8.12 Anti-patternlar
 
 **Har test sinfida yangi konteyner.** `@Container` ni instance maydonda ishlatish yoki har sinfda alohida `PostgreSQLContainer` e'lon qilish. Natija: 40 sinf × 2 s = 80 s faqat start uchun, plus kontekst keshi buzilishi. Yechim - bitta abstract bazaviy sinf yoki `@TestConfiguration` bean'lari.

@@ -117,6 +117,8 @@ Issue ni lokal ko'rish uchun bitta modulni skanerlash yetadi.
 
 Tavsiya: cognitive complexity ni refactoring uchun signal deb qabul qil, chegarani ko'tarib issue ni o'chirma.
 
+Mavzuning to'liq yozuvi [cognitive complexity](15-cognitive-complexity-va-takrorlanishni.md#151-cognitive-complexity-qanday-hisoblanadi-ortish-va-chuqurlik-jarimasi) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 27.2 Juda uzun metod va juda uzun klass
 
 Qoida: `java:S138`
@@ -362,6 +364,8 @@ if (sincePayment.compareTo(SETTLEMENT_WINDOW) > 0) markAsSettled(payment);
 ```
 
 Tavsiya: konstanta nomida qiymatni emas, biznes ma'nosini yoz, masalan `GATEWAY_FEE_RATE`.
+
+Mavzuning to'liq yozuvi [magic number](../patterns/25-anti-patternlar.md#258-sehrli-sonlar-va-satrlar-magic-numbers--strings) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
 
 ## 27.10 Ortiqcha mahalliy o'zgaruvchi va darhol qaytariladigan qiymat
 

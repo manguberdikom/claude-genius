@@ -273,6 +273,8 @@ public class Mahsulot {
 
 Tavsiya: entity da `equals` ni faqat `id` bo'yicha yoz, `hashCode` ni esa o'zgarmaydigan qiymatga bog'la.
 
+Mavzuning to'liq yozuvi [entity da equals va hashCode](../clean-code/15-tenglik-hash-va-obyekt-shartnomalari.md#155-entitet-va-value-object-tengligi-farqi) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 29.7 `@OneToMany` da `FetchType.EAGER` va N+1 xavfi
 
 Shikoyat qilinadigan kod:
@@ -305,6 +307,8 @@ public interface BuyurtmaRepository extends JpaRepository<Buyurtma, Long> {
 ```
 
 Tavsiya: barcha bog'lanishni `LAZY` qoldir va kerak bo'lgan joyda `@EntityGraph` yoki `join fetch` bilan aniq yukla.
+
+Mavzuning to'liq yozuvi [N+1 muammosi](../architect/18-spring-data-jpa-va-hibernate-chuqur.md#184-n1-sorov-muammosi-topish-usuli-va-tort-xil-yechim) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
 
 ## 29.8 Repository metodida barcha qatorlarni olish va sahifalashsiz ishlash
 

@@ -60,7 +60,7 @@ keyin kerakli bo'lim `show` bilan (Asboblar).
   (5-bob "Vaqt, tasodif va UUID'ni testlash", 11-bob "Asinxron kodni
   testlash").
 - `Instant.now()` va `UUID.randomUUID()` to'g'ridan-to'g'ri chaqirilmaydi -
-  `Clock` va `Supplier<UUID>` orqali in'ektsiya qilinadi (5-bob "Vaqt,
+  `Clock` va `Supplier<UUID>` orqali inyeksiya qilinadi (5-bob "Vaqt,
   tasodif va UUID'ni testlash"; Spring'siz dizayn: 6-bob).
 - Value object, DTO va JDK sinflari mock qilinmaydi.
 - Coverage foizi yagona sifat mezoni emas; domen paketlari uchun mutation

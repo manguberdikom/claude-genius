@@ -61,6 +61,8 @@ public class Payment {
 }
 ```
 
+Mavzuning to'liq yozuvi [entity da equals va hashCode](15-tenglik-hash-va-obyekt-shartnomalari.md#155-entitet-va-value-object-tengligi-farqi) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 28.2 Lombok va entitet: nimani ishlatmaslik
 
 Lombok ning ba'zi annotatsiyalari entitetda nozik xato beradi va ularning hammasi 26.10 siyosatida taqiqlangan. Sabablarini bilish muhim, chunki xato jim o'tadi.

@@ -339,6 +339,8 @@ Ehtiyot bo'ling: kutilgan natijani formula bilan hisoblash tekshirilayotgan mant
 
 Tavsiya: har bir raqamga nom bering, izohda biznes manbasini ko'rsating va formulani testda takrorlamang.
 
+Mavzuning to'liq yozuvi [magic number](../patterns/25-anti-patternlar.md#258-sehrli-sonlar-va-satrlar-magic-numbers--strings) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 30.9 Takrorlangan tayyorlash kodi va uni yagona joyga chiqarish
 
 Duplication alohida ko'rsatkich va test kodi uni tez buzadi.

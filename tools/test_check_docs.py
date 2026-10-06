@@ -236,6 +236,24 @@ def silent(change, needle):
     return case
 
 
+def no_owner_error(change, name):
+    """Sarlavha o'zgarishi anchorni sindirishi mumkin: faqat uy-bob xatosi yo'qligi tekshiriladi."""
+    def case(tmp):
+        errs, _ = run_full(tmp, re.sub(r"\W", "_", "o_" + name[:18]), change)
+        return not any("sarlavhasi" in e or "OWNERS.tsv" in e for e in errs)
+    return case
+
+
+def topic_heading(topic, pattern, heading, flagged):
+    """OWNERS dagi mavzu `topic`, CH1 sarlavhasi `heading`: uy-bob xatosi bormi."""
+    row = "%s\tsinov 2.1\tsinov uchun\t%s\n" % (topic, pattern)
+    change = [("docs/OWNERS.tsv", "ikkinchi mavzu\tsinov 2.1\tsinov uchun\n", row),
+              (CH1, "## 1.1 Mavzu", "## 1.1 " + heading)]
+    if flagged:
+        return expect(change, "'%s' sarlavhasi sinov 1.1" % topic)
+    return no_owner_error(change, "%s %s" % (topic, heading))
+
+
 def git(root, *args, author="Odam <odam@example.org>", body="sinov"):
     env = dict(os.environ, GIT_AUTHOR_NAME=author.split(" <")[0],
                GIT_AUTHOR_EMAIL=author.split("<")[1].rstrip(">"),
@@ -259,6 +277,57 @@ def signoff(author, body="sinov"):
         errs, _ = run_full(tmp, "", root=root)
         return [e for e in errs if "Claude muallifligida" in e]
     return case
+
+BAD_CHAPTER = "Bu \u2014 em-dash va \u0416 kirill.\n"
+
+
+def extra_file(tmp, name, rel, git_marker=None):
+    """Toza nusxa yasaydi, `rel` ga buzuq md yozadi va (xatolar, ogohlantirishlar) qaytaradi."""
+    root = os.path.join(tmp, name)
+    write(root)
+    path = os.path.join(root, rel)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as handle:
+        handle.write(BAD_CHAPTER)
+    if git_marker:
+        with open(os.path.join(root, git_marker), "w", encoding="utf-8") as handle:
+            handle.write("gitdir: /yo'q\n")
+    return run_full(tmp, "", root=root)
+
+
+def worktree_hidden(tmp):
+    # Nazorat: shu fayl worktrees dan tashqarida xato beradi, ya'ni sinov
+    # tekshiruvning o'zini ko'radi.
+    seen, _ = extra_file(tmp, "wt_nazorat", "boshqa/x.md")
+    hidden, _ = extra_file(tmp, "wt_yashirin", ".claude/worktrees/x/docs/sinov/01-birinchi.md")
+    return any("em-dash" in e for e in seen) and hidden == []
+
+
+def nested_repo_hidden(tmp):
+    seen, _ = extra_file(tmp, "ir_nazorat", "ichki/x.md")
+    hidden, _ = extra_file(tmp, "ir_yashirin", "ichki/x.md", git_marker="ichki/.git")
+    return any("em-dash" in e for e in seen) and hidden == []
+
+
+def skill_scan_hidden(tmp):
+    import test_skill
+    root = os.path.join(tmp, "skill_scan")
+    for rel in (".claude/skills/a/SKILL.md", ".claude/worktrees/x/.claude/agents/b.md",
+                ".claude/ichki/y.md"):
+        path = os.path.join(root, rel)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        open(path, "w", encoding="utf-8").write("x\n")
+    os.makedirs(os.path.join(root, ".claude", "ichki", "repo"))
+    open(os.path.join(root, ".claude", "ichki", "repo", ".git"), "w").write("gitdir: /yo'q\n")
+    open(os.path.join(root, ".claude", "ichki", "repo", "z.md"), "w").write("x\n")
+    saved = test_skill.ROOT
+    test_skill.ROOT = root
+    try:
+        got = [os.path.relpath(p, root).replace(os.sep, "/") for p in test_skill.claude_md_files()]
+    finally:
+        test_skill.ROOT = saved
+    return got == [".claude/ichki/y.md", ".claude/skills/a/SKILL.md"]
+
 
 CASES = [
     ("toza nusxada xato yo'q", lambda tmp: run(tmp, "toza") == []),
@@ -405,8 +474,8 @@ CASES = [
      expect(("docs/sinov/README.md", "2 bobdan 0 tasi", "2 bobdan 1 tasi"),
             "docs/sinov/README.md: holat qatori review.tsv ga mos emas")),
     # 12. Uy-bob: havola bo'lsa ogohlantirish yo'q.
-    ("uy-bobdan tashqari sarlavha ogohlantiradi",
-     warned((CH1, "## 1.1 Mavzu", "## 1.1 Ikkinchi mavzu"), "uy-bob sinov 2.1")),
+    ("uy bo'limdan tashqari sarlavha xato beradi",
+     expect((CH1, "## 1.1 Mavzu", "## 1.1 Ikkinchi mavzu"), "uy-bob sinov 2.1")),
     ("uy bo'limga havola bo'lsa jim",
      silent([(CH1, "## 1.1 Mavzu", "## 1.1 Ikkinchi mavzu"),
              (CH1, "- [1.1 Mavzu](#11-mavzu)", "- [1.1 Ikkinchi mavzu](#11-ikkinchi-mavzu)"),
@@ -414,13 +483,49 @@ CASES = [
              (CH1, "Matn.", "To'liq yozuv [ikkinchi mavzu](02-ikkinchi.md#21-mavzu) da.")],
             "uy-bob sinov 2.1")),
     ("boshqa bo'limga havola yetmaydi",
-     warned([(CH1, "## 1.1 Mavzu", "## 1.1 Ikkinchi mavzu"),
+     expect([(CH1, "## 1.1 Mavzu", "## 1.1 Ikkinchi mavzu"),
              (CH1, "Matn.", "Qarang: [ikkinchi bob](02-ikkinchi.md#22-amalda-qollash).")],
             "uy-bob sinov 2.1")),
     ("shu bobdagi uy bo'limga `](#anchor)` havolasi ham yetadi",
      lambda tmp: not any("sinov 2.2 da" in w for w in run_full(tmp, "ozbob", [
          ("docs/OWNERS.tsv", "ikkinchi mavzu\tsinov 2.1", "amalda\tsinov 2.1"),
-         (CH2, "- Band.\n", "- Band. To'liq yozuv [mavzu](#21-mavzu) da.\n")])[1])),
+         (CH2, "- Band.\n", "- Band. To'liq yozuv [mavzu](#21-mavzu) da.\n")])[0])),
+    ("naqsh ustuni sarlavhadagi o'zbekcha shaklni tutadi",
+     expect([("docs/OWNERS.tsv", "sinov uchun\n", "sinov uchun\tqiziq mavzu[a-z']*\n"),
+             (CH1, "## 1.1 Mavzu", "## 1.1 Qiziq mavzularga kirish")],
+            "'ikkinchi mavzu' sarlavhasi sinov 1.1")),
+    ("naqshsiz o'zbekcha shakl mavzu nomiga mos kelmaydi",
+     no_owner_error((CH1, "## 1.1 Mavzu", "## 1.1 Qiziq mavzularga kirish"), "naqshsiz")),
+    ("sozlama kaliti (nuqtadan keyingi bo'lak) mavzu emas",
+     no_owner_error([("docs/OWNERS.tsv", "sinov uchun\n", "sinov uchun\tqiziq\n"),
+                     (CH1, "## 1.1 Mavzu", "## 1.1 Kalit app.qiziq sozlamasi")], "nuqta")),
+    ("uy bo'limning o'zida mavzu sarlavhasi xato bermaydi",
+     no_owner_error((CH2, "## 2.1 Mavzu", "## 2.1 Ikkinchi mavzu"), "uyning ozi")),
+    ("imlo naqshi `claude` qamrovi bilan .claude matnini ham tutadi",
+     expect([("tools/known_errors.tsv", "sinov uchun naqsh\tdocs", "sinov uchun naqsh\tdocs,claude,nasr"),
+             (SKILL, "| Mavzu | Bo'lim |", "xatoso'z\n\n| Mavzu | Bo'lim |")],
+            "tuzatilgan xato qaytdi -> xatoso'z")),
+    ("sozlama kaliti `a.b.c` mavzu emas",
+     topic_heading("testcontainers", "testcontainers?",
+                   "`testcontainers.reuse.enable` sozlamasi", False)),
+    ("defisli artifact nomi mavzu emas",
+     topic_heading("testcontainers", "testcontainers?", "spring-boot-testcontainers", False)),
+    ("nuqtadan keyingi bo'lak mavzu emas",
+     topic_heading("idempotency", "idempoten[a-z']*", "idempotency.key sozlamasi", False)),
+    ("naqshdagi defisli shakl mavzuning o'zi",
+     topic_heading("circuit breaker", "circuit[ -]?breaker",
+                   "Resilience4j circuit-breaker sozlamasi", True)),
+    ("`@Testcontainers` annotatsiyasi mavzuning API si",
+     topic_heading("testcontainers", "testcontainers?", "@Testcontainers annotatsiyasi", True)),
+    ("umumiy `Sahifa n + 1` n+1 naqshini tutmaydi",
+     topic_heading("n+1", "n\\+1|n ?\\+ ?1 (so'rov|muammo|problem|query)[a-z']*",
+                   "Sahifa n + 1", False)),
+    ("`N+1 muammosi` n+1 naqshini tutadi",
+     topic_heading("n+1", "n\\+1|n ?\\+ ?1 (so'rov|muammo|problem|query)[a-z']*",
+                   "N+1 muammosi", True)),
+    ("`.claude/worktrees` ichidagi nusxa skanerlanmaydi", worktree_hidden),
+    ("ichki repo (o'z .git i bor papka) skanerlanmaydi", nested_repo_hidden),
+    ("test_skill `.claude/worktrees` ni o'tkazib yuboradi", skill_scan_hidden),
     # 13. README havola ratchet.
     ("README havolasi bazaviydan oshsa xato", ratchet),
     # 14. Summary.

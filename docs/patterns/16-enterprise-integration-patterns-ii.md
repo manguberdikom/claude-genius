@@ -330,6 +330,8 @@ IdempotentReceiverInterceptor idempotentInterceptor(ConcurrentMetadataStore stor
 
 **Ehtiyot bo'ling:** Dublikat kalitini yozish va biznes operatsiyasini bajarish bitta atomar chegarada (bir xil DB tranzaksiyasida) bo'lmasa, crash paytida yo "yozildi lekin bajarilmadi", yo teskarisi yuz beradi - in-memory `SimpleMetadataStore` esa restart'dan keyin butun himoyani yo'qotadi. Kalitlarni abadiy saqlash store'ni cheksiz o'stiradi, shuning uchun biznes uchun mantiqiy TTL (masalan 7-30 kun) va retention ishini oldindan rejalashtiring.
 
+Mavzuning to'liq yozuvi [idempotency](07-api-dizayn-patternlari.md#79-idempotentlik-kaliti-idempotency-key) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 16.17 Service Activator (Service Activator)
 
 **Tavsif:** Messaging infratuzilmasi bilan oddiy biznes POJO o'rtasida ko'prik bo'lib, kanaldan kelgan xabarni metod chaqiruviga aylantiradi va natijani (agar bo'lsa) reply kanaliga qaytaradi. Shu tufayli domain kodi `Message`, kanal yoki broker API'sini bilmaydi va xuddi oddiy service kabi unit-test qilinadi. Payload argumentga, header'lar esa alohida parametrlarga bind qilinadi.

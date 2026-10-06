@@ -622,6 +622,8 @@ public void on(OrderPlaced e) {
 // aks holda ikkisi orasida yiqilish takroriy ishlovga olib keladi.
 ```
 
+Mavzuning to'liq yozuvi [idempotency](07-api-dizayn-patternlari.md#79-idempotentlik-kaliti-idempotency-key) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 14.19 Klient tomonda aniqlash (Client-Side Discovery)
 
 **Tavsif:** Client (yoki uning ichidagi kutubxona) Service Registry'dan maqsadli servisning mavjud instansiyalari ro'yxatini oladi va o'zi load balancing qarorini qabul qiladi - qaysi instansiyaga so'rov yuborishni tanlaydi. Bu qo'shimcha network hop'ni yo'q qiladi va client'ga aqlli strategiya (zone affinity, least-requests, weighted) berish imkonini yaratadi. Kamchiligi - har bir til/stack uchun discovery client logikasi kerak va client registry'ga bog'lanadi. Service mesh davrida bu mantiq ko'pincha sidecar proxy'ga ko'chiriladi.

@@ -324,6 +324,8 @@ Web qatlamida idempotentlik ikki joyda kerak: mijoz retry qilganda va foydalanuv
 - Takroriy so'rovga qanday javob qaytadi (bir xil natija, 409 emas, agar tana bir xil bo'lsa).
 - Kalit qancha saqlanadi va kim tozalaydi.
 
+Mavzuning to'liq yozuvi [idempotency](../patterns/07-api-dizayn-patternlari.md#79-idempotentlik-kaliti-idempotency-key) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 20.10 CORS, header va kesh sozlamalari
 
 ```java

@@ -248,6 +248,8 @@ private boolean retryable(Exception e, HttpMethod m, Integer status) {
 }
 ```
 
+Mavzuning to'liq yozuvi [idempotency](../patterns/07-api-dizayn-patternlari.md#79-idempotentlik-kaliti-idempotency-key) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 32.9 Orqaga bosim (backpressure) va navbat chuqurligini cheklash
 
 Cheksiz navbat muammoni yo'qotmaydi, uni kechiktiradi va yomonlashtiradi. Navbatda 30 sekund yotgan so'rov allaqachon mijoz uchun o'lik, lekin u hali ham thread, ulanish va CPU yeydi. Tomcat da `max-threads` default 200, `accept-count` default 100. Bu degani og'ir paytda 300 ta so'rov tizim ichida bo'ladi va har biri deadline ni yemoqda.

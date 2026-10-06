@@ -266,6 +266,8 @@ void concurrentRegistrationCreatesSingleCustomer() throws Exception {
 // H2 da unique constraint xulqi farq qiladi ([36-bob](36-test-turi-va-integratsion-test-review.md)).
 ```
 
+Mavzuning to'liq yozuvi [idempotency](../patterns/07-api-dizayn-patternlari.md#79-idempotentlik-kaliti-idempotency-key) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 34.7 Mutatsion fikrlash: testni aldab o'tish mumkinmi
 
 Eng kuchli review texnikasi: "bu kodni qanday buzsam, testlar hali ham o'tadi" degan savol. Agar javob topilsa, test yetarli emas.

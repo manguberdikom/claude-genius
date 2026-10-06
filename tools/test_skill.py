@@ -268,6 +268,25 @@ def check_tool_sections(skills):
             err(rel, "bob jadvali bor, lekin `## Asboblar` da doc.sh show yo'q")
 
 
+def claude_md_files():
+    """`.claude/**/*.md`, lekin ichki worktree larsiz.
+
+    Guruh worktree lari `.claude/worktrees/` ichida turadi (guruh.py):
+    ularni skanerlash har faylni ikki marta sanaydi va boshqa branchning
+    yarim tahrirlangan matniga yolg'on xato beradi. Qoida check_docs ning
+    `foreign_tree` i bilan bir joyda turadi.
+    """
+    import check_docs
+    out = []
+    for dirpath, dirnames, filenames in os.walk(os.path.join(ROOT, ".claude")):
+        dirnames[:] = sorted(
+            d for d in dirnames
+            if not check_docs.foreign_tree(os.path.join(dirpath, d), ROOT))
+        out.extend(os.path.join(dirpath, f) for f in filenames
+                   if f.endswith(".md"))
+    return sorted(out)
+
+
 def check_size_table(paths):
     """S/M/L jadvali faqat marshrut.md da va u yerda to'liq."""
     for path in paths:
@@ -365,8 +384,7 @@ def main():
     check_models(agents)
     check_tool_sections(skills)
     check_hooks()
-    claude_docs = sorted(glob.glob(os.path.join(ROOT, ".claude", "**", "*.md"),
-                                   recursive=True))
+    claude_docs = claude_md_files()
     check_size_table(claude_docs)
     check_ref_sections(claude_docs)
 
@@ -374,8 +392,7 @@ def main():
     if not secs or not chs:
         err("index", "indeks yasalmadi: doc.sh havolalari tekshirilmadi")
     else:
-        for path in sorted(glob.glob(os.path.join(ROOT, ".claude", "**", "*.md"),
-                                     recursive=True)):
+        for path in claude_docs:
             check_doc_refs(path, secs, chs)
         claude_md = os.path.join(ROOT, "CLAUDE.md")
         if os.path.exists(claude_md):

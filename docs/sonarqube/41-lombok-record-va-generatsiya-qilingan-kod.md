@@ -225,6 +225,8 @@ public class Order {
 
 Bu variantda `equals` va `hashCode` qo'lda yozilgani uchun ular `@Generated` bilan belgilanmaydi va qamrovga tushadi. Bu to'g'ri, chunki ular endi sizning biznes qaroringiz va sinovga arziydi. Sonar ham merosxo'r klass maydon qo'shsa `equals` ni qayta aniqlashni talab qiladigan qoidani (`java:S2160`) shu holatda tinch qoldiradi.
 
+Mavzuning to'liq yozuvi [entity da equals va hashCode](../clean-code/15-tenglik-hash-va-obyekt-shartnomalari.md#155-entitet-va-value-object-tengligi-farqi) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 41.6 `@Builder` va majburiy maydonlar tekshiruvi
 
 `@Builder` hech qanday tekshiruv generatsiya qilmaydi. `Order.builder().build()` chaqirig'i barcha maydon `null` bo'lgan obyekt qaytaradi va kompilyator qarshilik ko'rsatmaydi. Sonar ham buni ko'rmaydi, chunki builder kodi manba faylda yo'q.

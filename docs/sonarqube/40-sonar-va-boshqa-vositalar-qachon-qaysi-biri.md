@@ -206,7 +206,7 @@ Ikkinchi masala: takrorlanish. ArchUnit bilan "`System.out` ishlatilmasin" degan
 
 Uchinchi masala: coverage. ArchUnit testlari JaCoCo hisobotiga tushadi va coverage raqamini oshiradi, lekin biznes mantiqni sinamaydi. Coverage pastligini ArchUnit testlari bilan "tuzatsangiz", quality gate o'tadi, sifat esa joyida qoladi.
 
-Mavzuning to'liq yozuvi testlash qo'llanmasidagi [arxitektura testlari va kod sifati darvozalari](../testing/14-arxitektura-testlari-va-kod-sifati.md) bobida; bu yerda faqat Sonar qoidasi nuqtai nazari.
+Mavzuning to'liq yozuvi testlash qo'llanmasidagi [arxitektura testlari va kod sifati darvozalari](../testing/14-arxitektura-testlari-va-kod-sifati.md#142-archunit-asoslari) bo'limida; bu yerda faqat Sonar qoidasi nuqtai nazari.
 
 ## 40.6 Semgrep va shunga o'xshash qoida yozish vositalari
 

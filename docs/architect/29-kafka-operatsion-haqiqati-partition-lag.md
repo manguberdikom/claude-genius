@@ -189,6 +189,8 @@ public void handle(PaymentConfirmed msg, String topic, int partition, long offse
 
 Bu yondashuvning cheklovi: ishlov PostgreSQL dan tashqariga chiqsa (tashqi API ga to'lov yuborish) atomarlik buziladi. Unda tashqi chaqiruvga idempotency key berish kerak, ya'ni idempotentlikni chegaradan tashqariga uzatish.
 
+Mavzuning to'liq yozuvi [idempotency](../patterns/07-api-dizayn-patternlari.md#79-idempotentlik-kaliti-idempotency-key) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 29.8 Consumer lag ni o'lchash va ogohlantirish chegarasi qo'yish
 
 Lag bu partition ning oxirgi offset i va group commit qilgan offset i o'rtasidagi farq. U faqat sondan iborat emas: 50000 lag bir topic da 2 sekund, boshqasida 2 soat bo'lishi mumkin. Shuning uchun ogohlantirishni vaqtga o'tkazish kerak: `lag / xabarlar_sekundda`. Bu "qancha orqada" degan savolga biznes tili bilan javob beradi.

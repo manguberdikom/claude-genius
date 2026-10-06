@@ -329,7 +329,7 @@ class ContainersConfig {
 
 **Ehtiyot bo'ling:** Har test sinfida yangi konteyner ko'tarish suite'ni daqiqalarga cho'zadi - konteynerni `static` qiling yoki singleton pattern/`withReuse(true)` va `testcontainers.reuse.enable` bilan qayta ishlatish. CI agentlarida Docker mavjudligi va image'larni tortib olish limitlari (Docker Hub rate limit) muhim shart; shuningdek konteyner image tegini `latest` qoldirmang, aks holda testlar bir kechada "o'z-o'zidan" sinadi.
 
-Mavzuning to'liq yozuvi testlash qo'llanmasidagi [Testcontainers bilan real infratuzilmada test](../testing/08-testcontainers-bilan-real-infratuzilmada.md) bobida; bu yerda faqat pattern katalogi nuqtai nazari.
+Mavzuning to'liq yozuvi testlash qo'llanmasidagi [Testcontainers bilan real infratuzilmada test](../testing/08-testcontainers-bilan-real-infratuzilmada.md#82-testcontainers-asoslari-docker-api-ustida-hayot-aylanishi) bo'limida; bu yerda faqat pattern katalogi nuqtai nazari.
 
 ## 23.16 Embedded DB mos kelmasligi (Embedded DB Mismatch - anti-pattern: H2 for PostgreSQL)
 
@@ -429,7 +429,7 @@ static final ArchRule domain_is_pure =
 
 **Ehtiyot bo'ling:** Haddan ziyod qattiq va mayda qoidalar refactoring'ni sekinlashtiradi - qoidalarni haqiqiy arxitektura qarorlari darajasida saqlang, stilistik narsalarni linter'ga qoldiring. Katta kod bazasida ArchUnit sinf skanerlashi sekin bo'lishi mumkin, shuning uchun paket qamrovini toraytiring va `freeze` bilan mavjud buzilishlarni baseline qiling.
 
-Mavzuning to'liq yozuvi testlash qo'llanmasidagi [arxitektura testlari va kod sifati darvozalari](../testing/14-arxitektura-testlari-va-kod-sifati.md) bobida; bu yerda faqat pattern katalogi nuqtai nazari.
+Mavzuning to'liq yozuvi testlash qo'llanmasidagi [arxitektura testlari va kod sifati darvozalari](../testing/14-arxitektura-testlari-va-kod-sifati.md#142-archunit-asoslari) bo'limida; bu yerda faqat pattern katalogi nuqtai nazari.
 
 ## 23.22 Tasdiqlash / Golden Master testlash (Approval / Golden Master Testing)
 

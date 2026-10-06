@@ -150,6 +150,8 @@ static final ArchRule test_nomlari = methods()
         .because("test nomi kutilgan xatti-harakatni aytishi kerak");
 ```
 
+Mavzuning to'liq yozuvi [ArchUnit](#142-archunit-asoslari) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 14.4 Spring Modulith bilan modul chegaralarini tekshirish
 
 Spring Modulith 1.x paketni modul deb qabul qiladi: application klassining to'g'ridan-to'g'ri ost-paketlari - modullar, ularning ichki ost-paketlari esa modulning yopiq qismi. Boshqa moduldan faqat modulning yuqori darajadagi tipiga yoki `@NamedInterface` bilan belgilangan paketga murojaat qilish mumkin. Bu modular monolitni saqlashning eng arzon yo'li: paket qoidalarini qo'lda yozish o'rniga bitta `verify()` barcha chegarani tekshiradi.
