@@ -444,6 +444,129 @@ def case_symlink_orqali_yol(_):
             and fcode == 0 and "shop.orders.OrderServiceTest" in fout)
 
 
+def case_symlink_ildiz_log(_):
+    """Git siz loyihaga symlink orqali kirilsa ham ildiz va log nomi bitta.
+
+    Windows da TEMP qisqa 8.3 nom bilan keladi (`RUNNER~1`) va shu sinf
+    xatosi faqat windows-latest CI da chiqardi. Linux da symlink xuddi
+    shu holat: realpath siz project_root havola yo'lini, log_path esa
+    boshqa hash berib, --tashxis yozilgan logni topmasdi.
+    """
+    root = tree("kontekst_havola", gradle_shop())
+    link = os.path.join(TEMP, "kontekst_havola_link")
+    try:
+        os.symlink(root, link, target_is_directory=True)
+    except (OSError, NotImplementedError, AttributeError):
+        return True        # symlink yo'q (Windows): CI da qisqa nom shuni sinaydi
+    real = os.path.realpath(root)
+    same_root = (run_tests.project_root(link) == real
+                 and run_tests.project_root(os.path.join(link, "orders")) == real)
+    same_log = run_tests.log_path(link, True) == run_tests.log_path(real, True)
+    log = run_tests.log_path(link, True)
+    with open(log, "w", encoding="utf-8") as handle:
+        handle.write("Started OrderApiTest in 4.2 seconds (process running for 9.1)\n"
+                     "Started CartIT in 3.0 seconds (process running for 12.0)\n")
+    try:
+        code, out = run_cli(root, "--ildiz", link, "--tashxis")
+    finally:
+        os.remove(log)
+    return same_root and same_log and code == 0 and "2 marta" in out
+
+
+# U+02BB (o'zbek lotin "ʻ"): git -z siz uni qo'shtirnoq va oktal bilan beradi.
+OKINA = "ʻ"
+
+
+def case_diff_non_ascii_migratsiya(_):
+    files = gradle_shop()
+    sql = "orders/src/main/resources/db/migration/V2__qo%sshimcha_ustun.sql" % OKINA
+    files[sql] = "alter table orders add column x int;\n"
+    root = tree("non_ascii_migratsiya", files)
+    commit(root)
+    with open(os.path.join(root, sql), "a", encoding="utf-8") as handle:
+        handle.write("alter table orders add column y int;\n")
+    code, out = run_cli(root, "--diff")
+    return (code == 0 and "shop.orders.OrderRepositoryIT" in out
+            and "shop.orders.OrderServiceTest" not in out)
+
+
+def case_diff_non_ascii_untracked(_):
+    root = tree("non_ascii_untracked", gradle_shop())
+    commit(root)
+    name = "Yangi%sTest" % OKINA
+    path = os.path.join(root, "orders/src/test/java/shop/orders/%s.java" % name)
+    with open(path, "w", encoding="utf-8") as handle:
+        handle.write(java("shop.orders", name))
+    code, out = run_cli(root, "--diff")
+    return code == 0 and "shop.orders." + name in out and "o'zgargan test" in out
+
+
+def monorepo(name):
+    """Git ildizi tepada, build `backend/` da, yonida `frontend/`."""
+    files = {"backend/" + path: text for path, text in gradle_shop().items()}
+    files["frontend/app.js"] = "console.log(1);\n"
+    root = tree(name, files)
+    commit(root)
+    return root
+
+
+SERVICE = "backend/orders/src/main/java/shop/orders/OrderService.java"
+
+
+def case_monorepo_diff(_):
+    root = monorepo("monorepo_diff")
+    with open(os.path.join(root, SERVICE), "a") as handle:
+        handle.write("// o'zgarish\n")
+    code, out = run_cli(root, "--ildiz", "backend", "--diff")
+    git(root, "checkout", "--", SERVICE)
+    with open(os.path.join(root, "frontend/app.js"), "a") as handle:
+        handle.write("console.log(2);\n")
+    fcode, fout = run_cli(root, "--ildiz", "backend", "--diff")
+    return (code == 0 and "shop.orders.OrderServiceTest" in out
+            and "--ildiz dan tashqarida" not in out
+            and fcode == 0 and "Ta'sirlangan test yo'q" in fout
+            and "1 fayl --ildiz dan tashqarida, hisobga olinmadi" in fout)
+
+
+def case_monorepo_asos(_):
+    root = monorepo("monorepo_asos")
+    git(root, "branch", "asos")
+    with open(os.path.join(root, SERVICE), "a") as handle:
+        handle.write("// o'zgarish\n")
+    git(root, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qam", "ish")
+    code, out = run_cli(root, "--ildiz", "backend", "--asos", "asos")
+    return code == 0 and "shop.orders.OrderServiceTest" in out
+
+
+def case_log_faqat_temp_yoki_loyiha(_):
+    """--log ixtiyoriy faylni build chiqishi bilan qayta yozmasin."""
+    root = git_shop("log_chegara")
+    outside = os.path.join(HERE, "genius-log-sinovi-%d.log" % os.getpid())
+    if run_tests.inside(outside, tempfile.gettempdir()):
+        return True        # repo temp ichida: tashqi yo'l yo'q
+    try:
+        code, out = run_cli(root, "--diff", "--yurgiz", "--log", outside)
+        written = os.path.exists(outside)
+    finally:
+        if os.path.exists(outside):
+            os.remove(outside)
+    inner = os.path.join(root, "ichki.log")
+    icode, _ = run_cli(root, "--diff", "--yurgiz", "--log", inner)
+    return code == 2 and "--log" in out and not written and icode == 0 and os.path.exists(inner)
+
+
+def case_asos_bayroq_emas(_):
+    """--asos git ga bayroq bo'lib o'tmasin va commit bo'lmasa rc 2."""
+    root = git_shop("asos_bayroq")
+    target = os.path.join(TEMP, "injected")
+    code, out = run_cli(root, "--asos=--output=%s" % target)
+    created = [n for n in os.listdir(TEMP) if n.startswith("injected")]
+    bad, _ = run_cli(root, "--asos", "yoq-ref")
+    good, gout = run_cli(root, "--asos", "HEAD")
+    return (code == 2 and not created and bad == 2
+            and good == 0 and "shop.orders.OrderServiceTest" in gout)
+
+
 def case_navbat_qulfi(_):
     root = tree("navbat", gradle_shop())
     with run_tests.queue_lock(root):
@@ -788,6 +911,13 @@ CASES = [
     ("--hammasi filtrsiz", case_hammasi),
     ("--modul: butun modul, boshqasi yo'q", case_modul),
     ("symlink yoki qisqa nom orqali yo'l", case_symlink_orqali_yol),
+    ("symlink orqali ildiz: bitta ildiz va log nomi", case_symlink_ildiz_log),
+    ("--diff: non-ASCII nomli migratsiya", case_diff_non_ascii_migratsiya),
+    ("--diff: non-ASCII nomli untracked test", case_diff_non_ascii_untracked),
+    ("monorepo: --ildiz backend --diff, frontend eslatma", case_monorepo_diff),
+    ("monorepo: --ildiz backend --asos", case_monorepo_asos),
+    ("--log faqat temp yoki loyiha ichida", case_log_faqat_temp_yoki_loyiha),
+    ("--asos bayroq emas, commit bo'lmasa 2", case_asos_bayroq_emas),
     ("navbat qulfi yechiladi", case_navbat_qulfi),
     ("tashxis: daemon, forkEvery, konteyner, sleep, hisobot", case_tashxis),
     ("tashxis: static konteyner toza", case_tashxis_static_konteyner_toza),
