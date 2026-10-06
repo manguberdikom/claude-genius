@@ -438,7 +438,7 @@ def doc_cmd():
 
 def render(hits, rules=(), cmd="tools/doc.sh"):
     """Hook matni. Sarlavha raqam bilan boshlanadi, raqam qayta yozilmaydi."""
-    lines = ["Mos bo'limlar (%s show <hujjat> <raqam>):" % cmd]
+    lines = ["Nomzod bo'limlar (%s show <hujjat> <raqam>):" % cmd]
     for doc, section, title, _ in hits:
         head = title.split(" ", 1)[0].rstrip(".")
         label = title if head == section else ("%s %s" % (section, title)).strip()

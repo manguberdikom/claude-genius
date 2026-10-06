@@ -345,11 +345,13 @@ etadi: o'chadigani faqat hooklar.
 `settings.json` dagi hook buyruqlari aynan shu klonga mutlaq yo'l bilan
 bog'langan. Klon o'chirilsa yoki boshqa nomga ko'chirilsa:
 
-- **hooklar jim o'tadi.** Har buyruq oxirida `|| exit 0` turadi, shuning
-  uchun Python ning "can't open file" xatosi 0 ga aylanadi. Bu muhim:
-  Claude Code hookdan kelgan 2 kodini TO'SIQ deb oladi, ya'ni `|| exit 0`
-  bo'lmasa o'chgan klon `PreToolUse` da har `Read` va `Bash` ni to'sib,
-  Claude Code ni hamma proyektda ishlatmay qo'yardi. Hooklarning o'zi
+- **hooklar to'smaydi, lekin "hook error" ko'rinadi.** Har buyruq
+  oxirida `|| exit 1` turadi, shuning uchun Python ning "can't open file"
+  xatosi (kodi 2) 1 ga aylanadi. Bu muhim: Claude Code hookdan kelgan 2
+  kodini TO'SIQ deb oladi, ya'ni usiz o'chgan klon `PreToolUse` da har
+  `Read` va `Bash` ni to'sib, Claude Code ni hamma proyektda ishlatmay
+  qo'yardi. 1 to'smaydi, lekin Claude Code har chaqiruvda "hook error"
+  xabarini ko'rsatadi: himoya o'chgani jim qolmaydi. Hooklarning o'zi
   to'siqni faqat JSON orqali beradi, shuning uchun bu hech qanday
   tekshiruvni yo'qotmaydi.
 - **skill ishlamaydi.** `manguberdi` matnidagi buyruqlar va qo'llanma
