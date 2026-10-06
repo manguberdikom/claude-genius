@@ -64,7 +64,8 @@ ensure_index() {
     [ -f "$f" ] || { rebuild; return; }
   done
   if [ -n "$(find "$ROOT/docs" "$ROOT/tools/build_index.py" \
-      \( -name '*.md' -o -name manifest.json -o -name build_index.py \) \
+      \( -name '*.md' -o -name manifest.json -o -name build_index.py \
+         -o -name aliases.tsv -o -name OWNERS.tsv \) \
       -newer "$STAMP" -print -quit)" ]; then
     printf 'indeks eskirgan, qayta yasalmoqda...\n' >&2
     rebuild
@@ -116,12 +117,23 @@ $(fulltext "$query")"
 
   # Ibora hech qayerda aynan yo'q, lekin so'zlari bor bo'lishi mumkin:
   # "optimistic locking" -> 18.8 "Optimistik va pessimistik lock".
+  # Faqat uy-bob topilgan bo'lsa ham shunday: qolgan hujjatlarning nuqtai
+  # nazari so'zlar bo'yicha qo'shiladi. Naqshga to'liq mos uy-bob
+  # birinchi qoladi, qisman mos kelgani (4-ustun `qisman`: "N+1 testda")
+  # so'zlar natijasidan keyin, chunki ortiqcha so'z mavzuni toraytiradi.
   # Python topilmasa yoki yiqilsa, avvalgidek "topilmadi".
-  local py
-  if [ -z "$out" ] && [ "$(printf '%s\n' "$query" | awk '{ print NF }')" -ge 2 ] \
+  local py extra
+  if [ -z "$(printf '%s\n' "$out" | cut -f3 | grep -v '\[uy-bob\]$' || true)" ] \
+      && [ "$(printf '%s\n' "$query" | awk '{ print NF }')" -ge 2 ] \
       && py="$(pick_python)"; then
-    out="$("$py" "$ROOT/tools/findlib.py" "$query" 2>/dev/null || true)"
-    [ -z "$out" ] || printf "ibora topilmadi, so'zlar bo'yicha:\n" >&2
+    extra="$("$py" "$ROOT/tools/findlib.py" "$query" 2>/dev/null || true)"
+    if [ -n "$extra" ]; then
+      [ -n "$out" ] || printf "ibora topilmadi, so'zlar bo'yicha:\n" >&2
+      out="$( { printf '%s\n' "$out" | awk -F'\t' '$4 != "qisman"'
+                printf '%s\n' "$extra"
+                printf '%s\n' "$out" | awk -F'\t' '$4 == "qisman"'; } \
+              | awk -F'\t' 'NF && !seen[$1"\t"$2]++')"
+    fi
   fi
 
   if [ -z "$out" ]; then
@@ -153,6 +165,10 @@ $(fulltext "$query")"
 # Bir daraja ichida tartib avvalgidek: taxallus, bo'lim, bob (NR).
 # Kichik harfga awk o'tkazadi: bash dagi kengaytmasi bash 4 talab qiladi.
 # Ishora-yozuv (sections.tsv 9-ustuni) to'liq yozuv raqami bilan belgilanadi.
+# Uy-bob (aliases.tsv kind=uy, docs/OWNERS.tsv dan): alias ustunidagi
+# naqsh so'rovga qo'llanadi. To'liq mos kelsa daraja 5, ya'ni hammadan
+# oldin; qisman mos kelsa 3 va o'sha daraja oxirida: "Idempotent
+# Consumer" taxallusi o'z bo'limini idempotentlik uy-bobidan oldin beradi.
 # Bitta so'zli ASCII so'rovga transliteratsiya varianti (tools/findlib.py
 # translit bilan bir xil) va synonyms.tsv [inglizcha] bloki qo'shiladi:
 # migration -> migratsiya, isolation -> izolyatsiya.
@@ -212,6 +228,11 @@ name_hits() {
       return best
     }
     function emit(t, line) { if (t > 0) print t "\t" NR "\t" line }
+    function owner(re,    t) {
+      if (match(q, "^(" re ")$")) return 5
+      if (match(q, re)) return 3
+      return 0
+    }
     BEGIN {
       q = tolower(q); nv = 1; v[1] = q
       if (q ~ /^[a-z]+$/) {
@@ -231,11 +252,25 @@ name_hits() {
       next
     }
     FNR == 1 { next }
+    FILENAME == al && $3 == "uy" {
+      t = owner($1)
+      if (t > uy[$2 "\t" $4]) uy[$2 "\t" $4] = t
+      next
+    }
     FILENAME == al { emit(score($1), $2 "\t" $4 "\t" $1 " [taxallus]"); next }
     FILENAME == se {
+      if (($1 "\t" $2) in uy) uytitle[$1 "\t" $2] = $4
       emit(score($4), $1 "\t" $2 "\t" $4 ($9 != "" ? " [ishora: " $9 "]" : "")); next
     }
-    FILENAME == ch && $2 != "" { emit(score($3), $1 "\t" $2 "\t" $3) }
+    FILENAME == ch && $2 != "" {
+      if (($1 "\t" $2) in uy) uytitle[$1 "\t" $2] = $3
+      emit(score($3), $1 "\t" $2 "\t" $3)
+    }
+    END {
+      for (k in uy) if (uy[k] > 0)
+        print uy[k] "\t" (uy[k] == 5 ? 0 : 999999999) "\t" k "\t" uytitle[k] \
+          " [uy-bob]" (uy[k] == 5 ? "" : "\tqisman")
+    }
   ' "$syn" "$ALIASES" "$SECTIONS" "$CHAPTERS" \
     | sort -t "$tab" -k1,1nr -k2,2n | cut -f3-
 }
@@ -382,16 +417,22 @@ cmd_rule() {
 
   # Bo'lim ustuni bo'sh qator: kalit bob muqaddimasidagi katalog jadvalida.
   # Butun bob o'qilmasin, belgi outline ga yo'naltiradi.
-  local out
+  # 7-ustun `qoida`: bo'lim "Qoida: `java:S1192`" bilan boshlanadi, ya'ni
+  # katalogdagi tuzatish retsepti. U birinchi turadi va uchinchi ustunda
+  # ulush o'rniga `qoida` yoziladi, qolgani ulush tartibida (sort -s
+  # barqaror).
+  local out tab
+  tab="$(printf '\t')"
   out="$(awk -F'\t' -v k="$key" '
     FILENAME ~ /sections\.tsv$/ { if (FNR > 1) st[$1"|"$2] = $4; next }
     FILENAME ~ /chapters\.tsv$/ { if (FNR > 1) ch[$1"|"$2] = $3; next }
     FNR > 1 && $1 == k {
       if ($4 != "") { ref = $4; title = st[$2"|"$4] }
       else          { ref = $3; title = ch[$2"|"$3] " [katalog: outline]" }
-      printf "%-11s %-7s %5.2f  %s\n", $2, ref, $6, title
+      share = ($7 + 0) ? "qoida" : sprintf("%5.2f", $6)
+      printf "%d\t%-11s %-7s %5s  %s\n", $7 + 0, $2, ref, share, title
     }
-  ' "$SECTIONS" "$CHAPTERS" "$RULES")"
+  ' "$SECTIONS" "$CHAPTERS" "$RULES" | sort -s -t "$tab" -k1,1nr | cut -f2-)"
 
   if [ -z "$out" ]; then
     printf '%s qo%sllanmada izohlanmagan.\n' "$key" "'" >&2
@@ -413,7 +454,7 @@ cmd_rule() {
   else
     printf '%s\n' "$out"
   fi
-  printf "> doc.sh show <hujjat> <raqam>   (uchinchi ustun: ko'zga tashlanish)\n" >&2
+  printf "> doc.sh show <hujjat> <raqam>   (uchinchi ustun: ko'zga tashlanish yoki qoida)\n" >&2
 }
 
 # Bo'lim yoki bobning tekshiruv punktlari. Korpusda 2000 dan ortiq punkt

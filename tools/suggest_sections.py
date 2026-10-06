@@ -18,7 +18,11 @@ Baholash ikki signaldan iborat:
      hal qiladi.
 
 Sonar kaliti (java:S2259) bo'lsa, index/rules.tsv dagi bo'limlar boshida
-turadi: kalit foydalanuvchi bera oladigan eng aniq signal.
+turadi: kalit foydalanuvchi bera oladigan eng aniq signal. Katalog
+bo'limi ("Qoida: `java:S1192`" qatori bilan) kalitning boshqa
+bo'limlaridan oldin. Exception nomi (NoUniqueBeanDefinitionException)
+ham shunday: index/exceptions.tsv dagi bo'limlar ball bilan emas,
+ro'yxat boshida beriladi.
 
 Hech narsa yetarlicha mos kelmasa, hook jim turadi: har so'rovga shovqin
 qo'shish uni foydasiz qiladi. Indeks yo'q yoki bobdan eski bo'lsa, doc.sh
@@ -64,6 +68,8 @@ SYNONYMS_FILE = os.path.join(HERE, "synonyms.tsv")
 EVIDENCE_MIN_IDF = 2.0
 ALIAS_WEIGHT = 1.2
 ALIAS_BASE = 2.2
+# Bitta exception nomi uchun shuncha bo'lim (index/exceptions.tsv).
+EXC_PER_NAME = 2
 PAREN_SUFFIX_RE = re.compile(r'\s*\([^()]*\)\s*$')
 # build_index.py dagi WORD_RE bilan bir xil bo'lishi shart. tokens() esa
 # ustiga `@` ni kesadi: "DataJpaTest" va "@DataJpaTest" bitta so'z.
@@ -79,6 +85,9 @@ DOMAIN_NOUNS = {"customer", "account", "notification"}
 FRAME = re.compile(r"^\s*at\s+[\w.$<>]+\(", re.M)
 DROP = re.compile(r"^\s*(at\s+[\w.$<>]+\(|\.\.\.\s*\d+\s+more|(Detail|Hint|Where|Position):)")
 HEAD = re.compile(r"^\s*(?:Caused by:\s*)?([\w.$]+(?:Exception|Error))\b:?.*$")
+# PostgreSQL va log darajasi xabar boshida ("ERROR: deadlock detected"):
+# `error` ko'p sarlavhada bor va mavzu so'zidan ko'p ball yig'ardi.
+SEVERITY = re.compile(r"\b(?:ERROR|FATAL|PANIC|WARNING|SEVERE):")
 APOSTROPHES = str.maketrans({c: "'" for c in "ʻ’‘ʼ"})
 # To'liq sinf nomi (FQCN) oddiy nomga: TOKEN_RE nuqtani so'z ichida
 # qoldiradi, ya'ni "org.hibernate.LazyInitializationException" bitta
@@ -182,8 +191,48 @@ def load_synonyms():
                 continue
             parts = line.split("\t")
             if len(parts) == 2 and parts[0] and parts[1]:
-                table[parts[0]] = parts[1].split()
+                # Ibora kaliti so'rov kabi tokenlanadi: "o'chirilgan qator".
+                key = " ".join(tokens(parts[0])) or parts[0]
+                table[key] = parts[1].split()
     return table
+
+
+def exception_rows():
+    """index/exceptions.tsv: nomi kichik harfda -> bo'lim qatorlari.
+
+    build_index nomni faqat sarlavha va nasrdan oladi, misol va umumiy
+    nomlarni (RuntimeException, OrderNotFoundException) tashlaydi.
+    """
+    out = {}
+    for row in read_tsv("exceptions.tsv"):
+        out.setdefault(row["nom"].lower(), []).append(row)
+    return out
+
+
+def known_exceptions():
+    return set(exception_rows())
+
+
+def exception_hits(prompt, titles):
+    """So'rovdagi exception nomi tushuntirilgan bo'limlar.
+
+    Nom Sonar kaliti kabi aniq signal, shuning uchun bo'limlar ball bilan
+    emas, ro'yxat boshida beriladi: "NoUniqueBeanDefinitionException: No
+    qualifying bean of type ... expected single matching bean" da xabar
+    so'zlari (`single`, `of`) begona sarlavhalarga ko'proq ball yig'adi.
+    exceptions.tsv nom ichida saralangan: sarlavhadagi nom, keyin ko'p
+    uchragani. Bitta nom uchun EXC_PER_NAME ta, nomlar so'rovdagi tartibda.
+    """
+    table = exception_rows()
+    out, seen = [], set()
+    for token in tokens(prompt):
+        if token in seen or token not in table:
+            continue
+        seen.add(token)
+        for row in table[token][:EXC_PER_NAME]:
+            key = (row["doc"], row["section"])
+            out.append(key + (titles.get(key, ""), 0.0))
+    return out
 
 
 def clean_prompt(prompt):
@@ -202,13 +251,19 @@ def clean_prompt(prompt):
     prompt = prompt.translate(APOSTROPHES)
     prompt = FQCN_RE.sub(r"\1", prompt)
     if FRAME.search(prompt):
-        kept = []
-        for line in prompt.splitlines():
-            if DROP.match(line):
-                continue
-            head = HEAD.match(line)
-            kept.append(head.group(1).rsplit(".", 1)[-1] if head else line)
-        prompt = "\n".join(kept)
+        lines = [line for line in prompt.splitlines() if not DROP.match(line)]
+        heads = [i for i, line in enumerate(lines) if HEAD.match(line)]
+        known = known_exceptions()
+        for i in heads:
+            name = HEAD.match(lines[i]).group(1).rsplit(".", 1)[-1]
+            # Nom indeksda bo'lsa uning o'zi yetadi, xabar faqat shovqin.
+            # Bo'lmasa va bu ildiz sabab (oxirgi exception qatori) bo'lsa,
+            # mavzu xabarda: "PSQLException: ERROR: deadlock detected"
+            # (PSQLException korpusda yo'q). Oraliq qatorlar xabari
+            # ("could not execute statement") qolsa shovqin beradi.
+            keep = name.lower() not in known and i == heads[-1]
+            lines[i] = SEVERITY.sub(" ", lines[i]) if keep else name
+        prompt = "\n".join(lines)
     prompt = strip_java_keywords(prompt)
     return META.sub(" ", prompt)
 
@@ -249,13 +304,26 @@ def roots(token, vocab):
 
 
 def expand(prompt, vocab, synonyms):
-    """So'rov so'zlari: o'zagi va sinonimlari bilan birga."""
-    out = set()
+    """So'rov so'zlari: o'zagi va sinonimlari bilan birga.
+
+    Kalitida bo'shliq bor sinonim ibora: uning so'zlari so'rovda ketma-ket
+    (o'zagi bilan) turgandagina nishon qo'shiladi. Umumiy so'zni
+    ("o'chirilgan", "qator") yolg'iz o'zi kamyob atamaga bog'lab
+    bo'lmaydi, ibora esa mavzuni aniq bildiradi.
+    """
+    out, seq = set(), []
     for token in tokens(prompt):
         forms = roots(token, vocab)
+        seq.append(forms)
         out |= forms
         for form in forms:
             out.update(synonyms.get(form, ()))
+    for key, targets in synonyms.items():
+        words = key.split()
+        if len(words) > 1 and any(
+                all(w in seq[i + j] for j, w in enumerate(words))
+                for i in range(len(seq) - len(words) + 1)):
+            out.update(targets)
     return out
 
 
@@ -277,7 +345,18 @@ def load_idf(total_sections):
     return idf
 
 
-def score_sections(wanted, sections, idf, term_vocab, direct=frozenset()):
+def synonym_echo(direct, synonyms):
+    """Sinonim nishoni -> uni bergan so'rov so'zlari (o'zidan farqli)."""
+    echo = {}
+    for form in direct:
+        for target in synonyms.get(form, ()):
+            if target != form:
+                echo.setdefault(target, set()).add(form)
+    return echo
+
+
+def score_sections(wanted, sections, idf, term_vocab, direct=frozenset(),
+                   echo=None):
     """Har bir bo'lim uchun uchta son: ball, kamyoblik, dalil kuchi.
 
     Uchinchisi kerak bo'lib qoldi, chunki chastota atamani mavhum so'zdan
@@ -295,6 +374,7 @@ def score_sections(wanted, sections, idf, term_vocab, direct=frozenset()):
     """
     if not wanted:
         return {}
+    echo = echo or {}
     scores = {}
     for row in sections:
         # Ishora-yozuv (`ishora` ustuni to'la) to'liq yozuvni takrorlaydi.
@@ -303,6 +383,10 @@ def score_sections(wanted, sections, idf, term_vocab, direct=frozenset()):
         shared = wanted & set(tokens(row["title"]))
         if not shared:
             continue
+        # Ikki tilli sarlavha ("Maydonga Injeksiya (Field Injection)") so'rov
+        # so'zini ham, uning sinonimini ham saqlaydi: bitta tushuncha ikki
+        # marta sanalsa "SQL injection" ga field injection birinchi chiqardi.
+        shared -= {t for t in shared if echo.get(t, set()) & shared}
         specific = [t for t in shared if is_specific(t)]
         carrying = [t for t in specific if idf.get(t, 0.0) >= EVIDENCE_MIN_IDF]
         evidence = len(carrying)
@@ -454,16 +538,32 @@ def rule_keys(prompt):
 
 
 def rule_hits(keys, titles):
-    """Kalit izohlangan bo'limlar; rules.tsv kalit ichida ulush bo'yicha saralangan."""
+    """Kalit izohlangan bo'limlar; rules.tsv kalit ichida saralangan:
+    avval katalogdagi tuzatish bo'limi (`qoida`), keyin ulush.
+
+    Kalitning bo'lim qatori umuman bo'lmasa (faqat katalog bobi
+    muqaddimasidagi jadvalda) bob qatori beriladi: hook jim qolmasin,
+    `doc.sh outline` bilan kerakli bo'limga bitta qadam.
+    """
     if not keys:
         return []
-    out, seen = [], {}
-    for row in read_tsv("rules.tsv"):
+    out, seen, chapter = [], {}, {}
+    rows = read_tsv("rules.tsv")
+    # Barqaror saralash: kalit ichida ulush tartibi saqlanadi.
+    rows.sort(key=lambda row: -int(row.get("qoida") or 0))
+    for row in rows:
         rule = row["rule"]
-        if rule in keys and row["section"] and seen.get(rule, 0) < RULE_PER_KEY:
+        if rule not in keys:
+            continue
+        if not row["section"]:
+            chapter.setdefault(rule, (row["doc"], row["chapter"]))
+        elif seen.get(rule, 0) < RULE_PER_KEY:
             seen[rule] = seen.get(rule, 0) + 1
             out.append((row["doc"], row["section"],
                         titles.get((row["doc"], row["section"]), ""), 0.0))
+    for rule in sorted(set(chapter) - set(seen)):
+        doc, number = chapter[rule]
+        out.append((doc, number, titles.get((doc, number), ""), 0.0))
     return out
 
 
@@ -475,9 +575,11 @@ def suggest(prompt):
     idf = load_idf(len(sections))
     aliases = read_tsv("aliases.tsv")
     term_vocab = (term_vocabulary(aliases) | title_terms(sections)) - DOMAIN_NOUNS
-    wanted = expand(prompt, idf, load_synonyms())
+    synonyms = load_synonyms()
+    wanted = expand(prompt, idf, synonyms)
     direct = set().union(*(roots(t, idf) for t in tokens(prompt)))
-    scores = score_sections(wanted, sections, idf, term_vocab, direct)
+    scores = score_sections(wanted, sections, idf, term_vocab, direct,
+                            synonym_echo(direct, synonyms))
     scores = score_aliases(prompt, aliases, scores)
 
     keep = {k: v for k, v in scores.items()
@@ -486,6 +588,10 @@ def suggest(prompt):
     titles = titles_by_key(sections)
     hits = rule_hits(rule_keys(prompt), titles)
     have = {(h[0], h[1]) for h in hits}
+    for hit in exception_hits(prompt, titles):
+        if (hit[0], hit[1]) not in have:
+            have.add((hit[0], hit[1]))
+            hits.append(hit)
     hits += [(doc, sec, titles.get((doc, sec), ""), total)
              for (doc, sec), (total, _, _) in ranked if (doc, sec) not in have]
     return hits[:MAX_SUGGESTIONS]
