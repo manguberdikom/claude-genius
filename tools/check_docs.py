@@ -641,6 +641,13 @@ def main():
     # 11. Sonar kalitlari snapshot bilan mos.
     check_sonar(files)
 
+    # 13. Da'volar: tools/verify_claims.py (Boot kalit, olib tashlangan API,
+    # BOM, YAML/XML). Hozircha faqat ogohlantirish; javac qismi bu yerda
+    # yurmaydi, u `verify_claims.py --java` bilan alohida.
+    import verify_claims
+    for found in verify_claims.collect(ROOT):
+        warn("da'vo: " + verify_claims.fmt(found))
+
     print(f"{len(files)} markdown fayl, {total} nisbiy havola tekshirildi")
     for w in warnings:
         print(f"OGOHLANTIRISH: {w}")
