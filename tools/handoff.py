@@ -38,10 +38,10 @@ import glob
 import json
 import os
 import re
-import subprocess
 import sys
 import time
 
+import geniuslib
 import hookio
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -327,22 +327,14 @@ def limit_for(before_auto, model, override):
 
 
 def git(*args):
-    try:
-        out = subprocess.run(["git"] + list(args), capture_output=True,
-                             text=True, cwd=project_dir(), timeout=20)
-        return out.stdout.strip()
-    except (OSError, subprocess.SubprocessError):
-        return ""
+    out = geniuslib.run_git(args, cwd=project_dir())
+    return out.stdout.strip() if out else ""
 
 
 def in_git(path):
     """Papka git ishchi daraxti ichidami."""
-    try:
-        out = subprocess.run(["git", "-C", path, "rev-parse", "--is-inside-work-tree"],
-                             capture_output=True, text=True, timeout=20)
-        return out.returncode == 0 and out.stdout.strip() == "true"
-    except (OSError, subprocess.SubprocessError):
-        return False
+    out = geniuslib.run_git(["-C", path, "rev-parse", "--is-inside-work-tree"])
+    return bool(out) and out.returncode == 0 and out.stdout.strip() == "true"
 
 
 def memory_slug():
@@ -649,10 +641,7 @@ def save_state(data):
     yozmaydi (budget.py va usage.py bilan bir xil)."""
     path = state_path()
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    tmp = "%s.%d.tmp" % (path, os.getpid())
-    with open(tmp, "w", encoding="utf-8") as handle:
-        json.dump(data, handle)
-    os.replace(tmp, path)
+    geniuslib.atomic_write_text(path, json.dumps(data))
 
 
 def hook():

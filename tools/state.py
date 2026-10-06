@@ -68,14 +68,14 @@ def mark(paths, labels=()):
     yozuvchiga berilmagan boblarni aytadi.
     """
     body = json.dumps({"labels": sorted(set(labels))}, ensure_ascii=False)
+    # Kech import: state.py ni check_code hook yo'lida ham yuklaydi
+    # (was_marked), geniuslib faqat yozuvchi mark() ga kerak.
+    import geniuslib
     try:
         os.makedirs(MARKS, exist_ok=True)
         for path in paths:
             target = _marker(path)
-            tmp = "%s.%d.tmp" % (target, os.getpid())
-            with open(tmp, "w", encoding="utf-8") as handle:
-                handle.write(body)
-            os.replace(tmp, target)
+            geniuslib.atomic_write_text(target, body)
         _prune(time.time())
     except OSError:
         pass  # belgilash ishni to'xtatmaydi

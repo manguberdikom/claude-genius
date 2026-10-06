@@ -53,10 +53,11 @@ import json
 import os
 import re
 import shutil
-import subprocess
 import sys
 import tempfile
 import time
+
+import geniuslib
 
 ID_RE = re.compile(r"^[A-Za-z0-9][\w.-]{0,39}$")
 BRANCH_RE = re.compile(r"^genius/[\w.-]{1,40}$")
@@ -66,9 +67,8 @@ EXCLUDE_LINE = WORKTREES + "/"
 
 
 def git(cwd, *args, check=False, data=None, env=None):
-    proc = subprocess.run(["git", "-C", cwd] + list(args), capture_output=True,
-                          input=data, timeout=120,
-                          env=dict(os.environ, **env) if env else None)
+    proc = geniuslib.run_git(["-C", cwd] + list(args), text=False, input=data,
+                             timeout=120, env=env, strict=True)
     if check and proc.returncode:
         raise RuntimeError((proc.stderr or proc.stdout).decode("utf-8", "replace").strip())
     return proc
@@ -114,14 +114,7 @@ def load(root):
 
 def save(root, data):
     path = state_file(root)
-    tmp = path + ".%d.tmp" % os.getpid()
-    try:
-        with open(tmp, "w", encoding="utf-8") as handle:
-            json.dump(data, handle, indent=1)
-        os.replace(tmp, path)
-    finally:
-        if os.path.exists(tmp):
-            os.remove(tmp)
+    geniuslib.atomic_write_text(path, json.dumps(data, indent=1))
 
 
 def limit():

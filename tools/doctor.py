@@ -41,6 +41,8 @@ import sys
 import tempfile
 import time
 
+import geniuslib
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 HOOKS_DIR = os.path.join(HERE, "testdata", "hooks")
@@ -169,12 +171,8 @@ def check_clone(manifest):
 
 
 def git_head(root):
-    try:
-        proc = subprocess.run(["git", "-C", root, "rev-parse", "HEAD"],
-                              capture_output=True, text=True, timeout=10)
-    except (OSError, subprocess.SubprocessError):
-        return ""
-    return proc.stdout.strip() if proc.returncode == 0 else ""
+    proc = geniuslib.run_git(["-C", root, "rev-parse", "HEAD"], timeout=10)
+    return proc.stdout.strip() if proc and proc.returncode == 0 else ""
 
 
 def check_installed(manifest):

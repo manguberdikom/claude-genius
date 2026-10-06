@@ -16,6 +16,8 @@ import re
 import subprocess
 import sys
 
+import geniuslib
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 INDEX = os.path.join(ROOT, "index")
@@ -163,12 +165,8 @@ def quote(path):
 
 
 def _git(args, cwd):
-    try:
-        proc = subprocess.run(["git"] + args, capture_output=True,
-                              text=True, cwd=cwd, timeout=20)
-    except (OSError, subprocess.SubprocessError):
-        return ""
-    return proc.stdout if proc.returncode == 0 else ""
+    proc = geniuslib.run_git(args, cwd=cwd)
+    return proc.stdout if proc and proc.returncode == 0 else ""
 
 
 # Klonda turadigan memory papkalari. Klon ochiq repo, shuning uchun unga

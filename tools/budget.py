@@ -58,6 +58,7 @@ import subprocess
 import sys
 import time
 
+import geniuslib
 import hookio
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -265,10 +266,7 @@ def save(data):
     try:
         os.makedirs(STATE_DIR, exist_ok=True)
         # Har jarayonning o'z tmp fayli: qulfsiz holatda ham JSON buzilmaydi.
-        tmp = "%s.%d.tmp" % (LOG, os.getpid())
-        with open(tmp, "w", encoding="utf-8") as handle:
-            json.dump(data, handle)
-        os.replace(tmp, LOG)
+        geniuslib.atomic_write_text(LOG, json.dumps(data))
     except OSError:
         pass   # hisoblagich ishni to'xtatmaydi
 
@@ -336,13 +334,8 @@ def installed_line():
     except (OSError, ValueError, AttributeError):
         return None
     root = manifest.get("root") or ROOT
-    try:
-        import subprocess
-        clone = subprocess.run(["git", "-C", root, "rev-parse", "HEAD"],
-                               capture_output=True, text=True,
-                               timeout=5).stdout.strip()
-    except (OSError, subprocess.SubprocessError):
-        clone = ""
+    proc = geniuslib.run_git(["-C", root, "rev-parse", "HEAD"], timeout=5)
+    clone = proc.stdout.strip() if proc else ""
     line = "o'rnatilgan: %s, klon: %s" % (installed[:12] or "?", clone[:12] or "?")
     if installed and clone and installed != clone:
         line += " (farq bor: o'rnatuvchini qayta yurgizing, install/README.md 'Yangilash')"

@@ -64,6 +64,7 @@ import re
 import statistics
 import sys
 
+import geniuslib
 import hookio
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -551,10 +552,8 @@ def save(rows, project, session, block=None):
             folder = os.path.join(STORE, month, project)
             os.makedirs(folder, exist_ok=True)
             path = os.path.join(folder, session + ".json")
-            tmp = "%s.%d.tmp" % (path, os.getpid())
-            with open(tmp, "w", encoding="utf-8") as handle:
-                json.dump(data, handle, indent=1, sort_keys=True)
-            os.replace(tmp, path)
+            geniuslib.atomic_write_text(
+                path, json.dumps(data, indent=1, sort_keys=True))
     except OSError:
         return 0           # hook o'z xatosi bilan ishni to'xtatmaydi
     return 0
@@ -569,12 +568,10 @@ def note_format(problem, source):
                 os.remove(target)
             return
         os.makedirs(STATE_DIR, exist_ok=True)
-        tmp = "%s.%d.tmp" % (target, os.getpid())
-        with open(tmp, "w", encoding="utf-8") as handle:
-            json.dump({"sabab": problem, "transkript": source,
-                       "vaqt": datetime.datetime.now().isoformat(timespec="seconds")},
-                      handle, ensure_ascii=False)
-        os.replace(tmp, target)
+        geniuslib.atomic_write_text(target, json.dumps(
+            {"sabab": problem, "transkript": source,
+             "vaqt": datetime.datetime.now().isoformat(timespec="seconds")},
+            ensure_ascii=False))
     except OSError:
         pass
 

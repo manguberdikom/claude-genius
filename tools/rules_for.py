@@ -26,7 +26,6 @@ Kotlin fayl (mexanik tekshiruv yo'q), Spring bo'lmagan JVM proyekt
 
 import os
 import re
-import subprocess
 import sys
 import time
 
@@ -35,6 +34,7 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 
 import check_code  # noqa: E402
+import geniuslib  # noqa: E402
 from check_code import in_clone, strip_noise, tool_cmd  # noqa: E402
 from docref import ensure_index, resolve  # noqa: E402
 from docref import project_slug as docref_slug  # noqa: E402
@@ -271,12 +271,8 @@ def _full(path):
 
 
 def _git(args, cwd):
-    try:
-        proc = subprocess.run(["git"] + args, capture_output=True,
-                              text=True, cwd=cwd)
-    except OSError:
-        return ""
-    return proc.stdout if proc.returncode == 0 else ""
+    proc = geniuslib.run_git(args, cwd=cwd, timeout=None)
+    return proc.stdout if proc and proc.returncode == 0 else ""
 
 
 def changed_files(args):

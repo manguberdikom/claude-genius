@@ -321,7 +321,7 @@ $toolsDir = Join-Path $GeniusPath 'tools'
 $Required = @(
   'tools\doc.sh', 'tools\guard.py', 'tools\check_code.py', 'tools\rules_for.py',
   'tools\budget.py', 'tools\suggest_sections.py', 'tools\usage.py', 'tools\actor_check.py',
-  'tools\handoff.py', 'tools\state.py', 'tools\docref.py', 'tools\hookio.py',
+  'tools\handoff.py', 'tools\state.py', 'tools\docref.py', 'tools\hookio.py', 'tools\geniuslib.py',
   'tools\build_index.py', 'tools\check_docs.py',
   'tools\review_status.py', 'tools\sonar_snapshot.py',
   'tools\run_tests.py', 'tools\parse_test_output.py', 'tools\guruh.py',

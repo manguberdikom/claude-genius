@@ -196,10 +196,10 @@ def fail_open(name, exc):
         except OSError:
             lines = []
         lines = (lines + [line])[-ERRORS_KEEP:]
-        tmp = "%s.%d.tmp" % (path, os.getpid())
-        with open(tmp, "w", encoding="utf-8") as handle:
-            handle.writelines(lines)
-        os.replace(tmp, path)
+        # Kech import: geniuslib topilmasa ham hookio yuklanadi, xato esa
+        # quyidagi except da yutiladi (hook fail-open).
+        import geniuslib
+        geniuslib.atomic_write_text(path, "".join(lines))
     except Exception:  # noqa: BLE001 - iz yozilmasa ham hook o'tadi
         pass
 

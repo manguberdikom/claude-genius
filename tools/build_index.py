@@ -27,6 +27,7 @@ DOCS_DIR = os.path.join(ROOT, "docs")
 # Anchor hisoblash mantig'i check_docs.py da. Nusxa ko'chirilsa ikkisi
 # vaqt o'tib bir-biridan uzoqlashadi, shuning uchun import qilinadi.
 sys.path.insert(0, HERE)
+import geniuslib  # noqa: E402
 from check_docs import gh_slug  # noqa: E402
 
 FENCE_RE = re.compile(r"^\s*(```|~~~)")
@@ -589,19 +590,10 @@ def write(name, header, data, mtime=None):
     raqam deb oladi va anchor oxiriga \\r tushadi.
     """
     path = os.path.join(INDEX_DIR, name)
-    tmp = "%s.%d.tmp" % (path, os.getpid())
-    try:
-        with open(tmp, "w", encoding="utf-8", newline="\n") as handle:
-            if header:
-                handle.write("\t".join(header) + "\n")
-            for row in data:
-                handle.write("\t".join(str(cell) for cell in row) + "\n")
-        if mtime is not None:
-            os.utime(tmp, (mtime, mtime))
-        os.replace(tmp, path)
-    finally:
-        if os.path.exists(tmp):
-            os.remove(tmp)
+    lines = ["\t".join(header)] if header else []
+    lines.extend("\t".join(str(cell) for cell in row) for row in data)
+    geniuslib.atomic_write_text(
+        path, "".join(line + "\n" for line in lines), newline="\n", mtime=mtime)
 
 
 def sources():
