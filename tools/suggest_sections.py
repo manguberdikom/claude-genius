@@ -79,6 +79,34 @@ DOMAIN_NOUNS = {"customer", "account", "notification"}
 FRAME = re.compile(r"^\s*at\s+[\w.$<>]+\(", re.M)
 DROP = re.compile(r"^\s*(at\s+[\w.$<>]+\(|\.\.\.\s*\d+\s+more|(Detail|Hint|Where|Position):)")
 HEAD = re.compile(r"^\s*(?:Caused by:\s*)?([\w.$]+(?:Exception|Error))\b:?.*$")
+APOSTROPHES = str.maketrans({c: "'" for c in "ʻ’‘ʼ"})
+# To'liq sinf nomi (FQCN) oddiy nomga: TOKEN_RE nuqtani so'z ichida
+# qoldiradi, ya'ni "org.hibernate.LazyInitializationException" bitta
+# token bo'lib, nom yo'qolardi. Paket qismi kichik harfli, nom katta
+# harfdan boshlanadi: "com.example.order.items" ga tegilmaydi. tokens()
+# da emas, shu yerda: u sarlavha va taxallus uchun ham ishlaydi va
+# build_index WORD_RE bilan bir xil turishi shart.
+FQCN_RE = re.compile(r"\b(?:[a-z_][a-z0-9_]*\.)+([A-Z][\w$]*)")
+# Yopishtirilgan Java kodi: kamida bitta shunday qator bo'lsa, kodga
+# o'xshagan qatorlardan zaxira so'zlar tashlanadi. Aks holda `public`,
+# `private`, `package` har safar bir xil sarlavhalarga ("`public` maydon",
+# "`package-private`") olib borardi. Identifikatorlar (ExecutorService,
+# Thread.sleep, @Transactional) joyida qoladi. Faqat tuzilish so'zlari
+# tashlanadi. Ma'noni o'zgartiradigan modifikator va konstruksiya
+# (private, static, final, synchronized, volatile, try, catch, throws,
+# switch, enum, record) qoladi: "@Transactional private metod" da
+# `private` mavzuning o'zi.
+CODE_START = re.compile(r"^\s*(?:package|import|public|private|protected|class|"
+                        r"interface|enum|record|@\w+)\b")
+# Kod qatori: `;`, `{` yoki `}` bilan tugaydi yoki yolg'iz annotatsiya.
+# "@Transactional private metodda ishlaydimi" kod emas, gap.
+CODE_LINE = re.compile(r"[;{}]\s*$|^\s*@\w+(?:\(.*\))?\s*$")
+JAVA_KEYWORDS = re.compile(
+    r"\b(?:abstract|assert|boolean|break|byte|case|char|class|const|"
+    r"continue|do|double|else|extends|float|for|goto|if|implements|import|"
+    r"int|interface|long|native|new|non-sealed|package|permits|public|"
+    r"return|short|strictfp|super|this|throws|void|while|var|yield|null|"
+    r"true|false)\b")
 # Asbobning o'ziga buyruq ("memory ga yoz"), qo'llanma mavzusi emas.
 META = re.compile(r"\bmemory\s*(?:ga|ni|dan|da|dagi)?\s+"
                   r"(?:yoz|saqla|tozala|o'qi|eslab|qo'sh)\w*", re.I)
@@ -91,6 +119,9 @@ PROPER_RE = re.compile(r"\b(?:[A-Z][a-z0-9]*[A-Z][A-Za-z0-9]*|[A-Z]{4,}[0-9]*)\b
 CODEY_RE = re.compile(r"[a-z][A-Z]|[_.@#0-9]")
 
 RULE_RE = re.compile(r"\b(?:java|squid):s(\d+)\b", re.I)
+# Prefikssiz kalit: "S1192 takrorlanyapti". Katta S va 3-5 raqam, oldida
+# harf yoki `:` yo'q: "S3 bucket", "AS400", "java:S1192" ning o'zi emas.
+BARE_RULE_RE = re.compile(r"(?<![\w:])S(\d{3,5})\b")
 # Bitta kalit uchun shuncha bo'lim, qolgani `doc.sh rule` da.
 RULE_PER_KEY = 2
 # Indeks yasash shundan uzoq cho'zilsa, bor indeks bilan davom etiladi.
@@ -163,7 +194,13 @@ def clean_prompt(prompt):
     `... 42 more`, `Detail:` qatorlari tashlanadi, exception qatoridan esa
     faqat sinf nomi qoladi. Bir qatorlik "XxxException chiqyapti" ga
     tegilmaydi: unda nom mavzuning o'zi.
+
+    Korpus faqat ASCII apostrof ishlatadi, telefon va Windows o'zbek
+    klaviaturasi esa ʻ yoki ’ qo'yadi: "yoʻqolgan" aks holda "yo" va
+    "qolgan" ga bo'linardi (doc.sh find ham shunday almashtiradi).
     """
+    prompt = prompt.translate(APOSTROPHES)
+    prompt = FQCN_RE.sub(r"\1", prompt)
     if FRAME.search(prompt):
         kept = []
         for line in prompt.splitlines():
@@ -172,7 +209,24 @@ def clean_prompt(prompt):
             head = HEAD.match(line)
             kept.append(head.group(1).rsplit(".", 1)[-1] if head else line)
         prompt = "\n".join(kept)
+    prompt = strip_java_keywords(prompt)
     return META.sub(" ", prompt)
+
+
+def strip_java_keywords(prompt):
+    """Kod qatorlaridan Java zaxira so'zlarini olib tashlaydi.
+
+    Prompt kod deb faqat kod qatori ikkitadan ko'p bo'lsa yoki kod qatori
+    `public`, `class`, `import` kabi so'z bilan boshlansa hisoblanadi.
+    Oddiy gapdagi so'z (masalan "record ishlatsam bo'ladimi") qoladi.
+    """
+    lines = prompt.split("\n")
+    code = [i for i, line in enumerate(lines) if CODE_LINE.search(line)]
+    if not code or (len(code) < 2 and not CODE_START.match(lines[code[0]])):
+        return prompt
+    for i in code:
+        lines[i] = JAVA_KEYWORDS.sub(" ", lines[i])
+    return "\n".join(lines)
 
 
 def roots(token, vocab):
@@ -381,9 +435,22 @@ def titles_by_key(sections):
     return out
 
 
+def rank_key(item):
+    """Ball, teng bo'lsa eng kamyob mos so'z, keyin bo'lim raqami son sifatida.
+
+    Avval tenglikni hujjat nomining alifbosi hal qilardi va architect
+    tizimli ravishda oldinga chiqardi. Raqam son sifatida: 2.10 2.9 dan
+    keyin. Oxirgi kalit hujjat nomi: tartib baribir aniq bo'lsin.
+    """
+    (doc, section), (score, rare, _) = item
+    number = tuple(int(p) for p in section.split(".") if p.isdigit())
+    return (-round(score, 6), -round(rare, 6), number, doc)
+
+
 def rule_keys(prompt):
     """So'rovdagi Sonar kalitlari, rules.tsv dagi shaklda: java:S2259."""
-    return sorted({"java:S" + digits for digits in RULE_RE.findall(prompt)})
+    digits = RULE_RE.findall(prompt) + BARE_RULE_RE.findall(prompt)
+    return sorted({"java:S" + d for d in digits})
 
 
 def rule_hits(keys, titles):
@@ -415,7 +482,7 @@ def suggest(prompt):
 
     keep = {k: v for k, v in scores.items()
             if v[0] >= MIN_SCORE and v[1] >= MIN_RARE_IDF and v[2] >= MIN_EVIDENCE}
-    ranked = sorted(keep.items(), key=lambda kv: (-kv[1][0], kv[0]))
+    ranked = sorted(keep.items(), key=rank_key)
     titles = titles_by_key(sections)
     hits = rule_hits(rule_keys(prompt), titles)
     have = {(h[0], h[1]) for h in hits}

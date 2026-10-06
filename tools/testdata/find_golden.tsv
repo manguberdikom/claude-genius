@@ -15,7 +15,7 @@
 # xato (xato yozilgan), sonar (kalit yoki atama), stack (exception nomi),
 # kod (identifikator yoki annotatsiya).
 id	toplam	kategoriya	sorov	qabul
-fu01	dev	uz	yo'qolgan yangilanish	architect:22.5
+fu01	dev	uz	yo'qolgan yangilanish	architect:22.5 code-review:15.3
 fu02	holdout	uz	optimistik lock	architect:18.8 testing:11.8 patterns:9.23 code-review:27.4
 fu03	dev	uz	kesh	patterns:11.1 patterns:11.7 patterns:11.8 patterns:11.9 patterns:11.10 patterns:11.11 patterns:11.14 patterns:11.15 patterns:11.16 patterns:11.18 patterns:11.19 patterns:11.21 architect:28.1 architect:28.2 architect:28.3 architect:28.4 architect:28.5 architect:28.6 architect:28.7 architect:28.8 architect:28.12 testing:7.8
 fu04	holdout	uz	qayta urinish	patterns:17.1 architect:7.4 patterns:19.10 architect:32.8 architect:29.9 architect:17.10 patterns:25.61
@@ -31,7 +31,7 @@ fe01	holdout	en	optimistic locking	architect:18.8 patterns:9.23 testing:11.8 cod
 fe02	dev	en	transaction propagation	architect:19.2 code-review:19.4
 fe03	holdout	en	thread safety	architect:11.7 architect:11.3 architect:11.4
 fe04	dev	en	self invocation	architect:15.9 architect:19.6 patterns:25.30
-fe05	holdout	en	lost update	architect:22.5
+fe05	holdout	en	lost update	architect:22.5 code-review:15.3
 fe06	dev	en	serialization	architect:22.3 architect:22.4 architect:8.8 architect:28.11 patterns:9.15 patterns:28.19 sonarqube:16.7 sonarqube:26.8
 fe07	holdout	en	isolation level	architect:19.3 code-review:27.1 patterns:28.18 architect:22.4
 fe08	holdout	en	connection pool	architect:8.4 architect:27.5 patterns:9.30 patterns:25.46 code-review:16.8 architect:12.6

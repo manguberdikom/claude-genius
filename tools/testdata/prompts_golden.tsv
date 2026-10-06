@@ -14,7 +14,7 @@
 # xato (xato yozilgan), sonar, stack (stack trace yoki exception xabari),
 # kod (yopishtirilgan Java kodi), mavzusiz (jim qolishi kerak).
 id	toplam	kategoriya	prompt	qabul
-u01	holdout	uz-erkin	ikki foydalanuvchi bir vaqtda bitta yozuvni yangilasa biri yo'qolib qolyapti	architect:22.5 architect:18.8 patterns:9.23 testing:11.8 code-review:27.4 code-review:27.2
+u01	holdout	uz-erkin	ikki foydalanuvchi bir vaqtda bitta yozuvni yangilasa biri yo'qolib qolyapti	architect:22.5 architect:18.8 patterns:9.23 testing:11.8 code-review:27.4 code-review:27.2 code-review:15.3
 u02	dev	uz-erkin	jadval hajmi o'sib ketdi, o'chirilgan qatorlar joy egallab yotibdi	architect:21.10 architect:21.7 architect:21.8 architect:22.9
 u03	dev	uz-erkin	tashqi servis sekin javob bersa bizning servis ham qotib qolyapti	patterns:17.2 patterns:17.3 patterns:17.4 patterns:19.10 architect:7.8 architect:17.10 code-review:22.3 code-review:19.2 architect:19.7
 u04	dev	uz-erkin	bir xil buyurtma ikki marta yaratilib qolyapti, nima qilish kerak	patterns:7.9 patterns:10.30 architect:7.5 clean-code:27.7 code-review:10.9 patterns:14.18 patterns:16.16 architect:29.7
@@ -63,7 +63,7 @@ s06	dev	sonar	java:S1068 ishlatilmagan private maydon	sonarqube:28.3
 t01	dev	stack	org.hibernate.LazyInitializationException: failed to lazily initialize a collection of role: com.example.order.Order.items, could not initialize proxy - no Session	patterns:25.52 architect:18.3 code-review:19.8 patterns:9.9
 t02	dev	stack	java.lang.OutOfMemoryError: Java heap space\n\tat java.base/java.util.Arrays.copyOf(Arrays.java:3512)\n\tat com.example.report.ReportService.build(ReportService.java:88)	architect:10.7 architect:10.9 architect:14.3 clean-code:19.6
 t03	dev	stack	org.springframework.beans.factory.NoUniqueBeanDefinitionException: No qualifying bean of type 'com.example.pay.PaymentGateway' available: expected single matching bean but found 2: stripeGateway,paymeGateway	patterns:5.8 architect:15.7 clean-code:26.8
-t04	holdout	stack	org.springframework.orm.ObjectOptimisticLockingFailureException: Row was updated or deleted by another transaction (or unsaved-value mapping was incorrect)	architect:18.8 patterns:9.23 testing:11.8 architect:22.5 code-review:27.4
+t04	holdout	stack	org.springframework.orm.ObjectOptimisticLockingFailureException: Row was updated or deleted by another transaction (or unsaved-value mapping was incorrect)	architect:18.8 patterns:9.23 testing:11.8 architect:22.5 code-review:27.4 code-review:15.3
 t05	holdout	stack	org.springframework.beans.factory.BeanCurrentlyInCreationException: Error creating bean with name 'orderService': Requested bean is currently in creation: Is there an unresolvable circular reference?	architect:15.6 patterns:25.37 patterns:25.18
 t06	dev	stack	so'rov yiqildi:\norg.postgresql.util.PSQLException: ERROR: deadlock detected\n  Detail: Process 4711 waits for ShareLock on transaction 99812; blocked by process 4712.\n\tat org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2713)	architect:22.8 architect:19.10 architect:11.10 code-review:15.4
 t07	dev	stack	java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30000ms.	architect:27.5 architect:8.4 code-review:16.8 patterns:25.46 patterns:9.30
