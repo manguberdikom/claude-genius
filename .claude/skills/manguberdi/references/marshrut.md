@@ -34,7 +34,7 @@ tegiladigan ishlab chiqarish fayllari kiradi, ularning testlari kirmaydi.
 |---|---|---|---|
 | S | 1-3 fayl, bitta qatlam, qaytariladi | `dasturchi` -> `review` | yo'q |
 | M | 4 va undan ko'p fayl yoki bir necha qatlam, qaytarib bo'lmaydigan qaror yo'q | `dasturchi` -> `test-muhandis` va `review` parallel -> bitta tuzatish aylanasi | yo'q |
-| L | qaytarib bo'lmaydigan qaror (sxema migratsiyasi, API shartnomasi, tashqi bog'liqlik, ma'lumot formati), talab hujjatdan yoki bir necha modul | `rejalashtiruvchi` -> har guruhga M, guruhlar parallel worktree da | bor |
+| L | qaytarib bo'lmaydigan qaror (sxema migratsiyasi, API shartnomasi, tashqi bog'liqlik, ma'lumot formati), talab hujjatdan yoki bir necha modul | `rejalashtiruvchi` -> har guruhga `dasturchi`, guruhlar parallel worktree da -> birlashgan diffga bitta `review` va `test-muhandis` | bor |
 
 Shubha bo'lsa kichigi olinadi: S dan M ga o'tish arzon (review topilmasi
 test muhandisini chaqiradi), M o'rniga L esa butun reja bosqichini

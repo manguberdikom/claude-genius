@@ -130,9 +130,15 @@ chaqiriladi.
 Aktyorlar o'z modelini olib yuradi va u vazifaga qarab tanlangan:
 `qidiruv` va `tahlil` haiku (ko'p o'qiydi, oz qaytaradi), `dasturchi`
 va `test-muhandis` sonnet (amalga oshirish), `review` sonnet (diffni
-qoidaga solishtiradi), `rejalashtiruvchi` opus (qaytarib bo'lmaydigan
-qarorlar). Bu taqsimot `.claude/agents/` da yozilgan, har vazifada
-qayta o'ylanmaydi.
+qoidaga solishtiradi), `rejalashtiruvchi` ham sonnet: opus da 7 ta
+reja guruhi $199 turdi (2026-10-06), farqi narxga arzimadi. Bu taqsimot
+`.claude/agents/` da yozilgan, har vazifada qayta o'ylanmaydi.
+
+Bitta so'rovda 5 tadan ko'p agent (`qidiruv`, `tahlil`, `Explore`
+sanalmaydi) bo'lsa `budget.py` har 5-chaqiruvdan keyin narx taxmini
+bilan tasdiq so'raydi (`GENIUS_AGENT_MAX`). Ko'p guruhli ishni boshlashdan
+oldin taxminiy narx foydalanuvchiga aytiladi; review har guruhga emas,
+birlashgan diffga bir marta.
 
 ## Memory
 

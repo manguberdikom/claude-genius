@@ -41,6 +41,9 @@ os.environ["CLAUDE_PROJECT_DIR"] = ROOT
 os.environ["GENIUS_STATE_DIR"] = STATE
 sys.path.insert(0, HERE)
 import budget  # noqa: E402
+
+# Eski holatlar jami agent chegarasiga urilmasin: uni alohida holatlar sinaydi.
+budget.AGENT_MAX = 1000
 import testkit  # noqa: E402
 
 budget.STATE_DIR, budget.LOG = STATE, LOG
@@ -67,7 +70,7 @@ def make_repo():
 
 
 def env_for(session=SESSION):
-    env = dict(os.environ, GENIUS_STATE_DIR=STATE)
+    env = dict(os.environ, GENIUS_STATE_DIR=STATE, GENIUS_AGENT_MAX="1000")
     env.pop("CLAUDE_CODE_SESSION_ID", None)
     if session is not None:
         env["CLAUDE_CODE_SESSION_ID"] = session
@@ -590,7 +593,70 @@ def case_ornatilgan_qator_snapshot(_):
         shutil.rmtree(cfg, ignore_errors=True)
 
 
+def full_output(tool_name, actor, call_id=None):
+    return call(stdin=payload(tool_name, actor, call_id=call_id)).stdout
+
+
+def case_jami_chegara_tasdiq(_):
+    """Jami agent chegarasidan keyingi birinchi chaqiruv `ask`, narx bilan;
+    keyingi AGENT_MAX ta yana o'tadi, keyin yana `ask`. Guruh hisobi
+    jami sonni bo'lmaydi."""
+    saved = budget.AGENT_MAX
+    budget.AGENT_MAX = 3
+    try:
+        call(stdin=json.dumps({"hook_event_name": "UserPromptSubmit",
+                               "session_id": SESSION, "prompt": "x"}))
+        got = [hook_group("review", g) for g in ("orders", "billing", "orders")]
+        fourth = full_output("Agent", "rejalashtiruvchi")
+        more = [hook("Agent", a) for a in ("dasturchi", "test-muhandis")]
+        seventh = decision(full_output("Agent", "general-purpose"))
+    finally:
+        budget.AGENT_MAX = saved
+    reason = json.loads(fourth)["hookSpecificOutput"]["permissionDecisionReason"]
+    return (got == ["allow"] * 3 and decision(fourth) == "ask"
+            and "4-agent" in reason and "model %s" % budget.model_of("rejalashtiruvchi") in reason
+            and "$" in reason
+            and more == ["allow"] * 2 and seventh == "ask")
+
+
+def case_jami_oqish_asbobi_sanalmaydi(_):
+    """qidiruv, tahlil va Explore jami songa ham kirmaydi."""
+    saved = budget.AGENT_MAX
+    budget.AGENT_MAX = 1
+    try:
+        call(stdin=json.dumps({"hook_event_name": "UserPromptSubmit",
+                               "session_id": SESSION, "prompt": "x"}))
+        free = [hook("Agent", a) for a in ("qidiruv", "tahlil", "Explore")]
+        first = hook("Agent", "dasturchi")
+        second = hook("Agent", "review")
+    finally:
+        budget.AGENT_MAX = saved
+    return free == ["allow"] * 3 and first == "allow" and second == "ask"
+
+
+def case_jami_yangi_sorovda_nolga(_):
+    """Yangi so'rov jami sonni nolga tushiradi, --yangi-vazifa tushirmaydi."""
+    saved = budget.AGENT_MAX
+    budget.AGENT_MAX = 2
+    try:
+        call(stdin=json.dumps({"hook_event_name": "UserPromptSubmit",
+                               "session_id": SESSION, "prompt": "x"}))
+        hook("Agent", "dasturchi")
+        hook("Agent", "review")
+        run("--yangi-vazifa", "ikkinchi")
+        after_task = hook("Agent", "dasturchi")
+        call(stdin=json.dumps({"hook_event_name": "UserPromptSubmit",
+                               "session_id": SESSION, "prompt": "y"}))
+        after_prompt = hook("Agent", "dasturchi")
+    finally:
+        budget.AGENT_MAX = saved
+    return after_task == "ask" and after_prompt == "allow"
+
+
 CASES = [
+    ("jami agent chegarasi: tasdiq va narx", case_jami_chegara_tasdiq),
+    ("jami: o'qish asbobi sanalmaydi", case_jami_oqish_asbobi_sanalmaydi),
+    ("jami: yangi so'rovda nolga, yangi vazifada emas", case_jami_yangi_sorovda_nolga),
     ("ikki chaqiruv o'tadi", case_ikki_marta),
     ("uchinchisi to'siladi", case_uchinchi_tosiladi),
     ("to'siq sababni so'raydi", case_sabab_aytiladi),

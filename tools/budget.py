@@ -91,6 +91,25 @@ STALE_LOCK = 5
 # Bir chaqiruv ikki marta kelsa (repo va global hook birga) bir marta sanaladi.
 SEEN_IDS = 20
 
+# Bitta so'rovdagi jami agent (guruh va aktyordan qat'i nazar). Shundan
+# keyin har AGENT_MAX-chi chaqiruvda foydalanuvchidan tasdiq so'raladi:
+# aktyor chegarasi guruh bo'yicha bo'linadi va yolg'iz o'zi jami sonni
+# to'xtatmaydi (2026-10-05/06: 18 review va 7 rejalashtiruvchi, ~$470).
+try:
+    AGENT_MAX = max(1, int(os.environ.get("GENIUS_AGENT_MAX", "5")))
+except ValueError:
+    AGENT_MAX = 5
+
+# Bitta agentning o'lchangan o'rtacha narxi, dollar (usage.py, 2026-10-05/06:
+# 18 sonnet review $263, 7 opus rejalashtiruvchi $199). Taxmin, hisob emas.
+AGENT_COST = {"haiku": 2, "sonnet": 15, "opus": 28}
+
+ASK = """Bu so'rovda %d-agent (%s, model %s). Chegara %d agent (GENIUS_AGENT_MAX).
+Taxminiy narx: shu agent ~$%d, shu so'rovda hozirgacha ~$%d.
+Har agent o'z kontekstini har chaqiruvda keshdan qayta o'qiydi: sarfning
+asosiy qismi shu. Kamroq agent, arzonroq model yoki bitta umumiy review
+yetmaydimi? Davom etish uchun tasdiqlang."""
+
 BLOCKED = """%s uchun budjet tugadi: %d chaqiruv bo'ldi, chegara %d.
 
 Uchinchi urinish o'rniga sabab aytiladi. Odatda u uchtadan biri:
@@ -198,6 +217,10 @@ def here():
 
 def _number(value):
     return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _count(value):
+    return int(value) if _number(value) else 0
 
 
 def _sound(slot):
@@ -311,7 +334,8 @@ def reset(key, cwd=""):
     """Yangi so'rov: shu sessiya hisobi jim nolga tushadi."""
     with locked():
         data = load()
-        slot_of(data, key, cwd).update(task="", started=time.time(), calls={})
+        slot_of(data, key, cwd).update(task="", started=time.time(), calls={},
+                                       total=0, spent=0)
         save(data)
 
 
@@ -403,21 +427,45 @@ def blocked(actor, used, group=""):
     return BLOCKED % (counter(actor, group) if group else actor, used, LIMIT, rules)
 
 
+def model_of(actor):
+    """Aktyor faylidagi `model:`; topilmasa sonnet (subagent sukuti)."""
+    path = os.path.join(ROOT, ".claude", "agents", actor + ".md")
+    try:
+        with open(path, encoding="utf-8") as handle:
+            for line in handle.read(2000).splitlines():
+                if line.startswith("model:"):
+                    return line.split(":", 1)[1].strip() or "sonnet"
+    except OSError:
+        pass
+    return "sonnet"
+
+
+def ask_text(actor, total, spent):
+    model = model_of(actor)
+    cost = AGENT_COST.get(model, AGENT_COST["sonnet"])
+    return ASK % (total, actor, model, AGENT_MAX, cost, spent + cost)
+
+
 def chain_active(slot, group=""):
     """Shu so'rovda zanjir aktyori chaqirilganmi (manguberdi faol)."""
     return any(slot["calls"].get(counter(a, group)) for a in ACTORS)
 
 
 def take(actor, key=None, cwd="", call_id=None, group=""):
-    """Bitta chaqiruvni hisobga oladi. Chegara oshsa (xabar, False).
+    """Bitta chaqiruvni hisobga oladi: (xabar, ruxsat, tasdiq matni).
+
+    Aktyor chegarasi oshsa ruxsat False. Jami agent AGENT_MAX dan oshib,
+    har AGENT_MAX-chi chaqiruvga yetsa tasdiq matni bo'sh emas.
 
     key None bo'lsa CLI chaqiruvi: sessiya cli_key bilan tanlanadi.
     group bo'lsa hisob shu guruhniki: parallel guruhlar bir-birini to'smaydi.
     """
+    raw = strip_prefix(actor)
     actor = actor_of(actor)
     if not actor:
-        return "", True            # o'qish asbobi erkin
+        return "", True, ""        # o'qish asbobi erkin
     name = counter(actor, group)
+    ask = ""
     with locked():
         data = load()
         if key is None:
@@ -426,16 +474,23 @@ def take(actor, key=None, cwd="", call_id=None, group=""):
         used = slot["calls"].get(name, 0)
         ids = slot.setdefault("ids", [])
         if call_id and call_id in ids:
-            return "%s: %d/%d chaqiruv" % (name, used, LIMIT), True
+            return "%s: %d/%d chaqiruv" % (name, used, LIMIT), True, ""
         over = used >= LIMIT and (actor != OTHER or chain_active(slot, group))
         if not over:
             slot["calls"][name] = used + 1
+            total = _count(slot.get("total")) + 1
+            spent = _count(slot.get("spent"))
+            if total > AGENT_MAX and (total - AGENT_MAX - 1) % AGENT_MAX == 0:
+                ask = ask_text(raw or actor, total, spent)
+            model = model_of(raw) if raw else "sonnet"
+            slot["total"] = total
+            slot["spent"] = spent + AGENT_COST.get(model, AGENT_COST["sonnet"])
             if call_id:
                 slot["ids"] = (ids + [call_id])[-SEEN_IDS:]
             save(data)
     if over:                       # matn qulfdan tashqarida yasaladi
-        return blocked(actor, used, group), False
-    return "%s: %d/%d chaqiruv" % (name, used + 1, LIMIT), True
+        return blocked(actor, used, group), False, ""
+    return "%s: %d/%d chaqiruv" % (name, used + 1, LIMIT), True, ask
 
 
 def hook(payload):
@@ -460,13 +515,13 @@ def hook(payload):
         text = tool_input.get("message")
     else:
         return 0
-    message, allowed = take(actor, key, cwd, payload.get("tool_use_id"),
-                            group_of(text, cwd))
-    if not allowed:
+    message, allowed, ask = take(actor, key, cwd, payload.get("tool_use_id"),
+                                 group_of(text, cwd))
+    if not allowed or ask:
         json.dump({"hookSpecificOutput": {
             "hookEventName": "PreToolUse",
-            "permissionDecision": "deny",
-            "permissionDecisionReason": message,
+            "permissionDecision": "deny" if not allowed else "ask",
+            "permissionDecisionReason": message if not allowed else ask,
         }}, sys.stdout)
     return 0
 
@@ -499,7 +554,7 @@ def main():
     if group and not registered(group, here()):
         print("guruh %s ro'yxatda yo'q (guruh.py yarat): umumiy hisob" % group)
         group = ""
-    message, allowed = take(args[0], group=group)
+    message, allowed, _ = take(args[0], group=group)
     print(message or "%s sanalmaydi (o'qish asbobi)" % args[0])
     return 0 if allowed else 1
 
