@@ -398,7 +398,7 @@ def main():
             err(f"{rel}: {size} bayt > {SIZE_LIMIT} - GitHub bu faylni render qilmaydi, bo'lish kerak")
 
         # 3. kirill
-        cyr = sorted({c for c in text if 'CYRILLIC' in unicodedata.name(c, '')})
+        cyr = sorted({c for c in set(text) if 'CYRILLIC' in unicodedata.name(c, '')})
         if cyr:
             err(f"{rel}: kirill harflar topildi: {''.join(cyr)}")
 
