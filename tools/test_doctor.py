@@ -260,17 +260,129 @@ def case_cli_bir_qator_va_kod(tmp):
     bad_path = write(os.path.join(tmp, "bad.json"), json.dumps(
         settings_with({"Stop": [("", command(crash))]})))
     env = dict(os.environ, CLAUDE_CONFIG_DIR=os.path.join(tmp, "bo'sh"),
-               GENIUS_PYTHON=sys.executable)
+               GENIUS_PYTHON=sys.executable,
+               GENIUS_STATE_DIR=os.path.join(tmp, "cli-holat"))
     runs = [subprocess.run([sys.executable, os.path.join(HERE, "doctor.py"),
                             "--settings", path], capture_output=True, text=True,
                            env=env, cwd=tmp)
             for path in (ok_path, bad_path)]
     bands = [ln for ln in runs[0].stdout.splitlines()
              if ln and not ln.startswith("doctor:")]
+    write(os.path.join(tmp, "cli-log", "hook_errors.log"),
+          "%s\thandoff\tValueError: \u0416 xabar\n2020-01-01T00:00:00\tx\tOSError: eski\n"
+          % time.strftime("%Y-%m-%dT%H:%M:%S"))
+    logged = subprocess.run(
+        [sys.executable, os.path.join(HERE, "doctor.py"), "--settings", ok_path],
+        capture_output=True, text=True, cwd=tmp,
+        env=dict(env, GENIUS_STATE_DIR=os.path.join(tmp, "cli-log"),
+                 PYTHONIOENCODING="ascii"))
+    logged_bands = [ln for ln in logged.stdout.splitlines()
+                    if ln and not ln.startswith("doctor:")]
     return (runs[0].returncode == 0 and runs[1].returncode == 1
             and all(ln[:4].rstrip() in (D.OK, D.WARN, D.FAIL, D.SKIP) for ln in bands)
+            and logged.returncode == 0
+            and all(ln[:4].rstrip() in (D.OK, D.WARN, D.FAIL, D.SKIP)
+                    for ln in logged_bands)
+            and any(ln.startswith("OGOH hook xatolari") and "jami 2" in ln
+                    for ln in logged_bands)
+            and any(ln.startswith("OK   hook xatolari") and "toza" in ln for ln in bands)
             and any("hook Stop cli_crash.py" in ln and ln.startswith("XATO")
                     for ln in runs[1].stdout.splitlines()))
+
+
+def error_lines(state, rows):
+    write(os.path.join(state, "hook_errors.log"), "".join(rows))
+
+
+def stamp(now, ago):
+    return time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(now - ago))
+
+
+def case_hook_xatolari_toza(tmp):
+    """Log yo'q yoki bo'sh: bitta OK 'toza' qatori, davomsiz."""
+    state = os.path.join(tmp, "xato-toza")
+    with Env(GENIUS_STATE_DIR=state):
+        missing = D.check_hook_errors()
+        error_lines(state, [])
+        empty = D.check_hook_errors()
+        error_lines(state, ["\n", "  \n"])
+        blank = D.check_hook_errors()
+    return all(len(r) == 1 and r[0][0] == D.OK and "toza" in r[0][1]
+               and "handoff" in r[0][1] for r in (missing, empty, blank))
+
+
+def case_hook_xatolari_oxirgilar_va_son(tmp):
+    """8 qator, yoshi 250, 222, 194, 55.6, 30.6 soat, 1 soat, 1 daqiqa va
+    kelajakdagi (1 soat keyingi): oxirgi 5 ko'rinadi (h3..h7), 24 soatlik son 2 (1 soat va 1 daqiqa; kelajakdagi kirmaydi), OGOH,
+    hammasi bitta qatorda."""
+    state = os.path.join(tmp, "xato-bir-nechta")
+    now = time.time()
+    ages = (900000, 800000, 700000, 200000, 110000, 3600, 60, -3600)
+    rows = ["%s\th%d\tValueError: xabar %d\n" % (stamp(now, ago), i, i)
+            for i, ago in enumerate(ages)]
+    error_lines(state, rows)
+    with Env(GENIUS_STATE_DIR=state):
+        results = D.check_hook_errors(now)
+    (status, text), = results
+    return (status == D.WARN and "\n" not in text
+            and "oxirgi 24 soatda 2, jami 8" in text
+            and all(("h%d " % i) in text for i in (3, 4, 5, 6, 7))
+            and "h2 " not in text and "o'qilmagan" not in text)
+
+
+def case_hook_xatolari_eski_qizil_emas(tmp):
+    """Faqat eski xato: OK (qizil emas), lekin oxirgisi ko'rinadi; XATO hech qachon."""
+    state = os.path.join(tmp, "xato-eski")
+    now = time.time()
+    error_lines(state, ["%s\tguard\tOSError: eski\n" % stamp(now, 5 * 86400)])
+    with Env(GENIUS_STATE_DIR=state):
+        results = D.check_hook_errors(now)
+    return (results[0][0] == D.OK and "oxirgi 24 soatda 0, jami 1" in results[0][1]
+            and "OSError: eski" in results[0][1] and len(results) == 1
+            and D.FAIL not in statuses(results))
+
+
+def case_hook_xatolari_buzuq_qator(tmp):
+    """Buzuq qator (tabsiz, noto'g'ri vaqt, bo'sh maydon) yiqitmaydi: jami va
+    'o'qilmagan' ga kiradi, 24 soatga kirmaydi."""
+    state = os.path.join(tmp, "xato-buzuq")
+    now = time.time()
+    error_lines(state, ["faqat matn\n", "kecha\tguard\tX: y\n",
+                        "%s\tguard\n" % stamp(now, 10),
+                        "%s\tbudget\tKeyError: 'k'\n" % stamp(now, 10)])
+    with Env(GENIUS_STATE_DIR=state):
+        results = D.check_hook_errors(now)
+    (status, text), = results
+    return (status == D.WARN and "oxirgi 24 soatda 1, jami 4, o'qilmagan 3" in text
+            and "o'qilmadi: faqat matn" in text and "KeyError" in text)
+
+
+def case_hook_xatolari_holat_yoli(tmp):
+    """Haqiqiy kutilgan yo'l: GENIUS_STATE_DIR berilsa o'sha papka; berilmasa
+    klon ichidagi .claude/.state; hook snapshotdan yurganda (ROOT
+    `<...>/.claude/genius/<12 hex>`) va GENIUS_CLONE bo'lsa klonniki."""
+    import hookio
+    clone = os.path.join(tmp, "klon")
+    snapshot = os.path.join(tmp, "home", ".claude", "genius", "0123456789ab")
+    os.makedirs(clone)
+    os.makedirs(snapshot)
+    saved = hookio.ROOT
+    try:
+        with Env(GENIUS_STATE_DIR=os.path.join(tmp, "boshqa"), GENIUS_CLONE=clone):
+            given = D.check_hook_errors()[0][1]
+        hookio.ROOT = clone
+        with Env(GENIUS_STATE_DIR=None, GENIUS_CLONE=None):
+            in_clone = D.check_hook_errors()[0][1]
+        hookio.ROOT = snapshot
+        with Env(GENIUS_STATE_DIR=None, GENIUS_CLONE=clone):
+            from_snapshot = D.check_hook_errors()[0][1]
+    finally:
+        hookio.ROOT = saved
+    log = os.path.join(".claude", ".state", "hook_errors.log")
+    return (os.path.join(tmp, "boshqa", "hook_errors.log") in given
+            and os.path.join(clone, log) in in_clone
+            and os.path.join(clone, log) in from_snapshot
+            and snapshot not in from_snapshot)
 
 
 CASES = [
@@ -285,6 +397,11 @@ CASES = [
     ("o'rnatilgan commit klon bilan", case_ornatilgan),
     ("snapshot manifesti: root snapshot, clone klon", case_snapshot_manifesti),
     ("aktyor -> model jadvali va alias ogohlantirishi", case_aktyor_modeli),
+    ("hook xatolari: log yo'q yoki bo'sh bo'lsa toza", case_hook_xatolari_toza),
+    ("hook xatolari: oxirgi qatorlar va 24 soatlik son", case_hook_xatolari_oxirgilar_va_son),
+    ("hook xatolari: eski xato qizil emas", case_hook_xatolari_eski_qizil_emas),
+    ("hook xatolari: buzuq qator yiqitmaydi", case_hook_xatolari_buzuq_qator),
+    ("hook xatolari: holat papkasi hookio bilan bir", case_hook_xatolari_holat_yoli),
     ("CLI: har band bir qator, kod 0/1", case_cli_bir_qator_va_kod),
 ]
 

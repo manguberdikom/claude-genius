@@ -437,8 +437,9 @@ Hooklar (hammasi tanlangan Python ning to'liq yo'li bilan):
 | `UserPromptSubmit` | `budget.py` | yangi so'rovda sessiya budjetini jim nolga tushiradi |
 | `UserPromptSubmit` | `handoff.py --hook` | kontekst chegaradan oshganda yangi sessiyaga uzatishni taklif qiladi |
 | `PreToolUse` (Read, Bash, PowerShell) | `guard.py` | katta faylni, konteynerni, bazani, PowerShell ni to'sadi |
-| `PreToolUse` (Task, Agent) | `budget.py` | aktyorning uchinchi chaqiruvini to'sadi |
+| `PreToolUse` (Task, Agent, SendMessage) | `budget.py` | aktyorning uchinchi chaqiruvini to'sadi |
 | `PostToolUse` (Write, Edit) | `check_code.py` | Java qoidalarini tekshiradi |
+| `SubagentStop` | `actor_check.py` | `dasturchi` va `test-muhandis` javobini tekshiradi ([pastda](#subagentstop-aktyor-javobi-tekshiruvi)) |
 | `Stop` | `usage.py --saqlash` | kunlik token sarfini yozib boradi |
 
 ### Hooklar qaysi proyektda ishlaydi
@@ -493,6 +494,49 @@ setx GENIUS_HOOKS off         # doimiy
 Bu `settings.json` ga tegmaydi, shuning uchun qaytarish uchun
 o'zgaruvchini o'chirish kifoya. Skill va aktyorlar ishlashda davom
 etadi: o'chadigani faqat hooklar.
+
+### SubagentStop: aktyor javobi tekshiruvi
+
+`dasturchi` yoki `test-muhandis` kod fayliga Edit yoki Write qilgan
+bo'lsa, `tools/actor_check.py` to'xtashidan oldin ikki narsani talab
+qiladi: javobda `run_tests exit=<kod>` qatori va `run_tests.py` jurnalida
+(`<holat>/run_tests.jsonl`) oxirgi tahrirdan keyingi yozuv. Biri
+bo'lmasa aktyor `block` oladi va shu chaqiruv ichida davom etadi. Hook
+`stop_hook_active` da jim (ikkinchi to'xtash o'tadi), hujjat tahriri,
+tahrirsiz ish va Java bo'lmagan proyektda ham jim. Butunlay o'chirish:
+`GENIUS_HOOKS=off`. Jurnal klon holat papkasida, shuning uchun
+`GENIUS_STATE_DIR` hook va aktyor Bash ida bir xil bo'lishi kerak. Sabab
+va rad etilgan variantlar: `DECISIONS.md`, "2026-10-06: Aktyor javobi
+SubagentStop hooki bilan tekshiriladi".
+
+### Hook xatolari
+
+`hookio.fail_open` ni chaqiradigan hook kutilmagan xatoda jim o'tadi
+(fail-open), lekin holat papkasidagi `hook_errors.log` ga bitta qator
+yozadi: vaqt, hook nomi, istisno turi va xabari (oxirgi 200 qator
+qoladi). Hozir buni faqat `handoff.py` va `suggest_sections.py` qiladi;
+`guard.py`, `budget.py`, `check_code.py`, `actor_check.py` va `usage.py`
+xatosi logga tushmaydi, ularni doctor hook buyrug'ini yurgizib
+tekshiradi. `doctor.py` logni "hook xatolari (handoff, suggest)" bandida
+bitta qatorda ko'rsatadi: oxirgi 24 soatdagi son va oxirgi besh qator.
+Yangi xato `OGOH`, eskisi yoki log yo'q bo'lsa `OK`: bu band `XATO`
+bermaydi, "toza" esa faqat shu ikki hookka tegishli. Fayl `.claude\.state`
+da (klon, snapshot emas), `GENIUS_STATE_DIR` bilan almashtiriladi.
+
+## Guruh worktree lari
+
+Parallel guruh (`guruh.py yarat`) har guruhga alohida git worktree
+yaratadi: `<proyekt>/.claude/worktrees/genius-<id>`, branch `genius/<id>`.
+Asos joriy holat (vaqtinchalik commit), shuning uchun iflos daraxt ham
+rad etilmaydi. Worktree proyekt ichida turadi: qo'shni papkada Edit va
+Write ishchi papkadan tashqarida bo'lib, har safar ruxsat so'rardi.
+`yarat` birinchi marta `<git-common-dir>/info/exclude` ga
+`.claude/worktrees/` qatorini qo'shadi, `.gitignore` ga emas: exclude
+lokal va commit qilinmaydi, proyekt fayli o'zgarmaydi va daraxt iflos
+bo'lmaydi. `GENIUS_GURUH_DIR` berilsa eski `<papka>/<repo>.guruh-<id>`
+joyi. Ro'yxat: `guruh.py royxat --fayllar`; tozalash: `guruh.py tozala`
+(so'rov bilan). Batafsil: `DECISIONS.md`, "2026-10-06: Guruh joriy
+holatdan, worktree loyiha ichida".
 
 ## Snapshot: hooklar aniq commitdan yuradi
 
@@ -699,8 +743,9 @@ yoki `python3`), hooklar yuradigan snapshot va klon yo'lini,
 `tools/testdata/hooks/<event>.json` namunasi bilan yurgizadi: exit 0,
 bo'sh stderr va to'g'ri `hookEventName` kutiladi. Klon ko'chgan yoki
 `python3` yo'q bo'lsa hook jim o'chadi, doctor esa shu yerda XATO
-beradi. Oxirida oxirgi 30 kun transkriptidan aktyor qaysi modelda
-yurgani chiqadi.
+beradi. Oxirgi 30 kun transkriptidan aktyor qaysi modelda yurgani
+va holat papkasidagi `hook_errors.log` ning oxirgi qatorlari
+([Hook xatolari](#hook-xatolari)) chiqadi.
 
 O'rnatuvchi o'zi tekshiradi, lekin qo'lda ham ko'rish mumkin:
 

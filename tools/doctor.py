@@ -22,6 +22,12 @@ Bandlar:
   6. Oxirgi N kun transkriptidan aktyor -> model: frontmatter dagi alias
      (sonnet, opus, haiku) provayder va vaqtga qarab boshqa modelga
      bog'lanadi. Kutilgan oiladan farq qilsa ogohlantirish.
+  7. Hook xatolari: holat papkasidagi `hook_errors.log` ning oxirgi qatorlari
+     va oxirgi 24 soatdagi soni, bitta qatorda. Logga faqat `hookio.fail_open`
+     ni chaqiradigan hooklar yozadi (hozir handoff va suggest_sections);
+     guard, budget, check_code, actor_check va usage yozmaydi, ularning
+     xatosi bu yerda ko'rinmaydi: ularni 5-band sinaydi. Yangi xato OGOH,
+     eskisi yoki log yo'q bo'lsa OK: bu band hech qachon XATO bermaydi.
 
 Hooklar vaqtinchalik holat papkasi bilan yuradi (GENIUS_STATE_DIR,
 USAGE_STORE): tekshiruv budjet, sarf va sessiya holatiga tegmaydi.
@@ -42,6 +48,7 @@ import tempfile
 import time
 
 import geniuslib
+import hookio
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -448,6 +455,54 @@ def check_models(days):
     return out
 
 
+# --- 7. Hook xatolari ----------------------------------------------------
+
+ERRORS_SHOWN = 5
+ERRORS_WINDOW = 24 * 3600
+ERRORS_BAND = "hook xatolari (handoff, suggest)"
+ERRORS_TAIL = 400   # bir qator juda uzun bo'lib ketmasin
+
+
+def parse_error_line(raw):
+    """`vaqt<TAB>hook<TAB>Istisno: xabar` -> (epoch yoki None, matn)."""
+    parts = raw.rstrip("\r\n").split("\t", 2)
+    if len(parts) == 3:
+        try:
+            when = time.mktime(time.strptime(parts[0], "%Y-%m-%dT%H:%M:%S"))
+        except (ValueError, OverflowError):
+            when = None
+        if when is not None:
+            return when, "%s %s %s" % (parts[0], parts[1], parts[2][:100])
+    return None, "o'qilmadi: %s" % raw.strip()[:100]
+
+
+def check_hook_errors(now=None, shown=ERRORS_SHOWN):
+    """Holat papkasidagi hook_errors.log (hookio.state_dir: GENIUS_STATE_DIR
+    yoki klon, snapshotdan yurganda GENIUS_CLONE) -> bitta band qatori.
+
+    Logga faqat hookio.fail_open ni chaqiradigan hooklar yozadi (handoff,
+    suggest_sections), shuning uchun "toza" faqat shularga tegishli. Eski
+    xato qizil qilmaydi, kelajak vaqtli qator 24 soatga kirmaydi."""
+    now = time.time() if now is None else now
+    path = os.path.join(hookio.state_dir(), hookio.ERRORS_LOG)
+    try:
+        with open(path, encoding="utf-8", errors="replace") as handle:
+            rows = [parse_error_line(raw) for raw in handle if raw.strip()]
+    except OSError:
+        rows = []
+    if not rows:
+        return [line(OK, ERRORS_BAND, "toza (%s yo'q yoki bo'sh)" % path)]
+    recent = sum(1 for when, _ in rows
+                 if when is not None and 0 <= now - when <= ERRORS_WINDOW)
+    broken = sum(1 for when, _ in rows if when is None)
+    tail = " | ".join(text for _, text in rows[-shown:])
+    if len(tail) > ERRORS_TAIL:
+        tail = "..." + tail[-ERRORS_TAIL:]
+    text = "oxirgi 24 soatda %d, jami %d%s | oxirgilari: %s" % (
+        recent, len(rows), ", o'qilmagan %d" % broken if broken else "", tail)
+    return [line(WARN if recent else OK, ERRORS_BAND, text)]
+
+
 # --- Yig'ish -------------------------------------------------------------
 
 def run(settings_path, project, days, version_output="auto"):
@@ -466,6 +521,7 @@ def run(settings_path, project, days, version_output="auto"):
     results.append(check_installed(manifest))
     results.extend(check_hooks(settings, project))
     results.extend(check_models(days))
+    results.extend(check_hook_errors())
     return results
 
 
@@ -479,6 +535,9 @@ def main(argv=None):
     args = parser.parse_args(argv)
     results = run(os.path.expanduser(args.settings),
                   os.path.abspath(args.proyekt), args.kun)
+    reconfigure = getattr(sys.stdout, "reconfigure", None)
+    if reconfigure:   # Windows cp1252 pipe da hook xabari yiqitmasin
+        reconfigure(errors="replace")
     for _, text in results:
         print(text)
     counts = collections.Counter(status for status, _ in results)
