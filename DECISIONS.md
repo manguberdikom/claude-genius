@@ -518,3 +518,49 @@ buyruqning har biri rc=1 va bo'sh stdout.
 **Orqaga qaytarish.** `git revert`, yoki ikkala fayldagi ` || exit 1` ni
 ` || exit 0` ga qaytarish (paritet testi ikkalasini birga talab qiladi).
 Global o'rnatishda `-Update` eski buyruqni yo'l bo'yicha almashtiradi.
+
+## 2026-10-06: guard o'qishni o'lchaydi, yagona clean va budjet tiklash so'raladi
+
+**Nima o'zgardi.** `tools/guard.py`:
+
+- Bash va PowerShell dagi o'qish bayt bilan o'lchanadi, Read dagi
+  `slice_bytes` kabi: `head -n N`, `head -c N`, `tail -n +K`,
+  `sed -n 'A,Bp'`, `awk 'NR>=A && NR<=B'`, `Get-Content -TotalCount N`.
+  `grep ''`, `awk '1'`, `sed ''`, `sed -n p` butun fayl. Quvurda oxirgi
+  bosqich hal qiladi: `cat BIG | wc -l`, `| head`, `| grep naqsh`,
+  `| tail -n N`, `| Select-Object -First N` va `> fayl` o'tadi. Bitta
+  chaqiruvdagi bo'laklar qo'shiladi (HK-H3).
+- Yagona vazifa sifatidagi `clean` (`./gradlew clean`, `mvn clean`)
+  `deny` emas `ask`. Test sharti undan oldin tekshiriladi, shuning uchun
+  `mvn clean install`, `./gradlew clean test` va `clean build` `deny`
+  qoladi. `clean` boshqa vazifa bilan birga ham `deny` (HK-H12).
+- `budget.py --tiklash` asosiy oqimda `ask`, subagentda `deny`.
+  `--holat` va `--yangi-vazifa` erkin (XV-O3).
+- Tekshiruv tartibi: avval hamma `deny`, keyin `ask`. Ruxsat berilgan
+  so'rov endi shu buyruqdagi to'liq suite yoki katta o'qishni ochmaydi.
+
+**Nega.** O'qish to'sig'i tasodifiy edi: `sed -n '1,400p' BIG` 54 KB
+o'tardi, `cat BIG | head -40` esa to'silardi va butun zanjirli buyruq
+qayta yuborilardi. `./gradlew clean` foydalanuvchi aniq so'raganda ham
+bajarilmasdi, lekin umumiy `ask` `mvn clean install` ni ham ochardi
+(tekshiruvchi varianti). `--tiklash` chegarani bitta buyruq bilan
+ochardi.
+
+**Rad etilgan variantlar.**
+
+- *`clean` ni umumiy `ask`.* Rad etildi: yuqoridagi sabab.
+- *Satr soni bilan o'lchash.* Rad etildi: zich bobda 300 satr 40 KB.
+- *`--yangi-vazifa` ni ham `ask`.* Rad etildi: SKILL.md dagi qonuniy
+  oqim zanjir o'rtasida to'xtardi.
+
+**Xavf.** Ruxsat qarori. Oddiy `grep naqsh` va `sed -n '/re/p'` filtr
+deb o'tadi: natija katta bo'lishi mumkin, lekin bu avval ham shunday
+edi. Noma'lum buyruq (`sort`, `tee`) oqimni kesmaydi deb olinadi, ya'ni
+`cat BIG | sort` avvalgidek `deny`.
+
+**Qaysi tekshiruv o'tdi.** `tools/test_guard.py` 272/272: 31 yangi
+o'lchov va quvur holati, Read va Bash ning chegaraning ikki yonida bir
+xil qarori, 8 clean, 8 budjet holati, yangi regexlar 10 KB patologik
+kirishda 0.2 s dan tez.
+
+**Orqaga qaytarish.** `git revert`.

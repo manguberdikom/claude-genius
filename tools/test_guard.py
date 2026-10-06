@@ -116,8 +116,9 @@ CASES = [
      {"tool_name": "Bash", "tool_input": {"command": "cat " + SMALL}}),
     ("less", DENY, {"tool_name": "Bash", "tool_input": {"command": "less " + BIG}}),
     ("tac", DENY, {"tool_name": "Bash", "tool_input": {"command": "tac " + BIG}}),
+    # sort oqimni kesmaydi: quvur ichidagi cat butun bob bo'lib qoladi.
     ("quvur ichidagi cat", DENY,
-     {"tool_name": "Bash", "tool_input": {"command": "x; cat " + BIG + " | tail -3"}}),
+     {"tool_name": "Bash", "tool_input": {"command": "x; cat " + BIG + " | sort"}}),
     # Buyruqlar yangi satr bilan ajratilsa ham ko'rinadi.
     ("yangi satrdan keyingi cat", DENY,
      {"tool_name": "Bash", "tool_input": {"command": "echo x\ncat " + BIG}}),
@@ -365,7 +366,7 @@ CASES = [
      bash("gradle --console plain :a:test --tests A")),
     ("gradle: build -x test", ALLOW, bash("./gradlew build -x test")),
     ("gradle: compileJava", ALLOW, bash("./gradlew compileJava compileTestJava")),
-    ("gradle: clean", DENY, bash("./gradlew clean :a:test --tests A")),
+    ("gradle: clean + vazifa", DENY, bash("./gradlew clean :a:test --tests A")),
     ("gradle: --rerun-tasks", DENY, bash("./gradlew :a:test --tests A --rerun-tasks")),
     ("gradle: --no-daemon", DENY, bash("./gradlew --no-daemon :a:test --tests A")),
     ("maven: filtrsiz test", DENY, bash("./mvnw -B test")),
@@ -464,6 +465,75 @@ CASES = [
      bash("git add memory/acme/x.md"), OTHER_CWD),
     ("memory: git log o'tadi", ALLOW, bash("git log -- memory/acme")),
     ("memory: qo'shtirnoq ichida o'tadi", ALLOW, bash("grep -rn 'git add memory/acme' .")),
+
+    # HK-H3: chegaralangan o'qish haqiqiy bayt bilan o'lchanadi, Read kabi.
+    ("o'lchov: sed -n '1,400p' katta", DENY, bash("sed -n '1,400p' " + BIG)),
+    ("o'lchov: head -n 300", DENY, bash("head -n 300 " + BIG)),
+    ("o'lchov: head -n 20", ALLOW, bash("head -n 20 " + BIG)),
+    ("o'lchov: head -40", ALLOW, bash("head -40 " + BIG)),
+    ("o'lchov: head -c 300000", DENY, bash("head -c 300000 " + BIG)),
+    ("o'lchov: head -c 2000", ALLOW, bash("head -c 2000 " + BIG)),
+    ("o'lchov: tail -n +1", DENY, bash("tail -n +1 " + BIG)),
+    ("o'lchov: tail -n +K, oxiri", ALLOW,
+     bash("tail -n +%d %s" % (line_count(BIG) - 20, BIG))),
+    ("o'lchov: grep ''", DENY, bash("grep '' " + BIG)),
+    ("o'lchov: awk '1'", DENY, bash("awk '1' " + BIG)),
+    ("o'lchov: sed ''", DENY, bash("sed '' " + BIG)),
+    ("o'lchov: sed -n p", DENY, bash("sed -n p " + BIG)),
+    ("o'lchov: sed 10q", ALLOW, bash("sed 10q " + BIG)),
+    ("o'lchov: awk NR oralig'i", ALLOW, bash("awk 'NR>=10 && NR<=40' " + BIG)),
+    ("o'lchov: head < katta", DENY, bash("head -n 400 < " + BIG)),
+    # Bitta chaqiruvdagi bo'laklar qo'shiladi: Read ham bitta bo'lak.
+    ("o'lchov: ikki sed yig'indisi", DENY,
+     bash("sed -n '1,100p' %s; sed -n '101,200p' %s" % (BIG, BIG))),
+    ("o'lchov: index head", ALLOW, bash("head -n 20 index/sections.tsv")),
+    ("o'lchov: index sed -n katta", DENY, bash("sed -n '1,2000p' index/sections.tsv")),
+    # Quvurda oxirgi bosqich hal qiladi.
+    ("quvur: cat | wc -l", ALLOW, bash("cat " + BIG + " | wc -l")),
+    ("quvur: cat | head -40", ALLOW, bash("cat " + BIG + " | head -40")),
+    ("quvur: cat | head -n 400", DENY, bash("cat " + BIG + " | head -n 400")),
+    ("quvur: cat | grep -n", ALLOW, bash("cat " + BIG + " | grep -n Singleton")),
+    ("quvur: cat | tail -3", ALLOW, bash("x; cat " + BIG + " | tail -3")),
+    ("quvur: nl | sed -n oraliq", ALLOW, bash("nl -ba " + BIG + " | sed -n '200,240p'")),
+    ("quvur: cat > fayl", ALLOW, bash("cat " + BIG + " > /tmp/copy.md")),
+    ("quvur: sed -n > fayl", ALLOW, bash("sed -n '1,400p' " + BIG + " > out.md")),
+    ("quvur: 2>&1 stdout ni ochmaydi", DENY, bash("cat " + BIG + " 2>&1 | sort")),
+    # Amalda to'silgan zanjir (HK-H3 dalili).
+    ("quvur: head -0 va sed -n zanjiri", ALLOW,
+     bash("cat docs/*/README.md | head -0; sed -n 1,80p tools/build_index.py")),
+    ("PowerShell: | Select-Object -First 40", ALLOW,
+     {"tool_name": "PowerShell", "tool_input":
+      {"command": "Get-Content " + BIG + " | Select-Object -First 40"}}),
+    ("PowerShell: | select -First 400", DENY,
+     {"tool_name": "PowerShell", "tool_input":
+      {"command": "Get-Content " + BIG + " | select -First 400"}}),
+    ("PowerShell: -TotalCount 400", DENY,
+     {"tool_name": "PowerShell", "tool_input":
+      {"command": "Get-Content -TotalCount 400 " + BIG}}),
+
+    # HK-H12: yagona clean ask, boshqa vazifa bilan deny, test sharti oldin.
+    ("gradle: yagona clean ask", ASK, bash("./gradlew clean")),
+    ("maven: yagona clean ask", ASK, bash("mvn clean")),
+    ("maven: -q clean ask", ASK, bash("./mvnw -q clean")),
+    ("gradle: :app:clean ask", ASK, bash("./gradlew :app:clean")),
+    ("gradle: clean test deny", DENY, bash("./gradlew clean test")),
+    ("gradle: clean build deny", DENY, bash("./gradlew clean build")),
+    ("gradle: clean compileJava deny", DENY, bash("./gradlew clean compileJava")),
+    ("subagent: yagona clean deny", DENY, sub("./gradlew clean")),
+
+    # XV-O3: budjetni tiklash odam qarori, holat va yangi vazifa erkin.
+    ("budget: --tiklash ask", ASK, bash("python3 tools/budget.py --tiklash dasturchi")),
+    ("budget: --tiklash --guruh ask", ASK,
+     bash("python3 tools/budget.py --tiklash review --guruh orders")),
+    ("budget: mutlaq yo'l ask", ASK,
+     bash('"C:/Python312/python.exe" "C:/g/tools/budget.py" --tiklash review')),
+    ("subagent: --tiklash deny", DENY, sub("python3 tools/budget.py --tiklash review")),
+    ("budget: --holat o'tadi", ALLOW, bash("python3 tools/budget.py --holat")),
+    ("budget: --yangi-vazifa o'tadi", ALLOW,
+     bash("python3 tools/budget.py --yangi-vazifa 'buyurtma'")),
+    ("budget: commit xabarida o'tadi", ALLOW,
+     bash("git " + "commit -m 'budget.py --tiklash haqida'")),
+    ("budget: grep o'tadi", ALLOW, bash("grep -n -- --tiklash tools/budget.py")),
 ]
 
 # To'siq maslahatidagi `tools/` yo'llari va CLAUDE.md. Global o'rnatishda
@@ -573,6 +643,14 @@ REASONS = [
     ("filtrsiz test: paketlash yo'q", bash("./mvnw test"), None, "Maqsad artefakt"),
     # Build ichki papkada bo'lsa (backend/pom.xml) yo'l --ildiz (QC-K2).
     ("maslahatda --ildiz", bash("./mvnw test"), "--ildiz <papka> --diff --yurgiz", None),
+    # HK-H12: test sharti clean dan oldin, sabab to'liq suite.
+    ("clean test sababi", bash("./gradlew clean test"), "filtrsiz test", None),
+    ("clean install sababi", bash("mvn clean install"), "filtrsiz test", None),
+    ("yagona clean sababi", bash("./gradlew clean"), "Test vaqti: clean.", None),
+    ("clean + vazifa sababi", bash("./gradlew clean compileJava"),
+     "clean ni alohida buyruq", None),
+    ("tiklash sababi", bash("python3 tools/budget.py --tiklash review"),
+     "Aktyor budjetini qo'lda tiklash", None),
     ("java yozish sababi", bash("sed -i s/a/b/ Foo.java"),
      "Java faylni Edit yoki Write bilan yozing: check_code va rules_for "
      "faqat shu asboblarda ishlaydi", None),
@@ -655,6 +733,70 @@ def case_memory_tree():
     return rows
 
 
+def case_read_bash_bir_xil():
+    """Read va Bash bir xil bo'lakka bir xil qaror beradi (HK-H3).
+
+    Chegarani kesib o'tadigan satr soni topiladi va uning ikki yonida
+    Read(offset, limit) bilan sed, tail | head, awk, head va Get-Content
+    solishtiriladi."""
+    lines = G.file_lines(os.path.join(ROOT, BIG))
+    rows = []
+    for offset in (1, 200):
+        total, edge = 0, None
+        for number, length in enumerate(lines[offset - 1:], 1):
+            total += length
+            if total > G.MAX_BYTES:
+                edge = number
+                break
+        for limit in (edge - 1, edge):
+            want = verdict({"tool_name": "Read", "tool_input":
+                            {"file_path": BIG, "offset": offset, "limit": limit}})
+            last = offset + limit - 1
+            forms = [bash("sed -n '%d,%dp' %s" % (offset, last, BIG)),
+                     bash("tail -n +%d %s | head -n %d" % (offset, BIG, limit)),
+                     bash("awk 'NR>=%d && NR<=%d' %s" % (offset, last, BIG))]
+            if offset == 1:
+                forms += [bash("head -n %d %s" % (limit, BIG)),
+                          {"tool_name": "PowerShell", "tool_input":
+                           {"command": "Get-Content -TotalCount %d %s" % (limit, BIG)}}]
+            got = [verdict(form) for form in forms]
+            rows.append(("Read=Bash: offset=%d limit=%d -> %s" % (offset, limit, want),
+                         set(got) == {want}))
+    return rows
+
+
+# Har yangi regex 10 KB patologik kirishda 0.2 s dan tez (ReDoS).
+REDOS_LIMIT = 0.2
+REDOS_INPUTS = ("a" * 10000, "1" * 10000, " 1" * 5000, "|" * 10000, "<" * 10000,
+                ">&" * 5000, "budget.py " * 1000, "budget.py" + " x" * 5000,
+                "~" * 10000, "NR>=1&&" * 1400, "1,$p" * 2500, "+1" * 5000,
+                "s/" * 5000, "-n " * 3300, "'a" * 5000, "1p;" * 3300)
+
+
+def case_redos():
+    import time
+    patterns = (G.SPLIT_RE, G.REDIRECT_RE, G.BUDGET_RESET_RE, G.SED_CMD_RE,
+                G.COUNT_RE, G.AWK_RANGE_RE, G.AWK_LINE_RE)
+    worst, name = 0.0, ""
+    for text in REDOS_INPUTS:
+        for pattern in patterns:
+            began = time.perf_counter()
+            pattern.search(text)
+            list(pattern.finditer(text))
+            pattern.fullmatch(text)
+            spent = time.perf_counter() - began
+            if spent > worst:
+                worst, name = spent, pattern.pattern[:30]
+        for powershell in (False, True):
+            began = time.perf_counter()
+            G.read_volume("sed -n '" + text + "' " + BIG + " | " + text, powershell)
+            G.check_budget_reset("python3 budget.py " + text)
+            spent = time.perf_counter() - began
+            if spent > worst:
+                worst, name = spent, "read_volume"
+    return [("ReDoS: eng sekini %.3f s (%s)" % (worst, name), worst < REDOS_LIMIT)]
+
+
 def case_hooks_off():
     """GENIUS_HOOKS=off: klonda ham jim. Muhit jarayonga meros o'tadi."""
     off = subprocess.run(
@@ -674,6 +816,8 @@ ALL_CASES = (
        hint_case("maslahat yo'llari, boshqa proyekt", True)]
     + [gating_case(*row) for row in GATING]
     + [("memory: butun daraxtni qo'shish", case_memory_tree)]
+    + [("Read va Bash bir xil qaror", case_read_bash_bir_xil)]
+    + [("ReDoS: yangi regexlar", case_redos)]
     + [("GENIUS_HOOKS=off: jim", case_hooks_off)]
 )
 
