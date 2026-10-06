@@ -89,7 +89,7 @@ class OrderPageController {
 **Spring'da qayerda uchraydi:** `org.springframework.web.servlet.DispatcherServlet` (`FrameworkServlet` vorisi) - Spring MVC'ning yuragi; uning `doDispatch` siklida `getHandler` → `getHandlerAdapter` → `handle` → `processDispatchResult` → `render` bosqichlari bor. Spring Boot uni `DispatcherServletAutoConfiguration` orqali `/` ga ro'yxatdan o'tkazadi (`DispatcherServletRegistrationBean`, `spring.mvc.servlet.path`). WebFlux'dagi muqobili - `DispatcherHandler` (`WebHandler` amalga oshirilishi) va uni o'rab turgan `HttpHandler`/`WebHttpHandlerBuilder`. Bir ilovada bir nechta `DispatcherServlet` (masalan, `/api/*` va `/admin/*` uchun alohida kontekstlar bilan) ro'yxatdan o'tkazish mumkin.
 
 **Qo'llanish keyslari:**
-- Har qanday Spring MVC ilovasi - pattern avtomatik qo'llaniladi, lekin uni bilish `DispatcherServlet` xususiyatlarini (`throwExceptionIfNoHandlerFound`, `enableLoggingRequestDetails`) ongli sozlash imkonini beradi.
+- Har qanday Spring MVC ilovasi - pattern avtomatik qo'llaniladi, lekin uni bilish `DispatcherServlet` xususiyatlarini (`enableLoggingRequestDetails`, `detectAllHandlerMappings`) ongli sozlash imkonini beradi. `throwExceptionIfNoHandlerFound` Spring Framework 6.1 dan standart `true` va deprecated, uni sozlash kerak emas.
 - Monolit ichida API va admin UI'ni alohida `DispatcherServlet` + alohida `WebApplicationContext` bilan izolyatsiya qilish.
 - Legacy servlet ilovasini bosqichma-bosqich Spring MVC'ga ko'chirish: avval `DispatcherServlet` ni bitta prefiksga ulash, keyin yo'llarni ko'chirish.
 - Yagona kirish nuqtasida kuzatuv (`ServerHttpObservationFilter`) va xatolarni yagona formatga keltirish.
@@ -97,12 +97,11 @@ class OrderPageController {
 **Ehtiyot bo'ling:** Front Controller'ning o'zini `extends DispatcherServlet` qilib o'zgartirish deyarli hech qachon kerak emas - kengaytirish nuqtalari `HandlerInterceptor`, `HandlerExceptionResolver`, `HandlerMethodArgumentResolver` va `WebMvcConfigurer` orqali beriladi. `DispatcherServlet` servlet konteyner `Filter` zanjiridan keyin ishlaydi, shuning uchun Security filtrlarida yuzaga kelgan istisnolar `@ControllerAdvice` ga yetib bormaydi.
 
 ```yaml
-// Front Controller: barcha so'rov bitta kirish nuqtasidan o'tadi
+# Front Controller: barcha so'rov bitta kirish nuqtasidan o'tadi
 spring:
   mvc:
     servlet:
       path: /                 # DispatcherServlet qayerga ulanadi
-    throw-exception-if-no-handler-found: true
   web:
     resources:
       add-mappings: false     # 404 ni handler yo'qligidan ajratish uchun
@@ -110,6 +109,8 @@ spring:
 # DispatcherServlet zanjiri: Filter -> HandlerMapping -> HandlerAdapter
 # -> HandlerInterceptor -> controller -> ViewResolver -> View
 ```
+
+`spring.mvc.throw-exception-if-no-handler-found` bu yerda ataylab yo'q: Spring Boot 3.2.0 da u deprecated ([WebMvcProperties, v3.2.0](https://github.com/spring-projects/spring-boot/blob/v3.2.0/spring-boot-project/spring-boot-autoconfigure/src/main/java/org/springframework/boot/autoconfigure/web/servlet/WebMvcProperties.java)), chunki Spring Framework 6.1 dan `DispatcherServlet` handler topilmasa `NoHandlerFoundException` ni o'zi tashlaydi ([DispatcherServlet, v6.1.0](https://github.com/spring-projects/spring-framework/blob/v6.1.0/spring-webmvc/src/main/java/org/springframework/web/servlet/DispatcherServlet.java)). Boot 4 metadata sida kalit `level: error` bilan belgilangan, ya'ni u endi umuman ulanmaydi.
 
 ## 6.3 Sahifa boshqaruvchisi (Page Controller)
 
@@ -839,7 +840,7 @@ JwtDecoder jwtDecoder(@Value("${auth.jwk-set-uri}") String jwkSetUri) {
 **Ehtiyot bo'ling:** Sessiyaga katta ob'ektlar (entity grafigi, hisobot natijalari) joylash xotirani to'ldiradi va Redis'ga seriyalashtirish narxini oshiradi - faqat identifikator va kichik DTO. Sessiyadagi ob'ektlar `Serializable` bo'lishi va versiya o'zgarishida (deploy) deseriyalanishi kerak - JSON seriyalashtirish (`GenericJackson2JsonRedisSerializer`) klass versiyasiga kamroq bog'liq. Sticky session'ga tayanish nol-uzilishli deploy va autoscaling'ni murakkablashtiradi; API uchun stateless (6.25), UI uchun Spring Session afzal. `@SessionAttributes` ni `setComplete()` siz qoldirish sessiyada "eskirgan" holat qoldiradi.
 
 ```yaml
-// Server sessiyasi: oddiy, lekin stateless deploy'ni buzadi
+# Server sessiyasi: oddiy, lekin stateless deploy'ni buzadi
 spring:
   session:
     store-type: redis        # sessiya tashqi omborda: podlar almashtirilsa yo'qolmaydi
@@ -971,7 +972,7 @@ WebMvcConfigurer localeInterceptor() {
 **Ehtiyot bo'ling:** Katta trafikli statik kontentni JVM'dan xizmat qilish CPU va ulanishlarni isrof qiladi - ishlab chiqarishda CDN yoki reverse proxy (Nginx) oldinga qo'yiladi, Spring faqat fallback. Versiyalash yoqilganda shablonlardagi URL'lar `ResourceUrlProvider`/`@{...}` orqali yaratilishi kerak, aks holda eski (keshdagi) nomlar 404 beradi. `addResourceLocations("file:" + userPath)` da yo'l tekshiruvisiz (`PathResourceResolver` saqlab qolinmasa) directory traversal xavfi bor. `index.html` fallback'ini `/api/**` ga ham qo'llash API 404'larini HTML'ga aylantiradi - namunalarni ajrating.
 
 ```yaml
-// Statik resurslar: kesh va versiyalash
+# Statik resurslar: kesh va versiyalash
 spring:
   web:
     resources:
@@ -1004,7 +1005,7 @@ spring:
 **Ehtiyot bo'ling:** Hajm chegaralari ikki darajada ishlaydi - Spring/Boot xususiyatlari va oldingi proxy (Nginx `client_max_body_size`, Gateway) - ikkalasini muvofiqlashtiring, aks holda foydalanuvchi tushunarsiz 413/502 oladi. `getOriginalFilename()` va `getContentType()` mijozdan keladi - ularga ishonmang: fayl nomini qayta nomlang (UUID), MIME'ni tarkib bo'yicha aniqlang (Apache Tika), zarur bo'lsa antivirus tekshiruvi. Faylni bazaga BLOB sifatida saqlash o'rniga obyekt saqlash + Valet Key (qarang: [17-bo'lim](17-resilience-va-cloud-dizayn-patternlari.md)) orqali to'g'ridan-to'g'ri yuklashni ko'rib chiqing. Vaqtinchalik `location` katalogi konteynerda to'lib ketmasligi uchun diskni kuzating.
 
 ```yaml
-// Multipart: chegara qo'yish majburiy
+# Multipart: chegara qo'yish majburiy
 spring:
   servlet:
     multipart:

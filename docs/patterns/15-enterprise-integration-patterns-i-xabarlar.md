@@ -396,7 +396,7 @@ DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> template) {
 **Ehtiyot bo'ling:** Persistence o'z-o'zidan "exactly-once" bermaydi - failover va retry paytida duplicate bo'ladi, shuning oqibatida iste'molchi idempotent bo'lishi yoki dedup store ishlatishi kerak. `acks=all` va `fsync` har bir xabar uchun latency'ni bir necha barobar oshiradi; past qiymatli telemetriya yoki metrika oqimida bu kafolatni talab qilish ortiqcha xarajat. Shuningdek DB va broker'ni bitta XA tranzaksiyaga bog'lashga urinmang - outbox pattern soddaroq va ishonchliroq.
 
 ```yaml
-// Kafolat uch tomondan ta'minlanadi: producer, broker va consumer
+# Kafolat uch tomondan ta'minlanadi: producer, broker va consumer
 spring:
   kafka:
     producer:

@@ -273,7 +273,7 @@ management:
         include: health,info,metrics,prometheus,threaddump,loggers
   endpoint:
     heapdump:
-      enabled: false           # kerak bo'lganda qo'lda yoqiladi
+      access: none             # Boot 3.4+; 3.4 gacha enabled: false
     health:
       show-details: when-authorized
   metrics:
@@ -283,7 +283,7 @@ management:
 
 Eng foydali metrikalar: `hikaricp.connections.pending` nolda turmasa connection pool tor, `executor.queued` va `executor.active` async pool to'lishini ko'rsatadi, `jvm.gc.pause` va `jvm.memory.used` GC bosimini beradi. `/actuator/loggers` orqali qayta deploy qilmasdan bitta paketga DEBUG yoqish incident paytida juda qimmatli.
 
-`/actuator/threaddump` va `/actuator/heapdump` faqat himoyalangan holda bo'lishi kerak. Heap dump endpointini odatda o'chirib qo'yish va zarurat tug'ilganda `jcmd` bilan ishlash xavfsizroq.
+`/actuator/threaddump` va `/actuator/heapdump` faqat himoyalangan holda bo'lishi kerak. Heap dump endpointini odatda o'chirib qo'yish va zarurat tug'ilganda `jcmd` bilan ishlash xavfsizroq. Spring Boot 3.4 dan endpointni yoqish va o'chirish `management.endpoint.<id>.access` (`none`, `read-only`, `unrestricted`) bilan boshqariladi, eski `management.endpoint.<id>.enabled` 3.4 da deprecated va Boot 4 da yo'q ([spring-boot v3.4.0, Controlling Access to Endpoints](https://github.com/spring-projects/spring-boot/blob/v3.4.0/spring-boot-project/spring-boot-docs/src/docs/antora/modules/reference/pages/actuator/endpoints.adoc)).
 
 ## 14.11 Tez-tez uchraydigan diagnoz: sekin so'rov, thread pool to'lishi, xotira sizishi
 

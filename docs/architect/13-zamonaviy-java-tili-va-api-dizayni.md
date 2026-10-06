@@ -83,7 +83,8 @@ String auditLine(PaymentResult result) {
                 "olindi ref=" + ref + " summa=" + amount;
         case Pending(var ref, var retryAfter) ->
                 "kutilmoqda ref=" + ref + " qayta=" + retryAfter.toSeconds() + "s";
-        case Declined(DeclineReason.INSUFFICIENT_FUNDS, var msg) ->
+        case Declined(var reason, var msg)
+                when reason == DeclineReason.INSUFFICIENT_FUNDS ->
                 "mablag' yetmadi: " + msg;
         case Declined(var reason, var msg) ->
                 "rad etildi " + reason + ": " + msg;
@@ -92,6 +93,8 @@ String auditLine(PaymentResult result) {
     };
 }
 ```
+
+Record pattern komponenti faqat pattern bo'ladi (`var x`, tur pattern yoki ichki record pattern), konstanta emas: `Declined(...)` qavsi ichiga enum qiymatini yozish Java 21 da ham, 25 da ham kompilyatsiya xatosi beradi. Aniq qiymat bo'yicha ajratish `when` guard bilan yoziladi va u umumiy `case Declined(var reason, var msg)` dan oldin turadi, aks holda kompilyator uni "dominated" deb rad etadi.
 
 `permits` ro'yxatini yozmasa ham bo'ladi, agar barcha implementatsiya bir faylda yoki bir paketda bo'lsa. Nested record lar shu sababli ko'p qulay: butun ierarxiya bitta faylda ko'rinadi.
 
