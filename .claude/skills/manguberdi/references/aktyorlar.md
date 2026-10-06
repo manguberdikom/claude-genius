@@ -206,3 +206,24 @@ stack trace bo'lmaydi. Javob savol bilan tugamaydi: ochiq qaror
   muhandisi chaqirilmaydi.
 - Bir necha modulli ish (to'liq review, keng tuzatish) ish boshida
   modullarga bo'linadi; fayllari kesishmasa ular parallel guruh.
+
+## Asboblar katalogi
+
+Qisqa ro'yxat; har asbobning to'liq qoidasi tegishli bo'limda.
+
+- `tools/doc.sh rule java:S3776` - Sonar kalitini izohlagan bo'lim.
+- `tools/doc.sh checklist <hujjat> [bob]` - yozilgan tekshiruv punktlari.
+- `tools/parse_test_output.py` - test chiqishidan birinchi haqiqiy sabab.
+- `tools/run_tests.py` - ta'sirlangan testlarni modul bilan yurgizadi;
+  `--hammasi` partiyada bir marta, `--tashxis` suite nega sekin,
+  `--hisobot` test vaqti jurnali (`Testlar qachon va qanday`).
+- `tools/guruh.py` - parallel guruh uchun git worktree va birlashtirish
+  (`references/parallel.md`).
+- `tools/rules_for.py` - tegilayotgan fayllarga qaysi boblar, tekshiruv
+  punktlari va avvalgi xatolar tegishli. Java yozishdan oldin majburiy.
+- `tools/check_code.py` - Java fayl yozilgandan keyin `PostToolUse` hooki:
+  mexanik qoidalar va `rules_for` chaqirilganmi. Faqat yolg'on ishga
+  tushishi nol bo'lgan tekshiruvlar.
+- `tools/budget.py`, `tools/handoff.py`, `tools/usage.py` - aktyor
+  budjeti (`Chaqiruv budjeti`), kontekst uzatish va token sarfi
+  (`references/kontekst.md`).

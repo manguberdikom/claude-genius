@@ -417,3 +417,43 @@ ga o'tdi, 21 ta `deny` bo'lib qoldi). Mezonlar qo'lda tekshirildi:
 **Orqaga qaytarish.** `git revert`. Qarorni qaytarish uchun `ask()`
 chaqiruvlarini `deny()` ga almashtirish ham yetadi, lekin unda `COST_OK`
 ham qaytarilishi kerak, aks holda yo'l butunlay yopiladi.
+
+## 2026-10-06: Hook xatosi jim o'tmaydi: `|| exit 0` o'rniga `|| exit 1`
+
+**Nima o'zgardi.** `.claude/settings.json` va `install/manguberdi.ps1`
+dagi yetti hook buyrug'ining oxiri ` || exit 0` dan ` || exit 1` ga
+almashdi. "Hooklar faqat Java proyektida va klonda ishlaydi" yozuvidagi
+qolgan qism (`active()`, `GENIUS_HOOKS=off`) o'zgarmaydi.
+
+**Nega.** `|| exit 0` hook ishga tushmaganini butunlay yashirardi: klon
+ko'chsa, Python almashsa yoki import xatosi bo'lsa guard, budget,
+check_code va usage birga jim o'chardi, foydalanuvchi esa himoya bor deb
+ishlardi. Claude Code 0 dagi stderr ni ko'p eventlarda faqat debug logga
+yozadi. 2 dan boshqa nol bo'lmagan kod to'smaydi, lekin transkriptda
+"hook error" bo'lib ko'rinadi (PL-CC11). Avvalgi yozuvdagi asos, ya'ni
+Python ning "can't open file" kodi 2 to'siq bo'lmasin, 1 bilan ham
+saqlanadi.
+
+**Rad etilgan variantlar.**
+
+- *`hookio` ichida `run_hook` o'rami va xato logi.* Rad etildi: skript
+  umuman ishga tushmasa (yo'l yo'q, Python yo'q) o'ram ham yurmaydi, ya'ni
+  aynan shu holatni ushlay olmaydi; uchta faylga tegadi.
+- *`|| exit 0` ni qoldirib, faqat `doctor` tekshiruvi.* Rad etildi:
+  tekshiruv qo'lda yurgiziladi, xato esa har sessiyada ko'rinishi kerak.
+
+**Xavf.** Hook xulqi. O'chgan yoki ko'chgan klon endi har chaqiruvda
+"hook error" xabarini beradi (to'smaydi). Hookning o'zi kutilmagan
+istisno bilan yiqilsa Python 1 qaytaradi va bu ham ko'rinadi; ichida
+istisnoni ushlab 0 qaytaradigan hooklar (`suggest_sections`, `handoff`)
+avvalgidek jim. To'siq faqat JSON orqali beriladi: hook rejimida hamma
+skript 0 qaytaradi, shuning uchun normal ishda xabar chiqmaydi.
+
+**Qaysi tekshiruv o'tdi.** `tools/test_rewrite_paths.py` (ps1 va
+settings.json hook jadvali paritet holati bilan), `tools/test_skill.py`.
+Qo'lda: `CLAUDE_PROJECT_DIR=/yoq` bilan `settings.json` dagi yetti
+buyruqning har biri rc=1 va bo'sh stdout.
+
+**Orqaga qaytarish.** `git revert`, yoki ikkala fayldagi ` || exit 1` ni
+` || exit 0` ga qaytarish (paritet testi ikkalasini birga talab qiladi).
+Global o'rnatishda `-Update` eski buyruqni yo'l bo'yicha almashtiradi.

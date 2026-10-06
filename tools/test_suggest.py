@@ -229,7 +229,7 @@ def output_shape_ok(stdout):
     event, text = context(stdout)
     lines = text.splitlines()
     return (event == "UserPromptSubmit" and len(lines) > 1
-            and lines[0].startswith("Mos bo'limlar") and "doc.sh show" in lines[0]
+            and lines[0].startswith("Nomzod bo'limlar") and "doc.sh show" in lines[0]
             and not any(DOUBLED_RE.search(line) for line in lines[1:])
             and "majburiyat emas" not in text)
 
@@ -276,7 +276,7 @@ def hook_cases():
         _, text = context(stdout)
         out.append(("klon ichida: nisbiy tools/doc.sh", rc == 0
                     and output_shape_ok(stdout)
-                    and text.startswith("Mos bo'limlar (tools/doc.sh show "),
+                    and text.startswith("Nomzod bo'limlar (tools/doc.sh show "),
                     text.splitlines()[0] if text else "rc=%d" % rc))
         other = tempfile.mkdtemp()
         try:

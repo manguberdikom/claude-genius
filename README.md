@@ -1,10 +1,11 @@
 # Java, Spring va PostgreSQL bo'yicha oltita qo'llanma
 
 O'zbek tilidagi oltita bir-birini to'ldiruvchi hujjat: 224 bob, 3293 bo'lim,
-2300 dan ortiq kod misoli. Har bir hujjat bir savolga javob beradi va
-qolganlariga mavzu nomi bilan havola qiladi. Ba'zi mavzular bir nechta
-hujjatda uchraydi, chunki ular har bir nuqtadan boshqacha ko'rinadi:
-masalan N+1 so'rovi pattern, arxitektura, review va Sonar tomonidan.
+2300 dan ortiq kod misoli. Har bir hujjat bir savolga javob beradi. Ba'zi
+mavzular bir nechta hujjatda uchraydi, chunki ular har bir nuqtadan
+boshqacha ko'rinadi: masalan N+1 so'rovi pattern, arxitektura, review va
+Sonar tomonidan.
+Mavzuning to'liq yozuvi bitta uy bo'limda (`docs/OWNERS.tsv`), boshqa hujjat o'z nuqtai nazarini yozadi va uyga mavzu nomi bilan havola beradi.
 
 | Hujjat | Hajm | Qanday savolga javob beradi |
 |---|---|---|

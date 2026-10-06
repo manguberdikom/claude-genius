@@ -590,7 +590,7 @@ function Show-OptIn {
 # ishlatadi, u esa faol proyektni ko'rsatadi; global o'rnatishda asboblar
 # boshqa papkada turadi, shuning uchun yo'l aynan shu klonga bog'lanadi.
 #
-# `|| exit 0` jadvalda, shu funksiyada EMAS: handoff va usage ga argument
+# `|| exit 1` jadvalda, shu funksiyada EMAS: handoff va usage ga argument
 # qo'shiladi va u suffiksdan oldin turishi kerak. Nega kerakligi jadval
 # ustidagi izohda.
 function HookCmd([string]$script) {
@@ -608,13 +608,15 @@ function HookCmd([string]$script) {
 # o'zgarsa, ikkinchisi ham moslanadi: tools/test_rewrite_paths.py dagi
 # case_ps1_hooklari_repoga_mos nomuvofiqlikda CI ni yiqitadi.
 #
-# Har buyruq oxirida `|| exit 0`. Sababi: yo'l aynan shu klonga bog'langan,
+# Har buyruq oxirida `|| exit 1`. Sababi: yo'l aynan shu klonga bog'langan,
 # klon o'chsa yoki ko'chsa Python "can't open file" bilan 2 kodi beradi,
 # Claude Code esa hookdan kelgan 2 ni TO'SIQ deb oladi: PreToolUse da Read
 # va Bash to'siladi, UserPromptSubmit da prompt modelga yetmaydi, Stop da
 # sessiya tugamaydi. Ya'ni o'chgan klon Claude Code ni hamma proyektda
-# ishlatmay qo'yardi. Hooklarning o'zi to'siqni faqat JSON orqali beradi,
-# shuning uchun 0 ga aylantirish hech qanday to'siqni yo'qotmaydi.
+# ishlatmay qo'yardi. 1 esa to'smaydi, lekin Claude Code uni "hook error"
+# deb ko'rsatadi: hook ishlamay qolgani jim o'tmaydi (0 da xabar faqat
+# debug logga tushardi). Hooklarning o'zi to'siqni faqat JSON orqali
+# beradi, shuning uchun 1 ga aylantirish hech qanday to'siqni yo'qotmaydi.
 # Hook bash ichida yuradi (yuqorida $BashExe talab qilinadi), `||` esa
 # PowerShell 5.1 da sintaksis xatosi bo'lardi.
 $g = $GeniusPath.Replace('\', '/')
@@ -629,31 +631,31 @@ $settings = [ordered]@{
     UserPromptSubmit = @(
       [ordered]@{ hooks = @(
         [ordered]@{
-          type = 'command'; command = ((HookCmd 'suggest_sections.py') + ' || exit 0')
+          type = 'command'; command = ((HookCmd 'suggest_sections.py') + ' || exit 1')
           timeout = 10; statusMessage = "Mos bo'limlar qidirilmoqda" },
         [ordered]@{
-          type = 'command'; command = ((HookCmd 'budget.py') + ' || exit 0')
+          type = 'command'; command = ((HookCmd 'budget.py') + ' || exit 1')
           timeout = 10 },
         [ordered]@{
-          type = 'command'; command = ((HookCmd 'handoff.py') + ' --hook || exit 0')
+          type = 'command'; command = ((HookCmd 'handoff.py') + ' --hook || exit 1')
           timeout = 10; statusMessage = "Kontekst o'lchanmoqda" }) }
     )
     PreToolUse = @(
       [ordered]@{ matcher = 'Read|Bash|PowerShell'; hooks = @([ordered]@{
-        type = 'command'; command = ((HookCmd 'guard.py') + ' || exit 0')
+        type = 'command'; command = ((HookCmd 'guard.py') + ' || exit 1')
         timeout = 10; statusMessage = 'Qimmat amal tekshirilmoqda' }) },
       [ordered]@{ matcher = 'Task|Agent'; hooks = @([ordered]@{
-        type = 'command'; command = ((HookCmd 'budget.py') + ' || exit 0')
+        type = 'command'; command = ((HookCmd 'budget.py') + ' || exit 1')
         timeout = 10; statusMessage = 'Aktyor budjeti tekshirilmoqda' }) }
     )
     PostToolUse = @(
       [ordered]@{ matcher = 'Write|Edit'; hooks = @([ordered]@{
-        type = 'command'; command = ((HookCmd 'check_code.py') + ' || exit 0')
+        type = 'command'; command = ((HookCmd 'check_code.py') + ' || exit 1')
         timeout = 15; statusMessage = 'Java qoidalari tekshirilmoqda' }) }
     )
     Stop = @(
       [ordered]@{ hooks = @([ordered]@{
-        type = 'command'; command = ((HookCmd 'usage.py') + ' --saqlash || exit 0')
+        type = 'command'; command = ((HookCmd 'usage.py') + ' --saqlash || exit 1')
         timeout = 20; statusMessage = 'Token sarfi yozilmoqda' }) }
     )
   }
