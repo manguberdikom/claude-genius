@@ -208,9 +208,12 @@ Agar biznes "aktivatsiya" deyotgan bo'lsa, kodda `enable`, `turnOn` va `activate
 
 ```bash
 # Domen tilining izchilligini tekshirish: bitta tushuncha necha xil nom bilan.
+# -o har uchrashni alohida qatorga chiqaradi, ya'ni wc -l uchrashlar sonini
+# beradi. -w qo'yilmaydi: u activateAccount kabi camelCase nomni o'tkazib yuboradi.
 for term in activate enable turnOn start; do
-  printf '%-10s %s\n' "$term" "$(grep -rn --include='*.java' -c "$term" src/main/java | wc -l)"
+  printf '%-10s %s\n' "$term" "$(grep -rhoi --include='*.java' "$term" src/main/java | wc -l)"
 done
+# Nechta faylda uchrashini bilish kerak bo'lsa: grep -rli --include='*.java' "$term" src/main/java | wc -l
 # Natijada bir tushuncha uchun to'rt nom chiqsa, lug'atni kelishib olish kerak.
 ```
 

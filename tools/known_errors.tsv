@@ -34,3 +34,15 @@ Java 21\+[^\n]{0,60}ShutdownOn	ShutdownOnSuccess/Failure faqat 21-24 preview da;
 Spring Framework 6[^\n]{0,60}(publishEvent|POJO event)	publishEvent(Object) va POJO event Spring Framework 4.2 dan beri bor, 6 dan emas	docs
 Java 17\+ `?switch`? pattern matching	switch pattern matching Java 21 da yakuniy; 17-20 da preview	docs
 (?<!jdbc\.)batch_versioned_data	to'liq nomi hibernate.jdbc.batch_versioned_data; standarti odatda true	docs
+@Where\(clause|\|\s*`@Where`\s*\|	@Where Hibernate 6.3 da deprecated, 7.0 da olib tashlangan; o'rniga @SQLRestriction (6.3+) yoki @SoftDelete (6.4+)	docs
+`@Where`,? (va )?`@SQLDelete`	global shart checklisti faqat @Where ni qidirsa @SQLRestriction va @SoftDelete review dan o'tib ketadi	docs
+`@LazyCollection\(EXTRA\)`\s*\|	@LazyCollection 6.2 da deprecated, 7.0 da olib tashlangan; jadvalda shu izohsiz turmasin	docs
+(?s)<artifactId>postgresql</artifactId>(?:(?!testcontainers-postgresql).){0,1000}Testcontainers versiyasini qo'lda yozmang	Testcontainers 2.x (Boot 4) da artifactId testcontainers-postgresql; eski nom faqat 1.x (Boot 3.5) uchun	docs
+\|\s*org\.testcontainers:(postgresql|kafka|mongodb|elasticsearch|rabbitmq|localstack)\s*\|\s*`	Testcontainers moduli jadvalida 2.x nomi (testcontainers-*) ustuni bo'lishi kerak	docs
+okJson\("""[^\n]	bir qatorli text block kompilyatsiya bo'lmaydi: ochuvchi """ dan keyin qator oxiri shart	docs
+secret larni ko'rsatadi \(maskalash to'liq emas\)	Boot 3.0 dan env va configprops show-values standarti never; xavf show-values always yoki keng when-authorized da	docs
+(?s)AnnotatedPackages=uz\.shop</arg>(?:(?!add-exports).){0,2000}Error Prone bu hujjatdagi	JDK 16+ da Error Prone uchun .mvn/jvm.config dagi --add-exports va --add-opens shart	docs
+valueOf\(0\.1\) ham xavfli	BigDecimal.valueOf(0.1) literal uchun 0.1 beradi; xavflisi new BigDecimal(0.1)	docs
+100_000 \* 50_000 manfiy	100_000 * 50_000 int da 705_032_704, ya'ni musbat; overflow ishorani o'zgartirishi shart emas	docs
+grep -r\S*\s[^|\n]*\s-c\s[^|\n]*\|\s*wc -l	grep -r -c har fayl uchun qator chiqaradi, wc -l uchrashni emas fayl sonini sanaydi	docs
+- \[ \] `@MockBean`/`@SpyBean` butun kod bazasidan	@MockitoBean Boot 3.4 dan; punkt (Boot 3.4+) belgisisiz Boot 3.2/3.3 loyihada noto'g'ri	docs

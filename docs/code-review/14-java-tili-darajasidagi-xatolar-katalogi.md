@@ -105,7 +105,10 @@ double percent = (double) count / total * 100;  // to'g'ri
 // Infinity (double) - ikkisi ham tekshirilmagan.
 
 // Xato 2: int overflow jim aylanadi.
-int totalBytes = fileCount * bytesPerFile;      // 100_000 * 50_000 manfiy bo'ladi
+int totalBytes = fileCount * bytesPerFile;      // 100_000 * 50_000 = 705_032_704
+// 5_000_000_000 int ga sig'maydi: natija jim, musbat, lekin noto'g'ri
+// (50_000 * 50_000 esa -1_794_967_296). Shuning uchun "totalBytes < 0"
+// tekshiruvi overflow ni ushlamaydi: ishora o'zgarmasligi ham mumkin.
 long totalBytes = (long) fileCount * bytesPerFile;
 // Yoki aniq tekshiruv bilan: Math.multiplyExact tashlaydi, jim aylanmaydi.
 long totalBytes = Math.multiplyExact((long) fileCount, bytesPerFile);
@@ -113,7 +116,10 @@ long totalBytes = Math.multiplyExact((long) fileCount, bytesPerFile);
 // Xato 3: pul double da.
 double total = 0.1 + 0.2;                        // 0.30000000000000004
 BigDecimal total = new BigDecimal("0.1").add(new BigDecimal("0.2"));   // 0.3
-// Diqqat: BigDecimal.valueOf(0.1) ham xavfli - double dan o'tadi.
+// Diqqat: new BigDecimal(0.1) xavfli: 0.1000000000000000055511151231257827021181583404541015625.
+// BigDecimal.valueOf(0.1) literal uchun to'g'ri (0.1), chunki Double.toString
+// orqali ishlaydi, lekin hisoblangan double dagi xatoni saqlaydi:
+// BigDecimal.valueOf(0.1 + 0.2) -> 0.30000000000000004. Pul satr yoki long dan kirsin.
 // new BigDecimal("0.1") - satr orqali, aniq.
 
 // Xato 4: BigDecimal da scale va yaxlitlash e'lon qilinmagan.

@@ -429,7 +429,7 @@ E'tibor bering: bu sinfda `@Transactional` **yo'q**, tozalash esa `@Sql`'ning AF
 ## 7.13 Arxitektor nazorat ro'yxati
 
 - [ ] Har bir test o'z qatlamiga mos slice annotatsiyasidan foydalanadi; `@SpringBootTest` faqat qatlamlar kesishgan oqimlar uchun qoldirilgan.
-- [ ] `@MockBean`/`@SpyBean` butun kod bazasidan olib tashlangan, o'rniga `@MockitoBean`/`@MockitoSpyBean`/`@TestBean` ishlatiladi.
+- [ ] (Boot 3.4+) `@MockBean`/`@SpyBean` butun kod bazasidan olib tashlangan, o'rniga `@MockitoBean`/`@MockitoSpyBean`/`@TestBean` ishlatiladi.
 - [ ] Integratsion testlar bitta umumiy abstract bazaviy sinfdan meros oladi; kontekstlar soni o'lchangan va 3-5 atrofida ushlab turiladi.
 - [ ] `@DirtiesContext` ishlatilgan har bir joy asoslangan; aks holda holat testning o'zida tozalanadi.
 - [ ] `@DataJpaTest` qaysi bazada ishlayotgani aniq: H2 faqat mapping uchun, baza xatti-harakatiga bog'liq query'lar real bazada tekshiriladi.

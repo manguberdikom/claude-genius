@@ -184,7 +184,7 @@ class RateClientTest {
             .willReturn(serverError()).willSetStateTo("second"));
         stubFor(get("/rates/USD").inScenario("retry")
             .whenScenarioStateIs("second")
-            .willReturn(okJson("""{"rate":"12750.00"}""")));
+            .willReturn(okJson("{\"rate\":\"12750.00\"}")));
 
         assertThat(client.rateFor("USD")).isNotNull();
         verify(2, getRequestedFor(urlEqualTo("/rates/USD")));   // retry ishladi
@@ -203,7 +203,7 @@ class RateClientTest {
 
     @Test
     void rejectsMalformedResponse() {
-        stubFor(get("/rates/USD").willReturn(okJson("""{"rate":"not-a-number"}""")));
+        stubFor(get("/rates/USD").willReturn(okJson("{\"rate\":\"not-a-number\"}")));
         assertThatThrownBy(() -> client.rateFor("USD"))
             .isInstanceOf(InvalidGatewayResponse.class);
     }
