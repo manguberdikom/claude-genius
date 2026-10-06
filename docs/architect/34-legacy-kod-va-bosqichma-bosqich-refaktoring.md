@@ -1,6 +1,8 @@
 <!-- doc: architect | chapter: 34 | part: VI. Amaliyot va o'sish -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
+
+> Holat: AI yozgan, inson tekshirmagan.
 
 # 34. Legacy kod va bosqichma-bosqich refaktoring (Legacy Code and Refactoring)
 
@@ -318,7 +320,7 @@ Jami taxminan 12-14 hafta, bitta kichik jamoa uchun. Muhimi muddat emas, balki h
 
 - [ ] `git log --name-only` asosida oxirgi 2 yilda eng ko'p o'zgargan 30 faylni chiqarib, ularning hajmi bilan jadval tuzing va refaktoring nomzodlarini belgilang.
 - [ ] `pg_stat_user_tables` va `pg_stat_statements` bo'yicha eng og'ir 20 so'rovni va ishlatilmayotgan index'larni yozib oling, bu refaktoringdan oldingi asos bo'ladi.
-- [ ] Tanlangan modulning 3 ta eng muhim stsenariysi uchun production ma'lumotidan characterization qayd fayli tayyorlang.
+- [ ] Tanlangan modulning 3 ta eng muhim ssenariysi uchun production ma'lumotidan characterization qayd fayli tayyorlang.
 - [ ] Modulda `new` operatori yoki `static` chaqiruv bilan qotib qolgan 5 ta bog'lanishni toping va ularning o'rniga interface seam qo'ying, mantiqga tegmasdan.
 - [ ] Bitta hisoblash mantiqi uchun soya rejimi yoqing: yangi kod natijasi log va metrikaga chiqsin, javob eski koddan qaytsin.
 - [ ] Har bir feature flag uchun egasi va o'chirish muddatini yozib qo'ying, muddati o'tgan flag'lar ro'yxati sprint ko'rikida ko'rilsin.

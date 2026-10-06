@@ -2,10 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 12. Arxitektura uslublari (Architectural Styles)
 
 <details>
-<summary>Bu bo'limdagi 34 bo'lim</summary>
+<summary>Bu bobdagi 34 bo'lim</summary>
 
 - [12.1 Qatlamli arxitektura (Layered / N-tier Architecture)](#121-qatlamli-arxitektura-layered--n-tier-architecture)
 - [12.2 Olti burchakli arxitektura (Hexagonal Architecture / Ports & Adapters)](#122-olti-burchakli-arxitektura-hexagonal-architecture--ports--adapters)
@@ -563,8 +565,9 @@ Config hazelcastConfig() {
 RestClient pspClient(RestClient.Builder builder, PspProperties props) {
     return builder
             .baseUrl(props.url())
-            .requestFactory(ClientHttpRequestFactories.get(
-                    ClientHttpRequestFactorySettings.DEFAULTS
+            // Boot 4.x: HttpClientSettings + ClientHttpRequestFactoryBuilder
+            .requestFactory(ClientHttpRequestFactoryBuilder.detect().build(
+                    HttpClientSettings.defaults()
                             .withConnectTimeout(Duration.ofSeconds(2))   // 1) timeout
                             .withReadTimeout(Duration.ofSeconds(5))))
             .defaultStatusHandler(HttpStatusCode::isError,
@@ -761,7 +764,7 @@ qayta birlashtirish. Microservice nomi natijani o'zgartirmaydi.
 
 **Tavsif:** Tizim bir-biridan to'liq izolyatsiya qilingan "hujayra"larga (cell) bo'linadi, har bir hujayra butun stack'ning mustaqil nusxasi bo'lib, foydalanuvchilarning aniq bir qismiga xizmat qiladi. Trafik cell router orqali shard kaliti (tenant ID, foydalanuvchi ID) bo'yicha yo'naltiriladi. Bitta hujayra ishdan chiqsa, faqat o'sha hujayradagi foydalanuvchilar ta'sirlanadi - bu "blast radius" ni cheklash usuli. AWS va Slack kabi yirik SaaS platformalari aynan shu model bilan ishlaydi.
 
-**Spring'da qayerda uchraydi:** Spring'da maxsus annotatsiya yo'q - bu infratuzilma va routing darajasidagi pattern. Amalda: har bir cell alohida Kubernetes namespace yoki alohida AWS region/AZ guruhida ishlaydigan bir xil Spring Boot 3.x image; routing Spring Cloud Gateway (`spring-cloud-starter-gateway`) ichida `RoutePredicateFactory` yoki custom `GlobalFilter` bilan tenant kaliti bo'yicha amalga oshiriladi; cell ichida konfiguratsiya Spring Cloud Config yoki Kubernetes ConfigMap orqali profile (`spring.profiles.active=cell-eu-1`) bilan beriladi. Multi-tenant ma'lumot izolyatsiyasi uchun `AbstractRoutingDataSource` yoki Hibernate 6 `MultiTenantConnectionProvider` + `CurrentTenantIdentifierResolver` ishlatiladi; har bir cell uchun Micrometer tag (`cell=eu-1`) bilan alohida metrikalar yig'iladi.
+**Spring'da qayerda uchraydi:** Spring'da maxsus annotatsiya yo'q - bu infratuzilma va routing darajasidagi pattern. Amalda: har bir cell alohida Kubernetes namespace yoki alohida AWS region/AZ guruhida ishlaydigan bir xil Spring Boot 3.x image; routing Spring Cloud Gateway (`spring-cloud-starter-gateway-server-webflux`) ichida `RoutePredicateFactory` yoki custom `GlobalFilter` bilan tenant kaliti bo'yicha amalga oshiriladi; cell ichida konfiguratsiya Spring Cloud Config yoki Kubernetes ConfigMap orqali profile (`spring.profiles.active=cell-eu-1`) bilan beriladi. Multi-tenant ma'lumot izolyatsiyasi uchun `AbstractRoutingDataSource` yoki Hibernate 6 `MultiTenantConnectionProvider` + `CurrentTenantIdentifierResolver` ishlatiladi; har bir cell uchun Micrometer tag (`cell=eu-1`) bilan alohida metrikalar yig'iladi.
 
 **Qo'llanish keyslari:**
 - Yirik B2B SaaS: har bir enterprise tenant guruhi o'z hujayrasida, shovqinli qo'shni (noisy neighbour) ta'sirini yo'qotish.
@@ -805,10 +808,9 @@ router:
 **Ehtiyot bo'ling:** "Stateless" degan ilovalar amalda yashirin holat saqlaydi - lokal fayl cache, static mutable field, in-memory rate limiter yoki scheduler lock - va bu faqat ikkinchi instance qo'shilganda ko'rinadi. Ma'lumotlar bazasi hamon umumiy resurs bo'lib qolgani uchun, shared-nothing application layer DB bottleneck'ini hal qilmaydi: sharding yoki read replica alohida qaror talab qiladi.
 
 ```yaml
-# Shared-nothing: nusxalar hech narsani bo'lishmaydi
+# Shared-nothing: nusxalar hech narsani bo'lishmaydi.
+# Sessiya ilovada saqlanmaydi (Spring Security da SessionCreationPolicy.STATELESS).
 spring:
-  session:
-    store-type: none          # sessiya ilovada saqlanmaydi
   jpa:
     open-in-view: false
 
@@ -845,7 +847,7 @@ serving_layer: {query: "batch UNION ALL speed"}
 
 # Kappa: faqat oqim. Tarixni qayta hisoblash kerak bo'lsa,
 # hodisalar boshidan qayta o'qiladi.
-kappa: {input: kafka://events (retention: infinite), reprocess: "offset 0 dan"}
+kappa: {input: "kafka://events (retention: infinite)", reprocess: "offset 0 dan"}
 ```
 
 ## 12.28 Feature Bo'yicha vs Qatlam Bo'yicha Paketlash (Package-by-feature vs Package-by-layer)

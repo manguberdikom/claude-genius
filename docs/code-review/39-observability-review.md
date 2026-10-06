@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 39. Observability review (Observability)
 
 <details>
@@ -165,6 +167,7 @@ management:
       probability: 0.1                 # 10% - prod uchun maqbul
   otlp:
     tracing:
+      # Boot 3.x kaliti; Boot 4 da: management.opentelemetry.tracing.export.otlp.endpoint
       endpoint: http://collector:4318/v1/traces
 logging:
   pattern:

@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 31. Xatolarga tushmaslik uchun yakuniy tavsiyalar (Preventive Checklist)
 
 <details>

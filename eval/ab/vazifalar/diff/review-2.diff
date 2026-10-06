@@ -1,0 +1,33 @@
+diff --git a/src/main/java/org/springframework/samples/petclinic/owner/VisitController.java b/src/main/java/org/springframework/samples/petclinic/owner/VisitController.java
+index b8b2700..df177d1 100644
+--- a/src/main/java/org/springframework/samples/petclinic/owner/VisitController.java
++++ b/src/main/java/org/springframework/samples/petclinic/owner/VisitController.java
+@@ -42,6 +42,28 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+ @Controller
+ class VisitController {
+ 
++	private static final java.text.SimpleDateFormat VISIT_DATE_FORMAT = new java.text.SimpleDateFormat("yyyy-MM-dd");
++
++	private static final double VAT_RATE = 0.12;
++
++	/** Tashrif narxiga QQS qo'shadi. */
++	double totalWithVat(double basePrice) {
++		return basePrice + basePrice * VAT_RATE;
++	}
++
++	java.math.BigDecimal asMoney(double amount) {
++		return new java.math.BigDecimal(amount).setScale(2);
++	}
++
++	String formatVisitDate(java.util.Date date) {
++		return VISIT_DATE_FORMAT.format(date);
++	}
++
++	@org.springframework.transaction.annotation.Transactional
++	private void auditVisit(Visit visit) {
++		System.out.println("visit saved: " + visit.getDate());
++	}
++
+ 	private final OwnerRepository owners;
+ 
+ 	public VisitController(OwnerRepository owners) {

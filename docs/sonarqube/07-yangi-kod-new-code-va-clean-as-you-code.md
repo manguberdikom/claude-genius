@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 7. Yangi kod (new code) va "clean as you code" tamoyili (New Code and Clean as You Code)
 
 <details>

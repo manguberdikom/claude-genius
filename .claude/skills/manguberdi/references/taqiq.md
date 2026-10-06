@@ -1,7 +1,8 @@
 # Qat'iy taqiqlar
 
-Uchta amal taqiqlangan. Ular shunchaki tavsiya emas: `tools/guard.py`
-ularni `PreToolUse` hook sifatida to'sadi. Bu odatga qarshi to'siq,
+To'rt toifa amal to'siladi. Ular shunchaki tavsiya emas: `tools/guard.py`
+ularni `PreToolUse` hook sifatida to'sadi. Birinchi uchtasi `ask`
+(qaror odamda), to'rtinchisi `deny` (arzon yo'l har doim bir xil). Bu odatga qarshi to'siq,
 xavfsizlik chegarasi emas: `bash -c` yoki skript ichidagi buyruqni
 ko'rmaydi. Hook o'tkazib yuborgani ruxsat degani emas.
 
@@ -29,11 +30,15 @@ ulanish: host bilan ham, hostsiz (lokal) ham, `PGPASSWORD=...` yoki
 `sudo -u` bilan ham, `docker exec` va `kubectl exec` ichida ham. Faqat
 `--version` va `--help` ulanish emas.
 
-Nega: sxemani bilish uchun ulanish shart emas. Entity sinflari jadval,
-ustun, tur, tashqi kalit va indeksni to'liq tasvirlaydi. Ulanish esa
-muhit, parol va ruxsat talab qiladi.
+Nega: jadval, ustun, tur va tashqi kalitni bilish uchun ulanish shart
+emas, ularni entity sinflari va migratsiyalar beradi. Ulanish esa muhit,
+parol va ruxsat talab qiladi.
 
-O'rniga: `python3 tools/schema_from_entities.py <src>`.
+Chegarasi: indeks, constraint, trigger va statistika faqat bazada
+turadi, haqiqiy plan ham. Tuning uchun shular kerak bo'lsa ulanish
+o'rinli: `EXPLAIN (ANALYZE, BUFFERS)` chiqishini kod bermaydi.
+
+O'rniga (sxema uchun): `python3 tools/schema_from_entities.py <src>`.
 
 ## 3. PowerShell
 
@@ -43,18 +48,44 @@ Nega: bu muhitda ishlamaydi va yozilgan skript tekshirilmagan bo'lib
 qoladi. Shu ishni `bash` yoki `python3` bilan bajaring: ikkalasi ham
 shu yerda sinaladi.
 
-## Chiqish yo'li
+## 4. Test vaqti
 
-Uchala holat ham **yopiq emas**. Haqiqatan kerak bo'lsa buyruq oldiga
-`COST_OK=1` qo'yiladi:
+Xom to'liq suite (`./gradlew test`, `./gradlew check`, `mvn test`,
+`mvn verify`, `mvn install`), `clean`, `--rerun-tasks` va `--no-daemon`.
+
+Nega: to'liq suite 5-8 daqiqa va aktyor uni qayta-qayta yurgizardi.
+Ko'p modulli loyihada modulsiz `--tests X` va `-Dtest=X` X yo'q modulda
+yiqiladi, shundan keyin aktyor filtrsiz suite ga qaytardi. `clean` va
+`--rerun-tasks` inkremental build ni, `--no-daemon` esa daemon ni
+yo'qotadi: keyingi har yurish ham sekinlashadi.
+
+O'rniga:
 
 ```bash
-COST_OK=1 docker compose up -d
+python3 tools/run_tests.py --diff --yurgiz          # maqsadli, modul bilan
+python3 tools/run_tests.py --modul <papka> --yurgiz # bitta modul
+python3 tools/run_tests.py --hammasi --yurgiz       # to'liq: partiyada bir marta
 ```
 
-Lekin shart: nega arzon yo'l yetmagani **aytiladi**. "Shunchaki
-ishonmadim" sabab emas. Sabab aytilmasa, bu taqiqni aylanib o'tish
-bo'ladi, qaror emas.
+Filtrli yurish (`:mod:test --tests X`, `-Dtest=X`) va testsiz build
+(`-x test`, `-DskipTests`) to'silmaydi. Bu `deny`, `ask` emas: `ask`
+zanjirni har safar odam javobini kutib to'xtatardi, holbuki bu yerda
+qaror yo'q, asbob hamma rejimni beradi.
+
+## Qarorni kim qiladi
+
+Birinchi uchta holat **yopiq emas**: `guard.py` ularni `ask` bilan
+foydalanuvchi qaroriga qo'yadi, ya'ni buyruq o'z-o'zidan bajarilmaydi
+va o'z-o'zidan rad etilmaydi ham.
+
+Avvalgi `COST_OK=1` qochish yo'li olib tashlandi: prefiksni modelning
+o'zi qo'yardi, ya'ni to'siq o'zini-o'zi ochardi. Endi prefiks hech
+narsani o'zgartirmaydi.
+
+Shuning uchun tartib shunday: avval arzon yo'lni sinang. Yetmasa,
+nega yetmaganini **aytib** so'rang: "entity da indeks yo'q, haqiqiy
+plan kerak" sabab, "shunchaki ishonmadim" sabab emas. Qaror
+foydalanuvchida.
 
 ## Yana nimalar qilinmaydi
 
@@ -68,5 +99,7 @@ Bular hook bilan to'silmaydi, lekin zanjir qoidasi:
 - Ikki chaqiruvdan keyin uchinchi urinishni boshqa yo'l bilan qilish:
   asosiy sessiyada o'zi tuzatish yoki behuda ketmagan chaqiruvni
   `budget.py --tiklash` yoki `--yangi-vazifa` bilan nolga tushirish.
-  Aktyorning uchinchi chaqiruvini esa `budget.py` hook o'zi to'sadi.
+  Aktyorning uchinchi chaqiruvini esa `budget.py` hook o'zi to'sadi:
+  ishni boshqa subagentga berish `boshqa` hisobiga, ro'yxatdan
+  o'tmagan `guruh:` id esa umumiy hisobga tushadi.
 - Foydalanuvchi so'ramagan faylni "yo'l-yo'lakay" tuzatish.

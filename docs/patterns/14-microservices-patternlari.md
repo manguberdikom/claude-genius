@@ -2,10 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 14. Microservices patternlari (Microservices Patterns)
 
 <details>
-<summary>Bu bo'limdagi 40 bo'lim</summary>
+<summary>Bu bobdagi 40 bo'lim</summary>
 
 - [14.1 Monolitik arxitektura va mikroservis arxitekturasi qarori (Monolithic Architecture vs Microservice Architecture (decision))](#141-monolitik-arxitektura-va-mikroservis-arxitekturasi-qarori-monolithic-architecture-vs-microservice-architecture-decision)
 - [14.2 Biznes imkoniyati bo'yicha dekompozitsiya (Decompose by Business Capability)](#142-biznes-imkoniyati-boyicha-dekompozitsiya-decompose-by-business-capability)
@@ -200,7 +202,7 @@ teams:
 
 **Tavsif:** Legacy monolitni bir zarbada qayta yozmasdan, uning atrofida yangi servislar o'stirib, funksiyalarni asta-sekin "bo'g'ib" ko'chirish strategiyasi. Oldiga proxy/gateway qo'yiladi: ko'chirilgan marshrutlar yangi servisga, qolganlari monolitga yo'naltiriladi; har bir qadamda rollback imkoniyati saqlanadi. Ma'lumotlar vaqtincha ikki tomonda sinxronlanadi (event yoki CDC bilan), monolitdagi kod oxirida o'chiriladi. Asosiy qiymati - risk kichik bo'laklarga bo'linadi va biznes ishlab turadi.
 
-**Spring'da qayerda uchraydi:** Fasad sifatida Spring Cloud Gateway (`spring-cloud-starter-gateway` yoki Boot 3.x+ uchun `spring-cloud-starter-gateway-mvc`), `RouteLocatorBuilder` bilan `Predicates.path("/orders/**")` → yangi servis, qolgani monolitga; `RewritePath`, `CircuitBreaker` va `Retry` filtrlari migratsiyani xavfsizlashtiradi. Trafikni bosqichma-bosqich o'tkazish uchun `Weight` predicate yoki feature flag (Togglz/Unleash) ishlatiladi; monolit ichida esa `@RestController` metodini yangi servisga `RestClient`/`@FeignClient` orqali delegatsiya qiladigan adapter yoziladi. Ma'lumot sinxronizatsiyasi Debezium CDC yoki Transactional Outbox + Kafka bilan bajariladi. Monolitni avval Spring Modulith bilan modullashtirish ajratishni ancha osonlashtiradi.
+**Spring'da qayerda uchraydi:** Fasad sifatida Spring Cloud Gateway (reaktiv `spring-cloud-starter-gateway-server-webflux` yoki servlet `spring-cloud-starter-gateway-server-webmvc`), `RouteLocatorBuilder` bilan `Predicates.path("/orders/**")` → yangi servis, qolgani monolitga; `RewritePath`, `CircuitBreaker` va `Retry` filtrlari migratsiyani xavfsizlashtiradi. Trafikni bosqichma-bosqich o'tkazish uchun `Weight` predicate yoki feature flag (Togglz/Unleash) ishlatiladi; monolit ichida esa `@RestController` metodini yangi servisga `RestClient`/`@FeignClient` orqali delegatsiya qiladigan adapter yoziladi. Ma'lumot sinxronizatsiyasi Debezium CDC yoki Transactional Outbox + Kafka bilan bajariladi. Monolitni avval Spring Modulith bilan modullashtirish ajratishni ancha osonlashtiradi.
 
 **Qo'llanish keyslari:**
 - 15 yillik Java EE monolitidan autentifikatsiya qismi birinchi bo'lib yangi Spring Boot servisiga ko'chiriladi.
@@ -427,6 +429,8 @@ record OrderPlaced(String orderId, BigDecimal total) {}
 
 **Ehtiyot bo'ling:** Outbox jadvalini tozalashni (archival/partition) oldindan rejalashtirmaslik DB o'sishi va vacuum muammolariga olib keladi. At-least-once sababli dublikatlar bo'ladi: iste'molchida dedup kaliti (message id) va idempotent handler bo'lmasa, ikki marta to'lov yoki ikki marta email yuborilishi real risk.
 
+Mavzuning to'liq yozuvi shu hujjatdagi [tranzaksion Outbox](10-malumotlarni-boshqarish-va-taqsimlash.md#1014-tranzaksion-outbox-transactional-outbox) bo'limida; bu yerda faqat pattern katalogi nuqtai nazari.
+
 ## 14.13 Tranzaksiya logini kuzatish (Transaction Log Tailing)
 
 **Tavsif:** Hodisalarni ilova kodidan emas, ma'lumotlar bazasining tranzaksiya logidan (PostgreSQL WAL, MySQL binlog, MongoDB oplog) o'qib chiqarish usuli - CDC (Change Data Capture). Tailer log'ni ketma-ket o'qiydi, har bir commit qilingan o'zgarishni hodisaga aylantirib broker'ga yuboradi; polling yo'q, latency past va ilovaga qo'shimcha yuk tushmaydi. Ko'pincha outbox bilan birga ishlatiladi: faqat `outbox` jadvalidagi insert'lar kuzatiladi va shu bilan hodisa sxemasi ichki jadval strukturasidan ajratiladi. Eng ko'p ishlatiladigan vosita - Debezium.
@@ -510,8 +514,9 @@ public void publish() {
 @Bean
 RestClient inventoryClient(RestClient.Builder b, ServiceProperties p) {
     return b.baseUrl(p.inventoryUrl())
-            .requestFactory(ClientHttpRequestFactories.get(
-                    ClientHttpRequestFactorySettings.DEFAULTS
+            // Boot 4.x: HttpClientSettings + ClientHttpRequestFactoryBuilder
+            .requestFactory(ClientHttpRequestFactoryBuilder.detect().build(
+                    HttpClientSettings.defaults()
                             .withConnectTimeout(Duration.ofSeconds(1))
                             .withReadTimeout(Duration.ofSeconds(3))))
             .build();
@@ -617,6 +622,8 @@ public void on(OrderPlaced e) {
 // aks holda ikkisi orasida yiqilish takroriy ishlovga olib keladi.
 ```
 
+Mavzuning to'liq yozuvi [idempotency](07-api-dizayn-patternlari.md#79-idempotentlik-kaliti-idempotency-key) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 14.19 Klient tomonda aniqlash (Client-Side Discovery)
 
 **Tavsif:** Client (yoki uning ichidagi kutubxona) Service Registry'dan maqsadli servisning mavjud instansiyalari ro'yxatini oladi va o'zi load balancing qarorini qabul qiladi - qaysi instansiyaga so'rov yuborishni tanlaydi. Bu qo'shimcha network hop'ni yo'q qiladi va client'ga aqlli strategiya (zone affinity, least-requests, weighted) berish imkonini yaratadi. Kamchiligi - har bir til/stack uchun discovery client logikasi kerak va client registry'ga bog'lanadi. Service mesh davrida bu mantiq ko'pincha sidecar proxy'ga ko'chiriladi.
@@ -653,7 +660,7 @@ class InventoryClient {
 
 **Tavsif:** Client faqat barqaror manzilga (router, load balancer yoki gateway) so'rov yuboradi; registry'ni so'rash va instansiya tanlash mas'uliyati shu infratuzilma komponentiga tegishli. Client hech qanday discovery kodi saqlamaydi, shuning uchun polyglot muhit uchun ideal va discovery logikasi markazlashgan holda yangilanadi. Kamchiligi - qo'shimcha network hop va LB'ning o'zi high-availability talab qiladigan kritik komponentga aylanishi. Kubernetes'dagi `Service` + kube-proxy/DNS, AWS ALB yoki Istio sidecar - bu pattern'ning eng keng tarqalgan ko'rinishlari.
 
-**Spring'da qayerda uchraydi:** Spring Cloud Gateway (`spring-cloud-starter-gateway`, Boot 3.x'da reactive yoki `gateway-server-webmvc`) `lb://order-service` URI bilan discovery'ni server tomonda bajaradi; `DiscoveryClientRouteDefinitionLocator` registry'dan route'larni avtomatik yaratadi. Kubernetes'da Spring Boot ilovasi oddiygina `http://order-service:8080` ga `RestClient` bilan murojaat qiladi va DNS/kube-proxy load balancing qiladi - kodda hech qanday discovery bean kerak emas; `spring-cloud-kubernetes` ConfigMap/Secret va discovery integratsiyasini qo'shadi. Istio/Linkerd bilan esa barcha chiqish trafigi Envoy sidecar orqali o'tadi, ilova faqat logical hostname biladi.
+**Spring'da qayerda uchraydi:** Spring Cloud Gateway (reaktiv `spring-cloud-starter-gateway-server-webflux` yoki servlet `spring-cloud-starter-gateway-server-webmvc`) `lb://order-service` URI bilan discovery'ni server tomonda bajaradi; `DiscoveryClientRouteDefinitionLocator` registry'dan route'larni avtomatik yaratadi. Kubernetes'da Spring Boot ilovasi oddiygina `http://order-service:8080` ga `RestClient` bilan murojaat qiladi va DNS/kube-proxy load balancing qiladi - kodda hech qanday discovery bean kerak emas; `spring-cloud-kubernetes` ConfigMap/Secret va discovery integratsiyasini qo'shadi. Istio/Linkerd bilan esa barcha chiqish trafigi Envoy sidecar orqali o'tadi, ilova faqat logical hostname biladi.
 
 **Qo'llanish keyslari:**
 - Kubernetes'da Java, Go va Node servislari bir-birini `Service` DNS nomi orqali chaqirishi.
@@ -859,7 +866,7 @@ async function renderHome() {
 
 **Tavsif:** Barcha tashqi client'lar uchun yagona kirish nuqtasini yaratadi va so'rovlarni orqadagi microservice'larga routing qiladi. Gateway qatlamida cross-cutting vazifalar - autentifikatsiya, rate limiting, TLS termination, so'rov/javob transformatsiyasi, circuit breaking - bir joyda markazlashadi. Natijada client'lar o'nlab host'ni bilishi va har biri bilan alohida shartnoma tuzishi shart emas. Shu bilan birga gateway tizimning yagona kirish nuqtasi bo'lgani uchun uning o'zi ham yuqori darajada available bo'lishi talab qilinadi.
 
-**Spring'da qayerda uchraydi:** `spring-cloud-starter-gateway` (Spring Cloud Gateway) - reactive, Spring WebFlux va Netty ustida ishlaydi; `RouteLocator`/`RouteLocatorBuilder` bean'i yoki `application.yml` ichidagi `spring.cloud.gateway.routes` orqali route e'lon qilinadi. Predicate'lar (`Path`, `Host`, `Method`, `Header`) va filter'lar (`StripPrefix`, `RewritePath`, `CircuitBreaker`, `RequestRateLimiter`, `Retry`) GatewayFilterFactory sifatida keladi; o'z filter'ingiz uchun `GlobalFilter` yoki `AbstractGatewayFilterFactory` implement qilinadi. Spring Boot 3.x/4.x da `spring-cloud-gateway-server-webmvc` varianti blocking (Servlet) stack uchun ham mavjud. `RequestRateLimiter` odatda `RedisRateLimiter` bilan, xavfsizlik esa `spring-boot-starter-oauth2-resource-server` va `spring-security` ReactiveSecurityFilterChain bilan birga quriladi. Service discovery bilan integratsiya `lb://service-name` URI va `DiscoveryClientRouteDefinitionLocator` orqali amalga oshadi.
+**Spring'da qayerda uchraydi:** `spring-cloud-starter-gateway-server-webflux` (Spring Cloud Gateway) - reactive, Spring WebFlux va Netty ustida ishlaydi; `RouteLocator`/`RouteLocatorBuilder` bean'i yoki `application.yml` ichidagi `spring.cloud.gateway.server.webflux.routes` orqali route e'lon qilinadi. Predicate'lar (`Path`, `Host`, `Method`, `Header`) va filter'lar (`StripPrefix`, `RewritePath`, `CircuitBreaker`, `RequestRateLimiter`, `Retry`) GatewayFilterFactory sifatida keladi; o'z filter'ingiz uchun `GlobalFilter` yoki `AbstractGatewayFilterFactory` implement qilinadi. Spring Boot 3.x/4.x da `spring-cloud-gateway-server-webmvc` varianti blocking (Servlet) stack uchun ham mavjud. `RequestRateLimiter` odatda `RedisRateLimiter` bilan, xavfsizlik esa `spring-boot-starter-oauth2-resource-server` va `spring-security` ReactiveSecurityFilterChain bilan birga quriladi. Service discovery bilan integratsiya `lb://service-name` URI va `DiscoveryClientRouteDefinitionLocator` orqali amalga oshadi.
 
 **Qo'llanish keyslari:**
 - Mobil va web client'lar uchun yagona public HTTPS endpoint ochish va orqadagi 40 ta service'ni yashirish.
@@ -930,7 +937,7 @@ class MobileHomeController {
 
 **Tavsif:** Har bir microservice'ga kerak bo'ladigan infratuzilma imkoniyatlari - configuration, logging, metrics, health check, tracing, security, exception handling - qayta-qayta yozilmasligi uchun yagona asos (chassis) sifatida tayyorlanadi. Jamoa yangi service boshlaganda bu chassis'ni olib, faqat business logikani yozadi. Natijada cross-cutting masalalar bir joyda standartlashadi va butun landscape bo'ylab bir xil ishlaydi. Chassis odatda kutubxona (starter) yoki template ko'rinishida yetkaziladi.
 
-**Spring'da qayerda uchraydi:** Spring Boot'ning o'zi de-facto chassis: auto-configuration, `spring-boot-starter-actuator` (health, metrics, `/actuator/prometheus`), Micrometer + Micrometer Tracing (OpenTelemetry/Brave bridge), `spring-boot-starter-validation`, Spring Cloud Config/Consul client, Resilience4j. Tashkilot darajasida o'z chassis'ingiz custom starter sifatida qilinadi: `spring.factories` o'rniga Boot 3.x da `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` fayliga `@AutoConfiguration` sinflari yoziladi, `@ConditionalOnMissingBean`/`@ConditionalOnProperty` bilan override imkoniyati qoldiriladi, `@ConfigurationProperties` bilan sozlamalar e'lon qilinadi. Umumiy xato formati `@ControllerAdvice` + `ProblemDetail` (RFC 7807) orqali, correlation ID `ObservationRegistry` yoki MDC filter orqali markazlashtiriladi.
+**Spring'da qayerda uchraydi:** Spring Boot'ning o'zi de-facto chassis: auto-configuration, `spring-boot-starter-actuator` (health, metrics, `/actuator/prometheus`), Micrometer + Micrometer Tracing (OpenTelemetry/Brave bridge), `spring-boot-starter-validation`, Spring Cloud Config/Consul client, Resilience4j. Tashkilot darajasida o'z chassis'ingiz custom starter sifatida qilinadi: `spring.factories` o'rniga Boot 3.x da `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` fayliga `@AutoConfiguration` sinflari yoziladi, `@ConditionalOnMissingBean`/`@ConditionalOnProperty` bilan override imkoniyati qoldiriladi, `@ConfigurationProperties` bilan sozlamalar e'lon qilinadi. Umumiy xato formati `@ControllerAdvice` + `ProblemDetail` (RFC 9457, 7807 ni almashtirgan) orqali, correlation ID `ObservationRegistry` yoki MDC filter orqali markazlashtiriladi.
 
 **Qo'llanish keyslari:**
 - Barcha service'larda bir xil `ProblemDetail` xato formati va error code taksonomiyasini majburlash.

@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 31. Kirish va chiqish xavfsizligi: SSRF, deserializatsiya, fayllar (Input and Output Safety)
 
 <details>

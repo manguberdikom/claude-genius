@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 30. Autentifikatsiya va avtorizatsiya review (Authentication and Authorization)
 
 <details>

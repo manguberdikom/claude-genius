@@ -1,6 +1,8 @@
 <!-- doc: architect | chapter: 39 | part: VI. Amaliyot va o'sish -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
+
+> Holat: AI yozgan, inson tekshirmagan.
 
 # 39. Birinchi 90 kun va o'z-o'zini baholash (First 90 Days and Self-Assessment)
 

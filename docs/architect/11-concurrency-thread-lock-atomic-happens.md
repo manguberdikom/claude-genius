@@ -1,6 +1,8 @@
 <!-- doc: architect | chapter: 11 | part: II. Java chuqur bilim -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
+
+> Holat: AI yozgan, inson tekshirmagan.
 
 # 11. Concurrency: thread, lock, atomic, happens-before (Java Concurrency)
 

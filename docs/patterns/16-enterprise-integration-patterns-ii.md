@@ -2,10 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 16. Enterprise Integration Patterns II: transformatsiya, endpointlar, boshqaruv, event patternlar (EIP II: Transformation, Endpoints, System Management, Event Patterns)
 
 <details>
-<summary>Bu bo'limdagi 45 bo'lim</summary>
+<summary>Bu bobdagi 45 bo'lim</summary>
 
 - [16.1 Konvert O'ramchisi (Envelope Wrapper)](#161-konvert-oramchisi-envelope-wrapper)
 - [16.2 Mazmun Boyituvchi (Content Enricher)](#162-mazmun-boyituvchi-content-enricher)
@@ -327,6 +329,8 @@ IdempotentReceiverInterceptor idempotentInterceptor(ConcurrentMetadataStore stor
 - Outbox poller'ning ikki instansiyasi bir xil eventni publish qilganda consumer tomonda dublikatni yutish.
 
 **Ehtiyot bo'ling:** Dublikat kalitini yozish va biznes operatsiyasini bajarish bitta atomar chegarada (bir xil DB tranzaksiyasida) bo'lmasa, crash paytida yo "yozildi lekin bajarilmadi", yo teskarisi yuz beradi - in-memory `SimpleMetadataStore` esa restart'dan keyin butun himoyani yo'qotadi. Kalitlarni abadiy saqlash store'ni cheksiz o'stiradi, shuning uchun biznes uchun mantiqiy TTL (masalan 7-30 kun) va retention ishini oldindan rejalashtiring.
+
+Mavzuning to'liq yozuvi [idempotency](07-api-dizayn-patternlari.md#79-idempotentlik-kaliti-idempotency-key) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
 
 ## 16.17 Service Activator (Service Activator)
 

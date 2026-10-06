@@ -22,9 +22,10 @@ import os
 import shutil
 import time
 
+import geniuslib
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-STATE_DIR = (os.environ.get("GENIUS_STATE_DIR")
-             or os.path.join(ROOT, ".claude", ".state"))
+STATE_DIR = geniuslib.state_dir(ROOT)
 MARKS = os.path.join(STATE_DIR, "rules_for")
 # Eski shakl: clear() uni ham tozalaydi, aks holda yetim qoladi.
 LEGACY_LOG = os.path.join(STATE_DIR, "rules_for.json")
@@ -72,10 +73,7 @@ def mark(paths, labels=()):
         os.makedirs(MARKS, exist_ok=True)
         for path in paths:
             target = _marker(path)
-            tmp = "%s.%d.tmp" % (target, os.getpid())
-            with open(tmp, "w", encoding="utf-8") as handle:
-                handle.write(body)
-            os.replace(tmp, target)
+            geniuslib.atomic_write_text(target, body)
         _prune(time.time())
     except OSError:
         pass  # belgilash ishni to'xtatmaydi

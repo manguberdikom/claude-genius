@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 23. To'plamlar va generiklar gigiyenasi (Collections and Generics)
 
 <details>

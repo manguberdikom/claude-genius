@@ -54,17 +54,24 @@ CASES = [
     ("rule kichik harf", ["rule", "java:s2095"], 0, "try-with-resources"),
     # Reyting: tushuntirgan bo'lim yuqorida turishi kerak, shunchaki
     # tilga olgan katalog qatori emas. S3776 da birinchi qator bo'lim
-    # (raqamida nuqta bor) va ulushi 1 dan kam emas: katalog bobi
-    # (29, ulush 0.20) yuqoriga chiqsa yiqiladi.
+    # (raqamida nuqta bor) va ulushi 1 dan kam emas yoki `qoida` (katalog
+    # bo'limining birinchi qatori): katalog bobi (29, ulush 0.20) yuqoriga
+    # chiqsa yiqiladi.
     ("rule S106 loglash", ["rule", "java:S106"], 0, r"^sonarqube +41\.7 "),
     ("rule S3776 bo'lim yuqorida", ["rule", "java:S3776"], 0,
-     r"^sonarqube +\d+\.\d+ +[1-9]"),
+     r"^sonarqube +\d+\.\d+ +(qoida|[1-9])"),
     ("rule uzun ro'yxat qisqa", ["rule", "java:S3776"], 0, "rule --all"),
     ("rule --all to'liq", ["rule", "--all", "java:S3776"], 0, "!... yana"),
     # Bob darajasidagi qator (katalog jadvali) butun bob emas, outline.
     ("rule katalog belgisi", ["rule", "java:S2259"], 0, "[katalog: outline]"),
     # Katalog bobi bali past bo'lsa ham qisqa ro'yxatda: S3776 da 29-o'rin.
     ("rule katalog doim ko'rinadi", ["rule", "java:S3776"], 0, "\nsonarqube   27 "),
+    # Katalog bo'limining birinchi qatori "Qoida: `java:S1192`": tuzatish
+    # retsepti ulushi baland tushuntirish bo'limidan (3.10) oldin.
+    ("rule S1192 katalog bo'limi", ["rule", "S1192"], 0, r"^sonarqube +27\.8 "),
+    ("rule S3776 katalog bo'limi", ["rule", "S3776"], 0, r"^sonarqube +27\.1 "),
+    # Avval bo'lim qatori umuman yo'q edi, faqat bob jadvali.
+    ("rule S1488 bo'limi bor", ["rule", "S1488"], 0, r"^sonarqube +27\.10 "),
     ("rule yo'q kalit", ["rule", "S99999"], 1, ""),
     ("rule raqamsiz", ["rule", "abc"], 1, ""),
 
@@ -92,6 +99,72 @@ CASES = [
     # Ishora-yozuv to'liq yozuv raqamini ko'rsatadi.
     ("find ishora-yozuv", ["find", "memoizatsiya"], 0, "[ishora: 11.17]"),
     ("find bo'sh so'rov", ["find", " "], 1, ""),
+    # Daraja: aniq moslik > butun so'z > so'z boshi > so'z ichida.
+    # So'z ichidagi moslik qoladi, faqat pastga tushadi.
+    ("find aniq moslik birinchi", ["find", "State"], 0, r"^patterns +3\.8 "),
+    ("find kesh: Bikeshedding emas", ["find", "kesh"], 0, r"^(?!.*Bikeshed)"),
+    ("find Pact: Compacted emas", ["find", "Pact"], 0, r"^testing +9\.9 "),
+    ("find so'z ichidagisi qoladi", ["find", "-n", "100", "Lock"], 0, "ReentrantLock"),
+    # Ko'p so'zli so'rov: ibora yo'q bo'lsa so'zlar bo'yicha (findlib.py).
+    ("find so'zlar: optimistic locking", ["find", "optimistic locking"], 0,
+     "18.8 Optimistik"),
+    ("find so'zlar: transaction propagation", ["find", "transaction propagation"],
+     0, r"^architect +19\.2 "),
+    ("find so'zlar: thread safety", ["find", "thread safety"], 0, r"^architect +11\.7 "),
+    ("find so'zlar: hech biri yo'q", ["find", "zzqwerty yyqwerty"], 1, ""),
+    # Bitta so'zli inglizcha so'rov: transliteratsiya va inglizcha jadval.
+    ("find tion -> tsiya", ["find", "-n", "60", "serialization"], 0, "Serializatsiya"),
+    ("find ic -> ik", ["find", "optimistic"], 0, "18.8 Optimistik"),
+    ("find jadval: isolation", ["find", "-n", "60", "isolation"], 0, "izolyatsiya"),
+    # Uy-bob (docs/OWNERS.tsv): naqshga to'liq mos so'rovda birinchi,
+    # o'zbekcha shakl bilan ham. 12 mavzuning hammasi check_owner_homes da.
+    ("find uy-bob belgisi", ["find", "n+1"], 0, r"^architect +18\.4 .*\[uy-bob\]$"),
+    ("find uy-bob: o'zbekcha", ["find", "ichki metod chaqiruvi"], 0,
+     r"^architect +19\.6 .*\[uy-bob\]$"),
+    ("find uy-bob: sehrli son", ["find", "sehrli son"], 0, r"^patterns +25\.8 "),
+    ("find uy-bob: optimistik lock", ["find", "optimistik lock"], 0,
+     r"^patterns +9\.23 .*\[uy-bob\]$"),
+    # Uy-bobdan keyin boshqa hujjatlar ham qoladi (so'zlar bo'yicha).
+    ("find uy-bob va 18.8", ["find", "optimistic locking"], 0, "18.8 Optimistik"),
+    # Qisman moslik: ortiqcha so'z mavzuni toraytiradi, aniq natija oldin.
+    ("find uy-bob qisman", ["find", "N+1 testda"], 0, r"^testing +7\.5 "),
+    ("find taxallus oldin, uy-bob keyin", ["find", "Idempotent Consumer"], 0,
+     r"^patterns +14\.18 "),
+    # Naqsh "equals hashCode" ni emas, entity ni talab qiladi.
+    ("find equals hashCode: uy emas", ["find", "equals hashCode"], 0, "![uy-bob]"),
+    # docs/<hujjat>/aliases.tsv: avval "topilmadi" yoki begona birinchi.
+    ("find taxallus: pool size", ["find", "connection pool size"], 0,
+     r"^architect +27\.6 "),
+    ("find taxallus: Optional field", ["find", "Optional field"], 0,
+     r"^clean-code +25\.1 "),
+    ("find taxallus: deadlock detection", ["find", "deadlock detection"], 0,
+     r"^architect +22\.8 "),
+    ("find taxallus: long method", ["find", "long method"], 0, r"^clean-code +32\.3 "),
+    # index/exceptions.tsv: exception nomi yoki xabar bo'lagi natija boshida
+    # (R3.3). Avval LazyInitializationException dan boshqasi "topilmadi"
+    # edi, "could not initialize proxy" esa begona bo'limlarga olib borardi.
+    ("find exception: nom", ["find", "NoUniqueBeanDefinitionException"], 0,
+     r"^patterns +5\.8 "),
+    ("find exception: sarlavhada nom", ["find", "LazyInitializationException"], 0,
+     r"^architect +18\.3 "),
+    ("find exception: FQCN", ["find", "org.hibernate.LazyInitializationException"],
+     0, r"^architect +18\.3 "),
+    ("find exception: nom va so'z", ["find", "LazyInitializationException", "outside"],
+     0, r"^architect +18\.3 "),
+    ("find exception: xabar bo'lagi", ["find", "could not initialize proxy"], 0,
+     r"^architect +18\.3 "),
+    ("find exception: uzun xabar", ["find", "no Session: failed to lazily initialize "
+                                    "a collection of role: com.example.Order.items"],
+     0, r"^architect +18\.3 "),
+    ("find exception: xabar, nomsiz", ["find", "expected single matching bean but found 2"],
+     0, r"^patterns +5\.8 "),
+    # Indeksda yo'q nom uchun hech narsa uydirilmaydi.
+    ("find exception: indeksda yo'q", ["find", "NullPointerException"], 1, ""),
+    # Xabarning bir bo'lagi yetmaydi: "could not initialize" boshqa xatolarda ham bor.
+    ("find exception: qisman xabar", ["find", "could not initialize"], 0,
+     "!LazyInitializationException"),
+    # synonyms.tsv [inglizcha]: entity -> entitet.
+    ("find jadval: entity", ["find", "-n", "60", "entity"], 0, "28.1 Entitet"),
 
     # show va path: X.10 X.1 ga tushmasin (awk son solishtirsa 24.10 == 24.1).
     ("show bo'lim", ["show", "patterns", "17.2"], 0, "Circuit Breaker"),
@@ -159,7 +232,8 @@ def check_exact_refs():
 
 def check_find_hint():
     """'Kengroq qidirish' maslahati apostrofli so'rovda ham buyruq bo'lib qoladi."""
-    proc = run("find", "qo'shimcha zzqwerty")
+    # Ikkala so'z ham hech qayerda yo'q: so'zlar bo'yicha qidiruv ham bo'sh.
+    proc = run("find", "zzqo'shimcha zzqwerty")
     hint = [l for l in proc.stderr.split("\n") if l.startswith("kengroq")]
     if not hint:
         return False, "maslahat yo'q"
@@ -190,6 +264,92 @@ def check_bash32():
             bad.append("%d: $( ) ichida izoh" % lineno)
         if text.endswith("$("):
             inside = True
+    return not bad, ", ".join(bad)
+
+
+def check_find_rank():
+    """Taxallus ko'p bo'lsa ham backtick ichidagi aniq nom yuqorida.
+
+    `find Transactional` da avval 10 ta patterns taxallusi oldinda edi,
+    architect 19.1 (`@Transactional` qanday ishlaydi) 12-o'rinda.
+    """
+    rows = [line.split()[:2] for line in run("find", "Transactional").stdout.split("\n")
+            if line.strip()]
+    keys = ["%s %s" % tuple(r) for r in rows if len(r) == 2]
+    ok = "architect 19.1" in keys[:5]
+    return ok, "" if ok else "19.1 o'rni: %s" % (
+        keys.index("architect 19.1") + 1 if "architect 19.1" in keys else "yo'q")
+
+
+def owner_rows():
+    """docs/OWNERS.tsv: (mavzu, uy_bob) ro'yxati."""
+    out, header = [], None
+    with open(os.path.join(ROOT, "docs", "OWNERS.tsv"), encoding="utf-8") as handle:
+        for line in handle:
+            line = line.rstrip("\n")
+            if not line.strip() or line.startswith("#"):
+                continue
+            parts = line.split("\t")
+            if header is None:
+                header = parts
+                continue
+            out.append((parts[0], parts[1]))
+    return out
+
+
+def check_owner_homes():
+    """OWNERS dagi har mavzu `find` da uy-bobni top-3 da beradi.
+
+    Avval 12 mavzudan 6 tasida uy-bob 1-o'rinda edi, 3 tasi "topilmadi".
+    """
+    bad = []
+    rows = owner_rows()
+    for topic, home in rows:
+        out = run("find", "-n", "3", topic).stdout
+        keys = [" ".join(line.split()[:2]) for line in out.split("\n") if line.strip()]
+        if home not in keys:
+            bad.append("%s -> %s" % (topic, ", ".join(keys) or "topilmadi"))
+    return not bad and len(rows) >= 12, "; ".join(bad) or "%d qator" % len(rows)
+
+
+def check_translit_same():
+    """doc.sh (awk) va findlib.py (Python) transliteratsiyasi bir xil."""
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    import findlib
+    words = ("migration", "replication", "serialization", "optimistic",
+             "configuration", "version", "transaction", "lock")
+    with open(DOC, encoding="utf-8") as handle:
+        text = handle.read()
+    begin = text.index("BEGIN {", text.index("name_hits()"))
+    last = "if (t != q) v[++nv] = t"
+    rules = text[begin:text.index(last, begin) + len(last)] + "\n} }\n"
+    bad = []
+    for word in words:
+        proc = subprocess.run(["awk", "-v", "q=" + word,
+                               rules + 'END { print (t == "" ? q : t) }'],
+                              capture_output=True, encoding="utf-8", stdin=subprocess.DEVNULL)
+        awk_out = proc.stdout.strip()
+        want = findlib.translit(word) or word
+        if awk_out != want:
+            bad.append("%s: awk %s, python %s" % (word, awk_out, want))
+    return not bad, "; ".join(bad)
+
+
+def check_posix_awk():
+    """doc.sh awk qismida gawk kengaytmasi va regex interval yo'q.
+
+    mawk (Debian/Ubuntu standarti) va macOS BWK awk ularni bilmaydi:
+    IGNORECASE jim e'tiborsiz qoladi, gensub esa sintaksis xatosi.
+    """
+    with open(DOC, encoding="utf-8") as handle:
+        lines = handle.read().split("\n")
+    bad = []
+    for lineno, line in enumerate(lines, 1):
+        if re.search(r"\b(gensub|IGNORECASE|asorti?|strftime|systime|PROCINFO|"
+                     r"patsplit|BEGINFILE|ENDFILE)\b", line):
+            bad.append("%d: gawk kengaytmasi" % lineno)
+        if re.search(r"(?:~|match\(|sub\(|split\()[^#]*/[^/]*\{\d+(,\d*)?\}[^/]*/", line):
+            bad.append("%d: regex interval" % lineno)
     return not bad, ", ".join(bad)
 
 
@@ -314,11 +474,44 @@ def check_byte_limit():
     return sh.group(1) == py.group(1), "doc.sh %s, guard.py %s" % (sh.group(1), py.group(1))
 
 
+def check_exception_messages():
+    """synonyms.tsv [xabar] bloki: nom indeksda bor va find uni birinchi qo'yadi.
+
+    Indeksda yo'q nomga bog'langan xabar jim o'lik qator: hech narsa
+    chiqmaydi. Bo'lak kamida uch so'z: qisqasi boshqa xatolarga ham tegadi.
+    """
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    import findlib
+    known = {}
+    for row in read_index("exceptions.tsv"):
+        known.setdefault(row[0], []).append((row[1], row[2]))
+    table = findlib.message_table()
+    bad = []
+    if not table:
+        bad.append("blok bo'sh")
+    for run_words, name in table:
+        text = " ".join(run_words)
+        if name not in known:
+            bad.append("%s: %s indeksda yo'q" % (text, name))
+            continue
+        if len(run_words) < 3:
+            bad.append("%s: uch so'zdan qisqa" % text)
+        first = run("find", text).stdout.split("\n", 1)[0].split()[:2]
+        if tuple(first) not in known[name][:2]:
+            bad.append("%s: birinchi %s" % (text, " ".join(first)))
+    return not bad, "; ".join(bad[:3])
+
+
 CHECKS = [
+    ("exception xabar jadvali", check_exception_messages),
     ("show va Read chegarasi teng", check_byte_limit),
     ("X.10 butun sinf", check_exact_refs),
     ("find maslahati apostrofda", check_find_hint),
     ("bash 3.2 sintaksisi", check_bash32),
+    ("find Transactional: 19.1 top-5", check_find_rank),
+    ("OWNERS: uy-bob top-3 da", check_owner_homes),
+    ("transliteratsiya awk = Python", check_translit_same),
+    ("awk: gawk kengaytmasi yo'q", check_posix_awk),
     ("indeks eskirishi", check_index_freshness),
     ("python3 stub PATH da", check_python_stub),
 ]

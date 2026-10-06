@@ -2,10 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 29. Kubernetes va cloud-native patternlar (Kubernetes & Cloud-Native Patterns)
 
 <details>
-<summary>Bu bo'limdagi 23 bo'lim</summary>
+<summary>Bu bobdagi 23 bo'lim</summary>
 
 - [29.1 Oldindan aytib beriladigan talablar (Predictable Demands)](#291-oldindan-aytib-beriladigan-talablar-predictable-demands)
 - [29.2 Deklarativ joylashtirish (Declarative Deployment)](#292-deklarativ-joylashtirish-declarative-deployment)

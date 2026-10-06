@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 5. Funksiya argumentlari (Function Arguments)
 
 <details>
@@ -23,7 +25,7 @@
 </details>
 
 
-Uzun parametr ro'yxati [patternlar hujjatida](../patterns/README.md) anti-pattern sifatida sanalgan (25.22). Bu bobda argumentlarning **shakli** ko'rib chiqiladi: nechta argument haqli, flag va selector argument nega zararli, chiqish argumenti nima uchun qoldirilgan, va argument obyekti qachon kerak.
+Uzun parametr ro'yxati patternlar hujjatida [uzun parametrlar ro'yxati anti-patterni](../patterns/25-anti-patternlar.md#2522-uzun-parametrlar-royxati-long-parameter-list) sifatida sanalgan. Bu bobda argumentlarning **shakli** ko'rib chiqiladi: nechta argument haqli, flag va selector argument nega zararli, chiqish argumenti nima uchun qoldirilgan, va argument obyekti qachon kerak.
 
 ## 5.1 Argument soni: nol, bir, ikki, uch va undan keyin
 

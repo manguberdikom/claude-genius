@@ -2,10 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+
 # 17. Resilience va cloud dizayn patternlari (Resilience & Cloud Design Patterns)
 
 <details>
-<summary>Bu bo'limdagi 43 bo'lim</summary>
+<summary>Bu bobdagi 43 bo'lim</summary>
 
 - [17.1 Qayta urinish (Retry - exponential backoff, jitter)](#171-qayta-urinish-retry---exponential-backoff-jitter)
 - [17.2 Zanjirni uzgich (Circuit Breaker)](#172-zanjirni-uzgich-circuit-breaker)
@@ -61,7 +63,7 @@ Taqsimlangan tizimlarda nosozlik istisno emas, balki normal holat: tarmoq kechik
 
 **Tavsif:** Vaqtinchalik (transient) nosozliklar - tarmoq paketining yo'qolishi, qisqa muddatli DB deadlock, HTTP 503 - ko'pincha o'z-o'zidan tuzaladi, shuning uchun operatsiyani bir necha marta qayta bajarish muvaffaqiyat ehtimolini oshiradi. Exponential backoff har urinish orasidagi kutish vaqtini geometrik ravishda oshiradi (100ms, 200ms, 400ms...), bu downstream servisga tiklanish uchun vaqt beradi. Jitter - kutish vaqtiga tasodifiy og'ish qo'shish - ko'p mijozning bir vaqtda qayta urinishidan kelib chiqadigan "thundering herd" effektini yo'q qiladi. Retry faqat idempotent yoki xavfsiz qayta bajarilishi mumkin bo'lgan operatsiyalar uchun qo'llanadi.
 
-**Spring'da qayerda uchraydi:** Spring Retry kutubxonasi `@EnableRetry` va `@Retryable`/`@Recover` annotatsiyalarini beradi, programmatik yondashuv uchun `RetryTemplate` bilan `ExponentialBackOffPolicy` va `ExponentialRandomBackOffPolicy` (jitter) mavjud. Spring Framework 6.1+ o'zining `org.springframework.core.retry.RetryTemplate` va `RetryPolicy` abstraksiyasini kiritdi, shuningdek `@Retryable` Spring Framework 7.x'da core'ga ko'chirildi. Resilience4j'da `io.github.resilience4j.retry.Retry` va `RetryConfig` (`intervalFunction(IntervalFunction.ofExponentialRandomBackoff(...))`), Spring Boot 3.x uchun `resilience4j-spring-boot3` starter'i `@Retry(name = "...")` annotatsiyasini taqdim etadi. Kafka tomonida `DefaultErrorHandler` + `ExponentialBackOffWithMaxRetries` va `@RetryableTopic`, JDBC uchun `spring.datasource.hikari` darajasida emas, balki `TransactionTemplate` ustida retry qo'llanadi.
+**Spring'da qayerda uchraydi:** Spring Retry kutubxonasi `@EnableRetry` va `@Retryable`/`@Recover` annotatsiyalarini beradi, programmatik yondashuv uchun `RetryTemplate` bilan `ExponentialBackOffPolicy` va `ExponentialRandomBackOffPolicy` (jitter) mavjud. Spring Framework 7.0 yadroga `org.springframework.core.retry.RetryTemplate` va `RetryPolicy` abstraksiyasini hamda `@Retryable` annotatsiyasini qo'shdi; 6.x da ularning hech biri yo'q edi va retry uchun faqat tashqi kutubxona bor edi. `RetryTemplate` ning ikki xili bir xil nomda, turli paketda: `org.springframework.core.retry` (yadro, 7.0) va `org.springframework.retry` (`spring-retry` kutubxonasi). Resilience4j'da `io.github.resilience4j.retry.Retry` va `RetryConfig` (`intervalFunction(IntervalFunction.ofExponentialRandomBackoff(...))`), Spring Boot 3.x uchun `resilience4j-spring-boot3` starter'i `@Retry(name = "...")` annotatsiyasini taqdim etadi. Kafka tomonida `DefaultErrorHandler` + `ExponentialBackOffWithMaxRetries` va `@RetryableTopic`, JDBC uchun `spring.datasource.hikari` darajasida emas, balki `TransactionTemplate` ustida retry qo'llanadi.
 
 **Qo'llanish keyslari:**
 - To'lov provayderining REST API'si 503 qaytarganda buyurtmani tasdiqlash chaqiruvini 3 marta exponential backoff bilan qayta yuborish.
@@ -106,7 +108,7 @@ Taqsimlangan tizimlarda nosozlik istisno emas, balki normal holat: tarmoq kechik
 
 **Tavsif:** Cheksiz kutish taqsimlangan tizimdagi eng xavfli xatolardan biri: javob kelmasa thread, connection va memory band bo'lib qoladi. Timeout har bir tashqi chaqiruvga qat'iy vaqt budjeti belgilaydi va u o'tganda operatsiyani uzib, xatoni yuqoriga uzatadi. To'g'ri loyihalashda timeout'lar zanjir bo'ylab kamayib boradi (end-to-end budget > downstream timeout), shunda yuqori qatlam quyi qatlamdan oldin uzilmaydi.
 
-**Spring'da qayerda uchraydi:** `RestClient`/`RestTemplate` uchun `ClientHttpRequestFactorySettings` yoki `JdkClientHttpRequestFactory`/`ReactorClientHttpConnector` orqali connect va read timeout; Spring Boot 3.x'da `spring.http.client.connect-timeout` va `spring.http.client.read-timeout` property'lari mavjud. `WebClient` uchun `.responseTimeout(...)` va reaktiv `Mono.timeout(...)`, `@Transactional(timeout = 5)` va `JpaRepository` so'rovlarida `jakarta.persistence.query.timeout` hint'i, HikariCP'da `connectionTimeout` va `validationTimeout`. Resilience4j'da `TimeLimiter` va `@TimeLimiter(name = "...")` (`CompletableFuture`/reaktiv tiplar bilan ishlaydi), Spring MVC'da asinxron so'rovlar uchun `spring.mvc.async.request-timeout`.
+**Spring'da qayerda uchraydi:** `RestClient`/`RestTemplate` uchun `HttpClientSettings` (Spring Boot 4.0 gacha `ClientHttpRequestFactorySettings`) yoki `JdkClientHttpRequestFactory`/`ReactorClientHttpConnector` orqali connect va read timeout; sozlama orqali ham: Spring Boot 3.4 da `spring.http.client.connect-timeout` va `spring.http.client.read-timeout`, 4.0 da prefiks `spring.http.clients` ga o'zgargan (ko'plikda). `WebClient` uchun `.responseTimeout(...)` va reaktiv `Mono.timeout(...)`, `@Transactional(timeout = 5)` va `JpaRepository` so'rovlarida `jakarta.persistence.query.timeout` hint'i, HikariCP'da `connectionTimeout` va `validationTimeout`. Resilience4j'da `TimeLimiter` va `@TimeLimiter(name = "...")` (`CompletableFuture`/reaktiv tiplar bilan ishlaydi), Spring MVC'da asinxron so'rovlar uchun `spring.mvc.async.request-timeout`.
 
 **Qo'llanish keyslari:**
 - Tashqi narx hisoblash servisiga 800ms budjet qo'yib, undan oshsa cache'dagi narxga o'tish.
@@ -223,7 +225,7 @@ private Price cachedPrice(String sku, Throwable ex) {
 
 **Tavsif:** Test harness - real integratsiyalarning "yomon xulq-atvorini" ataylab simulyatsiya qiluvchi sinov infratuzilmasi: sekin javoblar, yarim o'qilgan connection, noto'g'ri formatdagi javob, TCP reset. Oddiy mock faqat protokolning "baxtli yo'lini" tekshiradi, test harness esa tarmoq va protokol darajasidagi nosozliklarni qayta ishlab, resilience kodining haqiqatda ishlashini isbotlaydi. Bu patternsiz timeout, retry va circuit breaker sozlamalari faqat nazariy qoladi.
 
-**Spring'da qayerda uchraydi:** WireMock (`spring-cloud-contract-wiremock` yoki `wiremock-standalone`) `withFixedDelay`, `withChunkedDribbleDelay` va `Fault.CONNECTION_RESET_BY_PEER` bilan nosoz downstream'ni modellashtiradi; `MockRestServiceServer` va `MockWebServer` (OkHttp) ham shu maqsadda ishlatiladi. Testcontainers (`org.testcontainers:postgresql`, `kafka`, `toxiproxy`) real infratuzilmani ko'taradi va ToxiproxyContainer orqali latency, bandwidth cheklovi va connection uzilishini kiritadi; Spring Boot 3.1+ `@ServiceConnection` va `@DynamicPropertySource` bilan konteyner ulanishini avtomatik ulaydi. Spring Boot Test'da `@SpringBootTest`, `@MockitoBean` (3.4+) va Spring Cloud Contract Stub Runner, xaos injection uchun esa Spring Cloud'ning Chaos Monkey for Spring Boot kutubxonasi qo'llanadi.
+**Spring'da qayerda uchraydi:** WireMock (`spring-cloud-contract-wiremock` yoki `wiremock-standalone`) `withFixedDelay`, `withChunkedDribbleDelay` va `Fault.CONNECTION_RESET_BY_PEER` bilan nosoz downstream'ni modellashtiradi; `MockRestServiceServer` va `MockWebServer` (OkHttp) ham shu maqsadda ishlatiladi. Testcontainers (Boot 3.5 / TC 1.x da `org.testcontainers:postgresql`, `kafka`, `toxiproxy`; Boot 4 / TC 2.x da `testcontainers-postgresql`, `testcontainers-kafka`, `testcontainers-toxiproxy`, qarang: [testlash hujjatidagi Testcontainers asoslari](../testing/08-testcontainers-bilan-real-infratuzilmada.md#82-testcontainers-asoslari-docker-api-ustida-hayot-aylanishi)) real infratuzilmani ko'taradi va ToxiproxyContainer orqali latency, bandwidth cheklovi va connection uzilishini kiritadi; Spring Boot 3.1+ `@ServiceConnection` va `@DynamicPropertySource` bilan konteyner ulanishini avtomatik ulaydi. Spring Boot Test'da `@SpringBootTest`, `@MockitoBean` (3.4+) va Spring Cloud Contract Stub Runner, xaos injection uchun esa Spring Cloud'ning Chaos Monkey for Spring Boot kutubxonasi qo'llanadi.
 
 **Qo'llanish keyslari:**
 - WireMock'da 5 sekundlik kechikish qo'yib, `RestClient` read timeout'ining haqiqatda ishlashini tekshirish.
@@ -429,7 +431,7 @@ private Price cachedPrice(String sku, Throwable ex) {
 
 **Tavsif:** Client bilan ilova o'rtasiga maxsus, imtiyozsiz vositachi instance qo'yiladi: u so'rovni qabul qiladi, tekshiradi, tozalaydi va faqat shundan keyin ichki servisga yo'naltiradi. Gatekeeper'da hech qanday maxfiy kalit yoki ma'lumot saqlanmaydi, shuning uchun u buzib kirilsa ham hujumchi ichki tizimga to'g'ridan-to'g'ri yeta olmaydi. Bu Bulkhead'ning xavfsizlik o'lchovidagi ko'rinishi: hujum sathi tashqi perimetr bilan cheklanadi.
 
-**Spring'da qayerda uchraydi:** Spring Cloud Gateway (`spring-cloud-starter-gateway`, Spring Boot 3.x'da reactive `RouteLocator`/`GatewayFilter`, yoki `spring-cloud-starter-gateway-mvc` servlet varianti) tipik gatekeeper rolini bajaradi: `RequestRateLimiter`, `CircuitBreaker`, `StripPrefix`, `RemoveRequestHeader` filterlari va `GlobalFilter` implementatsiyalari. Spring Security `SecurityFilterChain` (`HttpSecurity#oauth2ResourceServer`, `csrf`, `headers`, `cors`) token tekshiruvi va header qattiqlashtirishni ta'minlaydi; `OncePerRequestFilter` o'z validatsiya qatlamini qo'shadi. Kirish ma'lumotini tozalash uchun `@Validated` + Jakarta Bean Validation (`jakarta.validation` annotatsiyalari) va `@ControllerAdvice` xato normalizatsiyasi. Ichki servislar faqat mTLS yoki tarmoq policy orqali gateway'dan kirishga ruxsat beradi; service mesh (Istio sidecar) ham shu rolni infratuzilma darajasida bajaradi.
+**Spring'da qayerda uchraydi:** Spring Cloud Gateway (`spring-cloud-starter-gateway-server-webflux` bilan reactive `RouteLocator`/`GatewayFilter`, yoki `spring-cloud-starter-gateway-server-webmvc` servlet varianti; starter nomlari Gateway 5 da `-server-webflux` va `-server-webmvc` qo'shimchasini oldi) tipik gatekeeper rolini bajaradi: `RequestRateLimiter`, `CircuitBreaker`, `StripPrefix`, `RemoveRequestHeader` filterlari va `GlobalFilter` implementatsiyalari. Spring Security `SecurityFilterChain` (`HttpSecurity#oauth2ResourceServer`, `csrf`, `headers`, `cors`) token tekshiruvi va header qattiqlashtirishni ta'minlaydi; `OncePerRequestFilter` o'z validatsiya qatlamini qo'shadi. Kirish ma'lumotini tozalash uchun `@Validated` + Jakarta Bean Validation (`jakarta.validation` annotatsiyalari) va `@ControllerAdvice` xato normalizatsiyasi. Ichki servislar faqat mTLS yoki tarmoq policy orqali gateway'dan kirishga ruxsat beradi; service mesh (Istio sidecar) ham shu rolni infratuzilma darajasida bajaradi.
 
 **Qo'llanish keyslari:**
 - Public API trafigini DMZ'dagi gateway orqali o'tkazib, ichki microservislarni tarmoqdan yashirish.
@@ -515,7 +517,7 @@ private Price cachedPrice(String sku, Throwable ex) {
 
 **Tavsif:** Client bir nechta backend servisga alohida-alohida so'rov yuborish o'rniga, gateway'ga bitta so'rov yuboradi; gateway esa kerakli servislarni (ko'pincha parallel) chaqirib, javoblarni bitta aggregate javobga birlashtiradi. Bu mobil va sekin tarmoqlarda chatty aloqa (N+1 HTTP so'rov) muammosini hal qiladi, latency va batareya sarfini kamaytiradi. Gateway shu bilan birga client'ni backend dekompozitsiyasidan izolyatsiya qiladi.
 
-**Spring'da qayerda uchraydi:** Spring Cloud Gateway (`spring-cloud-starter-gateway`, Spring Boot 3.x) - reaktiv variant; Spring Cloud Gateway MVC (`spring-cloud-starter-gateway-mvc`) virtual thread'lar bilan. Agregatsiya mantig'i odatda alohida BFF (Backend for Frontend) servisda: `WebClient` + `Mono.zip()`/`Flux.zip()`, yoki Java 21+ `StructuredTaskScope` bilan `RestClient` chaqiruvlari. Spring GraphQL (`spring-boot-starter-graphql`) `@SchemaMapping`/`@BatchMapping` bilan agregatsiyaning deklarativ shakli; `DataLoader` N+1 muammosini bartaraf etadi.
+**Spring'da qayerda uchraydi:** Spring Cloud Gateway (`spring-cloud-starter-gateway-server-webflux`) - reaktiv variant; Spring Cloud Gateway MVC (`spring-cloud-starter-gateway-server-webmvc`) virtual thread'lar bilan. Agregatsiya mantig'i odatda alohida BFF (Backend for Frontend) servisda: `WebClient` + `Mono.zip()`/`Flux.zip()`, yoki Java 21+ `StructuredTaskScope` bilan `RestClient` chaqiruvlari. Spring GraphQL (`spring-boot-starter-graphql`) `@SchemaMapping`/`@BatchMapping` bilan agregatsiyaning deklarativ shakli; `DataLoader` N+1 muammosini bartaraf etadi.
 
 ```java
 Mono<Dashboard> load(String userId) {
@@ -540,7 +542,7 @@ Mono<Dashboard> load(String userId) {
 
 **Tavsif:** Barcha servislarga umumiy bo'lgan ko'ndalang (cross-cutting) vazifalarni - TLS terminatsiyasi, autentifikatsiya, rate limiting, siqish, kesh, audit log - har bir servisda takrorlash o'rniga gateway yoki proxy qatlamiga ko'chirish patterni. Natijada business servislar yengillashadi, umumiy siyosatlar bir joyda markazlashadi va ularni bir marta yangilash kifoya. Bu, ayniqsa, legacy servislarni zamonaviy xavfsizlik talablariga moslashtirishda qulay.
 
-**Spring'da qayerda uchraydi:** Spring Cloud Gateway built-in filter'lari: `RequestRateLimiter` (Redis bilan, `RedisRateLimiter`), `TokenRelay`, `RemoveRequestHeader`, `Retry`, `CircuitBreaker`, `ModifyResponseBody`. Spring Security Resource Server gateway darajasida (`spring-boot-starter-oauth2-resource-server`) JWT validatsiyasi, keyin downstream'ga header orqali identity uzatish. `GlobalFilter`/`GatewayFilterFactory` bilan custom offload; `spring.cloud.gateway.httpclient.ssl` va `server.ssl` TLS uchun. Ko'p holatda infrastruktura darajasida Envoy/NGINX Ingress yoki service mesh sidecar ham shu rolni bajaradi.
+**Spring'da qayerda uchraydi:** Spring Cloud Gateway built-in filter'lari: `RequestRateLimiter` (Redis bilan, `RedisRateLimiter`), `TokenRelay`, `RemoveRequestHeader`, `Retry`, `CircuitBreaker`, `ModifyResponseBody`. Spring Security Resource Server gateway darajasida (`spring-boot-starter-oauth2-resource-server`) JWT validatsiyasi, keyin downstream'ga header orqali identity uzatish. `GlobalFilter`/`GatewayFilterFactory` bilan custom offload; `spring.cloud.gateway.server.webflux.httpclient.ssl` va `server.ssl` TLS uchun. Ko'p holatda infrastruktura darajasida Envoy/NGINX Ingress yoki service mesh sidecar ham shu rolni bajaradi.
 
 **Qo'llanish keyslari:**
 - Barcha mikroservislar uchun JWT tekshiruvini gateway'da bir marta bajarish.
@@ -555,7 +557,7 @@ Mono<Dashboard> load(String userId) {
 
 **Tavsif:** Bir nechta backend servisni bitta tashqi endpoint (bitta host va port) ortida yashirib, so'rovni path, header, metod, query yoki boshqa predikatlar asosida tegishli servisga yo'naltirish patterni. Client faqat bitta manzilni biladi, backend topologiyasi esa (servis bo'linishi, versiyalar, migratsiya) ichkarida erkin o'zgaradi. Shu bilan canary release, blue-green va strangler fig migratsiyalari ham mumkin bo'ladi.
 
-**Spring'da qayerda uchraydi:** Spring Cloud Gateway `RouteLocator` / `RouteLocatorBuilder`, YAML'da `spring.cloud.gateway.routes[]` (`predicates: Path, Host, Method, Header, Weight, Cookie`; `filters: StripPrefix, RewritePath, SetPath`). `lb://service-id` URI sxemasi Spring Cloud LoadBalancer va discovery (Eureka, Consul, Spring Cloud Kubernetes) bilan; `DiscoveryClientRouteDefinitionLocator` avtomatik route yaratadi. `Weight` predikati canary uchun; Spring Cloud Gateway MVC esa `RouterFunctions` asosida bloklanuvchi stack'da bir xil imkoniyat beradi.
+**Spring'da qayerda uchraydi:** Spring Cloud Gateway `RouteLocator` / `RouteLocatorBuilder`, YAML'da `spring.cloud.gateway.server.webflux.routes[]` (`predicates: Path, Host, Method, Header, Weight, Cookie`; `filters: StripPrefix, RewritePath, SetPath`). `lb://service-id` URI sxemasi Spring Cloud LoadBalancer va discovery (Eureka, Consul, Spring Cloud Kubernetes) bilan; `DiscoveryClientRouteDefinitionLocator` avtomatik route yaratadi. `Weight` predikati canary uchun; Spring Cloud Gateway MVC esa `RouterFunctions` asosida bloklanuvchi stack'da bir xil imkoniyat beradi.
 
 **Qo'llanish keyslari:**
 - `/api/orders/**` → order-service, `/api/users/**` → user-service marshrutlash.
@@ -600,7 +602,7 @@ Mono<Dashboard> load(String userId) {
 
 **Tavsif:** Tail latency (p99) ni kamaytirish uchun bitta so'rovni bir nechta replikaga yuborib, eng birinchi kelgan javobni olish va qolganlarini bekor qilish patterni. Ko'pincha "tied/deferred hedging" shaklida qo'llaniladi: avval bitta so'rov yuboriladi, agar p95 vaqt ichida javob kelmasa, ikkinchi nusxa boshqa replikaga yuboriladi. Bu sekin node, GC pauzasi yoki vaqtincha tarmoq muammosini yashiradi, ammo yuklamani oshiradi.
 
-**Spring'da qayerda uchraydi:** Spring Framework'da tayyor `@Hedged` annotatsiyasi YO'Q - reaktiv stack'da Reactor operatorlari bilan quriladi: `Mono.firstWithSignal(primary, secondary.delaySubscription(Duration.ofMillis(50)))` yoki `WebClient` chaqiruvlarida `timeout()` + `onErrorResume()`. Imperativ stack'da Java 21+ `StructuredTaskScope.ShutdownOnSuccess` bilan bir nechta `RestClient` chaqiruvini boshlab, birinchi muvaffaqiyatlisini olish. gRPC ishlatilsa, `grpc-java` o'zining hedging siyosatini service config orqali beradi (`spring-boot-starter-grpc`/grpc-spring-boot-starter bilan). Load balancer tomonida Spring Cloud LoadBalancer `ReactiveLoadBalancer` bilan turli instansiyalarni tanlash mumkin.
+**Spring'da qayerda uchraydi:** Spring Framework'da tayyor `@Hedged` annotatsiyasi YO'Q - reaktiv stack'da Reactor operatorlari bilan quriladi: `Mono.firstWithSignal(primary, secondary.delaySubscription(Duration.ofMillis(50)))` yoki `WebClient` chaqiruvlarida `timeout()` + `onErrorResume()`. Imperativ stack'da `StructuredTaskScope` bilan bir nechta `RestClient` chaqiruvini boshlab, birinchi muvaffaqiyatlisini olish: Java 21-24 preview da `ShutdownOnSuccess` subclass'i, Java 25 (JEP 505) da esa `StructuredTaskScope.open(Joiner.anySuccessfulResultOrThrow())`. API hamon preview, imzo relizlar orasida o'zgaradi. gRPC ishlatilsa, `grpc-java` o'zining hedging siyosatini service config orqali beradi (`spring-boot-starter-grpc`/grpc-spring-boot-starter bilan). Load balancer tomonida Spring Cloud LoadBalancer `ReactiveLoadBalancer` bilan turli instansiyalarni tanlash mumkin.
 
 **Qo'llanish keyslari:**
 - Ko'p replikali read-only katalog yoki search servisidan p99 latency'ni pasaytirish.
@@ -635,7 +637,7 @@ Mono<Dashboard> load(String userId) {
 **Qo'llanish keyslari:**
 - Staging'da DB latency'ni 500 ms oshirib, connection pool to'lib ketishini va timeout'lar yetarliligini tekshirish.
 - Kafka broker'ni o'chirib, consumer lag va DLT mexanizmining ishlashini tasdiqlash.
-- Testcontainers + Toxiproxy bilan CI'da "downstream 3 s javob bermaydi" senariysini doimiy regress test qilish.
+- Testcontainers + Toxiproxy bilan CI'da "downstream 3 s javob bermaydi" ssenariysini doimiy regress test qilish.
 - Kubernetes'da tasodifiy pod o'chirib, readiness/liveness probe va graceful shutdown (`server.shutdown=graceful`) to'g'riligini sinash.
 - GameDay mashqlarida on-call jamoasining runbook va alertlarini real sharoitda tekshirish.
 
@@ -643,7 +645,7 @@ Mono<Dashboard> load(String userId) {
 
 ## 17.39 Resilience4j va Spring Cloud Circuit Breaker (Resilience4j & Spring Cloud Circuit Breaker)
 
-**Tavsif:** Resilience4j - Java 17+ uchun funksional, yengil fault-tolerance kutubxonasi: Circuit Breaker, Retry, Rate Limiter, Bulkhead, TimeLimiter va Cache modullarini beradi (Netflix Hystrix o'rnini bosgan). Spring Cloud Circuit Breaker esa bu amalga oshirishlar ustida abstraksiya: kodingiz `CircuitBreakerFactory` API'siga bog'lanadi, implementatsiyani (Resilience4j, Spring Retry) esa starter almashtiradi. Dekoratorlarni zanjirlab, bir chaqiruvga bir vaqtda timeout, retry va circuit breaker qo'llash mumkin.
+**Tavsif:** Resilience4j - funksional, yengil fault-tolerance kutubxonasi (3.x Java 21 talab qiladi, 2.x Java 17 bilan ishlaydi): Circuit Breaker, Retry, Rate Limiter, Bulkhead, TimeLimiter va Cache modullarini beradi (Netflix Hystrix o'rnini bosgan). Spring Cloud Circuit Breaker esa bu amalga oshirishlar ustida abstraksiya: kodingiz `CircuitBreakerFactory` API'siga bog'lanadi, implementatsiyani (Resilience4j, Spring Retry) esa starter almashtiradi. Dekoratorlarni zanjirlab, bir chaqiruvga bir vaqtda timeout, retry va circuit breaker qo'llash mumkin.
 
 **Spring'da qayerda uchraydi:** `spring-cloud-starter-circuitbreaker-resilience4j` (imperativ) va `...-reactor-resilience4j` (reaktiv); yoki to'g'ridan-to'g'ri `io.github.resilience4j:resilience4j-spring-boot3`. Annotatsiyalar: `@CircuitBreaker`, `@Retry`, `@RateLimiter`, `@Bulkhead(type = THREADPOOL|SEMAPHORE)`, `@TimeLimiter` - har biri `fallbackMethod` bilan. Konfiguratsiya `resilience4j.circuitbreaker.instances.<name>.*` (`slidingWindowType`, `failureRateThreshold`, `waitDurationInOpenState`, `slowCallRateThreshold`). Actuator integratsiyasi: `/actuator/health` indicator, `/actuator/circuitbreakers`, `/actuator/circuitbreakerevents` va Micrometer metrikalari (`resilience4j_circuitbreaker_state`). Spring Cloud Gateway'da `CircuitBreaker` filter, Spring Cloud OpenFeign bilan ham integratsiya qilinadi.
 
@@ -667,16 +669,19 @@ resilience4j.circuitbreaker.instances.pricing:
 
 **Ehtiyot bo'ling:** Annotatsiyalar Spring AOP proxy orqali ishlaydi - bir sinf ichidagi self-invocation (`this.method()`) chetlab o'tiladi, shuning uchun chaqiruv boshqa bean orqali kelishi kerak. Retry va circuit breaker tartibini e'tiborsiz qoldirmang (aspect order: `Retry` tashqarida, `CircuitBreaker` ichkarida bo'lsa retry'lar circuit'ni tez ochadi) va circuit breaker'ni biznes xatolari (`validation`, `404`) uchun ochilmasligi uchun `ignoreExceptions` sozlang.
 
+Mavzuning to'liq yozuvi shu bobdagi [zanjirni uzgich](#172-zanjirni-uzgich-circuit-breaker) bo'limida; bu yerda faqat pattern katalogi nuqtai nazari.
+
 ## 17.40 Spring Framework 7 yadrosidagi resilience (Spring Framework 7 core resilience: @Retryable, @ConcurrencyLimit)
 
-**Tavsif:** Spring Framework 7 resilience'ning eng asosiy ikki primitivini yadroga olib kirdi: deklarativ retry va deklarativ concurrency cheklovi. Endi oddiy retry yoki bulkhead uchun tashqi kutubxona (Spring Retry, Resilience4j) qo'shish shart emas - `spring-core`/`spring-context` ichidagi annotatsiyalar va `@EnableResilientMethods` kifoya. Bu "yengil" ehtiyojlarni qoplaydi; murakkab circuit breaker, rate limiter va metrikalar uchun baribir Resilience4j o'z o'rnida qoladi.
+**Tavsif:** Spring Framework 7 resilience'ning eng asosiy ikki primitivini yadroga olib kirdi: deklarativ retry va deklarativ concurrency cheklovi. Endi oddiy retry yoki bulkhead uchun tashqi kutubxona (Spring Retry, Resilience4j) qo'shish shart emas - `spring-context` ichidagi annotatsiyalar va `@EnableResilientMethods` kifoya. Bu "yengil" ehtiyojlarni qoplaydi; murakkab circuit breaker, rate limiter va metrikalar uchun baribir Resilience4j o'z o'rnida qoladi.
 
-**Spring'da qayerda uchraydi:** `org.springframework.resilience.annotation.@Retryable` (atributlari: `maxAttempts`, `delay`, `multiplier`, `maxDelay`, `jitter`, `includes`, `excludes`, `predicate`) va `@ConcurrencyLimit(int)` - ikkisi ham `@EnableResilientMethods` bilan yoqiladi (Spring Boot 4.x bu infrastrukturani avtomatik sozlaydi). Ular ostida `RetryTemplate`/`RetryPolicy` (`org.springframework.core.retry`) va `ConcurrencyThrottleInterceptor` turadi; reaktiv qaytish turlari (`Mono`, `Flux`) ham qo'llab-quvvatlanadi. `@Retryable` metod darajasida ham, sinf darajasida ham qo'yiladi; eski `spring-retry` modulining `@Retryable`/`@Recover` annotatsiyalari bilan aralashtirib yubormaslik kerak - bular turli paketlarda.
+**Spring'da qayerda uchraydi:** `org.springframework.resilience.annotation.@Retryable` (atributlari: `maxRetries`, `delay`, `multiplier`, `maxDelay`, `jitter`, `timeout`, `includes`, `excludes`, `predicate`, har biriga `...String` juftligi bilan) va `@ConcurrencyLimit(int)` - ikkisi ham `@EnableResilientMethods` bilan yoqiladi (Spring Boot 4.x bu infrastrukturani avtomatik sozlaydi). Annotatsiyalar `spring-context` da, ular ostidagi `RetryTemplate`/`RetryPolicy` esa `spring-core` ning `org.springframework.core.retry` paketida; concurrency cheklovi `ConcurrencyThrottleInterceptor` ustida ishlaydi. Reaktiv qaytish turlari (`Mono`, `Flux`) ham qo'llab-quvvatlanadi. `@Retryable` metod darajasida ham, sinf darajasida ham qo'yiladi; eski `spring-retry` modulining `@Retryable`/`@Recover` annotatsiyalari bilan aralashtirib yubormaslik kerak - bular turli paketlarda va atribut nomlari ham boshqa: yadroda `maxRetries` (default 3) BIRINCHI urinishdan KEYINGI urinishlar soni, ya'ni jami urinish `1 + maxRetries`; `spring-retry` dagi `maxAttempts` (default 3) esa jami urinish soni. Ikkisida ham default 3, lekin yadroda bu 4 ta chaqiruv, `spring-retry` da 3 ta.
 
 ```java
 @Service
 public class RatesClient {
-    @Retryable(maxAttempts = 4, delay = 200, multiplier = 2.0, jitter = 100,
+    // maxRetries = 3, ya'ni jami 4 chaqiruv: 1 asosiy + 3 qayta urinish
+    @Retryable(maxRetries = 3, delay = 200, multiplier = 2.0, jitter = 100,
                includes = ResourceAccessException.class)
     @ConcurrencyLimit(10)
     public Rate fetch(String pair) {
@@ -698,7 +703,7 @@ public class RatesClient {
 
 **Tavsif:** Har bir chaqiruvga mustaqil timeout qo'yish o'rniga, butun so'rov uchun yagona "budjet" (masalan, 2000 ms) belgilanadi va u zanjir bo'ylab kamayib boradi: downstream chaqiruv faqat qolgan vaqt ichida bajarilishi mumkin. Deadline (absolyut vaqt nuqtasi) so'rov kontekstida downstream'ga uzatiladi, shunda hech bir servis mijoz allaqachon ketib qolgan ishni bajarib o'tirmaydi. Bu timeout'larning ichma-ich noto'g'ri sozlanishi (ichki timeout tashqisidan katta) muammosini hal qiladi va behuda resurs sarfini kamaytiradi.
 
-**Spring'da qayerda uchraydi:** Spring'da avtomatik deadline propagatsiyasi YO'Q - qo'lda quriladi. Timeout'lar: `RestClient`/`RestTemplate` uchun `ClientHttpRequestFactorySettings` yoki `JdkClientHttpRequestFactory` (`HttpClient.newBuilder().connectTimeout(...)`, `HttpRequest.timeout(...)`), `WebClient`'da `Mono.timeout(...)` va `ReactorClientHttpConnector` bilan `HttpClient.responseTimeout(...)`; `@Transactional(timeout = 2)`, JPA `jakarta.persistence.query.timeout`, `TaskExecutionProperties`. Propagatsiya uchun `ClientHttpRequestInterceptor` yoki `ExchangeFilterFunction` bilan `X-Request-Deadline` header'ini yozish/o'qish, qiymatni `ThreadLocal`/`ScopedValue` (Java 21+) yoki Reactor `Context` orqali tashish; Micrometer `ObservationRegistry` context'i bilan ham bog'lash mumkin. gRPC ishlatilsa, `Deadline` protokol darajasida tayyor keladi.
+**Spring'da qayerda uchraydi:** Spring'da avtomatik deadline propagatsiyasi YO'Q - qo'lda quriladi. Timeout'lar: `RestClient`/`RestTemplate` uchun `HttpClientSettings` (4.0 gacha `ClientHttpRequestFactorySettings`) yoki `JdkClientHttpRequestFactory` (`HttpClient.newBuilder().connectTimeout(...)`, `HttpRequest.timeout(...)`), `WebClient`'da `Mono.timeout(...)` va `ReactorClientHttpConnector` bilan `HttpClient.responseTimeout(...)`; `@Transactional(timeout = 2)`, JPA `jakarta.persistence.query.timeout`, `TaskExecutionProperties`. Propagatsiya uchun `ClientHttpRequestInterceptor` yoki `ExchangeFilterFunction` bilan `X-Request-Deadline` header'ini yozish/o'qish, qiymatni `ThreadLocal`/`ScopedValue` (Java 21+) yoki Reactor `Context` orqali tashish; Micrometer `ObservationRegistry` context'i bilan ham bog'lash mumkin. gRPC ishlatilsa, `Deadline` protokol darajasida tayyor keladi.
 
 **Qo'llanish keyslari:**
 - API gateway'da 3 s SLA berib, downstream zanjirga faqat qolgan vaqtni uzatish.
@@ -734,6 +739,18 @@ public class RatesClient {
 - [ ] Tashqi tizim bo'yicha bulkhead yoki `Semaphore` chegarasi borligini tasdiqlang.
 - [ ] Har bir xato holati uchun fallback xatti-harakatini yozing: kesh, bo'sh javob yoki aniq xato.
 - [ ] Resilience sozlamalarini chaos yoki nosozlik testi bilan bir marta tekshirib, natijani hujjatlashtiring.
+
+## Manbalar
+- [spring-cloud-gateway, `pom.xml`](https://raw.githubusercontent.com/spring-cloud/spring-cloud-gateway/v4.3.0/pom.xml) - starter modullari `spring-cloud-starter-gateway-server-webflux` va `-server-webmvc`
+
+- [Spring Framework, Resilience features](https://docs.spring.io/spring-framework/reference/core/resilience.html) - "As of 7.0, the core Spring Framework includes common resilience features": `@Retryable`, `@ConcurrencyLimit` va `RetryTemplate`
+- [spring-framework, `resilience/annotation/Retryable.java`](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/spring-context/src/main/java/org/springframework/resilience/annotation/Retryable.java) - atribut nomlari va `maxRetries() default 3`
+- [spring-retry, `retry/annotation/Retryable.java`](https://raw.githubusercontent.com/spring-projects/spring-retry/v2.0.12/src/main/java/org/springframework/retry/annotation/Retryable.java) - alohida kutubxonada atribut `maxAttempts() default 3`
+- [spring-boot, `HttpClientSettings.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/module/spring-boot-http-client/src/main/java/org/springframework/boot/http/client/HttpClientSettings.java) - 4.0 da `ClientHttpRequestFactorySettings` o'rnini bosgan tur
+- [spring-boot, `HttpClientProperties.java` (3.4.x)](https://raw.githubusercontent.com/spring-projects/spring-boot/3.4.x/spring-boot-project/spring-boot-autoconfigure/src/main/java/org/springframework/boot/autoconfigure/http/client/HttpClientProperties.java) - `spring.http.client` prefiksi, `@since 3.4.0`
+- [spring-boot, `HttpClientsProperties.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/module/spring-boot-http-client/src/main/java/org/springframework/boot/http/client/autoconfigure/HttpClientsProperties.java) - 4.0 da prefiks `spring.http.clients`
+- [openjdk/jdk, `StructuredTaskScope.java` (jdk-25-ga)](https://raw.githubusercontent.com/openjdk/jdk/jdk-25-ga/src/java.base/share/classes/java/util/concurrent/StructuredTaskScope.java) - `ShutdownOnSuccess` yo'q; `open(Joiner.anySuccessfulResultOrThrow())`
+- [resilience4j, `README.adoc`](https://raw.githubusercontent.com/resilience4j/resilience4j/v2.4.0/README.adoc) - "Resilience4j 3 requires Java 21"
 
 ---
 

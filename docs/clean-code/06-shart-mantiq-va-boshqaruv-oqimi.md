@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 6. Shart, mantiq va boshqaruv oqimi (Conditionals and Control Flow)
 
 <details>
@@ -200,7 +202,7 @@ return order.customer().address()
 
 ## 6.9 Yashirin vaqt bog'liqligini ko'rinadigan qilish
 
-Agar metodlarni faqat ma'lum tartibda chaqirish mumkin bo'lsa va bu tartib kodda ko'rinmasa, bu yashirin vaqt bog'liqligi (hidden temporal coupling; [patternlar hujjatida](../patterns/README.md) Sequential Coupling anti-patterni, 25.17). Clean code darajasidagi yechimi: tartibni imzoga olib chiqish.
+Agar metodlarni faqat ma'lum tartibda chaqirish mumkin bo'lsa va bu tartib kodda ko'rinmasa, bu yashirin vaqt bog'liqligi (hidden temporal coupling; patternlar hujjatida [Sequential Coupling anti-patterni](../patterns/25-anti-patternlar.md#2517-ketma-ket-bogliqlik-sequential-coupling)). Clean code darajasidagi yechimi: tartibni imzoga olib chiqish.
 
 ```java
 // yomon: tartib faqat izohda va xotirada

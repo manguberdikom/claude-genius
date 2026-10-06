@@ -1,6 +1,8 @@
 <!-- doc: architect | chapter: 19 | part: III. Spring chuqur bilim -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
+
+> Holat: AI yozgan, inson tekshirmagan.
 
 # 19. Spring tranzaksiyalari va ularning chegaralari (Spring Transactions)
 
@@ -153,7 +155,7 @@ Alohida tuzoq: ichki `REQUIRED` metod istisno tashlab, tashqi metod uni `catch` 
 
 `readOnly = true` ning eng aniq samarasi Hibernate qatlamida: Spring `Session` ning flush mode ini `MANUAL` ga qo'yadi, natijada commit da avtomatik flush bo'lmaydi va dirty checking amalda bajarilmaydi. Katta `SELECT` lar uchun bu sezilarli yutuq: 10 000 entity o'qilgan hisobot metodida dirty check ga ketadigan vaqt va snapshot xotirasi yo'qoladi.
 
-Nimani bermaydi: u ma'lumotni o'zgartirishdan himoya qilmaydi degan tushuncha noto'g'ri emas, lekin yarim to'g'ri. Native query yoki `JdbcTemplate` orqali `UPDATE` bajarish mumkin bo'lib qolishi mumkin, chunki JDBC connection ning `readOnly` flagi har doim DB tomoniga yetib bormaydi. Shuningdek `readOnly` o'zi bilan replika ga yo'naltirish qilmaydi. Yo'naltirishni o'zing qurasan: `AbstractRoutingDataSource` da `TransactionSynchronizationManager.isCurrentTransactionReadOnly()` ni o'qib key tanlaysan.
+Nimani bermaydi: u ma'lumotni o'zgartirishdan himoya qilmaydi degan tushuncha noto'g'ri emas, lekin yarim to'g'ri. Native query yoki `JdbcTemplate` orqali `UPDATE` bajarish mumkin bo'lib qolishi mumkin, chunki JDBC connection ning `readOnly` flagi DB ga yetishi drayverga bog'liq. PgJDBC da standart `readOnlyMode=transaction`: Spring tranzaksiyasi ichida (autocommit o'chiq) `readOnly` connection `BEGIN READ ONLY` bilan ochiladi va yozish DB tomonidan rad etiladi, lekin tranzaksiyadan tashqaridagi autocommit so'rovga u ta'sir qilmaydi ([pgjdbc REL42.7.4, readOnlyMode](https://github.com/pgjdbc/pgjdbc/blob/REL42.7.4/docs/content/documentation/use.md)). Boshqa drayverlarda flag faqat maslahat bo'lishi mumkin. Shuningdek `readOnly` o'zi bilan replika ga yo'naltirish qilmaydi. Yo'naltirishni o'zing qurasan: `AbstractRoutingDataSource` da `TransactionSynchronizationManager.isCurrentTransactionReadOnly()` ni o'qib key tanlaysan.
 
 ```java
 // Read-only tranzaksiyani replika ga yo'naltirish: Spring o'zi qilmaydi
@@ -168,14 +170,21 @@ public class ReplicaRoutingDataSource extends AbstractRoutingDataSource {
 ```
 
 ```properties
-# Hisobot so'rovlari uchun DB tomonidan kafolat: faqat shu yerda haqiqiy himoya bor
-spring.datasource.hikari.read-only=false
+# Asosiy pool: read-only qo'yilmaydi (standart false), yozish shu pool orqali ketadi
 spring.jpa.open-in-view=false
 # Har bir statement uchun qattiq chegara (PostgreSQL tomonida ishlaydi)
 spring.datasource.hikari.connection-init-sql=SET statement_timeout = '5s'
 spring.jpa.properties.hibernate.jdbc.batch_size=50
 spring.jpa.properties.hibernate.order_inserts=true
+
+# Alohida hisobot DataSource: @ConfigurationProperties("app.datasource.report.hikari")
+# bilan bog'langan HikariDataSource bean. Himoya shu pool da:
+app.datasource.report.hikari.read-only=true
+# autocommit so'rov ham READ ONLY sessiyada ketsin (PgJDBC)
+app.datasource.report.hikari.data-source-properties.readOnlyMode=always
 ```
+
+Eng ishonchli himoya esa DB rolining o'zida: hisobot pooli faqat `SELECT` huquqi berilgan foydalanuvchi bilan ulanadi, shunda flag qanday bo'lishidan qat'i nazar yozish rad etiladi.
 
 Tekshirish usuli oddiy: metod ichida `SELECT current_setting('transaction_read_only')` bajar va natijani ko'r. Taxmin qilma, o'lchab ko'r.
 

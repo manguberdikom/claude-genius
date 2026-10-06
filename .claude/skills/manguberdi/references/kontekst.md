@@ -44,6 +44,7 @@ Belgini taxmin qilish shart emas, u o'lchanadi:
 ```bash
 python3 tools/handoff.py            # kontekst hajmi va tavsiya
 python3 tools/handoff.py --prompt   # yangi sessiya uchun tayyor matn
+python3 tools/handoff.py --prompt --vazifa <nom>   # topshiriq faylga
 ```
 
 `UserPromptSubmit` hooki (`handoff.py --hook`) har so'rovda shuni
@@ -54,12 +55,16 @@ yurish shart emas.
 O'lchov transkriptdagi haqiqiy raqamdan olinadi. Oyna hajmi
 `CONTEXT_LIMIT`, `autoCompactWindow` sozlamasi yoki model jadvalidan
 (haiku 200K, qolgani 1M), auto siqish bo'lgan bo'lsa o'sha nuqtadan
-olinadi. Siqish bo'lgan, kontekst oynaning 75% idan yoki 400K tokendan
-(`CONTEXT_WARN`) oshgan bo'lsa yangi sessiya tavsiya qilinadi.
+olinadi. `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` berilgan bo'lsa oyna shu
+foizga tushiriladi, chunki siqish o'sha yerda bo'ladi. Siqish bo'lgan,
+kontekst chegaraning 75% idan yoki 400K tokendan (`CONTEXT_WARN`) oshgan
+bo'lsa yangi sessiya tavsiya qilinadi.
 
 Skill yangi sessiya ocha olmaydi, lekin `--prompt` tayyor topshiriq
-beradi: git holati, oxirgi commitlar va memory indeksini mashina
-to'ldiradi, `<...>` ichidagi joylarni siz to'ldirasiz.
+beradi. Fakt qismini mashina to'ldiradi: branch, oxirgi commitlar,
+`git diff --stat HEAD`, git da yo'q yangi fayllar, `REJA.md` dagi `[x]`
+qadamlar (Bajarildi) va belgisizlari (Qolgan), memory indeksi. Siz faqat
+`<...>` joylarini to'ldirasiz: Maqsad, Qarorlar, Keyingi qadam.
 
 Topshiriqning siz to'ldiradigan qismi quyidagi beshta maydondan iborat
 va **qisqa** bo'ladi. Uzun topshiriq yangi sessiyani ham to'ldiradi:
@@ -74,15 +79,27 @@ Qarorlar: <qaror va qoida raqami, nega shunday tanlangan>
 Keyingi qadam: <aniq birinchi harakat>
 ```
 
-Qayerga yoziladi: to'ldirilgan beshta maydon (mashina bergan git
-qismisiz, u git dan olinadi) `memory/<proyekt-slug>/project_<vazifa>.md`
-ga yoziladi, `MEMORY.md` ga bir qator qo'shiladi, commit va push
-qilinadi (`memory-protocol.md` marshruti, `type: project`).
+Qayerga yoziladi: `--prompt --vazifa <nom>` topshiriqni faylga o'zi
+yozadi va yo'lini aytadi, keyin `<...>` joylari bitta Edit bilan
+to'ldiriladi. Jami ikki navbat.
 
-Keyin foydalanuvchiga `--prompt` matni beriladi (u `/manguberdi` bilan
-boshlanadi) va u matnni yangi sessiyaga yuboradi. Matn yo'qolsa ham
-yangi sessiya memory indeksidan shu faylni topadi. Ish tugagach fayl va
-indeks qatori o'chiriladi.
+- Lokal sessiya: `.claude/.state/handoff/<nom>.md` (yoki
+  `GENIUS_STATE_DIR` ostida). Git siz: na commit, na push, na memory
+  indeksi qatori. Fayl shu mashinada qoladi.
+- Bulut sessiyasi (`CLAUDE_CODE_REMOTE`): konteyner qaytarib olinadi,
+  shuning uchun fayl proyekt memorysiga `project_<nom>.md` bo'lib
+  yoziladi. Klonning o'zida bu klondagi memory papkasi, boshqa proyektda
+  `GENIUS_MEMORY_DIR` (sukut `~/.claude/genius-memory`). Asbob kerakli
+  `git -C <memory ildizi>` buyrug'ini beradi; ildiz git da bo'lmasa buni
+  aytadi.
+
+Boshqa proyektning vazifa matni ochiq klon reposiga yozilmaydi
+(`memory/README.md`). Klondagi begona memory papkasini `git add` yoki
+`git commit` qilishni `guard.py` foydalanuvchi qaroriga qo'yadi.
+
+Keyin foydalanuvchiga asbob bergan qisqa prompt beriladi (u
+`/manguberdi` bilan boshlanadi va topshiriq faylini ko'rsatadi), u
+uni yangi sessiyaga yuboradi. Ish tugagach topshiriq fayli o'chiriladi.
 
 ## O'lchov
 

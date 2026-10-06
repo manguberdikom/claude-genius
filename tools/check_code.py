@@ -8,6 +8,12 @@
 Bir nechta fayl bitta chaqiruvda: 800 faylda Python 800 marta emas, bir
 marta ishga tushadi. Faqat buzilishi bor fayllar chiqadi, oxirida yig'ma
 qator `check_code: N fayl, M buzilish`, shuning uchun grep kerak emas.
+Chiqish kodi: 0 toza, 1 buzilish bor, 3 .java bo'lmagan fayl tekshirilmadi.
+
+NOSONAR izohli satr va `@SuppressWarnings("java:Sxxxx")` bilan o'ralgan
+e'lon o'tkaziladi: Sonar ham ularni o'tkazadi. Hook rejimida Edit dan
+oldingi mazmun (`originalFile`) bilan solishtiriladi va faqat yangi
+topilma aytiladi.
 
 Nega hook: qoidani CLAUDE.md da yozib qo'yish maslahat beradi, tekshirish
 esa majburlaydi. Fayl yozilgandan keyin bu hook uni o'qiydi va qoidaga zid
@@ -28,11 +34,21 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
-# in_clone, quote va tool_cmd docref da: rules_for ularni shu moduldan
-# oladi, shuning uchun bu yerda qayta eksport qilinadi.
 import hookio  # noqa: E402
-from docref import hint, in_clone, quote, tool_cmd  # noqa: E402,F401
-from state import marked_labels, was_marked  # noqa: E402
+
+# in_clone, quote, tool_cmd va hint docref da: rules_for va budget ularni
+# shu moduldan oladi, shuning uchun qayta eksport qilinadi. docref va state
+# kech yuklanadi: hook har yozuvda (.md, .py ham) ishga tushadi va .java
+# bo'lmagan yo'lda ular kerak emas, importi esa ~10 ms.
+_DOCREF_NAMES = ("hint", "in_clone", "quote", "tool_cmd")
+
+
+def __getattr__(name):
+    if name in _DOCREF_NAMES:
+        import docref
+        return getattr(docref, name)
+    raise AttributeError("module %r has no attribute %r" % (__name__, name))
+
 
 MAX_SHOWN = 6
 
@@ -47,14 +63,25 @@ NOISE_RE = re.compile(
     r"|//[^\n]*"
     r"|/\*.*?\*/", re.S)
 
-HTTP_CLIENT_RE = re.compile(
-    r"\b(restTemplate|webClient|restClient|httpClient|feignClient)\b", re.I)
-# Sinf darajasida faqat chaqiruv shakli olinadi: maydon e'loni
-# (`RestTemplate restTemplate;`) va statik fabrika (`RestClient.create()`)
-# tranzaksiya ichidagi tarmoq chaqiruvi emas.
-CLIENT_CALL_RE = re.compile(
-    r"\b(restTemplate|webClient|restClient|httpClient|feignClient)"
-    r"\s*\.\s*\w+\s*\(")
+# Faqat chaqiruv shakli `nom.metod(` olinadi: tur nomi (`HttpClient.Version`,
+# `WebClient.Builder builder`) va argument sifatida uzatilgan klient
+# chaqiruv emas. Sinf darajasida registr muhim: maydon initsializatoridagi
+# statik fabrika (`RestClient.create()`) tranzaksiya ichida yurmaydi.
+# Metod tanasida esa `RestClient.create().get()` ham tarmoq chaqiruvi,
+# shuning uchun u yerda registrsiz variant.
+_CLIENT_CALL = (r"\b(restTemplate|webClient|restClient|httpClient|feignClient)"
+                r"\s*\.\s*\w+\s*\(")
+CLIENT_CALL_RE = re.compile(_CLIENT_CALL)
+CLIENT_CALL_ANY_CASE_RE = re.compile(_CLIENT_CALL, re.I)
+# Commit dan keyin yuradigan joy: TransactionSynchronization callbacklari va
+# registerSynchronization argumenti. Qo'llanma tashqi chaqiruvni aynan shu
+# yerga ko'chirishni tavsiya qiladi (patterns, code-review, architect).
+AFTER_TX_RE = re.compile(r"\b(?:afterCommit|afterCompletion)\s*(?=\()")
+REGISTER_SYNC_RE = re.compile(r"\bregisterSynchronization\s*(?=\()")
+# Sinf darajasidagi @Transactional da listener metodi publisher tranzaksiyasi
+# commit bo'lgandan keyin yuradi (default AFTER_COMMIT). BEFORE_COMMIT esa
+# hali tranzaksiya ichida.
+TX_LISTENER_RE = re.compile(r"@TransactionalEventListener\b")
 TX_RE = re.compile(r"@Transactional\b")
 # Tranzaksiyani o'chiradigan propagation: tanasidagi chaqiruv bu qoidaga
 # tushmaydi.
@@ -114,14 +141,24 @@ def check_text(text, path):
             "Bo'sh catch: xato yutiladi va hech qayerda ko'rinmaydi.",
             "Error Handling", "java:S108"))
 
+    # Keng tur: xato qayta otilishi ham mumkin, shuning uchun "yutadi"
+    # deyilmaydi (yutish S108 ning ishi). Throwable Sonar da alohida kalit.
     for match in re.finditer(r"catch\s*\(\s*(?:final\s+)?(Exception|Throwable)\s", code):
-        out.append(Finding(
-            "o'rta", line_of(code, match.start()),
-            "`catch (%s)` kutilmagan xatolarni ham yutadi; aniq tur tutilsin."
-            % match.group(1),
-            "Error Handling", "java:S2221", term="catch"))
+        if match.group(1) == "Exception":
+            out.append(Finding(
+                "o'rta", line_of(code, match.start()),
+                "`catch (Exception)` keng tur: kutilmagan xatolar ham tutiladi; "
+                "aniq tur ko'rsatilsin.",
+                "Error Handling", "java:S2221", term="catch"))
+        else:
+            out.append(Finding(
+                "o'rta", line_of(code, match.start()),
+                "`catch (Throwable)`: Error lar ham (OutOfMemoryError, "
+                "StackOverflowError) tutiladi; aniq tur ko'rsatilsin.",
+                "Error Handling", "java:S1181", term="catch"))
 
-    for match in re.finditer(r"\bSystem\.(?:out|err)\.print", code):
+    # Sonar S106 ni test manbasiga qo'llamaydi.
+    for match in ([] if is_test else re.finditer(r"\bSystem\.(?:out|err)\.print", code)):
         out.append(Finding(
             "o'rta", line_of(code, match.start()),
             "`System.out` o'rniga logger ishlatilsin: chiqish darajasi, "
@@ -154,7 +191,58 @@ def check_text(text, path):
                 "Flaky Test", "java:S2925"))
 
     out.extend(check_transactions(code))
+    return suppress(out, text, code)
+
+
+def nosonar_lines(text):
+    """Izohida NOSONAR bor satrlar. Satr literalidagi so'z hisoblanmaydi."""
+    lines = set()
+    for match in NOISE_RE.finditer(text):
+        chunk = match.group(0)
+        if chunk.startswith(("//", "/*")) and "NOSONAR" in chunk:
+            lines.add(line_of(text, match.start() + chunk.index("NOSONAR")))
+    return lines
+
+
+def suppressed_ranges(text, code):
+    """@SuppressWarnings bilan o'ralgan e'lonlar: (kalitlar, 1-satr, oxirgi satr).
+
+    Annotatsiya `code` da qidiriladi (izohdagisi sanalmaydi), kalitlar esa
+    asl matndan olinadi: strip_noise satr literalini o'chirgan, pozitsiya
+    bir xil. Tanasiz e'lon (maydon) o'tkaziladi.
+    """
+    out = []
+    for match in re.finditer(r"@SuppressWarnings\s*\(", code):
+        close = _paren_end(code, match.end() - 1)
+        if close == -1:
+            continue
+        keys = set(re.findall(r'"([^"]*)"', text[match.end():close]))
+        start = _body_start(code, close + 1)
+        end = _block_end(code, start) if start != -1 else -1
+        if keys and end != -1:
+            out.append((keys, line_of(code, match.start()), line_of(code, end)))
     return out
+
+
+def suppress(findings, text, code):
+    """Sonar o'tkazadigan joy: NOSONAR satri va @SuppressWarnings kaliti.
+
+    Ongli istisnoga ogohlantirish shovqin: u har yozuvda takrorlanadi.
+    """
+    if "NOSONAR" not in text and "@SuppressWarnings" not in code:
+        return findings
+    quiet = nosonar_lines(text)
+    ranges = suppressed_ranges(text, code)
+    kept = []
+    for f in findings:
+        if f.line in quiet:
+            continue
+        names = {f.rule, f.rule.replace("java:", "squid:")} if f.rule else set()
+        if any(names & keys and first <= f.line <= last
+               for keys, first, last in ranges):
+            continue
+        kept.append(f)
+    return kept
 
 
 def _body_start(code, pos):
@@ -175,6 +263,19 @@ def _body_start(code, pos):
     return -1
 
 
+def _paren_end(code, start):
+    """`start` dagi `(` ning jufti; qavslar teng bo'lmasa -1."""
+    depth = 0
+    for i in range(start, len(code)):
+        if code[i] == "(":
+            depth += 1
+        elif code[i] == ")":
+            depth -= 1
+            if depth == 0:
+                return i
+    return -1
+
+
 def _block_end(code, start):
     """`start` dagi `{` ning jufti; qavslar teng bo'lmasa -1."""
     depth = 0
@@ -188,6 +289,37 @@ def _block_end(code, start):
     return -1
 
 
+def _after_tx_ranges(code):
+    """Commit dan keyin yuradigan bloklar: (boshi, oxiri) pozitsiyalari.
+
+    `afterCommit()`/`afterCompletion(int)` metod tanasi va
+    `registerSynchronization(...)` argumenti (anonim sinf yoki lambda).
+    Chaqiruv (`sync.afterCommit();`) tanasiz, o'tkaziladi.
+    """
+    out = []
+    for match in AFTER_TX_RE.finditer(code):
+        start = _body_start(code, match.end())
+        end = _block_end(code, start) if start != -1 else -1
+        if end != -1:
+            out.append((start, end))
+    for match in REGISTER_SYNC_RE.finditer(code):
+        end = _paren_end(code, match.end())
+        if end != -1:
+            out.append((match.end(), end))
+    return out
+
+
+def _listener_ranges(code):
+    """@TransactionalEventListener metod tanalari, BEFORE_COMMIT dan tashqari."""
+    out = []
+    for match in TX_LISTENER_RE.finditer(code):
+        start = _body_start(code, match.end())
+        end = _block_end(code, start) if start != -1 else -1
+        if end != -1 and "BEFORE_COMMIT" not in code[match.end():start]:
+            out.append((start, end))
+    return out
+
+
 def check_transactions(code):
     """@Transactional ichida tashqi HTTP chaqiruvi bormi.
 
@@ -197,6 +329,12 @@ def check_transactions(code):
     jim o'tadi. Tanasiz metod (interfeys, abstract) o'tkaziladi. Sinf
     darajasidagi annotatsiyada butun sinf tanasi ko'riladi, lekin faqat
     chaqiruv shakli va NOT_SUPPORTED/NEVER metodlaridan tashqarida.
+
+    Commit dan keyingi bloklar (afterCommit, registerSynchronization
+    argumenti) ikkala darajada o'tkaziladi: qo'llanma tashqi chaqiruvni
+    aynan shu yerga ko'chirishni tavsiya qiladi va hook o'z maslahatini
+    to'smasligi kerak. Listener metodi faqat sinf darajasida o'tkaziladi:
+    metodning o'z @Transactional i (REQUIRES_NEW) yangi tranzaksiya ochadi.
     """
     blocks = []
     for match in TX_RE.finditer(code):
@@ -209,18 +347,20 @@ def check_transactions(code):
         head = code[match.end():start]
         blocks.append((start, end, bool(NO_TX_RE.search(head)),
                        bool(TYPE_DECL_RE.search(head))))
+    if not blocks:
+        return []
 
     excluded = [(s, e) for s, e, no_tx, _ in blocks if no_tx]
+    excluded += _after_tx_ranges(code)
+    in_type = excluded + _listener_ranges(code)
     out, lines = [], set()
     for start, end, no_tx, is_type in blocks:
         if no_tx:
             continue
-        if is_type:
-            call = next((m for m in CLIENT_CALL_RE.finditer(code, start, end)
-                         if not any(s <= m.start() < e for s, e in excluded)),
-                        None)
-        else:
-            call = HTTP_CLIENT_RE.search(code, start, end)
+        pattern, skip = ((CLIENT_CALL_RE, in_type) if is_type
+                         else (CLIENT_CALL_ANY_CASE_RE, excluded))
+        call = next((m for m in pattern.finditer(code, start, end)
+                     if not any(s <= m.start() < e for s, e in skip)), None)
         if not call or line_of(code, call.start()) in lines:
             continue
         lines.add(line_of(code, call.start()))
@@ -234,6 +374,7 @@ def check_transactions(code):
 
 
 def render(path, findings):
+    from docref import hint
     lines = ["%s: %d ta qoida buzilishi" % (path, len(findings))]
     for f in findings[:MAX_SHOWN]:
         lines.append("[%s] %s:%d  %s" % (f.level, os.path.basename(path),
@@ -245,15 +386,52 @@ def render(path, findings):
     return "\n".join(lines)
 
 
-def analyse(path):
+def read_java(path):
+    """.java fayl matni; .java emas, yo'q yoki o'qilmasa None."""
     if not path.endswith(".java") or not os.path.isfile(path):
-        return []
+        return None
     try:
         with open(path, encoding="utf-8", errors="replace") as handle:
-            text = handle.read()
+            return handle.read()
     except OSError:
-        return []
-    return check_text(text, path)
+        return None
+
+
+def analyse(path):
+    text = read_java(path)
+    return [] if text is None else check_text(text, path)
+
+
+def _source_line(text, line):
+    lines = text.split("\n")
+    return lines[line - 1].strip() if 0 < line <= len(lines) else ""
+
+
+def _finding_key(f, text):
+    # Satr raqami emas, mazmuni: Edit yuqorida satr qo'shsa ham eski
+    # topilma eski bo'lib qoladi. Kaliti yo'q topilma mavzusi bilan.
+    return (f.rule or f.topic, _source_line(text, f.line))
+
+
+def only_new(findings, text, original, path):
+    """Edit dan oldin ham bor bo'lgan topilmalar olib tashlanadi.
+
+    Solishtirish multiset bo'yicha: (kalit, strip qilingan satr). Eski
+    faylda bitta printStackTrace bo'lib, yangisida ikkita bo'lsa, bittasi
+    yangi. Tegilgan satrdagi topilma (matni o'zgargan) ham yangi sanaladi.
+    """
+    old = {}
+    for f in check_text(original, path):
+        key = _finding_key(f, original)
+        old[key] = old.get(key, 0) + 1
+    fresh = []
+    for f in findings:
+        key = _finding_key(f, text)
+        if old.get(key):
+            old[key] -= 1
+        else:
+            fresh.append(f)
+    return fresh
 
 
 def new_signals(path):
@@ -263,6 +441,8 @@ def new_signals(path):
     reviewer esa yozilgan mazmundan oladi. Farq shu yerda aytiladi, aks
     holda reviewer ko'radigan bob yozuvchiga hech qachon yetmaydi.
     """
+    from docref import quote, tool_cmd
+    from state import marked_labels
     known = marked_labels(path)
     if known is None:
         return ""
@@ -277,6 +457,21 @@ def new_signals(path):
         lines.append("  %s -> %s" % (label, ", ".join("%s %s" % c for c in chapters)))
     lines.append("Punktlar: %s %s" % (tool_cmd("rules_for.py"), quote(path)))
     return "\n".join(lines)
+
+
+# Klondagi sinov fixture lari: ular qoidani buzish uchun yoziladi va
+# rules_for ro'yxati ularga hech narsa bermaydi (HK-H5).
+FIXTURES = os.path.join(HERE, "testdata")
+
+
+def is_fixture(path):
+    """Yo'l klonning tools/testdata/ papkasi ichidami."""
+    try:
+        full = os.path.normcase(os.path.realpath(path))
+        base = os.path.normcase(os.path.realpath(FIXTURES))
+    except (OSError, ValueError):
+        return False
+    return full.startswith(base.rstrip(os.sep) + os.sep)
 
 
 SKIPPED = (
@@ -295,7 +490,16 @@ def check_paths(paths):
     Bitta fayl uchun eski javob qoladi (toza fayl ham aytiladi). Ko'p
     faylda toza fayl qatori shovqin, o'rniga yig'ma qator bor: undagi
     fayl soni tekshiruv oxirigacha borganini ko'rsatadi.
+
+    .java bo'lmagan fayl (Kotlin, Groovy) uchun "topilmadi" yolg'on: u
+    tekshirilmagan. Shuning uchun alohida qator va rc 3 (buzilish bo'lsa
+    baribir 1). Hook rejimi bunday yozuvda jim qoladi.
     """
+    skipped = [p for p in paths if not p.endswith(".java")]
+    for path in skipped:
+        print("%s: tekshirilmadi (faqat .java)" % path)
+    if len(paths) == 1 and skipped:
+        return 3
     if len(paths) == 1:
         findings = analyse(paths[0])
         if not findings:
@@ -313,7 +517,7 @@ def check_paths(paths):
             total += len(findings)
             print(render(path, findings))
     print("check_code: %d fayl, %d buzilish" % (files, total))
-    return 1 if total else 0
+    return 1 if total else 3 if skipped else 0
 
 
 def main():
@@ -324,18 +528,50 @@ def main():
     if payload is None:
         return 0
     tool_input = payload.get("tool_input") or {}
-    response = payload.get("tool_response") or {}
+    response = payload.get("tool_response")
+    response = response if isinstance(response, dict) else {}
     path = (response.get("filePath") or tool_input.get("file_path") or "")
-    findings = analyse(path)
-    written = path.endswith(".java") and os.path.isfile(path)
+    # .md, .py yozuvlari ko'pchilik: docref, state va proyekt ildizini
+    # qidirmasdan chiqiladi.
+    if not path.endswith(".java"):
+        return 0
+    if not hookio.active(payload):
+        return 0   # CLI rejimi (argv) bu tekshiruvdan o'tmaydi
+    text = read_java(path)
+    written = text is not None
+    findings = check_text(text, path) if written else []
+    # Edit dan oldingi mazmun bo'lsa faqat shu yozuv keltirgan topilma
+    # aytiladi: eski kodga har Edit da block modelni tegilmagan kodni
+    # tuzatishga undaydi (diff kengayadi). Yangi faylda originalFile null.
+    original = response.get("originalFile")
+    if findings and isinstance(original, str):
+        findings = only_new(findings, text, original, path)
+
+    from docref import in_clone, quote, tool_cmd
+    from state import was_marked
 
     # Zanjir qoidasi: .java yozilishidan oldin rules_for chaqirilgan
     # bo'lishi kerak. Bu ko'rsatma emas, shart: aks holda u unutiladi.
-    if written and not was_marked(path):
+    #
+    # Lekin shart faqat KLON ichida: u shu proyektning o'z konvensiyasi,
+    # boshqa repoda esa hech kim unga rozi bo'lmagan. Global o'rnatishda
+    # bu hook har Java proyektida yuradi va u yerda har birinchi .java
+    # yozuvini to'sardi. Shuning uchun klondan tashqarida bu eslatma:
+    # chaqiruv to'xtamaydi, ro'yxat esa taklif qilinadi.
+    #
+    # tools/testdata/ dagi fixture shartdan tashqarida: u ataylab buzuq
+    # kod, unga qoidalar ro'yxati kerak emas. Mexanik tekshiruv qoladi.
+    if written and not was_marked(path) and not is_fixture(path):
         reason = SKIPPED % (tool_cmd("rules_for.py"), quote(path))
         if findings:
             reason = render(path, findings) + "\n\n" + reason
-        json.dump({"decision": "block", "reason": reason}, sys.stdout)
+        if in_clone():
+            json.dump({"decision": "block", "reason": reason}, sys.stdout)
+        else:
+            json.dump({"hookSpecificOutput": {
+                "hookEventName": "PostToolUse",
+                "additionalContext": reason,
+            }}, sys.stdout)
         return 0
 
     drift = new_signals(path) if written else ""

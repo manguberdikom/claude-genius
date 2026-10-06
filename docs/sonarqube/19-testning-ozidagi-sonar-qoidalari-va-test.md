@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 19. Testning o'zidagi Sonar qoidalari va test sifati (Sonar Rules on Test Code)
 
 <details>
@@ -40,7 +42,7 @@ Natijada test fayli Sonar hisobotida ikki marta ko'rinadi. Birinchi marta covera
 | Testdagi issue gate'ni buzadi | New Code'dagi issue manba turini ajratmaydi | Qoidani profil darajasida test uchun o'chir, faylni emas |
 | Coverage 0% ko'rinadi | JaCoCo report yo'li noto'g'ri | `sonar.coverage.jacoco.xmlReportPaths` ni tekshir |
 | Test fayli coverage'ni "suyultiradi" | Test papkasi sources deb belgilangan | Papkalarni to'g'ri ajrat |
-| Testda hardcoded parol hotspot beradi | `java:S2068` test kodida ham ishlaydi | Aniq qoida uchun `issue.ignore` yoz, izoh bilan |
+| Testda hardcoded parol issue beradi | `java:S2068` (vulnerability) `scope` i `Main`, ya'ni test papkasi sources deb sanalganda ishga tushadi | Avval `sonar.tests` ni to'g'rila; kerak bo'lsa aniq qoida uchun `issue.ignore`, izoh bilan |
 | Testdagi smell abadiy qoladi | Hech kim test faylini refaktor qilmaydi | Test kodini ham Definition of Done'ga kirit |
 
 ## 19.2 Assertion siz test va u nega buzilgan hisoblanadi
@@ -171,7 +173,7 @@ class StockServiceTest {
 }
 ```
 
-Spring kontekstidagi varianti ham bor: `@MockBean` yoki `@SpyBean` orqali sozlangan stub kontekst keshida qoladi va keyingi test klassiga o'tadi. Sonar bunga qoida bermaydi, lekin `@DirtiesContext` ning ko'payishi loyihada muammo borligini bildiradi. Bu holatda arxitektura darajasidagi qarorni [testlash qo'llanmasidagi](../testing/README.md) test izolyatsiyasi mavzusidan oling.
+Spring kontekstidagi varianti ham bor: `@MockitoBean` yoki `@MockitoSpyBean` orqali sozlangan stub kontekst keshida qoladi va keyingi test klassiga o'tadi. Sonar bunga qoida bermaydi, lekin `@DirtiesContext` ning ko'payishi loyihada muammo borligini bildiradi. Bu holatda arxitektura darajasidagi qarorni [testlash qo'llanmasidagi](../testing/README.md) test izolyatsiyasi mavzusidan oling.
 
 ## 19.6 Juda ko'p mock va haddan tashqari bog'langan test
 
@@ -257,6 +259,8 @@ void shouldAddVatToLineTotalForTwoUnits() {
 ```
 
 Testda hardcoded ma'lumotning yana bir turi Sonar'ni chindan ham qo'zg'atadi: `java:S2068`, kodga yozilgan parol. Test resource'laridagi `spring.datasource.password=test` qatori security hotspot sifatida chiqadi. Buni fayl bo'yicha exclude qilmang, aniq qoida va aniq yo'l bo'yicha `issue.ignore` yozib, sababini izohda qoldiring.
+
+Mavzuning to'liq yozuvi [magic number](../patterns/25-anti-patternlar.md#258-sehrli-sonlar-va-satrlar-magic-numbers--strings) bo'limida; son va pul qiymatlari toza kod hujjatidagi [primitiv, son va pul](../clean-code/20-primitiv-son-va-pul.md) bobida ham bor; bu yerda faqat Sonar qoidasi nuqtai nazari.
 
 ## 19.10 Test fayllarini Sonar uchun to'g'ri belgilash (`sonar.tests`)
 

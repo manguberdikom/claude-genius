@@ -1,6 +1,8 @@
 <!-- doc: architect | chapter: 5 | part: I. Fikrlash va qarorlar -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
+
+> Holat: AI yozgan, inson tekshirmagan.
 
 # 5. Abstraksiya hissi, bog'liqlik va chegaralar (Abstraction, Coupling and Boundaries)
 
@@ -198,7 +200,7 @@ class AcmeAuthorizerAdapter implements PaymentAuthorizer {
 }
 ```
 
-Bu joylashuvning yana bir foydasi bor: bog'liqlik yo'nalishi avtomatik to'g'ri bo'lib qoladi. `payment.acme` paketi `order.spi` paketini biladi, teskarisi yo'q. Spring konteyner `PaymentAuthorizer` ni injeksiya qilganda implementatsiya qaysi paketda ekani ahamiyatsiz, chunki bog'lanish tip bo'yicha amalga oshadi.
+Bu joylashuvning yana bir foydasi bor: bog'liqlik yo'nalishi avtomatik to'g'ri bo'lib qoladi. `payment.acme` paketi `order.spi` paketini biladi, teskarisi yo'q. Spring konteyner `PaymentAuthorizer` ni inyeksiya qilganda implementatsiya qaysi paketda ekani ahamiyatsiz, chunki bog'lanish tip bo'yicha amalga oshadi.
 
 ## 5.8 Bog'liqlik yo'nalishini boshqarish: ichki qatlam tashqarini bilmasin
 

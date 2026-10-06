@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 15. Cognitive complexity va takrorlanishni kamaytirish (Cognitive Complexity and Duplication)
 
 <details>

@@ -18,7 +18,11 @@ Baholash ikki signaldan iborat:
      hal qiladi.
 
 Sonar kaliti (java:S2259) bo'lsa, index/rules.tsv dagi bo'limlar boshida
-turadi: kalit foydalanuvchi bera oladigan eng aniq signal.
+turadi: kalit foydalanuvchi bera oladigan eng aniq signal. Katalog
+bo'limi ("Qoida: `java:S1192`" qatori bilan) kalitning boshqa
+bo'limlaridan oldin. Exception nomi (NoUniqueBeanDefinitionException)
+ham shunday: index/exceptions.tsv dagi bo'limlar ball bilan emas,
+ro'yxat boshida beriladi.
 
 Hech narsa yetarlicha mos kelmasa, hook jim turadi: har so'rovga shovqin
 qo'shish uni foydasiz qiladi. Indeks yo'q yoki bobdan eski bo'lsa, doc.sh
@@ -64,6 +68,8 @@ SYNONYMS_FILE = os.path.join(HERE, "synonyms.tsv")
 EVIDENCE_MIN_IDF = 2.0
 ALIAS_WEIGHT = 1.2
 ALIAS_BASE = 2.2
+# Bitta exception nomi uchun shuncha bo'lim (index/exceptions.tsv).
+EXC_PER_NAME = 2
 PAREN_SUFFIX_RE = re.compile(r'\s*\([^()]*\)\s*$')
 # build_index.py dagi WORD_RE bilan bir xil bo'lishi shart. tokens() esa
 # ustiga `@` ni kesadi: "DataJpaTest" va "@DataJpaTest" bitta so'z.
@@ -79,6 +85,37 @@ DOMAIN_NOUNS = {"customer", "account", "notification"}
 FRAME = re.compile(r"^\s*at\s+[\w.$<>]+\(", re.M)
 DROP = re.compile(r"^\s*(at\s+[\w.$<>]+\(|\.\.\.\s*\d+\s+more|(Detail|Hint|Where|Position):)")
 HEAD = re.compile(r"^\s*(?:Caused by:\s*)?([\w.$]+(?:Exception|Error))\b:?.*$")
+# PostgreSQL va log darajasi xabar boshida ("ERROR: deadlock detected"):
+# `error` ko'p sarlavhada bor va mavzu so'zidan ko'p ball yig'ardi.
+SEVERITY = re.compile(r"\b(?:ERROR|FATAL|PANIC|WARNING|SEVERE):")
+APOSTROPHES = str.maketrans({c: "'" for c in "ʻ’‘ʼ"})
+# To'liq sinf nomi (FQCN) oddiy nomga: TOKEN_RE nuqtani so'z ichida
+# qoldiradi, ya'ni "org.hibernate.LazyInitializationException" bitta
+# token bo'lib, nom yo'qolardi. Paket qismi kichik harfli, nom katta
+# harfdan boshlanadi: "com.example.order.items" ga tegilmaydi. tokens()
+# da emas, shu yerda: u sarlavha va taxallus uchun ham ishlaydi va
+# build_index WORD_RE bilan bir xil turishi shart.
+FQCN_RE = re.compile(r"\b(?:[a-z_][a-z0-9_]*\.)+([A-Z][\w$]*)")
+# Yopishtirilgan Java kodi: kamida bitta shunday qator bo'lsa, kodga
+# o'xshagan qatorlardan zaxira so'zlar tashlanadi. Aks holda `public`,
+# `private`, `package` har safar bir xil sarlavhalarga ("`public` maydon",
+# "`package-private`") olib borardi. Identifikatorlar (ExecutorService,
+# Thread.sleep, @Transactional) joyida qoladi. Faqat tuzilish so'zlari
+# tashlanadi. Ma'noni o'zgartiradigan modifikator va konstruksiya
+# (private, static, final, synchronized, volatile, try, catch, throws,
+# switch, enum, record) qoladi: "@Transactional private metod" da
+# `private` mavzuning o'zi.
+CODE_START = re.compile(r"^\s*(?:package|import|public|private|protected|class|"
+                        r"interface|enum|record|@\w+)\b")
+# Kod qatori: `;`, `{` yoki `}` bilan tugaydi yoki yolg'iz annotatsiya.
+# "@Transactional private metodda ishlaydimi" kod emas, gap.
+CODE_LINE = re.compile(r"[;{}]\s*$|^\s*@\w+(?:\(.*\))?\s*$")
+JAVA_KEYWORDS = re.compile(
+    r"\b(?:abstract|assert|boolean|break|byte|case|char|class|const|"
+    r"continue|do|double|else|extends|float|for|goto|if|implements|import|"
+    r"int|interface|long|native|new|non-sealed|package|permits|public|"
+    r"return|short|strictfp|super|this|throws|void|while|var|yield|null|"
+    r"true|false)\b")
 # Asbobning o'ziga buyruq ("memory ga yoz"), qo'llanma mavzusi emas.
 META = re.compile(r"\bmemory\s*(?:ga|ni|dan|da|dagi)?\s+"
                   r"(?:yoz|saqla|tozala|o'qi|eslab|qo'sh)\w*", re.I)
@@ -91,6 +128,9 @@ PROPER_RE = re.compile(r"\b(?:[A-Z][a-z0-9]*[A-Z][A-Za-z0-9]*|[A-Z]{4,}[0-9]*)\b
 CODEY_RE = re.compile(r"[a-z][A-Z]|[_.@#0-9]")
 
 RULE_RE = re.compile(r"\b(?:java|squid):s(\d+)\b", re.I)
+# Prefikssiz kalit: "S1192 takrorlanyapti". Katta S va 3-5 raqam, oldida
+# harf yoki `:` yo'q: "S3 bucket", "AS400", "java:S1192" ning o'zi emas.
+BARE_RULE_RE = re.compile(r"(?<![\w:])S(\d{3,5})\b")
 # Bitta kalit uchun shuncha bo'lim, qolgani `doc.sh rule` da.
 RULE_PER_KEY = 2
 # Indeks yasash shundan uzoq cho'zilsa, bor indeks bilan davom etiladi.
@@ -128,7 +168,8 @@ def ensure_fresh():
         import build_index
         if build_index.is_fresh():
             return
-    except Exception:
+    except Exception as exc:  # noqa: BLE001
+        hookio.fail_open("suggest_sections", exc)
         return  # yasovchi yuklanmasa, yasash ham yiqilardi
     try:
         subprocess.run([sys.executable, os.path.join(HERE, "build_index.py")],
@@ -143,16 +184,63 @@ def load_synonyms():
     table = {}
     if not os.path.exists(SYNONYMS_FILE):
         return table
+    skipping = False
     with open(SYNONYMS_FILE, encoding="utf-8") as handle:
         handle.readline()
         for line in handle:
             line = line.rstrip("\n")
-            if not line or line.startswith("#"):
+            # [xabar] bloki: nishon sinf nomi, sarlavha so'zi emas
+            # (findlib.message_table o'qiydi).
+            if line.startswith("# [xabar]"):
+                skipping = True
+            elif line.startswith("# [/xabar]"):
+                skipping = False
+            if skipping or not line or line.startswith("#"):
                 continue
             parts = line.split("\t")
             if len(parts) == 2 and parts[0] and parts[1]:
-                table[parts[0]] = parts[1].split()
+                # Ibora kaliti so'rov kabi tokenlanadi: "o'chirilgan qator".
+                key = " ".join(tokens(parts[0])) or parts[0]
+                table[key] = parts[1].split()
     return table
+
+
+def exception_rows():
+    """index/exceptions.tsv: nomi kichik harfda -> bo'lim qatorlari.
+
+    build_index nomni faqat sarlavha va nasrdan oladi, misol va umumiy
+    nomlarni (RuntimeException, OrderNotFoundException) tashlaydi.
+    """
+    out = {}
+    for row in read_tsv("exceptions.tsv"):
+        out.setdefault(row["nom"].lower(), []).append(row)
+    return out
+
+
+def known_exceptions():
+    return set(exception_rows())
+
+
+def exception_hits(prompt, titles):
+    """So'rovdagi exception nomi tushuntirilgan bo'limlar.
+
+    Nom Sonar kaliti kabi aniq signal, shuning uchun bo'limlar ball bilan
+    emas, ro'yxat boshida beriladi: "NoUniqueBeanDefinitionException: No
+    qualifying bean of type ... expected single matching bean" da xabar
+    so'zlari (`single`, `of`) begona sarlavhalarga ko'proq ball yig'adi.
+    exceptions.tsv nom ichida saralangan: sarlavhadagi nom, keyin ko'p
+    uchragani. Bitta nom uchun EXC_PER_NAME ta, nomlar so'rovdagi tartibda.
+    """
+    table = exception_rows()
+    out, seen = [], set()
+    for token in tokens(prompt):
+        if token in seen or token not in table:
+            continue
+        seen.add(token)
+        for row in table[token][:EXC_PER_NAME]:
+            key = (row["doc"], row["section"])
+            out.append(key + (titles.get(key, ""), 0.0))
+    return out
 
 
 def clean_prompt(prompt):
@@ -163,16 +251,45 @@ def clean_prompt(prompt):
     `... 42 more`, `Detail:` qatorlari tashlanadi, exception qatoridan esa
     faqat sinf nomi qoladi. Bir qatorlik "XxxException chiqyapti" ga
     tegilmaydi: unda nom mavzuning o'zi.
+
+    Korpus faqat ASCII apostrof ishlatadi, telefon va Windows o'zbek
+    klaviaturasi esa ʻ yoki ’ qo'yadi: "yoʻqolgan" aks holda "yo" va
+    "qolgan" ga bo'linardi (doc.sh find ham shunday almashtiradi).
     """
+    prompt = prompt.translate(APOSTROPHES)
+    prompt = FQCN_RE.sub(r"\1", prompt)
     if FRAME.search(prompt):
-        kept = []
-        for line in prompt.splitlines():
-            if DROP.match(line):
-                continue
-            head = HEAD.match(line)
-            kept.append(head.group(1).rsplit(".", 1)[-1] if head else line)
-        prompt = "\n".join(kept)
+        lines = [line for line in prompt.splitlines() if not DROP.match(line)]
+        heads = [i for i, line in enumerate(lines) if HEAD.match(line)]
+        known = known_exceptions()
+        for i in heads:
+            name = HEAD.match(lines[i]).group(1).rsplit(".", 1)[-1]
+            # Nom indeksda bo'lsa uning o'zi yetadi, xabar faqat shovqin.
+            # Bo'lmasa va bu ildiz sabab (oxirgi exception qatori) bo'lsa,
+            # mavzu xabarda: "PSQLException: ERROR: deadlock detected"
+            # (PSQLException korpusda yo'q). Oraliq qatorlar xabari
+            # ("could not execute statement") qolsa shovqin beradi.
+            keep = name.lower() not in known and i == heads[-1]
+            lines[i] = SEVERITY.sub(" ", lines[i]) if keep else name
+        prompt = "\n".join(lines)
+    prompt = strip_java_keywords(prompt)
     return META.sub(" ", prompt)
+
+
+def strip_java_keywords(prompt):
+    """Kod qatorlaridan Java zaxira so'zlarini olib tashlaydi.
+
+    Prompt kod deb faqat kod qatori ikkitadan ko'p bo'lsa yoki kod qatori
+    `public`, `class`, `import` kabi so'z bilan boshlansa hisoblanadi.
+    Oddiy gapdagi so'z (masalan "record ishlatsam bo'ladimi") qoladi.
+    """
+    lines = prompt.split("\n")
+    code = [i for i, line in enumerate(lines) if CODE_LINE.search(line)]
+    if not code or (len(code) < 2 and not CODE_START.match(lines[code[0]])):
+        return prompt
+    for i in code:
+        lines[i] = JAVA_KEYWORDS.sub(" ", lines[i])
+    return "\n".join(lines)
 
 
 def roots(token, vocab):
@@ -195,13 +312,26 @@ def roots(token, vocab):
 
 
 def expand(prompt, vocab, synonyms):
-    """So'rov so'zlari: o'zagi va sinonimlari bilan birga."""
-    out = set()
+    """So'rov so'zlari: o'zagi va sinonimlari bilan birga.
+
+    Kalitida bo'shliq bor sinonim ibora: uning so'zlari so'rovda ketma-ket
+    (o'zagi bilan) turgandagina nishon qo'shiladi. Umumiy so'zni
+    ("o'chirilgan", "qator") yolg'iz o'zi kamyob atamaga bog'lab
+    bo'lmaydi, ibora esa mavzuni aniq bildiradi.
+    """
+    out, seq = set(), []
     for token in tokens(prompt):
         forms = roots(token, vocab)
+        seq.append(forms)
         out |= forms
         for form in forms:
             out.update(synonyms.get(form, ()))
+    for key, targets in synonyms.items():
+        words = key.split()
+        if len(words) > 1 and any(
+                all(w in seq[i + j] for j, w in enumerate(words))
+                for i in range(len(seq) - len(words) + 1)):
+            out.update(targets)
     return out
 
 
@@ -223,7 +353,18 @@ def load_idf(total_sections):
     return idf
 
 
-def score_sections(wanted, sections, idf, term_vocab, direct=frozenset()):
+def synonym_echo(direct, synonyms):
+    """Sinonim nishoni -> uni bergan so'rov so'zlari (o'zidan farqli)."""
+    echo = {}
+    for form in direct:
+        for target in synonyms.get(form, ()):
+            if target != form:
+                echo.setdefault(target, set()).add(form)
+    return echo
+
+
+def score_sections(wanted, sections, idf, term_vocab, direct=frozenset(),
+                   echo=None):
     """Har bir bo'lim uchun uchta son: ball, kamyoblik, dalil kuchi.
 
     Uchinchisi kerak bo'lib qoldi, chunki chastota atamani mavhum so'zdan
@@ -241,6 +382,7 @@ def score_sections(wanted, sections, idf, term_vocab, direct=frozenset()):
     """
     if not wanted:
         return {}
+    echo = echo or {}
     scores = {}
     for row in sections:
         # Ishora-yozuv (`ishora` ustuni to'la) to'liq yozuvni takrorlaydi.
@@ -249,6 +391,10 @@ def score_sections(wanted, sections, idf, term_vocab, direct=frozenset()):
         shared = wanted & set(tokens(row["title"]))
         if not shared:
             continue
+        # Ikki tilli sarlavha ("Maydonga Injeksiya (Field Injection)") so'rov
+        # so'zini ham, uning sinonimini ham saqlaydi: bitta tushuncha ikki
+        # marta sanalsa "SQL injection" ga field injection birinchi chiqardi.
+        shared -= {t for t in shared if echo.get(t, set()) & shared}
         specific = [t for t in shared if is_specific(t)]
         carrying = [t for t in specific if idf.get(t, 0.0) >= EVIDENCE_MIN_IDF]
         evidence = len(carrying)
@@ -381,22 +527,51 @@ def titles_by_key(sections):
     return out
 
 
+def rank_key(item):
+    """Ball, teng bo'lsa eng kamyob mos so'z, keyin bo'lim raqami son sifatida.
+
+    Avval tenglikni hujjat nomining alifbosi hal qilardi va architect
+    tizimli ravishda oldinga chiqardi. Raqam son sifatida: 2.10 2.9 dan
+    keyin. Oxirgi kalit hujjat nomi: tartib baribir aniq bo'lsin.
+    """
+    (doc, section), (score, rare, _) = item
+    number = tuple(int(p) for p in section.split(".") if p.isdigit())
+    return (-round(score, 6), -round(rare, 6), number, doc)
+
+
 def rule_keys(prompt):
     """So'rovdagi Sonar kalitlari, rules.tsv dagi shaklda: java:S2259."""
-    return sorted({"java:S" + digits for digits in RULE_RE.findall(prompt)})
+    digits = RULE_RE.findall(prompt) + BARE_RULE_RE.findall(prompt)
+    return sorted({"java:S" + d for d in digits})
 
 
 def rule_hits(keys, titles):
-    """Kalit izohlangan bo'limlar; rules.tsv kalit ichida ulush bo'yicha saralangan."""
+    """Kalit izohlangan bo'limlar; rules.tsv kalit ichida saralangan:
+    avval katalogdagi tuzatish bo'limi (`qoida`), keyin ulush.
+
+    Kalitning bo'lim qatori umuman bo'lmasa (faqat katalog bobi
+    muqaddimasidagi jadvalda) bob qatori beriladi: hook jim qolmasin,
+    `doc.sh outline` bilan kerakli bo'limga bitta qadam.
+    """
     if not keys:
         return []
-    out, seen = [], {}
-    for row in read_tsv("rules.tsv"):
+    out, seen, chapter = [], {}, {}
+    rows = read_tsv("rules.tsv")
+    # Barqaror saralash: kalit ichida ulush tartibi saqlanadi.
+    rows.sort(key=lambda row: -int(row.get("qoida") or 0))
+    for row in rows:
         rule = row["rule"]
-        if rule in keys and row["section"] and seen.get(rule, 0) < RULE_PER_KEY:
+        if rule not in keys:
+            continue
+        if not row["section"]:
+            chapter.setdefault(rule, (row["doc"], row["chapter"]))
+        elif seen.get(rule, 0) < RULE_PER_KEY:
             seen[rule] = seen.get(rule, 0) + 1
             out.append((row["doc"], row["section"],
                         titles.get((row["doc"], row["section"]), ""), 0.0))
+    for rule in sorted(set(chapter) - set(seen)):
+        doc, number = chapter[rule]
+        out.append((doc, number, titles.get((doc, number), ""), 0.0))
     return out
 
 
@@ -408,17 +583,23 @@ def suggest(prompt):
     idf = load_idf(len(sections))
     aliases = read_tsv("aliases.tsv")
     term_vocab = (term_vocabulary(aliases) | title_terms(sections)) - DOMAIN_NOUNS
-    wanted = expand(prompt, idf, load_synonyms())
+    synonyms = load_synonyms()
+    wanted = expand(prompt, idf, synonyms)
     direct = set().union(*(roots(t, idf) for t in tokens(prompt)))
-    scores = score_sections(wanted, sections, idf, term_vocab, direct)
+    scores = score_sections(wanted, sections, idf, term_vocab, direct,
+                            synonym_echo(direct, synonyms))
     scores = score_aliases(prompt, aliases, scores)
 
     keep = {k: v for k, v in scores.items()
             if v[0] >= MIN_SCORE and v[1] >= MIN_RARE_IDF and v[2] >= MIN_EVIDENCE}
-    ranked = sorted(keep.items(), key=lambda kv: (-kv[1][0], kv[0]))
+    ranked = sorted(keep.items(), key=rank_key)
     titles = titles_by_key(sections)
     hits = rule_hits(rule_keys(prompt), titles)
     have = {(h[0], h[1]) for h in hits}
+    for hit in exception_hits(prompt, titles):
+        if (hit[0], hit[1]) not in have:
+            have.add((hit[0], hit[1]))
+            hits.append(hit)
     hits += [(doc, sec, titles.get((doc, sec), ""), total)
              for (doc, sec), (total, _, _) in ranked if (doc, sec) not in have]
     return hits[:MAX_SUGGESTIONS]
@@ -438,7 +619,7 @@ def doc_cmd():
 
 def render(hits, rules=(), cmd="tools/doc.sh"):
     """Hook matni. Sarlavha raqam bilan boshlanadi, raqam qayta yozilmaydi."""
-    lines = ["Mos bo'limlar (%s show <hujjat> <raqam>):" % cmd]
+    lines = ["Nomzod bo'limlar (%s show <hujjat> <raqam>):" % cmd]
     for doc, section, title, _ in hits:
         head = title.split(" ", 1)[0].rstrip(".")
         label = title if head == section else ("%s %s" % (section, title)).strip()
@@ -446,6 +627,49 @@ def render(hits, rules=(), cmd="tools/doc.sh"):
     for key in rules:
         lines.append("To'liq ro'yxat: %s rule %s" % (cmd, key))
     return "\n".join(lines)
+
+
+FORMAT_FILE = "format.json"
+FORMAT_SHOWN = "format.korsatildi"
+
+
+def format_notice(session):
+    """usage.py transkript formati o'zgarganini yozgan bo'lsa bitta qator.
+
+    usage.py hookda stderr ga yoza olmaydi (uni hech kim ko'rmaydi), shuning
+    uchun sababni holat papkasidagi format.json ga qo'yadi. Bu yerda u
+    sessiyada BIR MARTA aytiladi: har navbatda takrorlansa tarixda
+    to'planadi. Belgi alohida faylda, chunki usage.py format.json ni har
+    Stop da qayta yozadi.
+    """
+    folder = hookio.state_dir()
+    try:
+        with open(os.path.join(folder, FORMAT_FILE), encoding="utf-8") as handle:
+            data = json.load(handle)
+    except (OSError, ValueError):
+        return ""
+    reason = data.get("sabab") if isinstance(data, dict) else None
+    if not isinstance(reason, str) or not reason.strip():
+        return ""
+    mark = "%s\t%s" % (session, reason)
+    shown = os.path.join(folder, FORMAT_SHOWN)
+    try:
+        with open(shown, encoding="utf-8") as handle:
+            if handle.read() == mark:
+                return ""
+    except OSError:
+        pass
+    try:
+        with open(shown, "w", encoding="utf-8") as handle:
+            handle.write(mark)
+    except OSError:
+        pass   # belgi yozilmasa ham ogohlantirish beriladi
+    try:
+        from docref import tool_cmd
+        doctor = tool_cmd("doctor.py")
+    except (ImportError, SyntaxError, OSError):
+        doctor = "python3 tools/doctor.py"
+    return "usage: transkript formati o'zgargan (%s), %s" % (reason.strip(), doctor)
 
 
 def quiet(reason):
@@ -456,10 +680,17 @@ def quiet(reason):
 
 def main():
     payload = hookio.read_payload() or {}
+    if not hookio.active(payload):
+        return quiet("Java proyekti ham, klon ham emas")
     prompt = payload.get("prompt") or ""
     if not isinstance(prompt, str) or not prompt.strip():
         return quiet("stdin da prompt yo'q yoki JSON buzuq")
 
+    try:
+        notice = format_notice(str(payload.get("session_id") or ""))
+    except Exception as exc:  # noqa: BLE001
+        hookio.fail_open("suggest_sections", exc)
+        notice = ""
     try:
         ensure_fresh()
         hits = suggest(prompt)
@@ -469,9 +700,14 @@ def main():
             rules = [key for key in rules if key in known]
         text = render(hits, rules, doc_cmd()) if hits else ""
     except Exception as exc:  # hook hech qachon navbatni o'z xatosi tufayli buzmaydi
-        return quiet("%s: %s" % (type(exc).__name__, exc))
+        hookio.fail_open("suggest_sections", exc)
+        hits, text = [], ""
+        quiet("%s: %s" % (type(exc).__name__, exc))
     if not hits:
-        return quiet("mos bo'lim topilmadi (indeks: %s)" % INDEX)
+        quiet("mos bo'lim topilmadi (indeks: %s)" % INDEX)
+    text = "\n".join(part for part in (notice, text) if part)
+    if not text:
+        return None
 
     json.dump(
         {

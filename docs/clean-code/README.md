@@ -4,10 +4,10 @@ Bu hujjat toza kodning **qoidalar to'plami**. Arxitektura qarorlari, pattern kat
 test texnikasi boshqa hujjatlarda turadi; bu yerda faqat bitta savolga javob beriladi:
 klaviatura ostida tug'ilayotgan shu qator toza yoki yo'q.
 
-Hujjat oltilikning bir qismi va qasddan takrorlanmaydi:
+Hujjat oltilikning bir qismi, har biri boshqa savolga javob beradi:
 
 - [Dizayn patternlar](../patterns/README.md) - pattern katalogi, SOLID va GRASP printsiplari, 83 ta anti-pattern.
-- [Arxitektor miyyasi](../architect/README.md) - qaror, abstraksiya, chegara, murakkablik, JVM va PostgreSQL mexanikasi.
+- [Arxitektor miyasi](../architect/README.md) - qaror, abstraksiya, chegara, murakkablik, JVM va PostgreSQL mexanikasi.
 - [Testlash qo'llanmasi](../testing/README.md) - test strategiyasi, piramida, Testcontainers, CI pipeline.
 - [SonarQube](../sonarqube/README.md) - statik tahlil, quality gate, coverage, Sonar xato katalogi.
 - [Kod review](../code-review/README.md) - diffni o'qish, review stolida nimani ko'rish va nimani to'xtatish.
@@ -32,6 +32,8 @@ ma'lumotnoma va o'z-o'zini baholash uchun.
 
 
 **Versiya bazasi:** Java 21 LTS (pol: 17, Java 25 eslatmalari bilan), Spring Boot 3.2-3.5 (4.0 eslatmalari bilan), PostgreSQL 16+ (15-18 havolalari bilan), JUnit 5.
+
+> Holat: 49 bobdan 0 tasi odam tekshirgan, 0 tasi tekshirilmoqda, qolgan 49 tasi AI yozgan va inson tekshirmagan. Har bob holati: [docs/review.tsv](../review.tsv).
 
 ## Mundarija
 

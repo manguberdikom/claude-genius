@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 11. Qamralmay qoladigan kod va unga test yozish (Code That Stays Uncovered)
 
 <details>

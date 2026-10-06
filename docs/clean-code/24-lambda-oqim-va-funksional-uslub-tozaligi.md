@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 24. Lambda, oqim va funksional uslub tozaligi (Lambdas and Streams)
 
 <details>
@@ -21,7 +23,7 @@
 </details>
 
 
-Oqim va sikl tanlovi [arxitektor hujjatidagi](../architect/README.md) Stream API bo'limida, `Optional` ning to'g'ri ishlatilishi 13.5 da berilgan. Bu bobda funksional kodning tozalik qoidalari: lambda uzunligi, metod havolasi, yon ta'sir, `Collectors` ni o'qiladigan ushlash va istisnolar.
+Oqim va sikl tanlovi arxitektor hujjatidagi [Stream API](../architect/13-zamonaviy-java-tili-va-api-dizayni.md#136-stream-api-qachon-foyda-qachon-oddiy-sikl-tushunarliroq) bo'limida, `Optional` ning to'g'ri ishlatilishi esa o'sha bobdagi [Optional ni to'g'ri ishlatish](../architect/13-zamonaviy-java-tili-va-api-dizayni.md#135-optional-ni-togri-ishlatish-qaytish-qiymati-maydon-emas) bo'limida berilgan. Bu bobda funksional kodning tozalik qoidalari: lambda uzunligi, metod havolasi, yon ta'sir, `Collectors` ni o'qiladigan ushlash va istisnolar.
 
 ## 24.1 Lambda uzunligi va uni metodga chiqarish
 

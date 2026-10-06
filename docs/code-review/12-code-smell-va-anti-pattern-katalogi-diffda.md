@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 12. Code smell va anti-pattern katalogi diffda (Smells in a Diff)
 
 <details>

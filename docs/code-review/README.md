@@ -8,7 +8,7 @@ Hujjat oltilikning bir qismi va qolganlari bilan kesishmaydi:
 
 - pattern katalogi - [Dizayn patternlar](../patterns/README.md)
 - test yozish texnikasi - [Testlash qo'llanmasi](../testing/README.md)
-- JVM, Spring va PostgreSQL ichki mexanikasi - [Arxitektor miyyasi](../architect/README.md)
+- JVM, Spring va PostgreSQL ichki mexanikasi - [Arxitektor miyasi](../architect/README.md)
 - statik tahlil qoidalari va quality gate - [SonarQube](../sonarqube/README.md)
 - toza kod qoidalari - [Toza kod qoidalari](../clean-code/README.md)
 
@@ -24,6 +24,8 @@ Review izohlari uchun tayyor iboralar oxirgi bobda.
 
 
 **Versiya bazasi:** Java 21 LTS (pol: 17, Java 25 eslatmalari bilan), Spring Boot 3.2-3.5 (4.0 eslatmalari bilan), PostgreSQL 16+ (15-18 havolalari bilan), JUnit 5.
+
+> Holat: 44 bobdan 0 tasi odam tekshirgan, 1 tasi tekshirilmoqda, qolgan 43 tasi AI yozgan va inson tekshirmagan. Har bob holati: [docs/review.tsv](../review.tsv).
 
 ## Mundarija
 

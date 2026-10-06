@@ -1,6 +1,8 @@
 <!-- doc: architect | chapter: 24 | part: IV. PostgreSQL chuqur bilim -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
+
+> Holat: AI yozgan, inson tekshirmagan.
 
 # 24. Planner, statistika va EXPLAIN ANALYZE o'qish (Planner and EXPLAIN ANALYZE)
 

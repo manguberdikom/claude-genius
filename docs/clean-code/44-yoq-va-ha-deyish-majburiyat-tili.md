@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 44. "Yo'q" va "ha" deyish: majburiyat tili (Saying No and Saying Yes)
 
 <details>

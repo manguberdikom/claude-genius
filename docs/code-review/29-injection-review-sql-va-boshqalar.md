@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 29. Injection review: SQL va boshqalar (Injection)
 
 <details>

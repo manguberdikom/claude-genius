@@ -2,10 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 30. Spring AI va LLM integratsiya patternlari (Spring AI & LLM Integration Patterns)
 
 <details>
-<summary>Bu bo'limdagi 21 bo'lim</summary>
+<summary>Bu bobdagi 21 bo'lim</summary>
 
 - [30.1 ChatClient abstraksiyasi (ChatClient abstraction - Bridge over model providers)](#301-chatclient-abstraksiyasi-chatclient-abstraction---bridge-over-model-providers)
 - [30.2 Prompt shabloni (Prompt Template)](#302-prompt-shabloni-prompt-template)
@@ -228,7 +230,7 @@ Invoice invoice = chatClient.prompt()
 
 **Tavsif:** Model provayderi tashqi, sekin va kvotali servis: 429 (rate limit), 5xx, tarmoq uzilishi va cho'zilib ketgan generatsiya normal holat. Pattern uchta mudofaa chizig'ini birlashtiradi - qaytariladigan xatolarni backoff bilan retry qilish, har bir chaqiruvga qat'iy timeout qo'yish va o'z tomondan chiqadigan so'rov tezligini (hamda parallel chaqiruvlar sonini) cheklab, provayder kvotasini himoyalash. Natijada bitta sekin chaqiruv butun thread pool'ni yoki kvotani yeb qo'ymaydi.
 
-**Spring'da qayerda uchraydi:** Spring AI'da retry Spring Retry ustida qurilgan va `spring.ai.retry.max-attempts`, `spring.ai.retry.backoff.initial-interval`, `spring.ai.retry.backoff.multiplier`, `spring.ai.retry.on-client-errors`, `spring.ai.retry.exclude-on-http-codes` property'lari bilan boshqariladi; xohlasangiz o'z `RetryTemplate` bean'ingizni berasiz (`RetryUtils.DEFAULT_RETRY_TEMPLATE` - asos sifatida). Timeout model mijozining HTTP qatlamida qo'yiladi: `RestClient.Builder` / `WebClient.Builder` yoki `ClientHttpRequestFactorySettings` (Spring Boot 3.x `ClientHttpRequestFactoryBuilder`) orqali connect/read timeout, streaming uchun esa reaktiv `Flux` ustida `.timeout(Duration.ofSeconds(60))`. Rate limiting va circuit breaker Spring AI'da yo'q - bu Resilience4j (`@RateLimiter`, `@CircuitBreaker`, `@Bulkhead`, `@TimeLimiter`, Spring Cloud CircuitBreaker starter) yoki Bucket4j zimmasida; Spring Framework 7 / Boot 4 esa framework ichida `org.springframework.resilience` paketidagi `@Retryable` va `@ConcurrencyLimit` annotatsiyalarini taqdim etadi. Virtual thread'lar (Java 21+, `spring.threads.virtual.enabled=true`) bloklanadigan LLM chaqiruvlarini arzon qiladi, lekin bu concurrency limit zarurligini bekor qilmaydi.
+**Spring'da qayerda uchraydi:** Spring AI'da retry Spring Retry ustida qurilgan va `spring.ai.retry.max-attempts`, `spring.ai.retry.backoff.initial-interval`, `spring.ai.retry.backoff.multiplier`, `spring.ai.retry.on-client-errors`, `spring.ai.retry.exclude-on-http-codes` property'lari bilan boshqariladi; xohlasangiz o'z `RetryTemplate` bean'ingizni berasiz (`RetryUtils.DEFAULT_RETRY_TEMPLATE` - asos sifatida). Timeout model mijozining HTTP qatlamida qo'yiladi: `RestClient.Builder` / `WebClient.Builder` yoki `HttpClientSettings` (Spring Boot 4.0 gacha `ClientHttpRequestFactorySettings`, 3.x da `ClientHttpRequestFactoryBuilder` ham) orqali connect/read timeout, streaming uchun esa reaktiv `Flux` ustida `.timeout(Duration.ofSeconds(60))`. Rate limiting va circuit breaker Spring AI'da yo'q - bu Resilience4j (`@RateLimiter`, `@CircuitBreaker`, `@Bulkhead`, `@TimeLimiter`, Spring Cloud CircuitBreaker starter) yoki Bucket4j zimmasida; Spring Framework 7 / Boot 4 esa framework ichida `org.springframework.resilience` paketidagi `@Retryable` va `@ConcurrencyLimit` annotatsiyalarini taqdim etadi. Virtual thread'lar (Java 21+, `spring.threads.virtual.enabled=true`) bloklanadigan LLM chaqiruvlarini arzon qiladi, lekin bu concurrency limit zarurligini bekor qilmaydi.
 
 **Qo'llanish keyslari:**
 - 429 va 503 xatolarida eksponensial backoff + jitter bilan 3 marta qayta urinish, 400 (yomon prompt) da esa umuman retry qilmaslik.

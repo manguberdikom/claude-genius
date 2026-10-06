@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 39. Bir qadamli build va mahalliy qaytish halqasi (One-Step Build)
 
 <details>

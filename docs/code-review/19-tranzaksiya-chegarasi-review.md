@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 19. Tranzaksiya chegarasi review (Transaction Boundaries)
 
 <details>
@@ -22,7 +24,7 @@
 </details>
 
 
-Tranzaksiya chegarasi - Spring loyihasida eng ko'p xato qilinadigan dizayn qarori, va eng qimmat oqibat beradigan joy: noto'g'ri chegara ma'lumot nomuvofiqligi, uzoq qulflar yoki butun ilovaning to'xtashiga olib keladi. Bu bob chegarani diffdan baholashni beradi. Izolyatsiya darajalari va PostgreSQL MVCC mexanikasi [27-bobda](27-izolyatsiya-poyga-holatlari-va-xabar.md) va [Arxitektor miyyasi](../architect/README.md) da.
+Tranzaksiya chegarasi - Spring loyihasida eng ko'p xato qilinadigan dizayn qarori, va eng qimmat oqibat beradigan joy: noto'g'ri chegara ma'lumot nomuvofiqligi, uzoq qulflar yoki butun ilovaning to'xtashiga olib keladi. Bu bob chegarani diffdan baholashni beradi. Izolyatsiya darajalari va PostgreSQL MVCC mexanikasi [27-bobda](27-izolyatsiya-poyga-holatlari-va-xabar.md) va [Arxitektor miyasi](../architect/README.md) da.
 
 ## 19.1 Chegara qayerda turishi kerak
 

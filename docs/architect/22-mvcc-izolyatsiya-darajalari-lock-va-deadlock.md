@@ -1,6 +1,8 @@
 <!-- doc: architect | chapter: 22 | part: IV. PostgreSQL chuqur bilim -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
+
+> Holat: AI yozgan, inson tekshirmagan.
 
 # 22. MVCC, izolyatsiya darajalari, lock va deadlock (MVCC and Isolation)
 

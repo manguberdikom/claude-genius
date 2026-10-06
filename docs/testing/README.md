@@ -1,22 +1,24 @@
 # Java Spring loyihasida testlash: arxitektor uchun to'liq qo'llanma
 
-Bu qo'llanma Java va Spring loyihasida testlashni boshdan oxir qamrab oladi: sifat strategiyasi, testrovshikning kundalik ish jarayoni, unit va integratsion test yozish, contract testing, test ma'lumotlari, CI/CD pipeline, metrikalar va shablonlar. 18 bob, 239 bo'lim.
+Bu qo'llanma Java va Spring loyihasida testlashni boshdan oxir qamrab oladi: sifat strategiyasi, testerning kundalik ish jarayoni, unit va integratsion test yozish, contract testing, test ma'lumotlari, CI/CD pipeline, metrikalar va shablonlar. 18 bob, 239 bo'lim.
 
 Qo'llanma kimga: arxitektor, tech lead, QA lead, backend developer va automation muhandisi.
 
 Har bir bob oxirida `Arxitektor nazorat ro'yxati` bor: loyihada darhol tekshirish mumkin bo'lgan amaliy bandlar.
 
 
-**Bu hujjat oltilikning bir qismi.** Mavzular takrorlanmaydi; qolgan beshtasi: [Dizayn patternlar katalogi](../patterns/README.md), [Arxitektor miyyasi](../architect/README.md), [SonarQube hujjati](../sonarqube/README.md), [Toza kod qoidalari](../clean-code/README.md), [Kod review](../code-review/README.md).
+**Bu hujjat oltilikning bir qismi.** Har biri boshqa savolga javob beradi; qolgan beshtasi: [Dizayn patternlar katalogi](../patterns/README.md), [Arxitektor miyasi](../architect/README.md), [SonarQube hujjati](../sonarqube/README.md), [Toza kod qoidalari](../clean-code/README.md), [Kod review](../code-review/README.md).
 
 **Versiya bazasi:** Java 21 LTS (pol: 17, Java 25 eslatmalari bilan), Spring Boot 3.2-3.5 (4.0 eslatmalari bilan), PostgreSQL 16+ (15-18 havolalari bilan), JUnit 5.
+
+> Holat: 18 bobdan 0 tasi odam tekshirgan, 0 tasi tekshirilmoqda, qolgan 18 tasi AI yozgan va inson tekshirmagan. Har bob holati: [docs/review.tsv](../review.tsv).
 
 ## Mundarija
 
 - **1.** [Sifat strategiyasi va arxitektorning roli (Quality Strategy & the Architect's Role)](01-sifat-strategiyasi-va-arxitektorning-roli.md) - 9 bo'lim
 - **2.** [Test piramidasi va test turlari xaritasi (Test Pyramid & the Map of Test Types)](02-test-piramidasi-va-test-turlari-xaritasi.md) - 9 bo'lim
 - **3.** [Kim nima yozadi: rollar va mas'uliyat (Who Writes What - Roles & Responsibilities)](03-kim-nima-yozadi-rollar-va-masuliyat.md) - 10 bo'lim
-- **4.** [Testrovshik qanday ishlashi kerak: QA ish jarayoni (How a Tester Actually Works - The QA Workflow)](04-testrovshik-qanday-ishlashi-kerak-qa-ish.md) - 12 bo'lim
+- **4.** [Tester qanday ishlashi kerak: QA ish jarayoni (How a Tester Actually Works - The QA Workflow)](04-testrovshik-qanday-ishlashi-kerak-qa-ish.md) - 12 bo'lim
 - **5.** [Unit test: asoslar, qoidalar va JUnit 5 (Unit Testing - Foundations, Rules & JUnit 5)](05-unit-test-asoslar-qoidalar-va-junit-5.md) - 14 bo'lim
 - **6.** [Unit test Spring loyihasida: kontekstsiz testlash (Unit Testing in a Spring Project)](06-unit-test-spring-loyihasida-kontekstsiz.md) - 12 bo'lim
 - **7.** [Integratsion test: Spring Boot slice testlari (Integration Testing - Spring Boot Test Slices)](07-integratsion-test-spring-boot-slice-testlari.md) - 13 bo'lim

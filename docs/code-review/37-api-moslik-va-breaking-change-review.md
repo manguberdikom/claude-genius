@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 37. API moslik va breaking change review (API Compatibility)
 
 <details>
@@ -114,8 +116,8 @@ mapper.enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);   // standart 
 // sozlangan mijoz sinadi - ya'ni "mos" o'zgarish ham breaking bo'ladi.
 
 // Review tavsiyasi ikki tomonga:
-// 1) Iste'molchi sifatida: noma'lum maydonlarga chidamli bo'lish.
-spring.jackson.deserialization.fail-on-unknown-properties=false
+// 1) Iste'molchi sifatida: noma'lum maydonlarga chidamli bo'lish
+//    (Spring Boot da spring.jackson.deserialization.fail-on-unknown-properties=false).
 // 2) Provayder sifatida: mijozlarning qattiqligini bilish va
 //    yangi maydon qo'shishni ham e'lon qilish.
 ```

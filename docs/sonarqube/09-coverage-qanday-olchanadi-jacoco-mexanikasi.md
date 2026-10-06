@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 9. Coverage qanday o'lchanadi: JaCoCo mexanikasi (How Coverage Is Measured)
 
 <details>
@@ -165,12 +167,12 @@ Eng ko'p savol tug'diradigan holat shu: qator yashil, lekin yonida "1 of 2 branc
 
 `&&` va `||` operatorlari bitta qatorda bir nechta shart yaratadi. `if (order.isPaid() && order.getItems().size() > 0)` qatori bytecode da ikki `IFEQ` beradi, ya'ni to'rt tarmoq. Short-circuit sababli birinchi shart `false` bo'lsa ikkinchisi hech qachon bajarilmaydi. To'rt tarmoqni to'liq qoplash uchun kamida uch xil kirish kerak.
 
-Bundan tashqari kompilyator ko'rinmaydigan shartlar qo'shadi. `assert` operatori `$assertionsDisabled` maydoni ustida shart yaratadi. `try-with-resources` `close()` chaqirig'ini takrorlaydi va `null` tekshiruvi qo'yadi. Avtomatik unboxing `null` tekshiruvini keltiradi. JaCoCo 0.8.x bu naqshlarning kattaroq qismini filtrlaydi: `assert`, `try-with-resources` ning takroriy `finally` bloki, `record` ning generatsiya qilingan `equals`, `hashCode`, `toString` metodlari, `enum` ning `values()` va `valueOf()` metodlari, hamda `lombok.Generated` bilan belgilangan kod. Filtr ishlashi uchun JaCoCo versiyasi yangi bo'lishi kerak, shuning uchun 0.8.7 dan eski versiyada ko'p soxta qoplanmagan branch ko'rinadi.
+Bundan tashqari kompilyator ko'rinmaydigan shartlar qo'shadi. `assert` operatori `$assertionsDisabled` maydoni ustida shart yaratadi. `try-with-resources` `close()` chaqirig'ini takrorlaydi va `null` tekshiruvi qo'yadi. Avtomatik unboxing `null` tekshiruvini keltiradi. JaCoCo 0.8.x bu naqshlarning kattaroq qismini filtrlaydi: `assert`, `try-with-resources` ning takroriy `finally` bloki, `record` ning generatsiya qilingan `equals`, `hashCode`, `toString` metodlari, `enum` ning `values()` va `valueOf()` metodlari, hamda `lombok.Generated` bilan belgilangan kod. Filtrlar versiyama-versiya qo'shilgan: `@lombok.Generated` 0.8.0 dan, nomi `Generated` bo'lgan har qanday annotatsiya 0.8.2 dan, `record` ning `equals`, `hashCode`, `toString` metodlari 0.8.6 dan, `assert` 0.8.8 dan ([JaCoCo changelog, v0.8.14](https://github.com/jacoco/jacoco/blob/v0.8.14/org.jacoco.doc/docroot/doc/changes.html)). Shuning uchun eski versiyada soxta qoplanmagan branch ko'rinadi.
 
 | Tuzoq | Nega shunday bo'ladi | Yechim |
 |---|---|---|
 | Qator yashil, branch sariq | bir qatorda `&&` orqali ikki shart bor | shartni ajratib yoz yoki uchinchi test holatini qo'sh |
-| Lombok generatsiya qilgan kod qoplanmagan | eski JaCoCo filtri `@Generated` ni bilmaydi | JaCoCo 0.8.8 va yuqorisiga o't, `lombok.config` da `addLombokGeneratedAnnotation = true` |
+| Lombok generatsiya qilgan kod qoplanmagan | 0.8.2 dan oldingi JaCoCo umumiy `@Generated` ni filtrlamaydi, yoki `lombok.config` da annotatsiya yoqilmagan | JaCoCo 0.8.8 va yuqorisiga o't, `lombok.config` da `addLombokGeneratedAnnotation = true` |
 | `record` metodlari qizil | kanonik `equals` sinovdan o'tmagan | JaCoCo yangi versiyasi ularni filtrlaydi, versiyani tekshir |
 | Klass 0% bilan turadi | `.exec` dagi CRC64 hisobotdagi `.class` ga mos emas | hisobotni test ishlagan build artefakti bilan yarat, orada `clean` qilma |
 | `enum` switch da qo'shimcha branch | sintetik `$SwitchMap` yoki `MatchException` tarmog'i | exhaustive switch da `default` yozma, JaCoCo ni yangila |

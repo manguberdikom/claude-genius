@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 21. CI/CD ga ulash, PR decoration va blokirovka (CI/CD Integration)
 
 <details>

@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 13. Domen modeli review: invariant, agregat, chegara (Reviewing the Domain Model)
 
 <details>
@@ -22,7 +24,7 @@
 </details>
 
 
-Domen modeli - tizimning eng uzoq yashaydigan qismi. Controller qayta yoziladi, ORM almashtiriladi, lekin "buyurtma nima" degan savolning javobi yillar davomida qoladi. Shu sababli domen modeliga tegadigan PR boshqa PR lardan chuqurroq o'qiladi: bu yerdagi xato keyinchalik yuzta joyda ko'rinadi. DDD atamalarining ta'rifi [Dizayn patternlar](../patterns/README.md) va [Arxitektor miyyasi](../architect/README.md) da; bu yerda faqat review savollari.
+Domen modeli - tizimning eng uzoq yashaydigan qismi. Controller qayta yoziladi, ORM almashtiriladi, lekin "buyurtma nima" degan savolning javobi yillar davomida qoladi. Shu sababli domen modeliga tegadigan PR boshqa PR lardan chuqurroq o'qiladi: bu yerdagi xato keyinchalik yuzta joyda ko'rinadi. DDD atamalarining ta'rifi [Dizayn patternlar](../patterns/README.md) va [Arxitektor miyasi](../architect/README.md) da; bu yerda faqat review savollari.
 
 ## 13.1 Modelning asosiy savoli: invariant kim tomonidan himoyalangan
 
@@ -206,9 +208,12 @@ Agar biznes "aktivatsiya" deyotgan bo'lsa, kodda `enable`, `turnOn` va `activate
 
 ```bash
 # Domen tilining izchilligini tekshirish: bitta tushuncha necha xil nom bilan.
+# -o har uchrashni alohida qatorga chiqaradi, ya'ni wc -l uchrashlar sonini
+# beradi. -w qo'yilmaydi: u activateAccount kabi camelCase nomni o'tkazib yuboradi.
 for term in activate enable turnOn start; do
-  printf '%-10s %s\n' "$term" "$(grep -rn --include='*.java' -c "$term" src/main/java | wc -l)"
+  printf '%-10s %s\n' "$term" "$(grep -rhoi --include='*.java' "$term" src/main/java | wc -l)"
 done
+# Nechta faylda uchrashini bilish kerak bo'lsa: grep -rli --include='*.java' "$term" src/main/java | wc -l
 # Natijada bir tushuncha uchun to'rt nom chiqsa, lug'atni kelishib olish kerak.
 ```
 

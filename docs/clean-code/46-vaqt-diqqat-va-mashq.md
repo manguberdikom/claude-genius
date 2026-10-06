@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 46. Vaqt, diqqat va mashq (Time, Focus and Practice)
 
 <details>
@@ -20,7 +22,7 @@
 </details>
 
 
-Kod sifati diqqat sifatiga bog'liq va diqqat cheklangan resurs. Bu bobda shu resursni boshqarish: uzilishlar, vaqt bloklari, ko'r yo'laklardan chiqish va ataylab mashq. Vaqtni taqsimlash yetakchi nuqtai nazaridan [arxitektor hujjatidagi](../architect/README.md) vaqtni taqsimlash bo'limida, o'rganish rejasi esa 38.12 da.
+Kod sifati diqqat sifatiga bog'liq va diqqat cheklangan resurs. Bu bobda shu resursni boshqarish: uzilishlar, vaqt bloklari, ko'r yo'laklardan chiqish va ataylab mashq. Vaqtni taqsimlash yetakchi nuqtai nazaridan arxitektor hujjatidagi [vaqtni taqsimlash](../architect/36-code-review-va-jamoada-texnik-yetakchilik.md#3612-vaqtni-taqsimlash-kod-hujjat-suhbat-organish) bo'limida, [o'rganish rejasi](../architect/38-doimiy-organish-va-texnologiya-tanlash.md#3812-oz-organish-rejangizni-tuzish-chorak-uchun-aniq-maqsadlar) esa o'sha hujjatning o'rganish bobida.
 
 ## 46.1 Diqqat resursi va uni sarflash
 

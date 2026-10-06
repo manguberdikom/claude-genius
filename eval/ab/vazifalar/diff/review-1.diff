@@ -1,0 +1,38 @@
+diff --git a/src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java b/src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java
+index e5edf5b..d527fbd 100644
+--- a/src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java
++++ b/src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java
+@@ -104,7 +104,7 @@ class OwnerController {
+ 		}
+ 
+ 		// find owners by last name
+-		Page<Owner> ownersResults = findPaginatedForOwnersLastName(page, lastName);
++		Page<Owner> ownersResults = cachedSearch(page, lastName);
+ 		if (page < 1 || page > Math.max(ownersResults.getTotalPages(), 1)) {
+ 			redirectAttributes.addAttribute("page", 1);
+ 			if (!lastName.isEmpty()) {
+@@ -138,6 +138,24 @@ class OwnerController {
+ 		return "owners/ownersList";
+ 	}
+ 
++	private static final java.util.Map<String, Page<Owner>> SEARCH_CACHE = new java.util.HashMap<>();
++
++	private Page<Owner> cachedSearch(int page, String lastname) {
++		String key = "owners-" + lastname + "-" + page;
++		if (SEARCH_CACHE.containsKey(key)) {
++			return SEARCH_CACHE.get(key);
++		}
++		try {
++			Page<Owner> result = findPaginatedForOwnersLastName(page, lastname);
++			SEARCH_CACHE.put(key, result);
++			return result;
++		}
++		catch (Exception e) {
++			e.printStackTrace();
++			return Page.empty();
++		}
++	}
++
+ 	private Page<Owner> findPaginatedForOwnersLastName(int page, String lastname) {
+ 		int pageSize = 5;
+ 		int validatedPage = Math.max(page, 1);

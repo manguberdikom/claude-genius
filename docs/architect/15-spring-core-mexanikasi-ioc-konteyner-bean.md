@@ -1,6 +1,8 @@
 <!-- doc: architect | chapter: 15 | part: III. Spring chuqur bilim -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
+
+> Holat: AI yozgan, inson tekshirmagan.
 
 # 15. Spring Core mexanikasi: IoC konteyner, bean lifecycle, AOP proxy (Spring Core Mechanics)
 
@@ -308,6 +310,8 @@ Uch yechim bor va ularning narxi farq qiladi. Eng toza yechim mas'uliyatni ikki 
 | `@Async` metod `void` va exception | xato yo'qoladi | `CompletableFuture` qaytarish |
 | Prototype singleton ichida | bir marta olinadi | `ObjectProvider` |
 | Request scope `@Async` ichida | `BeanCreationException` | qiymatni oldin DTO ga ko'chirish |
+
+Mavzuning to'liq yozuvi [transactional self-invocation](19-spring-tranzaksiyalari-va-ularning.md#196-ichki-metod-chaqiruvi-tuzogi-va-undan-chiqish-yollari) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
 
 ## 15.10 `ApplicationEvent` va `@EventListener`: sinxron tabiati va tranzaksiya bilan bog'liqligi
 

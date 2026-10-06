@@ -1,6 +1,8 @@
 <!-- doc: architect | chapter: 36 | part: VI. Amaliyot va o'sish -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
+
+> Holat: AI yozgan, inson tekshirmagan.
 
 # 36. Code review va jamoada texnik yetakchilik (Code Review and Technical Leadership)
 
@@ -243,6 +245,8 @@ spring.lifecycle.timeout-per-shutdown-phase=25s
 | Yangi odam sekin o'sadi | PR da 30 izoh, prioritet yo'q | Uchta izoh qoidasi va prefikslar |
 | Migratsiya yarim yo'lda qoladi | Eski yo'l o'chirilmagan | Oxirgi PR da eski kodni o'chirish sharti |
 | Faqat bitta odam domenni biladi | Review doim bir odamda | Juftlik review va rotatsiya |
+
+Mavzuning to'liq yozuvi testlash qo'llanmasidagi [arxitektura testlari va kod sifati darvozalari](../testing/14-arxitektura-testlari-va-kod-sifati.md#142-archunit-asoslari) bo'limida; bu yerda faqat arxitektura nuqtai nazari.
 
 ## 36.10 Jamoaning bilim xaritasi va bitta odamga bog'liqlikni kamaytirish
 

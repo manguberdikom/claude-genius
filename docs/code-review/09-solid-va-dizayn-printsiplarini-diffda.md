@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 9. SOLID va dizayn printsiplarini diffda tekshirish (Principles, Not Slogans)
 
 <details>

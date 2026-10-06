@@ -1,6 +1,8 @@
 <!-- doc: architect | chapter: 33 | part: VI. Amaliyot va o'sish -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
+
+> Holat: AI yozgan, inson tekshirmagan.
 
 # 33. Sxema migratsiyasi va to'xtashsiz reliz (Schema Migration and Zero-Downtime Release)
 

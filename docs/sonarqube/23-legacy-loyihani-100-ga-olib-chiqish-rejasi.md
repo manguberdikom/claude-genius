@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 23. Legacy loyihani 100% ga olib chiqish rejasi (Bringing a Legacy Project to 100)
 
 <details>

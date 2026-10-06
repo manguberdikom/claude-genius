@@ -1,6 +1,8 @@
 <!-- doc: architect | chapter: 9 | part: II. Java chuqur bilim -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
+
+> Holat: AI yozgan, inson tekshirmagan.
 
 # 9. JVM ichki tuzilishi: class loading, memory model, JIT (JVM Internals)
 

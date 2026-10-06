@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 1. SonarQube arxitekturasi va tahlil oqimi (Architecture and Analysis Flow)
 
 <details>

@@ -1,6 +1,8 @@
 <!-- doc: architect | chapter: 7 | part: I. Fikrlash va qarorlar -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
+
+> Holat: AI yozgan, inson tekshirmagan.
 
 # 7. Nosozlik haqida fikrlash (Thinking About Failure)
 
@@ -150,6 +152,8 @@ RETURNING id;
 Idempotentlikning ikkinchi shakli natural kalitlar orqali keladi. Ombor qoldig'ini `stock = stock - 5` deb emas, hodisa identifikatori bilan yozib keyin yig'indini hisoblash qayta urinishga chidamli bo'ladi. Bu yerda outbox va hodisa jurnali kerak bo'ladi, dizayn [patternlar hujjatidagi](../patterns/README.md) outbox pattern bo'limi mexanikani tushuntiradi.
 
 Tashqi tizim o'zi idempotent bo'lmasa, uni siz idempotent qilasiz: har chaqiruvga `request_id` saqlab, javobni yozib, retry'ni o'sha saqlangan natija orqali boshqarasiz.
+
+Mavzuning to'liq yozuvi [idempotency](../patterns/07-api-dizayn-patternlari.md#79-idempotentlik-kaliti-idempotency-key) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
 
 ## 7.6 Qisman nosozlikda nima qilish: degradatsiya rejasi va zaxira javob
 

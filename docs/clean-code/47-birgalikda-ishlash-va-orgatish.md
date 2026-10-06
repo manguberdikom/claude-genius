@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 47. Birgalikda ishlash va o'rgatish (Collaboration and Mentoring)
 
 <details>

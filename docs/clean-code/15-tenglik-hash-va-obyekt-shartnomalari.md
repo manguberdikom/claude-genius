@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 15. Tenglik, hash va obyekt shartnomalari (Equality, Hashing and Object Contracts)
 
 <details>

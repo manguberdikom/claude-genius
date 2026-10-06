@@ -2,10 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 11. Keshlash patternlari (Caching Patterns)
 
 <details>
-<summary>Bu bo'limdagi 23 bo'lim</summary>
+<summary>Bu bobdagi 23 bo'lim</summary>
 
 - [11.1 Kesh-yonida (Cache-Aside)](#111-kesh-yonida-cache-aside)
 - [11.2 O'qish-orqali (Read-Through)](#112-oqish-orqali-read-through)

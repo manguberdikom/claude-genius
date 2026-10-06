@@ -6,6 +6,10 @@
     python3 install/rewrite_paths.py <papka> --root <klon> --tekshir
     python3 install/rewrite_paths.py <papka> --root <klon> \
         [--python P] [--bash B] --allow
+    python3 install/rewrite_paths.py <papka> --root <klon> \
+        [--python P] --opt-in
+    python3 install/rewrite_paths.py <papka> --root <snapshot> --clone <klon> \
+        [--root-keyin] ...
 
 Nega kerak: skill matni `python3 tools/rules_for.py` deb yozilgan va bu
 yo'l JORIY papkaga nisbatan hal qilinadi. Klon ichida ishlaganda to'g'ri,
@@ -25,6 +29,29 @@ shuning uchun klon ichidagi xulq o'zgarmaydi. `--allow` faylga yozmaydi:
 allaqachon almashtirilgan matnda uchragan har asbob uchun ruxsat qoidasini
 JSON qilib chiqaradi. Qoida buyruq matnining aynan boshlanishi bo'lishi
 shart, shuning uchun uni yo'lni yozgan funksiyaning o'zi yasaydi.
+
+`--root` global o'rnatishda PIN QILINGAN SNAPSHOT (`~/.claude/genius/<sha12>`,
+install/snapshot.py): asboblar va qo'llanma shu yerdan o'qiladi. Yoziladigan
+`memory/` yo'li esa klonga ketadi: `--clone <klon>` berilsa matndagi
+`memory/` shu klonga almashadi (memory klon reposi bilan push qilinadi va
+snapshot almashganda yo'qolmasligi shart). `--clone` siz klon = `--root`,
+ya'ni klon ichida ishlash o'zgarmaydi. `--root-keyin`: snapshot hali
+yaratilmagan (quruq yurish), `--root` mavjudligi tekshirilmaydi; `--clone`
+baribir mavjud bo'lishi shart.
+
+Global ruxsat faqat yon ta'sirsiz asboblarga beriladi (XV-K1, XV-T1):
+- `run_tests.py` ro'yxatga KIRMAYDI. U proyektning gradlew, build.gradle,
+  pom plaginlari va boshqa build kodini bajaradi: fork PR yoki begona
+  klonda bu so'rovsiz kod bajarish bo'lardi. Ishonchli proyekt uchun
+  qoidani `--opt-in` beradi, o'rnatuvchi uni `settings.local.json` ga
+  qo'shish uchun chiqaradi.
+- `guruh.py` uchun faqat `yarat` va `royxat` subbuyruqlari. `birlashtir`
+  va `tozala` worktree, branch va papkani o'zgartiradi yoki o'chiradi,
+  ular har safar so'raladi.
+
+`--root` va `--python` qiymatida `$`, backtick yoki qo'sh qo'shtirnoq
+bo'lsa 2 qaytadi (XV-P2): hook buyrug'i bash da qo'sh qo'shtirnoq ichida
+yuradi va bu belgilar u yerda kengayadi yoki qo'shtirnoqni buzadi.
 
 `doc.sh` bash skripti. Windows da bash har doim bo'lmaydi, shuning uchun
 u ochiq chaqiriladi: `bash "<klon>/tools/doc.sh"`. `--bash` bilan berilgan
@@ -58,9 +85,27 @@ MEM_PATH = re.compile(r"(?<![\w/])memory/(?=[\w<])")
 # Klon ildizidagi, skill matni nomi bilan tilga oladigan fayllar. Ular
 # Read bilan ham, shell argumenti sifatida ham (`awk '...' <fayl>`)
 # o'qiladi, shuning uchun tools/ yo'li kabi qo'shtirnoqqa olinadi.
-ROOT_FILES = ("memory-protocol.md",)
-ROOT_FILE = re.compile(r"(?<![\w/.-])(%s)\b"
-                       % "|".join(re.escape(name) for name in ROOT_FILES))
+#
+# Hozir bo'sh: memory qoidasi `memory/README.md` ga ko'chdi va uni
+# MEM_PATH allaqachon almashtiradi. Mexanizm qoldirildi, chunki ildizga
+# yana shunday fayl qo'shilishi mumkin.
+ROOT_FILES = ()
+
+
+def root_file_re(names):
+    """Nomlarni tutadigan naqsh. Bo'sh ro'yxatda hech narsa tutmaydi.
+
+    Bo'sh ro'yxatda `(%s)` bo'sh guruhga aylanib, matnning har joyida
+    mos kelardi va rewrite() butun faylni buzardi. `(?!)` esa hech
+    qachon mos kelmaydi.
+    """
+    if not names:
+        return re.compile(r"(?!)")
+    return re.compile(r"(?<![\w/.-])(%s)\b"
+                      % "|".join(re.escape(name) for name in names))
+
+
+ROOT_FILE = root_file_re(ROOT_FILES)
 # Global o'rnatishda $CLAUDE_PROJECT_DIR foydalanuvchi proyekti, klon emas:
 # undagi tools/ yo'li ham noto'g'ri. Almashtirilmaydi, faqat sanaladi.
 PROJECT_TOOLS = re.compile(r"\$\{?CLAUDE_PROJECT_DIR\}?\"?/tools/")
@@ -75,6 +120,14 @@ BARE_DOC = re.compile(r"(?<![\w/.])doc\.sh (?:toc\b|(?:find|show|outline|path"
                       r"|rule|checklist)(?=\s+[-\w]))")
 # --allow uchun: almashtirilgan matndagi asbob nomlari.
 ABS_TOOL = re.compile(r"/tools/([a-z_]+\.(?:py|sh))\b")
+# Global ruxsatga kirmaydigan asboblar: build kodini bajaradi. Ular uchun
+# qoida faqat --opt-in bilan, ishonchli proyektning settings.local.json iga.
+OPT_IN_TOOLS = ("run_tests.py",)
+# Faqat shu subbuyruqlari ruxsatli asboblar. Qolgan subbuyruq so'raladi.
+SUBCOMMANDS = {"guruh.py": ("yarat", "royxat")}
+# Hook buyrug'i bash da "..." ichida: bu belgilar kengayadi yoki
+# qo'shtirnoqni yopadi. Yo'lda bo'lsa o'rnatish to'xtaydi.
+UNSAFE_CHARS = ("$", "`", '"')
 
 TEXT_EXT = (".md",)
 
@@ -102,9 +155,13 @@ def tool_cmd(root, runner, name):
                       quote("%s/tools/%s" % (root, name)))
 
 
-def rewrite(text, root, bash="bash", python="python3"):
-    """Matndagi nisbiy yo'llarni mutlaq qiladi. (yangi matn, almashtirish soni)."""
+def rewrite(text, root, bash="bash", python="python3", clone=None):
+    """Matndagi nisbiy yo'llarni mutlaq qiladi. (yangi matn, almashtirish soni).
+
+    `tools/` yo'li `root` ga (snapshot), `memory/` esa `clone` ga (berilmasa
+    `root`) ketadi."""
     root = clean_root(root)
+    memory_root = clean_root(clone) if clone else root
     count = [0]
 
     def py(match):
@@ -117,7 +174,7 @@ def rewrite(text, root, bash="bash", python="python3"):
 
     def mem(_):
         count[0] += 1
-        return "%s/memory/" % root
+        return "%s/memory/" % memory_root
 
     def root_file(match):
         count[0] += 1
@@ -139,15 +196,45 @@ def relative_left(text):
     return out
 
 
-def allow_rules(text, root, bash="bash", python="python3"):
-    """Almashtirilgan matnda uchragan har asbob buyrug'i uchun ruxsat qoidasi."""
+def used_tools(text, root, bash="bash", python="python3"):
+    """{asbob: buyruq boshlanishi}: matnda aynan shu shaklda chaqirilganlar."""
     root = clean_root(root)
-    rules = set()
+    found = {}
     for name in set(ABS_TOOL.findall(text)):
         prefix = tool_cmd(root, bash if name.endswith(".sh") else python, name)
         if re.search(re.escape(prefix) + r"(?![\w.])", text):
-            rules.add("Bash(%s:*)" % prefix)
+            found[name] = prefix
+    return found
+
+
+def allow_rules(text, root, bash="bash", python="python3"):
+    """Almashtirilgan matnda uchragan yon ta'sirsiz asboblar uchun qoida.
+
+    OPT_IN_TOOLS tushadi, SUBCOMMANDS dagi asbobga faqat sanalgan
+    subbuyruqlar qoidasi beriladi."""
+    rules = set()
+    for name, prefix in used_tools(text, root, bash, python).items():
+        if name in OPT_IN_TOOLS:
+            continue
+        for sub in SUBCOMMANDS.get(name, (None,)):
+            rules.add("Bash(%s:*)" % (prefix if sub is None
+                                      else "%s %s" % (prefix, sub)))
     return sorted(rules)
+
+
+def opt_in_rules(text, root, bash="bash", python="python3"):
+    """allow_rules() ga kirmagan, faqat ishonchli proyektga beriladigan qoida."""
+    return sorted("Bash(%s:*)" % prefix
+                  for name, prefix in used_tools(text, root, bash, python).items()
+                  if name in OPT_IN_TOOLS)
+
+
+def unsafe_value(value):
+    """Hook buyrug'ini buzadigan birinchi belgi yoki None."""
+    for char in UNSAFE_CHARS:
+        if char in value:
+            return char
+    return None
 
 
 def walk(folder):
@@ -161,6 +248,10 @@ def main(argv=None):
     parser = argparse.ArgumentParser(add_help=True)
     parser.add_argument("folder")
     parser.add_argument("--root", required=True)
+    parser.add_argument("--clone", default="",
+                        help="klon yo'li: memory/ shu yerga almashadi (sukut --root)")
+    parser.add_argument("--root-keyin", action="store_true",
+                        help="--root hali yo'q (snapshot keyin yaratiladi), tekshirilmaydi")
     parser.add_argument("--bash", default="bash")
     parser.add_argument("--python", default="python3",
                         help="interpreter yo'li, skill buyruqlari shu bilan yoziladi")
@@ -169,12 +260,27 @@ def main(argv=None):
                       help="yozmaydi, faqat qolgan nisbiy yo'llarni sanaydi")
     mode.add_argument("--allow", action="store_true",
                       help="yozmaydi, ruxsat qoidalarini JSON qilib chiqaradi")
+    mode.add_argument("--opt-in", action="store_true",
+                      help="yozmaydi, ishonchli proyekt uchun settings.local.json "
+                           "bo'lagini JSON qilib chiqaradi (run_tests ruxsati)")
     args = parser.parse_args(argv)
+
+    for flag, value in (("--root", args.root), ("--python", args.python),
+                        ("--clone", args.clone)):
+        char = unsafe_value(value)
+        if char:
+            print("%s qiymatida %s bor: hook buyrug'i bash da qo'sh qo'shtirnoq "
+                  "ichida yuradi va bu belgi u yerda buzadi yoki bajariladi. "
+                  "Boshqa yo'l tanlang: %s" % (flag, char, value), file=sys.stderr)
+            return 2
 
     # Mavjud bo'lmagan klonga yo'l yozilsa, skill o'rnatiladi va har
     # buyruq "No such file" beradi: shu yerda to'xtaladi.
-    if not os.path.isdir(args.root):
+    if not args.root_keyin and not os.path.isdir(args.root):
         print("root papka emas: %s" % args.root, file=sys.stderr)
+        return 2
+    if args.clone and not os.path.isdir(args.clone):
+        print("klon papka emas: %s" % args.clone, file=sys.stderr)
         return 2
 
     if not os.path.isdir(args.folder):
@@ -195,6 +301,9 @@ def main(argv=None):
         if args.allow:
             rules.update(allow_rules(text, args.root, args.bash, args.python))
             continue
+        if args.opt_in:
+            rules.update(opt_in_rules(text, args.root, args.bash, args.python))
+            continue
         if args.tekshir:
             remaining = relative_left(text)
             left += len(remaining)
@@ -203,7 +312,8 @@ def main(argv=None):
                       % (os.path.basename(path), len(remaining),
                          ", ".join(sorted(set(remaining))[:3])))
             continue
-        new, count = rewrite(text, args.root, args.bash, args.python)
+        new, count = rewrite(text, args.root, args.bash, args.python,
+                             args.clone or None)
         total += count
         if new != text:
             with open(path, "w", encoding="utf-8") as handle:
@@ -212,6 +322,13 @@ def main(argv=None):
     if args.allow:
         # Faqat JSON: o'rnatuvchi chiqishni to'g'ridan-to'g'ri o'qiydi.
         print(json.dumps(sorted(rules)))
+        return 0
+    if args.opt_in:
+        # Tayyor bo'lak: foydalanuvchi uni proyektning settings.local.json
+        # iga qo'shadi. Qoida yo'q bo'lsa chiqish bo'sh.
+        if rules:
+            print(json.dumps({"permissions": {"allow": sorted(rules)}},
+                             indent=2, ensure_ascii=False))
         return 0
     if args.tekshir:
         print("%d fayl tekshirildi, %d nisbiy yo'l qoldi" % (len(files), left))

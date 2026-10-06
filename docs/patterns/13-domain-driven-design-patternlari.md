@@ -2,10 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 13. Domain-Driven Design patternlari (DDD Patterns)
 
 <details>
-<summary>Bu bo'limdagi 36 bo'lim</summary>
+<summary>Bu bobdagi 36 bo'lim</summary>
 
 - [13.1 Umumiy til (Ubiquitous Language)](#131-umumiy-til-ubiquitous-language)
 - [13.2 Chegaralangan kontekst (Bounded Context)](#132-chegaralangan-kontekst-bounded-context)
@@ -648,7 +650,7 @@ class PlaceOrderService {
 
 **Tavsif:** Domain Event - domain'da yuz bergan va boshqa qismlar uchun ahamiyatli bo'lgan faktning immutable yozuvi: `OrderPlaced`, `PaymentFailed`, `InvoiceOverdue`. U o'tgan zamonda nomlanadi, o'zgarmas Value Object sifatida vaqt va kerakli identifikatorlarni olib yuradi, hech qanday xatti-harakat buyurmaydi. Event'lar aggregate'lar va modullar orasidagi bog'lanishni yumshatadi: chiqaruvchi tomon kim tinglayotganini bilmaydi. Natijada cross-aggregate yangilanishlar eventual consistency, audit va integratsiya oson amalga oshadi.
 
-**Spring'da qayerda uchraydi:** Spring Framework 6.x ning `ApplicationEventPublisher#publishEvent(Object)` (POJO event yetarli, `ApplicationEvent` dan meros shart emas), `@EventListener`, `@TransactionalEventListener` va `@Async` bilan asinxron ishlash. Spring Data'da `org.springframework.data.domain.AbstractAggregateRoot#registerEvent()` yoki `@DomainEvents` + `@AfterDomainEventPublication` metodlari `save()` vaqtida event'larni avtomatik publish qiladi. Spring Modulith 1.x `@ApplicationModuleListener` (transactional + async), event publication registry (`EventPublicationRegistry`) va ishonchli qayta urinish/incomplete publication'larni ko'rish imkonini beradi; tashqi tizimga chiqarish uchun Kafka/RabbitMQ `externalized events` (`@Externalized`) ishlatiladi.
+**Spring'da qayerda uchraydi:** `ApplicationEventPublisher#publishEvent(Object)` (POJO event yetarli, `ApplicationEvent` dan meros shart emas: bu overload Spring Framework 4.2 dan beri bor), `@EventListener`, `@TransactionalEventListener` va `@Async` bilan asinxron ishlash. Spring Data'da `org.springframework.data.domain.AbstractAggregateRoot#registerEvent()` yoki `@DomainEvents` + `@AfterDomainEventPublication` metodlari `save()` vaqtida event'larni avtomatik publish qiladi. Spring Modulith 1.x `@ApplicationModuleListener` (transactional + async), event publication registry (`EventPublicationRegistry`) va ishonchli qayta urinish/incomplete publication'larni ko'rish imkonini beradi; tashqi tizimga chiqarish uchun Kafka/RabbitMQ `externalized events` (`@Externalized`) ishlatiladi.
 
 ```java
 @Entity
@@ -1019,7 +1021,7 @@ public final class DateRange {
 - Takrorlangan validatsiyani uchta servisdan bitta agregat metodiga birlashtirish.
 - CRUD-ga yaqin supporting modulni ataylab anemik qoldirib, core domain'ni boyitishga kuch yo'naltirish.
 
-**Ehtiyot bo'ling:** Teskari chetga chiqmang: agregatga repository, HTTP client yoki tashqi servis in'ektsiya qilib, uni "boy" qilishga urinish bog'liqliklarni domenga tortadi - bunday mantiq application servisga yoki domain service'ga tegishli. Shuningdek DTO va API modellari ataylab anemik bo'ladi; anemiklik muammosi faqat domen modeliga tegishli.
+**Ehtiyot bo'ling:** Teskari chetga chiqmang: agregatga repository, HTTP client yoki tashqi servis inyeksiya qilib, uni "boy" qilishga urinish bog'liqliklarni domenga tortadi - bunday mantiq application servisga yoki domain service'ga tegishli. Shuningdek DTO va API modellari ataylab anemik bo'ladi; anemiklik muammosi faqat domen modeliga tegishli.
 
 ```java
 // Anemik: qoida servisda, obyekt faqat ma'lumot tashiydi

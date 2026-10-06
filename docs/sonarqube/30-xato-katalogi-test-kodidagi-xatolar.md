@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 30. Xato katalogi: test kodidagi xatolar (Catalog: Test Code)
 
 <details>
@@ -27,7 +29,7 @@
 
 
 
-Sonar test kodini ham production kod kabi tahlil qiladi, lekin boshqa qoida to'plamini qo'llaydi. Asosiy savol "bu metod ishlaydimi" emas, balki "bu test haqiqatan biror narsani tekshiradimi". Quyidagi katalog test kodida eng ko'p uchraydigan shikoyatlarni, toifasini va tuzatilgan variantini yig'adi. Jiddiylik "taxminan", chunki u quality profile sozlamasiga qarab o'zgaradi.
+Sonar test kodini ham production kod kabi tahlil qiladi, lekin boshqa qoida to'plamini qo'llaydi. Asosiy savol "bu metod ishlaydimi" emas, balki "bu test haqiqatan biror narsani tekshiradimi". Quyidagi katalog test kodida eng ko'p uchraydigan shikoyatlarni, toifasini va tuzatilgan variantini yig'adi. Jiddiylik ustuni sonar-java rule metadata dagi `defaultSeverity` (legacy severity): quality profile va Sonar versiyasiga qarab farq qilishi mumkin.
 
 | Kod holati | Sonar nima deydi | Toifa | Jiddiylik (taxminan) | Ta'siri |
 | --- | --- | --- | --- | --- |
@@ -35,18 +37,20 @@ Sonar test kodini ham production kod kabi tahlil qiladi, lekin boshqa qoida to'p
 | `try { ... fail(); } catch (Ex e) {}` | eskirgan usul, `assertThrows` tavsiya qilinadi | maintainability (code smell) | Major | Noto'g'ri joyda tashlangan istisno ham testni o'tkazadi |
 | `assertThrows` lambdasida bir nechta chaqiruv | `java:S5778`: faqat bitta metod chaqirig'i kutiladi | maintainability (code smell) | Major | Qaysi chaqiruv istisno tashlaganini bilib bo'lmaydi |
 | `@Disabled` izohsiz qoldirilgan | `java:S1607`: tuzatilishi yoki olib tashlanishi kerak | maintainability (code smell) | Major | Yashirin regressiya, sababi esda qolmaydi |
-| `Thread.sleep(2000)` test ichida | `java:S2925`: testda `Thread.sleep` ishlatilmasin | reliability (bug) | Critical | Flaky test va sekin CI |
-| `static` o'zgaruvchan maydonga yozish | `java:S2696`: instance metod static maydonga yozmasin | reliability (bug) | Major | Testlar bajarilish tartibiga bog'lanadi |
+| `Thread.sleep(2000)` test ichida | `java:S2925`: testda `Thread.sleep` ishlatilmasin | maintainability (code smell) | Major | Flaky test va sekin CI |
+| `static` o'zgaruvchan maydonga yozish | `java:S2696`: instance metod static maydonga yozmasin | maintainability (code smell) | Critical | Testlar bajarilish tartibiga bog'lanadi |
 | `void test1()` kabi nomlar | `java:S100`: metod nomi konventsiyaga mos bo'lsin | maintainability (code smell) | Minor | Buzilgan test nimani anglatishini hisobot ko'rsatmaydi |
-| Kutilgan natija `BigDecimal("1187.5")` | `java:S109`: magic number izohlanmagan | maintainability (code smell) | Minor | Qoida o'zgarganda raqam manbasi noma'lum |
+| Kutilgan natija `BigDecimal("1187.5")` | Sonar qoidasi yo'q: `java:S109` ning `scope` i `Main` | - | - | Qoida o'zgarganda raqam manbasi noma'lum |
 | Har testda takrorlangan setup | duplicated blocks, duplication density o'sadi | maintainability (code smell) | Major | Gate ning duplication sharti buziladi |
 | Bitta testda 20 dan ortiq assertion | `java:S5961`: testda juda ko'p assertion | maintainability (code smell) | Major | Birinchi xato qolganini yashiradi |
 | `...Test` klassida test metodi yo'q | `java:S2187`: test klassi test o'z ichiga olishi kerak | maintainability (code smell) | Blocker | Fayl test deb o'qiladi, hech narsa bajarilmaydi |
-| `assertThat(total)` oxirigacha yozilmagan | `java:S2970`: assertion tugallanmagan | reliability (bug) | Blocker | Shart tekshirilmaydi, test doim yashil |
-| `assertTrue(true)` yoki `assertNotNull(new Order())` | `java:S2701` va o'xshash qoidalar | maintainability (code smell) | Major | Soxta tekshiruv, aslida assertion yo'q |
+| `assertThat(total)` oxirigacha yozilmagan | `java:S2970`: assertion tugallanmagan | maintainability (code smell) | Blocker | Shart tekshirilmaydi, test doim yashil |
+| `assertTrue(true)` yoki `assertNotNull(new Order())` | `java:S2701` va o'xshash qoidalar | maintainability (code smell) | Minor | Soxta tekshiruv, aslida assertion yo'q |
 | Faqat metodni chaqiradigan coverage testi | `java:S2699`, coverage ko'rsatkichi buziladi | maintainability (code smell) | Blocker | Coverage raqami haqiqatdan uzoqlashadi |
 
 ## 30.1 Assertion siz test metodi
+
+Qoida: `java:S2699`
 
 Eng ko'p uchraydigan shikoyat shu: test servisni chaqiradi, natijani o'zgaruvchiga yozadi va tugaydi.
 
@@ -118,6 +122,8 @@ Tavsiya: istisnoni `assertThrows` bilan tuting va qaytgan obyektning xabarini ha
 
 ## 30.3 Juda keng qamrovli assertThrows bloki
 
+Qoida: `java:S5778`
+
 `assertThrows` ga o'tish yetarli emas, lambda ichiga nima yozilgani ham muhim.
 
 ```java
@@ -151,6 +157,8 @@ Tavsiya: tayyorlash qadamlarini lambdadan tashqariga chiqarib, blokda bitta chaq
 
 ## 30.4 @Disabled qoldirilgan test va sababsiz o'chirish
 
+Qoida: `java:S1607`
+
 O'chirilgan test vaqtinchalik qaror bo'lib tug'iladi va doimiy qarz bo'lib qoladi.
 
 ```java
@@ -181,6 +189,8 @@ Tavsiya: `@Disabled` ga sabab va ticket raqamini yozing, sonini CI da chegaralan
 
 ## 30.5 Thread.sleep bilan kutish va uni almashtirish
 
+Qoida: `java:S2925`
+
 Asinxron kodni tekshirishda birinchi xayolga kelgan yechim eng yomoni.
 
 ```java
@@ -210,6 +220,8 @@ void tolov_tasdiqlangandan_keyin_buyurtma_PAID_bolishi_kerak() {
 Tavsiya: belgilangan vaqt kutish o'rniga shartni poll qiladigan kutishni ishlatib, timeout ni himoya chegarasi qilib qoldiring.
 
 ## 30.6 Testlar orasida umumiy o'zgaruvchan holat
+
+Qoida: `java:S2696`
 
 Bu xato Sonar hisobotida ikki xil qoida ostida chiqadi.
 
@@ -258,6 +270,8 @@ Tavsiya: holatni `@BeforeEach` da noldan tiklang va o'zgaruvchan `static` maydon
 
 ## 30.7 Test metodining ma'nosiz nomi
 
+Qoida: `java:S100`
+
 Nom testning hisobotdagi yuzi: buzilganda siz birinchi shu satrni ko'rasiz.
 
 ```java
@@ -284,6 +298,8 @@ Tavsiya: nomni "metod_shart_natija" shaklida yozing, murakkab holatni `@DisplayN
 
 ## 30.8 Testda magic number va tushunarsiz ma'lumot
 
+Qoida: `java:S109`
+
 To'lov hisoblashda raqamlar ko'p va ularning kelib chiqishi tez yo'qoladi.
 
 ```java
@@ -297,7 +313,7 @@ void calculateTotal_hammasini_hisoblaydi() {
 }
 ```
 
-`java:S109` izohlanmagan sonli konstantalarni belgilaydi va ko'p profilda bu qoida test fayllariga ham qo'llanadi. Asl muammo kengroq: `1285.20` qayerdan chiqqanini test tushuntirmaydi. QQS stavkasi o'zgarganda yangi developer raqamni qayta hisoblashni bilmaydi va testni shunchaki yangi natijaga moslashtiradi. Shu paytda test regressiyani ushlash qobiliyatini yo'qotadi.
+`java:S109` izohlanmagan sonli konstantalarni belgilaydi, lekin uning `scope` i `Main`: test fayllariga qo'llanmaydi, ya'ni bu yozuvda Sonar jim turadi (19.9 bilan bir xil). Muammo shunday ham qoladi: `1285.20` qayerdan chiqqanini test tushuntirmaydi. QQS stavkasi o'zgarganda yangi developer raqamni qayta hisoblashni bilmaydi va testni shunchaki yangi natijaga moslashtiradi. Shu paytda test regressiyani ushlash qobiliyatini yo'qotadi.
 
 ```java
 private static final BigDecimal BIRLIK_NARXI = new BigDecimal("450.00");
@@ -322,6 +338,8 @@ void calculateTotal_chegirma_va_qqs_ni_ketma_ket_qollaydi() {
 Ehtiyot bo'ling: kutilgan natijani formula bilan hisoblash tekshirilayotgan mantiqni takrorlash xavfini tug'diradi. Murakkab qoidalar uchun qiymatni konstanta qilib, izohda manbasini ko'rsatish afzal.
 
 Tavsiya: har bir raqamga nom bering, izohda biznes manbasini ko'rsating va formulani testda takrorlamang.
+
+Mavzuning to'liq yozuvi [magic number](../patterns/25-anti-patternlar.md#258-sehrli-sonlar-va-satrlar-magic-numbers--strings) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
 
 ## 30.9 Takrorlangan tayyorlash kodi va uni yagona joyga chiqarish
 
@@ -379,6 +397,8 @@ Tavsiya: takrorlangan tayyorlashni builder yoki fixture fayliga chiqarib, testda
 
 ## 30.10 Bir testda juda ko'p assertion va aralash maqsad
 
+Qoida: `java:S5961`
+
 Bitta test butun jarayonni qamrasa, buzilganda sabab noaniq bo'ladi.
 
 ```java
@@ -418,6 +438,8 @@ Tavsiya: bitta testda bitta xatti-harakatni tekshiring va bog'liq tekshiruvlarni
 
 ## 30.11 Test klassida test metodi yo'qligi
 
+Qoida: `java:S2187`
+
 Bu shikoyat ko'pincha refaktoringdan keyin qoladi.
 
 ```java
@@ -453,6 +475,8 @@ sonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
 Tavsiya: yordamchi klass nomida `Test` so'zini qoldirmang va `sonar.test.inclusions` ni aniq belgilang.
 
 ## 30.12 Faqat qamrov uchun yozilgan, natijani tekshirmaydigan test
+
+Qoida: `java:S2701`, `java:S2699`
 
 Katalogdagi eng xavfli holat, chunki u metrikani yaxshilab ko'rsatadi.
 

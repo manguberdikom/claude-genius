@@ -1,13 +1,15 @@
-# Kod yozadigan arxitektorning miyyasi: Java, Spring, PostgreSQL
+# Kod yozadigan arxitektorning miyasi: Java, Spring, PostgreSQL
 
 Bu hujjat kod yozadigan arxitektorning bilimi va fikrlash tarzini yig'adi.
 Tayanch stek: Java, Spring va PostgreSQL. Har bob ikki narsani beradi: ichkarida nima
 sodir bo'lishining mexanikasi, va shu bilimdan qanday qaror chiqarish.
 
 
-**Bu hujjat oltilikning bir qismi.** Mavzular takrorlanmaydi; qolgan beshtasi: [Dizayn patternlar katalogi](../patterns/README.md), [Testlash qo'llanmasi](../testing/README.md), [SonarQube hujjati](../sonarqube/README.md), [Toza kod qoidalari](../clean-code/README.md), [Kod review](../code-review/README.md).
+**Bu hujjat oltilikning bir qismi.** Har biri boshqa savolga javob beradi; qolgan beshtasi: [Dizayn patternlar katalogi](../patterns/README.md), [Testlash qo'llanmasi](../testing/README.md), [SonarQube hujjati](../sonarqube/README.md), [Toza kod qoidalari](../clean-code/README.md), [Kod review](../code-review/README.md).
 
 **Versiya bazasi:** Java 21 LTS (pol: 17, Java 25 eslatmalari bilan), Spring Boot 3.2-3.5 (4.0 eslatmalari bilan), PostgreSQL 16+ (15-18 havolalari bilan), JUnit 5.
+
+> Holat: 39 bobdan 0 tasi odam tekshirgan, 1 tasi tekshirilmoqda, qolgan 38 tasi AI yozgan va inson tekshirmagan. Har bob holati: [docs/review.tsv](../review.tsv).
 
 ## Mundarija
 

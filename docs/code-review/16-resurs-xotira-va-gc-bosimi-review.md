@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 16. Resurs, xotira va GC bosimi review (Resources and Memory)
 
 <details>
@@ -21,7 +23,7 @@
 </details>
 
 
-Xotira muammolari diffda deyarli ko'rinmaydi: bitta qator kod 2 million obyekt yaratishi mumkin. Shu sababli bu bobning asosiy savoli hajm haqida: shu kod eng katta real kirishda nechta obyekt yaratadi va nechtasini bir vaqtda ushlab turadi. JVM xotira hududlari va GC mexanikasi [Arxitektor miyyasi](../architect/README.md) da; bu yerda diffdan hajmni baholash.
+Xotira muammolari diffda deyarli ko'rinmaydi: bitta qator kod 2 million obyekt yaratishi mumkin. Shu sababli bu bobning asosiy savoli hajm haqida: shu kod eng katta real kirishda nechta obyekt yaratadi va nechtasini bir vaqtda ushlab turadi. JVM xotira hududlari va GC mexanikasi [Arxitektor miyasi](../architect/README.md) da; bu yerda diffdan hajmni baholash.
 
 ## 16.1 Chegarasiz to'plam - eng ko'p uchraydigan OOM sababi
 
@@ -112,7 +114,7 @@ Kesh xotira muammolarining ikkinchi eng katta manbasi, chunki u ongli ravishda m
 // Naqsh: chegarasiz kesh.
 private final Map<String, Report> cache = new HashMap<>();   // o'sishi cheksiz
 
-// To'g'ri: hajm, TTL, metrika va yakkalash siyosati.
+// To'g'ri: hajm, TTL, metrika va yaxlitlash siyosati.
 @Bean
 Cache<ReportKey, Report> reportCache(MeterRegistry registry) {
     Cache<ReportKey, Report> cache = Caffeine.newBuilder()

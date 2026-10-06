@@ -1,6 +1,8 @@
 <!-- doc: architect | chapter: 10 | part: II. Java chuqur bilim -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
+
+> Holat: AI yozgan, inson tekshirmagan.
 
 # 10. Garbage collection va xotira sozlash (Garbage Collection and Memory Tuning)
 
@@ -81,11 +83,13 @@ java -XX:+UseZGC \
   -Xlog:gc*,safepoint:file=/var/log/app/gc.log:time,uptime:filecount=5,filesize=50M \
   -jar gateway.jar
 
-# Shenandoah faqat ba'zi distributiv JDK larda mavjud (masalan Red Hat build)
+# Shenandoah OpenJDK 12 dan beri mainline da; faqat Oracle JDK build ida yo'q
 java -XX:+UseShenandoahGC -Xms8g -Xmx8g -jar order-service.jar
 ```
 
 `SoftMaxHeapSize` ZGC ni shu chegarada ushlashga urinadi, lekin zarurat bo'lsa `-Xmx` gacha o'sishga ruxsat beradi, bu burst trafikda OOM dan saqlaydi.
+
+Shenandoah OpenJDK ga 12 da qo'shilgan ([JEP 189](https://openjdk.org/jeps/189)), shuning uchun Temurin, Corretto, Red Hat kabi OpenJDK build larida bor; Oracle JDK uni o'z build iga kiritmaydi. JDK 25 da uning generational rejimi experimental holatdan chiqdi ([JEP 521](https://openjdk.org/jeps/521)).
 
 ## 10.5 Serial va Parallel GC: kichik konteynerda qachon mantiqli
 

@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 14. Java tili darajasidagi xatolar katalogi (Language-Level Defects)
 
 <details>
@@ -103,7 +105,10 @@ double percent = (double) count / total * 100;  // to'g'ri
 // Infinity (double) - ikkisi ham tekshirilmagan.
 
 // Xato 2: int overflow jim aylanadi.
-int totalBytes = fileCount * bytesPerFile;      // 100_000 * 50_000 manfiy bo'ladi
+int totalBytes = fileCount * bytesPerFile;      // 100_000 * 50_000 = 705_032_704
+// 5_000_000_000 int ga sig'maydi: natija jim, musbat, lekin noto'g'ri
+// (50_000 * 50_000 esa -1_794_967_296). Shuning uchun "totalBytes < 0"
+// tekshiruvi overflow ni ushlamaydi: ishora o'zgarmasligi ham mumkin.
 long totalBytes = (long) fileCount * bytesPerFile;
 // Yoki aniq tekshiruv bilan: Math.multiplyExact tashlaydi, jim aylanmaydi.
 long totalBytes = Math.multiplyExact((long) fileCount, bytesPerFile);
@@ -111,14 +116,17 @@ long totalBytes = Math.multiplyExact((long) fileCount, bytesPerFile);
 // Xato 3: pul double da.
 double total = 0.1 + 0.2;                        // 0.30000000000000004
 BigDecimal total = new BigDecimal("0.1").add(new BigDecimal("0.2"));   // 0.3
-// Diqqat: BigDecimal.valueOf(0.1) ham xavfli - double dan o'tadi.
+// Diqqat: new BigDecimal(0.1) xavfli: 0.1000000000000000055511151231257827021181583404541015625.
+// BigDecimal.valueOf(0.1) literal uchun to'g'ri (0.1), chunki Double.toString
+// orqali ishlaydi, lekin hisoblangan double dagi xatoni saqlaydi:
+// BigDecimal.valueOf(0.1 + 0.2) -> 0.30000000000000004. Pul satr yoki long dan kirsin.
 // new BigDecimal("0.1") - satr orqali, aniq.
 
-// Xato 4: BigDecimal da scale va yakkalash e'lon qilinmagan.
+// Xato 4: BigDecimal da scale va yaxlitlash e'lon qilinmagan.
 BigDecimal vat = total.multiply(new BigDecimal("0.12"));   // scale o'sadi
 BigDecimal vat = total.multiply(new BigDecimal("0.12"))
                       .setScale(2, RoundingMode.HALF_UP);  // qoida aniq
-// Review savoli: yakkalash qoidasi biznes bilan kelishilganmi? Soliq
+// Review savoli: yaxlitlash qoidasi biznes bilan kelishilganmi? Soliq
 // hisobida HALF_UP va HALF_EVEN farqi yiliga sezilarli summa beradi.
 
 // Xato 5: BigDecimal taqqoslashda equals.
@@ -374,7 +382,7 @@ Bu skriptni CI da ogohlantirish sifatida ishlatish mumkin, lekin bloklamaslik ke
 
 - [ ] `scripts/review-java-scan.sh` skriptini qo'shing va uni PR da o'zgargan fayllarga ishlatishni review oqimiga kiriting.
 - [ ] Loyihadagi pul maydonlarini tekshirib, `double`/`float` ishlatilgan joylarni `BigDecimal` yoki `Money` ga o'tkazish tiketini ochingg.
-- [ ] `setScale` va `RoundingMode` ko'rsatilmagan pul hisoblarini toping va yakkalash qoidasini biznes bilan kelishib yozib qo'ying.
+- [ ] `setScale` va `RoundingMode` ko'rsatilmagan pul hisoblarini toping va yaxlitlash qoidasini biznes bilan kelishib yozib qo'ying.
 - [ ] `@Enumerated(EnumType.ORDINAL)` ishlatilgan joylarni toping - har biri kelajakdagi ma'lumot buzilishi.
 - [ ] `Instant.now()` va `LocalDateTime.now()` to'g'ridan-to'g'ri ishlatilgan domen kodini `Clock` inyeksiyasiga o'tkazing.
 - [ ] `LocalDateTime` saqlanadigan ustunlarni aniqlab, PostgreSQL da `timestamptz` ga o'tish rejasini tuzing.

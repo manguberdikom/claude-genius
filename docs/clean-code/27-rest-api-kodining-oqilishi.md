@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 27. REST API kodining o'qilishi (Readable REST Code)
 
 <details>
@@ -64,7 +66,7 @@ Holat kodi mantiqi controller lar bo'ylab tarqalsa, bir xil xato turli endpointl
 
 ## 27.3 Xato javobi formati: `ProblemDetail` va `@ExceptionHandler`
 
-Hammasini tutuvchi exception handler [patternlar hujjatida](../patterns/README.md) anti-pattern (25.41). To'g'ri shakl: har bir istisno turiga aniq ishlov, bitta `@RestControllerAdvice` da, RFC 9457 (`ProblemDetail`) formatida.
+Hammasini tutuvchi exception handler patternlar hujjatida [anti-pattern](../patterns/25-anti-patternlar.md#2541-hammasini-tutuvchi-exception-handler-catch-all-exception-handler) sifatida yozilgan. To'g'ri shakl: har bir istisno turiga aniq ishlov, bitta `@RestControllerAdvice` da, RFC 9457 (`ProblemDetail`) formatida.
 
 ```java
 @RestControllerAdvice
@@ -199,6 +201,8 @@ RefundResponse refund(
 ```
 
 Kalit server tomonda **generatsiya qilinmaydi** (20.8): u klientdan keladi, bazada unikal cheklov bilan saqlanadi (3.13 dagi `uq_payment_idempotency_key`), va takroriy so'rov oldingi natijani qaytaradi.
+
+Mavzuning to'liq yozuvi patternlar hujjatidagi [idempotentlik kaliti](../patterns/07-api-dizayn-patternlari.md#79-idempotentlik-kaliti-idempotency-key) bo'limida; bu yerda faqat kod shakli nuqtai nazari.
 
 ## 27.8 API versiyasi kodda qanday ko'rinadi
 

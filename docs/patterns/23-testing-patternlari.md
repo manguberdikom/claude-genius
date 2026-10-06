@@ -2,10 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 23. Testing patternlari (Testing Patterns)
 
 <details>
-<summary>Bu bo'limdagi 62 bo'lim</summary>
+<summary>Bu bobdagi 62 bo'lim</summary>
 
 - [23.1 Test piramidasi / Testing Trophy / Honeycomb (Test Pyramid / Testing Trophy / Honeycomb)](#231-test-piramidasi--testing-trophy--honeycomb-test-pyramid--testing-trophy--honeycomb)
 - [23.2 Test dublyorlari (Test Doubles - Dummy, Fake, Stub, Spy, Mock)](#232-test-dublyorlari-test-doubles---dummy-fake-stub-spy-mock)
@@ -123,18 +125,18 @@ Testing patternlari - bu kodni tekshirishning emas, balki **tizim dizaynini tasd
 
 ## 23.4 Berilgan-Qachon-Unda (Given-When-Then - BDD)
 
-**Tavsif:** AAA'ning business tilidagi ko'rinishi: scenariy "Given <kontekst>, When <hodisa>, Then <kutilgan natija>" shaklida yoziladi va shu matn bajariladigan testga aylanadi. Maqsad - biznes-analitik, QA va dasturchi uchun yagona, bir xil tushuniladigan spetsifikatsiya yaratish (living documentation). Texnik jihatdan AAA bilan bir xil, ammo nomlanish va artefakt (feature file) darajasida farq qiladi.
+**Tavsif:** AAA'ning business tilidagi ko'rinishi: ssenariy "Given <kontekst>, When <hodisa>, Then <kutilgan natija>" shaklida yoziladi va shu matn bajariladigan testga aylanadi. Maqsad - biznes-analitik, QA va dasturchi uchun yagona, bir xil tushuniladigan spetsifikatsiya yaratish (living documentation). Texnik jihatdan AAA bilan bir xil, ammo nomlanish va artefakt (feature file) darajasida farq qiladi.
 
 **Spring'da qayerda uchraydi:** Cucumber-JVM + `io.cucumber:cucumber-spring` (`@CucumberContextConfiguration` bilan `@SpringBootTest`ni ulash, `.feature` fayllar Gherkin'da); JBehave; Spock (Groovy, `given:`/`when:`/`then:` bloklari, `spock-spring` moduli). Mockito'ning `BDDMockito` sinfi `given(...).willReturn(...)` va `then(mock).should()` sintaksisini beradi - bu Spring loyihalarida eng arzon BDD uslubidir.
 
 **Qo'llanish keyslari:**
-- Regulyator talablarini (KYC, AML qoidalari) bajariladigan va auditorga ko'rsatiladigan scenariylarga aylantirish.
+- Regulyator talablarini (KYC, AML qoidalari) bajariladigan va auditorga ko'rsatiladigan ssenariylarga aylantirish.
 - Murakkab narx-chegirma matritsasini Cucumber `Scenario Outline` jadvali bilan ifodalash.
 - Acceptance criteria'ni Jira ticket'dan to'g'ridan-to'g'ri `.feature` faylga ko'chirish.
-- Domain hodisalari ketma-ketligini (order → payment → shipment) end-to-end scenariyda tasvirlash.
+- Domain hodisalari ketma-ketligini (order → payment → shipment) end-to-end ssenariyda tasvirlash.
 - `BDDMockito` bilan oddiy unit testlarda o'qilishni yaxshilash, Cucumber infratuzilmasisiz.
 
-**Ehtiyot bo'ling:** Cucumber qatlami o'zi bilan katta maintenance narxini olib keladi - agar `.feature` fayllarni faqat dasturchilar o'qisa, u sof ortiqcha abstraksiya; bu holda oddiy JUnit + AssertJ afzal. Glue kod'da global mutable state ishlatish scenariylar orasida sirli bog'liqlik hosil qiladi.
+**Ehtiyot bo'ling:** Cucumber qatlami o'zi bilan katta maintenance narxini olib keladi - agar `.feature` fayllarni faqat dasturchilar o'qisa, u sof ortiqcha abstraksiya; bu holda oddiy JUnit + AssertJ afzal. Glue kod'da global mutable state ishlatish ssenariylar orasida sirli bog'liqlik hosil qiladi.
 
 ## 23.5 Test ma'lumot quruvchisi (Test Data Builder)
 
@@ -160,7 +162,7 @@ Order order = anOrder()
 
 ## 23.6 Obyekt-ona (Object Mother)
 
-**Tavsif:** Tipik test obyektlarini nomlangan factory metodlar orqali yetkazib beruvchi markazlashgan sinf: `CustomerMother.gold()`, `CustomerMother.blockedWithOverdueInvoice()`. Builder "qanday qurish"ni, Object Mother esa "qaysi kanonik scenariy"ni ifodalaydi - ya'ni domain tilidagi nomlangan holatlar katalogi. Ikkalasi odatda birga ishlatiladi: Mother metodi ichida Builder chaqiriladi va to'liq tayyor obyekt qaytaradi.
+**Tavsif:** Tipik test obyektlarini nomlangan factory metodlar orqali yetkazib beruvchi markazlashgan sinf: `CustomerMother.gold()`, `CustomerMother.blockedWithOverdueInvoice()`. Builder "qanday qurish"ni, Object Mother esa "qaysi kanonik ssenariy"ni ifodalaydi - ya'ni domain tilidagi nomlangan holatlar katalogi. Ikkalasi odatda birga ishlatiladi: Mother metodi ichida Builder chaqiriladi va to'liq tayyor obyekt qaytaradi.
 
 **Spring'da qayerda uchraydi:** Sof Java pattern - `static` factory metodlarga ega test sinflari (`OrderMother`, `UserFixtures`). Gradle `java-test-fixtures` plugin'i yoki Maven'da `test-jar` orqali bu sinflarni modullar orasida ulashish mumkin. Spring loyihalarida ko'pincha `@TestConfiguration` ichidagi bean'lar yoki `@Sql` skriptlari bilan birgalikda, DB'ga kanonik ma'lumotni joylashtirish uchun qo'llaniladi.
 
@@ -275,11 +277,11 @@ void jsonRoundTripPreservesOrder(@ForAll("orders") Order order) throws Exception
 
 **Tavsif:** Spring context ichidagi bean'ni Mockito mock yoki spy bilan almashtirish mexanizmi: tashqi bog'liqliklarni (to'lov API, message broker, sekin servis) real context'da neytrallashtirish uchun ishlatiladi. `@MockitoBean` bean'ni to'liq mock bilan almashtiradi (yoki yo'q bo'lsa yangisini qo'shadi), `@MockitoSpyBean` esa real bean'ni spy bilan o'raydi va faqat kerakli metodni stub qilishga imkon beradi. Spring Framework 6.2'dan boshlab bular Boot'dan Framework'ga ko'chdi va eski `@MockBean`/`@SpyBean` deprecated qilindi.
 
-**Spring'da qayerda uchraydi:** `org.springframework.test.context.bean.override.mockito.MockitoBean` va `MockitoSpyBean` (Spring Framework 6.2+ / Spring Boot 3.4+); eski nomlar - `org.springframework.boot.test.mock.mockito.MockBean`/`@SpyBean` (Boot 3.4'da deprecated, keyingi major'da olib tashlangan). Shu bean-override oilasiga `@TestBean` (static factory metod bilan almashtirish) ham kiradi. Parametrlar: `name`, `contextName`, `reset = MockReset.AFTER`, `enforceOverride`. `@MockitoBean` field'ni `@Nested` sinflarda ham meros qiladi.
+**Spring'da qayerda uchraydi:** `org.springframework.test.context.bean.override.mockito.MockitoBean` va `MockitoSpyBean` (Spring Framework 6.2+ / Spring Boot 3.4-3.5, Boot 4 da ham); eski nomlar - `org.springframework.boot.test.mock.mockito.MockBean`/`@SpyBean` (Boot 3.4'da deprecated, Boot 4 da olib tashlangan). Shu bean-override oilasiga `@TestBean` (static factory metod bilan almashtirish) ham kiradi. Parametrlar: `name`, `contextName`, `reset = MockReset.AFTER`, `enforceOverride`. `@MockitoBean` field'ni `@Nested` sinflarda ham meros qiladi.
 
 **Qo'llanish keyslari:**
 - `@WebMvcTest`da controller testi uchun service qatlamini `@MockitoBean` bilan ta'minlash.
-- Tashqi to'lov provayderi client'ini mock qilib, timeout va "declined" scenariylarini imitatsiya qilish.
+- Tashqi to'lov provayderi client'ini mock qilib, timeout va "declined" ssenariylarini imitatsiya qilish.
 - `@MockitoSpyBean` bilan real repository'ni saqlab, faqat bitta og'ir aggregation metodini stub qilish.
 - Email/SMS notifikatsiya bean'ini mock qilib, integration testda real xabar yuborilmasligini kafolatlash.
 - `verify()` orqali real oqimda audit yoki event publisher chaqirilganini tasdiqlash.
@@ -290,7 +292,7 @@ void jsonRoundTripPreservesOrder(@ForAll("orders") Order order) throws Exception
 
 **Tavsif:** Test uchun qo'shimcha yoki o'rnini bosuvchi bean'larni asosiy production konfiguratsiyasiga tegmasdan e'lon qilish imkonini beradi. `@TestConfiguration` - bu `@Configuration`ning maxsus ko'rinishi: u `@ComponentScan` tomonidan avtomatik olinmaydi, shuning uchun tasodifan production context'ga tushib qolmaydi. Agar test sinfi ichida static nested class sifatida yozilsa, faqat o'sha test sinfiga qo'llanadi; alohida top-level sinf bo'lsa, `@Import` bilan tanlab ulanadi. Shu bilan context cache'ni buzmasdan, nozik nuqtalarni (clock, random, tashqi client) nazorat ostiga olasiz.
 
-**Spring'da qayerda uchraydi:** `org.springframework.boot.test.context.TestConfiguration` (Spring Boot 3.x/4.x), `@Import(MyTestConfig.class)`, `@ContextConfiguration`. Odatda `@Bean` bilan birga `@Primary` yoki Spring Framework 6.2+ dagi `@TestBean`/`@MockitoBean`/`@MockitoSpyBean` (Spring Boot 3.4+ dan boshlab eski `@MockBean` o'rniga) ishlatiladi. Testcontainers konfiguratsiyasi ham ko'pincha `@TestConfiguration(proxyBeanMethods = false)` ichida `@Bean @ServiceConnection` ko'rinishida saqlanadi. `@Profile("test")` yoki `@ConditionalOnMissingBean` bilan birga ham keladi; `src/test/java` ichidagi `TestcontainersConfiguration` - Spring Boot'ning o'z generatsiya qiladigan namunasi.
+**Spring'da qayerda uchraydi:** `org.springframework.boot.test.context.TestConfiguration` (Spring Boot 3.x/4.x), `@Import(MyTestConfig.class)`, `@ContextConfiguration`. Odatda `@Bean` bilan birga `@Primary` yoki Spring Framework 6.2+ dagi `@TestBean`/`@MockitoBean`/`@MockitoSpyBean` (Spring Boot 3.4-3.5 va Boot 4 da eski `@MockBean` o'rniga) ishlatiladi. Testcontainers konfiguratsiyasi ham ko'pincha `@TestConfiguration(proxyBeanMethods = false)` ichida `@Bean @ServiceConnection` ko'rinishida saqlanadi. `@Profile("test")` yoki `@ConditionalOnMissingBean` bilan birga ham keladi; `src/test/java` ichidagi `TestcontainersConfiguration` - Spring Boot'ning o'z generatsiya qiladigan namunasi.
 
 **Qo'llanish keyslari:**
 - Vaqtga bog'liq logikani test qilish uchun `Clock.fixed(...)` bean'ini test context'iga joylash.
@@ -327,6 +329,8 @@ class ContainersConfig {
 
 **Ehtiyot bo'ling:** Har test sinfida yangi konteyner ko'tarish suite'ni daqiqalarga cho'zadi - konteynerni `static` qiling yoki singleton pattern/`withReuse(true)` va `testcontainers.reuse.enable` bilan qayta ishlatish. CI agentlarida Docker mavjudligi va image'larni tortib olish limitlari (Docker Hub rate limit) muhim shart; shuningdek konteyner image tegini `latest` qoldirmang, aks holda testlar bir kechada "o'z-o'zidan" sinadi.
 
+Mavzuning to'liq yozuvi testlash qo'llanmasidagi [Testcontainers bilan real infratuzilmada test](../testing/08-testcontainers-bilan-real-infratuzilmada.md#82-testcontainers-asoslari-docker-api-ustida-hayot-aylanishi) bo'limida; bu yerda faqat pattern katalogi nuqtai nazari.
+
 ## 23.16 Embedded DB mos kelmasligi (Embedded DB Mismatch - anti-pattern: H2 for PostgreSQL)
 
 **Tavsif:** Bu anti-pattern'da production PostgreSQL/Oracle/MySQL'da ishlaydi, testlar esa tezlik uchun H2 yoki HSQLDB'da yuritiladi. H2'ning PostgreSQL compatibility mode'i faqat SQL sintaksisining bir qismini qoplaydi: `jsonb`, partial index, `ON CONFLICT`, recursive CTE nuanslari, `SELECT ... FOR UPDATE SKIP LOCKED`, timezone va collation xatti-harakati farq qiladi. Natijada testlar yashil, production esa sinadi - yoki aksincha, production'da to'g'ri ishlaydigan migratsiya testda tushadi. To'g'ri yechim - Testcontainers bilan haqiqiy engine'da test qilish.
@@ -355,7 +359,7 @@ class ContainersConfig {
 - Provayder jamoasiga qaysi maydonlar haqiqatda ishlatilayotganini ko'rsatib, dead field'larni xavfsiz olib tashlash.
 - Monolitdan ajratilgan yangi servis uchun API'ni "contract-first" rejimida loyihalash.
 
-**Ehtiyot bo'ling:** Kontrakt test biznes mantiqni emas, faqat interfeys shaklini va kelishilgan stsenariylarni tekshiradi - uni integration test o'rnida ishlatish xato. Kontrakt fayllari va stub versiyalarini boshqarish jiddiy intizom talab qiladi: eskirgan stub'lar bilan ishlayotgan consumer testlari yolg'on ishonch beradi, shuning uchun `stubsMode` va versiyalash siyosatini aniq belgilang.
+**Ehtiyot bo'ling:** Kontrakt test biznes mantiqni emas, faqat interfeys shaklini va kelishilgan ssenariylarni tekshiradi - uni integration test o'rnida ishlatish xato. Kontrakt fayllari va stub versiyalarini boshqarish jiddiy intizom talab qiladi: eskirgan stub'lar bilan ishlayotgan consumer testlari yolg'on ishonch beradi, shuning uchun `stubsMode` va versiyalash siyosatini aniq belgilang.
 
 ## 23.18 Servis komponent testi (Service Component Test)
 
@@ -382,7 +386,7 @@ class ContainersConfig {
 - Consumer-driven kontraktlarni provayder CI pipeline'ida majburiy gate sifatida ishga tushirish.
 - API maydonini o'zgartirishdan oldin qaysi consumer sinishini aniqlash (Pact Broker'dagi `can-i-deploy`).
 - Event schema o'zgarishini Kafka producer tomonida kontraktga qarshi tekshirish.
-- Provider state'larni test ma'lumotlari bilan to'ldirib, turli javob stsenariylarini qoplash.
+- Provider state'larni test ma'lumotlari bilan to'ldirib, turli javob ssenariylarini qoplash.
 - Stub artefaktlarini relizga qo'shib, boshqa jamoalarga ishonchli mock manba berish.
 
 **Ehtiyot bo'ling:** Generatsiya qilingan testlarni qo'lda tahrirlash foydasiz - ular build vaqtida qayta yoziladi; o'zgartirish faqat kontrakt yoki base sinf orqali bo'ladi. Provider state'larni haqiqiy ma'lumotlar bazasi holatiga bog'lab tashlasangiz, testlar mo'rt bo'ladi va kontrakt testning tezlik ustunligi yo'qoladi.
@@ -424,6 +428,8 @@ static final ArchRule domain_is_pure =
 - `field injection` yoki `System.out.println` kabi taqiqlangan amaliyotlarni avtomatik aniqlash.
 
 **Ehtiyot bo'ling:** Haddan ziyod qattiq va mayda qoidalar refactoring'ni sekinlashtiradi - qoidalarni haqiqiy arxitektura qarorlari darajasida saqlang, stilistik narsalarni linter'ga qoldiring. Katta kod bazasida ArchUnit sinf skanerlashi sekin bo'lishi mumkin, shuning uchun paket qamrovini toraytiring va `freeze` bilan mavjud buzilishlarni baseline qiling.
+
+Mavzuning to'liq yozuvi testlash qo'llanmasidagi [arxitektura testlari va kod sifati darvozalari](../testing/14-arxitektura-testlari-va-kod-sifati.md#142-archunit-asoslari) bo'limida; bu yerda faqat pattern katalogi nuqtai nazari.
 
 ## 23.22 Tasdiqlash / Golden Master testlash (Approval / Golden Master Testing)
 
@@ -502,7 +508,7 @@ static final ArchRule domain_is_pure =
 
 ## 23.27 Servis stub (Service Stub)
 
-**Tavsif:** Tashqi HTTP servisni (payment gateway, partner API, OAuth2 provider) real emas, balki boshqariladigan stub server bilan almashtiradi. Stub kutilgan so'rovga belgilangan javob qaytaradi, shu bilan test tashqi tizim ishlashiga, tarmoqqa va test ma'lumotlariga bog'liq bo'lmaydi. Mock object'dan farqi: bu haqiqiy socket ustida ishlaydi, shuning uchun HTTP client sozlamalari, serializatsiya, timeout va retry logikasi ham test qilinadi. Xato scenariylarini (500, 429, sekin javob, buzilgan JSON) deterministik ko'rsatish mumkin.
+**Tavsif:** Tashqi HTTP servisni (payment gateway, partner API, OAuth2 provider) real emas, balki boshqariladigan stub server bilan almashtiradi. Stub kutilgan so'rovga belgilangan javob qaytaradi, shu bilan test tashqi tizim ishlashiga, tarmoqqa va test ma'lumotlariga bog'liq bo'lmaydi. Mock object'dan farqi: bu haqiqiy socket ustida ishlaydi, shuning uchun HTTP client sozlamalari, serializatsiya, timeout va retry logikasi ham test qilinadi. Xato ssenariylarini (500, 429, sekin javob, buzilgan JSON) deterministik ko'rsatish mumkin.
 
 **Spring'da qayerda uchraydi:** WireMock (`org.wiremock:wiremock-standalone`, JUnit 5 uchun `@WireMockTest`, yoki `WireMockServer` ni `@BeforeAll` da qo'lda ko'tarish) va MockServer (`org.mockserver.integration.ClientAndServer`). Spring Cloud Contract `spring-cloud-starter-contract-stub-runner` ichida `@AutoConfigureWireMock(port = 0)` va `@AutoConfigureStubRunner` beradi. Testcontainers'da `WireMockContainer` va `MockServerContainer` modullari bor. Stub port'ini ilovaga `@DynamicPropertySource` yoki Boot 3.4+ dagi `DynamicPropertyRegistrar` bean orqali uzatiladi; client tomonda `RestClient`, `WebClient` yoki `@HttpExchange` interfeysi `RestClientAdapter`/`WebClientAdapter` bilan sinovdan o'tadi.
 
@@ -547,9 +553,9 @@ static final ArchRule domain_is_pure =
 
 ## 23.30 Clock injection (Clock Injection)
 
-**Tavsif:** `LocalDateTime.now()` yoki `System.currentTimeMillis()` ni kod ichida qattiq chaqirish o'rniga, vaqt manbasini `java.time.Clock` bean sifatida inject qilish. Testda uni `Clock.fixed(...)` yoki mutable clock bilan almashtirib, "muddat o'tdi", "oy oxiri", "29-fevral", "soat 00:00" kabi scenariylarni deterministik o'ynatish mumkin. Bu `Thread.sleep()` ga va vaqtga bog'liq flaky test'larga ehtiyojni yo'q qiladi.
+**Tavsif:** `LocalDateTime.now()` yoki `System.currentTimeMillis()` ni kod ichida qattiq chaqirish o'rniga, vaqt manbasini `java.time.Clock` bean sifatida inject qilish. Testda uni `Clock.fixed(...)` yoki mutable clock bilan almashtirib, "muddat o'tdi", "oy oxiri", "29-fevral", "soat 00:00" kabi ssenariylarni deterministik o'ynatish mumkin. Bu `Thread.sleep()` ga va vaqtga bog'liq flaky test'larga ehtiyojni yo'q qiladi.
 
-**Spring'da qayerda uchraydi:** `@Bean Clock systemClock() { return Clock.systemDefaultZone(); }` (yoki `systemUTC()`), kodda `LocalDate.now(clock)` / `Instant.now(clock)`; Java 17+ da yengilroq abstraksiya sifatida `java.time.InstantSource` ham mos. Testda `@TestConfiguration` orqali `Clock.fixed(Instant.parse("2024-02-29T10:15:30Z"), ZoneOffset.UTC)` beriladi yoki `@MockitoBean` (Spring Boot 3.4+; undan oldin `@MockBean`) bilan stub qilinadi. Spring Data auditing'da `@EnableJpaAuditing(dateTimeProviderRef = "auditingDateTimeProvider")` va `DateTimeProvider` bean clock'dan foydalanadi; scheduling testlarida esa clock bilan birga `@Scheduled` metodini to'g'ridan-to'g'ri chaqirish ishlatiladi.
+**Spring'da qayerda uchraydi:** `@Bean Clock systemClock() { return Clock.systemDefaultZone(); }` (yoki `systemUTC()`), kodda `LocalDate.now(clock)` / `Instant.now(clock)`; Java 17+ da yengilroq abstraksiya sifatida `java.time.InstantSource` ham mos. Testda `@TestConfiguration` orqali `Clock.fixed(Instant.parse("2024-02-29T10:15:30Z"), ZoneOffset.UTC)` beriladi yoki `@MockitoBean` (Spring Boot 3.4-3.5 va Boot 4 da; undan oldin `@MockBean`) bilan stub qilinadi. Spring Data auditing'da `@EnableJpaAuditing(dateTimeProviderRef = "auditingDateTimeProvider")` va `DateTimeProvider` bean clock'dan foydalanadi; scheduling testlarida esa clock bilan birga `@Scheduled` metodini to'g'ridan-to'g'ri chaqirish ishlatiladi.
 
 ```java
 @TestConfiguration
@@ -603,13 +609,13 @@ static class FixedClockConfig {
 
 **Tavsif:** Funksional testlar "to'g'rimi?" degan savolga javob beradi, yuklama testlari esa "kutilgan trafikda qancha latency va throughput beradi, qachon sinadi?" degan savolga. Odatda bir necha turi ajratiladi: load (kutilgan yuklama), stress (chegarani topish), soak (uzoq muddatli memory leak/connection leak), spike (keskin o'sish). Natija SLO ko'rinishida (masalan p99 < 300ms, error rate < 0.1%) yozilib, CI yoki release gate'ga bog'lanadi.
 
-**Spring'da qayerda uchraydi:** Gatling Java DSL (`io.gatling.javaapi.core.Simulation`, `gatling-maven-plugin`), k6 (JavaScript scenariy, Grafana ekosistemasi, `k6 run` CI'da konteyner sifatida), Apache JMeter (`.jmx` plan + `jmeter-maven-plugin`). Ilova tomonida `spring-boot-starter-actuator` + Micrometer metrikalari (`http.server.requests`, `hikaricp.connections.pending`, `jvm.gc.pause`) Prometheus/Grafana orqali o'lchanadi; `@Timed` va `ObservationRegistry` custom metrika qo'shadi. Metod darajasidagi mikro-o'lchov uchun JMH (`@Benchmark`, `@State`) ishlatiladi, DB tomonini tahlil qilishda HikariCP pool metrikalari va `spring.jpa.properties.hibernate.generate_statistics` yordam beradi.
+**Spring'da qayerda uchraydi:** Gatling Java DSL (`io.gatling.javaapi.core.Simulation`, `gatling-maven-plugin`), k6 (JavaScript ssenariy, Grafana ekosistemasi, `k6 run` CI'da konteyner sifatida), Apache JMeter (`.jmx` plan + `jmeter-maven-plugin`). Ilova tomonida `spring-boot-starter-actuator` + Micrometer metrikalari (`http.server.requests`, `hikaricp.connections.pending`, `jvm.gc.pause`) Prometheus/Grafana orqali o'lchanadi; `@Timed` va `ObservationRegistry` custom metrika qo'shadi. Metod darajasidagi mikro-o'lchov uchun JMH (`@Benchmark`, `@State`) ishlatiladi, DB tomonini tahlil qilishda HikariCP pool metrikalari va `spring.jpa.properties.hibernate.generate_statistics` yordam beradi.
 
 **Qo'llanish keyslari:**
 - Yangi search endpoint'ini 500 RPS'da p99 latency SLO'ga tushishini tekshirish.
 - Hikari pool size va `connection-timeout` sozlamalarini stress test bilan kalibrlash.
 - 8 soatlik soak test bilan cache yoki `WebClient` connection leak'ini topish.
-- Black Friday spike scenariysida autoscaling va rate limiter xulqini sinash.
+- Black Friday spike ssenariysida autoscaling va rate limiter xulqini sinash.
 - Reactive (WebFlux) va blocking (MVC) variantlarni bir xil yuklamada taqqoslab, migratsiya qarorini asoslash.
 
 **Ehtiyot bo'ling:** Laptop'dan prod'ga yoki noto'g'ri sizing'li test muhitiga yuklama berish ma'nosiz raqamlar beradi - load generator, tarmoq va DB sizing prod'ga yaqin bo'lishi, test ma'lumoti realistik hajmda bo'lishi shart. O'rtacha (mean) latency'ga qarab qaror qabul qilmang: p95/p99 va error rate'ni, hamda JIT warm-up va GC rejimini hisobga oling; shuningdek yuklama testini hech qachon ruxsatsiz uchinchi tomon tizimiga qaratmang.
@@ -631,9 +637,9 @@ static class FixedClockConfig {
 
 ## 23.35 Uchidan-uchiga testlar (End-to-End Tests)
 
-**Tavsif:** E2E test real foydalanuvchi scenariysini butun stack bo'ylab - UI yoki public API'dan boshlab, servislar, broker va DB orqali - bajaradi. U integratsiya nuqtalarini, konfiguratsiyani va biznes oqimining yaxlitligini tekshiradi, ya'ni boshqa hech qanday qatlam ushlay olmaydigan xatolarni topadi. Shu bilan birga eng sekin, eng qimmat va eng beqaror qatlam, shuning uchun test piramidasida eng kam sonda bo'lishi kerak.
+**Tavsif:** E2E test real foydalanuvchi ssenariysini butun stack bo'ylab - UI yoki public API'dan boshlab, servislar, broker va DB orqali - bajaradi. U integratsiya nuqtalarini, konfiguratsiyani va biznes oqimining yaxlitligini tekshiradi, ya'ni boshqa hech qanday qatlam ushlay olmaydigan xatolarni topadi. Shu bilan birga eng sekin, eng qimmat va eng beqaror qatlam, shuning uchun test piramidasida eng kam sonda bo'lishi kerak.
 
-**Spring'da qayerda uchraydi:** `@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)` + `@LocalServerPort` va `TestRestTemplate` yoki `WebTestClient` (WebFlux uchun ham MVC uchun ham `bindToServer()` rejimida) - bitta servis uchun to'liq oqim. Ko'p servisli oqimda Testcontainers `ComposeContainer`/`DockerComposeContainer` yoki Kubernetes namespace ko'tariladi, tashqi tomonlar WireMock bilan stub qilinadi. Brauzer darajasida `playwright-java`, Selenium WebDriver yoki Selenide; scenariylarni o'qiydigan qilish uchun Cucumber/JBehave; `spring-boot-starter-test` ichidagi AssertJ va JsonPath assert'lar bilan birlashtiriladi.
+**Spring'da qayerda uchraydi:** `@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)` + `@LocalServerPort` va `TestRestTemplate` yoki `WebTestClient` (WebFlux uchun ham MVC uchun ham `bindToServer()` rejimida) - bitta servis uchun to'liq oqim. Ko'p servisli oqimda Testcontainers `ComposeContainer`/`DockerComposeContainer` yoki Kubernetes namespace ko'tariladi, tashqi tomonlar WireMock bilan stub qilinadi. Brauzer darajasida `playwright-java`, Selenium WebDriver yoki Selenide; ssenariylarni o'qiydigan qilish uchun Cucumber/JBehave; `spring-boot-starter-test` ichidagi AssertJ va JsonPath assert'lar bilan birlashtiriladi.
 
 **Qo'llanish keyslari:**
 - "Buyurtma berish → to'lov → event → email" oqimini bir testda uchidan-uchiga tasdiqlash.
@@ -646,7 +652,7 @@ static class FixedClockConfig {
 
 ## 23.36 Reactive kodni test qilish (Testing Reactive Code)
 
-**Tavsif:** `Mono`/`Flux` natijani darhol qaytarmaydi - oddiy `assertEquals` bilan test qilinsa, yo `block()` chaqirib reactive semantikani buziladi, yo signal'lar (`onNext`, `onComplete`, `onError`), backpressure va vaqt bo'yicha xulq umuman tekshirilmay qoladi. `StepVerifier` publisher'ga subscribe bo'lib, kutilgan signal ketma-ketligini deklarativ tasdiqlaydi va virtual vaqt bilan `delay`/`timeout` scenariylarini real kutmasdan o'ynatadi.
+**Tavsif:** `Mono`/`Flux` natijani darhol qaytarmaydi - oddiy `assertEquals` bilan test qilinsa, yo `block()` chaqirib reactive semantikani buziladi, yo signal'lar (`onNext`, `onComplete`, `onError`), backpressure va vaqt bo'yicha xulq umuman tekshirilmay qoladi. `StepVerifier` publisher'ga subscribe bo'lib, kutilgan signal ketma-ketligini deklarativ tasdiqlaydi va virtual vaqt bilan `delay`/`timeout` ssenariylarini real kutmasdan o'ynatadi.
 
 **Spring'da qayerda uchraydi:** `io.projectreactor:reactor-test` (`spring-boot-starter-webflux` bilan birga odatda test scope'da keladi): `StepVerifier.create(flux).expectNext("a","b").verifyComplete()`, `expectNextCount`, `expectError(MyException.class)`, `expectNextMatches`, `thenCancel().verify()`. Vaqt uchun `StepVerifier.withVirtualTime(...)` + `thenAwait(Duration.ofHours(1))` (ichida `VirtualTimeScheduler`). Qo'shimcha asboblar: `TestPublisher` (signal'ni qo'lda yuborish, `TestPublisher.createNoncompliant`), `PublisherProbe` (subscribe bo'ldimi, cancel bo'ldimi), `ReactorContext` uchun `contextWrite`. Web qatlamida `@WebFluxTest` + `WebTestClient`, R2DBC uchun `@DataR2dbcTest`, operator ketma-ketligini kuzatishda `Hooks.onOperatorDebug()` yoki `ReactorDebugAgent`.
 
@@ -684,7 +690,7 @@ StepVerifier.withVirtualTime(() -> service.pollWithRetry())
 
 ## 23.38 Event'larni test qilish (Testing Events)
 
-**Tavsif:** Event-driven dizaynda biznes natija ko'pincha publisher'ning qaytargan qiymatida emas, balki chiqarilgan event va uning listener'lari ta'sirida ko'rinadi. Shuning uchun test "nima qaytdi?" emas, "qanday event chiqdi, payload'i to'g'rimi, listener qanday reaksiya qildi?" degan savolni tekshirishi kerak. Spring buning uchun kontekstdagi barcha event'larni yozib oladigan va modul darajasida scenariy yozishga imkon beradigan asboblar beradi.
+**Tavsif:** Event-driven dizaynda biznes natija ko'pincha publisher'ning qaytargan qiymatida emas, balki chiqarilgan event va uning listener'lari ta'sirida ko'rinadi. Shuning uchun test "nima qaytdi?" emas, "qanday event chiqdi, payload'i to'g'rimi, listener qanday reaksiya qildi?" degan savolni tekshirishi kerak. Spring buning uchun kontekstdagi barcha event'larni yozib oladigan va modul darajasida ssenariy yozishga imkon beradigan asboblar beradi.
 
 **Spring'da qayerda uchraydi:** Spring Framework 5.3.3+ dan `@RecordApplicationEvents` + test'ga inject qilinadigan `ApplicationEvents` (`events.stream(OrderPlaced.class).count()`); publisher tomonida `ApplicationEventPublisher`, `@EventListener`, `@TransactionalEventListener(phase = AFTER_COMMIT)`. Spring Modulith'da `@ApplicationModuleTest` + `Scenario` parametri: `scenario.stimulate(() -> service.place(order)).andWaitForEventOfType(OrderPlaced.class).toArriveAndVerify(e -> ...)`, hamda `PublishedEvents`/`AssertablePublishedEvents` va `@ApplicationModuleTest(mode = STANDALONE)` bilan modulni izolyatsiyada ko'tarish; Modulith event publication registry esa `IncompleteEventPublications` orqali yetib bormagan event'larni tekshirishga imkon beradi. Listener'ni alohida test qilishda uni oddiy bean sifatida to'g'ridan-to'g'ri chaqirish yoki `@MockitoBean` bilan almashtirish mumkin.
 
@@ -716,7 +722,7 @@ StepVerifier.withVirtualTime(() -> service.pollWithRetry())
 
 **Tavsif:** Dummy obyekt - test uchun zarur bo'lgan, lekin hech qachon ishlatilmaydigan parametrni to'ldirish uchun uzatiladigan obyekt. Uning hech qanday xatti-harakati yo'q: metodlari chaqirilmasligi kutiladi, chaqirilsa ham natija ahamiyatsiz. Asosiy maqsadi - konstruktor yoki metod signaturasini qoniqtirish, ya'ni "bo'sh joy to'ldiruvchi" sifatida xizmat qilish. Ko'pincha `null` o'rniga ishlatiladi, chunki `null` kodda NPE yoki yashirin shart tekshiruvlarini keltirib chiqarishi mumkin.
 
-**Spring'da qayerda uchraydi:** Mockito'ning `Mockito.mock(Type.class)` chaqiruvi hech qanday `when(...)` sozlamasisiz amalda dummy rolini bajaradi - barcha metodlar default (`null`, `0`, `false`) qaytaradi. Spring ekosistemasida `org.springframework.mock.web.MockHttpServletRequest`, `MockHttpSession` yoki `org.springframework.mock.env.MockEnvironment` ko'p hollarda shunchaki signaturani to'ldirish uchun uzatiladi. `@MockitoBean` (Spring Framework 6.2+ / Spring Boot 3.4+, eski `@MockBean` o'rnida) bilan e'lon qilingan va test ichida hech qachon stub qilinmagan bean ham dummy hisoblanadi. Java 17+ `record` yoki `sealed interface` yordamida yengil dummy implementatsiya yozish qulay, chunki `record` bir qatorda butun DTO ni qoplaydi.
+**Spring'da qayerda uchraydi:** Mockito'ning `Mockito.mock(Type.class)` chaqiruvi hech qanday `when(...)` sozlamasisiz amalda dummy rolini bajaradi - barcha metodlar default (`null`, `0`, `false`) qaytaradi. Spring ekosistemasida `org.springframework.mock.web.MockHttpServletRequest`, `MockHttpSession` yoki `org.springframework.mock.env.MockEnvironment` ko'p hollarda shunchaki signaturani to'ldirish uchun uzatiladi. `@MockitoBean` (Spring Framework 6.2+ / Spring Boot 3.4-3.5 va Boot 4 da, eski `@MockBean` o'rnida) bilan e'lon qilingan va test ichida hech qachon stub qilinmagan bean ham dummy hisoblanadi. Java 17+ `record` yoki `sealed interface` yordamida yengil dummy implementatsiya yozish qulay, chunki `record` bir qatorda butun DTO ni qoplaydi.
 
 **Qo'llanish keyslari:**
 - Ko'p argumentli domain konstruktorini test qilishda faqat bitta maydon tekshirilsa, qolgan hamkor obyektlarni dummy bilan to'ldirish.
@@ -729,7 +735,7 @@ StepVerifier.withVirtualTime(() -> service.pollWithRetry())
 
 ## 23.41 Test stub (Test Stub)
 
-**Tavsif:** Test stub - testga kerakli "indirect input" ni, ya'ni tashqi bog'liqlikdan keladigan oldindan belgilangan javoblarni beradigan soxta implementatsiya. Haqiqiy bog'liqlik (ma'lumotlar bazasi, HTTP mijoz, soat) o'rniga qo'yiladi va har doim bir xil, oldindan aytib bo'ladigan natija qaytaradi. Shuningdek, xato stsenariylarini modellashtirish uchun exception tashlashi mumkin (bunday variant "saboteur" deb ataladi). Stub chaqiruvlarni tekshirmaydi - u faqat ma'lumot beradi.
+**Tavsif:** Test stub - testga kerakli "indirect input" ni, ya'ni tashqi bog'liqlikdan keladigan oldindan belgilangan javoblarni beradigan soxta implementatsiya. Haqiqiy bog'liqlik (ma'lumotlar bazasi, HTTP mijoz, soat) o'rniga qo'yiladi va har doim bir xil, oldindan aytib bo'ladigan natija qaytaradi. Shuningdek, xato ssenariylarini modellashtirish uchun exception tashlashi mumkin (bunday variant "saboteur" deb ataladi). Stub chaqiruvlarni tekshirmaydi - u faqat ma'lumot beradi.
 
 **Spring'da qayerda uchraydi:** Mockito'ning `when(repo.findById(1L)).thenReturn(Optional.of(order))` va `given(...).willReturn(...)` (BDDMockito) - eng keng tarqalgan stubbing usuli. HTTP darajasida `org.springframework.test.web.client.MockRestServiceServer` `RestTemplate` uchun, `MockRestServiceServer.bindTo(RestClient.builder())` esa Spring Framework 6.1+ `RestClient` uchun javoblarni stub qiladi; reaktiv tomonda `WebClient` ga `ExchangeFunction` stub berish yoki WireMock (`@AutoConfigureWireMock`, Spring Cloud Contract) ishlatiladi. Vaqtga bog'liq kodda `java.time.Clock.fixed(...)` ni bean sifatida inject qilish - klassik stub. Spring AI 1.x da `ChatModel` interfeysini stub qilib, LLM javobini determinlashtirish mumkin, shunda testda real model chaqirilmaydi.
 
@@ -746,7 +752,7 @@ StepVerifier.withVirtualTime(() -> service.pollWithRetry())
 
 **Tavsif:** Test spy - real yoki soxta obyektning chaqiruvlarini (argumentlar, chaqiruvlar soni, tartibi) yozib oladigan, lekin tekshirishni testning assert fazasiga qoldiradigan obyekt. Mock'dan farqi shunda: spy kutilgan xatti-harakatni oldindan e'lon qilmaydi, balki "nima bo'lgani" ni qayd etadi va keyin tekshiriladi. Bu "indirect output" ni, ya'ni tizim chiqishini bevosita qaytarilgan qiymat orqali emas, hamkor obyektga bergan buyruqlar orqali kuzatish imkonini beradi.
 
-**Spring'da qayerda uchraydi:** Mockito'ning `Mockito.spy(realObject)` va `@Spy` real implementatsiyani o'rab, chaqiruvlarni yozib oladi; `@MockitoSpyBean` (Spring Framework 6.2+ / Boot 3.4+, eski `@SpyBean` o'rnida) ApplicationContext'dagi haqiqiy beanni spy bilan o'raydi - shu bilan real logika ishlaydi, lekin chaqiruvlarni `verify(...)` bilan tekshirish mumkin. `ArgumentCaptor<T>` yoki `@Captor` uzatilgan argumentni ushlab olish uchun ishlatiladi. Spring'ning o'z test infratuzilmasida `ApplicationEvents` (`@RecordApplicationEvents`, Spring Framework 5.3.3+) - publish qilingan eventlarni yozib oladigan toza spy; `OutputCaptureExtension` (`@ExtendWith`, Spring Boot) konsol chiqishini, `MockMvc` esa `MvcResult` ichida butun request-response oqimini qayd etadi.
+**Spring'da qayerda uchraydi:** Mockito'ning `Mockito.spy(realObject)` va `@Spy` real implementatsiyani o'rab, chaqiruvlarni yozib oladi; `@MockitoSpyBean` (Spring Framework 6.2+ / Boot 3.4-3.5 va Boot 4 da, eski `@SpyBean` o'rnida) ApplicationContext'dagi haqiqiy beanni spy bilan o'raydi - shu bilan real logika ishlaydi, lekin chaqiruvlarni `verify(...)` bilan tekshirish mumkin. `ArgumentCaptor<T>` yoki `@Captor` uzatilgan argumentni ushlab olish uchun ishlatiladi. Spring'ning o'z test infratuzilmasida `ApplicationEvents` (`@RecordApplicationEvents`, Spring Framework 5.3.3+) - publish qilingan eventlarni yozib oladigan toza spy; `OutputCaptureExtension` (`@ExtendWith`, Spring Boot) konsol chiqishini, `MockMvc` esa `MvcResult` ichida butun request-response oqimini qayd etadi.
 
 **Qo'llanish keyslari:**
 - `@MockitoSpyBean` bilan real `PaymentService` ishlashini saqlab, `charge()` metodining necha marta chaqirilganini tekshirish.
@@ -761,7 +767,7 @@ StepVerifier.withVirtualTime(() -> service.pollWithRetry())
 
 **Tavsif:** Mock obyekt - kutilgan chaqiruvlar to'plami oldindan e'lon qilinadigan va o'zi shu kutishni tekshiradigan soxta obyekt. Spy'dan farqi shundaki, mock "behavior verification" ga mo'ljallangan: shartnoma buzilsa (kutilmagan chaqiruv yoki yetishmayotgan chaqiruv) testni o'zi muvaffaqiyatsiz qiladi. Bu, ayniqsa, metodning qaytaruvchi qiymati bo'lmagan (`void`) yoki natija faqat tashqi tizimga yuborilgan buyruqdan bilinadigan hollarda zarur.
 
-**Spring'da qayerda uchraydi:** Mockito (`@Mock`, `@ExtendWith(MockitoExtension.class)`, `verify`, `verifyNoMoreInteractions`, `InOrder`) - Spring Boot'ning `spring-boot-starter-test` tarkibidagi standart vosita. Spring konteksti ichida `@MockitoBean` (Spring Framework 6.2+) ApplicationContext'dagi beanni mock bilan almashtiradi va kontekst keshini shu konfiguratsiya bo'yicha ajratadi. `MockitoExtension` ning `Strictness.STRICT_STUBS` rejimi ishlatilmagan stublarni xato deb belgilaydi. Messaging qatlamida `org.springframework.messaging.support.MessageHandler` yoki `KafkaTemplate` ni mock qilib, publish shartnomasi tekshiriladi.
+**Spring'da qayerda uchraydi:** Mockito (`@Mock`, `@ExtendWith(MockitoExtension.class)`, `verify`, `verifyNoMoreInteractions`, `InOrder`) - Spring Boot'ning `spring-boot-starter-test` tarkibidagi standart vosita. Spring konteksti ichida `@MockitoBean` (Spring Framework 6.2+) ApplicationContext'dagi beanni mock bilan almashtiradi va kontekst keshini shu konfiguratsiya bo'yicha ajratadi. `MockitoExtension` ning `Strictness.STRICT_STUBS` rejimi ishlatilmagan stublarni xato deb belgilaydi. Messaging qatlamida `org.springframework.messaging.MessageHandler` yoki `KafkaTemplate` ni mock qilib, publish shartnomasi tekshiriladi.
 
 **Qo'llanish keyslari:**
 - `void sendEmail(...)` kabi natijasiz metodda xabar aynan bir marta va to'g'ri argument bilan yuborilganini tasdiqlash.
@@ -974,7 +980,7 @@ public class OrderAssert extends AbstractAssert<OrderAssert, Order> {
 
 **Qo'llanish keyslari:**
 - Buyurtma holatlari (NEW, PAID, SHIPPED, CANCELLED) uchun alohida test sinfi yoki `@Nested` guruh yaratish.
-- Autentifikatsiyalangan va anonim foydalanuvchi scenariylarini `@WithMockUser` bilan ikki xil sinfga ajratish.
+- Autentifikatsiyalangan va anonim foydalanuvchi ssenariylarini `@WithMockUser` bilan ikki xil sinfga ajratish.
 - Bir xil servisni turli `@ActiveProfiles` (masalan `stub-payment` va `real-payment`) ostida tekshirish.
 - Multi-tenant ilovada tenant mavjud/mavjud emas holatlari uchun ikki fixture sinfi tutish.
 - Feature flag yoqilgan va o'chirilgan holatlarni `@TestPropertySource` bilan ajratib sinash.
@@ -983,9 +989,9 @@ public class OrderAssert extends AbstractAssert<OrderAssert, Order> {
 
 ## 23.56 Test Ilgagi (Test Hook)
 
-**Tavsif:** Ishlab chiqarish kodiga faqat test uchun mo'ljallangan kengaytirish nuqtasi qo'yiladi: almashtirilishi mumkin bo'lgan abstraksiya, injektsiya qilinadigan bog'liqlik yoki hodisa tinglovchisi. Test shu ilgak orqali xatti-harakatni o'zgartiradi, holatni kuzatadi yoki vaqtni/tasodifni nazorat qiladi. Asosiy maqsad - kodni sinovchan (testable) qilish, uning mantiqini buzmasdan.
+**Tavsif:** Ishlab chiqarish kodiga faqat test uchun mo'ljallangan kengaytirish nuqtasi qo'yiladi: almashtirilishi mumkin bo'lgan abstraksiya, inyeksiya qilinadigan bog'liqlik yoki hodisa tinglovchisi. Test shu ilgak orqali xatti-harakatni o'zgartiradi, holatni kuzatadi yoki vaqtni/tasodifni nazorat qiladi. Asosiy maqsad - kodni sinovchan (testable) qilish, uning mantiqini buzmasdan.
 
-**Spring'da qayerda uchraydi:** `java.time.Clock` bean sifatida injektsiya qilinishi (testda `Clock.fixed(...)`) klassik ilgak; Spring Framework'ning `ApplicationEventPublisher` va `@EventListener`/`@TransactionalEventListener` esa kuzatish nuqtasi beradi - `@RecordApplicationEvents` + `ApplicationEvents` bilan testda hodisalar tekshiriladi. `TestExecutionListener`, JUnit 5 `Extension` (`BeforeEachCallback`, `TestWatcher`), `@MockitoBean`/`@MockitoSpyBean` (Spring Boot 3.4+; undan oldin `@MockBean`/`@SpyBean`) kontekstdagi bean'ni almashtiruvchi ilgaklardir. `TaskScheduler`/`TaskExecutor`ni testda `SyncTaskExecutor` yoki `SimpleAsyncTaskScheduler` bilan almashtirish ham shu patternga kiradi.
+**Spring'da qayerda uchraydi:** `java.time.Clock` bean sifatida inyeksiya qilinishi (testda `Clock.fixed(...)`) klassik ilgak; Spring Framework'ning `ApplicationEventPublisher` va `@EventListener`/`@TransactionalEventListener` esa kuzatish nuqtasi beradi - `@RecordApplicationEvents` + `ApplicationEvents` bilan testda hodisalar tekshiriladi. `TestExecutionListener`, JUnit 5 `Extension` (`BeforeEachCallback`, `TestWatcher`), `@MockitoBean`/`@MockitoSpyBean` (Spring Boot 3.4-3.5 va Boot 4 da; undan oldin `@MockBean`/`@SpyBean`) kontekstdagi bean'ni almashtiruvchi ilgaklardir. `TaskScheduler`/`TaskExecutor`ni testda `SyncTaskExecutor` yoki `SimpleAsyncTaskScheduler` bilan almashtirish ham shu patternga kiradi.
 
 ```java
 @Bean

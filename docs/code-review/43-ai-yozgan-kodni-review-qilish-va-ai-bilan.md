@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 43. AI yozgan kodni review qilish va AI bilan review qilish (Reviewing AI-Generated Code)
 
 <details>
@@ -57,7 +59,7 @@ public Money convertTotal(Order order, Currency target) {
 //    Loyihada `Money` ning o'zi `currency.getDefaultFractionDigits()`
 //    ishlatadi - bu kod shu konvensiyani buzadi.
 // 2) `getRate` null qaytarishi mumkin (mavjud kodda shunday) - NPE.
-// 3) Yakkalash qoidasi HALF_UP, lekin loyihada moliyaviy hisob uchun
+// 3) Yaxlitlash qoidasi HALF_UP, lekin loyihada moliyaviy hisob uchun
 //    HALF_EVEN kelishilgan (ADR-14).
 // 4) Teskari yo'nalishda konvertatsiya aniqlikni yo'qotadi -
 //    mavjud `CurrencyConverter` bu holatni hisobga oladi, bu kod yo'q.
@@ -76,7 +78,7 @@ public Money convertTotal(Order order, Currency target) {
 # Review izohi: muallifning tushunishini tekshirish (ayblash emas).
 question: Bu yerda `setScale(2, HALF_UP)` ishlatilgan, lekin loyihada
 `Money` konstruktori valyutaning kasr xonalarini o'zi qo'llaydi
-(Money.java:14) va ADR-14 da moliyaviy yakkalash uchun HALF_EVEN
+(Money.java:14) va ADR-14 da moliyaviy yaxlitlash uchun HALF_EVEN
 kelishilgan.
 
 Ikki variant: (a) `Money` ning o'z mexanizmidan foydalanish, (b) bu

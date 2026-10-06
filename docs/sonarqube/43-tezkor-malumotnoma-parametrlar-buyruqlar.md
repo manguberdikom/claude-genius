@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 43. Tezkor ma'lumotnoma: parametrlar, buyruqlar, glossariy (Quick Reference and Glossary)
 
 <details>

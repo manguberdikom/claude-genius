@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 44. Shablonlar, checklistlar va reviewer yetukligi (Templates and Maturity)
 
 <details>
@@ -68,7 +70,7 @@ Xavfsizlik:
 
 Pul va hisob:
 [ ] `BigDecimal`/`Money`, `double` yo'q
-[ ] Yakkalash qoidasi aniq va kelishilgan
+[ ] Yaxlitlash qoidasi aniq va kelishilgan
 [ ] Valyuta har summa bilan
 [ ] Manfiy va chegaraviy qiymatlar tekshirilgan
 [ ] Idempotentlik kaliti va unique constraint

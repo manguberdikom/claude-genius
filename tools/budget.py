@@ -2,12 +2,18 @@
 """Aktyor chaqiruv budjeti: bitta vazifada ko'pi bilan ikki marta.
 
     python3 tools/budget.py --yangi-vazifa "<nom>"   # hisoblagich nolga
-    python3 tools/budget.py arxitektor               # +1, uchinchida xato
+    python3 tools/budget.py dasturchi               # +1, uchinchida xato
     python3 tools/budget.py --holat                  # jadval
-    python3 tools/budget.py --tiklash arxitektor     # bitta qadamni qaytarish
+    python3 tools/budget.py --tiklash dasturchi     # bitta qadamni qaytarish
+    python3 tools/budget.py --tiklash dasturchi --guruh orders
 
 `PreToolUse` hook sifatida ham ishlaydi: stdin ga JSON kelsa, `Task`
 yoki `Agent` chaqiruvidagi aktyorni o'zi oladi va uchinchisini to'sadi.
+`SendMessage` da `to` aktyor nomi bo'lsa, tugagan aktyorni qayta
+yurgizish ham o'sha aktyorning chaqiruvi: yangi Agent chaqiruvisiz
+ishlaydi va aks holda budjetdan o'tib ketardi. Boshqa manzil (asosiy
+sessiya, agentId, jamoa) sanalmaydi. Bu faqat hook matcher'i
+`SendMessage` ni ushlaganda ishlaydi.
 `UserPromptSubmit` payloadi kelsa shu sessiya hisobini jim nolga
 tushiradi: yangi so'rov yangi vazifa.
 
@@ -24,27 +30,52 @@ o'rnatishdagi proyektlar bir-birini to'smaydi. Holat
 `.claude/.state/budget.json` da (`GENIUS_STATE_DIR` bilan
 almashtiriladi), bir vaqtdagi hooklar qulf bilan navbatlashadi.
 
-Zanjirdagi to'rtta aktyor sanaladi. `qidiruv` va `tahlil` sanalmaydi:
-ular zanjir qadami emas, o'qish asbobi, va ularni cheklash arzon
-yo'lni qimmat qiladi.
+Parallel guruhlar: aktyor promptidagi `guruh: <id>` qatori hisobni
+guruhga ajratadi. Ikki guruh bir sessiyada parallel ishlasa, ularning
+dasturchi chaqiruvlari bitta hisobga tushib, birinchi guruhning ikkinchi
+aylanasi ikkinchi guruhning birinchi chaqiruvi tufayli to'silardi.
+Qatorsiz chaqiruv eski xulqda: bitta umumiy hisob. Id faqat `guruh.py`
+holat faylida (`<git-common-dir>/genius-guruh.json`) bo'lsa qabul
+qilinadi: aks holda har chaqiruvga yangi `guruh: xN` yozib chegara
+aylanib o'tilardi.
+
+Zanjirdagi to'rtta aktyor sanaladi. `qidiruv`, `tahlil` va `Explore`
+sanalmaydi: ular zanjir qadami emas, o'qish asbobi, va ularni cheklash
+arzon yo'lni qimmat qiladi. Qolgan har qanday subagent (general-purpose,
+boshqa plaginning agenti) `boshqa` hisobiga tushadi. Chegara unga faqat
+shu so'rovda zanjir aktyori chaqirilgan bo'lsa qo'llanadi: aks holda
+aktyor ishi nomsiz agent orqali cheksiz yurardi. Zanjirsiz oddiy ishda
+general-purpose agent sanaladi, lekin to'silmaydi.
+Nomdan faqat `manguberdi:` prefiksi kesiladi; `boshqa-plugin:review`
+bu loyihaning `review` budjetini yemaydi.
 """
 
 import contextlib
 import json
 import os
+import re
+import subprocess
 import sys
 import time
 
+import geniuslib
 import hookio
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-STATE_DIR = (os.environ.get("GENIUS_STATE_DIR")
-             or os.path.join(ROOT, ".claude", ".state"))
+STATE_DIR = geniuslib.state_dir(ROOT)
 LOG = os.path.join(STATE_DIR, "budget.json")
 
 # Zanjir aktyorlari. Tartib chiqishdagi jadval tartibi.
-ACTORS = ("rejalashtiruvchi", "arxitektor", "test-muhandis", "review")
+ACTORS = ("rejalashtiruvchi", "dasturchi", "test-muhandis", "review")
 LIMIT = 2
+
+# O'qish asboblari: sanalmaydi.
+FREE = ("qidiruv", "tahlil", "Explore")
+# Qolgan subagentlar shu bitta hisobga tushadi.
+OTHER = "boshqa"
+# Plagin sifatida o'rnatilganda nom shu prefiks bilan keladi.
+PREFIX = "manguberdi:"
+GROUP_STATE = "genius-guruh.json"
 
 # Vazifa belgilanmagan bo'lsa hisoblagich shu muddatdan keyin o'zi
 # nolga tushadi: uzun sessiyada ertalabki vazifa kechqurungisini
@@ -74,6 +105,53 @@ Nima bajarildi, nima qolgan va nima yetishmayotganini yozib, aniq
 savol bering. Foydalanuvchi javob bergach budjet o'zi yangilanadi.
 Keyin memory bosqichi: qolgan kamchilik feedback nomzodi.
 """
+
+
+GROUP_RE = re.compile(r"(?im)^\s*\[?guruh:\s*([\w.-]+)")
+
+
+def strip_prefix(name):
+    name = (name or "").strip()
+    return name[len(PREFIX):] if name.startswith(PREFIX) else name
+
+
+def actor_of(subagent_type):
+    """subagent_type qaysi hisobga tushadi; '' sanalmaydi."""
+    name = strip_prefix(subagent_type)
+    if name in ACTORS:
+        return name
+    return "" if name in FREE else OTHER
+
+
+def registered(group, cwd=""):
+    """Id `guruh.py yarat` bilan ro'yxatga olinganmi.
+
+    Holat fayli umumiy .git papkasida: guruh worktree sidan ham, asosiy
+    daraxtdan ham bir xil fayl ko'rinadi. Tekshirib bo'lmasa (git yo'q,
+    repo emas) id qabul qilinmaydi: umumiy hisob xavfsiz tomon.
+    """
+    try:
+        from guruh import common_dir
+        common = common_dir(cwd or os.getcwd())
+        if not common:
+            return False
+        with open(os.path.join(common, GROUP_STATE), encoding="utf-8") as handle:
+            data = json.load(handle)
+    except (ImportError, OSError, ValueError, subprocess.SubprocessError):
+        return False
+    return isinstance(data, dict) and group in data
+
+
+def group_of(prompt, cwd=""):
+    """Promptdagi ro'yxatdan o'tgan `guruh: <id>`, aks holda ''."""
+    match = GROUP_RE.search(prompt if isinstance(prompt, str) else "")
+    if not match:
+        return ""
+    return match.group(1) if registered(match.group(1), cwd) else ""
+
+
+def counter(actor, group=""):
+    return "%s/%s" % (group, actor) if group else actor
 
 
 @contextlib.contextmanager
@@ -118,8 +196,31 @@ def here():
         return ""
 
 
+def _number(value):
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _sound(slot):
+    """Slot ishlatsa bo'ladigan shaklda bo'lsa o'zi (calls tuzatilgan), aks
+    holda None. `seen: null` yoki `started: "x"` keyingi `now - ...` da
+    TypeError berardi va budjet hooki HAMMA sessiyada jim o'chardi (KD-K2)."""
+    if not isinstance(slot, dict):
+        return None
+    if any(key in slot and not _number(slot[key]) for key in ("started", "seen")):
+        return None
+    calls = slot.get("calls")
+    slot["calls"] = ({k: v for k, v in calls.items() if _number(v)}
+                     if isinstance(calls, dict) else {})
+    if not isinstance(slot.get("ids", []), list):
+        slot["ids"] = []
+    return slot
+
+
 def load():
-    """{"sessions": {kalit: hisob}}. Eski tekis shakl bo'sh holat deb olinadi."""
+    """{"sessions": {kalit: hisob}}. Eski tekis shakl bo'sh holat deb olinadi.
+
+    Buzuq slot shu yerda bir marta tashlanadi: save, fresh, cli_key va
+    slot_of undan keyin faqat son va dict ko'radi."""
     try:
         with open(LOG, encoding="utf-8") as handle:
             data = json.load(handle)
@@ -127,6 +228,12 @@ def load():
         data = None
     if not isinstance(data, dict) or not isinstance(data.get("sessions"), dict):
         data = {"sessions": {}}
+    sessions = {}
+    for key, slot in data["sessions"].items():
+        slot = _sound(slot)
+        if slot is not None:
+            sessions[key] = slot
+    data["sessions"] = sessions
     return data
 
 
@@ -158,10 +265,7 @@ def save(data):
     try:
         os.makedirs(STATE_DIR, exist_ok=True)
         # Har jarayonning o'z tmp fayli: qulfsiz holatda ham JSON buzilmaydi.
-        tmp = "%s.%d.tmp" % (LOG, os.getpid())
-        with open(tmp, "w", encoding="utf-8") as handle:
-            json.dump(data, handle)
-        os.replace(tmp, LOG)
+        geniuslib.atomic_write_text(LOG, json.dumps(data))
     except OSError:
         pass   # hisoblagich ishni to'xtatmaydi
 
@@ -211,37 +315,82 @@ def reset(key, cwd=""):
         save(data)
 
 
+def installed_line():
+    """`o'rnatilgan: <sha>, klon: <sha>` yoki None (global o'rnatish yo'q).
+
+    O'rnatuvchi `~/.claude/skills/manguberdi/.genius.json` ga snapshot
+    commitini yozadi. Skill, aktyorlar va hooklar shu snapshotdan (R7.8
+    XV-Y1), klon esa undan oldinga ketishi mumkin (`git pull`): farqni shu
+    qator aytadi va yangilashni `tools/yangilash.py` bajaradi. Eski
+    o'rnatishda (manifestda `clone` yo'q) asboblar klondan jonli edi.
+    """
+    config = (os.environ.get("CLAUDE_CONFIG_DIR")
+              or os.path.join(os.path.expanduser("~"), ".claude"))
+    try:
+        with open(os.path.join(config, "skills", "manguberdi", ".genius.json"),
+                  encoding="utf-8-sig") as handle:
+            manifest = json.load(handle)
+        installed = str(manifest.get("commit") or "")
+    except (OSError, ValueError, AttributeError):
+        return None
+    pinned = bool(manifest.get("clone"))
+    root = manifest.get("clone") or manifest.get("root") or ROOT
+    proc = geniuslib.run_git(["-C", root, "rev-parse", "HEAD"], timeout=5)
+    clone = proc.stdout.strip() if proc else ""
+    line = "o'rnatilgan: %s, klon: %s" % (installed[:12] or "?", clone[:12] or "?")
+    if installed and clone and installed != clone:
+        if pinned:
+            tool = os.path.join(str(manifest.get("root") or ""), "tools",
+                                "yangilash.py").replace("\\", "/")
+            line += (" (hooklar o'rnatilgan commitdan yuradi: ro'yxatni ko'rish va "
+                     "yangilash uchun `python3 %s` (snapshotdagi nusxa), install/README.md "
+                     "'Yangilash')" % tool)
+        else:
+            line += (" (farq bor: o'rnatuvchini qayta yurgizing, install/README.md "
+                     "'Yangilash')")
+    return line
+
+
 def status():
     data = load()
     key, note = cli_key(data)
     slot = slot_of(data, key)
+    version = installed_line()
+    if version:
+        print(version)
     if note:
         print(note)
     print("Vazifa: %s" % (slot.get("task") or "nomsiz"))
-    print("\n%-18s %-10s %s" % ("aktyor", "chaqiruv", "holat"))
-    for actor in ACTORS:
-        used = slot["calls"].get(actor, 0)
-        state = "-" if not used else ("tugadi" if used >= LIMIT else "qoldi 1")
-        print("%-18s %-10s %s" % (actor, "%d/%d" % (used, LIMIT), state))
+    groups = sorted({key.split("/", 1)[0] for key in slot["calls"] if "/" in key})
+    for group in [""] + groups:
+        if group:
+            print("\nGuruh: %s" % group)
+        print("\n%-18s %-10s %s" % ("aktyor", "chaqiruv", "holat"))
+        rows = ACTORS + ((OTHER,) if slot["calls"].get(counter(OTHER, group)) else ())
+        for actor in rows:
+            used = slot["calls"].get(counter(actor, group), 0)
+            state = "-" if not used else ("tugadi" if used >= LIMIT else "qoldi 1")
+            print("%-18s %-10s %s" % (actor, "%d/%d" % (used, LIMIT), state))
     return 0
 
 
-def restore(actor):
+def restore(actor, group=""):
+    name = counter(actor, group)
     with locked():
         data = load()
         key, note = cli_key(data)
         slot = slot_of(data, key, here())
-        used = slot["calls"].get(actor, 0)
+        used = slot["calls"].get(name, 0)
         if used:
-            slot["calls"][actor] = used - 1
+            slot["calls"][name] = used - 1
             save(data)
     if note:
         print(note)
-    print("%s: %d/%d" % (actor, slot["calls"].get(actor, 0), LIMIT))
+    print("%s: %d/%d" % (name, slot["calls"].get(name, 0), LIMIT))
     return 0
 
 
-def blocked(actor, used):
+def blocked(actor, used, group=""):
     """To'siq matni. Buyruq klon ichida nisbiy, boshqa proyektda mutlaq.
 
     Import xatosi to'siqni buzmasin: hook yiqilsa chaqiruv o'tib ketadi.
@@ -251,48 +400,68 @@ def blocked(actor, used):
         rules = tool_cmd("rules_for.py")
     except (ImportError, OSError):
         rules = "python3 tools/rules_for.py"
-    return BLOCKED % (actor, used, LIMIT, rules)
+    return BLOCKED % (counter(actor, group) if group else actor, used, LIMIT, rules)
 
 
-def take(actor, key=None, cwd="", call_id=None):
+def chain_active(slot, group=""):
+    """Shu so'rovda zanjir aktyori chaqirilganmi (manguberdi faol)."""
+    return any(slot["calls"].get(counter(a, group)) for a in ACTORS)
+
+
+def take(actor, key=None, cwd="", call_id=None, group=""):
     """Bitta chaqiruvni hisobga oladi. Chegara oshsa (xabar, False).
 
     key None bo'lsa CLI chaqiruvi: sessiya cli_key bilan tanlanadi.
+    group bo'lsa hisob shu guruhniki: parallel guruhlar bir-birini to'smaydi.
     """
-    if actor not in ACTORS:
-        return "", True            # sanalmaydigan aktyor erkin
+    actor = actor_of(actor)
+    if not actor:
+        return "", True            # o'qish asbobi erkin
+    name = counter(actor, group)
     with locked():
         data = load()
         if key is None:
             key, cwd = cli_key(data)[0], here()
         slot = slot_of(data, key, cwd)
-        used = slot["calls"].get(actor, 0)
+        used = slot["calls"].get(name, 0)
         ids = slot.setdefault("ids", [])
         if call_id and call_id in ids:
-            return "%s: %d/%d chaqiruv" % (actor, used, LIMIT), True
-        over = used >= LIMIT
+            return "%s: %d/%d chaqiruv" % (name, used, LIMIT), True
+        over = used >= LIMIT and (actor != OTHER or chain_active(slot, group))
         if not over:
-            slot["calls"][actor] = used + 1
+            slot["calls"][name] = used + 1
             if call_id:
                 slot["ids"] = (ids + [call_id])[-SEEN_IDS:]
             save(data)
     if over:                       # matn qulfdan tashqarida yasaladi
-        return blocked(actor, used), False
-    return "%s: %d/%d chaqiruv" % (actor, used + 1, LIMIT), True
+        return blocked(actor, used, group), False
+    return "%s: %d/%d chaqiruv" % (name, used + 1, LIMIT), True
 
 
 def hook(payload):
-    """PreToolUse: Task yoki Agent chaqiruvidagi aktyorni tekshiradi."""
+    """PreToolUse: Task, Agent yoki SendMessage dagi aktyorni tekshiradi."""
     key = (payload.get("session_id")
            or os.environ.get("CLAUDE_CODE_SESSION_ID") or "")
     cwd = norm(payload.get("cwd"))
     if payload.get("hook_event_name") == "UserPromptSubmit":
         reset(key, cwd)            # jim: bu hook chiqishi kontekstga tushadi
         return 0
-    if payload.get("tool_name") not in ("Task", "Agent"):
+    tool = payload.get("tool_name")
+    tool_input = payload.get("tool_input") or {}
+    if not isinstance(tool_input, dict):
         return 0
-    actor = (payload.get("tool_input") or {}).get("subagent_type") or ""
-    message, allowed = take(actor, key, cwd, payload.get("tool_use_id"))
+    if tool in ("Task", "Agent"):
+        actor = tool_input.get("subagent_type") or ""
+        text = tool_input.get("prompt")
+    elif tool == "SendMessage":
+        actor = strip_prefix(tool_input.get("to"))
+        if actor not in ACTORS:
+            return 0               # asosiy sessiya, agentId yoki jamoa
+        text = tool_input.get("message")
+    else:
+        return 0
+    message, allowed = take(actor, key, cwd, payload.get("tool_use_id"),
+                            group_of(text, cwd))
     if not allowed:
         json.dump({"hookSpecificOutput": {
             "hookEventName": "PreToolUse",
@@ -309,18 +478,29 @@ def main():
             print(__doc__.strip().split("\n\n")[1].strip())
             return 2
         payload = hookio.read_payload()
-        return hook(payload) if payload is not None else 0  # hook o'z xatosi bilan ishni to'xtatmaydi
+        if payload is None or not hookio.active(payload):
+            return 0   # hook o'z xatosi yoki o'rinsizligi bilan ishni to'xtatmaydi
+        return hook(payload)
     if args[0] == "--holat":
         return status()
     if args[0] == "--yangi-vazifa":
         return new_task(args[1] if len(args) > 1 else "")
+    group = ""
+    if "--guruh" in args:
+        at = args.index("--guruh")
+        group = args[at + 1] if at + 1 < len(args) else ""
+        args = args[:at] + args[at + 2:]
     if args[0] == "--tiklash":
         if len(args) < 2:
-            print("foydalanish: budget.py --tiklash <aktyor>", file=sys.stderr)
+            print("foydalanish: budget.py --tiklash <aktyor> [--guruh <id>]",
+                  file=sys.stderr)
             return 2
-        return restore(args[1])
-    message, allowed = take(args[0])
-    print(message or "%s sanalmaydi (zanjir aktyori emas)" % args[0])
+        return restore(args[1], group)
+    if group and not registered(group, here()):
+        print("guruh %s ro'yxatda yo'q (guruh.py yarat): umumiy hisob" % group)
+        group = ""
+    message, allowed = take(args[0], group=group)
+    print(message or "%s sanalmaydi (o'qish asbobi)" % args[0])
     return 0 if allowed else 1
 
 

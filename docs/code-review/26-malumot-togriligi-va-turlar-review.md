@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 26. Ma'lumot to'g'riligi va turlar review (Data Correctness)
 
 <details>
@@ -69,7 +71,7 @@ Oxirgi indeks - review da kam uchraydigan, lekin juda kuchli vosita: partial uni
 | --- | --- | --- |
 | Java turi | `BigDecimal` + valyuta (`Money`) | `double`, `float` |
 | PostgreSQL turi | `numeric(19,4)` yoki butun son (tiyin) | `float8`, `money` |
-| Yakkalash | Aniq `RoundingMode`, biznes bilan kelishilgan | Standartga tashlab qo'yish |
+| Yaxlitlash | Aniq `RoundingMode`, biznes bilan kelishilgan | Standartga tashlab qo'yish |
 | Valyuta | Alohida ustun, har summa bilan | Taxmin qilish |
 | Taqqoslash | `compareTo` | `equals` |
 | Yig'indi | SQL `sum(numeric)` yoki `Money::plus` | `double` yig'indisi |
@@ -215,7 +217,7 @@ SELECT c.conrelid::regclass AS jadval, a.attname AS ustun
 
 `deleted_at timestamptz` ustuni qo'shilgan diff review da uch savol tug'diradi. Mexanikasi, SQL va narxi [arxitektor hujjatidagi yumshoq o'chirish va uning yashirin narxi](../architect/25-sxema-dizayni-malumot-turlari-va-cheklovlar.md#259-yumshoq-ochirish-soft-delete-va-uning-yashirin-narxi) mavzusida, bu yerda faqat review savollari.
 
-1. **Hamma so'rov `deleted_at IS NULL` shartini hisobga oladimi?** Bitta so'rovda esdan chiqsa, o'chirilgan ma'lumot foydalanuvchiga ko'rinadi. Himoya ko'rinish (view) yoki RLS, `@Where` emas: sababi [Hibernate xulqini o'zgartiradigan nozik annotatsiyalar](23-jpa-va-hibernate-review.md#238-hibernate-xulqini-ozgartiradigan-nozik-annotatsiyalar) mavzusida.
+1. **Hamma so'rov `deleted_at IS NULL` shartini hisobga oladimi?** Bitta so'rovda esdan chiqsa, o'chirilgan ma'lumot foydalanuvchiga ko'rinadi. Himoya ko'rinish (view) yoki RLS, `@SQLRestriction` (eski kodda `@Where`, u Hibernate 7.0 da olib tashlangan) emas: sababi [Hibernate xulqini o'zgartiradigan nozik annotatsiyalar](23-jpa-va-hibernate-review.md#238-hibernate-xulqini-ozgartiradigan-nozik-annotatsiyalar) mavzusida.
 2. **Unique constraint qanday ishlaydi?** O'chirilgan va yangi qator bir xil email bilan turishi kerakmi? Kerak bo'lsa, unikallik faqat aktiv qatorlar orasida, `WHERE deleted_at IS NULL` li partial unique indeks bilan ta'minlanadi.
 3. **Ma'lumotni haqiqatan o'chirish talabi (GDPR) bormi?** Yumshoq o'chirish "o'chirish huquqi" ni bajarmaydi: anonimlashtirish yoki haqiqiy o'chirish kerak bo'lishi mumkin, bu [secret, maxfiy ma'lumot va kriptografiya review](32-secret-maxfiy-malumot-va-kriptografiya.md) mavzusida.
 

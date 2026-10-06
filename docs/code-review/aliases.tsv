@@ -1,0 +1,10 @@
+# Inglizcha taxalluslar: bo'lim raqami va inglizcha nom.
+# Shakli va qoidalari docs/architect/aliases.tsv boshida.
+bolim	nom
+15.2	Check-then-act race
+15.4	Lock ordering
+16.8	Connection pool exhaustion
+19.4	Propagation in review
+22.1	HTTP client timeout
+27.1	Isolation levels
+29.4	Second-order injection

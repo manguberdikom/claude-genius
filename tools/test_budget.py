@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """budget.py uchun sinovlar.
 
-    python3 tools/test_budget.py
+    python3 tools/test_budget.py [-k matn] [--vaqt [ms]]
 
 Hisoblagich ishlashi yetarli emas: u sanamasligi kerak bo'lgan narsani
 sanab qo'ysa (o'qish asbobini yoki boshqa hook chaqiruvini), zanjir
 o'rtasida to'xtaydi va hisoblagich o'chiriladi. Shuning uchun qidiruv,
 tahlil va Task bo'lmagan asbob erkin o'tishi tekshiriladi. Parallel
 Agent chaqiruvlari va bir nechta sessiya ham alohida sinaladi: hisob
-yo'qolsa chegara jim aylanib o'tiladi.
+yo'qolsa chegara jim aylanib o'tiladi. Aylanib o'tish yo'llari ham
+(o'ylab topilgan guruh id, nomsiz subagent, boshqa prefiks,
+SendMessage) har biri ijobiy va salbiy holat bilan.
 
 Sinov jonli budjetga tegmaydi: holat vaqtinchalik papkada
 (`GENIUS_STATE_DIR`), sessiya nomi soxta.
@@ -28,6 +30,41 @@ STATE = tempfile.mkdtemp(prefix="budget_")
 LOG = os.path.join(STATE, "budget.json")
 SESSION = "sinov"
 
+# Hook faqat Java proyektida yoki klonning o'zida ishlaydi
+# (hookio.active). Sinovlar vaqtinchalik papkada yuradi, shu yerda esa
+# tekshirilayotgan narsa gating emas: ildiz klonga qo'yiladi. Gating ning
+# o'z sinovlari tools/test_hookio.py da.
+ROOT = os.path.dirname(HERE)
+os.environ["CLAUDE_PROJECT_DIR"] = ROOT
+# budget import qilinishidan OLDIN: modul holat papkasini importda oladi,
+# parallel holatdagi jarayonlar ham shu papkani meros oladi.
+os.environ["GENIUS_STATE_DIR"] = STATE
+sys.path.insert(0, HERE)
+import budget  # noqa: E402
+import testkit  # noqa: E402
+
+budget.STATE_DIR, budget.LOG = STATE, LOG
+
+# Parallel holatdagi jarayon: import tugagach "R" qatorini chiqaradi, keyin
+# stdin ni kutadi. Ota jarayon hamma "R" ni o'qigach payloadlarni beradi.
+READY = ("import sys; sys.path.insert(0, %r); import budget; "
+         "print('R', flush=True); sys.exit(budget.main())" % HERE)
+
+# guruh.py holat fayli bor soxta repo: `orders` va `billing`
+# ro'yxatdan o'tgan, boshqa id o'ylab topilgan hisoblanadi.
+REPO = os.path.join(STATE, "repo")
+GROUPS = ("orders", "billing")
+
+
+def make_repo():
+    os.makedirs(REPO, exist_ok=True)
+    subprocess.run(["git", "init", "-q", REPO], check=True)
+    common = os.path.join(REPO, ".git")
+    with open(os.path.join(common, "genius-guruh.json"), "w",
+              encoding="utf-8") as handle:
+        json.dump({gid: {"path": REPO + ".guruh-" + gid,
+                         "branch": "genius/" + gid} for gid in GROUPS}, handle)
+
 
 def env_for(session=SESSION):
     env = dict(os.environ, GENIUS_STATE_DIR=STATE)
@@ -37,11 +74,16 @@ def env_for(session=SESSION):
     return env
 
 
+def call(args=(), stdin="", session=SESSION, cwd=None):
+    """budget.main() jarayon ichida. session None bo'lsa muhitda sessiya yo'q."""
+    return testkit.call_main(budget.main, stdin, argv=["budget.py"] + list(args),
+                             cwd=cwd or STATE,
+                             env={"CLAUDE_CODE_SESSION_ID": session})
+
+
 def run(*args, session=SESSION, cwd=None):
-    proc = subprocess.run([sys.executable, TOOL] + list(args),
-                          capture_output=True, text=True,
-                          cwd=cwd or STATE, env=env_for(session))
-    return proc.returncode, proc.stdout
+    res = call(args, session=session, cwd=cwd)
+    return res.returncode, res.stdout
 
 
 def payload(tool_name, actor, session=SESSION, cwd=None, call_id=None):
@@ -62,24 +104,24 @@ def decision(out):
 
 
 def hook(tool_name, actor, session=SESSION, cwd=None, call_id=None):
-    proc = subprocess.run([sys.executable, TOOL],
-                          input=payload(tool_name, actor, session, cwd, call_id),
-                          capture_output=True, text=True, cwd=STATE,
-                          env=env_for())
-    return decision(proc.stdout)
+    return decision(call(stdin=payload(tool_name, actor, session, cwd, call_id)).stdout)
 
 
 def parallel(payloads):
     """Hamma jarayon stdin ni kutib turganda payload bir vaqtda beriladi.
 
     Kutishsiz jarayonlar ishga tushish vaqti bilan navbatlashib qoladi va
-    qulfsiz kod ham sinovdan o'tib ketadi.
+    qulfsiz kod ham sinovdan o'tib ketadi. Tayyorlik qat'iy kutish bilan
+    emas, har jarayonning "R" qatori bilan aniqlanadi: sekin runnerda ham
+    payload hamma jarayon importni tugatgandan keyin beriladi.
     """
-    procs = [subprocess.Popen([sys.executable, TOOL], stdin=subprocess.PIPE,
+    procs = [subprocess.Popen([sys.executable, "-c", READY], stdin=subprocess.PIPE,
                               stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                               text=True, cwd=STATE, env=env_for())
              for _ in payloads]
-    time.sleep(0.3)
+    for proc in procs:
+        if proc.stdout.readline().strip() != "R":
+            raise RuntimeError("budget jarayoni tayyor emas")
     for proc, data in zip(procs, payloads):
         proc.stdin.write(data)
         proc.stdin.close()
@@ -90,6 +132,35 @@ def parallel(payloads):
         proc.wait()
         out.append(decision(text))
     return out
+
+
+def send(data):
+    """Hook jarayon ichida: payload stdin dan, qaror stdout dan."""
+    return decision(call(stdin=json.dumps(data)).stdout)
+
+
+def hook_group(actor, group, call_id=None):
+    """Aktyor prompti `guruh: <id>` qatori bilan, orkestrator yozgandek.
+
+    cwd ro'yxat fayli bor repo: hook id ni shu yerdan tekshiradi.
+    """
+    data = {"hook_event_name": "PreToolUse", "tool_name": "Agent",
+            "tool_input": {"subagent_type": actor,
+                           "prompt": "guruh: %s\nVazifa: ..." % group},
+            "session_id": SESSION, "cwd": REPO}
+    if call_id:
+        data["tool_use_id"] = call_id
+    return send(data)
+
+
+def message(to, text="2-chaqiruv: topilmalar ...", call_id=None):
+    """Tugagan aktyorni SendMessage bilan qayta yurgizish."""
+    data = {"hook_event_name": "PreToolUse", "tool_name": "SendMessage",
+            "tool_input": {"to": to, "message": text},
+            "session_id": SESSION, "cwd": REPO}
+    if call_id:
+        data["tool_use_id"] = call_id
+    return send(data)
 
 
 def state():
@@ -113,16 +184,16 @@ def fresh(name="sinov"):
 
 def case_ikki_marta(_):
     fresh()
-    first, _ = run("arxitektor")
-    second, _ = run("arxitektor")
+    first, _ = run("dasturchi")
+    second, _ = run("dasturchi")
     return first == 0 and second == 0
 
 
 def case_uchinchi_tosiladi(_):
     fresh()
-    run("arxitektor")
-    run("arxitektor")
-    code, out = run("arxitektor")
+    run("dasturchi")
+    run("dasturchi")
+    code, out = run("dasturchi")
     return code == 1 and "budjet tugadi" in out
 
 
@@ -152,42 +223,42 @@ def case_tosiq_buyrugi_klonga_mos(_):
 
 def case_aktyorlar_mustaqil(_):
     fresh()
-    run("arxitektor")
-    run("arxitektor")
+    run("dasturchi")
+    run("dasturchi")
     code, _ = run("test-muhandis")
     return code == 0
 
 
 def case_yangi_vazifa_nolga(_):
     fresh()
-    run("arxitektor")
-    run("arxitektor")
+    run("dasturchi")
+    run("dasturchi")
     fresh("boshqa vazifa")
-    code, _ = run("arxitektor")
+    code, _ = run("dasturchi")
     return code == 0
 
 
 def case_tiklash(_):
     fresh()
-    run("arxitektor")
-    run("arxitektor")
-    run("--tiklash", "arxitektor")
-    code, _ = run("arxitektor")
+    run("dasturchi")
+    run("dasturchi")
+    run("--tiklash", "dasturchi")
+    code, _ = run("dasturchi")
     return code == 0
 
 
 def case_holat_jadvali(_):
     fresh()
-    run("arxitektor")
+    run("dasturchi")
     _, out = run("--holat")
-    return "arxitektor" in out and "1/2" in out and "rejalashtiruvchi" in out
+    return "dasturchi" in out and "1/2" in out and "rejalashtiruvchi" in out
 
 
 def case_hook_tosadi(_):
     fresh()
-    return (hook("Task", "arxitektor") == "allow"
-            and hook("Task", "arxitektor") == "allow"
-            and hook("Task", "arxitektor") == "deny")
+    return (hook("Task", "dasturchi") == "allow"
+            and hook("Task", "dasturchi") == "allow"
+            and hook("Task", "dasturchi") == "deny")
 
 
 def case_hook_agent_nomi(_):
@@ -207,8 +278,8 @@ def case_oqish_asbobi_erkin(_):
 
 def case_boshqa_asbob_tegilmaydi(_):
     fresh()
-    run("arxitektor")
-    run("arxitektor")
+    run("dasturchi")
+    run("dasturchi")
     # Read chaqiruvi hisobga olinmaydi va to'silmaydi.
     before = run("--holat")[1]
     ok = hook("Read", "") == "allow"
@@ -216,12 +287,124 @@ def case_boshqa_asbob_tegilmaydi(_):
 
 
 def case_notanish_aktyor(_):
+    """Notanish nom erkin emas: zanjir faol bo'lsa `boshqa` chegara bilan."""
     fresh()
+    run("dasturchi")
+    first = run("yoq-aktyor")
+    second = run("yoq-aktyor")
     code, out = run("yoq-aktyor")
-    return code == 0 and "sanalmaydi" in out
+    return (first[0] == 0 and "boshqa: 1/2" in first[1] and second[0] == 0
+            and code == 1 and "budjet tugadi" in out)
+
+
+def case_umumiy_subagent_boshqa(_):
+    """Zanjir faol bo'lsa general-purpose va nomsiz Agent bitta `boshqa` hisobida."""
+    fresh()
+    hook("Agent", "dasturchi")
+    got = [hook("Agent", "general-purpose"), hook("Agent", ""),
+           hook("Agent", "general-purpose")]
+    calls = state()["sessions"][SESSION]["calls"]
+    return got == ["allow", "allow", "deny"] and calls == {"dasturchi": 1, "boshqa": 2}
+
+
+def case_zanjirsiz_boshqa_tosilmaydi(_):
+    """manguberdi ishlatilmasa general-purpose sanaladi, lekin to'silmaydi."""
+    fresh()
+    got = [hook("Agent", "general-purpose") for _ in range(4)]
+    calls = state()["sessions"][SESSION]["calls"]
+    return got == ["allow"] * 4 and calls == {"boshqa": 4}
+
+
+def case_explore_erkin(_):
+    fresh()
+    ok = all(hook("Agent", "Explore") == "allow" for _ in range(4))
+    return ok and state()["sessions"][SESSION]["calls"] == {}
+
+
+def case_manguberdi_prefiksi(_):
+    """Plagin nomi `manguberdi:dasturchi` shu aktyorning hisobi."""
+    fresh()
+    got = [hook("Agent", "manguberdi:dasturchi"), hook("Agent", "dasturchi"),
+           hook("Agent", "manguberdi:dasturchi"),
+           hook("Agent", "manguberdi:qidiruv")]
+    return got == ["allow", "allow", "deny", "allow"]
+
+
+def case_boshqa_prefiks_review_emas(_):
+    """Begona plaginning `xxx:review` i loyiha review budjetini yemaydi."""
+    fresh()
+    hook("Agent", "review")
+    hook("Agent", "review")
+    foreign = hook("Agent", "boshqa-plugin:review")
+    calls = state()["sessions"][SESSION]["calls"]
+    return (foreign == "allow" and calls == {"review": 2, "boshqa": 1}
+            and hook("Agent", "review") == "deny")
+
+
+def case_holat_boshqa_qatori(_):
+    fresh()
+    _, before = run("--holat")
+    hook("Agent", "general-purpose")
+    _, after = run("--holat")
+    return "boshqa" not in before and "boshqa" in after and "1/2" in after
+
+
+def case_sendmessage_sanaladi(_):
+    """Tugagan aktyorga SendMessage: yangi Agent siz uchinchi urinish."""
+    fresh()
+    got = [hook("Agent", "dasturchi"), message("dasturchi"),
+           message("manguberdi:dasturchi")]
+    return got == ["allow", "allow", "deny"]
+
+
+def case_sendmessage_boshqa_manzil(_):
+    """Asosiy sessiya, agentId yoki o'qish asbobiga xabar sanalmaydi."""
+    fresh()
+    got = [message(to) for to in ("main", "a1b2c3d4", "qidiruv",
+                                  "general-purpose", "")]
+    return (got == ["allow"] * 5
+            and state()["sessions"][SESSION]["calls"] == {})
+
+
+def case_sendmessage_guruh(_):
+    """Xabardagi ro'yxatdan o'tgan `guruh:` qatori guruh hisobiga."""
+    run("--yangi-vazifa", "xabar")
+    hook_group("dasturchi", "orders")
+    first = message("dasturchi", "guruh: orders\n2-chaqiruv")
+    third = message("dasturchi", "guruh: orders\n3-urinish")
+    other = message("dasturchi", "guruh: billing\n2-chaqiruv")
+    return (first, third, other) == ("allow", "deny", "allow")
+
+
+def case_royxatsiz_guruh_umumiy(_):
+    """O'ylab topilgan `guruh: xN` chegarani aylanib o'tmaydi."""
+    run("--yangi-vazifa", "aylanma")
+    got = [hook_group("dasturchi", "x1"), hook_group("dasturchi", "x2"),
+           hook_group("dasturchi", "x3")]
+    calls = state()["sessions"][SESSION]["calls"]
+    return got == ["allow", "allow", "deny"] and calls == {"dasturchi": 2}
+
+
+def case_repodan_tashqari_guruh_umumiy(_):
+    """Holat faylini topib bo'lmasa (repo emas) id qabul qilinmaydi."""
+    run("--yangi-vazifa", "reposiz")
+    data = {"hook_event_name": "PreToolUse", "tool_name": "Agent",
+            "tool_input": {"subagent_type": "review",
+                           "prompt": "guruh: orders\n..."},
+            "session_id": SESSION, "cwd": STATE}
+    send(data)
+    return state()["sessions"][SESSION]["calls"] == {"review": 1}
+
+
+def case_cli_royxatsiz_guruh(_):
+    run("--yangi-vazifa", "cli")
+    code, out = run("dasturchi", "--guruh", "x9")
+    return (code == 0 and "ro'yxatda yo'q" in out
+            and state()["sessions"][SESSION]["calls"] == {"dasturchi": 1})
 
 
 def case_buzuq_json(_):
+    """E2E: alohida jarayon, chiqish kodi haqiqiy sys.exit dan."""
     proc = subprocess.run([sys.executable, TOOL], input="not json",
                           capture_output=True, text=True, cwd=STATE,
                           env=env_for())
@@ -233,32 +416,55 @@ def case_eskirgan_nolga(_):
     old = time.time() - 7 * 3600
     write_state({"sessions": {SESSION: {
         "task": "eski", "started": old, "seen": old,
-        "calls": {"arxitektor": 2}}}})
-    return run("arxitektor")[0] == 0
+        "calls": {"dasturchi": 2}}}})
+    return run("dasturchi")[0] == 0
+
+
+def case_buzuq_slot(_):
+    """Qo'shni sessiyaning buzuq sloti budjetni o'chirmaydi (KD-K2).
+
+    Avval `seen: null` save() da TypeError berardi: hook yiqilib, uchinchi
+    chaqiruv ham o'tib ketardi."""
+    write_state({"sessions": {
+        "a": {"seen": None, "calls": {}},
+        "b": {"started": "x", "calls": {}},
+        "c": [],
+        "d": {"started": time.time(), "seen": time.time(), "calls": [],
+              "ids": "x"},
+        "e": {"started": time.time(), "calls": {"dasturchi": "ikki"}}}})
+    results = [call(stdin=payload("Agent", "dasturchi", session="buzuq"))
+               for _ in range(3)]
+    clean_run = all(r.returncode == 0 and r.stderr == "" for r in results)
+    decisions = [decision(r.stdout) for r in results]
+    kept = state()["sessions"]
+    return (clean_run and decisions == ["allow", "allow", "deny"]
+            and "a" not in kept and "b" not in kept and "c" not in kept
+            and kept["d"]["calls"] == {} and kept["e"]["calls"] == {}
+            and run("--holat", session="d")[0] == 0)
 
 
 def case_eski_shakl_toza(_):
     """Sessiyasiz eski tekis fayl yangi sessiyani to'smaydi."""
     write_state({"task": "x", "started": time.time(),
-                 "calls": {"arxitektor": 2}})
-    return run("arxitektor")[0] == 0
+                 "calls": {"dasturchi": 2}})
+    return run("dasturchi")[0] == 0
 
 
 def case_ikki_sessiya_tosmaydi(_):
     """Parallel sessiya yoki boshqa proyekt hisobi aralashmaydi."""
     clean()
-    return (hook("Agent", "arxitektor", "s-a") == "allow"
-            and hook("Agent", "arxitektor", "s-a") == "allow"
-            and hook("Agent", "arxitektor", "s-b") == "allow"
-            and hook("Agent", "arxitektor", "s-a") == "deny")
+    return (hook("Agent", "dasturchi", "s-a") == "allow"
+            and hook("Agent", "dasturchi", "s-a") == "allow"
+            and hook("Agent", "dasturchi", "s-b") == "allow"
+            and hook("Agent", "dasturchi", "s-a") == "deny")
 
 
 def case_yangi_vazifa_boshqasiga_tegmaydi(_):
     clean()
-    hook("Agent", "arxitektor", "s-a")
-    hook("Agent", "arxitektor", "s-a")
+    hook("Agent", "dasturchi", "s-a")
+    hook("Agent", "dasturchi", "s-a")
     run("--yangi-vazifa", "B", session="s-b")
-    return hook("Agent", "arxitektor", "s-a") == "deny"
+    return hook("Agent", "dasturchi", "s-a") == "deny"
 
 
 def case_envsiz_cli_oz_proyektini_oladi(_):
@@ -268,9 +474,9 @@ def case_envsiz_cli_oz_proyektini_oladi(_):
     proj_b = os.path.join(STATE, "projB")
     os.makedirs(os.path.join(proj_a, "src"), exist_ok=True)
     os.makedirs(proj_b, exist_ok=True)
-    hook("Agent", "arxitektor", "s-p", cwd=proj_a)
-    hook("Agent", "arxitektor", "s-q", cwd=proj_b)
-    hook("Agent", "arxitektor", "s-q", cwd=proj_b)
+    hook("Agent", "dasturchi", "s-p", cwd=proj_a)
+    hook("Agent", "dasturchi", "s-q", cwd=proj_b)
+    hook("Agent", "dasturchi", "s-q", cwd=proj_b)
     _, in_a = run("--holat", session=None, cwd=os.path.join(proj_a, "src"))
     _, elsewhere = run("--holat", session=None, cwd=STATE)
     return ("Sessiya: s-p" in in_a and "1/2" in in_a
@@ -281,7 +487,7 @@ def case_parallel_hisob_yoqolmaydi(_):
     """Bir xabardagi 6 ta Agent: har turda aynan 2 o'tadi, 4 to'siladi."""
     for _ in range(5):
         fresh()
-        got = parallel([payload("Agent", "arxitektor")] * 6)
+        got = parallel([payload("Agent", "dasturchi")] * 6)
         if got.count("deny") != 4:
             return False
     return True
@@ -291,37 +497,97 @@ def case_parallel_aktyorlar_saqlanadi(_):
     """4 xil aktyor parallel: fayl buzilmaydi, har biri 1 ga teng."""
     fresh()
     parallel([payload("Agent", actor) for actor in
-              ("rejalashtiruvchi", "arxitektor", "test-muhandis", "review")])
+              ("rejalashtiruvchi", "dasturchi", "test-muhandis", "review")])
     calls = state()["sessions"][SESSION]["calls"]
-    return calls == {"rejalashtiruvchi": 1, "arxitektor": 1,
+    return calls == {"rejalashtiruvchi": 1, "dasturchi": 1,
                      "test-muhandis": 1, "review": 1}
 
 
 def case_bir_chaqiruv_bir_marta(_):
     """Repo va global hook birga yursa ham bitta tool_use_id bir marta."""
     fresh()
-    first = hook("Agent", "arxitektor", call_id="toolu_1")
-    again = hook("Agent", "arxitektor", call_id="toolu_1")
-    second = hook("Agent", "arxitektor", call_id="toolu_2")
-    third = hook("Agent", "arxitektor", call_id="toolu_3")
+    first = hook("Agent", "dasturchi", call_id="toolu_1")
+    again = hook("Agent", "dasturchi", call_id="toolu_1")
+    second = hook("Agent", "dasturchi", call_id="toolu_2")
+    third = hook("Agent", "dasturchi", call_id="toolu_3")
     return (first, again, second, third) == ("allow", "allow", "allow", "deny")
 
 
 def case_yangi_sorov_nolga(_):
     """UserPromptSubmit payloadi shu sessiyani jim nolga tushiradi."""
     fresh()
-    hook("Agent", "arxitektor")
-    hook("Agent", "arxitektor")
-    hook("Agent", "arxitektor", "boshqa")
-    proc = subprocess.run(
-        [sys.executable, TOOL], capture_output=True, text=True, cwd=STATE,
-        env=env_for(), input=json.dumps({"hook_event_name": "UserPromptSubmit",
-                                         "session_id": SESSION, "prompt": "x"}))
+    hook("Agent", "dasturchi")
+    hook("Agent", "dasturchi")
+    hook("Agent", "dasturchi", "boshqa")
+    proc = call(stdin=json.dumps({"hook_event_name": "UserPromptSubmit",
+                                  "session_id": SESSION, "prompt": "x"}))
     calls = state()["sessions"]
     return (proc.returncode == 0 and proc.stdout == ""
             and calls[SESSION]["calls"] == {}
-            and calls["boshqa"]["calls"] == {"arxitektor": 1}
-            and hook("Agent", "arxitektor") == "allow")
+            and calls["boshqa"]["calls"] == {"dasturchi": 1}
+            and hook("Agent", "dasturchi") == "allow")
+
+
+def case_guruhlar_bir_birini_tosmaydi(_):
+    """Ikki guruh parallel: har biri o'z ikki chaqiruvini oladi."""
+    run("--yangi-vazifa", "partiya")
+    got = [hook_group("dasturchi", "orders"), hook_group("dasturchi", "billing"),
+           hook_group("dasturchi", "orders"), hook_group("dasturchi", "billing")]
+    third = hook_group("dasturchi", "orders")
+    other = hook_group("test-muhandis", "orders")
+    return got == ["allow"] * 4 and third == "deny" and other == "allow"
+
+
+def case_guruhsiz_eski_xulq(_):
+    run("--yangi-vazifa", "bitta")
+    first = [hook("Agent", "review"), hook("Agent", "review")]
+    return first == ["allow", "allow"] and hook("Agent", "review") == "deny"
+
+
+def case_guruh_holat_va_tiklash(_):
+    run("--yangi-vazifa", "holat")
+    hook_group("dasturchi", "orders")
+    hook_group("dasturchi", "orders")
+    _, before = run("--holat")
+    code, out = run("--tiklash", "dasturchi", "--guruh", "orders")
+    after = hook_group("dasturchi", "orders")
+    return ("Guruh: orders" in before and code == 0
+            and "orders/dasturchi: 1/2" in out and after == "allow")
+
+
+def case_ornatilgan_qator_snapshot(_):
+    """R7.8 XV-Y1: manifestda `clone` bor bo'lsa o'rnatilgan commit klon HEAD
+    bilan solishtiriladi va farq `yangilash.py` ga yo'naltiriladi; eski
+    manifestda (clone yo'q) avvalgi matn."""
+    head = subprocess.run(["git", "-C", ROOT, "rev-parse", "HEAD"],
+                          stdout=subprocess.PIPE, encoding="utf-8").stdout.strip()
+    if not head:
+        return True
+    cfg = tempfile.mkdtemp(prefix="budget_cfg_")
+    saved = os.environ.get("CLAUDE_CONFIG_DIR")
+    try:
+        folder = os.path.join(cfg, "skills", "manguberdi")
+        os.makedirs(folder)
+        os.environ["CLAUDE_CONFIG_DIR"] = cfg
+
+        def line(manifest):
+            with open(os.path.join(folder, ".genius.json"), "w", encoding="utf-8") as handle:
+                json.dump(manifest, handle)
+            return budget.installed_line()
+
+        pinned = line({"commit": "0" * 40, "root": "/yo'q/snapshot", "clone": ROOT})
+        same = line({"commit": head, "root": "/yo'q/snapshot", "clone": ROOT})
+        old = line({"commit": "0" * 40, "root": ROOT})
+        return ("o'rnatilgan: 000000000000, klon: %s" % head[:12] in pinned
+                and "yangilash.py" in pinned and "farq bor" not in pinned
+                and "yangilash.py" not in same and "farq" not in same
+                and "farq bor" in old and "yangilash.py" not in old)
+    finally:
+        if saved is None:
+            os.environ.pop("CLAUDE_CONFIG_DIR", None)
+        else:
+            os.environ["CLAUDE_CONFIG_DIR"] = saved
+        shutil.rmtree(cfg, ignore_errors=True)
 
 
 CASES = [
@@ -337,10 +603,23 @@ CASES = [
     ("Task va Agent bir hisob", case_hook_agent_nomi),
     ("qidiruv va tahlil erkin", case_oqish_asbobi_erkin),
     ("boshqa asbob tegilmaydi", case_boshqa_asbob_tegilmaydi),
-    ("notanish aktyor erkin", case_notanish_aktyor),
+    ("notanish aktyor boshqa hisobida", case_notanish_aktyor),
+    ("general-purpose boshqa hisobida", case_umumiy_subagent_boshqa),
+    ("zanjirsiz general-purpose to'silmaydi", case_zanjirsiz_boshqa_tosilmaydi),
+    ("Explore erkin", case_explore_erkin),
+    ("manguberdi: prefiksi kesiladi", case_manguberdi_prefiksi),
+    ("begona prefiks review emas", case_boshqa_prefiks_review_emas),
+    ("--holat boshqa qatori", case_holat_boshqa_qatori),
+    ("SendMessage aktyorga sanaladi", case_sendmessage_sanaladi),
+    ("SendMessage boshqa manzilga erkin", case_sendmessage_boshqa_manzil),
+    ("SendMessage guruh hisobida", case_sendmessage_guruh),
+    ("ro'yxatsiz guruh umumiy hisobda", case_royxatsiz_guruh_umumiy),
+    ("repodan tashqari guruh umumiy", case_repodan_tashqari_guruh_umumiy),
+    ("CLI ro'yxatsiz guruh umumiy", case_cli_royxatsiz_guruh),
     ("buzuq JSON to'smaydi", case_buzuq_json),
     ("eskirgan hisob nolga tushadi", case_eskirgan_nolga),
     ("eski tekis fayl to'smaydi", case_eski_shakl_toza),
+    ("buzuq qo'shni slot budjetni o'chirmaydi", case_buzuq_slot),
     ("ikki sessiya bir-birini to'smaydi", case_ikki_sessiya_tosmaydi),
     ("--yangi-vazifa boshqa sessiyaga tegmaydi",
      case_yangi_vazifa_boshqasiga_tegmaydi),
@@ -349,24 +628,21 @@ CASES = [
     ("parallel aktyorlar saqlanadi", case_parallel_aktyorlar_saqlanadi),
     ("bitta chaqiruv bir marta sanaladi", case_bir_chaqiruv_bir_marta),
     ("yangi so'rov hisobni nolga tushiradi", case_yangi_sorov_nolga),
+    ("guruhlar bir-birini to'smaydi", case_guruhlar_bir_birini_tosmaydi),
+    ("guruhsiz chaqiruv eski xulqda", case_guruhsiz_eski_xulq),
+    ("guruh holati va tiklash", case_guruh_holat_va_tiklash),
+    ("o'rnatilgan qator: snapshot manifesti", case_ornatilgan_qator_snapshot),
 ]
 
 
-def main():
-    failures = 0
+def main(argv=()):
     try:
-        for name, fn in CASES:
-            try:
-                ok = bool(fn(None))
-            except Exception as exc:
-                ok, name = False, "%s (%s)" % (name, exc)
-            failures += not ok
-            print("%-4s %s" % ("OK" if ok else "XATO", name))
+        make_repo()
+        return testkit.run_cases(
+            [(name, lambda fn=fn: bool(fn(None))) for name, fn in CASES], argv)
     finally:
         shutil.rmtree(STATE, ignore_errors=True)
-    print("\n%d/%d o'tdi" % (len(CASES) - failures, len(CASES)))
-    return 1 if failures else 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))

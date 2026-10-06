@@ -1,121 +1,120 @@
 # Memory ombori
 
-Bu papka Claude sessiyalari orasida saqlanadigan bilimni ushlab turadi. Ikki
-qismdan iborat tizimning saqlovchi qismi:
+Sessiyalar orasida saqlanadigan bilim. Qoida shu faylda va boshqa joyda
+takrorlanmaydi. Git da, chunki auto memory papkasi mashinaga bog'langan
+va cloud konteyneri qaytarib olinadi: commit qilinmagan bilim yo'qoladi.
 
-- Filtr: `../memory-protocol.md` qaysi bilim saqlanishini va qaysi joyga
-  borishini belgilaydi. Qoidalar shu faylda, bu yerda takrorlanmaydi.
-- Ombor: shu papka. Filtrdan o'tgan bilim git'da, proyekt bo'yicha yig'iladi.
+Bu klon ochiq git repo. Unga faqat ikki papka yoziladi: `umumiy/`
+(hammaga tegishli) va `claude-genius/` (klonning o'z proyekti). Boshqa
+proyekt memorysi klondan tashqarida, `GENIUS_MEMORY_DIR` da, sukut
+bo'yicha `~/.claude/genius-memory/<slug>/`, push siz.
 
-## Nega git
+## Nima yoziladi
 
-Auto memory papkasi (`~/.claude/projects/<project>/memory/`) mashinaga bog'langan:
-mashinalar va cloud muhitlari orasida bo'lishilmaydi. Cloud sessiyaning
-konteyneri esa faoliyatsizlikdan keyin qaytarib olinadi. Ya'ni commit
-qilinmagan bilim yo'qoladi.
+Nomzod uchta signaldan biri bilan paydo bo'ladi: foydalanuvchi tuzatdi,
+xato ikkinchi marta takrorlandi, yoki kodidan topilmaydigan kontekst
+oshkor bo'ldi. "Foydali bo'lishi mumkin" signal emas. Keyin to'rt savol,
+bittasida to'xtasa yozilmaydi:
 
-Git ombori bu muammoni yechadi: bilim bir marta yoziladi, har mashinada va har
-sessiyada o'qiladi, tarixi saqlanadi va o'zgarishi ko'rinadi.
+1. Keyingi sessiyada foyda beradimi? Faqat hozirgi vazifaga kerak bo'lsa yo'q.
+2. Kod, fayl yo'li yoki git tarixidan chiqarib olinadimi? Olinsa yo'q.
+3. CLAUDE.md yoki mavjud yozuv aytganmi? Aytgan bo'lsa borini yangila.
+4. Tekshirib bo'ladigan darajada aniqmi? "Yaxshi kod yoz" kabi bo'lsa yo'q.
 
-## Tuzilish
+Yozilmaydi: sir, token, parol, shaxsiy ma'lumot (faqat joyi ko'rsatiladi,
+masalan "kalit `.env` da, `API_KEY` nomi bilan"); bir martalik vazifa
+tafsiloti; umumiy til yoki framework bilimi; bir hafta ichida eskiradigan
+gap. Sir masalasida istisno yo'q.
 
-```text
-memory/
-├── README.md              # shu fayl: ombor qoidasi va proyektlar ro'yxati
-├── umumiy/                # barcha proyektlarga tegishli bilim
-│   ├── MEMORY.md
-│   └── user_*.md
-└── <proyekt-slug>/        # bitta proyektga tegishli bilim
-    ├── MEMORY.md          # index: har yozuv bitta qator
-    ├── user_*.md
-    ├── feedback_*.md
-    ├── project_*.md
-    └── reference_*.md
-```
+Ochiq klonga boshqa proyektning matni yozilmaydi: proyekt nomi, vazifa
+maqsadi, qarorlar, modul va fayl nomlari sir bo'lmasa ham maxfiy, git
+tarixidan esa o'chirish qimmat. Klondagi begona `memory/<slug>/` ni
+`git add` yoki `git commit` qilishni `tools/guard.py` foydalanuvchi
+qaroriga qo'yadi.
 
-Fayl nomlari va frontmatter formati protokolning `Yozuv formati va nomlash`
-bo'limida. Qaysi bilim `umumiy/` ga, qaysi biri proyekt papkasiga borishi va
-takrorlanmaslik qoidasi protokolning `Marshrut` bo'limidagi jadvalda.
+Kontekst to'lganda yoziladigan topshiriq (handoff) memory emas, u bir
+martalik: lokal sessiyada `tools/handoff.py --vazifa` uni
+`.claude/.state/handoff/` ga git siz yozadi. Faqat cloud sessiyasida u
+proyekt memorysiga `project_<vazifa>.md` bo'lib tushadi va ish tugagach
+o'chiriladi.
 
-## Papka nomi qanday aniqlanadi
+## Qayerga va qanday
 
-Nom taxmin qilinmaydi, qoidadan chiqadi:
+Hammaga tegishli bilim `umumiy/`, bitta proyektga tegishlisi
+`<slug>/`. Slug `tools/docref.py` dagi `project_slug` qoidasi: repo nomi
+kichik harfda, ikki egada bir xil nom bo'lsa `<egasi>__<repo>`, repo
+yo'q bo'lsa ildiz papka nomi. Papka yo'q bo'lsa yaratiladi.
 
-| Holat | Papka nomi | Misol |
+Proyekt papkasi qayerda (`docref.memory_dir`):
+
+| Proyekt | Papka | Push |
 |---|---|---|
-| GitHub repo bor | repo nomi, kichik harfda | `claude-genius` |
-| Ikki egada bir xil repo nomi | `<egasi>__<repo>` | `manguberdikom__api` |
-| GitHub repo yo'q | proyekt ildiz papkasining nomi | `test-stend` |
+| hammasi | `<klon>/memory/umumiy/` | ha |
+| klonning o'zi | `<klon>/memory/claude-genius/` | ha |
+| boshqa har proyekt | `$GENIUS_MEMORY_DIR/<slug>/`, sukut `~/.claude/genius-memory/<slug>/` | yo'q |
 
-Papka mavjud bo'lmasa, yangisi yaratiladi va `MEMORY.md` indeks bilan
-boshlanadi.
+`GENIUS_MEMORY_DIR` ni xususiy git repoga qo'yish mumkin, unda commit
+va push shu repoga va foydalanuvchi qaroriga ko'ra.
 
-## O'qish ketma-ketligi
+Global o'rnatishda hooklar va asboblar `~/.claude/genius/<sha12>/`
+snapshotidan yuradi, lekin `<klon>` baribir klonning o'zi
+(`env.GENIUS_CLONE`): memory snapshotga emas, klonga yoziladi va push
+shu klondan qilinadi. Snapshot almashganda memory yo'qolmaydi.
 
-1. Ombor yangi holatda ekanini tekshir: `git pull`. Eski clone eskirgan bilim
-   beradi, bu yozuvning yo'qligidan xavfliroq.
-2. `umumiy/MEMORY.md` va `<proyekt-slug>/MEMORY.md` indekslarini o'qi. Ikkisi
-   ham qisqa, bir yozuv bir qator.
-3. Indeksdagi tavsifga qarab **faqat kerakli** topic faylni o'qi. Papkadagi
-   hamma faylni o'qish kontekstni behuda yoqadi.
-
-Proyekt papkasi yo'q bo'lsa, ish shundayoq boshlanadi: memory yo'qligi to'siq
-emas.
-
-## Yozish ketma-ketligi
-
-1. Nomzodni protokol darvozasidan o'tkaz (yetti savol).
-2. Darajani tanla: `umumiy/` yoki proyekt papkasi.
-3. Mavjud yozuvni qidir. Bor bo'lsa **yangilanadi**, yangi fayl qo'shilmaydi.
-4. Topic faylni yoz yoki yangila, indeksga bir qatorli tavsif qo'y.
-5. Commit qil va push qil. Push qilinmagan yozuv saqlanmagan hisoblanadi.
-
-Commit xabari qisqa bo'ladi: nima o'zgardi va qaysi proyekt.
-
-```text
-memory: claude-genius uchun hujjat yig'ish tuzoqlari qo'shildi
-```
-
-## Boshqa proyektdan qanday ulanadi
-
-Har bir proyektning `CLAUDE.md` fayliga bitta blok qo'yiladi. Blokda qoida emas,
-manzil turadi:
+Har papkada `MEMORY.md` indeksi: bir yozuv bir qator, mazmunni
+tasvirlaydi, o'zida saqlamaydi (kod bloki, jadval va tugagan ish tarixi
+bo'lmaydi). Topic fayl nomi `<type>_<mavzu>.md`, kichik harf; `type`
+to'rttadan biri: `user`, `feedback`, `project`, `reference`. Bir fayl
+bir mavzu. `modified` ni qo'lda yozish shart emas, Claude Code o'zi
+qo'yadi.
 
 ```markdown
-## Memory
-
-Bu proyektning memoryasi `manguberdikom/claude-genius` repodagi
-`memory/<proyekt-slug>/` papkasida, umumiy bilim `memory/umumiy/` da.
-Ish boshida o'sha ikki `MEMORY.md` indeksi o'qiladi, kerakli topic fayl
-indeksga qarab o'qiladi. Yozish qoidasi: o'sha repodagi `memory-protocol.md`.
+---
+type: feedback
+modified: 2026-10-04T12:00:00Z
+---
+# Sarlavha
+- Qisqa, tekshirib bo'ladigan bandlar.
 ```
 
-Omborni sessiyaga ulash:
+## Ketma-ketlik
 
-| Muhit | Qanday |
-|---|---|
-| Cloud sessiya (claude.ai/code) | `claude-genius` repo sessiyaga qo'shiladi va clone qilinadi |
-| Lokal sessiya | bir marta clone: `git clone https://github.com/manguberdikom/claude-genius ~/claude-genius`, keyin `claude --add-dir ~/claude-genius` |
+O'qish: ish boshida ikki `MEMORY.md` indeksi o'qiladi (proyektniki va
+`umumiy/`), kerakli topic fayl indeksdagi tavsifga qarab o'qiladi.
+`python3 tools/handoff.py --memory` ikkalasini joyidan qat'i nazar
+bitta chaqiruvda beradi. Memory yo'qligi to'siq emas. Klonni yangilash
+memory oqimiga kirmaydi: hooklar klondan emas, pin qilingan snapshotdan
+yuradi va yangilashni `tools/yangilash.py` tasdiq bilan qiladi
+(`install/README.md`, "Yangilash").
 
-`--add-dir` bilan qo'shilgan papkadagi `CLAUDE.md` fayllari default holda
-yuklanmaydi. Bu aynan kerakli xatti-harakat: ombor avtomatik yuklanmaydi,
-kerak bo'lganda o'qiladi.
+Yozish: darvozadan o'tkaz, mavjud yozuvni qidir (bor bo'lsa yangilanadi,
+yangi fayl qo'shilmaydi), yoz, indeksga bir qator qo'y. Keyin git
+buyruqlari memory ildizida yuradi, ish proyektida emas:
 
-## Hajm
+```bash
+git -C <memory ildizi> add -- <papka>
+git -C <memory ildizi> commit -m "memory: <mavzu>"
+git -C <memory ildizi> push --dry-run && git -C <memory ildizi> push
+```
 
-Har bir `MEMORY.md` indeksi qisqa qoladi: bir yozuv bir qator, tafsilot topic
-faylda. Indeks 200 qatorga yaqinlashsa, eski yozuvlar birlashtiriladi yoki
-o'chiriladi. Sabab va qolgan chegaralar protokolning `Hajm budjeti va qattiq
-chegaralar` bo'limida.
+Memory ildizi: `umumiy/` va `claude-genius/` uchun klon, boshqa proyekt
+uchun `GENIUS_MEMORY_DIR` (u git da bo'lmasa git qadami yo'q, fayl
+yozilgani yetarli). Push klon uchun: cloud konteyneri qaytarib olinadi.
+`push --dry-run` yiqilsa (huquq yo'q), lokal commit saqlangan
+hisoblanadi va bu hisobotda aytiladi. Sessiya `main` da bo'lmasa yozuv
+main ga PR bilan o'tadi, bu ham hisobotda aytiladi.
 
-## Nima bu omborga tushmaydi
+## Qachon o'chiriladi
 
-Sir, token, parol, shaxsiy ma'lumot, kodidan chiqarib olinadigan narsa, bir
-martalik vazifa tafsiloti. To'liq ro'yxat protokolning `Memoryga
-yozilmaydigan narsalar` bo'limida. Ombor ochiq git repoda turadi, shuning
-uchun sir masalasida istisno yo'q.
+Yozuv noto'g'ri bo'lib qolsa, takrorlansa yoki tekshirib bo'lmaydigan
+bo'lsa. Ziddiyatda yangi yozuv yutadi va eskisi o'chiriladi, ikkisi
+yonma-yon qoldirilmaydi. `MEMORY.md` 200 qatorga yaqinlashsa eski
+yozuvlar birlashtiriladi.
 
-## Proyektlar
+Boshqa proyektdan ulanish: global o'rnatishda (`install/README.md`)
+manguberdi ish boshida `tools/handoff.py --memory` bilan ikki indeksni
+o'qiydi. Lokal sessiyada qo'lda ulash: bir marta clone va
+`claude --add-dir <klon>`.
 
 | Papka | Proyekt | Izoh |
 |---|---|---|

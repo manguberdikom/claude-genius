@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 2. Test piramidasi va test turlari xaritasi (Test Pyramid & the Map of Test Types)
 
 <details>

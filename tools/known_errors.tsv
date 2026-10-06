@@ -1,0 +1,85 @@
+# Tuzatilgan mazmun xatolari. Naqsh qaytib kelsa check_docs xato beradi.
+#
+# naqsh      - Python re sintaksisi. Registrga BEFARQ solishtiriladi.
+# izoh       - nega xato, bir qatorda. Hisobotda shu matn chiqadi.
+# qamrov     - vergul bilan: docs, claude, root. Bo'sh bo'lsa uchalasi.
+#
+# Qoida: xato tuzatilganda shu yerga naqsh bo'lib tushadi, aks holda u
+# keyingi tahrirda jim qaytib keladi. Naqsh faqat xatoni tutishi kerak:
+# to'g'ri matnni tutadigan naqsh butun tekshiruvni ishonchsiz qiladi.
+#
+# COST_OK ataylab yo'q: u olib tashlangan mexanizm, lekin taqiq.md
+# uni nega olib tashlangani uchun ataylab tilga oladi. Olib
+# tashlangan mexanizmni tools/test_guard.py qo'riqlaydi, naqsh emas.
+naqsh	izoh	qamrov
+miyyasi	hujjat nomi "Arxitektor miyasi", ikki y bilan emas	
+anti[ -]view	anti-pattern nomi; "Anti View" degan atama yo'q	docs
+CGLIQ	CGLIB nomi xato yozilgan	
+yakkalash	RoundingMode konteksida to'g'ri so'z "yaxlitlash"	docs
+to'liq tasvirlaydi	entity sinflari sxemani to'liq tasvirlamaydi: indeks, constraint va plan faqat bazada	
+bashOutputMaxChars	Claude Code sozlama sxemasida yo'q kalit; faqat migratsiya qoidasida uchraydi	docs,claude
+java:S2229[^\n]{0,200}public bo'lmagan	public bo'lmagan metod qoidasi java:S2230, S2229 esa mos kelmaydigan @Transactional qiymatlari	docs
+allowPublicMethodsOnly\(\)[^\n]{0,40}`true`	bazada u false qaytaradi; EnableTransactionManagement 6.0 dan beri publicMethodsOnly=false beradi	docs
+6\.1[^\n]{0,60}core\.retry|core\.retry[^\n]{0,60}6\.1	yadrodagi core.retry.RetryTemplate va RetryPolicy 7.0 da keldi, 6.1 da emas	docs
+resilience\.annotation[^\n]{0,100}maxAttempts	yadrodagi @Retryable atributi maxRetries; maxAttempts alohida spring-retry kutubxonasida	docs
+\.run\([^\n]{0,60}doFilter	ScopedValue.run(Runnable) doFilter ning checked istisnolarini o'tkazmaydi, call(CallableOp) kerak	docs
+sighup[^\n]{0,80}work_mem|work_mem[^\n]{0,80}sighup	work_mem konteksti user (PGC_USERSET), sighup emas	docs
+huge_pages\s*=\s*try	try allaqachon standart qiymat; maslahat sifatida u hech narsa bermaydi, on kerak	docs
+2-5 foiz CPU	huge_pages foydasiga birlamchi manba foiz bermaydi, faqat sifat jihatidan gapiradi	docs
+ClientHttpRequestFactories\.get	Spring Boot 3.4 da deprecate, 4.0 da olib tashlangan; ClientHttpRequestFactoryBuilder ishlatiladi	docs
+ClientHttpRequestFactorySettings\.(DEFAULTS|defaults)	4.0 da bu tur HttpClientSettings deb nomlanadi; DEFAULTS doimiysi 3.4 dan beri yo'q	docs
+spring-cloud-starter-gateway(-mvc)?[`,)\s]	starter nomlari -server-webflux va -server-webmvc qo'shimchasini oldi	docs
+spring\.cloud\.gateway\.(routes|httpclient|globalcors|default-filters|discovery)	prefiks spring.cloud.gateway.server.webflux ga o'zgargan	docs
+Java 21\+[^\n]{0,60}ShutdownOn	ShutdownOnSuccess/Failure faqat 21-24 preview da; JDK 25 da Joiner bilan open(...)	docs
+Spring Framework 6[^\n]{0,60}(publishEvent|POJO event)	publishEvent(Object) va POJO event Spring Framework 4.2 dan beri bor, 6 dan emas	docs
+Java 17\+ `?switch`? pattern matching	switch pattern matching Java 21 da yakuniy; 17-20 da preview	docs
+(?<!jdbc\.)batch_versioned_data	to'liq nomi hibernate.jdbc.batch_versioned_data; standarti odatda true	docs
+@Where\(clause|\|\s*`@Where`\s*\|	@Where Hibernate 6.3 da deprecated, 7.0 da olib tashlangan; o'rniga @SQLRestriction (6.3+) yoki @SoftDelete (6.4+)	docs
+`@Where`,? (va )?`@SQLDelete`	global shart checklisti faqat @Where ni qidirsa @SQLRestriction va @SoftDelete review dan o'tib ketadi	docs
+`@LazyCollection\(EXTRA\)`\s*\|	@LazyCollection 6.2 da deprecated, 7.0 da olib tashlangan; jadvalda shu izohsiz turmasin	docs
+(?s)<artifactId>postgresql</artifactId>(?:(?!testcontainers-postgresql).){0,1000}Testcontainers versiyasini qo'lda yozmang	Testcontainers 2.x (Boot 4) da artifactId testcontainers-postgresql; eski nom faqat 1.x (Boot 3.5) uchun	docs
+\|\s*org\.testcontainers:(postgresql|kafka|mongodb|elasticsearch|rabbitmq|localstack)\s*\|\s*`	Testcontainers moduli jadvalida 2.x nomi (testcontainers-*) ustuni bo'lishi kerak	docs
+okJson\("""[^\n]	bir qatorli text block kompilyatsiya bo'lmaydi: ochuvchi """ dan keyin qator oxiri shart	docs
+secret larni ko'rsatadi \(maskalash to'liq emas\)	Boot 3.0 dan env va configprops show-values standarti never; xavf show-values always yoki keng when-authorized da	docs
+(?s)AnnotatedPackages=uz\.shop</arg>(?:(?!add-exports).){0,2000}Error Prone bu hujjatdagi	JDK 16+ da Error Prone uchun .mvn/jvm.config dagi --add-exports va --add-opens shart	docs
+valueOf\(0\.1\) ham xavfli	BigDecimal.valueOf(0.1) literal uchun 0.1 beradi; xavflisi new BigDecimal(0.1)	docs
+100_000 \* 50_000 manfiy	100_000 * 50_000 int da 705_032_704, ya'ni musbat; overflow ishorani o'zgartirishi shart emas	docs
+grep -r\S*\s[^|\n]*\s-c\s[^|\n]*\|\s*wc -l	grep -r -c har fayl uchun qator chiqaradi, wc -l uchrashni emas fayl sonini sanaydi	docs
+- \[ \] `@MockBean`/`@SpyBean` butun kod bazasidan	@MockitoBean Boot 3.4 dan; punkt (Boot 3.4+) belgisisiz Boot 3.2/3.3 loyihada noto'g'ri	docs
+case \w+\(\s*\w+\.[A-Z][A-Z0-9_]+\s*[,)]	record pattern komponenti faqat pattern bo'ladi, konstanta emas (Java 21 va 25 da kompilyatsiya xatosi); qiymat when guard bilan tekshiriladi	docs
+(PostgreSQL|PG) ?1[78] da[^\n]{0,10}(SPLIT|MERGE) PARTITION	SPLIT/MERGE PARTITION 17 ishlab chiqishida qo'shilib, chiqarilishdan oldin revert qilingan; 17 va 18 da yo'q	docs
+haqiqiy himoya[^\n]*\n[^\n]*read-only\s*=\s*false	hikari read-only=false standart qiymat, hech qanday himoya bermaydi; himoya alohida pool da read-only=true yoki SELECT huquqli rolda	docs
+21-23[^\n]{0,60}ShutdownOnFailure	eski StructuredTaskScope shakli 21-24 da (24 da JEP 499 qayta preview), 25 da open(...) va Joiner	docs
+Child virtual thread'lar qiymatni nusxalamaydi	ScopedValue merosi faqat StructuredTaskScope.fork da; oddiy Thread.ofVirtual yoki executor da qiymat bog'lanmagan	docs
+Shenandoah faqat ba'zi distributiv	Shenandoah OpenJDK 12 dan mainline da (JEP 189), faqat Oracle JDK build ida yo'q	docs
+Spring Boot 3\.4\+ markazlashgan HTTP client	spring.http.client.* faqat Boot 3.4-3.5 da; Boot 4 da deprecated, o'rnida spring.http.clients.*	docs
+throw-exception-if-no-handler-found\s*[:=]\s*true	Boot 3.2.0 dan deprecated, Framework 6.1 dan DispatcherServlet o'zi NoHandlerFoundException tashlaydi; Boot 4 da level=error	docs
+```ya?ml[ \t]*\n[ \t]*//	YAML da izoh # bilan yoziladi, // bilan boshlangan blok parse bo'lmaydi	docs
+heapdump:[ \t]*\n[ \t]*enabled:|management\.endpoint\.heapdump\.enabled	Boot 3.4 dan management.endpoint.<id>.access, enabled deprecated va Boot 4 da yo'q	docs
+ProblemDetail[^\n]{0,40}RFC 7807	RFC 9457 2023 da 7807 ni almashtirgan; ProblemDetail uchun joriy raqam 9457	docs
+-->\s*<\?xml	XML deklaratsiyasi birinchi baytdan boshlanadi; undan oldingi izoh parse xatosi beradi va XXE sinovi yolg'on salbiy chiqadi	docs
+prepare-agent-integration-test	jacoco-maven-plugin da bunday goal yo'q, to'g'risi prepare-agent-integration	docs
+unique = true\)\s*\n\s*private String orderNumber	biznes kalit tenglikda ishlatilsa setter yopiladi va updatable = false bo'ladi, aks holda hashCode o'zgaradi	docs
+orderNumber\.equals\(other\.orderNumber\)	Hibernate proxy maydoni bo'sh, equals da boshqa obyekt qiymati getter orqali olinadi	docs
+0\.8\.7 dan eski versiyada|Java 21 va undan yuqorisida 0\.8\.11	JaCoCo filtrlari versiyama-versiya keldi (@Generated 0.8.2, assert 0.8.8); Java 25 uchun 0.8.14 kerak	docs
+messaging\.support\.MessageHandler	MessageHandler interfeysi org.springframework.messaging paketida, support da emas	docs
+Kotlin yoki Lombok generatsiya qilgan metodlar	Lombok final metod yasamaydi; Kotlin da final standart, yechim kotlin("plugin.spring") (allopen)	docs
+@Where`?/filter	@Where Hibernate 7.0 da olib tashlangan; @SQLRestriction (6.3+) yoki @Filter	docs
+(?s)-Xplugin:ErrorProne(?:(?!add-exports|```).)*```(?:(?!add-exports)(?!\n## ).)*\n## 	JDK 16+ da Error Prone uchun .mvn/jvm.config dagi --add-exports va --add-opens shart; Maven misoli bo'lim ichida shu eslatmasiz turmasin	docs
+(?m)org\.testcontainers:(junit-jupiter|postgresql|kafka|mongodb|localstack|toxiproxy|mysql|mariadb|rabbitmq|elasticsearch)\b(?:(?!testcontainers-)[^\n])*$	Testcontainers 2.x (Boot 4) da modul nomi testcontainers- prefiksli; eski artifactId Boot 3.5 / TC 1.x belgisi va 2.x varianti bilan yoziladi	docs
+(?m)^(?!server\.error)(?:(?!spring\.web\.error)[^\n])*server\.error\.include(?:(?!spring\.web\.error)[^\n])*$	Boot 4 da server.error.include-* o'rnida spring.web.error.include-* (4.1.0 metadata da level=error); eski kalit Boot 4 eslatmasisiz turmasin	docs
+(?s)```properties(?:(?!```|spring\.web\.error).)*\nserver\.error\.include	Boot 4 da server.error.include-* o'rnida spring.web.error.include-* (level=error); properties blokida Boot 4 izohi bo'lishi kerak	docs
+(?<!ilgari )RFC 7807(?!'ni| ni)	RFC 9457 2023 da 7807 ni almashtirgan; joriy raqam 9457, 7807 faqat "almashtirgan" izohi bilan	docs
+mapConcurrent[^\n]{0,200}`synchronized` blok yoki pinning	JEP 491 dan (Java 24, Gatherers final bo'lgan versiya) synchronized virtual thread ni pin qilmaydi; pin native va FFM chaqiruvida qoladi	docs
+`@Where` emas|ilgari `@Where`, Hibernate 6\.3'dan deprecated\)	@Where Hibernate 7.0 da olib tashlangan; joriy nomi @SQLRestriction (6.3+)	docs
+`permits` ro'yxatini yozmasa ham bo'ladi[^\n]{0,80}paketda	permits faqat hamma subclass bitta compilation unit da bo'lsa tushiriladi (JLS 8.1.6); paket va modul sharti permits dagi sinflar uchun	docs
+# R4.6, R4.7. `nasr` qamrovi: naqsh faqat nasrda qidiriladi (kod bloki,
+# inline kod, sarlavha, ichki havola va URL chiqariladi). Sarlavhadagi
+# variant anchor bilan bog'langan va GLOSSARY ga ko'ra o'zgarmaydi.
+# Yolg'iz `nasr` docs nasri degani; boshqa qamrov bilan birga ham yoziladi.
+# Imlo qatorlari `.claude` ni ham qamraydi: skill va agent matni ham o'quvchiga
+# (modelga) shu imloda ko'rinadi (audit 2026-10-05, R4.7).
+stsenariy|scenariy|\bsenariy	imlo: scenario o'zbekchada "ssenariy" (TL-TL4)	docs,claude,root,nasr
+in['’]ektsiya|injeksiya|injektsiya	imlo: injection o'zbekchada "inyeksiya", GLOSSARY bilan bir xil (TL-TL4)	docs,claude,root,nasr
+ob['’]ekt	imlo: "obyekt", korpusda 750 marta shu shakl (TL-TL4)	docs,claude,root,nasr
+testrovshik(?![\w-]*\.md)	rus so'zi, o'rnida "tester" (TZ-T12); 04-testrovshik-... fayl nomi havolalar uchun qoldirilgan

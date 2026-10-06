@@ -1,0 +1,10 @@
+{
+  "session_id": "doctor-namuna",
+  "transcript_path": "${HOOKS_DIR}/transcript.jsonl",
+  "cwd": "${CLAUDE_PROJECT_DIR}",
+  "permission_mode": "default",
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Bash",
+  "tool_input": {"command": "git status", "description": "Show working tree status"},
+  "tool_use_id": "toolu_doctor_bash"
+}

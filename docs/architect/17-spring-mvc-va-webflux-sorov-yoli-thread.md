@@ -1,6 +1,8 @@
 <!-- doc: architect | chapter: 17 | part: III. Spring chuqur bilim -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
+
+> Holat: AI yozgan, inson tekshirmagan.
 
 # 17. Spring MVC va WebFlux: so'rov yo'li, thread modeli, REST dizayni (Spring MVC and WebFlux)
 
@@ -14,7 +16,7 @@
 - [17.5 Virtual thread bilan MVC: WebFlux ga ehtiyoj qanday kamayadi](#175-virtual-thread-bilan-mvc-webflux-ga-ehtiyoj-qanday-kamayadi)
 - [17.6 REST dizayni: resurs nomlari, HTTP metodlari, holat kodlari, versiyalash](#176-rest-dizayni-resurs-nomlari-http-metodlari-holat-kodlari-versiyalash)
 - [17.7 So'rov va javob modellari: DTO chegarasi va entity ni tashqariga chiqarmaslik](#177-sorov-va-javob-modellari-dto-chegarasi-va-entity-ni-tashqariga-chiqarmaslik)
-- [17.8 Validatsiya va xato javobi formati (`ProblemDetail`, RFC 7807)](#178-validatsiya-va-xato-javobi-formati-problemdetail-rfc-7807)
+- [17.8 Validatsiya va xato javobi formati (`ProblemDetail`, RFC 9457)](#178-validatsiya-va-xato-javobi-formati-problemdetail-rfc-9457)
 - [17.9 Katta javoblar: sahifalash, oqim (streaming), siqish](#179-katta-javoblar-sahifalash-oqim-streaming-siqish)
 - [17.10 `RestClient` va `WebClient`: timeout, connection pool, qayta urinish sozlamalari](#1710-restclient-va-webclient-timeout-connection-pool-qayta-urinish-sozlamalari)
 - [17.11 Filter va interceptor: qayerda kontekst (trace id, foydalanuvchi) o'rnatiladi](#1711-filter-va-interceptor-qayerda-kontekst-trace-id-foydalanuvchi-ornatiladi)
@@ -143,9 +145,9 @@ Mapping qayerda bo'lishi kerak? Service qatlamining chegarasida, tranzaksiya hal
 
 Alohida so'rov DTO'si ham kerak. `OrderCreateRequest` ichida `id` va `createdAt` bo'lmasin, aks holda mijoz server boshqaradigan maydonni yuborishga harakat qiladi. Projection (interface yoki record based) read tomonida DTO'ni DB darajasida to'g'ridan-to'g'ri qurish imkonini beradi va keraksiz ustunlarni o'qishni oldini oladi.
 
-## 17.8 Validatsiya va xato javobi formati (`ProblemDetail`, RFC 7807)
+## 17.8 Validatsiya va xato javobi formati (`ProblemDetail`, RFC 9457)
 
-Spring Framework 6 dan `ProblemDetail` mavjud va RFC 7807 formatini beradi: `type`, `title`, `status`, `detail`, `instance`, plus qo'shimcha maydonlar. `Content-Type` esa `application/problem+json` bo'ladi.
+Spring Framework 6 dan `ProblemDetail` mavjud va RFC 9457 formatini beradi ([RFC 9457](https://www.rfc-editor.org/rfc/rfc9457), 2023 da 7807 ni almashtirgan; maydonlar va media type o'zgarmagan, Spring 6.0 javadoci hali eski raqamni aytadi): `type`, `title`, `status`, `detail`, `instance`, plus qo'shimcha maydonlar. `Content-Type` esa `application/problem+json` bo'ladi.
 
 ```java
 @RestControllerAdvice
@@ -253,7 +255,8 @@ Eng xavfli default: timeout yo'q. JDK'ning `HttpClient` da connect timeout o'rna
 ```java
 @Bean
 RestClient paymentClient(RestClient.Builder builder) {
-    var settings = ClientHttpRequestFactorySettings.defaults()
+    // Boot 4.0 da bu tur HttpClientSettings deb nomlanadi
+    var settings = HttpClientSettings.defaults()
             .withConnectTimeout(Duration.ofSeconds(2))   // TCP + TLS uchun
             .withReadTimeout(Duration.ofSeconds(3));     // javob baytlarini kutish
     return builder

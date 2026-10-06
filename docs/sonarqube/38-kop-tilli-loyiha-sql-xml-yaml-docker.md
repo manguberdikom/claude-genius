@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 38. Ko'p tilli loyiha: SQL, XML, YAML, Docker, Kubernetes, frontend (Multi-language Projects)
 
 <details>

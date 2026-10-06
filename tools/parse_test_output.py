@@ -380,6 +380,32 @@ def compile_error(line):
     return None
 
 
+def gradle_causes(lines):
+    """Gradle `* What went wrong:` bloklari: [(sarlavha, [sabab, ...])].
+
+    Blok `* Try:` (yoki keyingi `* ` bo'lim, BUILD qatori) gacha. Sabab
+    zanjiri `>` bilan boshlanadigan qatorlar, eng ichkisi oxirida:
+    toolchain, dependency yoki plagin xatosida test umuman yurmaydi va
+    chiqishda faqat shu blok sababni aytadi."""
+    blocks, current = [], None
+    for line in lines:
+        text = line.strip()
+        if text.startswith("* What went wrong"):
+            current = ["", []]
+            blocks.append(current)
+            continue
+        if current is None:
+            continue
+        if text.startswith(("* ", "BUILD FAILED", "BUILD SUCCESSFUL")):
+            current = None
+            continue
+        if text.startswith(">"):
+            current[1].append(text.lstrip("> ").strip())
+        elif text and not current[0] and not current[1]:
+            current[0] = text
+    return [(head, causes) for head, causes in blocks if head or causes]
+
+
 def unrecognised(lines, totals):
     """Test bloki topilmadi, lekin build yiqilgan: jim 0 o'rniga sabab
     qidirish uchun birinchi belgilar. Yiqilish yo'q bo'lsa None."""
@@ -448,6 +474,16 @@ def main():
     if not unique:
         if compiled:
             print("Birinchisidan boshlang: keyingilari ko'pincha shuning oqibati.")
+            return 1
+        causes = gradle_causes(lines)
+        if causes and not (totals and totals[1] + totals[2]):
+            # Eng ichki sabab birinchi: "A problem occurred configuring
+            # root project" hech narsa aytmaydi, oxirgi ">" qatori aytadi.
+            print("Build yiqildi, test yurmadi.")
+            for head, chain in causes[:MAX_SHOWN]:
+                print("Sabab: %s" % (chain[-1] if chain else head)[:300])
+                for step in ([head] if chain and head else []) + chain[:-1]:
+                    print("    %s" % step[:300])
             return 1
         report = unrecognised(lines, totals)
         if report:

@@ -22,6 +22,10 @@ Har bob oxirida `Arxitektor nazorat ro'yxati` bor. Tavsiya berishdan oldin
 uni `tools/doc.sh checklist testing <bob>` bilan oling, bobni oxirigacha
 o'qimang.
 
+`/manguberdi` shu sessiyada chaqirilgan bo'lsa test yozish va tuzatish
+aktyorga beriladi (`test-muhandis`, yiqilish sababi kodda bo'lsa
+`dasturchi`); bu skill o'shanda faqat bob jadvali.
+
 ## Vazifa - bob jadvali
 
 Jadval bobni topadi. Bob fayli butunligicha o'qilmaydi: avval `outline`,
@@ -56,7 +60,7 @@ keyin kerakli bo'lim `show` bilan (Asboblar).
   (5-bob "Vaqt, tasodif va UUID'ni testlash", 11-bob "Asinxron kodni
   testlash").
 - `Instant.now()` va `UUID.randomUUID()` to'g'ridan-to'g'ri chaqirilmaydi -
-  `Clock` va `Supplier<UUID>` orqali in'ektsiya qilinadi (5-bob "Vaqt,
+  `Clock` va `Supplier<UUID>` orqali inyeksiya qilinadi (5-bob "Vaqt,
   tasodif va UUID'ni testlash"; Spring'siz dizayn: 6-bob).
 - Value object, DTO va JDK sinflari mock qilinmaydi.
 - Coverage foizi yagona sifat mezoni emas; domen paketlari uchun mutation
@@ -69,9 +73,9 @@ Sonar coverage talablari va JaCoCo mexanikasi boshqa hujjatda:
 ## Asboblar
 
 ```bash
-mvn test -Dtest=<Sinf> 2>&1 | python3 tools/parse_test_output.py  # qaysi test, nima kutilgan
-                                                                  # edi, loyiha kodining qaysi
-                                                                  # qatorida; sinfsiz to'plam konteyner ko'taradi
+python3 tools/run_tests.py <TestFayl>... --yurgiz   # modul, log va birinchi sabab bilan
+python3 tools/run_tests.py --diff --yurgiz        # o'zgarishga ta'sir qilgan testlar
+python3 tools/parse_test_output.py <log>          # faqat tashqi (CI) log uchun
 python3 tools/rules_for.py <test fayli>
 tools/doc.sh outline testing <bob>     # bobdagi bo'limlar ro'yxati
 tools/doc.sh show testing <raqam>      # butun bob emas, faqat o'sha bo'lim
@@ -79,7 +83,7 @@ tools/doc.sh checklist testing <bob>
 ```
 
 Testni ikkinchi marta yurgizish sababni ko'rsatmaydi, chiqishni o'qish
-ko'rsatadi. Testcontainers konteynerni `mvn` ichidan Docker API orqali
+ko'rsatadi. Testcontainers konteynerni build ichidan Docker API orqali
 ko'taradi va `tools/guard.py` buni ko'rmaydi: qo'lda `docker run` to'siladi,
 lekin bunday testning narxi u bilan bir xil. Shuning uchun Testcontainers
 ishlatadigan test faqat kerakli sinf bilan va sababi aytilib yurgiziladi.

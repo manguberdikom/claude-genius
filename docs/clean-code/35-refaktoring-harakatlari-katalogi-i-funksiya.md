@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 35. Refaktoring harakatlari katalogi I: funksiya va o'zgaruvchi (Refactoring Moves I)
 
 <details>

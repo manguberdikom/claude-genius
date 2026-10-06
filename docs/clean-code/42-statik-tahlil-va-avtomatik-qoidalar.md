@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 42. Statik tahlil va avtomatik qoidalar (Static Analysis and Automated Rules)
 
 <details>
@@ -133,6 +135,8 @@ class CleanCodeRulesTest {
                     .should().callMethod(Instant.class, "now");
 }
 ```
+
+Mavzuning to'liq yozuvi testlash qo'llanmasidagi [arxitektura testlari va kod sifati darvozalari](../testing/14-arxitektura-testlari-va-kod-sifati.md#142-archunit-asoslari) bo'limida; bu yerda faqat kod shakli nuqtai nazari.
 
 ## 42.5 Maxsus lint qoidasi yozish
 

@@ -1,6 +1,8 @@
 <!-- doc: architect | chapter: 13 | part: II. Java chuqur bilim -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
+
+> Holat: AI yozgan, inson tekshirmagan.
 
 # 13. Zamonaviy Java tili va API dizayni (Modern Java and API Design)
 
@@ -81,7 +83,8 @@ String auditLine(PaymentResult result) {
                 "olindi ref=" + ref + " summa=" + amount;
         case Pending(var ref, var retryAfter) ->
                 "kutilmoqda ref=" + ref + " qayta=" + retryAfter.toSeconds() + "s";
-        case Declined(DeclineReason.INSUFFICIENT_FUNDS, var msg) ->
+        case Declined(var reason, var msg)
+                when reason == DeclineReason.INSUFFICIENT_FUNDS ->
                 "mablag' yetmadi: " + msg;
         case Declined(var reason, var msg) ->
                 "rad etildi " + reason + ": " + msg;
@@ -91,7 +94,9 @@ String auditLine(PaymentResult result) {
 }
 ```
 
-`permits` ro'yxatini yozmasa ham bo'ladi, agar barcha implementatsiya bir faylda yoki bir paketda bo'lsa. Nested record lar shu sababli ko'p qulay: butun ierarxiya bitta faylda ko'rinadi.
+Record pattern komponenti faqat pattern bo'ladi (`var x`, tur pattern yoki ichki record pattern), konstanta emas: `Declined(...)` qavsi ichiga enum qiymatini yozish Java 21 da ham, 25 da ham kompilyatsiya xatosi beradi. Aniq qiymat bo'yicha ajratish `when` guard bilan yoziladi va u umumiy `case Declined(var reason, var msg)` dan oldin turadi, aks holda kompilyator uni "dominated" deb rad etadi.
+
+`permits` ro'yxatini faqat barcha implementatsiya sealed tur bilan bitta faylda (bitta compilation unit) e'lon qilinganda tushirib qoldirish mumkin: kompilyator ro'yxatni shu fayldan o'zi chiqaradi. Boshqa fayldagi implementatsiya bir paketda bo'lsa ham `permits` da yozilishi shart, aks holda javac "not listed in its 'permits' clause" xatosini beradi. `permits` dagi sinf nomli modulda sealed tur bilan bir modulda, nomsiz modulda (classpath) esa bir paketda bo'lishi kerak ([JLS 21, 8.1.6](https://docs.oracle.com/javase/specs/jls/se21/html/jls-8.html#jls-8.1.6), interfeys uchun 9.1.4; javac xabarlari [jdk-21+35 compiler.properties](https://github.com/openjdk/jdk/blob/jdk-21%2B35/src/jdk.compiler/share/classes/com/sun/tools/javac/resources/compiler.properties) da). Nested record lar shu sababli ko'p qulay: butun ierarxiya bitta faylda ko'rinadi va `permits` kerak emas.
 
 Muhim chegara: sealed ierarxiya sizning kodingizda bo'lishi kerak. Agar siz kutubxona chiqarayotgan bo'lsangiz, sealed interface mijozga yangi variant qo'shishga ruxsat bermaydi. Bu ataylab qilinadigan qaror. Agar kengaytirish nuqtasi kerak bo'lsa, oddiy interface qoldiring va visitor o'rnini saqlang. Agar variantlar sizda to'liq nazoratda bo'lsa, sealed ni tanlang, chunki u har bir yangi holatni qamrab olishga majbur qiladi.
 

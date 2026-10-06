@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 14. Java va Spring da eng ko'p uchraydigan issue va ularning yechimi (Common Java and Spring Issues)
 
 <details>
@@ -56,6 +58,8 @@ public class PaymentService {
     }
 }
 ```
+
+Mavzuning to'liq yozuvi patternlar hujjatidagi [maydonga inyeksiya](../patterns/25-anti-patternlar.md#2529-maydonga-injeksiya-field-injection) bo'limida; bu yerda faqat Sonar qoidasi nuqtai nazari.
 
 ## 14.2 Katta controller metodi va uni servisga bo'lish
 

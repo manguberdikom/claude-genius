@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 32. Secret, maxfiy ma'lumot va kriptografiya review (Secrets, PII and Crypto)
 
 <details>
@@ -34,14 +36,22 @@ log.debug("Foydalanuvchi: {}", user);            // toString() da nima bor?
 // Naqsh 2: istisno xabarida maxfiy ma'lumot.
 throw new InvalidCardException("Karta raqami yaroqsiz: " + cardNumber);
 // Bu istisno logga tushadi va karta raqami logda qoladi - PCI DSS buzilishi.
+```
 
-// Naqsh 3: HTTP mijoz loglari.
-logging.level.org.springframework.web.client=DEBUG   // Authorization header logda
+Yana ikki naqsh kodda emas, sozlamada yashiringan (`application.properties`):
 
-// Naqsh 4: SQL parametrlari logi.
-logging.level.org.hibernate.orm.jdbc.bind=TRACE      // parol hash, PII
-// Bu sozlama lokalda foydali, prodda - ma'lumot oqishi.
+```properties
+# Naqsh 3: HTTP mijoz loglari (Authorization header logda).
+logging.level.org.springframework.web.client=DEBUG
 
+# Naqsh 4: SQL parametrlari logi (parol hash, PII).
+# Bu sozlama lokalda foydali, prodda - ma'lumot oqishi.
+logging.level.org.hibernate.orm.jdbc.bind=TRACE
+```
+
+Himoya esa kodda: toString ni maskalash va maxfiy qiymatni tipga o'rash.
+
+```java
 // Himoya 1: toString ni maskalash - eng ishonchli, chunki bir joyda.
 public record PaymentRequest(String cardNumber, String cvv, Money amount) {
     @Override public String toString() {

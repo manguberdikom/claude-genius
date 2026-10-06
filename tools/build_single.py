@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Bo'lingan boblardan bitta fayllik versiyani qayta yig'adi.
 
-docs/ - yagona haqiqat manbasi. Bu skript undan offline o'qish, PDF va
+docs/ - dist/ ning manbasi. Bu skript undan offline o'qish, PDF va
 LLM ga uzatish uchun monolit fayl yasaydi.
 
     python3 tools/build_single.py            # hammasi -> dist/
@@ -29,14 +29,27 @@ def gh_slug(text):
     return RE_REMOVE.sub('', t).replace(' ', '-')
 
 
+STATUS_RE = re.compile(r'\A(> Holat:[^\n]*)\n\n')
+
+
 def unwrap_chapter(text):
-    """Bob faylidan sarlavha, breadcrumb, <details> va nav footer ni olib tashlaydi."""
+    """Bob faylidan sarlavha, breadcrumb, <details> va nav footer ni oladi.
+
+    (holat qatori, tana) qaytaradi. Holat qatori TASHLANMAYDI: u
+    yig'mada ham kerak, chunki o'quvchi bob tekshirilganmi yoki yo'qmi
+    bilishi kerak. build() uni bob sarlavhasi ostiga qo'yadi.
+    """
     t = re.sub(r'\A<!-- doc:[^\n]*-->\n\n', '', text)
     t = re.sub(r'\A\[[^\n]*\]\(README\.md\)\n\n', '', t)
+    status = ''
+    match = STATUS_RE.match(t)
+    if match:
+        status = match.group(1)
+        t = t[match.end():]
     t = re.sub(r'\A# [^\n]*\n\n', '', t)
     t = re.sub(r'\A<details>\n<summary>[^\n]*</summary>\n\n(?:- \[[^\n]*\n)+\n</details>\n\n', '', t)
     t = re.sub(r'\n\n---\n\n\[[^\n]*\n\Z', '\n', t)
-    return t.rstrip('\n')
+    return status, t.rstrip('\n')
 
 
 def deepen(text):
@@ -107,13 +120,17 @@ def build(key, out_dir=None):
     last_part = object()
     for c in man['chapters']:
         raw = open(os.path.join(d, c['file']), encoding='utf-8').read()
-        text = deepen(flatten_links(unwrap_chapter(raw), files, key, others))
+        status, inner = unwrap_chapter(raw)
+        text = deepen(flatten_links(inner, files, key, others))
         if c['part'] != last_part:
             last_part = c['part']
             if c['part']:
                 body += ['', f"# {c['part']}", '']
                 toc += ['', f"**{c['part']}**", '']
-        body += [f"## {c['title']}", '', text, '', '---', '']
+        body += [f"## {c['title']}", '']
+        if status:
+            body += [status, '']
+        body += [text, '', '---', '']
         toc.append(f"- [{c['title']}](#{gh_slug(c['title'])})")
         fence = False
         for l in text.split('\n'):

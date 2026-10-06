@@ -1,6 +1,8 @@
 <!-- doc: architect | chapter: 29 | part: V. Atrof ekotizim: operatsion haqiqat -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
+
+> Holat: AI yozgan, inson tekshirmagan.
 
 # 29. Kafka operatsion haqiqati: partition, lag, rebalance, idempotentlik (Kafka in Production)
 
@@ -186,6 +188,8 @@ public void handle(PaymentConfirmed msg, String topic, int partition, long offse
 ```
 
 Bu yondashuvning cheklovi: ishlov PostgreSQL dan tashqariga chiqsa (tashqi API ga to'lov yuborish) atomarlik buziladi. Unda tashqi chaqiruvga idempotency key berish kerak, ya'ni idempotentlikni chegaradan tashqariga uzatish.
+
+Mavzuning to'liq yozuvi [idempotency](../patterns/07-api-dizayn-patternlari.md#79-idempotentlik-kaliti-idempotency-key) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
 
 ## 29.8 Consumer lag ni o'lchash va ogohlantirish chegarasi qo'yish
 

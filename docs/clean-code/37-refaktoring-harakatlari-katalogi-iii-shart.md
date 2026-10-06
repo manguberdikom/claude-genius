@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 37. Refaktoring harakatlari katalogi III: shart, API va ierarxiya (Refactoring Moves III)
 
 <details>
@@ -136,7 +138,7 @@ void raise(Employee employee, BigDecimal factor) { employee.raiseBy(factor); }
 
 ## 37.9 Flag argumentini olib tashlash (Remove Flag Argument)
 
-5.3 da ko'rilgan. Mexanikasi: har bir flag qiymati uchun aniq nomlangan metod yaratish → asl metodni `private` qilish → chaqiruvchilarni yangi metodlarga ko'chirish.
+[Flag argumenti va uni ikki funksiyaga bo'lish](05-funksiya-argumentlari.md#53-flag-argumenti-va-uni-ikki-funksiyaga-bolish) bo'limida ko'rilgan. Mexanikasi: har bir flag qiymati uchun aniq nomlangan metod yaratish → asl metodni `private` qilish → chaqiruvchilarni yangi metodlarga ko'chirish.
 
 ## 37.10 Butun obyektni saqlash (Preserve Whole Object)
 
@@ -168,7 +170,7 @@ Bu harakatni test qamrovisiz bajarish mumkin emas: u xatti-harakatni saqlashi ke
 
 ## 37.14 Voris sinfni delegatsiyaga almashtirish
 
-17.9 da ko'rilgan. Mexanikasi: delegat maydon qo'shish → `extends` ni olib tashlash → kompilyator ko'rsatgan metodlarni delegatsiyaga aylantirish → keraksizlarini o'chirish → test.
+[Delegatsiya bilan vorislikni almashtirish](17-vorislik-kompozitsiya-va-polimorfizm.md#179-delegatsiya-bilan-vorislikni-almashtirish) bo'limida ko'rilgan. Mexanikasi: delegat maydon qo'shish → `extends` ni olib tashlash → kompilyator ko'rsatgan metodlarni delegatsiyaga aylantirish → keraksizlarini o'chirish → test.
 
 **Replace Superclass with Delegate** - xuddi shu harakatning bazaviy sinf tomoni: `extends HashMap` kabi noto'g'ri vorislikni yo'qotadi.
 

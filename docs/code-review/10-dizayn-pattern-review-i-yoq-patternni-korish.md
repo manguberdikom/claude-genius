@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 10. Dizayn pattern review I: yo'q patternni ko'rish (Missing Patterns)
 
 <details>
@@ -307,6 +309,8 @@ CREATE INDEX outbox_pending_idx ON outbox_message (created_at)
 
 Review ning qo'shimcha savollari: outbox tozalanadimi (aks holda jadval cheksiz o'sadi), xabar tartibi muhimmi (bo'lsa, agregat bo'yicha ketma-ketlik kerak), va iste'molchi dublikatga tayyormi (outbox "kamida bir marta" yetkazadi).
 
+Mavzuning to'liq yozuvi [transactional outbox](../patterns/10-malumotlarni-boshqarish-va-taqsimlash.md#1014-tranzaksion-outbox-transactional-outbox) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
+
 ## 10.9 Ikki marta kelgan so'rov: idempotentlik
 
 Belgi: tashqaridan keladigan yozuv operatsiyasida (to'lov, buyurtma, xabar iste'moli) takrorlanishga qarshi himoya yo'q. Oqibati: foydalanuvchi ikki marta bosganida ikki to'lov, retry dan keyin ikki buyurtma, Kafka qayta yetkazganida ikki yozuv.
@@ -354,6 +358,8 @@ CREATE INDEX idempotency_created_idx ON idempotency_record (created_at);
 ```
 
 Review ning asosiy diqqati: kalit qayerda tekshiriladi. Agar `findByKey` keyin `save` qilinsa, bu poyga - ikki parallel so'rov ikkisi ham "topilmadi" deb o'tadi. Faqat unique constraint ishonchli.
+
+Mavzuning to'liq yozuvi [idempotency](../patterns/07-api-dizayn-patternlari.md#79-idempotentlik-kaliti-idempotency-key) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
 
 ## 10.10 Ko'p bosqichli jarayon: saga va kompensatsiya
 

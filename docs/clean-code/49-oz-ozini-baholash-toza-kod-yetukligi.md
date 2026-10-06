@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 49. O'z-o'zini baholash: toza kod yetukligi (Self-Assessment)
 
 <details>

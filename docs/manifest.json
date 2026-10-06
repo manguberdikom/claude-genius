@@ -249,7 +249,7 @@
    },
    {
     "num": 4,
-    "title": "4. Testrovshik qanday ishlashi kerak: QA ish jarayoni (How a Tester Actually Works - The QA Workflow)",
+    "title": "4. Tester qanday ishlashi kerak: QA ish jarayoni (How a Tester Actually Works - The QA Workflow)",
     "file": "04-testrovshik-qanday-ishlashi-kerak-qa-ish.md",
     "part": null,
     "sections": 12
@@ -355,8 +355,8 @@
   ]
  },
  "architect": {
-  "title": "Kod yozadigan arxitektorning miyyasi: Java, Spring, PostgreSQL",
-  "label": "Arxitektor miyyasi",
+  "title": "Kod yozadigan arxitektorning miyasi: Java, Spring, PostgreSQL",
+  "label": "Arxitektor miyasi",
   "chapters": [
    {
     "num": 1,

@@ -1,6 +1,8 @@
 <!-- doc: architect | chapter: 3 | part: I. Fikrlash va qarorlar -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
+
+> Holat: AI yozgan, inson tekshirmagan.
 
 # 3. Qaror qabul qilish va uni hujjatlashtirish (Decisions and ADRs)
 

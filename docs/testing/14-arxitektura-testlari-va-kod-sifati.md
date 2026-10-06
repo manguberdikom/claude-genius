@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 14. Arxitektura testlari va kod sifati darvozalari (Architecture Tests & Code Quality Gates)
 
 <details>
@@ -147,6 +149,8 @@ static final ArchRule test_nomlari = methods()
         .should().haveNameMatching("should[A-Z].*|.*_should_.*")
         .because("test nomi kutilgan xatti-harakatni aytishi kerak");
 ```
+
+Mavzuning to'liq yozuvi [ArchUnit](#142-archunit-asoslari) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
 
 ## 14.4 Spring Modulith bilan modul chegaralarini tekshirish
 
@@ -301,6 +305,8 @@ Amaliy tanlov: minimal to'plam - Spotless (format), Error Prone + NullAway (komp
   </configuration>
 </plugin>
 ```
+
+JDK 16+ da bu blokning o'zi yetmaydi: Error Prone `jdk.compiler` ning yopiq ichki paketlariga murojaat qiladi va `.mvn/jvm.config` dagi `--add-exports`/`--add-opens` qatorlarisiz build `IllegalAccessError` bilan yiqiladi. Qatorlar ro'yxati, fork rejimidagi `-J` varianti va Error Prone ning JDK talabi [toza kod hujjatidagi kompilyator ogohlantirishlari va Error Prone bo'limida](../clean-code/25-java-kodidagi-umumiy-tuzoqlar.md#2510-kompilyator-ogohlantirishlari--xlint--werror-error-prone-nullaway).
 
 Qoidalarni bosqichma-bosqich kiriting: avval hammasini `WARN` darajasida yoqing, ogohlantirishlar sonini baseline qilib oling, so'ng eng ko'p real xato beradigan 10-15 qoidani `ERROR` ga ko'taring. NullAway'ni esa butun kodga birdan emas, `AnnotatedPackages` ni bitta moduldan boshlab kengaytiring.
 

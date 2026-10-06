@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 6. Arxitektura review: qatlam, chegara, bog'liqlik yo'nalishi (Architecture in a Diff)
 
 <details>
@@ -22,7 +24,7 @@
 </details>
 
 
-Arxitektura PR da bitta diagramma sifatida ko'rinmaydi. U mayda belgilar orqali ko'rinadi: yangi import, yangi konstruktor parametri, yangi paket, bir qatlamdan boshqasiga o'tgan chaqiruv. Arxitektura buzilishi hech qachon bitta PR da sodir bo'lmaydi - u yuzta PR da bittadan satr bilan sodir bo'ladi. Shu sababli arxitektura review ning asosiy quroli - yo'nalishni kuzatish. Arxitektura qarorlarining o'zi (chegarani qayerdan o'tkazish, monolit yoki servis) [Arxitektor miyyasi](../architect/README.md) da, bu yerda faqat diffdan o'qish.
+Arxitektura PR da bitta diagramma sifatida ko'rinmaydi. U mayda belgilar orqali ko'rinadi: yangi import, yangi konstruktor parametri, yangi paket, bir qatlamdan boshqasiga o'tgan chaqiruv. Arxitektura buzilishi hech qachon bitta PR da sodir bo'lmaydi - u yuzta PR da bittadan satr bilan sodir bo'ladi. Shu sababli arxitektura review ning asosiy quroli - yo'nalishni kuzatish. Arxitektura qarorlarining o'zi (chegarani qayerdan o'tkazish, monolit yoki servis) [Arxitektor miyasi](../architect/README.md) da, bu yerda faqat diffdan o'qish.
 
 ## 6.1 Importlar - arxitekturaning eng aniq ko'rsatkichi
 

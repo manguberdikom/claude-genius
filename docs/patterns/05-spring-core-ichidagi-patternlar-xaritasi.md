@@ -2,10 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 5. Spring Core ichidagi patternlar xaritasi (Patterns inside Spring Core)
 
 <details>
-<summary>Bu bo'limdagi 42 bo'lim</summary>
+<summary>Bu bobdagi 42 bo'lim</summary>
 
 - [5.1 IoC konteyner (IoC Container - BeanFactory / ApplicationContext)](#51-ioc-konteyner-ioc-container---beanfactory--applicationcontext)
 - [5.2 Bean definition va registry (Bean Definition & BeanDefinitionRegistry - Registry Pattern)](#52-bean-definition-va-registry-bean-definition--beandefinitionregistry---registry-pattern)
@@ -265,7 +267,7 @@ public class SearchService {
 
 **Tavsif:** Bir tipdan bir nechta bean bo'lsa, by-type autowiring noaniq bo'lib qoladi va konteyner xato beradi. `@Primary` "teng bo'lsa, standart sifatida shuni ol" deydi, `@Qualifier` esa injection point'da aniq nomli yoki meta-annotatsiyali kandidatni tanlaydi. Bu Strategy patternni konfiguratsiya darajasida boshqarish usuli: implementatsiyalar ko'p, tanlov esa deklarativ. To'g'ri qo'llanganda kod `if/else` va factory switch'lardan xoli bo'ladi.
 
-**Spring'da qayerda uchraydi:** `@Primary`, `@Qualifier` (`org.springframework.beans.factory.annotation`), `@Qualifier` bilan meta-annotatsiyalangan custom annotatsiyalar (masalan o'zingizning `@Fast`, `@Audit`), ro'yxat injeksiyasida tartib uchun `@Order` / `Ordered` / `@Priority`. Spring Framework 6.2'dan: `@Fallback` (faqat boshqa kandidat bo'lmasa tanlanadi) va `@Bean(defaultCandidate = false)` - bean'ni by-type tanlovdan chiqarib, faqat qualifier bilan olish mumkin. Noaniqlik xatosi `NoUniqueBeanDefinitionException`, bean yo'qligi `NoSuchBeanDefinitionException`; Spring Boot auto-configuration'lari esa `@ConditionalOnMissingBean` va `@Primary` kombinatsiyasi bilan foydalanuvchi bean'iga yo'l beradi.
+**Spring'da qayerda uchraydi:** `@Primary`, `@Qualifier` (`org.springframework.beans.factory.annotation`), `@Qualifier` bilan meta-annotatsiyalangan custom annotatsiyalar (masalan o'zingizning `@Fast`, `@Audit`), ro'yxat inyeksiyasida tartib uchun `@Order` / `Ordered` / `@Priority`. Spring Framework 6.2'dan: `@Fallback` (faqat boshqa kandidat bo'lmasa tanlanadi) va `@Bean(defaultCandidate = false)` - bean'ni by-type tanlovdan chiqarib, faqat qualifier bilan olish mumkin. Noaniqlik xatosi `NoUniqueBeanDefinitionException`, bean yo'qligi `NoSuchBeanDefinitionException`; Spring Boot auto-configuration'lari esa `@ConditionalOnMissingBean` va `@Primary` kombinatsiyasi bilan foydalanuvchi bean'iga yo'l beradi.
 
 **Qo'llanish keyslari:**
 - Bir nechta `DataSource` bo'lganda asosiysini `@Primary` qilib, qolganlarini `@Qualifier("reporting")` bilan olish.
@@ -914,7 +916,7 @@ List<Order> list(@PathVariable TenantId id) { return service.byTenant(id); }
 **Spring'da qayerda uchraydi:** `org.springframework.validation.Validator`, `Errors`, `BeanPropertyBindingResult`, `ValidationUtils`, `SmartValidator`. Bean Validation ko'prigi - `LocalValidatorFactoryBean` va `SpringValidatorAdapter` (Hibernate Validator 8.x ustida). Web qatlamida `@Valid`/`@Validated` + `@InitBinder` ichidagi `WebDataBinder.addValidators(...)`, global holda `WebMvcConfigurer#getValidator()`. Service qatlamida metod darajasidagi tekshirish `MethodValidationPostProcessor` orqali; Spring Framework 6.1+ da bu `MethodValidationResult` bilan boyitilgan va Spring Boot 3.2+ da controller metodlari uchun ham ishlaydi. `@ConfigurationProperties` + `@Validated` esa konfiguratsiyani ishga tushishda tekshiradi.
 
 **Qo'llanish keyslari:**
-- Bir xil DTO uchun "yaratish" va "tahrirlash" senariylarida turlicha qoidalar qo'llash.
+- Bir xil DTO uchun "yaratish" va "tahrirlash" ssenariylarida turlicha qoidalar qo'llash.
 - Bean Validation annotatsiyalari bilan ifodalanmaydigan cross-field qoidalar (masalan `startDate < endDate`).
 - Repository'ga murojaat qiladigan tekshiruvlar, masalan email unikalligi, buning uchun validator'ga bean inject qilinadi.
 - `@ConfigurationProperties` orqali kelgan noto'g'ri sozlamada ilovani fail-fast holatda to'xtatish.
@@ -1313,7 +1315,7 @@ SecurityFilterChain chain(HttpSecurity http) throws Exception {
 
 ## 5.42 Amalda qo'llash
 
-- [ ] `applicationContext.getBean(...)` va `BeanFactoryAware` ishlatadigan joylarni qidirib, har birini injeksiyaga aylantirish rejasini yozing.
+- [ ] `applicationContext.getBean(...)` va `BeanFactoryAware` ishlatadigan joylarni qidirib, har birini inyeksiyaga aylantirish rejasini yozing.
 - [ ] Bir interfeysga bir nechta implementatsiya bo'lgan joylarni toping va `@Primary` yoki `@Qualifier` aniq qo'yilganini tasdiqlang.
 - [ ] `@PostConstruct` ichida tashqi chaqiruv yoki uzoq ish bajaradigan bean'larni toping; ular startup'ni va readiness probe'ni buzadi.
 - [ ] `BeanPostProcessor` va `BeanFactoryPostProcessor` implementatsiyalarini sanab chiqing va har birining `@Order` qiymatini yozib qo'ying.

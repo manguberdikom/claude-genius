@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 17. Sonar talablarini qondiradigan test yozish (Writing Tests That Satisfy Sonar)
 
 <details>
@@ -323,7 +325,7 @@ sonar.tests=src/test/java
 | Ko'p holat | Metodni nusxa ko'chirish | `@ParameterizedTest` bilan jadval sifatida berish |
 | Mock chizig'i | Qulay bo'lgan hamma narsani mock qilish | Faqat tashqi chegarani mock qilish |
 | Spring | Hamma testga `@SpringBootTest` | Slice test, kontekst faqat simlanish uchun |
-| Vaqt | `LocalDate.now()` to'g'ridan to'g'ri | `Clock` injektsiya, `Clock.fixed` bilan test |
+| Vaqt | `LocalDate.now()` to'g'ridan to'g'ri | `Clock` inyeksiya, `Clock.fixed` bilan test |
 | Kutish | `Thread.sleep(2000)` | Awaitility yoki deterministik vaqt |
 | Exclusion | Coverage pasaysa servisni chiqarish | Faqat mantiqsiz kodni chiqarish, sababi yozilgan |
 | Yiqilgan test | `@Disabled` qo'yish | Sababni tuzatish, flaky bo'lsa izolyatsiya qilish |

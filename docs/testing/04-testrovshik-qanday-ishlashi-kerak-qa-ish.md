@@ -2,7 +2,9 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-# 4. Testrovshik qanday ishlashi kerak: QA ish jarayoni (How a Tester Actually Works - The QA Workflow)
+> Holat: AI yozgan, inson tekshirmagan.
+
+# 4. Tester qanday ishlashi kerak: QA ish jarayoni (How a Tester Actually Works - The QA Workflow)
 
 <details>
 <summary>Bu bobdagi 12 bo'lim</summary>
@@ -38,7 +40,7 @@ QA ishi chiziqli emas, aylanma: har bir talab bir necha bosqichdan o'tadi va har
 
 **4. Test dizayni.** Texnikalar qo'llanadi (ekvivalentlik sinflari, chegaralar, qaror jadvali), test case'lar va checklist'lar tayyorlanadi, risk yuqori bo'lgan joylarga ko'proq e'tibor beriladi.
 
-**5. Testni bajarish.** Yangi funksionallik test qilinadi: avval smoke, keyin asosiy scenariylar, keyin chegaralar va salbiy holatlar, oxirida exploratory session.
+**5. Testni bajarish.** Yangi funksionallik test qilinadi: avval smoke, keyin asosiy ssenariylar, keyin chegaralar va salbiy holatlar, oxirida exploratory session.
 
 **6. Defekt ochish.** Topilgan muammo standart formatda yoziladi, severity taklif qilinadi, log va trace ID ilova qilinadi.
 
@@ -285,7 +287,7 @@ Avtomatlashtirishga munosib: biznes qoidalari va hisob-kitoblar (limit formulala
 
 Qo'lda qolishi kerak: vizual estetika, maket bilan moslik va "his-tuyg'u" (UX); bir martalik migratsiya va release repetitsiyasi; exploratory testing - uni avtomatlashtirish mumkin emas, chunki qiymati aynan improvizatsiyada; shakli hali o'zgarib turgan yangi ekranlar (avtomat test ertaga qayta yozilishi kerak bo'ladi); tashqi tizim bilan qo'lda sozlash talab qiladigan kam uchraydigan holatlar; murakkab xato diagnostikasi.
 
-Amaliy ketma-ketlik: yangi funksionallik → qo'lda + exploratory → barqarorlashgandan keyin eng qimmatli scenariylar avtomatlashtiriladi → topilgan har bir jiddiy bug uchun regression test yoziladi (bug-driven automation, eng yuqori ROI'li yondashuv) → qo'lda vaqt yangi funksionallik va exploratory'ga qayta yo'naltiriladi. Agar QA vaqtining 80 foizi takrorlanadigan qo'lda regressiyaga ketayotgan bo'lsa, bu arxitektura muammosi, QA samaradorligi muammosi emas.
+Amaliy ketma-ketlik: yangi funksionallik → qo'lda + exploratory → barqarorlashgandan keyin eng qimmatli ssenariylar avtomatlashtiriladi → topilgan har bir jiddiy bug uchun regression test yoziladi (bug-driven automation, eng yuqori ROI'li yondashuv) → qo'lda vaqt yangi funksionallik va exploratory'ga qayta yo'naltiriladi. Agar QA vaqtining 80 foizi takrorlanadigan qo'lda regressiyaga ketayotgan bo'lsa, bu arxitektura muammosi, QA samaradorligi muammosi emas.
 
 ## 4.11 QA ishini o'lchash
 

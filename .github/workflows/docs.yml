@@ -4,20 +4,137 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
+# Token faqat o'qiydi: workflow hech narsa yozmaydi, secrets ishlatmaydi.
+# Yozish kerak bo'lgan yagona joy release.yml, u ham faqat o'z jobida.
+permissions:
+  contents: read
+
+# Bir branch ga ketma-ket push qilinsa eski run bekor bo'ladi: navbatni
+# keraksiz yurish band qilmasin.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Actions commit SHA ga qadalgan, tag ko'chirilsa ham kod o'zgarmaydi.
+# Yangilashni .github/dependabot.yml haftalik taklif qiladi.
 jobs:
+  # Nima o'zgarganini bir marta aniqlaydi. Windows joblari shunga qarab
+  # qisqa yo'ldan o'tadi, lekin JOB darajasida emas, QADAM darajasida:
+  # job darajasidagi `if` matritsali jobni "skipped" qiladi va required
+  # check nomi ("tools (windows-latest)") hisobot bermay qoladi.
+  # Har noaniqlikda (birinchi push, force push, workflow_dispatch) to'liq
+  # yo'l tanlanadi: ortiqcha yurish tushib qolgan tekshiruvdan arzon.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      kod: ${{ steps.f.outputs.kod }}
+      qidiruv: ${{ steps.f.outputs.qidiruv }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+
+      - name: O'zgargan fayllar
+        id: f
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set +e
+          base=""
+          case "$EVENT" in
+            pull_request)
+              # Merge commit: birinchi ota-ona base branch boshi.
+              base=$(git rev-parse -q --verify HEAD^1) ;;
+            push)
+              if [ -n "${BEFORE//0/}" ] \
+                  && git fetch -q --no-tags --depth=1 origin "$BEFORE"; then
+                base="$BEFORE"
+              fi ;;
+          esac
+          files=""
+          [ -n "$base" ] && files=$(git diff --name-only "$base" HEAD)
+          echo "o'zgargan fayllar:"
+          echo "${files:-(aniqlanmadi, to'liq yo'l)}"
+          kod=true
+          qidiruv=true
+          if [ -n "$files" ]; then
+            # Faqat hujjat: hamma fayl .md va asbob, skill yoki
+            # o'rnatuvchi papkasida emas.
+            if ! printf '%s\n' "$files" | grep -Ev '\.md$' | grep -q . \
+                && ! printf '%s\n' "$files" | grep -Eq '^(\.claude|install|tools)/'; then
+              kod=false
+            fi
+            # Qidiruv fayllari: doc.sh find shu fayllarga tayanadi.
+            if ! printf '%s\n' "$files" | grep -Eq \
+                '^(tools/(doc\.sh|build_index\.py|eval_find\.py|check_docs\.py)|\.github/workflows/)'; then
+              qidiruv=false
+            fi
+          fi
+          echo "kod=$kod qidiruv=$qidiruv"
+          echo "kod=$kod" >> "$GITHUB_OUTPUT"
+          echo "qidiruv=$qidiruv" >> "$GITHUB_OUTPUT"
+          exit 0
+
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      # To'liq tarix: check_signoff imzo tekshiruvi `git blame` ga tayanadi,
+      # sayoz klonda tarix chegarasidagi qator commiti ko'rinmaydi.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.12'
 
       - name: Hujjatlarni tekshirish
         run: python3 tools/check_docs.py
+
+      # verify_claims --java kod bloklarini javac parserida sinaydi: JDK kerak
+      # (faqat parser, build yo'q).
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      # Faqat o'zgargan boblar: PR da base branch (merge commit birinchi
+      # ota-ona), push da oldingi head (changes ishidagi kabi), topilmasa
+      # HEAD~1. Siyosat check_docs bilan bir xil (CONTRIBUTING: "hozircha
+      # ogohlantirish"): topilma (kod 1) qadamni yiqitmaydi, annotatsiya
+      # chiqadi. Asbob sinsa (boshqa nol bo'lmagan kod) qadam yiqiladi.
+      # Korpus toza bo'lgach `rc -eq 1` shoxini ham xatoga aylantiring.
+      - name: Da'volarni tekshirish (verify_claims, o'zgargan boblar)
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          base=""
+          case "$EVENT" in
+            pull_request) base=$(git rev-parse -q --verify HEAD^1) ;;
+            push)
+              if [ -n "${BEFORE//0/}" ] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+                base="$BEFORE"
+              fi ;;
+          esac
+          [ -n "$base" ] || base=$(git rev-parse -q --verify HEAD~1) || base=HEAD
+          echo "base: $base"
+          rc=0
+          python3 tools/verify_claims.py --java --diff "$base" || rc=$?
+          # 1 = topilma (ogohlantirish). Boshqa nol bo'lmagan kod asbobning
+          # o'zi singanini bildiradi (traceback, git xatosi): qadam yiqiladi.
+          if [ "$rc" -eq 1 ]; then
+            echo "::warning title=verify_claims::o'zgargan boblarda da'vo topilmasi bor (yuqoridagi chiqish)"
+          elif [ "$rc" -ne 0 ]; then
+            echo "::error title=verify_claims::asbob xato bilan tugadi (kod $rc)"
+            exit "$rc"
+          fi
 
       - name: Monolit qayta yig'ilishini sinash
         run: |
@@ -30,24 +147,56 @@ jobs:
   # Windows da ham: asboblar u yerda Claude Code ning Git Bash'ida yuradi.
   # Faqat Linux da yo'l ajratgichi (`\`), kod sahifasi (cp1252) va Git for
   # Windows dagi grep 3.0 xatolari CI dan yashirin qolardi.
+  #
+  # ubuntu-22.04 + 3.8 qatori o'rnatuvchining "Python 3.8+" va'dasini
+  # sinaydi: 3.9+ API (removeprefix, dict | dict) kirib qolsa shu yerda
+  # yiqiladi. `include` bilan qo'shilgan, shuning uchun mavjud required
+  # check nomlari ("tools (ubuntu-latest)", "tools (windows-latest)")
+  # o'zgarmaydi.
   tools:
+    needs: changes
+    # changes yiqilsa ham yuradi: chiqish bo'sh bo'lsa to'liq yo'l.
+    if: ${{ !cancelled() }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
+        include:
+          - os: ubuntu-22.04
+            python: '3.8'
+    # Linux har doim to'liq yuradi. Windows faqat hujjat o'zgarganda
+    # qisqa yo'ldan o'tadi, eval_find esa u yerda faqat qidiruv fayllari
+    # o'zgarganda (Git Bash da har `doc.sh find` ~0.3 s, 240 so'rov).
+    env:
+      ISHLA: ${{ needs.changes.outputs.kod != 'false' || !startsWith(matrix.os, 'windows') }}
+      QIDIRUV: ${{ needs.changes.outputs.qidiruv != 'false' || !startsWith(matrix.os, 'windows') }}
     # Windows da bash = Git Bash. `python3` u yerda Store stub'i bo'lishi
     # mumkin, shuning uchun `python`: setup-python ikkalasida ham beradi.
     defaults:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - name: Qisqa yo'l
+        if: env.ISHLA != 'true'
+        run: echo "Faqat hujjat o'zgardi, Windows asbob sinovlari o'tkazildi."
 
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: env.ISHLA == 'true'
         with:
-          python-version: '3.12'
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        if: env.ISHLA == 'true'
+        with:
+          python-version: ${{ matrix.python || '3.12' }}
+
+      # Statik darvoza: sintaksis, pyflakes va bugbear (ruff.toml).
+      # Versiya qadalgan, yangi ruff qoidasi CI ni jim qizil qilmasin.
+      - name: Ruff
+        if: matrix.os == 'ubuntu-latest'
+        run: pipx run ruff==0.15.20 check tools install
 
       # Nega alohida ish: yuqoridagi `check` hujjatni tekshiradi, bu esa
       # asboblarni. Ular mustaqil yiqiladi, shuning uchun qaysi biri
@@ -57,65 +206,136 @@ jobs:
       # suite yiqilsa qolganlari baribir yuradi, yiqilganlar oxirida
       # bitta qatorda chiqadi.
       - name: Asbob sinovlari
-        run: |
-          failed=""
-          for f in tools/test_*.py; do
-            echo "::group::$f"
-            python "$f" || failed="$failed $f"
-            echo "::endgroup::"
-          done
-          if [ -n "$failed" ]; then echo "yiqilgan:$failed"; exit 1; fi
+        if: env.ISHLA == 'true'
+        # Suitelar parallel yuradi: indeks avval bir marta yasaladi, chiqish
+        # tartib bilan ::group:: ichida, oxirida "yiqilgan:" qatori.
+        run: python tools/run_all_tests.py
 
       # Oldingi qadam yiqilsa ham o'lchovlar yuradi: bitta xato qolgan
       # signallarni yashirmasin.
       - name: Zanjir o'lchovi
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && env.ISHLA == 'true' }}
         run: python tools/eval_skill.py
 
       - name: Qidiruv o'rni
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && env.ISHLA == 'true' && env.QIDIRUV == 'true' }}
         run: python tools/eval_find.py
 
       - name: Har navbatdagi kontekst byudjeti
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && env.ISHLA == 'true' }}
         run: python tools/cost_report.py
 
   # O'rnatuvchi agent sessiyasida yurgizilmaydi (PowerShell taqiqlangan),
   # shuning uchun uni sinaydigan yagona joy shu. Runner bir martalik,
-  # demak -Apply xavfsiz. Ikki shell: Windows PowerShell 5.1 va pwsh 7
-  # fayl kodirovkasida farq qiladi.
+  # demak --apply xavfsiz. Windows: ikki shell (Windows PowerShell 5.1 va
+  # pwsh 7 fayl kodirovkasida farq qiladi), o'rnatuvchi manguberdi.ps1.
+  # Linux va macOS: install/install.py, har yurish vaqtinchalik HOME bilan.
+  # Faqat hujjat o'zgarsa qadamlar o'tkaziladi, job esa o'z nomi bilan yashil
+  # hisobot beradi.
+  #
+  # Matritsa: asosiy o'q `shell` va `os` standarti windows-latest, shuning
+  # uchun mavjud required check nomlari ("installer (powershell)",
+  # "installer (pwsh)") o'zgarmaydi. Linux va macOS `include` bilan qo'shilgan.
   installer:
-    runs-on: windows-latest
+    needs: changes
+    if: ${{ !cancelled() }}
+    runs-on: ${{ matrix.os || 'windows-latest' }}
     timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
         shell: [powershell, pwsh]
+        include:
+          - os: ubuntu-latest
+            shell: bash
+          - os: macos-latest
+            shell: bash
+    env:
+      ISHLA: ${{ needs.changes.outputs.kod != 'false' }}
     defaults:
       run:
         shell: ${{ matrix.shell }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Qisqa yo'l
+        if: env.ISHLA != 'true'
+        run: echo "Faqat hujjat o'zgardi, o'rnatuvchi sinovlari o'tkazildi."
 
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: env.ISHLA == 'true'
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        if: env.ISHLA == 'true'
         with:
           python-version: '3.12'
 
       - name: Quruq yurish
+        if: env.ISHLA == 'true' && runner.os == 'Windows'
         run: ./install/manguberdi.ps1 -GeniusPath $PWD
 
-      - name: Haqiqiy o'rnatish
+      # Sukut xulq QO'SHUVCHI: begona sozlamalar saqlanishi kerak. Avval
+      # bu qadam teskarisini talab qilardi (eski CLAUDE.md o'chgan bo'lsin),
+      # ya'ni CI foydalanuvchi sozlamasini o'chirishni qo'riqlayotgan edi.
+      - name: Haqiqiy o'rnatish (qo'shuvchi, sukut)
+        if: env.ISHLA == 'true' && runner.os == 'Windows'
         run: |
           New-Item -ItemType Directory -Force "$HOME/.claude/skills/eski" | Out-Null
+          Set-Content "$HOME/.claude/skills/eski/SKILL.md" 'eski'
           Set-Content "$HOME/.claude/CLAUDE.md" 'eski'
+          New-Item -ItemType Directory -Force "$HOME/.claude/plugins/p" | Out-Null
+          Set-Content "$HOME/.claude/plugins/p/x.json" '{}'
+          New-Item -ItemType Directory -Force "$HOME/.claude/rules" | Out-Null
+          Set-Content "$HOME/.claude/rules/r.md" 'qoida'
+          $ekin = Join-Path $env:RUNNER_TEMP 'begona_sozlama.py'
+          @'
+          import json, os
+          p = os.path.expanduser("~/.claude/settings.json")
+          json.dump({"model": "opus",
+                     "hooks": {"SessionStart": [{"hooks": [
+                         {"type": "command", "command": "echo begona-hook"}]}]},
+                     "permissions": {"allow": ["Bash(git status:*)"]}},
+                    open(p, "w", encoding="utf-8"), indent=2)
+          '@ | Set-Content -LiteralPath $ekin
+          python $ekin
+          if ($LASTEXITCODE) { exit 1 }
           ./install/manguberdi.ps1 -GeniusPath $PWD -Apply
           if ($LASTEXITCODE) { exit 1 }
           # Claude Code settings.json ni BOM siz kutadi; json.load BOM da yiqiladi.
           python -c "import json,os;json.load(open(os.path.expanduser('~/.claude/settings.json'),encoding='utf-8'))"
           if ($LASTEXITCODE) { exit 1 }
-          if (Test-Path "$HOME/.claude/skills/eski") { Write-Host "eski skill qoldi"; exit 1 }
-          if (Test-Path "$HOME/.claude/CLAUDE.md") { Write-Host "eski CLAUDE.md qoldi"; exit 1 }
+          $raw = [IO.File]::ReadAllBytes("$HOME/.claude/settings.json")
+          if ($raw[0] -eq 0xEF) { Write-Host "settings.json BOM bilan yozildi"; exit 1 }
+          foreach ($q in @('skills/eski/SKILL.md', 'CLAUDE.md', 'plugins/p/x.json', 'rules/r.md')) {
+            if (-not (Test-Path "$HOME/.claude/$q")) { Write-Host "begona yozuv o'chdi: $q"; exit 1 }
+          }
+          if ((Get-Content "$HOME/.claude/CLAUDE.md" -Raw).Trim() -ne 'eski') { Write-Host "CLAUDE.md o'zgardi"; exit 1 }
           if (-not (Test-Path "$HOME/.claude/skills/manguberdi/SKILL.md")) { Write-Host "skill yo'q"; exit 1 }
+          $aktyorlar = 'qidiruv', 'tahlil', 'review', 'dasturchi', 'test-muhandis', 'rejalashtiruvchi'
+          foreach ($a in $aktyorlar) {
+            if (-not (Test-Path "$HOME/.claude/agents/$a.md")) { Write-Host "aktyor yo'q: $a"; exit 1 }
+          }
+          $tekshir = Join-Path $env:RUNNER_TEMP 'qoshuvchi_tekshir.py'
+          @'
+          import json, os, sys
+          p = os.path.expanduser("~/.claude/settings.json")
+          d = json.load(open(p, encoding="utf-8"))
+          cmds = [h.get("command", "") for gs in d["hooks"].values()
+                  for g in gs for h in g.get("hooks", [])]
+          xato = []
+          if "echo begona-hook" not in cmds:
+              xato.append("begona hook yo'qoldi")
+          if sum("suggest_sections.py" in c for c in cmds) != 1:
+              xato.append("suggest_sections.py hooki bir marta emas")
+          if "Bash(git status:*)" not in d["permissions"]["allow"]:
+              xato.append("begona ruxsat yo'qoldi")
+          if d.get("model") != "opus":
+              xato.append("begona kalit yo'qoldi")
+          print("; ".join(xato) or "qo'shuvchi o'rnatish begona yozuvlarni saqladi")
+          sys.exit(1 if xato else 0)
+          '@ | Set-Content -LiteralPath $tekshir
+          python $tekshir
+          if ($LASTEXITCODE) { exit 1 }
           if (-not (Test-Path "$HOME/.claude-backup-*")) { Write-Host "zaxira yo'q"; exit 1 }
 
       # -Update faqat o'z birliklarini almashtiradi. Begona skill va begona
@@ -123,6 +343,7 @@ jobs:
       # ikkilanmasligi, BOM li eski settings.json o'qilib BOM siz yozilishi
       # va skill ichida ikkinchi manguberdi\ ochilmasligi shu yerda sinaladi.
       - name: Yangilash (-Update)
+        if: env.ISHLA == 'true' && runner.os == 'Windows'
         run: |
           New-Item -ItemType Directory -Force "$HOME/.claude/skills/begona" | Out-Null
           Set-Content "$HOME/.claude/skills/begona/SKILL.md" 'begona'
@@ -166,3 +387,292 @@ jobs:
           foreach ($z in @('skills--manguberdi', '.claude--settings.json')) {
             if (-not (Test-Path -LiteralPath "$env:RUNNER_TEMP/yangilash-zaxira/$z")) { Write-Host "zaxirada yo'q: $z"; exit 1 }
           }
+
+      # -Reset to'liq tozalaydi, lekin faqat -ConfirmReset bilan. Avval bu
+      # sukut xulq edi, shuning uchun uni ataylab so'rash shu yerda
+      # qo'riqlanadi: tasdiqsiz chaqiruv hech narsaga tegmasligi kerak.
+      - name: To'liq tozalash (-Reset)
+        if: env.ISHLA == 'true' && runner.os == 'Windows'
+        run: |
+          Set-Content "$HOME/.claude/CLAUDE.md" 'reset-sinovi'
+          New-Item -ItemType Directory -Force "$HOME/.claude/skills/begona2" | Out-Null
+          Set-Content "$HOME/.claude/skills/begona2/SKILL.md" 'begona'
+          # -ConfirmReset siz rad etilishi kerak va hech narsa o'chmasligi.
+          ./install/manguberdi.ps1 -GeniusPath $PWD -Reset -Apply
+          if ($LASTEXITCODE -eq 0) { Write-Host "-ConfirmReset siz o'tdi"; exit 1 }
+          if (-not (Test-Path "$HOME/.claude/CLAUDE.md")) { Write-Host "tasdiqsiz chaqiruv o'chirdi"; exit 1 }
+          if (-not (Test-Path "$HOME/.claude/skills/begona2/SKILL.md")) { Write-Host "tasdiqsiz chaqiruv skillni o'chirdi"; exit 1 }
+          # -Project va -IncludeAuth -Reset siz rad etiladi.
+          ./install/manguberdi.ps1 -GeniusPath $PWD -IncludeAuth
+          if ($LASTEXITCODE -eq 0) { Write-Host "-IncludeAuth -Reset siz o'tdi"; exit 1 }
+          # Tasdiq bilan: o'chadi va zaxira yoziladi.
+          $z = "$env:RUNNER_TEMP/reset-zaxira"
+          ./install/manguberdi.ps1 -GeniusPath $PWD -Reset -Apply -ConfirmReset -BackupTo $z
+          if ($LASTEXITCODE) { exit 1 }
+          if (Test-Path "$HOME/.claude/CLAUDE.md") { Write-Host "eski CLAUDE.md qoldi"; exit 1 }
+          if (Test-Path "$HOME/.claude/skills/begona2") { Write-Host "begona skill qoldi"; exit 1 }
+          if (-not (Test-Path "$HOME/.claude/skills/manguberdi/SKILL.md")) { Write-Host "skill yo'q"; exit 1 }
+          foreach ($q in @('.claude--CLAUDE.md', '.claude--skills')) {
+            if (-not (Test-Path -LiteralPath "$z/$q")) { Write-Host "zaxirada yo'q: $q"; exit 1 }
+          }
+
+      # -Uninstall klonga bog'liq emas: aynan shu holat uchun kerak, ya'ni
+      # klon o'chirilgan yoki ko'chirilgan va settings.json da uning yo'li
+      # qolgan. Shuning uchun nusxadan o'rnatiladi, nusxa o'chiriladi, keyin
+      # -GeniusPath endi mavjud bo'lmagan yo'lni ko'rsatadi. Asl checkout
+      # (joriy papka) tegilmaydi: skript shu yerdan yuradi.
+      - name: Olib tashlash (-Uninstall)
+        if: env.ISHLA == 'true' && runner.os == 'Windows'
+        run: |
+          $asl = $PWD.Path
+          $nusxa = Join-Path $env:RUNNER_TEMP 'kochirilgan-klon'
+          Copy-Item -LiteralPath $asl -Destination $nusxa -Recurse -Force
+          & "$nusxa/install/manguberdi.ps1" -GeniusPath $nusxa -Apply -BackupTo "$env:RUNNER_TEMP/nusxa-zaxira"
+          if ($LASTEXITCODE) { Write-Host "nusxadan o'rnatish yiqildi"; exit 1 }
+          # Begona yozuvlar: olib tashlash ularga tegmasligi kerak.
+          $ekin = Join-Path $env:RUNNER_TEMP 'uninst_ekin.py'
+          @'
+          import json, os
+          p = os.path.expanduser("~/.claude/settings.json")
+          d = json.load(open(p, encoding="utf-8"))
+          d.setdefault("hooks", {}).setdefault("SessionStart", []).append(
+              {"hooks": [{"type": "command", "command": "echo begona-hook"}]})
+          d.setdefault("permissions", {}).setdefault("allow", []).append("Bash(git status:*)")
+          d["model"] = "opus"
+          json.dump(d, open(p, "w", encoding="utf-8"), indent=2)
+          '@ | Set-Content -LiteralPath $ekin
+          python $ekin
+          if ($LASTEXITCODE) { exit 1 }
+          New-Item -ItemType Directory -Force "$HOME/.claude/skills/begona3" | Out-Null
+          Set-Content "$HOME/.claude/skills/begona3/SKILL.md" 'begona'
+          # Klon o'chadi: -GeniusPath endi mavjud emas.
+          Remove-Item -LiteralPath $nusxa -Recurse -Force
+          if (Test-Path -LiteralPath $nusxa) { Write-Host "nusxa o'chmadi"; exit 1 }
+          ./install/manguberdi.ps1 -GeniusPath $nusxa -Uninstall -Apply -BackupTo "$env:RUNNER_TEMP/uninst-zaxira"
+          if ($LASTEXITCODE) { Write-Host "-Uninstall yiqildi"; exit 1 }
+          if (Test-Path "$HOME/.claude/skills/manguberdi") { Write-Host "skill qoldi"; exit 1 }
+          foreach ($a in 'qidiruv', 'review', 'rejalashtiruvchi') {
+            if (Test-Path "$HOME/.claude/agents/$a.md") { Write-Host "aktyor qoldi: $a"; exit 1 }
+          }
+          if (-not (Test-Path "$HOME/.claude/skills/begona3/SKILL.md")) { Write-Host "begona skill o'chdi"; exit 1 }
+          if (@(Get-ChildItem "$HOME/.claude/genius" -Directory -ErrorAction SilentlyContinue).Count) {
+            Write-Host "snapshot qoldi: ~/.claude/genius"; exit 1
+          }
+          $env:UNINST_YOL = $nusxa
+          $tekshir = Join-Path $env:RUNNER_TEMP 'uninst_tekshir.py'
+          @'
+          import json, os, sys
+          yol = os.environ["UNINST_YOL"].replace("\\", "/").lower()
+          p = os.path.expanduser("~/.claude/settings.json")
+          d = json.load(open(p, encoding="utf-8"))
+          cmds = [h.get("command", "") for gs in d.get("hooks", {}).values()
+                  for g in gs for h in g.get("hooks", [])]
+          allow = [str(r) for r in d.get("permissions", {}).get("allow", [])]
+          dirs = [str(x) for x in d.get("permissions", {}).get("additionalDirectories", [])]
+          low = lambda xs: [x.replace("\\", "/").lower() for x in xs]
+          xato = []
+          if any(yol in c for c in low(cmds)):
+              xato.append("o'chirilgan klon hooki qoldi")
+          if any(yol in r for r in low(allow)):
+              xato.append("o'chirilgan klon ruxsati qoldi")
+          if any(yol in x for x in low(dirs)):
+              xato.append("additionalDirectories qoldi")
+          if "GENIUS_PYTHON" in d.get("env", {}) or "GENIUS_CLONE" in d.get("env", {}):
+              xato.append("env.GENIUS_PYTHON yoki GENIUS_CLONE qoldi")
+          # Hooklar klonga emas, ~/.claude/genius/<sha12> snapshotiga ishora
+          # qilardi (R7.8 XV-Y1): klon yo'li bo'yicha tekshiruv yolg'iz yetmaydi.
+          if any("/.claude/genius/" in c for c in low(cmds)):
+              xato.append("snapshot hooki qoldi")
+          if any("/.claude/genius/" in r for r in low(allow)):
+              xato.append("snapshot ruxsati qoldi")
+          if any("/.claude/genius/" in x for x in low(dirs)):
+              xato.append("snapshot additionalDirectories qoldi")
+          if "echo begona-hook" not in cmds:
+              xato.append("begona hook o'chdi")
+          if "Bash(git status:*)" not in allow:
+              xato.append("begona ruxsat o'chdi")
+          if d.get("model") != "opus":
+              xato.append("begona kalit o'chdi")
+          print("; ".join(xato) or "-Uninstall faqat o'z yozuvlarini oldi")
+          sys.exit(1 if xato else 0)
+          '@ | Set-Content -LiteralPath $tekshir
+          python $tekshir
+          if ($LASTEXITCODE) { exit 1 }
+
+      # Linux va macOS: install/install.py. Haqiqiy ~/.claude ga tegilmaydi:
+      # HOME runner vaqtinchalik papkasiga o'tkaziladi va keyingi qadamlar
+      # shuni ko'radi. Runner bash 3.2 (macOS): faqat POSIX sintaksis.
+      - name: Vaqtinchalik HOME (POSIX)
+        if: env.ISHLA == 'true' && runner.os != 'Windows'
+        run: |
+          mkdir -p "$RUNNER_TEMP/uy"
+          echo "HOME=$RUNNER_TEMP/uy" >> "$GITHUB_ENV"
+
+      - name: Quruq yurish (POSIX)
+        if: env.ISHLA == 'true' && runner.os != 'Windows'
+        run: |
+          # HOME haqiqatan vaqtinchalik papkada bo'lishi shart: aks holda keyingi
+          # qadamlar runnerning haqiqiy uyiga yozardi.
+          case "$HOME" in "$RUNNER_TEMP"/*) ;; *) echo "HOME vaqtinchalik emas: $HOME"; exit 1 ;; esac
+          python3 install/install.py
+          # Quruq yurish ~/.claude ni yaratmasligi kerak.
+          if [ -e "$HOME/.claude" ]; then echo "quruq yurish ~/.claude yaratdi"; exit 1; fi
+          if ls "$HOME"/.claude-backup-* >/dev/null 2>&1; then echo "quruq yurish zaxira yozdi"; exit 1; fi
+
+      # Sukut xulq QO'SHUVCHI: begona sozlamalar saqlanishi kerak.
+      - name: Haqiqiy o'rnatish (POSIX, qo'shuvchi)
+        if: env.ISHLA == 'true' && runner.os != 'Windows'
+        run: |
+          mkdir -p "$HOME/.claude/skills/eski" "$HOME/.claude/plugins/p" "$HOME/.claude/rules"
+          echo eski > "$HOME/.claude/skills/eski/SKILL.md"
+          echo eski > "$HOME/.claude/CLAUDE.md"
+          echo '{}' > "$HOME/.claude/plugins/p/x.json"
+          echo qoida > "$HOME/.claude/rules/r.md"
+          python3 - <<'PY'
+          import json, os
+          p = os.path.expanduser("~/.claude/settings.json")
+          json.dump({"model": "opus",
+                     "hooks": {"SessionStart": [{"hooks": [
+                         {"type": "command", "command": "echo begona-hook"}]}]},
+                     "permissions": {"allow": ["Bash(git status:*)"]}},
+                    open(p, "w", encoding="utf-8"), indent=2)
+          PY
+          python3 install/install.py --apply
+          for q in skills/eski/SKILL.md CLAUDE.md plugins/p/x.json rules/r.md skills/manguberdi/SKILL.md; do
+            test -e "$HOME/.claude/$q" || { echo "yo'q: $q"; exit 1; }
+          done
+          test "$(cat "$HOME/.claude/CLAUDE.md")" = eski || { echo "CLAUDE.md o'zgardi"; exit 1; }
+          for a in qidiruv tahlil review dasturchi test-muhandis rejalashtiruvchi; do
+            test -e "$HOME/.claude/agents/$a.md" || { echo "aktyor yo'q: $a"; exit 1; }
+          done
+          ls -d "$HOME"/.claude-backup-* >/dev/null 2>&1 || { echo "zaxira yo'q"; exit 1; }
+          python3 - <<'PY'
+          import json, os, sys
+          raw = open(os.path.expanduser("~/.claude/settings.json"), "rb").read()
+          d = json.loads(raw.decode("utf-8"))
+          cmds = [h.get("command", "") for gs in d["hooks"].values()
+                  for g in gs for h in g.get("hooks", [])]
+          xato = []
+          if raw.startswith(b"\xef\xbb\xbf"):
+              xato.append("settings.json BOM bilan")
+          if "echo begona-hook" not in cmds:
+              xato.append("begona hook yo'qoldi")
+          if sum("suggest_sections.py" in c for c in cmds) != 1:
+              xato.append("suggest_sections.py hooki bir marta emas")
+          if "Bash(git status:*)" not in d["permissions"]["allow"]:
+              xato.append("begona ruxsat yo'qoldi")
+          if d.get("model") != "opus":
+              xato.append("begona kalit yo'qoldi")
+          print("; ".join(xato) or "qo'shuvchi o'rnatish begona yozuvlarni saqladi")
+          sys.exit(1 if xato else 0)
+          PY
+
+      - name: Yangilash (POSIX, --update)
+        if: env.ISHLA == 'true' && runner.os != 'Windows'
+        run: |
+          mkdir -p "$HOME/.claude/skills/begona"
+          echo begona > "$HOME/.claude/skills/begona/SKILL.md"
+          python3 - <<'PY'
+          import json, os
+          p = os.path.expanduser("~/.claude/settings.json")
+          d = json.load(open(p, encoding="utf-8"))
+          d["hooks"]["UserPromptSubmit"][0]["hooks"].append(
+              {"type": "command", "command": "echo begona-hook"})
+          d["permissions"]["allow"].append("Bash(ls:*)")
+          json.dump(d, open(p, "w", encoding="utf-8"), indent=2)
+          PY
+          python3 install/install.py --update --apply --backup-to "$RUNNER_TEMP/yangilash-zaxira"
+          test -e "$HOME/.claude/skills/begona/SKILL.md" || { echo "begona skill o'chdi"; exit 1; }
+          test -e "$HOME/.claude/skills/manguberdi/SKILL.md" || { echo "skill yo'q"; exit 1; }
+          test ! -e "$HOME/.claude/skills/manguberdi/manguberdi" || { echo "skill ichida ikkinchi manguberdi"; exit 1; }
+          for z in skills--manguberdi .claude--settings.json; do
+            test -e "$RUNNER_TEMP/yangilash-zaxira/$z" || { echo "zaxirada yo'q: $z"; exit 1; }
+          done
+          python3 - <<'PY'
+          import json, os, sys
+          d = json.load(open(os.path.expanduser("~/.claude/settings.json"), encoding="utf-8"))
+          cmds = [h.get("command", "") for gs in d["hooks"].values()
+                  for g in gs for h in g.get("hooks", [])]
+          allow = d["permissions"]["allow"]
+          xato = []
+          if "echo begona-hook" not in cmds:
+              xato.append("begona hook yo'qoldi")
+          if sum("suggest_sections.py" in c for c in cmds) != 1:
+              xato.append("suggest_sections.py hooki bir marta emas")
+          if "Bash(git status:*)" not in allow or "Bash(ls:*)" not in allow:
+              xato.append("begona ruxsat yo'qoldi")
+          print("; ".join(xato) or "settings.json birlashdi")
+          sys.exit(1 if xato else 0)
+          PY
+
+      # --uninstall klonga bog'liq emas: nusxadan o'rnatiladi, nusxa
+      # o'chiriladi, keyin --genius-path endi mavjud bo'lmagan yo'lni ko'rsatadi.
+      - name: Olib tashlash (POSIX, --uninstall)
+        if: env.ISHLA == 'true' && runner.os != 'Windows'
+        run: |
+          nusxa="$RUNNER_TEMP/kochirilgan-klon"
+          cp -R "$PWD" "$nusxa"
+          python3 "$nusxa/install/install.py" --apply --backup-to "$RUNNER_TEMP/nusxa-zaxira"
+          mkdir -p "$HOME/.claude/skills/begona3"
+          echo begona > "$HOME/.claude/skills/begona3/SKILL.md"
+          rm -rf "$nusxa"
+          test ! -e "$nusxa" || { echo "nusxa o'chmadi"; exit 1; }
+          # Quruq yurish hech narsani o'chirmaydi.
+          python3 install/install.py --uninstall --genius-path "$nusxa"
+          test -e "$HOME/.claude/skills/manguberdi/SKILL.md" || { echo "quruq yurish skillni o'chirdi"; exit 1; }
+          python3 install/install.py --uninstall --apply --genius-path "$nusxa" --backup-to "$RUNNER_TEMP/uninst-zaxira"
+          test ! -e "$HOME/.claude/skills/manguberdi" || { echo "skill qoldi"; exit 1; }
+          for a in qidiruv review rejalashtiruvchi; do
+            test ! -e "$HOME/.claude/agents/$a.md" || { echo "aktyor qoldi: $a"; exit 1; }
+          done
+          test -e "$HOME/.claude/skills/begona3/SKILL.md" || { echo "begona skill o'chdi"; exit 1; }
+          test -z "$(ls -A "$HOME/.claude/genius" 2>/dev/null)" || { echo "snapshot qoldi: ~/.claude/genius"; exit 1; }
+          UNINST_YOL="$nusxa" python3 - <<'PY'
+          import json, os, sys
+          yol = os.environ["UNINST_YOL"].lower()
+          d = json.load(open(os.path.expanduser("~/.claude/settings.json"), encoding="utf-8"))
+          cmds = [h.get("command", "") for gs in d.get("hooks", {}).values()
+                  for g in gs for h in g.get("hooks", [])]
+          allow = [str(r) for r in d.get("permissions", {}).get("allow", [])]
+          dirs = [str(x) for x in d.get("permissions", {}).get("additionalDirectories", [])]
+          xato = []
+          if any(yol in c.lower() for c in cmds):
+              xato.append("o'chirilgan klon hooki qoldi")
+          if any(yol in r.lower() for r in allow):
+              xato.append("o'chirilgan klon ruxsati qoldi")
+          if any(yol in x.lower() for x in dirs):
+              xato.append("additionalDirectories qoldi")
+          if "GENIUS_PYTHON" in d.get("env", {}) or "GENIUS_CLONE" in d.get("env", {}):
+              xato.append("env.GENIUS_PYTHON yoki GENIUS_CLONE qoldi")
+          # Hooklar klonga emas, ~/.claude/genius/<sha12> snapshotiga ishora
+          # qilardi (R7.8 XV-Y1): klon yo'li bo'yicha tekshiruv yolg'iz yetmaydi.
+          if any("/.claude/genius/" in c for c in cmds):
+              xato.append("snapshot hooki qoldi")
+          if any("/.claude/genius/" in r for r in allow):
+              xato.append("snapshot ruxsati qoldi")
+          if any("/.claude/genius/" in x for x in dirs):
+              xato.append("snapshot additionalDirectories qoldi")
+          if "echo begona-hook" not in cmds:
+              xato.append("begona hook o'chdi")
+          if "Bash(git status:*)" not in allow:
+              xato.append("begona ruxsat o'chdi")
+          if d.get("model") != "opus":
+              xato.append("begona kalit o'chdi")
+          print("; ".join(xato) or "--uninstall faqat o'z yozuvlarini oldi")
+          sys.exit(1 if xato else 0)
+          PY
+
+      # --reset tasdiqsiz rad etiladi va hech narsa o'chmaydi; tasdiq bilan
+      # begona CLAUDE.md zaxiralanib o'chadi.
+      - name: To'liq tozalash (POSIX, --reset)
+        if: env.ISHLA == 'true' && runner.os != 'Windows'
+        run: |
+          echo reset-sinovi > "$HOME/.claude/CLAUDE.md"
+          if python3 install/install.py --reset --apply; then echo "--confirm-reset siz o'tdi"; exit 1; fi
+          test -e "$HOME/.claude/CLAUDE.md" || { echo "tasdiqsiz chaqiruv o'chirdi"; exit 1; }
+          if python3 install/install.py --include-auth; then echo "--include-auth --reset siz o'tdi"; exit 1; fi
+          python3 install/install.py --reset --apply --confirm-reset --backup-to "$RUNNER_TEMP/reset-zaxira"
+          test ! -e "$HOME/.claude/CLAUDE.md" || { echo "eski CLAUDE.md qoldi"; exit 1; }
+          test ! -e "$HOME/.claude/skills/begona3" || { echo "begona skill qoldi"; exit 1; }
+          test -e "$HOME/.claude/skills/manguberdi/SKILL.md" || { echo "skill yo'q"; exit 1; }
+          test -e "$RUNNER_TEMP/reset-zaxira/.claude--CLAUDE.md" || { echo "zaxirada yo'q: CLAUDE.md"; exit 1; }

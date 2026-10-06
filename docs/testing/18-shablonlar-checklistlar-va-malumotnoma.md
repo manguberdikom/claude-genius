@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 18. Shablonlar, checklistlar va ma'lumotnoma (Templates, Checklists & Reference)
 
 <details>
@@ -277,7 +279,7 @@ Tozalash: tranzaksiya rollback (test o'z schema'sida)
 ```text
 CHECKLIST: yangi REST endpoint
 - [ ] Happy path 2xx va javob sxemasi
-- [ ] Validatsiya xatolari 400 va xato formati (RFC 7807)
+- [ ] Validatsiya xatolari 400 va xato formati RFC 9457 (7807 ni almashtirgan)
 - [ ] Autentifikatsiyasiz 401, ruxsatsiz rol bilan 403
 - [ ] Mavjud bo'lmagan resurs 404
 - [ ] Idempotentlik (PUT/POST retry)
@@ -315,7 +317,7 @@ Keyingi charter taklifi: refund + chargeback kombinatsiyasi
 Yangi servis birinchi kundan to'g'ri sozlanmasa, keyin tuzatish bir necha hafta oladi. Quyidagilar repozitoriy yaratilgan kunning o'zida bajarilishi kerak.
 
 - [ ] `spring-boot-starter-test` qo'shilgan, `spring-security-test` xavfsizlik bo'lsa
-- [ ] `org.testcontainers:junit-jupiter` va kerakli modullar (`postgresql`, `kafka`) qo'shilgan
+- [ ] Testcontainers JUnit Jupiter moduli va kerakli modullar qo'shilgan: Boot 3.5 (TC 1.x) da `org.testcontainers:junit-jupiter`, `postgresql`, `kafka`; Boot 4 (TC 2.x) da `testcontainers-junit-jupiter`, `testcontainers-postgresql`, `testcontainers-kafka` ([artifactId versiyaga bog'liq](08-testcontainers-bilan-real-infratuzilmada.md#82-testcontainers-asoslari-docker-api-ustida-hayot-aylanishi))
 - [ ] `spring-boot-testcontainers` orqali `@ServiceConnection` ishlatilgan (manual property yo'q)
 - [ ] ArchUnit (`com.tngtech.archunit:archunit-junit5`) va kamida 3 ta qoida: qatlam yo'nalishi, paket bog'liqligi, test nomlash
 - [ ] Bazaviy sinflar yaratilgan: `AbstractIntegrationTest` (konteynerlar, shared context), `AbstractWebMvcTest`, `AbstractRepositoryTest`
@@ -385,7 +387,7 @@ Muhim ogohlantirish: aksariyat kutubxonalar versiyasini Spring Boot BOM (`spring
 | Mock | Mockito | `org.mockito:mockito-core`, `mockito-junit-jupiter` | BOM; faqat chegaralar uchun |
 | Umumiy to'plam | Spring Boot test starter | `org.springframework.boot:spring-boot-starter-test` | JUnit 5, AssertJ, Mockito, Hamcrest, JSONassert, JsonPath, XMLUnit, spring-test, Awaitility |
 | Xavfsizlik testi | Spring Security Test | `org.springframework.security:spring-security-test` | BOM; `@WithMockUser`, SecurityMockMvc |
-| Real bog'liqliklar | Testcontainers | `org.testcontainers:junit-jupiter`, `:postgresql`, `:kafka`, `:mongodb`, `:localstack` | BOM; Docker talab qiladi |
+| Real bog'liqliklar | Testcontainers | Boot 3.5 (TC 1.x): `org.testcontainers:junit-jupiter`, `:postgresql`, `:kafka`, `:mongodb`, `:localstack`; Boot 4 (TC 2.x): `org.testcontainers:testcontainers-junit-jupiter`, `:testcontainers-postgresql`, `:testcontainers-kafka`, `:testcontainers-mongodb`, `:testcontainers-localstack` | BOM; Docker talab qiladi; [artifactId versiyaga bog'liq](08-testcontainers-bilan-real-infratuzilmada.md#82-testcontainers-asoslari-docker-api-ustida-hayot-aylanishi) |
 | Boot integratsiyasi | Spring Boot Testcontainers | `org.springframework.boot:spring-boot-testcontainers` | BOM; `@ServiceConnection` |
 | HTTP stub | WireMock | `org.wiremock:wiremock-standalone` | BOM tashqarisida, 3.x |
 | Contract (Spring) | Spring Cloud Contract | `org.springframework.cloud:spring-cloud-starter-contract-verifier`, `...-stub-runner` | Spring Cloud BOM boshqaradi |
@@ -403,7 +405,7 @@ Muhim ogohlantirish: aksariyat kutubxonalar versiyasini Spring Boot BOM (`spring
 | Yuklama (JVM) | Gatling | `io.gatling:gatling-maven-plugin` (+ gatling-charts-highcharts) | 4.x atrofida |
 | Yuklama (skript) | k6 | Maven artefakti yo'q (Grafana k6 binary) | JS skript, CI'da konteyner |
 | Hisobot | Allure | `io.qameta.allure:allure-junit5` (+ `allure-maven`) | 2.x |
-| Tarmoq nosozligi | Toxiproxy | `org.testcontainers:toxiproxy` | BOM; kechikish, uzilish |
+| Tarmoq nosozligi | Toxiproxy | Boot 3.5 (TC 1.x): `org.testcontainers:toxiproxy`; Boot 4 (TC 2.x): `org.testcontainers:testcontainers-toxiproxy` | BOM; kechikish, uzilish |
 | Resilience sinovi | Chaos Monkey for Spring Boot | `de.codecentric:chaos-monkey-spring-boot` | 3.x; faqat non-prod profil |
 
 ## 18.13 Nomlash va joylashtirish konvensiyalari
@@ -430,7 +432,7 @@ Muhim ogohlantirish: aksariyat kutubxonalar versiyasini Spring Boot BOM (`spring
 
 | Simptom | Ehtimoliy sabab | Yechim |
 |---|---|---|
-| Kontekst ko'tarilmayapti (`ApplicationContextFailure`) | Yetishmayotgan bean, noto'g'ri property, bir nechta nomos `@MockBean` kombinatsiyasi | Xato stack'ining ENG CHUQUR `Caused by`ni o'qing; `@SpringBootTest` o'rniga slice test; `--debug` bilan auto-configuration reportini ko'ring |
+| Kontekst ko'tarilmayapti (`ApplicationContextFailure`) | Yetishmayotgan bean, noto'g'ri property, bir nechta nomos `@MockitoBean` kombinatsiyasi | Xato stack'ining ENG CHUQUR `Caused by`ni o'qing; `@SpringBootTest` o'rniga slice test; `--debug` bilan auto-configuration reportini ko'ring |
 | `LazyInitializationException` testda | Tranzaksiya tashqarisida lazy kolleksiyaga murojaat | Testda `@Transactional`, yoki `JOIN FETCH`/entity graph, yoki DTO proyeksiyasi bilan tekshirish |
 | Test lokalda o'tadi, CI'da yiqiladi | Vaqt zonasi, locale, fayl tartibi, sekinlik, parallel run, Docker resurslari | CI va lokalni bir xil `-Duser.timezone=UTC -Duser.language=en` bilan ishga tushirish; vaqtni `Clock` orqali; tartibga tayanchni olib tashlash |
 | `Could not find a valid Docker environment` | Docker demon ishlamaydi yoki socket boshqa yo'lda (Colima/Podman/Rancher) | Docker'ni yoqish; `DOCKER_HOST` yoki `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE` sozlash; CI'da privileged runner yoki DinD |

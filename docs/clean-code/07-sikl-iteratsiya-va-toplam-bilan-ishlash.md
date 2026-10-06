@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 7. Sikl, iteratsiya va to'plam bilan ishlash (Loops and Iteration)
 
 <details>

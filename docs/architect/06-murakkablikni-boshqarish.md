@@ -1,6 +1,8 @@
 <!-- doc: architect | chapter: 6 | part: I. Fikrlash va qarorlar -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
+
+> Holat: AI yozgan, inson tekshirmagan.
 
 # 6. Murakkablikni boshqarish (Managing Complexity)
 

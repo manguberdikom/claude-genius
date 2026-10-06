@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 41. O'zgarishni kiritish jarayoni: kichik qadamlar (Working in Small Steps)
 
 <details>

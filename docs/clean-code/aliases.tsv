@@ -1,0 +1,17 @@
+# Inglizcha taxalluslar: bo'lim raqami va inglizcha nom.
+# Shakli va qoidalari docs/architect/aliases.tsv boshida.
+bolim	nom
+3.4	Constant naming
+3.10	Exception naming
+4.1	Small functions
+5.3	Flag argument
+7.6	Modifying a collection while iterating
+15.1	equals contract
+15.2	hashCode contract
+15.5	Entity equality
+15.9	Mutable map key
+18.7	Returning null
+18.9	Exceptions for control flow
+24.6	Optional chaining
+25.1	Optional field
+32.3	Long method

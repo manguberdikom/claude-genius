@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 20. Primitiv, son va pul (Primitives, Numbers and Money)
 
 <details>
@@ -60,7 +62,7 @@ Qo'shimcha muhim qoida: `new BigDecimal(0.1)` **xato** - u `double` ni oladi va 
 
 **Ikkinchi**: `divide` aniq bo'linmasa `ArithmeticException` tashlaydi. Har doim scale va `RoundingMode` berish kerak.
 
-**Uchinchi**: yakkalash qoidasi (rounding) biznes qarori. `HALF_UP` odatiy, lekin bank hisobida `HALF_EVEN` (banker's rounding) talab qilinishi mumkin.
+**Uchinchi**: yaxlitlash qoidasi (rounding) biznes qarori. `HALF_UP` odatiy, lekin bank hisobida `HALF_EVEN` (banker's rounding) talab qilinishi mumkin.
 
 ```java
 // yomon: ArithmeticException: Non-terminating decimal expansion
@@ -161,7 +163,7 @@ int quantity = Objects.requireNonNullElse(order.quantity(), 0);
 
 ## 20.7 Pul va o'lchovni value object bilan ifodalash
 
-Pul uchun value object yozish primitivlarga berilish anti-patternidan ([patternlar hujjatidagi](../patterns/README.md) primitivlarga berilish anti-patterni) chiqish yo'li va u uch foyda beradi: valyuta aralashmaydi, yakkalash qoidasi bir joyda, va arifmetika domen tilida o'qiladi.
+Pul uchun value object yozish primitivlarga berilish anti-patternidan ([patternlar hujjatidagi](../patterns/README.md) primitivlarga berilish anti-patterni) chiqish yo'li va u uch foyda beradi: valyuta aralashmaydi, yaxlitlash qoidasi bir joyda, va arifmetika domen tilida o'qiladi.
 
 ```java
 public record Money(BigDecimal amount, Currency currency) implements Comparable<Money> {

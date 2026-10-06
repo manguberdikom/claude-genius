@@ -2,10 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 1. Yaratuvchi patternlar (Creational Patterns)
 
 <details>
-<summary>Bu bo'limdagi 18 bo'lim</summary>
+<summary>Bu bobdagi 18 bo'lim</summary>
 
 - [1.1 Yagona nusxa (Singleton)](#11-yagona-nusxa-singleton)
 - [1.2 Kalit bo'yicha yagona nusxalar (Multiton)](#12-kalit-boyicha-yagona-nusxalar-multiton)
@@ -257,13 +259,13 @@ public class PdfExporter extends ReportExporter {
 
 **Tavsif:** Bir-biriga bog'liq yoki bir "oila"ga mansub obyektlar to'plamini (masalan, Connection + Statement + ResultSet) konkret sinflarni ko'rsatmasdan yaratish interfeysi. Klient faqat fabrika interfeysi va mahsulot interfeyslari bilan ishlaydi; konkret fabrika almashtirilsa, butun oila bir vaqtda almashadi va mahsulotlar bir-biriga mos bo'lishi kafolatlanadi. Factory Method'dan farqi - bir metod emas, bir nechta o'zaro mos mahsulot yaratuvchi metodlar to'plami.
 
-**Spring'da qayerda uchraydi:** Spring Boot `WebServerFactory` oilasi: `ServletWebServerFactory` (`TomcatServletWebServerFactory`, `JettyServletWebServerFactory`, `UndertowServletWebServerFactory`) va `ReactiveWebServerFactory` - mahsulot `WebServer`; `ClientHttpRequestFactory` implementatsiyalari (`JdkClientHttpRequestFactory`, `HttpComponentsClientHttpRequestFactory`, `ReactorClientHttpRequestFactory`) - mahsulotlar `ClientHttpRequest` va `ClientHttpResponse`; `ApplicationContextFactory` (Boot); JDBC `DataSource -> Connection -> PreparedStatement -> ResultSet`; JPA `EntityManagerFactory -> EntityManager -> Query`; JMS `ConnectionFactory -> Connection -> Session -> MessageProducer`; Jackson `JsonFactory -> JsonParser / JsonGenerator`; `javax.xml.parsers.DocumentBuilderFactory`. `BeanFactory` nomi ham shu patternga ishora qiladi: u istalgan tipdagi bean'ni abstrakt tarzda yaratadi va qaytaradi.
+**Spring'da qayerda uchraydi:** Spring Boot `WebServerFactory` oilasi: `ServletWebServerFactory` (`TomcatServletWebServerFactory`, `JettyServletWebServerFactory`, `UndertowServletWebServerFactory` faqat Boot 3.x da: Boot 4 da Undertow qo'llovi olib tashlangan) va `ReactiveWebServerFactory` - mahsulot `WebServer`; `ClientHttpRequestFactory` implementatsiyalari (`JdkClientHttpRequestFactory`, `HttpComponentsClientHttpRequestFactory`, `ReactorClientHttpRequestFactory`) - mahsulotlar `ClientHttpRequest` va `ClientHttpResponse`; `ApplicationContextFactory` (Boot); JDBC `DataSource -> Connection -> PreparedStatement -> ResultSet`; JPA `EntityManagerFactory -> EntityManager -> Query`; JMS `ConnectionFactory -> Connection -> Session -> MessageProducer`; Jackson `JsonFactory -> JsonParser / JsonGenerator`; `javax.xml.parsers.DocumentBuilderFactory`. `BeanFactory` nomi ham shu patternga ishora qiladi: u istalgan tipdagi bean'ni abstrakt tarzda yaratadi va qaytaradi.
 
 **Qo'llanish keyslari:**
 - Bir nechta cloud provayder (AWS/GCP/Azure) uchun bir-biriga mos `StorageClient`, `QueueClient`, `SecretsClient` oilasini bitta `CloudFactory` orqali tanlash.
 - Ma'lumotlar bazasiga xos dialekt oilasi: `SqlDialect -> Paginator, UpsertBuilder, LockHint` - PostgreSQL va Oracle uchun turli implementatsiya.
 - Test va production uchun bir-biriga mos infratuzilma obyektlari (real Kafka klienti vs in-memory implementatsiya) oilasini almashtirish.
-- Embedded server tanlash (Tomcat/Jetty/Undertow) - Boot auto-configuration classpath'ga qarab mos `WebServerFactory` ni tanlaydi.
+- Embedded server tanlash (Tomcat/Jetty, Boot 3.x da Undertow ham) - Boot auto-configuration classpath'ga qarab mos `WebServerFactory` ni tanlaydi.
 - Hujjat formatlari oilasi: `DocumentFactory -> Parser, Renderer, Validator` har format uchun o'zaro mos bo'lishi shart.
 
 **Ehtiyot bo'ling:** Oila bitta mahsulotdan iborat bo'lsa, Abstract Factory - ortiqcha murakkablik; Factory Method yoki `@Bean` yetarli. Oilaga yangi mahsulot turi qo'shish barcha konkret fabrikalarni o'zgartirishni talab qiladi. Spring'da bu pattern ko'pincha `@Configuration` + `@Profile`/`@ConditionalOnProperty` orqali "oila"ni bitta konfiguratsiya sinfi sifatida almashtirish bilan tabiiy amalga oshadi - alohida fabrika interfeysi kerak bo'lmasligi mumkin.
@@ -585,7 +587,7 @@ public class PaymentHandlerRegistry {
 - [ ] Prototype bean'lar singleton ichiga to'g'ridan-to'g'ri inject qilingan joylarni qidiring va `ObjectProvider` yoki scoped proxy ga o'tkazing.
 - [ ] Kalit bo'yicha nusxa saqlaydigan har bir `Map` ni tekshiring: kalitlar to'plami chegaralanganmi, eviction bormi, nusxalar yopiladimi.
 - [ ] `spring.main.lazy-initialization` qiymatini muhitlar bo'yicha tekshiring va production'da `false` turganini tasdiqlang.
-- [ ] Service Locator ko'rinishidagi kodni (`applicationContext.getBean(...)`) qidirib, har bir chaqiruvni konstruktor injeksiyasiga aylantirish rejasini yozing.
+- [ ] Service Locator ko'rinishidagi kodni (`applicationContext.getBean(...)`) qidirib, har bir chaqiruvni konstruktor inyeksiyasiga aylantirish rejasini yozing.
 
 ---
 

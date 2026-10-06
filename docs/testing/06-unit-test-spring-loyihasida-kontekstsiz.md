@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 6. Unit test Spring loyihasida: kontekstsiz testlash (Unit Testing in a Spring Project)
 
 <details>

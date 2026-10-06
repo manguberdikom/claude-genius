@@ -1,6 +1,8 @@
 <!-- doc: architect | chapter: 1 | part: I. Fikrlash va qarorlar -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
+
+> Holat: AI yozgan, inson tekshirmagan.
 
 # 1. Arxitektorning fikrlash modeli (The Architect's Mental Model)
 
@@ -121,7 +123,7 @@ Bu yerda muhimi marshrutlash mexanizmi emas, balki shu: qaysi so'rov eskirgan ma
 
 ## 1.4 Sifat atributlari va ularni o'lchash
 
-Sifat atributi o'lchanmasa, u talab emas, istak. "Tizim tez bo'lsin" degan gap qaror chiqarmaydi. "Buyurtma yaratish p99 kechikishi 300 millisekunddan oshmasin, kunlik pik yukda, 95 foiz kunlarda" degan gap qaror chiqaradi. Shu sababli arxitektor har bir atributga stsenariy, raqam va o'lchash nuqtasini beradi.
+Sifat atributi o'lchanmasa, u talab emas, istak. "Tizim tez bo'lsin" degan gap qaror chiqarmaydi. "Buyurtma yaratish p99 kechikishi 300 millisekunddan oshmasin, kunlik pik yukda, 95 foiz kunlarda" degan gap qaror chiqaradi. Shu sababli arxitektor har bir atributga ssenariy, raqam va o'lchash nuqtasini beradi.
 
 Latency ni o'rtacha qiymat bilan o'lchash eng keng tarqalgan xato. O'rtacha 80 millisekund bo'lgan tizimda p99 ikki sekund bo'lishi mumkin. Foydalanuvchi o'rtachani sezmaydi, u o'z so'rovini sezadi. Shu sababli p95 va p99 o'lchanadi, mean esa faqat qo'shimcha sifatida.
 

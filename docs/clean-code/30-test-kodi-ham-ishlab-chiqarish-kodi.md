@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 30. Test kodi ham ishlab chiqarish kodi (Test Code Is Production Code)
 
 <details>

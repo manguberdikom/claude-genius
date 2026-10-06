@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 32. Kod hidlari katalogi I: nom, funksiya, ma'lumot (Code Smells I)
 
 <details>
@@ -105,7 +107,7 @@ Metod uzunligi [arxitektor hujjatidagi](../architect/README.md) metod uzunligi v
 
 ## 32.10 Vaqtinchalik maydon (Temporary Field)
 
-16.8 da ko'rilgan. Hid sifatida belgisi: maydon faqat ba'zi metodlar ishlaganda to'ldirilgan, qolgan vaqt `null`.
+[Vaqtinchalik maydon va uni yo'qotish](16-ozgarmaslik-va-holat-boshqaruvi-kod.md#168-vaqtinchalik-maydon-va-uni-yoqotish) bo'limida ko'rilgan. Hid sifatida belgisi: maydon faqat ba'zi metodlar ishlaganda to'ldirilgan, qolgan vaqt `null`.
 
 **Tuzatish**: Extract Class (vaqtinchalik maydonlar guruhini o'z sinfiga olish) yoki mahalliy o'zgaruvchiga aylantirish; `null` holatini Introduce Special Case bilan ifodalash.
 

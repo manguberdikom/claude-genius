@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 29. Log kodining tozaligi (Clean Logging Code)
 
 <details>
@@ -150,7 +152,7 @@ Asinxron kodda MDC avtomatik ko'chmaydi: `@Async` va `CompletableFuture` uchun k
 
 ## 29.8 Sezgir ma'lumot va maskalash
 
-Sezgir ma'lumotni log ga yozish [patternlar hujjatida](../patterns/README.md) anti-pattern (25.47) va u ko'pincha `toString` orqali tasodifan sodir bo'ladi (15.7). Himoya ikki qatlamli bo'lishi kerak: turda maskalash va log konfiguratsiyasida filtr.
+Sezgir ma'lumotni log ga yozish patternlar hujjatida [anti-pattern](../patterns/25-anti-patternlar.md#2547-sezgir-malumotni-logga-yozish-logging-sensitive-data) sifatida yozilgan va u ko'pincha [`toString`](15-tenglik-hash-va-obyekt-shartnomalari.md#157-tostring-foydali-xavfsiz-mantiqda-ishlatilmaydigan) orqali tasodifan sodir bo'ladi. Himoya ikki qatlamli bo'lishi kerak: turda maskalash va log konfiguratsiyasida filtr.
 
 ```java
 // yaxshi: tur o'zi maskalaydi - tasodifan oqib ketmaydi

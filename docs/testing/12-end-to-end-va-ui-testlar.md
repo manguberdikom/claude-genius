@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 12. End-to-end va UI testlar (End-to-End & UI Testing)
 
 <details>
@@ -32,15 +34,15 @@ End-to-end (E2E) va UI testlar test piramidasining eng yuqori, eng sekin va saql
 
 E2E test faqat bitta savolga yaxshi javob beradi: "alohida sinovdan o'tgan bo'laklar birgalikda ishlaydimi?". Bu savol arzimas emas - eng qimmat production incident'lari ko'pincha mantiq xatosi emas, balki wiring xatosi bo'ladi: noto'g'ri profil, ishga tushmagan Flyway migratsiya, yetishmayotgan environment variable, CORS va cookie `SameSite` sozlamasi, Spring Security filter zanjiridagi tartib, gateway'dagi timeout, JSON serializatsiyadagi sana formati. Bularning hech birini unit test ko'rmaydi, chunki ularning har biri aynan "hamma narsa birga ko'tarilganda" paydo bo'ladi.
 
-Narx tomoni ham aniq. Bitta unit test millisekundlar, integration test (Testcontainers bilan) sekundlar, UI orqali o'tadigan E2E senariy esa odatda 20-120 sekund oladi. Bunga brauzer konteynerlari, test muhitini tiklash va nosozlikni qayta tekshirish vaqti qo'shiladi. Diagnostika qiymati past: qizil E2E test "biror joyda buzildi" deydi, qaysi komponent aybdorini aytmaydi. Saqlash narxi ham yuqori - frontend'dagi har bir refactoring locator'larni buzadi.
+Narx tomoni ham aniq. Bitta unit test millisekundlar, integration test (Testcontainers bilan) sekundlar, UI orqali o'tadigan E2E ssenariy esa odatda 20-120 sekund oladi. Bunga brauzer konteynerlari, test muhitini tiklash va nosozlikni qayta tekshirish vaqti qo'shiladi. Diagnostika qiymati past: qizil E2E test "biror joyda buzildi" deydi, qaysi komponent aybdorini aytmaydi. Saqlash narxi ham yuqori - frontend'dagi har bir refactoring locator'larni buzadi.
 
-Shu sababli miqdor cheklanadi. Amaliy mo'ljal: o'rta kattalikdagi mahsulot uchun 15-40 ta E2E senariy, ulardan 5-10 tasi smoke to'plamda. Statistika buni majburlaydi: agar har bir test 1% ehtimol bilan "sababsiz" uzilsa, 20 testlik to'plam uchun muvaffaqiyat ehtimoli 0.99^20 ≈ 0.82 bo'ladi, ya'ni har beshinchi ishga tushirish asossiz qizil. 100 testda esa bu ko'rsatkich 0.37 ga tushadi va hech kim natijaga ishonmaydi. Demak E2E qatlamda flakiness byudjeti test soniga teng darajada muhim resurs.
+Shu sababli miqdor cheklanadi. Amaliy mo'ljal: o'rta kattalikdagi mahsulot uchun 15-40 ta E2E ssenariy, ulardan 5-10 tasi smoke to'plamda. Statistika buni majburlaydi: agar har bir test 1% ehtimol bilan "sababsiz" uzilsa, 20 testlik to'plam uchun muvaffaqiyat ehtimoli 0.99^20 ≈ 0.82 bo'ladi, ya'ni har beshinchi ishga tushirish asossiz qizil. 100 testda esa bu ko'rsatkich 0.37 ga tushadi va hech kim natijaga ishonmaydi. Demak E2E qatlamda flakiness byudjeti test soniga teng darajada muhim resurs.
 
 Har bir E2E test uchun arxitektor bitta savolga javob talab qilishi kerak: "bu test uzilsa, qaysi daromad yoki majburiyat yo'li to'xtaydi?". Javob bo'lmasa, test pastroq qatlamga ko'chiriladi.
 
 ## 12.2 Qaysi senariylarni E2E qilish kerak
 
-E2E qilinadigan senariylar ro'yxati qisqa va biznesga bog'langan bo'ladi:
+E2E qilinadigan ssenariylar ro'yxati qisqa va biznesga bog'langan bo'ladi:
 
 - **Pul oqimi**: savatdan to'lovga, to'lovdan tasdiqlangan buyurtmaga qadar to'liq yo'l, shu qatorda to'lov provayderi webhook'i kelgandan keyingi holat o'zgarishi.
 - **Ro'yxatdan o'tish va kirish**: signup, email tasdiqlash, login, parol tiklash, sessiya muddati tugashi. Bu yo'l uzilsa qolgan hamma narsa ahamiyatsiz.
@@ -52,7 +54,7 @@ E2E qilinmasligi kerak bo'lgan narsalar ro'yxati esa ancha uzun: forma validatsi
 
 ## 12.3 API darajasidagi E2E
 
-E2E'ning eng foydali shakli ko'pincha brauzersiz bo'ladi: butun ilovani haqiqiy portda ko'tarib, haqiqiy ma'lumotlar bazasi va broker bilan, senariyni HTTP orqali o'tkazish. Bu brauzer qatlamidan tashqari deyarli hamma integratsiya xatosini topadi, lekin 10-20 marta tezroq va bir necha marta barqarorroq ishlaydi. Spring'da uchta variant mavjud: `TestRestTemplate` (eng oddiy, blocking), `WebTestClient` (reactive stack yoki fluent assertion kerak bo'lsa) va `RestAssured` (eng o'qiluvchan DSL, JSON path assertion'lari kuchli).
+E2E'ning eng foydali shakli ko'pincha brauzersiz bo'ladi: butun ilovani haqiqiy portda ko'tarib, haqiqiy ma'lumotlar bazasi va broker bilan, ssenariyni HTTP orqali o'tkazish. Bu brauzer qatlamidan tashqari deyarli hamma integratsiya xatosini topadi, lekin 10-20 marta tezroq va bir necha marta barqarorroq ishlaydi. Spring'da uchta variant mavjud: `TestRestTemplate` (eng oddiy, blocking), `WebTestClient` (reactive stack yoki fluent assertion kerak bo'lsa) va `RestAssured` (eng o'qiluvchan DSL, JSON path assertion'lari kuchli).
 
 ```java
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
@@ -85,7 +87,7 @@ class CheckoutApiE2ETest {
 }
 ```
 
-Bu yerda `@ServiceConnection` (Spring Boot 3.1+) konteyner URL'ini avtomatik `DataSource`ga bog'laydi, `@LocalServerPort` esa haqiqiy tasodifiy portni beradi - ya'ni so'rov to'liq Tomcat, filter zanjiri, controller va tranzaksiya qatlamidan o'tadi. Amaliy taqsimot: biznes senariylarining 70-80% ini API darajasida, faqat qolganini brauzerda tekshirish. UI qatlamiga esa faqat "foydalanuvchi haqiqatan bosib o'tadigan" yo'llar qoldiriladi.
+Bu yerda `@ServiceConnection` (Spring Boot 3.1+) konteyner URL'ini avtomatik `DataSource`ga bog'laydi, `@LocalServerPort` esa haqiqiy tasodifiy portni beradi - ya'ni so'rov to'liq Tomcat, filter zanjiri, controller va tranzaksiya qatlamidan o'tadi. Amaliy taqsimot: biznes ssenariylarining 70-80% ini API darajasida, faqat qolganini brauzerda tekshirish. UI qatlamiga esa faqat "foydalanuvchi haqiqatan bosib o'tadigan" yo'llar qoldiriladi.
 
 ## 12.4 UI avtomatlashtirish vositalari
 
@@ -152,7 +154,7 @@ public class CheckoutPage {
 
 Katta suite'larda Page Object klasslari 500 qatorga o'sib ketadi. Bunga yechim - **komponent darajasidagi abstraksiya**: `CartWidget`, `AddressForm`, `DataTable` kabi klasslar o'z ildiz `Locator`ini qabul qiladi (`page.getByTestId("cart")`) va ichida nisbiy qidiradi. Shunda bir xil komponent bir necha sahifada qayta ishlatiladi.
 
-**Screenplay** pattern (Serenity BDD'da `Actor`, `Performable`, `Question`) bir qadam uzoqroq boradi: sahifa emas, foydalanuvchi vazifalari modellashtiriladi - `actor.attemptsTo(Login.withCredentials(user), Checkout.withTestCard())`. Bu ko'p rolli, ko'p foydalanuvchili senariylarda (masalan sotuvchi va xaridor bir senariyda) Page Object'dan toza chiqadi, lekin o'rganish narxi yuqori. Tavsiya: 30 testdan kichik suite uchun Page Object yetarli; ko'p aktyorli murakkab domenda Screenplay'ni ko'rib chiqing.
+**Screenplay** pattern (Serenity BDD'da `Actor`, `Performable`, `Question`) bir qadam uzoqroq boradi: sahifa emas, foydalanuvchi vazifalari modellashtiriladi - `actor.attemptsTo(Login.withCredentials(user), Checkout.withTestCard())`. Bu ko'p rolli, ko'p foydalanuvchili ssenariylarda (masalan sotuvchi va xaridor bir ssenariyda) Page Object'dan toza chiqadi, lekin o'rganish narxi yuqori. Tavsiya: 30 testdan kichik suite uchun Page Object yetarli; ko'p aktyorli murakkab domenda Screenplay'ni ko'rib chiqing.
 
 Locator strategiyasi barqarorlikning yarmi: birinchi tanlov - `data-testid` (dizayn o'zgarishidan himoyalangan, frontend bilan shartnoma sifatida kelishiladi), ikkinchi - `getByRole` va accessible name (bir vaqtda accessibility'ni ham tekshiradi), uchinchi - matn. XPath va uzun CSS zanjirlari (`div > div:nth-child(3) > span`) taqiqlanadi: ular DOM tuzilishiga bog'lanadi va har markup o'zgarishida buziladi. Playwright'da test atribut nomi `playwright.selectors().setTestIdAttribute("data-qa")` bilan moslashtiriladi.
 
@@ -160,7 +162,7 @@ Locator strategiyasi barqarorlikning yarmi: birinchi tanlov - `data-testid` (diz
 
 - **`Thread.sleep` qat'iy taqiqlanadi.** U yo testni sekinlashtiradi, yo sekin CI'da yetmaydi. Faqat auto-wait (`assertThat(locator).isVisible()`, Selenide'dagi `shouldBe`) yoki aniq shartga bog'langan kutish ishlatiladi: `page.waitForResponse("**/api/orders", () -> ...)`, `locator.waitFor()`.
 - **Timeout bitta joyda sozlanadi**, test ichida emas: global `setDefaultTimeout` va faqat haqiqatan sekin operatsiya uchun lokal override.
-- **Retry faqat infratuzilma uchun.** Konteyner ko'tarilmasligi, DNS, tarmoq uzilishi - qayta urinishga arziydi. Biznes senariyning o'zini retry qilish xatoni yashiradi (flaky testlar jarayoni [16-bobda](16-flaky-testlar-test-qarzi-va-test-kodini.md)).
+- **Retry faqat infratuzilma uchun.** Konteyner ko'tarilmasligi, DNS, tarmoq uzilishi - qayta urinishga arziydi. Biznes ssenariyning o'zini retry qilish xatoni yashiradi (flaky testlar jarayoni [16-bobda](16-flaky-testlar-test-qarzi-va-test-kodini.md)).
 - **Har test o'z ma'lumotini API orqali yaratadi** va unique identifikator ishlatadi (`"e2e-" + UUID.randomUUID() + "@shop.io"`). Shunda testlar bir-biriga ta'sir qilmaydi va parallel ishlaydi.
 - **Testlar idempotent bo'ladi**: ikki marta ketma-ket ishga tushirilsa, bir xil natija berishi shart. Umumiy, oldindan tayyorlangan "demo" akkauntga bog'lanish parallel bajarishni darhol buzadi.
 - **Kirish sessiyasi qayta ishlatiladi.** Har testda login UI orqali o'tish 5-15 sekundni behuda sarflaydi va eng mo'rt qadamni har testga ko'paytiradi. Playwright'da yechim - `storageState`.
@@ -214,7 +216,7 @@ app:
     seed-endpoints-enabled: true   # faqat e2e profilida
 ```
 
-Feature flag'lar E2E uchun ikki tomonlama foyda beradi: yangi yo'lni testda yoqib, production'da o'chirib turish mumkin; va flag holatini test boshida HTTP header yoki admin endpoint orqali o'rnatib, deterministik senariy olinadi. Tashqi to'lov tizimi esa albatta o'z sandbox'ida ishlatiladi (test kalitlari, provayderning e'lon qilgan test karta raqamlari), lekin webhook yetib kelishini kutish uchun testda aniq shart bo'yicha polling kerak - "sleep qilib umid qilish" emas. Barqarorligi past yoki pullik tashqi servislar E2E'da chegara adapteri darajasida stub bilan almashtiriladi.
+Feature flag'lar E2E uchun ikki tomonlama foyda beradi: yangi yo'lni testda yoqib, production'da o'chirib turish mumkin; va flag holatini test boshida HTTP header yoki admin endpoint orqali o'rnatib, deterministik ssenariy olinadi. Tashqi to'lov tizimi esa albatta o'z sandbox'ida ishlatiladi (test kalitlari, provayderning e'lon qilgan test karta raqamlari), lekin webhook yetib kelishini kutish uchun testda aniq shart bo'yicha polling kerak - "sleep qilib umid qilish" emas. Barqarorligi past yoki pullik tashqi servislar E2E'da chegara adapteri darajasida stub bilan almashtiriladi.
 
 ## 12.8 Parallel bajarish va vaqt byudjeti
 
@@ -285,41 +287,41 @@ Vizual regressiya screenshot'ni ma'lum (baseline) rasm bilan piksel darajasida t
 
 Flakiness sabablari deyarli har doim bir xil: font yuklanishi va antialiasing (OS'ga bog'liq), animatsiya va `transition`, kursor miltillashi, scrollbar, dinamik ma'lumot (sana, ID, avatar), va viewport o'lchamining o'zgarishi. Shuning uchun qoidalar qat'iy: baseline faqat CI bilan **bir xil Docker image**da generatsiya qilinadi; animatsiya `page.addStyleTag` bilan o'chiriladi (`*, *::before { animation: none !important; transition: none !important; }`); vaqt va dinamik bloklar mask qilinadi yoki fixture bilan muzlatiladi; tolerance esa 0 emas, lekin juda kichik (0.1-0.5% piksel) bo'ladi - katta tolerance haqiqiy regressiyani yashiradi.
 
-Java ekosistemasida tayyor snapshot assertion yo'q: Playwright'ning `toHaveScreenshot` imkoniyati faqat TypeScript runner'ida. Java uchun amaliy variantlar - `ashot` kutubxonasi (Selenium bilan), Applitools Eyes yoki Percy kabi cloud SDK'lar (AI/DOM asosida farqlarni filtrlaydi), yoki frontend tomonida Storybook + BackstopJS. Eng oqilona qarori: vizual testni E2E senariylaridan ajratish va komponent galereyasi darajasida ishlatish - u yerda sahifa holati deterministik, baseline'lar esa arzon.
+Java ekosistemasida tayyor snapshot assertion yo'q: Playwright'ning `toHaveScreenshot` imkoniyati faqat TypeScript runner'ida. Java uchun amaliy variantlar - `ashot` kutubxonasi (Selenium bilan), Applitools Eyes yoki Percy kabi cloud SDK'lar (AI/DOM asosida farqlarni filtrlaydi), yoki frontend tomonida Storybook + BackstopJS. Eng oqilona qarori: vizual testni E2E ssenariylaridan ajratish va komponent galereyasi darajasida ishlatish - u yerda sahifa holati deterministik, baseline'lar esa arzon.
 
 ## 12.11 Mobil va cross-browser
 
 Brauzer matritsasi analitika bilan asoslanadi, "har ehtimolga qarshi" bilan emas. Amaliy model: har PR'da faqat Chromium; kechasi (nightly) Firefox va WebKit qo'shiladi; legacy brauzerlar faqat real foydalanuvchi ulushi bo'lsa. Playwright bitta API bilan uchta engine'ni beradi, bu matritsani kengaytirishni arzonlashtiradi.
 
-Responsive tekshiruv alohida E2E senariy emas: bir necha asosiy sahifani belgilangan breakpoint viewport'larida (masalan 390x844, 768x1024, 1440x900) ochib, kritik elementlar ko'rinishini va bosilishini tasdiqlash yetarli. Playwright'da `new Browser.NewContextOptions().setViewportSize(390, 844).setHasTouch(true)` yoki `playwright.devices()` dan qurilma deskriptori ishlatiladi.
+Responsive tekshiruv alohida E2E ssenariy emas: bir necha asosiy sahifani belgilangan breakpoint viewport'larida (masalan 390x844, 768x1024, 1440x900) ochib, kritik elementlar ko'rinishini va bosilishini tasdiqlash yetarli. Playwright'da `new Browser.NewContextOptions().setViewportSize(390, 844).setHasTouch(true)` yoki `playwright.devices()` dan qurilma deskriptori ishlatiladi.
 
 Native mobil ilova - bu butunlay boshqa suite. Appium 2.x (`java-client`, UiAutomator2 va XCUITest drayverlari) web E2E bilan bir xil Page Object yondashuvini qo'llaydi, lekin o'z infratuzilmasi (emulyator yoki real device cloud), o'z vaqt byudjeti va o'z mas'ul jamoasini talab qiladi. Uni web E2E quvuriga qo'shmaslik kerak: deploy'ni 40 daqiqalik emulyator jobiga bog'lab qo'yish mahsulot tezligini o'ldiradi.
 
 ## 12.12 Smoke suite
 
-Smoke to'plam - deploy'dan keyin darhol ishga tushadigan, 2-5 daqiqada tugaydigan 5-10 senariy: tizim tirikmi, login ishlaydimi, asosiy sahifa ma'lumot bilan yuklanadimi, bitta buyurtma to'lanadimi, kritik hisobot generatsiya bo'ladimi. Bu to'plam `@Tag("smoke")` bilan belgilanadi va deploy quvurining gate'i bo'ladi: qizil bo'lsa, release avtomatik rollback qilinadi yoki trafik yangi versiyaga o'tkazilmaydi.
+Smoke to'plam - deploy'dan keyin darhol ishga tushadigan, 2-5 daqiqada tugaydigan 5-10 ssenariy: tizim tirikmi, login ishlaydimi, asosiy sahifa ma'lumot bilan yuklanadimi, bitta buyurtma to'lanadimi, kritik hisobot generatsiya bo'ladimi. Bu to'plam `@Tag("smoke")` bilan belgilanadi va deploy quvurining gate'i bo'ladi: qizil bo'lsa, release avtomatik rollback qilinadi yoki trafik yangi versiyaga o'tkazilmaydi.
 
-Smoke senariylari production'da ham xavfsiz bo'lishi uchun ular ko'proq o'qishga tayanadi, bitta yozuv operatsiyasi esa ajratilgan test akkaunt va test to'lov usuli bilan bajariladi hamda o'zidan keyin tozalanadi. Aynan shu senariylar keyinchalik production'da **synthetic monitoring** probe'lari sifatida qayta ishlatiladi - har 5 daqiqada ishlaydigan, alert'ga bog'langan tashqi tekshiruvlar (batafsil [15-bobda](15-ci-cd-da-test-pipeline.md)). Bitta senariy ta'rifini CI gate va synthetic monitoring o'rtasida bo'lishish - bu qatlamdan olinadigan eng yuqori qaytim.
+Smoke ssenariylari production'da ham xavfsiz bo'lishi uchun ular ko'proq o'qishga tayanadi, bitta yozuv operatsiyasi esa ajratilgan test akkaunt va test to'lov usuli bilan bajariladi hamda o'zidan keyin tozalanadi. Aynan shu ssenariylar keyinchalik production'da **synthetic monitoring** probe'lari sifatida qayta ishlatiladi - har 5 daqiqada ishlaydigan, alert'ga bog'langan tashqi tekshiruvlar (batafsil [15-bobda](15-ci-cd-da-test-pipeline.md)). Bitta ssenariy ta'rifini CI gate va synthetic monitoring o'rtasida bo'lishish - bu qatlamdan olinadigan eng yuqori qaytim.
 
 ## 12.13 Anti-patternlar
 
-- **Biznes qoidalarini E2E bilan qoplash.** Chegirma formulasi yoki soliq hisobi UI orqali 40 senariyda tekshirilganda, suite sekin va mo'rt bo'ladi, xato joyi esa noaniq qoladi. Bu mantiq unit testga tegishli.
+- **Biznes qoidalarini E2E bilan qoplash.** Chegirma formulasi yoki soliq hisobi UI orqali 40 ssenariyda tekshirilganda, suite sekin va mo'rt bo'ladi, xato joyi esa noaniq qoladi. Bu mantiq unit testga tegishli.
 - **UI test ichida SQL bilan ma'lumotni "tuzatish".** Test o'rtasida `UPDATE orders SET status='PAID'` yozilsa, test real bo'lmagan holatni tekshiradi va sxema o'zgarishida jimgina buziladi. Ma'lumot API yoki ajratilgan test-support endpoint orqali tayyorlanadi.
 - **Umumiy akkauntdan foydalanish.** Barcha testlar bitta `qa@company.com` bilan ishlasa, parallelizm imkonsiz, natijalar esa ishga tushirish tartibiga bog'lanib qoladi.
 - **Barcha E2E testni har PR'da ishga tushirish.** Bu feedback'ni 30-40 daqiqaga cho'zadi va jamoani "qizilni e'tiborsiz qoldirish" madaniyatiga olib keladi. PR'da smoke + o'zgargan domen shard'i, to'liq suite esa merge'dan keyin yoki nightly.
 - **Flaky testni retry bilan yashirish.** `rerunFailingTestsCount=3` statistikani yaxshilaydi, lekin haqiqiy race condition va noto'g'ri kutishni ko'rinmas qiladi - ya'ni production xatosini test bilan to'laydi.
 - **Baseline'ni ko'r-ko'rona yangilash.** Vizual test qizil bo'lganda baseline'ni avtomatik qabul qilish vizual testni butunlay bekor qiladi.
-- **Page Object'ni assertion ombori qilish.** Sahifa klassi ichida o'nlab biznes tekshiruvi bo'lsa, senariy niyati kodda ko'rinmaydi va qayta ishlatish yo'qoladi.
+- **Page Object'ni assertion ombori qilish.** Sahifa klassi ichida o'nlab biznes tekshiruvi bo'lsa, ssenariy niyati kodda ko'rinmaydi va qayta ishlatish yo'qoladi.
 
 ## 12.14 Arxitektor nazorat ro'yxati
 
-- [ ] E2E senariylar soni cheklangan (15-40) va har biri aniq biznes/daromad yo'liga bog'langan; ro'yxat yozilib qo'yilgan.
+- [ ] E2E ssenariylar soni cheklangan (15-40) va har biri aniq biznes/daromad yo'liga bog'langan; ro'yxat yozilib qo'yilgan.
 - [ ] Biznes mantiqning asosiy qismi API va slice darajasida qoplangan; UI E2E faqat foydalanuvchi yo'lini tekshiradi.
 - [ ] Barcha locator'lar `data-testid` yoki accessible role asosida; XPath va chuqur CSS zanjirlari CI'da taqiqlangan.
 - [ ] Kodda `Thread.sleep` yo'q; kutish faqat auto-wait yoki aniq shart bilan amalga oshiriladi.
 - [ ] Har test o'z ma'lumotini API orqali, unique identifikator bilan yaratadi; umumiy akkaunt va test tartibiga bog'liqlik yo'q.
 - [ ] Nosozlikda screenshot, trace/video, brauzer va server log'lari avtomatik yig'iladi va CI artefakti sifatida saqlanadi.
-- [ ] Smoke to'plam 5 daqiqadan oshmaydi, deploy gate'iga ulangan va synthetic monitoring bilan senariylarni bo'lishadi.
+- [ ] Smoke to'plam 5 daqiqadan oshmaydi, deploy gate'iga ulangan va synthetic monitoring bilan ssenariylarni bo'lishadi.
 - [ ] To'liq suite uchun vaqt byudjeti e'lon qilingan, sharding va parallelizm sozlangan, retry faqat infratuzilma xatolari uchun ruxsat etilgan.
 
 ---

@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # Alifbo bo'yicha indeks
 
 
@@ -46,7 +48,7 @@ Inglizcha nomi bo'yicha saralangan; raqam bo'lim va pattern tartibini ko'rsatadi
 - [Ambassador](14-microservices-patternlari.md#1433-ambassador-ambassador) - 14.33
 - [Ambassador Container](22-deployment-va-operatsion-patternlar.md#2216-ambassador-konteyner-ambassador-container) - 22.16
 - [Analysis Paralysis](25-anti-patternlar.md#2577-tahlil-falaji-analysis-paralysis) - 25.77
-- [Anemic Domain Model - Anti View](25-anti-patternlar.md#2535-anemik-domen-modeli-anemic-domain-model---anti-view) - 25.35
+- [Anemic Domain Model - anti-pattern](25-anti-patternlar.md#2535-anemik-domen-modeli-anemic-domain-model---anti-pattern) - 25.35
 - [Anemik domen modeli (anti) (Anemic Domain Model (anti))](13-domain-driven-design-patternlari.md#1331-anemik-domen-modeli-anti-anemic-domain-model-anti) - 13.31
 - [Anti-Corruption Layer](13-domain-driven-design-patternlari.md#137-buzilishdan-himoya-qatlami-anti-corruption-layer) - 13.7
 - [Anti-Entropy](28-taqsimlangan-malumot-replikatsiya-va.md#288-anti-entropiya-anti-entropy) - 28.8
@@ -661,7 +663,7 @@ Inglizcha nomi bo'yicha saralangan; raqam bo'lim va pattern tartibini ko'rsatadi
 - [Onion Architecture](12-arxitektura-uslublari.md#124-piyoz-arxitekturasi-onion-architecture) - 12.4
 - [Open Host Service](13-domain-driven-design-patternlari.md#138-ochiq-xizmat-interfeysi-open-host-service) - 13.8
 - [Open Session in View](09-malumotlarga-kirish-va-orm-patternlari.md#928-view-ichida-ochiq-sessiya---antipattern-open-session-in-view) - 9.28
-- [Open Session in View - Anti View](25-anti-patternlar.md#2532-view-ichida-ochiq-sessiya-open-session-in-view---anti-view) - 25.32
+- [Open Session in View - anti-pattern](25-anti-patternlar.md#2532-view-ichida-ochiq-sessiya-open-session-in-view---anti-pattern) - 25.32
 - [Open/Closed Principle](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#262-ochiqyopiq-printsipi-openclosed-principle) - 26.2
 - [OpenID Connect](18-xavfsizlik-patternlari.md#1818-openid-connect-openid-connect) - 18.18
 - [OpenTelemetry Collector (OpenTelemetry Collector (agent, sidecar))](21-observability-patternlari.md#2124-opentelemetry-collector-opentelemetry-collector-agent-sidecar) - 21.24
@@ -736,7 +738,7 @@ Inglizcha nomi bo'yicha saralangan; raqam bo'lim va pattern tartibini ko'rsatadi
 
 **Q**
 
-- [Qayta urinish bo'roni (Retry Storm (anti view))](25-anti-patternlar.md#2561-qayta-urinish-boroni-retry-storm-anti-view) - 25.61
+- [Qayta urinish bo'roni (Retry Storm (anti-pattern))](25-anti-patternlar.md#2561-qayta-urinish-boroni-retry-storm-anti-pattern) - 25.61
 - [Quartz Clustering](20-batch-va-scheduling-patternlari.md#2023-quartz-klasterlash-quartz-clustering) - 20.23
 - [Query Object](09-malumotlarga-kirish-va-orm-patternlari.md#921-sorov-obyekti-query-object) - 9.21
 - [Queue-Based Load Leveling](17-resilience-va-cloud-dizayn-patternlari.md#1718-queue-asosida-yukni-tekislash-queue-based-load-leveling) - 17.18

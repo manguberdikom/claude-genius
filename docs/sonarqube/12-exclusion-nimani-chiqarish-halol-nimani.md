@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 12. Exclusion: nimani chiqarish halol, nimani chiqarish aldov (Exclusions, Honest and Dishonest)
 
 <details>

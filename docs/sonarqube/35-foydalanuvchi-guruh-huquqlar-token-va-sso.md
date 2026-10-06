@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 35. Foydalanuvchi, guruh, huquqlar, token va SSO (Users, Permissions and Tokens)
 
 <details>

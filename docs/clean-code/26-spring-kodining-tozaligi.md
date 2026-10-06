@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 26. Spring kodining tozaligi (Clean Code in Spring)
 
 <details>
@@ -26,7 +28,7 @@ Spring mexanikasi [arxitektor hujjatidagi](../architect/README.md) Spring mexani
 
 ## 26.1 Konstruktor inyeksiyasi va `final` maydon
 
-Maydonga inyeksiya (`@Autowired` maydonda) [patternlar hujjatida](../patterns/README.md) anti-pattern sifatida sanalgan (25.29). Bu yerda to'g'ri shaklning aniq ko'rinishi: konstruktor inyeksiyasi, `final` maydon, `@Autowired` siz.
+Maydonga inyeksiya (`@Autowired` maydonda) patternlar hujjatida [maydonga inyeksiya anti-patterni](../patterns/25-anti-patternlar.md#2529-maydonga-injeksiya-field-injection) sifatida sanalgan. Bu yerda to'g'ri shaklning aniq ko'rinishi: konstruktor inyeksiyasi, `final` maydon, `@Autowired` siz.
 
 ```java
 // yaxshi: bitta konstruktor - @Autowired kerak emas (Spring 4.3+)
@@ -51,7 +53,7 @@ Bog'liqliklar soni to'rtdan oshsa, bu sinfning juda ko'p ish qilayotgani belgisi
 
 ## 26.2 Bean ko'rinishi: `package-private` konfiguratsiya va komponentlar
 
-Spring beanlari `public` bo'lishi shart emas va `package-private` qilish paket chegarasini mustahkamlaydi ([arxitektor hujjatidagi](../architect/README.md) paketni xususiyat bo'yicha bo'lish bo'limi va 5.9). Shunda boshqa paketdan tasodifiy import qilib bo'lmaydi.
+Spring beanlari `public` bo'lishi shart emas va `package-private` qilish paket chegarasini mustahkamlaydi (arxitektor hujjatidagi [paketni xususiyat bo'yicha bo'lish](../architect/04-kod-muloqot-vositasi-nomlash-aniqlik.md#48-paket-tuzilishi-xususiyat-boyicha-bolish) bo'limi). Shunda boshqa paketdan tasodifiy import qilib bo'lmaydi.
 
 ```java
 // yaxshi: faqat API public, implementatsiya paket ichida
@@ -117,7 +119,7 @@ Ikkinchi qoida: sirlar (`password`, `token`, `secret`) hech qachon `application.
 
 ## 26.5 Controller ni yupqa ushlash
 
-Semiz controller [patternlar hujjatida](../patterns/README.md) anti-pattern (25.34). Clean code darajasida controller metodining aniq vazifasi bor va u uch qatordan oshmaydi: kirishni domen turiga aylantirish, use case ni chaqirish, natijani javobga aylantirish.
+Semiz controller patternlar hujjatida [anti-pattern](../patterns/25-anti-patternlar.md#2534-semiz-controller-fat-controller) sifatida yozilgan. Clean code darajasida controller metodining aniq vazifasi bor va u uch qatordan oshmaydi: kirishni domen turiga aylantirish, use case ni chaqirish, natijani javobga aylantirish.
 
 ```java
 // yomon: biznes mantiqi controller da
@@ -198,7 +200,7 @@ PaymentGateway paymentGateway(PaymentProperties properties, ...) {
 
 ## 26.9 Shartli konfiguratsiya va `@Profile` ni kamaytirish
 
-Profil tarqoqligi [patternlar hujjatida](../patterns/README.md) anti-pattern (25.39). Clean code qoidasi: `@Profile` ni **kod** da emas, konfiguratsiyada hal qilish - xatti-harakat farqi property qiymati bilan boshqarilsa, muhitlar orasidagi farq bir faylda ko'rinadi.
+Profil tarqoqligi patternlar hujjatida [anti-pattern](../patterns/25-anti-patternlar.md#2539-profile-tarqoqligi-profile-sprawl) sifatida yozilgan. Clean code qoidasi: `@Profile` ni **kod** da emas, konfiguratsiyada hal qilish - xatti-harakat farqi property qiymati bilan boshqarilsa, muhitlar orasidagi farq bir faylda ko'rinadi.
 
 ```java
 // yomon: profil kod bo'ylab tarqalgan, nima farq qilishi ko'rinmaydi

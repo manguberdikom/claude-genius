@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 15. CI/CD da test pipeline (The Test Pipeline in CI/CD)
 
 <details>
@@ -143,7 +145,7 @@ Keshlash - pipeline tezlashtirishning eng arzon vositasi. Maven uchun `~/.m2/rep
 
 Docker layer cache image build vaqtini qisqartiradi, lekin Spring loyihalarida Jib yoki Buildpacks ishlatilsa, layer ajratish allaqachon optimal (dependency layer alohida, application class'lar alohida). Testcontainers uchun ikkita muhim optimizatsiya: image'larni oldindan pull qilish (pipeline boshida `docker pull postgres:16-alpine`, bu test timeout'ini oldini oladi) va container reuse (`testcontainers.reuse.enable=true` - lokalda juda foydali, CI'da ephemeral runner'da ma'nosi kam).
 
-Eng katta tezlashtirish manbai - Spring kontekst keshini buzmaslik. Har xil `@MockBean`, har xil `@TestPropertySource`, har xil `@ActiveProfiles` kombinatsiyasi yangi ApplicationContext yaratadi, va har bir kontekst 2-10 sekund. [7-bobda](07-integratsion-test-spring-boot-slice-testlari.md) ko'rilgan kontekst keshlash qoidalariga rioya qilish ko'pincha parallellashtirishdan kattaroq samara beradi. Incremental build (Gradle'ning up-to-date checking, Maven'da `-o` offline rejim va `mvn -am` bilan cheklangan scope) bu rasmni to'ldiradi.
+Eng katta tezlashtirish manbai - Spring kontekst keshini buzmaslik. Har xil `@MockitoBean`, har xil `@TestPropertySource`, har xil `@ActiveProfiles` kombinatsiyasi yangi ApplicationContext yaratadi, va har bir kontekst 2-10 sekund. [7-bobda](07-integratsion-test-spring-boot-slice-testlari.md) ko'rilgan kontekst keshlash qoidalariga rioya qilish ko'pincha parallellashtirishdan kattaroq samara beradi. Incremental build (Gradle'ning up-to-date checking, Maven'da `-o` offline rejim va `mvn -am` bilan cheklangan scope) bu rasmni to'ldiradi.
 
 ## 15.5 Testni tanlab ishga tushirish
 

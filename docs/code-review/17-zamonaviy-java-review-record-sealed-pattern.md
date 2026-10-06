@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 17. Zamonaviy Java review: record, sealed, pattern matching, virtual thread (Modern Java)
 
 <details>
@@ -122,6 +124,8 @@ Review da shu qator uchun to'rt savol beriladi:
 // bitta hayot sikli bilan boshqarish. Review da afzal ko'riladi, chunki
 // xato va bekor qilish aniq.
 public OrderPage load(OrderId id) throws InterruptedException {
+    // Java 21-24 preview; Java 25 (JEP 505) da ShutdownOnFailure yo'q,
+    // o'rniga open(Joiner.awaitAllSuccessfulOrThrow()).
     try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
         Subtask<Order> order = scope.fork(() -> orders.byId(id));
         Subtask<List<Shipment>> ships = scope.fork(() -> shipments.forOrder(id));

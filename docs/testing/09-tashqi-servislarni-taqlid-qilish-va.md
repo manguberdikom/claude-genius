@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 9. Tashqi servislarni taqlid qilish va contract testing (Faking External Services & Contract Testing)
 
 <details>
@@ -161,7 +163,7 @@ Xavfi: fayllarda token, karta raqami, shaxsiy ma'lumot qolib ketadi va repo'ga t
 
 ## 9.6 Stub drift muammosi
 
-Stub drift - integratsion testlashning markaziy nosozligi. Provider `status` maydonini `state` ga o'zgartiradi, `201` o'rniga `200` qaytaradi, xato formatini RFC 7807 `problem+json` ga ko'chiradi yoki enum'ga yangi qiymat qo'shadi. Consumer tomonidagi stub buni bilmaydi: eski shaklni qaytaradi, testlar yashil, deploy o'tadi, production'da esa deserializatsiya sinadi. Ko'proq stub yozish muammoni yomonlashtiradi - har bir yangi stub provider haqida yana bir tasdiqlanmagan taxmin.
+Stub drift - integratsion testlashning markaziy nosozligi. Provider `status` maydonini `state` ga o'zgartiradi, `201` o'rniga `200` qaytaradi, xato formatini RFC 9457 (7807 ni almashtirgan) `problem+json` ga ko'chiradi yoki enum'ga yangi qiymat qo'shadi. Consumer tomonidagi stub buni bilmaydi: eski shaklni qaytaradi, testlar yashil, deploy o'tadi, production'da esa deserializatsiya sinadi. Ko'proq stub yozish muammoni yomonlashtiradi - har bir yangi stub provider haqida yana bir tasdiqlanmagan taxmin.
 
 Sabab arxitektura darajasida: stub consumer repo'sida yashaydi, haqiqat esa provider repo'sida o'zgaradi va ikkisi o'rtasida avtomatik bog'lanish yo'q. Nightly sandbox smoke bu bog'lanishni kech va noaniq signal bilan beradi. To'g'ri yechim - stub'ni tasdiqlangan contract'dan olish: provider contract'ni buzsa, provider'ning o'z build'i qizil bo'ladi. Aynan shu contract testing'ning mavjudlik sababi.
 
@@ -448,7 +450,7 @@ Verification natijasini e'tiborsiz qoldirish: qizil provider verification'ini `@
 
 - [ ] Har bir tashqi integratsiya uchun qaysi qatlam ishlatilayotgani (mock, in-process stub, WireMock, contract test, sandbox) ro'yxatlangan va asoslangan.
 - [ ] Barcha stub server port'lari dinamik va Spring'ga `@DynamicPropertySource` orqali beriladi; test kodida qotirilgan port yo'q.
-- [ ] Faqat happy path emas: har bir kritik client uchun timeout, 5xx, buzilgan javob va retry stsenariylari WireMock bilan qoplangan.
+- [ ] Faqat happy path emas: har bir kritik client uchun timeout, 5xx, buzilgan javob va retry ssenariylari WireMock bilan qoplangan.
 - [ ] Kritik servis juftliklari uchun consumer-driven contract bor va stub qo'lda yozilmaydi, balki tasdiqlangan contract'dan generatsiya qilinadi.
 - [ ] Provider pipeline'i har commit'da va broker webhook'ida consumer contract'larini verifikatsiya qiladi, natija broker'ga publish qilinadi.
 - [ ] Deploy oldidan gate mavjud (`can-i-deploy` yoki stub versiyasi va provider verification tartibi) va u qo'lda chetlab o'tilmaydi.

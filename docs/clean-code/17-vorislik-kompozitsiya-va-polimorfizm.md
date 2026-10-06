@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 17. Vorislik, kompozitsiya va polimorfizm mexanikasi (Inheritance Mechanics)
 
 <details>

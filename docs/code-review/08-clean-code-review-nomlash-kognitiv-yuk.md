@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 8. Clean code review: nomlash, kognitiv yuk, metod shakli (Clean Code at the Review Table)
 
 <details>

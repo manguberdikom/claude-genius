@@ -1,6 +1,8 @@
 <!-- doc: architect | chapter: 23 | part: IV. PostgreSQL chuqur bilim -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
+
+> Holat: AI yozgan, inson tekshirmagan.
 
 # 23. Indekslar: B-tree, GIN, GiST, BRIN va tanlov (Indexes)
 

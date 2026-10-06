@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 33. Bog'liqlik va supply chain review (Dependencies and Supply Chain)
 
 <details>

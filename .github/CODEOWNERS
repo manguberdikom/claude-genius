@@ -1,0 +1,6 @@
+# Bu papkalardagi o'zgarish foydalanuvchi mashinasida kod bajaradi:
+# CI workflow, hook va asboblar, o'rnatuvchi. Shuning uchun egasining
+# review idan o'tadi (main da "Require review from Code Owners" bilan).
+/.github/  @manguberdikom
+/tools/    @manguberdikom
+/install/  @manguberdikom

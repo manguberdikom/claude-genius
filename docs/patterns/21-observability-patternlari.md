@@ -2,10 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 21. Observability patternlari (Observability Patterns)
 
 <details>
-<summary>Bu bo'limdagi 26 bo'lim</summary>
+<summary>Bu bobdagi 26 bo'lim</summary>
 
 - [21.1 Loglarni markazlashtirish (Log Aggregation)](#211-loglarni-markazlashtirish-log-aggregation)
 - [21.2 Strukturalangan loglash (Structured Logging)](#212-strukturalangan-loglash-structured-logging)
@@ -233,7 +235,7 @@ class CacheWarmupHealth implements HealthIndicator {
 
 ## 21.12 Deploy va o'zgarishlarni qayd etish (Log Deployments and Changes)
 
-**Tavsif:** Productiondagi incidentlarning katta qismi o'zgarishdan (deploy, config o'zgarishi, feature flag, migration, infra o'zgarishi) keyin yuzaga keladi, shuning uchun o'zgarishlarni telemetriya bilan bir vaqt o'qida ko'rish diagnostikani tezlashtiradi. Bu pattern har bir o'zgarishni mashina o'qiydigan hodisa sifatida qayd etadi (versiya, commit, kim, qachon, qaysi muhit) va uni dashboard'larda annotatsiya yoki metrika tagi sifatida ko'rsatadi. Natijada "latency 14:32 da oshdi" savoliga "14:31 da v2.14.0 chiqdi" javobi darhol topiladi. Shuningdek rollback qarori uchun ob'ektiv asos paydo bo'ladi.
+**Tavsif:** Productiondagi incidentlarning katta qismi o'zgarishdan (deploy, config o'zgarishi, feature flag, migration, infra o'zgarishi) keyin yuzaga keladi, shuning uchun o'zgarishlarni telemetriya bilan bir vaqt o'qida ko'rish diagnostikani tezlashtiradi. Bu pattern har bir o'zgarishni mashina o'qiydigan hodisa sifatida qayd etadi (versiya, commit, kim, qachon, qaysi muhit) va uni dashboard'larda annotatsiya yoki metrika tagi sifatida ko'rsatadi. Natijada "latency 14:32 da oshdi" savoliga "14:31 da v2.14.0 chiqdi" javobi darhol topiladi. Shuningdek rollback qarori uchun obyektiv asos paydo bo'ladi.
 
 **Spring'da qayerda uchraydi:** Build va git metadata'sini ilova o'zi e'lon qiladi: `spring-boot-maven-plugin`ning `build-info` goal'i (yoki Gradle `springBoot { buildInfo() }`) `META-INF/build-info.properties` yaratadi va `BuildProperties` bean'ini beradi, `io.github.git-commit-id:git-commit-id-maven-plugin` esa `git.properties` → `GitProperties`; bular `/actuator/info` da ko'rinadi (`management.info.git.mode=full`, `management.info.env.enabled`). Versiyani metrikalarga bog'lash uchun `MeterRegistryCustomizer<MeterRegistry>` bilan umumiy tag qo'shiladi (masalan `registry.config().commonTags("version", buildProperties.getVersion())`) yoki `management.metrics.tags.*` propertylari ishlatiladi; OTel tomonida bu `service.version`/`deployment.environment` resource atributlariga mos keladi. Konfiguratsiya o'zgarishlari uchun Spring Cloud Config + `/actuator/refresh`, `@RefreshScope` va `EnvironmentChangeEvent` hodisasi, flag o'zgarishlari uchun esa flag platformasining audit log'i qayd manbasi bo'ladi.
 

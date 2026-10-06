@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 3. Kim nima yozadi: rollar va mas'uliyat (Who Writes What - Roles & Responsibilities)
 
 <details>
@@ -32,7 +34,7 @@ Rol - bu lavozim emas, balki mas'uliyat to'plami. Kichik jamoada bitta odam uch-
 |---|---|---|---|
 | Developer | O'zi yozgan kodning ishlashiga javob beradi; testni kod bilan bir PR'da yetkazadi | Unit, slice (`@WebMvcTest`, `@DataJpaTest`), integratsion (Testcontainers), contract producer/consumer | PR'da test bor; o'z feature'idagi bug'lar soni kamayadi |
 | QA Engineer (manual) | Exploratory testing, qabul kriteriyalarini tekshirish, edge case'larni kashf qilish | Qo'lda exploratory sessiyalar, qabul testi, UAT yordami | Production'ga chiqib ketgan bug'larning kamligi, topilgan muhim defektlar sifati |
-| Automation QA / SDET | Avtomatlashtirish freymvorki, E2E va API test suite'lari, test ma'lumotlari vositalari | E2E (Selenium/Playwright), API testlar, `RestAssured` stsenariylari, test data builder'lar | Suite'ning barqarorligi, flaky foizi, ishlash vaqti |
+| Automation QA / SDET | Avtomatlashtirish freymvorki, E2E va API test suite'lari, test ma'lumotlari vositalari | E2E (Selenium/Playwright), API testlar, `RestAssured` ssenariylari, test data builder'lar | Suite'ning barqarorligi, flaky foizi, ishlash vaqti |
 | QA Lead | Sprint ichidagi sifat jarayoni, QA resurslarini taqsimlash, release sign-off | Test rejasi, regressiya qamrovi, risk bo'yicha prioritetlash | Release sign-off ishonchliligi, qamrov va risk muvofiqligi |
 | Test Architect | Test strategiyasi, piramidaning shakli, test freymvork standartlari | Shablonlar, baza test klasslari, konvensiyalar, qamrov siyosati | Piramidaning real shakli, test yozish narxi (yangi test qancha vaqt oladi) |
 | DevOps / Platform | CI/CD pipeline, test muhiti, Testcontainers uchun resurslar, parallel bajarilish | Infratuzilma, Docker image'lar, cache, test reportlari | Pipeline vaqti, muhit beqarorligidan kelgan nosozliklar soni |
@@ -72,13 +74,13 @@ Ikkinchidan, feedback aylanasi uzayadi. Developer o'z kodining integratsiyada is
 
 Uchinchidan, bilim bir tomonlama to'planadi. QA test dizayni texnikalarini biladi (boundary value, equivalence partitioning), developer esa kodning ichki tuzilishini biladi. Qattiq bo'linishda bu bilimlar almashmaydi: developer'ning unit testlari faqat happy path'ni tekshiradi, QA'ning E2E testlari esa kodning qaysi joyi xavfli ekanini bilmaydi.
 
-To'g'ri yondashuv - "kim yozadi" emas, "kim qaysi riskka javob beradi". Developer kod ichidagi riskni yopadi (barcha darajada, unit'dan Testcontainers'gacha), QA esa foydalanuvchi va biznes riskini yopadi (exploratory, qabul, end-to-end stsenariylar). Qatlam emas, risk turi bo'yicha bo'linish barqarorroq.
+To'g'ri yondashuv - "kim yozadi" emas, "kim qaysi riskka javob beradi". Developer kod ichidagi riskni yopadi (barcha darajada, unit'dan Testcontainers'gacha), QA esa foydalanuvchi va biznes riskini yopadi (exploratory, qabul, end-to-end ssenariylar). Qatlam emas, risk turi bo'yicha bo'linish barqarorroq.
 
 ## 3.4 Three Amigos va Example Mapping
 
 Three Amigos - bu PO (nima kerak), developer (qanday qilamiz) va QA (qanday buzilishi mumkin) birgalikda user story'ni muhokama qiladigan 25-40 daqiqalik uchrashuv. Uning maqsadi test yozish emas, balki noaniqlikni kod yozilishidan oldin topish.
 
-Example Mapping - bu muhokamani to'rt rangli kartada tuzadigan texnika: sariq - story, ko'k - qoida (biznes qoidasi / qabul kriteriyasi), yashil - misol (konkret stsenariy), qizil - savol (javobi yo'q, bloklovchi).
+Example Mapping - bu muhokamani to'rt rangli kartada tuzadigan texnika: sariq - story, ko'k - qoida (biznes qoidasi / qabul kriteriyasi), yashil - misol (konkret ssenariy), qizil - savol (javobi yo'q, bloklovchi).
 
 Misol: "Foydalanuvchi buyurtmani bekor qilishi mumkin" story'si.
 
@@ -101,7 +103,7 @@ Grooming / refinement bosqichida QA eng foydali savollarni beradi: "bu holatda n
 
 Qabul kriteriyalarini testlanadigan holatga keltirish - QA'ning asosiy hissasi. "Tez ishlashi kerak" → "p95 javob vaqti 300 ms dan kam, 200 RPS yuklamada". "To'g'ri hisoblanishi kerak" → konkret kirish va chiqish qiymatlari jadvali.
 
-Story ishlanayotganda QA tayyor bo'lgan qismni darhol tekshiradi (sprintning oxirini kutmaydi), exploratory sessiyalar o'tkazadi va avtomatlashtirish uchun stsenariylarni tanlaydi. Sprint oxirida regressiya ko'p hollarda avtomatik ishlaydi - QA faqat o'zgargan sohaga yo'naltirilgan qo'shimcha exploratory qiladi. Release sign-off esa "men ruxsat beraman" degani emas: QA risk hisobotini beradi - nima tekshirildi, nima tekshirilmadi, qanday ma'lum muammolar qoldi - qaror PO'da.
+Story ishlanayotganda QA tayyor bo'lgan qismni darhol tekshiradi (sprintning oxirini kutmaydi), exploratory sessiyalar o'tkazadi va avtomatlashtirish uchun ssenariylarni tanlaydi. Sprint oxirida regressiya ko'p hollarda avtomatik ishlaydi - QA faqat o'zgargan sohaga yo'naltirilgan qo'shimcha exploratory qiladi. Release sign-off esa "men ruxsat beraman" degani emas: QA risk hisobotini beradi - nima tekshirildi, nima tekshirilmadi, qanday ma'lum muammolar qoldi - qaror PO'da.
 
 ## 3.6 Test kodini code review qilish
 
@@ -147,7 +149,7 @@ O'zbekistondagi ko'p jamoalarda real nisbat 1:5 yoki 1:8. Bu holatda QA'ni hamma
 
 Ishlaydigan taqsimot quyidagicha. Developer'lar barcha kod ichidagi testlarni o'zi yozadi va egalik qiladi: unit, slice, Testcontainers bilan integratsion, contract. Bu muhokama mavzusi emas - Definition of Done'ga yoziladi va PR'da tekshiriladi. QA kod yozishdan ko'ra ko'proq "sifat dizayneri" bo'ladi: grooming'da qatnashadi, qabul kriteriyalarini misollar bilan to'ldiradi (Example Mapping), har story uchun qisqa risk ro'yxatini beradi va eng ko'p vaqtini exploratory testing'ga sarflaydi - chunki aynan shu ishni developer o'rniga bajara olmaydi.
 
-E2E suite'ni kichik ushlab turish shart: 10-20 ta eng muhim biznes yo'li, boshqa hech narsa. Bu suite'ni yozishda QA stsenariyni belgilaydi, developer esa texnik qismini yozadi (yoki juftlikda ishlashadi) - bunda QA avtomatlashtirish bo'yicha ortiqcha yuklanmaydi va suite jamoa bilimida qoladi.
+E2E suite'ni kichik ushlab turish shart: 10-20 ta eng muhim biznes yo'li, boshqa hech narsa. Bu suite'ni yozishda QA ssenariyni belgilaydi, developer esa texnik qismini yozadi (yoki juftlikda ishlashadi) - bunda QA avtomatlashtirish bo'yicha ortiqcha yuklanmaydi va suite jamoa bilimida qoladi.
 
 Qolgan ishlar aniq egalarga tarqatiladi: CI/CD va test muhiti - bitta developer "build egasi" sifatida (yoki DevOps bo'lsa, u); performance testlari - talab paydo bo'lganda arxitektor bilan birga; security skanerlar - pipeline'da avtomatik. Arxitektor esa testlanuvchanlikni dizaynga kiritadi va shablonlarni beradi, shunda yangi test yozish 20 daqiqalik ish bo'ladi, bir kunlik emas. Qoida sodda: QA bitta bo'lsa, u testlarni emas, sifat jarayonini masshtablashi kerak.
 
@@ -164,4 +166,4 @@ Qolgan ishlar aniq egalarga tarqatiladi: CI/CD va test muhiti - bitta developer 
 
 ---
 
-[&larr; 2. Test piramidasi va test turlari xaritasi](02-test-piramidasi-va-test-turlari-xaritasi.md) · [Mundarija](README.md) · [4. Testrovshik qanday ishlashi kerak: QA ish jarayoni &rarr;](04-testrovshik-qanday-ishlashi-kerak-qa-ish.md)
+[&larr; 2. Test piramidasi va test turlari xaritasi](02-test-piramidasi-va-test-turlari-xaritasi.md) · [Mundarija](README.md) · [4. Tester qanday ishlashi kerak: QA ish jarayoni &rarr;](04-testrovshik-qanday-ishlashi-kerak-qa-ish.md)

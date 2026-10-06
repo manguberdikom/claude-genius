@@ -2,10 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 28. Taqsimlangan ma'lumot, replikatsiya va konsistentlik patternlari (Distributed Data, Replication & Consistency Patterns)
 
 <details>
-<summary>Bu bo'limdagi 29 bo'lim</summary>
+<summary>Bu bobdagi 29 bo'lim</summary>
 
 - [28.1 Yozishdan-oldingi jurnal (Write-Ahead Log)](#281-yozishdan-oldingi-jurnal-write-ahead-log)
 - [28.2 Leader asosidagi replikatsiya (Leader-based Replication)](#282-leader-asosidagi-replikatsiya-leader-based-replication)

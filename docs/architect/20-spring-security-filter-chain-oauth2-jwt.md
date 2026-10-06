@@ -1,6 +1,8 @@
 <!-- doc: architect | chapter: 20 | part: III. Spring chuqur bilim -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
+
+> Holat: AI yozgan, inson tekshirmagan.
 
 # 20. Spring Security: filter chain, OAuth2, JWT (Spring Security)
 

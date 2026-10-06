@@ -2,10 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 24. Zamonaviy Java va funksional patternlar (Modern Java & Functional Patterns)
 
 <details>
-<summary>Bu bo'limdagi 41 bo'lim</summary>
+<summary>Bu bobdagi 41 bo'lim</summary>
 
 - [24.1 Records qiymat obyekti va DTO sifatida (Records as Value Objects / DTOs)](#241-records-qiymat-obyekti-va-dto-sifatida-records-as-value-objects--dtos)
 - [24.2 Sealed interfeyslar va pattern matching (Sealed Interfaces + Pattern Matching / Algebraic Data Types)](#242-sealed-interfeyslar-va-pattern-matching-sealed-interfaces--pattern-matching--algebraic-data-types)
@@ -324,7 +326,7 @@ List<List<Order>> batches = orders.stream()
 batches.forEach(orderRepository::saveAllAndFlush);
 ```
 
-**Ehtiyot bo'ling:** Java 22/23'da bu API preview bo'lgani uchun `--enable-preview` talab qiladi va binar moslik kafolatlanmaydi - production kodida faqat Java 24+ da ishlatish kerak, aks holda LTS'ga ko'chishda kod sinadi. `mapConcurrent` har element uchun virtual thread yaratadi, shuning uchun uning ichida `synchronized` blok yoki pinning qiladigan bloklovchi kod (ba'zi legacy JDBC driver'lari) bo'lmasligiga e'tibor bering.
+**Ehtiyot bo'ling:** Java 22/23'da bu API preview bo'lgani uchun `--enable-preview` talab qiladi va binar moslik kafolatlanmaydi - production kodida faqat Java 24+ da ishlatish kerak, aks holda LTS'ga ko'chishda kod sinadi. `mapConcurrent` har element uchun virtual thread yaratadi. API final bo'lgan Java 24 da [JEP 491](https://openjdk.org/jeps/491) ham keldi: `synchronized` blok va `Object.wait()` ichida bloklangan virtual thread endi carrier thread ni pin qilmaydi, shuning uchun `synchronized` ishlatadigan legacy kod (masalan ba'zi eski JDBC driver'lari) Java 24+ da o'z-o'zidan muammo emas. Pin faqat Java 22/23 preview da `synchronized` ichida bloklanganda, Java 24+ da esa native metod yoki Foreign Function chaqiruvi ichida bloklanganda qoladi.
 
 ## 24.18 O'rab bajarish / qarz patterni (Execute Around / Loan Pattern)
 

@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 33. Serverni o'rnatish, sozlash va resurs rejalashtirish (Installing and Sizing the Server)
 
 <details>

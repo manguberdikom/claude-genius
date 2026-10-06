@@ -1,6 +1,8 @@
 <!-- doc: architect | chapter: 26 | part: IV. PostgreSQL chuqur bilim -->
 
-[Barcha hujjatlar](../../README.md) / [Arxitektor miyyasi](README.md)
+[Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
+
+> Holat: AI yozgan, inson tekshirmagan.
 
 # 26. Partitioning, replikatsiya va katta hajm (Partitioning, Replication and Scale)
 
@@ -150,7 +152,7 @@ BEGIN;
 COMMIT;
 ```
 
-Nom almashtirish tranzaksiyasi millisekundlar ichida tugaydi, lekin ACCESS EXCLUSIVE lock talab qiladi. Shuning uchun `lock_timeout` qo'yiladi va buyruq yuklama past paytda takroriy urinish bilan bajariladi. PostgreSQL 17 da `SPLIT PARTITION` va `MERGE PARTITIONS` buyruqlari bor, lekin ular ham kuchli lock oladi, ya'ni ularni onlayn migratsiya vositasi deb hisoblash xato.
+Nom almashtirish tranzaksiyasi millisekundlar ichida tugaydi, lekin ACCESS EXCLUSIVE lock talab qiladi. Shuning uchun `lock_timeout` qo'yiladi va buyruq yuklama past paytda takroriy urinish bilan bajariladi. `SPLIT PARTITION` va `MERGE PARTITIONS` buyruqlari PostgreSQL 17 ishlab chiqish davrida qo'shilgan, lekin chiqarilishdan oldin qaytarib olingan: 17 va 18 ning `ALTER TABLE` sintaksisida ular yo'q, faqat `ATTACH PARTITION` va `DETACH PARTITION` bor ([REL_17_0](https://github.com/postgres/postgres/blob/REL_17_0/doc/src/sgml/ref/alter_table.sgml), [REL_18_0](https://github.com/postgres/postgres/blob/REL_18_0/doc/src/sgml/ref/alter_table.sgml)). Shuning uchun partitsiyani bo'lish yoki birlashtirish yangi partitsiya yaratish, ma'lumotni ko'chirish va `DETACH`/`ATTACH` bilan qilinadi.
 
 ## 26.6 Streaming replikatsiya: primary va standby, lag o'lchash
 
@@ -261,7 +263,7 @@ spring.datasource.hikari.validation-timeout=2000
 spring.datasource.hikari.keepalive-time=120000
 ```
 
-Failover testi ishlab chiqarishga chiqishdan oldin bajarilishi kerak: [testlash qo'llanmasidagi](../testing/README.md) resilience testlari bo'limida standby ni promote qilib tiklanish vaqtini o'lchash stsenariysi bor.
+Failover testi ishlab chiqarishga chiqishdan oldin bajarilishi kerak: [testlash qo'llanmasidagi](../testing/README.md) resilience testlari bo'limida standby ni promote qilib tiklanish vaqtini o'lchash ssenariysi bor.
 
 ## 26.11 Spring da o'qish va yozish uchun alohida DataSource sozlash
 
@@ -322,7 +324,7 @@ Sharding dan oldin to'rtta arzon qadam bor: partitioning, read replica, arxivlas
 - [ ] `pg_stat_replication` dagi `replay_lag` va `pg_replication_slots` dagi slot lag uchun alert qo'ying, `max_slot_wal_keep_size` ni belgilang.
 - [ ] `synchronous_standby_names` ni `ANY 1 (a, b)` shaklida kvorumga o'tkazing va bitta standby o'chganda yozish to'xtamasligini sinab ko'ring.
 - [ ] O'qish uchun alohida DataSource ni `LazyConnectionDataSourceProxy` bilan sozlang, pool o'lchamlarini yozish uchun 10, o'qish uchun 20 qilib ajratib qo'ying.
-- [ ] Yozishdan keyingi o'qishni primary ga yo'naltiruvchi qoida kiritib, lag sababli ko'rinmagan yozuv stsenariysini testda qayd eting.
+- [ ] Yozishdan keyingi o'qishni primary ga yo'naltiruvchi qoida kiritib, lag sababli ko'rinmagan yozuv ssenariysini testda qayd eting.
 
 ---
 

@@ -2,10 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 27. Monolitdan microservice'ga migratsiya patternlari (Monolith to Microservices Migration Patterns)
 
 <details>
-<summary>Bu bo'limdagi 23 bo'lim</summary>
+<summary>Bu bobdagi 23 bo'lim</summary>
 
 - [27.1 Bo'g'uvchi Anjir Ilovasi (Strangler Fig Application)](#271-boguvchi-anjir-ilovasi-strangler-fig-application)
 - [27.2 UI Kompozitsiyasi (UI Composition)](#272-ui-kompozitsiyasi-ui-composition)
@@ -41,7 +43,7 @@ Monolitdan microservice'ga o'tish - bu "katta portlash" (big bang) qayta yozish 
 
 **Tavsif:** Monolit oldiga proxy qo'yilib, trafik asta-sekin yangi servislarga yo'naltiriladi - monolit "bo'g'ilib", oxirida butunlay o'ladi. Boshida proxy barcha so'rovlarni monolitga uzatadi, keyin har bir ko'chirilgan endpoint uchun marshrut (route) yangi servisga almashtiriladi. Monolitning kodiga tegmasdan, HTTP yoki messaging darajasida ushlab olish (interception) amalga oshiriladi. Eng muhim xususiyati - har bir qadamni bir marshrut o'zgarishi bilan orqaga qaytarish mumkin.
 
-**Spring'da qayerda uchraydi:** Spring Cloud Gateway (reactive `RouteLocator`, `RouteLocatorBuilder` yoki `spring.cloud.gateway.routes` konfiguratsiyasi) va Spring Boot 3.2+ dagi Spring Cloud Gateway Server MVC varianti asosiy vosita; `Path`, `Header`, `Weight` predicate'lari bilan trafikni bo'lish mumkin. Spring Framework 6.x ichida `ProxyExchange` (spring-cloud-gateway-mvc) yoki oddiy `RestClient`/`WebClient` asosidago `@RestController` fasad ham ishlaydi. Infratuzilma darajasida NGINX, Envoy, AWS ALB listener rule'lari shu vazifani bajaradi va Spring ilovasi faqat yangi endpoint'ni taqdim etadi. Progressiv o'tish uchun Spring Cloud Circuit Breaker (Resilience4j) va `Weight` predicate'i bilan canary qilinadi.
+**Spring'da qayerda uchraydi:** Spring Cloud Gateway (reactive `RouteLocator`, `RouteLocatorBuilder` yoki `spring.cloud.gateway.server.webflux.routes` konfiguratsiyasi) va Spring Boot 3.2+ dagi Spring Cloud Gateway Server MVC varianti asosiy vosita; `Path`, `Header`, `Weight` predicate'lari bilan trafikni bo'lish mumkin. Spring Framework 6.x ichida `ProxyExchange` (spring-cloud-gateway-mvc) yoki oddiy `RestClient`/`WebClient` asosidago `@RestController` fasad ham ishlaydi. Infratuzilma darajasida NGINX, Envoy, AWS ALB listener rule'lari shu vazifani bajaradi va Spring ilovasi faqat yangi endpoint'ni taqdim etadi. Progressiv o'tish uchun Spring Cloud Circuit Breaker (Resilience4j) va `Weight` predicate'i bilan canary qilinadi.
 
 **Qo'llanish keyslari:**
 - Legacy e-commerce monolitdan `/api/catalog/**` marshrutini yangi Catalog servisiga ko'chirish.
@@ -380,7 +382,7 @@ class OrderLine {
 
 **Tavsif:** Migratsiyaning har bir qadami kichik, kuzatiladigan va qaytarib olinadigan bo'lishi kerak: trafikning 1%, keyin 10%, keyin 100% yangi service'ga yo'naltiriladi va har bir bosqichda xatolik darajasi hamda latency taqqoslanadi. Bu Feature Toggle, Canary Release, Parallel Run (eski va yangi kodni bir vaqtda ishlatib natijalarni solishtirish) va Expand-Contract (sxemani avval kengaytirib, keyin qisqartirish) usullarini bir strategiyaga birlashtiradi. Asosiy qoida: har qanday qadam uchun oldindan yozilgan rollback rejasi bo'lishi shart.
 
-**Spring'da qayerda uchraydi:** Marshrutlash Spring Cloud Gateway (`spring-cloud-starter-gateway`) predicate/filter'lari yoki service mesh (Istio `VirtualService` weight) darajasida bajariladi; ilova ichida Togglz/Unleash/FF4j yoki `@ConditionalOnProperty` + `@Primary` bean almashtirish ishlatiladi. Parallel Run uchun eski va yangi implementatsiya bir interfeysga yozilib, farq `Micrometer` counter'i va struktura log'iga yoziladi; kuzatuv uchun Micrometer Tracing (Spring Boot 3.x) + OpenTelemetry va `/actuator/health`, `/actuator/prometheus` endpoint'lari ishlatiladi. Sxema migratsiyalari Flyway'da faqat additive, backward-compatible qadamlar sifatida yoziladi (avval ustun qo'shish, keyingi release'da eski ustunni o'chirish).
+**Spring'da qayerda uchraydi:** Marshrutlash Spring Cloud Gateway (`spring-cloud-starter-gateway-server-webflux`) predicate/filter'lari yoki service mesh (Istio `VirtualService` weight) darajasida bajariladi; ilova ichida Togglz/Unleash/FF4j yoki `@ConditionalOnProperty` + `@Primary` bean almashtirish ishlatiladi. Parallel Run uchun eski va yangi implementatsiya bir interfeysga yozilib, farq `Micrometer` counter'i va struktura log'iga yoziladi; kuzatuv uchun Micrometer Tracing (Spring Boot 3.x) + OpenTelemetry va `/actuator/health`, `/actuator/prometheus` endpoint'lari ishlatiladi. Sxema migratsiyalari Flyway'da faqat additive, backward-compatible qadamlar sifatida yoziladi (avval ustun qo'shish, keyingi release'da eski ustunni o'chirish).
 
 ```java
 @Service

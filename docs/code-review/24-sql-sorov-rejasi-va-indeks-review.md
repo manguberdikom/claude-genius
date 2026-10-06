@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 24. SQL, so'rov rejasi va indeks review (SQL, Plans and Indexes)
 
 <details>
@@ -21,7 +23,7 @@
 </details>
 
 
-Review stolida so'rov rejasini ko'rish imkoni bo'lmaydi, lekin uni taxmin qilish imkoni bor. Bu bob shu malakani beradi: SQL ga qarab PostgreSQL nima qilishini aytish, va qachon `EXPLAIN` so'rash kerakligini bilish. PostgreSQL planner mexanikasi [Arxitektor miyyasi](../architect/README.md) da.
+Review stolida so'rov rejasini ko'rish imkoni bo'lmaydi, lekin uni taxmin qilish imkoni bor. Bu bob shu malakani beradi: SQL ga qarab PostgreSQL nima qilishini aytish, va qachon `EXPLAIN` so'rash kerakligini bilish. PostgreSQL planner mexanikasi [Arxitektor miyasi](../architect/README.md) da.
 
 ## 24.1 Indeks ishlatilmaydigan naqshlar
 

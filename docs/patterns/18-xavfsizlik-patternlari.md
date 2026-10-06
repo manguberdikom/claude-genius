@@ -2,10 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 18. Xavfsizlik patternlari (Security Patterns)
 
 <details>
-<summary>Bu bo'limdagi 49 bo'lim</summary>
+<summary>Bu bobdagi 49 bo'lim</summary>
 
 - [18.1 Autentifikatsiya va avtorizatsiya ajratilishi (Authentication vs Authorization)](#181-autentifikatsiya-va-avtorizatsiya-ajratilishi-authentication-vs-authorization)
 - [18.2 Xavfsizlik filtrlar zanjiri (SecurityFilterChain - Chain of Responsibility)](#182-xavfsizlik-filtrlar-zanjiri-securityfilterchain---chain-of-responsibility)
@@ -312,7 +314,7 @@ public Document findById(Long id) { /* ... */ }
 
 **Tavsif:** Foydalanuvchining access token'ini qabul qilgan xizmat uni pastdagi (downstream) xizmatlarga o'zgartirmasdan yoki almashtirib uzatish patterni. Shu orqali foydalanuvchi identifikatori va scope'lari butun chaqiruv zanjiri bo'ylab saqlanadi va har bir xizmat mustaqil avtorizatsiya qila oladi. Xavfsizroq varianti - RFC 8693 Token Exchange: har bir hop uchun `audience` toraytirilgan yangi token olinadi.
 
-**Spring'da qayerda uchraydi:** Spring Cloud Gateway'da `TokenRelay` filtri (`spring.cloud.gateway.routes[].filters: - TokenRelay=`); ilova ichida `ServletOAuth2AuthorizedClientExchangeFilterFunction`/`ServerOAuth2AuthorizedClientExchangeFilterFunction` yoki `OAuth2ClientHttpRequestInterceptor` orqali `RestClient`/`WebClient`ga token qo'shiladi. Spring Security 6.3+ `token-exchange` grant type va `TokenExchangeOAuth2AuthorizedClientProvider`ni qo'llab-quvvatlaydi, shuningdek `JwtBearerOAuth2AuthorizedClientProvider` ham mavjud. Reactive zanjirda token kontekstini saqlash uchun `ReactiveSecurityContextHolder` ishlatiladi.
+**Spring'da qayerda uchraydi:** Spring Cloud Gateway'da `TokenRelay` filtri (`spring.cloud.gateway.server.webflux.routes[].filters: - TokenRelay=`); ilova ichida `ServletOAuth2AuthorizedClientExchangeFilterFunction`/`ServerOAuth2AuthorizedClientExchangeFilterFunction` yoki `OAuth2ClientHttpRequestInterceptor` orqali `RestClient`/`WebClient`ga token qo'shiladi. Spring Security 6.3+ `token-exchange` grant type va `TokenExchangeOAuth2AuthorizedClientProvider`ni qo'llab-quvvatlaydi, shuningdek `JwtBearerOAuth2AuthorizedClientProvider` ham mavjud. Reactive zanjirda token kontekstini saqlash uchun `ReactiveSecurityContextHolder` ishlatiladi.
 
 **Qo'llanish keyslari:**
 - Gateway brauzerdan kelgan token'ni `order-service` va `billing-service`ga uzatadi.
@@ -440,7 +442,7 @@ TokenSettings settings = TokenSettings.builder()
 
 **Tavsif:** Browser'ning Same-Origin Policy'si boshqa origin'dagi JavaScript'ning javob tanasini o'qishiga to'sqinlik qiladi; CORS - serverga ruxsat berilgan origin, metod va header'larni e'lon qilish imkonini beradigan standart mexanizm. Server `Access-Control-Allow-Origin`, `-Methods`, `-Headers`, `-Credentials` javob header'lari bilan qoidalarni bildiradi, browser esa "non-simple" so'rovlardan avval `OPTIONS` preflight yuboradi. CORS - bu to'siq emas, balki boshqarilgan yumshatish: u autentifikatsiya yoki avtorizatsiya o'rnini bosmaydi, faqat browser'da kimga o'qishga ruxsat berilganini aytadi.
 
-**Spring'da qayerda uchraydi:** Spring Framework'da `@CrossOrigin` annotatsiyasi (controller yoki metod darajasida), `WebMvcConfigurer.addCorsMappings(CorsRegistry)`, WebFlux'da `CorsWebFilter`; past darajada `CorsConfiguration`, `CorsConfigurationSource` va `UrlBasedCorsConfigurationSource`. Spring Security'da `HttpSecurity.cors(Customizer)` `CorsFilter`ni filter chain boshiga qo'yadi - bu autentifikatsiya filtrlaridan oldin ishlashi muhim, aks holda preflight 401 oladi. Spring Boot'da `spring.graphql.cors.*` va Actuator uchun `management.endpoints.web.cors.*` property'lari mavjud; Gateway'da `spring.cloud.gateway.globalcors` konfiguratsiyasi bor. `CorsConfiguration.setAllowedOriginPatterns` wildcard va credentials'ni birga ishlatish uchun qo'shilgan.
+**Spring'da qayerda uchraydi:** Spring Framework'da `@CrossOrigin` annotatsiyasi (controller yoki metod darajasida), `WebMvcConfigurer.addCorsMappings(CorsRegistry)`, WebFlux'da `CorsWebFilter`; past darajada `CorsConfiguration`, `CorsConfigurationSource` va `UrlBasedCorsConfigurationSource`. Spring Security'da `HttpSecurity.cors(Customizer)` `CorsFilter`ni filter chain boshiga qo'yadi - bu autentifikatsiya filtrlaridan oldin ishlashi muhim, aks holda preflight 401 oladi. Spring Boot'da `spring.graphql.cors.*` va Actuator uchun `management.endpoints.web.cors.*` property'lari mavjud; Gateway'da `spring.cloud.gateway.server.webflux.globalcors` konfiguratsiyasi bor. `CorsConfiguration.setAllowedOriginPatterns` wildcard va credentials'ni birga ishlatish uchun qo'shilgan.
 
 **Qo'llanish keyslari:**
 - `app.example.com` dagi SPA'ning `api.example.com` dagi Spring Boot backend'iga murojaat qilishiga ruxsat berish.
@@ -661,7 +663,7 @@ public class ApiKeyFilter extends AbstractPreAuthenticatedProcessingFilter {
 
 **Tavsif:** Tizim hech qanday qo'shimcha konfiguratsiyasiz ham xavfsiz holatda ishga tushishi kerak: yopiq port, o'chirilgan debug, majburiy authentication, shifrlangan transport va ruxsat etilmagan amalga standart "deny". Xavfsizlikni yoqish uchun emas, kamaytirish uchun ongli qadam talab qilinadi - ya'ni xavfsizlikni o'chirish aniq, ko'rinadigan va review'dan o'tadigan o'zgarish bo'ladi. Bu pattern inson xatosini kamaytiradi, chunki "esdan chiqarib qo'yilgan" holat xavfsiz holat bo'ladi.
 
-**Spring'da qayerda uchraydi:** Spring Boot `spring-boot-starter-security` dependency qo'shilishining o'zi barcha endpoint'larni himoyalaydi va CSRF, session fixation protection, xavfsizlik header'larini yoqadi. Spring Security 6.x/7.x'da `authorizeHttpRequests` ichida mos qoida topilmagan request `AuthorizationFilter` tomonidan rad etiladi, `anyRequest().denyAll()` esa buni ochiq yozish usuli. Spring Boot 3.x'da Actuator'dan faqat `health` web'ga ochiq, qolganlari `management.endpoints.web.exposure.include` bilan ongli qo'shiladi. Parollar uchun `PasswordEncoderFactories.createDelegatingPasswordEncoder()` standart sifatida bcrypt'ni tanlaydi va `{bcrypt}` prefiksi bilan migratsiyaga yo'l beradi. `server.error.include-stacktrace=never` va `include-message=never` Boot'ning standart qiymatlari. Spring Boot 4.x / Framework 7.x'da `@Nullable` va null-safety annotatsiyalari (JSpecify) standart sifatida non-null'ni nazarda tutadi.
+**Spring'da qayerda uchraydi:** Spring Boot `spring-boot-starter-security` dependency qo'shilishining o'zi barcha endpoint'larni himoyalaydi va CSRF, session fixation protection, xavfsizlik header'larini yoqadi. Spring Security 6.x/7.x'da `authorizeHttpRequests` ichida mos qoida topilmagan request `AuthorizationFilter` tomonidan rad etiladi, `anyRequest().denyAll()` esa buni ochiq yozish usuli. Spring Boot 3.x'da Actuator'dan faqat `health` web'ga ochiq, qolganlari `management.endpoints.web.exposure.include` bilan ongli qo'shiladi. Parollar uchun `PasswordEncoderFactories.createDelegatingPasswordEncoder()` standart sifatida bcrypt'ni tanlaydi va `{bcrypt}` prefiksi bilan migratsiyaga yo'l beradi. `server.error.include-stacktrace=never` va `include-message=never` Boot'ning standart qiymatlari (Boot 4 da kalitlar `spring.web.error.*`). Spring Boot 4.x / Framework 7.x'da `@Nullable` va null-safety annotatsiyalari (JSpecify) standart sifatida non-null'ni nazarda tutadi.
 
 **Qo'llanish keyslari:**
 - Yangi microservice template'ida `anyRequest().authenticated()` bilan boshlab, ochiq endpoint'larni faqat aniq ro'yxat bilan qo'shish.

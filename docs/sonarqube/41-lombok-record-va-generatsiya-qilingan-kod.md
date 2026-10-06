@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 41. Lombok, record va generatsiya qilingan kod (Lombok, Records and Generated Code)
 
 <details>
@@ -181,30 +183,37 @@ public class Order {
 }
 ```
 
-Tuzatilgan variantda generatsiyani faqat xavfsiz qismga cheklaymiz va tenglikni biznes kaliti ustiga qo'yamiz.
+Tuzatilgan variantda generatsiyani faqat xavfsiz qismga cheklaymiz va tenglikni biznes kaliti ustiga qo'yamiz. Biznes kalit faqat o'zgarmas bo'lsa tenglikka yaraydi: unga setter yaratilmaydi, ustun `updatable = false`, qiymat konstruktorda beriladi.
 
 ```java
 @Entity
 @Getter
 @Setter
 @ToString(onlyExplicitlyIncluded = true)   // kolleksiya chiqmaydi
+@NoArgsConstructor(access = AccessLevel.PROTECTED)   // JPA uchun
 public class Order {
     @Id @GeneratedValue
     private Long id;
 
     @ToString.Include
-    @Column(nullable = false, unique = true)
+    @Setter(AccessLevel.NONE)               // sinf darajasidagi @Setter dan chiqariladi
+    @Column(nullable = false, unique = true, updatable = false)
     private String orderNumber;             // o'zgarmas biznes kaliti
 
     @OneToMany(mappedBy = "order")
     private List<OrderLine> lines = new ArrayList<>();
+
+    public Order(String orderNumber) {
+        this.orderNumber = Objects.requireNonNull(orderNumber);
+    }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         // proxy bilan ishlash uchun getClass emas, instanceof
         if (!(o instanceof Order other)) return false;
-        return orderNumber != null && orderNumber.equals(other.orderNumber);
+        // proxy maydoni bo'sh: qiymat getter orqali olinadi
+        return orderNumber != null && orderNumber.equals(other.getOrderNumber());
     }
 
     @Override
@@ -215,6 +224,8 @@ public class Order {
 ```
 
 Bu variantda `equals` va `hashCode` qo'lda yozilgani uchun ular `@Generated` bilan belgilanmaydi va qamrovga tushadi. Bu to'g'ri, chunki ular endi sizning biznes qaroringiz va sinovga arziydi. Sonar ham merosxo'r klass maydon qo'shsa `equals` ni qayta aniqlashni talab qiladigan qoidani (`java:S2160`) shu holatda tinch qoldiradi.
+
+Mavzuning to'liq yozuvi [entity da equals va hashCode](../clean-code/15-tenglik-hash-va-obyekt-shartnomalari.md#155-entitet-va-value-object-tengligi-farqi) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
 
 ## 41.6 `@Builder` va majburiy maydonlar tekshiruvi
 

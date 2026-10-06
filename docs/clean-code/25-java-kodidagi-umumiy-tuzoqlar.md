@@ -2,6 +2,8 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 25. Java kodidagi umumiy tuzoqlar (Common Java Pitfalls)
 
 <details>
@@ -237,6 +239,23 @@ Kompilyator eng arzon statik tahlilchi va u ko'pincha o'chirilgan holda qoldiril
   </configuration>
 </plugin>
 ```
+
+Bu konfiguratsiyaning o'zi JDK 16+ da ishlamaydi: Error Prone `jdk.compiler` ning ichki paketlariga murojaat qiladi, ular esa JEP 396 va JEP 403 dan beri yopiq, build `IllegalAccessError` bilan yiqiladi. Kompilyator Maven JVM ichida ishlasa (standart holat), loyiha ildizidagi `.mvn/jvm.config` fayliga quyidagilar yoziladi ([Error Prone o'rnatish hujjati](https://github.com/google/error-prone/blob/e92eb85f9ba728f07e6a49ca7732cedb4a0c64c9/docs/installation.md#maven)):
+
+```text
+--add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED
+--add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED
+--add-exports jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED
+--add-exports jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED
+--add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED
+--add-exports jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED
+--add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED
+--add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
+--add-opens jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED
+--add-opens jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED
+```
+
+Kompilyator alohida jarayonda ishlasa (`<fork>true</fork>` yoki `maven-toolchains-plugin`), xuddi shu qatorlar `compilerArgs` ichiga `-J` prefiksi bilan qo'shiladi: `<arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>` va hokazo. Shu hujjatga ko'ra joriy Error Prone JDK 21 yoki undan yangi JDK da ishga tushadi, JDK 21 da esa `-XDaddTypeAnnotationsToSymbol=true` argumenti ham kerak. Versiya raqamlarini Error Prone ning joriy o'rnatish hujjatiga solishtiring.
 
 Error Prone bu hujjatdagi ko'p qoidalarni avtomatik tekshiradi: `EqualsHashCode`, `Finally`, `ClassCanBeStatic`, `StringSplitter`, `DefaultCharset`, `JavaUtilDate`, `BigDecimalEquals`, `UnusedVariable` (42.2).
 

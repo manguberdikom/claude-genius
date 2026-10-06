@@ -2,10 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
+> Holat: AI yozgan, inson tekshirmagan.
+
 # 7. API dizayn patternlari (API Design Patterns)
 
 <details>
-<summary>Bu bo'limdagi 34 bo'lim</summary>
+<summary>Bu bobdagi 34 bo'lim</summary>
 
 - [7.1 Resurs-yo'naltirilgan REST (Resource-oriented REST)](#71-resurs-yonaltirilgan-rest-resource-oriented-rest)
 - [7.2 Richardson yetuklik modeli (Richardson Maturity Model)](#72-richardson-yetuklik-modeli-richardson-maturity-model)
@@ -568,7 +570,7 @@ public class WebhookSender {
 
 **Tavsif:** [Microservices patternlari bobidagi API Gateway yozuvi](14-microservices-patternlari.md#1427-api-gateway-api-gateway) bu patternning to'liq yozuvi, bu yerda faqat API dizayn nuqtai nazari: client ichki topologiyani bilmasdan yagona domen va barqaror shartnomani ko'radi, gateway esa protokol tarjimasi (HTTP dan gRPC ga), versiyalash va kanareyka routing uchun bitta nuqta beradi.
 
-**Spring'da qayerda uchraydi:** Kanonik yozuvdagi Spring Cloud Gateway'dan tashqari Servlet varianti `spring-cloud-starter-gateway-mvc`, OAuth2 token'ni downstream'ga uzatadigan `TokenRelay` filtri (`oauth2-client` bilan), Eureka discovery orqali `lb://ORDER-SERVICE` sxemasi va platforma darajasidagi alternativ sifatida Kubernetes Gateway API yoki Envoy.
+**Spring'da qayerda uchraydi:** Kanonik yozuvdagi Spring Cloud Gateway'dan tashqari Servlet varianti `spring-cloud-starter-gateway-server-webmvc`, OAuth2 token'ni downstream'ga uzatadigan `TokenRelay` filtri (`oauth2-client` bilan), Eureka discovery orqali `lb://ORDER-SERVICE` sxemasi va platforma darajasidagi alternativ sifatida Kubernetes Gateway API yoki Envoy.
 
 **Qo'llanish keyslari:**
 - Legacy SOAP yoki gRPC backend'ni tashqariga REST sifatida ko'rsatish va API versiyalarini gateway marshrutida ajratish.
@@ -627,6 +629,8 @@ class MobileHomeController {
 // API composition: bir nechta servisdan parallel yig'ish
 @GetMapping("/customers/{id}/overview")
 CustomerOverview overview(@PathVariable long id) throws InterruptedException {
+    // Java 21-24 preview. Java 25 (JEP 505): StructuredTaskScope.open(
+    // Joiner.awaitAllSuccessfulOrThrow()), ShutdownOnFailure olib tashlangan.
     try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
         var profile = scope.fork(() -> profiles.get(id));
         var orders  = scope.fork(() -> orderClient.recent(id));
@@ -767,7 +771,7 @@ Envelope<List<OrderDto>> list(Pageable p) {
 
 **Tavsif:** Barcha xatolarni bitta mashina o'qiy oladigan, barqaror formatga keltirish patterni: bir xil media type, bir xil maydonlar, stabil xato kodi va tashxis uchun korrelyatsiya ID'si. Maqsad - client'ning `instanceof`-ga o'xshash matn parsing qilishiga yo'l qo'ymaslik va stack trace kabi ichki ma'lumotni tashqariga chiqarmaslik. Hozirgi standart - RFC 9457 (ilgari RFC 7807) `application/problem+json`: `type`, `title`, `status`, `detail`, `instance` va ixtiyoriy kengaytmalar.
 
-**Spring'da qayerda uchraydi:** Spring Framework 6.0 dan `org.springframework.http.ProblemDetail`, `ErrorResponse` va `ErrorResponseException` mavjud; built-in Spring MVC/WebFlux istisnolari uchun problem detail'ni yoqish `spring.mvc.problemdetails.enabled=true` (WebFlux'da `spring.webflux.problemdetails.enabled=true`). Markazlashgan handling `@RestControllerAdvice` + `@ExceptionHandler` yoki `ResponseEntityExceptionHandler`dan meros olish bilan qilinadi; validatsiya xatolari `MethodArgumentNotValidException`, `HandlerMethodValidationException` (6.1+) va `ConstraintViolationException`dan keladi. Spring Boot'ning eski "whitelabel" JSON formati `DefaultErrorAttributes`/`BasicErrorController` orqali ishlaydi va `server.error.include-stacktrace=never` bo'lishi kerak. Trace ID'ni qo'shish uchun Micrometer Tracing'ning `Tracer.currentSpan()` qiymati `ProblemDetail#setProperty` bilan beriladi.
+**Spring'da qayerda uchraydi:** Spring Framework 6.0 dan `org.springframework.http.ProblemDetail`, `ErrorResponse` va `ErrorResponseException` mavjud; built-in Spring MVC/WebFlux istisnolari uchun problem detail'ni yoqish `spring.mvc.problemdetails.enabled=true` (WebFlux'da `spring.webflux.problemdetails.enabled=true`). Markazlashgan handling `@RestControllerAdvice` + `@ExceptionHandler` yoki `ResponseEntityExceptionHandler`dan meros olish bilan qilinadi; validatsiya xatolari `MethodArgumentNotValidException`, `HandlerMethodValidationException` (6.1+) va `ConstraintViolationException`dan keladi. Spring Boot'ning eski "whitelabel" JSON formati `DefaultErrorAttributes`/`BasicErrorController` orqali ishlaydi va `server.error.include-stacktrace=never` (Boot 4 da `spring.web.error.include-stacktrace`, eski kalit ulanmaydi) bo'lishi kerak. Trace ID'ni qo'shish uchun Micrometer Tracing'ning `Tracer.currentSpan()` qiymati `ProblemDetail#setProperty` bilan beriladi.
 
 ```java
 @RestControllerAdvice
