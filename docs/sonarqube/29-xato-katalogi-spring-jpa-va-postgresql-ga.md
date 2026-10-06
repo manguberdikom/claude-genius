@@ -53,6 +53,8 @@ Spring va JPA loyihalarida Sonar shikoyatlarining katta qismi bir necha o'nlab t
 
 ## 29.1 Maydonga `@Autowired` qo'yish
 
+Qoida: `java:S6813`
+
 Shikoyat qilinadigan kod:
 
 ```java
@@ -338,6 +340,8 @@ Tavsiya: tashqariga chiqadigan har bir ro'yxat `Pageable` qabul qilsin va maksim
 
 ## 29.9 Native query da satr birlashtirish
 
+Qoida: `java:S2077`
+
 Shikoyat qilinadigan kod:
 
 ```sql
@@ -376,6 +380,8 @@ Tavsiya: qiymatni har doim nomli parametr bilan uzat, identifikatorni esa qattiq
 
 ## 29.10 `@Value` bilan maxfiy ma'lumotni standart qiymat sifatida yozish
 
+Qoida: `java:S2068`
+
 Shikoyat qilinadigan kod:
 
 ```java
@@ -406,6 +412,8 @@ public class ToLovShlyuzi {
 Tavsiya: maxfiy qiymatga standart berma, u yo'q bo'lsa ilova ishga tushmasligi to'g'ri xatti harakat.
 
 ## 29.11 Konfiguratsiyada parol va kalitni ochiq saqlash
+
+Qoida: `java:S2068`
 
 Shikoyat qilinadigan kod:
 
@@ -472,6 +480,8 @@ class KeshKonfiguratsiyasi { /* faqat kesh bean lari */ }
 Tavsiya: konfiguratsiyani mavzu bo'yicha bo'l va Boot auto configuration bergan bean ni qo'lda qayta e'lon qilma.
 
 ## 29.13 Istisnolarni controller da umumiy ushlash va ma'lumotni oshkor qilish
+
+Qoida: `java:S2221`
 
 Shikoyat qilinadigan kod:
 

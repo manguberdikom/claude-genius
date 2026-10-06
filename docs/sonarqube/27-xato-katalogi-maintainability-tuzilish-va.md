@@ -55,6 +55,8 @@ Bu bob maintainability toifasidagi eng ko'p uchraydigan code smell larni katalog
 
 ## 27.1 Cognitive complexity chegarasidan oshgan metod
 
+Qoida: `java:S3776`
+
 Sonar cyclomatic complexity dan tashqari cognitive complexity ni ham hisoblaydi. Har bir shart, tsikl va `catch` ball qo'shadi, ichma-ich joylashuv esa ballni ko'paytirib yuboradi. Java uchun standart chegara metodga 15 ball, bu profile da o'zgartiriladi.
 
 ```java
@@ -117,6 +119,8 @@ Tavsiya: cognitive complexity ni refactoring uchun signal deb qabul qil, chegara
 
 ## 27.2 Juda uzun metod va juda uzun klass
 
+Qoida: `java:S138`
+
 Uzunlik qoidasi faqat qator sanaydi, lekin ko'pincha to'g'ri joyni ko'rsatadi. Hisobot servisidagi uzun metod odatda yig'ish, hisoblash va formatlashni bir joyda bajaradi.
 
 ```java
@@ -156,6 +160,8 @@ Tavsiya: uzunlik issue sini qator kesib emas, mas'uliyatni ajratib yo'q qil.
 
 ## 27.3 Parametrlar soni ko'p metod
 
+Qoida: `java:S107`
+
 Standart chegara 7 parametr. Bunday metodda argumentlar joyi almashsa, kompilyator ham ushlamaydi.
 
 ```java
@@ -182,6 +188,8 @@ public Payment create(PaymentRequest request) {
 Tavsiya: uchdan ortiq parametr paydo bo'lsa, ularni domain tushunchasi sifatida nomlab record ga yig'.
 
 ## 27.4 Ichma-ich joylashgan shartlar va chuqur bloklar
+
+Qoida: `java:S134`
 
 Sonar nazorat strukturalari chuqurligini alohida sanaydi, standart chegara uch daraja. Chuqur blok cognitive complexity ni ham oshiradi, ya'ni bitta joy ikki issue beradi.
 
@@ -216,6 +224,8 @@ Tavsiya: tsikl ichidagi shartlar zanjirini nomlangan predikat metodga chiqar.
 
 ## 27.5 Birlashtirish mumkin bo'lgan ketma-ket `if` lar
 
+Qoida: `java:S1066`
+
 Agar ichki `if` da `else` bo'lmasa va u tashqi blokdagi yakka operator bo'lsa, Sonar ikki shartni birlashtirishni talab qiladi.
 
 ```java
@@ -237,6 +247,8 @@ if (order.isConfirmed() && order.total().signum() > 0) {
 Tavsiya: birlashtirilgan shart uzayib ketsa, uni `&&` bilan qoldirmay nomlangan metodga ol.
 
 ## 27.6 Bo'sh blok va bo'sh `catch`
+
+Qoida: `java:S108`
 
 Bo'sh blok qoidasi `if`, `for`, `while` bloklariga tegadi. Bo'sh `catch` alohida qoida bilan ushlanadi va incident tahliliga ham zarar beradi.
 
@@ -309,6 +321,8 @@ Tavsiya: duplication ni exclusion bilan yashirishdan avval, blok haqiqatan umumi
 
 ## 27.8 Takrorlangan satr literali
 
+Qoida: `java:S1192`
+
 Bir xil satr literali uch martadan ko'p takrorlansa, Sonar konstanta talab qiladi. Chegara qoida parametri bilan sozlanadi.
 
 ```java
@@ -327,6 +341,8 @@ if (PAYMENT_FAILED.equals(status)) metrics.inc(PAYMENT_FAILED);
 Tavsiya: status va xato kodlari uchun satr emas, enum ishlat, shunda qoida ham, kompilyator ham yordam beradi.
 
 ## 27.9 Magic number va uni konstantaga chiqarish
+
+Qoida: `java:S109`
 
 Kod ichidagi tushuntirilmagan raqam uchun Sonar nomlangan konstanta so'raydi. `-1`, `0`, `1` kabi qiymatlar odatda istisno qilinadi.
 
@@ -348,6 +364,8 @@ if (sincePayment.compareTo(SETTLEMENT_WINDOW) > 0) markAsSettled(payment);
 Tavsiya: konstanta nomida qiymatni emas, biznes ma'nosini yoz, masalan `GATEWAY_FEE_RATE`.
 
 ## 27.10 Ortiqcha mahalliy o'zgaruvchi va darhol qaytariladigan qiymat
+
+Qoida: `java:S1488`, `java:S1854`
 
 Ikki qoida bor: darhol qaytariladigan o'zgaruvchi va hech qachon o'qilmaydigan qiymat berish. Ikkinchisi xavfliroq, chunki u ko'pincha haqiqiy bug ni yashiradi.
 
@@ -374,6 +392,8 @@ Tavsiya: ishlatilmaydigan qiymat berish issue sini o'chirishdan oldin, u yerda y
 
 ## 27.11 Keraksiz `else` va erta qaytish bilan soddalashtirish
 
+Qoida: `java:S1126`
+
 `return` dan keyingi `else` va boolean ifodani `if/else` bilan qaytarish alohida qoidalar bilan belgilanadi.
 
 ```java
@@ -397,6 +417,8 @@ public boolean isRefundable(Payment p) {
 Tavsiya: validatsiya qadamlarini guard clause bilan boshida qaytar, asosiy mantiqni `else` ichida saqlama.
 
 ## 27.12 Ternar operatorlarni ichma-ich joylash
+
+Qoida: `java:S3358`
 
 Ichma-ich ternar ifodani o'qishda xato qilish ehtimoli yuqori, shuning uchun Sonar alohida qoida beradi.
 
@@ -444,6 +466,8 @@ switch (order.status()) {
 Tavsiya: enum ustidagi `switch` ni expression shaklida yoz, shunda yangi qiymat qo'shilganda build buziladi.
 
 ## 27.14 Umumiy `Exception` ni ushlash yoki tashlash
+
+Qoida: `java:S112`
 
 `Exception` yoki `Throwable` ni tashlash uchun bitta qoida, ularni ushlash uchun boshqasi ishlaydi. Ikkisi ham chaqiruvchidan xatoni ajratish imkonini tortib oladi.
 
