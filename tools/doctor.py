@@ -158,16 +158,27 @@ def manifest_path():
 
 
 def check_clone(manifest):
-    root = (manifest or {}).get("root") if isinstance(manifest, dict) else None
-    root = root or ROOT
+    """Hooklar yuradigan ildiz to'liqmi. Global o'rnatishda bu pin qilingan
+    snapshot (`~/.claude/genius/<sha12>`, manifestda `root`), klon esa
+    manifestdagi `clone`: memory va holat shu yerga yoziladi (R7.8 XV-Y1)."""
+    manifest = manifest if isinstance(manifest, dict) else {}
+    root = manifest.get("root") or ROOT
     missing = [rel for rel in ("tools/guard.py", "tools/usage.py",
                                "docs/manifest.json")
                if not os.path.isfile(os.path.join(root, rel))]
+    clone = manifest.get("clone")
     if missing:
-        return line(FAIL, "klon", "%s da yo'q: %s. Klon ko'chgan bo'lsa "
-                    "install/README.md 'Klon o'chsa yoki ko'chsa'"
-                    % (root, ", ".join(missing)))
-    return line(OK, "klon", root)
+        what = "snapshot" if clone else "klon"
+        return line(FAIL, "klon", "%s (%s) da yo'q: %s. %s"
+                    % (root, what, ", ".join(missing),
+                       "Snapshot o'chgan bo'lsa o'rnatuvchini qayta yurgizing "
+                       "(install/README.md 'Yangilash')" if clone else
+                       "Klon ko'chgan bo'lsa install/README.md 'Klon o'chsa yoki ko'chsa'"))
+    if clone and not os.path.isdir(clone):
+        return line(WARN, "klon", "snapshot %s bor, lekin klon %s yo'q: memory va holat "
+                    "yozilmaydi. install/README.md 'Klon o'chsa yoki ko'chsa'"
+                    % (root, clone))
+    return line(OK, "klon", "%s (snapshot, klon: %s)" % (root, clone) if clone else root)
 
 
 def git_head(root):
@@ -182,9 +193,15 @@ def check_installed(manifest):
     if not isinstance(manifest, dict):
         return line(WARN, "o'rnatilgan", "%s buzuq" % manifest_path())
     installed = str(manifest.get("commit") or "")
-    clone = git_head(manifest.get("root") or ROOT)
+    clone = git_head(manifest.get("clone") or manifest.get("root") or ROOT)
     text = "o'rnatilgan: %s, klon: %s" % (installed[:12] or "?", clone[:12] or "?")
     if installed and clone and installed != clone:
+        if manifest.get("clone"):
+            tool = os.path.join(str(manifest.get("root") or ""), "tools",
+                                "yangilash.py").replace("\\", "/")
+            return line(WARN, "o'rnatilgan", text + "; hooklar va skill o'rnatilgan "
+                        "snapshotdan yuradi, klonda yangisi bor: `python3 %s` "
+                        "(snapshotdagi nusxa) ro'yxatni ko'rsatadi" % tool)
         return line(WARN, "o'rnatilgan", text + "; skill va aktyorlar eski "
                     "nusxa, o'rnatuvchini qayta yurgizing")
     return line(OK, "o'rnatilgan", text)

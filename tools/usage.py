@@ -68,9 +68,9 @@ import geniuslib
 import hookio
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-STORE = os.environ.get("USAGE_STORE") or os.path.join(ROOT, ".claude", "usage")
-STATE_DIR = (os.environ.get("GENIUS_STATE_DIR")
-             or os.path.join(ROOT, ".claude", ".state"))
+STORE = os.environ.get("USAGE_STORE") or os.path.join(
+    geniuslib.clone_root(ROOT), ".claude", "usage")
+STATE_DIR = geniuslib.state_dir(ROOT)
 FORMAT_FILE = "format.json"
 
 # Million token uchun dollar: (kirish, chiqish, keshdan o'qish).
@@ -162,6 +162,7 @@ def candidates():
             break
         here = parent
     out.append(ROOT)
+    out.append(geniuslib.clone_root(ROOT))
     return [c for c in out if c]
 
 

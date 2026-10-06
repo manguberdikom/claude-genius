@@ -542,9 +542,20 @@ MEMORY_HINT = (
     "va memory/claude-genius/ yoziladi.")
 
 
+def clone_dir():
+    """Klon: git add va commit tekshiruvi shu daraxtga nisbatan. Global
+    o'rnatishda ROOT snapshot, klon GENIUS_CLONE (geniuslib, R7.8 XV-Y1).
+    Hook fail-open: geniuslib yuklanmasa ROOT."""
+    try:
+        import geniuslib
+        return geniuslib.clone_root(ROOT)
+    except ImportError:
+        return ROOT
+
+
 def foreign_memory_dirs():
     """Klondagi `memory/` ostidagi begona slug papkalari."""
-    base = os.path.join(ROOT, "memory")
+    base = os.path.join(clone_dir(), "memory")
     try:
         names = os.listdir(base)
     except OSError:
@@ -598,10 +609,11 @@ def check_memory_git(command):
         args = split_args(base_cmd[match.start(3):match.end(3)].rstrip().rstrip(")`"))
         paths, broad = staged_targets(args, verb)
         found = set()
+        clone = clone_dir()
         for path in paths:
             full = os.path.normpath(os.path.join(base, os.path.expanduser(path)))
             try:
-                rel = os.path.relpath(full, ROOT)
+                rel = os.path.relpath(full, clone)
             except ValueError:
                 continue   # Windows: boshqa disk
             parts = rel.split(os.sep)
@@ -614,7 +626,7 @@ def check_memory_git(command):
                 found.add(parts[1])
         try:
             in_clone = not os.path.relpath(
-                os.path.normpath(base), ROOT).split(os.sep)[0] == ".."
+                os.path.normpath(base), clone).split(os.sep)[0] == ".."
         except ValueError:
             in_clone = False
         if broad and in_clone:

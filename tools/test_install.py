@@ -92,10 +92,38 @@ def temp_stages():
                   if n.startswith("manguberdi-"))
 
 
+_GITKLON = []
+
+
+def git_klon():
+    """O'rnatiladigan klon: ishchi daraxt nusxasi, commit qilingan git repo.
+
+    Snapshot `git worktree add` bilan yasaladi (R7.8 XV-Y1), shuning uchun klon
+    git repo bo'lishi shart. Reponing o'zi (uning .git/worktrees i) tegilmaydi."""
+    if not _GITKLON:
+        _GITKLON.append(testkit.repo_nusxa(ROOT, os.path.join(tmpdir("gitklon_"), "klon")))
+    return _GITKLON[0]
+
+
+def head_of(klon):
+    return testkit.git(klon, "rev-parse", "HEAD")
+
+
+def snap_of(home, klon):
+    """Kutilgan snapshot joyi: <uy>/.claude/genius/<sha12>."""
+    return os.path.join(home, ".claude", "genius", head_of(klon)[:12])
+
+
 def run_install(home, *args):
-    """install.main() ni vaqtinchalik HOME bilan yurgizadi: Result(rc, out, err)."""
+    """install.main() ni vaqtinchalik HOME bilan yurgizadi: Result(rc, out, err).
+
+    `--genius-path` berilmasa git_klon(): ishchi daraxtning o'zi emas, uning
+    commit qilingan nusxasi (snapshot reponing o'ziga tegmasin)."""
+    args = list(args)
+    if "--genius-path" not in args:
+        args += ["--genius-path", git_klon()]
     return testkit.call_main(
-        I.main, argv=["install.py"] + list(args),
+        I.main, argv=["install.py"] + args,
         env={"HOME": home, "CLAUDE_CONFIG_DIR": None})
 
 
@@ -137,12 +165,21 @@ def stsenariy():
 
     st = _STATE
     st["home"], st["claude"] = home, claude
+    klon = git_klon()
+    st["klon"], st["snap"] = klon, snap_of(home, klon)
+    st["head"] = head_of(klon)
     index = os.path.join(ROOT, "index")
 
     st["stages_before"] = temp_stages()
-    before = snapshot(home), snapshot(index), temp_stages()
+    git_before = (testkit.git(klon, "status", "--porcelain"),
+                  testkit.git(klon, "worktree", "list"))
+    before = snapshot(home), snapshot(index), temp_stages(), snapshot(os.path.join(klon, ".git"))
     st["dry"] = run_install(home)
-    st["dry_same"] = before == (snapshot(home), snapshot(index), temp_stages())
+    st["dry_same"] = before == (snapshot(home), snapshot(index), temp_stages(),
+                                snapshot(os.path.join(klon, ".git")))
+    st["dry_git_same"] = git_before == (testkit.git(klon, "status", "--porcelain"),
+                                        testkit.git(klon, "worktree", "list"))
+    st["dry_no_genius"] = not os.path.exists(os.path.join(claude, "genius"))
 
     st["apply"] = run_install(home, "--apply", "--backup-to",
                               os.path.join(home, "zaxira-1"))
@@ -154,13 +191,17 @@ def stsenariy():
     st["fs_apply"] = set(snapshot(claude))
     st["claude_md"] = get(os.path.join(claude, "CLAUDE.md"))
     st["manifest"] = jget(os.path.join(claude, "skills", "manguberdi", ".genius.json"))
+    st["skill_text"] = get(os.path.join(claude, "skills", "manguberdi", "SKILL.md"))
+    st["worktrees_apply"] = testkit.git(klon, "worktree", "list")
+    st["snap_tools_apply"] = sorted(os.listdir(os.path.join(st["snap"], "tools")))
+    st["snap_index_apply"] = os.path.isfile(os.path.join(st["snap"], "index", "sections.tsv"))
     st["opt_in_cli"] = I.run_py(
-        [os.path.join(ROOT, "install", "rewrite_paths.py"), claude, "--root", ROOT,
-         "--python", sys.executable, "--bash", "bash", "--opt-in"])
+        [os.path.join(ROOT, "install", "rewrite_paths.py"), claude, "--root", st["snap"],
+         "--clone", klon, "--python", sys.executable, "--bash", "bash", "--opt-in"])
     # ps1 ham, install.py ham ruxsatni shu asbobdan oladi: shu holatdagi chiqishi.
     st["allow_cli"] = I.run_py(
-        [os.path.join(ROOT, "install", "rewrite_paths.py"), claude, "--root", ROOT,
-         "--python", sys.executable, "--bash", "bash", "--allow"])
+        [os.path.join(ROOT, "install", "rewrite_paths.py"), claude, "--root", st["snap"],
+         "--clone", klon, "--python", sys.executable, "--bash", "bash", "--allow"])
 
     # Yangilash: begona skill, begona hook (o'z hooklari bilan bir guruhda),
     # begona ruxsat va ikkinchi marta o'rnatish.
@@ -183,6 +224,10 @@ def stsenariy():
                                   os.path.join(home, "zaxira-3"))
     st["fs_uninstall"] = set(snapshot(claude))
     st["after_uninstall"] = jget(path)
+    st["worktrees_uninstall"] = testkit.git(klon, "worktree", "list")
+    st["genius_after_uninstall"] = sorted(
+        os.listdir(os.path.join(claude, "genius"))) if os.path.isdir(
+            os.path.join(claude, "genius")) else []
     return st
 
 
@@ -200,7 +245,10 @@ def case_quruq_yurish_hech_narsa_yozmaydi():
     out = st["dry"].stdout
     return [
         ("quruq: rc 0", st["dry"].returncode == 0),
-        ("quruq: uy, indeks va vaqtinchalik papka o'zgarmadi", st["dry_same"]),
+        ("quruq: uy, indeks, vaqtinchalik papka va klonning .git i o'zgarmadi",
+         st["dry_same"]),
+        ("quruq: git status va worktree ro'yxati o'zgarmadi, snapshot yo'q",
+         st["dry_git_same"] and st["dry_no_genius"]),
         ("quruq: ro'yxat chiqdi", "quruq yurish" in out and "o'rnatilmoqda" in out
          and "almashtiriladi:" in out),
         ("quruq: zaxira yozilmadi", not any(
@@ -234,8 +282,32 @@ def case_apply_ornatadi():
         ("apply: o'z hooki bir marta",
          sum("suggest_sections.py" in c for c in cmds) == 1),
         ("apply: settings.json BOM siz", not st["after_apply_raw"].startswith(b"\xef\xbb\xbf")),
-        ("apply: manifest", manifest["root"] == ROOT and manifest["actors"] == list(I.ACTORS)
-         and manifest["python"] == sys.executable and "commit" in manifest),
+        ("apply: manifest (root snapshot, clone klon, commit HEAD)",
+         manifest["root"] == st["snap"] and manifest["clone"] == st["klon"]
+         and manifest["commit"] == st["head"] and manifest["actors"] == list(I.ACTORS)
+         and manifest["python"] == sys.executable),
+        ("apply: snapshot detached worktree, indeks bir marta yasalgan",
+         any(line.startswith(st["snap"]) and "detached HEAD" in line
+             for line in st["worktrees_apply"].splitlines())
+         and st["snap_index_apply"] and "guard.py" in st["snap_tools_apply"]),
+        ("apply: hook yo'li snapshotga ishora qiladi, klonning tools/ iga emas",
+         len(cmds) >= 8
+         and all((st["snap"] + "/tools/") in c for c in cmds if "begona" not in c)
+         and not any((st["klon"] + "/tools/") in c for c in cmds)),
+        ("apply: env.GENIUS_CLONE klon, additionalDirectories snapshot docs va klon memory",
+         after["env"].get("GENIUS_CLONE") == st["klon"]
+         and after["permissions"]["additionalDirectories"]
+         == [st["snap"] + "/docs", st["klon"] + "/memory"]),
+        ("apply: ruxsat qoidalari snapshotga ishora qiladi",
+         all(st["klon"] not in r for r in after["permissions"]["allow"])
+         and any(st["snap"] in r for r in after["permissions"]["allow"])),
+        ("apply: skill matni tools/ ni snapshotga, memory/ ni klonga bog'laydi",
+         ("%s/tools/rules_for.py" % st["snap"]) in st["skill_text"]
+         and ("%s/memory/" % st["klon"]) in st["skill_text"]
+         and ("%s/memory/" % st["snap"]) not in st["skill_text"]),
+        ("apply: klon ishchi daraxti toza, indeks klonga yozilmadi",
+         testkit.git(st["klon"], "status", "--porcelain") == ""
+         and not os.path.exists(os.path.join(st["klon"], "index"))),
         ("apply: zaxira (settings, skill yo'q edi, eski aktyor)",
          os.path.isfile(os.path.join(backup, ".claude--settings.json"))
          and os.path.isfile(os.path.join(backup, "agents--arxitektor.md"))),
@@ -276,7 +348,7 @@ def case_uninstall_faqat_ozini_oladi():
     st = stsenariy()
     claude, after = st["claude"], st["after_uninstall"]
     cmds, fs = commands_of(after), st["fs_uninstall"]
-    root = ROOT.lower()
+    root = st["snap"].lower()
     return [
         ("uninstall quruq: rc 0, hech narsa o'chmadi",
          st["uninstall_dry"].returncode == 0 and st["uninstall_dry_same"]
@@ -299,6 +371,12 @@ def case_uninstall_faqat_ozini_oladi():
          and after.get("model") == "opus"),
         ("uninstall: zaxira yozildi", os.path.isfile(
             os.path.join(st["home"], "zaxira-3", ".claude--settings.json"))),
+        ("uninstall: snapshot worktree olib tashlandi, klon reestri toza",
+         st["genius_after_uninstall"] == [] and not os.path.exists(st["snap"])
+         and len(st["worktrees_uninstall"].splitlines()) == 1
+         and not any(st["klon"] in c or st["snap"] in c for c in cmds)
+         and "GENIUS_CLONE" not in after.get("env", {})
+         and not after.get("permissions", {}).get("additionalDirectories")),
     ]
 
 
@@ -330,6 +408,134 @@ def case_uninstall_klon_yoq():
         ("klon yo'q: begona qoldi", cmds == ["echo begona"] and data["model"] == "opus"),
         ("klon yo'q: skill ketdi", not os.path.exists(
             os.path.join(claude, "skills", "manguberdi"))),
+    ]
+
+
+def case_uninstall_snapshotni_va_faqat_genius_ostidagini():
+    """--uninstall `~/.claude/genius/<sha12>` worktree larni olib tashlaydi,
+    lekin begona papka va nom mos kelmaydigan yozuvga tegmaydi."""
+    if not POSIX:
+        return SKIP
+    home = tmpdir("uy_")
+    klon = git_klon()
+    res = run_install(home, "--apply", "--backup-to", os.path.join(home, "z1"))
+    snap = snap_of(home, klon)
+    genius = os.path.join(home, ".claude", "genius")
+    put(os.path.join(genius, "begona", "x.txt"), "begona")
+    put(os.path.join(genius, "aaaaaaaaaaaa", "x.txt"), "worktree emas, 12 hex")
+    put(os.path.join(home, ".claude", "genius-memory", "m.md"), "memory")
+    res2 = run_install(home, "--uninstall", "--apply", "--backup-to", os.path.join(home, "z2"))
+    return [
+        ("snapshot: o'rnatildi", res.returncode == 0 and snap in res.stdout),
+        ("snapshot: --uninstall rc 0, worktree olindi, reestr toza",
+         res2.returncode == 0 and not os.path.exists(snap)
+         and len(testkit.git(klon, "worktree", "list").splitlines()) == 1),
+        ("snapshot: begona papka, worktree emas 12 hex va genius-memory joyida",
+         os.path.isfile(os.path.join(genius, "begona", "x.txt"))
+         and os.path.isfile(os.path.join(genius, "aaaaaaaaaaaa", "x.txt"))
+         and os.path.isfile(os.path.join(home, ".claude", "genius-memory", "m.md"))),
+    ]
+
+
+def case_uninstall_klon_ochgan_yetim_snapshot():
+    """Klon o'chgan: snapshot yetim (asosiy .git yo'q), --uninstall uni ham va
+    settings.json dagi yozuvlarini ham olib tashlaydi."""
+    if not POSIX:
+        return SKIP
+    home = tmpdir("uy_")
+    klon = testkit.repo_nusxa(ROOT, os.path.join(tmpdir("eski_"), "klon"))
+    res = run_install(home, "--apply", "--genius-path", klon,
+                      "--backup-to", os.path.join(home, "z1"))
+    snap = snap_of(home, klon)
+    shutil.rmtree(os.path.dirname(klon))
+    res2 = run_install(home, "--uninstall", "--apply", "--genius-path", klon,
+                       "--backup-to", os.path.join(home, "z2"))
+    data = jget(os.path.join(home, ".claude", "settings.json"))
+    return [
+        ("yetim: o'rnatildi, klon o'chdi", res.returncode == 0 and not os.path.exists(klon)),
+        ("yetim: --uninstall rc 0 va snapshot ketdi", res2.returncode == 0
+         and not os.path.exists(snap)),
+        ("yetim: settings.json da o'z yozuvi qolmadi",
+         not any(snap in c for c in commands_of(data))
+         and "GENIUS_CLONE" not in data.get("env", {})
+         and not data.get("permissions", {}).get("additionalDirectories")),
+    ]
+
+
+def case_eski_ornatishdan_otish():
+    """Snapshotdan oldingi o'rnatish: hook, ruxsat va papkalar klonning tools/ iga
+    bog'langan. Qayta o'rnatish ularni snapshotga o'tkazadi (ikkilanmaydi), begona
+    yozuv qoladi."""
+    if not POSIX:
+        return SKIP
+    home = tmpdir("uy_")
+    klon = git_klon()
+    py = sys.executable
+    eski = {
+        "model": "opus",
+        "env": {"GENIUS_PYTHON": py},
+        "permissions": {
+            "additionalDirectories": [klon, "D:/begona"],
+            "allow": ["Bash(%s %s/tools/budget.py:*)" % (py, klon), "Bash(ls:*)"]},
+        "hooks": {"UserPromptSubmit": [{"hooks": [
+            {"type": "command", "command": '"%s" "%s/tools/suggest_sections.py" || exit 1'
+             % (py, klon)},
+            {"type": "command", "command": "echo begona"}]}]}}
+    put(os.path.join(home, ".claude", "settings.json"), json.dumps(eski))
+    res = run_install(home, "--apply", "--backup-to", os.path.join(home, "z"))
+    data = jget(os.path.join(home, ".claude", "settings.json"))
+    snap = snap_of(home, klon)
+    cmds = commands_of(data)
+    return [
+        ("eski o'rnatish: rc 0", res.returncode == 0),
+        ("eski o'rnatish: klonning tools/ iga hook qolmadi, snapshotga o'tdi, begona qoldi",
+         not any((klon + "/tools/") in c for c in cmds)
+         and sum("suggest_sections.py" in c and (snap + "/tools/") in c for c in cmds) == 1
+         and "echo begona" in cmds),
+        ("eski o'rnatish: ruxsat va papkalar almashdi, begonasi qoldi",
+         not any((klon + "/tools/") in r for r in data["permissions"]["allow"])
+         and "Bash(ls:*)" in data["permissions"]["allow"]
+         and data["permissions"]["additionalDirectories"]
+         == ["D:/begona", snap + "/docs", klon + "/memory"]
+         and data["env"]["GENIUS_CLONE"] == klon and data["model"] == "opus"),
+    ]
+
+
+def case_git_bolmagan_klon_rad():
+    """Pin qilish uchun commit kerak: git repo bo'lmasa hech narsa yozilmaydi."""
+    if not POSIX:
+        return SKIP
+    home = tmpdir("uy_")
+    klon = os.path.join(tmpdir("gitsiz_"), "klon")
+    shutil.copytree(ROOT, klon, symlinks=True, ignore=testkit.REPO_IGNORE)
+    rows = []
+    for args in ((), ("--apply",)):
+        res = run_install(home, "--genius-path", klon, *args)
+        rows.append(("git siz klon %s: rc 1, sabab aytildi" % " ".join(args),
+                     res.returncode == 1 and "git repo" in res.stdout
+                     and "Hech narsa o'zgarmadi" in res.stdout))
+    rows.append(("git siz klon: ~/.claude yozilmadi",
+                 not os.path.exists(os.path.join(home, ".claude"))))
+    return rows
+
+
+def case_genius_klon_ichiga_symlink_rad():
+    """`~/.claude/genius` klon ichiga symlink bo'lsa worktree klon ichida
+    yaratilardi: o'rnatish snapshot yasamasdan to'xtaydi."""
+    if not POSIX:
+        return SKIP
+    klon = clone_nusxa()
+    home = tmpdir("uy_")
+    inner = os.path.join(klon, "ichki-snapshotlar")
+    os.makedirs(inner)
+    os.makedirs(os.path.join(home, ".claude"))
+    os.symlink(inner, os.path.join(home, ".claude", "genius"))
+    res = run_install(home, "--apply", "--genius-path", klon)
+    return [
+        ("genius symlink klon ichiga: rc 1, sabab aytildi",
+         res.returncode == 1 and "klon ichida" in res.stdout),
+        ("genius symlink: klon ichida worktree yaratilmadi",
+         os.listdir(inner) == [] and len(testkit.git(klon, "worktree", "list").splitlines()) == 1),
     ]
 
 
@@ -461,10 +667,8 @@ def clone_nusxa():
     """Klonning vaqtinchalik nusxasi: symlink rad etilmasa buzilishi mumkin bo'lgan
     manba fayllari reponing o'zida emas, shu nusxada bo'lsin."""
     if not _CLONE:
-        dst = os.path.join(tmpdir("klon_"), "klon")
-        shutil.copytree(ROOT, dst, symlinks=True, ignore=shutil.ignore_patterns(
-            ".git", "index", "dist", "worktrees", "__pycache__", ".state", "usage"))
-        _CLONE.append(dst)
+        # Git repo: snapshot (R7.8 XV-Y1) klon git repo bo'lishini talab qiladi.
+        _CLONE.append(testkit.repo_nusxa(ROOT, os.path.join(tmpdir("klon_"), "klon")))
     return _CLONE[0]
 
 
@@ -611,7 +815,8 @@ def case_paritet_hook_jadvali():
     skript, argument, timeout, statusMessage) va buyruq shakli bir xil."""
     if not POSIX:
         return SKIP
-    settings = I.sozlama_yasa(sys.executable, ROOT, [])
+    snap = "/uy/.claude/genius/0123456789ab"
+    settings = I.sozlama_yasa(sys.executable, snap, [], ROOT)
     got = []
     shape_ok = True
     for event, groups in settings["hooks"].items():
@@ -623,7 +828,7 @@ def case_paritet_hook_jadvali():
                             hook.get("timeout"), hook.get("statusMessage", "")))
                 shape_ok = shape_ok and re.match(
                     r'^"%s" "%s/tools/%s"( [^|]+)? \|\| exit 1$' % (
-                        re.escape(sys.executable), re.escape(ROOT), re.escape(script)),
+                        re.escape(sys.executable), re.escape(snap), re.escape(script)),
                     hook["command"]) is not None
     got.sort()
     want = T.ps1_hooks()
@@ -633,14 +838,40 @@ def case_paritet_hook_jadvali():
         ("paritet: hook jadvali ps1 bilan bir xil (faqat install: %s; faqat ps1: %s)"
          % ([h for h in got if h not in want], [h for h in want if h not in got]),
          got == want),
-        ("paritet: buyruq shakli `\"python\" \"<klon>/tools/x.py\" [arg] || exit 1`", shape_ok),
+        ("paritet: buyruq shakli `\"python\" \"<snapshot>/tools/x.py\" [arg] || exit 1`",
+         shape_ok),
         ("paritet: env, papkalar, schema (ps1 matnida ham shunday)",
-         settings["env"] == {"GENIUS_PYTHON": sys.executable}
+         settings["env"] == {"GENIUS_PYTHON": sys.executable, "GENIUS_CLONE": ROOT}
          and settings["permissions"]["additionalDirectories"]
-         == [ROOT + "/docs", ROOT + "/memory"]
+         == [snap + "/docs", ROOT + "/memory"]
          and "schemastore" in settings["$schema"]
-         and '"$g/docs", "$g/memory"' in ps1_text()
-         and "GENIUS_PYTHON = $pyArg" in ps1_text()),
+         and '"$sg/docs", "$g/memory"' in ps1_text()
+         and "GENIUS_PYTHON = $pyArg; GENIUS_CLONE = $g" in ps1_text()),
+    ]
+
+
+def case_paritet_snapshot_joyi():
+    """Snapshot joyi va git mantig'i bitta: install.py ham, ps1 ham
+    install/snapshot.py dan oladi. CLI `yol` install.py yozgan manifestdagi
+    root bilan bir xil joyni beradi."""
+    if not POSIX:
+        return SKIP
+    st = stsenariy()
+    code, out = I.run_py([os.path.join(ROOT, "install", "snapshot.py"), "yol",
+                          "--clone", st["klon"], "--claude-dir", st["claude"]])
+    info = json.loads(out) if code == 0 else {}
+    text = ps1_text()
+    return [
+        ("paritet: snapshot.py yol == manifestdagi root",
+         info.get("path") == st["manifest"]["root"] == st["snap"]
+         and info.get("sha") == st["manifest"]["commit"]),
+        ("paritet: joy `<claude>/genius/<sha12>`",
+         st["snap"] == os.path.join(st["claude"], "genius", st["head"][:12])),
+        ("paritet: ps1 snapshot.py ning yol, arxiv, yarat, royxat, tozala amallarini chaqiradi",
+         all(("'%s'" % act) in text for act in ("yol", "arxiv", "yarat", "royxat", "tozala"))),
+        ("paritet: install.py va ps1 `-c core.autocrlf=false` ni snapshot.py orqali oladi",
+         "core.autocrlf=false" in get(os.path.join(ROOT, "install", "snapshot.py"))
+         and "'worktree'" not in text and "'add', '--detach'" not in text),
     ]
 
 
@@ -717,6 +948,12 @@ CASES = [
     ("--update begonani saqlaydi", case_update_begonani_saqlaydi),
     ("--uninstall faqat o'zini oladi", case_uninstall_faqat_ozini_oladi),
     ("--uninstall klon yo'q bo'lsa ham ishlaydi", case_uninstall_klon_yoq),
+    ("--uninstall snapshotni olib tashlaydi, begonasiga tegmaydi",
+     case_uninstall_snapshotni_va_faqat_genius_ostidagini),
+    ("--uninstall klon o'chgan: yetim snapshot", case_uninstall_klon_ochgan_yetim_snapshot),
+    ("eski (snapshotsiz) o'rnatishdan o'tish", case_eski_ornatishdan_otish),
+    ("git bo'lmagan klon rad etiladi", case_git_bolmagan_klon_rad),
+    ("~/.claude/genius klon ichiga symlink rad etiladi", case_genius_klon_ichiga_symlink_rad),
     ("xavfli yo'l o'rnatishni to'xtatadi (XV-P2)", case_xavfli_yol_toxtatadi),
     ("rad etiladigan birikmalar", case_rad_etiladigan_birikmalar),
     ("--reset faqat tasdiq bilan", case_reset_tasdiq_bilan),
@@ -727,6 +964,7 @@ CASES = [
     ("HOME bo'sh yoki / rad etiladi", case_uy_papka_rad),
     ("--reset --include-auth --project --apply", case_reset_include_auth_va_project_apply),
     ("paritet: hook jadvali ps1 ga teng", case_paritet_hook_jadvali),
+    ("paritet: snapshot joyi va git mantig'i bitta", case_paritet_snapshot_joyi),
     ("paritet: ruxsat ro'yxati", case_paritet_ruxsat_royxati),
     ("paritet: ps1 doimiylari", case_paritet_ps1_doimiylari),
     ("paritet: xavfsiz belgilar", case_paritet_ps1_xavfsiz_belgilar),

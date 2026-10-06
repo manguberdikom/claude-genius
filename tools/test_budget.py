@@ -555,6 +555,41 @@ def case_guruh_holat_va_tiklash(_):
             and "orders/dasturchi: 1/2" in out and after == "allow")
 
 
+def case_ornatilgan_qator_snapshot(_):
+    """R7.8 XV-Y1: manifestda `clone` bor bo'lsa o'rnatilgan commit klon HEAD
+    bilan solishtiriladi va farq `yangilash.py` ga yo'naltiriladi; eski
+    manifestda (clone yo'q) avvalgi matn."""
+    head = subprocess.run(["git", "-C", ROOT, "rev-parse", "HEAD"],
+                          stdout=subprocess.PIPE, encoding="utf-8").stdout.strip()
+    if not head:
+        return True
+    cfg = tempfile.mkdtemp(prefix="budget_cfg_")
+    saved = os.environ.get("CLAUDE_CONFIG_DIR")
+    try:
+        folder = os.path.join(cfg, "skills", "manguberdi")
+        os.makedirs(folder)
+        os.environ["CLAUDE_CONFIG_DIR"] = cfg
+
+        def line(manifest):
+            with open(os.path.join(folder, ".genius.json"), "w", encoding="utf-8") as handle:
+                json.dump(manifest, handle)
+            return budget.installed_line()
+
+        pinned = line({"commit": "0" * 40, "root": "/yo'q/snapshot", "clone": ROOT})
+        same = line({"commit": head, "root": "/yo'q/snapshot", "clone": ROOT})
+        old = line({"commit": "0" * 40, "root": ROOT})
+        return ("o'rnatilgan: 000000000000, klon: %s" % head[:12] in pinned
+                and "yangilash.py" in pinned and "farq bor" not in pinned
+                and "yangilash.py" not in same and "farq" not in same
+                and "farq bor" in old and "yangilash.py" not in old)
+    finally:
+        if saved is None:
+            os.environ.pop("CLAUDE_CONFIG_DIR", None)
+        else:
+            os.environ["CLAUDE_CONFIG_DIR"] = saved
+        shutil.rmtree(cfg, ignore_errors=True)
+
+
 CASES = [
     ("ikki chaqiruv o'tadi", case_ikki_marta),
     ("uchinchisi to'siladi", case_uchinchi_tosiladi),
@@ -596,6 +631,7 @@ CASES = [
     ("guruhlar bir-birini to'smaydi", case_guruhlar_bir_birini_tosmaydi),
     ("guruhsiz chaqiruv eski xulqda", case_guruhsiz_eski_xulq),
     ("guruh holati va tiklash", case_guruh_holat_va_tiklash),
+    ("o'rnatilgan qator: snapshot manifesti", case_ornatilgan_qator_snapshot),
 ]
 
 

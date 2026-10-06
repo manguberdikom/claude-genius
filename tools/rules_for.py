@@ -46,7 +46,7 @@ CHAPTERS = os.path.join(ROOT, "index", "chapters.tsv")
 CHECKLIST = os.path.join(ROOT, "index", "checklist.tsv")
 # Klondagi memory. Boshqa proyekt memorysi klondan tashqarida
 # (docref.memory_home, GENIUS_MEMORY_DIR): memory_base() tanlaydi.
-MEMORY = os.path.join(ROOT, "memory")
+MEMORY = os.path.join(geniuslib.clone_root(ROOT), "memory")
 
 # Mashina topilmalaridan shuncha to'liq matn bilan, qolgani qisqa shaklda.
 MAX_ITEMS = 12
@@ -670,7 +670,8 @@ def past_mistakes(slug=None, labels=None, names=()):
             rel = full
             if in_clone():
                 try:
-                    rel = os.path.relpath(full, ROOT)
+                    # Klonga nisbatan: global o'rnatishda ROOT snapshot, memory klonda.
+                    rel = os.path.relpath(full, geniuslib.clone_root(ROOT))
                 except ValueError:
                     pass  # Windows: boshqa disk
             rows.append((stamp, rel, _short(note or name)))

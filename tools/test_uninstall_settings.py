@@ -205,6 +205,33 @@ def case_bom_oqiladi_bomsiz_yoziladi():
         return code == 0 and not raw.startswith(b"\xef\xbb\xbf")
 
 
+def case_snapshot_va_klon_ildizlari():
+    """R7.8 XV-Y1: klon va snapshot yo'llari `--root` takroran beriladi: hooklar,
+    ruxsat, docs (snapshot) va memory (klon) yozuvlari, env.GENIUS_CLONE ketadi;
+    boshqa klonning snapshoti va begona yozuv qoladi."""
+    snap = "C:/Users/a/.claude/genius/0123456789ab"
+    boshqa = "C:/Users/a/.claude/genius/ffffffffffff"
+    data = installed()
+    data["env"]["GENIUS_CLONE"] = GENIUS
+    data["hooks"]["UserPromptSubmit"][0]["hooks"] = [
+        {"type": "command", "command": '"%s" "%s/tools/suggest_sections.py"' % (PY, snap)},
+        {"type": "command", "command": '"%s" "%s/tools/budget.py"' % (PY, boshqa)}]
+    data["permissions"]["additionalDirectories"] = [
+        snap + "/docs", GENIUS + "/memory", boshqa + "/docs", "D:/mening"]
+    with workdir() as tmp:
+        path = os.path.join(tmp, "settings.json")
+        write_json(path, data)
+        proc = subprocess.run([sys.executable, TOOL, path, "--root", GENIUS,
+                               "--root", snap, "--yoz"], capture_output=True, text=True)
+        got = load(path)
+        cmds = [h["command"] for gs in got["hooks"].values() for g in gs for h in g["hooks"]]
+        return (proc.returncode == 0
+                and not any(snap in c or GENIUS in c for c in cmds)
+                and any(boshqa in c for c in cmds)
+                and got["permissions"]["additionalDirectories"] == [boshqa + "/docs", "D:/mening"]
+                and got["env"] == {"MENING": "1"})
+
+
 def case_fayl_yoq():
     with workdir() as tmp:
         code, out, _ = run(tmp, None)
@@ -241,6 +268,7 @@ def case_ikkinchi_yurish_ozgartirmaydi():
 
 
 CASES = [
+    ("snapshot va klon ildizlari (--root takroran)", case_snapshot_va_klon_ildizlari),
     ("o'z yozuvlari ketadi, begonalari qoladi", case_oz_yozuvlari_ketadi),
     ("bo'shab qolgan guruh va hodisa tushadi", case_bosh_guruh_va_hodisa_tushadi),
     ("env bo'sh qolsa env ham tushadi", case_env_bosh_qolsa_tushadi),

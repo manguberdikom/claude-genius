@@ -416,6 +416,9 @@ jobs:
             if (Test-Path "$HOME/.claude/agents/$a.md") { Write-Host "aktyor qoldi: $a"; exit 1 }
           }
           if (-not (Test-Path "$HOME/.claude/skills/begona3/SKILL.md")) { Write-Host "begona skill o'chdi"; exit 1 }
+          if (@(Get-ChildItem "$HOME/.claude/genius" -Directory -ErrorAction SilentlyContinue).Count) {
+            Write-Host "snapshot qoldi: ~/.claude/genius"; exit 1
+          }
           $env:UNINST_YOL = $nusxa
           $tekshir = Join-Path $env:RUNNER_TEMP 'uninst_tekshir.py'
           @'
@@ -435,8 +438,16 @@ jobs:
               xato.append("o'chirilgan klon ruxsati qoldi")
           if any(yol in x for x in low(dirs)):
               xato.append("additionalDirectories qoldi")
-          if "GENIUS_PYTHON" in d.get("env", {}):
-              xato.append("env.GENIUS_PYTHON qoldi")
+          if "GENIUS_PYTHON" in d.get("env", {}) or "GENIUS_CLONE" in d.get("env", {}):
+              xato.append("env.GENIUS_PYTHON yoki GENIUS_CLONE qoldi")
+          # Hooklar klonga emas, ~/.claude/genius/<sha12> snapshotiga ishora
+          # qilardi (R7.8 XV-Y1): klon yo'li bo'yicha tekshiruv yolg'iz yetmaydi.
+          if any("/.claude/genius/" in c for c in low(cmds)):
+              xato.append("snapshot hooki qoldi")
+          if any("/.claude/genius/" in r for r in low(allow)):
+              xato.append("snapshot ruxsati qoldi")
+          if any("/.claude/genius/" in x for x in low(dirs)):
+              xato.append("snapshot additionalDirectories qoldi")
           if "echo begona-hook" not in cmds:
               xato.append("begona hook o'chdi")
           if "Bash(git status:*)" not in allow:
@@ -576,6 +587,7 @@ jobs:
             test ! -e "$HOME/.claude/agents/$a.md" || { echo "aktyor qoldi: $a"; exit 1; }
           done
           test -e "$HOME/.claude/skills/begona3/SKILL.md" || { echo "begona skill o'chdi"; exit 1; }
+          test -z "$(ls -A "$HOME/.claude/genius" 2>/dev/null)" || { echo "snapshot qoldi: ~/.claude/genius"; exit 1; }
           UNINST_YOL="$nusxa" python3 - <<'PY'
           import json, os, sys
           yol = os.environ["UNINST_YOL"].lower()
@@ -591,8 +603,16 @@ jobs:
               xato.append("o'chirilgan klon ruxsati qoldi")
           if any(yol in x.lower() for x in dirs):
               xato.append("additionalDirectories qoldi")
-          if "GENIUS_PYTHON" in d.get("env", {}):
-              xato.append("env.GENIUS_PYTHON qoldi")
+          if "GENIUS_PYTHON" in d.get("env", {}) or "GENIUS_CLONE" in d.get("env", {}):
+              xato.append("env.GENIUS_PYTHON yoki GENIUS_CLONE qoldi")
+          # Hooklar klonga emas, ~/.claude/genius/<sha12> snapshotiga ishora
+          # qilardi (R7.8 XV-Y1): klon yo'li bo'yicha tekshiruv yolg'iz yetmaydi.
+          if any("/.claude/genius/" in c for c in cmds):
+              xato.append("snapshot hooki qoldi")
+          if any("/.claude/genius/" in r for r in allow):
+              xato.append("snapshot ruxsati qoldi")
+          if any("/.claude/genius/" in x for x in dirs):
+              xato.append("snapshot additionalDirectories qoldi")
           if "echo begona-hook" not in cmds:
               xato.append("begona hook o'chdi")
           if "Bash(git status:*)" not in allow:

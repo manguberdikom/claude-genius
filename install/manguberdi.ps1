@@ -17,9 +17,21 @@
   sinaydi, keyin uni o'chiradi: nosozlik hech narsa o'chmasidan oldin
   chiqadi. Avval ro'yxatni o'qing.
 
+  SNAPSHOT (R7.8, XV-Y1). Hooklar klonning ishchi daraxtidan EMAS, aniq
+  commit dagi snapshotdan yuradi: $HOME\.claude\genius\<sha12>\ (git
+  worktree add --detach, install\snapshot.py; install.py bilan bir xil joy
+  va buyruq). Aks holda git pull dan keyingi birinchi promptdayoq
+  tekshirilmagan kod bajarilardi. Skill matni, hook buyruqlari, ruxsatlar
+  va docs snapshotga ishora qiladi; memory va holat klonda qoladi
+  (settings.json env.GENIUS_CLONE). Snapshot HEAD commitdan olinadi:
+  commit qilinmagan o'zgarish unga kirmaydi. Yangi commit snapshotga
+  tools\yangilash.py orqali (ro'yxat, tasdiq) yoki shu skriptni qayta
+  yurgizish bilan o'tadi.
+
   SUKUT (qo'shuvchi). Faqat shu birliklar almashadi:
     skills\manguberdi, agents\ dagi olti aktyor fayli va settings.json
-    dagi shu klonning tools\ papkasiga ishora qilgan hook va ruxsatlar.
+    dagi shu klonning yoki uning snapshotlarining tools\ papkasiga ishora
+    qilgan hook va ruxsatlar.
   Olib tashlangan aktyor ($Retired, avvalgi .genius.json dagi, lekin
   hozirgi ro'yxatda yo'q nom) zaxira bilan o'chiriladi. O'rnatilgan
   commit, sana, klon, Python va aktyorlar
@@ -41,8 +53,9 @@
     va .mcp.json, boshqa proyektlarning .claude\ papkasi.
 
 .PARAMETER GeniusPath
-  claude-genius klonining yo'li. Skill qo'llanmasiz ishlamaydi: doc.sh,
-  index va docs\ aynan shu yerdan olinadi.
+  claude-genius klonining yo'li. U git repo bo'lishi shart: HEAD commit dan
+  snapshot olinadi ($HOME\.claude\genius\<sha12>\) va doc.sh, index, docs\
+  va hooklar o'sha snapshotdan o'qiladi. Memory va holat klonda qoladi.
 
 .PARAMETER Project
   Qo'shimcha: shu proyektdagi .claude\ papkasi ham tozalanadi. Klon yoki
@@ -70,7 +83,9 @@
   ildiz bor hooklar, shu ildizga tegishli allow, ask va deny qoidalari,
   ildiz va uning ostidagi additionalDirectories yozuvlari,
   env.GENIUS_PYTHON, skills\manguberdi (.genius.json bilan),
-  olti aktyor fayli va eski aktyorlar. Begona yozuvlar qoladi. Klonning o'ziga bog'liq emas:
+  olti aktyor fayli, eski aktyorlar va shu klonning snapshotlari
+  ($HOME\.claude\genius\ ostida, git worktree remove bilan). Begona
+  yozuvlar qoladi. Klonning o'ziga bog'liq emas:
   -GeniusPath oddiy satr sifatida olinadi, shuning uchun klon allaqachon
   o'chirilgan bo'lsa ham ishlaydi.
 
@@ -96,7 +111,11 @@
 .EXAMPLE
   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
   .\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius -Update -Apply
-  Sukut bilan bir xil: git pull dan keyin faqat manguberdi birliklari.
+  Sukut bilan bir xil: HEAD commit uchun yangi snapshot va faqat manguberdi
+  birliklari. Tasdiqsiz yo'l: hook kodi o'rnatilgan commitdan farq qilsa
+  o'zgarish ro'yxati chiqadi, lekin so'ralmaydi. git pull hooklarni
+  o'zgartirmaydi; ro'yxat va tasdiq bilan yangilash uchun snapshotdagi
+  tools\yangilash.py (o'rnatuvchi chiqishda yo'lini aytadi).
 
 .EXAMPLE
   .\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius -Reset -Apply -ConfirmReset
@@ -182,8 +201,10 @@ function Get-StaleActors {
     Select-Object -Unique)
 }
 
-# Sinov yig'imi papkasi. Fail uni tozalaydi, shuning uchun oldindan e'lon.
+# Sinov yig'imi papkasi va commit tarkibi (git archive) papkasi. Fail ularni
+# tozalaydi, shuning uchun oldindan e'lon.
 $Stage = $null
+$SrcTmp = $null
 
 function Say([string]$text, [string]$Color) {
   if ($Color) { Write-Host $text -ForegroundColor $Color } else { Write-Host $text }
@@ -192,8 +213,10 @@ function Step([string]$text) { Write-Host "  $text" }
 
 function Fail([string]$text) {
   Write-Host "XATO: $text" -ForegroundColor Red
-  if ($script:Stage -and (Test-Path -LiteralPath $script:Stage)) {
-    Remove-Item -LiteralPath $script:Stage -Recurse -Force -ErrorAction SilentlyContinue
+  foreach ($tmp in @($script:Stage, $script:SrcTmp)) {
+    if ($tmp -and (Test-Path -LiteralPath $tmp)) {
+      Remove-Item -LiteralPath $tmp -Recurse -Force -ErrorAction SilentlyContinue
+    }
   }
   exit 1
 }
@@ -325,7 +348,7 @@ $Required = @(
   'tools\build_index.py', 'tools\check_docs.py',
   'tools\review_status.py', 'tools\sonar_snapshot.py',
   'tools\run_tests.py', 'tools\parse_test_output.py', 'tools\guruh.py',
-  'install\rewrite_paths.py',
+  'install\rewrite_paths.py', 'install\snapshot.py',
   'docs\manifest.json', '.claude\skills\manguberdi\SKILL.md'
 )
 if ($Update) { $Required += 'install\merge_settings.py' }
@@ -391,6 +414,18 @@ if ($Uninstall) {
           "qo'lda tahrir qiling (install\README.md, 'Klon o'chsa yoki ko'chsa').")
   }
 
+  # Snapshot yordamchisi $PSScriptRoot dan, klon mavjud bo'lmasligi mumkin.
+  # Shu klonning snapshotlari (klon o'chgan bo'lsa yetimlari ham) olinadi.
+  $snapshotTool = Join-Path $PSScriptRoot 'snapshot.py'
+  $snaps = @()
+  if (Test-Path -LiteralPath $snapshotTool -PathType Leaf) {
+    $r = Invoke-Py @($snapshotTool, 'royxat', '--clone', $GeniusPath,
+                     '--claude-dir', $ClaudeDir, '--yetim')
+    if ($r.Code -eq 0 -and $r.Out) {
+      foreach ($p in @($r.Out | ConvertFrom-Json)) { if ($p) { $snaps += [string]$p } }
+    }
+  }
+
   Say ""
   Say "manguberdi olib tashlanmoqda"
   Say "Ildiz : $GeniusPath"
@@ -433,10 +468,20 @@ if ($Uninstall) {
     Step "o'chiriladi: $path"
     if ($Apply) { Remove-Item -LiteralPath $path -Recurse -Force }
   }
+  # Snapshotlar zaxiralanmaydi (git dan qayta yasaladi) va faqat
+  # ~/.claude/genius ostidagilar o'chadi: tozala shuni o'zi tekshiradi.
+  foreach ($path in $snaps) { Step "snapshot o'chiriladi (git worktree remove): $path" }
+  if ($snaps.Count -eq 0) { Step "snapshot topilmadi: $(Join-Path $ClaudeDir 'genius')" }
+  if ($Apply -and $snaps.Count -gt 0) {
+    $r = Invoke-Py @($snapshotTool, 'tozala', '--clone', $GeniusPath,
+                     '--claude-dir', $ClaudeDir, '--yetim')
+    if ($r.Code -ne 0) { Fail "snapshot o'chmadi: $($r.Out)" }
+  }
 
   Say ""
   Say "3. Sozlama -> $settingsPath"
   $uninstArgs = @($uninstaller, $settingsPath, '--root', $GeniusPath)
+  foreach ($p in $snaps) { $uninstArgs += @('--root', $p) }
   if ($Apply) { $uninstArgs += '--yoz' }
   $r = Invoke-Py $uninstArgs
   if ($r.Code -ne 0) {
@@ -533,6 +578,36 @@ if (-not $BashExe) {
         "skriptni qayta yurgizing. WSL dagi bash hisoblanmaydi.")
 }
 
+# --- 1c. Snapshot joyi ---------------------------------------------------
+
+# Hooklar klonning ishchi daraxtidan emas, HEAD commit dagi snapshotdan
+# yuradi (R7.8, XV-Y1). Joyi va git mantig'i install\snapshot.py da: install.py
+# ham shuni chaqiradi, shuning uchun ikkala o'rnatuvchi bir xil yo'lni yasaydi.
+# Bu yerda faqat joy aniqlanadi; snapshot -Apply bilan, zaxiradan keyin
+# yaratiladi.
+$snapshotPy = Join-Path $GeniusPath 'install\snapshot.py'
+$r = Invoke-Py @($snapshotPy, 'yol', '--clone', $GeniusPath, '--claude-dir', $ClaudeDir)
+if ($r.Code -ne 0) { Fail "snapshot joyi aniqlanmadi, hech narsa o'zgarmadi: $($r.Out)" }
+try { $snapInfo = $r.Out | ConvertFrom-Json } catch { Fail "snapshot javobi o'qilmadi: $($r.Out)" }
+$Sha = [string]$snapInfo.sha
+$SnapRoot = ([string]$snapInfo.path).Replace('\', '/').TrimEnd('/')
+Test-SafePath 'Snapshot' $SnapRoot
+# `/` ajratgich: Join-Path `C:/x/.claude/genius/abc` ga `\tools` qo'shib
+# aralash yo'l beradi, hook buyrug'idagi yo'l va quyidagi tekshiruv bir xil bo'lsin.
+$snapTools = "$SnapRoot/tools"
+Say ""
+Say "Snapshot: $SnapRoot (commit $($Sha.Substring(0, 12)))"
+Say "Klon  : $GeniusPath (hooklar shu klonning commitidan olinadi)"
+# Ro'yxatsiz o'tishni yashirmaslik: hook kodi o'rnatilgan commitdan farq qilsa
+# nima kelayotgani ko'rsatiladi (to'smaydi; tasdiqli yo'l tools\yangilash.py).
+$r = Invoke-Py @($snapshotPy, 'farq', '--clone', $GeniusPath, '--claude-dir', $ClaudeDir, '--sha', $Sha)
+if ($r.Code -eq 0 -and $r.Out) { Say ""; Say $r.Out; Say "" }
+$r = Invoke-Native 'git' @('-C', $GeniusPath, 'status', '--porcelain', '--untracked-files=no')
+if ($r.Code -eq 0 -and $r.Out) {
+  Say ("OGOHLANTIRISH: klonda commit qilinmagan o'zgarish bor. U snapshotga KIRMAYDI: " +
+       "hooklar aniq commit $($Sha.Substring(0, 12)) dan yuradi.") Yellow
+}
+
 # --- 2. Sinov yig'imi ----------------------------------------------------
 
 # Skill avval vaqtinchalik papkada yig'iladi va sinaladi, keyin o'rniga
@@ -544,7 +619,20 @@ if (-not $BashExe) {
 # boshqa proyektda ishlatilsa, ularning hammasi topilmaydi. Almashtirish
 # Python da, chunki bu qism sinaladi: tools/test_rewrite_paths.py.
 
-$skillSrc = Join-Path $GeniusPath '.claude\skills\manguberdi'
+# Manba klonning ishchi daraxti emas, snapshot olinadigan commit tarkibi
+# (git archive): quruq yurish ham, -Apply ham aynan snapshotga tushadigan
+# matnni sinaydi. Alohida papka: --allow ctx.stage dagi hamma .md ni o'qiydi,
+# commit hujjatlari ruxsat ro'yxatiga kirib qolmasin.
+$SrcTmp = Join-Path ([IO.Path]::GetTempPath()) ("manguberdi-src-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
+$commitSrc = Join-Path $SrcTmp 'commit'
+$r = Invoke-Py @($snapshotPy, 'arxiv', '--clone', $GeniusPath, '--sha', $Sha, '--to', $commitSrc)
+if ($r.Code -ne 0) { Fail "commit tarkibi olinmadi, hech narsa o'chmadi: $($r.Out)" }
+foreach ($rel in $Required) {
+  if (-not (Test-Path -LiteralPath (Join-Path $commitSrc $rel))) {
+    Fail "commit $($Sha.Substring(0, 12)) to'liq emas, yo'q: $rel"
+  }
+}
+$skillSrc = Join-Path $commitSrc '.claude\skills\manguberdi'
 $rewriter = Join-Path $GeniusPath 'install\rewrite_paths.py'
 $merger = Join-Path $GeniusPath 'install\merge_settings.py'
 # Skill matniga topilgan to'liq yo'l emas, `bash` nomi yoziladi: Claude
@@ -563,12 +651,13 @@ Say ""
 Say "0. Sinov yig'imi -> $Stage"
 Step "python: $pyArg"
 Step "bash  : $bashArg (skill matnida shu nom)"
+Step "manba : commit $($Sha.Substring(0, 12)) (klonning ishchi daraxti emas)"
 
 New-Item -ItemType Directory -Path (Split-Path -Parent $stageSkill) -Force | Out-Null
 New-Item -ItemType Directory -Path $stageAgents -Force | Out-Null
 Copy-Item -LiteralPath $skillSrc -Destination $stageSkill -Recurse -Force
 foreach ($actor in $Actors) {
-  $src = Join-Path $GeniusPath ".claude\agents\$actor.md"
+  $src = Join-Path $commitSrc ".claude\agents\$actor.md"
   if (-not (Test-Path -LiteralPath $src)) {
     Say "  OGOHLANTIRISH: aktyor fayli yo'q: $actor.md"
     continue
@@ -576,20 +665,22 @@ foreach ($actor in $Actors) {
   Copy-Item -LiteralPath $src -Destination $stageAgents -Force
 }
 
+# --root snapshot (tools va docs shu yerda), --clone klon (memory shu yerga).
+# Snapshot -Apply da keyinroq yaratiladi: --root-keyin mavjudligini tekshirmaydi.
+$rootArgs = @('--root', $SnapRoot, '--clone', $GeniusPath, '--root-keyin')
 foreach ($target in @($stageSkill, $stageAgents)) {
-  $r = Invoke-Py @($rewriter, $target, '--root', $GeniusPath,
-                   '--python', $pyArg, '--bash', $bashArg)
+  $r = Invoke-Py (@($rewriter, $target) + $rootArgs + @('--python', $pyArg, '--bash', $bashArg))
   if ($r.Code -ne 0) { Fail "yo'llarni almashtirish yiqildi, hech narsa o'chmadi: $($r.Out)" }
   Step $r.Out
-  $r = Invoke-Py @($rewriter, $target, '--root', $GeniusPath, '--tekshir')
+  $r = Invoke-Py (@($rewriter, $target) + $rootArgs + @('--tekshir'))
   if ($r.Code -ne 0) { Fail "nisbiy yo'l qoldi, hech narsa o'chmadi: $($r.Out)" }
 }
 
 # Global ruxsat ro'yxati. Qoida buyruq matnining aynan boshlanishi bo'lishi
 # shart, aks holda mos kelmaydi; shuning uchun uni yo'llarni yozgan asbob
 # o'zi beradi, bu yerda qo'lda yig'ilmaydi.
-$r = Invoke-Py @($rewriter, $Stage, '--root', $GeniusPath,
-                 '--python', $pyArg, '--bash', $bashArg, '--allow')
+$r = Invoke-Py (@($rewriter, $Stage) + $rootArgs +
+                 @('--python', $pyArg, '--bash', $bashArg, '--allow'))
 if ($r.Code -ne 0) { Fail "ruxsat ro'yxati yasalmadi, hech narsa o'chmadi: $($r.Out)" }
 $Allow = @()
 try {
@@ -603,8 +694,8 @@ Step "ruxsat qoidasi: $($Allow.Count) ta"
 # settings.local.json bo'lagini ham rewrite_paths beradi: qoida buyruqning
 # aynan boshlanishi bo'lishi shart. Oxirida ko'rsatiladi, hech qayerga
 # yozilmaydi.
-$r = Invoke-Py @($rewriter, $Stage, '--root', $GeniusPath,
-                 '--python', $pyArg, '--bash', $bashArg, '--opt-in')
+$r = Invoke-Py (@($rewriter, $Stage) + $rootArgs +
+                 @('--python', $pyArg, '--bash', $bashArg, '--opt-in'))
 if ($r.Code -ne 0) { Fail "opt-in ruxsat bo'lagi yasalmadi, hech narsa o'chmadi: $($r.Out)" }
 $OptIn = $r.Out
 
@@ -624,17 +715,20 @@ function Show-OptIn {
 #
 # Hook yo'llari MUTLAQ bo'ladi. Repodagi settings.json ${CLAUDE_PROJECT_DIR}
 # ishlatadi, u esa faol proyektni ko'rsatadi; global o'rnatishda asboblar
-# boshqa papkada turadi, shuning uchun yo'l aynan shu klonga bog'lanadi.
+# boshqa papkada turadi, shuning uchun yo'l aynan shu klonning pin qilingan
+# snapshotiga bog'lanadi ($snapTools), klonning ishchi daraxtiga emas.
 #
 # `|| exit 1` jadvalda, shu funksiyada EMAS: handoff va usage ga argument
 # qo'shiladi va u suffiksdan oldin turishi kerak. Nega kerakligi jadval
 # ustidagi izohda.
 function HookCmd([string]$script) {
-  return ('"{0}" "{1}"' -f $PythonExe, (Join-Path $toolsDir $script))
+  return ('"{0}" "{1}/{2}"' -f $PythonExe, $snapTools, $script)
 }
 
-# additionalDirectories da butun klon EMAS, faqat docs va memory: Read,
-# Grep va Glob qo'llanma va memoryni har proyektdan so'rovsiz o'qiydi.
+# additionalDirectories da butun klon EMAS, faqat snapshotning docs va
+# klonning memory papkasi: Read, Grep va Glob qo'llanma va memoryni har
+# proyektdan so'rovsiz o'qiydi. GENIUS_CLONE: snapshotdan yuradigan asbob
+# memory va holatni klonga yozadi (tools/geniuslib.py clone_root).
 # Butun klon berilsa, acceptEdits rejimida aktyor tools\ dagi hook
 # skriptini so'rovsiz tahrirlay olardi va o'zgarish keyingi promptda hamma
 # proyektda bajarilardi (XV-Y4). Asbob buyruqlari esa $Allow dan.
@@ -656,11 +750,12 @@ function HookCmd([string]$script) {
 # Hook bash ichida yuradi (yuqorida $BashExe talab qilinadi), `||` esa
 # PowerShell 5.1 da sintaksis xatosi bo'lardi.
 $g = $GeniusPath.Replace('\', '/')
+$sg = $SnapRoot
 $settings = [ordered]@{
   '$schema' = 'https://json.schemastore.org/claude-code-settings.json'
-  env = [ordered]@{ GENIUS_PYTHON = $pyArg }
+  env = [ordered]@{ GENIUS_PYTHON = $pyArg; GENIUS_CLONE = $g }
   permissions = [ordered]@{
-    additionalDirectories = @("$g/docs", "$g/memory")
+    additionalDirectories = @("$sg/docs", "$g/memory")
     allow = $Allow
   }
   hooks = [ordered]@{
@@ -710,24 +805,21 @@ $json = $settings | ConvertTo-Json -Depth 10
 [IO.File]::WriteAllText($stageSettings, $json, $Utf8NoBom)
 
 # -Update: settings.json ga yozmasdan, nima almashishini aytadi. Faqat
-# buyrug'i shu klonning tools\ papkasiga ishora qilgan yozuvlar almashadi.
+# buyrug'i shu klonning yoki uning snapshotlarining (avvalgi va yangi, klon
+# o'chgan bo'lsa yetimlari ham) tools\ papkasiga ishora qilgan yozuvlar
+# almashadi: eski snapshotning hooki yangisi bilan birga qolmaydi.
+$ownRoots = @($GeniusPath, $SnapRoot)
+$r = Invoke-Py @($snapshotPy, 'royxat', '--clone', $GeniusPath,
+                 '--claude-dir', $ClaudeDir, '--yetim')
+if ($r.Code -eq 0 -and $r.Out) {
+  foreach ($p in @($r.Out | ConvertFrom-Json)) { if ($p) { $ownRoots += [string]$p } }
+}
+$mergeRoots = @()
+foreach ($o in @($ownRoots | Select-Object -Unique)) { $mergeRoots += @('--root', $o) }
 if ($Update) {
-  $r = Invoke-Py @($merger, $settingsPath, $stageSettings, '--root', $GeniusPath)
+  $r = Invoke-Py (@($merger, $settingsPath, $stageSettings) + $mergeRoots)
   if ($r.Code -ne 0) { Fail "settings.json birlashtirilmadi, hech narsa o'chmadi: $($r.Out)" }
   Step $r.Out
-}
-
-# Indeks git da yo'q: toza klonda bo'lim taklifi hooki usiz jim bo'sh.
-# U klonga yoziladi, shuning uchun faqat -Apply bilan.
-$sections = Join-Path $GeniusPath 'index\sections.tsv'
-if ($Apply) {
-  $r = Invoke-Py @((Join-Path $toolsDir 'build_index.py'))
-  if ($r.Code -ne 0 -or -not (Test-Path -LiteralPath $sections)) {
-    Fail "indeks yasalmadi, hech narsa o'chmadi: $($r.Out)"
-  }
-  Step "indeks yasaldi: $(Split-Path -Parent $sections)"
-} else {
-  Step "indeks: $(Split-Path -Parent $sections) (-Apply bilan yasaladi)"
 }
 
 # --- 3. Zaxira ------------------------------------------------------------
@@ -785,6 +877,31 @@ if ($ToBackup.Count -eq 0) {
   }
 }
 
+# --- 3b. Snapshot --------------------------------------------------------
+
+# Hech narsa almashtirilmasdan oldin, zaxiradan keyin: yiqilsa eski o'rnatish
+# joyida qoladi. Mavjud snapshot qayta ishlatiladi, lekin snapshot.py uni
+# tekshiradi (boshqa commit yoki o'zgartirilgan bo'lsa xato). Indeks hosila:
+# snapshotda bir marta yasaladi, keyin hooklar uni faqat o'qiydi.
+Say ""
+Say "1b. Snapshot (hooklar shu commitdan yuradi)"
+Step "commit: $($Sha.Substring(0, 12)), klon: $GeniusPath"
+$sections = Join-Path $SnapRoot 'index\sections.tsv'
+if ($Apply) {
+  $r = Invoke-Py @($snapshotPy, 'yarat', '--clone', $GeniusPath,
+                   '--claude-dir', $ClaudeDir, '--sha', $Sha)
+  if ($r.Code -ne 0) { Fail "snapshot yaratilmadi, hech narsa o'chmadi: $($r.Out)" }
+  Step "snapshot: $SnapRoot"
+  $r = Invoke-Py @((Join-Path $snapTools 'build_index.py'))
+  if ($r.Code -ne 0 -or -not (Test-Path -LiteralPath $sections)) {
+    Fail "indeks yasalmadi, hech narsa o'chmadi: $($r.Out)"
+  }
+  Step "indeks yasaldi: $(Split-Path -Parent $sections)"
+} else {
+  Step "snapshot: $SnapRoot (-Apply bilan git worktree add --detach)"
+  Step "indeks: $(Split-Path -Parent $sections) (-Apply bilan yasaladi)"
+}
+
 # --- 4. Tozalash ---------------------------------------------------------
 
 Say ""
@@ -830,15 +947,14 @@ if ($Apply) {
   }
 }
 
-# Manifest skill nusxasi bilan birga yoziladi: skill o'rnatish paytidagi
-# nusxa, asboblar esa klondan jonli, shuning uchun qaysi commit
-# o'rnatilgani saqlanadi. git yo'q bo'lsa commit bo'sh qoladi.
+# Manifest skill nusxasi bilan birga yoziladi: commit va root snapshotniki
+# (hooklar yuradigan joy), clone klonniki. budget.py va doctor.py o'rnatilgan
+# commitni klon HEAD bilan solishtiradi, tools\yangilash.py klonni shu
+# yerdan topadi.
 Step "manifest -> $ManifestPath"
 if ($Apply) {
-  $commit = ''
-  $g = Invoke-Native 'git' @('-C', $GeniusPath, 'rev-parse', 'HEAD')
-  if ($g.Code -eq 0 -and $g.Out -match '^[0-9a-f]{40}$') { $commit = $g.Out }
-  $versionFile = Join-Path $GeniusPath 'VERSION'
+  $commit = $Sha
+  $versionFile = Join-Path $SnapRoot 'VERSION'
   $version = ''
   if (Test-Path -LiteralPath $versionFile -PathType Leaf) {
     $version = ([IO.File]::ReadAllText($versionFile)).Trim()
@@ -847,7 +963,8 @@ if ($Apply) {
     versiya = $version
     commit  = $commit
     sana    = (Get-Date).ToString('yyyy-MM-ddTHH:mm:sszzz')
-    root    = $GeniusPath.Replace('\', '/')
+    root    = $SnapRoot
+    clone   = $GeniusPath.Replace('\', '/')
     python  = $pyArg
     actors  = @($Actors)
   }
@@ -860,15 +977,16 @@ Say ""
 Say "4. Sozlama -> $settingsPath"
 Step ("yetti hook: bo'lim taklifi, budjetni nolga tushirish, kontekst o'lchovi, " +
       "qo'riqchi, aktyor budjeti, kod tekshiruvi, sarf hisobi")
-Step "yo'llar mutlaq, manba: $toolsDir"
-Step "ruxsat: klonning docs va memory papkalari additionalDirectories da, $($Allow.Count) ta asbob buyrug'i oldindan ruxsatli"
+Step "yo'llar mutlaq, manba (snapshot): $snapTools"
+Step "ruxsat: snapshotning docs va klonning memory papkalari additionalDirectories da, $($Allow.Count) ta asbob buyrug'i oldindan ruxsatli"
+Step "env.GENIUS_CLONE: memory va holat klonga yoziladi, snapshotga emas"
 Step "so'raladi: run_tests.py, guruh.py birlashtir va tozala (yon ta'siri bor)"
 if ($Update) { Step "birlashtiriladi: klonga ishora qilmagan hook, ruxsat (allow, ask, deny) va papkalar saqlanadi" }
 
 if ($Apply) {
   New-Item -ItemType Directory -Path $ClaudeDir -Force | Out-Null
   if ($Update) {
-    $r = Invoke-Py @($merger, $settingsPath, $stageSettings, '--root', $GeniusPath, '--yoz')
+    $r = Invoke-Py (@($merger, $settingsPath, $stageSettings) + $mergeRoots + @('--yoz'))
     if ($r.Code -ne 0) {
       Fail ("settings.json birlashtirilmadi va o'zgarmadi, skill va aktyorlar esa " +
             "yangilandi. Zaxira: $BackupTo. $($r.Out)")
@@ -880,6 +998,8 @@ if ($Apply) {
 }
 Remove-Item -LiteralPath $Stage -Recurse -Force
 $Stage = $null
+Remove-Item -LiteralPath $SrcTmp -Recurse -Force -ErrorAction SilentlyContinue
+$SrcTmp = $null
 
 # --- 7. Tekshirish -------------------------------------------------------
 
@@ -918,17 +1038,35 @@ try {
   $null = Get-Content -LiteralPath $settingsPath -Raw | ConvertFrom-Json
   Step "settings.json o'qiladi"
 } catch { Step "XATO: settings.json buzuq"; $ok = $false }
+# Hook yo'li klonga emas, snapshotga ishora qilishi shart (XV-Y1).
+# Xom JSON emas, buyruqlar bo'yicha (ConvertFrom-Json): xom matnda `\` qochirilgan.
+$hookCmds = @()
+try {
+  $written = Get-Content -LiteralPath $settingsPath -Raw | ConvertFrom-Json
+  foreach ($ev in $written.hooks.PSObject.Properties) {
+    foreach ($grp in @($ev.Value)) {
+      foreach ($hk in @($grp.hooks)) { $hookCmds += [string]$hk.command }
+    }
+  }
+} catch { $hookCmds = @() }
+$ownHooks = @($hookCmds | Where-Object { $_.Replace('\', '/').Contains("$snapTools/") })
+if ($ownHooks.Count -gt 0) {
+  Step "hook yo'li snapshotga ishora qiladi: $($ownHooks.Count) ta"
+} else { Step "XATO: hook yo'li snapshotga ishora qilmaydi"; $ok = $false }
 
 # Nisbiy yo'l qolmaganini tasdiqlash. Qolsa, skill boshqa proyektda
 # jim ishlamaydi: buyruq topilmaydi, sabab ko'rinmaydi.
 foreach ($target in @($skillDst, $agentsDst)) {
-  $r = Invoke-Py @($rewriter, $target, '--root', $GeniusPath, '--tekshir')
+  $r = Invoke-Py @($rewriter, $target, '--root', $SnapRoot, '--clone', $GeniusPath, '--tekshir')
   if ($r.Code -eq 0) { Step "nisbiy yo'l qolmadi: $(Split-Path -Leaf $target)" }
   else { Step "XATO: $($r.Out)"; $ok = $false }
 }
 
 # Asboblarning o'zi ishlayaptimi: har qatlamdan bitta arzon chaqiruv.
-$r = Invoke-Py @((Join-Path $toolsDir 'budget.py'), '--holat')
+# Hooklar settings.json env ni oladi: GENIUS_CLONE klonda, shuning uchun
+# sinov snapshotga .claude\.state yaratmaydi.
+$env:GENIUS_CLONE = $g
+$r = Invoke-Py @((Join-Path $snapTools 'budget.py'), '--holat')
 if ($r.Code -eq 0) { Step "asboblar ishlayapti" }
 else { Step "XATO: budget.py yiqildi: $($r.Out)"; $ok = $false }
 
@@ -940,7 +1078,7 @@ else { Step "XATO: budget.py yiqildi: $($r.Out)"; $ok = $false }
 $env:GENIUS_HOOK_DEBUG = '1'
 $savedProjectDir = $env:CLAUDE_PROJECT_DIR
 $env:CLAUDE_PROJECT_DIR = $GeniusPath
-$r = Invoke-Py @((Join-Path $toolsDir 'suggest_sections.py')) '{"prompt":"circuit breaker"}'
+$r = Invoke-Py @((Join-Path $snapTools 'suggest_sections.py')) '{"prompt":"circuit breaker"}'
 Remove-Item Env:GENIUS_HOOK_DEBUG -ErrorAction SilentlyContinue
 if ($null -eq $savedProjectDir) {
   Remove-Item Env:CLAUDE_PROJECT_DIR -ErrorAction SilentlyContinue
@@ -949,19 +1087,21 @@ if ($r.Code -eq 0 -and $r.Out -match 'patterns') { Step "bo'lim taklifi ishlayap
 else { Step "XATO: bo'lim taklifi bo'sh: $($r.Out)"; $ok = $false }
 
 if ($BashExe) {
-  $r = Invoke-Native $BashExe @((Join-Path $toolsDir 'doc.sh').Replace('\', '/'), 'find', 'circuit breaker')
+  $r = Invoke-Native $BashExe @((Join-Path $snapTools 'doc.sh').Replace('\', '/'), 'find', 'circuit breaker')
   if ($r.Code -eq 0) { Step "doc.sh ishlayapti" }
   else { Step "XATO: doc.sh ishlamadi (bash ichida python3 yo'qmi?): $($r.Out)"; $ok = $false }
 }
+Remove-Item Env:GENIUS_CLONE -ErrorAction SilentlyContinue
 
 Say ""
 if ($ok) {
   Say "Tayyor. Yangi sessiyada /manguberdi deb chaqiring."
   Say "Zaxira: $BackupTo"
   Say ""
-  Say "Diqqat: skill qo'llanmani shu klondan o'qiydi."
-  Say "$GeniusPath ko'chirilsa yoki o'chirilsa, hooklar ishlamay qoladi:"
-  Say "skriptni yangi yo'l bilan qayta yurgizing."
+  Say "Hooklar va qo'llanma snapshotdan o'qiladi: $SnapRoot"
+  Say "(commit $($Sha.Substring(0, 12))). Klondagi git pull ularni O'ZGARTIRMAYDI."
+  Say "Yangilash (snapshotdagi nusxa, klondagi emas): python $snapTools/yangilash.py (ro'yxatni ko'rsatadi, tasdiq so'raydi)."
+  Say "Memory va holat klonda: $GeniusPath. Klon ko'chirilsa skriptni yangi yo'l bilan qayta yurgizing."
   Show-OptIn
 } else {
   Say "O'rnatish to'liq emas, yuqoriga qarang. Zaxira: $BackupTo"

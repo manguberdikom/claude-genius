@@ -84,8 +84,7 @@ def env_int(name):
 def state_dir():
     """Holat papkasi: GENIUS_STATE_DIR (budget.py, state.py bilan bir xil),
     aks holda klondagi `.claude/.state`. Har chaqiruvda o'qiladi."""
-    return (os.environ.get("GENIUS_STATE_DIR")
-            or os.path.join(ROOT, ".claude", ".state"))
+    return geniuslib.state_dir(ROOT)
 
 
 def state_path():
@@ -143,6 +142,7 @@ def candidates():
             break
         path = parent
     out.append(ROOT)
+    out.append(geniuslib.clone_root(ROOT))
     return out
 
 
@@ -353,6 +353,11 @@ def memory_slug():
         return name.lower()
 
 
+def clone_dir():
+    """Klon: memory shu yerda (global o'rnatishda ROOT snapshot, R7.8 XV-Y1)."""
+    return geniuslib.clone_root(ROOT)
+
+
 def same_path(a, b):
     return (os.path.normcase(os.path.realpath(a))
             == os.path.normcase(os.path.realpath(b)))
@@ -360,9 +365,9 @@ def same_path(a, b):
 
 def show_path(path):
     """Klon ichida ishlaganda klondagi fayl nisbiy, qolgani to'liq, `/` bilan."""
-    if same_path(project_dir(), ROOT):
+    if same_path(project_dir(), clone_dir()):
         try:
-            rel = os.path.relpath(path, ROOT)
+            rel = os.path.relpath(path, clone_dir())
         except ValueError:
             rel = ".."   # Windows: boshqa disk
         if not rel.startswith(".."):
@@ -408,7 +413,7 @@ def memory_report():
             continue
         print("## %s\n\n%s\n" % (show_path(path), text))
     print("Topic fayl indeksdagi tavsifga qarab, faqat keragi o'qiladi. "
-          "Yozish qoidasi: %s" % show_path(os.path.join(ROOT, "memory", "README.md")))
+          "Yozish qoidasi: %s" % show_path(os.path.join(clone_dir(), "memory", "README.md")))
     return 0
 
 

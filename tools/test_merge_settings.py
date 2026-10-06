@@ -218,6 +218,57 @@ def case_butun_klon_papkasi_toraydi():
                              GENIUS + "/docs", GENIUS + "/memory"])
 
 
+def snapshot_settings(snap, clone):
+    """R7.8 XV-Y1: hook va docs snapshotda, memory va env.GENIUS_CLONE klonda."""
+    data = fresh(snap)
+    data["permissions"]["additionalDirectories"] = [snap + "/docs", clone + "/memory"]
+    data["env"]["GENIUS_CLONE"] = clone
+    return data
+
+
+def case_bir_necha_root_snapshot_almashadi():
+    """`--root` takroran: klon va eski snapshot o'ziniki. Yangilashda eski
+    snapshotning hooki, ruxsati va docs yozuvi yangisiga almashadi (ikkilanmaydi),
+    boshqa klonning snapshoti va begona yozuv qoladi."""
+    eski = "C:/Users/a/.claude/genius/aaaaaaaaaaaa"
+    yangi = "C:/Users/a/.claude/genius/bbbbbbbbbbbb"
+    boshqa = "C:/Users/a/.claude/genius/cccccccccccc"
+    existing = snapshot_settings(eski, GENIUS)
+    existing["hooks"]["Stop"] = [{"hooks": [
+        hook(own_cmd("usage.py", boshqa)), hook("echo begona")]}]
+    existing["permissions"]["allow"].append("Bash(npm test:*)")
+    existing["permissions"]["additionalDirectories"].append(boshqa + "/docs")
+    with workdir() as tmp:
+        old = os.path.join(tmp, "settings.json")
+        new = os.path.join(tmp, "yangi.json")
+        write_json(old, existing)
+        write_json(new, snapshot_settings(yangi, GENIUS))
+        code, out = run_main([old, new, "--root", GENIUS, "--root", eski,
+                              "--root", yangi, "--yoz"])
+        got = load(old)
+        cmds = [h["command"] for gs in got["hooks"].values() for g in gs
+                for h in g["hooks"]]
+        dirs = got["permissions"]["additionalDirectories"]
+        return (code == 0
+                and not any("aaaaaaaaaaaa" in c for c in cmds)
+                and sum("suggest_sections.py" in c and "bbbbbbbbbbbb" in c for c in cmds) == 1
+                and any("cccccccccccc" in c for c in cmds) and "echo begona" in cmds
+                and not any("aaaaaaaaaaaa" in r for r in got["permissions"]["allow"])
+                and "Bash(npm test:*)" in got["permissions"]["allow"]
+                and dirs == [boshqa + "/docs", yangi + "/docs", GENIUS + "/memory"]
+                and got["env"]["GENIUS_CLONE"] == GENIUS)
+
+
+def case_bitta_root_str_va_royxat_teng():
+    """merge() ga bitta satr ham, ro'yxat ham beriladi (eski chaqiruvlar buzilmasin)."""
+    old = fresh()
+    new = fresh()
+    a, _ = M.merge(old, new, GENIUS)
+    b, _ = M.merge(old, new, [GENIUS])
+    c, _ = M.merge(old, new, (GENIUS, GENIUS + "/"))
+    return a == b == c and M.norm_roots(["", "/", GENIUS + "/"]) == (GENIUS.lower(),)
+
+
 def case_foydalanuvchi_deny_va_ask_saqlanadi():
     """Foydalanuvchining deny va ask qoidasi qoladi, o'rnatuvchinikisi
     qo'shiladi. Avval foydalanuvchida shu nomli ro'yxat bo'lsa yangisi jim
@@ -377,6 +428,8 @@ CASES = [
     ("foydalanuvchining 8000 qiymati qoladi", case_foydalanuvchi_qiymati_qoladi),
     ("quruq yurish faylga tegmaydi", case_quruq_yurish_yozmaydi),
     ("buzuq JSON 1 qaytaradi, fayl tegilmaydi", case_buzuq_json_1),
+    ("bir necha --root: eski snapshot yangisiga almashadi", case_bir_necha_root_snapshot_almashadi),
+    ("merge() satr va ro'yxat root bilan bir xil", case_bitta_root_str_va_royxat_teng),
     ("BOM siz yoziladi, ikkinchi yurish o'zgartirmaydi",
      case_bomsiz_yoziladi_va_ikkinchi_yurish_ozgartirmaydi),
     ("ps1 hook va ruxsatlari o'zniki deb taniladi",

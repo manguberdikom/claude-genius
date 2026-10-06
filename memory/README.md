@@ -56,6 +56,11 @@ Proyekt papkasi qayerda (`docref.memory_dir`):
 `GENIUS_MEMORY_DIR` ni xususiy git repoga qo'yish mumkin, unda commit
 va push shu repoga va foydalanuvchi qaroriga ko'ra.
 
+Global o'rnatishda hooklar va asboblar `~/.claude/genius/<sha12>/`
+snapshotidan yuradi, lekin `<klon>` baribir klonning o'zi
+(`env.GENIUS_CLONE`): memory snapshotga emas, klonga yoziladi va push
+shu klondan qilinadi. Snapshot almashganda memory yo'qolmaydi.
+
 Har papkada `MEMORY.md` indeksi: bir yozuv bir qator, mazmunni
 tasvirlaydi, o'zida saqlamaydi (kod bloki, jadval va tugagan ish tarixi
 bo'lmaydi). Topic fayl nomi `<type>_<mavzu>.md`, kichik harf; `type`
@@ -77,8 +82,10 @@ modified: 2026-10-04T12:00:00Z
 O'qish: ish boshida ikki `MEMORY.md` indeksi o'qiladi (proyektniki va
 `umumiy/`), kerakli topic fayl indeksdagi tavsifga qarab o'qiladi.
 `python3 tools/handoff.py --memory` ikkalasini joyidan qat'i nazar
-bitta chaqiruvda beradi. Memory yo'qligi to'siq emas. `git pull` shart
-emas.
+bitta chaqiruvda beradi. Memory yo'qligi to'siq emas. Klonni yangilash
+memory oqimiga kirmaydi: hooklar klondan emas, pin qilingan snapshotdan
+yuradi va yangilashni `tools/yangilash.py` tasdiq bilan qiladi
+(`install/README.md`, "Yangilash").
 
 Yozish: darvozadan o'tkaz, mavjud yozuvni qidir (bor bo'lsa yangilanadi,
 yangi fayl qo'shilmaydi), yoz, indeksga bir qator qo'y. Keyin git

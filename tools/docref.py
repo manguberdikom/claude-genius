@@ -194,25 +194,32 @@ def memory_home():
     return os.path.join(os.path.expanduser("~"), ".claude", "genius-memory")
 
 
+def clone():
+    """Klon: yoziladigan memory shu yerda. Global o'rnatishda ROOT pin
+    qilingan snapshot, klon esa `GENIUS_CLONE` (geniuslib.clone_root,
+    R7.8 XV-Y1); o'rnatilmagan holatda ikkalasi bir xil."""
+    return geniuslib.clone_root(ROOT)
+
+
 def is_clone_project(cwd=None):
     """Joriy proyekt qo'llanma klonining o'zimi (pastki papkasi ham)."""
     top = _top(cwd or os.getcwd())
     return (os.path.normcase(os.path.realpath(top))
-            == os.path.normcase(os.path.realpath(ROOT)))
+            == os.path.normcase(os.path.realpath(clone())))
 
 
 def memory_root(cwd=None):
     """Proyekt memorysi ildizi: klonda `memory/`, boshqa proyektda
     memory_home()."""
     if is_clone_project(cwd):
-        return os.path.join(ROOT, "memory")
+        return os.path.join(clone(), "memory")
     return memory_home()
 
 
 def memory_dir(slug, cwd=None):
     """Bitta slug papkasi. `umumiy` va `claude-genius` har doim klonda."""
     if slug in SHARED_MEMORY:
-        return os.path.join(ROOT, "memory", slug)
+        return os.path.join(clone(), "memory", slug)
     return os.path.join(memory_root(cwd), slug)
 
 
@@ -246,7 +253,7 @@ def in_clone():
         here = os.path.realpath(os.getcwd())
     except OSError:
         return False
-    return os.path.normcase(here) == os.path.normcase(os.path.realpath(ROOT))
+    return os.path.normcase(here) == os.path.normcase(os.path.realpath(clone()))
 
 
 def tool_cmd(name):

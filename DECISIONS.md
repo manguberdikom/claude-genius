@@ -8,6 +8,105 @@ Hamma o'zgarish bu yerga yozilmaydi. Yoziladigani: foydalanuvchi
 muhitiga tegadigan, ma'lumot yo'qotishi mumkin bo'lgan yoki ruxsat
 qarorini o'zgartiradigan o'zgarish.
 
+## 2026-10-06: Global o'rnatishda hooklar pin qilingan snapshotdan yuradi, yangilash tasdiq bilan
+
+**Nima o'zgardi.** Hook buyruqlari, `permissions.allow`, `<docs>`
+`additionalDirectories` yozuvi va skill matnidagi `tools/` yo'llari klonning
+ishchi daraxtiga emas, `~/.claude/genius/<sha12>/` ga ishora qiladi. U
+`git worktree add --detach` bilan HEAD commitdan yasaladi (butun daraxt,
+`install/snapshot.py`; `install.py` va `manguberdi.ps1` bir xil joy va bir
+xil buyruqni undan oladi), indeks unda bir marta quriladi. Yoziladigan
+narsa snapshotga emas, klonga ketadi: o'rnatuvchi `settings.json` `env` ga
+`GENIUS_CLONE` yozadi va `geniuslib.clone_root` / `state_dir` shuni
+o'qiydi, faqat ROOT `~/.claude/genius/<12 hex>` bo'lsa (klonning o'zi va
+`.claude/worktrees/genius-x` o'z daraxtiga yozadi). `<klon>/memory` `additionalDirectories` da qoladi. Yangi
+`tools/yangilash.py`: `git fetch`, `git log --oneline` va hookka tegadigan
+yo'llar (`tools install .claude .github`) uchun `git diff --stat`, so'rov
+(`--ha` so'ramaydi, `--faqat-korsat` hech narsa qilmaydi), tasdiqdan
+keyin `merge --ff-only` va o'rnatuvchining mavjud yo'li bilan yangi
+snapshot; eski snapshot bittasi qoladi, qolgani `git worktree remove`
+bilan ketadi. `yangilash.py` ning o'zi ham pin qilingan: snapshotdagi
+nusxa bilan yuradi (klondagi nusxa manifest bor bo'lsa to'xtaydi,
+`--klondan` bilan ataylab), klon manifestdagi `clone` dan olinadi va
+env yoki skript joyi undan farq qilsa xato. O'rnatuvchi o'rnatilgan
+commitdan farqli sha ga o'tayotganda `log --oneline` ro'yxatini
+ko'rsatadi (tasdiqsiz qo'lda yo'l ochiq qoldirilgan, SECURITY.md). `--uninstall` snapshotlarni ham olib tashlaydi (faqat
+`~/.claude/genius/<12 hex>`). `merge_settings.py` va
+`uninstall_settings.py` `--root` ni takroran qabul qiladi (klon va uning
+snapshotlari o'zniki). Klon `.claude/settings.json` (A yo'li) o'zgarmadi.
+
+**Nega.** Audit XV-Y1: hook yo'li klonning `tools/` iga bog'langan edi,
+shuning uchun `main` ga tushgan bitta yomon commit `git pull` dan keyingi
+birinchi promptdayoq, hech kim ko'rmasdan, har Java proyektda
+foydalanuvchi huquqi bilan bajarilardi (34 soatda 40 commit hook
+fayllariga tekkan, tashqi PR 74 daqiqada merge qilingan, tag va imzo yo'q).
+Hook yangilash siyosati (audit 9-bo'lim, 12-savol): faqat tasdiq bilan.
+`<asos>` sifatida klon HEAD emas, hozir ishlayotgan snapshot commiti
+olinadi: aks holda qo'lda `git pull` qilingan commitlar ro'yxatda
+ko'rinmay hookka o'tardi.
+
+**Rad etilgan variantlar.**
+
+- *Faqat `tools/` ni nusxalash.* Rad etildi: asboblar `ROOT` ni `tools/` ning
+  ota papkasidan oladi va `index/`, `docs/`, `GLOSSARY.md`, `.claude/.state`
+  ni shu yerdan o'qiydi, nusxa hooklarni buzardi.
+- *Memory uchun `git checkout origin/main -- memory/`.* Rad etildi: lokal
+  `main` origin dan orqada qolsa push rad etiladi, baribir pull kerak
+  bo'ladi. Memory klonda, push shu yerdan.
+- *`git archive` nusxasi worktree o'rniga.* Rad etildi: git bilan aloqasiz
+  papka o'chirishda `worktree remove` qilmaydi, reestr eskirgan yozuv
+  qoldiradi va doctor commitni solishtira olmaydi. (Archive faqat
+  quruq yurishda, git ga yozmaslik uchun ishlatiladi.)
+- *Barqaror `~/.claude/genius/current` symlinki.* Rad etildi: hook yo'li
+  o'zgarmasa o'zgarish `settings.json` da ko'rinmaydi, almashtirish esa
+  tasdiqsiz bo'lib qolishi mumkin; sha yo'li o'zi tasdiq izi. Narxi: `run_tests.py`
+  opt-in qoidasi har yangilashdan keyin qayta qo'shiladi.
+- *Avtomatik yangilash.* Rad etildi (12-savol qarori: faqat tasdiq bilan).
+- *Klondan yurgan `yangilash.py` ni snapshotdan qayta exec qilish.* Rad
+  etildi: stdin va argumentlarni ko'chirish nozik, to'xtatib yo'lni
+  aytish soddaroq va xavfsizroq.
+- *Ikki klon uchun sha ga klon identifikatori qo'shish (`<sha12>-<klon>`).*
+  Rad etildi: spetsifikatsiya joyi `<sha12>`; boshqa klon yasagan snapshotga
+  `yarat` xato beradi.
+- *`GENIUS_CLONE` o'rniga `GENIUS_STATE_DIR` va `GENIUS_MEMORY_DIR` ni
+  alohida yozish.* Rad etildi: memory yo'li (`umumiy`, `claude-genius`)
+  klondan olinadi, uchta o'zgaruvchi esa har yangilashda uch joyda
+  mos kelishi kerak bo'lardi. `GENIUS_STATE_DIR` baribir ustun.
+
+**Xavf.** Yozuvchilar ro'yxati: holat papkasi (`budget.py`, `state.py`,
+`usage.py` ham `.claude/usage`, `handoff.py`, `hookio.py`, `actor_check.py`,
+`run_tests.py`), memory (`docref.py`, `rules_for.py`, `guard.py` ning git
+tekshiruvi, `handoff.py`), `hookio.active()`. Shulardan biri `ROOT` ga
+tushib qolsa snapshotga yozilardi: `tools/test_yangilash.py` snapshotda
+`.claude/.state`, `usage` va memory yo'qligini tekshiradi. Klon o'chsa
+`GENIUS_CLONE` e'tiborsiz qolib yozuv snapshotga tushadi (doctor
+ogohlantiradi). Snapshot HEAD dan olinadi, commit qilinmagan o'zgarish
+kirmaydi (o'rnatuvchi ogohlantiradi). Ikki klon bir sha da bitta
+snapshotni ulasha olmaydi: ikkinchisining `yarat` i xato beradi. Tasdiq odam o'qishiga tayanadi: `--ha`
+himoyani olib tashlaydi. ps1 va Windows dagi `yangilash.py` yo'li agent
+sessiyasida yurmaydi, faqat CI va matn paritet testlari.
+
+**Qaysi tekshiruv o'tdi.** `tools/test_yangilash.py` 64/64 (o'rnatish
+snapshot yasaydi, `git pull` dan keyin `sha256sum snapshot/tools/*.py`
+o'zgarmaydi, `--faqat-korsat` va rad etish hech narsa o'zgartirmaydi,
+tasdiqda ff-merge va yangi snapshot va settings, eski bittasi qoladi va
+keyingisida tozalanadi, iflos klon, detached HEAD va ajralgan tarixda
+to'xtaydi, memory va holat klonga tushadi, snapshot o'zgartirilgan yoki
+qo'lda o'chirilgan holat), `tools/test_install.py` 126/126 (snapshot,
+paritet snapshot joyi, eski o'rnatishdan o'tish, yetim snapshot,
+`--uninstall`), `tools/test_rewrite_paths.py` 39/39 (ps1 hook yo'li
+snapshotga, `--clone` va `--root-keyin`), `test_merge_settings` 19/19,
+`test_uninstall_settings` 14/14, `test_doctor` 12/12, `test_budget` 40/40,
+`run_all_tests.py` (32 suite), `check_docs.py`, `eval_skill.py`. CI
+`-Uninstall` qadamlari snapshot yozuvi qolmaganini ham tekshiradi.
+
+**Orqaga qaytarish.** Avval joriy kod bilan `python3 install/install.py
+--uninstall --apply` (u snapshot yozuvlari va worktree larni oladi:
+eski kod ularni o'zniki deb tanimaydi), so'ng `git revert` va o'rnatuvchini
+qayta yurgizish: hook yo'llari klonga qaytadi. Faqat shu yangilanishdan
+keyin nimadir buzilsa: o'rnatuvchi zaxirasidagi `.claude--settings.json`
+ni qaytaring, u qoldirilgan eski snapshotga ishora qiladi.
+
 ## 2026-10-06: Aktyor javobi SubagentStop hooki bilan tekshiriladi
 
 **Nima o'zgardi.** Yangi `tools/actor_check.py` `SubagentStop` hookiga

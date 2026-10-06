@@ -22,9 +22,10 @@ import os
 import shutil
 import time
 
+import geniuslib
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-STATE_DIR = (os.environ.get("GENIUS_STATE_DIR")
-             or os.path.join(ROOT, ".claude", ".state"))
+STATE_DIR = geniuslib.state_dir(ROOT)
 MARKS = os.path.join(STATE_DIR, "rules_for")
 # Eski shakl: clear() uni ham tozalaydi, aks holda yetim qoladi.
 LEGACY_LOG = os.path.join(STATE_DIR, "rules_for.json")
@@ -68,9 +69,6 @@ def mark(paths, labels=()):
     yozuvchiga berilmagan boblarni aytadi.
     """
     body = json.dumps({"labels": sorted(set(labels))}, ensure_ascii=False)
-    # Kech import: state.py ni check_code hook yo'lida ham yuklaydi
-    # (was_marked), geniuslib faqat yozuvchi mark() ga kerak.
-    import geniuslib
     try:
         os.makedirs(MARKS, exist_ok=True)
         for path in paths:

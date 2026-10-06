@@ -202,6 +202,24 @@ def case_ornatilgan(tmp):
                               and "o'rnatilgan: 000000000000" in other[1])))
 
 
+def case_snapshot_manifesti(tmp):
+    """R7.8 XV-Y1: manifestda `clone` bor: root snapshot (tools shu yerda),
+    klon alohida. Snapshot to'liq emas yoki klon yo'q bo'lsa aytiladi, commit
+    farqi `yangilash.py` ga yo'naltiradi (eski o'rnatishdagi 'qayta yurgizing' emas)."""
+    head = D.git_head(ROOT)
+    pinned = {"root": ROOT, "clone": ROOT, "commit": "0" * 40}
+    ok = D.check_clone(pinned)
+    gone = D.check_clone({"root": ROOT, "clone": os.path.join(tmp, "yoq-klon")})
+    broken = D.check_clone({"root": os.path.join(tmp, "yoq-snapshot"), "clone": ROOT})
+    diff = D.check_installed(pinned)
+    old = D.check_installed({"root": ROOT, "commit": "0" * 40})
+    return (ok[0] == D.OK and "snapshot" in ok[1]
+            and gone[0] == D.WARN and "memory va holat" in gone[1]
+            and broken[0] == D.FAIL and "snapshot" in broken[1]
+            and (not head or (diff[0] == D.WARN and "yangilash.py" in diff[1]
+                              and "yangilash.py" not in old[1])))
+
+
 def subagent(cfg, sid, name, actor, model, age_days=0):
     folder = os.path.join(cfg, "projects", "p", sid, "subagents")
     path = write(os.path.join(folder, name + ".jsonl"), json.dumps(
@@ -265,6 +283,7 @@ CASES = [
     ("GENIUS_PYTHON, settings env va python3", case_python),
     ("klon yo'li bor-yo'qligi", case_klon),
     ("o'rnatilgan commit klon bilan", case_ornatilgan),
+    ("snapshot manifesti: root snapshot, clone klon", case_snapshot_manifesti),
     ("aktyor -> model jadvali va alias ogohlantirishi", case_aktyor_modeli),
     ("CLI: har band bir qator, kod 0/1", case_cli_bir_qator_va_kod),
 ]

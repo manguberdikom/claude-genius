@@ -8,6 +8,8 @@
         [--python P] [--bash B] --allow
     python3 install/rewrite_paths.py <papka> --root <klon> \
         [--python P] --opt-in
+    python3 install/rewrite_paths.py <papka> --root <snapshot> --clone <klon> \
+        [--root-keyin] ...
 
 Nega kerak: skill matni `python3 tools/rules_for.py` deb yozilgan va bu
 yo'l JORIY papkaga nisbatan hal qilinadi. Klon ichida ishlaganda to'g'ri,
@@ -27,6 +29,15 @@ shuning uchun klon ichidagi xulq o'zgarmaydi. `--allow` faylga yozmaydi:
 allaqachon almashtirilgan matnda uchragan har asbob uchun ruxsat qoidasini
 JSON qilib chiqaradi. Qoida buyruq matnining aynan boshlanishi bo'lishi
 shart, shuning uchun uni yo'lni yozgan funksiyaning o'zi yasaydi.
+
+`--root` global o'rnatishda PIN QILINGAN SNAPSHOT (`~/.claude/genius/<sha12>`,
+install/snapshot.py): asboblar va qo'llanma shu yerdan o'qiladi. Yoziladigan
+`memory/` yo'li esa klonga ketadi: `--clone <klon>` berilsa matndagi
+`memory/` shu klonga almashadi (memory klon reposi bilan push qilinadi va
+snapshot almashganda yo'qolmasligi shart). `--clone` siz klon = `--root`,
+ya'ni klon ichida ishlash o'zgarmaydi. `--root-keyin`: snapshot hali
+yaratilmagan (quruq yurish), `--root` mavjudligi tekshirilmaydi; `--clone`
+baribir mavjud bo'lishi shart.
 
 Global ruxsat faqat yon ta'sirsiz asboblarga beriladi (XV-K1, XV-T1):
 - `run_tests.py` ro'yxatga KIRMAYDI. U proyektning gradlew, build.gradle,
@@ -144,9 +155,13 @@ def tool_cmd(root, runner, name):
                       quote("%s/tools/%s" % (root, name)))
 
 
-def rewrite(text, root, bash="bash", python="python3"):
-    """Matndagi nisbiy yo'llarni mutlaq qiladi. (yangi matn, almashtirish soni)."""
+def rewrite(text, root, bash="bash", python="python3", clone=None):
+    """Matndagi nisbiy yo'llarni mutlaq qiladi. (yangi matn, almashtirish soni).
+
+    `tools/` yo'li `root` ga (snapshot), `memory/` esa `clone` ga (berilmasa
+    `root`) ketadi."""
     root = clean_root(root)
+    memory_root = clean_root(clone) if clone else root
     count = [0]
 
     def py(match):
@@ -159,7 +174,7 @@ def rewrite(text, root, bash="bash", python="python3"):
 
     def mem(_):
         count[0] += 1
-        return "%s/memory/" % root
+        return "%s/memory/" % memory_root
 
     def root_file(match):
         count[0] += 1
@@ -233,6 +248,10 @@ def main(argv=None):
     parser = argparse.ArgumentParser(add_help=True)
     parser.add_argument("folder")
     parser.add_argument("--root", required=True)
+    parser.add_argument("--clone", default="",
+                        help="klon yo'li: memory/ shu yerga almashadi (sukut --root)")
+    parser.add_argument("--root-keyin", action="store_true",
+                        help="--root hali yo'q (snapshot keyin yaratiladi), tekshirilmaydi")
     parser.add_argument("--bash", default="bash")
     parser.add_argument("--python", default="python3",
                         help="interpreter yo'li, skill buyruqlari shu bilan yoziladi")
@@ -246,7 +265,8 @@ def main(argv=None):
                            "bo'lagini JSON qilib chiqaradi (run_tests ruxsati)")
     args = parser.parse_args(argv)
 
-    for flag, value in (("--root", args.root), ("--python", args.python)):
+    for flag, value in (("--root", args.root), ("--python", args.python),
+                        ("--clone", args.clone)):
         char = unsafe_value(value)
         if char:
             print("%s qiymatida %s bor: hook buyrug'i bash da qo'sh qo'shtirnoq "
@@ -256,8 +276,11 @@ def main(argv=None):
 
     # Mavjud bo'lmagan klonga yo'l yozilsa, skill o'rnatiladi va har
     # buyruq "No such file" beradi: shu yerda to'xtaladi.
-    if not os.path.isdir(args.root):
+    if not args.root_keyin and not os.path.isdir(args.root):
         print("root papka emas: %s" % args.root, file=sys.stderr)
+        return 2
+    if args.clone and not os.path.isdir(args.clone):
+        print("klon papka emas: %s" % args.clone, file=sys.stderr)
         return 2
 
     if not os.path.isdir(args.folder):
@@ -289,7 +312,8 @@ def main(argv=None):
                       % (os.path.basename(path), len(remaining),
                          ", ".join(sorted(set(remaining))[:3])))
             continue
-        new, count = rewrite(text, args.root, args.bash, args.python)
+        new, count = rewrite(text, args.root, args.bash, args.python,
+                             args.clone or None)
         total += count
         if new != text:
             with open(path, "w", encoding="utf-8") as handle:

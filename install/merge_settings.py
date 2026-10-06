@@ -3,12 +3,20 @@
 
     python3 install/merge_settings.py <mavjud> <yangi> --root <klon>
     python3 install/merge_settings.py <mavjud> <yangi> --root <klon> --yoz
+    python3 install/merge_settings.py <mavjud> <yangi> --root <klon> \
+        --root <eski-snapshot> --root <yangi-snapshot> --yoz
 
-Nega kerak: `manguberdi.ps1 -Update` git pull dan keyin faqat o'z
+Nega kerak: `manguberdi.ps1 -Update` qayta o'rnatishda faqat o'z
 birliklarini almashtiradi. settings.json da esa foydalanuvchining o'z
 hooklari, ruxsatlari va boshqa kalitlari ham turadi: faylni butunligicha
 yangisi bilan bosish ularni o'chirardi. Shuning uchun faqat shu klonning
 `tools/` papkasiga ishora qilgan yozuvlar almashadi.
+
+`--root` bir necha marta beriladi (R7.8, XV-Y1): global o'rnatishda hooklar
+klonning o'zida emas, pin qilingan snapshotda (`~/.claude/genius/<sha12>`)
+turadi. O'zniki: klon, uning avvalgi va yangi snapshotlari. Yangilashda
+eski snapshotga ishora qilgan hook shu yo'l bilan olib tashlanadi, aks
+holda eski va yangi hook birga yurardi.
 
 O'zniki: buyrug'i (teskari slash `/` ga, harflar kichikka o'girilgach)
 `<root>/tools/` ni o'z ichiga olgan hook. Root ham xuddi shunday
@@ -69,26 +77,46 @@ def norm_root(root):
     return norm(root).rstrip("/")
 
 
+def norm_roots(root):
+    """Bitta yo'l yoki yo'llar ro'yxati -> normallangan, bo'shsiz, takrorsiz tuple."""
+    items = [root] if isinstance(root, str) else list(root)
+    out = []
+    for item in items:
+        value = norm_root(item)
+        if value and value not in out:
+            out.append(value)
+    return tuple(out)
+
+
+def _roots(root):
+    """Allaqachon normallangan bitta yo'l yoki tuple."""
+    return (root,) if isinstance(root, str) else tuple(root)
+
+
 def is_own_hook(hook, root):
     command = hook.get("command") if isinstance(hook, dict) else None
-    return isinstance(command, str) and (root + "/tools/") in norm(command)
+    return isinstance(command, str) and any(
+        (one + "/tools/") in norm(command) for one in _roots(root) if one)
 
 
 def is_own_rule(rule, root):
     """Root dan keyin yo'l nomi davom etmasa: `<root>-eski` boshqa klon."""
-    if not isinstance(rule, str) or not root:
+    if not isinstance(rule, str):
         return False
-    return re.search(re.escape(root) + r"(?![\w.-])", norm(rule)) is not None
+    text = norm(rule)
+    return any(re.search(re.escape(one) + r"(?![\w.-])", text) is not None
+               for one in _roots(root) if one)
 
 
 def is_own_dir(entry, root):
     """additionalDirectories yozuvi: root ning o'zi yoki uning ostida.
 
     `<root>-eski` boshqa klon: root dan keyin `/` kelishi shart."""
-    if not isinstance(entry, str) or not root:
+    if not isinstance(entry, str):
         return False
     path = norm_root(entry)
-    return path == root or path.startswith(root + "/")
+    return any(path == one or path.startswith(one + "/")
+               for one in _roots(root) if one)
 
 
 def read_settings(path, must_exist):
@@ -206,7 +234,7 @@ def drop_legacy(merged, stats):
 
 def merge(old, new, root, path="mavjud"):
     """(birlashgan sozlama, sanoq). old va new o'zgarmaydi."""
-    root = norm_root(root)
+    root = norm_roots(root)
     stats = {"eski": 0, "yangi": 0, "ruxsat_eski": 0, "ruxsat_yangi": 0,
              "eskirgan": []}
     hooks = merge_hooks(section(old, "hooks", dict, path),
@@ -274,7 +302,9 @@ def main(argv=None):
     parser = argparse.ArgumentParser(add_help=True)
     parser.add_argument("mavjud", help="hozirgi settings.json (yo'q bo'lsa {})")
     parser.add_argument("yangi", help="toza o'rnatishning to'liq settings.json i")
-    parser.add_argument("--root", required=True, help="claude-genius klonining yo'li")
+    parser.add_argument("--root", required=True, action="append",
+                        help="claude-genius klonining yo'li; snapshot yo'llari uchun "
+                             "takroran beriladi")
     parser.add_argument("--yoz", action="store_true",
                         help="mavjud faylga yozadi; bersiz faqat xulosa")
     args = parser.parse_args(argv)

@@ -25,10 +25,17 @@ import collections
 import contextlib
 import io
 import os
+import shutil
+import subprocess
 import sys
 import time
 
 SLOW_MS = 200
+
+# Sinov jonli sessiyaning global sozlamasidan (settings.json env) xoli:
+# GENIUS_CLONE tashqaridan kirsa memory va holat yo'llari klonga qarab
+# ketardi (tools/geniuslib.py clone_root). Kerak bo'lgan sinov uni o'zi beradi.
+os.environ.pop("GENIUS_CLONE", None)
 
 Result = collections.namedtuple("Result", "returncode stdout stderr")
 
@@ -139,3 +146,55 @@ def run_cases(cases, argv=(), headers=False):
             print("%8.0f ms  %s" % (ms, name))
     print("\n%d/%d o'tdi" % (total - failures, total))
     return 1 if failures else 0
+
+
+# --- git fixture: vaqtinchalik repo, bare origin va klonlar ----------------
+#
+# Global o'rnatish snapshotni `git worktree add` bilan yasaydi (R7.8 XV-Y1),
+# shuning uchun uni sinash uchun haqiqiy git repo kerak. Sinov reponing o'ziga
+# (uning .git/worktrees iga) tegmaydi: ishchi daraxtning nusxasi vaqtinchalik
+# papkada alohida repo bo'ladi.
+
+REPO_IGNORE = shutil.ignore_patterns(
+    ".git", "index", "dist", "worktrees", "__pycache__", ".state", "usage", "audit")
+
+
+def git(cwd, *args):
+    """`git <args>` ni cwd da yurgizadi: stdout (bo'sh joysiz). Xatoda RuntimeError.
+
+    Shaxsiy sozlama (imzo, hook) ta'sir qilmasligi uchun o'zgaruvchilar va -c
+    bayroqlari aniq beriladi."""
+    env = dict(os.environ, GIT_AUTHOR_NAME="sinov", GIT_AUTHOR_EMAIL="sinov@example.com",
+               GIT_COMMITTER_NAME="sinov", GIT_COMMITTER_EMAIL="sinov@example.com",
+               GIT_TERMINAL_PROMPT="0")
+    proc = subprocess.run(
+        ["git", "-c", "commit.gpgsign=false", "-c", "core.hooksPath=" + os.devnull,
+         "-c", "protocol.file.allow=always"] + list(args),
+        cwd=cwd, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT, encoding="utf-8", errors="replace")
+    if proc.returncode != 0:
+        raise RuntimeError("git %s: %s" % (" ".join(args), proc.stdout.strip()))
+    return proc.stdout.strip()
+
+
+def repo_nusxa(src_root, dst):
+    """src_root ishchi daraxtining nusxasi dst da, bitta commit li `main` repo."""
+    shutil.copytree(src_root, dst, symlinks=True, ignore=REPO_IGNORE)
+    git(dst, "init", "-q")
+    git(dst, "symbolic-ref", "HEAD", "refs/heads/main")
+    git(dst, "add", "-A")
+    git(dst, "commit", "-q", "-m", "boshlang'ich")
+    return dst
+
+
+def origin_va_klonlar(template_bare, base):
+    """(origin.git, klon, dev): bare origin shablondan, undan ikki klon.
+
+    `klon` o'rnatiladigan klon, `dev` esa origin ga yangi commit push qiladigan
+    ikkinchi ishchi daraxt (boshqa dasturchi)."""
+    origin = os.path.join(base, "origin.git")
+    git(base, "clone", "-q", "--bare", template_bare, origin)
+    klon, dev = os.path.join(base, "klon"), os.path.join(base, "dev")
+    git(base, "clone", "-q", origin, klon)
+    git(base, "clone", "-q", origin, dev)
+    return origin, klon, dev

@@ -68,6 +68,8 @@ import time
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
 
+import geniuslib
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 PARSER = os.path.join(HERE, "parse_test_output.py")
 
@@ -163,8 +165,7 @@ MAX_SHOWN = 12
 # Yiqilgan sinflar shundan ko'p bo'lsa qayta yurgizilmaydi: bu flaky emas,
 # keng buzilish, qayta yurish faqat vaqt oladi.
 MAX_RERUN = 30
-STATE_DIR = (os.environ.get("GENIUS_STATE_DIR")
-             or os.path.join(os.path.dirname(HERE), ".claude", ".state"))
+STATE_DIR = geniuslib.state_dir(os.path.dirname(HERE))
 JOURNAL = os.path.join(STATE_DIR, "run_tests.jsonl")
 STARTED_RE = re.compile(r"\bStarted (\S+) in ([\d.]+) seconds\b")
 

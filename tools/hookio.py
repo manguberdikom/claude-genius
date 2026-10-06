@@ -144,7 +144,7 @@ def active(payload=None):
     root = project_root(payload)
     if root is None:
         return False
-    if _same(root, ROOT):
+    if _same(root, ROOT) or _same(root, _clone()):
         return True
     try:
         with os.scandir(root) as entries:
@@ -167,11 +167,25 @@ ERRORS_LOG = "hook_errors.log"
 ERRORS_KEEP = 200
 
 
+def _clone():
+    """Klon: global o'rnatishda ROOT snapshot, klon GENIUS_CLONE (geniuslib)."""
+    try:
+        import geniuslib
+        return geniuslib.clone_root(ROOT)
+    except ImportError:
+        return ROOT
+
+
 def state_dir():
     """Holat papkasi: GENIUS_STATE_DIR, aks holda klondagi `.claude/.state`
-    (budget, state va handoff bilan bir xil). Har chaqiruvda o'qiladi."""
-    return (os.environ.get("GENIUS_STATE_DIR")
-            or os.path.join(ROOT, ".claude", ".state"))
+    (budget, state va handoff bilan bir xil: geniuslib.state_dir). Global
+    o'rnatishda ROOT snapshot, klon esa GENIUS_CLONE. Har chaqiruvda o'qiladi."""
+    try:
+        import geniuslib   # kech: topilmasa hookio baribir yuklanadi
+        return geniuslib.state_dir(ROOT)
+    except ImportError:
+        return (os.environ.get("GENIUS_STATE_DIR")
+                or os.path.join(ROOT, ".claude", ".state"))
 
 
 def fail_open(name, exc):

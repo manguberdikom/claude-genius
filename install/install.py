@@ -20,9 +20,20 @@ vaqtinchalik papkada yig'ib sinaydi, keyin o'chiradi: nosozlik hech narsa
 o'chmasidan oldin chiqadi. Faqat shu vaqtinchalik papkaga yoziladi,
 `~/.claude`, klon va indeksga tegilmaydi.
 
+Hooklar klonning ishchi daraxtidan EMAS, aniq commit dagi snapshotdan
+yuradi: `git worktree add --detach ~/.claude/genius/<sha12>` (R7.8, XV-Y1).
+Aks holda `git pull` dan keyingi birinchi promptdayoq tekshirilmagan kod
+bajarilardi. Skill, hook buyruqlari, ruxsat qoidalari va `<snapshot>/docs`
+snapshotga ishora qiladi; memory va holat (`.claude/.state`) klonda qoladi:
+settings.json `env.GENIUS_CLONE` ni yozadi. Yangi commit snapshotga faqat
+`tools/yangilash.py` (ro'yxatni ko'rsatadi, tasdiq so'raydi) yoki shu
+skriptni qayta yurgizish bilan o'tadi. Snapshot HEAD commitdan olinadi:
+klondagi commit qilinmagan o'zgarish unga kirmaydi.
+
 Yordamchilar qayta ishlatiladi, takrorlanmaydi: `rewrite_paths.py` (yo'l
 almashtirish, ruxsat ro'yxati, opt-in bo'lagi), `merge_settings.py`
-(settings.json ni birlashtirish), `uninstall_settings.py` (olib tashlash).
+(settings.json ni birlashtirish), `uninstall_settings.py` (olib tashlash),
+`snapshot.py` (snapshot joyi, yaratish, tozalash: ps1 ham shuni chaqiradi).
 `restore_backup.py` o'rnatishda chaqirilmaydi: u zaxirani qaytaradi
 (install/README.md, "Orqaga qaytarish").
 
@@ -48,8 +59,8 @@ manguberdi.ps1 qadamlari va ularning shu yerdagi o'rni:
        --opt-in
     hook jadvali, settings.json                 sozlama_yasa, HOOKS
     -Update: merge_settings (quruq)             ornatish
-    indeks yasash (build_index.py)              ornatish
     1. zaxira                                   zaxira_ol
+    snapshot (worktree) va indeks               ornatish, snapshot.yarat
     2. almashtirish yoki tozalash               ornatish
     3. skill, aktyorlar, .genius.json           ornatish, manifest_yoz
     4. sozlama (--yoz yoki toza yozuv)          ornatish
@@ -72,6 +83,10 @@ import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CLONE = os.path.dirname(HERE)
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
+
+import snapshot  # noqa: E402  (snapshot joyi va git mantig'i: ps1 bilan bitta)
 
 # O'rnatiladigan aktyorlar. Skill shu nomlar bilan chaqiradi.
 ACTORS = ("qidiruv", "tahlil", "review", "dasturchi", "test-muhandis",
@@ -97,7 +112,7 @@ REQUIRED = (
     "tools/build_index.py", "tools/check_docs.py",
     "tools/review_status.py", "tools/sonar_snapshot.py",
     "tools/run_tests.py", "tools/parse_test_output.py", "tools/guruh.py",
-    "install/rewrite_paths.py",
+    "install/rewrite_paths.py", "install/snapshot.py",
     "docs/manifest.json", ".claude/skills/manguberdi/SKILL.md",
 )
 
@@ -195,11 +210,11 @@ def tekshir_argumentlar(opts):
                    "olib tashlab qayta yurgizing." % os.environ["CLAUDE_CONFIG_DIR"])
 
 
-def klon_tekshir(root, reset):
+def klon_tekshir(root, reset, nom="klon"):
     for rel in REQUIRED + (() if reset else ("install/merge_settings.py",)) \
             + ("install/uninstall_settings.py",):
         if not os.path.exists(os.path.join(root, rel)):
-            raise Xato("klon to'liq emas, yo'q: %s" % rel)
+            raise Xato("%s to'liq emas, yo'q: %s" % (nom, rel))
     # Git for Windows dan ko'chirilgan klonda doc.sh CRLF bilan bo'lishi
     # mumkin: bash uni birinchi qatordayoq to'xtatadi va qidiruv jim qoladi.
     with open(os.path.join(root, "tools", "doc.sh"), "rb") as handle:
@@ -290,14 +305,17 @@ def hook_buyruq(python, tools_dir, script, suffix=""):
                                          " " + suffix if suffix else "")
 
 
-def sozlama_yasa(python, root, allow):
+def sozlama_yasa(python, root, allow, clone):
     """Global settings.json. Hook yo'llari MUTLAQ: global o'rnatishda asboblar
-    boshqa papkada turadi, shuning uchun yo'l aynan shu klonga bog'lanadi.
+    boshqa papkada turadi. `root` pin qilingan snapshot (`~/.claude/genius/
+    <sha12>`), `clone` esa klon: hook va docs snapshotdan, memory klondan
+    (R7.8 XV-Y1).
 
-    additionalDirectories da butun klon EMAS, faqat docs va memory (XV-Y4):
-    butun klon berilsa aktyor tools/ dagi hook skriptini so'rovsiz tahrirlay
-    olardi. GENIUS_PYTHON: doc.sh indeksni qayta yasaganda aynan sinalgan
-    Python ni oladi.
+    additionalDirectories da butun klon EMAS, faqat `<snapshot>/docs` va
+    `<klon>/memory` (XV-Y4): butun daraxt berilsa aktyor hook skriptini
+    so'rovsiz tahrirlay olardi. GENIUS_PYTHON: doc.sh indeksni qayta
+    yasaganda aynan sinalgan Python ni oladi. GENIUS_CLONE: snapshotdan
+    yuradigan asbob memory va holatni klonga yozadi (geniuslib.clone_root).
     """
     hooks = {}
     tools_dir = root + "/tools"
@@ -315,9 +333,9 @@ def sozlama_yasa(python, root, allow):
         hooks.setdefault(event, []).append(group)
     return {
         "$schema": SCHEMA,
-        "env": {"GENIUS_PYTHON": python},
+        "env": {"GENIUS_PYTHON": python, "GENIUS_CLONE": clone},
         "permissions": {
-            "additionalDirectories": [root + "/docs", root + "/memory"],
+            "additionalDirectories": [root + "/docs", clone + "/memory"],
             "allow": allow,
         },
         "hooks": hooks,
@@ -380,13 +398,15 @@ def xavfsiz_joylashuv(ctx, removable):
     - ~/.claude, skills, agents va skills/manguberdi ning haqiqiy joyi klon
       ichida bo'lsa (symlink), o'rnatish `.claude/agents/*.md` kabi manba
       fayllarini ustidan yozardi yoki o'chirardi;
+    - `~/.claude/genius` (snapshotlar) klon ichiga symlink bo'lsa, worktree klon
+      ichida yaratilardi;
     - klonning o'zi o'chiriladigan birlik ichida bo'lsa, o'chirish klonni olib ketadi;
     - --backup-to o'chiriladigan birlik ichida bo'lsa, zaxira o'zini nusxalardi
       va o'chirish bilan birga ketardi.
     """
-    clone = os.path.realpath(ctx.root)
+    clone = os.path.realpath(ctx.clone)
     for path in (ctx.claude, os.path.join(ctx.claude, "skills"), ctx.agents_dst,
-                 ctx.skill_dst):
+                 ctx.skill_dst, snapshot.genius_dir(ctx.claude)):
         # To'liq realpath: papkaning o'zi symlink bo'lsa, ichiga yoziladigan va
         # ichidan o'chiriladigan narsa nishondagi fayllar.
         if ichida(os.path.realpath(path), clone):
@@ -435,10 +455,13 @@ class Ctx(object):
         self.agents_dst = os.path.join(self.claude, "agents")
         self.manifest_path = os.path.join(self.skill_dst, ".genius.json")
         self.stage = None
+        self.src = None                   # commit tarkibi (git archive), vaqtinchalik
         self.changed = False              # birinchi o'chirish boshlandimi
         self.stage_skill = None
         self.stage_agents = None
-        self.root = None
+        self.root = None                  # asboblar turadigan joy: snapshot
+        self.clone = None                 # klon: memory, holat va o'rnatuvchi manbasi
+        self.sha = ""                     # snapshot olingan commit (to'liq)
         self.python = sys.executable
         self.proj_claude = None
         self.backup_to = None
@@ -451,10 +474,15 @@ def sinov_yigimi(ctx):
     """Skill avval vaqtinchalik papkada yig'iladi va sinaladi, keyin o'rniga
     ko'chadi. Yo'l almashtirish yoki indeks yiqilsa, hali hech narsa o'chmagan.
 
+    Manba klonning ishchi daraxti emas, snapshot olinadigan commit tarkibi
+    (`git archive`, git ga yozmaydi): quruq yurish ham, --apply ham aynan
+    snapshotga tushadigan matnni sinaydi. Snapshot hali yo'q, shuning uchun
+    `--root-keyin`: yo'l almashtirish kelajakdagi snapshot yo'li bilan yuradi.
+
     Qaytaradi: (allow ro'yxati, opt-in bo'lagi matni).
     """
     root = ctx.root
-    rewriter = os.path.join(root, "install", "rewrite_paths.py")
+    rewriter = os.path.join(ctx.clone, "install", "rewrite_paths.py")
     ctx.stage = tempfile.mkdtemp(prefix="manguberdi-")
     stage_skill = os.path.join(ctx.stage, "skills", "manguberdi")
     stage_agents = os.path.join(ctx.stage, "agents")
@@ -464,24 +492,38 @@ def sinov_yigimi(ctx):
     say("0. Sinov yig'imi -> %s" % ctx.stage)
     step("python: %s" % ctx.python)
     step("bash  : bash (skill matnida shu nom)")
+    step("manba : commit %s (klonning ishchi daraxti emas)" % ctx.sha[:snapshot.SHA_UZUNLIK])
+
+    # Alohida papka: `--allow` va `--opt-in` ctx.stage dagi hamma .md ni
+    # o'qiydi, commit tarkibidagi hujjatlar (bobda `tools/x.py` eslatmasi
+    # bor) ruxsat ro'yxatiga kirib qolmasin.
+    ctx.src = tempfile.mkdtemp(prefix="manguberdi-src-")
+    commit_src = os.path.join(ctx.src, "commit")
+    try:
+        snapshot.arxiv(ctx.clone, ctx.sha, commit_src)
+    except snapshot.SnapshotXato as exc:
+        raise Xato("commit tarkibi olinmadi, hech narsa o'chmadi: %s" % exc) from exc
+    klon_tekshir(commit_src, ctx.reset, "commit %s" % ctx.sha[:snapshot.SHA_UZUNLIK])
 
     os.makedirs(os.path.dirname(stage_skill))
     os.makedirs(stage_agents)
-    shutil.copytree(os.path.join(root, ".claude", "skills", "manguberdi"), stage_skill)
+    shutil.copytree(os.path.join(commit_src, ".claude", "skills", "manguberdi"), stage_skill)
     for actor in ACTORS:
-        src = os.path.join(root, ".claude", "agents", actor + ".md")
+        src = os.path.join(commit_src, ".claude", "agents", actor + ".md")
         if not os.path.exists(src):
             say("  OGOHLANTIRISH: aktyor fayli yo'q: %s.md" % actor)
             continue
         shutil.copy2(src, stage_agents)
 
-    common = ["--root", root, "--python", ctx.python, "--bash", "bash"]
+    common = ["--root", root, "--clone", ctx.clone, "--root-keyin",
+              "--python", ctx.python, "--bash", "bash"]
     for target in (stage_skill, stage_agents):
         code, out = run_py([rewriter, target] + common)
         if code:
             raise Xato("yo'llarni almashtirish yiqildi, hech narsa o'chmadi: %s" % out)
         step(out)
-        code, out = run_py([rewriter, target, "--root", root, "--tekshir"])
+        code, out = run_py([rewriter, target, "--root", root, "--clone", ctx.clone,
+                            "--root-keyin", "--tekshir"])
         if code:
             raise Xato("nisbiy yo'l qoldi, hech narsa o'chmadi: %s" % out)
 
@@ -517,16 +559,11 @@ def opt_in_korsat(opt_in):
 
 def manifest_yoz(ctx):
     """Manifest skill nusxasi bilan birga: qaysi commit o'rnatilgani saqlanadi.
-    git yo'q bo'lsa commit bo'sh qoladi."""
-    commit = ""
-    try:
-        proc = subprocess.run(["git", "-C", ctx.root, "rev-parse", "HEAD"],
-                              stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-                              encoding="utf-8", errors="replace")
-        if proc.returncode == 0 and re.match(r"^[0-9a-f]{40}\Z", proc.stdout.strip()):
-            commit = proc.stdout.strip()
-    except OSError:
-        pass
+
+    `commit` va `root` snapshotniki (hooklar yuradigan joy), `clone` klonniki:
+    budget.py va doctor.py o'rnatilgan commitni klon HEAD bilan solishtiradi,
+    tools/yangilash.py klonni shu yerdan topadi."""
+    commit = ctx.sha
     version = ""
     version_file = os.path.join(ctx.root, "VERSION")
     if os.path.isfile(version_file):
@@ -537,39 +574,77 @@ def manifest_yoz(ctx):
         "commit": commit,
         "sana": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
         "root": ctx.root,
+        "clone": ctx.clone,
         "python": ctx.python,
         "actors": list(ACTORS),
     }
     yoz_atomik(ctx.manifest_path, json_matn(manifest))
 
 
+def own_roots(ctx):
+    """Settings.json da o'zimniki sanaladigan ildizlar: klon, uning mavjud
+    snapshotlari (klon o'chgan yoki ko'chgan bo'lsa yetim ham) va yangi snapshot.
+
+    Yangilashda eski snapshotga ishora qilgan hook shu yo'l bilan almashadi,
+    aks holda eski va yangi hook birga yurardi. Boshqa klonning snapshoti
+    begona: u `snapshot.royxat` ga kirmaydi."""
+    roots = [ctx.clone] + snapshot.royxat(ctx.clone, ctx.claude, yetim=True) + [ctx.root]
+    out = []
+    for item in roots:
+        if item not in out:
+            out.append(item)
+    return out
+
+
+def root_args(roots):
+    args = []
+    for item in roots:
+        args += ["--root", item]
+    return args
+
+
+def snapshot_yarat(ctx):
+    """--apply: snapshot (git worktree --detach) va undagi indeks.
+
+    Hech narsa almashtirilmasdan oldin, zaxiradan keyin: yiqilsa eski
+    o'rnatish joyida qoladi. Mavjud snapshot qayta ishlatiladi, lekin
+    tekshiriladi (boshqa commit yoki o'zgartirilgan bo'lsa xato).
+    Indeks hosila: snapshotda bir marta yasaladi (build_index.py snapshotning
+    o'zidan), keyin hooklar uni faqat o'qiydi."""
+    index_dir = os.path.join(ctx.root, "index")
+    if not ctx.apply:
+        step("snapshot: %s (--apply bilan git worktree add --detach)" % ctx.root)
+        step("indeks: %s (--apply bilan yasaladi)" % index_dir)
+        return
+    try:
+        path, created = snapshot.yarat(ctx.clone, ctx.claude, ctx.sha)
+    except snapshot.SnapshotXato as exc:
+        raise Xato("snapshot yaratilmadi, hech narsa o'chmadi: %s" % exc) from exc
+    step("snapshot %s: %s" % ("yaratildi" if created else "mavjud, qayta ishlatildi", path))
+    code, out = run_py([os.path.join(path, "tools", "build_index.py")],
+                       env={"GENIUS_CLONE": ctx.clone})
+    if code or not os.path.isfile(os.path.join(index_dir, "sections.tsv")):
+        raise Xato("indeks yasalmadi, hech narsa o'chmadi: %s" % out)
+    step("indeks yasaldi: %s" % index_dir)
+
+
 def ornatish(ctx, allow):
     root, apply = ctx.root, ctx.apply
     tools_dir = os.path.join(root, "tools")
-    merger = os.path.join(root, "install", "merge_settings.py")
+    merger = os.path.join(ctx.clone, "install", "merge_settings.py")
 
     stage_settings = os.path.join(ctx.stage, "settings.json")
-    text = json_matn(sozlama_yasa(ctx.python, root, allow))
+    text = json_matn(sozlama_yasa(ctx.python, root, allow, ctx.clone))
     with open(stage_settings, "w", encoding="utf-8", newline="\n") as handle:
         handle.write(text)
+    roots = root_args(own_roots(ctx))
 
     # Qo'shuvchi rejimda settings.json ga yozmasdan nima almashishini aytadi.
     if ctx.update:
-        code, out = run_py([merger, ctx.settings_path, stage_settings, "--root", root])
+        code, out = run_py([merger, ctx.settings_path, stage_settings] + roots)
         if code:
             raise Xato("settings.json birlashtirilmadi, hech narsa o'chmadi: %s" % out)
         step(out)
-
-    # Indeks git da yo'q: toza klonda bo'lim taklifi hooki usiz jim bo'sh.
-    # U klonga yoziladi, shuning uchun faqat --apply bilan.
-    index_dir = os.path.join(root, "index")
-    if apply:
-        code, out = run_py([os.path.join(tools_dir, "build_index.py")])
-        if code or not os.path.isfile(os.path.join(index_dir, "sections.tsv")):
-            raise Xato("indeks yasalmadi, hech narsa o'chmadi: %s" % out)
-        step("indeks yasaldi: %s" % index_dir)
-    else:
-        step("indeks: %s (--apply bilan yasaladi)" % index_dir)
 
     # --- 1. Zaxira ---
     say()
@@ -611,6 +686,12 @@ def ornatish(ctx, allow):
         if apply:
             zaxira_ol(to_backup, ctx.backup_to)
             step("zaxira yozildi: %d birlik" % len(to_backup))
+
+    # --- 1b. Snapshot ---
+    say()
+    say("1b. Snapshot (hooklar shu commitdan yuradi)")
+    step("commit: %s, klon: %s" % (ctx.sha[:snapshot.SHA_UZUNLIK], ctx.clone))
+    snapshot_yarat(ctx)
 
     # --- 2. Almashtirish yoki tozalash ---
     say()
@@ -657,9 +738,10 @@ def ornatish(ctx, allow):
     say("4. Sozlama -> %s" % ctx.settings_path)
     step("yetti hook: bo'lim taklifi, budjetni nolga tushirish, kontekst o'lchovi, "
          "qo'riqchi, aktyor budjeti, kod tekshiruvi, sarf hisobi")
-    step("yo'llar mutlaq, manba: %s" % tools_dir)
-    step("ruxsat: klonning docs va memory papkalari additionalDirectories da, %d ta "
-         "asbob buyrug'i oldindan ruxsatli" % len(allow))
+    step("yo'llar mutlaq, manba (snapshot): %s" % tools_dir)
+    step("ruxsat: snapshotning docs va klonning memory papkalari "
+         "additionalDirectories da, %d ta asbob buyrug'i oldindan ruxsatli" % len(allow))
+    step("env.GENIUS_CLONE: memory va holat klonga yoziladi, snapshotga emas")
     step("so'raladi: run_tests.py, guruh.py birlashtir va tozala (yon ta'siri bor)")
     if ctx.update:
         step("birlashtiriladi: klonga ishora qilmagan hook, ruxsat (allow, ask, deny) "
@@ -667,8 +749,8 @@ def ornatish(ctx, allow):
     if apply:
         os.makedirs(ctx.claude, exist_ok=True)
         if ctx.update:
-            code, out = run_py([merger, ctx.settings_path, stage_settings,
-                                "--root", root, "--yoz"])
+            code, out = run_py([merger, ctx.settings_path, stage_settings]
+                               + roots + ["--yoz"])
             if code:
                 raise Xato("settings.json birlashtirilmadi va o'zgarmadi, skill va "
                            "aktyorlar esa yangilandi. Zaxira: %s. %s"
@@ -683,6 +765,9 @@ def tekshirish(ctx):
     root = ctx.root
     tools_dir = os.path.join(root, "tools")
     ok = True
+    # Hooklar settings.json env ni oladi: yoziladigan narsa klonga tushsin,
+    # sinov snapshotga `.claude/.state` yaratmasin.
+    hook_env = {"GENIUS_CLONE": ctx.clone}
 
     if os.path.isfile(os.path.join(ctx.skill_dst, "SKILL.md")):
         step("skill joyida")
@@ -711,24 +796,34 @@ def tekshirish(ctx):
 
     try:
         with open(ctx.settings_path, encoding="utf-8") as handle:
-            json.load(handle)
+            written = json.load(handle)
         step("settings.json o'qiladi")
-    except (OSError, ValueError):
+        # Hook yo'li klonga emas, snapshotga ishora qilishi shart (XV-Y1).
+        own = [h.get("command", "") for groups in (written.get("hooks") or {}).values()
+               for g in groups for h in g.get("hooks", [])
+               if (root + "/tools/") in h.get("command", "").replace("\\", "/")]
+        if own:
+            step("hook yo'li snapshotga ishora qiladi: %d ta" % len(own))
+        else:
+            step("XATO: hook yo'li snapshotga ishora qilmaydi (%d ta)" % len(own))
+            ok = False
+    except (OSError, ValueError, AttributeError, TypeError):
         step("XATO: settings.json buzuq")
         ok = False
 
     # Nisbiy yo'l qolmaganini tasdiqlash: qolsa skill boshqa proyektda jim
     # ishlamaydi.
-    rewriter = os.path.join(root, "install", "rewrite_paths.py")
+    rewriter = os.path.join(ctx.clone, "install", "rewrite_paths.py")
     for target in (ctx.skill_dst, ctx.agents_dst):
-        code, out = run_py([rewriter, target, "--root", root, "--tekshir"])
+        code, out = run_py([rewriter, target, "--root", root, "--clone", ctx.clone,
+                            "--tekshir"])
         if code == 0:
             step("nisbiy yo'l qolmadi: %s" % os.path.basename(target))
         else:
             step("XATO: %s" % out)
             ok = False
 
-    code, out = run_py([os.path.join(tools_dir, "budget.py"), "--holat"])
+    code, out = run_py([os.path.join(tools_dir, "budget.py"), "--holat"], env=hook_env)
     if code == 0:
         step("asboblar ishlayapti")
     else:
@@ -739,7 +834,7 @@ def tekshirish(ctx):
     # faqat klonda yoki Java proyektida ishlaydi: shu yerda u klonga qo'yiladi.
     code, out = run_py([os.path.join(tools_dir, "suggest_sections.py")],
                        '{"prompt":"circuit breaker"}',
-                       {"GENIUS_HOOK_DEBUG": "1", "CLAUDE_PROJECT_DIR": root})
+                       dict(hook_env, GENIUS_HOOK_DEBUG="1", CLAUDE_PROJECT_DIR=ctx.clone))
     if code == 0 and "patterns" in out:
         step("bo'lim taklifi ishlayapti")
     else:
@@ -748,7 +843,8 @@ def tekshirish(ctx):
 
     bash = shutil.which("bash")
     if bash:
-        env = dict(os.environ, GENIUS_PYTHON=ctx.python, PYTHONIOENCODING="utf-8")
+        env = dict(os.environ, GENIUS_PYTHON=ctx.python, PYTHONIOENCODING="utf-8",
+                   **hook_env)
         proc = subprocess.run([bash, os.path.join(tools_dir, "doc.sh"), "find",
                                "circuit breaker"], stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT, env=env,
@@ -778,7 +874,7 @@ def olib_tashlash(ctx):
 
     say()
     say("manguberdi olib tashlanmoqda")
-    say("Ildiz : %s" % ctx.root)
+    say("Ildiz : %s" % ctx.clone)
     say("Global: %s" % ctx.claude)
     say("Rejim : %s" % ctx.rejim())
 
@@ -802,7 +898,10 @@ def olib_tashlash(ctx):
             if by_name:
                 step("OGOHLANTIRISH: manifest yo'q, %s nom bo'yicha olinadi: "
                      "manguberdi o'rnatganini tasdiqlab bo'lmaydi" % path)
-    xavfsiz_joylashuv(ctx, own)
+    # Snapshotlar: shu klonniki (klon o'chgan bo'lsa yetimlari ham), faqat
+    # ~/.claude/genius ostida. Ular zaxiralanmaydi: git dan qayta yasaladi.
+    snaps = snapshot.royxat(ctx.clone, ctx.claude, yetim=True)
+    xavfsiz_joylashuv(ctx, own + snaps)
 
     say()
     say("1. Zaxira -> %s" % ctx.backup_to)
@@ -827,10 +926,20 @@ def olib_tashlash(ctx):
         if ctx.apply:
             ctx.changed = True
             olib_tashla(path)
+    for path in snaps:
+        step("snapshot o'chiriladi (git worktree remove): %s" % path)
+        if ctx.apply:
+            ctx.changed = True
+            try:
+                snapshot.olib_tashla(path, ctx.clone, ctx.claude)
+            except snapshot.SnapshotXato as exc:
+                raise Xato("snapshot o'chmadi: %s" % exc) from exc
+    if not snaps:
+        step("snapshot topilmadi: %s" % snapshot.genius_dir(ctx.claude))
 
     say()
     say("3. Sozlama -> %s" % ctx.settings_path)
-    args = [uninstaller, ctx.settings_path, "--root", ctx.root]
+    args = [uninstaller, ctx.settings_path] + root_args([ctx.clone] + snaps)
     if ctx.apply:
         args.append("--yoz")
     code, out = run_py(args)
@@ -900,6 +1009,7 @@ def ish(ctx, opts):
     # --uninstall da klon mavjud bo'lishi shart emas: yo'l faqat settings.json
     # dagi yozuvlarni tanish uchun satr, shuning uchun faqat normallanadi.
     root = os.path.abspath(opts.genius_path).rstrip("/")
+    ctx.clone = root
     if opts.uninstall:
         if not root.strip("/").strip():
             raise Xato("--genius-path bo'sh: olib tashlanadigan yozuvlarni tanib bo'lmaydi.")
@@ -909,6 +1019,15 @@ def ish(ctx, opts):
         xavfsiz_yol("GeniusPath", root)
         klon_tekshir(root, opts.reset)
     ctx.root = root
+    if not opts.uninstall:
+        # Hooklar aniq commit dagi snapshotdan yuradi (XV-Y1): joyi HEAD
+        # shasidan. Klon git repo bo'lmasa pin qilib bo'lmaydi.
+        try:
+            ctx.sha = snapshot.sha_ol(root)
+        except snapshot.SnapshotXato as exc:
+            raise Xato("%s Hech narsa o'zgarmadi." % exc) from exc
+        ctx.root = snapshot.snapshot_yol(ctx.claude, ctx.sha).replace("\\", "/")
+        xavfsiz_yol("Snapshot", ctx.root)
 
     if opts.project:
         project, ctx.proj_claude = project_tekshir(opts.project, ctx.claude, root)
@@ -926,6 +1045,23 @@ def ish(ctx, opts):
     bash = shutil.which("bash")
     say()
     say("Manba : %s" % root)
+    say("Snapshot: %s (commit %s)" % (ctx.root, ctx.sha[:snapshot.SHA_UZUNLIK]))
+    say("Klon  : %s (hooklar shu klonning commitidan olinadi)" % root)
+    # Ro'yxatsiz o'tishni yashirmaslik: hook kodi o'rnatilgan commitdan farq qilsa
+    # nima kelayotgani ko'rsatiladi (to'smaydi; tasdiqli yo'l tools/yangilash.py).
+    try:
+        diff_text = snapshot.farq_matn(root, ctx.claude, ctx.sha)
+    except snapshot.SnapshotXato:
+        diff_text = ""
+    if diff_text:
+        say()
+        say(diff_text)
+        say()
+    dirty = snapshot.git(["-C", root, "status", "--porcelain", "--untracked-files=no"],
+                         timeout=30).stdout.strip()
+    if dirty:
+        say("OGOHLANTIRISH: klonda commit qilinmagan o'zgarish bor. U snapshotga "
+            "KIRMAYDI: hooklar aniq commit %s dan yuradi." % ctx.sha[:snapshot.SHA_UZUNLIK])
     say("Python: %s" % ctx.python)
     say("Bash  : %s" % (bash or "TOPILMADI"))
     say("Global: %s" % ctx.claude)
@@ -944,8 +1080,9 @@ def ish(ctx, opts):
         allow, opt_in = sinov_yigimi(ctx)
         ornatish(ctx, allow)
     finally:
-        if ctx.stage and os.path.isdir(ctx.stage):
-            shutil.rmtree(ctx.stage, ignore_errors=True)
+        for temp in (ctx.stage, ctx.src):
+            if temp and os.path.isdir(temp):
+                shutil.rmtree(temp, ignore_errors=True)
 
     say()
     say("5. Tekshirish")
@@ -960,9 +1097,12 @@ def ish(ctx, opts):
         say("Tayyor. Yangi sessiyada /manguberdi deb chaqiring.")
         say("Zaxira: %s" % ctx.backup_to)
         say()
-        say("Diqqat: skill qo'llanmani shu klondan o'qiydi.")
-        say("%s ko'chirilsa yoki o'chirilsa, hooklar ishlamay qoladi:" % root)
-        say("skriptni yangi yo'l bilan qayta yurgizing.")
+        say("Hooklar va qo'llanma snapshotdan o'qiladi: %s" % ctx.root)
+        say("(commit %s). Klondagi `git pull` ularni O'ZGARTIRMAYDI." % ctx.sha[:snapshot.SHA_UZUNLIK])
+        say("Yangilash (snapshotdagi nusxa, klondagi emas): python3 %s/tools/yangilash.py "
+            "(ro'yxatni ko'rsatadi, tasdiq so'raydi)." % ctx.root)
+        say("Memory va holat klonda: %s. Klon ko'chirilsa skriptni yangi yo'l bilan qayta "
+            "yurgizing." % ctx.clone)
         opt_in_korsat(opt_in)
         return 0
     say()

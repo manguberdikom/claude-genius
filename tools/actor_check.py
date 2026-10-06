@@ -49,8 +49,7 @@ import hookio
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 # run_tests.py bilan bir xil joy: jurnalni u yozadi.
-STATE_DIR = (os.environ.get("GENIUS_STATE_DIR")
-             or os.path.join(ROOT, ".claude", ".state"))
+STATE_DIR = hookio.state_dir()
 JOURNAL = os.path.join(STATE_DIR, "run_tests.jsonl")
 
 CHECKED = ("dasturchi", "test-muhandis")

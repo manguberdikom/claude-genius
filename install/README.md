@@ -25,12 +25,16 @@ qoladi:
 | Nima | Nega kerak |
 |---|---|
 | `docs/` | 6 qo'llanma, 224 bob. Qoida matni shu yerdan o'qiladi. |
-| `index/` | qidiruv indeksi, git da yo'q. O'rnatuvchi `-Apply` da yasaydi. Yo'q yoki eskirgan bo'lsa `doc.sh`, `rules_for.py`, `check_code.py` va bo'lim taklifi hooki o'zi qayta yasaydi (`build_index.py`, bash shart emas). |
+| `index/` | qidiruv indeksi, git da yo'q. O'rnatuvchi `-Apply` da snapshotda bir marta yasaydi. Yo'q yoki eskirgan bo'lsa `doc.sh`, `rules_for.py`, `check_code.py` va bo'lim taklifi hooki o'zi qayta yasaydi (`build_index.py`, bash shart emas). |
 | `tools/` | hooklar va asboblar: bo'lim taklifi, kontekst o'lchovi, qo'riqchi, budjet, kod tekshiruvi, sarf hisobi. |
 | `memory/` | sessiyalar orasida saqlanadigan bilim. |
 
-Shu sababli **klon o'chirilmaydi va ko'chirilmaydi**. Ko'chsa, o'rnatuvchi
-yangi `-GeniusPath` bilan qayta yurgiziladi, uning oqibati
+Global o'rnatishda `docs/`, `index/` va `tools/` klonning ishchi
+daraxtidan emas, **aniq commit dagi snapshotdan** o'qiladi va yuradi
+(`~/.claude/genius/<sha12>/`, [Snapshot](#snapshot-hooklar-aniq-commitdan-yuradi)).
+`memory/` va holat (`.claude/.state`) esa klonda qoladi. Shu sababli
+**klon o'chirilmaydi va ko'chirilmaydi**: ko'chsa, o'rnatuvchi yangi
+`-GeniusPath` bilan qayta yurgiziladi, uning oqibati
 [Yangilash](#yangilash) bo'limida.
 
 ## Talablar
@@ -104,7 +108,9 @@ Keyin sessiyada bir marta `/manguberdi`.
 ## B yo'li: global o'rnatish
 
 Skill `~/.claude/` ga o'rnatiladi va har proyektda ishlaydi. Hook
-yo'llari klonga **mutlaq** bog'lanadi.
+yo'llari klonning **pin qilingan snapshotiga** mutlaq bog'lanadi, klonning
+ishchi daraxtiga emas ([Snapshot](#snapshot-hooklar-aniq-commitdan-yuradi)).
+Klon git repo bo'lishi shart: snapshot HEAD commit dan olinadi.
 
 ### 0. Klonni oling va skriptga ruxsat bering
 
@@ -160,11 +166,15 @@ ishora qilgan hook va ruxsatlar almashadi. Boshqa skill, agent,
 Chiqishdagi raqamlar shu tartibda keladi:
 
 0. **Sinov yig'imi.** Zaxira va o'chirishdan OLDIN ishlaydi. Skill va
-   aktyorlar `%TEMP%` da yig'iladi, yo'llari almashtiriladi va
-   `--tekshir` bilan tekshiriladi, ruxsat ro'yxati yasaladi. `-Apply`
-   bo'lsa klonda indeks quriladi. Biror qadam yiqilsa skript shu yerda
-   to'xtaydi va hali hech narsa o'chmagan bo'ladi.
+   aktyorlar HEAD commit tarkibidan (`git archive`, klonning ishchi
+   daraxtidan emas) `%TEMP%` da yig'iladi, yo'llari almashtiriladi va
+   `--tekshir` bilan tekshiriladi, ruxsat ro'yxati yasaladi. Biror qadam
+   yiqilsa skript shu yerda to'xtaydi va hali hech narsa o'chmagan
+   bo'ladi.
 1. **Zaxira.** O'chiriladigan birliklar zaxira papkasiga ko'chiriladi.
+1b. **Snapshot.** Faqat `-Apply` bilan, zaxiradan keyin va hech narsa
+   o'chirilmasdan oldin: `git worktree add --detach` va undagi indeks.
+   Mavjud snapshot qayta ishlatiladi, lekin avval tekshiriladi.
 2. **Tozalash.** O'sha birliklar o'chiriladi, qoladiganlari ro'yxatda
    aytiladi.
 3. **O'rnatish.** Sinalgan nusxa `~/.claude` ga ko'chadi.
@@ -267,7 +277,8 @@ git clone https://github.com/manguberdikom/claude-genius ~/src/claude-genius
 cd ~/src/claude-genius
 python3 install/install.py                      # quruq yurish: ro'yxat, hech narsa yozilmaydi
 python3 install/install.py --apply              # o'rnatadi
-python3 install/install.py --update --apply     # git pull dan keyin: qayta o'rnatadi
+python3 install/install.py --update --apply     # qayta o'rnatish (hook kodini yangilash uchun emas, pastga qarang)
+python3 ~/.claude/genius/<sha12>/tools/yangilash.py   # git pull o'rniga: ro'yxat, tasdiq, yangi snapshot
 python3 install/install.py --uninstall --apply  # faqat o'zi qo'shganini oladi
 ```
 
@@ -345,14 +356,16 @@ tiklash](#eski-ornatuvchidan-keyin-tiklash)).
 | `manguberdi` skilli (SKILL.md va reference fayllari) | `~/.claude/skills/manguberdi/` |
 | 6 aktyor | `~/.claude/agents/` |
 | Yetti hook, ruxsatlar va `env` bilan `settings.json` | `~/.claude/settings.json` |
+| Klonning HEAD commit dagi nusxasi (snapshot, `git worktree`) | `~/.claude/genius/<sha12>/` |
 
 `settings.json` da hooklardan tashqari:
 
 | Kalit | Qiymat | Nega |
 |---|---|---|
-| `permissions.additionalDirectories` | `<klon>/docs` va `<klon>/memory` | Read, Grep va Glob qo'llanma va memoryni har proyektdan so'rovsiz o'qiydi |
+| `permissions.additionalDirectories` | `<snapshot>/docs` va `<klon>/memory` | Read, Grep va Glob qo'llanma va memoryni har proyektdan so'rovsiz o'qiydi |
 | `permissions.allow` | skill matnidagi yon ta'sirsiz asbob buyruqlari | skill buyruqlari har safar ruxsat so'ramaydi |
 | `env.GENIUS_PYTHON` | o'rnatuvchi sinagan Python yo'li | `doc.sh` indeksni qayta yasaganda Python ni nom bo'yicha qidirmaydi |
+| `env.GENIUS_CLONE` | klon yo'li | snapshotdan yuradigan asbob memory va holatni klonga yozadi, snapshotga emas |
 
 ### Nima so'rovsiz, nima so'rov bilan
 
@@ -371,8 +384,8 @@ asboblar kiradi (`doc.sh`, `rules_for.py`, `check_code.py`, `guard.py`,
 Butun klon `additionalDirectories` da emas: unda `tools\` ham bo'lardi va
 `acceptEdits` rejimida aktyor hook skriptini so'rovsiz tahrirlay olardi,
 o'zgarish esa keyingi promptda hamma proyektda bajarilardi. Skill
-klondan faqat `docs/` (Read orqali) va `memory/` ni o'qiydi, asboblar
-Bash orqali yuradi.
+klondan faqat `docs/` (snapshotdagisi, Read orqali) va `memory/` (klondagisi)
+ni o'qiydi, asboblar Bash orqali yuradi.
 
 ### Memory qayerda
 
@@ -481,26 +494,80 @@ Bu `settings.json` ga tegmaydi, shuning uchun qaytarish uchun
 o'zgaruvchini o'chirish kifoya. Skill va aktyorlar ishlashda davom
 etadi: o'chadigani faqat hooklar.
 
+## Snapshot: hooklar aniq commitdan yuradi
+
+Hook buyrug'i avval klonning ishchi daraxtidagi `tools\` ga bog'langan
+edi, ya'ni `git pull` dan keyingi birinchi promptdayoq yangi hook kodi
+hech kim ko'rmasdan bajarilardi (audit XV-Y1: bitta yomon commit
+`main` ga tushsa, u har Java proyektda foydalanuvchi huquqi bilan
+yurardi). Endi o'rnatuvchi HEAD commit uchun alohida daraxt yasaydi:
+
+```bash
+git -C <klon> worktree add --detach ~/.claude/genius/<sha12> <sha>
+```
+
+Butun daraxt olinadi, faqat `tools\` emas: asboblar `ROOT` ni `tools\` ning
+ota papkasidan oladi va `index\`, `docs\`, `GLOSSARY.md` ni shu yerdan
+o'qiydi. Hook buyruqlari, `permissions.allow`, `additionalDirectories`
+dagi `<snapshot>/docs` va skill matnidagi `tools/` yo'llari snapshotga
+ishora qiladi. Joyini va git buyrug'ini ikkala o'rnatuvchi ham
+`install/snapshot.py` dan oladi (bir xil yo'l, bir xil buyruq).
+`git worktree add` ga `-c core.autocrlf=false` beriladi: Windows da
+`doc.sh` CRLF bilan chiqmaydi.
+
+| Nima | Qayerda | Nega |
+|---|---|---|
+| `tools\`, `docs\`, `index\`, `GLOSSARY.md` (faqat o'qiladi) | snapshot | pin qilingan: `git pull` o'zgartirmaydi |
+| `memory\umumiy`, `memory\claude-genius` | klon | klon reposi bilan push qilinadi, snapshot almashganda yo'qolmasin |
+| `.claude\.state` (budjet, belgilar, `hook_errors.log`, `run_tests.jsonl`, handoff), `.claude\usage` | klon | snapshot almashganda budjet va jurnal yo'qolmasin |
+| `GENIUS_MEMORY_DIR` (boshqa proyekt memorysi) | o'zgarmadi, `~/.claude/genius-memory` | klonga bog'liq emas |
+
+`env.GENIUS_CLONE` shu ajratishni beradi: asboblar (`geniuslib.clone_root`)
+yoziladigan yo'lni undan oladi, qiymat mavjud papka bo'lmasa `ROOT` ga
+qaytadi. `GENIUS_STATE_DIR` berilsa u ustun.
+
+Tekshirish (audit o'lchovi): klonda `git pull` dan keyin ham
+`sha256sum ~/.claude/genius/*/tools/*.py` o'zgarmaydi. `budget.py --holat`
+va `doctor.py` o'rnatilgan commitni klon HEAD bilan solishtiradi va farq
+bo'lsa `tools/yangilash.py` ga yo'naltiradi.
+
+Cheklovlar:
+
+- Snapshot HEAD commitdan olinadi: klondagi commit qilinmagan o'zgarish
+  unga kirmaydi (o'rnatuvchi buni ogohlantiradi). A yo'lida (klon ichida
+  ishlash) repo o'zining `.claude/settings.json` hooklarini ishchi daraxtdan
+  yurgizadi, bu o'zgarmagan.
+- Snapshotdagi tracked fayl o'zgartirilgan bo'lsa o'rnatuvchi uni jim qayta
+  ishlatmaydi: xato beradi (hook kodi aniq commit bo'lib qolishi shart).
+- `run_tests.py` uchun ixtiyoriy opt-in qoidasi (`settings.local.json`)
+  snapshot yo'lini o'z ichiga oladi, shuning uchun har yangilashdan keyin
+  o'rnatuvchi chiqargan yangi qatorni qayta qo'shish kerak.
+
 ## Klon o'chsa yoki ko'chsa
 
-`settings.json` dagi hook buyruqlari aynan shu klonga mutlaq yo'l bilan
-bog'langan. Klon o'chirilsa yoki boshqa nomga ko'chirilsa:
+Hook buyruqlari klonga emas, snapshotga bog'langan, shuning uchun klon
+o'chirilsa yoki boshqa nomga ko'chirilsa hooklar ishlayveradi (snapshot
+fayllari joyida). Lekin:
 
-- **hooklar to'smaydi, lekin "hook error" ko'rinadi.** Har buyruq
+- **memory va holat yozilmaydi.** `GENIUS_CLONE` yo'q papkani ko'rsatadi,
+  asboblar `ROOT` ga qaytadi, ya'ni yozuv snapshot ichiga tushadi va u
+  yangilashda ketadi. `doctor.py` buni ogohlantiradi. Skill matnidagi
+  `memory/` yo'llari ham o'chgan klonga qaraydi.
+- **`tools/yangilash.py` ishlamaydi**, chunki klon yo'q.
+- **snapshot o'chsa hooklar "hook error" beradi, to'smaydi.** Har buyruq
   oxirida `|| exit 1` turadi, shuning uchun Python ning "can't open file"
   xatosi (kodi 2) 1 ga aylanadi. Bu muhim: Claude Code hookdan kelgan 2
-  kodini TO'SIQ deb oladi, ya'ni usiz o'chgan klon `PreToolUse` da har
+  kodini TO'SIQ deb oladi, ya'ni usiz o'chgan yo'l `PreToolUse` da har
   `Read` va `Bash` ni to'sib, Claude Code ni hamma proyektda ishlatmay
   qo'yardi. 1 to'smaydi, lekin Claude Code har chaqiruvda "hook error"
   xabarini ko'rsatadi: himoya o'chgani jim qolmaydi. Hooklarning o'zi
   to'siqni faqat JSON orqali beradi, shuning uchun bu hech qanday
   tekshiruvni yo'qotmaydi.
-- **skill ishlamaydi.** `manguberdi` matnidagi buyruqlar va qo'llanma
-  yo'llari o'sha klonga qaraydi, ularni hech narsa almashtirmaydi.
 
 Ikki yo'l bor. Klon kerak bo'lsa, yangi joyda saqlab o'rnatuvchini yangi
-`-GeniusPath` bilan qayta yurgizing: hooklar va skill yangi yo'lga
-bog'lanadi.
+`-GeniusPath` bilan qayta yurgizing: yangi snapshot yasaladi, hooklar,
+memory yo'li va skill yangi yo'lga bog'lanadi, eski klonning snapshotlari
+yetim hisoblanib `settings.json` dagi yozuvlari bilan almashadi.
 
 Kerak bo'lmasa, `-Uninstall` bilan olib tashlang:
 
@@ -514,26 +581,31 @@ solishtiriladi, `Resolve-Path` qilinmaydi va klon tekshiruvi o'tkazib
 yuboriladi. Skriptning o'zi esa kerak, shuning uchun klonning yangi
 nusxasidan (yoki `git clone` dan) yurgizing. `-Apply` siz quruq yurish.
 
-Nimalar olinadi: `settings.json` dan buyrug'ida shu ildiz bor hooklar
-(shundan bo'shab qolgan guruh va hodisa ham), shu ildizga tegishli
-`allow`, `ask` va `deny` qoidalari, `additionalDirectories` dagi ildizning
-o'zi va uning ostidagi yozuvlar (`<ildiz>/docs`, `<ildiz>/memory`),
-`env.GENIUS_PYTHON`, hamda
-`skills\manguberdi` va olti aktyor fayli. Begona yozuvlar qoladi:
-`<ildiz>-eski` kabi boshqa klonning yozuvlari ham begona hisoblanadi.
-Avval zaxira olinadi.
+Nimalar olinadi: `settings.json` dan buyrug'ida shu ildiz yoki uning
+snapshoti bor hooklar (shundan bo'shab qolgan guruh va hodisa ham), shu
+ildizga tegishli `allow`, `ask` va `deny` qoidalari,
+`additionalDirectories` dagi ildizning o'zi va uning ostidagi yozuvlar
+(`<snapshot>/docs`, `<klon>/memory`), `env.GENIUS_PYTHON` va
+`env.GENIUS_CLONE`, hamda `skills\manguberdi`, olti aktyor fayli va shu
+klonning `~/.claude/genius/<sha12>` snapshotlari (`git worktree remove`;
+klon o'chgan bo'lsa yetim snapshot papkasi o'zi, faqat `~/.claude/genius`
+ostida). Snapshotlar zaxiraga olinmaydi: ular git dan qayta yasaladi.
+Begona yozuvlar qoladi: `<ildiz>-eski` kabi boshqa klonning yozuvlari ham
+begona hisoblanadi. Avval zaxira olinadi.
 
 Skript ham yo'q bo'lsa, klon yozuvlarini qo'lda oling. Zaxira bo'lsa,
 [Orqaga qaytarish](#orqaga-qaytarish) dagi buyruqlar shuni qiladi.
 Zaxira ham yo'q bo'lsa `~/.claude/settings.json` ni tahrir qiling va
-eski klon yo'li uchragan to'rt joyni oling:
+eski klon yo'li va snapshot yo'li uchragan joylarni oling:
 
 - `hooks` ichidan buyrug'ida o'sha yo'l turgan yozuvlar (hodisa guruhi
   bo'shab qolsa, guruhning o'zi ham);
 - `permissions.allow`, `ask` va `deny` dan o'sha yo'l uchragan qoidalar;
 - `permissions.additionalDirectories` dan o'sha yo'l va uning ostidagi
-  yo'llar (`<yo'l>/docs`, `<yo'l>/memory`);
-- `env.GENIUS_PYTHON`.
+  yo'llar (`<yo'l>/docs`, `<yo'l>/memory`, `~/.claude/genius/<sha12>/docs`);
+- `env.GENIUS_PYTHON` va `env.GENIUS_CLONE`;
+- `~/.claude/genius/` papkasi (qo'lda: `git -C <klon> worktree remove --force
+  <snapshot>` yoki klon yo'q bo'lsa papkani o'chirish).
 
 Begona yozuvlarga tegilmaydi. Faylni BOM siz UTF-8 bilan saqlang: Claude
 Code va Python `json.load` BOM li faylda yiqiladi.
@@ -621,8 +693,9 @@ python3 /yo/l/claude-genius/tools/doctor.py --settings ~/.claude/settings.json  
 ```
 
 U `claude --version` ni sinalgan versiya bilan, Python (`GENIUS_PYTHON`
-yoki `python3`) va klon yo'lini, `.genius.json` dagi o'rnatilgan commitni
-klon bilan solishtiradi. Har hook buyrug'ini `|| exit 0` siz,
+yoki `python3`), hooklar yuradigan snapshot va klon yo'lini,
+`.genius.json` dagi o'rnatilgan commitni klon HEAD bilan solishtiradi
+(farq bo'lsa `tools/yangilash.py` ga yo'naltiradi). Har hook buyrug'ini `|| exit 0` siz,
 `tools/testdata/hooks/<event>.json` namunasi bilan yurgizadi: exit 0,
 bo'sh stderr va to'g'ri `hookEventName` kutiladi. Klon ko'chgan yoki
 `python3` yo'q bo'lsa hook jim o'chadi, doctor esa shu yerda XATO
@@ -668,47 +741,99 @@ Qiymat provayderning o'z model id si bo'ladi. Pinlangan id
 
 ## Yangilash
 
-`git pull` klondagi asboblarni yangilaydi va hooklar ularni darhol
-oladi, chunki hook yo'li klonga bog'langan. `~/.claude` dagi skill va
-aktyorlar esa o'rnatish paytidagi nusxa: ular pull bilan yangilanmaydi,
-yangi hook ham `settings.json` ga o'zi qo'shilmaydi.
+`git pull` hooklarni **yangilamaydi**: ular klonning ishchi daraxtidan emas,
+o'rnatish paytidagi commit dagi snapshotdan yuradi
+([Snapshot](#snapshot-hooklar-aniq-commitdan-yuradi)). Yangi kod
+foydalanuvchi ko'rib, tasdiqlagandan keyingina hookka o'tadi. Buni
+`yangilash.py` qiladi, `git pull` o'rniga. Uni **o'rnatilgan snapshotdagi
+nusxa** bilan yurgizing (o'rnatuvchi to'liq yo'lini oxirida chiqaradi;
+`budget.py --holat` va `doctor.py` ham ko'rsatadi), klondagi nusxa bilan
+emas: `git pull` dan keyin klonda ko'rilmagan yangi `yangilash.py` va
+`geniuslib.py` bo'lishi mumkin va ular tasdiqdan OLDIN yurardi. Klondan
+yurgizilgan nusxa to'xtaydi va snapshotdagi yo'lni aytadi (klonning o'zida
+`yangilash.py` ni ishlab chiqayotgan bo'lsangiz `--klondan` bilan ataylab).
 
-Ularni o'rnatuvchini qayta yurgizish yangilaydi: avval quruq, keyin
-`-Apply` bilan. Sukut rejim allaqachon qo'shuvchi, shuning uchun
-qo'shimcha bayroq kerak emas. Buyruqlar 0-qadamdagidek, klon ildizida va
-ruxsat berilgan oynada yurgiziladi:
-
-```powershell
-git -C C:\src\claude-genius pull
-.\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius
-.\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius -Apply
+```bash
+S=~/.claude/genius/<sha12>/tools/yangilash.py   # <sha12>: manifestdagi root
+python3 $S                  # ro'yxat, so'rov [y/N], keyin yangilaydi
+python3 $S --faqat-korsat   # faqat ro'yxat, hech narsa o'zgarmaydi
+python3 $S --ha             # so'ramasdan ha (ro'yxat baribir chiqadi)
 ```
+
+Qaysi klon yangilanishi manifestdagi `clone` dan olinadi. Skript turgan
+klon yoki `GENIUS_CLONE` undan farq qilsa xato beradi (jim noto'g'ri klonni
+yangilamaydi); boshqa klon kerak bo'lsa `--klon <yo'l>` bering. O'rnatuvchi
+ishga tushishdan oldin klonni aytadi.
+
+Tartib:
+
+1. Klon tekshiriladi: git repo, branch da (detached HEAD emas), tracked
+   fayllari toza. Iflos klon yoki detached HEAD da skript to'xtaydi va
+   hech narsa o'zgarmaydi.
+2. `git fetch origin`.
+3. Ko'rsatiladi: `git log --oneline <asos>..origin/<branch>` va hookka
+   tegadigan yo'llar uchun `git diff --stat <asos>..origin/<branch> --
+   tools install .claude .github`. `<asos>` hozir ishlayotgan snapshot
+   commiti (manifestdan); u klon HEAD dan orqada bo'lsa (qo'lda `git
+   pull` qilingan) oradagi ko'rilmagan commitlar ham ro'yxatga kiradi.
+4. So'rov. `--faqat-korsat` shu yerda tugaydi. Javob bo'sh yoki stdin yo'q
+   (CI, agent) bo'lsa "yo'q" deb olinadi va hech narsa o'zgarmaydi.
+5. Tasdiqdan keyin `git merge --ff-only`. Klon va origin ajralgan
+   bo'lsa skript to'xtaydi: rebase ham, merge commit ham qilinmaydi,
+   ajralishni qo'lda hal qilasiz.
+6. Yangi snapshot va `settings.json` dagi hook yo'llari o'rnatuvchining
+   mavjud yo'li bilan yangilanadi (`install/install.py --apply`, Windows da
+   `manguberdi.ps1 -Apply`): `settings.json` zaxiralanadi, skill va
+   aktyorlar almashadi, hook, `allow` va `additionalDirectories` yozuvlari
+   eski snapshotdan yangisiga o'tadi, begona yozuvlar qoladi.
+7. Eski snapshot **bittasi** qaytarish uchun qoladi, qolgani
+   `git worktree remove` bilan tozalanadi (faqat shu klonniki va faqat
+   `~/.claude/genius` ostida).
+
+Qaytarish: yangilashdan keyin nimadir buzilsa, o'rnatuvchi chiqargan zaxira
+papkasidagi `.claude--settings.json` ni `~/.claude/settings.json` ga
+qaytaring ([Orqaga qaytarish](#orqaga-qaytarish)): u qoldirilgan eski
+snapshotga ishora qiladi. Eski snapshot faqat keyingi yangilashgacha
+turadi, undan keyin tozalanadi. Klonning o'zini `git reset --hard <eski>`
+bilan qaytarish skript tomonidan qilinmaydi.
+
+`~/.claude` dagi skill va aktyorlar ham shu yangilash bilan almashadi
+(oldin ular pull bilan yangilanmasdi). Almashadigan narsalar o'zgarmagan:
+`skills\manguberdi`, 6 aktyor fayli va `settings.json` dagi o'z yozuvlari,
+ya'ni buyrug'i shu klonning yoki uning snapshotlarining `tools\` papkasiga
+ishora qilgan hooklar, shu yo'l uchragan `allow`, `ask` va `deny`
+qoidalari, `additionalDirectories` dagi klon va snapshot yozuvlari
+(`env.GENIUS_PYTHON` va `env.GENIUS_CLONE` ham yangilanadi). Uchala ruxsat
+ro'yxati bir xil qoida bilan birlashadi: eski o'z qoidalari tushadi,
+yangilari qo'shiladi, foydalanuvchining qoidasi qoladi. Qolgani joyida
+turadi: boshqa skill va agentlar, `CLAUDE.md`, `plugins\`, `settings.json`
+dagi begona hook va ruxsatlar, `env` dagi boshqa o'zgaruvchilar va qolgan
+kalitlar. Birlashtirishni `install/merge_settings.py` qiladi: quruq
+yurish nechta hook va ruxsat almashishini bir qatorda aytadi, buzuq
+`settings.json` da esa hech narsa o'chmasidan oldin to'xtaydi.
+
+Tasdiqsiz yo'l ham bor: klonda `git pull` va o'rnatuvchini qayta yurgizish
+hookni yangi commitga o'tkazadi, lekin so'ramaydi: o'rnatuvchi faqat
+`log --oneline` ro'yxatini ko'rsatadi va davom etadi. Bu yo'l
+[SECURITY.md](../SECURITY.md) dagi "Qolgan chegara" da ochiq aytilgan.
+Hook kodi uchun asosiy yo'l faqat `yangilash.py`. Klon KO'CHGAN holat
+(pastda) uchun qayta o'rnatish kerak bo'lsa, buyruqlar 0-qadamdagidek,
+klon ildizida va (Windows da) ruxsat berilgan oynada yurgiziladi.
 
 `-Update` ham ishlayveradi va aynan shu ishni qiladi: u eski nom, sukut
 xulqqa aylangan.
 
-Faqat uch narsa zaxiralanib almashadi: `skills\manguberdi`, 6 aktyor
-fayli va `settings.json` dagi o'z yozuvlari, ya'ni buyrug'i shu klonning
-`tools\` papkasiga ishora qilgan hooklar, shu klon yo'li uchragan
-`allow`, `ask` va `deny` qoidalari, `additionalDirectories` dagi klon
-ildizi va uning ostidagi yozuvlar (`env.GENIUS_PYTHON` ham yangilanadi).
-Uchala ruxsat ro'yxati bir xil qoida bilan birlashadi: eski o'z
-qoidalari tushadi, yangilari qo'shiladi, foydalanuvchining qoidasi
-qoladi. Shuning uchun eski o'rnatishdagi butun klon yozuvi yangilashda
-`<klon>/docs` va `<klon>/memory` ga almashadi, global ruxsatdagi eski
-`run_tests.py:*` va `guruh.py:*` qoidalari esa tushadi. Qolgani joyida
-turadi: boshqa skill va agentlar, `CLAUDE.md`, `plugins\`,
-`settings.json` dagi begona hook va ruxsatlar, `env` dagi boshqa
-o'zgaruvchilar va qolgan kalitlar.
-Birlashtirishni `install/merge_settings.py` qiladi: quruq yurish nechta
-hook va ruxsat almashishini bir qatorda aytadi, buzuq `settings.json` da
-esa hech narsa o'chmasidan oldin to'xtaydi. Zaxirani qaytarish
-[Orqaga qaytarish](#orqaga-qaytarish) bo'limida.
+**Eski o'rnatishdan o'tish.** Snapshot qo'shilishidan oldingi o'rnatishda
+hooklar klonning `tools\` iga bog'langan. O'rnatuvchini bir marta qayta
+yurgizish ularni snapshotga o'tkazadi: klon ildizi o'zniki deb tanilgani
+uchun eski hook, ruxsat va `additionalDirectories` yozuvlari yangilari
+bilan almashadi (`tools/test_install.py` dagi eski o'rnatish holati).
 
 Klon KO'CHGAN bo'lsa qayta o'rnatish yetmaydi: eski yo'lga ishora qilgan
-hooklar o'zniki deb tanilmaydi va yangilari yonida qoladi. Ikki buyruq
-kerak: avval eski yo'l uchun `-Uninstall`, keyin yangi yo'l uchun
-odatdagi o'rnatish.
+hooklar o'zniki deb tanilmaydi va yangilari yonida qoladi (yetim snapshotlar
+bundan mustasno: ularni o'rnatuvchi o'zi taniydi). Ikki buyruq kerak:
+avval eski yo'l uchun `-Uninstall`, keyin yangi yo'l uchun odatdagi
+o'rnatish.
 
 ```powershell
 .\install\manguberdi.ps1 -GeniusPath C:\eski\claude-genius -Uninstall -Apply
@@ -726,7 +851,10 @@ butun sozlamani tozalardi: endi unday emas va kerak ham emas.
 | `set: pipefail: invalid option name` | klon CRLF bilan olingan | `<klon>\tools\doc.sh` ni o'chirib `git -C <klon> -c core.autocrlf=false checkout -- tools/doc.sh`; doimiy yechim: klonni 0-qadamdagidek qayta olish |
 | `tools/doc.sh: No such file` | yo'llar almashmagan | `rewrite_paths.py --tekshir` bilan skill matnini tekshiring; nisbiy yo'l qolgan bo'lsa o'rnatuvchini qayta yurgizing |
 | `bash: command not found` | bash yo'q | Git for Windows o'rnatib skriptni qayta yurgizing |
-| Hooklar ishlamaydi | `settings.json` buzuq yoki klon ko'chgan | eski yo'l uchun `-Uninstall`, keyin yangi `-GeniusPath` bilan o'rnating |
+| Hooklar ishlamaydi | `settings.json` buzuq, snapshot (`~/.claude/genius/<sha12>`) o'chgan yoki klon ko'chgan | o'rnatuvchini qayta yurgizing; klon ko'chgan bo'lsa eski yo'l uchun `-Uninstall`, keyin yangi `-GeniusPath` bilan o'rnating |
+| `snapshot ... o'zgartirilgan fayl bor` | snapshotdagi tracked fayl tahrirlangan (hook kodi aniq commit bo'lib qolishi shart) | sababini aniqlang, `git -C <klon> worktree remove --force <snapshot>` va o'rnatuvchini qayta yurgizing |
+| `klon iflos` / `detached HEAD` (`yangilash.py`) | klonda commit qilinmagan o'zgarish yoki branch yo'q | commit yoki stash qiling, branch ga o'ting |
+| `fast-forward mumkin emas` (`yangilash.py`) | klon va origin ajralgan | ajralishni qo'lda hal qiling: skript rebase va merge commit qilmaydi |
 | Hooklar jim, xato ham yo'q | proyekt Java emas yoki `GENIUS_HOOKS=off` | [Hooklar qaysi proyektda ishlaydi](#hooklar-qaysi-proyektda-ishlaydi) |
 | `-Reset -Apply` rad etildi | `-ConfirmReset` berilmagan, bu ataylab | rozi bo'lsangiz `-ConfirmReset` qo'shing |
 | Eski o'rnatuvchi sozlamani o'chirgan | `-Update` siz `-Apply` avval to'liq tozalardi | [Eski o'rnatuvchidan keyin tiklash](#eski-ornatuvchidan-keyin-tiklash) |
@@ -857,6 +985,13 @@ paritetni har `tools` ishida (Linux va Windows) sinaydi.
 5. `-Uninstall`: klon nusxasidan o'rnatiladi, nusxa o'chiriladi, keyin
    mavjud bo'lmagan shu yo'l bilan `-Uninstall -Apply` yuradi; o'z
    yozuvlari ketgani va begonalari qolgani tekshiriladi.
+
+Snapshot (`git worktree add --detach`) CI da shu ketma-ketlikning ichida
+yuradi (klon `actions/checkout` repo si); `-Uninstall` qadami hooklar,
+ruxsat va `additionalDirectories` da `~/.claude/genius/` yozuvi qolmaganini
+va `~/.claude/genius` bo'shaganini ham tekshiradi. Snapshot, `yangilash.py`
+va yozuv joylari (memory va holat klonda) `tools/test_install.py` va
+`tools/test_yangilash.py` da vaqtinchalik repo va HOME bilan sinaladi.
 
 `-Project` CI da yurmaydi. Yo'llarni almashtirish, `settings.json` ni
 birlashtirish, olib tashlash va zaxiradan tiklash alohida birlik

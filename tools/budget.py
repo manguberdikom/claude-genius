@@ -62,8 +62,7 @@ import geniuslib
 import hookio
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-STATE_DIR = (os.environ.get("GENIUS_STATE_DIR")
-             or os.path.join(ROOT, ".claude", ".state"))
+STATE_DIR = geniuslib.state_dir(ROOT)
 LOG = os.path.join(STATE_DIR, "budget.json")
 
 # Zanjir aktyorlari. Tartib chiqishdagi jadval tartibi.
@@ -319,10 +318,11 @@ def reset(key, cwd=""):
 def installed_line():
     """`o'rnatilgan: <sha>, klon: <sha>` yoki None (global o'rnatish yo'q).
 
-    O'rnatuvchi `~/.claude/skills/manguberdi/.genius.json` ga commitni
-    yozadi. Skill va aktyorlar o'rnatish paytidagi nusxa, asboblar esa
-    klondan jonli: `git pull` dan keyin ular ajraladi va buni shu qator
-    aytadi.
+    O'rnatuvchi `~/.claude/skills/manguberdi/.genius.json` ga snapshot
+    commitini yozadi. Skill, aktyorlar va hooklar shu snapshotdan (R7.8
+    XV-Y1), klon esa undan oldinga ketishi mumkin (`git pull`): farqni shu
+    qator aytadi va yangilashni `tools/yangilash.py` bajaradi. Eski
+    o'rnatishda (manifestda `clone` yo'q) asboblar klondan jonli edi.
     """
     config = (os.environ.get("CLAUDE_CONFIG_DIR")
               or os.path.join(os.path.expanduser("~"), ".claude"))
@@ -333,12 +333,21 @@ def installed_line():
         installed = str(manifest.get("commit") or "")
     except (OSError, ValueError, AttributeError):
         return None
-    root = manifest.get("root") or ROOT
+    pinned = bool(manifest.get("clone"))
+    root = manifest.get("clone") or manifest.get("root") or ROOT
     proc = geniuslib.run_git(["-C", root, "rev-parse", "HEAD"], timeout=5)
     clone = proc.stdout.strip() if proc else ""
     line = "o'rnatilgan: %s, klon: %s" % (installed[:12] or "?", clone[:12] or "?")
     if installed and clone and installed != clone:
-        line += " (farq bor: o'rnatuvchini qayta yurgizing, install/README.md 'Yangilash')"
+        if pinned:
+            tool = os.path.join(str(manifest.get("root") or ""), "tools",
+                                "yangilash.py").replace("\\", "/")
+            line += (" (hooklar o'rnatilgan commitdan yuradi: ro'yxatni ko'rish va "
+                     "yangilash uchun `python3 %s` (snapshotdagi nusxa), install/README.md "
+                     "'Yangilash')" % tool)
+        else:
+            line += (" (farq bor: o'rnatuvchini qayta yurgizing, install/README.md "
+                     "'Yangilash')")
     return line
 
 

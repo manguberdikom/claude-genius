@@ -158,6 +158,54 @@ def case_memory_yoli():
     return n == 1 and "%s/memory/<proyekt-slug>/" % GENIUS in out
 
 
+def case_memory_klonga_tools_snapshotga():
+    """R7.8 XV-Y1: `--clone` berilsa `memory/` klonga, `tools/` snapshotga ketadi;
+    `--clone` siz klon ichidagi xulq o'zgarmaydi."""
+    snap = "C:/Users/a/.claude/genius/0123456789ab"
+    out, n = R.rewrite("python3 tools/rules_for.py x; `memory/umumiy/MEMORY.md`; tools/doc.sh toc",
+                       snap, "bash", "python3", clone=GENIUS)
+    plain, _ = R.rewrite("memory/umumiy/", GENIUS)
+    return (n == 3 and "python3 %s/tools/rules_for.py" % snap in out
+            and "%s/memory/umumiy/MEMORY.md" % GENIUS in out
+            and "bash %s/tools/doc.sh" % snap in out
+            and snap + "/memory" not in out
+            and plain == "%s/memory/" % GENIUS + "umumiy/")
+
+
+def case_clone_va_root_keyin_papkada():
+    """`--clone` fayl tizimida: skill matni snapshot va klon yo'llari bilan
+    yoziladi; `--root-keyin` bilan snapshot hali yo'q bo'lsa 2 qaytmaydi, lekin
+    klon yo'q bo'lsa 2; `--root-keyin` siz yo'q snapshot 2."""
+    tmp = tempfile.mkdtemp(prefix="rw_snap_")
+    try:
+        clone = os.path.join(tmp, "klon")
+        snap = os.path.join(tmp, "genius", "0123456789ab")
+        os.makedirs(clone)
+        skill = os.path.join(tmp, "SKILL.md")
+        io.open(skill, "w", encoding="utf-8").write(
+            "python3 tools/budget.py; `memory/umumiy/MEMORY.md`")
+        rows = []
+        code, _ = run_main([tmp, "--root", snap, "--clone", clone])
+        rows.append(code == 2)
+        code, _ = run_main([tmp, "--root", snap, "--clone", os.path.join(tmp, "yoq"),
+                            "--root-keyin"])
+        rows.append(code == 2)
+        code, _ = run_main([tmp, "--root", snap, "--clone", clone, "--root-keyin"])
+        text = io.open(skill, encoding="utf-8").read()
+        rows.append(code == 0 and "%s/tools/budget.py" % snap.replace(os.sep, "/") in text
+                    and "%s/memory/umumiy/MEMORY.md" % clone.replace(os.sep, "/") in text)
+        code, out = run_main([tmp, "--root", snap, "--clone", clone, "--root-keyin",
+                              "--tekshir"])
+        rows.append(code == 0)
+        code, out = run_main([tmp, "--root", snap, "--clone", clone, "--root-keyin",
+                              "--allow"])
+        rows.append(code == 0 and "%s/tools/budget.py" % snap.replace(os.sep, "/")
+                    in json.loads(out)[0])
+        return all(rows) and len(rows) == 5
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 def case_mutlaq_yol_tegilmaydi():
     """Allaqachon mutlaq yo'l ikkinchi marta almashmaydi."""
     text = "python3 /opt/genius/tools/rules_for.py x"
@@ -399,21 +447,22 @@ def ps1_text():
 
 def case_ps1_papkalar_va_opt_in():
     """ps1 sinalmaydi, matni tekshiriladi: additionalDirectories da butun
-    klon emas, faqat docs va memory (XV-Y4); opt-in bo'lagi rewrite_paths
-    dan olinadi va ko'rsatiladi; GeniusPath va Python yo'li xavfli belgida
-    to'xtatiladi (XV-P2)."""
+    klon emas, faqat snapshotning docs va klonning memory papkasi (XV-Y4,
+    XV-Y1); opt-in bo'lagi rewrite_paths dan olinadi va ko'rsatiladi;
+    GeniusPath, Snapshot va Python yo'li xavfli belgida to'xtatiladi (XV-P2)."""
     text = ps1_text()
     dirs = re.search(r"additionalDirectories = @\(([^)]*)\)", text)
     if not dirs:
         raise AssertionError("ps1 da additionalDirectories topilmadi")
     entries = re.findall(r'"([^"]*)"', dirs.group(1))
     unsafe = re.search(r"\$UnsafeChars = \[char\[\]\]@\(([^)]*)\)", text)
-    return (entries == ["$g/docs", "$g/memory"]
-            and "'--opt-in')" in text
+    return (entries == ["$sg/docs", "$g/memory"]
+            and "'--opt-in'" in text
             and text.count("Show-OptIn") >= 3
             and unsafe is not None
             and sorted(re.findall(r"'(.)'", unsafe.group(1))) == sorted(R.UNSAFE_CHARS)
             and "Test-SafePath 'GeniusPath' $GeniusPath" in text
+            and "Test-SafePath 'Snapshot' $SnapRoot" in text
             and "Test-SafePath 'Python' $PythonExe" in text)
 
 
@@ -435,13 +484,34 @@ def case_ps1_manifest_va_eski_aktyor():
     agents = {name[:-3] for name in os.listdir(os.path.join(ROOT, ".claude", "agents"))}
     return ("arxitektor" in old and not set(old) & set(current)
             and not set(old) & agents and set(current) <= agents
-            and keys == ["versiya", "commit", "sana", "root", "python", "actors"]
+            and keys == ["versiya", "commit", "sana", "root", "clone", "python", "actors"]
             and "skills\\manguberdi\\.genius.json" in text
             and '"manguberdi", ".genius.json"' in budget
             and 'manifest.get("commit")' in budget
             and 'manifest.get("root")' in budget
             # ta'rif, -Uninstall va yangilash
             and text.count("Get-StaleActors") >= 3)
+
+
+def case_ps1_hook_yoli_snapshotga():
+    """R7.8 XV-Y1 (ps1 CI quruq yurishi o'rniga matn): hook buyrug'i klonning
+    tools\\ iga emas, snapshot (`$snapTools`) ga ishora qiladi; snapshot joyini va
+    git mantig'ini install.py bilan bir xil snapshot.py beradi; GENIUS_CLONE
+    env ga yoziladi; sinov va yangi sinov `--clone` bilan yuradi."""
+    text = ps1_text()
+    return ("""'"{0}" "{1}/{2}"' -f $PythonExe, $snapTools, $script""" in text
+            and '$snapTools = "$SnapRoot/tools"' in text
+            and "Join-Path $SnapRoot 'tools'" not in text
+            and "ConvertFrom-Json" in text and "$hookCmds" in text
+            and ".Contains(\"$snapTools/\")" in text
+            and "'farq', '--clone'" in text
+            and "-Raw).Contains(" not in text
+            and "'install\\snapshot.py'" in text
+            and "'yol', '--clone'" in text and "'yarat', '--clone'" in text
+            and "'arxiv', '--clone'" in text and "'royxat', '--clone'" in text
+            and "GENIUS_CLONE = $g" in text
+            and "'--root', $SnapRoot, '--clone', $GeniusPath, '--root-keyin'" in text
+            and "HookCmd" in text)
 
 
 # PowerShell sinalmaydi, lekin u yasaydigan hook jadvali matndan o'qiladi
@@ -589,6 +659,8 @@ CASES = [
     ("bo'sh joyli ildiz fayli qo'shtirnoqda", case_root_file_bosh_joyli),
     ("../ va boshqa nomli ildiz fayli tegilmaydi", case_root_file_chegarasi),
     ("memory yo'li", case_memory_yoli),
+    ("--clone: memory klonga, tools snapshotga", case_memory_klonga_tools_snapshotga),
+    ("--clone va --root-keyin fayl tizimida", case_clone_va_root_keyin_papkada),
     ("mutlaq yo'l tegilmaydi", case_mutlaq_yol_tegilmaydi),
     ("ikki marta yurgizish xavfsiz", case_idempotent),
     ("teskari slash to'g'rilanadi", case_teskari_slash_tozalanadi),
@@ -607,6 +679,7 @@ CASES = [
     ("$, backtick yoki qo'shtirnoqli yo'l 2 qaytaradi", case_xavfli_belgili_yol_2),
     ("ps1: docs va memory papkasi, opt-in, xavfli belgi", case_ps1_papkalar_va_opt_in),
     ("ps1 hook jadvali settings.json ga mos", case_ps1_hooklari_repoga_mos),
+    ("ps1: hook yo'li snapshotga ishora qiladi (XV-Y1)", case_ps1_hook_yoli_snapshotga),
     ("ps1: .genius.json manifesti va eski aktyor", case_ps1_manifest_va_eski_aktyor),
     ("papka bo'ylab yuradi, .md dan boshqasi tegilmaydi", case_papkani_yuradi),
     ("haqiqiy skillda nol nisbiy yo'l", case_haqiqiy_skill_toza_qoladi),

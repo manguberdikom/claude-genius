@@ -31,6 +31,9 @@ ROOT = os.path.dirname(HERE)
 # shu papkani meros oladi.
 STATE = tempfile.mkdtemp(prefix="genius-state-")
 os.environ["GENIUS_STATE_DIR"] = STATE
+# Jonli sessiyaning global sozlamasi (env.GENIUS_CLONE) rules_for.MEMORY ni
+# boshqa klonga burib yubormasin (R7.8 XV-Y1).
+os.environ.pop("GENIUS_CLONE", None)
 sys.path.insert(0, HERE)
 
 import rules_for as R  # noqa: E402
@@ -692,6 +695,31 @@ def main():
         ("belgi bo'yicha: faqat tranzaksiya yozuvi", tx_notes == ["feedback_tx.md"]),
         ("fayl nomi bo'yicha", file_notes == ["feedback_fayl.md"]),
     ]
+    failures += report(rows)
+    total += len(rows)
+
+    print("\n== Avvalgi xatolar yo'li: snapshot ROOT, memory klonda (R7.8 XV-Y1) ==")
+    tmp_snap = tempfile.mkdtemp()
+    snap = os.path.join(tmp_snap, ".claude", "genius", "0123456789ab")
+    klon = os.path.join(tmp_snap, "klon")
+    write(os.path.join(klon, "memory", "umumiy", "feedback_yol.md"),
+          "# Yo'l sinovi\n\nYo'l klonga nisbatan bo'lsin.\n")
+    os.makedirs(snap)
+    saved_root, saved_mem, saved_in, saved_env = (
+        R.ROOT, R.MEMORY, R.in_clone, os.environ.get("GENIUS_CLONE"))
+    try:
+        os.environ["GENIUS_CLONE"] = klon
+        R.ROOT, R.MEMORY, R.in_clone = snap, os.path.join(klon, "memory"), lambda: True
+        rel_paths = [r for r, _ in R.past_mistakes(slug="umumiy")]
+    finally:
+        R.ROOT, R.MEMORY, R.in_clone = saved_root, saved_mem, saved_in
+        if saved_env is None:
+            os.environ.pop("GENIUS_CLONE", None)
+        else:
+            os.environ["GENIUS_CLONE"] = saved_env
+        shutil.rmtree(tmp_snap, ignore_errors=True)
+    rows = [("snapshot ROOT da yo'l klonga nisbatan (memory/umumiy/...), ../ yo'q",
+             rel_paths == [os.path.join("memory", "umumiy", "feedback_yol.md")])]
     failures += report(rows)
     total += len(rows)
 
