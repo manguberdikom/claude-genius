@@ -459,6 +459,21 @@ def new_signals(path):
     return "\n".join(lines)
 
 
+# Klondagi sinov fixture lari: ular qoidani buzish uchun yoziladi va
+# rules_for ro'yxati ularga hech narsa bermaydi (HK-H5).
+FIXTURES = os.path.join(HERE, "testdata")
+
+
+def is_fixture(path):
+    """Yo'l klonning tools/testdata/ papkasi ichidami."""
+    try:
+        full = os.path.normcase(os.path.realpath(path))
+        base = os.path.normcase(os.path.realpath(FIXTURES))
+    except (OSError, ValueError):
+        return False
+    return full.startswith(base.rstrip(os.sep) + os.sep)
+
+
 SKIPPED = (
     "Yozishdan oldin qoidalar olinmagan:\n"
     "    %s %s\n"
@@ -543,7 +558,10 @@ def main():
     # bu hook har Java proyektida yuradi va u yerda har birinchi .java
     # yozuvini to'sardi. Shuning uchun klondan tashqarida bu eslatma:
     # chaqiruv to'xtamaydi, ro'yxat esa taklif qilinadi.
-    if written and not was_marked(path):
+    #
+    # tools/testdata/ dagi fixture shartdan tashqarida: u ataylab buzuq
+    # kod, unga qoidalar ro'yxati kerak emas. Mexanik tekshiruv qoladi.
+    if written and not was_marked(path) and not is_fixture(path):
         reason = SKIPPED % (tool_cmd("rules_for.py"), quote(path))
         if findings:
             reason = render(path, findings) + "\n\n" + reason
