@@ -29,6 +29,7 @@ render qilmaydi, monolit variant brauzerda ochilmaydi.
 - **Ichkarida nima sodir bo'layotganini bilmoqchisiz** - [arxitektor hujjati](docs/architect/README.md)
 - **O'zingizni baholamoqchisiz** - [Birinchi 90 kun va o'z-o'zini baholash](docs/architect/39-birinchi-90-kun-va-oz-ozini-baholash.md)
 - **Atama tushunarsiz** - [GLOSSARY.md](GLOSSARY.md)
+- **Bobda xato topdingiz** - [bob xatosi haqida xabar](https://github.com/manguberdikom/claude-genius/issues/new?template=bob-xatosi.yml) (hujjat, bo'lim raqami, da'vo va manba)
 
 ## Claude Code bilan ishlatish
 
