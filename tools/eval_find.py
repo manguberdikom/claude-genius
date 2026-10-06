@@ -72,7 +72,8 @@ WORD_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_.]*")
 # tushadi va u o'nlab bo'limda uchraydi. Bitta shunday so'rov tufayli har
 # safar "yiqildi" deb chiqadigan o'lchov e'tibordan qoladi, ya'ni umuman
 # o'lchamagan bilan barobar.
-FLOORS_A = {"topildi": 99, "top-3": 98}
+# 1-o'rin: aniq moslik darajasidan oldin 116/120 edi, chegara shu (97%).
+FLOORS_A = {"topildi": 99, "1-o'rin": 97, "top-3": 98}
 # Namuna o'zining generatori bilan: avval global random.seed(7) edi va
 # aliases.tsv dagi o'zgarish B namunasini ham almashtirardi.
 A_SEED = 7
@@ -88,14 +89,20 @@ B_SLACK = 3
 # Qiymat oxirgi o'lchovdan bitta so'rov past (1 so'rov tolerantlik).
 # Bazaviy raqamlar (find va hook o'zgarishidan oldin, 2026-10-06):
 #   find  dev     topildi 18/32, 1-o'rin 14, top-3 18
-#   find  holdout topildi 20/35, 1-o'rin 12, top-3 19
+#   find  holdout topildi 20/35, 1-o'rin 13, top-3 19
 #   hook  dev     1-o'rin 10/34, top-3 15, topildi 16, aniqlik 34/82, jim 7/9
 #   hook  holdout 1-o'rin 11/27, top-3 16, topildi 16, aniqlik 34/75, jim 5/6
+# find ning daraja, transliteratsiya va so'zlar bo'yicha zaxirasi hamda
+# hook kirishini tozalashdan keyin (shu chegaralar shundan):
+#   find  dev     topildi 28/32, 1-o'rin 26, top-3 27
+#   find  holdout topildi 30/35, 1-o'rin 22, top-3 28
+#   hook  dev     1-o'rin 15/34, top-3 18, topildi 19, aniqlik 38/87, jim 7/9
+#   hook  holdout 1-o'rin 11/27, top-3 17, topildi 17, aniqlik 34/75, jim 5/6
 FLOORS_E = {
-    ("find", "dev"): {"topildi": 17, "1-o'rin": 13, "top-3": 17},
-    ("find", "holdout"): {"topildi": 19, "1-o'rin": 11, "top-3": 18},
-    ("hook", "dev"): {"1-o'rin": 9, "top-3": 14, "jim": 6},
-    ("hook", "holdout"): {"1-o'rin": 10, "top-3": 15, "jim": 4},
+    ("find", "dev"): {"topildi": 27, "1-o'rin": 25, "top-3": 26},
+    ("find", "holdout"): {"topildi": 29, "1-o'rin": 21, "top-3": 27},
+    ("hook", "dev"): {"1-o'rin": 14, "top-3": 17, "jim": 6},
+    ("hook", "holdout"): {"1-o'rin": 10, "top-3": 16, "jim": 4},
 }
 
 # C uchun so'rovlar: korpusda har xil sonda uchraydi, shuning uchun tartib

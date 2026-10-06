@@ -92,6 +92,23 @@ CASES = [
     # Ishora-yozuv to'liq yozuv raqamini ko'rsatadi.
     ("find ishora-yozuv", ["find", "memoizatsiya"], 0, "[ishora: 11.17]"),
     ("find bo'sh so'rov", ["find", " "], 1, ""),
+    # Daraja: aniq moslik > butun so'z > so'z boshi > so'z ichida.
+    # So'z ichidagi moslik qoladi, faqat pastga tushadi.
+    ("find aniq moslik birinchi", ["find", "State"], 0, r"^patterns +3\.8 "),
+    ("find kesh: Bikeshedding emas", ["find", "kesh"], 0, r"^(?!.*Bikeshed)"),
+    ("find Pact: Compacted emas", ["find", "Pact"], 0, r"^testing +9\.9 "),
+    ("find so'z ichidagisi qoladi", ["find", "-n", "100", "Lock"], 0, "ReentrantLock"),
+    # Ko'p so'zli so'rov: ibora yo'q bo'lsa so'zlar bo'yicha (findlib.py).
+    ("find so'zlar: optimistic locking", ["find", "optimistic locking"], 0,
+     "18.8 Optimistik"),
+    ("find so'zlar: transaction propagation", ["find", "transaction propagation"],
+     0, r"^architect +19\.2 "),
+    ("find so'zlar: thread safety", ["find", "thread safety"], 0, r"^architect +11\.7 "),
+    ("find so'zlar: hech biri yo'q", ["find", "zzqwerty yyqwerty"], 1, ""),
+    # Bitta so'zli inglizcha so'rov: transliteratsiya va inglizcha jadval.
+    ("find tion -> tsiya", ["find", "-n", "60", "serialization"], 0, "Serializatsiya"),
+    ("find ic -> ik", ["find", "optimistic"], 0, "18.8 Optimistik"),
+    ("find jadval: isolation", ["find", "-n", "60", "isolation"], 0, "izolyatsiya"),
 
     # show va path: X.10 X.1 ga tushmasin (awk son solishtirsa 24.10 == 24.1).
     ("show bo'lim", ["show", "patterns", "17.2"], 0, "Circuit Breaker"),
@@ -159,7 +176,8 @@ def check_exact_refs():
 
 def check_find_hint():
     """'Kengroq qidirish' maslahati apostrofli so'rovda ham buyruq bo'lib qoladi."""
-    proc = run("find", "qo'shimcha zzqwerty")
+    # Ikkala so'z ham hech qayerda yo'q: so'zlar bo'yicha qidiruv ham bo'sh.
+    proc = run("find", "zzqo'shimcha zzqwerty")
     hint = [l for l in proc.stderr.split("\n") if l.startswith("kengroq")]
     if not hint:
         return False, "maslahat yo'q"
@@ -190,6 +208,61 @@ def check_bash32():
             bad.append("%d: $( ) ichida izoh" % lineno)
         if text.endswith("$("):
             inside = True
+    return not bad, ", ".join(bad)
+
+
+def check_find_rank():
+    """Taxallus ko'p bo'lsa ham backtick ichidagi aniq nom yuqorida.
+
+    `find Transactional` da avval 10 ta patterns taxallusi oldinda edi,
+    architect 19.1 (`@Transactional` qanday ishlaydi) 12-o'rinda.
+    """
+    rows = [line.split()[:2] for line in run("find", "Transactional").stdout.split("\n")
+            if line.strip()]
+    keys = ["%s %s" % tuple(r) for r in rows if len(r) == 2]
+    ok = "architect 19.1" in keys[:5]
+    return ok, "" if ok else "19.1 o'rni: %s" % (
+        keys.index("architect 19.1") + 1 if "architect 19.1" in keys else "yo'q")
+
+
+def check_translit_same():
+    """doc.sh (awk) va findlib.py (Python) transliteratsiyasi bir xil."""
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    import findlib
+    words = ("migration", "replication", "serialization", "optimistic",
+             "configuration", "version", "transaction", "lock")
+    with open(DOC, encoding="utf-8") as handle:
+        text = handle.read()
+    begin = text.index("BEGIN {", text.index("name_hits()"))
+    last = "if (t != q) v[++nv] = t"
+    rules = text[begin:text.index(last, begin) + len(last)] + "\n} }\n"
+    bad = []
+    for word in words:
+        proc = subprocess.run(["awk", "-v", "q=" + word,
+                               rules + 'END { print (t == "" ? q : t) }'],
+                              capture_output=True, encoding="utf-8", stdin=subprocess.DEVNULL)
+        awk_out = proc.stdout.strip()
+        want = findlib.translit(word) or word
+        if awk_out != want:
+            bad.append("%s: awk %s, python %s" % (word, awk_out, want))
+    return not bad, "; ".join(bad)
+
+
+def check_posix_awk():
+    """doc.sh awk qismida gawk kengaytmasi va regex interval yo'q.
+
+    mawk (Debian/Ubuntu standarti) va macOS BWK awk ularni bilmaydi:
+    IGNORECASE jim e'tiborsiz qoladi, gensub esa sintaksis xatosi.
+    """
+    with open(DOC, encoding="utf-8") as handle:
+        lines = handle.read().split("\n")
+    bad = []
+    for lineno, line in enumerate(lines, 1):
+        if re.search(r"\b(gensub|IGNORECASE|asorti?|strftime|systime|PROCINFO|"
+                     r"patsplit|BEGINFILE|ENDFILE)\b", line):
+            bad.append("%d: gawk kengaytmasi" % lineno)
+        if re.search(r"(?:~|match\(|sub\(|split\()[^#]*/[^/]*\{\d+(,\d*)?\}[^/]*/", line):
+            bad.append("%d: regex interval" % lineno)
     return not bad, ", ".join(bad)
 
 
@@ -319,6 +392,9 @@ CHECKS = [
     ("X.10 butun sinf", check_exact_refs),
     ("find maslahati apostrofda", check_find_hint),
     ("bash 3.2 sintaksisi", check_bash32),
+    ("find Transactional: 19.1 top-5", check_find_rank),
+    ("transliteratsiya awk = Python", check_translit_same),
+    ("awk: gawk kengaytmasi yo'q", check_posix_awk),
     ("indeks eskirishi", check_index_freshness),
     ("python3 stub PATH da", check_python_stub),
 ]

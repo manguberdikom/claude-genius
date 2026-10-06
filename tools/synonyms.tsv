@@ -42,3 +42,25 @@ tranzaksiya	tranzaksiya tranzaksiyalar
 chiroyli	toza nomlash
 tartib	tuzilish tartib
 nusxa	takrorlanish nusxa
+# [inglizcha] Inglizcha atama -> korpus sarlavhasidagi o'zbekcha yozilishi.
+# Bu blokni doc.sh find ham o'qiydi: bitta so'zli so'rovga variant
+# qo'shadi, ko'p so'zli bo'sh natijada esa tools/findlib.py ishlatadi.
+# Faqat muntazam transliteratsiyaga (ction -> ksiya, tion -> tsiya,
+# sion -> siya, oxiridagi ic -> ik, c -> k) tushmaydigan so'zlar:
+# migration, validation, optimistic bu yerga yozilmaydi.
+isolation	izolyatsiya izolyatsiyasi
+transaction	tranzaksiya
+authentication	autentifikatsiya
+authorization	avtorizatsiya
+exception	istisno
+encapsulation	inkapsulyatsiya
+inheritance	vorislik
+dependency	bog'liqlik
+cache	kesh
+lock	qulf
+naming	nomlash
+pagination	sahifalash
+retry	urinish
+memory	xotira
+index	indeks indekslar
+# [/inglizcha]
