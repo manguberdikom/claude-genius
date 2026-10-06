@@ -285,9 +285,9 @@ done | sort -rn | head -15
 # Spring kontekst necha marta qurilgan (eng katta sekinlik manbasi).
 grep -rc 'Starting .*Test' target/surefire-reports/*.txt 2>/dev/null | head
 
-# Review izohi: har xil @MockBean kombinatsiyasi YANGI kontekst yaratadi.
+# Review izohi: har xil @MockitoBean kombinatsiyasi YANGI kontekst yaratadi.
 # 20 xil kombinatsiya = 20 kontekst = 20 x ishga tushish vaqti.
-# Yechim: @MockBean larni umumiy bazaviy klassga yig'ish.
+# Yechim: @MockitoBean larni umumiy bazaviy klassga yig'ish.
 ```
 
 | Test turi | Maqbul vaqt | Chegara |

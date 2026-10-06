@@ -342,7 +342,7 @@ class PaymentRouter {
 - Retry, circuit breaker va timeout'ni Resilience4j dekoratorlari sifatida qatlamma-qatlam qo'shish.
 - `RestClient.Builder` ga `ClientHttpRequestInterceptor` qo'shib, auth header'ni barcha chaqiruvlarga ulash.
 - Validatsiya qoidalarini `List<OrderValidator>` sifatida inject qilib, yangi qoidani yangi bean bilan qo'shish.
-- Testda real bog'liqlik o'rniga fake implementatsiya berish, `@SpyBean` yoki protected metodlarni override qilmasdan.
+- Testda real bog'liqlik o'rniga fake implementatsiya berish, `@MockitoSpyBean` yoki protected metodlarni override qilmasdan.
 
 **Ehtiyot bo'ling:** Kompozitsiya ham ortiqcha ishlatilsa, ko'p mayda bean va uzun konstruktorlarga olib keladi - konstruktorda 6-7 dan ortiq parametr paydo bo'lsa, bu sinf juda ko'p mas'uliyatni olgan degan signal. Vorislik haqiqiy "is-a" munosabati va barqaror, hujjatlashtirilgan kengaytirish nuqtalari bo'lganda (masalan Spring'ning `OncePerRequestFilter`) hamon to'g'ri tanlov.
 

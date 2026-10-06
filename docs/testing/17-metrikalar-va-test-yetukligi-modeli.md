@@ -115,7 +115,7 @@ Haftalik sifat hisobotining namunasi (bir sahifadan oshmasligi kerak):
 Outcome metrikalari kechikib keladi: escaped defect allaqachon mijozga tegib ketgan bo'ladi. Shu sababli oldindan ogohlantiruvchi belgilarni kuzatish kerak:
 
 - **PR'larda test yo'qligi** - production kodi o'zgargan, test fayllari o'zgarmagan PR'lar ulushi o'sadi.
-- **Kontekst sonining o'sishi** - har xil `@MockBean` va `@TestPropertySource` kombinatsiyalari ko'paysa, Spring kontekst cache ishlamay qoladi va build sekinlashadi.
+- **Kontekst sonining o'sishi** - har xil `@MockitoBean` va `@TestPropertySource` kombinatsiyalari ko'paysa, Spring kontekst cache ishlamay qoladi va build sekinlashadi.
 - **Build vaqtining sekin o'sishi** - haftada 2-3% o'sish bir chorakda ikki barobarga aylanadi; trend chizig'i absolyut qiymatdan muhimroq.
 - **Flake rate o'sishi** - jamoa "qayta ishga tushir" madaniyatiga o'tishdan oldingi oxirgi signal.
 - **`@Disabled` sonining o'sishi** - qarz jim to'planayotganini ko'rsatadi.

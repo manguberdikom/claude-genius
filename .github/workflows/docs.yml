@@ -97,6 +97,45 @@ jobs:
       - name: Hujjatlarni tekshirish
         run: python3 tools/check_docs.py
 
+      # verify_claims --java kod bloklarini javac parserida sinaydi: JDK kerak
+      # (faqat parser, build yo'q).
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      # Faqat o'zgargan boblar: PR da base branch (merge commit birinchi
+      # ota-ona), push da oldingi head (changes ishidagi kabi), topilmasa
+      # HEAD~1. Siyosat check_docs bilan bir xil (CONTRIBUTING: "hozircha
+      # ogohlantirish"): topilma (kod 1) qadamni yiqitmaydi, annotatsiya
+      # chiqadi. Asbob sinsa (boshqa nol bo'lmagan kod) qadam yiqiladi.
+      # Korpus toza bo'lgach `rc -eq 1` shoxini ham xatoga aylantiring.
+      - name: Da'volarni tekshirish (verify_claims, o'zgargan boblar)
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          base=""
+          case "$EVENT" in
+            pull_request) base=$(git rev-parse -q --verify HEAD^1) ;;
+            push)
+              if [ -n "${BEFORE//0/}" ] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+                base="$BEFORE"
+              fi ;;
+          esac
+          [ -n "$base" ] || base=$(git rev-parse -q --verify HEAD~1) || base=HEAD
+          echo "base: $base"
+          rc=0
+          python3 tools/verify_claims.py --java --diff "$base" || rc=$?
+          # 1 = topilma (ogohlantirish). Boshqa nol bo'lmagan kod asbobning
+          # o'zi singanini bildiradi (traceback, git xatosi): qadam yiqiladi.
+          if [ "$rc" -eq 1 ]; then
+            echo "::warning title=verify_claims::o'zgargan boblarda da'vo topilmasi bor (yuqoridagi chiqish)"
+          elif [ "$rc" -ne 0 ]; then
+            echo "::error title=verify_claims::asbob xato bilan tugadi (kod $rc)"
+            exit "$rc"
+          fi
+
       - name: Monolit qayta yig'ilishini sinash
         run: |
           python3 tools/build_single.py

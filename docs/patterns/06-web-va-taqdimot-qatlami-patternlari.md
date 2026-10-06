@@ -843,9 +843,12 @@ JwtDecoder jwtDecoder(@Value("${auth.jwk-set-uri}") String jwkSetUri) {
 # Server sessiyasi: oddiy, lekin stateless deploy'ni buzadi
 spring:
   session:
-    store-type: redis        # sessiya tashqi omborda: podlar almashtirilsa yo'qolmaydi
-    redis:
-      namespace: payments:session
+    # Saqlash turi classpath dagi spring-session-data-redis dan aniqlanadi (Boot 3.0+):
+    # sessiya tashqi omborda, podlar almashtirilsa yo'qolmaydi.
+    data:
+      redis:
+        # Boot 4 da shu kalit; Boot 3.x da: spring.session.redis.namespace
+        namespace: payments:session
   servlet:
     session:
       timeout: 30m

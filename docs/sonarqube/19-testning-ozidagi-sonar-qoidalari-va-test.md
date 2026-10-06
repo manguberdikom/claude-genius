@@ -173,7 +173,7 @@ class StockServiceTest {
 }
 ```
 
-Spring kontekstidagi varianti ham bor: `@MockBean` yoki `@SpyBean` orqali sozlangan stub kontekst keshida qoladi va keyingi test klassiga o'tadi. Sonar bunga qoida bermaydi, lekin `@DirtiesContext` ning ko'payishi loyihada muammo borligini bildiradi. Bu holatda arxitektura darajasidagi qarorni [testlash qo'llanmasidagi](../testing/README.md) test izolyatsiyasi mavzusidan oling.
+Spring kontekstidagi varianti ham bor: `@MockitoBean` yoki `@MockitoSpyBean` orqali sozlangan stub kontekst keshida qoladi va keyingi test klassiga o'tadi. Sonar bunga qoida bermaydi, lekin `@DirtiesContext` ning ko'payishi loyihada muammo borligini bildiradi. Bu holatda arxitektura darajasidagi qarorni [testlash qo'llanmasidagi](../testing/README.md) test izolyatsiyasi mavzusidan oling.
 
 ## 19.6 Juda ko'p mock va haddan tashqari bog'langan test
 

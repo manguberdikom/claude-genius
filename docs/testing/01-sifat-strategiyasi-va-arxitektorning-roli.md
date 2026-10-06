@@ -196,7 +196,7 @@ Amaliy qoidalar:
 - Bir xil ishonchni arzonroq darajada olish mumkin bo'lsa, arzonroqni tanlang. Validatsiya qoidasini E2E testda sinash - resurs isrofi.
 - Qiymat bermaydigan testni o'chirish - bu yo'qotish emas, tejamkorlik. Hech qachon buzilmagan va hech narsani ushlamagan test faqat saqlash narxini keltiradi.
 - Ishga tushish vaqtini kuzatib boring. PR pipeline 10 daqiqadan oshsa, developer kutmay boshqa ishga o'tadi - feedback loop buziladi va testning qiymati tushadi.
-- Spring context'ni qayta ishlatish (context caching) - eng arzon tezlashtirish usuli. Har bir test klassida har xil `@MockBean`/`@TestConfiguration` kombinatsiyasi yangi context yaratadi; bu sekinlikning asosiy manbai.
+- Spring context'ni qayta ishlatish (context caching) - eng arzon tezlashtirish usuli. Har bir test klassida har xil `@MockitoBean`/`@TestConfiguration` kombinatsiyasi yangi context yaratadi; bu sekinlikning asosiy manbai.
 - Flaky test qiymati manfiy: u ishonchni yo'qotadi va jamoani "qayta ishga tushirish" odatiga o'rgatadi ([16-bobga](16-flaky-testlar-test-qarzi-va-test-kodini.md) qarang).
 
 ## 1.8 Arxitektorning aniq vazifalari

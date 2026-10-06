@@ -432,7 +432,7 @@ Muhim ogohlantirish: aksariyat kutubxonalar versiyasini Spring Boot BOM (`spring
 
 | Simptom | Ehtimoliy sabab | Yechim |
 |---|---|---|
-| Kontekst ko'tarilmayapti (`ApplicationContextFailure`) | Yetishmayotgan bean, noto'g'ri property, bir nechta nomos `@MockBean` kombinatsiyasi | Xato stack'ining ENG CHUQUR `Caused by`ni o'qing; `@SpringBootTest` o'rniga slice test; `--debug` bilan auto-configuration reportini ko'ring |
+| Kontekst ko'tarilmayapti (`ApplicationContextFailure`) | Yetishmayotgan bean, noto'g'ri property, bir nechta nomos `@MockitoBean` kombinatsiyasi | Xato stack'ining ENG CHUQUR `Caused by`ni o'qing; `@SpringBootTest` o'rniga slice test; `--debug` bilan auto-configuration reportini ko'ring |
 | `LazyInitializationException` testda | Tranzaksiya tashqarisida lazy kolleksiyaga murojaat | Testda `@Transactional`, yoki `JOIN FETCH`/entity graph, yoki DTO proyeksiyasi bilan tekshirish |
 | Test lokalda o'tadi, CI'da yiqiladi | Vaqt zonasi, locale, fayl tartibi, sekinlik, parallel run, Docker resurslari | CI va lokalni bir xil `-Duser.timezone=UTC -Duser.language=en` bilan ishga tushirish; vaqtni `Clock` orqali; tartibga tayanchni olib tashlash |
 | `Could not find a valid Docker environment` | Docker demon ishlamaydi yoki socket boshqa yo'lda (Colima/Podman/Rancher) | Docker'ni yoqish; `DOCKER_HOST` yoki `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE` sozlash; CI'da privileged runner yoki DinD |
