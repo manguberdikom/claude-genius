@@ -6,8 +6,15 @@
 
 ```bash
 git checkout 500158f732419217507c7656904b8e6aa1bcc0d6 -- src
-git apply eval/ab/vazifalar/diff/review-2.diff
+rm -rf .git && git init -q && git add -A && git commit -qm "boshlang'ich"
+git apply <genius>/eval/ab/vazifalar/diff/review-2.diff
+rsync -a --exclude=.git ./ ../asl/   # baholovchi uchun asl holat
 ```
+
+Diff `.git` qayta yaratilgandan KEYIN qo'llanadi: review qilinadigan
+o'zgarish `git diff` da ataylab ko'rinadi.
+Buni `eval/ab/yurgiz.py` o'zi qiladi, yuqoridagi buyruqlar qo'lda
+takrorlash uchun.
 
 ## Prompt (ikkala holatda aynan bir xil)
 

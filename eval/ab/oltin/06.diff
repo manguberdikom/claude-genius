@@ -1,0 +1,29 @@
+diff --git a/src/test/java/org/springframework/samples/petclinic/owner/PetTypeFormatterTests.java b/src/test/java/org/springframework/samples/petclinic/owner/PetTypeFormatterTests.java
+index fe4a5f7..d4866a4 100644
+--- a/src/test/java/org/springframework/samples/petclinic/owner/PetTypeFormatterTests.java
++++ b/src/test/java/org/springframework/samples/petclinic/owner/PetTypeFormatterTests.java
+@@ -75,6 +75,24 @@ class PetTypeFormatterTests {
+ 		});
+ 	}
+ 
++	@Test
++	void shouldNotParseNameThatDiffersOnlyInCase() {
++		given(types.findPetTypes()).willReturn(makePetTypes());
++		Assertions.assertThrows(ParseException.class, () -> petTypeFormatter.parse("bird", Locale.ENGLISH));
++	}
++
++	@Test
++	void shouldThrowParseExceptionForNullText() {
++		given(types.findPetTypes()).willReturn(makePetTypes());
++		Assertions.assertThrows(ParseException.class, () -> petTypeFormatter.parse(null, Locale.ENGLISH));
++	}
++
++	@Test
++	void shouldThrowParseExceptionForEmptyText() {
++		given(types.findPetTypes()).willReturn(makePetTypes());
++		Assertions.assertThrows(ParseException.class, () -> petTypeFormatter.parse("", Locale.ENGLISH));
++	}
++
+ 	/**
+ 	 * Helper method to produce some sample pet types just for test purpose
+ 	 * @return {@link Collection} of {@link PetType}
