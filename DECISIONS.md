@@ -8,6 +8,67 @@ Hamma o'zgarish bu yerga yozilmaydi. Yoziladigani: foydalanuvchi
 muhitiga tegadigan, ma'lumot yo'qotishi mumkin bo'lgan yoki ruxsat
 qarorini o'zgartiradigan o'zgarish.
 
+## 2026-10-06: Boshqa proyekt memorysi klondan tashqarida, handoff lokal
+
+**Nima o'zgardi.** Global o'rnatishda (joriy proyekt klonning o'zi
+bo'lmasa) proyekt memorysi `GENIUS_MEMORY_DIR` da, sukut bo'yicha
+`~/.claude/genius-memory/<slug>/`, push siz. Klonga faqat
+`memory/umumiy/` va `memory/claude-genius/` yoziladi. Joyni
+`docref.memory_dir` hal qiladi, `rules_for.past_mistakes` va `handoff`
+shu funksiyani ishlatadi. `guard.py`: klondagi begona `memory/<slug>/`
+ga tegadigan `git add` yoki `git commit` (`add -A`, `add .`,
+`commit -a` ham, klonda begona papka bo'lsa) `ask`. `handoff.py
+--prompt` fakt qismini o'zi yig'adi (`git diff --stat HEAD`, git da yo'q
+fayllar, REJA.md `[x]` va `[ ]`); `--vazifa <nom>` topshiriqni lokal
+sessiyada `.claude/.state/handoff/<nom>.md` ga git siz yozadi, bulut
+sessiyasida (`CLAUDE_CODE_REMOTE`) proyekt memorysiga. `--memory` ikki
+indeksni bitta chaqiruvda beradi, manguberdi uni ish boshida o'qiydi.
+`memory/README.md` dagi git buyruqlari `git -C <memory ildizi>` bilan.
+Mayda: handoff holati `GENIUS_STATE_DIR` ni hurmat qiladi, tmp nomida
+pid; `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` chegarani siqish nuqtasiga
+tushiradi.
+
+**Nega.** Klon ochiq GitHub repo, global o'rnatishda esa hamma Java
+proyekt shu klonni ishlatadi. Eski qoida topshiriqning Maqsad, Qarorlar
+maydonlarini `memory/<proyekt-slug>/` ga yozib push qilardi: xususiy
+proyekt nomi, qarorlari va fayl yo'llari ochiq tarixga tushardi va
+o'chirish qimmat (JR-J6, OC-K4, OK-T-K3, XV-Y3). Git buyruqlari `-C`
+siz edi, ya'ni ish proyektida yurardi (OC-T-Q2). Handoff har uzatishda
+memory fayl, indeks, commit, push va o'chirishga 4-6 navbat sarflardi
+(OK-O17).
+
+**Rad etilgan variantlar.**
+
+- *`.gitignore` da `memory/*/`.* Rad etildi: yozuv jim lokal qolardi,
+  foydalanuvchi buni bilmasdi, `umumiy/` uchun istisno ham mo'rt.
+- *Proyekt memorysini proyektning o'zida (`<proyekt>/.claude/memory/`)
+  saqlash.* Rad etildi: u proyekt reposiga tushishi mumkin, jamoa
+  reposida esa shaxsiy eslatma begona.
+- *Push ni butunlay olib tashlash.* Rad etildi: cloud sessiyasida klon
+  memorysi yo'qolardi. Push klondagi ikki papka uchun qoladi.
+- *Handoff ni har doim memoryga yozish.* Rad etildi: bu bir martalik
+  vazifa tafsiloti, memory darvozasining 1-savoliga zid.
+
+**Xavf.** Ma'lumot joyi o'zgaradi. Oldin klonda `memory/<slug>/` bo'lsa,
+endi u boshqa proyektdan o'qilmaydi: uni qo'lda
+`~/.claude/genius-memory/` ga ko'chirish kerak. Bulut sessiyasida
+`GENIUS_MEMORY_DIR` git da bo'lmasa yozuv konteyner bilan yo'qoladi,
+asbob buni aytadi. `GENIUS_MEMORY_DIR` dagi topic faylni Read bilan
+ochish ruxsat so'rashi mumkin (`additionalDirectories` da emas).
+Guard to'sig'i odatga qarshi: `bash -c` ichini ko'rmaydi.
+
+**Qaysi tekshiruv o'tdi.** `tools/test_handoff.py` 29/29 (8 yangi:
+PCT, GENIUS_STATE_DIR va pid, fakt qismi, lokal va bulut topshirig'i,
+memory joyi), `tools/test_rules_for.py` 84/84 (GENIUS_MEMORY_DIR),
+`tools/test_guard.py` 209/209 (begona slug `add` va `commit` -> `ask`,
+umumiy va claude-genius -> o'tadi). O'rnatilgan `manguberdi` skill
+matnida `<klon>/memory/<proyekt-slug>` yo'q (`rewrite_paths` bilan
+sinaldi). Aktyor fayli `rejalashtiruvchi.md` dagi o'qish qatori bu
+o'zgarishga kirmadi.
+
+**Orqaga qaytarish.** `git revert`. Vaqtincha: `GENIUS_MEMORY_DIR` ni
+`<klon>/memory` ga qo'yish eski joyni qaytaradi (push qoidasisiz).
+
 ## 2026-10-05: Gradle yurishiga init skript: jacoco, XML, kompilyatsiya keshi
 
 **Nima o'zgardi.** `run_tests.py` har Gradle buyrug'iga `-I <init skript>`
