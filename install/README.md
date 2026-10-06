@@ -249,6 +249,95 @@ Klon yoki uy papkasi berilmaydi: skript buni rad etadi. `.claude\` git
 da bo'lsa o'chirish keyingi commit ga tushadi, `git status` bilan
 tekshiring.
 
+## Linux va macOS
+
+Windows da `manguberdi.ps1`, Linux va macOS da `install/install.py`:
+POSIX, faqat standart kutubxona, Python 3.8+. Mantiq bir xil: sukut
+qo'shuvchi, faqat `skills/manguberdi`, olti aktyor fayli va
+`settings.json` dagi shu klonga ishora qilgan hook va ruxsatlar
+almashadi, begona yozuvlar joyida qoladi. Yo'llarni almashtirish,
+`settings.json` ni birlashtirish va olib tashlashni ps1 dagi o'sha
+yordamchilar qiladi (`rewrite_paths.py`, `merge_settings.py`,
+`uninstall_settings.py`), shuning uchun ikki o'rnatuvchi bir xil hook
+buyruqlari va ruxsat ro'yxatini beradi (`tools/test_install.py`
+paritet holatlari).
+
+```bash
+git clone https://github.com/manguberdikom/claude-genius ~/src/claude-genius
+cd ~/src/claude-genius
+python3 install/install.py                      # quruq yurish: ro'yxat, hech narsa yozilmaydi
+python3 install/install.py --apply              # o'rnatadi
+python3 install/install.py --update --apply     # git pull dan keyin: qayta o'rnatadi
+python3 install/install.py --uninstall --apply  # faqat o'zi qo'shganini oladi
+```
+
+`--genius-path <yo'l>` berilmasa skript turgan klon olinadi. `--uninstall`
+da bu yo'l mavjud bo'lishi shart emas ([Klon o'chsa yoki
+ko'chsa](#klon-ochsa-yoki-kochsa) bilan bir xil): klonni o'chirgan bo'lsangiz
+skriptni boshqa nusxadan yurgizib, eski yo'lni `--genius-path` bilan
+bering.
+
+Switchlar ps1 bilan bir xil ma'noda: `-Apply` `--apply`, `-Update`
+`--update`, `-Uninstall` `--uninstall`, `-Reset` `--reset`, `-ConfirmReset`
+`--confirm-reset`, `-IncludeAuth` `--include-auth`, `-Project` `--project`,
+`-BackupTo` `--backup-to`, `-GeniusPath` `--genius-path`. `--reset --apply`
+`--confirm-reset` siz rad etiladi, `--project` va `--include-auth` faqat
+`--reset` bilan beriladi.
+
+Farqlar:
+
+| Mavzu | Windows (ps1) | Linux va macOS (install.py) |
+|---|---|---|
+| Python | `py -3`, `python`, `python3` sinaladi, Store stub'i hisoblanmaydi | `python3 install/install.py` ni yurgizgan interpreter (`sys.executable`) hook buyrug'iga yoziladi |
+| bash | Git Bash izlanadi, WSL ishga tushirgichi rad etiladi | `PATH` dagi `bash`, topilmasa o'rnatish to'xtaydi |
+| Skript yurgizish ruxsati | `Set-ExecutionPolicy -Scope Process` kerak | kerak emas |
+| Kodirovka | BOM siz UTF-8 maxsus ta'minlanadi | har fayl BOM siz UTF-8 |
+| Managed sozlama ogohlantirishi | `%ProgramFiles%\ClaudeCode`, `%ProgramData%\ClaudeCode` | `/etc/claude-code`, `/Library/Application Support/ClaudeCode` |
+| `--update` bilan `--reset` | `-Reset` ustun, `-Update` jim o'tadi | ikkalasi birga rad etiladi: ma'nosi ikki xil |
+| `--update` bilan `--uninstall` | `-Update` e'tiborsiz | rad etiladi |
+| `HOME` bo'sh yoki `/` | ildizga tegishi mumkin | rad etiladi |
+| `--uninstall` da aktyor fayllari | nom bo'yicha | manifest bo'lsa faqat undagi `actors`, yo'q bo'lsa nom bo'yicha va ogohlantirish |
+| Symlink | tekshirilmaydi | klon ichiga ishora qilsa rad etiladi, zaxirada symlink bo'lib qoladi |
+
+`$`, backtick yoki qo'sh qo'shtirnoq bo'lgan klon yoki Python yo'lida
+o'rnatish ps1 dagidek hech narsaga tegmasdan to'xtaydi ([Talablar](#talablar)).
+Quruq yurish ham skillni vaqtinchalik papkada (`$TMPDIR`) yig'ib sinaydi
+va uni o'chiradi: `~/.claude`, klon va `index/` ga yozilmaydi.
+`CLAUDE_CONFIG_DIR` o'rnatilgan bo'lsa o'rnatish rad etiladi.
+
+Egalik. O'rnatish ps1 dagidek `skills/manguberdi` va olti aktyor fayli
+(`qidiruv`, `tahlil`, `review`, `dasturchi`, `test-muhandis`,
+`rejalashtiruvchi`) ustidan nom bo'yicha yozadi: shu nomli begona fayl
+bo'lsa u almashadi, lekin avval zaxiraga tushadi. `--uninstall` esa
+manifest (`skills/manguberdi/.genius.json`) bo'lsa faqat undagi
+`actors` va skillni oladi, begona `review.md` qoladi. Manifest yo'q
+bo'lsa manguberdi o'rnatganini tasdiqlab bo'lmaydi: ps1 kabi nom
+bo'yicha olinadi, lekin har fayl uchun ogohlantirish qatori chiqadi.
+
+Xavfsizlik rad etishlari (hech narsa o'zgarmasdan, quruq yurishda ham):
+`~/.claude`, `skills`, `agents` yoki `skills/manguberdi` ning haqiqiy joyi
+klon ichida bo'lsa (symlink), klonning o'zi o'chiriladigan birlik ichida
+bo'lsa va `--backup-to` o'chiriladigan birlik ichida bo'lsa. Zaxirada
+symlink symlink bo'lib turadi (singani ham), nishon nusxalanmaydi va
+o'chmaydi. `HOME` bo'sh yoki `/` bo'lsa o'rnatish rad etiladi.
+
+Zaxira ps1 dagidek `~/.claude-backup-<vaqt>` (yoki `--backup-to`) ga
+`<ota>--<nom>` nomi bilan yoziladi. Qaytarish ([Orqaga qaytarish](#orqaga-qaytarish)
+dagi PowerShell buyruqlarining POSIX nusxasi, `<z>` zaxira papkasi):
+
+```bash
+c=~/.claude
+rm -rf "$c/skills/manguberdi" && cp -R "<z>/skills--manguberdi" "$c/skills/manguberdi"
+for f in "<z>"/agents--*.md; do cp "$f" "$c/agents/$(basename "$f" | sed 's/^agents--//')"; done
+cp "<z>/.claude--settings.json" "$c/settings.json"
+```
+
+`restore_backup.py` bu ishni qilmaydi: u eski o'rnatuvchi o'chirgan
+begona birliklarni qaytaradi va skill bilan olti aktyorni ataylab
+tashlab ketadi (`python3 install/restore_backup.py <z> [--yoz]
+[--claude ~/.claude]`, [Eski o'rnatuvchidan keyin
+tiklash](#eski-ornatuvchidan-keyin-tiklash)).
+
 ## Nima o'rnatiladi
 
 | Nima | Qayerga |
@@ -749,6 +838,11 @@ Agent sessiyasi `manguberdi.ps1` ni yurgiza olmaydi: repo PowerShell ni
 ish uchun taqiqlaydi (`tools/guard.py` uni to'sadi). Uni sinaydigan joy
 CI: `.github/workflows/docs.yml` dagi `installer` job `windows-latest`
 da Windows PowerShell 5.1 va pwsh 7 bilan to'rt qadam yurgizadi.
+`ubuntu-latest` va `macos-latest` da shu job `install/install.py` ni
+vaqtinchalik `HOME` bilan quruq yurish, `--apply`, `--update`,
+`--uninstall` va `--reset` ketma-ketligida yurgizadi (quyidagi ro'yxatning
+POSIX nusxasi). `tools/test_install.py` esa shu holatlarni va ps1 bilan
+paritetni har `tools` ishida (Linux va Windows) sinaydi.
 
 1. Quruq yurish.
 2. `-Apply` (sukut, qo'shuvchi): begona `CLAUDE.md`, `skills\eski`,

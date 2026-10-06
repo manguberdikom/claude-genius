@@ -188,18 +188,29 @@ jobs:
 
   # O'rnatuvchi agent sessiyasida yurgizilmaydi (PowerShell taqiqlangan),
   # shuning uchun uni sinaydigan yagona joy shu. Runner bir martalik,
-  # demak -Apply xavfsiz. Ikki shell: Windows PowerShell 5.1 va pwsh 7
-  # fayl kodirovkasida farq qiladi. Faqat hujjat o'zgarsa qadamlar
-  # o'tkaziladi, job esa o'z nomi bilan yashil hisobot beradi.
+  # demak --apply xavfsiz. Windows: ikki shell (Windows PowerShell 5.1 va
+  # pwsh 7 fayl kodirovkasida farq qiladi), o'rnatuvchi manguberdi.ps1.
+  # Linux va macOS: install/install.py, har yurish vaqtinchalik HOME bilan.
+  # Faqat hujjat o'zgarsa qadamlar o'tkaziladi, job esa o'z nomi bilan yashil
+  # hisobot beradi.
+  #
+  # Matritsa: asosiy o'q `shell` va `os` standarti windows-latest, shuning
+  # uchun mavjud required check nomlari ("installer (powershell)",
+  # "installer (pwsh)") o'zgarmaydi. Linux va macOS `include` bilan qo'shilgan.
   installer:
     needs: changes
     if: ${{ !cancelled() }}
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os || 'windows-latest' }}
     timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
         shell: [powershell, pwsh]
+        include:
+          - os: ubuntu-latest
+            shell: bash
+          - os: macos-latest
+            shell: bash
     env:
       ISHLA: ${{ needs.changes.outputs.kod != 'false' }}
     defaults:
@@ -221,14 +232,14 @@ jobs:
           python-version: '3.12'
 
       - name: Quruq yurish
-        if: env.ISHLA == 'true'
+        if: env.ISHLA == 'true' && runner.os == 'Windows'
         run: ./install/manguberdi.ps1 -GeniusPath $PWD
 
       # Sukut xulq QO'SHUVCHI: begona sozlamalar saqlanishi kerak. Avval
       # bu qadam teskarisini talab qilardi (eski CLAUDE.md o'chgan bo'lsin),
       # ya'ni CI foydalanuvchi sozlamasini o'chirishni qo'riqlayotgan edi.
       - name: Haqiqiy o'rnatish (qo'shuvchi, sukut)
-        if: env.ISHLA == 'true'
+        if: env.ISHLA == 'true' && runner.os == 'Windows'
         run: |
           New-Item -ItemType Directory -Force "$HOME/.claude/skills/eski" | Out-Null
           Set-Content "$HOME/.claude/skills/eski/SKILL.md" 'eski'
@@ -293,7 +304,7 @@ jobs:
       # ikkilanmasligi, BOM li eski settings.json o'qilib BOM siz yozilishi
       # va skill ichida ikkinchi manguberdi\ ochilmasligi shu yerda sinaladi.
       - name: Yangilash (-Update)
-        if: env.ISHLA == 'true'
+        if: env.ISHLA == 'true' && runner.os == 'Windows'
         run: |
           New-Item -ItemType Directory -Force "$HOME/.claude/skills/begona" | Out-Null
           Set-Content "$HOME/.claude/skills/begona/SKILL.md" 'begona'
@@ -342,7 +353,7 @@ jobs:
       # sukut xulq edi, shuning uchun uni ataylab so'rash shu yerda
       # qo'riqlanadi: tasdiqsiz chaqiruv hech narsaga tegmasligi kerak.
       - name: To'liq tozalash (-Reset)
-        if: env.ISHLA == 'true'
+        if: env.ISHLA == 'true' && runner.os == 'Windows'
         run: |
           Set-Content "$HOME/.claude/CLAUDE.md" 'reset-sinovi'
           New-Item -ItemType Directory -Force "$HOME/.claude/skills/begona2" | Out-Null
@@ -372,7 +383,7 @@ jobs:
       # -GeniusPath endi mavjud bo'lmagan yo'lni ko'rsatadi. Asl checkout
       # (joriy papka) tegilmaydi: skript shu yerdan yuradi.
       - name: Olib tashlash (-Uninstall)
-        if: env.ISHLA == 'true'
+        if: env.ISHLA == 'true' && runner.os == 'Windows'
         run: |
           $asl = $PWD.Path
           $nusxa = Join-Path $env:RUNNER_TEMP 'kochirilgan-klon'
@@ -437,3 +448,172 @@ jobs:
           '@ | Set-Content -LiteralPath $tekshir
           python $tekshir
           if ($LASTEXITCODE) { exit 1 }
+
+      # Linux va macOS: install/install.py. Haqiqiy ~/.claude ga tegilmaydi:
+      # HOME runner vaqtinchalik papkasiga o'tkaziladi va keyingi qadamlar
+      # shuni ko'radi. Runner bash 3.2 (macOS): faqat POSIX sintaksis.
+      - name: Vaqtinchalik HOME (POSIX)
+        if: env.ISHLA == 'true' && runner.os != 'Windows'
+        run: |
+          mkdir -p "$RUNNER_TEMP/uy"
+          echo "HOME=$RUNNER_TEMP/uy" >> "$GITHUB_ENV"
+
+      - name: Quruq yurish (POSIX)
+        if: env.ISHLA == 'true' && runner.os != 'Windows'
+        run: |
+          # HOME haqiqatan vaqtinchalik papkada bo'lishi shart: aks holda keyingi
+          # qadamlar runnerning haqiqiy uyiga yozardi.
+          case "$HOME" in "$RUNNER_TEMP"/*) ;; *) echo "HOME vaqtinchalik emas: $HOME"; exit 1 ;; esac
+          python3 install/install.py
+          # Quruq yurish ~/.claude ni yaratmasligi kerak.
+          if [ -e "$HOME/.claude" ]; then echo "quruq yurish ~/.claude yaratdi"; exit 1; fi
+          if ls "$HOME"/.claude-backup-* >/dev/null 2>&1; then echo "quruq yurish zaxira yozdi"; exit 1; fi
+
+      # Sukut xulq QO'SHUVCHI: begona sozlamalar saqlanishi kerak.
+      - name: Haqiqiy o'rnatish (POSIX, qo'shuvchi)
+        if: env.ISHLA == 'true' && runner.os != 'Windows'
+        run: |
+          mkdir -p "$HOME/.claude/skills/eski" "$HOME/.claude/plugins/p" "$HOME/.claude/rules"
+          echo eski > "$HOME/.claude/skills/eski/SKILL.md"
+          echo eski > "$HOME/.claude/CLAUDE.md"
+          echo '{}' > "$HOME/.claude/plugins/p/x.json"
+          echo qoida > "$HOME/.claude/rules/r.md"
+          python3 - <<'PY'
+          import json, os
+          p = os.path.expanduser("~/.claude/settings.json")
+          json.dump({"model": "opus",
+                     "hooks": {"SessionStart": [{"hooks": [
+                         {"type": "command", "command": "echo begona-hook"}]}]},
+                     "permissions": {"allow": ["Bash(git status:*)"]}},
+                    open(p, "w", encoding="utf-8"), indent=2)
+          PY
+          python3 install/install.py --apply
+          for q in skills/eski/SKILL.md CLAUDE.md plugins/p/x.json rules/r.md skills/manguberdi/SKILL.md; do
+            test -e "$HOME/.claude/$q" || { echo "yo'q: $q"; exit 1; }
+          done
+          test "$(cat "$HOME/.claude/CLAUDE.md")" = eski || { echo "CLAUDE.md o'zgardi"; exit 1; }
+          for a in qidiruv tahlil review dasturchi test-muhandis rejalashtiruvchi; do
+            test -e "$HOME/.claude/agents/$a.md" || { echo "aktyor yo'q: $a"; exit 1; }
+          done
+          ls -d "$HOME"/.claude-backup-* >/dev/null 2>&1 || { echo "zaxira yo'q"; exit 1; }
+          python3 - <<'PY'
+          import json, os, sys
+          raw = open(os.path.expanduser("~/.claude/settings.json"), "rb").read()
+          d = json.loads(raw.decode("utf-8"))
+          cmds = [h.get("command", "") for gs in d["hooks"].values()
+                  for g in gs for h in g.get("hooks", [])]
+          xato = []
+          if raw.startswith(b"\xef\xbb\xbf"):
+              xato.append("settings.json BOM bilan")
+          if "echo begona-hook" not in cmds:
+              xato.append("begona hook yo'qoldi")
+          if sum("suggest_sections.py" in c for c in cmds) != 1:
+              xato.append("suggest_sections.py hooki bir marta emas")
+          if "Bash(git status:*)" not in d["permissions"]["allow"]:
+              xato.append("begona ruxsat yo'qoldi")
+          if d.get("model") != "opus":
+              xato.append("begona kalit yo'qoldi")
+          print("; ".join(xato) or "qo'shuvchi o'rnatish begona yozuvlarni saqladi")
+          sys.exit(1 if xato else 0)
+          PY
+
+      - name: Yangilash (POSIX, --update)
+        if: env.ISHLA == 'true' && runner.os != 'Windows'
+        run: |
+          mkdir -p "$HOME/.claude/skills/begona"
+          echo begona > "$HOME/.claude/skills/begona/SKILL.md"
+          python3 - <<'PY'
+          import json, os
+          p = os.path.expanduser("~/.claude/settings.json")
+          d = json.load(open(p, encoding="utf-8"))
+          d["hooks"]["UserPromptSubmit"][0]["hooks"].append(
+              {"type": "command", "command": "echo begona-hook"})
+          d["permissions"]["allow"].append("Bash(ls:*)")
+          json.dump(d, open(p, "w", encoding="utf-8"), indent=2)
+          PY
+          python3 install/install.py --update --apply --backup-to "$RUNNER_TEMP/yangilash-zaxira"
+          test -e "$HOME/.claude/skills/begona/SKILL.md" || { echo "begona skill o'chdi"; exit 1; }
+          test -e "$HOME/.claude/skills/manguberdi/SKILL.md" || { echo "skill yo'q"; exit 1; }
+          test ! -e "$HOME/.claude/skills/manguberdi/manguberdi" || { echo "skill ichida ikkinchi manguberdi"; exit 1; }
+          for z in skills--manguberdi .claude--settings.json; do
+            test -e "$RUNNER_TEMP/yangilash-zaxira/$z" || { echo "zaxirada yo'q: $z"; exit 1; }
+          done
+          python3 - <<'PY'
+          import json, os, sys
+          d = json.load(open(os.path.expanduser("~/.claude/settings.json"), encoding="utf-8"))
+          cmds = [h.get("command", "") for gs in d["hooks"].values()
+                  for g in gs for h in g.get("hooks", [])]
+          allow = d["permissions"]["allow"]
+          xato = []
+          if "echo begona-hook" not in cmds:
+              xato.append("begona hook yo'qoldi")
+          if sum("suggest_sections.py" in c for c in cmds) != 1:
+              xato.append("suggest_sections.py hooki bir marta emas")
+          if "Bash(git status:*)" not in allow or "Bash(ls:*)" not in allow:
+              xato.append("begona ruxsat yo'qoldi")
+          print("; ".join(xato) or "settings.json birlashdi")
+          sys.exit(1 if xato else 0)
+          PY
+
+      # --uninstall klonga bog'liq emas: nusxadan o'rnatiladi, nusxa
+      # o'chiriladi, keyin --genius-path endi mavjud bo'lmagan yo'lni ko'rsatadi.
+      - name: Olib tashlash (POSIX, --uninstall)
+        if: env.ISHLA == 'true' && runner.os != 'Windows'
+        run: |
+          nusxa="$RUNNER_TEMP/kochirilgan-klon"
+          cp -R "$PWD" "$nusxa"
+          python3 "$nusxa/install/install.py" --apply --backup-to "$RUNNER_TEMP/nusxa-zaxira"
+          mkdir -p "$HOME/.claude/skills/begona3"
+          echo begona > "$HOME/.claude/skills/begona3/SKILL.md"
+          rm -rf "$nusxa"
+          test ! -e "$nusxa" || { echo "nusxa o'chmadi"; exit 1; }
+          # Quruq yurish hech narsani o'chirmaydi.
+          python3 install/install.py --uninstall --genius-path "$nusxa"
+          test -e "$HOME/.claude/skills/manguberdi/SKILL.md" || { echo "quruq yurish skillni o'chirdi"; exit 1; }
+          python3 install/install.py --uninstall --apply --genius-path "$nusxa" --backup-to "$RUNNER_TEMP/uninst-zaxira"
+          test ! -e "$HOME/.claude/skills/manguberdi" || { echo "skill qoldi"; exit 1; }
+          for a in qidiruv review rejalashtiruvchi; do
+            test ! -e "$HOME/.claude/agents/$a.md" || { echo "aktyor qoldi: $a"; exit 1; }
+          done
+          test -e "$HOME/.claude/skills/begona3/SKILL.md" || { echo "begona skill o'chdi"; exit 1; }
+          UNINST_YOL="$nusxa" python3 - <<'PY'
+          import json, os, sys
+          yol = os.environ["UNINST_YOL"].lower()
+          d = json.load(open(os.path.expanduser("~/.claude/settings.json"), encoding="utf-8"))
+          cmds = [h.get("command", "") for gs in d.get("hooks", {}).values()
+                  for g in gs for h in g.get("hooks", [])]
+          allow = [str(r) for r in d.get("permissions", {}).get("allow", [])]
+          dirs = [str(x) for x in d.get("permissions", {}).get("additionalDirectories", [])]
+          xato = []
+          if any(yol in c.lower() for c in cmds):
+              xato.append("o'chirilgan klon hooki qoldi")
+          if any(yol in r.lower() for r in allow):
+              xato.append("o'chirilgan klon ruxsati qoldi")
+          if any(yol in x.lower() for x in dirs):
+              xato.append("additionalDirectories qoldi")
+          if "GENIUS_PYTHON" in d.get("env", {}):
+              xato.append("env.GENIUS_PYTHON qoldi")
+          if "echo begona-hook" not in cmds:
+              xato.append("begona hook o'chdi")
+          if "Bash(git status:*)" not in allow:
+              xato.append("begona ruxsat o'chdi")
+          if d.get("model") != "opus":
+              xato.append("begona kalit o'chdi")
+          print("; ".join(xato) or "--uninstall faqat o'z yozuvlarini oldi")
+          sys.exit(1 if xato else 0)
+          PY
+
+      # --reset tasdiqsiz rad etiladi va hech narsa o'chmaydi; tasdiq bilan
+      # begona CLAUDE.md zaxiralanib o'chadi.
+      - name: To'liq tozalash (POSIX, --reset)
+        if: env.ISHLA == 'true' && runner.os != 'Windows'
+        run: |
+          echo reset-sinovi > "$HOME/.claude/CLAUDE.md"
+          if python3 install/install.py --reset --apply; then echo "--confirm-reset siz o'tdi"; exit 1; fi
+          test -e "$HOME/.claude/CLAUDE.md" || { echo "tasdiqsiz chaqiruv o'chirdi"; exit 1; }
+          if python3 install/install.py --include-auth; then echo "--include-auth --reset siz o'tdi"; exit 1; fi
+          python3 install/install.py --reset --apply --confirm-reset --backup-to "$RUNNER_TEMP/reset-zaxira"
+          test ! -e "$HOME/.claude/CLAUDE.md" || { echo "eski CLAUDE.md qoldi"; exit 1; }
+          test ! -e "$HOME/.claude/skills/begona3" || { echo "begona skill qoldi"; exit 1; }
+          test -e "$HOME/.claude/skills/manguberdi/SKILL.md" || { echo "skill yo'q"; exit 1; }
+          test -e "$RUNNER_TEMP/reset-zaxira/.claude--CLAUDE.md" || { echo "zaxirada yo'q: CLAUDE.md"; exit 1; }
