@@ -1,0 +1,738 @@
+# Spring Boot sozlama kalitlarining deprecation ro'yxati. Yasovchi:
+# `python3 tools/verify_claims.py --yangila`, qo'lda tahrir qilinmaydi.
+# Manba: org.springframework.boot:*:3.5.16 (9 modul) va *:4.1.0 (132 modul)
+# jarlaridagi META-INF/spring-configuration-metadata.json, Maven Central
+# (https://repo1.maven.org/maven2/org/springframework/boot/).
+# boot: kalit qaysi versiyada deprecated bo'lgan (3.5 = bazada ham).
+# daraja: 4.1.0 metadata sidagi level; removed = 4.1.0 da kalit yo'q.
+kalit	boot	daraja	almashtirish	since	tur
+logging.file	3.5	error	logging.file.name	2.2.0	
+logging.file.clean-history-on-start	3.5	error	logging.logback.rollingpolicy.clean-history-on-start	2.4.0	
+logging.file.max-history	3.5	error	logging.logback.rollingpolicy.max-history	2.4.0	
+logging.file.max-size	3.5	error	logging.logback.rollingpolicy.max-file-size	2.4.0	
+logging.file.total-size-cap	3.5	error	logging.logback.rollingpolicy.total-size-cap	2.4.0	
+logging.path	3.5	error	logging.file.path	2.2.0	
+logging.pattern.rolling-file-name	3.5	error	logging.logback.rollingpolicy.file-name-pattern	2.4.0	
+management.dynatrace.metrics.export.v1.device-id	4.1	warning		4.1.0	
+management.dynatrace.metrics.export.v1.group	4.1	warning		4.1.0	
+management.dynatrace.metrics.export.v1.technology-type	4.1	warning		4.1.0	
+management.endpoint.auditevents.enabled	3.5	removed	management.endpoint.auditevents.access	3.4.0	
+management.endpoint.beans.enabled	3.5	removed	management.endpoint.beans.access	3.4.0	
+management.endpoint.caches.enabled	3.5	removed	management.endpoint.caches.access	3.4.0	
+management.endpoint.conditions.enabled	3.5	removed	management.endpoint.conditions.access	3.4.0	
+management.endpoint.configprops.enabled	3.5	removed	management.endpoint.configprops.access	3.4.0	
+management.endpoint.env.enabled	3.5	removed	management.endpoint.env.access	3.4.0	
+management.endpoint.flyway.enabled	3.5	removed	management.endpoint.flyway.access	3.4.0	
+management.endpoint.health.enabled	3.5	removed	management.endpoint.health.access	3.4.0	
+management.endpoint.heapdump.enabled	3.5	removed	management.endpoint.heapdump.access	3.4.0	
+management.endpoint.httpexchanges.enabled	3.5	removed	management.endpoint.httpexchanges.access	3.4.0	
+management.endpoint.info.enabled	3.5	removed	management.endpoint.info.access	3.4.0	
+management.endpoint.integrationgraph.enabled	3.5	removed	management.endpoint.integrationgraph.access	3.4.0	
+management.endpoint.liquibase.enabled	3.5	removed	management.endpoint.liquibase.access	3.4.0	
+management.endpoint.logfile.enabled	3.5	removed	management.endpoint.logfile.access	3.4.0	
+management.endpoint.loggers.enabled	3.5	removed	management.endpoint.loggers.access	3.4.0	
+management.endpoint.mappings.enabled	3.5	removed	management.endpoint.mappings.access	3.4.0	
+management.endpoint.metrics.enabled	3.5	removed	management.endpoint.metrics.access	3.4.0	
+management.endpoint.prometheus.enabled	3.5	removed	management.endpoint.prometheus.access	3.4.0	
+management.endpoint.quartz.enabled	3.5	removed	management.endpoint.quartz.access	3.4.0	
+management.endpoint.sbom.enabled	3.5	removed	management.endpoint.sbom.access	3.4.0	
+management.endpoint.scheduledtasks.enabled	3.5	removed	management.endpoint.scheduledtasks.access	3.4.0	
+management.endpoint.sessions.enabled	3.5	removed	management.endpoint.sessions.access	3.4.0	
+management.endpoint.shutdown.enabled	3.5	removed	management.endpoint.shutdown.access	3.4.0	
+management.endpoint.startup.enabled	3.5	removed	management.endpoint.startup.access	3.4.0	
+management.endpoint.threaddump.enabled	3.5	removed	management.endpoint.threaddump.access	3.4.0	
+management.endpoints.enabled-by-default	3.5	warning	management.endpoints.access.default	3.4.0	
+management.endpoints.jackson.isolated-object-mapper	4.1	removed			
+management.endpoints.jackson2.isolated-object-mapper	4.1	warning		4.0.0	
+management.endpoints.jmx.unique-names	3.5	error	spring.jmx.unique-names	2.1.0	
+management.health.couchbase.timeout	3.5	error		2.0.6	
+management.health.elasticsearch.indices	3.5	error		2.2.0	
+management.health.elasticsearch.response-timeout	3.5	error		2.2.0	
+management.health.influxdb.enabled	3.5	error		3.2.0	
+management.health.mongo.enabled	4.1	error	management.health.mongodb.enabled	4.0.0	
+management.health.probes.enabled	3.5	error	management.endpoint.health.probes.enabled	2.3.2	
+management.metrics.binders.files.enabled	3.5	error		2.1.0	
+management.metrics.binders.jvm.enabled	3.5	error		2.1.0	
+management.metrics.binders.logback.enabled	3.5	error		2.1.0	
+management.metrics.binders.processor.enabled	3.5	error		2.1.0	
+management.metrics.binders.uptime.enabled	3.5	error		2.1.0	
+management.metrics.export.appoptics.api-token	3.5	error	management.appoptics.metrics.export.api-token	3.0.0	
+management.metrics.export.appoptics.batch-size	3.5	error	management.appoptics.metrics.export.batch-size	3.0.0	
+management.metrics.export.appoptics.connect-timeout	3.5	error	management.appoptics.metrics.export.connect-timeout	3.0.0	
+management.metrics.export.appoptics.enabled	3.5	error	management.appoptics.metrics.export.enabled	3.0.0	
+management.metrics.export.appoptics.floor-times	3.5	error	management.appoptics.metrics.export.floor-times	3.0.0	
+management.metrics.export.appoptics.host-tag	3.5	error	management.appoptics.metrics.export.host-tag	3.0.0	
+management.metrics.export.appoptics.num-threads	3.5	error		3.0.0	
+management.metrics.export.appoptics.read-timeout	3.5	error	management.appoptics.metrics.export.read-timeout	3.0.0	
+management.metrics.export.appoptics.step	3.5	error	management.appoptics.metrics.export.step	3.0.0	
+management.metrics.export.appoptics.uri	3.5	error	management.appoptics.metrics.export.uri	3.0.0	
+management.metrics.export.atlas.batch-size	3.5	error	management.atlas.metrics.export.batch-size	3.0.0	
+management.metrics.export.atlas.config-refresh-frequency	3.5	error	management.atlas.metrics.export.config-refresh-frequency	3.0.0	
+management.metrics.export.atlas.config-time-to-live	3.5	error	management.atlas.metrics.export.config-time-to-live	3.0.0	
+management.metrics.export.atlas.config-uri	3.5	error	management.atlas.metrics.export.config-uri	3.0.0	
+management.metrics.export.atlas.connect-timeout	3.5	error	management.atlas.metrics.export.connect-timeout	3.0.0	
+management.metrics.export.atlas.enabled	3.5	error	management.atlas.metrics.export.enabled	3.0.0	
+management.metrics.export.atlas.eval-uri	3.5	error	management.atlas.metrics.export.eval-uri	3.0.0	
+management.metrics.export.atlas.lwc-enabled	3.5	error	management.atlas.metrics.export.lwc-enabled	3.0.0	
+management.metrics.export.atlas.meter-time-to-live	3.5	error	management.atlas.metrics.export.meter-time-to-live	3.0.0	
+management.metrics.export.atlas.num-threads	3.5	error		3.0.0	
+management.metrics.export.atlas.read-timeout	3.5	error	management.atlas.metrics.export.read-timeout	3.0.0	
+management.metrics.export.atlas.step	3.5	error	management.atlas.metrics.export.step	3.0.0	
+management.metrics.export.atlas.uri	3.5	error	management.atlas.metrics.export.uri	3.0.0	
+management.metrics.export.datadog.api-key	3.5	error	management.datadog.metrics.export.api-key	3.0.0	
+management.metrics.export.datadog.application-key	3.5	error	management.datadog.metrics.export.application-key	3.0.0	
+management.metrics.export.datadog.batch-size	3.5	error	management.datadog.metrics.export.batch-size	3.0.0	
+management.metrics.export.datadog.connect-timeout	3.5	error	management.datadog.metrics.export.connect-timeout	3.0.0	
+management.metrics.export.datadog.descriptions	3.5	error	management.datadog.metrics.export.descriptions	3.0.0	
+management.metrics.export.datadog.enabled	3.5	error	management.datadog.metrics.export.enabled	3.0.0	
+management.metrics.export.datadog.host-tag	3.5	error	management.datadog.metrics.export.host-tag	3.0.0	
+management.metrics.export.datadog.num-threads	3.5	error		3.0.0	
+management.metrics.export.datadog.read-timeout	3.5	error	management.datadog.metrics.export.read-timeout	3.0.0	
+management.metrics.export.datadog.step	3.5	error	management.datadog.metrics.export.step	3.0.0	
+management.metrics.export.datadog.uri	3.5	error	management.datadog.metrics.export.uri	3.0.0	
+management.metrics.export.defaults.enabled	3.5	error	management.defaults.metrics.export.enabled	3.0.0	
+management.metrics.export.dynatrace.api-token	3.5	error	management.dynatrace.metrics.export.api-token	3.0.0	
+management.metrics.export.dynatrace.batch-size	3.5	error	management.dynatrace.metrics.export.batch-size	3.0.0	
+management.metrics.export.dynatrace.connect-timeout	3.5	error	management.dynatrace.metrics.export.connect-timeout	3.0.0	
+management.metrics.export.dynatrace.device-id	3.5	error	management.dynatrace.metrics.export.v1.device-id	3.0.0	
+management.metrics.export.dynatrace.enabled	3.5	error	management.dynatrace.metrics.export.enabled	3.0.0	
+management.metrics.export.dynatrace.group	3.5	error	management.dynatrace.metrics.export.v1.group	3.0.0	
+management.metrics.export.dynatrace.num-threads	3.5	error		3.0.0	
+management.metrics.export.dynatrace.read-timeout	3.5	error	management.dynatrace.metrics.export.read-timeout	3.0.0	
+management.metrics.export.dynatrace.step	3.5	error	management.dynatrace.metrics.export.step	3.0.0	
+management.metrics.export.dynatrace.technology-type	3.5	error	management.dynatrace.metrics.export.v1.technology-type	3.0.0	
+management.metrics.export.dynatrace.uri	3.5	error	management.dynatrace.metrics.export.uri	3.0.0	
+management.metrics.export.dynatrace.v1.device-id	3.5	error	management.dynatrace.metrics.export.v1.device-id	3.0.0	
+management.metrics.export.dynatrace.v1.group	3.5	error	management.dynatrace.metrics.export.v1.group	3.0.0	
+management.metrics.export.dynatrace.v1.technology-type	3.5	error	management.dynatrace.metrics.export.v1.technology-type	3.0.0	
+management.metrics.export.dynatrace.v2.default-dimensions	3.5	error	management.dynatrace.metrics.export.v2.default-dimensions	3.0.0	map
+management.metrics.export.dynatrace.v2.enrich-with-dynatrace-metadata	3.5	error	management.dynatrace.metrics.export.v2.enrich-with-dynatrace-metadata	3.0.0	
+management.metrics.export.dynatrace.v2.metric-key-prefix	3.5	error	management.dynatrace.metrics.export.v2.metric-key-prefix	3.0.0	
+management.metrics.export.elastic.api-key-credentials	3.5	error	management.elastic.metrics.export.api-key-credentials	3.0.0	
+management.metrics.export.elastic.auto-create-index	3.5	error	management.elastic.metrics.export.auto-create-index	3.0.0	
+management.metrics.export.elastic.batch-size	3.5	error	management.elastic.metrics.export.batch-size	3.0.0	
+management.metrics.export.elastic.connect-timeout	3.5	error	management.elastic.metrics.export.connect-timeout	3.0.0	
+management.metrics.export.elastic.enabled	3.5	error	management.elastic.metrics.export.enabled	3.0.0	
+management.metrics.export.elastic.host	3.5	error	management.elastic.metrics.export.host	3.0.0	
+management.metrics.export.elastic.index	3.5	error	management.elastic.metrics.export.index	3.0.0	
+management.metrics.export.elastic.index-date-format	3.5	error	management.elastic.metrics.export.index-date-format	3.0.0	
+management.metrics.export.elastic.index-date-separator	3.5	error	management.elastic.metrics.export.index-date-separator	3.0.0	
+management.metrics.export.elastic.num-threads	3.5	error		3.0.0	
+management.metrics.export.elastic.password	3.5	error	management.elastic.metrics.export.password	3.0.0	
+management.metrics.export.elastic.pipeline	3.5	error	management.elastic.metrics.export.pipeline	3.0.0	
+management.metrics.export.elastic.read-timeout	3.5	error	management.elastic.metrics.export.read-timeout	3.0.0	
+management.metrics.export.elastic.step	3.5	error	management.elastic.metrics.export.step	3.0.0	
+management.metrics.export.elastic.timestamp-field-name	3.5	error	management.elastic.metrics.export.timestamp-field-name	3.0.0	
+management.metrics.export.elastic.user-name	3.5	error	management.elastic.metrics.export.user-name	3.0.0	
+management.metrics.export.ganglia.addressing-mode	3.5	error	management.ganglia.metrics.export.addressing-mode	3.0.0	
+management.metrics.export.ganglia.duration-units	3.5	error	management.ganglia.metrics.export.duration-units	3.0.0	
+management.metrics.export.ganglia.enabled	3.5	error	management.ganglia.metrics.export.enabled	3.0.0	
+management.metrics.export.ganglia.host	3.5	error	management.ganglia.metrics.export.host	3.0.0	
+management.metrics.export.ganglia.port	3.5	error	management.ganglia.metrics.export.port	3.0.0	
+management.metrics.export.ganglia.rate-units	3.5	error		3.0.0	
+management.metrics.export.ganglia.step	3.5	error	management.ganglia.metrics.export.step	3.0.0	
+management.metrics.export.ganglia.time-to-live	3.5	error	management.ganglia.metrics.export.time-to-live	3.0.0	
+management.metrics.export.graphite.duration-units	3.5	error	management.graphite.metrics.export.duration-units	3.0.0	
+management.metrics.export.graphite.enabled	3.5	error	management.graphite.metrics.export.enabled	3.0.0	
+management.metrics.export.graphite.graphite-tags-enabled	3.5	error	management.graphite.metrics.export.graphite-tags-enabled	3.0.0	
+management.metrics.export.graphite.host	3.5	error	management.graphite.metrics.export.host	3.0.0	
+management.metrics.export.graphite.port	3.5	error	management.graphite.metrics.export.port	3.0.0	
+management.metrics.export.graphite.protocol	3.5	error	management.graphite.metrics.export.protocol	3.0.0	
+management.metrics.export.graphite.rate-units	3.5	error	management.graphite.metrics.export.rate-units	3.0.0	
+management.metrics.export.graphite.step	3.5	error	management.graphite.metrics.export.step	3.0.0	
+management.metrics.export.graphite.tags-as-prefix	3.5	error	management.graphite.metrics.export.tags-as-prefix	3.0.0	
+management.metrics.export.humio.api-token	3.5	error	management.humio.metrics.export.api-token	3.0.0	
+management.metrics.export.humio.batch-size	3.5	error	management.humio.metrics.export.batch-size	3.0.0	
+management.metrics.export.humio.connect-timeout	3.5	error	management.humio.metrics.export.connect-timeout	3.0.0	
+management.metrics.export.humio.enabled	3.5	error	management.humio.metrics.export.enabled	3.0.0	
+management.metrics.export.humio.num-threads	3.5	error		3.0.0	
+management.metrics.export.humio.read-timeout	3.5	error	management.humio.metrics.export.read-timeout	3.0.0	
+management.metrics.export.humio.repository	3.5	error		3.0.0	
+management.metrics.export.humio.step	3.5	error	management.humio.metrics.export.step	3.0.0	
+management.metrics.export.humio.tags	3.5	error	management.humio.metrics.export.tags	3.0.0	map
+management.metrics.export.humio.uri	3.5	error	management.humio.metrics.export.uri	3.0.0	
+management.metrics.export.influx.api-version	3.5	error	management.influx.metrics.export.api-version	3.0.0	
+management.metrics.export.influx.auto-create-db	3.5	error	management.influx.metrics.export.auto-create-db	3.0.0	
+management.metrics.export.influx.batch-size	3.5	error	management.influx.metrics.export.batch-size	3.0.0	
+management.metrics.export.influx.bucket	3.5	error	management.influx.metrics.export.bucket	3.0.0	
+management.metrics.export.influx.compressed	3.5	error	management.influx.metrics.export.compressed	3.0.0	
+management.metrics.export.influx.connect-timeout	3.5	error	management.influx.metrics.export.connect-timeout	3.0.0	
+management.metrics.export.influx.consistency	3.5	error	management.influx.metrics.export.consistency	3.0.0	
+management.metrics.export.influx.db	3.5	error	management.influx.metrics.export.db	3.0.0	
+management.metrics.export.influx.enabled	3.5	error	management.influx.metrics.export.enabled	3.0.0	
+management.metrics.export.influx.num-threads	3.5	error		3.0.0	
+management.metrics.export.influx.org	3.5	error	management.influx.metrics.export.org	3.0.0	
+management.metrics.export.influx.password	3.5	error	management.influx.metrics.export.password	3.0.0	
+management.metrics.export.influx.read-timeout	3.5	error	management.influx.metrics.export.read-timeout	3.0.0	
+management.metrics.export.influx.retention-duration	3.5	error	management.influx.metrics.export.retention-duration	3.0.0	
+management.metrics.export.influx.retention-policy	3.5	error	management.influx.metrics.export.retention-policy	3.0.0	
+management.metrics.export.influx.retention-replication-factor	3.5	error	management.influx.metrics.export.retention-replication-factor	3.0.0	
+management.metrics.export.influx.retention-shard-duration	3.5	error	management.influx.metrics.export.retention-shard-duration	3.0.0	
+management.metrics.export.influx.step	3.5	error	management.influx.metrics.export.step	3.0.0	
+management.metrics.export.influx.token	3.5	error	management.influx.metrics.export.token	3.0.0	
+management.metrics.export.influx.uri	3.5	error	management.influx.metrics.export.uri	3.0.0	
+management.metrics.export.influx.user-name	3.5	error	management.influx.metrics.export.user-name	3.0.0	
+management.metrics.export.jmx.domain	3.5	error	management.jmx.metrics.export.domain	3.0.0	
+management.metrics.export.jmx.enabled	3.5	error	management.jmx.metrics.export.enabled	3.0.0	
+management.metrics.export.jmx.step	3.5	error	management.jmx.metrics.export.step	3.0.0	
+management.metrics.export.kairos.batch-size	3.5	error	management.kairos.metrics.export.batch-size	3.0.0	
+management.metrics.export.kairos.connect-timeout	3.5	error	management.kairos.metrics.export.connect-timeout	3.0.0	
+management.metrics.export.kairos.enabled	3.5	error	management.kairos.metrics.export.enabled	3.0.0	
+management.metrics.export.kairos.num-threads	3.5	error		3.0.0	
+management.metrics.export.kairos.password	3.5	error	management.kairos.metrics.export.password	3.0.0	
+management.metrics.export.kairos.read-timeout	3.5	error	management.kairos.metrics.export.read-timeout	3.0.0	
+management.metrics.export.kairos.step	3.5	error	management.kairos.metrics.export.step	3.0.0	
+management.metrics.export.kairos.uri	3.5	error	management.kairos.metrics.export.uri	3.0.0	
+management.metrics.export.kairos.user-name	3.5	error	management.kairos.metrics.export.user-name	3.0.0	
+management.metrics.export.newrelic.account-id	3.5	error	management.newrelic.metrics.export.account-id	3.0.0	
+management.metrics.export.newrelic.api-key	3.5	error	management.newrelic.metrics.export.api-key	3.0.0	
+management.metrics.export.newrelic.batch-size	3.5	error	management.newrelic.metrics.export.batch-size	3.0.0	
+management.metrics.export.newrelic.client-provider-type	3.5	error	management.newrelic.metrics.export.client-provider-type	3.0.0	
+management.metrics.export.newrelic.connect-timeout	3.5	error	management.newrelic.metrics.export.connect-timeout	3.0.0	
+management.metrics.export.newrelic.enabled	3.5	error	management.newrelic.metrics.export.enabled	3.0.0	
+management.metrics.export.newrelic.event-type	3.5	error	management.newrelic.metrics.export.event-type	3.0.0	
+management.metrics.export.newrelic.meter-name-event-type-enabled	3.5	error	management.newrelic.metrics.export.meter-name-event-type-enabled	3.0.0	
+management.metrics.export.newrelic.num-threads	3.5	error		3.0.0	
+management.metrics.export.newrelic.read-timeout	3.5	error	management.newrelic.metrics.export.read-timeout	3.0.0	
+management.metrics.export.newrelic.step	3.5	error	management.newrelic.metrics.export.step	3.0.0	
+management.metrics.export.newrelic.uri	3.5	error	management.newrelic.metrics.export.uri	3.0.0	
+management.metrics.export.prometheus.descriptions	3.5	error	management.prometheus.metrics.export.descriptions	3.0.0	
+management.metrics.export.prometheus.enabled	3.5	error	management.prometheus.metrics.export.enabled	3.0.0	
+management.metrics.export.prometheus.histogram-flavor	3.5	error		3.0.0	
+management.metrics.export.prometheus.pushgateway.base-url	3.5	error	management.prometheus.metrics.export.pushgateway.address	3.0.0	
+management.metrics.export.prometheus.pushgateway.enabled	3.5	error	management.prometheus.metrics.export.pushgateway.enabled	3.0.0	
+management.metrics.export.prometheus.pushgateway.grouping-key	3.5	error	management.prometheus.metrics.export.pushgateway.grouping-key	3.0.0	map
+management.metrics.export.prometheus.pushgateway.job	3.5	error	management.prometheus.metrics.export.pushgateway.job	3.0.0	
+management.metrics.export.prometheus.pushgateway.password	3.5	error	management.prometheus.metrics.export.pushgateway.password	3.0.0	
+management.metrics.export.prometheus.pushgateway.push-rate	3.5	error	management.prometheus.metrics.export.pushgateway.push-rate	3.0.0	
+management.metrics.export.prometheus.pushgateway.shutdown-operation	3.5	error	management.prometheus.metrics.export.pushgateway.shutdown-operation	3.0.0	
+management.metrics.export.prometheus.pushgateway.username	3.5	error	management.prometheus.metrics.export.pushgateway.username	3.0.0	
+management.metrics.export.prometheus.step	3.5	error	management.prometheus.metrics.export.step	3.0.0	
+management.metrics.export.signalfx.access-token	3.5	error		3.0.0	
+management.metrics.export.signalfx.batch-size	3.5	error		3.0.0	
+management.metrics.export.signalfx.connect-timeout	3.5	error		3.0.0	
+management.metrics.export.signalfx.enabled	3.5	error		3.0.0	
+management.metrics.export.signalfx.num-threads	3.5	error		3.0.0	
+management.metrics.export.signalfx.published-histogram-type	3.5	error		3.0.0	
+management.metrics.export.signalfx.read-timeout	3.5	error		3.0.0	
+management.metrics.export.signalfx.source	3.5	error		3.0.0	
+management.metrics.export.signalfx.step	3.5	error		3.0.0	
+management.metrics.export.signalfx.uri	3.5	error		3.0.0	
+management.metrics.export.simple.enabled	3.5	error	management.simple.metrics.export.enabled	3.0.0	
+management.metrics.export.simple.mode	3.5	error	management.simple.metrics.export.mode	3.0.0	
+management.metrics.export.simple.step	3.5	error	management.simple.metrics.export.step	3.0.0	
+management.metrics.export.stackdriver.batch-size	3.5	error	management.stackdriver.metrics.export.batch-size	3.0.0	
+management.metrics.export.stackdriver.connect-timeout	3.5	error	management.stackdriver.metrics.export.connect-timeout	3.0.0	
+management.metrics.export.stackdriver.enabled	3.5	error	management.stackdriver.metrics.export.enabled	3.0.0	
+management.metrics.export.stackdriver.num-threads	3.5	error		3.0.0	
+management.metrics.export.stackdriver.project-id	3.5	error	management.stackdriver.metrics.export.project-id	3.0.0	
+management.metrics.export.stackdriver.read-timeout	3.5	error	management.stackdriver.metrics.export.read-timeout	3.0.0	
+management.metrics.export.stackdriver.resource-labels	3.5	error	management.stackdriver.metrics.export.resource-labels	3.0.0	map
+management.metrics.export.stackdriver.resource-type	3.5	error	management.stackdriver.metrics.export.resource-type	3.0.0	
+management.metrics.export.stackdriver.step	3.5	error	management.stackdriver.metrics.export.step	3.0.0	
+management.metrics.export.stackdriver.use-semantic-metric-types	3.5	error	management.stackdriver.metrics.export.use-semantic-metric-types	3.0.0	
+management.metrics.export.statsd.enabled	3.5	error	management.statsd.metrics.export.enabled	3.0.0	
+management.metrics.export.statsd.flavor	3.5	error	management.statsd.metrics.export.flavor	3.0.0	
+management.metrics.export.statsd.host	3.5	error	management.statsd.metrics.export.host	3.0.0	
+management.metrics.export.statsd.max-packet-length	3.5	error	management.statsd.metrics.export.max-packet-length	3.0.0	
+management.metrics.export.statsd.polling-frequency	3.5	error	management.statsd.metrics.export.polling-frequency	3.0.0	
+management.metrics.export.statsd.port	3.5	error	management.statsd.metrics.export.port	3.0.0	
+management.metrics.export.statsd.protocol	3.5	error	management.statsd.metrics.export.protocol	3.0.0	
+management.metrics.export.statsd.publish-unchanged-meters	3.5	error	management.statsd.metrics.export.publish-unchanged-meters	3.0.0	
+management.metrics.export.statsd.queue-size	3.5	error		3.0.0	
+management.metrics.export.wavefront.api-token	3.5	removed	management.wavefront.api-token	3.0.0	
+management.metrics.export.wavefront.batch-size	3.5	removed	management.wavefront.sender.batch-size	3.0.0	
+management.metrics.export.wavefront.connect-timeout	3.5	removed		2.3.0	
+management.metrics.export.wavefront.enabled	3.5	removed	management.wavefront.metrics.export.enabled	3.0.0	
+management.metrics.export.wavefront.global-prefix	3.5	removed	management.wavefront.metrics.export.global-prefix	3.0.0	
+management.metrics.export.wavefront.num-threads	3.5	removed		3.0.0	
+management.metrics.export.wavefront.read-timeout	3.5	removed		2.3.0	
+management.metrics.export.wavefront.sender.flush-interval	3.5	removed	management.wavefront.sender.flush-interval	3.0.0	
+management.metrics.export.wavefront.sender.max-queue-size	3.5	removed	management.wavefront.sender.max-queue-size	3.0.0	
+management.metrics.export.wavefront.sender.message-size	3.5	removed	management.wavefront.sender.message-size	3.0.0	
+management.metrics.export.wavefront.source	3.5	removed	management.wavefront.source	3.0.0	
+management.metrics.export.wavefront.step	3.5	removed	management.wavefront.metrics.export.step	3.0.0	
+management.metrics.export.wavefront.uri	3.5	removed	management.wavefront.uri	3.0.0	
+management.metrics.graphql.autotime.enabled	3.5	error		3.0.0	
+management.metrics.graphql.autotime.percentiles	3.5	error		3.0.0	
+management.metrics.graphql.autotime.percentiles-histogram	3.5	error		3.0.0	
+management.metrics.mongo.command.enabled	4.1	error	management.metrics.mongodb.command.enabled	4.0.0	
+management.metrics.mongo.connectionpool.enabled	4.1	error	management.metrics.mongodb.connectionpool.enabled	4.0.0	
+management.metrics.web.client.request.autotime.enabled	3.5	error		3.0.0	
+management.metrics.web.client.request.autotime.percentiles	3.5	error		3.0.0	
+management.metrics.web.client.request.autotime.percentiles-histogram	3.5	error		3.0.0	
+management.metrics.web.client.request.metric-name	3.5	error	management.observations.http.client.requests.name	3.0.0	
+management.metrics.web.client.requests-metric-name	3.5	error	management.observations.http.client.requests.name	3.0.0	
+management.metrics.web.server.auto-time-requests	3.5	error	management.metrics.web.server.request.autotime.enabled	3.0.0	
+management.metrics.web.server.request.autotime.enabled	3.5	error		3.0.0	
+management.metrics.web.server.request.autotime.percentiles	3.5	error		3.0.0	
+management.metrics.web.server.request.autotime.percentiles-histogram	3.5	error		3.0.0	
+management.metrics.web.server.request.ignore-trailing-slash	3.5	error		3.0.0	
+management.metrics.web.server.request.metric-name	3.5	error	management.observations.http.server.requests.name	3.0.0	
+management.metrics.web.server.requests-metric-name	3.5	error	management.observations.http.server.requests.name	3.0.0	
+management.observations.long-task-timer.enabled	4.1	removed			
+management.otlp.logging.compression	4.1	error	management.opentelemetry.logging.export.otlp.compression	4.0.0	
+management.otlp.logging.connect-timeout	4.1	error	management.opentelemetry.logging.export.otlp.connect-timeout	4.0.0	
+management.otlp.logging.endpoint	4.1	error	management.opentelemetry.logging.export.otlp.endpoint	4.0.0	
+management.otlp.logging.export.enabled	4.1	error	management.logging.export.otlp.enabled	4.0.0	
+management.otlp.logging.headers	4.1	error	management.opentelemetry.logging.export.otlp.headers	4.0.0	map
+management.otlp.logging.timeout	4.1	error	management.opentelemetry.logging.export.otlp.timeout	4.0.0	
+management.otlp.logging.transport	4.1	error	management.opentelemetry.logging.export.otlp.transport	4.0.0	
+management.otlp.tracing.compression	4.1	error	management.opentelemetry.tracing.export.otlp.compression	4.0.0	
+management.otlp.tracing.connect-timeout	4.1	error	management.opentelemetry.tracing.export.otlp.connect-timeout	4.0.0	
+management.otlp.tracing.endpoint	4.1	error	management.opentelemetry.tracing.export.otlp.endpoint	4.0.0	
+management.otlp.tracing.export.enabled	4.1	error	management.tracing.export.otlp.enabled	4.0.0	
+management.otlp.tracing.headers	4.1	error	management.opentelemetry.tracing.export.otlp.headers	4.0.0	
+management.otlp.tracing.timeout	4.1	error	management.opentelemetry.tracing.export.otlp.timeout	4.0.0	
+management.otlp.tracing.transport	4.1	error	management.opentelemetry.tracing.export.otlp.transport	4.0.0	
+management.promethus.metrics.export.pushgateway.base-url	3.5	error	management.prometheus.metrics.export.pushgateway.address	3.5.0	
+management.server.servlet.context-path	3.5	error	management.server.base-path	3.0.0	
+management.server.undertow.accesslog.prefix	4.1	removed			
+management.signalfx.metrics.export.access-token	3.5	removed		3.5.0	
+management.signalfx.metrics.export.batch-size	3.5	removed		3.5.0	
+management.signalfx.metrics.export.connect-timeout	3.5	removed		3.5.0	
+management.signalfx.metrics.export.enabled	3.5	removed		3.5.0	
+management.signalfx.metrics.export.published-histogram-type	3.5	removed		3.5.0	
+management.signalfx.metrics.export.read-timeout	3.5	removed		3.5.0	
+management.signalfx.metrics.export.source	3.5	removed		3.5.0	
+management.signalfx.metrics.export.step	3.5	removed		3.5.0	
+management.signalfx.metrics.export.uri	3.5	removed		3.5.0	
+management.trace.http.enabled	3.5	error	management.httpexchanges.recording.enabled	3.0.0	
+management.trace.http.include	3.5	error	management.httpexchanges.recording.include	3.0.0	
+management.trace.include	3.5	error	management.httpexchanges.recording.include	3.0.0	
+management.tracing.brave.span-joining-supported	4.1	error	management.brave.tracing.span-joining-supported	4.0.0	
+management.tracing.enabled	4.1	error	management.tracing.export.enabled	4.0.0	
+management.tracing.opentelemetry.export.include-unsampled	4.1	error	management.opentelemetry.tracing.export.include-unsampled	4.0.0	
+management.tracing.opentelemetry.export.max-batch-size	4.1	error	management.opentelemetry.tracing.export.max-batch-size	4.0.0	
+management.tracing.opentelemetry.export.max-queue-size	4.1	error	management.opentelemetry.tracing.export.max-queue-size	4.0.0	
+management.tracing.opentelemetry.export.schedule-delay	4.1	error	management.opentelemetry.tracing.export.schedule-delay	4.0.0	
+management.tracing.opentelemetry.export.timeout	4.1	error	management.opentelemetry.tracing.export.timeout	4.0.0	
+management.wavefront.api-token	4.1	error		4.0.0	
+management.wavefront.api-token-type	4.1	error		4.0.0	
+management.wavefront.application.cluster-name	4.1	error		4.0.0	
+management.wavefront.application.custom-tags	4.1	error		4.0.0	map
+management.wavefront.application.name	4.1	error		4.0.0	
+management.wavefront.application.service-name	4.1	error		4.0.0	
+management.wavefront.application.shard-name	4.1	error		4.0.0	
+management.wavefront.metrics.export.batch-size	4.1	error		4.0.0	
+management.wavefront.metrics.export.connect-timeout	4.1	error		4.0.0	
+management.wavefront.metrics.export.enabled	4.1	error		4.0.0	
+management.wavefront.metrics.export.global-prefix	4.1	error		4.0.0	
+management.wavefront.metrics.export.read-timeout	4.1	error		4.0.0	
+management.wavefront.metrics.export.report-day-distribution	4.1	error		4.0.0	
+management.wavefront.metrics.export.report-hour-distribution	4.1	error		4.0.0	
+management.wavefront.metrics.export.report-minute-distribution	4.1	error		4.0.0	
+management.wavefront.metrics.export.step	4.1	error		4.0.0	
+management.wavefront.sender.batch-size	4.1	error		4.0.0	
+management.wavefront.sender.flush-interval	4.1	error		4.0.0	
+management.wavefront.sender.max-queue-size	4.1	error		4.0.0	
+management.wavefront.sender.message-size	4.1	error		4.0.0	
+management.wavefront.source	4.1	error		4.0.0	
+management.wavefront.trace-derived-custom-tag-keys	4.1	error		4.0.0	
+management.wavefront.tracing.export.enabled	4.1	error		4.0.0	
+management.wavefront.uri	4.1	error		4.0.0	
+management.zipkin.tracing.connect-timeout	4.1	error	management.tracing.export.zipkin.connect-timeout	3.2.0	
+management.zipkin.tracing.encoding	4.1	error	management.tracing.export.zipkin.encoding	3.2.0	
+management.zipkin.tracing.endpoint	4.1	error	management.tracing.export.zipkin.endpoint	3.2.0	
+management.zipkin.tracing.export.enabled	4.1	error	management.tracing.export.zipkin.enabled	4.0.0	
+management.zipkin.tracing.read-timeout	4.1	error	management.tracing.export.zipkin.read-timeout	3.2.0	
+server.connection-timeout	3.5	error		2.1.0	
+server.error.include-binding-errors	4.1	error	spring.web.error.include-binding-errors	4.0.0	
+server.error.include-exception	4.1	error	spring.web.error.include-exception	4.0.0	
+server.error.include-message	4.1	error	spring.web.error.include-message	4.0.0	
+server.error.include-path	4.1	error	spring.web.error.include-path	4.0.0	
+server.error.include-stacktrace	4.1	error	spring.web.error.include-stacktrace	4.0.0	
+server.error.path	4.1	error	spring.web.error.path	4.0.0	
+server.error.whitelabel.enabled	4.1	error	spring.web.error.whitelabel.enabled	4.0.0	
+server.jetty.accesslog.date-format	3.5	error	server.jetty.accesslog.custom-format	2.2.0	
+server.jetty.accesslog.extended-format	3.5	error	server.jetty.accesslog.format	2.2.0	
+server.jetty.accesslog.locale	3.5	error	server.jetty.accesslog.custom-format	2.2.0	
+server.jetty.accesslog.log-cookies	3.5	error	server.jetty.accesslog.custom-format	2.2.0	
+server.jetty.accesslog.log-latency	3.5	error	server.jetty.accesslog.custom-format	2.2.0	
+server.jetty.accesslog.log-server	3.5	error	server.jetty.accesslog.custom-format	2.2.0	
+server.jetty.accesslog.time-zone	3.5	error	server.jetty.accesslog.custom-format	2.2.0	
+server.jetty.max-http-post-size	3.5	error	server.jetty.max-http-form-post-size	2.2.0	
+server.max-http-header-size	3.5	error	server.max-http-request-header-size	3.0.0	
+server.max-http-post-size	3.5	error		3.0.0	
+server.netty.max-chunk-size	3.5	error		3.0.0	
+server.servlet.encoding.charset	4.1	error	spring.servlet.encoding.charset	4.0.0	
+server.servlet.encoding.enabled	4.1	error	spring.servlet.encoding.enabled	4.0.0	
+server.servlet.encoding.force	4.1	error	spring.servlet.encoding.force	4.0.0	
+server.servlet.encoding.force-request	4.1	error	spring.servlet.encoding.force-request	4.0.0	
+server.servlet.encoding.force-response	4.1	error	spring.servlet.encoding.force-response	4.0.0	
+server.servlet.path	3.5	error	spring.mvc.servlet.path	2.1.0	
+server.servlet.session.cookie.comment	3.5	error		2.1.0	
+server.tomcat.max-http-post-size	3.5	error	server.tomcat.max-http-form-post-size	2.3.0	
+server.tomcat.reject-illegal-header	3.5	error		2.7.12	
+server.undertow.accesslog.dir	4.1	removed			
+server.undertow.accesslog.enabled	4.1	removed			
+server.undertow.accesslog.pattern	4.1	removed			
+server.undertow.accesslog.prefix	4.1	removed			
+server.undertow.accesslog.rotate	4.1	removed			
+server.undertow.accesslog.suffix	4.1	removed			
+server.undertow.allow-encoded-slash	3.5	removed	server.undertow.decode-slash	3.0.3	
+server.undertow.always-set-keep-alive	4.1	removed			
+server.undertow.buffer-size	4.1	removed			
+server.undertow.buffers-per-region	3.5	removed		1.5.0	
+server.undertow.decode-slash	4.1	removed			
+server.undertow.decode-url	4.1	removed			
+server.undertow.direct-buffers	4.1	removed			
+server.undertow.eager-filter-init	4.1	removed			
+server.undertow.max-cookies	4.1	removed			
+server.undertow.max-headers	4.1	removed			
+server.undertow.max-http-post-size	4.1	removed			
+server.undertow.max-parameters	4.1	removed			
+server.undertow.no-request-timeout	4.1	removed			
+server.undertow.options.server	4.1	removed			map
+server.undertow.options.socket	4.1	removed			map
+server.undertow.preserve-path-on-forward	4.1	removed			
+server.undertow.threads.io	4.1	removed			
+server.undertow.threads.worker	4.1	removed			
+server.undertow.url-charset	4.1	removed			
+server.use-forward-headers	3.5	error	server.forward-headers-strategy	4.0.0	
+spring.activemq.pool.create-connection-on-startup	3.5	error		2.1.0	
+spring.activemq.pool.expiry-timeout	3.5	error		2.1.0	
+spring.activemq.pool.maximum-active-session-per-connection	3.5	warning	spring.activemq.pool.max-sessions-per-connection	2.1.0	
+spring.activemq.pool.reconnect-on-exception	3.5	error		2.1.0	
+spring.application.index	3.5	error		2.0.0	
+spring.artemis.host	3.5	error	spring.artemis.broker-url	2.5.0	
+spring.artemis.pool.maximum-active-session-per-connection	3.5	warning	spring.artemis.pool.max-sessions-per-connection	2.1.0	
+spring.artemis.port	3.5	error	spring.artemis.broker-url	2.5.0	
+spring.banner.image.bitdepth	3.5	error		3.0.0	
+spring.banner.image.height	3.5	error		3.0.0	
+spring.banner.image.invert	3.5	error		3.0.0	
+spring.banner.image.location	3.5	error		3.0.0	
+spring.banner.image.margin	3.5	error		3.0.0	
+spring.banner.image.pixelmode	3.5	error		3.0.0	
+spring.banner.image.width	3.5	error		3.0.0	
+spring.batch.initialize-schema	3.5	error	spring.batch.jdbc.initialize-schema	2.5.0	
+spring.batch.initializer.enabled	3.5	error	spring.batch.jdbc.initialize-schema	2.0.0	
+spring.batch.schema	3.5	error	spring.batch.jdbc.schema	2.5.0	
+spring.batch.table-prefix	3.5	error	spring.batch.jdbc.table-prefix	2.5.0	
+spring.cassandra.ssl	3.5	error	spring.cassandra.ssl.enabled	3.1.0	
+spring.codec.log-request-details	3.5	removed	spring.http.codecs.log-request-details	3.5.0	
+spring.codec.max-in-memory-size	3.5	removed	spring.http.codecs.max-in-memory-size	3.5.0	
+spring.couchbase.bootstrap-hosts	3.5	error	spring.couchbase.connection-string	2.3.0	
+spring.couchbase.bucket.name	3.5	error		2.3.0	
+spring.couchbase.bucket.password	3.5	error		2.3.0	
+spring.couchbase.env.bootstrap.http-direct-port	3.5	error		2.3.0	
+spring.couchbase.env.bootstrap.http-ssl-port	3.5	error		2.3.0	
+spring.couchbase.env.endpoints.key-value	3.5	error		2.3.0	
+spring.couchbase.env.endpoints.query	3.5	error		2.3.0	
+spring.couchbase.env.endpoints.queryservice.max-endpoints	3.5	error	spring.couchbase.env.io.max-endpoints	2.3.0	
+spring.couchbase.env.endpoints.queryservice.min-endpoints	3.5	error	spring.couchbase.env.io.min-endpoints	2.3.0	
+spring.couchbase.env.endpoints.view	3.5	error		2.1.0	
+spring.couchbase.env.endpoints.viewservice.max-endpoints	3.5	error	spring.couchbase.env.io.max-endpoints	2.3.0	
+spring.couchbase.env.endpoints.viewservice.min-endpoints	3.5	error	spring.couchbase.env.io.min-endpoints	2.3.0	
+spring.couchbase.env.ssl.key-store	3.5	error	spring.couchbase.env.ssl.bundle	3.1.0	
+spring.couchbase.env.ssl.key-store-password	3.5	error	spring.couchbase.env.ssl.bundle	3.1.0	
+spring.couchbase.env.timeouts.socket-connect	3.5	error		2.3.0	
+spring.dao.exceptiontranslation.enabled	4.1	error	spring.persistence.exceptiontranslation.enabled	4.0.0	
+spring.data.cassandra.compression	3.5	error	spring.cassandra.compression	3.0.0	
+spring.data.cassandra.config	3.5	error	spring.cassandra.config	3.0.0	
+spring.data.cassandra.connection.connect-timeout	3.5	error	spring.cassandra.connection.connect-timeout	3.0.0	
+spring.data.cassandra.connection.init-query-timeout	3.5	error	spring.cassandra.connection.init-query-timeout	3.0.0	
+spring.data.cassandra.contact-points	3.5	error	spring.cassandra.contact-points	3.0.0	
+spring.data.cassandra.controlconnection.timeout	3.5	error	spring.cassandra.controlconnection.timeout	3.0.0	
+spring.data.cassandra.jmx-enabled	3.5	error		2.3.0	
+spring.data.cassandra.keyspace-name	3.5	error	spring.cassandra.keyspace-name	3.0.0	
+spring.data.cassandra.load-balancing-policy	3.5	error		2.2.0	
+spring.data.cassandra.local-datacenter	3.5	error	spring.cassandra.local-datacenter	3.0.0	
+spring.data.cassandra.password	3.5	error	spring.cassandra.password	3.0.0	
+spring.data.cassandra.pool.heartbeat-interval	3.5	error	spring.cassandra.pool.heartbeat-interval	3.0.0	
+spring.data.cassandra.pool.idle-timeout	3.5	error	spring.cassandra.pool.idle-timeout	3.0.0	
+spring.data.cassandra.pool.max-queue-size	3.5	error	spring.cassandra.request.throttler.max-queue-size	2.3.0	
+spring.data.cassandra.pool.pool-timeout	3.5	error		2.3.0	
+spring.data.cassandra.port	3.5	error	spring.cassandra.port	3.0.0	
+spring.data.cassandra.reconnection-policy	3.5	error		2.1.0	
+spring.data.cassandra.request.consistency	3.5	error	spring.cassandra.request.consistency	3.0.0	
+spring.data.cassandra.request.page-size	3.5	error	spring.cassandra.request.page-size	3.0.0	
+spring.data.cassandra.request.serial-consistency	3.5	error	spring.cassandra.request.serial-consistency	3.0.0	
+spring.data.cassandra.request.throttler.drain-interval	3.5	error	spring.cassandra.request.throttler.drain-interval	3.0.0	
+spring.data.cassandra.request.throttler.max-concurrent-requests	3.5	error	spring.cassandra.request.throttler.max-concurrent-requests	3.0.0	
+spring.data.cassandra.request.throttler.max-queue-size	3.5	error	spring.cassandra.request.throttler.max-queue-size	3.0.0	
+spring.data.cassandra.request.throttler.max-requests-per-second	3.5	error	spring.cassandra.request.throttler.max-requests-per-second	3.0.0	
+spring.data.cassandra.request.throttler.type	3.5	error	spring.cassandra.request.throttler.type	3.0.0	
+spring.data.cassandra.request.timeout	3.5	error	spring.cassandra.request.timeout	3.0.0	
+spring.data.cassandra.retry-policy	3.5	error		2.1.0	
+spring.data.cassandra.schema-action	3.5	error	spring.cassandra.schema-action	3.0.0	
+spring.data.cassandra.session-name	3.5	error	spring.cassandra.session-name	3.0.0	
+spring.data.cassandra.ssl	3.5	error	spring.cassandra.ssl.enabled	3.0.0	
+spring.data.cassandra.username	3.5	error	spring.cassandra.username	3.0.0	
+spring.data.couchbase.consistency	3.5	error		2.3.0	
+spring.data.elasticsearch.cluster-name	3.5	error		2.2.0	
+spring.data.elasticsearch.cluster-nodes	3.5	error		2.2.0	
+spring.data.elasticsearch.properties	3.5	error		2.2.0	map
+spring.data.mongodb.additional-hosts	4.1	error	spring.mongodb.additional-hosts	4.0.0	
+spring.data.mongodb.authentication-database	4.1	error	spring.mongodb.authentication-database	4.0.0	
+spring.data.mongodb.database	4.1	error	spring.mongodb.database	4.0.0	
+spring.data.mongodb.grid-fs-database	3.5	error	spring.data.mongodb.gridfs.database	2.4.0	
+spring.data.mongodb.host	4.1	error	spring.mongodb.host	4.0.0	
+spring.data.mongodb.password	4.1	error	spring.mongodb.password	4.0.0	
+spring.data.mongodb.port	4.1	error	spring.mongodb.port	4.0.0	
+spring.data.mongodb.protocol	4.1	error	spring.mongodb.protocol	4.0.0	
+spring.data.mongodb.replica-set-name	4.1	error	spring.mongodb.replica-set-name	4.0.0	
+spring.data.mongodb.ssl.bundle	4.1	error	spring.mongodb.ssl.bundle	4.0.0	
+spring.data.mongodb.ssl.enabled	4.1	error	spring.mongodb.ssl.enabled	4.0.0	
+spring.data.mongodb.uri	4.1	error	spring.mongodb.uri	4.0.0	
+spring.data.mongodb.username	4.1	error	spring.mongodb.username	4.0.0	
+spring.data.mongodb.uuid-representation	4.1	error	spring.mongodb.representation.uuid	4.0.0	
+spring.data.neo4j.auto-index	3.5	error		2.4.0	
+spring.data.neo4j.embedded.enabled	3.5	error		2.4.0	
+spring.data.neo4j.open-in-view	3.5	error		2.4.0	
+spring.data.neo4j.password	3.5	error	spring.neo4j.authentication.password	2.4.0	
+spring.data.neo4j.repositories.enabled	3.5	error	spring.data.neo4j.repositories.type	2.4.0	
+spring.data.neo4j.uri	3.5	error	spring.neo4j.uri	2.4.0	
+spring.data.neo4j.use-native-types	3.5	error		2.4.0	
+spring.data.neo4j.username	3.5	error	spring.neo4j.authentication.username	2.4.0	
+spring.data.redis.lettuce.cluster.refresh.adaptive	4.1	error		4.1.0	
+spring.data.redis.ssl	3.5	error	spring.data.redis.ssl.enabled	3.1.0	
+spring.datasource.continue-on-error	3.5	error	spring.sql.init.continue-on-error	2.5.0	
+spring.datasource.data	3.5	error	spring.sql.init.data-locations	2.5.0	
+spring.datasource.data-password	3.5	error	spring.sql.init.password	2.5.0	
+spring.datasource.data-username	3.5	error	spring.sql.init.username	2.5.0	
+spring.datasource.dbcp2.default-query-timeout	3.5	warning			
+spring.datasource.dbcp2.enable-auto-commit-on-return	3.5	warning			
+spring.datasource.dbcp2.max-conn-lifetime-millis	3.5	warning			
+spring.datasource.dbcp2.max-wait-millis	3.5	warning			
+spring.datasource.dbcp2.min-evictable-idle-time-millis	3.5	warning			
+spring.datasource.dbcp2.remove-abandoned-timeout	3.5	warning			
+spring.datasource.dbcp2.soft-min-evictable-idle-time-millis	3.5	warning			
+spring.datasource.dbcp2.time-between-eviction-runs-millis	3.5	warning			
+spring.datasource.dbcp2.validation-query-timeout	3.5	warning			
+spring.datasource.initialization-mode	3.5	error	spring.sql.init.mode	2.5.0	
+spring.datasource.jmx-enabled	3.5	error	spring.datasource.tomcat.jmx-enabled	2.2.0	
+spring.datasource.oracleucp.connection-wait-timeout	3.5	warning			
+spring.datasource.oracleucp.role-name	4.1	removed			
+spring.datasource.platform	3.5	error	spring.sql.init.platform	2.5.0	
+spring.datasource.schema	3.5	error	spring.sql.init.schema-locations	2.5.0	
+spring.datasource.schema-password	3.5	error	spring.sql.init.password	2.5.0	
+spring.datasource.schema-username	3.5	error	spring.sql.init.username	2.5.0	
+spring.datasource.separator	3.5	error	spring.sql.init.separator	2.5.0	
+spring.datasource.sql-script-encoding	3.5	error	spring.sql.init.encoding	2.5.0	
+spring.devtools.livereload.enabled	4.1	warning		4.1.0	
+spring.devtools.livereload.port	4.1	warning		4.1.0	
+spring.elasticsearch.jest.connection-timeout	3.5	error		2.3.0	
+spring.elasticsearch.jest.multi-threaded	3.5	error		2.3.0	
+spring.elasticsearch.jest.password	3.5	error		2.3.0	
+spring.elasticsearch.jest.proxy.host	3.5	error		2.3.0	
+spring.elasticsearch.jest.proxy.port	3.5	error		2.3.0	
+spring.elasticsearch.jest.read-timeout	3.5	error		2.3.0	
+spring.elasticsearch.jest.uris	3.5	error		2.3.0	
+spring.elasticsearch.jest.username	3.5	error		2.3.0	
+spring.elasticsearch.webclient.max-in-memory-size	3.5	error		3.0.0	
+spring.flyway.baseline-migration-prefix	3.5	removed		3.0.0	
+spring.flyway.check-location	3.5	removed	spring.flyway.fail-on-missing-locations	2.5.0	
+spring.flyway.cherry-pick	3.5	removed		3.3.0	
+spring.flyway.clean-on-validation-error	3.5	removed		3.4.0	
+spring.flyway.error-handlers	3.5	removed		2.0.0	
+spring.flyway.ignore-future-migrations	3.5	removed	spring.flyway.ignore-migration-patterns	3.0.0	
+spring.flyway.ignore-ignored-migrations	3.5	removed	spring.flyway.ignore-migration-patterns	3.0.0	
+spring.flyway.ignore-missing-migrations	3.5	removed	spring.flyway.ignore-migration-patterns	3.0.0	
+spring.flyway.ignore-pending-migrations	3.5	removed	spring.flyway.ignore-migration-patterns	3.0.0	
+spring.flyway.license-key	3.5	removed		3.3.0	
+spring.flyway.oracle-kerberos-cache-file	3.5	removed	spring.flyway.oracle.kerberos-cache-file	3.2.0	
+spring.flyway.oracle-kerberos-config-file	3.5	removed	spring.flyway.kerberos-config-file	3.0.0	
+spring.flyway.oracle-sqlplus	3.5	removed	spring.flyway.oracle.sqlplus	3.2.0	
+spring.flyway.oracle-sqlplus-warn	3.5	removed	spring.flyway.oracle.sqlplus-warn	3.2.0	
+spring.flyway.oracle-wallet-location	3.5	removed	spring.flyway.oracle.wallet-location	3.2.0	
+spring.flyway.sql-migration-suffix	3.5	removed	spring.flyway.sql-migration-suffixes	2.0.0	
+spring.flyway.sql-server-kerberos-login-file	3.5	removed	spring.flyway.sqlserver.kerberos-login-file	3.2.0	
+spring.flyway.undo-sql-migration-prefix	3.5	removed		3.3.0	
+spring.flyway.vault-secrets	3.5	removed		2.6.0	
+spring.flyway.vault-token	3.5	removed		2.6.0	
+spring.flyway.vault-url	3.5	removed		2.6.0	
+spring.freemarker.enabled	4.1	error		4.0.0	
+spring.git.properties	3.5	error	spring.info.git.location	1.4.0	
+spring.graphql.path	3.5	error	spring.graphql.http.path	3.5.0	
+spring.graphql.sse.timeout	3.5	error	spring.graphql.http.sse.timeout	3.5.0	
+spring.groovy.template.configuration.auto-escape	3.5	warning	spring.groovy.template.auto-escape	3.5.0	
+spring.groovy.template.configuration.auto-indent	3.5	warning	spring.groovy.template.auto-indent	3.5.0	
+spring.groovy.template.configuration.auto-indent-string	3.5	warning	spring.groovy.template.auto-indent-string	3.5.0	
+spring.groovy.template.configuration.auto-new-line	3.5	warning	spring.groovy.template.auto-new-line	3.5.0	
+spring.groovy.template.configuration.base-template-class	3.5	warning	spring.groovy.template.base-template-class	3.5.0	
+spring.groovy.template.configuration.cache-templates	3.5	warning	spring.groovy.template.cache	3.5.0	
+spring.groovy.template.configuration.declaration-encoding	3.5	warning	spring.groovy.template.declaration-encoding	3.5.0	
+spring.groovy.template.configuration.expand-empty-elements	3.5	warning	spring.groovy.template.expand-empty-elements	3.5.0	
+spring.groovy.template.configuration.locale	3.5	warning	spring.groovy.template.locale	3.5.0	
+spring.groovy.template.configuration.new-line-string	3.5	warning	spring.groovy.template.new-line-string	3.5.0	
+spring.groovy.template.configuration.resource-loader-path	3.5	warning	spring.groovy.template.resource-loader-path	3.5.0	
+spring.groovy.template.configuration.use-double-quotes	3.5	warning	spring.groovy.template.use-double-quotes	3.5.0	
+spring.groovy.template.enabled	4.1	error		4.0.0	
+spring.gson.lenient	3.5	warning	spring.gson.strictness	3.4.0	
+spring.http.client.connect-timeout	4.1	warning	spring.http.clients.connect-timeout	4.0.0	
+spring.http.client.factory	4.1	warning	spring.http.clients.imperative.factory	4.0.0	
+spring.http.client.read-timeout	4.1	warning	spring.http.clients.read-timeout	4.0.0	
+spring.http.client.redirects	4.1	warning	spring.http.clients.redirects	4.0.0	
+spring.http.client.ssl.bundle	4.1	warning	spring.http.clients.ssl.bundle	4.0.0	
+spring.http.encoding.charset	3.5	error	server.servlet.encoding.charset	2.3.0	
+spring.http.encoding.enabled	3.5	error	server.servlet.encoding.enabled	2.3.0	
+spring.http.encoding.force	3.5	error	server.servlet.encoding.force	2.3.0	
+spring.http.encoding.force-request	3.5	error	server.servlet.encoding.force-request	2.3.0	
+spring.http.encoding.force-response	3.5	error	server.servlet.encoding.force-response	2.3.0	
+spring.http.encoding.mapping	3.5	error	server.servlet.encoding.mapping	2.3.0	map
+spring.http.log-request-details	3.5	error	spring.mvc.log-request-details	2.3.0	
+spring.http.reactiveclient.connect-timeout	4.1	warning	spring.http.clients.connect-timeout	4.0.0	
+spring.http.reactiveclient.connector	4.1	warning	spring.http.clients.reactive.connector	4.0.0	
+spring.http.reactiveclient.read-timeout	4.1	warning	spring.http.clients.read-timeout	4.0.0	
+spring.http.reactiveclient.redirects	4.1	warning	spring.http.clients.redirects	4.0.0	
+spring.http.reactiveclient.ssl.bundle	4.1	warning	spring.http.clients.ssl.bundle	4.0.0	
+spring.influx.password	3.5	removed		3.2.0	
+spring.influx.url	3.5	removed		3.2.0	
+spring.influx.user	3.5	removed		3.2.0	
+spring.jackson.generator	4.1	error		4.0.0	
+spring.jackson.joda-date-time-format	3.5	error		2.2.0	
+spring.jackson.parser	4.1	error		4.0.0	
+spring.jackson2.constructor-detector	4.1	warning		4.0.0	
+spring.jackson2.datatype.enum	4.1	warning		4.0.0	map
+spring.jackson2.datatype.json-node	4.1	warning		4.0.0	map
+spring.jackson2.date-format	4.1	warning		4.0.0	
+spring.jackson2.default-leniency	4.1	warning		4.0.0	
+spring.jackson2.default-property-inclusion	4.1	warning		4.0.0	
+spring.jackson2.deserialization	4.1	warning		4.0.0	map
+spring.jackson2.generator	4.1	warning		4.0.0	map
+spring.jackson2.locale	4.1	warning		4.0.0	
+spring.jackson2.mapper	4.1	warning		4.0.0	map
+spring.jackson2.parser	4.1	warning		4.0.0	map
+spring.jackson2.property-naming-strategy	4.1	warning		4.0.0	
+spring.jackson2.serialization	4.1	warning		4.0.0	map
+spring.jackson2.time-zone	4.1	warning		4.0.0	
+spring.jackson2.visibility	4.1	warning		4.0.0	map
+spring.jms.listener.acknowledge-mode	3.5	warning	spring.jms.listener.session.acknowledge-mode	3.2.0	
+spring.jms.listener.concurrency	3.5	warning	spring.jms.listener.min-concurrency	3.2.0	
+spring.jpa.hibernate.use-new-id-generator-mappings	3.5	error		3.0.0	
+spring.jta.narayana.default-timeout	3.5	removed		2.1.0	
+spring.jta.narayana.expiry-scanners	3.5	removed		2.1.0	
+spring.jta.narayana.log-dir	3.5	removed		2.1.0	
+spring.jta.narayana.one-phase-commit	3.5	removed		2.1.0	
+spring.jta.narayana.periodic-recovery-period	3.5	removed		2.1.0	
+spring.jta.narayana.recovery-backoff-period	3.5	removed		2.1.0	
+spring.jta.narayana.recovery-db-pass	3.5	removed		2.1.0	
+spring.jta.narayana.recovery-db-user	3.5	removed		2.1.0	
+spring.jta.narayana.recovery-jms-pass	3.5	removed		2.1.0	
+spring.jta.narayana.recovery-jms-user	3.5	removed		2.1.0	
+spring.jta.narayana.recovery-modules	3.5	removed		2.1.0	
+spring.jta.narayana.transaction-manager-id	3.5	removed		2.1.0	
+spring.jta.narayana.xa-resource-orphan-filters	3.5	removed		2.1.0	
+spring.kafka.admin.ssl.keystore-location	3.5	error	spring.kafka.admin.ssl.key-store-location	2.1.0	
+spring.kafka.admin.ssl.keystore-password	3.5	error	spring.kafka.admin.ssl.key-store-password	2.1.0	
+spring.kafka.admin.ssl.truststore-location	3.5	error	spring.kafka.admin.ssl.trust-store-location	2.1.0	
+spring.kafka.admin.ssl.truststore-password	3.5	error	spring.kafka.admin.ssl.trust-store-password	2.1.0	
+spring.kafka.consumer.ssl.keystore-location	3.5	error	spring.kafka.consumer.ssl.key-store-location	2.1.0	
+spring.kafka.consumer.ssl.keystore-password	3.5	error	spring.kafka.consumer.ssl.key-store-password	2.1.0	
+spring.kafka.consumer.ssl.truststore-location	3.5	error	spring.kafka.consumer.ssl.trust-store-location	2.1.0	
+spring.kafka.consumer.ssl.truststore-password	3.5	error	spring.kafka.consumer.ssl.trust-store-password	2.1.0	
+spring.kafka.listener.only-log-record-metadata	3.5	error		3.0.0	
+spring.kafka.producer.ssl.keystore-location	3.5	error	spring.kafka.producer.ssl.key-store-location	2.1.0	
+spring.kafka.producer.ssl.keystore-password	3.5	error	spring.kafka.producer.ssl.key-store-password	2.1.0	
+spring.kafka.producer.ssl.truststore-location	3.5	error	spring.kafka.producer.ssl.trust-store-location	2.1.0	
+spring.kafka.producer.ssl.truststore-password	3.5	error	spring.kafka.producer.ssl.trust-store-password	2.1.0	
+spring.kafka.retry.topic.backoff.random	4.1	error	spring.kafka.retry.topic.backoff.jitter	4.0.0	
+spring.kafka.retry.topic.delay	3.5	warning	spring.kafka.retry.topic.backoff.delay	3.4.0	
+spring.kafka.retry.topic.max-delay	3.5	warning	spring.kafka.retry.topic.backoff.max-delay	3.4.0	
+spring.kafka.retry.topic.multiplier	3.5	warning	spring.kafka.retry.topic.backoff.multiplier	3.4.0	
+spring.kafka.retry.topic.random-back-off	3.5	warning	spring.kafka.retry.topic.backoff.random	3.4.0	
+spring.kafka.ssl.keystore-location	3.5	error	spring.kafka.ssl.key-store-location	2.1.0	
+spring.kafka.ssl.keystore-password	3.5	error	spring.kafka.ssl.key-store-password	2.1.0	
+spring.kafka.ssl.truststore-location	3.5	error	spring.kafka.ssl.trust-store-location	2.1.0	
+spring.kafka.ssl.truststore-password	3.5	error	spring.kafka.ssl.trust-store-password	2.1.0	
+spring.kafka.streams.cache-max-bytes-buffering	3.5	error	spring.kafka.streams.state-store-cache-max-size	2.2.0	
+spring.kafka.streams.cache-max-size-buffering	3.5	error	spring.kafka.streams.state-store-cache-max-size	3.1.0	
+spring.liquibase.check-change-log-location	3.5	error		2.1.7	
+spring.liquibase.labels	3.5	error	spring.liquibase.label-filter	3.0.0	
+spring.main.show-banner	3.5	warning	spring.main.banner-mode	1.3.0	
+spring.main.web-environment	3.5	warning	spring.main.web-application-type	2.0.0	
+spring.mustache.enabled	4.1	error		4.0.0	
+spring.mvc.converters.preferred-json-mapper	3.5	removed	spring.http.converters.preferred-json-mapper	3.5.0	
+spring.mvc.date-format	3.5	error		3.0.0	
+spring.mvc.favicon.enabled	3.5	error		2.2.0	
+spring.mvc.formcontent.putfilter.enabled	3.5	error	spring.mvc.formcontent.filter.enabled	2.1.0	
+spring.mvc.ignore-default-model-on-redirect	3.5	error		3.0.0	
+spring.mvc.locale	3.5	error	spring.web.locale	2.4.0	
+spring.mvc.locale-resolver	3.5	error	spring.web.locale-resolver	2.4.0	
+spring.mvc.throw-exception-if-no-handler-found	3.5	error		3.2.0	
+spring.neo4j.pool.metrics-enabled	4.1	error		4.0.0	
+spring.rabbitmq.listener.direct.retry.max-attempts	4.1	error	spring.rabbitmq.listener.direct.retry.max-retries	4.0.0	
+spring.rabbitmq.listener.simple.retry.max-attempts	4.1	error	spring.rabbitmq.listener.simple.retry.max-retries	4.0.0	
+spring.rabbitmq.listener.simple.transaction-size	3.5	error		2.2.0	
+spring.rabbitmq.publisher-confirms	3.5	error		2.2.0	
+spring.rabbitmq.template.queue	3.5	error	spring.rabbitmq.template.default-receive-queue	2.2.0	
+spring.rabbitmq.template.retry.max-attempts	4.1	error	spring.rabbitmq.template.retry.max-retries	4.0.0	
+spring.reactor.stacktrace-mode.enabled	3.5	warning	spring.reactor.debug-agent.enabled	2.2.0	
+spring.redis.client-name	3.5	error	spring.data.redis.client-name	3.0.0	
+spring.redis.client-type	3.5	error	spring.data.redis.client-type	3.0.0	
+spring.redis.cluster.max-redirects	3.5	error	spring.data.redis.cluster.max-redirects	3.0.0	
+spring.redis.cluster.nodes	3.5	error	spring.data.redis.cluster.nodes	3.0.0	
+spring.redis.connect-timeout	3.5	error	spring.data.redis.connect-timeout	3.0.0	
+spring.redis.database	3.5	error	spring.data.redis.database	3.0.0	
+spring.redis.host	3.5	error	spring.data.redis.host	3.0.0	
+spring.redis.jedis.pool.enabled	3.5	error		3.0.0	
+spring.redis.jedis.pool.max-active	3.5	error		3.0.0	
+spring.redis.jedis.pool.max-idle	3.5	error		3.0.0	
+spring.redis.jedis.pool.max-wait	3.5	error		3.0.0	
+spring.redis.jedis.pool.min-idle	3.5	error		3.0.0	
+spring.redis.jedis.pool.time-between-eviction-runs	3.5	error		3.0.0	
+spring.redis.lettuce.cluster.refresh.adaptive	3.5	error	spring.data.redis.lettuce.cluster.refresh.adaptive	3.0.0	
+spring.redis.lettuce.cluster.refresh.dynamic-refresh-sources	3.5	error	spring.data.redis.lettuce.cluster.refresh.dynamic-refresh-sources	3.0.0	
+spring.redis.lettuce.cluster.refresh.period	3.5	error	spring.data.redis.lettuce.cluster.refresh.period	3.0.0	
+spring.redis.lettuce.pool.enabled	3.5	error		3.0.0	
+spring.redis.lettuce.pool.max-active	3.5	error		3.0.0	
+spring.redis.lettuce.pool.max-idle	3.5	error		3.0.0	
+spring.redis.lettuce.pool.max-wait	3.5	error		3.0.0	
+spring.redis.lettuce.pool.min-idle	3.5	error		3.0.0	
+spring.redis.lettuce.pool.time-between-eviction-runs	3.5	error		3.0.0	
+spring.redis.lettuce.shutdown-timeout	3.5	error	spring.data.redis.lettuce.shutdown-timeout	3.0.0	
+spring.redis.password	3.5	error	spring.data.redis.password	3.0.0	
+spring.redis.port	3.5	error	spring.data.redis.port	3.0.0	
+spring.redis.sentinel.master	3.5	error	spring.data.redis.sentinel.master	3.0.0	
+spring.redis.sentinel.nodes	3.5	error	spring.data.redis.sentinel.nodes	3.0.0	
+spring.redis.sentinel.password	3.5	error	spring.data.redis.sentinel.password	3.0.0	
+spring.redis.sentinel.username	3.5	error	spring.data.redis.sentinel.username	3.0.0	
+spring.redis.ssl	3.5	error	spring.data.redis.ssl	3.0.0	
+spring.redis.timeout	3.5	error	spring.data.redis.timeout	3.0.0	
+spring.redis.url	3.5	error	spring.data.redis.url	3.0.0	
+spring.redis.username	3.5	error	spring.data.redis.username	3.0.0	
+spring.resources.add-mappings	3.5	error	spring.web.resources.add-mappings	2.4.0	
+spring.resources.cache.cachecontrol.cache-private	3.5	error	spring.web.resources.cache.cachecontrol.cache-private	2.4.0	
+spring.resources.cache.cachecontrol.cache-public	3.5	error	spring.web.resources.cache.cachecontrol.cache-public	2.4.0	
+spring.resources.cache.cachecontrol.max-age	3.5	error	spring.web.resources.cache.cachecontrol.max-age	2.4.0	
+spring.resources.cache.cachecontrol.must-revalidate	3.5	error	spring.web.resources.cache.cachecontrol.must-revalidate	2.4.0	
+spring.resources.cache.cachecontrol.no-cache	3.5	error	spring.web.resources.cache.cachecontrol.no-cache	2.4.0	
+spring.resources.cache.cachecontrol.no-store	3.5	error	spring.web.resources.cache.cachecontrol.no-store	2.4.0	
+spring.resources.cache.cachecontrol.no-transform	3.5	error	spring.web.resources.cache.cachecontrol.no-transform	2.4.0	
+spring.resources.cache.cachecontrol.proxy-revalidate	3.5	error	spring.web.resources.cache.cachecontrol.proxy-revalidate	2.4.0	
+spring.resources.cache.cachecontrol.s-max-age	3.5	error	spring.web.resources.cache.cachecontrol.s-max-age	2.4.0	
+spring.resources.cache.cachecontrol.stale-if-error	3.5	error	spring.web.resources.cache.cachecontrol.stale-if-error	2.4.0	
+spring.resources.cache.cachecontrol.stale-while-revalidate	3.5	error	spring.web.resources.cache.cachecontrol.stale-while-revalidate	2.4.0	
+spring.resources.cache.period	3.5	error	spring.web.resources.cache.period	2.4.0	
+spring.resources.cache.use-last-modified	3.5	error	spring.web.resources.cache.use-last-modified	2.4.0	
+spring.resources.chain.cache	3.5	error	spring.web.resources.chain.cache	2.4.0	
+spring.resources.chain.compressed	3.5	error	spring.web.resources.chain.compressed	2.4.0	
+spring.resources.chain.enabled	3.5	error	spring.web.resources.chain.enabled	2.4.0	
+spring.resources.chain.gzipped	3.5	error	spring.web.resources.chain.compressed	2.4.0	
+spring.resources.chain.html-application-cache	3.5	error		2.4.0	
+spring.resources.chain.strategy.content.enabled	3.5	error	spring.web.resources.chain.strategy.content.enabled	2.4.0	
+spring.resources.chain.strategy.content.paths	3.5	error	spring.web.resources.chain.strategy.content.paths	2.4.0	
+spring.resources.chain.strategy.fixed.enabled	3.5	error	spring.web.resources.chain.strategy.fixed.enabled	2.4.0	
+spring.resources.chain.strategy.fixed.paths	3.5	error	spring.web.resources.chain.strategy.fixed.paths	2.4.0	
+spring.resources.chain.strategy.fixed.version	3.5	error	spring.web.resources.chain.strategy.fixed.version	2.4.0	
+spring.resources.static-locations	3.5	error	spring.web.resources.static-locations	2.4.0	
+spring.security.oauth2.resourceserver.jwt.jws-algorithm	3.5	error	spring.security.oauth2.resourceserver.jwt.jws-algorithms	3.0.0	
+spring.session.hazelcast.flush-mode	4.1	removed			
+spring.session.hazelcast.map-name	4.1	removed			
+spring.session.hazelcast.save-mode	4.1	removed			
+spring.session.mongodb.collection-name	4.1	removed			
+spring.session.redis.cleanup-cron	4.1	error	spring.session.data.redis.cleanup-cron	4.0.0	
+spring.session.redis.configure-action	4.1	error	spring.session.data.redis.configure-action	4.0.0	
+spring.session.redis.flush-mode	4.1	error	spring.session.data.redis.flush-mode	4.0.0	
+spring.session.redis.namespace	4.1	error	spring.session.data.redis.namespace	4.0.0	
+spring.session.redis.repository-type	4.1	error	spring.session.data.redis.repository-type	4.0.0	
+spring.session.redis.save-mode	4.1	error	spring.session.data.redis.save-mode	4.0.0	
+spring.sql.init.enabled	3.5	warning	spring.sql.init.mode	2.5.1	
+spring.test.mockmvc.webclient.enabled	4.1	error	spring.test.mockmvc.htmlunit.webclient.enabled	4.0.0	
+spring.test.mockmvc.webdriver.enabled	4.1	error	spring.test.mockmvc.htmlunit.webdriver.enabled	4.0.0	
+spring.test.observability.auto-configure	4.1	error		4.0.0	
+spring.test.webclient.mockrestserviceserver.enabled	4.1	error	spring.test.restclient.mockrestserviceserver.enabled	4.0.0	
+spring.test.webclient.register-rest-template	4.1	removed			
+spring.thymeleaf.enabled	4.1	error		4.0.0	
+spring.webflux.multipart.streaming	3.5	error		3.0.0	

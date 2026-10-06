@@ -1,0 +1,43 @@
+# Keyingi major versiyada olib tashlangan yoki ko'chgan API nomlari.
+# Qo'lda yuritiladi: har qator ikki jar (yoki BOM) solishtirib tekshirilgan,
+# manba ustunida qaysi koordinatada bor va qaysida yo'qligi.
+#   Hibernate: org.hibernate.orm:hibernate-core:6.6.53.Final (Boot 3.5.16 BOM)
+#              va 7.4.1.Final (Boot 4.1.0 BOM)
+#   Spring:    org.springframework:spring-*:6.2.19 va 7.0.8
+#   Boot:      org.springframework.boot:*:3.5.16 va 4.1.0 (BOM dagi hamma modul)
+#   TC:        org.testcontainers:testcontainers-bom:1.21.4 va 2.0.5
+# tur: annotatsiya (@Nom), klass (oddiy nom, faqat bir ma'noli nomlar),
+#      fqn (to'liq nom), artifact (groupId:nom1|nom2, regex alternativasi).
+# Oddiy nomi boshqa kutubxonada ham bor annotatsiya (@Table, @Index,
+# @OrderBy, @ForeignKey, @Target) faqat fqn bilan yoziladi.
+# almashtirish matnda yonida tursa ham izoh hisoblanadi (vergul bilan bir nechta).
+tur	naqsh	nima	almashtirish	manba
+annotatsiya	Where	Hibernate 6.3 da deprecated, 7.0 da olib tashlangan	@SQLRestriction	hibernate-core 6.6.53.Final da org.hibernate.annotations.Where bor, 7.4.1.Final da yo'q
+annotatsiya	WhereJoinTable	Hibernate 6.3 da deprecated, 7.0 da olib tashlangan	@SQLJoinTableRestriction	hibernate-core 6.6.53.Final da bor, 7.4.1.Final da yo'q
+annotatsiya	LazyCollection	Hibernate 6.2 da deprecated, 7.0 da olib tashlangan		hibernate-core 6.6.53.Final da org.hibernate.annotations.LazyCollection bor, 7.4.1.Final da yo'q
+annotatsiya	LazyToOne	Hibernate 6.2 da deprecated, 7.0 da olib tashlangan		hibernate-core 6.6.53.Final da bor, 7.4.1.Final da yo'q
+annotatsiya	Polymorphism	Hibernate 6.2 da deprecated, 7.0 da olib tashlangan		hibernate-core 6.6.53.Final da bor, 7.4.1.Final da yo'q
+annotatsiya	SelectBeforeUpdate	Hibernate 6.2 da deprecated, 7.0 da olib tashlangan		hibernate-core 6.6.53.Final da bor, 7.4.1.Final da yo'q
+annotatsiya	IndexColumn	Hibernate 7.0 da olib tashlangan	@OrderColumn	hibernate-core 6.6.53.Final da bor, 7.4.1.Final da yo'q
+annotatsiya	GeneratorType	Hibernate 6.2 da deprecated, 7.0 da olib tashlangan	@ValueGenerationType	hibernate-core 6.6.53.Final da bor, 7.4.1.Final da yo'q
+fqn	org.hibernate.annotations.Table	Hibernate 7.0 da olib tashlangan	jakarta.persistence.Table	hibernate-core 6.6.53.Final da bor, 7.4.1.Final da yo'q
+fqn	org.hibernate.annotations.Index	Hibernate 7.0 da olib tashlangan	jakarta.persistence.Index	hibernate-core 6.6.53.Final da bor, 7.4.1.Final da yo'q
+fqn	org.hibernate.annotations.Proxy	Hibernate 7.0 da olib tashlangan	@ConcreteProxy	hibernate-core 6.6.53.Final da bor, 7.4.1.Final da yo'q
+fqn	org.hibernate.annotations.Loader	Hibernate 7.0 da olib tashlangan	@SQLSelect	hibernate-core 6.6.53.Final da bor, 7.4.1.Final da yo'q
+annotatsiya	MockBean	Boot 3.4 da deprecated, 4.0 da olib tashlangan	@MockitoBean	spring-boot-test 3.5.16 da org.springframework.boot.test.mock.mockito.MockBean bor, 4.1.0 modullarida yo'q
+annotatsiya	SpyBean	Boot 3.4 da deprecated, 4.0 da olib tashlangan	@MockitoSpyBean	spring-boot-test 3.5.16 da bor, 4.1.0 modullarida yo'q
+klass	ClientHttpRequestFactories	Boot 3.4 da deprecated, 4.0 da olib tashlangan	ClientHttpRequestFactoryBuilder	spring-boot 3.5.16 da org.springframework.boot.web.client.ClientHttpRequestFactories bor, 4.1.0 da yo'q
+klass	ClientHttpRequestFactorySettings	Boot 4.0 da HttpClientSettings ga almashgan	HttpClientSettings	spring-boot 3.5.16 da bor, 4.1.0 modullarida yo'q, org.springframework.boot.http.client.HttpClientSettings bor
+klass	UndertowServletWebServerFactory	Boot 4.0 da Undertow qo'llovi olib tashlangan (Tomcat yoki Jetty qoladi)		spring-boot 3.5.16 da bor, 4.1.0 modullarida Undertow yo'q
+klass	ListenableFuture	Spring 6.0 da deprecated, 7.0 da olib tashlangan	CompletableFuture	spring-core 6.2.19 da org.springframework.util.concurrent.ListenableFuture bor, 7.0.8 da yo'q
+klass	ThemeResolver	Spring 6.0 da deprecated, 7.0 da tema qo'llovi olib tashlangan		spring-webmvc 6.2.19 da org.springframework.web.servlet.ThemeResolver bor, 7.0.8 da yo'q
+klass	PathExtensionContentNegotiationStrategy	Spring 5.2.4 da deprecated, 7.0 da olib tashlangan		spring-web 6.2.19 da bor, 7.0.8 da yo'q
+fqn	org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest	Boot 4.0 da paket ko'chgan	org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest	spring-boot-test-autoconfigure 3.5.16 da bor; 4.1.0 da spring-boot-webmvc-test moduli
+fqn	org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc	Boot 4.0 da paket ko'chgan	org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc	spring-boot-test-autoconfigure 3.5.16 da bor; 4.1.0 da spring-boot-webmvc-test moduli
+fqn	org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest	Boot 4.0 da paket ko'chgan	org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest	spring-boot-test-autoconfigure 3.5.16 da bor; 4.1.0 da spring-boot-data-jpa-test moduli
+fqn	org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase	Boot 4.0 da paket ko'chgan	org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase	spring-boot-test-autoconfigure 3.5.16 da bor; 4.1.0 da spring-boot-jdbc-test moduli
+fqn	org.springframework.boot.test.web.client.TestRestTemplate	Boot 4.0 da paket ko'chgan	org.springframework.boot.resttestclient.TestRestTemplate	spring-boot-test 3.5.16 da bor; 4.1.0 da spring-boot-resttestclient moduli
+fqn	org.springframework.boot.web.client.RestTemplateBuilder	Boot 4.0 da paket ko'chgan	org.springframework.boot.restclient.RestTemplateBuilder	spring-boot 3.5.16 da bor; 4.1.0 da spring-boot-restclient moduli
+fqn	org.springframework.boot.autoconfigure.domain.EntityScan	Boot 4.0 da paket ko'chgan	org.springframework.boot.persistence.autoconfigure.EntityScan	spring-boot-autoconfigure 3.5.16 da bor; 4.1.0 da spring-boot-persistence moduli
+fqn	org.springframework.boot.actuate.health.HealthIndicator	Boot 4.0 da paket ko'chgan	org.springframework.boot.health.contributor.HealthIndicator	spring-boot-actuator 3.5.16 da bor; 4.1.0 da spring-boot-health moduli
+artifact	org.testcontainers:activemq|azure|cassandra|chromadb|clickhouse|cockroachdb|consul|couchbase|cratedb|database-commons|databend|db2|dynalite|elasticsearch|gcloud|grafana|hivemq|influxdb|jdbc|junit-jupiter|k3s|k6|kafka|ldap|localstack|mariadb|milvus|minio|mockserver|mongodb|mssqlserver|mysql|neo4j|nginx|oceanbase|ollama|openfga|oracle-free|oracle-xe|orientdb|pinecone|postgresql|presto|pulsar|qdrant|questdb|r2dbc|rabbitmq|redpanda|scylladb|selenium|solace|solr|spock|tidb|timeplus|toxiproxy|trino|typesense|vault|weaviate|yugabytedb	Testcontainers 2.0 da artifactId testcontainers- prefiksini oldi, Boot 4 BOM eski nomni boshqarmaydi (versiya yo'q, build yiqiladi)	org.testcontainers:testcontainers-<nom>	testcontainers-bom 1.21.4 da eski nomlar bor, 2.0.5 da faqat testcontainers va testcontainers-* (dynalite umuman yo'q)

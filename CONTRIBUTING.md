@@ -271,6 +271,17 @@ Qoidalar:
    `raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/...`,
    Maven Central dagi pom va sources jar ham birlamchi manba.
 
+8. **Mashina tekshiruvi agentdan oldin yuradi.**
+   `python3 tools/verify_claims.py` Spring kalitini Boot 3.5 va 4.1
+   metadata siga, olib tashlangan API ni (Hibernate 7, Testcontainers 2,
+   Boot 4), versiyasiz koordinatani Boot BOM ga solishtiradi va YAML/XML
+   ni parse qiladi; `--java` kod bloklarini javac parserida sinaydi,
+   `--diff` faqat o'zgargan boblarni oladi. `check_docs` natijani
+   hozircha ogohlantirish qiladi. Keyingi major versiyada o'zgargan nom
+   yopiq oraliq bilan yoziladi ("Boot 3.4-3.5", "Boot 4 da: ..."): ochiq
+   "3.4+" belgisi ogohlantirishni o'chirmaydi. Ataylab yozilgan Java
+   fragmenti `tools/claims_data/java_allow.tsv` ga sababi bilan tushadi.
+
 Da'vo turi bo'yicha kim tekshiradi. Uch qatlam bor: mashina har
 commitda yuradi, agent faqat mashina hal qilmagan da'voni oladi, odam
 esa mashina ham, agent ham ishonchli hal qila olmaydigan da'voni ko'radi.

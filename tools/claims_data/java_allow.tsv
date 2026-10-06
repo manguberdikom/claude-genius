@@ -1,0 +1,31 @@
+# ```java bloklar uchun allowlist: javac parserida o'tmaydigan, lekin
+# ataylab yozilgan fragmentlar. Kalit fayl + blok matnining sha1 i: blok
+# o'zgarsa yozuv o'z-o'zidan eskiradi va blok qayta tekshiriladi.
+# sha1 ni `python3 tools/verify_claims.py --java` chiqishi beradi.
+# Har qatorda sabab bo'ladi; ko'chirib ishlatiladigan to'liq misol bu yerga
+# tushmaydi, u tuzatiladi.
+fayl	sha1	sabab
+docs/architect/04-kod-muloqot-vositasi-nomlash-aniqlik.md	11aa4521be7d6ca2bbef68b65531128755cc73e8	a'zo e'loni va chaqiruv bir blokda (yomon/yaxshi taqqoslash)
+docs/clean-code/02-nomlash-qoidalari-maqsadni-ochib-beruvchi.md	23be40588579d8a5312b79d0d5677eeffb19f466	a'zo e'loni va chaqiruv bir blokda (yomon/yaxshi taqqoslash)
+docs/clean-code/05-funksiya-argumentlari.md	d541a9ca54529283073818c858e6d45b7a0662b4	a'zo e'loni va chaqiruv bir blokda (yomon/yaxshi taqqoslash)
+docs/clean-code/09-yomon-izohlar-katalogi.md	6a154ccfb133bf296e86d4b750495df3d4fcbf1b	konstruktor klass tanasisiz
+docs/clean-code/09-yomon-izohlar-katalogi.md	3726c9b48fb8038f19e7ab932a860dc4855d3a79	yopuvchi qavs izohlari namunasi, metod boshi yo'q
+docs/clean-code/14-obyekt-va-malumot-tuzilmasi-inkapsulyatsiya.md	8418ba9b611b506ea4cd71200076d22aaac1cae9	a'zo e'loni va chaqiruv bir blokda (yomon/yaxshi taqqoslash)
+docs/clean-code/14-obyekt-va-malumot-tuzilmasi-inkapsulyatsiya.md	b0542d2beee7869fa7cfb329ef7ce9634d254e73	konstruktor klass tanasisiz
+docs/clean-code/16-ozgarmaslik-va-holat-boshqaruvi-kod.md	7345d2b8b1e683f1599c4164d29f7788da7e88e1	a'zo e'loni va chaqiruv bir blokda (yomon/yaxshi taqqoslash)
+docs/clean-code/17-vorislik-kompozitsiya-va-polimorfizm.md	6b02e4239aaefdc4c28c404be181323cecf3f2b3	a'zo e'loni va chaqiruv bir blokda (yomon/yaxshi taqqoslash)
+docs/clean-code/19-istisno-mexanikasi-va-resurslar.md	c50569f901b0ac91155dea07748a41e1a85f6f7f	osilgan catch: faqat tutish qismi ko'rsatilgan
+docs/clean-code/19-istisno-mexanikasi-va-resurslar.md	368519b689d3468b396d4d85f2ab615095df1e24	osilgan catch: faqat tutish qismi ko'rsatilgan
+docs/clean-code/19-istisno-mexanikasi-va-resurslar.md	9df38eefefd9deb4380008c36135e8ca23bcc33f	osilgan catch: faqat tutish qismi ko'rsatilgan
+docs/clean-code/19-istisno-mexanikasi-va-resurslar.md	43344c26b7225637e14d62886c4277d8a532b3bd	konstruktor klass tanasisiz
+docs/clean-code/20-primitiv-son-va-pul.md	9b6c42fff63b35a350b579ea31866410ab83aaa0	ifoda namunasi, statement emas (a == b)
+docs/clean-code/24-lambda-oqim-va-funksional-uslub-tozaligi.md	78f079348a35929529fd6ab902fc8c1c373d4fd5	zanjir bo'lagi: oqim manbasi tushirib qoldirilgan
+docs/clean-code/25-java-kodidagi-umumiy-tuzoqlar.md	94b2f37460066ff689d65e866c8fd0709472f994	a'zo e'loni va chaqiruv bir blokda (yomon/yaxshi taqqoslash)
+docs/code-review/08-clean-code-review-nomlash-kognitiv-yuk.md	03a1071d6383a6e59c9bd8b7f72790d69539cc5e	a'zo e'loni va chaqiruv bir blokda (yomon/yaxshi taqqoslash)
+docs/code-review/14-java-tili-darajasidagi-xatolar-katalogi.md	2b4bfa1e3bf7e22b1256e6f3b6403f259193c764	osilgan catch: faqat tutish qismi ko'rsatilgan
+docs/code-review/15-holat-mutability-va-concurrency-review.md	1b5b0f5b329a9b68e9177279d330f7a8b2692fa0	a'zo e'loni va chaqiruv bir blokda (yomon/yaxshi taqqoslash)
+docs/code-review/15-holat-mutability-va-concurrency-review.md	73bb935d41e72236b585b44182ff4906c2508c3b	a'zo e'loni va chaqiruv bir blokda (yomon/yaxshi taqqoslash)
+docs/code-review/16-resurs-xotira-va-gc-bosimi-review.md	447e82119b6159319978175564b509abd9b18b33	osilgan annotatsiya: faqat kalit ifodasi ko'rsatilgan
+docs/code-review/35-test-sifati-review-assertion-izolyatsiya.md	1652e7aef146604d2733422d87c85c91420a1dbc	a'zo e'loni va chaqiruv bir blokda (yomon/yaxshi taqqoslash)
+docs/code-review/37-api-moslik-va-breaking-change-review.md	31ef7c63258cea8b24bcd641f66aaba464fa5f89	a'zo e'loni va chaqiruv bir blokda (yomon/yaxshi taqqoslash)
+docs/sonarqube/11-qamralmay-qoladigan-kod-va-unga-test-yozish.md	ff9d8ae34e7c2d1b62e6842fd7403777538abc9b	osilgan catch: faqat tutish qismi ko'rsatilgan
