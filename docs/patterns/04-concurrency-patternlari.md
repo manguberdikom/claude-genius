@@ -703,7 +703,7 @@ public void onRecord() { processed.incrementAndGet(); }
 **Ehtiyot bo'ling:** WebFlux'da event loop thread'ida JDBC, `Thread.sleep` yoki sinxron `RestTemplate` chaqirish eng ko'p uchraydigan halokatli xato - butun server kechikishi oshadi; bunday kodni albatta `boundedElastic`ga chiqaring. Shunchaki "tezroq bo'lsin" degan sabab bilan reactive stack'ga o'tmang: domen blocking bo'lsa, virtual thread'lar bir xil natijani ancha arzon murakkablikda beradi.
 
 ```yaml
-// Thread-per-request: har so'rov o'z thread'ida, blocking ruxsat
+# Thread-per-request: har so'rov o'z thread'ida, blocking ruxsat
 spring:
   threads:
     virtual:

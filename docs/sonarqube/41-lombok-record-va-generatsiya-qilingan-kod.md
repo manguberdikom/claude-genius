@@ -183,30 +183,37 @@ public class Order {
 }
 ```
 
-Tuzatilgan variantda generatsiyani faqat xavfsiz qismga cheklaymiz va tenglikni biznes kaliti ustiga qo'yamiz.
+Tuzatilgan variantda generatsiyani faqat xavfsiz qismga cheklaymiz va tenglikni biznes kaliti ustiga qo'yamiz. Biznes kalit faqat o'zgarmas bo'lsa tenglikka yaraydi: unga setter yaratilmaydi, ustun `updatable = false`, qiymat konstruktorda beriladi.
 
 ```java
 @Entity
 @Getter
 @Setter
 @ToString(onlyExplicitlyIncluded = true)   // kolleksiya chiqmaydi
+@NoArgsConstructor(access = AccessLevel.PROTECTED)   // JPA uchun
 public class Order {
     @Id @GeneratedValue
     private Long id;
 
     @ToString.Include
-    @Column(nullable = false, unique = true)
+    @Setter(AccessLevel.NONE)               // sinf darajasidagi @Setter dan chiqariladi
+    @Column(nullable = false, unique = true, updatable = false)
     private String orderNumber;             // o'zgarmas biznes kaliti
 
     @OneToMany(mappedBy = "order")
     private List<OrderLine> lines = new ArrayList<>();
+
+    public Order(String orderNumber) {
+        this.orderNumber = Objects.requireNonNull(orderNumber);
+    }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         // proxy bilan ishlash uchun getClass emas, instanceof
         if (!(o instanceof Order other)) return false;
-        return orderNumber != null && orderNumber.equals(other.orderNumber);
+        // proxy maydoni bo'sh: qiymat getter orqali olinadi
+        return orderNumber != null && orderNumber.equals(other.getOrderNumber());
     }
 
     @Override
