@@ -36,9 +36,10 @@ build va daemon ni yo'qotadi.
 Gradle buyrug'iga init skript qo'shiladi (`-I`, build fayllariga
 tegmaydi): maqsadli yurishda jacoco agenti, hisobot va coverage
 tekshiruvi o'chadi, HTML hisobot yozilmaydi; har yurishda JUnit XML
-majburiy. Loyiha keshni tanlamagan bo'lsa faqat kompilyatsiya lokal
-keshlanadi: yangi worktree boshqa daraxt kompilyatsiya qilgan modulni
-qayta kompilyatsiya qilmaydi, test esa har gal haqiqatan yuradi.
+majburiy. Loyiha build cache ni tanlamagan bo'lsa faqat kompilyatsiya
+lokal cache lanadi: yangi worktree boshqa daraxt kompilyatsiya qilgan
+modulni qayta kompilyatsiya qilmaydi, test esa har gal haqiqatan yuradi.
+Included build (`includeBuild`) moduli `:<nom>:test` bilan yuradi.
 
 Tanlash, eng aniqdan kengiga:
   1. o'zgargan test sinfi;
@@ -117,6 +118,11 @@ MIGRATION_RE = re.compile(
     r".*\.(?:sql|xml|ya?ml|json)$")
 BUILD_FILE_RE = re.compile(
     r"(?:^|/)(?:build\.gradle(?:\.kts)?|pom\.xml)$")
+# Included build ning o'z ildiz fayllari: u kutubxona sifatida ildiz build ga
+# ulanadi, shuning uchun ta'siri ildiz build faylinikidek keng.
+INCLUDED_ROOT_RE = re.compile(
+    r"^(?:settings\.gradle(?:\.kts)?|build\.gradle(?:\.kts)?|gradle\.properties"
+    r"|gradle/[^/]+\.toml)$")
 ROOT_BUILD_RE = re.compile(
     r"^(?:settings\.gradle(?:\.kts)?|gradle\.properties|gradle/[^/]+\.toml"
     r"|gradle/wrapper/.*|\.mvn/.*|buildSrc/.*|build-logic/.*)$")
@@ -359,6 +365,67 @@ def parse_settings(text):
     return projects
 
 
+def included_builds(text):
+    """settings dagi includeBuild: [(yo'l, nom yoki None)], pluginManagement
+    ichidagisi ham. Gradle included build ni papka nomi bilan chaqiradi
+    (rootProject.name bilan emas), `{ name = '...' }` uni almashtiradi."""
+    text = re.sub(r"(?<![:\w])//[^\n]*|/\*.*?\*/", "", text, flags=re.S)
+    found = []
+    for match in re.finditer(r"\bincludeBuild\s*\(?\s*['\"]([^'\"]+)['\"]\s*\)?"
+                             r"(\s*\{[^{}]*\})?", text):
+        name = re.search(r"\bname\s*=\s*['\"]([^'\"]+)['\"]", match.group(2) or "")
+        found.append((match.group(1), name.group(1) if name else None))
+    return found
+
+
+SSET_SKIP = {"java", "kotlin", "groovy", "resources", "sources", "sourceSets", "suites",
+             "testing", "main", "srcDirs", "srcDir", "configureEach", "all", "each"}
+
+
+def block_name(head):
+    """`{` dan oldingi matndan blok nomi: `x {`, `x(JvmTestSuite) {`,
+    `named("x") {`, `register<JvmTestSuite>("x") {`, `val x by creating {`."""
+    for pattern in (r"\b(\w+)\s+by\s+(?:[\w.]+\.)?(?:creating|getting|registering|existing)"
+                    r"\b[^{}]*$",
+                    r"['\"](\w+)['\"]\s*\)\s*$",
+                    r"\b(\w+)\s*(?:\([^()]*\))?\s*$"):
+        match = re.search(pattern, head)
+        if match:
+            return match.group(1)
+    return None
+
+
+def source_set_names(text):
+    """{papka: source set nomi}: build skriptidagi `src/<papka>/java` qaysi
+    blok ichida turgani. Taxminiy: topilmasa chaqiruvchi camelCase oladi."""
+    text = re.sub(r"(?<![:\w])//[^\n]*", "", text)
+    found = {}
+    for match in re.finditer(r"src/([\w.-]+)/(?:java|kotlin|groovy)\b", text):
+        depth, i = 0, match.start()
+        while i > 0:
+            i -= 1
+            char = text[i]
+            if char == "}":
+                depth += 1
+            elif char == "{":
+                if depth:
+                    depth -= 1
+                    continue
+                name = block_name(text[max(0, i - 160):i])
+                if name and name not in SSET_SKIP:
+                    found.setdefault(match.group(1), name)
+                    break
+    return found
+
+
+def settings_text(folder):
+    for name in ("settings.gradle.kts", "settings.gradle"):
+        path = os.path.join(folder, name)
+        if os.path.exists(path):
+            return read(path)
+    return ""
+
+
 class Project:
     def __init__(self, root, runner=None, tool=None):
         self.root = os.path.abspath(root)
@@ -366,18 +433,39 @@ class Project:
         self.runner = runner or self._runner()
         self.gradle_projects = OrderedDict()     # papka -> ":a:b"
         self.maven_modules = set()
+        self.included = []                       # includeBuild papkalari
+        self.root_listed = False                 # ildiz include lari literal topildimi
         if self.tool == "gradle":
-            for name in ("settings.gradle.kts", "settings.gradle"):
-                path = os.path.join(self.root, name)
-                if os.path.exists(path):
-                    with open(path, encoding="utf-8", errors="replace") as handle:
-                        for gpath, folder in parse_settings(handle.read()).items():
-                            self.gradle_projects[folder] = gpath
-                    break
+            text = settings_text(self.root)
+            for gpath, folder in parse_settings(text).items():
+                self.gradle_projects[folder] = gpath
+            self.root_listed = bool(self.gradle_projects)
+            # Included build o'z build i: `gradle test` unga tushmaydi, ildizning
+            # `:test` i esa uning sinflarini bilmaydi. Gradle 6.8+ uning vazifasini
+            # `:<nom>:test` deb buyruq satridan oladi (7.6, 8.14, 9.8 da sinalgan).
+            version = gradle_version(self.root)
+            if version is None or version >= (6, 8):
+                self._include_builds(text, "")
         self.sources = []
         self.by_rel = {}
         self.build_files = []
         self._index()
+
+    def _include_builds(self, text, base):
+        """Included build va uning ichidagi included build lar: hammasi bitta
+        build daraxtida, har biri o'z nomi bilan (`:<nom>:...`)."""
+        for path, name in included_builds(text):
+            folder = rel(os.path.relpath(os.path.normpath(
+                os.path.join(self.root, base, path)), self.root))
+            if folder in (".", "") or folder.startswith("../") or folder in self.included:
+                continue
+            gname = ":" + (name or os.path.basename(folder))
+            self.included.append(folder)
+            self.gradle_projects[folder] = gname
+            inner = settings_text(os.path.join(self.root, folder))
+            for gpath, sub in parse_settings(inner).items():
+                self.gradle_projects[folder + "/" + sub] = gname + gpath
+            self._include_builds(inner, folder)
 
     # -- loyiha turi -------------------------------------------------------
 
@@ -435,7 +523,10 @@ class Project:
                 if folder and (path == folder or path.startswith(folder + "/")) \
                         and len(folder) > len(best):
                     best = folder
-            return best
+            # Ildiz include lari dinamik bo'lsa (`listOf(...).forEach { include(it) }`)
+            # lug'atda faqat included build lar bor: qolgani build fayli bo'yicha.
+            if best or self.root_listed:
+                return best
         # Maven va settings siz Gradle: eng yaqin build fayli bor papka.
         names = (("pom.xml",) if self.tool == "maven"
                  else ("build.gradle", "build.gradle.kts"))
@@ -451,6 +542,27 @@ class Project:
         if not module:
             return ""
         return self.gradle_projects.get(module) or ":" + module.replace("/", ":")
+
+    def in_included(self, module):
+        return any(module == f or module.startswith(f + "/") for f in self.included)
+
+    def test_task(self, module, sset):
+        """Papka nomidan Gradle vazifa nomi. `src/integration-test/java` ni
+        build skripti odatda `integrationTest` source set iga ulaydi: avval
+        skriptdagi srcDir, bo'lmasa camelCase."""
+        if sset == "test" or self.tool != "gradle":
+            return sset
+        cache = self.__dict__.setdefault("_ssets", {})
+        if module not in cache:
+            texts = [read(os.path.join(self.root, module, n))
+                     for n in ("build.gradle.kts", "build.gradle")]
+            texts += [read(os.path.join(self.root, n)) for n in ("build.gradle.kts", "build.gradle")]
+            cache[module] = source_set_names("\n".join(texts))
+        name = cache[module].get(sset)
+        if name:
+            return name
+        parts = [p for p in re.split(r"[-_.]", sset) if p]
+        return parts[0] + "".join(p[:1].upper() + p[1:] for p in parts[1:]) if parts else sset
 
     def tests(self):
         return [s for s in self.sources if s.runnable]
@@ -675,8 +787,11 @@ def select(project, existing, deleted=()):
                 helper_names[src.name] = src
             continue
         module = project.module_of(path)
+        inner = next((path[len(f) + 1:] for f in project.included
+                      if path.startswith(f + "/")), None)
         if ROOT_BUILD_RE.search(path) or (BUILD_FILE_RE.search(path) and module == ""
-                                          and "/" not in path):
+                                          and "/" not in path) or (
+                inner is not None and INCLUDED_ROOT_RE.search(inner)):
             plan.everything = "build fayli: %s" % path
         elif BUILD_FILE_RE.search(path):
             for sset in sorted({t.sset for t in tests if t.module == module}):
@@ -808,6 +923,7 @@ def gradle_task(sset):
 # build faylida. Init skript faqat shu yurishga qo'shiladi, build fayllariga
 # tegmaydi. projectsEvaluated: plaginlar va build skriptining o'z sozlamasidan
 # keyin ishlaydi. Gradle 7.6, 8.14, 9.8 da tekshirilgan (DECISIONS.md).
+# `python3 tools/test_run_tests.py --gradle` uni haqiqiy Gradle da sinaydi.
 GRADLE_INIT = r"""// claude-genius run_tests.py: faqat shu yurish uchun, build fayllariga tegmaydi.
 import org.gradle.util.GradleVersion
 
@@ -819,11 +935,26 @@ if (GradleVersion.current() < GradleVersion.version('6.1')) {
 }
 
 if (geniusKesh) {
-    // Keshni asbob yoqdi: faqat lokal, loyihaning remote keshiga tegilmaydi.
-    settingsEvaluated { settings ->
-        def remote = settings.buildCache.remote
-        if (remote != null) {
-            remote.enabled = false
+    // Cache ni asbob yoqdi: faqat lokal, loyihaning remote cache iga tegilmaydi.
+    // beforeSettings ichida: hook GRADLE_USER_HOME/init.d skriptlarinikidan
+    // keyin ro'yxatga tushadi va ular sozlagan remote ni ham o'chiradi.
+    beforeSettings { early ->
+        early.gradle.settingsEvaluated { settings ->
+            def remote = settings.buildCache.remote
+            if (remote != null) {
+                remote.enabled = false
+            }
+        }
+    }
+}
+
+// --isit: loyihadagi har Test vazifasining test sinflari (va ular talab
+// qilgan main). Nomni Gradle beradi, papka nomidan taxmin qilinmaydi;
+// jmh yoki aot kabi test emas source set qurilmaydi.
+allprojects { project ->
+    project.plugins.withId('java') {
+        project.tasks.register('geniusIsit') { task ->
+            task.dependsOn { project.tasks.withType(Test).collect { it.testClassesDirs } }
         }
     }
 }
@@ -850,7 +981,7 @@ projectsEvaluated { gradle ->
                 def kompilyatsiya = task instanceof org.gradle.api.tasks.compile.AbstractCompile ||
                     task.class.name.startsWith('org.jetbrains.kotlin.gradle.tasks.KotlinCompile')
                 if (!kompilyatsiya) {
-                    task.outputs.doNotCacheIf('claude-genius: faqat kompilyatsiya keshlanadi',
+                    task.outputs.doNotCacheIf('claude-genius: faqat kompilyatsiya cache lanadi',
                         org.gradle.api.specs.Specs.SATISFIES_ALL)
                 }
             }
@@ -869,27 +1000,58 @@ def gradle_props(root):
     return props
 
 
+def gradle_choices(root):
+    """Gradle ko'radigan sozlamalar va so'zlar: gradle.properties, keyin
+    `-D` (GENIUS_TEST_FLAGS, GRADLE_OPTS, JAVA_OPTS). `-D` ustun."""
+    props = gradle_props(root)
+    words = list(extra_flags())
+    for name in ("GRADLE_OPTS", "JAVA_OPTS"):
+        with contextlib.suppress(ValueError):
+            words += shlex.split(os.environ.get(name, ""))
+    for word in words:
+        if word.startswith("-D") and "=" in word:
+            key, value = word[2:].split("=", 1)
+            props[key] = value
+    return props, words
+
+
+def isolated_projects(props):
+    return any(props.get(k, "").lower() == "true" for k in
+               ("org.gradle.unsafe.isolated-projects", "org.gradle.isolated-projects"))
+
+
 def gradle_version(root):
+    """Wrapper versiyasi: faqat distributionUrl qiymatidagi fayl nomidan.
+    Izohdagi eski URL yoki yo'ldagi boshqa `gradle-N.M` hisobga olinmaydi."""
     text = read(os.path.join(root, "gradle", "wrapper", "gradle-wrapper.properties"))
-    match = re.search(r"gradle-(\d+)\.(\d+)", text)
+    url = properties(text).get("distributionUrl", "")
+    match = re.match(r"gradle-(\d+)\.(\d+)", url.rsplit("/", 1)[-1])
     return (int(match.group(1)), int(match.group(2))) if match else None
 
 
-def gradle_cache_ours(root, flags):
-    """Kompilyatsiya keshini asbob yoqadimi. Loyiha yoki foydalanuvchi
-    keshni o'zi tanlagan bo'lsa (yoqilgan ham, o'chirilgan ham) uning
-    qarori qoladi va asbob unga tegmaydi."""
-    if "--build-cache" in flags or "--no-build-cache" in flags:
+def gradle_cache_ours(root):
+    """Kompilyatsiya cache ini asbob yoqadimi. Loyiha yoki foydalanuvchi
+    cache ni o'zi tanlagan bo'lsa (yoqilgan ham, o'chirilgan ham, -D bilan
+    ham) uning qarori qoladi va asbob unga tegmaydi."""
+    props, words = gradle_choices(root)
+    if "--build-cache" in words or "--no-build-cache" in words:
         return False
-    return gradle_props(root).get("org.gradle.caching", "").lower() not in ("true", "false")
+    return props.get("org.gradle.caching", "").lower() not in ("true", "false")
 
 
-def init_script(targeted, cache):
+def init_script(root, targeted, cache):
+    """Skript loyihaning `.gradle/` papkasida (Gradle o'zi yozadigan, odatda
+    gitignore dagi joy) va nisbiy yo'l bilan beriladi. Umumiy /tmp da
+    oldindan ma'lum nomli fayl boshqa foydalanuvchiga kod bajartirish yo'li
+    bo'lardi; Windows da esa TEMP dagi `&` yoki `^` `cmd /c` buyrug'ini
+    bo'lardi."""
     text = GRADLE_INIT % {"maqsadli": "true" if targeted else "false",
                           "kesh": "true" if cache else "false"}
-    path = os.path.join(tempfile.gettempdir(), "genius-gradle-%s.gradle"
-                        % hashlib.sha1(text.encode("utf-8")).hexdigest()[:10])
+    relpath = os.path.join(".gradle", "genius", "init-%s.gradle"
+                           % hashlib.sha1(text.encode("utf-8")).hexdigest()[:10])
+    path = os.path.join(root, relpath)
     if read(path) != text:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         tmp = "%s.%d.tmp" % (path, os.getpid())
         with open(tmp, "w", encoding="utf-8") as handle:
             handle.write(text)
@@ -902,11 +1064,11 @@ def init_script(targeted, cache):
                 os.remove(tmp)
             if read(path) != text:
                 raise
-    return path
+    return relpath
 
 
 def gradle_init(project, targeted):
-    """Gradle yurishiga init skript va kesh bayrog'i.
+    """Gradle yurishiga init skript va build cache bayrog'i.
 
     Maqsadli yurishda (targeted): jacoco agenti va jacoco hisobot,
     coverage tekshiruvi vazifalari o'chadi, HTML hisobot yozilmaydi.
@@ -915,20 +1077,28 @@ def gradle_init(project, targeted):
     bilan bir xil. To'liq suite da jacoco qoladi, coverage CI bilan bir xil.
 
     Har yurishda: JUnit XML majburiy (qayta yurish va beqarorni ajratish
-    shunga tayanadi). Kesh asbobniki bo'lsa: faqat kompilyatsiya, faqat
-    lokal. Yangi worktree boshqa daraxt kompilyatsiya qilgan modulni keshdan
-    oladi. Test natijasi keshlanmaydi: test har gal haqiqatan yuradi.
+    shunga tayanadi). Cache asbobniki bo'lsa: faqat kompilyatsiya, faqat
+    lokal. Yangi worktree boshqa daraxt kompilyatsiya qilgan modulni cache
+    dan oladi. Test natijasi cache lanmaydi: test har gal haqiqatan yuradi.
+    Cache ni loyiha tanlagan bo'lsa (org.gradle.caching=true) uning
+    sozlamasi amal qiladi: o'zgarmagan test ham cache dan kelishi mumkin.
 
-    O'chirish: GENIUS_GRADLE_INIT=0; faqat kesh: org.gradle.caching=false
-    yoki GENIUS_TEST_FLAGS=--no-build-cache.
+    Init skript qo'shilmaydi: GENIUS_GRADLE_INIT=0, wrapper Gradle 6.1 dan
+    eski, isolated projects yoqilgan (allprojects unga mos emas). Wrapper
+    versiyasi o'qilmasa cache yoqilmaydi: eski Gradle da skript hech narsa
+    qilmaydi va test natijasi cache dan kelardi. Faqat cache ni o'chirish:
+    org.gradle.caching=false yoki GENIUS_TEST_FLAGS=--no-build-cache.
     """
     if os.environ.get("GENIUS_GRADLE_INIT", "").strip() == "0":
         return []
     version = gradle_version(project.root)
     if version and version < (6, 1):
         return []
-    cache = gradle_cache_ours(project.root, extra_flags())
-    return ["-I", init_script(targeted, cache)] + (["--build-cache"] if cache else [])
+    if isolated_projects(gradle_choices(project.root)[0]):
+        return []
+    cache = version is not None and gradle_cache_ours(project.root)
+    return ["-I", init_script(project.root, targeted, cache)] + (
+        ["--build-cache"] if cache else [])
 
 
 def commands(project, plan, everything=False):
@@ -943,13 +1113,20 @@ def commands(project, plan, everything=False):
 def gradle_commands(project, plan, everything):
     argv = list(project.runner)
     if everything or plan.everything:
-        tasks = ["test"] + sorted({gradle_task(s.sset) for s in project.tests()} - {"test"})
+        tests = project.tests()
+        own = [s for s in tests if not project.in_included(s.module)]
+        # Faqat included build li "soyabon" ildizda `test` vazifasi yo'q.
+        tasks = (["test"] if own or not tests else []) + sorted(
+            {project.test_task(s.module, s.sset) for s in own} - {"test"})
+        tasks += sorted({"%s:%s" % (project.gradle_path(s.module),
+                                    project.test_task(s.module, s.sset))
+                         for s in tests if project.in_included(s.module)})
         return [(argv + tasks + ["--continue", "--console=plain"]
                  + gradle_init(project, False) + extra_flags(), "to'liq suite")]
     for module, sset in plan.whole:
-        argv.append("%s:%s" % (project.gradle_path(module), gradle_task(sset)))
+        argv.append("%s:%s" % (project.gradle_path(module), project.test_task(module, sset)))
     for (module, sset), chosen in plan.targets.items():
-        argv.append("%s:%s" % (project.gradle_path(module), gradle_task(sset)))
+        argv.append("%s:%s" % (project.gradle_path(module), project.test_task(module, sset)))
         for fqn in chosen:
             argv += ["--tests", fqn]
     return [(argv + ["--continue", "--console=plain"] + gradle_init(project, True)
@@ -1017,10 +1194,15 @@ def warmup_commands(project):
     """Fonda kompilyatsiya: guruh ochilgach aktyor kod o'qiyotgan paytda
     yangi worktree ning birinchi to'liq kompilyatsiyasi tugaydi."""
     if project.tool == "gradle":
-        tasks = sorted({gradle_task(s.sset) + "Classes" for s in project.tests()}
-                       | {"testClasses"})
+        init = gradle_init(project, False)
+        tests = project.tests()
+        own = [s for s in tests if not project.in_included(s.module)]
+        tasks = ["geniusIsit" if init else "testClasses"] if own or not tests else []
+        if init:
+            tasks += sorted({"%s:geniusIsit" % project.gradle_path(s.module)
+                             for s in tests if project.in_included(s.module)})
         return [(list(project.runner) + tasks + ["--console=plain", "-q"]
-                 + gradle_init(project, False) + extra_flags(), "isitish")]
+                 + init + extra_flags(), "isitish")]
     return [(list(project.runner) + ["-B", "-q", "test-compile", "-Djacoco.skip=true",
                                      "-Dspring-javaformat.validate.skip=true"]
              + extra_flags(), "isitish")]
@@ -1168,6 +1350,46 @@ def failed_classes(project, since):
     return found
 
 
+FAILED_TASK_RE = re.compile(r"Execution failed for task '(:[^']*)'")
+MAVEN_GOAL_RE = re.compile(
+    r"^\[ERROR\] Failed to execute goal ([\w.-]+):([\w.-]+):\S+ (?:\([^)]*\) )?"
+    r"on project ([\w.-]+)", re.M)
+MAVEN_SKIPPED_RE = re.compile(r"^\[INFO\] (\S.*?) \.+ SKIPPED\s*$", re.M)
+# execute() bularning yiqilishini ataylab kechiradi (formatlash qadami).
+FORMAT_PLUGINS = ("spring-javaformat-maven-plugin", "spotless-maven-plugin")
+
+
+def maven_artifact(project, module):
+    text = re.sub(r"<parent>.*?</parent>", "", read(os.path.join(
+        project.root, module, "pom.xml")), flags=re.S)
+    match = re.search(r"<artifactId>\s*([^<\s]+)\s*</artifactId>", text)
+    return match.group(1) if match else None
+
+
+def other_failures(project, log, failed):
+    """Test sinfi bilan izohlanmaydigan yiqilish: coverage tekshiruvi,
+    lint, JVM qulashi. Qayta yurish faqat yiqilgan sinflarni oladi va
+    bularni tekshirmaydi, shuning uchun ular natijani 'beqaror' qilmaydi."""
+    text = read(log)
+    if project.tool == "gradle":
+        tests = {"%s:%s" % (project.gradle_path(m), gradle_task(s)) for m, s in failed}
+        return sorted({t for t in FAILED_TASK_RE.findall(text) if t not in tests})
+    # Surefire yoki failsafe yiqilishi faqat yiqilgan sinfi bor modulda
+    # izohlanadi; boshqa modulda (fork qulashi, XML siz) u boshqa yiqilish.
+    explained = {maven_artifact(project, m) for m, _ in failed}
+    other = set()
+    for group, plugin, artifact in MAVEN_GOAL_RE.findall(text):
+        if plugin in FORMAT_PLUGINS:
+            continue
+        if plugin in ("maven-surefire-plugin", "maven-failsafe-plugin") \
+                and artifact in explained:
+            continue
+        other.add("%s:%s (%s)" % (group, plugin, artifact))
+    # -fae: yiqilgan modulga qaram modul SKIPPED, uning testlari yurmagan.
+    other.update("%s: SKIPPED" % name for name in MAVEN_SKIPPED_RE.findall(text))
+    return sorted(other)
+
+
 def has_compile_error(log):
     try:
         import parse_test_output as pto
@@ -1301,9 +1523,13 @@ def describe(project, plan, cmds, everything):
         lines.append("Asbob: %s" % project.tool_note)
     for argv, note in cmds:
         lines.append("Buyruq (%s): %s" % (note, show(argv)))
-    init = next((read(a[a.index("-I") + 1]) for a, _ in cmds if "-I" in a), "")
-    parts = (["jacoco va HTML hisobot o'chiq"] if "geniusMaqsadli = true" in init else []) + \
-        (["kesh faqat kompilyatsiya, lokal"] if "geniusKesh = true" in init else [])
+    init = next((read(os.path.join(project.root, a[a.index("-I") + 1]))
+                 for a, _ in cmds if "-I" in a), "")
+    parts = ["jacoco va HTML hisobot o'chiq"] if "geniusMaqsadli = true" in init else []
+    if "geniusKesh = true" in init:
+        parts.append("build cache faqat kompilyatsiya, lokal")
+    elif init and gradle_choices(project.root)[0].get("org.gradle.caching", "") == "true":
+        parts.append("build cache loyihaniki: o'zgarmagan test ham cache dan kelishi mumkin")
     if parts:
         lines.append("Gradle init: %s (GENIUS_GRADLE_INIT=0 o'chiradi)" % ", ".join(parts))
     for note in plan.notes:
@@ -1313,7 +1539,7 @@ def describe(project, plan, cmds, everything):
 
 def task_label(project, module, sset):
     if project.tool == "gradle":
-        return "%s:%s" % (project.gradle_path(module), gradle_task(sset))
+        return "%s:%s" % (project.gradle_path(module), project.test_task(module, sset))
     return "%s (%s)" % (module or ".", sset)
 
 
@@ -1328,12 +1554,15 @@ def read(path):
 
 
 def properties(text):
+    """Java properties: ajratgich `=`, `:` yoki bo'shliq; `\\:` va `\\=` ochiladi."""
     props = {}
     for line in text.splitlines():
         line = line.strip()
-        if line and not line.startswith(("#", "!")) and "=" in line:
-            key, value = line.split("=", 1)
-            props[key.strip()] = value.strip()
+        if not line or line.startswith(("#", "!")):
+            continue
+        match = re.match(r"([^=:\s]+)\s*[=:\s]\s*(.*)$", line)
+        if match:
+            props[match.group(1)] = re.sub(r"\\([:=\\])", r"\1", match.group(2).strip())
     return props
 
 
@@ -1386,46 +1615,62 @@ def diagnose(project):
     tests = project.tests()
     test_files = [s for s in project.sources if not s.is_main]
     if project.tool == "gradle":
-        props = gradle_props(project.root)
-        multi = len(project.gradle_projects) > 0
+        props = gradle_choices(project.root)[0]
+        modules = [f for f in project.gradle_projects if not project.in_included(f)]
+        multi = len(modules) > 0
         if props.get("org.gradle.daemon", "").lower() == "false":
             add("yuqori", "Gradle daemon o'chirilgan",
                 "har yurish JVM va build konfiguratsiyasini noldan ko'taradi",
                 "gradle.properties dan org.gradle.daemon=false ni olib tashlash", "testing 16.10")
         if multi and props.get("org.gradle.parallel", "").lower() != "true":
             add("o'rta", "Gradle modullari ketma-ket yig'iladi",
-                "%d modul bor, org.gradle.parallel yoqilmagan" % len(project.gradle_projects),
+                "%d modul bor, org.gradle.parallel yoqilmagan" % len(modules),
                 "gradle.properties: org.gradle.parallel=true", "testing 15.3")
         if props.get("org.gradle.caching", "").lower() == "false":
             add("o'rta", "Gradle build cache o'chirilgan",
-                "run_tests ham keshni yoqmaydi: yangi worktree har modulni noldan "
+                "run_tests ham cache ni yoqmaydi: yangi worktree har modulni noldan "
                 "kompilyatsiya qiladi",
                 "org.gradle.caching=false ni olib tashlash: run_tests o'zi faqat "
-                "kompilyatsiyani lokal keshlaydi, test natijasini emas", "testing 16.10")
+                "kompilyatsiyani lokal cache laydi, test natijasini emas",
+                "DECISIONS.md: Gradle init skript")
+        if isolated_projects(props):
+            add("past", "Isolated projects: run_tests init skriptsiz",
+                "init skriptning allprojects i isolated projects bilan mos emas: "
+                "maqsadli yurishda jacoco o'chmaydi, kompilyatsiya cache yo'q",
+                "isolated projects kerak bo'lmasa o'chirish; aks holda shu holat qoladi",
+                "DECISIONS.md: Gradle init skript")
         cc = props.get("org.gradle.configuration-cache",
                        props.get("org.gradle.unsafe.configuration-cache", ""))
-        if len(project.gradle_projects) >= 10 and cc.lower() != "true":
-            add("past", "Har yurish %d modulni qayta konfiguratsiya qiladi"
-                % len(project.gradle_projects),
+        if len(modules) >= 10 and cc.lower() != "true":
+            add("past", "Har yurish %d modulni qayta konfiguratsiya qiladi" % len(modules),
                 "configuration cache yo'q: build skriptlari har buyruqda qayta bajariladi",
                 "avval GENIUS_TEST_FLAGS=--configuration-cache bilan sinash, muammosiz "
-                "bo'lsa gradle.properties: org.gradle.configuration-cache=true", "testing 16.10")
+                "bo'lsa gradle.properties: org.gradle.configuration-cache=true",
+                "qo'llanmada yo'q; Gradle: configuration_cache.html")
         builds = "\n".join(read(os.path.join(project.root, p)) for p in project.build_files)
         if re.search(r"upToDateWhen\s*\{\s*false\s*\}", builds):
             add("past", "Vazifa hech qachon UP-TO-DATE emas",
                 "outputs.upToDateWhen { false }: o'zgarmagan kodda ham qayta yuradi",
-                "test tashqi holatga bog'liq bo'lmasa olib tashlash", "testing 16.10")
+                "test tashqi holatga bog'liq bo'lmasa olib tashlash",
+                "qo'llanmada yo'q; Gradle: incremental_build.html")
         if re.search(r"showStandardStreams\s*=\s*true", builds):
             add("past", "testLogging.showStandardStreams yoqilgan",
                 "har testning stdout va stderr i konsolga: log katta, yurish sekinroq",
-                "faqat yiqilganda: events 'failed', exceptionFormat 'full'", "testing 16.10")
+                "faqat yiqilganda: events 'failed', exceptionFormat 'full'",
+                "qo'llanmada yo'q; Gradle: Test.testLogging")
         scans = builds + "".join(read(os.path.join(project.root, n)) for n in
                                  ("settings.gradle", "settings.gradle.kts"))
-        if re.search(r"com\.gradle\.(?:develocity|enterprise|build-scan)\b", scans) and \
-                "--no-scan" not in extra_flags():
+        # Develocity standartda yuklaydi (onlyIf bo'lmasa); eski enterprise va
+        # build-scan plaginlari faqat publishAlways() yoki --scan bilan.
+        develocity = (re.search(r"com\.gradle\.develocity\b", scans)
+                      and not re.search(r"publishing\s*(?:\.|\{)\s*onlyIf\b", scans))
+        legacy = (re.search(r"com\.gradle\.(?:enterprise|build-scan)\b", scans)
+                  and re.search(r"\bpublishAlways\s*\(", scans))
+        if (develocity or legacy) and "--no-scan" not in extra_flags():
             add("past", "Build scan har yurishda yuklanadi",
-                "Develocity yoki build scan plagini: yurish oxirida natija serverga yuboriladi",
-                "agent yurishida kerak bo'lmasa GENIUS_TEST_FLAGS=--no-scan", "testing 16.10")
+                "yurish oxirida natija Develocity serveriga yuboriladi",
+                "agent yurishida kerak bo'lmasa GENIUS_TEST_FLAGS=--no-scan",
+                "qo'llanmada yo'q; DECISIONS.md: Gradle init skript")
         if re.search(r"\bforkEvery\b", builds):
             add("yuqori", "forkEvery yoqilgan",
                 "har N sinfda yangi JVM: Spring kontekst keshi har gal yo'qoladi",
@@ -1674,11 +1919,12 @@ def main(argv=None):
     mode = "hammasi" if everything else ("modul" if args.modul else "maqsadli")
     started = time.time()
     code, seconds = execute(project, cmds, log, args.vaqt, args.navbat)
-    flaky = []
+    flaky, other = [], []
     if code not in (0, 124, 127) and args.qayta > 0 and not has_compile_error(log):
         failed = failed_classes(project, started)
         count = sum(len(v) for v in failed.values())
         if 0 < count <= MAX_RERUN:
+            other = other_failures(project, log, failed)
             again = [c for c in commands(project, rerun_plan(failed))
                      if not c[1].startswith("formatlash")]
             # Alohida log: bitta logda ikki yurish xulosani ikki marta sanaydi.
@@ -1692,7 +1938,7 @@ def main(argv=None):
             still = failed_classes(project, rerun_start)
             if code2 == 0:
                 flaky = [f for names in failed.values() for f in names]
-                code = 4
+                code = 1 if other else 4
             else:
                 flaky = [f for k, names in failed.items() for f in names
                          if f not in still.get(k, ())]
@@ -1711,6 +1957,9 @@ def main(argv=None):
               % ", ".join(flaky[:10]))
         print("O'zgarish bilan bog'liq bo'lsa (o'zgargan test yoki o'zgargan kodga "
               "murojaat) bu poyga xatosi bo'lishi mumkin: egasi test-muhandis.")
+    if other:
+        print("Boshqa yiqilish (test sinfi emas, qayta yurishda tekshirilmaydi): %s"
+              % ", ".join(other[:10]))
     if code != 4:
         summary = summarize(summary_log)
         if summary_log != log:

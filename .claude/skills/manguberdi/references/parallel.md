@@ -42,7 +42,8 @@ python3 tools/guruh.py royxat                # papka, branch, fayl soni
 kod o'qiyotgan daqiqalarda shu kompilyatsiya tugaydi. Maven da har guruh
 o'z fon buyrug'i bilan. Gradle da hammasi bitta fon buyrug'ida ketma-ket
 (`...--ildiz <A> --isit; ...--ildiz <B> --isit`): birinchisi
-kompilyatsiyani lokal keshga yozadi, keyingilari keshdan oladi. Isitish
+kompilyatsiyani lokal build cache ga yozadi, keyingilari cache dan
+oladi. Isitish
 va aktyorning `--yurgiz` i bitta daraxtda hech qachon bir vaqtda
 yurmaydi: ildiz qulfi keyingisini kutdiradi.
 
@@ -131,7 +132,9 @@ bo'yicha aniqroq bo'linadi.
   parallel qoladi. `run_tests.py --tashxis` buni ko'rsatadi.
 - **Birinchi build.** Yangi worktree da `build/` yo'q: birinchi yurish
   to'liq kompilyatsiya. Gradle da `run_tests.py` kompilyatsiyani lokal
-  keshga yozadi (test natijasini emas) va keyingi worktree uni keshdan
-  oladi. Loyihada `org.gradle.caching=false` bo'lsa bu yo'q.
+  build cache ga yozadi (test natijasini emas) va keyingi worktree uni
+  cache dan oladi. Loyiha `org.gradle.caching` ni o'zi tanlagan bo'lsa
+  uning sozlamasi amal qiladi (`false` da cache yo'q, `true` da test
+  natijasi ham cache dan).
 - **Git da yo'q fayl.** `.env` yoki lokal sozlama worktree ga
   tushmaydi: `guruh.py yarat <id> --nusxa .env`.

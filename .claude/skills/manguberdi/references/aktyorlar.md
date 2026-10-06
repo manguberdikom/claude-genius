@@ -101,10 +101,10 @@ Chiqish kodi zanjirni belgilaydi:
 | Kod | Ma'nosi | Nima qilinadi |
 |---|---|---|
 | 0 | yashil | davom |
-| 1 | yiqildi: qayta yurishda ham, yoki kompilyatsiya | egasiga qaytadi |
+| 1 | yiqildi: qayta yurishda ham, kompilyatsiya, yoki test emas vazifa (coverage, lint) | egasiga qaytadi; `Boshqa yiqilish:` qatori shu vazifani aytadi |
 | 2 | asbob so'radi: bir nechta build ildizi (`--ildiz <papka>`), ikki build fayli (`--asbob gradle\|maven`) yoki build yo'q | aktyor chiqishdagi ro'yxatdan o'zgargan fayl turgan ildizni, wrapperi bor asbobni tanlab bir marta qayta yurgizadi; tanlab bo'lmasa `Testlar: yurgizilmadi, rc 2: <sabab>` deb yozadi, taxmin qilmaydi |
 | 3 | vaqt tugadi | to'liq suite bo'lsa fonda, aks holda tanlov juda keng: modul bo'yicha bo'lish |
-| 4 | beqaror: yiqilgan sinf qayta yurishda o'tdi | kod tuzatilmaydi; `Beqaror:` qatori hisobotga, egasi `test-muhandis` |
+| 4 | beqaror: yiqilgan sinf qayta yurishda o'tdi, boshqa yiqilish yo'q | kod tuzatilmaydi; `Beqaror:` qatori hisobotga, egasi `test-muhandis` |
 
 Asbob yiqilgan sinflarni bir marta qayta yurgizadi (`--qayta`): flaky
 test o'zgarishga yopishtirilib, dasturchi yo'q xatoni qidirmasin. Kod 4
@@ -119,7 +119,8 @@ coverage chegarasi bir nechta test bilan yolg'on yiqilardi. Maven da
 `-Djacoco.skip=true`, Gradle da init skript (`-I`, build fayliga
 tegmaydi): agent, hisobot va coverage tekshiruvi o'chadi. Gradle da
 kompilyatsiya natijasi lokal build cache ga tushadi, test natijasi
-tushmaydi; loyihaning `org.gradle.caching` qiymati ustun.
+tushmaydi. Loyiha `org.gradle.caching` ni o'zi tanlagan bo'lsa uning
+sozlamasi amal qiladi: `true` da o'zgarmagan test ham cache dan keladi.
 
 Tezlik o'lchanadi, taxmin qilinmaydi: har yurish jurnalga tushadi,
 `python3 tools/run_tests.py --hisobot` rejim bo'yicha soni va vaqtini,
