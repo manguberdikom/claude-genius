@@ -3,25 +3,54 @@
 Zanjir uzunligi vazifa hajmidan kelib chiqadi. Hammaga bir xil to'liq
 zanjir (dasturchi, test muhandisi, review, keyin ikkalasi yana) bitta
 guruhni 40-70 daqiqaga cho'zardi, holbuki kichik bugga u kerak emas.
-Hajm `references/marshrut.md` dagi qoida bilan aniqlanadi.
-
-| Hajm | Zanjir |
-|---|---|
-| S | `dasturchi` (o'zgarish va uning regressiya testi) -> `review` |
-| M | `dasturchi` -> `test-muhandis` va `review` **parallel** -> bitta tuzatish aylanasi |
-| L | `rejalashtiruvchi` -> har guruhga M zanjiri, guruhlar parallel (`references/parallel.md`) |
+Hajm va har hajmning zanjiri bitta jadvalda: `references/marshrut.md`,
+`Hajm: zanjir uzunligi va reja`. Bu yerda zanjirning ishlash tartibi.
 
 S da alohida `test-muhandis` chaqirilmaydi: bitta xatti-harakatning
-regressiya testini o'zgarishni yozgan dasturchi yozadi. Topshiriqda
-`hajm: S` yoziladi va `dasturchi` shu belgidan test yozishga ruxsatni
-oladi. Qoplash so'ralgan bo'lsa yoki test ko'p darajali bo'lsa, bu S
-emas.
+regressiya testini o'zgarishni yozgan dasturchi yozadi, lekin faqat
+quyidagi `Cheklov va testlar` sharti bajarilsa. Topshiriqda `hajm: S`
+yoziladi va `dasturchi` shu belgidan test yozishga ruxsatni oladi.
+Qoplash so'ralgan bo'lsa yoki test ko'p darajali bo'lsa, bu S emas.
 
 M da `review` va `test-muhandis` bir xabarda ikki Agent chaqiruvi bilan
-yuradi. Review faqat ishlab chiqarish kodini o'qiydi, test muhandisi esa
-faqat test yozadi, shuning uchun ular bitta faylga yozmaydi va bir-birini
-kutmaydi. Testlarning o'zi review siz qolmaydi: `check_code.py` ularni
-mexanik tekshiradi, yiqilgani `run_tests.py` da chiqadi.
+yuradi. Review faqat ishlab chiqarish kodini o'qiydi (test fayllari uning
+doirasidan pathspec bilan chiqariladi, `review` agent fayli), test muhandisi esa
+faqat test yozadi, shuning uchun ular bitta faylga yozmaydi va
+bir-birini kutmaydi. Testlar `check_code.py` bilan mexanik tekshiriladi,
+yiqilgani `run_tests.py` da chiqadi, lekin semantik review siz qoladi.
+Shuning uchun M ning yakuniy hisobotida qator majburiy:
+`Testlar: mexanik tekshirildi, semantik review qilinmadi`. Test
+semantikasi review qilinadi faqat L da yoki so'ralganda, alohida
+chaqiruvda.
+
+## Topshiriq kartasi
+
+Har aktyor promptining boshida karta turadi. Uni asosiy sessiya bir
+marta yozadi va zanjirning har chaqiruviga aynan ko'chiradi:
+
+```
+hajm: S | M | L
+fayllar: <tegiladigan ishlab chiqarish fayllari>
+cheklov: <normallashtirilgan Cheklov> | yo'q
+```
+
+`fayllar:` har hajmda majburiy: yozuvchi ham, reviewer ham `rules_for`
+ni shu ro'yxat bilan chaqiradi, ya'ni ikkalasi bir xil mezonni oladi.
+Reviewer `--diff` ni faqat kartada yo'q fayl diffda paydo bo'lsa
+qo'shimcha chaqiradi. Parallel guruhda bu qatorlar guruh kartasiga
+qo'shiladi (`references/parallel.md`).
+
+## Cheklov va testlar
+
+Normallashtirilgan Cheklov (`references/marshrut.md`) zanjirdan ustun:
+
+- S da regressiya testi faqat ikki shartda yoziladi: xatoni ko'rsatadigan
+  test hali yo'q va Cheklov test qo'shish yoki o'zgartirishni
+  taqiqlamaydi. Yozilmasa `Testlar:` qatorida xatoni qaysi mavjud test
+  qoplashi aytiladi.
+- M da Cheklov test o'zgarishini taqiqlasa `test-muhandis` chaqirilmaydi:
+  xulq mavjud testlar va `run_tests` bilan tekshiriladi, hisobotda
+  `xulq mavjud <N> test bilan tekshirildi` deb yoziladi.
 
 ## Ikkinchi aylana: faqat haqiqiy kamchilikda
 
@@ -153,11 +182,19 @@ python3 tools/budget.py --holat          # jadval, guruhlar bilan
 
 Parallel guruhda prompt `guruh: <id>` qatori bilan boshlanadi va hisob
 guruh bo'yicha yuritiladi: ikki guruh bir-birining budjetini yemaydi.
-Qatorsiz chaqiruv bitta umumiy hisobga tushadi.
+Id faqat `guruh.py yarat` bilan ro'yxatga olingan bo'lsa qabul
+qilinadi; o'ylab topilgan id va qatorsiz chaqiruv bitta umumiy hisobga
+tushadi.
 
 `PreToolUse` hook har aktyor chaqiruvini hisoblaydi va uchinchisini
-**to'sadi**. `qidiruv` va `tahlil` sanalmaydi: ular zanjir qadami emas,
-o'qish asbobi.
+**to'sadi**. `qidiruv`, `tahlil` va `Explore` sanalmaydi: ular zanjir
+qadami emas, o'qish asbobi. Boshqa har qanday subagent (masalan
+`general-purpose` yoki boshqa plaginning agenti) `boshqa` hisobiga
+xuddi shu chegara bilan tushadi: aktyor ishini nomsiz agentga berish
+budjetni aylanib o'tmaydi. Nomdagi faqat `manguberdi:` prefiksi
+kesiladi. Tugagan aktyorga `SendMessage` bilan yuborilgan xabarni
+(`to` aktyor nomi bo'lsa) `budget.py` o'sha aktyorning chaqiruvi deb
+sanaydi, hook matcher'i `SendMessage` ni ushlagan o'rnatishda.
 
 Chaqiruv behuda ketgan bo'lsa (aktyor boshqa sababdan yiqildi yoki
 foydalanuvchi to'xtatdi):

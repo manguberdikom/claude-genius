@@ -26,29 +26,27 @@ har modul alohida vazifa va alohida budjet.
 
 ## Hajm: zanjir uzunligi va reja
 
-Hajm zanjirni belgilaydi (`references/aktyorlar.md`):
+Hajm faqat shu jadvalda ta'riflanadi. `SKILL.md`, `aktyorlar.md` va
+agent fayllari unga havola qiladi, o'z shkalasini yozmaydi. Fayl soniga
+tegiladigan ishlab chiqarish fayllari kiradi, ularning testlari kirmaydi.
 
-| Hajm | Belgisi |
-|---|---|
-| S | bitta xatti-harakat, 1-2 ishlab chiqarish fayli, bitta modul, qaytariladi |
-| M | uch fayldan ko'p yoki bir necha qatlam, lekin qaytarib bo'lmaydigan qaror yo'q |
-| L | qaytarib bo'lmaydigan qaror, talab hujjatdan, yoki bir necha modul guruhi |
+| Hajm | Belgisi | Zanjir | Reja |
+|---|---|---|---|
+| S | 1-3 fayl, bitta qatlam, qaytariladi | `dasturchi` -> `review` | yo'q |
+| M | 4 va undan ko'p fayl yoki bir necha qatlam, qaytarib bo'lmaydigan qaror yo'q | `dasturchi` -> `test-muhandis` va `review` parallel -> bitta tuzatish aylanasi | yo'q |
+| L | qaytarib bo'lmaydigan qaror (sxema migratsiyasi, API shartnomasi, tashqi bog'liqlik, ma'lumot formati), talab hujjatdan yoki bir necha modul | `rejalashtiruvchi` -> har guruhga M, guruhlar parallel worktree da | bor |
 
 Shubha bo'lsa kichigi olinadi: S dan M ga o'tish arzon (review topilmasi
 test muhandisini chaqiradi), M o'rniga L esa butun reja bosqichini
 qo'shadi.
 
-Reja qimmat. U faqat shu uchtadan biri bo'lsa yoki foydalanuvchi ochiq
-so'rasa tuziladi:
-
-- O'zgarish **uch fayldan ko'proq** yoki bir necha qatlamga tegadi.
-- Qaror **qaytarib bo'lmaydi**: sxema migratsiyasi, API shartnomasi,
-  tashqi bog'liqlik, ma'lumot formati.
-- Talab **hujjatdan keladi**: spetsifikatsiya, dizayn rasmi, PDF, Word.
-
+Reja qimmat: u faqat L da yoki foydalanuvchi ochiq so'raganda tuziladi.
 Qolgan hammasi rejasiz: `dasturchi` toza kod va dizayn pattern
 qoidalari asosida o'zi bajaradi. Bitta bug uchun reja yozish ishni
 sekinlashtiradi va hech narsa qo'shmaydi.
+
+Cheklov zanjirni qisqartiradi (`references/aktyorlar.md`, `Cheklov va testlar`):
+test o'zgarishi taqiqlangan bo'lsa M da `test-muhandis` chaqirilmaydi.
 
 ## Aktyor tanlash
 
@@ -58,9 +56,9 @@ ketma-ket bajariladi, aralashtirilmaydi.
 | Niyat | Aktyor | Izoh |
 |---|---|---|
 | Holatni bilish, kamchilik topish | `review` | kod o'zgarmaydi; diff bo'lmasa doira va modul ro'yxati beriladi |
-| Yo'lni belgilash | `rejalashtiruvchi` | yuqoridagi uch shartda yoki ochiq so'ralganda |
-| Kodni o'zgartirish | `dasturchi` | bug, pattern, refaktoring, reja qadami |
-| Testlar | `test-muhandis` | qoplash yoki yiqilgan testni tuzatish |
+| Yo'lni belgilash | `rejalashtiruvchi` | hajm L yoki ochiq so'ralganda |
+| Kodni o'zgartirish | `dasturchi` | bug, pattern, refaktoring, reja qadami; "tuzat" va "yiqildi" birga kelsa ham |
+| Testlar | `test-muhandis` | qoplash so'ralganda yoki xato test kodining o'zida ekani aniq bo'lganda |
 | Qoida matnini keltirish, uchtadan ko'p bo'lim | `qidiruv` | bir-uch bo'lim bo'lsa `doc.sh show` asosiy sessiyada, aktyorsiz |
 | Chiqish yoki sxemani o'qish | `tahlil` | uzun log, entity, test chiqishi |
 

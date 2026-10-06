@@ -9,6 +9,11 @@
 
 `PreToolUse` hook sifatida ham ishlaydi: stdin ga JSON kelsa, `Task`
 yoki `Agent` chaqiruvidagi aktyorni o'zi oladi va uchinchisini to'sadi.
+`SendMessage` da `to` aktyor nomi bo'lsa, tugagan aktyorni qayta
+yurgizish ham o'sha aktyorning chaqiruvi: yangi Agent chaqiruvisiz
+ishlaydi va aks holda budjetdan o'tib ketardi. Boshqa manzil (asosiy
+sessiya, agentId, jamoa) sanalmaydi. Bu faqat hook matcher'i
+`SendMessage` ni ushlaganda ishlaydi.
 `UserPromptSubmit` payloadi kelsa shu sessiya hisobini jim nolga
 tushiradi: yangi so'rov yangi vazifa.
 
@@ -29,17 +34,25 @@ Parallel guruhlar: aktyor promptidagi `guruh: <id>` qatori hisobni
 guruhga ajratadi. Ikki guruh bir sessiyada parallel ishlasa, ularning
 dasturchi chaqiruvlari bitta hisobga tushib, birinchi guruhning ikkinchi
 aylanasi ikkinchi guruhning birinchi chaqiruvi tufayli to'silardi.
-Qatorsiz chaqiruv eski xulqda: bitta umumiy hisob.
+Qatorsiz chaqiruv eski xulqda: bitta umumiy hisob. Id faqat `guruh.py`
+holat faylida (`<git-common-dir>/genius-guruh.json`) bo'lsa qabul
+qilinadi: aks holda har chaqiruvga yangi `guruh: xN` yozib chegara
+aylanib o'tilardi.
 
-Zanjirdagi to'rtta aktyor sanaladi. `qidiruv` va `tahlil` sanalmaydi:
-ular zanjir qadami emas, o'qish asbobi, va ularni cheklash arzon
-yo'lni qimmat qiladi.
+Zanjirdagi to'rtta aktyor sanaladi. `qidiruv`, `tahlil` va `Explore`
+sanalmaydi: ular zanjir qadami emas, o'qish asbobi, va ularni cheklash
+arzon yo'lni qimmat qiladi. Qolgan har qanday subagent (general-purpose,
+boshqa plaginning agenti) `boshqa` hisobiga xuddi shu chegara bilan
+tushadi: aks holda aktyor ishi nomsiz agent orqali cheksiz yurardi.
+Nomdan faqat `manguberdi:` prefiksi kesiladi; `boshqa-plugin:review`
+bu loyihaning `review` budjetini yemaydi.
 """
 
 import contextlib
 import json
 import os
 import re
+import subprocess
 import sys
 import time
 
@@ -53,6 +66,14 @@ LOG = os.path.join(STATE_DIR, "budget.json")
 # Zanjir aktyorlari. Tartib chiqishdagi jadval tartibi.
 ACTORS = ("rejalashtiruvchi", "dasturchi", "test-muhandis", "review")
 LIMIT = 2
+
+# O'qish asboblari: sanalmaydi.
+FREE = ("qidiruv", "tahlil", "Explore")
+# Qolgan subagentlar shu bitta hisobga tushadi.
+OTHER = "boshqa"
+# Plagin sifatida o'rnatilganda nom shu prefiks bilan keladi.
+PREFIX = "manguberdi:"
+GROUP_STATE = "genius-guruh.json"
 
 # Vazifa belgilanmagan bo'lsa hisoblagich shu muddatdan keyin o'zi
 # nolga tushadi: uzun sessiyada ertalabki vazifa kechqurungisini
@@ -87,10 +108,44 @@ Keyin memory bosqichi: qolgan kamchilik feedback nomzodi.
 GROUP_RE = re.compile(r"(?im)^\s*\[?guruh:\s*([\w.-]+)")
 
 
-def group_of(prompt):
-    """Aktyor promptidagi `guruh: <id>` qatori, yo'q bo'lsa ''."""
-    match = GROUP_RE.search(prompt or "")
-    return match.group(1) if match else ""
+def strip_prefix(name):
+    name = (name or "").strip()
+    return name[len(PREFIX):] if name.startswith(PREFIX) else name
+
+
+def actor_of(subagent_type):
+    """subagent_type qaysi hisobga tushadi; '' sanalmaydi."""
+    name = strip_prefix(subagent_type)
+    if name in ACTORS:
+        return name
+    return "" if name in FREE else OTHER
+
+
+def registered(group, cwd=""):
+    """Id `guruh.py yarat` bilan ro'yxatga olinganmi.
+
+    Holat fayli umumiy .git papkasida: guruh worktree sidan ham, asosiy
+    daraxtdan ham bir xil fayl ko'rinadi. Tekshirib bo'lmasa (git yo'q,
+    repo emas) id qabul qilinmaydi: umumiy hisob xavfsiz tomon.
+    """
+    try:
+        from guruh import common_dir
+        common = common_dir(cwd or os.getcwd())
+        if not common:
+            return False
+        with open(os.path.join(common, GROUP_STATE), encoding="utf-8") as handle:
+            data = json.load(handle)
+    except (ImportError, OSError, ValueError, subprocess.SubprocessError):
+        return False
+    return isinstance(data, dict) and group in data
+
+
+def group_of(prompt, cwd=""):
+    """Promptdagi ro'yxatdan o'tgan `guruh: <id>`, aks holda ''."""
+    match = GROUP_RE.search(prompt if isinstance(prompt, str) else "")
+    if not match:
+        return ""
+    return match.group(1) if registered(match.group(1), cwd) else ""
 
 
 def counter(actor, group=""):
@@ -244,7 +299,8 @@ def status():
         if group:
             print("\nGuruh: %s" % group)
         print("\n%-18s %-10s %s" % ("aktyor", "chaqiruv", "holat"))
-        for actor in ACTORS:
+        rows = ACTORS + ((OTHER,) if slot["calls"].get(counter(OTHER, group)) else ())
+        for actor in rows:
             used = slot["calls"].get(counter(actor, group), 0)
             state = "-" if not used else ("tugadi" if used >= LIMIT else "qoldi 1")
             print("%-18s %-10s %s" % (actor, "%d/%d" % (used, LIMIT), state))
@@ -286,8 +342,9 @@ def take(actor, key=None, cwd="", call_id=None, group=""):
     key None bo'lsa CLI chaqiruvi: sessiya cli_key bilan tanlanadi.
     group bo'lsa hisob shu guruhniki: parallel guruhlar bir-birini to'smaydi.
     """
-    if actor not in ACTORS:
-        return "", True            # sanalmaydigan aktyor erkin
+    actor = actor_of(actor)
+    if not actor:
+        return "", True            # o'qish asbobi erkin
     name = counter(actor, group)
     with locked():
         data = load()
@@ -310,19 +367,29 @@ def take(actor, key=None, cwd="", call_id=None, group=""):
 
 
 def hook(payload):
-    """PreToolUse: Task yoki Agent chaqiruvidagi aktyorni tekshiradi."""
+    """PreToolUse: Task, Agent yoki SendMessage dagi aktyorni tekshiradi."""
     key = (payload.get("session_id")
            or os.environ.get("CLAUDE_CODE_SESSION_ID") or "")
     cwd = norm(payload.get("cwd"))
     if payload.get("hook_event_name") == "UserPromptSubmit":
         reset(key, cwd)            # jim: bu hook chiqishi kontekstga tushadi
         return 0
-    if payload.get("tool_name") not in ("Task", "Agent"):
-        return 0
+    tool = payload.get("tool_name")
     tool_input = payload.get("tool_input") or {}
-    actor = tool_input.get("subagent_type") or ""
+    if not isinstance(tool_input, dict):
+        return 0
+    if tool in ("Task", "Agent"):
+        actor = tool_input.get("subagent_type") or ""
+        text = tool_input.get("prompt")
+    elif tool == "SendMessage":
+        actor = strip_prefix(tool_input.get("to"))
+        if actor not in ACTORS:
+            return 0               # asosiy sessiya, agentId yoki jamoa
+        text = tool_input.get("message")
+    else:
+        return 0
     message, allowed = take(actor, key, cwd, payload.get("tool_use_id"),
-                            group_of(tool_input.get("prompt")))
+                            group_of(text, cwd))
     if not allowed:
         json.dump({"hookSpecificOutput": {
             "hookEventName": "PreToolUse",
@@ -357,8 +424,11 @@ def main():
                   file=sys.stderr)
             return 2
         return restore(args[1], group)
+    if group and not registered(group, here()):
+        print("guruh %s ro'yxatda yo'q (guruh.py yarat): umumiy hisob" % group)
+        group = ""
     message, allowed = take(args[0], group=group)
-    print(message or "%s sanalmaydi (zanjir aktyori emas)" % args[0])
+    print(message or "%s sanalmaydi (o'qish asbobi)" % args[0])
     return 0 if allowed else 1
 
 

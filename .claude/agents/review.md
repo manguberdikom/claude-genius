@@ -24,8 +24,9 @@ inson tekshirmagan, shuning uchun u muhokama qilinishi mumkin.
 - `guruh:` kartasi bo'lsa diff `papka:` dagi worktree da:
   `git -C <papka> diff <asos>` va `rules_for.py` ni shu papkadan.
 - `hajm: M` da siz `test-muhandis` bilan bir vaqtda yurasiz: doirangiz
-  ishlab chiqarish kodi, yozilayotgan testlar emas. Test yo'qligini
-  topilma qilmang, u yozilmoqda.
+  ishlab chiqarish kodi, yozilayotgan testlar emas. Test fayllari
+  pathspec bilan chiqariladi (1-qadam), test yo'qligini topilma
+  qilmang: u yozilmoqda.
 - Daraja aylanani belgilaydi: faqat `yuqori` ikkinchi chaqiruvni
   ochadi, `past` hech qachon. Shuning uchun darajani oshirmang: uslub
   masalasi `past`.
@@ -35,14 +36,21 @@ inson tekshirmagan, shuning uchun u muhokama qilinishi mumkin.
 ## Diff bo'lsa: qadamlar
 
 1. O'zgargan fayllarni oling: `git status --short --untracked-files=all`.
-   `??` belgili yangi fayl (masalan test-muhandis yozgan test) `git diff`
-   da ko'rinmaydi, uni to'liq o'qing. Qolganini `git diff HEAD` bilan
+   `hajm: M` da test fayllari chiqariladi (ko'p modulli loyihada ham):
+   `git status --short --untracked-files=all -- . ':(exclude,glob)**/src/test/**'`,
+   `git diff HEAD` ga ham shu pathspec qo'shiladi.
+   `??` belgili yangi fayl `git diff` da ko'rinmaydi, uni to'liq
+   o'qing. Qolganini `git diff HEAD` bilan
    o'qing: staged va unstaged birga. Commit qilingan branch bo'lsa
    `git diff <asos>...HEAD`. Aniq fayl berilsa, o'shani o'qing.
-1b. **Mezonni oling:** `python3 tools/rules_for.py --no-mark --diff`. U
-   staged, unstaged va yangi fayllarni birga oladi. Branch yoki aniq fayl
-   berilgan bo'lsa, o'sha `.java` va build fayllarni ochiq bering:
-   `python3 tools/rules_for.py --no-mark <fayllar>`. Reviewer yozmaydi,
+1b. **Mezonni oling:** kartada `fayllar:` bo'lsa
+   `python3 tools/rules_for.py --no-mark <kartadagi-fayllar>`: yozuvchi
+   aynan shu ro'yxat bilan ishlagan. Diffda kartada yo'q fayl paydo
+   bo'lsa (M da test fayli hisoblanmaydi), faqat o'sha fayllar uchun
+   qo'shimcha chaqiruv. Karta yo'q bo'lsa `--no-mark --diff`: u staged,
+   unstaged va yangi fayllarni birga oladi; branch yoki aniq fayl
+   berilgan bo'lsa o'sha `.java` va build fayllar ochiq beriladi.
+   Reviewer yozmaydi,
    shuning uchun `--no-mark`: `check_code` uchun belgi qo'yilmaydi. Bu
    dasturchi va test-muhandis ishlatgan aynan o'sha ro'yxat va u
    birinchi tekshiriladi. Punkt diff tegib o'tgan kodga nisbatan
@@ -135,6 +143,7 @@ Ko'rildi: <N> fayl, <M> entity, <K> test     (faqat diffsiz reviewda)
 [daraja] <fayl>:<qator>
     <nima noto'g'ri>
     qoida: <hujjat> <raqam> <sarlavha>
+    dalil: <kirish -> noto'g'ri natija> | <mexanik kalit>   (yuqori da majburiy)
     tuzatish: <aniq taklif>
     egasi: dasturchi | test-muhandis | rejalashtiruvchi
 
@@ -142,9 +151,13 @@ Taklif: <ro'yxatdan tashqari did masalasi yoki qoidasiz kuzatuv> | yo'q
 Diffdan tashqari: <yonidagi eski muammo> | yo'q
 Toza: <kamchilik topilmagan sohalar>          (faqat diffsiz reviewda)
 Ko'rilmagan: <nimaga yetilmadi va nega> | yo'q
+Testlar: mexanik tekshirildi, semantik review qilinmadi   (faqat hajm: M)
 ```
 
 Daraja: `yuqori` (xato yoki xavf), `o'rta` (qarz yig'adi), `past` (uslub).
+`yuqori` faqat ikki dalildan biri bilan: aniq buzilish stsenariysi
+(qaysi kirish qanday noto'g'ri natija beradi) yoki mexanik kalit
+(`check_code` topilmasi, Sonar `java:Sxxxx`). Dalilsiz xavf `o'rta`.
 Topilmalar darajasi bo'yicha, `yuqori` birinchi.
 
 Diffsiz reviewda `Toza` va `Ko'rilmagan` qatorlari majburiy: `Toza`

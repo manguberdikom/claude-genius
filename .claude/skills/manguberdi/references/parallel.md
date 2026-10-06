@@ -47,14 +47,19 @@ guruh: orders
 papka: /abs/yo'l/app.guruh-orders
 asos: 3f2a1c9e7b10
 vazifa: <normallashtirilgan bir jumla>
-fayllar: <tegiladigan fayllar>
+hajm: M
+fayllar: <tegiladigan ishlab chiqarish fayllari>
+cheklov: <normallashtirilgan Cheklov> | yo'q
 qabul mezoni: <...>
 qarorlar: <tanlangan standartlar, qoida raqami bilan>
 test: python3 tools/run_tests.py --ildiz <papka> --asos <asos> --yurgiz
 ```
 
 `guruh:` qatori budjetni guruhga ajratadi (`budget.py`): ikki guruhning
-dasturchisi bitta hisobni yemaydi. `papka:` qatori aktyorga barcha
+dasturchisi bitta hisobni yemaydi. Id `guruh.py yarat` bilan
+ro'yxatga olingan bo'lishi shart, aks holda chaqiruv umumiy hisobga
+tushadi. `hajm`, `fayllar` va `cheklov` qatorlari umumiy topshiriq
+kartasidan (`references/aktyorlar.md`, `Topshiriq kartasi`). `papka:` qatori aktyorga barcha
 yo'llar shu papka ichida ekanini aytadi: Bash buyruqlari `cd <papka>`
 bilan, Edit va Write mutlaq yo'l bilan. Asosiy daraxtga yozish guruh
 izolyatsiyasini buzadi.
@@ -77,7 +82,10 @@ python3 tools/guruh.py tozala orders
 To'liq suite **partiyada bir marta** yuradi, guruh yoki aktyor
 bo'yicha emas. U maqsadli tanlashning xavfsizlik to'ri: yiqilgan test
 fayli qaysi guruhniki ekani `guruh.py royxat` dagi fayllardan topiladi
-va kamchilik shu guruh egasiga qaytadi (budjetning ikkinchi chaqiruvi).
+va kamchilik shu guruh egasiga qaytadi, agar egasining budjeti qolgan
+bo'lsa (ikkinchi chaqiruv). Budjeti tugagan bo'lsa (M zanjiridagi
+tuzatish aylanasi uni ishlatgan bo'lishi mumkin) yiqilgan test va
+sababi hisobotga yoziladi va shu guruh zanjiri to'xtaydi.
 
 Tozalash ikki shartdan keyin: guruhning `birlashtir` i 0 qaytargan va
 to'liq suite natijasi kelgan. Suite dan oldin tozalansa yiqilgan testni
