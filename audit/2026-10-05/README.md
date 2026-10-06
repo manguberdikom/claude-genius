@@ -861,7 +861,7 @@ Reja `ccr-bbd7652b-066u0n` branchida bajarildi. Har o'zgarish toza nusxada `run_
   - R2.1 va R2.2: suite 49-52 s dan 14-16 s ga tushdi, parallel, CI runner bilan.
   - R2.3, R2.4: qat'iy kontekst 6346 tokendan 4987 ga.
   - R2.5 ning qoida qismi, R2.6.
-- **Bosqich 3:** R3.1, R3.2 va R3.6. Holdout da find 1-o'rin 13 dan 22 ga chiqdi.
+- **Bosqich 3:** R3.1-R3.6. Holdout da find 1-o'rin 13 dan 26 ga, hook 1-o'rin 11 dan 14 ga chiqdi.
 - **Bosqich 4:** R4.3, R4.5, R4.6, R4.7. check_docs ogohlantirishlari 26 dan 5 ga tushdi.
 - **Bosqich 5:** R5.1, R5.2, R5.3 (SubagentStop hooki), R5.4, R5.5, R5.6.
 - **Bosqich 6:** R6.1-R6.6.
@@ -871,7 +871,6 @@ Reja `ccr-bbd7652b-066u0n` branchida bajarildi. Har o'zgarish toza nusxada `run_
 **Ishlab turgan, birlashtirilmagan** (`.claude/worktrees/` dagi agent branchlari, keyingi sessiyada natijasi tekshirilib birlashtiriladi):
 
 - R4.2 `verify_claims.py`: Boot deprecation, olib tashlangan API, Maven koordinata, Java, YAML va XML parse.
-- R3.3-R3.5: exception indeksi, Sonar katalog kalitlari, OWNERS uy-bob taxalluslari, sinonimlar, README tipik savollari.
 
 **Qolgan, agent qila oladi:**
 
@@ -882,7 +881,8 @@ Reja `ccr-bbd7652b-066u0n` branchida bajarildi. Har o'zgarish toza nusxada `run_
 - `.claude/worktrees` ni check_docs va test_skill skanidan chiqarish. Guruh worktree lari endi loyiha ichida turadi.
 - `doctor` ning `hook_errors.log` ni o'qishi va `install/README.md` dagi SubagentStop va worktree tavsifi.
 - CI `check` ishiga `fetch-depth: 0`: usiz `check_review` imzo tekshiruvi to'liq ishlamaydi.
-- OWNERS ning qolgan 4 ogohlantirishi (sonarqube 27.1, 27.9, 29.7, 30.8). Keyin warn dan err ga o'tish.
+- `check_owners` uy-bob endi bo'lim darajasida ekanini va OWNERS naqsh ustunini hisobga olsin: ogohlantirish 17 ta (R3.4 dan keyin oshdi). Keyin warn dan err ga o'tish.
+- `doc.sh find` exceptions indeksini ishlatsin; o'zbekcha erkin gap uchun ibora sinonimlari (hozir 12 dan 2).
 - `.claude` dagi 2 imlo varianti: `agents/review.md` va `spring-testing/SKILL.md`.
 
 **Egasining qarori yoki qo'li kerak:**
