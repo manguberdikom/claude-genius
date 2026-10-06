@@ -73,3 +73,11 @@ Kotlin yoki Lombok generatsiya qilgan metodlar	Lombok final metod yasamaydi; Kot
 mapConcurrent[^\n]{0,200}`synchronized` blok yoki pinning	JEP 491 dan (Java 24, Gatherers final bo'lgan versiya) synchronized virtual thread ni pin qilmaydi; pin native va FFM chaqiruvida qoladi	docs
 `@Where` emas|ilgari `@Where`, Hibernate 6\.3'dan deprecated\)	@Where Hibernate 7.0 da olib tashlangan; joriy nomi @SQLRestriction (6.3+)	docs
 `permits` ro'yxatini yozmasa ham bo'ladi[^\n]{0,80}paketda	permits faqat hamma subclass bitta compilation unit da bo'lsa tushiriladi (JLS 8.1.6); paket va modul sharti permits dagi sinflar uchun	docs
+# R4.6, R4.7. `nasr` qamrovi: naqsh faqat nasrda qidiriladi (kod bloki,
+# inline kod, sarlavha, ichki havola va URL chiqariladi). Sarlavhadagi
+# variant anchor bilan bog'langan va GLOSSARY ga ko'ra o'zgarmaydi.
+# Yolg'iz `nasr` docs nasri degani; boshqa qamrov bilan birga ham yoziladi.
+stsenariy|scenariy|\bsenariy	imlo: scenario o'zbekchada "ssenariy" (TL-TL4)	docs,root,nasr
+in['’]ektsiya|injeksiya|injektsiya	imlo: injection o'zbekchada "inyeksiya", GLOSSARY bilan bir xil (TL-TL4)	docs,root,nasr
+ob['’]ekt	imlo: "obyekt", korpusda 750 marta shu shakl (TL-TL4)	docs,root,nasr
+testrovshik(?![\w-]*\.md)	rus so'zi, o'rnida "tester" (TZ-T12); 04-testrovshik-... fayl nomi havolalar uchun qoldirilgan
