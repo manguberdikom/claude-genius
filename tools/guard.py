@@ -8,6 +8,7 @@ alohida hook har Bash chaqiruvida ikkinchi marta Python ishga tushirardi.
    esa ~700. Butun faylni o'qish kontekstni yoqadi, holbuki javob kichik
    bo'lakda turadi. Fayllar ro'yxati yozilmagan: har chaqiruvda o'qiladigan
    bo'lakning bayti sanaladi, shuning uchun yangi bob qo'shilsa ham ishlaydi.
+   index/ dagi TSV ham shu tartibda: u grep qilinadi, kontekstga olinmaydi.
 
 2. Pul va vaqt qimmatligi. Konteyner ko'tarish yoki bazaga ulanish bir
    necha daqiqa va katta chiqish beradi, holbuki kerakli javob ko'pincha
@@ -20,9 +21,24 @@ Avval `COST_OK=1` qochish yo'li bor edi, lekin uni modelning o'zi
 qo'yardi, ya'ni to'siq amalda o'zini-o'zi ochadigan to'siq edi. `ask`
 bilan qaror egasi almashadi va qochish yo'li kerak bo'lmaydi.
 
+Subagent ichida (payloadda `agent_id` bor) `ask` o'rniga `deny`: u yerda
+so'rov muddatsiz kutadi va butun zanjirni to'xtatadi (workflow agenti
+6 soat 20 daqiqa psql so'rovida qotib qolgan). Subagent ishni to'xtatib,
+nima kerakligini asosiy sessiyaga qaytaradi, foydalanuvchidan esa asosiy
+sessiya so'raydi. Sabab matni shuni aytadi.
+
+`flyway:clean`, `flywayClean` va `liquibase:dropAll` ham `ask`, lekin
+sababi boshqa: ular jonli bazani o'chiradi.
+
 Katta bo'lakni o'qish esa `deny` bo'lib qoladi: u kontekstni himoya
 qiladi va odam qarorini talab qilmaydi, arzon yo'l (`doc.sh show`)
 har doim bir xil.
+
+`.java` faylga Bash orqali yozish (`>`, `>>`, `tee`, `sed -i`, `perl -i`)
+ham `deny`: check_code va rules_for darvozasi faqat Edit va Write da
+ishlaydi, Bash bilan yozilgan kod undan jim o'tib ketardi. Heredoc
+tanasidagi Java matni, faylni o'qish va `> Foo.java.txt` o'tadi. Bu ham
+odatga qarshi to'siq: `python -c` bilan yozish ushlanmaydi.
 
 3. Test vaqti. To'liq suite (`./gradlew test`, `mvn verify`) 5-8 daqiqa,
    `clean`, `--rerun-tasks` va `--no-daemon` esa inkremental build va
@@ -53,8 +69,9 @@ import hookio
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Shu papkalardagi markdown fayllar kuzatiladi.
-WATCHED_DIRS = ("docs", "dist")
+# Shu papkalardagi shu kengaytmali fayllar kuzatiladi. index/ hosila,
+# lekin sections.tsv ~600 KB: uni cat qilish bobni cat qilish bilan bir xil.
+WATCHED_DIRS = {"docs": ".md", "dist": ".md", "index": ".tsv"}
 
 # Bir o'qishda bundan ko'p bayt qaytsa to'siladi. Bo'lim o'rtacha 1.7 KB,
 # eng kattasi 5.6 KB, ya'ni chegara bir necha bo'limga yetadi. Satr soni
@@ -69,8 +86,15 @@ READ_DEFAULT_LINES = 2000
 # bo'lishi mumkin. Prefiks bayrog'i qiymat olishi mumkin: `sudo -u postgres
 # psql` dagi "postgres" buyruq emas. Yangi satr ham ajratgich, shuning
 # uchun heredoc tanasi tekshiruvdan oldin olib tashlanadi (strip_heredoc).
+# `timeout` uzun buyruqni o'rashning eng tabiiy shakli: muddati majburiy,
+# `-s KILL` va `-k 5` bayrog'i esa qiymat oladi. `command` faqat bayroqsiz:
+# `command -v psql` chaqiruv emas, tekshiruv. xargs, stdbuf va ionice
+# ataylab yo'q: ular tabiiy shakl emas, faqat murakkablik qo'shadi.
 CMD = (r"(?:^|[|;&\n(]\s*|\$\(\s*|`\s*)"
        r"(?:(?:sudo|time|env|nohup|nice|exec)(?:\s+-\S+(?:\s+[^\s|;&-][^\s|;&]*)??)*\s+"
+       r"|timeout(?:\s+(?:-[sk]\s+[^\s-]\S*|--\w[\w-]*(?:=\S+)?|-(?![sk]\s)\w+))*"
+       r"\s+\d[\d.]*[smhd]?\s+"
+       r"|command\s+"
        r"|[A-Za-z_]\w*=\S*\s+)*")
 
 # Faylni boshdan oxirigacha oqizadigan buyruqlar. Argumentlar oralig'ida
@@ -84,6 +108,18 @@ PS_SLURP_RE = re.compile(CMD + r"(?:get-content|gc|type|cat)\s+([^|;&\n>]*)", re
 # Get-Content ning satr chegarasi (First va Head TotalCount taxallusi,
 # Last esa Tail taxallusi): bo'lak cheklangan, o'qish o'tadi.
 PS_BOUNDED_RE = re.compile(r"(?:^|\s)-(?:TotalCount|Head|Tail|First|Last)\b", re.I)
+
+# Bash orqali .java ga yozish: qayta yo'naltirish, tee, joyida sed/perl.
+# Nom oxirida `(?![\w.])`: `Foo.java.txt` va `Foo.javadoc` Java fayl emas.
+# perl bayrog'i `-pi`, `-0pi` ham bo'ladi, lekin `-Mstrict` emas.
+JAVA_FILE = r"[^\s|;&<>()`]*\.java['\"]?(?![\w.])"
+JAVA_WRITE_RE = re.compile(
+    r">>?\s*" + JAVA_FILE
+    + r"|" + CMD + r"tee\s+(?:[^|;&\n]*?\s)?" + JAVA_FILE
+    + r"|" + CMD + r"(?:sed|perl)\s+(?:[^|;&\n]*?\s)?"
+    r"(?:-[A-Za-z0-9]{0,2}i|--in-place)[^|;&\n]*?\s" + JAVA_FILE)
+JAVA_WRITE_HINT = ("Kichik o'zgarish uchun Edit, yangi fayl uchun Write. "
+                   "Yozishdan oldin: {rules_for} <fayl>")
 
 HEREDOC_RE = re.compile(
     r"<<-?\s*(['\"]?)(\w+)\1[^\n]*(?:\n.*?)??(?:\n[ \t]*\2[ \t]*(?=\n|$)|\Z)", re.S)
@@ -134,8 +170,10 @@ EXPENSIVE = (
 )
 
 # Gradle va Maven chaqiruvi: bajariluvchi nom va shu buyruqning qolgani.
+# `sh gradlew test` ham chaqiruv: wrapper bajariluvchi bo'lmasa shunday yoziladi.
 BUILD_RE = re.compile(
-    CMD + r"((?:[\w.~-]*[/\\])*(?:gradlew(?:\.bat)?|gradle|mvnw(?:\.cmd)?|mvn))"
+    CMD + r"(?:(?:sh|bash)\s+)?"
+    r"((?:[\w.~-]*[/\\])*(?:gradlew(?:\.bat)?|gradle|mvnw(?:\.cmd)?|mvn))"
     r"(?![\w.-])([^|;&\n]*)")
 # Gradle da test yurgizadigan vazifa: test, check, build, *Test (integrationTest).
 GRADLE_TEST_TASK = re.compile(r"(?:^|:)(?:test|check|build|\w+Test)$")
@@ -152,6 +190,12 @@ MAVEN_TEST_PHASES = {"test", "integration-test", "verify", "install",
                      "package", "deploy"}
 MAVEN_SKIP_RE = re.compile(r"^-D(?:skipTests(?:=true)?|maven\.test\.skip=true)$")
 MAVEN_FILTER_RE = re.compile(r"^-D(?:it\.)?test=\S+")
+# Migratsiya asbobining bazani tozalovchi vazifasi. Bu `clean` emas:
+# inkremental build ga emas, jonli bazaga tegadi, ya'ni qaror odamniki.
+# Gradle liquibase plaginida xuddi shu vazifa `dropAll`.
+DB_WIPE_TASKS = {"flyway:clean", "flywayClean", "liquibase:dropAll", "dropAll"}
+DB_WIPE_HINT = ("Jadval va ma'lumot qaytarib bo'lmaydigan tarzda yo'qoladi. Test uchun\n"
+                "Testcontainers bazasi yetadi, sxema uchun esa {schema} <src>.")
 
 BUILD_HINT = (
     "Arzon yo'l bitta asbob, u modulni o'zi qo'yadi va logni faylga yozadi:\n"
@@ -189,7 +233,7 @@ def build_problem(tool, args):
         if arg in valued:
             i += 2
             continue
-        if not arg.startswith("-"):
+        if not arg.startswith("-") and arg not in DB_WIPE_TASKS:
             words.append(arg)
         i += 1
     if any(w == "clean" or w.endswith(":clean") for w in words):
@@ -216,14 +260,20 @@ def check_build(command):
     filtri bo'shatilsa, maqsadli yurish filtrsiz deb to'silardi.
     strip_quoted uzunlikni saqlaydi, shuning uchun oraliq bir xil."""
     base = strip_heredoc(command)
+    wipes = []
     for match in BUILD_RE.finditer(strip_quoted(base)):
         exe = os.path.basename(match.group(1).replace("\\", "/")).lower()
         tool = "gradle" if exe.startswith("gradle") else "maven"
-        args = base[match.start(2):match.end(2)]
-        problem = build_problem(tool, split_args(args))
+        # `(cd app && ./gradlew test)`: subshell qavsi argument emas.
+        args = split_args(base[match.start(2):match.end(2)].rstrip().rstrip(")`"))
+        problem = build_problem(tool, args)
         if problem:
             what, why = problem
             decide("deny", "Test vaqti: %s.\n%s." % (what, why), BUILD_HINT)
+        wipes += [a for a in args if a in DB_WIPE_TASKS]
+    # deny dan keyin: to'liq suite ham bo'lsa, ruxsat uni ochib yubormasin.
+    if wipes:
+        ask("Jonli bazani o'chiradi: %s." % ", ".join(wipes), DB_WIPE_HINT)
 
 
 # Maslahat matnlari shablon: yo'llar to'siq paytida qo'yiladi (commands).
@@ -252,6 +302,7 @@ def commands():
     return {"doc": tool_cmd("doc.sh"),
             "schema": tool_cmd("schema_from_entities.py"),
             "run_tests": tool_cmd("run_tests.py"),
+            "rules_for": tool_cmd("rules_for.py"),
             "claude_md": claude_md}
 
 
@@ -274,14 +325,26 @@ def deny(reason):
     decide("deny", reason, HINT)
 
 
+# main() payloaddan qo'yadi: subagent ichida `ask` muddatsiz kutardi.
+IN_SUBAGENT = False
+SUBAGENT_NOTE = ("Bu qaror foydalanuvchiniki: ishni shu yerda to'xtatib, asosiy "
+                 "sessiyaga nima kerakligini va nega arzon yo'l yetmaganini qaytaring.")
+
+
 def ask(reason, hint):
-    """Pul va vaqt sarflaydi: qarorni odam qiladi."""
+    """Pul va vaqt sarflaydi: qarorni odam qiladi.
+
+    Subagentda so'rovga hech kim javob bermaydi va zanjir osilib qoladi,
+    shuning uchun u yerda `deny` va qaror asosiy sessiyaga qaytariladi.
+    """
+    if IN_SUBAGENT:
+        decide("deny", reason + "\n" + SUBAGENT_NOTE, hint)
     decide("ask", reason, hint)
 
 
 def watched_path(candidate):
-    """Kuzatiladigan papkadagi markdown faylning to'liq yo'li, aks holda None."""
-    if not candidate.endswith(".md"):
+    """Kuzatiladigan fayl (WATCHED_DIRS) ning to'liq yo'li, aks holda None."""
+    if not candidate.endswith(tuple(WATCHED_DIRS.values())):
         return None
     for base in (os.getcwd(), ROOT):
         full = os.path.normpath(os.path.join(base, candidate))
@@ -290,7 +353,8 @@ def watched_path(candidate):
         except ValueError:
             continue
         head = rel.split(os.sep)[0]
-        if head in WATCHED_DIRS and os.path.isfile(full):
+        if (head in WATCHED_DIRS and full.endswith(WATCHED_DIRS[head])
+                and os.path.isfile(full)):
             return full
     return None
 
@@ -366,8 +430,11 @@ def check_cost(command):
 
 
 def slurped(arg):
-    """Argument ko'rsatgan kuzatiladigan fayllar: qo'shtirnoq va glob bilan."""
-    arg = arg.strip("'\"")
+    """Argument ko'rsatgan kuzatiladigan fayllar: qo'shtirnoq va glob bilan.
+
+    `(cat x.md)` va `$(cat x.md)` da yopuvchi qavs argumentga yopishadi.
+    """
+    arg = arg.strip("'\"`)")
     if not any(ch in arg for ch in "*?["):
         full = watched_path(arg)
         return {full} if full else set()
@@ -380,8 +447,30 @@ def slurped(arg):
     return found
 
 
+def mask_quoted(command):
+    """Qo'shtirnoq ichidagi ajratgich va bo'sh joyni `_` ga almashtiradi.
+
+    strip_quoted dan farqi: matn qoladi. `> "src/Foo.java"` dagi nom
+    ko'rinadi, `echo 'x > Foo.java'` dagi `>` esa operator emas, sed
+    skriptidagi `;` ham buyruqni bo'lmaydi.
+    """
+    return QUOTED_RE.sub(lambda m: re.sub(r"[\s|;&<>()`]", "_", m.group(0)), command)
+
+
+def check_java_write(command):
+    """Heredoc tanasi va qo'shtirnoq ichidagi matn yozuv emas, tekshiruv
+    ulardan keyin. `cat > X.java <<EOF` qatori strip_heredoc dan keyin
+    ham qoladi."""
+    match = JAVA_WRITE_RE.search(mask_quoted(strip_heredoc(command)))
+    if match:
+        decide("deny", "Java faylni Edit yoki Write bilan yozing: check_code va "
+               "rules_for faqat shu asboblarda ishlaydi (%s)."
+               % match.group(0).lstrip(" \t\n|;&(`$").strip(), JAVA_WRITE_HINT)
+
+
 def check_bash(tool_input, powershell=False):
     command = tool_input.get("command") or ""
+    check_java_write(command)
     check_cost(command)
     check_build(command)
     regex = PS_SLURP_RE if powershell else SLURP_RE
@@ -405,6 +494,8 @@ def main():
         return  # hook hech qachon chaqiruvni o'z xatosi tufayli to'smaydi
     if not hookio.active(payload):
         return  # Java proyekti ham, klon ham emas: to'siq o'rinsiz
+    global IN_SUBAGENT
+    IN_SUBAGENT = bool(payload.get("agent_id"))
     tool_input = payload.get("tool_input") or {}
     name = payload.get("tool_name")
     if name == "Read":
