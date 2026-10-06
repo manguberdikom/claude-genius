@@ -20,6 +20,10 @@
   SUKUT (qo'shuvchi). Faqat shu birliklar almashadi:
     skills\manguberdi, agents\ dagi olti aktyor fayli va settings.json
     dagi shu klonning tools\ papkasiga ishora qilgan hook va ruxsatlar.
+  Olib tashlangan aktyor ($Retired, avvalgi .genius.json dagi, lekin
+  hozirgi ro'yxatda yo'q nom) zaxira bilan o'chiriladi. O'rnatilgan
+  commit, sana, klon, Python va aktyorlar
+  skills\manguberdi\.genius.json ga yoziladi.
   Boshqa skill, agent, CLAUDE.md, commands\, plugins\, hooks\, rules\,
   output-styles\ va settings.json dagi begona yozuvlar JOYIDA QOLADI.
   Birlashtirishni install\merge_settings.py qiladi.
@@ -65,8 +69,8 @@
   manguberdi birliklarini olib tashlaydi: settings.json dan buyrug'ida shu
   ildiz bor hooklar, shu ildizga tegishli allow, ask va deny qoidalari,
   ildiz va uning ostidagi additionalDirectories yozuvlari,
-  env.GENIUS_PYTHON, skills\manguberdi va
-  olti aktyor fayli. Begona yozuvlar qoladi. Klonning o'ziga bog'liq emas:
+  env.GENIUS_PYTHON, skills\manguberdi (.genius.json bilan),
+  olti aktyor fayli va eski aktyorlar. Begona yozuvlar qoladi. Klonning o'ziga bog'liq emas:
   -GeniusPath oddiy satr sifatida olinadi, shuning uchun klon allaqachon
   o'chirilgan bo'lsa ham ishlaydi.
 
@@ -147,6 +151,36 @@ $ConfigItems = @(
 # O'rnatiladigan aktyorlar. Skill shu nomlar bilan chaqiradi.
 $Actors = @('qidiruv', 'tahlil', 'review', 'dasturchi', 'test-muhandis',
             'rejalashtiruvchi')
+
+# Olib tashlangan yoki qayta nomlangan aktyorlar. Qo'shuvchi o'rnatish
+# begona faylga tegmaydi, shuning uchun eski nom agents\ da abadiy qolardi
+# va eski ko'rsatma bilan subagent bo'lib ko'rinardi (dab9314: arxitektor
+# dasturchi bo'ldi). Yangilash va -Uninstall ularni zaxira bilan oladi.
+$Retired = @('arxitektor')
+
+# O'rnatish manifesti: commit, sana, klon, Python va aktyorlar.
+# tools\budget.py --holat commitni klon bilan solishtiradi. Keyingi
+# yangilash avvalgi manifestdagi, lekin $Actors da yo'q aktyorni ham oladi:
+# keyingi qayta nomlash $Retired ga qo'shilishini kutmaydi.
+$ManifestPath = Join-Path $ClaudeDir 'skills\manguberdi\.genius.json'
+
+# Eski aktyorlar: $Retired va avvalgi manifestdagi, $Actors da yo'q nomlar.
+# Manifestdagi nom fayl yo'liga qo'shiladi, shuning uchun faqat harf, raqam,
+# `_` va `-`.
+function Get-StaleActors {
+  $names = @($Retired)
+  if (Test-Path -LiteralPath $ManifestPath -PathType Leaf) {
+    try {
+      $prev = [IO.File]::ReadAllText($ManifestPath) | ConvertFrom-Json
+      $prop = $prev.PSObject.Properties['actors']
+      if ($prop -and $prop.Value) { $names += @($prop.Value | ForEach-Object { [string]$_ }) }
+    } catch {
+      Write-Host "  OGOHLANTIRISH: $ManifestPath o'qilmadi, faqat `$Retired olinadi"
+    }
+  }
+  return @($names | Where-Object { $_ -match '^[\w-]+$' -and ($Actors -notcontains $_) } |
+    Select-Object -Unique)
+}
 
 # Sinov yig'imi papkasi. Fail uni tozalaydi, shuning uchun oldindan e'lon.
 $Stage = $null
@@ -366,7 +400,9 @@ if ($Uninstall) {
   $skillDir = Join-Path $ClaudeDir 'skills\manguberdi'
   $own = @()
   if (Test-Path -LiteralPath $skillDir) { $own += $skillDir }
-  foreach ($actor in $Actors) {
+  # Eski aktyorlar ham: manifest skill papkasi bilan birga o'chadi,
+  # shuning uchun ro'yxat o'chirishdan OLDIN olinadi.
+  foreach ($actor in @($Actors) + @(Get-StaleActors)) {
     $actorFile = Join-Path $ClaudeDir "agents\$actor.md"
     if (Test-Path -LiteralPath $actorFile) { $own += $actorFile }
   }
@@ -701,6 +737,15 @@ $ToRemove = @()
 if ($Update) {
   $own = @(Join-Path $ClaudeDir 'skills\manguberdi')
   foreach ($actor in $Actors) { $own += (Join-Path $ClaudeDir "agents\$actor.md") }
+  # Eski aktyor zaxiralanib o'chiriladi va qaytib o'rnatilmaydi. Ro'yxat
+  # manifest (skill papkasi ichida) o'chishidan OLDIN olinadi.
+  foreach ($actor in @(Get-StaleActors)) {
+    $stalePath = Join-Path $ClaudeDir "agents\$actor.md"
+    if (Test-Path -LiteralPath $stalePath) {
+      Step "eski aktyor: $actor (endi o'rnatilmaydi)"
+      $own += $stalePath
+    }
+  }
   foreach ($path in $own) {
     if (Test-Path -LiteralPath $path) { $ToRemove += $path }
   }
@@ -780,6 +825,30 @@ if ($Apply) {
   }
 }
 
+# Manifest skill nusxasi bilan birga yoziladi: skill o'rnatish paytidagi
+# nusxa, asboblar esa klondan jonli, shuning uchun qaysi commit
+# o'rnatilgani saqlanadi. git yo'q bo'lsa commit bo'sh qoladi.
+Step "manifest -> $ManifestPath"
+if ($Apply) {
+  $commit = ''
+  $g = Invoke-Native 'git' @('-C', $GeniusPath, 'rev-parse', 'HEAD')
+  if ($g.Code -eq 0 -and $g.Out -match '^[0-9a-f]{40}$') { $commit = $g.Out }
+  $versionFile = Join-Path $GeniusPath 'VERSION'
+  $version = ''
+  if (Test-Path -LiteralPath $versionFile -PathType Leaf) {
+    $version = ([IO.File]::ReadAllText($versionFile)).Trim()
+  }
+  $manifest = [ordered]@{
+    versiya = $version
+    commit  = $commit
+    sana    = (Get-Date).ToString('yyyy-MM-ddTHH:mm:sszzz')
+    root    = $GeniusPath.Replace('\', '/')
+    python  = $pyArg
+    actors  = @($Actors)
+  }
+  [IO.File]::WriteAllText($ManifestPath, ($manifest | ConvertTo-Json -Depth 3), $Utf8NoBom)
+}
+
 # --- 6. Sozlama ----------------------------------------------------------
 
 Say ""
@@ -829,6 +898,16 @@ $agentFiles = Get-ChildItem -LiteralPath $agentsDst -Filter '*.md' -ErrorAction 
 $agentCount = @($agentFiles).Count
 Step "aktyor fayli: $agentCount"
 if ($agentCount -lt $Actors.Count) { $ok = $false }
+
+foreach ($actor in $Retired) {
+  if (Test-Path -LiteralPath (Join-Path $agentsDst "$actor.md")) {
+    Step "XATO: eski aktyor qoldi: $actor.md"; $ok = $false
+  }
+}
+
+if (Test-Path -LiteralPath $ManifestPath -PathType Leaf) {
+  Step "manifest yozildi: $ManifestPath"
+} else { Step "XATO: manifest yozilmadi: $ManifestPath"; $ok = $false }
 
 try {
   $null = Get-Content -LiteralPath $settingsPath -Raw | ConvertFrom-Json

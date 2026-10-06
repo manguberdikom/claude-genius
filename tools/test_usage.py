@@ -15,9 +15,11 @@ daqiqalik keshda chorak barobar, 1 soatlikda 2 barobar qimmat: shuning
 uchun har bir maydon alohida tekshiriladi.
 """
 
+import datetime
 import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -116,8 +118,9 @@ def maven(folder):
 
 
 def hermetic_env(tmp, **extra):
-    """Bolalar jarayoni haqiqiy ~/.claude va repo STORE ga tegmasin."""
-    env = dict(os.environ, HOME=tmp, USERPROFILE=tmp)
+    """Bolalar jarayoni haqiqiy ~/.claude, repo STORE va holatiga tegmasin."""
+    env = dict(os.environ, HOME=tmp, USERPROFILE=tmp,
+               GENIUS_STATE_DIR=os.path.join(tmp, "state_default"))
     for name in ("CLAUDE_CONFIG_DIR", "CLAUDE_PROJECT_DIR"):
         env.pop(name, None)
     env.update(extra)   # ataylab berilgani tozalashdan ustun
@@ -180,10 +183,42 @@ def case_nol_token_narxsiz_emas():
     return U.cost("<synthetic>", dict.fromkeys(U.FIELDS, 0)) == 0.0
 
 
-def case_eng_uzun_kalit():
-    """opus-5-5 opus-5 dan ustun: qisqa kalit uzunini yutib ketmasin."""
+def case_aniq_kalit():
+    """opus-5-5 va opus-5 har biri o'z narxida: qisqa kalit uzunini yutmaydi."""
     return U.price_for("claude-opus-5-5") == (4.0, 20.0, 0.20) \
         and U.price_for("claude-opus-5") == (5.0, 25.0, 0.50)
+
+
+def case_kelgusi_versiya_narxsiz():
+    """claude-opus-5-6 opus-5 narxini OLMAYDI: oila ichida narx farq qiladi."""
+    return (U.price_for("claude-opus-5-6") is None
+            and U.price_for("claude-sonnet-5-7") is None
+            and U.cost("claude-opus-5-6", dict.fromkeys(U.FIELDS, 10)) is None)
+
+
+def case_sana_va_1m_olib_tashlanadi():
+    return (U.price_for("claude-haiku-4-5-20251001") == (1.0, 5.0, 0.10)
+            and U.price_for("claude-haiku-4-5@20251001") == (1.0, 5.0, 0.10)
+            and U.price_for("claude-opus-5-5[1m]") == (4.0, 20.0, 0.20)
+            and U.price_for("claude-opus-5-5-20260101[1m]") == (4.0, 20.0, 0.20))
+
+
+def case_provayder_prefiksi_narxsiz():
+    """Bedrock/Vertex id lari birinchi tomon narxi bilan jim narxlanmaydi."""
+    return (U.price_for("us.anthropic.claude-opus-5-5") is None
+            and U.price_for("global.anthropic.claude-haiku-4-5") is None
+            and U.price_for("opus-5-5") is None
+            and U.price_for("") is None and U.price_for(None) is None)
+
+
+def case_narx_sanasi_va_manbasi():
+    proc = subprocess.run(
+        [sys.executable, os.path.join(HERE, "usage.py"), "--jadval"],
+        capture_output=True, text=True)
+    return (re.match(r"^\d{4}-\d{2}-\d{2}$", U.PRICES_AS_OF)
+            and U.PRICES_SOURCE.startswith("https://")
+            and U.PRICES_AS_OF in proc.stdout
+            and U.PRICES_SOURCE in proc.stdout and proc.returncode == 0)
 
 
 def case_asosiy_sessiya(tmp):
@@ -483,6 +518,269 @@ def case_saqlash_hook_jim(tmp):
             and not os.path.exists(store))
 
 
+# --- Sessiya bloki, format sentineli, yig'ma va hafta ----------------------
+
+def at(day, clock):
+    return "%sT%s.000Z" % (day, clock)
+
+
+def assistant(clock, tools=(), day=DAY, usage=True, mid=None, model="claude-opus-5"):
+    """Claude Code shaklidagi assistant qatori: type, role va content bilan."""
+    message = {"model": model, "role": "assistant", "id": mid or "m" + clock,
+               "content": [{"type": "tool_use", "id": ident, "name": name,
+                            "input": dict(extra)}
+                           for ident, name, extra in tools]}
+    if usage:
+        message["usage"] = {"input_tokens": 0,
+                            "cache_creation_input_tokens": 0,
+                            "cache_read_input_tokens": 1_000_000,
+                            "output_tokens": 0}
+    return {"type": "assistant", "timestamp": at(day, clock), "message": message}
+
+
+def guard_error(clock, ident, tool="Bash"):
+    return {"type": "user", "timestamp": at(DAY, clock), "message": {
+        "role": "user", "content": [{
+            "type": "tool_result", "tool_use_id": ident, "is_error": True,
+            "content": "PreToolUse:%s hook error: Bu buyruq 40 KB" % tool}]}}
+
+
+def hook_attachment(clock, ident, name, stdout):
+    return {"type": "attachment", "timestamp": at(DAY, clock), "attachment": {
+        "type": "hook_success", "hookName": name, "toolUseID": ident,
+        "hookEvent": name.split(":")[0], "stdout": stdout, "stderr": "",
+        "exitCode": 0}}
+
+
+def sample_session(tmp, project="ps", sid="s9"):
+    """3 javob (2 oraliq 1 va 2 daqiqa, keyin 10 daqiqa tanaffus), Bash x2,
+    Agent x1, guard x1 (+ budget to'sig'i sanalmaydi), check_code x1."""
+    main_rows = [
+        assistant("10:00:00", [("t1", "Bash", {"command": "ls"})]),
+        guard_error("10:00:01", "t1"),
+        assistant("10:01:00", [("t2", "Bash", {"command": "cat x"}),
+                               ("t3", "Agent", {"subagent_type": "review"})]),
+        guard_error("10:01:01", "t3", tool="Agent"),
+        assistant("10:03:00", [("t4", "Write", {"file_path": "A.java"})]),
+        hook_attachment("10:03:01", "t4", "PostToolUse:Write",
+                        json.dumps({"decision": "block", "reason": "x"})),
+        hook_attachment("10:03:02", "t9", "PostToolUse:Write", json.dumps(
+            {"hookSpecificOutput": {"hookEventName": "PostToolUse",
+                                    "additionalContext": "eslatma"}})),
+        # Bir javobning ikkinchi qatori: tool qayta sanalmaydi.
+        assistant("10:03:00", [("t4", "Write", {"file_path": "A.java"})],
+                  mid="m10:03:00"),
+        assistant("10:13:00"),
+    ]
+    return session(tmp, project, sid, main_rows, {
+        "agent-r.jsonl": ([assistant("10:01:30", [("t5", "Read", {})])],
+                          {"agentType": "review"}),
+    })
+
+
+def case_sessiya_bloki(tmp):
+    _, main = sample_session(tmp)
+    scan = U.Scan()
+    rows, _ = U.collect(U.session_files(main), scan)
+    block = U.session_block(rows, scan, "s9")
+    # 4 javob x 1M kesh o'qish x $0.50 (opus-5) + subagent 1M = $2.50
+    return (block["faol_daqiqa"] == 3.0
+            and block["tools"] == {"Agent": 1, "Bash": 2, "Read": 1, "Write": 1}
+            and block["aktyorlar"] == {"review": 1}
+            and block["tosiqlar"] == {"guard": 1, "check_code": 1}
+            and abs(block["usd"] - 2.5) < 1e-9 and block["narxsiz"] == []
+            and block["turi"] == "monitoring" and scan.problem() is None)
+
+
+def case_guard_deny_attachment_dan(tmp):
+    """Hook natijasi attachment da deny bo'lsa ham guard to'sig'i, ask emas."""
+    deny = json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse",
+                                              "permissionDecision": "deny"}})
+    ask = deny.replace("deny", "ask")
+    path = os.path.join(tmp, "gd.jsonl")
+    write_jsonl(path, [assistant("10:00:00", [("a", "Read", {}), ("b", "Bash", {})]),
+                       hook_attachment("10:00:01", "a", "PreToolUse:Read", deny),
+                       hook_attachment("10:00:02", "b", "PreToolUse:Bash", ask)])
+    scan = U.Scan()
+    U.collect([path], scan)
+    return len(scan.blocked["guard"]) == 1
+
+
+def case_format_usage_yoq(tmp):
+    """message.usage nomi o'zgarsa: jim $0 emas, sabab."""
+    path = os.path.join(tmp, "fv1.jsonl")
+    write_jsonl(path, [assistant("10:00:00", usage=False),
+                       assistant("10:01:00", usage=False)])
+    scan = U.Scan()
+    U.collect([path], scan)
+    return "usage" in (scan.problem() or "")
+
+
+def case_format_kesh_kaliti_yoq(tmp):
+    """cache_read_input_tokens nomi o'zgarsa: narx ~65% kam chiqardi."""
+    item = assistant("10:00:00")
+    item["message"]["usage"] = {"input_tokens": 1, "cache_read_tokens": 900,
+                                "output_tokens": 1}
+    path = os.path.join(tmp, "fv3.jsonl")
+    write_jsonl(path, [item])
+    scan = U.Scan()
+    U.collect([path], scan)
+    return "cache_read_input_tokens" in (scan.problem() or "")
+
+
+def case_format_yolgon_signal_yoq(tmp):
+    """Oddiy, bo'sh va faqat foydalanuvchi qatorli fayllarda signal yo'q."""
+    empty = os.path.join(tmp, "fv0.jsonl")
+    write_jsonl(empty, [{"type": "user", "message": {"role": "user",
+                                                     "content": "salom"}}])
+    synthetic = os.path.join(tmp, "fvs.jsonl")
+    write_jsonl(synthetic, [assistant("10:00:00", usage=False,
+                                      model="<synthetic>")])
+    plain = os.path.join(tmp, "fvok.jsonl")
+    write_jsonl(plain, [row(total_read=1), assistant("10:00:00")])
+    results = []
+    for path in (empty, synthetic, plain):
+        scan = U.Scan()
+        U.collect([path], scan)
+        results.append(scan.problem())
+    return results == [None, None, None]
+
+
+def project_env(tmp, name):
+    """Soxta ~/.claude/projects/<slug> bilan to'liq jarayon muhiti."""
+    root = os.path.join(tmp, name)
+    work = maven(os.path.join(root, "work"))
+    cfg = os.path.join(root, "cfg")
+    base = os.path.join(cfg, "projects", U.slug(os.path.abspath(work)))
+    env = hermetic_env(root, CLAUDE_CONFIG_DIR=cfg, CLAUDE_PROJECT_DIR=work,
+                       USAGE_STORE=os.path.join(root, "store"),
+                       GENIUS_STATE_DIR=os.path.join(root, "state"))
+    return work, base, env
+
+
+def run_usage(args, env, cwd, payload=None):
+    return subprocess.run(
+        [sys.executable, os.path.join(HERE, "usage.py")] + args,
+        capture_output=True, text=True, cwd=cwd, env=env,
+        input=json.dumps(payload) if payload is not None else "")
+
+
+def case_format_cli_exit_3(tmp):
+    work, base, env = project_env(tmp, "fcli")
+    write_jsonl(os.path.join(base, "s1.jsonl"),
+                [assistant("10:00:00", usage=False)])
+    report = run_usage(["--hammasi"], env, work)
+    single = run_usage(["--sessiya", "s1", "--json"], env, work)
+    return (report.returncode == 3 and "FORMAT O'ZGARGAN:" in report.stdout
+            and single.returncode == 3 and "FORMAT O'ZGARGAN:" in single.stdout)
+
+
+def case_format_hook_faylga(tmp):
+    """Hook rejimida stderr emas: .claude/.state/format.json, keyin toza."""
+    work, base, env = project_env(tmp, "fhook")
+    bad = os.path.join(base, "s1.jsonl")
+    write_jsonl(bad, [assistant("10:00:00", usage=False)])
+    proc = run_usage(["--saqlash"], env, work,
+                     {"transcript_path": bad, "session_id": "s1"})
+    target = os.path.join(env["GENIUS_STATE_DIR"], "format.json")
+    if not os.path.isfile(target) or proc.returncode or proc.stdout or proc.stderr:
+        return False
+    noted = json.load(io.open(target, encoding="utf-8"))
+    good = os.path.join(base, "s2.jsonl")
+    write_jsonl(good, [assistant("10:00:00")])
+    run_usage(["--saqlash"], env, work, {"transcript_path": good, "session_id": "s2"})
+    return "usage" in noted.get("sabab", "") and not os.path.exists(target)
+
+
+def case_sessiya_cli_json(tmp):
+    """--sessiya id bo'yicha ham, yo'l bo'yicha ham bir xil blok."""
+    work, base, env = project_env(tmp, "scli")
+    _, main = sample_session(os.path.dirname(base), os.path.basename(base), "s9")
+    by_id = run_usage(["--sessiya", "s9", "--json"], env, work)
+    by_path = run_usage(["--sessiya", main, "--json"], env, work)
+    text = run_usage(["--sessiya", "s9"], env, work)
+    if by_id.returncode or by_path.returncode or text.returncode:
+        return False
+    one, two = json.loads(by_id.stdout), json.loads(by_path.stdout)
+    return (one == two and one["tosiqlar"] == {"guard": 1, "check_code": 1}
+            and "faol daqiqa: 3.0" in text.stdout)
+
+
+def case_sessiya_yigmadan(tmp):
+    """Transkript o'chgandan keyin --sessiya Stop hook yozgan blokni beradi."""
+    work, base, env = project_env(tmp, "sstore")
+    _, main = sample_session(os.path.dirname(base), os.path.basename(base), "s9")
+    run_usage(["--saqlash"], env, work, {"transcript_path": main, "session_id": "s9"})
+    before = json.loads(run_usage(["--sessiya", "s9", "--json"], env, work).stdout)
+    shutil.rmtree(os.path.join(base, "s9"))
+    os.remove(main)
+    after = run_usage(["--sessiya", "s9", "--json"], env, work)
+    if after.returncode:
+        return False
+    data = json.loads(after.stdout)
+    missing = run_usage(["--sessiya", "yoq", "--json"], env, work)
+    return (data["manba"] == "saqlangan yig'ma"
+            and data["usd"] == before["usd"] and data["tools"] == before["tools"]
+            and missing.returncode == 2)
+
+
+def case_hammasi_transkript_ochgandan_keyin(tmp):
+    """--saqlash, keyin transkript o'chadi: --hammasi jami o'zgarmaydi."""
+    work, base, env = project_env(tmp, "hall")
+    _, main = sample_session(os.path.dirname(base), os.path.basename(base), "s9")
+    run_usage(["--saqlash"], env, work, {"transcript_path": main, "session_id": "s9"})
+    before = run_usage(["--hammasi"], env, work)
+    shutil.rmtree(os.path.join(base, "s9"))
+    os.remove(main)
+    after = run_usage(["--hammasi"], env, work)
+    shutil.rmtree(base)                       # proyekt papkasi ham o'chsa
+    gone = run_usage(["--hammasi"], env, work)
+
+    def total(out):
+        found = re.search(r"== %s == \$([\d.]+)" % DAY, out)
+        return found.group(1) if found else None
+
+    return (before.returncode == after.returncode == gone.returncode == 0
+            and total(before.stdout) == total(after.stdout)
+            == total(gone.stdout) == "2.50"
+            and "saqlangan yig'ma 0 kun" in before.stdout
+            and "saqlangan yig'ma 1 kun" in after.stdout)
+
+
+def case_hafta_mediana(tmp):
+    """3 sessiya: $0.50, $1.00, $5.50 -> mediana $1.00; aktyor ulushi.
+
+    20 kun oldingi qatorlar haftaga kirmaydi."""
+    work, base, env = project_env(tmp, "week")
+    today = str(datetime.date.today())
+    old = str(datetime.date.today() - datetime.timedelta(days=20))
+    for sid, reads in (("a", 1), ("b", 2), ("c", 10)):
+        rows = [assistant("12:00:%02d" % i, day=today, mid="%s%d" % (sid, i))
+                for i in range(reads)]
+        rows.append(assistant("12:30:00", day=old, mid=sid + "old"))
+        write_jsonl(os.path.join(base, sid + ".jsonl"), rows)
+    write_jsonl(os.path.join(base, "c", "subagents", "agent-x.jsonl"),
+                [assistant("12:00:59", day=today, mid="cx")])
+    write_json(os.path.join(base, "c", "subagents", "agent-x.meta.json"),
+               {"agentType": "dasturchi"})
+    proc = run_usage(["--hafta", "--json"], env, work)
+    if proc.returncode:
+        return False
+    data = json.loads(proc.stdout)
+    text = run_usage(["--hafta"], env, work).stdout
+    share = data["aktyor_ulushi"]
+    return (data["sessiyalar"] == 3 and data["mediana_usd"] == 1.0
+            and abs(data["jami_usd"] - 7.0) < 1e-9
+            and abs(share["dasturchi"] - round(0.5 / 7, 3)) < 1e-9
+            and "mediana $/sessiya: $1.00" in text)
+
+
+def case_json_faqat_sessiya_hafta(tmp):
+    work, _, env = project_env(tmp, "jflag")
+    proc = run_usage(["--json"], env, work)
+    return proc.returncode == 2
+
+
 CASES = [
     ("narx har maydon uchun alohida", case_narx_maydon_boyicha),
     ("kesh o'qish narxi modelga xos", case_kesh_oqish_modelga_xos),
@@ -491,7 +789,11 @@ CASES = [
     ("1 soatlik kesh yozuvi yig'iladi", case_kesh_1_soat_yigiladi),
     ("noma'lum model nol emas", case_noma_lum_model_nol_emas),
     ("nol tokenli model narxsiz emas", case_nol_token_narxsiz_emas),
-    ("eng uzun model kaliti tanlanadi", case_eng_uzun_kalit),
+    ("model aniq kalit bilan narxlanadi", case_aniq_kalit),
+    ("claude-opus-5-6 narxsiz, eski narxda emas", case_kelgusi_versiya_narxsiz),
+    ("sana, @sana va [1m] olib tashlanadi", case_sana_va_1m_olib_tashlanadi),
+    ("provayder prefiksli id narxsiz", case_provayder_prefiksi_narxsiz),
+    ("PRICES_AS_OF va manba --jadval da", case_narx_sanasi_va_manbasi),
     ("asosiy sessiya alohida", case_asosiy_sessiya),
     ("aktyor parentUuid bo'yicha", case_aktyor_parent_boyicha),
     ("zanjir davomi shu aktyorga", case_zanjir_davomi),
@@ -515,6 +817,18 @@ CASES = [
     ("ikki sessiya bir-birini bosmaydi", case_ikki_sessiya_bosmaydi),
     ("hook payloaddagi sessiyani yozadi", case_saqlash_hook_payload),
     ("--saqlash jim va 0 qaytaradi", case_saqlash_hook_jim),
+    ("sessiya bloki: usd, faol daqiqa, tool, aktyor, to'siq", case_sessiya_bloki),
+    ("guard deny attachment dan, ask sanalmaydi", case_guard_deny_attachment_dan),
+    ("format: usage yo'q -> sabab", case_format_usage_yoq),
+    ("format: cache_read kaliti yo'q -> sabab", case_format_kesh_kaliti_yoq),
+    ("format: oddiy faylda yolg'on signal yo'q", case_format_yolgon_signal_yoq),
+    ("format: CLI FORMAT O'ZGARGAN va exit 3", case_format_cli_exit_3),
+    ("format: hook rejimida format.json", case_format_hook_faylga),
+    ("--sessiya --json id va yo'l bo'yicha", case_sessiya_cli_json),
+    ("--sessiya transkript o'chgach yig'madan", case_sessiya_yigmadan),
+    ("--hammasi transkript o'chgach o'zgarmaydi", case_hammasi_transkript_ochgandan_keyin),
+    ("--hafta mediana $/sessiya va aktyor ulushi", case_hafta_mediana),
+    ("--json faqat --sessiya yoki --hafta bilan", case_json_faqat_sessiya_hafta),
 ]
 
 

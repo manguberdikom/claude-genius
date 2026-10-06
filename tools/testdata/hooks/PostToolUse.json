@@ -1,0 +1,11 @@
+{
+  "session_id": "doctor-namuna",
+  "transcript_path": "${HOOKS_DIR}/transcript.jsonl",
+  "cwd": "${CLAUDE_PROJECT_DIR}",
+  "permission_mode": "default",
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Write",
+  "tool_input": {"file_path": "${HOOKS_DIR}/namuna.md", "content": "namuna\n"},
+  "tool_response": {"type": "create", "filePath": "${HOOKS_DIR}/namuna.md", "content": "namuna\n", "originalFile": null},
+  "tool_use_id": "toolu_doctor_write"
+}
