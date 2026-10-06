@@ -6,7 +6,14 @@
 
 ```bash
 git checkout 500158f732419217507c7656904b8e6aa1bcc0d6 -- src
+rm -rf .git && git init -q && git add -A && git commit -qm "boshlang'ich"
+rsync -a --exclude=.git ./ ../asl/   # baholovchi uchun asl holat
 ```
+
+Diff qo'llanmaydi: kod toza holatda. `.git` hamma vazifadagidek bitta
+commit bilan qayta yaratiladi.
+Buni `eval/ab/yurgiz.py` o'zi qiladi, yuqoridagi buyruqlar qo'lda
+takrorlash uchun.
 
 ## Prompt (ikkala holatda aynan bir xil)
 
