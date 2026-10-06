@@ -56,6 +56,24 @@ konsistentlik	consistency
 # turgandagina ishlaydi. Yolg'iz "qator" yoki "o'chirilgan" hech narsaga
 # bog'lanmaydi, shuning uchun umumiy so'z qoidasi buzilmaydi.
 o'chirilgan qator	bloat
+# Ibora: erkin o'zbekcha gap -> mavzu atamalari (R3.5). Kalit so'rovda
+# ketma-ket turgandagina ishlaydi, yolg'iz so'z hech narsaga bog'lanmaydi.
+# Nishon kamida ikki so'z: sinonim yolg'iz dalil emas, bo'lim sarlavhasida
+# ikkalasi ham turishi kerak. Har kalit uchun tools/test_suggest.py da
+# musbat va manfiy holat.
+sekin javob	circuit breaker timeout bulkhead
+ulanish tugab	connection pool
+ulanish tugadi	connection pool
+so'rov kuzatish	korrelyatsiya correlation trace
+ikki marta yaratilib	idempotentlik idempotency
+ikki marta bajarilib	idempotentlik idempotency
+bir vaqtda yangilasa	yo'qolgan yangilanish lost update
+bir vaqtda yangilansa	yo'qolgan yangilanish lost update
+ikki marta keldi	idempotent consumer idempotentlik
+baza sekin	sekin so'rov so'rovni
+ikki marta to'lov	idempotentlik idempotency
+ikki marta pul	idempotentlik idempotency
+har qator alohida	n+1 so'rov
 # [inglizcha] Inglizcha atama -> korpus sarlavhasidagi o'zbekcha yozilishi.
 # Bu blokni doc.sh find ham o'qiydi: bitta so'zli so'rovga variant
 # qo'shadi, ko'p so'zli bo'sh natijada esa tools/findlib.py ishlatadi.
@@ -81,3 +99,18 @@ entity	entitet
 injection	inyeksiya injeksiya
 consistency	izchillik konsistentlik
 # [/inglizcha]
+# [xabar] Exception xabaridan bo'lak -> sinf nomi. `doc.sh find` va
+# tools/findlib.py ni o'qiydi: stack trace dagi xabarni nomsiz yozgan
+# foydalanuvchi index/exceptions.tsv dagi bo'limga boradi. Bo'lak ko'p
+# so'zli va aynan shu istisnoga xos bo'lsin (yolg'iz "timeout" yoki
+# "not found" yo'q). Sinf nomi exceptions.tsv da bo'lishi shart:
+# tools/test_doc.py buni tekshiradi.
+could not initialize proxy	LazyInitializationException
+failed to lazily initialize	LazyInitializationException
+no qualifying bean of type	NoSuchBeanDefinitionException
+expected single matching bean	NoUniqueBeanDefinitionException
+cannot simultaneously fetch multiple bags	MultipleBagFetchException
+requested bean is currently in creation	BeanCurrentlyInCreationException
+unnecessary stubbings detected	UnnecessaryStubbingException
+row was updated or deleted by another transaction	StaleObjectStateException
+# [/xabar]

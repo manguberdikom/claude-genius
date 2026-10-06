@@ -98,10 +98,16 @@ B_SLACK = 3
 #   find  holdout topildi 30/35, 1-o'rin 22, top-3 28
 #   hook  dev     1-o'rin 15/34, top-3 18, topildi 19, aniqlik 38/87, jim 7/9
 #   hook  holdout 1-o'rin 11/27, top-3 17, topildi 17, aniqlik 34/75, jim 5/6
+# exceptions.tsv ni find ishlatgandan va erkin gap iboralari (R3.3, R3.5)
+# dan keyin (dev ga 3 ta uz-erkin qator qo'shildi: 37 ta):
+#   find  dev     topildi 30/32, 1-o'rin 28, top-3 29
+#   find  holdout topildi 32/35, 1-o'rin 27, top-3 31
+#   hook  dev     1-o'rin 24/37, top-3 29, topildi 30, aniqlik 61/110, jim 7/9
+#   hook  holdout 1-o'rin 14/27, top-3 18, topildi 18, aniqlik 37/75, jim 5/6
 FLOORS_E = {
-    ("find", "dev"): {"topildi": 27, "1-o'rin": 25, "top-3": 26},
-    ("find", "holdout"): {"topildi": 29, "1-o'rin": 21, "top-3": 27},
-    ("hook", "dev"): {"1-o'rin": 14, "top-3": 17, "jim": 6},
+    ("find", "dev"): {"topildi": 29, "1-o'rin": 27, "top-3": 28},
+    ("find", "holdout"): {"topildi": 31, "1-o'rin": 26, "top-3": 30},
+    ("hook", "dev"): {"1-o'rin": 23, "top-3": 28, "jim": 6},
     ("hook", "holdout"): {"1-o'rin": 10, "top-3": 16, "jim": 4},
 }
 

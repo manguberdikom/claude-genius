@@ -2,6 +2,7 @@
 """doc.sh find ning ko'p so'zli zaxira yo'li.
 
     python3 tools/findlib.py <so'rov>
+    python3 tools/findlib.py --exceptions <so'rov>
 
 doc.sh find butun so'rovni ibora sifatida qidiradi. "optimistic locking"
 yoki "transaction propagation" kabi so'rovda ibora hech bir sarlavhada
@@ -17,6 +18,12 @@ ikki dvigatel bir-biridan uzoqlashmasin. Ustiga uchta qo'shimcha:
     propagatsiya (doc.sh dagi qoida bilan bir xil);
   - synonyms.tsv dagi inglizcha-o'zbekcha blok: transaction -> tranzaksiya;
   - so'z boshi bo'yicha moslik: locking -> lock, testlar -> test.
+
+Exception rejimi (--exceptions): so'rovdagi exception nomi yoki
+synonyms.tsv [xabar] blokidagi xabar bo'lagi index/exceptions.tsv dagi
+bo'limlarga bog'lanadi. Mantiq hook bilan bir xil (suggest_sections.
+exception_hits), bu yerda faqat xabar bo'lagi qo'shiladi. doc.sh find
+bu qatorlarni natija boshiga qo'yadi: nom Sonar kaliti kabi aniq signal.
 
 Saralash: avval hamma so'zi topilgan yozuvlar (AND). Bunday yozuv yo'q
 bo'lsa, eng ko'p so'zi topilganlar. Ichida IDF yig'indisi bo'yicha: kamyob
@@ -43,6 +50,11 @@ CHAPTER_WEIGHT = 0.5
 ASCII_WORD = re.compile(r"^[a-z]+$")
 BLOCK_START = "# [inglizcha]"
 BLOCK_END = "# [/inglizcha]"
+# Exception xabaridan bo'lak -> sinf nomi (`could not initialize proxy` ->
+# LazyInitializationException). suggest_sections.load_synonyms bu blokni
+# o'tkazib yuboradi: nishon sarlavha so'zi emas, sinf nomi.
+MESSAGE_START = "# [xabar]"
+MESSAGE_END = "# [/xabar]"
 
 
 def translit(word):
@@ -77,6 +89,72 @@ def english_table(path=S.SYNONYMS_FILE):
     except OSError:
         pass
     return table
+
+
+def message_table(path=S.SYNONYMS_FILE):
+    """synonyms.tsv dagi [xabar] bloki: [(bo'lak so'zlari, sinf nomi)].
+
+    Bo'lak so'rov kabi tokenlanadi (kichik harf, ASCII apostrof), shuning
+    uchun matn registri va tinish belgisi moslikka xalaqit bermaydi.
+    """
+    out, inside = [], False
+    try:
+        with open(path, encoding="utf-8") as handle:
+            for line in handle:
+                line = line.rstrip("\n")
+                if line.startswith(MESSAGE_START):
+                    inside = True
+                elif line.startswith(MESSAGE_END):
+                    inside = False
+                elif inside and line and not line.startswith("#"):
+                    parts = line.split("\t")
+                    if len(parts) == 2 and S.tokens(parts[0]):
+                        out.append((S.tokens(parts[0]), parts[1].strip()))
+    except OSError:
+        pass
+    return out
+
+
+def contains_run(words, run):
+    """`run` so'zlari `words` ichida ketma-ket turibdimi."""
+    size = len(run)
+    return any(words[i:i + size] == run for i in range(len(words) - size + 1))
+
+
+def exception_names(query, table=None):
+    """So'rovdagi exception nomlari kichik harfda, tartibi bilan, takrorsiz.
+
+    Nom so'rovda to'g'ridan (FQCN ham) yoki xabar bo'lagi sifatida turadi.
+    Faqat exceptions.tsv da bor nomlar qaytadi: indeksda bo'lmagan nom
+    uchun hech narsa uydirilmaydi.
+    """
+    table = S.exception_rows() if table is None else table
+    words = S.tokens(S.clean_prompt(query))
+    names = [w for w in words if w in table]
+    for run, name in message_table():
+        if contains_run(words, run) and name.lower() in table:
+            names.append(name.lower())
+    return list(dict.fromkeys(names))
+
+
+def exception_matches(query):
+    """[(hujjat, raqam, sarlavha)] doc.sh find chiqishi uchun.
+
+    Tanlov va tartib hookdagi bilan bir xil: nom ichida exceptions.tsv
+    tartibi, bitta nom uchun S.EXC_PER_NAME ta. Nomlar so'rovdagi tartibda,
+    xabar orqali topilgani keyin.
+    """
+    table = S.exception_rows()
+    names = exception_names(query, table)
+    if not names:
+        return []
+    titles = S.titles_by_key(S.read_tsv("sections.tsv"))
+    out = []
+    for name in names:
+        for row in table[name][:S.EXC_PER_NAME]:
+            key = (row["doc"], row["section"])
+            out.append(key + (titles.get(key, ""),))
+    return out
 
 
 def word_forms(word, vocab, synonyms, table):
@@ -184,7 +262,12 @@ def search(query):
 
 def main():
     sys.stdout.reconfigure(encoding="utf-8")
-    query = " ".join(sys.argv[1:])
+    args = sys.argv[1:]
+    if args[:1] == ["--exceptions"]:
+        for doc, number, title in exception_matches(" ".join(args[1:])):
+            sys.stdout.write("%s\t%s\t%s\n" % (doc, number, title))
+        return 0
+    query = " ".join(args)
     for doc, number, title, found, total in search(query):
         sys.stdout.write("%s\t%s\t%s [so'zlar: %d/%d]\n" % (doc, number, title, found, total))
     return 0

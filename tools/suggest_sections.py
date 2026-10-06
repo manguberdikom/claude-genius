@@ -184,11 +184,18 @@ def load_synonyms():
     table = {}
     if not os.path.exists(SYNONYMS_FILE):
         return table
+    skipping = False
     with open(SYNONYMS_FILE, encoding="utf-8") as handle:
         handle.readline()
         for line in handle:
             line = line.rstrip("\n")
-            if not line or line.startswith("#"):
+            # [xabar] bloki: nishon sinf nomi, sarlavha so'zi emas
+            # (findlib.message_table o'qiydi).
+            if line.startswith("# [xabar]"):
+                skipping = True
+            elif line.startswith("# [/xabar]"):
+                skipping = False
+            if skipping or not line or line.startswith("#"):
                 continue
             parts = line.split("\t")
             if len(parts) == 2 and parts[0] and parts[1]:

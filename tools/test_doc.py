@@ -140,6 +140,29 @@ CASES = [
     ("find taxallus: deadlock detection", ["find", "deadlock detection"], 0,
      r"^architect +22\.8 "),
     ("find taxallus: long method", ["find", "long method"], 0, r"^clean-code +32\.3 "),
+    # index/exceptions.tsv: exception nomi yoki xabar bo'lagi natija boshida
+    # (R3.3). Avval LazyInitializationException dan boshqasi "topilmadi"
+    # edi, "could not initialize proxy" esa begona bo'limlarga olib borardi.
+    ("find exception: nom", ["find", "NoUniqueBeanDefinitionException"], 0,
+     r"^patterns +5\.8 "),
+    ("find exception: sarlavhada nom", ["find", "LazyInitializationException"], 0,
+     r"^architect +18\.3 "),
+    ("find exception: FQCN", ["find", "org.hibernate.LazyInitializationException"],
+     0, r"^architect +18\.3 "),
+    ("find exception: nom va so'z", ["find", "LazyInitializationException", "outside"],
+     0, r"^architect +18\.3 "),
+    ("find exception: xabar bo'lagi", ["find", "could not initialize proxy"], 0,
+     r"^architect +18\.3 "),
+    ("find exception: uzun xabar", ["find", "no Session: failed to lazily initialize "
+                                    "a collection of role: com.example.Order.items"],
+     0, r"^architect +18\.3 "),
+    ("find exception: xabar, nomsiz", ["find", "expected single matching bean but found 2"],
+     0, r"^patterns +5\.8 "),
+    # Indeksda yo'q nom uchun hech narsa uydirilmaydi.
+    ("find exception: indeksda yo'q", ["find", "NullPointerException"], 1, ""),
+    # Xabarning bir bo'lagi yetmaydi: "could not initialize" boshqa xatolarda ham bor.
+    ("find exception: qisman xabar", ["find", "could not initialize"], 0,
+     "!LazyInitializationException"),
     # synonyms.tsv [inglizcha]: entity -> entitet.
     ("find jadval: entity", ["find", "-n", "60", "entity"], 0, "28.1 Entitet"),
 
@@ -451,7 +474,36 @@ def check_byte_limit():
     return sh.group(1) == py.group(1), "doc.sh %s, guard.py %s" % (sh.group(1), py.group(1))
 
 
+def check_exception_messages():
+    """synonyms.tsv [xabar] bloki: nom indeksda bor va find uni birinchi qo'yadi.
+
+    Indeksda yo'q nomga bog'langan xabar jim o'lik qator: hech narsa
+    chiqmaydi. Bo'lak kamida uch so'z: qisqasi boshqa xatolarga ham tegadi.
+    """
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    import findlib
+    known = {}
+    for row in read_index("exceptions.tsv"):
+        known.setdefault(row[0], []).append((row[1], row[2]))
+    table = findlib.message_table()
+    bad = []
+    if not table:
+        bad.append("blok bo'sh")
+    for run_words, name in table:
+        text = " ".join(run_words)
+        if name not in known:
+            bad.append("%s: %s indeksda yo'q" % (text, name))
+            continue
+        if len(run_words) < 3:
+            bad.append("%s: uch so'zdan qisqa" % text)
+        first = run("find", text).stdout.split("\n", 1)[0].split()[:2]
+        if tuple(first) not in known[name][:2]:
+            bad.append("%s: birinchi %s" % (text, " ".join(first)))
+    return not bad, "; ".join(bad[:3])
+
+
 CHECKS = [
+    ("exception xabar jadvali", check_exception_messages),
     ("show va Read chegarasi teng", check_byte_limit),
     ("X.10 butun sinf", check_exact_refs),
     ("find maslahati apostrofda", check_find_hint),

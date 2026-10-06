@@ -245,6 +245,51 @@ SYNONYM_CASES = [
      {("architect", "21.10")}, set()),
     # Ibora so'zlari ketma-ket bo'lishi shart.
     ("o'chirilgan qator", "qatorlar o'chirilgan", None, "jim"),
+    # Erkin o'zbekcha ibora (R3.5): kalit so'rovda ketma-ket bo'lsagina ishlaydi.
+    ("sekin javob", "tashqi servis sekin javob bersa bizning servis ham qotib qolyapti",
+     {("patterns", "17.2"), ("code-review", "22.3")}, set()),
+    ("sekin javob", "javob formati qanday, sekin testlar", None,
+     {("patterns", "17.2"), ("code-review", "22.3")}),
+    ("ulanish tugab", "bazaga ulanishlar tugab qolyapti",
+     {("architect", "27.5"), ("architect", "8.4")}, set()),
+    ("ulanish tugab", "ulanish satrini yoz, vaqt tugab qoldi", None,
+     {("architect", "27.5"), ("architect", "8.4")}),
+    ("ulanish tugadi", "bazaga ulanish tugadi",
+     {("architect", "27.5"), ("architect", "8.4")}, set()),
+    ("so'rov kuzatish", "servislar orasida so'rovni kuzatish uchun umumiy id kerak",
+     {("patterns", "21.3"), ("clean-code", "29.7")}, set()),
+    ("so'rov kuzatish", "kuzatish uchun yangi so'rov yarat", None,
+     {("patterns", "21.3"), ("clean-code", "29.7")}),
+    ("ikki marta yaratilib", "bir xil buyurtma ikki marta yaratilib qolyapti",
+     {("patterns", "7.9"), ("architect", "7.5")}, set()),
+    ("ikki marta yaratilib", "ikki marta yaratilmasin deb nomlash", None,
+     {("patterns", "7.9"), ("patterns", "10.30")}),
+    ("ikki marta bajarilib", "to'lov ikki marta bajarilib ketdi",
+     {("patterns", "7.9"), ("architect", "7.5")}, set()),
+    ("ikki marta to'lov", "mijoz ikki marta to'lov qildi",
+     {("patterns", "7.9"), ("architect", "7.5")}, set()),
+    ("ikki marta to'lov", "to'lov va marta bo'yicha ikki hisobot", None,
+     {("patterns", "7.9"), ("patterns", "10.30")}),
+    ("ikki marta pul", "mijozdan ikki marta pul yechildi",
+     {("patterns", "7.9"), ("patterns", "10.30")}, set()),
+    ("ikki marta keldi", "xabar ikki marta keldi, qayta ishlanib ketyapti",
+     {("patterns", "14.18")}, set()),
+    ("ikki marta keldi", "ikki xabar keldi, marta kerak emas", None,
+     {("patterns", "14.18")}),
+    ("bir vaqtda yangilasa", "ikki foydalanuvchi bir vaqtda yangilasa biri yo'qoladi",
+     {("architect", "22.5"), ("code-review", "15.3")}, set()),
+    ("bir vaqtda yangilansa", "yozuv bir vaqtda yangilansa nima bo'ladi",
+     {("architect", "22.5"), ("code-review", "15.3")}, set()),
+    ("bir vaqtda yangilasa", "vaqtda bir yangilasa", None,
+     {("architect", "22.5"), ("code-review", "15.3")}),
+    ("baza sekin", "bazaga sekin ishlayapti, so'rovlar uzoq",
+     {("architect", "24.12")}, set()),
+    # Yolg'iz "sekin" tegilmaydi: sekin testlar boshqa mavzu.
+    ("baza sekin", "testlar sekin ishlayapti", None, {("architect", "24.12")}),
+    ("har qator alohida", "har qatorga alohida so'rov ketyapti",
+     {("architect", "18.4")}, set()),
+    ("har qator alohida", "alohida qator, har xil so'rov", None,
+     {("architect", "18.4"), ("patterns", "25.43")}),
 ]
 # Sinonim faqat qidiruvni kengaytiradi: kengaytma darajasidagi holatlar
 # (so'rov, kutilgan nishon, bo'lmasligi kerak nishon).
@@ -255,6 +300,10 @@ EXPAND_CASES = [
     ("o'chirilgan qatorlar", "bloat", None),
     ("o'chirilgan fayl", None, "bloat"),
     ("qatorlar o'chirilgan", None, "bloat"),
+    ("bazaga ulanishlar tugab qolyapti", "pool", None),
+    ("ulanishlar qolyapti tugab", None, "pool"),
+    ("tashqi servis sekin javob bersa", "bulkhead", None),
+    ("servis javob sekin", None, "bulkhead"),
 ]
 
 # Ishora-yozuv (sections.tsv `ishora` ustuni to'la) to'liq yozuvni
@@ -496,8 +545,14 @@ def invariant_cases():
                     for row in S.read_tsv("sections.tsv")
                     if row.get("ishora") and (row["doc"], row["section"]) in
                     {(h[0], h[1]) for h in S.suggest(row["title"])})
+    # [xabar] bloki exception xabari jadvali, sinonim emas: uning kaliti
+    # (`could not initialize proxy`) kengaytmaga kirmasin.
+    leaked_msg = [key for key in S.load_synonyms()
+                  if key.startswith(("could not initialize", "expected single"))]
     return [("sinonim nishonlari sarlavhalarda bor", not missing,
              ", ".join(missing[:5]) or "hammasi bor"),
+            ("[xabar] bloki sinonimga aralashmaydi", not leaked_msg,
+             ", ".join(leaked_msg) or "aralashmagan"),
             ("ishora-yozuv taklif qilinmaydi", not leaked,
              ", ".join(leaked) or "hech biri")]
 

@@ -74,6 +74,21 @@ ensure_index() {
 
 # ---------------------------------------------------------------- find
 
+# Ko'p so'zli so'rovda synonyms.tsv [xabar] bloki bo'lagidan biri bor
+# bo'lsagina Python chaqiriladi: har ibora so'rovi (circuit breaker) ~80 ms
+# qo'shimcha to'lamasin. Qo'pol tekshiruv (kichik harf, qism satr): oxirgi
+# so'zni findlib.py o'zi tokenlab hal qiladi, bu yerda faqat prefiltr.
+message_cue() {
+  [ -f "$SYNONYMS" ] || return 1
+  awk -F'\t' -v q="$1" '
+    BEGIN { q = tolower(q) }
+    index($0, "# [xabar]") == 1 { inside = 1; next }
+    index($0, "# [/xabar]") == 1 { inside = 0; next }
+    inside && NF == 2 && substr($0, 1, 1) != "#" && index(q, $1) > 0 { found = 1; exit }
+    END { exit found ? 0 : 1 }
+  ' "$SYNONYMS"
+}
+
 cmd_find() {
   local full=0 limit=$LIMIT_DEFAULT
   local -a words=()
@@ -104,6 +119,21 @@ cmd_find() {
   # Nom bo'yicha qidiruv (name_hits), kerak bo'lsa matn ichidan ham.
   # Izoh shu yerda, chunki bash 3.2 (macOS standarti) buyruq o'rnidagi
   # izohni sintaksis deb o'qiydi.
+  # Exception nomi yoki xabar bo'lagi (index/exceptions.tsv) natija
+  # boshida: nom Sonar kaliti kabi aniq signal, shuning uchun uni umumiy
+  # nom moslig'i (taxallus, "Lock" ichidagi "ReentrantLock") siqib
+  # chiqarmasin. Python faqat nom (Exception/Error) yoki ko'p so'zli
+  # so'rovda (xabar bo'lagi) chaqiriladi: bir so'zli oddiy qidiruv
+  # tezligi o'zgarmaydi. Python yo'q yoki yiqilsa, avvalgidek.
+  local exc="" py_exc query_has_no_cue=""
+  case "$query" in
+    *[Ee]xception*|*[Ee]rror*) ;;
+    *" "*) message_cue "$query" || query_has_no_cue=1 ;;
+    *) query_has_no_cue=1 ;;
+  esac
+  if [ -z "${query_has_no_cue:-}" ] && py_exc="$(pick_python)"; then
+    exc="$("$py_exc" "$ROOT/tools/findlib.py" --exceptions "$query" 2>/dev/null || true)"
+  fi
   local raw
   raw="$(name_hits "$query")"
 
@@ -121,9 +151,12 @@ $(fulltext "$query")"
   # nazari so'zlar bo'yicha qo'shiladi. Naqshga to'liq mos uy-bob
   # birinchi qoladi, qisman mos kelgani (4-ustun `qisman`: "N+1 testda")
   # so'zlar natijasidan keyin, chunki ortiqcha so'z mavzuni toraytiradi.
+  # Exception topilgan bo'lsa zaxira ishlamaydi: nom aniq signal, so'zlar
+  # bo'yicha qo'shilgan begona bo'limlar uni suyultirardi.
   # Python topilmasa yoki yiqilsa, avvalgidek "topilmadi".
   local py extra
-  if [ -z "$(printf '%s\n' "$out" | cut -f3 | grep -v '\[uy-bob\]$' || true)" ] \
+  if [ -z "$exc" ] \
+      && [ -z "$(printf '%s\n' "$out" | cut -f3 | grep -v '\[uy-bob\]$' || true)" ] \
       && [ "$(printf '%s\n' "$query" | awk '{ print NF }')" -ge 2 ] \
       && py="$(pick_python)"; then
     extra="$("$py" "$ROOT/tools/findlib.py" "$query" 2>/dev/null || true)"
@@ -134,6 +167,13 @@ $(fulltext "$query")"
                 printf '%s\n' "$out" | awk -F'\t' '$4 == "qisman"'; } \
               | awk -F'\t' 'NF && !seen[$1"\t"$2]++')"
     fi
+  fi
+
+  # Exception qatorlari hammadan oldin; ular yuqoridagi so'zlar zaxirasiga
+  # xalaqit bermaydi (xabar bo'lagi bo'yicha topilgan bitta bo'lim butun
+  # so'rovni yopib qo'ymasin).
+  if [ -n "$exc" ]; then
+    out="$(printf '%s\n%s\n' "$exc" "$out" | awk -F'\t' 'NF && !seen[$1"\t"$2]++')"
   fi
 
   if [ -z "$out" ]; then

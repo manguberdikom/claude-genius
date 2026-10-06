@@ -26,6 +26,9 @@ u09	holdout	uz-erkin	foydalanuvchi parolini bazada qanday saqlash kerak	patterns
 u10	holdout	uz-erkin	pul summasini hisoblashda tiyinlar yo'qolib ketyapti	clean-code:20.1 clean-code:20.2 sonarqube:25.7 architect:25.2 patterns:13.35 code-review:14.3 clean-code:20.7
 u11	holdout	uz-erkin	metod ichida juda ko'p ichma-ich if bor, o'qish qiyin	sonarqube:27.4 sonarqube:27.1 sonarqube:27.11 clean-code:6.3 clean-code:6.4 code-review:5.5 sonarqube:15.1
 u12	dev	uz-erkin	servislar orasida bitta so'rovni kuzatish uchun umumiy id kerak	patterns:21.3 patterns:15.21 clean-code:29.7 patterns:21.17
+u13	dev	uz-erkin	broker xabarni ikki marta keldi, qayta ishlanib ketyapti, nima qilish kerak	patterns:14.18 architect:29.7
+u15	dev	uz-erkin	bitta sahifa ochilganda har qatorga alohida so'rov ketyapti	architect:18.4 patterns:25.43 patterns:9.27
+u16	dev	uz-erkin	baza sekin ishlayapti, qayerdan boshlayman	architect:24.12 architect:27.11 architect:14.11
 e01	holdout	en	how to size HikariCP maximum pool size	architect:27.5 architect:8.4 patterns:9.30 patterns:25.46 code-review:16.8 architect:27.6
 e02	dev	en	optimistic locking with @Version in JPA	architect:18.8 patterns:9.23 testing:11.8 code-review:27.4
 e03	dev	en	when should I use REQUIRES_NEW propagation	architect:19.2 code-review:19.4
