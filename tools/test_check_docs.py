@@ -91,12 +91,12 @@ FILES = {
     # 8. Regressiya naqshlari. Fixture da ataylab ikki qator: biri oddiy
     # so'z, biri kontekstli (naqsh to'g'ri matnni tutmasligi sinaladi).
     "tools/sonar_rules.tsv": ("# sana: 2026-01-01\n"
-                              "kalit\ttur\tdaraja\tscope\tsarlavha\n"
-                              "S109\tCODE_SMELL\tMajor\tMain\tMagic numbers\n"
+                              "kalit\ttur\tdaraja\tscope\n"
+                              "S109\tCODE_SMELL\tMajor\tMain\n"
                               "S2259\ttekshirilmadi\ttekshirilmadi"
-                              "\ttekshirilmadi\t\n"
+                              "\ttekshirilmadi\n"
                               "S9999\ttekshirilmadi\ttekshirilmadi"
-                              "\ttekshirilmadi\t\n"),
+                              "\ttekshirilmadi\n"),
     "docs/review.tsv": ("hujjat\tbob\tholat\tsana\ttekshiruvchi"
                         "\tmanbalar\txatolar\tizoh\n"
                         "sinov\t1\tai-draft\t\t\t0\t0\t\n"

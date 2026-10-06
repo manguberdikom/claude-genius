@@ -131,6 +131,16 @@ To'liq qoidalar: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Litsenziya
 
-Matn (.md fayllar): [CC BY 4.0](LICENSE). Kod misollari va .md bo'lmagan
-barcha fayllar (`tools/`, `install/`, `.claude/settings.json`):
-[MIT](LICENSE-CODE).
+SPDX: `CC-BY-4.0 AND MIT`. Ikki litsenziya, qamrovi fayl turi bo'yicha:
+
+| Nima | Litsenziya |
+|---|---|
+| Hujjat matni: `docs/` dagi boblar, ildizdagi va `install/` dagi `.md` hujjatlar | [CC BY 4.0](LICENSE) |
+| `.md` ichidagi kod misollari (kod bloki, undagi izoh ham) | [MIT](LICENSE-CODE) |
+| `.md` bo'lmagan barcha fayllar: `tools/`, `install/`, `.github/`, `.claude/settings.json` | [MIT](LICENSE-CODE) |
+| Funksional `.md`: `.claude/skills/`, `.claude/agents/`, `memory/`, `CLAUDE.md` | [MIT](LICENSE-CODE) |
+
+`LICENSE` va `LICENSE-CODE` litsenziyaning kanonik matnini saqlaydi,
+qamrov faqat shu jadvalda. Bo'limni nusxalaganda nasr uchun CC BY
+atributi (manba va litsenziya havolasi) yetadi, kod bloki esa MIT
+bildirishnomasi bilan olinadi.
