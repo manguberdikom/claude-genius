@@ -65,3 +65,11 @@ orderNumber\.equals\(other\.orderNumber\)	Hibernate proxy maydoni bo'sh, equals 
 messaging\.support\.MessageHandler	MessageHandler interfeysi org.springframework.messaging paketida, support da emas	docs
 Kotlin yoki Lombok generatsiya qilgan metodlar	Lombok final metod yasamaydi; Kotlin da final standart, yechim kotlin("plugin.spring") (allopen)	docs
 @Where`?/filter	@Where Hibernate 7.0 da olib tashlangan; @SQLRestriction (6.3+) yoki @Filter	docs
+(?s)-Xplugin:ErrorProne(?:(?!add-exports|```).)*```(?:(?!add-exports)(?!\n## ).)*\n## 	JDK 16+ da Error Prone uchun .mvn/jvm.config dagi --add-exports va --add-opens shart; Maven misoli bo'lim ichida shu eslatmasiz turmasin	docs
+(?m)org\.testcontainers:(junit-jupiter|postgresql|kafka|mongodb|localstack|toxiproxy|mysql|mariadb|rabbitmq|elasticsearch)\b(?:(?!testcontainers-)[^\n])*$	Testcontainers 2.x (Boot 4) da modul nomi testcontainers- prefiksli; eski artifactId Boot 3.5 / TC 1.x belgisi va 2.x varianti bilan yoziladi	docs
+(?m)^(?!server\.error)(?:(?!spring\.web\.error)[^\n])*server\.error\.include(?:(?!spring\.web\.error)[^\n])*$	Boot 4 da server.error.include-* o'rnida spring.web.error.include-* (4.1.0 metadata da level=error); eski kalit Boot 4 eslatmasisiz turmasin	docs
+(?s)```properties(?:(?!```|spring\.web\.error).)*\nserver\.error\.include	Boot 4 da server.error.include-* o'rnida spring.web.error.include-* (level=error); properties blokida Boot 4 izohi bo'lishi kerak	docs
+(?<!ilgari )RFC 7807(?!'ni| ni)	RFC 9457 2023 da 7807 ni almashtirgan; joriy raqam 9457, 7807 faqat "almashtirgan" izohi bilan	docs
+mapConcurrent[^\n]{0,200}`synchronized` blok yoki pinning	JEP 491 dan (Java 24, Gatherers final bo'lgan versiya) synchronized virtual thread ni pin qilmaydi; pin native va FFM chaqiruvida qoladi	docs
+`@Where` emas|ilgari `@Where`, Hibernate 6\.3'dan deprecated\)	@Where Hibernate 7.0 da olib tashlangan; joriy nomi @SQLRestriction (6.3+)	docs
+`permits` ro'yxatini yozmasa ham bo'ladi[^\n]{0,80}paketda	permits faqat hamma subclass bitta compilation unit da bo'lsa tushiriladi (JLS 8.1.6); paket va modul sharti permits dagi sinflar uchun	docs

@@ -165,6 +165,8 @@ NullAway esa Error Prone ustida ishlaydigan tekshiruv. U `@Nullable` annotatsiya
 </plugin>
 ```
 
+JDK 16+ da bu blokning o'zi yetmaydi: Error Prone `jdk.compiler` ning yopiq ichki paketlariga murojaat qiladi va `.mvn/jvm.config` dagi `--add-exports`/`--add-opens` qatorlarisiz build `IllegalAccessError` bilan yiqiladi. Qatorlar ro'yxati, fork rejimidagi `-J` varianti va Error Prone ning JDK talabi [toza kod hujjatidagi kompilyator ogohlantirishlari va Error Prone bo'limida](../clean-code/25-java-kodidagi-umumiy-tuzoqlar.md#2510-kompilyator-ogohlantirishlari--xlint--werror-error-prone-nullaway).
+
 To'lov servisidagi tipik holat: repository `Optional` emas, `null` qaytaradi, chaqiruvchi esa darhol metod chaqiradi. Sonar bunda ba'zan jim qoladi, chunki `null` boshqa klassdan keladi. NullAway uchun bu kompilyatsiya xatosi, chunki `@Nullable` qaytish tipi tekshirilmagan. Tuzatish: `Optional<Payment>` ga o'tish yoki `null` ni tekshirib, domen xatosini tashlash.
 
 Joriy qilish strategiyasi muhim. Hamma tekshiruvni darhol `ERROR` qilsangiz loyiha kompilyatsiya bo'lmaydi. Avval `-Xep:AllChecks:WARN` bilan ko'ring, keyin eng qimmat besh-o'n tekshiruvni `ERROR` ga ko'taring.

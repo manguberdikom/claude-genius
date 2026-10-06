@@ -304,6 +304,8 @@ Amaliy tanlov: minimal to'plam - Spotless (format), Error Prone + NullAway (komp
 </plugin>
 ```
 
+JDK 16+ da bu blokning o'zi yetmaydi: Error Prone `jdk.compiler` ning yopiq ichki paketlariga murojaat qiladi va `.mvn/jvm.config` dagi `--add-exports`/`--add-opens` qatorlarisiz build `IllegalAccessError` bilan yiqiladi. Qatorlar ro'yxati, fork rejimidagi `-J` varianti va Error Prone ning JDK talabi [toza kod hujjatidagi kompilyator ogohlantirishlari va Error Prone bo'limida](../clean-code/25-java-kodidagi-umumiy-tuzoqlar.md#2510-kompilyator-ogohlantirishlari--xlint--werror-error-prone-nullaway).
+
 Qoidalarni bosqichma-bosqich kiriting: avval hammasini `WARN` darajasida yoqing, ogohlantirishlar sonini baseline qilib oling, so'ng eng ko'p real xato beradigan 10-15 qoidani `ERROR` ga ko'taring. NullAway'ni esa butun kodga birdan emas, `AnnotatedPackages` ni bitta moduldan boshlab kengaytiring.
 
 ## 14.9 SonarQube quality gate
