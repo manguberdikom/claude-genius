@@ -11,9 +11,10 @@
     python3 tools/run_tests.py --isit                  # fonda oldindan kompilyatsiya
     python3 tools/run_tests.py --hisobot               # test vaqti jurnali, 7 kun
 
-Chiqish kodi: 0 yashil, 1 yiqildi, 3 vaqt tugadi, 4 beqaror (yiqilgan
-sinf qayta yurishda o'tdi: o'zgarish emas, flaky ehtimoli, lekin yashil
-ham emas).
+Chiqish kodi: 0 yashil, 1 yiqildi, 2 noto'g'ri kirish (loyiha yo'q,
+`--asos` commit emas, `--log` temp yoki loyihadan tashqarida), 3 vaqt
+tugadi, 4 beqaror (yiqilgan sinf qayta yurishda o'tdi: o'zgarish emas,
+flaky ehtimoli, lekin yashil ham emas).
 
 Nega: to'liq suite 5-8 daqiqa, aktyor esa uni 2-4 marta yurgizardi.
 Sabab faqat odat emas. Ko'p modulli Gradle da `test --tests X` X yo'q
@@ -175,9 +176,13 @@ def relative_to(path, root):
 
 
 def run_git(root, *args):
+    """git chiqishi yoki None. Kodirovka aniq: Windows da sukut cp1252
+    non-ASCII yo'lni buzar yoki UnicodeDecodeError berardi;
+    surrogateescape UTF-8 bo'lmagan nomni ham yo'qotmaydi."""
     try:
         out = subprocess.run(["git", "-C", root] + list(args),
-                             capture_output=True, text=True, timeout=60)
+                             capture_output=True, text=True, encoding="utf-8",
+                             errors="surrogateescape", timeout=60)
     except (OSError, subprocess.SubprocessError):
         return None
     return out.stdout if out.returncode == 0 else None
@@ -188,7 +193,9 @@ def project_root(start):
     top = run_git(start, "rev-parse", "--show-toplevel")
     if top and top.strip():
         return os.path.realpath(os.path.normpath(top.strip()))
-    path = os.path.abspath(start)
+    # Yuqoriga realpath dan yuriladi: symlink yoki Windows qisqa nomi
+    # orqali kirilganda ham ildiz (demak log_path kaliti) bitta bo'lsin.
+    path = os.path.realpath(os.path.abspath(start))
     while True:
         if any(os.path.exists(os.path.join(path, n)) for n in
                ("settings.gradle", "settings.gradle.kts", "pom.xml",
@@ -394,35 +401,106 @@ def is_output(path):
     return any(part in OUTPUT_DIRS for part in parts)
 
 
+def name_status(output):
+    """`diff --name-status -z` chiqishi: (status, [yo'l]) juftlari.
+
+    NUL bo'yicha: status tokeni, keyin R va C uchun 2 yo'l (eski, yangi),
+    qolganlariga 1 yo'l. -z siz git non-ASCII nomni qo'shtirnoq va oktal
+    bilan berardi va fayl os.path.exists filtrida jim tushib qolardi.
+    """
+    tokens = (output or "").split("\0")
+    pairs, i = [], 0
+    while i < len(tokens):
+        status = tokens[i]
+        if not status:
+            i += 1
+            continue
+        count = 2 if status[:1] in ("R", "C") else 1
+        paths = [p for p in tokens[i + 1:i + 1 + count] if p]
+        i += 1 + count
+        if paths:
+            pairs.append((status, paths))
+    return pairs
+
+
+def git_changes(root, base, relative):
+    """([(status, yo'llar)], [untracked]): base...HEAD, HEAD va yangi fayllar.
+
+    relative=True: faqat ildiz ichi, yo'l ildizga nisbatan. False: butun
+    repo, yo'l git ildiziga nisbatan.
+    """
+    scope = ["--relative"] if relative else []
+    pairs = []
+    for spec in (["%s...HEAD" % base] if base else []) + ["HEAD"]:
+        pairs += name_status(run_git(root, "diff", "--name-status", "-z", *(scope + [spec])))
+    untracked = run_git(root, "ls-files", "-z", "--others", "--exclude-standard",
+                        *([] if relative else ["--full-name", ":/"]))
+    return pairs, [p for p in (untracked or "").split("\0") if p]
+
+
+def outside_root(root, base=None):
+    """Diffdagi, lekin --ildiz dan tashqaridagi fayllar soni.
+
+    Build ildizi git ildizidan pastda bo'lsa (monorepo, `--ildiz backend`)
+    `--relative` faqat ildiz ichini beradi; qolgani shu yerda sanaladi.
+    Ildiz git ildizining o'zi bo'lsa tashqari yo'q, diff qayta olinmaydi.
+    """
+    prefix = (run_git(root, "rev-parse", "--show-prefix") or "").strip()
+    if not prefix:
+        return 0
+    pairs, untracked = git_changes(root, base, relative=False)
+    paths = {p for _, items in pairs for p in items} | set(untracked)
+    return sum(1 for p in paths if not p.startswith(prefix))
+
+
 def changed_files(root, base=None):
-    """(bor fayllar, o'chirilganlar), ildizga nisbatan."""
+    """(bor fayllar, o'chirilganlar), ildizga nisbatan.
+
+    `--relative`: build ildizi git ildizidan pastda bo'lsa ham yo'l ildizga
+    nisbatan keladi. Busiz `backend/...` yo'li ildizga ulanib yo'q fayl
+    bo'lardi va o'zgarish "yo'q" deb rc 0 qaytardi. `base` verify_base dan
+    o'tgan commit: git ga bayroq bo'lib o'tolmaydi.
+    """
     existing, deleted = [], []
-
-    def add(output):
-        for line in (output or "").splitlines():
-            parts = line.split("\t")
-            if len(parts) < 2:
-                continue
-            status, paths = parts[0], parts[1:]
-            if status.startswith("D"):
-                deleted.append(rel(paths[-1]))
-            elif status.startswith("R"):
-                deleted.append(rel(paths[0]))
-                existing.append(rel(paths[-1]))
-            else:
-                existing.append(rel(paths[-1]))
-
-    if base:
-        add(run_git(root, "diff", "--name-status", "%s...HEAD" % base))
-    add(run_git(root, "diff", "--name-status", "HEAD"))
-    for line in (run_git(root, "ls-files", "--others", "--exclude-standard") or "").splitlines():
-        if line.strip():
-            existing.append(rel(line.strip()))
+    pairs, untracked = git_changes(root, base, relative=True)
+    for status, paths in pairs:
+        if status.startswith("D"):
+            deleted.append(rel(paths[-1]))
+        elif status.startswith("R"):
+            deleted.append(rel(paths[0]))
+            existing.append(rel(paths[-1]))
+        else:
+            existing.append(rel(paths[-1]))
+    existing += [rel(p) for p in untracked]
     keep = lambda items: list(OrderedDict.fromkeys(
         p for p in items if not is_output(p)))
     existing = keep(p for p in existing if os.path.exists(os.path.join(root, p)))
     deleted = keep(p for p in deleted if p not in existing)
     return existing, deleted
+
+
+def verify_base(root, base):
+    """--asos ni commit hash iga aylantiradi, bo'lmasa None.
+
+    `-` bilan boshlangan qiymat git ga bayroq bo'lib o'tardi
+    (`--asos=--output=<fayl>` fayl yaratardi), shuning uchun rad etiladi.
+    `--end-of-options` qolganini ham faqat ref deb o'qitadi (git 2.24+).
+    """
+    if not base or base.startswith("-"):
+        return None
+    out = run_git(root, "rev-parse", "--verify", "--quiet", "--end-of-options",
+                  "%s^{commit}" % base)
+    return out.strip() if out and out.strip() else None
+
+
+def inside(path, folder):
+    """`path` realpath bo'yicha `folder` ichidami (Windows da registrsiz)."""
+    full = os.path.normcase(os.path.realpath(os.path.abspath(path)))
+    top = os.path.normcase(os.path.realpath(folder))
+    try:
+        return os.path.commonpath([full, top]) == top
+    except ValueError:          # Windows: boshqa disk
+        return False
 
 
 # -- tanlash -------------------------------------------------------------------
@@ -1408,6 +1486,12 @@ def main(argv=None):
         return report(max(1, args.kun))
     root = (os.path.realpath(os.path.abspath(args.ildiz)) if args.ildiz
             else project_root(os.getcwd()))
+    # Log build chiqishi bilan qayta yoziladi: ixtiyoriy yo'l (~/.bashrc,
+    # manba fayl) shu chiqish bilan almashardi. Faqat temp yoki loyiha.
+    if args.log and not (inside(args.log, tempfile.gettempdir()) or inside(args.log, root)):
+        print("--log faqat temp papka (%s) yoki loyiha (%s) ichida bo'ladi: %s"
+              % (tempfile.gettempdir(), root, args.log), file=sys.stderr)
+        return 2
     project = Project(root)
     if project.tool is None:
         print("Gradle yoki Maven loyihasi topilmadi: %s" % root)
@@ -1442,7 +1526,17 @@ def main(argv=None):
             deleted = [p for p in existing if not os.path.exists(os.path.join(root, p))]
             existing = [p for p in existing if p not in deleted]
         elif args.diff or args.asos:
-            existing, deleted = changed_files(root, args.asos)
+            base = None
+            if args.asos:
+                base = verify_base(root, args.asos)
+                if base is None:
+                    print("--asos commit emas yoki '-' bilan boshlanadi: %s" % args.asos,
+                          file=sys.stderr)
+                    return 2
+            existing, deleted = changed_files(root, base)
+            outside = outside_root(root, base)
+            if outside:
+                print("Eslatma: %d fayl --ildiz dan tashqarida, hisobga olinmadi" % outside)
         else:
             parser.print_usage()
             print("fayl, --diff, --asos yoki --hammasi kerak", file=sys.stderr)
