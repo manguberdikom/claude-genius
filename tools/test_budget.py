@@ -270,8 +270,9 @@ def case_boshqa_asbob_tegilmaydi(_):
 
 
 def case_notanish_aktyor(_):
-    """Notanish nom erkin emas: `boshqa` hisobiga chegara bilan."""
+    """Notanish nom erkin emas: zanjir faol bo'lsa `boshqa` chegara bilan."""
     fresh()
+    run("dasturchi")
     first = run("yoq-aktyor")
     second = run("yoq-aktyor")
     code, out = run("yoq-aktyor")
@@ -280,12 +281,21 @@ def case_notanish_aktyor(_):
 
 
 def case_umumiy_subagent_boshqa(_):
-    """general-purpose va nomsiz Agent bitta `boshqa` hisobida."""
+    """Zanjir faol bo'lsa general-purpose va nomsiz Agent bitta `boshqa` hisobida."""
     fresh()
+    hook("Agent", "dasturchi")
     got = [hook("Agent", "general-purpose"), hook("Agent", ""),
            hook("Agent", "general-purpose")]
     calls = state()["sessions"][SESSION]["calls"]
-    return got == ["allow", "allow", "deny"] and calls == {"boshqa": 2}
+    return got == ["allow", "allow", "deny"] and calls == {"dasturchi": 1, "boshqa": 2}
+
+
+def case_zanjirsiz_boshqa_tosilmaydi(_):
+    """manguberdi ishlatilmasa general-purpose sanaladi, lekin to'silmaydi."""
+    fresh()
+    got = [hook("Agent", "general-purpose") for _ in range(4)]
+    calls = state()["sessions"][SESSION]["calls"]
+    return got == ["allow"] * 4 and calls == {"boshqa": 4}
 
 
 def case_explore_erkin(_):
@@ -521,6 +531,7 @@ CASES = [
     ("boshqa asbob tegilmaydi", case_boshqa_asbob_tegilmaydi),
     ("notanish aktyor boshqa hisobida", case_notanish_aktyor),
     ("general-purpose boshqa hisobida", case_umumiy_subagent_boshqa),
+    ("zanjirsiz general-purpose to'silmaydi", case_zanjirsiz_boshqa_tosilmaydi),
     ("Explore erkin", case_explore_erkin),
     ("manguberdi: prefiksi kesiladi", case_manguberdi_prefiksi),
     ("begona prefiks review emas", case_boshqa_prefiks_review_emas),

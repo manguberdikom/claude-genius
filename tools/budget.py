@@ -42,8 +42,10 @@ aylanib o'tilardi.
 Zanjirdagi to'rtta aktyor sanaladi. `qidiruv`, `tahlil` va `Explore`
 sanalmaydi: ular zanjir qadami emas, o'qish asbobi, va ularni cheklash
 arzon yo'lni qimmat qiladi. Qolgan har qanday subagent (general-purpose,
-boshqa plaginning agenti) `boshqa` hisobiga xuddi shu chegara bilan
-tushadi: aks holda aktyor ishi nomsiz agent orqali cheksiz yurardi.
+boshqa plaginning agenti) `boshqa` hisobiga tushadi. Chegara unga faqat
+shu so'rovda zanjir aktyori chaqirilgan bo'lsa qo'llanadi: aks holda
+aktyor ishi nomsiz agent orqali cheksiz yurardi. Zanjirsiz oddiy ishda
+general-purpose agent sanaladi, lekin to'silmaydi.
 Nomdan faqat `manguberdi:` prefiksi kesiladi; `boshqa-plugin:review`
 bu loyihaning `review` budjetini yemaydi.
 """
@@ -336,6 +338,11 @@ def blocked(actor, used, group=""):
     return BLOCKED % (counter(actor, group) if group else actor, used, LIMIT, rules)
 
 
+def chain_active(slot, group=""):
+    """Shu so'rovda zanjir aktyori chaqirilganmi (manguberdi faol)."""
+    return any(slot["calls"].get(counter(a, group)) for a in ACTORS)
+
+
 def take(actor, key=None, cwd="", call_id=None, group=""):
     """Bitta chaqiruvni hisobga oladi. Chegara oshsa (xabar, False).
 
@@ -355,7 +362,7 @@ def take(actor, key=None, cwd="", call_id=None, group=""):
         ids = slot.setdefault("ids", [])
         if call_id and call_id in ids:
             return "%s: %d/%d chaqiruv" % (name, used, LIMIT), True
-        over = used >= LIMIT
+        over = used >= LIMIT and (actor != OTHER or chain_active(slot, group))
         if not over:
             slot["calls"][name] = used + 1
             if call_id:
