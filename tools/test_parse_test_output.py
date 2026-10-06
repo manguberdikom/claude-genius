@@ -14,6 +14,10 @@ Gradle JUnit 5 standart (SHORT) va to'liq formati, Maven va Gradle
 kompilyatsiya xatosi, Spring context yiqilishi, AssertJ va Hamcrest.
 Ularsiz asbob real chiqishda yiqilib, sinovda o'tib turardi.
 
+testdata/real/ dagi loglar haqiqiy yurishdan, manbasi fayl boshida:
+Gradle toolchain xatosi (test yurmaydi, sabab faqat "What went wrong"
+blokida) va petclinic bug-1 Maven logi (@Nested sinf, Spring logi).
+
 CI jurnali (`gh run view --log` va GitHub Actions xom logi) har qator
 boshiga vaqt qo'yadi. Uning uchun alohida fayl yo'q: real fixture har
 qatoriga prefiks qo'shib olinadi, natija prefikssiz bilan bir xil bo'lishi
@@ -39,6 +43,8 @@ MVN_COMPILE = os.path.join("test_output", "maven_compile.txt")
 GRADLE_COMPILE = os.path.join("test_output", "gradle_compile.txt")
 ASSERTJ = os.path.join("test_output", "assertj_hamcrest.txt")
 RESULTS = os.path.join("test_output", "results_only.txt")
+REAL_TOOLCHAIN = os.path.join("real", "gradle_toolchain.txt")
+REAL_BUG1 = os.path.join("real", "maven_petclinic_bug1.txt")
 
 CASES = [
     ("maven: xulosa", "maven_fail.txt", "Tests: 24, yiqildi: 3"),
@@ -87,6 +93,16 @@ CASES = [
     ("faqat Results: sabablar qo'shilmaydi", RESULTS,
      "Noyob sabab: 3 ta (jami 3 ta yiqilish)"),
     ("faqat Results: qavssiz son", RESULTS, "olingan : 100"),
+    # Haqiqiy loglar: birinchi sabab qatori eng ichki ">" qator.
+    ("real gradle toolchain: birinchi sabab", REAL_TOOLCHAIN,
+     "Build yiqildi, test yurmadi.\nSabab: Cannot find a Java installation"),
+    ("real gradle toolchain: zanjir", REAL_TOOLCHAIN,
+     "    Failed to calculate the value of task ':compileTestJava'"),
+    ("real maven bug-1: jami Results qatoridan", REAL_BUG1,
+     "Tests: 7, yiqildi: 1, xato: 0"),
+    ("real maven bug-1: test nomi", REAL_BUG1,
+     "PetValidatorTests.validateWithLongPetName"),
+    ("real maven bug-1: test qatori", REAL_BUG1, "(PetValidatorTests.java:134)"),
 ]
 
 # Chiqishda bo'lmasligi kerak: framework stack qatorlari va soxta natija.
@@ -103,6 +119,9 @@ ABSENT = [
     (G5_FULL, "Yiqilgan test topilmadi"),
     (MVN_COMPILE, "Yiqilgan test topilmadi"),
     (GRADLE_COMPILE, "Legacy.java"),        # ogohlantirish xato emas
+    (REAL_TOOLCHAIN, "sabab ajratilmadi"),
+    (REAL_TOOLCHAIN, "Run with --stacktrace"),   # * Try: bloki sabab emas
+    (REAL_BUG1, "Tests: 14"),                    # sinf qatorlari qo'shilmaydi
 ]
 
 # (nom, fayl yoki None, matn yoki None, kutilgan kod, chiqishda bo'lishi kerak)
@@ -125,6 +144,14 @@ EXIT_CODES = [
      "Foo.java:14: warning: [deprecation] Date(int,int,int) has been deprecated\n"
      "BUILD SUCCESSFUL in 3s\n", 0, "Yiqilgan test topilmadi"),
     ("bo'sh kirish", None, "", 0, "Yiqilgan test topilmadi"),
+    ("real gradle toolchain", REAL_TOOLCHAIN, None, 1, "Sabab:"),
+    ("gradle dependency: eng ichki sabab", None,
+     "FAILURE: Build failed with an exception.\n\n* What went wrong:\n"
+     "Execution failed for task ':compileJava'.\n"
+     "> Could not resolve all files for configuration ':compileClasspath'.\n"
+     "   > Could not find com.acme:lib:1.0.\n     Required by:\n         project :\n\n"
+     "* Try:\n> Run with --stacktrace option to get the stack trace.\n\n"
+     "BUILD FAILED in 2s\n", 1, "Sabab: Could not find com.acme:lib:1.0."),
 ]
 
 # (nom, fayl yoki None, matn, qator prefiksi, kutilgan kod, chiqishda bo'lishi kerak).

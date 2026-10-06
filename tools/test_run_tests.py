@@ -84,6 +84,23 @@ def commit(root):
     git(root, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "init")
 
 
+_GIT_TEMPLATE = []
+
+
+def shop_repo(name):
+    """gradle_shop() + commit. Repo bir marta yasaladi (init, add, commit
+    ~140 ms), keyingilari nusxa (~15 ms). symlinks=True: .git ichidagi
+    havola fayl bo'lib ko'chmasin."""
+    if not _GIT_TEMPLATE:
+        template = tree("_git_shablon", gradle_shop())
+        commit(template)
+        _GIT_TEMPLATE.append(template)
+    root = os.path.join(TEMP, name)
+    shutil.rmtree(root, ignore_errors=True)
+    shutil.copytree(_GIT_TEMPLATE[0], root, symlinks=True)
+    return root
+
+
 def gradle_shop():
     """orders va billing; billing orders ni ishlatadi."""
     return {
@@ -255,6 +272,90 @@ def maven_shop(extra_plugins=""):
     }
 
 
+def both_tools(name, *extra):
+    """pom.xml va build.gradle birga, `extra` wrapper fayllari."""
+    files = maven_shop()
+    files["settings.gradle"] = "rootProject.name = 'shop'\ninclude 'orders'\n"
+    files["build.gradle"] = "subprojects { apply plugin: 'java' }\n"
+    for wrapper in extra:
+        files[wrapper] = "#!/bin/sh\n"
+    return tree(name, files)
+
+
+def case_asbob_wrapper_ustun(_):
+    maven = run_tests.Project(both_tools("ikki_mvnw", "mvnw"), runner=["mvn"])
+    gradle = run_tests.Project(both_tools("ikki_gradlew", "gradlew"), runner=["gradle"])
+    return (maven.tool == "maven" and "wrapper mvnw" in maven.tool_note
+            and not maven.tool_error
+            and gradle.tool == "gradle" and "wrapper gradlew" in gradle.tool_note)
+
+
+def case_asbob_noaniq(_):
+    both = run_tests.Project(both_tools("ikki_wrapper", "mvnw", "gradlew"), runner=["x"])
+    none = run_tests.Project(both_tools("wrappersiz"), runner=["x"])
+    return (both.tool is None and "ikkalasida bor" in both.tool_error
+            and "--asbob maven|gradle" in both.tool_error
+            and none.tool is None and "hech birida yo'q" in none.tool_error)
+
+
+def case_asbob_tanlov(_):
+    root = both_tools("ikki_tanlov")
+    with Env(GENIUS_BUILD_TOOL="gradle"):
+        env = run_tests.Project(root, runner=["x"])
+        flag = run_tests.Project(root, runner=["x"], tool="maven")
+    only_gradle = run_tests.Project(tree("faqat_gradle", gradle_shop()), runner=["x"],
+                                    tool="maven")
+    with Env(GENIUS_BUILD_TOOL="ant"):
+        bad = run_tests.Project(root, runner=["x"])
+    return (env.tool == "gradle" and "GENIUS_BUILD_TOOL=gradle" in env.tool_note
+            and "ikkalasi bor" in env.tool_note
+            and flag.tool == "maven" and "--asbob maven" in flag.tool_note
+            and only_gradle.tool is None and "pom.xml" in only_gradle.tool_error
+            and bad.tool is None and "maven yoki gradle" in bad.tool_error)
+
+
+def case_asbob_cli(_):
+    """Reja qatorida tanlov va sababi; noaniq bo'lsa rc 2."""
+    root = both_tools("ikki_cli")
+    changed = "orders/src/main/java/shop/orders/OrderService.java"
+    bad, bad_out = run_cli(root, changed)
+    code, out = run_cli(root, changed, "--asbob", "maven")
+    return (bad == 2 and "--asbob" in bad_out
+            and code == 0 and "Asbob: maven (--asbob maven; Maven va Gradle ikkalasi bor)" in out
+            and "-Dtest=shop.orders.OrderServiceTest" in out)
+
+
+def case_quarkus_micronaut_sozlama(_):
+    """Spring siz JVM: sozlama o'zgarsa ilova testlari, migratsiyada baza testi."""
+    files = gradle_shop()
+    files["orders/src/test/java/shop/orders/QuarkusApiTest.java"] = java(
+        "shop.orders", "QuarkusApiTest", ann="@QuarkusTest\n")
+    files["orders/src/test/java/shop/orders/QuarkusFlowIT.java"] = java(
+        "shop.orders", "QuarkusFlowIT", ann="@QuarkusIntegrationTest\n")
+    files["orders/src/test/java/shop/orders/MicronautApiTest.java"] = java(
+        "shop.orders", "MicronautApiTest", ann="@MicronautTest\n")
+    root = tree("quarkus", files)
+    _, config = plan_for(root, ["orders/src/main/resources/application.properties"])
+    _, migration = plan_for(root, ["orders/src/main/resources/db/migration/V2__x.sql"])
+    picked = chosen(config)
+    return ({"shop.orders.QuarkusApiTest", "shop.orders.QuarkusFlowIT",
+             "shop.orders.MicronautApiTest"} <= picked
+            and "shop.orders.OrderServiceTest" not in picked
+            and "shop.orders.QuarkusApiTest" in chosen(migration))
+
+
+def case_qayta_yurish_jami(_):
+    """Qayta yurish logi faqat yiqilgan sinf: xulosa soni birinchi yurishdan."""
+    log = os.path.join(TEMP, "jami.log")
+    with open(log, "w", encoding="utf-8") as handle:
+        handle.write("[INFO] Tests run: 21, Failures: 1, Errors: 0, Skipped: 0\n")
+    summary = "Tests: 7, yiqildi: 1, xato: 0, o'tkazildi: 0\nNoyob sabab: 1 ta"
+    merged = run_tests.first_run_totals(log, summary)
+    return (merged.startswith("Tests: 21, yiqildi: 1") and "birinchi yurish" in merged
+            and merged.endswith("Noyob sabab: 1 ta")
+            and run_tests.first_run_totals(os.path.join(TEMP, "yoq.log"), summary) == summary)
+
+
 def case_maven_it_failsafe_ga(_):
     root = tree("maven", maven_shop())
     project = run_tests.Project(root, runner=["mvn"])
@@ -365,8 +466,7 @@ def run_cli(root, *args, mode="yashil"):
 
 
 def git_shop(name):
-    root = tree(name, gradle_shop())
-    commit(root)
+    root = shop_repo(name)
     path = os.path.join(root, "orders/src/main/java/shop/orders/OrderService.java")
     with open(path, "a") as handle:
         handle.write("// o'zgarish\n")
@@ -397,14 +497,13 @@ def case_yurgiz_yiqildi(_):
 
 def case_vaqt_tugadi(_):
     root = git_shop("vaqt")
-    code, out = run_cli(root, "--diff", "--yurgiz", "--vaqt", "2",
+    code, out = run_cli(root, "--diff", "--yurgiz", "--vaqt", "0.3",
                         "--log", os.path.join(TEMP, "v.log"), mode="sekin")
     return code == 3 and "vaqt tugadi" in out
 
 
 def case_tasir_yoq(_):
-    root = tree("tasir_yoq", gradle_shop())
-    commit(root)
+    root = shop_repo("tasir_yoq")
     with open(os.path.join(root, "README.md"), "w") as handle:
         handle.write("x\n")
     code, out = run_cli(root, "--diff", "--yurgiz")
@@ -412,15 +511,13 @@ def case_tasir_yoq(_):
 
 
 def case_hammasi(_):
-    root = tree("hammasi", gradle_shop())
-    commit(root)
+    root = shop_repo("hammasi")
     code, out = run_cli(root, "--hammasi")
     return code == 0 and "to'liq suite" in out and "--tests" not in out
 
 
 def case_modul(_):
-    root = tree("modul_rejim", gradle_shop())
-    commit(root)
+    root = shop_repo("modul_rejim")
     code, out = run_cli(root, "--modul", "billing")
     bad, _ = run_cli(root, "--modul", "yoq")
     return (code == 0 and ":billing:test" in out and "--tests" not in out
@@ -430,8 +527,7 @@ def case_modul(_):
 def case_symlink_orqali_yol(_):
     """Ildizga boshqa nom bilan yetib kelgan yo'l (POSIX da symlink,
     Windows da qisqa 8.3 nom) modulini yo'qotmasin."""
-    root = tree("symlink", gradle_shop())
-    commit(root)
+    root = shop_repo("symlink")
     link = os.path.join(TEMP, "symlink_havola")
     try:
         os.symlink(root, link, target_is_directory=True)
@@ -491,8 +587,7 @@ def case_diff_non_ascii_migratsiya(_):
 
 
 def case_diff_non_ascii_untracked(_):
-    root = tree("non_ascii_untracked", gradle_shop())
-    commit(root)
+    root = shop_repo("non_ascii_untracked")
     name = "Yangi%sTest" % OKINA
     path = os.path.join(root, "orders/src/test/java/shop/orders/%s.java" % name)
     with open(path, "w", encoding="utf-8") as handle:
@@ -504,6 +599,7 @@ def case_diff_non_ascii_untracked(_):
 def monorepo(name):
     """Git ildizi tepada, build `backend/` da, yonida `frontend/`."""
     files = {"backend/" + path: text for path, text in gradle_shop().items()}
+    files["backend/orders/build.gradle"] = "dependencies { }\n"
     files["frontend/app.js"] = "console.log(1);\n"
     root = tree(name, files)
     commit(root)
@@ -526,6 +622,49 @@ def case_monorepo_diff(_):
             and "--ildiz dan tashqarida" not in out
             and fcode == 0 and "Ta'sirlangan test yo'q" in fout
             and "1 fayl --ildiz dan tashqarida, hisobga olinmadi" in fout)
+
+
+def case_monorepo_ildizsiz(_):
+    """--ildiz siz: git ildizida build yo'q, birinchi darajada yagona
+    backend/. Submoduldan (o'z build.gradle i bor) ham ildiz backend."""
+    root = monorepo("monorepo_ildizsiz")
+    with open(os.path.join(root, SERVICE), "a") as handle:
+        handle.write("// o'zgarish\n")
+    top, tcode = run_cli(root, "--diff")
+    sub_code, sub_out = run_cli(os.path.join(root, "backend", "orders"), "--diff")
+    return (top == 0 and "shop.orders.OrderServiceTest" in tcode
+            and ":orders:test" in tcode
+            and sub_code == 0 and ":orders:test" in sub_out
+            and "shop.orders.OrderServiceTest" in sub_out)
+
+
+def case_ildiz_tanlash(_):
+    """locate_root: eng yuqori marker, yagona birinchi daraja, noaniqlik."""
+    files = {"backend/" + path: text for path, text in gradle_shop().items()}
+    files["backend/orders/build.gradle"] = "dependencies { }\n"
+    files["frontend/app.js"] = "x\n"
+    files["build/pom.xml"] = "<project/>\n"         # chiqish papkasi nomzod emas
+    root = os.path.realpath(tree("ildiz_tanlash", files))
+    git(root, "init", "-q")
+    backend = os.path.join(root, "backend")
+    results = [
+        run_tests.locate_root(root) == (backend, []),
+        run_tests.locate_root(os.path.join(backend, "orders", "src", "main")) == (backend, []),
+        run_tests.locate_root(os.path.join(root, "frontend")) == (backend, []),
+    ]
+    os.makedirs(os.path.join(root, "tools"))
+    with open(os.path.join(root, "tools", "pom.xml"), "w") as handle:
+        handle.write("<project/>\n")
+    results.append(run_tests.locate_root(root) == (root, ["backend", "tools"]))
+    # Submodul ichida noaniqlik yo'q: yo'ldagi eng yuqori marker hal qiladi.
+    results.append(run_tests.locate_root(os.path.join(backend, "orders")) == (backend, []))
+    code, out = run_cli(root, "--diff")
+    results.append(code == 2 and "Build ildizlari: backend, tools; --ildiz <papka>" in out)
+    # Git ildizida marker bo'lsa avvalgi xulq: ildizning o'zi.
+    with open(os.path.join(root, "pom.xml"), "w") as handle:
+        handle.write("<project/>\n")
+    results.append(run_tests.locate_root(os.path.join(backend, "orders")) == (root, []))
+    return all(results)
 
 
 def case_monorepo_asos(_):
@@ -916,6 +1055,14 @@ CASES = [
     ("--diff: non-ASCII nomli untracked test", case_diff_non_ascii_untracked),
     ("monorepo: --ildiz backend --diff, frontend eslatma", case_monorepo_diff),
     ("monorepo: --ildiz backend --asos", case_monorepo_asos),
+    ("monorepo: --ildiz siz, ildizdan va submoduldan", case_monorepo_ildizsiz),
+    ("ildiz: eng yuqori marker, yagona papka, noaniq rc 2", case_ildiz_tanlash),
+    ("asbob: wrapperi bor ustun", case_asbob_wrapper_ustun),
+    ("asbob: wrapper ikkalasida yoki yo'q", case_asbob_noaniq),
+    ("asbob: --asbob va GENIUS_BUILD_TOOL", case_asbob_tanlov),
+    ("asbob: reja qatori va rc 2", case_asbob_cli),
+    ("Quarkus va Micronaut testlari", case_quarkus_micronaut_sozlama),
+    ("qayta yurish: test soni birinchi yurishdan", case_qayta_yurish_jami),
     ("--log faqat temp yoki loyiha ichida", case_log_faqat_temp_yoki_loyiha),
     ("--asos bayroq emas, commit bo'lmasa 2", case_asos_bayroq_emas),
     ("navbat qulfi yechiladi", case_navbat_qulfi),
