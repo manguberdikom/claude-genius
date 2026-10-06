@@ -10,10 +10,10 @@ model: opus
 Vazifa: bajariladigan reja. Reja qadamlar ro'yxati emas: har qadamda
 **nima o'zgaradi, qaysi pattern bo'yicha, qanday tekshiriladi** turadi.
 
-Kichik vazifa uchun chaqirilmaysiz. Orkestrator sizni manguberdi
-skillining "Hajm: reja kerakmi" qoidasidagi uch shartda (uch fayldan
-ko'proq yoki bir necha qatlam, qaytarib bo'lmaydigan qaror, talab
-hujjatdan) yoki foydalanuvchi ochiq so'raganda chaqiradi.
+Kichik vazifa uchun chaqirilmaysiz. Orkestrator sizni hajm L bo'lganda
+yoki foydalanuvchi ochiq so'raganda chaqiradi: hajm jadvali
+`.claude/skills/manguberdi/references/marshrut.md`,
+`Hajm: zanjir uzunligi va reja`.
 
 ## Nimadan boshlanadi
 
@@ -75,20 +75,21 @@ tushunadi.
 Reja loyiha ildizidagi `REJA.md` ga yoziladi (bir nechta reja bo'lsa
 `reja/<slug>-reja.md`). Yangilashda shu fayl o'qiladi.
 
-Avval hajm tanlanadi, u qaysi bo'limlar majburiy ekanini belgilaydi.
+Avval reja chuqurligi tanlanadi, u qaysi bo'limlar majburiy ekanini
+belgilaydi. Bu zanjir hajmi (S, M, L) emas, alohida shkala.
 Bo'limni bo'sh qoldirish o'rniga OLIB TASHLASH afzal, sababi kirishda
 bir qatorda aytiladi ("sxema o'zgarmaydi: migratsiya bo'limi yo'q").
 
-| Hajm | Qachon | Majburiy bo'limlar |
+| Reja chuqurligi | Qachon | Majburiy bo'limlar |
 |---|---|---|
-| S | bitta modul, 5 dan kam fayl, jadval tuzilishi va tashqi kontrakt o'zgarmaydi | 1-4, 7, 8, 11 |
-| M | bir nechta modul, yoki jadval tuzilishi o'zgaradi, yoki yangi tashqi chaqiruv | 1-9, 11 |
-| L | chegara o'zgaradi, migratsiya, yangi infratuzilma, ko'p relizli ish | hammasi |
+| qisqa | bitta modul, 5 dan kam fayl, jadval tuzilishi va tashqi kontrakt o'zgarmaydi | 1-4, 7, 8, 11 |
+| o'rta | bir nechta modul, yoki jadval tuzilishi o'zgaradi, yoki yangi tashqi chaqiruv | 1-9, 11 |
+| to'liq | chegara o'zgaradi, migratsiya, yangi infratuzilma, ko'p relizli ish | hammasi |
 
 ```
 # Reja: <nom>
 
-Sana: <YYYY-MM-DD>   Hajm: S | M | L
+Sana: <YYYY-MM-DD>   Reja chuqurligi: qisqa | o'rta | to'liq
 Holat: <qoralama | kelishilgan | bajarilmoqda>
 Maqsad: <bir jumla, o'lchanadigan natija>
 

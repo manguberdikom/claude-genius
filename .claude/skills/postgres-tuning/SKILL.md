@@ -31,6 +31,10 @@ ma'lumotda boshqa reja berishi mumkin.
 `shared_buffers` ni oshirish sekin so'rovni tezlashtirmaydi. Noto'g'ri
 indeks `work_mem` bilan tuzalmaydi.
 
+`/manguberdi` shu sessiyada chaqirilgan bo'lsa kod yoki migratsiya
+o'zgarishi aktyorga beriladi (`dasturchi`, sxema qarori
+`rejalashtiruvchi`); bu skill o'shanda faqat bob jadvali.
+
 ## Vazifa - bob jadvali
 
 Jadvaldagi fayl butunligicha o'qilmaydi: avval `outline`, keyin kerakli

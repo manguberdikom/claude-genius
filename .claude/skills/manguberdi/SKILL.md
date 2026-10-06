@@ -40,9 +40,9 @@ aytiladi.
 4. **Mezon bitta.** Dasturchi, test muhandisi va reviewer ishni
    boshlashdan oldin `python3 tools/rules_for.py <fayllar>` chaqiradi
    (reviewer `--no-mark` bilan: belgini faqat yozuvchi qo'yadi).
-   Kirish bir xil, chiqish bir xil: yozuvchi reviewer tekshiradigan
-   aynan o'sha ro'yxat bilan ishlaydi. Ikkinchi aylana shundan
-   kamayadi.
+   Fayllar topshiriq kartasining `fayllar:` qatoridan olinadi
+   (`references/aktyorlar.md`, `Topshiriq kartasi`): kirish bir xil,
+   chiqish bir xil. Ikkinchi aylana shundan kamayadi.
 5. **Test faqat asbob bilan.** Aktyor ish oxirida bir marta
    `python3 tools/run_tests.py --diff --yurgiz`: o'zgarishga ta'sir
    qilgan testlar, modul bilan, log faylda. To'liq suite partiyada bir
@@ -61,8 +61,8 @@ tanlanadi:
 |---|---|
 | "review qil", "tekshir", "nima kamchilik bor" | `review` |
 | "reja tuz", "reja yangila", spetsifikatsiya yoki hujjat berildi | `rejalashtiruvchi` |
-| "tuzat", "qo'sh", "refaktoring qil", bug, kichik vazifa | `dasturchi` |
-| "test yoz", "qoplash", test yiqildi | `test-muhandis` |
+| "tuzat", "qo'sh", "refaktoring qil", bug, kichik vazifa; "yiqildi, tuzat" ham | `dasturchi` |
+| "test yoz", "qoplash"; xato test kodining o'zida ekani aniq | `test-muhandis` |
 | "qayerda yozilgan", "qoida nima deydi" (bir-uch bo'lim) | aktyor yo'q: taklif hookidagi raqam yoki `tools/doc.sh find`, keyin `tools/doc.sh show` |
 | ko'p bo'limni o'qib taqqoslash (uchtadan ko'p) | `qidiruv` |
 | "nega yiqildi", "sxema qanday" (chiqish uzun) | `tahlil` |
@@ -75,17 +75,17 @@ Review doirasi modul yoki butun proyekt bo'lsa yoki diff bo'sh bo'lsa,
 `Diff yo'q bo'lsa` tartibida ishlaydi. Doira bitta chaqiruvga sig'masa,
 ish boshida modullarga bo'linadi (`references/aktyorlar.md`).
 
-Manguberdi faol bo'lsa `code-review`, `clean-code`, `design-patterns` va
-`architect-review` skilllari alohida tartib sifatida yurgizilmaydi: vazifa
-yuqoridagi jadval bo'yicha aktyorga beriladi, skill faqat bob jadvali
-bo'lib xizmat qiladi. Topilma darajasi `review` aktyori shkalasida
-(`yuqori`, `o'rta`, `past`) yoziladi; PR izohiga o'tkazilganda `yuqori` =
-`blocker`, `o'rta` = `suggest`, `past` = `nit` (`code-review 4.9`).
+Manguberdi faol bo'lsa yettala marshrut skilli (`code-review`,
+`clean-code`, `design-patterns`, `architect-review`, `spring-testing`,
+`postgres-tuning`, `sonarqube-fix`) alohida tartib sifatida
+yurgizilmaydi: vazifa yuqoridagi jadval bo'yicha aktyorga beriladi,
+skill faqat bob jadvali bo'lib xizmat qiladi. Topilma darajasi `review`
+aktyori shkalasida (`yuqori`, `o'rta`, `past`) yoziladi; PR izohiga
+o'tkazilganda `yuqori` = `blocker`, `o'rta` = `suggest`, `past` = `nit`
+(`code-review 4.9`).
 
-Reja faqat `references/marshrut.md` dagi `Hajm: reja kerakmi` shartlaridan
-birida (uch fayldan ko'proq yoki bir necha qatlam, qaytarib bo'lmaydigan
-qaror, talab hujjatdan) yoki foydalanuvchi ochiq so'raganda tuziladi.
-Kichik bug va toza kod o'zgarishini `dasturchi` rejasiz bajaradi.
+Hajm (S, M, L), har hajmning zanjiri va reja qachon tuzilishi bitta
+jadvalda: `references/marshrut.md` dagi `Hajm: zanjir uzunligi va reja`.
 
 Reja so'rovi har doim `rejalashtiruvchi` ga beriladi. Repoda reja
 tuzadigan skill bo'lsa ham, zanjirda u chaqirilmaydi: u
@@ -93,13 +93,9 @@ asosiy sessiyada ~25k token o'qiydi va `budget.py` uni sanamaydi.
 
 ## Ketma-ketlik
 
-Zanjir hajmga qarab (`references/aktyorlar.md`):
-
-| Hajm | Zanjir |
-|---|---|
-| S | `dasturchi` (o'zgarish va regressiya testi) -> `review` |
-| M | `dasturchi` -> `test-muhandis` va `review` parallel -> bitta tuzatish aylanasi |
-| L | `rejalashtiruvchi` -> har guruhga M, guruhlar parallel worktree da |
+Zanjir hajm jadvalidan olinadi (`references/marshrut.md`), uning
+ishlash tartibi va Cheklov bilan qisqarishi `references/aktyorlar.md`
+da.
 
 `review` kamchilik topsa u **egasiga** qaytadi, lekin faqat `yuqori`
 topilma ikkinchi aylanani ochadi; `o'rta` egasi baribir chaqirilsa
@@ -113,6 +109,14 @@ Fayllari kesishmaydigan guruhlar parallel ishlaydi: har biriga o'z git
 worktree si (`python3 tools/guruh.py yarat <id>`), promptda `guruh:`
 kartasi, oxirida bitta birlashtirish va bitta to'liq suite
 (`references/parallel.md`).
+
+## Tez yo'l
+
+Holat: tajriba, A/B smoke dan keyin tasdiqlanadi. Hajm S va `rules_for` belgilarida tranzaksiya, xavfsizlik,
+migratsiya, sozlama va parallel yo'q bo'lsa, asosiy sessiya o'zi
+bajaradi: `rules_for` -> Edit -> `run_tests.py --diff --yurgiz`.
+`review` faqat xavf belgisi bo'lsa yoki diff 40 qatordan katta bo'lsa
+chaqiriladi.
 
 ## Model tanlash
 
