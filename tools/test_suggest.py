@@ -95,6 +95,25 @@ EXPECTED = [
     ("LazyInitializationException chiqyapti, qanday tuzataman", "patterns"),
     ("DataAccessException hierarchy nima", "patterns"),
     ("in-memory baza bilan test yozsam bo'ladimi", "testing"),
+    # Telefon va Windows o'zbek klaviaturasi apostrofi (U+02BB, U+2019):
+    # avval "yo" va "qolgan" ga bo'linib, hook jim qolardi.
+    ("yoʻqolgan yangilanish muammosi", "architect", {"22.5"}),
+    ("yo’qolgan yangilanish muammosi", "architect", {"22.5"}),
+    ("aylanma bogʻliqlik xatosi", "architect", {"15.6"}),
+    # FQCN oddiy nomga: avval "org.hibernate.lazyinitializationexception"
+    # bitta token edi va G1GC, RBAC kabi begona bo'limlar chiqardi.
+    ("org.hibernate.LazyInitializationException chiqdi, qanday tuzataman",
+     "patterns", {"25.52"}),
+    # Kodda `private` mavzuning o'zi, zaxira so'z sifatida tashlanmaydi.
+    ("@Transactional private metodda ishlaydimi", "sonarqube", {"29.3"}),
+    ("shu kodni review qil:\n@Service\npublic class OrderService {\n"
+     "    @Transactional\n    private void save(Order order) {\n"
+     "        repository.save(order);\n    }\n}", "sonarqube", {"29.3"}),
+    # Kod parchasi: `throws`, `void` tashlanadi, Thread.sleep qoladi.
+    ("shu testni review qil:\n@Test\nvoid waits() throws Exception {\n"
+     "    Thread.sleep(500);\n}", "sonarqube", {"19.4", "30.5"}),
+    # Prefikssiz Sonar kaliti ham kalit.
+    ("S2095 resurs yopilmagan deyapti", "sonarqube", {"13.6"}),
 ]
 
 # Ko'p qatorli stack trace: frame, paket nomlari va xabar mavzu emas.
@@ -171,9 +190,11 @@ BORDERLINE = [
     # diffdan ko'rish" degan bob bor. So'rov asbob tezligi haqida bo'lsa
     # ham, so'z darajasidagi moslik buni ajrata olmaydi. Qoidani shu
     # holat uchun burish haqiqiy atamalarni yo'qotardi, shuning uchun
-    # taklif chiqishi qabul qilinadi, faqat soni chegaralanadi.
+    # taklif chiqishi qabul qilinadi, faqat soni chegaralanadi. To'rt
+    # "Performance" sarlavhasi teng ball oladi, tenglikni raqam hal qiladi
+    # (avval hujjat alifbosi testing ni chetda qoldirardi).
     ("performance, tezlik, aniqlik haqida nima deysan", 4,
-     {"code-review", "patterns"}, None),
+     {"code-review", "patterns", "testing"}, None),
 ]
 
 # Ishora-yozuv (sections.tsv `ishora` ustuni to'la) to'liq yozuvni
@@ -331,6 +352,62 @@ def invariant_cases():
              ", ".join(leaked) or "hech biri")]
 
 
+# Kod yopishtirilganda Java zaxira so'zlari olib boradigan bo'limlar:
+# "`public` maydon", "`package-private`". Avval testdata/java dagi 7
+# faylning 7 tasida 14.6, 5 tasida 26.2 chiqardi.
+KEYWORD_NOISE = {("clean-code", "14.6"), ("clean-code", "26.2")}
+
+
+def clean_cases():
+    """clean_prompt, rule_keys va rank_key: (nom, ok, izoh) ro'yxati."""
+    out = []
+    text = S.clean_prompt("org.hibernate.LazyInitializationException va "
+                          "com.example.order.items")
+    out.append(("FQCN oddiy nomga, kichik harfli yo'l joyida",
+                 "LazyInitializationException" in text and "org." not in text
+                 and "com.example.order.items" in text, text))
+    text = S.clean_prompt("bogʻliqlik yo’q")
+    out.append(("ʻ va ’ ASCII apostrofga", text == "bog'liqlik yo'q", text))
+    text = S.clean_prompt("@Transactional\npublic void save() {")
+    out.append(("kod qatorida tuzilish so'zi tashlanadi",
+                 "public" not in text and "void" not in text
+                 and "save" in text and "@Transactional" in text, text))
+    text = S.clean_prompt("record ishlatsam bo'ladimi, public API uchun")
+    out.append(("oddiy gapda zaxira so'z qoladi",
+                 "record" in text and "public" in text, text))
+
+    noisy = []
+    folder = os.path.join(HERE, "testdata", "java")
+    for name in sorted(os.listdir(folder)):
+        with open(os.path.join(folder, name), encoding="utf-8") as handle:
+            code = handle.read()
+        hits = {(h[0], h[1]) for h in S.suggest("shu kodni review qil:\n" + code)}
+        if hits & KEYWORD_NOISE:
+            noisy.append("%s: %s" % (name, sorted(hits & KEYWORD_NOISE)))
+    hits = {(h[0], h[1]) for h in S.suggest("public enum OrderStatus { NEW }")}
+    if hits & KEYWORD_NOISE:
+        noisy.append("enum: %s" % sorted(hits & KEYWORD_NOISE))
+    out.append(("kod parchasida `public`/`package` bo'limi yo'q", not noisy,
+                ", ".join(noisy) or "hech birida"))
+
+    cases = (("S1192 string literal takrorlanyapti", ["java:S1192"]),
+             ("java:S2259 va squid:S1192", ["java:S1192", "java:S2259"]),
+             ("S3 bucket, AS400, s1192", []))
+    bad = ["%r -> %s" % (p, S.rule_keys(p)) for p, want in cases
+           if S.rule_keys(p) != want]
+    out.append(("prefikssiz Sonar kaliti", not bad, "; ".join(bad) or "uchala holat"))
+
+    items = [(("architect", "2.10"), [5.0, 3.0, 2]),
+             (("testing", "2.9"), [5.0, 3.0, 2]),
+             (("patterns", "1.1"), [5.0, 4.0, 2]),
+             (("clean-code", "9.9"), [6.0, 3.0, 2])]
+    order = ["%s %s" % key for key, _ in sorted(items, key=S.rank_key)]
+    want = ["clean-code 9.9", "patterns 1.1", "testing 2.9", "architect 2.10"]
+    out.append(("teng ball: max-idf, keyin raqam son sifatida", order == want,
+                ", ".join(order)))
+    return out
+
+
 def main():
     # Indeks hosila va git ga kirmaydi, ya'ni toza checkout da yo'q.
     # Avval bu yerda "yo'q, qo'lda yasang" deb yiqilardi: lokalda indeks
@@ -393,6 +470,13 @@ def main():
         print("%-4s %-58s -> %s" % (
             "OK" if ok else "XATO", prompt[:58],
             ", ".join("%s %s" % k for k in sorted(keys)) or "(jim)"))
+
+    print("\n== Kirishni tozalash va tartib ==")
+    for name, ok, note in clean_cases():
+        failures += not ok
+        total += 1
+        print("%-4s %-58s -> %s" % ("OK" if ok else "XATO", name,
+                                     str(note).replace("\n", " | ")[:60]))
 
     print("\n== Invariantlar ==")
     for name, ok, note in invariant_cases():
