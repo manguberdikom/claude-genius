@@ -865,22 +865,23 @@ Reja `ccr-bbd7652b-066u0n` branchida bajarildi. Har o'zgarish toza nusxada `run_
 - **Bosqich 4:** R4.2 (`verify_claims.py`, check_docs da ogohlantirish), R4.3, R4.5, R4.6, R4.7. check_docs ogohlantirishlari 26 dan 5 ga tushdi.
 - **Bosqich 5:** R5.1, R5.2, R5.3 (SubagentStop hooki), R5.4, R5.5, R5.6.
 - **Bosqich 6:** R6.1-R6.6.
-- **Bosqich 7:** R7.1, R7.3, R7.4, R7.6, R7.7, R7.8 (SECURITY.md, CI ruxsatlari, CODEOWNERS), R7.9.
+- **Bosqich 7:** R7.1-R7.9 to'liq.
+  - R7.2: `install/install.py` (Linux va macOS), CI installer matritsasi windows, ubuntu va macos. ps1 hali o'z holicha, Python o'ramiga qisqartirilmagan.
+  - R7.5: `tools/geniuslib.py` (`run_git`, `atomic_write_text`), 10 faylning nusxasi ko'chdi; `run_tests.py`, `check_docs.py`, `verify_claims.py` dagilari fayl tegilganda ko'chadi.
+  - R7.8: hooklar `~/.claude/genius/<sha12>` snapshotidan yuradi, `yangilash.py` faqat tasdiq bilan `merge --ff-only` qiladi (9-bo'lim, 12-savol: standart "faqat tasdiq bilan" tanlandi, qaytariladi).
+- **Kod:** KD-Q10 (vaqt tugaganda butun jarayon daraxti to'xtaydi, `start_new_session` siz).
 - **Bosqich 8:** qoidalar CONTRIBUTING "Ish tartibi" bo'limida.
 
 **Qolgan, agent qila oladi:**
 
 - verify_claims topgan 15 haqiqiy korpus kamchiligini tuzatish (code-review 39, patterns 06/25/01, `@MockBean` izohlari) va CI ga `verify_claims --java --diff` qadami (setup-java bilan).
-- R7.2 POSIX o'rnatuvchisi (`install/install.py`) va CI ga ubuntu va macos installer matritsasi.
-- R7.5 umumiy yordamchi (`run_git`, `atomic_write_text`).
-- R7.8 `yangilash.py` va hooklarni commit ga pin qilish.
-- KD-Q10: vaqt tugaganda nevara jarayonlarni o'ldirish.
-- `.claude/worktrees` ni check_docs va test_skill skanidan chiqarish. Guruh worktree lari endi loyiha ichida turadi.
 - `doctor` ning `hook_errors.log` ni o'qishi va `install/README.md` dagi SubagentStop va worktree tavsifi.
-- CI `check` ishiga `fetch-depth: 0`: usiz `check_review` imzo tekshiruvi to'liq ishlamaydi.
-- `check_owners` uy-bob endi bo'lim darajasida ekanini va OWNERS naqsh ustunini hisobga olsin: check_docs jami 31 ogohlantirish (OWNERS va verify_claims). Keyin warn dan err ga o'tish.
 - `doc.sh find` exceptions indeksini ishlatsin; o'zbekcha erkin gap uchun ibora sinonimlari (hozir 12 dan 2).
-- `.claude` dagi 2 imlo varianti: `agents/review.md` va `spring-testing/SKILL.md`.
+- ps1 ni `install.py` ustidagi yupqa o'ramga qisqartirish (R7.2 ning oxirgi qadami).
+- `ruff --select E9,F`: `tools/test_rules_for.py` dagi bitta eski F841.
+- Windows va macOS da sinalmagan yo'llar: KD-Q10 `taskkill /T`, macOS `ps` zaxirasi, ps1 snapshot qadamlari, yangi CI ishlari (`installer (bash, ubuntu-latest)`, `installer (bash, macos-latest)`). Birinchi CI yurishida tekshiriladi.
+
+**2026-10-06 ikkinchi partiya (bajarildi):** main birlashtirildi; R7.2, R7.5, R7.8, KD-Q10; `.claude/worktrees` check_docs va test_skill skanidan chiqdi; CI `check` ishida `fetch-depth: 0`; `check_owners` naqsh ustuni bilan, uyga havola bermagan 36 bo'limga havola qo'shildi, OWNERS ogohlantirishi 0 va endi xato (check_docs jami 31 dan 15 ga); `.claude` dagi 2 imlo varianti tuzatildi va `known_errors.tsv` endi `.claude` ni ham tekshiradi. Har guruh alohida worktree da, review dan keyin bitta tuzatish aylanasi, birlashtirishdan keyin `run_all_tests`, `check_docs`, `eval_skill`, `eval_find` toza.
 
 **Egasining qarori yoki qo'li kerak:**
 
