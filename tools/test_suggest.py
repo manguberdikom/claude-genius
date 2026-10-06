@@ -41,7 +41,9 @@ import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+import hookio  # noqa: E402
 import suggest_sections as S  # noqa: E402
+import testkit  # noqa: E402
 
 # Hook faqat Java proyektida yoki klonning o'zida ishlaydi
 # (hookio.active). Sinovlar vaqtinchalik papkada yuradi, shu yerda esa
@@ -329,6 +331,96 @@ def hook_cases():
     return out
 
 
+def call_hook(prompt, state, session="s1"):
+    """Hook jarayon ichida, holat papkasi vaqtinchalik: (rc, stdout)."""
+    raw = json.dumps({"prompt": prompt, "session_id": session})
+    res = testkit.call_main(S.main, raw, argv=["suggest_sections.py"], cwd=ROOT,
+                            env={"GENIUS_STATE_DIR": state, "CLAUDE_PROJECT_DIR": ROOT})
+    return res.returncode, res.stdout
+
+
+def error_lines(state):
+    try:
+        with open(os.path.join(state, hookio.ERRORS_LOG), encoding="utf-8") as handle:
+            return handle.read().splitlines()
+    except OSError:
+        return []
+
+
+def state_cases():
+    """format.json ogohlantirishi (PL-CC3) va hook xatosi izi (R6.3)."""
+    out = []
+    prompt = EXPECTED[1][0]
+    notice = ("usage: transkript formati o'zgargan (usage qatori yo'q), "
+              "python3 tools/doctor.py")
+    state = tempfile.mkdtemp(prefix="suggest_state_")
+    saved = os.environ.get("GENIUS_STATE_DIR")
+    try:
+        _, stdout = call_hook(prompt, state)
+        out.append(("format.json yo'q: ogohlantirish yo'q",
+                    output_shape_ok(stdout) and "usage:" not in stdout, "-"))
+
+        with open(os.path.join(state, S.FORMAT_FILE), "w", encoding="utf-8") as handle:
+            json.dump({"sabab": "usage qatori yo'q", "transkript": "x.jsonl"}, handle)
+        _, stdout = call_hook(prompt, state)
+        _, text = context(stdout)
+        lines = text.splitlines()
+        out.append(("format.json: birinchi qator ogohlantirish",
+                    lines[:1] == [notice] and len(lines) > 1
+                    and lines[1].startswith("Nomzod bo'limlar"),
+                    lines[0] if lines else "(jim)"))
+        _, stdout = call_hook(prompt, state)
+        out.append(("format.json: sessiyada bir marta",
+                    output_shape_ok(stdout) and "usage:" not in stdout, "-"))
+        rc, stdout = call_hook("salom", state, session="s2")
+        out.append(("format.json: yangi sessiya, mavzusiz so'rov",
+                    rc == 0 and context(stdout) == ("UserPromptSubmit", notice),
+                    context(stdout)[1][:60] or "(jim)"))
+
+        # Kutilmagan xato: hook jim (fail-open), iz esa log da.
+        real = S.suggest
+        S.suggest = lambda _prompt: 1 / 0
+        try:
+            rc, stdout = call_hook(prompt, state, session="s2")
+        finally:
+            S.suggest = real
+        logged = error_lines(state)
+        out.append(("xato: hook jim, hook_errors.log da qator",
+                    rc == 0 and stdout == "" and len(logged) == 1
+                    and "\tsuggest_sections\tZeroDivisionError: " in logged[0],
+                    logged[-1] if logged else "(log yo'q)"))
+
+        # handoff ning keng except i ham shu izni qoldiradi.
+        import handoff
+        real_hook = handoff._hook
+        handoff._hook = lambda: {}["yoq"]
+        os.environ["GENIUS_STATE_DIR"] = state
+        try:
+            code = handoff.hook()
+        finally:
+            handoff._hook = real_hook
+        logged = error_lines(state)
+        out.append(("handoff xatosi: 0 va log qatori",
+                    code == 0 and "\thandoff\tKeyError: " in logged[-1],
+                    logged[-1] if logged else "(log yo'q)"))
+
+        with open(os.path.join(state, hookio.ERRORS_LOG), "w", encoding="utf-8") as handle:
+            handle.writelines("eski %d\n" % n for n in range(250))
+        hookio.fail_open("sinov", ValueError("ko'p\nqatorli"))
+        logged = error_lines(state)
+        out.append(("hook_errors.log 200 qatorda kesiladi",
+                    len(logged) == hookio.ERRORS_KEEP and logged[0] == "eski 51"
+                    and logged[-1].endswith("\tsinov\tValueError: ko'p qatorli"),
+                    "%d qator" % len(logged)))
+    finally:
+        if saved is None:
+            os.environ.pop("GENIUS_STATE_DIR", None)
+        else:
+            os.environ["GENIUS_STATE_DIR"] = saved
+        shutil.rmtree(state, ignore_errors=True)
+    return out
+
+
 def invariant_cases():
     """Jadval va indeks orasidagi shartlar, (nom, ok, izoh) ro'yxati.
 
@@ -489,6 +581,12 @@ def main():
         failures += not ok
         total += 1
         print("%-4s %-58s -> %s" % ("OK" if ok else "XATO", name, note))
+
+    print("\n== Holat fayllari: format.json va xato izi ==")
+    for name, ok, note in state_cases():
+        failures += not ok
+        total += 1
+        print("%-4s %-58s -> %s" % ("OK" if ok else "XATO", name, str(note)[:60]))
 
     print("\n== Ma'lum bo'shliqlar (xato hisoblanmaydi) ==")
     for prompt, want, why in KNOWN_GAPS:

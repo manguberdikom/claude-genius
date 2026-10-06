@@ -664,7 +664,8 @@ def hook():
     """
     try:
         return _hook()
-    except Exception:  # noqa: BLE001 - hook yiqilsa navbat to'xtamasin
+    except Exception as exc:  # noqa: BLE001 - hook yiqilsa navbat to'xtamasin
+        hookio.fail_open("handoff", exc)   # o'zi hech qachon yiqilmaydi
         return 0
 
 
