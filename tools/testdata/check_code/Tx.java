@@ -9,7 +9,7 @@ public class Tx {
     private WebClient webClient;
 
     @Transactional
-    public void archive(AuditRecord record) {
+    public void archive(AuditRecord record) { // NOSONAR: `record` nomi ataylab
         restTemplate.postForObject("/audit", record, Void.class);
     }
 

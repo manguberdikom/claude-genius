@@ -640,6 +640,290 @@ def case_jonli_holat():
     return [("jonli .claude/.state o'zgarmadi", live_snapshot() == LIVE_BEFORE)]
 
 
+# Sonar qoidalari: (nom, qoida, yo'l, kod, kutilgan topilma bormi).
+# Musbat holatda kamida bitta topilma, manfiyda hech biri. Kod sinf
+# tanasiga o'raladi; test qoidalari uchun yo'l /test/ ichida.
+MAIN = "src/main/java/shop/A.java"
+TEST = "src/test/java/shop/ATest.java"
+
+
+def wrap(body, imports=""):
+    return imports + "class A {\n" + body + "\n}\n"
+
+
+SONAR_CASES = [
+    # java:S1128 ishlatilmagan import
+    ("S1128 ishlatilmagan import", "java:S1128", MAIN,
+     wrap("void f() {}", "import java.util.Set;\n"), True),
+    ("S1128 ishlatilmagan statik import", "java:S1128", TEST,
+     wrap("void f() {}", "import static org.mockito.Mockito.never;\n"), True),
+    ("S1128 ishlatilgan import toza", "java:S1128", MAIN,
+     wrap("Set<String> s;", "import java.util.Set;\n"), False),
+    ("S1128 FQN dagi nom import ni ishlatmaydi", "java:S1128", MAIN,
+     wrap("void f(x.Row r) {}", "import org.apache.poi.ss.usermodel.Row;\n"), True),
+    ("S1128 javadoc {@link} parametri ishlatish", "java:S1128", MAIN,
+     wrap("/** {@link Util#f(LocalDate, Set)} */ void f() {}",
+          "import java.time.LocalDate;\nimport java.util.Set;\n"), False),
+    ("S1128 @throws ishlatish", "java:S1128", MAIN,
+     wrap("/** @throws IOException xato */ void f() {}", "import java.io.IOException;\n"), False),
+    ("S1128 statik import chaqiruvda", "java:S1128", TEST,
+     wrap("void f() { when(x); }", "import static org.mockito.Mockito.when;\n"), False),
+    ("S1128 statik import `::nom` havola ishlatish emas", "java:S1128", TEST,
+     wrap("void f() { a.filter(b::contains); }",
+          "import static org.mockito.ArgumentMatchers.contains;\n"), True),
+    ("S1128 wildcard import tegilmaydi", "java:S1128", MAIN,
+     wrap("void f() {}", "import java.util.*;\n"), False),
+    ("S1128 annotatsiyada ishlatish", "java:S1128", MAIN,
+     wrap("@Marker void f() {}", "import shop.Marker;\n"), False),
+    # java:S8694 oy int literal
+    ("S8694 LocalDate.of oy literali", "java:S8694", MAIN,
+     wrap("Object d = LocalDate.of(2026, 10, 7);"), True),
+    ("S8694 LocalDateTime.of oy literali", "java:S8694", TEST,
+     wrap("Object d = LocalDateTime.of(2026, 10, 7, 9, 0);"), True),
+    ("S8694 YearMonth.of oy literali", "java:S8694", MAIN,
+     wrap("Object d = YearMonth.of(2026, 3);"), True),
+    ("S8694 MonthDay.of birinchi argument oy", "java:S8694", MAIN,
+     wrap("Object d = MonthDay.of(2, 29);"), True),
+    ("S8694 Month enum bilan toza", "java:S8694", MAIN,
+     wrap("Object d = LocalDate.of(2026, Month.OCTOBER, 7);"), False),
+    ("S8694 oy o'zgaruvchi bo'lsa tegilmaydi", "java:S8694", MAIN,
+     wrap("Object d = LocalDate.of(year, month, 7);"), False),
+    ("S8694 LocalDateTime.of(date, time)", "java:S8694", MAIN,
+     wrap("Object d = LocalDateTime.of(date, LocalTime.of(9, 0));"), False),
+    # java:S6213 cheklangan identifikator
+    ("S6213 record nomli parametr", "java:S6213", MAIN,
+     wrap("void f(AuditRecord record) { use(record); }"), True),
+    ("S6213 record nomli mahalliy o'zgaruvchi", "java:S6213", MAIN,
+     wrap("void f() { Row record = next(); }"), True),
+    ("S6213 for-each o'zgaruvchisi", "java:S6213", TEST,
+     wrap("void f() { for (ConsumerRecord<String, String> record : rows) { use(record); } }"), True),
+    ("S6213 lambda parametri", "java:S6213", MAIN,
+     wrap("void f() { run((record, exception) -> go(record)); }"), True),
+    ("S6213 yagona lambda parametri", "java:S6213", MAIN,
+     wrap("void f() { rows.forEach(record -> go(record)); }"), True),
+    ("S6213 pattern o'zgaruvchisi", "java:S6213", MAIN,
+     wrap("void f(Object o) { if (o instanceof Row record) { go(record); } }"), True),
+    ("S6213 record e'loni tegilmaydi", "java:S6213", MAIN,
+     wrap("record Point(int x, int y) {}"), False),
+    ("S6213 return record; tegilmaydi", "java:S6213", MAIN,
+     wrap("Row f() { return record; }"), False),
+    ("S6213 oddiy nom tegilmaydi", "java:S6213", MAIN,
+     wrap("void f(Row row) { rows.forEach(event -> go(event)); }"), False),
+    ("S6213 permits o'zgaruvchi nomi bo'lishi mumkin", "java:S6213", MAIN,
+     wrap("void f() { int permits = 3; }"), False),
+    ("S6213 `-> record;` tegilmaydi", "java:S6213", MAIN,
+     wrap("void f() { Supplier<Row> s = () -> record; }"), False),
+    # java:S5778 assertThrows lambdasida bir nechta chaqiruv
+    ("S5778 ikki chaqiruv", "java:S5778", TEST,
+     wrap("void t() { assertThatThrownBy(() -> parser.parse(load(\"a\")))"
+          ".isInstanceOf(IllegalStateException.class); }"), True),
+    ("S5778 konstruktor va chaqiruv", "java:S5778", TEST,
+     wrap("void t() { assertThatThrownBy(() -> Foo.of(new Bar(), 1))"
+          ".isInstanceOf(IllegalStateException.class); }"), True),
+    ("S5778 JUnit assertThrows", "java:S5778", TEST,
+     wrap("void t() { assertThrows(IllegalStateException.class, "
+          "() -> service.run(order.getId())); }"), True),
+    ("S5778 bitta chaqiruv toza", "java:S5778", TEST,
+     wrap("void t() { assertThatThrownBy(() -> service.run(ID))"
+          ".isInstanceOf(IllegalStateException.class); }"), False),
+    ("S5778 isInstanceOfSatisfying Sonar bayroqlamaydi", "java:S5778", TEST,
+     wrap("void t() { assertThatThrownBy(() -> service.run(order.getId()))"
+          ".isInstanceOfSatisfying(CommonException.class, ex -> check(ex)); }"), False),
+    ("S5778 List.of qiymat fabrikasi hisoblanmaydi", "java:S5778", TEST,
+     wrap("void t() { assertThatThrownBy(() -> service.update(List.of(ID)))"
+          ".isInstanceOf(IllegalStateException.class); }"), False),
+    ("S5778 main kodda tegilmaydi", "java:S5778", MAIN,
+     wrap("void t() { assertThrows(X.class, () -> a(b())); }"), False),
+    # java:S8692 testda tizim soati
+    ("S8692 Instant.now()", "java:S8692", TEST,
+     wrap("void t() { Instant at = Instant.now(); }"), True),
+    ("S8692 LocalDate.now(ZONE)", "java:S8692", TEST,
+     wrap("LocalDate d = LocalDate.now(AttendanceTime.ZONE);"), True),
+    ("S8692 Clock.systemUTC()", "java:S8692", TEST,
+     wrap("Clock c = Clock.systemUTC();"), True),
+    ("S8692 Clock.system(zone)", "java:S8692", TEST,
+     wrap("Clock c = Clock.system(ZONE);"), True),
+    ("S8692 Clock.fixed toza", "java:S8692", TEST,
+     wrap("Clock c = Clock.fixed(Instant.parse(\"2026-10-07T00:00:00Z\"), ZONE);"), False),
+    ("S8692 now(clock) toza", "java:S8692", TEST,
+     wrap("LocalDate d = LocalDate.now(clock); Instant i = Instant.now(fixedClock);"), False),
+    ("S8692 main kodda tegilmaydi", "java:S8692", MAIN,
+     wrap("Instant at = Instant.now();"), False),
+    # java:S1612 metod havolasi
+    ("S1612 x -> x == null", "java:S1612", TEST,
+     wrap("void t() { assertThat(rows).filteredOn(outcome -> outcome == null).hasSize(1); }"), True),
+    ("S1612 x -> x != null", "java:S1612", MAIN,
+     wrap("void t() { rows.removeIf(row -> row != null); }"), True),
+    ("S1612 x -> x.foo()", "java:S1612", MAIN,
+     wrap("void t() { rows.stream().filter(s -> s.isUpdatable()).toList(); }"), True),
+    ("S1612 () -> obj.foo()", "java:S1612", MAIN,
+     wrap("void t() { run(() -> resolver.visibleScope()); }"), True),
+    ("S1612 x -> Util.f(x)", "java:S1612", MAIN,
+     wrap("void t() { rows.stream().map(r -> Mapper.toDto(r)).toList(); }"), True),
+    ("S1612 x -> new T(x)", "java:S1612", MAIN,
+     wrap("void t() { rows.stream().map(r -> new Dto(r)).toList(); }"), True),
+    ("S1612 argumentli chaqiruv tegilmaydi", "java:S1612", MAIN,
+     wrap("void t() { rows.stream().filter(m -> m.startsWith(\"a\")).toList(); }"), False),
+    ("S1612 zanjir davomi tegilmaydi", "java:S1612", MAIN,
+     wrap("void t() { rows.stream().filter(c -> c.getDay().isAfter(d)).toList(); }"), False),
+    ("S1612 allaqachon havola", "java:S1612", MAIN,
+     wrap("void t() { rows.stream().filter(Objects::nonNull).map(Row::id).toList(); }"), False),
+    ("S1612 satr ichidagi lambda matni tegilmaydi", "java:S1612", MAIN,
+     wrap("String s = \"x -> x.foo()\";"), False),
+    # java:S5838 maxsus assertion
+    ("S5838 isEqualTo(\"\")", "java:S5838", TEST,
+     wrap("void t() { assertThat(cell.getStringCellValue()).as(\"bo'sh\").isEqualTo(\"\"); }"), True),
+    ("S5838 size()", "java:S5838", TEST,
+     wrap("void t() { assertThat(list.size()).isEqualTo(3); }"), True),
+    ("S5838 toString()", "java:S5838", TEST,
+     wrap("void t() { assertThat(x.toString()).isEqualTo(\"X[1]\"); }"), True),
+    ("S5838 Map.get", "java:S5838", TEST,
+     wrap("void t() { Map<String, String> labels = load();\n"
+          "assertThat(labels.get(\"a\")).isEqualTo(\"b\"); }"), True),
+    ("S5838 hasSize toza", "java:S5838", TEST,
+     wrap("void t() { assertThat(list).hasSize(3); assertThat(cell).isEmpty(); }"), False),
+    ("S5838 List.get(0) tegilmaydi", "java:S5838", TEST,
+     wrap("void t() { List<String> items = load();\n"
+          "assertThat(items.get(0)).isEqualTo(\"a\"); }"), False),
+    ("S5838 toString zanjir davomi bilan tegilmaydi", "java:S5838", TEST,
+     wrap("void t() { assertThat(x.toString()).isEqualTo(\"X\").doesNotContain(\"Y\"); }"), False),
+    ("S5838 main kodda tegilmaydi", "java:S5838", MAIN,
+     wrap("void t() { assertThat(list.size()).isEqualTo(3); }"), False),
+    # java:S3415 argument tartibi
+    ("S3415 AssertJ konstanta actual o'rnida", "java:S3415", TEST,
+     wrap("void t() { assertThat(EXPECTED).isEqualTo(compute()); }"), True),
+    ("S3415 AssertJ Sinf.KONSTANTA actual o'rnida", "java:S3415", TEST,
+     wrap("void t() { assertThat(DbLocks.TIMEOUT).isEqualTo(Duration.ofSeconds(3)); }"), True),
+    ("S3415 AssertJ literal actual o'rnida", "java:S3415", TEST,
+     wrap("void t() { assertThat(\"abc\").isEqualTo(name()); }"), True),
+    ("S3415 JUnit literal ikkinchi argumentda", "java:S3415", TEST,
+     wrap("void t() { assertEquals(service.count(), 3); }"), True),
+    ("S3415 JUnit satr literal ikkinchi argumentda", "java:S3415", TEST,
+     wrap("void t() { assertEquals(result.name(), \"Ali\"); }"), True),
+    ("S3415 JUnit to'g'ri tartib toza", "java:S3415", TEST,
+     wrap("void t() { assertEquals(3, service.count()); }"), False),
+    ("S3415 JUnit ikkalasi o'zgaruvchi toza", "java:S3415", TEST,
+     wrap("void t() { assertEquals(expected, actual); }"), False),
+    ("S3415 JUnit delta bilan tegilmaydi", "java:S3415", TEST,
+     wrap("void t() { assertEquals(value(), 1.5, 0.01); }"), False),
+    ("S3415 AssertJ to'g'ri tartib toza", "java:S3415", TEST,
+     wrap("void t() { assertThat(compute()).isEqualTo(EXPECTED); assertThat(A).isEqualTo(B); }"), False),
+    # java:S8696 value-based tur ==
+    ("S8696 LocalDate o'zgaruvchisi ==", "java:S8696", MAIN,
+     wrap("boolean f(LocalDate a, LocalDate b) { return a == b; }"), True),
+    ("S8696 Instant !=", "java:S8696", MAIN,
+     wrap("boolean f() { Instant seen = last(); return seen != other(); }"), True),
+    ("S8696 Optional ==", "java:S8696", MAIN,
+     wrap("boolean f(Optional<String> a) { return a == EMPTY; }"), True),
+    ("S8696 DayOfWeek ==", "java:S8696", TEST,
+     wrap("boolean f(LocalDate d) { return d.getDayOfWeek() == DayOfWeek.SUNDAY; }"), True),
+    ("S8696 null bilan toza", "java:S8696", MAIN,
+     wrap("boolean f(LocalDate a) { return a == null || a != null; }"), False),
+    ("S8696 equals bilan toza", "java:S8696", MAIN,
+     wrap("boolean f(LocalDate a, LocalDate b) { return a.equals(b); }"), False),
+    ("S8696 boshqa tur ==", "java:S8696", MAIN,
+     wrap("boolean f(Long a, Status s) { return a == 0 || s == Status.OPEN; }"), False),
+    # java:S1135 TODO
+    ("S1135 //TODO", "java:S1135", MAIN,
+     wrap("void f() { // TODO: keshlash\n }"), True),
+    ("S1135 javadocdagi TODO", "java:S1135", MAIN,
+     wrap("/**\n * <p>TODO: replika\n */ void f() {}"), True),
+    ("S1135 satrdagi TODO tegilmaydi", "java:S1135", MAIN,
+     wrap("String s = \"TODO list\";"), False),
+    ("S1135 so'z ichidagi todo tegilmaydi", "java:S1135", MAIN,
+     wrap("// mastodon va todos emas\nvoid f() {}"), False),
+    ("S1135 Cheklov izohi toza", "java:S1135", MAIN,
+     wrap("// Cheklov: replikada ikki marta yuradi.\nvoid f() {}"), False),
+    # java:S1068 va java:S1144 ishlatilmagan private
+    ("S1068 ishlatilmagan private maydon", "java:S1068", TEST,
+     wrap("private static final Long ADMIN_ID = 30L;\nvoid f() {}"), True),
+    ("S1068 ishlatilgan private maydon", "java:S1068", TEST,
+     wrap("private final Long id = 3L;\nLong f() { return id; }"), False),
+    ("S1068 annotatsiyali maydon tegilmaydi", "java:S1068", MAIN,
+     wrap("@Autowired\nprivate Service service;\nvoid f() {}"), False),
+    ("S1068 serialVersionUID tegilmaydi", "java:S1068", MAIN,
+     wrap("private static final long serialVersionUID = 1L;"), False),
+    ("S1068 Lombok sinfi tegilmaydi", "java:S1068", MAIN,
+     "import lombok.Data;\n@Data class A {\n private String name;\n}\n", False),
+    ("S1144 ishlatilmagan private metod", "java:S1144", TEST,
+     wrap("private static Day cell(Long id) { return null; }\nvoid f() {}"), True),
+    ("S1144 chaqirilgan private metod", "java:S1144", TEST,
+     wrap("private int two() { return 2; }\nint f() { return two(); }"), False),
+    ("S1144 @MethodSource satrida nomlangan metod", "java:S1144", TEST,
+     wrap("@ParameterizedTest\n@MethodSource(\"cells\")\nvoid f(int c) {}\n"
+          "private static Stream<Integer> cells() { return null; }"), False),
+    ("S1144 metod havolasi bilan ishlatilgan", "java:S1144", MAIN,
+     wrap("private int two() { return 2; }\nvoid f() { run(this::two); }"), False),
+    ("S1144 annotatsiyali private metod tegilmaydi", "java:S1144", MAIN,
+     wrap("@PostConstruct\nprivate void init() {}"), False),
+    # java:S5853 ketma-ket assertThat
+    ("S5853 bir xil subyekt ketma-ket", "java:S5853", TEST,
+     wrap("void t() {\nassertThat(ids).containsAll(A);\nassertThat(ids).containsAll(B);\n}"), True),
+    ("S5853 turli subyekt toza", "java:S5853", TEST,
+     wrap("void t() {\nassertThat(ids).containsAll(A);\nassertThat(names).containsAll(B);\n}"), False),
+    ("S5853 extracting bilan tegilmaydi", "java:S5853", TEST,
+     wrap("void t() {\nassertThat(rows).extracting(Row::id).contains(1);\n"
+          "assertThat(rows).extracting(Row::name).contains(\"a\");\n}"), False),
+    ("S5853 orasida boshqa gap bo'lsa tegilmaydi", "java:S5853", TEST,
+     wrap("void t() {\nassertThat(ids).isNotEmpty();\nrun();\nassertThat(ids).contains(1);\n}"), False),
+    # java:S1488 vaqtinchalik o'zgaruvchi
+    ("S1488 T x = ...; return x;", "java:S1488", MAIN,
+     wrap("Service f() {\n  Service s = build(a, b);\n  return s;\n}"), True),
+    ("S1488 darhol return toza", "java:S1488", MAIN,
+     wrap("Service f() {\n  return build(a, b);\n}"), False),
+    ("S1488 o'zgaruvchi oraliqda ishlatilsa toza", "java:S1488", MAIN,
+     wrap("Service f() {\n  Service s = build(a, b);\n  s.init();\n  return s;\n}"), False),
+    ("S1488 boshqa nom qaytarilsa toza", "java:S1488", MAIN,
+     wrap("Service f() {\n  Service s = build(a, b);\n  return other;\n}"), False),
+    # java:S1845 faqat registr bilan farq
+    ("S1845 RETRIES va retries", "java:S1845", MAIN,
+     wrap("static final String RETRIES = \"x\";\n"
+          "private final AtomicLong retries = new AtomicLong();"), True),
+    ("S1845 final bo'lmagan juft Sonar bayroqlamadi", "java:S1845", MAIN,
+     wrap("private static final int DOORS = 3;\nprivate List<Door> doors;"), False),
+    ("S1845 turli nomlar toza", "java:S1845", MAIN,
+     wrap("static final String RETRIES = \"x\";\n"
+          "private final AtomicLong attempts = new AtomicLong();"), False),
+]
+
+
+def case_sonar_qoidalari():
+    rows = []
+    for name, rule, path, code, expect in SONAR_CASES:
+        got = [f for f in check_code.check_text(code, path) if f.rule == rule]
+        rows.append(("%s (topildi: %d)" % (name, len(got)), bool(got) == expect))
+    return rows
+
+
+def case_sonar_havolalar():
+    """Har Sonar topilmasining ref= bo'limi indeksda bor va mavzuga mos."""
+    import docref
+    expect = {
+        "sonarqube 28.3": "import",
+        "sonarqube 28.4": "private",
+        "sonarqube 28.6": "todo",
+        "sonarqube 28.17": "main kod",
+        "sonarqube 30.3": "assertthrows",
+        "sonarqube 30.15": "test qoidalari",
+        "clean-code 24.2": "metod havolasi",
+        "clean-code 22.3": "clock",
+    }
+    titles = section_titles()
+    seen = {}
+    for _, rule, path, code, _ in SONAR_CASES:
+        for f in check_code.check_text(code, path):
+            if f.rule == rule:
+                seen.setdefault(f.ref, set()).add(rule)
+    rows = []
+    for ref, rules in sorted(seen.items()):
+        title = titles.get(tuple(ref.split()), "").lower()
+        rows.append(("%s (%s) -> %s" % (ref, ", ".join(sorted(rules)), title[:50]),
+                     docref.by_ref(ref) == ref and expect.get(ref, "?") in title))
+    rows.append(("kutilgan havolalarning hammasi ishlatilgan",
+                 set(expect) == set(seen)))
+    return rows
+
+
 SECTIONS = [
     ("Topilishi kerak", case_topilishi),
     ("Qo'llanmaga ulanish", case_qollanma),
@@ -649,6 +933,8 @@ SECTIONS = [
     ("Commit dan keyingi chaqiruv va tur nomi", case_commitdan_keyin),
     ("NOSONAR, @SuppressWarnings va test kodi", case_nosonar),
     ("Keng catch xabari", case_keng_catch),
+    ("Sonar qoidalari: musbat va manfiy", case_sonar_qoidalari),
+    ("Sonar qoidalari: qo'llanma havolasi", case_sonar_havolalar),
     ("Toza fayl", case_toza_fayl),
     ("Ko'p fayl", case_kop_fayl),
     ("Zanjir majburlanadi", case_zanjir),
