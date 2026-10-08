@@ -174,6 +174,18 @@ sonar {
 
 Gradle dagi odatiy XML yo'li `build/reports/jacoco/test/jacocoTestReport.xml`. Bu Maven dagi yo'ldan butunlay boshqacha, shuning uchun hujjatdan ko'chirgan sozlamani tekshirmasdan ishlatish eng ko'p uchraydigan xato. Yangi `org.sonarqube` plugin versiyalari `jacocoTestReport` chiqishini o'zi topa oladi, lekin property ni aniq yozish hamma versiyada ishlaydi.
 
+Integratsion testlar alohida task da (`integrationTest`) yurganda ular o'z `integrationTest.exec` faylini yozadi. Coverage maqsadi `test` task idan hisoblansa, `integrationTest` Sonar coverage ga kirmaydi. Hisobot qaysi exec fayllardan yig'ilishi `executionData` da aniq yoziladi, `fileTree` esa faqat diskda bor fayllarni oladi (faqat `test` yurgan bosqichda `integrationTest.exec` yo'qligi hisobotni yiqitmaydi):
+
+```kotlin
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    // integrationTest.exec ni qamrov maqsadidan chiqarish uchun include dan olib tashlang
+    executionData.setFrom(fileTree(layout.buildDirectory.dir("jacoco")) {
+        include("test.exec", "integrationTest.exec")
+    })
+}
+```
+
 ## 10.5 Ko'p modulli Maven loyihasida yig'ma hisobot tayyorlash
 
 Ko'p modulli loyihada har bir modul o'z `jacoco.exec` faylini yozadi. Muammo shunda: `order-service` dagi test `shared-domain` modulidagi klassni ishlatsa, bu qamrov `shared-domain` ning o'z hisobotida ko'rinmaydi. Natijada umumiy foiz haqiqatdan past chiqadi va quality gate behuda yiqiladi.

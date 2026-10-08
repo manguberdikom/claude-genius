@@ -150,6 +150,7 @@ Dependabot yoki Renovate yuborgan PR lar ko'pincha e'tiborsiz merge qilinadi. Ul
 | Xavfsizlik yangilanishi | Tezkor, lekin CI majburiy |
 | Transitive versiya o'zgarishi | `dependency:tree` farqini ko'rish |
 | Build plugin yangilanishi | Lokalda `verify` o'tkazish |
+| Kutubxona sinflari `AutoCloseable` bo'lib qolgan (masalan OpenPDF 2.4 dan 3.0.5 ga) | Ishlatiladigan sinflarni `javap -cp <jar> <sinf>` bilan tekshirish: Sonar `java:S2093` va `java:S2095` ni shu sinfning har `new` ida ochadi ([resurslarni yopish](../sonarqube/13-sonar-otadigan-kod-yozish-qoidalari.md#136-resurslarni-yopish-try-with-resources-va-yopilmagan-oqim)) |
 
 ```yaml
 # Renovate konfiguratsiyasi: shovqinni kamaytirish va muhimini ajratish.
@@ -192,6 +193,15 @@ Supply chain xavfi faqat kutubxonalarda emas - build jarayonining o'zida ham.
 | Build artefaktining imzosi yo'q | Sigstore, checksum |
 | Konteyner bazasi tag bilan | Digest bilan pin qilish |
 | `latest` tag | Aniq versiya |
+
+Gradle da `gradle/verification-metadata.xml` bu himoyaning bir qismi, va u diffda to'rt joyda buziladi.
+
+- `mavenLocal()` birinchi repo bo'lsa, lokal `~/.m2` dagi ichki kutubxona nusxasi registrdagidan farq qiladi: metadata lokal nusxaga qarab yoziladi, CI da esa registr nusxasi chiqib verification yiqiladi. Diffda `mavenLocal()` ni toraytirilgan holda talab qiling: `mavenLocal { content { includeModule("uz.mbabm", "internal-lib") } }`.
+- `./gradlew --write-verification-metadata sha256 build` keshdan o'qilgan parent POM larni yozmaydi, metadata to'liq bo'lmay qoladi. Qayta yozish `--refresh-dependencies` bilan va ishlaydigan registr tokeni bilan bajariladi.
+- `~/.gradle/gradle.properties` proyektdagi `gradle.properties` dan ustun. U yerdagi eskirgan registr tokeni 401 beradi, sababi esa proyekt fayliga qarab topilmaydi.
+- Ichki kutubxonani bir xil versiya bilan qayta publish qilish checksum ni o'zgartiradi va verification ni buzadi. Tuzatish yangi versiya raqami, metadata ni qo'lda to'g'rilash emas.
+
+Metadata fayli diffda o'zgargan bo'lsa, o'zgargan checksum uchun sabab so'raladi: yangi versiya, yoki o'sha versiyaning o'zgargan artefakti. Ikkinchisi bilan merge qilinmaydi.
 
 ```yaml
 # GitHub Actions: xavfsizroq shakl.

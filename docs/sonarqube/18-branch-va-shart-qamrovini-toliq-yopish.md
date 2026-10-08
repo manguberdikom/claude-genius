@@ -250,7 +250,7 @@ void capture_boshqaXatolarQaytaTashlanadi() {
 
 `finally` bloki bytecode da ikki marta yoziladi: normal oqim uchun va istisno oqimi uchun. Shu sababli faqat muvaffaqiyatli yo'lni test qilsangiz, JaCoCo `finally` qatorlarini qisman qoplangan deb ko'rsatadi.
 
-`try-with-resources` da kompilyator `close()` ni `null` tekshiruvi va bosiq istisno (suppressed exception) mantig'i bilan o'raydi. Hosil bo'lgan tarmoqlarning ba'zilarini Java kodidan turib yopish mumkin emas. Amaliy javob: ularni ta'qib qilmang, lekin `try` blokidan istisno chiqadigan testni albatta yozing.
+`try-with-resources` da kompilyator `close()` ni `null` tekshiruvi va bosiq istisno (suppressed exception) mantig'i bilan o'raydi. Hosil bo'lgan tarmoqlarning ba'zilarini Java kodidan turib yopish mumkin emas. Amaliy javob: istisno chiqadigan testni albatta yozing. Qoldiq tarmoqni esa kod shakli bilan kamaytiring: try-with-resources ichidagi `return` JaCoCo filtrlay olmaydigan `null` tekshiruv tarmog'ini qoldiradi, shuning uchun natijani o'zgaruvchiga yozib, `try` dan keyin bitta joyda qaytaring ([yetib bo'lmaydigan kod](11-qamralmay-qoladigan-kod-va-unga-test-yozish.md#119-yetib-bolmaydigan-kod-uni-test-bilan-emas-ochirish-bilan-hal-qilish)).
 
 ```java
 // Yomon: qo'lda finally, qo'shimcha null tarmog'i
@@ -264,10 +264,12 @@ try {
     }
 }
 
-// Sonar o'tadigan variant: tarmoq kodda ko'rinmaydi
+// Sonar o'tadigan variant: kodda tarmoq yo'q, chiqish bitta
+Result result;
 try (Connection conn = dataSource.getConnection()) {
-    return read(conn);
+    result = read(conn);
 }
+return result;
 ```
 
 ## 18.10 Null tekshiruvlari: haqiqatan kerakmi yoki olib tashlash mumkinmi

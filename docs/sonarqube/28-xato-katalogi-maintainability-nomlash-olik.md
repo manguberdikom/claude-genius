@@ -677,7 +677,8 @@ Ikkinchi jadval regex bilan ushlanmaydi. Sabablari: ularning hammasi chaqirilgan
 | `java:S6878` | `instanceof Rec r` yoki `case Rec r ->` dan keyin faqat `r.x()` accessorlari ishlatilsa, record pattern yozing: `case OrgScope.Only(var ids) ->` |
 | `java:S2184` | `int` bilan hisoblangan bo'linma, ayirma yoki ko'paytma keyin `float` yoki `double` ga o'tsa, amal avval `int` da bajariladi. Operandlardan birini oldin cast qiling: `(float) a / b` |
 | `java:S6809` | O'z sinfingizdagi `@Transactional` metodni `this` orqali chaqirmang: proxy aylanib o'tiladi ([transactional self-invocation](../architect/19-spring-tranzaksiyalari-va-ularning.md#196-ichki-metod-chaqiruvi-tuzogi-va-undan-chiqish-yollari)) |
-| `java:S2093` | `close()` ni `finally` ga yozmang, `try-with-resources` ishlating ([resurslarni yopish](13-sonar-otadigan-kod-yozish-qoidalari.md#136-resurslarni-yopish-try-with-resources-va-yopilmagan-oqim)) |
+| `java:S2093` | `close()` ni `finally` ga yozmang, `try-with-resources` ishlating. Kutubxona versiyasi ko'tarilganda `javap` bilan yangi `AutoCloseable` sinflarni tekshiring ([resurslarni yopish](13-sonar-otadigan-kod-yozish-qoidalari.md#136-resurslarni-yopish-try-with-resources-va-yopilmagan-oqim)) |
+| `java:S2143` | `java.util.Calendar` va `Date` o'rniga `java.time`. JDBC da `ps.setTimestamp(i, ts, calendar)` ni mintaqa semantikasini buzmasdan almashtirish yo'li bor ([bazada, API da va kodda vaqt turi](../clean-code/22-sana-vaqt-va-mintaqa.md#229-bazada-api-da-va-kodda-vaqt-turi-muvofiqligi)) |
 
 Birinchi jadvaldagi topilma sizning yozuvingizda chiqsa, uni tuzatmay `NOSONAR` bilan yopmang: bostirish tartibi alohida bobda ([false positive va won't fix farqi](24-false-positive-suppression-va-oz-qoidangiz.md#242-issue-ni-false-positive-yoki-wont-fix-deb-belgilash-va-farqi)).
 

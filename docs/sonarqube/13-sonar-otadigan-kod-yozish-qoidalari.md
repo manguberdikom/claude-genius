@@ -279,6 +279,18 @@ public long qatorSoni(Path yol) throws IOException {
 
 Spring kontekstida `JdbcTemplate`, `RestClient` va `EntityManager` ni o'zingiz yopmaysiz, ularni framework boshqaradi. Lekin `Files.lines`, `Stream` qaytaradigan JPA so'rovlari va qo'lda ochilgan `Connection` sizning mas'uliyatingizda qoladi.
 
+Uch tuzoq test kodida ham, main kodda ham bir xil ochiladi.
+
+1. `T r = open(); try { .. } finally { r.close(); }` shakli `java:S2093` beradi. Yechim `try (T r = open()) { .. }`. `finally` da `close()` emas, tozalash turgan bo'lsa (masalan ulanishda `autoCommit` ni tiklash), uni ham resursga aylantiring: `interface Restore extends AutoCloseable { void close() throws SQLException; }` e'lon qilib, lambda bering.
+2. Resurs `try (..)` da ochilgan bo'lsa, tanada uni `close()` qilmang: `java:S4087` blok oxirida resurs o'zi yopilishini eslatadi. Yopilgandan keyingi holat (masalan `isOpen()`) tekshirilishi kerak bo'lsa, tekshiruvni `try` dan keyinga ko'chiring.
+3. Dependency ko'tarilganda yangi `AutoCloseable` lar paydo bo'ladi. OpenPDF 2.4 dan 3.0.5 ga o'tganda `DocListener extends AutoCloseable` bo'ldi va `Document` ham shunday bo'lib qoldi, shu sababli kodda o'zgarish bo'lmasa ham `java:S2093` va `java:S2095` yangi issue topdi. Versiyani ko'targan zahoti loyiha `new` qiladigan kutubxona sinflarini tekshiring:
+
+```bash
+javap -cp openpdf-3.0.5.jar <to'liq.sinf.nomi> | grep -E 'AutoCloseable|Closeable'
+```
+
+Chiqishda `AutoCloseable` bor sinf kodda `new` bilan ochilgan joyda `try-with-resources` ga o'tadi. `check_code.py` `java:S2093` va `java:S4087` ning oddiy shakllarini ushlaydi (`T r = ..; try { .. } finally { r.close(); }` va resurs tanada yopilishi); sinf `AutoCloseable` ekanini u bilmaydi, chunki tur ma'lumoti kerak.
+
 ## 13.7 O'zgaruvchan holatni cheklash: `final`, immutable obyekt
 
 Sonar bu yerda bir nechta tomondan yondashadi: `public` o'zgaruvchan maydon (`java:S1104`), o'qilmagan qiymat tayinlash (dead store, `java:S1854`), parametrni metod ichida qayta tayinlash va kolleksiyani to'g'ridan to'g'ri tashqariga qaytarish. Asosiy g'oya bitta: obyekt yaratilgandan keyin o'zgarmasa, uning hech qanday tarmog'ini tekshirish kerak emas.

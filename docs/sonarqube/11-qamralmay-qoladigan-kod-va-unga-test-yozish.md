@@ -418,6 +418,16 @@ public BigDecimal discount(CustomerTier tier) {
 
 Java 17 dan boshlab enum ustidagi `switch` expression da barcha variant qoplangan bo'lsa `default` kerak emas. Yangi enum qiymati qo'shilsa, build buziladi. Bu runtime istisnodan yaxshi, coverage ham toza bo'ladi.
 
+Coverage 100% ga olib chiqishda JaCoCo ning o'z qoldiq tarmoqlari ham chiqadi. Uchalasi ham test qo'shish bilan emas, kod shaklini o'zgartirish bilan hal bo'ladi.
+
+| Qoldiq | Yechim |
+| --- | --- |
+| `try (R r = open()) { return read(r); }`: try-with-resources ichidagi `return` JaCoCo filtrlay olmaydigan `null` tekshiruv tarmog'ini qoldiradi | natijani o'zgaruvchiga yozib, bitta chiqish: `String result; try (R r = open()) { result = read(r); } return result;` ([`finally` va resurs yopilishi](18-branch-va-shart-qamrovini-toliq-yopish.md#189-finally-bloki-va-resurs-yopilishi)) |
+| enum ustidagi `switch` statement (arrow bilan) yetib bo'lmaydigan `default` tarmog'ini qoldiradi | exhaustive `switch` ifodasi: `return switch (tier) { case A -> ..; case B -> ..; };` (yuqoridagi misol) |
+| yetib bo'lmaydigan himoya sharti (`if (x == null) throw ..`, chaqiruvchi hech qachon `null` bermaydi) | uni yopadigan test yozilmaydi, shart olib tashlanadi ([null tekshiruvlari](18-branch-va-shart-qamrovini-toliq-yopish.md#1810-null-tekshiruvlari-haqiqatan-kerakmi-yoki-olib-tashlash-mumkinmi)) |
+
+Qamrov manbai ham aniq bo'lsin: coverage faqat `test` task idan yig'iladi, `integrationTest` testlari Sonar coverage ga kirmaydi ([Gradle da hisobot](10-jacoco-va-sonarqube-ulanishi-maven-va.md#104-gradle-da-jacoco-jacocotestreport-va-xml-chiqishini-yoqish)).
+
 ## 11.10 Interfeys standart metodlari va abstrakt klasslar
 
 `default` metod interfeysda tanaga ega, ya'ni JaCoCo uni qamralishi kerak deb sanaydi. Agar hech bir implementatsiya uni ishlatmasa, qator bekor turadi. Abstrakt klassdagi `protected` yordamchi metodlar bilan ham shunday.

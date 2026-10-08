@@ -201,6 +201,21 @@ Uch qatlamda vaqt turi mos bo'lishi kerak, aks holda konvertatsiya paytida minta
 
 `timestamp without time zone` ustunini `Instant` ga bog'lash eng ko'p uchraydigan nomuvofiqlik: baza mintaqani saqlamaydi va qiymat server mintaqasiga qarab o'zgaradi ([arxitektor hujjatidagi](../architect/README.md) sxema dizayni bo'limi sxema dizaynini ko'rib chiqadi).
 
+JDBC chegarasida `java.util.Calendar` bilan `ps.setTimestamp(i, ts, calendar)` yozish `java:S2143` beradi, chunki `Calendar` eskirgan vaqt API si. `Calendar` ni olib tashlash mintaqa semantikasini o'zgartirmasligi kerak, shuning uchun almashtirish sinalgan shaklda qilinadi (PostgreSQL JDBC drayveri, pgjdbc, bytecode i bilan tekshirilgan): vaqtni mintaqa bilan formatlangan satr qilib, `Types.OTHER` bilan yuboring.
+
+```java
+private static final DateTimeFormatter TS_WITH_OFFSET =
+        DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss.SSSSSSSSSxxx");
+
+// java:S2143: Calendar
+ps.setTimestamp(i, Timestamp.from(instant), Calendar.getInstance(TimeZone.getTimeZone(zone)));
+
+// java.time bilan, natija bir xil
+ps.setObject(i, TS_WITH_OFFSET.format(instant.atZone(zone)), Types.OTHER);
+```
+
+Sababi: pgjdbc `setTimestamp(.., calendar)` ni ham, `setObject(.., Types.OTHER)` ni ham `UNSPECIFIED` oid bilan yuboradi, qiymatni ustun turiga qarab server o'qiydi, shuning uchun `timestamp` va `timestamptz` ustunlarida natija bir xil. Boshqa ko'rinadigan almashtirishlar bu semantikani **buzadi**: `setObject(i, offsetDateTime)` oid 1184 (`timestamptz`) bilan, `setObject(i, localDateTime)` oid 1114 (`timestamp`) bilan yuboriladi va server ustun turiga qarab o'qimaydi. Almashtirishdan keyin ikkala tur ustuniga yozib, o'qilgan qiymatni solishtiring.
+
 ## 22.10 Amalda qo'llash
 
 - [ ] `java.util.Date`, `Calendar` va `SimpleDateFormat` ni Checkstyle yoki ArchUnit bilan taqiqlang va qolganlarini ko'chiring.

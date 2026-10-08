@@ -540,7 +540,12 @@ Test kodini ko'pincha tezda yozishadi, shuning uchun Sonar uning ustida eng ko'p
 | --- | --- | --- |
 | `java:S8694` | `LocalDate.of(2026, 10, 7)`: oy int literal | `LocalDate.of(2026, Month.OCTOBER, 7)` |
 | `java:S8692` | `Instant.now()`, `LocalDate.now(ZONE)`, `Clock.systemUTC()` testda | `Clock.fixed(Instant.parse("2026-10-07T00:00:00Z"), ZONE)`; kodga `Clock` inyeksiya qilinadi ([Clock ni inyeksiya qilish](../clean-code/22-sana-vaqt-va-mintaqa.md#223-clock-ni-inyeksiya-qilish-va-testlanadigan-vaqt)) |
-| `java:S5778` | `assertThatThrownBy(() -> parser.parse(load("a")))` | `var in = load("a");` lambdadan tashqarida, ichida faqat `parser.parse(in)` |
+| `java:S5778` | `assertThatThrownBy(() -> parser.parse(load("a")))`, `assertThatThrownBy(() -> service.overrideDay(tabel.getId(), request))`, `assertThatThrownBy(() -> rethrowing(failure).run(() -> "unused"))` | `var in = load("a");` lambdadan tashqarida, ichida faqat `parser.parse(in)`; `var id = tabel.getId();` oldindan; zanjir o'rniga `var action = rethrowing(failure);` |
+| `java:S6126` | `"...obj\n" + "...\nstream\nA\nendstream"`: ichida `\n` bor satr literallari `+` bilan | text block `"""`; baytlar muhim bo'lsa (CRLF) `\r\n` escape bilan |
+| `java:S3457` | `String.format("x=%s\n", x)`, `out.printf("..\n")`, `"..\n".formatted(x)` | `%n`; baytlar aniq `\n` bo'lishi kerak bo'lsa format tashqarida: `sb.append(String.format("x=%s", x)).append('\n')` |
+| `java:S2093` | `PdfReader r = new PdfReader(b); try { .. } finally { r.close(); }` | `try (PdfReader r = new PdfReader(b)) { .. }` ([resurslarni yopish](13-sonar-otadigan-kod-yozish-qoidalari.md#136-resurslarni-yopish-try-with-resources-va-yopilmagan-oqim)) |
+| `java:S4087` | `try (Document target = ...) { ..; target.close(); }` | `close()` ni olib tashlash: blok oxirida resurs o'zi yopiladi |
+| `java:S5976` | uch test bir xil shaklda, faqat kirish ma'lumoti farq qiladi | `@ParameterizedTest(name = "{0}")` + `@MethodSource`, nomlar `Arguments.of("nom", ...)` ning birinchi elementida saqlanadi |
 | `java:S5838` | `assertThat(list.size()).isEqualTo(3)`, `assertThat(s).isEqualTo("")`, `assertThat(x.toString()).isEqualTo(..)`, `assertThat(map.get(k)).isEqualTo(v)` | `hasSize(3)`, `isEmpty()`, `hasToString(..)`, `containsEntry(k, v)` |
 | `java:S3415` | `assertThat(EXPECTED).isEqualTo(compute())`, `assertEquals(compute(), 3)` | `assertThat(compute()).isEqualTo(EXPECTED)`, `assertEquals(3, compute())` |
 | `java:S5853` | ketma-ket `assertThat(ids).a(); assertThat(ids).b();` | `assertThat(ids).a().b();` |
@@ -559,13 +564,33 @@ void marchStartsOnTheFirst() {
 }
 ```
 
-`assertThatThrownBy` yoki `assertThrows` lambdasida bir nechta chaqiruv bo'lsa, qaysi biri istisno tashlagani noma'lum bo'lib qoladi ([juda keng qamrovli assertThrows](#303-juda-keng-qamrovli-assertthrows-bloki)). Mavjud ro'yxatda `isInstanceOfSatisfying` zanjirli holatlar bu qoida bo'yicha chiqmadi, shuning uchun tekshiruv faqat `isInstanceOf` va JUnit `assertThrows` ni ushlaydi.
+`assertThatThrownBy` yoki `assertThrows` lambdasida bir nechta chaqiruv bo'lsa, qaysi biri istisno tashlagani noma'lum bo'lib qoladi ([juda keng qamrovli assertThrows](#303-juda-keng-qamrovli-assertthrows-bloki)). Argument ichidagi chaqiruv (`tabel.getId()`) ham chaqiruv hisoblanadi, ichki lambdaga uzatilgan zanjirda (`rethrowing(f).run(() -> ..)`) esa tashqi lambdada `rethrowing` va `run` ikki chaqiruv. `List.of`, `Duration.ofDays` kabi qiymat fabrikalari hisobga kirmaydi. Mavjud ro'yxatda `isInstanceOfSatisfying` zanjirli holatlar bu qoida bo'yicha chiqmadi, shuning uchun tekshiruv faqat `isInstanceOf` va JUnit `assertThrows` ni ushlaydi.
+
+`java:S6126` faqat ifoda boshidagi literal zanjirini ushlaydi: `HEADER + "a\r\n" + "b\r\n"` da o'zgaruvchi oldin turgani uchun text block ga o'tmaydi. `java:S5976` tekshiruvi ikki shartni birga talab qiladi: uchta `@Test` metodi tanasi literallar almashtirilgandan keyin bir xil va hech bo'lmasa ikkitasida literal haqiqatan farq qiladi. Metod chaqiruvi yoki o'zgaruvchi nomi farq qilsa, regex jim qoladi, Sonar esa baribir shaklni solishtirishi mumkin.
+
+```java
+// java:S5976: uch test faqat kirish ma'lumoti bilan farqlanadi
+static Stream<Arguments> badInputs() {
+    return Stream.of(
+            Arguments.of("emptyName", ""),
+            Arguments.of("blankName", "  "),
+            Arguments.of("tooLong", "x".repeat(65)));
+}
+
+@ParameterizedTest(name = "{0}")
+@MethodSource("badInputs")
+void rejectsInvalidName(String caseName, String name) {
+    assertThatThrownBy(() -> Config.parameters(name))
+            .isInstanceOf(IllegalArgumentException.class);
+}
+```
 
 Regexda ishonchli ushlanmaydigan test qoidalari:
 
 - `java:S5841`: `allSatisfy`, `allMatch`, `noneMatch`, `doesNotContain` bo'sh ro'yxatda ham o'tadi. Oldin `isNotEmpty()` yoki `hasSize(n)` yozing, aks holda test hech narsani tekshirmay yashil bo'lishi mumkin.
 - `java:S1130`: test metodidagi `throws IOException` yoki `throws InterruptedException` ni tana otmasa olib tashlang; qaysi chaqiruv tashlashini tur ma'lumotisiz bilib bo'lmaydi.
-- `java:S2093`: `try` ichida ochilgan resurs `try-with-resources` ga o'tadi.
+- `java:S2093`: `try` dan oldin ochilgan resurs `finally` da yopilsa tekshiruv ushlaydi. Ushlamaydigani: `finally` da `close()` o'rniga tozalash (ulanish holatini tiklash, `reset`). Uni ham `try-with-resources` ga o'tkazing: `interface Restore extends AutoCloseable { void close() throws SQLException; }` e'lon qilib, `try (Restore reset = () -> connection.setAutoCommit(true)) { .. }` yozing.
+- Kutubxona yangilanganda (masalan OpenPDF 2.4 dan 3.0.5 ga) ilgari oddiy bo'lgan sinflar `AutoCloseable` bo'lib qolishi mumkin (`DocListener extends AutoCloseable`, shuning uchun `Document` ham). Shundan keyin `java:S2093` va `java:S2095` shu sinfning har `new` ida yangi issue ochadi. Dependency ko'targanda ishlatiladigan sinflarni `javap -cp <jar> <sinf>` bilan tekshiring ([resurslarni yopish](13-sonar-otadigan-kod-yozish-qoidalari.md#136-resurslarni-yopish-try-with-resources-va-yopilmagan-oqim)).
 
 ## 30.16 Amalda qo'llash
 
