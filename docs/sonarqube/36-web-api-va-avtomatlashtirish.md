@@ -7,7 +7,7 @@
 # 36. Web API va avtomatlashtirish (Web API and Automation)
 
 <details>
-<summary>Bu bobdagi 12 bo'lim</summary>
+<summary>Bu bobdagi 13 bo'lim</summary>
 
 - [36.1 Web API qayerda hujjatlashtirilgan va uni serverdan qanday ochish](#361-web-api-qayerda-hujjatlashtirilgan-va-uni-serverdan-qanday-ochish)
 - [36.2 Autentifikatsiya: token bilan so'rov yuborish](#362-autentifikatsiya-token-bilan-sorov-yuborish)
@@ -20,7 +20,8 @@
 - [36.9 Sahifalash, chegaralar va ko'p so'rov yuborishda ehtiyotkorlik](#369-sahifalash-chegaralar-va-kop-sorov-yuborishda-ehtiyotkorlik)
 - [36.10 API javobini CI da ishlatish: bloklash va hisobot yasash](#3610-api-javobini-ci-da-ishlatish-bloklash-va-hisobot-yasash)
 - [36.11 API versiyasi o'zgarishi va skriptlarni himoyalash](#3611-api-versiyasi-ozgarishi-va-skriptlarni-himoyalash)
-- [36.12 Amalda qo'llash](#3612-amalda-qollash)
+- [36.12 Sonar vazifasi kelganda tartib va mbabm serverining gate shartlari (Working a Sonar Task)](#3612-sonar-vazifasi-kelganda-tartib-va-mbabm-serverining-gate-shartlari-working-a-sonar-task)
+- [36.13 Amalda qo'llash](#3613-amalda-qollash)
 
 </details>
 
@@ -415,7 +416,35 @@ echo "Smoke test o'tdi"
 
 Yana bir muhim nuqta: `curl` da `-f` flagini ishlatish. Usiz HTTP 404 yoki 500 javobi ham `exit 0` bilan tugaydi va skript xato javobni ma'lumot deb qabul qiladi. Bu aynan "yashil CI, buzilgan tekshiruv" holatiga olib keladi.
 
-## 36.12 Amalda qo'llash
+## 36.12 Sonar vazifasi kelganda tartib va mbabm serverining gate shartlari (Working a Sonar Task)
+
+Sonar vazifasi kelganda issue larni qo'lda ko'chirmaslik uchun `tools/sonar_fetch.py` serverdan faqat o'qiydi: `issues` (ochiq issue lar TSV: kalit, daraja, tur, fayl, qator, xabar), `gate` (shartlar va qiymatlar), `coverage` (fayl bo'yicha `uncovered_lines` va `uncovered_conditions`), `hotspots` (`TO_REVIEW` holatdagilar). Token qiymati kodga, logga va chiqishga yozilmaydi: u `GENIUS_SONAR_TOKEN_FILE` ko'rsatgan fayldan (sukut `~/.sonar-token.txt`) o'qiladi va `-u token:` ko'rinishida yuboriladi. Server `GENIUS_SONAR_URL` (sukut `https://sonar.mbabm.uz`), project key `--loyiha` yoki `GENIUS_SONAR_PROJECT` dan olinadi (masalan `service-space-space-attendance-control-dev`).
+
+```bash
+python3 tools/sonar_fetch.py gate --loyiha service-space-space-attendance-control-dev
+python3 tools/sonar_fetch.py issues --chiqish issues.tsv
+python3 tools/sonar_fetch.py coverage
+```
+
+Tartib: 1) token fayli borligini tekshirish; 2) `gate` bilan yiqilgan shartni aniqlash; 3) `issues` ni `kalit` bo'yicha guruhlash, eng ko'pidan boshlash; 4) guruhlarni fayl bo'yicha kesishmaydigan to'plamlarga bo'lish, shunda parallel aktyorlar bir faylga tegmaydi; 5) tuzatish va `check_code.py` bilan qayta tekshirish. Serverda holatni o'zgartiradigan amallar tashqi ta'sir: hotspot ni `SAFE` deb belgilash va issue ni `Accept` yoki `won't fix` qilish faqat foydalanuvchi roziligi bilan bajariladi, asbob ularni bajarmaydi.
+
+2026-10-08 holatida serverdagi quality gate shartlari (ERROR beradigan chegara):
+
+| Metrika | Chegara |
+| --- | --- |
+| `new_coverage` | 60 dan kam |
+| `coverage` | 50 dan kam |
+| `new_duplicated_lines_density` | 10 dan ko'p |
+| `duplicated_lines_density` | 20 dan ko'p |
+| `new_security_hotspots_reviewed` | 70 dan kam |
+| `security_hotspots_reviewed` | 60 dan kam |
+| `new_violations` | 30 dan ko'p |
+| `software_quality_reliability_rating` | 3 dan katta |
+| `software_quality_security_rating` | 3 dan katta |
+
+Coverage faqat `test` task ning JaCoCo hisobotidan keladi; integratsion testlar `integrationTest` da yuradi va coverage ga kirmaydi. Kotlin fayllar uchun "ABM Kotlin" profili ishlatiladi.
+
+## 36.13 Amalda qo'llash
 
 - [ ] O'z serveringizning `/web_api` sahifasini ochib, skriptlarda ishlatayotgan har bir endpoint va parametr nomini tasdiqlang, deprecated belgisi borlarini ro'yxatga oling.
 - [ ] CI dagi Sonar token ni tekshirib ko'ring: u admin huquqli bo'lmasin, faqat analysis doirasida bo'lsin, va `pom.xml` yoki properties fayllarida saqlanmasin.
@@ -425,6 +454,7 @@ Yana bir muhim nuqta: `curl` da `-f` flagini ishlatish. Usiz HTTP 404 yoki 500 j
 - [ ] `sonar-smoke.sh` ni kunda bir marta ishlatadigan CI job yarating, u token, gate javobi va metrika kalitini tekshirsin.
 - [ ] Yangi loyiha uchun idempotent provizion skripti yozing: `api/projects/create`, `api/qualityprofiles/add_project` va `api/permissions/apply_template` bitta qadamda bajarilsin.
 - [ ] `api/measures/search_history` dan coverage va duplication qiymatlarini haftada bir o'qib o'z bazangizga yozadigan ish qo'shing, trend uchun ishonchli manba shu bo'ladi.
+- [ ] Sonar vazifasida avval `python3 tools/sonar_fetch.py gate` bilan yiqilgan shartni aniqlang; hotspot va issue holatini o'zgartirish uchun foydalanuvchi roziligini oling.
 
 ---
 

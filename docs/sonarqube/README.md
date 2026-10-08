@@ -63,9 +63,9 @@ Hujjat ikkalasini ham ko'rsatadi: shartni qanday qondirish, va qayerda bu raqam 
 - **25.** [Xato katalogi: reliability (bug) toifasi (Catalog: Reliability)](25-xato-katalogi-reliability-bug-toifasi.md) - 19 bo'lim
 - **26.** [Xato katalogi: security (vulnerability va hotspot) (Catalog: Security)](26-xato-katalogi-security-vulnerability-va.md) - 17 bo'lim
 - **27.** [Xato katalogi: maintainability, tuzilish va murakkablik (Catalog: Maintainability, Structure)](27-xato-katalogi-maintainability-tuzilish-va.md) - 17 bo'lim
-- **28.** [Xato katalogi: maintainability, nomlash, o'lik kod va uslub (Catalog: Maintainability, Naming)](28-xato-katalogi-maintainability-nomlash-olik.md) - 17 bo'lim
+- **28.** [Xato katalogi: maintainability, nomlash, o'lik kod va uslub (Catalog: Maintainability, Naming)](28-xato-katalogi-maintainability-nomlash-olik.md) - 18 bo'lim
 - **29.** [Xato katalogi: Spring, JPA va PostgreSQL ga xos xatolar (Catalog: Spring, JPA and PostgreSQL)](29-xato-katalogi-spring-jpa-va-postgresql-ga.md) - 17 bo'lim
-- **30.** [Xato katalogi: test kodidagi xatolar (Catalog: Test Code)](30-xato-katalogi-test-kodidagi-xatolar.md) - 15 bo'lim
+- **30.** [Xato katalogi: test kodidagi xatolar (Catalog: Test Code)](30-xato-katalogi-test-kodidagi-xatolar.md) - 16 bo'lim
 - **31.** [Xatolarga tushmaslik uchun yakuniy tavsiyalar (Preventive Checklist)](31-xatolarga-tushmaslik-uchun-yakuniy.md) - 12 bo'lim
 
 ### VIII. Server va tashkilot
@@ -77,7 +77,7 @@ Hujjat ikkalasini ham ko'rsatadi: shartni qanday qondirish, va qayerda bu raqam 
 
 ### IX. Kengaytirish va integratsiya
 
-- **36.** [Web API va avtomatlashtirish (Web API and Automation)](36-web-api-va-avtomatlashtirish.md) - 12 bo'lim
+- **36.** [Web API va avtomatlashtirish (Web API and Automation)](36-web-api-va-avtomatlashtirish.md) - 13 bo'lim
 - **37.** [Taint analysis mexanikasi: source, sink, sanitizer (Taint Analysis Mechanics)](37-taint-analysis-mexanikasi-source-sink.md) - 13 bo'lim
 - **38.** [Ko'p tilli loyiha: SQL, XML, YAML, Docker, Kubernetes, frontend (Multi-language Projects)](38-kop-tilli-loyiha-sql-xml-yaml-docker.md) - 13 bo'lim
 - **39.** [Bog'liqlik zaifliklari va litsenziya tekshiruvi (Dependency Risk and Licences)](39-bogliqlik-zaifliklari-va-litsenziya.md) - 13 bo'lim

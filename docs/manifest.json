@@ -831,7 +831,7 @@
     "title": "28. Xato katalogi: maintainability, nomlash, o'lik kod va uslub (Catalog: Maintainability, Naming)",
     "file": "28-xato-katalogi-maintainability-nomlash-olik.md",
     "part": "VII. Xato katalogi: qanday kod qanday xato hisoblanadi",
-    "sections": 17
+    "sections": 18
    },
    {
     "num": 29,
@@ -845,7 +845,7 @@
     "title": "30. Xato katalogi: test kodidagi xatolar (Catalog: Test Code)",
     "file": "30-xato-katalogi-test-kodidagi-xatolar.md",
     "part": "VII. Xato katalogi: qanday kod qanday xato hisoblanadi",
-    "sections": 15
+    "sections": 16
    },
    {
     "num": 31,
@@ -887,7 +887,7 @@
     "title": "36. Web API va avtomatlashtirish (Web API and Automation)",
     "file": "36-web-api-va-avtomatlashtirish.md",
     "part": "IX. Kengaytirish va integratsiya",
-    "sections": 12
+    "sections": 13
    },
    {
     "num": 37,

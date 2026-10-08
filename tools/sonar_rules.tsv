@@ -32,6 +32,7 @@ S1116	CODE_SMELL	Minor	All
 S1118	CODE_SMELL	Major	Main
 S1126	CODE_SMELL	Minor	Main
 S1128	CODE_SMELL	Minor	All
+S1130	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S1133	CODE_SMELL	Info	Main
 S1134	CODE_SMELL	Major	All
 S1135	CODE_SMELL	Info	All
@@ -53,8 +54,10 @@ S1448	CODE_SMELL	Major	Main
 S1481	CODE_SMELL	Minor	All
 S1488	CODE_SMELL	Minor	All
 S1607	CODE_SMELL	Major	Tests
+S1612	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S1643	CODE_SMELL	Minor	All
 S1763	tekshirilmadi	tekshirilmadi	tekshirilmadi
+S1845	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S1854	CODE_SMELL	Major	All
 S1858	CODE_SMELL	Minor	All
 S1874	CODE_SMELL	Minor	All
@@ -62,10 +65,12 @@ S2068	VULNERABILITY	Major	Main
 S2076	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S2077	VULNERABILITY	Major	Main
 S2083	tekshirilmadi	tekshirilmadi	tekshirilmadi
+S2093	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S2095	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S2111	BUG	Major	Main
 S2142	BUG	Major	Main
 S2160	CODE_SMELL	Minor	Main
+S2184	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S2187	CODE_SMELL	Blocker	Tests
 S2189	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S2201	BUG	Major	Main
@@ -107,6 +112,15 @@ S5145	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S5146	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S5778	CODE_SMELL	Major	Tests
 S5786	CODE_SMELL	Info	Tests
+S5838	tekshirilmadi	tekshirilmadi	tekshirilmadi
+S5841	tekshirilmadi	tekshirilmadi	tekshirilmadi
+S5853	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S5961	CODE_SMELL	Major	Tests
 S5976	CODE_SMELL	Major	Tests
+S6213	tekshirilmadi	tekshirilmadi	tekshirilmadi
+S6809	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S6813	CODE_SMELL	Major	Main
+S6878	tekshirilmadi	tekshirilmadi	tekshirilmadi
+S8692	tekshirilmadi	tekshirilmadi	tekshirilmadi
+S8694	tekshirilmadi	tekshirilmadi	tekshirilmadi
+S8696	tekshirilmadi	tekshirilmadi	tekshirilmadi

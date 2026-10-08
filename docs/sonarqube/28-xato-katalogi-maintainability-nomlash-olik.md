@@ -7,7 +7,7 @@
 # 28. Xato katalogi: maintainability, nomlash, o'lik kod va uslub (Catalog: Maintainability, Naming)
 
 <details>
-<summary>Bu bobdagi 17 bo'lim</summary>
+<summary>Bu bobdagi 18 bo'lim</summary>
 
 - [28.1 Nomlash shabloniga mos kelmaydigan klass, metod, maydon va konstanta](#281-nomlash-shabloniga-mos-kelmaydigan-klass-metod-maydon-va-konstanta)
 - [28.2 Bitta harfli va ma'nosiz nomlar](#282-bitta-harfli-va-manosiz-nomlar)
@@ -25,7 +25,8 @@
 - [28.14 Bir xil ishni bajaradigan ikkita metod](#2814-bir-xil-ishni-bajaradigan-ikkita-metod)
 - [28.15 Oddiy yondashuv va arxitektor yondashuvi](#2815-oddiy-yondashuv-va-arxitektor-yondashuvi)
 - [28.16 Tuzoqlar va yechimlar](#2816-tuzoqlar-va-yechimlar)
-- [28.17 Amalda qo'llash](#2817-amalda-qollash)
+- [28.17 Yozish paytida qaytadigan main kod qoidalari (Rules to Avoid While Writing)](#2817-yozish-paytida-qaytadigan-main-kod-qoidalari-rules-to-avoid-while-writing)
+- [28.18 Amalda qo'llash](#2818-amalda-qollash)
 
 </details>
 
@@ -291,7 +292,7 @@ Tavsiya: kommentda kod saqlashni taqiqlang, chunki versiya nazorati buni sizdan 
 
 Qoida: `java:S1135`, `java:S1134`
 
-`java:S1135` `TODO` ni, `java:S1134` esa `FIXME` ni belgilaydi. Ikkisining farqi muhim: `TODO` odatda info darajasida va quality gate ga kirmaydi, `FIXME` esa major bo'ladi va `Maintainability Rating` ga ta'sir qiladi.
+`java:S1135` `TODO` ni, `java:S1134` esa `FIXME` ni belgilaydi. Ikkisining farqi muhim: `TODO` odatda info darajasida, lekin `New Issues` sharti darajaga qaramay hamma yangi issue ni sanaydi, shuning uchun ular gate ni yiqitishga hissa qo'shadi; `FIXME` esa major bo'ladi va `Maintainability Rating` ga ta'sir qiladi.
 
 ```java
 @Service
@@ -644,7 +645,43 @@ CI da esa yangi kod uchun qattiq, eski kod uchun yumshoq siyosat yuritish mumkin
     ! grep -rq --include='*.java' -E '//\s*FIXME' src/main/java
 ```
 
-## 28.17 Amalda qo'llash
+## 28.17 Yozish paytida qaytadigan main kod qoidalari (Rules to Avoid While Writing)
+
+Aktyor yozgan kodda Sonar bir xil qoidalarni qayta-qayta ochadi, chunki ularni yozish paytida hech narsa to'smaydi. Birinchi jadvalni `tools/check_code.py` yozilgan zahoti ushlaydi (kalit va bo'lim raqami bilan), ikkinchisi tur ma'lumoti yoki chaqiruv grafi kerak bo'lgani uchun regexda ishonchli ushlanmaydi va yozuvchi uni oldindan bilishi shart.
+
+| Qoida | Nima chiqadi | Qanday yoziladi |
+| --- | --- | --- |
+| `java:S6213` | `record`, `var`, `yield` o'zgaruvchi, parametr yoki lambda parametri nomi | `event`, `row`, `inputRecord` |
+| `java:S8696` | `LocalDate`, `Instant`, `Optional` kabi value-based tur `==` yoki `!=` bilan; Sonar `DayOfWeek` va `Month` enum ni ham shunday bayroqlaydi | `.equals(...)`, `isBefore`/`isAfter`, enum uchun `switch` |
+| `java:S1488` | `T x = ...; return x;` | `return ...;` |
+| `java:S1845` | `RETRIES` va `retries` kabi faqat registr bilan farqlanadigan ikki `final` maydon | `retryCount`: kichik harfli nomga ma'no berish |
+| `java:S1128`, `java:S1068`, `java:S1144` | ishlatilmagan import, `private` maydon va metod (bo'limlar: ishlatilmaydigan import, o'lik kod) | yozib bo'lgach o'chirish |
+| `java:S1135` | izohdagi `TODO` | ishni ticketga yozish, izohda `Cheklov:` deb bayon qilish |
+
+```java
+// java:S6213 va java:S8696: Sonar ikkalasini ham ochadi
+recoverer = new DeadLetterPublishingRecoverer(template, (record, ex) -> route(record));
+boolean sameDay = start == end;                 // LocalDate
+
+// toza
+recoverer = new DeadLetterPublishingRecoverer(template, (failed, ex) -> route(failed));
+boolean sameDay = start.equals(end);
+```
+
+Ikkinchi jadval regex bilan ushlanmaydi. Sabablari: ularning hammasi chaqirilgan metodning tur ma'lumotini (deprecated belgisi, `throws` ro'yxati, record yoki oddiy sinf, `float` ga o'tish) talab qiladi.
+
+| Qoida | Yozayotganda nimaga qarash kerak |
+| --- | --- |
+| `java:S1874` | Kutubxona sinfini tanlashdan oldin Javadoc dagi `@deprecated` belgisini o'qing va ko'rsatilgan almashtirishni oling. Almashtirish yo'q bo'lsa, eskirgan sinfni bitta adapterga yig'ing: shu adapterdagi `@SuppressWarnings("java:S1874")` sababi bilan yoziladi, chunki har chaqiruv alohida issue ([eskirgan API va migratsiya](14-java-va-spring-da-eng-kop-uchraydigan-issue.md#1410-eskirgan-deprecated-api-ishlatish-va-migratsiya)) |
+| `java:S1130` | `throws IOException` yoki `throws Exception` ni tana otmasa yozmang. Metodni yozib bo'lgach `throws` ni olib tashlab kompilyatsiya qiling: xato bermasa, e'lon ortiqcha edi |
+| `java:S6878` | `instanceof Rec r` yoki `case Rec r ->` dan keyin faqat `r.x()` accessorlari ishlatilsa, record pattern yozing: `case OrgScope.Only(var ids) ->` |
+| `java:S2184` | `int` bilan hisoblangan bo'linma, ayirma yoki ko'paytma keyin `float` yoki `double` ga o'tsa, amal avval `int` da bajariladi. Operandlardan birini oldin cast qiling: `(float) a / b` |
+| `java:S6809` | O'z sinfingizdagi `@Transactional` metodni `this` orqali chaqirmang: proxy aylanib o'tiladi ([transactional self-invocation](../architect/19-spring-tranzaksiyalari-va-ularning.md#196-ichki-metod-chaqiruvi-tuzogi-va-undan-chiqish-yollari)) |
+| `java:S2093` | `close()` ni `finally` ga yozmang, `try-with-resources` ishlating ([resurslarni yopish](13-sonar-otadigan-kod-yozish-qoidalari.md#136-resurslarni-yopish-try-with-resources-va-yopilmagan-oqim)) |
+
+Birinchi jadvaldagi topilma sizning yozuvingizda chiqsa, uni tuzatmay `NOSONAR` bilan yopmang: bostirish tartibi alohida bobda ([false positive va won't fix farqi](24-false-positive-suppression-va-oz-qoidangiz.md#242-issue-ni-false-positive-yoki-wont-fix-deb-belgilash-va-farqi)).
+
+## 28.18 Amalda qo'llash
 
 - [ ] Quality profile da `java:S100`, `java:S101`, `java:S115`, `java:S116`, `java:S117` yoqilganini tekshiring va `format` parametrini jamoa konvensiyasiga moslang.
 - [ ] `java:S1068`, `java:S1128`, `java:S1172`, `java:S1481`, `java:S1144` bo'yicha hozirgi issue sonini yozib oling, bu sizning boshlang'ich nuqtangiz.
@@ -654,6 +691,7 @@ CI da esa yangi kod uchun qattiq, eski kod uchun yumshoq siyosat yuritish mumkin
 - [ ] `FIXME` sonini CI da nolga majburlang va mavjud `FIXME` larni issue tracker ga ko'chirib, havolasini `TODO` ga yozing.
 - [ ] `sonar.exclusions` va `sonar.java.binaries` ni to'g'rilab, generatsiya qilingan kod shikoyatlarini yo'q qiling.
 - [ ] Formatlovchi va IDE save action ni sozlab, `java:S2333`, `java:S1858`, `java:S1153` kabi uslub shikoyatlari qayta paydo bo'lmasligiga erishing.
+- [ ] Yangi `main` kodda `python3 tools/check_code.py <fayl>` toza bo'lsin; unda yo'q `java:S1130`, `java:S6878`, `java:S1874`, `java:S2184`, `java:S6809` ni yozayotganda qo'lda tekshiring.
 
 ---
 

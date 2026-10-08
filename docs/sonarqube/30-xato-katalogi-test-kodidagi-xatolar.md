@@ -7,7 +7,7 @@
 # 30. Xato katalogi: test kodidagi xatolar (Catalog: Test Code)
 
 <details>
-<summary>Bu bobdagi 15 bo'lim</summary>
+<summary>Bu bobdagi 16 bo'lim</summary>
 
 - [30.1 Assertion siz test metodi](#301-assertion-siz-test-metodi)
 - [30.2 Istisnoni try-catch bilan tekshirish va assertThrows ga o'tish](#302-istisnoni-try-catch-bilan-tekshirish-va-assertthrows-ga-otish)
@@ -23,7 +23,8 @@
 - [30.12 Faqat qamrov uchun yozilgan, natijani tekshirmaydigan test](#3012-faqat-qamrov-uchun-yozilgan-natijani-tekshirmaydigan-test)
 - [30.13 Oddiy yondashuv va arxitektor yondashuvi](#3013-oddiy-yondashuv-va-arxitektor-yondashuvi)
 - [30.14 Tuzoq va yechim](#3014-tuzoq-va-yechim)
-- [30.15 Amalda qo'llash](#3015-amalda-qollash)
+- [30.15 Yozish paytida qaytadigan test qoidalari (Test Rules to Avoid While Writing)](#3015-yozish-paytida-qaytadigan-test-qoidalari-test-rules-to-avoid-while-writing)
+- [30.16 Amalda qo'llash](#3016-amalda-qollash)
 
 </details>
 
@@ -531,7 +532,42 @@ Tavsiya: qamrov uchun soxta test yozish o'rniga mantiqsiz fayllarni `sonar.cover
 | Mock ni haddan ko'p ishlatish | Test faqat o'z mock ini tekshiradi | Integratsion sathni Testcontainers bilan qoplash, [testlash qo'llanmasidagi](../testing/README.md) Testcontainers mavzusida |
 | Flaky testni `@Disabled` bilan yopish | Muammo yashiriladi va unutiladi | Sababni topish va kutishni shartga bog'lash, [testlash qo'llanmasidagi](../testing/README.md) flaky testlar mavzusi |
 
-## 30.15 Amalda qo'llash
+## 30.15 Yozish paytida qaytadigan test qoidalari (Test Rules to Avoid While Writing)
+
+Test kodini ko'pincha tezda yozishadi, shuning uchun Sonar uning ustida eng ko'p issue ochadi. `tools/check_code.py` quyidagilarni test fayli yozilgan zahoti bo'lim raqami bilan aytadi; ushlay olmaydigani oxirida alohida.
+
+| Qoida | Xato yozuv | To'g'ri yozuv |
+| --- | --- | --- |
+| `java:S8694` | `LocalDate.of(2026, 10, 7)`: oy int literal | `LocalDate.of(2026, Month.OCTOBER, 7)` |
+| `java:S8692` | `Instant.now()`, `LocalDate.now(ZONE)`, `Clock.systemUTC()` testda | `Clock.fixed(Instant.parse("2026-10-07T00:00:00Z"), ZONE)`; kodga `Clock` inyeksiya qilinadi ([Clock ni inyeksiya qilish](../clean-code/22-sana-vaqt-va-mintaqa.md#223-clock-ni-inyeksiya-qilish-va-testlanadigan-vaqt)) |
+| `java:S5778` | `assertThatThrownBy(() -> parser.parse(load("a")))` | `var in = load("a");` lambdadan tashqarida, ichida faqat `parser.parse(in)` |
+| `java:S5838` | `assertThat(list.size()).isEqualTo(3)`, `assertThat(s).isEqualTo("")`, `assertThat(x.toString()).isEqualTo(..)`, `assertThat(map.get(k)).isEqualTo(v)` | `hasSize(3)`, `isEmpty()`, `hasToString(..)`, `containsEntry(k, v)` |
+| `java:S3415` | `assertThat(EXPECTED).isEqualTo(compute())`, `assertEquals(compute(), 3)` | `assertThat(compute()).isEqualTo(EXPECTED)`, `assertEquals(3, compute())` |
+| `java:S5853` | ketma-ket `assertThat(ids).a(); assertThat(ids).b();` | `assertThat(ids).a().b();` |
+| `java:S1612` | `filteredOn(o -> o == null)`, `extracting(e -> e.getId())` | `filteredOn(Objects::isNull)`, `extracting(Event::getId)` |
+| `java:S1068`, `java:S1144` | ishlatilmagan `private static final` konstanta yoki yordamchi metod | o'chirish; `@MethodSource("nom")` bilan nomlangan metod ishlatilgan hisoblanadi |
+
+```java
+@Test
+void marchStartsOnTheFirst() {
+    var start = LocalDate.of(2026, Month.MARCH, 1);        // java:S8694 toza
+    var bad = "x".repeat(64);                              // tayyorlash lambdadan tashqarida
+
+    assertThatThrownBy(() -> Config.parameters(bad))       // java:S5778: bitta chaqiruv
+            .isInstanceOf(IllegalStateException.class);
+    assertThat(Config.names()).hasSize(2);                 // java:S5838 toza
+}
+```
+
+`assertThatThrownBy` yoki `assertThrows` lambdasida bir nechta chaqiruv bo'lsa, qaysi biri istisno tashlagani noma'lum bo'lib qoladi ([juda keng qamrovli assertThrows](#303-juda-keng-qamrovli-assertthrows-bloki)). Mavjud ro'yxatda `isInstanceOfSatisfying` zanjirli holatlar bu qoida bo'yicha chiqmadi, shuning uchun tekshiruv faqat `isInstanceOf` va JUnit `assertThrows` ni ushlaydi.
+
+Regexda ishonchli ushlanmaydigan test qoidalari:
+
+- `java:S5841`: `allSatisfy`, `allMatch`, `noneMatch`, `doesNotContain` bo'sh ro'yxatda ham o'tadi. Oldin `isNotEmpty()` yoki `hasSize(n)` yozing, aks holda test hech narsani tekshirmay yashil bo'lishi mumkin.
+- `java:S1130`: test metodidagi `throws IOException` yoki `throws InterruptedException` ni tana otmasa olib tashlang; qaysi chaqiruv tashlashini tur ma'lumotisiz bilib bo'lmaydi.
+- `java:S2093`: `try` ichida ochilgan resurs `try-with-resources` ga o'tadi.
+
+## 30.16 Amalda qo'llash
 
 - [ ] Sonar hisobotini `scopes=TEST` filtri bilan oching va eng ko'p uchraydigan uchta qoidani aniqlang.
 - [ ] `java:S2699` va `java:S2970` issue larini birinchi navbatda yoping, ular doim yashil testni bildiradi.
@@ -541,6 +577,7 @@ Tavsiya: qamrov uchun soxta test yozish o'rniga mantiqsiz fayllarni `sonar.cover
 - [ ] Eng ko'p takrorlanadigan test ma'lumotini object mother yoki fixture fayliga chiqaring.
 - [ ] `sonar.tests`, `sonar.test.inclusions` va `sonar.test.exclusions` qiymatlarini aniq yozib, yordamchi klasslarni test to'plamidan chiqaring.
 - [ ] Bitta modulda mutation testing ni ishga tushirib, coverage bilan haqiqiy tekshiruv orasidagi farqni ko'rsating.
+- [ ] Yangi test faylida `python3 tools/check_code.py <fayl>` toza bo'lsin: `Month` enum, qotirilgan `Clock`, `assertThrows` lambdasida bitta chaqiruv, AssertJ maxsus assertionlari.
 
 ---
 
