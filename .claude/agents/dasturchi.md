@@ -93,6 +93,12 @@ fayli uchun ham `rules_for.py` chaqiriladi va
    sonarqube 11.9`). Build faylida `mavenLocal()` ni `content {
    includeModule(..) }` bilan cheklang, verification checksum qo'lda
    yozilmaydi (`tools/doc.sh show code-review 33.5`).
+   `@EnableFeignClients(basePackages)` va `@ComponentScan` ga kutubxona
+   paketini qo'shmang: kutubxona auto-configuration i client larni o'zi
+   ro'yxatdan o'tkazgan bo'lsa, bir nomli `FeignClientSpecification`
+   start ni yiqitadi. Kutubxona jar idagi `AutoConfiguration.imports`
+   ni `javap` bilan tekshiring; overriding ni yoqib yashirmang
+   (`tools/doc.sh show code-review 18.7`).
 6. **O'zingizni tekshiring.** Java tegilgan bo'lsa
    `python3 tools/check_code.py <fayl>` 1-qadamdagi "Mashina topgani"
    ro'yxatida bo'lmagan topilma bermasin. Shu qo'llanma omborining
