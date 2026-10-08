@@ -67,12 +67,35 @@ uchraydiganlari:
 Yozayotganda e'tibor (`tools/doc.sh show sonarqube 30.15`):
 
 - Oy int literal emas, `Month` enum: `LocalDate.of(2026, Month.OCTOBER, 7)`
-  (`java:S8694`).
+  (`java:S8694`), `LocalDateTime.of(2026, Month.OCTOBER, 2, 8, 30)` ham.
 - Tizim soati yo'q: `Clock.fixed(...)` bering, `Instant.now()`,
   `LocalDate.now(ZONE)`, `Clock.systemUTC()` testda yozilmaydi
   (`java:S8692`).
 - `assertThrows` va `assertThatThrownBy` lambdasida bitta chaqiruv,
-  tayyorlash tashqarida (`java:S5778`).
+  tayyorlash tashqarida (`java:S5778`). Argumentdagi `tabel.getId()` va
+  `rethrowing(f).run(() -> ..)` zanjiri ham ikkinchi chaqiruv:
+  oldindan `var id = tabel.getId();`.
+- Uch test bir xil shaklda, faqat kirish ma'lumoti farq qilsa, bitta
+  `@ParameterizedTest(name = "{0}")` + `@MethodSource` (`java:S5976`).
+- Ichida `\n` bor satrlarni `+` bilan qo'shmang, text block
+  (`java:S6126`); `String.format` da `\n` emas `%n`, baytlar aniq `\n`
+  bo'lishi kerak bo'lsa formatdan tashqarida `append('\n')`
+  (`java:S3457`).
+- Resurs `try-with-resources` bilan (`PdfReader`, ulanishni tiklash:
+  `interface X extends AutoCloseable { void close() throws SQLException; }`
+  va lambda), `finally` da `close()` yo'q (`java:S2093`). Resursni
+  tanada qayta `close()` qilmang (`java:S4087`). Dependency
+  ko'tarilgandan keyin yangi `AutoCloseable` sinflarni `javap` bilan
+  tekshiring.
+- Coverage uchun: try-with-resources ichida `return` o'rniga natijani
+  o'zgaruvchiga yozib bitta chiqish; yetib bo'lmaydigan himoya shartini
+  testlamang, kod egasiga olib tashlashni ayting (siz ishlab chiqarish
+  kodiga tegmaysiz). Coverage faqat `test` task idan hisoblanadi,
+  `integrationTest` Sonar coverage ga kirmaydi
+  (`tools/doc.sh show sonarqube 11.9`).
+- `Calendar` bilan `ps.setTimestamp(i, ts, calendar)` testda ham yozilmaydi:
+  `setObject(i, formatlangan satr, Types.OTHER)`
+  (`tools/doc.sh show clean-code 22.9`).
 - AssertJ maxsus assertion: `hasSize`, `isEmpty`, `hasToString`,
   `containsEntry` (`java:S5838`). Actual avval, kutilgan keyin
   (`java:S3415`). Bir subyektga ketma-ket `assertThat` bitta zanjirga

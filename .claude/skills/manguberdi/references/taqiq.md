@@ -103,3 +103,19 @@ Bular hook bilan to'silmaydi, lekin zanjir qoidasi:
   ishni boshqa subagentga berish `boshqa` hisobiga, ro'yxatdan
   o'tmagan `guruh:` id esa umumiy hisobga tushadi.
 - Foydalanuvchi so'ramagan faylni "yo'l-yo'lakay" tuzatish.
+
+## Xavfsizlikni pasaytiruvchi config tahriri
+
+Auto mode klassifikatori xavfsizlikni pasaytiruvchi config tahririni rad
+etadi: Kafka `SASL_SSL` dan `SASL_PLAINTEXT` ga, Gradle
+`verify-metadata=false`, `verification-metadata.xml` ga qo'lda checksum.
+Rad etilgan tahrir fayllar orasida yarim o'zgarish qoldiradi (bir fayl
+o'zgargan, ikkinchisi yo'q), shuning uchun:
+
+- Bunday ish bitta atomik buyruqda bajariladi (hamma fayl birga) yoki
+  foydalanuvchiga qoldiriladi va `Ochiq qaror:` da aytiladi.
+- Rad etilsa, shu urinish yozgan qismlar `git diff` bo'yicha darhol
+  qaytariladi, keyin ish to'xtatiladi. Rad etilgan tahrirni boshqa yo'l
+  bilan (sed, boshqa vosita) aylanib o'tib takrorlamang.
+- Checksum qo'lda yozilmaydi: u `--write-verification-metadata` bilan
+  hosil qilinadi (`tools/doc.sh show code-review 33.5`).

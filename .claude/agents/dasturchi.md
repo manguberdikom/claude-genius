@@ -77,7 +77,22 @@ fayli uchun ham `rules_for.py` chaqiriladi va
    oldin operandni cast qiling (`java:S2184`). `record`, `var`, `yield`
    nomini o'zgaruvchiga bermang (`java:S6213`). `throws` ni tana
    otmasa yozmang (`java:S1130`). `TODO` yozmang, ishlatilmagan import
-   va `private` a'zo qoldirmang.
+   va `private` a'zo qoldirmang. `try-with-resources` resursini tanada
+   `close()` qilmang (`java:S4087`). Ichida `\n` bor satrlarni `+` bilan
+   qo'shmang, text block ishlating (`java:S6126`); format satrida `\n`
+   emas `%n` (`java:S3457`). Dependency ko'targanda ishlatiladigan
+   kutubxona sinflarini `javap` bilan `AutoCloseable` ga tekshiring
+   (`tools/doc.sh show sonarqube 13.6`). `java.util.Calendar` o'rniga
+   `java.time`; JDBC da `setTimestamp(i, ts, calendar)` ni
+   `setObject(i, formatlangan satr, Types.OTHER)` bilan almashtiring,
+   `OffsetDateTime` yoki `LocalDateTime` bilan emas (`java:S2143`,
+   `tools/doc.sh show clean-code 22.9`). Coverage 100% kerak bo'lsa:
+   try-with-resources ichida `return` yozmang (natija o'zgaruvchiga,
+   bitta chiqish), enum ustida exhaustive `switch` ifodasi ishlating,
+   yetib bo'lmaydigan himoya shartini olib tashlang (`tools/doc.sh show
+   sonarqube 11.9`). Build faylida `mavenLocal()` ni `content {
+   includeModule(..) }` bilan cheklang, verification checksum qo'lda
+   yozilmaydi (`tools/doc.sh show code-review 33.5`).
 6. **O'zingizni tekshiring.** Java tegilgan bo'lsa
    `python3 tools/check_code.py <fayl>` 1-qadamdagi "Mashina topgani"
    ro'yxatida bo'lmagan topilma bermasin. Shu qo'llanma omborining
