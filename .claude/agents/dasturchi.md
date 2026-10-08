@@ -66,7 +66,18 @@ fayli uchun ham `rules_for.py` chaqiriladi va
    `python3 tools/schema_from_entities.py <src> --only-findings`.
    Test yiqilgan bo'lsa chiqishni `tools/parse_test_output.py` ga bering.
 5. **O'zgartiring.** Eng kichik o'zgarish: muammoni yechadigan, undan
-   ortig'i emas.
+   ortig'i emas. Yozayotganda Sonar qoidalari (`tools/doc.sh show
+   sonarqube 28.17`): `check_code` ushlamaydiganlarini o'zingiz
+   kuzating. Eskirgan (deprecated) API ishlatmang, Javadoc dagi
+   almashtirishni oling (`java:S1874`). Resursni `try-with-resources`
+   bilan oching (`java:S2093`). O'z sinfingizdagi `@Transactional`
+   metodni `this` orqali chaqirmang (`java:S6809`). `LocalDate`,
+   `Instant`, `Optional` kabi value-based turni `==` bilan
+   solishtirmang (`java:S8696`). `int` bo'linmani `float` ga o'tkazishdan
+   oldin operandni cast qiling (`java:S2184`). `record`, `var`, `yield`
+   nomini o'zgaruvchiga bermang (`java:S6213`). `throws` ni tana
+   otmasa yozmang (`java:S1130`). `TODO` yozmang, ishlatilmagan import
+   va `private` a'zo qoldirmang.
 6. **O'zingizni tekshiring.** Java tegilgan bo'lsa
    `python3 tools/check_code.py <fayl>` 1-qadamdagi "Mashina topgani"
    ro'yxatida bo'lmagan topilma bermasin. Shu qo'llanma omborining

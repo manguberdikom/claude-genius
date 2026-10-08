@@ -80,9 +80,24 @@ python3 tools/rules_for.py <fayl>...  # Java tuzatishdan OLDIN majburiy: boblar,
 tools/doc.sh rule java:S3776          # shu kalit tilga olingan bo'limlar
 tools/doc.sh outline sonarqube <bob>  # bobdagi bo'limlar ro'yxati
 tools/doc.sh show sonarqube <raqam>   # faqat o'sha bo'lim, butun bob emas
-python3 tools/check_code.py <fayl>    # S108, S2221, S106, S1148, S2111, S2925
+python3 tools/check_code.py <fayl>    # S108, S2221, S106, S1148, S2111, S2925, S1128, S1068, S1144, S1135, S1488, S1845, S6213, S8696; testda S8694, S8692, S5778, S5838, S3415, S5853, S1612
 tools/doc.sh checklist sonarqube <bob>
+python3 tools/sonar_fetch.py issues|gate|coverage|hotspots --loyiha <key>  # serverdan faqat o'qish
 ```
+
+## Sonar vazifasi kelganda tartib
+
+Gate shartlari va asbob sozlamasi: `tools/doc.sh show sonarqube 36.12`.
+
+1. Token fayli bormi (`GENIUS_SONAR_TOKEN_FILE`, sukut `~/.sonar-token.txt`).
+   Token qiymatini hech qayerga yozmang va chiqishda ko'rsatmang.
+2. `sonar_fetch.py gate`: qaysi shart yiqildi.
+3. `sonar_fetch.py issues`: `kalit` bo'yicha guruhlang, eng ko'pidan
+   boshlang. Coverage yetmasa `coverage` fayl bo'yicha qoplanmagan qatorni beradi.
+4. Guruhlarni fayl bo'yicha kesishmaydigan to'plamlarga bo'ling, parallel
+   aktyorlar bir faylga tegmasin.
+5. Hotspot ni `SAFE` deb belgilash va issue ni Accept yoki won't fix qilish
+   tashqi amal: faqat foydalanuvchi roziligi bilan, asbob buni qilmaydi.
 
 `doc.sh rule` kalit tilga olingan bo'limlarni ko'zga tashlanish bo'yicha
 beradi. Ba'zi katalog boblari (masalan 25 va 27) kalitni faqat bob

@@ -47,7 +47,8 @@ yozasiz, bir faylga ikkovingiz yozmaysiz.
    flaky test belgisi: sababi (vaqt, tartib, umumiy holat) topiladi va
    test barqaror qilinadi, `@Disabled` yoki qayta urinish qo'shilmaydi.
 6. **O'zingizni tekshiring.** `python3 tools/check_code.py <test-fayl>`:
-   testdagi `Thread.sleep` va bo'sh `catch` ham qoida buzilishi.
+   testdagi `Thread.sleep`, bo'sh `catch` va quyidagi Sonar qoidalari
+   ham buzilish.
 
 ## Qaysi testni yozmaslik kerak
 
@@ -62,6 +63,25 @@ uchraydiganlari:
 - Getter va setter testi: qamrov raqamini ko'taradi, xatoni topmaydi.
 - Bitta testda beshta tekshiruv: yiqilganda qaysi biri ekani bilinmaydi.
 - `Thread.sleep` bilan kutish: flaky test va sekin pipeline.
+
+Yozayotganda e'tibor (`tools/doc.sh show sonarqube 30.15`):
+
+- Oy int literal emas, `Month` enum: `LocalDate.of(2026, Month.OCTOBER, 7)`
+  (`java:S8694`).
+- Tizim soati yo'q: `Clock.fixed(...)` bering, `Instant.now()`,
+  `LocalDate.now(ZONE)`, `Clock.systemUTC()` testda yozilmaydi
+  (`java:S8692`).
+- `assertThrows` va `assertThatThrownBy` lambdasida bitta chaqiruv,
+  tayyorlash tashqarida (`java:S5778`).
+- AssertJ maxsus assertion: `hasSize`, `isEmpty`, `hasToString`,
+  `containsEntry` (`java:S5838`). Actual avval, kutilgan keyin
+  (`java:S3415`). Bir subyektga ketma-ket `assertThat` bitta zanjirga
+  (`java:S5853`).
+- `allSatisfy` va `doesNotContain` dan oldin ro'yxat bo'sh emasligi
+  (`java:S5841`).
+- `x -> x == null` o'rniga `Objects::isNull`, `x -> x.getId()` o'rniga
+  metod havolasi (`java:S1612`). Ishlatilmagan konstanta va yordamchi
+  metod qoldirilmaydi (`java:S1068`, `java:S1144`).
 
 ## Javob shakli
 
