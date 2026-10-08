@@ -26,8 +26,8 @@ hech qanday qoida qolmaydi. Chuqurroq tahlil `review` agentida va
 SonarQube da.
 
 Sonar qoidalari (`check_sonar`: S1128, S8694, S6213, S5778, S8692, S1612,
-S5838, S3415, S8696, S1135, S1068, S1144, S5853, S1488, S1845) tur
-ma'lumotisiz, regex va qavs sanash bilan. Ular haqiqiy loyihaning Sonar
+S5838, S3415, S8696, S1135, S1068, S1144, S5853, S1488, S1845, S6126,
+S3457, S2093, S4087, S5976) tur ma'lumotisiz, regex va qavs sanash bilan. Ular haqiqiy loyihaning Sonar
 ro'yxatiga solishtirib sozlangan. Tur kerak bo'lgan qoidalar (S1130,
 S6878, S1874, S2184, S6809, S5841) ataylab yo'q: ular qo'llanmada qoida
 sifatida yoziladi (sonarqube 28.17 va 30.15). Daraja: `yuqori` hookni
@@ -435,6 +435,36 @@ FACTORY_CALL_RE = re.compile(
     r"LocalDate|LocalDateTime|Collections)\s*\.\s*[A-Za-z_$][\w$]*\s*(?=\()")
 
 
+def _blank_nested_lambdas(body):
+    """Ichki lambda tanasini bo'sh joyga: `run(() -> "x")` dagi `run` tashqi
+    chaqiruv, lambda ichi esa alohida hisoblanadi (tashqi lambdaning ikkinchi
+    chaqiruvi emas)."""
+    out = list(body)
+    pos = 0
+    while True:
+        arrow = body.find("->", pos)
+        if arrow == -1:
+            return "".join(out)
+        depth = 0
+        end = len(body)
+        for i in range(arrow + 2, len(body)):
+            c = body[i]
+            if c in "([{":
+                depth += 1
+            elif c in ")]}":
+                if depth == 0:
+                    end = i
+                    break
+                depth -= 1
+            elif c == "," and depth == 0:
+                end = i
+                break
+        for i in range(arrow + 2, end):
+            if out[i] != "\n":
+                out[i] = " "
+        pos = end
+
+
 def _count_calls(body):
     body = FACTORY_CALL_RE.sub(lambda m: " " * len(m.group(0)), body)
     return sum(1 for m in CALL_RE.finditer(body) if m.group(1) not in KEYWORDS)
@@ -459,8 +489,9 @@ def check_throwing_lambda(code):
                 continue
             lam = next((s, e) for s, e in args if s <= arrow < e)
             body = code[arrow + 2:lam[1]]
-            if body.lstrip().startswith("{") or "->" in body:
+            if body.lstrip().startswith("{"):
                 continue
+            body = _blank_nested_lambdas(body)
             if name == "assertThatThrownBy":
                 chain = re.match(r"\s*\.\s*(\w+)", code[close + 1:])
                 if not chain or chain.group(1) not in THROW_CHAINS:
@@ -846,6 +877,237 @@ def check_temp_return(code):
     return out
 
 
+STRING_LITERAL_RE = re.compile(r'"(?:\\.|[^"\\\n])*"')
+NEWLINE_ESCAPE_RE = re.compile(r"(?<!\\)(?:\\\\)*\\n")
+PLUS_RE = re.compile(r"\s*\+\s*")
+PRINTF_RE = re.compile(
+    r"(?<![\w$])(?:String\s*\.\s*format|[\w$.]*\bprintf)\s*(?=\()")
+FORMATTED_RE = re.compile(r'("(?:\\.|[^"\\\n])*")\s*\.\s*formatted\s*(?=\()')
+LOCALE_ARG_RE = re.compile(r"(?:[\w$.]*[Ll]ocale\w*|Locale\s*\.\s*\w+)\Z")
+
+
+def _literals_only(text):
+    """Faqat bir qatorli satr literallari qoladi: izoh, char va text block
+    bo'sh joyga, pozitsiya saqlanadi."""
+    def keep(m):
+        s = m.group(0)
+        if s.startswith('"') and not s.startswith('"""'):
+            return s
+        return re.sub(r"[^\n]", " ", s)
+    return NOISE_RE.sub(keep, text)
+
+
+def check_newline_concat(text):
+    """java:S6126. `"a\\n" + "b"`: ichida \\n bor satr literallari `+` bilan qo'shilgan.
+
+    Faqat ifodaning boshidagi literal zanjiri: `"a\\n" + "b" + x` da literallar
+    chap-assotsiativ daraxtda alohida qism ifoda hosil qiladi, `x + "a\\n" +
+    "b"` da esa yo'q. O'zgaruvchi oraga kirgan qismni text block ga
+    o'tkazib bo'lmaydi, shuning uchun bunday zanjir bayroqlanmaydi.
+    """
+    lit = _literals_only(text)
+    parts = list(STRING_LITERAL_RE.finditer(lit))
+    out = []
+    i = 0
+    while i < len(parts):
+        j = i
+        while (j + 1 < len(parts)
+               and PLUS_RE.fullmatch(lit[parts[j].end():parts[j + 1].start()])):
+            j += 1
+        starts_expression = not lit[:parts[i].start()].rstrip().endswith("+")
+        if (j > i and starts_expression
+                and any(NEWLINE_ESCAPE_RE.search(p.group(0)) for p in parts[i:j + 1])):
+            out.append(_find(
+                "java:S6126", "o'rta", lit, parts[i].start(),
+                "Ichida `\\n` bor satr literallari `+` bilan qo'shilgan: "
+                "text block (`\"\"\"`) ishlatilsin. Baytlar muhim bo'lsa (CRLF, "
+                "PDF yoki binar format) `\\n` ni text blockda escape bilan saqlang.",
+                "Strings", ref="sonarqube 30.15"))
+        i = j + 1
+    return out
+
+
+def check_format_newline(code, text):
+    """java:S3457. `String.format("..\\n", x)`: format satrida \\n, `%n` kerak."""
+    out = []
+    for m in PRINTF_RE.finditer(code):
+        args, _ = _arg_texts(code, text, m.end())
+        if not args:
+            continue
+        rest = [a for a in args if not LOCALE_ARG_RE.match(a)]
+        fmt = rest[0] if rest else ""
+        if not any(NEWLINE_ESCAPE_RE.search(lit)
+                   for lit in STRING_LITERAL_RE.findall(fmt)):
+            continue
+        out.append(_find(
+            "java:S3457", "o'rta", code, m.start(),
+            "Format satrida `\\n`: platformaga bog'liq qator oxiri. `%n` "
+            "yozilsin; baytlar muhim bo'lsa (`\\n` aynan kerak) formatdan "
+            "tashqarida `append('\\n')` qiling.",
+            "Strings", ref="sonarqube 30.15"))
+    for m in FORMATTED_RE.finditer(_literals_only(text)):
+        if NEWLINE_ESCAPE_RE.search(m.group(1)):
+            out.append(_find(
+                "java:S3457", "o'rta", code, m.start(1),
+                "`formatted(...)` satrida `\\n`: `%n` yozilsin, baytlar muhim "
+                "bo'lsa formatdan tashqarida qo'shing.",
+                "Strings", ref="sonarqube 30.15"))
+    return out
+
+
+TRY_FINALLY_RE = re.compile(
+    r"(?<![\w$.])([A-Za-z_$][\w$]*)\s*=\s*([^;{}]*);\s*try\s*(?=\{)")
+CATCH_RE = re.compile(r"\s*catch\s*\(")
+FINALLY_RE = re.compile(r"\s*finally\s*(?=\{)")
+
+
+def _finally_block(code, try_open):
+    """`try {` ning `{` idan boshlab `catch` lardan o'tib, `finally {` ning
+    (`{` pozitsiyasi, `}` pozitsiyasi); `finally` yo'q bo'lsa None."""
+    end = _block_end(code, try_open)
+    while end != -1:
+        m = CATCH_RE.match(code, end + 1)
+        if not m:
+            break
+        close = _paren_end(code, m.end() - 1)
+        brace = code.find("{", close) if close != -1 else -1
+        if brace == -1:
+            return None
+        end = _block_end(code, brace)
+    if end == -1:
+        return None
+    m = FINALLY_RE.match(code, end + 1)
+    if not m:
+        return None
+    fin_end = _block_end(code, m.end())
+    return (m.end(), fin_end) if fin_end != -1 else None
+
+
+def _top_level(body):
+    """Ichki `{...}` bloklari bo'sh joyga: shartli `if (r != null) { r.close(); }`
+    qoidaga tushmaydi."""
+    depth = 0
+    out = []
+    for c in body:
+        if c == "{":
+            depth += 1
+        out.append(c if depth == 0 or c == "\n" else " ")
+        if c == "}":
+            depth -= 1
+    return "".join(out)
+
+
+def check_manual_close(code):
+    """java:S2093. `T r = open(); try { .. } finally { r.close(); }`."""
+    out = []
+    for m in TRY_FINALLY_RE.finditer(code):
+        if m.group(2).strip() == "null":
+            continue
+        fin = _finally_block(code, m.end())
+        if not fin:
+            continue
+        body = _top_level(code[fin[0] + 1:fin[1]])
+        close = re.search(
+            r"(?:^|[;{}])\s*%s\s*\.\s*close\s*\(\s*\)\s*;" % re.escape(m.group(1)), body)
+        if not close:
+            continue
+        out.append(_find(
+            "java:S2093", "o'rta", code, m.start(1),
+            "`%s` `finally` da qo'lda yopilmoqda: `try (T %s = ...) { ... }` "
+            "(try-with-resources) ishlatilsin. `close()` tekshiriladigan "
+            "istisno tashlasa: `interface X extends AutoCloseable { void "
+            "close() throws SQLException; }` e'lon qiling va lambda bering."
+            % (m.group(1), m.group(1)),
+            "Resource Leak", ref="sonarqube 13.6"))
+    return out
+
+
+TRY_RES_RE = re.compile(r"(?<![\w$.])try\s*(?=\()")
+RESOURCE_DECL_RE = re.compile(
+    r"\s*(?:final\s+)?[\w$.<>?,\[\]\s]+?\s([\w$]+)\s*=")
+
+
+def _resource_names(code, start, end):
+    """`try (` ichidagi resurs nomlari: `T a = ..; U b = ..` yoki mavjud `a`."""
+    names = []
+    depth = 0
+    seg = start
+    for i in range(start, end + 1):
+        c = ";" if i == end else code[i]
+        if c in "([{":
+            depth += 1
+        elif c in ")]}":
+            depth -= 1
+        elif c == ";" and depth <= 0:
+            part = code[seg:i]
+            seg = i + 1
+            decl = RESOURCE_DECL_RE.match(part)
+            if decl:
+                names.append(decl.group(1))
+            elif re.fullmatch(r"\s*[\w$]+\s*", part):
+                names.append(part.strip())
+    return names
+
+
+def check_close_in_twr(code):
+    """java:S4087. try-with-resources resursi tanada qo'lda yopilgan."""
+    out = []
+    for m in TRY_RES_RE.finditer(code):
+        close = _paren_end(code, m.end())
+        if close == -1:
+            continue
+        brace = re.compile(r"\s*(?=\{)").match(code, close + 1)
+        if not brace:
+            continue
+        body_end = _block_end(code, brace.end())
+        if body_end == -1:
+            continue
+        body = code[brace.end():body_end]
+        for name in _resource_names(code, m.end() + 1, close):
+            hit = re.search(r"(?<![\w$.])%s\s*\.\s*close\s*\(\s*\)" % re.escape(name), body)
+            if hit:
+                out.append(_find(
+                    "java:S4087", "o'rta", code, brace.end() + hit.start(),
+                    "`%s` try-with-resources resursi, tanada `close()` ortiqcha: "
+                    "blok oxirida o'zi yopiladi. Yopilgandan keyingi holat "
+                    "kerak bo'lsa, `try` dan chiqib tekshiring." % name,
+                    "Resource Leak", ref="sonarqube 13.6"))
+    return out
+
+
+TEST_METHOD_RE = re.compile(
+    r"@Test\b(?:\s*@[\w.]+(?:\s*\((?:[^()]|\([^()]*\))*\))?)*"
+    r"\s*(?:public\s+|protected\s+|private\s+)?void\s+([\w$]+)\s*\(\s*\)"
+    r"\s*(?:throws\s+[\w$.,\s]+)?(?=\{)")
+NUMBER_RE = re.compile(r"(?<![\w$.])\d[\w.]*")
+
+
+def check_similar_tests(text, code):
+    """java:S5976. Bir xil shakldagi 3+ test, faqat literal farq qiladi."""
+    lit = strip_comments(text)
+    groups = collections.defaultdict(list)
+    for m in TEST_METHOD_RE.finditer(code):
+        end = _block_end(code, m.end())
+        if end == -1:
+            continue
+        raw = re.sub(r"\s+", " ", lit[m.end() + 1:end]).strip()
+        shape = NUMBER_RE.sub("N", STRING_LITERAL_RE.sub('"S"', raw))
+        if len(shape) < 40 or shape == raw:
+            continue
+        groups[shape].append((m.start(), raw))
+    out = []
+    for items in groups.values():
+        if len(items) >= 3 and len({raw for _, raw in items}) >= 2:
+            out.append(_find(
+                "java:S5976", "o'rta", code, items[0][0],
+                "%d ta test bir xil shaklda, faqat kirish ma'lumoti farq qiladi: "
+                "`@ParameterizedTest(name = \"{0}\")` + `@MethodSource` bilan "
+                "bitta testga yig'ing (nomlar `Arguments.of(\"nom\", ...)` da "
+                "saqlanadi)." % len(items),
+                "Test Quality", ref="sonarqube 30.15"))
+    return out
+
+
 def check_sonar(text, code, is_test):
     """Sonar qoidalari: tur ma'lumotisiz aniqlanadiganlari."""
     out = []
@@ -859,7 +1121,12 @@ def check_sonar(text, code, is_test):
     out.extend(check_unused_private(code, lit))
     out.extend(check_field_case(code))
     out.extend(check_temp_return(code))
+    out.extend(check_newline_concat(text))
+    out.extend(check_format_newline(code, text))
+    out.extend(check_manual_close(code))
+    out.extend(check_close_in_twr(code))
     if is_test:
+        out.extend(check_similar_tests(text, code))
         out.extend(check_throwing_lambda(code))
         out.extend(check_system_clock(code))
         out.extend(check_assertions(code, text))

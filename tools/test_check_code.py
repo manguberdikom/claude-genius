@@ -651,6 +651,11 @@ def wrap(body, imports=""):
     return imports + "class A {\n" + body + "\n}\n"
 
 
+SIMILAR_TESTS = "".join(
+    "@Test\nvoid rejects%s() {\n  assertThatThrownBy(() -> parse(\"%s\"))\n"
+    "      .isInstanceOf(BadInput.class);\n  assertThat(counter.get()).isEqualTo(%d);\n}\n"
+    % (name, text, n) for name, text, n in (("A", "a", 1), ("B", "b", 2), ("C", "c", 3)))
+
 SONAR_CASES = [
     # java:S1128 ishlatilmagan import
     ("S1128 ishlatilmagan import", "java:S1128", MAIN,
@@ -884,6 +889,99 @@ SONAR_CASES = [
     ("S1845 turli nomlar toza", "java:S1845", MAIN,
      wrap("static final String RETRIES = \"x\";\n"
           "private final AtomicLong attempts = new AtomicLong();"), False),
+    # java:S8694 va S5778 kengaytmalari (ikkinchi va uchinchi aylana)
+    ("S8694 LocalDateTime.of(2026, 10, 2, 8, 30) testda", "java:S8694", TEST,
+     wrap("void t() { var at = LocalDateTime.of(2026, 10, 2, 8, 30); }"), True),
+    ("S5778 argumentdagi getId() ikkinchi chaqiruv", "java:S5778", TEST,
+     wrap("void t() { assertThatThrownBy(() -> service.overrideDay(tabel.getId(), request))"
+          ".isInstanceOf(IllegalStateException.class); }"), True),
+    ("S5778 ichki lambda: tashqi zanjir ikki chaqiruv", "java:S5778", TEST,
+     wrap("void t() { assertThatThrownBy(() -> rethrowing(failure).run(() -> \"unused\"))"
+          ".isInstanceOf(IllegalStateException.class); }"), True),
+    ("S5778 ichki lambdadagi chaqiruv sanalmaydi", "java:S5778", TEST,
+     wrap("void t() { assertThrows(X.class, () -> rows.forEach(r -> use(r))); }"), False),
+    ("S5778 argumentdagi qiymat fabrikasi sanalmaydi", "java:S5778", TEST,
+     wrap("void t() { assertThatThrownBy(() -> service.run(Duration.ofDays(1)))"
+          ".isInstanceOf(IllegalStateException.class); }"), False),
+    # java:S6126 \n li satr konkatenatsiyasi
+    ("S6126 \\n li literallar + bilan", "java:S6126", MAIN,
+     wrap("String s = \"1 0 obj\\n\"\n    + \"stream\\nA\\nendstream\";"), True),
+    ("S6126 faqat ikkinchisida \\n", "java:S6126", TEST,
+     wrap("String s = \"head\"\n    + \"x\\ny\";"), True),
+    ("S6126 \\n siz konkatenatsiya toza", "java:S6126", MAIN,
+     wrap("String s = \"a\"\n    + \"b\";"), False),
+    ("S6126 o'zgaruvchi bilan qo'shish toza", "java:S6126", MAIN,
+     wrap("String s = \"a\\n\" + name;"), False),
+    ("S6126 o'zgaruvchidan keyingi literal zanjiri toza", "java:S6126", MAIN,
+     wrap("String s = HEADER\n    + \"a\\r\\n\"\n    + \"b\\r\\n\";"), False),
+    ("S6126 boshidagi literal zanjiri, keyin o'zgaruvchi", "java:S6126", MAIN,
+     wrap("String s = \"a\\n\"\n    + \"b\\n\" + name\n    + \"c\";"), True),
+    ("S6126 text block toza", "java:S6126", MAIN,
+     wrap("String s = \"\"\"\n    a\n    b\n    \"\"\";"), False),
+    ("S6126 izohdagi literal sanalmaydi", "java:S6126", MAIN,
+     wrap("// \"a\\n\" + \"b\"\nString s = null;"), False),
+    ("S6126 escape qilingan teskari chiziq toza", "java:S6126", MAIN,
+     wrap("String s = \"a\\\\n\" + \"b\";"), False),
+    # java:S3457 format satrida \n
+    ("S3457 String.format da \\n", "java:S3457", MAIN,
+     wrap("String s = String.format(\"x=%s\\n\", x);"), True),
+    ("S3457 printf da \\n", "java:S3457", MAIN,
+     wrap("void f() { out.printf(\"x=%s\\n\", x); }"), True),
+    ("S3457 Locale birinchi argument", "java:S3457", MAIN,
+     wrap("String s = String.format(Locale.ROOT, \"x=%s\\n\", x);"), True),
+    ("S3457 formatted da \\n", "java:S3457", MAIN,
+     wrap("String s = \"x=%s\\n\".formatted(x);"), True),
+    ("S3457 %n bilan toza", "java:S3457", MAIN,
+     wrap("String s = String.format(\"x=%s%n\", x);"), False),
+    ("S3457 format o'zgaruvchi, \\n argumentda toza", "java:S3457", MAIN,
+     wrap("String s = String.format(fmt, \"a\\n\");"), False),
+    ("S3457 format ichida \\n yo'q, append('\\n') toza", "java:S3457", MAIN,
+     wrap("void f() { sb.append(String.format(\"x=%s\", x)).append('\\n'); }"), False),
+    # java:S2093 finally da qo'lda close
+    ("S2093 reader finally da close", "java:S2093", TEST,
+     wrap("void t() throws Exception {\n  PdfReader reader = new PdfReader(bytes);\n"
+          "  try {\n    use(reader);\n  } finally {\n    reader.close();\n  }\n}"), True),
+    ("S2093 catch bilan ham", "java:S2093", MAIN,
+     wrap("void f() {\n  Connection c = ds.getConnection();\n  try {\n    use(c);\n"
+          "  } catch (SQLException e) {\n    log(e);\n  } finally {\n    c.close();\n  }\n}"), True),
+    ("S2093 try-with-resources toza", "java:S2093", TEST,
+     wrap("void t() throws Exception {\n  try (PdfReader reader = new PdfReader(bytes)) {\n"
+          "    use(reader);\n  }\n}"), False),
+    ("S2093 null bilan boshlangan o'zgaruvchi toza", "java:S2093", MAIN,
+     wrap("void f() {\n  Reader r = null;\n  try {\n    r = open();\n  } finally {\n"
+          "    r.close();\n  }\n}"), False),
+    ("S2093 shartli close toza", "java:S2093", MAIN,
+     wrap("void f() {\n  Reader r = open();\n  try {\n    use(r);\n  } finally {\n"
+          "    if (r != null) {\n      r.close();\n    }\n  }\n}"), False),
+    ("S2093 finally da boshqa o'zgaruvchi toza", "java:S2093", MAIN,
+     wrap("void f() {\n  Reader r = open();\n  try {\n    use(r);\n  } finally {\n"
+          "    other.close();\n  }\n}"), False),
+    # java:S4087 try-with-resources resursini qo'lda yopish
+    ("S4087 resurs tanada close", "java:S4087", TEST,
+     wrap("void t() throws Exception {\n  try (Document target = new Document()) {\n"
+          "    target.open();\n    target.close();\n    assertThat(target.isOpen()).isFalse();\n  }\n}"), True),
+    ("S4087 ikkinchi resurs", "java:S4087", MAIN,
+     wrap("void f() throws Exception {\n  try (A a = open(); B b = open2(a)) {\n"
+          "    use(b);\n    b.close();\n  }\n}"), True),
+    ("S4087 tanada close yo'q", "java:S4087", MAIN,
+     wrap("void f() throws Exception {\n  try (A a = open()) {\n    use(a);\n  }\n}"), False),
+    ("S4087 boshqa o'zgaruvchi close", "java:S4087", MAIN,
+     wrap("void f() throws Exception {\n  try (A a = open()) {\n    other.close();\n  }\n}"), False),
+    ("S4087 maydon nomi bilan (this.a.close) toza", "java:S4087", MAIN,
+     wrap("void f() throws Exception {\n  try (A a = open()) {\n    this.a.close();\n  }\n}"), False),
+    # java:S5976 bir xil shakldagi testlar
+    ("S5976 uchta bir xil shakl", "java:S5976", TEST,
+     wrap(SIMILAR_TESTS), True),
+    ("S5976 ikkita bir xil shakl toza", "java:S5976", TEST,
+     wrap(SIMILAR_TESTS.rsplit("@Test", 1)[0]), False),
+    ("S5976 shakli turlicha toza", "java:S5976", TEST,
+     wrap("@Test\nvoid a() {\n  var r = parser.parse(\"x\");\n  assertThat(r.size()).isEqualTo(1);\n}\n"
+          "@Test\nvoid b() {\n  var r = parser.read(\"y\");\n  assertThat(r.isEmpty()).isTrue();\n}\n"
+          "@Test\nvoid c() {\n  var r = parser.dump(\"z\");\n  assertThat(r.name()).isEqualTo(\"q\");\n}"), False),
+    ("S5976 @ParameterizedTest tegilmaydi", "java:S5976", TEST,
+     wrap(SIMILAR_TESTS.replace("@Test", "@ParameterizedTest")), False),
+    ("S5976 main kodda tegilmaydi", "java:S5976", MAIN,
+     wrap(SIMILAR_TESTS), False),
 ]
 
 
@@ -905,6 +1003,7 @@ def case_sonar_havolalar():
         "sonarqube 28.17": "main kod",
         "sonarqube 30.3": "assertthrows",
         "sonarqube 30.15": "test qoidalari",
+        "sonarqube 13.6": "resurslarni yopish",
         "clean-code 24.2": "metod havolasi",
         "clean-code 22.3": "clock",
     }
