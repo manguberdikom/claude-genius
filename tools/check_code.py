@@ -27,7 +27,8 @@ SonarQube da.
 
 Sonar qoidalari (`check_sonar`: S1128, S8694, S6213, S5778, S8692, S1612,
 S5838, S3415, S8696, S1135, S1068, S1144, S5853, S1488, S1845, S6126,
-S3457, S2093, S4087, S5976) tur ma'lumotisiz, regex va qavs sanash bilan. Ular haqiqiy loyihaning Sonar
+S3457, S2093, S4087, S5976) va qo'llanmadagi ikki test qoidasi
+(JVM system property ga yozish, static ArchUnit grafi; kalitsiz) tur ma'lumotisiz, regex va qavs sanash bilan. Ular haqiqiy loyihaning Sonar
 ro'yxatiga solishtirib sozlangan. Tur kerak bo'lgan qoidalar (S1130,
 S6878, S1874, S2184, S6809, S5841) ataylab yo'q: ular qo'llanmada qoida
 sifatida yoziladi (sonarqube 28.17 va 30.15). Daraja: `yuqori` hookni
@@ -1108,6 +1109,60 @@ def check_similar_tests(text, code):
     return out
 
 
+ENV_WRITE_RE = re.compile(
+    r"\b(getSystemProperties|getSystemEnvironment)\s*\(\s*\)\s*\.\s*"
+    r"(?:put|putAll|remove|clear)\s*(?=\()")
+SET_PROPERTY_RE = re.compile(r"\bSystem\s*\.\s*setProperty\s*(?=\()")
+PROPERTY_RESTORE_RE = re.compile(r"\bSystem\s*\.\s*(?:clearProperty|setProperties)\s*\(")
+STATIC_GRAPH_RE = re.compile(
+    r"\bstatic\s+(?:(?:final|volatile)\s+)*JavaClasses\s+([\w$]+)\s*([=;])")
+
+
+def check_test_env_leak(code):
+    """Testda JVM system property yoki environment ga yozish: fork ga sizadi."""
+    out = []
+    for m in ENV_WRITE_RE.finditer(code):
+        out.append(_find(
+            "", "o'rta", code, m.start(),
+            "Testda `%s().put(..)`: `StandardEnvironment.getSystemProperties()` "
+            "haqiqiy JVM `System.getProperties()` ni qaytaradi, yozilgan qiymat shu "
+            "fork dagi keyingi testlarga sizadi va testlar tartibga bog'liq "
+            "yiqiladi. `environment.getPropertySources().addFirst(new "
+            "MapPropertySource(..))` ishlating." % m.group(1),
+            "Flaky Test", ref="testing 15.14"))
+    if not PROPERTY_RESTORE_RE.search(code):
+        for m in SET_PROPERTY_RE.finditer(code):
+            out.append(_find(
+                "", "o'rta", code, m.start(),
+                "Testda `System.setProperty(..)` va shu sinfda `clearProperty` yoki "
+                "tiklash yo'q: qiymat fork dagi keyingi testlarga sizadi. Tiklang "
+                "yoki `MapPropertySource` ni `addFirst` bilan qo'shing.",
+                "Flaky Test", ref="testing 15.14"))
+    return out
+
+
+def check_static_archunit_graph(code):
+    """Testda static `JavaClasses` maydoniga ClassFileImporter importi."""
+    out = []
+    for m in STATIC_GRAPH_RE.finditer(code):
+        if m.group(2) == "=":
+            end = _statement_end(code, m.end())
+            loaded = end != -1 and "ClassFileImporter" in code[m.end():end]
+        else:
+            loaded = re.search(r"(?<![\w$.])%s\s*=\s*[^;]*ClassFileImporter"
+                               % re.escape(m.group(1)), code) is not None
+        if loaded:
+            out.append(_find(
+                "", "o'rta", code, m.start(),
+                "Static `JavaClasses` maydoni: har import yuzlab MB lik graf, static "
+                "maydon uni fork oxirigacha ushlaydi. Bir necha arxitektura testi bitta "
+                "forkka tushsa test JVM `OutOfMemoryError` bilan o'ladi. Umumiy, "
+                "`SoftReference` bilan keshlangan yordamchi yoki `@AnalyzeClasses` "
+                "keshini ishlating.",
+                "Flaky Test", ref="testing 15.14"))
+    return out
+
+
 def check_sonar(text, code, is_test):
     """Sonar qoidalari: tur ma'lumotisiz aniqlanadiganlari."""
     out = []
@@ -1131,6 +1186,8 @@ def check_sonar(text, code, is_test):
         out.extend(check_system_clock(code))
         out.extend(check_assertions(code, text))
         out.extend(check_joined_assertions(code))
+        out.extend(check_test_env_leak(code))
+        out.extend(check_static_archunit_graph(code))
     return out
 
 

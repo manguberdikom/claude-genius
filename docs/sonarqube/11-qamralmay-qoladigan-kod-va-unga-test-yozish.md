@@ -426,6 +426,33 @@ Coverage 100% ga olib chiqishda JaCoCo ning o'z qoldiq tarmoqlari ham chiqadi. U
 | enum ustidagi `switch` statement (arrow bilan) yetib bo'lmaydigan `default` tarmog'ini qoldiradi | exhaustive `switch` ifodasi: `return switch (tier) { case A -> ..; case B -> ..; };` (yuqoridagi misol) |
 | yetib bo'lmaydigan himoya sharti (`if (x == null) throw ..`, chaqiruvchi hech qachon `null` bermaydi) | uni yopadigan test yozilmaydi, shart olib tashlanadi ([null tekshiruvlari](18-branch-va-shart-qamrovini-toliq-yopish.md#1810-null-tekshiruvlari-haqiqatan-kerakmi-yoki-olib-tashlash-mumkinmi)) |
 
+Antipattern: coverage uchun enum `switch` ni `if / else if / else` zanjiriga almashtirish. Qoldiq `default` yo'qoladi, lekin oxirgi `else` yangi konstantani jim yutadi va kompilyator to'liqligini endi tekshirmaydi: xato build da emas, production da chiqadi. To'g'ri yo'l switch ni saqlab, natija turiga qarab shaklini tanlash:
+
+```java
+// hisoblagich: EnumMap + merge, zanjirsiz
+Map<Status, Integer> counts = new EnumMap<>(Status.class);
+for (Order order : orders) {
+    counts.merge(order.status(), 1, Integer::sum);
+}
+
+// yon ta'sir: switch ifodasi Runnable qaytaradi, keyin bir marta ishga tushadi
+Runnable action = switch (status) {
+    case NEW -> () -> queue.add(order);
+    case PAID -> () -> shipping.start(order);
+    case CANCELLED -> () -> refunds.start(order);
+};
+action.run();
+
+// qiymat: oddiy switch ifodasi
+String label = switch (status) {
+    case NEW -> "yangi";
+    case PAID -> "to'langan";
+    case CANCELLED -> "bekor";
+};
+```
+
+Yangi konstanta qo'shilsa `switch` ifodalari kompilyatsiyada yiqiladi, `EnumMap` hisoblagichi esa uni o'zi sanaydi. `if / else` zanjirida esa na biri, na ikkinchisi bo'ladi.
+
 Qamrov manbai ham aniq bo'lsin: coverage faqat `test` task idan yig'iladi, `integrationTest` testlari Sonar coverage ga kirmaydi ([Gradle da hisobot](10-jacoco-va-sonarqube-ulanishi-maven-va.md#104-gradle-da-jacoco-jacocotestreport-va-xml-chiqishini-yoqish)).
 
 ## 11.10 Interfeys standart metodlari va abstrakt klasslar

@@ -127,6 +127,7 @@ Keyin memory bosqichi: qolgan kamchilik feedback nomzodi.
 
 
 GROUP_RE = re.compile(r"(?im)^\s*\[?guruh:\s*([\w.-]+)")
+FOLDER_RE = re.compile(r"(?im)^\s*\[?papka:[ \t]*`?([^`\r\n\]]+)")
 
 
 def strip_prefix(name):
@@ -162,11 +163,24 @@ def registered(group, cwd=""):
 
 
 def group_of(prompt, cwd=""):
-    """Promptdagi ro'yxatdan o'tgan `guruh: <id>`, aks holda ''."""
-    match = GROUP_RE.search(prompt if isinstance(prompt, str) else "")
+    """Promptdagi ro'yxatdan o'tgan `guruh: <id>`, aks holda ''.
+
+    Hook cwd si repo bo'lmasa (bir necha repo ni ichiga olgan ota papka)
+    holat fayli topilmaydi; shunda promptdagi `papka:` yo'li (worktree
+    ham git repo) umumiy .git ni beradi.
+    """
+    text = prompt if isinstance(prompt, str) else ""
+    match = GROUP_RE.search(text)
     if not match:
         return ""
-    return match.group(1) if registered(match.group(1), cwd) else ""
+    group = match.group(1)
+    if registered(group, cwd):
+        return group
+    folder = FOLDER_RE.search(text)
+    if folder and os.path.isdir(folder.group(1).strip()):
+        if registered(group, folder.group(1).strip()):
+            return group
+    return ""
 
 
 def counter(actor, group=""):

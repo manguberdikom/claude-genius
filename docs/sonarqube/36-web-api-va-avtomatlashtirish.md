@@ -444,6 +444,14 @@ Tartib: 1) token fayli borligini tekshirish; 2) `gate` bilan yiqilgan shartni an
 
 Coverage faqat `test` task ning JaCoCo hisobotidan keladi; integratsion testlar `integrationTest` da yuradi va coverage ga kirmaydi. Kotlin fayllar uchun "ABM Kotlin" profili ishlatiladi.
 
+Yuzlab issue li katta tozalashda parallel andoza:
+
+1. Issue lar paket bo'yicha kesishmaydigan guruhlarga bo'linadi, har guruh o'z worktree ida ishlaydi.
+2. Ko'p paketga tegadigan qoidalar guruhga berilmaydi: deprecated API ni o'chirish (`java:S1874`, `java:S1133`, `java:S6355`, `java:S5738`, `java:S1123`) va restricted nomli metodni qayta nomlash (`java:S6213` method). Ular alohida "cross" worktree da, o'z branchida commit bilan bajariladi va oxirida haqiqiy `git merge` (3-way) bilan qo'shiladi.
+3. Paket guruhlari patch sifatida qo'shiladi (`guruh.py birlashtir --3way`), guruh tugashi bilan darhol, oxirgisini kutmasdan.
+4. Har birlashtirishdan keyin kompilyatsiya: guruhlar yozgan yangi kod o'chirilgan yoki qayta nomlangan API ga murojaat qilishi mumkin.
+5. Sonar API ning `sources/lines` chaqiruvi fayl boshiga sekin va timeout siz osiladi, shuning uchun qatorma-qator coverage ni lokal JaCoCo XML dan oling. O'lchash uchun `run_tests.py --coverage`: maqsadli yurishda ham jacoco agenti va hisobot qoladi, hisobot yo'li chiqishda aytiladi.
+
 ## 36.13 Amalda qo'llash
 
 - [ ] O'z serveringizning `/web_api` sahifasini ochib, skriptlarda ishlatayotgan har bir endpoint va parametr nomini tasdiqlang, deprecated belgisi borlarini ro'yxatga oling.

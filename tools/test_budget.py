@@ -399,6 +399,25 @@ def case_repodan_tashqari_guruh_umumiy(_):
     return state()["sessions"][SESSION]["calls"] == {"review": 1}
 
 
+def case_papka_qatoridan_guruh(_):
+    """cwd repo emas: `papka:` dagi yo'ldan guruh tanilib o'z hisobiga tushadi."""
+    run("--yangi-vazifa", "papka")
+
+    def send_in_folder(prompt):
+        return send({"hook_event_name": "PreToolUse", "tool_name": "Agent",
+                     "tool_input": {"subagent_type": "dasturchi",
+                                    "prompt": prompt},
+                     "session_id": SESSION, "cwd": STATE})
+
+    card = "guruh: orders\npapka: %s\nVazifa: ..." % REPO
+    got = [send_in_folder(card) for _ in range(3)]
+    calls = state()["sessions"][SESSION]["calls"]
+    # papka: yo'q bo'lsa eski xulq: cwd repo emas, hisob umumiy
+    old = budget.group_of("guruh: orders\nVazifa: ...", STATE)
+    return (got == ["allow", "allow", "deny"]
+            and calls == {"orders/dasturchi": 2} and old == "")
+
+
 def case_cli_royxatsiz_guruh(_):
     run("--yangi-vazifa", "cli")
     code, out = run("dasturchi", "--guruh", "x9")
@@ -700,6 +719,7 @@ CASES = [
     ("SendMessage guruh hisobida", case_sendmessage_guruh),
     ("ro'yxatsiz guruh umumiy hisobda", case_royxatsiz_guruh_umumiy),
     ("repodan tashqari guruh umumiy", case_repodan_tashqari_guruh_umumiy),
+    ("papka: qatoridan guruh tanilishi", case_papka_qatoridan_guruh),
     ("CLI ro'yxatsiz guruh umumiy", case_cli_royxatsiz_guruh),
     ("buzuq JSON to'smaydi", case_buzuq_json),
     ("eskirgan hisob nolga tushadi", case_eskirgan_nolga),

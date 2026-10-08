@@ -1023,6 +1023,50 @@ def case_sonar_havolalar():
     return rows
 
 
+FLAKY_CASES = [
+    # (nom, yo'l, kod, kutilgan topilmalar soni)
+    ("getSystemProperties().put", TEST,
+     wrap("void t() { env.getSystemProperties().put(\"a\", \"b\"); }"), 1),
+    ("getSystemEnvironment().put", TEST,
+     wrap("void t() { env.getSystemEnvironment().put(\"A\", \"b\"); }"), 1),
+    ("System.setProperty tiklashsiz", TEST,
+     wrap("void t() { System.setProperty(\"a\", \"b\"); }"), 1),
+    ("System.setProperty + clearProperty toza", TEST,
+     wrap("void t() { System.setProperty(\"a\", \"b\"); }\n"
+          "void u() { System.clearProperty(\"a\"); }"), 0),
+    ("MapPropertySource addFirst toza", TEST,
+     wrap("void t() { env.getPropertySources().addFirst(new MapPropertySource(\"x\", m)); }"), 0),
+    ("getSystemProperties().get toza", TEST,
+     wrap("String t() { return env.getSystemProperties().get(\"a\"); }"), 0),
+    ("main kodda tegilmaydi", MAIN,
+     wrap("void t() { System.setProperty(\"a\", \"b\"); }"), 0),
+    ("static final JavaClasses importi", TEST,
+     wrap("static final JavaClasses CLASSES = new ClassFileImporter().importPackages(\"x\");"), 1),
+    ("static maydon + @BeforeAll importi", TEST,
+     wrap("static JavaClasses classes;\n"
+          "@BeforeAll static void load() { classes = new ClassFileImporter().importPackages(\"x\"); }"), 1),
+    ("SoftReference keshi toza", TEST,
+     wrap("static SoftReference<JavaClasses> CACHE = new SoftReference<>(null);"), 0),
+    ("static maydon umumiy yordamchidan toza", TEST,
+     wrap("static final JavaClasses CLASSES = ArchCache.production();"), 0),
+    ("lokal o'zgaruvchi toza", TEST,
+     wrap("void t() { JavaClasses c = new ClassFileImporter().importPackages(\"x\"); }"), 0),
+    ("main kodda static graf tegilmaydi", MAIN,
+     wrap("static final JavaClasses CLASSES = new ClassFileImporter().importPackages(\"x\");"), 0),
+]
+
+
+def case_flaky_qoidalar():
+    rows = []
+    for name, path, code, expect in FLAKY_CASES:
+        got = [f for f in check_code.check_text(code, path)
+               if f.ref == "testing 15.14"]
+        rows.append(("%s (topildi: %d)" % (name, len(got)), len(got) == expect))
+    import docref
+    rows.append(("testing 15.14 indeksda bor", docref.by_ref("testing 15.14") == "testing 15.14"))
+    return rows
+
+
 SECTIONS = [
     ("Topilishi kerak", case_topilishi),
     ("Qo'llanmaga ulanish", case_qollanma),
@@ -1034,6 +1078,7 @@ SECTIONS = [
     ("Keng catch xabari", case_keng_catch),
     ("Sonar qoidalari: musbat va manfiy", case_sonar_qoidalari),
     ("Sonar qoidalari: qo'llanma havolasi", case_sonar_havolalar),
+    ("Test sizishi va static ArchUnit grafi", case_flaky_qoidalar),
     ("Toza fayl", case_toza_fayl),
     ("Ko'p fayl", case_kop_fayl),
     ("Zanjir majburlanadi", case_zanjir),

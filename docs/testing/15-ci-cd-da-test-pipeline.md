@@ -312,6 +312,40 @@ Retry siyosati qat'iy bo'lishi kerak: `docker pull` va dependency download uchun
 
 Timeout har darajada: job uchun (`timeout-minutes: 25`), test uchun (`@Timeout` yoki `junit.jupiter.execution.timeout.testable.method.default=2 m`), container startup uchun (Testcontainers `withStartupTimeout`). Timeout bo'lmasa, osilgan test butun runner quotasini yeydi. Resurs tomoni: standart GitHub runner 2 vCPU / 7 GB RAM - bu Testcontainers bilan bir nechta container ko'targan integration suite uchun ko'pincha kam. Larger runner (4-8 vCPU) narxi bor, lekin 25 daqiqani 8 daqiqaga tushirsa, ishlab chiquvchi vaqti hisobida tez qaytadi. Nihoyat, Docker mavjudligini boshida tekshirish (`docker info`) va yo'q bo'lsa aniq xabar bilan tez yiqilish - 20 daqiqadan keyingi tushunarsiz `ContainerLaunchException` dan yaxshiroq.
 
+"Could not complete execution for Gradle Test Executor N" xatosi test fork JVM o'lganini bildiradi: Gradle fork bilan aloqani yo'qotgan. Ko'pincha sabab heap `OutOfMemoryError`, konteyner killer (OOM killer) emas. Lokal mashinada fork ko'p, har biriga kam sinf tushadi va xato ko'rinmaydi. CI da fork kam, shuning uchun har fork ko'p sinf yuritadi va static maydonlar, context cache va katta fixture lar to'planib heap ni to'ldiradi.
+
+Qayta chiqarish va dalil olish:
+
+- Fork sonini bittaga tushiring (`-P<forks>=1` yoki `maxParallelForks = 1`) va test chiqish papkasini o'chiring, aks holda task up-to-date bo'lib yurmaydi.
+- Dalilni doimiy qo'ying: heap dump va JVM xato fayli CI artefaktiga tushadi, taxmin kerak bo'lmaydi.
+- Bitta forkda tartibga bog'liq testlar ham chiqadi: bir test JVM system property ga yozsa, keyingi test uni ko'radi.
+
+```kotlin
+import java.lang.management.ManagementFactory
+import com.sun.management.OperatingSystemMXBean
+
+tasks.withType<Test> {
+    jvmArgs(
+        "-XX:+HeapDumpOnOutOfMemoryError",
+        "-XX:HeapDumpPath=build/test-crash",
+        "-XX:ErrorFile=build/test-crash/hs_err_%p.log",
+    )
+    // fork sonini CPU dan tashqari konteyner xotirasi bilan ham cheklang
+    val os = ManagementFactory.getOperatingSystemMXBean() as OperatingSystemMXBean
+    val byMemory = (os.totalMemorySize / (1024L * 1024 * 1024) / 2).toInt().coerceAtLeast(1)
+    maxParallelForks = minOf(Runtime.getRuntime().availableProcessors(), byMemory)
+}
+```
+
+`OperatingSystemMXBean.getTotalMemorySize()` konteynerda cgroup chegarasini o'qiydi, host xotirasini emas. Kotlin DSL da `java.lang.management.ManagementFactory` ni to'liq nomi bilan yozib bo'lmaydi: `java` nomi `java {}` extension ga bog'lanadi, shuning uchun import qiling.
+
+Odatiy sabablar:
+
+- Static ArchUnit importlari: `static final JavaClasses` maydoni yuzlab MB lik grafni fork oxirigacha ushlaydi. Yechim: `SoftReference` bilan keshlangan umumiy yordamchi yoki `@AnalyzeClasses` keshi.
+- Spring test context cache: sukut bo'yicha 32 ta context saqlanadi, har xil konfiguratsiyali testlar ko'p context ochadi.
+- Katta fixture: har testda to'liq qayta yaratiladigan yoki static ushlanadigan ma'lumot.
+- Test system property yoki environment ga yozishi: `StandardEnvironment.getSystemProperties()` haqiqiy JVM `System.getProperties()` ni qaytaradi, yozilgan qiymat shu fork dagi keyingi testlarga sizadi. Yechim: `environment.getPropertySources().addFirst(new MapPropertySource(..))`.
+
 ## 15.15 Anti-patternlar
 
 Hamma testni har push'da ishga tushirish. Boshida to'g'ri ko'rinadi, loyiha o'sgach PR vaqti 45 daqiqaga chiqadi. To'g'ri yo'l - bosqichli strategiya va selection, nightly safety net bilan.

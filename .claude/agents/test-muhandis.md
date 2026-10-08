@@ -92,7 +92,20 @@ Yozayotganda e'tibor (`tools/doc.sh show sonarqube 30.15`):
   testlamang, kod egasiga olib tashlashni ayting (siz ishlab chiqarish
   kodiga tegmaysiz). Coverage faqat `test` task idan hisoblanadi,
   `integrationTest` Sonar coverage ga kirmaydi
-  (`tools/doc.sh show sonarqube 11.9`).
+  (`tools/doc.sh show sonarqube 11.9`). Enum `switch` ni coverage uchun
+  `if / else` ga almashtirishni so'ramang: oxirgi `else` yangi konstantani
+  jim yutadi (shu bo'lim). Coverage o'lchash: `run_tests.py --coverage`
+  (`GENIUS_GRADLE_INIT=0` init ning boshqa foydasini ham o'chiradi).
+- Testda JVM system property ga yozmang (`System.setProperty`,
+  `getSystemProperties().put(..)`, `getSystemEnvironment().put(..)`):
+  qiymat shu fork dagi keyingi testlarga sizadi va testlar tartibga bog'liq
+  yiqiladi. `environment.getPropertySources().addFirst(new
+  MapPropertySource(..))` ishlating (`tools/doc.sh show testing 15.14`).
+- ArchUnit importini static maydonda saqlamang (`static final JavaClasses`
+  yoki `@BeforeAll` da static maydonga): graf yuzlab MB, fork oxirigacha
+  heap da qoladi va CI da bir forkka tushgan arxitektura testlari
+  `OutOfMemoryError` bilan o'ladi. Umumiy `SoftReference` bilan keshlangan
+  yordamchi yoki `@AnalyzeClasses` keshini ishlating (shu bo'lim).
 - `Calendar` bilan `ps.setTimestamp(i, ts, calendar)` testda ham yozilmaydi:
   `setObject(i, formatlangan satr, Types.OTHER)`
   (`tools/doc.sh show clean-code 22.9`).

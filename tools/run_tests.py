@@ -7,6 +7,7 @@
     python3 tools/run_tests.py --asos main --yurgiz    # guruh: main...HEAD va ishchi o'zgarish
     python3 tools/run_tests.py --modul orders --yurgiz # bitta modulning hammasi
     python3 tools/run_tests.py --hammasi --yurgiz      # to'liq suite: partiyada bir marta
+    python3 tools/run_tests.py --diff --coverage --yurgiz  # maqsadli yurish + jacoco hisoboti
     python3 tools/run_tests.py --tashxis               # suite nega sekin
     python3 tools/run_tests.py --isit                  # fonda oldindan kompilyatsiya
     python3 tools/run_tests.py --hisobot               # test vaqti jurnali, 7 kun
@@ -35,11 +36,20 @@ build va daemon ni yo'qotadi.
 
 Gradle buyrug'iga init skript qo'shiladi (`-I`, build fayllariga
 tegmaydi): maqsadli yurishda jacoco agenti, hisobot va coverage
-tekshiruvi o'chadi, HTML hisobot yozilmaydi; har yurishda JUnit XML
+tekshiruvi o'chadi (`--coverage` bo'lmasa), HTML hisobot yozilmaydi; har yurishda JUnit XML
 majburiy. Loyiha build cache ni tanlamagan bo'lsa faqat kompilyatsiya
 lokal cache lanadi: yangi worktree boshqa daraxt kompilyatsiya qilgan
 modulni qayta kompilyatsiya qilmaydi, test esa har gal haqiqatan yuradi.
 Included build (`includeBuild`) moduli `:<nom>:test` bilan yuradi.
+
+`--coverage`: maqsadli yurishda ham jacoco qoladi. Gradle da agent va
+`jacocoTestReport` (XML bilan) yoqiq, faqat coverage tekshiruvi
+(`jacocoTestCoverageVerification`) o'chadi; Maven da `-Djacoco.skip=true`
+olinadi, `jacoco:report` qo'shiladi va `jacoco:check` yiqitmaydi. Qolgan
+init xulqi (JUnit XML, kompilyatsiya cache) o'zgarmaydi, shuning uchun
+coverage ishida `GENIUS_GRADLE_INIT=0` kerak emas. Yurish oxirida hisobot
+yo'li aytiladi: qatorma-qator coverage ni shu XML dan oling. To'liq suite
+da jacoco avvaldan qoladi.
 
 Tanlash, eng aniqdan kengiga:
   1. o'zgargan test sinfi;
@@ -54,6 +64,7 @@ yuborsa, u o'sha yerda chiqadi va egasiga qaytadi.
 
 import argparse
 import contextlib
+import glob
 import hashlib
 import json
 import os
@@ -931,6 +942,7 @@ GRADLE_INIT = r"""// claude-genius run_tests.py: faqat shu yurish uchun, build f
 import org.gradle.util.GradleVersion
 
 def geniusMaqsadli = %(maqsadli)s
+def geniusCoverage = %(qoplama)s
 def geniusKesh = %(kesh)s
 
 if (GradleVersion.current() < GradleVersion.version('6.1')) {
@@ -969,14 +981,28 @@ projectsEvaluated { gradle ->
             if (geniusMaqsadli) {
                 task.reports.html.required.set(false)
                 def jacoco = task.extensions.findByName('jacoco')
-                if (jacoco != null) {
+                if (jacoco != null && !geniusCoverage) {
                     jacoco.enabled = false
                 }
             }
         }
         if (geniusMaqsadli) {
+            // --coverage: agent va jacocoTestReport qoladi, faqat chegara
+            // tekshiruvi o'chadi (bir nechta test bilan yolg'on yiqilardi).
             project.tasks.withType(org.gradle.testing.jacoco.tasks.JacocoReportBase).configureEach { task ->
-                task.enabled = false
+                if (!geniusCoverage || task instanceof org.gradle.testing.jacoco.tasks.JacocoCoverageVerification) {
+                    task.enabled = false
+                }
+            }
+        }
+        if (geniusCoverage) {
+            project.tasks.withType(org.gradle.testing.jacoco.tasks.JacocoReport).configureEach { task ->
+                task.reports.xml.required.set(true)
+            }
+            def report = project.tasks.findByName('jacocoTestReport')
+            def unitTest = project.tasks.findByName('test')
+            if (report != null && unitTest != null) {
+                unitTest.finalizedBy(report)
             }
         }
         if (geniusKesh) {
@@ -1042,13 +1068,14 @@ def gradle_cache_ours(root):
     return props.get("org.gradle.caching", "").lower() not in ("true", "false")
 
 
-def init_script(root, targeted, cache):
+def init_script(root, targeted, cache, coverage=False):
     """Skript loyihaning `.gradle/` papkasida (Gradle o'zi yozadigan, odatda
     gitignore dagi joy) va nisbiy yo'l bilan beriladi. Umumiy /tmp da
     oldindan ma'lum nomli fayl boshqa foydalanuvchiga kod bajartirish yo'li
     bo'lardi; Windows da esa TEMP dagi `&` yoki `^` `cmd /c` buyrug'ini
     bo'lardi."""
     text = GRADLE_INIT % {"maqsadli": "true" if targeted else "false",
+                          "qoplama": "true" if coverage else "false",
                           "kesh": "true" if cache else "false"}
     relpath = os.path.join(".gradle", "genius", "init-%s.gradle"
                            % hashlib.sha1(text.encode("utf-8")).hexdigest()[:10])
@@ -1070,7 +1097,7 @@ def init_script(root, targeted, cache):
     return relpath
 
 
-def gradle_init(project, targeted):
+def gradle_init(project, targeted, coverage=False):
     """Gradle yurishiga init skript va build cache bayrog'i.
 
     Maqsadli yurishda (targeted): jacoco agenti va jacoco hisobot,
@@ -1078,6 +1105,8 @@ def gradle_init(project, targeted):
     `test` ga finalizedBy bilan bog'langan coverage tekshiruvi bir nechta
     test bilan chegaraga yetmay yolg'on yiqilardi: Maven dagi jacoco:check
     bilan bir xil. To'liq suite da jacoco qoladi, coverage CI bilan bir xil.
+    coverage=True (`--coverage`) bo'lsa maqsadli yurishda ham agent va
+    jacocoTestReport (XML bilan) qoladi, faqat chegara tekshiruvi o'chadi.
 
     Har yurishda: JUnit XML majburiy (qayta yurish va beqarorni ajratish
     shunga tayanadi). Cache asbobniki bo'lsa: faqat kompilyatsiya, faqat
@@ -1100,20 +1129,20 @@ def gradle_init(project, targeted):
     if isolated_projects(gradle_choices(project.root)[0]):
         return []
     cache = version is not None and gradle_cache_ours(project.root)
-    return ["-I", init_script(project.root, targeted, cache)] + (
+    return ["-I", init_script(project.root, targeted, cache, coverage and targeted)] + (
         ["--build-cache"] if cache else [])
 
 
-def commands(project, plan, everything=False):
+def commands(project, plan, everything=False, coverage=False):
     """[(argv, izoh)]: ketma-ket yurgiziladigan buyruqlar."""
     if project.tool == "gradle":
-        return gradle_commands(project, plan, everything)
+        return gradle_commands(project, plan, everything, coverage)
     if project.tool == "maven":
-        return maven_commands(project, plan, everything)
+        return maven_commands(project, plan, everything, coverage)
     return []
 
 
-def gradle_commands(project, plan, everything):
+def gradle_commands(project, plan, everything, coverage=False):
     argv = list(project.runner)
     if everything or plan.everything:
         tests = project.tests()
@@ -1132,16 +1161,20 @@ def gradle_commands(project, plan, everything):
         argv.append("%s:%s" % (project.gradle_path(module), project.test_task(module, sset)))
         for fqn in chosen:
             argv += ["--tests", fqn]
-    return [(argv + ["--continue", "--console=plain"] + gradle_init(project, True)
+    return [(argv + ["--continue", "--console=plain"] + gradle_init(project, True, coverage)
              + extra_flags(), "maqsadli")]
 
 
-def maven_commands(project, plan, everything):
+def maven_commands(project, plan, everything, coverage=False):
     base = list(project.runner) + ["-B", "-fae"]
     # Maqsadli yurishda jacoco yo'q: agent testni sekinlashtiradi, verify ga
     # bog'langan jacoco:check esa bir nechta test bilan coverage chegarasiga
     # yetmay yolg'on yiqiladi. Coverage to'liq suite va CI niki.
     quick = ["-Djacoco.skip=true"]
+    if coverage:
+        # jacoco qoladi; chegara tekshiruvi (jacoco:check) bir nechta test bilan yiqitmaydi
+        quick = ["-Djacoco.haltOnFailure=false"]
+    report = ["jacoco:report"] if coverage else []
     pre = []
     poms = project.pom_texts()
     failsafe = project.failsafe()
@@ -1165,7 +1198,7 @@ def maven_commands(project, plan, everything):
     out = list(pre)
     if plan.whole:
         out.append((base + module_args({m for m, _ in plan.whole}) + ["test"]
-                    + quick + extra_flags(),
+                    + report + quick + extra_flags(),
                     "butun modul: " + "; ".join(plan.whole.values())))
     units, its = [], []
     for chosen in plan.targets.values():
@@ -1188,9 +1221,26 @@ def maven_commands(project, plan, everything):
             if any("spotless-maven-plugin" in t for t in poms):
                 out.insert(len(pre), (list(project.runner) + ["-B", "-q", "spotless:apply"],
                                       "formatlash: spotless:check verify fazasida"))
-        out.append((base + module_args(modules) + [phase] + props + quick
-                    + extra_flags(), "maqsadli"))
+        out.append((base + module_args(modules) + [phase] + report + props
+                    + quick + extra_flags(), "maqsadli"))
     return out
+
+
+def coverage_reports(project, since):
+    """`--coverage` yurishi yozgan jacoco XML hisobotlari (loyiha ildiziga nisbiy)."""
+    modules = {""} | {s.module for s in project.tests()}
+    found = set()
+    for module in modules:
+        base = os.path.join(project.root, module)
+        for pattern in ("build/reports/jacoco/*/*.xml", "target/site/jacoco*/jacoco*.xml"):
+            for path in glob.glob(os.path.join(base, *pattern.split("/"))):
+                try:
+                    fresh = os.path.getmtime(path) >= since - 2
+                except OSError:
+                    continue
+                if fresh:
+                    found.add(relative_to(path, project.root))
+    return sorted(found)
 
 
 def warmup_commands(project):
@@ -1710,7 +1760,11 @@ def describe(project, plan, cmds, everything):
         lines.append("Buyruq (%s): %s" % (note, show(argv)))
     init = next((read(os.path.join(project.root, a[a.index("-I") + 1]))
                  for a, _ in cmds if "-I" in a), "")
-    parts = ["jacoco va HTML hisobot o'chiq"] if "geniusMaqsadli = true" in init else []
+    parts = []
+    if "geniusMaqsadli = true" in init:
+        parts.append("jacoco qoladi (--coverage), HTML hisobot o'chiq"
+                     if "geniusCoverage = true" in init
+                     else "jacoco va HTML hisobot o'chiq")
     if "geniusKesh = true" in init:
         parts.append("build cache faqat kompilyatsiya, lokal")
     elif init and gradle_choices(project.root)[0].get("org.gradle.caching", "") == "true":
@@ -1997,6 +2051,9 @@ def main(argv=None):
                         help="modulning barcha testlari (takrorlanadi)")
     parser.add_argument("--hammasi", action="store_true", help="to'liq suite")
     parser.add_argument("--yurgiz", action="store_true", help="buyruqni yurgizish")
+    parser.add_argument("--coverage", action="store_true",
+                        help="maqsadli yurishda ham jacoco agenti va hisobot (Gradle "
+                             "jacocoTestReport, Maven jacoco:report); hisobot yo'li aytiladi")
     parser.add_argument("--tashxis", action="store_true", help="suite nega sekin")
     parser.add_argument("--isit", action="store_true",
                         help="oldindan kompilyatsiya (fonda, guruh ochilgach)")
@@ -2092,7 +2149,7 @@ def main(argv=None):
             return 0
 
     everything = args.hammasi or bool(plan.everything)
-    cmds = commands(project, plan, args.hammasi)
+    cmds = commands(project, plan, args.hammasi, args.coverage)
     print(describe(project, plan, cmds, args.hammasi))
     if not args.yurgiz:
         print("Yurgizish: shu buyruqqa --yurgiz qo'shiladi (Bash timeout 600000)%s."
@@ -2134,6 +2191,13 @@ def main(argv=None):
     print("\nNatija: %s, exit=%d, %d s, log: %s%s" % (
         state, code, seconds, log,
         "" if summary_log == log else ", qayta yurish: %s" % summary_log))
+    if args.coverage:
+        reports = coverage_reports(project, started)
+        if reports:
+            print("Coverage hisoboti: %s" % ", ".join(reports[:MAX_SHOWN]))
+        else:
+            print("Coverage hisoboti topilmadi: test yiqilgan yoki build jacoco "
+                  "hisobotini yozmaydi (Gradle: jacocoTestReport, Maven: jacoco plagini).")
     if code == 124:
         print("Vaqt chegarasi %g s. To'liq suite bo'lsa uni fonda yurgizing "
               "(Bash run_in_background) va --vaqt ni oshiring." % args.vaqt)

@@ -1025,6 +1025,18 @@ def case_maven_jacoco_maqsadlida(_):
     return "-Djacoco.skip=true" in target and "-Djacoco.skip=true" not in full
 
 
+def case_maven_coverage(_):
+    """--coverage: Maven maqsadli yurishda jacoco.skip yo'q, jacoco:report bor."""
+    root = tree("maven_coverage", maven_shop())
+    project = run_tests.Project(root, runner=["mvn"])
+    plan = run_tests.select(project, ["orders/src/main/java/shop/orders/OrderService.java"])
+    plain = run_tests.commands(project, plan)[-1][0]
+    cov = run_tests.commands(project, plan, coverage=True)[-1][0]
+    return ("-Djacoco.skip=true" in plain and "jacoco:report" not in plain
+            and "-Djacoco.skip=true" not in cov and "jacoco:report" in cov
+            and "-Djacoco.haltOnFailure=false" in cov)
+
+
 def case_qoshimcha_bayroqlar(_):
     root = tree("bayroq", gradle_shop())
     project, plan = plan_for(root, ["orders/src/main/java/shop/orders/OrderService.java"])
@@ -1075,7 +1087,7 @@ def init_of(argv, root=None):
         return handle.read()
 
 
-def gradle_argv(files, everything=False, version="8.14.3"):
+def gradle_argv(files, everything=False, version="8.14.3", coverage=False):
     files = dict(files)
     if version:
         files.setdefault("gradle/wrapper/gradle-wrapper.properties", WRAPPER % version)
@@ -1083,7 +1095,8 @@ def gradle_argv(files, everything=False, version="8.14.3"):
     project, plan = plan_for(root, ["orders/src/main/java/shop/orders/OrderService.java"])
     if everything:
         plan = run_tests.Plan()
-    return run_tests.commands(project, plan, everything=everything)[-1][0]
+    return run_tests.commands(project, plan, everything=everything,
+                              coverage=coverage)[-1][0]
 
 
 def case_gradle_init(_):
@@ -1101,6 +1114,50 @@ def case_gradle_init(_):
             # Loyihaning .gradle/ ida, nisbiy: umumiy /tmp da emas.
             and not os.path.isabs(path) and path.startswith(".gradle")
             and init_of(gradle_argv(gradle_shop())) == text)
+
+
+def case_gradle_coverage(_):
+    """--coverage: init da jacoco agenti va hisobot qoladi, chegara tekshiruvi
+    o'chadi; qolgan init (cache, XML) o'zgarmaydi. Bayroqsiz eski xulq."""
+    files = gradle_shop()
+    plain = gradle_argv(files)
+    plain_text = init_of(plain)
+    cov = gradle_argv(files, coverage=True)
+    cov_text = init_of(cov)
+    full = gradle_argv(files, everything=True, coverage=True)
+    return ("geniusCoverage = false" in plain_text and "geniusCoverage = true" in cov_text
+            and "geniusMaqsadli = true" in cov_text and "geniusKesh = true" in cov_text
+            and "jacoco != null && !geniusCoverage" in cov_text
+            and "JacocoCoverageVerification" in cov_text
+            and "jacocoTestReport" in cov_text
+            and "--build-cache" in cov and cov[cov.index("-I") + 1] != plain[plain.index("-I") + 1]
+            # to'liq suite da jacoco avvaldan qoladi: bayroq init ni o'zgartirmaydi
+            and "geniusCoverage = false" in init_of(full))
+
+
+def case_coverage_hisobot_yoli(_):
+    """Hisobot yo'li faqat shu yurishda yozilgan XML dan topiladi."""
+    root = tree("coverage_yol", gradle_shop())
+    project = run_tests.Project(root, runner=["./gradlew"])
+    old = os.path.join(root, "orders", "build", "reports", "jacoco", "test", "jacocoTestReport.xml")
+    os.makedirs(os.path.dirname(old), exist_ok=True)
+    with open(old, "w", encoding="utf-8") as handle:
+        handle.write("<report/>")
+    stamp = time.time() - 3600
+    os.utime(old, (stamp, stamp))
+    before = run_tests.coverage_reports(project, time.time() - 60)
+    os.utime(old, None)
+    after = run_tests.coverage_reports(project, time.time() - 60)
+    return before == [] and after == ["orders/build/reports/jacoco/test/jacocoTestReport.xml"]
+
+
+def case_describe_coverage(_):
+    files = gradle_shop()
+    files["gradle/wrapper/gradle-wrapper.properties"] = WRAPPER % "8.14.3"
+    root = tree("describe_coverage", files)
+    project, plan = plan_for(root, ["orders/src/main/java/shop/orders/OrderService.java"])
+    text = run_tests.describe(project, plan, run_tests.commands(project, plan, coverage=True), False)
+    return "Gradle init: jacoco qoladi (--coverage)" in text
 
 
 def case_gradle_kesh_qarori(_):
@@ -1437,9 +1494,13 @@ CASES = [
     ("jurnal va --hisobot", case_jurnal_hisobot),
     ("tashxis: kontekst ishga tushishi logdan", case_kontekst_ishga_tushishi),
     ("Maven: jacoco faqat maqsadlida o'chadi", case_maven_jacoco_maqsadlida),
+    ("Maven --coverage: jacoco qoladi, jacoco:report", case_maven_coverage),
     ("GENIUS_TEST_FLAGS", case_qoshimcha_bayroqlar),
     ("ildiz qulfi yechiladi", case_ildiz_qulfi),
     ("Gradle init: maqsadlida jacoco o'chadi, cache faqat kompilyatsiya", case_gradle_init),
+    ("Gradle --coverage: jacoco agenti va hisobot qoladi", case_gradle_coverage),
+    ("--coverage: hisobot yo'li yangi XML dan", case_coverage_hisobot_yoli),
+    ("describe: --coverage init satri", case_describe_coverage),
     ("Gradle cache: loyiha, foydalanuvchi va -D qarori ustun", case_gradle_kesh_qarori),
     ("Gradle init: o'chirish, Gradle 6.0, noma'lum versiya, isolated", case_gradle_init_ochirish),
     ("isitish: Gradle source set lari, papka nomidan emas", case_isit_hamma_toplam),

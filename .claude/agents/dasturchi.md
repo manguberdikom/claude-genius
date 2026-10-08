@@ -90,7 +90,16 @@ fayli uchun ham `rules_for.py` chaqiriladi va
    try-with-resources ichida `return` yozmang (natija o'zgaruvchiga,
    bitta chiqish), enum ustida exhaustive `switch` ifodasi ishlating,
    yetib bo'lmaydigan himoya shartini olib tashlang (`tools/doc.sh show
-   sonarqube 11.9`). Build faylida `mavenLocal()` ni `content {
+   sonarqube 11.9`). Enum `switch` ni coverage uchun `if / else`
+   zanjiriga almashtirmang: oxirgi `else` yangi konstantani jim yutadi
+   (`EnumMap` + `merge`, `Runnable` qaytaradigan `switch` ifodasi, qiymat
+   uchun `switch` ifodasi: shu bo'lim). Testda JVM system property yoki
+   `getSystemProperties().put(..)` ga yozmang: qiymat fork dagi keyingi
+   testlarga sizadi (`MapPropertySource` + `addFirst`, `tools/doc.sh show
+   testing 15.14`). `ClassFileImporter` natijasini static maydonda
+   saqlamang: graf fork oxirigacha heap da qoladi (shu bo'lim). Coverage
+   o'lchash kerak bo'lsa `run_tests.py --coverage`, `GENIUS_GRADLE_INIT=0`
+   emas. Build faylida `mavenLocal()` ni `content {
    includeModule(..) }` bilan cheklang, verification checksum qo'lda
    yozilmaydi (`tools/doc.sh show code-review 33.5`).
    `@EnableFeignClients(basePackages)` va `@ComponentScan` ga kutubxona

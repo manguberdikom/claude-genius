@@ -76,9 +76,40 @@ izolyatsiyasini buzadi.
 Guruhlar bir xabarda bir nechta Agent chaqiruvi bilan yurgiziladi: har
 guruhning birinchi aktyori bir vaqtda.
 
+Sessiya papkasi repo bo'lmagan ota papka bo'lsa (bir nechta repo ni
+ichiga olgan workspace), hook cwd dan holat faylini topolmaydi.
+`budget.py` shunda kartadagi `papka:` yo'lidan umumiy `.git` ni oladi
+(worktree ham git repo), shuning uchun `papka:` qatori har chaqiruvda
+bo'lishi shart: usiz parallel guruhlar umumiy hisobda 3-chaqiruvdan
+boshlab to'siladi.
+
+## Cross bosqichi: ko'p paketga tegadigan qoidalar
+
+Issue lar paket bo'yicha kesishmaydigan guruhlarga bo'linadi. Ko'p
+paketga tegadigan qoidalar guruhga berilmaydi, ular kesishmaydi degan
+shartni buzadi: deprecated API ni o'chirish (`java:S1874`, `java:S1133`,
+`java:S6355`, `java:S5738`, `java:S1123`) va restricted nomli metodni
+qayta nomlash (`java:S6213` method). Ular alohida "cross" worktree da,
+o'z branchida commit bilan bajariladi va oxirida haqiqiy `git merge`
+(3-way) bilan qo'shiladi. Paket guruhlari patch sifatida qo'shiladi
+(`guruh.py birlashtir --3way`).
+
+`GENIUS_GURUH_MAX` to'lgan bo'lsa cross uchun `guruh.py yarat` o'rniga
+oddiy `git worktree add -b <branch> <papka>` ishlatiladi va oxirida
+`git merge <branch>`. Papka guruh kartasidagi kabi `papka:` bilan beriladi.
+
+Har `birlashtir` dan keyin kompilyatsiya: guruhlar yozgan yangi kod
+cross o'chirgan yoki qayta nomlagan API ga murojaat qilishi mumkin.
+Sonar API ning `sources/lines` chaqiruvi fayl boshiga sekin va timeout siz
+osiladi: qatorma-qator coverage ni lokal JaCoCo XML dan oling
+(`run_tests.py --coverage`).
+
 ## Birlashtirish va to'liq suite
 
-Hamma guruh o'z zanjirini tugatgach:
+Guruh o'z zanjirini tugatishi bilan darhol `birlashtir` (oxirgisini
+kutmasdan): erta qo'shilgan guruh keyingi guruhlarning ziddiyatini
+erta ko'rsatadi. To'liq suite esa hamma guruh birlashgach bir marta
+yuradi:
 
 ```bash
 python3 tools/guruh.py birlashtir orders     # patch indeksga, commit yo'q
