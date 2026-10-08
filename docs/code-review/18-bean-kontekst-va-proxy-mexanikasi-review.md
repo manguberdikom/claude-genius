@@ -241,6 +241,22 @@ Oxirgi uchtasi alohida diqqat talab qiladi: ular global ta'sirga ega va diffda k
 }
 ```
 
+Uchinchi belgi: kutubxona paketini ilovada qayta skan qilish. Ichki kutubxona (starter yoki plugin) o'z `AutoConfiguration.imports` faylidagi sinfda `@EnableFeignClients(clients = ...)` bilan Feign client larini o'zi ro'yxatdan o'tkazadi. Ilova ham shu paketni `basePackages` bilan skan qilsa, bir nomli ikkinchi `FeignClientSpecification` paydo bo'ladi. Spring Boot da bean definition overriding sukut bo'yicha o'chiq, shuning uchun ilova start da yiqiladi. Kutubxonaning yangi versiyasida (yoki bir xil versiyaning qayta nashrida) auto-configuration qo'shilsa, xato faqat deploy da chiqadi: `@EnableFeignClients` ni o'qimaydigan slice testlari uni ushlamaydi.
+
+```java
+// Belgi: kutubxona paketini skan qilish.
+@EnableFeignClients(basePackages = {"uz.example.integration.feign", "uz.example.app.client"})
+// Xato (start da): The bean 'sign-service-client.FeignClientSpecification' could not be registered.
+// A bean with that name has already been defined and overriding is disabled.
+// Tekshirish: kutubxona jar idagi AutoConfiguration.imports va har sinfning @EnableFeignClients(clients=...)
+//   javap -v -cp lib.jar uz.example.integration.config.SignFileClientAutoConfiguration | grep -A3 EnableFeignClients
+// To'g'risi: faqat ilovaning o'z paketlari. allow-bean-definition-overriding=true bilan yashirmang.
+@EnableFeignClients(basePackages = {"uz.example.app.client"})
+
+// Takrorlanmaslik uchun unit test: auto-configuration ro'yxatdan o'tkazgan client paketlari
+// ilova skanida yo'q (ImportCandidates.load(AutoConfiguration.class, loader) orqali).
+```
+
 ## 18.8 Proxy va tranzaksiyani test bilan tekshirish
 
 Review izohida "proxy ishlamaydi" degan gapni dalil bilan quvvatlash mumkin: test yoziladi va u mavjud kodda yiqiladi.
@@ -305,6 +321,7 @@ static final ArchRule no_self_injection =
 | `ObjectMapper`, `RestClient` qo'lda yaratilgan bo'lsa, sozlamalar saqlanganmi | Konfiguratsiya yo'qolishi |
 | `@Primary`, `@Order`, `BeanPostProcessor` ta'siri baholanganmi | Global o'zgarish |
 | Yangi `@Enable*` annotatsiyasi uchun pool va xato ishlovchi bormi | Jim nosozlik |
+| `@EnableFeignClients` / `@ComponentScan` kutubxona paketini skan qilmaydimi, kutubxona auto-configuration i uni o'zi ro'yxatdan o'tkazmaydimi | Bir nomli bean, start yiqiladi |
 
 ## 18.10 Amalda qo'llash
 
@@ -314,6 +331,7 @@ static final ArchRule no_self_injection =
 - [ ] `@PostConstruct` ichida tashqi tizimga murojaat qiladigan joylarni toping va ularni `@Scheduled` + `HealthIndicator` ga o'tkazing.
 - [ ] Qo'lda yaratilgan `ObjectMapper` larni `Jackson2ObjectMapperBuilder` ga o'tkazib, sana formatlarini tekshiring.
 - [ ] `spring.main.allow-bean-definition-overriding` yoqilgan bo'lsa, qaysi beanlar almashtirilayotganini aniqlang.
+- [ ] `@EnableFeignClients(basePackages)` dagi har bir kutubxona paketi uchun kutubxona auto-configuration i shu client larni o'zi ro'yxatdan o'tkazmasligini `javap` bilan tekshiring va buni unit test bilan mahkamlang.
 - [ ] Prototype va request scope bean larning singleton ga inyeksiya qilinganini tekshiring.
 - [ ] Tranzaksiya chegarasi uchun `isActualTransactionActive()` tekshiruvi bilan kamida bitta test yozing.
 
