@@ -27,11 +27,14 @@ SonarQube da.
 
 Sonar qoidalari (`check_sonar`: S1128, S8694, S6213, S5778, S8692, S1612,
 S5838, S3415, S8696, S1135, S1068, S1144, S5853, S1488, S1845, S6126,
-S3457, S2093, S4087, S5976) va qo'llanmadagi ikki test qoidasi
+S3457, S2093, S4087, S5976; space-hrm dan 2026-10-09: S125, S2245, S2133,
+S6068, S5841, S4144, S6878, S1640) va qo'llanmadagi ikki test qoidasi
 (JVM system property ga yozish, static ArchUnit grafi; kalitsiz) tur ma'lumotisiz, regex va qavs sanash bilan. Ular haqiqiy loyihaning Sonar
 ro'yxatiga solishtirib sozlangan. Tur kerak bo'lgan qoidalar (S1130,
-S6878, S1874, S2184, S6809, S5841) ataylab yo'q: ular qo'llanmada qoida
-sifatida yoziladi (sonarqube 28.17 va 30.15). Daraja: `yuqori` hookni
+S1874, S2184, S6809) ataylab yo'q: ular qo'llanmada qoida sifatida yoziladi
+(sonarqube 28.17 va 30.15). S6878 va S1640 recordlar va enumlarni shu
+fayldan va loyiha `src` papkasidan oladi; S5841 faqat kolleksiya ekaniga
+dalil bor o'zgaruvchida (e'lon qilingan tur, `var x = ...collect(..)`). Daraja: `yuqori` hookni
 to'sadi (S8694, S6213, S8696 value-based tur), qolganlari `o'rta`:
 yozuvchiga eslatma.
 """
@@ -210,7 +213,7 @@ def check_text(text, path):
                 "Flaky Test", "java:S2925"))
 
     out.extend(check_transactions(code))
-    out.extend(check_sonar(text, code, is_test))
+    out.extend(check_sonar(text, code, is_test, path))
     return suppress(out, text, code)
 
 
@@ -218,7 +221,7 @@ def check_text(text, path):
 # Sonar qoidalari, aktyor yozgan koddagi eng ko'p uchraganlari.
 #
 # Hammasi regex va qavs sanash bilan, tur ma'lumotisiz. Tur kerak bo'lgan
-# qoida (S1130, S6878, S2184, S6809, S1874, S5841) bu yerda yo'q: ular
+# qoida (S1130, S2184, S6809, S1874) bu yerda yo'q: ular
 # qo'llanmada qoida sifatida yoziladi (sonarqube 28.17, 30.15). Har
 # tekshiruv noaniq joyda jim qoladi: yolg'on musbatdan ko'ra o'tkazib
 # yuborilgan topilma yaxshi, chunki Sonar baribir ushlaydi.
@@ -285,6 +288,22 @@ LITERAL_RE = re.compile(
     r'(?:"(?:\\.|[^"\\])*"|\d[\d_.]*[LlFfDd]?|true|false|null)\Z')
 EQ_ASSERTS = ("assertEquals", "assertSame", "assertNotEquals", "assertNotSame")
 AG_ORDERED = ("isEqualTo", "isNotEqualTo", "isSameAs", "isNotSameAs", "contains")
+# Kutilgan qiymatni argument qilib oladigan boshqa AssertJ metodlari: ularda
+# argument ko'pincha literal, shuning uchun faqat actual ning konstantaligi
+# tekshiriladi (Sonar `assertThat(Type.EMPTY).hasToString("...")` ni ham tutadi).
+AG_EXPECTED_ARG = ("hasToString", "hasSameHashCodeAs", "hasSameClassAs",
+                   "isEqualToIgnoringCase", "isEqualToIgnoringWhitespace",
+                   "isEqualByComparingTo", "isNotEqualByComparingTo")
+SIZE_COMPARISONS = {
+    "isGreaterThan": "hasSizeGreaterThan(n)",
+    "isGreaterThanOrEqualTo": "hasSizeGreaterThanOrEqualTo(n)",
+    "isLessThan": "hasSizeLessThan(n)",
+    "isLessThanOrEqualTo": "hasSizeLessThanOrEqualTo(n)",
+}
+ARRAY_DECL_RE = re.compile(
+    r"[\w$>]\s*\[\]\s+([A-Za-z_$][\w$]*)\s*(?==|;|,|\)|:)")
+CONTAINS_CALL_RE = re.compile(
+    r"\.\s*contains\s*\((?:[^()]|\((?:[^()]|\([^()]*\))*\))*\)\Z")
 
 VALUE_TYPES = ("LocalDate", "LocalDateTime", "LocalTime", "Instant", "Duration",
                "Period", "YearMonth", "MonthDay", "Year", "ZonedDateTime",
@@ -613,7 +632,12 @@ MAP_GET_RE = re.compile(
     r"(?:^|[.\s)])([A-Za-z_$][\w$]*)\s*(?:\((?:[^()]|\([^()]*\))*\))?\s*\.get\(([^()]+)\)\Z")
 
 
-def _better_assertion(actual, method, expected, maps):
+def _array_names(code):
+    """Faylda `T[] nom` deb e'lon qilingan nomlar."""
+    return set(m.group(1) for m in ARRAY_DECL_RE.finditer(code)) if "[]" in code else set()
+
+
+def _better_assertion(actual, method, expected, maps, arrays=frozenset()):
     """AssertJ da aniqroq assertion bor bo'lsa uning tavsifi, aks holda "".
 
     Faqat tur ma'lumotisiz aniq holatlar: `toString()`, `size()`, bo'sh satr
@@ -621,6 +645,21 @@ def _better_assertion(actual, method, expected, maps):
     sinfda ham bo'ladi (Sonar ularni bayroqlamadi), shuning uchun yo'q.
     """
     flat = " ".join(actual.split())
+    sized = re.search(r"\.\s*size\(\)\Z", flat)
+    length = re.search(r"([\w$]*)\s*(\)?)\s*\.\s*length\Z", flat)
+    if length and (length.group(2) or length.group(1) in arrays):
+        if method == "isEqualTo":
+            return "massiv uzunligi uchun `hasSize(n)` ishlatilsin"
+        if method in SIZE_COMPARISONS:
+            return "massiv uzunligi uchun `%s` ishlatilsin" % SIZE_COMPARISONS[method]
+    if sized and method in SIZE_COMPARISONS:
+        return "`%s` ishlatilsin" % SIZE_COMPARISONS[method]
+    if method in ("isTrue", "isFalse") and not expected and CONTAINS_CALL_RE.search(flat):
+        if method == "isTrue":
+            return "`contains(x)` ishlatilsin"
+        return ("`doesNotContain(x)` ishlatilsin; u bo'sh kolleksiyada ham o'tadi "
+                "(java:S5841), shuning uchun kirishni to'liq to'g'ri qilib "
+                "`isEmpty()` bilan tekshiring yoki avval `isNotEmpty()` yozing")
     if method != "isEqualTo":
         return ""
     if expected == ['""']:
@@ -639,6 +678,7 @@ def check_assertions(code, text):
     """java:S5838 (maxsus assertion) va java:S3415 (argument tartibi)."""
     out = []
     maps = _map_names(code)
+    arrays = _array_names(code)
     for m in ASSERT_THAT_RE.finditer(code):
         actual_args, close = _arg_texts(code, text, m.end())
         if not actual_args or len(actual_args) != 1:
@@ -651,7 +691,7 @@ def check_assertions(code, text):
         if expected_args is None:
             continue
         terminal = code[end + 1:].lstrip().startswith(";")
-        better = _better_assertion(actual, method, expected_args, maps) if terminal else ""
+        better = _better_assertion(actual, method, expected_args, maps, arrays) if terminal else ""
         if better:
             out.append(_find(
                 "java:S5838", "o'rta", code, at,
@@ -664,6 +704,15 @@ def check_assertions(code, text):
                 "java:S3415", "o'rta", code, m.start(),
                 "`assertThat(%s)` da kutilgan qiymat actual o'rnida: "
                 "argumentlarni almashtiring, `assertThat(haqiqiy).%s(%s)`."
+                % (_short(actual), method, _short(actual)),
+                "Test Quality", ref="sonarqube 30.15"))
+        if (method in AG_EXPECTED_ARG and len(expected_args) == 1
+                and CONSTANT_RE.match(actual) and not CONSTANT_RE.match(expected_args[0])):
+            out.append(_find(
+                "java:S3415", "o'rta", code, m.start(),
+                "`assertThat(%s).%s(...)`: Sonar konstantani kutilgan qiymat deb "
+                "biladi, actual o'rnida turibdi. Konstantani lokal o'zgaruvchiga "
+                "oling (`var actual = %s;`) yoki haqiqiy qiymatni hisoblang."
                 % (_short(actual), method, _short(actual)),
                 "Test Quality", ref="sonarqube 30.15"))
     for name in EQ_ASSERTS:
@@ -1163,7 +1212,535 @@ def check_static_archunit_graph(code):
     return out
 
 
-def check_sonar(text, code, is_test):
+# ---------------------------------------------------------------------------
+# space-hrm Sonar ida chiqqan, lekin yuqoridagilar ushlamagan holatlar
+# (2026-10-09): S125, S2245, S2133, S6068, S5841, S4144, S6878, S1640.
+# ---------------------------------------------------------------------------
+
+ENTITY_END_RE = re.compile(r"&(?:#\d+|#x[0-9a-fA-F]+|\w+);\Z")
+
+
+def _code_like_line(line):
+    """sonar-java JavaFootprint EndWithDetector: qator `;`, `{` yoki `}` bilan tugaydi.
+
+    `{@link X}` kabi juft figurali qavs va HTML entity (`&lt;`) kod emas.
+    """
+    if not line:
+        return False
+    if line.endswith(";"):
+        return not ENTITY_END_RE.search(line)
+    if line[-1] in "{}":
+        return line.count("{") != line.count("}")
+    return False
+
+
+def _comment_lines(chunk):
+    """Izohning mazmunli qatorlari: [(chunk ichidagi siljish, qator matni)]."""
+    out, offset = [], 0
+    for raw in chunk.split("\n"):
+        s = raw.strip()
+        if s.startswith("/*"):
+            s = s.lstrip("/*").strip()
+        elif s.startswith("//"):
+            s = s.lstrip("/").strip()
+        elif s.startswith("*") and not s.startswith("*/"):
+            s = s.lstrip("*").strip()
+        if s.endswith("*/"):
+            s = s[:-2].rstrip()
+        out.append((offset, s))
+        offset += len(raw) + 1
+    return out
+
+
+def check_commented_code(text, code):
+    """java:S125. Izoh qatori `;`, `{` yoki `}` bilan tugasa Sonar uni kodga o'xshatadi."""
+    first_code = len(code) - len(code.lstrip())
+    out = []
+    for m in NOISE_RE.finditer(text):
+        chunk = m.group(0)
+        if m.start() < first_code or not chunk.startswith(("//", "/*")):
+            continue   # fayl boshidagi sarlavha izohi Sonar da ham o'tadi
+        if chunk.startswith("/**"):
+            continue   # Javadoc: space-hrm da `;` bilan tugagan Javadoc qatorlari Sonar da toza
+        for offset, line in _comment_lines(chunk):
+            if _code_like_line(line):
+                out.append(_find(
+                    "java:S125", "o'rta", code, m.start() + offset,
+                    "Izoh qatori `%s` bilan tugaydi: Sonar uni kommentga olingan "
+                    "kod deb biladi. Haqiqiy kod bo'lsa o'chiring, gap bo'lsa "
+                    "nuqta bilan tugating." % line[-1],
+                    "Unused Code", ref="sonarqube 28.5"))
+                break   # Sonar bitta izohga bitta topilma beradi
+    return out
+
+
+RANDOM_RE = re.compile(
+    r"(?<![\w$])(?:ThreadLocalRandom\s*\.\s*current|Math\s*\.\s*random"
+    r"|new\s+(?:java\s*\.\s*util\s*\.\s*)?Random)\s*(?=\()")
+
+
+def check_insecure_random(code):
+    """java:S2245 (hotspot, faqat main kod). SecureRandom bu yerga tushmaydi."""
+    return [_find(
+        "java:S2245", "o'rta", code, m.start(),
+        "`%s` bashorat qilinadigan generator (Sonar hotspot): xavfsizlikka "
+        "daxldor qiymat uchun `SecureRandom`. Faqat vaqtga yoyish (jitter) "
+        "bo'lsa ham hotspot ko'rib chiqiladi: `SecureRandom` arzon."
+        % " ".join(m.group(0).split()),
+        "Security", ref="sonarqube 26.5") for m in RANDOM_RE.finditer(code)]
+
+
+NEW_RE = re.compile(
+    r"(?<![\w$.])new\s+[A-Za-z_$][\w$.]*\s*(?:<[^()<>]*(?:<[^()<>]*>[^()<>]*)*>)?\s*(?=\()")
+GET_CLASS_RE = re.compile(r"\s*\.\s*getClass\s*\(\s*\)")
+
+
+def check_new_get_class(code):
+    """java:S2133. `new X(...).getClass()`: obyekt faqat sinfi uchun yaratiladi."""
+    out = []
+    for m in NEW_RE.finditer(code):
+        _, close = _split_args(code, m.end())
+        if close != -1 and GET_CLASS_RE.match(code, close + 1):
+            out.append(_find(
+                "java:S2133", "o'rta", code, m.start(),
+                "`%s(...).getClass()`: obyekt faqat sinfi uchun yaratiladi; "
+                "`X.class` yozing." % " ".join(m.group(0).split()),
+                "Clean Code", ref="sonarqube 28.17"))
+    return out
+
+
+MOCK_WHEN_RE = re.compile(
+    r"(?:(?<![\w$.])|(?<=Mockito\.)|(?<=BDDMockito\.))(?:when|given)\s*(?=\()")
+MOCK_DO_WHEN_RE = re.compile(r"\)\s*\.\s*when\s*(?=\()")
+MOCK_VERIFY_RE = re.compile(r"(?:(?<![\w$.])|(?<=Mockito\.))verify\s*(?=\()")
+EQ_CALL_RE = re.compile(r"(?:[\w$]+\s*\.\s*)*eq\s*(?=\()")
+
+
+def _all_eq(code, open_idx):
+    """`(` dagi argumentlarning hammasi `eq(...)` mi (kamida bitta argument)."""
+    spans, _ = _split_args(code, open_idx)
+    if not spans:
+        return False
+    for s, e in spans:
+        chunk = code[s:e]
+        first = s + len(chunk) - len(chunk.lstrip())
+        last = s + len(chunk.rstrip()) - 1
+        m = EQ_CALL_RE.match(code, first)
+        if not m:
+            return False
+        _, close = _split_args(code, m.end())
+        if close != last:
+            return False
+    return True
+
+
+def _last_call_open(code, s, e):
+    """`code[s:e]` ifodasining oxirgi chaqiruvi `(` pozitsiyasi, aks holda -1."""
+    end = s + len(code[s:e].rstrip()) - 1
+    if end < s or code[end] != ")":
+        return -1
+    depth = 0
+    for i in range(end, s - 1, -1):
+        if code[i] == ")":
+            depth += 1
+        elif code[i] == "(":
+            depth -= 1
+            if depth == 0:
+                return i
+    return -1
+
+
+def check_mockito_eq(code):
+    """java:S6068. when/verify chaqiruvida hamma argument `eq(...)`: matcher ortiqcha."""
+    if "eq" not in code:
+        return []
+    opens = []
+    for m in MOCK_WHEN_RE.finditer(code):
+        spans, _ = _split_args(code, m.end())
+        if spans and len(spans) == 1:
+            opens.append((m.start(), _last_call_open(code, *spans[0])))
+    for rx in (MOCK_DO_WHEN_RE, MOCK_VERIFY_RE):
+        for m in rx.finditer(code):
+            _, close = _split_args(code, m.end())
+            chain = CHAIN_RE.match(code, close + 1) if close != -1 else None
+            if chain:
+                opens.append((m.start(), chain.end()))
+    return [_find(
+        "java:S6068", "o'rta", code, at,
+        "Mockito chaqiruvida hamma argument `eq(...)`: matcher ortiqcha, "
+        "xom qiymatlarni yozing (`eq(null)` o'rniga `null`).",
+        "Test Quality", ref="sonarqube 30.15")
+        for at, op in opens if op != -1 and _all_eq(code, op)]
+
+
+VACUOUS_ASSERTS = frozenset((
+    "doesNotContain", "doesNotContainAnyElementsOf", "doesNotContainNull",
+    "allMatch", "allSatisfy", "noneMatch", "noneSatisfy"))
+NONEMPTY_ASSERTS = frozenset((
+    "isNotEmpty", "hasSize", "hasSizeGreaterThan", "hasSizeGreaterThanOrEqualTo",
+    "hasSizeBetween", "contains", "containsExactly", "containsExactlyInAnyOrder",
+    "containsExactlyElementsOf", "containsOnly", "containsOnlyOnce", "containsAnyOf",
+    "containsAnyElementsOf", "containsSequence", "containsSubsequence", "anyMatch",
+    "anySatisfy", "satisfiesExactly", "satisfiesExactlyInAnyOrder",
+    "hasAtLeastOneElementOfType", "hasOnlyOneElementSatisfying",
+    "containsKey", "containsEntry", "containsKeys", "containsValue"))
+# Shu metoddan keyin subyekt boshqa narsa (element, satr): bo'shlik masalasi yo'q.
+SUBJECT_CHANGERS = frozenset((
+    "first", "last", "element", "singleElement", "asString", "asInstanceOf",
+    "extracting", "flatExtracting", "map", "filteredOn"))
+COLLECTION_TYPES = ("List", "Set", "Collection", "Iterable", "Queue", "Deque",
+                    "SortedSet", "NavigableSet", "Stream", "ArrayList", "LinkedList",
+                    "HashSet", "LinkedHashSet", "TreeSet")
+COLLECTION_RESULT_RE = re.compile(
+    r"\.\s*(?:toList|toSet|toArray)\s*\(\s*\)\Z|\.\s*collect\s*\(|"
+    r"new\s+(?:Array|Linked|Hash|Tree)(?:List|Set)|\.\s*stream\s*\(\s*\)")
+# Bo'sh bo'lishi mumkin emas deb qabul qilinadigan manbalar.
+LITERAL_COLLECTION_RE = re.compile(
+    r"(?:List|Set|Stream)\s*\.\s*of\s*\(\s*[^\s)]|Arrays\s*\.\s*asList\s*\(\s*[^\s)]|"
+    r"EnumSet\s*\.\s*(?:allOf|of)\s*\(")
+
+
+def _collection_evidence(actual, code):
+    """Tur ma'lumotisiz: actual kolleksiya ekaniga dalil bormi (aks holda S5841 jim).
+
+    Dalil: e'lon qilingan tur (`List<..> x`, `T[] x`), `var x = ...collect(..)`
+    yoki ifodaning o'zi `.stream()`/`.toList()` bilan tugashi. Satr (`String`, `CapturedOutput`)
+    va noma'lum tur dalil emas: `doesNotContain` satrga ham yoziladi.
+    """
+    flat = " ".join(actual.split())
+    if COLLECTION_RESULT_RE.search(flat):
+        return True
+    plain = re.match(r"(?:this\s*\.\s*)?([A-Za-z_$][\w$]*)\Z", flat)
+    if not plain:
+        return False   # metod chaqiruvi: space-hrm Sonar i `assertThat(columns())` ni bayroqlamaydi
+    ident = re.escape(plain.group(1))
+    decl = (r"(?<![\w$.])(?:(?:%s)(?:<[^;=(){}]*>)?|[\w$.]+(?:<[^;=(){}]*>)?\[\])\s+%s\s*(?==|;|,|\)|:)" %
+            ("|".join(COLLECTION_TYPES), ident))
+    if re.search(decl, code):
+        return True
+    for m in re.finditer(r"(?<![\w$.])var\s+%s\s*=\s*([^;]+);" % ident, code):
+        if COLLECTION_RESULT_RE.search(" ".join(m.group(1).split())):
+            return True
+    return False
+
+
+def _method_span(code, pos):
+    """`pos` turgan metod tanasi (boshi, oxiri); topilmasa (0, len(code))."""
+    best = (0, len(code))
+    for m in METHOD_HEAD_RE.finditer(code, 0, pos):
+        if m.group(1) in NOT_RETURN_TYPE:
+            continue
+        prev = PREV_TOKEN_RE.search(code[max(0, m.start() - 200):m.start()])
+        if not prev or prev.group(1) in NOT_RETURN_TYPE:
+            continue
+        end = _block_end(code, m.end() - 1)
+        if end >= pos:
+            best = (m.end(), end)
+    return best
+
+
+def _asserted_nonempty_before(code, text, actual, pos):
+    """Shu metodda oldin `assertThat(shu_actual)` zanjirida bo'sh emasligi tekshirilganmi."""
+    start, _ = _method_span(code, pos)
+    want = "".join(actual.split())
+    for m in ASSERT_THAT_RE.finditer(code, start, pos):
+        args, close = _arg_texts(code, text, m.end())
+        if not args or len(args) != 1 or "".join(args[0].split()) != want:
+            continue
+        cursor = close + 1
+        while True:
+            call = CHAIN_RE.match(code, cursor)
+            if not call:
+                break
+            cargs, end = _arg_texts(code, text, call.end())
+            if cargs is None:
+                break
+            if _is_nonempty_check(call.group(1), cargs):
+                return True
+            cursor = end + 1
+    return False
+
+
+def _is_nonempty_check(name, args):
+    if name == "hasSize":
+        return args != ["0"]
+    return name in NONEMPTY_ASSERTS or (
+        name.startswith("hasSize") and not name.startswith("hasSizeLessThan"))
+
+
+def check_vacuous_assertions(code, text):
+    """java:S5841. doesNotContain/allMatch/... bo'sh kolleksiyada ham o'tadi."""
+    out = []
+    for m in ASSERT_THAT_RE.finditer(code):
+        actual_args, close = _arg_texts(code, text, m.end())
+        if not actual_args or len(actual_args) != 1:
+            continue
+        actual = actual_args[0]
+        if (LITERAL_COLLECTION_RE.match(" ".join(actual.split()))
+                or not _collection_evidence(actual, code)):
+            continue
+        nonempty, pos = False, close + 1
+        while True:
+            call = CHAIN_RE.match(code, pos)
+            if not call:
+                break
+            name = call.group(1)
+            args, end = _arg_texts(code, text, call.end())
+            if args is None or name in SUBJECT_CHANGERS:
+                break
+            if _is_nonempty_check(name, args):
+                nonempty = True
+            elif name in VACUOUS_ASSERTS and not nonempty:
+                if not _asserted_nonempty_before(code, text, actual, m.start()):
+                    out.append(_find(
+                        "java:S5841", "o'rta", code, call.start(1),
+                        "`assertThat(%s).%s(...)` bo'sh kolleksiyada ham o'tadi: test "
+                        "hech narsani tekshirmay yashil bo'lishi mumkin. Kirishni to'liq "
+                        "to'g'ri qilib `isEmpty()` bilan tekshiring, yoki zanjirga "
+                        "oldin `isNotEmpty()`/`hasSize(n)` qo'ying."
+                        % (_short(actual), name),
+                        "Test Quality", ref="sonarqube 30.15"))
+                break
+            pos = end + 1
+    return out
+
+
+def _brace_parents(code):
+    """Har `{` ning o'rab turgan `{` i: {pozitsiya: ota pozitsiya yoki -1}."""
+    parents, stack = {}, []
+    for i, c in enumerate(code):
+        if c == "{":
+            parents[i] = stack[-1] if stack else -1
+            stack.append(i)
+        elif c == "}" and stack:
+            stack.pop()
+    return parents
+
+
+METHOD_HEAD_RE = re.compile(
+    r"(?<![\w$.])([A-Za-z_$][\w$]*)\s*\(([^()]*)\)\s*(?:throws\s+[\w$.,\s<>]+?)?\s*\{")
+PREV_TOKEN_RE = re.compile(r"([\w$>\]]+)\s*\Z")
+NOT_RETURN_TYPE = KEYWORDS | {
+    "try", "record", "public", "protected", "private", "static", "final",
+    "abstract", "synchronized", "native", "strictfp", "class", "enum", "interface"}
+
+
+def _top_level_statements(code, start, end):
+    """Tanadagi eng tashqi darajadagi `;` soni."""
+    brace = paren = count = 0
+    for c in code[start:end]:
+        if c == "{":
+            brace += 1
+        elif c == "}":
+            brace -= 1
+        elif c == "(":
+            paren += 1
+        elif c == ")":
+            paren -= 1
+        elif c == ";" and brace == 0 and paren == 0:
+            count += 1
+    return count
+
+
+def check_identical_methods(text, code):
+    """java:S4144. Bitta sinfda tanasi bir xil, kamida 2 statementli ikki metod."""
+    methods = []
+    for m in METHOD_HEAD_RE.finditer(code):
+        if m.group(1) in NOT_RETURN_TYPE:
+            continue
+        prev = PREV_TOKEN_RE.search(code[max(0, m.start() - 200):m.start()])
+        if not prev or prev.group(1) in NOT_RETURN_TYPE:
+            continue   # konstruktor, anonim sinf yoki chaqiruv
+        open_idx = m.end() - 1
+        close = _block_end(code, open_idx)
+        if close == -1 or _top_level_statements(code, open_idx + 1, close) < 2:
+            continue
+        # Parametr turlari ham bir xil bo'lsin (nomlarsiz): Sonar
+        # `normalizeCreate(CreateDto)` va `normalizeUpdate(UpdateDto)` ni bayroqlamaydi.
+        params = re.sub(r"\s+[\w$]+\s*(?=,|\Z)", "", " ".join(m.group(2).split()))
+        methods.append((m.group(1), m.start(1), open_idx,
+                        (params, " ".join(text[open_idx + 1:close].split()))))
+    if len(methods) < 2:
+        return []
+    parents = _brace_parents(code)
+    seen, out = {}, []
+    for name, at, open_idx, body in methods:
+        key = (parents.get(open_idx), body)
+        first = seen.setdefault(key, (name, at))
+        if first[0] != name:
+            out.append(_find(
+                "java:S4144", "o'rta", code, at,
+                "`%s` tanasi `%s` (%d-qator) bilan bir xil: bittasi ikkinchisini "
+                "chaqirsin yoki umumiy metodga chiqarilsin."
+                % (name, first[0], line_of(code, first[1])),
+                "Clean Code", ref="sonarqube 28.14"))
+    return out
+
+
+RECORD_DECL_RE = re.compile(
+    r"(?<![\w$.])record\s+([A-Z][\w$]*)\s*(?:<[^>(){}]*>)?\s*(?=\()")
+ENUM_DECL_RE = re.compile(r"(?<![\w$.])enum\s+([A-Z][\w$]*)\b")
+TYPE_FILE_LIMIT = 20000
+_TYPE_CACHE = {}
+
+
+def _declared_types(code):
+    """Faylda e'lon qilingan recordlar ({nom: [komponentlar...]}) va enumlar."""
+    records = {}
+    for m in RECORD_DECL_RE.finditer(code):
+        spans, _ = _split_args(code, m.end())
+        if spans is None:
+            continue
+        comps = [WORD_RE.findall(code[s:e])[-1] for s, e in spans
+                 if WORD_RE.findall(code[s:e])]
+        records.setdefault(m.group(1), []).append(comps)
+    return records, set(m.group(1) for m in ENUM_DECL_RE.finditer(code))
+
+
+def _src_root(path):
+    """Loyihaning `src` papkasi (ichida main yoki test bor); fayl diskda bo'lmasa None."""
+    if not os.path.isfile(path):
+        return None
+    d = os.path.dirname(os.path.abspath(path))
+    while True:
+        if (os.path.basename(d) == "src"
+                and any(os.path.isdir(os.path.join(d, x)) for x in ("main", "test"))):
+            return d
+        parent = os.path.dirname(d)
+        if parent == d:
+            return None
+        d = parent
+
+
+def _project_types(code, path):
+    """Shu fayl va loyiha `src` idagi recordlar va enumlar (tur ma'lumoti kerak bo'lganda)."""
+    records, enums = _declared_types(code)
+    root = _src_root(path)
+    if root is None:
+        return records, enums
+    if root not in _TYPE_CACHE:
+        found, found_enums, count = {}, set(), 0
+        for base, _, names in os.walk(root):
+            for name in names:
+                count += 1
+                if not name.endswith(".java") or count > TYPE_FILE_LIMIT:
+                    continue
+                try:
+                    with open(os.path.join(base, name), encoding="utf-8",
+                              errors="replace") as handle:
+                        body = handle.read()
+                except OSError:
+                    continue
+                if "record " not in body and "enum " not in body:
+                    continue
+                recs, ens = _declared_types(strip_noise(body))
+                for key, lists in recs.items():
+                    found.setdefault(key, []).extend(lists)
+                found_enums |= ens
+        _TYPE_CACHE[root] = (found, found_enums)
+    cached_records, cached_enums = _TYPE_CACHE[root]
+    merged = dict(cached_records)
+    merged.update(records)   # fayldagi yangi matn diskdagidan ustun
+    return merged, enums | cached_enums
+
+
+TYPE_PATH = r"([A-Z][\w$]*(?:\s*\.\s*[A-Z][\w$]*)*)"
+CASE_BIND_RE = re.compile(
+    r"(?<![\w$.])case\s+(?:final\s+)?%s\s+([a-z_][\w$]*)\s*(?=->|when\b)" % TYPE_PATH)
+INSTANCEOF_BIND_RE = re.compile(
+    r"(?<![\w$.])instanceof\s+(?:final\s+)?%s\s+([a-z_][\w$]*)\b(?!\s*\()" % TYPE_PATH)
+
+
+def _enclosing_end(code, pos):
+    """`pos` turgan blokning yopuvchi `}` i; topilmasa -1."""
+    depth = 0
+    for i in range(pos, len(code)):
+        if code[i] == "{":
+            depth += 1
+        elif code[i] == "}":
+            depth -= 1
+            if depth < 0:
+                return i
+    return -1
+
+
+def _binding_scopes(code):
+    """(tur, nom, boshi, oxiri, pozitsiya): pattern o'zgaruvchilari va ko'rinish sohasi."""
+    out = []
+    for m in CASE_BIND_RE.finditer(code):
+        arrow = code.find("->", m.end())
+        if arrow == -1:
+            continue
+        j = arrow + 2
+        while j < len(code) and code[j].isspace():
+            j += 1
+        end = _block_end(code, j) if code[j:j + 1] == "{" else _statement_end(code, j)
+        out.append((m.group(1), m.group(2), m.end(), end, m.start()))
+    for m in INSTANCEOF_BIND_RE.finditer(code):
+        out.append((m.group(1), m.group(2), m.end(),
+                    _enclosing_end(code, m.end()), m.start()))
+    return out
+
+
+def check_record_pattern(code, path):
+    """java:S6878. `case Rec r ->` / `instanceof Rec r` da r faqat accessor sifatida."""
+    scopes = _binding_scopes(code)
+    if not scopes:
+        return []
+    records, _ = _project_types(code, path)
+    out = []
+    for type_path, name, start, end, at in scopes:
+        short = re.split(r"\s*\.\s*", type_path)[-1]
+        if end == -1 or short not in records:
+            continue
+        used = []
+        for u in re.finditer(r"(?<![\w$.])%s(?![\w$])" % re.escape(name), code[start:end]):
+            acc = re.match(r"\s*\.\s*([A-Za-z_$][\w$]*)\s*\(\s*\)", code[start + u.end():end])
+            if not acc or any(acc.group(1) not in comps for comps in records[short]):
+                used = []
+                break
+            if acc.group(1) not in used:
+                used.append(acc.group(1))
+        # Sonar faqat record ning HAMMA komponenti o'qilganda bayroqlaydi
+        # (space-hrm: 2 komponentdan bittasi o'qilgan joylar toza).
+        if not used or any(set(comps) - set(used) for comps in records[short]):
+            continue
+        out.append(_find(
+            "java:S6878", "o'rta", code, at,
+            "`%s %s` faqat accessor (`%s.%s()`) uchun ishlatilgan: record pattern "
+            "yozing, `%s(%s)`." % (short, name, name, used[0], short,
+                                   ", ".join("var " + c for c in records[short][0])),
+            "Clean Code", ref="sonarqube 28.17"))
+    return out
+
+
+HASHMAP_NEW_RE = re.compile(
+    r"(?<![\w$])new\s+(?:java\s*\.\s*util\s*\.\s*)?HashMap\s*<\s*([\w$.]+)\s*,")
+HASHMAP_DECL_RE = re.compile(
+    r"(?<![\w$])(?:java\s*\.\s*util\s*\.\s*)?Map\s*<\s*([\w$.]+)\s*,[^;=(){}]*>\s*[A-Za-z_$][\w$]*\s*=\s*"
+    r"new\s+(?:java\s*\.\s*util\s*\.\s*)?HashMap\s*<\s*>")
+
+
+def check_enum_hashmap(code, path):
+    """java:S1640. Kaliti enum bo'lgan HashMap: EnumMap ishlatilsin."""
+    if "HashMap" not in code:
+        return []
+    candidates = [(m.group(1), m.start()) for rx in (HASHMAP_NEW_RE, HASHMAP_DECL_RE)
+                  for m in rx.finditer(code)]
+    if not candidates:
+        return []
+    _, enums = _project_types(code, path)
+    return [_find(
+        "java:S1640", "o'rta", code, at,
+        "Kaliti enum (`%s`) bo'lgan `HashMap`: `new EnumMap<>(%s.class)` tezroq va "
+        "kam xotira oladi. Null kalit kerak bo'lsa (EnumMap uni rad etadi) "
+        "metodga sababli @SuppressWarnings(\"java:S1640\") qo'ying."
+        % (key.rsplit(".", 1)[-1], key.rsplit(".", 1)[-1]),
+        "Clean Code", ref="sonarqube 28.17")
+        for key, at in candidates if key.rsplit(".", 1)[-1] in enums]
+
+
+def check_sonar(text, code, is_test, path=""):
     """Sonar qoidalari: tur ma'lumotisiz aniqlanadiganlari."""
     out = []
     out.extend(check_unused_imports(text, code))
@@ -1180,7 +1757,16 @@ def check_sonar(text, code, is_test):
     out.extend(check_format_newline(code, text))
     out.extend(check_manual_close(code))
     out.extend(check_close_in_twr(code))
+    out.extend(check_commented_code(text, code))
+    out.extend(check_new_get_class(code))
+    out.extend(check_identical_methods(lit, code))
+    out.extend(check_record_pattern(code, path))
+    out.extend(check_enum_hashmap(code, path))
+    if not is_test:
+        out.extend(check_insecure_random(code))
     if is_test:
+        out.extend(check_mockito_eq(code))
+        out.extend(check_vacuous_assertions(code, text))
         out.extend(check_similar_tests(text, code))
         out.extend(check_throwing_lambda(code))
         out.extend(check_system_clock(code))

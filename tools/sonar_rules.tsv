@@ -56,6 +56,7 @@ S1481	CODE_SMELL	Minor	All
 S1488	CODE_SMELL	Minor	All
 S1607	CODE_SMELL	Major	Tests
 S1612	tekshirilmadi	tekshirilmadi	tekshirilmadi
+S1640	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S1643	CODE_SMELL	Minor	All
 S1763	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S1845	tekshirilmadi	tekshirilmadi	tekshirilmadi
@@ -69,6 +70,7 @@ S2083	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S2093	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S2095	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S2111	BUG	Major	Main
+S2133	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S2142	BUG	Major	Main
 S2143	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S2160	CODE_SMELL	Minor	Main
@@ -122,6 +124,7 @@ S5841	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S5853	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S5961	CODE_SMELL	Major	Tests
 S5976	CODE_SMELL	Major	Tests
+S6068	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S6126	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S6213	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S6355	tekshirilmadi	tekshirilmadi	tekshirilmadi

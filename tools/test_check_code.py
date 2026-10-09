@@ -985,6 +985,283 @@ SONAR_CASES = [
 ]
 
 
+# space-hrm Sonar ida chiqqan holatlar (2026-10-09): "oldin" kod musbat,
+# tuzatilgani manfiy.
+HRM_CASES = [
+    # java:S125 izoh qatori `;`, `{`, `}` bilan tugaydi
+    ("S125 // izoh `;` bilan tugaydi", "java:S125", MAIN,
+     wrap("void f() {\n// FIRED_TRIGGERS is NOT touched: a peer runs it right now;\nrun();\n}"), True),
+    ("S125 blok izoh qatori `{` bilan tugaydi", "java:S125", MAIN,
+     wrap("void f() {\n/* open the block {\n more text */\nrun();\n}"), True),
+    ("S125 // izoh `}` bilan tugaydi", "java:S125", TEST,
+     wrap("void f() {\n// }\nrun();\n}"), True),
+    ("S125 nuqta bilan tugagan izoh toza", "java:S125", MAIN,
+     wrap("void f() {\n// FIRED_TRIGGERS is NOT touched: a peer runs it right now.\nrun();\n}"), False),
+    ("S125 juft {@link} bilan tugagan izoh toza", "java:S125", MAIN,
+     wrap("void f() {\n// see {@link Other}\nrun();\n}"), False),
+    ("S125 HTML entity bilan tugagan izoh toza", "java:S125", MAIN,
+     wrap("void f() {\n// returns List&lt;String&gt;\nrun();\n}"), False),
+    ("S125 Javadoc qatori toza (space-hrm Sonar i o'tkazadi)", "java:S125", MAIN,
+     wrap("/**\n * Written by the same path;\n * never derived on read.\n */\nvoid f() {}"), False),
+    ("S125 fayl boshidagi sarlavha toza", "java:S125", MAIN,
+     wrap("void f() {}", "/* Licensed under X;\n */\n"), False),
+    ("S125 satr ichidagi // toza", "java:S125", MAIN,
+     wrap("String u = \"http://x;\";"), False),
+    ("S125 @SuppressWarnings bilan o'ralgan toza", "java:S125", MAIN,
+     wrap("@SuppressWarnings(\"java:S125\")\nvoid f() {\n// kept as a note;\nrun();\n}"), False),
+    # java:S2245 bashorat qilinadigan generator, faqat main
+    ("S2245 ThreadLocalRandom.current()", "java:S2245", MAIN,
+     wrap("long jitter(long b) { return ThreadLocalRandom.current().nextLong(b); }"), True),
+    ("S2245 new Random(", "java:S2245", MAIN,
+     wrap("int roll() { return new Random().nextInt(6); }"), True),
+    ("S2245 Math.random()", "java:S2245", MAIN,
+     wrap("double roll() { return Math.random(); }"), True),
+    ("S2245 SecureRandom toza", "java:S2245", MAIN,
+     wrap("private static final SecureRandom SPREAD = new SecureRandom();\n"
+          "long jitter(long b) { return SPREAD.nextLong(b); }"), False),
+    ("S2245 test kodida tegilmaydi", "java:S2245", TEST,
+     wrap("int roll() { return new Random(42).nextInt(6); }"), False),
+    ("S2245 satr ichidagi nom tegilmaydi", "java:S2245", MAIN,
+     wrap("String s = \"new Random() Math.random()\";"), False),
+    # java:S2133 new X().getClass()
+    ("S2133 new X().getClass()", "java:S2133", TEST,
+     wrap("void t() { var enabled = new FeignConfig().getClass().getAnnotation(Enable.class); }"), True),
+    ("S2133 argumentli konstruktor", "java:S2133", MAIN,
+     wrap("Class<?> c() { return new Foo(a, b()).getClass(); }"), True),
+    ("S2133 X.class toza", "java:S2133", TEST,
+     wrap("void t() { var enabled = FeignConfig.class.getAnnotation(Enable.class); }"), False),
+    ("S2133 obyektning boshqa metodi toza", "java:S2133", MAIN,
+     wrap("String n() { return new Foo().getName(); }"), False),
+    ("S2133 o'zgaruvchi getClass() toza", "java:S2133", MAIN,
+     wrap("Class<?> c(Foo foo) { return foo.getClass(); }"), False),
+    # java:S6068 hamma argument eq(...)
+    ("S6068 when hamma eq", "java:S6068", TEST,
+     wrap("void t() { when(importer.prepare(eq(TYPE), eq(null), eq(null),\n eq(PINFL), eq(owner))).thenReturn(x); }"), True),
+    ("S6068 verify hamma eq", "java:S6068", TEST,
+     wrap("void t() { verify(repo).save(eq(row)); }"), True),
+    ("S6068 verify times hamma eq", "java:S6068", TEST,
+     wrap("void t() { verify(repo, times(2)).find(eq(1L), eq(\"a\")); }"), True),
+    ("S6068 doReturn.when hamma eq", "java:S6068", TEST,
+     wrap("void t() { Mockito.doReturn(x).when(repo).find(eq(1L)); }"), True),
+    ("S6068 Mockito.when hamma eq", "java:S6068", TEST,
+     wrap("void t() { Mockito.when(repo.find(eq(1L))).thenReturn(x); }"), True),
+    ("S6068 bittasi any() toza", "java:S6068", TEST,
+     wrap("void t() { when(repo.find(eq(1L), any())).thenReturn(x); }"), False),
+    ("S6068 xom qiymatlar toza", "java:S6068", TEST,
+     wrap("void t() { when(importer.prepare(TYPE, null, null, PINFL, owner)).thenReturn(x);\n"
+          "verify(repo).save(row); }"), False),
+    ("S6068 verify aralash toza", "java:S6068", TEST,
+     wrap("void t() { verify(repo).find(eq(1), anyString()); }"), False),
+    ("S6068 argumentsiz chaqiruv toza", "java:S6068", TEST,
+     wrap("void t() { when(repo.findAll()).thenReturn(x); verify(repo).flush(); }"), False),
+    ("S6068 eq ga o'xshash nom toza", "java:S6068", TEST,
+     wrap("void t() { when(repo.find(eqOf(1L))).thenReturn(x); }"), False),
+    # java:S5838 kengaytma
+    ("S5838 massiv length isGreaterThan", "java:S5838", TEST,
+     wrap("void t() { byte[] withPhoto = load(); byte[] without = load();\n"
+          "assertThat(withPhoto.length).isGreaterThan(without.length); }"), True),
+    ("S5838 massiv length isEqualTo", "java:S5838", TEST,
+     wrap("void t() { byte[] data = load();\nassertThat(data.length).isEqualTo(3); }"), True),
+    ("S5838 size() isGreaterThan", "java:S5838", TEST,
+     wrap("void t() { assertThat(rows.size()).isGreaterThan(2); }"), True),
+    ("S5838 contains isFalse as bilan", "java:S5838", TEST,
+     wrap("void t() { assertThat(violated.contains(\"endDate\")).as(\"violated: %s\", violated).isFalse(); }"), True),
+    ("S5838 contains isTrue", "java:S5838", TEST,
+     wrap("void t() { assertThat(names.contains(\"a\")).isTrue(); }"), True),
+    ("S5838 massiv bo'lmagan length maydoni toza", "java:S5838", TEST,
+     wrap("void t() { assertThat(dto.length).isGreaterThan(0); }"), False),
+    ("S5838 hasSizeGreaterThan toza", "java:S5838", TEST,
+     wrap("void t() { assertThat(withPhoto).hasSizeGreaterThan(without.length); }"), False),
+    ("S5838 doesNotContain toza", "java:S5838", TEST,
+     wrap("void t() { assertThat(violated).doesNotContain(\"endDate\"); }"), False),
+    ("S5838 contains zanjir davomi bilan tegilmaydi", "java:S5838", TEST,
+     wrap("void t() { assertThat(names.contains(\"a\")).isTrue().describedAs(\"x\"); }"), False),
+    # java:S5841 bo'sh kolleksiyada o'tadigan assertionlar
+    ("S5841 var to'plam doesNotContain", "java:S5841", TEST,
+     wrap("void t() { var violated = checks.stream().map(Check::path).collect(Collectors.toSet());\n"
+          "assertThat(violated).doesNotContain(\"endDate\"); }"), True),
+    ("S5841 List allMatch", "java:S5841", TEST,
+     wrap("void t() { List<String> names = load();\nassertThat(names).allMatch(n -> n.startsWith(\"a\")); }"), True),
+    ("S5841 allSatisfy as bilan", "java:S5841", TEST,
+     wrap("void t() { List<Row> rows = load();\nassertThat(rows).as(\"rows\").allSatisfy(r -> check(r)); }"), True),
+    ("S5841 noneMatch", "java:S5841", TEST,
+     wrap("void t() { Set<String> names = load();\nassertThat(names).noneMatch(String::isBlank); }"), True),
+    ("S5841 doesNotContainAnyElementsOf", "java:S5841", TEST,
+     wrap("void t() { List<String> names = load();\nassertThat(names).doesNotContainAnyElementsOf(banned); }"), True),
+    ("S5841 hasSize(0) keyin ham", "java:S5841", TEST,
+     wrap("void t() { List<String> names = load();\nassertThat(names).hasSize(0).doesNotContain(\"a\"); }"), True),
+    ("S5841 isNotEmpty oldin toza", "java:S5841", TEST,
+     wrap("void t() { List<String> names = load();\nassertThat(names).isNotEmpty().doesNotContain(\"a\"); }"), False),
+    ("S5841 hasSize oldin toza", "java:S5841", TEST,
+     wrap("void t() { List<String> names = load();\nassertThat(names).hasSize(2).allMatch(n -> ok(n)); }"), False),
+    ("S5841 hasSizeGreaterThan oldin toza", "java:S5841", TEST,
+     wrap("void t() { List<String> names = load();\n"
+          "assertThat(names).as(\"n\").hasSizeGreaterThan(0).noneMatch(String::isBlank); }"), False),
+    ("S5841 contains oldin toza", "java:S5841", TEST,
+     wrap("void t() { List<String> names = load();\nassertThat(names).contains(\"a\").doesNotContain(\"b\"); }"), False),
+    ("S5841 oldingi statementda hasSize toza", "java:S5841", TEST,
+     wrap("void t() { List<String> names = load();\nassertThat(names).hasSize(2);\n"
+          "assertThat(names).doesNotContain(\"a\"); }"), False),
+    ("S5841 satr doesNotContain toza", "java:S5841", TEST,
+     wrap("void t() { String sql = build();\nassertThat(sql).doesNotContain(\"DROP\"); }"), False),
+    ("S5841 noma'lum tur toza", "java:S5841", TEST,
+     wrap("void t(CapturedOutput output) { assertThat(output).doesNotContain(\"secret\"); }"), False),
+    ("S5841 metod chaqiruvi actual toza", "java:S5841", TEST,
+     wrap("List<String> names() { return load(); }\n"
+          "void t() { assertThat(names()).doesNotContain(\"a\"); }"), False),
+    ("S5841 isEmpty toza", "java:S5841", TEST,
+     wrap("void t() { List<String> names = load();\nassertThat(names).isEmpty(); }"), False),
+    ("S5841 List.of(a) bo'sh emas toza", "java:S5841", TEST,
+     wrap("void t() { assertThat(List.of(first, second)).allSatisfy(r -> check(r)); }"), False),
+    ("S5841 extracting dan keyin toza", "java:S5841", TEST,
+     wrap("void t() { List<Row> rows = load();\nassertThat(rows).extracting(Row::id).doesNotContainNull(); }"), False),
+    ("S5841 main kodda tegilmaydi", "java:S5841", MAIN,
+     wrap("void t() { List<String> names = load();\nassertThat(names).doesNotContain(\"a\"); }"), False),
+    # java:S3415 konstanta actual o'rnida, kutilgan qiymatli boshqa metodlar
+    ("S3415 hasToString konstanta actual", "java:S3415", TEST,
+     wrap("void t() { assertThat(IdentityDocument.EMPTY).hasToString(\"IdentityDocument[series=absent]\"); }"), True),
+    ("S3415 hasSameHashCodeAs konstanta actual", "java:S3415", TEST,
+     wrap("void t() { assertThat(EMPTY).hasSameHashCodeAs(copy()); }"), True),
+    ("S3415 isEqualToIgnoringCase konstanta actual", "java:S3415", TEST,
+     wrap("void t() { assertThat(Status.ACTIVE).isEqualToIgnoringCase(name()); }"), True),
+    ("S3415 hasToString lokal o'zgaruvchi toza", "java:S3415", TEST,
+     wrap("void t() { var empty = IdentityDocument.EMPTY;\nassertThat(empty).hasToString(\"IdentityDocument[]\"); }"), False),
+    ("S3415 hasToString haqiqiy qiymat toza", "java:S3415", TEST,
+     wrap("void t() { assertThat(document).hasToString(\"IdentityDocument[]\"); }"), False),
+    ("S3415 hasToString ikkalasi konstanta toza", "java:S3415", TEST,
+     wrap("void t() { assertThat(Type.EMPTY).hasToString(EXPECTED_TEXT); }"), False),
+    # java:S4144 bir xil tanali metodlar
+    ("S4144 ikki metod bir xil tana", "java:S4144", MAIN,
+     wrap("void normalizeCreate(Dto d) {\n if (d == null) {\n return;\n }\n fill(d);\n log(d);\n}\n"
+          "void normalizeUpdate(Dto d) {\n if (d == null) {\n return;\n }\n fill(d);\n log(d);\n}"), True),
+    ("S4144 bo'sh joyi boshqacha bo'lsa ham bir xil", "java:S4144", TEST,
+     wrap("@Test void a() {\n  load();\n  check(1);\n}\n@Test void b() { load();   check(1); }"), True),
+    ("S4144 literal farq qiladi toza", "java:S4144", MAIN,
+     wrap("void a() { load(); check(1); }\nvoid b() { load(); check(2); }"), False),
+    ("S4144 bitta statement toza", "java:S4144", MAIN,
+     wrap("int a() { return load(); }\nint b() { return load(); }"), False),
+    ("S4144 parametr turi boshqa toza", "java:S4144", MAIN,
+     wrap("void a(CreateDto d) { fill(d); log(d); }\nvoid b(UpdateDto d) { fill(d); log(d); }"), False),
+    ("S4144 bir nomli overload toza", "java:S4144", MAIN,
+     wrap("void a(int x) { fill(x); log(x); }\nvoid a(long x) { fill(x); log(x); }"), False),
+    ("S4144 turli ichki sinflar toza", "java:S4144", MAIN,
+     wrap("static class P { void a() { load(); check(); } }\nstatic class Q { void b() { load(); check(); } }"), False),
+    ("S4144 konstruktorlar toza", "java:S4144", MAIN,
+     wrap("A(int x) { this.x = x; init(); }\nA(long y) { this.x = y; init(); }"), False),
+    ("S4144 @SuppressWarnings bilan toza", "java:S4144", MAIN,
+     wrap("void a() { load(); check(); }\n@SuppressWarnings(\"java:S4144\")\nvoid b() { load(); check(); }"), False),
+    # java:S6878 faqat accessor ishlatilgan pattern o'zgaruvchisi (record shu faylda)
+    ("S6878 case Rec r -> r.delay()", "java:S6878", MAIN,
+     wrap("record Retry(long delay) {}\nlong f(Object d) { return switch (d) {\n"
+          "case Retry r -> r.delay();\ndefault -> 0;\n}; }"), True),
+    ("S6878 case blokida barcha accessorlar", "java:S6878", MAIN,
+     wrap("record Pair(long a, long b) {}\nlong f(Object d) { return switch (d) {\n"
+          "case Pair p -> {\n long s = p.a();\n yield s + p.b();\n}\ndefault -> 0;\n}; }"), True),
+    ("S6878 ichki Decision.RetryAfter", "java:S6878", MAIN,
+     wrap("sealed interface Decision { record RetryAfter(long delay) implements Decision {} }\n"
+          "void f(Decision d) { switch (d) {\ncase Decision.RetryAfter retry -> save(retry.delay());\ndefault -> {}\n} }"), True),
+    ("S6878 instanceof Rec r", "java:S6878", MAIN,
+     wrap("record Retry(long delay) {}\nboolean g(Object d) { if (d instanceof Retry r) { return r.delay() > 0; } return false; }"), True),
+    ("S6878 komponentlarning bittasi o'qilgan toza", "java:S6878", MAIN,
+     wrap("record Place(long unit, int day) {}\nvoid f(Object s) { if (s instanceof Place p) { use(p.unit()); } }"), False),
+    ("S6878 butun obyekt uzatilgan toza", "java:S6878", MAIN,
+     wrap("record Retry(long delay) {}\nlong f(Object d) { return switch (d) {\ncase Retry r -> use(r) + r.delay();\ndefault -> 0;\n}; }"), False),
+    ("S6878 komponent bo'lmagan metod toza", "java:S6878", MAIN,
+     wrap("record Retry(long delay) {}\nString f(Object d) { return switch (d) {\ncase Retry r -> r.delay() + r.toString();\ndefault -> \"\";\n}; }"), False),
+    ("S6878 record emas (sinf) toza", "java:S6878", MAIN,
+     wrap("class Retry { long delay() { return 1; } }\nlong f(Object d) { return switch (d) {\ncase Retry r -> r.delay();\ndefault -> 0;\n}; }"), False),
+    ("S6878 noma'lum tur toza", "java:S6878", MAIN,
+     wrap("long f(Object d) { return switch (d) {\ncase Retry r -> r.delay();\ndefault -> 0;\n}; }"), False),
+    ("S6878 argumentli chaqiruv toza", "java:S6878", MAIN,
+     wrap("record Retry(long delay) {}\nlong f(Object d) { return switch (d) {\ncase Retry r -> r.delay(1);\ndefault -> 0;\n}; }"), False),
+    ("S6878 record pattern allaqachon toza", "java:S6878", MAIN,
+     wrap("record Retry(long delay) {}\nlong f(Object d) { return switch (d) {\ncase Retry(var delay) -> delay;\ndefault -> 0;\n}; }"), False),
+    # java:S1640 kaliti enum bo'lgan HashMap (enum shu faylda)
+    ("S1640 new HashMap<Enum, V>()", "java:S1640", TEST,
+     wrap("enum Language { EN, UZ }\nvoid t() { var raw = new HashMap<Language, String>(); raw.put(null, \"x\"); }"), True),
+    ("S1640 Map<Enum, V> = new HashMap<>()", "java:S1640", MAIN,
+     wrap("enum Language { EN, UZ }\nMap<Language, List<String>> names = new HashMap<>();"), True),
+    ("S1640 @SuppressWarnings bilan toza", "java:S1640", TEST,
+     wrap("enum Language { EN, UZ }\n@Test\n@SuppressWarnings(\"java:S1640\") // null key is under test\n"
+          "void t() { var raw = new HashMap<Language, String>(); raw.put(null, \"x\"); }"), False),
+    ("S1640 EnumMap toza", "java:S1640", MAIN,
+     wrap("enum Language { EN, UZ }\nMap<Language, String> names = new EnumMap<>(Language.class);"), False),
+    ("S1640 kalit enum emas toza", "java:S1640", MAIN,
+     wrap("Map<String, String> names = new HashMap<>();\nvar ids = new HashMap<Long, String>();"), False),
+    ("S1640 noma'lum kalit turi toza", "java:S1640", MAIN,
+     wrap("Map<Language, String> names = new HashMap<>();"), False),
+]
+SONAR_CASES += HRM_CASES
+
+
+def _project(files):
+    """Vaqtinchalik loyiha: {nisbiy yo'l: matn}; (ildiz, yozilgan yo'llar)."""
+    root = tempfile.mkdtemp(prefix="genius-proj-")
+    paths = {}
+    for rel, body in files.items():
+        full = os.path.join(root, rel)
+        os.makedirs(os.path.dirname(full), exist_ok=True)
+        with open(full, "w", encoding="utf-8") as handle:
+            handle.write(body)
+        paths[rel] = full
+    return root, paths
+
+
+def case_hrm_loyiha_turlari():
+    """S6878 va S1640: record va enum boshqa faylda e'lon qilingan (loyiha src i)."""
+    root, paths = _project({
+        "src/main/java/x/Retry.java": "package x;\npublic record Retry(long delay) {}\n",
+        "src/main/java/x/Language.java": "package x;\npublic enum Language { EN, UZ }\n",
+        "src/main/java/x/Plain.java": "package x;\npublic class Plain { long delay() { return 1; } }\n",
+        "src/main/java/x/Use.java": (
+            "package x;\nclass Use {\n"
+            "  long f(Object d) { return switch (d) { case Retry r -> r.delay(); default -> 0; }; }\n"
+            "  long g(Object d) { return switch (d) { case Plain p -> p.delay(); default -> 0; }; }\n"
+            "  java.util.Map<Language, String> names = new java.util.HashMap<>();\n"
+            "  java.util.Map<String, String> ids = new java.util.HashMap<>();\n}\n"),
+    })
+    try:
+        got = check_code.analyse(paths["src/main/java/x/Use.java"])
+        by_rule = {}
+        for f in got:
+            by_rule.setdefault(f.rule, []).append(f.line)
+        missing = os.path.join(root, "src/main/java/x/Missing.java")
+        unknown = ("class U { long f(Object d) { return switch (d) "
+                   "{ case Retry r -> r.delay(); default -> 0; }; } }")
+        return [
+            ("S6878 boshqa fayldagi record (3-qator)", by_rule.get("java:S6878") == [3]),
+            ("S1640 boshqa fayldagi enum (5-qator)", by_rule.get("java:S1640") == [5]),
+            ("fayl diskda yo'q bo'lsa faqat o'z matni",
+             not [f for f in check_code.check_text(unknown, missing)
+                  if f.rule == "java:S6878"]),
+        ]
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def case_hrm_xabarlar():
+    """Xabar tuzatish yo'lini aytadi: S5838 -> S5841 ogohlantirishi, S1640 -> null kalit."""
+    def msg(rule, path, code):
+        return " ".join(f.message for f in check_code.check_text(code, path) if f.rule == rule)
+    contains = msg("java:S5838", TEST,
+                   wrap("void t() { assertThat(violated.contains(\"a\")).isFalse(); }"))
+    empty_enum = msg("java:S1640", MAIN,
+                     wrap("enum L { EN }\nMap<L, String> m = new HashMap<>();"))
+    s5841 = msg("java:S5841", TEST,
+                wrap("void t() { List<String> n = load();\nassertThat(n).doesNotContain(\"a\"); }"))
+    return [
+        ("S5838 doesNotContain xabari S5841 ni eslatadi",
+         "doesNotContain" in contains and "java:S5841" in contains and "isEmpty()" in contains),
+        ("S5838 contains isTrue xabarida S5841 ogohlantirishi yo'q",
+         "S5841" not in msg("java:S5838", TEST,
+                            wrap("void t() { assertThat(n.contains(\"a\")).isTrue(); }"))),
+        ("S1640 xabari null kalit va @SuppressWarnings ni aytadi",
+         "Null kalit" in empty_enum and "java:S1640" in empty_enum),
+        ("S5841 xabari tuzatish yo'lini aytadi",
+         "isEmpty()" in s5841 and "isNotEmpty()" in s5841),
+    ]
+
+
 def case_sonar_qoidalari():
     rows = []
     for name, rule, path, code, expect in SONAR_CASES:
@@ -1006,6 +1283,9 @@ def case_sonar_havolalar():
         "sonarqube 13.6": "resurslarni yopish",
         "clean-code 24.2": "metod havolasi",
         "clean-code 22.3": "clock",
+        "sonarqube 28.5": "kommentariyaga",
+        "sonarqube 26.5": "random",
+        "sonarqube 28.14": "bir xil ishni",
     }
     titles = section_titles()
     seen = {}
@@ -1078,6 +1358,8 @@ SECTIONS = [
     ("Keng catch xabari", case_keng_catch),
     ("Sonar qoidalari: musbat va manfiy", case_sonar_qoidalari),
     ("Sonar qoidalari: qo'llanma havolasi", case_sonar_havolalar),
+    ("Sonar qoidalari: space-hrm loyiha turlari", case_hrm_loyiha_turlari),
+    ("Sonar qoidalari: space-hrm xabarlar", case_hrm_xabarlar),
     ("Test sizishi va static ArchUnit grafi", case_flaky_qoidalar),
     ("Toza fayl", case_toza_fayl),
     ("Ko'p fayl", case_kop_fayl),
