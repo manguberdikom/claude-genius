@@ -33,6 +33,7 @@ import re
 import shutil
 import stat
 import sys
+import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -50,6 +51,11 @@ EXTRA_RE = re.compile(
 # Kodga tegishli resurs: test yoki ilova resursi ichidagi .md/.http hujjat emas.
 RESOURCE_RE = re.compile(r"(?:^|/)src/(?:main|test)/resources/")
 SHOW = 6
+# Faol ish himoyasi: hujjat yoki uning papkasidagi biror fayl shu muddatda o'zgargan bo'lsa unga tegilmaydi.
+QUIET_SECONDS = 3 * 24 * 3600
+# Tugagan hujjat o'chirilmaydi, `<docs-local>/.arxiv/<yyyymmdd>/` ga ko'chadi va shuncha kundan keyin o'chadi.
+ARCHIVE_DAYS = 14
+ARCHIVE = ".arxiv"
 
 
 def git(root, *args):
@@ -163,26 +169,79 @@ def is_done(path):
     return False
 
 
-def clean_docs(docs, dry):
-    """(o'chgan fayllar, o'chgan papkalar). Tugamagan hujjat joyida qoladi."""
-    files, folders = [], []
+def newest_mtime(folder):
+    """Papka daraxtidagi eng yangi fayl vaqti (papka yo'q bo'lsa 0)."""
+    newest = 0.0
+    for here, dirs, names in os.walk(folder):
+        dirs[:] = [d for d in dirs if d != ARCHIVE]
+        for name in names:
+            try:
+                newest = max(newest, os.path.getmtime(os.path.join(here, name)))
+            except OSError:
+                pass
+    return newest
+
+
+def archive_root(docs):
+    """Barcha proyektlar uchun umumiy arxiv: `<docs-local>/.arxiv`."""
+    return os.path.join(os.path.dirname(os.path.normpath(docs)), ARCHIVE)
+
+
+def purge_archive(docs, dry, now):
+    """ARCHIVE_DAYS dan eski kunlik arxiv papkalari (nomi yyyymmdd)."""
+    base, gone = archive_root(docs), []
+    if not os.path.isdir(base):
+        return gone
+    for day in sorted(os.listdir(base)):
+        try:
+            stamp = time.mktime(time.strptime(day, "%Y%m%d"))
+        except ValueError:
+            continue
+        if now - stamp > ARCHIVE_DAYS * 24 * 3600:
+            gone.append(day)
+            if not dry:
+                remove_tree(os.path.join(base, day))
+    return gone
+
+
+def clean_docs(docs, dry, now=None):
+    """(arxivga ko'chgan fayllar, o'chgan bo'sh papkalar, faol deb qoldirilganlar).
+
+    Tugagan hujjat (birinchi 10 qatorda `holat: tugadi`) faqat o'zi va papkasi QUIET_SECONDS davomida
+    o'zgarmagan bo'lsa ko'chadi: faol ishning tugagan bo'lagi (masalan review qismi) joyida qoladi.
+    Hech narsa qaytarib bo'lmaydigan tarzda o'chirilmaydi: fayl kunlik arxivga ko'chadi."""
+    now = time.time() if now is None else now
+    files, folders, active = [], [], []
     if not os.path.isdir(docs):
-        return files, folders
-    for here, _dirs, names in os.walk(docs):
+        return files, folders, active
+    target_root = os.path.join(archive_root(docs), time.strftime("%Y%m%d", time.localtime(now)),
+                               os.path.basename(os.path.normpath(docs)))
+    for here, dirs, names in os.walk(docs):
+        dirs[:] = [d for d in dirs if d != ARCHIVE]
         for name in sorted(names):
             path = os.path.join(here, name)
-            if is_done(path):
-                files.append(os.path.relpath(path, docs).replace(os.sep, "/"))
-                if not dry:
-                    os.chmod(path, stat.S_IWRITE)
-                    os.remove(path)
+            if not is_done(path):
+                continue
+            rel = os.path.relpath(path, docs).replace(os.sep, "/")
+            if now - newest_mtime(here) < QUIET_SECONDS:
+                active.append(rel)
+                continue
+            files.append(rel)
+            if not dry:
+                target = os.path.join(target_root, rel)
+                os.makedirs(os.path.dirname(target), exist_ok=True)
+                os.chmod(path, stat.S_IWRITE)
+                shutil.move(path, target)
     if dry:
-        return files, folders
-    for here, _dirs, _names in os.walk(docs, topdown=False):
-        if not os.listdir(here):
+        return files, folders, active
+    for here, dirs, _names in os.walk(docs, topdown=False):
+        if os.path.basename(here) != ARCHIVE and here != docs and not os.listdir(here):
             os.rmdir(here)
             folders.append(os.path.relpath(here, docs).replace(os.sep, "/"))
-    return files, folders
+    if not os.listdir(docs):
+        os.rmdir(docs)
+        folders.append(".")
+    return files, folders, active
 
 
 def extra_in_git(root):
@@ -219,12 +278,21 @@ def run(root, dry):
         if branches:
             lines.append("branch %s: %s" % (verb, brief(branches)))
     docs = docref.docs_dir(root)
-    files, folders = clean_docs(docs, dry)
+    files, folders, active = clean_docs(docs, dry)
     counts["hujjat"] = len(files)
+    for rel in files:
+        lines.append("hujjat arxivga %s: %s" % ("ko'chadi" if dry else "ko'chdi", rel))
     if files:
-        lines.append("hujjat %s (%s): %s" % (verb, docs.replace(os.sep, "/"), brief(files)))
+        lines.append("  arxiv: %s (%d kundan keyin o'chadi)" % (
+            archive_root(docs).replace(os.sep, "/"), ARCHIVE_DAYS))
+    if active:
+        lines.append("tugagan, lekin papkasi faol (%d kun ichida o'zgargan), tegilmadi: %s" % (
+            QUIET_SECONDS // 86400, brief(active)))
     if folders:
         lines.append("bo'sh papka %s: %d ta" % (verb, len(folders)))
+    purged = purge_archive(docs, dry, time.time())
+    if purged:
+        lines.append("eski arxiv %s: %s" % (verb, brief(purged)))
     extra = extra_in_git(root)
     counts["git da ortiqcha"] = len(extra)
     if extra:

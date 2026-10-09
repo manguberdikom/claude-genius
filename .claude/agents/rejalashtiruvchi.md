@@ -178,7 +178,7 @@ yangilanadi, yangi qadam qo'shiladi. Boshdagi `Sana` va `Holat`
 yangilanadi, ularning ostiga sana bilan bir qatorlik o'zgarishlar ro'yxati
 qo'shiladi. Nega o'zgardi degan savol javobsiz qolmasin. Barcha
 qadam bajarilib reja yopilganda `Holat: tugadi` yoziladi: shundan keyin
-`tools/tozala.py` hujjatni o'chiradi (birinchi 10 qatorda turishi shart).
+`tools/tozala.py` hujjatni 3 kun o'zgarmagach arxivga ko'chiradi (birinchi 10 qatorda turishi shart).
 
 ## Javob shakli
 

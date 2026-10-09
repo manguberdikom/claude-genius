@@ -19,6 +19,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TOOL = os.path.join(HERE, "tozala.py")
@@ -116,6 +117,20 @@ def case_branches():
                 ("boshqa prefiksli branch qoldi", "feature/x" in have and "dev" in have)]
 
 
+def age(folder, days=10):
+    """Papkadagi hamma fayl vaqtini `days` kun oldinga suradi (faol ish emas)."""
+    stamp = time.time() - days * 24 * 3600
+    for here, _dirs, names in os.walk(folder):
+        for name in names:
+            os.utime(os.path.join(here, name), (stamp, stamp))
+
+
+def archived(docs, rel):
+    base = os.path.join(os.path.dirname(docs), ".arxiv")
+    day = time.strftime("%Y%m%d")
+    return os.path.isfile(os.path.join(base, day, os.path.basename(docs), rel))
+
+
 def case_docs():
     with project() as (root, docs):
         write(os.path.join(docs, "REJA.md"), "# Reja: a\n\nHolat: tugadi\n")
@@ -123,22 +138,54 @@ def case_docs():
         write(os.path.join(docs, "reja", "c-reja.md"), "# Reja: c\nHolat: ishda\n")
         write(os.path.join(docs, "late.md"), "\n" * 12 + "Holat: tugadi\n")
         write(os.path.join(docs, "old", "d.md"), "Holat: tugadi\n")
+        age(docs)
         code, out = tozala(root, docs)
-        return [("tugagan REJA.md o'chdi", not os.path.exists(os.path.join(docs, "REJA.md"))),
-                ("status: done o'chdi",
-                 not os.path.exists(os.path.join(docs, "reja", "b-reja.md"))),
+        return [("tugagan REJA.md arxivga ko'chdi", not os.path.exists(os.path.join(docs, "REJA.md"))
+                 and archived(docs, "REJA.md")),
+                ("status: done arxivga ko'chdi",
+                 not os.path.exists(os.path.join(docs, "reja", "b-reja.md"))
+                 and archived(docs, "reja/b-reja.md")),
                 ("ishda hujjat qoldi", os.path.isfile(os.path.join(docs, "reja", "c-reja.md"))),
                 ("10 qatordan keyingi belgi hisobga olinmaydi",
                  os.path.isfile(os.path.join(docs, "late.md"))),
                 ("bo'shagan papka o'chdi", not os.path.exists(os.path.join(docs, "old"))),
-                ("chiqish hujjat sonini aytadi", code == 0 and "hujjat 3" in out)]
+                ("chiqish har faylni va sonini aytadi", code == 0 and "hujjat 3" in out
+                 and "REJA.md" in out and "reja/b-reja.md" in out)]
+
+
+def case_docs_active_folder_untouched():
+    """Faol ishning tugagan bo'lagi (review qismi) qoladi: papkada yaqinda o'zgargan fayl bor."""
+    with project() as (root, docs):
+        write(os.path.join(docs, "review", "P06-repo.md"), "# P06\nHolat: tugadi\n")
+        write(os.path.join(docs, "review", "P07-dto.md"), "# P07\nHolat: ishda\n")
+        age(docs)
+        write(os.path.join(docs, "review", "P08-new.md"), "# P08\nHolat: tugadi\n")
+        code, out = tozala(root, docs)
+        return [("faol papkadagi tugagan qism qoldi",
+                 os.path.isfile(os.path.join(docs, "review", "P06-repo.md"))
+                 and os.path.isfile(os.path.join(docs, "review", "P08-new.md"))),
+                ("chiqish faol deb aytadi", code == 0 and "papkasi faol" in out and "hujjat 0" in out)]
+
+
+def case_docs_old_archive_purged():
+    with project() as (root, docs):
+        old_day = os.path.join(os.path.dirname(docs), ".arxiv", "20000101", "app")
+        write(os.path.join(old_day, "x.md"), "Holat: tugadi\n")
+        fresh_day = os.path.join(os.path.dirname(docs), ".arxiv", time.strftime("%Y%m%d"), "app")
+        write(os.path.join(fresh_day, "y.md"), "Holat: tugadi\n")
+        code, out = tozala(root, docs)
+        return [("14 kundan eski arxiv o'chdi", not os.path.exists(os.path.dirname(old_day))),
+                ("bugungi arxiv qoldi", os.path.isfile(os.path.join(fresh_day, "y.md"))),
+                ("chiqish aytadi", code == 0 and "eski arxiv" in out)]
 
 
 def case_docs_all_done_folder_removed():
     with project() as (root, docs):
         write(os.path.join(docs, "REJA.md"), "Holat: tugadi\n")
+        age(docs)
         tozala(root, docs)
-        return [("hammasi tugagan: repo papkasi o'chdi", not os.path.exists(docs))]
+        return [("hammasi tugagan: repo papkasi o'chdi", not os.path.exists(docs)),
+                ("fayl arxivda", archived(docs, "REJA.md"))]
 
 
 def case_git_extra_only_listed():
@@ -173,6 +220,7 @@ def case_summary_line():
         orphan(root, "dead")
         git(root, "branch", "genius/stale")
         write(os.path.join(docs, "REJA.md"), "Holat: tugadi\n")
+        age(docs)
         _, out = tozala(root, docs)
         last = out.strip().splitlines()[-1]
         return [("yig'ma qator oxirida", last.startswith("tozala:")
@@ -194,6 +242,8 @@ CASES = [
     ("genius/* branchlar", case_branches),
     ("tugagan hujjatlar", case_docs),
     ("hammasi tugagan: papka o'chadi", case_docs_all_done_folder_removed),
+    ("faol papkadagi tugagan hujjatga tegilmaydi", case_docs_active_folder_untouched),
+    ("eski arxiv o'chadi", case_docs_old_archive_purged),
     ("git dagi ortiqcha faqat aytiladi", case_git_extra_only_listed),
     ("--quruq", case_dry_run),
     ("yig'ma qator", case_summary_line),

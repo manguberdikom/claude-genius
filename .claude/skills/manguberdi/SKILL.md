@@ -252,9 +252,14 @@ python3 tools/tozala.py            # --quruq: hech narsa o'chirmay ro'yxat
 ```
 
 U `.claude/worktrees/` dagi ro'yxatda yo'q (yetim) papkalarni,
-worktree siz `genius/*` branchlarni va hujjatlar papkasidagi
-`Holat: tugadi` (yoki `status: done`) hujjatlarni o'chiradi; ro'yxatdagi
-(faol) worktree ga va tugamagan hujjatga tegmaydi. Repoda git ga
+worktree siz `genius/*` branchlarni o'chiradi. Hujjatlar papkasidagi
+`Holat: tugadi` (yoki `status: done`) hujjat o'chirilmaydi: u
+`<docs-local>/.arxiv/<yyyymmdd>/` ga ko'chadi va 14 kundan keyin o'chadi.
+Hujjat yoki uning papkasidagi biror fayl oxirgi 3 kunda o'zgargan bo'lsa
+unga tegilmaydi: faol ishning tugagan bo'lagi (review qismi, faza) joyida
+qoladi. Ro'yxatdagi (faol) worktree ga va tugamagan hujjatga tegmaydi.
+Workspace da bir nechta sessiya ishlashi mumkin: `tozala` ning to'liq
+chiqishi (har ko'chgan fayl nomi) ko'rsatiladi, faqat yig'ma qator emas. Repoda git ga
 qo'shilgan hujjat yoki asbob fayli (`*.md`, `.claude/`, `.idea/`,
 `*.http`, `adr/`, `docs/`) bo'lsa o'chirmaydi, "git da ortiqcha: ..."
 deb ro'yxatini beradi: ularni olib tashlash commit talab qiladi,
