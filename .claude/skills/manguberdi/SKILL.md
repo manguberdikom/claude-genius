@@ -156,6 +156,26 @@ budjet tugab to'xtaganda ham. Qoida bitta faylda: `memory/README.md`.
 Nima yoziladi, nima yozilmaydi, qayerga va qanday format. To'rt savol
 darvozasidan o'tmagan narsa yozilmaydi.
 
+Memorydan keyin genius saboq bosqichi keladi. U zanjirning eng oxirida,
+proyekt commiti (va so'ralgan bo'lsa pushi) tugagandan keyin bajariladi,
+shuning uchun proyekt commitiga ham, pushiga ham xalaqit bermaydi.
+Ishda yangi Sonar yoki test saboqi chiqqan bo'lsa (Sonar topgan,
+lekin `check_code` ushlamagan holat; tuzatish yangi issue ochgani;
+test infratuzilmasi tuzog'i), u klonga yoziladi:
+
+1. Qoida `tools/check_code.py` ga musbat va manfiy test bilan yoziladi.
+   Tushuntirish `docs/` dagi mos bobga yoziladi.
+2. Klon ochiq repo: proyekt nomi, modul, sinf va fayl nomlari
+   yozilmaydi, misol umumiy bo'ladi (`memory/README.md`).
+3. Tekshiriladi: `tools/test_check_code.py`, `tools/check_docs.py`.
+4. Klonning joriy tarmog'ida bitta qisqa commit qilinadi va push
+   qilinadi.
+5. Snapshot yangilanadi:
+   `python install/install.py --genius-path <klon> --apply`.
+
+Saboq yo'q bo'lsa bosqich bir qator bilan "yangi saboq yo'q" deb
+yopiladi.
+
 ## Kontekst
 
 Uzun ishda kontekstni toza saqlash va ishni yangi sessiyaga uzatish:

@@ -200,6 +200,30 @@ class OrderRepositoryTest {
 
 `em.flush()` va `em.clear()` juftligi majburiy odat bo'lishi kerak: ularsiz query first-level cache'dan javob olishi mumkin va siz SQL'ni emas, Hibernate keshini test qilasiz.
 
+Uchta tuzoq `@DataJpaTest` va Testcontainers bilan ishlaganda tez-tez uchraydi.
+
+**`@SQLRestriction` va soft delete.** Entity da `@SQLRestriction("status <> 'DELETED'")` bo'lsa, Hibernate shartni har finder ga, `findById` ga ham qo'shadi: o'chirilgan qator entity sifatida ko'rinmaydi. Shuning uchun soft delete ni repository orqali tekshirib bo'lmaydi; qatorning holatini native SQL bilan o'qing.
+
+```java
+// YOMON: o'chirilgan qator findById dan ham yashirin, test "yo'q" va "o'chirilgan" ni ajratmaydi
+assertThat(orders.findById(id)).isEmpty();
+
+// YAXSHI: baza holati to'g'ridan-to'g'ri o'qiladi
+em.flush();
+var status = jdbc.queryForObject("select status from orders where id = ?", String.class, id);
+assertThat(status).isEqualTo("DELETED");
+```
+
+**`NOT_SUPPORTED` va `TestEntityManager`.** Sinf `@Transactional(propagation = NOT_SUPPORTED)` bo'lsa, `TestEntityManager.getEntityManager()` "No transactional EntityManager" xatosini beradi: tranzaksiya yo'q, shuning uchun bog'langan EntityManager ham yo'q. `EntityManagerFactory` ni inject qilib, `unwrap(SessionFactory.class)` bilan ishlang.
+
+```java
+@Autowired EntityManagerFactory emf;
+
+var sessionFactory = emf.unwrap(SessionFactory.class);
+```
+
+**`afterCommit` callback.** `@DataJpaTest` ning tranzaksiyasi hech qachon commit bo'lmaydi (oxirida rollback), shuning uchun `TransactionSynchronization.afterCommit()` yoki `@TransactionalEventListener(AFTER_COMMIT)` ishlamaydi. Yechim [11.7](11-xavfsizlik-tranzaksiya-asinxron-va.md#117-tranzaksiya-chegaralarini-testlash) da.
+
 ## 7.5 N+1 va generatsiya qilingan SQL'ni testda ushlash
 
 Fetch strategiyasi - bu kod review'da emas, testda ushlanadigan narsa. Eng arzon usul: Hibernate `Statistics`'ni yoqib, query sonini tasdiqlash. Shunda `join fetch` yoki `@EntityGraph` olib tashlansa test qizil bo'ladi.

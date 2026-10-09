@@ -288,6 +288,16 @@ public void refund(long paymentId, BigDecimal amount) {
 
 Tavsiya: kommentda kod saqlashni taqiqlang, chunki versiya nazorati buni sizdan yaxshiroq bajaradi.
 
+Oddiy tushuntiruvchi izoh ham shikoyat chaqirishi mumkin. Sonar bunday qatorni sintaksis daraxti bilan emas, qator oxiriga qarab baholaydi: izoh qatori `;`, `{` yoki `}` bilan tugasa, uni kod deb hisoblaydi (Sonar uchun JavaFootprint ichidagi `EndWithDetector`). Tabiiy matnli izohni nuqta bilan tugating. Javadoc qatorlari bu qoidaga tushmagani kuzatilgan.
+
+```java
+// YOMON: izoh ";" bilan tugaydi, kod deb o'qiladi (java:S125)
+// bekor qilingan buyurtma qaytarilmaydi;
+
+// YAXSHI: tabiiy jumla nuqta bilan tugaydi
+// Bekor qilingan buyurtma qaytarilmaydi.
+```
+
 ## 28.6 `TODO` va `FIXME` izohlari va ularning hisobi
 
 Qoida: `java:S1135`, `java:S1134`
@@ -566,6 +576,8 @@ public class WarehouseService {
 }
 ```
 
+Test sinfida bu qoida ko'pincha boshqa narsani bildiradi: ikkinchi test metodi birinchisining nusxasi bo'lib qolgan va mo'ljallangan holatni tekshirmayapti. Metodni o'chirish yoki delegatsiya qilish bu yerda noto'g'ri; ikkinchi testni haqiqiy holatga o'tkazing ([misol](30-xato-katalogi-test-kodidagi-xatolar.md#3015-yozish-paytida-qaytadigan-test-qoidalari-test-rules-to-avoid-while-writing)).
+
 Repository da bu holat yana osonroq paydo bo'ladi: ikki derived query bir xil SQL ga aylanadi. Tuzatish bitta nom qoldirib, ikkinchisini delegatsiya qilish yoki butunlay o'chirish.
 
 ```java
@@ -674,7 +686,7 @@ Ikkinchi jadval regex bilan ushlanmaydi. Sabablari: ularning hammasi chaqirilgan
 | --- | --- |
 | `java:S1874` | Kutubxona sinfini tanlashdan oldin Javadoc dagi `@deprecated` belgisini o'qing va ko'rsatilgan almashtirishni oling. Almashtirish yo'q bo'lsa, eskirgan sinfni bitta adapterga yig'ing: shu adapterdagi `@SuppressWarnings("java:S1874")` sababi bilan yoziladi, chunki har chaqiruv alohida issue ([eskirgan API va migratsiya](14-java-va-spring-da-eng-kop-uchraydigan-issue.md#1410-eskirgan-deprecated-api-ishlatish-va-migratsiya)) |
 | `java:S1130` | `throws IOException` yoki `throws Exception` ni tana otmasa yozmang. Metodni yozib bo'lgach `throws` ni olib tashlab kompilyatsiya qiling: xato bermasa, e'lon ortiqcha edi |
-| `java:S6878` | `instanceof Rec r` yoki `case Rec r ->` dan keyin faqat `r.x()` accessorlari ishlatilsa, record pattern yozing: `case OrgScope.Only(var ids) ->` |
+| `java:S6878` | `instanceof Rec r` yoki `case Rec r ->` dan keyin faqat `r.x()` accessorlari ishlatilsa, record pattern yozing: `case OrgScope.Only(var ids) ->`. Masalan `case RetryAfter retry -> schedule(retry.delay())` o'rniga `case RetryAfter(var delay) -> schedule(delay)`. Qoida faqat recordning hamma komponenti o'qilganda talab qilinadi |
 | `java:S2184` | `int` bilan hisoblangan bo'linma, ayirma yoki ko'paytma keyin `float` yoki `double` ga o'tsa, amal avval `int` da bajariladi. Operandlardan birini oldin cast qiling: `(float) a / b` |
 | `java:S6809` | O'z sinfingizdagi `@Transactional` metodni `this` orqali chaqirmang: proxy aylanib o'tiladi ([transactional self-invocation](../architect/19-spring-tranzaksiyalari-va-ularning.md#196-ichki-metod-chaqiruvi-tuzogi-va-undan-chiqish-yollari)) |
 | `java:S2093` | `close()` ni `finally` ga yozmang, `try-with-resources` ishlating. Kutubxona versiyasi ko'tarilganda `javap` bilan yangi `AutoCloseable` sinflarni tekshiring ([resurslarni yopish](13-sonar-otadigan-kod-yozish-qoidalari.md#136-resurslarni-yopish-try-with-resources-va-yopilmagan-oqim)) |

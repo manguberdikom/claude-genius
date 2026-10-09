@@ -585,9 +585,68 @@ void rejectsInvalidName(String caseName, String name) {
 }
 ```
 
+Tuzatish ba'zan boshqa qoidani ochadi yoki tuzatishning o'zi noto'g'ri bo'ladi. Quyidagi holatlar amalda uchradi.
+
+**`java:S5838` ni tuzatish `java:S5841` ni ochadi.** `assertThat(set.contains("x")).isFalse()` ni `assertThat(set).doesNotContain("x")` ga almashtirish mexanik tuzatish, lekin to'plam bo'sh bo'lsa yangi tekshiruv hech narsani isbotlamaydi. Sonar buni `java:S5841` bilan ushlaydi. "Boshqa maydon xatosi borligi uchun to'plam hech qachon bo'sh emas" degan mulohaza test kirishi chala ekanini bildiradi: majburiy maydonlar yuborilmagan, shuning uchun natijada doim begona xato turibdi. To'g'ri yo'l: kirishni to'liq to'g'ri qilib, to'plamning o'zini tekshirish. Bo'lmasa zanjirda avval `isNotEmpty()` yoki `hasSize(n)` turadi.
+
+```java
+// YOMON: orderNo yuborilmagan, violations doim to'la; doesNotContain bo'sh to'plamda ham o'tardi (java:S5841)
+var violations = validator.validate(new Order(null, "  "));
+assertThat(violations.stream().map(Violation::field).toList()).doesNotContain("note");
+
+// YAXSHI: kirish to'liq to'g'ri, shuning uchun hech qanday xato bo'lmasligi kerak
+var violations = validator.validate(new Order("A-1", "  "));
+assertThat(violations).isEmpty();
+```
+
+**`java:S3415` va konstanta.** `assertThat(Type.EMPTY).hasToString("...")` da Sonar `Type.EMPTY` konstantasini "kutilgan qiymat" deb o'qiydi va argumentlar o'rni almashgan deb shikoyat qiladi. Tekshirilayotgan qiymatni lokal o'zgaruvchiga oling.
+
+```java
+// YOMON
+assertThat(Type.EMPTY).hasToString("EMPTY");   // java:S3415
+
+// YAXSHI
+var empty = Type.EMPTY;
+assertThat(empty).hasToString("EMPTY");
+```
+
+**`java:S2133` va qamrov.** `new Config().getClass().getAnnotation(...)` obyekt yaratib, keyin sinfni so'raydi; `Config.class.getAnnotation(...)` yetarli. Lekin bo'sh `@Configuration` sinf boshqa joyda `new` bilan yaratilmasa, yagona yashil qator konstruktor edi va qamrov bir qatorga tushadi. Spring sinfni qanday yaratsa, test ham shunday yaratsin: `BeanUtils.instantiateClass` konstruktorni chaqiradi va yaratish yo'lini tekshiradi.
+
+```java
+// YOMON: java:S2133, obyekt faqat sinf olish uchun yaratilgan
+var annotation = new ShopConfig().getClass().getAnnotation(Configuration.class);
+
+// YAXSHI: annotatsiya sinfdan olinadi, konstruktor Spring yo'li bilan chaqiriladi
+assertThat(ShopConfig.class.getAnnotation(Configuration.class)).isNotNull();
+assertThat(BeanUtils.instantiateClass(ShopConfig.class)).isExactlyInstanceOf(ShopConfig.class);
+```
+
+**`java:S1640` va ataylab null kalit.** Kalit turi enum bo'lsa Sonar `HashMap` o'rniga `EnumMap` ni talab qiladi. Test esa aynan `null` kalit bilan ishlashni tekshirayotgan bo'lsa, `EnumMap` null kalitni rad etadi (`NullPointerException`) va almashtirish testning mazmunini yo'qotadi. Bu holatda bostirish to'g'ri, lekin faqat shu metodda va sabab bilan ([doira haqida](24-false-positive-suppression-va-oz-qoidangiz.md#244-kod-ichida-bostirish-suppresswarnings-va-uning-tasir-doirasi)).
+
+```java
+@Test
+@SuppressWarnings("java:S1640") // null kalit tekshirilayotgan holat
+void treatsMissingStatusAsDefault() {
+    Map<Status, Integer> counts = new HashMap<>();
+    counts.put(null, 1);
+    assertThat(summary.totalFor(counts)).isEqualTo(1);
+}
+```
+
+**`java:S4144` va ikkinchi test.** Ikki test metodi bir xil tanali bo'lsa, odatda ikkinchisi mo'ljallangan holatni tekshirmayapti: nusxa ko'chirilgan, lekin ma'lumoti almashtirilmagan. Masalan "boshqa egaga tegishli" testi birinchisi bilan aynan bir xil id ni ishlatadi. Dublikatni o'chirish holatni yo'qotadi; tuzatish ikkinchi testni haqiqiy holatga o'tkazishdir.
+
+```java
+// YOMON: ikkinchi test birinchisining nusxasi (java:S4144), "boshqa ega" holati tekshirilmayapti
+@Test void findsOwnInvoice()   { assertThat(service.find(OWNER_ID, INVOICE_ID)).isPresent(); }
+@Test void hidesForeignInvoice() { assertThat(service.find(OWNER_ID, INVOICE_ID)).isPresent(); }
+
+// YAXSHI: ikkinchi test boshqa owner id bilan yozilgan
+@Test void hidesForeignInvoice() { assertThat(service.find(OTHER_OWNER_ID, INVOICE_ID)).isEmpty(); }
+```
+
 Regexda ishonchli ushlanmaydigan test qoidalari:
 
-- `java:S5841`: `allSatisfy`, `allMatch`, `noneMatch`, `doesNotContain` bo'sh ro'yxatda ham o'tadi. Oldin `isNotEmpty()` yoki `hasSize(n)` yozing, aks holda test hech narsani tekshirmay yashil bo'lishi mumkin.
+- `java:S5841`: `allSatisfy`, `allMatch`, `noneMatch`, `doesNotContain` bo'sh ro'yxatda ham o'tadi. Oldin `isNotEmpty()` yoki `hasSize(n)` yozing, aks holda test hech narsani tekshirmay yashil bo'lishi mumkin. `java:S5838` ni mexanik tuzatish aynan shu qoidani ochadi, yuqoridagi "tuzatish boshqa qoidani ochadi" misoliga qarang.
 - `java:S1130`: test metodidagi `throws IOException` yoki `throws InterruptedException` ni tana otmasa olib tashlang; qaysi chaqiruv tashlashini tur ma'lumotisiz bilib bo'lmaydi.
 - `java:S2093`: `try` dan oldin ochilgan resurs `finally` da yopilsa tekshiruv ushlaydi. Ushlamaydigani: `finally` da `close()` o'rniga tozalash (ulanish holatini tiklash, `reset`). Uni ham `try-with-resources` ga o'tkazing: `interface Restore extends AutoCloseable { void close() throws SQLException; }` e'lon qilib, `try (Restore reset = () -> connection.setAutoCommit(true)) { .. }` yozing.
 - Kutubxona yangilanganda (masalan OpenPDF 2.4 dan 3.0.5 ga) ilgari oddiy bo'lgan sinflar `AutoCloseable` bo'lib qolishi mumkin (`DocListener extends AutoCloseable`, shuning uchun `Document` ham). Shundan keyin `java:S2093` va `java:S2095` shu sinfning har `new` ida yangi issue ochadi. Dependency ko'targanda ishlatiladigan sinflarni `javap -cp <jar> <sinf>` bilan tekshiring ([resurslarni yopish](13-sonar-otadigan-kod-yozish-qoidalari.md#136-resurslarni-yopish-try-with-resources-va-yopilmagan-oqim)).

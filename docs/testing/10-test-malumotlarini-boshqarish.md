@@ -278,6 +278,17 @@ INSERT INTO customers (id, name, email, tier, blocked, created_at) VALUES
   (1003, 'Kamola Rashidova','kamola@example.com', 'STANDARD', true,  '2026-01-12T09:00:00');
 ```
 
+**Seed bilan id to'qnashuvi.** Singleton container da migratsiya reference qatorlarni (tarjimalar, bog'liq jadvallar) allaqachon seed qilgan bo'ladi. Test fabrikasi tarjima yoki bog'liq jadvaldagi `record_id` yoki tabiiy kalitni 1, 2, 3 dan boshlasa, seed qatorlari bilan unique to'qnashuv chiqadi. Test id lari katta asosdan boshlansin; view tabiiy kalit bilan bog'lasa (`record_id` = entity id), shu bog'lanish saqlansin.
+
+```java
+// YOMON: migratsiya 1..50 ni seed qilgan, unique buziladi
+private final AtomicLong ids = new AtomicLong(0);
+
+// YAXSHI: test id lari seed dan uzoqda
+private static final long TEST_ID_BASE = 1_000_000_000L;
+private final AtomicLong ids = new AtomicLong(TEST_ID_BASE);
+```
+
 Qoida: **sxema har doim Flyway orqali**, business ma'lumot repository yoki builder orqali, reference ma'lumot test migration orqali, maxsus holatlar `@Sql` orqali.
 
 ## 10.8 Testlar orasida izolyatsiya

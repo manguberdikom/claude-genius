@@ -141,6 +141,8 @@ public class OmborXizmatiFixed {
 }
 ```
 
+Test kodida ham shu qoida: masalan test ataylab `null` kalit bilan `HashMap` ni tekshirsa, `java:S1640` talab qilgan `EnumMap` uni rad etadi. Bostirish faqat shu test metodiga, sabab izohi bilan qo'yiladi ([misol](30-xato-katalogi-test-kodidagi-xatolar.md#3015-yozish-paytida-qaytadigan-test-qoidalari-test-rules-to-avoid-while-writing)).
+
 `// NOSONAR` izohi ham bor. U qatordagi barcha issue ni bostiradi, kalit talab qilmaydi va shu sababdan ancha qo'pol vosita. Uni faqat annotatsiya qo'yish imkoni bo'lmagan joyda ishlatish kerak, masalan annotatsiya qo'yiladigan element yo'q bo'lsa. Sonar da NOSONAR izohlarini kuzatuvchi qoida bor, uni profilda yoqib qo'yish foydali, shunda bostirishlar o'zi ko'rinadigan bo'ladi.
 
 Uchinchi yo'l skanerlash konfiguratsiyasi. U eng kuchli va eng xavfli, chunki issue serverga umuman kelmaydi va UI da hech qanday iz qoldirmaydi.

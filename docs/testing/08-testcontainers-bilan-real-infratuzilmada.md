@@ -312,6 +312,7 @@ Boshqa tekshiruvlar:
 - **Zero-downtime**: expand/contract naqshi. Test N-1 versiya kodi N versiya schema'si bilan ishlashini tasdiqlaydi - eski entity mapping bilan yangi schema'ga `INSERT` qilib ko'ring. Yangi ustun `NOT NULL DEFAULT` bilan qo'shilgani, eski ustun darhol o'chirilmagani, rename o'rniga "yangi ustun + backfill + eski ustunni keyingi relizda o'chirish" ketma-ketligi bajarilgani shu testda ko'rinadi.
 - **Liquibase** uchun xuddi shu yondashuv: `SpringLiquibase` bean'ini sozlab `setChangeLog(...)`, yoki `liquibase.update(new Contexts(...))` bilan ma'lum tag'gacha yugurtirib, keyin qolganini bajarish.
 - **Idempotentlik**: migratsiyani ikki marta ishga tushirsangiz, ikkinchisi hech narsa qilmasligi kerak.
+- **Entity va sxema kontrakti**: `@Column(length = n)` sxemadagi `VARCHAR(n)` ga teng bo'lsin, view ga bog'langan entity larda ham. Farq jim yuradi: kichik testlar o'tadi, uzun qiymat esa faqat real bazada yoki productionda yiqiladi. Schema-mapping kontrakt testi (Hibernate metadata dagi ustun uzunligini `information_schema.columns` bilan solishtirish) bunday farqni ushlaydi.
 
 ## 8.9 Kafka bilan integratsion test
 
@@ -408,6 +409,8 @@ Mavzuning to'liq yozuvi [Testcontainers](#82-testcontainers-asoslari-docker-api-
 **`Thread.sleep` bilan kutish.** Asinxron natijani kutishda sleep ikki yo'l bilan yomon: sekin (har doim to'liq kutadi) va ishonchsiz (sekin CI'da yetmaydi). Awaitility `await().atMost(...).untilAsserted(...)` yagona to'g'ri javob - tez muhitda bir necha millisekundda tugaydi.
 
 **`latest` tag.** `postgres:latest`, `confluentinc/cp-kafka:latest` - bu testlarni tashqi relizlarga bog'laydi: bir kun major versiya chiqadi va butun pipeline yiqiladi, kod o'zgarmagan holda. Har doim aniq versiyani (ideal holda digest'ni) yozing va prod versiyasiga mos qiling: prodda PostgreSQL 16 bo'lsa, testda ham 16.
+
+**Integration testlarni uzoq yurgizmaslik.** Integration testlar CI da yoki lokal muntazam yurmasa, ko'p fazali refaktoringdan keyin ommaviy yiqiladi va sabablar bir-biriga aralashadi. Har partiya (faza) oxirida to'liq integrationTest ni bir marta yurgizing, shunda yiqilish aynan shu partiyaga bog'lanadi.
 
 Qo'shimcha ikki xato: **`FixedHostPortGenericContainer`** (parallellikni o'ldiradi) va **mapped port'ni qo'lda yozish** (`localhost:5432`). Ikkisi ham `getMappedPort()`/`@ServiceConnection` bilan almashtiriladi.
 

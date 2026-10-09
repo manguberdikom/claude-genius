@@ -288,6 +288,17 @@ assertThat(service.viaSelfCall()).isFalse();   // self-invocation fosh bo'ldi
 
 Oraliq holatni tekshirish uchun `TestTransaction.flagForCommit()` va `TestTransaction.end()` yordam beradi: testning o'rtasida commit qilib, keyin yangi tranzaksiyada natijani o'qish mumkin.
 
+`@DataJpaTest` yoki test metodida `@Transactional` bor sinfda tranzaksiya hech qachon commit bo'lmaydi, shuning uchun `TransactionSynchronization.afterCommit()` va `@TransactionalEventListener(AFTER_COMMIT)` callback lari chaqirilmaydi. Ikki yo'l bor. Birinchisi: callback larni testda qo'lda chaqirish va "yangi tranzaksiya" qadamini (`REQUIRES_NEW`) test tranzaksiyasida bajaradigan kichik test sinfi bilan almashtirish. Ikkinchisi: haqiqiy commit li test (yuqoridagi `@SpringBootTest`, test metodida `@Transactional` siz).
+
+```java
+// Callback lar ro'yxatdan o'tgan, lekin commit bo'lmaydi: qo'lda chaqiriladi
+service.archive(orderId);
+TransactionSynchronizationManager.getSynchronizations()
+        .forEach(TransactionSynchronization::afterCommit);
+
+assertThat(publishedEvents).hasSize(1);
+```
+
 ## 11.8 Optimistik va pessimistik lock'ni testlash
 
 `@Version` bilan to'qnashuvni thread'lar bilan yasash mumkin, lekin bu beqaror chiqadi. Deterministik yo'l - bitta thread'da ikkita `EntityManager` ochib, ikkisi ham bir xil versiyani o'qib, birin-ketin commit qilish: ikkinchi commit kafolatli yiqiladi.

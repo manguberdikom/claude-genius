@@ -150,6 +150,17 @@ static final ArchRule test_nomlari = methods()
         .because("test nomi kutilgan xatti-harakatni aytishi kerak");
 ```
 
+Classpath ni skanerlaydigan qoida yoki test (masalan `ClassPathScanningCandidateComponentProvider` bilan barcha `@RestController` larni topish) test classpath dagi test ichidagi (nested) `@RestController` larni ham topadi. Faqat main sinflarni olish uchun natijani code source bo'yicha filtrlang: main sinflar bilan bir xil joydan yuklanganlarini qoldiring. Nom ro'yxati bilan istisno qilish mo'rt: yangi test controller har safar ro'yxatni buzadi.
+
+```java
+var mainSource = ShopApplication.class.getProtectionDomain().getCodeSource().getLocation();
+
+var controllers = provider.findCandidateComponents("com.example.shop").stream()
+        .map(def -> load(def.getBeanClassName()))
+        .filter(c -> mainSource.equals(c.getProtectionDomain().getCodeSource().getLocation()))
+        .toList();
+```
+
 Mavzuning to'liq yozuvi [ArchUnit](#142-archunit-asoslari) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
 
 ## 14.4 Spring Modulith bilan modul chegaralarini tekshirish
