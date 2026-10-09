@@ -89,7 +89,7 @@ qayta yurish hech narsa bermaydi.
 | `dasturchi` | o'z ishining oxirida bir marta, maqsadli |
 | `test-muhandis` | o'zi yozgan testlar va maqsadli tanlash, bir marta |
 | `review` | yurgizmaydi: topshiriqdagi `run_tests` xulosasini o'qiydi |
-| asosiy sessiya | partiya oxirida bir marta to'liq suite, fonda: `--hammasi` |
+| asosiy sessiya | partiya oxirida bir marta to'liq suite, fonda: `--hammasi`, keyin `sonar_local.py tahlil` (`SKILL.md`, `Sonar darvozasi`) |
 
 Tashqi yoki fork PR da hech kim yurgizmaydi: "Ishonchsiz kirish" ga qarang.
 

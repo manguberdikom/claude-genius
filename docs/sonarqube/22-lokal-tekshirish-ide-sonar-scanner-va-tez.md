@@ -7,7 +7,7 @@
 # 22. Lokal tekshirish: IDE, sonar-scanner va tez qaytish (Local Feedback Loop)
 
 <details>
-<summary>Bu bobdagi 11 bo'lim</summary>
+<summary>Bu bobdagi 12 bo'lim</summary>
 
 - [22.1 Nega xatoni CI da emas, yozayotganda ko'rish arzonroq](#221-nega-xatoni-ci-da-emas-yozayotganda-korish-arzonroq)
 - [22.2 SonarLint ni IDE ga o'rnatish va ishlatish](#222-sonarlint-ni-ide-ga-ornatish-va-ishlatish)
@@ -19,7 +19,8 @@
 - [22.8 Tez qaytish uchun tekshiruvlarni bosqichlarga bo'lish](#228-tez-qaytish-uchun-tekshiruvlarni-bosqichlarga-bolish)
 - [22.9 Jamoada bir xil sozlama: formatlash, linter, IDE konfiguratsiyasi](#229-jamoada-bir-xil-sozlama-formatlash-linter-ide-konfiguratsiyasi)
 - [22.10 Lokal tahlilni tezlashtirish: faqat o'zgargan modulni tekshirish](#2210-lokal-tahlilni-tezlashtirish-faqat-ozgargan-modulni-tekshirish)
-- [22.11 Amalda qo'llash](#2211-amalda-qollash)
+- [22.11 Lokal SonarQube ni asosiy serverning ko'zgusi qilish](#2211-lokal-sonarqube-ni-asosiy-serverning-kozgusi-qilish)
+- [22.12 Amalda qo'llash](#2212-amalda-qollash)
 
 </details>
 
@@ -362,7 +363,36 @@ Lekin bitta ogohlantirish bor va u muhim. Qisman tahlil Sonar da to'liq rasmni b
 
 Duplicated code ayniqsa shunday. U modullar orasida ham topiladi, shuning uchun bitta modulni tahlil qilib "takrorlanish yo'q" degan xulosa chiqarish xato. Quality gate hisobini faqat CI dagi to'liq tahlil beradi.
 
-## 22.11 Amalda qo'llash
+## 22.11 Lokal SonarQube ni asosiy serverning ko'zgusi qilish
+
+IDE va `sonar-scanner` serverga yuborishdan oldin tez javob beradi, lekin to'liq gate javobini faqat server hisoblaydi. Push dan oldin bir marta shu hisobni o'z kompyuteringda olish uchun lokal SonarQube ko'tariladi. U faqat natija asosiy server bilan bir xil bo'lsa foydali: aks holda lokal "toza" deydi, serverda esa issue chiqadi. Shu sababli lokal nusxa serverning ko'zgusi qilib sozlanadi.
+
+Nima bir xil bo'lishi kerak va qanday ta'minlanadi:
+
+| Narsa | Qanday bir xil qilinadi |
+|---|---|
+| Analyzer va built-in profillar | Aynan bir versiyadagi image: server `26.6.0.123539` bo'lsa `sonarqube:26.6.0.123539-community`. Versiya `/api/system/status` dagi `version` dan olinadi. Built-in profil o'zgarmasa qoidalar ham bir xil. |
+| Maxsus profil | Serverdan `api/qualityprofiles/backup`, lokalga `restore` va `set_default`. Qoida darajasida tekshiriladi: `api/rules/search?qprofile=<key>&activation=true` dan qoida kaliti, severity va parametrlar hash lanadi, ikki tomonda teng bo'lishi shart. |
+| Quality gate | Nomi va shartlari (metrika, operator, chegara) nusxalanadi va lokalda default qilinadi. |
+| Loyiha sozlamalari | `api/settings/values?component=<kalit>` dagi loyihaning o'z sozlamalari (exclusions, coverage exclusions, cpd) lokal loyihaga `api/settings/set` bilan qo'yiladi. |
+| Qo'lda qo'yilgan statuslar | `REVIEWED` hotspot qoida, fayl va qator bo'yicha `api/hotspots/change_status` bilan; `ACCEPTED` va `FALSE_POSITIVE` issue `api/issues/do_transition` bilan ko'chiriladi. Statuslar kod bilan emas, serverda odam qarori bilan paydo bo'ladi, shuning uchun alohida sinxronlanadi. |
+| Qidiruv indeksi | Docker Desktop da (WSL2) Elasticsearch `mmap` ni qabul qilmasa `SONAR_SEARCH_JAVAADDITIONALOPTS=-Dnode.store.allow_mmap=false` beriladi. |
+
+```bash
+# Konteyner: volume lar saqlanadi, versiya serverniki.
+docker run -d --name sonar-local --restart unless-stopped -p 9000:9000   -e SONAR_SEARCH_JAVAADDITIONALOPTS="-Dnode.store.allow_mmap=false"   -e SONAR_TELEMETRY_ENABLE=false   -v sonar_local_data:/opt/sonarqube/data   -v sonar_local_ext:/opt/sonarqube/extensions   -v sonar_local_logs:/opt/sonarqube/logs   sonarqube:26.6.0.123539-community
+
+# Gradle da scanner plugini init skript bilan, build faylga tegmasdan.
+gradlew sonar -x test -I sonar-init.gradle   -Dsonar.host.url=http://localhost:9000 -Dsonar.projectKey=<kalit>
+```
+
+Community edition da branch tahlili yo'q, shuning uchun branch ni kalitga qo'shish kerak (`group-sub-repo-dev`), va lokal tahlil hech qachon asosiy server kalitiga yuborilmaydi: u o'zining `localhost` serveriga ketadi. Coverage to'liq bo'lishi uchun tahlildan oldin unit va integration testlar jacoco bilan yurgan bo'lishi kerak; `build/jacoco/*.exec` manba fayldan eski bo'lsa coverage eskirgan hisoblanadi.
+
+Birinchi marta ko'zgu to'g'riligini dalil bilan ko'rish kerak: bir commit uchun ikkala serverdagi issue lar, hotspot lar va metrikalar solishtiriladi. Namunada 22 metrikaning 22 tasi, issue va hotspot ro'yxati bir xil chiqdi. Farq chiqsa avval versiya, keyin profil hash i, keyin gate va loyiha sozlamalari tekshiriladi. Ko'rinmaydigan narsa (token ruxsati yo'q new code davri, scanner konteksti: JDK, muhit) jim o'tkazilmaydi, "tekshirib bo'lmadi" deb aytiladi.
+
+Bu ish `tools/sonar_local.py` da: `ishga` (konteyner), `sozla` (parol, token, profil, gate), `moslik` (farqni topib tuzatish), `tahlil` (to'liq tahlil va natija), `solishtir` (server bilan solishtirish).
+
+## 22.12 Amalda qo'llash
 
 - [ ] IDE ga SonarQube for IDE pluginini o'rnat va server bilan connected mode ni yoq, shundan keyin IDE profili server profiliga mos keladi.
 - [ ] `curl -s -u "$SONAR_TOKEN:" "$SONAR_HOST_URL/api/authentication/validate"` bilan tokenni tekshir va uni faqat IDE kalit saqlovchisida qoldir.
@@ -371,6 +401,7 @@ Duplicated code ayniqsa shunday. U modullar orasida ham topiladi, shuning uchun 
 - [ ] Spotless va `.editorconfig` ni repozitoriyga qo'shib, `spotless:check` ni `verify` fazasiga bog'la, shunda formatlash diff lari yo'qoladi.
 - [ ] CI da `fast` va `analysis` joblarini ajrat, `analysis` ga `needs: fast` qo'y va checkout da `fetch-depth: 0` ber.
 - [ ] Ko'p modulli loyihada diff dan modul nomini topib `mvn verify -pl <modullar> -am -T 1C` bilan lokal halqani qisqartir, lekin CI da to'liq tahlil qoldir.
+- [ ] Push dan oldin lokal SonarQube ni asosiy serverning ko'zgusi qilib (aynan bir versiya image, profil hash i, gate shartlari, status sinxroni) bir marta tahlil qil va `solishtir` bilan birinchi marta dalil ol.
 - [ ] PR ochishdan oldin bir marta `mvn clean verify sonar:sonar -Dsonar.qualitygate.wait=true` ni lokal branch nomi bilan ishlatib, gate javobini oldindan ko'r.
 
 ---

@@ -1,6 +1,6 @@
 # Java, Spring va PostgreSQL bo'yicha oltita qo'llanma
 
-O'zbek tilidagi oltita bir-birini to'ldiruvchi hujjat: 224 bob, 3296 bo'lim,
+O'zbek tilidagi oltita bir-birini to'ldiruvchi hujjat: 224 bob, 3297 bo'lim,
 2300 dan ortiq kod misoli. Har bir hujjat bir savolga javob beradi. Ba'zi
 mavzular bir nechta hujjatda uchraydi, chunki ular har bir nuqtadan
 boshqacha ko'rinadi: masalan N+1 so'rovi pattern, arxitektura, review va
@@ -12,7 +12,7 @@ Mavzuning to'liq yozuvi bitta uy bo'limda (`docs/OWNERS.tsv`), boshqa hujjat o'z
 | [Dizayn patternlar](docs/patterns/README.md) | 31 bob, 1037 bo'lim | Bu muammoga qaysi pattern to'g'ri keladi |
 | [Testlash qo'llanmasi](docs/testing/README.md) | 18 bob, 239 bo'lim | Buni qanday test qilaman |
 | [Arxitektor miyasi](docs/architect/README.md) | 39 bob, 482 bo'lim | Ichkarida nima sodir bo'ladi va qanday qaror chiqaraman |
-| [SonarQube](docs/sonarqube/README.md) | 43 bob, 560 bo'lim | Statik tahlil nimadan shikoyat qilyapti va qanday tuzataman |
+| [SonarQube](docs/sonarqube/README.md) | 43 bob, 561 bo'lim | Statik tahlil nimadan shikoyat qilyapti va qanday tuzataman |
 | [Toza kod qoidalari](docs/clean-code/README.md) | 49 bob, 533 bo'lim | Klaviatura ostidagi shu qator toza yoki yo'q |
 | [Kod review](docs/code-review/README.md) | 44 bob, 445 bo'lim | Diffda nimani ko'raman, nimani so'rayman, nimani to'xtataman |
 

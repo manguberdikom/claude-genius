@@ -23,6 +23,11 @@ python3 tools/parse_test_output.py <chiqish-fayli>
 `docker ps`, `docker logs`, `docker images` to'silmaydi: ular arzon
 tashxis va ko'pincha aynan kerak.
 
+Istisno: `tools/sonar_local.py ishga` lokal SonarQube konteynerini
+yaratadi yoki ishga tushiradi. U docker ni `subprocess` bilan chaqiradi,
+shuning uchun hook ko'rmaydi; asbob buni oldindan bir qator bilan aytadi
+va birinchi yaratish foydalanuvchi roziligi bilan bo'ladi.
+
 ## 2. Bazaga ulanish
 
 `psql`, `mysql`, `mongosh`, `redis-cli` va shunga o'xshash har qanday

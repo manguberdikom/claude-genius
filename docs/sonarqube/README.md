@@ -54,7 +54,7 @@ Hujjat ikkalasini ham ko'rsatadi: shartni qanday qondirish, va qayerda bu raqam 
 ### VI. Amaliyot va jarayon
 
 - **21.** [CI/CD ga ulash, PR decoration va blokirovka (CI/CD Integration)](21-ci-cd-ga-ulash-pr-decoration-va-blokirovka.md) - 12 bo'lim
-- **22.** [Lokal tekshirish: IDE, sonar-scanner va tez qaytish (Local Feedback Loop)](22-lokal-tekshirish-ide-sonar-scanner-va-tez.md) - 11 bo'lim
+- **22.** [Lokal tekshirish: IDE, sonar-scanner va tez qaytish (Local Feedback Loop)](22-lokal-tekshirish-ide-sonar-scanner-va-tez.md) - 12 bo'lim
 - **23.** [Legacy loyihani 100% ga olib chiqish rejasi (Bringing a Legacy Project to 100)](23-legacy-loyihani-100-ga-olib-chiqish-rejasi.md) - 13 bo'lim
 - **24.** [False positive, suppression va o'z qoidangiz (False Positives and Custom Rules)](24-false-positive-suppression-va-oz-qoidangiz.md) - 12 bo'lim
 
