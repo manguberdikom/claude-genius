@@ -1,6 +1,6 @@
 ---
 name: tahlil
-description: Statik asbobni yurgizib, uzun chiqishdan faqat topilmani qaytaradi: entity sxemasi, test xatosi, stack trace. Konteyner ko'tarmaydi, bazaga ulanmaydi.
+description: "Statik asbobni yurgizib, uzun chiqishdan faqat topilmani qaytaradi: entity sxemasi, test xatosi, stack trace. Konteyner ko'tarmaydi, bazaga ulanmaydi."
 tools: Bash, Read, Grep, Glob
 model: haiku
 ---

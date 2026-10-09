@@ -1,6 +1,6 @@
 ---
 name: rejalashtiruvchi
-description: Katta vazifa uchun reja tuzadi yoki yangilaydi: kod, memory, konfiguratsiya va berilgan hujjatlardan. Har qadamga pattern, test va qabul mezoni.
+description: "Katta vazifa uchun reja tuzadi yoki yangilaydi: kod, memory, konfiguratsiya va berilgan hujjatlardan. Har qadamga pattern, test va qabul mezoni."
 tools: Bash, Read, Grep, Glob, Edit, Write
 model: sonnet
 ---

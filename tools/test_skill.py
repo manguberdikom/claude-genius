@@ -121,6 +121,13 @@ def check(path, kind):
         err(rel, "frontmatter yo'q yoki fayl boshida emas")
         return
 
+    # Qo'shtirnoqsiz qiymatdagi ": " YAML xatosi: Claude Code faylni jim
+    # tashlab yuboradi va agent sessiyada umuman ko'rinmaydi.
+    for key, value in front.items():
+        if value[:1] not in ("\"", "'") and (": " in value or " #" in value):
+            err(rel, "%s qiymati qo'shtirnoqsiz va ': ' yoki ' #' bor: "
+                     "YAML o'qilmaydi, qiymatni qo'shtirnoqqa oling" % key)
+
     name = front.get("name", "")
     if not name:
         err(rel, "name yo'q")
