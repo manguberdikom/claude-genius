@@ -30,7 +30,7 @@ ENV_KEYS = ("CONTEXT_LIMIT", "CLAUDE_CODE_AUTO_COMPACT_WINDOW", "CONTEXT_WARN",
             "CLAUDE_PROJECT_DIR", "CLAUDE_CODE_SESSION_ID", "CLAUDE_CONFIG_DIR",
             "HOME", "USERPROFILE", "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE",
             "CLAUDE_CODE_REMOTE", "GENIUS_STATE_DIR", "GENIUS_MEMORY_DIR",
-            "GENIUS_CLONE")
+            "GENIUS_CLONE", "GENIUS_DOCS_DIR")
 
 
 def write_transcript(path, rows):
@@ -442,7 +442,10 @@ def fact_repo(project):
         h.write("// o'zgardi\n")
     with io.open(os.path.join(project, "Yangi.java"), "w", encoding="utf-8") as h:
         h.write("class Yangi {}\n")
-    with io.open(os.path.join(project, "REJA.md"), "w", encoding="utf-8") as h:
+    import docref
+    docs = docref.docs_dir(project)
+    os.makedirs(docs, exist_ok=True)
+    with io.open(os.path.join(docs, "REJA.md"), "w", encoding="utf-8") as h:
         h.write("# Reja: sinov\n\n## 4. Qadamlar\n### [x] 1-qadam. Entity qo'shish\n"
                 "- Fayl: Eski.java\n### 2-qadam. Servisni yozish\n\n"
                 "## 10. Definition of Done\n- [x] testlar yashil\n- [ ] review\n")
@@ -458,6 +461,43 @@ def run_prompt(vazifa=None):
     finally:
         handoff.transcript = saved
     return code, out.getvalue()
+
+
+def case_docs_sukut_ota_papkada(tmp):
+    """Hujjatlar papkasi repoda emas: sukut ota papkadagi docs-local/<repo>."""
+    import docref
+    with isolated(tmp, "docs_sukut", GENIUS_DOCS_DIR="") as (_, project):
+        git_in(project, "init", "-q")
+        got = os.path.normcase(os.path.realpath(docref.docs_dir(project)))
+        want = os.path.normcase(os.path.realpath(
+            os.path.join(os.path.dirname(project), "docs-local", "my_proj.v2")))
+        inside = os.path.normcase(os.path.realpath(project))
+        return got == want and not got.startswith(inside + os.sep)
+
+
+def case_docs_git_bolmagan_workspace(tmp):
+    """Bir nechta repo turgan, o'zi git bo'lmagan workspace: hujjatlar <workspace>/docs-local, repo nomisiz."""
+    import docref
+    with isolated(tmp, "docs_workspace", GENIUS_DOCS_DIR="") as (_, project):
+        got = os.path.normcase(os.path.realpath(docref.docs_dir(project)))
+        want = os.path.normcase(os.path.realpath(os.path.join(project, "docs-local")))
+        return got == want
+
+
+def case_docs_env_va_worktree(tmp):
+    """GENIUS_DOCS_DIR/<repo>; guruh worktree si asosiy repo bilan bir papkani beradi."""
+    import docref
+    base = os.path.join(tmp, "docs_env_baza")
+    with isolated(tmp, "docs_env", GENIUS_DOCS_DIR=base) as (_, project):
+        fact_repo(project)
+        git_in(project, "add", "-A")
+        git_in(project, "commit", "-q", "-m", "x")
+        tree = os.path.join(project, ".claude", "worktrees", "genius-a")
+        git_in(project, "worktree", "add", "-q", "-b", "genius/a", tree)
+        main_dir = docref.docs_dir(project)
+        tree_dir = docref.docs_dir(tree)
+        return (os.path.normcase(main_dir) == os.path.normcase(os.path.join(base, "my_proj.v2"))
+                and os.path.normcase(tree_dir) == os.path.normcase(main_dir))
 
 
 def case_fakt_avtomatik(tmp):
@@ -565,6 +605,9 @@ CASES = [
     ("CLAUDE_AUTOCOMPACT_PCT_OVERRIDE chegarani tushiradi", case_pct_override),
     ("PCT=80: 2-pog'ona 720K da", case_pct_hook_ikkinchi_pogona),
     ("holat GENIUS_STATE_DIR da, tmp nomida pid", case_holat_genius_state_dir),
+    ("hujjatlar papkasi: sukut ota papkada", case_docs_sukut_ota_papkada),
+    ("docs: git bo'lmagan workspace", case_docs_git_bolmagan_workspace),
+    ("hujjatlar papkasi: env va worktree", case_docs_env_va_worktree),
     ("fakt qismi: diff --stat, yangi fayl, REJA.md", case_fakt_avtomatik),
     ("lokal topshiriq handoff/ ga, git siz", case_lokal_vazifa_faylga_git_siz),
     ("bulut topshirig'i proyekt memorysiga", case_bulut_vazifa_memoryga),

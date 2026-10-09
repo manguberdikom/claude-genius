@@ -120,7 +120,7 @@ REQUIRED = (
     "tools/handoff.py", "tools/state.py", "tools/docref.py", "tools/hookio.py", "tools/geniuslib.py",
     "tools/build_index.py", "tools/check_docs.py",
     "tools/review_status.py", "tools/sonar_snapshot.py",
-    "tools/run_tests.py", "tools/parse_test_output.py", "tools/guruh.py",
+    "tools/run_tests.py", "tools/parse_test_output.py", "tools/guruh.py", "tools/tozala.py",
     "install/rewrite_paths.py", "install/snapshot.py",
     "docs/manifest.json", ".claude/skills/manguberdi/SKILL.md",
 )

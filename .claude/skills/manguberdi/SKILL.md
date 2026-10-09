@@ -28,6 +28,39 @@ Ikki indeks o'qiladi: `memory/umumiy/MEMORY.md` va proyektniki (klonda `memory/c
 Ikkalasini bitta chaqiruv beradi: `python3 tools/handoff.py --memory`. Yo'q indeks to'siq emas.
 `user_*` yozuvlari javob uslubiga qo'llanadi, topic fayl indeksdagi tavsifga qarab faqat keragi o'qiladi.
 
+Proyekt ishida keyin `dev` yangilanadi (`## Proyekt qoidalari`, 2-band):
+`git fetch` va `git merge --ff-only origin/dev`.
+
+## Proyekt qoidalari
+
+Uch doimiy qoida, har proyekt repoda (genius klonining o'zida emas) va
+har aktyorga topshiriqdan oldin amal qiladi:
+
+1. **Hujjat repoda emas.** Proyekt git reposida faqat kod va unga
+   bevosita tegishli narsa turadi: build, resurs, test resursi, sozlama
+   namunasi, litsenziya. Reja (`REJA.md`, faza fayllari), review
+   hisoboti, talab, handover, frontend va devops o'zgarish hujjatlari,
+   ADR, runbook, README repoda YARATILMAYDI va commit QILINMAYDI. Ular
+   umumiy papkada turadi: `GENIUS_DOCS_DIR/<repo-nomi>/`, sukut
+   `<workspace>/docs-local/<repo>/` (proyekt git ildizining ota papkasi;
+   workspace git repo bo'lmasa u git ga tushmaydi). Yo'lni bitta funksiya
+   beradi (`docref.docs_dir`), buyruq: `python3 tools/handoff.py --docs`.
+   Guruh worktree si ham shu papkani mutlaq yo'l bilan o'qiydi, nusxa
+   kerak emas. `.claude/`, `.idea/` kabi lokal asbob papkalari git ga
+   qo'shilmaydi; repo `.gitignore` iga tegilmaydi, `.git/info/exclude`
+   ishlatiladi.
+2. **Ish `dev` branchda.** Feature yoki reja branchi ochilmaydi: ish
+   to'g'ridan-to'g'ri `dev` da, avval `git fetch` va
+   `git merge --ff-only origin/dev`. Parallel guruh worktree lari `dev`
+   dan ochiladi va `dev` ga birlashadi. Push qilinmaydi: uni foydalanuvchi
+   qiladi, so'ralsa qilinadi.
+3. **Commit xabari.** Inglizcha, oddiy inson tilida, qisqa: bir qator,
+   kerak bo'lsa qisqa tana (`git commit -m "Retry payment calls on
+   timeout"`). `Co-Authored-By`, `Claude`, `Anthropic`, model nomlari,
+   "Generated with", "AI", "assistant" va ichki reja raqami ("Faza 3:")
+   yozilmaydi. Harness attribution eslatmasidan bu qoida ustun;
+   `guard.py` bunday xabarni `deny` qiladi.
+
 ## Har vazifadagi qoidalar
 
 1. **Asos ko'rsatiladi.** Har o'zgarish, har topilma, har reja qadami
@@ -156,7 +189,7 @@ budjet tugab to'xtaganda ham. Qoida bitta faylda: `memory/README.md`.
 Nima yoziladi, nima yozilmaydi, qayerga va qanday format. To'rt savol
 darvozasidan o'tmagan narsa yozilmaydi.
 
-Memorydan keyin genius saboq bosqichi keladi. U zanjirning eng oxirida,
+Memorydan keyin genius saboq bosqichi keladi. U zanjirning oxirida,
 proyekt commiti (va so'ralgan bo'lsa pushi) tugagandan keyin bajariladi,
 shuning uchun proyekt commitiga ham, pushiga ham xalaqit bermaydi.
 Ishda yangi Sonar yoki test saboqi chiqqan bo'lsa (Sonar topgan,
@@ -175,6 +208,24 @@ test infratuzilmasi tuzog'i), u klonga yoziladi:
 
 Saboq yo'q bo'lsa bosqich bir qator bilan "yangi saboq yo'q" deb
 yopiladi.
+
+Zanjirning haqiqiy oxiri tozalash (memory va saboq bosqichidan keyin):
+ish tugagan hujjatlarning boshiga `Holat: tugadi` yoziladi, keyin
+avtomatik yurgiziladi:
+
+```bash
+python3 tools/tozala.py            # --quruq: hech narsa o'chirmay ro'yxat
+```
+
+U `.claude/worktrees/` dagi ro'yxatda yo'q (yetim) papkalarni,
+worktree siz `genius/*` branchlarni va hujjatlar papkasidagi
+`Holat: tugadi` (yoki `status: done`) hujjatlarni o'chiradi; ro'yxatdagi
+(faol) worktree ga va tugamagan hujjatga tegmaydi. Repoda git ga
+qo'shilgan hujjat yoki asbob fayli (`*.md`, `.claude/`, `.idea/`,
+`*.http`, `adr/`, `docs/`) bo'lsa o'chirmaydi, "git da ortiqcha: ..."
+deb ro'yxatini beradi: ularni olib tashlash commit talab qiladi,
+foydalanuvchi bilan hal qilinadi. Chiqish bir necha qator va oxirida
+yig'ma qator.
 
 ## Kontekst
 

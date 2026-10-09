@@ -372,6 +372,11 @@ def deny(reason):
     decide("deny", reason, HINT)
 
 
+def deny_with(reason, hint):
+    """deny, o'z maslahati bilan (HINT kontekst haqida)."""
+    decide("deny", reason, hint)
+
+
 # main() payloaddan qo'yadi: subagent ichida `ask` muddatsiz kutardi.
 IN_SUBAGENT = False
 SUBAGENT_NOTE = ("Bu qaror foydalanuvchiniki: ishni shu yerda to'xtatib, asosiy "
@@ -634,6 +639,75 @@ def check_memory_git(command):
         if found:
             ask("Begona memory ochiq klonga: git %s, memory/%s."
                 % (verb, ", memory/".join(sorted(found))), MEMORY_HINT)
+
+
+# --- Proyekt commit xabari: oddiy inglizcha, muallifsiz ------------------
+#
+# Foydalanuvchi qoidasi: xabar qisqa, inson tilida; "Co-Authored-By", model
+# yoki vosita nomi, "Generated with", "AI" va ichki reja raqami ("Faza 3:")
+# yo'q. Harness attribution eslatmasidan bu qoida ustun, shuning uchun
+# eslatma xabarga qo'shgan satr `deny` oladi. Faqat inline xabar (`-m`,
+# `--message`, heredoc) tekshiriladi, `-F fayl` o'qilmaydi. Klonning o'zida
+# qoida qo'llanmaydi.
+COMMIT_WORDS_RE = re.compile(
+    r"co-authored-by|(?<![./\w])claude(?![\w/])|\banthropic\b"
+    r"|\b(?:opus|sonnet|haiku|fable)\b|generated\s+(?:with|by)|\bai\b"
+    r"|\bassistant\b|\bfaza\s*\d+\s*:", re.IGNORECASE)
+COMMIT_MESSAGE_FLAGS = ("-m", "--message")
+COMMIT_HINT = (
+    "Xabar inglizcha, oddiy, bir qator (kerak bo'lsa qisqa tana):\n"
+    "  git commit -m \"Retry payment calls on timeout\"\n"
+    "Muallif satri, model yoki vosita nomi, \"AI\" va reja raqami yozilmaydi.")
+
+
+def commit_messages(command):
+    """Har `git commit` ning inline xabarlari (`-m`, `--message`, `-am`) va
+    buyruqdagi heredoc matnlari."""
+    base_cmd = strip_heredoc(command)
+    found, has_commit = [], False
+    for match in GIT_STAGE_RE.finditer(mask_quoted(base_cmd)):
+        if match.group(2) != "commit":
+            continue
+        has_commit = True
+        args = split_args(base_cmd[match.start(3):match.end(3)].rstrip().rstrip(")`"))
+        for i, arg in enumerate(args):
+            value = None
+            if arg in COMMIT_MESSAGE_FLAGS and i + 1 < len(args):
+                value = args[i + 1]
+            elif arg.startswith("--message="):
+                value = arg.split("=", 1)[1]
+            elif arg.startswith("-m") and len(arg) > 2 and not arg.startswith("--"):
+                value = arg[2:]
+            elif (arg.startswith("-") and not arg.startswith("--") and len(arg) > 2
+                  and arg.endswith("m") and i + 1 < len(args)):
+                value = args[i + 1]   # `-am "xabar"`
+            if value is not None:
+                found.append(value)
+    if has_commit:
+        found += [m.group(0) for m in HEREDOC_RE.finditer(command)]
+    return found
+
+
+def check_commit_message(command):
+    """Proyekt repolarida commit xabari qoidasi: taqiqlangan so'z bo'lsa `deny`."""
+    if "commit" not in command or "git" not in command:
+        return
+    base = os.getcwd()
+    for match in GIT_STAGE_RE.finditer(mask_quoted(strip_heredoc(command))):
+        flags = split_args(command[match.start(1):match.end(1)])
+        for flag, value in zip(flags, flags[1:]):
+            if flag == "-C":
+                base = os.path.join(base, os.path.expanduser(value))
+    try:
+        if os.path.relpath(os.path.normpath(base), clone_dir()).split(os.sep)[0] != "..":
+            return   # genius klonining o'zi: qoida proyektlar uchun
+    except ValueError:
+        pass         # Windows: boshqa disk, klon emas
+    for text in commit_messages(command):
+        found = COMMIT_WORDS_RE.search(text)
+        if found:
+            deny_with("Commit xabarida taqiqlangan so'z: \"%s\"." % found.group(0).strip(),
+                      COMMIT_HINT)
 
 
 # --- Bash va PowerShell da o'qish hajmi (HK-H3) -------------------------
@@ -1212,6 +1286,7 @@ def check_bash(tool_input, powershell=False):
     asks = check_build(command)
     check_reads(command, powershell)
     check_memory_git(command)
+    check_commit_message(command)
     check_cost(command)
     check_budget_reset(command)
     for reason, hint in asks:

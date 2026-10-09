@@ -713,6 +713,64 @@ def gating_case(name, want, files, payload):
     return name, run
 
 
+# Commit xabari qoidasi: proyekt repolarida taqiqlangan so'z deny, klonda
+# o'tadi. Proyekt: pom.xml bor vaqtinchalik papka (cwd ham shu).
+COMMIT_DENY = [
+    ("Co-Authored-By", 'git commit -m "Fix retry" -m "Co-Authored-By: X <a@b.c>"'),
+    ("model nomi", 'git commit -m "Refactor with Sonnet"'),
+    ("Claude", "git commit -m 'Claude fixed the null check'"),
+    ("Generated with", 'git commit -m "Add cache. Generated with a tool"'),
+    ("AI", 'git commit -m "AI cleanup"'),
+    ("assistant", 'git commit -m "assistant edits"'),
+    ("Faza N:", 'git commit -m "Faza 3: add cache"'),
+    ("-am birlashgan", 'git commit -am "Opus cleanup"'),
+    ("--message=", 'git commit --message="Anthropic style"'),
+    ("heredoc", "git commit -m \"$(cat <<'EOF'\nFix null check\n\n"
+                "Co-Authored-By: Claude <noreply@x.y>\nEOF\n)\""),
+    ("git -C", 'git -C . commit -m "Haiku pass"'),
+]
+COMMIT_ALLOW = [
+    ("oddiy xabar", 'git commit -m "Retry payment calls on timeout"'),
+    ("ikki -m", 'git commit -m "Add cache" -m "Entries expire after ten minutes"'),
+    ("-F fayl o'qilmaydi", "git commit -F msg.txt"),
+    ("so'z ichida ai", 'git commit -m "Fix maintain and said paint"'),
+    (".claude yo'li", 'git commit -m "Ignore .claude folder"'),
+    ("amend, xabarsiz", "git commit --amend --no-edit"),
+    ("commit emas", 'git log --grep "Claude"'),
+    ("echo", 'echo "AI" && git commit -m "Add index"'),
+]
+
+
+def case_commit_message():
+    tmp = tempfile.mkdtemp(prefix="guard_commit_")
+    rows = []
+    try:
+        io.open(os.path.join(tmp, "pom.xml"), "w", encoding="utf-8").write("")
+
+        def got(command, cwd=tmp):
+            return run_guard(bash(command), cwd, root=tmp).get("permissionDecision", ALLOW)
+
+        for name, command in COMMIT_DENY:
+            rows.append(("commit xabari: %s -> deny" % name, got(command) == DENY))
+        for name, command in COMMIT_ALLOW:
+            rows.append(("commit xabari: %s -> allow" % name, got(command) == ALLOW))
+        reason = run_guard(bash(COMMIT_DENY[0][1]), tmp, root=tmp).get(
+            "permissionDecisionReason", "")
+        rows.append(("commit xabari: sabab va namuna",
+                     "Co-Authored-By" in reason and "git commit -m" in reason))
+        # Klonning o'zida qoida qo'llanmaydi.
+        rows.append(("commit xabari: klonda o'tadi",
+                     run_guard(bash(COMMIT_DENY[0][1]), ROOT, root=tmp).get(
+                         "permissionDecision", ALLOW) == ALLOW))
+        # Subagent ichida ham deny.
+        rows.append(("commit xabari: subagentda deny",
+                     run_guard(sub(COMMIT_DENY[1][1]), tmp, root=tmp).get(
+                         "permissionDecision", ALLOW) == DENY))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    return rows
+
+
 def case_memory_tree():
     """Butun daraxtni qo'shish: klonda begona memory papkasi bo'lsa ask,
     bo'lmasa o'tadi. Ro'yxat docref bilan bir xil."""
@@ -816,6 +874,7 @@ ALL_CASES = (
        hint_case("maslahat yo'llari, boshqa proyekt", True)]
     + [gating_case(*row) for row in GATING]
     + [("memory: butun daraxtni qo'shish", case_memory_tree)]
+    + [("commit xabari qoidasi", case_commit_message)]
     + [("Read va Bash bir xil qaror", case_read_bash_bir_xil)]
     + [("ReDoS: yangi regexlar", case_redos)]
     + [("GENIUS_HOOKS=off: jim", case_hooks_off)]

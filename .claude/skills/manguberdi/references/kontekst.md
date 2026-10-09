@@ -62,8 +62,8 @@ bo'lsa yangi sessiya tavsiya qilinadi.
 
 Skill yangi sessiya ocha olmaydi, lekin `--prompt` tayyor topshiriq
 beradi. Fakt qismini mashina to'ldiradi: branch, oxirgi commitlar,
-`git diff --stat HEAD`, git da yo'q yangi fayllar, `REJA.md` dagi `[x]`
-qadamlar (Bajarildi) va belgisizlari (Qolgan), memory indeksi. Siz faqat
+`git diff --stat HEAD`, git da yo'q yangi fayllar, hujjatlar papkasidagi
+(`handoff.py --docs`, repoda emas) `REJA.md` dagi `[x]` qadamlar (Bajarildi) va belgisizlari (Qolgan), memory indeksi. Siz faqat
 `<...>` joylarini to'ldirasiz: Maqsad, Qarorlar, Keyingi qadam.
 
 Topshiriqning siz to'ldiradigan qismi quyidagi beshta maydondan iborat

@@ -5,6 +5,7 @@
     python3 tools/handoff.py --prompt     # yangi sessiya uchun tayyor matn
     python3 tools/handoff.py --prompt --vazifa <nom>   # topshiriq faylga
     python3 tools/handoff.py --memory     # ikki MEMORY.md indeksi, ish boshida
+    python3 tools/handoff.py --docs       # proyekt hujjatlari papkasi yo'li
     python3 tools/handoff.py --limit 400000
     python3 tools/handoff.py --hook       # UserPromptSubmit hooki
 
@@ -26,7 +27,8 @@ CLAUDE_CODE_SESSION_ID, keyin proyekt papkasi (CLAUDE_PROJECT_DIR, joriy
 papka va uning otalari, oxirida klon).
 
 Topshiriqning fakt qismi (branch, commitlar, `git diff --stat HEAD`,
-kuzatilmagan fayllar, REJA.md dagi `[x]` va `[ ]` qadamlar) mashinadan
+kuzatilmagan fayllar, hujjatlar papkasidagi REJA.md dagi `[x]` va `[ ]`
+qadamlar) mashinadan
 olinadi; model faqat Maqsad, Qarorlar va Keyingi qadamni yozadi
 (OK-O17). `--vazifa` bilan topshiriq faylga yoziladi: lokal sessiyada
 holat papkasining `handoff/` iga, git siz; bulut sessiyasida
@@ -422,11 +424,20 @@ PLAN_HEAD_RE = re.compile(r"^#{2,6}\s+(?:\[([ xX])\]\s+)?(\d+-qadam\..*)$")
 PLAN_ITEM_RE = re.compile(r"^\s*[-*+]\s+\[([ xX])\]\s+(.+)$")
 
 
+def docs_path():
+    """Proyekt hujjatlari papkasi (docref.docs_dir): reja repoda emas."""
+    from docref import _git, docs_dir
+    # Workspace sessiyasida (CLAUDE_PROJECT_DIR git emas) joriy papka repo ichida bo'lsa, o'sha repo olinadi.
+    here = os.getcwd()
+    inside = bool(_git(["rev-parse", "--show-toplevel"], here).strip())
+    return docs_dir(here if inside else project_dir())
+
+
 def plan_steps():
-    """(bajarilgan, qolgan) qadamlar. rejalashtiruvchi rejani proyekt
-    ildizidagi REJA.md ga yozadi, bir nechta bo'lsa `reja/<slug>-reja.md`
-    ga; bajarilgan qadam oldiga `[x]` qo'yiladi."""
-    top = git("rev-parse", "--show-toplevel") or project_dir()
+    """(bajarilgan, qolgan) qadamlar. rejalashtiruvchi rejani hujjatlar
+    papkasidagi REJA.md ga yozadi (docref.docs_dir), bir nechta bo'lsa
+    `reja/<slug>-reja.md` ga; bajarilgan qadam oldiga `[x]` qo'yiladi."""
+    top = docs_path()
     files = [os.path.join(top, "REJA.md")]
     files += sorted(glob.glob(os.path.join(glob.escape(top), "reja", "*-reja.md")))
     done, left = [], []
@@ -727,6 +738,9 @@ def main():
             override = int(args[index + 1])
     if "--memory" in args:
         return memory_report()
+    if "--docs" in args:
+        print(docs_path().replace(os.sep, "/"))
+        return 0
     if "--prompt" in args or "--vazifa" in args:
         vazifa = None
         if "--vazifa" in args:

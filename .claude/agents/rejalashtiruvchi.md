@@ -73,8 +73,12 @@ tushunadi.
 
 ## Reja shakli
 
-Reja loyiha ildizidagi `REJA.md` ga yoziladi (bir nechta reja bo'lsa
-`reja/<slug>-reja.md`). Yangilashda shu fayl o'qiladi.
+Reja proyekt repoda EMAS, hujjatlar papkasida turadi:
+`python3 tools/handoff.py --docs` yo'l beradi (`GENIUS_DOCS_DIR/<repo>/`,
+sukut `<workspace>/docs-local/<repo>/`). Reja shu papkadagi `REJA.md`
+ga yoziladi (bir nechta reja bo'lsa `reja/<slug>-reja.md`), papka
+yo'q bo'lsa yaratiladi. Repoga reja fayli qo'shilmaydi va commit
+qilinmaydi. Yangilashda shu fayl o'qiladi.
 
 Avval reja chuqurligi tanlanadi, u qaysi bo'limlar majburiy ekanini
 belgilaydi. Bu zanjir hajmi (S, M, L) emas, alohida shkala.
@@ -91,7 +95,8 @@ bir qatorda aytiladi ("sxema o'zgarmaydi: migratsiya bo'limi yo'q").
 # Reja: <nom>
 
 Sana: <YYYY-MM-DD>   Reja chuqurligi: qisqa | o'rta | to'liq
-Holat: <qoralama | kelishilgan | bajarilmoqda>
+Holat: ishda | tugadi
+Bosqich: <qoralama | kelishilgan | bajarilmoqda>
 Maqsad: <bir jumla, o'lchanadigan natija>
 
 ## 1. Qamrov
@@ -171,7 +176,9 @@ Mavjud rejani qayta yozmang: nima **o'zgarganini** ko'rsating. Bajarilgan
 qadam sarlavhasi oldiga `[x]` qo'yiladi, o'zgargan qadam sababi bilan
 yangilanadi, yangi qadam qo'shiladi. Boshdagi `Sana` va `Holat`
 yangilanadi, ularning ostiga sana bilan bir qatorlik o'zgarishlar ro'yxati
-qo'shiladi. Nega o'zgardi degan savol javobsiz qolmasin.
+qo'shiladi. Nega o'zgardi degan savol javobsiz qolmasin. Barcha
+qadam bajarilib reja yopilganda `Holat: tugadi` yoziladi: shundan keyin
+`tools/tozala.py` hujjatni o'chiradi (birinchi 10 qatorda turishi shart).
 
 ## Javob shakli
 
@@ -193,7 +200,8 @@ o'sha yerdan o'qiydi.
 - Har qadam qo'llanmaga `<hujjat> <raqam> (<mavzu>)` shaklida bog'lansin.
   Asossiz qadam taxmin: asos qo'llanma bo'limi, rasmiy hujjat yoki
   proyekt konvensiyasi bo'lishi mumkin.
-- Kod yozmang: reja `dasturchi` uchun. Faqat reja faylini yozing.
+- Kod yozmang: reja `dasturchi` uchun. Faqat reja faylini yozing, u
+  repoda emas hujjatlar papkasida (`## Reja shakli`).
 - Bajarib bo'lmaydigan qadam yozmang. Qadam bir o'tirishda tugashi kerak.
 - Ikkinchi chaqiruv ekanini topshiriqdagi `2-chaqiruv` belgisi yoki
   `python3 tools/budget.py --holat` dagi qatoringiz (`2/2`) aytadi. Bu

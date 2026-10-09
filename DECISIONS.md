@@ -855,3 +855,51 @@ xil qarori, 8 clean, 8 budjet holati, yangi regexlar 10 KB patologik
 kirishda 0.2 s dan tez.
 
 **Orqaga qaytarish.** `git revert`.
+
+## 2026-10-09: Hujjat repoda emas, ish `dev` da, commit xabari oddiy, tozalash avtomatik
+
+**Nima o'zgardi.** To'rt doimiy qoida (skill `## Proyekt qoidalari`,
+aktyorlar):
+
+- Reja, review hisoboti, talab, handover, ADR, runbook va README proyekt
+  repoga yozilmaydi va commit qilinmaydi. Ular `docref.docs_dir` beradigan
+  papkada: `GENIUS_DOCS_DIR/<repo>/`, sukut `<workspace>/docs-local/<repo>/`.
+  Asboblar (`handoff.py --docs`, `plan_steps`, `guruh.py yarat`) shu
+  funksiyadan oladi; guruh worktree si ham asosiy repo nomini oladi.
+- Ish to'g'ridan-to'g'ri `dev` da (`git fetch`, `merge --ff-only`), yangi
+  feature yoki reja branchi ochilmaydi. Push foydalanuvchida.
+- `guard.py`: proyekt repoda `git commit` xabarida `Co-Authored-By`,
+  `Claude`, `Anthropic`, model nomi, "Generated with", "AI", "assistant"
+  yoki "Faza N:" bo'lsa `deny`. Klonning o'zida qoida yo'q; `-F fayl`
+  o'qilmaydi.
+- Yangi `tools/tozala.py`: ro'yxatda yo'q `.claude/worktrees/*` papkalar,
+  worktree siz `genius/*` branchlar va `Holat: tugadi` hujjatlar
+  o'chadi. Git ga qo'shilgan hujjat va asbob fayllari faqat ro'yxatga
+  chiqadi. `--quruq` hech narsa o'chirmaydi.
+
+**Nega.** Hujjat repoga tushsa u kod tarixini to'ldiradi va begona
+kishiga ko'rinadi. Reja fayli branch almashganda yo'qolardi yoki
+guruhga nusxalanishi kerak edi. Yetim worktree va eski branchlar disk va
+`git branch` ro'yxatini to'ldirardi. Harness qo'shgan muallif satri
+foydalanuvchi xohlagan xabar uslubiga zid.
+
+**Rad etilgan variantlar.**
+
+- *`.gitignore` ga hujjat papkasini yozish.* Rad etildi: `.gitignore`
+  proyekt fayli, unga yozish daraxtni o'zgartiradi; `.git/info/exclude`
+  yetarli.
+- *`tozala` git dagi hujjatni o'zi o'chirsin.* Rad etildi: bu commit
+  talab qiladi, foydalanuvchi hal qiladi.
+- *Commit xabarini `-F` fayldan ham o'qish.* Rad etildi: guard fayl
+  tizimiga bog'lanib qoladi, inline xabar asosiy yo'l.
+
+**Xavf.** `tozala` worktree siz `genius/*` branchni `-D` bilan o'chiradi:
+birlashmagan commit shu branchda bo'lsa yo'qoladi. Guard qoidasi so'z
+bo'yicha: "AI" yoki "Claude" so'zi qonuniy ma'noda kelsa ham `deny`
+(`.claude/` yo'li istisno).
+
+**Qaysi tekshiruv o'tdi.** `tools/test_tozala.py` 25/25,
+`tools/test_guard.py` (yangi commit holatlari 24/24, 2 eski yiqilish
+o'zgarmadi), `tools/test_handoff.py` 31/31, `tools/test_guruh.py` 29/29.
+
+**Orqaga qaytarish.** `git revert`.

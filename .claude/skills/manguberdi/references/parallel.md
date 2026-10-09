@@ -9,9 +9,11 @@ ishlatishga chidaydi.
 Guruh asosiy daraxtning **joriy holatidan** boshlanadi, HEAD dan emas:
 `yarat` vaqtinchalik commit oladi (alohida indeks bilan `add -A`,
 `write-tree`, `commit-tree -p HEAD`), asosiy branch va indeks
-o'zgarmaydi. Shuning uchun commit qilinmagan REJA.md va oldingi
-partiyaning birlashtirilgan natijasi guruhda bor, iflos daraxt to'siq
-emas. Worktree `<root>/.claude/worktrees/genius-<id>` da, loyiha ichida:
+o'zgarmaydi. Shuning uchun oldingi partiyaning birlashtirilgan natijasi
+guruhda bor, iflos daraxt to'siq emas. Reja repoda emas, hujjatlar
+papkasida (`handoff.py --docs`): guruh uni mutlaq yo'l bilan o'qiydi,
+worktree ga nusxalanmaydi. Guruh worktree lari `dev` dan ochiladi va
+`dev` ga birlashadi. Worktree `<root>/.claude/worktrees/genius-<id>` da, loyiha ichida:
 Edit va Write ruxsat so'ramaydi. Papka `.git/info/exclude` orqali
 yashiriladi, `.gitignore` ga tegilmaydi.
 
@@ -90,8 +92,8 @@ paketga tegadigan qoidalar guruhga berilmaydi, ular kesishmaydi degan
 shartni buzadi: deprecated API ni o'chirish (`java:S1874`, `java:S1133`,
 `java:S6355`, `java:S5738`, `java:S1123`) va restricted nomli metodni
 qayta nomlash (`java:S6213` method). Ular alohida "cross" worktree da,
-o'z branchida commit bilan bajariladi va oxirida haqiqiy `git merge`
-(3-way) bilan qo'shiladi. Paket guruhlari patch sifatida qo'shiladi
+o'z branchida commit bilan bajariladi va oxirida `dev` ga haqiqiy
+`git merge` (3-way) bilan qo'shiladi. Paket guruhlari patch sifatida qo'shiladi
 (`guruh.py birlashtir --3way`).
 
 `GENIUS_GURUH_MAX` to'lgan bo'lsa cross uchun `guruh.py yarat` o'rniga

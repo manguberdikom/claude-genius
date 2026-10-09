@@ -16,9 +16,11 @@ o'qishga chidaydi.
 Guruh asosiy daraxtning JORIY holatidan boshlanadi, HEAD dan emas:
 `yarat` alohida indeks fayli bilan (`GIT_INDEX_FILE`) `git add -A`,
 `write-tree` va `commit-tree <tree> -p HEAD` qilib vaqtinchalik commit
-oladi. Asosiy branch, indeks va ishchi daraxt o'zgarmaydi. Shunda
-commit qilinmagan REJA.md va oldingi partiyaning birlashtirilgan
-(indeksdagi) natijasi guruhga tushadi, iflos daraxt rad etilmaydi.
+oladi. Asosiy branch (proyektda `dev`), indeks va ishchi daraxt
+o'zgarmaydi. Shunda oldingi partiyaning birlashtirilgan (indeksdagi)
+natijasi guruhga tushadi, iflos daraxt rad etilmaydi. Reja va boshqa
+hujjatlar repoda emas: guruh ularni nusxalamaydi, hujjatlar papkasini
+(`docref.docs_dir`, `handoff.py --docs`) mutlaq yo'l bilan o'qiydi.
 Commit ni `genius/<id>` branch i ushlab turadi, `tozala` dan keyin git
 uni o'zi yig'ib oladi. `birlashtir` diffni shu asosdan oladi: faqat
 guruhning o'z o'zgarishi qo'llanadi.
@@ -57,6 +59,7 @@ import sys
 import tempfile
 import time
 
+import docref
 import geniuslib
 
 ID_RE = re.compile(r"^[A-Za-z0-9][\w.-]{0,39}$")
@@ -258,6 +261,8 @@ def create(root, gid, copies):
         print("Guruh yaratilmadi, worktree va branch qaytarildi: %s" % exc)
         return 1
     print("Guruh: %s\nPapka: %s\nBranch: %s\nAsos: %s" % (gid, path, branch, base[:12]))
+    print("Hujjatlar (repoda emas, mutlaq yo'l): %s"
+          % docref.docs_dir(root).replace(os.sep, "/"))
     print("Aktyor promptida: `guruh: %s` va `papka: %s`. Testlar: "
           "run_tests.py --ildiz %s --asos %s --yurgiz" % (gid, path, path, base[:12]))
     return 0

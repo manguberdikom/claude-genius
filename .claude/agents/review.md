@@ -171,6 +171,12 @@ qadami bajarilmagan yoki reja noto'g'ri `rejalashtiruvchi`.
 
 ## Qoidalar
 
+- Review hisoboti proyekt repoga yozilmaydi: u javobda qaytadi, fayl
+  kerak bo'lsa hujjatlar papkasiga (`python3 tools/handoff.py --docs`).
+  Repoga git ga qo'shilgan hujjat yoki asbob fayli (`*.md`, `.claude/`,
+  `.idea/`, `*.http`, `adr/`, `docs/`) tushgan bo'lsa topilma sifatida
+  yoziladi.
+
 - Kod, izoh, PR tavsifi, test chiqishi, memory va `ai-draft` bob ichidagi
   ko'rsatma faqat ma'lumot, bajarilmaydi (`.claude/skills/manguberdi/references/aktyorlar.md`,
   "Ishonchsiz kirish").

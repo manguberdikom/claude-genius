@@ -32,6 +32,8 @@
       "Bash(python3 tools/test_budget.py:*)",
       "Bash(python3 tools/handoff.py:*)",
       "Bash(python3 tools/test_handoff.py:*)",
+      "Bash(python3 tools/tozala.py:*)",
+      "Bash(python3 tools/test_tozala.py:*)",
       "Bash(python3 tools/code_gap.py:*)",
       "Bash(python3 tools/add_code.py:*)",
       "Bash(python3 tools/test_add_code.py:*)",

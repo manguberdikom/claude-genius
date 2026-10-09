@@ -15,7 +15,7 @@ boshida.
 |---|---|---|
 | Niyat | nima qilinadi: tekshirish, tuzatish, rejalashtirish, qoplash | bitta savol beriladi |
 | Doira | qaysi fayl, modul yoki butun proyekt | eng tor variant olinadi |
-| Artefakt | natija nima: kod, reja fayli, hisobot, test | niyatdan kelib chiqadi |
+| Artefakt | natija nima: kod, reja fayli, hisobot, test (reja va hisobot hujjatlar papkasida, repoda emas) | niyatdan kelib chiqadi |
 | Qabul mezoni | qachon bajarilgan hisoblanadi | tekshiruvlar toza bo'lishi olinadi |
 | Cheklov | nimaga tegilmaydi | CLAUDE.md va memorydan olinadi |
 

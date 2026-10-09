@@ -54,8 +54,9 @@ fayli uchun ham `rules_for.py` chaqiriladi va
    yomon bo'lsa, uni tuzatmang: oxirida alohida ayting.
 3. **Qoidani bo'lim darajasida tanlang.** Reja qadami bilan chaqirilgan
    bo'lsangiz, qadamdagi pattern va bo'lim raqami promptda yoki reja
-   faylida turadi (`REJA.md` yoki `reja/<slug>-reja.md`): shunga amal
-   qiling va qadamning qabul mezoni bilan tugating. Reja bo'lmasa,
+   faylida turadi: hujjatlar papkasidagi `REJA.md` yoki
+   `reja/<slug>-reja.md` (yo'l `python3 tools/handoff.py --docs`, repoda
+   emas): shunga amal qiling va qadamning qabul mezoni bilan tugating. Reja bo'lmasa,
    muammoni bir jumlada ayting, undan qisqa mavzu yoki patternning
    inglizcha nomini oling va `tools/doc.sh find "<mavzu>"` bilan
    qidiring (topilmasa `find -f`), keyin `tools/doc.sh show <hujjat> <raqam>`
@@ -156,6 +157,16 @@ Tegilmagan: <yonidagi muammo, agar ko'rilgan bo'lsa>
   o'zgartirgan qatordagi va yangi paydo bo'lgan `check_code.py`
   topilmasi tuzatilmay qolmaydi. Eski topilma uchun PostToolUse bloki
   takrorlansa, bu xato emas: fayl qaytarilmaydi, ish davom etadi.
+- Hujjat repoda emas. Reja, hisobot, talab, handover, ADR, README va
+  shunga o'xshash fayl proyekt repoga yozilmaydi va commit qilinmaydi:
+  ular hujjatlar papkasida (`python3 tools/handoff.py --docs`). Ish
+  `dev` branchda, yangi branch ochilmaydi (guruhda kartadagi worktree
+  dan tashqari).
+- Commit qilsangiz (faqat topshiriqda aytilsa): xabar inglizcha, oddiy,
+  bir qator, masalan `Retry payment calls on timeout`. `Co-Authored-By`,
+  `Claude`, `Anthropic`, model nomi, "Generated with", "AI", "assistant"
+  va "Faza N:" kabi reja raqami yozilmaydi; `guard.py` bunday xabarni
+  to'sadi. Push qilinmaydi.
 - Test yozmang: bu `test-muhandis` ning ishi (`hajm: S` bundan
   mustasno). Mavjud test buzilsa ayting.
 - Foydalanuvchiga savol bilan tugamang. Qaytariladigan qarorda

@@ -284,3 +284,37 @@ def hint(topic, rule="", ref="", term=""):
     if found:
         return "qo'llanma: %s show %s" % (cmd, found)
     return "qo'llanma: %s find \"%s\"" % (cmd, topic)
+
+
+def docs_dir(cwd=None):
+    """Proyekt hujjatlari (reja, review hisoboti, talab, handover, ADR)
+    turadigan papka. Hujjat proyekt git reposiga YOZILMAYDI.
+
+    `GENIUS_DOCS_DIR/<repo-nomi>/`; berilmasa proyekt git ildizining OTA
+    papkasidagi `docs-local/<repo-nomi>/`, ya'ni `<workspace>/docs-local/<repo>/`.
+    Workspace git repo bo'lmasa u git ga tushmaydi; bo'lsa `docs-local/`
+    ni foydalanuvchi o'zi `.git/info/exclude` ga qo'shadi (asbob repo
+    `.gitignore` iga tegmaydi).
+
+    Guruh worktree si (`.claude/worktrees/genius-<id>`) asosiy repoga
+    ulangan: `--git-common-dir` orqali asosiy repo nomi olinadi, shuning
+    uchun guruh va asosiy sessiya bitta papkani o'qiydi. Papka yaratilmaydi:
+    yozuvchi `os.makedirs` qiladi. Har chaqiruvda o'qiladi.
+    """
+    here = cwd or os.getcwd()
+    if not _git(["rev-parse", "--show-toplevel"], here).strip():
+        # Git bo'lmagan workspace (bir nechta repo turgan papka): hujjatlar uning o'zida, repo nomisiz.
+        given = os.environ.get("GENIUS_DOCS_DIR", "").strip()
+        return os.path.abspath(os.path.expanduser(given)) if given else os.path.join(here, "docs-local")
+    top = _top(here)
+    common = _git(["rev-parse", "--path-format=absolute", "--git-common-dir"],
+                  here).strip()
+    if common and os.path.basename(os.path.normpath(common)) == ".git":
+        top = os.path.dirname(os.path.normpath(common))
+    name = os.path.basename(os.path.normpath(top))
+    given = os.environ.get("GENIUS_DOCS_DIR", "").strip()
+    if given:
+        base = os.path.abspath(os.path.expanduser(given))
+    else:
+        base = os.path.join(os.path.dirname(os.path.normpath(top)), "docs-local")
+    return os.path.join(base, name)

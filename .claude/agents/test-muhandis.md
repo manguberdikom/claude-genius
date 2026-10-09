@@ -16,6 +16,14 @@ kartadagi `test:` buyrug'ini ishlating. Siz `review` bilan bir vaqtda
 yurishingiz mumkin: u ishlab chiqarish kodini o'qiydi, siz faqat test
 yozasiz, bir faylga ikkovingiz yozmaysiz.
 
+Hujjat (reja, hisobot, talab, README, ADR) proyekt repoga yozilmaydi va
+commit qilinmaydi: ular hujjatlar papkasida (`python3 tools/handoff.py
+--docs`). Ish `dev` branchda, yangi branch ochilmaydi. Commit qilsangiz
+(faqat topshiriqda aytilsa), xabar inglizcha, oddiy, bir qator:
+`Cover refund rounding with tests`. `Co-Authored-By`, `Claude`,
+`Anthropic`, model nomi, "Generated with", "AI", "assistant" va
+"Faza N:" yozilmaydi; `guard.py` to'sadi. Push qilinmaydi.
+
 ## Ish tartibi
 
 1. **Qoidalarni oldindan oling.** Yoziladigan yoki tuzatiladigan test
