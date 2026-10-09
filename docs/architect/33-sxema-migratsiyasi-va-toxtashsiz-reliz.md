@@ -79,6 +79,16 @@ spring:
 
 Qo'lda `psql` ochib production'da `ALTER TABLE` yozish ham xuddi shunday buzilish. Shoshilinch tuzatishni ham avval migratsiya fayli sifatida commit qiling.
 
+Istisno: changeset hali hech bir muhitda qo'llanmagan yoki faqat yiqilgan bo'lsa (masalan precondition release'ni to'xtatgan), uni joyida tuzatish mumkin. Lekin uni allaqachon qo'llagan muhit bo'lishi mumkin: dasturchining lokal bazasi yoki sinov muhiti. U yerda checksum o'zgargani uchun ilova ishga tushmaydi. Liquibase'da eski versiyaning checksum'ini `validCheckSum` ga yozing. `ANY` emas, aniq qiymatni yozing: uni Testcontainers'da eski faylni qo'llab, `DATABASECHANGELOG.MD5SUM` dan oling. Shu holatni tekshiradigan test yozing: jadvalga eski checksum bilan qator qo'yiladi va changeset xatosiz o'tib, qayta yurmasligi kutiladi.
+
+```yaml
+- changeSet:
+    id: 20260112_200_order_reference_lower_idx
+    author: shop
+    # eski versiya (faqat indeks) qo'llangan muhit checksum xatosisiz ishga tushadi
+    validCheckSum: 9:0123456789abcdef0123456789abcdef
+```
+
 ## 33.3 Kengaytirish va qisqartirish (expand and contract) usuli bosqichma-bosqich
 
 To'xtashsiz relizning asosiy g'oyasi: hech qachon kod va sxemani bir vaqtda mos kelmaydigan holatga keltirmaslik. Rolling deployment paytida bir necha daqiqa davomida eski va yangi kod bir xil bazaga yozadi. Demak sxema shu ikki versiyaning ikkisiga ham mos bo'lishi kerak.
@@ -223,6 +233,36 @@ DROP INDEX CONCURRENTLY IF EXISTS idx_payments_merchant_created;
 Ikkinchi shart: `CONCURRENTLY` uzilib qolsa, PostgreSQL `indisvalid = false` holatidagi indeksni qoldiradi. Bu indeks so'rovlarda ishlatilmaydi, lekin `INSERT` va `UPDATE` da yangilanadi, ya'ni faqat sekinlashtiradi va joy egallaydi. Shuning uchun har migratsiya ishga tushgandan keyin invalid indekslarni tekshiradigan avtomatik nazorat bo'lishi kerak.
 
 Yana bir tuzoq: `CONCURRENTLY` boshlanish paytidagi ochiq tranzaksiyalarni kutadi. Bitta 40 daqiqalik hisobot so'rovi indeks yaratishni shu muddatga ushlab turadi, shuning uchun avval `pg_stat_activity` ni ko'rib chiqing.
+
+Eski ma'lumotdagi takror indeksdan oldin chiqadi. "Takror bor bo'lsa to'xta" (`preConditions onFail: HALT`) degan shart xavfsiz ko'rinadi, lekin amalda u release'ni hamma muhitda to'xtatadi. Ma'lumot har muhitda har xil, tozalashni esa kimdir qo'lda bajarishi kerak bo'ladi. Rolling deploy'da bu yanada yomon: tozalovchi bir martalik changeset allaqachon yozilgan bo'ladi, eski pod esa oynada yangi takror yozadi. Natijada HALT har deployda takrorlanaveradi.
+
+Barqaror yo'l: tozalashni indeks changeset'ining o'ziga, `CREATE INDEX` dan oldingi statement qilib qo'yish (`runInTransaction: false`, autocommit).
+- Guruhda kim qolishini aniq tartib belgilaydi. Masalan avval ACTIVE yozuv, keyin ishdan bo'shatilmagan, keyin eng kichik id.
+- Qolganlari o'chirilmaydi, zaxira jadvalga yoziladi.
+- Bitta atomik so'rov ishlatiladi (`WITH ... UPDATE ... RETURNING` + `INSERT`), shunda qator faqat zaxiraga tushgan bo'lsagina o'zgaradi.
+- Rollback zaxiradan qaytaradi, lekin keyin qo'lda berilgan qiymatni bosib o'tmaydi.
+- Login yoki identifikator kabi maydonga yangi qiymat o'ylab topmang: `NULL` qiling va ilovaning "qiymat berilmagan" oqimiga (ro'yxat va berish endpointi) topshiring.
+
+```sql
+WITH ranked AS (
+  SELECT o.id, o.reference,
+         first_value(o.id) OVER w AS kept_id,
+         row_number()      OVER w AS position_in_group
+  FROM shop.orders o
+  WHERE o.reference IS NOT NULL AND o.status <> 'DELETED'
+  WINDOW w AS (PARTITION BY lower(o.reference)
+               ORDER BY (o.status = 'ACTIVE') DESC, o.id)
+), cleared AS (
+  UPDATE shop.orders o SET reference = NULL
+  FROM ranked r
+  WHERE o.id = r.id AND r.position_in_group > 1
+  RETURNING o.id AS order_id, r.reference, r.kept_id   -- r: UPDATE dan oldingi qiymat
+)
+INSERT INTO shop.orders_reference_dup_bak (order_id, reference, kept_order_id)
+SELECT order_id, reference, kept_id FROM cleared;
+```
+
+Indeks UNIQUE bo'lmasa, oynada eski pod yozgan takror qurilishni yiqitmaydi: u qoladi va runbook'dagi hisobot so'rovi uni ko'rsatadi. UNIQUE bo'lsa qurilish yiqiladi va INVALID indeks qoladi. Keyingi deploy uni tashlab, tozalashni qayta yurgizadi.
 
 ## 33.9 Ma'lumotni ko'chirish (backfill): bo'laklab, yuk nazorati bilan
 

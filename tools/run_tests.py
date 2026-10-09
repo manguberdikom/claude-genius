@@ -790,6 +790,14 @@ def select(project, existing, deleted=()):
         return [t for t in tests if t.module == module
                 and matches_up(t, test_sources, DB_TEST_RE)]
 
+    def migration_dir_tests(module, path):
+        # Bazasiz test ham migratsiya papkasini o'qiydi (changelog lint, sxema kontrakti): u fayl nomini emas,
+        # papkani (`db/app`) tilga oladi. Ikki va undan chuqur bo'lak: yolg'iz `db` deyarli hamma joyda bor.
+        rel = path.split("src/main/resources/", 1)[-1]
+        parts = rel.split("/")[:-1]
+        names = [os.path.basename(path)] + ["/".join(parts[:i]) for i in range(2, len(parts) + 1)]
+        return [t for t in tests if t.module == module and any(name in t.text for name in names)]
+
     main_names, helper_names, ignored = OrderedDict(), OrderedDict(), []
     for path in existing:
         src = project.by_rel.get(path)
@@ -816,6 +824,8 @@ def select(project, existing, deleted=()):
                 plan.add(test, "config", os.path.basename(path))
         elif MIGRATION_RE.search(path):
             for test in db_tests(module):
+                plan.add(test, "migration", os.path.basename(path))
+            for test in migration_dir_tests(module, path):
                 plan.add(test, "migration", os.path.basename(path))
         elif re.search(r"(?:^|/)src/(?!main/)[^/]+/resources/", path):
             base = os.path.basename(path)

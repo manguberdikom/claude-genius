@@ -219,6 +219,18 @@ def case_migratsiya_baza_testlari(_):
     return "shop.orders.OrderRepositoryIT" in picked and "shop.orders.OrderServiceTest" not in picked
 
 
+def case_migratsiya_papkasini_oqiydigan_unit_test(_):
+    files = gradle_shop()
+    files["orders/src/test/java/shop/orders/ChangelogLintTest.java"] = java(
+        "shop.orders", "ChangelogLintTest",
+        body='java.nio.file.Path root = java.nio.file.Path.of("src/main/resources").resolve("db/shop");')
+    root = tree("migratsiya_papkasi", files)
+    _, plan = plan_for(root, ["orders/src/main/resources/db/shop/2026/V3__y.yaml"])
+    picked = chosen(plan)
+    return ("shop.orders.ChangelogLintTest" in picked and "shop.orders.OrderRepositoryIT" in picked
+            and "shop.orders.OrderServiceTest" not in picked)
+
+
 def case_build_fayli(_):
     root = tree("build_fayli", gradle_shop())
     project, whole_root = plan_for(root, ["build.gradle"])
@@ -1447,6 +1459,7 @@ def case_ildiz_qulfi(_):
 CASES = [
     ("settings.gradle: groovy, kotlin, projectDir", case_settings_groovy_va_kotlin),
     ("Gradle modul yo'li", case_modul_yoli_gradle),
+    ("migratsiya papkasini o'qiydigan bazasiz test ham tanlanadi", case_migratsiya_papkasini_oqiydigan_unit_test),
     (".claude/worktrees ichidagi nusxa modul emas", case_claude_worktree_modul_emas),
     ("nomi mos va bir qadam narida", case_nomi_mos_va_bir_qadam),
     ("buyruq modulga bog'langan, clean yo'q", case_buyruq_modulga_bogliq),
