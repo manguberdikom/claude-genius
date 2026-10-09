@@ -512,8 +512,9 @@ class Project:
             relative = rel(os.path.relpath(current, self.root))
             relative = "" if relative == "." else relative
             inside_src = "/src/" in "/" + relative + "/"
+            # `.claude/worktrees` holds full copies of the project (parallel groups): not modules of this tree.
             dirs[:] = [d for d in dirs
-                       if d != ".git" and (inside_src or d not in OUTPUT_DIRS)]
+                       if d not in (".git", ".claude") and (inside_src or d not in OUTPUT_DIRS)]
             for name in files:
                 path = (relative + "/" + name).lstrip("/")
                 if name == "pom.xml" and self.tool == "maven":

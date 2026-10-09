@@ -158,6 +158,15 @@ def case_modul_yoli_gradle(_):
             and project.gradle_path("") == "")
 
 
+def case_claude_worktree_modul_emas(_):
+    files = gradle_shop()
+    files.update({".claude/worktrees/genius-x/" + path: text for path, text in gradle_shop().items()})
+    root = tree("claude_worktree", files)
+    project, plan = plan_for(root, ["orders/src/main/java/shop/orders/OrderService.java"])
+    return (all(not src.rel.startswith(".claude/") for src in project.sources)
+            and all(not module.startswith(".claude") for module, _ in plan.targets))
+
+
 # -- tanlash -------------------------------------------------------------------
 
 def case_nomi_mos_va_bir_qadam(_):
@@ -1438,6 +1447,7 @@ def case_ildiz_qulfi(_):
 CASES = [
     ("settings.gradle: groovy, kotlin, projectDir", case_settings_groovy_va_kotlin),
     ("Gradle modul yo'li", case_modul_yoli_gradle),
+    (".claude/worktrees ichidagi nusxa modul emas", case_claude_worktree_modul_emas),
     ("nomi mos va bir qadam narida", case_nomi_mos_va_bir_qadam),
     ("buyruq modulga bog'langan, clean yo'q", case_buyruq_modulga_bogliq),
     ("o'zgargan test yolg'iz yuradi", case_ozgargan_test_yolgiz),
