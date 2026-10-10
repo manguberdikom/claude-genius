@@ -1479,7 +1479,43 @@ def case_ildiz_qulfi(_):
     return first and second
 
 
+def case_ildiz_modul_test_resursi_sset(_):
+    """Ildiz moduldagi test resursi `:test` beradi, hech qachon `:src`.
+
+    Musbat: hech bir testda nomi uchramaydigan `src/test/resources/x.txt`
+    butun `:test` to'plamini tanlaydi, `src/integration-test/resources/...`
+    esa o'sha to'plamni. Manfiy: hosil bo'lgan vazifa nomi `src` BO'LMAYDI.
+    Yo'l ildiz modulda boshida `/` siz keladi (`src/test/...`), shuning uchun
+    prefikssiz `split("/src/")` ishlamay qolsa natija `src` bo'lardi va Gradle
+    "task ':src' not found" bilan yiqilardi, hech bir test yurmasdi.
+    """
+    single = {
+        "settings.gradle": "rootProject.name = 'lib'\n",
+        "build.gradle": "apply plugin: 'java'\n",
+        "src/main/java/lib/Lib.java": main_class("lib", "Lib", "public int one() { return 1; }"),
+        "src/test/java/lib/LibTest.java": java("lib", "LibTest"),
+        "src/test/resources/fixture/begona.txt": "a\n",
+        "src/integration-test/resources/begona-it.txt": "b\n",
+    }
+    root = tree("ildiz_sset", single)
+    project, plan = plan_for(root, ["src/test/resources/fixture/begona.txt"])
+    _, it_plan = plan_for(root, ["src/integration-test/resources/begona-it.txt"])
+    tasks = [task for cmd, _ in run_tests.commands(project, plan) for task in cmd]
+
+    files = gradle_shop()
+    files["orders/src/test/resources/fixture/begona.txt"] = "c\n"
+    _, modul = plan_for(tree("modul_sset", files),
+                        ["orders/src/test/resources/fixture/begona.txt"])
+
+    return (list(plan.whole) == [("", "test")]
+            and list(it_plan.whole) == [("", "integration-test")]
+            and not any(task == "src" or task.endswith(":src") for task in tasks)
+            and any(task.endswith("test") for task in tasks)
+            and list(modul.whole) == [("orders", "test")])
+
+
 CASES = [
+    ("ildiz modul test resursi `:test` beradi, `:src` emas", case_ildiz_modul_test_resursi_sset),
     ("settings.gradle: groovy, kotlin, projectDir", case_settings_groovy_va_kotlin),
     ("Gradle modul yo'li", case_modul_yoli_gradle),
     ("migratsiya papkasini o'qiydigan bazasiz test ham tanlanadi", case_migratsiya_papkasini_oqiydigan_unit_test),
