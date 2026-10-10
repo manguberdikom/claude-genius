@@ -163,6 +163,18 @@ private static final Pattern SETTLEMENT_LINE = Pattern.compile("""
 
 Nomlangan guruhlar (`(?<bank>...)`) indeks bo'yicha murojaatdan ancha o'qiladi: `matcher.group("bank")`.
 
+Regex literalida qisqa shakl bor bo'lsa shuni yozing: `[0-9]` o'rniga `\d`, `[A-Za-z0-9_]` o'rniga `\w` (`java:S6353`), bir belgili alternatsiya guruhi o'rniga belgi sinfi, masalan `[YN]` (`java:S6035`). Ikkalasi ham ma'noni o'zgartirmaydi, faqat regexni qisqartiradi.
+
+```java
+// yomon: java:S6353 va java:S6035
+Pattern.compile("^[0-9]{4}-[A-Za-z0-9_]+$");
+Pattern.compile("^(Y|N)$");
+
+// yaxshi
+Pattern.compile("^\\d{4}-\\w+$");
+Pattern.compile("^[YN]$");
+```
+
 ## 21.7 Katastrofik backtracking va kiritish uzunligi
 
 Ba'zi regex shakllari (ichma-ich kvantifikatorlar: `(a+)+`, `(\\w+\\s?)*`) ma'lum kiritishda eksponensial vaqtda ishlaydi va ilovani to'xtatadi. Bu ReDoS (regex denial of service) deb ataladi va tashqi kiritishni regex bilan tekshiradigan har bir joyda xavf bor.

@@ -1,5 +1,5 @@
 # sonar-java rule metadata snapshoti.
-# sana: 2026-10-08
+# sana: 2026-10-10
 # manba: https://raw.githubusercontent.com/SonarSource/sonar-java/master/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/<kalit>.json
 #
 # tur    - CODE_SMELL | BUG | VULNERABILITY | SECURITY_HOTSPOT
@@ -124,9 +124,11 @@ S5841	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S5853	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S5961	CODE_SMELL	Major	Tests
 S5976	CODE_SMELL	Major	Tests
+S6035	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S6068	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S6126	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S6213	tekshirilmadi	tekshirilmadi	tekshirilmadi
+S6353	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S6355	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S6809	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S6813	CODE_SMELL	Major	Main

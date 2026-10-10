@@ -61,6 +61,7 @@ Quyidagi jadval - diagnostikada birinchi murojaat qiladigan ro'yxat. Amalda hodi
 | Map/Set tartibi | `HashMap`/`HashSet` iteration, `toString()` taqqoslash | Iteration tartibi kafolatlanmagan | `containsExactlyInAnyOrder`, `LinkedHashMap` |
 | Test ma'lumotining ta'siri | Umumiy `@Sql` seed, bir xil email bilan yozuv | Noyoblik buzilishi, kutilmagan qator soni | Test-scoped unique key, `@Transactional` rollback |
 | Resurs yetishmasligi | CI runner'da 2 vCPU, timeout 500 ms | Kutish oynasi juda tor | Timeout'ni real p99 dan 3-5× katta qilish; polling |
+| Coverage agenti | Reflektsiya bilan a'zo sanash: `getDeclaredMethods()`, `getDeclaredFields()` | JaCoCo agenti sintetik `$jacocoInit` va `$jacocoData` qo'shadi: tor yurish (agentsiz) yashil, to'liq suite qizil | `isSynthetic()` filtri ([JaCoCo agenti](../sonarqube/09-coverage-qanday-olchanadi-jacoco-mexanikasi.md#92-java-agent-va-offline-instrumentatsiya-farqi)) |
 
 **1. Vaqtga bog'liqlik.**
 

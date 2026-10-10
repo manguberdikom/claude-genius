@@ -72,6 +72,21 @@ java -javaagent:/opt/jacoco/jacocoagent.jar=destfile=/data/jacoco-e2e.exec,appen
 java -jar jacococli.jar dump --address localhost --port 6300 --destfile target/jacoco-e2e.exec
 ```
 
+Agent rejimida JaCoCo har instrumentatsiya qilingan klassga sintetik a'zo qo'shadi: statik `$jacocoInit()` metodi va `$jacocoData` maydoni (ikkalasida `isSynthetic()` rost). Reflektsiya bilan a'zo sanaydigan test (`getDeclaredMethods()`, `getDeclaredFields()`) ularni faqat agent ostida ko'radi. Natija: bitta test sinfini agentsiz yurgizganda yashil, to'liq suite da (agent yoqilgan) qizil. Tuzatish sinfdan emas, sanashdan: sintetik a'zolar tashlanadi.
+
+```java
+// yomon: agent ostida $jacocoInit ham sanaladi, tor yurishda yashil, to'liq suite da qizil
+assertThat(OrderService.class.getDeclaredMethods()).hasSize(4);
+
+// yaxshi: sintetik a'zolar (agent, kompilyator) sanalmaydi
+long methods = Arrays.stream(OrderService.class.getDeclaredMethods())
+        .filter(method -> !method.isSynthetic())
+        .count();
+assertThat(methods).isEqualTo(4);
+```
+
+Maydonlar uchun ham xuddi shunday: `getDeclaredFields()` da `$jacocoData` chiqadi, shuning uchun `field.isSynthetic()` bilan filtrlang. Tekshiruvni "agent yoqilgan to'liq suite" da bir marta yurgizish shart, aks holda bunday test faqat CI da yiqiladi.
+
 ## 9.3 `jacoco.exec` fayli: nima yoziladi va qanday hisobotga aylanadi
 
 `jacoco.exec` binar fayl va uning ichidagi ma'lumot juda kam. U ikki turdagi blokdan iborat: session ma'lumoti va execution ma'lumoti. Session blokida JVM identifikatori va vaqt oralig'i bor. Execution bloki har bir klass uchun uch narsani saqlaydi: klass nomi, klass identifikatori va `boolean[]` probe massivi.

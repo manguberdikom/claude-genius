@@ -547,7 +547,7 @@ Test kodini ko'pincha tezda yozishadi, shuning uchun Sonar uning ustida eng ko'p
 | `java:S4087` | `try (Document target = ...) { ..; target.close(); }` | `close()` ni olib tashlash: blok oxirida resurs o'zi yopiladi |
 | `java:S5976` | uch test bir xil shaklda, faqat kirish ma'lumoti farq qiladi | `@ParameterizedTest(name = "{0}")` + `@MethodSource`, nomlar `Arguments.of("nom", ...)` ning birinchi elementida saqlanadi |
 | `java:S5838` | `assertThat(list.size()).isEqualTo(3)`, `assertThat(s).isEqualTo("")`, `assertThat(x.toString()).isEqualTo(..)`, `assertThat(map.get(k)).isEqualTo(v)` | `hasSize(3)`, `isEmpty()`, `hasToString(..)`, `containsEntry(k, v)` |
-| `java:S3415` | `assertThat(EXPECTED).isEqualTo(compute())`, `assertEquals(compute(), 3)` | `assertThat(compute()).isEqualTo(EXPECTED)`, `assertEquals(3, compute())` |
+| `java:S3415` | `assertThat(EXPECTED).isEqualTo(compute())`, `assertEquals(compute(), 3)`, `assertEquals(delta(), -1)`, `assertEquals(grade(), 'A')` | `assertThat(compute()).isEqualTo(EXPECTED)`, `assertEquals(3, compute())` |
 | `java:S5853` | ketma-ket `assertThat(ids).a(); assertThat(ids).b();` | `assertThat(ids).a().b();` |
 | `java:S1612` | `filteredOn(o -> o == null)`, `extracting(e -> e.getId())` | `filteredOn(Objects::isNull)`, `extracting(Event::getId)` |
 | `java:S1068`, `java:S1144` | ishlatilmagan `private static final` konstanta yoki yordamchi metod | o'chirish; `@MethodSource("nom")` bilan nomlangan metod ishlatilgan hisoblanadi |

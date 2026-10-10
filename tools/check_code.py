@@ -28,7 +28,8 @@ SonarQube da.
 Sonar qoidalari (`check_sonar`: S1128, S8694, S6213, S5778, S8692, S1612,
 S5838, S3415, S8696, S1135, S1068, S1144, S5853, S1488, S1845, S6126,
 S3457, S2093, S4087, S5976; space-hrm dan 2026-10-09: S125, S2245, S2133,
-S6068, S5841, S4144, S6878, S1640) va qo'llanmadagi ikki test qoidasi
+S6068, S5841, S4144, S6878, S1640; lokal Sonar dan 2026-10-10: S6353, S6035,
+S1123, S6355, S1192 bor konstanta, S3415 manfiy va char literal) va qo'llanmadagi ikki test qoidasi
 (JVM system property ga yozish, static ArchUnit grafi; kalitsiz) tur ma'lumotisiz, regex va qavs sanash bilan. Ular haqiqiy loyihaning Sonar
 ro'yxatiga solishtirib sozlangan. Tur kerak bo'lgan qoidalar (S1130,
 S1874, S2184, S6809) ataylab yo'q: ular qo'llanmada qoida sifatida yoziladi
@@ -284,8 +285,11 @@ MAP_DECL_RE = re.compile(
 CHAIN_RE = re.compile(r"\s*\.\s*([A-Za-z_$][\w$]*)\s*(?=\()")
 ASSERT_THAT_RE = re.compile(r"(?<![\w.$])assertThat\s*(?=\()")
 CONSTANT_RE = re.compile(r"(?:[\w$]+\s*\.\s*)*[A-Z][A-Z0-9_]*\Z")
+# Manfiy son, o'n oltilik son va char ham literal: `assertEquals(count, -1)`
+# va `assertEquals(c, 'a')` da kutilgan qiymat actual o'rnida (java:S3415).
 LITERAL_RE = re.compile(
-    r'(?:"(?:\\.|[^"\\])*"|\d[\d_.]*[LlFfDd]?|true|false|null)\Z')
+    r'(?:"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])+\'|-?0[xX][0-9a-fA-F_]+[Ll]?'
+    r'|-?\d[\d_.]*[LlFfDd]?|true|false|null)\Z')
 EQ_ASSERTS = ("assertEquals", "assertSame", "assertNotEquals", "assertNotSame")
 AG_ORDERED = ("isEqualTo", "isNotEqualTo", "isSameAs", "isNotSameAs", "contains")
 # Kutilgan qiymatni argument qilib oladigan boshqa AssertJ metodlari: ularda
@@ -1740,6 +1744,281 @@ def check_enum_hashmap(code, path):
         for key, at in candidates if key.rsplit(".", 1)[-1] in enums]
 
 
+# ---------------------------------------------------------------------------
+# Lokal Sonar ida chiqqan, lekin yuqoridagilar ushlamagan holatlar:
+# S6353, S6035 (regex), S1123, S6355 (@Deprecated), S1192 (bor konstanta).
+# ---------------------------------------------------------------------------
+
+REGEX_CALL_RE = re.compile(
+    r"(?:(?<![\w$])Pattern\s*\.\s*(?:compile|matches)"
+    r"|\.\s*(?:matches|replaceAll|replaceFirst|split))\s*(?=\()")
+PATTERN_ANNOTATION_RE = re.compile(r"(?<![\w$.])@Pattern\s*(?=\()")
+REGEXP_ARG_RE = re.compile(r'regexp\s*=\s*("(?:\\.|[^"\\\n])*")\Z')
+SINGLE_LITERAL_RE = re.compile(r'"(?:\\.|[^"\\\n])*"\Z')
+WORD_CLASS_PARTS = frozenset(("A-Z", "a-z", "0-9", "_"))
+WORD_CLASS_BODY_RE = re.compile(r"(?:A-Z|a-z|0-9|_)+\Z")
+SINGLE_CHAR = r"[A-Za-z0-9_ ,;:/@#%&=~]"
+SINGLE_CHAR_ALT_RE = re.compile(
+    r"\((?:\?:)?(%s(?:\|%s)+)\)" % (SINGLE_CHAR, SINGLE_CHAR))
+
+
+def _java_regex(literal):
+    """Java satr literali (qo'shtirnoqli) ichidagi regex: `\\\\` va `\\"` ochiladi."""
+    return re.sub(r'\\([\\"])', r"\1", literal[1:-1])
+
+
+def _regex_classes(rx):
+    """Regexdagi oddiy belgi sinflari va tuzilma bo'lmagan pozitsiyalar.
+
+    Qaytaradi: ([(boshi, oxiri, tanasi, inkor)], pozitsiyalar). Pozitsiyalar:
+    escape qilingan belgilar va sinf ichi, ya'ni guruh qavsi bo'la olmaydigan
+    joylar. Ichma-ich sinf (`[a-z&&[^aeiou]]`) va kesishma o'tkaziladi.
+    """
+    classes, skip = [], set()
+    n, i = len(rx), 0
+    while i < n:
+        c = rx[i]
+        if c == "\\":
+            skip.update((i, i + 1))
+            i += 2
+            continue
+        if c != "[":
+            i += 1
+            continue
+        j = i + 1
+        negated = j < n and rx[j] == "^"
+        if negated:
+            j += 1
+        k, nested = j, False
+        while k < n:
+            if rx[k] == "\\":
+                k += 2
+                continue
+            if rx[k] == "[":
+                nested = True
+            elif rx[k] == "]" and k > j:
+                break
+            k += 1
+        if k >= n:
+            break
+        skip.update(range(i, k + 1))
+        body = rx[j:k]
+        if not nested and "&&" not in body:
+            classes.append((i, k + 1, body, negated))
+        i = k + 1
+    return classes, skip
+
+
+def _concise_class(body, negated):
+    """Belgi sinfining qisqa shakli (`\\d`, `\\w`) yoki ""."""
+    if body == "0-9":
+        return "\\D" if negated else "\\d"
+    if WORD_CLASS_BODY_RE.match(body):
+        parts = re.findall(r"A-Z|a-z|0-9|_", body)
+        if len(parts) == 4 and set(parts) == WORD_CLASS_PARTS:
+            return "\\W" if negated else "\\w"
+    return ""
+
+
+def _check_regex(literal, code, pos):
+    """Bitta regex literalidagi S6353 va S6035."""
+    rx = _java_regex(literal)
+    if "[" not in rx and "|" not in rx:
+        return []
+    out = []
+    classes, skip = _regex_classes(rx)
+    for start, end, body, negated in classes:
+        short = _concise_class(body, negated)
+        if short:
+            out.append(_find(
+                "java:S6353", "o'rta", code, pos,
+                "Regexda `%s` o'rniga `%s` yozilsin (Java literalida `%s`): "
+                "qisqa belgi sinfi o'qishga oson." % (
+                    rx[start:end], short, short.replace("\\", "\\\\")),
+                "Strings", ref="clean-code 21.6"))
+    for m in SINGLE_CHAR_ALT_RE.finditer(rx):
+        if m.start() in skip:
+            continue
+        chars = m.group(1).split("|")
+        out.append(_find(
+            "java:S6035", "o'rta", code, pos,
+            "Regexda bir belgili alternatsiya `%s` o'rniga belgi sinfi `[%s]` "
+            "yozilsin." % (m.group(0), "".join(chars)),
+            "Strings", ref="clean-code 21.6"))
+    return out
+
+
+def check_regex_literals(code, text):
+    """java:S6353 va java:S6035. Regex kontekstidagi satr literali.
+
+    Faqat bitta literaldan iborat birinchi argument: `Pattern.compile`,
+    `Pattern.matches`, `matches`, `replaceAll`, `replaceFirst`, `split` va
+    `@Pattern(regexp = ...)`. O'zgaruvchi yoki birlashtirilgan regex
+    o'tkaziladi.
+    """
+    out = []
+    for m in REGEX_CALL_RE.finditer(code):
+        args, _ = _arg_texts(code, text, m.end())
+        if args and SINGLE_LITERAL_RE.match(args[0]):
+            out.extend(_check_regex(args[0], code, m.start()))
+    for m in PATTERN_ANNOTATION_RE.finditer(code):
+        args, _ = _arg_texts(code, text, m.end())
+        for arg in args or ():
+            found = REGEXP_ARG_RE.match(arg)
+            if found:
+                out.extend(_check_regex(found.group(1), code, m.start()))
+    return out
+
+
+ANNOTATION_RE = re.compile(r"@(?!interface\b)([A-Za-z_$][\w$.]*)")
+DECL_MODIFIERS = frozenset((
+    "public", "protected", "private", "static", "final", "abstract", "default",
+    "synchronized", "native", "strictfp", "sealed", "transient", "volatile"))
+DEPRECATED_NAMES = ("Deprecated", "java.lang.Deprecated")
+JAVADOC_DEPRECATED_RE = re.compile(r"(?<![\w{])@deprecated\b")
+OVERRIDE_BEFORE_RE = re.compile(
+    r"@Override\s*(?:@[\w.]+\s*(?:\([^()]*\))?\s*)*\Z")
+
+
+def _annotation_chain(code, pos):
+    """`pos` dan boshlangan annotatsiyalar va modifikatorlar zanjiri.
+
+    Qaytaradi: [(nom, boshi, argumentlar matni yoki None)].
+    """
+    chain, i, n = [], pos, len(code)
+    while i < n:
+        while i < n and code[i].isspace():
+            i += 1
+        m = ANNOTATION_RE.match(code, i)
+        if m:
+            j = m.end()
+            k = j
+            while k < n and code[k].isspace():
+                k += 1
+            args = None
+            if k < n and code[k] == "(":
+                close = _paren_end(code, k)
+                if close == -1:
+                    break
+                args = code[k + 1:close]
+                j = close + 1
+            chain.append((m.group(1), m.start(), args))
+            i = j
+            continue
+        word = WORD_RE.match(code, i)
+        if word and word.group(0) in DECL_MODIFIERS:
+            i = word.end()
+            continue
+        break
+    return chain
+
+
+def check_deprecated(code, text):
+    """java:S1123 (Javadoc da `@deprecated` yo'q) va java:S6355 (argumentsiz).
+
+    Javadoc `@Deprecated` dan oldin turgan blok: undan keyin annotatsiyalar
+    zanjiri keladi. `@Override` li metod o'tkaziladi (Sonar ham).
+    """
+    javadoc = {}
+    for m in NOISE_RE.finditer(text):
+        chunk = m.group(0)
+        if chunk.startswith("/**") and len(chunk) > 4:
+            for name, start, _ in _annotation_chain(code, m.end()):
+                if name in DEPRECATED_NAMES:
+                    javadoc[start] = chunk
+    out = []
+    for m in ANNOTATION_RE.finditer(code):
+        if m.group(1) not in DEPRECATED_NAMES:
+            continue
+        chain = _annotation_chain(code, m.start())
+        overriding = (any(name == "Override" for name, _, _ in chain)
+                      or OVERRIDE_BEFORE_RE.search(code[max(0, m.start() - 300):m.start()]))
+        doc = javadoc.get(m.start())
+        if not overriding and (doc is None or not JAVADOC_DEPRECATED_RE.search(doc)):
+            out.append(_find(
+                "java:S1123", "o'rta", code, m.start(),
+                "`@Deprecated` bor, lekin Javadoc da `@deprecated` tegi yo'q: "
+                "`@deprecated Use {@link X} instead.` deb sababni va almashtirishni yozing.",
+                "Clean Code", ref="sonarqube 28.7"))
+        args = chain[0][2] if chain else None
+        if args is None or not args.strip():
+            out.append(_find(
+                "java:S6355", "o'rta", code, m.start(),
+                "`@Deprecated` argumentsiz: `since` va `forRemoval` qo'shing, "
+                "masalan `@Deprecated(since = \"2.0\", forRemoval = true)`.",
+                "Clean Code", ref="sonarqube 28.7"))
+    return out
+
+
+CONSTANT_DECL_RE = re.compile(
+    r"(?<![\w$.])(?:(?:public|protected|private)\s+)?"
+    r"(?:static\s+final|final\s+static)\s+String\s+([A-Za-z_$][\w$]*)\s*=")
+ANNOTATION_ARGS_RE = re.compile(r"(?<![\w$.])@(?!interface\b)[A-Za-z_$][\w$.]*\s*(?=\()")
+MIN_LITERAL_LENGTH = 5
+
+
+def _string_literals(text):
+    """Bir qatorli satr literallari: [(boshi, oxiri, qiymat)]. Text block emas."""
+    return [(m.start(), m.end(), m.group(0)[1:-1]) for m in NOISE_RE.finditer(text)
+            if m.group(0).startswith('"') and not m.group(0).startswith('"""')]
+
+
+def _enclosing_block(code, pos):
+    """`pos` ni o'raydigan eng ichki `{...}`: (boshi, oxiri) yoki (0, len)."""
+    stack, best = [], (0, len(code))
+    for i, c in enumerate(code):
+        if c == "{":
+            stack.append(i)
+        elif c == "}" and stack:
+            start = stack.pop()
+            if start < pos < i and i - start < best[1] - best[0]:
+                best = (start, i)
+    return best
+
+
+def check_known_constant(code, text):
+    """java:S1192 (tor holat). `static final String X = "abc"` bor, boshqa joyda `"abc"`.
+
+    Takror soni sanalmaydi: Sonar e'lon qilingan konstantaning qiymatini
+    nusxalagan har literalni ("Use already-defined constant") bayroqlaydi.
+    Annotatsiya argumenti, boshqa konstantaning initsializatori va o'sha
+    konstanta ko'rinmaydigan boshqa sinf tanasi o'tkaziladi.
+    """
+    if "static" not in code or "final" not in code:
+        return []
+    literals = _string_literals(text)
+    if not literals:
+        return []
+    constants, declared = [], set()
+    for m in CONSTANT_DECL_RE.finditer(code):
+        first = next((lit for lit in literals if lit[0] >= m.end()), None)
+        if (first and not text[m.end():first[0]].strip()
+                and text[first[1]:].lstrip().startswith(";")):
+            declared.add(first[0])
+            if len(first[2]) >= MIN_LITERAL_LENGTH:
+                constants.append((m.group(1), first[2], m.start()))
+    if not constants:
+        return []
+    ranges = []
+    for m in ANNOTATION_ARGS_RE.finditer(code):
+        close = _paren_end(code, m.end())
+        if close != -1:
+            ranges.append((m.end(), close))
+    out = []
+    for name, value, at in constants:
+        lo, hi = _enclosing_block(code, at)
+        for start, _, other in literals:
+            if (other != value or start in declared or not lo < start < hi
+                    or any(a < start < b for a, b in ranges)):
+                continue
+            out.append(_find(
+                "java:S1192", "o'rta", code, start,
+                "Literal `\"%s\"` allaqachon `%s` konstantasi sifatida e'lon "
+                "qilingan: shu konstantani ishlating." % (_short(value), name),
+                "Clean Code", ref="sonarqube 27.8"))
+    return out
+
+
 def check_sonar(text, code, is_test, path=""):
     """Sonar qoidalari: tur ma'lumotisiz aniqlanadiganlari."""
     out = []
@@ -1762,6 +2041,9 @@ def check_sonar(text, code, is_test, path=""):
     out.extend(check_identical_methods(lit, code))
     out.extend(check_record_pattern(code, path))
     out.extend(check_enum_hashmap(code, path))
+    out.extend(check_regex_literals(code, text))
+    out.extend(check_deprecated(code, text))
+    out.extend(check_known_constant(code, text))
     if not is_test:
         out.extend(check_insecure_random(code))
     if is_test:

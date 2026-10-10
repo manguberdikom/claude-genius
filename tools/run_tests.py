@@ -227,6 +227,10 @@ def has_marker(path):
     return any(os.path.exists(os.path.join(path, n)) for n in BUILD_MARKERS)
 
 
+def has_gradle_settings(path):
+    return any(os.path.exists(os.path.join(path, n)) for n in ("settings.gradle", "settings.gradle.kts"))
+
+
 def locate_root(start):
     """(ildiz, nomzodlar). Nomzodlar bo'sh bo'lmasa ildiz noaniq.
 
@@ -254,15 +258,23 @@ def locate_root(start):
             if parent == path:
                 return here, []
             path = parent
-    highest, path = None, here
+    highest, nearest_gradle, path = None, None, here
     while True:
         if has_marker(path):
             highest = path
+        if nearest_gradle is None and has_gradle_settings(path):
+            nearest_gradle = path
         parent = os.path.dirname(path)
         if os.path.normcase(path) == os.path.normcase(top) or parent == path:
             break
         path = parent
     if highest:
+        # Gradle build ichida o'z settings fayli bor papka: mustaqil build, uning
+        # vazifalari tashqi ildizda yo'q. Yuqoridagi marker Gradle bo'lmasa (masalan
+        # pom.xml) avvalgi xulq: eng yuqori marker.
+        if (nearest_gradle and has_gradle_settings(highest)
+                and os.path.normcase(nearest_gradle) != os.path.normcase(highest)):
+            return nearest_gradle, []
         return highest, []
     try:
         names = sorted(os.listdir(top))
@@ -833,8 +845,13 @@ def select(project, existing, deleted=()):
             for test in hits:
                 plan.add(test, "resource", base)
             if not hits:
-                sset = path.split("/src/", 1)[-1].split("/", 1)[0] if "/src/" in "/" + path \
-                    else "test"
+                # `path` is module-relative, so a root-module file starts with
+                # `src/` and carries no leading slash. Split the same prefixed
+                # form the condition tests, otherwise the split is a no-op and
+                # the source set becomes "src": Gradle then reports that task
+                # `:src` does not exist and the run dies before any test.
+                sset = ("/" + path).split("/src/", 1)[-1].split("/", 1)[0] \
+                    if "/src/" in "/" + path else "test"
                 plan.add_whole(module, sset, "test resursi: %s" % base)
         else:
             ignored.append(path)

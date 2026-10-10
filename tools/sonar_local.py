@@ -746,11 +746,29 @@ def wrapper_command(root, tool):
     return [fallback]
 
 
+def original_case_env(current, original):
+    """`current` qiymatlari, kalitlar `original` dagi asl yozilishida.
+
+    Windows da `os.environ` kalitlarni katta harfga o'tkazadi, Gradle esa
+    `ORG_GRADLE_PROJECT_<nom>` dagi nomni kichik-katta farqlab o'qiydi:
+    katta harfli kalit boshqa xossa bo'lib qoladi. Asl yozilish jarayon
+    boshidagi suratdan (`nt.environ`) olinadi, qiymat esa joriy muhitdan."""
+    names = {key.upper(): key for key in original}
+    return {names.get(key.upper(), key): value for key, value in current.items()}
+
+
 def scan_env(token):
     """Gradle/Maven uchun muhit: token faqat env da, Windows wrapper yechimi."""
+    source = dict(os.environ)
+    if os.name == "nt":
+        try:
+            import nt
+            source = original_case_env(source, nt.environ)
+        except ImportError:
+            pass
     # Windows da kalit katta harfga o'tadi: nomi kichik-katta farqsiz olib tashlanadi,
     # aks holda `cmd /c gradlew.bat` joriy papkadan topilmaydi.
-    env = {k: v for k, v in os.environ.items() if k.lower() != "nodefaultcurrentdirectoryinexepath"}
+    env = {k: v for k, v in source.items() if k.lower() != "nodefaultcurrentdirectoryinexepath"}
     env["SONAR_TOKEN"] = token
     return env
 
@@ -758,6 +776,10 @@ def scan_env(token):
 def mentions_task(root, task):
     for current, dirs, files in os.walk(root):
         dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+        if current != root and any(n in files for n in ("settings.gradle", "settings.gradle.kts")):
+            # ichki mustaqil Gradle build: uning vazifalari tashqi ildizda yo'q
+            dirs[:] = []
+            continue
         for name in files:
             if name in ("build.gradle", "build.gradle.kts") or current.endswith("buildSrc"):
                 try:

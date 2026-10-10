@@ -828,6 +828,29 @@ def case_ildiz_tanlash(_):
     return all(results)
 
 
+def case_ildiz_ichki_gradle_build(_):
+    """Gradle build ichidagi o'z settings fayli bor papka mustaqil build: ildiz o'sha."""
+    files = {
+        "settings.gradle.kts": 'rootProject.name = "library"\n',
+        "build.gradle.kts": "plugins { java }\n",
+        "src/main/java/shop/Lib.java": main_class("shop", "Lib", "public int one() { return 1; }"),
+        "module/build.gradle.kts": "plugins { java }\n",
+        "app/settings.gradle.kts": 'rootProject.name = "app"\n',
+        "app/build.gradle.kts": "plugins { java }\n",
+        "app/src/main/java/shop/app/App.java": main_class("shop.app", "App", "public int two() { return 2; }"),
+    }
+    root = os.path.realpath(tree("ildiz_ichki_gradle", files))
+    git(root, "init", "-q")
+    app = os.path.join(root, "app")
+    return all([
+        run_tests.locate_root(app) == (app, []),
+        run_tests.locate_root(os.path.join(app, "src", "main")) == (app, []),
+        run_tests.locate_root(root) == (root, []),
+        # settings fayli yo'q papka oddiy modul: ildiz tashqi build
+        run_tests.locate_root(os.path.join(root, "module")) == (root, []),
+    ])
+
+
 def case_monorepo_asos(_):
     root = monorepo("monorepo_asos")
     git(root, "branch", "asos")
@@ -1493,6 +1516,7 @@ CASES = [
     ("monorepo: --ildiz backend --asos", case_monorepo_asos),
     ("monorepo: --ildiz siz, ildizdan va submoduldan", case_monorepo_ildizsiz),
     ("ildiz: eng yuqori marker, yagona papka, noaniq rc 2", case_ildiz_tanlash),
+    ("ildiz: Gradle ichidagi mustaqil Gradle build o'zi ildiz", case_ildiz_ichki_gradle_build),
     ("asbob: wrapperi bor ustun", case_asbob_wrapper_ustun),
     ("asbob: wrapper ikkalasida yoki yo'q", case_asbob_noaniq),
     ("asbob: --asbob va GENIUS_BUILD_TOOL", case_asbob_tanlov),

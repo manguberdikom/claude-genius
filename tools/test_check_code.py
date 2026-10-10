@@ -1193,6 +1193,157 @@ HRM_CASES = [
 ]
 SONAR_CASES += HRM_CASES
 
+# Lokal Sonar ida chiqqan holatlar: S3415 (manfiy va char literal), S6353,
+# S6035, S1123, S6355, S1192 (bor konstanta).
+SABOQ_CASES = [
+    # java:S3415, literal turlari
+    ("S3415 JUnit manfiy son ikkinchi argumentda", "java:S3415", TEST,
+     wrap("void t() { assertEquals(service.delta(), -1); }"), True),
+    ("S3415 JUnit char literal ikkinchi argumentda", "java:S3415", TEST,
+     wrap("void t() { assertEquals(result.grade(), 'A'); }"), True),
+    ("S3415 JUnit true ikkinchi argumentda", "java:S3415", TEST,
+     wrap("void t() { assertEquals(flag(), true); }"), True),
+    ("S3415 JUnit null ikkinchi argumentda", "java:S3415", TEST,
+     wrap("void t() { assertSame(lookup(), null); }"), True),
+    ("S3415 JUnit xabar bilan literal ikkinchi argumentda", "java:S3415", TEST,
+     wrap("void t() { assertEquals(service.count(), 5, \"count\"); }"), True),
+    ("S3415 AssertJ true actual o'rnida", "java:S3415", TEST,
+     wrap("void t() { assertThat(true).isEqualTo(valid()); }"), True),
+    ("S3415 AssertJ manfiy son actual o'rnida", "java:S3415", TEST,
+     wrap("void t() { assertThat(-1).isEqualTo(compute()); }"), True),
+    ("S3415 JUnit manfiy son birinchi argumentda toza", "java:S3415", TEST,
+     wrap("void t() { assertEquals(-1, service.delta()); }"), False),
+    ("S3415 JUnit ikkalasi literal toza", "java:S3415", TEST,
+     wrap("void t() { assertEquals(-1, -1); }"), False),
+    ("S3415 AssertJ literal kutilgan qiymatda toza", "java:S3415", TEST,
+     wrap("void t() { assertThat(compute()).isEqualTo(-1); }"), False),
+    # java:S6353 qisqa belgi sinfi
+    ("S6353 Pattern.compile [0-9]", "java:S6353", MAIN,
+     wrap("static final Pattern P = Pattern.compile(\"^[0-9]{4}$\");"), True),
+    ("S6353 matches [A-Za-z0-9_]", "java:S6353", MAIN,
+     wrap("boolean f(String s) { return s.matches(\"[A-Za-z0-9_]+\"); }"), True),
+    ("S6353 \\w sinfi har tartibda", "java:S6353", MAIN,
+     wrap("boolean f(String s) { return s.matches(\"[a-zA-Z_0-9]+\"); }"), True),
+    ("S6353 replaceAll [^0-9]", "java:S6353", MAIN,
+     wrap("String f(String s) { return s.replaceAll(\"[^0-9]\", \"\"); }"), True),
+    ("S6353 @Pattern regexp", "java:S6353", MAIN,
+     wrap("@Pattern(regexp = \"[0-9]+\", message = \"digits\")\nString code;"), True),
+    ("S6353 replaceFirst", "java:S6353", MAIN,
+     wrap("String f(String s) { return s.replaceFirst(\"[0-9]\", \"#\"); }"), True),
+    ("S6353 allaqachon \\d toza", "java:S6353", MAIN,
+     wrap("static final Pattern P = Pattern.compile(\"^\\\\d{4}$\");"), False),
+    ("S6353 [0-9a-f] kattaroq sinf toza", "java:S6353", MAIN,
+     wrap("static final Pattern P = Pattern.compile(\"[0-9a-f]+\");"), False),
+    ("S6353 [A-Z0-9] to'liq \\w emas toza", "java:S6353", MAIN,
+     wrap("boolean f(String s) { return s.matches(\"[A-Z0-9]{2}\"); }"), False),
+    ("S6353 [A-Za-z0-9] underscore siz toza", "java:S6353", MAIN,
+     wrap("boolean f(String s) { return s.matches(\"[A-Za-z0-9]+\"); }"), False),
+    ("S6353 escape qilingan qavs toza", "java:S6353", MAIN,
+     wrap("boolean f(String s) { return s.matches(\"\\\\[0-9\\\\]\"); }"), False),
+    ("S6353 regex bo'lmagan kontekstdagi literal toza", "java:S6353", MAIN,
+     wrap("String f() { return log(\"[0-9]\"); }"), False),
+    ("S6353 o'zgaruvchi regex toza", "java:S6353", MAIN,
+     wrap("boolean f(String s, String rx) { return s.matches(rx); }"), False),
+    ("S6353 birlashtirilgan regex toza", "java:S6353", MAIN,
+     wrap("boolean f(String s) { return s.matches(\"[0-9]\" + suffix); }"), False),
+    ("S6353 izohdagi regex toza", "java:S6353", MAIN,
+     wrap("// s.matches(\"[0-9]\")\nvoid f() {}"), False),
+    # java:S6035 bir belgili alternatsiya
+    ("S6035 (Y|N) capture guruh", "java:S6035", MAIN,
+     wrap("static final Pattern P = Pattern.compile(\"^(Y|N)$\");"), True),
+    ("S6035 (?:a|b|c) capture siz guruh", "java:S6035", MAIN,
+     wrap("boolean f(String s) { return s.matches(\"x(?:a|b|c)y\"); }"), True),
+    ("S6035 @Pattern regexp", "java:S6035", MAIN,
+     wrap("@Pattern(regexp = \"(M|F)\")\nString sex;"), True),
+    ("S6035 ko'p belgili alternatsiya toza", "java:S6035", MAIN,
+     wrap("boolean f(String s) { return s.matches(\"(Yes|No)\"); }"), False),
+    ("S6035 aralash uzunlik toza", "java:S6035", MAIN,
+     wrap("boolean f(String s) { return s.matches(\"(Y|No)\"); }"), False),
+    ("S6035 belgi sinfi allaqachon toza", "java:S6035", MAIN,
+     wrap("boolean f(String s) { return s.matches(\"[YN]\"); }"), False),
+    ("S6035 escape qilingan qavs toza", "java:S6035", MAIN,
+     wrap("boolean f(String s) { return s.matches(\"\\\\(Y|N)\"); }"), False),
+    ("S6035 sinf ichidagi qavs toza", "java:S6035", MAIN,
+     wrap("boolean f(String s) { return s.matches(\"[(Y|N)]\"); }"), False),
+    ("S6035 regex bo'lmagan kontekstdagi literal toza", "java:S6035", MAIN,
+     wrap("String f() { return log(\"(Y|N)\"); }"), False),
+    # java:S1123 Javadoc da @deprecated yo'q
+    ("S1123 Javadoc siz @Deprecated", "java:S1123", MAIN,
+     wrap("@Deprecated(since = \"2.0\")\nvoid old() {}"), True),
+    ("S1123 Javadoc da tag yo'q", "java:S1123", MAIN,
+     wrap("/** Old way. */\n@Deprecated(since = \"2.0\", forRemoval = true)\nvoid old() {}"), True),
+    ("S1123 boshqa annotatsiya orada, tag yo'q", "java:S1123", MAIN,
+     wrap("/** Old way. */\n@Transactional\n@Deprecated(since = \"2.0\")\nvoid old() {}"), True),
+    ("S1123 tag va annotatsiya bor toza", "java:S1123", MAIN,
+     wrap("/**\n * Old way.\n *\n * @deprecated Use {@link #fresh()}.\n */\n"
+          "@Deprecated(since = \"2.0\", forRemoval = true)\nvoid old() {}"), False),
+    ("S1123 tag va boshqa annotatsiya oldin toza", "java:S1123", MAIN,
+     wrap("/** @deprecated Use fresh. */\n@Transactional\n@Deprecated(since = \"2.0\")\nvoid old() {}"), False),
+    ("S1123 tag modifikatordan oldin toza", "java:S1123", MAIN,
+     wrap("/** @deprecated Use fresh. */\n@Deprecated(since = \"2.0\")\npublic static void old() {}"), False),
+    ("S1123 @Override metod o'tkaziladi", "java:S1123", MAIN,
+     wrap("@Override\n@Deprecated(since = \"2.0\")\npublic String toString() { return \"\"; }"), False),
+    ("S1123 izohdagi @Deprecated sanalmaydi", "java:S1123", MAIN,
+     wrap("// @Deprecated old\nvoid f() {}"), False),
+    ("S1123 satr ichidagi @Deprecated sanalmaydi", "java:S1123", MAIN,
+     wrap("String f() { return \"@Deprecated\"; }"), False),
+    # java:S6355 argumentsiz @Deprecated
+    ("S6355 argumentsiz @Deprecated", "java:S6355", MAIN,
+     wrap("/** @deprecated Use fresh. */\n@Deprecated\nvoid old() {}"), True),
+    ("S6355 bo'sh qavsli @Deprecated", "java:S6355", MAIN,
+     wrap("/** @deprecated Use fresh. */\n@Deprecated()\nvoid old() {}"), True),
+    ("S6355 to'liq nomli @Deprecated", "java:S6355", MAIN,
+     wrap("/** @deprecated Use fresh. */\n@java.lang.Deprecated\nvoid old() {}"), True),
+    ("S6355 since va forRemoval bilan toza", "java:S6355", MAIN,
+     wrap("/** @deprecated Use fresh. */\n@Deprecated(since = \"2.0\", forRemoval = true)\nvoid old() {}"), False),
+    ("S6355 faqat forRemoval bilan toza", "java:S6355", MAIN,
+     wrap("/** @deprecated Use fresh. */\n@Deprecated(forRemoval = true)\nvoid old() {}"), False),
+    ("S6355 boshqa annotatsiya toza", "java:S6355", MAIN,
+     wrap("/** Fresh. */\n@DeprecatedConfig\nvoid f() {}"), False),
+    ("S6355 izohdagi @Deprecated toza", "java:S6355", MAIN,
+     wrap("// @Deprecated\nvoid f() {}"), False),
+    # java:S1192 bor konstanta o'rniga literal
+    ("S1192 konstanta bor, literal takrorlangan", "java:S1192", MAIN,
+     wrap("private static final String STATUS = \"PAYMENT_FAILED\";\n"
+          "boolean f(String s) { return \"PAYMENT_FAILED\".equals(s); }"), True),
+    ("S1192 public static final tartibi", "java:S1192", MAIN,
+     wrap("public static final String STATUS = \"PAYMENT_FAILED\";\n"
+          "void f() { log(\"PAYMENT_FAILED\"); }"), True),
+    ("S1192 final static tartibi", "java:S1192", TEST,
+     wrap("final static String STATUS = \"PAYMENT_FAILED\";\n"
+          "void f() { assertThat(x).isEqualTo(\"PAYMENT_FAILED\"); }"), True),
+    ("S1192 bir nechta takror", "java:S1192", MAIN,
+     wrap("static final String STATUS = \"PAYMENT_FAILED\";\n"
+          "void f() { log(\"PAYMENT_FAILED\"); audit(\"PAYMENT_FAILED\"); }"), True),
+    ("S1192 faqat konstanta toza", "java:S1192", MAIN,
+     wrap("private static final String STATUS = \"PAYMENT_FAILED\";\n"
+          "boolean f(String s) { return STATUS.equals(s); }"), False),
+    ("S1192 konstanta yo'q, literal takrorlangan (bu qoida emas) toza", "java:S1192", MAIN,
+     wrap("void f() { log(\"PAYMENT_FAILED\"); audit(\"PAYMENT_FAILED\"); log(\"PAYMENT_FAILED\"); }"), False),
+    ("S1192 boshqa qiymat toza", "java:S1192", MAIN,
+     wrap("static final String STATUS = \"PAYMENT_FAILED\";\n"
+          "void f() { log(\"PAYMENT_OK\"); }"), False),
+    ("S1192 qisqa literal toza", "java:S1192", MAIN,
+     wrap("static final String SEP = \",\";\n"
+          "String f(String a) { return a + \",\"; }"), False),
+    ("S1192 annotatsiya argumenti toza", "java:S1192", MAIN,
+     wrap("static final String NAME = \"orderCache\";\n"
+          "@Cacheable(\"orderCache\")\nOrder f() { return null; }"), False),
+    ("S1192 boshqa konstantaning initsializatori toza", "java:S1192", MAIN,
+     wrap("static final String A_NAME = \"PAYMENT_FAILED\";\n"
+          "static final String B_NAME = \"PAYMENT_FAILED\";"), False),
+    ("S1192 konstanta ko'rinmaydigan boshqa sinf toza", "java:S1192", MAIN,
+     wrap("static class Inner { static final String STATUS = \"PAYMENT_FAILED\"; }\n"
+          "static class Other { String f() { return \"PAYMENT_FAILED\"; } }"), False),
+    ("S1192 izohdagi literal toza", "java:S1192", MAIN,
+     wrap("static final String STATUS = \"PAYMENT_FAILED\";\n"
+          "// \"PAYMENT_FAILED\" was renamed\nvoid f() {}"), False),
+    ("S1192 final bo'lmagan maydon toza", "java:S1192", MAIN,
+     wrap("static String status = \"PAYMENT_FAILED\";\n"
+          "void f() { log(\"PAYMENT_FAILED\"); }"), False),
+]
+SONAR_CASES += SABOQ_CASES
+
 
 def _project(files):
     """Vaqtinchalik loyiha: {nisbiy yo'l: matn}; (ildiz, yozilgan yo'llar)."""
@@ -1286,6 +1437,9 @@ def case_sonar_havolalar():
         "sonarqube 28.5": "kommentariyaga",
         "sonarqube 26.5": "random",
         "sonarqube 28.14": "bir xil ishni",
+        "sonarqube 28.7": "deprecated",
+        "sonarqube 27.8": "satr literali",
+        "clean-code 21.6": "regexni",
     }
     titles = section_titles()
     seen = {}

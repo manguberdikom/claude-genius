@@ -669,6 +669,9 @@ Aktyor yozgan kodda Sonar bir xil qoidalarni qayta-qayta ochadi, chunki ularni y
 | `java:S1845` | `RETRIES` va `retries` kabi faqat registr bilan farqlanadigan ikki `final` maydon | `retryCount`: kichik harfli nomga ma'no berish |
 | `java:S1128`, `java:S1068`, `java:S1144` | ishlatilmagan import, `private` maydon va metod (bo'limlar: ishlatilmaydigan import, o'lik kod) | yozib bo'lgach o'chirish |
 | `java:S1135` | izohdagi `TODO` | ishni ticketga yozish, izohda `Cheklov:` deb bayon qilish |
+| `java:S6353`, `java:S6035` | regex literalida `[0-9]`, `[A-Za-z0-9_]` yoki bir belgili alternatsiya guruhi | `\d`, `\w`, `[YN]` ([regex](../clean-code/21-satr-matn-va-regex.md#216-regexni-oldindan-kompilyatsiya-qilish-va-nomlash)) |
+| `java:S1123`, `java:S6355` | `@Deprecated` Javadoc da `@deprecated` tegisiz yoki `since` va `forRemoval` siz | Javadoc ga `@deprecated Use {@link X}.`, annotatsiyaga `since` va `forRemoval` ([eskirgan API](#287-eskirgan-deprecated-api-ishlatish)) |
+| `java:S1192` | `static final String X = "abc"` bor, boshqa joyda `"abc"` literal | `X` ni ishlatish ([takrorlangan literal](27-xato-katalogi-maintainability-tuzilish-va.md#278-takrorlangan-satr-literali)) |
 
 ```java
 // java:S6213 va java:S8696: Sonar ikkalasini ham ochadi

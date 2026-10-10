@@ -363,6 +363,17 @@ Lekin bitta ogohlantirish bor va u muhim. Qisman tahlil Sonar da to'liq rasmni b
 
 Duplicated code ayniqsa shunday. U modullar orasida ham topiladi, shuning uchun bitta modulni tahlil qilib "takrorlanish yo'q" degan xulosa chiqarish xato. Quality gate hisobini faqat CI dagi to'liq tahlil beradi.
 
+Gradle bilan lokal tahlilda vazifani `-x` bilan chiqarishda ehtiyot bo'ling: loyiha ichida o'z `settings.gradle` yoki `settings.gradle.kts` li papka bo'lsa, u ichki mustaqil Gradle build, tashqi ildizning qismi emas. Uning vazifalari tashqi ildizga tegishli bo'lmagani uchun `-x :tools:test` kabi chiqarish `Task not found` xatosi bilan tushadi. Tuzatish: ichki buildni tashqi chaqiruvdan olib tashlash yoki alohida chaqirish.
+
+```bash
+# yomon: tools/ o'z settings.gradle li mustaqil build, tashqi ildizda bunday vazifa yo'q
+./gradlew test sonar -x :tools:test
+
+# yaxshi: tashqi ildiz o'z vazifalari bilan, ichki build alohida chaqiriladi
+./gradlew test sonar
+./gradlew -p tools test
+```
+
 ## 22.11 Lokal SonarQube ni asosiy serverning ko'zgusi qilish
 
 IDE va `sonar-scanner` serverga yuborishdan oldin tez javob beradi, lekin to'liq gate javobini faqat server hisoblaydi. Push dan oldin bir marta shu hisobni o'z kompyuteringda olish uchun lokal SonarQube ko'tariladi. U faqat natija asosiy server bilan bir xil bo'lsa foydali: aks holda lokal "toza" deydi, serverda esa issue chiqadi. Shu sababli lokal nusxa serverning ko'zgusi qilib sozlanadi.

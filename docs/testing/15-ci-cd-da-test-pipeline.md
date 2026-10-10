@@ -172,6 +172,13 @@ Predictive test selection (Gradle Develocity, Launchable kabi tijorat yechimlari
 
 Xavfi va chegarasi aniq bo'lishi kerak. Test selection har qanday holatda ham evristika: reflection, Spring profile, konfiguratsiya fayli, SQL migratsiya yoki resource orqali keladigan bog'liqlikni statik tahlil ko'rmaydi. Shuning uchun qoida: selection faqat PR darajasida, merge pipeline va nightly'da esa to'liq suite majburiy. Agar selection noto'g'ri ishlasa, nightly uni tutadi - bu "safety net" bo'lmasa, selection'ni kiritmang.
 
+O'zgarishga ta'sir qilgan testlar rejimi build fayli (`build.gradle`, `settings.gradle`, `pom.xml`, versiya katalogi) o'zgarganda to'liq suite ga o'tadi: bog'liqlik versiyasi hamma testga tegadi, shuning uchun bu to'g'ri xatti-harakat. Oqibati kutilmagan: mashinada Docker ishlab tursa, to'liq suite ichidagi Testcontainers integratsion testlari ham yuradi va vaqt bir necha barobar oshadi. Docker siz yoki cheklangan muhitda (sandbox, kichik CI agent) sinalayotgan narsaga tegishli test fayllarini aniq yo'l bilan bering. Bu to'liq suite ni almashtirmaydi: merge pipeline va nightly da u baribir majburiy.
+
+```bash
+# build fayli o'zgargan, Docker kerak emas: faqat tegishli sinflar
+./gradlew test --tests 'com.example.order.OrderServiceTest' --tests 'com.example.order.PriceCalculatorTest'
+```
+
 ## 15.6 GitHub Actions bilan to'liq namuna workflow
 
 ```yaml
@@ -268,6 +275,21 @@ Boyroq hisobot uchun Allure (`allure-junit5` adapter, `allure-maven`/`allure-gra
 
 PR izohida nima bo'lishi kerak: o'tgan/yiqilgan test soni, coverage o'zgarishi (delta, mutlaq son emas), yangi flaky testlar va to'g'ridan-to'g'ri nosoz test log'iga havola. Nosozlik artefaktlari - bu debug qilish imkoniyati: failsafe report, application log, E2E uchun screenshot va video, OOM holatida heap dump (`-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=target/`). Artefaktlarni faqat `if: failure()` da yuklash saqlash xarajatini keskin kamaytiradi.
 
+Test asbobi chiqishini quvurga (`| tail`, `| tee`) ulaganda chiqish kodi quvurdagi oxirgi buyruqniki bo'ladi: asbob yiqilsa ham `tail` 0 qaytaradi va skript yoki CI "yashil" deb o'qiydi. Natijani kodga emas, asbobning yakuniy natija qatoriga va JUnit XML fayllariga qarab o'qing (`tests`, `failures`, `errors` atributlari). Kod kerak bo'lsa `set -o pipefail` yoki faylga yo'naltirish ishlatiladi.
+
+```bash
+# yomon: rc ni tail beradi, testlar yiqilsa ham 0
+./gradlew test | tail -20; echo "rc=$?"
+
+# yaxshi: quvur birinchi yiqilgan buyruqning kodini qaytaradi
+set -o pipefail
+./gradlew test | tail -20; echo "rc=$?"
+
+# eng ishonchli: faylga yozish, kodni saqlash, keyin XML dan sanash
+./gradlew test > build/test.log 2>&1; rc=$?
+grep -ho 'tests="[0-9]*" skipped="[0-9]*" failures="[0-9]*" errors="[0-9]*"' build/test-results/test/*.xml
+```
+
 ## 15.10 Nightly va haftalik suite'lar
 
 | Suite | Chastota | Tarkib | Egasi |
@@ -303,6 +325,21 @@ Multi-modul Maven/Gradle loyihasida pipeline arxitekturasi modul grafigidan keli
 Test util modullari (`test-support`, `testcontainers-fixtures`) `test-jar` yoki alohida artifact bo'lib chiqariladi, shunda har bir service uni `test` scope'da oladi - takroriy Testcontainers konfiguratsiyasi, umumiy fixture va assertion'lar bir joyda saqlanadi.
 
 Versiyalash ikki modelda bo'ladi: bitta umumiy versiya (release train - barcha modullar birga chiqadi, oddiy, lekin bog'liq) yoki modul-bo'yicha mustaqil versiya (moslashuvchan, lekin matritsa testini talab qiladi). Release train monorepo'da ko'pincha to'g'ri tanlov: pipeline oddiy bo'ladi va contract test matritsasi kichik qoladi. Mustaqil versiyalashni tanlasangiz, contract test majburiy - aks holda modullar orasidagi moslik faqat production'da tekshiriladi.
+
+Nashr qilinmagan lokal kutubxona versiyasini iste'molchida sinash uchun `mavenLocal()` ko'pincha init skript (`~/.gradle/init.d/`) orqali qo'shiladi. Iste'molchining repozitoriylari ichki guruhni `exclusiveContent` va guruh filtri (`includeGroup`) bilan faqat bitta registrdan olishga majburlasa, init skript qo'shgan `mavenLocal()` shu guruh uchun chetlab o'tiladi: Gradle guruhni faqat exclusive repoga yo'naltiradi, lokal versiya topilmaydi yoki registrdagi eski nusxa olinadi. Repo faylini tahrir qilmaslik yo'li: registr URL i xossadan o'qilsa (`providers.gradleProperty`), uni vaqtincha lokal repoga qaratish.
+
+```bash
+# 1. Kutubxonada: nashr qilinmagan versiyani lokal repoga chiqarish
+./gradlew publishToMavenLocal
+
+# 2. Iste'molchida: URL xossasini lokal repoga qaratish, build fayllariga tegmasdan
+./gradlew test -PinternalRepoUrl="file://$HOME/.m2/repository" --refresh-dependencies
+
+# 3. Kutubxona nashr qilingach: xossani olib tashlash va lokal nusxani o'chirish
+rm -rf "$HOME/.m2/repository/com/example/internal/order-lib/1.4.0"
+```
+
+Tozalash majburiy qadam: `-P` ni `~/.gradle/gradle.properties` ga yozib qo'ymang, lokal nusxa qolib ketsa keyingi build jim holda registrdagisini emas, shuni oladi va CI da boshqacha natija chiqadi.
 
 ## 15.14 Pipeline'ni ishonchli qilish
 

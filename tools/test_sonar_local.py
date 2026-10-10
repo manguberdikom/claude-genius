@@ -238,6 +238,15 @@ def case_buyruq_va_holat():
     cmd = sl.build_command(TMP, "maven", "k", "n", False, "x.gradle")
     gradle = sl.build_command(os.path.join(TMP, "proj"), "gradle", "k", "n", False, "i.gradle")
     gradle_t = sl.build_command(os.path.join(TMP, "proj"), "gradle", "k", "n", True, "i.gradle")
+    outer = os.path.join(TMP, "outer")
+    for folder, text in ((os.path.join(outer, "nested"), 'tasks.register("integrationTest")'),
+                         (os.path.join(outer, "module"), 'tasks.register("moduleCheck")')):
+        os.makedirs(folder, exist_ok=True)
+        with open(os.path.join(folder, "build.gradle.kts"), "w", encoding="utf-8") as h:
+            h.write(text)
+    with open(os.path.join(outer, "nested", "settings.gradle.kts"), "w", encoding="utf-8") as h:
+        h.write('rootProject.name = "nested"')
+    nested_cmd = sl.build_command(outer, "gradle", "k", "n", False, "i.gradle")
     os.environ["NODEFAULTCURRENTDIRECTORYINEXEPATH"] = "1"
     try:
         env = sl.scan_env("squ_tokenqiymati")
@@ -249,10 +258,17 @@ def case_buyruq_va_holat():
         ("gradle: testlarsiz, init va kalit", "-x" in gradle and "test" in gradle and "sonar" in gradle
          and "-Dsonar.projectKey=k" in gradle and "i.gradle" in gradle),
         ("gradle --testlar: test va jacocoTestReport", "jacocoTestReport" in gradle_t and "-x" not in gradle_t),
+        ("gradle: ichki mustaqil build vazifasi tashqi ildizga -x bo'lib tushmaydi",
+         "integrationTest" not in nested_cmd and sl.mentions_task(outer, "moduleCheck")
+         and sl.mentions_task(os.path.join(outer, "nested"), "integrationTest")),
         ("maven: -DskipTests", "-DskipTests" in cmd and any("sonar-maven-plugin" in c for c in cmd)),
         ("token faqat muhitda, buyruqda emas", env["SONAR_TOKEN"] == "squ_tokenqiymati"
          and not any("squ_" in c for c in gradle + gradle_t + cmd)),
         ("NoDefaultCurrentDirectoryInExePath olib tashlanadi", not any(k.lower() == "nodefaultcurrentdirectoryinexepath" for k in env)),
+        ("muhit kaliti asl yozilishida: Gradle xossa nomi kichik-katta farqli",
+         sl.original_case_env({"ORG_GRADLE_PROJECT_REPOURL": "yangi", "PATH": "p", "QOSHIMCHA": "q"},
+                              {"ORG_GRADLE_PROJECT_repoUrl": "eski", "Path": "p"})
+         == {"ORG_GRADLE_PROJECT_repoUrl": "yangi", "Path": "p", "QOSHIMCHA": "q"}),
     ]
 
 
