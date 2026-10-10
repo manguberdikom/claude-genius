@@ -214,6 +214,7 @@ def check_text(text, path):
                 "Flaky Test", "java:S2925"))
 
     out.extend(check_transactions(code))
+    out.extend(check_tx_template_catch(code))
     out.extend(check_sonar(text, code, is_test, path))
     return suppress(out, text, code)
 
@@ -2275,6 +2276,69 @@ def check_transactions(code):
             "servis javobini kutib band turadi va pool tugaydi."
             % call.group(1),
             "Transaction Spanning Remote Calls"))
+    return out
+
+
+TX_TEMPLATE_VAR_RE = re.compile(
+    r"\bTransactionTemplate\s+([\w$]+)\b|"
+    r"\b(?:var|final\s+var)\s+([\w$]+)\s*=\s*new\s+TransactionTemplate\b")
+TRY_RE = re.compile(r"\btry\s*\{")
+CATCH_CLAUSE_RE = re.compile(
+    r"\s*catch\s*\(\s*(?:final\s+)?([\w.$\s|]+?)\s+[\w$]+\s*\)\s*\{")
+# `TransactionTemplate` chaqiruvining tranzaksiya xatosini ham tutadigan turlar.
+TX_FAILURE_TYPES = frozenset((
+    "TransactionException", "CannotCreateTransactionException",
+    "NestedRuntimeException", "RuntimeException", "Exception", "Throwable"))
+
+
+def check_tx_template_catch(code):
+    """`TransactionTemplate` chaqiruvi atrofida faqat `DataAccessException`.
+
+    Ulanish olinmasa `TransactionTemplate.execute` `doBegin` da
+    `CannotCreateTransactionException` tashlaydi. U `TransactionException`,
+    `DataAccessException` EMAS, shuning uchun `catch (DataAccessException e)`
+    uni o'tkazib yuboradi. "Xatoni yutib davom etadi" deb yozilgan kod
+    (startup tekshiruvi, best-effort tozalash) baza yetib bo'lmaydigan
+    paytda aynan shu joyda yiqiladi. `JdbcTemplate` ni tranzaksiyasiz
+    chaqirgan kod `CannotGetJdbcConnectionException` oladi, u
+    `DataAccessException`: tranzaksiya qo'shilganda catch o'zgarishi kerak.
+
+    Faqat `TransactionTemplate` turidagi o'zgaruvchi orqali chaqiruv
+    ko'riladi; tur noma'lum bo'lsa tekshiruv jim.
+    """
+    names = {n for m in TX_TEMPLATE_VAR_RE.finditer(code)
+             for n in m.groups() if n}
+    if not names:
+        return []
+    call_re = re.compile(
+        r"(?<![\w$.])(?:this\s*\.\s*)?(?:%s)\s*\.\s*execute(?:WithoutResult)?\s*\("
+        % "|".join(re.escape(n) for n in sorted(names)))
+    out = []
+    for m in TRY_RE.finditer(code):
+        end = _block_end(code, m.end() - 1)
+        if end < 0 or not call_re.search(code, m.end(), end):
+            continue
+        caught, first, pos = set(), -1, end + 1
+        while True:
+            clause = CATCH_CLAUSE_RE.match(code, pos)
+            if not clause:
+                break
+            if first < 0:
+                first = clause.start(1)
+            caught.update(t.strip().rsplit(".", 1)[-1]
+                          for t in clause.group(1).split("|"))
+            pos = _block_end(code, clause.end() - 1) + 1
+            if pos <= 0:
+                break
+        if "DataAccessException" in caught and not caught & TX_FAILURE_TYPES:
+            out.append(_find(
+                "", "o'rta", code, first,
+                "`TransactionTemplate` chaqiruvi atrofida faqat "
+                "`DataAccessException` tutilgan: ulanish olinmasa "
+                "`CannotCreateTransactionException` chiqadi, u "
+                "`TransactionException`, `DataAccessException` emas. "
+                "`catch (DataAccessException | TransactionException e)` yozilsin.",
+                "DataAccessException Hierarchy", ref="patterns 5.33"))
     return out
 
 

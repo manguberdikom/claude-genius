@@ -56,6 +56,8 @@ Qoida bitta va qattiq: `main` branch'ga tushgan migratsiya fayli o'zgarmas. Flyw
 
 Shuning uchun xatoni tuzatish yo'li bitta: yangi fayl yozish. `V...1430__add_column.sql` da tip xato bo'lsa, uni tahrirlamaymiz, `V...1700__fix_column_type.sql` qo'shamiz.
 
+"O'zgarmas" so'zi izohga ham tegishli. Liquibase `sqlFile` changeset ining checksum'i fayl matnidan hisoblanadi va `stripComments: true` buni o'zgartirmaydi: qo'llangan `.sql` fayldagi bitta izoh qatorini tahrirlash ham har muhitda `ValidationFailedException` beradi. Eng ko'p uchraydigan sabab sinf yoki jadval nomini butun repoda almashtirish (rename sweep): izohda eski nom tilga olingan bo'lsa, qidiruv uni ham almashtiradi. Qo'llangan migratsiya resurslari bunday almashtirishdan chiqariladi; eskirgan izoh joyida qoladi, to'g'ri nom yangi changeset izohiga yoziladi.
+
 ```yaml
 spring:
   flyway:

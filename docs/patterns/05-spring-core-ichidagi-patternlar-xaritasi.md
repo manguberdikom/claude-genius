@@ -1058,7 +1058,7 @@ public class OutboxPublisher {
 - JDBC'dan JPA'ga yoki aksincha ko'chganda catch bloklarini o'zgartirmaslik.
 - `@RestControllerAdvice` da `DataAccessException` ni yagona `ProblemDetail` javobga aylantirish.
 
-**Ehtiyot bo'ling:** Tarjima avtomatik emas - oddiy POJO DAO'da `EntityManager` ni to'g'ridan-to'g'ri ishlatsang, `@Repository` yoki translation post-processor bo'lmasa, native `PersistenceException` chiqadi. Shuningdek `DataIntegrityViolationException` ni "duplicate" deb taxmin qilish xato: u foreign key, not-null va check constraint'lar uchun ham keladi, shuning uchun sabab bo'yicha aniqlashtirish kerak.
+**Ehtiyot bo'ling:** Tarjima avtomatik emas - oddiy POJO DAO'da `EntityManager` ni to'g'ridan-to'g'ri ishlatsang, `@Repository` yoki translation post-processor bo'lmasa, native `PersistenceException` chiqadi. Shuningdek `DataIntegrityViolationException` ni "duplicate" deb taxmin qilish xato: u foreign key, not-null va check constraint'lar uchun ham keladi, shuning uchun sabab bo'yicha aniqlashtirish kerak. Tranzaksiya xatolari bu daraxtga kirmaydi: `TransactionTemplate.execute` ulanish ololmasa `CannotCreateTransactionException` tashlaydi, u `TransactionException`, `DataAccessException` emas. Tranzaksiyasiz `JdbcTemplate` esa xuddi shu vaziyatda `CannotGetJdbcConnectionException` (`DataAccessException`) beradi. Shuning uchun "xatoni yutib davom etadi" degan kodga tranzaksiya qo'shilsa, catch ham `DataAccessException | TransactionException` ga kengayadi; aks holda baza yetib bo'lmaydigan paytda xato tashqariga chiqadi (`check_code` buni ushlaydi).
 
 ```java
 // Exception tarjimasi: SQLException emas, ma'noli tur

@@ -81,6 +81,16 @@ NO_FINDING = [
      'class A { String f(String t) { return t.replaceAll("\\\\s+", " "); } }'),
     ("regex bo'lmagan literalda bitta teskari chiziqli s",
      'class A { String t = "a\\sb"; }'),
+    ("TransactionTemplate atrofida TransactionException ham tutilgan",
+     "class A { void f(TransactionTemplate tx) { try { tx.execute(s -> 1); }"
+     " catch (DataAccessException | TransactionException e) { log.warn(\"x\", e); } } }"),
+    ("TransactionTemplate atrofida ikkinchi catch tranzaksiya xatosini tutadi",
+     "class A { void f(TransactionTemplate tx) { try { tx.executeWithoutResult(s -> g()); }"
+     " catch (DataAccessException e) { log.warn(\"x\", e); }"
+     " catch (RuntimeException e) { log.warn(\"y\", e); } } }"),
+    ("tranzaksiyasiz JdbcTemplate chaqiruvida DataAccessException yetarli",
+     "class A { TransactionTemplate tx; void f(JdbcTemplate jdbc) { try { jdbc.execute(Q); }"
+     " catch (DataAccessException e) { log.warn(\"x\", e); } } }"),
 ]
 # URL va `/*` li satrdan keyingi kod baribir o'qiladi: yolg'on manfiy yo'q.
 ONE_FINDING = [
@@ -92,6 +102,13 @@ ONE_FINDING = [
      'class A { String f(String t) { return t.replaceAll("\\s+", " "); } }'),
     ("Pattern.compile da bitta teskari chiziqli s",
      'class A { Object p = java.util.regex.Pattern.compile("\\s+"); }'),
+    ("TransactionTemplate atrofida faqat DataAccessException",
+     "class A { void f(TransactionTemplate tx) { try { tx.execute(s -> 1); }"
+     " catch (DataAccessException e) { log.warn(\"x\", e); } } }"),
+    ("var bilan yaratilgan TransactionTemplate atrofida faqat DataAccessException",
+     "class A { void f(Object tm) { var tx = new TransactionTemplate(tm);"
+     " try { tx.executeWithoutResult(s -> g()); }"
+     " catch (DataAccessException e) { log.warn(\"x\", e); } } }"),
 ]
 
 
