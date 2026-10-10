@@ -29,7 +29,8 @@ Sonar qoidalari (`check_sonar`: S1128, S8694, S6213, S5778, S8692, S1612,
 S5838, S3415, S8696, S1135, S1068, S1144, S5853, S1488, S1845, S6126,
 S3457, S2093, S4087, S5976; space-hrm dan 2026-10-09: S125, S2245, S2133,
 S6068, S5841, S4144, S6878, S1640; lokal Sonar dan 2026-10-10: S6353, S6035,
-S1123, S6355, S1192 bor konstanta, S3415 manfiy va char literal) va qo'llanmadagi ikki test qoidasi
+S1123, S6355, S1192 bor konstanta, S3415 manfiy va char literal; 2026-10-11:
+S3415 `allSatisfy`/`anySatisfy` kabi predikatli metodlar) va qo'llanmadagi ikki test qoidasi
 (JVM system property ga yozish, static ArchUnit grafi; kalitsiz) tur ma'lumotisiz, regex va qavs sanash bilan. Ular haqiqiy loyihaning Sonar
 ro'yxatiga solishtirib sozlangan. Tur kerak bo'lgan qoidalar (S1874,
 S2184, S6809) ataylab yo'q: ular qo'llanmada qoida sifatida yoziladi
@@ -309,7 +310,13 @@ AG_ORDERED = ("isEqualTo", "isNotEqualTo", "isSameAs", "isNotSameAs", "contains"
 # tekshiriladi (Sonar `assertThat(Type.EMPTY).hasToString("...")` ni ham tutadi).
 AG_EXPECTED_ARG = ("hasToString", "hasSameHashCodeAs", "hasSameClassAs",
                    "isEqualToIgnoringCase", "isEqualToIgnoringWhitespace",
-                   "isEqualByComparingTo", "isNotEqualByComparingTo")
+                   "isEqualByComparingTo", "isNotEqualByComparingTo",
+                   # Lokal Sonar 2026-10-11: `assertThat(KONSTANTA).allSatisfy(x -> ...)` ni ham tutadi.
+                   # Lambda hech qachon konstanta emas, shuning uchun shart o'zgarmaydi. Bu yerda tuzatish
+                   # yo'li boshqacha: konstantani `for` sikliga oling, shunda yiqilganda element indeksi
+                   # emas, elementning o'zi ko'rinadi.
+                   "allSatisfy", "anySatisfy", "noneSatisfy",
+                   "allMatch", "anyMatch", "noneMatch")
 SIZE_COMPARISONS = {
     "isGreaterThan": "hasSizeGreaterThan(n)",
     "isGreaterThanOrEqualTo": "hasSizeGreaterThanOrEqualTo(n)",

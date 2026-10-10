@@ -613,6 +613,19 @@ var empty = Type.EMPTY;
 assertThat(empty).hasToString("EMPTY");
 ```
 
+Xuddi shu narsa predikat oladigan metodlarda ham bo'ladi: `assertThat(KONSTANTA).allSatisfy(...)`, `anySatisfy`, `noneSatisfy`. Lambda hech qachon konstanta emas, shuning uchun Sonar konstantani kutilgan qiymat deb o'qiydi. Bu yerda lokal o'zgaruvchi eng yaxshi yechim emas: `for` sikli ham qoidani yopadi, ham yiqilgan testda element nomini ko'rsatadi, `allSatisfy` esa faqat indeksni aytadi.
+
+```java
+// YOMON
+assertThat(Exporter.CAPTION_CODES).allSatisfy(       // java:S3415
+        code -> assertThat(labels.caption(code)).isNotBlank());
+
+// YAXSHI
+for (DayCode code : Exporter.CAPTION_CODES) {
+    assertThat(labels.caption(code)).as(code.name()).isNotBlank();
+}
+```
+
 **`java:S2133` va qamrov.** `new Config().getClass().getAnnotation(...)` obyekt yaratib, keyin sinfni so'raydi; `Config.class.getAnnotation(...)` yetarli. Lekin bo'sh `@Configuration` sinf boshqa joyda `new` bilan yaratilmasa, yagona yashil qator konstruktor edi va qamrov bir qatorga tushadi. Spring sinfni qanday yaratsa, test ham shunday yaratsin: `BeanUtils.instantiateClass` konstruktorni chaqiradi va yaratish yo'lini tekshiradi.
 
 ```java

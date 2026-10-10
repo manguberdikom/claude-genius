@@ -1167,6 +1167,16 @@ HRM_CASES = [
      wrap("void t() { assertThat(document).hasToString(\"IdentityDocument[]\"); }"), False),
     ("S3415 hasToString ikkalasi konstanta toza", "java:S3415", TEST,
      wrap("void t() { assertThat(Type.EMPTY).hasToString(EXPECTED_TEXT); }"), False),
+    ("S3415 allSatisfy konstanta actual", "java:S3415", TEST,
+     wrap("void t() { assertThat(Exporter.CAPTION_CODES).allSatisfy(\n"
+          "    code -> assertThat(Labels.of(lang).caption(code)).isNotBlank()); }"), True),
+    ("S3415 anySatisfy konstanta actual", "java:S3415", TEST,
+     wrap("void t() { assertThat(CAPTION_CODES).anySatisfy(code -> assertThat(code).isNotNull()); }"), True),
+    ("S3415 allSatisfy lokal o'zgaruvchi toza", "java:S3415", TEST,
+     wrap("void t() { var codes = Exporter.CAPTION_CODES;\n"
+          "assertThat(codes).allSatisfy(code -> assertThat(code).isNotNull()); }"), False),
+    ("S3415 allSatisfy haqiqiy qiymat toza", "java:S3415", TEST,
+     wrap("void t() { assertThat(labels.captions()).allSatisfy(code -> assertThat(code).isNotNull()); }"), False),
     # java:S4144 bir xil tanali metodlar
     ("S4144 ikki metod bir xil tana", "java:S4144", MAIN,
      wrap("void normalizeCreate(Dto d) {\n if (d == null) {\n return;\n }\n fill(d);\n log(d);\n}\n"
