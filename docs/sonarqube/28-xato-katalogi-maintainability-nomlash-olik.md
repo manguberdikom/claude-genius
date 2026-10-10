@@ -664,7 +664,8 @@ Aktyor yozgan kodda Sonar bir xil qoidalarni qayta-qayta ochadi, chunki ularni y
 | Qoida | Nima chiqadi | Qanday yoziladi |
 | --- | --- | --- |
 | `java:S6213` | `record`, `var`, `yield` o'zgaruvchi, parametr yoki lambda parametri nomi | `event`, `row`, `inputRecord` |
-| `java:S8696` | `LocalDate`, `Instant`, `Optional` kabi value-based tur `==` yoki `!=` bilan; Sonar `DayOfWeek` va `Month` enum ni ham shunday bayroqlaydi | `.equals(...)`, `isBefore`/`isAfter`, enum uchun `switch` |
+| `java:S8696` | `LocalDate`, `Instant`, `Optional` kabi value-based tur `==` yoki `!=` bilan; Sonar `DayOfWeek` va `Month` enum ni ham shunday bayroqlaydi, chap tomon zanjir bo'lsa ham (`row.getDate().getMonth() == Month.MAY`) | `.equals(...)`, `isBefore`/`isAfter`, enum uchun `switch`, yoki butun son: `getMonthValue() == Month.MAY.getValue()` |
+| `java:S8700` | `Duration.between(a, b)` yoki `ChronoUnit.MINUTES.between(a, b)` da ikkala argument zonasiz `LocalDateTime` (o'zgaruvchi, parametr, `x.truncatedTo(..)` zanjiri, `day.startAt()` kabi record accessori). `LocalDate` (`ChronoUnit.DAYS.between(from, to)`) va `Instant` orasidagi hisob bayroqlanmaydi | `a.atZone(zone)` va `b.atZone(zone)` bilan `ZonedDateTime` ga, yoki voqeani boshidanoq `Instant` da saqlash |
 | `java:S1488` | `T x = ...; return x;` | `return ...;` |
 | `java:S1845` | `RETRIES` va `retries` kabi faqat registr bilan farqlanadigan ikki `final` maydon | `retryCount`: kichik harfli nomga ma'no berish |
 | `java:S1128`, `java:S1068`, `java:S1144` | ishlatilmagan import, `private` maydon va metod (bo'limlar: ishlatilmaydigan import, o'lik kod) | yozib bo'lgach o'chirish |
@@ -683,17 +684,51 @@ recoverer = new DeadLetterPublishingRecoverer(template, (failed, ex) -> route(fa
 boolean sameDay = start.equals(end);
 ```
 
-Ikkinchi jadval regex bilan ushlanmaydi. Sabablari: ularning hammasi chaqirilgan metodning tur ma'lumotini (deprecated belgisi, `throws` ro'yxati, record yoki oddiy sinf, `float` ga o'tish) talab qiladi.
+Ikkinchi jadval asosan regex bilan ushlanmaydi (S1130 va S2259 ning faqat quyida aytilgan aniq naqshi bundan mustasno). Sabablari: ularning hammasi chaqirilgan metodning tur ma'lumotini (deprecated belgisi, `throws` ro'yxati, record yoki oddiy sinf, `float` ga o'tish) talab qiladi.
 
 | Qoida | Yozayotganda nimaga qarash kerak |
 | --- | --- |
 | `java:S1874` | Kutubxona sinfini tanlashdan oldin Javadoc dagi `@deprecated` belgisini o'qing va ko'rsatilgan almashtirishni oling. Almashtirish yo'q bo'lsa, eskirgan sinfni bitta adapterga yig'ing: shu adapterdagi `@SuppressWarnings("java:S1874")` sababi bilan yoziladi, chunki har chaqiruv alohida issue ([eskirgan API va migratsiya](14-java-va-spring-da-eng-kop-uchraydigan-issue.md#1410-eskirgan-deprecated-api-ishlatish-va-migratsiya)) |
-| `java:S1130` | `throws IOException` yoki `throws Exception` ni tana otmasa yozmang. Metodni yozib bo'lgach `throws` ni olib tashlab kompilyatsiya qiling: xato bermasa, e'lon ortiqcha edi |
+| `java:S1130` | `throws IOException` yoki `throws Exception` ni tana otmasa yozmang. Metodni yozib bo'lgach `throws` ni olib tashlab kompilyatsiya qiling: xato bermasa, e'lon ortiqcha edi. Lambda ichidagi chaqiruv metodga o'tmaydi: `assertThatThrownBy(() -> mapper.readValue(s, X.class))` tanasi uchun `throws` ortiqcha. `check_code` faqat tanasi butunlay assertion bo'lgan test metodini ushlaydi, qolganini kompilyator tekshiradi |
+| `java:S2259` | Shu faylda `return null` (yoki `cond ? x : null`) qaytaradigan metod natijasini tekshirmay ishlatmang va parametrini dereference qiladigan metodga bermang. `check_code` shu naqshni ushlaydi; ushlamaydiganlari: `Map.get(..)` natijasi, `null` tekshirilgandan keyin shartsiz `entry.x()`, `Persistable.getId()` ([null dereference](25-xato-katalogi-reliability-bug-toifasi.md#252-null-bolishi-mumkin-bolgan-qiymatga-murojaat-qilish)) |
 | `java:S6878` | `instanceof Rec r` yoki `case Rec r ->` dan keyin faqat `r.x()` accessorlari ishlatilsa, record pattern yozing: `case OrgScope.Only(var ids) ->`. Masalan `case RetryAfter retry -> schedule(retry.delay())` o'rniga `case RetryAfter(var delay) -> schedule(delay)`. Qoida faqat recordning hamma komponenti o'qilganda talab qilinadi |
 | `java:S2184` | `int` bilan hisoblangan bo'linma, ayirma yoki ko'paytma keyin `float` yoki `double` ga o'tsa, amal avval `int` da bajariladi. Operandlardan birini oldin cast qiling: `(float) a / b` |
 | `java:S6809` | O'z sinfingizdagi `@Transactional` metodni `this` orqali chaqirmang: proxy aylanib o'tiladi ([transactional self-invocation](../architect/19-spring-tranzaksiyalari-va-ularning.md#196-ichki-metod-chaqiruvi-tuzogi-va-undan-chiqish-yollari)) |
 | `java:S2093` | `close()` ni `finally` ga yozmang, `try-with-resources` ishlating. Kutubxona versiyasi ko'tarilganda `javap` bilan yangi `AutoCloseable` sinflarni tekshiring ([resurslarni yopish](13-sonar-otadigan-kod-yozish-qoidalari.md#136-resurslarni-yopish-try-with-resources-va-yopilmagan-oqim)) |
 | `java:S2143` | `java.util.Calendar` va `Date` o'rniga `java.time`. JDBC da `ps.setTimestamp(i, ts, calendar)` ni mintaqa semantikasini buzmasdan almashtirish yo'li bor ([bazada, API da va kodda vaqt turi](../clean-code/22-sana-vaqt-va-mintaqa.md#229-bazada-api-da-va-kodda-vaqt-turi-muvofiqligi)) |
+
+`LocalDateTime` devor soatini saqlaydi, zonani emas: ikki `LocalDateTime` orasidagi `Duration` yozgi vaqtga o'tish kunida haqiqiy o'tgan vaqtdan bir soat farq qilishi mumkin. Sonar 26.x shuning uchun `java:S8700` ochadi, `LocalDate` hisobini (`ChronoUnit.DAYS.between`) esa ochmaydi.
+
+```java
+// YOMON: java:S8700, ikkala argument zonasiz
+long minutes(LocalDateTime from, LocalDateTime to) {
+    return ChronoUnit.MINUTES.between(from, to);
+}
+Duration gap = Duration.between(slot.startAt(), slot.endAt());   // record komponentlari LocalDateTime
+
+// YAXSHI: zona bilan
+long minutes(LocalDateTime from, LocalDateTime to, ZoneId zone) {
+    return ChronoUnit.MINUTES.between(from.atZone(zone), to.atZone(zone));
+}
+```
+
+`java:S2259` ni Sonar yo'l bo'yicha kuzatadi, shuning uchun `null` qaytarishi mumkin metodning natijasi ham, `null` tekshirilgandan keyin shartsiz ishlatilgan qiymat ham bayroqlanadi. Tuzatish: metod `null` qaytarmasin, yoki `null` yo'li tekshirilgan joyda alohida metod bo'lsin.
+
+```java
+// YOMON: java:S2259, activeSlotOf() passiv holatda null qaytaradi, limitOf() esa slot.minutes() ni chaqiradi
+private static Slot activeSlotOf(Plan plan) {
+    return plan.state() == State.ACTIVE ? new Slot(plan.from(), plan.to()) : null;
+}
+int limit = limitOf(plan, activeSlotOf(plan));
+
+// YAXSHI: holat tekshirilgach null bo'lmagan qiymat qaytaradigan metod
+private static Slot slotOf(Plan plan) {                  // chaqiruvchi state ni tekshirgan
+    return new Slot(plan.from(), plan.to());
+}
+int limit = plan.state() == State.ACTIVE ? limitOf(plan, slotOf(plan)) : 0;
+```
+
+Qiymat (`entry = entries.get(key)`) bir joyda `entry != null` bilan tekshirilib, boshqa joyda `overdue ? entry.delayMinutes() : null` kabi boshqa shart ostida ishlatilsa, Sonar ikkinchisini bayroqlaydi, chunki `overdue` o'zgaruvchisi `entry != null` ni bilvosita bildirishini u bilmaydi: shartga `entry != null &&` ni to'g'ridan-to'g'ri yozing. `Persistable.getId()` esa `@Nullable`: `event.getId().toString()` o'rniga `UUID id = Objects.requireNonNull(event.getId(), "id");` yozing (xabar bilan, jim `NullPointerException` emas).
 
 Birinchi jadvaldagi topilma sizning yozuvingizda chiqsa, uni tuzatmay `NOSONAR` bilan yopmang: bostirish tartibi alohida bobda ([false positive va won't fix farqi](24-false-positive-suppression-va-oz-qoidangiz.md#242-issue-ni-false-positive-yoki-wont-fix-deb-belgilash-va-farqi)).
 

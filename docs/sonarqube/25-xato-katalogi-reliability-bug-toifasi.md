@@ -84,6 +84,24 @@ public BigDecimal paidAmount(String orderId) {
 
 Repository metodlari `Optional` qaytarsin, shunda yo'qlik holati kompilyatsiya darajasida ko'rinadi.
 
+**Shu fayldagi metod `null` qaytaradi.** Sonar 26.x metodning o'z faylidagi qaytish yo'llarini ham kuzatadi: `cond ? new Slot(..) : null` qaytaradigan `private` metodning natijasi tekshirilmay `slot.start()` deb ishlatilsa, yoki parametrini dereference qiladigan boshqa metodga (`limitOf(plan, slot)`) berilsa, ikkalasi ham `java:S2259`. Parametrning o'zi `null` bo'lganda `null` qaytarish (`p == null ? null : f(p)`) bu qoidaga tushmaydi. Tuzatish `null` qaytarmaslikdir: shart tekshirilgan yo'lda null bo'lmagan qiymat qaytaradigan alohida metod yozing, yoki `Optional` qaytaring.
+
+```java
+// YOMON: java:S2259 (ikkala qatorda)
+Slot slot = slotOf(entry, plan);                    // passiv holatda null
+int limit = active ? limitOf(plan, slot) : 0;       // limitOf slot.minutes() ni chaqiradi
+int overrun = slot.end() - closedAt;                // null tekshiruvisiz
+
+// YAXSHI: holat oldin ajratiladi, ACTIVE yo'lida slot null emas
+if (plan.state() != State.ACTIVE) {
+    return passive(entry);
+}
+Slot slot = entry.snapshot() != null ? entry.snapshot() : slotOf(plan);
+int limit = limitOf(plan, slot);
+```
+
+`tools/check_code.py` shu naqshni ushlaydi (`java:S2259`): `return null` yoki `? x : null` qaytaradigan va shu faylda e'lon qilingan metodning natijasi tekshirilmasdan dereference qilinsa yoki parametrini dereference qiladigan metodga berilsa. U ushlamaydigan ikki holat Sonar da qoladi. Birinchisi: `Map.get(..)` natijasi bir joyda `entry != null` bilan tekshirilib, boshqa joyda boshqa shart ostida `entry.x()` deb ishlatilsa; tuzatish shartga `entry != null &&` ni yozish yoki erta qaytish. Ikkinchisi: Spring Data `Persistable.getId()` `@Nullable`, shuning uchun `event.getId().toString()` ni Sonar bayroqlaydi; tuzatish `UUID id = Objects.requireNonNull(event.getId(), "id");` va keyin `id.toString()`, xabar bilan: jim `NullPointerException` emas.
+
 ## 25.3 Optional ni tekshirmasdan get() chaqirish
 
 Qoida: `java:S3655`

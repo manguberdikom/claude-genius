@@ -300,6 +300,30 @@ public void reservQil(Long mahsulotId, int soni) {
 
 Chiqarmaslik kerak bo'lgan holatlar aniq. Ikki modul mustaqil deploy qilinsa, umumiy metod ular orasida keraksiz bog'liqlik yaratadi. Takrorlangan kod ikki xil qatlamda bo'lsa, masalan DTO va entity, o'xshashlik tabiiy. Umumiy metod uchta `boolean` parametr talab qilsa, u ikki maqsadni siqib turgan. Blok hali barqarorlashmagan yangi funksiya ichida bo'lsa, uchinchi nusxagacha kutish amalda yaxshi ishlaydi.
 
+**Ikki entity bir xil ustun blokini takrorlasa.** Ikki jadval (masalan `OrderLine` va `InvoiceLine`) bir xil nom, tur va nullability bilan beshta ustun e'lon qilsa (`owner_id`, `on_date`, `kind`, `start_time`, `end_time`), CPD maydon e'lonlarini dublikat deb belgilaydi. Bu yerda yuqoridagi "DTO va entity" istisnosi ishlamaydi: ikki entity bir qatlamda va bir xil sabab bilan o'zgaradi. Yechim: ustunlarni `@MappedSuperclass` ga (yoki bir xil guruh qiymat obyekti bo'lsa `@Embeddable` ga) chiqarish.
+
+```java
+// YOMON: ikki entityda aynan bir xil blok (CPD)
+@Entity class OrderLine extends BaseEntity {
+    @Column(name = "owner_id", nullable = false, updatable = false) private Long ownerId;
+    @Column(name = "on_date", nullable = false, updatable = false) private LocalDate onDate;
+    @Enumerated(EnumType.STRING) @Column(name = "kind", nullable = false, length = 16) private Kind kind;
+    @Column(name = "start_time") private LocalTime startTime;
+    @Column(name = "end_time") private LocalTime endTime;
+}
+
+// YAXSHI: bir joyda; har entity o'zining @Id, @Version va o'ziga xos ustunlarini saqlaydi
+@MappedSuperclass
+public abstract class AbstractCell extends BaseEntity {
+    @Column(name = "owner_id", nullable = false, updatable = false) private Long ownerId;
+    @Column(name = "on_date", nullable = false, updatable = false) private LocalDate onDate;
+    // ... kind, startTime, endTime: avvalgi @Column parametrlari aynan o'sha
+}
+@Entity class OrderLine extends AbstractCell { /* @Id, @Version, order_id */ }
+```
+
+Ko'chirishda bir narsa ham o'zgarmasligi kerak: ustun nomi, tur, `nullable`, `updatable`, `length`, `@Enumerated`. `@Id` va `@Version` har entity da qoladi (kalit strategiyasi va optimistik qulf entity ga xos). Maydonlar `private` bo'lib qolsa, entity ichidagi `field = value` tayinlashlari `getField()` va protected `keyTo(..)`/`holdWindow(..)` kabi metodlarga o'tadi; tekshiruvlar (`requireNonNull`, domen qoidasi) o'z entity sinfida qoladi. Paket bog'liqligi yo'nalishi buzilmasin: supersinf quyi paketda, yuqori paketdagi entity unga bog'liq bo'ladi, teskarisi emas. Natijani `schema_from_entities.py --only-findings` bilan tekshiring: ikki jadvalning ustunlari oldin va keyin bir xil bo'lishi kerak.
+
 ## 15.10 Test kodidagi takrorlanish: alohida munosabat talab qiladi
 
 Sonar `sonar.tests` papkasini ham tahlil qiladi, lekin qoida to'plami boshqacha va duplikatsiya metrikasiga test kodi odatda qo'shilmaydi. Shunga qaramay testdagi nusxa real muammo, chunki o'qilishni buzadi.

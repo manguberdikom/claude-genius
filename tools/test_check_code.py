@@ -759,8 +759,11 @@ SONAR_CASES = [
     ("S5778 isInstanceOfSatisfying Sonar bayroqlamaydi", "java:S5778", TEST,
      wrap("void t() { assertThatThrownBy(() -> service.run(order.getId()))"
           ".isInstanceOfSatisfying(CommonException.class, ex -> check(ex)); }"), False),
-    ("S5778 List.of qiymat fabrikasi hisoblanmaydi", "java:S5778", TEST,
+    ("S5778 argumentli fabrika List.of(ID) ham chaqiruv", "java:S5778", TEST,
      wrap("void t() { assertThatThrownBy(() -> service.update(List.of(ID)))"
+          ".isInstanceOf(IllegalStateException.class); }"), True),
+    ("S5778 argumentsiz fabrika Set.of() sanalmaydi", "java:S5778", TEST,
+     wrap("void t() { assertThatThrownBy(() -> activator.activate(plan, Set.of(), AT))"
           ".isInstanceOf(IllegalStateException.class); }"), False),
     ("S5778 main kodda tegilmaydi", "java:S5778", MAIN,
      wrap("void t() { assertThrows(X.class, () -> a(b())); }"), False),
@@ -925,8 +928,17 @@ SONAR_CASES = [
           ".isInstanceOf(IllegalStateException.class); }"), True),
     ("S5778 ichki lambdadagi chaqiruv sanalmaydi", "java:S5778", TEST,
      wrap("void t() { assertThrows(X.class, () -> rows.forEach(r -> use(r))); }"), False),
-    ("S5778 argumentdagi qiymat fabrikasi sanalmaydi", "java:S5778", TEST,
-     wrap("void t() { assertThatThrownBy(() -> service.run(Duration.ofDays(1)))"
+    ("S5778 argumentdagi LocalDate.of(..) ham chaqiruv", "java:S5778", TEST,
+     wrap("void t() { assertThatThrownBy(() -> days.add(LocalDate.of(2026, Month.MAY, 20)))"
+          ".isInstanceOf(UnsupportedOperationException.class); }"), True),
+    ("S5778 argumentsiz static UUID.randomUUID() sanalmaydi", "java:S5778", TEST,
+     wrap("void t() { assertThatThrownBy(() -> service.run(UUID.randomUUID()))"
+          ".isInstanceOf(IllegalStateException.class); }"), False),
+    ("S5778 sinfning argumentsiz yordamchisi sanalmaydi", "java:S5778", TEST,
+     wrap("void t() { assertThatThrownBy(() -> service().submit(1L))"
+          ".isInstanceOf(IllegalStateException.class); }"), False),
+    ("S5778 argumentdagi admitted() yordamchi sanalmaydi", "java:S5778", TEST,
+     wrap("void t() { assertThatThrownBy(() -> committer.commit(admitted(), prepared, FILE_ID))"
           ".isInstanceOf(IllegalStateException.class); }"), False),
     # java:S6126 \n li satr konkatenatsiyasi
     ("S6126 \\n li literallar + bilan", "java:S6126", MAIN,
@@ -1369,6 +1381,169 @@ SABOQ_CASES = [
 ]
 SONAR_CASES += SABOQ_CASES
 
+# Sonar 26.x: serverda chiqib, avval o'tkazib yuborilgan holatlar (S8700, S2259,
+# S1130, S5841 extracting, S3415 doesNotContain, S8696 zanjir, S5838 Optional,
+# S5976 qator uzilishi). Misollar umumiy: Order, Invoice, Span.
+WRAPPED_TESTS = "".join(
+    "@Test\nvoid prints%s() {\n  show();\n  Result r = download(get(URL).param(\"month\", \"2026-11\")%s"
+    ".header(\"Accept-Language\", \"%s\"))\n      .andExpect(ok()).andReturn();\n"
+    "  assertThat(cell(r).value()).isEqualTo(\"%s\");\n}\n" % (name, gap, lang, line)
+    for name, gap, lang, line in (
+        ("A", "", "ru", "one"), ("B", "\n      ", "tg", "two"), ("C", "", "en", "three")))
+
+SONAR26_CASES = [
+    # java:S8700 zonasiz LocalDateTime lar orasida
+    ("S8700 ChronoUnit parametrlar LocalDateTime", "java:S8700", MAIN,
+     wrap("long minutes(LocalDateTime from, LocalDateTime to) {\n"
+          "  return ChronoUnit.MINUTES.between(from, to);\n}"), True),
+    ("S8700 Duration maydon va parametr", "java:S8700", MAIN,
+     wrap("private LocalDateTime opened;\n"
+          "Duration age(LocalDateTime now) { return Duration.between(opened, now); }"), True),
+    ("S8700 truncatedTo zanjiri", "java:S8700", TEST,
+     wrap("long f(LocalDateTime in, LocalDateTime out) {\n"
+          "  return ChronoUnit.MINUTES.between(in.truncatedTo(ChronoUnit.MINUTES), "
+          "out.truncatedTo(ChronoUnit.MINUTES));\n}"), True),
+    ("S8700 atStartOfDay() va LocalDateTime", "java:S8700", MAIN,
+     wrap("Duration f(LocalDate day, LocalDateTime at) {\n"
+          "  return Duration.between(day.atStartOfDay(), at);\n}"), True),
+    ("S8700 shu fayldagi record accessori", "java:S8700", MAIN,
+     wrap("record Span(LocalDateTime from, LocalDateTime to) {}\n"
+          "long f(Span span) { return Duration.between(span.from(), span.to()).toMinutes(); }"), True),
+    ("S8700 var o'zgaruvchi LocalDateTime.of dan", "java:S8700", TEST,
+     wrap("long f(LocalDateTime end) {\n"
+          "  var start = LocalDateTime.of(2026, Month.MAY, 1, 8, 0);\n"
+          "  return Duration.between(start, end).toMinutes();\n}"), True),
+    ("S8700 atZone bilan toza", "java:S8700", MAIN,
+     wrap("long f(LocalDateTime a, LocalDateTime b) {\n"
+          "  return Duration.between(a.atZone(ZONE), b.atZone(ZONE)).toMinutes();\n}"), False),
+    ("S8700 Instant toza", "java:S8700", MAIN,
+     wrap("long f(Instant a, Instant b) { return Duration.between(a, b).toMinutes(); }"), False),
+    ("S8700 LocalDate toza", "java:S8700", MAIN,
+     wrap("long f(LocalDate from, LocalDate to) { return ChronoUnit.DAYS.between(from, to) + 1; }"), False),
+    ("S8700 LocalTime toza", "java:S8700", MAIN,
+     wrap("int f(LocalTime start, LocalTime end) { return (int) ChronoUnit.MINUTES.between(start, end); }"),
+     False),
+    ("S8700 bir nom ikki turda: eng yaqin e'lon (LocalDate) toza", "java:S8700", MAIN,
+     wrap("long days(LocalDate from, LocalDate to) { return ChronoUnit.DAYS.between(from, to); }\n"
+          "LocalDateTime later(LocalDateTime from) { return from; }"), False),
+    ("S8700 noma'lum tur toza", "java:S8700", MAIN,
+     wrap("long f(Span span) { return Duration.between(span.from(), span.to()).toMinutes(); }"), False),
+    # java:S2259 shu fayldagi null qaytaradigan metod
+    ("S2259 natija to'g'ridan-to'g'ri dereference", "java:S2259", MAIN,
+     wrap("private Window liveWindowOf(Day d) { return d.work() ? new Window(d.start()) : null; }\n"
+          "int norm(Day d) { return liveWindowOf(d).minutes(); }"), True),
+    ("S2259 return null va lokal o'zgaruvchi", "java:S2259", MAIN,
+     wrap("private Window find(Day d) {\n  if (d.off()) {\n    return null;\n  }\n"
+          "  return new Window();\n}\n"
+          "int run(Day d) {\n  Window w = find(d);\n  return w.minutes();\n}"), True),
+    ("S2259 nullable qiymat parametrini dereference qiladigan metodga beriladi", "java:S2259", MAIN,
+     wrap("private Window find(Day d) { return d.off() ? null : new Window(); }\n"
+          "private int normOf(Day d, Window w) { return d.planned() ? w.minutes() : 0; }\n"
+          "int run(Day d) {\n  Window w = find(d);\n  return normOf(d, w);\n}\n"), True),
+    ("S2259 nullable metod natijasini qaytaradigan metod ham nullable", "java:S2259", MAIN,
+     wrap("private Window find(Day d) { return d.off() ? null : new Window(); }\n"
+          "private Window pick(Day d) { return find(d); }\n"
+          "int run(Day d) {\n  Window w = pick(d);\n  return w.minutes();\n}"), True),
+    ("S2259 tekshiruvdan keyin toza", "java:S2259", MAIN,
+     wrap("private Window find(Day d) { return d.off() ? null : new Window(); }\n"
+          "int run(Day d) {\n  Window w = find(d);\n  if (w == null) {\n    return 0;\n  }\n"
+          "  return w.minutes();\n}"), False),
+    ("S2259 requireNonNull bilan toza", "java:S2259", MAIN,
+     wrap("private Window find(Day d) { return d.off() ? null : new Window(); }\n"
+          "int run(Day d) {\n  Window w = find(d);\n  Objects.requireNonNull(w, \"w\");\n"
+          "  return w.minutes();\n}"), False),
+    ("S2259 konstruktor argumentidagi null shoxi metodni nullable qilmaydi", "java:S2259", MAIN,
+     wrap("private Entry of(Row r) { return new Entry(r.a() == null ? null : r.a().text()); }\n"
+          "int run(Row r) { return of(r).size(); }"), False),
+    ("S2259 lambdadagi return null metodniki emas", "java:S2259", MAIN,
+     wrap("private List<String> names(List<Row> rows) {\n"
+          "  return rows.stream().map(r -> {\n    if (r.skip()) {\n      return null;\n    }\n"
+          "    return r.name();\n  }).toList();\n}\n"
+          "int run(List<Row> rows) { return names(rows).size(); }"), False),
+    ("S2259 parametrni tekshiradigan metodga berish toza", "java:S2259", MAIN,
+     wrap("private Window find(Day d) { return d.off() ? null : new Window(); }\n"
+          "private int normOf(Window w) { return w == null ? 0 : w.minutes(); }\n"
+          "int run(Day d) {\n  Window w = find(d);\n  return normOf(w);\n}"), False),
+    ("S2259 parametr null bo'lsa null qaytarish (ternary) toza", "java:S2259", MAIN,
+     wrap("private LocalDateTime local(Instant moment) {\n"
+          "  return moment == null ? null : moment.atZone(ZONE).toLocalDateTime();\n}\n"
+          "boolean f(Event e) {\n  LocalDateTime at = local(e.time());\n  return at.isBefore(NOW);\n}"),
+     False),
+    ("S2259 parametr null bo'lsa null qaytarish (if) toza", "java:S2259", MAIN,
+     wrap("private Window of(Day d) {\n  if (d == null) {\n    return null;\n  }\n"
+          "  return new Window(d);\n}\n"
+          "int f(Day d) {\n  Window w = of(d);\n  return w.minutes();\n}"), False),
+    # java:S1130 ortiqcha throws (test, faqat assertion tanasi)
+    ("S1130 lambdadagi chaqiruv metodga o'tmaydi", "java:S1130", TEST,
+     wrap("@Test\nvoid t() throws IOException {\n"
+          "  assertThatThrownBy(() -> mapper.readValue(\"x\", Month.class))\n"
+          "      .hasMessageContaining(\"x\");\n}"), True),
+    ("S1130 faqat assertThat konstanta", "java:S1130", TEST,
+     wrap("@Test\nvoid t() throws Exception {\n  assertThat(LIMIT).isEqualTo(5);\n}"), True),
+    ("S1130 private metod", "java:S1130", MAIN,
+     wrap("private void check() throws Exception {\n  assertThat(LIMIT).isEqualTo(5);\n}"), False),
+    ("S1130 yordamchi chaqiruvi bor toza", "java:S1130", TEST,
+     wrap("@Test\nvoid t() throws Exception {\n  service.run();\n  assertThat(done).isTrue();\n}"), False),
+    ("S1130 argumentdagi chaqiruv toza", "java:S1130", TEST,
+     wrap("@Test\nvoid t() throws Exception {\n  assertThat(reader.readLine()).isEqualTo(\"x\");\n}"),
+     False),
+    ("S1130 new obyekt toza", "java:S1130", TEST,
+     wrap("@Test\nvoid t() throws Exception {\n  assertThat(new Parser().parse()).isTrue();\n}"), False),
+    ("S1130 throws yo'q toza", "java:S1130", TEST,
+     wrap("@Test\nvoid t() {\n  assertThat(LIMIT).isEqualTo(5);\n}"), False),
+    ("S1130 public yordamchi tegilmaydi", "java:S1130", TEST,
+     wrap("public void helper() throws Exception {\n  assertThat(LIMIT).isEqualTo(5);\n}"), False),
+    ("S1130 lambdadan keyin verify toza", "java:S1130", TEST,
+     wrap("@Test\nvoid t() throws Exception {\n  assertThatThrownBy(() -> run())\n"
+          "      .isInstanceOf(IllegalStateException.class);\n  verify(client).send();\n}"), False),
+    # java:S5841 extracting dan keyin
+    ("S5841 extracting bitta argument va doesNotContain", "java:S5841", TEST,
+     wrap("void t() {\n  Calendar first = load();\n"
+          "  assertThat(first.days()).extracting(Day::status)\n"
+          "      .doesNotContain(Status.OUT);\n}"), True),
+    ("S5841 extracting dan oldin isNotEmpty toza", "java:S5841", TEST,
+     wrap("void t() {\n  Calendar first = load();\n"
+          "  assertThat(first.days()).isNotEmpty().extracting(Day::status)\n"
+          "      .doesNotContain(Status.OUT);\n}"), False),
+    ("S5841 ildiz o'zgaruvchi oldin assertThat da toza", "java:S5841", TEST,
+     wrap("void t() {\n  Calendar calendar = load();\n"
+          "  assertThat(day(calendar, 6).window()).isEqualTo(WINDOW);\n"
+          "  assertThat(calendar.days()).extracting(Day::status).doesNotContain(Status.OUT);\n}"),
+     False),
+    ("S5841 zanjirning keyingi qismida contains toza", "java:S5841", TEST,
+     wrap("void t() {\n  Result run = load();\n"
+          "  assertThat(run.saved()).extracting(Day::date).doesNotContain(FIRST).contains(SECOND);\n}"),
+     False),
+    ("S5841 ko'p argumentli extracting toza", "java:S5841", TEST,
+     wrap("void t() {\n  Calendar first = load();\n"
+          "  assertThat(first.day()).extracting(\"a\", \"b\").doesNotContain(\"x\");\n}"), False),
+    # java:S3415 doesNotContain
+    ("S3415 doesNotContain konstanta actual o'rnida", "java:S3415", TEST,
+     wrap("void t() { assertThat(Status.ACTIVE).doesNotContain(order.getStatus()); }"), True),
+    ("S3415 doesNotContain to'g'ri tartib toza", "java:S3415", TEST,
+     wrap("void t() { assertThat(order.getStatus()).doesNotContain(Status.ACTIVE); }"), False),
+    # java:S8696 java.time enum, chap tomon zanjir
+    ("S8696 zanjir == Month.X", "java:S8696", TEST,
+     wrap("void t() { days.stream().filter(day -> day.getDate().getMonth() == Month.SEPTEMBER).count(); }"),
+     True),
+    ("S8696 DayOfWeek.X != zanjir", "java:S8696", MAIN,
+     wrap("boolean f(Order o) { return DayOfWeek.SUNDAY != o.date().getDayOfWeek(); }"), True),
+    ("S8696 getMonthValue() == Month.X.getValue() toza", "java:S8696", TEST,
+     wrap("void t() { days.stream().filter(day -> day.getDate().getMonthValue() == "
+          "Month.SEPTEMBER.getValue()).count(); }"), False),
+    # java:S5838 Optional.empty()
+    ("S5838 isEqualTo(Optional.empty())", "java:S5838", TEST,
+     wrap("void t() { assertThat(Parser.parse(text)).isEqualTo(Optional.empty()); }"), True),
+    ("S5838 isEmpty() toza", "java:S5838", TEST,
+     wrap("void t() { assertThat(Parser.parse(text)).isEmpty(); }"), False),
+    ("S5838 isEqualTo(Optional.of(x)) tegilmaydi", "java:S5838", TEST,
+     wrap("void t() { assertThat(Parser.parse(text)).isEqualTo(Optional.of(expected)); }"), False),
+    # java:S5976 qator uzilishi shaklni o'zgartirmaydi
+    ("S5976 qator uzilishi bilan farq qiladigan uch test", "java:S5976", TEST,
+     wrap(WRAPPED_TESTS), True),
+]
+SONAR_CASES += SONAR26_CASES
+
 
 def _project(files):
     """Vaqtinchalik loyiha: {nisbiy yo'l: matn}; (ildiz, yozilgan yo'llar)."""
@@ -1410,6 +1585,42 @@ def case_hrm_loyiha_turlari():
             ("fayl diskda yo'q bo'lsa faqat o'z matni",
              not [f for f in check_code.check_text(unknown, missing)
                   if f.rule == "java:S6878"]),
+        ]
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def case_zonasiz_loyiha():
+    """S8700: argument turi boshqa fayldagi record/sinf a'zosidan aniqlanadi."""
+    root, paths = _project({
+        "src/main/java/x/Span.java": (
+            "package x;\nimport java.time.LocalDateTime;\n"
+            "public record Span(LocalDateTime startAt, LocalDateTime endAt, int minutes) {}\n"),
+        "src/main/java/x/Period.java": (
+            "package x;\nimport java.time.LocalDate;\n"
+            "public record Period(LocalDate startAt, LocalDate endAt) {}\n"),
+        "src/main/java/x/Entry.java": (
+            "package x;\nimport java.time.LocalDateTime;\n"
+            "public class Entry {\n  private LocalDateTime openedAt;\n"
+            "  public LocalDateTime getOpenedAt() { return openedAt; }\n}\n"),
+        "src/main/java/x/Use.java": (
+            "package x;\nimport java.time.Duration;\nimport java.time.temporal.ChronoUnit;\n"
+            "class Use {\n"
+            "  long a(Span span) { return Duration.between(span.startAt(), span.endAt()).toMinutes(); }\n"
+            "  long b(Period period) { return ChronoUnit.DAYS.between(period.startAt(), period.endAt()); }\n"
+            "  long c(Entry entry, java.time.LocalDateTime now) {\n"
+            "    return Duration.between(entry.getOpenedAt(), now).toMinutes();\n  }\n"
+            "  long d(Entry entry, java.time.Instant now) {\n"
+            "    return Duration.between(entry.getOpenedAt().atZone(Z).toInstant(), now).toMinutes();\n  }\n}\n"),
+    })
+    try:
+        got = [f.line for f in check_code.analyse(paths["src/main/java/x/Use.java"])
+               if f.rule == "java:S8700"]
+        return [
+            ("S8700 boshqa fayldagi record accessori (5-qator)", 5 in got),
+            ("S8700 LocalDate komponentli record toza (6-qator)", 6 not in got),
+            ("S8700 Lombok uslubidagi getter va maydon (8-qator)", 8 in got),
+            ("S8700 atZone().toInstant() toza (11-qator)", 11 not in got),
         ]
     finally:
         shutil.rmtree(root, ignore_errors=True)
@@ -1465,6 +1676,7 @@ def case_sonar_havolalar():
         "sonarqube 28.7": "deprecated",
         "sonarqube 27.8": "satr literali",
         "clean-code 21.6": "regexni",
+        "sonarqube 25.2": "null bo'lishi mumkin",
     }
     titles = section_titles()
     seen = {}
@@ -1539,6 +1751,7 @@ SECTIONS = [
     ("Sonar qoidalari: qo'llanma havolasi", case_sonar_havolalar),
     ("Sonar qoidalari: space-hrm loyiha turlari", case_hrm_loyiha_turlari),
     ("Sonar qoidalari: space-hrm xabarlar", case_hrm_xabarlar),
+    ("Sonar 26.x: LocalDateTime turi boshqa fayldan", case_zonasiz_loyiha),
     ("Test sizishi va static ArchUnit grafi", case_flaky_qoidalar),
     ("Toza fayl", case_toza_fayl),
     ("Ko'p fayl", case_kop_fayl),

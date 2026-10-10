@@ -31,13 +31,23 @@ S3457, S2093, S4087, S5976; space-hrm dan 2026-10-09: S125, S2245, S2133,
 S6068, S5841, S4144, S6878, S1640; lokal Sonar dan 2026-10-10: S6353, S6035,
 S1123, S6355, S1192 bor konstanta, S3415 manfiy va char literal) va qo'llanmadagi ikki test qoidasi
 (JVM system property ga yozish, static ArchUnit grafi; kalitsiz) tur ma'lumotisiz, regex va qavs sanash bilan. Ular haqiqiy loyihaning Sonar
-ro'yxatiga solishtirib sozlangan. Tur kerak bo'lgan qoidalar (S1130,
-S1874, S2184, S6809) ataylab yo'q: ular qo'llanmada qoida sifatida yoziladi
+ro'yxatiga solishtirib sozlangan. Tur kerak bo'lgan qoidalar (S1874,
+S2184, S6809) ataylab yo'q: ular qo'llanmada qoida sifatida yoziladi
 (sonarqube 28.17 va 30.15). S6878 va S1640 recordlar va enumlarni shu
 fayldan va loyiha `src` papkasidan oladi; S5841 faqat kolleksiya ekaniga
-dalil bor o'zgaruvchida (e'lon qilingan tur, `var x = ...collect(..)`). Daraja: `yuqori` hookni
-to'sadi (S8694, S6213, S8696 value-based tur), qolganlari `o'rta`:
-yozuvchiga eslatma.
+dalil bor o'zgaruvchida (e'lon qilingan tur, `var x = ...collect(..)`,
+bitta argumentli `extracting`).
+
+Sonar 26.x serveridan 2026-10-10: S8700 (LocalDateTime lar orasida
+Duration/ChronoUnit between: tur e'londan, zanjirdan yoki loyiha `src`
+dagi record/sinf a'zosidan), S2259 (shu fayldagi `return null` qaytaradigan
+metod natijasi tekshiruvsiz), S1130 (faqat assertion tanali test) shu
+fayldagi e'lonlardan aniq chiqsagina ishlaydi; S5778 argumentli fabrikani
+sanaydi, S3415 `doesNotContain`, S8696 zanjirli `== Month.X`, S5838
+`Optional.empty()`, S5976 qator uzilishini ham qamraydi. Aniqlanmaydigan
+S2259 (`Map.get` natijasi, `Persistable.getId()`) qo'llanmada (sonarqube
+25.2). Daraja: `yuqori` hookni to'sadi (S8694, S6213, S8696 value-based
+tur), qolganlari `o'rta`: yozuvchiga eslatma.
 """
 
 import collections
@@ -292,7 +302,8 @@ LITERAL_RE = re.compile(
     r'(?:"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])+\'|-?0[xX][0-9a-fA-F_]+[Ll]?'
     r'|-?\d[\d_.]*[LlFfDd]?|true|false|null)\Z')
 EQ_ASSERTS = ("assertEquals", "assertSame", "assertNotEquals", "assertNotSame")
-AG_ORDERED = ("isEqualTo", "isNotEqualTo", "isSameAs", "isNotSameAs", "contains")
+AG_ORDERED = ("isEqualTo", "isNotEqualTo", "isSameAs", "isNotSameAs", "contains",
+              "doesNotContain")
 # Kutilgan qiymatni argument qilib oladigan boshqa AssertJ metodlari: ularda
 # argument ko'pincha literal, shuning uchun faqat actual ning konstantaligi
 # tekshiriladi (Sonar `assertThat(Type.EMPTY).hasToString("...")` ni ham tutadi).
@@ -307,6 +318,7 @@ SIZE_COMPARISONS = {
 }
 ARRAY_DECL_RE = re.compile(
     r"[\w$>]\s*\[\]\s+([A-Za-z_$][\w$]*)\s*(?==|;|,|\)|:)")
+OPTIONAL_EMPTY_RE = re.compile(r"Optional\s*\.\s*empty\s*\(\s*\)\Z")
 CONTAINS_CALL_RE = re.compile(
     r"\.\s*contains\s*\((?:[^()]|\((?:[^()]|\([^()]*\))*\))*\)\Z")
 
@@ -320,6 +332,10 @@ VALUE_DECL_RE = re.compile(
 VALUE_CONST_RE = re.compile(r"(?:%s)\.(?:[A-Z][A-Z_0-9]*|now\(\)|of\w*\(.*\))\Z"
                             % "|".join(VALUE_TYPES))
 JAVA_TIME_ENUM_RE = re.compile(r"(?:DayOfWeek|Month)\.[A-Z]+\Z")
+# `<ifoda> == Month.MAY` va `Month.MAY == <ifoda>`; `Month.MAY.getValue()` emas.
+JAVA_TIME_ENUM_EQ_RE = re.compile(
+    r"(?P<op>[!=]=)\s*(?:DayOfWeek|Month)\s*\.\s*[A-Z]+\b(?!\s*[.(\w$])"
+    r"|(?<![\w$.])(?:DayOfWeek|Month)\s*\.\s*[A-Z]+\b(?!\s*[.(\w$])\s*(?P<op2>[!=]=)")
 EQ_OP_RE = re.compile(
     r"(?<![\w.$])([\w$]+(?:\s*\.\s*[\w$]+)*(?:\([^()]*\))?)\s*([!=]=)\s*"
     r"([\w$]+(?:\s*\.\s*[\w$]+)*(?:\([^()]*\))?)(?![\w$])")
@@ -454,10 +470,9 @@ def check_restricted_identifiers(code):
 # hasMessage da 0/37 ta topilma bergan: sinov kodi bazasida o'lchangan).
 THROW_CHAINS = ("isInstanceOf", "isExactlyInstanceOf", "isNotInstanceOf",
                 "isNotExactlyInstanceOf")
-# Qiymat fabrikalari istisno tashlamaydi, ular chaqiruv hisobiga kirmaydi.
-FACTORY_CALL_RE = re.compile(
-    r"(?<![\w$.])(?:List|Set|Map|Arrays|Optional|UUID|Duration|Instant|"
-    r"LocalDate|LocalDateTime|Collections)\s*\.\s*[A-Za-z_$][\w$]*\s*(?=\()")
+# Qabul qiluvchisi tur nomi bo'lgan, hammasi bosh harfdagi nomlar (UUID.randomUUID()):
+# konstanta emas, tur.
+UPPER_TYPES = frozenset(("UUID", "URI", "URL"))
 
 
 def _blank_nested_lambdas(body):
@@ -490,17 +505,42 @@ def _blank_nested_lambdas(body):
         pos = end
 
 
-def _count_calls(body):
-    body = FACTORY_CALL_RE.sub(lambda m: " " * len(m.group(0)), body)
-    return sum(1 for m in CALL_RE.finditer(body) if m.group(1) not in KEYWORDS)
+def _cannot_throw(body, match, lit):
+    """Chaqiruv argumentsiz va qabul qiluvchisi ifoda emas (static yoki `this`).
+
+    Sonar 26.x S5778 da "istisno tashlashi mumkin bo'lgan" chaqiruvni sanaydi:
+    `Set.of(id)` va `LocalDate.of(..)` sanaladi, `Set.of()`, `UUID.randomUUID()` va
+    sinfning o'z yordamchisi `service()` sanalmaydi (argument ham, null bo'lishi
+    mumkin qabul qiluvchi ham yo'q). `tabel.getId()` esa sanaladi. Konstruktor
+    doim sanaladi.
+    """
+    if not re.match(r"\s*\(\s*\)", lit[match.end():]):
+        return False   # `lit`: literali saqlangan nusxa, `load("a")` bo'sh emas
+    start = match.start(1)
+    before = body[:start].rstrip()
+    if re.search(r"(?<![\w$])new\Z", before):
+        return False
+    if not before.endswith("."):
+        return True
+    owner = re.search(r"([\w$]+)\Z", before[:-1].rstrip())
+    if owner is None:
+        return False   # `a().b()`, `xs[0].b()`: qabul qiluvchi ifoda
+    name = owner.group(1)
+    return name == "this" or (name[0].isupper() and (not name.isupper() or name in UPPER_TYPES))
 
 
-def check_throwing_lambda(code):
+def _count_calls(body, lit):
+    return sum(1 for m in CALL_RE.finditer(body)
+               if m.group(1) not in KEYWORDS and not _cannot_throw(body, m, lit))
+
+
+def check_throwing_lambda(code, lit):
     """java:S5778. assertThrows lambdasida bir nechta chaqiruv (heuristik).
 
     Faqat ifodali lambda (`() -> a.b(c.d())`) va `isInstanceOf` kabi zanjir
     yoki JUnit `assertThrows`: Sonar boshqa shaklni bayroqlamaydi, shuning
-    uchun biz ham.
+    uchun biz ham. Argumentli fabrika (`Set.of(id)`) ham chaqiruv hisobida
+    (_cannot_throw).
     """
     out = []
     for name in THROW_ASSERTS:
@@ -517,11 +557,12 @@ def check_throwing_lambda(code):
             if body.lstrip().startswith("{"):
                 continue
             body = _blank_nested_lambdas(body)
+            literal_body = lit[arrow + 2:lam[1]]
             if name == "assertThatThrownBy":
                 chain = re.match(r"\s*\.\s*(\w+)", code[close + 1:])
                 if not chain or chain.group(1) not in THROW_CHAINS:
                     continue
-            calls = _count_calls(body)
+            calls = _count_calls(body, literal_body)
             if calls < 2:
                 continue
             out.append(_find(
@@ -667,7 +708,7 @@ def _better_assertion(actual, method, expected, maps, arrays=frozenset()):
                 "`isEmpty()` bilan tekshiring yoki avval `isNotEmpty()` yozing")
     if method != "isEqualTo":
         return ""
-    if expected == ['""']:
+    if expected == ['""'] or (len(expected) == 1 and OPTIONAL_EMPTY_RE.match(expected[0])):
         return "`isEmpty()` ishlatilsin"
     if re.search(r"\.size\(\)\Z", flat):
         return "`hasSize(n)` (yoki `isEmpty()`) ishlatilsin"
@@ -806,6 +847,7 @@ def check_value_based_equality(code):
     """java:S8696. LocalDate, Instant, Optional va boshqa value-based turni ==/!= bilan."""
     names = set(m.group(1) for m in VALUE_DECL_RE.finditer(code))
     out = []
+    seen = set()
     for m in EQ_OP_RE.finditer(code):
         left, right = m.group(1), m.group(3)
         if "null" in (left, right):
@@ -824,6 +866,20 @@ def check_value_based_equality(code):
                 "value-based deb `==` da bayroqlaydi. `.equals(...)` yoki "
                 "`switch` ishlatilsin." % (_short(left), m.group(2), _short(right)),
                 "Equality", ref="sonarqube 28.17"))
+        seen.add(m.start(2))
+    # Chap tomon zanjir bo'lsa (`day.getDate().getMonth() == Month.MAY`) EQ_OP_RE
+    # uni olmaydi: enum konstantasining o'zi yetarli.
+    for m in JAVA_TIME_ENUM_EQ_RE.finditer(code):
+        op = m.start("op") if m.group("op") else m.start("op2")
+        if op in seen:
+            continue
+        seen.add(op)
+        out.append(_find(
+            "java:S8696", "o'rta", code, m.start(),
+            "`%s`: Sonar java.time enum (`DayOfWeek`, `Month`) ni ham value-based "
+            "deb `==` da bayroqlaydi. Butun son bilan (`getMonthValue() == "
+            "Month.MAY.getValue()`), `.equals(...)` yoki `switch` solishtiring."
+            % _short(m.group(0)), "Equality", ref="sonarqube 28.17"))
     return out
 
 
@@ -1135,6 +1191,7 @@ TEST_METHOD_RE = re.compile(
     r"\s*(?:public\s+|protected\s+|private\s+)?void\s+([\w$]+)\s*\(\s*\)"
     r"\s*(?:throws\s+[\w$.,\s]+)?(?=\{)")
 NUMBER_RE = re.compile(r"(?<![\w$.])\d[\w.]*")
+SHAPE_SPACE_RE = re.compile(r"\s*([().,;{}\[\]<>=+\-*/!&|?:])\s*")
 
 
 def check_similar_tests(text, code):
@@ -1149,7 +1206,10 @@ def check_similar_tests(text, code):
         shape = NUMBER_RE.sub("N", STRING_LITERAL_RE.sub('"S"', raw))
         if len(shape) < 40 or shape == raw:
             continue
-        groups[shape].append((m.start(), raw))
+        # Qatorni uzish (`)` dan keyin `.header(..)`) shaklni o'zgartirmaydi:
+        # tinish belgisi atrofidagi bo'shliq olinadi.
+        shape = SHAPE_SPACE_RE.sub(r"\1", shape)
+        groups[shape].append((m.start(1), raw))
     out = []
     for items in groups.values():
         if len(items) >= 3 and len({raw for _, raw in items}) >= 2:
@@ -1466,6 +1526,24 @@ def _asserted_nonempty_before(code, text, actual, pos):
     return False
 
 
+def _root_asserted_before(code, actual, pos):
+    """Shu metodda oldin boshqa `assertThat(..)` argumentida actual ning ildiz o'zgaruvchisi bormi.
+
+    `calendar.days()` ni `assertThat(day(calendar, 6)...)` oldin tekshirgan
+    bo'lsa Sonar 26.x `doesNotContain` ni bayroqlamagan (bitta misolda kuzatilgan).
+    """
+    root = re.match(r"\s*(?:this\s*\.\s*)?([A-Za-z_$][\w$]*)", actual)
+    if not root:
+        return False
+    start, _ = _method_span(code, pos)
+    word = re.compile(r"(?<![\w$.])%s\b" % re.escape(root.group(1)))
+    for m in ASSERT_THAT_RE.finditer(code, start, pos):
+        spans, _ = _split_args(code, m.end())
+        if spans and any(word.search(code[s:e]) for s, e in spans):
+            return True
+    return False
+
+
 def _is_nonempty_check(name, args):
     if name == "hasSize":
         return args != ["0"]
@@ -1473,17 +1551,45 @@ def _is_nonempty_check(name, args):
         name.startswith("hasSize") and not name.startswith("hasSizeLessThan"))
 
 
+# `X.class.getDeclaredFields()` kabi reflection massivlari: Sonar ularni
+# bayroqlashi o'lchanmagan, shuning uchun jim.
+REFLECTION_ARRAY_RE = re.compile(r"\.\s*class\s*\.\s*get\w+\s*\(\s*\)\s*\Z")
+
+
+def _later_nonempty(code, text, pos):
+    """Zanjirning `pos` dan keyingi qismida bo'shlikni rad etadigan assertion bormi."""
+    while True:
+        call = CHAIN_RE.match(code, pos)
+        if not call:
+            return False
+        args, end = _arg_texts(code, text, call.end())
+        if args is None:
+            return False
+        if _is_nonempty_check(call.group(1), args):
+            return True
+        pos = end + 1
+
+
 def check_vacuous_assertions(code, text):
-    """java:S5841. doesNotContain/allMatch/... bo'sh kolleksiyada ham o'tadi."""
+    """java:S5841. doesNotContain/allMatch/... bo'sh kolleksiyada ham o'tadi.
+
+    `assertThat(x.items()).extracting(Item::status).doesNotContain(..)`: bitta
+    argumentli `extracting` dan keyin `doesNotContain` faqat iterable da bor,
+    shuning uchun actual metod chaqiruvi bo'lsa ham kolleksiya (Sonar 26.x
+    shuni bayroqlaydi). `doesNotContainNull` bundan mustasno. Zanjirning keyingi
+    qismida `contains(..)` kabi bo'shlikni rad etuvchi assertion bo'lsa topilma yo'q.
+    """
     out = []
     for m in ASSERT_THAT_RE.finditer(code):
         actual_args, close = _arg_texts(code, text, m.end())
         if not actual_args or len(actual_args) != 1:
             continue
         actual = actual_args[0]
-        if (LITERAL_COLLECTION_RE.match(" ".join(actual.split()))
-                or not _collection_evidence(actual, code)):
+        if LITERAL_COLLECTION_RE.match(" ".join(actual.split())):
             continue
+        evidence = _collection_evidence(actual, code)
+        known = evidence      # actual ning o'zi kolleksiya ekani ma'lum
+        extracted = False
         nonempty, pos = False, close + 1
         while True:
             call = CHAIN_RE.match(code, pos)
@@ -1491,12 +1597,24 @@ def check_vacuous_assertions(code, text):
                 break
             name = call.group(1)
             args, end = _arg_texts(code, text, call.end())
-            if args is None or name in SUBJECT_CHANGERS:
+            if args is None:
+                break
+            if name == "extracting" and len(args) == 1:
+                evidence = extracted = True
+                pos = end + 1
+                continue
+            if name in SUBJECT_CHANGERS:
                 break
             if _is_nonempty_check(name, args):
                 nonempty = True
             elif name in VACUOUS_ASSERTS and not nonempty:
-                if not _asserted_nonempty_before(code, text, actual, m.start()):
+                if not evidence or (extracted and (name == "doesNotContainNull" or (
+                        not known and REFLECTION_ARRAY_RE.search(actual)))):
+                    break
+                clean = (_asserted_nonempty_before(code, text, actual, m.start())
+                         or _later_nonempty(code, text, end + 1)
+                         or (not known and _root_asserted_before(code, actual, m.start())))
+                if not clean:
                     out.append(_find(
                         "java:S5841", "o'rta", code, call.start(1),
                         "`assertThat(%s).%s(...)` bo'sh kolleksiyada ham o'tadi: test "
@@ -1743,6 +1861,621 @@ def check_enum_hashmap(code, path):
         % (key.rsplit(".", 1)[-1], key.rsplit(".", 1)[-1]),
         "Clean Code", ref="sonarqube 28.17")
         for key, at in candidates if key.rsplit(".", 1)[-1] in enums]
+
+
+# ---------------------------------------------------------------------------
+# Sonar 26.x qoidalari, tur ma'lumoti kerak bo'lganlari (S8700, S2259, S1130):
+# faqat shu fayl va loyiha `src` idagi e'lonlardan aniq chiqadigan holatda
+# ishlaydi, noaniq joyda jim qoladi.
+# ---------------------------------------------------------------------------
+
+LDT = "LocalDateTime"
+BETWEEN_RE = re.compile(
+    r"(?<![\w$.])(?:(?:java\s*\.\s*time\s*\.\s*)?(?:temporal\s*\.\s*)?"
+    r"(?:Duration|ChronoUnit\s*\.\s*[A-Z_]+)|[A-Z_]{3,})\s*\.\s*between\s*(?=\()")
+TYPED_DECL_RE = re.compile(
+    r"(?<![\w.$])([A-Z][\w$]*(?:\s*\.\s*[A-Z][\w$]*)*(?:\s*<[^;=(){}]*>)?(?:\s*\[\])*)\s+"
+    r"([a-z_$][\w$]*)\s*(?==|;|,|\)|:)")
+VAR_DECL_RE = re.compile(r"(?<![\w.$])var\s+([a-z_$][\w$]*)\s*=\s*([^;]+);")
+TYPE_HEAD_RE = re.compile(r"(?<![\w$.])(?:class|interface|enum|record)\s+([A-Z][\w$]*)\b")
+MEMBER_RE = re.compile(
+    r"(?<![\w$.@])([A-Z][\w$]*(?:\s*\.\s*[A-Z][\w$]*)*(?:\s*<[^;=(){}]*>)?(?:\s*\[\])*)\s+"
+    r"([a-z_$][\w$]*)\s*(?=\(|=|;)")
+COMPONENT_RE = re.compile(
+    r"([A-Z][\w$]*(?:\s*\.\s*[A-Z][\w$]*)*(?:\s*<.*>)?(?:\s*\[\])*)\s+([a-z_$][\w$]*)\s*\Z", re.S)
+ANNOTATION_TEXT_RE = re.compile(r"@[\w$.]+(?:\s*\((?:[^()]|\([^()]*\))*\))?")
+GENERICS_RE = re.compile(r"\s*<.*>", re.S)
+_MEMBER_CACHE = {}
+
+
+def _simple_type(text):
+    """`java.util.List<String>` -> `List`; `LocalDateTime[]` -> `LocalDateTime[]`."""
+    text = GENERICS_RE.sub("", " ".join(text.split()))
+    return re.sub(r"\s+", "", text).split(".")[-1]
+
+
+def _put_member(members, name, kind):
+    members[name] = kind if members.get(name, kind) == kind else None
+
+
+def _brace_depths(code):
+    """Har pozitsiyadagi `{` chuqurligi."""
+    depths, depth = [], 0
+    for c in code:
+        depths.append(depth)
+        if c == "{":
+            depth += 1
+        elif c == "}":
+            depth -= 1
+    return depths
+
+
+def _type_members(code):
+    """Faylda e'lon qilingan turlarning a'zolari: {tur: {nom: qaytish turi}}.
+
+    Record komponenti, maydon va metod (o'zining tanasida, ichki turniki emas).
+    Bir nom turli turda qaytsa qiymat `None`: noaniq.
+    """
+    out = {}
+    depths = None
+    for m in TYPE_HEAD_RE.finditer(code):
+        brace = code.find("{", m.end())
+        if brace == -1:
+            continue
+        members = out.setdefault(m.group(1), {})
+        head = code[m.end():brace]
+        if "(" in head:   # record komponentlari
+            spans, _ = _split_args(code, m.end() + head.index("("))
+            for s, e in spans or []:
+                comp = COMPONENT_RE.search(ANNOTATION_TEXT_RE.sub(" ", code[s:e]))
+                if comp:
+                    _put_member(members, comp.group(2), _simple_type(comp.group(1)))
+        end = _block_end(code, brace)
+        if end == -1:
+            continue
+        if depths is None:
+            depths = _brace_depths(code)
+        body_depth = depths[brace] + 1
+        for d in MEMBER_RE.finditer(code, brace + 1, end):
+            if d.group(1) not in NOT_A_TYPE and depths[d.start()] == body_depth:
+                _put_member(members, d.group(2), _simple_type(d.group(1)))
+    return out
+
+
+def _project_members(code, path):
+    """Shu fayl va loyiha `src` idagi turlar a'zolari (faqat LocalDateTime tilgan fayllar)."""
+    own = _type_members(code)
+    root = _src_root(path)
+    if root is None:
+        return own
+    if root not in _MEMBER_CACHE:
+        found, count = {}, 0
+        for base, _, names in os.walk(root):
+            for name in names:
+                count += 1
+                if not name.endswith(".java") or count > TYPE_FILE_LIMIT:
+                    continue
+                try:
+                    with open(os.path.join(base, name), encoding="utf-8",
+                              errors="replace") as handle:
+                        body = handle.read()
+                except OSError:
+                    continue
+                if LDT not in body:
+                    continue
+                for kind, members in _type_members(strip_noise(body)).items():
+                    slot = found.setdefault(kind, {})
+                    for key, value in members.items():
+                        _put_member(slot, key, value)
+        _MEMBER_CACHE[root] = found
+    merged = {k: dict(v) for k, v in _MEMBER_CACHE[root].items()}
+    merged.update(own)
+    return merged
+
+
+def _last_call(expr):
+    """`a.b(c)` -> ("a", "b", "c"); `b(c)` -> (None, "b", "c"); chaqiruv bo'lmasa None."""
+    if not expr.endswith(")"):
+        return None
+    depth = 0
+    for i in range(len(expr) - 1, -1, -1):
+        if expr[i] == ")":
+            depth += 1
+        elif expr[i] == "(":
+            depth -= 1
+            if depth == 0:
+                head = expr[:i].rstrip()
+                name = re.search(r"([A-Za-z_$][\w$]*)\Z", head)
+                if not name:
+                    return None
+                before = head[:name.start()].rstrip()
+                if before and not before.endswith("."):
+                    return None
+                return (before[:-1].rstrip() if before else None), name.group(1), expr[i + 1:-1].strip()
+    return None
+
+
+class _Typed:
+    """Faylning e'lonlari: ifodaning turini aniq bo'lsa aytadi, bo'lmasa None."""
+
+    def __init__(self, code, path):
+        self.code = code
+        self.path = path
+        self._members = None
+        self._own = None
+        decls = [(m.start(), m.group(2), _simple_type(m.group(1)), None)
+                 for m in TYPED_DECL_RE.finditer(code) if m.group(1) not in NOT_A_TYPE]
+        decls += [(m.start(), m.group(1), None, m.group(2)) for m in VAR_DECL_RE.finditer(code)]
+        self.decls = {}
+        for pos, name, kind, init in sorted(decls):
+            if kind is None:
+                kind = self.of(init, pos)
+            if kind:
+                self.decls.setdefault(name, []).append((pos, kind))
+
+    def members(self):
+        if self._members is None:
+            self._members = _project_members(self.code, self.path)
+        return self._members
+
+    def name_type(self, name, pos):
+        """O'zgaruvchining turi: `pos` dan oldingi eng yaqin e'lon (yo'q bo'lsa yagona e'lon)."""
+        found = self.decls.get(name)
+        if not found:
+            return None
+        before = [kind for p, kind in found if p < pos]
+        if before:
+            return before[-1]
+        kinds = {kind for _, kind in found}
+        return kinds.pop() if len(kinds) == 1 else None
+
+    def of(self, expr, pos):
+        e = " ".join(expr.split())
+        while e.startswith("(") and e.endswith(")") and _split_args(e, 0)[1] == len(e) - 1:
+            e = e[1:-1].strip()
+        cast = re.match(r"\(\s*([A-Z][\w$.]*)\s*\)\s*\S", e)
+        if cast:
+            return cast.group(1).split(".")[-1]
+        plain = re.match(r"(?:this\s*\.\s*)?([A-Za-z_$][\w$]*)\Z", e)
+        if plain:
+            return self.name_type(plain.group(1), pos)
+        if re.match(r"LocalDateTime\s*\.\s*\w+", e):
+            return LDT
+        call = _last_call(e)
+        if call is None:
+            return None
+        base, name, args = call
+        base_type = self.of(base, pos) if base else None
+        if base_type == LDT:
+            if name.startswith(("plus", "minus", "with")) or name == "truncatedTo":
+                return LDT
+            return None
+        if not args and name in ("toLocalDateTime", "atStartOfDay"):
+            return LDT
+        if name == "atTime" and base_type == "LocalDate":
+            return LDT
+        if base is None:
+            return self._own_member(name)
+        if base_type is None and re.match(r"[A-Z][\w$]*(?:\s*\.\s*[A-Z][\w$]*)*\Z", base):
+            base_type = base.split(".")[-1].strip()   # static chaqiruv: `Type.method()`
+        return self._member(base_type, name) if base_type else None
+
+    def _own_member(self, name):
+        """Qabul qiluvchisiz chaqiruv: shu fayldagi turlardan yagonasining a'zosi."""
+        if self._own is None:
+            self._own = _type_members(self.code)
+        owners = [k for k, v in self._own.items() if v.get(name)]
+        return self._own[owners[0]][name] if len(owners) == 1 else None
+
+    def _member(self, owner, name):
+        members = self.members().get(owner)
+        if members is None:
+            return None
+        if name in members:
+            return members[name]
+        prop = re.match(r"(?:get|is)([A-Z]\w*)\Z", name)
+        if prop:
+            return members.get(prop.group(1)[0].lower() + prop.group(1)[1:])
+        return None
+
+
+def check_zoneless_between(code, path):
+    """java:S8700. `Duration.between` / `ChronoUnit.X.between` zonasiz LocalDateTime lar orasida.
+
+    Faqat LocalDateTime: `ChronoUnit.DAYS.between(from, to)` (LocalDate) va
+    Instant orasidagi hisob Sonar 26.x da bayroqlanmagan. Argument turi shu
+    fayldagi e'lon, `x.atStartOfDay()`/`.plusX()` zanjiri yoki loyihadagi
+    record/sinf a'zosidan (`day.startAt()`) aniq chiqsagina topiladi.
+    """
+    out = []
+    typed = None
+    for m in BETWEEN_RE.finditer(code):
+        args, _ = _split_args(code, m.end())
+        if not args or len(args) != 2:
+            continue
+        if typed is None:
+            typed = _Typed(code, path)
+        kinds = {typed.of(code[s:e], m.start()) for s, e in args}
+        if LDT in kinds:
+            call = " ".join(code[m.start():args[-1][1] + 1].split())
+            # Sonar birinchi argument turgan qatorni bayroqlaydi.
+            first = args[0][0] + len(code[args[0][0]:args[0][1]]) - len(
+                code[args[0][0]:args[0][1]].lstrip())
+            out.append(_find(
+                "java:S8700", "o'rta", code, first,
+                "`%s)` zonasiz `LocalDateTime` lar orasida: DST o'tishida natija "
+                "devor soatidan farq qiladi. Ikkalasini `atZone(zone)` bilan "
+                "`ZonedDateTime` ga (yoki `Instant` ga) aylantirib hisoblang."
+                % _short(call), "Time", ref="sonarqube 28.17"))
+    return out
+
+
+# S2259: shu faylda `return null` (yoki `? x : null`, `@Nullable`) qaytaradigan
+# metod natijasi null tekshiruvisiz dereference qilinadi yoki parametrini
+# dereference qiladigan metodga beriladi.
+NULLABLE_ANNOTATION_RE = re.compile(r"@(?:Nullable|CheckForNull)\b")
+RETURN_RE = re.compile(r"(?<![\w$.])return\s+(?=[^;])")
+NULL_GUARD_TEMPLATE = (
+    r"(?<![\w$.]){v}\s*[!=]=\s*null|null\s*[!=]=\s*{v}(?![\w$])|"
+    r"(?:requireNonNull|ofNullable|notNull|isNull|nonNull|checkNotNull|assertNotNull|"
+    r"assertNull|assertThat)\s*\(\s*{v}\b|(?<![\w$.]){v}\s+instanceof\b")
+
+
+def _blank_inner_bodies(body):
+    """Lambda va anonim sinf tanalari bo'sh joyga: ulardagi `return null` metodniki emas."""
+    out = list(body)
+    for m in re.finditer(r"->\s*\{|(?<![\w$])new\s+[\w$.<>]+\s*\([^()]*\)\s*\{", body):
+        brace = m.end() - 1
+        end = _block_end(body, brace)
+        if end == -1:
+            continue
+        for i in range(brace, end + 1):
+            if out[i] != "\n":
+                out[i] = " "
+    return "".join(out)
+
+
+def _split_ternary(expr):
+    """`c ? a : b` -> (c, a, b) eng tashqi darajada; ternary bo'lmasa None."""
+    depth, question, nested = 0, -1, 0
+    for i, ch in enumerate(expr):
+        if ch in "([{":
+            depth += 1
+        elif ch in ")]}":
+            depth -= 1
+        elif depth == 0 and ch == "?":
+            if question == -1:
+                question = i
+            else:
+                nested += 1
+        elif depth == 0 and ch == ":" and question != -1:
+            if nested:
+                nested -= 1
+            else:
+                return expr[:question], expr[question + 1:i], expr[i + 1:]
+    return None
+
+
+def _may_be_null(expr, params):
+    """Ifoda null bo'lishi mumkin; `p == null ? null : f(p)` null ni faqat o'tkazadi."""
+    expr = expr.strip()
+    if expr == "null":
+        return True
+    parts = _split_ternary(expr)
+    if not parts:
+        return False
+    cond, yes, no = parts
+    guard = re.fullmatch(r"\s*([A-Za-z_$][\w$]*)\s*([!=]=)\s*null\s*", cond)
+    if guard and guard.group(1) in params:
+        passed, other = (yes, no) if guard.group(2) == "==" else (no, yes)
+        if passed.strip() == "null":
+            return _may_be_null(other, params)
+    return _may_be_null(yes, params) or _may_be_null(no, params)
+
+
+def _returns_null(body, params):
+    """Tanada `return null;` yoki eng tashqi darajadagi `return c ? x : null;` bor.
+
+    Parametr null bo'lsa null qaytarish (`if (p == null) return null;`) hisobga
+    kirmaydi: Sonar uni faqat argument ma'lum null bo'lganda ko'radi.
+    """
+    for m in RETURN_RE.finditer(body):
+        end = _statement_end(body, m.end())
+        if end == -1 or not _may_be_null(body[m.end():end], params):
+            continue
+        guard = re.search(r"if\s*\(\s*([A-Za-z_$][\w$]*)\s*==\s*null\s*\)\s*\{?\s*\Z",
+                          body[:m.start()])
+        if body[m.end():end].strip() == "null" and guard and guard.group(1) in params:
+            continue
+        return True
+    return False
+
+
+def _param_count(params):
+    return len([p for p in re.split(r",(?![^<]*>)", params) if p.strip()])
+
+
+def _same_file_methods(code):
+    """{(nom, parametrlar soni): (parametrlar, tana boshi, tana oxiri, @Nullable bormi)}.
+
+    Bir xil nom va parametr soni ikki marta e'lon qilingan metod tashlanadi
+    (qaysi biri chaqirilgani tur ma'lumotisiz noaniq).
+    """
+    found, dup = {}, set()
+    for m in METHOD_HEAD_RE.finditer(code):
+        if m.group(1) in NOT_RETURN_TYPE:
+            continue
+        prev = PREV_TOKEN_RE.search(code[max(0, m.start() - 200):m.start()])
+        if not prev or prev.group(1) in NOT_RETURN_TYPE:
+            continue
+        open_idx = m.end() - 1
+        close = _block_end(code, open_idx)
+        if close == -1:
+            continue
+        header = code[max(0, m.start() - 160):m.start()]
+        header = header[max(header.rfind(";"), header.rfind("{"), header.rfind("}")) + 1:]
+        key = (m.group(1), _param_count(m.group(2)))
+        if key in found:
+            dup.add(key)
+        found[key] = (m.group(2), open_idx + 1, close,
+                      bool(NULLABLE_ANNOTATION_RE.search(header)))
+    return {k: v for k, v in found.items() if k not in dup}
+
+
+def _returns_call_of(code, body_span, callee):
+    """Tanada `return callee(..);` bor: natija butunlay shu chaqiruv."""
+    name, arity = callee
+    start, end = body_span
+    for m in re.finditer(r"(?<![\w$.])return\s+(?:this\s*\.\s*)?%s\s*(?=\()" % re.escape(name),
+                         code[start:end]):
+        args, close = _split_args(code, start + m.end())
+        if (close != -1 and len(args or []) == arity
+                and code[close + 1:end].lstrip().startswith(";")):
+            return True
+    return False
+
+
+def _nullable_methods(code, methods):
+    """Null qaytarishi mumkin metodlar (to'g'ridan-to'g'ri yoki shunday metod natijasi orqali)."""
+    nullable = set()
+    for key, (params, start, end, annotated) in methods.items():
+        names = {w[-1] for w in (WORD_RE.findall(p) for p in params.split(",")) if w}
+        if annotated or _returns_null(_blank_inner_bodies(code[start:end]), names):
+            nullable.add(key)
+    changed = True
+    while changed:
+        changed = False
+        for key, (_, start, end, _) in methods.items():
+            if key not in nullable and any(
+                    _returns_call_of(code, (start, end), c) for c in nullable):
+                nullable.add(key)
+                changed = True
+    return nullable
+
+
+def _guarded_before(code, var, start, pos):
+    """`var` uchun `start..pos` oralig'ida null tekshiruvi yoki qayta tayinlash bormi."""
+    segment = code[start:pos]
+    return bool(re.search(NULL_GUARD_TEMPLATE.format(v=re.escape(var)), segment)
+                or re.search(r"(?<![\w$.])%s\s*=(?!=)" % re.escape(var), segment))
+
+
+def _param_dereferenced(code, methods, callee, index):
+    """Metod `index` parametrini null tekshirmasdan dereference qiladimi."""
+    params, start, end, _ = methods[callee]
+    parts = [p for p in re.split(r",(?![^<]*>)", params) if p.strip()]
+    words = WORD_RE.findall(parts[index]) if index < len(parts) else []
+    if len(words) < 2:
+        return False
+    name = words[-1]
+    body = code[start:end]
+    deref = re.search(r"(?<![\w$.])%s\s*\.\s*[A-Za-z_$]" % re.escape(name), body)
+    return bool(deref and not re.search(
+        NULL_GUARD_TEMPLATE.format(v=re.escape(name)), body[:deref.start()]))
+
+
+def _alternation(names):
+    return "|".join(re.escape(n) for n in sorted(names))
+
+
+def check_nullable_result(code):
+    """java:S2259. Shu faylda null qaytarishi mumkin metodning natijasi tekshiruvsiz ishlatiladi."""
+    methods = _same_file_methods(code)
+    nullable = _nullable_methods(code, methods) if methods else set()
+    if not nullable:
+        return []
+    nullable_names = {n for n, _ in nullable}
+    decl_re = re.compile(
+        r"(?<![\w$.])(?:final\s+)?(?:var|[A-Z][\w$.<>\[\]]*)\s+([a-z_$][\w$]*)\s*=\s*"
+        r"(?:this\s*\.\s*)?(%s)\s*(?=\()" % _alternation(nullable_names))
+    call_re = re.compile(r"(?<![\w$.])(?:this\s*\.\s*)?(%s)\s*(?=\()"
+                         % _alternation(nullable_names))
+    all_re = re.compile(r"(?<![\w$.])(%s)\s*(?=\()" % _alternation({n for n, _ in methods}))
+    out, reported = [], set()
+
+    def is_nullable_call(name_pos, name):
+        args, close = _split_args(code, name_pos)
+        ok = args is not None and (name, len(args)) in nullable
+        return ok, close
+
+    def report(pos, what):
+        line = line_of(code, pos)
+        if line in reported:
+            return
+        reported.add(line)
+        out.append(_find(
+            "java:S2259", "o'rta", code, pos,
+            "%s null bo'lishi mumkin (shu fayldagi metod `null` qaytaradi), "
+            "tekshiruvsiz ishlatilmoqda: `NullPointerException`. Metod null "
+            "qaytarmasin (`Optional`, erta qaytish, yoki shart tekshirilgan "
+            "yo'lda alohida metod) yoki natija tekshirilsin." % what,
+            "Reliability", ref="sonarqube 25.2"))
+
+    for (name, _), (_, start, end, _) in methods.items():
+        local = {}
+        for m in decl_re.finditer(code, start, end):
+            ok, close = is_nullable_call(m.end(), m.group(2))
+            if ok and code[close + 1:].lstrip().startswith(";"):
+                local[m.group(1)] = close + 1
+        for m in call_re.finditer(code, start, end):
+            ok, close = is_nullable_call(m.end(), m.group(1))
+            if ok and re.match(r"\s*\.\s*[A-Za-z_$]", code[close + 1:end]):
+                report(m.start(1), "`%s(..)` natijasi" % m.group(1))
+        for var, decl in local.items():
+            for use in re.finditer(r"(?<![\w$.])%s\s*\.\s*[A-Za-z_$]" % re.escape(var),
+                                   code[decl:end]):
+                at = decl + use.start()
+                if _guarded_before(code, var, decl, at):
+                    break
+                report(at, "`%s`" % var)
+        for m in all_re.finditer(code, start, end):
+            args, _ = _split_args(code, m.end())
+            callee = (m.group(1), len(args or []))
+            if args is None or callee not in methods or callee[0] == name:
+                continue
+            for i, (s, e) in enumerate(args):
+                arg = code[s:e].strip()
+                what = None
+                direct = re.match(r"(?:this\s*\.\s*)?([A-Za-z_$][\w$]*)\s*(?=\()", arg)
+                if direct and arg.endswith(")"):
+                    inner, close = _split_args(arg, direct.end())
+                    if inner is not None and close == len(arg) - 1 and (
+                            direct.group(1), len(inner)) in nullable:
+                        what = "`%s(..)` natijasi" % direct.group(1)
+                elif arg in local and s > local[arg] and not _guarded_before(
+                        code, arg, local[arg], s):
+                    what = "`%s`" % arg
+                if what and _param_dereferenced(code, methods, callee, i):
+                    report(m.start(1), what)
+    return out
+
+
+THROWS_RE = re.compile(r"\)\s*throws\s+([\w$.,\s]+?)\s*\{")
+TEST_ANNOTATIONS = frozenset((
+    "Test", "ParameterizedTest", "RepeatedTest", "TestFactory", "BeforeEach", "AfterEach",
+    "BeforeAll", "AfterAll"))
+# Tana faqat shu chaqiruvlardan iborat bo'lsa, `throws` ortiqcha: assertion
+# kutubxonalari (AssertJ, JUnit) tekshirilgan istisno tashlamaydi, lambda
+# ichidagisi esa metodga o'tmaydi.
+ASSERT_STARTERS = frozenset((
+    "assertThat", "assertThatThrownBy", "assertThatCode", "assertThatExceptionOfType",
+    "assertThatNullPointerException", "assertThatIllegalArgumentException",
+    "assertThatIllegalStateException", "assertThrows", "assertEquals", "assertNotEquals",
+    "assertTrue", "assertFalse", "assertNull", "assertNotNull", "assertSame",
+    "assertNotSame", "fail"))
+PURE_CALLS = frozenset(("of", "asList", "ofNullable", "empty"))
+STATEMENT_WORDS_RE = re.compile(
+    r"(?<![\w$])(?:new|throw|try|if|for|while|switch|return|synchronized|do)\b|[{}]")
+
+
+def _blank_lambda_bodies(code):
+    """Barcha lambda tanalari (blok ham, ifoda ham) bo'sh joyga."""
+    out = list(code)
+    pos = 0
+    while True:
+        arrow = code.find("->", pos)
+        if arrow == -1:
+            return "".join(out)
+        i = arrow + 2
+        while i < len(code) and code[i].isspace():
+            i += 1
+        if i < len(code) and code[i] == "{":
+            end = _block_end(code, i)
+            end = len(code) if end == -1 else end + 1
+        else:
+            depth, end = 0, len(code)
+            for j in range(i, len(code)):
+                c = code[j]
+                if c in "([{":
+                    depth += 1
+                elif c in ")]}":
+                    if depth == 0:
+                        end = j
+                        break
+                    depth -= 1
+                elif c in ",;" and depth == 0:
+                    end = j
+                    break
+        for j in range(i, end):
+            if out[j] != "\n":
+                out[j] = " "
+        pos = max(end, arrow + 2)
+
+
+def _is_assertion_statement(stmt):
+    """`assertThat(a).isEqualTo(b)` shaklidagi statement; argumentlarda faqat sof fabrikalar."""
+    head = re.match(r"\s*([A-Za-z_$][\w$]*)\s*(?=\()", stmt)
+    if not head or head.group(1) not in ASSERT_STARTERS:
+        return False
+    pos = head.end()
+    while True:
+        args, close = _split_args(stmt, pos)
+        if args is None:
+            return False
+        for s, e in args:
+            for inner in CALL_RE.finditer(stmt[s:e]):
+                if inner.group(1) not in KEYWORDS and inner.group(1) not in PURE_CALLS:
+                    return False
+        nxt = CHAIN_RE.match(stmt, close + 1)
+        if not nxt:
+            return not stmt[close + 1:].strip()
+        pos = nxt.end()
+
+
+def _only_assertions(body):
+    """Tana faqat assertion statementlaridan iboratmi."""
+    flat = _blank_lambda_bodies(body)
+    if STATEMENT_WORDS_RE.search(flat):
+        return False
+    statements = [s for s in flat.split(";") if s.strip()]
+    return bool(statements) and all(_is_assertion_statement(s) for s in statements)
+
+
+def _member_header(code, name_start):
+    """Metod nomidan oldingi annotatsiya va modifikatorlar (oldingi a'zo oxirigacha)."""
+    depth = 0
+    for i in range(name_start - 1, -1, -1):
+        c = code[i]
+        if c == ")":
+            depth += 1
+        elif c == "(":
+            depth -= 1
+        elif c in ";{}" and depth <= 0:
+            return code[i + 1:name_start]
+    return code[:name_start]
+
+
+def check_superfluous_throws(code):
+    """java:S1130. Test (yoki private) metod `throws` deydi, lekin tana faqat assertion."""
+    out = []
+    for m in THROWS_RE.finditer(code):
+        depth, i = 0, m.start()
+        while i >= 0:
+            if code[i] == ")":
+                depth += 1
+            elif code[i] == "(":
+                depth -= 1
+                if depth == 0:
+                    break
+            i -= 1
+        name = re.search(r"([A-Za-z_$][\w$]*)\s*\Z", code[:i]) if i >= 0 else None
+        if not name:
+            continue
+        header = _member_header(code, name.start())
+        annotations = {a.split(".")[-1] for a in re.findall(r"@([A-Za-z_$][\w$.]*)", header)}
+        if "Override" in annotations or not (
+                annotations & TEST_ANNOTATIONS or re.search(r"(?<![\w$])private\b", header)):
+            continue
+        end = _block_end(code, m.end() - 1)
+        if end != -1 and _only_assertions(code[m.end():end]):
+            out.append(_find(
+                "java:S1130", "o'rta", code, code.index("throws", m.start()),
+                "`%s` `throws %s` deydi, lekin tanasi tekshirilgan istisno "
+                "tashlamaydi (faqat assertion; lambda ichidagi chaqiruv metodga "
+                "o'tmaydi): `throws` ni olib tashlang."
+                % (name.group(1), " ".join(m.group(1).split())),
+                "Clean Code", ref="sonarqube 30.15"))
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -2085,18 +2818,21 @@ def check_sonar(text, code, is_test, path=""):
     out.extend(check_deprecated(code, text))
     out.extend(check_known_constant(code, text))
     out.extend(check_space_escape_regex(code, text))
+    out.extend(check_zoneless_between(code, path))
+    out.extend(check_nullable_result(code))
     if not is_test:
         out.extend(check_insecure_random(code))
     if is_test:
         out.extend(check_mockito_eq(code))
         out.extend(check_vacuous_assertions(code, text))
         out.extend(check_similar_tests(text, code))
-        out.extend(check_throwing_lambda(code))
+        out.extend(check_throwing_lambda(code, lit))
         out.extend(check_system_clock(code))
         out.extend(check_assertions(code, text))
         out.extend(check_joined_assertions(code))
         out.extend(check_test_env_leak(code))
         out.extend(check_static_archunit_graph(code))
+        out.extend(check_superfluous_throws(code))
     return out
 
 

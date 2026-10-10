@@ -315,6 +315,19 @@ class PaymentRetryConfigurationTest {
 
 Bu runner yana: `withBean(...)` bilan soxta bean qo'shish, `withConfiguration(AutoConfigurations.of(...))` bilan auto-configuration zanjirini sinash, `assertThat(ctx).hasFailed()` va `getFailure().hasMessageContaining(...)` bilan noto'g'ri qiymatda kontekst qulashini tasdiqlash imkonini beradi. Bir test ~30-200 ms vaqt oladi - `@SpringBootTest`ga nisbatan o'nlab marta tez.
 
+**`ApplicationContextRunner` `application.yml` ni o'qimaydi.** `@SpringBootTest` Spring Boot ning config data yuklovchisini ishga tushiradi, runner esa yo'q: `application.yml` dagi standart qiymatlar kontekstga tushmaydi va test "kalit yo'q" deb yiqiladi (yoki, undan yomoni, record ning kod ichidagi standarti bilan yashil bo'ladi va yml ni umuman tekshirmaydi). Yml ni haqiqatan o'qitish uchun `ConfigDataApplicationContextInitializer` beriladi.
+
+```java
+// YOMON: yml o'qilmaydi, test yml dagi standartni tekshirmayapti
+runner.run(ctx -> assertThat(ctx.getBean(RetryProperties.class).maxAttempts()).isEqualTo(3));
+
+// YAXSHI: application.yml yuklanadi
+runner.withInitializer(new ConfigDataApplicationContextInitializer())
+        .run(ctx -> assertThat(ctx.getBean(RetryProperties.class).maxAttempts()).isEqualTo(3));
+```
+
+Ikkinchi tuzoq: konfiguratsiya sinflarini skanerlab tekshiradigan "qo'riqchi" test (har `@ConfigurationProperties` yoki `@Configuration` ni topadi) ichki `@TestConfiguration` sinfini ham topadi va ularni production konfiguratsiyasi deb hisoblaydi. Skaner filtrida `@TestConfiguration` bilan belgilangan (va test paketidagi) sinflarni chiqarib tashlang, aks holda test sinfi qo'shilishi qo'riqchini yiqitadi.
+
 ## 6.9 AOP va proxy: unit testda ushlab bo'lmaydigan xatti-harakat
 
 Spring'ning `@Transactional`, `@Cacheable`, `@Async`, `@Retryable`, `@PreAuthorize` kabi annotatsiyalari proxy (JDK dynamic proxy yoki CGLIB) orqali ishlaydi. Unit testda obyekt `new` bilan yaratilganda proxy yo'q - annotatsiyalar shunchaki e'tiborsiz qoladi. Natijada quyidagi xato unit testda hech qachon ko'rinmaydi:
