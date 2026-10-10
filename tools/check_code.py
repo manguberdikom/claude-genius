@@ -2019,6 +2019,45 @@ def check_known_constant(code, text):
     return out
 
 
+REGEX_ARG_RE = re.compile(
+    r"(?:\.(?:replaceAll|replaceFirst|split|matches)|"
+    r"Pattern\s*\.\s*(?:compile|matches))\s*\(\s*$")
+
+
+def check_space_escape_regex(code, text):
+    r"""Regex argumentida bitta teskari chiziqli `\s`.
+
+    Java 15 dan boshlab satr literalidagi `\s` BO'SHLIQ escape i
+    (JLS 3.10.7), regex whitespace sinfi emas. Shuning uchun
+    `replaceAll("\s+", " ")` amalda `" +"` ni bildiradi: qator ko'chishi
+    va tab normallashtirilmaydi, kod esa normallashtirgandek ko'rinadi.
+    Kompilyator ham, Sonar ham jim. To'g'risi `"\s+"`.
+    """
+    out = []
+    for start, _, value in _string_literals(text):
+        pos = 0
+        while True:
+            at = value.find("s", pos)
+            if at < 1:
+                break
+            pos = at + 1
+            back = 0
+            while at - back - 1 >= 0 and value[at - back - 1] == "\\":
+                back += 1
+            if back % 2 == 0:
+                continue
+            if not REGEX_ARG_RE.search(code[max(0, start - 60):start]):
+                continue
+            out.append(_find(
+                "java:S6395", "yuqori", code, start,
+                "Regex argumentida `\\s` bitta teskari chiziq bilan: Java 15 dan "
+                "bu BO'SHLIQ escape i (JLS 3.10.7), whitespace sinfi emas. "
+                "`\\\\s` yozilsin.",
+                "Java tuzoqlari", ref="clean-code 21.6"))
+            break
+    return out
+
+
 def check_sonar(text, code, is_test, path=""):
     """Sonar qoidalari: tur ma'lumotisiz aniqlanadiganlari."""
     out = []
@@ -2044,6 +2083,7 @@ def check_sonar(text, code, is_test, path=""):
     out.extend(check_regex_literals(code, text))
     out.extend(check_deprecated(code, text))
     out.extend(check_known_constant(code, text))
+    out.extend(check_space_escape_regex(code, text))
     if not is_test:
         out.extend(check_insecure_random(code))
     if is_test:

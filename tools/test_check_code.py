@@ -77,6 +77,10 @@ NO_FINDING = [
     ("char ichidagi qo'shtirnoq",
      "class A { char q = '\"'; String t = \"catch (Exception e) {}\"; }"),
     ("text block", 'class A { String t = """\n  // "x" e.printStackTrace();\n  """; }'),
+    ("regex da ikki teskari chiziqli s",
+     'class A { String f(String t) { return t.replaceAll("\\\\s+", " "); } }'),
+    ("regex bo'lmagan literalda bitta teskari chiziqli s",
+     'class A { String t = "a\\sb"; }'),
 ]
 # URL va `/*` li satrdan keyingi kod baribir o'qiladi: yolg'on manfiy yo'q.
 ONE_FINDING = [
@@ -84,6 +88,10 @@ ONE_FINDING = [
      'class A { String u = "http://x"; void f(Exception e) { e.printStackTrace(); } }'),
     ("`image/*` dan keyingi kod",
      'class A { String t = "image/*";\n void f(Exception e) { e.printStackTrace(); } }'),
+    ("regex da bitta teskari chiziqli s",
+     'class A { String f(String t) { return t.replaceAll("\\s+", " "); } }'),
+    ("Pattern.compile da bitta teskari chiziqli s",
+     'class A { Object p = java.util.regex.Pattern.compile("\\s+"); }'),
 ]
 
 

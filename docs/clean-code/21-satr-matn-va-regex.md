@@ -151,6 +151,16 @@ private static final Pattern IBAN_FORMAT =
 boolean valid = IBAN_FORMAT.matcher(iban).matches();
 ```
 
+Teskari chiziqni ikki marta yozishni unutmang. Java 15 dan boshlab satr literalidagi `\s` **bo'shliq escape i** (JLS 3.10.7), regex whitespace sinfi emas. Shuning uchun `replaceAll("\s+", " ")` amalda `" +"` ni bildiradi: ketma-ket probellar birlashadi, lekin qator ko'chishi va tab normallashtirilmaydi. Kod esa normallashtirgandek ko'rinadi, kompilyator ham, Sonar ham jim. `\d` va `\w` da bu tuzoq yo'q: ular yaroqsiz escape bo'lgani uchun kompilyatsiya xatosi beradi.
+
+```java
+// yomon: regex emas, " +" ga teng
+String oneLine = text.replaceAll("\s+", " ");
+
+// yaxshi: whitespace sinfi
+String oneLine = text.replaceAll("\\s+", " ");
+```
+
 Murakkab regex uchun `Pattern.COMMENTS` flagi bilan izohli shaklga o'tish mumkin, bu uzun regexni o'qiladigan qiladi.
 
 ```java
