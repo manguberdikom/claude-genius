@@ -334,7 +334,7 @@ Tavsiya: `TODO` ni issue tracker raqami bilan yozishni majburiy qiling va `FIXME
 
 ## 28.7 Eskirgan (deprecated) API ishlatish
 
-Qoida: `java:S1874`
+Qoida: `java:S1874`, `java:S5738`, `java:S1133`
 
 Sonar bu mavzuda ikki tomondan yuradi. `java:S1874` eskirgan elementni chaqirgan kodni, `java:S1133` esa o'zingiz `@Deprecated` deb belgilagan va hali o'chirmagan kodni ko'rsatadi.
 
@@ -368,6 +368,62 @@ public BigDecimal fee(BigDecimal amount) {
 ```
 
 Tavsiya: har bir `@Deprecated` ga `forRemoval` va o'chirish versiyasini yozing, aks holda eskirgan kod abadiy yashaydi.
+
+### `forRemoval = true` iste'molchiga boshqa qoida beradi
+
+`forRemoval` qo'shish iste'molchi tomonda topilmaning qoidasini ham almashtiradi, nafaqat signalni kuchaytiradi:
+
+| Chaqirilgan element | Qoida | Jiddiylik | Qamrov |
+|---|---|---|---|
+| `@Deprecated` | `java:S1874` | Minor | main va test |
+| `@Deprecated(forRemoval = true)` | `java:S5738` | Major | main va test |
+
+Amaliy farqi: `java:S1874` ni keyingi reliz uchun qoldirib ketish mumkin, `java:S5738` ni esa yo'q. Element o'chirilishi rejalashtirilgan, demak kutish faqat kompilyatsiya buziladigan sanani kechiktiradi. Ikkisining qamrovi `All`, shuning uchun test kodi ham sanaladi: katta modulda topilmalarning ko'pi aynan testlardan chiqadi.
+
+### Fasadni tor interfeyslarga ko'chirishning uch tuzog'i
+
+Kutubxona bitta keng interfeysni (fasadni) `forRemoval` qilib, uning o'rniga bir nechta tor interfeys bersa, iste'molchi tomonda uch narsa kutib turadi.
+
+**1. Konstruktor parametrlari o'sadi, `java:S107` ochiladi.** Fasaddan uch xil o'qiydigan sinf endi uch maydon oladi. `java:S5738` ni yopib, `java:S107` ni ochish yaxshilanish emas: ko'chirishdan oldin har sinfning parametr sonini sanab chiqing va chegaraga yaqinini parametr obyektiga yig'ing (`27.3`).
+
+**2. Mockito mock da `default` ko'prik metodi ishlamaydi.** Kutubxona odatda eski imzoni saqlab, yangi tirik overload ni `default` metod qilib qo'yadi:
+
+```java
+public interface Catalog {
+
+    /** Tirik overload: eski imzoga delegatsiya qiladi. */
+    default List<Item> find(Kind kind, int limit) {
+        return find(kind == null ? null : kind.name(), limit);
+    }
+
+    /** @deprecated since 2.0: {@link #find(Kind, int)} ishlatilsin */
+    @Deprecated(since = "2.0")
+    List<Item> find(String kind, int limit);
+}
+```
+
+Ishlab chiqarish kodi tirik overloadga o'tgach, test stublarini ham ko'chirish KERAK. Sabab: `mock(Catalog.class)` da `default` metodning tanasi chaqirilmaydi, Mockito uni ham stub qilinadigan metod deb ko'radi. Eski imzoda qolgan stub endi hech narsani stub qilmaydi va mock yangi overloaddan `null` yoki bo'sh ro'yxat qaytaradi:
+
+```java
+// Endi ishlamaydi: production `find(Kind, int)` ni chaqiradi, stub esa String imzoda
+when(catalog.find(eq("BOOK"), anyInt())).thenReturn(List.of(item));
+
+// To'g'risi
+when(catalog.find(eq(Kind.BOOK), anyInt())).thenReturn(List.of(item));
+```
+
+Bu JIM buzilish: kompilyatsiya o'tadi, test esa boshqa yo'ldan yiqiladi yoki yolg'on o'tadi. `verify` va `never()` qatorlari ham shu bilan birga ko'chadi.
+
+**3. String parametr enum ga aylansa, `valueOf(name())` kompilyator tekshirmaydigan ko'prik.** Yangi overload kutubxonaning o'z enum ini so'raydi, sizning kodingizda esa o'z enumingiz turadi:
+
+```java
+// Ikki enum nomlari mos kelishiga ishonadi, kompilyator buni bilmaydi
+return catalog.find(Kind.valueOf(scope.name()), limit);
+```
+
+Bugun to'g'ri, lekin o'z enumingizga kutubxonada yo'q qiymat qo'shilsa xato runtime da `IllegalArgumentException` bo'lib chiqadi, oldin esa string sifatida bemalol o'tib ketardi. Qiymatlar soni oz bo'lsa, o'z enumingizga kutubxona enumini maydon qilib bering: moslik kompilyatsiya vaqtida tekshiriladi.
+
+Test tomonidagi mehnatni kamaytirish uchun: fasadni mock qilgan testlar tor interfeyslarning hammasidan meros oladigan test-only interfeys mock qilsa, `when(...)` qatorlari joyida qoladi va faqat tur nomi almashadi. Bu production dagi ajratishni buzmaydi, chunki ishlab chiqarish kodi bunday turni ko'rmaydi.
 
 ## 28.8 `public` maydon va kapsullashning buzilishi
 

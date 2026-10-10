@@ -116,7 +116,7 @@ S5131	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S5135	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S5145	tekshirilmadi	tekshirilmadi	tekshirilmadi
 S5146	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S5738	tekshirilmadi	tekshirilmadi	tekshirilmadi
+S5738	CODE_SMELL	Major	All
 S5778	CODE_SMELL	Major	Tests
 S5786	CODE_SMELL	Info	Tests
 S5838	tekshirilmadi	tekshirilmadi	tekshirilmadi
