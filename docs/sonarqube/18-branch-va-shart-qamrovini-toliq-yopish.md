@@ -412,6 +412,32 @@ Halol xulosa: 100% tarmoq qamrovi xatosiz kodni kafolatlamaydi. JaCoCo kombinats
 - [ ] Har bir `catch` bloki uchun mock bilan xato yuzaga keltiruvchi test yozing va `catch` ichidagi xatti harakatni `verify` bilan tasdiqlang.
 - [ ] Kamida bitta uzun `if` zanjirini `Map` yoki strategiyaga aylantirib, tarmoq soni va cognitive complexity qanchaga kamayganini o'lchab yozib qo'ying.
 - [ ] CI da `fetch-depth: 0` va `sonar.qualitygate.wait=true` yoqilganini tekshirib, gate qizil bo'lganda pipeline haqiqatan yiqilishiga ishonch hosil qiling.
+- [18.16 Qaysi operand sinalmagani: taxmin qilmasdan aniqlash](#1816-qaysi-operand-sinalmagani-taxmin-qilmasdan-aniqlash)
+
+## 18.16 Qaysi operand sinalmagani: taxmin qilmasdan aniqlash
+
+Hisobotda `shox 3/4` yoki `1/2` ko'rinsa, bu "shu qatorga test kerak" degani emas, "shu qatordagi aniq bitta
+natija sinalmagan" degani. Ikki operandli `a && b` to'rt shox beradi: `a` ning rost va yolg'oni, `b` ning rost va
+yolg'oni. `3/4` bitta natija qolganini aytadi, qaysi biri qolganini aytmaydi.
+
+Taxmin qilib test yozish eng ko'p uchraydigan vaqt yo'qotish. Yangi test o'tadi, mavjud testlar ham o'tadi, lekin
+hisobotdagi son **o'zgarmaydi**: yozilgan holat allaqachon boshqa test bilan qoplangan edi.
+
+**Tartib:**
+
+1. Qatorni butun o'qib operandlarni ajratish.
+2. Mavjud testlarni o'qib har operandning qaysi natijasi allaqachon sinalganini yozib chiqish. Odatda "qiymat bor
+   va yaroqli" yo'li qoplangan bo'ladi, qolgani esa `null`, bo'sh satr yoki bo'sh kolleksiya.
+3. Faqat qolgan natijani beradigan holat yozish.
+4. Hisobotni qayta olib, shu qatorning soni to'lganini ko'rish. To'lmasa, 2-qadamdagi ro'yxat xato edi.
+
+Misol: `x != null && !x.isBlank()` da "bor va bo'sh emas" hamda "bor va bo'sh" holatlari ikkita test bilan
+qoplangan bo'lishi mumkin, qolgani esa `x == null`. Bo'sh satr bilan yana bir test yozish sonni o'zgartirmaydi.
+
+**Qolgan shox yetib bo'lmaydigan bo'lsa** test yozilmaydi: shart soddalashtiriladi. Buni oldin tekshirish kerak,
+chunki yetib bo'lmaydigan shox uchun yozilgan test ko'pincha reflection yoki mock bilan kodni buzib chaqiradi va
+keyinchalik yolg'on ishonch beradi.
+
 
 ---
 

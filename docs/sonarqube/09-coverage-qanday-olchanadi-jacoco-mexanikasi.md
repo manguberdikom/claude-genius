@@ -315,6 +315,31 @@ Qamrovning ikkinchi chegarasi ma'lumot bo'yicha. Branch qamrovi "ikki yo'nalish 
 - [ ] HTML hisobotdagi eng past branch qamrovi bo'lgan beshta metodni oching va har bir sariq rombcha uchun qaysi shart sinalmaganini yozib chiqing.
 - [ ] Har bir `orElseThrow` va `Optional` lambda si uchun uni bajaradigan alohida test holati borligini tasdiqlang.
 - [ ] PIT mutation testing ni eng muhim ikki paketga ulab, mutation score bilan line coverage o'rtasidagi farqni o'lchang.
+- [9.12 Generatsiya qilingan kod jacoco hisobotida bor, Sonar da yo'q](#912-generatsiya-qilingan-kod-jacoco-hisobotida-bor-sonar-da-yoq)
+
+## 9.12 Generatsiya qilingan kod jacoco hisobotida bor, Sonar da yo'q
+
+Annotatsiya protsessori yozgan sinflar (mapper implementatsiyalari, builder lar, DTO yordamchilari) `build` ichida
+oddiy `.class` bo'lib turadi, shuning uchun **jacoco ularni sanaydi**. Sonar esa generatsiya qilingan manbani
+hisobga olmaydi. Natijada ikki raqam hech qachon mos kelmaydi va lokal hisobotda 100% ga yetib bo'lmaydi.
+
+Bu farq kichik emas. Mapper generatori har maydon uchun null tekshiruvi yozadi va ularning yarmi hech qachon
+bajarilmaydi, chunki chaqiruvchi doim to'ldirilgan obyekt beradi. Bitta katta mapper yolg'iz o'zi o'nlab qoplanmagan
+shox berishi mumkin, qo'lda yozilgan kodda esa bitta ham qolmagan bo'ladi.
+
+**Qanday o'lchash kerak.** Yig'ma foizga qarab xulosa chiqarmaslik kerak. Jacoco XML dan fayl bo'yicha bo'shliq
+ro'yxatini chiqarib, generatsiya qilingan fayl nomlarini (masalan `*MapperImpl`) ro'yxatdan chiqarib tashlash, keyin
+qolganini ko'rish. Qolgani bo'sh bo'lsa, qo'lda yozilgan kodda qoplanmagan joy yo'q va maqsad bajarilgan, lokal
+foiz 100 bo'lmasa ham.
+
+Shu sababli serverning "qamralmagan fayllar" ro'yxati lokal ro'yxatdan qisqa yoki butunlay boshqa ko'rinadi: ikki
+ro'yxat boshqa to'plamni qamraydi. Serverdagi ro'yxat tugaganda ish tugadi; lokal ro'yxatdagi qoldiq generatsiya
+qilingan kod bo'lsa, unga test yozish behuda ish.
+
+**Exclusion qo'shish kerakmi.** Sonar tomonida kerak emas, u allaqachon chiqarib tashlagan. Jacoco tomonida
+`excludes` qo'shish mumkin, lekin shart emas: o'lchovni to'g'ri o'qish yetarli va hisobot to'liq qolgani
+generatorning xulqi o'zgarganini ko'rishga yordam beradi.
+
 
 ---
 

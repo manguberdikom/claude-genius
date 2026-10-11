@@ -367,6 +367,50 @@ Oxirgi va eng muhim qadam: bostirishni oson, tuzatishni qiyin qilib qo'ymaslik. 
 - [ ] Quality profile ni eksport qilib repozitoriyda saqlang, har bir o'chirilgan qoida yoniga sabab va ADR havolasini yozing.
 - [ ] Yangi konvensiyani Sonar plagini bilan emas, avval shablon qoida yoki ArchUnit testi bilan avtomatlashtirishga harakat qiling.
 - [ ] Har sprintda suppress, false positive va accepted sonlarini yozib boring va chorakda tendensiyani ko'rib chiqing.
+- [24.13 Spring Data repository `default` metodi va `java:S6809`](#2413-spring-data-repository-default-metodi-va-javas6809)
+
+## 24.13 Spring Data repository `default` metodi va `java:S6809`
+
+`java:S6809` ("Call transactional methods via an injected dependency instead of directly via `this`") Spring Data
+repository interfeysidagi `default` metodda **false positive** beradi. Qoida o'zi to'g'ri: oddiy Spring bean ida
+`this.transactionalMethod()` proksini chetlab o'tadi va `@Transactional` ishlamaydi. Lekin repository interfeysi
+oddiy bean emas.
+
+Dalil kutubxona manbasida turadi (`spring-data-commons`, `-sources.jar`):
+
+- repository fabrikasi interfeysda `default` metod borligini ko'rsa, proksiga `DefaultMethodInvokingMethodInterceptor`
+  qo'shadi;
+- o'sha interceptor `method.isDefault()` bo'lsa metod uchun `MethodHandle` oladi va uni **proksiga** `bindTo` qilib
+  chaqiradi.
+
+Ya'ni `default` metod tanasidagi `this` repository proksining o'zi. Shu tanadan chaqirilgan `@Transactional` yoki
+`@Modifying` metod to'liq advice zanjiridan o'tadi. Sonar proksini ko'rmaydi, u faqat bytecode dagi `this` chaqiruvini
+ko'radi, shuning uchun shikoyat qiladi.
+
+**To'g'ri yechim: kodda bostirish.** Metod darajasida qoida kaliti bilan `@SuppressWarnings` va sababini aytadigan
+bir qatorli izoh. Doira tor bo'lishi shart: sinf darajasiga qo'yilsa interfeysdagi boshqa haqiqiy topilmalar ham
+yashirinadi.
+
+```java
+@SuppressWarnings("java:S6809") // this is the repository proxy: the default method is bound to it
+default int updateStatusIfCurrent(Long id, Status next, Clock clock) {
+    return updateStatusIfCurrentAt(id, next, LocalDateTime.now(clock));
+}
+```
+
+**Refaktoring qilish noto'g'ri.** Sonar talab qilgan shakl bu `default` metodlarni alohida komponentga ko'chirish va
+repository ni unga inyeksiya qilish. Natijada qulaylik metodining ichidagi vaqt manbasi va konstantalar hamma
+chaqiruvchiga tarqaladi, chaqiruvchilar imzosi o'zgaradi va public shartnoma buziladi. Ya'ni ishlayotgan kodni
+to'g'ri xulq uchun emas, skaner ko'rmagani uchun yomonlashtirish bo'ladi.
+
+**Qaysi `default` metodga annotatsiya kerak emas.** Tranzaksiyali metod chaqirmaydigan qulaylik metodi (masalan
+faqat konstantalarni to'ldirib `findX(...)` chaqiradigani) topilma bermaydi. Annotatsiyani faqat hisobotda chiqqan
+metodga qo'yiladi, oldindan hammasiga emas.
+
+**Nega serverda "won't fix" emas.** Kodda bostirish o'zgarish tarixida ko'rinadi va kodni o'qigan odam sababni
+darhol topadi; serverdagi belgi esa repo tashqarisida qoladi va yangi tahlilda yoki loyiha ko'chirilganda yo'qoladi.
+Agar jamoada "serverda belgilanmaydi" kelishuvi bo'lsa, bu yechim yagona yo'l bo'lib qoladi.
+
 
 ---
 
