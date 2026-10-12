@@ -13,3 +13,7 @@ type: feedback
   repolarida push foydalanuvchida qoladi, KLONDA esa push saboq bosqichining o'z qismi.
 - Tekshirish: `git branch --show-current` `main` bo'lishi kerak. Lokal `pre-push` hook
   (`.git/hooks/pre-push`) `main` dan boshqa ref ga pushni rad etadi.
+- GitHub tomonida `main` default branch va protected: force-push va branchni o'chirish
+  TAQIQLANGAN, adminga ham. Oddiy push ishlaydi (PR, status check va push cheklovi yo'q).
+  Demak `main` tarixini qayta yozib bo'lmaydi: xato commitni `--force` bilan tuzatish
+  o'rniga ustiga yangi commit qo'yiladi.
