@@ -235,8 +235,9 @@ test infratuzilmasi tuzog'i), u klonga yoziladi:
 2. Klon ochiq repo: proyekt nomi, modul, sinf va fayl nomlari
    yozilmaydi, misol umumiy bo'ladi (`memory/README.md`).
 3. Tekshiriladi: `tools/test_check_code.py`, `tools/check_docs.py`.
-4. Klonning joriy tarmog'ida bitta qisqa commit qilinadi va push
-   qilinadi.
+4. Klonning `main` branchida bitta qisqa commit qilinadi va `main` ga push
+   qilinadi. Klonda `main` dan boshqa branch ochilmaydi va boshqa branchga
+   push qilinmaydi: butun bilim bitta tarmoqda turadi.
 5. Snapshot yangilanadi:
    `python install/install.py --genius-path <klon> --apply`.
 
