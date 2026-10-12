@@ -1753,6 +1753,56 @@ def case_flaky_qoidalar():
     return rows
 
 
+REGCLASS_SQL = "SELECT to_regclass('myschema.mytable')::text"
+REGCLASS_CASES = [
+    # (nom, yo'l, kod, kutilgan topilmalar soni)
+    ("assertThat(queryForObject(..::text)).isEqualTo(\"s.t\")", TEST,
+     wrap("void t() {\n  assertThat(jdbc.queryForObject(\"" + REGCLASS_SQL
+          + "\", String.class))\n      .isEqualTo(\"myschema.mytable\");\n}"), 1),
+    ("o'zgaruvchi orqali, keyin isEqualTo(\"s.t\")", TEST,
+     wrap("void t() {\n  String n = jdbc.queryForObject(\"" + REGCLASS_SQL
+          + "\", String.class);\n  assertThat(n).isEqualTo(\"myschema.mytable\");\n}"), 1),
+    ("assertEquals(\"s.t\", ..::text)", TEST,
+     wrap("void t() {\n  assertEquals(\"myschema.mytable\", jdbc.queryForObject(\""
+          + REGCLASS_SQL + "\", String.class));\n}"), 1),
+    ("text block ichida ::text", TEST,
+     wrap("void t() {\n  assertThat(jdbc.queryForObject(\"\"\"\n      "
+          + REGCLASS_SQL + "\n      \"\"\", String.class)).isEqualTo(\"a.b\");\n}"), 1),
+    ("IS NOT NULL isTrue toza", TEST,
+     wrap("void t() {\n  assertThat(jdbc.queryForObject(\"SELECT to_regclass('myschema.mytable') "
+          "IS NOT NULL\", Boolean.class)).isTrue();\n}"), 0),
+    ("::text siz schema li nom bilan solishtirish toza", TEST,
+     wrap("void t() {\n  assertThat(jdbc.queryForObject(\"SELECT to_regclass('myschema.mytable')\","
+          " String.class)).isEqualTo(\"myschema.mytable\");\n}"), 0),
+    ("::text, schema siz oddiy nom toza", TEST,
+     wrap("void t() {\n  assertThat(jdbc.queryForObject(\"" + REGCLASS_SQL
+          + "\", String.class)).isEqualTo(\"mytable\");\n}"), 0),
+    ("::text, tenglik emas (isNotNull) toza", TEST,
+     wrap("void t() {\n  assertThat(jdbc.queryForObject(\"" + REGCLASS_SQL
+          + "\", String.class)).isNotNull();\n}"), 0),
+    ("boshqa matn ::text, schema li literal toza", TEST,
+     wrap("void t() {\n  assertThat(jdbc.queryForObject(\"SELECT name::text FROM t\", String.class))"
+          ".isEqualTo(\"a.b\");\n}"), 0),
+    ("izohdagi misol toza", TEST,
+     wrap("void t() {\n  // assertThat(q(\"" + REGCLASS_SQL + "\")).isEqualTo(\"a.b\");\n}"), 0),
+    ("main kodda tegilmaydi", MAIN,
+     wrap("void t() {\n  assertThat(jdbc.queryForObject(\"" + REGCLASS_SQL
+          + "\", String.class)).isEqualTo(\"a.b\");\n}"), 0),
+]
+
+
+def case_regclass_matn():
+    rows = []
+    for name, path, code, expect in REGCLASS_CASES:
+        got = [f for f in check_code.check_text(code, path)
+               if f.ref == "architect 33.13"]
+        rows.append(("%s (topildi: %d)" % (name, len(got)), len(got) == expect))
+    import docref
+    rows.append(("architect 33.13 indeksda bor",
+                 docref.by_ref("architect 33.13") == "architect 33.13"))
+    return rows
+
+
 SECTIONS = [
     ("Topilishi kerak", case_topilishi),
     ("Qo'llanmaga ulanish", case_qollanma),
@@ -1768,6 +1818,7 @@ SECTIONS = [
     ("Sonar qoidalari: space-hrm xabarlar", case_hrm_xabarlar),
     ("Sonar 26.x: LocalDateTime turi boshqa fayldan", case_zonasiz_loyiha),
     ("Test sizishi va static ArchUnit grafi", case_flaky_qoidalar),
+    ("to_regclass(..)::text va schema li nom", case_regclass_matn),
     ("Toza fayl", case_toza_fayl),
     ("Ko'p fayl", case_kop_fayl),
     ("Zanjir majburlanadi", case_zanjir),

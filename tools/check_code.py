@@ -1275,6 +1275,53 @@ def check_test_env_leak(code):
     return out
 
 
+REGCLASS_TEXT_RE = re.compile(
+    r"\bto_regclass\s*\([^)]*\)\s*::\s*text\b", re.IGNORECASE)
+# `isEqualTo("schema.name")` / `assertEquals("schema.name", ..)`: ikki qismli
+# identifikator. `"1.5"` yoki bo'shliqli matn emas, `"name"` ham emas.
+QUALIFIED_EQ_RE = re.compile(
+    r"\b(?:isEqualTo|isEqualToIgnoringCase|assertEquals)\s*\(\s*"
+    r"\"[A-Za-z_]\w*\.[A-Za-z_]\w*\"")
+ASSIGN_RE = re.compile(r"(?:^|[\s(])([A-Za-z_]\w*)\s*=(?!=)")
+
+
+def check_regclass_text_schema(code, lit):
+    """Testda `to_regclass(..)::text` ni `schema.nom` matni bilan tenglash.
+
+    `regclass` matnga joriy `search_path` ga nisbatan chiqadi: schema yo'lda
+    bo'lsa prefiks tushib qoladi va test datasource schema ni pin qilganda
+    qizaradi. Faqat tenglik `schema.nom` ga bo'lsa bayroqlanadi; `::text` siz
+    `IS NOT NULL` va schema siz `"nom"` bilan solishtirish toza.
+    """
+    out = []
+    for m in REGCLASS_TEXT_RE.finditer(lit):
+        start = max(code.rfind(c, 0, m.start()) for c in ";{}") + 1
+        end = _statement_end(code, start)
+        if end == -1:
+            end = code.find(";", m.end())
+        if end == -1:
+            end = len(code)
+        stmt = lit[start:end]
+        hit = QUALIFIED_EQ_RE.search(stmt)
+        if not hit:
+            var = ASSIGN_RE.search(code[start:m.start()])
+            if var:
+                hit = re.search(
+                    r"\bassertThat\s*\(\s*%s\s*\)\s*\.\s*isEqualTo\s*\(\s*"
+                    r"\"[A-Za-z_]\w*\.[A-Za-z_]\w*\"" % re.escape(var.group(1)),
+                    lit[end:])
+        if hit:
+            out.append(_find(
+                "", "o'rta", code, m.start(),
+                "Testda `to_regclass(..)::text` `schema.nom` matni bilan "
+                "solishtirilyapti: `regclass` matnga joriy `search_path` ga nisbatan "
+                "chiqadi, schema yo'lda bo'lsa prefiks tushib `\"nom\"` qaytadi va "
+                "datasource schema ni pin qilganda test qizaradi. Mavjudlikni "
+                "so'rang: `SELECT to_regclass('schema.nom') IS NOT NULL` va `isTrue()`.",
+                "Flaky Test", ref="architect 33.13"))
+    return out
+
+
 def check_static_archunit_graph(code):
     """Testda static `JavaClasses` maydoniga ClassFileImporter importi."""
     out = []
@@ -2851,6 +2898,7 @@ def check_sonar(text, code, is_test, path=""):
         out.extend(check_assertions(code, text))
         out.extend(check_joined_assertions(code))
         out.extend(check_test_env_leak(code))
+        out.extend(check_regclass_text_schema(code, lit))
         out.extend(check_static_archunit_graph(code))
         out.extend(check_superfluous_throws(code))
     return out

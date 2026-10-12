@@ -7,7 +7,7 @@
 # 33. Sxema migratsiyasi va to'xtashsiz reliz (Schema Migration and Zero-Downtime Release)
 
 <details>
-<summary>Bu bobdagi 13 bo'lim</summary>
+<summary>Bu bobdagi 14 bo'lim</summary>
 
 - [33.1 Migratsiya vositalari: Flyway va Liquibase, versiyalash va nomlash tartibi](#331-migratsiya-vositalari-flyway-va-liquibase-versiyalash-va-nomlash-tartibi)
 - [33.2 Migratsiya qoidalari: oldinga faqat yangi fayl, qo'lda o'zgartirmaslik](#332-migratsiya-qoidalari-oldinga-faqat-yangi-fayl-qolda-ozgartirmaslik)
@@ -21,7 +21,8 @@
 - [33.10 Kod va sxema relizini bir-biriga moslashtirish: eski kod yangi sxemada ishlasin](#3310-kod-va-sxema-relizini-bir-biriga-moslashtirish-eski-kod-yangi-sxemada-ishlasin)
 - [33.11 Orqaga qaytish (rollback) rejasi: sxemani qaytarish nega qiyin](#3311-orqaga-qaytish-rollback-rejasi-sxemani-qaytarish-nega-qiyin)
 - [33.12 Migratsiyani sinash: ishlab chiqarish hajmidagi nusxada vaqtini o'lchash](#3312-migratsiyani-sinash-ishlab-chiqarish-hajmidagi-nusxada-vaqtini-olchash)
-- [33.13 Amalda qo'llash](#3313-amalda-qollash)
+- [33.13 Boshqa schema jadvalini o'qiydigan changeset: ruxsatni tekshiradigan precondition](#3313-boshqa-schema-jadvalini-oqiydigan-changeset-ruxsatni-tekshiradigan-precondition)
+- [33.14 Amalda qo'llash](#3314-amalda-qollash)
 
 </details>
 
@@ -415,10 +416,52 @@ Snapshot'dan nusxa ko'taring, unga production yukining 20-30 foizini bering, key
 | Replika 8 daqiqa orqada qoldi | Bitta ulkan `UPDATE` WAL'ni to'ldirdi | Bo'laklash va `pg_stat_replication` nazorati |
 | Deploy paytida `column does not exist` | Sxema eski kod bilan mos emas | N-1 moslik qoidasi, expand bosqichi |
 | Pod migratsiya paytida restart bo'ldi | Startup migratsiya liveness probe'dan uzoq ketdi | Migratsiyani alohida Job'ga chiqarish |
+| Precondition o'tdi, changeset `permission denied for schema` bilan yiqildi | `tableExists` va `to_regclass` katalogni o'qiydi, ruxsatni emas | `sqlCheck` + `has_schema_privilege` va `has_table_privilege` (33.13) |
 | Flyway ishga tushmadi, checksum xatosi | Qo'llangan migratsiya fayli tahrirlangan | Faylni qaytarish, tuzatishni yangi faylda berish |
 | `DROP COLUMN` dan keyin disk bo'shamadi | Ma'lumot qatorlarda qoladi | `VACUUM FULL` yoki jadvalni asta qayta yozish |
 
-## 33.13 Amalda qo'llash
+## 33.13 Boshqa schema jadvalini o'qiydigan changeset: ruxsatni tekshiradigan precondition
+
+Changeset boshqa schema'dagi jadvaldan `SELECT` qilsa, odatda uni "jadval bor bo'lsa ishla" sharti bilan o'raymiz. Migratsiya roliga o'sha schema'ga ruxsat berilmagan bo'lsa, bu shart himoya qilmaydi:
+
+```yaml
+      preConditions:
+        onFail: MARK_RAN
+        tableExists:
+          schemaName: other
+          tableName: thing
+```
+
+Sabab: `tableExists` ham, `to_regclass(...) IS NOT NULL` ham `pg_catalog` ni o'qiydi, u esa ruxsatdan qat'i nazar hamma rolga ko'rinadi. Jadval bor, precondition o'tadi, keyin changeset SQL'i `permission denied for schema other` bilan yiqiladi va deploy to'xtaydi. Katalogni o'qiydigan tekshiruv jadval borligini aytadi, uni o'qiy olishingizni emas.
+
+To'g'ri shakl ruxsatning o'zini tekshiradi:
+
+```yaml
+      preConditions:
+        onFail: MARK_RAN
+        onError: MARK_RAN
+        sqlCheck:
+          expectedResult: 1
+          sql: |
+            SELECT CASE
+                     WHEN to_regnamespace('other') IS NULL THEN 0
+                     WHEN NOT has_schema_privilege('other', 'USAGE') THEN 0
+                     WHEN to_regclass('other.thing') IS NULL THEN 0
+                     WHEN NOT has_table_privilege('other.thing', 'SELECT') THEN 0
+                     ELSE 1
+                   END
+```
+
+Bu shaklda to'rt nuqta bor.
+
+1. `CASE ... WHEN` zanjiri ishlatiladi, `AND` emas. SQL'da `AND` ning short-circuit'i kafolatlanmagan, shuning uchun yo'q schema'da `has_schema_privilege` xato berishi mumkin. `CASE` ning `WHEN` shoxlari esa ketma-ket baholanadi (SQL standarti): schema yo'q bo'lsa keyingi shoxlarga yetib bormaydi.
+2. Schema darajasidagi `USAGE` tekshiruvi yetarli emas: changeset o'qiydigan har jadval uchun `has_table_privilege` kerak. `public` schema'da `USAGE` sukut bo'yicha `PUBLIC` ga berilgan (PostgreSQL 15 dan oldin), ya'ni u yerda faqat jadval darajasidagi tekshiruv himoya qiladi. Qisman grant berilgan holatda bitta vakil jadval bilan guard o'tib ketadi va keyin `permission denied for table` chiqadi.
+3. Allaqachon qo'llangan changeset'ga precondition qo'shish xavfsiz. Liquibase checksum'ni faqat `changes` (va `sqlVisitors`) dan hisoblaydi, `preConditions` unga kirmaydi; qo'llangan changeset'ning precondition'i qayta baholanmaydi ham. Shu sababli `changes` blokiga tegib bo'lmaydi (33.2), precondition'ga tegish mumkin.
+4. Bunday guard'ni faqat integration test isbotlaydi: jadvallar bor, lekin rolga ruxsat berilmagan baza kerak. "Jadval yo'q" holatini qoplaydigan test bu xatoni ushlamaydi, chunki eski guard ham, yangisi ham o'sha holatda bir xil ishlaydi. Testda migratsiya roli o'z schema'sining egasi bo'lishi va bazada `CREATE` huquqiga ega bo'lishi kerak, aks holda `CREATE SCHEMA IF NOT EXISTS` ham yiqiladi: PostgreSQL huquqni `IF NOT EXISTS` shortcut'idan oldin tekshiradi.
+
+Testda `to_regclass('s.t')::text` ni `"s.t"` bilan solishtirmang: `regclass` matnga `search_path` ga nisbatan chiqadi va schema yo'lda bo'lsa prefiks tushib qoladi. Mavjudlikni `to_regclass('s.t') IS NOT NULL` bilan so'rang.
+
+## 33.14 Amalda qo'llash
 
 - [ ] Loyihadagi hamma migratsiya fayllarini ko'rib chiqing va `spring.jpa.hibernate.ddl-auto` production profilida `none` ekanini tasdiqlang.
 - [ ] Har migratsiya faylining boshiga `SET lock_timeout = '3s'` qo'shing va deploy pipeline'ga `55P03` xatosida 5 martagacha qayta urinish mantiqini kiriting.
@@ -428,6 +471,7 @@ Snapshot'dan nusxa ko'taring, unga production yukining 20-30 foizini bering, key
 - [ ] Invalid indekslarni (`pg_index.indisvalid = false`) topadigan so'rovni monitoring'ga alert sifatida qo'shing.
 - [ ] Backfill uchun bo'laklab ishlaydigan runner yozing, unda bo'lak kattaligi va replika lag chegarasi sozlanadigan bo'lsin.
 - [ ] Qaytarib bo'lmaydigan migratsiyalar ro'yxatini tuzing va har biri uchun "oldingi relizdan necha kun keyin chiqadi" muddatini belgilang.
+- [ ] Boshqa schema'dan o'qiydigan har changeset'ning precondition'i `tableExists` emas, har o'qiladigan jadval uchun `has_table_privilege` tekshiradigan `sqlCheck` ekanini tasdiqlang.
 
 ---
 

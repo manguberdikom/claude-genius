@@ -62,7 +62,7 @@ sodir bo'lishining mexanikasi, va shu bilimdan qanday qaror chiqarish.
 
 ### VI. Amaliyot va o'sish
 
-- **33.** [Sxema migratsiyasi va to'xtashsiz reliz (Schema Migration and Zero-Downtime Release)](33-sxema-migratsiyasi-va-toxtashsiz-reliz.md) - 13 bo'lim
+- **33.** [Sxema migratsiyasi va to'xtashsiz reliz (Schema Migration and Zero-Downtime Release)](33-sxema-migratsiyasi-va-toxtashsiz-reliz.md) - 14 bo'lim
 - **34.** [Legacy kod va bosqichma-bosqich refaktoring (Legacy Code and Refactoring)](34-legacy-kod-va-bosqichma-bosqich-refaktoring.md) - 13 bo'lim
 - **35.** [Incident, on-call va post-mortem (Incidents and Post-mortems)](35-incident-on-call-va-post-mortem.md) - 14 bo'lim
 - **36.** [Code review va jamoada texnik yetakchilik (Code Review and Technical Leadership)](36-code-review-va-jamoada-texnik-yetakchilik.md) - 13 bo'lim
