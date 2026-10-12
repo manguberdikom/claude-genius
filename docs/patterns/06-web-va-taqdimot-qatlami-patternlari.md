@@ -7,7 +7,7 @@
 # 6. Web va taqdimot qatlami patternlari (Web & Presentation Patterns)
 
 <details>
-<summary>Bu bobdagi 35 bo'lim</summary>
+<summary>Bu bobdagi 36 bo'lim</summary>
 
 - [6.1 Model-Ko'rinish-Boshqaruvchi (Model-View-Controller, MVC)](#61-model-korinish-boshqaruvchi-model-view-controller-mvc)
 - [6.2 Old boshqaruvchi (Front Controller - DispatcherServlet)](#62-old-boshqaruvchi-front-controller---dispatcherservlet)
@@ -43,7 +43,8 @@
 - [6.32 Ko'rinish aniqlovchi (View Resolver)](#632-korinish-aniqlovchi-view-resolver)
 - [6.33 Asinxron so'rovlarni qayta ishlash (Async Request Processing - Callable, DeferredResult, StreamingResponseBody)](#633-asinxron-sorovlarni-qayta-ishlash-async-request-processing---callable-deferredresult-streamingresponsebody)
 - [6.34 Server tomonida renderlash, SPA va gipermedia ilovalar (Server-Side Rendering vs SPA vs Hypermedia-Driven Application)](#634-server-tomonida-renderlash-spa-va-gipermedia-ilovalar-server-side-rendering-vs-spa-vs-hypermedia-driven-application)
-- [6.35 Amalda qo'llash](#635-amalda-qollash)
+- [6.35 `th:if` matn ustida: bo'sh satr va `no` tuzog'i (Conditional Rendering of a Text Value)](#635-thif-matn-ustida-bosh-satr-va-no-tuzogi-conditional-rendering-of-a-text-value)
+- [6.36 Amalda qo'llash](#636-amalda-qollash)
 
 </details>
 
@@ -1111,7 +1112,48 @@ EntityModel<OrderDto> get(@PathVariable long id) {
 // Mijoz "qachon bekor qilish mumkin" qoidasini takrorlamaydi
 ```
 
-## 6.35 Amalda qo'llash
+## 6.35 `th:if` matn ustida: bo'sh satr va `no` tuzog'i (Conditional Rendering of a Text Value)
+
+**Muammo:** shablonda ixtiyoriy matn maydoni faqat to'ldirilgan bo'lsa chiqishi kerak. Eng qo'l keladigan yozuv
+`th:if="${item.note}"`, va u ko'pincha ishlaydi, shuning uchun xato uzoq vaqt sezilmaydi.
+
+**Nega noto'g'ri:** Thymeleaf ifodani `EvaluationUtils.evaluateAsBoolean` bilan baholaydi va `String` uchun qoida
+mantiqiy emas, matniy:
+
+| Qiymat | Natija |
+|---|---|
+| `null` | `false` |
+| `""` (bo'sh satr) | **`true`** |
+| `"   "` (faqat probel) | **`true`** |
+| `"false"`, `"off"`, `"no"` (registrga qaramay) | **`false`** |
+| boshqa har qanday matn | `true` |
+
+Ya'ni shart "qiymat bormi" degan savolga javob bermaydi. Ikki kutilmagan natija chiqadi. Birinchisi: foydalanuvchi
+maydonni tozalaganda klient `""` yuboradi, u saqlanadi va hujjatda qiymatsiz yorliq (`Izoh:` va keyin hech narsa)
+bosiladi. Ikkinchisi va jiddiyrog'i: matni aynan `no` bo'lgan izoh hujjatdan **jimgina** tushib qoladi. Rasmiy
+hujjatda bu ma'lumot yo'qolishi, xato xabari emas.
+
+**Yechim:** matn uchun aniq bo'shlik tekshiruvi yoziladi.
+
+```html
+<!-- noto'g'ri: "" ni bor deb oladi, "no" ni yo'q deb oladi -->
+<span th:if="${item.note}">Izoh: <span th:text="${item.note}"></span></span>
+
+<!-- to'g'ri: null, "" va faqat probeldan iborat satr yashiriladi, qolgani chiqadi -->
+<span th:if="${!#strings.isEmpty(item.note)}">Izoh: <span th:text="${item.note}"></span></span>
+```
+
+`#strings.isEmpty` `null` ni ham, trim dan keyin bo'sh qolgan satrni ham `true` deb oladi, matn mazmuniga esa
+qaramaydi. Shuning uchun u ikkala tuzoqni birdan yopadi.
+
+**Tekshirish.** Golden master testi odatda faqat "hamma maydon to'ldirilgan" holatni qoplaydi, ya'ni bu xatoni
+ko'rmaydi. Shartli bo'lak uchun ikkinchi holat kerak: maydonlar `null`, `""` va `"   "` bo'lgan hujjatda yorliq
+umuman chiqmasligi, va matni `no` bo'lgan maydon chiqishi. Ikkinchisi tuzatishning regressiya qalqoni.
+
+**Qachon kerak emas:** qiymat `Boolean`, son yoki kolleksiya bo'lsa `th:if="${flag}"` to'g'ri ishlaydi; bu tuzoq
+faqat `String` da. Obyekt uchun `th:if="${obj != null}"` aniqroq va o'qishga ham oson.
+
+## 6.36 Amalda qo'llash
 
 - [ ] Controller metodlarining uzunligini o'lchab, 20 qatordan oshganlarini ro'yxatga oling - ularda biznes logika bor.
 - [ ] Controller ichidan repository yoki `EntityManager` chaqirilgan joylarni qidirib, har birini servis qatlamiga ko'chirish rejasini yozing.

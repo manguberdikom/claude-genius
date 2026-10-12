@@ -23,7 +23,7 @@ Barcha patternlarning inglizcha nomi bo'yicha [alifbo indeksi](99-alifbo-boyicha
 - **3.** [Xulq-atvor patternlari (Behavioral Patterns)](03-xulq-atvor-patternlari.md) - 23 pattern
 - **4.** [Concurrency patternlari (Concurrency Patterns)](04-concurrency-patternlari.md) - 27 pattern
 - **5.** [Spring Core ichidagi patternlar xaritasi (Patterns inside Spring Core)](05-spring-core-ichidagi-patternlar-xaritasi.md) - 41 pattern
-- **6.** [Web va taqdimot qatlami patternlari (Web & Presentation Patterns)](06-web-va-taqdimot-qatlami-patternlari.md) - 34 pattern
+- **6.** [Web va taqdimot qatlami patternlari (Web & Presentation Patterns)](06-web-va-taqdimot-qatlami-patternlari.md) - 35 pattern
 - **7.** [API dizayn patternlari (API Design Patterns)](07-api-dizayn-patternlari.md) - 33 pattern
 - **8.** [Biznes logika va Service qatlam patternlari (Business & Service Layer Patterns)](08-biznes-logika-va-service-qatlam-patternlari.md) - 26 pattern
 - **9.** [Ma'lumotlarga kirish va ORM patternlari (Data Access & ORM Patterns)](09-malumotlarga-kirish-va-orm-patternlari.md) - 37 pattern
