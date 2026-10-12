@@ -7,7 +7,7 @@
 # 16. Spring Boot mexanikasi: auto-configuration, starter, Actuator (Spring Boot Mechanics)
 
 <details>
-<summary>Bu bobdagi 12 bo'lim</summary>
+<summary>Bu bobdagi 13 bo'lim</summary>
 
 - [16.1 Auto-configuration qanday ishlaydi: `AutoConfiguration.imports` va shartli annotatsiyalar](#161-auto-configuration-qanday-ishlaydi-autoconfigurationimports-va-shartli-annotatsiyalar)
 - [16.2 `@ConditionalOnClass`, `@ConditionalOnMissingBean` va tartib (`@AutoConfigureAfter`)](#162-conditionalonclass-conditionalonmissingbean-va-tartib-autoconfigureafter)
@@ -20,7 +20,8 @@
 - [16.9 Health indicator yozish va readiness va liveness farqi](#169-health-indicator-yozish-va-readiness-va-liveness-farqi)
 - [16.10 Ishga tushish vaqti: lazy initialization, AOT va native image ta'siri](#1610-ishga-tushish-vaqti-lazy-initialization-aot-va-native-image-tasiri)
 - [16.11 Spring Boot 3 ga o'tish: Jakarta nomlari va konfiguratsiya o'zgarishlari](#1611-spring-boot-3-ga-otish-jakarta-nomlari-va-konfiguratsiya-ozgarishlari)
-- [16.12 Amalda qo'llash](#1612-amalda-qollash)
+- [16.12 `@ConditionalOnBean` ni olib tashlash: majburiy bog'liqlik va test kontekstlari](#1612-conditionalonbean-ni-olib-tashlash-majburiy-bogliqlik-va-test-kontekstlari)
+- [16.13 Amalda qo'llash](#1613-amalda-qollash)
 
 </details>
 
@@ -312,7 +313,55 @@ Konfiguratsiya tomonida ko'p xossa nomi o'zgardi va eng xavfli jihati shu: eski 
 
 Yana ikki nuqta e'tibor talab qiladi. Birinchisi: URL oxiridagi slash avtomatik moslashtirish olib tashlandi, ya'ni `/api/orders` va `/api/orders/` endi bir xil emas. Agar mijozlar eski formatda so'rov yuborsa, 404 oladi. Ikkinchisi: Hibernate 6 da identifikator generatsiyasi va ba'zi SQL generatsiya qoidalari o'zgardi, shu sababli migratsiyadan keyin yaratilgan SQL ni log orqali solishtirish kerak. Migratsiya tartibi amalda shunday bo'ladi: avval Boot 2.7 ga ko'tarilish, keyin dependency larni jakarta versiyalariga olib chiqish, so'ngra Boot 3.x, va har qadamda to'liq test to'plami. Shartnoma buzilmaganini tekshirish uchun [testlash qo'llanmasidagi](../testing/README.md) contract testing bo'limida tavsiflangan yondashuv qo'l keladi.
 
-## 16.12 Amalda qo'llash
+## 16.12 `@ConditionalOnBean` ni olib tashlash: majburiy bog'liqlik va test kontekstlari
+
+`@ConditionalOnBean` qo'yilgan bean "bog'liqlik bo'lmasa jim tushib qolish" xulqini oladi. Kutubxona o'z
+repository yoki klientlarini o'zi beradigan holatda bu qulay ko'rinadi, lekin iste'molchi ularni o'zi berishga
+o'tsa va bittasini bermasa, ilova startda hech narsa aytmaydi: tegishli bean shunchaki yo'q bo'ladi va xato
+birinchi so'rovda, butunlay boshqa joyda chiqadi. Shuning uchun majburiy bog'liqlikda shart emas, fail-fast
+to'g'ri tanlov: start paytida yo'q bean nomi bilan yiqilish arzonroq.
+
+**Shartni olib tashlash yetarli emas, agar standart lazy bo'lsa.** Bean `ObjectProvider<T>` olib, uni o'z ichida
+saqlab qo'ysa, `@ConditionalOnBean` ni olib tashlash xatoni startga qaytarmaydi: `ObjectProvider` kech
+hal qilinadi va `NoSuchBeanDefinitionException` birinchi chaqiruvda chiqadi. Fail-fast ni tiklash uchun bean
+yaratilishida bog'liqlik bir marta so'raladi:
+
+```java
+@Bean
+@ConditionalOnMissingBean(HistoryService.class)
+public HistoryService historyService(ObjectProvider<EditProtocolRepository> repository) {
+    // The default keeps the lazy provider, so a missing repository would only surface at the first call;
+    // asking for it here makes the context fail at startup with the repository's name instead.
+    repository.getObject();
+    return new DefaultHistoryService(repository);
+}
+```
+
+**Tartib shartning o'rnini oladi.** Shart olib tashlangach, bog'liqlikni beradigan auto-configuration undan oldin
+yurishi kerak, aks holda bean yaratilishi ro'yxatdan o'tish tartibiga tushadi. Buni `@AutoConfiguration(after = ...)`
+bilan yozish kerak: sinfda allaqachon `after` bo'lsa, yonidagi alohida `@AutoConfigureAfter` ni Boot jim tashlab
+yuboradi va tartib kafolati yo'qoladi.
+
+**Test kontekstlarini nom bilan emas, `grep` bilan toping.** Shart olib tashlanishi o'sha konfiguratsiyani
+yuklaydigan HAR BIR test kontekstining shartnomasini o'zgartiradi: avval bean jim tushgani uchun test o'tib
+ketardi, endi kontekst yiqiladi. Bu testlarning hammasi konfiguratsiya nomiga o'xshash nom bilan atalmagan:
+amalda yiqilgani serializatsiya xulqini tekshiradigan, boshqa paketdagi va nomida konfiguratsiya haqida hech
+narsa yo'q test bo'ldi, chunki u shunchaki haqiqiy kontekstdan `ObjectMapper` olardi. Ro'yxatni to'liq olish
+yo'li bitta:
+
+```bash
+grep -rl 'SupportAutoConfiguration' src/test/java   # konfiguratsiya sinfining nomi bilan
+```
+
+Shundan keyin har bir topilgan kontekstga yangi majburiy bean ning mock i qo'shiladi. Testni tanlash asbobi
+o'zgargan fayllardan kontekst bog'lanishini chiqarsa (Spring sozlamasi bo'yicha), u ham shu ro'yxatni beradi;
+qo'lda qidirishda esa nomga tayanish yetib bo'lmagan testni qoldiradi.
+
+**Istisnoni ataylab qoldirish.** Hamma shart olib tashlanmaydi: ixtiyoriy bo'lagi bor bog'liqlik (outbox jadvali,
+skan qilinadigan `@Repository`, iste'molchi o'zi beradigan klient) shartli qolishi kerak va buning sababi
+javadoc da yoziladi. Aks holda keyingi o'quvchi "qolgan shartlar ham unutilgan" deb o'ylaydi.
+
+## 16.13 Amalda qo'llash
 
 - [ ] Servisni `--debug` bilan bir marta ishga tushirib, `Negative matches` ro'yxatini ko'rib chiqing va kutilmagan tarzda o'chib qolgan auto-configuration borligini aniqlang.
 - [ ] `management.endpoints.web.exposure.include` qiymatini tekshiring: `*` bo'lsa aniq ro'yxatga almashtiring va `management.server.port` ni 8081 ga ajratib, Ingress dan olib tashlang.

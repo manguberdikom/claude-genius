@@ -7,7 +7,7 @@
 # 24. False positive, suppression va o'z qoidangiz (False Positives and Custom Rules)
 
 <details>
-<summary>Bu bobdagi 12 bo'lim</summary>
+<summary>Bu bobdagi 13 bo'lim</summary>
 
 - [24.1 False positive nima va u qanchalik tez-tez uchraydi](#241-false-positive-nima-va-u-qanchalik-tez-tez-uchraydi)
 - [24.2 Issue ni "false positive" yoki "won't fix" deb belgilash va farqi](#242-issue-ni-false-positive-yoki-wont-fix-deb-belgilash-va-farqi)
@@ -20,7 +20,8 @@
 - [24.9 Jamoaviy kelishuv: kim belgilaydi, kim tasdiqlaydi](#249-jamoaviy-kelishuv-kim-belgilaydi-kim-tasdiqlaydi)
 - [24.10 Suppression statistikasini kuzatish va ularni kamaytirish](#2410-suppression-statistikasini-kuzatish-va-ularni-kamaytirish)
 - [24.11 Sonar charchog'i: belgilar ko'payib ketganda nima qilish](#2411-sonar-charchogi-belgilar-kopayib-ketganda-nima-qilish)
-- [24.12 Amalda qo'llash](#2412-amalda-qollash)
+- [24.12 Spring Data repository `default` metodi va `java:S6809`](#2412-spring-data-repository-default-metodi-va-javas6809)
+- [24.13 Amalda qo'llash](#2413-amalda-qollash)
 
 </details>
 
@@ -357,19 +358,7 @@ Uchinchi qadam: bitta mavzuga fokus. Bu chorak faqat resurs yopilishi, keyingisi
 
 Oxirgi va eng muhim qadam: bostirishni oson, tuzatishni qiyin qilib qo'ymaslik. Agar bostirish bir klik, tuzatish esa yarim kun bo'lsa, jamoa doim bostirishni tanlaydi. Izoh majburiyati va reviewer tasdig'i aynan shu balansni teskari tomonga buradi.
 
-## 24.12 Amalda qo'llash
-
-- [ ] `sonar.java.binaries` va kutubxona yo'llarini tekshirib, klasspathdan kelayotgan false positive larni bitta ishda yo'q qiling.
-- [ ] Koddagi barcha `@SuppressWarnings` va NOSONAR ni `grep` bilan ro'yxatga oling, izohsiz bo'lganlariga sabab yozing yoki olib tashlang.
-- [ ] Jamoada yozma qoida qabul qiling: false positive va accepted farqi, izohning to'rt elementi, va kim tasdiqlashi.
-- [ ] "Administer Issues" huquqini cheklangan guruhga bering, doimiy bostirishlarni koddagi annotatsiyaga ko'chiring.
-- [ ] Eng ko'p bostirilgan uchta qoidani aniqlang va har biri uchun qaror qabul qiling: tuzatish, parametrni o'zgartirish yoki o'chirish.
-- [ ] Quality profile ni eksport qilib repozitoriyda saqlang, har bir o'chirilgan qoida yoniga sabab va ADR havolasini yozing.
-- [ ] Yangi konvensiyani Sonar plagini bilan emas, avval shablon qoida yoki ArchUnit testi bilan avtomatlashtirishga harakat qiling.
-- [ ] Har sprintda suppress, false positive va accepted sonlarini yozib boring va chorakda tendensiyani ko'rib chiqing.
-- [24.13 Spring Data repository `default` metodi va `java:S6809`](#2413-spring-data-repository-default-metodi-va-javas6809)
-
-## 24.13 Spring Data repository `default` metodi va `java:S6809`
+## 24.12 Spring Data repository `default` metodi va `java:S6809`
 
 `java:S6809` ("Call transactional methods via an injected dependency instead of directly via `this`") Spring Data
 repository interfeysidagi `default` metodda **false positive** beradi. Qoida o'zi to'g'ri: oddiy Spring bean ida
@@ -411,6 +400,18 @@ metodga qo'yiladi, oldindan hammasiga emas.
 darhol topadi; serverdagi belgi esa repo tashqarisida qoladi va yangi tahlilda yoki loyiha ko'chirilganda yo'qoladi.
 Agar jamoada "serverda belgilanmaydi" kelishuvi bo'lsa, bu yechim yagona yo'l bo'lib qoladi.
 
+
+
+## 24.13 Amalda qo'llash
+
+- [ ] `sonar.java.binaries` va kutubxona yo'llarini tekshirib, klasspathdan kelayotgan false positive larni bitta ishda yo'q qiling.
+- [ ] Koddagi barcha `@SuppressWarnings` va NOSONAR ni `grep` bilan ro'yxatga oling, izohsiz bo'lganlariga sabab yozing yoki olib tashlang.
+- [ ] Jamoada yozma qoida qabul qiling: false positive va accepted farqi, izohning to'rt elementi, va kim tasdiqlashi.
+- [ ] "Administer Issues" huquqini cheklangan guruhga bering, doimiy bostirishlarni koddagi annotatsiyaga ko'chiring.
+- [ ] Eng ko'p bostirilgan uchta qoidani aniqlang va har biri uchun qaror qabul qiling: tuzatish, parametrni o'zgartirish yoki o'chirish.
+- [ ] Quality profile ni eksport qilib repozitoriyda saqlang, har bir o'chirilgan qoida yoniga sabab va ADR havolasini yozing.
+- [ ] Yangi konvensiyani Sonar plagini bilan emas, avval shablon qoida yoki ArchUnit testi bilan avtomatlashtirishga harakat qiling.
+- [ ] Har sprintda suppress, false positive va accepted sonlarini yozib boring va chorakda tendensiyani ko'rib chiqing.
 
 ---
 

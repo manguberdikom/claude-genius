@@ -7,7 +7,7 @@
 # 18. Branch va shart qamrovini to'liq yopish usullari (Covering Every Branch)
 
 <details>
-<summary>Bu bobdagi 15 bo'lim</summary>
+<summary>Bu bobdagi 16 bo'lim</summary>
 
 - [18.1 Line coverage va branch coverage farqi aniq misolda](#181-line-coverage-va-branch-coverage-farqi-aniq-misolda)
 - [18.2 Murakkab shart (`&&`, `||`) bytecode da nechta tarmoq hosil qiladi](#182-murakkab-shart---bytecode-da-nechta-tarmoq-hosil-qiladi)
@@ -23,7 +23,8 @@
 - [18.12 Tuzoq va yechim](#1812-tuzoq-va-yechim)
 - [18.13 Oddiy yondashuv va arxitektor yondashuvi](#1813-oddiy-yondashuv-va-arxitektor-yondashuvi)
 - [18.14 Sonar ga tarmoq ma'lumotini uzatish](#1814-sonar-ga-tarmoq-malumotini-uzatish)
-- [18.15 Amalda qo'llash](#1815-amalda-qollash)
+- [18.15 Qaysi operand sinalmagani: taxmin qilmasdan aniqlash](#1815-qaysi-operand-sinalmagani-taxmin-qilmasdan-aniqlash)
+- [18.16 Amalda qo'llash](#1816-amalda-qollash)
 
 </details>
 
@@ -402,19 +403,7 @@ jobs:
 
 Halol xulosa: 100% tarmoq qamrovi xatosiz kodni kafolatlamaydi. JaCoCo kombinatsiyalarni emas, alohida natijalarni sanaydi va assertion sifatini o'lchamaydi. Tarmoq qamrovi faqat "bu qaror hech qachon sinalmagan" holatini ushlaydigan quyi chegara. Shartni soddalashtirib tarmoq sonini kamaytirish, qolganini jadval orqali ataylab yopish eng barqaror strategiya.
 
-## 18.15 Amalda qo'llash
-
-- [ ] Sonar loyiha panelida `branch_coverage` va `uncovered_conditions` metrikalarini qo'shib, eng ko'p yopilmagan shart saqlagan 10 ta sinfni ro'yxatga oling.
-- [ ] Shu ro'yxatdagi eng murakkab shartni oling, uning atomar shartlarini sanab haqiqat jadvalini tuzing va `@CsvSource` parametrli testga ko'chiring.
-- [ ] `jacoco-maven-plugin` ga `BRANCH` va `COVEREDRATIO` chegarasi bilan `check` qoidasini qo'shib, generatsiya qilingan sinflarni `excludes` ga kiriting.
-- [ ] Barcha qo'lda yozilgan `finally` bloklarini `try-with-resources` ga o'tkazing va `java:S2095` ogohlantirishlari yo'qolganini tekshiring.
-- [ ] Ichki domen metodlaridagi null tekshiruvlarini ko'rib chiqing: konstruktorda bir marta `requireNonNull` qoldirib, qolganini o'chiring.
-- [ ] Har bir `catch` bloki uchun mock bilan xato yuzaga keltiruvchi test yozing va `catch` ichidagi xatti harakatni `verify` bilan tasdiqlang.
-- [ ] Kamida bitta uzun `if` zanjirini `Map` yoki strategiyaga aylantirib, tarmoq soni va cognitive complexity qanchaga kamayganini o'lchab yozib qo'ying.
-- [ ] CI da `fetch-depth: 0` va `sonar.qualitygate.wait=true` yoqilganini tekshirib, gate qizil bo'lganda pipeline haqiqatan yiqilishiga ishonch hosil qiling.
-- [18.16 Qaysi operand sinalmagani: taxmin qilmasdan aniqlash](#1816-qaysi-operand-sinalmagani-taxmin-qilmasdan-aniqlash)
-
-## 18.16 Qaysi operand sinalmagani: taxmin qilmasdan aniqlash
+## 18.15 Qaysi operand sinalmagani: taxmin qilmasdan aniqlash
 
 Hisobotda `shox 3/4` yoki `1/2` ko'rinsa, bu "shu qatorga test kerak" degani emas, "shu qatordagi aniq bitta
 natija sinalmagan" degani. Ikki operandli `a && b` to'rt shox beradi: `a` ning rost va yolg'oni, `b` ning rost va
@@ -438,6 +427,18 @@ qoplangan bo'lishi mumkin, qolgani esa `x == null`. Bo'sh satr bilan yana bir te
 chunki yetib bo'lmaydigan shox uchun yozilgan test ko'pincha reflection yoki mock bilan kodni buzib chaqiradi va
 keyinchalik yolg'on ishonch beradi.
 
+
+
+## 18.16 Amalda qo'llash
+
+- [ ] Sonar loyiha panelida `branch_coverage` va `uncovered_conditions` metrikalarini qo'shib, eng ko'p yopilmagan shart saqlagan 10 ta sinfni ro'yxatga oling.
+- [ ] Shu ro'yxatdagi eng murakkab shartni oling, uning atomar shartlarini sanab haqiqat jadvalini tuzing va `@CsvSource` parametrli testga ko'chiring.
+- [ ] `jacoco-maven-plugin` ga `BRANCH` va `COVEREDRATIO` chegarasi bilan `check` qoidasini qo'shib, generatsiya qilingan sinflarni `excludes` ga kiriting.
+- [ ] Barcha qo'lda yozilgan `finally` bloklarini `try-with-resources` ga o'tkazing va `java:S2095` ogohlantirishlari yo'qolganini tekshiring.
+- [ ] Ichki domen metodlaridagi null tekshiruvlarini ko'rib chiqing: konstruktorda bir marta `requireNonNull` qoldirib, qolganini o'chiring.
+- [ ] Har bir `catch` bloki uchun mock bilan xato yuzaga keltiruvchi test yozing va `catch` ichidagi xatti harakatni `verify` bilan tasdiqlang.
+- [ ] Kamida bitta uzun `if` zanjirini `Map` yoki strategiyaga aylantirib, tarmoq soni va cognitive complexity qanchaga kamayganini o'lchab yozib qo'ying.
+- [ ] CI da `fetch-depth: 0` va `sonar.qualitygate.wait=true` yoqilganini tekshirib, gate qizil bo'lganda pipeline haqiqatan yiqilishiga ishonch hosil qiling.
 
 ---
 

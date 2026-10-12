@@ -468,7 +468,7 @@
     "title": "16. Spring Boot mexanikasi: auto-configuration, starter, Actuator (Spring Boot Mechanics)",
     "file": "16-spring-boot-mexanikasi-auto-configuration.md",
     "part": "III. Spring chuqur bilim",
-    "sections": 12
+    "sections": 13
    },
    {
     "num": 17,
@@ -698,7 +698,7 @@
     "title": "9. Coverage qanday o'lchanadi: JaCoCo mexanikasi (How Coverage Is Measured)",
     "file": "09-coverage-qanday-olchanadi-jacoco-mexanikasi.md",
     "part": "III. Qamrov (coverage)",
-    "sections": 11
+    "sections": 12
    },
    {
     "num": 10,
@@ -761,7 +761,7 @@
     "title": "18. Branch va shart qamrovini to'liq yopish usullari (Covering Every Branch)",
     "file": "18-branch-va-shart-qamrovini-toliq-yopish.md",
     "part": "V. Sonar o'tadigan test",
-    "sections": 15
+    "sections": 16
    },
    {
     "num": 19,
@@ -803,7 +803,7 @@
     "title": "24. False positive, suppression va o'z qoidangiz (False Positives and Custom Rules)",
     "file": "24-false-positive-suppression-va-oz-qoidangiz.md",
     "part": "VI. Amaliyot va jarayon",
-    "sections": 12
+    "sections": 13
    },
    {
     "num": 25,

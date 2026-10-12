@@ -7,7 +7,7 @@
 # 9. Coverage qanday o'lchanadi: JaCoCo mexanikasi (How Coverage Is Measured)
 
 <details>
-<summary>Bu bobdagi 11 bo'lim</summary>
+<summary>Bu bobdagi 12 bo'lim</summary>
 
 - [9.1 JaCoCo qanday ishlaydi: bytecode ga instrumentatsiya qo'shish](#91-jacoco-qanday-ishlaydi-bytecode-ga-instrumentatsiya-qoshish)
 - [9.2 Java agent va offline instrumentatsiya farqi](#92-java-agent-va-offline-instrumentatsiya-farqi)
@@ -19,7 +19,8 @@
 - [9.8 Unit test va integratsion test qamrovini birlashtirish](#98-unit-test-va-integratsion-test-qamrovini-birlashtirish)
 - [9.9 Ko'p modulli loyihada umumiy hisobot yig'ish](#99-kop-modulli-loyihada-umumiy-hisobot-yigish)
 - [9.10 Qamrov o'lchovining chegarasi: bajarilgan kod tekshirilgan degani emas](#910-qamrov-olchovining-chegarasi-bajarilgan-kod-tekshirilgan-degani-emas)
-- [9.11 Amalda qo'llash](#911-amalda-qollash)
+- [9.11 Generatsiya qilingan kod jacoco hisobotida bor, Sonar da yo'q](#911-generatsiya-qilingan-kod-jacoco-hisobotida-bor-sonar-da-yoq)
+- [9.12 Amalda qo'llash](#912-amalda-qollash)
 
 </details>
 
@@ -305,19 +306,7 @@ Qamrovning ikkinchi chegarasi ma'lumot bo'yicha. Branch qamrovi "ikki yo'nalish 
 | Chegaraviy holat | happy path test yetarli deb hisoblash | chegara, `null` va xato yo'lini alohida test bilan qoplash |
 | Build xatosi | qamrov pastligida build ni o'tkazib yuborish | `jacoco:check` bilan lokal darajada ham to'xtatish |
 
-## 9.11 Amalda qo'llash
-
-- [ ] `mvn help:effective-pom | grep -A3 '<debug'` bilan debug ma'lumoti yoqilganini tasdiqlang, aks holda line coverage 0 bo'ladi.
-- [ ] JaCoCo versiyasini 0.8.12 yoki undan yangisiga ko'taring va `lombok.config` ga `lombok.addLombokGeneratedAnnotation = true` qo'shing.
-- [ ] `prepare-agent` va `prepare-agent-integration` ni ikki alohida `destFile` bilan sozlang, keyin `merge` va `report` goal larini `verify` fazasiga ulang.
-- [ ] `sonar.coverage.jacoco.xmlReportPaths` ni XML hisobotga yo'naltiring va `.exec` yo'li qolmaganini tekshiring.
-- [ ] Ko'p modulli loyihada kodsiz `coverage` modulini `report-aggregate` bilan yaratib, reactor da oxirgi qilib qo'ying.
-- [ ] HTML hisobotdagi eng past branch qamrovi bo'lgan beshta metodni oching va har bir sariq rombcha uchun qaysi shart sinalmaganini yozib chiqing.
-- [ ] Har bir `orElseThrow` va `Optional` lambda si uchun uni bajaradigan alohida test holati borligini tasdiqlang.
-- [ ] PIT mutation testing ni eng muhim ikki paketga ulab, mutation score bilan line coverage o'rtasidagi farqni o'lchang.
-- [9.12 Generatsiya qilingan kod jacoco hisobotida bor, Sonar da yo'q](#912-generatsiya-qilingan-kod-jacoco-hisobotida-bor-sonar-da-yoq)
-
-## 9.12 Generatsiya qilingan kod jacoco hisobotida bor, Sonar da yo'q
+## 9.11 Generatsiya qilingan kod jacoco hisobotida bor, Sonar da yo'q
 
 Annotatsiya protsessori yozgan sinflar (mapper implementatsiyalari, builder lar, DTO yordamchilari) `build` ichida
 oddiy `.class` bo'lib turadi, shuning uchun **jacoco ularni sanaydi**. Sonar esa generatsiya qilingan manbani
@@ -340,6 +329,18 @@ qilingan kod bo'lsa, unga test yozish behuda ish.
 `excludes` qo'shish mumkin, lekin shart emas: o'lchovni to'g'ri o'qish yetarli va hisobot to'liq qolgani
 generatorning xulqi o'zgarganini ko'rishga yordam beradi.
 
+
+
+## 9.12 Amalda qo'llash
+
+- [ ] `mvn help:effective-pom | grep -A3 '<debug'` bilan debug ma'lumoti yoqilganini tasdiqlang, aks holda line coverage 0 bo'ladi.
+- [ ] JaCoCo versiyasini 0.8.12 yoki undan yangisiga ko'taring va `lombok.config` ga `lombok.addLombokGeneratedAnnotation = true` qo'shing.
+- [ ] `prepare-agent` va `prepare-agent-integration` ni ikki alohida `destFile` bilan sozlang, keyin `merge` va `report` goal larini `verify` fazasiga ulang.
+- [ ] `sonar.coverage.jacoco.xmlReportPaths` ni XML hisobotga yo'naltiring va `.exec` yo'li qolmaganini tekshiring.
+- [ ] Ko'p modulli loyihada kodsiz `coverage` modulini `report-aggregate` bilan yaratib, reactor da oxirgi qilib qo'ying.
+- [ ] HTML hisobotdagi eng past branch qamrovi bo'lgan beshta metodni oching va har bir sariq rombcha uchun qaysi shart sinalmaganini yozib chiqing.
+- [ ] Har bir `orElseThrow` va `Optional` lambda si uchun uni bajaradigan alohida test holati borligini tasdiqlang.
+- [ ] PIT mutation testing ni eng muhim ikki paketga ulab, mutation score bilan line coverage o'rtasidagi farqni o'lchang.
 
 ---
 

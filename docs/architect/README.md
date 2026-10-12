@@ -36,7 +36,7 @@ sodir bo'lishining mexanikasi, va shu bilimdan qanday qaror chiqarish.
 ### III. Spring chuqur bilim
 
 - **15.** [Spring Core mexanikasi: IoC konteyner, bean lifecycle, AOP proxy (Spring Core Mechanics)](15-spring-core-mexanikasi-ioc-konteyner-bean.md) - 12 bo'lim
-- **16.** [Spring Boot mexanikasi: auto-configuration, starter, Actuator (Spring Boot Mechanics)](16-spring-boot-mexanikasi-auto-configuration.md) - 12 bo'lim
+- **16.** [Spring Boot mexanikasi: auto-configuration, starter, Actuator (Spring Boot Mechanics)](16-spring-boot-mexanikasi-auto-configuration.md) - 13 bo'lim
 - **17.** [Spring MVC va WebFlux: so'rov yo'li, thread modeli, REST dizayni (Spring MVC and WebFlux)](17-spring-mvc-va-webflux-sorov-yoli-thread.md) - 12 bo'lim
 - **18.** [Spring Data JPA va Hibernate chuqur (Spring Data JPA and Hibernate)](18-spring-data-jpa-va-hibernate-chuqur.md) - 13 bo'lim
 - **19.** [Spring tranzaksiyalari va ularning chegaralari (Spring Transactions)](19-spring-tranzaksiyalari-va-ularning.md) - 13 bo'lim

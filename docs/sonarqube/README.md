@@ -32,7 +32,7 @@ Hujjat ikkalasini ham ko'rsatadi: shartni qanday qondirish, va qayerda bu raqam 
 
 ### III. Qamrov (coverage)
 
-- **9.** [Coverage qanday o'lchanadi: JaCoCo mexanikasi (How Coverage Is Measured)](09-coverage-qanday-olchanadi-jacoco-mexanikasi.md) - 11 bo'lim
+- **9.** [Coverage qanday o'lchanadi: JaCoCo mexanikasi (How Coverage Is Measured)](09-coverage-qanday-olchanadi-jacoco-mexanikasi.md) - 12 bo'lim
 - **10.** [JaCoCo va SonarQube ulanishi: Maven va Gradle sozlash (Wiring JaCoCo to SonarQube)](10-jacoco-va-sonarqube-ulanishi-maven-va.md) - 12 bo'lim
 - **11.** [Qamralmay qoladigan kod va unga test yozish (Code That Stays Uncovered)](11-qamralmay-qoladigan-kod-va-unga-test-yozish.md) - 15 bo'lim
 - **12.** [Exclusion: nimani chiqarish halol, nimani chiqarish aldov (Exclusions, Honest and Dishonest)](12-exclusion-nimani-chiqarish-halol-nimani.md) - 12 bo'lim
@@ -47,7 +47,7 @@ Hujjat ikkalasini ham ko'rsatadi: shartni qanday qondirish, va qayerda bu raqam 
 ### V. Sonar o'tadigan test
 
 - **17.** [Sonar talablarini qondiradigan test yozish (Writing Tests That Satisfy Sonar)](17-sonar-talablarini-qondiradigan-test-yozish.md) - 12 bo'lim
-- **18.** [Branch va shart qamrovini to'liq yopish usullari (Covering Every Branch)](18-branch-va-shart-qamrovini-toliq-yopish.md) - 15 bo'lim
+- **18.** [Branch va shart qamrovini to'liq yopish usullari (Covering Every Branch)](18-branch-va-shart-qamrovini-toliq-yopish.md) - 16 bo'lim
 - **19.** [Testning o'zidagi Sonar qoidalari va test sifati (Sonar Rules on Test Code)](19-testning-ozidagi-sonar-qoidalari-va-test.md) - 12 bo'lim
 - **20.** [Mutation testing: 100% coverage qachon yolg'on (Mutation Testing)](20-mutation-testing-100-coverage-qachon-yolgon.md) - 12 bo'lim
 
@@ -56,7 +56,7 @@ Hujjat ikkalasini ham ko'rsatadi: shartni qanday qondirish, va qayerda bu raqam 
 - **21.** [CI/CD ga ulash, PR decoration va blokirovka (CI/CD Integration)](21-ci-cd-ga-ulash-pr-decoration-va-blokirovka.md) - 12 bo'lim
 - **22.** [Lokal tekshirish: IDE, sonar-scanner va tez qaytish (Local Feedback Loop)](22-lokal-tekshirish-ide-sonar-scanner-va-tez.md) - 12 bo'lim
 - **23.** [Legacy loyihani 100% ga olib chiqish rejasi (Bringing a Legacy Project to 100)](23-legacy-loyihani-100-ga-olib-chiqish-rejasi.md) - 13 bo'lim
-- **24.** [False positive, suppression va o'z qoidangiz (False Positives and Custom Rules)](24-false-positive-suppression-va-oz-qoidangiz.md) - 12 bo'lim
+- **24.** [False positive, suppression va o'z qoidangiz (False Positives and Custom Rules)](24-false-positive-suppression-va-oz-qoidangiz.md) - 13 bo'lim
 
 ### VII. Xato katalogi: qanday kod qanday xato hisoblanadi
 
