@@ -164,6 +164,19 @@ def check_text(text, path):
                or os.path.basename(path).endswith(("Test.java", "Tests.java", "IT.java")))
     out = []
 
+    # BOM javac uchun oddiy belgi: `illegal character: '﻿'` bilan butun
+    # fayl yiqiladi va undan keyingi har bir qator "class, interface, enum, or
+    # record expected" beradi, ya'ni asl sabab yuzlab xato ichida ko'rinmaydi.
+    # Odatda fayl skript bilan yozilganda tushadi (Python da `utf-8-sig`,
+    # PowerShell da `Out-File`/`Set-Content` sukuti), shuning uchun mexanik
+    # tekshiruvda ushlanadi.
+    if text.startswith("﻿"):
+        out.append(Finding(
+            "yuqori", 1,
+            "Fayl BOM bilan boshlanadi: `javac` `illegal character: '\\ufeff'` "
+            "beradi. Fayl BOM siz UTF-8 da yozilsin.",
+            "Encoding", ref="clean-code 12.10"))
+
     for match in re.finditer(r"catch\s*\([^)]*\)\s*(\{\s*\})", code):
         # Izohli blok Sonar uchun bo'sh emas (java:S108 istisnosi). Izoh
         # strip_noise da o'chgan, shuning uchun asl matndan qaraladi:

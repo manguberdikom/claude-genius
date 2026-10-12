@@ -205,6 +205,30 @@ Bu qoidalar ko'rinmas, lekin ularning yo'qligi diff ni buzadi va cross-platform 
 | Tab | bo'shliqqa aylantiriladi |
 | BOM | yo'q |
 
+### BOM Java da ko'rinmas emas: kompilyatsiyani yiqitadi
+
+Jadvalning boshqa qatorlari diff gigiyenasi haqida, BOM esa boshqa toifada: `javac` uni oddiy belgi deb o'qiydi va fayl kompilyatsiya bo'lmaydi.
+
+```text
+A.java:1: error: illegal character: '﻿'
+A.java:1: error: class, interface, enum, or record expected
+A.java:3: error: class, interface, enum, or record expected
+...
+```
+
+Birinchi qatordan keyin deyarli har bir qator "class, interface, enum, or record expected" beradi, shuning uchun asl sabab yuzlab xato ichida ko'rinmaydi va "nega butun fayl buzildi" degan savol tug'iladi. Faqat **fayl boshidagi** BOM muhim: satr literali ichidagi yoki o'rtadagi U+FEFF kompilyatsiyaga xalaqit bermaydi.
+
+Qo'lda yozilganda bu kamdan-kam uchraydi, chunki IDE BOM qo'ymaydi. U fayl **skript bilan** yozilganda tushadi:
+
+| Vosita | BOM qo'yadigan shakl | To'g'ri shakl |
+|---|---|---|
+| Python | `open(p, "w", encoding="utf-8-sig")` | `encoding="utf-8"` |
+| PowerShell 5.1 | `Out-File`, `>`, `>>` (sukut BOM bilan) | `Set-Content -Encoding utf8NoBOM`, yoki `[IO.File]::WriteAllText` |
+
+Tuzoq ayniqsa mavjud faylni skript bilan tahrirlaganda qo'shiladi: fayl `utf-8-sig` bilan o'qilib, keyin shu kodirovka bilan qayta yozilsa, BOM bo'lmagan faylga BOM qo'shiladi. O'qishda `utf-8-sig`, yozishda `utf-8` ishlatilsin, yoki fayl baytlar bilan o'qib yozilsin.
+
+`.properties` faylida BOM kompilyatsiyani yiqitmaydi, lekin **birinchi kalit** nomiga qo'shilib ketadi va u kalit topilmay qoladi. Fayl oxiriga qator qo'shish esa xavfsiz.
+
 ## 12.11 Amalda qo'llash
 
 - [ ] Qator uzunligi chegarasini tanlab (100 tavsiya etiladi), uni formatter va Checkstyle da bir xil qiymatga qo'ying.

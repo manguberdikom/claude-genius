@@ -91,9 +91,14 @@ NO_FINDING = [
     ("tranzaksiyasiz JdbcTemplate chaqiruvida DataAccessException yetarli",
      "class A { TransactionTemplate tx; void f(JdbcTemplate jdbc) { try { jdbc.execute(Q); }"
      " catch (DataAccessException e) { log.warn(\"x\", e); } } }"),
+    # BOM faqat fayl boshida muhim: o'rtadagi yoki literal ichidagi U+FEFF
+    # javac ni yiqitmaydi, shuning uchun topilma bermaydi.
+    ("BOM siz oddiy fayl", "class A {}"),
+    ("U+FEFF satr literali ichida", 'class A { String t = "﻿"; }'),
 ]
 # URL va `/*` li satrdan keyingi kod baribir o'qiladi: yolg'on manfiy yo'q.
 ONE_FINDING = [
+    ("fayl boshidagi BOM", "﻿class A {}"),
     ("URL dan keyingi kod",
      'class A { String u = "http://x"; void f(Exception e) { e.printStackTrace(); } }'),
     ("`image/*` dan keyingi kod",
