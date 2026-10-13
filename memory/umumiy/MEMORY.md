@@ -8,3 +8,4 @@ Barcha proyektlarga tegishli yozuvlar. Bitta yozuv bitta qator.
 - `feedback_pdf-vizual-tekshiruv.md` - chizilgan hujjat ko'rinishi o'zgarganda vaqtinchalik test bilan PNG ga render qilib ko'z bilan tekshirish
 - `feedback_golden-update-begona-snapshot.md` - golden yangilash rejimi begona snapshotlarni ham qayta yozadi, kutilgan ro'yxat bilan solishtirish
 - `feedback_klon-faqat-main.md` - klonda faqat `main`: boshqa branch ochilmaydi, saboq commiti `main` ga push qilinadi
+- `feedback_mdc-korrelyatsiya-id-bosilishi.md` - filtr qo'ygan MDC korrelyatsiya id ni kutubxona interceptor i bosib ketadi
