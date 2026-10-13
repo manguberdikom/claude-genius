@@ -9,4 +9,5 @@ Barcha proyektlarga tegishli yozuvlar. Bitta yozuv bitta qator.
 - `feedback_golden-update-begona-snapshot.md` - golden yangilash rejimi begona snapshotlarni ham qayta yozadi, kutilgan ro'yxat bilan solishtirish
 - `feedback_klon-faqat-main.md` - klonda faqat `main`: boshqa branch ochilmaydi, saboq commiti `main` ga push qilinadi
 - `feedback_mdc-korrelyatsiya-id-bosilishi.md` - filtr qo'ygan MDC korrelyatsiya id ni kutubxona interceptor i bosib ketadi
+- `feedback_kontrakt-parity-oram.md` - shakl pariteti tekshirilganda javob o'ramini ham solishtirish, kontrakt testi JSON yo'lini ildizdan yozishi
 - `feedback_sheets-sintetik-paste.md` - Google Sheets ga brauzerdan ko'p qator yozish: sintetik paste hodisasi, koordinata masshtabi
