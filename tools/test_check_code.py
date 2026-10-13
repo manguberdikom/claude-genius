@@ -1803,6 +1803,100 @@ def case_regclass_matn():
     return rows
 
 
+def repo(annotations, signature):
+    return "interface ARepository extends JpaRepository<X, Long> {\n%s\n%s\n}\n" % (
+        annotations, signature)
+
+
+JOIN_LABEL = ("select new V(x.id, y.text) from X x left join Y y "
+              "on y.ownerId = x.id and y.status = 'ACTIVE' where x.id = :id")
+JOIN_CASES = [
+    # (nom, kod, kutilgan topilmalar soni). Musbat: bitta natijali metod va
+    # kalitsiz join; manfiy: 500 bermaydigan yoki yagonaligi ko'rinadigan shakl.
+    ("Optional + kalitsiz left join", repo('@Query("%s")' % JOIN_LABEL,
+        "Optional<V> findView(Long id);"), 1),
+    ("bitta obyekt + kalitsiz inner join", repo(
+        '@Query("select x from X x join Y y on y.ownerId = x.id where y.code = :c")',
+        "X findOne(String c);"), 1),
+    ("`as` bilan taxallus", repo(
+        '@Query("select x from X x left join Y as y on y.ownerId = x.id")',
+        "Optional<X> findOne();"), 1),
+    ("text block va annotatsiyalar orasida", repo(
+        '@QueryHints({@QueryHint(name = "k", value = "v")})\n@Query("""\n'
+        "        select x from X x\n        left join Y y\n"
+        '               on y.ownerId = x.id and y.field = \'name\'\n        where x.id = :id\n'
+        '        """)\n@Transactional(readOnly = true)',
+        "default Optional<X> findOne(Long id);"), 1),
+    ("`on` da faqat ildiz id si (y.id yo'q)", repo(
+        '@Query("select x from X x left join Y y on y.ownerId = x.id and x.id = :id")',
+        "Optional<X> findOne(Long id);"), 1),
+    ("`value =` nomi bilan", repo(
+        '@Query(value = "select x from X x left join Y y on y.ownerId = x.id")',
+        "Optional<X> findOne();"), 1),
+    ("birlamchi kalit bo'yicha join toza", repo(
+        '@Query("select x from X x left join Y y on y.id = x.yId")',
+        "Optional<X> findOne();"), 0),
+    ("birlamchi kalit teskari tomondan toza", repo(
+        '@Query("select x from X x left join Y y on x.yId = y.id")',
+        "Optional<X> findOne();"), 0),
+    ("y.id where da cheklangan toza", repo(
+        '@Query("select x from X x left join Y y on y.ownerId = x.id where y.id = :yid")',
+        "Optional<X> findOne(Long yid);"), 0),
+    ("List qaytarsa toza (500 yo'q)", repo('@Query("%s")' % JOIN_LABEL,
+        "List<V> findViews();"), 0),
+    ("Page va Pageable toza", repo('@Query("%s")' % JOIN_LABEL,
+        "Page<V> findViews(Pageable p);"), 0),
+    ("Optional<List<..>> toza", repo('@Query("%s")' % JOIN_LABEL,
+        "Optional<List<V>> findViews();"), 0),
+    ("Pageable parametri bor toza", repo('@Query("%s")' % JOIN_LABEL,
+        "Optional<V> findViews(Pageable p);"), 0),
+    ("limit bor toza", repo(
+        '@Query("select x from X x left join Y y on y.ownerId = x.id limit 1")',
+        "Optional<X> findOne();"), 0),
+    ("agregat toza", repo(
+        '@Query("select count(x) from X x left join Y y on y.ownerId = x.id")',
+        "long countAll();"), 0),
+    ("nativeQuery tegilmaydi", repo(
+        '@Query(value = "select * from x left join y on y.owner_id = x.id", '
+        "nativeQuery = true)", "Optional<X> findOne();"), 0),
+    ("bog'lanish yo'li bo'yicha join toza", repo(
+        '@Query("select x from X x left join x.items i on i.active = true")',
+        "Optional<X> findOne();"), 0),
+    ("subso'rov ichidagi join toza", repo(
+        '@Query("select x from X x where exists (select 1 from A a join B b '
+        'on b.aId = a.id where a.id = x.id)")', "Optional<X> findOne();"), 0),
+    ("joinsiz so'rov toza", repo(
+        '@Query("select x from X x where x.code = :c")', "Optional<X> findOne(String c);"), 0),
+    ("update toza", repo(
+        '@Modifying\n@Query("update X x set x.a = 1 where x.id in '
+        '(select y.ownerId from Y y join Z z on z.yId = y.id)")', "int touch();"), 0),
+    ("countQuery dagi join sanalmaydi", repo(
+        '@Query(value = "select x from X x where x.id = :id", countQuery = '
+        '"select count(x) from X x left join Y y on y.ownerId = x.id")',
+        "Optional<X> findOne(Long id);"), 0),
+    ("literal bo'lmagan @Query toza", repo("@Query(Queries.FIND)",
+        "Optional<X> findOne();"), 0),
+    ("izohdagi @Query toza", repo(
+        '// @Query("select x from X x left join Y y on y.ownerId = x.id")',
+        "Optional<X> findByCode(String c);"), 0),
+    ("NOSONAR bilan o'tkaziladi", repo(
+        '@Query("select x from X x left join Y y on y.code = x.code") // NOSONAR',
+        "Optional<X> findOne();"), 0),
+]
+
+
+def case_nokalit_join():
+    rows = []
+    for name, code, expect in JOIN_CASES:
+        got = [f for f in check_code.check_text(code, MAIN)
+               if f.ref == "architect 18.10"]
+        rows.append(("%s (topildi: %d)" % (name, len(got)), len(got) == expect))
+    import docref
+    rows.append(("architect 18.10 indeksda bor",
+                 docref.by_ref("architect 18.10") == "architect 18.10"))
+    return rows
+
+
 SECTIONS = [
     ("Topilishi kerak", case_topilishi),
     ("Qo'llanmaga ulanish", case_qollanma),
@@ -1819,6 +1913,7 @@ SECTIONS = [
     ("Sonar 26.x: LocalDateTime turi boshqa fayldan", case_zonasiz_loyiha),
     ("Test sizishi va static ArchUnit grafi", case_flaky_qoidalar),
     ("to_regclass(..)::text va schema li nom", case_regclass_matn),
+    ("Bitta natijali @Query va kalitsiz join", case_nokalit_join),
     ("Toza fayl", case_toza_fayl),
     ("Ko'p fayl", case_kop_fayl),
     ("Zanjir majburlanadi", case_zanjir),

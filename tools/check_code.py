@@ -239,6 +239,7 @@ def check_text(text, path):
 
     out.extend(check_transactions(code))
     out.extend(check_tx_template_catch(code))
+    out.extend(check_nonunique_join(code, strip_comments(text)))
     out.extend(check_sonar(text, code, is_test, path))
     return suppress(out, text, code)
 
@@ -2414,6 +2415,124 @@ def check_nullable_result(code):
                     what = "`%s`" % arg
                 if what and _param_dereferenced(code, methods, callee, i):
                     report(m.start(1), what)
+    return out
+
+
+QUERY_RE = re.compile(r"@Query\b\s*(?=\()")
+QUERY_TAIL_RE = re.compile(r"\b(?:countQuery|countProjection|nativeQuery|name)\s*=")
+# Faqat entity nomi bilan (bosh harf) yozilgan join: sharti `on` da turadi va
+# shu shart joinning yagona cheklovi. `join e.items i on ..` kabi bog'lanish
+# yo'li bu yerga tushmaydi: uning ko'pligi tur ma'lumotisiz ko'rinmaydi.
+ENTITY_JOIN_RE = re.compile(
+    r"\b(?i:(?:(?:left|right|inner|full|cross)\s+)?(?:outer\s+)?join)\s+"
+    r"([A-Z][\w$.]*)\s+(?i:as\s+)?([A-Za-z_]\w*)\s+(?i:on|with)\b")
+JOIN_END_RE = re.compile(
+    r"\b(?i:join|where|group\s+by|order\s+by|having|union)\b")
+MANY_RESULT_RE = re.compile(
+    r"\b(?:List|Set|SortedSet|Collection|Iterable|Page|Slice|Stream|Streamable|"
+    r"Flux|Mono|Map|Window|Scroll)\b|\[")
+QUERY_SKIP_RE = re.compile(
+    r"\b(?i:(?:count|sum|avg|min|max)\s*\(|limit|group\s+by|fetch\s+first)\b")
+
+
+def _query_text(lit, start, end):
+    """@Query argumentidagi satr va text block literallari, bir qatorga."""
+    parts = []
+    for m in NOISE_RE.finditer(lit, start, end):
+        chunk = m.group(0)
+        if chunk.startswith('"""'):
+            parts.append(chunk[3:-3])
+        elif chunk.startswith('"'):
+            parts.append(re.sub(r"\\.", " ", chunk[1:-1]))
+    return re.sub(r"\s+", " ", " ".join(parts)).strip()
+
+
+def _query_method(code, pos):
+    """@Query dan keyingi metod: (qaytish turi, parametrlar matni) yoki None."""
+    i = pos
+    while True:
+        m = re.compile(r"\s*@[\w.]+").match(code, i)
+        if not m:
+            break
+        i = m.end()
+        if re.compile(r"\s*\(").match(code, i):
+            close = _paren_end(code, code.index("(", i))
+            if close == -1:
+                return None
+            i = close + 1
+    head = re.compile(
+        r"\s*((?:[\w$.<>?,\[\]]|\s)+?)\s+([a-z_$][\w$]*)\s*\(").match(code, i)
+    if not head:
+        return None
+    close = _paren_end(code, head.end() - 1)
+    if close == -1:
+        return None
+    ret = re.sub(r"^(?:(?:public|default|static|abstract)\s+)*", "",
+                 re.sub(r"\s+", " ", head.group(1)).strip())
+    return ret, code[head.end():close]
+
+
+def _top_level_depth(query, pos):
+    return query.count("(", 0, pos) - query.count(")", 0, pos)
+
+
+def check_nonunique_join(code, lit):
+    """Bitta natijali `@Query` da birlamchi kalit bo'yicha bo'lmagan join.
+
+    Metod bitta obyekt yoki `Optional` qaytaradi, JPQL da esa entity nomi
+    bilan `join Y y on ..` bor va `y.id` na `on` da, na `where` da
+    cheklanmagan: ikkinchi mos qator `IncorrectResultSizeDataAccessException`
+    (500) beradi. Jim qoladi: `List` qaytaradigan metod (500 yo'q), agregat
+    (`count`, `max`, ..), `limit`, `Pageable` parametri, `nativeQuery`,
+    update/delete, subso'rov ichidagi join va bog'lanish yo'li bo'yicha join.
+    Qiymati yagona deb bazada majburlangan kalit (masalan `y.code`) bo'yicha
+    join ham topiladi: tur ma'lumotisiz farqlab bo'lmaydi, shuning uchun
+    shunday joyda NOSONAR bilan izoh qoldiriladi.
+    """
+    out = []
+    for m in QUERY_RE.finditer(code):
+        close = _paren_end(code, m.end())
+        if close == -1:
+            continue
+        tail = QUERY_TAIL_RE.search(code, m.end(), close)
+        cut = tail.start() if tail else close
+        if re.search(r"nativeQuery\s*=\s*true", code[m.end():close]):
+            continue
+        query = _query_text(lit, m.end(), cut)
+        if not re.match(r"(?i:select|from)\b", query) or QUERY_SKIP_RE.search(query):
+            continue
+        method = _query_method(code, close + 1)
+        if not method:
+            continue
+        ret, params = method
+        if ret == "void" or MANY_RESULT_RE.search(ret) or re.search(
+                r"\b(?:Pageable|Limit)\b", params):
+            continue
+        where = re.search(r"\b(?i:where)\b", query)
+        where_text = query[where.end():] if where else ""
+        for j in ENTITY_JOIN_RE.finditer(query):
+            if _top_level_depth(query, j.start()) != 0:
+                continue
+            nxt = JOIN_END_RE.search(query, j.end())
+            on_text = query[j.end():nxt.start() if nxt else len(query)]
+            alias = re.escape(j.group(2))
+            if re.search(r"(?<![\w.])%s\.id\b" % alias, on_text) or re.search(
+                    r"(?<![\w.])%s\.id\s*(?:=|(?i:in)\b)|(?:=|(?i:in)\s*\()\s*%s\.id\b"
+                    % (alias, alias), where_text):
+                continue
+            out.append(_find(
+                "", "o'rta", code, m.start(),
+                "Bitta natijali `@Query` da `join %s %s on ..` birlamchi kalit bo'yicha "
+                "emas: `%s.id` shartda cheklanmagan, demak join tomoni yagona "
+                "ekani faqat taxmin. Ikkinchi mos qator `Query did not return a "
+                "unique result` (500) beradi, ro'yxatli so'rovda esa yozuv jim "
+                "takrorlanadi. Joinni `%s.id = x.<havola>` ga bog'lang, yagonalikni "
+                "partial unique index bilan bazada majburlang yoki metod `List` "
+                "qaytarsin va `order by` oxirida `%s.id` tursin. Yagonalik bazada "
+                "allaqachon majburlangan bo'lsa, izohli NOSONAR qo'ying."
+                % (j.group(1), j.group(2), j.group(2), j.group(2), j.group(2)),
+                "JPA", ref="architect 18.10"))
+            break
     return out
 
 

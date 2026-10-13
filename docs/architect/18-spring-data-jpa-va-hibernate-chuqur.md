@@ -265,6 +265,49 @@ Eng muhim chegara shu: JPQL ham, Criteria ham PostgreSQL ning kuchli qismini ifo
 | Performans tekshiruvi | "sekin" degan hisga tayanish | statistikadan so'rov soni, `explain analyze` dan plan |
 | Sahifalash | `offset` ni cheksiz o'stirish | katta offset da kalit bo'yicha keyset sahifalash |
 
+Bitta natija kutiladigan `@Query` da yashirin tuzoq bor: nokalitli join. Metod `Optional<T>` yoki bitta obyekt qaytaradi, JPQL da esa `left join` bor va uning sharti birlamchi kalit bo'yicha emas:
+
+```java
+@Query("""
+        select new ProductView(p.id, l.text)
+        from Product p
+        left join EntityLabel l
+               on l.ownerId = p.id and l.field = 'name' and l.status = 'ACTIVE'
+        where p.id = :id
+        """)
+Optional<ProductView> findView(Long id);
+```
+
+Bu so'rov "har mahsulotga bitta faol yorliq" degan taxminga tayanadi. Join ning `EntityLabel` tomoni yagona emas, yagonalik faqat Java kodidagi invariant: bazada uni hech narsa majburlamaydi. Ikkinchi faol qator paydo bo'lishi bilan (poyga, qo'lda tuzatilgan ma'lumot, boshqa servis) bitta mahsulot ikki qator beradi.
+
+Belgi: bitta natijali metod `IncorrectResultSizeDataAccessException: Query did not return a unique result: 2 results were returned` bilan yiqiladi, HTTP da bu 500. Ro'yxat qaytaradigan o'sha shakldagi so'rov esa hech narsa tashlamaydi: bir yozuvni ikki marta qaytaradi. Ekranda takror qator ko'rinadi, `Page` ning umumiy soni join bilan qurilgan count so'rovidan chiqsa, ortiqcha sanaladi. Bu jim nuqson, xato ham, log ham yo'q, shuning uchun uni 500 beradigan variantdan ham yomonroq deb hisoblash kerak. Bitta natijali va ro'yxatli so'rov bir xil sababdan buziladi, faqat belgisi har xil.
+
+Uch yechim bor, tanlov taxmin qayerda yashashiga bog'liq:
+
+1. Joinni birlamchi kalitga bog'lash: `left join EntityLabel l on l.id = p.labelId`. Join ning ikkinchi tomoni birlamchi kalit bo'yicha topilsa, u ko'pi bilan bitta qator beradi va bazadan hech narsa talab qilinmaydi. Ildiz yozuv kerakli yorliqqa havolani o'zi saqlay olsa, shu yechim eng yaxshi, chunki taxmin umuman yo'qoladi.
+2. Yagonalikni bazada majburlash: `create unique index ux_entity_label_active on entity_label (owner_id, field) where status = 'ACTIVE'`. "Bitta faol qator" haqiqiy biznes qoidasi bo'lsa va havola ildiz yozuvga sig'masa shu to'g'ri. Qoida Java dan bazaga ko'chadi, ikkinchi faol qator yozish urinishi `INSERT` da yiqiladi, ya'ni xato o'qishda emas, yozishda va aniq joyda chiqadi. Narxi: mavjud ma'lumotda takror bo'lsa indeks yaratilmaydi va migratsiya (deploy) to'xtaydi. Shuning uchun oldin `group by owner_id, field having count(*) > 1` bilan takrorlar sanaladi, tozalash alohida qadam bo'ladi, indeks undan keyin keladi. Yozuvchi kod ham o'zgaradi: eskisini nofaol qilish va yangisini qo'shish bitta tranzaksiyada, shu tartibda bo'lishi kerak.
+3. Yagonalikni ta'minlab bo'lmasa, tanlovni so'rovga ochiq yozish: metod `List` qaytaradi, chaqiruvchi har id uchun birinchi qatorni oladi. Bu yagona qator "bo'lishi kerak" bo'lgan holat emas, "bir nechtasidan bittasini tanlash" holati (masalan tarix qatorlaridan eng yangisi). Bunda 500 o'rniga barqaror natija chiqadi.
+
+```java
+@Query("""
+        select new ProductView(p.id, l.text)
+        from Product p
+        left join EntityLabel l
+               on l.ownerId = p.id and l.field = 'name' and l.status = 'ACTIVE'
+        where p.id in :ids
+        order by p.id asc, l.id asc
+        """)
+List<ProductView> findViews(Collection<Long> ids);
+```
+
+```java
+Map<Long, ProductView> byId = rows.stream()
+        .collect(Collectors.toMap(ProductView::id, Function.identity(),
+                (first, second) -> first, LinkedHashMap::new));
+```
+
+Uchinchi yechimda `order by` ning tuzilishi hal qiluvchi. Oxirgi ustun joinlangan tomonning yagona kaliti bo'lishi kerak (`l.id`): undan oldingi ustunlar teng chiqsa, qatorlar tartibi PostgreSQL da kafolatsiz va "birinchi qator" har so'rovda boshqa bo'lishi mumkin. Undan oldin ildiz yozuvning id si turadi (`p.id`): shunda bir yozuvning qatorlari ketma-ket keladi va sahifalash chegarasi ham aniq bo'ladi. Aks holda ikki yozuv qatorlari aralashadi va "har id uchun birinchi qator" faqat tasodifan to'g'ri bo'ladi. `left join` da hal qiluvchi ustun `null` bo'lishi mumkin (mos qator yo'q): `asc` da PostgreSQL `null` ni oxiriga qo'yadi, `desc` da boshiga. Shuning uchun `desc` kerak bo'lsa, `nulls last` ochiq yoziladi.
+
 ## 18.11 Qachon JPA dan voz kechib `JdbcClient` yoki to'g'ridan-to'g'ri SQL yozish kerak
 
 JPA ning kuchi domen obyektining hayot aylanishini boshqarishda: bitta buyurtmani yuklash, tahrirlash, saqlash. Kuchsiz joyi ommaviy o'qish va ommaviy yozish. Spring Framework 6.1 dan beri `JdbcClient` mavjud va shu bo'shliqni toza to'ldiradi: nomli parametrlar, record ga mapping.
