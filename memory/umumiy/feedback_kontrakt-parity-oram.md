@@ -20,3 +20,12 @@ yetarli emas.
 - Yo'qlikni tekshiradigan assert (`doesNotExist`) o'ram yo'q bo'lganda
   bo'sh ma'noda o'tadi: avval o'ram mavjudligi tasdiqlanadi, keyin
   ichidagi blok yo'qligi.
+- Shakl bir xil bo'lib, ma'no har xil bo'lishi ham parite buzilishi.
+  Bir ishda ikki servis bir xil `appliedFilter` ni qaytardi, lekin bitta
+  blokni biri oraliqqa toraytirdi, ikkinchisi butun tarix bo'yicha berdi:
+  bitta ekranda bir xil filtr ikki xil son ko'rsatardi. Shuning uchun
+  review topshirig'ida "har bir blok filtrga ikki servisda bir xil
+  javob beradimi" deb alohida so'raladi.
+- Seam (internal endpoint yoki client) orqali keladigan blok alohida
+  tekshiriladi: endpoint parametrni qabul qilgani uning o'sha parametrni
+  ishlatishini bildirmaydi.
