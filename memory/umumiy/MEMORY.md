@@ -11,3 +11,4 @@ Barcha proyektlarga tegishli yozuvlar. Bitta yozuv bitta qator.
 - `feedback_mdc-korrelyatsiya-id-bosilishi.md` - filtr qo'ygan MDC korrelyatsiya id ni kutubxona interceptor i bosib ketadi
 - `feedback_kontrakt-parity-oram.md` - shakl pariteti tekshirilganda javob o'ramini ham solishtirish, kontrakt testi JSON yo'lini ildizdan yozishi
 - `feedback_sheets-sintetik-paste.md` - Google Sheets ga brauzerdan ko'p qator yozish: sintetik paste hodisasi, koordinata masshtabi
+- `feedback_umumiy-daraxt-kompilyatsiya-buzilgan.md` - boshqa sessiyaning yarim ishi umumiy daraxtni yig'ilmas qilsa, testni ajratilgan worktree da yurgizish
