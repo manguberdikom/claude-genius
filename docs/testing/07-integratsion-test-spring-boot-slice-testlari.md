@@ -37,7 +37,7 @@ Arxitektor uchun muhim xulosa: slice test tezlik uchun emas, **cheklangan mas'ul
 
 | Annotatsiya | Nima ko'tariladi | Qachon ishlatiladi |
 | --- | --- | --- |
-| `@WebMvcTest` | DispatcherServlet, `@Controller`, `@ControllerAdvice`, `Converter`/`GenericConverter`, `Filter`, `HandlerInterceptor`, `WebMvcConfigurer`, Jackson, MockMvc, Spring Security config | HTTP kontrakti: status, JSON shakli, header, validatsiya, xato mapping |
+| `@WebMvcTest` | DispatcherServlet, `@Controller`, `@ControllerAdvice`, `Converter`/`GenericConverter`, `Filter`, `HandlerInterceptor`, `WebMvcConfigurer`, Jackson auto-konfiguratsiyasi (ilova `@Configuration` idagi `Module` bean emas, 7.12), MockMvc, Spring Security config | HTTP kontrakti: status, JSON shakli, header, validatsiya, xato mapping |
 | `@WebFluxTest` | WebFlux infra, `@Controller`, `@ControllerAdvice`, `WebFilter`, codec'lar, `WebTestClient` | Reactive controller va stream kontrakti |
 | `@DataJpaTest` | `@Entity`, Spring Data JPA repository, `EntityManager`, `TestEntityManager`, embedded DB, tranzaksiya + rollback | Query, mapping, fetch strategiya, projection |
 | `@JdbcTest` | `JdbcTemplate`, `DataSource`, tranzaksiya | Qo'lda yozilgan SQL, DAO |
@@ -450,6 +450,8 @@ E'tibor bering: bu sinfda `@Transactional` **yo'q**, tozalash esa `@Sql`'ning AF
 
 **MockMvc bilan biznes logikani testlash.** Agar `@WebMvcTest`'da narx hisoblash yoki chegirma qoidalari tekshirilayotgan bo'lsa, demak logika controller'da qolib ketgan yoki test noto'g'ri qatlamda yozilgan. HTTP testi faqat kontraktni tekshirsin.
 
+**Ilovaning Jackson `Module` bean ini slice ko'taradi deb o'ylash.** `@WebMvcTest` Jackson auto-konfiguratsiyasini ko'taradi, lekin ilovaning `@Configuration` sinflarini emas. Agar `JsonNullableModule`, o'z `Module` ingiz yoki `@JsonComponent` oddiy `@Configuration` da `@Bean` bo'lib tursa, slice uni ko'rmaydi: `ObjectMapper` o'sha turni tanimaydi va so'rov 400 yoki 500 bilan yiqiladi. Tuzoq shundaki, xato qisman ko'rinadi: shu turdagi maydoni YO'Q so'rov bemalol ishlaydi, shuning uchun sabab controller yoki validatsiyadan qidiriladi. Modul bean ini slice ga `@Import(JacksonConfig.class)` bilan yoki umumiy test `@TestConfiguration` iga qo'shib bering, va bitta deserializatsiya testi uni muzlatsin.
+
 **Slice'ni mock bilan to'ldirish.** `@WebMvcTest`'da o'nta `@MockitoBean` bo'lsa, controller haddan tashqari ko'p bog'liqlikka ega. Test dizayn muammosini ko'rsatib turadi - buni tuzatish kerak, mock qo'shish emas.
 
 ## 7.13 Arxitektor nazorat ro'yxati
@@ -461,6 +463,7 @@ E'tibor bering: bu sinfda `@Transactional` **yo'q**, tozalash esa `@Sql`'ning AF
 - [ ] `@DataJpaTest` qaysi bazada ishlayotgani aniq: H2 faqat mapping uchun, baza xatti-harakatiga bog'liq query'lar real bazada tekshiriladi.
 - [ ] Kritik query'lar uchun query soni (Hibernate statistics yoki datasource-proxy) aniq raqam bilan tasdiqlangan, N+1 regressiya testda ushlanadi.
 - [ ] API kontrakti (JSON maydonlari, status kodlari, `ProblemDetail` formati) `@WebMvcTest`/`@JsonTest` bilan qoplangan, ichki maydonlar sizib chiqmasligi tekshirilgan.
+- [ ] Ilova qo'shgan har bir Jackson `Module` yoki `@JsonComponent` slice testlarida ham ro'yxatdan o'tadi; buni bitta deserializatsiya testi muzlatadi.
 - [ ] Commit'dan keyingi xatti-harakat (AFTER_COMMIT event, trigger, constraint) tranzaksiyasiz testda tekshiriladi, tozalash esa `@Sql` yoki aniq cleanup bilan bajariladi.
 
 ---
