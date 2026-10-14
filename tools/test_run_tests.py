@@ -36,6 +36,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+from unittest import mock
 import threading
 import time
 
@@ -1514,7 +1515,31 @@ def case_ildiz_modul_test_resursi_sset(_):
             and list(modul.whole) == [("orders", "test")])
 
 
+def case_windows_wrapper_mutlaq_yol(_):
+    """Windows da wrapper mutlaq yo'l bilan chaqiriladi, yalang'och nom bilan emas.
+
+    Git Bash `NoDefaultCurrentDirectoryInExePath=1` qo'yadi va shunda
+    `cmd /c gradlew.bat` wrapper ni joriy papkadan topmaydi: buyruq 0
+    soniyada "is not recognized" bilan yiqiladi va birorta test yurmaydi.
+
+    Musbat: wrapper bor bo'lsa argv ildizga ulangan mutlaq yo'lni beradi.
+    Manfiy: argv da yalang'och `gradlew.bat` BO'LMAYDI, va wrapper yo'q
+    bo'lsa PATH dagi `gradle` ga qaytiladi (unga yo'l qo'shilmaydi).
+    """
+    files = gradle_shop()
+    files["gradlew.bat"] = "@echo off" + chr(10)
+    root = tree("wrapper_mutlaq", files)
+    yalangoch = tree("wrapper_yoq", gradle_shop())
+    with mock.patch.object(run_tests.os, "name", "nt"):
+        bor = run_tests.Project(root).runner
+        yoq = run_tests.Project(yalangoch).runner
+    return (bor == ["cmd", "/c", os.path.join(root, "gradlew.bat")]
+            and "gradlew.bat" not in bor
+            and yoq == ["cmd", "/c", "gradle"])
+
+
 CASES = [
+    ("Windows wrapper mutlaq yo'l bilan chaqiriladi", case_windows_wrapper_mutlaq_yol),
     ("ildiz modul test resursi `:test` beradi, `:src` emas", case_ildiz_modul_test_resursi_sset),
     ("settings.gradle: groovy, kotlin, projectDir", case_settings_groovy_va_kotlin),
     ("Gradle modul yo'li", case_modul_yoli_gradle),

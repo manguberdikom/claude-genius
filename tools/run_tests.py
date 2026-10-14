@@ -509,8 +509,12 @@ class Project:
                              else ("mvnw", "mvn"))
         if os.name == "nt":
             script = wrapper + (".bat" if self.tool == "gradle" else ".cmd")
-            if os.path.exists(os.path.join(self.root, script)):
-                return ["cmd", "/c", script]
+            # Mutlaq yo'l ataylab: Git Bash `NoDefaultCurrentDirectoryInExePath=1` qo'yadi,
+            # shuning uchun `cmd /c gradlew.bat` wrapper ni joriy papkadan TOPMAYDI va
+            # buyruq 0 soniyada "is not recognized" bilan yiqiladi.
+            script_path = os.path.join(self.root, script)
+            if os.path.exists(script_path):
+                return ["cmd", "/c", script_path]
             return ["cmd", "/c", fallback]
         path = os.path.join(self.root, wrapper)
         if os.path.exists(path):
