@@ -15,3 +15,4 @@ Barcha proyektlarga tegishli yozuvlar. Bitta yozuv bitta qator.
 - `feedback_sheets-sintetik-paste.md` - Google Sheets ga brauzerdan ko'p qator yozish: sintetik paste hodisasi, koordinata masshtabi
 - `feedback_umumiy-daraxt-kompilyatsiya-buzilgan.md` - boshqa sessiyaning yarim ishi umumiy daraxtni yig'ilmas qilsa, testni ajratilgan worktree da yurgizish
 - `feedback_token-egalik-identifikatorga-bogliq.md` - egalik identifikatordan hisoblanadigan tokenlashtirishda identifikatorni o'zgartirish tuzog'i
+- `feedback_tashqi-sinxda-bosh-qiymat.md` - tashqi manbadan sinxda bo'sh qiymat va placeholder mavjud ma'lumotni o'chirishi
