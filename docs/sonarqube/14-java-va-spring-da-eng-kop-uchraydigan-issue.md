@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 14. Java va Spring da eng ko'p uchraydigan issue va ularning yechimi (Common Java and Spring Issues)
 
@@ -126,7 +126,7 @@ public List<Report> list(@Valid ReportQuery query) {     // @Valid bo'lmasa teks
 
 ## 14.4 Qo'lda yozilgan SQL konkatenatsiyasi va parametrlangan so'rov
 
-SQL ni satr qo'shish bilan yig'ish Sonar da ikki xil belgilanadi. Formatlangan so'rov security hotspot sifatida chiqadi, kaliti `java:S2077`. Agar taint tahlili foydalanuvchi qiymatining so'rovga yetib borishini isbotlasa, bu vulnerability darajasiga ko'tariladi. Yechim oddiy: qiymatlar har doim parametr orqali uzatiladi. Muhim nuqta: parametr faqat qiymat uchun ishlaydi, ustun nomi uchun ishlamaydi. Shuning uchun tartiblash ustunini enum orqali whitelist qilish kerak.
+SQL ni satr qo'shish bilan yig'ish Sonar da ikki xil belgilanadi. Formatlangan so'rov `java:S2077` bilan chiqadi; bu qoida ilgari security hotspot bo'lgan, ochiq metadata da esa endi VULNERABILITY (Major) va `former-hotspot` tegi bilan. Agar taint tahlili foydalanuvchi qiymatining so'rovga yetib borishini isbotlasa, bu vulnerability darajasiga ko'tariladi. Yechim oddiy: qiymatlar har doim parametr orqali uzatiladi. Muhim nuqta: parametr faqat qiymat uchun ishlaydi, ustun nomi uchun ishlamaydi. Shuning uchun tartiblash ustunini enum orqali whitelist qilish kerak.
 
 ```java
 // Yomon: konkatenatsiya, Sonar security hotspot yoki vulnerability ochadi
@@ -413,6 +413,14 @@ Mingta issue bilan ishlashning birinchi qadami ro'yxatni tartiblash. Eski Sonar 
 - [ ] `java.util.Date`, `Calendar` va `SimpleDateFormat` ishlatgan joylarni `java.time` ga ko'chiring, vaqt olishni `Clock` bean i orqali qiling.
 - [ ] Getter lar ichida ichki to'plam qaytaradigan joylarni `List.copyOf` ga almashtiring va `null` qaytaradiganlarni bo'sh to'plamga o'zgartiring.
 - [ ] Test paketida assertion siz testlarni va `Thread.sleep` ishlatgan testlarni toping, birinchisiga assertion qo'shing, ikkinchisini shart bo'yicha kutishga o'tkazing.
+
+## Manbalar
+
+- [sonar-java 8.44, `S2077.json`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S2077.json) - formatlangan SQL qoidasining turi va tegi
+- [sonar-java 8.44, `TransactionalMethodVisibilityCheck.java`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/java-checks/src/main/java/org/sonar/java/checks/spring/TransactionalMethodVisibilityCheck.java) - `java:S2230` ning Spring 6 ga qarab o'zgarishi
+- [sonar-java 8.44, qoida metadata si](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S1192.json) - bobdagi har qoidaning rasmiy sarlavhasi, turi va darajasi shu metadata dan olingan
+- `tools/sonar_rules.tsv` - tur va daraja da'volari `check_docs.py` da shu snapshotga solishtiriladi; snapshot sonar-java va sonar-java-symbolic-execution metadata sidan olinadi
+- `tools/claims_data/sonar_messages.tsv` - keltirilgan inglizcha xabarlar check manbasidagi matnga `verify_claims.py --faqat xabar` bilan solishtiriladi
 
 ---
 

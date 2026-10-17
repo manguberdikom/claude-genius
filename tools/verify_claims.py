@@ -24,6 +24,9 @@ Tekshiruvlar (ma'lumot `tools/claims_data/` da, tarmoq kerak emas):
          PyYAML o'rnatilgan bo'lsa blok parse ham qilinadi.
   xml    ```xml blok xml.etree da parse bo'lmaydi (izohdan keyin
          `<?xml ...?>` kabi).
+  xabar  `java:Sxxxx` bilan bir qatorda keltirilgan inglizcha iqtibos
+         sonar_messages.tsv dagi check xabarlariga mos kelmaydi: qoida
+         xabari versiya bilan o'zgaradi va eski matn qolib ketadi.
   java   (faqat --java) ```java blok javac parserida uch o'ramda
          (compilation unit, class body, method body) ham o'tmaydi; butun
          blok o'tmasa bo'sh qator bo'yicha bo'laklarga bo'linib har bo'lak
@@ -63,8 +66,8 @@ import zipfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 DATA = os.path.join(HERE, "claims_data")
-KINDS = ("kalit", "api", "bom", "yaml", "xml", "java")
-DEFAULT_KINDS = ("kalit", "api", "bom", "yaml", "xml")
+KINDS = ("kalit", "api", "bom", "yaml", "xml", "xabar", "java")
+DEFAULT_KINDS = ("kalit", "api", "bom", "yaml", "xml", "xabar")
 WINDOW = 3
 
 Finding = collections.namedtuple("Finding", "path line tur xabar")
@@ -123,6 +126,11 @@ class Data(object):
                 self.api.append((api_literal(row), re.compile(pattern), row))
         self.java_allow = {(r["fayl"], r["sha1"]) for r in
                            read_tsv("java_allow.tsv", data_dir)}
+        # Qoida xabari: bitta kalitda bir nechta xabar bo'lishi mumkin
+        # (bir check turli holatda turli matn beradi).
+        self.sonar_msgs = {}
+        for row in read_tsv("sonar_messages.tsv", data_dir):
+            self.sonar_msgs.setdefault(row["kalit"], []).append(row)
 
 
 def api_literal(row):
@@ -505,6 +513,67 @@ def yaml_loader():
     return yaml, Loader
 
 
+# Qoida kaliti bilan bir qatorda turgan ingliz tilidagi iqtibos: korpus
+# Sonar xabarini aynan keltiradi, xabar esa versiya bilan o'zgaradi
+# (`java:S108` da "Either remove or fill this block of code" ->
+# "Remove this block of code, fill it in, or add a comment ...").
+RULE_IN_LINE = re.compile(r"\bjava:(S\d+)\b")
+EN_STOPWORDS = frozenset((
+    "a", "an", "and", "are", "be", "by", "for", "from", "in", "instead",
+    "is", "it", "its", "not", "of", "or", "should", "that", "the", "them",
+    "this", "to", "with", "without"))
+QUOTED_EN = re.compile(r'"([A-Z][^"]{14,200})"')
+# Xabarda interpolyatsiya bo'ladi ("Assign this magic number 42 to a
+# well-named constant"), shuning uchun taqqoslash uchun matn
+# normallashtiriladi va eng uzun statik bo'lagi olinadi.
+MSG_SPLIT = re.compile(r'(?:" \+ [^+]+ \+ "|%s|%d|\{\d*\})')
+
+
+def norm_msg(text):
+    text = text.replace("\u2019", "'").replace("`", "'")
+    text = re.sub(r"\s+", " ", text).strip().rstrip(".")
+    return text.lower()
+
+
+def msg_parts(text):
+    """Xabarning statik bo'laklari (14 belgidan uzunlari)."""
+    return [norm_msg(part) for part in MSG_SPLIT.split(text)
+            if len(norm_msg(part)) >= 14]
+
+
+def check_messages(doc, data, sink):
+    for line_no, line in enumerate(doc.text.splitlines(), 1):
+        keys = set(RULE_IN_LINE.findall(line))
+        if len(keys) != 1:
+            continue
+        key = keys.pop()
+        known = data.sonar_msgs.get(key)
+        if not known:
+            continue
+        for quote in QUOTED_EN.findall(line):
+            q = norm_msg(quote)
+            # Faqat inglizcha iqtibos tekshiriladi: o'zbekcha izohda ham
+            # uchta ketma-ket kichik harfli so'z bo'ladi, shuning uchun
+            # mezon inglizcha xizmat so'zlari sonidan olinadi.
+            if len(EN_STOPWORDS & set(q.split())) < 2:
+                continue
+            ok = False
+            for row in known:
+                full = norm_msg(row["xabar"])
+                if q in full or full in q:
+                    ok = True
+                    break
+                if any(part in q for part in msg_parts(row["xabar"])):
+                    ok = True
+                    break
+            if not ok:
+                sink.add(Finding(doc.rel, line_no, "xabar",
+                                 "java:%s xabari check manbasida yo'q: \"%s\"; "
+                                 "mavjudlari: %s" % (
+                                     key, quote,
+                                     "; ".join(sorted({r["xabar"] for r in known}))[:300])))
+
+
 def check_yaml(doc, sink, loader):
     for block in doc.blocks:
         if block.lang not in ("yaml", "yml"):
@@ -774,6 +843,8 @@ def collect(root=None, files=None, kinds=DEFAULT_KINDS, notes=None, data_dir=Non
             check_yaml(doc, sink, loader)
         if "xml" in kinds:
             check_xml(doc, sink)
+        if "xabar" in kinds:
+            check_messages(doc, data, sink)
     if "java" in kinds:
         check_java(docs, data, sink, notes)
 

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 15. Tenglik, hash va obyekt shartnomalari (Equality, Hashing and Object Contracts)
 
@@ -70,6 +70,10 @@ public final class Sku {
     }
 }
 ```
+
+Ko'p maydonli sinfda `Objects.hash(a, b, c)` bir qatorda yoziladi va u to'g'ri ishlaydi, lekin tez emas: argumentlar massivga yig'iladi va primitivlar boxing dan o'tadi. Shu sababli issiq yo'lda yoki kalit sifatida ko'p ishlatiladigan sinfda hash qo'lda yoziladi (`31 * result + ...` shakli), o'zgarmas sinfda esa natijani keshlash mumkin. Keshlashda bitta ehtiyot bor: boshlang'ich qiymat (`0`) ko'p uchraydigan nusxaning haqiqiy hash i bo'lmasligi kerak, aks holda kesh hech qachon to'ldirilmaydi.
+
+Teskari tomoni ham qoida: **ahamiyatli maydonni hash hisobidan tezlik uchun chiqarib tashlash xato**. Hash tezlashadi, lekin sifati tushadi: faqat chiqarib tashlangan maydon bilan farq qiladigan nusxalar bir xil hash oladi va `HashMap` chiziqli vaqtdan kvadratik vaqtga o'tadi. `equals` da solishtirilgan maydonlar to'plami hash da ham bo'ladi (ortiqcha, ya'ni `equals` da ishlatilmaydigan maydon esa hash ga kirmaydi).
 
 ## 15.3 `equals` ni yozish shabloni va `instanceof` pattern matching
 
@@ -242,6 +246,17 @@ Ikkinchi qoida: `Comparator` ni `static final` maydonga chiqarish - har bir chaq
 - [ ] Barcha `toString` larni ko'rib, sezgir maydonlarni maskalang va lazy assotsiatsiyalarni olib tashlang.
 - [ ] `Cloneable` ishlatilgan joylarni nusxa konstruktori yoki o'zgarmas turga o'tkazing.
 - [ ] `Map` kaliti va `Set` elementi sifatida ishlatilgan o'zgaradigan turlarni topib, o'zgarmas turga almashtiring.
+
+## Manbalar
+
+- Joshua Bloch, *Effective Java* 3rd, Item 10 - `equals` shartnomasining besh qoidasi, `CaseInsensitiveString` simmetriklik buzilishi, qiymat komponentini vorislik bilan qo'shib bo'lmasligi
+- Joshua Bloch, *Effective Java* 3rd, Item 11 - `hashCode` shartnomasi, `Objects.hash` ning narxi, hash ni keshlash va ahamiyatli maydonni chiqarib tashlamaslik
+- Joshua Bloch, *Effective Java* 3rd, Item 12 - `toString` da nimani ko'rsatish va formatni hujjatlash qarori
+- Joshua Bloch, *Effective Java* 3rd, Item 13 - `clone` dan voz kechish va nusxa konstruktori
+- Joshua Bloch, *Effective Java* 3rd, Item 14 - `compareTo` shartnomasi va `BigDecimal("1.0")` ning `HashSet` va `TreeSet` dagi farqi
+- Joshua Bloch, *Effective Java* 3rd, Item 40 - `@Override` imzo xatosini ushlashi
+- [Java API, `Object.hashCode`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html#hashCode()) - teng obyektlar bir xil hash qaytarishi talabi
+- [Hibernate User Guide, equals/hashCode](https://docs.jboss.org/hibernate/orm/6.6/userguide/html_single/Hibernate_User_Guide.html#entity-pojo-equals-hashcode) - entitetda identifikator bo'yicha tenglik va proxy bilan `instanceof`
 
 ---
 

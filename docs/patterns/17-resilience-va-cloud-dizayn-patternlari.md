@@ -7,7 +7,7 @@
 # 17. Resilience va cloud dizayn patternlari (Resilience & Cloud Design Patterns)
 
 <details>
-<summary>Bu bobdagi 43 bo'lim</summary>
+<summary>Bu bobdagi 44 bo'lim</summary>
 
 - [17.1 Qayta urinish (Retry - exponential backoff, jitter)](#171-qayta-urinish-retry---exponential-backoff-jitter)
 - [17.2 Zanjirni uzgich (Circuit Breaker)](#172-zanjirni-uzgich-circuit-breaker)
@@ -51,7 +51,8 @@
 - [17.40 Spring Framework 7 yadrosidagi resilience (Spring Framework 7 core resilience: @Retryable, @ConcurrencyLimit)](#1740-spring-framework-7-yadrosidagi-resilience-spring-framework-7-core-resilience-retryable-concurrencylimit)
 - [17.41 Timeout budjeti / deadline propagatsiyasi (Timeouts Budget / Deadline Propagation)](#1741-timeout-budjeti--deadline-propagatsiyasi-timeouts-budget--deadline-propagation)
 - [17.42 Retry bo'roni (Retry Storm - anti-pattern)](#1742-retry-boroni-retry-storm---anti-pattern)
-- [17.43 Amalda qo'llash](#1743-amalda-qollash)
+- [17.43 Kontentni oldindan hisoblash (Precompute Content)](#1743-kontentni-oldindan-hisoblash-precompute-content)
+- [17.44 Amalda qo'llash](#1744-amalda-qollash)
 
 </details>
 
@@ -729,7 +730,50 @@ public class RatesClient {
 
 **Ehtiyot bo'ling:** Default retry sozlamalarini "xavfsiz" deb o'ylamang - jitter'siz fixed delay va ko'p qatlamli retry eng ko'p uchraydigan prod incident sababidir; retry'ni har doim circuit breaker, concurrency limit va timeout budjeti bilan birga joylashtiring. Kafka'da bloklanuvchi retry (`DefaultErrorHandler` uzoq backoff bilan) butun partitionni to'xtatadi va rebalance'ga olib keladi - bunday holda `@RetryableTopic` asosidagi non-blocking retry'ni tanlang.
 
-## 17.43 Amalda qo'llash
+## 17.43 Kontentni oldindan hisoblash (Precompute Content)
+
+**Tavsif:** Har so'rovda qaytadan yasaladigan, lekin kamdan-kam o'zgaradigan kontent so'rov yo'lidan olib chiqiladi va deploy yoki rejali job vaqtida bir marta hisoblanadi. Nygard buni ko'paytiruvchi effekti bilan izohlaydi: kontent haftada bir marta o'zgarsa-yu kuniga juda ko'p marta render qilinsa, foyda bir marta olinadi, narx esa har so'rovda to'lanadi. Xotiradagi fragment keshi bu muammoni to'liq yopmaydi: kesh ishchi to'plamdan kichik bo'lsa thrashing boshlanadi va sovuq kesh birinchi so'rovni uzoq kutishga majbur qiladi. Tanlov "hammasi yoki hech narsa" emas: trafik zich tushadigan sahifa oldindan hisoblanadi, kam ko'rilgani dinamik qoladi.
+
+**Spring'da qayerda uchraydi:** Hosil qilish tomoni - `@Scheduled` yoki Spring Batch job ichida Thymeleaf `TemplateEngine.process(...)` bilan HTML ni faylga yozish, yoki build vaqtida generator plugin. Berish tomoni - `WebMvcConfigurer.addResourceHandlers(...)` va `ResourceHandlerRegistration.setCacheControl(...)`, `spring.web.resources.static-locations` hamda `spring.web.resources.cache.cachecontrol.max-age`; `ShallowEtagHeaderFilter` ETag qo'shadi. Ma'lumot tomonida xuddi shu g'oya read model va [materiallashtirilgan ko'rinish](10-malumotlarni-boshqarish-va-taqsimlash.md#1018-materiallashtirilgan-korinish-materialized-view) sifatida yashaydi, fayl taqsimlash esa shu bobdagi [statik kontentni hosting qilish](#1723-statik-kontentni-hosting-qilish-static-content-hosting) bo'limida. Keshni oldindan to'ldirish boshqa narsa va u [keshni oldindan to'ldirish](11-keshlash-patternlari.md#1119-keshni-oldindan-toldirish-cache-warming) bo'limida yoziladi: u so'rov yo'lini saqlab, faqat birinchi urinishni tezlashtiradi.
+
+```java
+@Component
+class CatalogPageGenerator {
+
+    private final TemplateEngine templateEngine;
+    private final Path target;
+
+    CatalogPageGenerator(TemplateEngine templateEngine,
+                         @Value("${app.precomputed-dir}") Path target) {
+        this.templateEngine = templateEngine;
+        this.target = target;
+    }
+
+    @Scheduled(cron = "0 15 3 * * *")   // kecha bo'yi bir marta
+    void regenerate() throws IOException {
+        Context context = new Context();
+        context.setVariable("categories", List.of("kitob", "telefon"));
+        String html = templateEngine.process("catalog", context);
+        Path tmp = target.resolveSibling("catalog.html.tmp");
+        Files.writeString(tmp, html);
+        Files.move(tmp, target.resolve("catalog.html"),
+                StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+    }
+}
+```
+
+**Qo'llanish keyslari:**
+- Kategoriya va kampaniya sahifalarini kecha bo'yi bir marta yasab, CDN ortida statik fayl sifatida berish.
+- Narx va mavjudlik kabi tez o'zgaradigan kichik bo'lakni alohida AJAX chaqiruvga ajratib, qolgan sahifani oldindan hisoblash.
+- Hisobot ekranining og'ir agregatini rejali job bilan read model jadvaliga yozib, so'rovni oddiy `SELECT` ga aylantirish.
+- Sitemap, RSS va ochiq API ning katalog eksportini har o'zgarishda emas, jadval bo'yicha hosil qilish.
+- Birinchi yuklanishdagi JSON konfiguratsiyani build vaqtida fayl qilib, har so'rovda yasamaslik.
+
+**Ehtiyot bo'ling:** Oldindan hisoblangan kontent eskiradi, shuning uchun uni bekor qilish qoidasi oldindan kelishiladi: deploy da to'liq qayta yasash, yoki manba o'zgarganda nishonlangan qayta hisoblash. Faylni joyida tahrir qilish yarim yozilgan sahifani ko'rsatadi; vaqtinchalik faylga yozib atomik `move` bilan almashtirish kerak. Foydalanuvchiga xos bo'lak (savat, ism) oldindan hisoblanmaydi: uni sahifaga keyin qo'shish kerak, aks holda bir mijozning ma'lumoti boshqasiga ko'rinadi. Barcha instance bir vaqtda qayta hisoblashga tushsa, bu o'zi yuklama cho'qqisi bo'ladi; generatsiyani bitta egaga (leader) berib yoki jitter qo'yib tarqatiladi.
+
+Manba: Michael T. Nygard, *Release It! Design and Deploy Production-Ready Software*, 1-nashr, Pragmatic Bookshelf, 2007, 10.3-bo'lim, 210-213-betlar.
+
+## 17.44 Amalda qo'llash
 
 - [ ] Har bir tashqi chaqiruv uchun connect va read timeout aniq qo'yilganini tekshiring; default qiymatga tayanadigan joylarni ro'yxat qiling.
 - [ ] Chaqiruv zanjirlari bo'yicha timeout budjetini hisoblang: ichki timeout tashqisidan kichik bo'lishi kerak.
@@ -751,6 +795,9 @@ public class RatesClient {
 - [spring-boot, `HttpClientsProperties.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/module/spring-boot-http-client/src/main/java/org/springframework/boot/http/client/autoconfigure/HttpClientsProperties.java) - 4.0 da prefiks `spring.http.clients`
 - [openjdk/jdk, `StructuredTaskScope.java` (jdk-25-ga)](https://raw.githubusercontent.com/openjdk/jdk/jdk-25-ga/src/java.base/share/classes/java/util/concurrent/StructuredTaskScope.java) - `ShutdownOnSuccess` yo'q; `open(Joiner.anySuccessfulResultOrThrow())`
 - [resilience4j, `README.adoc`](https://raw.githubusercontent.com/resilience4j/resilience4j/v2.4.0/README.adoc) - "Resilience4j 3 requires Java 21"
+- Michael T. Nygard, *Release It! Design and Deploy Production-Ready Software*, 1-nashr, Pragmatic Bookshelf, 2007, 10-bob - Precompute Content (210-213-betlar: ko'paytiruvchi effekti, xotiradagi fragment keshi thrashing va sovuq kesh muammosi, qism-qism oldindan hisoblash)
+- Michael T. Nygard, *Release It!*, 1-nashr, 2007, 5-bob - Stability Patterns ro'yxati sakkiz elementdan iborat: Use Timeouts (111-bet), Circuit Breaker (115-bet), Bulkheads (119-bet), Steady State (124-bet), Fail Fast (131-bet), Handshaking (134-bet), Test Harness (136-bet), Decoupling Middleware (141-bet)
+- ESLATMA: mavjud nusxa 1-nashr (2007). 2-nashr (2018) nomlari (Let It Crash, Shed Load, Create Back Pressure, Governor) shu kitobdan iqtibos qilinmaydi
 
 ---
 

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 5. Metrikalar: rating, texnik qarz, murakkablik, takrorlanish (Metrics and Ratings)
 
@@ -47,7 +47,13 @@ Jadvaldagi chegaralar SonarQube ning standart sozlamasi, va ularni administrator
 
 Texnik qarz Sonar da aniq o'lchov birligiga ega: daqiqa. Bu SQALE index deb ataladi va barcha maintainability issue larning remediation effort yig'indisiga teng. Hisobotda u "5d 4h" ko'rinishida chiqadi, lekin ichida baribir butun son daqiqa yotadi. Kun hisobiga o'tkazishda standart ish kuni 8 soat deb olinadi, shuning uchun 480 daqiqa qarz "1d" bo'lib ko'rinadi.
 
-Debt ratio esa nisbat: qarzni shu kodni noldan yozish uchun ketadigan taxminiy vaqtga bo'ladi. Rivojlantirish narxi standart holatda har bir kod qatori uchun 30 daqiqa deb olinadi, bu `sonar.technicalDebt.developmentCost` sozlamasi bilan boshqariladi. Formula: debt ratio = remediation cost / (ncloc * cost per line). 10 000 qatorli modulda rivojlantirish narxi 300 000 daqiqa, ya'ni A reyting uchun qarz 15 000 daqiqadan oshmasligi kerak.
+Debt ratio esa nisbat: qarzni shu kodni noldan yozish uchun ketadigan taxminiy vaqtga bo'ladi. Rivojlantirish narxi default holatda har bir kod qatori uchun 30 daqiqa (`sonar.technicalDebt.developmentCost`, default qiymati manbada `"30"`). Formula: debt ratio = remediation cost / (ncloc * cost per line). 10 000 qatorli modulda rivojlantirish narxi 300 000 daqiqa, ya'ni A reyting uchun qarz 15 000 daqiqadan oshmasligi kerak.
+
+Reyting chegaralari ham sozlama: `sonar.technicalDebt.ratingGrid` ning default qiymati `0.05,0.1,0.2,0.5`, ya'ni A uchun debt ratio 5 foizgacha, B uchun 10, C uchun 20, D uchun 50, undan ortig'i E. SonarQube ning o'z sozlama tavsifidagi misol ham shunday ishlaydi: rivojlantirish narxi 30 daqiqa bo'lsa, 2 500 qatorli va 24 000 daqiqa qarzli proyektning nisbati 24000 / (30 * 2500) = 0.32 va bu D reytingini beradi.
+
+Atama haqida bir izoh: metrikaning kaliti hamon `sqale_rating`, lekin uning rasmiy nomi `CoreMetrics` da **"Maintainability Rating"** deb yozilgan, tavsifi esa "A-to-E rating based on the technical debt ratio". `sqale_index` ning tavsifi ham aniq: komponentdagi hamma issue ni tuzatish uchun ketadigan **daqiqadagi** umumiy kuch. Hisobotda "SQALE" so'zi ko'rinmasligi mumkin, lekin kalitlar o'sha-o'sha, va Web API hamda gate shartlarida aynan kalit ishlatiladi.
+
+**Muhim:** bu ikki sozlama scanner tomonida emas, **server tomonida** o'qiladi. Ularni hisoblaydigan `RatingSettings` sinfi `@ComputeEngineSide` deb belgilangan va qiymatni Compute Engine ning `Configuration` idan oladi; `DebtProperties` ularni "Technical Debt" kategoriyasidagi global sozlama sifatida e'lon qiladi. Ya'ni `sonar-project.properties` ga `sonar.technicalDebt.developmentCost` yozib qo'yish reytingni o'zgartirmaydi: u SonarQube ning sozlamalar sahifasida qo'yiladi.
 
 Bu formuladan bitta nozik xulosa chiqadi: debt ratio ni kod yozib ham yaxshilash mumkin. Agar modulga toza 5000 qator qo'shsangiz, maxraj o'sadi va foiz tushadi, qarzning o'zi esa joyida qoladi. Shuning uchun absolyut qarz daqiqasi va foiz birga o'qilishi kerak.
 
@@ -58,9 +64,9 @@ sonar.sources=src/main/java
 sonar.tests=src/test/java
 sonar.java.binaries=target/classes
 
-# Bitta kod qatorini yozish narxi daqiqada.
-# Standart 30. Pasaytirsang debt ratio oshadi, ya'ni talab qattiqlashadi.
-sonar.technicalDebt.developmentCost=30
+# DIQQAT: sonar.technicalDebt.developmentCost va .ratingGrid bu yerda
+# ishlamaydi, ular server sozlamasi (Compute Engine o'qiydi).
+# Scanner tomonida faqat quyidagilar ma'noga ega.
 
 # Generatsiya qilingan kod qarzga kirmasligi uchun chiqarib tashlanadi.
 sonar.exclusions=**/generated/**,**/*MapperImpl.java,**/dto/openapi/**
@@ -316,6 +322,13 @@ Oxirgi maslahat: trendni odamga ko'rsatganda foizni emas, yo'nalishni ko'rsating
 - [ ] Quality gate ni ko'rib chiqing: unda faqat new code bo'yicha qaror metrikalari turganiga, umumiy coverage kabi signal metrikalari turmaganiga ishonch hosil qiling.
 - [ ] Kod bazasida `NOSONAR` va `@SuppressWarnings("java:S...")` sonini sanab, trend jadvaliga ustun qilib qo'shing va har bir yangisiga sabab izohini talab qiling.
 - [ ] Haftalik cron bilan `api/measures/search_history` natijasini o'z jadvalingizga yozib boradigan skript qo'shing, keyin 6 oylik trendni jamoaga ko'rsating.
+
+## Manbalar
+
+- [sonar-plugin-api, `CoreMetrics.java`](https://raw.githubusercontent.com/SonarSource/sonar-plugin-api/a9d2a8204d3762cc96ea7bd074a26cbe982745b4/plugin-api/src/main/java/org/sonar/api/measures/CoreMetrics.java) - metrika kalitlari, nomlari va tavsiflari: `sqale_index` (hamma issue ni tuzatish uchun daqiqadagi kuch), `sqale_rating` (rasmiy nomi "Maintainability Rating", debt ratio asosidagi A-E), `development_cost`, `new_technical_debt`, `new_maintainability_rating`
+- [sonar-plugin-api, `CoreProperties.java`](https://raw.githubusercontent.com/SonarSource/sonar-plugin-api/a9d2a8204d3762cc96ea7bd074a26cbe982745b4/plugin-api/src/main/java/org/sonar/api/CoreProperties.java) - `sonar.technicalDebt.developmentCost` default `30` va `sonar.technicalDebt.ratingGrid` default `0.05,0.1,0.2,0.5`
+- [sonarqube 9.9 LTA, `DebtProperties.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/sonar-core/src/main/java/org/sonar/core/config/DebtProperties.java) - ikki sozlamaning global (server) sozlama sifatida e'lon qilinishi va hujjatdagi hisob misoli (24000 / (30 * 2500) = 0.32, D reyting)
+- [sonarqube 9.9 LTA, `RatingSettings.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-ce-task-projectanalysis/src/main/java/org/sonar/ce/task/projectanalysis/qualitymodel/RatingSettings.java) - `@ComputeEngineSide`, ya'ni qiymat server tomonida o'qiladi va scanner tomonidagi `sonar-project.properties` ga ta'sir qilmaydi
 
 ---
 

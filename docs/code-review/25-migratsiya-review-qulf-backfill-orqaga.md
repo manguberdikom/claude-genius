@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 25. Migratsiya review: qulf, backfill, orqaga moslik (Reviewing Migrations)
 
@@ -46,6 +46,34 @@ PostgreSQL da har bir DDL operatsiyasi qulf oladi, va qulf turi hamma narsani be
 | `DROP INDEX CONCURRENTLY` | SHARE UPDATE EXCLUSIVE | Tez | Past |
 | `RENAME COLUMN` | ACCESS EXCLUSIVE | Bir zumda | Yuqori (kod moslik) |
 | `TRUNCATE` | ACCESS EXCLUSIVE | Tez | Juda yuqori (ma'lumot) |
+
+Jadvalning asosi qo'llanmadagi bitta qoida: `ALTER TABLE` ning har bir
+shakli, alohida aytilmagan bo'lsa, `ACCESS EXCLUSIVE` qulf oladi.
+Istisnolar oshkor sanalgan, shuning uchun review da savol teskari
+qo'yiladi: "bu shakl istisnolar ro'yxatida bormi".
+
+Yana bitta narsa jadvalda ko'rinmaydi va u katta jadvalda vaqtni
+keskin qisqartiradi: `SET NOT NULL` odatda butun jadvalni skanerlaydi,
+lekin ustunda `NULL` yo'qligini isbotlaydigan yaroqli `CHECK` cheklovi
+bo'lsa, skan o'tkazib yuboriladi. Shundan uch qadamli xavfsiz yo'l
+chiqadi va review da aynan shu yo'l talab qilinadi.
+
+```sql
+-- 1) Cheklov tez qo'shiladi: mavjud qatorlar tekshirilmaydi
+ALTER TABLE orders
+    ADD CONSTRAINT orders_paid_at_not_null CHECK (paid_at IS NOT NULL) NOT VALID;
+
+-- 2) Tekshirish yozuvni bloklamaydi (SHARE UPDATE EXCLUSIVE)
+ALTER TABLE orders VALIDATE CONSTRAINT orders_paid_at_not_null;
+
+-- 3) Endi skan kerak emas, chunki cheklov buni allaqachon isbotlagan
+ALTER TABLE orders ALTER COLUMN paid_at SET NOT NULL;
+ALTER TABLE orders DROP CONSTRAINT orders_paid_at_not_null;
+```
+
+`CHECK` va `NOT NULL` qo'shish jadvalni skanerlaydi, lekin uni **qayta
+yozmaydi**: ikkisining farqi muhim, chunki qayta yozish vaqtincha ikki
+baravar disk joyini talab qiladi.
 
 ```sql
 -- Review da to'xtatiladigan migratsiya: diffda bir qator.
@@ -325,6 +353,12 @@ void migrationsRunOnSchemaWithExistingData() {
 - [ ] Eng katta beshta jadval hajmini `REVIEW.md` ga yozib qo'ying - reviewer qulf xavfini tez baholashi uchun.
 - [ ] Ma'lumot yo'qotadigan migratsiyalar uchun "ko'chirib nomlash va bir oy kutish" konvensiyasini kelishib oling.
 - [ ] Backfill lar uchun standart shablon (bo'lak, idempotentlik, progress metrikasi, to'xtatish kaliti) tayyorlang.
+
+## Manbalar
+
+- [PostgreSQL 17, ALTER TABLE (alter_table.sgml)](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/ref/alter_table.sgml) - alohida aytilmasa `ACCESS EXCLUSIVE` qulf olinishi; `ADD FOREIGN KEY` ikki jadvalda `SHARE ROW EXCLUSIVE`; `CHECK` va `NOT NULL` skanerlaydi lekin qayta yozmaydi; yaroqli `CHECK` bo'lsa `SET NOT NULL` skanni o'tkazib yuborishi
+- [PostgreSQL 17, Explicit Locking (mvcc.sgml)](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/mvcc.sgml) - qulf turlari va ularning mosligi jadvali
+- [PostgreSQL 17, Routine Maintenance (maintenance.sgml)](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/maintenance.sgml) - uzun tranzaksiya va vacuum bog'liqligi
 
 ---
 

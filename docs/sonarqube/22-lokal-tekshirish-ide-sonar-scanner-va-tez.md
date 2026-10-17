@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 22. Lokal tekshirish: IDE, sonar-scanner va tez qaytish (Local Feedback Loop)
 
@@ -115,6 +115,10 @@ mvn -B sonar:sonar -Dsonar.qualitygate.wait=true -Dsonar.qualitygate.timeout=300
 ./gradlew clean test jacocoTestReport sonar \
     -Dsonar.token="$SONAR_TOKEN" -Dsonar.host.url="$SONAR_HOST_URL"
 ```
+
+Tokenni berishning uch yo'li bor va ular versiyaga bog'liq. `SONAR_TOKEN` muhit o'zgaruvchisi **hamma liniyada** ishlaydi: 9.9 LTA scanner manbasida ham u birinchi o'qiladi va keyin `sonar.login` ga tushadi. `sonar.token` xossasi esa yangi liniyalarda paydo bo'lgan va 9.9 da yo'q; eski o'rnatmada u jim e'tiborsiz qoladi va tahlil anonim ketadi (yoki 401 beradi). Shu sababli yuqoridagi misolda `-Dsonar.token` bilan birga `SONAR_TOKEN` ham eksport qilingan: bu ikki liniyada ham ishlaydigan yagona shakl. Uchinchi, eng eski yo'l `sonar.login` va `sonar.password`; tokenni `sonar.login` ga qo'yib, parolni bo'sh qoldirish kerak.
+
+Yana bir default manbadan: `sonar.host.url` ko'rsatilmasa scanner `http://localhost:9000` ga uradi. CI da bu "ulanmadi" emas, "boshqa joyga ulandi" turidagi xatoga olib keladi, shuning uchun URL ni aniq berish kerak.
 
 Natijani ko'rishning ikki yo'li bor. Birinchisi brauzerda loyiha sahifasi, bu eng aniq. Ikkinchisi terminalda qaytgan `ANALYSIS SUCCESSFUL, you can find the results at ...` qatori, u to'g'ridan to'g'ri havola beradi.
 
@@ -414,6 +418,12 @@ Bu ish `tools/sonar_local.py` da: `ishga` (konteyner), `sozla` (parol, token, pr
 - [ ] Ko'p modulli loyihada diff dan modul nomini topib `mvn verify -pl <modullar> -am -T 1C` bilan lokal halqani qisqartir, lekin CI da to'liq tahlil qoldir.
 - [ ] Push dan oldin lokal SonarQube ni asosiy serverning ko'zgusi qilib (aynan bir versiya image, profil hash i, gate shartlari, status sinxroni) bir marta tahlil qil va `solishtir` bilan birinchi marta dalil ol.
 - [ ] PR ochishdan oldin bir marta `mvn clean verify sonar:sonar -Dsonar.qualitygate.wait=true` ni lokal branch nomi bilan ishlatib, gate javobini oldindan ko'r.
+
+## Manbalar
+
+- [sonarqube 9.9 LTA, `ScannerWsClientProvider.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/sonar-scanner-engine/src/main/java/org/sonar/scanner/bootstrap/ScannerWsClientProvider.java) - `SONAR_TOKEN` muhit o'zgaruvchisi, `sonar.login`/`sonar.password` va `sonar.host.url` ning defaulti `http://localhost:9000`
+- [sonarqube 9.9 LTA, `ScanProperties.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/sonar-scanner-engine/src/main/java/org/sonar/scanner/scan/ScanProperties.java) - `sonar.verbose`, `sonar.qualitygate.wait` va `sonar.qualitygate.timeout`
+- [sonarqube 9.9 LTA, `ScannerProperties.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/sonar-core/src/main/java/org/sonar/core/config/ScannerProperties.java) - `sonar.branch.name`, `sonar.pullrequest.key`, `sonar.pullrequest.branch`, `sonar.pullrequest.base`
 
 ---
 

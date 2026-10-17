@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 34. Yangilash, LTA migratsiyasi, zaxira va housekeeping (Upgrades, Backup and Housekeeping)
 
@@ -243,7 +243,18 @@ O'z maxsus qoida pluginingiz bo'lsa, u eng zaif nuqta. Plugin API versiyalar ora
 
 Housekeeping bu Sonar ning ichki tozalash siyosati. U tahlil tarixini qancha saqlashni, snapshot larni qanday birlashtirishni va o'lgan branch bilan yopilgan PR ma'lumotlarini qachon o'chirishni belgilaydi. Standart sozlamalar ko'p branch li loyihada tez yetmaydi.
 
-Eng foydali uchta sozlama shular. Birinchisi, yopilgan PR ma'lumotlarini bir necha kundan keyin o'chirish. Ikkinchisi, faol bo'lmagan feature branch ma'lumotlarini bir necha haftadan keyin o'chirish. Uchinchisi, kunlik snapshot larni haftalik va oylik darajaga birlashtirish. Housekeeping yangilashning bir qismi, chunki migratsiya vaqti baza hajmiga bog'liq. Yangilashdan bir hafta oldin uni qattiqlashtirib bir necha tozalash siklini o'tkazsangiz, migratsiya tezroq o'tadi.
+Sozlamalarning kaliti va defaulti SonarQube manbasida (`PurgeProperties`) aniq yozilgan va ularni bilish migratsiyani rejalashtirishda kerak:
+
+| Kalit | Default | Ma'nosi |
+|---|---|---|
+| `sonar.dbcleaner.hoursBeforeKeepingOnlyOneSnapshotByDay` | 24 soat | shundan keyin kuniga bitta tahlil qoldiriladi |
+| `sonar.dbcleaner.weeksBeforeKeepingOnlyOneSnapshotByWeek` | 4 hafta | shundan keyin haftada bitta |
+| `sonar.dbcleaner.weeksBeforeKeepingOnlyOneSnapshotByMonth` | 52 hafta | shundan keyin oyda bitta |
+| `sonar.dbcleaner.weeksBeforeKeepingOnlyAnalysesWithVersion` | 104 hafta | shundan keyin faqat versiya hodisasi bor tahlillar |
+| `sonar.dbcleaner.weeksBeforeDeletingAllSnapshots` | 260 hafta | shundan keyin hammasi o'chadi |
+| `sonar.dbcleaner.daysBeforeDeletingClosedIssues` | 30 kun | yopilgan issue shundan keyin o'chadi |
+
+Jadvaldan ko'rinadigan narsa muhim: defaultlar **juda uzun** (260 hafta besh yildan ko'proq), ya'ni baza o'z-o'zidan qisqarmaydi va migratsiya vaqti yillar bo'ylab o'sib boradi. Eng foydali uchta harakat esa shular: yopilgan PR ma'lumotlarini bir necha kundan keyin o'chirish; faol bo'lmagan feature branch ma'lumotlarini bir necha haftadan keyin o'chirish; kunlik snapshot larni haftalik va oylik darajaga birlashtirish, ya'ni yuqoridagi uch oraliqni qisqartirish. Housekeeping yangilashning bir qismi, chunki migratsiya vaqti baza hajmiga bog'liq. Yangilashdan bir hafta oldin uni qattiqlashtirib bir necha tozalash siklini o'tkazsangiz, migratsiya tezroq o'tadi.
 
 | Oddiy yondashuv | Arxitektor yondashuvi |
 |---|---|
@@ -380,6 +391,12 @@ Oxirgi gap eng muhimi: bu bo'limdagi tartib umumiy prinsip darajasida yozilgan. 
 - [ ] Housekeeping sozlamalarini loyiha branch oqimiga moslab qisqartiring va bir necha tozalash siklidan keyin baza hajmini qayta o'lchang.
 - [ ] Yangilashdan keyin new code period ni yangi referens versiyaga qo'yib, barcha asosiy branch larni bir marta to'liq qayta tahlil qiling.
 - [ ] Rollback rejasini bitta sahifada yozing: kim bajaradi, qaysi dump ishlatiladi, qancha ma'lumot yo'qoladi va qaror qanday mezon bilan qabul qilinadi.
+
+## Manbalar
+
+- [sonarqube 9.9 LTA, `PurgeProperties.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/sonar-core/src/main/java/org/sonar/core/config/PurgeProperties.java) - housekeeping kalitlari va defaultlari (24 soat, 4, 52, 104, 260 hafta, 30 kun)
+- [sonarqube 9.9 LTA, `PurgeConstants.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/sonar-core/src/main/java/org/sonar/core/config/PurgeConstants.java) - `sonar.dbcleaner.*` kalitlarining to'liq ro'yxati
+- [sonarqube 9.9 LTA, `ProcessProperties.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-process/src/main/java/org/sonar/process/ProcessProperties.java) - server sozlamalari va ularning defaultlari
 
 ---
 

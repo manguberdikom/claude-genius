@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 5. Unit test: asoslar, qoidalar va JUnit 5 (Unit Testing - Foundations, Rules & JUnit 5)
 
 <details>
-<summary>Bu bobdagi 14 bo'lim</summary>
+<summary>Bu bobdagi 15 bo'lim</summary>
 
 - [5.1 Unit test nima va nima emas](#51-unit-test-nima-va-nima-emas)
 - [5.2 FIRST printsiplari](#52-first-printsiplari)
@@ -22,7 +22,8 @@
 - [5.11 Property-based testing: jqwik](#511-property-based-testing-jqwik)
 - [5.12 Mutation testing bilan sifatni o'lchash (PIT)](#512-mutation-testing-bilan-sifatni-olchash-pit)
 - [5.13 Unit test anti-patternlari](#513-unit-test-anti-patternlari)
-- [5.14 Arxitektor nazorat ro'yxati](#514-arxitektor-nazorat-royxati)
+- [5.14 Test case sonini kod tuzilishidan chiqarish: structured basis va data-flow](#514-test-case-sonini-kod-tuzilishidan-chiqarish-structured-basis-va-data-flow)
+- [5.15 Arxitektor nazorat ro'yxati](#515-arxitektor-nazorat-royxati)
 
 </details>
 
@@ -85,7 +86,7 @@ Nomlash konvensiyalari, afzalliklari bilan:
 
 ## 5.4 JUnit 5 asoslari: lifecycle va tuzilma
 
-`@Test` - `void`, parametrsiz (yoki inyeksiya qilinadigan parametrlar bilan), `public` bo'lishi shart emas. Lifecycle: `@BeforeEach`/`@AfterEach` har bir testdan oldin/keyin, `@BeforeAll`/`@AfterAll` esa sinf darajasida bir marta ishlaydi va standart holatda `static` bo'lishi kerak. `@Nested` ichki sinflar bilan testlarni kontekst bo'yicha guruhlash - eng kuchli o'qiluvchanlik vositasi: tashqi `@BeforeEach` ichki sinflarda ham ishlaydi.
+`@Test` - `void`, parametrsiz (yoki inyeksiya qilinadigan parametrlar bilan), `public` bo'lishi shart emas. Lifecycle: `@BeforeEach`/`@AfterEach` har bir testdan oldin/keyin, `@BeforeAll`/`@AfterAll` esa sinf darajasida bir marta ishlaydi va standart holatda `static` bo'lishi kerak. `@Nested` ichki sinflar bilan testlarni kontekst bo'yicha guruhlash - eng kuchli o'qiluvchanlik vositasi: tashqi `@BeforeEach` ichki sinflarda ham ishlaydi. `@Nested` ning uchta qattiq sharti bor: sinf **non-static inner** bo'lishi kerak (static nested sinf `@Nested` bo'la olmaydi), annotatsiyaning o'zi meros olinmaydi, va `@BeforeAll`/`@AfterAll` ni `@Nested` ichida ishlatish Java versiyasiga bog'liq: Java 16 dan boshlab ularni `static` deb e'lon qilish har ikki lifecycle rejimida ishlaydi, undan oldingi Java da esa faqat per-class lifecycle bilan.
 
 ```java
 @DisplayName("CartService")
@@ -421,7 +422,43 @@ void processesOrderByTotal(BigDecimal total, OrderStatus expected) {
 
 **Boshqalar:** `verify` dan iborat testlar (interaction'ga ortiqcha bog'lanish), `assertTrue(result != null)` kabi ma'nosiz assertion'lar, bir testda 10 ta mantiqiy tekshiruv, va `@Disabled` "vaqtincha" qoldirilgan testlar.
 
-## 5.14 Arxitektor nazorat ro'yxati
+## 5.14 Test case sonini kod tuzilishidan chiqarish: structured basis va data-flow
+
+Qancha test yozish kerakligini taxmin bilan emas, metodning o'z tuzilishidan hisoblash mumkin. McConnell ikkita bir-birini to'ldiradigan usul beradi va tartibni ham aytadi: avval structured basis, keyin undan qolgan bo'shliqni data-flow bilan yopish.
+
+**Structured basis testing: minimal test case soni.** G'oyasi - har bir bayonot hech bo'lmaganda bir marta bajarilsin, lekin buni minimal to'plam bilan qilish. Hisoblash protsedurasi: metod bo'ylab to'g'ri yo'l uchun 1 dan boshlanadi; har bir `if`, `while`, `repeat`, `for`, `and` va `or` uchun 1 qo'shiladi; `case` ning har bir shoxi uchun 1, va agar `default` yo'q bo'lsa yana 1 qo'shiladi. Natija - **minimal** son: olti chiqsa, har qanday olti test yetadi degani emas, har bir kalit so'z uchun kamida bitta `true` va bitta `false` holat bo'lishi shart (McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 22.3 (506-508-bet)). Kitob shu protsedura murakkablikni o'lchash protsedurasi bilan bir xil ekanini ham aytadi, ya'ni [cyclomatic complexity va cognitive complexity farqi](../sonarqube/05-metrikalar-rating-texnik-qarz-murakkablik.md#54-cyclomatic-complexity-va-cognitive-complexity-farqi) bo'limidagi raqam shu yerda to'g'ridan-to'g'ri ishlatiladi: qaror nuqtalari soni + 1 minimal test case sonini beradi. Kitob code coverage va logic coverage yondashuvlarini shu bilan qiyoslaydi: ular ham barcha yo'llarni qoplaydi, lekin minimal to'plam g'oyasi yo'q, shuning uchun bir xil mantiq uchun kerakdan ko'p test chiqadi.
+
+```java
+// 1 (to'g'ri yo'l) + 1 (for) + 1 (birinchi if) + 1 (ikkinchi if) + 1 (&&) + 1 (uchinchi if) = 6
+BigDecimal totalNetPay(List<Employee> employees) {
+    BigDecimal total = BigDecimal.ZERO;
+    for (Employee employee : employees) {                       // for
+        BigDecimal pension = BigDecimal.ZERO;
+        if (employee.pensionWithheld().compareTo(MAX_PENSION) < 0) {   // if
+            pension = pensionOf(employee);
+        }
+        BigDecimal voluntary = BigDecimal.ZERO;
+        if (employee.wantsVoluntary() && eligible(employee)) {  // if + &&
+            voluntary = voluntaryOf(employee);
+        }
+        if (eligibleForIra(employee)) {                         // if
+            voluntary = voluntary.add(iraOf(employee));
+        }
+        total = total.add(grossOf(employee).subtract(pension).subtract(voluntary));
+    }
+    return total;
+}
+```
+
+Olti holat: hamma shart `true` bo'lgan nominal holat; bo'sh ro'yxat (`for` sharti darhol `false`); birinchi `if` `false`; ikkinchi `if` `&&` ning birinchi qismi tufayli `false`; ikkinchi `if` `&&` ning ikkinchi qismi tufayli `false`; uchinchi `if` `false`.
+
+**Data-flow testing: defined-used yo'llari.** Ikkinchi usul boshqa o'qqa qaraydi - ma'lumotdan foydalanish xatoga control flow dan kam moyil emas. O'zgaruvchi uch holatda bo'ladi: **defined** (qiymat berilgan, hali ishlatilmagan), **used** (hisobda yoki argument sifatida ishlatilgan), **killed** (aniqlangandan keyin qaytib aniqlanmagan holatga o'tgan, masalan yopilgan resursga ishora). Kitob avval anomal ketma-ketliklarni testdan oldin qidirishni talab qiladi: defined-defined, defined-exited, defined-killed, entered-killed, entered-used, killed-killed, killed-used va used-defined. Keyin asosiy qoida keladi: barcha mumkin bo'lgan **defined-used** yo'llarini bajarish. Kitob ikki darajani ajratadi: "barcha definition" darajasi zaif, chunki har qatorni bajarishga urinsangiz uni bepul olasiz; kuchli daraja esa har bir "bir joyda aniqlash + boshqa joyda ishlatish" juftligini sinaydi (o'sha joy, 22.3 (509-512-bet)).
+
+Ikkisining farqi eng oddiy misolda ko'rinadi: ikkita ketma-ket `if` bo'lsa, structured basis ikki test bilan qanoatlanadi (ikkisi ham `true`, ikkisi ham `false`), lekin `x` ni birinchi shoxda aniqlab ikkinchi shoxda ishlatish juftliklari qoplanmay qoladi, shuning uchun to'rt test kerak bo'ladi. Shu sababli kitobning tavsiyasi ketma-ket: structured basis bilan boshlanadi, keyin yetishmagan defined-used holatlari qo'shiladi.
+
+**Qo'lda tekshirishni osonlashtiradigan ma'lumot tanlash.** Uchinchi, kichik lekin amalda ko'p vaqt tejaydigan qoida: nominal qiymatni "barmoq tushgan raqam" bilan emas, qo'lda hisoblash oson bo'ladigan ko'rinishda tanlang. Kitobning misoli: 90 783.82 kabi qiymatda kutilgan natijani qo'lda hisoblaganda xato qilish ehtimoli koddagi xatoni topish ehtimoli bilan teng bo'lib qoladi, 20 000 esa hisobni yengillashtiradi. Muhimi: xunuk raqam o'z ekvivalentlik sinfidagi boshqa raqamdan ko'proq xato ochmaydi (o'sha joy, 22.3 (516-bet)). Ekvivalentlik sinflari va chegara qiymatlari texnikasining o'zi [test dizayn texnikalari](04-testrovshik-qanday-ishlashi-kerak-qa-ish.md#43-test-dizayn-texnikalari) bo'limida.
+
+## 5.15 Arxitektor nazorat ro'yxati
 
 - [ ] Unit test "unit"i sinf emas, xatti-harakat deb belgilangan; sociable uslub standart, solitary - faqat I/O chegarasida
 - [ ] Butun unit to'plam lokal mashinada 60 sekunddan kam ishlaydi va hech bir test DB, tarmoq, fayl tizimi yoki Spring kontekstiga tegmaydi
@@ -431,6 +468,16 @@ void processesOrderByTotal(BigDecimal total, OrderStatus expected) {
 - [ ] Vaqt `Clock` bean orqali, tasodif va UUID `Supplier` ortida inyeksiya qilinadi; kod bazasida `Thread.sleep` va `Instant.now()` to'g'ridan-to'g'ri chaqiruvi yo'q
 - [ ] `@Disabled` testlar sabab va issue havolasi bilan; ularning soni CI'da kuzatiladi va nolga intiladi
 - [ ] Domen va hisob-kitob paketlari uchun mutation score o'lchanadi (PIT) va coverage foizi yagona sifat mezoni sifatida ishlatilmaydi
+
+## Manbalar
+
+- Robert C. Martin, *Clean Code*, 9-bob ("F.I.R.S.T.") - tez, mustaqil, qaytariladigan, o'zini tasdiqlaydigan, o'z vaqtida
+- Robert C. Martin, *Clean Code*, 9-bob ("Single Concept per Test") - bir testda bir tushuncha, assert soni minimallashtiriladi
+- Robert C. Martin, *Clean Code*, 9-bob ("Keeping Tests Clean") - iflos test testsizlikdan yomonroq
+- [JUnit 5.11, Writing Tests](https://raw.githubusercontent.com/junit-team/junit5/r5.11.0/documentation/src/docs/asciidoc/user-guide/writing-tests.adoc) - annotatsiyalar jadvali, test instance lifecycle, `@Nested` ning non-static sharti va `@BeforeAll` ning Java 16 dagi o'zgarishi, `@Timeout` ning sinf darajasida tarqalishi
+- [Mockito, README](https://raw.githubusercontent.com/mockito/mockito/613ab039480c8dbf1fe0fe4c0c91022e81cd7b75/README.md) - Mockito 5 da default mock maker `mockito-inline` ga o'tgani va Java 11 talabi
+- [AssertJ, README](https://raw.githubusercontent.com/assertj/assertj/fb834e1df5e12973b120b67eafb09938fdf14976/README.md) - fluent assertion modeli va modullar
+- Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 22.3 "Bag of Testing Tricks" (505-516-bet) - structured basis testing uchun minimal test case sonini hisoblash protsedurasi, data-flow testingdagi defined/used/killed holatlari va defined-used juftliklari, qo'lda hisoblashni osonlashtiradigan ma'lumot tanlash
 
 ---
 

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 35. Foydalanuvchi, guruh, huquqlar, token va SSO (Users, Permissions and Tokens)
 
@@ -129,6 +129,20 @@ Ochiq loyiha ba'zan kerak bo'ladi, masalan ichki open source kutubxona uchun. Le
 | Yangi loyiha | admin qo'lda huquq yozadi | kalit namunasiga bog'langan huquq shabloni ishlaydi |
 | Ko'rinuvchanlik | sukutdagi holat o'zgartirilmaydi | sukut private, ochiqlik alohida qarorga qo'yiladi |
 | Tahlil tokeni | developer o'z tokenini CI ga qo'yadi | alohida servis hisobi va project analysis token |
+
+Global huquqlar ro'yxati manbada (`GlobalPermission`) qattiq belgilangan va ularning **ichki kaliti** interfeysdagi nomdan farq qiladi. Web API va avtomatlashtirishda aynan kalit ishlatiladi, shuning uchun jadval shu ko'rinishda:
+
+| Huquq | Kalit | Ma'nosi |
+|---|---|---|
+| `ADMINISTER` | `admin` | serverni to'liq boshqarish |
+| `ADMINISTER_QUALITY_GATES` | `gateadmin` | gate va shartlarini o'zgartirish |
+| `ADMINISTER_QUALITY_PROFILES` | `profileadmin` | profil va qoidalarni o'zgartirish |
+| `PROVISION_PROJECTS` | `provisioning` | loyiha yaratish |
+| `SCAN` | `scan` | tahlil yuborish |
+| `APPLICATION_CREATOR` | `applicationcreator` | application yaratish (7.4 dan) |
+| `PORTFOLIO_CREATOR` | `portfoliocreator` | portfolio yaratish (7.4 dan) |
+
+Ro'yxatdan amaliy xulosa: CI uchun kerak bo'lgan yagona global huquq `scan`. Agar servis hisobida bundan ko'p huquq bo'lsa, u ortiqcha va kamaytirilishi kerak.
 | Token muddati | muddatsiz token yaratiladi | muddat belgilanadi va aylantirish taqvimi bor |
 | Quality gate | har jamoa o'zi uchun gate yaratadi | bitta umumiy gate, chetga chiqish yozilib qo'yiladi |
 | Kirish | lokal hisoblar qo'lda yaratiladi | LDAP yoki SAML, guruh mapping bilan |
@@ -138,7 +152,18 @@ Ochiq loyiha ba'zan kerak bo'ladi, masalan ichki open source kutubxona uchun. Le
 
 ## 35.6 Token turlari: foydalanuvchi, global tahlil, loyiha tahlili
 
-Sonar ga parol bilan emas, token bilan ulanish kerak. Tokenlarning bir nechta turi bor va ular bir xil emas. Foydalanuvchi tokeni (user token) o'z egasining hamma huquqini oladi, shuning uchun CI da ishlatilmaydi. Global tahlil tokeni (global analysis token) har qanday loyihaga tahlil yuborishi mumkin, u ko'p loyihali umumiy pipeline uchun qulay. Loyiha tahlil tokeni (project analysis token) faqat bitta loyihaga tahlil yuboradi va eng xavfsiz variant.
+Sonar ga parol bilan emas, token bilan ulanish kerak. Manbadagi enum (`TokenType`) to'rtta turni e'lon qiladi va to'rtinchisi ko'pincha e'tibordan qoladi:
+
+| Tur | Nima qila oladi |
+|---|---|
+| `USER_TOKEN` | egasining hamma huquqi |
+| `GLOBAL_ANALYSIS_TOKEN` | har qanday loyihaga tahlil yuborish |
+| `PROJECT_ANALYSIS_TOKEN` | faqat bitta loyihaga tahlil yuborish |
+| `PROJECT_BADGE_TOKEN` | faqat loyihaning badge rasmini olish (yopiq loyihada README uchun) |
+
+To'rtinchisi alohida ahamiyatli: yopiq loyihaning quality gate badge ini README ga qo'yish uchun odamlar ko'pincha analysis token ishlatadi va shu bilan CI huquqini ommaviy joyga chiqaradi. To'g'ri yo'l badge token, u faqat rasm olishga yetadi.
+
+Tokenlarning turi bir xil emas. Foydalanuvchi tokeni (user token) o'z egasining hamma huquqini oladi, shuning uchun CI da ishlatilmaydi. Global tahlil tokeni (global analysis token) har qanday loyihaga tahlil yuborishi mumkin, u ko'p loyihali umumiy pipeline uchun qulay. Loyiha tahlil tokeni (project analysis token) faqat bitta loyihaga tahlil yuboradi va eng xavfsiz variant.
 
 Global va loyiha tahlil tokenlari SonarQube ning yangi liniyalarida paydo bo'lgan, eski o'rnatmalarda faqat user token bo'lishi mumkin. Agar interfeysda token turini tanlash maydoni ko'rinmasa, demak versiyangiz uni qo'llamaydi va siz servis hisobi ochib, unga faqat `scan` huquqini berib, uning user tokenini ishlatishingiz kerak.
 
@@ -348,6 +373,12 @@ Alohida eslatma: `sonar.token` yoki parolni buyruq qatorida `-D` bilan uzatish x
 - [ ] Hamma tokenni ro'yxatlab, muddatsizlarini muddatli yangisiga almashtiring va aylantirish sanasini taqvimga qo'ying.
 - [ ] Kirishni LDAP yoki SAML ga ulab, guruh nomlarini mapping uchun kelishib oling va anonim kirishni yopganingizni tasdiqlang.
 - [ ] Huquq va token inventarizatsiyasini API dan oladigan skript yozib, uning natijasini versiyalanadigan faylga yozishni avtomatlashtiring.
+
+## Manbalar
+
+- [sonarqube 9.9 LTA, `TokenType.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-db-dao/src/main/java/org/sonar/db/user/TokenType.java) - to'rtta token turi, `PROJECT_BADGE_TOKEN` bilan birga
+- [sonarqube 9.9 LTA, `GlobalPermission.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-db-dao/src/main/java/org/sonar/db/permission/GlobalPermission.java) - yettita global huquq va ularning ichki kalitlari (`admin`, `gateadmin`, `profileadmin`, `provisioning`, `scan`, `applicationcreator`, `portfoliocreator`)
+- [sonarqube 9.9 LTA, permissions Web API](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-webserver-webapi/src/main/java/org/sonar/server/permission/ws/template/ApplyTemplateAction.java) - `api/permissions/apply_template` va shablon amallari
 
 ---
 

@@ -7,7 +7,7 @@
 # 8. Biznes logika va Service qatlam patternlari (Business & Service Layer Patterns)
 
 <details>
-<summary>Bu bobdagi 27 bo'lim</summary>
+<summary>Bu bobdagi 28 bo'lim</summary>
 
 - [8.1 Tranzaksiya skripti (Transaction Script)](#81-tranzaksiya-skripti-transaction-script)
 - [8.2 Domen modeli (Domain Model)](#82-domen-modeli-domain-model)
@@ -35,7 +35,8 @@
 - [8.24 Aggregate-ga bitta service (Service-per-Aggregate)](#824-aggregate-ga-bitta-service-service-per-aggregate)
 - [8.25 Orkestrator vs Fasad (Orchestrator vs Facade)](#825-orkestrator-vs-fasad-orchestrator-vs-facade)
 - [8.26 Service'dan domain event chiqarish (Domain Event Publishing from Service)](#826-servicedan-domain-event-chiqarish-domain-event-publishing-from-service)
-- [8.27 Amalda qo'llash](#827-amalda-qollash)
+- [8.27 Maxsus holat (Special Case)](#827-maxsus-holat-special-case)
+- [8.28 Amalda qo'llash](#828-amalda-qollash)
 
 </details>
 
@@ -487,6 +488,8 @@ public interface OrderMapper {
 
 **Tavsif:** Har bir biznes amali (use case) o'zining alohida handler sinfiga joylashtiriladi: input sifatida immutable command obyekti keladi, handler uni bajaradi va natija qaytaradi. Bu "god service" (1000 qatorli `UserService`) muammosini hal qiladi - har bir sinf bitta javobgarlikka ega bo'ladi va mustaqil test qilinadi. Clean Architecture va Hexagonal arxitekturada bu qatlam "application layer" deb ataladi. Handler faqat orkestratsiya qiladi: domain obyektlarini yuklaydi, ularning metodlarini chaqiradi, repository orqali saqlaydi.
 
+Fowler shu tuzilmaga nom beradi va unga bitta shart qo'yadi. Use case ga xos mantiqni Transaction Script shaklidagi sinfga, bir nechta use case da ishlatiladigan mantiqni esa domen obyektlariga (entity larga) qo'yadigan uslubni u **controller-entity style** deb ataydi va nomning Jacobson ta'sirida tarqalganini aytadi; MVC ning input controller i bilan chalkashmasligi uchun bu yerdagi controller ni **use-case controller** deb yozadi (Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 2-bob "Organizing Domain Logic", 31-bet). Fowler bu uslubni yoqtirmaydi va sababini aniq aytadi: use case controller lar, har qanday Transaction Script kabi, takroriy kodga undaydi, shuning uchun domen modeli tanlangan bo'lsa, uni to'liq dominant qilish kerak. Shart ikki pozitsiyani ajratadi: handler domen obyektlarini yuklab, ularning metodlarini chaqiradigan yupqa orkestrator bo'lsa, biznes qoidasi domenda qoladi va Fowler ning e'tirozi tegmaydi; handler ning o'zi narx, soliq va holat o'tishlarini hisoblay boshlasa, u controller-entity style ga aylanadi va takrorlanish aynan shu yerdan boshlanadi. Ya'ni bu bo'limdagi pattern "mantiqni handler ga ko'chir" degani emas, "use case ni alohida nomlangan kirish nuqtasiga ajrat" degani. Fowler ning umumiy pozitsiyasi ham shunga yaqin: biznes mantiqli procedural servis obyektlari foydali bo'lishi mumkin, lekin ulardan qat'iy arxitektura qatlami yasash shart emas.
+
 **Spring'da qayerda uchraydi:** Odatiy amalga oshirish - `CommandHandler<C, R>` yoki `UseCase<I, O>` generic interface va uni implement qiluvchi `@Service`/`@Component` sinflar (`PlaceOrderHandler implements UseCase<PlaceOrderCommand, OrderId>`), command'lar Java `record` sifatida. Spring tranzaksiyani `@Transactional` bilan handler'ning `handle` metodiga qo'yadi, validatsiya esa `@Validated` + `jakarta.validation` annotatsiyalari bilan command'da amalga oshiriladi. Spring Modulith (`spring-modulith-core`) bu uslubni modul-ichi application service sifatida rasmiylashtiradi; Axon Framework'da esa `@CommandHandler` annotatsiyasi bor. Controller handler'ni to'g'ridan-to'g'ri inject qiladi yoki Command Bus orqali chaqiradi.
 
 **Qo'llanish keyslari:**
@@ -496,7 +499,7 @@ public interface OrderMapper {
 - Bir xil use case'ni HTTP controller, Kafka consumer va scheduled job'dan qayta ishlatish.
 - Audit log: har bir command obyektini bajarilishdan oldin serialize qilib saqlash.
 
-**Ehtiyot bo'ling:** Kichik CRUD loyihada har bir metod uchun alohida sinf yaratish sun'iy murakkablik keltiradi - bu pattern domain mantiqi boy bo'lganda foyda beradi. Handler'lar bir-birini chaqira boshlasa, tranzaksiya chegarasi va nested use case bog'liqliklari chigallashadi; umumiy mantiqni domain service'ga chiqaring.
+**Ehtiyot bo'ling:** Kichik CRUD loyihada har bir metod uchun alohida sinf yaratish sun'iy murakkablik keltiradi - bu pattern domain mantiqi boy bo'lganda foyda beradi. Handler'lar bir-birini chaqira boshlasa, tranzaksiya chegarasi va nested use case bog'liqliklari chigallashadi; umumiy mantiqni domain service'ga chiqaring. Handler ichida hisob-kitob paydo bo'lsa, u controller-entity style ga aylanganini bilib oling: shu paytdan boshlab bir xil qoida ikki handler da takrorlana boshlaydi.
 
 ```java
 // Use case handler: bitta sinf, bitta amal, aniq kirish va chiqish
@@ -555,6 +558,8 @@ public class CommandBus {
 ## 8.17 Tranzaksiya chegarasi (Transaction Boundary - @Transactional on service)
 
 **Tavsif:** Tranzaksiya chegarasi - bu "biznes amali atomar bajariladigan" aniq belgilangan nuqta. To'g'ri joyi service (use case) qatlami: controller juda yuqori (HTTP so'rov DB tranzaksiyasiga teng emas), repository juda past (bir use case bir nechta repository chaqiradi). Spring buni declarative tarzda `@Transactional` bilan amalga oshiradi va proxy orqali `begin/commit/rollback`ni boshqaradi. Shu chegara ichida JPA persistence context, optimistik lock va domain event'larni commit'ga bog'lash ishlaydi.
+
+Fowler chegarani vaqt o'qida ham uch variantga ajratadi va ularga nom beradi (Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 5-bob "Concurrency", 72-bet). **Request transaction** - tranzaksiyani so'rov boshida ochib, oxirida yopish; sodda model va aynan `@Transactional` deklarativ shaklida arzon tushadi. **Long transaction** - bir necha so'rovga cho'zilgan tranzaksiya; umumiy maslahat bunday qilmaslik, chunki zamonaviy tranzaksiya tizimlari throughput uchun tranzaksiyani iloji boricha qisqa ushlashga qurilgan. **Late transaction** - tranzaksiyani iloji boricha kech ochish: o'qishlarni tranzaksiyadan tashqarida bajarib, uni faqat yozish paytida ochish. Foydasi - tranzaksiya ichida o'tkazilgan vaqt qisqaradi, va ochilish bilan birinchi yozuv orasida uzoq tanaffus bo'lsa bu liveness ni yaxshilaydi. Narxi aniq: tranzaksiya boshlanmaguncha hech qanday concurrency control yo'q, ya'ni nomuvofiq o'qishga (inconsistent read) ochiq qolasiz. Shuning uchun Fowler ning xulosasi ehtiyotkor - late transaction odatda o'zini oqlamaydi, faqat contention juda og'ir bo'lsa yoki bir necha so'rovga cho'ziladigan biznes tranzaksiyasi tufayli buni baribir qilayotgan bo'lsangiz. Amalda bu o'qishni `@Transactional` siz metodda qoldirib, yozishni `TransactionTemplate` yoki alohida `@Transactional` metodga qamashni bildiradi, eskirgan o'qishni esa optimistik qulf (`@Version`) ushlaydi.
 
 **Spring'da qayerda uchraydi:** `org.springframework.transaction.annotation.@Transactional` service metodida; `PlatformTransactionManager` (`JpaTransactionManager`, `DataSourceTransactionManager`) yoki reaktiv `ReactiveTransactionManager`. Atributlar: `propagation` (`REQUIRED`, `REQUIRES_NEW`, `NESTED`), `isolation`, `readOnly = true`, `timeout`, `rollbackFor`, `noRollbackFor`. Programmatic variant - `TransactionTemplate` va Spring Framework 6'dagi `TransactionalOperator` (reaktiv). Spring Boot 3.x/4.x'da `spring-boot-starter-data-jpa` tranzaksiyani avtomatik sozlaydi; `@TransactionalEventListener(phase = AFTER_COMMIT)` esa event'ni commit'dan keyin ishlatadi. Spring Boot 3.x'da AOP default sifatida CGLIB proxy ishlatadi.
 
@@ -894,7 +899,42 @@ class WarehouseNotifier {
 }
 ```
 
-## 8.27 Amalda qo'llash
+## 8.27 Maxsus holat (Special Case)
+
+**Tavsif:** Maxsus holat - tipning odatdagi xatti-harakatini o'zgartiruvchi subklass: `null` yoki "g'alati qiymat" qaytarish o'rniga chaqiruvchi kutgan interfeysni to'liq bajaradigan, lekin zararsiz javob beradigan obyekt qaytariladi. Fowler ta'rifi qisqa: "ayrim holatlar uchun maxsus xatti-harakat beradigan subklass"; u Null Object'ni Special Case'ning xususiy holi deb hisoblaydi va bitta `null` o'rniga `MissingCustomer` hamda `UnknownCustomer` kabi alohida holatlarni ajratishni tavsiya qiladi (Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 18-bob "Base Patterns", 496-498-betlar). Foyda shunda: bir xil `null` tekshiruvi ko'p joyda bir xil javob bersa, o'sha javob bitta sinfga ko'chadi. Bo'sh obyekt (3.12) shu patternning tor ko'rinishi.
+
+**Spring'da qayerda uchraydi:** Spring'ning o'zida tayyor maxsus holatlar bor: kesh o'chirilganda `NoOpCacheManager` haqiqiy kesh o'rniga hech narsa saqlamaydigan `Cache` beradi, Spring Security'da autentifikatsiyasiz so'rov uchun `AnonymousAuthenticationToken` qaytariladi, `NullSecurityContextRepository` va `NullRequestCache` esa "hech narsa qilmaydigan" implementatsiyalar. Micrometer o'lchov o'chirilganda `NoopCounter` va `NoopTimer` ni qaytaradi. O'z kodingizda `sealed interface` plus `record`/`enum` (Java 17+) shu patternni turlar darajasida yozishga imkon beradi.
+
+**Qo'llanish keyslari:**
+- Hisob-kitobda yo'q mijoz yoki yo'q tarif uchun nol chegirma qaytarish, har chaqiruvda `null` tekshirmaslik.
+- Tashqi xizmat javob bermaganda "ma'lumot mavjud emas" holatini qaytarib, hisobotni to'liq buzmaslik.
+- Konfiguratsiya o'chirilganda real bean o'rniga hech narsa qilmaydigan implementatsiya ulash (kesh, metrika, notifikatsiya).
+- Legacy integratsiyada noma'lum kod qiymatini `UnknownTariff` kabi aniq nomlangan holatga o'girish.
+- Kolleksiya qaytaradigan metodlarda `null` emas, `List.of()` berish: bu patternning eng arzon ko'rinishi.
+
+**Ehtiyot bo'ling:** Maxsus holat xatoni jimgina yashirishi mumkin: agar yo'q mijoz haqiqatda bug bo'lsa, nol chegirma exception'dan ko'ra qimmatga tushadi, shuning uchun pul va buxgalteriya oqimlarida uni ehtiyot bilan qo'llang va holatni log yoki metrikada belgilang. Chaqiruvchi holatni ajratishi shart bo'lsa, maxsus holat emas, `Optional` yoki natija obyekti (8.19) to'g'ri keladi. Kitobning mexanikasi eskirgan: misol C# da `INull` marker interfeysi va `isNull` metodi bilan yozilgan, bugungi Java'da `sealed` ierarxiya aniqroq va kompilyator to'liqlikni o'zi tekshiradi. Holatsiz maxsus holatni har marta yangilab yaratmang: kitob aytganidek, bitta nusxa (flyweight) yetadi.
+
+```java
+public sealed interface Customer permits RegisteredCustomer, MissingCustomer {
+    String displayName();
+    BigDecimal discountRate();
+}
+
+public record RegisteredCustomer(long id, String name, BigDecimal discountRate)
+        implements Customer {
+    @Override public String displayName() { return name; }
+}
+
+/** Maxsus holat: mijoz ko'rsatilmagan. Chaqiruvchi `null` tekshirmaydi. */
+public enum MissingCustomer implements Customer {
+    INSTANCE;                                        // bitta nusxa yetarli
+
+    @Override public String displayName() { return "Mijoz ko'rsatilmagan"; }
+    @Override public BigDecimal discountRate() { return BigDecimal.ZERO; }
+}
+```
+
+## 8.28 Amalda qo'llash
 
 - [ ] Servis sinflarining qator sonini o'lchab, 300 qatordan oshganlarini use-case bo'yicha bo'lish nomzodi sifatida belgilang.
 - [ ] Faqat getter va setter'dan iborat domen sinflarini toping (anemik model) va ularga tegishli mantiqni ko'chirish rejasini yozing.
@@ -911,6 +951,9 @@ class WarehouseNotifier {
 - [spring-framework, `ApplicationEventPublisher.java`](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/spring-context/src/main/java/org/springframework/context/ApplicationEventPublisher.java) - `publishEvent(Object)` `@since 4.2`
 - [JEP 441: Pattern Matching for switch](https://openjdk.org/jeps/441) - Java 21 da yakuniy holat; `javac --release 17` "patterns in switch statements are not supported in -source 17" deydi
 - [jakartaee/persistence, `SequenceGenerator.java`](https://raw.githubusercontent.com/jakartaee/persistence/3.2-3.2.0-RELEASE/api/src/main/java/jakarta/persistence/SequenceGenerator.java) - `allocationSize() default 50`
+- Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 18-bob (496-498) - Special Case ta'rifi, Missing va Unknown holatlarini ajratish hamda Null Object ni Special Case ning xususiy holi deb hisoblash (8.27)
+- Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 2-bob (31) - controller-entity style nomi va uning Jacobson ta'sirida tarqalishi, use-case controller atamasining MVC controller idan farqi, Transaction Script tufayli takroriy kod xavfi va "domen modeli tanlangan bo'lsa uni dominant qilish kerak" pozitsiyasi (8.15)
+- Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 5-bob (72) - request transaction, long transaction va late transaction nomlari, late transaction ning liveness foydasi, nomuvofiq o'qish narxi va uni faqat og'ir contention da qo'llash tavsiyasi (8.17)
 
 ---
 

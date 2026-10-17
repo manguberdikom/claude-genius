@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 36. Web API va avtomatlashtirish (Web API and Automation)
 
@@ -463,6 +463,13 @@ Yuzlab issue li katta tozalashda parallel andoza:
 - [ ] Yangi loyiha uchun idempotent provizion skripti yozing: `api/projects/create`, `api/qualityprofiles/add_project` va `api/permissions/apply_template` bitta qadamda bajarilsin.
 - [ ] `api/measures/search_history` dan coverage va duplication qiymatlarini haftada bir o'qib o'z bazangizga yozadigan ish qo'shing, trend uchun ishonchli manba shu bo'ladi.
 - [ ] Sonar vazifasida avval `python3 tools/sonar_fetch.py gate` bilan yiqilgan shartni aniqlang; hotspot va issue holatini o'zgartirish uchun foydalanuvchi roziligini oling.
+
+## Manbalar
+
+- [sonarqube 9.9 LTA, quality profile Web API amallari](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-webserver-webapi/src/main/java/org/sonar/server/qualityprofile/ws/BackupAction.java) - `backup`, `restore`, `create`, `add_project`, `change_parent` amallarining ta'rifi
+- [sonarqube 9.9 LTA, `ProjectStatusAction.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-webserver-webapi/src/main/java/org/sonar/server/qualitygate/ws/ProjectStatusAction.java) - `api/qualitygates/project_status` (gate natijasini CI da o'qish)
+- [sonarqube 9.9 LTA, `ComponentTreeAction.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-webserver-webapi/src/main/java/org/sonar/server/measure/ws/ComponentTreeAction.java) - `api/measures/component_tree` va metrika so'rovi
+- [sonarqube 9.9 LTA, `TaskAction.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-webserver-webapi/src/main/java/org/sonar/server/ce/ws/TaskAction.java) - `api/ce/task` (Compute Engine vazifasining holati)
 
 ---
 

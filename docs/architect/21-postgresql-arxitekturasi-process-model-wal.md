@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 21. PostgreSQL arxitekturasi: process model, WAL, checkpoint, vacuum (PostgreSQL Architecture)
 
 <details>
-<summary>Bu bobdagi 12 bo'lim</summary>
+<summary>Bu bobdagi 17 bo'lim</summary>
 
 - [21.1 Protsess modeli: postmaster, backend protsess, fon ishchilari](#211-protsess-modeli-postmaster-backend-protsess-fon-ishchilari)
 - [21.2 Har ulanishga bitta protsess: bundan kelib chiqadigan ulanish narxi](#212-har-ulanishga-bitta-protsess-bundan-kelib-chiqadigan-ulanish-narxi)
@@ -20,7 +20,12 @@
 - [21.9 Transaction ID o'ralishi (wraparound) va freeze jarayoni](#219-transaction-id-oralishi-wraparound-va-freeze-jarayoni)
 - [21.10 Jadval va indeks shishishi (bloat): o'lchash va tuzatish](#2110-jadval-va-indeks-shishishi-bloat-olchash-va-tuzatish)
 - [21.11 `TOAST`: katta qiymatlar qanday saqlanadi](#2111-toast-katta-qiymatlar-qanday-saqlanadi)
-- [21.12 Amalda qo'llash](#2112-amalda-qollash)
+- [21.12 Buffer cache ichida: clock sweep, buffer ring va keshni isitish](#2112-buffer-cache-ichida-clock-sweep-buffer-ring-va-keshni-isitish)
+- [21.13 Sahifani tozalash (page pruning), HOT zanjiri va `fillfactor`](#2113-sahifani-tozalash-page-pruning-hot-zanjiri-va-fillfactor)
+- [21.14 `pg_xact`, hint bit, virtual transaction va subtransaction](#2114-pg_xact-hint-bit-virtual-transaction-va-subtransaction)
+- [21.15 Nosozlikdan tiklanish: startup protsess, full page write va checksum](#2115-nosozlikdan-tiklanish-startup-protsess-full-page-write-va-checksum)
+- [21.16 Xotira tuzilmalari qulfi: spinlock, lightweight lock va wait event](#2116-xotira-tuzilmalari-qulfi-spinlock-lightweight-lock-va-wait-event)
+- [21.17 Amalda qo'llash](#2117-amalda-qollash)
 
 </details>
 
@@ -53,7 +58,7 @@ Arxitektor uchun muhim xulosa: `idle in transaction` holatidagi backend bu shunc
 
 `fork()` arzon emas. Yangi backend yaratilishi taxminan 1 dan 5 millisekundgacha oladi, uning ustiga ulanish autentifikatsiyasi, katalog keshini isitish va `search_path` o'rnatish qo'shiladi. Har bir bo'sh backend taxminan 2 dan 10 MB gacha xususiy xotira egallaydi, murakkab so'rovlardan keyin esa `work_mem` va katalog keshi hisobiga 50 MB dan oshishi mumkin. Shuning uchun `max_connections = 1000` qo'yish xatodir: PostgreSQL 1000 ta parallel backendda lock manager va snapshot hisob-kitoblari ustida o'zini yeb qo'yadi.
 
-Amaliy qoida: haqiqiy parallel ishlayotgan backendlar soni CPU yadrosi sonidan 2-4 barobar ko'p bo'lmasin. 16 yadroli serverda 40-60 ta faol backend ko'pincha maksimal throughput beradi. Qolgan hamma narsa pool va PgBouncer vazifasi.
+Amaliy qoida: haqiqiy parallel ishlayotgan backendlar soni CPU yadrosi sonidan bir necha barobar ko'p bo'lmasin. Boshlang'ich mo'ljal yadro sonining 2 dan 4 barobariga teng, ya'ni 16 yadroli serverda 40 dan 60 gacha faol backend, lekin bu o'lchanmagan taxmin: maksimal throughput nuqtasi yuklamaning CPU va IO nisbatiga bog'liq va faqat o'lchov bilan topiladi. Qolgan hamma narsa pool va PgBouncer vazifasi.
 
 ```properties
 # Spring Boot 3.x: pool kattaligi PostgreSQL imkoniyatiga qarab tanlanadi
@@ -160,7 +165,7 @@ SELECT slot_name, active, pg_size_pretty(
 FROM pg_replication_slots;
 ```
 
-`synchronous_commit` ma'lumot xavfsizligining asosiy tugmasi. `on` (standart) commit ni mahalliy WAL diskka tushmaguncha kutadi. `off` kutmaydi, natijada commit 10-50 barobar tez bo'ladi, lekin crash paytida oxirgi `wal_writer_delay` ichidagi commitlar yo'qoladi; tranzaksiya atomikligi buzilmaydi, faqat tasdiqlangan commit yo'qolishi mumkin. `local` replikani kutmaydi, `remote_write` va `remote_apply` esa sinxron replikadan tasdiq kutadi.
+`synchronous_commit` ma'lumot xavfsizligining asosiy tugmasi. `on` (standart) commit ni mahalliy WAL diskka tushmaguncha kutadi. `off` kutmaydi, natijada commit sezilarli tez bo'ladi (qo'llanma buni raqam bilan bermaydi: kritik bo'lmagan tranzaksiyalar uchun `synchronous_commit` ni o'chirish `fsync` ni o'chirishdan keladigan foydaning katta qismini beradi, lekin ma'lumot buzilishi xavfisiz deb yozilgan), lekin crash paytida oxirgi `wal_writer_delay` ichidagi commitlar yo'qoladi; tranzaksiya atomikligi buzilmaydi, faqat tasdiqlangan commit yo'qolishi mumkin. `local` replikani kutmaydi, `remote_write` va `remote_apply` esa sinxron replikadan tasdiq kutadi.
 
 Arxitektorning asosiy qarori shu yerda: xavfsizlik darajasi butun instans uchun bir xil bo'lishi shart emas. To'lov tranzaksiyasi `synchronous_commit = on` bilan ketadi, audit log yoki metrika yozuvi esa o'sha sessionda `SET LOCAL synchronous_commit = off` qilib tezlashtiriladi. `full_page_writes` ni o'chirish esa deyarli har doim xato, chunki u qisman yozilgan sahifadan himoya qiladi.
 
@@ -308,7 +313,7 @@ Tuzatishda uch yo'l bor. `REINDEX INDEX CONCURRENTLY` indeksni yozuvni bloklamas
 
 Tuple sahifadan katta bo'lishi mumkin emas, shuning uchun PostgreSQL satr hajmi taxminan 2 KB (`toast_tuple_target`, standart 2032 bayt) dan oshsa, katta ustunlarni siqadi va kerak bo'lsa alohida TOAST jadvaliga 2 KB ga yaqin chunk larga bo'lib chiqaradi. TOAST jadvali `pg_toast` sxemasida yashaydi va o'z indeksiga ega.
 
-Har bir ustun uchun strategiya tanlanadi: `EXTENDED` (standart, siqadi va kerak bo'lsa chiqaradi), `EXTERNAL` (siqmaydi, lekin chiqaradi), `MAIN` (imkon qadar ichida qoldiradi), `PLAIN` (umuman TOAST qilmaydi). JSONB hisobot payload ida `substring` yoki prefiks qidiruv ko'p bo'lsa, `EXTERNAL` tezroq bo'ladi, chunki dekompressiya kerak emas. PostgreSQL 14 dan `default_toast_compression = lz4` mavjud va u `pglz` dan 2-4 barobar tez siqadi.
+Har bir ustun uchun strategiya tanlanadi: `EXTENDED` (standart, siqadi va kerak bo'lsa chiqaradi), `EXTERNAL` (siqmaydi, lekin chiqaradi), `MAIN` (imkon qadar ichida qoldiradi), `PLAIN` (umuman TOAST qilmaydi). JSONB hisobot payload ida `substring` yoki prefiks qidiruv ko'p bo'lsa, `EXTERNAL` tezroq bo'ladi, chunki dekompressiya kerak emas. PostgreSQL 14 dan `default_toast_compression = lz4` mavjud (default esa hamon `pglz`). lz4 odatda tezroq siqadi, lekin tezlik nisbati bu yerda raqam bilan berilmaydi: qo'llanma uni bermaydi va u ma'lumot shakliga bog'liq, shuning uchun o'z payload ingizda o'lchash kerak.
 
 ```sql
 -- Jadvalning TOAST qismi qancha joy egallaydi
@@ -346,7 +351,143 @@ Quyidagi jadval butun bob bo'yicha ikki xil fikrlashni qiyoslaydi.
 | UPDATE yuki | Hamma ustunga indeks qo'yish | HOT update ni saqlash, `fillfactor = 80`, keraksiz indeksni o'chirish |
 | Hisobot so'rovi | Asosiy bazada uzoq tranzaksiya | Replikada bajarish, snapshot ushlab turmaslik, vacuum ni erkin qoldirish |
 
-## 21.12 Amalda qo'llash
+## 21.12 Buffer cache ichida: clock sweep, buffer ring va keshni isitish
+
+Har bir bufer ikki qismdan iborat: 8 KB li sahifa va uning headeri. Header sahifaning fizik manzilini (fayl, fork, blok raqami), `dirty` bayrog'ini, foydalanish hisoblagichini va pin sonini saqlaydi. Sahifa ishlatilayotganda buferga pin qo'yiladi; pin uni siqib chiqarishdan himoya qiladi va har bir pin hisoblagichni oshiradi.
+
+Bo'sh bufer qolmaganda PostgreSQL clock sweep algoritmini ishlatadi: strelka buferlar bo'ylab aylanadi va har o'tganda foydalanish hisoblagichini bittaga kamaytiradi; pin qo'yilmagan va hisoblagichi nolga tushgan birinchi bufer tozalanadi. Hisoblagich 5 bilan cheklangan, aks holda strelka bir necha aylanish qilishga majbur bo'lar edi.
+
+Ommaviy operatsiyalar butun keshni yuvib yubormasligi uchun ular kichik buffer ring ichida ishlaydi va siqib chiqarish faqat shu ring chegarasida boradi. Kitob uchta strategiyani sanaydi: kesh hajmining choragidan katta jadvalni ketma-ket o'qishda ring 256 KB (32 sahifa); `COPY FROM`, `CREATE TABLE AS SELECT`, `CREATE MATERIALIZED VIEW` va jadvalni qayta yozadigan `ALTER TABLE` uchun standart 16 MB (2048 sahifa), lekin hech qachon kesh hajmining sakkizdan biridan oshmaydi; vacuum uchun yana 256 KB. Muhim istisno: ko'p qator o'zgartiradigan `UPDATE` yoki `DELETE` da sahifalar doim o'zgarib turgani uchun ring amalda foyda bermay qoladi.
+
+```sql
+-- Buferlarning foydalanish hisoblagichi bo'yicha taqsimlanishi
+SELECT usagecount, count(*) FROM pg_buffercache
+GROUP BY usagecount ORDER BY usagecount;
+
+-- Restartdan keyin issiq jadvalni oldindan yuklash
+CREATE EXTENSION IF NOT EXISTS pg_prewarm;
+SELECT pg_prewarm('buyurtmalar');
+```
+
+`pg_prewarm` kutubxonasi `shared_preload_libraries` ga qo'shilsa, `autoprewarm leader` protsessi keshdagi sahifalar ro'yxatini vaqti-vaqti bilan `autoprewarm.blocks` fayliga yozadi va restartdan keyin tiklaydi. Vaqtinchalik jadvallar umumiy keshga tushmaydi: ular protsessning lokal keshida yashaydi, hajmi `temp_buffers` bilan cheklanadi va `EXPLAIN (ANALYZE, BUFFERS)` ularni `shared` emas, `local hit=` deb ko'rsatadi.
+
+Spring tomonidagi xulosa: tungi hisobotning katta sequential scan i OLTP ish to'plamini siqib chiqarmaydi, chunki u ring ichida ishlaydi; lekin Spring Batch ning ommaviy `UPDATE` chunk i ringni foydasiz qiladi va keshni haqiqatan yuvadi. Shuning uchun ommaviy yangilashga alohida oyna ajratiladi va undan keyin issiq jadvallar `pg_prewarm` bilan qaytariladi.
+
+## 21.13 Sahifani tozalash (page pruning), HOT zanjiri va `fillfactor`
+
+Vacuum dan tashqari yana bitta, ancha arzon tozalash bor: page pruning. U bitta heap sahifasi ichida ishlaydi va ikki holatda ishga tushadi: oldingi `UPDATE` shu sahifada yangi tuple uchun joy topmagan bo'lsa (bu sahifa headerida qayd etiladi) yoki sahifada `fillfactor` ruxsat berganidan ko'p ma'lumot bo'lsa.
+
+Pruning baza gorizontidan orqada qolgan, ya'ni hech bir snapshotga ko'rinmaydigan tuple larni olib tashlaydi, lekin ularning line pointer larini joyida qoldiradi, chunki ularga indeksdan havola bo'lishi mumkin. Shu sababli u visibility map ni ham, free space map ni ham yangilamaydi: bo'shagan joy yangi `INSERT` uchun emas, shu sahifadagi `UPDATE` uchun saqlanadi. Yana bir natija: sahifa o'qilayotganda ham tozalanishi mumkin, ya'ni oddiy `SELECT` sahifani o'zgartirib, uni iflos qilib qo'yadi.
+
+HOT zanjirining boshiga indeksdan havola bor, shuning uchun uni ko'chirib bo'lmaydi. PostgreSQL ikki bosqichli adreslash ishlatadi: indeks ko'rsatadigan line pointer `redirect` holatiga o'tib, zanjirning joriy boshiga ishora qiladi, oradagi pointer lar esa `unused` ga o'tkaziladi, chunki ularga tashqi havola yo'qligi aniq. Agar sahifada umuman joy qolmasa, zanjir uziladi va boshqa sahifadagi yangi tuple uchun indeksga alohida yozuv qo'shiladi.
+
+```sql
+-- Sahifa ichidagi holat: redirect, unused va HOT bayroqlari
+CREATE EXTENSION IF NOT EXISTS pageinspect;
+SELECT lp, lp_flags, t_ctid
+FROM heap_page_items(get_raw_page('ombor_qoldiq', 0));
+
+-- Tez-tez yangilanadigan jadvalda sahifada joy qoldirish
+ALTER TABLE ombor_qoldiq SET (fillfactor = 80);
+```
+
+`fillfactor` ni pasaytirish HOT ni saqlab qoladi, lekin sahifalarda ko'proq bo'sh joy qolgani uchun jadvalning fizik hajmini oshiradi: bu ataylab qilinadigan almashtirish.
+
+Java tomonida eng ko'p uchraydigan xato Hibernate dan keladi: standart holatda u `UPDATE` ni entity ning hamma ustuni bilan yozadi, shuning uchun o'zgarmagan indekslangan ustun ham "o'zgargan" bo'lib ko'rinadi va HOT sharti buziladi. `@DynamicUpdate` Hibernate ni faqat haqiqatan o'zgargan ustunni yozishga majbur qiladi.
+
+```java
+@Entity
+@Table(name = "ombor_qoldiq")
+@DynamicUpdate
+public class StockItem {
+
+    @Id
+    private Long id;
+
+    @Column(name = "qoldiq")
+    private int quantity;
+
+    @Column(name = "oxirgi_ozgarish")
+    private Instant updatedAt;
+}
+```
+
+PostgreSQL 14 dan B-tree da bottom-up index deletion bor: sahifa bo'linishidan oldin indeks avval o'lik deb belgilangan yozuvlarni tozalaydi, keyin MVCC yangilanishlari hosil qilgan "istiqbolli" dublikatlarni heap orqali tekshiradi. Bu tekshiruv qimmat, lekin ortiqcha sahifa bo'linishidan arzonroq.
+
+## 21.14 `pg_xact`, hint bit, virtual transaction va subtransaction
+
+Tranzaksiya holati `PGDATA/pg_xact` katalogidagi fayllarda saqlanadi (12-versiyagacha katalog nomi `pg_clog` edi) va har bir tranzaksiya uchun ikki bit ajratiladi: committed va aborted. Tuple ni ko'rish uchun `xmin` tranzaksiyasi tugaganmi degan savolga javob kerak: hali faolmi degan qismni umumiy xotiradagi `ProcArray` beradi, tugagan bo'lsa yakuniy holat `pg_xact` dan olinadi.
+
+Har safar `pg_xact` ga borish qimmat, shuning uchun aniqlangan holat tuple headeridagi hint bit larga yoziladi va keyingi o'quvchi na `pg_xact` ga, na `ProcArray` ga boradi. Bitlarni yozuvchi tranzaksiyaning o'zi qo'ya olmaydi: commit paytida qaysi sahifalar o'zgarganini kuzatib yurish qimmat, ular esa keshda bo'lmasligi ham mumkin. Natijada arxitektor uchun muhim oqibat: yangi yuklangan jadvalni birinchi marta o'qiydigan `SELECT` sahifalarni iflos qiladi, checksum yoqilgan bo'lsa (yoki `wal_log_hints` yoqilgan bo'lsa) bu o'zgarishlar WAL ga full page image bo'lib tushadi. Ommaviy yuklashdan keyin "birinchi hisobot sekin, ikkinchisi tez" hodisasining sababi aynan shu.
+
+Faqat o'qiydigan tranzaksiya XID sarflamaydi: unga avval virtual XID beriladi (backend protsess identifikatori va ketma-ket raqam) va haqiqiy XID faqat ma'lumot o'zgartirilganda ajratiladi. Virtual XID lar faqat xotirada yashaydi va hech qachon diskka tushmaydi. Shuning uchun uzoq hisobot tranzaksiyasi XID zaxirasini sarflamaydi, lekin baribir snapshot ushlab turib vacuum ni to'sadi.
+
+Savepoint subtransaction orqali amalga oshiriladi: subtransaction asosiy tranzaksiyanikidan katta o'z XID ini oladi, holati `pg_xact` ga yoziladi, qo'shimcha ma'lumot esa `PGDATA/pg_subtrans` da `pg_xact` kabi bufer orqali saqlanadi. Commit qilingan subtransaction ikkala bitni ham birdan oladi va yakuniy qaror asosiy tranzaksiya holatiga qarab chiqariladi: asosiysi abort bo'lsa hammasi abort hisoblanadi.
+
+```java
+@Service
+public class PaymentService {
+
+    @Transactional
+    public void processBatch(List<PaymentRequest> requests) {
+        for (PaymentRequest request : requests) {
+            paymentWriter.writeOne(request);
+        }
+    }
+}
+
+@Service
+class PaymentWriter {
+
+    // NESTED Spring da JDBC savepoint ochadi, savepoint esa subtransaction
+    @Transactional(propagation = Propagation.NESTED)
+    void writeOne(PaymentRequest request) {
+        // xatolik bo'lsa faqat shu savepoint qaytariladi
+    }
+}
+```
+
+Shu kod 10000 elementli batch da 10000 ta subtransaction ochadi. Kitob subtransaction mexanikasini tavsiflaydi va raqamli chegara bermaydi, lekin mexanizmdan kelib chiqadigan xulosa aniq: har bir savepoint qo'shimcha XID va `pg_subtrans` ga qo'shimcha yozuv degani. Shuning uchun sikl ichida `Propagation.NESTED` ishlatish o'rniga xatoni batch darajasida ushlash arzonroq.
+
+## 21.15 Nosozlikdan tiklanish: startup protsess, full page write va checksum
+
+Server ishga tushganda postmaster birinchi bo'lib startup protsessini yaratadi. U `pg_control` faylini o'qiydi va klaster holatini tekshiradi: to'g'ri to'xtatilgan server `shut down` holatida bo'ladi, ishlamayotgan serverdagi `in production` esa nosozlik bo'lganini bildiradi. Shunda tiklanish oxirgi tugagan checkpoint ning REDO pozitsiyasidan boshlanadi; zaxira nusxadan tiklanayotgan bo'lsa pozitsiya `backup_label` faylidan olinadi.
+
+WAL yozuvi sahifaga faqat sahifaning LSN i yozuv LSN idan kichik bo'lsa qo'llanadi. Full page image istisno: u sahifani butunlay qayta yozgani uchun idempotent va LSN tekshirilmasdan qo'llanadi. PostgreSQL da klassik ikki bosqichli tiklanishning ikkinchi bosqichi, ya'ni roll-back, umuman yo'q: tugallanmagan tranzaksiya `pg_xact` da na commit, na abort bitini oladi va u endi ishlamayotgani aniq bo'lgani uchun abort qilingan deb hisoblanadi.
+
+```bash
+# Klaster holati va oxirgi checkpoint pozitsiyasi
+pg_controldata -D "$PGDATA" | egrep 'cluster state|Latest.*location'
+
+# Sinxronlash usulini o'z diskingizda o'lchash
+pg_test_fsync
+```
+
+Ikki sozlamani aralashtirmaslik kerak. `fsync = off` sinxronlashni butunlay o'chiradi va har qanday nosozlik ma'lumotni qaytarib bo'lmaydigan darajada buzadi. `synchronous_commit = off` esa izchil holatgacha tiklanishni kafolatlaydi va faqat eng oxirgi commit lar yo'qolishi mumkin. Birinchisi prodda ishlatilmaydi, ikkinchisi esa ongli almashtirish.
+
+Sahifa checksum lari prodda doim yoqilgan bo'lishi kerak, lekin ularning chegaralarini bilish shart. Checksum faqat sahifa o'qilganda tekshiriladi, demak buzilish uzoq vaqt sezilmay qolishi va hamma zaxira nusxaga tushib ketishi mumkin; nolga to'ldirilgan sahifa to'g'ri hisoblanadi; va checksum faqat relation ning asosiy fork iga qo'yiladi, `pg_xact` kabi boshqa fayllar himoyalanmagan. Shuning uchun checksum zaxira nusxani muntazam tiklab sinashning o'rnini bosmaydi.
+
+`full_page_writes` sahifa checkpoint boshlangandan keyin birinchi marta o'zgarganda uning to'liq nusxasini WAL ga yozadi va shu bilan qisman yozilgan sahifadan himoya qiladi. Narxi katta: kitobdagi `pgbench` tajribasida full page image lar hosil bo'lgan WAL hajmining taxminan 71 foizini egallagan, chunki test checkpoint dan darhol keyin boshlangan. Checkpoint lar orasida sahifa bir necha marta o'zgarsa bu nisbat kichrayadi, shuning uchun checkpoint ni siyraklashtirish va `wal_compression` ni yoqish bitta muammoning ikki yechimi.
+
+## 21.16 Xotira tuzilmalari qulfi: spinlock, lightweight lock va wait event
+
+Relation va qator darajasidagi og'ir qulflardan tashqari PostgreSQL umumiy xotiradagi tuzilmalarni ikki xil yengil qulf bilan himoya qiladi. Spinlock atomar protsessor buyrug'iga (masalan compare-and-swap) tayanadi, faqat eksklyuziv rejimni biladi va band resursni kutayotgan protsess sikl ichida aylanadi. Unda na deadlock aniqlash, na instrumentatsiya bor, shuning uchun uni kuzatib bo'lmaydi. Lightweight lock eksklyuziv va umumiy rejimni qo'llaydi, navbati yo'q (kutayotganlardan qaysi biri o'tishi deyarli tasodifiy), deadlock tekshiruvi ham yo'q, lekin instrumentatsiyasi bor va shuning uchun kuzatuvda ko'rinadi.
+
+Ikkita amaliy misol. Buffer cache dagi hash jadvalga kirish uchun `BufferMapping` qulfi olinadi; u bitta qulf emas, 128 ta qulfdan iborat tranche, chunki bu jadvalga murojaat juda tez-tez bo'ladi va donadorlik yetishmasa u darhol bo'g'iz joyga aylanadi. WAL tomonida sahifani diskka yozishni bitta `WALWrite` qulfi serializatsiya qiladi, WAL yozuvi uchun joy band qilishni `insert position` spinlocki himoya qiladi, band qilingan joyni to'ldirish esa 8 ta qulfdan iborat `WALInsert` tranche i orqali parallel ketadi.
+
+```sql
+-- Hozirgi kutishlar. Turlari: Lock, LWLock, BufferPin, IO, Client,
+-- IPC, Extension, Activity va Timeout
+SELECT backend_type, wait_event_type, wait_event, count(*)
+FROM pg_stat_activity
+GROUP BY 1, 2, 3 ORDER BY 4 DESC;
+```
+
+`pg_stat_activity` faqat shu lahzani ko'rsatadi va tarix to'plamaydi. Tarix kerak bo'lsa `pg_wait_sampling` kengaytmasi ishlatiladi: u `shared_preload_libraries` ga qo'shiladi va sessiya bo'yicha kutish profilini yig'adi. Kitobdagi misolda standart namuna olish chastotasi sekundiga 100 marta, ya'ni `count` ustunini 100 ga bo'lsangiz kutish davomiyligini sekundda olasiz. Qisqa sessiyalar uchun bu usul ishlamaydi, chunki namuna olish statistik.
+
+Diagnostikada ikki narsa yodda turishi kerak. Birinchisi: ko'rinishda faqat kodda nomlangan kutishlar aks etadi, qolgan vaqt hisobga olinmagan bo'lib qoladi va bu "protsess hech narsa kutmayapti" degani emas. Ikkinchisi Spring uchun muhim: HikariCP metrikasi `hikaricp.connections.pending` ni ko'rsatsa, sabab har doim pool kichikligida emas. Server tomonidagi profil `IO / WALSync` yoki `LWLock / WALWrite` ni ko'rsatsa, chegarani disk sinxronlashi qo'yadi va pool ni kattalashtirish faqat navbatni serverga ko'chiradi.
+
+## 21.17 Amalda qo'llash
 
 - [ ] `pg_stat_activity` dan `idle in transaction` sessionlarini sanab chiqing va `idle_in_transaction_session_timeout` ni 30 sekundga qo'ying.
 - [ ] HikariCP `maximum-pool-size` ni barcha instanslar bo'yicha qo'shib, PostgreSQL yadro sonining 2-4 barobaridan oshmasligini tekshiring.
@@ -363,6 +504,13 @@ Quyidagi jadval butun bob bo'yicha ikki xil fikrlashni qiyoslaydi.
 - [PostgreSQL, Linux Huge Pages](https://www.postgresql.org/docs/current/kernel-resources.html#LINUX-HUGE-PAGES) - `shared_memory_size_in_huge_pages` va `vm.nr_hugepages` bilan hovuzni sozlash
 - [postgres, `guc.c` (REL_15_STABLE)](https://raw.githubusercontent.com/postgres/postgres/REL_15_STABLE/src/backend/utils/misc/guc.c) - `huge_pages` `PGC_POSTMASTER`, standarti `HUGE_PAGES_TRY`
 - [postgres, `system_views.sql`](https://raw.githubusercontent.com/postgres/postgres/REL_16_STABLE/src/backend/catalog/system_views.sql) - `pg_stat_io` 16 da bor, 15 da yo'q
+- [PostgreSQL 17, WAL (wal.sgml)](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/wal.sgml) - WAL, checkpoint va fsync xatti-harakati
+- [PostgreSQL 17, Routine Maintenance (maintenance.sgml)](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/maintenance.sgml) - vacuum, analyze va tranzaksiya id aylanishi
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 9-bob "Buffer Cache", 147-163-betlar - bufer headeri, clock sweep, buffer ring strategiyalari, `pg_prewarm` va lokal kesh
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 5-bob "Page Pruning and HOT Updates", 92-101-betlar - page pruning sharti, `redirect` pointer, HOT zanjirining uzilishi, bottom-up index deletion
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 3-bob "Pages and Tuples", 70-79-betlar - `pg_xact` ikki biti, hint bit, virtual transaction, savepoint va subtransaction
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 10-bob "Write-Ahead Log" 173-176-betlar va 11-bob "WAL Modes" 185-191-betlar - startup protsess, `pg_control`, roll-back bosqichining yo'qligi, checksum chegaralari, full page write ulushi
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 15-bob "Locks on Memory Structures", 240-247-betlar - spinlock va lightweight lock farqi, `BufferMapping` va `WALInsert` tranche lari, wait event turlari, `pg_wait_sampling`
 
 ---
 

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 14. Arxitektura testlari va kod sifati darvozalari (Architecture Tests & Code Quality Gates)
 
@@ -462,6 +462,11 @@ Darvozalar ro'yxatini ham kod kabi yuriting: har chorakda ko'rib chiqing, bitta 
 - [ ] Statik tahlil bosqichma-bosqich joriy qilingan: baseline olingan, yangi kodga qattiq, eski kodga yumshoq talab.
 - [ ] Bog'liqlik darvozasi bor: `dependencyConvergence`, ban ro'yxati, litsenziya tekshiruvi va zaxiralanmagan kutubxona signali.
 - [ ] Har bir darvoza uchun "qizil bo'lsa kim nima qiladi" qoidasi va istisno so'rash yo'li hujjatlashtirilgan.
+
+## Manbalar
+
+- [ArchUnit, README](https://raw.githubusercontent.com/TNG/ArchUnit/a0640ffa3ea5806c4fbab0dfbd29e363646d0fa3/README.md) - qatlam va bog'liqlik qoidalarini test sifatida yozish, `slices` va tsikl tekshiruvi
+- [PIT, README](https://raw.githubusercontent.com/hcoles/pitest/f7fe5adfa5fb6e727c12d2403a48f5e4e9dd2fc6/README.md) - mutatsiya ballining qamrovdan farqi
 
 ---
 

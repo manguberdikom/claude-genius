@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 32. SonarQube nashrlari va ularning farqi (Editions)
 
@@ -30,23 +30,36 @@ SonarQube bitta mahsulot emas, balki bir nechta nashrdan iborat qator. Siz CI da
 
 ## 32.1 Nashrlar qatori: Community, Developer, Enterprise va Data Center yo'nalishi
 
-Qator to'rt bosqichdan iborat va har bir yuqori bosqich pastdagini to'liq o'z ichiga oladi. Community bepul va ochiq asosdagi nashr, u yakka dasturchi yoki kichik jamoa uchun yetarli. Developer nashri branch tahlili va chuqur xavfsizlik tahlilini qo'shadi, ya'ni kundalik PR ish oqimi shu yerdan boshlanadi. Enterprise nashri portfolio, umumiy boshqaruv hisobotlari va ko'p loyihali tashkilot ehtiyojlarini qo'shadi. Data Center yo'nalishi esa klaster, yuqori ishonchlilik va gorizontal masshtab uchun, ya'ni Sonar ishdan chiqsa butun CI to'xtab qolishi mumkin bo'lgan tashkilotlar uchun.
+Nashrlar ro'yxati mahsulotning o'z kodida qattiq yozilgan: `EditionProvider.Edition` enum i to'rt qiymatdan iborat - `COMMUNITY` ("Community"), `DEVELOPER` ("Developer"), `ENTERPRISE` ("Enterprise") va `DATACENTER` ("Data Center"). Community bepul va ochiq manbali nashr: SonarQube ning ochiq repozitoriysi aynan shu nashrning kodini saqlaydi va LGPL v3 ostida tarqatiladi, qolgan uchtasi esa tijoriy litsenziya bilan beriladi.
 
-Nomlar bilan ehtiyot bo'lish kerak. Sonar brendi bir necha marta qayta nomlangan va bugungi hujjatlarda "SonarQube Server", "SonarQube Cloud" va "SonarQube Community Build" kabi atamalar uchraydi, avvalroq esa "SonarQube" va "SonarCloud" ishlatilgan. Agar sizning jamoada eski atamalar yursa, bu qo'shimcha chalkashlik manbai bo'ladi. Hozirgi rasmiy nomlanishni va nashrlar ro'yxatini rasmiy saytdan tekshiring.
+Nashrlar orasidagi imkoniyat taqsimotini esa kod to'liq ko'rsatmaydi: ochiq kodda faqat Community da NIMA YO'Q ekani ko'rinadi, u yoki bu imkoniyat qaysi pullik bosqichdan boshlanishini sotuvchining joriy matritsasi belgilaydi. Shu sababli bu bobda Community chegaralari kodga tayangan holda, pullik bosqichlar farqi esa tasdiqlashni talab qiladigan ma'lumot sifatida beriladi.
+
+Nomlar bilan ehtiyot bo'lish kerak. Ochiq nashrning hozirgi rasmiy nomi "SonarQube Community Build": repozitoriyning o'z README fayli shu nomni ishlatadi. Avvalroq "SonarQube" va "SonarCloud" atamalari yurgan, bugun esa "SonarQube Server" va "SonarQube Cloud" ishlatiladi.
+
+Versiya raqamlari ham ikki qatorga bo'lingan va buni Docker image teglarida ko'rish mumkin: Community Build teglari `26.10.0.133078-community` shaklida (ya'ni 26.x qatori), pullik nashrlar esa `2026.5.2-developer`, `2026.5.2-enterprise`, `2026.5.2-datacenter-app` shaklida (2026.x qatori). Uzoq muddat qo'llab-quvvatlanadigan qator LTA (Long-Term Active) deb ataladi va uning teglari `2026.5-lta-developer` kabi yoziladi. "LTS" eski atama, yangi teglarda u uchramaydi.
 
 ## 32.2 Community nashrda nima bor va nima yo'q
 
-Community nashrda tahlil yadrosi to'liq ishlaydi. Siz quality profile sozlaysiz, quality gate yaratasiz, issue va code smell ko'rasiz, coverage hisobotini yuklaysiz va Web API orqali hammasini avtomatlashtirasiz. Ya'ni "Sonar o'tadigan kod yozish" mashqining 80 foizini bepul nashrda ham bajarish mumkin.
+Community nashrda tahlil yadrosi to'liq ishlaydi. Siz quality profile sozlaysiz, quality gate yaratasiz, issue va code smell ko'rasiz, coverage hisobotini yuklaysiz va Web API orqali hammasini avtomatlashtirasiz.
 
-Yo'q narsalar esa aniq va sezilarli. Odatda Community nashrda faqat bitta asosiy branch tahlil qilinadi, pull request uchun alohida tahlil va PR decoration bo'lmaydi, taint analysis ishlamaydi, portfolio darajasidagi ko'rinish yo'q va ba'zi tillar qo'llanmaydi. Bu taqsimot versiyaga qarab o'zgarishi mumkin, shuning uchun o'z versiyangiz hujjatiga qarab tasdiqlang.
+Yo'q narsalar esa aniq. Ularning bir qismi to'g'ridan-to'g'ri kodda ko'rinadi:
+
+- branch va pull request tahlili yo'q: tahlil metama'lumotida branch yoki PR berilsa, kod `Branches and Pull Requests are not supported in Community Edition` deb to'xtatadi (`AnalysisMetadataHolderImpl`), Web API parametrlari esa "Branch key. Not available in the community edition" izohi bilan belgilangan;
+- moslashtirilgan dashboard yo'q: "Community Edition does not support custom dashboards" (`DefaultDashboardCountService`);
+- taint analysis va bir qancha til analizatori birga kelmaydi (32.4 va 32.6).
+
+Teskari misol ham bor: loyihani eksport qilish imkoniyati 9.2 versiyada Enterprise dan Community ga ko'chirilgan (`ExportAction` changelog i). Ya'ni chegara qotib qolgan narsa emas, versiyadan versiyaga siljiydi va har versiyada qayta tekshirilishi kerak.
 
 ```bash
 # Community nashrni mahalliy sinash uchun eng tez yo'l
 # Diqqat: tashqi baza va hajm sozlamalari yo'q, faqat tajriba uchun
+# Teg shakli: Community uchun `community` yoki `<versiya>-community`,
+# pullik nashrlar uchun `<versiya>-developer`, `-enterprise`,
+# `-datacenter-app`, `-datacenter-search`
 docker run -d --name sonar-local \
   -p 9000:9000 \
   -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
-  sonarqube:lts-community
+  sonarqube:community
 
 # Konteyner tayyor bo'lganini kutish
 until curl -sf http://localhost:9000/api/system/status | grep -q '"UP"'; do
@@ -62,11 +75,12 @@ curl -su admin:admin http://localhost:9000/api/navigation/global \
 
 ## 32.3 Branch tahlili va pull request decoration qaysi nashrdan boshlab mavjud
 
-Branch tahlili va PR decoration odatda Developer nashridan boshlab mavjud bo'ladi. Buning amaliy ma'nosi katta. Developer nashrida har bir feature branch va har bir pull request alohida tahlil qilinadi, "new code" faqat shu PR o'zgartirgan qatorlar bo'yicha hisoblanadi va quality gate natijasi to'g'ridan-to'g'ri GitHub yoki GitLab PR sahifasida ko'rinadi. Community nashrida esa bitta asosiy branch tahlil qilinadi va dasturchi fikr-mulohazani merge dan keyin oladi, ya'ni eng qimmat paytda.
+Branch tahlili va PR decoration Community Build da yo'q: bu kodda aniq to'sib qo'yilgan (32.2). Pullik nashrlarda bu imkoniyat bor, aniq bosqichni esa sotuvchi matritsasidan tasdiqlang. Buning amaliy ma'nosi katta. Branch tahlili bor nashrda har bir feature branch va har bir pull request alohida tahlil qilinadi, "new code" faqat shu PR o'zgartirgan qatorlar bo'yicha hisoblanadi va quality gate natijasi GitHub yoki GitLab PR sahifasida ko'rinadi. Community nashrida esa bitta asosiy branch tahlil qilinadi va dasturchi fikr-mulohazani merge dan keyin oladi, ya'ni eng qimmat paytda.
 
 ```yaml
 # GitHub Actions: branch va PR parametrlari
-# Bu parametrlar Developer nashri va yuqorisida kutilgan natija beradi
+# Bu parametrlar branch tahlili bor nashrda kutilgan natija beradi,
+# Community Build da esa tahlil xato bilan to'xtaydi
 name: sonar
 on:
   push:
@@ -94,7 +108,7 @@ jobs:
 
 ## 32.4 Taint analysis (chuqur xavfsizlik tahlili) qaysi nashrda ishlaydi
 
-Taint analysis ishonchsiz manbadan (masalan HTTP parametri) xavfli nuqtaga (masalan SQL so'rovi) qadar ma'lumot yo'lini kuzatadi. Bu oddiy pattern tekshiruvidan farq qiladi, chunki u metodlar orasidan o'tib yo'lni quradi. Odatda bu imkoniyat Developer nashridan boshlab ishlaydi va Community nashrida mavjud emas. Natijada bir xil kod Community da "toza", Developer da esa vulnerability sifatida ko'rinadi.
+Taint analysis ishonchsiz manbadan (masalan HTTP parametri) xavfli nuqtaga (masalan SQL so'rovi) qadar ma'lumot yo'lini kuzatadi. Bu oddiy pattern tekshiruvidan farq qiladi, chunki u metodlar orasidan o'tib yo'lni quradi. Bu imkoniyat Community Build ga kirmaydi: uni bajaradigan plaginlar tijoriy `com.sonarsource.security` guruhida turadi (`sonar-security-plugin` va til bo'yicha frontendlari: java, php, python, kotlin, go, csharp, vbnet), Community Build ning birga keladigan plaginlar ro'yxatida esa ular yo'q. Natijada bir xil kod Community Build da "toza", taint analysis bor nashrda esa vulnerability sifatida ko'rinadi.
 
 ```java
 // SHIKOYAT QILINADIGAN kod: so'rov HTTP parametridan to'g'ridan-to'g'ri yig'iladi
@@ -160,25 +174,27 @@ done < /tmp/loyihalar.txt | sort -k2 -n -r
 
 ## 32.6 Qo'llab-quvvatlanadigan tillar soni nashrga qanday bog'liq
 
-Tillar ro'yxati nashrga bog'liq va bu ko'pchilik uchun kutilmagan cheklov bo'ladi. Umumiy qoida shunday: keng tarqalgan zamonaviy tillar Community nashrida ham bor, kompilyatsiya talab qiladigan mahalliy tillar va korporativ meros tillari esa yuqori nashrlarda paydo bo'ladi. Java, Kotlin, JavaScript, TypeScript, Python va shunga o'xshash tillar bilan ishlaydigan Spring jamoasi uchun Community nashrining til qamrovi odatda muammo emas.
+Community Build bilan qaysi analizator birga kelishini taxmin qilish shart emas: u paketlash faylida qatorma-qator sanab o'tilgan. 26.11 kodida ro'yxat shunday: Java (va Java symbolic execution), C#, VB.NET, JavaScript (TypeScript va CSS bilan bir paketda), PHP, Python, Kotlin, Ruby, Scala, Go, Rust, Flex, HTML, XML, IaC va Text (sir qidirish), ustiga JaCoCo hisobotini o'qiydigan plagin.
 
-Agar sizda C yoki C++ komponenti, mobil native kod yoki mainframe merosi bo'lsa, tekshirish majburiy. Aniq taqsimot versiyadan versiyaga o'zgaradi, shuning uchun til ro'yxatini rasmiy saytdagi joriy matritsadan tasdiqlang va uni arxitektura qaroriga asos qilib olmang.
+Tijoriy guruhda (`com.sonarsource.*`) qoladigan analizatorlar esa boshqalar: ABAP, COBOL, CFamily (C, C++, Objective-C), Dart, PL/I, PL/SQL, VB6, RPG, Apex, shuningdek dataflow bug detection (DBD) va xavfsizlik (taint) plaginlari. Ya'ni keng tarqalgan zamonaviy tillar bilan ishlaydigan Spring jamoasi uchun Community Build ning til qamrovi yetadi; C yoki C++ komponenti, mainframe merosi yoki Dart bo'lsa, pullik nashr kerak bo'ladi.
 
-| Imkoniyat | Community | Developer | Enterprise | Data Center |
-| --- | --- | --- | --- | --- |
-| Asosiy branch tahlili, issue, code smell | bor | bor | bor | bor |
-| Quality gate va quality profile | bor | bor | bor | bor |
-| Coverage hisobotini qabul qilish | bor | bor | bor | bor |
-| Feature branch tahlili | yo'q | bor | bor | bor |
-| Pull request tahlili va decoration | yo'q | bor | bor | bor |
-| Taint analysis (manba va nuqta yo'li) | yo'q | bor | bor | bor |
-| Xavfsizlik hisobotlari (OWASP kabi) | cheklangan | bor | bor | bor |
-| Portfolio va application ko'rinishi | yo'q | yo'q | bor | bor |
-| Tashkiliy boshqaruv hisobotlari | yo'q | yo'q | bor | bor |
-| Qo'shimcha tillar (native, meros) | cheklangan | kengayadi | yana kengayadi | yana kengayadi |
-| Klaster va yuqori ishonchlilik | yo'q | yo'q | yo'q | bor |
+Ro'yxat har relizda o'zgaradi: o'z versiyangizdagi aniq holatni server UI sidagi plaginlar ro'yxatidan yoki shu versiya kodining paketlash faylidan tekshirib oling.
 
-Yuqoridagi taqsimot umumiy manzara uchun va versiyaga qarab o'zgarishi mumkin. Shartnoma yoki arxitektura qaroridan oldin joriy rasmiy jadval bilan solishtiring.
+Quyidagi jadval faqat Community Build chegarasini ko'rsatadi, chunki aynan shu chegara ochiq kodda tasdiqlanadi. Pullik bosqichlar orasidagi farqni (nima Developer da, nima Enterprise da) bu yerdan izlamang: uni sotuvchining joriy matritsasi belgilaydi va shartnomadan oldin shu matritsa bilan solishtirish kerak.
+
+| Imkoniyat | Community Build da | Tasdiq |
+| --- | --- | --- |
+| Asosiy branch tahlili, issue, code smell | bor | ochiq kod va paketlangan analizatorlar |
+| Quality gate va quality profile | bor | ochiq kodda |
+| Coverage hisobotini qabul qilish | bor | JaCoCo plagini birga keladi |
+| Loyihani eksport qilish | bor | 9.2 da Enterprise dan ko'chirilgan |
+| Feature branch tahlili | yo'q | kod xato bilan to'xtatadi |
+| Pull request tahlili va decoration | yo'q | kod xato bilan to'xtatadi |
+| Moslashtirilgan dashboard | yo'q | kodda shunday yozilgan |
+| Taint analysis | yo'q | plagin tijoriy guruhda |
+| Native va meros tillari (C, C++, COBOL, ABAP, PL/SQL, RPG, Dart) | yo'q | analizatorlar tijoriy guruhda |
+| Portfolio va application ko'rinishi | yo'q | ochiq kodda yo'q |
+| Klaster (Data Center) | yo'q | ochiq kodda yo'q |
 
 ## 32.7 SonarQube Cloud va o'zingizda joylashtirilgan server tanlovi
 
@@ -208,7 +224,7 @@ sonar.branch.name=${env.BRANCH_NAME}
 
 ## 32.8 Litsenziya qanday hisoblanadi va xarajat nimaga bog'liq
 
-Sonar litsenziyasi an'anaviy ravishda tahlil qilinadigan kod qatorlari soniga, ya'ni LOC ga bog'lanadi va yillik obuna shaklida sotiladi. Dasturchilar soni emas, kod hajmi asosiy o'lchov bo'lishi odatiy holat. Shu sababli xarajatni kamaytirishning eng halol yo'li keraksiz kodni tahlildan chiqarib tashlash, ya'ni generatsiya qilingan sinflar va migratsiya skriptlarini exclusions ga kiritish.
+Litsenziya hisobi va narx siyosati ochiq kodda emas, shuning uchun bu yerda hisoblash qoidasi tasdiqlangan ma'lumot sifatida berilmaydi: uni sotuvchining joriy shartlaridan oling. Shu sababli xarajatni kamaytirishning eng halol yo'li keraksiz kodni tahlildan chiqarib tashlash, ya'ni generatsiya qilingan sinflar va migratsiya skriptlarini exclusions ga kiritish.
 
 Aniq narx yozmaymiz va u haqda taxmin qilmaymiz, chunki narx siyosati, bosqichlar va hisoblash qoidalari o'zgaradi. Hozirgi holatni rasmiy saytdan tekshiring va o'z LOC raqamingiz bilan hisoblang. LOC ni oldindan bilish uchun Community nashrida bir marta tahlil qilib, `ncloc` o'lchovini o'qib olish eng ishonchli usul.
 
@@ -307,7 +323,9 @@ Ko'p jamoali tashkilot uchun asosiy ehtiyoj ko'rinish bo'ladi, ya'ni o'nlab loyi
 
 Birinchi savol: fikr-mulohaza qachon kerak. Agar javob "PR da" bo'lsa, branch tahlili bo'lmagan nashr sizga mos kelmaydi. Ikkinchi savol: kodda ishonchsiz kiritma xavfli nuqtaga yetib boradigan joy bormi. Agar bor bo'lsa, taint analysis ni alohida baholang.
 
-Uchinchi savol: nechta loyiha va kim umumiy manzarani ko'rishi kerak. Agar javob "o'nlab loyiha va texnik direktor" bo'lsa, portfolio yo'nalishi muhokamaga kiradi. To'rtinchi savol: Sonar to'xtasa nima bo'ladi. Agar relizga chiqa olmasangiz, bu ishonchlilik masalasi va u pul bilan hal qilinadi. Beshinchi savol: haqiqiy LOC qancha va undan qancha qismi generatsiya qilingan. Bu raqam bevosita xarajatga ta'sir qiladi va uni oldindan o'lchash mumkin.
+Uchinchi savol: nechta loyiha va kim umumiy manzarani ko'rishi kerak. Agar javob "o'nlab loyiha va texnik direktor" bo'lsa, portfolio yo'nalishi muhokamaga kiradi. To'rtinchi savol: Sonar to'xtasa nima bo'ladi. Agar relizga chiqa olmasangiz, bu ishonchlilik masalasi va u pul bilan hal qilinadi. Beshinchi savol: haqiqiy LOC qancha va undan qancha qismi generatsiya qilingan. Bu raqamni oldindan o'lchash mumkin va u tahlil hajmini ham, shovqinni ham belgilaydi.
+
+Oltinchi savol: yangilanish qatori qaysi. Kodning o'z sozlamalarida har reliz uchun amal qilish muddati (EOL) yozib qo'yiladi: LTA bo'lmagan versiya uchun u keyingi relizgacha, LTA versiya uchun esa reliz sanasidan 12 oy (premium qo'llab-quvvatlash bilan 18 oy). Ya'ni oddiy qatorda qolsangiz, har reliz bilan ko'chishga majbursiz.
 
 Alohida eslatma: coverage, quality gate va yangi kod tamoyili bo'yicha kundalik ish uslubi barcha nashrlarda bir xil, bu masalalar bu hujjatning quality gate va yangi kod mavzularida yoritilgan. Test yozish uslubi esa [testlash qo'llanmasiga](../testing/README.md) tegishli.
 
@@ -321,6 +339,22 @@ Alohida eslatma: coverage, quality gate va yangi kod tamoyili bo'yicha kundalik 
 - [ ] Kodda ishonchsiz kiritmadan SQL yoki buyruq nuqtasiga boradigan yo'llarni qo'lda ro'yxatlab, taint analysis qancha qiymat berishini baholang.
 - [ ] Cloud va o'z serveri variantlarini operatsion yuk, ma'lumot siyosati va to'xtash narxi bo'yicha bitta sahifada taqqoslang.
 - [ ] Yakuniy tanlovni sababi bilan qaror hujjatiga yozib, narx va nashr nomlarini rasmiy saytdan tasdiqlangan sana bilan belgilang.
+
+## Manbalar
+
+- SonarQube Community Build manbasi, `c9f52e4d6e4a34a0d8ba4df9de9c093b6e077707` commit (26.11, 2026-10-16): [`sonar-core/src/main/java/org/sonar/core/platform/EditionProvider.java`](https://github.com/SonarSource/sonarqube/blob/c9f52e4d6e4a34a0d8ba4df9de9c093b6e077707/sonar-core/src/main/java/org/sonar/core/platform/EditionProvider.java) - `Edition` enum i to'rt qiymat: COMMUNITY, DEVELOPER, ENTERPRISE, DATACENTER va ularning yorliqlari
+- [`README.md`](https://github.com/SonarSource/sonarqube/blob/c9f52e4d6e4a34a0d8ba4df9de9c093b6e077707/README.md) - ochiq nashrning rasmiy nomi "SonarQube Community Build", litsenziya LGPL v3
+- [`server/sonar-ce-task-projectanalysis/src/main/java/org/sonar/ce/task/projectanalysis/analysis/AnalysisMetadataHolderImpl.java`](https://github.com/SonarSource/sonarqube/blob/c9f52e4d6e4a34a0d8ba4df9de9c093b6e077707/server/sonar-ce-task-projectanalysis/src/main/java/org/sonar/ce/task/projectanalysis/analysis/AnalysisMetadataHolderImpl.java) - "Branches and Pull Requests are not supported in Community Edition"
+- [`server/sonar-webserver-webapi/src/main/java/org/sonar/server/issue/ws/SearchAction.java`](https://github.com/SonarSource/sonarqube/blob/c9f52e4d6e4a34a0d8ba4df9de9c093b6e077707/server/sonar-webserver-webapi/src/main/java/org/sonar/server/issue/ws/SearchAction.java) - `branch` va `pullRequest` parametrlari izohi: "Not available in the community edition"
+- [`server/sonar-webserver-webapi/src/main/java/org/sonar/server/projectdump/ws/ExportAction.java`](https://github.com/SonarSource/sonarqube/blob/c9f52e4d6e4a34a0d8ba4df9de9c093b6e077707/server/sonar-webserver-webapi/src/main/java/org/sonar/server/projectdump/ws/ExportAction.java) - changelog: loyiha eksporti 9.2 da Enterprise dan Community ga ko'chirilgan
+- [`server/sonar-webserver/src/main/java/org/sonar/server/platform/telemetry/DefaultDashboardCountService.java`](https://github.com/SonarSource/sonarqube/blob/c9f52e4d6e4a34a0d8ba4df9de9c093b6e077707/server/sonar-webserver/src/main/java/org/sonar/server/platform/telemetry/DefaultDashboardCountService.java) - "Community Edition does not support custom dashboards"
+- [`sonar-application/bundled_plugins.gradle`](https://github.com/SonarSource/sonarqube/blob/c9f52e4d6e4a34a0d8ba4df9de9c093b6e077707/sonar-application/bundled_plugins.gradle) - Community Build bilan birga keladigan analizatorlar ro'yxati (32.6)
+- [`build.gradle`](https://github.com/SonarSource/sonarqube/blob/c9f52e4d6e4a34a0d8ba4df9de9c093b6e077707/build.gradle) - tijoriy `com.sonarsource.*` guruhidagi analizatorlar va xavfsizlik (taint) plaginlari (32.4, 32.6)
+- [`gradle.properties`](https://github.com/SonarSource/sonarqube/blob/c9f52e4d6e4a34a0d8ba4df9de9c093b6e077707/gradle.properties) - versiya 26.11 va EOL qoidasi: LTA bo'lmagan versiya keyingi relizgacha, LTA versiya 12 oy, premium qo'llab-quvvatlash bilan 18 oy
+- [`server/sonar-webserver-webapi/src/main/java/org/sonar/server/platform/ws/UpgradesAction.java`](https://github.com/SonarSource/sonarqube/blob/c9f52e4d6e4a34a0d8ba4df9de9c093b6e077707/server/sonar-webserver-webapi/src/main/java/org/sonar/server/platform/ws/UpgradesAction.java) - 2026.5 da `lta` maydoni qo'shilgan, atama Long-Term Active
+- Docker Hub `library/sonarqube` teglar ro'yxati, 2026-10-17 da olingan - teg shakllari `community`, `26.10.0.133078-community`, `2026.5.2-developer`, `2026.5.2-enterprise`, `2026.5.2-datacenter-app`, `2026.5-lta-developer`; `lts-community` degan teg yo'q
+- ESLATMA: pullik bosqichlar orasidagi imkoniyat taqsimoti (nima Developer da, nima Enterprise da), litsenziya hisobi va narx ochiq manbada yo'q. Ular shu bobda tasdiqlangan ma'lumot sifatida berilmaydi, sotuvchining joriy matritsasidan tekshirilishi kerak
+- ESLATMA: 32.5, 32.7, 32.9, 32.10, 32.11 va 32.12 dagi tavsiyalar, jamoa hajmi bo'yicha maslahat va API asosida darvoza qurish usullari shu korpusning amaliy tavsiyasi, birlamchi manbadan olingan emas
 
 ---
 

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 12. Code smell va anti-pattern katalogi diffda (Smells in a Diff)
 
@@ -250,6 +250,8 @@ Katalogdan foydalanishning to'g'ri usuli - nomini aytmaslik, oqibatini aytish. "
 | Anemic model | "Status o'tish qoidasi uch joyda takrorlangan" |
 | Leaky abstraction | "Port `HttpClientErrorException` tashlaydi" |
 
+Atamalarning kelib chiqishi haqida bir izoh, chunki u manbani qidirganda vaqt tejaydi. Jadvaldagi nomlarning bir qismi *Clean Code* ning 17-bobida ("Smells and Heuristics") kod bilan belgilangan: masalan feature envy u yerda `G14` deb yuritiladi va kitob uning o'zi ham *Refactoring* dan olinganini aytadi. Shotgun surgery, primitive obsession va divergent change kabi nomlar esa Fowler ning *Refactoring* kitobidagi katalogdan keladi va bu korpusda o'sha kitob yo'q, shuning uchun ularning ta'rifi bu yerda qisqa va oqibat tilida beriladi, kanonik ta'rif sifatida emas.
+
 ## 12.10 Katalogni loyihaga moslashtirish
 
 Umumiy katalog boshlanish nuqtasi, lekin eng foydali katalog - loyihaning o'z incidentlaridan yozilgani. Har bir incidentdan keyin bitta satr qo'shiladi: belgi, oqibat, qanday topish.
@@ -276,6 +278,12 @@ Shu jadval review checklistining eng ishonchli qismiga aylanadi, chunki uning ha
 - [ ] `static` mutable maydonlarni (`static Map`, `static List`, `SimpleDateFormat`) grep bilan topib ro'yxat tuzing.
 - [ ] Timeout sozlanmagan HTTP mijozlarini aniqlang va har biriga ulanish va o'qish timeout i qo'ying.
 - [ ] Smell nomlarini izohda ishlatishni to'xtatib, oqibat tilidagi iboralar jadvalini jamoaga tarqating.
+
+## Manbalar
+
+- Robert C. Martin, *Clean Code*, 17-bob ("Smells and Heuristics") - smell va evristikalarning kodlangan ro'yxati, shu jumladan `G14: Feature Envy` va uning *Refactoring* dan olingani
+- [Google, What to Look For in a Code Review](https://raw.githubusercontent.com/google/eng-practices/3bb3ec25b3b0199f4940b1aa75f0ac5c5753301c/review/reviewer/looking-for.md) - murakkablik, nomlash va izohga qaraydigan savollar
+- [sonar-java 8.44, qoida metadata si](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S3776.json) - mashina topa oladigan smell lar (cognitive complexity va boshqalar) va ularning chegaralari
 
 ---
 

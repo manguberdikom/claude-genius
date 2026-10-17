@@ -17,3 +17,6 @@ type: feedback
   TAQIQLANGAN, adminga ham. Oddiy push ishlaydi (PR, status check va push cheklovi yo'q).
   Demak `main` tarixini qayta yozib bo'lmaydi: xato commitni `--force` bilan tuzatish
   o'rniga ustiga yangi commit qo'yiladi.
+- Cloud sessiyasi `claude/<nom>` branchida ochilsa ham qoida o'zgarmaydi: 2026-10-15 da
+  foydalanuvchi buni qayta tasdiqladi. Berilgan branch e'tiborga olinmaydi, ish `main` ga
+  o'tkaziladi va push `main` ga qilinadi; PR ochilmaydi.

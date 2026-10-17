@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 19. Spring tranzaksiyalari va ularning chegaralari (Spring Transactions)
 
@@ -46,7 +46,8 @@ public class TxConfig {
         JpaTransactionManager tm = new JpaTransactionManager(emf);
         // default timeout: hech qanday @Transactional da timeout ko'rsatilmasa shu ishlaydi
         tm.setDefaultTimeout(5); // sekund
-        // DataSourceTransactionManager da savepoint uchun kerak; JPA da ko'pincha qo'llanmaydi
+        // Default allaqachon false (JPA): bu qator faqat niyatni ko'rsatadi.
+        // DataSourceTransactionManager da esa default true, 19.2 ga qara.
         tm.setNestedTransactionAllowed(false);
         return tm;
     }
@@ -67,9 +68,17 @@ Shu mexanikadan ikki natija kelib chiqadi. Birinchi: tranzaksiya faqat proxy orq
 
 `REQUIRED` default. Tranzaksiya bo'lsa unga qo'shiladi, bo'lmasa yangisini boshlaydi. "Qo'shiladi" so'zi aldaydi: ichki metodda `rollback` sodir bo'lsa, u o'z o'zini bekor qila olmaydi, faqat umumiy tranzaksiyani `rollback-only` deb belgilaydi. Tashqi metod istisnoni yutib yuborib commit qilmoqchi bo'lsa, Spring `UnexpectedRollbackException` tashlaydi. Bu eng ko'p uchraydigan "nega ma'lumot saqlanmadi" sababi.
 
-`REQUIRES_NEW` tashqi tranzaksiyani to'xtatib (suspend qilib) butunlay yangi tranzaksiya oladi. Bu yangi connection degani: pool dan ikkinchi connection olinadi va ikkisi ham bir vaqtda band bo'ladi. Shuning uchun `REQUIRES_NEW` ni rekursiv yoki loop ichida ishlatish pool ni tugatadigan klassik xato. 20 ta connection li pool da 10 ta parallel so'rov bitta joyda `REQUIRES_NEW` qilsa, pool to'la bo'ladi va qolgan so'rovlar `HikariPool-1 - Connection is not available` bilan tushadi.
+`REQUIRED` ning ikkinchi, kamroq ma'lum tuzog'i sozlamalarda. Spring hujjati: qo'shilgan tranzaksiya tashqi scope ning xususiyatlarini oladi va o'zining isolation darajasini, timeout ini va `readOnly` flagini **jimgina** e'tiborsiz qoldiradi. Ya'ni ichki metodda `@Transactional(timeout = 2)` yozilgan bo'lsa va u tashqi tranzaksiyaga qo'shilsa, timeout 2 sekund emas, tashqinikidir, hech qanday ogohlantirish ham chiqmaydi. Buni xatoga aylantirish mumkin: transaction manager da `validateExistingTransactions = true` qilinsa, boshqa isolation darajasi bilan qo'shilishga urinish rad etiladi; bu qattiq rejim `readOnly` nomuvofiqligini ham (read-write ichki qism read-only tashqi scope ga qo'shilmoqchi bo'lsa) rad etadi.
 
-`NESTED` savepoint ishlatadi: ichki qism bekor bo'lsa faqat savepoint ga qaytadi, tashqi tranzaksiya davom etadi. Lekin bu `SavepointManager` ni talab qiladi. `DataSourceTransactionManager` da `nestedTransactionAllowed = true` bo'lsa ishlaydi, `JpaTransactionManager` da esa odatda `NestedTransactionNotSupportedException` olasan. Agar savepoint kerak bo'lsa, `JdbcTemplate` qatlamida yoki `EntityManager.unwrap(Session.class)` orqali aniq boshqarish amaliyroq.
+`REQUIRES_NEW` tashqi tranzaksiyani to'xtatib (suspend qilib) har safar mustaqil fizik tranzaksiya oladi: ichki qismning rollback i tashqisiga ta'sir qilmaydi va ichki qism o'z isolation, timeout va `readOnly` sozlamasini e'lon qila oladi.
+
+Lekin tashqi tranzaksiyaga bog'langan resurs bo'shatilmaydi: u shu yerda qoladi, ichki tranzaksiya esa o'ziga yangi connection oladi. Spring hujjati bundan ikki xavfni chiqaradi: pool tugashi va deadlock. Deadlock mexanikasi shunday: bir nechta thread da tashqi tranzaksiya faol turadi va har biri ichkisi uchun yangi connection kutadi, pool esa endi hech kimga connection bera olmaydi, ya'ni hamma bir-birini kutadi va hech biri qo'yib yubormaydi. Shuning uchun hujjat aniq chegarani beradi: `REQUIRES_NEW` ni pool hajmi parallel thread sonidan kamida bittaga ortiq bo'lmaganda ishlatma. Bu arifmetika ko'pincha e'tibordan qoladi: 20 ta connection li pool da 20 ta HTTP thread `REQUIRES_NEW` qilsa, chegara aynan buzilgan, chunki har bir thread ga ikkita connection kerak.
+
+`NESTED` bitta fizik tranzaksiya ichida bir nechta savepoint ishlatadi: ichki qism bekor bo'lsa shu savepoint ga qaytadi, tashqi tranzaksiya esa davom etadi. Spring hujjati buni JDBC savepoint ga bog'laydi, demak u faqat JDBC resurs tranzaksiyasida ishlaydi.
+
+Ikki transaction manager da default ikki xil va buni bilmaslik qimmat turadi. `DataSourceTransactionManager` da `nestedTransactionAllowed` **true**: savepoint ni qo'llaydigan drayverda `NESTED` darhol ishlaydi. `JpaTransactionManager` da esa default **false**, ya'ni sozlamasiz `NestedTransactionNotSupportedException` olasan.
+
+Eng muhim nozik joy flag ni `true` qilgandan keyin boshlanadi. `JpaTransactionManager` hujjati ogohlantiradi: savepoint faqat JDBC `Connection` ga tegadi, `EntityManager` va uning keshlagan entity lari hamda persistence context iga tegmaydi, chunki JPA ning o'zi nested tranzaksiyani qo'llamaydi. Ya'ni savepoint ga qaytish SQL ni orqaga qaytaradi, lekin persistence context da o'sha entity lar o'zgargan holda qolib ketadi: keyingi flush ularni yana bazaga yozadi. Shuning uchun JPA kodida `NESTED` ga tayanmaslik kerak; savepoint rostdan kerak bo'lsa, uni `JdbcTemplate` qatlamida yoki `EntityManager.unwrap(Session.class)` orqali aniq boshqarish amaliyroq.
 
 ```java
 @Service
@@ -141,7 +150,8 @@ public class OrderService {
         try {
             inventory.reserve(order);
         } catch (PartialReservationException e) {
-            // Yozuv qolsin, lekin tranzaksiya commit bo'lmasin degan holat:
+            // Istisno yuqoriga chiqmaydi, lekin ish bekor bo'lishi kerak:
+            // setRollbackOnly butun tranzaksiyani, orderRepo.save ni ham bekor qiladi
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             log.warn("Buyurtma {} qisman band qilindi, bekor qilinadi", order.getId());
         }
@@ -154,6 +164,8 @@ Alohida tuzoq: ichki `REQUIRED` metod istisno tashlab, tashqi metod uni `catch` 
 ## 19.5 `readOnly = true` nima beradi va nima bermaydi
 
 `readOnly = true` ning eng aniq samarasi Hibernate qatlamida: Spring `Session` ning flush mode ini `MANUAL` ga qo'yadi, natijada commit da avtomatik flush bo'lmaydi va dirty checking amalda bajarilmaydi. Katta `SELECT` lar uchun bu sezilarli yutuq: 10 000 entity o'qilgan hisobot metodida dirty check ga ketadigan vaqt va snapshot xotirasi yo'qoladi.
+
+Birinchi chegara propagation da: Spring hujjatidagi `@Transactional` atributlari jadvali `readOnly` ni "faqat `REQUIRED` yoki `REQUIRES_NEW` qiymatlarida qo'llanadi" deb belgilaydi. Bundan tashqari 19.2 da aytilgan qoida shu yerda ham ishlaydi: tashqi read-write tranzaksiyaga qo'shilgan ichki `REQUIRED` metodning `readOnly = true` si jimgina tashlab yuboriladi. Demak `readOnly` ni ishonchli olishning yo'li uni chegara ochadigan metodda, ya'ni eng tashqi `@Transactional` da yozish.
 
 Nimani bermaydi: u ma'lumotni o'zgartirishdan himoya qilmaydi degan tushuncha noto'g'ri emas, lekin yarim to'g'ri. Native query yoki `JdbcTemplate` orqali `UPDATE` bajarish mumkin bo'lib qolishi mumkin, chunki JDBC connection ning `readOnly` flagi DB ga yetishi drayverga bog'liq. PgJDBC da standart `readOnlyMode=transaction`: Spring tranzaksiyasi ichida (autocommit o'chiq) `readOnly` connection `BEGIN READ ONLY` bilan ochiladi va yozish DB tomonidan rad etiladi, lekin tranzaksiyadan tashqaridagi autocommit so'rovga u ta'sir qilmaydi ([pgjdbc REL42.7.4, readOnlyMode](https://github.com/pgjdbc/pgjdbc/blob/REL42.7.4/docs/content/documentation/use.md)). Boshqa drayverlarda flag faqat maslahat bo'lishi mumkin. Shuningdek `readOnly` o'zi bilan replika ga yo'naltirish qilmaydi. Yo'naltirishni o'zing qurasan: `AbstractRoutingDataSource` da `TransactionSynchronizationManager.isCurrentTransactionReadOnly()` ni o'qib key tanlaysan.
 
@@ -191,6 +203,8 @@ Tekshirish usuli oddiy: metod ichida `SELECT current_setting('transaction_read_o
 ## 19.6 Ichki metod chaqiruvi tuzog'i va undan chiqish yo'llari
 
 Proxy faqat tashqaridan kelgan chaqiruvni ushlaydi. Shuning uchun `this.saveAudit()` ko'rinishidagi ichki chaqiruvda `@Transactional` butunlay e'tiborsiz qoladi. Xuddi shu sabab `@Async`, `@Cacheable` va `@Retryable` da ham ishlaydi. Eng yomoni, xato jim: hech qanday ogohlantirish chiqmaydi, faqat tranzaksiya yo'q.
+
+Metod ko'rinishi haqida eski qoida yangilangan. Spring 6.0 dan boshlab class-based proxy (CGLIB) da `protected` va package-visible metod ham tranzaksion bo'la oladi, ya'ni "faqat `public` ishlaydi" degan gap endi to'liq to'g'ri emas. Interfeys asosidagi proxy da esa metod hamon `public` va proxy qilinayotgan interfeysda e'lon qilingan bo'lishi shart. Eski, bir xil xulqni (5.3 gacha bo'lgan default) xohlasa, `AnnotationTransactionAttributeSource(true)` bean i bilan `publicMethodsOnly` yoqiladi. Ikki proxy turida ham o'zgarmagan narsa bitta va asosiysi shu: faqat proxy orqali tashqaridan kelgan chaqiruv ushlanadi. `private` metod esa hech qachon.
 
 To'rtta chiqish yo'li bor. Metodni boshqa bean ga ko'chirish eng toza yechim va men shuni tanlayman. `TransactionTemplate` orqali chegarani kodda ochish ikkinchi tanlov, u ayniqsa loop ichida yaxshi. O'ziga `@Lazy` bilan inject qilish (self-injection) ishlaydi, lekin kodni o'qiyotgan odamni chalg'itadi. `@EnableTransactionManagement(mode = AdviceMode.ASPECTJ)` proxy muammosini butunlay yo'q qiladi, lekin build ga weaving qo'shadi va kichik loyiha uchun bu juda qimmat.
 
@@ -412,6 +426,13 @@ Testlashda arxitektor uchta narsani tekshiradi: rollback haqiqatan sodir bo'ladi
 - [ ] Broker ga tranzaksiya ichida yuborilayotgan har bir xabarni outbox jadvaliga ko'chirish rejasini tuz.
 - [ ] Barcha batch va import joblarini 500-1000 qatorli chunk tranzaksiyalariga bo'lib, qayerga yetganini saqlaydigan checkpoint qo'sh.
 - [ ] `40001` va `40P01` xatolari uchun tranzaksiyadan tashqaridagi retry ni `TransactionTemplate` bilan joylashtir va urinishlar sonini metrika sifatida chiqar.
+
+## Manbalar
+
+- [Spring Framework 7.0, Transaction Propagation](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/data-access/transaction/declarative/tx-propagation.adoc) - fizik va mantiqiy tranzaksiya, `rollback-only` va `UnexpectedRollbackException`, qo'shilgan tranzaksiyaning sozlamalarini jimgina e'tiborsiz qoldirishi, `REQUIRES_NEW` da pool va deadlock chegarasi, `NESTED` ning JDBC savepoint ga bog'liqligi
+- [Spring Framework 7.0, `@Transactional` sozlamalari](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/data-access/transaction/declarative/annotations.adoc) - default qiymatlar, atributlar jadvali, `readOnly` ning faqat `REQUIRED` va `REQUIRES_NEW` da ishlashi, 6.0 dan metod ko'rinishi qoidasi
+- [spring-framework, `DataSourceTransactionManager.java`](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/spring-jdbc/src/main/java/org/springframework/jdbc/datasource/DataSourceTransactionManager.java) - `nestedTransactionAllowed` default `true`
+- [spring-framework, `JpaTransactionManager.java`](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/spring-orm/src/main/java/org/springframework/orm/jpa/JpaTransactionManager.java) - `nestedTransactionAllowed` default `false`; savepoint faqat JDBC `Connection` ga tegadi, persistence context ga tegmaydi
 
 ---
 

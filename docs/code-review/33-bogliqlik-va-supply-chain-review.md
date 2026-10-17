@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 33. Bog'liqlik va supply chain review (Dependencies and Supply Chain)
 
@@ -86,11 +86,41 @@ curl -s -X POST https://api.osv.dev/v1/query \
 
 <!-- Agar aniq versiya kerak bo'lsa: sabab izoh bilan va BOM property orqali. -->
 <properties>
-  <!-- CVE-2026-XXXX tufayli 2.17.1 ga ko'tarildi; Boot 3.4 da 2.17.0.
-       Boot 3.5 ga o'tganda bu propertyni olib tashlash kerak. -->
-  <jackson-bom.version>2.17.1</jackson-bom.version>
+  <!-- Izohda ikki narsa aniq bo'lishi kerak: SABAB va BOM dagi
+       hozirgi qiymat. Ikkinchisini taxmin qilmaslik kerak, aks holda
+       "ko'tarish" amalda PASAYTIRISH bo'lib chiqadi: masalan Boot 3.3
+       Jackson 2.17.x ni, Boot 3.4 esa 2.18.x ni boshqaradi, demak
+       Boot 3.4 da 2.17.1 yozish versiyani orqaga suradi. To'g'ri
+       qiymatni Boot ning o'z BOM idan tekshirish kerak:
+       `mvn help:evaluate -Dexpression=jackson-bom.version`.
+       Boot keyingi minor ga o'tganda bu propertyni olib tashlash shart. -->
+  <jackson-bom.version>2.18.2</jackson-bom.version>
 </properties>
 ```
+
+Ikki BOM import qilingan loyihada review da yana bitta savol paydo
+bo'ladi: bir xil artifact ikkisida ham bo'lsa, qaysi biri g'olib. Maven
+ning javobi "oxirgi so'z emas, birinchi so'z": import lar tartib bilan
+o'qiladi va kalit allaqachon kiritilgan bo'lsa, keyingi import uni
+ALMASHTIRMAYDI. Shuning uchun BOM lar tartibi ahamiyatli va uni
+tasodifga qoldirmaslik kerak. To'g'ridan-to'g'ri yozilgan
+`<dependencyManagement>` yozuvi esa import lardan oldin qo'yiladi, ya'ni
+u har qanday BOM dan ustun turadi. Diffda yangi BOM import qilinganda
+review savoli shu: u mavjud BOM dan oldin turadimi va qaysi versiyalarga
+tegadi.
+
+Uchinchi nozik joy scope da. `optional` deb belgilangan bog'liqlik
+chuqur tranzitiv darajada umuman tortilmaydi, shuning uchun "tranzitiv
+bog'liqlik hammasi keladi" degan taxmin to'g'ri emas. Shunga o'xshab
+`provided` va `test` scope lari ham transitiv emas. Bu zaiflik
+hisobotini o'qishda muhim: hisobotda ko'rinmagan artifact yo'q degani
+emas, u boshqa scope da bo'lishi mumkin.
+
+Maven Enforcer ning `requireUpperBoundDeps` qoidasi shu sohada eng
+arzon himoya: u tanlangan versiya tranzitiv talab qilingan eng yuqori
+versiyadan past bo'lsa build ni yiqitadi. Lekin uning qamrovini bilish
+kerak: `test` va `provided` scope lari default bo'yicha chetlab
+o'tiladi.
 
 ## 33.3 Skanerlashni CI ga qo'yish
 
@@ -100,13 +130,20 @@ curl -s -X POST https://api.osv.dev/v1/query \
   <groupId>org.owasp</groupId>
   <artifactId>dependency-check-maven</artifactId>
   <configuration>
-    <!-- Yangi zaiflik topilsa build yiqiladi, lekin faqat yuqori darajada -
-         aks holda shovqin tufayli hamma e'tiborsiz qoldiradi. -->
+    <!-- DIQQAT: bu chegara "yangi" zaiflikni emas, MAVJUD har qanday
+         zaiflikni tekshiradi. Default qiymat 11, ya'ni build hech
+         qachon yiqilmaydi. 7.0 ga tushirish legacy loyihada birinchi
+         yurishda darhol qizil beradi, shuning uchun avval suppression
+         ro'yxatini tayyorlash kerak. -->
     <failBuildOnCVSS>7.0</failBuildOnCVSS>
     <suppressionFiles>
       <suppressionFile>.dependency-check-suppressions.xml</suppressionFile>
     </suppressionFiles>
-    <nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
+    <!-- `<nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>` YOZMANG: plugin
+         javadoc i buni ogohlantiradi, chunki `mvn -X` bilan kalit
+         standart chiqishga tushadi. To'g'ri shakl kalitni emas,
+         o'zgaruvchi NOMINI beradi. -->
+    <nvdApiKeyEnvironmentVariable>NVD_API_KEY</nvdApiKeyEnvironmentVariable>
   </configuration>
 </plugin>
 ```
@@ -114,10 +151,12 @@ curl -s -X POST https://api.osv.dev/v1/query \
 ```xml
 <!-- Suppression fayli - review ning muhim obyekti.
      Har bir suppression sabab va muddat bilan bo'lishi kerak. -->
-<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.4.xsd">
   <suppress until="2026-12-31Z">
     <notes>
       CVE-2026-1234: faqat XML parsing yo'lida, biz faqat JSON ishlatamiz.
+      Muddat tugaganda topilma QAYTA PAYDO BO'LADI va build yiqilishi
+      mumkin, shuning uchun bu sana taqvimga ham yozilgan.
       Tekshirilgan: 2026-10-04, PR #1423. Keyingi ko'rib chiqish: 2026-12-31.
     </notes>
     <packageUrl regex="true">^pkg:maven/com\.example/some-lib@.*$</packageUrl>
@@ -129,8 +168,9 @@ curl -s -X POST https://api.osv.dev/v1/query \
 ```
 
 ```bash
-# Yengilroq va tezroq alternativa: osv-scanner (lockfile bo'yicha).
-osv-scanner --lockfile=pom.xml
+# Alternativa: osv-scanner. `--lockfile` hali ishlaydi, lekin v2 da
+# kanonik shakl subcommand bilan.
+osv-scanner scan source -r .
 
 # SBOM yaratish: nima ishlatilayotganini hujjatlashtirish.
 ./mvnw org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom
@@ -150,7 +190,8 @@ Dependabot yoki Renovate yuborgan PR lar ko'pincha e'tiborsiz merge qilinadi. Ul
 | Xavfsizlik yangilanishi | Tezkor, lekin CI majburiy |
 | Transitive versiya o'zgarishi | `dependency:tree` farqini ko'rish |
 | Build plugin yangilanishi | Lokalda `verify` o'tkazish |
-| Kutubxona sinflari `AutoCloseable` bo'lib qolgan (masalan OpenPDF 2.4 dan 3.0.5 ga) | Ishlatiladigan sinflarni `javap -cp <jar> <sinf>` bilan tekshirish: Sonar `java:S2093` va `java:S2095` ni shu sinfning har `new` ida ochadi ([resurslarni yopish](../sonarqube/13-sonar-otadigan-kod-yozish-qoidalari.md#136-resurslarni-yopish-try-with-resources-va-yopilmagan-oqim)) |
+| Paket nomi o'zgargan (masalan OpenPDF 2.4 dan 3.0 ga: `com.lowagie` -> `org.openpdf`) | Import larni almashtirish mexanik, lekin kompilyatsiya xatosi butun modulga tarqaladi; reliz izohini o'qib, alohida PR qilish |
+| Kutubxona sinflari `AutoCloseable` bo'lib qolgan | Ishlatiladigan sinflarni `javap -cp <jar> <sinf>` bilan tekshirish: Sonar `java:S2093` va `java:S2095` shu sinf bilan ishlagan joylarni ko'rsatadi ([resurslarni yopish](../sonarqube/13-sonar-otadigan-kod-yozish-qoidalari.md#136-resurslarni-yopish-try-with-resources-va-yopilmagan-oqim)) |
 
 ```yaml
 # Renovate konfiguratsiyasi: shovqinni kamaytirish va muhimini ajratish.
@@ -165,19 +206,32 @@ Dependabot yoki Renovate yuborgan PR lar ko'pincha e'tiborsiz merge qilinadi. Ul
     },
     {
       "description": "Spring Boot va Java ni alohida ko'rish",
-      "matchPackagePatterns": ["^org.springframework", "^java"],
+      "matchPackageNames": ["/^org\\.springframework/", "/^java/"],
       "automerge": false,
       "labels": ["needs-careful-review"]
-    },
-    {
-      "description": "Xavfsizlik yangilanishlari darhol",
-      "matchDatasources": ["maven"],
-      "vulnerabilityAlerts": { "labels": ["security"], "automerge": false }
     }
   ],
+  "vulnerabilityAlerts": {
+    "labels": ["security"],
+    "automerge": false
+  },
   "prConcurrentLimit": 5
 }
 ```
+
+Shu konfiguratsiyada ikkita tuzatish bor va ikkisi ham jimgina
+ishlamaydigan sozlamalar edi.
+
+Birinchi: `vulnerabilityAlerts` YUQORI DARAJADAGI obyekt, u
+`packageRules` ichiga yozilmaydi. Renovate update larni tekislaganda
+bu kalitni har bir update dan olib tashlaydi, shuning uchun qoida
+ichida yozilgan `labels` va `automerge` hech qachon qo'llanmaydi.
+Ya'ni xavfsizlik PR lari yorliqsiz kelib turadi va buni sezish qiyin.
+
+Ikkinchi: `matchPackagePatterns` eskirgan. Renovate uni
+`matchPackageNames` ga avtomatik ko'chiradi va naqshni `/.../` ichiga
+o'raydi, lekin migratsiyaga tayanmaslik kerak: yangi yozuvda naqsh
+aniq `/regex/` shaklida beriladi.
 
 ## 33.5 Build va CI ning o'zi
 
@@ -208,7 +262,11 @@ Metadata fayli diffda o'zgargan bo'lsa, o'zgargan checksum uchun sabab so'raladi
 jobs:
   build:
     permissions:
-      contents: read              # minimal huquq (standart: write)
+      # Default huquq enterprise, tashkilot yoki repozitoriya
+      # sozlamasidan keladi, shuning uchun "standart: write" deb
+      # taxmin qilmaslik kerak. Bu qator default nima bo'lishidan
+      # qat'i nazar minimumni qo'yadi.
+      contents: read
     steps:
       # SHA bilan pin: tag o'zgartirilishi mumkin, SHA - yo'q.
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955  # v4.3.0
@@ -259,6 +317,64 @@ COPY --chown=10001:10001 target/app.jar /app/app.jar
 - [ ] Barcha GitHub Action larni SHA bilan pin qiling va workflow huquqlarini `contents: read` ga tushiring.
 - [ ] Konteyner bazasini digest bilan pin qilib, uni yangilash jarayonini belgilang.
 - [ ] Yangi bog'liqlik qo'shadigan PR lar uchun shablonga 8 savolli ro'yxatni kiriting.
+
+## Manbalar
+
+- Apache Maven, `DefaultDependencyManagementImporter` va
+  `DefaultDependencyManagementInjector`
+  ([https://github.com/apache/maven/blob/maven-3.9.16/maven-model-builder/src/main/java/org/apache/maven/model/composition/DefaultDependencyManagementImporter.java](https://github.com/apache/maven/blob/maven-3.9.16/maven-model-builder/src/main/java/org/apache/maven/model/composition/DefaultDependencyManagementImporter.java),
+  tag `maven-3.9.16`, Apache-2.0) - 33.2 dagi BOM import tartibi:
+  birinchi import g'olib, to'g'ridan-to'g'ri yozuv import lardan ustun.
+- Apache Maven Resolver, `NearestVersionSelector` va
+  `OptionalDependencySelector`
+  ([https://github.com/apache/maven-resolver/blob/maven-resolver-2.0.24/maven-resolver-util/src/main/java/org/eclipse/aether/util/graph/transformer/NearestVersionSelector.java](https://github.com/apache/maven-resolver/blob/maven-resolver-2.0.24/maven-resolver-util/src/main/java/org/eclipse/aether/util/graph/transformer/NearestVersionSelector.java),
+  tag `maven-resolver-2.0.24`, Apache-2.0) - 33.2 dagi "eng yaqin
+  g'olib" qoidasi va `optional` bog'liqlikning chuqur darajada
+  tortilmasligi.
+- Apache Maven Dependency Plugin va Dependency Tree
+  ([https://github.com/apache/maven-dependency-tree/blob/maven-dependency-tree-3.3.0/src/main/java/org/apache/maven/shared/dependency/graph/internal/VerboseDependencyNode.java](https://github.com/apache/maven-dependency-tree/blob/maven-dependency-tree-3.3.0/src/main/java/org/apache/maven/shared/dependency/graph/internal/VerboseDependencyNode.java),
+  tag `maven-dependency-tree-3.3.0`, Apache-2.0) - 33.2 dagi
+  "omitted for conflict" matni va `tree`, `list` goal nomlari.
+- Apache Maven Enforcer, `requireUpperBoundDeps`
+  ([https://github.com/apache/maven-enforcer/blob/enforcer-3.6.3/enforcer-rules/src/site/apt/requireUpperBoundDeps.apt.vm](https://github.com/apache/maven-enforcer/blob/enforcer-3.6.3/enforcer-rules/src/site/apt/requireUpperBoundDeps.apt.vm),
+  tag `enforcer-3.6.3`, Apache-2.0) - 33.2 dagi qoida va uning
+  `test` bilan `provided` ni chetlab o'tishi.
+- OWASP Dependency-Check Maven plugini
+  ([https://github.com/dependency-check/DependencyCheck/blob/v13.0.0/maven/src/main/java/org/owasp/dependencycheck/maven/BaseDependencyCheckMojo.java](https://github.com/dependency-check/DependencyCheck/blob/v13.0.0/maven/src/main/java/org/owasp/dependencycheck/maven/BaseDependencyCheckMojo.java),
+  tag `v13.0.0`, Apache-2.0) - 33.3 dagi `failBuildOnCVSS` ning mavjud
+  zaiflikni tekshirishi va 11 lik default i, hamda `nvdApiKey` ni
+  POM ga yozishning sir oqishi xavfi va
+  `nvdApiKeyEnvironmentVariable` tavsiyasi.
+- OWASP Dependency-Check, suppression sxemasi
+  ([https://github.com/dependency-check/DependencyCheck/blob/v13.0.0/core/src/main/resources/schema/dependency-suppression.1.4.xsd](https://github.com/dependency-check/DependencyCheck/blob/v13.0.0/core/src/main/resources/schema/dependency-suppression.1.4.xsd),
+  tag `v13.0.0`, Apache-2.0) - 33.3 dagi 1.4 namespace i va `until`
+  semantikasi.
+- Renovate
+  ([https://github.com/renovatebot/renovate/blob/08cb221/docs/usage/configuration-options.md](https://github.com/renovatebot/renovate/blob/08cb221/docs/usage/configuration-options.md)
+  va [`flatten.ts`](https://github.com/renovatebot/renovate/blob/08cb221/lib/workers/repository/updates/flatten.ts),
+  commit `08cb221`, AGPL-3.0) - 33.4 dagi `vulnerabilityAlerts` ning
+  yuqori darajadagi obyekt bo'lishi va `matchPackagePatterns` ning
+  `matchPackageNames` ga migratsiyasi.
+- OpenPDF, 3.0.0 changelog i
+  ([https://github.com/LibrePDF/OpenPDF/blob/3.0.5/changelogs/3.0.0.md](https://github.com/LibrePDF/OpenPDF/blob/3.0.5/changelogs/3.0.0.md),
+  tag `3.0.5`, MPL-2.0 yoki LGPL-2.1) - 33.4 dagi `com.lowagie` dan
+  `org.openpdf` ga paket nomi o'zgarishi.
+- GitHub Docs, workflow sintaksisi va `pull_request_target`
+  ([https://github.com/github/docs/blob/53aac26/content/actions/reference/workflows-and-actions/workflow-syntax.md](https://github.com/github/docs/blob/53aac26/content/actions/reference/workflows-and-actions/workflow-syntax.md),
+  commit `53aac26`, CC BY 4.0) - 33.5 dagi `GITHUB_TOKEN` default
+  huquqining sozlamaga bog'liqligi va fork PR da `pull_request` ning
+  read-only token berishi.
+- Gradle, bog'liqlik verifikatsiyasi
+  ([https://github.com/gradle/gradle/blob/v9.8.1/platforms/documentation/docs/src/docs/userguide/securing-builds/dependency_verification.adoc](https://github.com/gradle/gradle/blob/v9.8.1/platforms/documentation/docs/src/docs/userguide/securing-builds/dependency_verification.adoc),
+  tag `v9.8.1`, Apache-2.0) - 33.5 dagi
+  `--write-verification-metadata` va repozitoriya kontentini
+  cheklash.
+- CycloneDX Maven plugini va OSV Scanner
+  ([https://github.com/CycloneDX/cyclonedx-maven-plugin/blob/2.4.1/src/main/java/org/cyclonedx/maven/CycloneDxAggregateMojo.java](https://github.com/CycloneDX/cyclonedx-maven-plugin/blob/2.4.1/src/main/java/org/cyclonedx/maven/CycloneDxAggregateMojo.java),
+  tag `2.4.1`, Apache-2.0; va
+  [osv-scanner README](https://github.com/google/osv-scanner/blob/v2.7.0/README.md),
+  tag `v2.7.0`, Apache-2.0) - 33.3 dagi `makeAggregateBom` va
+  `target/bom.json`, hamda `osv-scanner scan source` shakli.
 
 ---
 

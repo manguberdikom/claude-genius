@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 13. Nofunksional testlar: performance, resilience, xavfsizlik (Non-Functional Testing)
 
@@ -126,6 +126,11 @@ export const options = {
   thresholds: {
     http_req_failed: ['rate<0.001'],
     'http_req_duration{name:orders}': ['p(95)<300', 'p(99)<800'],
+    // Bu qator bo'lmasa test yashil yolg'on gapiradi: VU pool band
+    // bo'lsa `ramping-arrival-rate` iteratsiyani tashlab yuboradi va
+    // faqat `dropped_iterations` ga yozadi. Ya'ni yuklama rejadan
+    // past bo'lgan holda ham hamma threshold o'tadi.
+    dropped_iterations: ['count==0'],
   },
 };
 
@@ -173,7 +178,7 @@ Muhim detal: yuklama generatori alohida, band bo'lmagan runner'da ishlashi kerak
 
 ## 13.5 To'g'ri o'lchash metodikasi
 
-Noto'g'ri o'lchov noto'g'ri qarorga olib keladi, shuning uchun metodika vositadan muhimroq. Birinchi qoida - **warm-up**. JVM C2 kompilyatori qaynoq kodni optimizatsiya qilishi uchun minglab chaqiruv kerak; shuningdek connection pool to'ladi, Hibernate metadata va cache isiydi. Shu sababli birinchi 1-3 daqiqa natijasini hisobdan chiqaring (Gatling'da alohida warm-up ssenariysi, k6'da `--no-summary` bilan oldindan yuritish yoki natijani time range bo'yicha kesish).
+Noto'g'ri o'lchov noto'g'ri qarorga olib keladi, shuning uchun metodika vositadan muhimroq. Birinchi qoida - **warm-up**. JVM C2 kompilyatori qaynoq kodni optimizatsiya qilishi uchun minglab chaqiruv kerak; shuningdek connection pool to'ladi, Hibernate metadata va cache isiydi. Shu sababli birinchi 1-3 daqiqa natijasini hisobdan chiqaring (Gatling'da alohida warm-up ssenariysi, k6'da natijani time range bo'yicha kesish; `--no-summary` flagi k6 2.0 da olib tashlangan va uning o'rniga `--summary-mode=disabled` keldi, lekin u warm-up vositasi emas, faqat yakuniy xulosani o'chiradi).
 
 Ikkinchi qoida - **o'rtacha qiymatni unutish**. O'rtacha 120 ms bo'lgan tizimda p99 4 sekund bo'lishi mumkin va aynan shu 1% foydalanuvchi shikoyat qiladi. p50/p95/p99 va maksimum birga ko'riladi; persentillarni bir nechta injector natijasida "o'rtalashtirish" matematik jihatdan xato - HdrHistogram kabi birlashtiriladigan histogram ishlating yoki serverdagi Micrometer histogramiga tayaning.
 
@@ -181,7 +186,7 @@ Uchinchi qoida - **coordinated omission**. Closed model'da (fiksirlangan VU soni
 
 To'rtinchi qoida - **bitta o'zgaruvchi**. Har bir testda faqat bitta narsa o'zgarsin: yoki yuklama, yoki pool hajmi, yoki JVM flag. Ikkitasini birga o'zgartirsangiz, natijani talqin qila olmaysiz. GC ta'siri shu yerda ko'rinadi: G1 bilan ZGC'ni taqqoslayotganda heap hajmi va yuklama bir xil bo'lishi shart.
 
-Beshinchi qoida - **ishlab chiqarishga o'xshash muhit va ma'lumot hajmi**. 10 000 qatorli jadvalda index'siz query 2 ms, 50 million qatorda 4 sekund. CPU limiti, replica soni, tarmoq topologiyasi, TLS, ingress va feature flag'lar ham prod'dagiday bo'lishi kerak. Farqlar bo'lsa, ularni test hisobotida ochiq yozing.
+Beshinchi qoida - **ishlab chiqarishga o'xshash muhit va ma'lumot hajmi**. Indekssiz query ning narxi jadval o'sishi bilan chiziqli o'sadi, shuning uchun o'n ming qatorda sezilmagan to'liq skanerlash o'n million qatorda butun endpoint ni yiqitadi. Aniq raqam baza, apparat va ma'lumot taqsimotiga bog'liq, shuning uchun uni o'z muhitingizda `EXPLAIN (ANALYZE, BUFFERS)` bilan o'lchash kerak, kitobdan olmaslik. CPU limiti, replica soni, tarmoq topologiyasi, TLS, ingress va feature flag'lar ham prod'dagiday bo'lishi kerak. Farqlar bo'lsa, ularni test hisobotida ochiq yozing.
 
 ## 13.6 Yuklama ostida nimani kuzatish
 
@@ -221,7 +226,7 @@ management:
 
 Load test "muammo bor" deydi, profiling "muammo qayerda" deydi. Ikkisini aralashtirmang: avval yuklama ostida SLO buzilishini takrorlang, keyin shu holatda profil oling.
 
-JFR - birinchi vosita, chunki overhead'i past (odatda bir necha foiz) va ishlab chiqarishda ham yoqish mumkin. Uni to'g'ridan-to'g'ri ishga tushirishda yoki `jcmd` orqali ulanishda ishlatasiz. async-profiler CPU va wall-clock flame graph uchun kuchliroq: `wall` rejimi bloklangan thread'larni ko'rsatadi, bu I/O bound Spring ilovalarida aynan kerak bo'ladigan narsa.
+JFR - birinchi vosita, chunki u JDK ichida keladi va ishlab chiqarishda ham yoqish mumkin. Overhead i default sozlamada kichik, lekin aniq foizni ochiq manbadan keltirib bo'lmaydi: u yoqilgan hodisalar to'plamiga va ilovaning yuklamasiga bog'liq. To'g'ri yo'l uni o'z ilovangizda `default.jfc` va `profile.jfc` bilan ikki marta o'lchash, chunki `profile` sozlamasi ancha qimmat turadi. Uni to'g'ridan-to'g'ri ishga tushirishda yoki `jcmd` orqali ulanishda ishlatasiz. async-profiler CPU va wall-clock flame graph uchun kuchliroq: `wall` rejimi bloklangan thread'larni ko'rsatadi, bu I/O bound Spring ilovalarida aynan kerak bo'ladigan narsa.
 
 ```bash
 java -XX:StartFlightRecording=settings=profile,duration=20m,filename=/tmp/load.jfr -jar app.jar
@@ -245,7 +250,7 @@ Java 21'dan virtual thread (`spring.threads.virtual.enabled=true`, Spring Boot 3
 
 O'lchash kerak bo'lgan narsalar: bir xil SLO ostida maksimal throughput; p99 (o'rtacha emas); CPU va xotira birligiga to'g'ri keladigan RPS; thread/stack xotirasi; ulanish pool'ining to'yinish nuqtasi; downstream sekinlashganda tizim xatti-harakati (bu eng muhimi). Virtual thread downstream sekinlashganda ko'p "arzon" thread yaratadi, lekin ma'lumotlar bazasi pool'i hali ham 20 ta ulanish bilan cheklangan - ya'ni bottleneck ko'chadi, yo'qolmaydi. Reactive stack'da esa backpressure to'g'ri sozlanmagan bo'lsa queue cheksiz o'sadi.
 
-Odatiy xatolar: (1) virtual thread testida `synchronized` bloklar sababli pinning - Java 21-23'da bu carrier thread'ni band qiladi; JDK 24'dan (JEP 491) `synchronized` endi pinning qilmaydi, lekin native/JNI chaqiruv va `Object.wait` hali ham muammo bo'lishi mumkin. Pinning'ni JFR'dagi `jdk.VirtualThreadPinned` hodisasi bilan tekshiring, taxmin qilmang. (2) Reactive zanjirning o'rtasida blocking JDBC chaqiruvi - event loop thread bloklanadi va butun tizim qulaydi; `BlockHound` bilan test muhitida aniqlash mumkin. (3) Thread pool o'lchamlarini bir xil qoldirib taqqoslash. (4) Faqat "salom dunyo" endpoint'ida o'lchash - real ssenariyda ma'lumotlar bazasi va tashqi servis bo'lishi shart. Arxitektorning xulosasi ko'pincha shunday bo'ladi: ikkala stack ham yetarli, tanlov jamoaning tajribasi, debug qulayligi va kutubxona ekosistemasiga bog'liq - raqamlar farqi esa bottleneck ma'lumotlar bazasida bo'lganda deyarli ko'rinmaydi.
+Odatiy xatolar: (1) virtual thread testida `synchronized` bloklar sababli pinning - Java 21-23'da bu carrier thread'ni band qiladi; JDK 24'dan (JEP 491) `synchronized` endi pinning qilmaydi, lekin native/JNI chaqiruv va `Object.wait` hali ham muammo bo'lishi mumkin. Pinning'ni JFR'dagi `jdk.VirtualThreadPinned` hodisasi bilan tekshiring, taxmin qilmang. (2) Reactive zanjirning o'rtasida blocking JDBC chaqiruvi - event loop thread bloklanadi va butun tizim qulaydi; `BlockHound` bilan test muhitida aniqlash mumkin. (3) Thread pool o'lchamlarini bir xil qoldirib taqqoslash. Bu yerda alohida tuzoq bor: `spring.threads.virtual.enabled=true` bo'lsa, thread pool ni sozlovchi property lar umuman ta'sir qilmaydi (Spring Boot hujjati buni aniq aytadi). Ya'ni "ikki o'lchovda pool bir xil" deb property orqali sozlangan taqqoslash jimgina bajarilmaydi va sen ikki xil narsani solishtirgan bo'lasan. (4) Faqat "salom dunyo" endpoint'ida o'lchash - real ssenariyda ma'lumotlar bazasi va tashqi servis bo'lishi shart. Arxitektorning xulosasi ko'pincha shunday bo'ladi: ikkala stack ham yetarli, tanlov jamoaning tajribasi, debug qulayligi va kutubxona ekosistemasiga bog'liq - raqamlar farqi esa bottleneck ma'lumotlar bazasida bo'lganda deyarli ko'rinmaydi.
 
 ## 13.9 Resilience va chaos testing
 
@@ -267,13 +272,42 @@ try {
   assertThat(circuitBreaker.getState())
       .isIn(State.OPEN, State.HALF_OPEN);
   assertThat(meterRegistry.get("http.client.requests")
-      .tag("outcome", "CLIENT_ERROR").timer().count()).isPositive();
+      // Javob kelmaganda (timeout, ulanish uzilishi) `status` tegi
+      // CLIENT_ERROR bo'ladi, `outcome` esa UNKNOWN. Shu ssenariyda
+      // .tag("outcome", "CLIENT_ERROR") meter topa olmaydi va test
+      // MeterNotFoundException bilan yiqiladi.
+      .tag("status", "CLIENT_ERROR").timer().count()).isPositive();
 } finally {
   payments.toxics().get("lag").remove();
 }
 ```
 
-Ilova ichidagi nosozliklar uchun Chaos Monkey for Spring Boot (codecentric) ishlatiladi: `chaos.monkey.enabled=true`, watcher'lar (`watcher.service`, `watcher.repository`, `watcher.controller`) va assault'lar (`assaults.latencyActive`, `assaults.exceptionsActive`, `assaults.killApplicationActive`, `assaults.memoryActive`). Uni faqat staging yoki alohida chaos profilida yoqing va Actuator endpoint'i orqali ish vaqtida boshqaring.
+Ilova ichidagi nosozliklar uchun Chaos Monkey for Spring Boot (codecentric) ishlatiladi. Kalitlar to'liq shaklda `chaos.monkey.*` prefiksida: watcher'lar `chaos.monkey.watcher.service`, `.repository`, `.controller`; assault'lar `chaos.monkey.assaults.latencyActive`, `.exceptionsActive`, `.killApplicationActive`, `.memoryActive`.
+
+Bu yerda ikkita shart bor va ikkalasi ham jimgina ishlamay qo'yishga olib keladi.
+
+Birinchi: `chaos.monkey.enabled=true` o'zi yetmaydi. Kutubxonaning avtokonfiguratsiyasi `chaos-monkey` profili faol bo'lsa yoki `LOAD_CHAOS_MONKEY` system property si qo'yilsa ishga tushadi. Profil yoqilmagan bo'lsa, `enabled=true` yozilgan bo'lsa ham komponentlar umuman yuklanmaydi. Amalda bu yaxshi, chunki shu shart kutubxonaning ishlab chiqarishda tasodifan yoqilishiga to'siq bo'ladi.
+
+```bash
+# Ikkisi birga kerak: profil va bayroq
+java -jar shop.jar --spring.profiles.active=chaos-monkey \
+     --chaos.monkey.enabled=true
+```
+
+Ikkinchi: boshqarish uchun ishlatiladigan Actuator endpoint `chaosmonkey` default holatda o'chiq (`enableByDefault = false`), shuning uchun uni alohida yoqish kerak:
+
+```yaml
+management:
+  endpoint:
+    chaosmonkey:
+      access: unrestricted
+  endpoints:
+    web:
+      exposure:
+        include: health,info,chaosmonkey
+```
+
+Uni faqat staging yoki alohida chaos profilida yoqing.
 
 Nimani tasdiqlash kerak: timeout'lar barcha qatlamda mavjud va downstream timeout upstream'dan kichik; retry faqat idempotent operatsiyalarda va jitter bilan; circuit breaker ochiladi va yopiladi; graceful degradation ishlaydi (cache'dan eski ma'lumot, qisqartirilgan javob); health check nosozlikni to'g'ri aks ettiradi; alert ishga tushadi va dashboard'da sabab ko'rinadi. Game day - jamoa bilan rejalashtirilgan mashq: staging yoki cheklangan prod segmentida nosozlik kiritiladi, on-call muhandis runbook bo'yicha harakat qiladi, natijada runbook va alert'lardagi bo'shliqlar topiladi.
 
@@ -299,7 +333,9 @@ jobs:
       - name: OWASP Dependency-Check
         run: ./gradlew dependencyCheckAnalyze --info
       - name: Trivy filesystem va IaC
-        uses: aquasecurity/trivy-action@master
+        # Branch emas, teg: `@master` bugun va bir yildan keyin boshqa
+        # kodni yurgizadi va bu CI ni jimgina o'zgartiradi.
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           severity: HIGH,CRITICAL
@@ -330,7 +366,9 @@ Natijani boshqarish: har bir topilma odatdagi backlog ishiga aylanadi, severity 
 
 ## 13.12 OWASP Top 10'ni test bilan qoplash
 
-Quyidagi jadval OWASP Top 10 (2021 nashri) punktlarini qanday testlar bilan qoplash mumkinligini ko'rsatadi. Ro'yxat vaqti-vaqti bilan qayta ko'rib chiqiladi, shuning uchun jamoa qaysi nashrga tayanayotganini hujjatda qat'iy belgilab qo'ying.
+Quyidagi jadval OWASP Top 10 ning 2021 nashri punktlarini qanday testlar bilan qoplash mumkinligini ko'rsatadi. Jadvalda nomlar qisqartirilgan; rasmiy nomlar uzunroq, masalan A06 "Vulnerable and Outdated Components", A07 "Identification and Authentication Failures", A08 "Software and Data Integrity Failures", A09 "Security Logging and Monitoring Failures".
+
+Nashr masalasi amaliy: 2025 nashri chiqqan va u strukturani o'zgartirdi. SSRF endi alohida punkt emas, u A01 Broken Access Control ichiga CWE-918 sifatida kirgan; 2021 dagi A06 (zaif komponentlar) kengaytirilib A03 "Software Supply Chain Failures" bo'lgan; yangi A10 "Mishandling of Exceptional Conditions" qo'shilgan. Shuning uchun jamoa qaysi nashrga tayanayotganini hujjatda qat'iy belgilab qo'yishi kerak, aks holda "A06 ni qoplaganmiz" degan gap ikki xil ma'no beradi.
 
 | Punkt | Avtomatik test | Qo'lda / pentest | Izoh |
 |---|---|---|---|
@@ -351,7 +389,7 @@ Xulosa: A06 va A05 deyarli to'liq avtomatlashtiriladi, A01, A04 va A09 esa inson
 
 Agar mahsulotda veb interfeys bo'lsa, accessibility nofunksional talab va ko'p yurisdiksiyalarda yuridik majburiyat. Yevropa Ittifoqida European Accessibility Act, AQShda ADA va davlat sektori uchun Section 508, Yevropa davlat xaridlarida EN 301 549 standarti amal qiladi. Texnik mezon - WCAG (2.1 yoki 2.2) va uning darajalari: A (minimal), AA (amalda standart talab, odatda shartnomalarda shu ko'rsatiladi), AAA (tanlangan kriteriyalar uchun).
 
-Avtomatik tekshiruv: `axe-core` (E2E testlarga `@axe-core/playwright` yoki `@axe-core/cli` orqali qo'shiladi) va Lighthouse / Lighthouse CI. Ular kontrast, `alt` matn yo'qligi, ARIA noto'g'ri ishlatilishi, label'siz forma maydonlari, sarlavha ierarxiyasi kabi narsalarni topadi. Ammo real qoplama cheklangan - avtomatik vositalar WCAG kriteriyalarining taxminan uchdan bir qismini aniqlaydi. Qolgani qo'lda tekshiriladi: faqat klaviatura bilan butun oqimni o'tish (Tab tartibi, focus ko'rinishi, modal'dan chiqish), screen reader (NVDA, VoiceOver) bilan sinash, 200% zoom va matnni kattalashtirishda layout buzilmasligi, rangga bog'liq bo'lmagan ma'no uzatish, xato xabarlarining e'lon qilinishi. Jarayon uchun amaliy yechim: axe tekshiruvini E2E suite'ga qo'shib, yangi "critical" buzilishlarni PR'da to'xtatish, mavjud qarzni alohida backlog'da bosqichma-bosqich yopish va har chorakda qo'lda audit o'tkazish.
+Avtomatik tekshiruv: `axe-core` (E2E testlarga `@axe-core/playwright` yoki `@axe-core/cli` orqali qo'shiladi) va Lighthouse / Lighthouse CI. Ular kontrast, `alt` matn yo'qligi, ARIA noto'g'ri ishlatilishi, label'siz forma maydonlari, sarlavha ierarxiyasi kabi narsalarni topadi. Ammo real qoplama cheklangan. Vositaning o'z hujjati raqamni shunday beradi: axe-core bilan WCAG muammolarining o'rtacha 57 foizini avtomatik topish mumkin. Diqqat qiling, bu kriteriyalar emas, muammolar ulushi, va u o'rtacha qiymat. Qolgani qo'lda tekshiriladi: faqat klaviatura bilan butun oqimni o'tish (Tab tartibi, focus ko'rinishi, modal'dan chiqish), screen reader (NVDA, VoiceOver) bilan sinash, 200% zoom va matnni kattalashtirishda layout buzilmasligi, rangga bog'liq bo'lmagan ma'no uzatish, xato xabarlarining e'lon qilinishi. Jarayon uchun amaliy yechim: axe tekshiruvini E2E suite'ga qo'shib, yangi "critical" buzilishlarni PR'da to'xtatish, mavjud qarzni alohida backlog'da bosqichma-bosqich yopish va har chorakda qo'lda audit o'tkazish.
 
 ## 13.14 Nofunksional testni jarayonga kiritish
 
@@ -395,6 +433,50 @@ Kim ko'radi va qanday qaror qabul qiladi: PR darajasidagi natijani muallif va re
 - [ ] Xavfsizlik to'plami to'liq va to'g'ri bosqichda: SAST va SCA PR'da, secret scanning pre-commit va CI'da, image/IaC scanning build'da, DAST nightly; barcha istisnolar sabab va muddat bilan versiya nazoratida.
 - [ ] Pentest yiliga kamida bir marta, har bir topilma uchun severity SLA va regression test mavjud.
 - [ ] Natijalar uchun aniq egasi va qaror qoidalari belgilangan (regressiya foizi, error budget holati, CVE SLA), prod'da canary va synthetic monitoring ishlaydi.
+
+## Manbalar
+
+- Spring Framework, `DefaultClientRequestObservationConvention`
+  ([https://github.com/spring-projects/spring-framework/blob/v6.2.19/spring-web/src/main/java/org/springframework/http/client/observation/DefaultClientRequestObservationConvention.java](https://github.com/spring-projects/spring-framework/blob/v6.2.19/spring-web/src/main/java/org/springframework/http/client/observation/DefaultClientRequestObservationConvention.java),
+  tag `v6.2.19`, Apache-2.0) - 13.9 dagi `status` va `outcome` teglari
+  farqi: javob kelmasa `status` CLIENT_ERROR, `outcome` esa UNKNOWN.
+- Spring Boot, *Spring Application* hujjati
+  ([https://github.com/spring-projects/spring-boot/blob/v3.5.16/spring-boot-project/spring-boot-docs/src/docs/antora/modules/reference/pages/features/spring-application.adoc](https://github.com/spring-projects/spring-boot/blob/v3.5.16/spring-boot-project/spring-boot-docs/src/docs/antora/modules/reference/pages/features/spring-application.adoc),
+  tag `v3.5.16`, Apache-2.0) - 13.8 dagi `spring.threads.virtual.enabled`
+  va virtual thread yoqilganda pool property larining ta'sir qilmasligi.
+- Chaos Monkey for Spring Boot, `ChaosMonkeyCondition`,
+  `ChaosMonkeyProperties` va `ChaosMonkeyRestEndpoint`
+  ([https://github.com/codecentric/chaos-monkey-spring-boot/tree/v3.3.0/chaos-monkey-spring-boot/src/main/java/de/codecentric/spring/boot/chaos/monkey](https://github.com/codecentric/chaos-monkey-spring-boot/tree/v3.3.0/chaos-monkey-spring-boot/src/main/java/de/codecentric/spring/boot/chaos/monkey),
+  tag `v3.3.0`, Apache-2.0) - 13.9 dagi `chaos-monkey` profili sharti,
+  `chaos.monkey.*` kalit prefiksi va endpoint ning default o'chiqligi.
+- k6, `ramping_arrival_rate.go` va 2.0 reliz eslatmalari
+  ([https://github.com/grafana/k6/blob/v2.3.0/lib/executor/ramping_arrival_rate.go](https://github.com/grafana/k6/blob/v2.3.0/lib/executor/ramping_arrival_rate.go),
+  tag `v2.3.0`, AGPL-3.0) - 13.4 dagi `dropped_iterations` va 13.5 dagi
+  `--no-summary` ning olib tashlanishi.
+- Gatling, `gatling-defaults.conf` va `Assertion` API
+  ([https://github.com/gatling/gatling/blob/v3.16.0/gatling-core/src/main/resources/gatling-defaults.conf](https://github.com/gatling/gatling/blob/v3.16.0/gatling-core/src/main/resources/gatling-defaults.conf),
+  tag `v3.16.0`, Apache-2.0) - 13.4 dagi `percentile3` p95 va
+  `percentile4` p99 default qiymatlari.
+- Testcontainers for Java, Toxiproxy moduli
+  ([https://github.com/testcontainers/testcontainers-java/tree/2.0.5/modules/toxiproxy](https://github.com/testcontainers/testcontainers-java/tree/2.0.5/modules/toxiproxy),
+  tag `2.0.5`, MIT) - 13.9 dagi `ToxiproxyClient`, `createProxy` va
+  `toxics().latency(...)` API si.
+- axe-core
+  ([https://github.com/dequelabs/axe-core/blob/v4.14.0/README.md](https://github.com/dequelabs/axe-core/blob/v4.14.0/README.md),
+  tag `v4.14.0`, MPL-2.0) - 13.13 dagi "o'rtacha 57 foiz WCAG muammosi"
+  raqami.
+- OWASP Top 10
+  ([https://github.com/OWASP/Top10/tree/3a31f35/2025/docs/en](https://github.com/OWASP/Top10/tree/3a31f35/2025/docs/en),
+  commit `3a31f35`, CC BY-SA 4.0) - 13.12 dagi 2021 nashrining rasmiy
+  nomlari va 2025 nashridagi struktura o'zgarishi.
+- Micrometer va Resilience4j metrika nomlari
+  ([https://github.com/micrometer-metrics/micrometer/tree/v1.17.1/micrometer-core/src/main/java/io/micrometer/core/instrument/binder/jvm](https://github.com/micrometer-metrics/micrometer/tree/v1.17.1/micrometer-core/src/main/java/io/micrometer/core/instrument/binder/jvm),
+  tag `v1.17.1`, Apache-2.0) - 13.6 dagi `jvm.gc.pause`,
+  `jvm.threads.live`, `executor.active` va `executor.queued`.
+- async-profiler, *Profiler Options* va *Profiling Modes*
+  ([https://github.com/async-profiler/async-profiler/tree/v4.5/docs](https://github.com/async-profiler/async-profiler/tree/v4.5/docs),
+  tag `v4.5`, Apache-2.0) - 13.7 dagi `-e cpu`, `-e wall -t`, `-e alloc`
+  rejimlari.
 
 ---
 

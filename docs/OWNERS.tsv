@@ -40,3 +40,5 @@ field injection	patterns 25.29	anti-pattern yozuvi sabab va yechim bilan; sonarq
 entity equals hashCode	clean-code 15.5	entitet va value object tengligi, `hashCode` uchun barqaror id; 15.1-15.2 shartnomalar, sonarqube 29.6 entity xatolari, code-review 13 domen modeli	(entity|entitet)[a-z']* .*equals.*hashcode|equals.*hashcode.*(entity|entitet)
 magic number	patterns 25.8	atama sarlavhada, sabab va yechim bilan; clean-code 3.4 konstanta nomi, sonarqube 13.8 va 27.9 Sonar nuqtasidan	magic (numbers?|strings?)|sehrli (son|qiymat|satr)[a-z']*
 cognitive complexity	sonarqube 15.1	15-bob butunlay shu haqda, 15.1 hisoblash qoidasi; sonarqube 27.1 katalog yozuvi, clean-code 4 funksiya kichikligi nuqtasidan	cognitive complexity|kognitiv murakkablik
+extract and override	patterns 23.86	uch variant pattern yozuvi shaklida, Spring sharti va Java/C++ farqi bilan; architect 34.16 legacy qaror tartibi nuqtasidan	extract and override
+introduce static setter	patterns 23.85	statik va singleton bog`liqlikni testga ochishning uch shakli bir joyda; architect 34.17 legacy qaror tartibi nuqtasidan	(introduce )?(static setter|instance delegator)|expose static method

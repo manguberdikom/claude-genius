@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 15. CI/CD da test pipeline (The Test Pipeline in CI/CD)
 
 <details>
-<summary>Bu bobdagi 16 bo'lim</summary>
+<summary>Bu bobdagi 18 bo'lim</summary>
 
 - [15.1 Pipeline bosqichlari va tartibi](#151-pipeline-bosqichlari-va-tartibi)
 - [15.2 Feedback vaqti byudjeti](#152-feedback-vaqti-byudjeti)
@@ -24,7 +24,9 @@
 - [15.13 Monorepo va multi-modul loyihada test pipeline](#1513-monorepo-va-multi-modul-loyihada-test-pipeline)
 - [15.14 Pipeline'ni ishonchli qilish](#1514-pipelineni-ishonchli-qilish)
 - [15.15 Anti-patternlar](#1515-anti-patternlar)
-- [15.16 Arxitektor nazorat ro'yxati](#1516-arxitektor-nazorat-royxati)
+- [15.16 Test ijarasi (tenancy) bilan production'da testlash](#1516-test-ijarasi-tenancy-bilan-productionda-testlash)
+- [15.17 Integratsiya chastotasi va sakkizta integratsiya strategiyasi](#1517-integratsiya-chastotasi-va-sakkizta-integratsiya-strategiyasi)
+- [15.18 Arxitektor nazorat ro'yxati](#1518-arxitektor-nazorat-royxati)
 
 </details>
 
@@ -397,7 +399,126 @@ Faqat main'da test qilish. PR'da hech narsa ishlamasa, nosozlik main'ga tushgand
 
 Lokal va CI natijasining farqi. "Mening mashinamda ishlaydi" - bu pipeline dizayni muammosi: timezone, locale, Java versiyasi, Docker yoki fayl tizimi farqlari. Yechim - bir xil Java versiyasini wrapper/toolchain bilan qotirish, `-Duser.timezone=UTC` va `file.encoding=UTF-8` ni ikki joyda bir xil qo'yish, Testcontainers'ni lokalda ham ishlatish.
 
-## 15.16 Arxitektor nazorat ro'yxati
+## 15.16 Test ijarasi (tenancy) bilan production'da testlash
+
+15.12-bo'limdagi texnikalar test trafigini production'dan feature flag va shadow traffic bilan ajratadi. To'rtinchi yo'l boshqacha: so'rovga ijara (tenancy) konteksti qo'shiladi, u zanjir bo'ylab tarqaladi va har bir servis so'rov production, test yoki beta ijarasiga tegishli ekanini bilib, unga boshqacha ishlov beradi. Orosz buni Uber amaliyoti sifatida keltiradi: test ijarasidagi so'rovni olgan to'lov tizimi haqiqiy to'lovni amalga oshirmaydi, uni mock qiladi (Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr, Pragmatic Engineer, 2023, 17-bob, 251-bet; shu kitob, 14-bob, 205-bet).
+
+Kitobda g'oya nasrda berilgan, kod misoli yo'q; quyida u Spring MVC ga ko'chirilgan: ijara filter'da o'qiladi, adapter esa uni qaror nuqtasi sifatida ishlatadi.
+
+```java
+public enum Tenancy { PRODUCTION, TEST }
+
+public final class TenancyContext {
+    private static final ThreadLocal<Tenancy> CURRENT = new ThreadLocal<>();
+
+    public static Tenancy current() {
+        return CURRENT.get() == null ? Tenancy.PRODUCTION : CURRENT.get();
+    }
+
+    public static void set(Tenancy tenancy) { CURRENT.set(tenancy); }
+
+    public static void clear() { CURRENT.remove(); }
+}
+
+@Component
+public class TenancyFilter extends OncePerRequestFilter {
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+            throws ServletException, IOException {
+        // ijara faqat ishonchli chegaradan keladi: tashqi so'rovda bu header o'chiriladi
+        TenancyContext.set("test".equals(request.getHeader("X-Tenancy")) ? Tenancy.TEST : Tenancy.PRODUCTION);
+        try {
+            chain.doFilter(request, response);
+        } finally {
+            TenancyContext.clear();
+        }
+    }
+}
+
+@Service
+public class PaymentGateway {
+
+    private final PaymentClient real;
+    private final PaymentClient stub;
+
+    public PaymentGateway(PaymentClient real, PaymentClient stub) {
+        this.real = real;
+        this.stub = stub;
+    }
+
+    public PaymentResult charge(Order order) {
+        return TenancyContext.current() == Tenancy.TEST ? stub.charge(order) : real.charge(order);
+    }
+}
+```
+
+Narxi kichik emas. Ijara kontekstini HTTP, Kafka va scheduler chegaralarida ham uzatish kerak (header propagatsiyasi, MDC yoki tracing baggage); `ThreadLocal` asinxron ishga o'tgan joyda yo'qoladi, shuning uchun uzatish nuqtalari testda qoplansin. Zanjirning bitta bo'g'ini ijarani bilmasa, test so'rovi real yon ta'sirga aylanadi. Test ma'lumoti analitikadan chiqariladi, PII qoidalari esa test ijarasi uchun ham kuchda qoladi.
+
+Buning evaziga qatlamlar soni kamayadi: Orosz ko'p ijara qo'yilgan joyda bir nechta alohida test muhitini saqlashga ehtiyoj qolmasligini aytadi, ya'ni tekshiruv qatlamlari qo'shiladigan emas, bir-birini almashtiradigan tanlov (o'sha bob, 251-bet).
+
+## 15.17 Integratsiya chastotasi va sakkizta integratsiya strategiyasi
+
+Pipeline bosqichlari "qachon test ishlaydi" savoliga javob beradi, bu bo'lim esa undan oldingi savolga: bo'laklar bir-biriga **qanday tartibda** qo'shiladi. McConnell ikki chastota va olti tartib strategiyasini nomlaydi; tanlov integratsiya xatosini qidirish narxini belgilaydi, shuning uchun u CI sozlamasidan oldin turadigan qaror.
+
+**Fazali integratsiya (phased).** Uch qadam: har bir sinf alohida yoziladi va testdan o'tadi, keyin hammasi bir vaqtda bitta tizimga qo'shiladi, keyin butun tizim debug qilinadi. Kitob uni "big bang integration" deb ham ataydi: sinflar birinchi marta birga ishlaganda muammolar bir vaqtda chiqadi, ayblanuvchi esa har qanday sinf, har qanday interfeys yoki ularning o'zaro ta'siri bo'lishi mumkin. Muammolar bir-birini niqoblaydi va integratsiya loyihaning oxirigacha boshlanmaydi. Kitob bu usulni faqat juda kichik, ikki-uch sinfli dasturga o'rinli deb beradi (McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 29.2 (691-692-bet)).
+
+**Inkremental integratsiya.** Avval tizimning kichik, ishlaydigan qismi (skelet) yoziladi va to'liq testdan o'tkaziladi, keyin har bir yangi sinf shu skeletga bittalab qo'shiladi va har qo'shilishdan keyin kombinatsiya tekshiriladi. Birlik sinfdan kattaroq (yaxshi tekshirilgan komponent) bo'lishi ham mumkin. Kitob oltita foydani sanaydi: xatoni joylashtirish oson (yangi sinf aniq ayblanuvchi), tizim loyihaning boshida ishlay boshlaydi, taraqqiyotni kuzatish aniqlashadi, mijoz munosabati yaxshilanadi, birliklar butun tizim qismi sifatida ko'proq mashq qiladi va ish qismlarini parallel qilish hisobiga jadval qisqaradi. Interfeys xatosining ulushi sezilarli: bir loyiha hisobida xatolarning 39 foizi modullar orasidagi interfeys xatosi bo'lgan (o'sha joy, 29.2 (693-694-bet)).
+
+Qolgan oltitasi inkremental integratsiyaning tartib strategiyalari (o'sha joy, 29.3 (694-701-bet)). Kitobning o'z ogohlantirishi: ularning hech biri hamma holat uchun eng yaxshi emas.
+
+- **Yuqoridan-pastga (top-down).** Ierarxiyaning yuqorisidagi sinf birinchi yoziladi, pastdagilar o'rniga **stub** qo'yiladi va integratsiya davomida stublar haqiqiy sinflarga almashtiriladi. Foydasi: boshqaruv mantiqi va katta konseptual dizayn muammolari erta ochiladi, qisman ishlaydigan tizim erta paydo bo'ladi. Narxi: tizim interfeyslari oxirigacha sinalmay qoladi va juda ko'p stub kerak bo'ladi; stub test kodi bo'lgani uchun unda production koddan ko'proq xato bo'ladi, bu esa inkremental integratsiyaning maqsadini buzadi. Sof shaklda deyarli qo'llanmaydi: amalda tizim yuqoridan pastga, lekin bo'laklab (vertical slice) qilinadi.
+- **Pastdan-yuqoriga (bottom-up).** Ierarxiyaning pastidagi sinflar birinchi yoziladi va ularni mashq qilish uchun **test driver** yoziladi; yuqori sinflar paydo bo'lgani sayin driverlar haqiqiy sinflarga almashtiriladi. Foydasi: xato manbasi bitta sinfga chegaralanadi va tizim interfeyslari erta sinaladi. Narxi: yuqori darajadagi interfeyslar oxirigacha qoladi, shuning uchun konseptual dizayn xatosi hamma mayda ish bitgandan keyin ochiladi; shu sababli kitob yuqori darajadagi dizaynni past darajadagi koddan oldin yakunlashni talab qiladi.
+- **Sendvich (sandwich).** Myers tavsiyasi: avval yuqoridagi biznes-obyekt sinflari, keyin pastdagi qurilma interfeysi va keng ishlatiladigan utility sinflari integratsiya qilinadi, o'rta qatlam oxiriga qoldiriladi. Sof yuqoridan-pastga va sof pastdan-yuqoriga qattiqligidan qutqaradi va kerakli scaffolding ni kamaytiradi.
+- **Xavf bo'yicha (risk-oriented).** Kitobning ikkinchi nomi - "hard part first". Har bir sinfga xavf darajasi qo'yiladi va eng qiyin qismlar birinchi integratsiya qilinadi. Natija sendvichga o'xshaydi (tepa va tag birinchi), lekin sababi boshqa: tepadagi interfeyslar va tizim interfeyslari tajribaga ko'ra xavfli, shu bilan birga o'rtadagi yomon tushunilgan algoritm yoki qattiq performance maqsadi bor sinf ham ro'yxat boshiga chiqishi mumkin.
+- **Xususiyat bo'yicha (feature-oriented).** Bir vaqtda bitta xususiyat integratsiya qilinadi, ya'ni "inkrement" bitta sinfdan katta bo'ladi. Uch foydasi: past darajadagi umumiy kutubxonalardan boshqa joyda scaffolding yo'qoladi, chunki har bir xususiyat kerakli kodni o'zi bilan olib keladi; har bir integratsiya ko'rinadigan funksionallik qo'shadi; va u obyektga yo'naltirilgan dizayn bilan mos tushadi. Narxi: inkrement kattalashgani uchun yangi xatoning manbasi bitta sinfga chegaralanmaydi.
+- **T shaklida (T-shaped).** Bitta vertikal bo'lak tanlanadi, u tizimni uchidan uchiga mashq qiladi va arxitektura taxminlaridagi katta muammolarni ochadi; vertikal bo'lak ishlagandan keyin tizimning kengligi qurib boriladi. Kitob uni ko'pincha xavf bo'yicha yoki xususiyat bo'yicha strategiya bilan birga ishlatishni aytadi.
+
+Kitobdagi misollar C++ va ierarxiya diagrammasi shaklida; quyida ikki rolning Java dagi eng kichik ko'rinishi - stub bilan yuqoridan-pastga va driver bilan pastdan-yuqoriga.
+
+```java
+// Yuqoridan-pastga: PaymentClient hali yozilmagan, o'rnida stub turadi
+private final PaymentClient stub = order -> PaymentResult.approved("stub-ref");
+
+@Test
+void marksOrderPaidWhenGatewayApproves() {
+    CheckoutService service = new CheckoutService(stub, new InMemoryOrderRepository());
+
+    assertThat(service.checkout(anOrder().withTotal("1500").build()).status())
+            .isEqualTo(Status.PAID);
+}
+
+// Pastdan-yuqoriga: repository tayyor, uni mashq qiladigan driver test
+@DataJpaTest
+class OrderRepositoryBottomUpTest {
+
+    @Autowired
+    private OrderRepository repository;
+
+    @Test
+    void findsOpenOrdersByCustomer() {
+        repository.save(anOrder().forCustomer(1L).withStatus(Status.NEW).build());
+
+        assertThat(repository.findOpenByCustomerId(1L)).hasSize(1);
+    }
+}
+```
+
+| Strategiya | Nima kerak bo'ladi | Nimani erta ochadi |
+|---|---|---|
+| Fazali | Hech narsa | Hech narsa: hammasi oxirida chiqadi |
+| Yuqoridan-pastga | Stub (ko'p) | Boshqaruv mantiqi, UI, konseptual dizayn |
+| Pastdan-yuqoriga | Test driver | Tizim va infratuzilma interfeyslari |
+| Sendvich | Ikkisi ham, lekin kamroq | Tepa va tagdagi muammolar |
+| Xavf bo'yicha | Xavf ro'yxati | Eng qimmat noma'lumlik |
+| Xususiyat bo'yicha | Skelet | Foydalanuvchiga ko'rinadigan funksionallik |
+| T shaklida | Bitta uchidan uchiga yo'l | Arxitektura taxminlari |
+
+Korpusda bitta strategiya allaqachon amalda tavsiya qilingan, lekin nomlanmagan: [review ni bo'lish: stacked PR texnikasi](../code-review/02-review-iqtisodi-xato-narxi-navbat-va-pr.md#26-review-ni-bolish-stacked-pr-texnikasi) katta ishni migratsiya, domen va controller tartibida uch PR ga bo'lishni aytadi. Bu aynan pastdan-yuqoriga integratsiya: sxema va entity pastda, domen o'rtada, tashqi API tepada, va har bosqich o'zidan pastdagisi yashil bo'lgandan keyin qo'shiladi. Shu nom bilan uning narxi ham ko'rinadi: tashqi API shakli oxirigacha sinalmaydi, shuning uchun uchinchi PR da kontrakt o'zgarsa, oldingi ikkitasi qayta ishlanadi. T shaklidagi variant bu narxni kamaytiradi - birinchi PR da bitta uchidan uchiga yupqa yo'l (bitta endpoint, bitta jadval, bitta domen qoidasi) chiqariladi, kenglik keyin qo'shiladi.
+
+ESLATMA: Spring loyihasida stub va driver nomlari boshqacha ko'rinadi. Stub rolini `@MockitoBean` yoki qo'lda yozilgan fake bean bajaradi, driver rolini esa `@SpringBootTest` ko'tarmagan oddiy JUnit test sinfi yoki `@DataJpaTest` kabi slice bajaradi; kitobdagi "scaffolding ni kamaytirish" argumenti shu yerda "qancha mock bean kerak" savoliga aylanadi.
+
+## 15.18 Arxitektor nazorat ro'yxati
 
 - [ ] Pipeline bosqichlari fail fast printsipi bo'yicha tartiblangan, PR gate va merge pipeline aniq ajratilgan
 - [ ] Feedback vaqti byudjeti yozilgan (PR < 10 daq), p95 metrika sifatida kuzatiladi va buzilganda aniq harakat rejasi bor
@@ -407,6 +528,15 @@ Lokal va CI natijasining farqi. "Mening mashinamda ishlaydi" - bu pipeline dizay
 - [ ] Nosozlik artefaktlari (JUnit XML, log, screenshot, heap dump) `if: failure()` da saqlanadi va PR'da xulosa ko'rinadi
 - [ ] Deploy'dan keyin smoke test, canary metrikasi va avtomatik rollback sharti raqamlar bilan belgilangan
 - [ ] Retry faqat infratuzilma step'larida; har bir nightly suite'ning nomlangan egasi va nosozlik marshruti bor
+
+## Manbalar
+
+- [JUnit 5.11, Running Tests](https://raw.githubusercontent.com/junit-team/junit5/r5.11.0/documentation/src/docs/asciidoc/user-guide/running-tests.adoc) - teg bo'yicha tanlash (`@Tag`, `includeTags`), `junit-platform.properties` va parallel bajarish sozlamalari, ya'ni pipeline da testni bosqichga bo'lish mexanizmi
+- [maven-surefire, `TestSuiteXmlParser.java`](https://raw.githubusercontent.com/apache/maven-surefire/0c970adeb11e8a59b449be5b3be2a50c478c2a65/surefire-report-parser/src/main/java/org/apache/maven/plugins/surefire/report/TestSuiteXmlParser.java) - JUnit XML hisobotining tarkibi, CI da yig'iladigan maydonlar
+- [Google, Speed of Code Reviews](https://raw.githubusercontent.com/google/eng-practices/3bb3ec25b3b0199f4940b1aa75f0ac5c5753301c/review/reviewer/speed.md) - javob tezligining jamoa oqimiga ta'siri, ya'ni pipeline vaqtining tashkiliy narxi
+- [sonarqube 9.9 LTA, `ScanProperties.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/sonar-scanner-engine/src/main/java/org/sonar/scanner/scan/ScanProperties.java) - `sonar.qualitygate.wait` bilan pipeline ni bloklash va 300 sekundlik default timeout
+- Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr, Pragmatic Engineer, 2023, 17-bob "Shipping to Production" (251-bet) va 14-bob "Testing" (205-bet) - ijara konteksti so'rov bilan tarqaladi va servislar unga qarab boshqacha yo'naltiradi, test ijarasidagi to'lov mock qilinadi, ko'p ijara qo'yilganda alohida test muhitlariga ehtiyoj kamayadi
+- Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 29.2-29.3 "Integration" (691-701-bet) - fazali va inkremental integratsiya farqi, inkremental integratsiyaning oltita foydasi va olti tartib strategiyasi: yuqoridan-pastga (stub), pastdan-yuqoriga (test driver), sendvich, xavf bo'yicha, xususiyat bo'yicha va T shaklida
 
 ---
 

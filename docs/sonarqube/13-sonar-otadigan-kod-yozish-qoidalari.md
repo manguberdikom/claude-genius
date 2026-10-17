@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 13. Sonar o'tadigan kod yozish qoidalari (Writing Code That Passes)
 
@@ -457,6 +457,13 @@ Oxirgi qatorga alohida e'tibor bering. Bu bobdagi hamma narsa quality profile da
 - [ ] Pul bilan ishlaydigan hamma joyda `double` va `float` ni `BigDecimal` ga o'tkazing, `equals` o'rniga `compareTo` ishlating va `setScale` ni aniq belgilang.
 - [ ] Log chaqiruvlarini placeholder formatiga keltiring, istisnoni oxirgi argument sifatida uzating va karta, token, parol kabi maydonlar uchun maskalash yordamchisi yozing.
 - [ ] IDE ga SonarLint o'rnatib, uni serverdagi quality profile ga ulang, so'ngra pull request oldidan diff ni shu bobdagi savollar ro'yxati bilan o'qib chiqish odatini jamoa qoidasiga kiriting.
+
+## Manbalar
+
+- [sonar-java 8.44, `CognitiveComplexityMethodCheck.java`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/java-checks/src/main/java/org/sonar/java/checks/CognitiveComplexityMethodCheck.java) - `DEFAULT_MAX = 15`
+- [sonar-java 8.44, qoida metadata si](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S1192.json) - bobdagi har qoidaning rasmiy sarlavhasi, turi va darajasi shu metadata dan olingan
+- `tools/sonar_rules.tsv` - tur va daraja da'volari `check_docs.py` da shu snapshotga solishtiriladi; snapshot sonar-java va sonar-java-symbolic-execution metadata sidan olinadi
+- `tools/claims_data/sonar_messages.tsv` - keltirilgan inglizcha xabarlar check manbasidagi matnga `verify_claims.py --faqat xabar` bilan solishtiriladi
 
 ---
 

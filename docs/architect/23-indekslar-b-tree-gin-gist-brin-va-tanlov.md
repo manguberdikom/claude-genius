@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 23. Indekslar: B-tree, GIN, GiST, BRIN va tanlov (Indexes)
 
 <details>
-<summary>Bu bobdagi 13 bo'lim</summary>
+<summary>Bu bobdagi 19 bo'lim</summary>
 
 - [23.1 B-tree tuzilishi va u qaysi so'rovlarga yordam beradi](#231-b-tree-tuzilishi-va-u-qaysi-sorovlarga-yordam-beradi)
 - [23.2 Ko'p ustunli indeks va ustunlar tartibining ahamiyati](#232-kop-ustunli-indeks-va-ustunlar-tartibining-ahamiyati)
@@ -21,7 +21,13 @@
 - [23.10 Keraksiz indekslarni topish va o'chirish (`pg_stat_user_indexes`)](#2310-keraksiz-indekslarni-topish-va-ochirish-pg_stat_user_indexes)
 - [23.11 `CREATE INDEX CONCURRENTLY` va ishlab chiqarishda indeks qo'shish](#2311-create-index-concurrently-va-ishlab-chiqarishda-indeks-qoshish)
 - [23.12 Indeks shishishi va `REINDEX CONCURRENTLY`](#2312-indeks-shishishi-va-reindex-concurrently)
-- [23.13 Amalda qo'llash](#2313-amalda-qollash)
+- [23.13 Saqlash dvigateli oilalari: B-tree va LSM, o'qish va yozish kuchayishi](#2313-saqlash-dvigateli-oilalari-b-tree-va-lsm-oqish-va-yozish-kuchayishi)
+- [23.14 Indeks interfeysi: `pg_am`, operator class va operator family](#2314-indeks-interfeysi-pg_am-operator-class-va-operator-family)
+- [23.15 Indeks xossalari: qaysi tur nimani qo'llaydi](#2315-indeks-xossalari-qaysi-tur-nimani-qollaydi)
+- [23.16 Hash indeks: qachon mantiqiy, qachon B-tree afzal](#2316-hash-indeks-qachon-mantiqiy-qachon-b-tree-afzal)
+- [23.17 SP-GiST: quadtree, k-d tree va radix tree](#2317-sp-gist-quadtree-k-d-tree-va-radix-tree)
+- [23.18 B-tree ichida: deduplication va suffix truncation](#2318-b-tree-ichida-deduplication-va-suffix-truncation)
+- [23.19 Amalda qo'llash](#2319-amalda-qollash)
 
 </details>
 
@@ -168,6 +174,8 @@ GIN teskari indeks: u qiymatni emas, qiymat ichidagi elementlarni kalit qilib ol
 `jsonb` uchun ikki opclass bor. Standart `jsonb_ops` hamma kalit va qiymatni indekslaydi, shuning uchun `?` operatori ham ishlaydi, lekin hajmi katta. `jsonb_path_ops` faqat yo'l va qiymat hash ini saqlaydi, taxminan ikki barobar kichik va `@>` so'rovlarida tezroq, lekin kalit mavjudligini tekshiruvchi operatorlarni qo'llamaydi.
 
 Hajm haqida ogohlik: `tsvector` ustidagi GIN jadval hajmining taxminan 20-40 foizini oladi va qurilishi B-tree dan bir necha barobar uzoq davom etadi, shuning uchun uni `maintenance_work_mem` ni kamida 1 GB qilib qo'ygan sessiyada qurish kerak.
+
+GIN ning ikkita mexanik chegarasi to'liq matn qidiruvida sezilarli. Birinchisi: `tsvector` leksemaning pozitsiyasini saqlasa ham, bu ma'lumot indeksga tushmaydi, shuning uchun GIN ibora bo'yicha qidiruvni tezlashtira olmaydi. Ikkinchisi: GIN tartiblash operatorlarini qo'llamaydi, demak relevantlik bo'yicha tartiblashda `ts_rank` har bir natija qatori uchun alohida hisoblanadi. Ikkala chegarani `rum` kengaytmasi yopadi, lekin u yadro tarkibida emas va alohida o'rnatiladi; qidiruv sifati haqidagi qaror esa [PostgreSQL FTS ning qattiq chegaralari](40-qidiruv-postgresql-fts-va-alohida-dvigatel.md#403-postgresql-fts-ning-qattiq-chegaralari) bo'limida ko'riladi.
 
 Mexanikaning muhim qismi: GIN da `fastupdate` yoqilgan va yangi yozuvlar avval pending list ga tushadi. Ro'yxat `gin_pending_list_limit` (standart 4 MB) ga yetganda yoki vacuum vaqtida asosiy tuzilmaga ko'chiriladi. Natijada ommaviy `INSERT` dan keyingi birinchi qidiruv kutilmaganda sekin bo'ladi, chunki u pending list ni ketma-ket o'qiydi. Yuqori yozuv oqimida `fastupdate = off` qilish yoki pending limitni kamaytirish kerak bo'ladi.
 
@@ -384,7 +392,158 @@ WHERE NOT indisvalid AND indexrelid::regclass::text LIKE '%_ccnew%';
 | `idx_scan = 0` deb primary da o'chirildi | Replika dagi hisobot sekinlashadi | Hamma instansdan statistika yig'ish |
 | UUID v4 primary key | Sahifa bo'linishi, indeks parchalanishi | UUID v7 yoki `bigserial` ga o'tish |
 
-## 23.13 Amalda qo'llash
+## 23.13 Saqlash dvigateli oilalari: B-tree va LSM, o'qish va yozish kuchayishi
+
+PostgreSQL indekslari B-tree asosida ishlaydi, lekin boshqa saqlash dvigatellari boshqa tanlov qiladi va bu tanlov ma'lumot bazasini tanlashda ko'rinadi. Shuning uchun ikki oilaning farqini bilish kerak: u "qaysi baza tez" degan savolga emas, "qaysi yuk uchun qaysi baza" degan savolga javob beradi.
+
+B-tree yozuvni **joyida** o'zgartiradi: sahifa topiladi, o'qiladi, o'zgartiriladi va qaytib yoziladi. LSM (log-structured merge) esa yozuvni xotiradagi tartiblangan tuzilmaga qo'yadi, u to'lganda diskka ketma-ket yozadi va keyin fon jarayoni fayllarni birlashtiradi (compaction). PostgreSQL ning WAL i ham ketma-ket yozadi, lekin ma'lumot fayllari baribir joyida o'zgaradi.
+
+| O'lchov | B-tree | LSM |
+|---|---|---|
+| Yozish | tasodifiy I/O, sahifa to'liq yoziladi | ketma-ket I/O, keyin compaction |
+| O'qish | bitta yo'l, barqaror kechikish | bir necha qatlam, Bloom filtri bilan tezlashtiriladi |
+| Yozish kuchayishi | sahifa darajasida | compaction hisobiga, umumiy hajmi kattaroq |
+| Bo'sh joy | sahifalarda bo'shliq (bloat) | tiqizroq, lekin compaction vaqtincha joy oladi |
+| Kechikish barqarorligi | ancha barqaror | compaction paytida cho'qqi |
+
+Ikki atama shu yerdan chiqadi va ikkisi ham o'lchanadi. Yozish kuchayishi (write amplification) - bitta mantiqiy yozuv diskka necha bayt bo'lib tushishi; o'qish kuchayishi (read amplification) - bitta so'rov necha marta diskka borishi. PostgreSQL da yozish kuchayishining o'ziga xos manbasi bor: qator o'zgarganda yangi versiya yoziladi va unga tegishli hamma indeks ham yangilanadi, shuning uchun ortiqcha indeks yozishni ham sekinlashtiradi. Buning yumshatuvchisi HOT update: o'zgargan ustun hech bir indeksda bo'lmasa, indekslar yangilanmaydi.
+
+Amaliy xulosa: yozuv og'ir va kalit bo'yicha oddiy qidiruvli yuk (metrika, hodisa jurnali, vaqt qatori) LSM asosidagi tuzilmaga mos keladi; murakkab so'rov, join, tranzaksiya va barqaror kechikish kerak bo'lsa B-tree asosidagi relyatsion baza mos. Bu tanlov [texnologiya tanlash mezonlari](38-doimiy-organish-va-texnologiya-tanlash.md#384-yangi-kutubxonani-baholash-mezonlari-qollab-quvvatlash-bogliqlik-chiqish-yoli) bilan birga qilinadi va ko'p holatda PostgreSQL ikkisiga ham yetadi.
+
+## 23.14 Indeks interfeysi: `pg_am`, operator class va operator family
+
+PostgreSQL yadrosida oltita indeks access method bor: `btree`, `hash`, `gist`, `gin`, `spgist` va `brin`. Kengaytiriluvchanlik yadroni o'zgartirmasdan yangi usul qo'shishga imkon beradi va standart modullar to'plamidagi `bloom` indeksi shunga misol.
+
+Har qanday turdagi indeks oxir-oqibat kalitni heap tuple lariga bog'laydi va olti baytli TID qaytaradi. Qolgan ishni umumiy indexing engine bajaradi: TID bo'yicha heap dan o'qiydi, tuple ni snapshotga qarab ko'rinuvchanlikka tekshiradi va access method ning javobi qat'iy bo'lmasa shartni qayta tekshiradi. Aynan shu qayta tekshirish rejada `Recheck Cond` bo'lib ko'rinadi.
+
+Access method yangi ma'lumot turi haqida oldindan hech narsa bilmaydi, shuning uchun u o'z interfeysini ochadi. Turni indeks bilan bog'laydigan operatorlar va yordamchi funksiyalar to'plami operator class deb ataladi va `pg_opclass` da yashaydi. Har bir tur uchun bitta class standart deb belgilanadi, shuning uchun odatdagi buyruq qisqartma bo'lib chiqadi.
+
+```sql
+-- Bu ikki buyruq bir xil indeksni yaratadi
+CREATE INDEX ON mijozlar (email);
+CREATE INDEX ON mijozlar USING btree (email text_ops);
+
+-- text uchun mavjud B-tree classlari va qaysi biri standart
+SELECT opcname, opcdefault
+FROM pg_am am JOIN pg_opclass opc ON opcmethod = am.oid
+WHERE amname = 'btree' AND opcintype = 'text'::regtype;
+
+-- Mavjud access method lar ro'yxati
+SELECT amname FROM pg_am WHERE amtype = 'i';
+```
+
+Har bir operator class operator family ga tegishli, family esa bir xil semantikadagi turlarni birlashtiradi: `integer_ops` ga `int2_ops`, `int4_ops` va `int8_ops` kiradi, `datetime_ops` ga `date_ops`, `timestamp_ops` va `timestamptz_ops`. Buning amaliy ma'nosi katta: family tufayli planner turlari har xil bo'lgan shartda ham indeksni ishlata oladi va cast qo'shishga majbur emas.
+
+Bundan aniq qoida chiqadi: entity maydonining turi ustun turiga mos kelmasa va ikki tur bitta family da bo'lmasa, solishtirishda cast paydo bo'ladi va indeks ishlamay qolishi mumkin. Hibernate bunday nomuvofiqlikni jim yutadi, chunki JDBC darajasida konvertatsiya bajariladi. `EXPLAIN` da buni `Index Cond` o'rniga `Filter` satri paydo bo'lishidan yoki shartdagi `::` belgisidan bilish mumkin, shuning uchun migratsiya ko'rigida entity turi bilan ustun turi solishtiriladi.
+
+## 23.15 Indeks xossalari: qaysi tur nimani qo'llaydi
+
+Reja tuzishdan oldin planner access method nimani qo'llashini bilishi kerak: natijani tartiblangan holda qaytara oladimi, index-only scan mumkinmi, bitmap qura oladimi. Bu ma'lumot interfeysda uch darajada e'lon qilinadi va uchta funksiya bilan so'raladi. Ajratish kelajak uchun qilingan: hozircha bitta access method ga asoslangan hamma indeks birinchi ikki darajada bir xil xossaga ega.
+
+```sql
+-- Access method darajasi: tur umuman nimani qo'llaydi
+SELECT p.name, pg_indexam_has_property(a.oid, p.name)
+FROM pg_am a, unnest(array['can_order','can_unique','can_multi_col',
+                           'can_exclude','can_include']) p(name)
+WHERE a.amname = 'gin';
+
+-- Indeks darajasi
+SELECT p.name, pg_index_has_property('idx_buyurtma_sana', p.name)
+FROM unnest(array['clusterable','index_scan','bitmap_scan',
+                  'backward_scan']) p(name);
+
+-- Ustun darajasi: returnable index-only scan imkonini bildiradi
+SELECT p.name, pg_index_column_has_property('idx_buyurtma_sana', 1, p.name)
+FROM unnest(array['orderable','distance_orderable','returnable',
+                  'search_array','search_nulls']) p(name);
+```
+
+Bu uchta so'rov amalda ko'p bahsni yopadi. `can_order` faqat B-tree da rost, demak `ORDER BY` ni indeks bilan qoplash boshqa turlarda mumkin emas va reja baribir `Sort` node qo'yadi. `can_unique` ham faqat B-tree da, shuning uchun unikal cheklov boshqa turda qurilmaydi. `can_include`, ya'ni `INCLUDE` ustunlari qo'shish, hamma turda yo'q. `returnable` esa eng aniq savolga javob beradi: shu ustun bo'yicha index-only scan umuman mumkinmi.
+
+Unikal indeks bilan unikal cheklov farqini ham shu yerda aytish kerak. Cheklov hech qachon buzilmasligi kerak bo'lgan xossani e'lon qiladi, indeks esa uni ta'minlaydigan mexanizm. Farq amaliy: partitsiyalangan jadvalda global indeks yo'q, lekin partition kalitini o'z ichiga olgan unikal cheklov qo'yish mumkin va global unikallikni har bir partition ning lokal indeksi ta'minlaydi.
+
+JPA tomonida bundan ikki xulosa chiqadi. Birinchisi: `Pageable` bilan berilgan `Sort` ustuni B-tree indeksida bo'lishi shart, GIN yoki BRIN bu ishni bajarmaydi. Ikkinchisi: projection interfeysida faqat indeksdagi ustunlarni so'rash index-only scan uchun nomzod yaratadi, lekin faqat `returnable` rost bo'lgan tur uchun.
+
+```java
+public interface OrderSummary {
+    Long getId();
+    Instant getCreatedAt();
+}
+
+public interface OrderRepository extends JpaRepository<Order, Long> {
+
+    // Faqat indeksdagi ustunlar: index-only scan uchun nomzod
+    List<OrderSummary> findByCustomerIdOrderByCreatedAtDesc(Long customerId);
+}
+```
+
+## 23.16 Hash indeks: qachon mantiqiy, qachon B-tree afzal
+
+Hash indeks diskda saqlanadigan hash jadval. Kalitning hash funksiyasi hisoblanadi, uning quyi bitlari bucket raqamini beradi va bucket ga TID bilan birga kalitning hash kodi yoziladi. Kalitning o'zi saqlanmaydi, chunki kichik va qat'iy uzunlikdagi qiymat bilan ishlash qulayroq. Jadval dinamik kengayadi: minimal bucket soni ikkita, o'sish paytida bitta bucket ikkiga bo'linadi va elementlar faqat shu ikki bucket o'rtasida qayta taqsimlanadi.
+
+Kalit saqlanmagani uchun kelib chiqadigan ikki oqibat bor. Birinchisi: hash to'qnashuvi sababli access method ortiqcha TID qaytarishi mumkin, shuning uchun natija heap da qayta tekshiriladi. Ikkinchisi: index-only scan umuman mumkin emas.
+
+Xossalari qattiq cheklangan: tartiblash yo'q, unikal cheklov yo'q, ko'p ustunli indeks yo'q, `INCLUDE` yo'q, `NULL` bo'yicha qidiruv yo'q, massiv ichidan qidiruv yo'q, `CLUSTER` yo'q. Yagona qo'llaydigan operatori tenglik. Shunga qaramay exclusion constraint qo'llanadi va tenglik operatori bilan u amalda unikallik ma'nosini oladi. Yana bitta operatsion cheklov bor: hash indeks kichraymaydi, bucket sahifalari bo'sh bo'lsa ham operatsion tizimga qaytarilmaydi va hajmni faqat `REINDEX` kamaytiradi.
+
+```sql
+-- Uzun matnli kalit bo'yicha faqat tenglik qidiruvi
+CREATE INDEX idx_hodisa_kalit ON hodisalar USING hash (idempotency_key);
+
+-- Rejada indeks turi ko'rinmaydi: oddiy Bitmap Index Scan deb yoziladi
+EXPLAIN SELECT * FROM hodisalar WHERE idempotency_key = '3f2a7c';
+
+-- Unikallik kerak bo'lsa yagona yo'l exclusion constraint
+ALTER TABLE hodisalar
+    ADD CONSTRAINT hodisa_kalit_unikal
+    EXCLUDE USING hash (idempotency_key WITH =);
+```
+
+PostgreSQL 10 gacha hash indeks WAL ga yozilmagan, ya'ni nosozlikdan himoyalanmagan va replikatsiya qilinmagan edi, shuning uchun uni ishlatish tavsiya etilmasdi; 10 dan boshlab bu cheklov yo'q. Kitob hash va B-tree ni tezlik bo'yicha taqqoslamaydi, shuning uchun bu yerda raqam berilmaydi. Mexanizmdan kelib chiqadigan xulosa esa shunday: hash indeks kalitni saqlamagani uchun uzun kalitlarda kichikroq chiqadi, lekin oraliq, tartib va index-only scan ni bermaydi, demak u faqat uzun kalit faqat tenglik bo'yicha qidiriladigan tor holatga mos keladi. Spring da bunga idempotentlik kaliti yoki webhook imzosi ustuni misol bo'ladi, lekin bunday ustun odatda unikal bo'lishi kerak va unikallikni hash faqat exclusion constraint orqali beradi.
+
+## 23.17 SP-GiST: quadtree, k-d tree va radix tree
+
+SP-GiST nomidagi SP qismi Space Partitioning, ya'ni fazoni bo'lish degani; GiST qismi esa ikkala usul ham umumlashgan qidiruv daraxti ekanini bildiradi. Fazo bu yerda ikki o'lchovli tekislik emas, balki qidiruv olib boriladigan ixtiyoriy qiymatlar to'plami. Usulning g'oyasi fazoni kesishmaydigan sohalarga bo'lish va har bir sohani rekursiv ravishda yana bo'lish.
+
+Natijada hosil bo'ladigan daraxt muvozanatlanmagan: B-tree va GiST dan farqli, uning shoxlari kam va chuqurligi katta, shuning uchun tugunlarni sahifalarga zich joylashtirish alohida vazifa bo'lib qoladi. Shu asosda uchta klassik tuzilma quriladi: nuqtalar uchun quadtree (tekislik tanlangan nuqta, ya'ni centroid atrofida to'rt kvadrantga bo'linadi), yana nuqtalar uchun k-d tree (har qadamda gorizontal va vertikal bo'lish navbatlashadi, demak har tugunda ikkita farzand) va satrlar uchun radix tree, unda ichki tugunning prefiksi haqiqatan ham farzandlarning umumiy prefiksi bo'ladi.
+
+```sql
+-- Satr uchun radix tree: prefiks bo'yicha qidiruv ^@ operatori bilan
+CREATE INDEX idx_hujjat_raqam ON hujjatlar USING spgist (raqam);
+SELECT * FROM hujjatlar WHERE raqam ^@ 'UZ-2026-';
+
+-- IP manzil uchun radix tree
+CREATE INDEX idx_kirish_ip ON kirish_jurnali USING spgist (ip_manzil inet_ops);
+
+-- Oraliqlar uchun quadtree: pastki va yuqori chegara ikki o'lchovli nuqta
+CREATE INDEX idx_narx_davri ON narx_davrlari USING spgist (amal_davri);
+```
+
+Xossalari GiST dan sezilarli farq qiladi va tanlovda ko'pincha shu farq hal qiladi: tartiblash va unikallik yo'q, ko'p ustunli indeks yo'q, `CLUSTER` yo'q, teskari skan yo'q. Exclusion constraint va `INCLUDE` ustunlari esa bor. `NULL` qiymatlar asosiy daraxtda emas, indeksning uchinchi sahifasidan boshlanadigan alohida daraxtda saqlanadi.
+
+GiST bilan SP-GiST o'rtasidagi tanlov ma'lumot tabiatiga bog'liq: kitob PostGIS hujjatiga havola qilib, bir-biri bilan ko'p kesishadigan obyektlar uchun SP-GiST tavsiya etilishini aytadi. Java tomonidagi tipik qo'llanishlar: hujjat raqami yoki mahsulot artikuli kabi prefiksli kodlar (`^@` operatori `startsWith` semantikasini beradi), `inet` ustunidagi IP manzil va `tstzrange` ustunidagi narx yoki bron davrlari. Masofa operatori satrlar uchun aniqlanmagan, shuning uchun o'xshashlik bo'yicha tartiblash kerak bo'lsa baribir GiST va `pg_trgm` tanlanadi.
+
+## 23.18 B-tree ichida: deduplication va suffix truncation
+
+Nounikal indeksda bitta kalit ko'p marta takrorlanishi mumkin va har takror joy oladi. PostgreSQL 13 dan buni deduplication hal qiladi: bir xil kalitli yozuvlar bitta yozuvga yig'iladi va unda kalit bilan birga TID lar ro'yxati saqlanadi. Unikal indeksda ham dublikat bo'ladi, chunki MVCC tufayli indeks qatorning hamma versiyasiga havola saqlaydi; HOT update buni yumshatadi, lekin har doim ham qo'llanmaydi.
+
+Deduplication resursni behuda sarflamasligi uchun u doim emas, faqat leaf sahifada navbatdagi tuple uchun joy qolmaganda ishga tushadi. Shunda sahifa tozalanadi va dublikatlar yig'iladi, natijada sahifa bo'linishi kechiktiriladi yoki umuman kerak bo'lmaydi.
+
+Hamma indeks ham buni qo'llamaydi. Asosiy shart: kalitlarning tengligi ularning ichki tasvirini baytma-bayt solishtirish bilan aniqlanishi kerak. Shuning uchun deduplication `float` va `double precision` uchun ishlamaydi (nolning ikki tasviri bor), `numeric` uchun ham ishlamaydi (bir son har xil masshtabda yozilishi mumkin) va shunday sonlarni ishlatishi mumkin bo'lgan `jsonb` uchun ham; nodeterministik collation li matn, kompozit turlar, oraliqlar, massivlar va `INCLUDE` bilan e'lon qilingan indekslar ham tashqarida qoladi.
+
+```sql
+-- Shu indeksda deduplication mumkinmi
+CREATE EXTENSION IF NOT EXISTS pageinspect;
+SELECT allequalimage FROM bt_metap('idx_buyurtma_mijoz');
+
+-- Dublikat kam bo'lsa deduplication ni o'chirish mumkin
+ALTER INDEX idx_buyurtma_mijoz SET (deduplicate_items = off);
+```
+
+Ikkinchi zichlashtirish mexanizmi ichki sahifalarda ishlaydi. Ichki yozuvdagi kalit faqat qaysi pastki daraxtga tushishni aniqlash uchun kerak, shuning uchun ko'p ustunli indeksda ko'pincha birinchi atribut yetadi va qolganlari kesib tashlanadi. Bu suffix truncation deb ataladi va leaf sahifa bo'linayotganda bajariladi. Foydasi to'g'ridan-to'g'ri: ichki sahifaga ko'proq yozuv sig'adi, daraxt sayozroq bo'ladi va qidiruv kamroq sahifa o'qiydi. Hozircha kesish atribut darajasida: yozuv atributni yo butunlay saqlaydi, yo butunlay tashlab yuboradi.
+
+Arxitektor uchun xulosa: ustun turini tanlash indeks hajmiga bevosita ta'sir qiladi. Pul qiymati uchun `numeric` to'g'ri tanlov, lekin unga qo'yilgan nounikal indeks deduplication dan foyda ko'rmaydi; `jsonb` ustiga qo'yilgan B-tree ham shunday. Takrorlanadigan kalitli ustunlar (status, mijoz identifikatori) `bigint` yoki `text` bo'lsa esa deduplication indeks hajmini sezilarli kamaytiradi va buni `pgstatindex` bilan o'lchab tasdiqlash mumkin.
+
+## 23.19 Amalda qo'llash
 
 - [ ] Eng og'ir 10 so'rovni `pg_stat_statements` dan oling va har biriga `EXPLAIN (ANALYZE, BUFFERS)` yozib, `Heap Fetches` va `Rows Removed by Filter` qiymatlarini qayd qiling.
 - [ ] Mijoz kabinetidagi ro'yxat so'rovi uchun ustunlar tartibini tekshirib, tenglik ustunini oldinga, `ORDER BY` ustunini oxiriga qo'ygan bitta indeks qoldiring.
@@ -394,6 +553,19 @@ WHERE NOT indisvalid AND indexrelid::regclass::text LIKE '%_ccnew%';
 - [ ] `pg_stat_user_indexes` so'rovini primary va hamma replikada bajarib, nomzod keraksiz indekslar ro'yxatini tuzing va choraklik ko'rikka qo'ying.
 - [ ] Migratsiya quvurida `CREATE INDEX CONCURRENTLY` ni tranzaksiyadan tashqarida ishlatish imkonini sozlab, yaroqsiz indeksni tekshiruvchi qadamni qo'shing.
 - [ ] Eng katta uchta indeks uchun `pgstatindex` bilan leaf zichligini o'lchab, 40 foizdan past bo'lsa `REINDEX CONCURRENTLY` ni xizmat oynasiga rejalashtiring.
+- [ ] Yozuv og'ir jadvallarda indeks sonini qayta ko'rib chiqing: har bir ortiqcha indeks yozish kuchayishini oshiradi.
+- [ ] HOT update ishlayotganini tekshirish uchun tez-tez o'zgaradigan ustunlar indeksda yo'qligini ta'minlang.
+
+## Manbalar
+
+- Martin Kleppmann, *Designing Data-Intensive Applications*, 3-bob - B-tree va LSM dvigatellari, o'qish va yozish kuchayishi
+- [PostgreSQL, Heap-Only Tuples (HOT)](https://www.postgresql.org/docs/current/storage-hot.html) - indeks yangilanmasligi sharti
+- [PostgreSQL 17, Indexes (indices.sgml)](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/indices.sgml) - indeks turlari, qaysi operatorga yordam berishi, partial va covering indeks
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 19-bob "Index Access Methods", 313-328-betlar - oltita access method, indexing engine vazifasi, operator class va family, indeks xossalari
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 24-bob "Hash", 411-420-betlar - bucket va overflow sahifalari, kalit saqlanmasligi, hash indeks xossalari va cheklovlari
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 27-bob "SP-GiST", 472-491-betlar - quadtree, k-d tree, satrlar uchun radix tree, `inet` va oraliq operator classlari
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 25-bob "B-tree", 429-431-betlar - deduplication sharti va `allequalimage`, ichki yozuvlarda suffix truncation
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 28-bob "GIN", 505-506-betlar - GIN xossalari, leksema pozitsiyasi indeksga tushmasligi va `rum` kengaytmasi
 
 ---
 

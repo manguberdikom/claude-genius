@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 8. 100% ga sozlangan gate: har bir shart nimani talab qiladi (A Gate Set to 100 Percent)
 
@@ -373,6 +373,12 @@ To'rtinchi bosqich: faqat yadro modullarda coverage 100 va issue 0. Bu bosqich b
 - [ ] Har bir exclusion va `Won't fix` qaroriga sabab yozadigan jurnal fayli yuritishni boshlang.
 - [ ] Qaysi modulda 100 foiz, qaysi modulda 80 foiz talab qilinishini risk bo'yicha ajratib, ikkita alohida gate yarating.
 - [ ] Bitta yadro modulda mutation testing ishlatib, 100 foiz coverage haqiqatan xatoni ushlayotganini tekshirib ko'ring.
+
+## Manbalar
+
+- [sonarqube 9.9 LTA, `RegisterQualityGates.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-webserver-webapi/src/main/java/org/sonar/server/qualitygate/RegisterQualityGates.java) - default gate shartlarini qattiqlashtirish uchun boshlang'ich nuqta
+- [sonar-plugin-api, `CoreMetrics.java`](https://raw.githubusercontent.com/SonarSource/sonar-plugin-api/a9d2a8204d3762cc96ea7bd074a26cbe982745b4/plugin-api/src/main/java/org/sonar/api/measures/CoreMetrics.java) - shart qo'yish mumkin bo'lgan metrika kalitlari va ularning ma'nosi
+- [sonar-plugin-api, `CoreProperties.java`](https://raw.githubusercontent.com/SonarSource/sonar-plugin-api/a9d2a8204d3762cc96ea7bd074a26cbe982745b4/plugin-api/src/main/java/org/sonar/api/CoreProperties.java) - reyting chegaralari (`ratingGrid`) va rivojlantirish narxi, ya'ni maintainability sharti ortidagi arifmetika
 
 ---
 

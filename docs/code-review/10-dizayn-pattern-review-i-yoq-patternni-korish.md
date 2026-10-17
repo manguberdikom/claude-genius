@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 10. Dizayn pattern review I: yo'q patternni ko'rish (Missing Patterns)
 
@@ -31,18 +31,34 @@ Review ning eng yuqori qiymatli qismi - kodda pattern o'rni bo'sh qolganini ko'r
 
 | Diffdagi belgi | Nimani bildiradi | Qaysi yechim |
 | --- | --- | --- |
-| Enum bo'yicha `switch` uch va ko'p joyda | Xulq ma'lumot bilan birga turmaydi | Strategy, polimorfizm, enum ichida xulq |
-| `if (type == A) ... else if (type == B)` o'sib boryapti | Yangi tur har joyda eslanishi kerak | Strategy registri |
-| Obyekt yaratish mantiqi uch joyda takrorlangan | Yaratish qoidasi tarqalgan | Factory, statik fabrika metodi |
-| Konstruktorda 6+ parametr, ko'pi ixtiyoriy | Chaqiruv joyi o'qilmaydi | Builder, parametr obyekti |
-| Har metodda bir xil `try/catch/log/metric` o'rami | Kesishgan vazifa qo'lda yozilgan | Decorator, AOP, `@Retryable` |
-| `status` bo'yicha `if` lar va qo'lda o'tishlar | Holat mashinasi yashiringan | State pattern, aniq state machine |
-| Tashqi API chaqiruvi domen ichida | Chegara yo'q | Adapter, port, Gateway |
-| DB yozuvi va keyin xabar yuborish | Atomiklik yo'q | Transactional Outbox |
-| Bir xil so'rov ikki marta kelsa dublikat | Idempotentlik yo'q | Idempotency key + unique |
-| Ko'p bosqichli jarayon bitta metodda | Qaytarish va kuzatish imkoni yo'q | Saga, Pipeline, Chain |
-| Har joyda `new RestClient(...)` | Konfiguratsiya tarqalgan | Bitta sozlangan bean, Builder |
+| Enum bo'yicha `switch` uch va ko'p joyda | Xulq ma'lumot bilan birga turmaydi | Fowler: Replace Conditional with Polymorphism; enum ichida xulq |
+| `if (type == A) ... else if (type == B)` o'sib boryapti | Yangi tur har joyda eslanishi kerak | Fowler: Replace Type Code with Subclasses yoki State/Strategy |
+| Obyekt yaratish mantiqi uch joyda takrorlangan | Yaratish qoidasi tarqalgan | Fowler: Replace Constructor with Factory Method |
+| Konstruktorda 6+ parametr, ko'pi bir xil turda | Argumentni almashtirib qo'yish tutilmaydi | Fowler: Introduce Parameter Object |
+| Konstruktorda ko'p ixtiyoriy maydon, qurilish bosqichli | Bir chaqiruvda qurish noqulay | GoF: Builder |
+| Har metodda bir xil `try/catch/log/metric` o'rami | Kesishgan vazifa qo'lda yozilgan | GoF: Decorator (mas'uliyat qo'shish); AOP, `@Retryable` |
+| Tashqi obyektga kirishni boshqarish kerak (masofaviy, kech yuklanadigan, huquq tekshiriladigan) | Kirish nazorati tarqalgan | GoF: Proxy (kirishni boshqarish) |
+| `status` bo'yicha `if` lar va qo'lda o'tishlar | Holat mashinasi yashiringan | Aniq o'tish jadvali; xulq holatga bog'liq bo'lsa Fowler: Replace Type Code with State/Strategy |
+| Tashqi API chaqiruvi domen ichida | Chegara yo'q | GoF: Adapter; port |
+| DB yozuvi va keyin xabar yuborish | Atomiklik yo'q | Richardson: Transactional outbox |
+| Bir xil so'rov yoki xabar ikki marta kelsa dublikat | Idempotentlik yo'q | Idempotent ishlovchi + bazada yagonalik |
+| Ko'p bosqichli jarayon bitta metodda, qaytarish yo'q | Mustaqil tizimlar nomuvofiq qoladi | Richardson: Saga va kompensatsiya |
+| Har joyda `new RestClient(...)` | Konfiguratsiya tarqalgan | Bitta sozlangan bean |
 | Katta `Map<String,Object>` konfiguratsiya | Shartnoma yo'q | `@ConfigurationProperties` tipli obyekt |
+
+Jadvalda ikki nom qasddan ajratilgan. Birinchisi - Decorator va Proxy. GoF ikkisining
+niyatini aniq farqlaydi: Decorator obyektga dinamik ravishda qo'shimcha mas'uliyat
+qo'shadi, Proxy esa obyektning o'rnini bosib unga kirishni boshqaradi (GoF, 175 va
+207-bet). GoF ning strukturaviy patternlar muhokamasida bu farq yana bir marta
+ta'kidlanadi: Proxy da asosiy funksiyani subyektning o'zi beradi, proxy esa unga
+kirishga ruxsat beradi yoki rad etadi; Decorator da komponent funksiyaning faqat bir
+qismini beradi, qolganini dekoratorlar qo'shadi (GoF, 220-bet).
+
+Ikkinchisi - Chain of Responsibility. U ko'p bosqichli jarayon uchun emas: GoF da uning
+vazifasi so'rovni bir necha nomzoddan biri bajarishi, va GoF ning o'zi uning uchinchi
+oqibatini "qabul qilinishi kafolatlanmagan" deb yozadi - so'rov zanjir oxiriga yetib,
+umuman bajarilmasligi mumkin (GoF, 223 va 226-bet). Har bosqichi bajarilishi shart
+bo'lgan jarayon uchun bu noto'g'ri nom; 10.10 dagi saga shakli ishlatiladi.
 
 ## 10.2 Shoxlanishdan polimorfizmga: eng ko'p uchraydigan bo'shliq
 
@@ -73,7 +89,8 @@ public enum CustomerTier {
 // Foydasi: yangi daraja qo'shilganda kompilyator uch joyni emas, bir joyni
 // talab qiladi va hech narsa esdan chiqmaydi.
 
-// Review javobi 2: qoida murakkab bo'lsa (tashqi bog'liqlik kerak) - Strategy.
+// Review javobi 2: tur qiymati obyekt yaratilgandan keyin o'zgarsa, yoki sinf
+// boshqa sabab bilan allaqachon subclass qilingan bo'lsa - Strategy/State obyekti.
 public interface TierPolicy {
     CustomerTier tier();
     Money discountOn(Money total);
@@ -83,6 +100,20 @@ public interface TierPolicy {
 class GoldPolicy implements TierPolicy { /* ... */ }
 // Spring List<TierPolicy> ni o'zi yig'adi; registr 9.2 da ko'rsatilgan.
 ```
+
+Bu refaktoringning kitobdagi nomi - Fowler, *Replace Conditional with Polymorphism*
+(1999, 205-206-bet; 2-nashrda, 2019, 272-bet). Fowler ning asosiy dalili aynan yuqoridagi
+belgi bilan bir xil: polimorfizmdan eng katta foyda bir xil shartlar to'plami
+programmaning ko'p joyida takrorlanganda olinadi, chunki yangi tur qo'shilganda
+shartlarning hammasini topib tuzatish kerak bo'ladi, subclass bilan esa faqat yangi
+subclass yoziladi (1999, 205-bet).
+
+Polimorfizm uchun kerakli ierarxiyani qurishning ikki yo'li bor va tanlash sharti
+kitobda aniq: odatda *Replace Type Code with Subclasses* ishlatiladi, lekin tur
+qiymati obyekt yaratilgandan keyin o'zgarsa yoki sinf boshqa sabab bilan allaqachon
+subclass qilingan bo'lsa, subclass qilish mumkin emas va *Replace Type Code with
+State/Strategy* ishlatiladi (Fowler 1999, 181 va 205-bet). Yuqoridagi ikkinchi javob
+shu holat uchun.
 
 Qachon `switch` qoldiriladi: bitta joyda, kichik va barqaror to'plam uchun. `sealed interface` bilan birga ishlatilsa, kompilyator to'liqligini tekshiradi - bu holat polimorfizmdan ham yaxshiroq bo'lishi mumkin ([17-bob](17-zamonaviy-java-review-record-sealed-pattern.md)).
 
@@ -110,6 +141,20 @@ public record AuditEvent(UserId userId, Instant at, AuditAction action, String p
 // va yangi majburiy maydon qo'shilsa kompilyator hamma joyni ko'rsatadi.
 ```
 
+Nomlashda diqqat: bu yerdagi `AuditEvent.of(...)` - GoF ning Factory Method i emas.
+GoF Factory Method ining niyati boshqa: obyekt yaratish uchun interfeys e'lon
+qilinadi, lekin qaysi sinf yaratilishini subclasslar hal qiladi (GoF, 107-bet).
+Yuqoridagi statik metodda hech qanday subclass yo'q. Uning kitobdagi nomi - Fowler,
+*Replace Constructor with Factory Method* (1999, 246-bet; 2-nashrda, 2019, *Replace
+Constructor with Factory Function*, 334-bet): oddiy qurishdan ko'proq ish qilish
+kerak bo'lganda konstruktor fabrika metodi bilan almashtiriladi. Review izohida
+shu nom ishlatilsa, muallif noto'g'ri patternni izlab ketmaydi.
+
+GoF ning o'zi bu yerda ortiqcha ish qilmaslikni ham eslatadi: Factory Method
+dizaynni moslashuvchan qiladi, lekin yaratilayotgan sinf hech qachon o'zgarmasa
+yoki yaratish subclass oson override qila oladigan operatsiyada bo'lsa, u shart
+emas (GoF, 136-bet).
+
 ## 10.4 Parametrlar portlashi: builder yoki parametr obyekti
 
 Belgi: konstruktor yoki metodda 6+ parametr, ularning bir nechtasi bir xil turda. Oqibati: parametrlarni almashtirib qo'yish kompilyatsiyada tutilmaydi.
@@ -133,6 +178,25 @@ ShipmentRequest.builder()
 // shart. Aks holda builder konstruktordan xavfsizroq emas - u faqat
 // xatoni kompilyatsiyadan ish vaqtiga ko'chiradi.
 ```
+
+Ikki yechimni almashtirib yubormaslik kerak, chunki ular turli muammolarni hal
+qiladi.
+
+Birinchi yechim - argument tartibi muammosi. Birga yuradigan parametrlar guruhi
+bitta obyektga aylantiriladi; Fowler bu refaktoringni *Introduce Parameter Object*
+deb ataydi (1999, 238-bet; 2-nashrda, 2019, 140-bet) va sababini shunday beradi: bunday
+guruh data clump, uzun parametr ro'yxatini tushunish qiyin, obyekt esa ro'yxatni
+qisqartiradi va keyinchalik parametrlar ustidagi takroriy mantiqni ham o'ziga
+tortadi. Argumentni almashtirib qo'yishdan himoya shu yechimdan keladi, chunki
+turlar boshqacha bo'ladi.
+
+Ikkinchi yechim - Builder. GoF da uning niyati argument xavfsizligi emas:
+murakkab obyektning qurilishini uning tasvirlanishidan ajratish, shunda bir xil
+qurish jarayoni turli tasvirlar yaratishi mumkin bo'ladi (GoF, 97-bet). GoF
+sanab o'tgan foydalar ham shu haqda: mahsulotning ichki tasvirini almashtirish,
+qurish kodini tasvirlashdan ajratish va qurish jarayonini qadamlab boshqarish
+(GoF, 100-bet). Shuning uchun review izohida "argumentlar almashib ketmasligi
+uchun builder" emas, "bu besh parametr bitta obyekt" deyiladi.
 
 ## 10.5 Kesishgan vazifalar qo'lda yozilganda: decorator yoki AOP
 
@@ -199,9 +263,40 @@ resilience4j:
 
 Review da asosiy savol konfiguratsiyaga qaratiladi: qaysi istisnolar retry qilinadi. `retry-exceptions` ga biznes xatolari (karta rad etildi, yetarli mablag' yo'q) kirib qolsa, tizim bir xil rad etishni uch marta takrorlaydi va foydalanuvchiga uch marta SMS keladi.
 
+Nomlashda ikkinchi diqqat: Spring ning `@Retryable` va `@Transactional` mexanizmi
+proxy orqali ishlaydi, lekin bu yerda taklif qilinayotgan yechimning niyati
+Decorator ga tegishli. GoF ikki patternni niyati bo'yicha ajratadi. Decorator
+obyektga dinamik ravishda qo'shimcha mas'uliyat qo'shadi va subclass qilishga
+moslashuvchan alternativa beradi (GoF, 175-bet); Proxy esa boshqa obyektning
+o'rnini bosib unga kirishni boshqaradi (GoF, 207-bet). GoF ning strukturaviy
+patternlar muhokamasi farqni amaliy shaklga keltiradi: Proxy da asosiy funksiyani
+subyekt beradi, proxy esa unga kirishga ruxsat beradi yoki rad etadi, va proxy
+dinamik ravishda xususiyat qo'shish yoki olib tashlash uchun mo'ljallanmagan;
+Decorator da esa komponent funksiyaning faqat bir qismini beradi, qolganini bir
+yoki bir nechta dekorator qo'shadi, shuning uchun rekursiv kompozitsiya
+Decorator ning ajralmas qismi (GoF, 220-bet).
+
+Review uchun bu farq amaliy: o'ram retry, o'lchov yoki kesh qo'shsa - bu
+Decorator, va review savoli "zanjir tartibi qanday" bo'ladi (11.6). O'ram
+kirishni tekshirsa yoki real obyektni kechiktirib yaratsa - bu Proxy, va review
+savoli "kirish rad etilganda nima qaytadi" bo'ladi.
+
 ## 10.6 Holat shoxlari: yashiringan holat mashinasi
 
 Belgi: `status` maydoni bo'yicha `if` lar turli joylarda, va holat o'tishlari `setStatus` bilan qo'lda qilinadi. Oqibati: taqiqlangan o'tish (bekor qilingan buyurtmani jo'natish) hech narsa bilan to'xtatilmaydi.
+
+Quyidagi yechim - o'tish jadvali, va uni GoF ning State pattern i deb atash xato.
+GoF State da xulq holat sinflariga ko'chiriladi: har holat alohida sinf bo'ladi,
+Context joriy holat obyektiga so'rovni delegat qiladi va holat o'zgarganda
+ishlatayotgan obyektini almashtiradi; GoF shartning har tarmog'i alohida sinfga
+tushishini aynan shunday ta'riflaydi (GoF, 305-306-bet). O'tish jadvali esa hech
+qanday xulqni ko'chirmaydi - u faqat ruxsat etilgan o'tishlarni e'lon qiladi.
+Agar xulqning o'zi holatga qarab o'zgarsa, kerakli refaktoringning kitobdagi nomi
+- Fowler, *Replace Type Code with State/Strategy* (1999, 184-bet): tur kodi holat
+obyekti bilan almashtiriladi va bu GoF ning state yoki strategy pattern iga
+tayanadi. Fowler shu yerda ikkisidan birini tanlash mexanikani o'zgartirmasligini
+ham aytadi: bitta algoritmni soddalashtirsa strategy, holatga xos ma'lumot
+ko'chirilsa va obyekt holat almashtiradi deb qaralsa state (1999, 184-bet).
 
 ```java
 // Review javobi: o'tishlarni aniq e'lon qilish. Oddiy va o'qiladigan shakl.
@@ -231,6 +326,14 @@ public void transitionTo(OrderStatus next) {
 // jadvali kodda hujjat sifatida turadi. Testda ham o'tish matritsasini
 // to'liq tekshirish mumkin ([34-bob](34-test-toliqligini-review-qilish.md)).
 ```
+
+Head First ham shu ikkisini ajratishni ta'kidlaydi: Strategy va State strukturasi
+deyarli bir xil, lekin niyatlari butunlay boshqa (Freeman/Robson, 381-bet). Farqni
+kitob shunday beradi: Strategy da klient odatda obyektga qaysi strategiyani
+berishni o'zi boshqaradi, State da esa Context vaqt o'tishi bilan o'z holatini
+aniq belgilangan o'tishlar bo'yicha o'zi almashtiradi, ya'ni xulqni o'zgartirish
+patternning ishlash usuliga kiritilgan (Freeman/Robson, 414-415-bet). Diffda
+`setStatus` ko'rinsa, mavzu State ga tegishli; `setPolicy` ko'rinsa - Strategy ga.
 
 Qo'shimcha review savoli: holat o'tishi ma'lumotlar bazasida ham himoyalanganmi. Ikki parallel so'rov bir vaqtda `PAID` dan `SHIPPED` va `REFUNDED` ga o'tkazishi mumkin. Shu sababli o'tish `UPDATE ... WHERE status = 'PAID'` shaklida yoki optimistik versiya bilan bajarilishi kerak ([27-bob](27-izolyatsiya-poyga-holatlari-va-xabar.md)).
 
@@ -269,6 +372,15 @@ class VendorFraudScoring implements FraudScoring {   // infra adapteri
 // faqat uch holatni biladi; test uchun tarmoq kerak emas.
 ```
 
+Nom kitobdan keladi: GoF da Adapter ning niyati sinfning interfeysini klient
+kutgan boshqa interfeysga o'girish, shunda interfeyslari mos kelmagani uchun
+birga ishlay olmaydigan sinflar birga ishlay oladi (GoF, 139-bet). Yuqoridagi
+`VendorFraudScoring` aynan shuni qiladi: vendor javobini domen kutgan uch
+qiymatli verdiktga o'giradi. GoF Adapter ni Facade dan ham ajratadi - facade
+yangi interfeys e'lon qiladi, adapter esa mavjud interfeysni qayta ishlatadi
+(GoF, 219-bet), shuning uchun port domen tilida bo'lishi muhim: u yangi emas,
+domenning allaqachon mavjud tili.
+
 ## 10.8 Yozuv va xabar birga bo'lishi kerak bo'lganda: outbox
 
 Belgi: bitta metodda `repository.save(...)` va keyin `kafkaTemplate.send(...)` yoki tashqi HTTP chaqiruvi. Oqibati: ikkisidan biri bajarilib, ikkinchisi bajarilmasligi mumkin, va tizim holatlari ajralib ketadi.
@@ -306,6 +418,12 @@ CREATE TABLE outbox_message (
 CREATE INDEX outbox_pending_idx ON outbox_message (created_at)
     WHERE published_at IS NULL;
 ```
+
+Patternning nomi va mohiyati Richardson da yozilgan: xabar ma'lumotlar bazasi
+tranzaksiyasining bir qismi sifatida bazadagi OUTBOX jadvaliga saqlanib
+e'lon qilinadi; atomiklik shu yerdan keladi, chunki bu bitta lokal ACID
+tranzaksiya, jadval vaqtinchalik navbat vazifasini bajaradi va alohida komponent
+uni o'qib brokerga chiqaradi (Richardson, 3-bob, 98-bet).
 
 Review ning qo'shimcha savollari: outbox tozalanadimi (aks holda jadval cheksiz o'sadi), xabar tartibi muhimmi (bo'lsa, agregat bo'yicha ketma-ketlik kerak), va iste'molchi dublikatga tayyormi (outbox "kamida bir marta" yetkazadi).
 
@@ -357,6 +475,15 @@ CREATE TABLE idempotency_record (
 CREATE INDEX idempotency_created_idx ON idempotency_record (created_at);
 ```
 
+Mexanizmning kitobdagi shakli xabar iste'moli uchun tasvirlangan va u yuqoridagi
+koddagi bilan bir xil: ishlovchi agar bir xil xabar bilan bir necha marta
+chaqirilishi xavfsiz bo'lsa idempotent hisoblanadi, va buni ta'minlashning
+amaliy yo'li - ishlangan xabarlarning identifikatorlarini biznes mantiqi
+ishlatadigan lokal ACID tranzaksiyaning o'zida alohida jadvalga yozib qo'yish,
+keyin shu jadvalda bor identifikatorni dublikat deb tashlab yuborish
+(Richardson, 6-bob, 196-bet). Yuqorida `idempotency_record` shu jadval, va
+`Idempotency-Key` uning kaliti.
+
 Review ning asosiy diqqati: kalit qayerda tekshiriladi. Agar `findByKey` keyin `save` qilinsa, bu poyga - ikki parallel so'rov ikkisi ham "topilmadi" deb o'tadi. Faqat unique constraint ishonchli.
 
 Mavzuning to'liq yozuvi [idempotency](../patterns/07-api-dizayn-patternlari.md#79-idempotentlik-kaliti-idempotency-key) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
@@ -393,23 +520,53 @@ public void advance(CheckoutId id) {
 // payments.refund(c) chaqiriladi va inventory.release(c) bajariladi.
 ```
 
+Nom Richardson dan: saga - bir necha servisdagi ma'lumotni yangilashi kerak
+bo'lgan har bir tizim buyrug'i uchun aniqlanadigan lokal tranzaksiyalar
+ketma-ketligi; har lokal tranzaksiya bitta servis ichida oddiy ACID tranzaksiya
+bilan bajariladi, va saga ACID tranzaksiyadan ikki jihatda farq qiladi: unda
+izolyatsiya xususiyati yo'q, va har lokal tranzaksiya o'z o'zgarishini commit
+qilgani uchun sagani qaytarish faqat kompensatsiya tranzaksiyalari bilan
+mumkin (Richardson, 4-bob, 114-bet). Yuqoridagi `advance` shaklida qadamlar va
+kompensatsiya aynan shu sababdan aniq yozilgan.
+
 Review da saga uchun uch savol: har qadam idempotentmi (worker qayta urinadi), kompensatsiya ham yiqilishi mumkinmi (ikkinchi darajali himoya kerak), va jarayon qotib qolganini qanday bilamiz (eng muhim savol - metrika va alert, [39-bob](39-observability-review.md)).
 
 ## 10.11 Pattern taklif qilishning narxi
 
 Pattern taklif qilgan reviewer uning narxini ham aytishi kerak. Har bir pattern kod hajmini oshiradi, navigatsiyani uzaytiradi va yangi odam uchun o'rganish yuki qo'shadi.
 
-| Pattern | Tipik narxi | Qachon arzimaydi |
+Bu talab kitoblardan keladi. GoF patternlarni qanday ishlatish bo'limini aynan
+shu ogohlantirish bilan yopadi: patternlar tanlab ishlatilmasdan qo'llanmasligi
+kerak, chunki ular moslashuvchanlikka ko'pincha qo'shimcha bilvosita qatlamlar
+kiritib erishadi, bu dizaynni murakkablashtiradi va unumdorlikka tushadi;
+pattern faqat bergan moslashuvchanlik haqiqatda kerak bo'lganda qo'llanadi (GoF,
+1.8-bo'lim, 31-bet). Head First xuddi shu fikrni ogohlantirish shaklida beradi:
+patternlarni ortiqcha ishlatish overengineered kodga olib keladi, shuning uchun
+har doim ishni bajaradigan eng oddiy yechim tanlanadi va pattern faqat ehtiyoj
+paydo bo'lganda kiritiladi (Freeman/Robson, 584-bet).
+
+Narx nimadan iborat bo'lishini jadval ko'rsatadi. Aniq satr soni loyihaga qarab
+o'zgaradi, shuning uchun bu yerda faqat qo'shiladigan qismlar sanaladi.
+
+| Pattern | Narxi nimadan iborat | Qachon arzimaydi |
 | --- | --- | --- |
-| Strategy | 1 interfeys + N klass + registr | Ikki holat, o'zgarmaydi |
-| Builder | 30-60 satr (yoki kutubxona) | Record va 3 parametr yetadi |
+| Strategy | 1 interfeys + har tur uchun 1 klass + registr | Ikki holat, o'zgarmaydi |
+| Builder | Builder klassi yoki kutubxona + `build()` tekshiruvi | Record va bir necha majburiy parametr yetadi |
 | Outbox | Jadval, worker, tozalash, monitoring | Xabar yo'qolishi muhim emas |
 | Saga | Holat jadvali, worker, kompensatsiya | Bir tizimli tranzaksiya yetadi |
 | CQRS | Ikki model, sinxronizatsiya | O'qish yuki kichik |
 | Event sourcing | Event do'koni, proyeksiya, migratsiya | Tarix talab qilinmaydi |
 | Adapter/port | 1 interfeys + 1 klass | Vendor almashtirilmaydi va test oson |
 
-Shu sababli review izohining to'g'ri shakli: "bu yerda Strategy kerak" emas, balki "shu `switch` uchinchi joyda takrorlandi, yangi tur qo'shilganda uchtasini eslash kerak; enum ichiga xulqni olsak, bitta joy qoladi, narxi 20 satr". Birinchi shakl buyruq, ikkinchisi muhandislik taklifi.
+GoF ning o'zi bir misolda bu hisobni qanday qilishni ko'rsatadi: Factory Method
+dizaynni moslashuvchan qiladi va boshqa patternlardan kam joy oladi, chunki yangi
+klass emas, faqat yangi operatsiya talab qiladi; lekin yaratilayotgan sinf hech
+qachon o'zgarmasa u shart emas (GoF, 136-bet).
+
+Shu sababli review izohining to'g'ri shakli: "bu yerda Strategy kerak" emas, balki
+"shu `switch` uchinchi joyda takrorlandi, yangi tur qo'shilganda uchtasini eslash
+kerak; enum ichiga xulqni olsak, bitta joy qoladi". Birinchi shakl buyruq,
+ikkinchisi muhandislik taklifi: u belgini, oqibatni va narxni birga qo'yadi.
 
 ## 10.12 Amalda qo'llash
 
@@ -421,6 +578,23 @@ Shu sababli review izohining to'g'ri shakli: "bu yerda Strategy kerak" emas, bal
 - [ ] `status` bo'yicha shoxlanishlarni toping va o'tish matritsasini enum ichida e'lon qiling.
 - [ ] Domen va servis paketlarida `RestClient`, `WebClient`, SDK importlarini qidirib, ularni adapter ortiga ko'chirish ro'yxatini tuzing.
 - [ ] Ko'p qadamli jarayonlarni (uchdan ko'p tashqi chaqiruv) aniqlab, har biri uchun "uchinchi qadam yiqilsa nima bo'ladi" savoliga yozma javob oling.
+
+## Manbalar
+
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns: Elements of Reusable Object-Oriented Software*, Addison-Wesley, 1995, 1.8-bo'lim (29-31-bet) - patternni qanday ishlatish tartibi va ogohlantirish: pattern tanlab ishlatilmasdan qo'llanmaydi, u qo'shimcha bilvosita qatlam kiritadi
+- GoF, *Design Patterns*, 1995, 3-bob (87, 97, 100, 107, 127, 136-bet) - Abstract Factory, Builder, Factory Method va Singleton niyatlari; Builder ning oqibatlari; Factory Method qachon shart emasligi
+- GoF, *Design Patterns*, 1995, 4-bob (139, 175, 207, 219-220-bet) - Adapter, Decorator va Proxy niyatlari; strukturaviy patternlar muhokamasida Adapter/Facade va Decorator/Proxy farqi
+- GoF, *Design Patterns*, 1995, 5-bob (223, 226, 293, 305-307, 315, 318-bet) - Chain of Responsibility niyati va "qabul qilinishi kafolatlanmagan" oqibati; Observer, State va Strategy niyatlari; State da shart tarmoqlarining alohida sinflarga tushishi
+- Martin Fowler, *Refactoring: Improving the Design of Existing Code*, 1-nashr, Addison-Wesley, 1999, 8-bob (181, 184, 238, 246-bet) - Replace Type Code with Subclasses va State/Strategy tanlash sharti; Introduce Parameter Object; Replace Constructor with Factory Method
+- Martin Fowler, *Refactoring*, 1-nashr, 1999, 9-bob (205-206-bet) - Replace Conditional with Polymorphism va uning sababi: bir xil shartlar to'plami ko'p joyda takrorlanganda eng katta foyda
+- Martin Fowler, *Refactoring*, 2-nashr, Addison-Wesley, 2019, refaktoringlar ro'yxati (140, 272, 334, 362-bet) - shu refaktoringlarning ikkinchi nashrdagi nomlari va o'rni: Introduce Parameter Object, Replace Conditional with Polymorphism, Replace Constructor with Factory Function, Replace Type Code with Subclasses
+- Eric Freeman, Elisabeth Robson, *Head First Design Patterns*, 2-nashr, O'Reilly, 2021, 10-bob (381, 414-415-bet) - Strategy va State strukturasi o'xshash, niyati butunlay boshqa; klient strategiyani beradi, Context esa o'z holatini o'zi almashtiradi
+- Freeman/Robson, *Head First Design Patterns*, 2-nashr, 2021, 13-bob (584-bet) - patternni ortiqcha ishlatish overengineered kodga olib keladi; eng oddiy yechim tanlanadi va pattern ehtiyoj paydo bo'lganda kiritiladi
+- Chris Richardson, *Microservices Patterns*, Manning, 2019, 3-bob (98-bet) - Transactional outbox: xabar baza tranzaksiyasining bir qismi sifatida OUTBOX jadvaliga yoziladi
+- Chris Richardson, *Microservices Patterns*, 2019, 4-bob (114-bet) - Saga: lokal tranzaksiyalar ketma-ketligi, izolyatsiya yo'q, qaytarish faqat kompensatsiya bilan
+- Chris Richardson, *Microservices Patterns*, 2019, 6-bob (196-bet) - idempotent ishlovchi: ishlangan xabar identifikatori bir xil lokal tranzaksiyada jadvalga yoziladi va dublikat tashlanadi
+- ESLATMA: 10.5 dagi Resilience4j va Micrometer annotatsiyalari, 10.6 dagi `EnumSet` o'tish jadvali, 10.9 dagi `Idempotency-Key` HTTP sarlavhasi va 10.12 dagi checklist shu korpusning amaliy tavsiyasi, yuqoridagi kitoblardan olingan emas
+- ESLATMA: 10.8, 10.9 va 10.10 ning to'liq yozuvi patterns hujjatida (outbox 10.14, idempotentlik 7.9, saga 14.9); bu bobda faqat diffdan ko'rish nuqtai nazari
 
 ---
 

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 14. JVM profiling va diagnostika: JFR, async-profiler, heap dump (JVM Profiling and Diagnostics)
 
@@ -35,6 +35,27 @@ Eng qimmat xato tartibni buzish: faraz qilib, darhol kodni o'zgartirish. Bunda s
 Belgini raqamga aylantirish degani "sekin" so'zini "p99 latency 180 ms dan 2.4 s ga chiqdi, p50 esa 60 ms da qoldi" deb yozish. p50 o'zgarmagani muhim dalil: bu bir qism so'rov navbatda kutayotganini bildiradi. Navbat esa yoki thread pool, yoki connection pool, yoki GC pauza, yoki tashqi I/O.
 
 Keyin resursni ajratish kerak. CPU to'lgan bo'lsa profiling kerak. CPU bo'sh, lekin latency baland bo'lsa, bu kutish, ya'ni wall-clock profiling yoki thread dump kerak. Xotira o'sib borsa heap dump kerak. Bitta asbob hamma holatga yaramaydi, shuning uchun resursni noto'g'ri aniqlash bir soatni yo'qotadi.
+
+Yuqoridagi to'rt qadam o'lchov tartibini beradi, lekin nuqsonni qidirishning to'liq ketma-ketligi undan ikki qadam uzun. McConnell bu ketma-ketlikni debug ning ilmiy usuli deb ataydi va uni klassik ilmiy usulga (takrorlanadigan tajriba bilan ma'lumot yig'ish, farazni shakllantirish, uni isbotlash yoki rad etish uchun tajriba loyihalash, isbotlash yoki rad etish, kerak bo'lsa takrorlash) solishtiradi. Nuqsonni topish uchun shakli shunday (McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 23.2 (540-541-betlar)):
+
+1. Xatoni barqarorlashtirish.
+2. Xatoning manbasini (fault) lokalizatsiya qilish: nuqsonni keltirib chiqaradigan ma'lumotni yig'ish; yig'ilgan ma'lumotni tahlil qilib faraz tuzish; farazni programmani testlash yoki kodni ko'rish bilan isbotlash yo'lini aniqlash; shu yo'l bilan farazni isbotlash yoki rad etish.
+3. Nuqsonni tuzatish.
+4. Tuzatishni test qilish.
+5. O'xshash xatolarni izlash.
+
+Birinchi va oxirgi qadam amalda eng ko'p tashlab ketiladi, lekin ikkisi ham qimmat. McConnell nuqsonni topish va uni tushunish odatda ishning 90 foizi ekanini aytadi (23.2 (540-bet)) va barqarorlashtirishning shartini aniq qo'yadi: nuqson ishonchli takrorlanmasa, uni diagnoz qilish deyarli imkonsiz; barqarorlashtirish esa xatoni beradigan test holatini topish bilan tugamaydi, uni xatoni hali ham beradigan eng sodda holatga toraytirish kerak, shunchalik sodda bo'lishi kerakki, uning biror jihatini o'zgartirish xato xulqini ham o'zgartirsin (23.2 (542-bet)). Toraytirishning usuli yana farazdan iborat: o'nta omil birgalikda xatoni berayotgan bo'lsa, qaysilari ahamiyatsiz degan faraz tuzasiz, o'sha omillarni o'zgartirib testni qaytarasiz; xato saqlanib qolsa, ularni hisobdan chiqarasiz va test soddalashadi, xato yo'qolsa esa farazni rad etgan bo'lasiz va baribir avvalgidan ko'p narsani bilasiz (23.2 (542-bet)).
+
+Beqaror nuqsonning sabablari ham sanalgan: bashoratsiz chiqadigan xato odatda initsializatsiya xatosi, vaqt (timing) masalasi yoki osilib qolgan ko'rsatkich muammosi bo'ladi (23.2 (542-bet)). ESLATMA: uchinchi sabab Java da bevosita uchramaydi, uning o'rnida bu korpusda bir xil rolni thread lar orasida almashiladigan o'zgaruvchan holat va `ThreadLocal` tozalanmasligi o'ynaydi; tekshirish esa [thread dump](#142-thread-dump-olish-va-oqish-jstack-bloklangan-thread-lock-egasi) va [tez-tez uchraydigan diagnoz](#1411-tez-tez-uchraydigan-diagnoz-sekin-sorov-thread-pool-tolishi-xotira-sizishi) bo'limlariga tushadi.
+
+Oxirgi qadam alohida eslatma talab qiladi: tuzatish test bilan tasdiqlanganidan keyin kodda o'xshash xato izlanadi. Amalda bu bitta `grep` dan boshlanadi, chunki bir xil noto'g'ri qolip odatda ko'chirib yozilgan.
+
+```bash
+# "O'xshash xatolarni izlash" qadami: topilgan qolipni butun kodda qidirish.
+# Misol: timeout belgilanmagan har bir WebClient va RestClient qurilishi.
+grep -rln --include='*.java' -E 'WebClient\.(create|builder)|RestClient\.(create|builder)' src/main/java \
+  | xargs grep -L -E 'responseTimeout|setReadTimeout'
+```
 
 ## 14.2 Thread dump olish va o'qish: `jstack`, bloklangan thread, lock egasi
 
@@ -252,7 +273,7 @@ Operatsion jihat: diagnostika asboblari image ichida bo'lishi kerak. Faqat runti
 | Faqat bitta thread dump olish | Bir lahza foto, sabab ko'rinmaydi | 10 s oraliq bilan 3-5 dump olish |
 | CPU profili bilan sekin so'rovni izlash | Kutish ko'rinmaydi, profil bo'sh chiqadi | `wall` rejimi yoki JFR socket hodisalari |
 | Ishlab chiqarishda heap dump olish | O'n sekundlab STW, health check yiqiladi | Instansiyani trafikdan chiqarib dump olish |
-| `HeapDumpPath` da joy yetmasligi | Dump buzilgan, tahlil imkonsiz | Heap dan 2 barobar katta volume ajratish |
+| `HeapDumpPath` da joy yetmasligi | Dump buzilgan, tahlil imkonsiz | Heap hajmidan kattaroq volume ajratish: dump jonli heap hajmiga yaqin chiqadi, ustiga zaxira kerak |
 | Incident boshlanganda JFR yoqish | Muammo boshlanishi yozilmagan | `maxage` bilan aylanma bufer doimiy yoniq |
 | Heap dumpni tiketga biriktirish | Maxfiy ma'lumot tarqaladi | Shifrlangan ombor, muddatli saqlash |
 | `jstack -F` majburan ishlatish | Process qotishi mumkin | Avval oddiy `jcmd`, keyin JFR dalili |
@@ -328,6 +349,11 @@ Xotira sizishida uch dalil kerak: `jvm.memory.used` ning full GC dan keyingi pas
 - [ ] Actuator ni `management.server.port` orqali alohida portga chiqaring, `heapdump` endpointini o'chiring va health detallarini faqat autentifikatsiyadan keyin ko'rsatadigan qilib qo'ying.
 - [ ] `hikaricp.connections.pending`, `executor.queued` va `jvm.gc.pause` uchun alert qo'ying, chunki bu uchtasi latency muammosini belgidan oldin ko'rsatadi.
 - [ ] Eng qimmat ikkita hot path uchun JMH benchmark yozing va uning natijasini servis darajasidagi yuk testi bilan taqqoslab tekshirib ko'ring.
+
+## Manbalar
+
+- [async-profiler, README](https://raw.githubusercontent.com/async-profiler/async-profiler/c7d6a3614df284bd92b275378a3f8bb07fdb6a5d/README.md) - CPU, allokatsiya va wall-clock rejimlari, safepoint bias muammosi
+- Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 23.2 (540-542-betlar) - debug ning ilmiy usuli: klassik ilmiy usulning besh qadami va nuqson qidirishning besh qadamli shakli (barqarorlashtirish, manbani lokalizatsiya qilish, tuzatish, tuzatishni test qilish, o'xshash xatolarni izlash); nuqsonni topish va tushunish ishning taxminan 90 foizi; barqarorlashtirishning sharti va test holatini eng sodda shaklga toraytirish; ahamiyatsiz omillar haqidagi faraz bilan soddalashtirish; beqaror nuqsonning uch sababi (initsializatsiya, timing, osilib qolgan ko'rsatkich)
 
 ---
 

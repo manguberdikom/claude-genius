@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 5. Spring Core ichidagi patternlar xaritasi (Patterns inside Spring Core)
 
@@ -267,7 +267,7 @@ public class SearchService {
 
 **Tavsif:** Bir tipdan bir nechta bean bo'lsa, by-type autowiring noaniq bo'lib qoladi va konteyner xato beradi. `@Primary` "teng bo'lsa, standart sifatida shuni ol" deydi, `@Qualifier` esa injection point'da aniq nomli yoki meta-annotatsiyali kandidatni tanlaydi. Bu Strategy patternni konfiguratsiya darajasida boshqarish usuli: implementatsiyalar ko'p, tanlov esa deklarativ. To'g'ri qo'llanganda kod `if/else` va factory switch'lardan xoli bo'ladi.
 
-**Spring'da qayerda uchraydi:** `@Primary`, `@Qualifier` (`org.springframework.beans.factory.annotation`), `@Qualifier` bilan meta-annotatsiyalangan custom annotatsiyalar (masalan o'zingizning `@Fast`, `@Audit`), ro'yxat inyeksiyasida tartib uchun `@Order` / `Ordered` / `@Priority`. Spring Framework 6.2'dan: `@Fallback` (faqat boshqa kandidat bo'lmasa tanlanadi) va `@Bean(defaultCandidate = false)` - bean'ni by-type tanlovdan chiqarib, faqat qualifier bilan olish mumkin. Noaniqlik xatosi `NoUniqueBeanDefinitionException`, bean yo'qligi `NoSuchBeanDefinitionException`; Spring Boot auto-configuration'lari esa `@ConditionalOnMissingBean` va `@Primary` kombinatsiyasi bilan foydalanuvchi bean'iga yo'l beradi.
+**Spring'da qayerda uchraydi:** `@Qualifier` (`org.springframework.beans.factory.annotation`) va `@Primary` (`org.springframework.context.annotation`, ya'ni paketi boshqa va import yozganda shu chalkashtiriladi), `@Qualifier` bilan meta-annotatsiyalangan custom annotatsiyalar (masalan o'zingizning `@Fast`, `@Audit`), ro'yxat inyeksiyasida tartib uchun `@Order` / `Ordered` / `@Priority`. Spring Framework 6.2'dan: `@Fallback` (`org.springframework.context.annotation`, faqat boshqa kandidat bo'lmasa tanlanadi) va `@Bean(defaultCandidate = false)` - bean'ni by-type tanlovdan chiqarib, faqat qualifier bilan olish mumkin. Noaniqlik xatosi `NoUniqueBeanDefinitionException`, bean yo'qligi `NoSuchBeanDefinitionException`; Spring Boot auto-configuration'lari esa `@ConditionalOnMissingBean` va `@Primary` kombinatsiyasi bilan foydalanuvchi bean'iga yo'l beradi.
 
 **Qo'llanish keyslari:**
 - Bir nechta `DataSource` bo'lganda asosiysini `@Primary` qilib, qolganlarini `@Qualifier("reporting")` bilan olish.
@@ -1323,6 +1323,19 @@ SecurityFilterChain chain(HttpSecurity http) throws Exception {
 - [ ] `@ConfigurationProperties` sinflarini `@Validated` bilan qoplab, noto'g'ri konfiguratsiya startup'da yiqitishini ta'minlang.
 - [ ] `@EventListener` larni ko'rib chiqing va tranzaksiya commit'idan keyin ishlashi kerak bo'lganlarini `@TransactionalEventListener` ga o'tkazing.
 - [ ] Auto-konfiguratsiya qaroriga ta'sir qilgan shartlarni `--debug` rejimidagi `ConditionEvaluationReport` dan eksport qilib, hujjatlashtirib qo'ying.
+
+## Manbalar
+
+- Craig Walls, *Spring in Action* 6th, 1-bob - bean, konfiguratsiya va avtomatik sozlash
+- Craig Walls, *Spring in Action* 6th, 6-bob - `@ConfigurationProperties` bilan bog'lash
+- Boyarsky/Selikoff, *OCP Java SE 17 Study Guide*, 7-bob - interfeys, `sealed`, ichki sinf va enum mexanikasi
+- [Spring Framework, The IoC Container](https://docs.spring.io/spring-framework/reference/core/beans.html) - konteyner va bean definition mexanikasi
+- [spring-framework, `Bean.java`](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/spring-context/src/main/java/org/springframework/context/annotation/Bean.java) - `autowireCandidate` (5.1 dan) va `defaultCandidate` (6.2 dan) atributlarining farqi
+- [spring-framework, `Fallback.java`](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/spring-context/src/main/java/org/springframework/context/annotation/Fallback.java) - `@Fallback` ning paketi va ma'nosi
+- [spring-framework, `Primary.java`](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/spring-context/src/main/java/org/springframework/context/annotation/Primary.java) - `@Primary` ning paketi (`context.annotation`, `beans.factory.annotation` emas)
+- [Spring Framework 7.0, Bean Scopes](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/core/beans/factory-scopes.adoc) - singleton va prototype lifecycle i
+- [Spring Framework 7.0, Proxying Mechanisms](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/core/aop/proxying.adoc) - JDK proxy va CGLIB tanlovi, proxy chegaralari
+- [spring-framework, `DefaultSingletonBeanRegistry.java`](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/spring-beans/src/main/java/org/springframework/beans/factory/support/DefaultSingletonBeanRegistry.java) - singleton registry va `ObjectFactory` (lazy lookup) mexanikasi
 
 ---
 

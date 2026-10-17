@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 24. False positive, suppression va o'z qoidangiz (False Positives and Custom Rules)
 
@@ -360,7 +360,7 @@ Oxirgi va eng muhim qadam: bostirishni oson, tuzatishni qiyin qilib qo'ymaslik. 
 
 ## 24.12 Spring Data repository `default` metodi va `java:S6809`
 
-`java:S6809` ("Call transactional methods via an injected dependency instead of directly via `this`") Spring Data
+`java:S6809` ("Call transactional methods via an injected dependency instead of directly via 'this'.", xabar matni annotatsiyaga qarab o'zgaradi: qoida `@Async`, `@Transactional` va `@Cacheable` ni qamraydi) Spring Data
 repository interfeysidagi `default` metodda **false positive** beradi. Qoida o'zi to'g'ri: oddiy Spring bean ida
 `this.transactionalMethod()` proksini chetlab o'tadi va `@Transactional` ishlamaydi. Lekin repository interfeysi
 oddiy bean emas.
@@ -412,6 +412,12 @@ Agar jamoada "serverda belgilanmaydi" kelishuvi bo'lsa, bu yechim yagona yo'l bo
 - [ ] Quality profile ni eksport qilib repozitoriyda saqlang, har bir o'chirilgan qoida yoniga sabab va ADR havolasini yozing.
 - [ ] Yangi konvensiyani Sonar plagini bilan emas, avval shablon qoida yoki ArchUnit testi bilan avtomatlashtirishga harakat qiling.
 - [ ] Har sprintda suppress, false positive va accepted sonlarini yozib boring va chorakda tendensiyani ko'rib chiqing.
+
+## Manbalar
+
+- [sonar-java 8.44, `AsyncMethodsCalledViaThisCheck.java`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/java-checks/src/main/java/org/sonar/java/checks/spring/AsyncMethodsCalledViaThisCheck.java) - `java:S6809` ning amalga oshirilishi: `@Async`, `@Transactional` va `@Cacheable` ni qamraydi, xabar annotatsiyaga qarab o'zgaradi, oshkor `this` ham belgilanadi
+- [sonar-java 8.44, `TransactionalMethodVisibilityCheck.java`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/java-checks/src/main/java/org/sonar/java/checks/spring/TransactionalMethodVisibilityCheck.java) - `java:S2230` ning Spring 6 ga qarab xabarni o'zgartirishi (`non-"private"` yoki `"public"`)
+- [sonar-java 8.44, `S2230` tavsifi](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S2230.html) - Spring 5 gacha hamma public bo'lmagan metod, Spring 6 da esa faqat `private` metod belgilanishi
 
 ---
 

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 11. Qamralmay qoladigan kod va unga test yozish (Code That Stays Uncovered)
 
@@ -595,6 +595,13 @@ Ro'yxatning tepasida DTO, mapper va konfiguratsiya turgan bo'lsa, ishni exclusio
 - [ ] Enum ustidagi barcha `switch` ni expression shakliga o'tkazing va qamralmaydigan `default` tarmoqlarini o'chirib tashlang.
 - [ ] Qo'lda yozilgan mapperlarni MapStruct ga `unmappedTargetPolicy = ReportingPolicy.ERROR` bilan ko'chiring yoki `hasNoNullFieldsOrProperties` testi qo'shing.
 - [ ] Testida uchtadan ko'p mock talab qiladigan metodlarni ro'yxatga oling va ularni `Clock` hamda interfeys injection bilan qayta loyihalashni rejaga kiriting.
+
+## Manbalar
+
+- [JaCoCo 0.8.12, Coverage Counters](https://raw.githubusercontent.com/jacoco/jacoco/v0.8.12/org.jacoco.doc/docroot/doc/counters.html) - branch coverage faqat `if` va `switch` dan tug'ilgan tarmoqlarni sanashi, exception yo'lining branch hisoblanmasligi, qisman qoplangan qatorning belgilanishi
+- [JaCoCo 0.8.12, Implementation Design](https://raw.githubusercontent.com/jacoco/jacoco/v0.8.12/org.jacoco.doc/docroot/doc/implementation.html) - implicit kod (default konstruktor, `finally` uchun yasalgan tuzilma) tufayli kutilmagan qamrov natijalari
+- [sonar-java 8.44, `S1206.json`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S1206.json) - `equals` va `hashCode` ni juft yozish qoidasi
+- `tools/sonar_rules.tsv` - bobda keltirilgan qoidalarning turi va darajasi `check_docs` da shu snapshotga solishtiriladi
 
 ---
 

@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 2. Nomlash qoidalari: maqsadni ochib beruvchi nom (Naming: Intention-Revealing Names)
 
 <details>
-<summary>Bu bobdagi 16 bo'lim</summary>
+<summary>Bu bobdagi 17 bo'lim</summary>
 
 - [2.1 Nom javob berishi kerak bo'lgan uchta savol](#21-nom-javob-berishi-kerak-bolgan-uchta-savol)
 - [2.2 Yolg'on ma'lumot beradigan nom](#22-yolgon-malumot-beradigan-nom)
@@ -24,7 +24,8 @@
 - [2.13 Yechim domeni va muammo domeni nomlari](#213-yechim-domeni-va-muammo-domeni-nomlari)
 - [2.14 Kontekst qo'shish va ortiqcha kontekst qo'shmaslik](#214-kontekst-qoshish-va-ortiqcha-kontekst-qoshmaslik)
 - [2.15 Nom uzunligi qamrovga mutanosib](#215-nom-uzunligi-qamrovga-mutanosib)
-- [2.16 Amalda qo'llash](#216-amalda-qollash)
+- [2.16 Qisqartma qoidalari va psixologik masofa](#216-qisqartma-qoidalari-va-psixologik-masofa)
+- [2.17 Amalda qo'llash](#217-amalda-qollash)
 
 </details>
 
@@ -261,7 +262,43 @@ Amaliy qoida: nom uzunligi uning qamrovi (scope) ga mutanosib bo'lishi kerak. Uc
 | Public konstanta | to'liq, birlik bilan | `DEFAULT_READ_TIMEOUT_MS` |
 | Sinf | ot iborasi | `SettlementBatchImporter` |
 
-## 2.16 Amalda qo'llash
+## 2.16 Qisqartma qoidalari va psixologik masofa
+
+Qisqartma yozuvni tezlashtiradi va o'qishni sekinlashtiradi. Programmist kod bazasining hayoti davomida yozishdan ko'ra ko'proq o'qiydi, shuning uchun tanlov o'qish foydasiga qilinadi: qisqartma faqat jamoada kelishilgan va hujjatlashtirilgan bo'lsa haqli, qolgan holatda so'z to'liq yoziladi (McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 11.6 (285-bet)).
+
+**Fonetik qisqartma yozilmaydi.** So'zning imlosi emas, tovushi bo'yicha qisqartirish (`skating` dan `sk8ing`, `highlight` dan `hilite`, `before` dan `b4`, `execute` dan `xqt`) nomni jumboqqa aylantiradi; McConnell bu usulni shaxsiy avtomobil raqamini o'qishga qiyoslaydi va tavsiya qilmaydi (shu yerda, 11.6 (283-bet)).
+
+**Bitta harf tashlash qisqartma emas.** Bitta belgi yozish mehnati arzimas, yo'qotilgan o'qilish esa arzimas emas; keyin o'zingiz ham harf tashlagan yoki tashlamaganingizni eslamaysiz. Yo bir necha harf tashlanadi, yo so'z to'liq yoziladi.
+
+**Bitta so'zga bitta qisqartma.** `Num` yoki `No` dan biri tanlanadi va hamma joyda shu ishlatiladi; bir joyda `Number`, boshqa joyda `Num` bo'lmaydi. Bu 2.11 dagi "bitta tushunchaga bitta so'z" qoidasining qisqartmaga tegishli shakli.
+
+**Telefon testi.** Kodni telefonda boshqa odamga o'qib bera olmasangiz, nom o'zgaradi: `xPstn` emas `xPos`, `ndsCmptg` emas `needsComputing` (shu yerda, 11.6 (283-bet)). Bu [talaffuz qilinadigan nom](#25-talaffuz-qilinadigan-nom) qoidasining qisqartmaga tegishli tekshiruvi.
+
+**Psixologik masofa** - ikki nomni bir-biridan ajratishning qanchalik osonligi. Masofa kichik bo'lsa, o'quvchi ikki nomni bitta deb o'qiydi va xato ko'rinmas bo'lib qoladi:
+
+| Birinchi nom | Ikkinchi nom | Masofa |
+|---|---|---|
+| `stoppt` | `stcppt` | deyarli ko'rinmaydi |
+| `shiftrn` | `shiftrm` | deyarli yo'q |
+| `dcount` | `bcount` | kichik |
+| `claims1` | `claims2` | kichik |
+| `product` | `sum` | katta |
+
+Jadval McConnell dan (shu yerda, 23.4 (556-bet)). Undan ikkita amaliy qoida chiqadi. Birinchisi: ikki nom orasida kamida ikki harf farq bo'lsin yoki farq nomning boshida yoki oxirida tursin, chunki so'z o'rtasidagi harf eng kam ko'rinadi (shu yerda, 11.7 (285-bet)). Ikkinchisi: ma'nosi yaqin nomlar ham xavfli - `input` va `inputValue`, `recordNum` va `numRecords`, `fileNumber` va `fileIndex` juftlarini bir qarashda ajratib bo'lmaydi; ikki o'zgaruvchining nomini almashtirib qo'yganda programma buzilmasa, ikkisi ham qayta nomlanishi kerak (shu yerda, 11.7 (285-bet) va bu bobdagi [ma'noli farq](#23-manoli-farq-a1-a2-info-va-data) qoidasi).
+
+```java
+// yomon: farq bitta harfda va u so'z o'rtasida
+int clientRecs = repository.countRecords(clientId);
+int clientReps = repository.countReports(clientId);
+
+// yaxshi: farq oxirida va bir necha harfda
+int clientRecordCount = repository.countRecords(clientId);
+int clientReportCount = repository.countReports(clientId);
+```
+
+Qoida nega debug paytida qimmat: odam kutgan narsasini ko'radi, shuning uchun masofasi kichik juft nomlar xatoni o'qish paytida ko'rinmas qiladi. Shu mexanizm va uning debugdagi oqibati [xatoni topish va tuzatish tartibida](46-vaqt-diqqat-va-mashq.md#4610-xatoni-topish-va-tuzatish-tartibi) ko'rilgan.
+
+## 2.17 Amalda qo'llash
 
 - [ ] Kod bazasida `Info`, `Data`, `Object`, `temp`, `flag`, `result` so'zlarini grep qilib, har birini rolga qarab qayta nomlang.
 - [ ] `IOrderRepository` turidagi interfeys prefikslarini olib tashlab, implementatsiyalarga mexanika nomini bering (`JdbcOrderRepository`).
@@ -271,6 +308,23 @@ Amaliy qoida: nom uzunligi uning qamrovi (scope) ga mutanosib bo'lishi kerak. Uc
 - [ ] Bir xil tushuncha uchun ikki nom ishlatilgan joylarni (`Product`/`ProductInfo`) birlashtiring yoki farqini bir gapda hujjatlashtiring.
 - [ ] Har bir public konstanta nomida birlik borligini tekshiring (`...Ms`, `...Bytes`, `...Percent`).
 - [ ] Jamoa lug'atini (glossary) fayl sifatida repoga qo'shib, har bir yangi domen atamasini shu yerda qayd eting (3.14).
+- [ ] Jamoa lug'atiga qisqartmalar ro'yxatini qo'shib, fonetik qisqartmalarni (`hilite`, `xqt`) taqiqlang va bir harf bilan farq qiladigan nom juftlarini topib qayta nomlang (2.16).
+
+## Manbalar
+
+- Robert C. Martin, *Clean Code*, 2-bob - maqsadni ochib beruvchi nom, yolg'on ma'lumot, ma'noli farq, talaffuz qilinadigan va qidiriladigan nom
+- Robert C. Martin, *Clean Code*, 2-bob ("Avoid Encodings") - Hungarian notation, a'zo prefiksi, interfeys va implementatsiya nomlari
+- Robert C. Martin, *Clean Code*, 2-bob ("Add Meaningful Context") - kontekst qo'shish va ortiqcha kontekst qo'shmaslik
+- Robert C. Martin, *Clean Code*, 17-bob, N1-N7 - nomlash evristikalari, uzun qamrov uchun uzun nom
+- Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 11.6
+  (283, 285) - fonetik qisqartma, bitta harf tashlamaslik, izchil
+  qisqartirish, telefon testi va qisqartma to'qnashuvini sinonim bilan
+  yechish; yozish qulayligi va o'qish qulayligi farqi
+- Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 11.7
+  (285) - o'xshash ma'noli va bir harf bilan farq qiladigan nomlar, kamida
+  ikki harf farq talabi
+- Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 23.4
+  (556) - psixologik masofa ta'rifi va nomlar jadvali
 
 ---
 

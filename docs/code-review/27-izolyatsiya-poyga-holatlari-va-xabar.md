@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 27. Izolyatsiya, poyga holatlari va xabar yetkazish (Isolation, Races and Delivery)
 
@@ -339,6 +339,12 @@ Mavzuning to'liq yozuvi [transactional outbox](../patterns/10-malumotlarni-boshq
 - [ ] Iste'molchilarda qayta ishlangan xabarlar jadvali yoki tabiiy idempotentlik borligini tasdiqlang va tozalash ishini qo'shing.
 - [ ] Outbox uchun kutayotgan xabarlar soni va eng qadimgi xabar yoshi metrikalarini va alertni qo'shing.
 - [ ] `lock_timeout` va `deadlock_timeout` qiymatlarini sozlab, deadlock loglarini bir hafta kuzatib boring.
+
+## Manbalar
+
+- [PostgreSQL 17, MVCC](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/mvcc.sgml) - `READ COMMITTED`, `REPEATABLE READ` va `SERIALIZABLE` ning aniq kafolatlari, snapshot ning birinchi statementda olinishi, `40001` serializatsiya xatosi va qayta urinish talabi
+- [Spring Framework 7.0, Transaction Propagation](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/data-access/transaction/declarative/tx-propagation.adoc) - izolyatsiya darajasining qo'shilgan tranzaksiyada jimgina tashlab yuborilishi
+- [OWASP, Transaction Authorization Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Transaction_Authorization_Cheat_Sheet.md) - TOCTOU va oqimni ketma-ket majburlash
 
 ---
 

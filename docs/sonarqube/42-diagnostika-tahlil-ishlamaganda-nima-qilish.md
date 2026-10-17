@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 42. Diagnostika: tahlil ishlamaganda nima qilish (Troubleshooting)
 
@@ -477,6 +477,13 @@ LIMIT 10;
 - [ ] Indekslangan fayl sonini haqiqiy fayl soni bilan solishtirib, exclusion ro'yxatini qayta ko'rib chiqing.
 - [ ] Server sog'ligi va Compute Engine navbati holatini tekshiradigan kichik skript yozib, uni jamoa wiki siga qo'shing.
 - [ ] Shu bobdagi tekshiruv buyruqlarini `scripts/sonar-diagnose.sh` fayliga yig'ib, repository ga commit qiling.
+
+## Manbalar
+
+- [sonarqube 9.9 LTA, `ProcessProperties.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-process/src/main/java/org/sonar/process/ProcessProperties.java) - `sonar.log.level` va log bilan bog'liq sozlamalar
+- [sonarqube 9.9 LTA, `ScanProperties.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/sonar-scanner-engine/src/main/java/org/sonar/scanner/scan/ScanProperties.java) - `sonar.verbose` va scanner tomonidagi diagnostika
+- [sonar-java 8.44, `DroppedPropertiesSensor.java`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/java/org/sonar/plugins/java/DroppedPropertiesSensor.java) - olib tashlangan coverage kalitlari va ular uchun chiqadigan tahlil ogohlantirishi
+- [sonar-java 8.44, `ClasspathForMain`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/java-frontend/src/main/java/org/sonar/java/classpath/ClasspathForMain.java) - "Missing 'sonar.java.binaries'..." ogohlantirishining aynan matni
 
 ---
 

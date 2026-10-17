@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 12. Gorizontal formatlash va kod uslubi (Horizontal Formatting and Style)
 
@@ -43,7 +43,7 @@ Muhimi - son emas, chegara borligi va uni formatter majburlashi. Chegara bo'lmas
 
 Bo'shliq bog'liqlikni ko'rsatadi: zich turgan narsalar bir butun, ajratilgan narsalar alohida. Konvensiya: binar operator atrofida bo'shliq, vergul keyin bo'shliq, qavs ichida bo'shliq yo'q, metod nomi va qavs orasida bo'shliq yo'q.
 
-Prioriteti yuqori operatorlarni zich yozish o'qilishga yordam beradi, lekin google-java-format bunga ruxsat bermaydi va bu to'g'ri qaror: izchillik did dan muhimroq.
+Prioriteti yuqori operatorlarni zich yozish o'qilishga yordam beradi, lekin google-java-format bunga ruxsat bermaydi va bu to'g'ri qaror: izchillik did dan muhimroq. Bo'shliq bilan ustunlikni ko'rsatish baribir yetarli emas: ustunlik qavs bilan yoziladi, bo'shliq bilan emas ([murakkab mantiqni soddalashtirish](06-shart-mantiq-va-boshqaruv-oqimi.md#63-murakkab-mantiqni-soddalashtirish)).
 
 ```java
 // yaxshi: standart konvensiya
@@ -239,6 +239,11 @@ Tuzoq ayniqsa mavjud faylni skript bilan tahrirlaganda qo'shiladi: fayl `utf-8-s
 - [ ] `.gitattributes` va `.editorconfig` fayllarini qo'shib, kodirovka va qator oxirini normallashtiring.
 - [ ] Bo'sh bloklarni (`;` bilan tugagan sikl, bo'sh `catch`) topib, qavs va izoh qo'shing.
 - [ ] Uzun oqim zanjirlarini har bir bo'g'in alohida qatorda bo'ladigan shaklga keltiring.
+
+## Manbalar
+
+- [Google Java Style Guide](https://raw.githubusercontent.com/google/styleguide/aee99aa581bd852c8a40814c1c8d0f8aa79a0ba2/javaguide.html) - qator uzunligi, bo'shliq, qavs, import tartibi va yulduzcha importning taqiqlanishi
+- Robert C. Martin, *Clean Code*, 5-bob - gorizontal formatlash va zichlik
 
 ---
 

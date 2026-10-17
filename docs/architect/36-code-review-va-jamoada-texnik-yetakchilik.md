@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 36. Code review va jamoada texnik yetakchilik (Code Review and Technical Leadership)
 
 <details>
-<summary>Bu bobdagi 13 bo'lim</summary>
+<summary>Bu bobdagi 16 bo'lim</summary>
 
 - [36.1 Code review nimani topishi kerak: xatti-harakat, chegara, nom, xavfsizlik](#361-code-review-nimani-topishi-kerak-xatti-harakat-chegara-nom-xavfsizlik)
 - [36.2 Nimani topmasligi kerak: formatlash, uslub, mashina tekshiradigan narsalar](#362-nimani-topmasligi-kerak-formatlash-uslub-mashina-tekshiradigan-narsalar)
@@ -21,7 +21,10 @@
 - [36.10 Jamoaning bilim xaritasi va bitta odamga bog'liqlikni kamaytirish](#3610-jamoaning-bilim-xaritasi-va-bitta-odamga-bogliqlikni-kamaytirish)
 - [36.11 Texnik yetakchi va menejer roli farqi](#3611-texnik-yetakchi-va-menejer-roli-farqi)
 - [36.12 Vaqtni taqsimlash: kod, hujjat, suhbat, o'rganish](#3612-vaqtni-taqsimlash-kod-hujjat-suhbat-organish)
-- [36.13 Amalda qo'llash](#3613-amalda-qollash)
+- [36.13 Review standarti: tasdiqlash chegarasi qayerda](#3613-review-standarti-tasdiqlash-chegarasi-qayerda)
+- [36.14 "Keyin tozalaymiz" va'dasi va qat'iylikdan shikoyat](#3614-keyin-tozalaymiz-vadasi-va-qatiylikdan-shikoyat)
+- [36.15 Bog'liq jamoalar xaritasi va chegaradagi takroriy ishqalanish](#3615-bogliq-jamoalar-xaritasi-va-chegaradagi-takroriy-ishqalanish)
+- [36.16 Amalda qo'llash](#3616-amalda-qollash)
 
 </details>
 
@@ -31,7 +34,11 @@ Code review arxitektorning eng arzon va eng ta'sirli vositasi. U kod birlashishd
 
 ## 36.1 Code review nimani topishi kerak: xatti-harakat, chegara, nom, xavfsizlik
 
-Review diqqati to'rtta narsaga qaratilishi kerak. Birinchisi xatti-harakat: kod aytilgan ishni qiladimi, chegara holatlarida nima bo'ladi, xato yo'lida qanday javob qaytadi. Ikkinchisi chegara: tranzaksiya qayerda ochiladi va yopiladi, tashqi HTTP chaqiruv tranzaksiya ichida qolib ketmaganmi, cache invalidatsiyasi commit dan keyin bo'ladimi. Uchinchisi nom: metod nomi uning yon ta'sirini yashirmayaptimi, domen atamasi kodda bir xil ishlatilayaptimi. To'rtinchisi xavfsizlik: autorizatsiya tekshiruvi qayerda, log ichiga karta raqami yoki token tushmayaptimi, SQL parametrlanganmi.
+Google ning review qo'llanmasi review da qaraladigan narsalarni ketma-ket sanaydi va birinchisini alohida ajratadi: "The most important thing to cover in a review is the overall design of the CL." Dizayndan keyin funksionallik, murakkablik, testlar, nom, izoh, uslub, izchillik va hujjat keladi. Shu ro'yxat umumiy; Java va Spring da esa dizayndan keyingi qism amalda to'rtta savolga aylanadi. Birinchisi xatti-harakat: kod aytilgan ishni qiladimi, chegara holatlarida nima bo'ladi, xato yo'lida qanday javob qaytadi. Ikkinchisi chegara: tranzaksiya qayerda ochiladi va yopiladi, tashqi HTTP chaqiruv tranzaksiya ichida qolib ketmaganmi, cache invalidatsiyasi commit dan keyin bo'ladimi. Uchinchisi nom: metod nomi uning yon ta'sirini yashirmayaptimi, domen atamasi kodda bir xil ishlatilayaptimi. To'rtinchisi xavfsizlik: autorizatsiya tekshiruvi qayerda, log ichiga karta raqami yoki token tushmayaptimi, SQL parametrlanganmi.
+
+Murakkablik bo'yicha manbaning ta'rifi aniq va foydali: "Too complex" usually means "can't be understood quickly by code readers", yoki "developers are likely to introduce bugs when they try to call or modify this code". Murakkablikning alohida turi over-engineering: kod kerakdan generic qilingan yoki hozir kerak bo'lmagan funksionallik qo'shilgan. Qo'llanma reviewer ni shunga ayricha hushyor bo'lishga chaqiradi va qoidani shunday beradi: dasturchi hozir hal qilinishi kerak ekani ma'lum muammoni hal qilsin, kelajakda kerak bo'lishi mumkin deb taxmin qilgan muammoni emas. Kelajakdagi muammo kelganda, haqiqiy shakli va talablari ko'ringanda hal qilinadi. Spring loyihada bu eng ko'p uchraydigan ko'rinishi bitta implementatsiyasi bor interfeys va bitta joydan chaqiriladigan strategy ro'yxati.
+
+Parallel kod uchun manba yana bitta amaliy maslahat beradi: deadlock yoki race condition keltirib chiqarishi mumkin bo'lgan o'zgarishni ishga tushirib topib bo'lmaydi, uni muallif ham reviewer ham boshida o'ylab chiqishi kerak. Qo'llanma shu yerda teskari xulosa ham chiqaradi: bu race condition va deadlock mumkin bo'lgan concurrency modelidan umuman foydalanmaslikning yana bir sababi, chunki bunday kodni review qilish va tushunish qiyinlashadi.
 
 Eng ko'p uchraydigan muammo pul va vaqt bilan ishlashda. `double` bilan hisoblangan summa ikki yildan keyin hisobotda tiyin farqi beradi, va bu farqni topish bir hafta oladi.
 
@@ -94,7 +101,11 @@ jobs:
       - run: ./mvnw -B test -Dtest='Arch*Test'
 ```
 
-Shuningdek review da uslub ta'mi haqida bahs qilmaslik kerak. "Men bu yerda stream emas, for loop ni afzal ko'raman" degan izoh muallifning vaqtini oladi va hech narsani yaxshilamaydi. Agar ikkita variant o'qilish darajasida teng bo'lsa, muallif variantini qoldir.
+Uslub bo'yicha qoidani Google qo'llanmasi uch bosqichda beradi va bu bosqichlar review da bahsni tugatish uchun yetadi. Birinchi: uslub masalasida style guide mutlaq hokim, style guide talab qilgan narsa bajariladi. Ikkinchi: style guide da yo'q har qanday sof uslub nuqtasi (probel va shunga o'xshash) shaxsiy xohish, uslub atrofdagi kodga mos bo'lishi kerak. Uchinchi: agar avvaldan uslub bo'lmasa, muallif uslubi qabul qilinadi. Shundan kelib chiqib, "Men bu yerda stream emas, for loop ni afzal ko'raman" degan izoh review izohi emas: qo'llanma shaxsiy uslub xohishi uchun CL ni bloklamaslikni va bunday izohga `Nit:` prefiksini qo'yishni talab qiladi.
+
+Muhim istisno: dizayn uslub emas. Qo'llanma buni alohida ta'kidlaydi, "aspects of software design are almost never a pure style issue or just a personal preference". Dizayn qarori prinsipga tayanadi, shuning uchun "bu shunchaki ta'm masalasi" deb yopib qo'yilmaydi. Lekin agar muallif o'lchov yoki muhandislik prinsipi bilan bir necha yondashuv teng ekanini ko'rsata olsa, reviewer muallif variantini qabul qiladi.
+
+Yana bitta qoida muallif tomoniga tegishli: katta uslub o'zgarishini funksional o'zgarish bilan birga yubormaslik kerak. Aks holda nima o'zgargani ko'rinmaydi, merge va rollback qiyinlashadi. Agar faylni qaytadan formatlash kerak bo'lsa, formatlash alohida PR da ketadi, funksional o'zgarish keyingisida.
 
 | Vaziyat | Oddiy yondashuv | Arxitektor yondashuvi |
 |---|---|---|
@@ -106,20 +117,24 @@ Shuningdek review da uslub ta'mi haqida bahs qilmaslik kerak. "Men bu yerda stre
 | Arxitektura qarori qabul qilindi | Chatda aytiladi va yo'qoladi | ADR yoziladi, shablonda namuna kod paydo bo'ladi |
 | Faqat bitta odam Kafka ni biladi | Hamma unga yo'naltiriladi | Bilim xaritasi, juftlik review, rotatsiya |
 | Yetakchi hamma PR ni o'zi ko'radi | Navbat yetakchiga tiqiladi | Qoidalar avtomatlashtiriladi, review tarqatiladi |
-| Review javob vaqti 2 kun | "Band edim" deyiladi | Kuniga ikki marta review oynasi belgilanadi |
+| Review javob vaqti 2 kun | "Band edim" deyiladi | Chegara bitta ish kuni, javob tabiiy to'xtash nuqtasida |
 | Hisobot query sekin ishlaydi | Keyin optimallashtiramiz deyiladi | PR da EXPLAIN natijasi talab qilinadi |
 
 ## 36.3 Izoh yozish uslubi: muammoni ko'rsat, qaror egasini qoldirib ket
 
-Yaxshi izoh uchta qismdan iborat: nima ko'rdim, nega bu muhim, qaysi yo'nalishda o'ylash kerak. Yechimni buyruq shaklida yozmaslik kerak, chunki kodni muallif yozadi va kontekstni u yaxshi biladi. "Bu yerni ChangeStreamListener ga o'tkaz" degan izoh muallifni ijrochiga aylantiradi. "Bu listener commit dan oldin ishga tushadi, shuning uchun rollback bo'lsa cache eski emas, yangi qiymatni ushlab qoladi. Qanday hal qilsak yaxshi bo'ladi?" degan izoh muallifni o'ylashga majbur qiladi va u ko'pincha sendan yaxshiroq variant topadi.
+Google qo'llanmasi izoh yozishni to'rt qatorga sig'diradi: mehribon bo'l, sababini tushuntir, aniq ko'rsatma berish bilan muammoni ko'rsatib qaror egasini muallifda qoldirish o'rtasida balans saqla, murakkablikni review da senga tushuntirish o'rniga kodni soddalashtirishga yoki kodga izoh qo'shishga undagin. Yaxshi izoh uchta qismdan iborat: nima ko'rdim, nega bu muhim, qaysi yo'nalishda o'ylash kerak. Asosiy qoida CL ni tuzatish reviewer ning emas, muallifning javobgarligi: reviewer yechimni batafsil loyihalashga yoki muallif uchun kod yozishga majbur emas. Lekin balans so'zi muhim, chunki qo'llanma "hech qachon yechim taklif qilma" demaydi: ba'zan to'g'ridan-to'g'ri ko'rsatma, taklif yoki hatto kod ko'proq yordam beradi. Muammoni ko'rsatib qarorni muallifga qoldirish esa ko'pincha o'rgatadi va yaxshiroq yechim beradi, chunki muallif kodga reviewer dan yaqin turadi. "Bu yerni ChangeStreamListener ga o'tkaz" degan izoh muallifni ijrochiga aylantiradi. "Bu listener commit dan oldin ishga tushadi, shuning uchun rollback bo'lsa cache eski emas, yangi qiymatni ushlab qoladi. Qanday hal qilsak yaxshi bo'ladi?" degan izoh muallifni o'ylashga majbur qiladi va u ko'pincha sendan yaxshiroq variant topadi.
 
 Izohda nega ekanini ko'rsatish yagona eng muhim odat. "BigDecimal ishlat" o'rniga "to'lov summasi hisobotda tiyingacha mos kelishi kerak, suzuvchi nuqta uchta amaldan keyin farq beradi" deb yoz. Birinchi izoh bitta qatorni tuzatadi, ikkinchisi odamni o'zgartiradi va keyingi PR da shu muammo bo'lmaydi.
 
 Savol shaklidagi izoh ikki tomonga ham xizmat qiladi. Agar sen xato qilgan bo'lsang, savol shakli sening obro'yingni saqlaydi. Agar muallif xato qilgan bo'lsa, savol unga o'zi topish imkonini beradi.
 
+Odob qoidasining mexanik shakli bor va u juda ishlaydi: izoh kod haqida yoziladi, dasturchi haqida emas. Manbadagi misol shu farqni ko'rsatadi. Yomon: "Why did you use threads here when there's obviously no benefit to be gained from concurrency?" Yaxshi: "The concurrency model here is adding complexity to the system without any actual performance benefit that I can see." Ikkinchi shaklda bir xil texnik fikr bor, lekin unda muallifga tegadigan hech narsa qolmagan.
+
+Oxirgi va eng ko'p o'tkazib yuboriladigan qoida: review da yozilgan tushuntirish kelajakdagi o'quvchiga yetib bormaydi. Agar sen tushunmagan kod haqida savol bersang, to'g'ri natija muallif kodni ravshanroq qayta yozishi. Ba'zan kodga izoh qo'shish ham mos javob, lekin bu izoh keragidan murakkab kodni tushuntirish uchun bo'lmasligi shart. Review oynasida qolgan tushuntirish faqat bir necha holatda yetarli: masalan sen yaxshi bilmagan sohani ko'rib chiqayotganingda, va muallif shu kodning odatdagi o'quvchisi allaqachon biladigan narsani aytayotganda.
+
 ## 36.4 Majburiy va ixtiyoriy izohlarni ajratish
 
-PR da yigirma izoh bo'lsa, muallif qaysi biri birlashishga to'sqinlik qilayotganini bilmaydi. Shuning uchun har bir izohga prefiks qo'yish kerak. Men to'rtta darajani ishlataman: `blocker` (bu holatda birlashtirmaymiz), `kerak` (birlashishdan oldin tuzatiladi), `fikr` (o'ylab ko'r, qaror senda), `maqtov` (yaxshi yechimni ko'rsatish). Oxirgisi bo'sh narsa emas: u review ni jazo mexanizmidan o'rgatish mexanizmiga aylantiradi.
+PR da yigirma izoh bo'lsa, muallif qaysi biri birlashishga to'sqinlik qilayotganini bilmaydi. Google qo'llanmasida bu alohida qoida: izohning og'irligini belgilab qo'y, majburiy o'zgarishni maslahat va taklifdan ajrat. Sababi ham yozilgan: belgisiz izohlarni muallif hammasini majburiy deb o'qishi mumkin, hatto ular faqat ma'lumot uchun yoki ixtiyoriy bo'lsa ham. Manbadagi uch belgi: `Nit:` (mayda narsa, texnik jihatdan qilish kerak, lekin ta'siri katta emas), `Optional:` yoki `Consider:` (yaxshi fikr deb o'ylayman, lekin qat'iy talab emas), `FYI:` (bu CL da qilishingni kutmayman, lekin kelajak uchun o'ylab ko'rishga arziydi). Shu uchlikni to'g'ridan-to'g'ri olish ham mumkin; biz jamoada to'rtta darajani ishlatamiz, chunki bizda birlashishni bloklaydigan daraja alohida kerak. To'rtta daraja: `blocker` (bu holatda birlashtirmaymiz), `kerak` (birlashishdan oldin tuzatiladi), `fikr` (o'ylab ko'r, qaror senda), `maqtov` (yaxshi yechimni ko'rsatish). Oxirgisi bo'sh narsa emas: u review ni jazo mexanizmidan o'rgatish mexanizmiga aylantiradi.
 
 | Prefiks | Ma'nosi | Misol |
 |---|---|---|
@@ -132,7 +147,11 @@ Agar PR da uchdan ko'p `blocker` bo'lsa, izoh yozishni to'xtat va 15 daqiqalik s
 
 ## 36.5 Review hajmi: katta o'zgarishni bo'lish va navbat vaqtini qisqartirish
 
-Review sifati PR hajmiga teskari proportsional. Taxminan 200 qatordan keyin odam diqqati tushadi, 400 qatordan keyin review amalda faqat imzo bo'lib qoladi. Shuning uchun arxitektorning ishi review paytida boshlanmaydi, u PR tuzilishidan boshlanadi. Katta o'zgarishni uchta tabiiy qatlamga bo'lish mumkin: birinchi PR da yangi interfeys va migratsiya skripti, ikkinchisida implementatsiya, uchinchisida eski yo'lni o'chirish.
+Kichik PR tezroq va chuqurroq ko'riladi, kamroq bug keltiradi, rad etilsa kamroq ish yo'qoladi, oson merge va oson rollback bo'ladi. Hajm bo'yicha aniq chegara esa yo'q va manba buni ochiq aytadi: "There are no hard and fast rules about how large is too large. 100 lines is usually a reasonable size for a CL, and 1000 lines is usually too large, but it's up to the judgment of your reviewer." Qatorlar soni yagona o'lchov emas: o'zgarish necha faylga tarqalgani ham hajmga kiradi, bitta fayldagi 200 qatorlik o'zgarish normal bo'lishi mumkin, 50 faylga tarqalgan o'sha 200 qator esa odatda katta. To'g'ri o'lcham ta'rifi qator emas, mazmun: bitta o'zini o'zi to'ldiradigan o'zgarish, u bitta narsani hal qiladi va o'zi bilan testini olib keladi.
+
+Ikki chekka ham xavfli. Reviewer PR ni faqat kattaligi uchun rad qilish huquqiga ega, lekin PR shunchalik kichik ham bo'lmasligi kerak, aks holda uning oqibatini tushunish qiyinlashadi: yangi API qo'shilsa, o'sha API ning ishlatilishi ham shu PR da bo'lishi kerak, aks holda reviewer uni qanday ishlatilishini ko'rmaydi va kodbazaga ishlatilmaydigan API tushadi. Ba'zi katta PR lar esa muammo emas: butun faylni o'chirish reviewer uchun bitta qatorlik ish, ishonchli avtomatik refaktoring vositasi yozgan o'zgarishda esa reviewer ning ishi natijani tasdiqlash.
+
+Shuning uchun arxitektorning ishi review paytida boshlanmaydi, u PR tuzilishidan boshlanadi. Katta o'zgarishni uchta tabiiy qatlamga bo'lish mumkin: birinchi PR da yangi interfeys va migratsiya skripti, ikkinchisida implementatsiya, uchinchisida eski yo'lni o'chirish.
 
 ```bash
 # Katta branch ni ketma-ket PR larga bo'lish
@@ -151,7 +170,13 @@ gh pr list --state merged --limit 50 \
       ((.mergedAt|fromdate) - (.createdAt|fromdate))/3600 | floor] | @tsv'
 ```
 
-Navbat vaqti review ning yashirin narxi. Agar PR ikki kun kutsa, muallif boshqa ishga o'tadi va kontekstni yo'qotadi, qaytib kelganda tuzatish uch barobar qimmat. Kuniga ikki marta belgilangan review oynasi (masalan ertalab va tushdan keyin) navbatni odatda bir necha soatga tushiradi. 200 qatorlik PR uchun maqsad: birinchi javob 4 soat ichida.
+Navbat vaqti review ning yashirin narxi, va bu yerda manbaning qoidasi o'lchanadigan: "One business day is the maximum time it should take to respond to a code review request." Ya'ni chegara javob vaqtida, PR ning boshdan oxirgacha o'tish vaqtida emas. Qo'llanma shu farqni ataylab ta'kidlaydi: alohida javoblarning tez kelishi butun jarayonning tez tugashidan ham muhimroq, chunki dasturchining "review sekin" degan noroziligi aslida javobni kutishdan tug'iladi.
+
+Lekin tezlik qoidasining aniq istisnosi bor va u ko'p jamoada e'tibordan chetda qoladi: diqqat talab qiladigan ish o'rtasida bo'lsang, review uchun o'zingni to'xtatmaysan. Sababi jamoa hisobida: uzilgandan keyin dasturchi ish oqimiga qaytishi uzoq vaqt oladi, shuning uchun kod yozish o'rtasida o'zini uzish jamoaga boshqa dasturchini bir oz kutishdan qimmatroq turadi. To'g'ri yo'l ishdagi tabiiy to'xtash nuqtasini kutish: joriy vazifa tugaganda, tushlikdan keyin, uchrashuvdan qaytganda. Kuniga ikki marta belgilangan review oynasi aynan shu qoidaning amaliy shakli.
+
+Agar PR kelganda to'liq review ga vaqt bo'lmasa, bo'sh turish o'rniga qisqa javob yuborish kerak: qachon ko'raman, yoki kim tezroq ko'rishi mumkin, yoki umumiy dizayn haqida birinchi izohlar. Vaqt mintaqasi farqida esa maqsad muallif o'z ish kuni tugashidan oldin javobni olishi.
+
+Navbatni qisqartiradigan yana bitta vosita ko'p jamoada ishlatilmaydi: izohlar bilan tasdiqlash. Qo'llanma reviewer ga hal qilinmagan izohlar qoldirib ham LGTM berishni tavsiya qiladi, agar uchta shartdan kamida bittasi bajarilsa: reviewer muallif qolgan izohlarni to'g'ri hal qilishiga ishonadi; izohlarni bajarish shart emas; takliflar mayda (import tartibi, yondagi xato yozilgan so'z, ishlatilmagan bog'liqlikni olib tashlash). Reviewer qaysi birini nazarda tutganini aytib qo'yishi kerak. Bu ayniqsa muallif bilan reviewer boshqa vaqt mintaqasida bo'lganda foydali: aks holda muallif faqat "LGTM" so'zi uchun bir kun kutadi.
 
 ## 36.6 Kelishmovchilikni hal qilish: dalil, prototip, uchinchi fikr
 
@@ -174,11 +199,21 @@ CREATE INDEX CONCURRENTLY idx_orders_wh_created
     ON orders (warehouse_id, created_at DESC);
 ```
 
-Agar o'lchov imkonsiz bo'lsa, ikkinchi qadam vaqt chegarasi bilan prototip. Ikki tomon ham yarim kun ichida eng kichik ishlaydigan variantini yozadi va uchrashuvda ikkisini solishtiradi. Uchinchi qadam uchinchi odamni chaqirish, lekin uning roli hakam emas, savol beruvchi. Agar bahs baribir hal bo'lmasa, qaytarilishi oson variantni tanlash kerak: xato variantni bir hafta ichida qaytarish, to'g'ri variantni bir oy kutishdan arzon. Qaror qabul qilinganda uni va sababini yozib qo'y, aks holda uch oydan keyin bir xil bahs qaytadi.
+O'lchovning ustuvorligi manbada prinsip darajasida yozilgan: "Technical facts and data overrule opinions and personal preferences." Shuning uchun birinchi harakat bahsni fikrdan o'lchovga ko'chirish.
+
+Agar o'lchov imkonsiz bo'lsa, ikkinchi qadam vaqt chegarasi bilan prototip. Ikki tomon ham yarim kun ichida eng kichik ishlaydigan variantini yozadi va uchrashuvda ikkisini solishtiradi.
+
+Uchinchi qadam qo'llanmada aniq ketma-ketlik bilan berilgan. Avval muallif va reviewer kelishuvga kelishga harakat qiladi. Kelishuv qiyin bo'lsa, review izohlari o'rniga yuzma-yuz yoki video uchrashuv yordam beradi, lekin natijani PR ga izoh qilib yozib qo'yish shart, aks holda kelajakdagi o'quvchi uchun qaror yo'qoladi. Bu ham yordam bermasa, eskalatsiya: kengaytirilgan jamoa muhokamasi, texnik yetakchining fikri, kod maintainer idan qaror so'rash, yoki menejerni jalb qilish. Eng muhim jumla shu yerda: "Don't let a CL sit around because the author and the reviewer can't come to an agreement." Hal qilinmagan bahs PR ni to'xtatib turishi kelishmovchilikning o'zidan qimmatroq.
+
+Agar bahs baribir hal bo'lmasa, qaytarilishi oson variantni tanlash kerak: xato variantni bir hafta ichida qaytarish, to'g'ri variantni bir oy kutishdan arzon. Qaror qabul qilinganda uni va sababini yozib qo'y, aks holda uch oydan keyin bir xil bahs qaytadi.
 
 ## 36.7 Yangi odamga review orqali o'rgatish
 
-Yangi odamning birinchi PR si uchun qoida oddiy: uchtadan ko'p izoh yozma. Qolgan muammolarni ro'yxatga ol va keyingi PR larga tarqat. Bu yumshoqlik emas, hisob-kitob: bir vaqtda uchta narsadan ko'pini o'rganib bo'lmaydi.
+Review ning o'rgatish vazifasi manbada alohida yozilgan: review tilda, framework da yoki umumiy dizayn prinsiplarida yangi narsa o'rgatishi mumkin, va bilim almashish tizim kod salomatligini uzoq muddatda yaxshilaydi. Lekin shu yerda bitta shart bor: agar izoh faqat o'rgatish uchun bo'lsa va review standartini bajarish uchun zarur bo'lmasa, unga `Nit:` prefiksi qo'yiladi yoki boshqa yo'l bilan majburiy emasligi aytiladi. Aks holda yangi odam o'rgatish izohini blocker deb o'qiydi.
+
+Yangi odamning birinchi PR si uchun bizning jamoa amaliyotimiz: uchtadan ko'p majburiy izoh yozmaymiz, qolgan muammolarni ro'yxatga olib keyingi PR larga tarqatamiz. Bu manbadagi qoida emas, o'lchovga ham tayanmaydi: shunchaki bir vaqtda uchta narsadan ko'pini o'rganib bo'lmaydi degan taxminga asoslangan ish usuli, va jamoa boshqacha kelishishi mumkin.
+
+Teskari yo'nalish ham manbada bor va u ko'pincha e'tibordan chetda qoladi: odamlar faqat xatodan emas, to'g'ri qilgan ishining tasdiqlanishidan ham o'rganadi. Qo'llanma buni ochiq aytadi, o'rgatish nuqtai nazaridan dasturchiga nimani to'g'ri qilganini aytish ba'zan nimani noto'g'ri qilganini aytishdan qimmatroq. Shuning uchun yaxshi yechimni ko'rsatadigan izoh ham sababini olib yurishi kerak.
 
 Ikkinchi qoida izoh ichida havola qoldirish. "Biz bu yerda doim idempotency key ishlatamiz, mana shu servisda namunasi bor" degan izoh kodni ham tuzatadi, ham kodbazani o'rgatadi. Uchinchi qoida teskari yo'nalish: yangi odamga katta PR ni review qilishni berish. U savol berishga majbur bo'ladi va o'sha savollar sening hujjatlaringdagi bo'shliqni ko'rsatadi.
 
@@ -264,20 +299,154 @@ Bir xil narsada ikki rol birlashadi: ikkisi ham odamlar ishini bloklaydigan to's
 
 ## 36.12 Vaqtni taqsimlash: kod, hujjat, suhbat, o'rganish
 
-Taxminiy nisbat haftada shunday ko'rinadi: 40 foiz kod va review, 20 foiz hujjat va qaror, 25 foiz suhbat va juftlik ishi, 15 foiz o'rganish va o'lchash. Kod yozishni butunlay tashlab qo'ygan yetakchi ikki chorakdan keyin kodbazani bilmay qoladi va uning qarorlari xayoliy bo'lib qoladi. Kodning 100 foizini o'zi yozadigan yetakchi esa jamoani o'stirmaydi va bottleneck ga aylanadi.
+Vaqt taqsimotining to'g'ri nisbati bo'yicha o'lchov yo'q va bu yerda raqam yozish ham noto'g'ri bo'ladi: nisbat jamoa hajmiga, mahsulot bosqichiga va yetakchining boshqa majburiyatlariga qarab o'zgaradi. Aniq bo'lgani ikki chekkaning oqibati. Kod yozishni butunlay tashlab qo'ygan yetakchi ikki chorakdan keyin kodbazani bilmay qoladi va uning qarorlari xayoliy bo'lib qoladi. Kodning 100 foizini o'zi yozadigan yetakchi esa jamoani o'stirmaydi va bottleneck ga aylanadi.
 
 Amaliy qoida: haftada kamida bitta haqiqiy PR yoz, lekin kritik yo'ldagi ishni o'zingga olma. Eng yaxshi tanlov shablon loyihaga, observability ga, yoki migratsiyaning birinchi namunasiga tegishli ish. Shunday ish ikki maqsadni bajaradi: sen kontekstni saqlaysan va jamoa nusxa oladigan namuna paydo bo'ladi. Review uchun kuniga ikki oyna ajrat va o'sha oynalarda chuqur ishlamagin, chunki review diqqat talab qiladi.
 
-## 36.13 Amalda qo'llash
+## 36.13 Review standarti: tasdiqlash chegarasi qayerda
+
+Review da eng ko'p yo'qoladigan narsa chegara: reviewer qachon "ha" deydi.
+Google qo'llanmasi buni o'zining eng katta prinsipi deb ataydi va bitta
+jumlada beradi: reviewer CL ni tizimning umumiy kod salomatligini aniq
+yaxshilaydigan holatga kelgandan keyin tasdiqlashni afzal ko'rishi kerak,
+hatto CL mukammal bo'lmasa ham.
+
+Prinsip ikki tomonli muvozanatdan chiqadi. Bir tomondan dasturchi o'z ishida
+oldinga siljishi kerak: agar kodbazaga yaxshilanish hech qachon tushmasa,
+kodbaza yaxshilanmaydi. Qo'llanma ikkinchi ta'sirni ham aytadi, agar reviewer
+har qanday o'zgarishni kiritishni juda qiyinlashtirsa, dasturchilarda
+kelajakda yaxshilash kiritish istagi qolmaydi. Boshqa tomondan reviewer
+har bir CL ning sifati tizim kod salomatligini vaqt o'tishi bilan
+pasaytirmasligini kafolatlashi kerak, chunki kodbaza aynan kichik
+pasayishlar yig'indisidan buziladi, ayniqsa jamoa vaqt tanqisligida
+yo'lni qisqartirish kerak deb hisoblaganda.
+
+Shu yerdan amaliy xulosa chiqadi: "mukammal kod" degan narsa yo'q, faqat
+"yaxshiroq kod" bor. Reviewer muallifdan CL ning har bir mayda qismini
+yaltiratishni talab qilmasligi kerak; maqsad mukammallik emas, uzluksiz
+yaxshilanish. Ta'minlanishi, o'qilishi va tushunilishi yaxshilangan CL
+mukammal emasligi uchun kunlab yoki haftalab turmasligi kerak.
+
+Prinsipning chegarasi ham bor va u ikki tomonlama. Birinchi: agar CL
+reviewer o'z tizimida ko'rishni istamagan funksionallikni qo'shsa, reviewer
+kod yaxshi loyihalangan bo'lsa ham tasdiqlamasligi mumkin. Ikkinchi va
+muhimrog'i: bu prinsip tizim kod salomatligini aniq pasaytiradigan CL ni
+kiritishni oqlamaydi.
+
+Java loyihada chegara shunday ko'rinadi. To'rt servisdan bittasida pulni
+`double` dan `BigDecimal` ga o'tkazgan PR keldi, qolgan uchtasi eski
+holatda. Bu PR tizimni aniq yaxshilaydi, demak u birlashadi va qolgan
+uchtasi uchun alohida ish ochiladi. Teskari misol: PR bitta joyni
+tuzatib, yo'l-yo'lakay tranzaksiya chegarasini tashqi HTTP chaqiruvini
+o'rab oladigan qilib kengaytirgan. Bu PR bir narsani yaxshilab ikkinchisini
+buzadi, shuning uchun u tasdiqlanmaydi.
+
+## 36.14 "Keyin tozalaymiz" va'dasi va qat'iylikdan shikoyat
+
+Review da eng ko'p uchraydigan qarshilik texnik emas: "keling buni
+birlashtiramiz, tozalashni keyingi PR da qilaman". Google qo'llanmasining
+javobi tajribaga tayanadi: muallif asl CL ni yozgandan keyin qancha vaqt
+o'tsa, tozalash ehtimoli shuncha kamayadi, va amalda muallif tozalashni
+darhol qilmasa, u hech qachon bo'lmaydi. Buning sababi dasturchining
+mas'uliyatsizligi emas: uning ishi ko'p va tozalash boshqa ishlar
+oqimida yo'qoladi. Shuning uchun to'g'ri yo'l muallifdan tozalashni
+hozir, kod kodbazaga tushib "tugallangan" holatga o'tishidan oldin
+talab qilish. Qo'llanma buni ochiq ogohlantirish bilan yakunlaydi:
+odamlarga "keyin tozalaymiz" deyishga ruxsat berish kodbazaning
+buzilishining eng ko'p uchraydigan yo'li.
+
+Lekin qoida ikkiga bo'linadi va bu farq amalda hal qiluvchi. Agar CL
+yangi murakkablik keltirsa, u birlashishdan oldin tozalanadi (favqulodda
+holat bundan mustasno). Agar CL atrofdagi mavjud muammoni ochib bergan
+bo'lsa va uni hozir hal qilish imkoni bo'lmasa, muallif tozalash uchun
+ish ochadi va uni o'ziga tayinlaydi, shunda u yo'qolmaydi; ixtiyoriy
+ravishda kodda shu ishga havola qiladigan `TODO` izohi ham qoldiriladi.
+
+| Holat | Kim keltirdi | Qaror |
+|---|---|---|
+| PR to'lov turlari `switch` iga beshinchi shox qo'shdi | PR ning o'zi | Hozir tozalanadi: polimorfizm yoki strategy |
+| PR qo'shgan metod uchta mas'uliyatni oldi | PR ning o'zi | Hozir bo'linadi |
+| PR ning query si indeks yo'qligini ko'rsatdi | Mavjud muammo | Ish ochiladi va muallifga tayinlanadi |
+| PR tekkan klass avvaldan 900 qator edi | Mavjud muammo | Ish ochiladi, `TODO` havola qiladi |
+
+Qat'iylikdan shikoyat alohida mavzu va uning javobi kutilganidan boshqa.
+Agar jamoa avval yumshoq review dan qat'iy review ga o'tsa, ba'zi
+dasturchilar baland ovozda shikoyat qiladi. Qo'llanmaning kuzatishi
+shunday: shikoyatlarning aksariyati review tezligini yaxshilash bilan
+yo'qoladi. Ya'ni "reviewer juda qattiq" degan shikoyat ko'pincha
+"reviewer har uch kunda bir javob beradi va har safar katta o'zgarish
+so'raydi" degan ma'noni yashiradi. Bir xil katta o'zgarishni so'ragan,
+lekin har safar tez javob bergan reviewer dan shikoyat kelmaydi.
+
+## 36.15 Bog'liq jamoalar xaritasi va chegaradagi takroriy ishqalanish
+
+[36.10](#3610-jamoaning-bilim-xaritasi-va-bitta-odamga-bogliqlikni-kamaytirish) dagi xarita jamoa ichiga qaraydi: kim nimani biladi. Undan tashqarida ikkinchi xarita kerak, va u arxitektorga tegishli: jamoang qaysi jamoalarga bog'liq va qaysilari senga bog'liq. Kichik tashkilotda bu xarita boshda turadi, lekin Orosz ning kuzatuvi aniq: o'n ikkitadan ko'p muhandislik jamoasi bo'lgan joyda o'z jamoang kim bilan bog'liqligini aniqlash qiyinlashadi va bilim yo'qoladi (Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr, Pragmatic Engineer, 2023, 12-bob, 177-bet).
+
+Orosz xaritaga besh ro'yxat kiritadi, va ulardan ikkitasi texnik, qolgani mahsulot tomonidan keladi:
+
+- sening jamoang bog'liq bo'lgan jamoalar: API yoki servisini ishlatadiganlaring;
+- sening tizimingga bog'liq jamoalar. Ularni topishning amaliy yo'li oddiy: o'z jamoangga ta'sir qilgan incidentlarni ko'rib chiq va o'zgarish qaysi jamoadan kelganini qara, bog'liq jamoa ko'pincha o'sha yerdan chiqadi;
+- funksiyasi ustma-ust tushish ehtimoli bor jamoalar;
+- agar jamoang interfeys egasi bo'lsa, bir ekranda sening funksiyang bilan birga ko'rinadigan jamoalar;
+- bilvosita bo'lsa ham ishlatadigan infratuzilma jamoalari.
+
+Xarita tayyor bo'lgach, uni hamkasblar va menejerga ko'rsatish kerak: bo'shliq aynan shu yerda ko'rinadi (12-bob, 177-bet). Kim bilan gaplashish kerakligini topishning eng arzon usuli ham shu bobda: tegishli kod satrini oxirgi marta kim o'zgartirganini qarash va o'shanga murojaat qilish.
+
+Xaritaning arxitektura qiymati review chegarasida ochiladi. Orosz tajribali reviewer ning xulqini shunday ta'riflaydi: vaqt zonasi farqidan kelgan ishqalanishni bir necha marta uchratsa, u yechimni review jadvalida emas, review doirasidan tashqarida qidiradi, va bunday yechim ko'pincha oddiy emas: refaktoring, yangi servis yoki interfeys yaratish, instrument yaxshilash. Bog'liqlikni shu yo'l bilan hal qilish ikkala jamoaning ham ishini yengillashtiradi (12-bob, 168-bet).
+
+| Takrorlanuvchi belgi | Noto'g'ri o'qish | Arxitektura o'qishi |
+|---|---|---|
+| Bir xil tashqi jamoa PR larni har hafta to'xtatib turadi | Review tezligi muammosi | Egalik chegarasi noto'g'ri joyda |
+| Har o'zgarish ikki repoda bir vaqtda ketadi | Rejalashtirish muammosi | Interfeys o'rniga umumiy ichki tuzilma ishlatilgan |
+| Javob kelishi doim ertangi kunga qoladi | Vaqt zonasi muammosi | Yo'lda keraksiz sinxron bog'liqlik bor |
+| Ikki jamoa bir xil funksiyani yozyapti | Aloqa muammosi | Xaritadagi ustma-ust tushish ko'rilmagan |
+
+Xulosa bitta qoidaga yig'iladi: review da takrorlanuvchi ishqalanish odam yoki jadval muammosi emas, chegara muammosining belgisi. Chegara to'g'ri qo'yilganda o'sha ishqalanish o'zidan yo'qoladi, va bu arxitektorning ishi, reviewer niki emas.
+
+## 36.16 Amalda qo'llash
 
 - [ ] Review izohlari uchun to'rtta prefiks kelishib ol (`blocker`, `kerak`, `fikr`, `maqtov`) va PR shablonida ularni yoz.
 - [ ] Oxirgi 30 ta PR dagi izohlarni o'qib chiq, formatlash va uslubga tegishli hamma izohni Spotless yoki static analyzer qoidasiga ko'chir.
 - [ ] CI ga uchta darvoza qo'y: `spotless:check`, static analyzer, va `Arch*Test` qoidalari.
 - [ ] ArchUnit da kamida uch qoida yoz: controller to'g'ridan repository ga kirmasin, domen Spring ga bog'lanmasin, pul maydoni `double` bo'lmasin.
-- [ ] PR hajmi va navbat vaqtini o'lchay boshla, 400 qatordan katta PR uchun bo'lish talabini kelish.
+- [ ] PR hajmi va navbat vaqtini o'lchay boshla: javob chegarasi bitta ish kuni, hajm chegarasi esa qator soni emas, bitta o'zini o'zi to'ldiradigan o'zgarish.
+- [ ] Izoh og'irligi belgilarini PR shablonida yoz va o'rgatish uchun yozilgan izohga majburiy emasligini ko'rsatadigan belgi qo'y.
+- [ ] "Keyin tozalaymiz" uchun qoida kelish: PR keltirgan murakkablik hozir tozalanadi, PR ochib bergan mavjud muammo uchun ish ochiladi va muallifga tayinlanadi.
 - [ ] Jamoa bilim xaritasini jadval shaklida yoz va har bir kritik tizim uchun ikkinchi odamni belgila.
 - [ ] Oxirgi uch arxitektura qarorini bir sahifalik hujjat qilib yoz va har biriga namuna kod joyini havola qil.
 - [ ] Shablon loyiha yarat yoki yangila: pool, timeout, graceful shutdown, metrikalar, migratsiya va test bazasi tayyor bo'lsin.
+
+## Manbalar
+
+- Google, *Engineering Practices: The Standard of Code Review*
+  ([https://github.com/google/eng-practices/blob/3bb3ec2/review/reviewer/standard.md](https://github.com/google/eng-practices/blob/3bb3ec2/review/reviewer/standard.md), commit `3bb3ec2`,
+  CC BY 3.0) - 36.2, 36.6, 36.7, 36.13 dagi tasdiqlash chegarasi, uslub
+  hokimiyati, dalil ustunligi va eskalatsiya yo'li.
+- Google, *Engineering Practices: What to Look For in a Code Review*
+  ([https://github.com/google/eng-practices/blob/3bb3ec2/review/reviewer/looking-for.md](https://github.com/google/eng-practices/blob/3bb3ec2/review/reviewer/looking-for.md), commit
+  `3bb3ec2`, CC BY 3.0) - 36.1 dagi dizayn ustuvorligi, murakkablik
+  ta'rifi, over-engineering va parallel kod.
+- Google, *Engineering Practices: Speed of Code Reviews*
+  ([https://github.com/google/eng-practices/blob/3bb3ec2/review/reviewer/speed.md](https://github.com/google/eng-practices/blob/3bb3ec2/review/reviewer/speed.md), commit `3bb3ec2`,
+  CC BY 3.0) - 36.5 dagi bitta ish kuni chegarasi, uzilish qoidasi va
+  izohlar bilan tasdiqlash.
+- Google, *Engineering Practices: How to Write Code Review Comments*
+  ([https://github.com/google/eng-practices/blob/3bb3ec2/review/reviewer/comments.md](https://github.com/google/eng-practices/blob/3bb3ec2/review/reviewer/comments.md), commit `3bb3ec2`,
+  CC BY 3.0) - 36.3 dagi balans, kod haqida gapirish va 36.4 dagi izoh
+  og'irligi belgilari.
+- Google, *Engineering Practices: Handling Pushback in Code Reviews*
+  ([https://github.com/google/eng-practices/blob/3bb3ec2/review/reviewer/pushback.md](https://github.com/google/eng-practices/blob/3bb3ec2/review/reviewer/pushback.md), commit `3bb3ec2`,
+  CC BY 3.0) - 36.14 dagi "keyin tozalaymiz" qoidasi va qat'iylikdan
+  shikoyat.
+- Google, *Engineering Practices: Small CLs*
+  ([https://github.com/google/eng-practices/blob/3bb3ec2/review/developer/small-cls.md](https://github.com/google/eng-practices/blob/3bb3ec2/review/developer/small-cls.md), commit
+  `3bb3ec2`, CC BY 3.0) - 36.5 dagi hajm chegaralari, fayl soni ta'siri va
+  katta PR qabul qilinadigan holatlar.
+- Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr,
+  Pragmatic Engineer, 2023, 12-bob, "Collaboration and Teamwork"
+  (168 va 177-betlar) - 36.15 dagi bog'liq jamoalar xaritasining besh
+  ro'yxati, oxirgi o'zgartirgan odamni topish usuli va takrorlanuvchi
+  review ishqalanishini review dan tashqarida hal qilish.
 
 ---
 

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 24. SQL, so'rov rejasi va indeks review (SQL, Plans and Indexes)
 
@@ -299,6 +299,12 @@ psql -c "ALTER SYSTEM SET log_min_duration_statement = '200ms';" -c "SELECT pg_r
 - [ ] `Page` ishlatadigan katta jadval so'rovlarini `Slice` yoki keyset pagination ga o'tkazing.
 - [ ] Yangi indeks qo'shadigan PR lar uchun `EXPLAIN (ANALYZE, BUFFERS)` natijasini majburiy talab qilib qo'ying.
 - [ ] JSONB ustunlari uchun `CHECK` constraint va indeks borligini tekshiring.
+
+## Manbalar
+
+- [PostgreSQL 17, Performance Tips](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/perform.sgml) - `EXPLAIN` va `EXPLAIN ANALYZE` ni o'qish, planner statistikasi va baho bilan haqiqat orasidagi farq
+- [PostgreSQL 17, Indexes](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/indices.sgml) - indeks turlari, ustun tartibi va qoplovchi indeks
+- [PostgreSQL 17, Server Configuration](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/config.sgml) - planner ga ta'sir qiladigan parametrlar va ularning default qiymatlari
 
 ---
 

@@ -1,0 +1,1270 @@
+# Kitob qamrovi: qaysi kitob bobi korpusga kirgan.
+#
+# Manba: `akaukaclaude-sys/books` repozitoriysi, 51 manba (kitob,
+# spetsifikatsiya va JEP hujjati).
+# Bir qator - bitta kitob bobi (Effective Java da bitta Item), ya'ni
+# qoida manbasining eng kichik mustaqil bo'lagi. Qator soni kitob
+# PDF sidagi outline dan olingan, qo'lda emas: bob o'tkazib yuborilmaydi.
+#
+# kitob    - qisqa kalit, pastdagi jadvalda to'liq nomi
+# bob      - kitobdagi bob yoki Item raqami, `A` appendix
+# sahifa   - PDF sahifasi, bob boshlanishi
+# sarlavha - kitobdagi inglizcha sarlavha, o'zgartirilmaydi
+# hujjat   - qoida tushadigan hujjat, `-` qamrovdan tashqari
+# holat    - kirmagan | qoshildi | bor | tashqari
+# izoh     - `bor` va `tashqari` uchun sabab, qisqa
+#
+# holat ma'nosi:
+#   kirmagan  - bob hali ko'rilmagan
+#   qoshildi  - bobdagi qoida korpusga yozilgan, bo'lim izohda
+#   bor        - qoida korpusda allaqachon to'liq bor, izohda bo'lim
+#   tashqari  - korpus qamrovidan tashqari (GUI, desktop, imtihon mashqi)
+#
+# Kitob kalitlari:
+#   clean-code-book  Robert C. Martin, Clean Code
+#   clean-arch       Robert C. Martin, Clean Architecture
+#   effective-java   Joshua Bloch, Effective Java 3rd
+#   jcip             Brian Goetz, Java Concurrency in Practice
+#   java-ref         Schildt, Java The Complete Reference 12-nashr (2022)
+#   ocp-study        Boyarsky/Selikoff, OCP Java SE 17 Study Guide
+#   ocp-practice     Boyarsky/Selikoff, OCP Java SE 17 Practice Tests
+#   hfdp             Freeman/Robson, Head First Design Patterns 2nd
+#   micro-patterns   Chris Richardson, Microservices Patterns
+#   spring-micro     John Carnell, Spring Microservices in Action
+#   spring-action    Craig Walls, Spring in Action 6th
+#   spring-security  Laurentiu Spilca, Spring Security in Action
+#   eip              Hohpe/Woolf, Enterprise Integration Patterns
+#   poeaa            Martin Fowler, Patterns of Enterprise Application Architecture
+#   xunit            Gerard Meszaros, xUnit Test Patterns
+#   release-it       Michael Nygard, Release It! 1-nashr (2007)
+#   k8s-patterns     Ibryam/Huss, Kubernetes Patterns 1-nashr (2019)
+#   dds              Brendan Burns, Designing Distributed Systems
+#   refactoring      Martin Fowler, Refactoring 1-nashr (1999)
+#   refactoring2     Martin Fowler, Refactoring 2-nashr (2019), faqat preview
+#   code-complete    Steve McConnell, Code Complete 2-nashr
+#   swe-google       Winters/Manshreck/Wright, Software Engineering at Google
+#   arc              Boswell/Foucher, The Art of Readable Code
+#   fundamentals     Richards/Ford, Fundamentals of Software Architecture
+#   hard-parts       Ford va boshqalar, Software Architecture: The Hard Parts
+#   just-enough      George Fairbanks, Just Enough Software Architecture
+#   sa-for-devs      Simon Brown, Software Architecture for Developers
+#   doc-sa           Clements va boshqalar, Documenting Software Architectures, qism
+#   ddd-evans        Eric Evans, Domain-Driven Design (2003 manuskript nusxasi)
+#   learning-ddd     Vlad Khononov, Learning Domain-Driven Design
+#   legacy-code      Michael Feathers, Working Effectively with Legacy Code
+#   m2m              Sam Newman, Monolith to Microservices
+#   building-micro2  Sam Newman, Building Microservices 2-nashr
+#   pg-internals     Egor Rogov, PostgreSQL 14 Internals
+#   sys-perf         Brendan Gregg, Systems Performance, faqat 6-bob
+#   java-perf        Jack Shirazi, Java Performance Tuning 2-nashr (2003)
+#   philosophy       John Ousterhout, A Philosophy of Software Design
+#   jls              The Java Language Specification, Java SE 25
+#   jvms             The Java Virtual Machine Specification, Java SE 25
+#   jeps             OpenJDK JEP hujjatlari
+#   wgjd             Evans/Verburg, The Well-Grounded Java Developer, 4-bob namunasi
+#   clrs             Cormen va boshqalar, Introduction to Algorithms 3-nashr
+#   deitel           Deitel, Java How to Program 9-nashr
+#   deitel10         Deitel, Java How to Program 10-nashr, Early Objects
+#   liang9           Y. Daniel Liang, Introduction to Java Programming 9-nashr
+#   schildt11        Schildt, Java The Complete Reference 11-nashr (2019). 17-bobdan
+#                    keyin raqam java-ref dan bittaga kam: schildt11 N = java-ref N+1
+#   gof              Gamma, Helm, Johnson, Vlissides, Design Patterns
+#                    (copyright 1995, LC ma'lumotida 1994; nusxa 37-nashr)
+#   orosz            Gergely Orosz, The Software Engineer's Guidebook (2023)
+#   evolutionary-keynote  Neal Ford, Building Evolutionary Architectures taqdimoti
+#   learning-ddd-html     Khononov kitobining Google Books sahifasi
+#   ddia             Martin Kleppmann, Designing Data-Intensive Applications
+#
+# Kitob matni repozitoriyga ko'chirilmaydi: mualliflik huquqi. Korpusga
+# qoidaning o'zi o'zbekcha nasr bilan yoziladi va `## Manbalar` da kitob
+# nomi va bob raqami ko'rsatiladi (CONTRIBUTING.md, "Manbalar").
+#
+# Tekshiruv darajasi: `qoshildi` qatorlar bob matni o'qilib yozilgan;
+# `bor` qatorlar mavzu darajasida solishtirilgan (qoida nomi va kalit
+# atamalari korpusda qidirilgan, mos bo'lim topilgan). Ya'ni `bor`
+# qatorda qoida bor, lekin uning har bir jumlasi kitobga solishtirilgan
+# emas: bu `docs/review.tsv` dagi bob tekshiruvining ishi.
+#
+# BO'LIM DARAJASIDAGI AUDIT (2026-10-17). Bob darajasidagi `bor`
+# bobning har bir nomlangan qoidasi borligini bildirmaydi. Shuni
+# tekshirish uchun olti kitob bo'lim darajasida audit qilindi:
+# clean-arch, code-complete, legacy-code, philosophy, poeaa, xunit.
+# 1218 nomlangan qoidadan 979 tasi korpusda bor edi, 155 tasi yo'q
+# edi va shu sessiyada yozildi, 84 tasi `tashqari`. Eng past qamrov
+# legacy-code da: 123 dan 44 tasi yo'q edi.
+#
+# Qolgan 34 kitob HAMON BOB DARAJASIDA. Ular uchun `bor` qatori
+# "bobning mavzusi korpusda bor" degani, "bobning har bir nomlangan
+# qoidasi bor" degani EMAS. Quyidagilarga audit kerak emas, chunki
+# ularning qatori allaqachon eng mayda birlik: effective-java (Item),
+# gof va doc-sa (bo'lim), sa-for-devs (uch betlik bob), jeps (bitta
+# JEP), orosz, schildt11, sys-perf, wgjd, evolutionary-keynote,
+# learning-ddd-html.
+#
+# Holat (2026-10-17): 1155 qatordan 684 tasi `bor`, 236 tasi `qoshildi`,
+# 230 tasi `tashqari`, 5 tasi `kirmagan`.
+#
+# Qolgan besh `kirmagan` ning sababi bitta: bob tanasi nusxada yo'q
+# (fundamentals 21-23, doc-sa 1-11, sys-perf 1-5 va 7-13). Ular
+# taxmin bilan yopilmadi.
+#
+# Orosz kitobining katta qismi (karera, performance review, lavozim,
+# jamoa dinamikasi) `tashqari`: korpus Java, Spring va PostgreSQL
+# bo'yicha olti texnik hujjat, bu mavzularning uyi yo'q.
+#
+# kitob	bob	sahifa	sarlavha	hujjat	holat	izoh
+clean-code-book	1	32	Chapter 1: Clean Code	clean-code	bor	clean-code 1
+clean-code-book	2	48	Chapter 2: Meaningful Names	clean-code	bor	clean-code 2, 3 nomlash
+clean-code-book	3	62	Chapter 3: Functions	clean-code	bor	clean-code 4, 5 funksiya
+clean-code-book	4	84	Chapter 4: Comments	clean-code	bor	clean-code 8, 9 izoh
+clean-code-book	5	106	Chapter 5: Formatting	clean-code	bor	clean-code 11, 12, 13 formatlash
+clean-code-book	6	124	Chapter 6: Objects and Data Structures	clean-code	qoshildi	clean-code 14, Manbalar qo`shildi
+clean-code-book	7	134	Chapter 7: Error Handling	clean-code	bor	clean-code 18, 19 xato
+clean-code-book	8	144	Chapter 8: Boundaries	clean-code	qoshildi	clean-code 14.11, 14.12; testing 9.14
+clean-code-book	9	152	Chapter 9: Unit Tests	clean-code	bor	clean-code 30, 31.1; testing 5.2 FIRST
+clean-code-book	10	166	Chapter 10: Classes	clean-code	bor	clean-code 11.1; patterns 26.1, 26.5; code-review 7
+clean-code-book	11	184	Chapter 11: Systems	clean-code	qoshildi	architect 15.12; architect 3.3 last responsible moment
+clean-code-book	12	202	Chapter 12: Emergence	clean-code	qoshildi	clean-code 31.8 sodda dizayn to`rt qoidasi
+clean-code-book	13	208	Chapter 13: Concurrency	clean-code	qoshildi	architect 11.1 kodni ajratish, 11.15 qulf qamrovi
+clean-code-book	14	224	Chapter 14: Successive Refinement	-	tashqari	bosqichma-bosqich refaktoring keys-stadi, qoida emas
+clean-code-book	15	282	Chapter 15: JUnit Internals	-	tashqari	JUnit ichki tuzilishi keys-stadi
+clean-code-book	16	298	Chapter 16: Refactoring SerialDate	-	tashqari	SerialDate refaktoring keys-stadi
+clean-code-book	17	316	Chapter 17: Smells and Heuristics	clean-code	bor	clean-code 32, 33, 34 evristika katalogi
+clean-code-book	AA	348	Appendix A: Concurrency II	clean-code	bor	architect 11, 12 konkurentlik mexanikasi
+clean-code-book	AB	380	Appendix B: org.jfree.date.SerialDate	-	tashqari	SerialDate manba kodi
+clean-code-book	AC	440	Appendix C: Cross References of Heuristics	clean-code	bor	clean-code 34 evristika ro`yxati
+java-ref	1	38	Chapter 1 The History and Evolution of Java	clean-code	bor	architect 13 zamonaviy Java
+java-ref	2	56	Chapter 2 An Overview of Java	clean-code	bor	clean-code 1, architect 13
+java-ref	3	74	Chapter 3 Data Types, Variables, and Arrays	clean-code	bor	clean-code 20.3-20.6, 23.10
+java-ref	4	102	Chapter 4 Operators	clean-code	bor	clean-code 6, 20.3-20.5
+java-ref	5	122	Chapter 5 Control Statements	clean-code	bor	clean-code 6, 7
+java-ref	6	152	Chapter 6 Introducing Classes	clean-code	bor	clean-code 14, 16
+java-ref	7	172	Chapter 7 A Closer Look at Methods and Classes	clean-code	bor	clean-code 4, 5, 17
+java-ref	8	206	Chapter 8 Inheritance	clean-code	bor	clean-code 17 vorislik
+java-ref	9	234	Chapter 9 Packages and Interfaces	clean-code	bor	patterns 24.32 JPMS, architect 4.8
+java-ref	10	262	Chapter 10 Exception Handling	clean-code	bor	clean-code 18, 19
+java-ref	11	282	Chapter 11 Multithreaded Programming	clean-code	bor	architect 11
+java-ref	12	312	Chapter 12 Enumerations, Autoboxing, and Annotations	clean-code	bor	clean-code 25.9, 25.11
+java-ref	13	350	Chapter 13 I/O, Try-with-Resources, and Other Topics	clean-code	bor	clean-code 19.4, 19.13
+java-ref	14	382	Chapter 14 Generics	clean-code	bor	clean-code 23.7-23.10
+java-ref	15	426	Chapter 15 Lambda Expressions	clean-code	bor	clean-code 24 lambda va oqim
+java-ref	16	456	Chapter 16 Modules	clean-code	bor	patterns 24.32 JPMS
+java-ref	17	484	Chapter 17 Switch Expressions, Records, and Other Recently Added Features	clean-code	bor	architect 13.1 record, code-review 17.3 pattern matching
+java-ref	18	518	Chapter 18 String Handling	clean-code	bor	clean-code 21 satr va regex
+java-ref	19	546	Chapter 19 Exploring java.lang	clean-code	bor	clean-code 15, 20, 25
+java-ref	20	606	Chapter 20 java.util Part 1: The Collections Framework	clean-code	bor	clean-code 23 to`plamlar
+java-ref	21	688	Chapter 21 java.util Part 2: More Utility Classes	clean-code	bor	clean-code 22 sana va vaqt
+java-ref	22	748	Chapter 22 Input/Output: Exploring java.io	clean-code	bor	clean-code 19.13 fayl va yo`l
+java-ref	23	798	Chapter 23 Exploring NIO	clean-code	bor	clean-code 19.13 NIO
+java-ref	24	830	Chapter 24 Networking	-	tashqari	korpus qamrovidan tashqari
+java-ref	25	854	Chapter 25 Event Handling	-	tashqari	korpus qamrovidan tashqari
+java-ref	26	886	Chapter 26 Introducing the AWT: Working with Windows, Graphics, and Text	-	tashqari	korpus qamrovidan tashqari
+java-ref	27	914	Chapter 27 Using AWT Controls, Layout Managers, and Menus	-	tashqari	korpus qamrovidan tashqari
+java-ref	28	964	Chapter 28 Images	-	tashqari	korpus qamrovidan tashqari
+java-ref	29	990	Chapter 29 The Concurrency Utilities	clean-code	bor	architect 11.5-11.9 konkurentlik vositalari
+java-ref	30	1040	Chapter 30 The Stream API	clean-code	bor	clean-code 24 oqim
+java-ref	31	1066	Chapter 31 Regular Expressions and Other Packages	clean-code	bor	clean-code 21.6, 21.7 regex
+java-ref	32	1096	Chapter 32 Introducing Swing	-	tashqari	korpus qamrovidan tashqari
+java-ref	33	1114	Chapter 33 Exploring Swing	-	tashqari	korpus qamrovidan tashqari
+java-ref	34	1144	Chapter 34 Introducing Swing Menus	-	tashqari	korpus qamrovidan tashqari
+java-ref	35	1180	Chapter 35 Java Beans	-	tashqari	korpus qamrovidan tashqari
+java-ref	36	1192	Chapter 36 Introducing Servlets	-	tashqari	korpus qamrovidan tashqari
+java-ref	AA	1218	Appendix A Using Java’s Documentation Comments	clean-code	bor	clean-code 10.1, 10.3, 10.5, 10.6 Javadoc va API hujjati
+java-ref	AB	1226	Appendix B Introducing JShell	-	tashqari	korpus qamrovidan tashqari
+java-ref	AC	1236	Appendix C Compile and Run Simple Single-File Programs in One Step	-	tashqari	korpus qamrovidan tashqari
+ddia	1	25	Chapter 1. Reliable, Scalable, and Maintainable Applications	architect	bor	architect 1, 7, 37 SLO
+ddia	2	49	Chapter 2. Data Models and Query Languages	architect	bor	architect 25, patterns 9
+ddia	3	91	Chapter 3. Storage and Retrieval	architect	qoshildi	architect 23.13 B-tree va LSM
+ddia	4	133	Chapter 4. Encoding and Evolution	architect	bor	patterns 16.34, testing 9.10, architect 13.9
+ddia	5	173	Chapter 5. Replication	architect	bor	architect 26, patterns 28.1-28.16
+ddia	6	221	Chapter 6. Partitioning	architect	bor	architect 26 partitioning
+ddia	7	243	Chapter 7. Transactions	architect	bor	architect 22 MVCC va izolyatsiya
+ddia	8	295	Chapter 8. The Trouble with Distributed Systems	architect	qoshildi	architect 32.13 soat, patterns 28.12 fencing
+ddia	9	343	Chapter 9. Consistency and Consensus	architect	bor	patterns 28.13 linearizability, 28.14 kauzal
+ddia	10	411	Chapter 10. Batch Processing	architect	bor	patterns 20 batch, 21
+ddia	11	461	Chapter 11. Stream Processing	architect	bor	architect 29 Kafka, patterns 16
+ddia	12	511	Chapter 12. The Future of Data Systems	-	tashqari	kelajak haqida mulohaza, qoida emas
+hfdp	Intro	27	Intro	patterns	bor	patterns README, 26 printsiplar
+hfdp	1	39	1: intro to Design Patterns: Welcome to Design Patterns	patterns	bor	patterns 3.9 Strategy, 26.24 Encapsulate What Varies
+hfdp	2	75	2: the Observer Pattern: Keeping your Objects in the Know	patterns	bor	patterns 3.7 Observer
+hfdp	3	117	3: the Decorator Pattern: Decorating Objects	patterns	bor	patterns 2.4 Decorator
+hfdp	4	147	4: the Factory Pattern: Baking with OO Goodness	patterns	bor	patterns 1.7 Factory Method, 1.8 Abstract Factory
+hfdp	5	207	5 the Singleton Pattern: One-of-a-Kind Objects	patterns	bor	patterns 1.1 Singleton
+hfdp	6	229	6: the Command Pattern: Encapsulating Invocation	patterns	bor	patterns 3.2 Command
+hfdp	7	275	7: the Adapter and Facade Patterns: Being Adaptive	patterns	bor	patterns 2.1 Adapter, 2.5 Facade
+hfdp	8	315	8: the Template Method Pattern: Encapsulating Algorithms	patterns	bor	patterns 3.10 Template Method
+hfdp	9	355	9: the Iterator and Composite Patterns: Well-Managed Collections	patterns	bor	patterns 3.4 Iterator, 2.3 Composite
+hfdp	10	419	10: the State Pattern: The State of Things	patterns	bor	patterns 3.8 State
+hfdp	11	463	11: the Proxy Pattern: Controlling Object Access	patterns	bor	patterns 2.7 Proxy
+hfdp	12	531	12: compound patterns: Patterns of Patterns	patterns	bor	patterns 3.27 kompozit pattern, 6.1 MVC
+hfdp	13	601	13: better living with patterns: Patterns in the Real World	patterns	bor	patterns 25 anti-pattern, 26 printsiplar
+hfdp	14	635	14: appendix: Leftover Patterns	-	tashqari	korpus qamrovidan tashqari
+jcip	1	18	Chapter 1 - Introduction	architect	bor	architect 11.1
+jcip	2	28	Chapter 2. Thread Safety	architect	bor	architect 11.3, 11.12
+jcip	3	40	Chapter 3. Sharing Objects	architect	qoshildi	architect 11.13 xavfsiz nashr
+jcip	4	54	Chapter 4. Composing Objects	architect	qoshildi	architect 11.12, 11.13 @GuardedBy
+jcip	5	68	Chapter 5. Building Blocks	architect	bor	architect 11.7 thread-safe to`plamlar
+jcip	6	89	Chapter 6. Task Execution	architect	bor	architect 11.8 ExecutorService
+jcip	7	102	Chapter 7. Cancellation and Shutdown	architect	qoshildi	architect 11.14 bekor qilish va interrupt
+jcip	8	121	Chapter 8. Applying Thread Pools	architect	qoshildi	architect 11.8 saturation, 11.14 starvation deadlock
+jcip	9	134	Chapter 9. GUI Applications	-	tashqari	GUI, korpus qamrovidan tashqari
+jcip	10	145	Chapter 10. Avoiding Liveness Hazards	architect	bor	architect 11.10, code-review 15.4 lock ordering
+jcip	11	154	Chapter 11. Performance and Scalability	architect	qoshildi	architect 8.11 Amdahl, 11.15 qulf raqobati
+jcip	12	170	Chapter 12. Testing Concurrent Programs	architect	bor	testing 11.12 konkurentlik testi
+jcip	13	188	Chapter 13 - Explicit Locks	architect	bor	architect 11.4 ReentrantLock
+jcip	14	196	Chapter 14 - Building Custom Synchronizers	architect	bor	architect 11.14, patterns 4.12 Guarded Suspension
+jcip	15	212	Chapter 15. Atomic Variables and Non-blocking Synchronization	architect	bor	architect 11.5 atomic va CAS
+jcip	16	224	Chapter 16. The Java Memory Model	architect	bor	architect 11.6 volatile va happens-before
+ocp-study	1	2	Chapter 1 Building Blocks	clean-code	bor	clean-code 3, 20.5
+ocp-study	2	66	Chapter 2 Operators	clean-code	bor	clean-code 6, 20.3-20.5
+ocp-study	3	102	Chapter 3 Making Decisions	clean-code	bor	clean-code 6, 7
+ocp-study	4	156	Chapter 4 Core APIs	clean-code	bor	clean-code 21, 22, 23
+ocp-study	5	220	Chapter 5 Methods	clean-code	bor	clean-code 4, 5
+ocp-study	6	276	Chapter 6 Class Design	clean-code	bor	clean-code 14, 16, 17
+ocp-study	7	346	Chapter 7 Beyond Classes	clean-code	bor	clean-code 17.10 sealed, 25.9 enum, 25.7 ichki sinf
+ocp-study	8	420	Chapter 8 Lambdas and Functional Interfaces	clean-code	bor	clean-code 24.1-24.3
+ocp-study	9	464	Chapter 9 Collections and Generics	clean-code	bor	clean-code 23
+ocp-study	10	532	Chapter 10 Streams	clean-code	bor	clean-code 24.4-24.9
+ocp-study	11	592	Chapter 11 Exceptions and Localization	clean-code	bor	clean-code 18, 19; i18n patterns 5.30
+ocp-study	12	662	Chapter 12 Modules	clean-code	bor	patterns 24.32 JPMS
+ocp-study	13	722	Chapter 13 Concurrency	clean-code	bor	architect 11, 12
+ocp-study	14	786	Chapter 14 I/O	clean-code	bor	clean-code 19.13 Path va Files
+ocp-study	15	864	Chapter 15 JDBC	clean-code	bor	patterns 9.34 Spring Data JDBC, architect 18
+ocp-study	AA	910	Appendix Answers to the Review Questions	-	tashqari	korpus qamrovidan tashqari
+spring-micro	1	26	1 Welcome to the cloud, Spring	patterns	bor	patterns 12, 14 mikroservis arxitekturasi
+spring-micro	2	60	2 Building microservices with Spring Boot	patterns	bor	architect 16 Spring Boot mexanikasi
+spring-micro	3	89	3 Controlling your configuration with Spring Cloud configuration server	patterns	bor	patterns 14.30 Externalized Configuration
+spring-micro	4	121	4 On service discovery	patterns	bor	patterns 14.x servis topish; Eureka o`rnida Spring Cloud Discovery
+spring-micro	5	144	5 When bad things happen: client resiliency patterns with Spring Cloud and Netflix Hystrix	patterns	bor	patterns 17.2 Circuit Breaker, 17.39 Resilience4j; Hystrix EOL
+spring-micro	6	178	6 Service routing with Spring Cloud and Zuul	patterns	bor	patterns 17.31, 14 API Gateway; Zuul o`rnida Spring Cloud Gateway
+spring-micro	7	217	7 Securing your microservices	patterns	bor	architect 20, patterns 18 xavfsizlik
+spring-micro	8	253	8 Event-driven architecture with Spring Cloud Stream	patterns	bor	patterns 16.37 Spring Cloud Stream
+spring-micro	9	284	9 Distributed tracing with Spring Cloud Sleuth and Zipkin	patterns	bor	patterns 21.4 Distributed Tracing; Sleuth o`rnida Micrometer Tracing
+spring-micro	10	313	10 Deploying your microservices	patterns	bor	patterns 22, architect 31 deployment
+effective-java	1	26	Item 1: Consider static factory methods instead of constructors	clean-code	bor	patterns 1.2 static factory
+effective-java	2	31	Item 2: Consider a builder when faced with many constructor parameters	clean-code	bor	clean-code 16.5 builder
+effective-java	3	38	Item 3: Enforce the singleton property with a private constructor or an enum type	clean-code	bor	patterns 1.1 singleton
+effective-java	4	40	Item 4: Enforce noninstantiability with a private constructor	clean-code	bor	clean-code 14.8
+effective-java	5	41	Item 5: Prefer dependency injection to hardwiring resources	clean-code	bor	architect 15.5
+effective-java	6	43	Item 6: Avoid creating unnecessary objects	clean-code	bor	clean-code 20.6
+effective-java	7	47	Item 7: Eliminate obsolete object references	clean-code	bor	architect 10, 14
+effective-java	8	50	Item 8: Avoid finalizers and cleaners	clean-code	bor	clean-code 25.6
+effective-java	9	55	Item 9: Prefer try-with-resources to try-finally	clean-code	bor	clean-code 19.4
+effective-java	10	58	Item 10: Obey the general contract when overriding equals	clean-code	bor	clean-code 15.1
+effective-java	11	71	Item 11: Always override hashCode when you override equals	clean-code	bor	clean-code 15.2
+effective-java	12	76	Item 12: Always override toString	clean-code	bor	clean-code 15.7
+effective-java	13	79	Item 13: Override clone judiciously	clean-code	bor	clean-code 15.8
+effective-java	14	87	Item 14: Consider implementing Comparable	clean-code	bor	clean-code 15.6
+effective-java	15	94	Item 15: Minimize the accessibility of classes and members	clean-code	bor	clean-code 14.6
+effective-java	16	99	Item 16: In public classes, use accessor methods, not public fields	clean-code	bor	clean-code 14.1
+effective-java	17	101	Item 17: Minimize mutability	clean-code	bor	clean-code 16.1
+effective-java	18	108	Item 18: Favor composition over inheritance	clean-code	bor	clean-code 17.9
+effective-java	19	114	Item 19: Design and document for inheritance or else prohibit it	clean-code	bor	clean-code 17.1
+effective-java	20	120	Item 20: Prefer interfaces to abstract classes	clean-code	bor	clean-code 17.7
+effective-java	21	125	Item 21: Design interfaces for posterity	clean-code	qoshildi	clean-code 17.7 default metod xavfi
+effective-java	22	128	Item 22: Use interfaces only to define types	clean-code	bor	clean-code 17.8
+effective-java	23	130	Item 23: Prefer class hierarchies to tagged classes	clean-code	qoshildi	clean-code 17.10 sealed ierarxiya
+effective-java	24	133	Item 24: Favor static member classes over nonstatic	clean-code	bor	clean-code 25.7
+effective-java	25	136	Item 25: Limit source files to a single top-level class	clean-code	qoshildi	clean-code 11.10
+effective-java	26	138	Item 26: Don’t use raw types	clean-code	bor	clean-code 23.7
+effective-java	27	144	Item 27: Eliminate unchecked warnings	clean-code	bor	clean-code 23.7
+effective-java	28	147	Item 28: Prefer lists to arrays	clean-code	bor	clean-code 23.10
+effective-java	29	151	Item 29: Favor generic types	clean-code	bor	clean-code 23.9
+effective-java	30	156	Item 30: Favor generic methods	clean-code	bor	clean-code 23.9
+effective-java	31	160	Item 31: Use bounded wildcards to increase API flexibility	clean-code	bor	clean-code 23.8 PECS
+effective-java	32	167	Item 32: Combine generics and varargs judiciously	clean-code	qoshildi	clean-code 5.9 @SafeVarargs
+effective-java	33	172	Item 33: Consider typesafe heterogeneous containers	clean-code	qoshildi	clean-code 23.9 heterogen konteyner
+effective-java	34	178	Item 34: Use enums instead of int constants	clean-code	bor	clean-code 3.5, 25.9
+effective-java	35	189	Item 35: Use instance fields instead of ordinals	clean-code	qoshildi	clean-code 25.11
+effective-java	36	190	Item 36: Use EnumSet instead of bit fields	clean-code	bor	clean-code 25.9
+effective-java	37	192	Item 37: Use EnumMap instead of ordinal indexing	clean-code	bor	clean-code 25.9
+effective-java	38	197	Item 38: Emulate extensible enums with interfaces	clean-code	qoshildi	clean-code 25.11
+effective-java	39	201	Item 39: Prefer annotations to naming patterns	clean-code	bor	patterns 2.8 marker, clean-code 10
+effective-java	40	209	Item 40: Consistently use the Override annotation	clean-code	qoshildi	clean-code 25.11
+effective-java	41	212	Item 41: Use marker interfaces to define types	clean-code	bor	patterns 2.8 Marker Interface
+effective-java	42	214	Item 42: Prefer lambdas to anonymous classes	clean-code	bor	clean-code 25.8
+effective-java	43	218	Item 43: Prefer method references to lambdas	clean-code	bor	clean-code 24.2
+effective-java	44	220	Item 44: Favor the use of standard functional interfaces	clean-code	bor	clean-code 24.3
+effective-java	45	224	Item 45: Use streams judiciously	clean-code	bor	clean-code 24.1
+effective-java	46	231	Item 46: Prefer side-effect-free functions in streams	clean-code	bor	clean-code 24.4
+effective-java	47	237	Item 47: Prefer Collection to Stream as a return type	clean-code	bor	clean-code 24.9
+effective-java	48	243	Item 48: Use caution when making streams parallel	clean-code	bor	clean-code 24.5
+effective-java	49	248	Item 49: Check parameters for validity	clean-code	bor	clean-code 5.11, 19.9
+effective-java	50	252	Item 50: Make defensive copies when needed	clean-code	bor	clean-code 14.7
+effective-java	51	257	Item 51: Design method signatures carefully	clean-code	bor	clean-code 5.1-5.8
+effective-java	52	259	Item 52: Use overloading judiciously	clean-code	bor	clean-code 5.10
+effective-java	53	266	Item 53: Use varargs judiciously	clean-code	bor	clean-code 5.9
+effective-java	54	268	Item 54: Return empty collections or arrays, not nulls	clean-code	bor	clean-code 18.8
+effective-java	55	270	Item 55: Return optionals judiciously	clean-code	bor	clean-code 24.6, 25.1
+effective-java	56	275	Item 56: Write doc comments for all exposed API elements	clean-code	bor	clean-code 10
+effective-java	57	282	Item 57: Minimize the scope of local variables	clean-code	qoshildi	clean-code 11.10
+effective-java	58	285	Item 58: Prefer for-each loops to traditional for loops	clean-code	bor	clean-code 7.2
+effective-java	59	288	Item 59: Know and use the libraries	clean-code	qoshildi	architect 38.4 platforma kutubxonasi
+effective-java	60	291	Item 60: Avoid float and double if exact answers are required	clean-code	bor	clean-code 20.1
+effective-java	61	294	Item 61: Prefer primitive types to boxed primitives	clean-code	bor	clean-code 20.5
+effective-java	62	297	Item 62: Avoid strings where other types are more appropriate	clean-code	bor	clean-code 21.8
+effective-java	63	300	Item 63: Beware the performance of string concatenation	clean-code	bor	clean-code 21.2
+effective-java	64	301	Item 64: Refer to objects by their interfaces	clean-code	qoshildi	clean-code 23.1 interfeys turi
+effective-java	65	303	Item 65: Prefer interfaces to reflection	clean-code	bor	clean-code 25.5
+effective-java	66	306	Item 66: Use native methods judiciously	-	tashqari	JNI, korpus qamrovidan tashqari
+effective-java	67	307	Item 67: Optimize judiciously	clean-code	bor	architect 8
+effective-java	68	310	Item 68: Adhere to generally accepted naming conventions	clean-code	bor	clean-code 3
+effective-java	69	314	Item 69: Use exceptions only for exceptional conditions	clean-code	bor	clean-code 18.9
+effective-java	70	317	Item 70: Use checked exceptions for recoverable conditions and runtime exceptions for programming errors	clean-code	bor	clean-code 18.11 Manbalar
+effective-java	71	319	Item 71: Avoid unnecessary use of checked exceptions	clean-code	bor	clean-code 18.11 Manbalar
+effective-java	72	321	Item 72: Favor the use of standard exceptions	clean-code	qoshildi	clean-code 18.11
+effective-java	73	323	Item 73: Throw exceptions appropriate to the abstraction	clean-code	bor	clean-code 18.3, 19.1
+effective-java	74	325	Item 74: Document all exceptions thrown by each method	clean-code	bor	clean-code 10.3
+effective-java	75	327	Item 75: Include failure-capture information in detail messages	clean-code	bor	clean-code 19.10
+effective-java	76	329	Item 76: Strive for failure atomicity	clean-code	qoshildi	clean-code 19.12 atomarlik
+effective-java	77	331	Item 77: Don’t ignore exceptions	clean-code	bor	clean-code 19.3
+effective-java	78	332	Item 78: Synchronize access to shared mutable data	clean-code	bor	architect 11.3
+effective-java	79	338	Item 79: Avoid excessive synchronization	clean-code	qoshildi	architect 11.12
+effective-java	80	344	Item 80: Prefer executors, tasks, and streams to threads	clean-code	bor	architect 11.8
+effective-java	81	346	Item 81: Prefer concurrency utilities to wait and notify	clean-code	qoshildi	architect 11.12
+effective-java	82	351	Item 82: Document thread safety	clean-code	qoshildi	architect 11.12
+effective-java	83	354	Item 83: Use lazy initialization judiciously	clean-code	bor	architect 15.12, 16.10
+effective-java	84	357	Item 84: Don’t depend on the thread scheduler	clean-code	qoshildi	architect 11.12
+effective-java	85	360	Item 85: Prefer alternatives to Java serialization	clean-code	bor	clean-code 25.4
+effective-java	86	364	Item 86: Implement Serializable with great caution	clean-code	bor	clean-code 25.4
+effective-java	87	367	Item 87: Consider using a custom serialized form	clean-code	qoshildi	clean-code 25.4 o`z seriyalangan shakli
+effective-java	88	374	Item 88: Write readObject methods defensively	clean-code	bor	clean-code 25.4
+effective-java	89	380	Item 89: For instance control, prefer enum types to readResolve	clean-code	qoshildi	clean-code 25.4 nusxa nazorati
+effective-java	90	384	Item 90: Consider serialization proxies instead of serialized instances	clean-code	qoshildi	clean-code 25.4 seriyalash proxysi
+ocp-practice	1	24	Chapter 1: Handling Date, Time, Text, Numeric and Boolean Values	clean-code	bor	ocp-study bilan bir xil mavzu, imtihon savollari shaklida
+ocp-practice	2	51	Chapter 2: Controlling Program Flow	clean-code	bor	ocp-study bilan bir xil mavzu, imtihon savollari shaklida
+ocp-practice	3	73	Chapter 3: Utilizing Java Object-Oriented Approach	clean-code	bor	ocp-study bilan bir xil mavzu, imtihon savollari shaklida
+ocp-practice	4	193	Chapter 4: Handling Exceptions	clean-code	bor	ocp-study bilan bir xil mavzu, imtihon savollari shaklida
+ocp-practice	5	228	Chapter 5: Working with Arrays and Collections	clean-code	bor	ocp-study bilan bir xil mavzu, imtihon savollari shaklida
+ocp-practice	6	264	Chapter 6: Working with Streams and Lambda Expressions	clean-code	bor	ocp-study bilan bir xil mavzu, imtihon savollari shaklida
+ocp-practice	7	328	Chapter 7: Packaging and Deploying Java Code and Use the Java Platform Module System	clean-code	bor	ocp-study bilan bir xil mavzu, imtihon savollari shaklida
+ocp-practice	8	366	Chapter 8: Managing Concurrent Code Execution	clean-code	bor	ocp-study bilan bir xil mavzu, imtihon savollari shaklida
+ocp-practice	9	394	Chapter 9: Using Java I/O API	clean-code	bor	ocp-study bilan bir xil mavzu, imtihon savollari shaklida
+ocp-practice	10	417	Chapter 10: Accessing Databases Using JDBC	clean-code	bor	ocp-study bilan bir xil mavzu, imtihon savollari shaklida
+ocp-practice	11	432	Chapter 11: Implementing Localization	clean-code	bor	ocp-study bilan bir xil mavzu, imtihon savollari shaklida
+ocp-practice	12	447	Chapter 12: Practice Exam 1	-	tashqari	korpus qamrovidan tashqari
+ocp-practice	13	476	Chapter 13: Practice Exam 2	-	tashqari	korpus qamrovidan tashqari
+ocp-practice	14	504	Chapter 14: Practice Exam 3	-	tashqari	korpus qamrovidan tashqari
+ocp-practice	A	533	Appendix: Answers to Review Questions	-	tashqari	korpus qamrovidan tashqari
+micro-patterns	1	31	1 Escaping monolithic hell	patterns	bor	patterns 12.1, 14.1 monolit va mikroservis
+micro-patterns	2	63	2 Decomposition strategies	patterns	bor	patterns 14.2, 14.3 dekompozitsiya
+micro-patterns	3	95	3 Interprocess communication in a microservice architecture	patterns	bor	patterns 7, 15, 16 IPC va messaging
+micro-patterns	4	140	4 Managing transactions with sagas	patterns	bor	patterns 14.8 Saga, 10.14 Outbox
+micro-patterns	5	176	5 Designing business logic in a microservice architecture	patterns	bor	patterns 13 DDD biznes mantiqi
+micro-patterns	6	213	6 Developing business logic with event sourcing	patterns	bor	patterns 12.11 Event Sourcing
+micro-patterns	7	250	7 Implementing queries in a microservice architecture	patterns	bor	patterns 12.10 CQRS, 14.10 API Composition
+micro-patterns	8	283	8 External API patterns	patterns	bor	patterns 7.19 BFF, 14 API Gateway
+micro-patterns	9	322	9 Testing microservices: Part 1	patterns	bor	testing 9 contract testing
+micro-patterns	10	348	10 Testing microservices: Part 2	patterns	bor	testing 12, 13 E2E va nofunksional
+micro-patterns	11	378	11 Developing production-ready services	patterns	bor	patterns 21 kuzatuvchanlik, 14.29 chassis
+micro-patterns	12	413	12 Deploying microservices	patterns	bor	patterns 22 deploy, 14.32 Sidecar
+micro-patterns	13	458	13 Refactoring to microservices	patterns	bor	patterns 14.6 Strangler Fig
+spring-action	1	30	1 Getting started with Spring	architect	bor	architect 15, 16
+spring-action	2	56	2 Developing web applications	architect	bor	architect 17 MVC
+spring-action	3	88	3 Working with data	architect	bor	architect 18 JPA
+spring-action	4	121	4 Working with nonrelational data	architect	bor	patterns 9, 10 ma`lumot patternlari
+spring-action	5	140	5 Securing Spring	architect	bor	architect 20 Security
+spring-action	6	167	6 Working with configuration properties	architect	bor	clean-code 26.3, patterns 5.22
+spring-action	7	190	7 Creating REST services	architect	bor	architect 17.6 REST dizayni
+spring-action	8	213	8 Securing REST	architect	bor	architect 20, patterns 18.14
+spring-action	9	237	9 Sending messages asynchronously	architect	bor	patterns 15, 16 messaging
+spring-action	10	270	10 Integrating Spring	architect	bor	patterns 16.36 Spring Integration
+spring-action	11	306	11 Introducing Reactor	architect	bor	patterns 4.6 Reactor, 19
+spring-action	12	335	12 Developing reactive APIs	architect	bor	architect 17.4 WebFlux
+spring-action	13	364	13 Persisting data reactively	architect	qoshildi	architect 17.12 R2DBC
+spring-action	14	396	14 Working with RSocket	architect	qoshildi	architect 17.12 RSocket
+spring-action	15	414	15 Working with Spring Boot Actuator	architect	bor	architect 16.8 Actuator
+spring-action	16	450	16 Administering Spring	architect	bor	architect 30.12
+spring-action	17	462	17 Monitoring Spring with JMX	architect	qoshildi	architect 30.12 JMX qoidasi
+spring-action	18	470	18 Deploying Spring	architect	bor	architect 31 deployment
+spring-security	1	33	1 Security today	architect	bor	architect 20.1 filter chain
+spring-security	2	63	2 Hello Spring Security	architect	bor	architect 20, patterns 18
+spring-security	3	91	3 Managing users	architect	bor	patterns 18.5 UserDetailsService
+spring-security	4	116	4 Dealing with passwords	architect	bor	patterns 18.7 PasswordEncoder
+spring-security	5	132	5 Implementing authentication	architect	bor	architect 20.2 autentifikatsiya
+spring-security	6	165	6 Hands-on: A small secured web application	architect	bor	architect 20, testing 11.1
+spring-security	7	183	7 Configuring authorization: Restricting access	architect	bor	architect 20.4 avtorizatsiya
+spring-security	8	202	8 Configuring authorization: Applying restrictions	architect	bor	architect 20.4, patterns 18.10
+spring-security	9	225	9 Implementing filters	architect	bor	architect 20.1 filtrlar
+spring-security	10	243	10 Applying CSRF protection and CORS	architect	bor	patterns 18.23 CSRF, 18.24 CORS
+spring-security	11	274	11 Hands-on: A separation of responsibilities	architect	bor	architect 20 mas`uliyat bo`linishi
+spring-security	12	314	12 How does OAuth 2 work?	architect	bor	patterns 18.12 OAuth2
+spring-security	13	346	13 OAuth 2: Implementing the authorization server	architect	bor	patterns 18.44 Authorization Server
+spring-security	14	368	14 OAuth 2: Implementing the resource server	architect	bor	patterns 18.14 Resource Server
+spring-security	15	390	15 OAuth 2: Using JWT and cryptographic signatures	architect	bor	architect 20.6 JWT va JWKS
+spring-security	16	417	16 Global method security: Pre- and postauthorizations	architect	bor	patterns 18.10 Method Security
+spring-security	17	443	17 Global method security: Pre- and postfiltering	architect	bor	patterns 18.10 postfiltering
+spring-security	18	463	18 Hands-on: An OAuth 2 application	architect	bor	patterns 18.12 OAuth2 ilovasi
+spring-security	19	497	19 Spring Security for reactive apps	architect	bor	patterns 19.15 Reactive Security
+spring-security	20	520	20 Spring Security testing	architect	bor	testing 11.1-11.6
+clean-arch	1	27	Chapter 1 What Is Design and Architecture?	architect	bor	architect 1
+clean-arch	2	37	Chapter 2 A Tale of Two Values	architect	bor	architect 34 legacy, 1.x qaror narxi
+clean-arch	3	43	Chapter 3 Paradigm Overview	architect	qoshildi	architect 13.13 paradigma nimani olib qo`yadi va til imkoniyati bilan cheklanmaslik; printsiplar patterns 26 da. Audit 2026-10-17: avvalgi izoh architect 13 ni umumiy ko`rsatardi
+clean-arch	4	46	Chapter 4 Structured Programming	architect	bor	clean-code 4, 6
+clean-arch	5	52	Chapter 5 Object-Oriented Programming	architect	bor	clean-code 17, patterns 26.17
+clean-arch	6	65	Chapter 6 Functional Programming	architect	bor	clean-code 16, 24
+clean-arch	7	75	Chapter 7 SRP: The Single Responsibility Principle	architect	bor	patterns 26.1 SRP
+clean-arch	8	82	Chapter 8 OCP: The Open-Closed Principle	architect	bor	patterns 26.2 OCP
+clean-arch	9	88	Chapter 9 LSP: The Liskov Substitution Principle	architect	bor	patterns 26.3 LSP
+clean-arch	10	94	Chapter 10 ISP: The Interface Segregation Principle	architect	bor	patterns 26.4 ISP
+clean-arch	11	98	Chapter 11 DIP: The Dependency Inversion Principle	architect	bor	patterns 26.5 DIP
+clean-arch	12	103	Chapter 12 Components	architect	bor	architect 5.6 modul chegarasi
+clean-arch	13	110	Chapter 13 Component Cohesion	architect	qoshildi	patterns 26.30 REP, CCP, CRP
+clean-arch	14	117	Chapter 14 Component Coupling	architect	qoshildi	patterns 26.31 ADP; 26.29 SDP, SAP
+clean-arch	15	139	Chapter 15 What Is Architecture?	architect	bor	architect 1, 5
+clean-arch	16	149	Chapter 16 Independence	architect	bor	architect 5.6, patterns 12
+clean-arch	17	158	Chapter 17 Boundaries: Drawing Lines	architect	bor	architect 5.8 bog`liqlik yo`nalishi
+clean-arch	18	170	Chapter 18 Boundary Anatomy	architect	bor	architect 5.4, 5.8
+clean-arch	19	176	Chapter 19 Policy and Level	architect	bor	architect 5.8
+clean-arch	20	181	Chapter 20 Business Rules	architect	bor	patterns 13 DDD entity va use case
+clean-arch	21	187	Chapter 21 Screaming Architecture	architect	bor	patterns 12.29 Screaming Architecture
+clean-arch	22	191	Chapter 22 The Clean Architecture	architect	bor	patterns 12.x hexagonal va clean arxitektura
+clean-arch	23	198	Chapter 23 Presenters and Humble Objects	architect	bor	patterns 23.25 Humble Object, 6.14 MVP
+clean-arch	24	202	Chapter 24 Partial Boundaries	architect	qoshildi	architect 5.11 qisman chegara
+clean-arch	25	206	Chapter 25 Layers and Boundaries	architect	bor	architect 5.8, patterns 12
+clean-arch	26	215	Chapter 26 The Main Component	architect	qoshildi	architect 15.12 Main komponenti
+clean-arch	27	220	Chapter 27 Services: Great and Small	architect	bor	patterns 14.39 servis granularligi
+clean-arch	28	228	Chapter 28 The Test Boundary	architect	bor	testing 2, 14 arxitektura testlari
+clean-arch	29	232	Chapter 29 Clean Embedded Architecture	-	tashqari	embedded, korpus qamrovidan tashqari
+clean-arch	30	249	Chapter 30 The Database Is a Detail	architect	bor	architect 5.9, patterns 9 ma`lumot manbasi
+clean-arch	31	255	Chapter 31 The Web Is a Detail	architect	bor	architect 17, patterns 12
+clean-arch	32	259	Chapter 32 Frameworks Are Details	architect	bor	architect 16, 38.4
+clean-arch	33	263	Chapter 33 Case Study: Video Sales	-	tashqari	keys-stadi, qoida emas
+clean-arch	34	269	Chapter 34 The Missing Chapter	architect	bor	architect 4.8, patterns 12.28 package-by-feature
+arc	1	13	Chapter 1. Code Should Be Easy to Understand	architect	qoshildi	architect 4.1 kod o`qishga ko`p vaqt ketadi, o`qiluvchanlik teoremasi (ARC 1-bob, 2-4-bet)
+arc	2	19	Chapter 2. Packing Information into Names	architect	qoshildi	architect 4.2 domen tilidan nom, 4.3 qisqartma narxi (ARC 2-bob, 18-19-bet); clean-code 2
+arc	3	35	Chapter 3. Names That Can`t Be Misconstrued	clean-code	bor	clean-code 2.2 yolg`on ma`lumot beradigan nom, 2.3 ma`noli farq, 22.6 inklyuziv oraliq
+arc	4	45	Chapter 4. Aesthetics	clean-code	bor	clean-code 11 vertikal formatlash, 12 gorizontal formatlash va kod uslubi
+arc	5	57	Chapter 5. Knowing What to Comment	architect	qoshildi	architect 4.5 "nima" emas "nega", 4.9 kodda yashirin bilim (ARC 5-bob, 47-51-bet)
+arc	6	71	Chapter 6. Making Comments Precise and Compact	clean-code	bor	clean-code 8.4 maqsadni tushuntiruvchi izoh, 8.5 aniqlashtiruvchi izoh, 9.2 ortiqcha izoh
+arc	7	81	Chapter 7. Making Control Flow Easy to Read	architect	qoshildi	architect 4.4 ichma-ich shart va erta qaytish (ARC 7-bob, 75-78-bet); clean-code 6
+arc	8	95	Chapter 8. Breaking Down Giant Expressions	architect	qoshildi	architect 4.3 shartni nomli o`zgaruvchiga chiqarish (ARC 8-bob, 84-bet); clean-code 35.3
+arc	9	105	Chapter 9. Variables and Readability	architect	qoshildi	architect 4.3 kognitiv yuk (ARC 9-bob, 97-bet); clean-code 11.10 lokal qamrov, 16.9
+arc	10	121	Chapter 10. Extracting Unrelated Subproblems	clean-code	bor	clean-code 4.5 funksiyadan funksiya chiqarish, 35.1 Extract Function
+arc	11	133	Chapter 11. One Task at a Time	clean-code	bor	clean-code 4.2 "bitta ish qiladi" ni tekshirish, 4.3 bo`limlari bor funksiya
+arc	12	143	Chapter 12. Turning Thoughts into Code	clean-code	qoshildi	clean-code 4.13 mantiqni avval sodda tilda bayon qilish
+arc	13	151	Chapter 13. Writing Less Code	architect	bor	architect 6.5 kodni o`chirish; patterns 26.21 YAGNI; architect 1.6 over-engineering
+arc	14	161	Chapter 14. Testing and Readability	clean-code	qoshildi	architect 4 test kodining o`qiluvchanligi (ARC 14-bob, 157-158-bet); clean-code 30
+arc	15	177	Chapter 15. Designing and Implementing a "Minute/Hour Counter"	-	tashqari	keys-stadi, qoida emas
+building-micro2	1	18	1. What Are Microservices?	patterns	bor	nusxada chop etilgan bet raqami yo`q, sahifa PDF beti; patterns 12.12, 14.1
+building-micro2	2	57	2. How to Model Microservices	patterns	bor	patterns 14.2, 14.3; 13.2 bounded context
+building-micro2	3	101	3. Splitting the Monolith	patterns	bor	patterns 27.1-27.5; architect 34.7 strangler
+building-micro2	4	121	4. Microservice Communication Styles	patterns	bor	patterns 7.1 REST, 15 va 16 messaging
+building-micro2	5	158	5. Implementing Microservice Communication	patterns	qoshildi	patterns 27.22 expand and contract; bet raqami yo`q, faqat bob ko`rsatilgan
+building-micro2	6	223	6. Workflow	patterns	bor	patterns 14.8 saga, 10.14 tranzaksion outbox
+building-micro2	7	250	7. Build	architect	qoshildi	architect 37.10 progressive delivery va Accelerate, 35.4 deploy va release ajralishi; testing 15.1
+building-micro2	8	276	8. Deployment	patterns	bor	patterns 22.6 blue-green va 22 deployment; architect 31
+building-micro2	9	349	9. Testing	architect	qoshildi	architect 35.10 MTBF va MTTR tanlovi, 37.8 cross-functional talab; testing 13
+building-micro2	10	384	10. From Monitoring to Observability	architect	qoshildi	architect 37.5 SLI/SLO/SLA, 37.6 xato byudjeti, 35.12 alert sifati va EEMUA
+building-micro2	11	431	11. Security	architect	qoshildi	architect 35.6 incidentdan keyingi muloqot va GDPR 72 soat; patterns 18
+building-micro2	12	481	12. Resiliency	architect	qoshildi	architect 35.8 ayblamaydigan post-mortem; patterns 17 resilience
+building-micro2	13	520	13. Scaling	architect	bor	architect 8 napkin math, 26 partitioning, 41 ko`p region; patterns 11 keshlash
+building-micro2	14	561	14. User Interfaces	patterns	bor	patterns 7.19 BFF, 12.33 mikro-frontend, 27.2 UI kompozitsiyasi
+building-micro2	15	603	15. Organizational Structures	patterns	bor	patterns 14.5 Service per Team va Conway qonuni; architect 36.10
+building-micro2	16	643	16. The Evolutionary Architect	architect	bor	architect 1.1, 1.9, 3.1 ADR, 38 texnologiya tanlash
+clrs	1	26	1 The Role of Algorithms in Computing	-	tashqari	umumiy algoritm nazariyasiga kirish, Java/Spring qoidasi chiqmaydi
+clrs	2	37	2 Getting Started	-	tashqari	insertion va merge sort o`qitish mashqi
+clrs	3	64	3 Growth of Functions	architect	qoshildi	architect 8.12 o`sish tartibi (Big O, Theta, Omega)
+clrs	4	86	4 Divide-and-Conquer	-	tashqari	rekurrent tenglama va master teoremasi, nazariy
+clrs	5	135	5 Probabilistic Analysis and Randomized Algorithms	-	tashqari	ehtimollik tahlili, nazariy
+clrs	6	172	6 Heapsort	clean-code	qoshildi	clean-code 23.12 `PriorityQueue`, 23.1 jadvalda ham bor
+clrs	7	191	7 Quicksort	-	tashqari	saralash algoritmi nazariyasi, JDK `Arrays.sort` qoidasiga aylanmaydi
+clrs	8	212	8 Sorting in Linear Time	-	tashqari	counting va radix sort, nazariy
+clrs	9	234	9 Medians and Order Statistics	-	tashqari	selection algoritmi; architect 8.6 dagi p95/p99 o`lchash boshqa mavzu
+clrs	10	253	10 Elementary Data Structures	clean-code	bor	clean-code 23.1 to`plam turini tanlash, 23.11
+clrs	11	274	11 Hash Tables	clean-code	bor	clean-code 15 tenglik va hash, 23.2 `Map` ni toza ishlatish
+clrs	12	307	12 Binary Search Trees	clean-code	bor	clean-code 23.1 `TreeMap` va `TreeSet` tanlovi
+clrs	13	329	13 Red-Black Trees	-	tashqari	`TreeMap` ning ichki implementatsiyasi, kod qoidasi chiqmaydi
+clrs	14	360	14 Augmenting Data Structures	-	tashqari	interval daraxti kabi maxsus tuzilmalar, nazariy
+clrs	15	380	15 Dynamic Programming	-	tashqari	algoritm dizayni texnikasi, korpus qamrovidan tashqari
+clrs	16	435	16 Greedy Algorithms	-	tashqari	algoritm dizayni texnikasi, korpus qamrovidan tashqari
+clrs	17	472	17 Amortized Analysis	architect	qoshildi	architect 8.13 amortizatsiyalangan narx, jadval ikkilantirish
+clrs	18	505	18 B-Trees	architect	bor	architect 23.1 B-tree tuzilishi, 23.18 B-tree ichida
+clrs	19	526	19 Fibonacci Heaps	-	tashqari	nazariy ma`lumot tuzilmasi, amalda JDK da yo`q
+clrs	20	552	20 van Emde Boas Trees	-	tashqari	nazariy ma`lumot tuzilmasi
+clrs	21	582	21 Data Structures for Disjoint Sets	-	tashqari	nazariy ma`lumot tuzilmasi
+clrs	22	610	22 Elementary Graph Algorithms	-	tashqari	graf algoritmlari korpus qamrovidan tashqari
+clrs	23	645	23 Minimum Spanning Trees	-	tashqari	graf algoritmlari korpus qamrovidan tashqari
+clrs	24	664	24 Single-Source Shortest Paths	-	tashqari	graf algoritmlari korpus qamrovidan tashqari
+clrs	25	705	25 All-Pairs Shortest Paths	-	tashqari	graf algoritmlari korpus qamrovidan tashqari
+clrs	26	729	26 Maximum Flow	-	tashqari	graf algoritmlari korpus qamrovidan tashqari
+clrs	27	793	27 Multithreaded Algorithms	patterns	bor	patterns 4.18 Fork-Join va ishni o`g`irlash, architect 8.11 Amdahl qonuni
+clrs	28	834	28 Matrix Operations	-	tashqari	sonli matematika, korpus qamrovidan tashqari
+clrs	29	864	29 Linear Programming	-	tashqari	optimallashtirish nazariyasi
+clrs	30	919	30 Polynomials and the FFT	-	tashqari	sonli matematika
+clrs	31	947	31 Number-Theoretic Algorithms	-	tashqari	RSA matematikasi; korpus kriptografiyani amaliy darajada beradi (code-review 32)
+clrs	32	1006	32 String Matching	-	tashqari	KMP nazariyasi; clean-code 21 regex amaliyoti boshqa mavzu
+clrs	33	1035	33 Computational Geometry	-	tashqari	hisoblash geometriyasi, korpus qamrovidan tashqari
+clrs	34	1069	34 NP-Completeness	-	tashqari	murakkablik nazariyasi, korpus qamrovidan tashqari
+clrs	35	1127	35 Approximation Algorithms	-	tashqari	murakkablik nazariyasi, korpus qamrovidan tashqari
+clrs	A	1166	A Summations	-	tashqari	matematik ilova
+clrs	B	1179	B Sets, Etc.	-	tashqari	matematik ilova
+clrs	C	1204	C Counting and Probability	-	tashqari	matematik ilova
+clrs	D	1238	D Matrices	-	tashqari	matematik ilova
+code-complete	1	40	Chapter 1: Welcome to Software Construction	clean-code	bor	clean-code 1.1-1.6 toza kod ta`rifi va o`lchanadigan belgilari; architect 1.1
+code-complete	2	46	Chapter 2: Metaphors for a Richer Understanding of Software Development	patterns	bor	patterns 13.53 Tizim metaforasi; clean-code 11.2 gazeta metaforasi
+code-complete	3	60	Chapter 3: Measure Twice, Cut Once: Upstream Prerequisites	architect	qoshildi	architect 2.2 talablar, 2.4 domen; 3-1-jadval nuqson narxi architect 2 Manbalar da
+code-complete	4	98	Chapter 4: Key Construction Decisions	architect	bor	clean-code 3 konvensiyalar, 3.14 jamoa lug`ati; architect 13 til imkoniyatlari
+code-complete	5	110	Chapter 5: Design in Construction	architect	qoshildi	architect 6.1 muhim va tasodifiy murakkablik, 6.3 global holat (CC 5.2, 5.3)
+code-complete	6	162	Chapter 6: Working Classes	clean-code	bor	clean-code 14 inkapsulyatsiya, 17 vorislik; patterns 26.1 SOLID
+code-complete	7	198	Chapter 7: High-Quality Routines	clean-code	qoshildi	architect 4.3 Miller sig`imi va parametr chegarasi (CC 7-bob, 178-bet); clean-code 32
+code-complete	8	224	Chapter 8: Defensive Programming	clean-code	bor	clean-code 18 xato bilan ishlash, 19 istisno; patterns 24.26 himoyali nusxalash
+code-complete	9	252	Chapter 9: The Pseudocode Programming Process	clean-code	qoshildi	clean-code 4.11 pseudokod qoidalari, 4.12 PPP
+code-complete	10	274	Chapter 10: General Issues in Using Variables	clean-code	bor	clean-code 11.10 lokal qamrov, 16.9 global va statik o`zgaradigan holat
+code-complete	11	296	Chapter 11: The Power of Variable Names	clean-code	qoshildi	architect 4.2 domen tilidan nom, 4.3 qisqartma narxi (CC 11.1, 11.6); clean-code 2, 3
+code-complete	12	328	Chapter 12: Fundamental Data Types	clean-code	bor	clean-code 20 primitiv va son, 21 satr, 25.9 enum
+code-complete	13	356	Chapter 13: Unusual Data Types	clean-code	bor	clean-code 14 ma`lumot tuzilmasi, 16.9 global holat; ko`rsatkich bo`limi Java da ahamiyatsiz
+code-complete	14	384	Chapter 14: Organizing Straight-Line Code	clean-code	bor	clean-code 11.4 vertikal zichlik, 11.10 e`lon joyini ishlatishga yaqin qilish
+code-complete	15	392	Chapter 15: Using Conditionals	clean-code	bor	clean-code 6 shart va boshqaruv oqimi; sonarqube 13.3 erta qaytish
+code-complete	16	404	Chapter 16: Controlling Loops	clean-code	bor	clean-code 7 sikl va iteratsiya, 7.1 sikl tanasini chiqarish
+code-complete	17	428	Chapter 17: Unusual Control Structures	clean-code	bor	clean-code 4.7 ko`p return afsonasi, 19 istisno mexanikasi; goto Java da yo`q
+code-complete	18	448	Chapter 18: Table-Driven Methods	clean-code	bor	clean-code 37.4 shartni polimorfizmga; sonarqube 15.6 switch dan ko`rsatkichga
+code-complete	19	468	Chapter 19: General Control Issues	clean-code	qoshildi	architect 4.4 ichma-ich shart chegarasi (CC 19.4), 4.3 (19.6); testing 4 qaror jadvali (19.1)
+code-complete	20	500	Chapter 20: The Software-Quality Landscape	testing	qoshildi	code-review 1.12 topish darajalari jadvali, 2.12 sifat narxni kamaytiradi; testing 3, 4
+code-complete	21	516	Chapter 21: Collaborative Construction	code-review	qoshildi	code-review 40 inspeksiya rollari va tartibi, 41, 42; clean-code 47, 48.8, 49
+code-complete	22	536	Chapter 22: Developer Testing	testing	qoshildi	testing 3 clean va dirty test nisbati, 4.3 ekvivalentlik sinfi va chegara tahlili
+code-complete	23	572	Chapter 23: Debugging	architect	qoshildi	clean-code 46 debug vaqti va confessional debugging (CC 23-bob); architect 14.1
+code-complete	24	600	Chapter 24: Refactoring	clean-code	qoshildi	clean-code 38 xavfsiz refaktoring, 38.7 (CC 24.4, 24.5); code-review 2 bir qatorli diff
+code-complete	25	624	Chapter 25: Code-Tuning Strategies	architect	bor	architect 8 napkin math, 14.1 avval o`lchov, 14.8 JMH; patterns 25.10
+code-complete	26	646	Chapter 26: Code-Tuning Techniques	-	tashqari	qo`lda mikro-optimizatsiya katalogi, JVM JIT buni o`zi bajaradi (architect 9.6)
+code-complete	27	686	Chapter 27: How Program Size Affects Construction	architect	bor	architect 1.2 jamoa kattaligi, 6.8 servislar soni va operatsion murakkablik
+code-complete	28	698	Chapter 28: Managing Construction	clean-code	qoshildi	clean-code 45 baholash va noaniqlik konusi, 44, 46.1 vaqt-harakat tadqiqoti (CC 28-bob)
+code-complete	29	726	Chapter 29: Integration	testing	qoshildi	testing 4 smoke test ta`rifi (CC 29.4); clean-code 39 bir qadamli build, 41
+code-complete	30	746	Chapter 30: Programming Tools	clean-code	bor	clean-code 42 statik tahlil, 39 build; sonarqube 40 vositalar taqsimoti
+code-complete	31	766	Chapter 31: Layout and Style	clean-code	bor	clean-code 11 vertikal, 12 gorizontal, 13 avtomatik formatlash
+code-complete	32	814	Chapter 32: Self-Documenting Code	clean-code	qoshildi	architect 4.5 niyat darajasidagi izoh, 4.10 o`zini hujjatlaydigan API (CC 32.5)
+code-complete	33	856	Chapter 33: Personal Character	clean-code	qoshildi	clean-code 43 intellektual halollik, 44, 46 (CC 33-bob); architect 38.10, 39
+code-complete	34	874	Chapter 34: Themes in Software Craftsmanship	clean-code	qoshildi	architect 4 o`qish qulayligi ustunligi va muammo sohasida dasturlash (CC 34.3, 34.6)
+code-complete	35	892	Chapter 35: Where to Find More Information	architect	qoshildi	architect 38.3 birlamchi manbalar, 38.12 o`qish rejasi; architect 39 (CC 35.1-35.5)
+ddd-evans	1	15	1. Crunching Knowledge	patterns	bor	nusxa 2003 aprel Final Manuscript, bet raqami chop etilgan nashr bilan mos emas; patterns 13.36, architect 2.4
+ddd-evans	2	24	2. Communication and the Use of Language	patterns	bor	patterns 13.1 umumiy til
+ddd-evans	3	37	3. Binding Model and Implementation	patterns	bor	patterns 13.36, 13.37, 13.38
+ddd-evans	4	51	4. Isolating the Domain	patterns	bor	patterns 13.34 DDD qatlamli arxitekturasi, 13.38 Smart UI
+ddd-evans	5	60	5. A Model Expressed in Software	patterns	bor	patterns 13.13, 13.14, 13.18, 13.21
+ddd-evans	6	88	6. The Lifecycle of a Domain Object	patterns	bor	patterns 13.15, 13.16, 13.17, 13.24
+ddd-evans	7	115	7. Using the Language in an Example: A Cargo Shipping System	-	tashqari	kengaytirilgan misol, qoida emas
+ddd-evans	8	136	8. Breakthrough	patterns	bor	patterns 13.44 Breakthrough, 13.43
+ddd-evans	9	145	9. Making Implicit Concepts Explicit	patterns	bor	patterns 13.22 Specification, 13.24 invariantlar
+ddd-evans	10	170	10. Supple Design	patterns	bor	patterns 13.26-13.30, 13.40, 13.41, 13.42
+ddd-evans	11	207	11. Applying Analysis Patterns	patterns	qoshildi	patterns 13.61 analiz patternlarini qo`llash
+ddd-evans	12	218	12. Relating Design Patterns to the Model	patterns	bor	patterns 13.23 Policy, 3.9 Strategy, 2.3 Composite
+ddd-evans	13	230	13. Bringing the Pieces Together	patterns	bor	patterns 13.43 chuqur tushunchaga qarab refactoring
+ddd-evans	14	235	14. Maintaining Model Integrity	patterns	bor	patterns 13.2-13.11, 13.39
+ddd-evans	15	279	15. Distillation	patterns	bor	patterns 13.12, 13.45-13.50
+ddd-evans	16	307	16. Large-Scale Structure	patterns	bor	patterns 13.51-13.56
+ddd-evans	17	339	17. Bringing the Strategy Together	patterns	qoshildi	patterns 13.62 strategiyani birga yig`ish
+ddd-evans	A	358	Appendix: Use of Patterns in This Book	-	tashqari	kitobning pattern formati haqida, qoida emas
+dds	1	15	Chapter 1. Introduction	-	tashqari	tizimlar va patternlar tarixi, muqaddima: qoida emas
+dds	2	25	Chapter 2. The Sidecar Pattern	patterns	bor	patterns 22.15 Sidecar Container, 14.32
+dds	3	35	Chapter 3. Ambassadors	patterns	bor	patterns 22.16 Ambassador Container, 14.33
+dds	4	45	Chapter 4. Adapters	patterns	bor	patterns 22.17 Adapter Container
+dds	5	59	Chapter 5. Replicated Load-Balanced Services	patterns	qoshildi	patterns 22.38 qo`shildi; 7.13 rate limiting, 11 keshlash
+dds	6	73	Chapter 6. Sharded Services	patterns	qoshildi	patterns 22.39 qo`shildi; 10.9 sharding, architect 26.12
+dds	7	87	Chapter 7. Scatter/Gather	patterns	bor	patterns 15.33 Scatter-Gather
+dds	8	95	Chapter 8. Functions and Event-Driven Processing	patterns	bor	patterns 12.15 Serverless/FaaS, 22.24 Serverless Deployment
+dds	9	107	Chapter 9. Ownership Election	patterns	bor	patterns 17.20 Leader Election, 20.24 job uchun saylov
+dds	10	123	Chapter 10. Work Queue Systems	patterns	qoshildi	patterns 22.40 qo`shildi; 17.18 Queue-Based Load Leveling
+dds	11	135	Chapter 11. Event-Driven Batch Processing	patterns	qoshildi	patterns 22.41 qo`shildi; Copier, Filter, Splitter, Sharder, Merger
+dds	12	147	Chapter 12. Coordinated Batch Processing	patterns	qoshildi	patterns 22.42 qo`shildi; Join va Reduce
+dds	13	157	Chapter 13. Conclusion: A New Beginning?	-	tashqari	kitob xulosasi, yangi qoida yo`q
+deitel	1	39	1 Introduction to Computers and Java	-	tashqari	kompyuter savodxonligi va IDE bilan tanishish, qoida chiqmaydi
+deitel	2	75	2 Introduction to Java Applications	clean-code	bor	clean-code 20.3-20.5 son va operator, 6 boshqaruv oqimi
+deitel	3	109	3 Introduction to Classes, Objects, Methods and Strings	clean-code	bor	clean-code 14 obyekt va ma`lumot tuzilmasi, 16 inkapsulyatsiya
+deitel	4	140	4 Control Statements: Part 1	clean-code	bor	clean-code 6 shart va boshqaruv oqimi
+deitel	5	189	5 Control Statements: Part 2	clean-code	bor	clean-code 6, 7 sikl va iteratsiya
+deitel	6	235	6 Methods: A Deeper Look	clean-code	bor	clean-code 4 funksiya kichikligi, 5 argumentlar
+deitel	7	278	7 Arrays and ArrayLists	clean-code	bor	clean-code 23.1 tur tanlash, 23.10 massiv va generik
+deitel	8	349	8 Classes and Objects: A Deeper Look	clean-code	bor	clean-code 16 o`zgarmaslik, 14 inkapsulyatsiya
+deitel	9	397	9 Object-Oriented Programming: Inheritance	clean-code	bor	clean-code 17 vorislik va kompozitsiya
+deitel	10	432	10 Object-Oriented Programming: Polymorphism	clean-code	bor	clean-code 17 polimorfizm, patterns 3 xatti-harakat patternlari
+deitel	11	476	11 Exception Handling: A Deeper Look	clean-code	bor	clean-code 18 xato bilan ishlash, 19 istisno mexanikasi
+deitel	12	507	12 ATM Case Study, Part 1: Object-Oriented Design with the UML	-	tashqari	UML o`quv case study si; korpusda UML diagramma qoidasi yo`q
+deitel	13	548	13 ATM Case Study Part 2: Implementing an Object-Oriented Design	-	tashqari	o`quv case study ni kodga ko`chirish mashqi
+deitel	14	587	14 GUI Components: Part 1	-	tashqari	Swing GUI, korpus qamrovidan tashqari
+deitel	15	669	15 Graphics and Java 2D	-	tashqari	desktop grafika, korpus qamrovidan tashqari
+deitel	16	710	16 Strings, Characters and Regular Expressions	clean-code	bor	clean-code 21 satr, matn va regex
+deitel	17	757	17 Files, Streams and Object Serialization	clean-code	bor	clean-code 19.13 fayl va yo`l, code-review 20.6 serializatsiya tuzoqlari
+deitel	18	803	18 Recursion	-	tashqari	o`quv algoritmik mashq (fraktal, backtracking)
+deitel	19	836	19 Searching, Sorting and Big O	architect	qoshildi	architect 8.12 o`sish tartibi, 8.13 amortizatsiya
+deitel	20	867	20 Generic Collections	clean-code	bor	clean-code 23 to`plamlar va generiklar gigiyenasi
+deitel	21	911	21 Generic Classes and Methods	clean-code	bor	clean-code 23.7-23.9 xom tur, PECS, generik metod
+deitel	22	942	22 Custom Generic Data Structures	-	tashqari	o`z linked list va stack ini yozish mashqi
+deitel	23	979	23 Applets and Java Web Start	-	tashqari	applet va Java Web Start olib tashlangan, eskirgan texnologiya
+deitel	24	1005	24 Multimedia: Applets and Applications	-	tashqari	desktop multimedia, eskirgan
+deitel	25	1038	25 GUI Components: Part 2	-	tashqari	Swing GUI, korpus qamrovidan tashqari
+deitel	26	1083	26 Multithreading	architect	bor	architect 11 concurrency: thread, lock, atomic, happens-before
+deitel	27	1156	27 Networking	-	tashqari	socket darajasidagi tarmoq; korpus integratsiyani architect 32 da beradi
+deitel	28	1209	28 Accessing Databases with JDBC	architect	bor	architect 32.5 ulanish hovuzi, code-review 29.3 JdbcTemplate va JdbcClient
+deitel	29	1273	29 JavaServer Faces Web Apps: Part 1	-	tashqari	JSF eskirgan, korpus Spring MVC/WebFlux ga asoslangan
+deitel	30	1314	30 JavaServer Faces Web Apps: Part 2	-	tashqari	JSF eskirgan
+deitel	31	1337	31 Web Services	-	tashqari	JAX-WS SOAP davri; korpus REST ni patterns 7 da beradi
+deitel	A	1403	A: Operator Precedence Chart	-	tashqari	ma`lumotnoma jadvali
+deitel	B	1405	B: ASCII Character Set	-	tashqari	ma`lumotnoma jadvali
+deitel	C	1406	C: Keywords and Reserved Words	-	tashqari	ma`lumotnoma jadvali
+deitel	D	1407	D: Primitive Types	-	tashqari	ma`lumotnoma jadvali
+deitel	E	1408	E: Using the Java API Documentation	-	tashqari	asbob qo`llanmasi
+deitel	F	1416	F: Using the Debugger	-	tashqari	IDE debugger qo`llanmasi
+deitel	G	1433	G: Formatted Output	-	tashqari	ma`lumotnoma jadvali
+deitel	H	1456	H: Number Systems	-	tashqari	matematik ilova
+deitel	I	1469	I: GroupLayout	-	tashqari	Swing layout, korpus qamrovidan tashqari
+deitel	J	1481	J: Java Desktop Integration Components	-	tashqari	desktop integratsiya, eskirgan
+deitel	K	1487	K: Mashups	-	tashqari	eskirgan veb mashup mavzusi
+deitel	L	1490	L: Unicode	-	tashqari	ma`lumotnoma jadvali
+deitel10	1	45	1 Introduction to Computers, the Internet and Java	-	tashqari	kompyuter savodxonligi, qoida chiqmaydi
+deitel10	2	78	2 Introduction to Java Applications; Input/Output and Operators	clean-code	bor	clean-code 20.3-20.5 son va operator, 6
+deitel10	3	113	3 Introduction to Classes, Objects, Methods and Strings	clean-code	bor	clean-code 14, 16
+deitel10	4	145	4 Control Statements: Part 1; Assignment, ++ and -- Operators	clean-code	bor	clean-code 6 shart va boshqaruv oqimi
+deitel10	5	196	5 Control Statements: Part 2; Logical Operators	clean-code	bor	clean-code 6, 7
+deitel10	6	244	6 Methods: A Deeper Look	clean-code	bor	clean-code 4, 5
+deitel10	7	287	7 Arrays and ArrayLists	clean-code	bor	clean-code 23.1, 23.10
+deitel10	8	359	8 Classes and Objects: A Deeper Look	clean-code	bor	clean-code 16, 14
+deitel10	9	404	9 Object-Oriented Programming: Inheritance	clean-code	bor	clean-code 17
+deitel10	10	439	10 Object-Oriented Programming: Polymorphism and Interfaces	clean-code	bor	clean-code 17, architect 4.7 tur tizimi
+deitel10	11	485	11 Exception Handling: A Deeper Look	clean-code	bor	clean-code 18, 19
+deitel10	12	517	12 GUI Components: Part 1	-	tashqari	Swing GUI, korpus qamrovidan tashqari
+deitel10	13	599	13 Graphics and Java 2D	-	tashqari	desktop grafika
+deitel10	14	640	14 Strings, Characters and Regular Expressions	clean-code	bor	clean-code 21 satr, matn va regex
+deitel10	15	688	15 Files, Streams and Object Serialization	clean-code	bor	clean-code 19.13, code-review 20.6
+deitel10	16	728	16 Generic Collections	clean-code	bor	clean-code 23 to`plamlar
+deitel10	17	773	17 Java SE 8 Lambdas and Streams	clean-code	bor	clean-code 24 lambda va oqim, architect 13.6
+deitel10	18	820	18 Recursion	-	tashqari	o`quv algoritmik mashq
+deitel10	19	854	19 Searching, Sorting and Big O	architect	qoshildi	architect 8.12 o`sish tartibi, 8.13 amortizatsiya
+deitel10	20	883	20 Generic Classes and Methods	clean-code	bor	clean-code 23.7-23.9
+deitel10	21	913	21 Custom Generic Data Structures	-	tashqari	o`z tuzilmasini yozish mashqi
+deitel10	22	955	22 GUI Components: Part 2	-	tashqari	Swing GUI
+deitel10	23	1001	23 Concurrency	architect	bor	architect 11 concurrency, 12 virtual thread
+deitel10	24	1089	24 Accessing Databases with JDBC	architect	bor	architect 32.5 ulanish hovuzi, code-review 29.3
+deitel10	25	1151	25 JavaFX GUI: Part 1	-	tashqari	JavaFX desktop GUI, korpus qamrovidan tashqari
+doc-sa	P.1	25	P.1 A Short Overview of Software Architecture	architect	qoshildi	architect 1.1 (Prolog P.1, 3-5-bet iqtibos qilingan)
+doc-sa	P.2	33	P.2 A Short Overview of Architecture Documentation	architect	qoshildi	architect 3.1, 37.8 (P.2.3: atribut talabi va manfaatdorlar)
+doc-sa	P.3	46	P.3 Architecture Views	architect	qoshildi	architect 3.18 arxitektura ko`rinishi (view) qoidalari
+doc-sa	P.4	49	P.4 Architecture Styles	patterns	bor	patterns 12; uslub va pattern farqi shu bobda
+doc-sa	P.5	60	P.5 Seven Rules for Sound Documentation	architect	qoshildi	architect 3.1, 3.8, 3.9 (Rule 5 va Rule 6, 44-45-bet)
+doc-sa	P.6	69	P.6 Summary Checklist	-	tashqari	Prolog xulosa ro`yxati, yangi qoida emas
+doc-sa	P.7	70	P.7 Discussion Questions	-	tashqari	muhokama savollari, qoida emas
+doc-sa	P.8	71	P.8 For Further Reading	-	tashqari	adabiyot ro`yxati, qoida emas
+doc-sa	1-11	-	Chapters 1-11, Epilogue, Appendixes A-C	-	kirmagan	nusxada yo`q: PDF 93 bet, faqat front matter va Prolog bor
+eip	Intro	12	Introduction	patterns	bor	patterns 15 kirish, 14.16 Messaging; architect 32 asinxron almashinuv
+eip	1	31	1 Solving Integration Problems using Patterns	patterns	bor	patterns 15.38 integratsiya uslublari; bo`sh bog`liqlik architect 5.4
+eip	2	63	2 Integration Styles	patterns	qoshildi	patterns 15.37 File Transfer, 15.38; 10.13 Shared Database, 14.15 RPI, 14.16 Messaging
+eip	3	75	3 Messaging Systems	patterns	bor	patterns 15.1-15.6 oltita asos pattern
+eip	4	108	4 Messaging Channels	patterns	bor	patterns 15.7-15.15 kanal patternlari
+eip	5	140	5 Message Construction	patterns	bor	patterns 15.16-15.24 xabar qurish
+eip	6	169	6 Interlude: Simple Messaging	-	tashqari	JMS va .NET kod misoli, qoida emas
+eip	7	208	7 Message Routing	patterns	bor	patterns 15.25-15.36 marshrutlash
+eip	8	291	8 Message Transformation	patterns	bor	patterns 16.1-16.6 transformatsiya
+eip	9	317	9 Interlude: Composed Messaging	-	tashqari	MSMQ va TIBCO keys-stadi, eskirgan texnologiya
+eip	10	415	10 Messaging Endpoints	patterns	bor	patterns 16.7-16.17 endpoint patternlari
+eip	11	476	11 System Management	patterns	bor	patterns 16.18-16.25 boshqaruv patternlari
+eip	12	504	12 Interlude: System Management Example	-	tashqari	Loan Broker keys-stadi, qoida emas
+eip	13	528	13 Integration Patterns in Practice	-	tashqari	Bond Trading keys-stadi, qoida emas
+eip	14	548	14 Concluding Remarks	-	tashqari	2003 yil standart prognozi (WS-*, ebXML), eskirgan
+evolutionary-keynote	-	-	Building Evolutionary Architectures (keynote)	-	tashqari	kitob emas, 128 slayd (Keynote, 2017): iqtibos manbasi sifatida ishlatilmaydi, nasr yo`q
+fundamentals	1	3	Chapter 1. Introduction	architect	qoshildi	architect 1.1, 1.3, 1.8: sakkiz vazifa, birinchi va ikkinchi qonun
+fundamentals	2	19	Chapter 2. Architectural Thinking	architect	qoshildi	architect 1.1, 1.2, 1.3, 1.9: bilim piramidasi, kenglik va chuqurlik
+fundamentals	3	31	Chapter 3. Modularity	architect	qoshildi	architect 5.4, 5.5: connascence, koheziya va bog`liqlik o`lchovi
+fundamentals	4	46	Chapter 4. Architecture Characteristics Defined	architect	qoshildi	architect 1.4: sifat atributi ta`rifining uch muammosi
+fundamentals	5	55	Chapter 5. Identifying Architectural Characteristics	architect	qoshildi	architect 1.4, 2.1, 2.2: atributni manfaatdordan chiqarish, Vasa misoli
+fundamentals	6	64	Chapter 6. Measuring and Governing Architecture Characteristics	architect	qoshildi	architect 1.4, 2.8; testing 14.4, sonarqube 40.5 fitness function
+fundamentals	7	75	Chapter 7. Scope of Architecture Characteristics	patterns	qoshildi	patterns 12.12, 12.24 arxitektura kvanti; architect 5.4
+fundamentals	8	81	Chapter 8. Component-Based Thinking	patterns	qoshildi	patterns 12.28, 12.30; entity trap patterns 12 da
+fundamentals	9	98	Chapter 9. Foundations	patterns	qoshildi	patterns 12.17, 12.22, 12.23 fundamental qoliplar va Big Ball of Mud
+fundamentals	10	108	Chapter 10. Layered Architecture Style	patterns	qoshildi	patterns 12.1 qatlamli uslub, architecture sinkhole
+fundamentals	11	116	Chapter 11. Pipeline Architecture Style	patterns	qoshildi	patterns 12.8 quvurlar va filtrlar, to`rt tur filter
+fundamentals	12	121	Chapter 12. Microkernel Architecture Style	patterns	qoshildi	patterns 12.7 mikroyadro, plug-in registry
+fundamentals	13	133	Chapter 13. Service-Based Architecture Style	patterns	qoshildi	patterns 12.34 servis asosidagi arxitektura
+fundamentals	14	148	Chapter 14. Event-Driven Architecture Style	patterns	qoshildi	patterns 12.9 broker va mediator topologiyalari
+fundamentals	15	177	Chapter 15. Space-Based Architecture Style	patterns	qoshildi	patterns 12.16 tuple space, data pump, processing unit
+fundamentals	16	199	Chapter 16. Orchestration-Driven Service-Oriented Architecture	patterns	qoshildi	patterns 12.14 servis taksonomiyasi, orchestration engine
+fundamentals	17	208	Chapter 17. Microservices Architecture	patterns	qoshildi	patterns 12.12 bounded context, granularlik narxi
+fundamentals	18	226	Chapter 18. Choosing the Appropriate Architecture Style	patterns	qoshildi	patterns 12.36 arxitektura uslubini tanlash tartibi
+fundamentals	19	264	Chapter 19. Architecture Decisions	architect	qoshildi	bob tanasi nusxada yo`q; architect 3.1, 3.9 ilova savollariga tayangan
+fundamentals	20	236	Chapter 20. Analyzing Architecture Risk	architect	qoshildi	architect 1.5, 7.10; testing 1.3 risk jadvali (ta`sir x ehtimol)
+fundamentals	21	264	Chapter 21. Diagramming and Presenting Architecture	-	kirmagan	bob tanasi nusxada yo`q; diagramma mavzusi Brown dan olingan: architect 3.11, 3.17
+fundamentals	22	264	Chapter 22. Making Teams Effective	architect	kirmagan	bob tanasi nusxada yo`q; architect 36 da jamoa modeli yo`q
+fundamentals	23	265	Chapter 23. Negotiation and Leadership Skills	architect	kirmagan	bob tanasi nusxada yo`q; architect 37.11 faqat muddat muzokarasi
+fundamentals	24	251	Chapter 24. Developing a Career Path	architect	qoshildi	architect 38.1, 38.12, 39.7 yetuklik darajalari va o`rganish rejasi
+fundamentals	A	259	Appendix. Self-Assessment Questions	architect	qoshildi	architect 3 da 19-bob savollari manba; 19, 21, 22, 23-bob tanasi nusxada yo`q
+hard-parts	1	19	Chapter 1. What Happens When There Are No "Best Practices"?	architect	qoshildi	architect 1.3, 3.2; 1-bob, 2-7-bet iqtibos qilingan
+hard-parts	2	43	Chapter 2. Discerning Coupling in Software Architecture	architect	qoshildi	architect 5.4; patterns 12.24 statik va dinamik bog`liqlik, kvant
+hard-parts	3	63	Chapter 3. Architectural Modularity	architect	bor	architect 6.8; patterns 14.1 monolit va mikroservis qarori
+hard-parts	4	81	Chapter 4. Architectural Decomposition	patterns	qoshildi	patterns 27.23 yondashuv tanlovi, 27.24 taktik ayirish
+hard-parts	5	99	Chapter 5. Component-Based Decomposition Patterns	patterns	qoshildi	patterns 27.25, 27.26, 27.27, 27.28, 27.29, 27.30 oltita pattern
+hard-parts	6	149	Chapter 6. Pulling Apart Operational Data	architect	qoshildi	architect 5.9; 6-bob, 151-161-bet; patterns 27.14, 27.17
+hard-parts	7	203	Chapter 7. Service Granularity	patterns	qoshildi	patterns 12.12, 14.39; architect 5.6 disintegrator va integrator
+hard-parts	8	237	Chapter 8. Reuse Patterns	patterns	qoshildi	architect 5.10 (8-bob, 224-bet); patterns 14.32, 14.36
+hard-parts	9	267	Chapter 9. Data Ownership and Distributed Transactions	architect	qoshildi	architect 5.9 (9-bob, 250-bet); patterns 14.7, 10.14
+hard-parts	10	301	Chapter 10. Distributed Data Access	patterns	bor	patterns 11.7, 11.8 replikatsiyalangan kesh; 14.15, 28 replikatsiya
+hard-parts	11	317	Chapter 11. Managing Distributed Workflows	patterns	bor	patterns 14.8, 14.9, 15.35, 8.25 orkestratsiya va xoreografiya
+hard-parts	12	341	Chapter 12. Transactional Sagas	patterns	bor	patterns 14.8, 14.9, 14.40, 28.29; sakkiz nomlangan saga varianti yo`q
+hard-parts	13	383	Chapter 13. Contracts	patterns	qoshildi	patterns 12.31 (13-bob, 367-375-bet); patterns 7.22, testing 9
+hard-parts	14	399	Chapter 14. Managing Analytical Data	patterns	qoshildi	patterns 12.35 data mesh va analitik ma`lumot tekisligi
+hard-parts	15	417	Chapter 15. Build Your Own Trade-Off Analysis	architect	qoshildi	architect 3.2 (15-bob, 402-410-bet) mezon jadvali va og`irlik
+hard-parts	A	435	Appendix A. Concept and Term References	-	tashqari	atama ko`rsatkichi, qoida emas
+hard-parts	B	437	Appendix B. Architecture Decision Record References	-	tashqari	kitob ichidagi ADR havolalari ro`yxati, qoida emas
+hard-parts	C	439	Appendix C. Trade-Off References	-	tashqari	kitob ichidagi trade-off havolalari ro`yxati, qoida emas
+java-perf	1	15	Chapter 1. Introduction	architect	bor	architect 8.10 o`lchab tuzatish, 14.1 diagnostika tartibi
+java-perf	2	34	Chapter 2. Profiling Tools	architect	bor	architect 14.2-14.7 jstack, heap dump, JFR, async-profiler; kitobdagi asboblar eskirgan
+java-perf	3	79	Chapter 3. Underlying JDK Improvements	architect	bor	architect 10.1-10.8 GC va heap, 9.5 JIT, 9.11 AOT; JDK 1.2-1.4 flaglari eskirgan
+java-perf	4	117	Chapter 4. Object Creation	architect	bor	architect 10.11 allokatsiyani kamaytirish, clean-code 25.6 finalize, patterns 1.12 Object Pool
+java-perf	5	148	Chapter 5. Strings	clean-code	bor	clean-code 21.1 literal pool, 21.2 StringBuilder, 21.5 split va strip
+java-perf	6	190	Chapter 6. Exceptions, Assertions, Casts, and Variables	clean-code	bor	clean-code 19 istisno mexanikasi, 25.3 instanceof zanjiri, architect 13.7
+java-perf	7	210	Chapter 7. Loops, Switches, and Recursion	clean-code	bor	clean-code 7 sikl va iteratsiya, 6 shart va boshqaruv oqimi
+java-perf	8	242	Chapter 8. I/O, Logging, and Console Output	clean-code	bor	clean-code 29 log kodi tozaligi, 25.4 seriyalash, architect 30 kuzatuvchanlik narxi
+java-perf	9	281	Chapter 9. Sorting	-	tashqari	qo`lda yozilgan saralash freymvorki, JDK 1.2 davri, eskirgan
+java-perf	10	300	Chapter 10. Threading	architect	bor	architect 11.3 poyga sharti, 11.4 lock turlari, 11.8 thread pool, 11.22 sinxronlash narxi
+java-perf	11	337	Chapter 11. Appropriate Data Structures and Algorithms	clean-code	bor	clean-code 23.1 to`plam turini tanlash, 23.2 Map, architect 28 keshlash
+java-perf	12	394	Chapter 12. Distributed Computing	architect	bor	architect 8.7 tarmoq safari soni, 8.8 serializatsiya narxi, 32.5 ulanish hovuzi
+java-perf	13	426	Chapter 13. When to Optimize	architect	bor	architect 8.10 o`lchovsiz optimallashtirish, 37.5 SLO, clean-code 1.5
+java-perf	14	460	Chapter 14. Underlying Operating System and Network Improvements	architect	bor	architect 31.2-31.4 konteyner CPU va xotira limiti, 32.5 keep-alive
+java-perf	15	476	Chapter 15. J2EE Performance Tuning	-	tashqari	J2EE va JMS sozlash, eskirgan texnologiya
+java-perf	16	497	Chapter 16. Tuning JDBC	architect	bor	architect 27.5 HikariCP, 18.11 JdbcClient, code-review 24 so`rov rejasi
+java-perf	17	532	Chapter 17. Tuning Servlets and JSPs	-	tashqari	JSP, body tag va HttpSession sozlash, eskirgan texnologiya
+java-perf	18	551	Chapter 18. Tuning EJBs	-	tashqari	EJB, eskirgan texnologiya
+java-perf	19	570	Chapter 19. Further Resources	-	tashqari	adabiyot va asbob ro`yxati, qoida emas
+jeps	248	-	Make G1 the Default Garbage Collector	architect	bor	architect 10.3 G1GC, 10 bobda G1 JDK 9 dan beri standart deb yozilgan
+jeps	333	-	ZGC: A Scalable Low-Latency Garbage Collector (Experimental)	architect	bor	architect 10.4 ZGC va Shenandoah, 10.6 GC tanlash jadvali
+jeps	361	-	Switch Expressions	architect	bor	architect 13.3 `switch` ifodasi, patterns 24.33, sonarqube 18.5
+jeps	378	-	Text Blocks	architect	bor	architect 13.4 text block, code-review 17.5 text block va SQL, patterns 24.33
+jeps	394	-	Pattern Matching for instanceof	clean-code	bor	clean-code 15.3 `equals` va `instanceof` pattern matching, code-review 17
+jeps	395	-	Records	architect	bor	architect 13.1 record, code-review 17.1, patterns 24
+jeps	409	-	Sealed Classes	architect	bor	architect 13.2 sealed, code-review 17.2, clean-code 17.10
+jeps	439	-	Generational ZGC	architect	bor	architect 10.4 generational ZGC JDK 21, 10.6 tanlov jadvali
+jeps	441	-	Pattern Matching for switch	architect	bor	architect 13.2, 13.3 deconstruction pattern, code-review 14.8, patterns 24
+jeps	444	-	Virtual Threads	architect	bor	architect 12.1-12.3 virtual thread mexanikasi, patterns 4
+jeps	446	-	Scoped Values (Preview)	architect	bor	architect 12.8 scoped values, patterns 24.36
+jeps	453	-	Structured Concurrency (Preview)	architect	bor	architect 12.7 structured concurrency, architect 8 da JEP 453 havolasi bor
+jeps	491	-	Synchronize Virtual Threads without Pinning	architect	bor	architect 12.4 pinning: Java 24 da `synchronized` tuzatilgani yozilgan, patterns 24
+jls	1	17	Chapter 1. Introduction	-	tashqari	spetsifikatsiyaning tuzilishi va tarixi, qoida emas
+jls	2	29	Chapter 2. Grammars	-	tashqari	grammatika notatsiyasi, korpus qamrovidan tashqari
+jls	3	35	Chapter 3. Lexical Structure	clean-code	bor	clean-code 3 nomlash konvensiyalari, 20.1-20.5 son literali, 21 satr va text block
+jls	4	73	Chapter 4. Types, Values, and Variables	clean-code	bor	clean-code 20.5 primitiv va boxed tur, 23.7 xom tur, architect 9.9 final maydon
+jls	5	127	Chapter 5. Conversions and Contexts	clean-code	bor	clean-code 20.3 to`lib ketish, 20.6 avtoboxing va null unboxing, 23.9 tur xulosasi
+jls	6	167	Chapter 6. Names	clean-code	bor	clean-code 3 nom turlari, 14.1 inkapsulyatsiya, sonarqube 11.3 getter va qamrov
+jls	7	227	Chapter 7. Packages and Modules	clean-code	bor	clean-code 10.7 paket va modul hujjati, architect 4.8 paket tuzilishi, patterns 2.9
+jls	8	261	Chapter 8. Classes	clean-code	bor	clean-code 14 inkapsulyatsiya, 17 vorislik mexanikasi, architect 13.1 record
+jls	9	369	Chapter 9. Interfaces	clean-code	bor	clean-code 17.7 default metod, 17.8 interfeys konstantasi, 24.1 funksional interfeys
+jls	10	427	Chapter 10. Arrays	clean-code	bor	clean-code 23.5 Arrays.asList va List.of, 23.10 massiv va generikni aralashtirmaslik
+jls	11	439	Chapter 11. Exceptions	clean-code	bor	clean-code 18 xato bilan ishlash, 19 istisno mexanikasi, architect 13.7
+jls	12	453	Chapter 12. Execution	architect	bor	architect 9.2 class loading bosqichlari, clean-code 25.2 statik ishga tushirish tartibi
+jls	13	479	Chapter 13. Binary Compatibility	code-review	bor	code-review 37.1 breaking change katalogi, 37.7 deprecation, architect 13.9
+jls	14	511	Chapter 14. Blocks, Statements, and Patterns	clean-code	bor	clean-code 6 shart va boshqaruv oqimi, 7 sikl, architect 13.3 switch va deconstruction
+jls	15	595	Chapter 15. Expressions	clean-code	bor	clean-code 20.4 bo`lish va qoldiq, 25.3 instanceof zanjiri, 24 lambda va oqim
+jls	16	761	Chapter 16. Definite Assignment	-	tashqari	kompilyatorning rasmiy oqim tahlili qoidalari, korpus qamrovidan tashqari
+jls	17	791	Chapter 17. Threads and Locks	architect	bor	architect 9.9 Java memory model, 11.6 volatile va happens-before, 11.20 qayta tartiblash
+jls	18	819	Chapter 18. Type Inference	clean-code	bor	clean-code 23.8 PECS, 23.9 generik metod va var, architect 13.4 var
+jls	19	857	Chapter 19. Syntax	-	tashqari	to`liq grammatika ilovasi, ma`lumotnoma
+jls	A	887	Appendix A. Limited License Grant	-	tashqari	litsenziya matni, qoida emas
+just-enough	1	20	Chapter 1 Introduction	architect	bor	architect 1.6 yetarlicha arxitektura va over-engineering chegarasi
+just-enough	2	35	Chapter 2 Software Architecture	architect	bor	architect 1.1 arxitektura ta`rifi va nega muhim
+just-enough	3	60	Chapter 3 Risk-Driven Model	architect	qoshildi	architect 1.6, 2.9, 3.x (3.1, 3.3, 3.6-bo`lim); testing 1.3 risk hisobi
+just-enough	4	92	Chapter 4 Example: Home Media Player	-	tashqari	to`liq keys-stadi, qoida emas
+just-enough	5	118	Chapter 5 Modeling Advice	architect	qoshildi	architect 3.2, 3.6 (5.4-bo`lim rasional tanlov shabloni)
+just-enough	6	132	Chapter 6 Engineers Use Models	architect	qoshildi	architect 2.11 savol birinchi, model ikkinchi
+just-enough	7	142	Chapter 7 Conceptual Model of Software Architecture	architect	qoshildi	architect 2.12 uch model: domen, dizayn va kod
+just-enough	8	160	Chapter 8 The Domain Model	patterns	qoshildi	architect 2.4 (8.6-bo`lim umumiy lug`at); patterns 13.1, 13.2
+just-enough	9	172	Chapter 9 The Design Model	architect	qoshildi	architect 2.13 dizayn modeli: chegara va ichki model
+just-enough	10	203	Chapter 10 The Code Model	architect	bor	architect 4.9, 4.10 kodda yashirin bilim va o`zini hujjatlash
+just-enough	11	235	Chapter 11 Encapsulation and Partitioning	architect	qoshildi	architect 5.1, 5.6, 5.11; patterns 26.24 o`zgaruvchini inkapsulyatsiya
+just-enough	12	254	Chapter 12 Model Elements	architect	qoshildi	architect 3.8 (12.5-bo`lim: faqat pivotal qaror yozilsin)
+just-enough	13	301	Chapter 13 Model Relationships	architect	qoshildi	architect 2.14 model munosabatlari: designation, refinement
+just-enough	14	321	Chapter 14 Architectural Styles	patterns	qoshildi	patterns 12 uslublar katalogi
+just-enough	15	348	Chapter 15 Using Architecture Models	architect	qoshildi	architect 2.15 qaysi model quriladi va qachon tashlanadi
+just-enough	16	379	Chapter 16 Conclusion	-	tashqari	xulosa bobi, yangi qoida yo`q
+jvms	1	11	Chapter 1. Introduction	-	tashqari	spetsifikatsiyaning tarixi va tuzilishi, qoida emas
+jvms	2	19	Chapter 2. The Structure of the Java Virtual Machine	architect	bor	architect 9.1 JVM xotira hududlari, 9.4 bytecode, 10.1 heap va GC
+jvms	3	53	Chapter 3. Compiling for the Java Virtual Machine	architect	bor	architect 9.4 bytecode va interpretatsiya, sonarqube 9.6 lambda va switch bytecode da
+jvms	4	85	Chapter 4. The class File Format	architect	bor	architect 9.2 class loading, 9.4 bytecode, sonarqube 1.4 semantik model va bytecode
+jvms	5	369	Chapter 5. Loading, Linking, and Initializing	architect	bor	architect 9.2 class loading bosqichlari va class loader ierarxiyasi, 9.3 fat jar
+jvms	6	413	Chapter 6. The Java Virtual Machine Instruction Set	architect	bor	architect 9.4 bytecode, 9.6 inlining va escape analysis, sonarqube 9.7 yashirin shartlar
+jvms	7	615	Chapter 7. Opcode Mnemonics by Opcode	-	tashqari	opcode jadvali, ma`lumotnoma
+jvms	A	619	Appendix A. Limited License Grant	-	tashqari	litsenziya matni, qoida emas
+k8s-patterns	1	21	Chapter 1. Introduction	patterns	bor	patterns 29.21 Pod deploy birligi, 29.11 Service Discovery
+k8s-patterns	2	35	Chapter 2. Predictable Demands	patterns	qoshildi	patterns 29.24 qo`shildi; 29.1, 29.22 resurs so`rovi va limiti
+k8s-patterns	3	45	Chapter 3. Declarative Deployment	patterns	bor	patterns 29.2; 22.6 Blue-Green, 22.7 Canary
+k8s-patterns	4	55	Chapter 4. Health Probe	patterns	bor	patterns 22.19 health probe, architect 31.6 probe sozlash
+k8s-patterns	5	61	Chapter 5. Managed Lifecycle	patterns	bor	patterns 29.3, architect 31.7 SIGTERM va graceful shutdown
+k8s-patterns	6	67	Chapter 6. Automated Placement	patterns	bor	patterns 29.4 affinity, taint va toleration
+k8s-patterns	7	83	Chapter 7. Batch Job	patterns	bor	patterns 29.5
+k8s-patterns	8	89	Chapter 8. Periodic Job	patterns	bor	patterns 29.6
+k8s-patterns	9	93	Chapter 9. Daemon Service	patterns	bor	patterns 29.7
+k8s-patterns	10	99	Chapter 10. Singleton Service	patterns	qoshildi	patterns 29.23 qo`shildi; 29.8, 17.20 Leader Election
+k8s-patterns	11	107	Chapter 11. Stateful Service	patterns	bor	patterns 29.10 StatefulSet
+k8s-patterns	12	119	Chapter 12. Service Discovery	patterns	bor	patterns 29.11, 14 microservices patternlari
+k8s-patterns	13	137	Chapter 13. Self Awareness	patterns	bor	patterns 29.12 Downward API
+k8s-patterns	14	145	Chapter 14. Init Container	patterns	bor	patterns 22.18
+k8s-patterns	15	151	Chapter 15. Sidecar	patterns	bor	patterns 22.15, 14.32
+k8s-patterns	16	155	Chapter 16. Adapter	patterns	bor	patterns 22.17
+k8s-patterns	17	159	Chapter 17. Ambassador	patterns	bor	patterns 22.16, 14.33
+k8s-patterns	18	165	Chapter 18. EnvVar Configuration	patterns	bor	patterns 29.17
+k8s-patterns	19	171	Chapter 19. Configuration Resource	patterns	bor	patterns 29.15 ConfigMap va Secret
+k8s-patterns	20	177	Chapter 20. Immutable Configuration	patterns	bor	patterns 29.16
+k8s-patterns	21	185	Chapter 21. Configuration Template	patterns	bor	patterns 29.18
+k8s-patterns	22	195	Chapter 22. Controller	patterns	bor	patterns 29.19 boshqaruvchi halqa
+k8s-patterns	23	209	Chapter 23. Operator	patterns	bor	patterns 29.20 CRD va operator
+k8s-patterns	24	223	Chapter 24. Elastic Scale	patterns	bor	patterns 29.13 HPA va VPA, architect 31.12
+k8s-patterns	25	241	Chapter 25. Image Builder	patterns	bor	patterns 29.14, architect 31.5 image qurish
+learning-ddd-html	-	-	Learning Domain-Driven Design (Google Books page)	-	tashqari	kitob emas, Google Books veb sahifasi: faqat iv beti ko`rinadi, matn yo`q
+learning-ddd	1	29	Chapter 1. Analyzing Business Domains	patterns	bor	patterns 13.12 core, supporting va generic subdomenlar
+learning-ddd	2	47	Chapter 2. Discovering Domain Knowledge	patterns	bor	patterns 13.1 umumiy til, architect 2.4 domenni o`rganish
+learning-ddd	3	59	Chapter 3. Managing Domain Complexity	patterns	bor	patterns 13.2 bounded context, 13.3 kontekst xaritasi
+learning-ddd	4	75	Chapter 4. Integrating Bounded Contexts	patterns	bor	patterns 13.3-13.11 kontekst munosabatlari
+learning-ddd	5	89	Chapter 5. Implementing Simple Business Logic	patterns	bor	patterns 8.1 Transaction Script, 9.5 Active Record, 13.31
+learning-ddd	6	101	Chapter 6. Tackling Complex Business Logic	patterns	bor	patterns 13.15 agregat, 13.20 domen hodisasi, 13.25
+learning-ddd	7	125	Chapter 7. Modeling the Dimension of Time	patterns	bor	patterns 13.57 hodisa manbali domen modeli
+learning-ddd	8	143	Chapter 8. Architectural Patterns	patterns	bor	patterns 12.2 hexagonal, 12.10 CQRS, 13.34
+learning-ddd	9	163	Chapter 9. Communication Patterns	patterns	bor	patterns 13.58 model tarjimasi, 14.8 saga, 10.14 outbox
+learning-ddd	10	185	Chapter 10. Design Heuristics	patterns	bor	patterns 13.59 biznes logika shaklini tanlash evristikasi
+learning-ddd	11	195	Chapter 11. Evolving Design Decisions	patterns	bor	patterns 13.60 dizayn qarorlari evolyutsiyasi
+learning-ddd	12	211	Chapter 12. EventStorming	patterns	bor	patterns 13.32 Event Storming, architect 2.4
+learning-ddd	13	227	Chapter 13. Domain-Driven Design in the Real World	architect	bor	architect 34.7 strangler, 34.9 refaktoringni biznes bilan kelishish
+learning-ddd	14	243	Chapter 14. Microservices	patterns	bor	patterns 14.1, 14.2, 13.2 servis va kontekst chegarasi
+learning-ddd	15	259	Chapter 15. Event-Driven Architecture	patterns	bor	patterns 12.9 hodisaga asoslangan arxitektura, 13.58
+learning-ddd	16	275	Chapter 16. Data Mesh	patterns	qoshildi	patterns 12.35 data mesh, data product va analitik model
+learning-ddd	A	299	Appendix A. Applying DDD: A Case Study	-	tashqari	keys-stadi, qoida emas
+learning-ddd	B	315	Appendix B. Answers to Exercise Questions	-	tashqari	mashq javoblari, qoida emas
+legacy-code	1	26	Chapter 1: Changing Software	clean-code	bor	clean-code 38.4 refaktoringni mantiq o`zgarishidan ajratish, ikki shlyapa
+legacy-code	2	32	Chapter 2: Working with Feedback	architect	qoshildi	architect 34.1 besh qadamli algoritm, 34.3 xavfsizlik to`ri
+legacy-code	3	44	Chapter 3: Sensing and Separation	testing	bor	testing 9.1, patterns 23.2 test dublyorlari
+legacy-code	4	52	Chapter 4: The Seam Model	architect	qoshildi	architect 34.4 chok va enabling point, clean-code 38.2
+legacy-code	5	68	Chapter 5: Tools	clean-code	bor	clean-code 38.3 IDE refaktoringiga ishonish chegarasi; bobdagi asbob ro`yxati 2004 yilga tegishli
+legacy-code	6	80	Chapter 6: I Don`t Have Much Time and I Have to Change It	clean-code	qoshildi	clean-code 38.2 Sprout va Wrap Method, architect 34.11
+legacy-code	7	100	Chapter 7: It Takes Forever to Make a Change	clean-code	bor	clean-code 39.1 bir qadamli build, 39.7 tez qaytish halqasi
+legacy-code	8	110	Chapter 8: How Do I Add a Feature?	clean-code	bor	clean-code 31.2 red-green-refactor, 17 vorislik va kompozitsiya
+legacy-code	9	128	Chapter 9: I Can`t Get This Class into a Test Harness	testing	bor	testing 17.10 legacy kodga test yozish strategiyasi
+legacy-code	10	160	Chapter 10: I Can`t Run This Method in a Test Harness	testing	bor	testing 17.10, patterns 23.2
+legacy-code	11	174	Chapter 11: I Need to Make a Change. What Methods Should I Test?	architect	qoshildi	architect 34.2 effect sketch
+legacy-code	12	196	Chapter 12: I Need to Make Many Changes in One Area	architect	qoshildi	architect 34.2 interception point va pinch point
+legacy-code	13	208	Chapter 13: I Need to Make a Change, but I Don`t Know What Tests to Write	architect	qoshildi	architect 34.3 characterization test besh qadami, clean-code 38.2
+legacy-code	14	220	Chapter 14: Dependencies on Libraries Are Killing Me	architect	bor	architect 38.5 bog`liqlik narxi, patterns 14.36 Shared Library Coupling
+legacy-code	15	222	Chapter 15: My Application Is All API Calls	patterns	bor	patterns 2.1 Adapter, 13.7 buzilishdan himoya qatlami
+legacy-code	16	232	Chapter 16: I Don`t Understand the Code Well Enough to Change It	architect	qoshildi	architect 34.2 notes/sketching, scratch refactoring, delete unused code
+legacy-code	17	238	Chapter 17: My Application Has No Structure	architect	qoshildi	architect 34.2 tizim haqida hikoya aytib berish usuli
+legacy-code	18	250	Chapter 18: My Test Code Is in the Way	clean-code	bor	clean-code 30 test kodi ham ishlab chiqarish kodi, testing 2.8
+legacy-code	19	254	Chapter 19: My Project Is Not Object Oriented. How Do I Make Safe Changes?	-	tashqari	C, COBOL va boshqa protsedura tillari, Java korpusiga kirmaydi
+legacy-code	20	268	Chapter 20: This Class Is Too Big and I Don`t Want It to Get Any Bigger	clean-code	bor	clean-code 33.19 katta sinf, 36.1 Extract Class
+legacy-code	21	292	Chapter 21: I`m Changing the Same Code All Over the Place	architect	qoshildi	architect 34.2 yuqori churn, clean-code 32.2 takrorlangan kod
+legacy-code	22	312	Chapter 22: I Need to Change a Monster Method and I Can`t Write Tests for It	clean-code	bor	clean-code 32.3 uzun funksiya, 35.1 funksiya ajratish
+legacy-code	23	332	Chapter 23: How Do I Know That I`m Not Breaking Anything?	clean-code	bor	clean-code 38.1, 38.2; patterns 23.22 golden master
+legacy-code	24	342	Chapter 24: We Feel Overwhelmed. It Isn`t Going to Get Any Better	architect	bor	architect 34.6 katta qayta yozish nega muvaffaqiyatsiz bo`ladi
+legacy-code	25	348	Chapter 25: Dependency-Breaking Techniques	architect	qoshildi	architect 34.5 Extract Interface eng xavfsiz usul, testing 17.10
+legacy-code	A	438	Appendix: Refactoring	clean-code	bor	clean-code 35.1 funksiya ajratish (Extract Function)
+liang9	1	34	Chapter 1 Introduction to Computers, Programs, and Java	-	tashqari	kompyuter savodxonligi, qoida chiqmaydi
+liang9	2	66	Chapter 2 Elementary Programming	clean-code	bor	clean-code 20.3-20.5 primitiv va son
+liang9	3	114	Chapter 3 Selections	clean-code	bor	clean-code 6 shart va boshqaruv oqimi
+liang9	4	166	Chapter 4 Loops	clean-code	bor	clean-code 7 sikl va iteratsiya
+liang9	5	210	Chapter 5 Methods	clean-code	bor	clean-code 4, 5
+liang9	6	256	Chapter 6 Single-Dimensional Arrays	clean-code	bor	clean-code 23.10 massiv va generik
+liang9	7	296	Chapter 7 Multidimensional Arrays	clean-code	bor	clean-code 23.10
+liang9	8	328	Chapter 8 Objects and Classes	clean-code	bor	clean-code 14, 16
+liang9	9	368	Chapter 9 Strings	clean-code	bor	clean-code 21 satr va matn
+liang9	10	402	Chapter 10 Thinking in Objects	clean-code	bor	clean-code 14, architect 5 abstraksiya va chegaralar
+liang9	11	440	Chapter 11 Inheritance and Polymorphism	clean-code	bor	clean-code 17
+liang9	12	478	Chapter 12 GUI Basics	-	tashqari	Swing GUI
+liang9	13	512	Chapter 13 Graphics	-	tashqari	desktop grafika
+liang9	14	550	Chapter 14 Exception Handling and Text I/O	clean-code	bor	clean-code 18, 19
+liang9	15	592	Chapter 15 Abstract Classes and Interfaces	clean-code	bor	clean-code 17, architect 4.7
+liang9	16	632	Chapter 16 Event-Driven Programming	-	tashqari	Swing event modeli, korpus qamrovidan tashqari
+liang9	17	672	Chapter 17 GUI Components	-	tashqari	Swing GUI
+liang9	18	704	Chapter 18 Applets and Multimedia	-	tashqari	applet olib tashlangan, eskirgan
+liang9	19	742	Chapter 19 Binary I/O	clean-code	bor	clean-code 19.13 resurs, fayl va NIO
+liang9	20	770	Chapter 20 Recursion	-	tashqari	o`quv algoritmik mashq
+liang9	21	802	Chapter 21 Generics	clean-code	bor	clean-code 23.7-23.9
+liang9	22	826	Chapter 22 Lists, Stacks, Queues, and Priority Queues	clean-code	bor	clean-code 23.1 to`plam turini tanlash, 23.11
+liang9	23	862	Chapter 23 Sets and Maps	clean-code	bor	clean-code 23.1, 23.2 `Map` ni toza ishlatish
+liang9	24	886	Chapter 24 Developing Efficient Algorithms	architect	qoshildi	architect 8.12 o`sish tartibi, 8.13 amortizatsiya
+liang9	25	926	Chapter 25 Sorting	-	tashqari	saralash algoritmlari nazariyasi
+liang9	26	960	Chapter 26 Implementing Lists, Stacks, Queues, and Priority Queues	-	tashqari	o`z implementatsiyasini yozish mashqi
+liang9	27	994	Chapter 27 Binary Search Trees	clean-code	bor	clean-code 23.1 `TreeMap` tanlovi; implementatsiya tafsiloti kerak emas
+liang9	28	1030	Chapter 28 Hashing	clean-code	bor	clean-code 15 tenglik va hash shartnomasi, 23.2
+liang9	29	1060	Chapter 29 AVL Trees	-	tashqari	balanslangan daraxt implementatsiyasi, qoida chiqmaydi
+liang9	30	1080	Chapter 30 Graphs and Applications	-	tashqari	graf algoritmlari
+liang9	31	1126	Chapter 31 Weighted Graphs and Applications	-	tashqari	graf algoritmlari
+liang9	32	1162	Chapter 32 Multithreading and Parallel Programming	architect	bor	architect 11 concurrency, patterns 4.18 Fork-Join
+liang9	33	1208	Chapter 33 Networking	-	tashqari	socket darajasidagi tarmoq, korpus architect 32 da integratsiya darajasida
+liang9	34	1244	Chapter 34 Java Database Programming	architect	bor	architect 32.5 ulanish hovuzi, code-review 29.3
+liang9	35	1284	Chapter 35 Internationalization	patterns	bor	patterns 5.30 MessageSource va i18n, clean-code 21.4 `Locale` tuzog`i
+liang9	36	1321	Chapter 36 JavaBeans	-	tashqari	Swing uchun JavaBeans, eskirgan
+liang9	37	1343	Chapter 37 Containers, Layout Managers, and Borders	-	tashqari	Swing GUI
+liang9	38	1386	Chapter 38 Menus, Toolbars, and Dialogs	-	tashqari	Swing GUI
+liang9	39	1427	Chapter 39 MVC and Swing Models	-	tashqari	Swing GUI
+liang9	40	1471	Chapter 40 JTable and JTree	-	tashqari	Swing GUI
+liang9	41	1526	Chapter 41 Advanced Database Programming	-	tashqari	`RowSet` va scrollable `ResultSet` eskirgan API
+liang9	42	1565	Chapter 42 Servlets	-	tashqari	xom servlet, korpus Spring MVC ga asoslangan
+liang9	43	1623	Chapter 43 JavaServer Pages	-	tashqari	JSP eskirgan
+liang9	44	1660	Chapter 44 JavaServer Faces	-	tashqari	JSF eskirgan
+liang9	45	1710	Chapter 45 Web Services	-	tashqari	JAX-WS SOAP davri
+liang9	46	1736	Chapter 46 Remote Method Invocation	-	tashqari	RMI eskirgan
+liang9	47	1764	Chapter 47 2-4 Trees and B-Trees	architect	bor	architect 23.1 B-tree tuzilishi
+liang9	48	1798	Chapter 48 Red-Black Trees	-	tashqari	`TreeMap` ichki implementatsiyasi
+liang9	49	1836	Chapter 49 Java 2D	-	tashqari	desktop grafika
+liang9	50	1870	Chapter 50 Testing Using JUnit	testing	bor	testing 5 unit test va JUnit 5; kitobda JUnit 4 davri
+liang9	A	1890	Appendix A Java Keywords	-	tashqari	ma`lumotnoma jadvali
+liang9	B	1891	Appendix B The ASCII Character Set	-	tashqari	ma`lumotnoma jadvali
+liang9	C	1893	Appendix C Operator Precedence Chart	-	tashqari	ma`lumotnoma jadvali
+liang9	D	1895	Appendix D Java Modifiers	-	tashqari	ma`lumotnoma jadvali
+liang9	E	1897	Appendix E Special Floating-Point Values	-	tashqari	ma`lumotnoma; clean-code 20 pul va son qoidasi bu mavzuni qamraydi
+liang9	F	1898	Appendix F Number Systems	-	tashqari	matematik ilova
+liang9	G	1902	Appendix G Bitwise Operations	-	tashqari	ma`lumotnoma jadvali
+m2m	1	19	Chapter 1. Just Enough Microservices	patterns	bor	patterns 12.12, 12.24 taqsimlangan monolit, 14.1; architect 5 bog`liqlik va koheziya
+m2m	2	51	Chapter 2. Planning a Migration	architect	qoshildi	architect 34.6 big bang, 34.9 biznes bilan kelishish, 34.10 o`lchov
+m2m	3	93	Chapter 3. Splitting the Monolith	patterns	qoshildi	patterns 27.1-27.6 va 27.22
+m2m	4	143	Chapter 4. Decomposing the Database	patterns	qoshildi	patterns 27.7-27.21; architect 34.8 bazani ajratish tartibi
+m2m	5	225	Chapter 5. Growing Pains	architect	bor	architect 30 kuzatuvchanlik, testing 12.1 E2E, code-review 37 breaking change, patterns 14.5 egalik
+m2m	6	255	Chapter 6. Closing Words	-	tashqari	xulosa bobi, qoida emas
+m2m	A	257	Appendix A. Bibliography	-	tashqari	bibliografiya, qoida emas
+m2m	B	261	Appendix B. Pattern Index	-	tashqari	pattern indeksi; nomlar patterns 27 da
+pg-internals	1	20	Introduction	architect	bor	architect 21.1 protsess modeli, 21.2 ulanish narxi, 21.3 umumiy xotira
+pg-internals	2	39	Isolation	architect	bor	architect 22.1-22.4 izolyatsiya darajalari, 22.12 anomaliyalar taksonomiyasi
+pg-internals	3	62	Pages and Tuples	architect	bor	architect 21.4 sahifa va tuple, 21.11 TOAST, 21.14 virtual va subtransaction
+pg-internals	4	80	Snapshots	architect	bor	architect 22.1 snapshot va ko`rinuvchanlik qoidasi, 22.9 uzoq ochiq tranzaksiya
+pg-internals	5	92	Page Pruning and HOT Updates	architect	bor	architect 21.13 page pruning, HOT zanjiri va fillfactor
+pg-internals	6	102	Vacuum and Autovacuum	architect	bor	architect 21.7 vacuum, 21.8 autovacuum sozlamalari, 21.10 bloat
+pg-internals	7	123	Freezing	architect	bor	architect 21.9 transaction ID o`ralishi va freeze jarayoni
+pg-internals	8	135	Rebuilding Tables and Indexes	architect	bor	architect 21.10 VACUUM FULL va bloat, 23.12 REINDEX CONCURRENTLY
+pg-internals	9	147	Buffer Cache	architect	bor	architect 21.3 shared_buffers, 21.12 clock sweep va buffer ring
+pg-internals	10	164	Write-Ahead Log	architect	bor	architect 21.5 WAL yozuv tartibi, 21.6 checkpoint
+pg-internals	11	182	WAL Modes	architect	bor	architect 21.5 wal_level va synchronous_commit, 21.15 full page write
+pg-internals	12	199	Relation-Level Locks	architect	bor	architect 22.7 jadval darajasidagi lock turlari va DDL lock talabi
+pg-internals	13	210	Row-Level Locks	architect	bor	architect 22.6 FOR UPDATE va SKIP LOCKED, 22.8 deadlock, 22.11 navbat jadvali
+pg-internals	14	231	Miscellaneous Locks	architect	bor	architect 22.15 advisory lock, 22.4 predikat lock, 22.16 PREPARE TRANSACTION
+pg-internals	15	240	Locks on Memory Structures	architect	bor	architect 21.16 spinlock, lightweight lock va wait event
+pg-internals	16	251	Query Execution Stages	architect	bor	architect 24.1 planner va narx modeli, 24.6 EXPLAIN ANALYZE o`qish
+pg-internals	17	271	Statistics	architect	bor	architect 24.2 ANALYZE va pg_statistic, 24.8 ko`p ustunli statistika
+pg-internals	18	294	Table Access Methods	architect	bor	architect 24.4 skan turlari, 24.16 parallel reja
+pg-internals	19	313	Index Access Methods	architect	bor	architect 23.14 pg_am va operator class, 23.15 indeks xossalari
+pg-internals	20	330	Index Scans	architect	bor	architect 24.4 index va index-only scan, 23.3 INCLUDE va index-only shartlari
+pg-internals	21	350	Nested Loop	architect	bor	architect 24.5 join algoritmlari, 24.14 Memoize
+pg-internals	22	367	Hashing	architect	bor	architect 24.5 hash join, 27.3 work_mem har operatsiyaga ajratiladi
+pg-internals	23	387	Sorting and Merging	architect	bor	architect 24.15 Sort node ichida, 24.5 merge join
+pg-internals	24	411	Hash	architect	bor	architect 23.16 hash indeks: qachon mantiqiy, qachon B-tree afzal
+pg-internals	25	421	B-tree	architect	bor	architect 23.1 B-tree tuzilishi, 23.18 deduplication va suffix truncation
+pg-internals	26	444	GiST	architect	bor	architect 23.7 GiST, matn o`xshashligi va oraliq turlar
+pg-internals	27	472	SP-GiST	architect	bor	architect 23.17 SP-GiST: quadtree, k-d tree va radix tree
+pg-internals	28	492	GIN	architect	bor	architect 23.6 GIN: massiv, jsonb va to`liq matn qidiruvi
+pg-internals	29	517	BRIN	architect	bor	architect 23.8 BRIN: katta tartibli jadvallar uchun arzon indeks
+philosophy	1	13	Chapter 1 Introduction	architect	bor	architect 6.1 muhim va tasodifiy murakkablik, 6.2 murakkablik qayerda to`planadi
+philosophy	2	18	Chapter 2 The Nature of Complexity	architect	bor	architect 6.2 uch belgi va ikki sabab, 4.3 kognitiv yuk, 4.9 obscurity
+philosophy	3	25	Chapter 3 Working Code Isn’t Enough	architect	qoshildi	architect 6.6 taktik va strategik dasturlash, startup va investitsiya dalili shu yerda; vaqtning 10-20 foizi 6.10 da (6.9 emas, audit 2026-10-17 tuzatdi)
+philosophy	4	31	Chapter 4 Modules Should Be Deep	architect	bor	architect 6.8 chuqur va yuzaki modul, 5.1 abstraksiya ta`rifi, 4.3 classitis tanqidi
+philosophy	5	40	Chapter 5 Information Hiding (and Leakage)	architect	bor	architect 6.8 ma`lumotni yashirish, 5.7 interfeys kimga tegishli, clean-code 14.1
+philosophy	6	50	Chapter 6 General-Purpose Modules are Deeper	architect	bor	architect 6.9 umumiylashtirish tuzog`i, 5.2 erta abstraksiya va takrorlanish
+philosophy	7	56	Chapter 7 Different Layer, Different Abstraction	architect	bor	architect 4.3 bir metodda bitta abstraksiya darajasi, 5.8 qatlam yo`nalishi
+philosophy	8	65	Chapter 8 Pull Complexity Downwards	architect	bor	architect 6.4 har flag kelajakdagi xato, 6.8 murakkablikni pastga tortish
+philosophy	9	69	Chapter 9 Better Together Or Better Apart?	architect	bor	architect 5.5 koheziya, 5.6 modul chegarasi, 6.9 takrorlanish qizil bayrog`i
+philosophy	10	84	Chapter 10 Define Errors Out Of Existence	clean-code	bor	clean-code 18.6 maxsus holat obyekti, 18.7 null qaytarmaslik, architect 4.6
+philosophy	11	99	Chapter 11 Design it Twice	architect	bor	architect 3.2 variantlarni taqqoslash, 3.5 spike va prototip
+philosophy	12	102	Chapter 12 Why Write Comments? The Four Excuses	clean-code	bor	clean-code 8.1 izoh muvaffaqiyatsizlikni tan olish, 8.2, architect 4.5
+philosophy	13	107	Chapter 13 Comments Should Describe Things that Aren’t Obvious from the Code	clean-code	bor	clean-code 8.4 maqsadni tushuntiruvchi izoh, 10.3, architect 4.5 va 4.10
+philosophy	14	129	Chapter 14 Choosing Names	clean-code	bor	clean-code 2 maqsadni ochuvchi nom, 3 konvensiyalar, architect 4.2
+philosophy	15	137	Chapter 15 Write The Comments First	clean-code	bor	clean-code 10.1 Javadoc kimga yoziladi, 10.4 shartnoma yozish, architect 4.10
+philosophy	16	142	Chapter 16 Modifying Existing Code	clean-code	bor	clean-code 41.2 oldin tushunish keyin o`zgartirish, architect 34.4 chok topish
+philosophy	17	148	Chapter 17 Consistency	clean-code	bor	clean-code 13.1 bitta jamoa bitta uslub, 13.4 Checkstyle qoidalari
+philosophy	18	152	Chapter 18 Code Should be Obvious	clean-code	bor	clean-code 9.10 noravshan bog`liqlik, 34.4-34.6 evristikalar, architect 4.9
+philosophy	19	159	Chapter 19 Software Trends	clean-code	bor	clean-code 31 TDD intizomi, 17.9 delegatsiya bilan vorislik, 14.1 getter emas
+philosophy	20	166	Chapter 20 Designing for Performance	architect	bor	architect 8.10 o`lchovsiz optimallashtirish, clean-code 1.5 toza kod va tez kod
+philosophy	21	176	Chapter 21 Conclusion	-	tashqari	xulosa bobi, yangi qoida bermaydi
+poeaa	1	42	Chapter 1: Layering	architect	bor	patterns 12.1 qatlamli arxitektura; architect 5.8 bog`liqlik yo`nalishi
+poeaa	2	50	Chapter 2: Organizing Domain Logic	patterns	bor	patterns 8.1-8.4; 8.23 anemik model
+poeaa	3	58	Chapter 3: Mapping to Relational Databases	patterns	bor	patterns 9.3-9.22; 9.27 N+1
+poeaa	4	80	Chapter 4: Web Presentation	patterns	bor	patterns 6.1-6.4, 6.11-6.13
+poeaa	5	88	Chapter 5: Concurrency	patterns	bor	patterns 9.23-9.26; architect 22 MVCC va izolyatsiya
+poeaa	6	106	Chapter 6: Session State	patterns	bor	patterns 6.25-6.27
+poeaa	7	112	Chapter 7: Distribution Strategies	patterns	bor	patterns 8.13 Remote Facade, 8.10 DTO; architect 32 tarmoq narxi
+poeaa	8	120	Chapter 8: Putting It All Together	patterns	bor	patterns 12 uslub tanlash; 8.28 amalda qo`llash
+poeaa	9	134	Chapter 9: Domain Logic Patterns	patterns	bor	patterns 8.1 Transaction Script, 8.2 Domain Model, 8.3 Table Module, 8.4 Service Layer
+poeaa	10	168	Chapter 10: Data Source Architectural Patterns	patterns	bor	patterns 9.3 Table Data Gateway, 9.4 Row Data Gateway, 9.5 Active Record, 9.6 Data Mapper
+poeaa	11	208	Chapter 11: Object-Relational Behavioral Patterns	patterns	bor	patterns 9.7 Unit of Work, 9.8 Identity Map, 9.9 Lazy Load
+poeaa	12	240	Chapter 12: Object-Relational Structural Patterns	patterns	bor	patterns 9.10-9.19 identity, mapping va meros
+poeaa	13	330	Chapter 13: Object-Relational Metadata Mapping Patterns	patterns	bor	patterns 9.20 Metadata Mapping, 9.21 Query Object, 9.2 Repository
+poeaa	14	354	Chapter 14: Web Presentation Patterns	patterns	bor	patterns 6.1 MVC, 6.2 Front Controller, 6.3 Page Controller, 6.4 Application Controller, 6.11-6.13 view
+poeaa	15	412	Chapter 15: Distribution Patterns	patterns	bor	patterns 8.13 Remote Facade, 8.10 DTO
+poeaa	16	440	Chapter 16: Offline Concurrency Patterns	patterns	bor	patterns 9.23 Optimistic, 9.24 Pessimistic, 9.25 Coarse-Grained, 9.26 Implicit Lock
+poeaa	17	480	Chapter 17: Session State Patterns	patterns	bor	patterns 6.25 Client, 6.26 Server, 6.27 Database Session State
+poeaa	18	490	Chapter 18: Base Patterns	patterns	qoshildi	patterns 8.27 Special Case, 9.38 Gateway; 2.16, 2.17, 1.17, 13.14, 13.35, 23.27, 9.37
+refactoring	1	13	Chapter 1. Refactoring, a First Example	clean-code	bor	video do`kon misoli: clean-code 35.1, 35.2, 37.4 shu misolga tayanadi
+refactoring	2	46	Chapter 2. Principles in Refactoring	clean-code	bor	clean-code 38 xavfsiz mexanika, 41 kichik qadamlar, architect 34.9
+refactoring	3	63	Chapter 3. Bad Smells in Code	clean-code	qoshildi	clean-code 32.14, 32.15, 33.17-33.20 qo`shildi; 22 hid 32 va 33 da
+refactoring	4	73	Chapter 4. Building Tests	testing	bor	testing 5.2 FIRST, clean-code 30 test kodi, 31.2 red-green-refactor
+refactoring	5	85	Chapter 5. Toward a Catalog of Refactorings	-	tashqari	katalog yozuv formati haqida meta bob, qoida emas
+refactoring	6	89	Chapter 6. Composing Methods	clean-code	bor	clean-code 35.1-35.4, 35.19, 36.9, 37.12
+refactoring	7	115	Chapter 7. Moving Features Between Objects	clean-code	bor	clean-code 35.12, 36.1-36.5
+refactoring	8	138	Chapter 8. Organizing Data	clean-code	bor	clean-code 35.6, 36.6-36.11, 37.13; patterns 25.8 sehrli son
+refactoring	9	192	Chapter 9. Simplifying Conditional Expressions	clean-code	bor	clean-code 37.1-37.6; patterns 3.12 Null Object
+refactoring	10	220	Chapter 10. Making Method Calls Simpler	clean-code	bor	clean-code 35.5, 36.12, 36.13, 37.7-37.11; 18.1 xato kodi emas istisno
+refactoring	11	259	Chapter 11. Dealing with Generalization	clean-code	bor	clean-code 36.15, 37.13-37.15; patterns 3.10 Template Method, 26.4 ISP
+refactoring	12	293	Chapter 12. Big Refactorings	architect	bor	architect 34.7 strangler, 34.12; clean-code 38.5; patterns 12.2
+refactoring	13	311	Chapter 13. Refactoring, Reuse, and Reality	architect	bor	architect 34.9 biznes bilan kelishish, 34.11 qachon tegmaslik
+refactoring	14	328	Chapter 14. Refactoring Tools	-	tashqari	1999 yilgi Smalltalk Refactoring Browser sharhi, eskirgan
+refactoring	15	333	Chapter 15. Putting It All Together	clean-code	bor	clean-code 38.6 refaktoringni to`xtatish nuqtasi
+refactoring2	1	1	Chapter 1: Refactoring: A First Example	clean-code	bor	preview: faqat nom va 18 betgacha matn; clean-code 35.1, 35.2, 37.4
+refactoring2	2	45	Chapter 2: Principles in Refactoring	clean-code	bor	preview: faqat mundarija va nomlar, matn yo`q; clean-code 38, 41
+refactoring2	3	71	Chapter 3: Bad Smells in Code	clean-code	qoshildi	preview: faqat nomlar; 24 hid clean-code 32, 33 da, 6 tasi qo`shildi
+refactoring2	4	85	Chapter 4: Building Tests	testing	bor	preview: faqat nomlar, matn yo`q; testing 5.2, clean-code 30, 31.2
+refactoring2	5	101	Chapter 5: Introducing the Catalog	-	tashqari	katalog formati haqida meta bob; preview: faqat nomlar
+refactoring2	6	105	Chapter 6: A First Set of Refactorings	clean-code	bor	preview: faqat nomlar, matn yo`q; clean-code 35.1-35.11
+refactoring2	7	161	Chapter 7: Encapsulation	clean-code	bor	preview: faqat nomlar, matn yo`q; clean-code 36.1-36.9, 37.12
+refactoring2	8	197	Chapter 8: Moving Features	clean-code	bor	preview: faqat nomlar, matn yo`q; clean-code 35.12-35.18, 36.5
+refactoring2	9	239	Chapter 9: Organizing Data	clean-code	bor	preview: faqat nomlar, matn yo`q; clean-code 35.19, 35.20, 36.10, 36.11
+refactoring2	10	259	Chapter 10: Simplifying Conditional Logic	clean-code	bor	preview: faqat nomlar, matn yo`q; clean-code 37.1-37.6
+refactoring2	11	305	Chapter 11: Refactoring APIs	clean-code	bor	preview: faqat nomlar, matn yo`q; clean-code 35.5, 36.12-36.14, 37.7-37.11
+refactoring2	12	349	Chapter 12: Dealing with Inheritance	clean-code	bor	preview: faqat nomlar, matn yo`q; clean-code 36.15, 37.13-37.15
+release-it	1	14	Introduction	architect	bor	architect 1 fikrlash modeli, 37.5 SLO va uzilish narxi
+release-it	2	21	The Exception That Grounded an Airline	-	tashqari	keys-stadi (aviakompaniya uzilishi), qoida emas
+release-it	3	35	Introducing Stability	architect	bor	architect 7.1-7.3 nosozlik turlari va kraklar tarqalishi
+release-it	4	44	Stability Antipatterns	patterns	qoshildi	patterns 25.84-25.94 o`n bir antipattern
+release-it	5	110	Stability Patterns	patterns	bor	patterns 17.2-17.12 sakkiz stability pattern
+release-it	6	144	Stability Summary	-	tashqari	bob xulosasi, yangi qoida yo`q
+release-it	7	147	Trampled by Your Own Customers	-	tashqari	keys-stadi (reliz kunidagi yuk), qoida emas
+release-it	8	161	Introducing Capacity	architect	bor	architect 8 napkin math, 8.11 Amdahl qonuni
+release-it	9	175	Capacity Antipatterns	patterns	qoshildi	patterns 25.95-25.100; to`rt element eskirgan deb olinmadi
+release-it	10	204	Capacity Patterns	patterns	qoshildi	patterns 17.43 qo`shildi; 9.30, 11.16, architect 10.6
+release-it	11	219	Networking	-	tashqari	multihomed server, routing, virtual IP: datacenter tarmoq sozlamasi
+release-it	12	226	Security	patterns	bor	patterns 18.37 Least Privilege, 18.30 Secrets Management
+release-it	13	229	Availability	architect	bor	architect 37.5 SLO kelishuvi, 32.11 yuk tarqatuvchi, patterns 22
+release-it	14	240	Administration	architect	bor	architect 31.7 graceful shutdown, 31.10 konfiguratsiya, 16.8 Actuator
+release-it	15	249	Design Summary	-	tashqari	bob xulosasi, yangi qoida yo`q
+release-it	16	252	Phenomenal Cosmic Powers, Itty-Bitty Living Space	-	tashqari	keys-stadi (bayram cho`qqisi), qoida emas
+release-it	17	265	Transparency	architect	bor	architect 30 kuzatuvchanlik, patterns 21 observability patternlari
+release-it	18	310	Adaptation	architect	bor	architect 33 to`xtashsiz reliz, patterns 22.6, 22.7, patterns 27
+sa-for-devs	1	18	What is architecture?	architect	bor	architect 1.1 arxitektura ta`rifi
+sa-for-devs	2	20	Types of architecture	-	tashqari	arxitektura turlari sanog`i (enterprise, infratuzilma), qoida emas
+sa-for-devs	3	22	What is software architecture?	architect	qoshildi	architect 1.1 muhim qarorlar ta`rifi
+sa-for-devs	4	25	What is agile software architecture?	architect	bor	architect 1.6; chaqqonlik va tuzilma muvozanati
+sa-for-devs	5	28	Architecture vs design	architect	qoshildi	architect 1.1 (5-bob, 12-13-bet: Booch ta`rifi) iqtibos qilingan
+sa-for-devs	6	30	Is software architecture important?	architect	bor	architect 1.1, 6.6 arxitektura yo`qligining narxi
+sa-for-devs	7	32	Questions	-	tashqari	bob oxiri savollari, qoida emas
+sa-for-devs	8	34	The software architecture role	architect	qoshildi	architect 1.1 arxitektorning vazifalari
+sa-for-devs	9	39	Should software architects code?	architect	qoshildi	architect 1.9 kod yozmaydigan arxitektor
+sa-for-devs	10	42	Software architects should be master builders	architect	bor	architect 1.9, 36.11 texnik yetakchi roli
+sa-for-devs	11	48	From developer to architect	architect	bor	architect 39.1, 39.7 o`tish yo`li va yetuklik
+sa-for-devs	12	50	Broadening the T	architect	bor	architect 38.1 kenglik va chuqurlik tanlovi
+sa-for-devs	13	52	Soft skills	architect	bor	architect 36.3, 37.11 muloqot va muzokara
+sa-for-devs	14	54	Software development is not a relay sport	architect	bor	architect 36.12, 39.5 birgalikda ishlash
+sa-for-devs	15	56	Software architecture introduces control?	architect	bor	architect 36.9 standart o`rnatish, ArchUnit qoidalari
+sa-for-devs	16	58	Mind the gap	architect	bor	architect 1.9, 36.9 arxitektura va kod orasidagi uzilish
+sa-for-devs	17	61	Where are the software architects of tomorrow?	-	tashqari	kasb kelajagi haqida mulohaza, qoida emas
+sa-for-devs	18	63	Everybody is an architect, except when they`re not	architect	bor	architect 1.1, 3.6 qaror egasi kim
+sa-for-devs	19	65	Software architecture as a consultant	-	tashqari	konsultant ish modeli, korpus qamrovidan tashqari
+sa-for-devs	20	67	Questions	-	tashqari	bob oxiri savollari, qoida emas
+sa-for-devs	21	69	Architectural drivers	architect	qoshildi	architect 2.1, 2.2 talab, sifat atributi, cheklov
+sa-for-devs	22	71	Quality Attributes (non-functional requirements)	architect	qoshildi	architect 1.4, 2.2 (19-bet iqtibos qilingan)
+sa-for-devs	23	75	Working with non-functional requirements	architect	qoshildi	architect 2.3, 37.7 (55-58-bet: to`qqizlar va to`xtash oynasi)
+sa-for-devs	24	77	Constraints	architect	qoshildi	architect 1.2 byudjet, muddat va jamoa cheklovi
+sa-for-devs	25	80	Principles	patterns	bor	patterns 26 dizayn printsiplari; architect 5.8
+sa-for-devs	26	83	Technology is not an implementation detail	architect	qoshildi	architect 3.3, 38.7 (26-bob, 67-bet iqtibos qilingan)
+sa-for-devs	27	86	More layers = more complexity	architect	qoshildi	architect 6.1; patterns 12.1 qatlam narxi
+sa-for-devs	28	88	Collaborative design can help and hinder	architect	qoshildi	architect 3.6 kelishmovchilik va qaror egasi
+sa-for-devs	29	89	Software architecture is a platform for conversation	architect	bor	architect 36.8 qarorni jamoaga tarqatish
+sa-for-devs	30	91	SharePoint projects need software architecture too	-	tashqari	SharePoint platformasi, korpus qamrovidan tashqari
+sa-for-devs	31	93	Questions	-	tashqari	bob oxiri savollari, qoida emas
+sa-for-devs	32	95	We have a failure to communicate	architect	qoshildi	architect 3.11 nega eskiz kerak
+sa-for-devs	33	98	The need for sketches	architect	qoshildi	architect 3.11 eskiz zarurati
+sa-for-devs	34	100	Ineffective sketches	architect	qoshildi	architect 3.11 samarasiz diagramma belgilari
+sa-for-devs	35	114	C4: context, containers, components and classes	architect	qoshildi	architect 3.12 C4 modeli: to`rt daraja
+sa-for-devs	36	118	Context diagram	architect	qoshildi	architect 3.13 kontekst diagrammasi
+sa-for-devs	37	122	Container diagram	architect	qoshildi	architect 3.14 konteyner diagrammasi
+sa-for-devs	38	127	Component diagram	architect	qoshildi	architect 3.15 komponent diagrammasi
+sa-for-devs	39	132	Technology choices included or omitted?	architect	qoshildi	architect 3.3 (39-bob, 116-118-bet iqtibos qilingan)
+sa-for-devs	40	136	Would you code it that way?	architect	qoshildi	architect 3.16 "kodda shunday qilasizmi" sinovi
+sa-for-devs	41	138	Software architecture vs code	architect	qoshildi	architect 3.16 model va kod orasidagi uzilish
+sa-for-devs	42	144	You don`t need a UML tool	-	tashqari	diagramma asboblari tanlovi, qoida emas
+sa-for-devs	43	147	Effective sketches	architect	qoshildi	architect 3.17 samarali eskiz: sarlavha, legend, strelka
+sa-for-devs	44	153	C4 - FAQ	architect	qoshildi	architect 3.12, 3.15 C4 savol-javoblari
+sa-for-devs	45	155	Questions	-	tashqari	bob oxiri savollari, qoida emas
+sa-for-devs	46	157	The code doesn`t tell the whole story	architect	qoshildi	architect 3.19 kod aytmagan narsa
+sa-for-devs	47	160	Software documentation as a guidebook	architect	qoshildi	architect 3.19 guidebook shabloni va o`n uch bo`lim
+sa-for-devs	48	165	Context	architect	qoshildi	architect 3.19 Context bo`limi
+sa-for-devs	49	166	Functional Overview	architect	qoshildi	architect 3.19 Functional Overview bo`limi
+sa-for-devs	50	168	Quality Attributes	architect	bor	architect 1.4, 2.3 o`lchanadigan sifat atributi
+sa-for-devs	51	170	Constraints	architect	bor	architect 1.2 cheklovlar
+sa-for-devs	52	172	Principles	patterns	bor	patterns 26; architect 5.8 bog`liqlik yo`nalishi
+sa-for-devs	53	174	Software Architecture	architect	qoshildi	architect 3.19 Software Architecture bo`limi
+sa-for-devs	54	176	External Interfaces	patterns	bor	patterns 7 API dizayni; architect 32 tashqi integratsiya
+sa-for-devs	55	178	Code	architect	bor	architect 4.10; clean-code 10 Javadoc va API hujjati
+sa-for-devs	56	180	Data	architect	bor	architect 25 sxema dizayni va ma`lumot turlari
+sa-for-devs	57	182	Infrastructure Architecture	architect	bor	architect 31 konteyner, cgroup va probe
+sa-for-devs	58	184	Deployment	architect	bor	architect 31, 33 reliz va migratsiya
+sa-for-devs	59	186	Operation and Support	architect	bor	architect 30, 35 kuzatuvchanlik va on-call
+sa-for-devs	60	188	Decision Log	architect	qoshildi	architect 3.1, 3.8 (60-bob, 172-173-bet iqtibos qilingan)
+sa-for-devs	61	190	Questions	-	tashqari	bob oxiri savollari, qoida emas
+sa-for-devs	62	192	The conflict between agile and architecture - myth or reality?	architect	bor	architect 1.6, 3.3 oldindan dizayn miqdori
+sa-for-devs	63	195	Quantifying risk	architect	bor	testing 1.3 ehtimol va ta`sir; architect 7.10 ssenariy jadvali
+sa-for-devs	64	197	Risk-storming	architect	qoshildi	architect 7.11 risk-storming
+sa-for-devs	65	201	Just enough up front design	architect	qoshildi	architect 1.6, 3.3 oxirgi mas`ul daqiqa
+sa-for-devs	66	207	Introducing software architecture	architect	bor	architect 39.3, 39.4 bosqichma-bosqich joriy etish
+sa-for-devs	67	212	Questions	-	tashqari	bob oxiri savollari, qoida emas
+sa-for-devs	A	214	Appendix A: Financial Risk System	-	tashqari	namuna tizim keys-stadi, qoida emas
+sa-for-devs	B	217	Appendix B: Software Guidebook for techtribes.je	-	tashqari	to`liq guidebook namunasi, keys-stadi
+swe-google	1	16	Chapter 1. What Is Software Engineering?	testing	qoshildi	testing 1 shifting left va xato narxi; clean-code 45 baho va bosim (SWE 1-bob)
+swe-google	2	42	Chapter 2. How to Work Well on Teams	clean-code	qoshildi	clean-code 47.1 bus factor, 43 ayblamaydigan post-mortem; architect 35; code-review 41
+swe-google	3	61	Chapter 3. Knowledge Sharing	clean-code	qoshildi	clean-code 47.2 psixologik xavfsizlik, 46, 49; architect 38, 39; code-review 40 readability
+swe-google	4	88	Chapter 4. Engineering for Equity	-	tashqari	jamoa xilma-xilligi va inklyuziv mahsulot siyosati, korpusning texnik qamrovidan tashqari
+swe-google	5	100	Chapter 5. How to Lead a Team	clean-code	qoshildi	clean-code 44 kelishuv qurish, 47; architect 39 "lose the ego" (SWE 5-bob)
+swe-google	6	129	Chapter 6. Leading at Scale	clean-code	qoshildi	clean-code 46 muhim va shoshilinch farqi, aloqa kanallari diqqatga ta`siri (SWE 6-bob)
+swe-google	7	148	Chapter 7. Measuring Engineering Productivity	code-review	bor	code-review 42.1 foydali, 42.2 zararli metrikalar; testing 17.1; architect 6.7
+swe-google	8	169	Chapter 8. Style Guides and Rules	code-review	qoshildi	code-review 40 qoida va ko`rsatma farqi, majburlashni avtomatlashtirish, formatter (SWE 8-bob)
+swe-google	9	195	Chapter 9. Code Review	code-review	qoshildi	code-review 1 review foydalari, 40 review turlari va egalik, 41, 43; clean-code 47.4
+swe-google	10	216	Chapter 10. Documentation	clean-code	bor	clean-code 10 Javadoc va API hujjati; architect 3 ADR, 4.10 o`zini hujjatlaydigan API
+swe-google	11	240	Chapter 11. Testing Overview	testing	qoshildi	testing 1 testlash maqsadi, 2 piramida, 3 kim nima yozadi, 4 exploratory test
+swe-google	12	267	Chapter 12. Unit Testing	testing	qoshildi	testing 3.6 test kodini review qilish checklisti; testing 4 testda control flow
+swe-google	13	295	Chapter 13. Test Doubles	testing	qoshildi	testing 1 dependency injection va testlanuvchanlik (SWE 13-bob); testing 9; patterns 23
+swe-google	14	321	Chapter 14. Larger Testing	testing	qoshildi	testing 1 test rejasi strategiyasi, 3, 4 katta qamrovli test; testing 7, 8, 12
+swe-google	15	355	Chapter 15. Deprecation	code-review	bor	code-review 37.7 deprecation jarayoni; patterns 7.30 Deprecation va Sunset header
+swe-google	16	370	Chapter 16. Version Control and Branch Management	clean-code	bor	clean-code 40 versiya nazorati gigiyenasi; patterns 22.31 trunk-based development
+swe-google	17	396	Chapter 17. Code Search	-	tashqari	Google ichki Code Search vositasi, korpus qamrovidan tashqari
+swe-google	18	418	Chapter 18. Build Systems and Build Philosophy	clean-code	bor	clean-code 39.1 bitta buyruq, 39.3 takrorlanadigan build, 39.5 build fayli o`qilishi
+swe-google	19	452	Chapter 19. Critique: Google`s Code Review Tool	-	tashqari	Google ichki review vositasi, korpus qamrovidan tashqari
+swe-google	20	471	Chapter 20. Static Analysis	code-review	qoshildi	code-review 42.10 effective false positive, 5; clean-code 42 (SWE 20-bob Tricorder)
+swe-google	21	484	Chapter 21. Dependency Management	clean-code	bor	clean-code 39.4 bog`liqlik gigiyenasi; code-review 33; sonarqube 39
+swe-google	22	516	Chapter 22. Large-Scale Changes	architect	bor	architect 34.12 bosqichma-bosqich reja; clean-code 38 xavfsiz refaktoring, 41
+swe-google	23	538	Chapter 23. Continuous Integration	testing	qoshildi	testing 3, 4 feedback halqasi (SWE 23-bob); code-review 2 xato narxi; testing 15
+swe-google	24	568	Chapter 24. Continuous Delivery	testing	qoshildi	testing 4 YouTube reliz keysi (SWE 24-bob); patterns 22.7 kanareyka, 22.31
+swe-google	25	580	Chapter 25. Compute as a Service	architect	bor	architect 31 konteyner va cgroup haqiqati; patterns 29 Kubernetes patternlari
+swe-google	26	614	Chapter 26. Conclusion	-	tashqari	kitob xulosasi, qoida emas
+sys-perf	6	39	Chapter 6 CPUs	architect	bor	architect 14.6 CPU profiling va flame graph, 31.4 CPU throttling, patterns 21.7 USE
+sys-perf	1-5,7-13	-	Chapters 1-5 and 7-13: Introduction, Methodology, Operating Systems, Observability Tools, Applications, Memory, File Systems, Disks, Network, Cloud Computing, Benchmarking, Case Study	-	kirmagan	nusxada yo`q: PDF da faqat 6-bob bor (chop etilgan 189-270 betlar)
+wgjd	4	4	4 Modern concurrency	architect	bor	faqat 4-bob namunasi (47 bet, Manning sample); architect 11 va 12, patterns 4.18 Fork-Join
+xunit	1	66	Chapter 1. A Brief Tour	testing	bor	testing 2.4 test turlari, 5.1 unit test; patterns 23.45 Four-Phase Test
+xunit	2	72	Chapter 2. Test Smells	testing	qoshildi	testing 16.13 smell uch qatlami; 16.9 smell katalogi
+xunit	3	82	Chapter 3. Goals of Test Automation	testing	qoshildi	testing 1.10 spetsifikatsiya va hujjat maqsadlari; qolgan maqsadlar clean-code 30.1, 30.4, 30.6 va testing 4.8, 5.2, 16.16, 16.19, 16.20, 16.26 da. Audit 2026-10-17: 1.1 bu bobning uyi emas edi
+xunit	4	94	Chapter 4. Philosophy of Test Automation	testing	qoshildi	patterns 23.67 State va Behavior Verification; testing 1.6 testability
+xunit	5	102	Chapter 5. Principles of Test Automation	testing	bor	testing 5.2 FIRST, 5.3 AAA, 5.13 anti-patternlar
+xunit	6	112	Chapter 6. Test Automation Strategy	testing	bor	testing 2.1-2.7 piramida va taqsimot; patterns 23.1
+xunit	7	138	Chapter 7. xUnit Basics	patterns	qoshildi	patterns 23.62 Test Method, 23.63 Test Runner, 23.64 Test Discovery, 23.65 Assertion Method
+xunit	8	148	Chapter 8. Transient Fixture Management	patterns	qoshildi	patterns 23.68 In-line/Delegated/Implicit Setup, 23.50 Fresh Fixture, 23.71 teardown
+xunit	9	158	Chapter 9. Persistent Fixture Management	patterns	qoshildi	patterns 23.51 Shared Fixture, 23.52 Prebuilt, 23.53 Lazy Setup, 23.59, 23.72
+xunit	10	170	Chapter 10. Result Verification	patterns	qoshildi	patterns 23.67 verifikatsiya, 23.47 Delta, 23.48 Guard, 23.49 Custom Assertion
+xunit	11	188	Chapter 11. Using Test Doubles	patterns	qoshildi	patterns 23.2, 23.40-23.44 dublyorlar, 23.73 configurable, 23.74 test-specific subclass
+xunit	12	216	Chapter 12. Organizing Our Tests	patterns	qoshildi	patterns 23.77 per Class/Feature, 23.55 per Fixture, 23.76 superklass, 23.64 Named Test Suite
+xunit	13	230	Chapter 13. Testing with Databases	patterns	qoshildi	patterns 23.78 Database Sandbox, 23.79 Stored Procedure Test, 23.57; testing 8 Testcontainers
+xunit	14	238	Chapter 14. A Roadmap to Effective Test Automation	testing	bor	testing 17.8 yetuklik modeli, 17.9 30/60/90 reja, 17.10 legacy
+xunit	15	248	Chapter 15. Code Smells	testing	qoshildi	testing 16.21-16.26 code smell va sabablari
+xunit	16	286	Chapter 16. Behavior Smells	testing	qoshildi	testing 16.14-16.20 behavior smell va sabablari
+xunit	17	322	Chapter 17. Project Smells	testing	qoshildi	testing 16.27 Buggy Tests, 16.28 Production Bugs; 3.1 Developers Not Writing Tests
+xunit	18	340	Chapter 18. Test Strategy Patterns	patterns	qoshildi	patterns 23.82 Recorded/Scripted, 23.83 Data-Driven, 23.70 Minimal/Standard Fixture, 23.50, 23.51, 23.57, 23.58
+xunit	19	410	Chapter 19. xUnit Basics Patterns	patterns	qoshildi	patterns 23.62-23.66 metod, runner, discovery, assertion; 23.45 Four-Phase Test
+xunit	20	470	Chapter 20. Fixture Setup Patterns	patterns	qoshildi	patterns 23.68 uch setup, 23.46 Creation Method, 23.52, 23.53, 23.54, 23.69
+xunit	21	524	Chapter 21. Result Verification Patterns	patterns	qoshildi	patterns 23.67, 23.49 Custom Assertion, 23.47 Delta, 23.48 Guard, 23.66 Unfinished
+xunit	22	562	Chapter 22. Fixture Teardown Patterns	patterns	qoshildi	patterns 23.71 uch teardown shakli, 23.60 Automated Teardown
+xunit	23	584	Chapter 23. Test Double Patterns	patterns	qoshildi	patterns 23.2, 23.41 Stub, 23.42 Spy, 23.43 Mock, 23.44 Fake, 23.73, 23.74
+xunit	24	654	Chapter 24. Test Organization Patterns	patterns	qoshildi	patterns 23.64 Named Test Suite, 23.75 utility va helper, 23.8 Parameterized, 23.77, 23.55, 23.76
+xunit	25	712	Chapter 25. Database Patterns	patterns	qoshildi	patterns 23.78 Sandbox, 23.79 Stored Procedure Test, 23.59 Table Truncation, 23.72 Rollback
+xunit	26	740	Chapter 26. Design-for-Testability Patterns	patterns	qoshildi	patterns 23.80 Dependency Lookup, 23.56 Test Hook, 23.25 Humble Object, 1.13 Dependency Injection
+xunit	27	776	Chapter 27. Value Patterns	patterns	qoshildi	patterns 23.81 Literal/Derived/Generated Value, 23.40 Dummy Object
+xunit	A	798	Appendix A. Test Refactorings	testing	qoshildi	testing 16.29 In-line Resource va Setup External Resource; qolgan to`rttasi patterns 23.25, 23.81, 23.70, 23.2 da. Audit 2026-10-17: 16.8 bu ilovaning uyi emas edi
+xunit	B	804	Appendix B. xUnit Terminology	-	tashqari	atamalar lug`ati, qoida emas
+xunit	C	810	Appendix C. xUnit Family Members	-	tashqari	boshqa tillardagi xUnit freymvorklari ro`yxati
+xunit	D	816	Appendix D. Tools	-	tashqari	2007 yil asbob ro`yxati, eskirgan
+xunit	E	820	Appendix E. Goals and Principles	testing	bor	testing 1.1, 5.2 FIRST printsiplari
+xunit	F	824	Appendix F. Smells, Aliases, and Causes	testing	qoshildi	testing 16.13-16.28 smell va sabab taksonomiyasi shu indeksdan
+xunit	G	830	Appendix G. Patterns, Aliases, and Variations	patterns	qoshildi	patterns 23.62-23.83 pattern katalogi shu indeksdan
+gof	1.1	22	1.1 What Is a Design Pattern?	patterns	bor	patterns 1.18 pattern ta`rifi: nom, muammo, yechim, oqibatlar
+gof	1.2	24	1.2 Design Patterns in Smalltalk MVC	-	tashqari	Smalltalk MVC tafsiloti; MVC rollari patterns 6.1 da Spring kontekstida
+gof	1.3	26	1.3 Describing Design Patterns	patterns	bor	patterns 1.18 GoF yozuv shabloni va uning korpusdagi qisqartmasi
+gof	1.4	28	1.4 The Catalog of Design Patterns	patterns	bor	patterns 1-3 boblar katalogi; patterns 99 alifbo indeksi
+gof	1.5	29	1.5 Organizing the Catalog	patterns	bor	patterns 1.19 maqsad va qamrov ikki o`lchovi
+gof	1.6	31	1.6 How Design Patterns Solve Design Problems	patterns	bor	patterns 1.20 granularlik, 2.18-2.21 interfeys va qayta ishlatish, 3.24, 3.28
+gof	1.7	48	1.7 How to Select a Design Pattern	patterns	bor	patterns 3.25 oltita kirish yo`li
+gof	1.8	49	1.8 How to Use a Design Pattern	patterns	bor	patterns 3.25 qo`llash tartibi; 3.26 bog`liq patternlar
+gof	2.1	53	2.1 Design Problems	-	tashqari	C++ GUI matn redaktori keysining yettita masalasi
+gof	2.2	55	2.2 Document Structure	-	tashqari	redaktor keysi; pattern o`zi patterns 2.3 Composite da
+gof	2.3	60	2.3 Formatting	-	tashqari	redaktor keysi; pattern o`zi patterns 3.9 Strategy da
+gof	2.4	63	2.4 Embellishing the User Interface	-	tashqari	desktop GUI keysi; pattern o`zi patterns 2.4 Decorator da
+gof	2.5	67	2.5 Supporting Multiple Look-and-Feel Standards	-	tashqari	desktop GUI keysi; pattern o`zi patterns 1.8 Abstract Factory da
+gof	2.6	71	2.6 Supporting Multiple Window Systems	-	tashqari	oyna tizimi keysi; pattern o`zi patterns 2.2 Bridge da
+gof	2.7	78	2.7 User Operations	-	tashqari	redaktor undo keysi; pattern o`zi patterns 3.2 Command da
+gof	2.8	84	2.8 Spelling Checking and Hyphenation	-	tashqari	redaktor keysi; patternlar patterns 3.4 Iterator va 3.11 Visitor da
+gof	2.9	96	2.9 Summary	-	tashqari	redaktor keysida ishlatilgan sakkiz pattern xulosasi
+gof	3.1	107	Abstract Factory	patterns	bor	patterns 1.8; 5.3 FactoryBean
+gof	3.2	117	Builder	patterns	bor	patterns 1.10 Step Builder va Lombok @Builder; clean-code 16.5
+gof	3.3	127	Factory Method	patterns	bor	patterns 1.7; 1.6 static factory
+gof	3.4	137	Prototype	patterns	bor	patterns 1.11 clone o`rniga copy constructor va toBuilder
+gof	3.5	147	Singleton	patterns	bor	patterns 1.1; 24.10 enum singleton, 25.26 singleton abuse
+gof	4.1	159	Adapter	patterns	bor	patterns 2.1; code-review 10.7 port va adapter
+gof	4.2	171	Bridge	patterns	bor	patterns 2.2
+gof	4.3	183	Composite	patterns	bor	patterns 2.3
+gof	4.4	195	Decorator	patterns	bor	patterns 2.4; code-review 11.6 dekorator zanjiri
+gof	4.5	205	Facade	patterns	bor	patterns 2.5; 8.25 orchestrator va facade farqi
+gof	4.6	215	Flyweight	patterns	bor	patterns 2.6
+gof	4.7	227	Proxy	patterns	bor	patterns 2.7 static, JDK dynamic proxy, CGLIB
+gof	5.1	243	Chain of Responsibility	patterns	bor	patterns 3.1; 18.2 SecurityFilterChain
+gof	5.2	253	Command	patterns	bor	patterns 3.2; 8.15 use case handler
+gof	5.3	263	Interpreter	patterns	bor	patterns 3.3 AST va qoidalar matni
+gof	5.4	277	Iterator	patterns	bor	patterns 3.4; clean-code 7.2 iterator tanlovi
+gof	5.5	293	Mediator	patterns	bor	patterns 3.5; 8.16 Command Bus
+gof	5.6	303	Memento	patterns	bor	patterns 3.6 snapshot va caretaker
+gof	5.7	313	Observer	patterns	bor	patterns 3.7
+gof	5.8	325	State	patterns	bor	patterns 3.8; 3.21 Spring Statemachine
+gof	5.9	335	Strategy	patterns	bor	patterns 3.9
+gof	5.10	345	Template Method	patterns	bor	patterns 3.10; 5.9 bean lifecycle callbacklari
+gof	5.11	351	Visitor	patterns	bor	patterns 3.11; 24.3 exhaustive switch
+gof	6	371	6 Conclusion	-	tashqari	kitob xulosasi va 1994 pattern jamoasi tarixi; qiymat patterns 1.18, 3.24 da
+gof	A	379	A: Glossary	patterns	bor	GLOSSARY.md va patterns 99 indeksi; atamalar patterns 2.13, 2.19, 2.20 da
+gof	B	383	B: Guide to Notation	-	tashqari	1994 OMT notatsiyasi, eskirgan; korpus eskizi architect 3.13-3.15 da
+gof	C	389	C: Foundation Classes	-	tashqari	C++ List, Iterator, Point, Rect sinf kutubxonasi kodi
+schildt11	1	49	Chapter 1 The History and Evolution of Java	architect	bor	architect 13.11 LTS va Java versiyalari; java-ref 1-bob bilan bir xil mavzu
+schildt11	2	73	Chapter 2 An Overview of Java	clean-code	bor	clean-code 1.1; architect 13.11; java-ref 2-bob bilan bir xil mavzu
+schildt11	3	100	Chapter 3 Data Types, Variables, and Arrays	clean-code	bor	clean-code 20.3, 20.5, 23.10; java-ref 3-bob bilan bir xil mavzu
+schildt11	4	139	Chapter 4 Operators	clean-code	bor	clean-code 6.5, 20.3, 20.4; java-ref 4-bob bilan bir xil mavzu
+schildt11	5	168	Chapter 5 Control Statements	clean-code	bor	clean-code 6.6, 7.2, 7.4; java-ref 5-bob bilan bir xil mavzu
+schildt11	6	212	Chapter 6 Introducing Classes	clean-code	bor	clean-code 14.1, 14.9, 16.1; java-ref 6-bob bilan bir xil mavzu
+schildt11	7	243	Chapter 7 A Closer Look at Methods and Classes	clean-code	bor	clean-code 4.1, 5.1, 5.10, 14.8; java-ref 7-bob bilan bir xil mavzu
+schildt11	8	291	Chapter 8 Inheritance	clean-code	bor	clean-code 17.1, 17.4, 17.9; java-ref 8-bob bilan bir xil mavzu
+schildt11	9	336	Chapter 9 Packages and Interfaces	patterns	bor	patterns 24.32 JPMS, architect 4.8; java-ref 9-bob bilan bir xil mavzu
+schildt11	10	376	Chapter 10 Exception Handling	clean-code	bor	clean-code 18.1, 18.3, 19.2; java-ref 10-bob bilan bir xil mavzu
+schildt11	11	408	Chapter 11 Multithreaded Programming	architect	bor	architect 11.2, 11.3, 11.4; java-ref 11-bob bilan bir xil mavzu
+schildt11	12	454	Chapter 12 Enumerations, Autoboxing, and Annotations	clean-code	bor	clean-code 25.9, 25.11, 20.6; java-ref 12-bob bilan bir xil mavzu
+schildt11	13	512	Chapter 13 I/O, Try-with-Resources, and Other Topics	clean-code	bor	clean-code 19.4, 19.13; java-ref 13-bob bilan bir xil mavzu
+schildt11	14	558	Chapter 14 Generics	clean-code	bor	clean-code 23.7, 23.8, 23.9, 23.10; java-ref 14-bob bilan bir xil mavzu
+schildt11	15	624	Chapter 15 Lambda Expressions	clean-code	bor	clean-code 24.1, 24.2, 24.3; java-ref 15-bob bilan bir xil mavzu
+schildt11	16	667	Chapter 16 Modules	patterns	bor	patterns 24.32 JPMS; java-ref 16-bob bilan bir xil mavzu
+schildt11	17	711	Chapter 17 String Handling	clean-code	bor	clean-code 21.1, 21.2, 21.5; java-ref 18-bob bilan bir xil mavzu
+schildt11	18	750	Chapter 18 Exploring java.lang	clean-code	bor	clean-code 15.1, 15.7, 20.5, 25.2; java-ref 19-bob bilan bir xil mavzu
+schildt11	19	839	Chapter 19 java.util Part 1: The Collections Framework	clean-code	bor	clean-code 23.12 PriorityQueue shu bobga iqtibos, 23.1, 23.4; java-ref 20-bob bilan bir xil mavzu
+schildt11	20	963	Chapter 20 java.util Part 2: More Utility Classes	clean-code	bor	clean-code 22.2, 22.4, 20.8; java-ref 21-bob bilan bir xil mavzu
+schildt11	21	1046	Chapter 21 Input/Output: Exploring java.io	clean-code	bor	clean-code 19.13, 19.4; java-ref 22-bob bilan bir xil mavzu
+schildt11	22	1117	Chapter 22 Exploring NIO	clean-code	bor	clean-code 19.13 Path va Files; java-ref 23-bob bilan bir xil mavzu
+schildt11	23	1166	Chapter 23 Networking	-	tashqari	soket darajasidagi java.net API, korpus tarmoq qoidasi mijoz darajasida; java-ref 24-bob ham tashqari
+schildt11	24	1201	Chapter 24 Event Handling	-	tashqari	AWT hodisa modeli, desktop GUI; java-ref 25-bob ham tashqari
+schildt11	25	1247	Chapter 25 Introducing the AWT: Working with Windows, Graphics, and Text	-	tashqari	AWT desktop GUI; java-ref 26-bob ham tashqari
+schildt11	26	1288	Chapter 26 Using AWT Controls, Layout Managers, and Menus	-	tashqari	AWT desktop GUI; java-ref 27-bob ham tashqari
+schildt11	27	1363	Chapter 27 Images	-	tashqari	AWT grafika va rasm, desktop; java-ref 28-bob ham tashqari
+schildt11	28	1403	Chapter 28 The Concurrency Utilities	architect	bor	architect 11.5, 11.7, 11.8, 11.9; java-ref 29-bob bilan bir xil mavzu
+schildt11	29	1479	Chapter 29 The Stream API	clean-code	bor	clean-code 24.4, 24.5, 24.8, architect 13.6; java-ref 30-bob bilan bir xil mavzu
+schildt11	30	1518	Chapter 30 Regular Expressions and Other Packages	clean-code	bor	clean-code 21.6, 21.7 regex; java-ref 31-bob bilan bir xil mavzu
+schildt11	31	1560	Chapter 31 Introducing Swing	-	tashqari	Swing desktop GUI; java-ref 32-bob ham tashqari
+schildt11	32	1587	Chapter 32 Exploring Swing	-	tashqari	Swing desktop GUI; java-ref 33-bob ham tashqari
+schildt11	33	1632	Chapter 33 Introducing Swing Menus	-	tashqari	Swing desktop GUI; java-ref 34-bob ham tashqari
+schildt11	34	1686	Chapter 34 Java Beans	-	tashqari	desktop Beans komponent modeli, Spring bean emas; java-ref 35-bob ham tashqari
+schildt11	35	1704	Chapter 35 Introducing Servlets	-	tashqari	xom servlet API va Tomcat qoshish, korpus Spring MVC darajasida; java-ref 36-bob ham tashqari
+schildt11	A	1738	Appendix A Using Java`s Documentation Comments	clean-code	bor	clean-code 10.3, 10.5, 10.6 Javadoc; java-ref Appendix A tashqari deb belgilangan, bu xato
+schildt11	B	1750	Appendix B Introducing JShell	-	tashqari	REPL asbobi, kod qoidasi chiqmaydi; java-ref Appendix B ham tashqari
+schildt11	C	1765	Appendix C Compile and Run Simple Single-File Programs in One Step	-	tashqari	launcher imkoniyati, kod qoidasi chiqmaydi; java-ref Appendix C ham tashqari
+orosz	1	16	Chapter 1. Career Paths	-	tashqari	kompaniya turlari (Big Tech, scaleup, startup), karera zinasi, kompensatsiya va "tier"lar, cost/profit center; texnik qoida yo`q
+orosz	2	34	Chapter 2. Owning Your Career	-	tashqari	karera egaligi, work log, feedback so`rash, menejerni ittifoqchi qilish, sur`atni saqlash; korpusda uyi yo`q
+orosz	3	46	Chapter 3. Performance Reviews	-	tashqari	performance review ga tayyorgarlik, maqsad qo`yish, odat kuchi; HR jarayoni, texnik qoida emas
+orosz	4	58	Chapter 4. Promotions	-	tashqari	promotion qarori, terminal level, Big Tech promo jarayoni; karera zinasi mavzusi
+orosz	5	70	Chapter 5. Thriving in Different Environments	-	tashqari	product va platform jamoalari, product-minded engineer, "peacetime/wartime", kompaniya turlari; ish muhitiga moslashish, texnik qoida yo`q
+orosz	6	84	Chapter 6. Switching Jobs	-	tashqari	ish almashtirish, intervyuga tayyorgarlik, down-leveling/up-leveling, onboarding; korpus qamrovidan tashqari
+orosz	7	104	Getting Things Done	clean-code	qoshildi	clean-code 47.6 xayrixohlik balansi, tayyorlanib so`rash va eskalatsiya zinasi; clean-code 45.9 ish turiga qarab baholash va timebox; blokni tan olish va rubber ducking clean-code 46.5 da bor; ustuvorlik, mentor izlash va tashabbus qismi tashqari
+orosz	8	122	Coding	clean-code	bor	Readable code (nom, KISS, SRP, DRY, kommentariya, doimiy refaktoring) clean-code 1-13 va 32-33 da; xato ishlash va himoyali programmalash clean-code 19, patterns 24.26 va 24.40 da; kod review so`rash va AI feedback chegarasi code-review 40.3, 41 va 43 da; kata va muntazam mashq clean-code 46.7 da. Yagona bo`shliq, takrorlanadigan review izohidan odatni tuzatish (112-bet), clean-code 41.9 ga qo`shildi
+orosz	9	132	Software Development	clean-code	qoshildi	clean-code 46.9 Debugger asbobini o`zlashtirish (shartli va istisno breakpointi, watchpoint, drop frame, threadlar orasida o`tish, juft debug seansi); kod o`qish yozuvlari (128-bet) clean-code 41.9 da. Debug vaqti va asbobsiz debug 46.8 da, refaktoring mexanikasi 38 da, test refaktoringi testing 16.8 da, chegaraviy holat va avtomatlashtirilgan test testing 2 va 4 da allaqachon bor; tilni chuqur o`rganish va ikkinchi til (121-125-bet) architect 38 ning o`rganish bobiga tegishli
+orosz	10	144	Tools of the Productive Software Engineer	clean-code	qoshildi	clean-code 39.9 IDE qobiliyatlari va tahrir-ishga tushirish sikli, 40.9 Git ni model darajasida bilish (cherry-pick, konflikt, buyruq qatori), 41.9 shaxsiy yozuvlar va productivity cheat sheet. PR tavsifi code-review 40.4 shablonida, PR hajmi clean-code 40.6 va architect 36.5 da, review navbati code-review 40.3 da, formatlash va linter sozlamasi clean-code 13.2 va sonarqube 22.9 da, AI asistent chegarasi code-review 43 da, CI/CD testing 15 va sonarqube 21 da, SQL va regex korpusning boshqa hujjatlarida allaqachon bor
+orosz	11	162	Getting Things Done	architect	qoshildi	architect 2.16 ishdan oldin yozma talab, tasdiqlash va test rejasi; testing 3.10 ishni QA ga devor orqali uzatmaslik; clean-code 47.6 yechimni aytmay savol bilan yo`naltirish va juftlik; kiruvchi so`rov va uzilish clean-code 46 da, kichik PR va qisqa iteratsiya clean-code 40.6 da bor; ishni ko`rsatish va under-promise qismi tashqari
+orosz	12	176	Chapter 12. Collaboration and Teamwork	code-review	qoshildi	code-review 40.14 review yetukligining ikki darajasi (165-168-bet); architect 36.15 bog`liq jamoalar xaritasi va chegaradagi takroriy ishqalanish (168, 177-bet); 1-bo`limning qolgani code-review 41.3, 41.5, 41.7, 41.12, architect 36.2, 36.7 da bor; pairing clean-code 41.7 da; mentoring, feedback va ta`sir o`tkazish qismlari tashqari, uy bobi yo`q
+orosz	13	192	Software Engineering	clean-code	qoshildi	clean-code 1.10 qasddan olingan texnik qarz, bankrotlik nuqtasi va "yetarlicha qarz"; clean-code 45.8 qarz ta`sirini raqamga aylantirish va yuqori ta`sirli loyihaga qo`shib olib tashlash; til, platforma va full-stack bo`limlari hamda hujjat turlari ro`yxati korpusda uyi boshqa hujjatlarda (architect), debugging bo`limi architect 30 va 35 da
+orosz	14	206	Testing	testing	bor	testing 2.1-2.4 piramida, Testing Trophy va test turlari xaritasi (smoke, chaos, performance, exploratory, mutation); 1.7 avtomat testning foydasi va narxi; 15.12 production`da testlash. Snapshot va bundle size testi frontend mavzusi, korpus qamrovidan tashqarida. Yagona yangi qoida - ko`p ijara bilan production testi - 15.16 ga qo`shildi
+orosz	15	218	Software Architecture	architect	qoshildi	architect 3.20 RFC va dizayn hujjati, 3.21 muhokamani ochish; DDD patterns 13 da, prototip architect 3.5 da; rollout va pre-mortem uy bobi boshqa hujjatda
+orosz	16	234	Chapter 16. Project Management	clean-code	bor	"software project physics" uchburchagi (timeline/scope/people) va baholash clean-code 45 da: 45.2 uch nuqtali baho, 45.4 noaniqlik konusi, 45.5 Brooks qonuni va odam qo`shish, 45.7 qamrovni qisqartirish; patterns 25.83 Death by Planning. Chetda: kickoff, milestone, kundalik status, loyihani yopish - jarayon qismi
+orosz	17	252	Shipping to Production	testing	qoshildi	testing 1.9 reliz tekshiruvi og`irligining ikki chekkasi, kompaniya turi bo`yicha jadval va tanlov savollari; 15.16 test ijarasi (tenancy) bilan production`da testlash. Canary, feature flag va avtomatik rollback 15.11-15.12 hamda patterns 22.7 da bor, production bazasini qo`lda o`zgartirish taqiqi architect 33.2 da, error budget architect 37.6 da
+orosz	18	268	Chapter 18. Stakeholder Management	-	tashqari	stakeholder ni aniqlash, xabardor qilish, muammoli stakeholder bilan ishlash; aloqa va jarayon mavzusi, korpusda uyi yo`q
+orosz	19	278	Chapter 19. Team Structure	-	tashqari	rol va title farqi, oshkor/yashirin rollar, jamoa jarayonlari ro`yxati, fokusni oshirish; Conway qonuni yoki jamoa chegarasi arxitekturasi bu bobda yo`q (u patterns 12.1, 12.14, 13.3, 14.5 da)
+orosz	20	284	Chapter 20. Team Dynamics	-	tashqari	sog`lom va nosog`lom jamoa belgilari, o`sish og`rig`i, konflikt, boshqa jamoalar bilan munosabat; chetdagi texnik ishoralar korpusda bor: avtomat guardrail va coverage gate sonarqube 6.1 va 9.5, testing 14.9, texnik qarz sonarqube 5.2 va architect 6.6
+orosz	21	304	Understanding the Business	architect	qoshildi	architect 37.13 maqsadga aylangan metrikaning o`ynalishi va qarshi o`lchov; nofunksional talabni biznes tiliga o`girish architect 37.8 da bor; North Star, OKR, SWOT, profit va cost center, biznes modeli, startup va sanoat tahlili qismi tashqari
+orosz	22	320	Chapter 22. Collaboration	code-review	qoshildi	code-review 41.13 ishni qaytarib olish va mansab bilan bosish (309-bet); bobning ko`pchiligi tashqari: ichki siyosat, trust capital, menejer va staff+ peer bilan ishlash, tarmoq kengaytirish, sponsorlik - korpusda uy bobi yo`q; PR tavsifi bo`yicha maslahat (312-bet) code-review 40.4 da bor
+orosz	23	334	Software Engineering	clean-code	qoshildi	clean-code 43.6 sifat me`yorini eng tajribali muhandis belgilaydi, namunali PR va "chayqa menejmenti"; definition of done bor (clean-code 41.8, testing 1.5 va 18.3); coding style guideline va code review bor (clean-code 13 va 42, code-review 40); CI/CD, trunk-based, feature flag, monorepo va microservice vs monolit bor (patterns 22 va 27); staff+ roli, vosita sotib olish yoki qurish va compliance qismlari korpus qamrovidan tashqarida
+orosz	24	354	Reliable Software Systems	architect	qoshildi	architect 30.13 statik chegara va anomaliya aniqlash, 35.14 alert precision va recall, 35.15 on-call zanjiri va navbat o`lchami; log 30.2-30.4, metrika 30.5-30.7, alert dizayni 30.10, incident 35.1-35.10 da allaqachon bor; 1-bo`lim (OKR, KPI, staff+ roli) va on-call kompensatsiyasi korpus qamrovidan tashqari
+orosz	25	372	Software Architecture	architect	qoshildi	architect 1.11 ta`sir radiusi (blast radius), 5.12 biznes use case o`sishi, 6.11 arxitektura qarzi; bir va ikki tomonlama eshik 1.5 da, arxitektor arxetiplari korpusdan tashqari
+orosz	26	394	Chapter 26. Lifelong Learning	-	tashqari	qiziquvchanlik, o`rganishni davom ettirish, sohadan xabardor bo`lish, burnout dan saqlanish; shaxsiy o`sish odatlari. DIQQAT: bet siljishi bu yerda +13, +11 emas (PDF 404 da kolontitul 391)
+orosz	27	406	Chapter 27. Further Reading	-	tashqari	bonus boblar, newsletter va tavsiya etilgan kitoblar ro`yxati (QR havolalar); bibliografiya, qoida emas. Bet siljishi +13 (PDF 407 da kolontitul 394)

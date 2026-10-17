@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 9. JVM ichki tuzilishi: class loading, memory model, JIT (JVM Internals)
 
@@ -336,6 +336,13 @@ Qaror mezoni oddiy. Uzoq ishlaydigan va yuqori throughput talab qiladigan to'lov
 - [ ] `-Xlog:deoptimization=info` ni staging da yuklama testi vaqtida yoqib, eng ko'p takrorlanadigan deoptimizatsiya sabablarini ro'yxatga oling.
 - [ ] Kubernetes manifestlariga `startupProbe`, graceful shutdown va bosqichli trafik berishni qo'shib, deploy paytidagi p99 sakrashini o'lchang.
 - [ ] Umumiy mutable holat ishlatadigan har bir class ni ko'rib chiqib, uni immutable ga, `volatile` ga yoki `java.util.concurrent` strukturasiga o'tkazish bo'yicha qaror yozib qo'ying.
+
+## Manbalar
+
+- [OpenJDK 25, `java.util.concurrent` package javadoc](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/util/concurrent/package-info.java) - happens-before munosabati va memory model ning amaliy ko'rinishi
+- [OpenJDK 25, `VirtualThread.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/lang/VirtualThread.java) - thread holat mashinasi va mount/unmount mexanikasi
+- [OpenJDK 25, `gc_globals.hpp`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/hotspot/share/gc/shared/gc_globals.hpp) - heap va GC bilan bog'liq bayroqlarning haqiqiy defaultlari
+- [OpenJDK 25, `ForkJoinPool.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/util/concurrent/ForkJoinPool.java) - `commonPool` ning yadro soniga bog'lanishi
 
 ---
 

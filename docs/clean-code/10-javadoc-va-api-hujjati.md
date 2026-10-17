@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 10. Javadoc va API hujjati (Javadoc and API Documentation)
 
 <details>
-<summary>Bu bobdagi 11 bo'lim</summary>
+<summary>Bu bobdagi 12 bo'lim</summary>
 
 - [10.1 Javadoc kimga yoziladi va qayerga yozilmaydi](#101-javadoc-kimga-yoziladi-va-qayerga-yozilmaydi)
 - [10.2 Birinchi gap qoidasi va fe'l shakli](#102-birinchi-gap-qoidasi-va-fel-shakli)
@@ -19,7 +19,8 @@
 - [10.8 Namuna kod va uni kompilyatsiya ostida ushlash](#108-namuna-kod-va-uni-kompilyatsiya-ostida-ushlash)
 - [10.9 Javadoc ni CI da tekshirish](#109-javadoc-ni-ci-da-tekshirish)
 - [10.10 Kod ichidagi hujjat va repodagi hujjat bo'linishi](#1010-kod-ichidagi-hujjat-va-repodagi-hujjat-bolinishi)
-- [10.11 Amalda qo'llash](#1011-amalda-qollash)
+- [10.11 Hujjatni tasvirlash qiyinligi (Red Flag: Hard to Describe)](#1011-hujjatni-tasvirlash-qiyinligi-red-flag-hard-to-describe)
+- [10.12 Amalda qo'llash](#1012-amalda-qollash)
 
 </details>
 
@@ -203,7 +204,45 @@ Hujjatning qayerda turishi uning hayot muddatini belgilaydi. Qoida: kod bilan bi
 | Reliz o'zgarishlari | `CHANGELOG.md` (40.3) |
 | Operatsion qo'llanma | runbook, repoda yoki wiki da |
 
-## 10.11 Amalda qo'llash
+## 10.11 Hujjatni tasvirlash qiyinligi (Red Flag: Hard to Describe)
+
+10.3 va 10.4 hujjatni to'liq yozishni talab qiladi. Shu talabning teskari tomoni ham bor va u dizayn haqida gapiradi: metod yoki o'zgaruvchining izohi sodda va ayni paytda to'liq bo'lishi kerak, shunday izoh yozish qiyin bo'lsa, tasvirlanayotgan narsaning dizaynida muammo bor (Ousterhout, *A Philosophy of Software Design*, 1-nashr, Yaknyam Press, 2018, 15.3). Ousterhout izohni murakkablik koniga tushirilgan kanareykaga qiyoslaydi: metod yoki o'zgaruvchi uzun izoh talab qilsa, bu abstraksiya topilmaganining birinchi belgisi.
+
+Mezon shu yerda aniq ko'rsatilgan. Yaxshi sinf chuqur bo'ladi: interfeysi sodda, ichida bajarayotgan ishi katta. Interfeysning murakkabligini o'lchashning eng yaxshi usuli esa uni tasvirlaydigan izoh: agar metodning interfeys izohi uni ishlatish uchun kerakli hamma narsani beradi va shu bilan birga qisqa bo'lsa, interfeys sodda; agar metodni uzun va murakkab izohsiz to'liq tasvirlash imkoni bo'lmasa, interfeys murakkab. Interfeys izohini implementatsiya bilan solishtirish chuqurlikni ko'rsatadi: izoh implementatsiyaning hamma asosiy xususiyatini aytib berishga majbur bo'lsa, metod yuzaki (shu yerda, 15.3).
+
+| Hujjatdagi belgi | Nimani bildiradi | Harakat |
+|---|---|---|
+| `@param` lar soni ko'p va har biriga chegara sharti kerak | parametrlar bir-biriga bog'liq | parametr obyektiga yig'ish (32.14) |
+| Shartnoma "agar ... bo'lsa boshqacha ishlaydi" bilan shoxlanadi | bitta metod ikki ishni qiladi | metodni bo'lish (4-bob) |
+| `boolean` parametr ma'nosini izohlab berish kerak | bayroq xatti-harakatni tanlaydi | ikki alohida metod (5-bob) |
+| `@return` bo'sh va xato holatini uzun tasvirlaydi | qaytish turi yetarli emas | `Optional` yoki natija turi (18-bob) |
+| Maydon izohi uzun | maydonlarga bo'lish noto'g'ri | o'z turiga ajratish (32.15) |
+
+```java
+// yomon: shartnomani faqat uzun izoh bilan aytib berish mumkin, chunki
+// metod bayroqqa qarab ikki boshqa ish qiladi
+/**
+ * To'lovni yopadi. {@code dryRun} true bo'lsa bank chaqirilmaydi va
+ * natija faqat hisoblanadi; bu holda {@code force} e'tiborga olinmaydi.
+ * {@code force} true bo'lsa muddati o'tgan to'lov ham yopiladi, lekin
+ * audit yozuvi boshqa turda chiqadi va hodisa chiqmaydi.
+ */
+SettlementResult settle(PaymentId id, boolean dryRun, boolean force);
+
+// yaxshi: har bir metodning izohi qisqa, chunki har biri bitta ish qiladi
+/** To'lovni bank bilan yopadi; muddati o'tgan to'lovni rad etadi. */
+SettlementResult settle(PaymentId id);
+
+/** Yopish natijasini bankka murojaat qilmasdan hisoblaydi. */
+SettlementEstimate estimate(PaymentId id);
+
+/** Muddati o'tgan to'lovni majburiy yopadi va buni auditga yozadi. */
+SettlementResult settleOverdue(PaymentId id, OverrideReason reason);
+```
+
+Signalning sharti bor va uni esda tutish kerak: izoh faqat to'liq va tushunarli bo'lganda murakkablikning yaxshi o'lchovi bo'ladi. Metodni chaqirish uchun kerakli ma'lumotni bermaydigan yoki tushunarsiz yozilgan qisqa izoh interfeys sodda ekanini isbotlamaydi (shu yerda, 15.3). Shuning uchun tartib bitta yo'nalishda ishlaydi: avval hujjat 10.3 va 10.4 talab qilgan darajada to'liq yoziladi, keyin uzunligiga qaraladi. Hujjatni qisqartirish bilan boshlash signalni o'chiradi, muammoni esa qoldiradi.
+
+## 10.12 Amalda qo'llash
 
 - [ ] Javadoc siyosatini yozib qo'ying: qaysi elementlarga majburiy, qaysilariga taqiqlangan (10.1 jadvali).
 - [ ] Public API metodlarida `@param`, `@return`, `@throws` to'liqligini tekshirib, yarim to'ldirilganlarini tugating.
@@ -213,6 +252,19 @@ Hujjatning qayerda turishi uning hayot muddatini belgilaydi. Qoida: kod bilan bi
 - [ ] Har bir public paketga `package-info.java` yozib, kirish nuqtalari va chegarani belgilang.
 - [ ] `maven-javadoc-plugin` ni `doclint=all` va `failOnWarnings` bilan CI ga qo'shing.
 - [ ] Javadoc dagi namuna kodlarni `{@snippet}` orqali testdagi faylga bog'lang.
+- [ ] Shartnomasi uzun va shoxlangan metodlarni ro'yxatlab, har birini hujjatni qisqartirish emas, dizaynni bo'lish bilan tuzating (10.11).
+
+## Manbalar
+
+- Joshua Bloch, *Effective Java* 3rd, Item 56 - oshkor API elementlarining hammasiga hujjat izohi yozish
+- Joshua Bloch, *Effective Java* 3rd, Item 74 - har bir metod tashlaydigan istisnoni hujjatlash
+- Robert C. Martin, *Clean Code*, 4-bob ("Javadocs in Public APIs", "Javadocs in Nonpublic Code") - Javadoc qayerda foydali, qayerda shovqin
+- [Oracle, How to Write Doc Comments](https://www.oracle.com/technical-resources/articles/java/javadoc-tool.html) - birinchi gap qoidasi va teg tartibi
+- John Ousterhout, *A Philosophy of Software Design*, 1-nashr, Yaknyam Press,
+  2018, 15.3 - "Red Flag: Hard to Describe": izoh sodda va to'liq bo'lishi
+  kerakligi, izohning murakkablik o'lchovi sifatida ishlashi, chuqur va
+  yuzaki metodni interfeys izohi bilan solishtirish, hamda signalning
+  faqat to'liq va tushunarli izohda ishlashi
 
 ---
 

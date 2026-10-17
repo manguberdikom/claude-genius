@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 15. Spring Core mexanikasi: IoC konteyner, bean lifecycle, AOP proxy (Spring Core Mechanics)
 
 <details>
-<summary>Bu bobdagi 12 bo'lim</summary>
+<summary>Bu bobdagi 13 bo'lim</summary>
 
 - [15.1 `ApplicationContext` ishga tushish bosqichlari: bean definition, post-processor, instantiation](#151-applicationcontext-ishga-tushish-bosqichlari-bean-definition-post-processor-instantiation)
 - [15.2 `BeanFactoryPostProcessor` va `BeanPostProcessor` farqi va ularning tartibi](#152-beanfactorypostprocessor-va-beanpostprocessor-farqi-va-ularning-tartibi)
@@ -20,7 +20,8 @@
 - [15.9 Proxy tuzog'i: ichki metod chaqiruvida `@Transactional` va `@Cacheable` ishlamasligi](#159-proxy-tuzogi-ichki-metod-chaqiruvida-transactional-va-cacheable-ishlamasligi)
 - [15.10 `ApplicationEvent` va `@EventListener`: sinxron tabiati va tranzaksiya bilan bog'liqligi](#1510-applicationevent-va-eventlistener-sinxron-tabiati-va-tranzaksiya-bilan-bogliqligi)
 - [15.11 Ishga tushish vaqtini qisqartirish: ortiqcha bean va komponent skanerlash](#1511-ishga-tushish-vaqtini-qisqartirish-ortiqcha-bean-va-komponent-skanerlash)
-- [15.12 Amalda qo'llash](#1512-amalda-qollash)
+- [15.12 Qurish va ishlatishni ajratish: `main` chegarasi va lazy init tuzog'i](#1512-qurish-va-ishlatishni-ajratish-main-chegarasi-va-lazy-init-tuzogi)
+- [15.13 Amalda qo'llash](#1513-amalda-qollash)
 
 </details>
 
@@ -130,7 +131,7 @@ Eng ko'p uchraydigan tuzoq: konstruktor ichida inject qilingan bean ning metodin
 
 ## 15.4 Scope lar: singleton, prototype, request va ularning amaliy oqibati
 
-Default scope singleton va u konteyner darajasidagi yakka nusxa. Bu degani singleton bean da o'zgaradigan holat saqlash thread safety buzilishiga olib keladi. Prototype har `getBean()` da yangi obyekt beradi, lekin Spring uni kuzatmaydi va `@PreDestroy` ni chaqirmaydi. Shu sababli prototype ichida resurs ochish xotira sizishiga olib keladi.
+Default scope singleton va u konteyner darajasidagi yakka nusxa. Bu degani singleton bean da o'zgaradigan holat saqlash thread safety buzilishiga olib keladi. Prototype har `getBean()` da yangi obyekt beradi, lekin Spring uning to'liq lifecycle ini boshqarmaydi: konteyner obyektni yasaydi, sozlaydi va mijozga beradi, keyin esa u haqda hech qanday yozuv saqlamaydi. Nozik farq shu yerda: initsializatsiya callback i (`@PostConstruct`) prototype da ham chaqiriladi, destruction callback i (`@PreDestroy`) esa chaqirilmaydi. Spring hujjatining o'z iborasi bilan, prototype da konteynerning roli `new` operatorini almashtirishdan nariga o'tmaydi, undan keyingi hamma narsa mijozning ishi. Shu sababli prototype ichida resurs ochish xotira sizishiga olib keladi; tozalashni mijoz kodi qiladi yoki (hujjat taklif qiladigan yo'l) tozalanishi kerak bean larga havola ushlab turadigan maxsus `BeanPostProcessor` yoziladi.
 
 Eng nozik joy: prototype yoki request scope bean ni singleton ga to'g'ridan to'g'ri inject qilish. Singleton bir marta yaratilganda bir marta inject oladi, demak prototype bir martagina olinadi va amalda singleton ga aylanadi.
 
@@ -257,12 +258,17 @@ Spring AOP byte code ni o'zgartirmaydi, u proxy yasaydi. Ikki mexanizm bor. JDK 
 | Nimani ushlaydi | interfeys metodlari | barcha public va protected metodlar |
 | `final` sinf | muammo yo'q | proxy yasalmaydi, xato |
 | `private` metod | ushlanmaydi | ushlanmaydi |
-| Konstruktor | chaqirilmaydi | subclass konstruktori chaqiriladi |
+| Boshqa paketdagi ota-sinfning package-private metodi | ushlanmaydi | ushlanmaydi (amalda private) |
+| Konstruktor | chaqirilmaydi | Objenesis orqali chetlab o'tiladi, ya'ni ikki marta chaqirilmaydi |
 | Tipga cast | faqat interfeysga | konkret sinfga ham |
 
 Spring Boot da `spring.aop.proxy-target-class` default `true`, ya'ni CGLIB ishlatiladi hatto interfeys bo'lsa ham. Bu bilimsiz holda tuzoqqa aylanadi: agar kod `@Autowired` bilan interfeysni emas, konkret sinfni kutsa va boshqa joyda JDK proxy yasalgan bo'lsa, `BeanNotOfRequiredTypeException` chiqadi. Shuning uchun injection nuqtalarida interfeysga tayanish ishonchliroq.
 
 Spring Framework 6.x da CGLIB qayta paketlangan holda ichida keladi. Lekin u `final` metodni override qila olmaydi, demak `@Transactional` qo'yilgan `final` metod jim tranzaksiyasiz ishlaydi. Kotlin da sinflar default `final` bo'lgani uchun bu muammo tez yuzaga keladi.
+
+Konstruktor haqidagi keng tarqalgan xato: CGLIB proxy maqsadli sinfning konstruktorini qaytadan chaqiradi degan gap. Spring hujjati buni rad etadi: proxy nusxasi Objenesis orqali yaratiladi, shuning uchun konstruktor **ikki marta chaqirilmaydi**. Yagona istisno JVM konstruktorni chetlab o'tishga ruxsat bermagan holat: o'shanda ikki marta chaqiruv va Spring AOP ning debug log yozuvi ko'rinadi. Shu sababli konstruktorda yon ta'sir (registratsiya, hisoblagich, tashqi chaqiruv) qilish proxy li bean da baribir xavfli: xulq JVM ga bog'liq bo'lib qoladi.
+
+Uchinchi, kamroq uchraydigan chegara Java Module System da. Module path da deploy qilinganda `java.lang` paketidagi sinf uchun CGLIB proxy yasash mumkin emas. Bunday holat JVM da `--add-opens=java.base/java.lang=ALL-UNNAMED` flagini talab qiladi, u esa modul uchun berilmaydi. Amaliy xulosa: proxy qilinadigan tipni hech qachon JDK paketlaridan olmaslik kerak, u o'z domen sinfi yoki o'z interfeysi bo'lishi kerak.
 
 ## 15.9 Proxy tuzog'i: ichki metod chaqiruvida `@Transactional` va `@Cacheable` ishlamasligi
 
@@ -371,7 +377,33 @@ Connection pool ham ta'sir qiladi: HikariCP da `minimum-idle` ni `maximum-pool-s
 
 `spring.main.lazy-initialization=true` ishga tushishni taxminan ikki baravar tezlashtiradi, lekin konfiguratsiya xatolari birinchi so'rovga suriladi. Shuning uchun uni faqat lokal development profilida yoqish mantiqiy, production da esa fail-fast qimmatliroq. Spring Framework 6.2 dan boshlab sekin bean larni fonda initsializatsiya qilish imkoni bor va u asosan tashqi ulanish kutadigan bean lar uchun foyda beradi.
 
-## 15.12 Amalda qo'llash
+## 15.12 Qurish va ishlatishni ajratish: `main` chegarasi va lazy init tuzog'i
+
+Konteyner mexanikasining asosidagi qoida tilga bog'liq emas: obyekt grafini **qurish** va uni **ishlatish** ikki boshqa ish, ular bir joyda turmaydi. Ishga tushish jarayoni (Spring da `main` va konfiguratsiya sinflari) bog'liqlikni ulaydi, qolgan kod faqat tayyor bog'liqlikni oladi. Shu chegara buzilganda biznes kodining ichida qurish mantiqi paydo bo'ladi.
+
+Eng ko'p uchraydigan buzilish shakli lazy init idiomi: maydon birinchi murojaatda yaratiladi.
+
+```java
+// yomon: ishlatish kodi qurish mantiqini ham olib yuradi
+public Invoice renderFor(OrderId id) {
+    if (this.renderer == null) {                 // har chaqiruvda tekshiriladi
+        this.renderer = new PdfRenderer(fontPath, Locale.getDefault());
+    }
+    return renderer.render(load(id));
+}
+
+// yaxshi: qurish ishga tushishda, ishlatish toza qoladi
+@Bean
+PdfRenderer pdfRenderer(RenderProperties props) {
+    return new PdfRenderer(props.fontPath(), props.locale());
+}
+```
+
+Lazy init uchta narxni birga olib keladi: `renderer` ning aniq turi va uning konstruktor argumentlari biznes metodiga yopishib qoladi (test uchun boshqa implementatsiya berib bo'lmaydi), tekshiruv har chaqiruvda bajariladi, va bir nechta thread bir vaqtda kirganda ikkita nusxa yaratilishi mumkin. Spring da haqiqiy kechiktirish kerak bo'lsa buning o'z vositalari bor: [`@Lazy` va shartli bean](#157-lazy-primary-qualifier-conditional-qachon-kerak), `ObjectProvider` yoki `Supplier<T>` bilan kiritish.
+
+Shu chegaraning ikkinchi oqibati: ishga tushish kodining o'zi testdan tashqarida qoladi va unda qaror bo'lmaydi. Agar `main` yoki `@Configuration` sinfida `if` lar o'sib ketsa, qaror profil, `@ConditionalOnProperty` yoki alohida konfiguratsiya sinfiga ko'chiriladi. Ulanish grafini qurish nuqtasini bitta joyda ushlash Clean Architecture da Main komponenti deb ataladi: u eng tashqi qatlam, hamma narsani biladi va hech kim uni bilmaydi.
+
+## 15.13 Amalda qo'llash
 
 - [ ] `/actuator/startup` ni `BufferingApplicationStartup` bilan yoqib, eng sekin 15 ta qadamni yozib ol va ishga tushish vaqtini bazaviy raqam sifatida qayd qil.
 - [ ] Kod bazasida `@Transactional` va `@Cacheable` qo'yilgan barcha metodlarni tekshirib, ichki `this.` chaqiruvi orqali chaqirilayotganlarini top va chaqiruvni tashqariga chiqar.
@@ -381,6 +413,16 @@ Connection pool ham ta'sir qiladi: HikariCP da `minimum-idle` ni `maximum-pool-s
 - [ ] `--debug` bilan auto-configuration hisobotini olib, ishlatilmaydigan starter larni va auto-configuration larni `spring.autoconfigure.exclude` bilan o'chir.
 - [ ] `scanBasePackages` ni aniq paketlar ro'yxatiga qisqartirib, bean definition sonining oldin va keyingi farqini o'lchab yoz.
 - [ ] `server.shutdown=graceful` va `spring.lifecycle.timeout-per-shutdown-phase` ni sozlab, Kubernetes grace period ini undan kattaroq qilib qo'y.
+- [ ] Biznes metodlari ichida `new` bilan qurilgan va `null` tekshiruvi bilan kechiktirilgan maydonlarni topib, ularni bean ga yoki `ObjectProvider` ga o'tkazing.
+
+## Manbalar
+
+- Robert C. Martin, *Clean Code*, 11-bob - tizimni qurish va ishlatishni ajratish, lazy init idiomining narxi
+- Robert C. Martin, *Clean Architecture*, 26-bob - Main komponenti eng tashqi qatlam sifatida
+- [Spring Framework 7.0, Proxying Mechanisms](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/core/aop/proxying.adoc) - JDK proxy va CGLIB tanlovi, `final`, `private` va boshqa paketdagi package-private metod chegarasi, proxy nusxasining Objenesis orqali yaratilishi, Java Module System chegarasi
+- [Spring Framework 7.0, Bean Scopes](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/core/beans/factory-scopes.adoc) - prototype da destruction callback chaqirilmasligi, singleton ichidagi prototype bog'liqligining instantiation vaqtida hal bo'lishi, `Scope.registerDestructionCallback`
+- [spring-boot, `AopAutoConfiguration.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/core/spring-boot-autoconfigure/src/main/java/org/springframework/boot/autoconfigure/aop/AopAutoConfiguration.java) - `spring.aop.proxy-target-class` ning default `true` ekani (`matchIfMissing`)
+- [spring-boot, `SpringApplication.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/core/spring-boot/src/main/java/org/springframework/boot/SpringApplication.java) - `allowCircularReferences` sozlamasi Boot 4 da ham mavjudligi
 
 ---
 

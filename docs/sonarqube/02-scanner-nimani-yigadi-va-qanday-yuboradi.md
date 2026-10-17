@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 2. Scanner nimani yig'adi va qanday yuboradi (What the Scanner Collects)
 
@@ -97,9 +97,30 @@ sonar-scanner \
 
 ## 2.4 Tashqi hisobotlarni ulash
 
+Yana bir e'tibordan qoladigan narsa: parametr **majburiy emas**. `sonar.coverage.jacoco.xmlReportPaths` berilmasa, `sonar-jacoco` plagini uchta standart joyni o'zi sinaydi va log ga "is not defined. Using default locations: ..." deb yozadi:
+
+| Standart joy | Qaysi build uchun |
+|---|---|
+| `target/site/jacoco/jacoco.xml` | Maven, unit test hisoboti |
+| `target/site/jacoco-it/jacoco.xml` | Maven, integratsion test hisoboti |
+| `build/reports/jacoco/test/jacocoTestReport.xml` | Gradle |
+
+Ya'ni standart tuzilmali loyihada coverage parametrsiz ham ishlaydi, va "coverage 0 chiqdi" muammosi ko'pincha parametr yo'qligidan emas, XML ning umuman yozilmaganidan yoki boshqa joyga yozilganidan kelib chiqadi. Logdagi yuqoridagi qator bu ikki holatni ajratib beradi.
+
 Sonar coverage ni o'zi o'lchamaydi. U JaCoCo kabi vositalar yozgan XML hisobotni o'qiydi va undagi raqamlarni o'z fayl modeliga moslaydi. Shu sababli coverage hamisha ikki qadamli jarayon: avval test ishga tushadi va hisobot yoziladi, keyin scanner uni o'qiydi. Tartib buzilsa coverage 0% bo'ladi va buning sababi Sonar emas.
 
 Java uchun to'g'ri parametr `sonar.coverage.jacoco.xmlReportPaths`. U aynan XML ni kutadi, `jacoco.exec` binar faylini emas. Shuning uchun Maven da `report` goal ni va XML formatni yoqish shart.
+
+Eski parametrlar esa **butunlay olib tashlangan** va buni bilmaslik coverage ni 0 da qoldiradi. sonar-java da shu holat uchun maxsus sensor bor (`DroppedPropertiesSensor`): u konfiguratsiyada quyidagi kalitlardan birini ko'rsa, tahlil ogohlantirishini chiqaradi, "Property '...' is no longer supported. Use JaCoCo's xml report and sonar-jacoco plugin.":
+
+| Olib tashlangan kalit | O'rniga |
+|---|---|
+| `sonar.jacoco.reportPath` | `sonar.coverage.jacoco.xmlReportPaths` |
+| `sonar.jacoco.reportPaths` | `sonar.coverage.jacoco.xmlReportPaths` |
+| `sonar.jacoco.itReportPath` | bitta XML ro'yxatga birlashtirish (9.8) |
+| `sonar.jacoco.reportMissing.force.zero` | yo'q, hisobotni yozishni ta'minlash |
+
+Bitta nozik joy ham bor: Gradle plagini moslik uchun `reportPath` va `reportPaths` ning **ikkisini ham** qo'yadi, shuning uchun sensor ikkisi birga turganda jim qoladi va faqat bittasi qo'yilgan holatda ogohlantiradi. Ya'ni Gradle loyihasida bu ogohlantirishning yo'qligi kalitlar to'g'ri degani emas.
 
 ```xml
 <plugin>
@@ -291,6 +312,13 @@ Nihoyat, CI keshi bilan ehtiyot bo'lish kerak. Maven repository keshini saqlash 
 - [ ] Monorepo bo'lsa har deploylanadigan servisga alohida `sonar.projectKey` ajratib, faqat o'zgargan servisni tahlil qiladigan qilib pipeline ni sozlang.
 - [ ] `sonar.qualitygate.wait=true` ni yoqib, gate yiqilganda pipeline ning to'xtashini tekshirib ko'ring.
 - [ ] CI da `target` papkasi keshlanmayotganini va har tahlil `clean` bilan boshlanishini tasdiqlang.
+
+## Manbalar
+
+- [sonar-java 8.44, `DroppedPropertiesSensor.java`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/java/org/sonar/plugins/java/DroppedPropertiesSensor.java) - olib tashlangan to'rtta coverage kaliti, ogohlantirish matni va Gradle plagini ikki kalitni birga qo'yganda sensor jim qolishi
+- [sonar-java 8.44, `ClasspathForMain`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/java-frontend/src/main/java/org/sonar/java/classpath/ClasspathForMain.java) - `sonar.java.binaries` va `sonar.java.libraries` yo'q bo'lsa chiqadigan ogohlantirish va tahlil aniqligiga ta'siri
+- [JaCoCo 0.8.12, Agent](https://raw.githubusercontent.com/jacoco/jacoco/v0.8.12/org.jacoco.doc/docroot/doc/agent.html) - `jacoco.exec` ning yozilishi, ya'ni XML hisobot alohida qadam ekani
+- [sonar-jacoco, `ReportPathsProvider.java`](https://raw.githubusercontent.com/SonarSource/sonar-jacoco/301ac5a760f3d21922f5062ca810e456f6f86cad/src/main/java/org/sonar/plugins/jacoco/ReportPathsProvider.java) - `sonar.coverage.jacoco.xmlReportPaths` berilmasa ishlatiladigan uchta standart joy va log xabari
 
 ---
 

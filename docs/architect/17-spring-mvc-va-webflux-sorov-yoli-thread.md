@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 17. Spring MVC va WebFlux: so'rov yo'li, thread modeli, REST dizayni (Spring MVC and WebFlux)
 
 <details>
-<summary>Bu bobdagi 12 bo'lim</summary>
+<summary>Bu bobdagi 13 bo'lim</summary>
 
 - [17.1 So'rovning to'liq yo'li: konteyner, filter, `DispatcherServlet`, handler, converter](#171-sorovning-toliq-yoli-konteyner-filter-dispatcherservlet-handler-converter)
 - [17.2 Thread modeli: har so'rovga bitta thread va uning chegarasi](#172-thread-modeli-har-sorovga-bitta-thread-va-uning-chegarasi)
@@ -20,7 +20,8 @@
 - [17.9 Katta javoblar: sahifalash, oqim (streaming), siqish](#179-katta-javoblar-sahifalash-oqim-streaming-siqish)
 - [17.10 `RestClient` va `WebClient`: timeout, connection pool, qayta urinish sozlamalari](#1710-restclient-va-webclient-timeout-connection-pool-qayta-urinish-sozlamalari)
 - [17.11 Filter va interceptor: qayerda kontekst (trace id, foydalanuvchi) o'rnatiladi](#1711-filter-va-interceptor-qayerda-kontekst-trace-id-foydalanuvchi-ornatiladi)
-- [17.12 Amalda qo'llash](#1712-amalda-qollash)
+- [17.12 Reaktiv ma'lumotga kirish (R2DBC) va RSocket: event loop ni bloklamaslik](#1712-reaktiv-malumotga-kirish-r2dbc-va-rsocket-event-loop-ni-bloklamaslik)
+- [17.13 Amalda qo'llash](#1713-amalda-qollash)
 
 </details>
 
@@ -69,13 +70,17 @@ server:
 
 `max-connections` (default 8192) va `threads.max` (default 200) orasidagi farq ataylab qo'yilgan: keep-alive ulanish ochiq turadi, lekin thread egallamaydi. 8192 ochiq ulanish va 200 worker bo'lsa, tizim 8000 ta bekor turgan ulanishni arzon ushlab turadi. `accept-count` (default 100) esa `max-connections` ham to'lganda OS backlog'ida kutadigan navbat. U to'lsa yangi ulanish darhol rad etiladi va mijoz "connection refused" oladi.
 
+`keep-alive-timeout` da bitta nozik joy bor: Spring Boot da uning o'z defaulti yo'q (`null`), va qiymat berilmasa `connection-timeout` ishlatiladi. `-1` esa timeout butunlay yo'q degani. Ya'ni `connection-timeout` ni qisqartirish keep-alive ni ham qisqartiradi, va buni bilmasa, keep-alive ulanishlar kutilganidan tez uzilib, mijozda qayta qo'l siqish (handshake) ko'payadi.
+
 `connection-timeout` default qiymati 20 s va bu juda uzun. Mijoz TCP ulanishni ochib, so'rov yozmasa, 20 s davomida slot egallanadi. Ommaviy API uchun 5 s yetarli. `accept-count` ni kattalashtirish vasvasasiga tushmaslik kerak: uzun navbat latency'ni oshiradi, lekin throughput'ni oshirmaydi. To'lgan navbat o'rniga tez rad etish (fail fast) mijozga retry qilish imkonini beradi, uzoq kutish esa timeout'dan keyin ishni behuda qiladi.
 
-`threads.max` ni 800 ga ko'tarish ham odatda xato. Agar bottleneck DB connection pool bo'lsa (masalan HikariCP 20 ta ulanish), 800 thread shunchaki 780 tasini pool navbatida kutishga majbur qiladi. Natijada latency oshadi, context switch ko'payadi va xato diagnostikasi qiyinlashadi. Qoida: worker thread soni DB pool'dan 4-10 barobar katta bo'lsin, undan ortiq emas.
+`threads.max` ni 800 ga ko'tarish ham odatda xato. Agar bottleneck DB connection pool bo'lsa (masalan HikariCP 20 ta ulanish), 800 thread shunchaki 780 tasini pool navbatida kutishga majbur qiladi. Natijada latency oshadi, context switch ko'payadi va xato diagnostikasi qiyinlashadi. Bu bo'limdagi hamma narsadan oldin tekshirilishi kerak bo'lgan bitta shart bor: `server.tomcat.threads.max` va `min-spare` **virtual thread yoqilgan bo'lsa umuman ta'sir qilmaydi**. Spring Boot ning o'z xossa hujjatida shu aniq yozilgan. Demak `spring.threads.virtual.enabled=true` qo'yilgan ilovada thread pool ni sozlash bilan o'tgan vaqt behuda: u yerda chegara boshqa joyda, ya'ni downstream pool larda va semafor yoki rate limiter da qo'yiladi (12-bob).
+
+Qoida: worker thread soni DB pool dan bir necha barobar katta bo'lsin, undan ortiq emas; boshlang'ich nuqta sifatida pool dan 4 dan 10 barobargacha olinadi, lekin bu o'lchanmagan taxmin va to'g'ri qiymat so'rovning qancha vaqti DB da o'tishiga bog'liq (DB da o'tgan ulush katta bo'lsa, nisbat kichikroq bo'ladi).
 
 ## 17.4 WebFlux va event loop modeli: qachon haqiqatan foyda beradi
 
-WebFlux Netty ustida ishlaydi va event loop thread soni CPU yadrosi soniga teng (default `max(4, yadro soni)`). Har bir so'rov thread egallamaydi, balki callback zanjiri sifatida ro'yxatga olinadi. Shuning uchun 20 000 ochiq ulanishni 8 thread bilan ushlab turish mumkin.
+WebFlux Netty ustida ishlaydi va event loop thread soni CPU yadrosi soniga teng: Reactor Netty da default `Math.max(availableProcessors(), 4)`, ya'ni ikki yadroli konteynerda ham kamida 4 ta. Qiymat `reactor.netty.ioWorkerCount` system property si bilan o'zgartiriladi, lekin uni ko'tarish deyarli hech qachon yechim emas: event loop CPU ishi uchun emas, ro'yxatga olish uchun. Har bir so'rov thread egallamaydi, balki callback zanjiri sifatida ro'yxatga olinadi. Shuning uchun 20 000 ochiq ulanishni 8 thread bilan ushlab turish mumkin.
 
 Foyda aniq uchta holatda keladi. Birinchisi: ko'p sonli uzoq yashaydigan ulanish (SSE, WebSocket, long polling). Ikkinchisi: servis asosan boshqa servislarga proxy bo'lsa va o'zi hisob-kitob qilmasa (API gateway, aggregator). Uchinchisi: oqim sifatida kelayotgan katta ma'lumotni backpressure bilan uzatish kerak bo'lsa.
 
@@ -356,7 +361,29 @@ Uchinchi tuzoq: filter'da `request.getInputStream()` ni o'qish. Stream bir marta
 | Reactive'da blocking JDBC | event loop bloklanadi, butun servis to'xtaydi | blocking kodni MVC'da qoldirish yoki alohida scheduler |
 | Retry budjetsiz | downstream'ga yuk ko'payadi, cascade failure | idempotent chaqiruvda, backoff + jitter, umumiy deadline |
 
-## 17.12 Amalda qo'llash
+## 17.12 Reaktiv ma'lumotga kirish (R2DBC) va RSocket: event loop ni bloklamaslik
+
+WebFlux ning foydasi bitta shart bilan paydo bo'ladi: so'rov yo'lida hech narsa bloklamasligi kerak. Shu sababli reaktiv kontrollerning ostida bloklaydigan JDBC qolgan bo'lsa, foyda yo'qoladi va holat oddiy MVC dan yomonlashadi: event loop thread lari oz, ularning biri bloklanganda butun navbat to'xtaydi.
+
+R2DBC shu bo'shliqni to'ldiradi: drayver bloklamaydi va natija `Flux` bo'lib keladi. Lekin uning narxi ham bor va u tanlovni belgilaydi: R2DBC JPA emas, demak entity grafi, lazy loading, dirty checking va `@Transactional` ning odatdagi semantikasi yo'q; so'rov qo'lda yoziladi va mapping ham oshkor bo'ladi.
+
+| Ehtiyoj | Tanlov |
+|---|---|
+| Boy domen modeli, tranzaksiyali yozish | JPA, virtual thread bilan MVC |
+| Ko'p ulanish, oddiy so'rov, oqim bilan o'qish | R2DBC va WebFlux |
+| Mavjud JPA kodi, lekin reaktiv API kerak | adapter qatlam, bloklovchi qismni alohida pool ga |
+
+```java
+// Agar bloklaydigan chaqiruvdan qutulib bo'lmasa: alohida pool ga chiqarish
+Mono<Invoice> invoice = Mono.fromCallable(() -> jpaRepository.findById(id).orElseThrow())
+        .subscribeOn(Schedulers.boundedElastic());   // event loop bloklanmaydi
+```
+
+`Schedulers.boundedElastic()` yechim emas, yamoq: u bloklashni boshqa thread ga ko'chiradi, ya'ni thread soni yana chegara bo'lib qoladi. Haqiqiy tanlov ikkita: butun yo'lni reaktiv qilish yoki MVC da [virtual thread bilan qolish](#175-virtual-thread-bilan-mvc-webflux-ga-ehtiyoj-qanday-kamayadi). Bloklovchi chaqiruvni topish uchun BlockHound kabi vosita test profilida yoqiladi: u event loop thread ida bloklaydigan chaqiruvni aniqlab, testni yiqitadi.
+
+RSocket shu modelning transport darajasidagi davomi: TCP yoki WebSocket ustida ishlaydigan, to'rt o'zaro ta'sir shakliga (request-response, request-stream, fire-and-forget, channel) ega va orqaga bosimni protokol darajasida tashiydigan protokol. Amaliy o'rni tor: ikki yo'nalishli oqim yoki uzoq yashaydigan stream kerak bo'lgan ichki servislar orasida. Oddiy so'rov-javob uchun u HTTP ga nisbatan foyda bermaydi va operatsion narxi (proxy, kuzatuvchanlik, debug vositalari) HTTP dan baland.
+
+## 17.13 Amalda qo'llash
 
 - [ ] Har bir tashqi HTTP client uchun `connect` va `read` timeout qiymatini aniq yozib chiqing, default qolgan joy bo'lmasin.
 - [ ] `threads.max` ni Little qonuni bo'yicha p99 latency asosida qayta hisoblang va DB pool o'lchami bilan nisbatini tekshiring.
@@ -366,6 +393,19 @@ Uchinchi tuzoq: filter'da `request.getInputStream()` ni o'qish. Stream bir marta
 - [ ] Controller qaytaradigan tiplarni audit qiling: entity qaytaradigan joy qolmasin, test sifatida JSON sxemasini qotirib qo'yish yetarli.
 - [ ] Java 21+ da `spring.threads.virtual.enabled=true` ni staging'da yoqib, DB pool timeout va bulkhead limitlarini qayta o'lchang.
 - [ ] `MDC` va `SecurityContext` async chaqiruvlarda ko'chayotganini bitta integratsiya testi bilan qotirib qo'ying.
+- [ ] WebFlux ishlatadigan yo'llarda bloklaydigan chaqiruv (JDBC, fayl, sinxron HTTP) qolmaganini BlockHound bilan tekshiring.
+- [ ] `Schedulers.boundedElastic()` ishlatilgan joylarni ro'yxatlab, har biri uchun to'liq reaktiv yoki virtual thread yechimini baholang.
+
+## Manbalar
+
+- Craig Walls, *Spring in Action* 6th, 13-bob - reaktiv ma'lumotga kirish va R2DBC
+- Craig Walls, *Spring in Action* 6th, 11, 12-boblar - Reactor va reaktiv API lar
+- Craig Walls, *Spring in Action* 6th, 14-bob - RSocket va uning o'zaro ta'sir shakllari
+- [Spring Framework, RSocket support](https://docs.spring.io/spring-framework/reference/rsocket.html) - to'rt o'zaro ta'sir shakli
+- [spring-boot, `TomcatServerProperties.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/module/spring-boot-tomcat/src/main/java/org/springframework/boot/tomcat/autoconfigure/TomcatServerProperties.java) - `threads.max=200`, `min-spare=10`, `max-connections=8192`, `accept-count=100`, `max-keep-alive-requests=100`; `keep-alive-timeout` ning defaulti yo'q va `connection-timeout` ga qaytishi; thread sozlamalarining virtual thread yoqilganda ta'sir qilmasligi
+- [reactor-netty v1.2.0, `LoopResources.java`](https://raw.githubusercontent.com/reactor/reactor-netty/v1.2.0/reactor-netty-core/src/main/java/reactor/netty/resources/LoopResources.java) - event loop worker soni `Math.max(availableProcessors(), 4)` va `reactor.netty.ioWorkerCount` bilan boshqarilishi
+- [Spring Framework 7.0, Reactive Core va concurrency modeli](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/web/webflux/reactive-spring.adoc) - WebFlux ning thread modeli va bloklamaslik sharti
+- [Spring Framework 7.0, Asynchronous Requests (MVC)](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/web/webmvc/mvc-ann-async.adoc) - `DeferredResult`, `Callable` va async so'rov hayot sikli
 
 ---
 

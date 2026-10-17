@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 18. Shablonlar, checklistlar va ma'lumotnoma (Templates, Checklists & Reference)
 
@@ -380,6 +380,14 @@ Qoida oddiy: har bir prodga chiqqan incident kamida bitta avtomatlashtirilgan re
 
 Muhim ogohlantirish: aksariyat kutubxonalar versiyasini Spring Boot BOM (`spring-boot-dependencies`) boshqaradi - `pom.xml`da `<version>` yozish kerak EMAS va zararli. Pastdagi jadvalda "BOM" degani shu. BOM tashqarisidagilar uchun faqat taxminiy major versiya ko'rsatilgan; aniq versiyani Maven Central'dan tekshiring.
 
+"BOM" yorlig'i ikki yo'l bilan kelishi mumkin va bu farqni bilish kerak.
+Ba'zi kutubxonalarni Boot BOM o'zi sanaydi (AssertJ, Mockito, Awaitility,
+RestAssured, JUnit 5, Testcontainers). Boshqalarni esa Boot BOM boshqa
+BOM ni import qilib boshqaradi: `spring-security-test` versiyasi
+`spring-security-bom` dan keladi. Spring Cloud Contract va Spring
+Modulith esa Boot BOM da umuman yo'q, ular o'z BOM ini talab qiladi, va
+shu ikkisini qo'shmasdan `<version>` yozmaslik ishlamaydi.
+
 | Maqsad | Kutubxona | Maven coordinate | Izoh |
 |---|---|---|---|
 | Test engine | JUnit 5 | `org.junit.jupiter:junit-jupiter` | BOM; starter-test ichida keladi |
@@ -397,14 +405,14 @@ Muhim ogohlantirish: aksariyat kutubxonalar versiyasini Spring Boot BOM (`spring
 | Brauzer (Selenium ustida) | Selenide | `com.codeborne:selenide` | 7.x; qisqa API |
 | Asinxron kutish | Awaitility | `org.awaitility:awaitility` | BOM; `Thread.sleep` o'rniga |
 | Soxta ma'lumot | Datafaker | `net.datafaker:datafaker` | 2.x; ism, manzil, IBAN |
-| Obyekt generatsiyasi | Instancio | `org.instancio:instancio-junit` | 5.x; to'ldirilgan POJO |
+| Obyekt generatsiyasi | Instancio | `org.instancio:instancio-junit` | 6.x; to'ldirilgan POJO |
 | Arxitektura qoidalari | ArchUnit | `com.tngtech.archunit:archunit-junit5` | 1.x; qatlam va paket qoidalari |
 | Modullar | Spring Modulith test | `org.springframework.modulith:spring-modulith-starter-test` | Modulith BOM; `@ApplicationModuleTest` |
 | Qamrov | JaCoCo | `org.jacoco:jacoco-maven-plugin` | 0.8.x; plugin |
 | Mutation testing | PIT | `org.pitest:pitest-maven` + `org.pitest:pitest-junit5-plugin` | plugin; testlar sifatini o'lchaydi |
 | Yuklama (JVM) | Gatling | `io.gatling:gatling-maven-plugin` (+ gatling-charts-highcharts) | 4.x atrofida |
 | Yuklama (skript) | k6 | Maven artefakti yo'q (Grafana k6 binary) | JS skript, CI'da konteyner |
-| Hisobot | Allure | `io.qameta.allure:allure-junit5` (+ `allure-maven`) | 2.x |
+| Hisobot | Allure | `io.qameta.allure:allure-junit5` (+ `allure-maven`) | 3.x |
 | Tarmoq nosozligi | Toxiproxy | Boot 3.5 (TC 1.x): `org.testcontainers:toxiproxy`; Boot 4 (TC 2.x): `org.testcontainers:testcontainers-toxiproxy` | BOM; kechikish, uzilish |
 | Resilience sinovi | Chaos Monkey for Spring Boot | `de.codecentric:chaos-monkey-spring-boot` | 3.x; faqat non-prod profil |
 
@@ -437,7 +445,7 @@ Muhim ogohlantirish: aksariyat kutubxonalar versiyasini Spring Boot BOM (`spring
 | Test lokalda o'tadi, CI'da yiqiladi | Vaqt zonasi, locale, fayl tartibi, sekinlik, parallel run, Docker resurslari | CI va lokalni bir xil `-Duser.timezone=UTC -Duser.language=en` bilan ishga tushirish; vaqtni `Clock` orqali; tartibga tayanchni olib tashlash |
 | `Could not find a valid Docker environment` | Docker demon ishlamaydi yoki socket boshqa yo'lda (Colima/Podman/Rancher) | Docker'ni yoqish; `DOCKER_HOST` yoki `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE` sozlash; CI'da privileged runner yoki DinD |
 | MockMvc 403 qaytaradi | CSRF yoqilgan yoki foydalanuvchi yo'q | POST uchun `with(csrf())`; `@WithMockUser(roles=...)`; `SecurityMockMvcRequestPostProcessors` ishlatish |
-| `@MockBean` deprecated ogohlantirishi | Spring Framework 6.2 / Boot 3.4'dan keyin yangi API | `@MockitoBean` va `@MockitoSpyBean`ga o'tish (`org.springframework.test.context.bean.override.mockito`) |
+| `@MockBean` deprecated ogohlantirishi | Boot 3.4.0 da deprecated, 4.0.0 da OLIB TASHLANADI (annotatsiya o'zida `forRemoval = true`) | `@MockitoBean` va `@MockitoSpyBean`ga o'tish (`org.springframework.test.context.bean.override.mockito`); Boot 4 ga ko'tarilishdan oldin majburiy |
 | Testlar bir-biriga xalaqit beradi | Umumiy DB holati, static field, cache, yoqilgan scheduler | Har test o'z ma'lumotini yaratadi; `@Transactional` rollback; `@DirtiesContext` faqat chora sifatida; cache va scheduler'ni test profilida o'chirish |
 | H2'da ishlagan SQL PostgreSQL'da yiqildi | Dialekt farqi: `ON CONFLICT`, `jsonb`, window funksiyalar, `LIMIT` sintaksisi, type casting | H2'dan voz kechish; Testcontainers PostgreSQL ishlatish; migratsiyalarni real DB'da tekshirish |
 | Har test konteyner ko'taradi, suite sekin | Konteyner lifecycle noto'g'ri | `static` container + `@Testcontainers`, yoki singleton container pattern; `@ServiceConnection` bilan bitta shared context |
@@ -470,6 +478,34 @@ Muhim ogohlantirish: aksariyat kutubxonalar versiyasini Spring Boot BOM (`spring
 - [ ] Kutubxona versiyalari Spring Boot BOM orqali boshqariladi, BOM tashqarisidagilar markazlashtirilgan
 - [ ] Nomlash va tag konvensiyalari ArchUnit qoidasi bilan majburlanadi
 - [ ] Flaky testlar uchun ko'rinadigan backlog va mas'ul shaxs tayinlangan
+
+## Manbalar
+
+Bu bob shablon va ma'lumotnoma to'plami, shuning uchun uning asosiy
+qismi korpusning boshqa boblariga havola qiladi. Faqat 18.12 va 18.14
+dagi tekshirilishi mumkin bo'lgan da'volar uchun manba keltiriladi.
+
+- Spring Boot, `spring-boot-starter-test` ning bog'liqliklari
+  ([https://github.com/spring-projects/spring-boot/blob/v3.5.16/spring-boot-project/spring-boot-starters/spring-boot-starter-test/build.gradle](https://github.com/spring-projects/spring-boot/blob/v3.5.16/spring-boot-project/spring-boot-starters/spring-boot-starter-test/build.gradle),
+  tag `v3.5.16`, Apache-2.0) - 18.12 dagi starter tarkibi: JUnit 5,
+  AssertJ, Mockito, Hamcrest, JSONassert, JsonPath, XMLUnit, spring-test
+  va Awaitility.
+- Spring Boot, `spring-boot-dependencies`
+  ([https://github.com/spring-projects/spring-boot/blob/v3.5.16/spring-boot-project/spring-boot-dependencies/build.gradle](https://github.com/spring-projects/spring-boot/blob/v3.5.16/spring-boot-project/spring-boot-dependencies/build.gradle),
+  tag `v3.5.16`, Apache-2.0) - 18.12 dagi "BOM" yorliqlari: qaysi
+  kutubxona Boot BOM da sanalgan, qaysi biri boshqa BOM orqali keladi
+  (`spring-security-bom`), qaysi biri umuman yo'q (Spring Cloud
+  Contract, Spring Modulith, WireMock).
+- Spring Boot, `@MockBean`
+  ([https://github.com/spring-projects/spring-boot/blob/v3.5.16/spring-boot-project/spring-boot-test/src/main/java/org/springframework/boot/test/mock/mockito/MockBean.java](https://github.com/spring-projects/spring-boot/blob/v3.5.16/spring-boot-project/spring-boot-test/src/main/java/org/springframework/boot/test/mock/mockito/MockBean.java),
+  tag `v3.5.16`, Apache-2.0) - 18.14 dagi deprecation sanasi va 4.0.0
+  da olib tashlanishi.
+- Testcontainers for Java, `settings.gradle`
+  ([https://github.com/testcontainers/testcontainers-java/blob/2.0.5/settings.gradle](https://github.com/testcontainers/testcontainers-java/blob/2.0.5/settings.gradle)
+  va [1.21.4 dagi varianti](https://github.com/testcontainers/testcontainers-java/blob/1.21.4/settings.gradle),
+  MIT) - 18.12 dagi artifactId farqi: 1.x da modul katalogi nomi
+  (`postgresql`), 2.x da `testcontainers-` prefiksi bilan
+  (`testcontainers-postgresql`).
 
 ---
 

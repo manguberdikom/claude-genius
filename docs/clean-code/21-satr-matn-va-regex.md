@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 21. Satr, matn va regex (Strings, Text and Regex)
 
@@ -245,6 +245,14 @@ String query = """
 - [ ] Barcha inline regexlarni `static final Pattern` maydonlariga chiqarib, nom bering.
 - [ ] Tashqi kiritishni tekshiradigan regexlarni ichma-ich kvantifikatorga qarshi ko'rib chiqing va uzunlik chegarasi qo'ying.
 - [ ] `+` bilan qurilgan SQL va JSON literallarini matn blokiga o'tkazing.
+
+## Manbalar
+
+- Joshua Bloch, *Effective Java* 3rd, Item 62 - boshqa tur mos keladigan joyda satr ishlatmaslik
+- Joshua Bloch, *Effective Java* 3rd, Item 63 - satr birlashtirishning narxi
+- Herbert Schildt, *Java The Complete Reference*, 18-bob - `String` metodlari, `intern` va literal pool
+- [Java API, `Pattern`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/regex/Pattern.html) - regexni kompilyatsiya qilish va qayta ishlatish
+- [Java API, `String.toLowerCase`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/String.html#toLowerCase()) - `Locale` ga bog'liqligi va turk `i` muammosi
 
 ---
 

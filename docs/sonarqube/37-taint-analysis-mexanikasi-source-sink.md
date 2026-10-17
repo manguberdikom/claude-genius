@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 37. Taint analysis mexanikasi: source, sink, sanitizer (Taint Analysis Mechanics)
 
@@ -36,6 +36,10 @@ Oddiy qoida sintaktik daraxt va bitta metod doirasidagi oqim bilan ishlaydi. Mas
 Taint analysis boshqa masalani hal qiladi. U so'raydi: bu qiymat foydalanuvchidan keldimi, va u qayerga yetib bordi. Javob uchun metod chegarasidan oshib o'tish kerak, chunki controller qiymatni service ga, service repository ga uzatadi. Shuning uchun bu tahlil interprocedural, ya'ni bir nechta metod va bir nechta fayl bo'ylab ishlaydi.
 
 Farqning amaliy natijasi shu: oddiy qoida buzilishini kod ko'rinishidan topish mumkin, taint issue esa faqat butun chaqiruv zanjirini ko'rib tushuniladi. Shuning uchun taint natijasini bitta qatorga qarab "bu yerda hammasi joyida" deb yopib tashlash eng ko'p uchraydigan xato.
+
+Yana bir farq hujjat izlashda ko'rinadi va uni bilib qo'yish vaqt tejaydi: **taint qoidalarining metadata si ochiq emas.** Oddiy Java qoidasining tavsifi, turi va darajasi `SonarSource/sonar-java` repozitoriyasida, `org/sonar/l10n/java/rules/java/<kalit>.json` yo'lida yotadi va uni mashina ham o'qiy oladi. Symbolic execution qoidalarining bir qismi 2024 da alohida ochiq repoga (`sonar-java-symbolic-execution`, yo'lida `rules/javase`) ko'chirilgan. Taint qoidalari esa ikkisida ham yo'q: `java:S2076` (buyruq injection), `java:S2083` (fayl yo'li), `java:S3649` (SQL injection), `java:S5131` (XSS), `java:S5135` (deserializatsiya), `java:S5145` (log injection), `java:S5146` (open redirect) uchun ochiq JSON topilmaydi, chunki ular yopiq analizatorda.
+
+Amaliy natija ikki tomonli. Birinchi: bu qoidalarning tavsifini faqat o'z serveringizdagi Rules sahifasida yoki SonarSource hujjatida ko'rish mumkin, repodan grep qilib bo'lmaydi. Ikkinchi: shu sababli korpusdagi `tools/sonar_rules.tsv` snapshotida ular `tekshirilmadi` deb belgilangan va `check_docs` ularning turi hamda darajasi haqidagi da'voni tekshirmaydi, faqat ogohlantirish bilan o'tkazadi. Ya'ni bu yettita kalit atrofidagi gaplar mashina nazoratidan tashqarida qoladi va ularni odam tekshiradi.
 
 ## 37.2 Source nima: ishonchsiz ma'lumot kiradigan nuqtalar
 
@@ -350,6 +354,13 @@ Quality gate tomonida qattiq qoida saqlash mantiqan to'g'ri. Yangi kodda ochiq x
 - [ ] False positive deb yopilgan har bir xavfsizlik issue siga dalil izohi yozilganini tekshiring, izohsizlarini qayta oching.
 - [ ] CI da tahlil bosqichi uchun xotira limitini va exclusion ro'yxatini sozlab, tahlil vaqtini o'lchab yozib qo'ying.
 - [ ] Review checklist ga bitta band qo'shing: yangi xavfli chaqiruv qo'shilganda uning kirish nuqtasi qanday himoyalangani ko'rsatilsin.
+
+## Manbalar
+
+- `tools/sonar_rules.tsv` - taint qoidalarining ochiq metadata da yo'qligi shu snapshotda `tekshirilmadi` deb qayd etilgan (S2076, S2083, S3649, S5131, S5135, S5145, S5146)
+- [sonar-java 8.44, ochiq qoida metadata si](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S2077.json) - taqqoslash uchun: ochiq qoidaning metadata si qanday ko'rinadi
+- [OWASP, SQL Injection Prevention Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.md) - source va sink tushunchasining amaliy ko'rinishi, sanitizer ning chegarasi
+- [OWASP, Deserialization Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Deserialization_Cheat_Sheet.md) - ishonilmaydigan ma'lumot oqimi va gadget zanjiri
 
 ---
 

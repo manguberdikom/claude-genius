@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 12. Exclusion: nimani chiqarish halol, nimani chiqarish aldov (Exclusions, Honest and Dishonest)
 
@@ -66,6 +66,19 @@ sonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
 Muhim halollik nuqtasi: `sonar.exclusions` coverage foizining maxrajini ham kichraytiradi. Ya'ni siz testlanmagan katta faylni tahlildan chiqarsangiz, coverage raqami o'z-o'zidan ko'tariladi. Bu raqam yaxshilanishi emas, o'lchov maydonining qisqarishi. Shu sababli coverage ni ko'tarish uchun `sonar.exclusions` ga tegish eng ko'p uchraydigan aldov usuli.
 
 Muayyan qoidani tor doirada o'chirish uchun multicriteria mexanizmi ishlatiladi. Bu eng aniq vosita, chunki u "qaysi qoida" va "qaysi fayl" degan ikki savolga aniq javob beradi.
+
+Lekin mexanizm bitta emas, SonarQube manbasida (`IssueExclusionProperties`) to'rttasi e'lon qilingan va ularning har biri boshqa aniqlikda ishlaydi:
+
+| Kalit | Nima bilan ishlaydi | Qachon to'g'ri |
+|---|---|---|
+| `sonar.issue.ignore.multicriteria` | qoida kaliti + fayl yo'li naqshi | eng aniq, odatdagi tanlov |
+| `sonar.issue.ignore.block` | ikki regex orasidagi blok (`beginBlockRegexp`, `endBlockRegexp`) | fayl ichidagi ma'lum bo'lak (generatsiya qilingan qism) |
+| `sonar.issue.ignore.allfile` | fayl ichidagi regex (`fileRegexp`) | fayl mazmuniga qarab aniqlash, masalan generator imzosi bo'yicha |
+| `sonar.issue.enforce.multicriteria` | teskari ish: qoidani **faqat** shu fayllarda qoldirish | qoida ataylab tor doirada kerak bo'lsa |
+
+`allfile` ko'pincha eng toza yechim bo'ladi: yo'l naqshiga tayanmaydi, faylning o'zidagi belgi bo'yicha ishlaydi (masalan `@Generated` yoki generator sarlavhasi), shuning uchun papka tuzilishi o'zgarganda buzilmaydi.
+
+Qoida kaliti naqshida joker belgi ham ishlaydi: manbadagi yordam matni `java:S1195` bilan bir qatorda `java:*Naming*` shaklini ham ko'rsatadi, ya'ni nom bo'lagi bo'yicha bir guruh qoidani birdan qo'yish mumkin.
 
 ```xml
 <!-- pom.xml: bitta qoidani bitta fayl naqshi uchun o'chirish -->
@@ -356,6 +369,12 @@ entries:
 - [ ] CI ga bostirish formatini tekshiradigan skript qo'shing va asoslanmagan `NOSONAR` uchun build ni yiqitadigan qiling.
 - [ ] CODEOWNERS ga exclusion fayllarini kiritib, arxitektor review ini majburiy qilib qo'ying.
 - [ ] Chorakli ko'rib chiqish uchun kalendarga takrorlanuvchi uchrashuv qo'yib, birinchi majlisda muddati o'tgan yozuvlar ro'yxatini chiqaring.
+
+## Manbalar
+
+- [sonarqube 9.9 LTA, `IssueExclusionProperties.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/sonar-core/src/main/java/org/sonar/core/config/IssueExclusionProperties.java) - to'rtta mexanizm (`multicriteria`, `block`, `allfile`, `enforce.multicriteria`), ularning parametrlari va qoida kaliti naqshida joker belgi (`java:*Naming*`)
+- [sonarqube 9.9 LTA, `IssueFilter.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-ce-task-projectanalysis/src/main/java/org/sonar/ce/task/projectanalysis/issue/filter/IssueFilter.java) - exclusion va inclusion naqshlarining Compute Engine da qo'llanishi
+- [sonarqube 9.9 LTA, `AbstractCoverageAndDuplicationExclusions.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/sonar-scanner-engine/src/main/java/org/sonar/scanner/scan/filesystem/AbstractCoverageAndDuplicationExclusions.java) - `sonar.coverage.exclusions` va `sonar.cpd.exclusions` ning scanner tomonida ishlashi
 
 ---
 

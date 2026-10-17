@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 7. Integratsion test: Spring Boot slice testlari (Integration Testing - Spring Boot Test Slices)
 
@@ -31,9 +31,11 @@ Unit testlar biznes qoidalarini tasdiqlaydi, ammo Spring ilovasining katta qismi
 
 ## 7.1 Slice test g'oyasi: butun ilovani emas, bitta qatlamni ko'tarish
 
-Oddiy `@SpringBootTest` `@SpringBootApplication`'ni topadi va uning barcha auto-configuration'larini qo'llaydi: DataSource, JPA, Flyway, Security, Kafka, cache, scheduler. Bu 5-15 sekundlik startup va yuzlab bean degani. Slice annotatsiyalari esa boshqa yo'ldan boradi - ular `@BootstrapWith` + `TypeExcludeFilter` + aniq auto-configuration ro'yxati ustiga qurilgan. Masalan `@WebMvcTest` `spring-boot-test-autoconfigure` ichidagi `spring.factories`/`AutoConfiguration.imports` metadatasidan faqat web qatlamiga tegishli auto-configuration'larni tanlaydi, qolganini o'chiradi. Shu bilan birga component scanning ham cheklanadi: slice o'z filtri ruxsat bergan stereotype'lardan boshqasini kontekstga kiritmaydi.
+Oddiy `@SpringBootTest` `@SpringBootApplication`'ni topadi va uning barcha auto-configuration'larini qo'llaydi: DataSource, JPA, Flyway, Security, Kafka, cache, scheduler. Bu 5-15 sekundlik startup va yuzlab bean degani. Slice annotatsiyalari esa boshqa yo'ldan boradi - ular `@BootstrapWith` + `TypeExcludeFilter` + aniq auto-configuration ro'yxati ustiga qurilgan. Masalan `@WebMvcTest` `AutoConfiguration.imports` metadatasidan faqat web qatlamiga tegishli auto-configuration'larni tanlaydi, qolganini o'chiradi. Shu bilan birga component scanning ham cheklanadi: slice o'z filtri ruxsat bergan stereotype'lardan boshqasini kontekstga kiritmaydi.
 
 Arxitektor uchun muhim xulosa: slice test tezlik uchun emas, **cheklangan mas'uliyat** uchun kerak. `@WebMvcTest`'da repository mavjud emas, demak unda service logikasini test qilishning imkoni ham, ma'nosi ham yo'q. Har bir slice bitta kontraktni tekshiradi.
+
+Spring Boot 4 da slice annotatsiyalarining joyi o'zgargan va bu migratsiyada e'tibordan qoladigan narsa. Avval hammasi bitta `spring-boot-test-autoconfigure` da va `org.springframework.boot.test.autoconfigure.*` paketida turardi; endi har biri o'z moduli va o'z paketida: `@WebMvcTest` `spring-boot-webmvc-test` modulida va `org.springframework.boot.webmvc.test.autoconfigure` paketida, `@WebFluxTest` `spring-boot-webflux-test` da, `@DataJpaTest` `spring-boot-data-jpa-test` da (`org.springframework.boot.data.jpa.test.autoconfigure`), `TestEntityManager` esa `org.springframework.boot.jpa.test.autoconfigure` da, `@JdbcTest` `spring-boot-jdbc-test` da, `@DataJdbcTest` `spring-boot-data-jdbc-test` da, `@RestClientTest` `spring-boot-restclient-test` da. Demak Boot 4 ga o'tishda faqat import yo'li emas, test uchun kerakli dependency ro'yxati ham o'zgaradi: slice ishlatadigan modul `pom.xml` yoki `build.gradle` ga qo'shilmasa, annotatsiya topilmaydi.
 
 | Annotatsiya | Nima ko'tariladi | Qachon ishlatiladi |
 | --- | --- | --- |
@@ -44,6 +46,7 @@ Arxitektor uchun muhim xulosa: slice test tezlik uchun emas, **cheklangan mas'ul
 | `@DataJdbcTest` | Spring Data JDBC repository + aggregate mapping | Spring Data JDBC loyihalari |
 | `@JsonTest` | `ObjectMapper`, `@JsonComponent`, `Module`, `JacksonTester` | Serialization/deserialization kontrakti |
 | `@RestClientTest` | `RestClient.Builder`/`RestTemplateBuilder`, `MockRestServiceServer` | Chiquvchi HTTP client logikasi |
+| `@WebClientTest` | `WebClient.Builder`, mock server | `WebClient` ishlatadigan chiquvchi kod (Boot 4, `spring-boot-webclient-test`) |
 | `@SpringBootTest` | Butun kontekst (+ ixtiyoriy real server) | Qatlamlar kesishgan oqim, real HTTP, konfiguratsiya tekshiruvi |
 
 ## 7.2 @WebMvcTest: web qatlamni izolyatsiyada testlash
@@ -142,7 +145,7 @@ class ReactiveOrderControllerTest {
 
 ## 7.4 @DataJpaTest: persistence qatlami va TestEntityManager
 
-`@DataJpaTest` `@Entity` sinflarini, Spring Data JPA repository'larini, `EntityManager` va `TestEntityManager`'ni ko'taradi; service qatlamini ko'tarmaydi. Har bir test metodi default'da tranzaksiya ichida ishlaydi va oxirida **rollback** qilinadi, shuning uchun testlar bir-biriga ta'sir qilmaydi.
+`@DataJpaTest` `@Entity` sinflarini, Spring Data JPA repository'larini, `EntityManager` va `TestEntityManager`'ni ko'taradi; service qatlamini ko'tarmaydi. Har bir test metodi default'da tranzaksiya ichida ishlaydi va oxirida **rollback** qilinadi, shuning uchun testlar bir-biriga ta'sir qilmaydi. Yana bir default e'tibordan qoladi: `@DataJpaTest` `spring.jpa.show-sql` ni `true` ga qo'yadi, ya'ni SQL log ga chiqadi. Katta suite da bu chiqishni ko'mib tashlaydi; kerak bo'lmasa annotatsiyaning `showSql = false` atributi bilan o'chiriladi.
 
 Asosiy xavf - `@AutoConfigureTestDatabase`. `@DataJpaTest` uni `replace = Replace.ANY` bilan qo'llaydi, ya'ni sizning haqiqiy DataSource'ingizni classpath'dagi embedded bazaga (odatda H2) **jimgina** almashtiradi. Natijada siz PostgreSQL uchun yozilgan native query, `jsonb`, `ON CONFLICT` yoki partial index'ni H2'da test qilgan bo'lib qolasiz. Real bazada ishlash uchun `@AutoConfigureTestDatabase(replace = Replace.NONE)` yoki Spring Boot 3.4+'dagi `Replace.NON_TEST` (test o'zi e'lon qilgan DataSource'ni saqlaydi) ishlatiladi; real baza bilan ishlash [8-bobning](08-testcontainers-bilan-real-infratuzilmada.md) mavzusi.
 
@@ -354,6 +357,10 @@ Spring TestContext Framework kontekstlarni keshlaydi, kalit esa `MergedContextCo
 
 Raqamli ta'sir: tasavvur qiling, 40 ta integratsion test sinfi bor va har biri bir oz boshqacha konfiguratsiyaga ega. Startup 5 sekund bo'lsa - 40 x 5 = 200 sekund faqat kontekst ko'tarishga ketadi. Shu 40 sinf 3 ta umumiy konfiguratsiyaga keltirilsa, xarajat 15 sekundga tushadi, ya'ni suite'ning sof foydasiz vaqti ~13 barobar qisqaradi. Bundan tashqari kesh hajmi default'da 32 (`spring.test.context.cache.maxSize`); undan oshsa LRU evicting boshlanadi va chiqarib yuborilgan kontekst keyinroq **qaytadan** quriladi. `org.springframework.test.context.cache` logger'ini DEBUG'ga qo'yib kesh statistikasini (hit/miss/size) ko'rish mumkin.
 
+Keshni butunlay o'chiradigan bitta sozlama bor va u Spring da emas, build da. Kontekst `static` o'zgaruvchida saqlanadi, demak testlar alohida process da ketsa, static kesh har process orasida tozalanadi va keshlash amalda ishlamaydi. Spring hujjati Maven Surefire ning `forkMode` i `always` yoki `pertest` bo'lsa, framework kontekstni sinflar orasida keshlay olmasligini va build sezilarli sekinlashishini aniq aytadi. Ya'ni suite sekin bo'lsa, birinchi qaraladigan joy konfiguratsiya xilma-xilligi, ikkinchisi fork siyosati.
+
+Spring Framework 7.0 da kesh xulqiga yangi qadam qo'shilgan: keshda turgan, lekin hozir ishlatilmayotgan kontekst **pauza** qilinadi va keyingi marta keshdan olinganda avtomatik qayta ishga tushadi, ya'ni auto-startup bean lari qaytadan ko'tariladi. Maqsadi: test ishlatmayotgan kontekstdagi fon jarayonlari (JMS listener container, scheduled task) bekorga ishlab turmasin. Amaliy natija: lifecycle ga tayangan test (`@PostConstruct` da bir marta sanaydigan hisoblagich, start da yuboriladigan xabar) endi bir necha marta ishga tushishi mumkin, shuni hisobga ol.
+
 `@DirtiesContext` eng qimmat annotatsiya: u kontekstni keshdan o'chiradi, demak keyingi test uni noldan ko'taradi. Uni "ehtiyot uchun" qo'yish suite'ni sekinlashtirishning eng tez usuli; holatni testning o'zida tozalash deyarli har doim arzonroq. Strategiya oddiy: bitta umumiy abstract bazaviy sinf, bitta profil, mock'lar faqat shu bazaviy sinfda yoki umuman yo'q.
 
 ```java
@@ -465,6 +472,12 @@ E'tibor bering: bu sinfda `@Transactional` **yo'q**, tozalash esa `@Sql`'ning AF
 - [ ] API kontrakti (JSON maydonlari, status kodlari, `ProblemDetail` formati) `@WebMvcTest`/`@JsonTest` bilan qoplangan, ichki maydonlar sizib chiqmasligi tekshirilgan.
 - [ ] Ilova qo'shgan har bir Jackson `Module` yoki `@JsonComponent` slice testlarida ham ro'yxatdan o'tadi; buni bitta deserializatsiya testi muzlatadi.
 - [ ] Commit'dan keyingi xatti-harakat (AFTER_COMMIT event, trigger, constraint) tranzaksiyasiz testda tekshiriladi, tozalash esa `@Sql` yoki aniq cleanup bilan bajariladi.
+
+## Manbalar
+
+- [Spring Boot 4.0, Testing Spring Boot Applications](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/documentation/spring-boot-docs/src/docs/antora/modules/reference/pages/testing/spring-boot-applications.adoc) - har bir slice annotatsiyasining Boot 4 dagi moduli va paketi, `@WebMvcTest` skanerlaydigan stereotype ro'yxati, `@DataJpaTest` ning tranzaksiya va `show-sql` defaultlari, `@AutoConfigureTestDatabase`
+- [Spring Framework 7.0, Context Caching](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/testing/testcontext-framework/ctx-management/caching.adoc) - kesh kaliti tarkibi, default hajm 32 va LRU, static keshning fork da ishlamasligi, 7.0 dagi pauza va qayta ishga tushirish
+- [Spring Framework 7.0, Transaction Management in tests](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/testing/testcontext-framework/tx.adoc) - test tranzaksiyasi, rollback default i va `@Sql` bilan birgalikdagi xulqi
 
 ---
 

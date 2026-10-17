@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 23. Testing patternlari (Testing Patterns)
 
 <details>
-<summary>Bu bobdagi 62 bo'lim</summary>
+<summary>Bu bobdagi 90 bo'lim</summary>
 
 - [23.1 Test piramidasi / Testing Trophy / Honeycomb (Test Pyramid / Testing Trophy / Honeycomb)](#231-test-piramidasi--testing-trophy--honeycomb-test-pyramid--testing-trophy--honeycomb)
 - [23.2 Test dublyorlari (Test Doubles - Dummy, Fake, Stub, Spy, Mock)](#232-test-dublyorlari-test-doubles---dummy-fake-stub-spy-mock)
@@ -70,7 +70,35 @@
 - [23.59 Jadvalni Bo'shatish Orqali Tozalash (Table Truncation Teardown)](#2359-jadvalni-boshatish-orqali-tozalash-table-truncation-teardown)
 - [23.60 Avtomatik Tozalash (Automated Teardown)](#2360-avtomatik-tozalash-automated-teardown)
 - [23.61 Tasdiqlash Testi (Approval Test)](#2361-tasdiqlash-testi-approval-test)
-- [23.62 Amalda qo'llash](#2362-amalda-qollash)
+- [23.62 Test metodi va testcase sinfi (Test Method / Testcase Class)](#2362-test-metodi-va-testcase-sinfi-test-method--testcase-class)
+- [23.63 Test runner, testcase obyekti va test to'plami obyekti (Test Runner / Testcase Object / Test Suite Object)](#2363-test-runner-testcase-obyekti-va-test-toplami-obyekti-test-runner--testcase-object--test-suite-object)
+- [23.64 Testlarni topish, sanash va tanlash (Test Discovery / Test Enumeration / Test Selection)](#2364-testlarni-topish-sanash-va-tanlash-test-discovery--test-enumeration--test-selection)
+- [23.65 Assertion metodi va assertion xabari (Assertion Method / Assertion Message)](#2365-assertion-metodi-va-assertion-xabari-assertion-method--assertion-message)
+- [23.66 Tugallanmagan test tasdigi (Unfinished Test Assertion)](#2366-tugallanmagan-test-tasdigi-unfinished-test-assertion)
+- [23.67 Holatni va xulqni tekshirish (State Verification / Behavior Verification)](#2367-holatni-va-xulqni-tekshirish-state-verification--behavior-verification)
+- [23.68 Fixture sozlashning uch shakli (In-line Setup / Delegated Setup / Implicit Setup)](#2368-fixture-sozlashning-uch-shakli-in-line-setup--delegated-setup--implicit-setup)
+- [23.69 Setup dekoratori va zanjirli testlar (Setup Decorator / Chained Tests)](#2369-setup-dekoratori-va-zanjirli-testlar-setup-decorator--chained-tests)
+- [23.70 Minimal va standart fixture (Minimal Fixture / Standard Fixture)](#2370-minimal-va-standart-fixture-minimal-fixture--standard-fixture)
+- [23.71 Tozalashning uch shakli (Garbage-Collected / In-line / Implicit Teardown)](#2371-tozalashning-uch-shakli-garbage-collected--in-line--implicit-teardown)
+- [23.72 Tranzaksiyani qaytarish orqali tozalash (Transaction Rollback Teardown)](#2372-tranzaksiyani-qaytarish-orqali-tozalash-transaction-rollback-teardown)
+- [23.73 Konfiguratsiyalanadigan va qattiq kodlangan test dublyori (Configurable / Hard-Coded Test Double)](#2373-konfiguratsiyalanadigan-va-qattiq-kodlangan-test-dublyori-configurable--hard-coded-test-double)
+- [23.74 Testga xos subklass (Test-Specific Subclass)](#2374-testga-xos-subklass-test-specific-subclass)
+- [23.75 Test utility metodi va test helper (Test Utility Method / Test Helper)](#2375-test-utility-metodi-va-test-helper-test-utility-method--test-helper)
+- [23.76 Test superklassi (Testcase Superclass)](#2376-test-superklassi-testcase-superclass)
+- [23.77 Test sinfini sinf va feature bo'yicha tashkil qilish (Testcase Class per Class / per Feature)](#2377-test-sinfini-sinf-va-feature-boyicha-tashkil-qilish-testcase-class-per-class--per-feature)
+- [23.78 Baza qumloqi (Database Sandbox)](#2378-baza-qumloqi-database-sandbox)
+- [23.79 Stored procedure testi (Stored Procedure Test)](#2379-stored-procedure-testi-stored-procedure-test)
+- [23.80 Bog'liqlikni izlash (Dependency Lookup)](#2380-bogliqlikni-izlash-dependency-lookup)
+- [23.81 Test qiymatlari: literal, hosila va generatsiya (Literal Value / Derived Value / Generated Value)](#2381-test-qiymatlari-literal-hosila-va-generatsiya-literal-value--derived-value--generated-value)
+- [23.82 Yozib olingan test va skript test (Recorded Test / Scripted Test)](#2382-yozib-olingan-test-va-skript-test-recorded-test--scripted-test)
+- [23.83 Ma'lumotga asoslangan test (Data-Driven Test)](#2383-malumotga-asoslangan-test-data-driven-test)
+- [23.84 Global murojaatni testga ochish (Encapsulate Global References / Replace Global Reference with Getter)](#2384-global-murojaatni-testga-ochish-encapsulate-global-references--replace-global-reference-with-getter)
+- [23.85 Statik metodni test uchun ochish (Expose Static Method / Introduce Instance Delegator / Introduce Static Setter)](#2385-statik-metodni-test-uchun-ochish-expose-static-method--introduce-instance-delegator--introduce-static-setter)
+- [23.86 Chaqiruvni ajratib override qilish (Extract and Override Call / Factory Method / Getter)](#2386-chaqiruvni-ajratib-override-qilish-extract-and-override-call--factory-method--getter)
+- [23.87 Maydonni testda almashtirish (Supersede Instance Variable)](#2387-maydonni-testda-almashtirish-supersede-instance-variable)
+- [23.88 O'zgarmas umumiy fixture (Immutable Shared Fixture)](#2388-ozgarmas-umumiy-fixture-immutable-shared-fixture)
+- [23.89 Entity zanjirini kesish (Entity Chain Snipping)](#2389-entity-zanjirini-kesish-entity-chain-snipping)
+- [23.90 Amalda qo'llash](#2390-amalda-qollash)
 
 </details>
 
@@ -478,7 +506,7 @@ Mavzuning to'liq yozuvi testlash qo'llanmasidagi [arxitektura testlari va kod si
 
 ## 23.25 Kamtarin obyekt (Humble Object)
 
-**Tavsif:** Agar logika test qilish qiyin bo'lgan muhitga (framework callback, UI, scheduler, message listener, HTTP controller) yopishib qolgan bo'lsa, Humble Object pattern uni ikkiga ajratadi: muhitga bog'langan qism iloji boricha "kamtarin" - hech qanday qaror qabul qilmaydigan, faqat delegatsiya qiladigan yupqa qatlam bo'ladi, butun mantiq esa oddiy, bog'liqliksiz POJO'ga ko'chiriladi. Natijada mantiqni ApplicationContext ko'tarmasdan, millisekundlarda unit test qilish mumkin bo'ladi.
+**Tavsif:** Agar logika test qilish qiyin bo'lgan muhitga (framework callback, UI, scheduler, message listener, HTTP controller) yopishib qolgan bo'lsa, Humble Object pattern uni ikkiga ajratadi: muhitga bog'langan qism iloji boricha "kamtarin" - hech qanday qaror qabul qilmaydigan, faqat delegatsiya qiladigan yupqa qatlam bo'ladi, butun mantiq esa oddiy, bog'liqliksiz POJO'ga ko'chiriladi. Natijada mantiqni ApplicationContext ko'tarmasdan, millisekundlarda unit test qilish mumkin bo'ladi. Pattern faqat UI yoki controller uchun emas: Martin uni har qanday arxitektura chegarasining belgisi deb qaraydi va servis chegarasini alohida ko'rsatadi. Chiqishda ilova ma'lumotni oddiy strukturaga yuklab, uni formatlab tashqi servisga yuboradigan modulga uzatadi; kirishda esa service listener servis interfeysidan ma'lumotni qabul qilib, uni ilova ishlatadigan oddiy strukturaga aylantiradi va shundan keyin chegaradan o'tkazadi. Chegaradan o'tadigan narsa deyarli har doim oddiy ma'lumot strukturasi bo'ladi, va chegara test qilish qiyin qismni test qilish oson qismdan ajratadi (Martin, *Clean Architecture*, Prentice Hall, 2018, 23-bob).
 
 **Spring'da qayerda uchraydi:** `@RestController` metodlari faqat so'rovni DTO'ga aylantirib application service'ga uzatadi; `@Scheduled` yoki `@EventListener` metodi bir satrlik delegatsiya bo'ladi; `MessageListener`/`@KafkaListener`/`@RabbitListener` va Spring Batch'ning `ItemProcessor`/`ItemWriter` implementatsiyalari ham shu tarzda yupqalashtiriladi. Spring Integration'dagi `ServiceActivator` va Spring Modulith'ning `@ApplicationModuleListener` ham xuddi shu rolni bajaradi. Mantiq ajratilgandan keyin uni oddiy JUnit 5 + Mockito/AssertJ bilan, `@SpringBootTest`siz test qilasiz; kamtarin qatlam uchun esa yengil `@WebMvcTest` yoki `MockMvcTester` (Spring Framework 6.2+) yetarli.
 
@@ -486,6 +514,7 @@ Mavzuning to'liq yozuvi testlash qo'llanmasidagi [arxitektura testlari va kod si
 - Controller'dagi validation va narx hisoblash mantiqini alohida domain service'ga chiqarib, tez unit testlar yozish.
 - `@Scheduled` job'ning jadval mantiqini (qaysi yozuvlar tanlanadi) vaqt va cron'dan ajratish.
 - Kafka listener'dagi deserialization va biznes qarorini ikki sinfga bo'lib, retry/DLQ xulqini alohida tekshirish.
+- Tashqi servisga ulanadigan adapterni ikkiga bo'lish: service listener faqat protokol va mapping, qaror esa application service da.
 - Spring Batch step'ining transformatsiya mantiqini `JobLauncherTestUtils` ishga tushirmasdan sinash.
 - Legacy JSF/Vaadin yoki Thymeleaf controller'dan mantiqni ko'chirib, UI'ga bog'liqlikni yo'qotish.
 
@@ -746,7 +775,7 @@ StepVerifier.withVirtualTime(() -> service.pollWithRetry())
 - Feature flag provayderini stub qilib, bir xil kodni ikki xil konfiguratsiyada tekshirish.
 - `ChatModel` ni fiksirlangan javob bilan stub qilib, prompt-parsing va output-converter logikasini LLM'ga murojaat qilmasdan test qilish.
 
-**Ehtiyot bo'ling:** Haddan ziyod stubbing testni implementatsiyaga mahkam bog'lab qo'yadi - har bir refaktoringda o'nlab test "qizil" bo'ladi; stub javoblari real API bilan sinxrondan chiqib ketishi mumkin, shuning uchun contract test (Spring Cloud Contract) yoki Testcontainers bilan qoplash kerak. `Mockito.verify` ni stub ustida ishlatish patternlarni aralashtirish hisoblanadi - bu holda siz allaqachon mock yozayotgan bo'lasiz.
+**Ehtiyot bo'ling:** Haddan ziyod stubbing testni implementatsiyaga mahkam bog'lab qo'yadi - har bir refaktoringda o'nlab test "qizil" bo'ladi; stub javoblari real API bilan sinxrondan chiqib ketishi mumkin, shuning uchun contract test (Spring Cloud Contract) yoki Testcontainers bilan qoplash kerak. `Mockito.verify` ni stub ustida ishlatish patternlarni aralashtirish hisoblanadi - bu holda siz allaqachon mock yozayotgan bo'lasiz. Butun obyektlar to'rini bitta stub bilan almashtirish kerak bo'lsa, stub ning maxsus holati [entity zanjirini kesish](#2389-entity-zanjirini-kesish-entity-chain-snipping) da yozilgan.
 
 ## 23.42 Test spy (Test Spy)
 
@@ -925,7 +954,7 @@ public class OrderAssert extends AbstractAssert<OrderAssert, Order> {
 - `@TestConfiguration` sinflarini bir xil tutib, context kalitini o'zgartirmaslik va shu orqali cache hit'ni oshirish.
 - CI'da parallel test executor'lar soniga mos ravishda bitta umumiy Docker network va konteyner to'plamidan foydalanish.
 
-**Ehtiyot bo'ling:** Umumiy fixture testlar orasida yashirin bog'liqlik tug'diradi - bir test yozgan ma'lumot ikkinchisining natijasini o'zgartirishi mumkin, natijada flaky va tartibga bog'liq testlar paydo bo'ladi. `@MockBean`/`@MockitoBean` yoki har xil `properties` qo'shish context kalitini o'zgartirib, cache'da ko'plab kontekstlar to'planishiga va OOM'ga olib kelishi mumkin.
+**Ehtiyot bo'ling:** Umumiy fixture testlar orasida yashirin bog'liqlik tug'diradi - bir test yozgan ma'lumot ikkinchisining natijasini o'zgartirishi mumkin, natijada flaky va tartibga bog'liq testlar paydo bo'ladi. `@MockBean`/`@MockitoBean` yoki har xil `properties` qo'shish context kalitini o'zgartirib, cache'da ko'plab kontekstlar to'planishiga va OOM'ga olib kelishi mumkin. Kitob bu xavfni yo'qotadigan variantni ham beradi: fixture ni hech bir test o'zgartirmaydigan qismga va test o'zi quradigan qismga bo'lish, ya'ni [o'zgarmas umumiy fixture](#2388-ozgarmas-umumiy-fixture-immutable-shared-fixture).
 
 ## 23.52 Oldindan Qurilgan Fixture (Prebuilt Fixture)
 
@@ -1090,7 +1119,802 @@ static class FixedClockConfig {
 
 **Ehtiyot bo'ling:** Chiqishda determinizmsiz qiymatlar (`UUID`, `Instant.now()`, tartibsiz `Set`, ketma-ket ID'lar) bo'lsa test flaky bo'ladi - ularni `Clock` bean'i, fixed generator yoki scrubber bilan normalizatsiya qilish shart. Diff'ni o'ylab ko'rmasdan "approve" bosish odati testni ma'nosiz qiladi: approval test bug'ni ushlamaydi, faqat o'zgarishni qayd etadi.
 
-## 23.62 Amalda qo'llash
+## 23.62 Test metodi va testcase sinfi (Test Method / Testcase Class)
+
+**Tavsif:** Kitobning eng asosiy ikki patterni: har bir test bitta metod sifatida yoziladi, bir-biriga bog'liq test metodlari esa bitta sinfga guruhlanadi. Meszaros test metodining uch shablonini sanaydi: Simple Success Test (setup, exercise, verify chiziqli ketma-ketlikda), Expected Exception Test (istisno tashlanmasa test yiqiladi) va Constructor Test (obyekt yaratiladi va atributlari tekshiriladi) (Gerard Meszaros, *xUnit Test Patterns*, Addison-Wesley, 2007, 19-bob, 348-349-bet va 373-bet). Shablonni tanib olish o'quvchiga testning turini sarlavhasini o'qimasdan aytadi.
+
+**Spring'da qayerda uchraydi:** JUnit 5 da test metodi `@Test` (yoki `@ParameterizedTest`, `@RepeatedTest`, `@TestFactory`), testcase sinfi esa oddiy sinf: `public` bo'lishi shart emas, konstruktor argumentlari `ParameterResolver` orqali to'ldiriladi. Expected Exception Test uchun JUnit 3 davridagi `try/fail/catch` o'rniga `assertThrows` yoki AssertJ `assertThatThrownBy` ishlatiladi. `@Nested` ichki sinflar bitta testcase sinfini bir nechta mantiqiy guruhga ajratadi, `@DisplayName` esa niyatni o'zbekcha matn bilan yozishga imkon beradi.
+
+**Qo'llanish keyslari:**
+- Domen qoidasining har bir shartini alohida `@Test` metodi qilib yozish va nomida kutilgan natijani ko'rsatish.
+- Istisno ssenariylarini `assertThrows` bilan Expected Exception Test shaklida yozish.
+- Konstruktor va factory metodining invariantlarini Constructor Test shaklida tekshirish.
+- `@Nested` bilan "limit yetarli" va "limit yetmaydi" ssenariylarini bitta sinf ichida ajratish.
+- Testcase sinfini SUT sinfi bilan bir paketda saqlab, package-private metodlarni ham test qilish imkonini qoldirish.
+
+```java
+class CreditLimitPolicyTest {
+    private final CreditLimitPolicy policy = new CreditLimitPolicy();
+
+    @Test
+    @DisplayName("limitdan oshgan buyurtma rad etiladi")
+    void rejectsOrderOverLimit() {
+        var customer = new Customer("c-1", Money.of("1000", "UZS"));
+        assertThatThrownBy(() -> policy.check(customer, Money.of("1500", "UZS")))
+                .isInstanceOf(CreditLimitExceededException.class);
+    }
+}
+```
+
+**Ehtiyot bo'ling:** Bir metodda bir nechta shablonni aralashtirish (konstruktorni tekshirib, keyin biznes metodini ham sinash) Eager Test smell'iga olib keladi va qizil bo'lganda muammo joyini ko'rsatmaydi. Testcase sinfiga maydon qo'yish JUnit 5 da xavfsiz, chunki standart hayotiy davr har metod uchun yangi nusxa yaratadi, lekin `@TestInstance(PER_CLASS)` bilan bu kafolat yo'qoladi.
+
+## 23.63 Test runner, testcase obyekti va test to'plami obyekti (Test Runner / Testcase Object / Test Suite Object)
+
+**Tavsif:** xUnit freymvorklarining ichki mexanikasi: runner topilgan testlarni Command obyektlariga (Testcase Object) aylantiradi, ularni Composite to'plamga (Test Suite Object) yig'adi va bitta interfeys orqali yuritadi, shu bilan bitta test va ko'p qatlamli to'plam runner uchun bir xil ko'rinadi (Gerard Meszaros, *xUnit Test Patterns*, Addison-Wesley, 2007, 19-bob, 377-378-bet, 382-383-bet va 387-bet). Har test uchun alohida obyekt yaratilishi testlarni bir-biridan ajratadi. Bu uchligi birgalikda Test Automation Framework patternini tashkil qiladi: freymvork testlarni topish, to'plamga yig'ish, ketma-ket bajarish, kutilgan natijani tekshirish, xato va yiqilishlarni yig'ib hisobot berish va ularda tozalash mexanizmlarini beradi, test yozuvchi esa faqat testga xos mantiqni yozadi (o'sha kitob, 18-bob, 298-299-bet).
+
+**Spring'da qayerda uchraydi:** JUnit 5 da bu uch pattern JUnit Platform ichida: `Launcher` runner rolini, `TestDescriptor` daraxti esa Testcase Object va Test Suite Object rolini bajaradi; `TestEngine` (jupiter, vintage, yoki jqwik) daraxtni quradi. Maven'da `maven-surefire-plugin` va `maven-failsafe-plugin` launcher'ni chaqiradi, Gradle'da `Test` task. Dasturchi bu qatlamga kamdan-kam tegadi: `TestExecutionListener` yozib natijalarni yig'ish yoki `EngineTestKit` bilan o'z extension'ini test qilish shu qatlam bilan ishlashning amaliy holatlari.
+
+**Qo'llanish keyslari:**
+- `TestExecutionListener` bilan test davomiyligini yig'ib, eng sekin testlar hisobotini chiqarish.
+- `EngineTestKit` bilan o'zingiz yozgan JUnit extension'ining xatti-harakatini test qilish.
+- `@Suite` (junit-platform-suite) bilan bir nechta modulning testlarini bitta to'plamga yig'ish.
+- Surefire va Failsafe'ni ajratib, unit va integration to'plamlarini turli bosqichda yuritish.
+- CI'da platform natija daraxtidan foydalanib flaky testlarni test darajasida hisoblash.
+
+```java
+public class SlowestTestsListener implements TestExecutionListener {
+    private final Map<String, Long> started = new ConcurrentHashMap<>();
+
+    @Override
+    public void executionStarted(TestIdentifier id) {
+        started.put(id.getUniqueId(), System.nanoTime());
+    }
+
+    @Override
+    public void executionFinished(TestIdentifier id, TestExecutionResult result) {
+        Long t0 = started.remove(id.getUniqueId());
+        if (t0 != null && id.isTest()) {
+            System.out.printf("%d ms %s%n", (System.nanoTime() - t0) / 1_000_000, id.getDisplayName());
+        }
+    }
+}
+```
+
+**Ehtiyot bo'ling:** Kitobda runner va suite obyekti qo'lda yoziladigan kod sifatida tasvirlangan, JUnit 5 da esa ular freymvork ichida: bu qatlamni qo'lda qurishga urinish keraksiz ish. Listener ichida og'ir ish qilish butun to'plamni sekinlashtiradi va static holat orqali testlar orasida bog'liqlik yaratishi mumkin.
+
+## 23.64 Testlarni topish, sanash va tanlash (Test Discovery / Test Enumeration / Test Selection)
+
+**Tavsif:** Runner qaysi testlarni yurgizishini bilishning uch yo'li. Test Discovery da freymvork reflection bilan test metodlarini o'zi topadi; Test Enumeration da dasturchi to'plamni qo'lda yozadi; Test Selection da esa testlar atributlari bo'yicha ish vaqtida filtrlanadi (Gerard Meszaros, *xUnit Test Patterns*, Addison-Wesley, 2007, 19-bob, 393-bet, 399-bet va 403-bet). Kitobda qo'lda sanash JUnit 3 ning `suite()` metodi bilan bog'langan va Lost Test smell'ining asosiy sababi deb ko'rsatilgan.
+
+**Spring'da qayerda uchraydi:** JUnit 5 butunlay discovery'ga o'tgan: `@Test` va boshqa annotatsiyalar metodni e'lon qiladi, `suite()` yozilmaydi. Tanlash `@Tag` va platform filtrlari bilan bajariladi: `-Dgroups=`, `-DexcludedGroups=` (Surefire), `includeTags`/`excludeTags` (Gradle), `junit.jupiter.conditions.deactivate`. Shartli o'tkazib yuborish uchun `@EnabledIf...` va `@DisabledIf...` annotatsiyalari bor; qo'lda to'plam kerak bo'lsa `junit-platform-suite` ning `@Suite` va `@SelectPackages` annotatsiyalari ishlatiladi.
+
+**Qo'llanish keyslari:**
+- `@Tag("slow")` bilan sekin testlarni PR gate'dan chiqarib, nightly build'ga qoldirish.
+- `@Tag("flaky")` bilan karantin ro'yxatini kod ichida ko'rinadigan qilish.
+- `@SelectPackages` bilan modul darajasidagi smoke to'plam yig'ish.
+- Metod nomlash konvensiyasini buzgan testlarni topish uchun platform discovery hisobotini CI'da sanash.
+- `@EnabledIfSystemProperty` bilan faqat Docker mavjud muhitda ishlaydigan testlarni ajratish.
+
+```properties
+# junit-platform.properties: tag bo'yicha tanlash standart filtri
+junit.jupiter.execution.parallel.enabled=true
+junit.platform.discovery.issue.severity.critical=ERROR
+```
+
+To'rtinchi, yaqin pattern - Named Test Suite: birga yurgizilishi kerak bo'lgan testlar guruhi uchun niyatni ko'rsatadigan nom bilan alohida to'plam e'lon qilinadi, masalan commit oldidan yuriladigan kichik kesim yoki butun loyihaning AllTests to'plami (Gerard Meszaros, *xUnit Test Patterns*, Addison-Wesley, 2007, 24-bob, 592-593-bet). JUnit 5 da bu `@Suite` sinfi yoki oddiygina kelishilgan `@Tag` nomi bo'ladi.
+
+**Ehtiyot bo'ling:** Tanlash filtri noto'g'ri bo'lsa test jim o'tkazib yuboriladi va bu Lost Test smell'i: to'plam yashil, lekin test soni kamaygan. Shuning uchun CI'da test sonini o'lchab, kutilgan chegaradan pastga tushganda build'ni yiqitish kerak. `@Tag` nomlarini hujjatsiz ko'paytirish filtrlarni boshqarib bo'lmaydigan qilib qo'yadi.
+
+## 23.65 Assertion metodi va assertion xabari (Assertion Method / Assertion Message)
+
+**Tavsif:** Test o'zini o'zi tekshiradigan bo'lishi uchun kutilgan natija assertion metodlari chaqiruvi sifatida yoziladi; assertion xabari esa qaysi tasdiq yiqilganini aytadi. Meszaros amaliy qoida beradi: bir xil turdagi assertion metodidan birdan ko'p chaqiruv bo'lsa, hech bo'lmaganda minimal xabar qo'shiladi, aks holda Missing Assertion Message sababi orqali Assertion Roulette paydo bo'ladi (Gerard Meszaros, *xUnit Test Patterns*, Addison-Wesley, 2007, 19-bob, 362-bet va 370-371-bet).
+
+**Spring'da qayerda uchraydi:** JUnit 5 `Assertions` sinfida xabar oxirgi argument yoki `Supplier<String>` sifatida beriladi; AssertJ da esa `as("...")` va `describedAs(...)` tasdiqni nomlaydi, `withFailMessage(...)` xabarni to'liq almashtiradi. `assertAll` bir nechta tasdiqni birga bajarib, hammasining natijasini ko'rsatadi. Spring tomonida `MockMvcTester` va `WebTestClient` AssertJ uslubidagi zanjirli tasdiqlarni beradi, `JSONAssert` esa JSON taqqoslash xabarini maydon yo'li bilan chiqaradi.
+
+**Qo'llanish keyslari:**
+- Bir obyektning uch maydonini tekshirganda har tasdiqqa `as("status")` qo'shib, qizil xabarni o'qiladigan qilish.
+- `assertAll` bilan validatsiya xatolarining butun to'plamini bir yugurishda ko'rish.
+- AssertJ `satisfies(...)` bilan murakkab shartni bitta nomlangan tasdiqqa yig'ish.
+- `Supplier<String>` shaklidagi xabar bilan faqat yiqilganda qimmat matn yasash.
+- Maxsus assertion yozib, xabarni domen tilida chiqarish.
+
+```java
+@Test
+void calculatesInvoiceTotals() {
+    Invoice invoice = invoiceService.build(order);
+    assertAll(
+            () -> assertEquals(3, invoice.lineCount(), "qatorlar soni"),
+            () -> assertEquals(Money.of("450.00", "UZS"), invoice.net(), "net summa"),
+            () -> assertEquals(Money.of("54.00", "UZS"), invoice.vat(), "QQS"));
+}
+```
+
+**Ehtiyot bo'ling:** Xabar matnini tasdiqning o'zi bilan takrorlash (`"expected 3 but was"`) foydasiz: xabar nima tekshirilayotganini aytishi kerak, natijani freymvork o'zi chiqaradi. AssertJ da `withFailMessage` standart diffni o'chirib qo'yadi, shuning uchun odatda `as(...)` afzal.
+
+## 23.66 Tugallanmagan test tasdigi (Unfinished Test Assertion)
+
+**Tavsif:** Hali yozib bitirilmagan test tasodifan yashil bo'lib qolmasligi uchun uning oxiriga doim yiqiladigan tasdiq qo'yiladi. Meszaros buni odat qilishni maslahat beradi: narxi yo'q, foydasi katta, chunki yozilmagan test yashil bo'lsa u Neverfail Test ga aylanadi (Gerard Meszaros, *xUnit Test Patterns*, Addison-Wesley, 2007, 21-bob, 494-bet).
+
+**Spring'da qayerda uchraydi:** JUnit 5 da `Assertions.fail("tugallanmagan")` shu rolni bajaradi; `assertThat(...).isNotNull()` kabi bo'sh tasdiqlar bu rolni bajarmaydi. Tugallanmagan testni belgilashning ikkinchi yo'li `@Disabled("sabab va issue")`: u testni yurgizmaydi, lekin hisobotda ko'rinadi. Uchinchi yo'l `Assumptions.abort("sabab")`, bu testni o'tkazib yuborilgan deb belgilaydi. Tanlov siyosatga bog'liq: yiqiladigan tasdiq build'ni qizil qiladi, `@Disabled` esa qarzni ko'rinadigan qiladi.
+
+**Qo'llanish keyslari:**
+- TDD da test skeletini yozib, implementatsiya boshlanmaguncha `fail` qoldirish.
+- Yangi talab uchun test nomlarini oldin yozib, har biriga `fail("yozilmagan")` qo'yish.
+- IDE shablonida yangi test metodiga avtomatik `fail` qo'shib qo'yish.
+- Review'da `isNotNull()` dan boshqa tasdiqi yo'q testlarni tugallanmagan deb belgilash.
+- Karantinga olingan testni `@Disabled` bilan emas, yiqiladigan tasdiq bilan belgilab, muddat bosimini saqlash.
+
+```java
+@Test
+void refundsPartiallyShippedOrder() {
+    // TODO: qaytarish qoidasi aniqlangandan keyin yoziladi (JIRA-4821)
+    fail("tugallanmagan test");
+}
+```
+
+**Ehtiyot bo'ling:** Tugallanmagan tasdiqni commit qilib yuborish main'ni qizil qiladi, shuning uchun bu usul lokal ish uchun; qizil main'ga chidamaydigan jamoada o'rniga sababli va egali `@Disabled` ishlatiladi. Hech qachon testni yashil qilish uchun tasdiqni butunlay olib tashlamang.
+
+## 23.67 Holatni va xulqni tekshirish (State Verification / Behavior Verification)
+
+**Tavsif:** Natijani tekshirishning ikki uslubi. State Verification da SUT ishlatilgandan keyin uning holati o'qiladi va kutilgan holat bilan taqqoslanadi; Behavior Verification da esa SUT o'z bog'liqliklariga qanday murojaat qilgani yozib olinadi va kutilgan chaqiruvlar bilan solishtiriladi (Gerard Meszaros, *xUnit Test Patterns*, Addison-Wesley, 2007, 21-bob, 462-463-bet va 468-469-bet). Kitob ogohlantiradi: xulq tekshiruvini ortiqcha ishlatish Overspecified Software sababi orqali Fragile Test ga olib keladi.
+
+**Spring'da qayerda uchraydi:** State Verification Spring testlarida ustun uslub: `@DataJpaTest` da `TestEntityManager` bilan yozuvni qayta o'qish, `MockMvcTester` bilan javob tanasini tekshirish, `ApplicationContext` dan bean holatini olish. Behavior Verification Mockito bilan: `verify(repo).save(order)`, `verify(publisher, never()).publish(any())`, `ArgumentCaptor` bilan argumentni ushlab tekshirish, `InOrder` bilan tartibni tasdiqlash. `@MockitoBean` bilan qo'yilgan dublyor har ikki uslubga xizmat qiladi.
+
+**Qo'llanish keyslari:**
+- Domen hisob-kitobini State Verification bilan tekshirish: natija qiymati muhim, chaqiruvlar emas.
+- Tashqi to'lov provayderiga so'rov yuborilganini Behavior Verification bilan tasdiqlash, chunki natija ko'rinmaydi.
+- `ArgumentCaptor` bilan yuborilgan event tanasini tekshirib, ikki uslubni birlashtirish.
+- `verify(..., never())` bilan "idempotent qayta urinishda ikkinchi debet bo'lmaydi" qoidasini tasdiqlash.
+- Repository chaqiruvlarini emas, saqlangan yozuvni tekshirib, testni refaktoringga chidamli qilish.
+
+```java
+@Test
+void publishesEventOnceOnRetry() {
+    orderService.submit(order);
+    orderService.submit(order); // idempotent qayta urinish
+
+    ArgumentCaptor<OrderSubmitted> captor = ArgumentCaptor.forClass(OrderSubmitted.class);
+    verify(publisher, times(1)).publish(captor.capture());
+    assertThat(captor.getValue().orderId()).isEqualTo(order.id());
+}
+```
+
+**Ehtiyot bo'ling:** Har chaqiruvni `verify` qilish testni implementatsiya nusxasiga aylantiradi: metod nomini o'zgartirsangiz test yiqiladi, xatti-harakat esa o'zgarmagan. Qoida: holatni o'qish mumkin bo'lsa State Verification, faqat ko'rinmas yon ta'sir (xabar yuborish, log, tashqi chaqiruv) uchun Behavior Verification.
+
+## 23.68 Fixture sozlashning uch shakli (In-line Setup / Delegated Setup / Implicit Setup)
+
+**Tavsif:** Fixture'ni qurishning uch joyi: test metodining o'zida (In-line), test metodidan chaqirilgan Creation Method'larda (Delegated) yoki freymvork avtomatik chaqiradigan `setUp` metodida (Implicit). Meszaros tanlov mezonini beradi: In-line sozlash juda sodda fixture uchun va testning birinchi qoralamasi uchun, Delegated takrorlanishni yo'qotib fixture tabiatini test ichida ko'rinadigan qoldiradi, Implicit esa bir sinfdagi barcha testlar aynan bir xil fixture talab qilganda (Gerard Meszaros, *xUnit Test Patterns*, Addison-Wesley, 2007, 20-bob, 408-409-bet, 411-412-bet va 424-425-bet).
+
+**Spring'da qayerda uchraydi:** Implicit Setup JUnit 5 da `@BeforeEach` va `@BeforeAll`, Spring tomonida `@Sql(executionPhase = BEFORE_TEST_METHOD)`, `@TestExecutionListeners` va `@MockitoBean` ning avtomatik o'rnatilishi. Delegated Setup `src/test/java` dagi builder va `OrderMother` turidagi fabrikalar, `TestEntityManager.persistFlushFind(...)` chaqiruvlari orqali. In-line Setup esa oddiy konstruktor chaqiruvi bilan sinf maydonini to'ldirish.
+
+**Qo'llanish keyslari:**
+- Yangi testni In-line sozlash bilan yozib, uchinchi nusxadan keyin Delegated ga ko'chirish.
+- `@BeforeEach` ga faqat barcha testlarga baravar kerak bo'lgan qismni qoldirish.
+- Ssenariyga xos qiymatlarni (limit, summa) doim test metodining o'zida ko'rsatish.
+- `@Nested` ichida lokal `@BeforeEach` yozib, guruhga xos fixture'ni ajratish.
+- Bazaga tayanadigan testda umumiy reference ma'lumotni `@Sql` ga, ssenariy ma'lumotini builder'ga berish.
+
+```java
+@BeforeEach
+void setUp() { // Implicit: hamma testga baravar
+    policy = new CreditLimitPolicy(clock);
+}
+
+@Test
+void rejectsOverLimit() {
+    // Delegated: ssenariyga xos qiymatlar ko'rinib turadi
+    var customer = aCustomer().withCreditLimit("1000").build();
+    assertThatThrownBy(() -> policy.check(customer, Money.of("1500", "UZS")))
+            .isInstanceOf(CreditLimitExceededException.class);
+}
+```
+
+**Ehtiyot bo'ling:** `@BeforeEach` ga ssenariyga xos qiymat yashirsa test Mystery Guest bo'ladi: o'quvchi nega 1500 rad etilganini tushunish uchun yuqoriga qarashi kerak. Teskari xato - har testda yigirma qatorlik In-line sozlash: bu Test Code Duplication va Irrelevant Information.
+
+## 23.69 Setup dekoratori va zanjirli testlar (Setup Decorator / Chained Tests)
+
+**Tavsif:** Umumiy fixture'ni butun to'plam atrofida "qavs"ga olishning ikki eski yo'li. Setup Decorator to'plamni Decorator bilan o'rab, yugurishdan oldin fixture'ni quradi va tugagandan keyin buzadi; Chained Tests esa fixture'ni umuman qurmaydi va o'zidan oldin yurgan testlardan qolgan holatga tayanadi (Gerard Meszaros, *xUnit Test Patterns*, Addison-Wesley, 2007, 20-bob, 447-448-bet va 454-455-bet). Kitob Chained Tests'ni "yoki yoqtiradilar yoki yomon ko'radilar" deb ta'riflaydi va uning Interacting Tests va Lonely Test smell'lari bilan bog'liqligini ko'rsatadi.
+
+**Spring'da qayerda uchraydi:** Setup Decorator rolini JUnit 5 da `Extension` bajaradi: `BeforeAllCallback`/`AfterAllCallback` sinf atrofida, `ExtensionContext.Store` dagi `CloseableResource` esa butun yugurish atrofida tozalashni beradi. Testcontainers'ning singleton konteyner patterni va `@Testcontainers` annotatsiyasi shu shaklni amalda ko'rsatadi. Chained Tests uchun JUnit 5 da `@TestMethodOrder(OrderAnnotation.class)` va `@TestInstance(PER_CLASS)` kerak, ya'ni tartibni ataylab e'lon qilish shart.
+
+**Qo'llanish keyslari:**
+- `Extension` yozib, butun yugurish uchun bitta konteyner yoki mock server ko'tarish.
+- `ExtensionContext.Store` ga `CloseableResource` qo'yib, JVM tugaganda tozalashni kafolatlash.
+- Uzun biznes ssenariysini (buyurtma yaratildi, to'landi, yetkazildi) ataylab zanjirga tizib, har bosqichni alohida tekshirish.
+- Zanjirli testni faqat bitta `@Nested` sinf ichida saqlab, qolgan to'plamdan ajratish.
+- Dekorator ichida fixture qurilishi muvaffaqiyatsiz bo'lsa butun to'plamni tez yiqitish.
+
+```java
+public class SharedBrokerExtension implements BeforeAllCallback {
+    @Override
+    public void beforeAll(ExtensionContext context) {
+        context.getRoot()
+               .getStore(ExtensionContext.Namespace.GLOBAL)
+               .getOrComputeIfAbsent("broker", key -> new BrokerResource());
+    }
+
+    private record BrokerResource() implements ExtensionContext.Store.CloseableResource {
+        @Override public void close() { /* to'plam tugagach yopiladi */ }
+    }
+}
+```
+
+**Ehtiyot bo'ling:** Chained Tests har qanday tartib o'zgarishida, bitta testni o'chirishda yoki uni yolg'iz yurgizishda buziladi; kitob buni Lonely Test sababi deb belgilaydi. Parallel yugurishda zanjir butunlay ishlamaydi. Dekorator esa fixture'ni butun to'plamga umumiy qiladi, ya'ni Shared Fixture ning hamma xavfini olib keladi.
+
+## 23.70 Minimal va standart fixture (Minimal Fixture / Standard Fixture)
+
+**Tavsif:** Minimal Fixture - har test uchun eng kichik va eng sodda fixture; Standard Fixture - bir nechta test uchun oldindan loyihalangan umumiy fixture dizayni. Meszaros Minimal Fixture'ni testni hujjat sifatida o'qish va Slow Tests'dan qutulish uchun asosiy vosita deb ataydi; Standard Fixture esa "texnologiya emas, munosabat" va aslida fixture uchun "big design upfront" (Gerard Meszaros, *xUnit Test Patterns*, Addison-Wesley, 2007, 18-bob, 302-bet va 305-306-bet). Standard Fixture dizayn qayta ishlatilishini bildiradi, Shared Fixture esa nusxa qayta ishlatilishini: har Shared Fixture Standard Fixture, teskarisi esa yo'q.
+
+**Spring'da qayerda uchraydi:** Minimal Fixture amalda builder bilan quriladi: `anOrder().withTotal("1500").build()` faqat ssenariyga ta'sir qiladigan maydonni ko'rsatadi. Standard Fixture Spring'da ikki shaklda uchraydi: `@Sql` yoki Flyway'ning test migratsiyasi bilan yozilgan umumiy ma'lumot to'plami, va `@TestConfiguration` da e'lon qilingan standart bean to'plami. Context keshi standart konfiguratsiyalarni qayta ishlatishni rag'batlantiradi, ya'ni Standard Fixture'ni konfiguratsiya darajasida ham qo'llash foydali.
+
+**Qo'llanish keyslari:**
+- Har testga faqat kerakli entity'ni yaratib, "standart aeroport va reyslar" turidagi katta fixture'dan voz kechish.
+- Loyiha bo'yicha 3-5 ta standart test konfiguratsiyasini kelishib, context keshini samarali ishlatish.
+- Reference ma'lumot (valyuta, soliq stavkasi) uchun Standard Fixture, tranzaksion ma'lumot uchun Minimal Fixture ishlatish.
+- Yangi test yozilganda umumiy fixture'ga maydon qo'shish o'rniga builder'da ustiga yozish.
+- Fixture qurish vaqtini o'lchab, eng qimmat umumiy fixture'ni ssenariy bo'yicha bo'lish.
+
+```java
+// Minimal Fixture: faqat limit va summa ssenariyga ta'sir qiladi
+Customer customer = aCustomer().withCreditLimit("1000").build();
+Order order = anOrder().forCustomer(customer).withTotal("1500").build();
+```
+
+**Ehtiyot bo'ling:** Standard Fixture'ni "yangi test uchun bitta maydon qo'shaman" deb o'zgartirish boshqa testlarni yiqitadi - kitob buni Fragile Fixture sababi deb ataydi. Minimal Fixture'ni haddan tashqari qisqartirish esa teskari xatoga olib keladi: fixture SUT ning oldingi shartlarini qanoatlantirmasa test real bo'lmagan ssenariyni tekshiradi.
+
+## 23.71 Tozalashning uch shakli (Garbage-Collected / In-line / Implicit Teardown)
+
+**Tavsif:** Fixture'ni buzishning uch yo'li. Garbage-Collected Teardown da tozalash umuman yozilmaydi: obyektlarga havola qolmaganda ularni til mexanizmi yo'q qiladi. In-line Teardown da tozalash kodi test metodining oxirida, natija tekshirilgandan keyin turadi. Implicit Teardown da esa freymvork `tearDown` metodini har testdan keyin, test o'tdi yoki yiqildi degan farqsiz chaqiradi (Gerard Meszaros, *xUnit Test Patterns*, Addison-Wesley, 2007, 22-bob, 500-501-bet, 509-510-bet va 516-517-bet). Kitob muhim ogohlantirish beradi: xUnit a'zolarining ko'pi `setUp` xato bersa `tearDown` ni chaqirmaydi.
+
+**Spring'da qayerda uchraydi:** Garbage-Collected Teardown JVM'da standart holat: oddiy unit testda tozalash yozilmaydi. Implicit Teardown - JUnit 5 `@AfterEach` va `@AfterAll`, Spring tomonida `@Transactional` testning avtomatik rollback'i, `@Sql(executionPhase = AFTER_TEST_METHOD)` va `@DirtiesContext`. In-line Teardown uchun `try/finally` yoki Java'ning `try-with-resources` konstruksiyasi ishlatiladi; JUnit 5 `@TempDir` va `ExtensionContext.Store` ning `CloseableResource` mexanizmi tozalashni avtomatlashtiradi.
+
+**Qo'llanish keyslari:**
+- Toza unit testda tozalash kodini umuman yozmaslik va GC'ga tayanish.
+- Fayl, socket yoki `ExecutorService` kabi resurslarni `try-with-resources` bilan In-line tozalash.
+- Bazaga commit qiladigan testdan keyin `@Sql` bilan Implicit tozalash.
+- `@AfterEach` ichida static holatni (keshni, `ThreadLocal` ni) qaytarish.
+- `setUp` yiqilishi mumkin bo'lgan joyda resursni `Store` ga qo'yib, tozalashni freymvorkka qoldirish.
+
+```java
+@Test
+void writesReportFile(@TempDir Path dir) throws Exception {
+    Path out = dir.resolve("report.csv");
+    try (var writer = Files.newBufferedWriter(out)) { // In-line teardown
+        reportService.writeTo(writer, order);
+    }
+    assertThat(out).content().startsWith("orderId,total");
+    // @TempDir katalogni testdan keyin o'zi o'chiradi (Implicit teardown)
+}
+```
+
+**Ehtiyot bo'ling:** `@BeforeEach` ichida istisno chiqsa `@AfterEach` chaqirilmasligiga tayanmang - resursni ochishni `try-with-resources` yoki extension ichiga ko'chiring, aks holda Resource Leakage boshlanadi. Static maydonda qolgan holat GC'ga tushmaydi va Interacting Tests sababi bo'ladi.
+
+## 23.72 Tranzaksiyani qaytarish orqali tozalash (Transaction Rollback Teardown)
+
+**Tavsif:** Test yangi tranzaksiya ochadi, fixture'ni quradi, SUT'ni ishlatadi, natijani tekshiradi va oxirida tranzaksiyani rollback qiladi, shuning uchun hech bir o'zgarish doimiy bo'lmaydi (Gerard Meszaros, *xUnit Test Patterns*, Addison-Wesley, 2007, 25-bob, 668-669-bet). Jadvalni truncate qilishga yoki yaratilgan yozuvlarni hisoblab yurishga hojat qolmaydi. Bu eng arzon tozalash, lekin eng ko'p narsani yashiradigan tozalash ham.
+
+**Spring'da qayerda uchraydi:** Spring TestContext Framework'da `@Transactional` qo'yilgan test metodi standart holda rollback bilan tugaydi; buni `@Rollback(false)` yoki `@Commit` o'zgartiradi. `@DataJpaTest` bu xatti-harakatni avtomatik yoqadi. `TestTransaction` sinfi test ichida tranzaksiyani qo'lda tugatish va yangisini boshlash imkonini beradi, ya'ni commit'dan keyingi holatni ham tekshirish mumkin. Bu bobdagi transactional test rollback tuzoqlari bo'limi shu patternning amaliy chetga chiqishlarini batafsil yozadi.
+
+**Qo'llanish keyslari:**
+- `@DataJpaTest` da repository so'rovlarini bazani tozalamasdan ketma-ket sinash.
+- Murakkab JPQL so'rovini real bazada tekshirib, ma'lumotni keyin qoldirmaslik.
+- `TestTransaction.flagForCommit()` bilan commit'dan keyingi trigger va constraint ishlashini tekshirish.
+- Bir nechta repository ustidagi servis metodini bitta test tranzaksiyasida sinash.
+- Reference ma'lumotni migratsiyada qoldirib, faqat ssenariy yozuvlarini rollback bilan yo'qotish.
+
+```java
+@DataJpaTest
+class OrderRepositoryTest {
+
+    @Autowired private OrderRepository orders;
+
+    @Test
+        // @DataJpaTest tranzaksiyani ochadi va test oxirida rollback qiladi
+    void findsOverdueOrders() {
+        orders.save(anOrder().withDueDate(LocalDate.of(2020, 1, 1)).build());
+        assertThat(orders.findOverdue(LocalDate.of(2020, 2, 1))).hasSize(1);
+    }
+}
+```
+
+**Ehtiyot bo'ling:** Rollback real commit xatti-harakatini yashiradi: deferred constraint, trigger, `AFTER_COMMIT` event listener va ikkinchi darajali keshning holati tekshirilmay qoladi. Shuningdek test tranzaksiyasi ichida ishlagan SUT o'zi tranzaksiya boshqarsa (`REQUIRES_NEW`), rollback uning yozuvlarini qaytarmaydi. HTTP orqali ishlaydigan testda rollback umuman ishlamaydi, chunki server boshqa tranzaksiyada ishlaydi.
+
+## 23.73 Konfiguratsiyalanadigan va qattiq kodlangan test dublyori (Configurable / Hard-Coded Test Double)
+
+**Tavsif:** Dublyorga nima qaytarishini yoki nimani kutishini aytishning ikki yo'li. Configurable Test Double qiymatlarni maydonda saqlaydi va test ularni sozlash fazasida o'rnatadi; Hard-Coded Test Double esa xatti-harakatni o'z kodiga yozib qo'yadi (Gerard Meszaros, *xUnit Test Patterns*, Addison-Wesley, 2007, 23-bob, 558-559-bet va 568-569-bet). Kitob qattiq kodlangan variantni xatti-harakat juda sodda yoki bitta testga xos bo'lganda tanlashni taklif qiladi.
+
+**Spring'da qayerda uchraydi:** Mockito butunlay Configurable Test Double: `when(...).thenReturn(...)`, `given(...).willThrow(...)`, `doAnswer(...)`. Hard-Coded Test Double esa qo'lda yozilgan test sinfi: interfeysni amalga oshirgan `InMemoryOrderRepository` yoki `FixedRateProvider`. Spring tomonida `@MockitoBean` konfiguratsiyalanadigan dublyorni context'ga qo'yadi, `@TestConfiguration` ichidagi `@Bean` esa qo'lda yozilgan dublyorni. WireMock va `MockRestServiceServer` HTTP darajasida konfiguratsiyalanadigan dublyor beradi.
+
+**Qo'llanish keyslari:**
+- Bitta testda ikki xil javob kerak bo'lsa Mockito bilan sozlash (`thenReturn(a).thenReturn(b)`).
+- Butun to'plamda bir xil ishlaydigan `Clock` yoki kurs provayderi uchun qo'lda yozilgan qattiq kodlangan dublyor.
+- `Answer` bilan argumentga qarab javob qaytarish, ya'ni soddagina fake qurish.
+- Qo'lda yozilgan dublyorni `@TestConfiguration` da `@Primary` bean qilib, integration testlarda tashqi tizimni almashtirish.
+- Bir xil `when(...)` zanjiri o'nlab testda takrorlansa, uni qo'lda yozilgan dublyorga ko'chirish.
+
+```java
+// Hard-Coded Test Double: xatti-harakat kodga yozilgan
+class FixedRateProvider implements RateProvider {
+    @Override
+    public BigDecimal rateFor(String currency) {
+        return new BigDecimal("12500.00"); // UZS uchun qat'iy kurs
+    }
+}
+
+// Configurable Test Double: test sozlash fazasida aytadi
+given(rateProvider.rateFor("USD")).willReturn(new BigDecimal("12500.00"));
+```
+
+**Ehtiyot bo'ling:** Mockito `STRICT_STUBS` rejimida ishlatilmagan sozlash testni yiqitadi: bu yaxshi, chunki keraksiz sozlash Irrelevant Information. Qo'lda yozilgan dublyor real interfeys o'zgarganda kompilyatsiya bilan ogohlantiradi, lekin uning xatti-harakati real implementatsiyadan chetga chiqsa test yolg'on ishonch beradi; shu sababli unga ham kontrakt testi kerak.
+
+## 23.74 Testga xos subklass (Test-Specific Subclass)
+
+**Tavsif:** SUT'ning subklassi yozilib, unga faqat test uchun kerak bo'lgan control point va observation point'lar qo'shiladi: holatni ochadigan getter, ichki holatni to'g'ridan-to'g'ri o'rnatadigan setter yoki bitta metodni override qilib soddalashtirish. Dublyor test bilan birga paketlanganligi uchun SUT ning qolgan ilova uchun ko'rinishi o'zgarmaydi (Gerard Meszaros, *xUnit Test Patterns*, Addison-Wesley, 2007, 23-bob, 579-580-bet). Bu Test Logic in Production smell'idan qutulishning asosiy yo'li.
+
+**Spring'da qayerda uchraydi:** Mockito `spy()` va `@MockitoSpyBean` shu patternning dinamik varianti: real obyekt saqlanadi, faqat ayrim metodlar almashtiriladi. Qo'lda yozish ham keng: `src/test/java` ichida `TestableOrderService extends OrderService` sinfi himoyalangan metodni ochadi. Legacy kodni testlashda Spring'ning `ReflectionTestUtils.setField(...)` bilan ichki holatni o'rnatish shu maqsadga xizmat qiladi, lekin u subklassdan ko'ra qo'polroq vosita.
+
+**Qo'llanish keyslari:**
+- `protected` hisoblash metodini ochib, uni to'g'ridan-to'g'ri test qilish.
+- Tashqi tizimga murojaat qiladigan bitta `protected` metodni override qilib, qolgan mantiqni real qoldirish.
+- Legacy sinfning ichki holatini test uchun o'rnatib, uni to'liq hayotiy davrdan o'tkazmaslik.
+- `@MockitoSpyBean` bilan context'dagi real bean'ning bitta metodini almashtirish.
+- Abstract SUT uchun minimal test implementatsiyasi yozib, shartnomani tekshirish.
+
+```java
+// src/test/java: testga xos subklass control point qo'shadi
+class TestableOrderService extends OrderService {
+    private boolean notified;
+
+    TestableOrderService(OrderRepository repo) { super(repo, null); }
+
+    @Override
+    protected void notifyWarehouse(Order order) { notified = true; }
+
+    boolean wasWarehouseNotified() { return notified; }
+}
+```
+
+**Ehtiyot bo'ling:** Testga xos subklass SUT ni `final` bo'lmasligiga va metodlarini override qilish mumkin bo'lishiga majbur qiladi, bu esa dizayn qarori: ko'pincha to'g'ri yechim bog'liqlikni ajratib injection qilish. Override qilingan metod ichidagi haqiqiy mantiq hech qachon test qilinmasligi mumkin, shuning uchun u imkon qadar bo'sh va mexanik bo'lishi kerak. Subklass override qiladigan nuqtani legacy sinfda yo'qdan yasash uchun [chaqiruvni ajratib override qilish](#2386-chaqiruvni-ajratib-override-qilish-extract-and-override-call--factory-method--getter) va [maydonni testda almashtirish](#2387-maydonni-testda-almashtirish-supersede-instance-variable) ishlatiladi.
+
+## 23.75 Test utility metodi va test helper (Test Utility Method / Test Helper)
+
+**Tavsif:** Birdan ko'p testda uchragan mantiq nomlangan utility metodga ko'chiriladi; bir nechta test sinfiga kerak bo'lsa esa alohida Test Helper sinfiga joylashtiriladi va static chaqiruv yoki maxsus yaratilgan nusxa orqali ishlatiladi (Gerard Meszaros, *xUnit Test Patterns*, Addison-Wesley, 2007, 24-bob, 599-bet va 643-bet). Kitob utility metodlarning turlarini sanaydi, ular orasida SUT API Encapsulation ham bor: u Interface Sensitivity ga qarshi eng yaxshi himoya.
+
+**Spring'da qayerda uchraydi:** Spring Boot test starter'i tayyor helper'lar beradi: `JdbcTestUtils`, `ReflectionTestUtils`, `TestSocketUtils`, `JacksonTester`, `TestEntityManager`. Loyiha tomonida `src/test/java` ichida `OrderFixtures`, `JsonFixtures` turidagi sinflar yoziladi; AssertJ uchun `Assertions` ni kengaytirgan `OrderAssertions` helper'i. Helper'ni `@TestConfiguration` da bean qilib e'lon qilish uni Spring testlariga inject qilish imkonini beradi. `src/test/java` dagi kodni modullar orasida ulashish uchun Maven `test-jar` yoki Gradle `testFixtures` konfiguratsiyasi ishlatiladi.
+
+**Qo'llanish keyslari:**
+- `authenticatedAs("admin")` turidagi metod bilan security kontekstini bir qatorda tayyorlash.
+- SUT ning uzun API chaqiruvini bitta nomlangan metodga yashirib, API o'zgarganda bitta joyni tuzatish.
+- JSON fixture'larini fayldan o'qiydigan `loadJson("order-created.json")` helper'i.
+- `testFixtures` konfiguratsiyasi bilan builder'larni modul chegarasidan o'tkazib ishlatish.
+- Tez-tez takrorlanadigan tekshiruvni maxsus AssertJ assertion'iga ko'chirish.
+
+```java
+public final class SecurityTestSupport { // Test Helper
+    private SecurityTestSupport() {}
+
+    public static RequestPostProcessor asAdmin() { // Test Utility Method
+        return SecurityMockMvcRequestPostProcessors.user("admin").roles("ADMIN");
+    }
+}
+```
+
+**Ehtiyot bo'ling:** Helper'lar nomsiz "util" to'planmasiga aylansa Reinventing the Wheel boshlanadi: dasturchi mavjud metodni topa olmay o'zi yozadi. Shuning uchun helper'lar mavzu bo'yicha nomlanadi va topilishi oson joyda turadi. Helper ichida shart va tsikl ko'paysa u Untestable Test Code bo'ladi, ya'ni testning o'zi testga muhtoj bo'lib qoladi.
+
+## 23.76 Test superklassi (Testcase Superclass)
+
+**Tavsif:** Qayta ishlatiladigan test mantiqi abstract superklassga ko'chiriladi, metodlar subklasslarga ko'rinadigan qilinadi va bu sinf mantiqqa muhtoj barcha test sinflari uchun baza bo'ladi (Gerard Meszaros, *xUnit Test Patterns*, Addison-Wesley, 2007, 24-bob, 638-639-bet). Kitob uni Test Helper bilan solishtiradi: superklass mantiqni chaqirishni osonlashtiradi, lekin merosni sarflaydi, chunki Java'da bitta superklass bor.
+
+**Spring'da qayerda uchraydi:** Spring testlarida bu pattern eng ko'p ishlatiladigan shakl: `abstract class AbstractIntegrationTest` sinfiga `@SpringBootTest`, konteyner e'lonlari va `@DynamicPropertySource` yoziladi, barcha integration testlar undan meros oladi. Shu bilan context keshi ham samarali bo'ladi, chunki konfiguratsiya bitta. Zamonaviy alternativa - merosdan voz kechib, meta-annotatsiya (`@IntegrationTest` deb nomlangan o'z annotatsiyangiz) yoki `@ExtendWith` orqali extension ulash; JUnit 5 da bitta sinfga bir nechta extension qo'shish mumkin, superklass esa bitta.
+
+**Qo'llanish keyslari:**
+- Barcha integration testlar uchun bitta `AbstractIntegrationTest` bazasi va bitta context konfiguratsiyasi.
+- Konteyner e'lonlarini bazaga yig'ib, har testda takrorlamaslik.
+- Umumiy `@BeforeEach` tozalash mantiqini bazaga chiqarish.
+- Bazadan voz kechib, uni meta-annotatsiyaga aylantirish va merosni bo'shatish.
+- Security testlari uchun alohida baza: autentifikatsiya qilingan `MockMvc` tayyorlaydi.
+
+```java
+@SpringBootTest
+@Testcontainers
+public abstract class AbstractIntegrationTest {
+
+    @Container
+    @ServiceConnection
+    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16");
+
+    @Autowired protected TestEntityManager entityManager;
+}
+```
+
+**Ehtiyot bo'ling:** Superklass o'sib ketsa u General Fixture ga aylanadi: har test sinfi uning 10 foizini ishlatadi, qolgani vaqtni yeydi. Merosdan foydalanish bitta slotni band qiladi, shuning uchun uni faqat context konfiguratsiyasi uchun saqlab, qolgan mantiqni helper yoki extension'ga bering. Chuqur ierarxiya (uch darajali test bazasi) testni o'qib bo'lmaydigan qiladi.
+
+## 23.77 Test sinfini sinf va feature bo'yicha tashkil qilish (Testcase Class per Class / per Feature)
+
+**Tavsif:** Test metodlarini sinflarga guruhlashning ikki mezoni. Testcase Class per Class da har SUT sinfi uchun bitta test sinfi yoziladi; Testcase Class per Feature da esa testlar SUT ning qaysi xususiyatini tekshirishiga qarab guruhlanadi, bu esa test sinflarini kichraytiradi va bir feature uchun barcha shartlarni bir qarashda ko'rsatadi (Gerard Meszaros, *xUnit Test Patterns*, Addison-Wesley, 2007, 24-bob, 617-618-bet va 624-625-bet). Kitob sinf bo'yicha guruhlashni boshlang'ich nuqta deb ataydi va test soni o'sgach bo'lishni taklif qiladi. Uchinchi mezon, fixture bo'yicha guruhlash, bu bobda alohida bo'limda yozilgan.
+
+**Spring'da qayerda uchraydi:** JUnit 5 da feature bo'yicha guruhlash uchun alohida fayl ochish shart emas: `@Nested` ichki sinflari bitta faylda `OrderServiceTest.Submission`, `OrderServiceTest.Cancellation` kabi guruhlarni beradi va har biri o'z `@BeforeEach` iga ega bo'ladi. `@DisplayName` bilan guruh nomi hisobotda o'zbekcha chiqadi. Maven Surefire standart holda `*Test.java` va `*Tests.java` naqshlarini oladi, `@Nested` sinflar esa alohida nom talab qilmaydi.
+
+**Qo'llanish keyslari:**
+- Kichik sinf uchun bitta `XTest` fayli bilan boshlash.
+- Test soni 20 dan oshganda `@Nested` guruhlarga bo'lish: feature bo'yicha.
+- Har `@Nested` guruhga o'z fixture'ini berib, General Fixture dan qutulish.
+- Hisobotda guruh nomini `@DisplayName` bilan talab tiliga yaqinlashtirish.
+- Katta servis sinfining har metodiga alohida test fayli emas, alohida `@Nested` guruh berish.
+
+```java
+class OrderServiceTest {
+
+    @Nested
+    @DisplayName("buyurtma yuborish")
+    class Submission {
+        @Test void rejectsOverCreditLimit() { /* ... */ }
+        @Test void acceptsWithinCreditLimit() { /* ... */ }
+    }
+
+    @Nested
+    @DisplayName("buyurtmani bekor qilish")
+    class Cancellation {
+        @Test void rejectsCancelAfterShipment() { /* ... */ }
+    }
+}
+```
+
+**Ehtiyot bo'ling:** Feature bo'yicha bo'lish bitta SUT sinfi uchun testlarni bir nechta faylga sochib yuborishi mumkin: "bu sinfning testlari qayerda" savoliga javob qiyinlashadi, shuning uchun `@Nested` bir fayl ichida qolishi afzal. Guruhlash mezonini aralashtirish (bir joyda feature, boshqa joyda fixture) to'plamni tartibsiz qiladi.
+
+## 23.78 Baza qumloqi (Database Sandbox)
+
+**Tavsif:** Har bir dasturchi va har bir test yugurishiga o'z, mustaqil baza nusxasi beriladi, shunda kim qanday o'zgartirish qilsa ham boshqalarning testlariga ta'sir qilmaydi (Gerard Meszaros, *xUnit Test Patterns*, Addison-Wesley, 2007, 25-bob, 650-651-bet). Kitob buni bazaga sezilarli darajada tayanadigan har qanday ilovada qo'llashni maslahat beradi va bu Test Run War smell'iga qarshi asosiy himoya.
+
+**Spring'da qayerda uchraydi:** Bugungi amalda qumloq konteyner bilan beriladi: har test sinfi yoki har yugurish uchun o'z Postgres konteyneri, Spring Boot tomonida `@ServiceConnection` yoki `@DynamicPropertySource` bilan ulanadi. Ikkinchi shakl - bitta serverda har foydalanuvchiga alohida schema yoki alohida baza: `spring.jpa.properties.hibernate.default_schema` yoki alohida `DataSource` URL. Flyway yoki Liquibase migratsiyalari qumloqni yaratilgandan keyin bir xil holatga keltiradi. Bu bobdagi Testcontainers bo'limi ulash mexanikasini batafsil beradi.
+
+**Qo'llanish keyslari:**
+- CI'da har build uchun yangi konteyner ko'tarib, build'lar orasidagi ta'sirni yo'q qilish.
+- Parallel modullar uchun har moduldan alohida konteyner yoki alohida schema.
+- Lokal ishlab chiqishda dasturchiga o'z bazasini berib, umumiy dev bazasidan voz kechish.
+- Migratsiyalarni toza qumloqda yurgizib, ularning idempotentligini tekshirish.
+- Bir nechta ijarachi (tenant) uchun schema darajasidagi ajratishni test bilan tasdiqlash.
+
+```yaml
+# application-test.yml: qumloq ulanishi dinamik beriladi, qat'iy yozilmaydi
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    clean-disabled: false
+```
+
+**Ehtiyot bo'ling:** Umumiy staging bazasini "qumloq" deb ishlatish eng tipik xato: u Test Run War, Unrepeatable Test va Data Sensitivity ning bir vaqtda manbai. Har test sinfi uchun yangi konteyner ko'tarish esa to'plamni sekinlashtiradi, shuning uchun odatda bitta konteyner butun yugurishga beriladi va izolyatsiya tranzaksiya yoki schema darajasida qilinadi.
+
+## 23.79 Stored procedure testi (Stored Procedure Test)
+
+**Tavsif:** Bazada yozilgan har bir jiddiy stored procedure va funksiya uchun klient ilovasidan mustaqil avtomatik test yoziladi; test turi protseduraning tabiatiga qarab qatlam kesib o'tuvchi yoki aylanma (round-trip) bo'ladi (Gerard Meszaros, *xUnit Test Patterns*, Addison-Wesley, 2007, 25-bob, 654-655-bet). Mantiq bazada bo'lsa, u ham kod va ham testga muhtoj.
+
+**Spring'da qayerda uchraydi:** Java tomondan chaqirish uchun `SimpleJdbcCall`, `JdbcTemplate.execute(...)` yoki JPA `@NamedStoredProcedureQuery` va `StoredProcedureQuery`. Test muhiti real PostgreSQL bo'lishi shart, chunki PL/pgSQL embedded bazada ishlamaydi: shu sababli konteyner ishlatiladi. Migratsiya vositasi (Flyway) protsedurani ham versiyalaydi, ya'ni test protseduraning aynan joriy versiyasini sinaydi. Sof SQL darajasidagi testlar uchun pgTAP yoki oddiy `@Sql` skriptlari ham ishlatiladi.
+
+**Qo'llanish keyslari:**
+- Hisob-kitob qiladigan PL/pgSQL funksiyasini chegara qiymatlar bilan sinash.
+- Trigger va constraint o'zaro ishini commit qilinadigan testda tekshirish.
+- Protsedura migratsiyadan keyin o'zgarmaganini `@Sql` fixture va tasdiq bilan qayd etish.
+- Katta ko'chirish (batch) protsedurasini kichik ma'lumot to'plamida sinab, natija yozuvlarini tekshirish.
+- Protsedura xato holatida qanday istisno qaytarishini `assertThatThrownBy` bilan tasdiqlash.
+
+```java
+@Test
+void calculatesVatInDatabase() {
+    SimpleJdbcCall call = new SimpleJdbcCall(jdbcTemplate)
+            .withFunctionName("calc_vat")
+            .declareParameters(new SqlParameter("p_net", Types.NUMERIC));
+
+    BigDecimal vat = call.executeFunction(BigDecimal.class, new BigDecimal("450.00"));
+
+    assertThat(vat).isEqualByComparingTo("54.00");
+}
+```
+
+**Ehtiyot bo'ling:** Bazadagi mantiq odatda tranzaksiya rollback'i bilan tozalanadi, lekin protsedura o'zi commit qilsa yoki avtonom tranzaksiya ishlatsa rollback ishlamaydi va jadvalni truncate qilish kerak bo'ladi. Bazaga ko'p mantiq ko'chirish uni testlash va versiyalashni qiyinlashtiradi: bu pattern mavjud mantiqni qoplaydi, yangi mantiqni bazaga ko'chirishga ruxsat emas.
+
+## 23.80 Bog'liqlikni izlash (Dependency Lookup)
+
+**Tavsif:** SUT o'ziga kerakli obyektni o'zi so'rab oladi: bog'liqlik sinfining nomi kodga yozilmaydi, buning o'rniga "komponent broker" nomi yozilib, undan tayyor obyekt so'raladi va broker testda boshqa obyektni qaytarishi mumkin (Gerard Meszaros, *xUnit Test Patterns*, Addison-Wesley, 2007, 26-bob, 686-687-bet). Bu Dependency Injection ning qarama-qarshisi: nazorat SUT qo'lida qoladi.
+
+**Spring'da qayerda uchraydi:** Spring'da lookup shakllari bor, lekin ular istisno: `ApplicationContextAware` va `BeanFactoryAware` bilan context'ni olib `getBean(...)` chaqirish, `ObjectProvider<T>` bilan kech va ixtiyoriy bog'liqlikni olish, `@Lookup` metodi bilan har chaqiruvda yangi prototype bean olish. Testda lookup'ni almashtirish uchun `@MockitoBean` context'dagi bean'ni o'zgartiradi, ya'ni `getBean(...)` dublyorni qaytaradi. Spring'ning o'z hujjatlari va bu hujjatning field injection yozuvi konstruktor injection'ni standart deb belgilaydi, lookup esa faqat scope nomuvofiqligi uchun qoladi.
+
+**Qo'llanish keyslari:**
+- Singleton bean ichida prototype bean kerak bo'lsa `@Lookup` yoki `ObjectProvider` bilan olish.
+- Ixtiyoriy bog'liqlikni `ObjectProvider.getIfAvailable()` bilan olib, `@Autowired(required = false)` dan qutulish.
+- Dinamik tanlov: strategiya nomiga qarab `Map<String, Strategy>` dan implementatsiya olish.
+- Legacy kodda `ServiceLocator` ni testda almashtirib, bog'liqlikni ajratish.
+- Konteynerdan tashqarida yaratilgan obyektga bean berish uchun context'ni lookup qilish.
+
+```java
+@Component
+public class ReportScheduler {
+
+    private final ObjectProvider<ReportJob> jobs; // lookup, injection emas
+
+    public ReportScheduler(ObjectProvider<ReportJob> jobs) { this.jobs = jobs; }
+
+    public void runOnce(String reportId) {
+        jobs.getObject().execute(reportId); // har chaqiruvda yangi prototype
+    }
+}
+```
+
+**Ehtiyot bo'ling:** Lookup SUT'ni konteynerga bog'laydi: `getBean(...)` ishlatgan sinfni Spring'siz unit test qilish uchun context yoki mock context kerak bo'ladi, bu esa Hard-to-Test Code sababi. Shuning uchun standart tanlov konstruktor injection, lookup esa faqat scope mos kelmaganda. `ApplicationContextAware` ni domen sinfiga qo'yish arxitektura xatosi: infratuzilma domen ichiga kirib keladi.
+
+## 23.81 Test qiymatlari: literal, hosila va generatsiya (Literal Value / Derived Value / Generated Value)
+
+**Tavsif:** Testda qiymat tanlashning uch yo'li. Literal Value - qo'lda hisoblangan va kodga yozilgan doimiy; Derived Value - boshqa qiymatlardan ifoda bilan hisoblangan qiymat, bu qiymatlar orasidagi bog'liqlikni ko'rinadigan qiladi; Generated Value - test yugurganda yasaladigan qiymat, masalan bazada noyob bo'lishi kerak bo'lgan maydon uchun (Gerard Meszaros, *xUnit Test Patterns*, Addison-Wesley, 2007, 27-bob, 714-bet, 718-bet va 723-bet). Kitob literal qiymatlarning Obscure Test ga olib kelishini va generatsiya qilingan qiymatlar Unrepeatable Test ga qarshi ishlashini ko'rsatadi.
+
+**Spring'da qayerda uchraydi:** Literal qiymatlar `@ParameterizedTest` bilan `@CsvSource` va `@ValueSource` orqali jadvalga chiqariladi. Derived Value JUnit 5 da oddiy Java ifodasi, yoki `@MethodSource` da hisoblangan argument to'plami. Generated Value uchun `UUID.randomUUID()`, `AtomicLong` hisoblagich, Datafaker yoki Instancio; Spring tomonida `TestSocketUtils` bo'sh port beradi, `@DynamicPropertySource` esa konteyner bergan port va URL ni qiymat sifatida uzatadi. Noyoblikni kafolatlash kerak bo'lsa generatsiya qilingan qiymat eng arzon yechim.
+
+**Qo'llanish keyslari:**
+- Soliq hisoblashda kutilgan qiymatni `net.multiply(RATE)` deb yozib, bog'liqlikni ko'rsatish.
+- Unique constraint'li email maydonini `UUID` prefiksi bilan generatsiya qilib, testlarni qayta yugurtiriladigan qilish.
+- Chegara qiymatlarni `@CsvSource` jadvalida literal shaklda saqlab, niyatni ko'rsatish.
+- Sana bilan ishlaganda `clock.instant().plus(30, DAYS)` deb hosila qiymat yasash.
+- Generatsiya qilingan qiymat seed'ini loglab, yiqilgan testni qayta tiklash imkonini qoldirish.
+
+```java
+@ParameterizedTest
+@CsvSource({"1000, 1500, true", "1000, 900, false"}) // Literal Value jadvali
+void appliesCreditLimit(String limit, String total, boolean rejected) {
+    var customer = aCustomer().withCreditLimit(limit).build();
+    var order = anOrder().forCustomer(customer).withTotal(total).build();
+    // Derived Value: kutilgan qoldiq ifoda bilan hisoblanadi
+    Money expected = Money.of(limit, "UZS").minus(Money.of(total, "UZS"));
+    assertThat(policy.isRejected(customer, order)).isEqualTo(rejected);
+    if (!rejected) assertThat(policy.remaining(customer, order)).isEqualTo(expected);
+}
+```
+
+**Ehtiyot bo'ling:** Hosila qiymat SUT ning hisob-kitobini test ichida takrorlasa test hech narsa tekshirmaydi: kutilgan natija mustaqil yo'l bilan olinishi kerak. Generatsiya qilingan qiymat esa determinizmni buzadi va Nondeterministic Test sababi bo'ladi: seed'ni fiksirlang yoki faqat natijaga ta'sir qilmaydigan maydonlarni generatsiya qiling.
+
+## 23.82 Yozib olingan test va skript test (Recorded Test / Scripted Test)
+
+**Tavsif:** Testni avtomatlashtirishning ikki asosiy strategiyasi. Recorded Test da asbob ilova bilan o'zaro ishni yozib oladi va keyin qayta o'ynatadi; Scripted Test da esa test programma sifatida qo'lda yoziladi (Gerard Meszaros, *xUnit Test Patterns*, Addison-Wesley, 2007, 18-bob, 278-279-bet va 285-bet). Kitob yozib olingan testlarning asosiy muammosini aniq ko'rsatadi: ularning ko'pi Obscure Test, chunki asbob o'quvchi uchun nima muhimligini bilmaydi, va ular Interface Sensitivity ga eng moyil.
+
+**Spring'da qayerda uchraydi:** Bu hujjatdagi hamma misol Scripted Test: JUnit 5 kodida qo'lda yozilgan test. Recorded Test bugun brauzer darajasida uchraydi: Playwright codegen yoki Selenium IDE yozib beradigan skriptlar. Yuklama testlarida HTTP trafikni yozib olib qayta o'ynatish ham shu strategiya. Spring tomonida yozib olishga yaqin shakl - `spring-restdocs` va Spring Cloud Contract: ular testdan artefakt yozib oladi, teskarisi emas, shuning uchun Obscure Test xavfi yo'q.
+
+**Qo'llanish keyslari:**
+- Yangi E2E ssenariysining qoralamasini codegen bilan yozib olib, keyin uni qo'lda tartibga solish.
+- Legacy UI uchun vaqtinchalik regressiya to'ri qurish, keyin testlarni pastki qatlamga ko'chirish.
+- Yozib olingan skriptdan Page Object'lar ajratib, Interface Sensitivity ni kamaytirish.
+- Real trafikni yozib olib, uni yuklama testi profiliga aylantirish.
+- Scripted testni standart qilib belgilab, yozib olinganlarni faqat kirish nuqtasi sifatida ruxsat berish.
+
+```java
+// Scripted Test: niyat kodda ko'rinadi, selektor emas
+@Test
+void customerCompletesCheckout() {
+    checkoutPage.open()
+                .addItem("SKU-1", 2)
+                .applyCoupon("WELCOME10")
+                .submit();
+    assertThat(orderRepository.findLatest()).extracting(Order::status)
+            .isEqualTo(OrderStatus.PAID);
+}
+```
+
+**Ehtiyot bo'ling:** Yozib olingan testni "tezda ko'p qoplama" deb saqlab qolish uzoq muddatda eng qimmat yo'l: UI ning har kichik o'zgarishi yuzlab testni yiqitadi va ularning hech biri nimani tekshirayotganini aytmaydi. Yozib olinganni qoldirish kerak bo'lsa, uni refaktoring qilib niyatni ko'rsatadigan qatlam qo'shing.
+
+## 23.83 Ma'lumotga asoslangan test (Data-Driven Test)
+
+**Tavsif:** Testning umumiy mantiqi interpretatorga chiqariladi, testdan testga o'zgaradigan ma'lumot esa faylda saqlanadi: interpretator faylni o'qib, har qator uchun to'rt fazani bajaradi (Gerard Meszaros, *xUnit Test Patterns*, Addison-Wesley, 2007, 18-bob, 288-289-bet). Bu dasturlash bilmaydigan odam ham test qo'shishi mumkin bo'lgan yagona shakl va Test Code Duplication ga qarshi kuchli vosita.
+
+**Spring'da qayerda uchraydi:** JUnit 5 `@ParameterizedTest` bu patternning tayyor shakli: `@CsvFileSource` tashqi CSV faylini o'qiydi, `@MethodSource` esa argumentlarni koddan yasaydi, `ArgumentsProvider` bilan o'z manbangizni (JSON, baza, YAML) ulash mumkin. Mijoz bilan ishlashda Cucumber yoki Spring Cloud Contract ning YAML/DSL fayllari ham shu patternga kiradi. Spring tomonida `@Sql` skriptlari fixture ma'lumotini faylga chiqarishning oddiy shakli.
+
+**Qo'llanish keyslari:**
+- Soliq va chegirma jadvalini CSV faylga chiqarib, biznes egasiga qator qo'shish imkonini berish.
+- Valyuta konvertatsiyasi chegaralarini `@CsvFileSource` bilan yuzlab holatda sinash.
+- Validatsiya qoidalarining to'liq matritsasini bitta parametrlangan testda qamrash.
+- `ArgumentsProvider` yozib, test holatlarini bazadan yoki JSON fayldan olish.
+- `@DisplayName` shablonida qator qiymatlarini ko'rsatib, qizil testni darhol taniydigan qilish.
+
+```java
+@ParameterizedTest(name = "{0} UZS -> QQS {1}")
+@CsvFileSource(resources = "/fixtures/vat-cases.csv", numLinesToSkip = 1)
+void calculatesVatFromTable(String net, String expectedVat) {
+    assertThat(vatCalculator.vatFor(Money.of(net, "UZS")))
+            .isEqualTo(Money.of(expectedVat, "UZS"));
+}
+```
+
+**Ehtiyot bo'ling:** Ma'lumot faylga chiqarilgandan keyin test Mystery Guest bo'lish xavfi paydo bo'ladi: kod faylni ko'rsatadi, lekin nima tekshirilayotgani ko'rinmaydi. Shuning uchun fayl testga yaqin tursin, ustun nomlari bo'lsin va `name` shablonida qiymatlar hisobotda chiqsin. Interpretatorga shart va tsikl ko'chsa u Untestable Test Code bo'ladi.
+
+## 23.84 Global murojaatni testga ochish (Encapsulate Global References / Replace Global Reference with Getter)
+
+**Tavsif:** Global holatga tayangan kodni test ostiga olishning uch yo'li bor: globalni test paytida boshqacha ishlashga majbur qilish, boshqa globalga ulanish, yoki globalni kapsullab bog'liqlikni uzish. Uchinchi yo'l ikki texnikaga bo'linadi. **Encapsulate Global References** doim birga ishlatiladigan globallarni bitta yangi sinfga yig'adi, keyin o'sha sinf nusxasini konstruktor orqali uzatadi; kitobning qoidasi shu: agar bir nechta global doim birga o'qilsa yoki birga o'zgartirilsa, ular bir sinfga tegishli. **Replace Global Reference with Getter** har bir global murojaat uchun sinf ichida `protected` getter yozadi, sinf ichidagi hamma murojaatni getter ga o'tkazadi, keyin testga xos subklass getter ni override qiladi (Feathers, *Working Effectively with Legacy Code*, Prentice Hall PTR, 2004 (copyright 2005), 25-bob, 339 va 399-bet). Ikkisi ham xatti-harakatni saqlaydigan mexanik qadam: mantiq ko'chmaydi, faqat murojaat yo'li o'zgaradi. Kitob tanlash mezonini ham beradi: bitta global ustida sinf ichida ko'p xil chaqiruv bo'lsa getter arzonroq, bitta chaqiruv bo'lsa chaqiruvni ajratib override qilish yetadi (o'sha kitob, 25-bob, 349-bet). Kitobdagi birinchi misol C++ da, g'oya quyida Java ga o'tkazilgan.
+
+**Spring'da qayerda uchraydi:** Java da "global" ko'pincha statik holder sinfi: `SecurityContextHolder.getContext()`, `LocaleContextHolder.getLocale()`, `TransactionSynchronizationManager`, legacy `ConfigHolder.get(...)` yoki o'z `SpringContextHolder` i. Yakuniy manzil - bu murojaatlarni bean ga aylantirib konstruktor injection qilish, lekin testsiz kodda birdan o'tish xavfli: getter oraliq qadam bo'ladi va bitta kommitda butun sinfni ochadi. Kapsullashning Spring dagi tabiiy natijasi - `@ConfigurationProperties` sinfi (tarqoq `System.getProperty` chaqiruvlari o'rniga) yoki `Clock` bean i (`LocalDate.now()` o'rniga). Getter ni override qilish uchun sinf va metod `final` bo'lmasligi kerak, shu sabab sinf CGLIB proxy uchun ham mos qoladi.
+
+**Qo'llanish keyslari:**
+- Legacy servisdagi `SecurityContextHolder` chaqiruvlarini `protected AuthenticatedUser currentUser()` getter iga yig'ib, testda uni override qilish.
+- Birga ishlatiladigan `ConfigHolder.region()` va `ConfigHolder.tenant()` globallarini bitta `TenantContext` sinfiga kapsullab, keyin uni konstruktorga uzatish.
+- Tarqoq `System.getenv("PAYMENT_URL")` murojaatlarini bitta `PaymentSettings` sinfiga yig'ib, keyin `@ConfigurationProperties` ga o'tkazish.
+- Statik `CacheHolder.instance()` murojaatini getter ortiga olib, testda in-memory implementatsiya qaytarish.
+- Getter ni ochgandan keyin uni konstruktor parametriga aylantirib, testga xos subklassni butunlay yo'q qilish.
+
+```java
+public class InvoiceService {
+    public Invoice issue(Order order) {
+        // avval: ConfigHolder.region() to'g'ridan-to'g'ri chaqirilgan edi
+        return new Invoice(order, vatRateFor(currentRegion()));
+    }
+
+    // testda override qilinadigan seam: tanasi bitta qator va mantiqsiz
+    protected String currentRegion() {
+        return ConfigHolder.region();
+    }
+}
+```
+
+**Ehtiyot bo'ling:** Getter oraliq holat, manzil emas: u bog'liqlikni ko'rinadigan qiladi, lekin konstruktor imzosiga chiqarmaydi, shuning uchun sinf tashqaridan hali ham "bog'liqliksiz" ko'rinadi. Getter tanasiga shart yoki hisob qo'shilsa, override qilingan testda u hech qachon bajarilmaydi va qoplama yolg'on bo'ladi. Globallarni bitta sinfga yig'ishda nom bilan ovora bo'lmang: kitob nomni keyin o'zgartirish mumkinligini aytadi, lekin mantiqni yangi sinfga ko'chirishni testlar paydo bo'lgandan keyinga qoldirishni talab qiladi.
+
+## 23.85 Statik metodni test uchun ochish (Expose Static Method / Introduce Instance Delegator / Introduce Static Setter)
+
+**Tavsif:** Sinfni test harness ichida yaratib bo'lmasa yoki uning statik chaqiruvini almashtirish kerak bo'lsa, uch mexanik texnika bor (Feathers, *Working Effectively with Legacy Code*, Prentice Hall PTR, 2004 (copyright 2005), 25-bob, 345, 369 va 372-bet).
+
+- **Expose Static Method:** metod instance maydon va instance metodga tegmasa, uning tanasi `static` metodga ajratiladi va sinfni yaratmasdan test qilinadi. Kitobning dalili: sinfning statik qismi aslida sinfga tegishli emas, shuning uchun `static` qilish inkapsulyatsiyani buzmaydi, aksincha metod private holatga tegmasligini kompilyator bilan isbotlaydi. Yangi nom kerak bo'ladi, odatda parametr nomidan olinadi (`validate(Packet)` -> `validatePacket(Packet)`).
+- **Introduce Instance Delegator:** faqat statik metodlardan iborat utility sinfga o'sha statikka delegat qiladigan instance metod qo'shiladi, chaqiruvchi esa sinf nomi orqali emas, obyekt orqali chaqiradi. Shunda object seam paydo bo'ladi. Vaqt o'tib hamma chaqiruv delegat orqali o'tsa, statik tanalar instance metodga ko'chiriladi va statiklar o'chiriladi.
+- **Introduce Static Setter:** singleton nusxasini testda almashtirish uchun konstruktor himoyasi `protected` ga tushiriladi va sinfga nusxani almashtiradigan statik setter qo'shiladi; testda subklass yaratilib setter ga beriladi. Statik fabrika uchun ham xuddi shu: fabrika ichiga almashtiriladigan `server` maydoni va unga statik setter qo'yiladi.
+
+**Spring'da qayerda uchraydi:** Spring ning `singleton` scope dagi bean i GoF Singleton emas, shuning uchun bu texnikalar faqat legacy statik holder bilan birga yashashda kerak. `SecurityContextHolder.setContext(...)` va `clearContext()` aslida tayyor static setter: Spring Security uni ataylab test uchun ochiq qoldirgan. `ReflectionTestUtils.setField(TargetClass.class, "instance", null)` statik maydonni testdan keyin tiklashga yaraydi. Mockito ning `mockStatic(...)` zamonaviy muqobil, lekin u `try` bloki ichida yopilishi shart va boshqa thread ga tarqamaydi, shuning uchun uni doimiy yechim deb emas, xuddi shu oraliq qadam deb ko'rish to'g'ri.
+
+**Qo'llanish keyslari:**
+- Yaratilishi qiyin legacy `RSCWorkflow` sinfidagi validatsiyani `static` qilib ajratib, sinfni ko'tarmasdan test yozish.
+- Statik `BankingServices.updateAccountBalance(...)` utility siga instance delegat qo'shib, chaqiruvchiga obyektni parametr sifatida berish.
+- Legacy singleton `ExternalRouter` ni testda fake subklass bilan almashtirish uchun statik setter qo'shish.
+- Statik fabrika `RouterFactory.makeRouter()` ichiga almashtiriladigan `RouterServer` maydoni qo'yib, testda fake router qaytarish.
+- Delegat orqali o'tgandan keyin statik metodlarni o'chirib, utility sinfni oddiy bean ga aylantirish.
+
+```java
+public class RscWorkflow { // yaratilishi qiyin legacy sinf
+
+    public void validate(Packet packet) {
+        validatePacket(packet); // imzo o'zgarmadi, chaqiruvchilar tegilmadi
+    }
+
+    // Expose Static Method: instance holatiga tegmaydi, shuning uchun `static`
+    // bo'ladi va sinfni yaratmasdan test qilinadi; nom parametrdan olingan
+    static void validatePacket(Packet packet) {
+        if (packet.originator().equals("MIA") || !packet.hasValidChecksum()) {
+            throw new InvalidFlowException(packet.id());
+        }
+    }
+}
+```
+
+**Ehtiyot bo'ling:** Statik setter barcha testga ko'rinadigan holatni o'zgartiradi: kitob keyingi testni chalg'itishi mumkin bo'lgan holda `tearDown` da boshlang'ich qiymatni tiklashni talab qiladi, JUnit 5 da bu `@AfterEach`. Parallel test bajarilishida statik maydon umumiy resurs bo'ladi va bu yerda `@DirtiesContext` yordam bermaydi, chunki statik maydon Spring context ga tegishli emas. `Expose Static Method` bilan ochilgan metodni production kodi ishlatib ketmasligi uchun ko'rinishini package-private yoki `protected` qoldirish mumkin; `protected` bo'lsa testga xos subklass orqali chaqiriladi. Statikka delegat qilish hali ham global holatni yo'q qilmaydi: u faqat almashtirish nuqtasi beradi. Bu uch texnikani legacy kodda qanday tartibda qo'llash va qaysi shartda to'g'ridan konstruktor injection ga o'tish kerakligi [statik chaqiruv va singleton](../architect/34-legacy-kod-va-bosqichma-bosqich-refaktoring.md#3417-statik-chaqiruv-va-singleton-instance-delegator-va-static-setter) da yozilgan.
+
+## 23.86 Chaqiruvni ajratib override qilish (Extract and Override Call / Factory Method / Getter)
+
+**Tavsif:** Testga xalal beradigan bog'liqlik lokal bo'lsa, uni tashqi interfeys o'zgartirmasdan, faqat sinf ichida override qilinadigan nuqta yasab uzish mumkin. Uch shakl bor (Feathers, *Working Effectively with Legacy Code*, Prentice Hall PTR, 2004 (copyright 2005), 25-bob, 348, 350 va 352-bet).
+
+- **Extract and Override Call:** bitta muammoli chaqiruv (odatda statik yoki global) o'sha sinfdagi yangi `protected` metodga ajratiladi, imzo o'zgarmaydi, keyin testga xos subklass uni override qiladi. Kitob buni eng ko'p ishlatiladigan texnika deb ataydi va global va statik bog'liqlikni uzishning ideal yo'li deydi.
+- **Extract and Override Factory Method:** konstruktor ichidagi `new` va u bilan bog'liq butun tayyorlash ishi `protected` fabrika metodiga chiqariladi, testga xos subklass fabrikani override qilib fake qaytaradi.
+- **Extract and Override Getter:** maydon uchun dangasa getter yoziladi (birinchi chaqiruvda yaratadi), sinf ichidagi hamma murojaat getter ga o'tadi, keyin getter override qilinadi. Kitob mezonni aniq beradi: bitta muammoli metod bo'lsa chaqiruvni ajratish osonroq, bir obyektda ko'p muammoli metod bo'lsa getter aniq foyda.
+
+Kitobdagi getter misoli C++ da, chunki texnika o'sha tilning konstruktorda virtual chaqiruvni almashtirmaslik qoidasi uchun o'ylangan; quyida g'oya Java ga o'tkazilgan. Java da bu taqiq yo'q, lekin kitob Java da ham konstruktordan override qilinadigan metodni chaqirishni production kodida tavsiya qilmaydi (o'sha kitob, 25-bob, 406-bet).
+
+**Spring'da qayerda uchraydi:** `@MockitoSpyBean` va Mockito `spy(...)` shu texnikaning dinamik varianti: real obyekt qoladi, faqat ajratilgan metod almashtiriladi. Legacy komponentda konstruktorda `new RestTemplate()`, `new KafkaProducer<>(...)` yoki `new JdbcTemplate(dataSource)` yozilgan bo'lsa, fabrika metodi birinchi qadam, `RestClient.Builder` yoki `DataSource` ni inject qilish esa manzil. Sinf va metod `final` bo'lmasligi shart, shuning uchun bu texnika Java `record` va `final` sinflarda ishlamaydi.
+
+**Qo'llanish keyslari:**
+- Legacy servisdagi bitta statik `StyleMaster.formStyles(...)` chaqiruvini ajratib, testda bo'sh ro'yxat qaytarish.
+- Konstruktordagi `new HttpPaymentGateway(...)` ni `protected PaymentGateway createGateway()` ga chiqarib, testda fake qaytarish.
+- Bitta obyektda beshta muammoli metod bo'lsa, maydon uchun `protected` getter ochib, hammasini bir joyda almashtirish.
+- Jadval ichidagi `UUID.randomUUID()` yoki `LocalDate.now()` chaqiruvini ajratib, testda qat'iy qiymat berish.
+- Fabrika metodini ochgandan keyin uni konstruktor parametriga aylantirib, subklassni olib tashlash.
+
+```java
+public class SettlementJob {
+    private final PaymentGateway gateway;
+
+    public SettlementJob(SettlementProperties props) {
+        this.gateway = createGateway(props); // konstruktordagi `new` fabrikaga chiqdi
+    }
+
+    // Extract and Override Factory Method: tanasi faqat yaratish, qarorsiz
+    protected PaymentGateway createGateway(SettlementProperties props) {
+        return new HttpPaymentGateway(props.baseUrl());
+    }
+}
+```
+
+**Ehtiyot bo'ling:** Override qilingan metodning haqiqiy tanasi testda hech qachon bajarilmaydi, shuning uchun u imkon qadar bo'sh va mexanik bo'lishi kerak: ichida shart yoki hisob qolsa, u qoplamadan tushib qoladi. Konstruktordan chaqirilgan fabrika metodi subklassda override qilinsa, subklass maydonlari hali initsializatsiya qilinmagan bo'ladi va override qilingan tana ularni o'qisa `null` oladi; shu sabab override qilingan tana faqat parametrlarga tayansin. Uch texnikaning hammasi vaqtinchalik seam: tayyor test to'ri paydo bo'lgandan keyin bog'liqlik konstruktorga chiqarilsin, aks holda sinfda doimiy test uchun ochilgan teshik qoladi. Uchligini legacy modulda qo'llash tartibi va variantni tanlash jadvali [metod ichidagi `new` ni testda almashtirish](../architect/34-legacy-kod-va-bosqichma-bosqich-refaktoring.md#3416-metod-ichidagi-new-ni-testda-almashtirish-extract-and-override-uchligi) da.
+
+## 23.87 Maydonni testda almashtirish (Supersede Instance Variable)
+
+**Tavsif:** Konstruktorda yaratilgan obyektni testda almashtirish kerak, lekin konstruktorni parametrlashtirish undagi chalkash mantiq sababli qimmat va konstruktordan override qilinadigan metod chaqirishni ham xohlamaysiz. Bunda sinfga `supersedeXxx(...)` nomli metod qo'shiladi: u eski nusxani tashlab, maydonga yangi obyektni qo'yadi; test obyektni yaratib, SUT ni ishlatishdan OLDIN shu metodni chaqiradi (Feathers, *Working Effectively with Legacy Code*, Prentice Hall PTR, 2004 (copyright 2005), 25-bob, 404-bet). Nom tasodifiy tanlanmagan: `supersede` kamdan-kam uchraydigan so'z, shuning uchun production kodi bu metodni ishlatib ketganini oddiy qidiruv bilan topish mumkin (o'sha kitob, 25-bob, 407-bet). Kitob umumiy ogohlantirish ham beradi: obyektning asosiy hamkorlarini almashtiradigan setter yomon amaliyot, chunki undan keyin metod nima qilishini bilish uchun obyektning tarixini bilish kerak bo'ladi.
+
+Kitobdagi misol C++ da va asosiy sababi ham C++ ga xos (konstruktordan virtual chaqiruv override qilinmaydi). Java da bu taqiq yo'q, lekin ikkinchi sabab qoladi: konstruktordan chaqirilgan override qilinadigan metod subklass maydonlari initsializatsiya qilinmaganda bajariladi. Shu sababli Java da ham `supersede` chaqiruvni ajratib override qilishga nisbatan xavfsizroq tanlov bo'lib qoladi. ESLATMA: bu Java uchun korpusning xulosasi, kitob Java ni bu o'rinda alohida tavsiflamaydi.
+
+**Spring'da qayerda uchraydi:** Bean ni Spring yaratadigan joyda `ReflectionTestUtils.setField(bean, "gateway", fake)` xuddi shu ishni production kodiga metod qo'shmasdan bajaradi, lekin u maydon nomiga satr bilan bog'lanadi va refaktoringda jim sinadi; `supersedeXxx` esa kompilyator tekshiradigan variant. `@MockitoSpyBean` context dagi real bean ni o'rab metodini almashtiradi, maydonini emas, shuning uchun konstruktorda yaratilgan hamkor uchun u yetarli bo'lmaydi. Metodni package-private qoldirish odatiy: test bir xil paketda bo'ladi va production kodi uni ko'rmaydi.
+
+**Qo'llanish keyslari:**
+- Konstruktorda `new HttpPaymentGateway(...)` yaratgan legacy job ga `supersedeGateway(...)` qo'shib, testda fake berish.
+- Konstruktorda ochilgan fayl yoki ulanishni testda in-memory variantga almashtirish.
+- Konstruktorda `Executors.newFixedThreadPool(...)` yaratgan komponentda executor ni sinxron variantga almashtirish.
+- `Clock` ni konstruktorga chiqarish hali imkonsiz bo'lsa, `supersedeClock(Clock.fixed(...))` bilan vaqtni qotirish.
+- Texnikani kiritgandan keyin maydonni konstruktor parametriga ko'chirib, `supersede` metodini o'chirish.
+
+```java
+public class SettlementJob {
+    private PaymentGateway gateway; // `final` bo'lishi mumkin emas
+
+    public SettlementJob(SettlementProperties props) {
+        this.gateway = new HttpPaymentGateway(props.baseUrl());
+    }
+
+    // faqat test uchun: nomi `supersede` bilan boshlanadi, production'da qidirib topiladi
+    void supersedeGateway(PaymentGateway replacement) {
+        this.gateway = replacement;
+    }
+}
+```
+
+**Ehtiyot bo'ling:** Maydon `final` bo'lishdan to'xtaydi, ya'ni immutable dizaynga qarshi qadam; bu qarz vaqtinchalik bo'lishi kerak. Eski obyektga sinf ichida boshqa havola saqlangan bo'lsa (ro'yxat, listener ro'yxati, keshdagi nusxa), almashtirish yarim ishlaydi va test yolg'on ishonch beradi: kitob almashtirishdan oldin boshqa havola yo'qligini tekshirishni talab qiladi. Metod thread-safe emas, shuning uchun u obyekt boshqa thread ga berilishidan oldin chaqirilsin; singleton bean da esa uni umuman ishlatmang. Production kodida `supersede` chaqiruvi paydo bo'lsa, bu Test Logic in Production smell i va darhol tuzatilishi kerak.
+
+## 23.88 O'zgarmas umumiy fixture (Immutable Shared Fixture)
+
+**Tavsif:** Umumiy fixture ning asosiy muammosi - testlar uni o'zgartirsa Erratic Tests paydo bo'lishi va Independent Test printsipi buzilishi. O'zgarmas umumiy fixture buni fixture ni ikki mantiqiy qismga bo'lib hal qiladi: birinchi qism - har bir testga kerak, lekin hech bir test o'zgartirmaydigan narsa; ikkinchi qism - testga o'zgartirish yoki o'chirish kerak bo'lgan obyektlar, va ular har bir testda yangi fixture sifatida quriladi. Meszaros ning asosiy mezoni: agar biror test boshqa test qilgan ishni o'zgarmas qismdagi obyektning o'zgarishi deb sezsa, o'sha o'zgarish fixture ni baham ko'radigan hech bir testda ruxsat etilmaydi. Amalda o'zgarmas qism ko'pincha reference ma'lumot bo'ladi va test fixture lari uning ustiga quriladi (Gerard Meszaros, *xUnit Test Patterns*, Addison-Wesley, 2007, 18-bob, 323-bet). Kitob misolida test umumiy "taklif qilingan reys" ni bekor qilib, keyin `finally` da holatni tiklashga urinadi; o'zgarmas variantda test o'zi ahamiyatsiz aeroportlar orasida reys yaratadi va tozalash umuman kerak bo'lmaydi (o'sha kitob, 18-bob, 326-bet).
+
+**Spring'da qayerda uchraydi:** Spring TestContext Framework ning context keshi bean lar uchun aynan o'zgarmas umumiy fixture: bean lar baham ko'riladi va hech bir test ularning holatini o'zgartirmaydi deb kelishilgan. Ma'lumot tomonida o'zgarmas qism Flyway ning `R__reference_data.sql` repeatable migration i bilan beriladi (valyutalar, soliq stavkalari, rollar, mamlakatlar), o'zgaradigan qism esa har testda `@Transactional` rollback ostida quriladi. Loyiha darajasidagi strategiya va qaysi jadval qaysi qismga tegishli ekani [fixture strategiyalari](../testing/10-test-malumotlarini-boshqarish.md#102-fixture-strategiyalari) da yozilgan.
+
+**Qo'llanish keyslari:**
+- Valyuta, soliq va rol kataloglarini repeatable migration bilan bir marta yuklab, testlarda faqat o'qish.
+- Har test o'ziga tegishli buyurtma va mijozni yaratib, katalogdagi mavjud valyuta kodiga tayanishi.
+- Umumiy fixture dagi yozuvni o'zgartirib, keyin `finally` da tiklaydigan testlarni shu shaklga ko'chirish.
+- Identifikatorni testda qo'lda bermaslik: generatsiya qilingan kalit bilan yozuvlar to'qnashmasdan to'planadi.
+- Sanoqqa ta'sir qiladigan testlar uchun katalogdagi ataylab ahamiyatsiz yozuvlardan foydalanish.
+
+```java
+@SpringBootTest
+@Transactional // o'zgaradigan qism: har testdan keyin rollback
+class OrderPricingTest {
+
+    @Test
+    void pricesOrderInExistingCurrency() {
+        // o'zgarmas qism: "UZS" R__reference_data.sql dan keladi, test uni o'zgartirmaydi
+        Order order = orders.save(new Order("UZS", Money.of("100000", "UZS")));
+        assertThat(pricer.totalOf(order)).isEqualTo(Money.of("112000", "UZS"));
+    }
+}
+```
+
+**Ehtiyot bo'ling:** "O'zgarmas" - kelishuv, kafolat emas: bitta `UPDATE` yoki `delete` butun to'plamni jim buzadi va nosozlik boshqa testda chiqadi. Shuning uchun o'zgarmas jadvallarga yozishni test rolidan tortib olish yoki to'plam oxirida qator sonini tekshirish kerak. Eng qiyin qism - nima "o'zgarish" ekanini aniqlash: aeroportdagi reyslar soni kabi hosila qiymat ham o'zgarmas qismning bir qismi bo'lib chiqadi, shuning uchun sanoqqa tayanadigan assertion lar o'zgarmas ma'lumotga emas, test o'zi yaratgan yozuvlarga qarasin. O'zgarmas qismga unique constraint li maydon kirsa, test o'z yozuvini qo'shganda to'qnashuv chiqishi mumkin.
+
+## 23.89 Entity zanjirini kesish (Entity Chain Snipping)
+
+**Tavsif:** Entity Chain Snipping - test stub ning Responder variantining maxsus holati: bir-biriga bog'langan obyektlarning butun to'ri bitta stub bilan almashtiriladi va o'sha stub shu to'r bo'lib ko'rinadi. Meszaros ikki foydani ko'rsatadi: fixture tayyorlash ancha tezlashadi (ayniqsa obyektlar odatda bazaga saqlanishi kerak bo'lganda) va testni o'qish osonlashadi (Gerard Meszaros, *xUnit Test Patterns*, Addison-Wesley, 2007, 23-bob, 531-bet). Texnikaning mohiyati - zanjirni eng birinchi bo'g'inida kesish: SUT ga butun graf emas, grafdan kerakli javobni beradigan yupqa shartnoma uzatiladi.
+
+**Spring'da qayerda uchraydi:** JPA da zanjir odatiy: `Order -> Customer -> Organization -> TaxProfile`. Narx hisoblashni test qilish uchun to'rt entity ni saqlash kerak bo'ladi, holbuki SUT ga faqat soliq stavkasi kerak. Kesish Java da tor interfeys kiritish bilan bajariladi (`TaxRateSource`), keyin Mockito yoki qo'lda yozilgan implementatsiya uni stub qiladi. Qo'shimcha foyda Hibernate ga xos: lazy assotsiatsiya bo'ylab yurish tranzaksiya tashqarisida `LazyInitializationException` beradi, kesilgan zanjirda esa yurish umuman yo'q, shuning uchun testga ochiq session kerak bo'lmaydi. ESLATMA: lazy graf bilan bog'liq bu sabab korpusning qo'shimchasi, kitob JPA ni tilga olmaydi.
+
+**Qo'llanish keyslari:**
+- Narx hisoblagichni test qilishda `Order -> Customer -> Organization -> TaxProfile` zanjirini bitta `TaxRateSource` stub i bilan almashtirish.
+- Hisobot generatori uchun chuqur graf o'rniga faqat kerakli maydonlarni beradigan projection interfeysini stub qilish.
+- `@DataJpaTest` ichida o'nlab `save(...)` chaqiruvidan iborat fixture ni bitta stub ga aylantirib, testni unit darajasiga tushirish.
+- Tranzaksiyadan tashqarida ishlaydigan listener testida lazy zanjirni kesib, ochiq session talabini yo'qotish.
+- Grafning faqat bitta bo'g'ini kerak bo'lgan testlarni aniqlab, qolgan uchta entity ni fixture dan olib tashlash.
+
+```java
+// kesishdan oldin: SUT grafni o'zi kezadi, testga to'rt entity kerak
+BigDecimal rate = order.getCustomer().getOrganization().getTaxProfile().getRate();
+
+// kesishdan keyin: yupqa shartnoma, testda bitta stub
+public interface TaxRateSource {
+    BigDecimal rateFor(Order order);
+}
+
+given(taxRateSource.rateFor(order)).willReturn(new BigDecimal("0.12"));
+```
+
+**Ehtiyot bo'ling:** Stub SUT ni production dagidan boshqa konfiguratsiyada sinaydi, shuning uchun kitob kamida bitta testni stub siz o'tkazishni talab qiladi: kesilgan zanjirning real mapping i, `JoinColumn` lari va fetch rejimi aynan o'sha testda tekshiriladi. Ikkinchi tuzoq - SUT ning o'z qismini stub bilan almashtirib qo'yish; nima SUT, nima fixture ekani aniq bo'lishi kerak. Entity sinfining o'zini mock qilmang: `equals`, `hashCode` va proxy xulqi tufayli bu mo'rt bo'ladi, kesish uchun yangi interfeys kiritish to'g'ri yo'l. Haddan ziyod stubbing esa Overspecified Software ga olib keladi.
+
+## 23.90 Amalda qo'llash
 
 - [ ] Test to'plamini uch guruhga ajratib o'lchang: unit, slice va to'liq kontekst. Har birining vaqtini yozib qo'ying.
 - [ ] H2 ni PostgreSQL o'rniga ishlatadigan testlarni toping va ularni Testcontainers ga o'tkazish rejasini tuzing.
@@ -1100,6 +1924,29 @@ static class FixedClockConfig {
 - [ ] Domen va hisob-kitob paketlari uchun mutation score ni PIT bilan o'lchab, natijani yozib qo'ying.
 - [ ] `@Disabled` testlarni sanab chiqib, har biriga sabab va issue havolasi qo'shilganini tasdiqlang.
 - [ ] Test ma'lumotlarini yaratish usulini birlashtiring: builder yoki object mother tanlang va qolganini ko'chirish rejasini yozing.
+
+## Manbalar
+
+- Gerard Meszaros, *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley, 2007, 18-bob "Test Strategy Patterns" (277-345-bet) - Recorded Test, Scripted Test, Data-Driven Test, Minimal Fixture va Standard Fixture yozuvlari
+- Gerard Meszaros, *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley, 2007, 19-bob "xUnit Basics Patterns" (347-406-bet) - Test Method shablonlari, Assertion Method va Assertion Message, Test Runner, Testcase Object, Test Suite Object, Test Discovery, Test Enumeration va Test Selection
+- Gerard Meszaros, *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley, 2007, 20-bob "Fixture Setup Patterns" (407-459-bet) - In-line, Delegated va Implicit Setup ni tanlash mezoni, Setup Decorator va Chained Tests
+- Gerard Meszaros, *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley, 2007, 21-bob "Result Verification Patterns" (461-497-bet) - State Verification va Behavior Verification farqi, Unfinished Test Assertion
+- Gerard Meszaros, *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley, 2007, 22-bob "Fixture Teardown Patterns" (499-520-bet) - Garbage-Collected, In-line va Implicit Teardown; setUp xato bersa tearDown chaqirilmasligi
+- Gerard Meszaros, *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley, 2007, 23-bob "Test Double Patterns" (521-590-bet) - Configurable va Hard-Coded Test Double, Test-Specific Subclass
+- Gerard Meszaros, *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley, 2007, 24-bob "Test Organization Patterns" (591-648-bet) - Test Utility Method, Test Helper, Testcase Superclass, Testcase Class per Class va per Feature
+- Gerard Meszaros, *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley, 2007, 25-bob "Database Patterns" (649-675-bet) - Database Sandbox, Stored Procedure Test, Transaction Rollback Teardown
+- Gerard Meszaros, *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley, 2007, 26-bob "Design-for-Testability Patterns" (677-712-bet) - Dependency Lookup va uning Dependency Injection dan farqi
+- Gerard Meszaros, *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley, 2007, 27-bob "Value Patterns" (713-731-bet) - Literal Value, Derived Value va Generated Value
+- Michael C. Feathers, *Working Effectively with Legacy Code*, Prentice Hall PTR, 2004 (copyright 2005), 25-bob (339, 345, 348, 349, 350, 352, 369, 372, 399, 404, 406 va 407-bet) - global va statik bog'liqlikni uzish texnikalari: Encapsulate Global References, Replace Global Reference with Getter, Expose Static Method, Introduce Instance Delegator, Introduce Static Setter, Extract and Override Call, Extract and Override Factory Method, Extract and Override Getter va Supersede Instance Variable; tanlash mezoni va `supersede` nom prefiksining sababi
+- Gerard Meszaros, *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley, 2007, 18-bob "Test Strategy Patterns" (323 va 326-bet) - Immutable Shared Fixture varianti: fixture ni hech bir test o'zgartirmaydigan umumiy qism va test o'zi quradigan qismga bo'lish, va "o'zgarish" nima ekanini aniqlash mezoni
+- Gerard Meszaros, *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley, 2007, 23-bob "Test Double Patterns" (531-bet) - Entity Chain Snipping: obyektlar to'rini bitta Responder stub bilan almashtirish, fixture tezlashishi va stub siz kamida bitta test talabi
+- Robert C. Martin, *Clean Architecture*, 28-bob - test chegarasi va testlarning arxitektura qismi ekani
+- Robert C. Martin, *Clean Architecture*, 23-bob - Humble Object va uni testda ishlatish
+- [JUnit 5.11, Writing Tests](https://raw.githubusercontent.com/junit-team/junit5/r5.11.0/documentation/src/docs/asciidoc/user-guide/writing-tests.adoc) - lifecycle, `@Nested`, parametrli test va `@Timeout`
+- [JUnit 5.11, Extensions](https://raw.githubusercontent.com/junit-team/junit5/r5.11.0/documentation/src/docs/asciidoc/user-guide/extensions.adoc) - extension model, `TestInstancePostProcessor`, `ParameterResolver`
+- [Testcontainers, Reusable Containers](https://raw.githubusercontent.com/testcontainers/testcontainers-java/9bb3c2dc175672ad33a2eafd7133212c7173ac43/docs/features/reuse.md) - reuse ning experimental ekani, `start()` qo'lda chaqirilishi va `stop()` taqiqi
+- [Testcontainers, JUnit 5 Quickstart](https://raw.githubusercontent.com/testcontainers/testcontainers-java/9bb3c2dc175672ad33a2eafd7133212c7173ac43/docs/quickstart/junit_5_quickstart.md) - `@Testcontainers` va `@Container` ning ishlashi
+- [Spring Framework 7.0, Context Caching](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/testing/testcontext-framework/ctx-management/caching.adoc) - kesh kaliti, default hajm 32 va fork da keshning ishlamasligi
 
 ---
 

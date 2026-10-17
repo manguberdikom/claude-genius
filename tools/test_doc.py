@@ -76,12 +76,18 @@ CASES = [
     ("rule raqamsiz", ["rule", "abc"], 1, ""),
 
     # Tekshiruv punktlari.
-    ("checklist bo'lim", ["checklist", "patterns", "17.43"], 0, "timeout"),
+    # 17.43 ga Precompute Content qo'shilgach yopish bo'limi 17.44 ga ko'chdi.
+    ("checklist bo'lim", ["checklist", "patterns", "17.44"], 0, "timeout"),
     ("checklist bob", ["checklist", "sonarqube", "13"], 0, "- [ ]"),
     ("checklist hujjat: sanoq", ["checklist", "clean-code"], 0, "punkt"),
     ("checklist hujjat: punktsiz", ["checklist", "clean-code"], 0, "!- [ ]"),
     ("checklist --all", ["checklist", "--all", "clean-code"], 0, "- [ ]"),
-    ("checklist X.10", ["checklist", "clean-code", "1.10"], 0, r"^1\.10$"),
+    # "10" ni "1" deb o'qimasligi kerak. Fikstura yopish bo'limi X.10
+    # bo'lgan bobga tayanadi, shuning uchun bob o'ssa u ko'chadi: avval
+    # 1.10, keyin 39.10 edi. clean-code 22 (sana va vaqt) shu sababdan
+    # tanlangan: unga kitob to'lqinlarida bo'lim qo'shilmagan.
+    ("checklist X.10", ["checklist", "clean-code", "22.10"], 0, r"^22\.10$"),
+    ("checklist X.11", ["checklist", "clean-code", "1.11"], 0, r"^1\.11$"),
     ("checklist yo'q bo'lim", ["checklist", "patterns", "99.99"], 1, ""),
     ("checklist yo'q hujjat", ["checklist", "yoq"], 1, ""),
 
@@ -110,7 +116,12 @@ CASES = [
      "18.8 Optimistik"),
     ("find so'zlar: transaction propagation", ["find", "transaction propagation"],
      0, r"^architect +19\.2 "),
-    ("find so'zlar: thread safety", ["find", "thread safety"], 0, r"^architect +11\.7 "),
+    # 11.12 "Thread safety darajasini hujjatlash" shu sessiyada qo'shildi va
+    # ibora aynan uning sarlavhasida turadi, shuning uchun u birinchi chiqadi.
+    # Birinchi qator taxallus mosligi: patterns 4.29 sarlavhasida
+    # "Delegating Thread Safety" turadi. architect 11.12 ham chiqadi.
+    ("find so'zlar: thread safety", ["find", "thread safety"], 0, r"^patterns +4\.29 "),
+    ("find so'zlar: ikkinchi mos", ["find", "thread safety"], 0, "architect   11.12"),
     ("find so'zlar: hech biri yo'q", ["find", "zzqwerty yyqwerty"], 1, ""),
     # Bitta so'zli inglizcha so'rov: transliteratsiya va inglizcha jadval.
     ("find tion -> tsiya", ["find", "-n", "60", "serialization"], 0, "Serializatsiya"),

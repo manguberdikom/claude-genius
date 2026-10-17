@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 27. Sozlash, connection pool va monitoring (Configuration, Pooling and Monitoring)
 
@@ -64,14 +64,14 @@ SELECT pg_reload_conf();            -- sighup va user kontekstidagi yangi standa
 
 ## 27.2 `shared_buffers`, `work_mem`, `maintenance_work_mem`, `effective_cache_size` tanlash
 
-`shared_buffers` bu PostgreSQL ning o'z buffer cache'i, sahifalar bu yerda OS page cache'dan tashqari yana bir marta saqlanadi. Shuning uchun RAM ning hammasini bermaslik kerak: bir xil sahifa ikki joyda yotadi va OS cache'ga joy qolmaydi. Amalda 25 foiz yaxshi boshlanish, 40 foizdan oshirish faqat o'lchov natijasi bilan asoslanadi.
+`shared_buffers` bu PostgreSQL ning o'z buffer cache'i, sahifalar bu yerda OS page cache'dan tashqari yana bir marta saqlanadi. Shuning uchun RAM ning hammasini bermaslik kerak: bir xil sahifa ikki joyda yotadi va OS cache'ga joy qolmaydi. Qo'llanmaning o'zi ham tizim xotirasining 25 foizini boshlang'ich qiymat sifatida aytadi; 40 foizdan oshirish faqat o'lchov natijasi bilan asoslanadi (o'lchanmagan taxmin).
 
 `effective_cache_size` hech qanday xotira ajratmaydi. Bu faqat planner'ga "shu sahifalar ehtimol cache'da bor" degan ishora, vazifasi index scan narxini arzonlashtirish. Kichik qiymat planner'ni sequential scan tomon suradi, bu 50 million qatorli buyurtma jadvalida falokat.
 
 ```properties
 # 16 GB RAM, 4 vCPU, SSD, OLTP + kechqurun hisobot
 shared_buffers = 4GB
-effective_cache_size = 12GB
+effective_cache_size = 12GB   # RAM ning ~75%, o'lchanmagan taxmin; default 4GB
 work_mem = 24MB                   # har bir sort/hash node uchun
 maintenance_work_mem = 1GB        # CREATE INDEX, VACUUM, ALTER TABLE
 max_parallel_workers_per_gather = 2
@@ -253,7 +253,7 @@ ORDER BY total_exec_time DESC LIMIT 10;
 SELECT pg_stat_statements_reset();
 ```
 
-Muntazam amaliyot: har kuni bir vaqtda snapshot olib alohida jadvalga yozish, keyin oldingi snapshot bilan ayirmasini hisoblash. Shunda "bu so'rov relizdan keyin 3 barobar ko'p chaqirilyapti" degan xulosa chiqadi, N+1 esa `calls` ustunidagi keskin o'sish sifatida ko'rinadi. `stddev_exec_time` ning kattaligi so'rov plan almashtirayotganini bildiradi.
+Muntazam amaliyot: har kuni bir vaqtda snapshot olib alohida jadvalga yozish, keyin oldingi snapshot bilan ayirmasini hisoblash. Shunda "bu so'rov relizdan keyin bir necha barobar ko'p chaqirilyapti" turkumidagi xulosa chiqadi, N+1 esa `calls` ustunidagi keskin o'sish sifatida ko'rinadi. `stddev_exec_time` ning kattaligi so'rov plan almashtirayotganini bildiradi.
 
 ## 27.11 Sekin so'rov logi va `auto_explain` sozlash
 
@@ -326,6 +326,8 @@ Raqamlarni oldindan belgilash kerak. WAL arxivini har 60 sekundda yuborsang, RPO
 - [PostgreSQL, Resource consumption](https://www.postgresql.org/docs/current/runtime-config-resource.html) - `work_mem` va `hash_mem_multiplier` ning ta'rifi va standart qiymati
 - [postgres, `guc.c` (REL_15_STABLE)](https://raw.githubusercontent.com/postgres/postgres/REL_15_STABLE/src/backend/utils/misc/guc.c) - `work_mem` va `hash_mem_multiplier` `PGC_USERSET`, `log_min_duration_statement` `PGC_SUSET`, `max_wal_size` `PGC_SIGHUP`; `GucContext_Names[]` da `PGC_USERSET` -> `"user"`; `hash_mem_multiplier` standarti 2.0
 - [postgres, `guc.c` (REL_14_STABLE)](https://raw.githubusercontent.com/postgres/postgres/REL_14_STABLE/src/backend/utils/misc/guc.c) - 14 da `hash_mem_multiplier` standarti 1.0
+- [PostgreSQL 17, Resource Consumption (config.sgml)](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/config.sgml) - `shared_buffers` default 128MB va 25 foiz tavsiyasi, `work_mem` default 4MB
+- [PostgreSQL 17, Monitoring (monitoring.sgml)](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/monitoring.sgml) - `pg_stat_*` ko'rinishlari va ularning mazmuni
 
 ---
 

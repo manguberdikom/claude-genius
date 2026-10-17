@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 38. Ko'p tilli loyiha: SQL, XML, YAML, Docker, Kubernetes, frontend (Multi-language Projects)
 
@@ -81,7 +81,25 @@ Bu yerda muhim nuqta bor: `sonar.exclusions` faylni butunlay tahlildan chiqaradi
 
 Bu yerda eng ko'p noto'g'ri tushuniladigan joy. Flyway migratsiyalaridagi `.sql` fayllari uchun chuqur tahlil, ya'ni so'rov mantiqini tekshiruvchi qoidalar, standart bepul nashrda mavjud emas. PL/SQL va T-SQL analizatorlari tijorat nashriga tegishli, va ular ham PostgreSQL dialektini emas, Oracle va SQL Server dialektini nazarda tutadi. Shuning uchun "Sonar mening PostgreSQL migratsiyamni tekshiradi" degan kutish ko'pincha asossiz.
 
-Amalda ikkita haqiqiy foyda bor. Birinchisi, `.sql` fayllaridagi maxfiy ma'lumot: parol, token, connection string. Maxfiy ma'lumotni aniqlash qoidalari matn analizatori orqali ishlaydi va u bepul nashrda ham mavjud. Ikkinchisi, Java tomondan SQL ga bo'lgan munosabat: satrlarni ulab so'rov yasash. Bu Java qoidasi bo'lib, injection xavfini ko'rsatadi.
+Ko'p jamoa shu yerda ikkinchi marta yanglishadi: "mayli, hech bo'lmaganda `.sql` dagi parolni topadi" deb o'ylaydi. Default holatda topmaydi, va buning sababi analizatorning fayl tanlash mantiqida. Matn va secret analizatori (`sonar-text`) ikki to'plamni ko'radi: tili aniqlangan fayllar, va `sonar.text.inclusions` naqshiga tushgan fayllar. Shu ikkinchi naqshning default qiymati aniq:
+
+```properties
+# sonar-text ning default inclusions ro'yxati
+sonar.text.inclusions=**/*.sh,**/*.bash,**/*.zsh,**/*.ksh,**/*.ps1,\
+  **/*.properties,**/*.conf,**/*.pem,**/*.config,.env,.aws/config
+```
+
+Ro'yxatda `**/*.sql` yo'q. Bepul nashrda `.sql` ning tili ham yo'q, chunki SQL analizatorlari tijorat nashriga tegishli. Ikkisi birlashganda natija shu: Flyway migratsiyasidagi parolni hech kim ko'rmaydi. Yechim bitta qator:
+
+```properties
+# .sql va boshqa kerakli kengaytmalarni secret skaneriga qo'shish
+sonar.text.inclusions=**/*.sh,**/*.properties,**/*.conf,**/*.pem,\
+  **/*.config,.env,**/*.sql
+```
+
+Bu yerda yana bitta shart bor va u CI da jimgina ishdan chiqaradi: `sonar.text.inclusions` orqali qo'shilgan fayllar faqat git kuzatuvidagi bo'lsa tahlil qilinadi. Agar tahlil git repozitoriysi ichida yurgizilmasa (arxivdan ochilgan manba, `.git` siz konteyner), analizator faqat tili aniqlangan fayllarga qaytadi va log ga ogohlantirish yozadi. Ya'ni lokal mashinada ishlagan sozlama CI da jim qolishi mumkin, va buni faqat log ni o'qib bilasan.
+
+Ikkinchi haqiqiy foyda Java tomonida: satrlarni ulab so'rov yasash. Bu Java qoidasi bo'lib, injection xavfini ko'rsatadi va u hech qanday qo'shimcha sozlamasiz ishlaydi.
 
 ```sql
 -- Shikoyat chiqaradigan migratsiya: ishlab chiqarishda bloklanish xavfi
@@ -123,41 +141,38 @@ public List<Order> findByStatus(String status) {
 
 ## 38.4 XML va `pom.xml`: bog'liqlik va konfiguratsiya qoidalari
 
-XML analizatori bepul nashrda bor va u `pom.xml`, `logback-spring.xml`, `web.xml` kabi fayllarni o'qiydi. Uning qoidalari ikki guruhga bo'linadi: umumiy XML gigiyenasi va Maven ga xos tekshiruvlar. Umumiy guruhda bo'sh element, takroriy atribut, kodlanish e'loni yo'qligi, DTD tashqi obyektini yuklash xavfi bor. Maven guruhida bog'liqlik versiyasi ko'rsatilmagani yoki `LATEST` va `RELEASE` kabi aniq bo'lmagan versiya ishlatilgani tekshiriladi.
+XML analizatori bepul nashrda bor va u `pom.xml`, `logback-spring.xml`, `web.xml` kabi fayllarni o'qiydi. Lekin bu yerda keng tarqalgan bitta kutish borki, u bajarilmaydi: **`pom.xml` da `LATEST` yoki `RELEASE` versiya ishlatilgani uchun Sonar shikoyat qilmaydi**. Analizatorning qoida ro'yxatida bunday qoida yo'q, versiyasi umuman yozilmagan bog'liqlik uchun ham yo'q. Agar bu kerak bo'lsa, uni Maven Enforcer plugini bajaradi, Sonar emas.
 
-Aniq versiya masalasi real: versiyasi qotirilmagan build takrorlanmaydi, va bugun o'tgan test ertaga boshqa artefakt bilan ishga tushadi.
+Maven ga tegishli haqiqiy qoidalar boshqa narsani tekshiradi va ularning bir qismi default profilda yoqilmagan:
+
+| Qoida | Nimani tekshiradi | Turi | Sonar way da |
+|---|---|---|---|
+| `xml:S3422` | Bog'liqlikda `system` scope | BUG | Ha |
+| `xml:S3421` | Eskirgan `${pom}` prefiksli property | CODE_SMELL | Ha |
+| `xml:S3417` | Taqiqlangan bog'liqlik ro'yxati (sozlanadi) | CODE_SMELL | Yo'q |
+| `xml:S3423` | `pom.xml` elementlari tavsiya etilgan tartibda | CODE_SMELL | Yo'q |
+| `xml:S3419`, `xml:S3420` | `groupId` va `artifactId` nom qoidasi | CODE_SMELL | Yo'q |
+
+Shu jadvaldagi `xml:S3417` amalda eng foydalisi: taqiqlangan bog'liqlik ro'yxatini o'zing yozasan (masalan `commons-logging` yoki ichki eskirgan kutubxona) va u PR da yiqitadi. Lekin u default profilda o'chiq turadi, shuning uchun uni quality profile da qo'lda yoqib, parametrini to'ldirish kerak.
+
+Spring loyihada XML analizatoridan olinadigan eng qimmat ikki qoida esa Maven ga umuman tegishli emas:
 
 ```xml
-<!-- Shikoyat chiqaradigan qism: versiya aniq emas, scope yozilmagan -->
-<dependency>
-  <groupId>org.apache.commons</groupId>
-  <artifactId>commons-lang3</artifactId>
-  <version>RELEASE</version>
-</dependency>
+<!-- xml:S3822 (Sonar way da yoqilgan): hbm2ddl.auto "validate" dan boshqa
+     qiymatda bo'lsa, sxema o'zgarishi, o'chishi yoki tozalanishi mumkin -->
+<session-factory>
+  <property name="hibernate.hbm2ddl.auto">update</property>  <!-- shikoyat -->
+</session-factory>
 
-<!-- Tuzatilgan variant: versiya property orqali qotirilgan -->
-<properties>
-  <commons-lang3.version>3.17.0</commons-lang3.version>
-</properties>
-
-<dependency>
-  <groupId>org.apache.commons</groupId>
-  <artifactId>commons-lang3</artifactId>
-  <version>${commons-lang3.version}</version>
-</dependency>
-
-<!-- Qamrov hisobotini Sonar o'qiydigan XML formatda chiqarish -->
-<plugin>
-  <groupId>org.jacoco</groupId>
-  <artifactId>jacoco-maven-plugin</artifactId>
-  <version>0.8.12</version>
-  <executions>
-    <execution><id>report</id><goals><goal>report</goal></goals></execution>
-  </executions>
-</plugin>
+<!-- xml:S2068: parol XML ichida ochiq yozilgan -->
+<bean id="dataSource" class="...DriverManagerDataSource">
+  <property name="password" value="Pr0d-P@ssw0rd"/>           <!-- shikoyat -->
+</bean>
 ```
 
-JaCoCo 0.8.x liniyasida patch versiyasini Java versiyangizga qarab tanlang: yangi bytecode bilan eski patch sinishi mumkin, shuning uchun uni Java yangilanishi bilan birga ko'tarib borish kerak.
+Bu yerda nozik joy bor: `xml:S3822` faqat XML ni o'qiydi. Spring Boot loyihasida `ddl-auto` odatda `application.yaml` da turadi, va o'sha yerda bu qoida ishga tushmaydi. Ya'ni "Sonar meni `ddl-auto: update` dan himoya qiladi" degan taxmin faqat eski XML konfiguratsiyali loyihada to'g'ri.
+
+Umumiy XML gigiyenasi qoidalari ham bor, lekin ular kutilganidan torroq: uzun qator (`S103`), tabulyatsiya (`S105`), bir xil bo'lmagan otstup (`S1120`), izohga olingan kod (`S125`), prolog `<?xml` bilan boshlanishi (`S1778`), parser xatosi (`S2260`), va o'z XPath ifodangni qoida sifatida yozish imkoni (`S140`). Birinchi beshtasining to'rttasi default profilda yo'q. XXE, ya'ni tashqi DTD obyektini yuklash xavfi esa XML qoidasi emas, u Java tomonidagi parser sozlamasi bo'yicha tekshiriladi.
 
 ## 38.5 YAML va `application.yaml`: maxfiy ma'lumot va sozlama xatolari
 
@@ -193,7 +208,26 @@ Bir ogohlantirish: maxfiy ma'lumotni aniqlash qoidalari naqsh asosida ishlaydi. 
 
 ## 38.6 Dockerfile qoidalari: root foydalanuvchi, aniq versiya, keraksiz paket
 
-Dockerfile tahlili infratuzilma analizatori orqali keladi va bepul nashrda mavjud. Qoidalar mazmunan quyidagi masalalarni qamrab oladi: konteyner root sifatida ishga tushishi, base image tegining aniq bo'lmasligi, paket menejerining keshini tozalamaslik, `apt-get install` da versiya qotirilmagani, `COPY` o'rniga `ADD` ishlatilishi, sir qiymatini `ENV` orqali image ichiga joylash, va `RUN` ichida parol yozish. Qoida kalitlari `docker:` prefiksi bilan boshlanadi va aniq raqamni server UI dagi Rules bo'limidan ko'rish kerak, chunki ular versiya bilan qo'shilib boradi.
+Dockerfile tahlili infratuzilma analizatori orqali keladi va bepul nashrda mavjud. Qoida kalitlari `docker:` prefiksi bilan boshlanadi. Amalda eng ko'p ishlaydiganlari:
+
+| Qoida | Nimani tekshiradi |
+|---|---|
+| `docker:S6471` | Konteyner imtiyozli foydalanuvchi sifatida ishlaydi |
+| `docker:S6596` | Base image tegi aniq emas (`latest` va shunga o'xshash) |
+| `docker:S6587` | Paket o'rnatilgandan keyin kesh tozalanmagan |
+| `docker:S6472` | Sir qiymati `ENV` yoki `ARG` orqali berilgan |
+| `docker:S6437` | Hisob ma'lumoti kodda qotirilgan |
+| `docker:S6589` | Faylda bittadan ko'p `ENTRYPOINT` yoki `CMD` |
+| `docker:S7019` | `ENTRYPOINT` va `CMD` uchun exec shakli afzal |
+| `docker:S7029` | Lokal faylni ko'chirishda `ADD` emas, `COPY` |
+
+Oxirgi qatorda ko'p takrorlanadigan sodda qoidaning aslida ikki tomoni borligi ko'rinadi. `docker:S7029` lokal fayl uchun `COPY` ni talab qiladi, lekin `docker:S7026` teskari yo'nalishda ishlaydi: masofaviy resursni olishda `ADD` ni so'raydi. Ya'ni "`ADD` yomon, `COPY` yaxshi" degan qisqa qoida yarim haqiqat.
+
+Ikki tuzoq esa alohida aytishga arziydi.
+
+Birinchisi, "`apt-get install` da versiyani qotirish" qoidasi mavjud deb o'ylash. Bunday qoida yo'q. Paket menejeri bilan bog'liq qoidalar boshqa narsani ko'radi: keshni tozalash (`S6587`), `update` ni `install` siz bajarish (`S6595`), tavsiya etilgan paketlarni avtomatik o'rnatish (`S6500`), rozilik bayrog'ini qo'ymaslik (`S6584`). Paket versiyasini qotirishni xohlasang, bu Dockerfile review qoidasi bo'ladi, Sonar qoidasi emas.
+
+Ikkinchisi, digest masalasidagi ichki ziddiyat. `docker:S7023` base image ni digest bilan mixlashni so'raydi, `docker:S6497` esa digest bilan image tortishni xavfsizlik nuqtai nazaridan shubhali deb belgilaydi, chunki digest ga mixlangan image xavfsizlik yangilanishini olmaydi. SonarSource bu ziddiyatni oddiy yo'l bilan hal qilgan: ikkalasi ham default `Sonar way` profilida yo'q. Agar o'z profilingda ikkalasini yoqsang, har bir `FROM` qatori ikkita qarama-qarshi shikoyat oladi.
 
 ```bash
 # Shikoyat chiqaradigan Dockerfile
@@ -218,11 +252,34 @@ EXPOSE 8080
 ENTRYPOINT ["java","-XX:MaxRAMPercentage=75","-jar","/app/shop.jar"]
 ```
 
-Ikki eslatma. Faylni Sonar ko'rishi uchun u `sonar.sources` ichida bo'lishi kerak, aks holda ildizdagi Dockerfile tahlilga kirmaydi. Va Sonar image ichidagi CVE larni skanerlamaydi: bu boshqa vositaning ishi.
+Uch eslatma. Birinchi: faylni Sonar ko'rishi uchun u `sonar.sources` ichida bo'lishi kerak, aks holda ildizdagi Dockerfile tahlilga kirmaydi.
+
+Ikkinchi va ko'proq jimgina ishlaydigani: fayl nomi ham mos kelishi kerak. `sonar.docker.file.patterns` ning default qiymati `Dockerfile,*.dockerfile`. Demak `Dockerfile.prod`, `Dockerfile-builder` yoki `docker/app.build` nomli fayl indekslanmaydi va hech qanday xato chiqmaydi, u shunchaki yo'q bo'ladi. Ko'p modulli loyihada bu odatiy holat, shuning uchun naqshni kengaytirish kerak:
+
+```properties
+sonar.docker.file.patterns=Dockerfile,*.dockerfile,Dockerfile.*
+```
+
+Uchinchi: Sonar image ichidagi CVE larni skanerlamaydi, bu boshqa vositaning ishi.
 
 ## 38.7 Kubernetes manifesti: resurs limiti, probe, imtiyozli konteyner
 
-Kubernetes manifestlari ham infratuzilma analizatori hududiga kiradi. Qoidalar mazmuni: konteynerda CPU va memory limiti yo'qligi, readiness va liveness probe yo'qligi, `privileged: true` qo'yilgani, `allowPrivilegeEscalation` ni yopmaslik, host tarmog'i yoki host papkasini mount qilish, `latest` tegi bilan image ishlatish, `Secret` qiymatini manifest ichida ochiq yozish. Qoida kalitlari `kubernetes:` prefiksi bilan boshlanadi.
+Kubernetes manifestlari ham infratuzilma analizatori hududiga kiradi, qoida kalitlari `kubernetes:` prefiksi bilan boshlanadi. Lekin bu yerda kutish bilan haqiqat orasida ikkita aniq farq bor va ikkalasi ham xavfsizlik rejasiga ta'sir qiladi.
+
+Birinchi farq: **readiness va liveness probe yo'qligi uchun qoida mavjud emas**. Analizator qoidalari orasida probe ni tekshiradigani yo'q. Bu real bo'shliq, chunki probe yo'q Deployment ishlab chiqarishda jimgina buzilgan podga trafik yuboradi. Uni `kubeconform`, `kube-score` yoki OPA/Conftest siyosati bilan yopish kerak.
+
+Ikkinchi farq: resurs chegarasi qoidalari uchta va ularning hammasi default profilda emas.
+
+| Qoida | Nimani tekshiradi | Turi | Sonar way da |
+|---|---|---|---|
+| `kubernetes:S6864` | Memory limit qo'yilgan | VULNERABILITY | Ha |
+| `kubernetes:S6870` | Storage limit qo'yilgan | VULNERABILITY | Ha |
+| `kubernetes:S6869` | CPU limit qo'yilgan | VULNERABILITY | **Yo'q** |
+| `kubernetes:S6873`, `S6892`, `S6897` | Memory, CPU va storage uchun `requests` | CODE_SMELL | Ha |
+
+Ya'ni default sozlamada CPU limiti yo'q konteyner shikoyat chiqarmaydi, memory limiti yo'q konteyner esa chiqaradi. Agar CPU limiti sening siyosating bo'lsa, `kubernetes:S6869` ni profilda qo'lda yoqish kerak. (CPU limiti har doim ham to'g'ri siyosat emas, bu alohida bahs, lekin qaror ongli bo'lishi kerak, default tanlab bermasin.)
+
+Qolgan qoidalar kutilgandek ishlaydi: `privileged: true` uchun `kubernetes:S6428`, `allowPrivilegeEscalation` uchun `S6430`, host namespace uchun `S6431`, nozik yo'lni mount qilish uchun `S6433` (bu ham Sonar way da emas), `latest` tegi uchun `S6596`, Docker socket uchun `S6429`, RBAC da wildcard uchun `S6867`. Manifest ichida ochiq yozilgan parolni esa Kubernetes qoidasi emas, secret analizatori topadi.
 
 Bu yerda Sonar ning kuchli tomoni shu: manifest odatda hech qanday testdan o'tmaydi, shuning uchun avtomatik tekshiruv bo'lmasa, xato faqat hodisadan keyin topiladi.
 
@@ -256,7 +313,7 @@ spec:
             - secretRef: { name: shop-db-credentials }
 ```
 
-Helm chart da qiyinchilik bor: shablon ichidagi `{{ }}` ifodalari YAML ni yaroqsiz qiladi va analizator ba'zi fayllarni o'qiy olmaydi. Yechim: `helm template` natijasini alohida papkaga chiqarib, shu papkani Sonar ga berish.
+Helm bo'yicha eski maslahat endi kerak emas. Analizator ichida Go template evaluatori bor: u `Chart.yaml` turgan papkani topadi, shablonni o'zi hisoblab chiqadi va natijani Kubernetes qoidalari bilan tekshiradi. Ya'ni `helm template` natijasini alohida papkaga chiqarib berish shart emas. Ikkita istisno bor va ular log da ko'rinadi: chart ildizidagi `values.yaml` va `.tpl` fayllari parse qilinmaydi, chunki ular manifest emas. Helm shablonining o'z gigiyenasi uchun esa alohida qoida bor: `kubernetes:S6893` qavslar ichidagi probelni tekshiradi (`{{ .Values.x }}`, `{{.Values.x}}` emas).
 
 ## 38.8 Frontend (TypeScript va JavaScript) ni shu loyihaga qo'shish yoki ajratish
 
@@ -297,9 +354,20 @@ npx sonarqube-scanner \
 
 `sonar.qualitygate.wait=true` ni ikkala skanerlashda ham qo'yish muhim. Aks holda CI yashil bo'ladi, gate esa keyin yiqiladi va hech kim buni ko'rmaydi.
 
+Frontend tomonida yana bitta jim chegara bor: `sonar.javascript.maxFileSize` ning default qiymati 1000 KB. Undan katta fayl tahlil qilinmaydi. Generatordan chiqqan API klienti yoki bitta katta bundle shu chegaradan oshib, hisobotda umuman ko'rinmasligi mumkin. Agar bunday fayl haqiqatan tahlil qilinishi kerak bo'lsa, chegarani ko'tarish mumkin; ko'pincha esa to'g'ri javob uni `sonar.exclusions` ga ataylab yozib qo'yish, shunda u "tahlil qilindi" deb o'ylanmaydi.
+
 ## 38.10 Shell skriptlari va CI konfiguratsiyasi
 
 Shell skriptlari uchun Sonar da to'liq analizator yo'q. Buni aytib qo'yish kerak, chunki ko'p jamoa `scripts/deploy.sh` ni Sonar tekshirishini kutadi. Bash uchun to'g'ri vosita ShellCheck, va uni CI da alohida bosqich sifatida ushlab turish mumkin. Hamma narsa bitta joyda ko'rinishi talab bo'lsa, tashqi vosita natijasini SARIF formatida `sonar.sarifReportPaths` orqali yuklash yo'li bor, lekin issue lar tashqi qoida sifatida ko'rinadi va gate shartlariga ta'siri cheklangan.
+
+Dockerfile uchun esa umumiy SARIF yo'lidan ko'ra yaxshiroq variant bor: infratuzilma analizatori hadolint hisobotini to'g'ridan-to'g'ri qabul qiladi.
+
+```properties
+# hadolint natijasini Sonar ga import qilish
+sonar.docker.hadolint.reportPaths=target/hadolint-report.json
+```
+
+Analizator o'z ichida hadolint qoidalari katalogini (`DL1001`, `DL3000` va hokazo) nom va og'irlik bilan olib yuradi, shuning uchun import qilingan issue lar "noma'lum tashqi qoida" bo'lib emas, tushunarli nom bilan ko'rinadi. Bu Dockerfile ni ikki qatlamda tekshirish imkonini beradi: Sonar ning o'z qoidalari va hadolint ning o'zi.
 
 CI konfiguratsiyasi, masalan `.github/workflows/ci.yaml`, YAML sifatida tekshiriladi va undagi maxfiy ma'lumot aniqlanadi. Lekin workflow mantiqi, masalan action ni commit hash bilan pinlamaslik, Sonar qoidalari bilan to'liq qamrab olinmaydi.
 
@@ -318,6 +386,7 @@ Eng muhim qoida bitta: gate ni "new code" asosida qo'y. Ko'p tilli eski loyihada
 | Shell skript | Sonar tekshiradi deb o'ylanadi | ShellCheck alohida bosqich, kerak bo'lsa SARIF orqali yuklanadi |
 | Exclusion siyosati | Gate yiqilganda shoshilib exclusion yoziladi | Exclusion lar ro'yxati sabab izohi bilan reviewdan o'tadi |
 | Nashr imkoniyatlari | "Sonar hammasini biladi" deb taxmin qilinadi | Qaysi til qaysi nashrda borligi oldin tekshiriladi, reja shunga moslanadi |
+| Default profil | Qoida bor ekan, demak ishlaydi deb o'ylanadi | `Sonar way` da yo'q qoidalar ajratib yoqiladi (CPU limit, taqiqlangan bog'liqlik) |
 | Hisobot egasi | Gate yiqilsa kim tuzatishi noma'lum | Har loyiha va har tilga egalik biriktirilgan |
 
 Amaliy taqsimot shunday bo'lishi mumkin: backend uchun new code coverage 80 foiz, frontend uchun 60 foizdan boshlab har chorakda ko'tarish, infratuzilma loyihasiga coverage sharti umuman yo'q, chunki Dockerfile ga test yozilmaydi. Uning o'rniga security rating va yangi issue soni sharti qo'yiladi. Qamrov sharti ma'nosiz bo'lgan tilga qamrov talab qilish gate ni soxta yiqitadi va jamoani uni chetlab o'tishga o'rgatadi.
@@ -342,12 +411,50 @@ Chiqarib qo'yishning har bir qatori sabab izohi bilan birga yozilishi kerak. Exc
 
 - [ ] Repozitoriyni ochib, undagi barcha til va fayl turlarini sanab, ro'yxat tuz: qaysi biri hozir tahlilga kiradi va qaysi biri kirmaydi.
 - [ ] Server UI dagi Rules bo'limida til bo'yicha filtr qo'yib, o'z nashringizda qaysi til uchun qoida mavjudligini aniq tekshir, taxminga tayanma.
+- [ ] Shu filtrda qoidaning `Sonar way` da yoqilganini ham tekshir: `kubernetes:S6869` (CPU limit) va `xml:S3417` (taqiqlangan bog'liqlik) default da o'chiq.
+- [ ] `sonar.text.inclusions` ga `**/*.sql` qo'shib, migratsiyadagi parol topilishini bitta soxta parol bilan sinab ko'r; tahlil git repozitoriysi ichida yurgizilayotganini ham tasdiqla.
+- [ ] `sonar.docker.file.patterns` ni repozitoriyadagi haqiqiy Dockerfile nomlariga solishtir: `Dockerfile.prod` kabi nomlar default naqshga tushmaydi.
+- [ ] Probe yo'qligini tekshiradigan qoida Sonar da yo'q: `kube-score`, `kubeconform` yoki Conftest siyosati bilan shu bo'shliqni yop.
 - [ ] `sonar.sources` ga `Dockerfile`, `deploy` va `.github` papkalarini qo'shib, birinchi tahlildan keyin chiqqan infratuzilma issue larini ko'rib chiq.
 - [ ] `sonar.exclusions` va `sonar.coverage.exclusions` ni ajrat: generatsiya qilingan kodni birinchisiga, konfiguratsiya klasslarini ikkinchisiga yoz.
 - [ ] Frontend uchun alohida loyiha kaliti yaratib, LCOV va `tsconfig` yo'llarini ulab, backend bilan aralashtirmagan holda qamrovni o'lchang.
 - [ ] Quality gate ni new code asosiga o'tkaz va infratuzilma loyihasiga coverage sharti qo'ymasdan security rating sharti qo'y.
 - [ ] Shell skriptlar uchun CI ga ShellCheck bosqichini qo'shib, natijani majburiy qil, uni Sonar dan kutib o'tirma.
 - [ ] Exclusion faylidagi har bir qatorga bir qatorli izoh yozib, uni har chorakda qayta ko'rib chiqadigan vazifa yarat.
+
+## Manbalar
+
+- SonarSource, `sonar-iac` ning Kubernetes qoidalari metadatasi
+  ([https://github.com/SonarSource/sonar-iac/tree/1.42.0.14460/iac-extensions/kubernetes/src/main/resources/org/sonar/l10n/kubernetes/rules/kubernetes](https://github.com/SonarSource/sonar-iac/tree/1.42.0.14460/iac-extensions/kubernetes/src/main/resources/org/sonar/l10n/kubernetes/rules/kubernetes),
+  tag `1.42.0.14460`, SONAR Source-Available License v1.0) - 38.7 dagi
+  qoida ro'yxati, turlari va `Sonar way` profiliga kirmaganlari; probe
+  qoidasining yo'qligi shu ro'yxatdan ko'rinadi.
+- SonarSource, `sonar-iac` ning Docker qoidalari metadatasi
+  ([https://github.com/SonarSource/sonar-iac/tree/1.42.0.14460/iac-extensions/docker/src/main/resources/org/sonar/l10n/docker/rules/docker](https://github.com/SonarSource/sonar-iac/tree/1.42.0.14460/iac-extensions/docker/src/main/resources/org/sonar/l10n/docker/rules/docker),
+  tag `1.42.0.14460`, SONAR Source-Available License v1.0) - 38.6 dagi
+  qoidalar, `S7023` va `S6497` ziddiyati, paket versiyasi qoidasining
+  yo'qligi.
+- SonarSource, `DockerSettings`
+  ([https://github.com/SonarSource/sonar-iac/blob/1.42.0.14460/iac-extensions/docker/src/main/java/org/sonar/iac/docker/plugin/DockerSettings.java](https://github.com/SonarSource/sonar-iac/blob/1.42.0.14460/iac-extensions/docker/src/main/java/org/sonar/iac/docker/plugin/DockerSettings.java),
+  tag `1.42.0.14460`) - 38.6 dagi `sonar.docker.file.patterns` default
+  qiymati va 38.10 dagi `sonar.docker.hadolint.reportPaths`.
+- SonarSource, `sonar-iac` ning Helm evaluatori
+  ([https://github.com/SonarSource/sonar-iac/tree/1.42.0.14460/iac-extensions/kubernetes/src/main/java/org/sonar/iac/helm](https://github.com/SonarSource/sonar-iac/tree/1.42.0.14460/iac-extensions/kubernetes/src/main/java/org/sonar/iac/helm),
+  tag `1.42.0.14460`) - 38.7 dagi Helm shablonini analizatorning o'zi
+  hisoblashi, `values.yaml` va `.tpl` istisnolari.
+- SonarSource, `TextAndSecretsSensor`
+  ([https://github.com/SonarSource/sonar-text/blob/2.21.0.5225/sonar-text-plugin/src/main/java/org/sonar/plugins/common/TextAndSecretsSensor.java](https://github.com/SonarSource/sonar-text/blob/2.21.0.5225/sonar-text-plugin/src/main/java/org/sonar/plugins/common/TextAndSecretsSensor.java),
+  tag `2.21.0.5225`) - 38.3 dagi `sonar.text.inclusions` default qiymati
+  va git kuzatuvi sharti.
+- SonarSource, `sonar-xml` qoidalari metadatasi
+  ([https://github.com/SonarSource/sonar-xml/tree/2.19.0.8138/sonar-xml-plugin/src/main/resources/org/sonar/l10n/xml/rules/xml](https://github.com/SonarSource/sonar-xml/tree/2.19.0.8138/sonar-xml-plugin/src/main/resources/org/sonar/l10n/xml/rules/xml),
+  tag `2.19.0.8138`) - 38.4 dagi Maven qoidalari, `S3822` ning XML bilan
+  cheklanishi va `LATEST`/`RELEASE` qoidasining yo'qligi.
+- SonarSource, `JavaScriptPlugin`
+  ([https://github.com/SonarSource/sonar-javascript/blob/14.1.0.46226/sonar-plugin/sonar-javascript-plugin/src/main/java/org/sonar/plugins/javascript/JavaScriptPlugin.java](https://github.com/SonarSource/sonar-javascript/blob/14.1.0.46226/sonar-plugin/sonar-javascript-plugin/src/main/java/org/sonar/plugins/javascript/JavaScriptPlugin.java),
+  tag `14.1.0.46226`) - 38.9 dagi `sonar.typescript.tsconfigPaths`,
+  `sonar.javascript.lcov.reportPaths` va `sonar.javascript.maxFileSize`
+  default qiymati.
 
 ---
 

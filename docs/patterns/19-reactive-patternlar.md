@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 19. Reactive patternlar (Reactive Patterns)
 
@@ -137,6 +137,8 @@ Reactive patternlar - bu bloklanmaydigan (non-blocking), hodisaga asoslangan va 
 **Tavsif:** Reactor thread'ni o'zi tanlamaydi - kod subscribe qilingan thread'da ishlaydi, scheduler'lar esa bu xatti-harakatni ataylab o'zgartirish vositasidir. `subscribeOn(scheduler)` butun zanjirning subscription (manba) tomonini ko'rsatilgan scheduler'ga ko'chiradi va joylashuvidan qat'i nazar bir marta ta'sir qiladi. `publishOn(scheduler)` esa o'zidan KEYINGI operatorlarni boshqa thread'ga o'tkazadi, ya'ni zanjirni nuqta-nuqta bo'lib qismlarga ajratadi. To'g'ri tanlov bloklovchi legacy kodni ajratish va CPU-bound ishni event loop'dan uzoqlashtirish uchun kalit.
 
 **Spring'da qayerda uchraydi:** `reactor.core.scheduler.Schedulers` fabrikalari: `parallel()` (CPU-bound, cheklangan thread), `boundedElastic()` (bloklovchi chaqiriqlar uchun, Reactor 3.6+ da virtual thread variantini `Schedulers.boundedElastic()` konfiguratsiyasi yoki `Schedulers.fromExecutor(Executors.newVirtualThreadPerTaskExecutor())` bilan olish mumkin), `single()`, `immediate()`, `newParallel(...)`. Testda `VirtualTimeScheduler` va `StepVerifier.withVirtualTime(...)` vaqtni tezlashtirish uchun ishlatiladi. Spring Boot'da `spring.threads.virtual.enabled` virtual thread'larni yoqadi, `BlockHound` esa noto'g'ri thread'dagi bloklanishni aniqlaydi. `Mono.fromCallable(...).subscribeOn(Schedulers.boundedElastic())` - JDBC yoki legacy SDK'ni o'rash uchun standart idioma.
+
+`boundedElastic()` ning chegaralari manbada aniq va ularni bilish sig'imni hisoblashda kerak: thread soni `10 * availableProcessors()` bilan cheklangan (`reactor.schedulers.defaultBoundedElasticSize` bilan o'zgartiriladi), har bir backing thread da navbatga qo'yiladigan vazifa soni esa **100 000** (`reactor.schedulers.defaultBoundedElasticQueueSize`). Shu chegaradan oshganda vazifa jim kutmaydi, `RejectedExecutionException` tashlanadi. Ya'ni to'rt yadroli konteynerda bu 40 thread va umumiy 4 million kutayotgan vazifa degani: bloklovchi chaqiruv sekinlashsa, xato darhol emas, juda kech ko'rinadi. Thread-per-task (virtual thread) variantida esa javadoc alohida maslahat beradi: ko'proq parallel virtual thread ishlatish uchun `DEFAULT_BOUNDED_ELASTIC_SIZE` ni oshirish kerak, chunki cap o'zi o'rnida qoladi.
 
 **Qo'llanish keyslari:**
 - Legacy JDBC repository'ni `boundedElastic()` da o'rab, WebFlux controller'dan xavfsiz chaqirish.
@@ -458,6 +460,15 @@ Mono<Order> findOrder(Long id) {
 - [ ] SSE yoki streaming endpointlar uchun mijoz uzilganda resurs bo'shatilayotganini tekshiring.
 - [ ] Reactive kodda kontekst uzatish (`contextWrite`) orqali correlation ID saqlanayotganini tasdiqlang.
 - [ ] WebFlux ishlatilsa, butun zanjir reactive drayverda ekanini tekshiring; bitta JDBC chaqiruvi butun foydani yo'qotadi.
+
+## Manbalar
+
+- Laurentiu Spilca, *Spring Security in Action*, 19-bob - reaktiv ilovalar uchun Spring Security
+- Craig Walls, *Spring in Action* 6th, 11, 12, 13-boblar - Reactor, reaktiv API va reaktiv saqlash
+- [reactor-core v3.7.0, `Schedulers.java`](https://raw.githubusercontent.com/reactor/reactor-core/v3.7.0/reactor-core/src/main/java/reactor/core/scheduler/Schedulers.java) - `boundedElastic()` ning thread cap i (`10 * availableProcessors()`), har thread uchun 100 000 navbat chegarasi va `RejectedExecutionException`, hamda virtual thread variantidagi maslahat
+- [Reactor, README](https://raw.githubusercontent.com/reactor/reactor-core/v3.7.0/README.md) - Reactor ning asosiy tiplari va `Schedulers` fabrikalari
+- [reactor-netty v1.2.0, `LoopResources.java`](https://raw.githubusercontent.com/reactor/reactor-netty/v1.2.0/reactor-netty-core/src/main/java/reactor/netty/resources/LoopResources.java) - event loop worker soni `Math.max(availableProcessors(), 4)`
+- [Spring Framework 7.0, Reactive Core](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/web/webflux/reactive-spring.adoc) - WebFlux ning thread modeli va bloklamaslik sharti
 
 ---
 

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 36. Test turi va integratsion test review (Test Types and Integration Tests)
 
@@ -320,6 +320,13 @@ Review mezoni: test yiqilsa, u haqiqiy xatoni ko'rsatadimi yoki shunchaki kod o'
 - [ ] Asosiy API javoblari uchun shakl snapshot testlarini qo'shing.
 - [ ] Getter/setter va framework xulqini sinaydigan testlarni toping va olib tashlang.
 - [ ] Spring kontekst necha marta qurilayotganini o'lchab, kombinatsiyalarni kamaytirish rejasini tuzing.
+
+## Manbalar
+
+- [Spring Boot 4.0, Testing Spring Boot Applications](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/documentation/spring-boot-docs/src/docs/antora/modules/reference/pages/testing/spring-boot-applications.adoc) - slice annotatsiyalarining Boot 4 dagi moduli va paketi, `@DataJpaTest` defaultlari
+- [Spring Framework 7.0, Context Caching](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/testing/testcontext-framework/ctx-management/caching.adoc) - kesh kaliti, 32 chegarasi va fork da keshning ishlamasligi
+- [Testcontainers, Reusable Containers](https://raw.githubusercontent.com/testcontainers/testcontainers-java/9bb3c2dc175672ad33a2eafd7133212c7173ac43/docs/features/reuse.md) - reuse ning uchta sharti
+- [Google, What to Look For in a Code Review](https://raw.githubusercontent.com/google/eng-practices/3bb3ec25b3b0199f4940b1aa75f0ac5c5753301c/review/reviewer/looking-for.md) - test turini o'zgarishga mos talab qilish
 
 ---
 

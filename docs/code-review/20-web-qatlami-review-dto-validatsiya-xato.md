@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 20. Web qatlami review: DTO, validatsiya, xato javobi (The Web Layer)
 
@@ -111,6 +111,20 @@ public class OrderController {
 ```
 
 ## 20.3 Xato javobi: ichki detallar chiqmasligi
+
+`ProblemDetail` ni ishlatishda bir nechta mexanika bor va ularni bilmagan review ortiqcha kod yozilishiga ruxsat beradi.
+
+Spring ning xato javobi RFC 9457 ga tayanadi (eski nomi bilan 7807 emas, yangi raqam shu) va uchta tipni beradi: `ProblemDetail` (javob tanasining o'zi), `ErrorResponse` (status, header va RFC 9457 shaklidagi tana kontrakti, barcha ichki web istisnolari shuni qo'llaydi) va `ErrorResponseException`.
+
+Shundan uch amaliy natija chiqadi:
+
+- `ProblemDetail` ning `status` xossasi HTTP statusni **o'zi** belgilaydi, ya'ni `ResponseEntity.status(...)` bilan takrorlash kerak emas.
+- `instance` xossasi joriy URL yo'lidan **avtomatik** to'ldiriladi, agar qo'lda qo'yilmagan bo'lsa. Qo'lda yozilgan `path` maydoni ko'pincha shuning takrori.
+- Content negotiation da Jackson `application/problem+json` ni `application/json` dan afzal ko'radi va mos media turi topilmasa ham shunga qaytadi. Ya'ni javob turi haqida alohida sozlash shart emas.
+
+Spring ning o'z web istisnolarini ham shu shaklga keltirish uchun to'g'ri yo'l `@ExceptionHandler` larni qo'lda sanab chiqish emas, `ResponseEntityExceptionHandler` dan meros olib uni `@ControllerAdvice` deb e'lon qilish: unda barcha ichki web istisnosini qamragan handler allaqachon bor, qolgan istisnolarni esa ustiga qo'shiladi. Diffda `MethodArgumentNotValidException`, `HttpMessageNotReadableException`, `NoResourceFoundException` kabi o'nta ichki istisno qo'lda sanalgan bo'lsa, bu shu bazaviy sinf ishlatilmaganining belgisi.
+
+Nostandart maydon qo'shishning ikki yo'li bor: `ProblemDetail` ning `properties` xaritasiga qo'yish (Jackson da `ProblemDetailJacksonMixin` ularni yuqori darajadagi JSON maydonlari qilib chiqaradi), yoki `ProblemDetail` dan meros olib alohida maydon e'lon qilish. Korrelyatsiya ID uchun birinchisi yetarli.
 
 ```java
 // Naqsh: istisno xabari to'g'ridan-to'g'ri mijozga.
@@ -380,6 +394,11 @@ Keshlash header lari uchun review savoli: maxfiy ma'lumot qaytaradigan javobda `
 - [ ] Jackson `StreamReadConstraints` chegaralarini sozlang.
 - [ ] `@CrossOrigin(origins = "*")` ishlatilgan joylarni aniq domen ro'yxatiga o'tkazing.
 - [ ] Maxfiy ma'lumot qaytaradigan endpointlarda `Cache-Control: no-store` header ini qo'shing.
+
+## Manbalar
+
+- [Spring Framework 7.0, Error Responses](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/web/webmvc/mvc-ann-rest-exceptions.adoc) - RFC 9457, `ProblemDetail` va `ErrorResponse` kontrakti, `status` va `instance` ning o'zi to'ldirilishi, `application/problem+json` tanlovi, `ResponseEntityExceptionHandler`, nostandart maydon qo'shishning ikki yo'li
+- [Spring Framework 7.0, Java Bean Validation](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/core/validation/beanvalidation.adoc) - `@Valid` va metod validatsiyasi, MVC da AOP siz ishlashi, `MethodValidationException` va `ParameterValidationResult`
 
 ---
 

@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 17. Vorislik, kompozitsiya va polimorfizm mexanikasi (Inheritance Mechanics)
 
 <details>
-<summary>Bu bobdagi 10 bo'lim</summary>
+<summary>Bu bobdagi 11 bo'lim</summary>
 
 - [17.1 Vorislik uchun dizayn qilish yoki `final` qilish](#171-vorislik-uchun-dizayn-qilish-yoki-final-qilish)
 - [17.2 Konstruktorda override qilinadigan metodni chaqirish](#172-konstruktorda-override-qilinadigan-metodni-chaqirish)
@@ -18,7 +18,8 @@
 - [17.7 Abstrakt sinf va interfeys tanlovi, `default` metodlar](#177-abstrakt-sinf-va-interfeys-tanlovi-default-metodlar)
 - [17.8 Konstantalarni interfeysdan voris olish](#178-konstantalarni-interfeysdan-voris-olish)
 - [17.9 Delegatsiya bilan vorislikni almashtirish](#179-delegatsiya-bilan-vorislikni-almashtirish)
-- [17.10 Amalda qo'llash](#1710-amalda-qollash)
+- [17.10 Teglangan sinf o'rniga ierarxiya yoki `sealed`](#1710-teglangan-sinf-orniga-ierarxiya-yoki-sealed)
+- [17.11 Amalda qo'llash](#1711-amalda-qollash)
 
 </details>
 
@@ -172,6 +173,8 @@ Tanlov mezoni oddiy: **holat** kerak bo'lsa abstrakt sinf, faqat shartnoma kerak
 
 `default` metodlar interfeysga xatti-harakat qo'shish imkonini beradi, lekin ularni ehtiyotkorlik bilan ishlatish kerak: ular holatga kira olmaydi, va ikki interfeys bir xil `default` metod bersa konflikt bo'ladi.
 
+Uchinchi ehtiyot nuqtasi muhimroq: chiqarilgan interfeysga `default` metod qo'shish mavjud implementatsiyalarni **jim** buzishi mumkin. Kompilyatsiya o'tadi, chunki metod tayyor, lekin implementatsiya shu metodning invariantini bilmaydi. Platformaning o'zida shu holat bo'lgan: `Collection.removeIf` Java 8 da `default` bo'lib qo'shilgach, chaqiruvchi tomonda sinxronlanadigan o'ramlar uni o'zlarining qulfidan o'tkazmasdan bajaradigan bo'lib qoldi. Shu sababli interfeysni chiqarishdan oldin kamida ikki-uch mustaqil implementatsiya yozib ko'riladi, `default` metod esa faqat haqiqiy moslik ehtiyoji uchun qo'shiladi, qulaylik uchun emas.
+
 | Ehtiyoj | Tanlov |
 |---|---|
 | Faqat shartnoma | interfeys |
@@ -181,6 +184,8 @@ Tanlov mezoni oddiy: **holat** kerak bo'lsa abstrakt sinf, faqat shartnoma kerak
 | Ko'p rolni birlashtirish | bir nechta interfeys |
 | Konstanta to'plami | enum yoki `final` sinf, interfeys emas (17.8) |
 | Shablon tartibi | abstrakt sinf + `final` shablon metod |
+
+Ikkisini birga ishlatadigan shakl ham bor va u ko'p holatda eng qulay: interfeys turni belgilaydi, uning yonidagi `AbstractXxx` sinfi esa qolgan metodlarni bir nechta asosiy metod ustiga quradi. Implementatsiya qiluvchi tomon xohlasa abstrakt sinfdan voris oladi va faqat asosiy metodlarni yozadi, xohlasa interfeysni o'zi to'liq implementatsiya qiladi. Java to'plamlar kutubxonasining o'zi shu shaklda: `List` va `AbstractList`, `Map` va `AbstractMap`.
 
 ## 17.8 Konstantalarni interfeysdan voris olish
 
@@ -207,6 +212,24 @@ public enum RetryLimit { ... }
 
 Vorislikdan chiqish yo'li - delegatsiya: voris sinf bazaviy sinfni **maydon** sifatida saqlaydi va kerakli metodlarni o'ziga o'tkazadi. Shunda bazaviy sinfning butun API si meros bo'lib o'tmaydi va shartnoma buzilmaydi.
 
+Vorislik nega sinadi: bazaviy sinf o'z metodlarini ichidan chaqiradi (self-use) va bu hujjatlashtirilmagan detal. Klassik namuna hisoblagich qo'shilgan `HashSet`: `add` va `addAll` ikkisi ham override qilinadi, uchta element `addAll` bilan qo'shilganda hisoblagich uch emas, **olti** bo'ladi, chunki `HashSet.addAll` ichida har element uchun `add` ni chaqiradi va u override qilingan versiyaga tushadi.
+
+```java
+// yomon: addAll ichida add chaqirilishi hisoblagichni ikki marta oshiradi
+class InstrumentedHashSet<E> extends HashSet<E> {
+
+    private int addCount;
+
+    @Override public boolean add(E e) { addCount++; return super.add(e); }
+    @Override public boolean addAll(Collection<? extends E> c) {
+        addCount += c.size();              // + keyin har element uchun add
+        return super.addAll(c);
+    }
+}
+```
+
+`addAll` ni override qilmaslik bilan "tuzatish" mumkin, lekin unda kod `HashSet.addAll` ning ichidan `add` ni chaqirishiga tayanib qoladi: bu kafolatlanmagan detal va reliz bilan o'zgarishi mumkin. Ikkinchi sinish yo'li: bazaviy sinfga keyingi relizda yangi metod qo'shilsa, voris sinf uni bilmasdan meros oladi va o'z invariantini u orqali buzadi.
+
 ```java
 // yomon: HashMap dan voris olish - butun API meros bo'ladi, invariant himoyalanmaydi
 public class StockLevels extends HashMap<Sku, Integer> { }
@@ -230,7 +253,49 @@ public final class StockLevels {
 
 O'tish tartibi: maydon qo'shish → `extends` ni olib tashlash → kompilyator ko'rsatgan metodlarni delegatsiyaga aylantirish → keraksizlarini o'chirish ([37-bob](37-refaktoring-harakatlari-katalogi-iii-shart.md), Replace Superclass with Delegate).
 
-## 17.10 Amalda qo'llash
+## 17.10 Teglangan sinf o'rniga ierarxiya yoki `sealed`
+
+Teglangan sinf (tagged class) - bitta sinf ichida tur belgisi maydoni va shu belgiga qarab shoxlanadigan metodlar. Shakli tanilishi oson: `type` yoki `kind` maydoni, `switch` bilan shoxlanish va faqat ba'zi turlar uchun ma'noli maydonlar.
+
+```java
+// yomon: teglangan sinf - ikki shakl bitta sinfda
+final class Figure {
+
+    enum Kind { RECTANGLE, CIRCLE }
+
+    private final Kind kind;
+    private final double width, height;   // faqat RECTANGLE uchun
+    private final double radius;          // faqat CIRCLE uchun
+
+    double area() {
+        return switch (kind) {
+            case RECTANGLE -> width * height;
+            case CIRCLE -> Math.PI * radius * radius;
+        };
+    }
+}
+```
+
+Narxi: har bir obyekt ishlatilmaydigan maydonlarni ko'tarib yuradi, konstruktor noto'g'ri kombinatsiyani to'sa olmaydi (radiusli to'rtburchak), yangi shakl qo'shilganda `switch` lar bo'ylab yurish kerak va biri esdan chiqsa kompilyator jim qoladi. Yechim ierarxiya: har shakl o'z sinfida, o'z maydonlari bilan.
+
+```java
+// yaxshi: sealed ierarxiya - kompilyator to'liqlikni tekshiradi
+sealed interface Figure permits Rectangle, Circle {
+    double area();
+}
+
+record Rectangle(double width, double height) implements Figure {
+    public double area() { return width * height; }
+}
+
+record Circle(double radius) implements Figure {
+    public double area() { return Math.PI * radius * radius; }
+}
+```
+
+`sealed` qo'shimcha narsa beradi: ruxsat etilgan voris ro'yxati e'londa turadi, shu sababli `switch` to'liqligini kompilyator tekshiradi va `default` shoxi kerak bo'lmaydi. Yangi voris qo'shilsa, to'liq bo'lmagan `switch` lar kompilyatsiyada chiqadi. Turga qarab shoxlanishni polimorfizmga aylantirish [takrorlangan `switch`](06-shart-mantiq-va-boshqaruv-oqimi.md#610-takrorlangan-switch-va-turga-qarab-shoxlanish) da ham ko'rilgan; bu bo'lim ierarxiya shaklini belgilaydi.
+
+## 17.11 Amalda qo'llash
 
 - [ ] Vorislik uchun mo'ljallanmagan barcha sinflarni `final` qiling (Spring proxy talab qilgan joylardan tashqari).
 - [ ] Konstruktordan chaqirilayotgan override qilinadigan metodlarni topib, sozlashni konstruktordan chiqaring.
@@ -240,6 +305,17 @@ O'tish tartibi: maydon qo'shish → `extends` ni olib tashlash → kompilyator k
 - [ ] `UnsupportedOperationException` tashlaydigan override larni topib, interfeysni bo'ling.
 - [ ] Constant interface larni yo'qotib, konstantalarni tegishli sinfga yoki enum ga ko'chiring.
 - [ ] `ArrayList`, `HashMap` kabi to'plamlardan voris olgan sinflarni delegatsiyaga o'tkazing.
+- [ ] Tur belgisi maydoni (`type`, `kind`) bo'yicha shoxlanadigan sinflarni toping va ularni `sealed` ierarxiyaga o'tkazing.
+
+## Manbalar
+
+- Joshua Bloch, *Effective Java* 3rd, Item 18, 19, 20 - kompozitsiya, vorislik uchun dizayn, interfeys va abstrakt sinf tanlovi
+- Joshua Bloch, *Effective Java* 3rd, Item 22, 23 - interfeys faqat tur uchun, teglangan sinf o'rniga ierarxiya
+- [JEP 409: Sealed Classes](https://openjdk.org/jeps/409) - `sealed` va `permits` semantikasi, switch to'liqligi
+- Joshua Bloch, *Effective Java* 3rd, Item 21 - chiqarilgan interfeysga `default` metod qo'shishning xavfi
+- Joshua Bloch, *Effective Java* 3rd, Item 18 - `InstrumentedHashSet` da `addAll` ikki marta hisoblashi, self-use ning hujjatlashtirilmagan detal ekani
+- Joshua Bloch, *Effective Java* 3rd, Item 19 - vorislik uchun hujjatlash, konstruktorda override qilinadigan metodni chaqirmaslik, `clone` va `readObject` ham shunday
+- Joshua Bloch, *Effective Java* 3rd, Item 20 - interfeys yonida `AbstractXxx` skelet implementatsiyasi
 
 ---
 

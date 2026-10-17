@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 12. Virtual threads, structured concurrency va scoped values (Modern Concurrency)
 
@@ -93,7 +93,9 @@ Yana bir nozik holat: virtual thread scheduler preemptive emas. Uzun CPU tsikli 
 
 Pinning bu virtual thread'ning unmount qilolmay carrier'ni egallab qolishi. Blokirovka davomida carrier band bo'ladi va boshqa hech qanday virtual thread uni ishlatolmaydi. Agar carrier soni 8 bo'lsa va 8 ta virtual thread pinned holda bloklansa, butun ilova to'xtaydi.
 
-Java 21-23 da pinning'ning asosiy manbasi `synchronized` blok edi: object monitor ichida bloklanish unmount'ni taqiqlaydi. Java 24 da bu tuzatildi, endi `synchronized` ichida bloklangan virtual thread ham normal unmount qiladi. Java 25 (LTS) shu xatti-harakatni meros qilib oladi. Shuning uchun bugungi pinning sabablari qisqargan: native frame (JNI chaqiruvi yoki `Object.wait` dan tashqari native blokirovka) va class initializer ichidagi kutish.
+Java 21-23 da pinning'ning asosiy manbasi `synchronized` blok edi: object monitor ichida bloklanish unmount'ni taqiqlaydi. Java 24 da bu tuzatildi, endi `synchronized` ichida bloklangan virtual thread ham normal unmount qiladi. Java 25 (LTS) shu xatti-harakatni meros qilib oladi.
+
+Buni JDK manbasidagi `VirtualThread` ning holat mashinasida ko'rish mumkin va farq yaqqol. JDK 21 da monitor uchun alohida holat yo'q, pinned holat esa `PARKING -> PINNED` dan keladi, ya'ni `cont.yield` muvaffaqiyatsiz bo'lgan va thread carrier da qolgan hol. JDK 24 va 25 da esa monitor uchun alohida o'tishlar paydo bo'lgan: `RUNNING -> BLOCKING -> BLOCKED` (monitor enter da bloklanish) va `BLOCKED -> UNBLOCKED -> RUNNING`, shuningdek `Object.wait` uchun `RUNNING -> WAITING -> WAIT` va `WAIT -> BLOCKED` yoki `WAIT -> UNBLOCKED`. Ya'ni monitorda kutish endi carrier ni ushlab turmaydi: thread unmount bo'ladi va keyin qaytib mount qilinadi. `PINNED` va `TIMED_PINNED` holatlari saqlangan, lekin ular `LockSupport.park` da `cont.yield` ning muvaffaqiyatsiz bo'lishi uchun qoladi, ya'ni native frame va shunga o'xshash haqiqiy pinning sabablari uchun. Shuning uchun bugungi pinning sabablari qisqargan: native frame (JNI chaqiruvi yoki `Object.wait` dan tashqari native blokirovka) va class initializer ichidagi kutish.
 
 | Tuzoq | Nega sodir bo'ladi | Yechim |
 |---|---|---|
@@ -211,6 +213,12 @@ Bekor qilish `Thread.interrupt` orqali ishlaydi, shuning uchun vazifa ichidagi k
 
 `ScopedValue` Java 25 da final bo'ldi. U immutable va uning amal qilish doirasi leksik blok bilan belgilanadi: blok tugashi bilan bog'lanish o'z-o'zidan yo'qoladi, tozalash kerak emas. Meros faqat `StructuredTaskScope.fork(...)` bilan tug'ilgan child thread larda ishlaydi: ular qiymatni nusxalamaydi, ota bog'lanishini ko'radi ([JEP 506](https://openjdk.org/jeps/506)). Oddiy `Thread.ofVirtual().start(...)` yoki executor ga uzatilgan vazifada qiymat bog'lanmagan bo'ladi (`isBound()` false), shuning uchun kontekst u yerga alohida uzatiladi.
 
+Javadoc ikki nozik joyni ham aniq aytadi. Birinchi: bog'lanishlar `StructuredTaskScope` **yaratilganda** olinadi (captured) va shundan keyin `fork` bilan boshlangan hamma thread ularni meros qiladi. Ya'ni scope yaratilgandan keyin qo'yilgan bog'lanish o'sha scope ning thread lariga tushmaydi.
+
+Ikkinchi: thread lar o'rtasida ulashiladigan `ScopedValue` ning qiymati **immutable** bo'lishi kerak, aks holda unga kirish to'liq sinxronlangan bo'lishi shart. `ScopedValue` ning o'zi immutable bo'lishi uning ichidagi obyektni immutable qilmaydi, va bu xato review da ko'rinmay o'tib ketadi.
+
+Soni haqida ham tavsiya bor va u dizaynga tegishli: `ScopedValue` lar **kam sonda** ishlatish uchun mo'ljallangan. `get()` avval o'rab turgan scope larni qidiradi, keyin natijani thread ga xos kichik keshda saqlaydi; agar kod ko'p sonli scoped value ni navbatma-navbat ishlatsa, kesh hit rate i pasayadi va ishlash yomonlashadi. Ya'ni "har bir kontekst maydoni uchun bitta `ScopedValue`" emas, bitta kontekst obyektini bitta `ScopedValue` da uzatish to'g'ri shakl.
+
 ```java
 // Request kontekstini ThreadLocal o'rniga ScopedValue da uzatish
 public final class Kontekst {
@@ -285,6 +293,12 @@ Migratsiyada arxitektor tekshiradigan narsa: yoqishdan oldin va keyin latency'ni
 - [ ] Dashboard'dagi `tomcat.threads.busy` panelini in-flight so'rov gauge'i va `hikaricp.connections.pending` bilan almashtiring.
 - [ ] JFR profilini yuk testi davomida yozib, `jdk.VirtualThreadPinned` event'lari borligini tekshiring va sababini toping.
 - [ ] CPU bilan band vazifalarni (hisobot, shifrlash, katta serializatsiya) yadro soniga teng alohida platform thread pool'ga ajratib chiqaring.
+
+## Manbalar
+
+- [OpenJDK 25, `VirtualThread.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/lang/VirtualThread.java) - holat mashinasi: JDK 24 dan monitor uchun `BLOCKING -> BLOCKED -> UNBLOCKED` va `Object.wait` uchun `WAITING -> WAIT` o'tishlari, ya'ni monitorda kutish carrier ni ushlab turmaydi; `PINNED` va `TIMED_PINNED` esa `cont.yield` muvaffaqiyatsiz bo'lgan holatlar uchun qoladi
+- [OpenJDK 25, `ScopedValue.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/lang/ScopedValue.java) - `where(key, value)` va `Carrier.run/call` API si, bog'lanishning `StructuredTaskScope` yaratilganda olinishi, ulashiladigan qiymatning immutable bo'lish talabi, kam sonda ishlatish tavsiyasi va `get()` ning kesh mexanikasi
+- [OpenJDK 21, `VirtualThread.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-21%2B35/src/java.base/share/classes/java/lang/VirtualThread.java) - JDK 21 da monitor uchun alohida holat yo'qligi, taqqoslash uchun
 
 ---
 

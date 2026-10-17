@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 14. Java tili darajasidagi xatolar katalogi (Language-Level Defects)
 
@@ -73,11 +73,21 @@ Bu uchlikdagi xatolar jim ishlaydi: kod kompilyatsiya bo'ladi, testlar o'tadi, v
 | --- | --- |
 | `equals` bor, `hashCode` yo'q | `HashSet` da dublikat, `HashMap` da yozuv topilmaydi |
 | `hashCode` da mutable maydon | Obyekt o'zgargach `Map` dan yo'qoladi |
-| `equals` da `getClass()` o'rniga `instanceof` meros bilan | Nosimmetrik tenglik |
+| Voris sinf qiymat maydoni qo'shib `equals` ni kengaytirgan | `instanceof` da nosimmetrik tenglik, `getClass()` da esa LSP buziladi (pastda) |
 | `compareTo` va `equals` mos emas | `TreeSet` va `HashSet` turlicha xulq |
 | `equals` da `BigDecimal` to'g'ridan-to'g'ri | `10.0` va `10.00` teng emas |
 | JPA entity da generated ID bilan `equals` | Saqlashdan keyin `hashCode` o'zgaradi |
 | Array `equals` | Havola taqqoslanadi, `Arrays.equals` kerak |
+
+Jadvaldagi voris sinf qatori review da eng ko'p noto'g'ri hal qilinadigan joy, shuning uchun uni alohida yozib qo'yish kerak. *Effective Java* ning 10-punkti ikki yo'lni ham rad etadi.
+
+`instanceof` bilan: voris sinf yangi qiymat maydoni qo'shsa, tenglik **nosimmetrik** bo'ladi, ya'ni `a.equals(b)` va `b.equals(a)` turli natija beradi.
+
+`getClass()` bilan: tenglik faqat bir xil implementatsiya sinfidagi obyektlar uchun ishlaydi va bu **Liskov almashtirish printsipini buzadi**. Kitobning misoli aniq: `Point` ning vorisi hamon `Point` va `Point` sifatida ishlashi kerak, lekin `getClass()` asosidagi `equals` bilan u ishlamaydi. `onUnitCircle` kabi metod `HashSet.contains` ga tayansa, hech bir voris nusxa hech bir `Point` ga teng bo'lmaydi va javob har doim `false` chiqadi; `instanceof` asosidagi `equals` bilan esa shu metod to'g'ri ishlaydi.
+
+Kitobning xulosasi qat'iy: **instansiyalanadigan sinfni kengaytirib, unga qiymat maydoni qo'shish va shu bilan birga `equals` kontraktini saqlashning qoniqarli usuli yo'q.** Review da shuning uchun to'g'ri savol "`getClass()` mi yoki `instanceof` mi" emas, "nega voris sinf qiymat maydoni qo'shayapti" bo'ladi; javobi odatda meros o'rniga kompozitsiya.
+
+Amaliy natija: `instanceof` tanlanadi (Hibernate proxy si uchun ham shu kerak, clean-code 28.1), lekin ayni paytda qiymat maydoni qo'shadigan voris sinf yozilmaydi. Ikkisi birga bo'lgandagina kontrakt buzilmaydi.
 
 ```java
 // compareTo va equals mos kelmasligi: TreeSet elementni "bor" deb hisoblaydi.
@@ -388,6 +398,13 @@ Bu skriptni CI da ogohlantirish sifatida ishlatish mumkin, lekin bloklamaslik ke
 - [ ] `LocalDateTime` saqlanadigan ustunlarni aniqlab, PostgreSQL da `timestamptz` ga o'tish rejasini tuzing.
 - [ ] `toMap` ishlatilgan joylarda kalit yagonaligi kafolatlanganini tekshiring va merge funksiyasini qo'shing.
 - [ ] `catch (InterruptedException)` bloklarida `Thread.currentThread().interrupt()` borligini tekshiring.
+
+## Manbalar
+
+- Joshua Bloch, *Effective Java* 3rd, Item 10 - `equals` kontrakti, simmetriya buzilishi va `getClass()` ning LSP ni buzishi, hamda "instansiyalanadigan sinfga qiymat maydoni qo'shishning qoniqarli usuli yo'q" xulosasi
+- Joshua Bloch, *Effective Java* 3rd, Item 11 - `hashCode` ni `equals` bilan birga yozish; Item 14 - `compareTo` va `equals` nomuvofiqligi
+- [OpenJDK 25, `ConcurrentHashMap.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/util/concurrent/ConcurrentHashMap.java) - kolleksiyalarning `equals` va `hashCode` ga tayanishi, aggregate status metodlari
+- [OpenJDK 25, `ForkJoinPool.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/util/concurrent/ForkJoinPool.java) - `parallelStream()` ortidagi `commonPool` va uning hajmi
 
 ---
 

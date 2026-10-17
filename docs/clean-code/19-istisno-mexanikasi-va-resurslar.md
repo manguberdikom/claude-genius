@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 19. Istisno mexanikasi va resurslar (Exception Mechanics and Resources)
 
 <details>
-<summary>Bu bobdagi 12 bo'lim</summary>
+<summary>Bu bobdagi 15 bo'lim</summary>
 
 - [19.1 Stack trace ni yo'qotmaslik: wrap va rethrow](#191-stack-trace-ni-yoqotmaslik-wrap-va-rethrow)
 - [19.2 Ko'p turni tutish va tutish tartibi](#192-kop-turni-tutish-va-tutish-tartibi)
@@ -20,7 +20,10 @@
 - [19.9 `Objects.requireNonNull`, Guava `Preconditions`, Bean Validation](#199-objectsrequirenonnull-guava-preconditions-bean-validation)
 - [19.10 Xato xabari matni: uch xil adresat](#1910-xato-xabari-matni-uch-xil-adresat)
 - [19.11 Xato kodi katalogi va uni barqaror ushlash](#1911-xato-kodi-katalogi-va-uni-barqaror-ushlash)
-- [19.12 Amalda qo'llash](#1912-amalda-qollash)
+- [19.12 Xatolik atomarligi: yiqilgan metod obyektni buzib qoldirmasligi](#1912-xatolik-atomarligi-yiqilgan-metod-obyektni-buzib-qoldirmasligi)
+- [19.13 Fayl va yo'l bilan ishlash: `Path`, `Files` va kodirovka](#1913-fayl-va-yol-bilan-ishlash-path-files-va-kodirovka)
+- [19.14 Offensive programming: development da qattiq, production da yumshoq yiqilish](#1914-offensive-programming-development-da-qattiq-production-da-yumshoq-yiqilish)
+- [19.15 Amalda qo'llash](#1915-amalda-qollash)
 
 </details>
 
@@ -277,7 +280,123 @@ public enum SettlementErrorCode {
 }
 ```
 
-## 19.12 Amalda qo'llash
+## 19.12 Xatolik atomarligi: yiqilgan metod obyektni buzib qoldirmasligi
+
+Metod istisno bilan tugasa, obyekt chaqiruvdan oldingi holatida qolishi kerak. Bu xatolik atomarligi (failure atomicity) deyiladi. Buzilganda oqibat yashirin bo'ladi: chaqiruvchi istisnoni ushlab, log yozib, ishini davom ettiradi, obyekt esa yarim o'zgargan holatda qoladi va xato ancha keyin, boshqa joyda chiqadi.
+
+```java
+// yomon: ikkinchi qator yiqilsa, hisob allaqachon kamaygan
+public void transfer(Money amount, Account target) {
+    this.balance = this.balance.minus(amount);   // o'zgardi
+    target.credit(amount);                       // bu yerda yiqilsa, pul yo'qoladi
+}
+
+// yaxshi: avval tekshiriladi, keyin o'zgartiriladi
+public void transfer(Money amount, Account target) {
+    if (balance.isLessThan(amount)) {
+        throw new InsufficientFundsException(id, balance, amount);
+    }
+    Money remaining = balance.minus(amount);     // vaqtinchalik qiymat
+    target.credit(amount);                       // yiqilsa, balance hali tegilmagan
+    this.balance = remaining;
+}
+```
+
+To'rt yo'l bor va tartibi shunday: obyektni o'zgarmas qilish (o'zgarmas obyektda bu muammo tug'ilmaydi), hamma tekshiruvni o'zgartirishdan **oldin** bajarish, o'zgarishni vaqtinchalik nusxada qilib oxirida almashtirish, yoki xato chiqqanda holatni qaytaradigan qayta tiklash kodi yozish. Oxirgisi eng qimmat va eng ko'p xato qiladigan yo'l, u odatda disk va tashqi resurs bilan ishlashda qoladi.
+
+Qoida mutlaq emas: bir nechta thread bir obyektni o'zgartirganda `ConcurrentModificationException` dan keyin obyekt holati noma'lum bo'lib qolishi mumkin va `Error` dan keyin tiklanishga urinmaydi. Lekin oddiy biznes kodida atomarlik erishiladigan narsa va uning yo'qligi hujjatlanishi kerak. Spring kontekstida tranzaksiya bazadagi holatni qaytaradi, lekin obyektning xotiradagi maydonlarini qaytarmaydi: rollback dan keyin keshda yoki singleton bean ichida qolgan o'zgarish shu qoidaga tegishli.
+
+## 19.13 Fayl va yo'l bilan ishlash: `Path`, `Files` va kodirovka
+
+Fayl bilan ishlashda eski (`java.io.File`) va yangi (`java.nio.file`) API lar yonma-yon yashaydi va eski API ning uchta kamchiligi bor: xato holatida `boolean` qaytaradi (sabab bilinmaydi), symlink va fayl atributlari bilan ishlamaydi, kodirovkani yashiradi. Qoida: yangi kodda `Path` va `Files` ishlatiladi, `File` faqat eski API bilan chegarada.
+
+```java
+// yomon: xato sababi yo'qoladi, kodirovka platformaga bog'liq
+File f = new File(dir, name);
+if (!f.delete()) {
+    log.warn("o'chirilmadi");            // nega? ruxsat, band, yo'q?
+}
+List<String> lines = Files.readAllLines(f.toPath());   // JDK 18 gacha platforma kodirovkasi
+
+// yaxshi: istisno sababni aytadi, kodirovka oshkor
+Path path = dir.resolve(name);
+Files.delete(path);                      // NoSuchFileException, AccessDeniedException
+try (Stream<String> lines = Files.lines(path, StandardCharsets.UTF_8)) {
+    lines.filter(not(String::isBlank)).forEach(this::handle);
+}
+```
+
+Uchta tuzoq takrorlanadi. Birinchisi: `Files.lines`, `Files.list` va `Files.walk` oqim qaytaradi va ular ochiq fayl deskriptorini ushlab turadi, shuning uchun `try-with-resources` ichida ishlatiladi, aks holda deskriptor sizib ketadi va bu faqat yuk ostida ko'rinadi. Ikkinchisi: kodirovkani ko'rsatmaslik. JDK 18 dan beri sukut UTF-8, lekin eski JDK da va `FileReader` bilan u platformaga bog'liq, demak kod Windows da va konteynerda boshqa ishlaydi. Uchinchisi: yo'lni satr birlashtirish bilan qurish. `dir + "/" + name` ajratgichni qattiq yozadi va `..` bilan katalogdan chiqib ketishni to'smaydi; `resolve` esa `Path` semantikasini saqlaydi.
+
+Tashqaridan kelgan nom bilan yo'l qurilganda xavfsizlik qoidasi qo'shiladi: yo'l normallashtiriladi va bazaviy katalog ichida qolganligi tekshiriladi.
+
+```java
+// yaxshi: katalogdan chiqib ketishni to'sadi
+Path target = baseDir.resolve(userInput).normalize();
+if (!target.startsWith(baseDir)) {
+    throw new IllegalArgumentException("yo'l bazaviy katalogdan tashqarida");
+}
+```
+
+Vaqtinchalik fayl uchun `Files.createTempFile` ishlatiladi: u nomni taxmin qilinmaydigan qiladi va ruxsatni tor qo'yadi, `new File(tmpdir, "x.tmp")` esa poyga sharti va boshqa jarayon tomonidan almashtirish uchun ochiq qoldiradi. Tozalash `deleteOnExit` ga qoldirilmaydi (u faqat JVM normal tugaganda ishlaydi va ro'yxatni xotirada o'stiradi), balki `try-with-resources` yoki `finally` da bajariladi.
+
+## 19.14 Offensive programming: development da qattiq, production da yumshoq yiqilish
+
+Himoya tekshiruvining qaysi qismi ishlab chiqarishga qolishi [xato bilan ishlash bobida](18-xato-bilan-ishlash-qoidalari.md#1813-himoya-tekshiruvining-qanchasi-ishlab-chiqarishda-qoladi) hal qilinadi; bu bo'lim shu qarorning mexanikasi haqida, ya'ni bitta tekshiruv development da **qattiq**, production da **yumshoq** ishlashini qanday ta'minlash haqida. McConnell bu yondashuvni Howard va LeBlanc dan olib offensive programming deb ataydi: kutilmagan holat development da ko'zdan qochmaydigan, production da esa tiklanadigan bo'lsin (McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 8.6 (206-bet)). Kitobda keltirilgan qisqa shakl eslab qolishga qulay: o'lgan programma shikastlangan programmadan kamroq zarar keltiradi (Andy Hunt va Dave Thomas).
+
+Development da qattiqlik nimadan iborat:
+
+- **Assertion chindan ham to'xtatsin.** Ma'lum muammoni Enter bosib o'tib ketish odati paydo bo'lmasligi kerak; muammo tuzatiladigan darajada og'riqli bo'lishi kerak. Java da bu `-ea` ni test va dev JVM da yoqish demakdir ([assertion va `-ea`: qachon haqli](#198-assertion-va--ea-qachon-haqli)).
+- **Kutilmagan shox jim o'tmasin.** `default` yoki `else` tarmog'i qattiq yiqilsin yoki boshqa yo'l bilan ko'zga tashlanadigan bo'lsin.
+- **"Toza" ma'lumot bilan cheklanmaslik.** McConnell ning C dagi tavsiyalari (ajratilgan xotirani va faylni axlat bilan to'ldirish, o'chirishdan oldin obyektni axlatga aylantirish) Java da ko'chmaydi, chunki xotira qo'lda ajratilmaydi. G'oyaning Java dagi shakli: testda chiroyli fixture emas, chetki va tasodifiy qiymat berish; yopilgan resursni qayta ishlatish jim o'tmasligi uchun `close()` dan keyin holat oshkor "yopilgan" deb belgilanadi va keyingi chaqiruv `IllegalStateException` tashlaydi.
+- **Production dagi xato log i yig'ilib turadigan bo'lsin.** Chiqarilgan versiyada qanday xatolar bo'layotganini ko'rmasangiz, development dagi qattiqlikning foydasi yo'qoladi.
+
+`default` tarmog'i haqidagi talab [`switch` ni toza ishlatish](06-shart-mantiq-va-boshqaruv-oqimi.md#66-switch-ni-toza-ishlatish-toliqlik-default-fallthrough) qoidasiga qarama-qarshi ko'rinadi, u yerda enum ustidagi `switch` da `default` yozilmaydi deyilgan. Ikkisini ajratadigan shart - to'liqlikni **kompilyator tekshira oladimi**. Enum yoki `sealed` tur ustidagi `switch` ifodasida tekshira oladi, shuning uchun `default` ni butunlay yozmaslik qattiqroq variant: xato run time dan compile time ga ko'chadi. `int`, `String` yoki tashqaridan kelgan qiymat ustidagi `switch` da esa kompilyator yordam bermaydi va o'shanda `default` majburiy, lekin u jim qiymat qaytarmaydi, yiqiladi.
+
+```java
+// Tashqi qiymat: to'liqlikni kompilyator tekshirmaydi, default yiqiladi
+return switch (externalCode) {
+    case "SETTLED" -> Status.SETTLED;
+    case "REJECTED" -> Status.REJECTED;
+    default -> throw new IllegalStateException("qo'llanmagan status kodi: " + externalCode);
+};
+```
+
+Production dagi yumshoqlik esa kodni har safar qo'lda kiritib-chiqarib yurish bilan emas, **bir xil kodning ikki xatti-harakati** bilan ta'minlanadi: McConnell bu usulni debugging stub deb ataydi, ya'ni development da to'liq tekshiradigan, production da esa darhol qaytadigan ikki variant saqlanadi va ular build yoki sozlama bilan almashtiriladi (8.6 (207-208-bet)). Spring da buning tabiiy shakli profil bo'yicha ikki bean:
+
+```java
+public interface InvariantGuard {
+    void require(boolean condition, String message);
+}
+
+@Component
+@Profile("dev")
+class FailHardGuard implements InvariantGuard {
+    @Override
+    public void require(boolean condition, String message) {
+        if (!condition) {
+            throw new IllegalStateException("invariant buzildi: " + message);
+        }
+    }
+}
+
+@Component
+@Profile("!dev")
+class LoggingGuard implements InvariantGuard {
+    private static final Logger log = LoggerFactory.getLogger(LoggingGuard.class);
+
+    @Override
+    public void require(boolean condition, String message) {
+        if (!condition) {
+            log.error("invariant buzildi: {}", message);   // to'xtatmaydi, iz qoldiradi
+        }
+    }
+}
+```
+
+Shu shaklning qiymati: chaqiruv joyi o'zgarmaydi, siyosat esa bitta joyda turadi. Debug yordamchisini kodga kiritib-chiqarib yuradigan usul har tahrirda diff shovqini va unutilgan tekshiruv qoldiradi.
+
+## 19.15 Amalda qo'llash
 
 - [ ] Barcha `catch` bloklarini ko'rib, sababni (`cause`) uzatmaydiganlarini tuzating.
 - [ ] `catch (Throwable)` va `catch (Error)` ni topib, eng tashqi chegaradan tashqari joylarda olib tashlang.
@@ -287,6 +406,26 @@ public enum SettlementErrorCode {
 - [ ] "Log va qayta tashlash" namunalarini topib, log ni faqat qayta ishlagan joyda qoldiring.
 - [ ] `assert` bilan kirish tekshiradigan joylarni oshkor tekshiruvga o'tkazing.
 - [ ] API xato kodlari katalogini enum sifatida yozib, hujjatlashtiring va barqarorlik qoidasini kelishib oling.
+- [ ] Holatni o'zgartiradigan metodlarni ko'rib chiqing: tekshiruvlar o'zgartirishdan oldin bajarilayotganini ta'minlang.
+- [ ] Tranzaksiya rollback idan keyin xotirada qoladigan o'zgarishlarni (kesh, singleton maydon) ro'yxatlab, ularni tozalash yo'lini qo'ying.
+- [ ] `Files.lines`, `Files.list` va `Files.walk` chaqiruvlarini toping va hammasi `try-with-resources` ichida ekanini tekshiring.
+- [ ] `FileReader`, `FileWriter` va kodirovkasiz `readAllLines` chaqiruvlarini oshkor `StandardCharsets.UTF_8` ga o'tkazing.
+- [ ] Tashqi kirishdan yo'l quradigan joylarda `normalize` va `startsWith` tekshiruvi borligini ta'minlang.
+- [ ] Test va dev JVM da `-ea` yoqilganini tekshirib, assertion ning chindan ham to'xtatishini ta'minlang.
+- [ ] Kompilyator to'liqligini tekshirmaydigan `switch` lardagi `default` tarmoqlarini ko'rib, jim qiymat qaytaradiganlarini yiqiladigan qiling.
+
+## Manbalar
+
+- Joshua Bloch, *Effective Java* 3rd, Item 76 - xatolik atomarligi va unga erishishning to'rt yo'li
+- Joshua Bloch, *Effective Java* 3rd, Item 75 - istisno xabarida xatoni ushlash uchun ma'lumot
+- Joshua Bloch, *Effective Java* 3rd, Item 77 - istisnoni e'tiborsiz qoldirmaslik
+- Joshua Bloch, *Effective Java* 3rd, Item 9 - `try-finally` emas `try-with-resources`
+- Joshua Bloch, *Effective Java* 3rd, Item 49 - parametr yaroqliligini tekshirish
+- Herbert Schildt, *Java The Complete Reference*, 22, 23-boblar - `java.io` va NIO fayl API si
+- [JEP 400: UTF-8 by Default](https://openjdk.org/jeps/400) - JDK 18 dan beri sukut kodirovka UTF-8
+- Boyarsky/Selikoff, *OCP Java SE 17 Study Guide*, 14-bob - `Path`, `Files` va oqim bilan fayl o'qish
+- Steve McConnell, *Code Complete*, 2-nashr, 8.6 (206-bet) - offensive programming: development da ko'zga tashlanadigan, production da tiklanadigan xato
+- Steve McConnell, *Code Complete*, 2-nashr, 8.6 (207-208-bet) - debug yordamchilarini olib tashlashni rejalashtirish va debugging stub
 
 ---
 

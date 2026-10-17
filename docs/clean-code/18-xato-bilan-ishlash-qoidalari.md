@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 18. Xato bilan ishlash qoidalari (Error Handling Rules)
 
 <details>
-<summary>Bu bobdagi 11 bo'lim</summary>
+<summary>Bu bobdagi 14 bo'lim</summary>
 
 - [18.1 Xato kodi emas, istisno](#181-xato-kodi-emas-istisno)
 - [18.2 `try-catch-finally` ni birinchi yozish](#182-try-catch-finally-ni-birinchi-yozish)
@@ -19,7 +19,10 @@
 - [18.8 Bo'sh to'plam qaytarish qoidasi](#188-bosh-toplam-qaytarish-qoidasi)
 - [18.9 Istisnoni oqim boshqarish uchun ishlatmaslik](#189-istisnoni-oqim-boshqarish-uchun-ishlatmaslik)
 - [18.10 Tez to'xtash (fail fast) va chegarada tekshirish](#1810-tez-toxtash-fail-fast-va-chegarada-tekshirish)
-- [18.11 Amalda qo'llash](#1811-amalda-qollash)
+- [18.11 Standart istisnolardan foydalanish](#1811-standart-istisnolardan-foydalanish)
+- [18.12 To'g'rilik va mustahkamlik: javob bera olmaganda to'xtash yoki davom etish](#1812-togrilik-va-mustahkamlik-javob-bera-olmaganda-toxtash-yoki-davom-etish)
+- [18.13 Himoya tekshiruvining qanchasi ishlab chiqarishda qoladi](#1813-himoya-tekshiruvining-qanchasi-ishlab-chiqarishda-qoladi)
+- [18.14 Amalda qo'llash](#1814-amalda-qollash)
 
 </details>
 
@@ -236,6 +239,8 @@ for (Item item : items) {
 
 Shu qoidaning amaliy shakli: validatsiya uchun `try { Integer.parseInt(s) } catch` o'rniga oldindan tekshirish yoki `Optional` qaytaradigan parser ishlatish.
 
+Shu yerda tekshiriladigan istisnoning narxi ham ko'rinadi: u chaqiruvchini `try-catch` ga majburlaydi va lambda ichida ishlatilmaydi ([tekshiriladigan istisno va lambda](24-lambda-oqim-va-funksional-uslub-tozaligi.md#247-tekshiriladigan-istisno-va-lambda)). Metodda yagona tekshiriladigan istisno qolgan bo'lsa, uni olib tashlashning ikki yo'li bor. Birinchisi: natijani `Optional` qilib qaytarish, shunda "bajarilmadi" holati qaytish turida ko'rinadi (kamchiligi: sabab haqida ma'lumot yo'qoladi). Ikkinchisi: metodni ikkiga bo'lish - holatni tekshiradigan metod va amalni bajaradigan metod, bajaruvchisi esa tekshirilmaydigan istisno tashlaydi (`hasNext` va `next` shakli). Ikkinchi yo'l ko'p threadli muhitda ehtiyot talab qiladi: tekshiruv va amal orasida holat o'zgarishi mumkin.
+
 ## 18.10 Tez to'xtash (fail fast) va chegarada tekshirish
 
 Xato qanchalik manbaga yaqin aniqlansa, uni tuzatish shunchalik arzon. Shu sababli noto'g'ri ma'lumot tizimga kirishi bilan to'xtatilishi kerak, ichkariga tarqalib ketmasligi kerak.
@@ -262,7 +267,100 @@ public void refund(Money amount) {
 }
 ```
 
-## 18.11 Amalda qo'llash
+## 18.11 Standart istisnolardan foydalanish
+
+Har bir xato holati uchun yangi istisno sinfi yozish kod bazasini kattalashtiradi va o'quvchiga hech narsa qo'shmaydi: `InvalidOrderQuantityException` nomi `IllegalArgumentException` dan ko'proq ma'lumot bermaydi, chunki sabab xabarda yoziladi. Qoida: platformaning standart istisnosi ma'noga mos kelsa, shu ishlatiladi.
+
+| Holat | Istisno |
+|---|---|
+| Argument qiymati noto'g'ri | `IllegalArgumentException` |
+| Argument `null` bo'lmasligi kerak edi | `NullPointerException` |
+| Indeks oraliqdan tashqarida | `IndexOutOfBoundsException` |
+| Obyekt holati bu chaqiruvga tayyor emas | `IllegalStateException` |
+| Operatsiya bu implementatsiyada yo'q | `UnsupportedOperationException` |
+| Hisob arifmetik qoidani buzdi | `ArithmeticException` |
+
+```java
+// yomon: standart istisnoni takrorlaydigan o'z sinfi
+if (quantity <= 0) {
+    throw new InvalidOrderQuantityException("quantity=" + quantity);
+}
+
+// yaxshi: standart istisno, xabarda kontekst bilan
+if (quantity <= 0) {
+    throw new IllegalArgumentException("quantity musbat bo'lishi kerak, berilgan: " + quantity);
+}
+```
+
+O'z istisno sinfi haqli bo'ladigan ikki holat bor. Birinchisi: chaqiruvchi shu xatoni **alohida** ushlab, boshqa yo'l tanlashi kerak (`InsufficientFundsException` ni ushlab, boshqa to'lov usuliga o'tish). Ikkinchisi: istisno xabarda sig'maydigan ma'lumot tashiydi (qolgan balans, kutish muddati, qayta urinish vaqti). Ikkisi ham yo'q bo'lsa, standart istisno yetadi. `IllegalArgumentException` va `IllegalStateException` orasidagi tanlov qoidasi: argument qiymatidan qat'i nazar chaqiruv noto'g'ri bo'lsa, bu holat xatosi; aks holda argument xatosi.
+
+Standart istisnoni ishlatish tanlovi API shartnomasining bir qismi: u `@throws` da yoziladi ([`@param`, `@return`, `@throws` to'liqligi](10-javadoc-va-api-hujjati.md#103-param-return-throws-toliqligi)) va keyin uni o'zgartirish buzuvchi o'zgarish bo'ladi.
+
+## 18.12 To'g'rilik va mustahkamlik: javob bera olmaganda to'xtash yoki davom etish
+
+Oldingi bo'limlar istisnoni qanday tashlash va tutishni yozdi, lekin ularning hech biri bitta savolga javob bermaydi: to'g'ri javob berish imkoni yo'q bo'lganda tizim **to'xtaydimi** yoki noto'g'ri javob bilan ishlashda davom etadimi. McConnell bu ikki yo'nalishni bitta o'qning ikki uchi deb qo'yadi (McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 8.3 (197-bet)):
+
+- **To'g'rilik** (correctness) - noto'g'ri natijani hech qachon qaytarmaslik. Javob bermaslik noto'g'ri javob berishdan yaxshi.
+- **Mustahkamlik** (robustness) - tizim ishlashda davom etishi uchun doim biror narsa qilishga urinish, natija ba'zan noto'g'ri bo'lishi hisobiga ham.
+
+Ikkisi bir vaqtda maksimal bo'lmaydi: birini oshirish ikkinchisini pasaytiradi. Xavfsizlik uchun kritik va pul bilan ishlaydigan joy to'g'rilik tomonida turadi (radiatsiya dozasi, balans, limit, soliq), ko'rinish va ma'lumot beruvchi joy mustahkamlik tomonida (tavsiyalar, yetkazib berish prognozi). Diqqat: bu [Postel qonuni](../patterns/26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2627-mustahkamlik-printsipi-robustness-principle-postels-law) EMAS. Postel qonuni kirishni qanday qabul qilish haqida, bu yerdagi qaror esa javob bera olmagan paytda nima qilish haqida.
+
+Qaror arxitektura darajasida bir marta qabul qilinadi va izchil qo'llanadi: har bir ishlab chiquvchi o'z joyida o'zi tanlasa, tizimning umumiy xatti-harakati hech bir talabga mos kelmaydi, McConnell "qanday qulay bo'lsa shunday" variantini aynan shu sababdan tanqid qiladi. Tanlangan tomon esa kodda ko'rinadi va o'lchanadi ([arxitektor hujjatidagi degradatsiya rejasi](../architect/07-nosozlik-haqida-fikrlash.md#76-qisman-nosozlikda-nima-qilish-degradatsiya-rejasi-va-zaxira-javob), [patternlar hujjatidagi Fallback](../patterns/17-resilience-va-cloud-dizayn-patternlari.md#177-zaxira-yechim-fallback)).
+
+```java
+// To'g'rilik tomoni: javob bera olmasa, javob bermaydi
+public Money balance(AccountId id) {
+    return ledgerClient.balance(id);     // xato yuqoriga ketadi, "taxminiy balans" yo'q
+}
+
+// Mustahkamlik tomoni: past sifatli javob javobsizlikdan yaxshi
+public List<Product> recommendations(CustomerId id) {
+    try {
+        return recommender.forCustomer(id);
+    } catch (RecommenderUnavailableException e) {
+        metrics.counter("recommendations.degraded").increment();
+        return bestSellers.top(TOP_COUNT);   // sifati past, lekin belgilangan va o'lchangan
+    }
+}
+```
+
+Tomon tanlangandan keyin texnika tanlanadi. McConnell beradigan menyu har qatorning narxini ko'rsatadi (8.3 (194-196-bet)):
+
+| Texnika | Nima qiladi | Qachon o'rinli |
+|---|---|---|
+| Neytral qiymat | zararsiz qiymat qaytaradi: nol, bo'sh satr, default rang | qiymat ko'rinishga ta'sir qiladi, qarorga emas |
+| Keyingi yaroqli ma'lumot | buzilgan yozuvni o'tkazib yuboradi | oqim va paketli ishlovda, bitta yozuv hal qilmasa |
+| Oldingi javob | oxirgi muvaffaqiyatli qiymatni qaytaradi | qiymat qisqa oraliqda deyarli o'zgarmasa |
+| Eng yaqin yaroqli qiymat | diapazondan chiqqanini chegaraga tortadi | kalibrlangan o'lchov, chegarasi ma'lum qiymat |
+| Ogohlantirishni log ga yozish | davom etadi, lekin iz qoldiradi | boshqa texnika bilan birga, yolg'iz emas |
+| Xatoni yuqoriga uzatish | o'zi hal qilmaydi, xabar beradi | qaror yuqori qatlamda bo'lsa |
+| Markaziy xato ishlovchisi | hamma xato bitta joyga boradi | yagona javob shakli kerak bo'lsa, bog'liqlik narxiga rozi bo'lsangiz |
+| Xabarni shu joyda ko'rsatish | foydalanuvchiga darhol aytadi | UI matnini butun tizimga tarqatishga rozi bo'lsangiz |
+| To'xtash | umuman javob bermaydi | noto'g'ri javobning zarari to'xtash zararidan katta bo'lsa |
+
+Ikki qator Java da aniq shakl oladi. "Xatoni yuqoriga uzatish" `int` holat kodi emas, istisno: McConnell ning o'zi bu texnikaning uch mexanizmidan birini tilning istisno apparati deb sanaydi, shuning uchun [xato kodi emas, istisno](#181-xato-kodi-emas-istisno) qoidasi bilan ziddiyat yo'q - menyu qatori qaysi qatlam hal qilishi haqida, tashish mexanizmi haqida emas. "Neytral qiymat" esa [bo'sh to'plam qaytarish qoidasi](#188-bosh-toplam-qaytarish-qoidasi) ko'rinishida haqli, pul yoki ruxsat hisobida esa haqli emas: u yerda [tez to'xtash](#1810-tez-toxtash-fail-fast-va-chegarada-tekshirish) ishlaydi.
+
+Mustahkamlik tomonining o'z chegarasi bor. Ousterhout buni haddan oshirish deb nomlaydi: istisnoni modul ichida yashirish faqat shu ma'lumot moduldan tashqarida kerak bo'lmaganda ma'noli. Uning misolida jamoa tarmoq moduli ichida hamma tarmoq istisnosini tutib tashlagan; natijada moduldan foydalanadigan ilova xabar yo'qolganini ham, qarshi tomondagi server yiqilganini ham bilib ololmagan, ya'ni mustahkam ilova yozish imkonsiz bo'lgan (Ousterhout, *A Philosophy of Software Design*, 1-nashr, Yaknyam Press, 2018, 10.10). Qoida shundan chiqadi: muhim bo'lmagan narsa yashiriladi, muhim narsa oshkor qilinadi. Jim yashirilgan xato mustahkamlik emas, bilib bo'lmaydigan noto'g'ri javob.
+
+## 18.13 Himoya tekshiruvining qanchasi ishlab chiqarishda qoladi
+
+Himoya kodining paradoksi: development da xato **ko'zga tashlanishi** kerak, hatto bezor bo'lsa ham, chunki sezilmagan xato tuzatilmaydi; production da esa shu xato iloji boricha sezilmasligi, tizim esa tiklanishi yoki chiroyli yiqilishi kerak. Shuning uchun "hamma tekshiruv qolsin" ham, "hammasi olinsin" ham javob emas: tekshiruvlar toifaga bo'linadi (McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 8.7 (209-210-bet)).
+
+| Tekshiruv | Production da |
+|---|---|
+| Muhim xatoni ushlaydigani (hisob-kitob, pul, ruxsat) | **qoladi** |
+| Oqibati chindan ham arzimas bo'lgani (ko'rinish, kosmetik nomuvofiqlik) | olinadi yoki jim log ga tushadi |
+| Qattiq yiqilishga olib keladigani (ma'lumot yo'qolishi bilan) | **olinadi**: foydalanuvchi ishini saqlashga ulgursin |
+| Chiroyli yiqilishga yordam beradigani | **qoladi** |
+| Development da to'xtatadigan assertion | xatti-harakati o'zgaradi: log ga yozadi, to'xtatmaydi |
+
+Ikki izoh shu jadvalga tegishli. Birinchisi: "olinadi" manba kodidan o'chirish degani emas, build yoki sozlama darajasida o'chirish degani - kod joyida qoladi, shunda keyingi tahrirda uni qaytarib yurish kerak bo'lmaydi. Ikkinchisi: chiroyli yiqilishga yordam beradigan tekshiruvni ataylab qoldirish real foyda bergan - Mars Pathfinder da injenerlar debug yordamchilarining bir qismini qasddan qoldirgan, qo'nishdan keyin yuzaga kelgan xatoni aynan shular bilan aniqlagan va tuzatilgan kodni yuklab, missiyani oxirigacha olib borgan.
+
+Production da qoladigan tekshiruvning xabari esa foydalanuvchi ko'radigan matn bo'lib qoladi, shuning uchun u ichki jargon bilan emas, [uch xil adresat qoidasi](19-istisno-mexanikasi-va-resurslar.md#1910-xato-xabari-matni-uch-xil-adresat) bo'yicha yoziladi va yonida xatoni xabar qilish yo'li turadi.
+
+Oxirgi va eng oson esdan chiqadigan qoida: himoya kodining o'zi ham kod. Har parametrni har joyda har tomondan tekshirish programmani sekin va semiz qiladi, lekin asosiy zarari boshqa - u murakkablikni oshiradi va himoya kodi xatodan xoli emas. Shoshib yozilgan tekshiruvda xato topilish ehtimoli oddiy koddan **kamroq emas**, ko'proq (McConnell, 8.8 (210-bet)). Shuning uchun himoya ham ustuvorlik bilan joylashtiriladi: u chegarada va invariant tug'ilish joyida zich bo'ladi ([tez to'xtash va chegarada tekshirish](#1810-tez-toxtash-fail-fast-va-chegarada-tekshirish)), chegaradan ichkarida esa siyraklashadi.
+
+## 18.14 Amalda qo'llash
 
 - [ ] Xato kodi qaytaradigan metodlarni (`int` holat, `boolean` muvaffaqiyat) istisnoga yoki `Optional` ga o'tkazing.
 - [ ] To'plam qaytaradigan barcha metodlarda `null` qaytarilmasligini tekshirib, `List.of()` ga o'tkazing.
@@ -272,6 +370,26 @@ public void refund(Money amount) {
 - [ ] Oqim boshqarish uchun istisno ishlatilgan joylarni (`catch (ArrayIndexOutOfBounds)`) oddiy shartga aylantiring.
 - [ ] "Yo'q" holati normal bo'lgan joylarni maxsus holat obyekti bilan ifodalab, `catch` bloklarini olib tashlang.
 - [ ] Validatsiyani 5.11 taqsimoti bo'yicha chegaraga ko'chirib, ichki metodlardagi takroriy tekshiruvlarni o'chiring.
+- [ ] O'z istisno sinflarini sanab, har biri uchun savol bering: chaqiruvchi uni alohida ushlaydimi yoki qo'shimcha ma'lumot tashiydimi; ikkisi ham yo'q bo'lsa standart istisnoga o'tkazing.
+- [ ] Har bir tashqi bog'liqlik uchun yozib qo'ying: javob bo'lmasa to'g'rilik tomonida to'xtaymizmi yoki mustahkamlik tomonida past sifatli javob beramizmi.
+- [ ] Istisnoni tutib jim davom etadigan `catch` bloklarini topib, yashirilgan ma'lumot chaqiruvchiga kerakmi degan savolni bering.
+- [ ] Production da qoladigan va olinadigan tekshiruvlarni ro'yxatlab, "olinadi" deganini build yoki sozlama bilan o'chiring, manbadan o'chirmang.
+
+## Manbalar
+
+- Joshua Bloch, *Effective Java* 3rd, Item 69 - istisno faqat istisno holat uchun
+- Joshua Bloch, *Effective Java* 3rd, Item 70, 71 - tekshiriladigan va tekshirilmaydigan istisno tanlovi
+- Joshua Bloch, *Effective Java* 3rd, Item 72 - standart istisnolardan foydalanish
+- Joshua Bloch, *Effective Java* 3rd, Item 73 - abstraksiyaga mos istisno tashlash
+- Joshua Bloch, *Effective Java* 3rd, Item 54 - `null` emas, bo'sh to'plam qaytarish
+- Robert C. Martin, *Clean Code*, 7-bob - xato kodi emas istisno, maxsus holat obyekti, `null` qaytarmaslik
+- Joshua Bloch, *Effective Java* 3rd, Item 71 - yagona tekshiriladigan istisnoni olib tashlashning ikki yo'li: `Optional` va holat tekshiruvchi metod
+- Robert C. Martin, *Clean Code*, 7-bob - `ACMEPort` namunasi: uchta past darajali istisnoni bitta ma'noli istisnoga o'rash
+- Steve McConnell, *Code Complete*, 2-nashr, 8.3 (194-196-bet) - xato bilan ishlash texnikalari menyusi
+- Steve McConnell, *Code Complete*, 2-nashr, 8.3 (197-bet) - to'g'rilik va mustahkamlik orasidagi tanlov, qaror arxitektura darajasida
+- Steve McConnell, *Code Complete*, 2-nashr, 8.7 (209-210-bet) - qaysi himoya tekshiruvi ishlab chiqarishda qoladi, Mars Pathfinder misoli
+- Steve McConnell, *Code Complete*, 2-nashr, 8.8 (210-bet) - ortiqcha himoya kodining o'zi xato manbai
+- John Ousterhout, *A Philosophy of Software Design*, 1-nashr, 10.10 - xatoni yo'q qilishni haddan oshirish: muhim ma'lumot oshkor qilinadi
 
 ---
 

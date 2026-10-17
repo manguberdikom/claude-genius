@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 9. Yomon izohlar katalogi (Comments: The Bad Ones)
 
 <details>
-<summary>Bu bobdagi 13 bo'lim</summary>
+<summary>Bu bobdagi 15 bo'lim</summary>
 
 - [9.1 G'o'ldirash (mumbling)](#91-goldirash-mumbling)
 - [9.2 Ortiqcha izoh: kodni so'zma-so'z takrorlash](#92-ortiqcha-izoh-kodni-sozma-soz-takrorlash)
@@ -21,7 +21,9 @@
 - [9.10 Noravshan bog'liqlik](#910-noravshan-bogliqlik)
 - [9.11 Funksiya sarlavhasi izohi](#911-funksiya-sarlavhasi-izohi)
 - [9.12 Izohni o'chirish qarori: tekshiruv ro'yxati](#912-izohni-ochirish-qarori-tekshiruv-royxati)
-- [9.13 Amalda qo'llash](#913-amalda-qollash)
+- [9.13 Izoh emas, nom: funksiya yoki o'zgaruvchi bilan aytish](#913-izoh-emas-nom-funksiya-yoki-ozgaruvchi-bilan-aytish)
+- [9.14 Qo'rqinchli shovqin: Javadoc shaklidagi ortiqcha izoh, HTML va ichki koddagi Javadoc](#914-qorqinchli-shovqin-javadoc-shaklidagi-ortiqcha-izoh-html-va-ichki-koddagi-javadoc)
+- [9.15 Amalda qo'llash](#915-amalda-qollash)
 
 </details>
 
@@ -228,7 +230,85 @@ Review paytida izoh uchun ketma-ket beriladigan savollar. Birinchi "yo'q" javobi
 | Izohda ticket va shart bormi (`TODO` uchun)? | qo'shish yoki o'chirish |
 | Izohga olingan kod emasmi? | darhol o'chirish |
 
-## 9.13 Amalda qo'llash
+## 9.13 Izoh emas, nom: funksiya yoki o'zgaruvchi bilan aytish
+
+Izoh yozish o'rniga nom berish mumkin bo'lgan holat alohida turkum, chunki u boshqa yomon izohlardan farq qiladi: bu yerda izoh noto'g'ri emas, u shunchaki **keraksiz**, va uni keraksiz qilish qo'lingizda.
+
+Kitobdagi misol aynan shunday ko'rinadi:
+
+```java
+// does the module from the global list <mod> depend on the
+// subsystem we are part of?
+if (smodule.getDependSubsystems().contains(subSysMod.getSubSystem())) { ... }
+```
+
+Izohni o'chirish uchun uni tarjima qilish kerak emas, ifodani nomlash kerak:
+
+```java
+ArrayList moduleDependees = smodule.getDependSubsystems();
+String ourSubSystem = subSysMod.getSubSystem();
+if (moduleDependees.contains(ourSubSystem)) { ... }
+```
+
+Natijada savol kodning o'zida javob topadi va izoh ortiqcha bo'lib qoladi. Kitobning kuzatuvi ham shunday: muallif izohni oldin yozgan bo'lishi mumkin, lekin keyin kodni refaktor qilib izohni olib tashlashi kerak edi.
+
+Amalda bu ikki harakatdan biri bilan bajariladi: uzun shartni nomlangan lokal o'zgaruvchiga chiqarish, yoki uni nomlangan predikat metodga ajratish.
+
+```java
+// IZOH KERAK: shart nima qilayotgani ko'rinmaydi
+// Mijoz oxirgi 90 kunda to'lov qilgan va bloklanmagan bo'lsa
+if (c.getLastPaymentAt() != null
+        && c.getLastPaymentAt().isAfter(LocalDate.now().minusDays(90))
+        && !c.isBlocked()) { ... }
+
+// IZOH KERAK EMAS: shart o'zini aytadi
+if (customer.isActivePayer()) { ... }
+```
+
+Qoida sodda: izoh yozishdan oldin "buni nom bilan aytib bera olamanmi" degan savol beriladi. Javob "ha" bo'lsa, izoh emas, nom yoziladi.
+
+## 9.14 Qo'rqinchli shovqin: Javadoc shaklidagi ortiqcha izoh, HTML va ichki koddagi Javadoc
+
+Javadoc shakli izohni yaxshi qilmaydi. Kitob buni "qo'rqinchli shovqin" (scary noise) deb ataydi va mashhur ochiq kutubxonadan olingan misolni keltiradi:
+
+```java
+/** The name. */
+private String name;
+/** The version. */
+private String version;
+/** The licenceName. */
+private String licenceName;
+/** The version. */
+private String info;
+```
+
+Bu izohlar hech qanday maqsadga xizmat qilmaydi, ular hujjat berish istagidan tug'ilgan ortiqcha takrorlar. Lekin eng muhim xulosa misolni **diqqat bilan** o'qiganda chiqadi: oxirgi maydon `info`, izohi esa "The version", ya'ni nusxa-ko'chirish xatosi. Kitobning savoli shu yerda: izoh yozilayotganda (yoki ko'chirilayotganda) muallif e'tibor bermasa, o'quvchi nega undan foyda ko'rishi kerak?
+
+Review uchun bu foydali signal: bir xil shakldagi maydon izohlari ketma-ket turgan joy nusxa xatosining eng ehtimolli joyi. Shu bilan birga ikkita qoida kelib chiqadi.
+
+Birinchi: izoh ichida HTML yozish. Kitob buni qattiq rad etadi, chunki HTML izohni aynan eng ko'p o'qiladigan joyda, muharrir va IDE da, o'qishga qiyin qiladi. Izohni veb sahifaga chiqaradigan asbob bo'lsa (Javadoc kabi), HTML qo'yish **shu asbobning** vazifasi, dasturchining emas.
+
+Ikkinchi: Javadoc ni ommaviy bo'lmagan kodga yozish. Javadoc ommaviy API uchun foydali, lekin tashqi iste'mol uchun mo'ljallanmagan kod uchun u zararli: tizim ichidagi sinf va funksiyalar uchun javadoc sahifasi yasash odatda foyda bermaydi, javadoc shaklining qo'shimcha rasmiyatchiligi esa chalg'ituvchi yuk bo'lib qoladi.
+
+```java
+// YOMON: ichki yordamchi sinfga javadoc rasmiyatchiligi
+/**
+ * <p>Hisob-kitob yordamchisi.</p>
+ * <pre>
+ * Usage:
+ *   Calculator.add(a, b)
+ * </pre>
+ * @param a birinchi son
+ * @param b ikkinchi son
+ * @return yig'indi
+ */
+static int add(int a, int b) { return a + b; }
+
+// YAXSHI: ichki kod uchun izoh ham, HTML ham kerak emas
+static int add(int a, int b) { return a + b; }
+```
+
+## 9.15 Amalda qo'llash
 
 - [ ] Izohga olingan kodni butun repoda grep qilib (`^\s*//\s*\w+.*[;{}]`), hammasini o'chiring.
 - [ ] `@author` va fayl boshidagi o'zgarish jurnallarini olib tashlab, egalikni CODEOWNERS ga ko'chiring.
@@ -238,6 +318,14 @@ Review paytida izoh uchun ketma-ket beriladigan savollar. Birinchi "yo'q" javobi
 - [ ] 9.12 jadvalidagi savollar ro'yxatini review checklistiga kiritib, izoh bo'yicha qarorni standartlashtiring.
 - [ ] Uzun tushuntirish izohlarini `docs/` dagi faylga ko'chirib, kodda faqat havola qoldiring.
 - [ ] Checkstyle yoki custom qoida bilan `FIXME` ni CI da bloklang.
+- [ ] Bobdagi har bir izohni oling va "buni nom bilan aytib bera olamanmi" savolini bering; javob "ha" bo'lsa, izohni o'chirib shartni nomlangan o'zgaruvchiga yoki predikat metodga chiqaring.
+- [ ] Ketma-ket turgan bir xil shakldagi maydon izohlarini o'qib chiqing: nusxa-ko'chirish xatosi aynan shu joyda bo'ladi.
+- [ ] Izoh ichidagi HTML teglarini olib tashlang va ommaviy bo'lmagan sinflardagi Javadoc bloklarini oddiy izohga yoki nomga aylantiring.
+
+## Manbalar
+
+- Robert C. Martin, *Clean Code*, 4-bob, "Don't Use a Comment When You Can Use a Function or a Variable"
+- Robert C. Martin, *Clean Code*, 4-bob, "Scary Noise", "HTML Comments", "Javadocs in Nonpublic Code" - Javadoc shaklidagi ortiqcha izoh, nusxa xatosi, izohdagi HTML va ichki koddagi Javadoc
 
 ---
 

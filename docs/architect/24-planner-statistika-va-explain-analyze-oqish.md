@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 24. Planner, statistika va EXPLAIN ANALYZE o'qish (Planner and EXPLAIN ANALYZE)
 
 <details>
-<summary>Bu bobdagi 13 bo'lim</summary>
+<summary>Bu bobdagi 17 bo'lim</summary>
 
 - [24.1 Planner nima qiladi: variantlar, narx modeli, tanlov](#241-planner-nima-qiladi-variantlar-narx-modeli-tanlov)
 - [24.2 Statistika qayerdan keladi: `ANALYZE`, `pg_statistic`, `default_statistics_target`](#242-statistika-qayerdan-keladi-analyze-pg_statistic-default_statistics_target)
@@ -21,7 +21,11 @@
 - [24.10 `pg_stat_statements` bilan eng qimmat so'rovlarni topish](#2410-pg_stat_statements-bilan-eng-qimmat-sorovlarni-topish)
 - [24.11 So'rovni qayta yozish: `EXISTS`, `LATERAL`, `DISTINCT ON`, CTE va materializatsiya](#2411-sorovni-qayta-yozish-exists-lateral-distinct-on-cte-va-materializatsiya)
 - [24.12 Sekin so'rovni tekshirish tartibi: aniq qadamlar ro'yxati](#2412-sekin-sorovni-tekshirish-tartibi-aniq-qadamlar-royxati)
-- [24.13 Amalda qo'llash](#2413-amalda-qollash)
+- [24.13 Join tartibini boshqarish: `join_collapse_limit`, `from_collapse_limit` va genetik optimizator](#2413-join-tartibini-boshqarish-join_collapse_limit-from_collapse_limit-va-genetik-optimizator)
+- [24.14 `Memoize`: parametrlashtirilgan nested loop uchun qator keshi](#2414-memoize-parametrlashtirilgan-nested-loop-uchun-qator-keshi)
+- [24.15 `Sort` node ichida: quicksort, top-N heapsort, external merge va incremental sort](#2415-sort-node-ichida-quicksort-top-n-heapsort-external-merge-va-incremental-sort)
+- [24.16 Parallel reja: `Gather`, ishchi soni formulasi va parallellashmaydigan so'rovlar](#2416-parallel-reja-gather-ishchi-soni-formulasi-va-parallellashmaydigan-sorovlar)
+- [24.17 Amalda qo'llash](#2417-amalda-qollash)
 
 </details>
 
@@ -67,12 +71,12 @@ WHERE relname IN ('orders', 'payments', 'stock_items');
 
 `random_page_cost` standart 4.0, bu aylanuvchi diskdan tasodifiy o'qish ketma-ket o'qishdan to'rt baravar qimmat degan taxmin. SSD va NVMe da bu nisbat haqiqatda 1.1 dan 1.5 gacha. Standart qiymatni qoldirish planner'ni index scan'dan qo'rqitadi va u seq scan tanlaydi.
 
-`effective_cache_size` hech qanday xotira ajratmaydi, u faqat planner'ga "operatsion tizim page cache va shared_buffers birgalikda taxminan shuncha ma'lumotni ushlab turadi" deb aytadi. Qiymati kichik bo'lsa planner index scan'da har safar diskka borishni taxmin qiladi va uni qimmat deb baholaydi.
+`effective_cache_size` hech qanday xotira ajratmaydi, u faqat planner'ga "operatsion tizim page cache va shared_buffers birgalikda taxminan shuncha ma'lumotni ushlab turadi" deb aytadi. Qo'llanmadagi default qiymat 4 GB va u hech narsa ajratmaydi; RAM ning 75 foizi degan raqam esa qo'llanmada yo'q, u jamoa amaliyotidan kelgan boshlang'ich taxmin. Qiymati kichik bo'lsa planner index scan'da har safar diskka borishni taxmin qiladi va uni qimmat deb baholaydi.
 
 ```sql
 -- 64 GB RAM li SSD serveri uchun tipik boshlang'ich qiymatlar
 ALTER SYSTEM SET random_page_cost = 1.1;        -- SSD uchun
-ALTER SYSTEM SET effective_cache_size = '48GB'; -- RAM ning ~75%
+ALTER SYSTEM SET effective_cache_size = '48GB'; -- RAM ning ~75%, o'lchanmagan taxmin
 ALTER SYSTEM SET effective_io_concurrency = 200;-- NVMe uchun
 ALTER SYSTEM SET work_mem = '32MB';             -- har bir sort/hash uchun
 SELECT pg_reload_conf();
@@ -91,6 +95,8 @@ Sequential scan butun jadvalni ketma-ket o'qiydi. Jadval kichik bo'lsa yoki nati
 Index scan indeksni aylanib, har bir topilgan qator uchun heap'ga boradi. Tanlovchanlik yuqori bo'lganda (masalan `order_id = ?`) ideal. Index-only scan heap'ga bormaydi, chunki kerakli hamma ustun indeksda bor va sahifa visibility map'da "butunlay ko'rinadigan" deb belgilangan. `VACUUM` ishlamasa visibility map eskiradi va index-only scan ham heap fetch qilishga tushadi.
 
 Bitmap heap scan ikki bosqichli: avval indeksdan mos qatorlarning sahifa bitmap'i quriladi, keyin heap jismoniy tartibda o'qiladi. Bu bir necha ming qator qaytaradigan so'rovlar uchun eng samarali usul, chunki tasodifiy o'qish ketma-ket o'qishga aylanadi. `Heap Blocks: exact=... lossy=...` satrida `lossy` ko'rinsa, bitmap `work_mem` ga sig'magan va sahifa darajasiga qo'pollashgan, natijada ortiqcha qator filtrlanadi.
+
+Bitmap ning yana bir xossasi bor: uni mantiqiy amal bilan birlashtirish mumkin. Bir nechta indeksdan qurilgan bitmap lar `BitmapAnd` node ida kesishtiriladi va `BitmapOr` node ida birlashtiriladi, shuning uchun `WHERE status = ? AND kanal = ?` shartiga ikki alohida bitta ustunli indeks ham yetishi mumkin. Rejada shu node larni ko'rish amaliy signal: ko'p ustunli indeks qo'shishdan oldin planner mavjud indekslarni allaqachon birga ishlatayotganini tekshirish kerak.
 
 ## 24.5 Join algoritmlari: nested loop, hash join, merge join va qachon qaysi biri tanlanadi
 
@@ -321,7 +327,99 @@ Undan keyin `EXPLAIN (ANALYZE, BUFFERS)` olinadi va eng ko'p `actual time` yegan
 
 Oxirida o'zgarish prod hajmiga yaqin ma'lumotda sinaladi, chunki 10 ming qatorli lokal bazada reja butunlay boshqacha bo'ladi. Index qo'shilsa `CREATE INDEX CONCURRENTLY` ishlatiladi va `pg_stat_user_indexes` orqali u haqiqatan ishlatilayotgani bir hafta kuzatiladi.
 
-## 24.13 Amalda qo'llash
+## 24.13 Join tartibini boshqarish: `join_collapse_limit`, `from_collapse_limit` va genetik optimizator
+
+Join tartibi variantlari soni jadval soniga qarab portlaydi, shuning uchun planner avval parse daraxtini yassilaydi: har bir `JOIN` tuguni o'z elementlarining tekis ro'yxati bilan almashtiriladi va shundan keyin hamma juftlik ko'rib chiqiladi. Yassilash faqat natija ro'yxatida `join_collapse_limit` dan ko'p element bo'lmasa bajariladi.
+
+Buning amaliy ma'nosi aniq. `FROM a, b JOIN c ON ..., d, e` yozilganda limit yetarli bo'lsa planner tartibni o'zi tanlaydi; limit kichik bo'lsa `JOIN` tuguni ochilmaydi va `b` bilan `c` majburan birinchi birlashtiriladi, qolganlari esa shu natija bilan ixtiyoriy tartibda qo'shiladi. `join_collapse_limit = 1` qo'yilsa, `JOIN` bilan yozilgan tartib butunlay saqlanadi. `FULL OUTER JOIN` esa limit qiymatidan qat'i nazar hech qachon yassilanmaydi. Pastki so'rovlar uchun xuddi shu vazifani `from_collapse_limit` bajaradi, chunki parse daraxti darajasida pastki so'rov ham shunday tugun bo'lib ko'rinadi.
+
+```sql
+-- Reja tuzish vaqti ijro vaqtiga yaqinlashsa: tartibni qo'lda belgilash
+SET LOCAL join_collapse_limit = 1;
+SET LOCAL from_collapse_limit = 1;
+
+-- Reja tuzish vaqtini alohida o'lchash
+EXPLAIN (ANALYZE, SUMMARY ON) SELECT ...;
+```
+
+Yassilashdan keyin bitta darajada juda ko'p element qolsa, planner genetik algoritmga o'tadi: `geqo` yoqilgan va element soni `geqo_threshold` dan oshganda. Genetik algoritm dinamik programmalashdan ancha tez, lekin topilgan reja optimal ekanini kafolatlamaydi. Shuning uchun amaliy maqsad undan qochish, ya'ni optimallashtiriladigan element sonini kamaytirish.
+
+Kitob buning uch yo'lini sanaydi va uchalasi ham qidiruv doirasini toraytirish hisobiga ishlaydi: CTE ni `MATERIALIZED` deb e'lon qilish (shunda u asosiy so'rovdan alohida optimallashtiriladi), so'rovni SQL bo'lmagan funksiya ichiga olish (SQL funksiyalari ba'zan asosiy so'rovga singdiriladi, shuning uchun ular kafolat bermaydi) va yuqoridagi ikki limit.
+
+Spring Data JPA da bu muammo ikki joyda chiqadi. Birinchisi: `@EntityGraph` yoki bir nechta `JOIN FETCH` bilan yozilgan so'rov Hibernate tomonidan o'nlab jadvalli bitta SQL ga aylanadi va planner genetik algoritmga tushadi; natijada bir xil so'rov har safar boshqa reja olishi mumkin. Ikkinchisi: Criteria API bilan dinamik qurilgan so'rovda jadval soni foydalanuvchi filtriga qarab o'zgaradi, shuning uchun regressiya faqat ayrim filtr kombinatsiyalarida ko'rinadi. Ikkala holatda ham yechim bitta: fetch grafini kichraytirish yoki so'rovni ikki bosqichga bo'lish.
+
+## 24.14 `Memoize`: parametrlashtirilgan nested loop uchun qator keshi
+
+PostgreSQL 14 da yangi reja node i paydo bo'ldi: `Memoize`. U parametrlashtirilgan nested loop da ichki tomon bir xil parametr qiymati bilan qayta-qayta skanlanayotganini ko'rsa, natijani keshlab qo'yadi. `Materialize` dan ikki farqi bor: `Materialize` farzand node ning hamma qatorini bir butun qilib saqlaydi, `Memoize` esa har bir parametr qiymati uchun alohida saqlaydi; va `Materialize` joy yetmaganda diskka to'kiladi, `Memoize` esa faqat xotirada ishlaydi, chunki aks holda keshlashning ma'nosi qolmaydi.
+
+Kesh uchun ajratiladigan xotira `work_mem` va `hash_mem_multiplier` ko'paytmasiga teng. Kalitlar ro'yxat bo'lib bog'lanadi: ro'yxatning bir uchi sovuq (uzoq ishlatilmagan kalitlar), ikkinchisi issiq, va joy kerak bo'lganda sovuq uchidagi qatorlar chiqarib yuboriladi. Bitta parametr qiymatiga juda ko'p qator to'g'ri kelsa va ular xotiraga sig'masa, shu parametr umuman keshlanmaydi: qatorlarning bir qismini saqlashning foydasi yo'q.
+
+```text
+-> Memoize (actual rows=1 loops=113)
+     Cache Key: f.aircraft_code
+     Cache Mode: logical
+     Hits: 112  Misses: 1  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+```
+
+Rejani o'qishda to'rtta son muhim. `Hits` va `Misses` keshning foydasini ko'rsatadi. `Evictions` va `Overflows` nolga yaqin bo'lmasa, ajratilgan kesh kichik; bu odatda alohida parametr qiymatlari sonining noto'g'ri baholanishidan kelib chiqadi va shunda `Memoize` foyda emas, qo'shimcha narx beradi. Node ning rejadagi narxi ham aldamchi: u farzand node narxiga `cpu_tuple_cost` qo'shilgani, ya'ni keshning haqiqiy narxini aks ettirmaydi.
+
+Java tomonida `Memoize` eng ko'p [n+1 so'rov muammosi](18-spring-data-jpa-va-hibernate-chuqur.md#184-n1-sorov-muammosi-topish-usuli-va-tort-xil-yechim) shaklida uchraydi. Hibernate `JOIN FETCH` siz lug'at entity ni (valyuta, status, shahar) har qator uchun qayta so'raganda SQL darajasida parametrlashtirilgan nested loop hosil bo'ladi va `Memoize` uni yumshatadi. Lekin bu yechim emas, faqat yumshatish: rejada `Memoize` ko'rinishi "bu yerda takrorlanuvchi qidiruv bor" degan signal va to'g'ri javob so'rovni `JOIN` yoki `@EntityGraph` bilan qayta yozish. Node ning hissasini o'lchash uchun uni `enable_memoize = off` bilan o'chirib, ikki rejani taqqoslash mumkin.
+
+## 24.15 `Sort` node ichida: quicksort, top-N heapsort, external merge va incremental sort
+
+`Sort` node rejada bitta satr bo'lib ko'rinadi, lekin uning ichida to'rt xil algoritm bo'lishi mumkin va `EXPLAIN ANALYZE` qaysi biri ishlaganini `Sort Method` satrida aytadi.
+
+Ma'lumot `work_mem` ga sig'sa quicksort ishlaydi va `Memory: NkB` ko'rsatiladi. `LIMIT` bo'lsa to'liq saralash shart emas va top-N heapsort tanlanadi: u faqat kerakli N ta qatorni ushlab turadi, shuning uchun xotira talabi kichik. Sig'masa node external merge ga o'tadi: xotiraga sig'gan qism quicksort bilan saralanib vaqtinchalik faylga yoziladi, bo'shagan xotiraga keyingi qatorlar o'qiladi va shu takrorlanadi; oxirida fayllar birlashtiriladi. Birlashtirish ko'p xotira talab qilmaydi, chunki har fayldan bitta qator yetarli, lekin hamma fayl bitta o'tishda birlashmasa iteratsiya takrorlanadi va har iteratsiya diskka qo'shimcha o'qish va yozish qo'shadi. Shuning uchun xotira qancha ko'p bo'lsa, external sort shuncha tez tugaydi.
+
+```sql
+-- Qaysi algoritm ishlagani va diskka qancha to'kilgani
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT * FROM parvozlar ORDER BY rejalashtirilgan_vaqt;
+-- Sort Method: external merge  Disk: 17136kB
+-- Buffers: shared hit=2627, temp read=2142 written=2150
+
+-- Vaqtinchalik fayllarni logga yozish
+ALTER SYSTEM SET log_temp_files = 0;
+```
+
+To'rtinchi variant PostgreSQL 13 dan bor: incremental sort. Agar to'plam bir nechta kalit bo'yicha saralanishi kerak bo'lsa va u boshlang'ich kalitlar bo'yicha allaqachon tartiblangan bo'lsa (masalan indeks skanidan kelayotgan bo'lsa), uni shu kalitlar bo'yicha guruhlarga bo'lib, har bir guruhni faqat qolgan kalitlar bo'yicha saralash yetarli. Bu kamroq xotira yeydi va birinchi guruh tayyor bo'lishi bilan natija qaytara boshlaydi, ya'ni `LIMIT` bilan juda yaxshi ishlaydi. Rejada u `Incremental Sort` node i, `Presorted Key` satri va guruhlar statistikasi bilan ko'rinadi.
+
+Spring tomonida bundan aniq qoida chiqadi: `Pageable` bilan sahifalanadigan ro'yxatda `Sort` ustunlarining boshlang'ich qismi mavjud indeks tartibiga mos kelsa, planner incremental sort ni tanlay oladi va `LIMIT 20` uchun butun jadvalni saralamaydi. Mos kelmasa har sahifa so'rovi to'liq saralashni qaytadan bajaradi; `temp read/written` bloklarining noldan farqli bo'lishi aynan shuning signali.
+
+## 24.16 Parallel reja: `Gather`, ishchi soni formulasi va parallellashmaydigan so'rovlar
+
+So'rovni bajarayotgan asosiy protsess postmaster orqali bir nechta ishchi protsess ochadi, ular rejaning parallel qismini bir vaqtda bajaradi va natijalar `Gather` node ida yig'iladi. Asosiy protsess ma'lumot qabul qilmayotgan paytda o'zi ham parallel qismda qatnashadi; buni `parallel_leader_participation` bilan o'chirish mumkin. `Gather` dan pastdagi hamma narsa parallel qism, yuqoridagi hamma narsa ketma-ket qism.
+
+Ishchi soni uchta parametr ierarxiyasi bilan cheklanadi: `max_worker_processes` umuman fon ishchilari soni, `max_parallel_workers` ulardan parallel so'rovga ajratilgani, `max_parallel_workers_per_gather` esa bitta `Gather` ga tegishlisi. Jadval uchun ishchi soni `parallel_workers` saqlash parametri qo'yilmagan bo'lsa formuladan hisoblanadi va formulaning ma'nosi oddiy: jadval hajmi `min_parallel_table_scan_size` ga nisbatan har uch barobar oshganda yana bitta ishchi qo'shiladi. Jadval `min_parallel_table_scan_size` dan kichik bo'lsa planner parallel rejani umuman ko'rib chiqmaydi.
+
+Rejada `Workers Planned` va `Workers Launched` sonlari farq qilishi mumkin: ishga tushirish paytida bo'sh slot yetmasa, mavjud soni ishga tushadi va so'rov sekinroq bajariladi. Shuning uchun bitta katta hisobot so'rovi emas, bir vaqtda kelgan bir nechtasi muammo tug'diradi.
+
+```sql
+-- Jadval uchun ishchi sonini qo'lda belgilash
+ALTER TABLE audit_log SET (parallel_workers = 4);
+
+-- Rejalashtirilgan va haqiqatda ishga tushgan ishchi soni
+EXPLAIN (ANALYZE, COSTS OFF)
+SELECT count(*) FROM audit_log;
+-- Gather (actual rows=3 loops=1)
+--   Workers Planned: 2
+--   Workers Launched: 2
+```
+
+Hamma so'rov ham parallellashmaydi. Kitob aniq cheklovlarni sanaydi: ma'lumotni o'zgartiradigan yoki qulflaydigan so'rovlar (`INSERT`, `UPDATE`, `DELETE`, `SELECT FOR UPDATE`); to'xtatib turish mumkin bo'lgan so'rovlar, ya'ni cursor ichida bajariladiganlar va PL/pgSQL dagi `FOR` sikllari; `PARALLEL UNSAFE` deb belgilangan funksiyani chaqiradigan so'rovlar, standart holatda esa foydalanuvchi yozgan hamma funksiya shunday hisoblanadi; va parallel so'rov ichidan chaqirilgan funksiya ichidagi so'rovlar.
+
+Spring uchun birinchi ikki band eng muhimi. Spring Data ning `Stream<T>` qaytaradigan metodi yoki `ScrollableResults` serverda cursor ochadi, demak hisobot so'rovi parallel bajarilmaydi; katta eksport uchun cursor emas, kalit bo'yicha sahifalash (keyset pagination) tanlanadi. Ikkinchisi: o'z PL/pgSQL funksiyangizni so'rov shartida ishlatsangiz, uni `PARALLEL SAFE` deb e'lon qilmaguningizcha butun so'rov ketma-ket bajariladi.
+
+```sql
+CREATE OR REPLACE FUNCTION hisobot_koeffitsiyenti(summa numeric)
+RETURNS numeric
+LANGUAGE sql
+IMMUTABLE
+PARALLEL SAFE
+AS $$ SELECT summa * 0.13 $$;
+```
+
+## 24.17 Amalda qo'llash
 
 - [ ] Eng og'ir 20 so'rovni `pg_stat_statements` dan `total_exec_time` bo'yicha chiqarib, ularning har biri uchun `EXPLAIN (ANALYZE, BUFFERS)` rejasini saqlab qo'y.
 - [ ] Har bir rejada taxmin va haqiqiy qator sonini taqqoslab, 10 baravardan ortiq farq bo'lgan node'lar ro'yxatini tuz.
@@ -331,6 +429,16 @@ Oxirida o'zgarish prod hajmiga yaqin ma'lumotda sinaladi, chunki 10 ming qatorli
 - [ ] `auto_explain` ni `log_min_duration = 500ms` va `sample_rate = 0.1` bilan yoqib, log'dan haftalik sekin reja hisobotini chiqar.
 - [ ] Notekis taqsimlangan ustun bo'yicha filtrlaydigan prepared statement'larni topib, generic plan regressiyasini sinab ko'r va kerak bo'lsa partial index yoki `force_custom_plan` qo'lla.
 - [ ] `work_mem` ni global 32MB da qoldirib, hisobot va eksport yo'llarida `SET LOCAL` bilan oshirishni kod darajasida standartlashtir.
+
+## Manbalar
+
+- [PostgreSQL 17, Performance Tips (perform.sgml)](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/perform.sgml) - `EXPLAIN` chiqishini o'qish va planner statistikasi
+- [PostgreSQL 17, Planner Cost Constants (config.sgml)](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/config.sgml) - `random_page_cost` default 4, `effective_cache_size` default 4GB va u xotira ajratmasligi
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 16-bob "Query Execution Stages", 257-263-betlar - join daraxtini yassilash, `join_collapse_limit`, `from_collapse_limit`, genetik optimizator, startup va total narx
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 21-bob "Nested Loop", 359-361-betlar - `Memoize` node i, `Materialize` dan farqi, `Hits`, `Misses`, `Evictions` va `Overflows` o'qilishi
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 23-bob "Sorting and Merging", 392-401-betlar - quicksort, top-N heapsort, external merge va incremental sort
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 18-bob "Table Access Methods", 300-310-betlar - `Gather`, ishchi soni ierarxiyasi va formulasi, parallellashmaydigan so'rovlar ro'yxati
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 20-bob "Index Scans", 340-346-betlar - bitmap aniqligi, `BitmapAnd` va `BitmapOr` amallari
 
 ---
 

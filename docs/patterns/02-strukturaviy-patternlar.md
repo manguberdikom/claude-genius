@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 2. Strukturaviy patternlar (Structural Patterns)
 
 <details>
-<summary>Bu bobdagi 18 bo'lim</summary>
+<summary>Bu bobdagi 22 bo'lim</summary>
 
 - [2.1 Adapter (Adapter)](#21-adapter-adapter)
 - [2.2 Ko'prik (Bridge)](#22-koprik-bridge)
@@ -26,7 +26,11 @@
 - [2.15 Mixin / Trait default metodlar orqali (Mixin / Trait via default methods)](#215-mixin--trait-default-metodlar-orqali-mixin--trait-via-default-methods)
 - [2.16 Qatlam ustki turi (Layer Supertype)](#216-qatlam-ustki-turi-layer-supertype)
 - [2.17 Ajratilgan interfeys (Separated Interface)](#217-ajratilgan-interfeys-separated-interface)
-- [2.18 Amalda qo'llash](#218-amalda-qollash)
+- [2.18 Obyekt interfeysini spetsifikatsiyalash (Specifying Object Interfaces)](#218-obyekt-interfeysini-spetsifikatsiyalash-specifying-object-interfaces)
+- [2.19 Sinf merosi va interfeys merosi (Class versus Interface Inheritance)](#219-sinf-merosi-va-interfeys-merosi-class-versus-interface-inheritance)
+- [2.20 Qayta ishlatish mexanizmlari: white-box, black-box va parametrlangan turlar (Putting Reuse Mechanisms to Work)](#220-qayta-ishlatish-mexanizmlari-white-box-black-box-va-parametrlangan-turlar-putting-reuse-mechanisms-to-work)
+- [2.21 Ish vaqtidagi va kompilyatsiya vaqtidagi struktura (Run-Time and Compile-Time Structures)](#221-ish-vaqtidagi-va-kompilyatsiya-vaqtidagi-struktura-run-time-and-compile-time-structures)
+- [2.22 Amalda qo'llash](#222-amalda-qollash)
 
 </details>
 
@@ -253,7 +257,7 @@ Boolean yes = Boolean.valueOf(true);   // har doim bir xil nusxa
 - `@Async` bilan chaqiruvni task executor'ga uzatish (fire-and-forget yoki `CompletableFuture`).
 - HTTP interface client'lari (`@HttpExchange` + `HttpServiceProxyFactory`) - interfeys asosida runtime'da client generatsiyasi.
 
-**Ehtiyot bo'ling:** Eng ko'p uchraydigan tuzoq - self-invocation: bir metod ichida `this.other()` chaqirilsa proxy chetlab o'tiladi va `@Transactional`/`@Cacheable` ishlamaydi (yechim: alohida bean, `AopContext.currentProxy()` yoki self-injection). CGLIB `final` sinf/metodni proxy qilolmaydi, parametrsiz constructor talab qiladi va `private` metodlarga ta'sir qilmaydi; JDK proxy esa faqat interfeys metodlarini qamraydi, shuning uchun konkret tipga `cast` qilish `ClassCastException` beradi.
+**Ehtiyot bo'ling:** Eng ko'p uchraydigan tuzoq - self-invocation: bir metod ichida `this.other()` chaqirilsa proxy chetlab o'tiladi va `@Transactional`/`@Cacheable` ishlamaydi (yechim: alohida bean, `AopContext.currentProxy()` yoki self-injection). CGLIB `final` sinf va `final` metodni proxy qilolmaydi va `private` metodlarga ta'sir qilmaydi. Parametrsiz konstruktor talabi esa **Spring da yo'q**: Spring 4.0 dan beri CGLIB proxy nusxasi Objenesis bilan, konstruktorni umuman chaqirmasdan yaratiladi (`ObjenesisCglibAopProxy`, sukut bo'yicha ishlatiladi), shuning uchun maydonlar proxy nusxasida `null` bo'ladi va ular faqat delegatga uzatish uchun ishlatiladi. Yalang'och CGLIB ni Spring dan tashqarida ishlatganda parametrsiz konstruktor kerak bo'ladi; JDK proxy esa faqat interfeys metodlarini qamraydi, shuning uchun konkret tipga `cast` qilish `ClassCastException` beradi.
 
 ```java
 // Spring proxy qanday tanlanadi va qachon chetlab o'tiladi
@@ -587,7 +591,147 @@ class CbuExchangeRates implements ExchangeRates {
 // Bog'liqlik yo'nalishi: infra -> domen. Domen RestClient ni bilmaydi.
 ```
 
-## 2.18 Amalda qo'llash
+## 2.18 Obyekt interfeysini spetsifikatsiyalash (Specifying Object Interfaces)
+
+**Tavsif:** Strukturaviy patternlarning hammasi interfeys ustida ishlaydi, shuning uchun atamalar aniq bo'lishi kerak. Metod e'lon qilganda uning nomi, parametr tiplari va qaytaruvchi qiymati birga signatura deyiladi. Obyektning barcha signaturalari to'plami uning interfeysi; interfeysga berilgan nom esa tur (type). Bitta obyekt bir nechta turga ega bo'lishi mumkin, bir-biriga umuman o'xshamagan obyektlar bir xil turni bo'lishishi mumkin, va agar bir turning interfeysi ikkinchisining interfeysini to'liq o'z ichiga olsa, birinchisi ikkinchisining subtype'i bo'ladi. So'rovni qaysi metod bajarishi ish vaqtida so'rov va qabul qiluvchi obyektga qarab hal qilinadi: bu dynamic binding, va uning natijasi - bir xil interfeysli obyektlarni ish vaqtida bir-birining o'rniga qo'yish mumkinligi, ya'ni polimorfizm (qarang: [26-bo'lim](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2611-polimorfizm-polymorphism), Polimorfizm). Patternlar interfeysni nafaqat tavsiflaydi, balki unga shartlar ham qo'yadi va ba'zan nima kiritmaslik kerakligini aytadi: Decorator va Proxy o'ralgan obyekt bilan bir xil interfeysga ega bo'lishi shart, aks holda klient almashtirishni sezadi; Visitor interfeysi tashrif qilinadigan barcha element sinflarini aks ettirishi kerak; Memento esa ataylab ikki interfeys beradi, biri klient uchun tor, ikkinchisi faqat egasi uchun keng. Ya'ni interfeys dizayni patterndan kelib chiqadi, patternni tanlagandan keyin interfeys "erkin" qolmaydi.
+
+**Spring'da qayerda uchraydi:** Spring interfeysga tayangan deyarli hamma joyda bir xil interfeysli almashtirishdan foydalanadi: `DataSource` ni `TransactionAwareDataSourceProxy` bilan o'rash, `CacheManager` ni `TransactionAwareCacheManagerProxy` bilan o'rash, `@Transactional` va `@Cacheable` uchun yasaladigan proxy. Aynan shu sabab `@Transactional` ni `private` yoki `final` metodga qo'yish ishlamaydi: proxy interfeysni yoki ochiq metodni takrorlay olmasa, almashtirish buziladi. `BeanWrapper`, `Environment`, `ConversionService`, `HttpMessageConverter` va `ClientHttpRequestFactory` - bularning har biri "tur" sifatida e'lon qilinib, implementatsiyasi konfiguratsiya orqali tanlanadi. Java'da tur va implementatsiya ajratilgani uchun GoF ta'rifidagi farq tilning o'zida ko'rinadi: `interface` turni, `class` esa implementatsiyani beradi.
+
+**Qo'llanish keyslari:**
+- Decorator yoki Proxy qo'shishdan oldin asl tipning interfeysi mavjudligini tekshirish; bo'lmasa, uni avval ajratish.
+- Memento uslubida ikki yuza berish: tashqariga faqat o'qiladigan `Snapshot`, egasiga esa holatni tiklash metodi.
+- Tashqi jamoaga beriladigan interfeysga faqat zarur signaturalarni qoldirish va qolganini `package-private` qilish.
+- Bir nechta implementatsiyani almashtirish uchun klient faqat turga tayanishini tasdiqlash: konstruktor parametrida konkret sinf bo'lmasligi.
+- Visitor qo'shishda element ierarxiyasining to'liqligini `sealed` bilan kompilyatorga tekshirtirish.
+
+**Ehtiyot bo'ling:** Interfeysni implementatsiyadan nusxa olib yozish eng tez-tez uchraydigan xato: `getJdbcTemplate()` yoki `getEntityManager()` interfeysda paydo bo'lsa, almashtirish imkoniyati yo'qoladi. Teskari chekka ham bor: har sinf uchun bitta foydalanuvchisi bo'lgan interfeys yasash faqat fayl sonini oshiradi. Interfeysga qarab programmalash printsipi va uning chegaralari alohida yozilgan (qarang: [26-bo'lim](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2625-interfeysga-qarab-programmalash-program-to-an-interface), Interfeysga qarab programmalash). `default` metod qo'shish interfeysni kengaytirishning arzon yo'li, lekin u subtype shartnomasini jimgina o'zgartiradi: mavjud implementatsiyalar yangi xulqni o'zi bilmay oladi.
+
+```java
+// Memento ikki interfeys beradi: klient uchun tor, egasi uchun keng
+public interface EditorSnapshot { }                 // klient faqat ushlab turadi
+
+public final class TextEditor {
+    private String text = "";
+
+    private static final class Snapshot implements EditorSnapshot {
+        private final String text;                  // faqat egasi ko'radi
+        private Snapshot(String text) { this.text = text; }
+    }
+
+    public EditorSnapshot save() { return new Snapshot(text); }
+
+    public void restore(EditorSnapshot snapshot) {
+        this.text = ((Snapshot) snapshot).text;     // keng yuza bu yerda
+    }
+}
+// Klient Snapshot ichiga kira olmaydi: interfeys ataylab bo'sh.
+```
+
+## 2.19 Sinf merosi va interfeys merosi (Class versus Interface Inheritance)
+
+**Tavsif:** Obyektning sinfi va turi ikki boshqa narsa. Sinf obyektning qanday amalga oshirilganini belgilaydi: ichki holat va metodlar tanasi. Tur esa faqat interfeysga, ya'ni obyekt javob bera oladigan so'rovlar to'plamiga ishora qiladi. Shundan ikki xil meros chiqadi. Sinf merosi bitta sinf implementatsiyasini boshqasi orqali ta'riflaydi: bu kod va ma'lumot tasvirini bo'lishish mexanizmi. Interfeys merosi (subtyping) esa butunlay boshqa savolga javob beradi: qachon bitta obyektni ikkinchisining o'rniga qo'yish mumkin. C++ va Smalltalk bu farqni tilda ko'rsatmagani uchun GoF uni alohida tushuntirishga majbur bo'lgan; Java'da farq sintaksisda turadi (`implements` va `extends`), shuning uchun uni yo'qotish qiyinroq, lekin `extends` bilan implementatsiyani ham, turni ham birga olish hali ham mumkin va shu yerda chalkashlik qoladi. Patternlarning ko'pi aynan shu farqqa tayanadi: Chain of Responsibility ishtirokchilari umumiy turga ega bo'lishi shart, lekin umumiy implementatsiyani bo'lishishi shart emas; Composite'da `Component` umumiy interfeysni beradi, `Composite` esa ko'pincha umumiy implementatsiyani ham beradi; Command, Observer, State va Strategy esa odatda sof interfeys sifatida yoziladi. Demak "meros qilamizmi" savoli ikkiga bo'linadi: turni bo'lishish kerakmi, va implementatsiyani bo'lishish kerakmi.
+
+**Spring'da qayerda uchraydi:** Spring ikki merosni ataylab ajratadi. Turni bo'lishish uchun sof interfeyslar: `ApplicationListener`, `Converter`, `HealthIndicator`, `AuthenticationProvider`, `HandlerInterceptor`. Implementatsiyani bo'lishish uchun esa `Abstract` prefiksli yordamchi sinflar: `AbstractAuthenticationProcessingFilter`, `AbstractRoutingDataSource`, `AbstractErrorWebExceptionHandler`. Juftlikning ma'nosi shu: interfeys shartnoma, `Abstract` sinf esa ixtiyoriy yordam. `OncePerRequestFilter` xuddi shu uslubda `Filter` turini beradi va takroriy bajarilishdan himoyani implementatsiya sifatida qo'shadi. Spring Data `JpaRepository` esa teskari misol: u turni ham, generatsiya qilinadigan implementatsiyani ham birga beradi, shuning uchun uni domen interfeysi sifatida tashqariga chiqarish bog'liqlikni oshiradi.
+
+**Qo'llanish keyslari:**
+- Kengaytirish nuqtasini ikki qavat qilib berish: majburiy interfeys va ixtiyoriy `Abstract` yordamchi sinf.
+- `Abstract` bazaviy sinfdan meros olgan domen sinfini interfeys va delegatsiyaga ko'chirish (qarang: [Delegatsiya](#213-delegatsiya-delegation)).
+- Test'da almashtirish uchun faqat tur kerak bo'lgan joyni aniqlash: u yerda bazaviy sinfdan meros shart emas.
+- Repository interfeysini domen porti sifatida o'zi yozib, Spring Data interfeysini faqat infratuzilma qatlamida qoldirish.
+- `sealed interface` bilan turni yopib, implementatsiyalar ro'yxatini kompilyatsiya vaqtida belgilash.
+
+**Ehtiyot bo'ling:** Faqat kodni qayta ishlatish uchun meros olish eng qimmat xato: subclass superclass'ning ichki tuzilishiga bog'lanadi va superclass o'zgarsa jimgina buziladi (fragile base class). Buning o'rnini kompozitsiya egallaydi (qarang: [26-bo'lim](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2617-vorislikdan-ustun-kompozitsiya-composition-over-inheritance), Vorislikdan ustun kompozitsiya). Spring'da yana bitta aniq tuzoq bor: `Abstract` sinfdan meros olib, `@Transactional` yoki `@Cacheable` metodni o'sha ierarxiya ichidan chaqirish proxy'ni chetlab o'tadi. Va subtype bo'lish faqat signatura mosligi emas: shartnoma ham saqlanishi kerak, aks holda almashtirish kompilyatsiya qilinadi, lekin ish vaqtida buziladi.
+
+```java
+// Tur va implementatsiya ajratilgan: interfeys shartnoma, Abstract yordam
+public interface NotificationChannel {
+    boolean supports(NotificationType type);
+    void send(Notification notification);
+}
+
+// Ixtiyoriy yordam: faqat takrorlanadigan qismni beradi, shartnomani emas
+public abstract class RetryingChannel implements NotificationChannel {
+    @Override public final void send(Notification notification) {
+        for (int attempt = 1; attempt <= 3; attempt++) {
+            try { deliver(notification); return; }
+            catch (TransientChannelException e) { if (attempt == 3) throw e; }
+        }
+    }
+    protected abstract void deliver(Notification notification);
+}
+
+// Yordamdan foydalanmaydigan implementatsiya ham to'liq haqli
+@Component
+class WebhookChannel implements NotificationChannel { /* ... */ }
+```
+
+## 2.20 Qayta ishlatish mexanizmlari: white-box, black-box va parametrlangan turlar (Putting Reuse Mechanisms to Work)
+
+**Tavsif:** Funksionallikni qayta ishlatishning uch mexanizmi bor va ular bir-birining o'rnini bosa oladi. Birinchisi - sinf merosi. Unda ota sinfning ichki tuzilishi subclass'ga ko'rinadi, shuning uchun bu usul white-box reuse deb ataladi: "oq quti", ichi ko'rinadi. U kompilyatsiya vaqtida qotadi, tilning o'zi qo'llab-quvvatlaydi, lekin ota sinfning implementatsiyasi o'zgarsa subclass o'zgarishga majbur bo'ladi. Ikkinchisi - obyekt kompozitsiyasi. Yangi xulq mavjud obyektlarni yig'ish orqali olinadi va yig'ilayotgan obyektlar faqat o'z interfeysi orqali ko'rinadi, shuning uchun bu black-box reuse: "qora quti", ichi ko'rinmaydi. U ish vaqtida tuziladi, inkapsulyatsiyani buzmaydi, lekin ko'proq obyekt va ko'proq bilvosita chaqiruv beradi. Uchinchisi - parametrlangan turlar. GoF bu mexanizmni Ada generiklari va C++ shablonlari misolida ko'rsatadi; Java'dagi javobi generiklar, va quyidagi misollar kitob kodidan emas, shu g'oyadan olingan. Parametrlangan turda tur boshqa turlarni to'liq ko'rsatmasdan ta'riflanadi va yetishmagani ishlatish nuqtasida parametr sifatida beriladi. Bir xil masalani uchtasi bilan ham hal qilish mumkin, va klassik misoli - saralashda taqqoslashni parametrlash: taqqoslashni subclass metodi qilib berish Template Method bo'ladi, taqqoslashni tashqaridan uzatiladigan obyekt qilib berish Strategy bo'ladi, taqqoslashni tur parametri qilib berish esa generik yechim bo'ladi. Farqi aniq: kompozitsiya xulqni ish vaqtida almashtiradi, lekin bilvosita qatlam qo'shadi; meros standart implementatsiya berib, uni override qilishga imkon beradi; parametrlangan turlar sinf ishlatadigan turlarni o'zgartiradi, biroq meros ham, generiklar ham ish vaqtida o'zgarmaydi. Delegatsiya kompozitsiyaning eng keskin shakli (qarang: [Delegatsiya](#213-delegatsiya-delegation)) va u merosni kod qayta ishlatish mexanizmi sifatida har doim almashtira olishini ko'rsatadi.
+
+**Spring'da qayerda uchraydi:** Uchtasi bir vaqtda `JdbcTemplate` atrofida ko'rinadi: `JdbcTemplate` ning o'zi kompozitsiya orqali `DataSource` ni oladi (black-box), `RowMapper` strategiya sifatida tashqaridan beriladi, `RowMapper<T>` esa parametrlangan tur bo'lib natija tipini kompilyatsiya vaqtida bog'laydi. `Comparator.comparing(...).thenComparing(...)` kompozitsiya va generiklarning birga ishlashi; `AbstractRoutingDataSource` esa white-box kengaytirishning saqlanib qolgan misoli. `TransactionTemplate.execute(TransactionCallback<T>)`, `RestClient` va `ResponseEntity<T>` ham shu uchligiga tayanadi. Spring Data `JpaRepository<T, ID>` parametrlangan tur bilan butun CRUD yuzasini bir marta ta'riflab beradi.
+
+**Qo'llanish keyslari:**
+- Kutubxona API'sida kengaytirishni meros emas, callback yoki strategiya obyekti sifatida berish.
+- Bir xil algoritmni turli tiplar ustida ishlatish uchun generik parametr kiritish va `instanceof` tekshiruvlarini olib tashlash.
+- `AbstractBaseService` ierarxiyasini bosqichma-bosqich kompozitsiyaga ko'chirish va har qadamda testlarni ishlatish.
+- Taqqoslash yoki validatsiya qoidasini bean sifatida inject qilib, uni muhit bo'yicha almashtirish.
+- Framework kodida ikki qavat berish: generik interfeys va uning ustida ixtiyoriy `Abstract` yordamchisi.
+
+**Ehtiyot bo'ling:** Uch mexanizmdan birini "har doim to'g'ri" deb tanlash xato. Meros va kompozitsiya tanlovining to'liq yozuvi alohida turadi (qarang: [26-bo'lim](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2617-vorislikdan-ustun-kompozitsiya-composition-over-inheritance), Vorislikdan ustun kompozitsiya). Kompozitsiyaning narxi: obyekt soni oshadi, xulq bitta sinfda emas aloqalarda yashaydi va stack trace uzayadi. Generiklarning narxi Java'da alohida: type erasure sababli ish vaqtida tur parametri yo'q, shuning uchun `new T()`, `instanceof T` va `T[]` ishlamaydi va Spring'da `ParameterizedTypeReference` yoki `ResolvableType` kerak bo'ladi. Bir masalani uchta mexanizm bilan bir vaqtda hal qilish esa o'qib bo'lmaydigan kod beradi.
+
+```java
+// Bitta masala, uch mexanizm. Tanlov: nima qachon o'zgarishi kerak.
+
+// 1. Template Method: taqqoslash subclass'da, kompilyatsiya vaqtida qotadi
+abstract class SortedReport {
+    protected abstract int compare(Row a, Row b);
+    final List<Row> rows(List<Row> in) { return in.stream().sorted(this::compare).toList(); }
+}
+
+// 2. Strategy: taqqoslash obyekt, ish vaqtida almashadi
+record ReportSorter(Comparator<Row> order) {
+    List<Row> rows(List<Row> in) { return in.stream().sorted(order).toList(); }
+}
+
+// 3. Parametrlangan tur: element tipi parametr, xulq emas
+static <T> List<T> sorted(List<T> in, Comparator<? super T> order) {
+    return in.stream().sorted(order).toList();
+}
+```
+
+## 2.21 Ish vaqtidagi va kompilyatsiya vaqtidagi struktura (Run-Time and Compile-Time Structures)
+
+**Tavsif:** Obyektga yo'naltirilgan programmaning ish vaqtidagi tuzilishi uning kod tuzilishiga kam o'xshaydi. Kod tuzilishi kompilyatsiya vaqtida qotadi: sinflar va ular orasidagi o'zgarmas meros munosabatlari. Ish vaqtidagi tuzilish esa tez o'zgaradigan, bir-biriga xabar yuboradigan obyektlar tarmog'i. Ikkisi asosan mustaqil va birini ikkinchisidan kelib chiqarib tushunishga urinish natija bermaydi. Shu farqning ikki muhim ko'rinishi bor. Agregatsiya bitta obyekt ikkinchisiga egalik qilishini yoki uning uchun javobgar ekanini bildiradi va odatda ikkisining hayot muddati bir xil bo'ladi. Tanishlik (acquaintance) esa obyekt ikkinchisidan faqat "xabardor" ekanini bildiradi; uni assotsiatsiya yoki "ishlatish" munosabati deb ham atashadi. Tanishlik agregatsiyadan kuchsizroq va kamroq bog'lanish beradi: tanishlik aloqalari tez-tez yasaladi va yo'qoladi, ba'zan faqat bitta amal davomida yashaydi. Java'da ikkisi ham oddiy ishora bilan amalga oshadi, shuning uchun farq tilda ko'rinmaydi va faqat niyat bilan belgilanadi. Obyekt qamrovidagi patternlarning ko'pi aynan shu farqni ushlaydi: Composite va Decorator murakkab ish vaqtidagi tuzilmalarni qurish uchun ishlatiladi, Observer'ning ish vaqtidagi tuzilishini patternni bilmasdan tushunib bo'lmaydi, Chain of Responsibility esa meros ierarxiyasida umuman ko'rinmaydigan aloqa yo'llarini yasaydi.
+
+**Spring'da qayerda uchraydi:** Spring'da ish vaqtidagi tuzilish bean grafi bo'lib, u kod tuzilishidan ancha boshqa ko'rinadi: `@Component` ro'yxati statik, lekin kim kimga ulanishi `@Profile`, `@ConditionalOnProperty`, `@Order` va `@Primary` bilan deployment paytida hal bo'ladi. Shuning uchun grafni koddan emas, ishlab turgan ilovadan o'qish kerak: Actuator'ning `/actuator/beans` endpoint'i bean grafini, `/actuator/conditions` esa qaysi auto-configuration nega qo'llangani yoki qo'llanmaganini beradi; `--debug` bilan ishga tushirish xuddi shu hisobotni konsolga chiqaradi. Filter va interceptor zanjirlari, `SecurityFilterChain` va `HandlerInterceptor` tartibi ham faqat ish vaqtida ko'rinadi. Agregatsiya va tanishlik farqi JPA'da esa to'g'ridan-to'g'ri xulqqa aylanadi: `cascade` va `orphanRemoval` agregatsiyani bildiradi, oddiy `@ManyToOne` esa tanishlikni.
+
+**Qo'llanish keyslari:**
+- Dekorator yoki interceptor zanjiri chalkashganda grafni Actuator orqali chiqarib, tartibni tasdiqlash.
+- Yangi bog'liqlik qo'shishda ongli qaror: bu egalikmi yoki shunchaki xabardorlikmi, va shunga mos JPA `cascade` sozlamasi.
+- Observer asosidagi oqimni hujjatlashtirishda kim kimni eshitayotganini alohida diagrammada ko'rsatish, chunki koddan ko'rinmaydi.
+- `@Order` yoki `Ordered` qiymatlarini ochiq konstantaga chiqarib, zanjir tartibini kodda ko'rinadigan qilish.
+- Incident tahlilida chaqiruv grafini tracing orqali o'lchab, kod tuzilishidan chiqqan taxminni tekshirish.
+
+**Ehtiyot bo'ling:** Eng ko'p uchraydigan xato - ish vaqtidagi tuzilishni kod o'qish orqali bilish mumkin deb o'ylash: paket diagrammasi bean grafini bermaydi. Ikkinchi xato - agregatsiya va tanishlikni ongsiz aralashtirish: `cascade = CascadeType.ALL` ni tanishlik munosabatiga qo'yish boshqa agregatning ma'lumotini o'chirib yuboradi. Uchinchisi - zanjirni juda uzun qilish: har qatlam alohida to'g'ri, lekin birgalikda hech kim kutmagan tartibda ishlaydi va xatolikni qaysi qatlam keltirganini aniqlash qiyinlashadi. Ish vaqtidagi tuzilishni tilga tashlab qo'ymang: uni dizayner ongli ravishda belgilaydi.
+
+```text
+Bir xil kod, ikki xil ish vaqtidagi tuzilish:
+
+  Kod tuzilishi (kompilyatsiya vaqtida qotgan)
+    interface NotificationChannel
+      EmailChannel, SmsChannel, WebhookChannel   -> uchta sinf, meros grafi
+
+  Ish vaqtidagi tuzilish (profil bilan hal bo'ladi)
+    prod:   Retrying(Metered(EmailChannel))
+            Retrying(Metered(SmsChannel))
+    test:   RecordingChannel
+
+Birinchisini `grep` ko'rsatadi. Ikkinchisini faqat
+`/actuator/beans` va `/actuator/conditions` ko'rsatadi.
+```
+
+## 2.22 Amalda qo'llash
 
 - [ ] Tashqi kutubxona tiplari domen paketiga kirib kelgan joylarni qidiring va har biri uchun Adapter chegarasini belgilang.
 - [ ] `@Transactional`, `@Cacheable` va `@Async` annotatsiyasi bor metodlarning `public` va tashqaridan chaqirilayotganini tekshiring - self-invocation proxy'ni chetlab o'tadi.
@@ -597,6 +741,24 @@ class CbuExchangeRates implements ExchangeRates {
 - [ ] Fasad deb nomlangan sinflarni tekshiring: ular soddalashtiryaptimi yoki shunchaki chaqiruvlarni uzatyaptimi.
 - [ ] Ko'p nusxada yaratilgan o'zgarmas qiymat obyektlarini (valyuta, mintaqa, status) toping va ularni Flyweight sifatida keshlash foydasini o'lchang.
 - [ ] Marker interfeyslarni annotatsiyaga almashtirish mumkinmi degan savolni har biri uchun hal qiling.
+
+## Manbalar
+
+- Freeman/Robson, *Head First Design Patterns* 2nd, 3-bob - Decorator va o'rash orqali xatti-harakat qo'shish
+- Freeman/Robson, *Head First Design Patterns* 2nd, 7-bob - Adapter va Facade
+- Freeman/Robson, *Head First Design Patterns* 2nd, 9-bob - Composite
+- Freeman/Robson, *Head First Design Patterns* 2nd, 11-bob - Proxy va uning turlari
+- Joshua Bloch, *Effective Java* 3rd, Item 18 - vorislik o'rniga kompozitsiya va o'rovchi sinf
+- Joshua Bloch, *Effective Java* 3rd, Item 41 - marker interfeys bilan tur belgilash
+- [Spring Framework, AOP Proxies](https://docs.spring.io/spring-framework/reference/core/aop/proxying.html) - JDK dinamik proxy va CGLIB farqi
+- [Spring Framework v7.0.0, ObjenesisCglibAopProxy](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/spring-aop/src/main/java/org/springframework/aop/framework/ObjenesisCglibAopProxy.java) - CGLIB proxy konstruktorni chaqirmasdan yaratiladi, 4.0 dan beri sukut bo'yicha
+- [Java API, `java.lang.reflect.Proxy`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/reflect/Proxy.html) - JDK dinamik proxy faqat interfeys asosida ishlashi
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns: Elements of Reusable Object-Oriented Software*, Addison-Wesley, 1995, 1.6-bo'lim (13-14-bet) - signatura, interfeys, tur va subtype ta'riflari; Decorator va Proxy interfeysi o'ralgan obyekt bilan bir xil bo'lishi sharti
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, 1.6-bo'lim (16-17-bet) - sinf merosi va interfeys merosi farqi; Chain of Responsibility umumiy tur talab qiladi, umumiy implementatsiyani esa yo'q
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, 1.6-bo'lim (18-22-bet) - white-box va black-box qayta ishlatish, hamda parametrlangan turlar uchinchi mexanizm sifatida
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, 1.6-bo'lim (22-23-bet) - ish vaqtidagi va kompilyatsiya vaqtidagi tuzilish mustaqilligi, agregatsiya va tanishlik farqi
+- [Spring Boot, Beans endpoint](https://docs.spring.io/spring-boot/api/rest/actuator/beans.html) - `/actuator/beans` ish vaqtidagi bean grafini beradi
+- [JLS 4.6, Type Erasure](https://docs.oracle.com/javase/specs/jls/se21/html/jls-4.html#jls-4.6) - generik tur parametri kompilyatsiyada o'chirilishi, shuning uchun ish vaqtida mavjud emasligi
 
 ---
 

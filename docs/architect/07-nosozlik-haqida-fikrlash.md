@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 7. Nosozlik haqida fikrlash (Thinking About Failure)
 
 <details>
-<summary>Bu bobdagi 11 bo'lim</summary>
+<summary>Bu bobdagi 12 bo'lim</summary>
 
 - [7.1 Hamma narsa buziladi: tarmoq, disk, protsess, boshqa servis](#71-hamma-narsa-buziladi-tarmoq-disk-protsess-boshqa-servis)
 - [7.2 Nosozlik turlari: to'liq to'xtash, sekinlashuv, qisman javob, yolg'on javob](#72-nosozlik-turlari-toliq-toxtash-sekinlashuv-qisman-javob-yolgon-javob)
@@ -19,7 +19,8 @@
 - [7.8 Nosozlik ta'sirini cheklash: bulkhead va alohida resurs hovuzlari](#78-nosozlik-tasirini-cheklash-bulkhead-va-alohida-resurs-hovuzlari)
 - [7.9 Tiklanish vaqti: RTO va RPO raqamlarini kelishib olish](#79-tiklanish-vaqti-rto-va-rpo-raqamlarini-kelishib-olish)
 - [7.10 Nosozlik ssenariylarini oldindan yozish: "nima bo'lsa, nima qilamiz" jadvali](#710-nosozlik-ssenariylarini-oldindan-yozish-nima-bolsa-nima-qilamiz-jadvali)
-- [7.11 Amalda qo'llash](#711-amalda-qollash)
+- [7.11 Risk-storming: xavfni jamoa bilan diagramma ustida topish](#711-risk-storming-xavfni-jamoa-bilan-diagramma-ustida-topish)
+- [7.12 Amalda qo'llash](#712-amalda-qollash)
 
 </details>
 
@@ -29,11 +30,11 @@ Nosozlik haqida fikrlash arxitektorni developerdan ajratadigan eng aniq chegara.
 
 ## 7.1 Hamma narsa buziladi: tarmoq, disk, protsess, boshqa servis
 
-Taqsimlangan tizimda nosozlik hodisa emas, doimiy holat. Tarmoq paketi yo'qoladi, TCP ulanish NAT jadvalidan tushib qoladi, disk fsync'ni 400 ms kechiktiradi, JVM 3 sekundlik full GC ga ketadi, Kubernetes node'ni evict qiladi. Bu ro'yxatning har bir bandi oyda bir necha marta sodir bo'ladi, va ularning hech biri sizning kodingizdagi bug emas.
+Taqsimlangan tizimda nosozlik hodisa emas, doimiy holat. Tarmoq paketi yo'qoladi, TCP ulanish firewall ning ulanish jadvalidan tushib qoladi, disk fsync'ni 400 ms kechiktiradi, JVM 3 sekundlik full GC ga ketadi, Kubernetes node'ni evict qiladi. Bu ro'yxatning har bir bandi oyda bir necha marta sodir bo'ladi, va ularning hech biri sizning kodingizdagi bug emas.
 
 Arxitektor har bir tashqi chaqiruv uchun uchta savolga javob tayyorlaydi. Bu chaqiruv eng ko'p qancha kutadi. Kutish tugagach nima bo'ladi. Chaqiruv ikkinchi marta bajarilsa, biznes natija buziladimi.
 
-Eng ko'p uchraydigan xato: timeout belgilanmagan chaqiruv. Spring'da `RestClient` yoki `WebClient` da timeout qo'yilmasa, OS darajasidagi TCP retransmission limitiga tayanadi, bu Linux'da taxminan 15 minutgacha cho'ziladi.
+Eng ko'p uchraydigan xato: timeout belgilanmagan chaqiruv. Spring'da `RestClient` yoki `WebClient` da timeout qo'yilmasa, OS darajasidagi TCP retransmission limitiga tayanadi. Linux'da `tcp_retries2` ning default qiymati 15 ta qayta uzatish bo'lib, bu taxminan YIGIRMA DAQIQALIK timeout beradi - 15 raqami qayta uzatish soni, daqiqa emas, bu ikkisi tez-tez aralashtiriladi.
 
 ```yaml
 spring:
@@ -56,6 +57,8 @@ spring:
 PostgreSQL tomonida ham chegara kerak. `statement_timeout` uzoq so'rovni uzadi, `lock_timeout` navbatda qotib qolishni to'xtatadi, `idle_in_transaction_session_timeout` ochiq tranzaksiyani tashlab ketgan protsessni tozalaydi. Hisobot servisi uchun `statement_timeout` ni 30 sekund, OLTP to'lov servisi uchun 3 sekund qilib ajratish normal qaror.
 
 ## 7.2 Nosozlik turlari: to'liq to'xtash, sekinlashuv, qisman javob, yolg'on javob
+
+Quyidagi to'rt turlik ajratish shu korpusning amaliy taksonomiyasi. Nygard ning *Release It!* kitobi asosiy farqni ikki turda qo'yadi - tez xato va sekin xato - va sekin javobni ancha xavfliroq deb ataydi; kaskad nosozlik belgilari sifatida esa "crashing, hung threads, empty responses, or nonsense replies" ni sanaydi. Ya'ni pastdagi "yolg'on javob" tushunchasi kitobdagi "nonsense replies" ga yaqin, lekin alohida atama sifatida kitobda yo'q.
 
 To'rt turdagi nosozlik bir xil emas, va ularni aniqlash qiyinligi ham bir xil emas. To'liq to'xtash eng oson tur: ulanish rad etiladi, xato darhol ko'rinadi, alert ishlaydi. Sekinlashuv qiyinroq: servis javob beradi, lekin p99 latency 80 ms dan 4 sekundga chiqadi.
 
@@ -106,6 +109,12 @@ spring.lifecycle.timeout-per-shutdown-phase=25s
 Asosiy qoida: har bir chaqiruvning timeout'i chaqiruvchi tomonning SLO sidan kichik bo'lsin. Agar API o'z mijoziga 1 sekund ichida javob berishga majbur bo'lsa, ichki uchta chaqiruvning timeout yig'indisi 1 sekundan oshmasligi kerak. Ko'pincha bu 300 ms, 300 ms va 250 ms degan taqsimot bo'ladi.
 
 Orqaga bosim (backpressure) kutishni navbatga yashirishni to'xtatadi. Kafka consumer'da `max.poll.records` ni kamaytirish, reactive oqimda bounded buffer, HTTP darajasida 429 qaytarish: bularning hammasi bitta fikrni amalga oshiradi. Tizim imkonidan ko'p ish qabul qilmasin.
+
+Nygard bu hodisalar zanjiriga aniq nomlar bergan va ularni bilish suhbatni tezlashtiradi. **Blocked Threads**: barcha thread'lar bloklanib qolsa, server tashqaridan o'lgan ko'rinadi. **Chain Reactions**: bitta node yiqilsa uning yuklamasi qolganlarga tushadi va ular ham navbat bilan yiqiladi, ya'ni nosozlik bitta qatlam ICHIDA tarqaladi. **Cascading Failures**: nosozlik qatlamlar ORASIDA, integratsiya nuqtasi orqali o'tadi. **Unbalanced Capacities**: front-end back-end imkonidan ko'p so'rov yuborishi. Nygard ning yechimlaridan biri shu yerga tegishli: **Handshaking** - back-end o'zi "hozir qabul qilolmayman" deb aytishi, ya'ni orqaga bosimning protokol darajasidagi shakli. Yana biri **Fail Fast**: kitob "doim tez yiqilish yaxshiroq" deb yozadi, chunki eng yomoni sekin xato javobi.
+
+Uzoq ishlaydigan protsess uchun alohida pattern bor: **Steady State**. Ma'lumot cheksiz o'ssa yoki xotira oqsa, tizim hech qanday tashqi sabab bo'lmasa ham vaqt o'tishi bilan yiqiladi. Shuning uchun har bir o'suvchi narsaga (log, cache, jadval, sessiya) tozalash mexanizmi kerak va u ilovaning o'zida bo'lishi kerak, qo'lda emas.
+
+Timeout bu zanjirning yarmi. Nygard timeout va circuit breaker ni juft sifatida ko'radi: timeout nosozlikni ANIQLAYDI, circuit breaker esa shu signalga qarab qayta urinishni TO'XTATADI; ikkinchisisiz birinchisi faqat kutish vaqtini qisqartiradi, lekin yiqilgan servisga yuklama berishni davom etadi. Arxitektor uchun bu yerda ikki qaror bor. Birinchisi - kalit ochiq bo'lganda nima qaytarish, va bu muhandis yolg'iz hal qiladigan narsa emas: kitob buni biznes qarori deb ataydi, chunki variantlar (eski keshdagi qiymat, bo'sh ro'yxat, ochiq xato, yoki navbatga qo'yib keyin bajarish) biznes uchun bir xil emas. Ikkinchisi - kalitning qamrovi: bitta circuit breaker butun tashqi servis uchun emas, uning har bir muhim operatsiyasi uchun alohida bo'lsin, aks holda katalogni o'qish yiqilgani uchun to'lov yo'li ham yopilib qoladi. Mexanikasi va Resilience4j dagi sozlamalari uchun: [patterns 17.2](../patterns/17-resilience-va-cloud-dizayn-patternlari.md#172-zanjirni-uzgich-circuit-breaker).
 
 ## 7.4 Qayta urinish qachon zarar keltiradi: retry bo'roni va retry byudjeti
 
@@ -268,7 +277,7 @@ Jadvalda besh ustun bo'ladi: ssenariy, qanday bilib olamiz, avtomatik nima bo'la
 
 | Tuzoq | Nega yuzaga keladi | Yechim |
 |---|---|---|
-| Timeout'siz tashqi chaqiruv | default qiymat OS darajasida, 15 minutgacha | har client uchun aniq timeout, SLO dan kichik |
+| Timeout'siz tashqi chaqiruv | default qiymat OS darajasida, ~20 daqiqagacha | har client uchun aniq timeout, SLO dan kichik |
 | Ko'p qatlamli retry | har qatlam mustaqil 3 marta urinadi | retry bitta qatlamda, byudjet bilan cheklangan |
 | Bo'sh ro'yxat qaytaradigan catch | xato yashiriladi, metrika toza ko'rinadi | alohida UNKNOWN holati va degradatsiya hisoblagichi |
 | Umumiy connection pool | hisobot va OLTP bitta hovuzda | alohida DataSource, bulkhead |
@@ -295,10 +304,29 @@ Ssenariylarni izlash joyi aniq. Har bir tashqi bog'liqlik ikki ssenariy beradi: 
 
 Ssenariyni yozgandan keyin uni sinab ko'rish kerak. Bu yerda chaos testlari va nosozlikni ataylab kiritish ishga kiradi, [testlash qo'llanmasidagi](../testing/README.md) resilience testlari bo'limi texnikani ko'rsatadi. Arxitektor uchun muhimi: har bir yozilgan ssenariyning kamida bittasi haqiqatan tekshirilgan bo'lsin, aks holda jadval ishonch emas, qog'oz bo'lib qoladi.
 
-## 7.11 Amalda qo'llash
+## 7.11 Risk-storming: xavfni jamoa bilan diagramma ustida topish
+
+Yuqoridagi ssenariy jadvalini kim to'ldiradi? Agar uni arxitektor yolg'iz yozsa, jadval faqat uning tajribasidagi xavflarni oladi. Simon Brown shu ish uchun alohida texnika beradi: risk-storming - jamoa bilan birga, diagramma ustida bajariladigan tez va ko'rinadigan mashq. Diqqat: bu bobning qolgan qismi Nygard ning *Release It!* 1-nashriga tayanadi, risk-storming esa boshqa kitobdan, Brown ning *Software Architecture for Developers* idan olingan.
+
+Brown to'rt qadam sanaydi.
+
+| Qadam | Nima qilinadi | Nega shunday |
+|---|---|---|
+| 1. Diagramma chizish | arxitektura diagrammalari doskaga yoki katta qog'ozga chiziladi, Brown boshlang'ich nuqta sifatida C4 ni tavsiya qiladi | turli abstraksiya darajasi turli xavfni ko'rsatadi; katta diagramma yaxshiroq |
+| 2. Xavfni mustaqil yozish | har kim (arxitektor, dasturchi, menejer, operatsiya xodimi) diagramma oldida turib, bitta stikerga bitta xavf yozadi va uni ehtimol va ta'sir bo'yicha baholaydi | xavfni sezish tajribaga bog'liq; sukutda va yashirin yozish jamoaning haqiqiy qarashini beradi, yetakchining qarashini emas |
+| 3. Xavfni diagrammaga yopishtirish | stiker xavf topilgan joyga, masalan sekin ishlashi mumkin bo'lgan komponent ustiga qo'yiladi | bir qarashda eng xavfli hudud ko'rinadi; o'xshash xavflar bir joyda to'planadi |
+| 4. Ustuvorlash | har stiker yoki stikerlar to'dasi uchun ehtimol va ta'sir jamoa bilan kelishiladi | chetga chiqqan baholarning sababi so'raladi, Planning Poker dagi kabi umumiy raqamga kelinadi |
+
+Brown ikkinchi qadamni vaqt bilan cheklashni (5-10 daqiqa) va stiker rangini ustuvorlik uchun ishlatishni tavsiya qiladi. Ehtimol va ta'sirning ko'paytmasi [risk formulasi](01-arxitektorning-fikrlash-modeli.md#15-qaytarib-boladigan-va-qaytarib-bolmaydigan-qarorlar) bo'limida, test chuqurligini shu bo'yicha tanlash esa [risk-ga asoslangan testlash](../testing/01-sifat-strategiyasi-va-arxitektorning-roli.md#13-risk-ga-asoslangan-testlash) bo'limida berilgan, bu yerda takrorlanmaydi.
+
+Xavfni topish ishning yarmi: Brown uchta yumshatish yo'lini sanaydi. O'qitish yoki jamoani to'ldirish, tajriba yetmagan joyda. Prototip: stiker to'plangan yo'lni kichik tajriba bilan sinash. Arxitekturani o'zgartirish, masalan yagona nosozlik nuqtasini olib tashlash; o'zgarishdan keyin mashq qayta o'tkaziladi va ta'sir kutilganidek bo'lgani tekshiriladi.
+
+Natija yozib qolinadi. Brown ehtimoli yoki ta'siri "yo'q" deb baholangan xavflarni ham jurnalda saqlashni aytadi, chunki keyin shart o'zgaradi. Texnik xavf egasi masalasida uning tavsiyasi aniq: xavf reyestri ko'pincha texnik bo'lmagan loyiha menejeri qo'lida bo'ladi, texnik xavflarning egasi esa arxitektura roli bo'lishi kerak. Mashqni loyiha boshida bir marta emas, iteratsiya rejalashtirish va retrospektivada ham o'tkazish mumkin.
+
+## 7.12 Amalda qo'llash
 
 - [ ] Servisdagi barcha tashqi chaqiruvlarni sanab, timeout qo'yilmaganlarini topib, har biriga SLO dan kelib chiqqan aniq qiymat belgilash.
-- [ ] Little qonuni bilan hisoblab ko'rish: eng muhim downstream 10 barobar sekinlashsa, thread pool va connection pool qachon to'ladi va qancha so'rov rad etiladi.
+- [ ] Little qonuni bilan hisoblab ko'rish: eng muhim downstream o'n barobar sekinlashgan ssenariyni oling, thread pool va connection pool qachon to'ladi va qancha so'rov rad etiladi.
 - [ ] Retry siyosatini bitta qatlamga yig'ish, jitter qo'shish va retry byudjetini umumiy oqimning 10 foizi darajasida cheklash.
 - [ ] To'lov va buyurtma yozuvlariga idempotency key maydoni va unique index qo'shib, takroriy so'rovni baza darajasida to'xtatish.
 - [ ] Funksiyalarni majburiy, muhim va qo'shimcha guruhlarga ajratib, har bir muhim funksiya uchun zaxira javobni product egasi bilan yozma kelishib olish.
@@ -306,6 +334,17 @@ Ssenariyni yozgandan keyin uni sinab ko'rish kerak. Bu yerda chaos testlari va n
 - [ ] `pg_stat_replication` dagi `flush_lag` bo'yicha alert yoqib, haqiqiy RPO ni o'lchangan raqam sifatida hujjatga yozish.
 - [ ] Backup'dan tiklashni haftalik avtomatik test qilib, RTO ni besh qismi bilan (aniqlash, qaror, failover, qayta ulanish, cache isishi) o'lchash.
 - [ ] Dizayn hujjatiga besh ustunli ssenariy jadvalini kiritib, kamida 15 ta ssenariy yozish va ulardan uchtasini haqiqatan sinab ko'rish.
+
+## Manbalar
+
+- Michael T. Nygard, *Release It! Design and Deploy Production-Ready Software*, 1-nashr, Pragmatic Bookshelf, 2007, 4-bob - Integration Points (54-57-betlar: timeout'siz chaqiruv, Linux `tcp_retries2` default 15 qayta uzatish taxminan 20 daqiqalik timeout beradi, firewall ulanish jadvali), Chain Reactions (61-bet), Cascading Failures (65-bet), Blocked Threads (81-bet), Unbalanced Capacities (98-bet), Slow Responses (100-bet), degradatsiya (104-bet)
+- Michael T. Nygard, *Release It!*, 1-nashr, 2007, 4.1, 50-bet - sekin javob javob bermaslikdan yomonroq; tez va sekin xatoni ajratish; kaskad nosozlik belgilari
+- Michael T. Nygard, *Release It!*, 1-nashr, 2007, 5-bob - Use Timeouts (111-114-betlar: "hope is not a design method", navbatga qo'yib keyin qayta urinish), Circuit Breaker (115-118-betlar: timeout bilan juftlik, kalit ochiq bo'lgandagi javob biznes qarori), Bulkheads (119 va 122-betlar: kema bo'limlari analogiyasi, thread pool'ni ajratish), Steady State (124-bet), Fail Fast (131-bet), Handshaking (134-bet), Test Harness (136-bet)
+- Simon Brown, *Software Architecture for Developers*, Leanpub, 2014, 64-bob - Risk-storming (181-183-betlar: to'rt qadam, xavfni mustaqil va sukutda yozish, 5-10 daqiqalik cheklov, stikerni diagrammaga yopishtirish, Planning Poker uslubida umumiy bahoga kelish, uchta yumshatish yo'li, ehtimoli yoki ta'siri "yo'q" bo'lgan xavfni ham jurnalda saqlash)
+- Simon Brown, *Software Architecture for Developers*, Leanpub, 2014, 64-bob, "Collective ownership" (184-bet: xavf reyestri odatda texnik bo'lmagan loyiha menejerida bo'ladi, texnik xavflarning egasi esa arxitektura roli bo'lishi kerak)
+- ESLATMA: mavjud nusxa 1-nashr (2007). 2-nashrda (2018) pattern ro'yxati kengaytirilgan va bir qismi qayta nomlangan (masalan "Attacks of Self-Denial" va "Use Timeouts" nomlari o'zgargan), shuning uchun 2-nashrga xos nomlar bu yerda iqtibos qilinmaydi
+- ESLATMA: 7.2 dagi to'rt turlik taksonomiya, 7.3 dagi Little qonuni va timeout byudjeti, 7.4 dagi retry byudjeti foizi va jitter oraliqlari, 7.5 dagi idempotentlik yechimlari, 7.7 dagi backup qatlamlari, 7.9 dagi RTO va RPO raqamlari va 7.10 dagi ssenariy soni shu korpusning amaliy tavsiyasi, kitobdan olingan emas
+- ESLATMA: 7.11 dagi risk-storming Brown kitobidan olingan; Nygard ning *Release It!* 1-nashrida bu texnika yo'q
 
 ---
 

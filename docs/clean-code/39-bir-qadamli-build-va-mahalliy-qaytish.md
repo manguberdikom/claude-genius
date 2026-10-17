@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 39. Bir qadamli build va mahalliy qaytish halqasi (One-Step Build)
 
 <details>
-<summary>Bu bobdagi 9 bo'lim</summary>
+<summary>Bu bobdagi 11 bo'lim</summary>
 
 - [39.1 Build bitta buyruq bo'lsin](#391-build-bitta-buyruq-bolsin)
 - [39.2 Test bitta buyruq bo'lsin](#392-test-bitta-buyruq-bolsin)
@@ -17,7 +17,9 @@
 - [39.6 Generatsiya qilingan kodni ajratish](#396-generatsiya-qilingan-kodni-ajratish)
 - [39.7 Mahalliy tez qaytish halqasi](#397-mahalliy-tez-qaytish-halqasi)
 - [39.8 `.gitignore`, sir va konfiguratsiya fayllari](#398-gitignore-sir-va-konfiguratsiya-fayllari)
-- [39.9 Amalda qo'llash](#399-amalda-qollash)
+- [39.9 IDE qobiliyatlari: bir tugmali ishga tushirish, test va debug](#399-ide-qobiliyatlari-bir-tugmali-ishga-tushirish-test-va-debug)
+- [39.10 Debug yordamchilarini rejali olib tashlash](#3910-debug-yordamchilarini-rejali-olib-tashlash)
+- [39.11 Amalda qo'llash](#3911-amalda-qollash)
 
 </details>
 
@@ -50,7 +52,9 @@ Agar testni ishga tushirish uchun mahalliy PostgreSQL o'rnatish yoki `applicatio
 
 ## 39.3 Takrorlanadigan build: versiya qotirish va wrapper
 
-Build takrorlanadigan bo'lishi kerak: bir xil commit bir xil natija bersin. Buni buzadigan uch narsa bor va ularning hammasini yopish mumkin.
+Build takrorlanadigan bo'lishi kerak: bir xil commit bir xil natija bersin. Buni buzadigan narsalarni jadvalga yig'dik, va ularning hammasini yopish mumkin.
+
+"Bir xil natija" iborasining ikki darajasi bor va ularni ajratish kerak. Birinchi daraja: build bir xil ishlaydi va bir xil testlardan o'tadi. Pastdagi jadval shu darajani ta'minlaydi. Ikkinchi daraja kuchliroq: chiqqan artifact BAYTGA BAYT bir xil bo'ladi (reproducible build). Ikkinchisi birinchisidan o'z-o'zidan kelib chiqmaydi, chunki JAR ichidagi yozuvlarning vaqt belgisi har build da o'zgaradi.
 
 | Buzuvchi | Yechim |
 |---|---|
@@ -60,6 +64,32 @@ Build takrorlanadigan bo'lishi kerak: bir xil commit bir xil natija bersin. Buni
 | Snapshot bog'liqligi | reliz versiyasiga o'tish |
 | Build vaqtidagi tashqi so'rov | kerakli fayllarni repoda saqlash |
 | Plagin versiyasi ko'rsatilmagan | har bir plagin versiyasini yozish |
+| Artifact ichidagi vaqt belgisi har build da boshqa | `project.build.outputTimestamp` |
+
+Baytga bayt takrorlanishni yoqish uchun Maven da bitta property yetarli. Maven hujjati tartibni shunday beradi: avval `mvn artifact:check-buildplan` bilan plaginlarni ko'tarish kerakligini tekshirish, keyin property ni qo'yish.
+
+```xml
+<properties>
+  <!-- Reproducible Builds rejimi: JAR ichidagi yozuvlar shu vaqt
+       belgisini oladi, demak ikki build bayt-baytga teng chiqadi.
+       Maven 3.10.0 va 4.0.0-beta-5 dan boshlab bu rejim default
+       yoqilgan, lekin property ni yozish default qiymatni
+       almashtirish uchun foydali qoladi. -->
+  <project.build.outputTimestamp>2026-01-01T00:00:00Z</project.build.outputTimestamp>
+</properties>
+```
+
+Takrorlanishni tekshirish ham bitta buyruq bilan bo'ladi:
+
+```bash
+# 1) Loyihani build qilib lokal repoga o'rnatish
+mvn clean install
+
+# 2) Qayta build qilib, oldingi natija bilan solishtirish
+mvn clean verify artifact:compare
+```
+
+Bu lokal tekshiruv to'liq dalil emas: u muhit oqishini (foydalanuvchi nomi, joriy katalog) ushlamaydi, shuning uchun haqiqiy takrorlanishni butunlay boshqa muhitda qayta build qilib tekshirish kerak. Lekin u arzon va vaqt belgisi kabi oddiy sabablarni darhol topadi.
 
 ```xml
 <!-- Versiyalar bir joyda, BOM bilan boshqariladi -->
@@ -133,9 +163,9 @@ Agar generator vositasi `src/` ga yozsa, uning sozlamasini o'zgartirish kerak; i
 
 ## 39.7 Mahalliy tez qaytish halqasi
 
-Qaytish halqasining uzunligi ishlab chiqish tezligini belgilaydi. Maqsad: kod yozilgandan keyin natijani 10 sekundda ko'rish.
+Qaytish halqasining uzunligi ishlab chiqish tezligini belgilaydi. Pastdagi jadvaldagi vaqtlar o'lchov emas, JAMOA BYUDJETI: ular loyiha hajmiga, apparatga va test turiga qarab o'zgaradi. Jadvalning foydasi aniq raqamda emas, tartibda: kompilyatsiya sekundlarda, bir modul testlari sekundlar ichida, integratsion testlar daqiqalarda, butun build esa diqqatni yo'qotmaslik uchun o'n daqiqalar oralig'ida qolishi kerak. O'z byudjetingizni o'lchab yozing va buzilganda sababini qidiring.
 
-| Halqa | Maqsad vaqt | Vositalar |
+| Halqa | Byudjet (jamoa kelishuvi) | Vositalar |
 |---|---|---|
 | Kompilyatsiya | < 5 s | incremental build, IDE |
 | Unit testlar (bir modul) | < 10 s | tez testlar, mocksiz domen |
@@ -144,10 +174,29 @@ Qaytish halqasining uzunligi ishlab chiqish tezligini belgilaydi. Maqsad: kod yo
 | Butun build | < 10 min | parallel modul, test teg |
 | CI pipeline | < 15 min | keshlash, parallel job |
 
+Konteynerni qayta ishlatish integratsion test halqasini sezilarli qisqartiradi, lekin uni yoqish bitta qatordan iborat emas va bu yerda jimgina ishlamay qolish oson. Testcontainers hujjati uchta shartni talab qiladi: bayroq, konteynerda `withReuse(true)`, va konteynerni QO'LDA `start()` bilan ishga tushirish (`stop()` chaqirilmaydi, ya'ni `try-with-resources` ham, JUnit integratsiyasi ham ishlatilmaydi). Shartlardan bittasi bajarilmasa konteyner oddiy tartibda ko'tariladi va o'chadi, hech qanday xato chiqmaydi.
+
 ```properties
-# ~/.testcontainers.properties - konteynerlarni qayta ishlatish (mahalliy ishda)
+# ~/.testcontainers.properties - FOYDALANUVCHI fayli.
+# Diqqat: bu sozlamani classpath dagi properties fayli orqali berish
+# ISHLAMAYDI, hujjat buni alohida aytadi. Muqobil yo'l muhit
+# o'zgaruvchisi: TESTCONTAINERS_REUSE_ENABLE=true
 testcontainers.reuse.enable=true
 ```
+
+```java
+// Konteyner konfiguratsiyasi BIR XIL bo'lishi shart, aks holda qayta
+// ishlatilmaydi va yangisi ko'tariladi.
+static final PostgreSQLContainer<?> DB =
+    new PostgreSQLContainer<>("postgres:16-alpine")
+        .withReuse(true);
+
+static {
+    DB.start();   // qo'lda; stop() chaqirilmaydi
+}
+```
+
+Uch ogohlantirishni ham yozib qo'yish kerak, chunki ular hujjatda bor. Birinchi: bu imkoniyat EKSPERIMENTAL va xulqi o'zgarishi mumkin. Ikkinchi: konteynerlar testlar tugagandan keyin TO'XTAMAYDI, ya'ni ularni o'zingiz kuzatasiz va o'chirasiz. Uchinchi: bu rejim CI uchun mos emas, chunki resurs tozalash va tarmoq kabi ba'zi imkoniyatlar to'liq ishlamaydi. Shuning uchun u faqat mahalliy ishda yoqiladi.
 
 ```bash
 # Faqat o'zgargan modul testlari
@@ -187,7 +236,96 @@ Qoida: `application.yml` da sir bo'lmaydi - faqat `${ENV_VAR}` havolasi (26.4). 
       detect --source=/repo --no-git -v
 ```
 
-## 39.9 Amalda qo'llash
+## 39.9 IDE qobiliyatlari: bir tugmali ishga tushirish, test va debug
+
+Bir qadamli build ning IDE dagi aksi ham bor: kuniga o'nlab marta takrorlanadigan harakat bitta tugma bo'lishi kerak. Orosz bu bo'shliqni alohida ta'kidlaydi: kimyo laboratoriyasida asbobni ishlatish o'rgatiladi, dasturiy ta'minotda esa bunday o'qitish kam uchraydi va muhandis tooling, build va deploy qanday ishlashini ko'pincha o'zi topib olishga majbur (Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr, Pragmatic Engineer, 2023, 10-bob, 133-bet).
+
+Quyidagi ro'yxat kitobning zamonaviy IDE dan kutiladigan qobiliyatlar ro'yxati; o'ng ustun shu qobiliyat Java va Spring loyihasida qayerda kerak bo'lishini ko'rsatadi (shu yerda, 133-134-bet).
+
+| Qobiliyat | Tekshiruv savoli | Java va Spring da qayerda |
+|---|---|---|
+| Refaktoring | nom o'zgartirish va metod ajratish tugmasi bormi | 38.3 chegarasi ichida |
+| Kompilyatsiya | bitta qisqartma bilan, saqlashda avtomatik bo'ladimi | ko'p modulli Maven loyihasi |
+| Ishga tushirish | ilovani bitta tugma bilan ko'tarish | `spring-boot:run` konfiguratsiyasi |
+| Qayta yuklash | kod o'zgarsa kontekst qayta ko'tariladimi | mahalliy profil |
+| Debug | breakpoint, qadamlash, stack trace, lokal o'zgaruvchilar | 46.9 |
+| Kengaytirilgan debug | shartli breakpoint, N marta o'tkazib yuborish | sikl ichidagi bitta yozuv |
+| Testni ishga tushirish | bitta test metodini alohida yurgizish | `@Test` metod darajasida |
+| Testni debug qilish | aynan shu testga breakpoint qo'yish | yiqilgan integratsion test |
+| PR ochish | IDE dan chiqmasdan | 40.6 hajmi bilan birga |
+
+Ikkinchi talab siklning uzunligiga tegishli: tahrirdan natijani ko'rishgacha bir necha sekunddan ko'p ketsa, vaqt kontekstni almashtirishga sarflanadi va zamonaviy asbobda bunchalik kutishning sababi yo'q. Sekin siklni normal deb qabul qilmaslik kerak: jamoadoshlardan so'rab, mashinasini kutmaydigan odamning sozlamasini ko'chirish eng tez yo'l (shu yerda, 134-bet).
+
+```bash
+# IDE dagi har tugma ortida shu buyruqlar turadi. Ikkisi bir xil
+# natija bermasa, IDE konfiguratsiyasi build dan ajrab ketgan:
+# odatda sabab IDE ning o'z kompilyatori, faol profil yoki
+# muhit o'zgaruvchisi bo'ladi.
+./mvnw -q -pl payment -am test -Dtest=SettlementImporterTest#rejectsMixedCurrency
+./mvnw -q -pl payment spring-boot:run -Dspring-boot.run.profiles=local
+```
+
+ESLATMA: jadvalning o'ng ustuni va IDE bilan buyruq natijasini solishtirish tavsiyasi shu korpusning amaliy qo'shimchasi, kitobdan olingan emas.
+
+## 39.10 Debug yordamchilarini rejali olib tashlash
+
+Debug yordamchisi - invariant tekshiruvi, qo'shimcha diagnostika, soxta ma'lumot generatori, yordamchi endpoint - ishlab chiqish paytida arzon, production da esa hajm va tezlik bo'yicha qimmat tushadi. Qaysi tekshiruv production da qoladi degan savol [xato bilan ishlash bobida](18-xato-bilan-ishlash-qoidalari.md#1813-himoya-tekshiruvining-qanchasi-ishlab-chiqarishda-qoladi) hal qilinadi; bu bo'lim esa qolmaydiganini qanday olib tashlash haqida, ya'ni build darajasidagi qarori haqida. McConnell bu yerda ikki qoida beradi va ikkisi ham vaqt bilan bog'liq.
+
+Birinchisi: yordamchi iloji boricha ertaroq kiritiladi. Odatda programmist yordamchi yozishga muammo bir necha marta tishlaganidan keyin kirishadi; birinchi holatdan keyin yozilsa, u butun loyiha davomida foyda beradi (McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 8.6 (206-bet)).
+
+Ikkinchisi: olib tashlash yo'li yordamchi KIRITILAYOTGANDA hal qilinadi. Maqsad - debug kodini programmaga qo'lda kiritib, keyin qo'lda chiqarib yurishdan qutulish; kitob buning uchun uch yo'lni sanaydi (shu yerda, 8.6 (206-208-bet)):
+
+- **Versiya nazorati va build asbobi.** Bir xil manbadan ikki xil build yasaladi: development rejimida debug kodi kiradi, production rejimida chiqib qoladi.
+- **Preprotsessor.** C++ da `#if defined(DEBUG)` bilan bo'lak kompilyator kalitida yoqiladi yoki o'chiriladi; tilda preprotsessor bo'lmasa, kitob o'z konvensiyasi bilan precompiler yozishni ham ko'rib chiqadi (misoli Java uchun `//#BEGIN DEBUG` va `//#END DEBUG` belgilari).
+- **Debug stub.** Tekshiruv alohida rutinaga chiqariladi: development versiyasi to'liq tekshiradi, production versiyasi darhol qaytadi; ikki versiya ham saqlanadi. Buning Spring dagi shakli (profil bo'yicha ikki bean) [offensive programming bo'limida](19-istisno-mexanikasi-va-resurslar.md#1914-offensive-programming-development-da-qattiq-production-da-yumshoq-yiqilish).
+
+Java da birinchi va uchinchi yo'l ishlaydi, ikkinchisi yo'q: tilda preprotsessor va shartli kompilyatsiya yo'q, shuning uchun uning o'rnini build profili, konfiguratsiya kaliti va `assert` oladi.
+
+| Yordamchi | Java va Spring mexanizmi | Nimaga e'tibor berish |
+|---|---|---|
+| Invariant tekshiruvi | `assert` va faqat test ishga tushirishida `-ea` ([assertion va `-ea`](19-istisno-mexanikasi-va-resurslar.md#198-assertion-va--ea-qachon-haqli)) | `assert` ichida yon ta'sir bo'lmasligi shart: production da u bajarilmaydi |
+| Qimmat diagnostika | `log.debug` va `isDebugEnabled` | `System.out` emas (29-bob); log darajasi deploydan keyin ham o'zgartiriladi |
+| Yordamchi endpoint yoki sahifa | `@Profile("local")`, `@ConditionalOnProperty` | production profilida ko'tarilmasligini test bilan qulflash |
+| Soxta ma'lumot generatori | `test` scope yoki alohida Maven profili | asosiy artefaktga tushmasligi (39.4) |
+| Qattiq tekshiruv rejimi | bayroq bilan yoqiladigan validator (debug stub ning Java shakli) | o'chirilganda xatti-harakat o'zgarmasligi |
+
+```java
+// Invariant: faqat `-ea` bilan yoqiladi, shuning uchun ichida yon ta'sir yo'q
+assert rows.stream().noneMatch(SettlementRow::isNegative)
+        : "validatsiyadan keyin manfiy qator qoldi";
+
+// Qimmat diagnostika: daraja bilan o'chadi, kodda qolib ketmaydi
+if (log.isDebugEnabled()) {
+    log.debug("batch={} accepted={} rejected={}",
+            batch.id(), accepted.size(), rejected.size());
+}
+```
+
+```java
+// Yordamchi endpoint: production profilida kontekstga umuman kirmaydi
+@Profile("local")
+@RestController
+@RequestMapping("/internal/settlement")
+class SettlementDebugController {
+
+    private final SettlementImporter importer;
+
+    SettlementDebugController(SettlementImporter importer) {
+        this.importer = importer;
+    }
+
+    @PostMapping("/replay")
+    ImportReport replay(@RequestBody ReplayRequest request) {
+        return importer.replay(request.batchId());
+    }
+}
+```
+
+Qoidaning bitta amaliy shakli bor: yordamchining o'chirilgan holati xatti-harakatni o'zgartirmasin. `assert` ichida hisob yoki o'zgartirish bo'lsa, `-ea` siz production boshqacha ishlaydi va bu eng qiyin topiladigan xato turi bo'ladi. Olib tashlash rejasi esa izoh emas: u build profili, konfiguratsiya kaliti yoki feature flag shaklida bo'ladi. `TODO: keyin o'chiriladi` reja hisoblanmaydi (8.7).
+
+ESLATMA: jadvalning Java va Spring ustuni shu korpusning moslashtirishi; kitob til sifatida C++ va umumiy build asboblari (ant, make) misolida gapiradi. `assert` ning `-ea` siz bajarilmasligi va `@Profile` xatti-harakati esa Java va Spring ning hujjatlashtirilgan xatti-harakati.
+
+## 39.11 Amalda qo'llash
 
 - [ ] Yangi (yoki tozalangan) mashinada `git clone` + bitta buyruq bilan build ishlashini tekshirib, yetishmaganini README ga emas, build ga ko'chiring.
 - [ ] Testni ishga tushirish uchun qo'lda sozlash kerak bo'lsa, uni Testcontainers yoki standart konfiguratsiya bilan yo'qoting.
@@ -197,6 +335,31 @@ Qoida: `application.yml` da sir bo'lmaydi - faqat `${ENV_VAR}` havolasi (26.4). 
 - [ ] Generatsiya qilingan kodni `git` dan chiqarib, formatlash va tahlildan istisno qiling.
 - [ ] Mahalliy qaytish halqasini 39.7 jadvaliga qarab o'lchab, eng sekin bo'g'inni tezlashtiring.
 - [ ] `.gitignore` ni sir fayllari bilan to'ldirib, CI ga sir skanerlashni qo'shing.
+- [ ] Har bir debug yordamchisi uchun olib tashlash mexanizmini (profil, sozlama kaliti, `-ea`) yozib qo'ying va `TODO` bilan qolganlarini tuzating (39.10).
+
+## Manbalar
+
+- Apache Maven, *Configuring for Reproducible Builds*
+  ([https://github.com/apache/maven-site/blob/eb827a7/content/markdown/guides/mini/guide-reproducible-builds.md](https://github.com/apache/maven-site/blob/eb827a7/content/markdown/guides/mini/guide-reproducible-builds.md),
+  commit `eb827a7`, Apache-2.0) - 39.3 dagi
+  `project.build.outputTimestamp`, `artifact:check-buildplan` va
+  `artifact:compare` bilan tekshirish, hamda Maven 3.10.0 dan boshlab
+  rejimning default yoqilishi.
+- Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr,
+  Pragmatic Engineer, 2023, 10-bob (133-134) - 39.9 dagi IDE dan
+  kutiladigan qobiliyatlar ro'yxati, tooling bo'yicha rasmiy
+  o'qitishning kamligi va tahrirdan natijagacha bo'lgan siklni qisqa
+  ushlash talabi.
+- Testcontainers, *Reusable Containers*
+  ([https://github.com/testcontainers/testcontainers-java/blob/1.21.4/docs/features/reuse.md](https://github.com/testcontainers/testcontainers-java/blob/1.21.4/docs/features/reuse.md),
+  tag `1.21.4`, MIT) - 39.7 dagi uch shart (bayroq, `withReuse(true)`,
+  qo'lda `start()`), classpath properties fayli orqali yoqilmasligi,
+  imkoniyatning eksperimental ekani, konteynerlarning to'xtamasligi va
+  CI uchun mos emasligi.
+- Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 8.6
+  (206-208) - 39.10 dagi ikki qoida: debug yordamchisini ertaroq kiritish,
+  olib tashlash yo'lini oldindan hal qilish; versiya nazorati va build
+  asbobi, preprotsessor va debug stub mexanizmlari
 
 ---
 

@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 17. Metrikalar va test yetukligi modeli (Metrics & Testing Maturity)
 
 <details>
-<summary>Bu bobdagi 14 bo'lim</summary>
+<summary>Bu bobdagi 15 bo'lim</summary>
 
 - [17.1 Nimani o'lchash kerak va nega](#171-nimani-olchash-kerak-va-nega)
 - [17.2 Sifat natijasi metrikalari (outcome)](#172-sifat-natijasi-metrikalari-outcome)
@@ -22,7 +22,8 @@
 - [17.11 Jamoani ishontirish va o'rgatish](#1711-jamoani-ishontirish-va-orgatish)
 - [17.12 Byudjet va vaqt](#1712-byudjet-va-vaqt)
 - [17.13 Anti-patternlar](#1713-anti-patternlar)
-- [17.14 Arxitektor nazorat ro'yxati](#1714-arxitektor-nazorat-royxati)
+- [17.14 Nechta defekt kutish kerak: nuqson zichligi mo'ljallari](#1714-nechta-defekt-kutish-kerak-nuqson-zichligi-moljallari)
+- [17.15 Arxitektor nazorat ro'yxati](#1715-arxitektor-nazorat-royxati)
 
 </details>
 
@@ -254,6 +255,30 @@ void finalize_qaysi_summani_qaytarishini_yozib_olamiz() {
 
 Agar natija kutilganidan farq qilsa, testni "to'g'ri" qiymatga emas, **haqiqiy** qiymatga moslang va farqni alohida defekt sifatida yozib qo'ying: shu bosqichda maqsad xulqni saqlash, tuzatish emas.
 
+Parameterize constructor eng oson yo'l, lekin har doim ishlamaydi. Feathers buni alohida holat qilib ajratadi: konstruktor ichida ko'p obyekt yaratilsa yoki yaratilgan obyektlardan boshqa obyektlar qurilsa, parametr ro'yxati haddan ziyod uzayadi va kerakli obyekt "obyekt yaratish blobi" ichida qamalib qoladi. Shunda yana ikki chora bor (Feathers, *Working Effectively with Legacy Code*, Prentice Hall PTR, 2004 (copyright 2005), 9-bob, 116-118-bet). Birinchisi - **extract and override factory method**: konstruktordagi yaratish kodi metodga ajratiladi va test subclass uni override qiladi. Kitob Java va C# da bu yo'l ishlashini aytadi, lekin umumiy ogohlantirish beradi: bazaviy konstruktor tugamaguncha override qilingan metod initsializatsiya qilinmagan maydonga tegishi mumkin. Ikkinchisi - **supersede instance variable**: sinfga maydonni almashtiradigan setter qo'yiladi va obyekt qurilgandan keyin kerakli bog'liqlik joylashtiriladi. Feathers bu choradan iloji boricha qochadi, chunki almashtirilgan obyekt boshqa resursni boshqarsa resurs muammosi paydo bo'ladi; shu sababli superseding metodi production kodida ishlatilmaydi.
+
+```java
+public class WatercolorPane {
+    private Cursor cursor;
+
+    public WatercolorPane(Form border, Brush brush) {
+        Panel background = new Panel(border);
+        this.cursor = createCursor(brush, background); // extract and override factory method
+    }
+
+    // test subclass shu metodni override qiladi; konstruktor tugamaguncha
+    // maydonlarga tegmasligi shart
+    protected Cursor createCursor(Brush brush, Panel background) {
+        return new FocusWidget(brush, background);
+    }
+
+    // supersede instance variable: faqat test uchun, production kodi chaqirmaydi
+    void supersedeCursor(Cursor replacement) {
+        this.cursor = replacement;
+    }
+}
+```
+
 ## 17.11 Jamoani ishontirish va o'rgatish
 
 Eng kuchli argument - incident bilan bog'lanish. Oxirgi uch-besh incidentni olib, har biri uchun "qanday test buni oldini olardi va u qancha vaqt oladi?" degan tahlil yozilsa, testlash mavhum qiymatdan konkret summaga aylanadi. Shundan keyin ichki standart yoziladi: qaysi kodga qanday daraja test majburiy, nima mock qilinadi, nima real (Testcontainers), test nomlash konvensiyasi, flaky test bilan nima qilinadi.
@@ -275,7 +300,26 @@ Amaliy mo'ljal: feature ishlab chiqish vaqtining 20-30% testga ketadi va bu aloh
 - **Darvozani darhol majburiy qilish** - bypass madaniyati tug'iladi; o'lchash → ko'rsatish → ogohlantirish → bloklash ketma-ketligiga rioya qiling.
 - **Yolg'iz metrikaga qarab qaror qabul qilish** - tezlik va barqarorlikni, coverage va mutation'ni har doim juftlikda o'qing.
 
-## 17.14 Arxitektor nazorat ro'yxati
+## 17.14 Nechta defekt kutish kerak: nuqson zichligi mo'ljallari
+
+Escaped defect ni o'lchash boshlangandan keyin birinchi savol shu bo'ladi: topilgan son ko'pmi yoki kammi? Javob jarayonning sifatiga bog'liq va McConnell to'rtta nuqtali diapazon beradi (McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 22.4 (521-522-bet)). Raqamlar ming qator kodga nisbatan hisoblanadi.
+
+| Jarayon | Ichki testlashda | Chiqarilgan mahsulotda |
+|---|---|---|
+| Sanoat o'rtachasi (texnikalar aralash) | - | ming qatorga 1-25 nuqson |
+| Microsoft Applications Division | ming qatorga 10-20 | ming qatorga 0.5 |
+| Cleanroom (Mills) | ming qatorga 3 | ming qatorga 0.1 |
+| Team Software Process (Humphrey) | - | ming qatorga ~0.06 |
+
+Kitob diapazonning chetlarini ham izohlaydi: sanoat o'rtachasidan o'n barobar kam nuqsonli holatlar kam uchraydi, o'n barobar ko'p nuqsonli loyihalar esa odatda hisobotga chiqmaydi, chunki ular tugamaydi. Microsoft ning darajasi kod o'qish texnikalari va mustaqil testlash kombinatsiyasi bilan, cleanroom darajasi esa rasmiy usullar, peer review va statistik testlash bilan olingan; TSP esa nuqsonni tuzatishga emas, uni umuman yaratmaslikka o'rgatadi. Kitob shu yerda bitta alohida natijani ham keltiradi: bir necha loyiha, masalan space shuttle dasturi, 500 ming qator kodda nolinchi nuqson darajasiga chiqqan.
+
+Diapazonning amaliy ma'nosi tanqidiy yo'nalishni o'zgartiradi: "nuqson topilmayapti, demak testlar yaxshi" xulosasi noto'g'ri bo'lishi mumkin. Agar modul 20 ming qator bo'lsa va sanoat o'rtachasi diapazonining pastki chegarasi ham qo'llansa, chiqarilgandan keyin bir nechta nuqson kutilishi normal; agar hisobda umuman nol bo'lsa, ehtimol defektlar yozib olinmayapti yoki `found-in: production` maydoni to'ldirilmayapti. Shu bog'lanish [sifat natijasi metrikalari](#172-sifat-natijasi-metrikalari-outcome) jadvali bilan birga o'qiladi.
+
+Kitobning ikkinchi xulosasi iqtisodiy: sifatli dasturni qurish uni qurib keyin tuzatishdan arzonroq. Dalil sifatida unumdorlik raqami keltiriladi - to'liq tekshirilgan 80 ming qatorlik cleanroom loyihasida ish-oyiga 740 qator, sanoat o'rtachasi esa to'liq tekshirilgan kod uchun ish-oyiga 250-300 qator (barcha kod yozmaydigan ishlar bilan birga). Sabab oddiy: bu loyihalarda debug qilishga deyarli vaqt ketmaydi.
+
+ESLATMA: bu raqamlar 2004 yildagi hisobotlardan va mo'ljal sifatida beriladi, loyihangiz uchun darvoza emas. Ularni darvozaga aylantirish Goodhart tuzog'iga tushiradi: jamoa nuqsonni kamaytirish o'rniga nuqsonni yozmaslikni o'rganadi. To'g'ri ishlatish - o'z loyihangizning zichligini o'lchab shu ustunlarning qaysi biriga tushganini bilish, keyin jarayonni (review, mustaqil testlash) o'zgartirib trendni kuzatish.
+
+## 17.15 Arxitektor nazorat ro'yxati
 
 - [ ] Har bir yig'ilayotgan metrika uchun "qanday o'zgarsa, nima qilamiz" qarori va javobgar shaxs yozilgan.
 - [ ] Outcome metrikalari (escaped defect, change failure rate, MTTR, SLO buzilishi) muntazam yig'iladi va escaped defect'ga "qaysi test darajasi tutishi kerak edi" maydoni biriktirilgan.
@@ -285,6 +329,15 @@ Amaliy mo'ljal: feature ishlab chiqish vaqtining 20-30% testga ketadi va bu aloh
 - [ ] Jamoaning hozirgi yetuklik darajasi aniqlangan va keyingi darajaga 3-5 ta konkret qadam rejaga kiritilgan.
 - [ ] Legacy modullar uchun characterization test va seam ochish tartibi standart sifatida hujjatlangan.
 - [ ] Test infratuzilmasiga har sprintda aniq sig'im (5-10%) ajratilgan va hech bir metrika shaxsiy KPI qilib qo'yilmagan.
+
+## Manbalar
+
+- [JaCoCo 0.8.12, Coverage Counters](https://raw.githubusercontent.com/jacoco/jacoco/v0.8.12/org.jacoco.doc/docroot/doc/counters.html) - oltita hisoblagich va ularning farqi, ya'ni "coverage" raqamining nimani o'lchashi
+- [sonar-plugin-api, `CoreMetrics.java`](https://raw.githubusercontent.com/SonarSource/sonar-plugin-api/a9d2a8204d3762cc96ea7bd074a26cbe982745b4/plugin-api/src/main/java/org/sonar/api/measures/CoreMetrics.java) - metrika kalitlari va tavsiflari (`coverage`, `new_coverage`, `sqale_index`)
+- [pitest, `Mutator.java`](https://raw.githubusercontent.com/hcoles/pitest/f7fe5adfa5fb6e727c12d2403a48f5e4e9dd2fc6/pitest/src/main/java/org/pitest/mutationtest/engine/gregor/config/Mutator.java) - default mutator to'plami, ya'ni mutatsiya ballining mazmuni
+- [maven-surefire, `TestSuiteXmlParser.java`](https://raw.githubusercontent.com/apache/maven-surefire/0c970adeb11e8a59b449be5b3be2a50c478c2a65/surefire-report-parser/src/main/java/org/apache/maven/plugins/surefire/report/TestSuiteXmlParser.java) - flaky va davomiylik ma'lumoti hisobotdan qanday olinishi
+- Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 22.4 "Typical Errors" (521-522-bet) - ming qatorga nuqson zichligi mo'ljallari (sanoat o'rtachasi, Microsoft Applications Division, cleanroom, TSP) va cleanroom unumdorligi raqamlari
+- Michael Feathers, *Working Effectively with Legacy Code*, Prentice Hall PTR, 2004 (copyright 2005), 9-bob (116-118-bet) - construction blob holati, extract and override factory method va supersede instance variable choralari
 
 ---
 

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 10. Ma'lumotlarni boshqarish va taqsimlash patternlari (Data Management & Distribution Patterns)
 
@@ -52,7 +52,7 @@ Ma'lumotlarni boshqarish va taqsimlash patternlari ma'lumotning hayot davri - ya
 
 **Tavsif:** Yozuvni jadvaldan jismoniy `DELETE` qilish o'rniga uni `deleted`/`deleted_at` kabi flag bilan belgilab, barcha o'qish so'rovlarida filtrlab chiqarib tashlash. Bu ma'lumotni tiklash imkonini beradi, foreign key'lar va tarixiy hisobotlar buzilmaydi, "kim nimani o'chirdi" savoliga javob qoladi. Buning narxi - har bir so'rovga qo'shimcha predikat va "o'lik" qatorlarning to'planishi.
 
-**Spring'da qayerda uchraydi:** Hibernate 6.4+ dagi `@SoftDelete` annotatsiyasi (entity yoki field ustida, `SoftDeleteType.DELETED`/`ACTIVE`, `converter` bilan), yoki klassik yondashuv - `@SQLDelete(sql = "update ... set deleted = true where id = ?")` plus `@SQLRestriction("deleted = false")` (ilgari `@Where`, Hibernate 6.3'dan deprecated va 7.0 da olib tashlangan). Spring Data JPA tomonida `deleteById` ni override qilish yoki repository'da `findAllByDeletedFalse` / `@Query` bilan aniq filtr. Multi-tenant yoki global filtr kerak bo'lsa Hibernate `@FilterDef`/`@Filter` va `Session#enableFilter` ishlatiladi. Spring Modulith / event'lar bilan birga `ApplicationEventPublisher` orqali `EntityDeletedEvent` chiqarish keng tarqalgan.
+**Spring'da qayerda uchraydi:** Hibernate 6.4+ dagi `@SoftDelete` annotatsiyasi (entity yoki field ustida). Default'lari: `strategy` `SoftDeleteType.DELETED`, ustun nomi `deleted` (boolean); `ACTIVE` teskari ma'noni, `TIMESTAMP` esa vaqt belgisini yozadi - `TIMESTAMP` bilan `converter` berilsa `UnsupportedMappingException` chiqadi. Hibernate 7.0 dan `options` va `comment` atributlari ham bor. yoki klassik yondashuv - `@SQLDelete(sql = "update ... set deleted = true where id = ?")` plus `@SQLRestriction("deleted = false")` (ilgari `@Where`, Hibernate 6.3'dan deprecated va 7.0 da olib tashlangan). Spring Data JPA tomonida `deleteById` ni override qilish yoki repository'da `findAllByDeletedFalse` / `@Query` bilan aniq filtr. Multi-tenant yoki global filtr kerak bo'lsa Hibernate `@FilterDef`/`@Filter` va `Session#enableFilter` ishlatiladi. Spring Modulith yoki oddiy `ApplicationEventPublisher` bilan o'chirish hodisasini e'lon qilish ham uchraydi, lekin bu sizning domen hodisangiz bo'ladi: Spring Data'da `EntityDeletedEvent` degan tayyor sinf yo'q, nomni o'zingiz belgilaysiz.
 
 **Qo'llanish keyslari:**
 - Foydalanuvchi akkauntini "deaktivatsiya" qilish, 30 kunlik tiklash oynasi bilan.
@@ -81,7 +81,7 @@ class Order {
 
 **Tavsif:** Har bir o'zgarish uchun kim, qachon va nimani o'zgartirganini avtomatik qayd qilish. Eng oddiy darajada bu `created_by`/`created_at`/`modified_by`/`modified_at` ustunlari, kuchliroq darajada - har bir `UPDATE` uchun to'liq revision jadvali. Muammosi: biznes kodini audit logikasi bilan ifloslantirmaslik, shuning uchun u framework darajasidagi callback'lar orqali amalga oshiriladi.
 
-**Spring'da qayerda uchraydi:** Spring Data JPA auditing - `@EnableJpaAuditing`, entity ustida `@EntityListeners(AuditingEntityListener.class)`, maydonlarda `@CreatedDate`, `@LastModifiedDate`, `@CreatedBy`, `@LastModifiedBy`, hamda `AuditorAware<T>` bean'i (odatda `SecurityContextHolder` dan foydalanuvchini oladi). Mongo uchun `@EnableMongoAuditing`. To'liq revision tarixi kerak bo'lsa - Hibernate Envers: `@Audited`, `@AuditTable`, `_AUD` jadvallari va `AuditReader`/`AuditQuery` orqali so'rov; Spring Data Envers `RevisionRepository<T, ID, N>` interfeysini beradi (`findRevisions(id)`). Qo'shimcha: `@Version` optimistic lock, Spring Security'da `AuthenticationSuccessEvent`/`AuditEventRepository` (Actuator `/actuator/auditevents`).
+**Spring'da qayerda uchraydi:** Spring Data JPA auditing - `@EnableJpaAuditing`, entity ustida `@EntityListeners(AuditingEntityListener.class)`, maydonlarda `@CreatedDate`, `@LastModifiedDate`, `@CreatedBy`, `@LastModifiedBy`, hamda `AuditorAware<T>` bean'i (odatda `SecurityContextHolder` dan foydalanuvchini oladi). Diqqat: `AuditorAware` bean'i bo'lmasa `@CreatedBy` va `@LastModifiedBy` xatosiz, jim bo'sh qoladi - `AuditingHandler` faqat "No AuditorAware set; Auditing will not be applied" deb log yozadi, shuning uchun bu bean borligini test bilan qoplang. Mongo uchun `@EnableMongoAuditing`. To'liq revision tarixi kerak bo'lsa - Hibernate Envers: `org.hibernate.envers.Audited`, `@AuditTable`, `_AUD` jadvallari va `AuditReader`/`AuditQuery` orqali so'rov. Hibernate 7.4 dan yadroda ham `org.hibernate.annotations.Audited` paydo bo'lgan: nomi bir xil, paketi boshqa, shuning uchun import'ni diqqat bilan tanlang (migration guide Envers'dan yadro `@Audited` ga o'tish yo'lini alohida tasvirlaydi); Revision tarixini repository orqali o'qish uchun `RevisionRepository<T, ID, N>` (`findRevisions(id)`) ishlatiladi - u `spring-data-commons` ning `org.springframework.data.repository.history` paketida, Envers'ga xos interfeys emas; `spring-data-envers` esa uning JPA/Envers implementatsiyasini beradi. Qo'shimcha: `@Version` optimistic lock, Spring Security'da `AuthenticationSuccessEvent`/`AuditEventRepository` (Actuator `/actuator/auditevents`).
 
 **Qo'llanish keyslari:**
 - Bank yoki fintech'da har bir balans o'zgarishining revision tarixini saqlash.
@@ -130,6 +130,10 @@ class AuditConfig {
 
 ```sql
 -- Temporal: har o'zgarish yangi qator, joriy holat `valid_to IS NULL`
+-- bigint ustida `=` operatorini GiST da ishlatish uchun shu kengaytma SHART,
+-- aks holda "data type bigint has no default operator class" xatosi chiqadi
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+
 CREATE TABLE price_history (
     product_id bigint    NOT NULL,
     price      numeric   NOT NULL,
@@ -138,6 +142,14 @@ CREATE TABLE price_history (
     EXCLUDE USING gist (product_id WITH =,
              tstzrange(valid_from, valid_to) WITH &&)   -- kesishmaslik kafolati
 );
+
+-- PostgreSQL 18 dan boshqa yo'l ham bor: temporal kalit tabiiy qo'llanadi
+-- CREATE TABLE price_history (
+--     product_id bigint NOT NULL,
+--     valid_at   tstzrange NOT NULL,
+--     price      numeric NOT NULL,
+--     PRIMARY KEY (product_id, valid_at WITHOUT OVERLAPS)
+-- );
 
 -- Joriy narx
 SELECT price FROM price_history
@@ -152,7 +164,7 @@ WHERE product_id = $1 AND tstzrange(valid_from, valid_to) @> $2::timestamptz;
 
 **Tavsif:** Schema o'zgarishlarini versiyalangan, tartiblangan va takrorlanadigan skriptlar ko'rinishida kodga joylashtirish, so'ng ilova ishga tushganda yoki CI/CD bosqichida avtomatik qo'llash. Har bir migratsiya bir marta bajariladi va baza ichidagi maxsus jadvalda (checksum bilan) qayd etiladi, shuning uchun har qanday muhitda schema holati bir xil va kuzatiladigan bo'ladi.
 
-**Spring'da qayerda uchraydi:** Spring Boot 3.x/4.x Flyway va Liquibase'ni avtomatik konfiguratsiya qiladi. Flyway: `org.flywaydb:flyway-core` (PostgreSQL uchun qo'shimcha `flyway-database-postgresql`), skriptlar `classpath:db/migration/V1__init.sql`, `spring.flyway.*` xossalari, `FlywayMigrationStrategy` bean'i orqali boshqarish. Liquibase: `spring.liquibase.change-log=classpath:db/changelog/db.changelog-master.yaml`, XML/YAML/SQL changeset'lar, `databaseChangeLog` jadvali. Ikkalasi ham `DataSource` tayyor bo'lgandan keyin, JPA `EntityManagerFactory` dan oldin ishlaydi. Testda Testcontainers + `@Sql`, `@DynamicPropertySource` bilan birga ishlatiladi; `spring.jpa.hibernate.ddl-auto` esa prod'da `none`/`validate` bo'lishi kerak.
+**Spring'da qayerda uchraydi:** Spring Boot 3.x/4.x Flyway va Liquibase'ni avtomatik konfiguratsiya qiladi. Flyway: `org.flywaydb:flyway-core` (PostgreSQL uchun qo'shimcha `flyway-database-postgresql`), skriptlar `classpath:db/migration/V1__init.sql`, `spring.flyway.*` xossalari, `FlywayMigrationStrategy` bean'i orqali boshqarish. Liquibase: `spring.liquibase.change-log=classpath:db/changelog/db.changelog-master.yaml`, XML/YAML/SQL changeset'lar. Kuzatuv jadvalining nomi `DATABASECHANGELOG` (va `DATABASECHANGELOGLOCK`) - `databaseChangeLog` esa XML va Java tomonidagi element nomi, jadval nomi emas. Litsenziyaga ham e'tibor bering: Liquibase 5.x Functional Source License ostida, Apache-2.0 emas. Ikkalasi ham `DataSource` tayyor bo'lgandan keyin, JPA `EntityManagerFactory` dan oldin ishlaydi. Testda Testcontainers + `@Sql`, `@DynamicPropertySource` bilan birga ishlatiladi; `spring.jpa.hibernate.ddl-auto` esa prod'da `none`/`validate` bo'lishi kerak.
 
 **Qo'llanish keyslari:**
 - Yangi jadval, ustun yoki index'ni barcha muhitlarga (dev → stage → prod) bir xil tartibda tarqatish.
@@ -170,7 +182,9 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_orders_status
     ON orders (status) WHERE deleted_at IS NULL;
 
 -- CONCURRENTLY tranzaksiya ichida ishlamaydi, shuning uchun:
--- flyway.conf: flyway.executeInTransaction=false (yoki migratsiya nomida -- noTransaction)
+-- Boot'da: spring.flyway.execute-in-transaction=false (default true), yoki
+-- bitta skript uchun yonidagi V2__nom.sql.conf faylida executeInTransaction=false.
+-- "-- noTransaction" degan izoh-direktiva Flyway'da YO'Q, u ishlamaydi.
 -- Qoida: deploy qilingan migratsiya hech qachon tahrirlanmaydi,
 -- xato bo'lsa yangi migratsiya yoziladi.
 ```
@@ -237,7 +251,7 @@ class TenantFilterActivator {
 
 **Tavsif:** Bitta baza instance'i ichida har bir tenant uchun alohida schema yaratiladi; so'rovlar bir xil, faqat ulanishning joriy schema'si almashtiriladi. Bu izolyatsiya va xarajat o'rtasidagi o'rta yo'l: ma'lumot fizik ajratilgan, backup va o'chirish schema darajasida bajariladi, lekin baza resurslari hamon umumiy.
 
-**Spring'da qayerda uchraydi:** Hibernate multi-tenancy: `hibernate.multiTenancy=SCHEMA`, `MultiTenantConnectionProvider` (connection olingach `SET search_path TO tenant_x` yoki `USE schema` bajaradi) va `CurrentTenantIdentifierResolver`; Spring Boot'da bu bean'lar `HibernatePropertiesCustomizer` orqali ulanadi. Spring Boot 3.x/4.x'da `LocalContainerEntityManagerFactoryBean` ni qo'lda sozlash ko'p uchraydi. Migratsiya tomonida Flyway'ni har bir schema uchun alohida ishga tushirish (`Flyway.configure().schemas(tenant).load().migrate()`) yoki Liquibase `defaultSchemaName` bilan sikl ichida chaqirish. Tenant provisioning - `JdbcTemplate` bilan `CREATE SCHEMA` plus migratsiya; cache tomonida tenant-aware kalit strategiyasi (`CacheResolver` yoki `KeyGenerator`) kerak.
+**Spring'da qayerda uchraydi:** Hibernate multi-tenancy uchun `MultiTenantConnectionProvider` (connection olingach `SET search_path TO tenant_x` yoki `USE schema` bajaradi) va `CurrentTenantIdentifierResolver` yoziladi. Kalit nomlariga diqqat: `hibernate.multiTenancy` degan sozlama Hibernate 7 da YO'Q. Haqiqiy kalitlar `hibernate.multi_tenant_connection_provider`, `hibernate.tenant_identifier_resolver` va schema rejimi uchun `hibernate.multi_tenant.schema_mapper` (`TenantSchemaMapper` SPI). Spring Boot bu bean'larni o'zi topib ulamaydi: ularni `HibernatePropertiesCustomizer` orqali yoki shu kalitlar bilan aniq berish kerak. Spring Boot 3.x/4.x'da `LocalContainerEntityManagerFactoryBean` ni qo'lda sozlash ko'p uchraydi. Migratsiya tomonida Flyway'ni har bir schema uchun alohida ishga tushirish (`Flyway.configure().schemas(tenant).load().migrate()`) yoki Liquibase `defaultSchemaName` bilan sikl ichida chaqirish. Tenant provisioning - `JdbcTemplate` bilan `CREATE SCHEMA` plus migratsiya; cache tomonida tenant-aware kalit strategiyasi (`CacheResolver` yoki `KeyGenerator`) kerak.
 
 **Qo'llanish keyslari:**
 - O'rta hajmdagi B2B SaaS: yuzlab tenant, har biri uchun kuchli izolyatsiya talabi.
@@ -249,14 +263,33 @@ class TenantFilterActivator {
 **Ehtiyot bo'ling:** Schema soni o'sgach migratsiya vaqti chiziqli oshadi va bir nechta schema yarim migratsiya holatida qolib ketishi mumkin - tenant provisioning va migratsiyani idempotent, qayta ishga tushirilishi mumkin qilib yozing. Connection pool ham diqqatli bo'lishni talab qiladi: pool'ga qaytarilgan connection'da `search_path` tozalanmasa, keyingi so'rov boshqa tenant schema'siga tushib qolishi mumkin.
 
 ```java
-// Schema per tenant: bitta ulanish, search_path almashtiriladi
+// Schema per tenant: bitta ulanish, search_path almashtiriladi.
+// MultiTenantConnectionProvider ni to'g'ridan-to'g'ri implement qilsangiz
+// getAnyConnection, releaseAnyConnection va supportsAggressiveRelease ni
+// ham yozishga majbur bo'lasiz. Shuning uchun abstract bazadan meros olinadi.
 @Component
 public class SchemaTenantConnectionProvider
-        implements MultiTenantConnectionProvider<String> {
+        extends AbstractDataSourceBasedMultiTenantConnectionProviderImpl<String> {
+
+    private final DataSource dataSource;
+
+    public SchemaTenantConnectionProvider(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    @Override
+    protected DataSource selectAnyDataSource() {
+        return dataSource;              // bitta pool, schema so'rov paytida tanlanadi
+    }
+
+    @Override
+    protected DataSource selectDataSource(String tenantId) {
+        return dataSource;
+    }
 
     @Override
     public Connection getConnection(String tenantId) throws SQLException {
-        Connection c = dataSource.getConnection();
+        Connection c = super.getConnection(tenantId);
         try (Statement s = c.createStatement()) {
             // Tenant nomi oq ro'yxatdan kelishi shart: SQL injection xavfi
             s.execute("SET search_path TO " + quoteIdentifier(tenantId));
@@ -267,7 +300,12 @@ public class SchemaTenantConnectionProvider
     @Override
     public void releaseConnection(String tenantId, Connection c) throws SQLException {
         try (Statement s = c.createStatement()) { s.execute("SET search_path TO public"); }
-        c.close();                      // pool'ga qaytganda tozalash majburiy
+        super.releaseConnection(tenantId, c);   // pool'ga qaytganda tozalash majburiy
+    }
+
+    private String quoteIdentifier(String tenantId) {
+        // Oq ro'yxat tekshiruvi shu yerda: faqat ma'lum tenant nomlari o'tsin
+        return "\"" + tenantId.replace("\"", "\"\"") + "\"";
     }
 }
 ```
@@ -276,7 +314,7 @@ public class SchemaTenantConnectionProvider
 
 **Tavsif:** Har bir tenant butunlay alohida ma'lumotlar bazasiga (ba'zan alohida serverga) ega bo'ladi, ilova esa so'rov kontekstiga qarab mos `DataSource` ni tanlaydi. Bu eng kuchli izolyatsiya, per-tenant backup, SLA va hatto turli geografik regionlarga joylash imkonini beradi; narxi - infratuzilma xarajati va operatsion murakkablik.
 
-**Spring'da qayerda uchraydi:** `AbstractRoutingDataSource` ni extend qilib `determineCurrentLookupKey()` da tenant ID qaytarish (eng oddiy yo'l), yoki Hibernate `hibernate.multiTenancy=DATABASE` + `MultiTenantConnectionProvider` bilan tenant boshiga HikariCP pool'lari. Tenant → ulanish ma'lumotlari ro'yxati odatda alohida "master"/catalog bazada saqlanadi va `DataSourceBuilder` orqali dinamik yaratiladi; sirlar uchun Spring Cloud Vault yoki AWS Secrets Manager. Tranzaksiyalar uchun har bir `DataSource` ga alohida `PlatformTransactionManager`/`EntityManagerFactory`, yoki routing yondashuvida bitta `JpaTransactionManager`. Migratsiya - tenant ro'yxati bo'ylab Flyway/Liquibase'ni programmatik aylantirish, ko'pincha alohida admin endpoint yoki Spring Batch job orqali.
+**Spring'da qayerda uchraydi:** `AbstractRoutingDataSource` ni extend qilib `determineCurrentLookupKey()` da tenant ID qaytarish (eng oddiy yo'l), yoki Hibernate ning `hibernate.multi_tenant_connection_provider` kalitiga berilgan `MultiTenantConnectionProvider` bilan tenant boshiga HikariCP pool'lari. Tenant → ulanish ma'lumotlari ro'yxati odatda alohida "master"/catalog bazada saqlanadi va `DataSourceBuilder` orqali dinamik yaratiladi; sirlar uchun Spring Cloud Vault yoki AWS Secrets Manager. Tranzaksiyalar uchun har bir `DataSource` ga alohida `PlatformTransactionManager`/`EntityManagerFactory`, yoki routing yondashuvida bitta `JpaTransactionManager`. Migratsiya - tenant ro'yxati bo'ylab Flyway/Liquibase'ni programmatik aylantirish, ko'pincha alohida admin endpoint yoki Spring Batch job orqali.
 
 **Qo'llanish keyslari:**
 - Enterprise mijozlar: kam sonli, yirik, shartnomada izolyatsiya talab qilinadigan tenant'lar.
@@ -368,7 +406,7 @@ public class RoutingDataSource extends AbstractRoutingDataSource {
 
 **Tavsif:** Bitta tizim ichida har bir ma'lumot turi uchun unga eng mos saqlash texnologiyasini tanlash: tranzaksion yadro uchun relyatsion baza, qidiruv uchun Elasticsearch/OpenSearch, cache va session uchun Redis, hujjatlar uchun MongoDB, graf aloqalar uchun Neo4j, event log uchun Kafka. Bu har bir use-case'da optimal unumdorlik beradi, lekin ma'lumotni sinxronlashtirish va operatsion murakkablikni tizimga olib kiradi.
 
-**Spring'da qayerda uchraydi:** Spring Data'ning modul oilasi bir xil abstraksiya beradi: Spring Data JPA, Spring Data MongoDB (`MongoTemplate`, `@Document`), Spring Data Redis (`RedisTemplate`, `@RedisHash`), Spring Data Elasticsearch (`ElasticsearchOperations`, `@Document(indexName=...)`), Spring Data Cassandra, Spring Data Neo4j, Spring Data JDBC/R2DBC. Cache qatlami uchun `@EnableCaching`, `@Cacheable` va `RedisCacheManager`; sinxronizatsiya uchun Spring for Apache Kafka (`@KafkaListener`), Spring Integration yoki Debezium orqali CDC. Muhim nuqta: har bir store o'z `TransactionManager` iga ega, shuning uchun cross-store atomiklikni `@Transactional` bera olmaydi - `ChainedTransactionManager` deprecated/olib tashlangan, o'rniga outbox pattern va `@TransactionalEventListener(phase = AFTER_COMMIT)` ishlatiladi.
+**Spring'da qayerda uchraydi:** Spring Data'ning modul oilasi bir xil abstraksiya beradi: Spring Data JPA, Spring Data MongoDB (`MongoTemplate`, `@Document`), Spring Data Redis (`RedisTemplate`, `@RedisHash`), Spring Data Elasticsearch (`ElasticsearchOperations`, `@Document(indexName=...)`), Spring Data Cassandra, Spring Data Neo4j, Spring Data JDBC/R2DBC. Cache qatlami uchun `@EnableCaching`, `@Cacheable` va `RedisCacheManager`; sinxronizatsiya uchun Spring for Apache Kafka (`@KafkaListener`), Spring Integration yoki Debezium orqali CDC. Muhim nuqta: har bir store o'z `TransactionManager` iga ega, shuning uchun cross-store atomiklikni `@Transactional` bera olmaydi - `ChainedTransactionManager` (u Spring Framework da emas, `spring-data-commons` ning `org.springframework.data.transaction` paketida, 2.5 dan deprecated, lekin hali olib tashlanmagan) haqiqiy atomiklik bermaydi, o'rniga outbox pattern va `@TransactionalEventListener(phase = AFTER_COMMIT)` ishlatiladi.
 
 **Qo'llanish keyslari:**
 - E-commerce: buyurtmalar PostgreSQL'da, mahsulot qidiruvi Elasticsearch'da, savatcha Redis'da.
@@ -453,7 +491,7 @@ UPDATE orders SET status = 'PAID', paid_at = now() WHERE id = $1;
 
 **Tavsif:** Ma'lumotni o'zgartirish va bu haqda event yuborishni atomik qilish muammosini hal qiladi: broker'ga yuborish va bazaga commit alohida resurslar bo'lgani uchun biri muvaffaqiyatli, ikkinchisi muvaffaqiyatsiz bo'lishi mumkin (dual-write muammosi). Pattern bo'yicha event domen o'zgarishi bilan bir xil local tranzaksiyada `outbox` jadvaliga yoziladi. Keyin alohida publisher (poller yoki CDC) shu jadvalni o'qib brokerga yuboradi va yuborilganini belgilaydi. Natijada "at-least-once" kafolat olinadi - commit bo'lgan hamma o'zgarish albatta event sifatida chiqadi.
 
-**Spring'da qayerda uchraydi:** `@Transactional` metod ichida `OrderRepository.save(...)` bilan birga `OutboxRepository.save(new OutboxEvent(...))` chaqiriladi - ikkisi bir JDBC tranzaksiyasida. Publisher tomonida `@Scheduled` + `SELECT ... FOR UPDATE SKIP LOCKED` (Spring Data JPA'da `@Lock(LockModeType.PESSIMISTIC_WRITE)` yoki native query) bilan batch olinadi va `KafkaTemplate`/`RabbitTemplate` orqali yuboriladi. Domen hodisalarini to'plash uchun Spring Data'ning `AbstractAggregateRoot#registerEvent` va `@DomainEvents`/`@AfterDomainEventPublication` mexanizmi, hamda `ApplicationEventPublisher` + `@TransactionalEventListener(phase = BEFORE_COMMIT)` qulay. Kutubxonalar: Debezium Outbox Event Router (CDC variantida), Axon Framework, Eventuate Tram.
+**Spring'da qayerda uchraydi:** `@Transactional` metod ichida `OrderRepository.save(...)` bilan birga `OutboxRepository.save(new OutboxEvent(...))` chaqiriladi - ikkisi bir JDBC tranzaksiyasida. Publisher tomonida `@Scheduled` + `SELECT ... FOR UPDATE SKIP LOCKED` bilan batch olinadi. Diqqat: Spring Data JPA'da `@Lock(LockModeType.PESSIMISTIC_WRITE)` o'zi `SKIP LOCKED` BERMAYDI - u faqat `FOR UPDATE` qo'yadi. `SKIP LOCKED` uchun lock timeout hint'iga Hibernate'ning maxsus qiymati beriladi: `@QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "-2"))`, yoki soddarog'i native query yoziladi va `KafkaTemplate`/`RabbitTemplate` orqali yuboriladi. Domen hodisalarini to'plash uchun Spring Data'ning `AbstractAggregateRoot#registerEvent` va `@DomainEvents`/`@AfterDomainEventPublication` mexanizmi, hamda `ApplicationEventPublisher` + `@TransactionalEventListener(phase = BEFORE_COMMIT)` qulay. Kutubxonalar: Debezium Outbox Event Router (CDC variantida), Axon Framework, Eventuate Tram.
 
 ```java
 @Transactional
@@ -509,7 +547,7 @@ Mavzuning to'liq yozuvi [idempotency](07-api-dizayn-patternlari.md#79-idempotent
 
 **Tavsif:** Ilova kodini o'zgartirmasdan, ma'lumotlar bazasidagi har bir INSERT/UPDATE/DELETE ni event oqimiga aylantiradi. Debezium bazaning tranzaksion log'ini (PostgreSQL logical replication slot va WAL, MySQL binlog, MongoDB oplog, Oracle LogMiner) o'qiydi va o'zgarishlarni Kafka topic'lariga `before`/`after` tasvirlari bilan yuboradi. Bu polling'ga qaraganda arzon va ishonchli: bazaga qo'shimcha query yuklanmaydi, o'chirishlar ham ko'rinadi, tartib tranzaksion log tartibida saqlanadi. Odatda legacy bazadan event-driven dunyoga ko'prik yoki read model'ni yangilash uchun ishlatiladi.
 
-**Spring'da qayerda uchraydi:** Eng ko'p tarqalgan sxema - Debezium Kafka Connect'da ishlaydi, Spring Boot ilovasi esa natijani `@KafkaListener` bilan iste'mol qiladi (`spring-kafka`). Debezium Outbox Event Router SMT bilan birga outbox jadvalidagi qatorlar to'g'ridan-to'g'ri domen topic'lariga marshrutlanadi. Embedded variantda ilova ichida `io.debezium:debezium-embedded` va `DebeziumEngine`/`io.debezium.engine.RecordChangeEvent` ishlatiladi; Spring Boot'da bu odatda `@Bean DebeziumEngine<...>` + `ExecutorService` ko'rinishida yoziladi, ammo bu ilovani stateful qiladi (offset file/`KafkaOffsetBackingStore`). Testlar uchun Testcontainers'ning `DebeziumContainer` moduli mavjud. Spring Cloud Stream bilan ham binder orqali ulash mumkin.
+**Spring'da qayerda uchraydi:** Eng ko'p tarqalgan sxema - Debezium Kafka Connect'da ishlaydi, Spring Boot ilovasi esa natijani `@KafkaListener` bilan iste'mol qiladi (`spring-kafka`). Debezium Outbox Event Router SMT bilan birga outbox jadvalidagi qatorlar to'g'ridan-to'g'ri domen topic'lariga marshrutlanadi. Embedded variantda ilova ichida `io.debezium:debezium-embedded` va `DebeziumEngine`/`io.debezium.engine.RecordChangeEvent` ishlatiladi; Spring Boot'da bu odatda `@Bean DebeziumEngine<...>` + `ExecutorService` ko'rinishida yoziladi, ammo bu ilovani stateful qiladi (offset file/`KafkaOffsetBackingStore`). Testlar uchun `DebeziumContainer` mavjud - u Testcontainers loyihasining moduli emas, Debezium reposidagi `debezium-testing-testcontainers` artifaktidan (`io.debezium.testing.testcontainers` paketi) keladi. Spring Cloud Stream bilan ham binder orqali ulash mumkin.
 
 **Qo'llanish keyslari:**
 - Legacy monolit bazasidan yangi mikroservislarga ma'lumot oqimini chiqarish (strangler migratsiya).
@@ -637,7 +675,7 @@ CREATE INDEX ix_orders_customer ON orders (customer_id, created_at DESC);
 
 **Tavsif:** Katta hajmdagi yozuvlarni bittalab INSERT qilish tarmoq round-trip va tranzaksiya overhead'i tufayli sekin bo'ladi. Pattern bo'yicha yozuvlar guruhlarga (batch) to'planadi va bitta so'rov yoki bitta statement bilan bazaga yuboriladi - ko'pincha bir necha o'n baravar tezlanish beradi. Muvozanat chegarasi muhim: batch juda kichik bo'lsa foyda yo'q, juda katta bo'lsa memory va lock ushlab turish vaqti oshadi, xato bo'lganda esa butun batch qayta urinishga ketadi.
 
-**Spring'da qayerda uchraydi:** `JdbcTemplate.batchUpdate(...)` va `NamedParameterJdbcTemplate.batchUpdate(...)` - eng to'g'ridan-to'g'ri yo'l; Spring Boot 3.2+ da `JdbcClient` ham bor. JPA/Hibernate'da `spring.jpa.properties.hibernate.jdbc.batch_size`, `order_inserts=true`, `order_updates=true` sozlanadi va `EntityManager.flush()`/`clear()` har batch'dan keyin chaqiriladi; `GenerationType.IDENTITY` batching'ni o'chirib qo'yganini bilish muhim (`SEQUENCE` + `pooled` optimizer tanlang). PostgreSQL JDBC'da `reWriteBatchedInserts=true` parametri INSERT'larni multi-row ga aylantiradi. Juda katta yuklamalarda PostgreSQL `COPY` (pgjdbc `CopyManager`) ishlatiladi. Spring Batch esa butun ETL oqimi uchun chunk-oriented processing beradi: `JdbcBatchItemWriter`, `JpaItemWriter`, `FlatFileItemReader` va `@EnableBatchProcessing`.
+**Spring'da qayerda uchraydi:** `JdbcTemplate.batchUpdate(...)` va `NamedParameterJdbcTemplate.batchUpdate(...)` - eng to'g'ridan-to'g'ri yo'l; `JdbcClient` ham bor (u Spring Framework 6.1 dan, Boot emas). JPA/Hibernate'da `spring.jpa.properties.hibernate.jdbc.batch_size`, `order_inserts=true`, `order_updates=true` sozlanadi - uchalasi ham default'da o'chiq (`batch_size` 0, qolgan ikkisi `false`), ya'ni batching hech narsa sozlamasa umuman ishlamaydi va `EntityManager.flush()`/`clear()` har batch'dan keyin chaqiriladi; `GenerationType.IDENTITY` batching'ni o'chirib qo'yganini bilish muhim (`SEQUENCE` + `pooled` optimizer tanlang). PostgreSQL JDBC'da `reWriteBatchedInserts=true` parametri INSERT'larni multi-row ga aylantiradi (u ham default'da `false`). Juda katta yuklamalarda PostgreSQL `COPY` (pgjdbc `CopyManager`) ishlatiladi. Spring Batch esa butun ETL oqimi uchun chunk-oriented processing beradi: `JdbcBatchItemWriter`, `JpaItemWriter`, `FlatFileItemReader` va `@EnableBatchProcessing`.
 
 ```java
 jdbcTemplate.batchUpdate("INSERT INTO price(sku, amount) VALUES (?,?)",
@@ -660,7 +698,7 @@ jdbcTemplate.batchUpdate("INSERT INTO price(sku, amount) VALUES (?,?)",
 
 **Tavsif:** Bir nechta resurs (ikki baza, baza va message broker) ustidagi o'zgarishlarni atomik qilish uchun ishlatiladigan distributed tranzaksiya protokoli. Transaction manager avval hamma qatnashchidan "prepare" so'raydi - har biri commit qilishga qodirligini kafolatlaydi va log'ga yozadi; hammasi "ha" desa ikkinchi fazada "commit" buyrug'i yuboriladi, aks holda hammasi rollback qiladi. Bu kuchli consistency beradi, lekin qimmat: ikki marta tarmoq aylanishi, resurslarda uzoq lock, va coordinator prepare bilan commit o'rtasida o'lsa qatnashchilar "in-doubt" holatida blokda qoladi. Zamonaviy mikroservislarda shu sababli Saga va Outbox afzal ko'riladi.
 
-**Spring'da qayerda uchraydi:** `JtaTransactionManager` (Spring Framework 6.x) orqali tashqi JTA provayderga ulanadi; Jakarta EE serverida (WildFly, WebLogic) bu konteynerning transaction manager'i bo'ladi. Standalone Spring Boot'da tarixiy ravishda Atomikos va Bitronix ishlatilgan, ammo Spring Boot 3.x da Bitronix uchun auto-configuration olib tashlangan, Atomikos qo'llab-quvvatlashi ham `spring-boot-starter-jta-atomikos` sifatida 3.0'da tugatilgan - bugun odatda Narayana (`narayana-spring-boot-starter`) yoki konteyner JTA'si tanlanadi. Resurs tomonida `XADataSource` (PostgreSQL `PGXADataSource`, Oracle `OracleXADataSource`) va XA-ga mos JMS `ConnectionFactory` kerak. Muhim fakt: Apache Kafka XA ni qo'llab-quvvatlamaydi - `KafkaTransactionManager` faqat Kafka'ning o'z tranzaksiyalari; Kafka + DB atomikligi uchun `ChainedTransactionManager` ishlatilgan, ammo u Spring'da deprecated va haqiqiy atomiklik bermaydi, shuning uchun to'g'ri yechim Outbox.
+**Spring'da qayerda uchraydi:** `JtaTransactionManager` (Spring Framework 6.x) orqali tashqi JTA provayderga ulanadi; Jakarta EE serverida (WildFly, WebLogic) bu konteynerning transaction manager'i bo'ladi. Standalone Spring Boot'da tarixiy ravishda Atomikos va Bitronix ishlatilgan: `spring-boot-starter-jta-atomikos` 2.7 da bor, 3.0 dan yo'q, Spring Boot 4 da esa JTA moduli umuman qolmagan. Bugun odatda Narayana (`narayana-spring-boot-starter` - bu Narayana loyihasining artifacti, Spring Boot moduli emas) yoki konteyner JTA'si tanlanadi. Resurs tomonida `XADataSource` (PostgreSQL `PGXADataSource`, Oracle `OracleXADataSource`) va XA-ga mos JMS `ConnectionFactory` kerak. Muhim fakt: Apache Kafka XA ni qo'llab-quvvatlamaydi - `KafkaTransactionManager` faqat Kafka'ning o'z tranzaksiyalari; Kafka + DB atomikligi uchun `ChainedTransactionManager` ishlatilgan, ammo u (`spring-data-commons` da, 2.5 dan deprecated) haqiqiy atomiklik bermaydi, shuning uchun to'g'ri yechim Outbox.
 
 **Qo'llanish keyslari:**
 - Legacy bank tizimida bir tranzaksiyada ikki alohida RDBMS'ga yozish (masalan, core banking va ledger).
@@ -691,7 +729,7 @@ public void place(Order order) {
 
 **Tavsif:** TCC - distributed tranzaksiyalarni uch fazaga ajratadigan pattern: `Try` fazasida resurs rezerv qilinadi (masalan, balansdan pul "frozen" holatga o'tadi), `Confirm` fazasida rezerv haqiqiy o'zgarishga aylanadi, `Cancel` fazasida esa rezerv bo'shatiladi. Saga'dan farqi shundaki, har bir servis o'z resursini oldindan ushlab turadi, shuning uchun `Confirm` fazasi deyarli hech qachon muvaffaqiyatsiz bo'lmaydi. Bu 2PC'ning biznes-darajadagi muqobili: lock ma'lumotlar bazasida emas, balki domen modelida (reserved/available maydonlari) saqlanadi.
 
-**Spring'da qayerda uchraydi:** Har bir mikroservis uchta endpoint beradi (`POST /reserve`, `POST /confirm`, `POST /cancel`) - ular oddiy `@RestController` metodlari bo'lib, har biri `@Transactional` bilan lokal tranzaksiyada ishlaydi. Koordinatorni Spring Boot 3.x'da `RestClient`/`WebClient` yoki Spring Cloud OpenFeign bilan yozish mumkin; Seata framework'ning TCC rejimi uchun `io.seata:seata-spring-boot-starter` va `@LocalTCC` + `@TwoPhaseBusinessAction` annotatsiyalari mavjud. Rezervlarning muddati o'tganini tozalash uchun `@Scheduled` task yoki Quartz job ishlatiladi, idempotentlik uchun esa `reservation_id` ustunida unique constraint qo'yiladi.
+**Spring'da qayerda uchraydi:** Har bir mikroservis uchta endpoint beradi (`POST /reserve`, `POST /confirm`, `POST /cancel`) - ular oddiy `@RestController` metodlari bo'lib, har biri `@Transactional` bilan lokal tranzaksiyada ishlaydi. Koordinatorni Spring Boot 3.x'da `RestClient`/`WebClient` yoki Spring Cloud OpenFeign bilan yozish mumkin; Seata framework'ning TCC rejimi uchun `seata-spring-boot-starter` va `@LocalTCC` + `@TwoPhaseBusinessAction` annotatsiyalari mavjud. Paket nomi versiyaga bog'liq: Seata 2.x (Apache ostida) da asosiy paket `org.apache.seata`, eski `io.seata` esa faqat compatible modulida qoldi. Rezervlarning muddati o'tganini tozalash uchun `@Scheduled` task yoki Quartz job ishlatiladi, idempotentlik uchun esa `reservation_id` ustunida unique constraint qo'yiladi.
 
 **Qo'llanish keyslari:**
 - Aviachipta bron qilish: o'rindiq 15 daqiqaga ushlanadi, to'lov tasdiqlansa `Confirm`, aks holda `Cancel`.
@@ -760,7 +798,7 @@ public class RefundCompensation {
 
 **Tavsif:** Agregatning joriy holatini jadvalda saqlash o'rniga, unga olib kelgan barcha o'zgarishlar immutable event'lar ketma-ketligi sifatida append-only jurnalga yoziladi. Joriy holat event'larni qayta o'ynatish (replay) yo'li bilan tiklanadi, katta agregatlar uchun esa snapshot'lar qo'llaniladi. Natijada to'liq audit izi, vaqt bo'yicha "orqaga qaytish" (temporal query) va bir xil event oqimidan turli read model'lar qurish imkoni paydo bo'ladi.
 
-**Spring'da qayerda uchraydi:** Axon Framework Spring Boot starter (`axon-spring-boot-starter`) eng keng tarqalgan yechim: `@Aggregate`, `@CommandHandler`, `@EventSourcingHandler`, `AggregateLifecycle.apply()` va `EventStore` abstraksiyasi. Muqobil variantlar - Eventuate Tram, yoki EventStoreDB kliyenti bilan oddiy Spring Boot 3.x servisi. "Qo'lda" realizatsiyada `events` jadvali (`aggregate_id`, `sequence_no`, `event_type`, `payload` jsonb) va `(aggregate_id, sequence_no)` ustida unique constraint optimistik lock vazifasini bajaradi; yozish uchun Spring Data JDBC yoki `JdbcTemplate`, seriyalash uchun Jackson ishlatiladi.
+**Spring'da qayerda uchraydi:** Axon Framework Spring Boot starter (`axon-spring-boot-starter`) eng keng tarqalgan yechim. Axon 4.x da API `@Aggregate`, `@CommandHandler`, `@EventSourcingHandler`, `AggregateLifecycle.apply()` va `EventStore` abstraksiyasi ko'rinishida; Axon 5 da bu nomlar o'zgargan (`@EventSourcedEntity`, `@Snapshotting`), shuning uchun qo'llanmalarni o'qiyotganda qaysi major versiya haqida ekanini albatta tekshiring. Muqobil variantlar - Eventuate Tram, yoki EventStoreDB kliyenti bilan oddiy Spring Boot 3.x servisi. "Qo'lda" realizatsiyada `events` jadvali (`aggregate_id`, `sequence_no`, `event_type`, `payload` jsonb) va `(aggregate_id, sequence_no)` ustida unique constraint optimistik lock vazifasini bajaradi; yozish uchun Spring Data JDBC yoki `JdbcTemplate`, seriyalash uchun Jackson ishlatiladi.
 
 **Qo'llanish keyslari:**
 - Bank hisob-raqami: har bir debet/kredit event sifatida, balans esa hisoblanadigan proyeksiya.
@@ -791,7 +829,7 @@ CREATE TABLE account_events (
 
 **Tavsif:** Operatsion ma'lumotlar bazasini kichik va tez ushlab turish uchun "sovigan" yozuvlar arzon omborga ko'chiriladi (archive), keyin esa muddati o'tganlari butunlay o'chiriladi (purge). Bu ikki bosqichli bo'lishi muhim: avval nusxa ishonchli joyga ko'chadi, keyingina manba'dan o'chiriladi. Natijada index'lar kichrayadi, backup/restore vaqti qisqaradi, so'rovlar tezlashadi.
 
-**Spring'da qayerda uchraydi:** Spring Boot 3.x'da `@Scheduled(cron = "...")` yoki Quartz (`spring-boot-starter-quartz`) bilan periodik job; katta hajm uchun Spring Batch (`spring-boot-starter-batch`) va `JdbcPagingItemReader` + `JdbcBatchItemWriter` yoki `RepositoryItemReader`, chunk-oriented processing bilan. O'chirishni bo'laklab bajarish uchun `@Modifying @Query` ichida `LIMIT`li DELETE yoki native query; PostgreSQL'da partition'larni `DETACH PARTITION` bilan bir zumda chiqarib yuborish eng arzon usul. Arxiv maqsadi sifatida S3 (`spring-cloud-aws-starter-s3` yoki AWS SDK v2) yoki alohida "cold" DataSource ishlatiladi.
+**Spring'da qayerda uchraydi:** Spring Boot 3.x'da `@Scheduled(cron = "...")` yoki Quartz (`spring-boot-starter-quartz`) bilan periodik job; katta hajm uchun Spring Batch (`spring-boot-starter-batch`) va `JdbcPagingItemReader` + `JdbcBatchItemWriter` yoki `RepositoryItemReader`, chunk-oriented processing bilan. O'chirishni bo'laklab bajarish uchun `@Modifying @Query` ichida subquery bilan chegaralangan DELETE kerak: PostgreSQL ning `DELETE` buyrug'ida `LIMIT` bandi YO'Q, shuning uchun `DELETE FROM t WHERE id IN (SELECT id FROM t WHERE ... LIMIT 1000)` shaklida yoziladi; PostgreSQL'da partition'larni `DETACH PARTITION` bilan bir zumda chiqarib yuborish eng arzon usul. Arxiv maqsadi sifatida S3 (`spring-cloud-aws-starter-s3` yoki AWS SDK v2) yoki alohida "cold" DataSource ishlatiladi.
 
 **Qo'llanish keyslari:**
 - 2 yildan oshgan buyurtma va to'lov tarixini S3'ga Parquet formatida chiqarib, OLTP bazasidan o'chirish.
@@ -849,7 +887,7 @@ retention:
 
 **Tavsif:** Ma'lumotlar diskda shifrlangan holda saqlanadi, shunda disk, backup yoki dump o'g'irlangan taqdirda ham o'qib bo'lmaydi. Encryption at rest butun hajm yoki tablespace darajasida (TDE) shaffof ishlaydi, field-level encryption esa faqat tanlangan ustunlarni (passport raqami, karta, telefon) ilova darajasida shifrlaydi va DBA'dan ham himoya qiladi. Qidiruv kerak bo'lsa, deterministik shifr yoki blind index (HMAC) qo'shiladi.
 
-**Spring'da qayerda uchraydi:** Spring Security Crypto moduli `Encryptors.stronger(password, salt)` (AES-GCM) va `TextEncryptor` beradi; JPA'da `@Convert(converter = ...)` bilan `AttributeConverter` yozib, ustunni shaffof shifrlash odatiy yondashuv. Kalitlarni Spring Cloud Vault (`spring-cloud-starter-vault-config`), AWS KMS yoki `spring-cloud-aws-starter-secrets-manager` orqali olish kerak - `application.properties`da emas. Spring Cloud Config Server `{cipher}` prefiksli qiymatlarni va `/encrypt` endpoint'ini qo'llab-quvvatlaydi; Jasypt (`jasypt-spring-boot-starter`) konfiguratsiya shifrlash uchun keng ishlatiladi. Java 17+ da `javax.crypto` va `KeyStore` standart API sifatida mavjud.
+**Spring'da qayerda uchraydi:** Spring Security Crypto moduli shifrlashni beradi, lekin qaysi factory metodni tanlash muhim: `Encryptors.stronger(password, salt)` AES-GCM bilan `BytesEncryptor` qaytaradi, `TextEncryptor` esa `Encryptors.delux(password, salt)` dan keladi (u `stronger` ustiga hex kodlash qo'shadi). `AttributeConverter` da satr bilan ishlayotgan bo'lsangiz sizga `delux` kerak; JPA'da `@Convert(converter = ...)` bilan `AttributeConverter` yozib, ustunni shaffof shifrlash odatiy yondashuv. Kalitlarni Spring Cloud Vault (`spring-cloud-starter-vault-config`), AWS KMS yoki `spring-cloud-aws-starter-secrets-manager` orqali olish kerak - `application.properties`da emas. Spring Cloud Config Server `{cipher}` prefiksli qiymatlarni va `/encrypt` endpoint'ini qo'llab-quvvatlaydi; Jasypt (`jasypt-spring-boot-starter`) konfiguratsiya shifrlash uchun keng ishlatiladi. Java 17+ da `javax.crypto` va `KeyStore` standart API sifatida mavjud.
 
 ```java
 @Converter
@@ -1009,6 +1047,28 @@ public void placeSafely(Order order) {
 - [ ] Taqsimlangan lock ishlatadigan joylarni toping va har birining TTL, egalik va lock yo'qolganda xatti-harakati yozilganini tasdiqlang.
 - [ ] CDC yoki Debezium ishlatilsa, `wal_level = logical` boshidan yoqilganini va reliz oynasidan tashqarida o'zgarmasligini tekshiring.
 - [ ] Har bir xabar iste'molchisi uchun savolga javob yozing: xabar ikki marta kelsa nima bo'ladi.
+
+## Manbalar
+
+- Hibernate ORM kodi: `@SoftDelete` (6.4 dan, default `SoftDeleteType.DELETED` va `deleted` ustuni), `SoftDeleteType`, `@SQLRestriction` (6.3 dan), `@SQLDelete`, `@Filter`/`@FilterDef`, `@Subselect`. hibernate/hibernate-orm, tag `7.4.13` (commit `ba8526adf869e8cd3b4ab4bf7f09aa46daf8ab7e`); versiya tarixi uchun `6.3.0`, `6.4.0`, `6.6.58` va `7.0.0` teglari ham o'qildi. Apache-2.0. https://github.com/hibernate/hibernate-orm/blob/ba8526adf869e8cd3b4ab4bf7f09aa46daf8ab7e/hibernate-core/src/main/java/org/hibernate/annotations/SoftDelete.java
+- Hibernate ORM: `@Where` 6.3 da deprecated, 7.0 da olib tashlangan (`@SQLRestriction` bilan almashtiriladi) va yadrodagi yangi `org.hibernate.annotations.Audited` (7.4 dan, Envers'dagisidan boshqa paket). hibernate/hibernate-orm, teglar `6.3.0` (commit `a4bebd7e0dd638a4bf5971198d3ae11c87cd95d5`) va `7.4.13`. Apache-2.0. https://github.com/hibernate/hibernate-orm/blob/a4bebd7e0dd638a4bf5971198d3ae11c87cd95d5/hibernate-core/src/main/java/org/hibernate/annotations/Where.java
+- Spring Data Commons kodi: auditing annotatsiyalari (`@CreatedDate`, `@CreatedBy`, ...), `AuditorAware`, `AuditingHandler` (bean yo'q bo'lsa jim log) va `RevisionRepository` (Envers'ga xos emas). spring-projects/spring-data-commons, tag `4.1.1` (commit `2a54699bfbd8c2a956066ef7d50cd089b7500bdc`). Apache-2.0. https://github.com/spring-projects/spring-data-commons/blob/2a54699bfbd8c2a956066ef7d50cd089b7500bdc/src/main/java/org/springframework/data/auditing/AuditingHandler.java
+- Spring Data JPA kodi: `AuditingEntityListener`, `@EnableJpaAuditing` (`auditorAwareRef`). spring-projects/spring-data-jpa, tag `4.1.1` (commit `3833be89e36def30b31f47c6b28a95e9bcc590af`). Apache-2.0. https://github.com/spring-projects/spring-data-jpa/blob/3833be89e36def30b31f47c6b28a95e9bcc590af/spring-data-jpa/src/main/java/org/springframework/data/jpa/domain/support/AuditingEntityListener.java
+- Spring Boot kodi: `FlywayProperties` (`spring.flyway` prefiksi, `execute-in-transaction` default `true`, locations default `classpath:db/migration`), `LiquibaseProperties`, `FlywayMigrationStrategy`, `FlywayDatabaseInitializerDetector` (Flyway `EntityManagerFactory` dan oldin ishlaydi). spring-projects/spring-boot, tag `v4.1.1` (commit `6fdf67ea1552691e932604d4bf67a5e08ff0b0ea`). Apache-2.0. https://github.com/spring-projects/spring-boot/blob/6fdf67ea1552691e932604d4bf67a5e08ff0b0ea/module/spring-boot-flyway/src/main/java/org/springframework/boot/flyway/autoconfigure/FlywayProperties.java
+- Flyway: skript darajasidagi konfiguratsiya (`executeInTransaction` `.conf` faylida; `-- noTransaction` degan direktiva yo'q), `MigrationVersion` (`V1_012__` nomlanishi), `UndoCommandExtensionStub` (`undo` community nashrida yo'q). flyway/flyway, tag `flyway-13.10.3` (commit `782f5b5cec113f0475fce99219906753e834c3bc`). Apache-2.0. https://github.com/flyway/flyway/blob/782f5b5cec113f0475fce99219906753e834c3bc/flyway-core/src/main/java/org/flywaydb/core/api/MigrationVersion.java
+- Liquibase: `GlobalConfiguration` (kuzatuv jadvali nomi `DATABASECHANGELOG`). liquibase/liquibase, tag `v5.0.4` (commit `2c25134e198054c70da3122b6179b64d2279b1c9`). Functional Source License v1.1 (ALv2 Future License), Apache-2.0 emas. https://github.com/liquibase/liquibase/blob/2c25134e198054c70da3122b6179b64d2279b1c9/liquibase-standard/src/main/java/liquibase/GlobalConfiguration.java
+- PostgreSQL hujjati: `CREATE TABLE` (exclusion constraint uchun `btree_gist` kengaytmasi shart; PostgreSQL 18 dan `PRIMARY KEY (..., valid_at WITHOUT OVERLAPS)`), `btree-gist`, `CREATE INDEX CONCURRENTLY` (tranzaksiya blokida ishlamaydi). postgres/postgres, tag `REL_18_6` (commit `724edf9bde9d356724ad384a2e196edc3c9f80f7`). PostgreSQL License. https://github.com/postgres/postgres/blob/724edf9bde9d356724ad384a2e196edc3c9f80f7/doc/src/sgml/ref/create_table.sgml
+- Spring Security kodi: `SecurityContextHolder` (default `MODE_THREADLOCAL`, shuning uchun `AuditorAware` yangi thread'da bo'sh qoladi), `AuthenticationSuccessEvent`, `Encryptors` (`stronger` -> `BytesEncryptor`, `delux` -> `TextEncryptor`), `AesBytesEncryptor` (AES/GCM). spring-projects/spring-security, tag `7.1.1` (commit `a825937b8175ee85872c49d9c7fc25eea8cff991`). Apache-2.0. https://github.com/spring-projects/spring-security/blob/a825937b8175ee85872c49d9c7fc25eea8cff991/crypto/src/main/java/org/springframework/security/crypto/encrypt/Encryptors.java
+- Hibernate ORM kodi: `MultiTenancySettings` (haqiqiy kalitlar `hibernate.multi_tenant_connection_provider`, `hibernate.tenant_identifier_resolver`, `hibernate.multi_tenant.schema_mapper`), `MultiTenantConnectionProvider` va `AbstractDataSourceBasedMultiTenantConnectionProviderImpl` (abstract metodlar), `CurrentTenantIdentifierResolver`, `@TenantId`, `LockOptions` (`SKIP_LOCKED = -2`), `SpecHints`, `BatchSettings` (`batch_size` default 0, `order_inserts`/`order_updates` default `false`). hibernate/hibernate-orm, tag `7.4.13`. Apache-2.0. https://github.com/hibernate/hibernate-orm/blob/ba8526adf869e8cd3b4ab4bf7f09aa46daf8ab7e/hibernate-core/src/main/java/org/hibernate/cfg/MultiTenancySettings.java
+- Spring Data Commons kodi: `ChainedTransactionManager` (2.5 dan deprecated, hali mavjud; Spring Framework da emas), `AbstractAggregateRoot`. spring-projects/spring-data-commons, tag `4.1.1`. Apache-2.0. https://github.com/spring-projects/spring-data-commons/blob/2a54699bfbd8c2a956066ef7d50cd089b7500bdc/src/main/java/org/springframework/data/transaction/ChainedTransactionManager.java
+- PostgreSQL hujjati: `DELETE` (`LIMIT` bandi yo'q, subquery usuli tavsiya etiladi), `ALTER TABLE ... DETACH PARTITION`, `REFRESH MATERIALIZED VIEW CONCURRENTLY` (unique indeks shart), partition kalitining unique constraint'ga kirishi, advisory lock funksiyalari. postgres/postgres, tag `REL_18_6` (commit `724edf9bde9d356724ad384a2e196edc3c9f80f7`). PostgreSQL License. https://github.com/postgres/postgres/blob/724edf9bde9d356724ad384a2e196edc3c9f80f7/doc/src/sgml/ref/delete.sgml
+- pgjdbc kodi: `PGProperty` (`reWriteBatchedInserts` default `false`, `targetServerType` qiymatlari), `PGXADataSource`. pgjdbc/pgjdbc, tag `REL42.7.14` (commit `ebdd9d0a4017e74182eabb0cc304105a0120b647`). BSD-2-Clause. https://github.com/pgjdbc/pgjdbc/blob/ebdd9d0a4017e74182eabb0cc304105a0120b647/pgjdbc/src/main/java/org/postgresql/PGProperty.java
+- Debezium kodi: `RecordChangeEvent`, `PostgresConnectorConfig` (`publication.autocreate.mode`), Outbox `EventRouter` SMT, `DebeziumContainer` (Debezium reposida, Testcontainers moduli emas). debezium/debezium, tag `v3.7.0.Final` (commit `17843f309f75a8035d972296e38ed742a3ea2a07`). Apache-2.0. https://github.com/debezium/debezium/blob/17843f309f75a8035d972296e38ed742a3ea2a07/debezium-testing/debezium-testing-testcontainers/src/main/java/io/debezium/testing/testcontainers/DebeziumContainer.java
+- Axon Framework: 4.x API (`@Aggregate`, `AggregateLifecycle`, `@SagaEventHandler`, `SnapshotTriggerDefinition`) va 5.x da o'zgargan nomlar (`@EventSourcedEntity`, `@Snapshotting`). AxonFramework/AxonFramework, teglar `axon-4.13.2` (commit `c74431417c70061ccc5760b67f6e2edd7375078e`) va `axon-5.4.0` (commit `feda4ed0afe0546d475cee565ea2d934a16ed4dd`). Apache-2.0. https://github.com/AxonFramework/AxonFramework/blob/feda4ed0afe0546d475cee565ea2d934a16ed4dd/eventsourcing/src/main/java/org/axonframework/eventsourcing/annotation/EventSourcedEntity.java
+- Apache Seata: `seata-spring-boot-starter` pom (2.x da groupId `org.apache.seata`), `@LocalTCC` ikki paketda (`org.apache.seata` va compatible modulidagi `io.seata`). seata/seata, tag `v2.7.0` (commit `ae8d0c52125bcb25594f386bfc70d90bffedea41`). Apache-2.0. https://github.com/seata/seata/blob/ae8d0c52125bcb25594f386bfc70d90bffedea41/tcc/src/main/java/org/apache/seata/rm/tcc/api/LocalTCC.java
+- ShedLock kodi: `@SchedulerLock` (`name`, `lockAtMostFor`, `lockAtLeastFor`) va provider modullari. lukas-krecan/ShedLock, tag `shedlock-parent-7.10.1` (commit `c88efaf9d58cf72b4b8943a9c9d26ddd9d2c829c`). Apache-2.0. https://github.com/lukas-krecan/ShedLock/blob/c88efaf9d58cf72b4b8943a9c9d26ddd9d2c829c/spring/shedlock-spring/src/main/java/net/javacrumbs/shedlock/spring/annotation/SchedulerLock.java
+- Spring Integration kodi: `LockRegistry` implementatsiyalari (`RedisLockRegistry`, `JdbcLockRegistry`, `ZookeeperLockRegistry`), `IdempotentReceiverInterceptor`, metadata store'lar. spring-projects/spring-integration, tag `v7.1.1` (commit `60931e3b56c32b4457c73e824864bfa2bbfc1aa7`). Apache-2.0. https://github.com/spring-projects/spring-integration/blob/60931e3b56c32b4457c73e824864bfa2bbfc1aa7/spring-integration-jdbc/src/main/java/org/springframework/integration/jdbc/lock/JdbcLockRegistry.java
+- Spring Modulith: `EventPublicationRegistry` va `spring-modulith-events-jpa`/`-kafka` modullari. spring-projects/spring-modulith, tag `2.1.1` (commit `83ce54cfc5229f9fe748afc332d8c728ecd0b81c`). Apache-2.0. https://github.com/spring-projects/spring-modulith/tree/83ce54cfc5229f9fe748afc332d8c728ecd0b81c/spring-modulith-events
 
 ---
 

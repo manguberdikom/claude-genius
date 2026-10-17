@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 22. Sana, vaqt va mintaqa (Date, Time and Zone)
 
@@ -113,7 +113,7 @@ String display = settledAt.atZone(userZone)
 
 ## 22.5 Davomiylik: `Duration`, `Period` va birlik nomi
 
-`Duration` aniq vaqt oralig'ini (sekund va nanosekund) ifodalaydi, `Period` esa kalendar oralig'ini (yil, oy, kun). Farq yoz vaqti o'tishida ko'rinadi: `Duration.ofDays(1)` har doim 24 soat, `Period.ofDays(1)` esa "ertangi kun" (23 yoki 25 soat bo'lishi mumkin).
+[`Duration`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/time/Duration.html) aniq vaqt oralig'ini (sekund va nanosekund) ifodalaydi, [`Period`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/time/Period.html) esa kalendar oralig'ini (yil, oy, kun). Farq yoz vaqti o'tishida ko'rinadi: `Duration.ofDays(1)` ta'rifi bo'yicha aniq 24 soat (86400 sekund), `Period.ofDays(1)` esa "ertangi kun", ya'ni mintaqada yoz vaqti o'tsa 23 yoki 25 soat bo'ladi.
 
 ```java
 // yomon: raqam va birlik kodda tarqoq
@@ -226,6 +226,14 @@ Sababi: pgjdbc `setTimestamp(.., calendar)` ni ham, `setObject(.., Types.OTHER)`
 - [ ] Timeout va TTL qiymatlarini `Duration` ga o'tkazib, konfiguratsiyada `30s` shaklida yozing.
 - [ ] `DateTimeFormatter` shablonlarida `YYYY`, `DD`, `hh` xatolarini qidirib tuzating.
 - [ ] Baza ustunlarini `timestamptz` ga keltirib, JPA maydonlari `Instant` ekanini tekshiring.
+
+## Manbalar
+
+- Herbert Schildt, *Java The Complete Reference*, 21-bob - `Date`, `Calendar`, `TimeZone` va ularning eskirgan o'rni
+- [Java API, `Duration`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/time/Duration.html) - aniq vaqt oralig'i, kun 86400 sekund
+- [Java API, `Period`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/time/Period.html) - kalendar oralig'i, yoz vaqti bilan xatti-harakati
+- [Java API, `Clock`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/time/Clock.html) - testda vaqtni almashtirish uchun inyeksiya
+- [JSR-310, java.time paketi](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/time/package-summary.html) - tur tanlash jadvali
 
 ---
 

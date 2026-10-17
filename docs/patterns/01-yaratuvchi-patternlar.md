@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 1. Yaratuvchi patternlar (Creational Patterns)
 
 <details>
-<summary>Bu bobdagi 18 bo'lim</summary>
+<summary>Bu bobdagi 21 bo'lim</summary>
 
 - [1.1 Yagona nusxa (Singleton)](#11-yagona-nusxa-singleton)
 - [1.2 Kalit bo'yicha yagona nusxalar (Multiton)](#12-kalit-boyicha-yagona-nusxalar-multiton)
@@ -26,7 +26,10 @@
 - [1.15 Provider / Supplier orqali kiritish (Provider / Supplier Injection)](#115-provider--supplier-orqali-kiritish-provider--supplier-injection)
 - [1.16 Servis topuvchi (Service Locator)](#116-servis-topuvchi-service-locator)
 - [1.17 Reyestr (Registry)](#117-reyestr-registry)
-- [1.18 Amalda qo'llash](#118-amalda-qollash)
+- [1.18 Pattern ta'rifi va GoF yozuv shabloni (Design Pattern Definition and Pattern Template)](#118-pattern-tarifi-va-gof-yozuv-shabloni-design-pattern-definition-and-pattern-template)
+- [1.19 Katalogni tashkil etish: maqsad va qamrov (Organizing the Catalog: Purpose and Scope)](#119-katalogni-tashkil-etish-maqsad-va-qamrov-organizing-the-catalog-purpose-and-scope)
+- [1.20 Obyektlarni topish va obyekt granularligi (Finding Appropriate Objects and Object Granularity)](#120-obyektlarni-topish-va-obyekt-granularligi-finding-appropriate-objects-and-object-granularity)
+- [1.21 Amalda qo'llash](#121-amalda-qollash)
 
 </details>
 
@@ -578,7 +581,124 @@ public class PaymentHandlerRegistry {
 }
 ```
 
-## 1.18 Amalda qo'llash
+## 1.18 Pattern ta'rifi va GoF yozuv shabloni (Design Pattern Definition and Pattern Template)
+
+**Tavsif:** Katalogdagi har yozuv "pattern" deb ataladi, lekin patternning o'zi nima ekani alohida ta'rif talab qiladi. Keng tarqalgan qisqa ta'rif: pattern - kontekst ichidagi muammoning yechimi. Kontekst - qaytalanadigan vaziyat; muammo - shu kontekstdagi maqsad va unga ta'sir qiladigan cheklovlar (pattern adabiyotida ikkisi birga "forces" deb ataladi, va yechim ikki tomonni muvozanatga keltirgandagina pattern bo'ladi); yechim - maqsad va cheklovlarni hal qiladigan, boshqa odam ham o'z masalasiga qo'llay oladigan umumiy dizayn. Uchlikning o'zi yetarli emas: muammo takrorlanadigan bo'lishi va patternning nomi bo'lishi shart, aks holda u jamoaning umumiy lug'atiga kirmaydi. GoF patternni to'rt majburiy elementdan iborat deb qaraydi: nom, muammo, yechim va oqibatlar. To'rtinchisi eng ko'p e'tibordan chetda qoladi: oqibatlar - patternning narxi va murosasi, ya'ni xotira va vaqt almashinuvi, tilga va implementatsiyaga xos cheklovlar, tizimning moslashuvchanligi, kengaytiruvchanligi va ko'chiruvchanligiga ta'sir. Katalogdagi har yozuv bir xil shablonga amal qiladi: Pattern Name and Classification, Intent, Also Known As, Motivation, Applicability, Structure, Participants, Collaborations, Consequences, Implementation, Sample Code, Known Uses va Related Patterns. Shu hujjatdagi to'rt qismli yozuv aynan shu shablonning qisqartmasi: `Tavsif` Intent va Motivation o'rnida, `Qo'llanish keyslari` Applicability va Known Uses o'rnida, `Ehtiyot bo'ling` esa Consequences va Implementation o'rnida turadi. Bitta farq ataylab qo'yilgan: GoF ning Sample Code bo'limi C++ da, ba'zan Smalltalk da yozilgan, bu hujjatda esa har misol g'oya darajasida Java va Spring kontekstiga o'tkazilgan, kitob kodi ko'chirilmagan.
+
+**Spring'da qayerda uchraydi:** Spring hujjatlari va manba kodi shu lug'atni ochiq ishlatadi: `BeanFactory`, `FactoryBean`, `TransactionTemplate`, `DelegatingFilterProxy`, `CompositeHealthContributor`, `HandlerInterceptor` nomlarining o'zi pattern nomini o'z ichiga oladi va sinf nima qilishini bir so'zda aytadi. `JdbcTemplate` Javadoc'i "Template Method" atamasini bevosita ishlatadi, `@Bean` esa `BeanDefinition.getFactoryMethodName()` da "factory method" deb atalgan. Shuning uchun Spring kodini o'qish patternlarni bilmasdan ancha sekin boradi: nom o'zi tashiydigan ma'lumot yo'qoladi.
+
+**Qo'llanish keyslari:**
+- Yangi abstraksiyaga nom qo'yishda mavjud pattern nomidan foydalanish, shunda review paytida uzun tushuntirish kerak bo'lmaydi.
+- ADR yozishda qarorni pattern nomi bilan belgilash va `Consequences` o'rnida narxni aniq sanab chiqish.
+- Kutubxona yoki ichki framework hujjatini pattern nomlari bilan yozish, shunda yangi ishlab chiquvchi uning tuzilishini tezroq tushunadi.
+- O'z jamoasi uchun ichki pattern katalogini yuritish: nom, muammo, yechim, oqibatlar va "qachon ishlatmaslik kerak".
+- Suhbatda "bu Strategy" deyish bilan yarim sahifa tushuntirishni almashtirish.
+
+**Ehtiyot bo'ling:** Faqat "muammo, kontekst, yechim" uchligi bor narsa hali pattern emas: bir martalik, takrorlanmaydigan yechim pattern bo'lmaydi, nomsiz yechim esa tarqalmaydi. Teskari xato ham xuddi shunchalik qimmat: pattern nomini sinfga yopishtirib, mazmunini bermaslik (`OrderStrategy` nomi bor, lekin ichida `switch`). Pattern qoida emas, yo'riqnoma: klassik tuzilishni o'z ehtiyojiga moslashtirish mumkin, lekin farqni hujjatda yozib qo'yish kerak, aks holda o'quvchi klassik shaklni kutadi va kodni noto'g'ri o'qiydi. Oqibatlar bo'limi bo'lmagan pattern tavsifi yarim tavsif: u faqat foydani ko'rsatadi va narxni yashiradi.
+
+```text
+Bitta patternni hujjatlashtirish uchun minimal shakl:
+
+  Nom          Idempotent Receiver
+  Kontekst     at-least-once yetkazadigan broker, takroriy xabar normal
+  Muammo       maqsad: natija bir marta qo'llanilsin
+               cheklov: broker tartibni kafolatlamaydi, latency byudjet bor
+  Yechim       xabar kalitini saqlash + kalit bo'yicha unique index
+  Oqibatlar    + takroriy ishlov xavfsiz
+               - har xabarga bitta yozuv va bitta index qidiruvi
+               - kalit saqlanish muddati va tozalash siyosati kerak
+  Qo'shnilar   Transactional Outbox, Retry, Dead Letter Channel
+
+Oqibatlar qatori bo'sh qolsa, yozuv hali tugallanmagan.
+```
+
+## 1.19 Katalogni tashkil etish: maqsad va qamrov (Organizing the Catalog: Purpose and Scope)
+
+**Tavsif:** Yigirma uchta pattern ikki o'lchov bo'yicha joylashtiriladi va shu hujjatning 1, 2 va 3-boblari faqat birinchi o'lchovni ishlatadi. Birinchi o'lchov - maqsad (purpose): pattern nima qiladi. Yaratuvchi patternlar obyekt yaratish jarayoni bilan, strukturaviy patternlar sinf va obyektlarning kompozitsiyasi bilan, xulq-atvor patternlari esa sinf va obyektlarning o'zaro ta'siri va mas'uliyat taqsimoti bilan shug'ullanadi. Ikkinchi o'lchov - qamrov (scope): pattern asosan sinflarga yoki obyektlarga tegishlimi. Sinf qamrovidagi pattern sinf va uning subclass'lari orasidagi munosabatga tayanadi; bu munosabat meros orqali o'rnatiladi, demak statik va kompilyatsiya vaqtida qotib qoladi. Obyekt qamrovidagi pattern obyektlar orasidagi munosabatga tayanadi; u ish vaqtida o'zgarishi mumkin va shu tufayli dinamik. Deyarli har pattern merosdan qaysidir darajada foydalanadi, shuning uchun "sinf patterni" yorligi faqat e'tibor markazi sinf munosabati bo'lganlarga qo'yiladi va ularning soni juda kam: Factory Method, Interpreter, Template Method, hamda Adapter'ning sinf varianti. Qolgan hammasi obyekt qamrovida. Shu kesim amaliy qiymat beradi: sinf qamrovidagi patternni almashtirish uchun qayta kompilyatsiya kerak, obyekt qamrovidagisini esa konfiguratsiya yoki bean almashtirish bilan o'zgartirish mumkin.
+
+**Spring'da qayerda uchraydi:** Spring ikkinchi o'lchovni deyarli har joyda obyekt tomonga suradi. Sinf qamrovidagi Template Method hali ham ko'rinadi (`AbstractApplicationContext.refresh()` ichidagi `postProcessBeanFactory`, `onRefresh`), lekin `JdbcTemplate` va `TransactionTemplate` xuddi shu g'oyani callback obyekti bilan beradi va meros talab qilmaydi. `Adapter` ning sinf varianti o'rniga `HandlerMethodArgumentResolver` ro'yxati keladi; `Factory Method` o'rniga `@Bean` metodi va `ObjectProvider` keladi. Buning natijasi `@ConditionalOnProperty`, `@Profile` va `spring.config.import` orqali ko'rinadi: obyekt qamrovida tanlov deployment paytida, sinf qamrovida esa build paytida qilinadi.
+
+**Qo'llanish keyslari:**
+- Yangi kengaytirish nuqtasini loyihalashda ongli tanlov: `abstract` metod (sinf qamrovi) yoki inject qilinadigan interfeys (obyekt qamrovi).
+- Kutubxonada kengaytirishni meros orqali berish qarorini qayta ko'rib chiqish: foydalanuvchi uni ish vaqtida almashtira oladimi.
+- Katalogda mos pattern qidirishda izlash maydonini qisqartirish: avval maqsad, keyin qamrov bo'yicha filtrlash.
+- Legacy ierarxiyani (`AbstractBaseService` va o'nta subclass) obyekt qamroviga ko'chirish rejasini tuzish.
+- Test yozishda almashtirish nuqtasini aniqlash: meros bo'lsa subclass kerak, kompozitsiya bo'lsa mock yetadi.
+
+**Ehtiyot bo'ling:** Tasnif qat'iy chegara emas: bir xil nom ikki qamrovda ham uchraydi (Adapter sinf va obyekt variantlariga ega), ba'zi patternlar esa tuzilishi o'xshash bo'lsa ham maqsadi boshqa (Composite va Decorator diagrammasi yaqin, ammo biri butun-qism ierarxiyasi, ikkinchisi mas'uliyat qo'shish uchun). Tasnifni pattern tanlash uchun yagona asos qilib olmang: u faqat izlash maydonini qisqartiradigan ko'rsatkich. Sinf qamrovini "eskirgan" deb hisoblash ham xato: `Template Method` ko'rinishidagi `final` metod ichida `abstract` qadam framework uchun hali ham eng aniq shartnoma.
+
+```text
+Maqsad x Qamrov kesimi (GoF Table 1.1 ga mos):
+
+               Yaratuvchi        Strukturaviy        Xulq-atvor
+  Sinf         Factory Method    Adapter (sinf)      Interpreter
+                                                     Template Method
+
+  Obyekt       Abstract Factory  Adapter (obyekt)    Chain of Responsibility
+               Builder           Bridge              Command
+               Prototype         Composite           Iterator
+               Singleton         Decorator           Mediator
+                                 Facade              Memento
+                                 Flyweight           Observer
+                                 Proxy               State
+                                                     Strategy
+                                                     Visitor
+
+Xulosa: patternlarning aksariyati obyekt qamrovida, ya'ni ularning
+ulanishi ish vaqtida o'zgaradi. Spring shuni konfiguratsiya darajasiga
+chiqaradi.
+```
+
+## 1.20 Obyektlarni topish va obyekt granularligi (Finding Appropriate Objects and Object Granularity)
+
+**Tavsif:** Obyektga yo'naltirilgan dizaynning eng qiyin qismi - tizimni obyektlarga bo'lish. Qarorga bir vaqtda bir necha omil ta'sir qiladi va ular ko'pincha bir-biriga qarshi turadi: inkapsulyatsiya, granularlik, bog'liqlik, moslashuvchanlik, unumdorlik, evolyutsiya va qayta ishlatish. Tahlil modelidan keladigan obyektlar (buyurtma, mijoz, hisob-faktura) kerak, lekin ular yetarli emas: yaxshi dizaynda real dunyoda muqobili yo'q sinflar paydo bo'ladi va aynan shular dizaynni moslashuvchan qiladi. Algoritmni obyekt qilib ko'rsatadigan Strategy, holatni obyekt qilib ko'rsatadigan State, bir nechta obyektni bittasi kabi ishlatishga imkon beradigan Composite - bularning hech biri domen tahlilida chiqmaydi, ular dizaynni egiluvchan qilish jarayonida topiladi. Ikkinchi savol - obyekt qanchalik yirik bo'lishi. Patternlar bu savolga ham javob beradi va javoblar ikki chekkada joylashadi: Facade butun subsystem'ni bitta obyekt sifatida ko'rsatadi, Flyweight esa juda mayda obyektlarni ko'p sonda saqlashni arzonlashtiradi. Oradagi javoblar ham bor: Abstract Factory va Builder mas'uliyati faqat boshqa obyektlarni yaratish bo'lgan obyekt beradi, Command va Visitor esa mas'uliyati faqat bitta amalni boshqa obyekt ustida bajarish bo'lgan obyekt beradi. Ya'ni "mas'uliyati bitta amaldan iborat obyekt" dizayn xatosi emas, balki patternlarning doimiy usuli.
+
+**Spring'da qayerda uchraydi:** Spring'da amal-obyekt eng ko'p uchraydigan shakl: `Runnable` va `Callable`, `ApplicationEvent` va `@EventListener`, Spring Batch `Tasklet`, `Converter` va `Formatter`, Security'dagi `AuthorizationManager`, validatsiyadagi `Validator`, `RowMapper` va `ResultSetExtractor`. Yaratish mas'uliyatini alohida obyektga chiqarish `@Configuration` sinflari, `FactoryBean` va `ObjectProvider` orqali beriladi. Granularlikning ikkinchi chekkasi `@Service` fasadlari va `spring-modulith` modullarida: `@ApplicationModule` butun modulni tashqariga bitta nuqta orqali ko'rsatadi.
+
+**Qo'llanish keyslari:**
+- Uzun `if/else` yoki `switch` ni holat obyektlariga yoki strategiyalarga ajratish uchun yashiringan obyektni topish.
+- Domen tahlilida nomi bo'lmagan, lekin kodda takrorlanadigan qarorni (narx hisoblash qoidasi, chegirma siyosati) alohida obyekt qilib ajratish.
+- Juda ko'p mayda obyekt xotirani yeyayotganda umumiy qismini ajratib, ularni bo'lishish mumkin qilish.
+- Tashqi jamoaga beriladigan API yuzasini kichraytirish uchun o'nta sinf o'rniga bitta fasad e'lon qilish.
+- Bitta amalni (hisobotni eksport qilish, xabarni qayta yuborish) alohida obyekt qilib, uni navbatga qo'yish va jurnalga yozish imkonini ochish.
+
+**Ehtiyot bo'ling:** Real dunyoni qat'iy modellashtirish bugungi talabni aks ettiradi, ertangisini esa yo'q: shu sababli faqat domen otlaridan chiqqan dizayn tez qotib qoladi. Teskari xato - har qarorni obyektga aylantirib, o'qib bo'lmaydigan mayda sinflar changalzorini yasash: obyekt soni oshgani sari tizim xatti-harakati bitta sinfda emas, ularning aloqalarida yashaydi va bu aloqalar koddan ko'rinmaydi. Granularlikni "sinf necha qatorlik" bilan emas, mas'uliyat va o'zgarish sababi bilan o'lchang. Fasadni domen mantiqi uchun yashirish joyi qilmang: u faqat kirish nuqtasi.
+
+```java
+// Yashiringan obyektni topish: narx qoidasi switch ichida emas,
+// alohida tipda. Qoida qo'shilganda mavjud kod o'zgarmaydi.
+public interface PricingRule {
+    boolean appliesTo(Order order);
+    Money discount(Order order);
+}
+
+@Component
+class LoyaltyDiscountRule implements PricingRule {
+    @Override public boolean appliesTo(Order order) {
+        return order.customerTier() == Tier.GOLD;
+    }
+    @Override public Money discount(Order order) {
+        return order.total().percent(5);
+    }
+}
+
+@Service
+public class PriceCalculator {
+    private final List<PricingRule> rules;          // Spring ro'yxatni to'ldiradi
+
+    PriceCalculator(List<PricingRule> rules) { this.rules = rules; }
+
+    public Money finalPrice(Order order) {
+        Money total = order.total();
+        for (PricingRule rule : rules) {
+            if (rule.appliesTo(order)) total = total.minus(rule.discount(order));
+        }
+        return total;
+    }
+}
+```
+
+## 1.21 Amalda qo'llash
 
 - [ ] Servis va controller sinflarida `new` bilan yaratilgan har bir obyektni ro'yxatga oling va qaysilari konteyner nazoratiga o'tishi kerakligini belgilang.
 - [ ] `getInstance()` metodi bor sinflarni toping; har biri uchun DI ga o'tkazish yoki qoldirish qarorini sabab bilan yozib qo'ying.
@@ -588,6 +708,26 @@ public class PaymentHandlerRegistry {
 - [ ] Kalit bo'yicha nusxa saqlaydigan har bir `Map` ni tekshiring: kalitlar to'plami chegaralanganmi, eviction bormi, nusxalar yopiladimi.
 - [ ] `spring.main.lazy-initialization` qiymatini muhitlar bo'yicha tekshiring va production'da `false` turganini tasdiqlang.
 - [ ] Service Locator ko'rinishidagi kodni (`applicationContext.getBean(...)`) qidirib, har bir chaqiruvni konstruktor inyeksiyasiga aylantirish rejasini yozing.
+
+## Manbalar
+
+- Joshua Bloch, *Effective Java* 3rd, Item 1 - konstruktor o'rniga statik fabrika metodi va uning afzalliklari
+- Joshua Bloch, *Effective Java* 3rd, Item 2 - ko'p parametrli konstruktor uchun builder
+- Joshua Bloch, *Effective Java* 3rd, Item 3 - singleton xususiyatini `private` konstruktor yoki enum bilan majburlash
+- Joshua Bloch, *Effective Java* 3rd, Item 5 - resursni qattiq bog'lash o'rniga bog'liqlikni kiritish
+- Freeman/Robson, *Head First Design Patterns* 2nd, 4-bob - Factory Method va Abstract Factory
+- Freeman/Robson, *Head First Design Patterns* 2nd, 5-bob - Singleton va thread xavfsizligi variantlari
+- [Spring Framework, Bean Scopes](https://docs.spring.io/spring-framework/reference/core/beans/factory-scopes.html) - singleton scope konteyner uchun bitta, JVM uchun emas
+- Joshua Bloch, *Effective Java* 3rd, Item 83 - statik maydon uchun holder idiomasi, nusxa maydoni uchun double-check idiomasi (`volatile` shart)
+- Joshua Bloch, *Effective Java* 3rd, Item 13 - `clone` muammolari va nusxa konstruktori
+- [JLS 12.4.1, When Initialization Occurs](https://docs.oracle.com/javase/specs/jls/se21/html/jls-12.html#jls-12.4.1) - sinf faqat birinchi ishlatilishida initsializatsiya qilinishi
+- [Spring Boot v3.5.0, spring-boot-starter-undertow](https://raw.githubusercontent.com/spring-projects/spring-boot/v3.5.0/spring-boot-project/spring-boot-starters/spring-boot-starter-undertow/build.gradle) - Boot 3.5 da Undertow starteri bor
+- [Spring Boot v4.0.0, settings.gradle](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/settings.gradle) - Boot 4.0 da tomcat va jetty starterlari bor, undertow yo'q
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns: Elements of Reusable Object-Oriented Software*, Addison-Wesley, 1995, 1.1-bo'lim (3-bet) - patternning to'rt majburiy elementi: nom, muammo, yechim va oqibatlar
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, 1.3-bo'lim (6-7-bet) - katalog yozuvining o'n uch bo'limli shabloni, Consequences va Related Patterns shu ro'yxatda
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, 1.5-bo'lim va Table 1.1 (9-10-bet) - tasnifning ikki o'lchovi (purpose va scope) va sinf qamrovidagi patternlar kamligi
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, 1.6-bo'lim (11 va 13-bet) - obyektlarni topish, hamda Facade va Flyweight granularlikning ikki chekkasi sifatida
+- Freeman/Robson, *Head First Design Patterns* 2nd, 13-bob (565 va 568-bet) - "pattern kontekst ichidagi muammoning yechimi" ta'rifi va forces (maqsad bilan cheklov muvozanati)
 
 ---
 

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 39. Bog'liqlik zaifliklari va litsenziya tekshiruvi (Dependency Risk and Licences)
 
@@ -55,6 +55,10 @@ Log4Shell voqeasi buni yaxshi ko'rsatdi. Ko'p jamoalar `log4j-core` ni hech qach
 
 Maven da versiya tanlash qoidasi "nearest definition wins", ya'ni daraxtda ildizga eng yaqin e'lon g'olib bo'ladi. Gradle da esa odatiy xulq boshqacha, u konflikt bo'lganda eng yuqori versiyani tanlaydi. Bu farqni bilish kerak, aks holda "nega men qo'ygan versiya qo'llanmadi" degan savol javobsiz qoladi.
 
+Maven ning qoidasida ikkinchi qism ham bor va u ko'proq hayron qoldiradi: agar ikki versiya daraxtda bir xil chuqurlikda turgan bo'lsa, birinchi e'lon g'olib bo'ladi. Ya'ni natija `pom.xml` dagi bog'liqliklar tartibiga bog'liq. Shu sababli ikki bog'liqlikning joyini almashtirish classpath ni jimgina o'zgartirishi mumkin, va `dependency:tree` dan boshqa hech narsa buni ko'rsatmaydi.
+
+Scope ning transitivligi ham qoidaning bir qismi. `provided` va `test` scope lari transitiv EMAS: ular sizning loyihangizga bog'liq bo'lgan boshqa loyihaga o'tmaydi. Shuning uchun tranzitiv zaiflikni qidirganda `provided` orqali kelgan artifactni daraxtning chuqur qatlamida kutmaslik kerak, u faqat o'zingiz e'lon qilgan joyda bo'ladi.
+
 Spring Boot da eng toza yechim BOM orqali versiyani boshqarish. `spring-boot-dependencies` allaqachon yuzlab artifact versiyasini muvofiqlashtirib beradi. Bitta tranzitiv artifactni ko'tarish kerak bo'lsa, uni property orqali yoki `dependencyManagement` bo'limida bir joyda bosh.
 
 ```xml
@@ -104,13 +108,19 @@ mvn dependency:tree -Dverbose
 
 Ikkita maslahat. Birinchisi: `runtimeClasspath` ni tekshiring, `compileClasspath` ni emas. Ishlab turgan ilovaga nima yuklansa, xavf shundan keladi. Ikkinchisi: test uchun ishlatiladigan artifact prod ga chiqmaydi, shuning uchun uni ajratib qarang. `test` scope dagi zaiflik ham muhim, lekin ustuvorligi boshqacha.
 
+`provided` scope bu yerda alohida e'tibor talab qiladi. U kompilyatsiya va test classpath ida bor, lekin runtime classpath ida yo'q, chunki uni container beradi. Demak `runtimeClasspath` ni skanerlash `provided` artifactni ko'rmaydi, lekin ishlab chiqarishda container o'zining versiyasini beradi va u ham zaif bo'lishi mumkin. Spring Boot ning ichki Tomcat i bilan bu muammo kamayadi, tashqi application server bilan esa qoladi: o'sha holda server ichidagi kutubxonalar alohida tekshiriladi.
+
 Daraxtni CI artifact sifatida saqlab qo'yish ham foydali. Keyinchalik "o'sha hafta qaysi versiya edi" degan savolga javob topish osonlashadi.
 
 ## 39.5 Zaiflikni tekshiruvchi vositalar: OWASP Dependency-Check, Trivy, Grype, Dependabot
 
 To'rtta vosita to'rt xil o'rinda turadi va ular bir-birini almashtirmaydi.
 
-OWASP Dependency-Check build ichida ishlaydi, Maven va Gradle plugini bor, NVD ma'lumotlariga tayanadi va HTML yoki JSON hisobot beradi. Kuchli tomoni: build ga chuqur integratsiya. Og'ir tomoni: NVD bazasini yuklab olish va keshlash vaqt oladi, API kalit va kesh katalogini oldindan sozlash kerak.
+OWASP Dependency-Check build ichida ishlaydi, Maven va Gradle plugini bor, NVD ma'lumotlariga tayanadi va HTML yoki JSON hisobot beradi. Kuchli tomoni: build ga chuqur integratsiya. Og'ir tomoni esa aniq raqamlarda emas, sozlamada.
+
+Vosita 9.0 dan boshlab NVD data-feed dan NVD API ga o'tdi, va loyihaning o'z hujjati API kalitini "highly encouraged" deb belgilaydi: kalit bo'lmasa yangilanish "extremely slow" bo'ladi. CI uchun ikkinchi ogohlantirish ham bor: NVD API da rate limit majburlangan, bitta kalit bilan bir necha build parallel ketsa 403 kelishi mumkin, shuning uchun CI muhitida keshlash strategiyasi shart.
+
+Eng jim ishlaydigan narsa esa boshqa joyda. Sonatype OSS Index analizatori 2025 sentyabrdan autentifikatsiya talab qiladi, va hujjat shuni aytadi: hisob ma'lumoti bo'lmasa Dependency-Check o'sha analizatorni AVTOMATIK o'chirib qo'yadi. Ya'ni build yashil, hisobot chiqdi, lekin qamrov kutganingizdan kichik va bu haqda faqat log da bitta qator bor. Qamrovni tekshirishning amaliy yo'li hisobotdagi analizator ro'yxatini o'qish, "xato yo'q" degan xulosaga tayanmaslik.
 
 Trivy container image, filesystem va repository ni skanerlaydi. Agar siz Spring Boot ni Docker image sifatida chiqarsangiz, Trivy bitta o'tishda ham JAR larni, ham base image dagi OS paketlarni ko'radi. Grype shunga yaqin vazifani bajaradi va SBOM fayl bilan yaxshi ishlaydi, uning hamkori Syft SBOM yaratadi.
 
@@ -124,19 +134,32 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    # 5 allaqachon default: bu qator faqat niyatni qayd qiladi. Va u
+    # faqat version update larga tegishli, security update PR lari
+    # chegaraga bo'ysunmaydi.
     open-pull-requests-limit: 5
-    # Mayda patch larni bitta PR ga yig'ish
     groups:
-      spring-patches:
+      # `applies-to` yozilmasa guruh FAQAT version update larga
+      # qo'llanadi. Security update lari esa har bog'liqlik uchun
+      # alohida PR bo'lib keladi, ya'ni guruhlashdan kutgan foyda
+      # aynan kerak bo'lgan joyda ishlamaydi.
+      spring-version-patches:
+        applies-to: version-updates
         patterns:
           - "org.springframework*"
         update-types:
           - "patch"
+      spring-security-fixes:
+        applies-to: security-updates
+        patterns:
+          - "org.springframework*"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "monthly"
 ```
+
+Guruhlar tartibi ham ahamiyatli: bog'liqlik bir nechta qoidaga mos kelsa, u BIRINCHI mos kelgan guruhga tushadi. Shuning uchun torroq naqshni yuqoriga, keng naqshni pastga yozish kerak, aks holda keng guruh hammasini yutib yuboradi.
 
 ## 39.6 Natijani CI ga ulash va qaysi daraja build ni bloklashi
 
@@ -145,6 +168,8 @@ Birinchi kundan boshlab build ni yiqitish eng tez-tez uchraydigan xato. Katta le
 To'g'ri yo'l bosqichli. Avval skanerni hisobot rejimida ishlatasiz, build yiqilmaydi. Ikki hafta ichida mavjud topilmalarni ro'yxatga olasiz va baseline qilasiz. Keyin faqat yangi topilmalar uchun blok qo'yasiz. Bu Sonar ning "new code" falsafasiga aynan mos keladi va shu mantiqni bog'liqliklarga ham ko'chirish mumkin.
 
 Blok chegarasi haqida aniq qaror yozib qo'yilsin. Amaliyotda keng tarqalgan taqsimot: Critical darajasidagi topilma prod release ni bloklaydi, High darajasi asosli izoh talab qiladi, Medium va pastrog'i backlog ga tushadi. Raqam emas, qaror muhim: kim va qancha vaqt ichida javob beradi.
+
+Vosita darajasida esa aynan raqam kerak. Dependency-Check da chegara `failBuildOnCVSS` bo'lib, u nom emas, CVSS ball qabul qiladi, shuning uchun "Critical" so'zini raqamga ko'chirish sizning ishingiz (odatda 9.0 va yuqori). Plugin ning o'z hujjati bosqichli yo'lni ham ko'rsatadi: bitta build da ikkita task ro'yxatdan o'tkaziladi, har biri o'z chegarasi bilan.
 
 ```yaml
 # GitHub Actions: avval hisobot, keyin blok
@@ -159,9 +184,12 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
-      # 1-bosqich: har qanday holatda hisobot yig'iladi
-      - name: Skaner
-        run: ./gradlew dependencyCheckAnalyze || true
+      # 1-bosqich: hisobot yig'iladi, build yiqilmaydi.
+      # `|| true` emas: u haqiqiy xatoni ham yashiradi. To'g'ri yo'l
+      # chegarani yuqori qo'yib alohida task yasash (quyidagi
+      # build.gradle ga qarang).
+      - name: Skaner (hisobot rejimi)
+        run: ./gradlew dependencyCheckReportOnly
       - name: Hisobotni saqlash
         if: always()
         uses: actions/upload-artifact@v4
@@ -170,7 +198,24 @@ jobs:
           path: build/reports/
       # 2-bosqich: baseline tayyor bo'lgandan keyin yoqiladi
       - name: Yangi topilmalar uchun blok
-        run: ./gradlew dependencyCheckAnalyze
+        run: ./gradlew dependencyCheckBlocking
+```
+
+```groovy
+// build.gradle: bir xil pluginning ikki chegarasi, ikki task
+plugins { id 'org.owasp.dependencycheck' version '13.0.0' }
+
+// Hisobot rejimi: amalda hech qachon yiqilmaydi (CVSS 10 dan yuqori yo'q)
+tasks.register('dependencyCheckReportOnly',
+        org.owasp.dependencycheck.gradle.tasks.Analyze) {
+    dependencyCheck { failBuildOnCVSS = 11.0 }
+}
+
+// Bloklash rejimi: faqat Critical yiqitadi
+tasks.register('dependencyCheckBlocking',
+        org.owasp.dependencycheck.gradle.tasks.Analyze) {
+    dependencyCheck { failBuildOnCVSS = 9.0 }
+}
 ```
 
 ## 39.7 False positive va zaiflikni asosli ravishda e'tiborsiz qoldirish
@@ -198,7 +243,9 @@ Ikkala holatda ham javob bitta: suppress qiling, lekin izoh va muddat bilan. Izo
 </suppressions>
 ```
 
-`until` atributi muhim. U suppress ni avtomatik eskiradigan qiladi, shuning uchun ro'yxat yildan yilga shishib ketmaydi.
+`until` atributi muhim. U suppress ni avtomatik eskiradigan qiladi, shuning uchun ro'yxat yildan yilga shishib ketmaydi. Qiymat turi `xs:date`, shuning uchun `2026-01-31` ham, vaqt mintaqasi bilan `2026-01-31Z` ham yaroqli.
+
+Namespace dagi raqamga e'tibor bering: yuqorida `1.3` ishlatilgan, lekin vosita `1.4` sxemasini ham olib yuradi. Yangi namespace yangi atributlarni ochadi, eskisi esa orqaga moslik uchun qoladi. Qaysi versiyani yozganingizni bilib yozish kerak, chunki noto'g'ri namespace da yozilgan atribut jimgina e'tiborsiz qolishi mumkin.
 
 ## 39.8 Yangilash siyosati: qachon darhol, qachon rejali
 
@@ -221,11 +268,14 @@ Nima uchun kerak. Yangi CVE e'lon qilinganda savol bitta bo'ladi: bizda bormi va
 Shuning uchun SBOM ni release artifact qatorida saqlash kerak, build papkasida qoldirmaslik kerak. Har bir versiya uchun o'z SBOM fayli bo'lsin.
 
 ```bash
-# CycloneDX plugin bilan SBOM yaratish (Maven)
+# CycloneDX plugin bilan SBOM yaratish (Maven). Uchta goal bor:
+# `makeBom` bitta modul uchun, `makeAggregateBom` ko'p modulli
+# loyiha uchun bitta umumiy BOM, `makePackageBom` paket uchun.
 mvn org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom
 
-# Syft bilan image dan SBOM
-syft packages registry:myrepo/orders:1.4.2 -o cyclonedx-json > sbom.json
+# Syft bilan image dan SBOM. `syft packages` eskirgan (vosita o'zi
+# "use `syft scan` instead" deb ogohlantiradi), hozirgi buyruq `scan`.
+syft scan registry:myrepo/orders:1.4.2 -o cyclonedx-json > sbom.json
 
 # SBOM faylini zaiflikka tekshirish
 grype sbom:sbom.json
@@ -298,6 +348,39 @@ Bitta dashboard tuzish amalda yaxshi natija beradi: Sonar quality gate holati, y
 - [ ] CycloneDX yoki Syft bilan SBOM yaratishni release pipeline ga qo'shing va faylni har versiya uchun alohida saqlanadigan artifactga aylantiring.
 - [ ] Ruxsat berilgan litsenziyalar ro'yxatini yozma hujjat qilib tasdiqlang va noma'lum litsenziyali artifact chiqqanda ogohlantirish beradigan tekshiruv qo'shing.
 - [ ] Dependabot yoki shunga o'xshash yangilash oqimini yoqing, Spring Boot patch versiyasini oylik ko'tarish odatini sprint rejasiga kiritib, har yangilash PR ida integratsion testlar majburiy bo'lsin.
+
+## Manbalar
+
+- Apache Maven, *Introduction to the Dependency Mechanism*
+  ([https://github.com/apache/maven-site/blob/cd8c1b1/content/markdown/guides/introduction/introduction-to-dependency-mechanism.md](https://github.com/apache/maven-site/blob/cd8c1b1/content/markdown/guides/introduction/introduction-to-dependency-mechanism.md),
+  commit `cd8c1b1`, Apache-2.0) - 39.3 dagi "nearest definition" qoidasi,
+  teng chuqurlikda birinchi e'lonning g'olibligi, va `provided` bilan
+  `test` scope larining transitiv emasligi.
+- OWASP Dependency-Check, README
+  ([https://github.com/dependency-check/DependencyCheck/blob/v13.0.0/README.md](https://github.com/dependency-check/DependencyCheck/blob/v13.0.0/README.md),
+  tag `v13.0.0`, Apache-2.0) - 39.5 dagi NVD API kaliti, CI dagi rate
+  limit va OSS Index analizatorining hisob ma'lumotisiz avtomatik
+  o'chishi.
+- OWASP Dependency-Check Gradle plugini, README
+  ([https://github.com/dependency-check/dependency-check-gradle/blob/v13.0.0/README.md](https://github.com/dependency-check/dependency-check-gradle/blob/v13.0.0/README.md),
+  tag `v13.0.0`, Apache-2.0) - 39.6 dagi `failBuildOnCVSS` ning raqam
+  qabul qilishi va ikki task bilan bosqichli yo'l.
+- OWASP Dependency-Check, suppression sxemasi
+  ([https://github.com/dependency-check/DependencyCheck/blob/v13.0.0/core/src/main/resources/schema/dependency-suppression.1.4.xsd](https://github.com/dependency-check/DependencyCheck/blob/v13.0.0/core/src/main/resources/schema/dependency-suppression.1.4.xsd),
+  tag `v13.0.0`, Apache-2.0) - 39.7 dagi `until` ning `xs:date` turi va
+  1.3 bilan 1.4 namespace larining birga yashashi.
+- Syft, `packages` buyrug'i
+  ([https://github.com/anchore/syft/blob/v1.54.1/cmd/syft/internal/commands/packages.go](https://github.com/anchore/syft/blob/v1.54.1/cmd/syft/internal/commands/packages.go),
+  tag `v1.54.1`, Apache-2.0) - 39.9 dagi `syft packages` ning eskirgani
+  va `syft scan` ga o'tish.
+- CycloneDX Maven plugini, README
+  ([https://github.com/CycloneDX/cyclonedx-maven-plugin/blob/2.4.1/README.md](https://github.com/CycloneDX/cyclonedx-maven-plugin/blob/2.4.1/README.md),
+  tag `2.4.1`, Apache-2.0) - 39.9 dagi uchta goal.
+- GitHub Docs, *Dependabot options reference*
+  ([https://github.com/github/docs/blob/53aac26/content/code-security/reference/supply-chain-security/dependabot-options-reference.md](https://github.com/github/docs/blob/53aac26/content/code-security/reference/supply-chain-security/dependabot-options-reference.md),
+  commit `53aac26`, CC BY 4.0) - 39.5 dagi `applies-to` ning default i,
+  guruhlar tartibi va `open-pull-requests-limit` ning default qiymati
+  hamda faqat version update larga tegishliligi.
 
 ---
 

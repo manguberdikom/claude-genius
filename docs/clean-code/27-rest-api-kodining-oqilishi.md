@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 27. REST API kodining o'qilishi (Readable REST Code)
 
@@ -185,6 +185,10 @@ spring:
     time-zone: UTC
 ```
 
+Spring Boot 4 ga o'tishda bu bo'limdagi sozlamalar ustiga bitta qatlam qo'shiladi va uni bilmaslik javob shaklini jim o'zgartiradi: Boot 4 Jackson 3 bilan keladi. Shuning uchun `JacksonProperties` da yangi xossa bor, `spring.jackson.use-jackson2-defaults`: u Jackson 3 ni Spring Boot ilgari Jackson 2 uchun ishlatgan defaultlar bilan sozlaydi. Auto-configuration da aynan shu flag yoqilganda `WRITE_DATES_AS_TIMESTAMPS` va `WRITE_DURATIONS_AS_TIMESTAMPS` o'chiriladi, ya'ni sana ISO-8601 bo'lib qoladi. Flag yoqilmasa, sana va boshqa bir qancha xulq Jackson 3 ning o'z defaultlariga tayanadi.
+
+Amaliy xulosa: migratsiya paytida javob shaklini barqaror ushlash kerak bo'lsa, `use-jackson2-defaults` ni yoqib, keyin har bir sozlamani alohida ko'chirish kerak; yoki yuqoridagi kabi muhim sozlamalarni oshkor yozib, flag ga tayanmaslik kerak. Ikkala holatda ham serializatsiya shaklini test bilan qulflash zarur, chunki bu o'zgarish kompilyatsiya xatosi bermaydi.
+
 Qo'shimcha qoidalar: JPA entitetini API da qaytarmaslik ([patternlar hujjatidagi](../patterns/README.md) API da JPA entitetlarini fosh qilish anti-patterni), `@JsonIgnore` bilan sezgir maydonlarni yopish, va DTO maydonlari nomini API shartnomasida barqaror ushlash.
 
 ## 27.7 Idempotentlik va `Idempotency-Key` kodda
@@ -235,6 +239,14 @@ class OrderV2Controller { ... }
 - [ ] Saralash maydonlarini oq ro'yxat bilan cheklab, indekssiz ustunlarni chiqarib tashlang.
 - [ ] Jackson sozlamalarini `application.yml` da oshkor yozib, sana formatini ISO-8601 ga qotiring.
 - [ ] Yaratish endpointlariga `Idempotency-Key` sarlavhasini va bazada unikal cheklovni qo'shing.
+
+## Manbalar
+
+- [Spring Framework 7.0, Error Responses](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/web/webmvc/mvc-ann-rest-exceptions.adoc) - RFC 9457, `ProblemDetail` va `ErrorResponse`, `status` va `instance` ning o'zi to'ldirilishi, `ResponseEntityExceptionHandler`
+- [Spring Framework 7.0, Java Bean Validation](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/core/validation/beanvalidation.adoc) - `@Valid`, validatsiya guruhlari va metod validatsiyasining chegarasi
+- [spring-boot, `JacksonProperties.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/module/spring-boot-jackson/src/main/java/org/springframework/boot/jackson/autoconfigure/JacksonProperties.java) - Boot 4 da `spring.jackson.use-jackson2-defaults` xossasi va uning ma'nosi
+- [spring-boot, `JacksonAutoConfiguration.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/module/spring-boot-jackson/src/main/java/org/springframework/boot/jackson/autoconfigure/JacksonAutoConfiguration.java) - `configureForJackson2()` va `WRITE_DATES_AS_TIMESTAMPS` ning qaysi shartda o'chirilishi
+- [OpenAPI Specification 3.1.0](https://raw.githubusercontent.com/OAI/OpenAPI-Specification/ffb3e579dfb4ef5ae1a68d11af125e2a593505fc/versions/3.1.0.md) - API shartnomasi shakli, javob va parametr tavsifi
 
 ---
 

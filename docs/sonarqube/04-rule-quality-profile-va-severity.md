@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 4. Rule, quality profile va severity (Rules, Profiles and Severity)
 
@@ -112,7 +112,7 @@ Jarayon oddiy: Quality Profiles sahifasida Sonar way ni tanlaysiz, Copy yoki Ext
 
 Amalda tavsiya: Extend tanlang. Shunda Sonar jamoasi yangi foydali qoida qo'shganda siz uni bepul olasiz, o'zingizning farqlaringiz esa alohida qatlamda qoladi. Nasl olingan profilda ota qoidasini o'chira olmaysiz, faqat o'zingiz qo'shganini boshqarasiz. Agar otaning bitta qoidasi sizga umuman mos kelmasa, o'sha holatda Copy yoki qoida darajasida boshqa yechim kerak bo'ladi.
 
-Profilni qo'lda sozlashning xavfi shuki, u serverda yashaydi va git da izi qolmaydi. Shuning uchun profilni backup qilib repoda saqlash kerak. Web API buni oson qiladi.
+Profilni qo'lda sozlashning xavfi shuki, u serverda yashaydi va git da izi qolmaydi. Shuning uchun profilni backup qilib repoda saqlash kerak. Web API buni oson qiladi va bitta amaliy tafsilot bu ishni yengillashtiradi: `api/qualityprofiles/backup` **admin huquqini talab qilmaydi** (manbada shu aniq izohlangan), ya'ni uni oddiy CI tokeni bilan ham chaqirib bo'ladi. Eksport qilingan XML `api/qualityprofiles/restore` orqali tiklanadi, nasl bog'lanishi esa `api/qualityprofiles/change_parent` bilan boshqariladi, ya'ni Extend qarorini ham avtomatlashtirish mumkin.
 
 ```bash
 # Profilni XML ga eksport qilish va repoda saqlash
@@ -337,6 +337,13 @@ Oxirgi maslahat: profilni kichik tuting. 600 ta yoqilgan qoida 200 tasidan yaxsh
 - [ ] `java:S3776` chegarasini loyihangizda sinab ko'ring: standart 15 da qoldirib, yangi kodda qancha issue chiqishini o'lchang.
 - [ ] CI ga serverdagi profil repodagi XML dan farq qilsa ogohlantirish beradigan qadam qo'shing.
 - [ ] Keyingi SonarQube yangilanishini avval staging da bajarib, yangi qoidalardan kelgan issue larni jamoa bilan bir o'tirishda baholang.
+
+## Manbalar
+
+- [sonarqube 9.9 LTA, `BackupAction.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-webserver-webapi/src/main/java/org/sonar/server/qualityprofile/ws/BackupAction.java) - `api/qualityprofiles/backup` (5.2 dan), XML eksport, `restore` orqali tiklash va admin huquqi talab qilinmasligi
+- [sonarqube 9.9 LTA, `ChangeParentAction.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-webserver-webapi/src/main/java/org/sonar/server/qualityprofile/ws/ChangeParentAction.java) - nasl bog'lanishini (Extend) API orqali o'zgartirish
+- [sonarqube 9.9 LTA, `CopyAction.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-webserver-webapi/src/main/java/org/sonar/server/qualityprofile/ws/CopyAction.java) - profil nusxasini olish
+- [sonar-plugin-api, `CoreProperties.java`](https://raw.githubusercontent.com/SonarSource/sonar-plugin-api/a9d2a8204d3762cc96ea7bd074a26cbe982745b4/plugin-api/src/main/java/org/sonar/api/CoreProperties.java) - profil va tahlil bilan bog'liq kalitlar
 
 ---
 

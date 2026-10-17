@@ -1,139 +1,177 @@
-# sonar-java rule metadata snapshoti.
-# sana: 2026-10-10
-# manba: https://raw.githubusercontent.com/SonarSource/sonar-java/master/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/<kalit>.json
+# Sonar rule metadata snapshoti: java, xml, docker, kubernetes.
+# sana: 2026-10-15
 #
+# manba (hammasi SonarSource, tagga mixlangan):
+#   docker     https://raw.githubusercontent.com/SonarSource/sonar-iac/1.42.0.14460/iac-extensions/docker/src/main/resources/org/sonar/l10n/docker/rules/docker/<kalit>.json
+#   java       https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/<kalit>.json
+#   java       https://raw.githubusercontent.com/SonarSource/sonar-java-symbolic-execution/8.24.0.2319/java-symbolic-execution/java-symbolic-execution-plugin/src/main/resources/org/sonar/l10n/java/rules/javase/<kalit>.json
+#   kubernetes https://raw.githubusercontent.com/SonarSource/sonar-iac/1.42.0.14460/iac-extensions/kubernetes/src/main/resources/org/sonar/l10n/kubernetes/rules/kubernetes/<kalit>.json
+#   xml        https://raw.githubusercontent.com/SonarSource/sonar-xml/2.19.0.8138/sonar-xml-plugin/src/main/resources/org/sonar/l10n/xml/rules/xml/<kalit>.json
+#
+# kalit  - to'liq kalit, masalan java:S1192 yoki docker:S6596
 # tur    - CODE_SMELL | BUG | VULNERABILITY | SECURITY_HOTSPOT
 # daraja - defaultSeverity (legacy severity)
 # scope  - Main | Tests | All
+# profil - qoida `Sonar way` da yoqilganmi: ha | yo'q | tekshirilmadi
 #
-# `tekshirilmadi` = qoida ochiq metadata da yo'q (symbolic execution va
-# shunga o'xshash yopiq qoidalar). check_docs ularni ogohlantirish
-# bilan o'tkazadi. Yangilash: python3 tools/sonar_snapshot.py
-kalit	tur	daraja	scope
-S100	CODE_SMELL	Minor	Main
-S101	CODE_SMELL	Minor	Main
-S106	CODE_SMELL	Major	Main
-S107	CODE_SMELL	Major	Main
-S108	CODE_SMELL	Major	All
-S109	CODE_SMELL	Major	Main
-S112	CODE_SMELL	Major	Main
-S115	CODE_SMELL	Critical	All
-S116	CODE_SMELL	Minor	All
-S117	CODE_SMELL	Minor	All
-S125	CODE_SMELL	Major	All
-S127	CODE_SMELL	Major	Main
-S131	CODE_SMELL	Critical	All
-S134	CODE_SMELL	Critical	Main
-S138	CODE_SMELL	Major	Main
-S1066	CODE_SMELL	Major	All
-S1068	CODE_SMELL	Major	All
-S1104	CODE_SMELL	Minor	Main
-S1116	CODE_SMELL	Minor	All
-S1118	CODE_SMELL	Major	Main
-S1123	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S1126	CODE_SMELL	Minor	Main
-S1128	CODE_SMELL	Minor	All
-S1130	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S1133	CODE_SMELL	Info	Main
-S1134	CODE_SMELL	Major	All
-S1135	CODE_SMELL	Info	All
-S1142	CODE_SMELL	Major	Main
-S1144	CODE_SMELL	Major	All
-S1148	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S1153	CODE_SMELL	Minor	Main
-S1168	CODE_SMELL	Major	Main
-S1170	CODE_SMELL	Minor	Main
-S1172	CODE_SMELL	Major	All
-S1181	CODE_SMELL	Major	Main
-S1192	CODE_SMELL	Critical	Main
-S1206	BUG	Minor	Main
-S1210	CODE_SMELL	Minor	Main
-S1217	BUG	Major	Main
-S1244	BUG	Major	Main
-S1312	CODE_SMELL	Minor	Main
-S1448	CODE_SMELL	Major	Main
-S1481	CODE_SMELL	Minor	All
-S1488	CODE_SMELL	Minor	All
-S1607	CODE_SMELL	Major	Tests
-S1612	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S1640	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S1643	CODE_SMELL	Minor	All
-S1763	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S1845	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S1854	CODE_SMELL	Major	All
-S1858	CODE_SMELL	Minor	All
-S1874	CODE_SMELL	Minor	All
-S2068	VULNERABILITY	Major	Main
-S2076	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S2077	VULNERABILITY	Major	Main
-S2083	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S2093	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S2095	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S2111	BUG	Major	Main
-S2133	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S2142	BUG	Major	Main
-S2143	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S2160	CODE_SMELL	Minor	Main
-S2184	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S2187	CODE_SMELL	Blocker	Tests
-S2189	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S2201	BUG	Major	Main
-S2221	CODE_SMELL	Minor	Main
-S2229	BUG	Blocker	Main
-S2230	BUG	Major	Main
-S2245	VULNERABILITY	Major	Main
-S2259	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S2333	CODE_SMELL	Minor	Main
-S2384	CODE_SMELL	Minor	Main
-S2386	CODE_SMELL	Minor	Main
-S2583	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S2589	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S2629	CODE_SMELL	Major	Main
-S2696	CODE_SMELL	Critical	Main
-S2699	CODE_SMELL	Blocker	Tests
-S2701	CODE_SMELL	Minor	Tests
-S2755	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S2789	BUG	Major	Main
-S2925	CODE_SMELL	Major	Tests
-S2970	CODE_SMELL	Blocker	Tests
-S3011	CODE_SMELL	Major	Main
-S3358	CODE_SMELL	Major	Main
-S3415	CODE_SMELL	Major	Tests
-S3457	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S3577	CODE_SMELL	Minor	Tests
-S3649	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S3655	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S3776	CODE_SMELL	Critical	Main
-S3864	CODE_SMELL	Major	Main
-S4087	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S4144	CODE_SMELL	Major	All
-S4502	VULNERABILITY	Critical	Main
-S4790	VULNERABILITY	Critical	Main
-S4830	VULNERABILITY	Critical	Main
-S4973	BUG	Major	Main
-S5122	VULNERABILITY	Major	Main
-S5131	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S5135	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S5145	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S5146	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S5738	CODE_SMELL	Major	All
-S5778	CODE_SMELL	Major	Tests
-S5786	CODE_SMELL	Info	Tests
-S5838	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S5841	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S5853	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S5961	CODE_SMELL	Major	Tests
-S5976	CODE_SMELL	Major	Tests
-S6035	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S6068	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S6126	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S6213	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S6353	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S6355	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S6809	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S6813	CODE_SMELL	Major	Main
-S6878	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S8692	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S8694	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S8696	tekshirilmadi	tekshirilmadi	tekshirilmadi
-S8700	tekshirilmadi	tekshirilmadi	tekshirilmadi
+# `tekshirilmadi` = ma'lumot ochiq metadata da yo'q. Qoida uchun bu
+# yopiq analizator (taint analysis, bir qism SE qoidalari);
+# profil uchun esa til default profilini bermaydi. check_docs
+# ikkisini ham ogohlantirish bilan o'tkazadi, xato bermaydi.
+#
+# Yangilash: python3 tools/sonar_snapshot.py
+kalit	tur	daraja	scope	profil
+docker:S6437	VULNERABILITY	Blocker	Main	ha
+docker:S6471	SECURITY_HOTSPOT	Minor	Main	ha
+docker:S6472	SECURITY_HOTSPOT	Blocker	All	ha
+docker:S6497	SECURITY_HOTSPOT	Minor	Main	yo'q
+docker:S6587	CODE_SMELL	Major	All	ha
+docker:S6589	BUG	Major	All	ha
+docker:S6596	CODE_SMELL	Major	All	ha
+docker:S7019	CODE_SMELL	Major	All	ha
+docker:S7023	CODE_SMELL	Major	All	yo'q
+docker:S7026	CODE_SMELL	Minor	All	ha
+docker:S7029	CODE_SMELL	Major	All	ha
+java:S100	CODE_SMELL	Minor	Main	ha
+java:S101	CODE_SMELL	Minor	Main	ha
+java:S106	CODE_SMELL	Major	Main	ha
+java:S107	CODE_SMELL	Major	Main	ha
+java:S108	CODE_SMELL	Major	All	ha
+java:S109	CODE_SMELL	Major	Main	yo'q
+java:S112	CODE_SMELL	Major	Main	ha
+java:S115	CODE_SMELL	Critical	All	ha
+java:S116	CODE_SMELL	Minor	All	ha
+java:S117	CODE_SMELL	Minor	All	ha
+java:S125	CODE_SMELL	Major	All	ha
+java:S127	CODE_SMELL	Major	Main	ha
+java:S131	CODE_SMELL	Critical	All	ha
+java:S134	CODE_SMELL	Critical	Main	yo'q
+java:S138	CODE_SMELL	Major	Main	yo'q
+java:S1066	CODE_SMELL	Major	All	ha
+java:S1068	CODE_SMELL	Major	All	ha
+java:S1104	CODE_SMELL	Minor	Main	yo'q
+java:S1116	CODE_SMELL	Minor	All	ha
+java:S1118	CODE_SMELL	Major	Main	ha
+java:S1123	CODE_SMELL	Major	Main	ha
+java:S1126	CODE_SMELL	Minor	Main	ha
+java:S1128	CODE_SMELL	Minor	All	ha
+java:S1130	CODE_SMELL	Minor	All	ha
+java:S1133	CODE_SMELL	Info	Main	ha
+java:S1134	CODE_SMELL	Major	All	ha
+java:S1135	CODE_SMELL	Info	All	ha
+java:S1142	CODE_SMELL	Major	Main	yo'q
+java:S1144	CODE_SMELL	Major	All	ha
+java:S1148	tekshirilmadi	tekshirilmadi	tekshirilmadi	yo'q
+java:S1153	CODE_SMELL	Minor	Main	ha
+java:S1168	CODE_SMELL	Major	Main	ha
+java:S1170	CODE_SMELL	Minor	Main	ha
+java:S1172	CODE_SMELL	Major	All	ha
+java:S1181	CODE_SMELL	Major	Main	ha
+java:S1192	CODE_SMELL	Critical	Main	ha
+java:S1195	CODE_SMELL	Minor	Main	ha
+java:S1206	BUG	Minor	Main	ha
+java:S1210	CODE_SMELL	Minor	Main	ha
+java:S1217	BUG	Major	Main	ha
+java:S1244	BUG	Major	Main	yo'q
+java:S1312	CODE_SMELL	Minor	Main	yo'q
+java:S1448	CODE_SMELL	Major	Main	yo'q
+java:S1451	CODE_SMELL	Blocker	Main	yo'q
+java:S1481	CODE_SMELL	Minor	All	ha
+java:S1488	CODE_SMELL	Minor	All	ha
+java:S1598	CODE_SMELL	Critical	All	ha
+java:S1607	CODE_SMELL	Major	Tests	ha
+java:S1612	CODE_SMELL	Minor	All	ha
+java:S1640	CODE_SMELL	Minor	All	ha
+java:S1643	CODE_SMELL	Minor	All	ha
+java:S1763	tekshirilmadi	tekshirilmadi	tekshirilmadi	yo'q
+java:S1845	CODE_SMELL	Blocker	Main	ha
+java:S1854	CODE_SMELL	Major	All	ha
+java:S1858	CODE_SMELL	Minor	All	ha
+java:S1874	CODE_SMELL	Minor	All	yo'q
+java:S2068	VULNERABILITY	Major	Main	ha
+java:S2076	tekshirilmadi	tekshirilmadi	tekshirilmadi	yo'q
+java:S2077	VULNERABILITY	Major	Main	ha
+java:S2083	tekshirilmadi	tekshirilmadi	tekshirilmadi	yo'q
+java:S2093	CODE_SMELL	Critical	All	ha
+java:S2095	BUG	Blocker	All	yo'q
+java:S2111	BUG	Major	Main	ha
+java:S2133	CODE_SMELL	Major	All	ha
+java:S2142	BUG	Major	Main	ha
+java:S2143	CODE_SMELL	Info	Main	ha
+java:S2160	CODE_SMELL	Minor	Main	ha
+java:S2184	BUG	Minor	Main	ha
+java:S2187	CODE_SMELL	Blocker	Tests	ha
+java:S2189	BUG	Blocker	Main	yo'q
+java:S2201	BUG	Major	Main	ha
+java:S2221	CODE_SMELL	Minor	Main	yo'q
+java:S2229	BUG	Blocker	Main	ha
+java:S2230	BUG	Major	Main	ha
+java:S2245	VULNERABILITY	Major	Main	ha
+java:S2259	tekshirilmadi	tekshirilmadi	tekshirilmadi	yo'q
+java:S2333	CODE_SMELL	Minor	Main	yo'q
+java:S2384	CODE_SMELL	Minor	Main	yo'q
+java:S2386	CODE_SMELL	Minor	Main	ha
+java:S2583	BUG	Major	All	yo'q
+java:S2589	CODE_SMELL	Major	All	yo'q
+java:S2629	CODE_SMELL	Major	Main	ha
+java:S2696	CODE_SMELL	Critical	Main	ha
+java:S2699	CODE_SMELL	Blocker	Tests	ha
+java:S2701	CODE_SMELL	Minor	Tests	yo'q
+java:S2755	VULNERABILITY	Blocker	Main	yo'q
+java:S2789	BUG	Major	Main	ha
+java:S2925	CODE_SMELL	Major	Tests	ha
+java:S2970	CODE_SMELL	Blocker	Tests	ha
+java:S3011	CODE_SMELL	Major	Main	ha
+java:S3358	CODE_SMELL	Major	Main	ha
+java:S3415	CODE_SMELL	Major	Tests	ha
+java:S3457	CODE_SMELL	Major	All	ha
+java:S3577	CODE_SMELL	Minor	Tests	ha
+java:S3649	tekshirilmadi	tekshirilmadi	tekshirilmadi	yo'q
+java:S3655	tekshirilmadi	tekshirilmadi	tekshirilmadi	yo'q
+java:S3776	CODE_SMELL	Critical	Main	ha
+java:S3864	CODE_SMELL	Major	Main	ha
+java:S4087	CODE_SMELL	Minor	Main	ha
+java:S4144	CODE_SMELL	Major	All	ha
+java:S4502	VULNERABILITY	Critical	Main	ha
+java:S4790	VULNERABILITY	Critical	Main	ha
+java:S4830	VULNERABILITY	Critical	Main	ha
+java:S4973	BUG	Major	Main	ha
+java:S5122	VULNERABILITY	Major	Main	ha
+java:S5131	tekshirilmadi	tekshirilmadi	tekshirilmadi	yo'q
+java:S5135	tekshirilmadi	tekshirilmadi	tekshirilmadi	yo'q
+java:S5145	tekshirilmadi	tekshirilmadi	tekshirilmadi	yo'q
+java:S5146	tekshirilmadi	tekshirilmadi	tekshirilmadi	yo'q
+java:S5738	CODE_SMELL	Major	All	ha
+java:S5778	CODE_SMELL	Major	Tests	ha
+java:S5786	CODE_SMELL	Info	Tests	ha
+java:S5838	CODE_SMELL	Minor	Tests	ha
+java:S5841	BUG	Minor	Tests	ha
+java:S5853	CODE_SMELL	Minor	Tests	ha
+java:S5961	CODE_SMELL	Major	Tests	ha
+java:S5976	CODE_SMELL	Major	Tests	ha
+java:S6035	CODE_SMELL	Major	Main	ha
+java:S6126	CODE_SMELL	Major	All	ha
+java:S6213	CODE_SMELL	Major	All	ha
+java:S6353	CODE_SMELL	Minor	Main	ha
+java:S6355	CODE_SMELL	Major	Main	ha
+java:S6809	CODE_SMELL	Critical	Main	ha
+java:S6813	CODE_SMELL	Major	Main	ha
+java:S6878	CODE_SMELL	Major	Main	ha
+java:S8692	CODE_SMELL	Info	Tests	yo'q
+java:S8694	CODE_SMELL	Minor	All	ha
+java:S8696	BUG	Critical	All	ha
+java:S8700	BUG	Major	All	ha
+kubernetes:S6428	SECURITY_HOTSPOT	Major	Main	ha
+kubernetes:S6864	VULNERABILITY	Major	All	ha
+kubernetes:S6869	VULNERABILITY	Minor	All	yo'q
+kubernetes:S6870	VULNERABILITY	Major	All	ha
+kubernetes:S6873	CODE_SMELL	Major	All	ha
+kubernetes:S6893	CODE_SMELL	Major	All	ha
+xml:S2068	VULNERABILITY	Major	Main	ha
+xml:S3417	CODE_SMELL	Major	Main	yo'q
+xml:S3419	CODE_SMELL	Minor	All	yo'q
+xml:S3420	CODE_SMELL	Minor	All	yo'q
+xml:S3421	CODE_SMELL	Minor	All	ha
+xml:S3422	BUG	Critical	All	ha
+xml:S3423	CODE_SMELL	Minor	Main	yo'q
+xml:S3822	BUG	Critical	All	ha

@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 22. Deployment va operatsion patternlar (Deployment & Operations Patterns)
 
 <details>
-<summary>Bu bobdagi 38 bo'lim</summary>
+<summary>Bu bobdagi 43 bo'lim</summary>
 
 - [22.1 O'n ikki faktorli ilova (Twelve-Factor App)](#221-on-ikki-faktorli-ilova-twelve-factor-app)
 - [22.2 Tashqi konfiguratsiya (Externalized Configuration)](#222-tashqi-konfiguratsiya-externalized-configuration)
@@ -46,7 +46,12 @@
 - [22.35 Secrets manager integratsiyasi (Secrets Manager Integration)](#2235-secrets-manager-integratsiyasi-secrets-manager-integration)
 - [22.36 Hisoblash resurslarini konsolidatsiya qilish (Compute Resource Consolidation)](#2236-hisoblash-resurslarini-konsolidatsiya-qilish-compute-resource-consolidation)
 - [22.37 Har bir servis nusxasi uchun alohida container (Service Instance per Container)](#2237-har-bir-servis-nusxasi-uchun-alohida-container-service-instance-per-container)
-- [22.38 Amalda qo'llash](#2238-amalda-qollash)
+- [22.38 Replikatsiyalangan yuk-balanslangan servis (Replicated Load-Balanced Service)](#2238-replikatsiyalangan-yuk-balanslangan-servis-replicated-load-balanced-service)
+- [22.39 Shardlangan servis (Sharded Service)](#2239-shardlangan-servis-sharded-service)
+- [22.40 Ish navbati tizimi (Work Queue System)](#2240-ish-navbati-tizimi-work-queue-system)
+- [22.41 Hodisaga asoslangan batch ishlov (Event-Driven Batch Processing)](#2241-hodisaga-asoslangan-batch-ishlov-event-driven-batch-processing)
+- [22.42 Muvofiqlashtirilgan batch ishlov (Coordinated Batch Processing: Join, Reduce)](#2242-muvofiqlashtirilgan-batch-ishlov-coordinated-batch-processing-join-reduce)
+- [22.43 Amalda qo'llash](#2243-amalda-qollash)
 
 </details>
 
@@ -58,7 +63,7 @@ Deployment va operatsion patternlar - bu kod yozilib bo'lgandan keyin boshlanadi
 
 **Tavsif:** Heroku tomonidan shakllantirilgan va bugun cloud-native standartga aylangan 12 ta tamoyil to'plami: bitta kod bazasi, aniq deklarativ bog'liqliklar, muhitdan keladigan konfiguratsiya, backing service'larni almashtiriladigan resurs sifatida ko'rish, build/release/run bosqichlarining qat'iy ajratilishi, stateless process'lar, port binding, gorizontal masshtablash, tez ishga tushish va graceful shutdown, dev/prod paritet, log'larni event stream sifatida stdout'ga yozish va admin vazifalarini bir martalik process sifatida bajarish. Muammosi - an'anaviy "application server'ga WAR tashlash" modeli konteyner va orkestratorlarda qayta-qayta buziladi; 12-faktor shu modelni almashtiradi. Natijada ilova o'zini qayerda ishlayotganini bilmaydigan, almashtiriladigan birlikka aylanadi.
 
-**Spring'da qayerda uchraydi:** Spring Boot 3.x/4.x bu tamoyillarni deyarli standart holatda beradi: embedded Tomcat/Netty orqali port binding, `application.yml` + `Environment` + `@ConfigurationProperties` orqali tashqi konfiguratsiya, Maven/Gradle `spring-boot-starter-*` orqali deklarativ bog'liqliklar. `spring-boot-starter-actuator` build/release ajratilishini `/actuator/info` (git/build ma'lumotlari `BuildProperties`, `GitProperties`) va Kubernetes probe'lari (`management.endpoint.health.probes.enabled=true`, `/actuator/health/liveness`, `/actuator/health/readiness`) bilan qo'llab-quvvatlaydi. Graceful shutdown uchun `server.shutdown=graceful` va `spring.lifecycle.timeout-per-shutdown-phase`; stateless process uchun session'ni Redis'ga chiqarish - `spring-session-data-redis`; log'lar Logback'ning `ConsoleAppender` orqali stdout'ga; admin process'lar `ApplicationRunner`/`CommandLineRunner` yoki Spring Batch job'lari sifatida. Dev/prod paritetini Testcontainers (`spring-boot-testcontainers`, `@ServiceConnection`) ta'minlaydi, build/run ajratilishini esa `spring-boot-maven-plugin:build-image` (Cloud Native Buildpacks).
+**Spring'da qayerda uchraydi:** Spring Boot 3.x/4.x bu tamoyillarni deyarli standart holatda beradi: embedded Tomcat/Netty orqali port binding, `Environment` + `@ConfigurationProperties` orqali tashqi konfiguratsiya (diqqat: repo ichidagi `application.yml` ning o'zi 12-faktorning III bandiga to'liq javob bermaydi - u konfiguratsiyani environment variable'da saqlashni talab qiladi va versiya nazoratiga tushmaydigan config faylini ham "zaifliklari bor" deb ataydi; shuning uchun muhitga xos qiymatlar `SPRING_DATASOURCE_URL` kabi o'zgaruvchilar yoki ConfigMap/Secret orqali kelsin, `application.yml` esa faqat defaultlarni ushlab tursin), Maven/Gradle `spring-boot-starter-*` orqali deklarativ bog'liqliklar. `spring-boot-starter-actuator` build/release ajratilishini `/actuator/info` (git/build ma'lumotlari `BuildProperties`, `GitProperties`) va Kubernetes probe'lari (`management.endpoint.health.probes.enabled=true`, `/actuator/health/liveness`, `/actuator/health/readiness`) bilan qo'llab-quvvatlaydi. Graceful shutdown uchun `server.shutdown=graceful` va `spring.lifecycle.timeout-per-shutdown-phase`; stateless process uchun session'ni Redis'ga chiqarish - `spring-session-data-redis`; log'lar Logback'ning `ConsoleAppender` orqali stdout'ga; admin process'lar `ApplicationRunner`/`CommandLineRunner` yoki Spring Batch job'lari sifatida. Dev/prod paritetini Testcontainers (`spring-boot-testcontainers`, `@ServiceConnection`) ta'minlaydi, build/run ajratilishini esa `spring-boot-maven-plugin:build-image` (Cloud Native Buildpacks).
 
 **Qo'llanish keyslari:**
 - Kubernetes'da ishlaydigan har qanday yangi Spring Boot microservice uchun bazaviy talablar ro'yxati sifatida.
@@ -159,7 +164,7 @@ Deployment va operatsion patternlar - bu kod yozilib bo'lgandan keyin boshlanadi
 
 **Tavsif:** Eski versiya instance'lari birin-ketin, kichik to'plamlar bilan yangi versiyaga almashtiriladi; har bir yangi pod sog'lom deb tan olinganidan keyingina keyingisi almashtiriladi. Bu zero-downtime relizning eng arzon va eng ko'p ishlatiladigan shakli, chunki qo'shimcha to'liq muhit talab qilmaydi. Narxi - reliz davomida ikki versiya bir vaqtda ishlaydi, demak API va DB sxemasi ikki tomonga mos bo'lishi shart.
 
-**Spring'da qayerda uchraydi:** Kubernetes `Deployment`ning standart `strategy.type: RollingUpdate` (`maxSurge`, `maxUnavailable`) strategiyasi; uning to'g'ri ishlashi butunlay Spring Boot'ning probe'lariga bog'liq - `management.endpoint.health.probes.enabled=true` bilan `/actuator/health/liveness` va `/actuator/health/readiness`, Spring Boot `AvailabilityChangeEvent`/`ReadinessState` orqali ichki holatni e'lon qiladi. In-flight so'rovlar yo'qolmasligi uchun `server.shutdown=graceful` + `spring.lifecycle.timeout-per-shutdown-phase: 30s` va `preStop` hook; foydalanuvchi sessiyasi pod'dan tashqarida - `spring-session-data-redis`. Sxema o'zgarishi Flyway bilan expand/contract tartibida chiqariladi, Kafka consumer'lar uchun esa yangi va eski deserializer mosligi (Avro/Protobuf schema evolution, `spring-kafka`) tekshiriladi.
+**Spring'da qayerda uchraydi:** Kubernetes `Deployment`ning standart `strategy.type: RollingUpdate` strategiyasi; `maxSurge` va `maxUnavailable` ikkisining ham default qiymati 25% (`maxUnavailable` foizdan pastga, `maxSurge` yuqoriga yumaloqlanadi, ikkisi bir vaqtda 0 bo'la olmaydi), `revisionHistoryLimit` default 10, `progressDeadlineSeconds` default 600, `minReadySeconds` default 0. Oxirgisiga alohida e'tibor bering: Kubernetes "available" ni "ready bo'lgandan keyin `minReadySeconds` o'tgan" deb hisoblaydi, ya'ni 0 da pod ready bo'lishi bilanoq available sanaladi va keyingi pod almashtirilishi boshlanadi - warm-up ni hisobga olish uchun bu qiymatni ataylab qo'yish kerak. uning to'g'ri ishlashi butunlay Spring Boot'ning probe'lariga bog'liq - `management.endpoint.health.probes.enabled=true` bilan `/actuator/health/liveness` va `/actuator/health/readiness`, Spring Boot `AvailabilityChangeEvent`/`ReadinessState` orqali ichki holatni e'lon qiladi. In-flight so'rovlar yo'qolmasligi uchun `server.shutdown=graceful` (Spring Boot 3.4 dan default allaqachon `GRACEFUL`, 3.3 va undan oldin `IMMEDIATE` edi - ya'ni bu kalit eski versiyada zarur, yangisida ortiqcha) + `spring.lifecycle.timeout-per-shutdown-phase` (default 30s) va `preStop` hook; foydalanuvchi sessiyasi pod'dan tashqarida - `spring-session-data-redis`. Sxema o'zgarishi Flyway bilan expand/contract tartibida chiqariladi, Kafka consumer'lar uchun esa yangi va eski deserializer mosligi (Avro/Protobuf schema evolution, `spring-kafka`) tekshiriladi.
 
 **Qo'llanish keyslari:**
 - Kuniga bir necha marta chiqadigan oddiy microservice relizlari uchun standart strategiya.
@@ -168,13 +173,13 @@ Deployment va operatsion patternlar - bu kod yozilib bo'lgandan keyin boshlanadi
 - Resurs cheklangan muhitda blue-green'ning ikki barobar xarajatidan qochish.
 - Avtomatik `kubectl rollout undo` bilan tez qaytarish siyosatini o'rnatish.
 
-**Ehtiyot bo'ling:** Readiness probe'ni liveness bilan bir xil qilib qo'yish yoki probe'ni warm-up tugashidan oldin "yashil" qilish - reliz paytida 5xx xatolarining asosiy sababi. Orqaga mos bo'lmagan DB migratsiyasi yoki API shartnomasi bilan rolling update ishlamaydi: reliz oynasida ikki versiya bir vaqtda jonli, shuning uchun har bir o'zgarish N va N-1 versiyalar bilan mos bo'lishi kerak.
+**Ehtiyot bo'ling:** Readiness probe'ni liveness bilan bir xil qilib qo'yish yoki probe'ni warm-up tugashidan oldin "yashil" qilish - reliz paytida 5xx xatolarining asosiy sababi. Orqaga mos bo'lmagan DB migratsiyasi yoki API shartnomasi bilan rolling update ishlamaydi: reliz oynasida ikki versiya bir vaqtda jonli, shuning uchun har bir o'zgarish N va N-1 versiyalar bilan mos bo'lishi kerak. Ikkinchi tez-tez uchraydigan xato - shutdown byudjetini qo'shmaslik: Kubernetes'ning `terminationGracePeriodSeconds` default qiymati 30s, Spring'ning `timeout-per-shutdown-phase` default qiymati ham 30s, `preStop` esa shu grace oynasi ICHIDA ishlaydi. Shu defaultlar bilan `preStop` ga sleep qo'shsangiz, drain tugamasdan SIGKILL keladi. Qoida: `terminationGracePeriodSeconds` > `preStop` davomiyligi + `timeout-per-shutdown-phase` + zaxira. Grace tugaganda `preStop` hali ishlayotgan bo'lsa kubelet faqat bir martalik 2 sekund qo'shadi, undan keyin SIGKILL.
 
 ## 22.9 Qayta yaratish usuli bilan joylashtirish (Recreate Deployment)
 
-**Tavsif:** Eng sodda strategiya: barcha eski instance'lar to'xtatiladi, keyin yangi versiya ishga tushiriladi. Natijada qisqa, ongli ravishda qabul qilingan tushkunlik (downtime) oynasi paydo bo'ladi, lekin hech qachon ikki versiya bir vaqtda ishlamaydi. Bu orqaga mos bo'lmagan ma'lumotlar bazasi migratsiyalari, yagona-faol (singleton) komponentlar va eski litsenziya cheklovlari bo'lgan holatlarda eng xavfsiz va eng tushunarli yo'l.
+**Tavsif:** Eng sodda strategiya: barcha eski instance'lar to'xtatiladi, keyin yangi versiya ishga tushiriladi. Natijada qisqa, ongli ravishda qabul qilingan tushkunlik (downtime) oynasi paydo bo'ladi, buning o'rniga ikki versiya trafikni bir vaqtda qabul qilmaydi. "Hech qachon ikki versiya ishlamaydi" deb aytish aniq emas: Kubernetes yangi pod'larni eski pod'lar o'chirilishi tasdiqlanmaguncha yaratmaydi, lekin grace oynasi davomida eski pod `Terminating` holatda bo'lsa ham jarayon hali tirik - demak eksklyuziv resursga (singleton lock, migratsiya) tayangan ilovada o'chish faktini ilova ichida ham tekshirish kerak. Bu orqaga mos bo'lmagan ma'lumotlar bazasi migratsiyalari, yagona-faol (singleton) komponentlar va eski litsenziya cheklovlari bo'lgan holatlarda eng xavfsiz va eng tushunarli yo'l.
 
-**Spring'da qayerda uchraydi:** Kubernetes'da `strategy.type: Recreate` (yoki `replicas: 1` bilan StatefulSet) ko'rinishida; Spring tomonida bu strategiya ko'pincha Flyway/Liquibase migratsiyasini `initContainer` yoki alohida Job sifatida bir marta bajarishga bog'lanadi (`spring.flyway.enabled=false` ilovada, migratsiya alohida qadamda). Yagona-faol komponentlar: Quartz'ni klaster rejimisiz ishlatuvchi `spring-boot-starter-quartz` scheduler'lari, `@Scheduled` job'lar, Spring Batch `JobLauncher`, `@KafkaListener` bilan bitta partition'ga bog'langan consumer'lar. Tushkunlik oynasini qisqartirish uchun tez ishga tushish muhim - Spring Boot 3.x AOT, GraalVM native image yoki lazy initialization (`spring.main.lazy-initialization=true`) yordam beradi.
+**Spring'da qayerda uchraydi:** Kubernetes'da `Deployment`ning `strategy.type: Recreate` ko'rinishida. StatefulSet'ni `replicas: 1` qilish Recreate EMAS - u `OrderedReady` yoki `RollingUpdate` bilan pod'ni o'rnini bosib yangilaydi; StatefulSet uchun haqiqiy `Recreate` strategiyasi alohida `StatefulSetRecreateStrategy` feature gate ostida turadi va faqat u yoqilganda barcha pod'lar yangilarini yaratishdan oldin o'chiriladi; Spring tomonida bu strategiya ko'pincha Flyway/Liquibase migratsiyasini `initContainer` yoki alohida Job sifatida bir marta bajarishga bog'lanadi (`spring.flyway.enabled=false` ilovada, migratsiya alohida qadamda). Yagona-faol komponentlar: Quartz'ni klaster rejimisiz ishlatuvchi `spring-boot-starter-quartz` scheduler'lari, `@Scheduled` job'lar, Spring Batch `JobLauncher`, `@KafkaListener` bilan bitta partition'ga bog'langan consumer'lar. Tushkunlik oynasini qisqartirish uchun tez ishga tushish muhim - Spring Boot 3.x AOT, GraalVM native image yoki lazy initialization (`spring.main.lazy-initialization=true`) yordam beradi.
 
 **Qo'llanish keyslari:**
 - Orqaga mos bo'lmagan DB sxemasi o'zgarishi (ustun turini o'zgartirish, jadvalni bo'lish) bilan chiqadigan reliz.
@@ -268,11 +273,11 @@ public enum BillingFeature implements Feature {
 - Liquibase changeset xato ishlaganda `rollbackCount 1` bilan schema o'zgarishini bekor qilish.
 - Performance regressiya aniqlangach, oldingi image tag'iga Helm rollback qilish.
 
-**Ehtiyot bo'ling:** Destruktiv migratsiyalar (ustun o'chirish, `NOT NULL` qo'shish, tur o'zgartirish) rollback'ni imkonsiz qiladi - avval expand, keyin contract bosqichini alohida release'larda bajaring. Ikkinchi tuzoq: rollback hech qachon sinalmagan bo'lsa, u inqiroz paytida ishlamaydi; uni release checklist'ida muntazam mashq qilish kerak.
+**Ehtiyot bo'ling:** Destruktiv migratsiyalar (ustun o'chirish, `NOT NULL` qo'shish, tur o'zgartirish) rollback'ni imkonsiz qiladi - avval expand, keyin contract bosqichini alohida release'larda bajaring. Ikkinchi tuzoq: rollback hech qachon sinalmagan bo'lsa, u inqiroz paytida ishlamaydi; uni release checklist'ida muntazam mashq qilish kerak. Uchinchisi Kubernetes tomonida: `kubectl rollout undo` faqat saqlangan revision'lar hisobidan ishlaydi, `revisionHistoryLimit` esa default 10 - uni "chiqindini kamaytiraman" deb 0 ga qo'ysangiz, Deployment butun tarixini tozalaydi va rollback umuman imkonsiz bo'ladi.
 
 ## 22.15 Sidecar konteyner (Sidecar Container)
 
-**Tavsif:** Asosiy ilova konteyneriga yordamchi funksiyani alohida konteyner sifatida biriktirib, uni bitta Pod ichida yonma-yon ishlatish patterni. Ikki konteyner network namespace'ni (localhost) va kerak bo'lsa volume'ni birga ishlatadi, lekin mustaqil ravishda build qilinadi, versiyalanadi va yangilanadi. Bu cross-cutting vazifalarni (log yig'ish, proxy, konfiguratsiya sinxronizatsiyasi, metrika eksporti) ilova kodidan ajratib olishga imkon beradi. Natijada polyglot tizimda bir xil infratuzilma imkoniyatlari barcha tillarga bir xil tarzda beriladi.
+**Tavsif:** Asosiy ilova konteyneriga yordamchi funksiyani alohida konteyner sifatida biriktirib, uni bitta Pod ichida yonma-yon ishlatish patterni. Ikki konteyner network namespace'ni (localhost) va kerak bo'lsa volume'ni birga ishlatadi, lekin mustaqil ravishda build qilinadi, versiyalanadi va yangilanadi. Bu cross-cutting vazifalarni (log yig'ish, proxy, konfiguratsiya sinxronizatsiyasi, metrika eksporti) ilova kodidan ajratib olishga imkon beradi. Natijada polyglot tizimda bir xil infratuzilma imkoniyatlari barcha tillarga bir xil tarzda beriladi. Pattern ikki manbada ham kanonik: Burns unga modullilik va qayta ishlatish tomonidan qaraydi va har konteynerning o'z API'sini e'lon qilishi, parametrlanishi va hujjatlashtirilishini talab qiladi, Ibryam va Huss esa uni Pod ichidagi struktura patterni sifatida yozadi.
 
 **Spring'da qayerda uchraydi:** Spring Boot ilovasi Pod'da Envoy (Istio `istio-proxy`) yoki Linkerd proxy bilan birga ishlaganda, ilova faqat `http://localhost:...` ga murojaat qiladi va mTLS, retry, circuit breaking sidecar'da bajariladi - bu holda `spring-cloud-starter-circuitbreaker-resilience4j`'ni dublikat qilmaslik kerak. Log sidecar'lari (Fluent Bit, Vector) uchun Spring Boot'da `logging.file.name` bilan shared `emptyDir` volume'ga yoziladi yoki Logback'ning `LogstashEncoder`'i (net.logstash.logback) bilan JSON format beriladi. Konfiguratsiya uchun Vault Agent Injector sidecar fayl yozadi, Spring esa `spring.config.import=file:/vault/secrets/application.yaml` yoki `spring-cloud-vault` bilan o'qiydi. Kubernetes 1.29+ da `initContainers` ichida `restartPolicy: Always` bilan rasmiy "native sidecar" mavjud.
 
@@ -287,7 +292,7 @@ public enum BillingFeature implements Feature {
 
 ## 22.16 Ambassador konteyner (Ambassador Container)
 
-**Tavsif:** Tashqi servisga chiqish murakkabligini alohida konteynerga chiqarib, ilova faqat `localhost` orqali oddiy ulanish qiladigan sidecar turi. Ambassador service discovery, TLS termination, connection pooling, sharding, retry va rate limiting kabi vazifalarni o'z ichiga oladi. Ilova uchun tashqi dunyo bitta statik local endpoint'ga aylanadi, bu esa test va lokal ishlab chiqishni osonlashtiradi. Sidecar'dan farqi: ambassador aynan chiquvchi (egress) trafikka proxy bo'lib xizmat qiladi.
+**Tavsif:** Tashqi servisga chiqish murakkabligini alohida konteynerga chiqarib, ilova faqat `localhost` orqali oddiy ulanish qiladigan sidecar turi. Ambassador service discovery, TLS termination, connection pooling, sharding, retry va rate limiting kabi vazifalarni o'z ichiga oladi. Ilova uchun tashqi dunyo bitta statik local endpoint'ga aylanadi, bu esa test va lokal ishlab chiqishni osonlashtiradi. Sidecar'dan farqi: ambassador aynan chiquvchi (egress) trafikka proxy bo'lib xizmat qiladi. Burns ambassador uchun uch asosiy qo'llanishni sanaydi: servisni shardlash, service brokering hamda tajriba o'tkazish yoki so'rovni bo'lish; Ibryam va Huss esa uni Pod ichidan tashqi dunyoga chiqadigan proxy sifatida beradi.
 
 **Spring'da qayerda uchraydi:** Cloud SQL Auth Proxy yoki AWS RDS Proxy ambassador sifatida ishlaganda Spring Boot'ning `spring.datasource.url` qiymati `jdbc:postgresql://localhost:5432/db` bo'lib qoladi va IAM autentifikatsiyasi proxy'da bajariladi. Istio'da egress uchun `ServiceEntry` + `DestinationRule` bilan sidecar ambassador rolini bajaradi, Spring'dagi `RestClient`/`WebClient` esa oddiy HTTP yuboradi. Redis cluster yoki Memcached uchun Twemproxy/Envoy local port beradi, `spring-boot-starter-data-redis` esa `spring.data.redis.host=localhost` bilan ishlaydi. Shuningdek Kafka uchun local proxy (masalan Envoy'ning Kafka filter'i) ishlatilganda `spring.kafka.bootstrap-servers=localhost:9092` qoladi.
 
@@ -302,7 +307,7 @@ public enum BillingFeature implements Feature {
 
 ## 22.17 Adapter konteyner (Adapter Container)
 
-**Tavsif:** Ilovaning nostandart chiqishini (log formati, metrika, health ma'lumoti) tashqi tizim kutgan yagona standart formatga o'giruvchi sidecar turi. Ambassador chiquvchi trafikni normallashtirsa, adapter ilovadan tashqariga ko'rinadigan interfeysni normallashtiradi. Bu heterogen (turli til va framework'dagi) servislarni bitta monitoring va logging platformasiga arzon narxda ulashga imkon beradi. Ilova kodi o'zgarmaydi - moslashtirish infratuzilma qatlamida bajariladi.
+**Tavsif:** Ilovaning nostandart chiqishini (log formati, metrika, health ma'lumoti) tashqi tizim kutgan yagona standart formatga o'giruvchi sidecar turi. Ambassador chiquvchi trafikni normallashtirsa, adapter ilovadan tashqariga ko'rinadigan interfeysni normallashtiradi. Bu heterogen (turli til va framework'dagi) servislarni bitta monitoring va logging platformasiga arzon narxda ulashga imkon beradi. Ilova kodi o'zgarmaydi - moslashtirish infratuzilma qatlamida bajariladi. Burns adapter uchun uch keysni ko'rsatadi: monitoring, logging va boy health monitor qo'shish; Ibryam va Huss esa uni heterogen tizimni yagona interfeysga keltirish patterni deb yozadi.
 
 **Spring'da qayerda uchraydi:** Spring Boot 3.x'da Micrometer `PrometheusMeterRegistry` (`micrometer-registry-prometheus`) metrikani `/actuator/prometheus` orqali o'zi beradi, shuning uchun adapter asosan legacy yoki non-Spring komponentlar uchun kerak bo'ladi: `jmx_exporter` JMX'ni Prometheus formatiga, `statsd_exporter` StatsD'ni Prometheus'ga o'giradi (Spring tomonida alternativa - `micrometer-registry-statsd`). Log tomonida Fluent Bit/Vector adapter sifatida plain text Logback chiqishini JSON'ga parse qiladi; Spring'ning o'zida bu `logging.structured.format.console=ecs|logstash|gelf` (Spring Boot 3.4+) bilan ilova ichida ham bajarilishi mumkin. OpenTelemetry Collector esa `opentelemetry-spring-boot-starter` yuborgan ma'lumotni turli backend formatlariga moslashtiruvchi adapter rolini o'ynaydi.
 
@@ -317,7 +322,7 @@ public enum BillingFeature implements Feature {
 
 ## 22.18 Init konteyner (Init Container)
 
-**Tavsif:** Asosiy konteynerlar ishga tushishidan oldin to'liq bajarilib tugaydigan, bir martalik tayyorlov vazifalarini o'tkazuvchi konteyner. Kubernetes init konteynerlarni ketma-ket ishga tushiradi va har biri muvaffaqiyatli tugamaguncha keyingisi boshlanmaydi; xato bo'lsa Pod `restartPolicy`ga qarab qayta uriniladi. Shu sababli u dependency kutish, schema migration, fayl yuklab olish, ruxsatlarni to'g'rilash kabi ishlar uchun ideal. Natijada asosiy ilova image'i toza va yagona vazifaga mo'ljallangan bo'lib qoladi.
+**Tavsif:** Asosiy konteynerlar ishga tushishidan oldin to'liq bajarilib tugaydigan, bir martalik tayyorlov vazifalarini o'tkazuvchi konteyner. Kubernetes init konteynerlarni `.spec.initContainers` tartibida ketma-ket ishga tushiradi va oddiy init konteyner muvaffaqiyatli tugamaguncha keyingisi boshlanmaydi; xato bo'lsa Pod `restartPolicy`ga qarab qayta uriniladi. Bitta istisno bor: `restartPolicy: Always` qo'yilgan init konteyner (native sidecar) umuman tugamaydi - kubelet uning `started` holatini `true` qilgandan keyin ro'yxatdagi keyingi init konteynerni boshlaydi, ya'ni "tugadi" sharti faqat sidecar bo'lmagan init konteynerlarga tegishli. Shu sababli u dependency kutish, schema migration, fayl yuklab olish, ruxsatlarni to'g'rilash kabi ishlar uchun ideal. Natijada asosiy ilova image'i toza va yagona vazifaga mo'ljallangan bo'lib qoladi.
 
 **Spring'da qayerda uchraydi:** Eng keng tarqalgan keys - Flyway yoki Liquibase migratsiyasini init konteynerda alohida ishga tushirib, ilova replica'larida esa `spring.flyway.enabled=false` (yoki `spring.liquibase.enabled=false`) qilib qo'yish; shunda bir nechta replica bir vaqtda migration qilishga urinmaydi. Migratsiyani Flyway/Liquibase CLI image'i yoki Spring Boot ilovasining o'zini maxsus profil bilan ishga tushirish orqali bajarish mumkin. Konfiguratsiya va sertifikatlarni oldindan tortib olish uchun Vault Agent init mode, `git-sync` yoki `busybox` skriptlari ishlatiladi, Spring esa `spring.config.import=file:/config/app.yaml` bilan o'qiydi. Kubernetes 1.29+ dan boshlab `restartPolicy: Always` bilan init konteyner "native sidecar" bo'lib ham ishlaydi.
 
@@ -332,9 +337,9 @@ public enum BillingFeature implements Feature {
 
 ## 22.19 Health probe'lar (Health Probes: Liveness, Readiness, Startup)
 
-**Tavsif:** Orkestratorga ilovaning ishlayotgani (liveness), trafik qabul qilishga tayyorligi (readiness) va hali ishga tushayotgani (startup) haqida mashina o'qiy oladigan signal berish patterni. Liveness muvaffaqiyatsiz bo'lsa konteyner restart qilinadi, readiness muvaffaqiyatsiz bo'lsa Pod Service endpoint'laridan chiqariladi (lekin restart bo'lmaydi), startup probe esa sekin ishga tushadigan ilovada liveness'ni vaqtincha bloklab turadi. To'g'ri ajratilgan probe'lar rolling update, autoscaling va graceful shutdown'ning asosidir.
+**Tavsif:** Orkestratorga ilovaning ishlayotgani (liveness), trafik qabul qilishga tayyorligi (readiness) va hali ishga tushayotgani (startup) haqida mashina o'qiy oladigan signal berish patterni. Liveness muvaffaqiyatsiz bo'lsa konteyner restart qilinadi, readiness muvaffaqiyatsiz bo'lsa Pod Service endpoint'laridan chiqariladi (lekin restart bo'lmaydi), startup probe esa sekin ishga tushadigan ilovada liveness bilan birga readiness'ni ham bloklab turadi - startup probe muvaffaqiyatli bo'lmaguncha kubelet liveness va readiness probe'larning hech birini bajarmaydi. To'g'ri ajratilgan probe'lar rolling update, autoscaling va graceful shutdown'ning asosidir.
 
-**Spring'da qayerda uchraydi:** Spring Boot Actuator `/actuator/health/liveness` va `/actuator/health/readiness` endpointlarini beradi; Kubernetes muhitida ular avtomatik yoqiladi yoki `management.endpoint.health.probes.enabled=true` bilan majburan yoqiladi. `ApplicationAvailability`, `LivenessState` va `ReadinessState` interfeyslari orqali holatni kodda o'qish, `AvailabilityChangeEvent.publish(context, ReadinessState.REFUSING_TRAFFIC)` bilan o'zgartirish mumkin. Custom tekshiruvlar `HealthIndicator`/`ReactiveHealthIndicator` implementatsiyasi bilan yoziladi, `management.endpoint.health.group.readiness.include=db,redis` orqali guruhlanadi. Probe endpoint'ini asosiy portdan ajratish uchun `management.server.port` ishlatiladi.
+**Spring'da qayerda uchraydi:** Spring Boot Actuator `/actuator/health/liveness` va `/actuator/health/readiness` endpointlarini beradi; Kubernetes muhitida ular avtomatik yoqiladi yoki `management.endpoint.health.probes.enabled=true` bilan majburan yoqiladi. `ApplicationAvailability`, `LivenessState` va `ReadinessState` interfeyslari orqali holatni kodda o'qish, `AvailabilityChangeEvent.publish(context, ReadinessState.REFUSING_TRAFFIC)` bilan o'zgartirish mumkin. Custom tekshiruvlar `HealthIndicator`/`ReactiveHealthIndicator` implementatsiyasi bilan yoziladi, `management.endpoint.health.group.readiness.include=db,redis` orqali guruhlanadi. Probe endpoint'ini asosiy portdan ajratish uchun `management.server.port` ishlatiladi. Kubernetes tomonidagi default qiymatlarni yodda tuting: `initialDelaySeconds` 0, `periodSeconds` 10, `timeoutSeconds` 1 (minimal qiymat ham 1), `successThreshold` 1 (liveness va startup uchun u faqat 1 bo'lishi mumkin), `failureThreshold` 3. Shulardan eng xavflisi `timeoutSeconds: 1`: yuklama ostida yoki GC pauzasida `/actuator/health/liveness` bir sekundga sig'masa, uchta ketma-ket timeout konteynerni restart qiladi - ya'ni soxta restart'larning eng keng tarqalgan sababi aynan shu sozlanmagan default. Kubernetes 1.25+ da probe darajasida `terminationGracePeriodSeconds` ham bor (liveness va startup uchun; readiness probe'da u taqiqlangan).
 
 **Qo'llanish keyslari:**
 - Kubernetes `readinessProbe` uchun `/actuator/health/readiness` ni ko'rsatib, warm-up tugaguncha trafik yubormaslik.
@@ -347,7 +352,7 @@ public enum BillingFeature implements Feature {
 
 ## 22.20 Nazorat ostida to'xtatish (Graceful Shutdown)
 
-**Tavsif:** `SIGTERM` signalini olgandan keyin yangi so'rovlarni qabul qilishni to'xtatib, ishlayotgan so'rovlar va task'larni tugatib, resurslarni toza yopib chiqish patterni. Bu rolling update, scale-in va spot instance uzilishlarida 5xx xatolari va yarim bajarilgan tranzaksiyalarni oldini oladi. To'g'ri ishlashi uchun ketma-ketlik muhim: avval readiness'ni `DOWN` qilish, load balancer endpoint'ni olib tashlashini kutish, keyin server'ni drain qilish. Shutdown muddati orkestratorning `terminationGracePeriodSeconds` qiymatidan qisqa bo'lishi shart.
+**Tavsif:** `SIGTERM` signalini olgandan keyin yangi so'rovlarni qabul qilishni to'xtatib, ishlayotgan so'rovlar va task'larni tugatib, resurslarni toza yopib chiqish patterni. Bu rolling update, scale-in va spot instance uzilishlarida 5xx xatolari va yarim bajarilgan tranzaksiyalarni oldini oladi. Kubernetes'da bu ketma-ketlik kafolatlanmaydi: kubelet Pod'ni graceful to'xtatishni boshlaganda control plane Pod'ni EndpointSlice'lardan olib tashlashni SHU PAYTNING O'ZIDA, ya'ni SIGTERM bilan parallel bajaradi - demak SIGTERM kelganda LB hali trafik yuborayotgan bo'lishi mumkin. Shuning uchun oynani `preStop` hook bilan ochish kerak: `preStop` SIGTERM'dan OLDIN ishlaydi, shu yerdagi qisqa kutish propagatsiyaga vaqt beradi. Shutdown byudjeti ham shu grace oynasiga sig'ishi shart: `terminationGracePeriodSeconds` (default 30s) > `preStop` + Spring'ning `timeout-per-shutdown-phase` (default 30s) + zaxira.
 
 **Spring'da qayerda uchraydi:** Spring Boot'da `server.shutdown=graceful` va `spring.lifecycle.timeout-per-shutdown-phase=30s` asosiy sozlamalar; `SmartLifecycle` yoki `@PreDestroy` bilan o'z komponentlarini tartibli yopish mumkin. Kubernetes muhitida Actuator'ning readiness'i avtomatik `OUT_OF_SERVICE` ga o'tadi, qo'lda esa `AvailabilityChangeEvent.publish(ctx, ReadinessState.REFUSING_TRAFFIC)` ishlatiladi; `preStop` hook'da qisqa `sleep` qo'yish LB propagatsiyasini kutish uchun amaliy usul. Kafka uchun `spring-kafka`'ning `KafkaListenerEndpointRegistry.stop()`, scheduler uchun `ThreadPoolTaskExecutor`'da `setWaitForTasksToCompleteOnShutdown(true)` va `setAwaitTerminationSeconds(...)` ishlatiladi. Shuningdek `/actuator/shutdown` endpointi mavjud, lekin production'da odatda o'chirib qo'yiladi.
 
@@ -370,7 +375,7 @@ class ConsumerLifecycle implements SmartLifecycle {
 - Spot/preemptible instance uzilishi ogohlantirilganda ulanishlarni toza yopish.
 - HikariCP connection pool'ni yopib, DB'da osilib qolgan sessiyalarni oldini olish.
 
-**Ehtiyot bo'ling:** `terminationGracePeriodSeconds` Spring'ning shutdown timeout'idan kichik bo'lsa, Kubernetes `SIGKILL` yuborib, graceful shutdown ma'nosini yo'qotadi - bu qiymatlarni doim birga sozlang. Ikkinchi tuzoq: readiness'ni `DOWN` qilmasdan darhol drain boshlash, chunki load balancer bir necha soniya hali trafik yuborib turadi.
+**Ehtiyot bo'ling:** Ikki default bir-biriga teng: Kubernetes `terminationGracePeriodSeconds` 30s va Spring `spring.lifecycle.timeout-per-shutdown-phase` 30s. Ikkisini ham o'zgartirmasdan `preStop` ga sleep qo'shsangiz byudjet allaqachon to'lgan bo'ladi va `SIGKILL` keladi: `terminationGracePeriodSeconds` ni ataylab oshiring. Grace tugaganda `preStop` hali ishlayotgan bo'lsa kubelet faqat bir martalik 2 sekund qo'shadi. Ikkinchi tuzoq: readiness'ni `DOWN` qilmasdan darhol drain boshlash, chunki load balancer bir necha soniya hali trafik yuborib turadi. Uchinchisi - native sidecar bilan ishlaganda tartibni unutish: kubelet sidecar konteynerlarni asosiy ilova konteyneri TO'LIQ to'xtaguncha o'chirmaydi, keyin ularni ro'yxatdagi teskari tartibda yopadi. Istio yoki Vault sidecar'i app drain tugaguncha tirik qolishi aynan shuning hisobiga ishlaydi, lekin sidecar'ning o'z to'xtash vaqti ham umumiy grace byudjetidan yeydi.
 
 ## 22.21 Gorizontal / vertikal avtomatik masshtablash (Horizontal / Vertical Autoscaling)
 
@@ -509,7 +514,7 @@ class PaymentHints implements RuntimeHintsRegistrar {
 
 **Qo'llanish keyslari:**
 - Rolling update'da pod'larning tezroq Ready bo'lishi va deploy oynasining qisqarishi.
-- Native image'ga o'tish imkoni yo'q, lekin startup 2-3 barobar tez bo'lishi kerak bo'lgan katta monolit.
+- Native image'ga o'tish imkoni yo'q, lekin startup bir necha barobar tez bo'lishi talab qilinadigan katta monolit.
 - Kubernetes'da CPU limit past bo'lgan pod'da startup timeout'ga tushib qolmaslik.
 - CI'da integration test suite'ini ko'p marta JVM ko'tarib ishga tushirish vaqtini kamaytirish.
 - Scheduled batch job'larda har safar warm-up to'lashdan qutulish.
@@ -662,7 +667,182 @@ class DrainOnShutdown {
 
 **Ehtiyot bo'ling:** Container ichidagi JVM'ga memory limit haqida xabar bermaslik klassik tuzoq - `-XX:MaxRAMPercentage` yoki to'g'ri `requests/limits` sozlanmasa, pod `OOMKilled` bo'lib doimiy restart qiladi, heap esa limitdan katta bo'lib qoladi. Shuningdek container'ga state (yuklangan fayllar, lokal cache, H2 fayl bazasi) yozib qo'yish uni stateless bo'lmagan "pet"ga aylantiradi: har bir restart yoki rescheduling'da ma'lumot yo'qoladi, shuning uchun state tashqi store'ga (S3, Redis, DB) chiqarilishi va graceful shutdown bilan in-flight so'rovlar tugatilishi shart.
 
-## 22.38 Amalda qo'llash
+## 22.38 Replikatsiyalangan yuk-balanslangan servis (Replicated Load-Balanced Service)
+
+**Tavsif:** Burns bu patternni eng oddiy taqsimlangan shakl deb ataydi: har bir server qolganlariga aynan o'xshash, har biri har qanday so'rovni qabul qila oladi, oldida esa load balancer turadi va trafikni round-robin yoki session stickiness bilan tarqatadi. Replikatsiyaning birinchi sababi masshtab emas, zaxira: Burns hisobiga ko'ra yuqori mavjudlik SLA'sini bitta nusxa bilan ushlab turish uchun reliz butun kunlik downtime byudjetiga sig'ishi kerak bo'ladi, shuning uchun eng kichik servis ham kamida ikki nusxada ishlatiladi. Patternning ikkinchi majburiy qismi - load balancer uchun halol readiness signali: konteyner tirik, lekin bazaga ulanmagan yoki ma'lumotni hali yuklab olmagan bo'lsa, u "tayyor" deb ko'rinmasligi kerak. Burns shuningdek ayni patternning sessiyani kuzatuvchi variantini beradi: so'rovni foydalanuvchi bo'yicha doimiy ravishda bitta nusxaga yo'naltirish (in-memory cache hit rate yoki uzoq davom etadigan muloqot uchun), bu odatda manba va manzil IP'sini xeshlash bilan amalga oshiriladi, NAT sababli tashqi IP'lar uchun esa cookie darajasidagi kuzatish afzal. Nusxa soni o'zgarganda yo'naltirish buzilishini kamaytirish uchun konsistent xeshlash ishlatiladi. Pattern tepasiga ikki chekka qatlam qo'shiladi: caching proxy (hit rate'ni oshirish uchun kam sonli, lekin katta nusxa) hamda rate limiting va SSL termination qiladigan reverse proxy.
+
+**Spring'da qayerda uchraydi:** Kubernetes'da bu `Deployment` + `Service` juftligi, Spring tomonidan esa talab bitta - warm-up tugaguncha readiness bermaslik. Spring Boot Actuator'da buni `ApplicationAvailability` va `AvailabilityChangeEvent.publish(context, ReadinessState.REFUSING_TRAFFIC)` bilan boshqarish mumkin; probe mexanikasi [Health probe'lar](#2219-health-probelar-health-probes-liveness-readiness-startup) da. Sessiyani kuzatish kerak bo'lsa `spring-session-data-redis` bilan holatni tashqariga chiqarish sticky routing'dan afzal, chunki u nusxalarni almashtirishga to'sqinlik qilmaydi. Chekka qatlam uchun rate limiting Spring Cloud Gateway'ning `RequestRateLimiterGatewayFilterFactory` (`spring-cloud-starter-gateway-server-webflux` + Redis) bilan yoki Resilience4j `RateLimiter` bilan ilovaning o'zida yoziladi; limitga urilgan so'rovga Burns aytgandek `429` va qolgan chaqiruvlar sonini ko'rsatuvchi javob header'i qaytariladi. SSL termination odatda Ingress yoki `nginx` qatlamida bajariladi, shuning uchun Spring Boot'da `server.forward-headers-strategy=framework` qo'yib `X-Forwarded-*` header'larini hisobga olish kerak.
+
+```java
+@Component
+class CatalogWarmUp {
+
+    private final ApplicationContext context;
+    private final CatalogLoader loader;
+
+    CatalogWarmUp(ApplicationContext context, CatalogLoader loader) {
+        this.context = context;
+        this.loader = loader;
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    void warmUp() {
+        // load balancer warm-up tugamaguncha bu nusxaga trafik yubormaydi
+        AvailabilityChangeEvent.publish(context, ReadinessState.REFUSING_TRAFFIC);
+        loader.loadAll();
+        AvailabilityChangeEvent.publish(context, ReadinessState.ACCEPTING_TRAFFIC);
+    }
+}
+```
+
+**Qo'llanish keyslari:**
+- Stateless REST API'ni kamida ikki nusxada ishlatib, reliz paytida uzilishsiz yangilash.
+- Katta ma'lumot to'plamini startup'da yuklab oladigan servisda readiness'ni warm-up tugagach berish.
+- Ko'p o'qiladigan sahifalar uchun ilova oldiga caching proxy qatlamini qo'yib, backend yuklamasini kamaytirish.
+- Anonim trafikka past, autentifikatsiya qilingan foydalanuvchiga baland rate limit berib, tasodifiy DoS'dan himoyalanish.
+- Chekka qatlamda SSL termination qilib, ichki qatlamlarga alohida sertifikat berish va ularni mustaqil yangilash.
+
+**Ehtiyot bo'ling:** Burns caching qatlamini ilova yonidagi sidecar sifatida joylashtirishning kamchiligini aniq ko'rsatadi: cache ilova bilan birga masshtablanadi va har bir nusxa bir xil sahifani saqlaydi, natijada hit rate pasayadi; shuning uchun cache uchun kam sonli, lekin katta xotirali nusxa afzal. Sticky session'ga tayanish esa yashirin holat yaratadi - nusxa yo'qolganda foydalanuvchi sessiyasi ham yo'qoladi va deploy paytida trafik bir tekis tarqalmaydi, shuning uchun sessiyani tashqariga chiqarish birinchi tanlov bo'lishi kerak.
+
+## 22.39 Shardlangan servis (Sharded Service)
+
+**Tavsif:** Replikatsiyalangan servisda har bir nusxa har qanday so'rovga javob bera oladi, shardlangan servisda esa har bir nusxa (shard) so'rovlarning faqat bir qismiga javob beradi; oldida turgan root yoki shard router har so'rovni ko'rib, uni kerakli shard'ga yo'naltiradi. Burns asosiy sababni aniq aytadi: holat bitta mashinaga sig'maydi, shuning uchun shardlash servisni ma'lumot HAJMI bo'yicha masshtablash usuli. Eng ko'rsatuvchi misol - shardlangan cache: replikatsiyalangan cache'da har nusxa taxminan bir xil ma'lumotni saqlaydi va umumiy to'plamning kichik qismi sig'adi, shardlanganda esa har kalit faqat bitta cache'da yashaydi va xotira ancha samarali ishlatiladi. Yo'naltirish shardlash funksiyasi bilan bajariladi: `Shard = ShardingFunction(Req)`, odatda xesh va modulo. Funksiyadan ikki xususiyat talab qilinadi - determinizm (bir so'rov doim bir shard'ga tushsin) va bir tekislik (yuklama shardlar orasida teng bo'linsin). Burns kalit tanlashga alohida to'xtaladi: butun so'rov obyektini xesh qilish noto'g'ri, chunki javobga ta'sir qilmaydigan maydonlar (so'rov vaqti, mijoz IP'si) kalitni behuda maydalaydi; aksincha juda umumiy kalit javobi boshqa bo'lgan so'rovlarni bir shard'ga qo'shib, xato javob beradi. Shard soni o'zgarganda qayta yo'naltirishni kamaytirish uchun konsistent xeshlash ishlatiladi, hot shard paydo bo'lganda esa shard replikatsiyalanadi.
+
+**Spring'da qayerda uchraydi:** Ma'lumot darajasidagi shardlashning to'liq yozuvi [Shardlash / Bo'laklash](10-malumotlarni-boshqarish-va-taqsimlash.md#109-shardlash--bolaklash-sharding--partitioning) da, bu yerda gap serving qatlamidagi shard router haqida. Spring Boot'da shard router rolini odatda ambassador konteyner (Twemproxy, Envoy) bajaradi va ilova `spring.data.redis.host=localhost` bilan ishlaydi; `spring-boot-starter-data-redis` Redis Cluster rejimida (`spring.data.redis.cluster.nodes`) Lettuce'ning o'zi slot hisobini qiladi. Ilova ichida shard tanlash kerak bo'lsa, shardlash funksiyasi oddiy `@Component` sifatida yozilib, `RestClient`/`WebClient` base URL'ini shard bo'yicha tanlaydi; `AbstractRoutingDataSource` esa bir nechta shard DataSource'ini bitta mantiqiy manbaga biriktiradi. Kalit tanlash xatosi Spring tomonida `@Cacheable(keyGenerator = ...)` darajasida ham takrorlanadi, shuning uchun cache kaliti va shard kaliti bir mantiqdan chiqishi kerak. Konsistent xeshlashning o'z yozuvi [Konsistent xeshlash](28-taqsimlangan-malumot-replikatsiya-va.md#286-konsistent-xeshlash-consistent-hashing) da, hot shard bilan kurash esa [Hot key ta'sirini yumshatish](11-keshlash-patternlari.md#1120-hot-key-tasirini-yumshatish-hot-key-mitigation) da.
+
+```java
+@Component
+class CacheShardRouter {
+
+    private final List<String> shards;
+
+    CacheShardRouter(@Value("${app.cache.shards}") List<String> shards) {
+        this.shards = shards;
+    }
+
+    String shardFor(String path, String countryCode) {
+        // kalitga faqat javobga ta'sir qiladigan maydonlar kiradi:
+        // IP va vaqtni butunligicha xesh qilish shard'ni behuda maydalaydi
+        int hash = Objects.hash(countryCode, path);
+        return shards.get(Math.floorMod(hash, shards.size()));
+    }
+}
+```
+
+**Qo'llanish keyslari:**
+- Umumiy hajmi bitta node xotirasiga sig'maydigan render natijalarini shardlangan cache'da saqlash.
+- Shard routerni ambassador sifatida joylashtirib, ilova kodini oddiy local ulanish bilan qoldirish.
+- Shard kalitiga mamlakat kodini qo'shib, tilga bog'liq javoblarni to'g'ri ajratish.
+- Har shard'ni alohida autoscaling qilib, hot shard'ni dinamik ravishda ko'paytirish.
+- Ish navbatini shardlab, yangi worker versiyasini bosqichma-bosqich chiqarish va nosozlik qamrovini kamaytirish.
+
+**Ehtiyot bo'ling:** Burns shardlangan cache'ning replikatsiyalanganidan farqli xavfini ta'kidlaydi: foydalanuvchi doim bir shard'ga tushgani uchun o'sha shard yiqilsa, u tiklanmaguncha bu foydalanuvchi uchun cache har safar miss beradi - demak backend sig'imi cache hit rate'ga qarab hisoblanishi kerak, aks holda shard yo'qolganda backend yuklamasi birdan ko'tariladi. Ikkinchi tuzoq - shard sonini `%` modulo bilan hisoblash: shard soni o'zgarishi bilan deyarli barcha kalitlar ko'chadi, shuning uchun o'sadigan tizimda konsistent xeshlash tanlanadi.
+
+## 22.40 Ish navbati tizimi (Work Queue System)
+
+**Tavsif:** Burns ish navbatini batch ishlovning eng oddiy shakli deb ataydi: bajarilishi kerak bo'lgan ish bo'laklari bor, har bir bo'lak qolganlaridan butunlay mustaqil va o'zaro ta'sirsiz ishlanadi, maqsad esa har bo'lakni belgilangan vaqt ichida tugatish, worker sonini shunga qarab ko'paytirib yoki kamaytirib. Patternning asosiy g'oyasi - navbat mantiqining deyarli hammasi bajarilayotgan ishdan mustaqil, shuning uchun u qayta ishlatiladigan konteynerlarga chiqariladi va ilovaga faqat ikki interfeys qoladi. Birinchisi - source container interface: ishlov kerak bo'lgan bo'laklar oqimini beradi va ambassador rolini o'ynaydi, chunki umumiy navbat menejerining so'rovini real manbaga (cloud storage'dagi fayl ro'yxati, Kafka yoki Redis navbati) proksilaydi. Burns bu interfeys uchun oddiy HTTP REST shartnomasini beradi: `GET /api/v1/items` butun ro'yxatni, `GET /api/v1/items/<item-name>` bitta bo'lak tafsilotini qaytaradi; API'da "bajarildi" deb belgilash yo'q, chunki qaysi bo'lak ishlangani hisobini navbat menejerining o'zi yuritadi. Ikkinchisi - worker container interface: u bir martalik chaqiruv, worker navbat menejeri bilan bir konteyner guruhida emas, alohida joylashtiriladi, shuning uchun chaqiruv masofaviy va xavfsizlik talablari qattiqroq. Burns yana versiyalash bo'yicha amaliy qoida beradi: API'ga `v1` ni darhol qo'yish arzon, keyin qo'shish qimmat.
+
+**Spring'da qayerda uchraydi:** Xabarlar darajasidagi o'xshash yozuv [Raqobatlashuvchi Iste'molchilar](16-enterprise-integration-patterns-ii.md#1612-raqobatlashuvchi-istemolchilar-competing-consumers) da; bu yerda gap konteyner darajasidagi shartnoma haqida. Spring Boot'da source interface oddiy `@RestController` bo'ladi va `record` bilan kitobdagi `kind`/`apiVersion`/`items` javob shaklini aynan beradi. Worker tomonida Kubernetes `Job` ichida ishlaydigan Spring Boot ilovasi `ApplicationRunner` yoki Spring Batch `Job` sifatida yoziladi; `spring-cloud-task` esa qisqa yashovchi vazifa uchun `TaskRepository` bilan ijro tarixini yozib boradi. Navbat haqiqiy broker ustida qurilsa, `spring-kafka`'ning `@KafkaListener` `concurrency` parametri yoki `spring-rabbit`'ning `SimpleRabbitListenerContainerFactory.setConcurrentConsumers` worker sonini boshqaradi. Burns bergan dinamik masshtablash hisobi (ishlov vaqtini parallellikka bo'lib, uni yangi bo'laklarning kelish davridan kichik ushlab turish) Micrometer'ning `kafka.consumer.fetch.manager.records.lag` yoki o'z `Gauge`'ingiz orqali o'lchanadi va KEDA yoki HPA custom metrikasiga beriladi.
+
+```java
+@RestController
+@RequestMapping("/api/v1/items")
+class WorkQueueSourceController {
+
+    private final ItemSource source;
+
+    WorkQueueSourceController(ItemSource source) { this.source = source; }
+
+    @GetMapping
+    ItemList list() {
+        // navbat menejeri qaysi bo'lak ishlanganini o'zi hisoblaydi:
+        // bu API faqat mavjud bo'laklarni e'lon qiladi
+        return new ItemList("ItemList", "v1", source.names());
+    }
+
+    @GetMapping("/{name}")
+    Item detail(@PathVariable String name) { return source.detail(name); }
+}
+
+record ItemList(String kind, String apiVersion, List<String> items) {}
+```
+
+**Qo'llanish keyslari:**
+- Object storage'ga tushgan rasm yoki videoni thumbnail qilish uchun bir martalik worker `Job`'larini navbatdan ishga tushirish.
+- Manbani almashtirib (S3, NFS, Kafka) bir xil navbat menejerini qayta ishlatish.
+- Worker sonini navbat lag'i bo'yicha KEDA bilan avtomatik masshtablash.
+- Hisobot generatsiyasini navbatga qo'yib, foydalanuvchi so'rovini bloklamaslik.
+- Bir vaqtda yaratiladigan `Job` sonini cheklab, cluster'ni burst yuklamadan saqlash.
+
+**Ehtiyot bo'ling:** Burns parallellikni cheklashning narxini aniq ko'rsatadi: bir vaqtda yaratiladigan ish soni cheklansa resurs sarfi barqarorlashadi, lekin har bo'lakning tugash vaqti uzayadi; agar barqaror yuklama sig'imdan baland bo'lsa navbat hech qachon yetib olmaydi va kechikish cheksiz o'sadi. Shuning uchun ikki metrikani birga kuzatish kerak: yangi bo'laklarning o'rtacha kelish davri va bitta bo'lakning o'rtacha ishlov vaqti. Spring tomonida eng ko'p uchraydigan xato - worker'ni idempotent qilmaslik: `Job` qayta urinishida bo'lak ikkinchi marta ishlanadi.
+
+## 22.41 Hodisaga asoslangan batch ishlov (Event-Driven Batch Processing)
+
+**Tavsif:** Bitta ish navbati bitta kirishni bitta chiqishga o'girish uchun yaxshi, lekin ko'p batch ilovada bir kirishdan bir nechta chiqish yoki ketma-ket bir nechta amal kerak bo'ladi. Shunda navbatlar bir-biriga ulanadi: birining chiqishi ikkinchisining kirishi bo'ladi va yo'naltirilgan asiklik grafda hodisaga javob beradigan workflow hosil bo'ladi, hodisa esa oldingi qadamning tugashi. Burns navbatlarni ulashning besh nomlangan shaklini beradi. Copier bitta oqimni ikki yoki undan ko'p aynan oqimga ko'paytiradi (bir video bir nechta formatga render qilinadi). Filter oqimni mezon bo'yicha kichraytiradi, mos kelmagan bo'laklarni tashlab yuboradi (faqat marketing xabarlariga rozilik bergan foydalanuvchilar). Splitter hech narsani tashlamaydi, ikki xil kirishni mezon bo'yicha ikki alohida navbatga ajratadi (email va SMS xabarnomalari); Burns ta'kidlashicha, splitter'ni copier va ikki filter bilan ham qurish mumkin, lekin splitter ixchamroq shakl. Sharder splitter'ning umumiylashgan shakli: navbatni shardlash funksiyasi bilan teng bo'laklarga bo'ladi, bu ishonchlilik uchun (yangi worker versiyasini bir shard'ga chiqarib sinash) va yuklamani datacenter'lar bo'ylab tarqatish uchun ishlatiladi. Merger copier'ning teskarisi: bir nechta navbatni bitta navbatga qo'shadi (ko'p sondagi repozitoriydan kelgan commit'larni bitta build tizimiga berish).
+
+**Spring'da qayerda uchraydi:** Bu shakllarning xabar darajasidagi yozuvlari EIP bo'limlarida: [Ajratuvchi](15-enterprise-integration-patterns-i-xabarlar.md#1529-ajratuvchi-splitter) va [Agregator](15-enterprise-integration-patterns-i-xabarlar.md#1530-agregator-aggregator). Spring Integration Java DSL ularni to'g'ridan-to'g'ri beradi: copier uchun `.publishSubscribeChannel(...)`, filter uchun `.filter(...)`, splitter uchun `.route(...)` yoki `.split()`, merger uchun bir nechta `IntegrationFlow`'ni bitta `MessageChannel`'ga ulash. Sharder esa `.route(...)` ichida shardlash funksiyasini ishlatish bilan yoziladi va Kafka'da `spring.kafka.producer.properties.partitioner.class` yoki `@SendTo` bilan partitsiya tanlashga tushadi. Spring Cloud Stream'da xuddi shu grafni `spring.cloud.stream.bindings.*.destination` va funksional kompozitsiya (`spring.cloud.function.definition=enrich|filterOptIn`) orqali e'lon qilish mumkin. Filter va splitter mezoni biznes qoidasi bo'lgani uchun ularni alohida bean sifatida yozib test bilan qulflash kerak.
+
+```java
+@Bean
+IntegrationFlow shippingNotifications() {
+    return IntegrationFlow.from("shippedOrders")
+        // Copier: bir xil bo'lakni audit navbatiga ham ko'paytiramiz
+        .publishSubscribeChannel(p -> p.subscribe(f -> f.channel("auditQueue")))
+        // Filter: xabarnomaga rozilik bermaganlar oqimdan chiqadi
+        .filter(Order.class, Order::notifyCustomer)
+        // Splitter: qolganlari ikki alohida navbatga ajraladi
+        .<Order, String>route(Order::channelPreference,
+            m -> m.channelMapping("EMAIL", "emailQueue")
+                  .channelMapping("SMS", "smsQueue"))
+        .get();
+}
+```
+
+**Qo'llanish keyslari:**
+- Yuklangan videoni bir vaqtda bir nechta formatga render qilish uchun copier qo'yish.
+- Yangi ro'yxatdan o'tgan foydalanuvchilardan faqat rozilik berganlariga xabar yuborish uchun filter.
+- Yuborilgan buyurtmalarni email va SMS navbatlariga splitter bilan ajratish.
+- Ish navbatini to'rt shard'ga bo'lib, yangi worker image'ini faqat bitta shard'da sinash.
+- Ko'p repozitoriydan kelgan commit'larni merger bilan bitta build navbatiga keltirish.
+
+**Ehtiyot bo'ling:** Burns bu tizimlarning asosiy xavfini aniq aytadi: navbatlar bir-biriga qanday ulanganini ko'rsatadigan umumiy chizma bo'lmasa, tizim qanday ishlayotganini tushunish qiyinlashadi - xuddi hodisaga asoslangan FaaS'dagi kabi. Shuning uchun graf hujjatlashtirilishi va kuzatuvchanlikka chiqarilishi kerak: Spring tomonida bu Micrometer Tracing bilan uchidan uchiga trace va har kanal uchun alohida metrika. Ikkinchi tuzoq - filter mezonini kodga yashirish: rozilik yoki segment qoidasi o'zgarganda jim ravishda boshqa oqim hosil bo'ladi.
+
+## 22.42 Muvofiqlashtirilgan batch ishlov (Coordinated Batch Processing: Join, Reduce)
+
+**Tavsif:** Oldingi pattern navbatlarni bo'lish va ko'paytirish haqida bo'lsa, bu pattern teskari tomon: parallel chiqishlarni qaytadan birlashtirib yig'ma natija chiqarish. Burns eng kanonik misol sifatida MapReduce'ning reduce qismini ko'rsatadi: map qadami ish navbatini shardlash, reduce qadami esa ko'p sonli chiqishni bitta yig'ma javobga keltiradigan muvofiqlashtirilgan ishlov. Join (yoki barrier synchronization) - thread'ga `join` qilishning batch analogi: ish parallel bajariladi, lekin barcha parallel bo'laklar tugamaguncha hech bir natija join'dan chiqmaydi. Burns merge bilan farqni ta'kidlaydi: merge ikki navbat chiqishini shunchaki bitta navbatga aralashtiradi va to'liqlikni kafolatlamaydi, join esa yig'ma statistika hisoblash mumkin bo'lishi uchun ma'lumot to'plamining to'liq ekanini kafolatlaydi. Narxi bor: join keyingi qadamni oldingi qadam butunlay tugashiga bog'laydi, bu parallellikni kamaytiradi va butun workflow kechikishini oshiradi. Reduce boshqacha ishlaydi: u hamma ma'lumot ishlanishini kutmaydi, parallel chiqishlarni optimistik ravishda bosqichma-bosqich birlashtiradi va har qadam chiqishlar sonini kamaytiradi; shakli kirishiga o'xshagani uchun reduce kerak bo'lgancha marta takrorlanadi. Shu sababli reduce map qadami hali davom etayotganda ham boshlanishi mumkin va butun hisob tezroq tugaydi.
+
+**Spring'da qayerda uchraydi:** Spring Batch'da join'ning tabiiy shakli - qadam chegarasi: `JobBuilder.start(mapStep).next(reduceStep)` da `reduceStep` `mapStep` to'liq tugamaguncha boshlanmaydi, ya'ni qadam o'tishi barrier rolini o'ynaydi. Map qismi partitsiyalangan qadam bilan beriladi (`StepBuilder.partitioner(...)` va `TaskExecutor`), uning to'liq yozuvi [Partitsiyalash](20-batch-va-scheduling-patternlari.md#207-partitsiyalash-partitioning---local-remote) da. Reduce qismi `ItemProcessor` va `ItemWriter` zanjirida yoki `StepExecutionContext`'dan `JobExecutionContext`'ga promotion (`ExecutionContextPromotionListener`) orqali yig'iladi. Agar natijani to'liqlik kafolati bilan yig'ish xabar oqimida kerak bo'lsa, Spring Integration `AggregatorSpec`'ning `releaseStrategy` va `correlationStrategy` juftligi aynan join semantikasini beradi; `groupTimeout` esa to'liq to'plam kelmasa nima qilishni belgilaydi. Reaktiv kodda bu `Flux.reduce(...)` va `Mono.zip(...)`, imperativ kodda `Stream.reduce(...)` yoki `CompletableFuture.allOf(...)`.
+
+```java
+@Bean
+Job wordCountJob(JobRepository repository, Step mapStep, Step reduceStep) {
+    return new JobBuilder("wordCount", repository)
+        .start(mapStep)      // map: partitsiyalar parallel sanaydi
+        .next(reduceStep)    // join: mapStep tugamaguncha bu qadam boshlanmaydi
+        .build();
+}
+
+@Bean
+Step mapStep(JobRepository repository, Step countPagesStep,
+             Partitioner pagePartitioner, TaskExecutor executor) {
+    return new StepBuilder("mapStep", repository)
+        .partitioner("countPagesStep", pagePartitioner)
+        .step(countPagesStep)
+        .taskExecutor(executor)
+        .build();
+}
+```
+
+**Qo'llanish keyslari:**
+- Kunlik hisobotni partitsiyalangan qadamda hisoblab, yig'ma jadvalni keyingi qadamda yozish.
+- Barcha bo'laklar tugaganini kafolatlab, keyin yig'ma summani va histogramni chiqarish.
+- Hisob-kitob yopilishida to'liqlik kafolati talab qilinadigan solishtirish (reconciliation) job'i.
+- Ko'p manbadan kelgan narx fayllarini parallel o'qib, yakuniy narx jadvalini bitta reduce bilan yasash.
+- Oraliq natijalarni bosqichma-bosqich reduce qilib, xotirada butun to'plamni ushlab turmaslik.
+
+**Ehtiyot bo'ling:** Join'ning narxi parallellikning yo'qolishi: butun to'plam oldingi qadamdan o'tmaguncha keyingi hisob boshlanmaydi, demak bitta sekin partitsiya butun job'ni ushlab turadi - shuning uchun partitsiya kalitini teng taqsimlanadigan qilib tanlash kerak. Ikkinchi tuzoq - to'liqlik kafolati kerak bo'lmagan joyda join ishlatish: agar yig'ma statistika emas, oddiy oqim kerak bo'lsa, merge yoki bosqichma-bosqich reduce arzonroq va tezroq. Reduce funksiyasi esa assotsiativ bo'lishi shart, aks holda bo'laklarni boshqa tartibda birlashtirish boshqa natija beradi.
+
+## 22.43 Amalda qo'llash
 
 - [ ] Konteyner image'ini tekshiring: qatlamlar ajratilganmi, JAR to'liq nusxalanmayaptimi, base image yangilanadimi.
 - [ ] JVM ning cgroup limitlarini hurmat qilayotganini tasdiqlang va heap foizini yozib qo'ying.
@@ -672,6 +852,30 @@ class DrainOnShutdown {
 - [ ] Deploy strategiyasini hujjatlashtiring: rolling, blue-green yoki canary. Orqaga qaytish qadamlarini yozib qo'ying.
 - [ ] Konfiguratsiya image ichiga qotib qolmaganini tekshiring; har bir muhit uchun qiymat tashqaridan kelishi kerak.
 - [ ] Feature flag larni ro'yxatga olib, har biriga yaratilgan sana va o'chirish rejasini qo'shing.
+
+## Manbalar
+
+- Chris Richardson, *Microservices Patterns*, 12-bob - mikroservisni deploy qilish: konteyner, orkestrator, serverless
+- John Carnell, *Spring Microservices in Action*, 10-bob - servisni bulutga deploy qilish
+- Kubernetes hujjati: Deployments. kubernetes/website, commit `2f85f2802e59eb2128543dbfbf114ad641db4be0`, `content/en/docs/concepts/workloads/controllers/deployment.md`. CC BY 4.0. https://github.com/kubernetes/website/blob/2f85f2802e59eb2128543dbfbf114ad641db4be0/content/en/docs/concepts/workloads/controllers/deployment.md
+- Kubernetes hujjati: Pod Lifecycle (termination, preStop, grace period). kubernetes/website, commit `2f85f2802e59eb2128543dbfbf114ad641db4be0`, `content/en/docs/concepts/workloads/pods/pod-lifecycle.md`. CC BY 4.0. https://github.com/kubernetes/website/blob/2f85f2802e59eb2128543dbfbf114ad641db4be0/content/en/docs/concepts/workloads/pods/pod-lifecycle.md
+- Kubernetes hujjati: Liveness, Readiness va Startup Probes. kubernetes/website, commit `2f85f2802e59eb2128543dbfbf114ad641db4be0`, `content/en/docs/concepts/workloads/pods/probes.md`. CC BY 4.0. https://github.com/kubernetes/website/blob/2f85f2802e59eb2128543dbfbf114ad641db4be0/content/en/docs/concepts/workloads/pods/probes.md
+- Kubernetes hujjati: Sidecar Containers. kubernetes/website, commit `2f85f2802e59eb2128543dbfbf114ad641db4be0`, `content/en/docs/concepts/workloads/pods/sidecar-containers.md`. CC BY 4.0. https://github.com/kubernetes/website/blob/2f85f2802e59eb2128543dbfbf114ad641db4be0/content/en/docs/concepts/workloads/pods/sidecar-containers.md
+- Kubernetes hujjati: StatefulSets (`StatefulSetRecreateStrategy` feature gate). kubernetes/website, commit `2f85f2802e59eb2128543dbfbf114ad641db4be0`, `content/en/docs/concepts/workloads/controllers/statefulset.md`. CC BY 4.0. https://github.com/kubernetes/website/blob/2f85f2802e59eb2128543dbfbf114ad641db4be0/content/en/docs/concepts/workloads/controllers/statefulset.md
+- Kubernetes API default qiymatlari: `SetDefaults_Probe` va `SetDefaults_Deployment`. kubernetes/kubernetes, tag `v1.37.1`, `pkg/apis/core/v1/defaults.go`, `pkg/apis/apps/v1/defaults.go`, `staging/src/k8s.io/api/apps/v1/types.go`. Apache-2.0. https://github.com/kubernetes/kubernetes/blob/v1.37.1/pkg/apis/core/v1/defaults.go
+- Spring Boot hujjati: Graceful Shutdown va Actuator Kubernetes probe'lari. spring-projects/spring-boot, tag `v4.1.1`. Apache-2.0. https://github.com/spring-projects/spring-boot/blob/v4.1.1/documentation/spring-boot-docs/src/docs/antora/modules/reference/pages/web/graceful-shutdown.adoc
+- Spring Boot kodi: `LifecycleProperties` (`timeout-per-shutdown-phase` default 30s), `ServletWebServerApplicationContext` (`REFUSING_TRAFFIC`). spring-projects/spring-boot, tag `v4.1.1`. Apache-2.0. https://github.com/spring-projects/spring-boot/blob/v4.1.1/core/spring-boot/src/main/java/org/springframework/boot/context/properties/LifecycleProperties.java
+- Spring Boot kodi: `ServerProperties.shutdown` default qiymati. spring-projects/spring-boot, tag `v3.4.13` (`GRACEFUL`) va tag `v3.3.13` (`IMMEDIATE`). Apache-2.0. https://github.com/spring-projects/spring-boot/blob/v3.4.13/spring-boot-project/spring-boot-autoconfigure/src/main/java/org/springframework/boot/autoconfigure/web/ServerProperties.java
+- Spring Framework kodi: `SmartLifecycle` (to'xtatish teskari tartibda). spring-projects/spring-framework, tag `v6.2.19`. Apache-2.0. https://github.com/spring-projects/spring-framework/blob/v6.2.19/spring-context/src/main/java/org/springframework/context/SmartLifecycle.java
+- Brendan Burns, *Designing Distributed Systems: Patterns and Paradigms for Scalable, Reliable Services*, 1-nashr, O'Reilly, 2018, 2-4-boblar (11-38-betlar) - sidecar, ambassador va adapter bir node ichidagi uch pattern sifatida
+- Brendan Burns, *Designing Distributed Systems: Patterns and Paradigms for Scalable, Reliable Services*, 1-nashr, O'Reilly, 2018, 5-bob (45-57-betlar) - load balancer uchun readiness probe, sessiyani kuzatuvchi servis va konsistent xeshlash, caching qatlami, rate limiting va SSL termination
+- Brendan Burns, *Designing Distributed Systems: Patterns and Paradigms for Scalable, Reliable Services*, 1-nashr, O'Reilly, 2018, 6-bob (59-71-betlar) - shardlash funksiyasi, kalit tanlash xatolari, shardlangan cache'ning hit rate xavfi va hot sharding
+- Brendan Burns, *Designing Distributed Systems: Patterns and Paradigms for Scalable, Reliable Services*, 1-nashr, O'Reilly, 2018, 10-bob (109-119-betlar) - source va worker container interfeyslari, `GET /api/v1/items` shartnomasi, worker'ni dinamik masshtablash hisobi
+- Brendan Burns, *Designing Distributed Systems: Patterns and Paradigms for Scalable, Reliable Services*, 1-nashr, O'Reilly, 2018, 11-bob (121-131-betlar) - copier, filter, splitter, sharder va merger shakllari
+- Brendan Burns, *Designing Distributed Systems: Patterns and Paradigms for Scalable, Reliable Services*, 1-nashr, O'Reilly, 2018, 12-bob (133-141-betlar) - join (barrier synchronization) va reduce, hamda ularning parallellikka ta'siri
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 14-17-boblar (125-142-betlar) - init container, sidecar, adapter va ambassador Structural Patterns qismi sifatida
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 4-bob (35-40-betlar) - Health Probe: process health check, liveness va readiness ajratmasi
+- *The Twelve-Factor App* (III. Config, IX. Disposability). heroku/12factor, commit `1385d2c80bac38c25647651f6f5ec769561828dc`, `content/en/config.md`, `content/en/disposability.md`. MIT. https://github.com/heroku/12factor/blob/1385d2c80bac38c25647651f6f5ec769561828dc/content/en/config.md
 
 ---
 

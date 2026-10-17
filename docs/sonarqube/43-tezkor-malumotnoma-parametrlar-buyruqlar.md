@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 43. Tezkor ma'lumotnoma: parametrlar, buyruqlar, glossariy (Quick Reference and Glossary)
 
@@ -438,6 +438,15 @@ Standart `Sonar way` gate shu ruhda tuzilgan va u faqat new code ni tekshiradi. 
 - [ ] New code definition ni relizlash modelingizga moslab tanlang va tanlov sababini repozitoriyda qisqa yozib qoldiring.
 - [ ] Glossariy atamalarini jamoa bilan bir marta ko'rib chiqing, chunki `bug`, `hotspot` va `debt` so'zlarini har kim boshqacha tushunadi.
 - [ ] Oyda bir marta `ncloc`, `new_coverage` va `sqale_index` qiymatlarini yozib boradigan oddiy jadval yuritib, trendni kuzating.
+
+## Manbalar
+
+- [sonarqube 9.9 LTA, `ScanProperties.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/sonar-scanner-engine/src/main/java/org/sonar/scanner/scan/ScanProperties.java) - `sonar.verbose`, `sonar.qualitygate.wait` (default `false`), `sonar.qualitygate.timeout` (default 300)
+- [sonarqube 9.9 LTA, `ScannerProperties.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/sonar-core/src/main/java/org/sonar/core/config/ScannerProperties.java) - branch va pull request kalitlari
+- [sonarqube 9.9 LTA, `ProcessProperties.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-process/src/main/java/org/sonar/process/ProcessProperties.java) - server sozlamalari va defaultlari
+- [sonarqube 9.9 LTA, `IssueExclusionProperties.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/sonar-core/src/main/java/org/sonar/core/config/IssueExclusionProperties.java) - to'rtta ignore mexanizmi
+- [sonar-jacoco, `ReportPathsProvider.java`](https://raw.githubusercontent.com/SonarSource/sonar-jacoco/301ac5a760f3d21922f5062ca810e456f6f86cad/src/main/java/org/sonar/plugins/jacoco/ReportPathsProvider.java) - coverage hisoboti kalitlari va standart joylar
+- `tools/sonar_rules.tsv` va `tools/claims_data/sonar_messages.tsv` - ma'lumotnomadagi qoida kaliti, turi, darajasi va xabarlari shu snapshotlarga solishtiriladi
 
 ---
 

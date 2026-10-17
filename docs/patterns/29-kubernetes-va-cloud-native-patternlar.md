@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 29. Kubernetes va cloud-native patternlar (Kubernetes & Cloud-Native Patterns)
 
 <details>
-<summary>Bu bobdagi 23 bo'lim</summary>
+<summary>Bu bobdagi 25 bo'lim</summary>
 
 - [29.1 Oldindan aytib beriladigan talablar (Predictable Demands)](#291-oldindan-aytib-beriladigan-talablar-predictable-demands)
 - [29.2 Deklarativ joylashtirish (Declarative Deployment)](#292-deklarativ-joylashtirish-declarative-deployment)
@@ -31,7 +31,9 @@
 - [29.20 Operator (Operator)](#2920-operator-operator)
 - [29.21 Pod - deploy birligi sifatida (Pod as Deployment Unit)](#2921-pod---deploy-birligi-sifatida-pod-as-deployment-unit)
 - [29.22 Resurs so'rovlari va limitlari (Resource Requests & Limits)](#2922-resurs-sorovlari-va-limitlari-resource-requests--limits)
-- [29.23 Amalda qo'llash](#2923-amalda-qollash)
+- [29.23 Pod uzilish byudjeti (Pod Disruption Budget)](#2923-pod-uzilish-byudjeti-pod-disruption-budget)
+- [29.24 Pod prioriteti va preemption (Pod Priority & Preemption)](#2924-pod-prioriteti-va-preemption-pod-priority--preemption)
+- [29.25 Amalda qo'llash](#2925-amalda-qollash)
 
 </details>
 
@@ -415,7 +417,83 @@ public class CacheReconciler implements Reconciler<CacheCluster> {
 
 **Ehtiyot bo'ling:** `limits`ni belgilamaslik ham, `requests`ni real iste'moldan ancha yuqori qo'yish ham zarar: birinchisida bitta ilova node'ni yiqitadi, ikkinchisida klasterning yarmi bo'sh turgan holda to'la hisoblanadi. CPU limitini juda past qo'yish Spring Boot ilovasini startup paytida throttling'ga uchratib, liveness probe'ning noto'g'ri restart tsikliga olib keladi; memory limitida esa heap'ni limitga teng qilib qo'ymang - JVM'ning non-heap qismi ham o'sha limit ichida hisoblanadi.
 
-## 29.23 Amalda qo'llash
+## 29.23 Pod uzilish byudjeti (Pod Disruption Budget)
+
+**Tavsif:** Ibryam va Huss PodDisruptionBudget'ni Singleton Service'ning to'ldiruvchi va qarama-qarshi tomoni deb ta'riflaydi: Singleton Service bir vaqtda ISHLAYDIGAN nusxalarning maksimumini cheklasa, PDB bir vaqtda O'CHIRILGAN nusxalarning maksimumini cheklaydi. Byudjet faqat ixtiyoriy (voluntary) eviction'ga tegishli, ya'ni kechiktirilishi mumkin bo'lgan uzilishga: `kubectl drain`, node'ni yangilash, cluster scale-down. Node'ning o'zi nosoz bo'lib qolishi ixtiyorsiz uzilish va PDB uni to'sa olmaydi. Resursda yoki `.spec.minAvailable` (kamida shuncha pod tirik qolsin), yoki `.spec.maxUnavailable` beriladi, ikkisi birga berilmaydi; qiymat son yoki foiz bo'lishi mumkin. PDB odatda faqat controller boshqaradigan pod'larga (Deployment, StatefulSet) ishlaydi, nazoratsiz "yalang'och" pod'lar uchun qo'shimcha cheklovlar bor. Asosiy qo'llanish joyi - kvorumga tayangan ilovalar va hech qachon ma'lum foizdan pastga tushmasligi kerak bo'lgan kritik trafik.
+
+**Spring'da qayerda uchraydi:** PDB manifest darajasida yashaydi, lekin uning hisobi Spring Boot ilovasining readiness signaliga bog'liq: byudjet "available" deb faqat `Ready` holatdagi pod'ni sanaydi, demak `/actuator/health/readiness` nohalol `UP` bersa, PDB node drain'ga noto'g'ri ruxsat beradi. Teskarisi ham xavfli: readiness guruhiga tashqi bog'liqlik qo'shilib pod uzoq vaqt `Ready` bo'lmasa, drain cheksiz bloklanadi va cluster yangilanmaydi. Shuning uchun `management.endpoint.health.group.readiness.include` tarkibini ataylab tanlash kerak. Kvorumli ilovalarda (Hazelcast yoki Infinispan embedded cluster, `spring-integration-jdbc` lock registry'siga tayangan leader, ShedLock bilan himoyalangan `@Scheduled`) o'z `HealthIndicator`'i kvorum yo'qolganini readiness'ga chiqaradi. PDB `server.shutdown=graceful` va `terminationGracePeriodSeconds` bilan birga ishlaydi: byudjet qancha pod ketishi mumkinligini, graceful shutdown esa ketayotgan pod so'rovlarni yo'qotmasligini ta'minlaydi.
+
+```java
+@Component("replicaQuorum")
+class ReplicaQuorumHealthIndicator implements HealthIndicator {
+
+    private final ClusterMembership membership;
+
+    ReplicaQuorumHealthIndicator(ClusterMembership membership) {
+        this.membership = membership;
+    }
+
+    @Override
+    public Health health() {
+        int live = membership.liveMemberCount();
+        // PDB faqat Ready pod'ni available sanaydi: kvorum yo'qolsa
+        // readiness DOWN bo'lib, keyingi ixtiyoriy eviction to'siladi
+        return live >= 2
+                ? Health.up().withDetail("live", live).build()
+                : Health.down().withDetail("live", live).build();
+    }
+}
+```
+
+**Qo'llanish keyslari:**
+- Uch replica'li to'lov servisiga `minAvailable: 2` qo'yib, node yangilash paytida xizmatni uzmaslik.
+- Kvorumga tayangan embedded cache cluster'ini (Hazelcast) drain vaqtida bir vaqtda ikki a'zodan ayrilishdan saqlash.
+- Ko'p replica'li read-only API uchun `maxUnavailable: 20%` berib, yangilashni tez, lekin xavfsiz qilish.
+- Leader'ga tayangan `@Scheduled` worker'da leader va standby bir vaqtda ketmasligini kafolatlash.
+- Kafka consumer group'da bir vaqtda ko'p consumer ketib, rebalans bo'roni ko'tarilishini oldini olish.
+
+**Ehtiyot bo'ling:** Byudjetni ilovaning haqiqiy replica sonidan baland qo'yish (masalan ikki replica'ga `minAvailable: 2`) node drain'ni butunlay to'xtatadi va platforma yangilanmay qoladi; bu PDB bilan eng ko'p uchraydigan operatsion tuzoq. Ibryam va Huss yana bir muhim cheklovni eslatadi: yuqori prioritetli pod joy izlab preemption qilganda PDB kafolatlanmaydi, shuning uchun PDB'ni kvorumning yagona himoyasi deb hisoblamang.
+
+## 29.24 Pod prioriteti va preemption (Pod Priority & Preemption)
+
+**Tavsif:** `PriorityClass` - namespace'ga bog'lanmagan resurs, u butun son qiymat (`value`) orqali pod'larning bir-biriga nisbatan muhimligini belgilaydi; pod unga `priorityClassName` bilan ulanadi. Priority admission controller yangi pod'ga shu qiymatni yozadi, scheduler esa kutayotgan pod'lar navbatini eng baland prioritetdan boshlab tartiblaydi. Eng muhim qismi preemption: agar hech bir node'da joy bo'lmasa, scheduler past prioritetli pod'larni node'dan chiqarib, baland prioritetlisiga joy ochadi. Ibryam va Huss ta'kidlashicha, prioritet va QoS klassi ortogonal mexanizmlar: kubelet node barqarorligini saqlash uchun avval QoS'ni, keyin `PriorityClass`'ni ko'radi, scheduler esa preemption nishonini tanlashda QoS'ni butunlay e'tiborsiz qoldiradi va faqat eng past prioritetli to'plamni izlaydi.
+
+**Spring'da qayerda uchraydi:** Spring'da bu patternga mas'ul annotatsiya yo'q, lekin ilova "ko'chirilishga tayyor" bo'lishi kerak. Preemption oddiy graceful termination bilan boshlanadi, ya'ni pod `SIGTERM` oladi: shuning uchun `server.shutdown=graceful` va `spring.lifecycle.timeout-per-shutdown-phase` to'g'ri sozlangan past prioritetli ilova zarar ko'rmaydi. Uzoq ishlaydigan batch va reporting ilovalarini past prioritetga qo'yib, ular `SmartLifecycle.stop()` yoki `@PreDestroy` ichida progress checkpoint'ini saqlashi ma'qul; Spring Batch'da buning tayyor shakli `JobRepository` va restart imkoniyati. Latency sezgir web servislarni esa baland prioritetga qo'yish va `requests` bilan `limits`ni teng berib Guaranteed QoS'ga chiqarish birga ishlaydi. Micrometer'ning `jvm.memory.used` va `process.uptime` metrikalari pod kutilmaganda ko'chirilganini keyin tahlil qilishga yordam beradi.
+
+```java
+@Component
+class CheckpointingWorker implements SmartLifecycle {
+
+    private final CheckpointStore store;
+    private volatile boolean running;
+    private volatile long processedOffset;
+
+    CheckpointingWorker(CheckpointStore store) { this.store = store; }
+
+    @Override public void start() { running = true; }
+
+    @Override
+    public void stop() {
+        running = false;
+        // past prioritetli pod istalgan payt preemption bilan ketadi:
+        // SIGTERM oynasida progressni saqlab qolamiz
+        store.save(processedOffset);
+    }
+
+    @Override public boolean isRunning() { return running; }
+}
+```
+
+**Qo'llanish keyslari:**
+- Kritik to'lov API'siga baland `PriorityClass` berib, trafik cho'qqisida u albatta joylashishini ta'minlash.
+- Kechqurun ishlaydigan ETL job'larini past prioritetga qo'yib, kunduzgi yuklamaga xalal bermaslik.
+- Spot node pool'da ishlaydigan checkpoint qiladigan batch worker'larini eng past prioritetga chiqarish.
+- Platforma komponentlarini (log collector, metrika agenti) ilova pod'laridan baland prioritetda ushlab turish.
+- `ResourceQuota`'ni `PriorityClass` bo'yicha cheklab, jamoalar o'zboshimchalik bilan baland prioritet olishini to'sish.
+
+**Ehtiyot bo'ling:** Ibryam va Huss prioritetdan ehtiyotkorlik bilan foydalanishni so'raydi: qiymatlarni foydalanuvchi o'zi yozgani uchun mexanizm "o'yinga" ochiq - xabardor bo'lmagan yoki niyati buzuq foydalanuvchi eng baland prioritetli pod yaratib qolganlarini chiqarib tashlashi mumkin, shu sababli `ResourceQuota` `PriorityClass`'ni qo'llashga kengaytirilgan va katta raqamlar tizim pod'lari uchun zaxiralangan. Ikkinchi xavf - preemption vaqtida [Pod uzilish byudjeti](#2923-pod-uzilish-byudjeti-pod-disruption-budget) kafolatlanmaydi, bu esa kvorumga tayangan past prioritetli cluster'ni buzishi mumkin.
+
+## 29.25 Amalda qo'llash
 
 - [ ] Har bir pod uchun `requests` va `limits` qiymatlarini o'lchangan p95 CPU va maksimal RSS ga asoslab qayta hisoblang.
 - [ ] Readiness, liveness va startup probe'lari uchta alohida maqsadga xizmat qilayotganini tasdiqlang.
@@ -425,6 +503,13 @@ public class CacheReconciler implements Reconciler<CacheCluster> {
 - [ ] Pod disruption budget borligini va reliz paytida xizmat uzilmasligini tasdiqlang.
 - [ ] Init container va sidecar larni sanab chiqib, har birining nega kerakligini yozib qo'ying.
 - [ ] Stateless talabini tekshirish uchun bitta podni ataylab o'chirib ko'ring va natijani hujjatlashtiring.
+
+## Manbalar
+
+- [Kubernetes, Deployment](https://raw.githubusercontent.com/kubernetes/website/e91eff3b59c0bf813193202a4f193d37beb7efd7/content/en/docs/concepts/workloads/controllers/deployment.md) - rolling update, `maxSurge` va `maxUnavailable`
+- [Kubernetes, Pod Lifecycle](https://raw.githubusercontent.com/kubernetes/website/e91eff3b59c0bf813193202a4f193d37beb7efd7/content/en/docs/concepts/workloads/pods/pod-lifecycle.md) - probe turlari va to'xtatish tartibi
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 10-bob (84-85-betlar) - PodDisruptionBudget faqat ixtiyoriy eviction'ni cheklaydi, `minAvailable` va `maxUnavailable` birga berilmaydi
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 2-bob (20-22-betlar) - `PriorityClass`, preemption va QoS bilan ortogonalligi, `ResourceQuota` ning `PriorityClass` ni qo'llashi, prioritetning "o'yinga" ochiqligi
 
 ---
 

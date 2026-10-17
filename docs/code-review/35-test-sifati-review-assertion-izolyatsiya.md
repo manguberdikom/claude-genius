@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 35. Test sifati review: assertion, izolyatsiya, beqarorlik (Test Quality)
 
@@ -326,6 +326,13 @@ grep -rc 'Starting .*Test' target/surefire-reports/*.txt 2>/dev/null | head
 - [ ] `@Disabled` testlarni sanab, har biriga tiket va sabab qo'shing yoki o'chirib tashlang.
 - [ ] Eng sekin 15 testni aniqlab, Spring kontekst kombinatsiyalarini kamaytirishni rejalashtiring.
 - [ ] Beqaror testlarni aniqlash uchun CI da testlarni kuniga bir marta 3 takror ishga tushirib, natijani kuzatib boring.
+
+## Manbalar
+
+- [Google, What to Look For in a Code Review](https://raw.githubusercontent.com/google/eng-practices/3bb3ec25b3b0199f4940b1aa75f0ac5c5753301c/review/reviewer/looking-for.md) - testning o'zini tekshirish savollari: kod buzilganda yiqiladimi, soxta musbat beradimi, tasdiqlar sodda va foydalimi
+- [JUnit 5.11, Writing Tests](https://raw.githubusercontent.com/junit-team/junit5/r5.11.0/documentation/src/docs/asciidoc/user-guide/writing-tests.adoc) - lifecycle, `@Nested` sharti va `@Timeout` ning tarqalishi
+- [sonar-java 8.44, `S2699`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S2699.json) - assertion siz test: CODE_SMELL, Blocker, scope `Tests`
+- [sonar-java 8.44, `S2970`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S2970.json) - to'liqsiz assertion
 
 ---
 

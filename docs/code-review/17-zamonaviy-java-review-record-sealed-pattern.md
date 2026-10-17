@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 17. Zamonaviy Java review: record, sealed, pattern matching, virtual thread (Modern Java)
 
@@ -205,6 +205,15 @@ Review da takrorlanadigan bahsni oldini olish uchun jamoa yangi imkoniyatlar bo'
 - [ ] `spring.threads.virtual.enabled=true` yoqilgan bo'lsa, Hikari pool va timeout qiymatlarini yuk sinovi bilan qayta tekshiring.
 - [ ] `var` ishlatilgan joylarni ko'rib, metod natijasida turi ko'rinmaydiganlarni aniq turga o'tkazing.
 - [ ] Parallel tashqi chaqiruvlarni `StructuredTaskScope` yoki umumiy deadline bilan qayta yozishni rejalashtiring.
+
+## Manbalar
+
+- Herbert Schildt, *Java The Complete Reference*, 17-bob - record, `sealed` sinflar, `switch` ifodasi va pattern matching
+- Boyarsky/Selikoff, *OCP Java SE 17 Study Guide*, 7-bob - `sealed` ierarxiya va record semantikasi
+- [OpenJDK 25, `VirtualThread.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/lang/VirtualThread.java) - JDK 24 dan monitorda kutishning carrier ni ushlab turmasligi, `PINNED` holatining qolgan ma'nosi
+- [OpenJDK 25, `ScopedValue.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/lang/ScopedValue.java) - `where`/`run`/`call` API si, bog'lanishning `StructuredTaskScope` yaratilganda olinishi va kam sonda ishlatish tavsiyasi
+- Joshua Bloch, *Effective Java* 3rd, Item 10 va Item 17 - record va o'zgarmaslik bilan bog'liq kontraktlar
+- [sonar-java 8.44, `S6878.json`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S6878.json) - record pattern ishlatish qoidasi
 
 ---
 

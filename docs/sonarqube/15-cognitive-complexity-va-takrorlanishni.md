@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 15. Cognitive complexity va takrorlanishni kamaytirish (Cognitive Complexity and Duplication)
 
@@ -30,7 +30,9 @@ Cognitive complexity va takrorlanish Sonar hisobotida eng ko'p uchraydigan ikki 
 
 ## 15.1 Cognitive complexity qanday hisoblanadi: ortish va chuqurlik jarimasi
 
-Cognitive complexity ni Sonar `java:S3776` qoidasi bilan tekshiradi, metod uchun standart chegara 15. Hisob uch qoidadan iborat.
+Cognitive complexity ni Sonar `java:S3776` qoidasi bilan tekshiradi, metod uchun standart chegara 15 (check manbasidagi `DEFAULT_MAX`, `max` parametri bilan o'zgartiriladi). Qoidaning turi CODE_SMELL, darajasi Critical.
+
+Qarz hisobi ham shu qoidada boshqacha va bu amalda sezilarli: remediation funksiyasi "Linear with offset", ya'ni **5 daqiqa boshlang'ich** va chegaradan oshgan **har bir ball uchun 1 daqiqa**. Demak chegarasi 15 bo'lgan loyihada ball 45 ga chiqqan bitta metod 5 + 30 = 35 daqiqa qarz beradi. Shu sababli bir nechta og'ir metod texnik qarz ro'yxatining boshini egallab oladi va `sqale_index` ni ularning o'zi belgilaydi. Hisob uch qoidadan iborat.
 
 Birinchi qoida: chiziqli oqimni buzgan har bir konstruksiya uchun +1 qo'shiladi. Bunga `if`, `else if`, `else`, uchlik operator, `switch`, `for`, `while`, `do while`, `catch`, belgiga `break` yoki `continue`, va rekursiya kiradi.
 
@@ -429,6 +431,13 @@ Oxirgi ogohlantirish: `//NOSONAR` qoidani o'chiradi, lekin sababsiz qo'yilsa key
 - [ ] CI da `sonar.qualitygate.wait=true` va `fetch-depth: 0` borligini tasdiqla, aks holda new code hisobi noto'g'ri chiqadi.
 - [ ] `//NOSONAR` va `Accepted` holatidagi issue larni sanab chiq, sababsizlarini sababli qil yoki tuzat.
 - [ ] O'zgarish chastotasi va cognitive complexity ko'paytmasi bo'yicha refactoring navbatini tuz va uni har chorakda yangila.
+
+## Manbalar
+
+- [sonar-java 8.44, `CognitiveComplexityMethodCheck.java`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/java-checks/src/main/java/org/sonar/java/checks/CognitiveComplexityMethodCheck.java) - `DEFAULT_MAX = 15`, `max` parametri va xabar matni
+- [sonar-java 8.44, `S3776.json`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S3776.json) - CODE_SMELL, Critical va remediation funksiyasi: "Linear with offset", 5 daqiqa offset, chegaradan oshgan har ball uchun 1 daqiqa
+- [sonar-java 8.44, `S1067.json`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S1067.json) - ifoda murakkabligi qoidasi
+- [sonar-java 8.44, `S1192.json`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S1192.json) - takrorlangan literal qoidasi
 
 ---
 

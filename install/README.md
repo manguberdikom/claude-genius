@@ -24,7 +24,7 @@ qoladi:
 
 | Nima | Nega kerak |
 |---|---|
-| `docs/` | 6 qo'llanma, 224 bob. Qoida matni shu yerdan o'qiladi. |
+| `docs/` | 6 qo'llanma, 226 bob. Qoida matni shu yerdan o'qiladi. |
 | `index/` | qidiruv indeksi, git da yo'q. O'rnatuvchi `-Apply` da snapshotda bir marta yasaydi. Yo'q yoki eskirgan bo'lsa `doc.sh`, `rules_for.py`, `check_code.py` va bo'lim taklifi hooki o'zi qayta yasaydi (`build_index.py`, bash shart emas). |
 | `tools/` | hooklar va asboblar: bo'lim taklifi, kontekst o'lchovi, qo'riqchi, budjet, kod tekshiruvi, sarf hisobi. |
 | `memory/` | sessiyalar orasida saqlanadigan bilim. |

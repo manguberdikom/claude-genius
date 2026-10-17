@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 5. Funksiya argumentlari (Function Arguments)
 
@@ -159,6 +159,21 @@ void execute(TransferInstruction instruction);
 
 Tartib bo'yicha konvensiya: muhimdan kam muhimga, obyekt birinchi, sozlama oxirida, `callback` eng oxirida (lambda ni chaqiruv joyida o'qiladigan qiladi).
 
+Shu konvensiyaning eski va aniqroq shakli **kirish-o'zgartirish-chiqish** tartibi: faqat o'qiladigan parametrlar birinchi, o'qilib ham o'zgartiriladigani ikkinchi, faqat yoziladigani uchinchi. Tartib shu bilan metod ichidagi amal ketma-ketligini takrorlaydi: ma'lumotni ol, o'zgartir, natijani qaytar. Tartibni tasodifiy yoki alifbo bo'yicha qo'yish shu ma'noni yo'qotadi (McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 7.5 (174-bet)). McConnell bu konvensiya C kutubxonasining "o'zgaradigan parametr birinchi" an'anasiga zid ekanini ham aytadi va ikkisidan qaysi birini tanlasang ham **izchil** qo'llashni talab qiladi; Java standart kutubxonasining o'zi ikki tomonda turadi (`System.arraycopy(src, srcPos, dest, destPos, length)` kirishni oldinga, `Collections.copy(dest, src)` esa chiqishni oldinga qo'yadi).
+
+Java da chiqish argumenti baribir tavsiya qilinmaydi ([chiqish argumenti va `void` dan qaytishga o'tish](#55-chiqish-argumenti-va-void-dan-qaytishga-otish)), shuning uchun qoida amalda ikki qismga qisqaradi: faqat o'qiladigan parametrlar oldinda, to'ldiriladigan yoki o'zgartiriladigan yagona nishon esa oxirida.
+
+```java
+// yomon: nishon oldinda, kirish keyinda - o'qilishi teskari
+void render(StringBuilder out, Invoice invoice, Locale locale);
+
+// yaxshi: kirish -> o'zgartiriladigan nishon
+void render(Invoice invoice, Locale locale, StringBuilder out);
+
+// eng yaxshi: nishon umuman yo'q, natija qaytadi
+String render(Invoice invoice, Locale locale);
+```
+
 ## 5.9 Varargs, `null` argument va ixtiyoriy parametrlar
 
 `varargs` o'qilishi uchun foydali, lekin uch tuzog'i bor: nol argument bilan chaqirish mumkin (kutilmagan bo'sh holat), avtomatik massiv yaratiladi (issiq yo'lda narx), va overload bilan birga ishlatilsa tanlov qoidalari chalkash bo'ladi. Qoida: `varargs` dan oldin kamida bitta majburiy parametr qo'yish.
@@ -172,6 +187,16 @@ public Page<Order> search(OrderCriteria criteria, Pageable pageable) { ... }
 
 // yaxshi: varargs oldida majburiy parametr bor
 public void audit(AuditEvent event, Tag... tags) { ... }
+```
+
+To'rtinchi tuzoq generik bilan birga chiqadi: `List<String>...` kabi parametr ichida generik massiv yaratiladi, Java da esa generik massiv tur xavfsiz emas. Kompilyator shu sababli ogohlantirish beradi. Metod massivni tashqariga bermasa va unga faqat o'qish uchun tegsa, ogohlantirish `@SafeVarargs` bilan yopiladi; metod massivni qaytarsa yoki saqlasa, `@SafeVarargs` yolg'on bo'ladi va o'rniga `List<List<String>>` parametri yoziladi.
+
+```java
+// yaxshi: massiv tashqariga chiqmaydi, shuning uchun xavfsiz
+@SafeVarargs
+static <T> List<T> concat(List<T>... lists) {
+    return Arrays.stream(lists).flatMap(List::stream).toList();
+}
 ```
 
 ## 5.10 Overload qilish tuzoqlari va nomni aniqlashtirish
@@ -215,6 +240,17 @@ Shu taqsimot "fail fast" ni ta'minlaydi (18.10) va ichki metodlarni toza qoldira
 - [ ] Overload qilingan metodlar ro'yxatini chiqarib, xatti-harakati farq qiladiganlarini qayta nomlang.
 - [ ] Validatsiya 5.11 jadvalidagi darajalarga mos taqsimlanganini tekshirib, takrorlangan tekshiruvlarni olib tashlang.
 - [ ] Yangi public API uchun "3 dan ko'p parametr review da asoslanadi" qoidasini kiritib, PR shabloniga qo'shing.
+
+## Manbalar
+
+- Robert C. Martin, *Clean Code*, 3-bob ("Function Arguments") - nol, bir, ikki, uch argument tartibi va poliadik funksiya
+- Robert C. Martin, *Clean Code*, 3-bob ("Flag Arguments", "Output Arguments") - flag argumenti funksiyani ikkiga bo'ladi, chiqish argumenti o'rniga qaytish qiymati
+- Joshua Bloch, *Effective Java* 3rd, Item 51 - metod imzosini ehtiyotkorlik bilan loyihalash, to'rtta yoki undan kam parametr
+- Joshua Bloch, *Effective Java* 3rd, Item 52, 53 - overload va varargs ni o'rinli ishlatish
+- Joshua Bloch, *Effective Java* 3rd, Item 49 - parametr yaroqliligini tekshirish joyi
+- Robert C. Martin, *Clean Code*, 17-bob, F1-F3 - ko'p argument, chiqish argumenti, flag argumenti
+- Steve McConnell, *Code Complete*, 2-nashr, 7.5 (174-bet) - parametrlarni kirish-o'zgartirish-chiqish tartibida qo'yish va C an'anasi bilan ziddiyat
+- [Java API, `java.util.Collections`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Collections.html) - `copy(dest, src)` imzosi: nishon birinchi
 
 ---
 

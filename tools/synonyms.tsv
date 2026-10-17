@@ -56,6 +56,16 @@ konsistentlik	consistency
 # turgandagina ishlaydi. Yolg'iz "qator" yoki "o'chirilgan" hech narsaga
 # bog'lanmaydi, shuning uchun umumiy so'z qoidasi buzilmaydi.
 o'chirilgan qator	bloat
+# Ibora: buyruq shaklidagi fe'l -> sarlavhadagi harakat nomi.
+# "testni ishga tushir" so'rovi jim qolgan edi: "tushir" korpus
+# lug'atida yo'q (sarlavhalarda "tushirish" turadi), "ishga" ning
+# idf i esa korpus o'sgani sayin 2.0 dalil chegarasidan pastga tushdi.
+# Faqat shu ibora uchun: yolg'iz "tushir" yoki yolg'iz "ishga"
+# hech narsaga bog'lanmaydi. Umumiy qoida (lug'atda yo'q fe'lga
+# "ish" qo'shib ko'rish) sinab ko'rilgan va rad etilgan: u "ko'rib
+# chiq" ni "chiqish" ga, "o'zgartir" ni "o'zgartirish" ga
+# yopishtirib, ikkita manfiy holatni buzgan.
+ishga tushir	tushirish
 # Ibora: erkin o'zbekcha gap -> mavzu atamalari (R3.5). Kalit so'rovda
 # ketma-ket turgandagina ishlaydi, yolg'iz so'z hech narsaga bog'lanmaydi.
 # Nishon kamida ikki so'z: sinonim yolg'iz dalil emas, bo'lim sarlavhasida
@@ -114,3 +124,12 @@ requested bean is currently in creation	BeanCurrentlyInCreationException
 unnecessary stubbings detected	UnnecessaryStubbingException
 row was updated or deleted by another transaction	StaleObjectStateException
 # [/xabar]
+tranzaksia	tranzaksiya
+propogation	propagation
+loking	lock qulf
+optimistik	optimistik optimistic
+testcontainer	testcontainers
+postgress	postgresql
+conection	ulanish connection
+konkurentlik	konkurentlik parallellik
+dublikat	takroriy idempotentlik

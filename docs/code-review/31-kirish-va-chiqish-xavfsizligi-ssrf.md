@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 31. Kirish va chiqish xavfsizligi: SSRF, deserializatsiya, fayllar (Input and Output Safety)
 
@@ -76,6 +76,14 @@ public class SafeUrlResolver {
 // - metadata servisiga kirishni infratuzilma darajasida bloklash.
 ```
 
+Yuqoridagi tekshiruvda uchta teshik qoladi va OWASP ularni aniq nomlaydi.
+
+**Birinchi, eng muhimi: IP ni tekshirib, keyin host nomi bilan ulanish DNS rebinding ni to'xtatmaydi.** Tekshiruv va ulanish orasida HTTP client ikkinchi, tekshirilmagan DNS so'rovini qiladi va hujumchi shu oraliqda javobni ichki manzilga o'zgartiradi. OWASP ning talabi shunday: barcha IP ni olish (IPv4 uchun `A`, IPv6 uchun `AAAA`), ularni tekshirish, va ulanishni **tekshirilgan IP ga bog'lash**. Ya'ni `restClient.get().uri(hostName)` emas, ulanish aniq IP ga qilinadi va `Host` header i alohida qo'yiladi. Domen whitelist ining o'zi bu hujumga qarshi yetarli emas.
+
+**Ikkinchi: manzilni yozishning boshqa shakllari.** SSRF himoyasini hex, octal, dword, URL va aralash kodlash bilan chetlab o'tish mumkin, va OWASP ro'yxatida kutubxonalarning qaysi biri qaysi shaklga chidamli ekani alohida yozilgan. Ya'ni `127.0.0.1` ni to'sgan tekshiruv `0177.0.0.1`, `2130706433` yoki `0x7f.0.0.1` ni o'tkazib yuborishi mumkin. Shuning uchun to'g'ri tartib: avval satrni normallashtirib IP ga aylantirish, keyin tekshirish, va tekshirilgan IP bilan ulanish.
+
+**Uchinchi: IPv6.** Yuqoridagi `isSiteLocalAddress()` va `isLinkLocalAddress()` IPv4 uchun ishlaydi, lekin IPv6 ning Unique Local diapazoni `fc00::/7` ni qoplamaydi (Java da `isSiteLocalAddress` IPv6 da eskirgan `fec0::/10` ni bildiradi). OWASP ning to'sish ro'yxatida `fc00::/7` va `fe80::/10` alohida qatorda turadi. Ya'ni IPv6 yoqilgan muhitda bu tekshiruv ochiq qoladi va diapazonni o'zi yozib tekshirish kerak.
+
 ```java
 // Redirect: eng ko'p o'tkazib yuboriladigan nuqta.
 // Hujumchi ruxsat etilgan hostdan 302 bilan ichki manzilga yo'naltiradi.
@@ -127,6 +135,14 @@ dbf.setExpandEntityReferences(false);
 // YAML: SnakeYAML da ham deserializatsiya xavfi bor.
 Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));   // ixtiyoriy turlar yo'q
 ```
+
+Review paytida qidirilishi kerak bo'lgan API ro'yxati OWASP da aniq yozilgan va u `readObject` dan kengroq: `ObjectInputStream.readObject` va `readUnshared`, sinfning o'zidagi `readObject`, `readObjectNoData`, `readResolve`, `readExternal`, `Serializable` ning o'zi, `XMLDecoder` foydalanuvchi bergan parametr bilan, hamda `XStream.fromXML` (1.4.6 va undan oldingi versiyada zaif). Grep uchun shu ro'yxat bitta qoida: diffda shu nomlardan biri ko'rinsa, ma'lumot manbasi so'raladi.
+
+Filtr haqida ikki qo'shimcha. Birinchi: filtr faqat sinf ro'yxatini emas, **resurs chegaralarini** ham qo'yadi (`maxdepth`, `maxarray`, `maxrefs`, `maxbytes`), va OWASP buni alohida ta'kidlaydi, chunki sinf tekshiruvining o'zi xotira va CPU sarfini cheklamaydi: ruxsat etilgan sinflardan ham chuqur ichma-ich tuzilma yasab DoS qilish mumkin. Ikkinchi: `resolveClass()` ni override qilish bilan qurilgan eski himoya shu sababdan yetarli emas.
+
+Trafikda Java serializatsiya oqimini tanish uchun uchta belgi bor va ular incident tahlilida foydali: hex da `AC ED 00 05`, Base64 da `rO0` bilan boshlanish, va `Content-Type: application/x-java-serialized-object`.
+
+Serializable sinfdagi maxfiy maydon esa `private transient` deb e'lon qilinadi: shunda u na serializatsiyada chiqadi, na deserializatsiyada foydalanuvchi tomonidan boshqariladi.
 
 ## 31.3 Fayl yo'li va arxivlar
 
@@ -292,6 +308,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
 - [ ] Arxiv ochadigan kodga element soni, umumiy hajm va yo'l tekshiruvini qo'shing.
 - [ ] Loyihadagi regex larni ko'rib chiqib, ichma-ich kvantifikatorli naqshlarni toping va kirish uzunligini cheklang.
 - [ ] Qimmat endpointlar (hisobot, eksport, qidiruv) uchun alohida rate limit qo'ying.
+
+## Manbalar
+
+- [OWASP, SSRF Prevention Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.md) - domen whitelist ining DNS rebinding ga qarshi yetarli emasligi va ulanishni tekshirilgan IP ga bog'lash talabi, hex/octal/dword/URL/aralash kodlash bilan chetlab o'tish, to'siladigan diapazonlar ro'yxati (IPv6 `fc00::/7` va `fe80::/10` bilan), redirect ni o'chirish
+- [OWASP, Deserialization Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Deserialization_Cheat_Sheet.md) - tekshiriladigan API ro'yxati (`readUnshared`, `readResolve`, `readExternal`, `XMLDecoder`, `XStream.fromXML`), serialization filter da resurs chegaralari, `resolveClass` ning chegarasi, oqimni tanish belgilari, `private transient`
 
 ---
 

@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 33. Sxema migratsiyasi va to'xtashsiz reliz (Schema Migration and Zero-Downtime Release)
 
 <details>
-<summary>Bu bobdagi 14 bo'lim</summary>
+<summary>Bu bobdagi 15 bo'lim</summary>
 
 - [33.1 Migratsiya vositalari: Flyway va Liquibase, versiyalash va nomlash tartibi](#331-migratsiya-vositalari-flyway-va-liquibase-versiyalash-va-nomlash-tartibi)
 - [33.2 Migratsiya qoidalari: oldinga faqat yangi fayl, qo'lda o'zgartirmaslik](#332-migratsiya-qoidalari-oldinga-faqat-yangi-fayl-qolda-ozgartirmaslik)
@@ -22,7 +22,8 @@
 - [33.11 Orqaga qaytish (rollback) rejasi: sxemani qaytarish nega qiyin](#3311-orqaga-qaytish-rollback-rejasi-sxemani-qaytarish-nega-qiyin)
 - [33.12 Migratsiyani sinash: ishlab chiqarish hajmidagi nusxada vaqtini o'lchash](#3312-migratsiyani-sinash-ishlab-chiqarish-hajmidagi-nusxada-vaqtini-olchash)
 - [33.13 Boshqa schema jadvalini o'qiydigan changeset: ruxsatni tekshiradigan precondition](#3313-boshqa-schema-jadvalini-oqiydigan-changeset-ruxsatni-tekshiradigan-precondition)
-- [33.14 Amalda qo'llash](#3314-amalda-qollash)
+- [33.14 Reliz rejasi va "time to bake": bosqichlar, sog'liq mezoni va kutish muddati](#3314-reliz-rejasi-va-time-to-bake-bosqichlar-sogliq-mezoni-va-kutish-muddati)
+- [33.15 Amalda qo'llash](#3315-amalda-qollash)
 
 </details>
 
@@ -32,7 +33,7 @@ Sxema relizning eng qaytarib bo'lmaydigan qismi. Kodni oldingi image'ga qaytaris
 
 ## 33.1 Migratsiya vositalari: Flyway va Liquibase, versiyalash va nomlash tartibi
 
-Flyway va Liquibase bir masalani hal qiladi: sxemaning qaysi o'zgarishi allaqachon qo'llanganini bazaning o'zida saqlash. Flyway buni `flyway_schema_history` jadvalida qiladi: versiya, tavsif, skript nomi va checksum. Liquibase `DATABASECHANGELOG` va `DATABASECHANGELOGLOCK` jadvallarini ishlatadi, har changeset `id` va `author` juftligi bilan aniqlanadi.
+Flyway va Liquibase bir masalani hal qiladi: sxemaning qaysi o'zgarishi allaqachon qo'llanganini bazaning o'zida saqlash. Flyway buni `flyway_schema_history` jadvalida qiladi: versiya, tavsif, skript nomi va checksum. Liquibase `DATABASECHANGELOG` va `DATABASECHANGELOGLOCK` jadvallarini ishlatadi. Changeset ning identifikatori esa juftlik emas, UCHLIK: `filePath::id::author`. Fayl yo'li ham kirgani amalda sezilarli: changelog faylini boshqa papkaga ko'chirish yoki `include` yo'lini o'zgartirish changeset ni YANGI deb ko'rsatadi va u qayta yurgiziladi.
 
 Tanlov mexanikaga bog'liq. Bitta PostgreSQL bilan ishlaydigan to'lov servisi uchun Flyway yetarli, chunki SQL baribir Postgres'ga xos bo'ladi. Bir nechta DBMS'ni qo'llaydigan mahsulotda Liquibase abstraksiyasi va changeset ichidagi rollback bloki foyda beradi.
 
@@ -100,7 +101,7 @@ Bosqichlar ketma-ketligi quyidagicha. Birinchi bosqich (expand): sxemaga yangi s
 
 Keyin kod chiqadi va ikki joyga yozadi, eski joydan o'qiydi. Uchinchi bosqichda backfill eski ma'lumotni ko'chiradi. To'rtinchida kod yangi joydan o'qiydi, eskisiga hali yozadi. Beshinchida eski joyga yozish to'xtaydi. Oltinchida (contract) eski ustun o'chiriladi.
 
-Har bosqich alohida deploy va har biri orqaga qaytishga ochiq. To'lov servisidagi `amount` ustunini `numeric(19,4)` ga o'tkazish shu yo'l bilan ikki hafta davom etadi, lekin bironta so'rov yo'qolmaydi. Alternativa bitta tungi `ALTER TABLE`, u 50 million qatorli jadvalda bir soat lock ushlaydi.
+Har bosqich alohida deploy va har biri orqaga qaytishga ochiq. To'lov servisidagi `amount` ustunini `numeric(19,4)` ga o'tkazish shu yo'l bilan ikki hafta davom etadi, lekin bironta so'rov yo'qolmaydi. Alternativa bitta tungi `ALTER TABLE`, u katta jadvalda qayta yozish talab qiladi va shu davrda `ACCESS EXCLUSIVE` lock ushlab turadi; aniq vaqtni faqat production hajmidagi nusxada o'lchash mumkin.
 
 ## 33.4 Ustun qo'shish, nomini o'zgartirish va o'chirishning xavfsiz ketma-ketligi
 
@@ -144,10 +145,14 @@ Eng ko'p uchraydigan halokat shu: `ALTER TABLE` uzoq ishlaydigan `SELECT` ortida
 | `DROP COLUMN` | ACCESS EXCLUSIVE, qisqa | Yo'q |
 | `ALTER COLUMN TYPE int` dan `bigint` ga | ACCESS EXCLUSIVE, uzoq | Ha, to'liq |
 | `SET NOT NULL` (valid CHECK bor) | ACCESS EXCLUSIVE, qisqa | Yo'q |
-| `ADD CONSTRAINT ... NOT VALID` | ACCESS EXCLUSIVE, qisqa | Yo'q |
-| `VALIDATE CONSTRAINT` | SHARE UPDATE EXCLUSIVE | Yo'q, lekin to'liq skan |
+| `ADD CONSTRAINT CHECK ... NOT VALID` | ACCESS EXCLUSIVE, qisqa | Yo'q |
+| `ADD CONSTRAINT FOREIGN KEY ... NOT VALID` | SHARE ROW EXCLUSIVE, ikki jadvalda | Yo'q |
+| `VALIDATE CONSTRAINT` (CHECK) | SHARE UPDATE EXCLUSIVE | Yo'q, lekin to'liq skan |
+| `VALIDATE CONSTRAINT` (FK) | SHARE UPDATE EXCLUSIVE + referenced da ROW SHARE | Yo'q, lekin to'liq skan |
 | `CREATE INDEX` | SHARE (yozish bloklanadi) | Yo'q |
 | `CREATE INDEX CONCURRENTLY` | SHARE UPDATE EXCLUSIVE | Yo'q, ikki marta skan |
+
+Jadvaldagi FOREIGN KEY qatori ko'p hujjatda noto'g'ri yoziladi, shuning uchun uni alohida aytish kerak. PostgreSQL hujjati aniq: `ADD table_constraint` shakllarining ko'pi ACCESS EXCLUSIVE talab qiladi, LEKIN `ADD FOREIGN KEY` faqat SHARE ROW EXCLUSIVE oladi. Buning yonida ikkinchi, ko'proq e'tibordan chetda qoladigan jihat bor: u MUROJAAT QILINADIGAN jadvalda ham SHARE ROW EXCLUSIVE oladi. Ya'ni `orders` ga FK qo'shish `delivery_slots` jadvaliga yozishni ham bloklaydi, va agar `delivery_slots` kichik lug'at jadval bo'lib, unga doimiy yozilsa, muammo aynan shu yerdan chiqadi.
 
 Himoya mexanizmi `lock_timeout`: kutish cho'zilsa migratsiya xato bilan to'xtaydi va boshqa so'rovlarni bo'g'maydi.
 
@@ -166,9 +171,9 @@ ALTER TABLE orders ADD COLUMN delivery_slot_id bigint;
 
 ## 33.6 Katta jadvalga ustun qo'shish va standart qiymat masalasi
 
-PostgreSQL 11 dan boshlab constant default bilan ustun qo'shish jadvalni qayta yozmaydi. Default qiymat `pg_attribute.attmissingval` da saqlanadi va o'qishda qatorga "yopishtiriladi". Ya'ni `ADD COLUMN status text DEFAULT 'NEW' NOT NULL` 80 million qatorli `orders` jadvalida ham taxminan 20 millisekundda tugaydi.
+PostgreSQL 11 dan boshlab constant default bilan ustun qo'shish jadvalni qayta yozmaydi. Default qiymat `pg_attribute.attmissingval` da saqlanadi va o'qishda qatorga "yopishtiriladi". Ya'ni `ADD COLUMN status text DEFAULT 'NEW' NOT NULL` jadval hajmidan deyarli mustaqil ravishda tez tugaydi: ish qatorlar ustida emas, katalog yozuvi ustida bajariladi.
 
-Lekin default volatile funksiya bo'lsa, qoida buziladi. `DEFAULT gen_random_uuid()` yoki `DEFAULT clock_timestamp()` har qatorga boshqa qiymat beradi, demak PostgreSQL har qatorni yangidan yozishga majbur. 80 million qatorli jadvalda bu disk hajmining ikki baravariga va taxminan 20-40 daqiqa `ACCESS EXCLUSIVE` lock'ga olib keladi.
+Lekin default volatile funksiya bo'lsa, qoida buziladi. `DEFAULT gen_random_uuid()` yoki `DEFAULT clock_timestamp()` har qatorga boshqa qiymat beradi, demak PostgreSQL har qatorni yangidan yozishga majbur. Katta jadvalda bu ikki narsani keltiradi: qayta yozish davomida disk hajmi vaqtincha ikki baravarga ehtiyoj sezadi (hujjat buni ochiq aytadi), va `ACCESS EXCLUSIVE` lock butun qayta yozish davomida ushlab turiladi, ya'ni jadval o'qish uchun ham yopiladi.
 
 ```sql
 -- XAVFLI: volatile default jadvalni to'liq qayta yozadi
@@ -207,17 +212,25 @@ ALTER TABLE orders ALTER COLUMN delivery_slot_id SET NOT NULL;
 ALTER TABLE orders DROP CONSTRAINT orders_delivery_slot_not_null;
 ```
 
-`VALIDATE CONSTRAINT` 80 million qatorli jadvalda sequential scan qiladi, bu taxminan 2-5 daqiqa oladi. Uni yuk kam vaqtda ishga tushiring, lekin tungi oyna shart emas, chunki hech kim bloklanmaydi.
+`VALIDATE CONSTRAINT` jadvalni to'liq skanlaydi, shuning uchun uning vaqti jadval hajmiga qarab daqiqalarga cho'ziladi. Uni yuk kam vaqtda ishga tushiring, lekin tungi oyna odatda shart emas.
+
+"Hech kim bloklanmaydi" degan qisqa xulosa esa noto'g'ri. VALIDATE SHARE UPDATE EXCLUSIVE lock oladi, va PostgreSQL hujjatiga ko'ra SELECT ni faqat ACCESS EXCLUSIVE bloklaydi, demak o'qish va yozish davom etadi. Lekin SHARE UPDATE EXCLUSIVE ning o'zi bilan, SHARE bilan va yuqoridagilar bilan to'qnashadi: bu rejim jadvalni bir vaqtda ketadigan schema o'zgarishi va VACUUM dan himoya qiladi. Amalda bu ikki narsani bildiradi: VALIDATE ketayotgan paytda autovacuum shu jadvalda kutadi, va agar autovacuum allaqachon ishlab turgan bo'lsa, VALIDATE o'zi kutadi. Katta, tez o'zgaradigan jadvalda shu kutish migratsiyani `lock_timeout` ga olib borishi mumkin.
 
 ## 33.8 Indeksni ishlab chiqarishda qo'shish: `CONCURRENTLY` va u uzilganda nima bo'ladi
 
-Oddiy `CREATE INDEX` `SHARE` lock oladi: o'qish davom etadi, yozish to'xtaydi. 50 million qatorli `payments` jadvalida bu 5-15 daqiqa yozishsiz qolish degani. `CONCURRENTLY` yozishga xalaqit bermaydi, lekin jadvalni ikki marta skanlaydi va taxminan ikki baravar uzoq ishlaydi.
+Oddiy `CREATE INDEX` `SHARE` lock oladi: o'qish davom etadi, yozish to'xtaydi. Katta jadvalda bu daqiqalarcha yozishsiz qolish degani, va aniq vaqt jadval hajmi, indeks turi va disk tezligiga bog'liq. `CONCURRENTLY` yozishga xalaqit bermaydi, lekin jadvalni ikki marta skanlaydi va hujjat aytganidek sezilarli uzoq ishlaydi.
 
-Ikki muhim shart. Birinchisi: `CONCURRENTLY` tranzaksiya ichida ishlamaydi. Flyway'da bunday faylga maxsus belgi kerak.
+Ikki muhim shart. Birinchisi: `CONCURRENTLY` tranzaksiya ichida ishlamaydi. Bu yerda Flyway tomonida ko'p takrorlanadigan ikkita noto'g'ri gap bor. `transactional` degan sozlama yo'q, va PostgreSQL uchun maxsus belgi ham kerak emas: Flyway ning PostgreSQL parseri `CREATE [UNIQUE] INDEX CONCURRENTLY` ni (shuningdek `DROP INDEX CONCURRENTLY`, `REINDEX CONCURRENTLY`, `VACUUM` ni) o'zi tranzaksiyasiz deb belgilaydi.
+
+Haqiqiy tuzoq boshqa joyda: `mixed` sozlamasining default qiymati `false`, shuning uchun bitta faylda tranzaksiyali buyruq (masalan `UPDATE`) va `CONCURRENTLY` birga bo'lsa, Flyway ishni boshlamasdan `FlywayException` tashlaydi va xabari "Detected both transactional and non-transactional statements within the same migration" bo'ladi. Demak qoida sodda: `CONCURRENTLY` o'z faylida yolg'iz turadi.
+
+Kerak bo'lganda tranzaksiyani aniq o'chirish ham mumkin, lekin fayl nomi bilan emas: yonidagi `<skript>.sql.conf` faylida `executeInTransaction=false` yoziladi, yoki butun migratsiya oqimi uchun `spring.flyway.execute-in-transaction` (default `true`) o'zgartiriladi.
 
 ```sql
--- flyway migratsiyasida tranzaksiyani o'chirish uchun fayl nomiga
--- Flyway'ning transactional=false sozlamasi yoki alohida callback kerak.
+-- PostgreSQL da bu fayl uchun hech narsa yozish shart emas: Flyway
+-- CONCURRENTLY ni o'zi tranzaksiyasiz deb biladi. Lekin fayl FAQAT
+-- shu buyruqdan iborat bo'lishi kerak, aks holda `mixed=false`
+-- tufayli migratsiya umuman boshlanmaydi.
 -- Liquibase'da changeset'ga runInTransaction="false" qo'yiladi.
 
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_payments_merchant_created
@@ -235,7 +248,7 @@ DROP INDEX CONCURRENTLY IF EXISTS idx_payments_merchant_created;
 
 Ikkinchi shart: `CONCURRENTLY` uzilib qolsa, PostgreSQL `indisvalid = false` holatidagi indeksni qoldiradi. Bu indeks so'rovlarda ishlatilmaydi, lekin `INSERT` va `UPDATE` da yangilanadi, ya'ni faqat sekinlashtiradi va joy egallaydi. Shuning uchun har migratsiya ishga tushgandan keyin invalid indekslarni tekshiradigan avtomatik nazorat bo'lishi kerak.
 
-Yana bir tuzoq: `CONCURRENTLY` boshlanish paytidagi ochiq tranzaksiyalarni kutadi. Bitta 40 daqiqalik hisobot so'rovi indeks yaratishni shu muddatga ushlab turadi, shuning uchun avval `pg_stat_activity` ni ko'rib chiqing.
+Yana bir tuzoq: `CONCURRENTLY` boshlanish paytidagi ochiq tranzaksiyalarni kutadi. Uzoq ketadigan bitta hisobot so'rovi indeks yaratishni o'zi tugagunga qadar ushlab turadi, shuning uchun avval `pg_stat_activity` ni ko'rib chiqing.
 
 Eski ma'lumotdagi takror indeksdan oldin chiqadi. "Takror bor bo'lsa to'xta" (`preConditions onFail: HALT`) degan shart xavfsiz ko'rinadi, lekin amalda u release'ni hamma muhitda to'xtatadi. Ma'lumot har muhitda har xil, tozalashni esa kimdir qo'lda bajarishi kerak bo'ladi. Rolling deploy'da bu yanada yomon: tozalovchi bir martalik changeset allaqachon yozilgan bo'ladi, eski pod esa oynada yangi takror yozadi. Natijada HALT har deployda takrorlanaveradi.
 
@@ -267,9 +280,13 @@ SELECT order_id, reference, kept_id FROM cleared;
 
 Indeks UNIQUE bo'lmasa, oynada eski pod yozgan takror qurilishni yiqitmaydi: u qoladi va runbook'dagi hisobot so'rovi uni ko'rsatadi. UNIQUE bo'lsa qurilish yiqiladi va INVALID indeks qoladi. Keyingi deploy uni tashlab, tozalashni qayta yurgizadi.
 
+Bu yerda PostgreSQL hujjatidagi bitta jihat ko'pincha e'tibordan chetda qoladi va u uchinchi bosqichni ham ta'sirlaydi: muvaffaqiyatsiz qurilgan INVALID unique indeks keyin ham o'z unikallik cheklovini MAJBURLASHDA DAVOM ETADI. Ya'ni indeks "yaroqsiz" bo'lsa ham, unga zid keladigan `INSERT` yoki `UPDATE` xato beradi. Shuning uchun INVALID indeksni "shunchaki foydasiz" deb qoldirib qo'yish mumkin emas, u ishlab chiqarishda yozishni buzadi va darhol o'chirilishi kerak.
+
+Yana ikkita cheklov qurilish rejasiga ta'sir qiladi: bitta jadvalda bir vaqtda faqat BITTA concurrent indeks qurilishi mumkin, va qurilish davomida o'sha jadvalning schema o'zgarishi taqiqlanadi. Demak bir jadvalga uchta indeks kerak bo'lsa, ular ketma-ket ketadi va o'sha oynada boshqa DDL rejalashtirmaslik kerak.
+
 ## 33.9 Ma'lumotni ko'chirish (backfill): bo'laklab, yuk nazorati bilan
 
-Bitta `UPDATE orders SET delivery_slot_id = ...` 80 million qatorda ulkan tranzaksiya ochadi, WAL hajmini o'nlab gigabaytga oshiradi, replika lag'ini cho'zadi va autovacuum'ni dead tuple ostida ko'madi. Bundan tashqari, u yiqilsa butun ish nolga qaytadi.
+Bitta `UPDATE orders SET delivery_slot_id = ...` butun jadval ustida ulkan tranzaksiya ochadi, WAL hajmini o'nlab gigabaytga oshiradi, replika lag'ini cho'zadi va autovacuum'ni dead tuple ostida ko'madi. Bundan tashqari, u yiqilsa butun ish nolga qaytadi.
 
 To'g'ri yo'l: primary key diapazoni bo'yicha bo'laklash, har bo'lak alohida tranzaksiya, bo'laklar orasida pauza va replika lag'ini kuzatish.
 
@@ -393,7 +410,7 @@ Qaytarib bo'lmaydigan migratsiyalarni alohida belgilang va faqat yangi kod ishla
 
 ## 33.12 Migratsiyani sinash: ishlab chiqarish hajmidagi nusxada vaqtini o'lchash
 
-Migratsiyaning to'g'riligi kichik bazada tekshiriladi, bu [testlash qo'llanmasidagi](../testing/README.md) Testcontainers mavzusi. Vaqtini esa faqat production hajmidagi nusxada o'lchash mumkin. 1000 qatorli jadvaldagi `ALTER TABLE` 5 millisekundda, 80 million qatorlisida 40 daqiqada tugaydi, va bu farq butun reliz rejasini o'zgartiradi.
+Migratsiyaning to'g'riligi kichik bazada tekshiriladi, bu [testlash qo'llanmasidagi](../testing/README.md) Testcontainers mavzusi. Vaqtini esa faqat production hajmidagi nusxada o'lchash mumkin. Kichik jadvaldagi `ALTER TABLE` millisekundlarda, jadvalni qayta yozadigan shakli esa katta jadvalda daqiqalarda yoki undan uzoq tugaydi, va bu farq butun reliz rejasini o'zgartiradi.
 
 Snapshot'dan nusxa ko'taring, unga production yukining 20-30 foizini bering, keyin migratsiyani `\timing` bilan ishga tushiring. Shu paytda `pg_locks` ni kuzatib, qanday so'rovlar bloklanganini ko'ring.
 
@@ -411,9 +428,9 @@ Snapshot'dan nusxa ko'taring, unga production yukining 20-30 foizini bering, key
 | Tuzoq | Nega sodir bo'ladi | Yechim |
 | --- | --- | --- |
 | 20 ms DDL jadvalni 3 daqiqa o'chirdi | `ACCESS EXCLUSIVE` uzoq `SELECT` ortida navbatga tushdi | `lock_timeout = 3s` va retry |
-| `ADD COLUMN` 40 daqiqa ketdi | Volatile default to'liq qayta yozishni chaqirdi | Default'siz qo'shib, keyin backfill |
+| `ADD COLUMN` juda uzoq ketdi | Volatile default to'liq qayta yozishni chaqirdi | Default'siz qo'shib, keyin backfill |
 | Indeks so'rovda ishlatilmaydi | `CONCURRENTLY` uzilib `indisvalid = false` qoldirdi | `DROP INDEX CONCURRENTLY` va qayta yaratish |
-| Replika 8 daqiqa orqada qoldi | Bitta ulkan `UPDATE` WAL'ni to'ldirdi | Bo'laklash va `pg_stat_replication` nazorati |
+| Replika sezilarli orqada qoldi | Bitta ulkan `UPDATE` WAL'ni to'ldirdi | Bo'laklash va `pg_stat_replication` nazorati |
 | Deploy paytida `column does not exist` | Sxema eski kod bilan mos emas | N-1 moslik qoidasi, expand bosqichi |
 | Pod migratsiya paytida restart bo'ldi | Startup migratsiya liveness probe'dan uzoq ketdi | Migratsiyani alohida Job'ga chiqarish |
 | Precondition o'tdi, changeset `permission denied for schema` bilan yiqildi | `tableExists` va `to_regclass` katalogni o'qiydi, ruxsatni emas | `sqlCheck` + `has_schema_privilege` va `has_table_privilege` (33.13) |
@@ -455,13 +472,36 @@ To'g'ri shakl ruxsatning o'zini tekshiradi:
 Bu shaklda to'rt nuqta bor.
 
 1. `CASE ... WHEN` zanjiri ishlatiladi, `AND` emas. SQL'da `AND` ning short-circuit'i kafolatlanmagan, shuning uchun yo'q schema'da `has_schema_privilege` xato berishi mumkin. `CASE` ning `WHEN` shoxlari esa ketma-ket baholanadi (SQL standarti): schema yo'q bo'lsa keyingi shoxlarga yetib bormaydi.
-2. Schema darajasidagi `USAGE` tekshiruvi yetarli emas: changeset o'qiydigan har jadval uchun `has_table_privilege` kerak. `public` schema'da `USAGE` sukut bo'yicha `PUBLIC` ga berilgan (PostgreSQL 15 dan oldin), ya'ni u yerda faqat jadval darajasidagi tekshiruv himoya qiladi. Qisman grant berilgan holatda bitta vakil jadval bilan guard o'tib ketadi va keyin `permission denied for table` chiqadi.
+2. Schema darajasidagi `USAGE` tekshiruvi yetarli emas: changeset o'qiydigan har jadval uchun `has_table_privilege` kerak. `public` schema'da `USAGE` sukut bo'yicha `PUBLIC` ga berilgan, ya'ni u yerda faqat jadval darajasidagi tekshiruv himoya qiladi. PostgreSQL 15 dagi o'zgarish bu holatni o'zgartirmaydi: u `public` schema dan faqat `CREATE` huquqini olib tashladi, `USAGE` esa hamon default bo'yicha hamma uchun ochiq. Shuning uchun xulosa yangi versiyalarda ham, hatto kuchliroq shaklda amal qiladi. Qisman grant berilgan holatda bitta vakil jadval bilan guard o'tib ketadi va keyin `permission denied for table` chiqadi.
 3. Allaqachon qo'llangan changeset'ga precondition qo'shish xavfsiz. Liquibase checksum'ni faqat `changes` (va `sqlVisitors`) dan hisoblaydi, `preConditions` unga kirmaydi; qo'llangan changeset'ning precondition'i qayta baholanmaydi ham. Shu sababli `changes` blokiga tegib bo'lmaydi (33.2), precondition'ga tegish mumkin.
 4. Bunday guard'ni faqat integration test isbotlaydi: jadvallar bor, lekin rolga ruxsat berilmagan baza kerak. "Jadval yo'q" holatini qoplaydigan test bu xatoni ushlamaydi, chunki eski guard ham, yangisi ham o'sha holatda bir xil ishlaydi. Testda migratsiya roli o'z schema'sining egasi bo'lishi va bazada `CREATE` huquqiga ega bo'lishi kerak, aks holda `CREATE SCHEMA IF NOT EXISTS` ham yiqiladi: PostgreSQL huquqni `IF NOT EXISTS` shortcut'idan oldin tekshiradi.
 
 Testda `to_regclass('s.t')::text` ni `"s.t"` bilan solishtirmang: `regclass` matnga `search_path` ga nisbatan chiqadi va schema yo'lda bo'lsa prefiks tushib qoladi. Mavjudlikni `to_regclass('s.t') IS NOT NULL` bilan so'rang.
 
-## 33.14 Amalda qo'llash
+## 33.14 Reliz rejasi va "time to bake": bosqichlar, sog'liq mezoni va kutish muddati
+
+33.3 dagi expand va contract ketma-ketligi nima qilinishini aytadi, bu bo'lim esa keyingi bosqichga qachon o'tilishini aytadi. Orosz o'zgarishni qurib bo'lgandan keyin rolloutning o'ziga yetarli vaqt ajratishni talab qiladi: rollout puxta bajarilmasa, nimadir noto'g'ri ketish ehtimoli ortadi (Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr, Pragmatic Engineer, 2023, 15-bob, 215-bet).
+
+Birinchi shart rolloutni o'lchanadigan qilish. Orosz yangi arxitektura kutilgandek ishlayotganini ko'rsatadigan metrikani oldindan topishni so'raydi: eski va yangi tizimning ishlatilishini kuzatish, unumdorlik metrikasi, biznes metrikasi (15-bob, 215-bet). Sxema migratsiyasida bu aniq o'lchovga aylanadi: yangi ustun to'ldirilgan qatorlar ulushi, eski va yangi o'qish yo'lining chaqiriq soni, backfill qoldig'i.
+
+Ikkinchi shart bosqichli reja. Orosz rollout bosqichlarini oldindan e'lon qilishni va har bosqich uchun "bu bosqich sog'lommi, keyingisi boshlanishi mumkinmi" savoliga javob beradigan mezonni yozib qo'yishni talab qiladi (15-bob, 215-bet). Mezon rejada yozilgan bo'lsa, qaror hissiyot bilan emas, o'lchov bilan chiqadi.
+
+Uchinchi shart "time to bake". Yirik o'zgarish chiqqanda yangi tizimga production da pishish uchun saxiy vaqt oynasi beriladi va loyiha o'sha oyna tugaguncha muvaffaqiyatli deb e'lon qilinmaydi; shu oynada tizim sog'lig'ining asosiy metrikalari o'lchanadi (15-bob, 215-bet). Orosz aniq muddat bermaydi, u o'zgarish ko'lamiga bog'liq. Sxemada esa bake oynasining tabiiy chegarasi bor: qaytarib bo'lmaydigan contract qadami (33.11) shu oyna tugamaguncha chiqarilmaydi.
+
+Quyidagi bosqich nomlari va mezon shakllari korpusning tavsiyasi: Orosz umumiy qoidani beradi, bu ro'yxat kitobda yo'q.
+
+| Bosqich | Nimani o'lchaymiz | Keyingi bosqichga o'tish sharti |
+| --- | --- | --- |
+| Expand: yangi struktura qo'shildi | DDL vaqti, lock kutish | DDL rejalashtirilgan oynada tugadi, bloklangan so'rov qolmadi |
+| Dual write | yangi ustun to'ldirilgan ulushi, yozish xatolari | ulush to'liqqa chiqdi, xato oqimi baseline darajasida |
+| Backfill | qoldiq qatorlar, replika lag | qoldiq nol, lag chegaradan chiqmadi |
+| Yangi yo'ldan o'qish | eski va yangi yo'l chaqiriq soni, p99, biznes metrikasi | yangi yo'l eski yo'ldan yomon emas |
+| Bake (pishish) | tizim sog'lig'ining asosiy metrikalari | belgilangan oyna o'tdi, yangi xato sinfi chiqmadi |
+| Contract: eskisini o'chirish | - | 33.11 dagi qaytarib bo'lmaslik sharti bajarildi |
+
+Orosz shu ro'yxatga yana ikki bandni qo'shadi: rollback rejasi va pre-mortem mashqi (15-bob, 215-bet). Birinchisi sxema uchun 33.11 da, ikkinchisi 35.16 da ochilgan, shuning uchun bu yerda takrorlanmaydi.
+
+## 33.15 Amalda qo'llash
 
 - [ ] Loyihadagi hamma migratsiya fayllarini ko'rib chiqing va `spring.jpa.hibernate.ddl-auto` production profilida `none` ekanini tasdiqlang.
 - [ ] Har migratsiya faylining boshiga `SET lock_timeout = '3s'` qo'shing va deploy pipeline'ga `55P03` xatosida 5 martagacha qayta urinish mantiqini kiriting.
@@ -472,6 +512,64 @@ Testda `to_regclass('s.t')::text` ni `"s.t"` bilan solishtirmang: `regclass` mat
 - [ ] Backfill uchun bo'laklab ishlaydigan runner yozing, unda bo'lak kattaligi va replika lag chegarasi sozlanadigan bo'lsin.
 - [ ] Qaytarib bo'lmaydigan migratsiyalar ro'yxatini tuzing va har biri uchun "oldingi relizdan necha kun keyin chiqadi" muddatini belgilang.
 - [ ] Boshqa schema'dan o'qiydigan har changeset'ning precondition'i `tableExists` emas, har o'qiladigan jadval uchun `has_table_privilege` tekshiradigan `sqlCheck` ekanini tasdiqlang.
+
+## Manbalar
+
+- PostgreSQL, `ALTER TABLE` hujjati
+  ([https://github.com/postgres/postgres/blob/REL_18_6/doc/src/sgml/ref/alter_table.sgml](https://github.com/postgres/postgres/blob/REL_18_6/doc/src/sgml/ref/alter_table.sgml),
+  tag `REL_18_6`, PostgreSQL License) - 33.5 dagi lock jadvali,
+  `ADD FOREIGN KEY` ning SHARE ROW EXCLUSIVE olishi va murojaat
+  qilinadigan jadvalda ham lock qo'yishi, 33.6 dagi constant va
+  volatile default farqi, 33.7 dagi `SET NOT NULL` ning valid CHECK
+  bilan skanni o'tkazib yuborishi.
+- PostgreSQL, `CREATE INDEX` hujjati
+  ([https://github.com/postgres/postgres/blob/REL_18_6/doc/src/sgml/ref/create_index.sgml](https://github.com/postgres/postgres/blob/REL_18_6/doc/src/sgml/ref/create_index.sgml),
+  tag `REL_18_6`) - 33.8 dagi `CONCURRENTLY` ning tranzaksiya ichida
+  ishlamasligi, ikki skan, INVALID indeksning unikallikni majburlashda
+  davom etishi, bitta jadvalda bir vaqtda bitta qurilish va qurilish
+  davomida schema o'zgarishining taqiqlanishi.
+- PostgreSQL, qulflar haqidagi bo'lim
+  ([https://github.com/postgres/postgres/blob/REL_18_6/doc/src/sgml/mvcc.sgml](https://github.com/postgres/postgres/blob/REL_18_6/doc/src/sgml/mvcc.sgml),
+  tag `REL_18_6`) - 33.7 dagi SHARE UPDATE EXCLUSIVE ning VACUUM va
+  schema o'zgarishi bilan to'qnashishi, va SELECT ni faqat ACCESS
+  EXCLUSIVE bloklashi.
+- PostgreSQL, schema huquqlari va 15-reliz eslatmalari
+  ([https://github.com/postgres/postgres/blob/REL_18_6/doc/src/sgml/ddl.sgml](https://github.com/postgres/postgres/blob/REL_18_6/doc/src/sgml/ddl.sgml),
+  tag `REL_18_6`; va
+  [`release-15.sgml`](https://github.com/postgres/postgres/blob/REL_15_0/doc/src/sgml/release-15.sgml),
+  tag `REL_15_0`) - 33.13 dagi `public` schema da `USAGE` ning default
+  bo'lishi va 15 da faqat `CREATE` ning olib tashlanishi.
+- Flyway, PostgreSQL parseri va skript metadatasi
+  ([https://github.com/flyway/flyway/blob/flyway-13.10.3/flyway-database/flyway-database-postgresql/src/main/java/org/flywaydb/database/postgresql/PostgreSQLParser.java](https://github.com/flyway/flyway/blob/flyway-13.10.3/flyway-database/flyway-database-postgresql/src/main/java/org/flywaydb/database/postgresql/PostgreSQLParser.java),
+  tag `flyway-13.10.3`, Apache-2.0) - 33.8 dagi `CONCURRENTLY` ning
+  avtomatik tranzaksiyasiz belgilanishi, `mixed=false` bilan
+  "transactional va non-transactional" xatosi va `.sql.conf` yonidagi
+  fayl orqali `executeInTransaction`.
+- Spring Boot, `FlywayProperties`
+  ([https://github.com/spring-projects/spring-boot/blob/v4.1.1/module/spring-boot-flyway/src/main/java/org/springframework/boot/flyway/autoconfigure/FlywayProperties.java](https://github.com/spring-projects/spring-boot/blob/v4.1.1/module/spring-boot-flyway/src/main/java/org/springframework/boot/flyway/autoconfigure/FlywayProperties.java),
+  tag `v4.1.1`, Apache-2.0) - 33.2 va 33.8 dagi default qiymatlar:
+  `validate-on-migrate` true, `out-of-order` false,
+  `baseline-on-migrate` false, `execute-in-transaction` true.
+- Liquibase, `ChangeSet`
+  ([https://github.com/liquibase/liquibase/blob/v4.33.0/liquibase-standard/src/main/java/liquibase/changelog/ChangeSet.java](https://github.com/liquibase/liquibase/blob/v4.33.0/liquibase-standard/src/main/java/liquibase/changelog/ChangeSet.java),
+  tag `v4.33.0`, Apache-2.0) - 33.1 dagi `filePath::id::author` identifikatori,
+  33.2 dagi checksum hisobi va `validCheckSum`, 33.8 dagi
+  `runInTransaction`. Yangi relizlar (5.x) FSL litsenziyasi ostida,
+  shuning uchun oxirgi Apache-2.0 tegi keltirilgan; tekshirilgan
+  mantiq ikkisida bir xil.
+- Hibernate ORM, `AbstractSchemaMigrator`
+  ([https://github.com/hibernate/hibernate-orm/blob/7.4.13/hibernate-core/src/main/java/org/hibernate/tool/schema/internal/AbstractSchemaMigrator.java](https://github.com/hibernate/hibernate-orm/blob/7.4.13/hibernate-core/src/main/java/org/hibernate/tool/schema/internal/AbstractSchemaMigrator.java),
+  tag `7.4.13`, Apache-2.0) - 33.2 dagi `ddl-auto=update` ning indeks,
+  unique kalit va FK qo'shishi.
+- Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr,
+  Pragmatic Engineer, 2023, 15-bob (215-bet) - rolloutga alohida vaqt
+  ajratish, rolloutni o'lchaydigan metrikani oldindan topish, bosqichli
+  reja va bosqich sog'ligi mezoni, "time to bake" oynasi va o'sha oynada
+  sog'liq metrikalarini o'lchash (33.14).
+- Kubernetes, Job turlari
+  ([https://github.com/kubernetes/kubernetes/blob/v1.37.1/staging/src/k8s.io/api/batch/v1/types.go](https://github.com/kubernetes/kubernetes/blob/v1.37.1/staging/src/k8s.io/api/batch/v1/types.go),
+  tag `v1.37.1`, Apache-2.0) - 33.10 dagi `backoffLimit` va
+  `activeDeadlineSeconds` (default `backoffLimit` 6).
 
 ---
 

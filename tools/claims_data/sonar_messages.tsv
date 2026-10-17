@@ -1,0 +1,327 @@
+# sonar-java check manbalaridagi qoida xabarlari (korpusda keltirilgan
+# kalitlar uchun). Xabar matni qoida TAVSIFIDA emas, check ning
+# `reportIssue` chaqiruvida yoziladi, shuning uchun manba shu.
+# sana: 2026-10-15
+# manba: github.com/SonarSource/sonar-java, tag 8.44.0.48651,
+#         java-checks/src/main/java/org/sonar/java/checks/**
+# Yasovchi: `python3 tools/verify_claims.py --yangila` (sonar qismi).
+# `check` ustunida `(sarlavha)` = qoidaning rasmiy sarlavhasi
+# (metadata dagi `title`), korpus ba'zan aynan shuni keltiradi.
+kalit	check	xabar
+S100	(sarlavha)	Method names should comply with a naming convention
+S100	BadMethodNameCheck.java	Regular expression used to check the method names against.
+S100	BadMethodNameCheck.java	Rename this method name to match the regular expression '
+S101	(sarlavha)	Class names should comply with a naming convention
+S101	BadClassNameCheck.java	Regular expression used to check the class names against.
+S101	BadClassNameCheck.java	Rename this %s name to match the regular expression '%s'.
+S106	(sarlavha)	Standard outputs should not be used directly to log anything
+S106	SystemOutOrErrUsageCheck.java	Replace this use of IO.
+S106	SystemOutOrErrUsageCheck.java	Replace this use of System.err by a logger.
+S106	SystemOutOrErrUsageCheck.java	Replace this use of System.out by a logger.
+S1066	(sarlavha)	Mergeable "if" statements should be combined
+S1066	CollapsibleIfCandidateCheck.java	Merge this if statement with the enclosing one
+S1066	CollapsibleIfCandidateCheck.java	Merge this if statement with the enclosing one.
+S1068	(sarlavha)	Unused "private" fields should be removed
+S1068	UnusedPrivateFieldCheck.java	Remove this unused private field
+S1068	UnusedPrivateFieldCheck.java	Unexpected subscribed tree.
+S107	(sarlavha)	Methods should not have too many parameters
+S107	TooManyParametersCheck.java	Maximum authorized number of parameters for a constructor
+S108	(sarlavha)	Nested blocks of code should not be left empty
+S108	EmptyBlockCheck.java	Remove this block of code, fill it in, or add a comment explaining why it is empty.
+S109	(sarlavha)	Magic numbers should not be used
+S109	MagicNumberCheck.java	Assign this magic number 
+S109	MagicNumberCheck.java	to a well-named constant, and use the constant instead.
+S1104	(sarlavha)	Class variable fields should not have public accessibility
+S1104	ClassVariableVisibilityCheck.java	a static final constant or non-public and provide accessors if needed.
+S1116	(sarlavha)	Empty statements should be removed
+S1116	EmptyStatementUsageCheck.java	Remove this empty statement
+S1116	EmptyStatementUsageCheck.java	Remove this empty statement.
+S1118	(sarlavha)	Utility classes should not have public constructors
+S1118	UtilityClassWithPublicConstructorCheck.java	Add a private constructor to hide the implicit public one.
+S1118	UtilityClassWithPublicConstructorCheck.java	Add an empty private constructor as the first member of the class.
+S1118	UtilityClassWithPublicConstructorCheck.java	Add an empty private constructor as the last member of the class.
+S1118	UtilityClassWithPublicConstructorCheck.java	Add an empty private constructor before the first method in the class.
+S1118	UtilityClassWithPublicConstructorCheck.java	Hide this public constructor.
+S112	(sarlavha)	Generic exceptions should never be thrown
+S112	RawExceptionCheck.java	Replace generic exceptions with specific library exceptions or a custom exception.
+S1123	(sarlavha)	Deprecated elements should have both the annotation and the Javadoc tag
+S1123	MissingDeprecatedCheck.java	Add the missing @Deprecated annotation.
+S1123	MissingDeprecatedCheck.java	Add the missing @deprecated Javadoc tag.
+S1126	(sarlavha)	Return of boolean expressions should not be wrapped into an "if-then-else" statement
+S1126	ReturnOfBooleanExpressionsCheck.java	Replace this if-then-else statement by a single method invocation.
+S1126	ReturnOfBooleanExpressionsCheck.java	Replace this if-then-else statement by a single return statement.
+S1128	(sarlavha)	Unnecessary imports should be removed
+S1128	UselessImportCheck.java	Remove this duplicated import.
+S1128	UselessImportCheck.java	Remove this unnecessary import: java.lang classes are always implicitly imported.
+S1128	UselessImportCheck.java	Remove this unnecessary import: same package classes are always implicitly imported.
+S1128	UselessImportCheck.java	Remove this unused import '
+S1128	UselessImportCheck.java	The import ([$\\w]++(\\.[$\\w]++)*+) is never used
+S1130	(sarlavha)	Exceptions in "throws" clauses should not be superfluous
+S1130	RedundantThrowsDeclarationCheck.java	' which is a subclass of '
+S1130	RedundantThrowsDeclarationCheck.java	', as it cannot be thrown from
+S1130	RedundantThrowsDeclarationCheck.java	Remove the declaration of thrown exception '
+S1130	RedundantThrowsDeclarationCheck.java	Remove the redundant '
+S1133	(sarlavha)	Deprecated code should be removed
+S1133	DeprecatedTagPresenceCheck.java	Do not forget to remove this deprecated code someday.
+S1134	(sarlavha)	Track uses of "FIXME" tags
+S1134	FixmeTagPresenceCheck.java	Take the required action to fix the issue indicated by this comment.
+S1135	(sarlavha)	Track uses of "TODO" tags
+S1135	TodoTagPresenceCheck.java	Complete the task associated to this TODO comment.
+S1142	(sarlavha)	Methods should not have too many return statements
+S1142	MethodWithExcessiveReturnsCheck.java	This method has %d returns, which is more than the %d allowed.
+S1144	(sarlavha)	Unused "private" methods should be removed
+S1144	UnusedPrivateMethodCheck.java	Remove the unused %s
+S1144	UnusedPrivateMethodCheck.java	Unexpected TypeTree used as constructor.
+S115	(sarlavha)	Constant names should comply with a naming convention
+S115	BadConstantNameCheck.java	Regular expression used to check the constant names against.
+S115	BadConstantNameCheck.java	Rename this constant name to match the regular expression '
+S1153	(sarlavha)	"String.valueOf()" should not be appended to a "String"
+S1153	ConcatenationWithStringValueOfCheck.java	Directly append the argument of String.valueOf().
+S116	(sarlavha)	Field names should comply with a naming convention
+S1168	(sarlavha)	Empty arrays and collections should be returned instead of null
+S1168	ReturnEmptyArrayNotNullCheck.java	Replace "null" with an empty %s
+S1168	ReturnEmptyArrayNotNullCheck.java	Replace "null" with an empty array
+S1168	ReturnEmptyArrayNotNullCheck.java	Return an empty %s instead of null.
+S117	(sarlavha)	Local variable and method parameter names should comply with a naming convention
+S117	BadLocalVariableNameCheck.java	Regular expression used to check the names against.
+S117	BadLocalVariableNameCheck.java	Rename this local variable to match the regular expression '
+S1170	(sarlavha)	Public constants and fields initialized at declaration should be "static final" rather than merely "final"
+S1170	ConstantsShouldBeStaticFinalCheck.java	Make this final field static too.
+S1172	(sarlavha)	Unused method parameters should be removed
+S1172	UnusedMethodParameterCheck.java	Remove these unused method parameters %s.
+S1172	UnusedMethodParameterCheck.java	Remove this unused method parameter %s.
+S1181	(sarlavha)	Throwable and Error should not be caught
+S1181	CatchOfThrowableOrErrorCheck.java	Catch Exception instead of
+S1181	CatchOfThrowableOrErrorCheck.java	Catch Exception instead of 
+S1192	(sarlavha)	String literals should not be duplicated
+S1192	StringLiteralDuplicatedCheck.java	' instead of duplicating its value here.
+S1192	StringLiteralDuplicatedCheck.java	Define a constant instead of duplicating this literal "
+S1192	StringLiteralDuplicatedCheck.java	Define a constant instead of duplicating this text block
+S1192	StringLiteralDuplicatedCheck.java	Define a constant instead of duplicating this text block 
+S1192	StringLiteralDuplicatedCheck.java	Minimal length a string literal must have to be considered for duplication
+S1192	StringLiteralDuplicatedCheck.java	Number of times a literal must be duplicated to trigger an issue
+S1192	StringLiteralDuplicatedCheck.java	Regular expression that strings must match to be excluded from the check. Leave empty to disable.
+S1206	(sarlavha)	"equals(Object obj)" and "hashCode()" should be overridden in pairs
+S1206	EqualsOverriddenWithHashCodeCheck.java	()" and should therefore also override "
+S1210	(sarlavha)	"equals(Object obj)" should be overridden along with the "compareTo(T obj)" method
+S1210	EqualsNotOverriddenWithCompareToCheck.java	Override "equals(Object obj)" to comply with the contract of the "compareTo(T o)" method.
+S1217	(sarlavha)	"Thread.run()" should not be called directly
+S1217	ThreadRunCheck.java	Call the method Thread.start() to execute the content of the run() method in a dedicated thread.
+S1244	(sarlavha)	Floating point numbers should not be tested for equality
+S1244	FloatEqualityCheck.java	Equality tests should not be made with floating point values.
+S125	(sarlavha)	Sections of code should not be commented out
+S125	CommentedOutCodeLineCheck.java	This block of commented-out lines of code should be removed.
+S127	(sarlavha)	"for" loop stop conditions should be invariant
+S127	ForLoopCounterChangedCheck.java	Refactor the code in order to not assign to this loop counter from within the loop body.
+S131	(sarlavha)	"switch" statements should have "default" clauses
+S131	SwitchLastCaseIsDefaultCheck.java	Add a default case to this switch.
+S131	SwitchLastCaseIsDefaultCheck.java	Complete cases by adding the missing enum constants or add a default case to this switch.
+S1312	(sarlavha)	Loggers should be "private static final" and should share a naming convention
+S1312	LoggersDeclarationCheck.java	" logger to comply with the format "
+S1312	LoggersDeclarationCheck.java	Regular expression used to check the logger names against.
+S1312	LoggersDeclarationCheck.java	and rename it to comply with the format "
+S134	(sarlavha)	Control flow statements "if", "for", "while", "switch" and "try" should not be nested too deeply
+S134	NestedIfStatementsCheck.java	Maximum allowed control flow statement nesting depth.
+S134	NestedIfStatementsCheck.java	Refactor this code to not nest more than
+S134	NestedIfStatementsCheck.java	Refactor this code to not nest more than 
+S138	(sarlavha)	Methods should not have too many lines
+S138	MethodTooBigCheck.java	Maximum authorized lines in a method
+S138	MethodTooBigCheck.java	lines, which is greater than the
+S1448	(sarlavha)	Classes should not have too many methods
+S1448	TooManyMethodsCheck.java	%s "%s" has %d%s methods, which is greater than the %d authorized. Split it into smaller %s.
+S1448	TooManyMethodsCheck.java	The maximum number of methods authorized in a class.
+S1448	TooManyMethodsCheck.java	Whether or not to include non-public methods in the count.
+S1481	(sarlavha)	Unused local variables should be removed
+S1481	UnusedLocalVariableCheck.java	Remove unused local variable
+S1481	UnusedLocalVariableCheck.java	Replace unused local variable with _
+S1488	(sarlavha)	Local variables should not be declared and then immediately returned or thrown
+S1488	ImmediatelyReturnedVariableCheck.java	Immediately %s this expression instead of assigning it to the temporary variable "%s".
+S1607	(sarlavha)	JUnit4 @Ignored and JUnit5 @Disabled annotations should be used to disable tests and should provide a rationale
+S1607	IgnoredTestsCheck.java	A constant boolean value is passed as argument, causing this test to always be skipped.
+S1607	IgnoredTestsCheck.java	Either add an explanation about why this test is skipped or remove the "@
+S1607	IgnoredTestsCheck.java	This assumption is called with a boolean constant; remove it or, to skip this
+S1607	IgnoredTestsCheck.java	This assumption is called with a boolean constant; remove it or, to skip this 
+S1612	(sarlavha)	Lambdas should be replaced with method references
+S1612	ReplaceLambdaByMethodRefCheck.java	Replace this lambda with method reference '%s'.%s
+S1640	(sarlavha)	Maps with keys that are enum values should use the EnumMap implementation
+S1640	EnumMapCheck.java	Convert this Map to an EnumMap.
+S1643	(sarlavha)	Strings should not be concatenated using '+' in a loop
+S1643	StringConcatenationInLoopCheck.java	Use a StringBuilder instead.
+S1845	(sarlavha)	Methods and field names should not be the same or differ only by capitalization
+S1854	(sarlavha)	Unused assignments should be removed
+S1854	DeadStoreCheck.java	Remove this useless assignment to local variable "
+S1858	(sarlavha)	"toString()" should never be called on a String object
+S1858	StringToStringCheck.java	" returns a string, there's no need to call "toString()".
+S1858	StringToStringCheck.java	"%s" is already a string, there's no need to call "toString()" on it.
+S1858	StringToStringCheck.java	"%s" is an array of strings, there's no need to call "toString()".
+S1858	StringToStringCheck.java	Message should always be set with a report tree.
+S1858	StringToStringCheck.java	There's no need to call "toString()" on an array of String.
+S1858	StringToStringCheck.java	there's no need to call "toString()" on a string literal.
+S1858	StringToStringCheck.java	there's no need to call "toString()" on a text block.
+S1874	(sarlavha)	"@Deprecated" code should not be used
+S1874	CallToDeprecatedMethodCheck.java	Don't override a deprecated method or explicitly mark it as "@Deprecated".
+S1874	CallToDeprecatedMethodCheck.java	Remove this use of "%s"; it is deprecated.
+S2068	(sarlavha)	Credentials should not be hard-coded
+S2068	HardCodedPasswordCheck.java	' detected in this expression, review this potentially hard-coded password.
+S2068	HardCodedPasswordCheck.java	Review this hard-coded URL, which may contain a password.
+S2077	(sarlavha)	SQL queries should not be dynamically formatted
+S2077	SQLInjectionCheck.java	Make sure using a dynamically formatted SQL query is safe here.
+S2077	SQLInjectionCheck.java	SQL Query is assigned to '
+S2077	SQLInjectionCheck.java	SQL Query is dynamically formatted and assigned to '
+S2093	(sarlavha)	Try-with-resources should be used
+S2093	TryWithResourcesCheck.java	Change this "try" to a try-with-resources.
+S2111	(sarlavha)	"BigDecimal(double)" should not be used
+S2133	(sarlavha)	Objects should not be created only to invoke "getClass"
+S2133	ObjectCreatedOnlyToCallGetClassCheck.java	Remove this object instantiation and use "
+S2142	(sarlavha)	"InterruptedException" and "ThreadDeath" should not be ignored
+S2142	InterruptedExceptionCheck.java	Either re-interrupt this method or rethrow the "%s" that can be caught here.
+S2143	(sarlavha)	"java.time" classes should be used for dates and times
+S2143	DateAndTimesCheck.java	Use the "java.time" API for date and time.
+S2160	(sarlavha)	Subclasses that add fields to classes that override "equals" should also override "equals"
+S2160	EqualsNotOverriddenInSubclassCheck.java	Override the "equals" method in this class.
+S2184	(sarlavha)	Math operands should be cast before assignment
+S2184	CastArithmeticOperandCheck.java	Cast one of the operands of this
+S2184	CastArithmeticOperandCheck.java	Cast one of the operands of this 
+S2184	CastArithmeticOperandCheck.java	Cast one of the operands of this integer division to a "double".
+S2184	CastArithmeticOperandCheck.java	operation to a "
+S2187	(sarlavha)	TestCases should contain tests
+S2187	NoTestInTestClassCheck.java	Add some tests to this class.
+S2201	(sarlavha)	Return values from functions without side effects should not be ignored
+S2201	IgnoredReturnValueCheck.java	The return value of "
+S2221	(sarlavha)	"Exception" should not be caught when not required by called methods
+S2221	CatchExceptionCheck.java	Catch a list of specific exception subtypes instead.
+S2229	(sarlavha)	Methods should not call same-class methods with incompatible "@Transactional" values
+S2229	SpringIncompatibleTransactionalCheck.java	's" @Transactional requirement is incompatible with the one for this method.
+S2229	SpringIncompatibleTransactionalCheck.java	Incompatible method definition.
+S2230	(sarlavha)	Methods with Spring proxying annotations should be public
+S2230	TransactionalMethodVisibilityCheck.java	Make this method 
+S2230	TransactionalMethodVisibilityCheck.java	or remove the "
+S2245	(sarlavha)	Pseudorandom number generators (PRNGs) should not be used in security contexts
+S2245	PseudoRandomCheck.java	Make sure that using this pseudorandom number generator is safe here.
+S2333	(sarlavha)	Redundant modifiers should not be used
+S2333	RedundantModifierCheck.java	"%s" is redundant in this context.
+S2384	(sarlavha)	Private mutable members should not be stored or returned directly
+S2384	MutableMembersUsageCheck.java	Return a copy of "
+S2384	MutableMembersUsageCheck.java	Store a copy of "
+S2386	(sarlavha)	Mutable fields should not be "public static"
+S2386	PublicStaticMutableMembersCheck.java	Move "{0}" to a class and lower its visibility
+S2629	(sarlavha)	"Preconditions" and logging arguments should not require evaluation
+S2629	LazyArgEvaluationCheck.java	Use the built-in formatting to construct this argument.
+S2696	(sarlavha)	Instance methods should not write to "static" fields
+S2696	StaticFieldUpateCheck.java	Make the enclosing method "static" or remove this set.
+S2699	(sarlavha)	Tests should include assertions
+S2699	AssertionsInTestsCheck.java	Add at least one assertion to this test case.
+S2699	AssertionsInTestsCheck.java	Comma-separated list of fully qualified method symbols that should be considered as assertion methods.
+S2699	AssertionsInTestsCheck.java	The wildcard character can be used at the end of the method name.
+S2699	AssertionsInTestsCheck.java	Unable to create a corresponding matcher for custom assertion method, please check the format of the following symbol: '{}'
+S2701	(sarlavha)	Literal boolean values and nulls should not be used in assertions
+S2701	BooleanOrNullLiteralInAssertionsCheck.java	Remove or correct this assertion.
+S2701	BooleanOrNullLiteralInAssertionsCheck.java	There does not seem to be a reason to use a literal here.
+S2701	BooleanOrNullLiteralInAssertionsCheck.java	This literal can be avoided by using a different assertion method.
+S2789	(sarlavha)	"null" should not be used with "Optional"
+S2789	NullShouldNotBeUsedWithOptionalCheck.java	"Optional" variables should not be "%s".
+S2789	NullShouldNotBeUsedWithOptionalCheck.java	Ensure this "Optional" could never be null and remove this null-check.
+S2789	NullShouldNotBeUsedWithOptionalCheck.java	Methods with an "Optional" return type should never return null.
+S2789	NullShouldNotBeUsedWithOptionalCheck.java	Methods with an "Optional" return type should not be "%s".
+S2789	NullShouldNotBeUsedWithOptionalCheck.java	Replace this null literal by an "Optional" object.
+S2925	(sarlavha)	"Thread.sleep" should not be used in tests
+S2925	ThreadSleepInTestsCheck.java	Remove this use of "%s.sleep()".
+S2970	(sarlavha)	Assertions should be complete
+S2970	AssertionsCompletenessCheck.java	Add a call to 'assertAll' after all 'assertThat'.
+S2970	AssertionsCompletenessCheck.java	Add one or more 'assertThat' before 'assertAll'.
+S2970	AssertionsCompletenessCheck.java	Add one or more 'assertThat' before the end of this try block.
+S2970	AssertionsCompletenessCheck.java	Complete the assertion.
+S2970	AssertionsCompletenessCheck.java	Tree is not try-with-resources resource
+S2970	AssertionsCompletenessCheck.java	Use 'Java6SoftAssertions' instead of 'Java6AbstractStandardSoftAssertions'.
+S3011	(sarlavha)	Reflection should not be used to increase accessibility of classes, methods, or fields
+S3011	AccessibilityChangeCheck.java	This accessibility bypass should be removed.
+S3011	AccessibilityChangeCheck.java	This accessibility update should be removed.
+S3358	(sarlavha)	Ternary operators should not be nested
+S3358	NestedTernaryOperatorsCheck.java	Extract this nested ternary operation into an independent statement.
+S3415	(sarlavha)	Assertion arguments should be passed in the correct order
+S3415	AssertionArgumentOrderCheck.java	Change this assertion to not compare two literals.
+S3415	AssertionArgumentOrderCheck.java	Other argument to swap.
+S3415	AssertionArgumentOrderCheck.java	Replace this literal with the actual expression you want to assert.
+S3415	AssertionArgumentOrderCheck.java	Swap these 2 arguments so they are in the correct order: %s.
+S3457	(sarlavha)	Format strings should be used correctly
+S3457	PrintfMisuseCheck.java	%n should be used in place of \ to produce the platform-specific line separator.
+S3457	PrintfMisuseCheck.java	Arguments are numbered starting from 1.
+S3457	PrintfMisuseCheck.java	Directly inject the boolean value.
+S3457	PrintfMisuseCheck.java	Format specifiers or lambda should be used instead of string concatenation.
+S3457	PrintfMisuseCheck.java	Format specifiers should be used instead of string concatenation.
+S3457	PrintfMisuseCheck.java	Lambda should be used to defer string concatenation.
+S3457	PrintfMisuseCheck.java	Looks like there is a confusion with the use of java.text.MessageFormat, parameters will be simply ignored here
+S3457	PrintfMisuseCheck.java	No need to call "toString()" method as formatting and string conversion is done by the Formatter.
+S3457	PrintfMisuseCheck.java	No need to call "toString()" method since an array of Objects can be used here.
+S3457	PrintfMisuseCheck.java	Not enough arguments.
+S3457	PrintfMisuseCheck.java	String contains no format specifiers.
+S3457	PrintfMisuseCheck.java	argument is not used.
+S3577	(sarlavha)	Test classes should comply with a naming convention
+S3577	BadTestClassNameCheck.java	" to match the regular expression: '
+S3577	BadTestClassNameCheck.java	Regular expression against which test class names are checked.
+S3776	(sarlavha)	Cognitive Complexity of methods should not be too high
+S3776	CognitiveComplexityMethodCheck.java	Refactor this method to reduce its Cognitive Complexity from
+S3776	CognitiveComplexityMethodCheck.java	Refactor this method to reduce its Cognitive Complexity from 
+S3776	CognitiveComplexityMethodCheck.java	The maximum authorized complexity.
+S3864	(sarlavha)	"Stream.peek" should be used with caution
+S3864	StreamPeekCheck.java	Remove this use of "Stream.peek".
+S4087	(sarlavha)	"close()" calls should not be redundant
+S4087	RedundantCloseCheck.java	Remove this "close" call; closing the resource is handled automatically by the try-with-resources.
+S4144	(sarlavha)	Methods should not have identical implementations
+S4144	MethodIdenticalImplementationsCheck.java	Update this method so that its implementation is not identical to "%s" on line %d.
+S4502	(sarlavha)	CSRF protections should not be disabled
+S4502	SpringSecurityDisableCSRFCheck.java	Make sure disabling Spring Security's CSRF protection is safe here.
+S4790	(sarlavha)	Weak hashing algorithms should not be used
+S4790	DataHashingCheck.java	Make sure this weak hash algorithm is not used in a sensitive context here.
+S4830	(sarlavha)	Server certificates should be verified during SSL/TLS connections
+S4830	ServerCertificatesCheck.java	Enable server certificate validation on this SSL/TLS connection.
+S4973	(sarlavha)	Strings and Boxed types should be compared using "equals()"
+S4973	CompareStringsBoxedTypesWithEqualsCheck.java	Replace with boxed comparison
+S4973	CompareStringsBoxedTypesWithEqualsCheck.java	Strings and Boxed types should be compared using "equals()".
+S5122	(sarlavha)	Cross-Origin Resource Sharing (CORS) policy should be restricted to trusted origins
+S5122	CORSCheck.java	Make sure that enabling CORS is safe here.
+S5738	(sarlavha)	"@Deprecated" code marked for removal should never be used
+S5738	CallToDeprecatedCodeMarkedForRemovalCheck.java	Don't override this deprecated method, it has been marked for removal.
+S5738	CallToDeprecatedCodeMarkedForRemovalCheck.java	Remove this call to a deprecated %s, it has been marked for removal.
+S5778	(sarlavha)	Only one method invocation is expected when testing runtime exceptions
+S5778	OneExpectedRuntimeExceptionCheck.java	to have only one invocation possibly throwing a runtime exception.
+S5786	(sarlavha)	JUnit5 test methods should have default package visibility
+S5786	JUnit5DefaultPackageClassAndMethodCheck.java	Remove all redundant visibility modifiers
+S5786	JUnit5DefaultPackageClassAndMethodCheck.java	Remove redundant visibility modifiers from the methods of this test class.
+S5838	(sarlavha)	AssertJ assertions should be simplified to the corresponding dedicated assertion
+S5838	AssertJChainSimplificationCheck.java	This can be simplified
+S5841	(sarlavha)	AssertJ assertions "allMatch" and "doesNotContain" should also test for emptiness
+S5841	AssertJTestForEmptinessCheck.java	Test the emptiness of the list before calling this assertion predicate.
+S5853	(sarlavha)	Consecutive AssertJ "assertThat" statements should be chained
+S5853	AssertJConsecutiveAssertionCheck.java	Join these multiple assertions subject to one assertion chain.
+S5961	(sarlavha)	Test methods should not contain too many assertions
+S5961	TooManyAssertionsCheck.java	Refactor this method to reduce the number of assertions from %d to less than %d.
+S5961	TooManyAssertionsCheck.java	The maximum authorized number of assertions in a test method
+S5976	(sarlavha)	Similar tests should be grouped in a single Parameterized test
+S5976	ParameterizedTestCheck.java	Replace these %d tests with a single Parameterized one.
+S6035	(sarlavha)	Single-character alternations in regular expressions should be replaced with character classes
+S6126	(sarlavha)	String multiline concatenation should be replaced with Text Blocks
+S6126	StringConcatToTextBlockCheck.java	Replace this String concatenation with Text block.
+S6213	(sarlavha)	Restricted Identifiers should not be used as Identifiers
+S6213	RestrictedIdentifiersUsageCheck.java	Rename this %s to not match a restricted identifier.
+S6353	(sarlavha)	Regular expression quantifiers and character classes should be used concisely
+S6355	(sarlavha)	Deprecated annotations should include explanations
+S6355	DeprecatedArgumentsCheck.java	Add 'since' and/or 'forRemoval' arguments to the @Deprecated annotation.
+S6809	(sarlavha)	Methods with Spring proxy should not be called via "this"
+S6809	AsyncMethodsCalledViaThisCheck.java	methods via an injected dependency instead of directly via 'this'.
+S6813	(sarlavha)	Field dependency injection should be avoided
+S6813	FieldDependencyInjectionCheck.java	Remove this field injection and use constructor injection instead.
+S6878	(sarlavha)	Use record pattern instead of explicit field access
+S6878	RecordPatternInsteadOfFieldAccessCheck.java	Replace this getter with the respective record pattern component
+S6878	RecordPatternInsteadOfFieldAccessCheck.java	Use the record pattern instead of this pattern match variable.
+S8692	(sarlavha)	The system clock should not be used in unit tests
+S8692	SystemClockCheck.java	Do not use the system clock in tests.
+S8694	(sarlavha)	"Month" and "DayOfWeek" enums should be used instead of numeric literals
+S8694	DateEnumsCheck.java	Use a "java.time.DayOfWeek" enum constant instead of this int literal.
+S8694	DateEnumsCheck.java	Use a "java.time.Month" enum constant instead of this int literal.
+S8696	(sarlavha)	Value-based classes should be compared using their value
+S8696	ValueBasedObjectIdentityCheck.java	Use ".equals()" instead of "==" or "!=" to compare objects of value-based types.
+S8696	ValueBasedObjectIdentityCheck.java	Use ".hashCode()" instead of "System.identityHashCode()" to compute the hash code for objects of value-based types.
+S8700	(sarlavha)	Time zone-aware types should be used to compute durations
+S8700	DateTimeDurationCheck.java	Convert these arguments to time zone-aware types before computing a duration between them.
+S8700	DateTimeDurationCheck.java	Convert this argument to a time zone-aware type before computing a duration on it.

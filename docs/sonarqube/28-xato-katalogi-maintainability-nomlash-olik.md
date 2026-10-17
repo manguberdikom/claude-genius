@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 28. Xato katalogi: maintainability, nomlash, o'lik kod va uslub (Catalog: Maintainability, Naming)
 
@@ -185,15 +185,6 @@ public class StockService {
     }
 }
 ```
-
-Bir xil import ikki marta yozilgani ham `java:S1128`, lekin uni "ishlatilmagan" izlash topmaydi: har ikki qator ham ishlatilgan nomni keltiradi. Bu odatda qo'lda birlashtirish yoki IDE siz tahrirdan qoladi va kompilyatsiya o'tib ketadi, shuning uchun faqat statik tekshiruv ko'rsatadi.
-
-```java
-import java.util.Set;
-import java.util.Set;               // java:S1128: takroriy, birini o'chirish kerak
-```
-
-Bir xil oddiy nomning turli paketdan kelgani (`java.util.Set` va `shop.Set`) takror emas, u kompilyatsiya xatosi yoki ataylab yozilgan FQN masalasi. Statik import va shu turning oddiy importi ham takror emas: ular boshqa narsani keltiradi.
 
 `java:S1481` ayniqsa qimmatli signal. Ko'pincha o'zgaruvchi o'qilmagani demak, muallif tekshiruvni yozishni unutgan. Shuning uchun bu shikoyatni avtomatik o'chirib tashlamang, avval mantiqni qayta o'qing.
 
@@ -808,6 +799,14 @@ Birinchi jadvaldagi topilma sizning yozuvingizda chiqsa, uni tuzatmay `NOSONAR` 
 - [ ] `sonar.exclusions` va `sonar.java.binaries` ni to'g'rilab, generatsiya qilingan kod shikoyatlarini yo'q qiling.
 - [ ] Formatlovchi va IDE save action ni sozlab, `java:S2333`, `java:S1858`, `java:S1153` kabi uslub shikoyatlari qayta paydo bo'lmasligiga erishing.
 - [ ] Yangi `main` kodda `python3 tools/check_code.py <fayl>` toza bo'lsin; unda yo'q `java:S1130`, `java:S6878`, `java:S1874`, `java:S2184`, `java:S6809` ni yozayotganda qo'lda tekshiring.
+
+## Manbalar
+
+- [sonar-java 8.44, `DeadStoreCheck.java`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/java-checks/src/main/java/org/sonar/java/checks/DeadStoreCheck.java) - `java:S1854` xabari
+- [sonar-java 8.44, `MagicNumberCheck.java`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/java-checks/src/main/java/org/sonar/java/checks/MagicNumberCheck.java) - `java:S109` xabari
+- [sonar-java 8.44, qoida metadata si](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S1192.json) - bobdagi har qoidaning rasmiy sarlavhasi, turi va darajasi shu metadata dan olingan
+- `tools/sonar_rules.tsv` - tur va daraja da'volari `check_docs.py` da shu snapshotga solishtiriladi; snapshot sonar-java va sonar-java-symbolic-execution metadata sidan olinadi
+- `tools/claims_data/sonar_messages.tsv` - keltirilgan inglizcha xabarlar check manbasidagi matnga `verify_claims.py --faqat xabar` bilan solishtiriladi
 
 ---
 

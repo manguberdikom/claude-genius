@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 17. Sonar talablarini qondiradigan test yozish (Writing Tests That Satisfy Sonar)
 
@@ -342,6 +342,12 @@ Integratsion test infratuzilmasi, Testcontainers va flaky testlarni barqarorlash
 - [ ] Testlardagi `Thread.sleep` chaqiruvlarini Awaitility yoki qotirilgan vaqt bilan almashtiring.
 - [ ] `sonar.coverage.exclusions` ro'yxatini ko'rib chiqing va mantiq saqlaydigan har bir sinfni undan chiqarib tashlang.
 - [ ] Integratsion test `exec` faylining birlashtirilganini tekshirib, Sonar dagi coverage raqami lokal hisobot bilan mos kelishini tasdiqlang.
+
+## Manbalar
+
+- [sonar-java 8.44, `S2699.json`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S2699.json) - assertion siz test
+- [sonar-java 8.44, `S2187.json`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S2187.json) - test metodi yo'q test sinfi
+- [JUnit 5.11, Writing Tests](https://raw.githubusercontent.com/junit-team/junit5/r5.11.0/documentation/src/docs/asciidoc/user-guide/writing-tests.adoc) - assertion va test lifecycle
 
 ---
 

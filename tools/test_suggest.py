@@ -245,6 +245,14 @@ SYNONYM_CASES = [
      {("architect", "21.10")}, set()),
     # Ibora so'zlari ketma-ket bo'lishi shart.
     ("o'chirilgan qator", "qatorlar o'chirilgan", None, "jim"),
+    # Buyruq shaklidagi fe'l -> sarlavhadagi harakat nomi. Musbat holat
+    # BORDERLINE da ham bor ("testni ishga tushir" -> testing 15.5); bu
+    # yerda ibora shartining o'zi sinaladi.
+    ("ishga tushir", "integratsion testni ishga tushir",
+     {("testing", "15.5")}, set()),
+    # Teskari tartib va yolg'iz so'z: ibora ishlamasligi kerak.
+    ("ishga tushir", "tushir buni ishga", None,
+     {("testing", "15.5")}),
     # Erkin o'zbekcha ibora (R3.5): kalit so'rovda ketma-ket bo'lsagina ishlaydi.
     ("sekin javob", "tashqi servis sekin javob bersa bizning servis ham qotib qolyapti",
      {("patterns", "17.2"), ("code-review", "22.3")}, set()),

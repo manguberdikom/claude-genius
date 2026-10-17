@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 3. Nom turlari bo'yicha aniq konvensiyalar (Naming Conventions by Kind)
 
 <details>
-<summary>Bu bobdagi 16 bo'lim</summary>
+<summary>Bu bobdagi 17 bo'lim</summary>
 
 - [3.1 Mantiqiy nomlar: `is`, `has`, `can`, `should` va inkor tuzog'i](#31-mantiqiy-nomlar-is-has-can-should-va-inkor-tuzogi)
 - [3.2 To'plam, massiv va oqim nomlari](#32-toplam-massiv-va-oqim-nomlari)
@@ -24,7 +24,8 @@
 - [3.13 Fayl, resurs va konfiguratsiya kaliti nomlari](#313-fayl-resurs-va-konfiguratsiya-kaliti-nomlari)
 - [3.14 Jamoa lug'ati va uni majburlash](#314-jamoa-lugati-va-uni-majburlash)
 - [3.15 Nomni o'zgartirish intizomi](#315-nomni-ozgartirish-intizomi)
-- [3.16 Amalda qo'llash](#316-amalda-qollash)
+- [3.16 Hisoblangan qiymat qo'shimchasi va juft nomlar](#316-hisoblangan-qiymat-qoshimchasi-va-juft-nomlar)
+- [3.17 Amalda qo'llash](#317-amalda-qollash)
 
 </details>
 
@@ -269,7 +270,54 @@ git diff HEAD~1 -- '*.java' | grep -E '^\+' | grep -vE 'rename|Rename' | head
 grep -rn "orderManager" --include=*.java --include=*.yml --include=*.sql src/
 ```
 
-## 3.16 Amalda qo'llash
+## 3.16 Hisoblangan qiymat qo'shimchasi va juft nomlar
+
+Ikki kichik konvensiya nomlarni bir-biriga moslaydi: hisoblangan qiymatning qo'shimchasi qayerda turadi va qarama-qarshi tushunchalar qanday juftlikda nomlanadi. Ikkisi ham o'zicha arzimas, lekin jamoada izchil bo'lmasa, bir xil narsa uchun ikki nom paydo bo'ladi.
+
+**Hisob qo'shimchasi nom oxirida turadi.** `Total`, `Sum`, `Average`, `Max`, `Min`, `Count`, `Index` kabi qo'shimcha nomning oxiriga qo'yiladi: `revenueTotal`, `expenseTotal`, `revenueAverage`, `expenseAverage`. Buning uchta sababi bor (McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 11.1 (263-264-bet)). Birinchisi: nomning eng ma'noli qismi oldinda turadi va birinchi o'qiladi. Ikkinchisi: konvensiya `totalRevenue` va `revenueTotal` ni bitta programmada yonma-yon ishlatishga yo'l qoldirmaydi, holbuki ikkisi bir xil narsa va o'quvchi ularni ikki narsa deb o'ylaydi. Uchinchisi: `revenueTotal`, `expenseTotal`, `revenueAverage` to'plami simmetrik, `totalRevenue`, `expenseTotal`, `averageExpense` esa tartibsiz.
+
+Istisno `Num` bilan bog'liq: boshida turganda u jamini (`numCustomers`), oxirida turganda indeksni (`customerNum`) anglatadi. Shu ikkilik chalkashtirgani uchun McConnell `Num` dan butunlay voz kechishni tavsiya qiladi: jami uchun `Count` yoki `Total`, aniq element uchun `Index` (shu yerda, 11.1 (264-bet)). Ya'ni `customerCount` va `customerIndex`.
+
+Qo'shimcha faqat hisoblangan qiymatga tegishli, tur nomiga emas: `orderList`, `nameString` yoki `priceData` shaklidagi nomlar bu konvensiya bilan oqlanmaydi, ular 2.4 dagi shovqin so'z va 3.2 dagi tur nomini takrorlash qoidalariga tushadi.
+
+**Qarama-qarshi tushunchalar juftlikda nomlanadi.** Juftlikni aniq ishlatish izchillikni, izchillik esa o'qilishni beradi; tabiiy tildagi juftlikdan chiqib ketgan nom esa eslab qolinmaydi. Kitob quyidagi juftliklarni beradi (shu yerda, 11.1 (264-bet)):
+
+| Juftlik | Java da tipik joy |
+|---|---|
+| `begin` / `end` | oraliq, sahifa chegarasi |
+| `first` / `last` | tartiblangan to'plam elementi |
+| `min` / `max` | chegara va validatsiya |
+| `next` / `previous` | iterator, sahifalash |
+| `old` / `new` | audit va o'zgarish tarixi |
+| `opened` / `closed` | resurs va hisob holati |
+| `locked` / `unlocked` | qulf holati |
+| `visible` / `invisible` | UI va eksport maydonlari |
+| `source` / `target`, `source` / `destination` | ko'chirish va migratsiya |
+| `up` / `down` | tartib va yo'nalish |
+
+Qoida: bitta juftlik tanlanadi va aralashtirilmaydi. `startDate` bilan `endDate` to'g'ri, `startDate` bilan `finishDate` esa ikki juftlikdan yarmini oladi va o'quvchini to'xtatadi.
+
+```java
+// yomon: qo'shimcha oldinda, juftlik aralash, Num ikki ma'noda
+BigDecimal totalRevenue;
+BigDecimal revenueSum;
+LocalDate startDate;
+LocalDate finishDate;
+int numOrders;
+int orderNum;
+
+// yaxshi: qo'shimcha oxirida, bitta juftlik, Num yo'q
+BigDecimal revenueTotal;
+BigDecimal revenueAverage;
+LocalDate beginDate;
+LocalDate endDate;
+int orderCount;
+int orderIndex;
+```
+
+Shu ikki konvensiya 2.11 dagi "bitta tushunchaga bitta so'z" qoidasining nom qismiga tegishli aniqlashtirishi: jamoa lug'ati qo'shimcha va juftlik ro'yxatini ham o'z ichiga oladi (3.14).
+
+## 3.17 Amalda qo'llash
 
 - [ ] Barcha mantiqiy maydon va metodlarni ko'rib, inkor nomlarni (`isNot...`, `disable...`) ijobiy shaklga o'tkazing.
 - [ ] Vaqt, hajm va pul bilan ishlaydigan public imzolarda birlikni turga ko'chiring: `Duration`, `Money`, `Percentage`.
@@ -279,6 +327,18 @@ grep -rn "orderManager" --include=*.java --include=*.yml --include=*.sql src/
 - [ ] Metod nomlari va qaytish turlari muvofiqligini 3.9 jadvali bo'yicha tekshirib, mos kelmaganlarini qayta nomlang.
 - [ ] Flyway, property, jadval va metrika nomlanishini 3.13 jadvaliga moslab, farqlarni bitta migratsiyada tuzating.
 - [ ] Nom o'zgartirish uchun alohida commit qoidasini jamoa kelishuviga kiritib, PR shabloniga eslatma qo'shing.
+- [ ] `total...`, `avg...` shaklidagi nomlarni qo'shimchasi oxirida turadigan shaklga o'tkazib, `Num` ni `Count` va `Index` ga ajratib yozing (3.16).
+
+## Manbalar
+
+- Robert C. Martin, *Clean Code*, 2-bob ("Class Names", "Method Names") - sinf nomi ot, metod nomi fe'l, getter konvensiyasi
+- Joshua Bloch, *Effective Java* 3rd, Item 68 - umumiy qabul qilingan nomlash konvensiyalari (tipografik va grammatik)
+- Joshua Bloch, *Effective Java* 3rd, Item 34 - `int` konstanta o'rniga enum va enum a'zolari nomi
+- Robert C. Martin, *Clean Code*, 17-bob, N7 - nom yon ta'sirni aytsin
+- Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 11.1
+  (263-264) - hisoblangan qiymat qo'shimchasining nom oxirida turishi va uning
+  uch sababi, `Num` qo'shimchasining ikki ma'nosi va `Count`/`Index` ga
+  o'tish tavsiyasi, qarama-qarshi nom juftliklari ro'yxati
 
 ---
 

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 30. Test kodi ham ishlab chiqarish kodi (Test Code Is Production Code)
 
@@ -225,6 +225,13 @@ Test kodidagi hidlar alohida katalogga ega va ularning har biri aniq muammoni bi
 - [ ] `Thread.sleep` ishlatilgan testlarni Awaitility yoki qotirilgan `Clock` ga o'tkazing.
 - [ ] `@Disabled` testlarni ro'yxatlab, har biriga sabab va ticket qo'shing yoki o'chiring.
 - [ ] 30.9 jadvalidagi hidlar bo'yicha test kodini bir marta to'liq ko'rib chiqib, ro'yxat tuzing.
+
+## Manbalar
+
+- Robert C. Martin, *Clean Code*, 9-bob ("Keeping Tests Clean") - test kodi ishlab chiqarish kodi bilan bir xil standartda
+- Robert C. Martin, *Clean Code*, 9-bob ("One Assert per Test", "Single Concept per Test") - bir testda bir tushuncha, assert soni minimallashtiriladi
+- Robert C. Martin, *Clean Code*, 9-bob ("F.I.R.S.T.") - tez, mustaqil, qaytariladigan, o'zini tasdiqlaydigan, o'z vaqtida
+- Robert C. Martin, *Clean Code*, 17-bob, T1-T9 - test evristikalari
 
 ---
 

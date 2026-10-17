@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 4. Diffni o'qish mexanikasi (Reading a Diff)
 
@@ -31,6 +31,12 @@ Diff - mashina uchun qulay, odam uchun noqulay format. U fayllarni alifbo bo'yic
 GitHub diffni fayl yo'li bo'yicha alifbo tartibida ko'rsatadi. Natijada reviewer `controller` dan boshlaydi, `domain` ni o'rtada ko'radi, `resources/db/migration` ni esa oxirida - charchagan holda. Ammo xavf taqsimoti teskari: migratsiya eng xavfli, controller eng arzon.
 
 Ikkinchi muammo - uch satrli kontekst. Metodning o'rtasidagi o'zgarish ko'rinadi, lekin uning boshida qanday tekshiruv borligi ko'rinmaydi. Reviewer esa shu ko'rinmagan kontekstga asoslanib "yaxshi" deb o'ylaydi.
+
+Uchinchi, va eng qimmat muammo: alifbo tartibi reviewer ni o'zgarishning **ma'nosidan** boshlashga majbur qilmaydi. Google ning CL ni o'qish bo'yicha qo'llanmasi tartibni uchta qadamga qisqartiradi va ularning birinchisi diffda emas: o'zgarish umuman ma'noga egami va uning tavsifi yaxshimi. Agar o'zgarish asli qilinmasligi kerak bo'lsa, javob **darhol** berilishi kerak, nega qilinmasligi tushuntirilib va muallif nima qilishi kerak edi degan taklif bilan. Qolgan satrlarni o'qish bu holatda vaqt isrofi.
+
+Ikkinchi qadam: CL ning asosiy qismini topish. Odatda bitta fayl mantiqiy o'zgarishning eng katta ulushini oladi va shuni birinchi o'qish qolgan mayda qismlarga kontekst beradi hamda review ni tezlashtiradi. Asosiy qismni ajratib bo'lmasa, muallifdan nimadan boshlashni so'rash yoki PR ni bo'lishni so'rash kerak. Va shu qadamda dizayn darajasidagi muammo ko'rinsa, izoh **darhol**, qolgan qismni o'qimasdan yuboriladi: dizayn o'zgarsa, ostidagi kodning ko'pi baribir yo'qoladi.
+
+Jamoa darajasidagi signal ham shu yerda: agar "qilinmasligi kerak edi" turkumidagi PR lar bir nechta bo'lsa, muammo PR larda emas, jarayonda. PR yozilishidan **oldin** muloqot qo'yish kerak, aks holda odamlar tashlab yuboriladigan ishni qilishda davom etadi.
 
 ## 4.2 To'g'ri o'qish tartibi: sakkiz qadam
 
@@ -241,6 +247,11 @@ Beshinchi odat: review ni yozma xulosadan boshlab, keyin izohlarni yozish. Bu re
 - [ ] Yuqori xavfli PR larni lokalda `gh pr checkout` bilan olib, testlarni va migratsiyani ishga tushirishni majburiy qilib qo'ying.
 - [ ] Bog'liqlik versiyasi o'zgargan PR larda `dependency:tree` farqini taqqoslang.
 - [ ] Izoh prefikslari (`blocker`, `suggest`, `question`, `nit`, `praise`) ni jamoada kelishib, `REVIEW.md` ga yozing.
+
+## Manbalar
+
+- [Google, Navigating a CL in Review](https://raw.githubusercontent.com/google/eng-practices/3bb3ec25b3b0199f4940b1aa75f0ac5c5753301c/review/reviewer/navigate.md) - uch qadamli tartib, ma'nosiz o'zgarishga darhol javob berish, asosiy faylni birinchi o'qish, dizayn muammosi topilsa qolganini o'qimaslik
+- [Google, Writing CL descriptions](https://raw.githubusercontent.com/google/eng-practices/3bb3ec25b3b0199f4940b1aa75f0ac5c5753301c/review/developer/cl-descriptions.md) - tavsifning birinchi qatori va tanasi, nima uchun o'zgartirilgani
 
 ---
 

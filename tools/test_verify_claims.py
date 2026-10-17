@@ -504,6 +504,62 @@ def cli_chiqish_kodi():
             ("topilma bo'lmasa 0", good.returncode == 0)]
 
 
+
+# --- xabar: qoida matni versiya bilan o'zgaradi -------------------------
+
+XABAR_ESKI = (
+    "| Bo'sh blok (`java:S108`) | \"Either remove or fill this block of code\" |"
+    " maintainability (code smell) | Major | Yozilmagan mantiq yo'q bo'lib ketadi |")
+
+XABAR_YANGI = (
+    "| Bo'sh blok (`java:S108`) | \"Remove this block of code, fill it in, or add"
+    " a comment explaining why it is empty.\" | maintainability (code smell) |"
+    " Major | Yozilmagan mantiq yo'q bo'lib ketadi |")
+
+
+def xabar_ozbekcha_tekshirilmaydi():
+    """O'zbekcha iqtibos xabar deb hisoblanmaydi (inglizcha mezon)."""
+    text = ("| Chuqur joylashtirma (`java:S134`) | \"Uch darajadan chuqur"
+            " joylashtirma\" | maintainability | Major | - |")
+    found = run(text, ("xabar",))
+    return [("o'zbekcha iqtibos topilma bermaydi (%s)" % (
+        "; ".join(vc.fmt(f) for f in found) or "toza"), not found)]
+
+
+def xabar_sarlavha_ham_maqbul():
+    """Korpus qoidaning rasmiy sarlavhasini keltirsa ham o'tadi."""
+    text = ("SonarQube `java:S2230` (\"Methods with Spring proxying annotations"
+            " should be public\") bu holatni aniqlaydi.")
+    found = run(text, ("xabar",))
+    return [("sarlavha iqtibosi o'tadi (%s)" % (
+        "; ".join(vc.fmt(f) for f in found) or "toza"), not found)]
+
+
+def xabar_interpolyatsiya():
+    """Xabarda o'zgaruvchi bo'lsa statik bo'lak bo'yicha mos keladi."""
+    text = ("`java:S1854` xabari: \"Remove this useless assignment to local"
+            " variable\" deb boshlanadi.")
+    found = run(text, ("xabar",))
+    return [("interpolyatsiyali xabar o'tadi (%s)" % (
+        "; ".join(vc.fmt(f) for f in found) or "toza"), not found)]
+
+
+def xabar_data_fayli():
+    data = vc.Data()
+    msgs = data.sonar_msgs
+    s108 = [r["xabar"] for r in msgs.get("S108", [])]
+    first = open(os.path.join(vc.DATA, "sonar_messages.tsv"),
+                 encoding="utf-8").read(600)
+    return [("S108 ning hozirgi xabari bor",
+             any("add a comment explaining why it is empty" in m for m in s108)),
+            ("S108 ning eski xabari yo'q",
+             not any(m.startswith("Either remove or fill") for m in s108)),
+            ("sarlavha yozuvlari ham bor",
+             any(r["check"] == "(sarlavha)" for r in msgs.get("S2230", []))),
+            ("manba va sana fayl boshida",
+             "sonar-java" in first and "sana:" in first)]
+
+
 CASES = [
     # Qabul: c15a979 dagi qo'lda topilgan xatolar va ularning tuzatilgani.
     ("eski/yangi architect 32 spring.http.client.* (KR-Q7, KR-T-K1)",
@@ -549,6 +605,12 @@ CASES = [
     ("java `...` va varargs", ellipsis_va_varargs),
     ("javac yo'q bo'lsa", javac_yoq),
     ("claims_data fayllari", data_fayllari),
+    ("xabar: eski qoida matni", pair(XABAR_ESKI, XABAR_YANGI, "xabar",
+                                     ["Either remove or fill"], ("xabar",))),
+    ("xabar: o'zbekcha iqtibos tekshirilmaydi", xabar_ozbekcha_tekshirilmaydi),
+    ("xabar: rasmiy sarlavha ham maqbul", xabar_sarlavha_ham_maqbul),
+    ("xabar: interpolyatsiyali xabar", xabar_interpolyatsiya),
+    ("xabar: sonar_messages.tsv", xabar_data_fayli),
     ("--diff faqat o'zgargan boblar", diff_rejimi),
     ("check_docs da ogohlantirish", check_docs_ogohlantirish),
     ("CLI chiqish kodi", cli_chiqish_kodi),

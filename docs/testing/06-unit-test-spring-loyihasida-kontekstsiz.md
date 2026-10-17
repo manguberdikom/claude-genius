@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 6. Unit test Spring loyihasida: kontekstsiz testlash (Unit Testing in a Spring Project)
 
@@ -195,6 +195,8 @@ Qo'lda yozilgan konvertorlar uchun AssertJ'ning `usingRecursiveComparison()` usu
 
 Jakarta Bean Validation 3.x implementatsiyasi (Hibernate Validator) Spring'dan mustaqil ishlaydi. `Validator`ni qo'lda yaratish kontekstdan taxminan 50-100 marta tezroq.
 
+Chegarasi ham bor va u aniq: qo'lda qurilgan `Validator` faqat obyekt validatsiyasini bajaradi. Metod parametridagi constraint lar (`@Validated` sinfidagi `service.charge(@NotNull Long id)`) Spring ning `MethodValidationPostProcessor` i va AOP proxy i orqali ishlaydi, demak kontekstsiz testda ular umuman tekshirilmaydi. Shu sababli metod validatsiyasini slice yoki kontekstli testga qoldirish kerak (7-bob). Spring MVC va WebFlux esa shu mexanizmni AOP siz, o'z ichida qo'llaydi, ya'ni controller parametrlari `@WebMvcTest` da tekshiriladi.
+
 ```java
 class CreateOrderRequestValidationTest {
 
@@ -386,6 +388,12 @@ Amaliy nisbat: test piramidasining pastki qatlamida (soni bo'yicha ~70-80%) Spri
 - [ ] `@Transactional`, `@Cacheable`, `@Async`, `@Retryable` ishlatilgan har bir joy integratsion test bilan qoplangan; self-invocation holatlari ko'rib chiqilgan.
 - [ ] Repository port'lari domain qatlamida e'lon qilingan, shuning uchun service testlari Spring Data interfeyslarini mock qilishga muhtoj emas.
 - [ ] CI'da unit testlar alohida, tez bosqichda (kontekstsiz) ishga tushadi va integratsion testlardan oldin natija qaytaradi.
+
+## Manbalar
+
+- [Spring Framework 7.0, Java Bean Validation](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/core/validation/beanvalidation.adoc) - `Validator` ni mustaqil qurish, `MethodValidationPostProcessor` va metod validatsiyasining AOP proxy ga bog'liqligi, MVC va WebFlux dagi AOP siz varianti
+- [spring-boot, `ApplicationContextRunner.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/core/spring-boot-test/src/main/java/org/springframework/boot/test/context/runner/ApplicationContextRunner.java) - runner API si va Boot 4 dagi joyi (`core:spring-boot-test`, paket o'zgarmagan)
+- [spring-boot, `ConfigDataApplicationContextInitializer.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/core/spring-boot-test/src/main/java/org/springframework/boot/test/context/ConfigDataApplicationContextInitializer.java) - `application.yml` ni runner da o'qitish uchun initializer
 
 ---
 

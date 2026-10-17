@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 29. Injection review: SQL va boshqalar (Injection)
 
@@ -28,6 +28,12 @@ SQL injection eng qadimgi zaiflik sinfi, lekin u hali ham topiladi - chunki para
 ## 29.1 Parametrlashtirish: nima parametr bo'la oladi
 
 Bu farqni tushunmaslik barcha SQL injection larning sababi.
+
+OWASP ning himoya ro'yxati to'rt variantdan iborat va ularning tartibi tasodifiy emas: parametrlangan prepared statement, to'g'ri qurilgan stored procedure, allow-list bilan kirish validatsiyasi, va oxirgi o'rinda **qat'iy tavsiya etilmaydigan** variant, ya'ni foydalanuvchi kiritganini escape qilish. Review da shu tartib ishlatiladi: escape ko'rinsa, bu boshqa uchtasidan biri nega qo'llanmagani haqida savol.
+
+Ikki nozik joy bor. Birinchi: stored procedure avtomatik xavfsiz emas. U ichida dinamik SQL yasasa (`exec`, `execute`, `sp_execute`), xavf qaytib keladi; OWASP auditorga aynan shu chaqiruvlarni qidirishni aytadi. Ikkinchi: stored procedure execute huquqini talab qiladi va ba'zi sozlamalarda bu web ilovani kengroq rol bilan ishlashga majbur qiladi, ya'ni server buzilganda zarar kattalashadi.
+
+Jadvaldagi "parametr bo'la olmaydi" qatorlari uchun OWASP ning qo'shimcha shartini ham yozib qo'yish kerak: jadval va ustun nomi ideal holda **koddan** kelishi kerak, foydalanuvchi parametridan emas. Foydalanuvchi qiymati jadval yoki ustun nomini belgilashi dizayn muammosining belgisi va imkon bo'lsa qaytadan yozish ko'rib chiqiladi; bo'lmasa, qiymat ruxsat etilgan nomlarga `switch` orqali xaritalanadi va mos kelmagani istisno bilan rad etiladi.
 
 | So'rov qismi | Parametr bo'la oladimi | Xavfsiz yo'l |
 | --- | --- | --- |
@@ -314,6 +320,10 @@ static final ArchRule no_string_concatenation_in_queries =
 - [ ] Saqlanadigan filtr yoki ifoda bo'lsa, uni strukturaviy shaklga (enum + parametr) o'tkazing.
 - [ ] CSV va Excel eksportida formula neytrallash funksiyasini qo'shing.
 - [ ] Injection himoyasi uchun parametrlashtirilgan testni yozib, zararli kirish namunalarini CI ga kiriting.
+
+## Manbalar
+
+- [OWASP, SQL Injection Prevention Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.md) - to'rtta himoya varianti va ularning tartibi, escape ning qat'iy tavsiya etilmasligi, stored procedure ichidagi dinamik SQL xavfi va execute huquqi muammosi, jadval va ustun nomi uchun allow-list xaritalash
 
 ---
 

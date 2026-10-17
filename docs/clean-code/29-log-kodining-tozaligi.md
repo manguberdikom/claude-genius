@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 29. Log kodining tozaligi (Clean Logging Code)
 
@@ -203,6 +203,11 @@ Bu testni har bir log uchun yozish kerak emas - faqat audit va xavfsizlik yozuvl
 - [ ] MDC ishlatilgan filtrlarda `finally` da `MDC.clear()` borligini tekshiring.
 - [ ] Karta, parol va token turlariga maskalangan `toString` qo'shib, log filtrini sozlang.
 - [ ] Audit va xavfsizlik log yozuvlarini test bilan mahkamlang.
+
+## Manbalar
+
+- [SLF4J, README](https://raw.githubusercontent.com/qos-ch/slf4j/69d28be9fba7a9c0072dfbac8cbee8e40bb965d5/README.md) - fasad va binding modeli, parametrlangan xabar
+- [Micrometer, Concepts](https://raw.githubusercontent.com/micrometer-metrics/micrometer-docs/06f377a95db21894939c6fff39441fe608e804a2/src/docs/concepts/index.adoc) - metrika va log orasidagi chegara, teg kardinalligi
 
 ---
 

@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 32. Tarmoq, timeout va integratsiya haqiqati (Network, Timeouts and Integration)
 
 <details>
-<summary>Bu bobdagi 13 bo'lim</summary>
+<summary>Bu bobdagi 14 bo'lim</summary>
 
 - [32.1 Tarmoq ishonchsiz: ulanish uzilishi, paket yo'qolishi, yarim ochiq ulanish](#321-tarmoq-ishonchsiz-ulanish-uzilishi-paket-yoqolishi-yarim-ochiq-ulanish)
 - [32.2 Timeout turlari: ulanish, o'qish, yozish, umumiy so'rov, va ularning farqi](#322-timeout-turlari-ulanish-oqish-yozish-umumiy-sorov-va-ularning-farqi)
@@ -21,7 +21,8 @@
 - [32.10 Tashqi servis bilan shartnoma: versiyalash, buzilmaydigan o'zgarish, ogohlantirish](#3210-tashqi-servis-bilan-shartnoma-versiyalash-buzilmaydigan-ozgarish-ogohlantirish)
 - [32.11 Yuk tarqatuvchi va proxy sozlamalari: idle timeout nomuvofiqligi tuzog'i](#3211-yuk-tarqatuvchi-va-proxy-sozlamalari-idle-timeout-nomuvofiqligi-tuzogi)
 - [32.12 Integratsiyani sinash: tashqi servis sekinlashganda nima bo'ladi](#3212-integratsiyani-sinash-tashqi-servis-sekinlashganda-nima-boladi)
-- [32.13 Amalda qo'llash](#3213-amalda-qollash)
+- [32.13 Soat ishonchsiz: monoton soat, clock skew va TTL ga tayanmaslik](#3213-soat-ishonchsiz-monoton-soat-clock-skew-va-ttl-ga-tayanmaslik)
+- [32.14 Amalda qo'llash](#3214-amalda-qollash)
 
 </details>
 
@@ -33,13 +34,13 @@ Tarmoq orqali chaqiruv lokal metod chaqiruvi emas, lekin kodda ikkisi bir xil ko
 
 TCP ishonchli yetkazishni kafolatlaydi, lekin faqat ulanish tirik bo'lsa. Ikki xil uzilish bor va ularning oqibati butunlay boshqa. Birinchisi toza uzilish: peer FIN yoki RST yuboradi, socket darhol xabar beradi, `read()` bir necha mikrosekundda xato qaytaradi. Ikkinchisi yarim ochiq (half-open) ulanish: peer o'lgan, lekin hech qanday paket yubormagan. Bu `kill -9` da, VM o'chib qolganda, NAT jadvalidan yozuv tushib ketganda yoki firewall paketni jim tashlab yuborganda sodir bo'ladi.
 
-Yarim ochiq ulanish eng qimmat holat, chunki JVM uning o'lganini bilmaydi. Linux `tcp_retries2` default 15 ga teng, bu taxminan 924 sekund, ya'ni 15 daqiqa qayta yuborishdan keyin socket xato beradi. Shu 15 daqiqa davomida thread `read()` da osilib turadi. `SO_KEEPALIVE` yoqilgan bo'lsa ham default `tcp_keepalive_time` 7200 sekund, ya'ni birinchi probe 2 soatdan keyin ketadi. Xulosa: application darajasidagi read timeout yagona ishonchli himoya, OS sozlamalariga tayanib bo'lmaydi.
+Yarim ochiq ulanish eng qimmat holat, chunki JVM uning o'lganini bilmaydi. Linux `tcp_retries2` default 15 ga teng, va yadro hujjati buni "hypothetical timeout of 924.6 seconds" deb atab, muhim izoh qo'shadi: bu qiymat haqiqiy timeout uchun PASTKI chegara, ya'ni amalda kutish uzunroq bo'lishi mumkin. Shu 15 daqiqa davomida thread `read()` da osilib turadi. `SO_KEEPALIVE` yoqilgan bo'lsa ham default `tcp_keepalive_time` 7200 sekund, ya'ni birinchi probe 2 soatdan keyin ketadi. Xulosa: application darajasidagi read timeout yagona ishonchli himoya, OS sozlamalariga tayanib bo'lmaydi.
 
 ```bash
 # Yarim ochiq ulanish belgisi: Send-Q o'smoqda, lekin ACK kelmayapti
 ss -tin dst 10.20.0.15 | head -20
 
-# Dead peer ni TCP qancha kutadi: 15 ta retry taxminan 924 sekund
+# Dead peer ni TCP qancha kutadi: 15 ta retry, pastki chegara 924.6 s
 cat /proc/sys/net/ipv4/tcp_retries2
 
 # Keepalive birinchi probe gacha jimlik: default 7200 sekund
@@ -59,20 +60,31 @@ Connection request timeout yoki pool acquire timeout: hovuzdan bo'sh ulanish kut
 
 Socket yoki read timeout: ikki ketma-ket bayt oralig'idagi jimlik. Bu umumiy so'rov vaqti EMAS. Serverda sekin oqim bo'lsa, masalan har 4 sekundda bir bayt kelsa, 5 sekundlik read timeout hech qachon ishlamaydi va chaqiruv cheksiz davom etadi.
 
-Response timeout: so'rov yuborilgandan birinchi javob baytigacha. Write timeout: kernel send buffer to'lib, yozish bloklanganda. Umumiy so'rov timeout: butun operatsiya uchun qattiq deadline, retry va redirect bilan birga. Faqat shu oxirgisi haqiqiy kafolat beradi.
+Response timeout: so'rov yuborilgandan birinchi javob baytigacha. Write timeout: kernel send buffer to'lib, yozish bloklanganda. Umumiy so'rov timeout: butun operatsiya uchun qattiq deadline. Faqat shu oxirgisi haqiqiy kafolat beradi, va aynan shu yerda eng ko'p tarqalgan yanglishish yashiradi.
+
+`HttpRequest.timeout()` ni "butun so'rov uchun deadline" deb o'qish noto'g'ri. JDK ning o'z kodida taymer HAR URINISH uchun alohida ro'yxatga olinadi (ichki retry va redirect yangi taymer qo'yadi), va u javob SARLAVHALARI olinganda bekor qilinadi. Body shundan keyin, taymersiz o'qiladi. Ya'ni sekin tomchilovchi javob tanasi bu timeout bilan cheklanmaydi, va zanjirdagi urinishlar yig'indisi ham cheklanmaydi.
 
 ```java
-// Java HttpClient: umumiy deadline bor, bu eng muhim xususiyat
+// Java HttpClient: `timeout` har urinish uchun va faqat javob
+// sarlavhalarigacha. Umumiy deadline alohida qo'yiladi.
 HttpClient client = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(2))   // faqat TCP handshake
         .version(HttpClient.Version.HTTP_2)
         .build();
 
 HttpRequest req = HttpRequest.newBuilder(URI.create(baseUrl + "/payments"))
-        .timeout(Duration.ofMillis(1200))        // butun so'rov uchun qattiq chegara
+        // Bir urinishning sarlavhagacha chegarasi, body va retry emas
+        .timeout(Duration.ofMillis(1200))
         .header("Idempotency-Key", paymentId.toString())
         .POST(HttpRequest.BodyPublishers.ofString(body))
         .build();
+
+// Haqiqiy umumiy deadline: body o'qishni va ichki urinishlarni ham
+// qamrab oladi. Buni so'rov darajasida qo'yish kerak.
+HttpResponse<String> res = client
+        .sendAsync(req, HttpResponse.BodyHandlers.ofString())
+        .orTimeout(1500, TimeUnit.MILLISECONDS)
+        .join();
 ```
 
 ```properties
@@ -136,7 +148,7 @@ public record Deadline(long epochMillis) {
 | oddiy yondashuv | arxitektor yondashuvi |
 | --- | --- |
 | Hamma joyda default timeout, ko'pincha 30 yoki 60 sekund | Har bir chaqiruvga p99.9 asosida hisoblangan qiymat, 1 sekund atrofida |
-| Faqat connect va read timeout qo'yiladi | Pool acquire, connect, read, umumiy deadline, hammasi alohida |
+| Faqat connect va read timeout qo'yiladi | Pool acquire, connect, read va umumiy deadline alohida; JDK klientida umumiy deadline so'rov darajasida qo'yiladi, `HttpRequest.timeout` bilan emas |
 | Har bir servis o'z timeout ini mustaqil tanlaydi | Zanjir uchun yagona byudjet, qatlamlar bo'yicha taqsimlangan |
 | Timeout statik konstanta | Deadline so'rov bilan uzatiladi, qolgan vaqtga qarab qisqaradi |
 | Xato bo'lsa darhol 3 marta qayta uriniladi | Faqat idempotent chaqiruvda, jitter bilan, retry budjeti ostida |
@@ -159,10 +171,15 @@ spring:
   datasource:
     hikari:
       maximum-pool-size: 10          # Little qonuni: 300 rps * 15 ms
+      # DIQQAT: `idle-timeout` faqat `minimum-idle` `maximum-pool-size`
+      # dan KICHIK bo'lganda ishlaydi. Ikkisi teng bo'lsa (pastdagi
+      # holat) pool hech qachon qisqarmaydi va `idle-timeout` qatori
+      # hech narsa qilmaydi. Bu ongli tanlov: biz isinish pauzasini
+      # yo'q qilish uchun poolni to'liq ushlab turamiz.
       minimum-idle: 10               # bir xil qiymat, isinish pauzasi bo'lmasin
       connection-timeout: 2000       # navbatda kutish, 30 s emas
       validation-timeout: 1000
-      idle-timeout: 600000           # 10 daqiqa
+      idle-timeout: 600000           # default qiymat, bu yerda ta'sirsiz
       max-lifetime: 1500000          # 25 daqiqa, LB/PgBouncer chegarasidan kam
       keepalive-time: 120000         # 2 daqiqada bir probe, yarim ochiq ulanishga qarshi
       data-source-properties:
@@ -194,9 +211,21 @@ Kubernetes da uchinchi tuzoq `ndots`. Default `ndots:5` bo'lgani uchun to'liq bo
 # JVM DNS kesh TTL ni ko'rish (abadiy kesh -1 bo'lmasligi kerak)
 grep -n 'networkaddress.cache' "$JAVA_HOME/conf/security/java.security"
 
-# Ishga tushirishda aniq qiymat berish
-java -Dnetworkaddress.cache.ttl=30 \
-     -Dnetworkaddress.cache.negative.ttl=5 \
+# DIQQAT: `-Dnetworkaddress.cache.ttl=...` ISHLAMAYDI. JVM bu nomni
+# system property emas, XAVFSIZLIK property si deb o'qiydi, ya'ni
+# `java.security` faylidan yoki `Security.setProperty` dan. Buyruq
+# qatorida berilgani jimgina e'tiborsiz qoladi va TTL default 30 s
+# qoladi. Uchta haqiqiy yo'l bor:
+
+# 1) java.security faylini tahrirlash yoki o'z faylini qo'shish
+java -Djava.security.properties=/app/dns.security -jar order-service.jar
+
+# 2) Klass yuklanishidan oldin kodda qo'yish
+#    java.security.Security.setProperty("networkaddress.cache.ttl", "30");
+
+# 3) Ichki fallback nomi (JDK ning o'z nomi, barqarorligi kafolatlanmagan)
+java -Dsun.net.inetaddr.ttl=30 \
+     -Dsun.net.inetaddr.negative.ttl=5 \
      -jar order-service.jar
 
 # Kubernetes ichida ortiqcha qidiruv domenlarini ko'rish
@@ -207,7 +236,7 @@ cat /etc/resolv.conf   # ndots:5 bo'lsa, FQDN ni nuqta bilan yozing
 
 TLS 1.3 to'liq handshake bitta RTT, TLS 1.2 ikkita RTT oladi. Region oralig'ida RTT 30 ms bo'lsa, bu 30 dan 60 ms gacha sof kechikish, ustiga asimmetrik imzo uchun protsessor vaqti, RSA 2048 da taxminan 1 dan 2 ms gacha, ECDSA P-256 da sezilarli kamroq. Demak har so'rovda yangi ulanish ochish p99 ni ikki baravar oshirishi mumkin. Bu yerda optimizatsiya aniq: keep-alive va ulanish hovuzini to'g'ri sozlash, session resumption ni yoqish.
 
-Sertifikat muddati ishlab chiqarishdagi eng oldindan ko'rinadigan, lekin eng ko'p qaytariladigan avariya. Ichki CA ishlatilsa, truststore da CA sertifikati bo'lishi va uning muddati ham kuzatilishi kerak. Spring Boot 3.1 dan boshlab SSL bundle mavzusi markazlashgan va bundle ni fayl o'zgarganda qayta yuklash mumkin, bu rotatsiyani restart siz qiladi. Hostname tekshiruvini o'chirish esa hech qachon yechim emas, u shunchaki muammoni kelasi yilga suradi.
+Sertifikat muddati ishlab chiqarishdagi eng oldindan ko'rinadigan, lekin eng ko'p qaytariladigan avariya. Ichki CA ishlatilsa, truststore da CA sertifikati bo'lishi va uning muddati ham kuzatilishi kerak. Spring Boot 3.1 dan boshlab SSL bundle mavzusi markazlashgan, fayl o'zgarganda qayta yuklash esa 3.2 da qo'shilgan (`reload-on-update`), va u rotatsiyani restart siz qiladi. Ikki versiyani aralashtirmaslik kerak: 3.1 da bundle bor, avtomatik qayta yuklash yo'q. Hostname tekshiruvini o'chirish esa hech qachon yechim emas, u shunchaki muammoni kelasi yilga suradi.
 
 ```bash
 # Sertifikat muddati va handshake vaqtini bir yo'la o'lchash
@@ -240,13 +269,37 @@ private Duration backoff(int attempt) {
     return Duration.ofMillis(ThreadLocalRandom.current().nextLong(expo + 1));
 }
 
-// Qayta urinishga arzaydimi: yozish operatsiyasida read timeout xavfli
-private boolean retryable(Exception e, HttpMethod m, Integer status) {
-    if (e instanceof ConnectException) return true;                 // so'rov yetmagan
-    if (e instanceof HttpTimeoutException) return m.isIdempotent(); // natija noaniq
+// Qayta urinishga arzaydimi: yozish operatsiyasida read timeout xavfli.
+// Tartib muhim: HttpConnectTimeoutException HttpTimeoutException ning
+// BOLASI, shuning uchun u avval tekshiriladi. Teskari tartibda connect
+// timeout ham "natija noaniq" deb tasniflanib, POST qayta urinmaydi.
+private boolean retryable(Exception e, String method, Integer status) {
+    // Ulanish o'rnatilmagan: so'rov serverga yetmagan, qayta urinish xavfsiz
+    if (e instanceof HttpConnectTimeoutException) return true;
+    if (e instanceof ConnectException) return true;
+    // Javob kelmadi: so'rov bajarilgan bo'lishi mumkin, natija noaniq
+    if (e instanceof HttpTimeoutException) return idempotent(method);
     return status != null && (status == 429 || status == 503 || status == 504);
 }
+
+// `isIdempotent()` JDK API si emas, uni o'zingiz yozasiz. JDK ning
+// ichki qoidasi faqat GET va HEAD ni idempotent deb hisoblaydi; PUT va
+// DELETE HTTP bo'yicha idempotent, lekin bu sizning endpointingiz
+// haqiqatan shunday ekaniga bog'liq. POST faqat idempotency key bilan.
+private boolean idempotent(String method) {
+    return switch (method) {
+        case "GET", "HEAD", "PUT", "DELETE", "OPTIONS", "TRACE" -> true;
+        default -> false;
+    };
+}
 ```
+
+Retry ni hisoblashda yana bitta qatlam borligini bilish kerak: JDK
+klientining o'zi ham ulanish xatolarida qayta uriniladi (jami urinishlar
+soni beshta, va bu xulqni `jdk.httpclient.disableRetryConnect` bilan
+o'chirish mumkin). Demak "men bitta urinish qildim" degan taxmin
+noto'g'ri bo'lishi mumkin, va quyidagi ko'paytirish hisobi ham JDK ning
+ichki urinishlarini hisobga olmaydi.
 
 Mavzuning to'liq yozuvi [idempotency](../patterns/07-api-dizayn-patternlari.md#79-idempotentlik-kaliti-idempotency-key) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
 
@@ -287,6 +340,9 @@ Versiyalash yo'li muhim emas, barqarorligi muhim. URI da `/v1` ko'rinadi va kesh
 @Configuration
 class JsonContractConfig {
     @Bean
+    // Spring Boot 3.x uchun. Boot 4.0 da bu interfeys deprecated
+    // (4.2.0 da olib tashlanadi) va uning o'rnini Jackson 3 egallaydi,
+    // shuning uchun Boot 4 ga ko'tarilishda bu bean qayta yoziladi.
     Jackson2ObjectMapperBuilderCustomizer tolerantReader() {
         return b -> b
             // Yetkazib beruvchi yangi maydon qo'shsa yiqilmaymiz
@@ -341,7 +397,33 @@ Kamida beshta sahnani o'lchash kerak: dependency ga 5 sekund latency qo'shilgan,
 | Notanish enum deserializatsiyani buzadi | Tolerant reader va default enum qiymati |
 | Sertifikat muddati faqat avariyada bilinadi | CI da `checkend` tekshiruvi va 30 kunlik ogohlantirish |
 
-## 32.13 Amalda qo'llash
+## 32.13 Soat ishonchsiz: monoton soat, clock skew va TTL ga tayanmaslik
+
+Taqsimlangan tizimda vaqt tarmoq kabi ishonchsiz resurs. Ikki xil soat bor va ularni aralashtirish ko'p xatoning sababi: kun soati (`System.currentTimeMillis()`, `Instant.now()`) NTP bilan sozlanadi va **orqaga qaytishi** mumkin; monoton soat (`System.nanoTime()`) esa NTP sozlashidan ta'sirlanmaydi, shuning uchun davomiylik o'lchash uchun to'g'ri tanlov. Lekin uning kafolatini oshirib yubormaslik kerak: javadoc monotonlikni va aniqlikni kafolatlamaydi, qiymat manfiy bo'lishi mumkin deb ataylab ogohlantiradi, va boshlanish nuqtasi ma'nosiz. Amalda monotonlik operatsion tizimdan keladi (Linux da `CLOCK_MONOTONIC`), platformadan emas; qiymat esa faqat shu jarayon ichida solishtiriladi.
+
+| Vazifa | Soat |
+|---|---|
+| Hodisa vaqtini saqlash, log, audit | kun soati (`Instant.now()`) |
+| Davomiylikni o'lchash, timeout, retry kechikishi | monoton soat (`System.nanoTime()`) |
+| Ikki mashina hodisasini tartiblash | hech qaysi biri yetarli emas |
+
+```java
+// yomon: kun soati NTP sozlanishida orqaga qaytsa, davomiylik manfiy chiqadi
+long start = System.currentTimeMillis();
+call();
+long tookMs = System.currentTimeMillis() - start;
+
+// yaxshi: davomiylik monoton soat bilan
+long start = System.nanoTime();
+call();
+Duration took = Duration.ofNanos(System.nanoTime() - start);
+```
+
+Uchinchi qatorning ma'nosi muhim: ikki mashinaning timestamp ini solishtirib tartib chiqarish ishlamaydi, chunki soatlar orasidagi farq (clock skew) odatdagi holat. Shundan ikkita amaliy qoida kelib chiqadi. Birinchisi: tartib kerak bo'lsa, vaqt emas, ketma-ketlik ishlatiladi - baza sekvensiyasi, Kafka offseti, versiya raqami yoki mantiqiy soat. "Oxirgi yozuv g'alaba qiladi" qoidasini timestamp bilan qurish jim ma'lumot yo'qotishga olib keladi.
+
+Ikkinchisi: taqsimlangan qulf va lease ni faqat TTL ga ishonib qurish xavfli. Qulf egasi GC pauzasi yoki uzun stop-the-world dan keyin o'zini hali ega deb o'ylab ishni davom ettirishi mumkin, holbuki TTL tugagan va qulfni boshqa olgan. Himoya - himoya belgisi (fencing token): qulf bilan birga o'sib boruvchi raqam beriladi va resurs eski raqamli yozuvni rad etadi. Shu qoida JWT va token muddati uchun ham amal qiladi: `exp` tekshiruvi mashinalar orasidagi kichik farqga toqat qiladigan oraliq (clock skew allowance) bilan yoziladi, aks holda to'g'ri token chekka holatda rad etiladi.
+
+## 32.14 Amalda qo'llash
 
 - [ ] Barcha tashqi HTTP klientlarni ro'yxatga oling va har biriga connect, pool acquire, read va umumiy deadline qiymatlarini aniq yozib chiqing, default qolgan joy qolmasin.
 - [ ] Asosiy API lar uchun timeout byudjetini chizing: SLO dan boshlab har bir quyi chaqiruvga millisekund taqsimlang va yig'indi SLO dan kichik ekanini tekshiring.
@@ -351,6 +433,70 @@ Kamida beshta sahnani o'lchash kerak: dependency ga 5 sekund latency qo'shilgan,
 - [ ] Qayta urinish siyosatini audit qiling: idempotentlik kalitlari bor-yo'qligini, full jitter ishlatilganini va retry faqat bitta qatlamda bo'lishini tasdiqlang.
 - [ ] Sertifikat muddatini CI da `checkend` bilan tekshiradigan qadam qo'shing va truststore dagi ichki CA muddatini ham kuzatuvga oling.
 - [ ] Eng muhim dependency ga 5 sekund latency va blackhole inyeksiya qilib, birinchi xato vaqtini, bajarilgan so'rov ulushini va tiklanish vaqtini o'lchab, natijani relizga shart qilib qo'ying.
+- [ ] Davomiylik o'lchaydigan kodda `currentTimeMillis` ishlatilgan joylarni `nanoTime` ga o'tkazing.
+- [ ] Timestamp bilan tartiblanadigan yoki "oxirgi yozuv g'alaba qiladi" qoidasiga tayangan joylarni toping va ketma-ketlikka o'tkazing.
+- [ ] Taqsimlangan qulf va lease larda himoya belgisi (fencing token) borligini tekshiring.
+
+## Manbalar
+
+- Martin Kleppmann, *Designing Data-Intensive Applications*, 8-bob - ishonchsiz soat, clock skew, himoya belgisi va jarayon pauzasi
+- Martin Kleppmann, *Designing Data-Intensive Applications*, 9-bob - linearizability, tartib va konsensus
+- Martin Kleppmann, *Designing Data-Intensive Applications*, 5-bob - replikatsiya kechikishi va o'qish kafolatlari
+- OpenJDK, `MultiExchange` va `HttpRequest`
+  ([https://github.com/openjdk/jdk/blob/jdk-25-ga/src/java.net.http/share/classes/jdk/internal/net/http/MultiExchange.java](https://github.com/openjdk/jdk/blob/jdk-25-ga/src/java.net.http/share/classes/jdk/internal/net/http/MultiExchange.java),
+  tag `jdk-25-ga`, GPLv2 + Classpath istisnosi) - 32.2 dagi
+  `HttpRequest.timeout` ning har urinish uchun ro'yxatga olinishi va
+  javob sarlavhalarida bekor qilinishi, 32.8 dagi ichki retry va
+  `HttpConnectTimeoutException` ierarxiyasi.
+- OpenJDK, `InetAddressCachePolicy` va `java.security`
+  ([https://github.com/openjdk/jdk/blob/jdk-25-ga/src/java.base/share/classes/sun/net/InetAddressCachePolicy.java](https://github.com/openjdk/jdk/blob/jdk-25-ga/src/java.base/share/classes/sun/net/InetAddressCachePolicy.java),
+  tag `jdk-25-ga`) - 32.6 dagi DNS kesh TTL ning xavfsizlik property si
+  bo'lishi, default 30 va 10 sekund, va `sun.net.inetaddr.ttl`
+  fallback nomi.
+- OpenJDK, `System.nanoTime` javadoc i
+  ([https://github.com/openjdk/jdk/blob/jdk-25-ga/src/java.base/share/classes/java/lang/System.java](https://github.com/openjdk/jdk/blob/jdk-25-ga/src/java.base/share/classes/java/lang/System.java),
+  tag `jdk-25-ga`) - 32.13 dagi kafolatlar chegarasi.
+- Linux, `ip-sysctl.rst`
+  ([https://github.com/torvalds/linux/blob/v6.12/Documentation/networking/ip-sysctl.rst](https://github.com/torvalds/linux/blob/v6.12/Documentation/networking/ip-sysctl.rst),
+  tag `v6.12`, GPL-2.0) - 32.1 dagi `tcp_retries2` ning 924.6 sekundi
+  pastki chegara ekani va `tcp_keepalive_time` ning 7200 sekundi.
+- HikariCP, README va `HikariConfig`
+  ([https://github.com/brettwooldridge/HikariCP/blob/HikariCP-7.1.0/README.md](https://github.com/brettwooldridge/HikariCP/blob/HikariCP-7.1.0/README.md),
+  tag `HikariCP-7.1.0`, Apache-2.0) - 32.5 dagi `idleTimeout` ning
+  faqat `minimumIdle` kichik bo'lganda ishlashi, `maxLifetime` 30
+  daqiqa, `connectionTimeout` 30 sekund, `validationTimeout` 5 sekund.
+- Reactor Netty, `ConnectionProvider`
+  ([https://github.com/reactor/reactor-netty/blob/v1.2.9/reactor-netty-core/src/main/java/reactor/netty/resources/ConnectionProvider.java](https://github.com/reactor/reactor-netty/blob/v1.2.9/reactor-netty-core/src/main/java/reactor/netty/resources/ConnectionProvider.java),
+  tag `v1.2.9`, Apache-2.0) - 32.2 va 32.12 dagi
+  `pendingAcquireTimeout` ning 45 sekundlik default i.
+- Apache HttpClient 5, `RequestConfig`
+  ([https://github.com/apache/httpcomponents-client/blob/rel/v5.6.5/httpclient5/src/main/java/org/apache/hc/client5/http/config/RequestConfig.java](https://github.com/apache/httpcomponents-client/blob/rel/v5.6.5/httpclient5/src/main/java/org/apache/hc/client5/http/config/RequestConfig.java),
+  tag `rel/v5.6.5`, Apache-2.0) - 32.2 dagi `connectionRequestTimeout`
+  ning uch daqiqalik default i.
+- Spring Boot, HTTP klient, SSL va Tomcat property lari
+  ([https://github.com/spring-projects/spring-boot/blob/v3.5.0/spring-boot-project/spring-boot-autoconfigure/src/main/java/org/springframework/boot/autoconfigure/http/client/AbstractHttpClientProperties.java](https://github.com/spring-projects/spring-boot/blob/v3.5.0/spring-boot-project/spring-boot-autoconfigure/src/main/java/org/springframework/boot/autoconfigure/http/client/AbstractHttpClientProperties.java),
+  tag `v3.5.0`, Apache-2.0; SSL uchun
+  [3.2.0 dagi `SslBundleProperties`](https://github.com/spring-projects/spring-boot/blob/v3.2.0/spring-boot-project/spring-boot-autoconfigure/src/main/java/org/springframework/boot/autoconfigure/ssl/SslBundleProperties.java)) -
+  32.2 dagi `spring.http.client.*` kalitlari, 32.7 dagi
+  `reload-on-update` ning 3.2 da paydo bo'lishi, 32.9 dagi Tomcat
+  `max-threads` 200 va `accept-count` 100 default lari.
+- Spring Boot 4.0, Jackson 2 avtokonfiguratsiyasining deprecation i
+  ([https://github.com/spring-projects/spring-boot/blob/v4.0.0/module/spring-boot-jackson2/src/main/java/org/springframework/boot/jackson2/autoconfigure/Jackson2ObjectMapperBuilderCustomizer.java](https://github.com/spring-projects/spring-boot/blob/v4.0.0/module/spring-boot-jackson2/src/main/java/org/springframework/boot/jackson2/autoconfigure/Jackson2ObjectMapperBuilderCustomizer.java),
+  tag `v4.0.0`, Apache-2.0) - 32.10 dagi interfeysning 4.2.0 da olib
+  tashlanishi.
+- pgjdbc hujjati va PostgreSQL GUC jadvali
+  ([https://github.com/pgjdbc/pgjdbc/blob/REL42.7.7/docs/content/documentation/use.md](https://github.com/pgjdbc/pgjdbc/blob/REL42.7.7/docs/content/documentation/use.md),
+  tag `REL42.7.7`, BSD-2-Clause; va
+  [postgres `guc_tables.c`](https://github.com/postgres/postgres/blob/REL_17_0/src/backend/utils/misc/guc_tables.c),
+  tag `REL_17_0`, PostgreSQL License) - 32.3 dagi `socketTimeout` ning
+  ulanishni yopishi va sessiya darajasidagi timeout lar.
+- Kubernetes, kubelet DNS sozlamasi
+  ([https://github.com/kubernetes/kubernetes/blob/v1.33.9/pkg/kubelet/network/dns/dns.go](https://github.com/kubernetes/kubernetes/blob/v1.33.9/pkg/kubelet/network/dns/dns.go),
+  tag `v1.33.9`, Apache-2.0) - 32.6 dagi `ndots:5` default i.
+- nginx, `ngx_http_proxy_module.c`
+  ([https://github.com/nginx/nginx/blob/release-1.27.5/src/http/modules/ngx_http_proxy_module.c](https://github.com/nginx/nginx/blob/release-1.27.5/src/http/modules/ngx_http_proxy_module.c),
+  tag `release-1.27.5`, BSD tipidagi litsenziya) - 32.11 dagi
+  `proxy_read_timeout` ning 60 sekundlik default i.
 
 ---
 

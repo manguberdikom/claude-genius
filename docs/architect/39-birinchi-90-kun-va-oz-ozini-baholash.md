@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 39. Birinchi 90 kun va o'z-o'zini baholash (First 90 Days and Self-Assessment)
 
@@ -28,7 +28,9 @@
 
 
 
-Arxitektor yangi tizimga kelganda eng katta xatosi tezda foydali bo'lishga urinishdir. Haqiqatda esa birinchi uch oyda sizning asosiy mahsulotingiz kod emas, balki ishonchli xarita va ishonchli munosabatdir. Bu bob shu uch oyni haftalab bo'lib beradi, keyin esa diqqatni sizning o'zingizga qaratadi: bilimingizdagi bo'shliqni qanday topish va qaysi mavzuda qay darajada turganingizni qanday o'lchash. Hujjat shu bob bilan tugaydi, shuning uchun oxirida oltita hujjatni birgalikda qanday ishlatish ham aytiladi.
+Arxitektor yangi tizimga kelganda eng katta xatosi tezda foydali bo'lishga urinishdir. Haqiqatda esa birinchi oylarda sizning asosiy mahsulotingiz kod emas, balki ishonchli xarita va ishonchli munosabatdir. Kutish muddatini Google'ning injenerlik amaliyoti ochiq aytadi: yangi kelgan injenerga katta va murakkab infratuzilmaga kirib olish taxminan olti oy olishi oldindan tushuntiriladi, va bu o'rganish uzluksiz, iterativ jarayon ekanini ham eslatib turadi (Software Engineering at Google, 3-bob). Ya'ni uch oy oxirida siz tizimni "biladigan" odam bo'lmaysiz, faqat xaritasi bor odam bo'lasiz.
+
+Quyidagi oylarga bo'linish (birinchi hafta, birinchi oy, ikkinchi oy, uchinchi oy) shu korpusning amaliy rejasi, kitobdan olingan metodologiya emas; manbalar ro'yxatidagi ESLATMA da shu aytilgan. Bobning ikkinchi yarmi diqqatni sizning o'zingizga qaratadi: bilimingizdagi bo'shliqni qanday topish va qaysi mavzuda qay darajada turganingizni qanday o'lchash. Hujjat shu bob bilan tugaydi, shuning uchun oxirida oltita hujjatni birgalikda qanday ishlatish ham aytiladi.
 
 ## 39.1 Yangi loyihada birinchi hafta: nimani o'qish, kimdan so'rash, nima yozmaslik
 
@@ -52,7 +54,9 @@ ls -1 src/main/resources/db/migration | tail -25
 grep -rnE "https?://" src/main/resources/application*.y*ml | head -20
 ```
 
-So'rash kerak bo'lgan odamlar ro'yxati qisqa. Birinchisi tungi chaqiruvlarga javob beradigan dejur injener, chunki u tizimning haqiqiy zaif joyini biladi. Ikkinchisi eng ko'p commit qilgan developer, uchinchisi mahsulot egasi. Dejurdan bitta savol so'rang: oxirgi uch oyda sizni nima uyqudan uyg'otdi. Bu savol odatda arxitektura muammosining aniq manzilini beradi.
+So'rash kerak bo'lgan odamlar ro'yxati qisqa. Birinchisi tungi chaqiruvlarga javob beradigan dejur injener, chunki u tizimning haqiqiy zaif joyini biladi. Ikkinchisi eng ko'p commit qilgan developer, uchinchisi mahsulot egasi. Dejurdan bitta savol so'rang: oxirgi oylarda sizni nima uyqudan uyg'otdi. Bu savol odatda arxitektura muammosining aniq manzilini beradi.
+
+So'rashning o'zi ko'nikma. Google kitobining shu mavzudagi bobidan bitta gap qolsa, u shu: doim o'rganing, doim savol bering. Yangi kelganlarning eng katta xatosi tiqilib qolganda yordam so'ramaslik, "savolim juda sodda" deb o'ylab o'zi urinishdir; ayni paytda "bilmayman, tushuntirib bera olasizmi" deyish yetakchi odamdan kelsa, u boshqalarga ham shu erkinlikni beradi (Software Engineering at Google, 3-bob). Shu bob yana bir amaliyotni ko'rsatadi: yangi a'zoga menejer yoki tech lead bo'lmagan alohida mentor tayinlash, shunda savol berish birovning vaqtini olish hisoblanmaydi.
 
 Yozmaslik kerak bo'lgan narsalar ham aniq. Katta refactoring, yangi framework taklifi, va "biz buni hammasini qayta yozamiz" degan gap. Bu uchtasi birinchi haftada ishonchni eng tez yo'qotadigan harakatlardir.
 
@@ -89,6 +93,8 @@ ORDER BY pg_relation_size(indexrelid) DESC
 LIMIT 15;
 ```
 
+Ro'yxatning o'zi tasodifiy artefakt emas. Fairbanks arxitektura ishini xatarga bog'laydi: arxitekturaga sarflanadigan kuch loyihaning xatariga mos bo'lishi kerak, va usul uch qadamdan iborat - xatarlarni aniqlab ustuvorlashtirish, ularga mos texnikani tanlab qo'llash, keyin xatar kamayganini baholash. U yana telltale belgini aytadi: ko'p developer o'zini xatarga tayangan deb hisoblaydi, lekin "qaysi xatarlar bilan kurashyapsiz va qanday texnika qo'llayapsiz" savoliga javob bera olmaydi, holbuki "qaysi funksiya ustida ishlayapsiz" savoliga hamma javob beradi (Just Enough Software Architecture, 3-bob). Birinchi oydagi og'riq ro'yxati aslida shu javobning yozma shakli.
+
 Ro'yxatni tartiblashda ikkita o'qdan foydalaning: biznesga ta'siri va tuzatish narxi. Yuqori ta'sir va past narx bo'lgan bandlar ikkinchi oyning ishi bo'ladi. Yuqori ta'sir va yuqori narx bo'lganlar uchinchi oydagi rejaga tushadi. Past ta'sirli bandlarni umuman yozib qo'ying, ularga tegmang.
 
 Shu oyda yana bitta o'lchov oling: p99 latency va connection pool to'yinganligi. Ko'p tizimda muammo so'rov sekinligida emas, pool navbatida turadi. Agar HikariCP `pending` metrikasi nolga teng bo'lmasa, siz o'lchovni topdingiz.
@@ -121,13 +127,15 @@ management.metrics.tags.application=order-service
 
 Pool o'lchamini tanlashda hisobni ko'rsatib bering. Agar o'rtacha so'rov bazada 5 ms turadigan bo'lsa, 20 ta connection nazariy jihatdan sekundda taxminan 4000 ta so'rovga yetadi. Shuning uchun 100 ta connection so'rash deyarli har doim xato bo'ladi, u faqat PostgreSQL tarafidagi raqobatni oshiradi.
 
-Ko'rinadigan yaxshilanishni e'lon qilish usuli ham muhim. Oldingi va keyingi raqamni bitta jadvalda bering: p99 480 ms dan 120 ms ga tushdi, pool `pending` o'rtacha 7 dan 0 ga tushdi. Raqam bilan aytilgan natija sizga keyingi oyda kattaroq o'zgarish uchun ruxsat ochadi.
+Ko'rinadigan yaxshilanishni e'lon qilish usuli ham muhim. Oldingi va keyingi raqamni bitta jadvalda bering, shaklni shunday tuting: o'lchov nomi, o'zgarishdan oldingi qiymat, keyingi qiymat, o'lchov oynasi. Raqam bilan aytilgan natija sizga keyingi oyda kattaroq o'zgarish uchun ruxsat ochadi.
 
 ## 39.4 Uchinchi oy: o'rta muddatli reja taklif qilish va kelishib olish
 
 Uchinchi oyda siz endi taklif qilish huquqini qozondingiz. Reja uch oydan olti oyga mo'ljallangan bo'lsin, undan uzoqroq reja ishonchni emas, shubhani keltiradi. Rejada har bir bandning uchta ustuni bo'lsin: qanday o'lchovni yaxshilaydi, qancha ishchi hafta oladi, va qanday risk tug'diradi.
 
 Rejani yozishda eng kuchli vosita alternativani ham ko'rsatishdir. Masalan ombor qoldig'i servisini ajratish taklifida ikkinchi variant sifatida bitta bazada schema ajratishni ham bering. Bu sizni "o'z g'oyasini himoya qiladigan odam" emas, "qarorni ochib beradigan odam" qilib ko'rsatadi.
+
+Variantlarni ko'rsatishning ham shakli bor. Ford va sheriklari taqqoslanadigan variantlar ro'yxatini MECE qilib tuzishni tavsiya qiladi: o'zaro kesishmaydigan va sohani to'liq qoplaydigan ro'yxat, aks holda taqqoslash noto'g'ri narsalarni solishtiradi (The Hard Parts, 15-bob, 404-bet). Ko'rsatishda esa teskari qoida ishlaydi: yig'ilgan hamma dalilni yoyish o'rniga tahlilni bir nechta asosiy nuqtaga siqish kerak, chunki texnik tafsilotning ko'pi biznes tomoni uchun begona va u qarorga hissa qo'shmaydi (15-bob, 409-410-bet).
 
 Kelishib olishning amaliy shakli qisqa qaror hujjati. Bir sahifada kontekst, variantlar, tanlangan yo'l, va natijalar. Shu hujjatni jamoa bilan o'qib chiqing, keyin uni repozitoriyga qo'ying. Og'zaki kelishuv yo'qoladi, yozilgani qoladi.
 
@@ -136,7 +144,7 @@ Kelishib olishning amaliy shakli qisqa qaror hujjati. Bir sahifada kontekst, var
 | Birinchi hafta | Darhol task olib kod yozadi | Deploy, migratsiya va incident tarixini o'qiydi |
 | Muammoni topish | "Kod eski" deb umumlashtiradi | `pg_stat_statements` va pool metrikasi bilan o'lchaydi |
 | Birinchi taklif | Katta refactoring taklif qiladi | Timeout va index kabi arzon yutuqni beradi |
-| Natijani e'lon qilish | "Tezlashdi" deb aytadi | p99 480 ms dan 120 ms ga tushdi deb ko'rsatadi |
+| Natijani e'lon qilish | "Tezlashdi" deb aytadi | p99 ning oldingi va keyingi qiymatini ko'rsatadi |
 | Mavjud qarorga munosabat | "Buni kim shunday qildi" deb so'raydi | "Qanday sharoitda shunday to'g'ri edi" deb so'raydi |
 | Reja ufqi | Ikki yillik maqsadni chizadi | Uch oylik o'lchanadigan bandlarni beradi |
 | Alternativa | Bitta yo'lni himoya qiladi | Ikki yo'lni va tanlash mezonini beradi |
@@ -149,6 +157,8 @@ Kelishib olishning amaliy shakli qisqa qaror hujjati. Bir sahifada kontekst, var
 Har bir g'alati kod bir paytda to'g'ri javob bo'lgan. Hisobotda denormalizatsiya qilingan jadval bo'lsa, ehtimol o'sha paytda hisobot 40 sekund ishlagan va mijoz ketib qolgan. Native SQL yozilgan joy bo'lsa, ehtimol Hibernate generatsiya qilgan so'rov planner tomonidan noto'g'ri bajarilgan.
 
 Shu sababli birinchi savol bitta bo'lsin: qanday cheklov ostida bu qaror oqilona edi. Bu savol sizga ko'rinmagan cheklovni beradi, muallifni esa himoyaga o'tishga majburlamaydi.
+
+Richards va Ford buni qoida darajasiga ko'taradi: arxitekturaning ikkinchi qonuni "nega" ning "qanday" dan muhimroq ekani. Ular sababini shunday ko'rsatadi: begona tizimga qarab uning tuzilishi QANDAY ishlashini aniqlash mumkin, lekin NEGA aynan shu tanlov qilinganini tushuntirish qiyin, chunki aynan shu yozib qoldirilmagan (Fundamentals of Software Architecture, 1-bob). Google kitobi shu munosabatning yetakchilik tomonini qo'shadi: jamoaga ishonish, ya'ni a'zolarning oldingi yutuqlari va qobiliyatini hurmat qilish, hatto ular sizning jamoangizga yangi bo'lsa ham; va maslahat so'ralganda darhol yechim rejimiga o'tmasdan savol berish (Software Engineering at Google, 5-bob).
 
 Amalda bu `git log` bilan ishlashni bildiradi. Commit xabari, bog'langan ticket, va o'sha davrdagi incident bir-biriga ulanadi.
 
@@ -174,6 +184,8 @@ Bilimdagi bo'shliqni topishning eng ishonchli usuli javobni emas, tushuntirishni
 
 Tekshirishni haftada bir marta, bitta mavzuda o'tkazing. Har savol uchun uchta javob variantidan birini belgilang: chizib tushuntiraman, taniyman lekin tushuntirmayman, bilmayman. Ikkinchi variant eng xavfli, chunki u o'zini bilim deb ko'rsatadi.
 
+Shu uchlikning kaliti halollik. McConnell intellektual halollikni kasbiy yetuklikning bir qismi deb ataydi va uning birinchi ikki alomatini shunday beradi: ekspert bo'lmagan joyda ekspert bo'lib ko'rinmaslik va xatoni darhol tan olish. U o'lchov ham beradi: har masalada o'z ishonchingiz darajasini raqamlashga tayyor bo'ling, va agar u odatda 100 foiz chiqsa, bu ogohlantirish signali (Code Complete, 2-nashr, 33.4, 826-bet). Google kitobi shu nuqtada bir gapni qo'shadi: qancha ko'p bilsangiz, bilmagan narsangizni shuncha ko'p bilasiz (3-bob).
+
 | Tuzoq | Yechim |
 |---|---|
 | Hammasini bir vaqtda o'rganishga urinish | Haftada bitta mavzu, ikki daqiqalik tushuntirish mashqi |
@@ -185,30 +197,36 @@ Tekshirishni haftada bir marta, bitta mavzuda o'tkazing. Har savol uchun uchta j
 
 ## 39.7 Yetuklik darajalari: qaysi mavzuda qay darajada turibsiz
 
-Daraja o'zini maqtash uchun emas, vaqtni to'g'ri taqsimlash uchun kerak. Pastki jadvalda har bir mavzu uchun uchta daraja bor. O'zingizni rost joylashtiring, keyin eng past ustunlardan ikkitasini tanlab, keyingi choraklik o'rganish rejangizni shundan quring.
+Daraja o'zini maqtash uchun emas, vaqtni to'g'ri taqsimlash uchun kerak. Ball yoki foiz yo'q: bu yerda faqat uchta nomlangan daraja bor, va ularning orasidagi chegara o'lchov emas, tavsif.
 
-| Mavzu | Boshlang'ich | O'rta | Yuqori |
-|---|---|---|---|
-| JVM xotira | Heap va stack farqini biladi | GC log o'qiydi, pause sababini topadi | Region o'lchami va allocation rate bo'yicha sozlaydi |
-| Concurrency | `synchronized` ishlatadi | Thread pool o'lchamini hisoblab beradi | Virtual thread va blocking chegarasini loyihalaydi |
-| Spring konteyner | Bean e'lon qiladi | Proxy va self-invocation tuzog'ini biladi | Lifecycle va startup vaqtini boshqaradi |
-| Tranzaksiya | `@Transactional` qo'yadi | Propagation va isolation tanlaydi | Flush, lock va retry siyosatini loyihalaydi |
-| Hibernate | Entity yozadi | N+1 ni topib tuzatadi | Fetch strategiyasi va cache chegarasini belgilaydi |
-| PostgreSQL planner | `EXPLAIN` chaqiradi | `EXPLAIN ANALYZE BUFFERS` o'qiydi | Statistika va index turini qarorga aylantiradi |
-| Index dizayni | B-tree qo'yadi | Composite tartibini to'g'ri beradi | Partial, GIN va covering index tanlaydi |
-| API dizayni | REST endpoint yozadi | Versiyalash va xato formatini belgilaydi | Mos keluvchanlik shartnomasini boshqaradi |
-| Observability | Log yozadi | Metrika va alert qo'yadi | SLO va xato budjetini belgilaydi |
-| Deploy | Pipeline ishlatadi | Migratsiyani mos keluvchan yozadi | Nol to'xtovli relizni loyihalaydi |
-| Xavfsizlik | Autentifikatsiya yoqadi | Avtorizatsiya chegarasini tekshiradi | Sir boshqaruvi va audit izini quradi |
-| Qaror yuritish | Fikrini aytadi | Variantlarni taqqoslaydi | Mezon va qaytarish yo'lini yozib qoldiradi |
+Darajalarga bo'lish g'oyasining o'zi kitobdan keladi. McConnell o'z kompaniyasida ishlatilgan kasbiy o'sish zinapoyasini to'rt darajada beradi: boshlang'ich (bitta tilning asosiy imkoniyatlarini ishlatadi), kirish (bir necha tilning asosini biladi, kamida bittasida erkin), kompetentlik (til yoki muhitda chuqur ekspertiza; ko'p programmist shu darajada qolib ketadi) va yetakchilik (ekspertizaga qo'shimcha ravishda programmalashning kattaroq qismi odamlar bilan muloqot ekanini biladi va kodni mashina uchun emas, odam uchun yozadi). Uning xulosasi ham o'z joyida: boshlang'ich yoki kompetent bo'lish gunoh emas, nima qilish kerakligini bilib ham shu darajada uzoq turib qolish gunoh (Code Complete, 2-nashr, 33.3, 825-bet).
+
+Quyidagi jadval shu g'oyani shu korpusning mavzulariga ko'chiradi: qatorlar va daraja tavsiflari korpusning o'zi tuzgan, McConnell ning zinapoyasi emas. O'zingizni rost joylashtiring, keyin eng past qatorlardan ikkitasini tanlab, keyingi choraklik o'rganish rejangizni shundan quring; har qatorning oxirgi ustunida tegishli bob bor, tekshiruv shu bobdan boshlanadi.
+
+| Mavzu | Boshlang'ich | O'rta | Yuqori | Bob |
+|---|---|---|---|---|
+| JVM xotira | Heap va stack farqini biladi | GC log o'qiydi, pause sababini topadi | Region o'lchami va allocation rate bo'yicha sozlaydi | [10](10-garbage-collection-va-xotira-sozlash.md) |
+| Concurrency | `synchronized` ishlatadi | Thread pool o'lchamini hisoblab beradi | Virtual thread va blocking chegarasini loyihalaydi | [11](11-concurrency-thread-lock-atomic-happens.md), [12](12-virtual-threads-structured-concurrency-va.md) |
+| Spring konteyner | Bean e'lon qiladi | Proxy va self-invocation tuzog'ini biladi | Lifecycle va startup vaqtini boshqaradi | [15](15-spring-core-mexanikasi-ioc-konteyner-bean.md) |
+| Tranzaksiya | `@Transactional` qo'yadi | Propagation va isolation tanlaydi | Flush, lock va retry siyosatini loyihalaydi | [19](19-spring-tranzaksiyalari-va-ularning.md) |
+| Hibernate | Entity yozadi | N+1 ni topib tuzatadi | Fetch strategiyasi va cache chegarasini belgilaydi | [18](18-spring-data-jpa-va-hibernate-chuqur.md) |
+| PostgreSQL planner | `EXPLAIN` chaqiradi | `EXPLAIN ANALYZE BUFFERS` o'qiydi | Statistika va index turini qarorga aylantiradi | [24](24-planner-statistika-va-explain-analyze-oqish.md) |
+| Index dizayni | B-tree qo'yadi | Composite tartibini to'g'ri beradi | Partial, GIN va covering index tanlaydi | [23](23-indekslar-b-tree-gin-gist-brin-va-tanlov.md) |
+| API dizayni | REST endpoint yozadi | Versiyalash va xato formatini belgilaydi | Mos keluvchanlik shartnomasini boshqaradi | [13](13-zamonaviy-java-tili-va-api-dizayni.md) |
+| Observability | Log yozadi | Metrika va alert qo'yadi | SLO va xato budjetini belgilaydi | [30](30-kuzatuvchanlik-amaliyoti-log-metrika-trace.md) |
+| Deploy | Pipeline ishlatadi | Migratsiyani mos keluvchan yozadi | Nol to'xtovli relizni loyihalaydi | [31](31-deployment-haqiqati-konteyner-cgroup-jvm-va.md), [33](33-sxema-migratsiyasi-va-toxtashsiz-reliz.md) |
+| Xavfsizlik | Autentifikatsiya yoqadi | Avtorizatsiya chegarasini tekshiradi | Sir boshqaruvi va audit izini quradi | [20](20-spring-security-filter-chain-oauth2-jwt.md) |
+| Qaror yuritish | Fikrini aytadi | Variantlarni taqqoslaydi | Mezon va qaytarish yo'lini yozib qoldiradi | [03](03-qaror-qabul-qilish-va-uni-hujjatlashtirish.md) |
 
 ## 39.8 Fikrlash va qarorlar bilimini o'zingizga qo'llash
 
 Fikrlash va qarorlar qismidagi vositalar faqat tizimga emas, sizning karyerangizga ham tegishli. Qaytarib bo'lmaydigan qarorni sekin qabul qilish qoidasi sizning o'zingizga ham tegadi. Masalan yangi texnologiyaga butun jamoani ko'chirish qaytarib bo'lmaydigan qarordir, uni bitta servisda sinab ko'rish esa qaytariladi.
 
-Xato budjeti tushunchasini o'z o'rganishingizga ham qo'llang. Chorakda ikkita yangi mavzuni chuqur o'rganish realistik budjet, beshta mavzu esa yuzaki natija beradi. Ikkinchi tartibli ta'sir haqida o'ylash qoidasi ham shu yerda ishlaydi: siz tanlagan texnologiya jamoaning uch yildan keyingi ishga olish imkoniyatini belgilaydi.
+Vaqt budjetini o'ylab topmang, kitobdagi oynani oling: kuniga kamida 20 daqiqa, ertalab, email'ni ochishdan oldin (Fundamentals of Software Architecture, 24-bob; shu korpusda [38.11](38-doimiy-organish-va-texnologiya-tanlash.md#3811-java-va-spring-ekotizimini-kuzatib-borish-usullari)). Ikkinchi tartibli ta'sir haqida o'ylash qoidasi ham shu yerda ishlaydi: siz tanlagan texnologiya jamoaning keyingi yillardagi ishga olish imkoniyatini belgilaydi.
 
-Eng muhimi esa qarorni yozib qoldirish odati. O'zingiz uchun qisqa jurnal yuritib boring: qanday qaror qabul qildim, qanday kutgandim, nima bo'ldi. Olti oydan keyin shu jurnal sizning eng kuchli o'qituvchingiz bo'ladi.
+Eng muhimi esa qarorni yozib qoldirish odati. O'zingiz uchun qisqa jurnal yuritib boring: qanday qaror qabul qildim, qanday kutgandim, nima bo'ldi. Bir muncha vaqtdan keyin shu jurnal sizning eng kuchli o'qituvchingiz bo'ladi.
+
+Odatning o'zi nega hal qiluvchi ekanini McConnell alohida bo'limda tushuntiradi: programmist qiladigan ishning ko'pi ongli o'ylamasdan, odat bilan bajariladi, va agar siz tezlik bilan o'qiluvchanlik orasida har safar bir xil tanlov qilsangiz, siz tanlamayapsiz, odat bilan javob berayapsiz. Yomon odatni "hech qanday odat" bilan almashtirib bo'lmaydi, uni boshqa odat bilan almashtirish kerak (Code Complete, 2-nashr, 33.9, 833-834-bet).
 
 ## 39.9 Java va JVM: o'zingizni sinash savollari
 
@@ -299,7 +317,7 @@ management:
       enabled: true
   tracing:
     sampling:
-      probability: 0.1         # yuqori trafikda 10 foiz yetadi
+      probability: 0.1         # namuna ulushi: trafik hajmiga qarab o'lchanib tanlanadi
   metrics:
     distribution:
       percentiles-histogram:
@@ -314,9 +332,11 @@ Oltita hujjat bitta maqsadga xizmat qiladi, lekin har biri boshqa paytda ochilad
 
 Amaliy tartib shunday bo'lsin. Yangi talab kelganda avval bu hujjatdan tegishli mexanika bobini o'qing, chunki qaror cheklovdan chiqadi. Keyin dizayn [patternlar hujjatidan](../patterns/README.md) shaklni tanlang, masalan tashqi tizimga ishonchli xabar yuborish uchun outbox pattern. Undan keyin [testlash qo'llanmasidagi](../testing/README.md) contract testing va Testcontainers bo'limlaridan tekshirish rejasini oling. Kod yozilayotganda [toza kod qoidalari](../clean-code/README.md), PR ochilganda [kod review hujjati](../code-review/README.md), CI quality gate yiqilganda esa [SonarQube hujjati](../sonarqube/README.md) ochiladi.
 
-Jamoada ishlatishning eng yaxshi usuli esa birgalikda o'qishdir. Haftada bitta bob tanlang, uni ikki kishi o'qib chiqsin, keyin 30 daqiqada jamoaga o'z tizimingiz misolida tushuntirsin. Shu tartib bilim tarqalishini tezlashtiradi, va eng muhimi, u hujjatni o'lik matndan jamoa tiliga aylantiradi.
+Jamoada ishlatishning eng yaxshi usuli esa birgalikda o'qishdir. Haftada bitta bob tanlang, uni ikki kishi o'qib chiqsin, keyin qisqa uchrashuvda jamoaga o'z tizimingiz misolida tushuntirsin. Shu tartib bilim tarqalishini tezlashtiradi, va eng muhimi, u hujjatni o'lik matndan jamoa tiliga aylantiradi. Bu tartib tasodifiy emas: yozilgan bilim tashkilot darajasiga ko'tariladi, odamdagi bilim esa kontekstga moslanadi, va ular bir-birini almashtirmaydi (Software Engineering at Google, 3-bob).
 
-Oxirgi gap sizning o'zingiz haqida. Arxitektor bo'lish bilim miqdorida emas, qarorning sababini ko'rsatib bera olishda. Agar siz har bir qarorni cheklov, variant va o'lchov bilan tushuntirsangiz, jamoa sizdan keyin ham to'g'ri qaror qabul qilishni davom etadi. Shu esa bu hujjatning asl maqsadi edi.
+Shu olti hujjat yopiq ro'yxat emas. McConnell o'z kitobining oxirgi bobini aynan shu masalaga ajratadi: qurilish amaliyoti, qurilishdan tashqaridagi mavzular, darajalarga bo'lingan o'qish rejasi va kasbiy tashkilotga qo'shilish (Code Complete, 2-nashr, 35.1-35.5, 856-862-bet). Ya'ni korpusdan keyingi qadam tasodifiy blog emas, o'zingiz tuzgan va yozib qo'yilgan o'qish rejasi bo'ladi.
+
+Oxirgi gap sizning o'zingiz haqida. Arxitektor bo'lish bilim miqdorida emas, qarorning sababini ko'rsatib bera olishda. Richards va Ford kitobini shu uch so'z bilan yopadi: doim o'rganing, doim mashq qiling, va borib arxitektura qiling; ularning ta'kidi shu yerda ham bir xil - yechimning QANDAY qilinganini saqlash voqeaning yarmi, trade-off larni ushlab turgan NEGA esa qolgan yarmi (Fundamentals of Software Architecture, 24-bob). Agar siz har bir qarorni cheklov, variant va o'lchov bilan tushuntirsangiz, jamoa sizdan keyin ham to'g'ri qaror qabul qilishni davom etadi. Shu esa bu hujjatning asl maqsadi edi.
 
 ## 39.14 Amalda qo'llash
 
@@ -324,11 +344,56 @@ Oxirgi gap sizning o'zingiz haqida. Arxitektor bo'lish bilim miqdorida emas, qar
 - [ ] `pg_stat_statements` va `pg_stat_user_tables` dan top 20 og'ir so'rov va yetishmayotgan index ro'yxatini chiqarib, biznesga ta'siri bo'yicha tartiblang.
 - [ ] Barcha tashqi HTTP chaqiruvlarga connect va read timeout qo'yib, `statement_timeout` va `idle_in_transaction_session_timeout` ni yoqing.
 - [ ] HikariCP pool o'lchamini so'rov davomiyligi hisobi bilan qayta belgilab, `pending` metrikasini dashboardga chiqaring.
-- [ ] Ikkinchi oyda bitta ko'rinadigan yaxshilanishni oldingi va keyingi p99 raqami bilan e'lon qiling.
+- [ ] Ikkinchi oyda bitta ko'rinadigan yaxshilanishni oldingi va keyingi p99 qiymati va o'lchov oynasi bilan e'lon qiling.
 - [ ] Uchinchi oyda bir sahifali qaror hujjatini yozib, ichida ikkita variant, tanlash mezoni va qaytarish yo'lini bering.
 - [ ] Yetuklik matritsasidan o'zingizga eng past ikkita mavzuni tanlab, chorakka faqat shu ikkitasini rejalashtiring.
-- [ ] Shu bobdagi sinov savollaridan o'tib, "taniyman lekin tushuntirmayman" deb belgilangan har bir mavzuni jamoaga 30 daqiqada tushuntirib bering.
+- [ ] Shu bobdagi sinov savollaridan o'tib, "taniyman lekin tushuntirmayman" deb belgilangan har bir mavzuni jamoaga qisqa uchrashuvda tushuntirib bering.
+
+## Manbalar
+
+- *Software Engineering at Google*, O'Reilly, 2020, 3-bob - yangi injenerning kirib
+  olishi taxminan olti oy davom etishi, "always be learning, always be asking questions",
+  menejer bo'lmagan alohida mentor tayinlash, yozilgan va odamdagi bilimning bir-birini
+  to'ldirishi, "qancha ko'p bilsangiz, bilmaganingizni shuncha ko'p bilasiz"
+- *Software Engineering at Google*, O'Reilly, 2020, 5-bob - "lose the ego": jamoaga
+  ishonish va a'zolarning oldingi yutuqlarini hurmat qilish; maslahat so'ralganda darhol
+  yechim rejimiga o'tmasdan savol berish
+- Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 33.3 (825-bet) -
+  to'rt darajali kasbiy o'sish zinapoyasi va "darajada qolib ketish" haqidagi xulosa
+- Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 33.4 (826-bet) -
+  intellektual halollik; ishonch darajasini raqamlash va 100 foizning ogohlantirish
+  signali ekani
+- Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 33.9 (833-834-bet) -
+  ishning ko'pi odat bilan bajariladi, yomon odat faqat boshqa odat bilan almashtiriladi
+- Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 35.1-35.5
+  (856-862-bet) - qurilish va undan tashqaridagi manbalar, darajalarga bo'lingan o'qish
+  rejasi, kasbiy tashkilotga qo'shilish
+- Mark Richards, Neal Ford, *Fundamentals of Software Architecture*, O'Reilly, 2020,
+  1-bob - arxitekturaning ikkinchi qonuni: "nega" "qanday" dan muhimroq; begona tizimning
+  qanday ishlashini aniqlash mumkin, nega shunday tanlanganini esa yo'q
+- Mark Richards, Neal Ford, *Fundamentals of Software Architecture*, O'Reilly, 2020,
+  24-bob - 20 daqiqa qoidasi va uni ertalab email'dan oldin bajarish; "doim o'rganing,
+  doim mashq qiling"; QANDAY ni saqlash voqeaning yarmi, NEGA qolgan yarmi
+- Neal Ford, Mark Richards, Pramod Sadalage, Zhamak Dehghani, *Software Architecture:
+  The Hard Parts*, 1-nashr, O'Reilly, 2021 (copyright 2022), 15-bob (404-bet, 409-410-bet) - taqqoslash uchun MECE
+  ro'yxat; dalil to'dasi o'rniga bir nechta asosiy nuqtani ko'rsatish
+- George Fairbanks, *Just Enough Software Architecture*, Marshall & Brainerd, 2010,
+  3-bob - xatarga tayangan model: xatarlarni aniqlab ustuvorlashtirish, texnikani tanlab
+  qo'llash, xatar kamayganini baholash; "qaysi xatarlar bilan kurashyapsiz" savoliga
+  javob bera olmaslik belgisi
+- ESLATMA: bobning birinchi yarmidagi oylarga bo'linish (birinchi hafta, birinchi oy,
+  ikkinchi oy, uchinchi oy) va 39.14 dagi tekshiruv ro'yxati shu korpusning amaliy
+  rejasi, kitobdan olingan metodologiya emas
+- ESLATMA: 39.7 dagi jadval qatorlari va daraja tavsiflari shu korpusning o'z
+  mavzularidan tuzilgan; kitobdan olingani faqat darajalarga bo'lish g'oyasining o'zi.
+  Ball va foiz yo'q, tekshiruv har qatorning oxirgi ustunidagi bobdan boshlanadi
+- ESLATMA: 39.1-39.4 dagi buyruqlar, SQL so'rovlari va `application.properties` /
+  `application.yml` qiymatlari shu korpusning amaliy misollari; qiymatlar o'z muhitingizda
+  o'lchanib tanlanadi
+- ESLATMA: 39.9-39.12 dagi sinov savollari shu korpusning o'z ro'yxati; javoblar tegishli
+  boblarda (Java va JVM uchun 09-14, Spring uchun 15-20, PostgreSQL uchun 21-27,
+  operatsion tayyorlik uchun 30-35)
 
 ---
 
-[&larr; 38. Doimiy o'rganish va texnologiya tanlash](38-doimiy-organish-va-texnologiya-tanlash.md) · [Mundarija](README.md)
+[&larr; 38. Doimiy o'rganish va texnologiya tanlash](38-doimiy-organish-va-texnologiya-tanlash.md) · [Mundarija](README.md) · [40. Qidiruv: PostgreSQL FTS chegarasi va alohida dvigatelga o'tish &rarr;](40-qidiruv-postgresql-fts-va-alohida-dvigatel.md)

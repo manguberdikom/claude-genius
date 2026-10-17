@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 6. Quality gate mexanikasi va shartlari (Quality Gate Mechanics)
 
@@ -39,7 +39,20 @@ Shartlar odatda "New Code" (yangi kod) va "Overall Code" (butun kod) ko'rinishid
 
 SonarQube o'rnatilganda `Sonar way` nomli gate built-in bo'lib keladi va yangi loyihalarga standart sifatida tayinlanadi. Uni tahrirlab bo'lmaydi, chunki u built-in. O'zgartirish kerak bo'lsa, nusxa olinadi va nusxa tahrirlanadi.
 
-`Sonar way` tarkibi SonarQube liniyasiga qarab farq qiladi, buni e'tiborsiz qoldirmang. 9.9 LTA davrida u asosan reyting va foiz shartlaridan iborat edi: New Code uchun coverage kamida 80%, duplikatsiya 3% dan oshmasin, Reliability, Security va Maintainability reytingi A bo'lsin, Security Hotspots 100% ko'rib chiqilgan bo'lsin. Clean Code taksonomiyasi kirgandan keyin, 10.x va 2025 LTA liniyasida reyting shartlari o'rnini "yangi issue bo'lmasin" turidagi to'g'ridan to'g'ri shart egalladi. Aniq ro'yxatni har doim o'z serveringizdagi Quality Gates sahifasidan tekshirib oling, yodda saqlangan ro'yxatga ishonmang.
+Bu "tahrirlab bo'lmaydi" shunchaki UI cheklovi emas, serverning ishga tushish mantig'i. `RegisterQualityGates` komponenti har start da built-in gate ni ro'yxatdagi shartlar bilan **qaytadan sinxronlaydi**: ro'yxatda yo'q shartlarni o'chiradi, yo'q bo'lganlarini qo'shadi. Ya'ni bazaga qo'lda qo'shilgan shart keyingi start da yo'qoladi.
+
+`Sonar way` tarkibi SonarQube liniyasiga qarab farq qiladi, buni e'tiborsiz qoldirmang. 9.9 LTA davridagi aniq ro'yxat manbada shu ko'rinishda yozilgan (metrika kaliti, operator, xato chegarasi):
+
+| Metrika | Shart | Ma'nosi |
+|---|---|---|
+| `new_security_rating` | `GT` A | A dan yomon bo'lsa yiqiladi |
+| `new_reliability_rating` | `GT` A | A dan yomon bo'lsa yiqiladi |
+| `new_maintainability_rating` | `GT` A | A dan yomon bo'lsa yiqiladi |
+| `new_coverage` | `LT` 80 | 80 foizdan past bo'lsa yiqiladi |
+| `new_duplicated_lines_density` | `GT` 3 | 3 foizdan oshsa yiqiladi |
+| `new_security_hotspots_reviewed` | `LT` 100 | 100 foizdan kam ko'rilgan bo'lsa yiqiladi |
+
+Hamma oltita shart `new_` prefiksli, ya'ni gate butunlay yangi kodga qaraydi; eski kod uchun hech qanday shart yo'q. Shu bitta jadval 7-bobdagi "clean as you code" tamoyilining amaldagi ko'rinishi. Clean Code taksonomiyasi kirgandan keyin, 10.x va 2025 LTA liniyasida reyting shartlari o'rnini "yangi issue bo'lmasin" turidagi to'g'ridan to'g'ri shart egalladi. Aniq ro'yxatni har doim o'z serveringizdagi Quality Gates sahifasidan tekshirib oling, yodda saqlangan ro'yxatga ishonmang.
 
 Amalda eng ko'p adashtiradigan shart coverage. 80% raqami butun loyiha uchun emas, New Code uchun qo'yiladi. Agar PR da 10 qator yangi kod bo'lsa va ulardan 2 qator test bilan qoplanmagan bo'lsa, New Code coverage 80% chiqadi va shart arang o'tadi. Yana bitta qoplanmagan qator PR ni failed qiladi. Kichik PR da coverage juda sezgir bo'ladi, bu normal hol.
 
@@ -372,6 +385,11 @@ New Code chegarasini o'zgartirish ham shunga o'xshash ta'sir beradi. Agar chegar
 - [ ] Oxirgi 30 kundagi gate yiqilishlarini metrika bo'yicha guruhlab, eng ko'p bloklagan shartni aniqlang va u asoslimi degan savolga javob yozing.
 - [ ] `sonar.coverage.exclusions` ro'yxatini qayta ko'rib chiqing va domen yoki servis qatlamiga tegadigan har bir qatorni olib tashlang.
 - [ ] Gate ni qattiqlashtirish rejasini e'lon sanasi, sinov davri va kuchga kirish sanasi bilan yozib, jamoaga oldindan tarqating.
+
+## Manbalar
+
+- [sonarqube 9.9 LTA, `RegisterQualityGates.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-webserver-webapi/src/main/java/org/sonar/server/qualitygate/RegisterQualityGates.java) - built-in `Sonar way` gate ning aniq oltita sharti (metrika kaliti, operator, chegara) va har start da qaytadan sinxronlanishi
+- [sonar-plugin-api, `CoreMetrics.java`](https://raw.githubusercontent.com/SonarSource/sonar-plugin-api/a9d2a8204d3762cc96ea7bd074a26cbe982745b4/plugin-api/src/main/java/org/sonar/api/measures/CoreMetrics.java) - gate da ishlatiladigan metrika kalitlari va ularning ValueType hamda direction i
 
 ---
 

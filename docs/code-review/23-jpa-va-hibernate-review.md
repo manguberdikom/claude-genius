@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 23. JPA va Hibernate review (JPA and Hibernate)
 
@@ -345,6 +345,12 @@ public void update(OrderDto dto) {
 - [ ] Ro'yxat qaytaradigan so'rovlarni projection ga o'tkazib, o'qilayotgan ustun sonini kamaytiring.
 - [ ] `@SQLRestriction` (eski kodda `@Where`), `@SoftDelete` va `@SQLDelete` ishlatilgan joylarni aniq so'rov shartlariga o'tkazishni ko'rib chiqing.
 - [ ] `new Entity()` + `setId()` + `save()` naqshini grep bilan topib, barchasini tuzating.
+
+## Manbalar
+
+- [Hibernate 6.6 User Guide, Fetching](https://raw.githubusercontent.com/hibernate/hibernate-orm/6.6/documentation/src/main/asciidoc/userguide/chapters/fetching/Fetching.adoc) - hamma assotsiatsiyani statik lazy belgilash tavsiyasi va uning Jakarta Persistence default i bilan ziddiyati, entity graph
+- [Hibernate 6.6 User Guide, Persistence Context](https://raw.githubusercontent.com/hibernate/hibernate-orm/6.6/documentation/src/main/asciidoc/userguide/chapters/pc/PersistenceContext.adoc) - entitet holatlari, flush va identifikator bo'yicha tenglik
+- [Hibernate 6.6 User Guide, Batching](https://raw.githubusercontent.com/hibernate/hibernate-orm/6.6/documentation/src/main/asciidoc/userguide/chapters/batch/Batching.adoc) - `jdbc.batch_size`, `order_inserts` va `hibernate.jdbc.batch_versioned_data`
 
 ---
 

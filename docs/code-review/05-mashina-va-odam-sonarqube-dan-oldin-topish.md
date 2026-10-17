@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 5. Mashina va odam: SonarQube dan oldin topish (Beating the Tools)
 
@@ -359,6 +359,13 @@ Qoidaga aylantirishning chegarasi ham bor: kontekstga bog'liq qarorni qoida qili
 - [ ] `package-info.java` ga `@NullMarked` (yoki `@NonNullApi`) qo'yib, null chegarasini e'lon qiling.
 - [ ] Yangi kod coverage i emas, yangi testlardagi assertion sifatini tekshirishni review bandiga aylantiring: `assertNotNull` bilan tugaydigan testlarni toping.
 - [ ] Sonar hotspot lari uchun "tashqi ma'lumot bormi" javobini izohda yozib qoldirish qoidasini joriy qiling.
+
+## Manbalar
+
+- [sonar-java 8.44, qoida metadata si](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S3776.json) - mashina topa oladigan narsalar va ularning chegarasi (cognitive complexity, murakkablik)
+- `tools/sonar_rules.tsv` - korpusdagi qoida kalitlarining turi va darajasi, ya'ni "mashina nimani biladi" ro'yxati
+- [sonar-java 8.44, `DroppedPropertiesSensor.java`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/java/org/sonar/plugins/java/DroppedPropertiesSensor.java) - asbobning o'zi bergan ogohlantirishlarni o'qish
+- [Google, What to Look For in a Code Review](https://raw.githubusercontent.com/google/eng-practices/3bb3ec25b3b0199f4940b1aa75f0ac5c5753301c/review/reviewer/looking-for.md) - mashina topa olmaydigan qism: dizayn, nomlash, test to'g'riligi
 
 ---
 

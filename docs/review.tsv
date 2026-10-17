@@ -10,227 +10,229 @@
 # "Tekshiruv tartibi" bo'limida. Sessiya ko'pi bilan
 # "tekshirilmoqda" ga o'tkazadi.
 hujjat	bob	holat	sana	tekshiruvchi	manbalar	xatolar	izoh
-architect	1	ai-draft			0	0	
-architect	2	ai-draft			0	0	
-architect	3	ai-draft			0	0	
-architect	4	ai-draft			0	0	
-architect	5	ai-draft			0	0	
-architect	6	ai-draft			0	0	
-architect	7	ai-draft			0	0	
-architect	8	ai-draft			0	0	
-architect	9	ai-draft			0	0	
-architect	10	ai-draft			0	0	
-architect	11	ai-draft			0	0	
-architect	12	ai-draft			0	0	
-architect	13	ai-draft			0	0	
-architect	14	ai-draft			0	0	
-architect	15	ai-draft			0	0	
-architect	16	ai-draft			0	0	
-architect	17	ai-draft			0	0	
+architect	1	tekshirilmoqda	2026-10-17	sessiya	21	11	kitob to`lqini
+architect	2	tekshirilmoqda	2026-10-17	sessiya	21	9	kitob to`lqini
+architect	3	tekshirilmoqda	2026-10-17	sessiya	45	14	kitob to`lqini
+architect	4	tekshirilmoqda	2026-10-17	sessiya	20	12	kitob to`lqini
+architect	5	tekshirilmoqda	2026-10-17	sessiya	25	10	kitob to`lqini
+architect	6	tekshirilmoqda	2026-10-17	sessiya	13	4	kitob to`lqini
+architect	7	tekshirilmoqda	2026-10-17	sessiya	8	4	kitob to`lqini
+architect	8	tekshirilmoqda	2026-10-17	sessiya	28	35	kitob to`lqini
+architect	9	tekshirilmoqda	2026-10-15	sessiya	4	0	kitob to`lqini
+architect	10	tekshirilmoqda	2026-10-15	sessiya	5	0	kitob to`lqini
+architect	11	tekshirilmoqda	2026-10-15	sessiya	23	1	kitob to`lqini
+architect	12	tekshirilmoqda	2026-10-15	sessiya	3	0	kitob to`lqini
+architect	13	tekshirilmoqda	2026-10-15	sessiya	12	0	kitob to`lqini
+architect	14	tekshirilmoqda	2026-10-15	sessiya	2	0	kitob to`lqini
+architect	15	tekshirilmoqda	2026-10-15	sessiya	6	1	kitob to`lqini
+architect	16	tekshirilmoqda	2026-10-15	sessiya	8	0	kitob to`lqini
+architect	17	tekshirilmoqda	2026-10-15	sessiya	8	0	kitob to`lqini
 architect	18	tekshirilmoqda	2026-10-05	sessiya	4	3	tekshiruv to'lqini 1
-architect	19	ai-draft			0	0	
-architect	20	ai-draft			0	0	
-architect	21	ai-draft	2026-10-05	sessiya	4	2	huge_pages qismi tekshirildi, bob to'liq emas
-architect	22	ai-draft			0	0	
-architect	23	ai-draft			0	0	
-architect	24	ai-draft			0	0	
-architect	25	ai-draft			0	0	
-architect	26	ai-draft			0	0	
-architect	27	ai-draft	2026-10-05	sessiya	3	3	27.1 va 27.3 tekshirildi, bob to'liq emas
-architect	28	ai-draft			0	0	
-architect	29	ai-draft			0	0	
-architect	30	ai-draft			0	0	
-architect	31	ai-draft			0	0	
-architect	32	ai-draft			0	0	
-architect	33	ai-draft			0	0	
-architect	34	ai-draft			0	0	
-architect	35	ai-draft			0	0	
-architect	36	ai-draft			0	0	
-architect	37	ai-draft			0	0	
-architect	38	ai-draft			0	0	
-architect	39	ai-draft			0	0	
-clean-code	1	ai-draft			0	0	
-clean-code	2	ai-draft			0	0	
-clean-code	3	ai-draft			0	0	
-clean-code	4	ai-draft			0	0	
-clean-code	5	ai-draft			0	0	
-clean-code	6	ai-draft			0	0	
-clean-code	7	ai-draft			0	0	
-clean-code	8	ai-draft			0	0	
-clean-code	9	ai-draft			0	0	
-clean-code	10	ai-draft			0	0	
-clean-code	11	ai-draft			0	0	
-clean-code	12	ai-draft			0	0	
-clean-code	13	ai-draft			0	0	
-clean-code	14	ai-draft			0	0	
-clean-code	15	ai-draft			0	0	
-clean-code	16	ai-draft			0	0	
-clean-code	17	ai-draft			0	0	
-clean-code	18	ai-draft			0	0	
-clean-code	19	ai-draft			0	0	
-clean-code	20	ai-draft			0	0	
-clean-code	21	ai-draft			0	0	
-clean-code	22	ai-draft			0	0	
-clean-code	23	ai-draft			0	0	
-clean-code	24	ai-draft			0	0	
-clean-code	25	ai-draft			0	0	
-clean-code	26	ai-draft			0	0	
-clean-code	27	ai-draft			0	0	
-clean-code	28	ai-draft			0	0	
-clean-code	29	ai-draft			0	0	
-clean-code	30	ai-draft			0	0	
-clean-code	31	ai-draft			0	0	
-clean-code	32	ai-draft			0	0	
-clean-code	33	ai-draft			0	0	
-clean-code	34	ai-draft			0	0	
-clean-code	35	ai-draft			0	0	
-clean-code	36	ai-draft			0	0	
-clean-code	37	ai-draft			0	0	
-clean-code	38	ai-draft			0	0	
-clean-code	39	ai-draft			0	0	
-clean-code	40	ai-draft			0	0	
-clean-code	41	ai-draft			0	0	
-clean-code	42	ai-draft			0	0	
-clean-code	43	ai-draft			0	0	
-clean-code	44	ai-draft			0	0	
-clean-code	45	ai-draft			0	0	
-clean-code	46	ai-draft			0	0	
-clean-code	47	ai-draft			0	0	
-clean-code	48	ai-draft			0	0	
-clean-code	49	ai-draft			0	0	
-code-review	1	ai-draft			0	0	
-code-review	2	ai-draft			0	0	
-code-review	3	ai-draft			0	0	
-code-review	4	ai-draft			0	0	
-code-review	5	ai-draft			0	0	
-code-review	6	ai-draft			0	0	
-code-review	7	ai-draft			0	0	
-code-review	8	ai-draft			0	0	
-code-review	9	ai-draft			0	0	
-code-review	10	ai-draft			0	0	
-code-review	11	ai-draft			0	0	
-code-review	12	ai-draft			0	0	
-code-review	13	ai-draft			0	0	
-code-review	14	ai-draft			0	0	
-code-review	15	ai-draft			0	0	
-code-review	16	ai-draft			0	0	
-code-review	17	ai-draft			0	0	
-code-review	18	ai-draft			0	0	
-code-review	19	ai-draft			0	0	
-code-review	20	ai-draft			0	0	
-code-review	21	ai-draft			0	0	
+architect	19	tekshirilmoqda	2026-10-15	sessiya	4	5	kitob to`lqini
+architect	20	tekshirilmoqda	2026-10-15	sessiya	7	0	kitob to`lqini
+architect	21	tekshirilmoqda	2026-10-15	sessiya	11	0	kitob to`lqini
+architect	22	tekshirilmoqda	2026-10-15	sessiya	11	1	kitob to`lqini
+architect	23	tekshirilmoqda	2026-10-15	sessiya	8	0	kitob to`lqini
+architect	24	tekshirilmoqda	2026-10-15	sessiya	7	1	kitob to`lqini
+architect	25	tekshirilmoqda	2026-10-15	sessiya	4	0	kitob to`lqini
+architect	26	tekshirilmoqda	2026-10-15	sessiya	11	0	kitob to`lqini
+architect	27	tekshirilmoqda	2026-10-15	sessiya	5	1	kitob to`lqini
+architect	28	tekshirilmoqda	2026-10-15	sessiya	2	1	kitob to`lqini
+architect	29	tekshirilmoqda	2026-10-15	sessiya	9	1	kitob to`lqini
+architect	30	tekshirilmoqda	2026-10-15	sessiya	7	0	kitob to`lqini
+architect	31	tekshirilmoqda	2026-10-15	sessiya	4	0	kitob to`lqini
+architect	32	tekshirilmoqda	2026-10-15	sessiya	15	8	kitob to`lqini
+architect	33	tekshirilmoqda	2026-10-15	sessiya	10	6	kitob to`lqini
+architect	34	tekshirilmoqda	2026-10-17	sessiya	52	30	kitob to`lqini
+architect	35	tekshirilmoqda	2026-10-17	sessiya	16	21	kitob to`lqini
+architect	36	tekshirilmoqda	2026-10-15	sessiya	7	6	kitob to`lqini
+architect	37	tekshirilmoqda	2026-10-17	sessiya	17	24	kitob to`lqini
+architect	38	tekshirilmoqda	2026-10-17	sessiya	13	27	kitob to`lqini
+architect	39	tekshirilmoqda	2026-10-17	sessiya	14	15	kitob to`lqini
+architect	40	tekshirilmoqda	2026-10-15	sessiya	6	0	yangi bob, kitob to`lqini
+architect	41	tekshirilmoqda	2026-10-15	sessiya	5	0	yangi bob, kitob to`lqini
+clean-code	1	tekshirilmoqda	2026-10-15	sessiya	6	2	kitob to`lqini
+clean-code	2	tekshirilmoqda	2026-10-15	sessiya	7	0	kitob to`lqini
+clean-code	3	tekshirilmoqda	2026-10-15	sessiya	5	0	kitob to`lqini
+clean-code	4	tekshirilmoqda	2026-10-15	sessiya	11	3	kitob to`lqini
+clean-code	5	tekshirilmoqda	2026-10-15	sessiya	8	0	kitob to`lqini
+clean-code	6	tekshirilmoqda	2026-10-15	sessiya	9	0	kitob to`lqini
+clean-code	7	tekshirilmoqda	2026-10-15	sessiya	7	0	kitob to`lqini
+clean-code	8	tekshirilmoqda	2026-10-15	sessiya	6	0	kitob to`lqini
+clean-code	9	tekshirilmoqda	2026-10-15	sessiya	2	0	kitob to`lqini
+clean-code	10	tekshirilmoqda	2026-10-15	sessiya	5	0	kitob to`lqini
+clean-code	11	tekshirilmoqda	2026-10-15	sessiya	10	0	kitob to`lqini
+clean-code	12	tekshirilmoqda	2026-10-15	sessiya	2	0	kitob to`lqini
+clean-code	13	tekshirilmoqda	2026-10-15	sessiya	3	0	kitob to`lqini
+clean-code	14	tekshirilmoqda	2026-10-15	sessiya	6	2	kitob to`lqini
+clean-code	15	tekshirilmoqda	2026-10-15	sessiya	8	1	kitob to`lqini
+clean-code	16	tekshirilmoqda	2026-10-15	sessiya	7	2	kitob to`lqini
+clean-code	17	tekshirilmoqda	2026-10-15	sessiya	7	2	kitob to`lqini
+clean-code	18	tekshirilmoqda	2026-10-15	sessiya	13	1	kitob to`lqini
+clean-code	19	tekshirilmoqda	2026-10-15	sessiya	10	0	kitob to`lqini
+clean-code	20	tekshirilmoqda	2026-10-15	sessiya	8	2	kitob to`lqini
+clean-code	21	tekshirilmoqda	2026-10-15	sessiya	5	0	kitob to`lqini
+clean-code	22	tekshirilmoqda	2026-10-15	sessiya	5	1	kitob to`lqini
+clean-code	23	tekshirilmoqda	2026-10-15	sessiya	16	2	kitob to`lqini
+clean-code	24	tekshirilmoqda	2026-10-15	sessiya	8	1	kitob to`lqini
+clean-code	25	tekshirilmoqda	2026-10-15	sessiya	14	0	kitob to`lqini
+clean-code	26	tekshirilmoqda	2026-10-15	sessiya	4	0	kitob to`lqini
+clean-code	27	tekshirilmoqda	2026-10-15	sessiya	5	0	kitob to`lqini
+clean-code	28	tekshirilmoqda	2026-10-15	sessiya	2	0	kitob to`lqini
+clean-code	29	tekshirilmoqda	2026-10-15	sessiya	2	0	kitob to`lqini
+clean-code	30	tekshirilmoqda	2026-10-15	sessiya	4	0	kitob to`lqini
+clean-code	31	tekshirilmoqda	2026-10-15	sessiya	3	1	kitob to`lqini
+clean-code	32	tekshirilmoqda	2026-10-17	sessiya	18	12	kitob to`lqini
+clean-code	33	tekshirilmoqda	2026-10-17	sessiya	13	11	kitob to`lqini
+clean-code	34	tekshirilmoqda	2026-10-15	sessiya	3	0	kitob to`lqini
+clean-code	35	tekshirilmoqda	2026-10-17	sessiya	8	12	kitob to`lqini
+clean-code	36	tekshirilmoqda	2026-10-17	sessiya	10	15	kitob to`lqini
+clean-code	37	tekshirilmoqda	2026-10-17	sessiya	8	17	kitob to`lqini
+clean-code	38	tekshirilmoqda	2026-10-17	sessiya	15	9	kitob to`lqini
+clean-code	39	tekshirilmoqda	2026-10-17	sessiya	4	3	kitob to`lqini
+clean-code	40	tekshirilmoqda	2026-10-15	sessiya	6	0	kitob to`lqini
+clean-code	41	tekshirilmoqda	2026-10-17	sessiya	4	4	kitob to`lqini
+clean-code	42	tekshirilmoqda	2026-10-15	sessiya	3	0	kitob to`lqini
+clean-code	43	tekshirilmoqda	2026-10-17	sessiya	13	9	kitob to`lqini
+clean-code	44	tekshirilmoqda	2026-10-17	sessiya	12	8	kitob to`lqini
+clean-code	45	tekshirilmoqda	2026-10-17	sessiya	14	9	kitob to`lqini
+clean-code	46	tekshirilmoqda	2026-10-17	sessiya	19	11	kitob to`lqini
+clean-code	47	tekshirilmoqda	2026-10-17	sessiya	12	15	kitob to`lqini
+clean-code	48	tekshirilmoqda	2026-10-17	sessiya	8	14	kitob to`lqini
+clean-code	49	tekshirilmoqda	2026-10-17	sessiya	5	9	kitob to`lqini
+code-review	1	tekshirilmoqda	2026-10-15	sessiya	11	0	kitob to`lqini
+code-review	2	tekshirilmoqda	2026-10-15	sessiya	12	2	kitob to`lqini
+code-review	3	tekshirilmoqda	2026-10-15	sessiya	1	0	kitob to`lqini
+code-review	4	tekshirilmoqda	2026-10-15	sessiya	2	0	kitob to`lqini
+code-review	5	tekshirilmoqda	2026-10-15	sessiya	4	0	kitob to`lqini
+code-review	6	tekshirilmoqda	2026-10-15	sessiya	3	0	kitob to`lqini
+code-review	7	tekshirilmoqda	2026-10-15	sessiya	5	0	kitob to`lqini
+code-review	8	tekshirilmoqda	2026-10-15	sessiya	5	0	kitob to`lqini
+code-review	9	tekshirilmoqda	2026-10-15	sessiya	3	0	kitob to`lqini
+code-review	10	tekshirilmoqda	2026-10-17	sessiya	14	13	kitob to`lqini
+code-review	11	tekshirilmoqda	2026-10-17	sessiya	18	12	kitob to`lqini
+code-review	12	tekshirilmoqda	2026-10-15	sessiya	3	0	kitob to`lqini
+code-review	13	tekshirilmoqda	2026-10-17	sessiya	11	9	kitob to`lqini
+code-review	14	tekshirilmoqda	2026-10-15	sessiya	4	1	kitob to`lqini
+code-review	15	tekshirilmoqda	2026-10-15	sessiya	7	0	kitob to`lqini
+code-review	16	tekshirilmoqda	2026-10-15	sessiya	4	0	kitob to`lqini
+code-review	17	tekshirilmoqda	2026-10-15	sessiya	6	0	kitob to`lqini
+code-review	18	tekshirilmoqda	2026-10-15	sessiya	4	1	kitob to`lqini
+code-review	19	tekshirilmoqda	2026-10-15	sessiya	3	1	kitob to`lqini
+code-review	20	tekshirilmoqda	2026-10-15	sessiya	2	0	kitob to`lqini
+code-review	21	tekshirilmoqda	2026-10-15	sessiya	3	0	kitob to`lqini
 code-review	22	tekshirilmoqda	2026-10-05	sessiya	9	4	tekshiruv to'lqini 1
-code-review	23	ai-draft			0	0	
-code-review	24	ai-draft			0	0	
-code-review	25	ai-draft			0	0	
-code-review	26	ai-draft			0	0	
-code-review	27	ai-draft			0	0	
-code-review	28	ai-draft			0	0	
-code-review	29	ai-draft			0	0	
-code-review	30	ai-draft			0	0	
-code-review	31	ai-draft			0	0	
-code-review	32	ai-draft			0	0	
-code-review	33	ai-draft			0	0	
-code-review	34	ai-draft			0	0	
-code-review	35	ai-draft			0	0	
-code-review	36	ai-draft			0	0	
-code-review	37	ai-draft			0	0	
-code-review	38	ai-draft			0	0	
-code-review	39	ai-draft			0	0	
-code-review	40	ai-draft			0	0	
-code-review	41	ai-draft			0	0	
-code-review	42	ai-draft			0	0	
-code-review	43	ai-draft			0	0	
-code-review	44	ai-draft			0	0	
-patterns	1	ai-draft			0	0	
-patterns	2	ai-draft			0	0	
-patterns	3	ai-draft			0	0	
-patterns	4	ai-draft	2026-10-05	sessiya	3	1	4.25 tekshirildi, bob to'liq emas
-patterns	5	ai-draft			0	0	
-patterns	6	ai-draft			0	0	
-patterns	7	ai-draft			0	0	
-patterns	8	tekshirilmoqda	2026-10-05	sessiya	4	2	tekshiruv to'lqini 1
-patterns	9	tekshirilmoqda	2026-10-05	sessiya	7	0	tekshiruv to'lqini 1
-patterns	10	ai-draft			0	0	
-patterns	11	ai-draft			0	0	
-patterns	12	ai-draft			0	0	
-patterns	13	ai-draft			0	0	
-patterns	14	ai-draft			0	0	
-patterns	15	ai-draft			0	0	
-patterns	16	ai-draft			0	0	
-patterns	17	tekshirilmoqda	2026-10-05	sessiya	9	6	tekshiruv to'lqini 1
-patterns	18	ai-draft			0	0	
-patterns	19	ai-draft			0	0	
-patterns	20	ai-draft			0	0	
-patterns	21	ai-draft			0	0	
-patterns	22	ai-draft			0	0	
-patterns	23	ai-draft			0	0	
-patterns	24	ai-draft			0	0	
-patterns	25	ai-draft	2026-10-05	sessiya	3	1	25.31 tekshirildi, bob to'liq emas
-patterns	26	ai-draft			0	0	
-patterns	27	ai-draft			0	0	
-patterns	28	ai-draft			0	0	
-patterns	29	ai-draft			0	0	
-patterns	30	ai-draft			0	0	
-patterns		ai-draft			0	0	
-sonarqube	1	ai-draft			0	0	
-sonarqube	2	ai-draft			0	0	
-sonarqube	3	ai-draft			0	0	
-sonarqube	4	ai-draft			0	0	
-sonarqube	5	ai-draft			0	0	
-sonarqube	6	ai-draft			0	0	
-sonarqube	7	ai-draft			0	0	
-sonarqube	8	ai-draft			0	0	
-sonarqube	9	ai-draft			0	0	
-sonarqube	10	ai-draft			0	0	
-sonarqube	11	ai-draft			0	0	
-sonarqube	12	ai-draft			0	0	
-sonarqube	13	ai-draft			0	0	
-sonarqube	14	ai-draft			0	0	
-sonarqube	15	ai-draft			0	0	
-sonarqube	16	ai-draft			0	0	
-sonarqube	17	ai-draft			0	0	
-sonarqube	18	ai-draft			0	0	
-sonarqube	19	ai-draft			0	0	
-sonarqube	20	ai-draft			0	0	
-sonarqube	21	ai-draft			0	0	
-sonarqube	22	ai-draft			0	0	
-sonarqube	23	ai-draft			0	0	
-sonarqube	24	ai-draft			0	0	
-sonarqube	25	ai-draft			0	0	
-sonarqube	26	ai-draft			0	0	
-sonarqube	27	ai-draft			0	0	
-sonarqube	28	ai-draft			0	0	
-sonarqube	29	ai-draft			0	0	
-sonarqube	30	ai-draft			0	0	
-sonarqube	31	ai-draft			0	0	
-sonarqube	32	ai-draft			0	0	
-sonarqube	33	ai-draft			0	0	
-sonarqube	34	ai-draft			0	0	
-sonarqube	35	ai-draft			0	0	
-sonarqube	36	ai-draft			0	0	
-sonarqube	37	ai-draft			0	0	
-sonarqube	38	ai-draft			0	0	
-sonarqube	39	ai-draft			0	0	
-sonarqube	40	ai-draft			0	0	
-sonarqube	41	ai-draft			0	0	
-sonarqube	42	ai-draft			0	0	
-sonarqube	43	ai-draft			0	0	
-testing	1	ai-draft			0	0	
-testing	2	ai-draft			0	0	
-testing	3	ai-draft			0	0	
-testing	4	ai-draft			0	0	
-testing	5	ai-draft			0	0	
-testing	6	ai-draft			0	0	
-testing	7	ai-draft			0	0	
-testing	8	ai-draft			0	0	
-testing	9	ai-draft			0	0	
-testing	10	ai-draft			0	0	
-testing	11	ai-draft			0	0	
-testing	12	ai-draft			0	0	
-testing	13	ai-draft			0	0	
-testing	14	ai-draft			0	0	
-testing	15	ai-draft			0	0	
-testing	16	ai-draft			0	0	
-testing	17	ai-draft			0	0	
-testing	18	ai-draft			0	0	
+code-review	23	tekshirilmoqda	2026-10-15	sessiya	3	0	kitob to`lqini
+code-review	24	tekshirilmoqda	2026-10-15	sessiya	3	0	kitob to`lqini
+code-review	25	tekshirilmoqda	2026-10-15	sessiya	3	1	kitob to`lqini
+code-review	26	tekshirilmoqda	2026-10-15	sessiya	3	0	kitob to`lqini
+code-review	27	tekshirilmoqda	2026-10-15	sessiya	3	0	kitob to`lqini
+code-review	28	tekshirilmoqda	2026-10-15	sessiya	5	0	kitob to`lqini
+code-review	29	tekshirilmoqda	2026-10-15	sessiya	1	0	kitob to`lqini
+code-review	30	tekshirilmoqda	2026-10-15	sessiya	4	0	kitob to`lqini
+code-review	31	tekshirilmoqda	2026-10-15	sessiya	2	1	kitob to`lqini
+code-review	32	tekshirilmoqda	2026-10-15	sessiya	4	1	kitob to`lqini
+code-review	33	tekshirilmoqda	2026-10-15	sessiya	11	8	kitob to`lqini
+code-review	34	tekshirilmoqda	2026-10-15	sessiya	1	0	kitob to`lqini
+code-review	35	tekshirilmoqda	2026-10-15	sessiya	4	0	kitob to`lqini
+code-review	36	tekshirilmoqda	2026-10-15	sessiya	4	0	kitob to`lqini
+code-review	37	tekshirilmoqda	2026-10-15	sessiya	7	5	kitob to`lqini
+code-review	38	tekshirilmoqda	2026-10-15	sessiya	8	7	kitob to`lqini
+code-review	39	tekshirilmoqda	2026-10-15	sessiya	4	0	kitob to`lqini
+code-review	40	tekshirilmoqda	2026-10-15	sessiya	18	0	kitob to`lqini
+code-review	41	tekshirilmoqda	2026-10-15	sessiya	9	0	kitob to`lqini
+code-review	42	tekshirilmoqda	2026-10-15	sessiya	12	0	kitob to`lqini
+code-review	43	tekshirilmoqda	2026-10-17	sessiya	4	2	kitob to`lqini
+code-review	44	tekshirilmoqda	2026-10-17	sessiya	7	7	kitob to`lqini
+patterns	1	tekshirilmoqda	2026-10-15	sessiya	17	0	kitob to`lqini
+patterns	2	tekshirilmoqda	2026-10-15	sessiya	15	1	kitob to`lqini
+patterns	3	tekshirilmoqda	2026-10-15	sessiya	19	0	kitob to`lqini
+patterns	4	tekshirilmoqda	2026-10-15	sessiya	23	1	kitob to`lqini
+patterns	5	tekshirilmoqda	2026-10-15	sessiya	10	1	kitob to`lqini
+patterns	6	tekshirilmoqda	2026-10-17	sessiya	8	8	kitob to`lqini
+patterns	7	tekshirilmoqda	2026-10-17	sessiya	15	12	kitob to`lqini
+patterns	8	tekshirilmoqda	2026-10-05	sessiya	7	2	tekshiruv to'lqini 1
+patterns	9	tekshirilmoqda	2026-10-05	sessiya	12	0	tekshiruv to'lqini 1
+patterns	10	tekshirilmoqda	2026-10-17	sessiya	19	16	kitob to`lqini
+patterns	11	tekshirilmoqda	2026-10-15	sessiya	3	0	kitob to`lqini
+patterns	12	tekshirilmoqda	2026-10-17	sessiya	37	45	kitob to`lqini
+patterns	13	tekshirilmoqda	2026-10-17	sessiya	49	18	kitob to`lqini
+patterns	14	tekshirilmoqda	2026-10-15	sessiya	11	1	kitob to`lqini
+patterns	15	tekshirilmoqda	2026-10-17	sessiya	17	12	kitob to`lqini
+patterns	16	tekshirilmoqda	2026-10-17	sessiya	11	12	kitob to`lqini
+patterns	17	tekshirilmoqda	2026-10-05	sessiya	12	6	tekshiruv to'lqini 1
+patterns	18	tekshirilmoqda	2026-10-15	sessiya	12	0	kitob to`lqini
+patterns	19	tekshirilmoqda	2026-10-15	sessiya	6	0	kitob to`lqini
+patterns	20	tekshirilmoqda	2026-10-17	sessiya	10	10	kitob to`lqini
+patterns	21	tekshirilmoqda	2026-10-15	sessiya	8	0	kitob to`lqini
+patterns	22	tekshirilmoqda	2026-10-17	sessiya	21	7	kitob to`lqini
+patterns	23	tekshirilmoqda	2026-10-15	sessiya	20	0	kitob to`lqini
+patterns	24	tekshirilmoqda	2026-10-17	sessiya	11	7	kitob to`lqini
+patterns	25	tekshirilmoqda	2026-10-17	sessiya	20	14	kitob to`lqini
+patterns	26	tekshirilmoqda	2026-10-15	sessiya	11	1	kitob to`lqini
+patterns	27	tekshirilmoqda	2026-10-17	sessiya	41	16	kitob to`lqini
+patterns	28	tekshirilmoqda	2026-10-17	sessiya	16	9	29 bo'limdan 22 tasi tekshirildi
+patterns	29	tekshirilmoqda	2026-10-15	sessiya	4	0	kitob to`lqini
+patterns	30	tekshirilmoqda	2026-10-15	sessiya	1	0	kitob to`lqini
+patterns		tekshirilmoqda	2026-10-17	sessiya	0	0	hosila alifbo indeksi, anchorlari check_docs bilan tekshirildi
+sonarqube	1	tekshirilmoqda	2026-10-15	sessiya	4	0	kitob to`lqini
+sonarqube	2	tekshirilmoqda	2026-10-15	sessiya	4	0	kitob to`lqini
+sonarqube	3	tekshirilmoqda	2026-10-15	sessiya	4	0	kitob to`lqini
+sonarqube	4	tekshirilmoqda	2026-10-15	sessiya	4	0	kitob to`lqini
+sonarqube	5	tekshirilmoqda	2026-10-15	sessiya	4	1	kitob to`lqini
+sonarqube	6	tekshirilmoqda	2026-10-15	sessiya	2	0	kitob to`lqini
+sonarqube	7	tekshirilmoqda	2026-10-15	sessiya	3	1	kitob to`lqini
+sonarqube	8	tekshirilmoqda	2026-10-15	sessiya	3	0	kitob to`lqini
+sonarqube	9	tekshirilmoqda	2026-10-15	sessiya	5	1	kitob to`lqini
+sonarqube	10	tekshirilmoqda	2026-10-15	sessiya	3	0	kitob to`lqini
+sonarqube	11	tekshirilmoqda	2026-10-15	sessiya	4	0	kitob to`lqini
+sonarqube	12	tekshirilmoqda	2026-10-15	sessiya	3	0	kitob to`lqini
+sonarqube	13	tekshirilmoqda	2026-10-15	sessiya	4	0	kitob to`lqini
+sonarqube	14	tekshirilmoqda	2026-10-15	sessiya	5	0	kitob to`lqini
+sonarqube	15	tekshirilmoqda	2026-10-15	sessiya	4	0	kitob to`lqini
+sonarqube	16	tekshirilmoqda	2026-10-15	sessiya	4	3	kitob to`lqini
+sonarqube	17	tekshirilmoqda	2026-10-15	sessiya	3	0	kitob to`lqini
+sonarqube	18	tekshirilmoqda	2026-10-15	sessiya	3	0	kitob to`lqini
+sonarqube	19	tekshirilmoqda	2026-10-15	sessiya	3	1	kitob to`lqini
+sonarqube	20	tekshirilmoqda	2026-10-15	sessiya	2	1	kitob to`lqini
+sonarqube	21	tekshirilmoqda	2026-10-15	sessiya	3	0	kitob to`lqini
+sonarqube	22	tekshirilmoqda	2026-10-15	sessiya	3	1	kitob to`lqini
+sonarqube	23	tekshirilmoqda	2026-10-17	sessiya	7	6	kitob to`lqini
+sonarqube	24	tekshirilmoqda	2026-10-15	sessiya	3	0	kitob to`lqini
+sonarqube	25	tekshirilmoqda	2026-10-15	sessiya	5	1	kitob to`lqini
+sonarqube	26	tekshirilmoqda	2026-10-15	sessiya	5	4	kitob to`lqini
+sonarqube	27	tekshirilmoqda	2026-10-15	sessiya	6	1	kitob to`lqini
+sonarqube	28	tekshirilmoqda	2026-10-15	sessiya	5	0	kitob to`lqini
+sonarqube	29	tekshirilmoqda	2026-10-15	sessiya	5	0	kitob to`lqini
+sonarqube	30	tekshirilmoqda	2026-10-15	sessiya	6	0	kitob to`lqini
+sonarqube	31	tekshirilmoqda	2026-10-17	sessiya	3	4	kitob to`lqini
+sonarqube	32	tekshirilmoqda	2026-10-17	sessiya	13	10	kitob to`lqini
+sonarqube	33	tekshirilmoqda	2026-10-15	sessiya	2	0	kitob to`lqini
+sonarqube	34	tekshirilmoqda	2026-10-15	sessiya	3	0	kitob to`lqini
+sonarqube	35	tekshirilmoqda	2026-10-15	sessiya	3	1	kitob to`lqini
+sonarqube	36	tekshirilmoqda	2026-10-15	sessiya	4	0	kitob to`lqini
+sonarqube	37	tekshirilmoqda	2026-10-15	sessiya	4	0	kitob to`lqini
+sonarqube	38	tekshirilmoqda	2026-10-15	sessiya	7	7	kitob to`lqini
+sonarqube	39	tekshirilmoqda	2026-10-15	sessiya	7	4	kitob to`lqini
+sonarqube	40	tekshirilmoqda	2026-10-15	sessiya	9	9	kitob to`lqini
+sonarqube	41	tekshirilmoqda	2026-10-15	sessiya	5	0	kitob to`lqini
+sonarqube	42	tekshirilmoqda	2026-10-15	sessiya	4	0	kitob to`lqini
+sonarqube	43	tekshirilmoqda	2026-10-15	sessiya	6	0	kitob to`lqini
+testing	1	tekshirilmoqda	2026-10-17	sessiya	7	4	kitob to`lqini
+testing	2	tekshirilmoqda	2026-10-17	sessiya	5	3	kitob to`lqini
+testing	3	tekshirilmoqda	2026-10-17	sessiya	14	11	kitob to`lqini
+testing	4	tekshirilmoqda	2026-10-17	sessiya	16	14	kitob to`lqini
+testing	5	tekshirilmoqda	2026-10-15	sessiya	7	0	kitob to`lqini
+testing	6	tekshirilmoqda	2026-10-15	sessiya	3	1	kitob to`lqini
+testing	7	tekshirilmoqda	2026-10-15	sessiya	3	3	kitob to`lqini
+testing	8	tekshirilmoqda	2026-10-15	sessiya	4	3	kitob to`lqini
+testing	9	tekshirilmoqda	2026-10-15	sessiya	5	0	kitob to`lqini
+testing	10	tekshirilmoqda	2026-10-15	sessiya	3	0	kitob to`lqini
+testing	11	tekshirilmoqda	2026-10-15	sessiya	7	0	kitob to`lqini
+testing	12	tekshirilmoqda	2026-10-15	sessiya	8	5	kitob to`lqini
+testing	13	tekshirilmoqda	2026-10-15	sessiya	10	7	kitob to`lqini
+testing	14	tekshirilmoqda	2026-10-15	sessiya	2	0	kitob to`lqini
+testing	15	tekshirilmoqda	2026-10-15	sessiya	6	0	kitob to`lqini
+testing	16	tekshirilmoqda	2026-10-15	sessiya	11	0	kitob to`lqini
+testing	17	tekshirilmoqda	2026-10-15	sessiya	6	0	kitob to`lqini
+testing	18	tekshirilmoqda	2026-10-15	sessiya	4	3	kitob to`lqini

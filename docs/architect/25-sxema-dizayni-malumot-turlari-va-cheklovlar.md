@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 25. Sxema dizayni, ma'lumot turlari va cheklovlar (Schema Design and Data Types)
 
@@ -349,6 +349,13 @@ Asosiy xulosa: sxemadagi har bir qaror keyinchalik migratsiya narxiga aylanadi, 
 - [ ] `jsonb` ustuni bo'yicha filtrlaydigan so'rovlarni topib, eng ko'p ishlatilgan kalitni generated column ga chiqarib, farqni `EXPLAIN ANALYZE` bilan o'lchang.
 - [ ] `ddl-auto` qiymatini barcha profil uchun `validate` yoki `none` ga o'rnatib, sxema o'zgarishini faqat Flyway orqali qabul qiling.
 - [ ] Nomlash qoidalarini bitta sahifada yozib migratsiya review checklist'iga kiriting va eng katta uchta jadvalda ustun tartibini `pg_total_relation_size` bilan tekshiring.
+
+## Manbalar
+
+- Martin Kleppmann, *Designing Data-Intensive Applications*, 2-bob - ma'lumot modellari va so'rov tillari
+- Martin Kleppmann, *Designing Data-Intensive Applications*, 4-bob - sxema evolyutsiyasi va kodlash
+- [PostgreSQL 17, Data Types (datatype.sgml)](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/datatype.sgml) - `numeric` aniqligi, `text` va `varchar` farqi, vaqt turlari
+- [PostgreSQL 17, Data Definition (ddl.sgml)](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/ddl.sgml) - cheklovlar, generatsiya qilingan ustun, partitioning
 
 ---
 

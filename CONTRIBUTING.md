@@ -285,6 +285,17 @@ Qoidalar:
    "3.4+" belgisi ogohlantirishni o'chirmaydi. Ataylab yozilgan Java
    fragmenti `tools/claims_data/java_allow.tsv` ga sababi bilan tushadi.
 
+   Sonar qoidasining xabari **qoida tavsifida emas**, check ning
+   `reportIssue` chaqiruvida yoziladi va versiya bilan o'zgaradi
+   (`java:S108`: "Either remove or fill this block of code" ->
+   "Remove this block of code, fill it in, or add a comment explaining
+   why it is empty."). Shuning uchun matnni aynan keltirgan joy
+   `tools/claims_data/sonar_messages.tsv` ga solishtiriladi; faylda
+   check xabarlari va qoidaning rasmiy sarlavhasi (`(sarlavha)` ustuni)
+   bor, manbasi `SonarSource/sonar-java` ning tagga qadalgan holati.
+   Qoida turi va darajasi esa alohida, `tools/sonar_rules.tsv` bo'yicha
+   `check_docs` da tekshiriladi.
+
 Da'vo turi bo'yicha kim tekshiradi. Uch qatlam bor: mashina har
 commitda yuradi, agent faqat mashina hal qilmagan da'voni oladi, odam
 esa mashina ham, agent ham ishonchli hal qila olmaydigan da'voni ko'radi.

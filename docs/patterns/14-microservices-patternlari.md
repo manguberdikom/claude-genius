@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 14. Microservices patternlari (Microservices Patterns)
 
 <details>
-<summary>Bu bobdagi 40 bo'lim</summary>
+<summary>Bu bobdagi 42 bo'lim</summary>
 
 - [14.1 Monolitik arxitektura va mikroservis arxitekturasi qarori (Monolithic Architecture vs Microservice Architecture (decision))](#141-monolitik-arxitektura-va-mikroservis-arxitekturasi-qarori-monolithic-architecture-vs-microservice-architecture-decision)
 - [14.2 Biznes imkoniyati bo'yicha dekompozitsiya (Decompose by Business Capability)](#142-biznes-imkoniyati-boyicha-dekompozitsiya-decompose-by-business-capability)
@@ -48,7 +48,9 @@
 - [14.37 Taqsimlangan monolit (Distributed Monolith) - antipattern](#1437-taqsimlangan-monolit-distributed-monolith---antipattern)
 - [14.38 Nano-service'lar (Nano-services) - antipattern](#1438-nano-servicelar-nano-services---antipattern)
 - [14.39 Service granularligi bo'yicha qaror (Service Granularity Decision)](#1439-service-granularligi-boyicha-qaror-service-granularity-decision)
-- [14.40 Amalda qo'llash](#1440-amalda-qollash)
+- [14.40 Saga da izolyatsiya yo'q: anomaliyalar va qarshi choralar](#1440-saga-da-izolyatsiya-yoq-anomaliyalar-va-qarshi-choralar)
+- [14.41 Tilga xos paketlash formati (Language-specific Packaging Format)](#1441-tilga-xos-paketlash-formati-language-specific-packaging-format)
+- [14.42 Amalda qo'llash](#1442-amalda-qollash)
 
 </details>
 
@@ -65,7 +67,7 @@ Mikroservis patternlari - bu bitta deployment birligiga sig'maydigan tizimni mus
 **Qo'llanish keyslari:**
 - Startap MVP: bitta Spring Boot monolit, lekin Spring Modulith bilan modul chegaralari testdan o'tkaziladi.
 - 50+ injener va kuniga bir necha release kerak bo'lgan to'lov platformasi mikroservislarga ajratiladi.
-- Hisobot va ML inference qismi asosiy ilovadan 10 barobar ko'proq CPU talab qilsa, faqat shu qism alohida servis qilinadi.
+- Hisobot va ML inference qismi asosiy ilovadan bir necha barobar ko'proq CPU talab qilsa, faqat shu qism alohida servis qilinadi.
 - Legacy monolitni butunlay yozmasdan, eng tez o'zgaradigan domen (masalan, narxlash) birinchi mikroservis sifatida ajratiladi.
 - Regulyator talabi bilan kartalar ma'lumoti alohida compliance zonasida ishlashi kerak bo'lgan tizim.
 
@@ -1283,7 +1285,65 @@ Shubha bo'lsa kattaroq servis tanlanadi: ajratish keyin ham mumkin,
 birlashtirish esa ancha qimmat.
 ```
 
-## 14.40 Amalda qo'llash
+## 14.40 Saga da izolyatsiya yo'q: anomaliyalar va qarshi choralar
+
+**Tavsif:** Saga tranzaksiya modeli ACID emas, **ACD**: atomarlik, izchillik va chidamlilik bor, izolyatsiya esa yo'q. Bu nazariy nuqta emas, saga yozgan odam hal qilishi kerak bo'lgan masala, chunki izolyatsiyaning yo'qligi uchta anomaliyaga olib keladi.
+
+| Anomaliya | Nima bo'ladi |
+|---|---|
+| Yo'qolgan yangilanish (lost update) | Bir saga ikkinchi saga qilgan o'zgarishni o'qimasdan uning ustiga yozadi |
+| Iflos o'qish (dirty read) | Tranzaksiya yoki saga hali tugamagan saga ning yangilanishini o'qiydi |
+| Takrorlanmaydigan o'qish (fuzzy read) | Saganing ikki qadami bir xil ma'lumotni o'qib turli natija oladi |
+
+Birinchi ikkitasi eng ko'p uchraydi va eng qiyin. Kitobdagi misollar aniq. Yo'qolgan yangilanish: `Create Order Saga` ning birinchi qadami buyurtma yaratadi; u ishlayotganda `Cancel Order Saga` buyurtmani bekor qiladi; `Create Order Saga` ning oxirgi qadami buyurtmani tasdiqlaydi, ya'ni bekor qilishni ustiga yozadi va mijoz bekor qilgan buyurtma jo'natiladi. Iflos o'qish: bekor qilish sagasi mijozning kredit limitini bo'shatadi, shu oraliqda `Create Order Saga` kreditni band qiladi, keyin bekor qilish sagasi kompensatsiya bilan kreditni qaytarib kamaytiradi; natijada mijoz kredit limitidan oshgan buyurtma bera oladi.
+
+**Qarshi choralar.** Kitob 1998 yildagi "Semantic ACID properties in multidatabases" maqolasidan oltita qarshi chorani keltiradi. Ularning bir qismi izolyatsiyani ilova darajasida tiklaydi, bir qismi esa izolyatsiya yo'qligining **biznes xavfini** kamaytiradi:
+
+| Qarshi chora | Nima qiladi |
+|---|---|
+| Semantic lock | Ilova darajasidagi qulf: yozuv `*_PENDING` kabi holatga qo'yiladi va boshqa tranzaksiyalar shunga qarab ish qiladi |
+| Commutative updates | Yangilash amallari istalgan tartibda bajarilsa ham bir xil natija bersin |
+| Pessimistic view | Saga qadamlarini qayta tartiblab, biznes xavfini kamaytirish |
+| Reread value | Ustiga yozishdan oldin ma'lumotni qayta o'qib, o'zgarmaganini tekshirish |
+| Version file | Yozuvdagi yangilanishlarni qayd qilib, keyin ularni qayta tartiblash imkonini berish |
+| By value | Har so'rovning biznes xavfiga qarab konkurentlik mexanizmini dinamik tanlash |
+
+Eng ko'p ishlatiladigani semantic lock va u yuqoridagi `*_PENDING` holati bilan aynan bir narsa: `APPROVAL_PENDING` holati "bu yozuv hozir saga tomonidan o'zgartirilayapti" degan signal beradi.
+
+**Spring'da qayerda uchraydi:** Semantic lock odatda entity dagi holat maydoni va `@Version` bilan optimistik qulf birgaligida yoziladi; reread value `@Version` yoki `WHERE` sharti bilan shartli `UPDATE` ga aylanadi (`UPDATE ... WHERE status = 'PENDING'` va `rowsAffected` ni tekshirish). Commutative updates ko'pincha `balance = balance + ?` shaklidagi nisbiy yangilanish bilan beriladi, mutlaq qiymat o'rniga. Pessimistic view esa saga qadamlarining tartibini o'zgartirish, ya'ni kodda emas, dizaynda hal qilinadi.
+
+**Ehtiyot bo'ling:** Saga ni "distributed tranzaksiya o'rnini bosadi" deb o'ylash eng qimmat xato. U atomarlikni beradi, izolyatsiyani bermaydi; shuning uchun har bir saga uchun "qaysi anomaliya mumkin va qaysi qarshi chora qo'yildi" savoliga javob yozilishi kerak. Javobsiz saga ishlaydi, lekin yuklama ostida yuqoridagi ikki misoldagi holatga tushadi.
+
+## 14.41 Tilga xos paketlash formati (Language-specific Packaging Format)
+
+**Tavsif:** Servis production'ga o'z tilining tabiiy paket formatida chiqariladi: Java uchun executable JAR yoki WAR, Node.js uchun kod va modullar papkasi, Go uchun OS ga xos ikkilik fayl. Mashinaga avval runtime o'rnatiladi (JDK, WAR bo'lsa Tomcat ham), keyin paket ko'chiriladi va ishga tushiriladi; har bir nusxa alohida JVM process bo'ladi yoki eski application server'da bitta JVM ichidagi bir nechta servisdan biri. Richardson bu patternni ataylab deploy variantlarining birinchisi sifatida beradi: uning kamchiliklari qolgan uchtasini (VM, container, serverless) nega kerak qilganini ko'rsatadi (Chris Richardson, *Microservices Patterns: With examples in Java*, Manning, 2019, 12-bob, 386-390-betlar). Foydasi ikkita: deploy tez va resurs tejamkor, chunki OS hamda ba'zan JVM ham bo'lishiladi. Narxi to'rtta: technology stack kapsulalanmaydi, ya'ni operations har servisning runtime versiyasini bilishi shart; process iste'mol qiladigan resursni chegaralash imkoni yo'q; bitta mashinadagi nusxalar o'zaro izolyatsiyalanmaydi; nusxani qaysi mashinaga joylashni avtomatik hal qilib bo'lmaydi. Shu sababli kitob bu yo'lni faqat samaradorlik boshqa hamma narsadan ustun bo'lgan holatda tavsiya qiladi.
+
+**Spring'da qayerda uchraydi:** Spring Boot'ning standart chiqishi aynan shu pattern: Gradle'da `bootJar`, Maven'da `spring-boot-maven-plugin` ning `repackage` goal'i executable JAR yasaydi va u `java -jar` bilan ishga tushadi. Boot 3 da tashqi Tomcat shart emas, lekin `spring-boot-starter-tomcat` ni `providedRuntime` qilib `bootWar` ham mumkin. Kamchilikni yumshatadigan sozlamalar: `-XX:MaxRAMPercentage` bilan heap'ni mashina xotirasiga nisbatda berish, `server.shutdown=graceful` va `spring.lifecycle.timeout-per-shutdown-phase` bilan to'g'ri to'xtash, `management.endpoint.health.group.readiness.include` bilan alohida readiness guruhi. Ishga tushishni tezlashtirish uchun CDS arxivi (`-XX:ArchiveClassesAtExit`, keyin `-XX:SharedArchiveFile`) yoki `nativeCompile` bilan GraalVM native image. Kitob Spring Boot 2 davrida yozilgani uchun undagi WAR va tashqi web container misoli bugun kam uchraydi, lekin patternning mohiyati o'zgarmagan.
+
+**Qo'llanish keyslari:**
+- Bitta VM da ishlaydigan ikki-uchta servisli kichik tizim: container orchestration narxi hali oqlanmagan.
+- Kuniga bir marta ishlaydigan ichki batch yoki admin servisini `systemd` unit sifatida qo'yish.
+- On-premise yetkazib berish: mijozga JAR fayl va `application.yml` beriladi, qolganini u o'zi boshqaradi.
+- Container image qurish taqiqlangan muhitda legacy ilovani Spring Boot ga ko'chirishning birinchi bosqichi.
+- Mahalliy va test muhitida `java -jar` bilan tez tekshirish, production esa konteynerda ketadi.
+
+**Ehtiyot bo'ling:** Bitta Tomcat ichiga bir nechta servisni joylash eng xavfli shakl: izolyatsiya umuman yo'q, bitta servisning `OutOfMemoryError` i hammasini o'ldiradi va classloader konflikti kutilmagan joyda chiqadi. Resurs chegarasi yo'qligi "shovqinli qo'shni" muammosini keltiradi, shuning uchun hech bo'lmasa `systemd` darajasida `MemoryMax` va `CPUQuota` qo'yiladi. Operations har servisning JDK versiyasini qo'lda kuzatishi ham xato manbai, shuning uchun bu patterndan [har bir service instance alohida host, VM yoki konteynerda](22-deployment-va-operatsion-patternlar.md#2223-har-bir-service-instance-alohida-host--vm--konteynerda-service-instance-per-host--vm--container) va [servis deploy platformasi](22-deployment-va-operatsion-patternlar.md#2225-servis-deploy-platformasi-service-deployment-platform---kubernetes-paas) ga o'tish yo'li oldindan rejalashtiriladi.
+
+```bash
+# Tilga xos paket: Spring Boot executable JAR
+./gradlew bootJar                  # build/libs/orders-1.4.2.jar
+
+# Runtime mashinada faqat JDK bor: paket ko'chiriladi va ishga tushadi
+java -XX:MaxRAMPercentage=70 -jar orders-1.4.2.jar --server.port=8081
+
+# Patternning asosiy kamchiligi shu buyruqda ko'rinadi: process
+# resursini OS darajasida hech narsa chegaralamaydi. Konteynerda bu
+# cgroup orqali o'zi chiqadi, bu yerda esa qo'lda qo'yiladi:
+systemd-run --unit=orders --property=MemoryMax=2G --property=CPUQuota=150% \
+    java -XX:MaxRAMPercentage=70 -jar orders-1.4.2.jar
+```
+
+## 14.42 Amalda qo'llash
 
 - [ ] Servislar xaritasini chizib, har bir sinxron chaqiruv zanjirini va uning umumiy timeout budjetini yozib qo'ying.
 - [ ] Ikki yoki undan ko'p servis bitta bazaga ulanadigan joylarni toping - bu taqsimlangan monolit belgisi.
@@ -1293,6 +1353,22 @@ birlashtirish esa ancha qimmat.
 - [ ] Har bir servisning readiness va liveness probe'i alohida va to'g'ri ma'no berayotganini tekshiring.
 - [ ] Servislar o'rtasida umumiy kutubxona (`shared`, `common`) borligini tekshirib, undagi har bir sinfni egasi bor servisga ko'chirish rejasini yozing.
 - [ ] Strangler fig bilan ajratilayotgan funksiyalar uchun o'tish mezoni va orqaga qaytish yo'lini yozib qo'ying.
+- [ ] Har bir saga uchun uchta anomaliyadan qaysi biri mumkinligini yozib chiqing va har biriga qarshi chora tanlang (semantic lock, reread value, commutative update).
+- [ ] Saga o'zgartiradigan entity larda holat maydoni va `@Version` borligini tekshirib, shartli `UPDATE` ning `rowsAffected` natijasi nazorat qilinishiga ishonch hosil qiling.
+
+## Manbalar
+
+- Chris Richardson, *Microservices Patterns*, 2-bob - biznes imkoniyati va subdomen bo'yicha dekompozitsiya, Service per Team
+- Chris Richardson, *Microservices Patterns*, 4-bob - saga bilan tranzaksiyalarni boshqarish (koreografiya va orkestratsiya)
+- Chris Richardson, *Microservices Patterns*, 11-bob - ishlab chiqarishga tayyor servis: chassis, Externalized Configuration
+- Chris Richardson, *Microservices Patterns*, 13-bob - mikroservisga refaktoring va Strangler Fig
+- Robert C. Martin, *Clean Architecture*, 27-bob - servis granularligi: katta va kichik servis
+- John Carnell, *Spring Microservices in Action*, 4-bob - servis topish
+- Chris Richardson, *Microservices Patterns*, 4.3 - saga modelining ACD ekani, izolyatsiya yo'qligidan kelib chiqadigan uchta anomaliya (lost update, dirty read, fuzzy read) va oltita qarshi chora (semantic lock, commutative updates, pessimistic view, reread value, version file, by value)
+- Chris Richardson, *Microservices Patterns*, 3-bob - xabar almashish, outbox va idempotent iste'molchi
+- Chris Richardson, *Microservices Patterns*, 7-bob - API composition va CQRS bilan so'rovlarni birlashtirish
+- Chris Richardson, *Microservices Patterns*, 13-bob - Strangler Fig va monolitni bosqichma-bosqich ajratish
+- Chris Richardson, *Microservices Patterns: With examples in Java*, Manning, 2019, 12-bob, 386-390-betlar - tilga xos paketlash formati patterni, uning ikki foydasi (tez deploy, resurs tejamkorligi) va to'rt kamchiligi (technology stack kapsulalanmasligi, resurs chegarasi yo'qligi, izolyatsiya yo'qligi, joylashtirishni avtomatlashtirishning qiyinligi)
 
 ---
 

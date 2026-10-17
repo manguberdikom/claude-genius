@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 6. Arxitektura review: qatlam, chegara, bog'liqlik yo'nalishi (Architecture in a Diff)
 
@@ -306,6 +306,12 @@ bo'ladi.
 - [ ] Controller javoblarida JPA entity qaytarilgan joylarni toping va DTO ga o'tkazishni rejalashtiring.
 - [ ] Eroziya belgilari jadvalidan uchtasini tanlab, repoda qanchaligini o'lchang: konstruktor parametrlari 6 dan ko'p klasslar, `Util`/`Helper` klasslar soni, `@Autowired` maydonlar.
 - [ ] Modullar aro umumiy jadvalga yozadigan joylarni toping va ularni API yoki event ga o'tkazish tiketini ochingg.
+
+## Manbalar
+
+- Robert C. Martin, *Clean Architecture*, 11-bob (DIP) - "Stable Abstractions" dagi to'rtta amaliyot va bog'liqlik yo'nalishi
+- Robert C. Martin, *Clean Architecture*, 13-14 bob - komponent kohezi va bog'lanish printsiplari (ADP, SDP, SAP)
+- [Spring Framework 7.0, Proxying Mechanisms](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/core/aop/proxying.adoc) - qatlam chegarasida proxy va interfeys tanlovining mexanik oqibati
 
 ---
 

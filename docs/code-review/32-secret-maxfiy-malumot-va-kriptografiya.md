@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 32. Secret, maxfiy ma'lumot va kriptografiya review (Secrets, PII and Crypto)
 
@@ -125,6 +125,14 @@ SELECT c.table_name, c.column_name, pd.description
 ```
 
 ## 32.3 Parol va token saqlash
+
+OWASP ning parol saqlash ro'yxati aniq raqamlar beradi va review da shular tekshiriladi. Birinchi tanlov Argon2id: kamida **19 MiB xotira, 2 iteratsiya, 1 parallelism**. Argon2id bo'lmasa scrypt: CPU va xotira narxi kamida 2^17, blok o'lchami kamida 8 (1024 bayt), parallelism 1. Eski tizimdagi bcrypt uchun work factor 10 dan kam bo'lmasin va parol 72 baytga cheklansin. FIPS-140 talab qilinsa PBKDF2, work factor 600 000 dan kam bo'lmasin va ichki hash funksiyasi HMAC-SHA-256 bo'lsin.
+
+Bitta tuzoq Spring ning o'zida turadi va uni bilib qo'yish kerak. `Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8()` ning xotira defaulti `1 << 14`, ya'ni 16 MiB: bu OWASP ning 19 MiB chegarasidan **past**. Shuning uchun quyidagi misol parametrlarni aniq yozadi. Konstruktor tartibi ham e'tibor talab qiladi: `(saltLength, hashLength, parallelism, memory, iterations)`, ya'ni parallelism memory dan **oldin** turadi va ikkisini almashtirib yuborish jim ravishda kuchsiz sozlama beradi.
+
+Work factor ning o'zi uchun esa oltin qiymat yo'q: u serverga va foydalanuvchi soniga bog'liq va o'lchash bilan tanlanadi. OWASP ning amaliy mo'ljali bitta: hash hisoblash **bir sekunddan kam** vaqt olishi kerak. Juda yuqori work factor esa o'zi xavf: kirish urinishlari bilan CPU ni tugatib DoS qilish mumkin.
+
+Work factor ni oshirish rejasi ham review savoli. Odatdagi yo'l: foydalanuvchi keyingi marta kirganda parolni yangi work factor bilan qayta hash qilish. Buning kamchiligi bor va u e'tibordan qoladi: qaytib kirmagan foydalanuvchining hash i hech qachon yangilanmaydi. Shuning uchun ba'zi holatda to'g'ri qaror eski hash larni o'chirib, foydalanuvchini parol tiklashga majburlash bo'ladi.
 
 ```java
 // Parol: faqat moslashuvchan hash funksiyasi bilan.
@@ -286,6 +294,13 @@ SSLContext ctx = SSLContextBuilder.create()
 - [ ] Shifrlash ishlatilgan joylarda rejim (GCM), nonke yangiligi va kalit manbasini tekshiring.
 - [ ] Webhook qabul qiluvchilarda imzo tekshiruvi va doimiy vaqtli taqqoslash borligini tasdiqlang.
 - [ ] PII ustunlarini `COMMENT ON COLUMN` bilan belgilab, saqlash muddati siyosatini yozing.
+
+## Manbalar
+
+- [OWASP, Password Storage Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Password_Storage_Cheat_Sheet.md) - Argon2id uchun 19 MiB, 2 iteratsiya, 1 parallelism; scrypt, bcrypt va PBKDF2 chegaralari; work factor uchun bir sekundlik mo'ljal va DoS xavfi; work factor ni oshirish rejasi
+- [spring-security 6.3, `Argon2PasswordEncoder.java`](https://raw.githubusercontent.com/spring-projects/spring-security/6.3.0/crypto/src/main/java/org/springframework/security/crypto/argon2/Argon2PasswordEncoder.java) - konstruktor tartibi va `defaultsForSpringSecurity_v5_8` ning xotira defaulti 16 MiB, ya'ni OWASP chegarasidan past
+- [OWASP, Secrets Management Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Secrets_Management_Cheat_Sheet.md) - secret ning hayot sikli, rotatsiya va saqlash joyi
+- [OWASP, User Privacy Protection Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/User_Privacy_Protection_Cheat_Sheet.md) - ma'lumot minimizatsiyasi va saqlash muddati
 
 ---
 
