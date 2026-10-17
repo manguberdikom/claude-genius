@@ -14,3 +14,4 @@ Barcha proyektlarga tegishli yozuvlar. Bitta yozuv bitta qator.
 - `feedback_reja-qachon-kerak.md` - ko'p modul o'z-o'zidan reja sababi emas, qarorlar hal bo'lgach to'g'ridan-to'g'ri ijro
 - `feedback_sheets-sintetik-paste.md` - Google Sheets ga brauzerdan ko'p qator yozish: sintetik paste hodisasi, koordinata masshtabi
 - `feedback_umumiy-daraxt-kompilyatsiya-buzilgan.md` - boshqa sessiyaning yarim ishi umumiy daraxtni yig'ilmas qilsa, testni ajratilgan worktree da yurgizish
+- `feedback_token-egalik-identifikatorga-bogliq.md` - egalik identifikatordan hisoblanadigan tokenlashtirishda identifikatorni o'zgartirish tuzog'i

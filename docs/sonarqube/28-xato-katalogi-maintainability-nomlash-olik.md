@@ -186,6 +186,15 @@ public class StockService {
 }
 ```
 
+Bir xil import ikki marta yozilgani ham `java:S1128`, lekin uni "ishlatilmagan" izlash topmaydi: har ikki qator ham ishlatilgan nomni keltiradi. Bu odatda qo'lda birlashtirish yoki IDE siz tahrirdan qoladi va kompilyatsiya o'tib ketadi, shuning uchun faqat statik tekshiruv ko'rsatadi.
+
+```java
+import java.util.Set;
+import java.util.Set;               // java:S1128: takroriy, birini o'chirish kerak
+```
+
+Bir xil oddiy nomning turli paketdan kelgani (`java.util.Set` va `shop.Set`) takror emas, u kompilyatsiya xatosi yoki ataylab yozilgan FQN masalasi. Statik import va shu turning oddiy importi ham takror emas: ular boshqa narsani keltiradi.
+
 `java:S1481` ayniqsa qimmatli signal. Ko'pincha o'zgaruvchi o'qilmagani demak, muallif tekshiruvni yozishni unutgan. Shuning uchun bu shikoyatni avtomatik o'chirib tashlamang, avval mantiqni qayta o'qing.
 
 ```java
