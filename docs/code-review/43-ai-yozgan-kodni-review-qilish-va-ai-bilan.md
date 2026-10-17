@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 43. AI yozgan kodni review qilish va AI bilan review qilish (Reviewing AI-Generated Code)
 
@@ -184,13 +184,16 @@ shovqinga ko'madi va jamoa AI izohlarini e'tiborsiz qoldiradi.
 # 6) Bot izohi `suggest` darajasida bo'ladi, `blocker` emas - blocker
 #    qarorini odam qabul qiladi.
 #
-# 7) Bot topilmalarining qabul qilinish nisbatini o'lchash: 30 foizdan
-#    past bo'lsa, sozlamani o'zgartirish yoki o'chirish kerak.
+# 7) Bot topilmalarining qabul qilinish nisbatini o'lchash: nisbat
+#    pasayib borsa, sozlamani o'zgartirish yoki botni o'chirish kerak.
+#    Chegara raqamini jamoa o'zi tanlaydi, universal qiymat yo'q.
 ```
 
 ## 43.7 Muallif mas'uliyati o'zgarmaydi
 
 Eng muhim qoida: kodni kim yozgani - odam, AI yoki ikkisi birga - mas'uliyatni o'zgartirmaydi. PR muallifi kodning har bir qatori uchun javob beradi: uni tushunishi, tushuntirib berishi va prodda ishlamay qolsa tuzatishi kerak.
+
+Bu yangi qoida emas. Martin kodni himoya qilish mas'uliyatini dasturchining o'z ishi deb ataydi: menejer muddatni jon-jahdi bilan talab qilishi mumkin, "lekin bu uning ishi; kodni xuddi shunday qat'iylik bilan himoya qilish esa sizning ishingiz". Google da ham har o'zgarish kamida bitta LGTM talab qiladi, ya'ni kodni kimdir ko'rib, "men bu o'zgarishni ko'rdim va to'g'ri deb hisoblayman" deb o'z nomini qo'yadi. AI yozgan kodda bu zanjir uzilmaydi: nom qo'yadigan ham, javob beradigan ham odam.
 
 Shu sababli review da qoida oddiy: muallif tushuntirib bera olmaydigan kod merge qilinmaydi. Bu qoida AI dan oldin ham amal qilgan (copy-paste qilingan kod uchun) va u o'zgarmaydi.
 
@@ -228,10 +231,17 @@ Agar SERIALIZABLE kerak bo'lmasa, uni olib tashlash osonroq.
 - [ ] Har bir yozilgan konvensiya uchun uni majburlaydigan mexanizm qo'shing: ArchUnit, ErrorProne, Semgrep yoki tipli domen turi.
 - [ ] `GLOSSARY.md` va ADR larni kod bazasida saqlab, kontekstni kodga yaqin tuting.
 - [ ] AI yozgan kod uchun qo'shimcha review savollarini checklistga qo'shing.
-- [ ] AI review bot i ishlatilsa, uning topilmalari qabul qilinish nisbatini o'lchang va 30 foizdan past bo'lsa sozlang.
+- [ ] AI review bot i ishlatilsa, uning topilmalari qabul qilinish nisbatini o'lchab boring va nisbat pasaysa sozlamani o'zgartiring.
 - [ ] Bot izohlarini `suggest` darajasida cheklab, `blocker` qarorini odamga qoldiring.
 - [ ] "Muallif tushuntirib bera olmaydigan kod merge qilinmaydi" qoidasini `REVIEW.md` ga yozing.
 - [ ] Yangi testlarda kutilgan qiymatlar qo'lda yozilganini (kod bilan hisoblanmaganini) tekshirishni review bandiga aylantiring.
+
+## Manbalar
+
+- Robert C. Martin, *Clean Code: A Handbook of Agile Software Craftsmanship*, Prentice Hall, 2008, 1-bob (5-6-betlar) - kodni himoya qilish dasturchining o'z mas'uliyati; muddat bosimiga berilish noprofessionallik
+- Titus Winters, Tom Manshreck, Hyrum Wright (tahr.), *Software Engineering at Google*, O'Reilly, 2020, 9-bob "Code Review" - har o'zgarish kamida bitta LGTM talab qiladi; LGTM, approval va readability approval uchta alohida ruxsat; review bosqichlari
+- ESLATMA: AI yozgan kodning xato profili (43.1), ishonchli ko'rinadigan noto'g'ri kod naqshi (43.2), qo'shimcha review savollari (43.3), kontekst fayllari ro'yxati (43.4), mehnat taqsimoti jadvali (43.5), bot sozlamalari (43.6) va checklist (43.8) uchun birlamchi kitob manbasi yo'q: bu qismlar shu korpusning amaliy tavsiyasi. Ularni kitobdan olingan qoida sifatida keltirmang
+- ESLATMA: bot topilmalarining qabul qilinish nisbati uchun aniq chegara raqami berilmaydi, chunki uni tasdiqlaydigan manba yo'q
 
 ---
 

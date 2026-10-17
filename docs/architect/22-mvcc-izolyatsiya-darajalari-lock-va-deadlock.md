@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 22. MVCC, izolyatsiya darajalari, lock va deadlock (MVCC and Isolation)
 
 <details>
-<summary>Bu bobdagi 12 bo'lim</summary>
+<summary>Bu bobdagi 17 bo'lim</summary>
 
 - [22.1 MVCC mexanikasi: `xmin`, `xmax`, snapshot va ko'rinuvchanlik qoidasi](#221-mvcc-mexanikasi-xmin-xmax-snapshot-va-korinuvchanlik-qoidasi)
 - [22.2 PostgreSQL da Read Committed haqiqatda qanday ishlaydi](#222-postgresql-da-read-committed-haqiqatda-qanday-ishlaydi)
@@ -20,7 +20,12 @@
 - [22.9 Uzoq ochiq tranzaksiya: vacuum ni to'xtatishi va bloat keltirishi](#229-uzoq-ochiq-tranzaksiya-vacuum-ni-toxtatishi-va-bloat-keltirishi)
 - [22.10 `pg_locks` va `pg_stat_activity` bilan bloklanishni topish](#2210-pg_locks-va-pg_stat_activity-bilan-bloklanishni-topish)
 - [22.11 Navbat jadvali qurish: `SKIP LOCKED` bilan ishonchli ishlov berish](#2211-navbat-jadvali-qurish-skip-locked-bilan-ishonchli-ishlov-berish)
-- [22.12 Amalda qo'llash](#2212-amalda-qollash)
+- [22.12 ACID ta'rifi nega noaniq va anomaliyalar taksonomiyasi](#2212-acid-tarifi-nega-noaniq-va-anomaliyalar-taksonomiyasi)
+- [22.13 Bir obyektli va ko'p obyektli operatsiya: atomiklik qayerda tugaydi](#2213-bir-obyektli-va-kop-obyektli-operatsiya-atomiklik-qayerda-tugaydi)
+- [22.14 Fantomni lock obyektiga aylantirish: materializing conflicts](#2214-fantomni-lock-obyektiga-aylantirish-materializing-conflicts)
+- [22.15 Serializability ga uch yo'l va PostgreSQL faqat bittasini beradi](#2215-serializability-ga-uch-yol-va-postgresql-faqat-bittasini-beradi)
+- [22.16 `PREPARE TRANSACTION`: shubhadagi tranzaksiya lock ni ushlab turadi](#2216-prepare-transaction-shubhadagi-tranzaksiya-lock-ni-ushlab-turadi)
+- [22.17 Amalda qo'llash](#2217-amalda-qollash)
 
 </details>
 
@@ -98,7 +103,7 @@ if (updated == 0) {
 
 ## 22.3 Repeatable Read va serialization xatosi, qayta urinish zarurati
 
-Repeatable Read da snapshot tranzaksiya boshida olinadi va oxirigacha o'zgarmaydi, hamma `SELECT` bir xil holatni ko'radi. Hisobot va ko'p bosqichli o'qish uchun ideal.
+Repeatable Read da snapshot bir marta olinadi va tranzaksiya oxirigacha o'zgarmaydi, hamma `SELECT` bir xil holatni ko'radi. Aniq payti muhim: snapshot `BEGIN` da emas, tranzaksiyadagi **birinchi** statementda (tranzaksiyani boshqaruvchi buyruqlardan boshqasida) olinadi. Shu sababli `BEGIN` dan keyin uzoq kutib turgan tranzaksiya kutish davomida commit bo'lgan o'zgarishlarni baribir ko'radi. Hisobot va ko'p bosqichli o'qish uchun ideal.
 
 Yozishda narx paydo bo'ladi. Agar snapshot olgandan keyin boshqa kim o'zgartirgan qatorni yangilamoqchi bo'lsangiz, EvalPlanQual ishlamaydi va `40001` keladi: `could not serialize access due to concurrent update`. Tranzaksiya butunlay bekor bo'ladi.
 
@@ -222,6 +227,28 @@ CREATE INDEX CONCURRENTLY idx_orders_channel ON orders (channel);
 ```
 
 `lock_timeout` ni migratsiyada majburiy qilish arxitektura qarori: 3 soniyada ololmasa migratsiya tushadi va keyin qayta urinadi, bu butun ilovaning o'lishidan yaxshi.
+
+Jadval darajasiga chiqishning ikkinchi yo'li ham bor va uning nomi lock escalation. Fowler tranzaksiya ishlatganda aynan nima lock qilinayotganidan xabardor bo'lishni talab qiladi: ko'p baza amalida tranzaksiya tizimi tegishli qatorlarni lock qiladi va shu sababli bir nechta tranzaksiya bitta jadval bilan ishlay oladi, lekin tranzaksiya jadvalda juda ko'p qatorni lock qilsa, bazada ko'tara oladiganidan ko'p lock to'planadi va lock butun jadvalga ko'tariladi, ya'ni boshqa tranzaksiyalarni jadvaldan chiqarib yuboradi (Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 5-bob, 72-73-betlar).
+
+Shu mexanizmdan Fowler bitta aniq sxema qoidasini chiqaradi: lock escalation konkurentlikka jiddiy ta'sir qilishi mumkin, va aynan shu sababli domenning [qatlam ustki turi](../patterns/02-strukturaviy-patternlar.md#216-qatlam-ustki-turi-layer-supertype) darajasidagi ma'lumot uchun umumiy "obyekt" jadvali qurmaslik kerak; bunday jadval lock escalation ning birinchi nomzodi bo'ladi, uni lock qilish esa hammani bazadan chiqarib yuboradi (5-bob, 73-bet).
+
+```sql
+-- Qochiladigan shakl: hamma agregat bitta jadvalda.
+-- Har bir biznes oqimi shu jadvalga tegadi, demak har lock hammaga tegadi.
+CREATE TABLE object (
+    id      bigserial PRIMARY KEY,
+    type    text NOT NULL,          -- 'ORDER', 'PAYMENT', 'INVOICE'
+    payload jsonb NOT NULL
+);
+
+-- To'g'ri shakl: har agregat o'z jadvalida, lock ham o'sha jadvalda qoladi.
+CREATE TABLE orders  (id bigserial PRIMARY KEY, customer_id bigint NOT NULL);
+CREATE TABLE payment (id bigserial PRIMARY KEY, order_id    bigint NOT NULL);
+```
+
+Bu qoidaning sxema tomonidagi sababi lock dan ham keng: umumiy `object` jadvali turni ustun qiymatiga aylantirib cheklovlarni ham, indeksni ham ishlatib bo'lmaydigan qiladi, va bu [ichki platforma effekti](../patterns/25-anti-patternlar.md#2524-ichki-platforma-effekti-inner-platform-effect) ko'rinishi; turni to'g'ri tanlash [sxema dizayni bobida](25-sxema-dizayni-malumot-turlari-va-cheklovlar.md#251-turni-togri-tanlash-text-varchar-numeric-timestamptz-uuid-boolean).
+
+PostgreSQL da escalation uchun sabab yo'q, chunki qator lock i umuman lock jadvalida yashamaydi. Qaysi qator lock qilingani haqidagi ma'lumot faqat o'sha qatorning joriy versiyasi, ya'ni heap tuple headerida saqlanadi: lock qo'ygan tranzaksiyaning `xid` i `xmax` maydoniga yoziladi va qo'shimcha hint bitlari bilan birga lock belgisi bo'lib xizmat qiladi. Demak qator lock lari amalda heap sahifasidagi atribut, haqiqiy lock emas: ular xotirada joy egallamaydi va `pg_locks` da hech qanday ko'rinmaydi, va shu mexanizm kerak bo'lgan qadar qatorni qo'shimcha narxsiz lock qilish imkonini beradi. Escalation esa o'sha yerda "ba'zi baza tizimlari" ning yechimi sifatida tasvirlanadi: qator lock lari juda ko'payganda ular bitta yirikroq granularitetdagi (sahifa yoki jadval darajasidagi) lock bilan almashtiriladi, bu implementatsiyani soddalashtiradi, lekin tizim throughput ini keskin cheklashi mumkin (Egor Rogov, *PostgreSQL 14 Internals*, 13-bob, 210-bet). Chegaradan oshib ketadigan hisob ham yo'q: navbatga turish uchun protsess qatorni emas, o'sha qator bilan band tranzaksiyaning `xid` ini lock qiladi, shuning uchun heavyweight lock soni o'zgartirilayotgan qator soniga emas, parallel protsess soniga proportsional (13-bob, 210-bet); `max_locks_per_transaction` chegaralaydigan pul ham (`max_locks_per_transaction` ni `max_connections` ga ko'paytirilgani, default 64 va 100) aynan shu obyekt darajasidagi heavyweight lock lar uchun (12-bob, 201-bet). Kitobning granularity haqidagi umumiy kirishida escalation lock metadatasiga ketadigan xotirani kamaytirish usullari qatorida bir marta eslatib o'tiladi (12-bob, 200-bet), lekin PostgreSQL ning qator lock i aynan tasvirlangan joyda yo'l `xmax` ekani va uning qo'shimcha narxi yo'qligi aytiladi. Natijada Fowler ning escalation mexanizmi PostgreSQL ga tegishli emas, uning sxema qoidasi esa kuchda qoladi: umumiy "obyekt" jadvali qurilmaydi, ammo sababi escalation emas, yuqorida sanalgani, ya'ni har bir biznes oqimining shu bitta jadvalga tegishi va cheklov bilan indeksni ishlatib bo'lmasligi.
 
 ## 22.8 Deadlock qanday yuzaga keladi, log da qanday ko'rinadi, qanday oldini olinadi
 
@@ -356,7 +383,164 @@ Hajm chegarasini bilib turing: bitta PostgreSQL navbat taxminan minutda 10 mingd
 | Diagnostika | `pg_stat_activity` ni qo'lda ko'radi | `pg_blocking_pids` dashboard, `log_lock_waits = on` |
 | Navbat | `SELECT` plus `UPDATE` ikki qadamda | Bitta atomik statement plus reaper |
 
-## 22.12 Amalda qo'llash
+## 22.12 ACID ta'rifi nega noaniq va anomaliyalar taksonomiyasi
+
+ACID 1983 yilda Theo Harder va Andreas Reuter tomonidan aniq terminologiya yaratish uchun kiritilgan, lekin bugun bir bazaning ACID i boshqasining ACID iga teng emas va eng ko'p noaniqlik aynan isolation harfida: "ACID compliant" da'vosi qanday kafolat berilganini aytmaydi va Kleppmann atamani asosan marketing atamasiga aylangan deb baholaydi (*Designing Data-Intensive Applications*, 7-bob, 223-bet). ACID ga qarshi qo'yiladigan BASE yana ham noaniq: uning yagona mazmunli ta'rifi "ACID emas" (7-bob, 223-bet).
+
+Arxitektor uchun shundan ikki aniqlik chiqadi. Birinchi: ACID dagi atomiklik concurrency haqida emas. U bir nechta yozuvning o'rtasida xato chiqsa nima bo'lishini bildiradi, ya'ni abort qilish va qilingan yozuvlarni bekor qilish qobiliyatini; Kleppmann "atomicity" o'rniga "abortability" to'g'riroq atama bo'lar edi deydi (7-bob, 223-bet). Bir vaqtda ishlayotgan tranzaksiyalar bir-biriga ta'siri esa I harfining ishi.
+
+Ikkinchi: C harfi bazaga tegishli emas. Atomiklik, izolyatsiya va bardoshlilik bazaning xossasi, ACID ma'nosidagi konsistentlik esa ilovaning xossasi: invariantni ilova ta'riflaydi, baza esa invariantni buzadigan ma'lumotni yozishdan to'smaydi (7-bob, 224-225-betlar). Shuning uchun "baza konsistent" degan hisobot bandi hech narsani tasdiqlamaydi, `CHECK`, `FOREIGN KEY` va `UNIQUE` esa tasdiqlaydi: invariantni kodga emas, sxemaga ko'chirish shu farqdan kelib chiqadi.
+
+Anomaliyalarni nomlab chiqish qarorni osonlashtiradi, chunki har bir daraja boshqa ro'yxatni to'sadi. PostgreSQL uchta daraja beradi va `READ UNCOMMITTED` ni `READ COMMITTED` deb qabul qiladi.
+
+| Anomaliya | Nima sodir bo'ladi (DDIA 7-bob) | PostgreSQL da qaysi daraja to'sadi |
+|---|---|---|
+| Dirty read | Commit qilinmagan yozuv o'qiladi (234-bet) | Read Committed |
+| Dirty write | Commit qilinmagan yozuv ustiga yoziladi (235-bet) | Read Committed |
+| Read skew | Bitta tranzaksiya ikki xil holatni ko'radi (237-bet) | Repeatable Read |
+| Lost update | Read-modify-write tsikli bir-birini bosadi (242-bet) | Repeatable Read (`40001`) yoki aniq lock |
+| Write skew | Qaror eskirgan premissaga asoslanadi (246-bet) | Faqat Serializable |
+| Phantom | Yozuv boshqa tranzaksiyaning qidiruv natijasini o'zgartiradi (250-bet) | O'qishda Repeatable Read, yozuv yo'lida faqat Serializable |
+
+```sql
+-- Sessiya qaysi darajada ishlayotganini tekshirish: taxmin qilinmaydi.
+SHOW transaction_isolation;   -- read committed
+
+-- Butun ilovaga emas, faqat kerakli yo'lga ko'tarish.
+BEGIN ISOLATION LEVEL SERIALIZABLE;
+-- ... kredit limiti tekshiruvi ...
+COMMIT;
+```
+
+Qoida: daraja tanlashdan oldin qaysi anomaliya biznesga pul yo'qotishini ayting. "Serializable xavfsizroq" degan gap qaror emas, chunki u narxni hisobga olmaydi.
+
+## 22.13 Bir obyektli va ko'p obyektli operatsiya: atomiklik qayerda tugaydi
+
+Bitta `INSERT`, `UPDATE` yoki `DELETE` PostgreSQL da `BEGIN` yozilmasa ham atomik: statement o'z tranzaksiyasida ketadi. Kleppmann bu kafolatni storage engine darajasidagi atomiklik va izolyatsiya deb ataydi va ogohlantiradi: bir obyektli amallar, masalan atomik increment yoki compare-and-set, ko'pincha "transaction" deb sotiladi, lekin bu chalg'ituvchi, chunki ACID ma'nosidagi tranzaksiya bir nechta obyektni bitta guruhga biriktirishni bildiradi (*Designing Data-Intensive Applications*, 7-bob, 230-bet).
+
+Ko'p obyektli tranzaksiya qachon haqiqatan kerak bo'ladi: foreign key bilan bog'langan qatorlarni birga yozishda, denormallashtirilgan nusxani (hisoblangan son, materiallashtirilgan ko'rinish) asl ma'lumot bilan birga yangilashda, va sekundar indeks jadval bilan bir vaqtda o'zgarishi kerak bo'lganda (7-bob, 231-bet).
+
+Eng nozik joy guruhlashning o'zida. Relyatsion bazada tranzaksiya `BEGIN` va `COMMIT` orasidagi hamma narsa deb olinadi va bu TCP ulanishiga bog'langan; Kleppmann buni ideal emas deb ataydi: ulanish `COMMIT` so'ralgandan keyin, lekin javob kelmasidan uzilsa, mijoz tranzaksiya commit bo'lgan yoki bo'lmaganini bilmaydi (7-bob, 229-bet). Spring da bu holat `@Transactional` metod `CannotGetJdbcConnectionException` yoki `TransactionSystemException` bilan tushishi ko'rinishida chiqadi va "qayta urinaymi" savolini javobsiz qoldiradi.
+
+Shundan qayta urinishning aniq chegaralari chiqadi. Kleppmann retry ni abort ning asl maqsadi deb ataydi, lekin to'rt tuzoqni sanaydi: commit haqiqatda o'tib faqat javob yo'qolgan bo'lsa retry ishni ikki marta qiladi; xato overload dan bo'lsa retry holatni yomonlashtiradi; doimiy xatoda (constraint buzilishi) retry ma'nosiz; bazadan tashqaridagi yon ta'sir (email, HTTP chaqiruv) tranzaksiya abort bo'lsa ham sodir bo'lib qoladi (7-bob, 231-232-betlar).
+
+```java
+@Service
+public class PaymentFacade {
+    private final PaymentService service;   // @Transactional shu ichida
+
+    public PaymentResult pay(String idempotencyKey, PayCommand cmd) {
+        int attempt = 0;
+        while (true) {
+            try {
+                // Kalit bazada unique: ikkinchi urinish dublikat yaratmaydi.
+                return service.payOnce(idempotencyKey, cmd);
+            } catch (CannotSerializeTransactionException
+                     | CannotAcquireLockException
+                     | TransactionSystemException e) {
+                // O'tkinchi xato: faqat shu sinf qayta urinishga arziydi.
+                if (++attempt >= 3) throw e;
+            } catch (DataIntegrityViolationException e) {
+                // Doimiy xato: retry hech qachon natijani o'zgartirmaydi.
+                throw new PaymentRejectedException(idempotencyKey, e);
+            }
+        }
+    }
+}
+```
+
+Yon ta'sirni tranzaksiya ichida qoldirmaslik qoidasi shu yerdan keladi: email va HTTP chaqiruv commit dan keyin, `@TransactionalEventListener(phase = AFTER_COMMIT)` orqali ketadi.
+
+## 22.14 Fantomni lock obyektiga aylantirish: materializing conflicts
+
+Fantom muammosining sababi lock qo'yadigan obyekt yo'qligida: tranzaksiya "bu xona bu vaqtda bo'shmi" deb qidiradi, natija bo'sh keladi va lock qo'yish uchun hech qanday qator yo'q. Kleppmann yechimni sun'iy lock obyekti kiritishda ko'radi: xona va 15 daqiqalik oraliqlarning hamma kombinatsiyasi uchun qatorlar oldindan yaratiladi, tranzaksiya kerakli qatorlarni `SELECT ... FOR UPDATE` bilan lock qiladi, keyin ustma-ust tushishni tekshiradi. Bu usul materializing conflicts deb ataladi, chunki u fantomni bazada mavjud aniq qatorlar ustidagi lock konfliktiga aylantiradi (*Designing Data-Intensive Applications*, 7-bob, 251-bet).
+
+Kitob darhol narxini ham aytadi: konfliktni qanday materiallashtirish kerakligini topish qiyin va xatoga moyil, concurrency control ning ilova ma'lumot modeliga sizib kirishi esa xunuk; shu sababli bu usul boshqa yo'l qolmaganda ishlatiladigan oxirgi chora, ko'p holatda serializable daraja afzal (7-bob, 251-bet).
+
+PostgreSQL da ikkinchi va uchinchi yo'l bor, shuning uchun lock jadvali kamdan kam oqlanadi. Eng toza yo'l invariantni cheklovga aylantirish: `btree_gist` kengaytmasi bilan `EXCLUDE` cheklovi ustma-ust tushgan oraliqni indeks darajasida rad etadi va hech qanday aniq lock talab qilmaydi.
+
+```sql
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+
+CREATE TABLE room_booking (
+    id          bigserial PRIMARY KEY,
+    room_id     bigint NOT NULL,
+    period      tstzrange NOT NULL,
+    -- Ustma-ust tushish endi fantom emas, cheklov buzilishi.
+    EXCLUDE USING gist (room_id WITH =, period WITH &&)
+);
+
+-- Ikkinchi sessiya shu oraliqni yozsa:
+-- ERROR: conflicting key value violates exclusion constraint
+--        "room_booking_room_id_period_excl"   (SQLSTATE 23P01)
+```
+
+Java tomonida bu `DataIntegrityViolationException` bo'lib keladi va uni biznes xatosiga aylantirish kerak, chunki retry hech narsa bermaydi.
+
+```java
+try {
+    bookingRepository.saveAndFlush(booking);
+} catch (DataIntegrityViolationException e) {
+    // 23P01: xona shu oraliqda band. Qayta urinish foydasiz.
+    throw new RoomAlreadyBookedException(booking.getRoomId(), e);
+}
+```
+
+Qaror tartibi: birinchi `EXCLUDE` yoki `UNIQUE` cheklovi, bo'lmasa Serializable plus retry, va faqat ikkisi ham imkonsiz bo'lganda lock jadvali. Lock jadvali tanlangan bo'lsa, u ma'lumot saqlamasligi va faqat lock yig'indisi ekani kod izohida yozilishi kerak.
+
+## 22.15 Serializability ga uch yo'l va PostgreSQL faqat bittasini beradi
+
+Kleppmann serializable izolyatsiyaga uchta amaliy yo'l borligini ko'rsatadi: tranzaksiyalarni haqiqatan ketma-ket bajarish, ikki fazali qulflash (2PL) va serializable snapshot isolation (SSI) (*Designing Data-Intensive Applications*, 7-bob, 251-266-betlar). Farqni bilish kerak, chunki PostgreSQL ularning faqat bittasini beradi va qolgan ikkitasini ilova darajasida taqlid qilish kerak bo'ladi.
+
+Haqiqatan ketma-ket bajarish bitta thread da ishlaydi va shuning uchun to'rtta qattiq shartga bog'langan: har bir tranzaksiya kichik va tez bo'lishi shart, chunki bitta sekin tranzaksiya butun ishni to'xtatadi; faol ma'lumot xotiraga sig'ishi kerak; yozish throughput i bitta CPU yadrosiga sig'ishi kerak, aks holda partitsiyalash majburiy bo'ladi; partition lar o'rtasidagi tranzaksiyalar mumkin, lekin ularning ulushi qattiq cheklangan (7-bob, 256-bet). PostgreSQL bunday rejim bermaydi, lekin uning amaliy ko'rinishi bor: bitta agregat kalitiga bitta worker, ya'ni `pg_advisory_xact_lock(hashtext(key))` yoki kalit bo'yicha navbat.
+
+2PL da yozuvchilar faqat yozuvchilarni emas, o'quvchilarni ham bloklaydi va teskarisi ham to'g'ri: snapshot izolyatsiyasining "o'quvchi yozuvchini bloklamaydi" mantrasi aynan shu nuqtada buziladi (7-bob, 257-bet). Buning narxi bashoratsiz latency va deadlock soni (7-bob, 258-bet). PostgreSQL o'qilgan qatorga avtomatik shared lock qo'ymaydi, ya'ni u 2PL ni amalga oshirmaydi; 2PL ga yaqin xulq faqat qo'lda, `FOR SHARE` va `FOR UPDATE` bilan quriladi. Pattern sifatida yozuvi [ikki fazali qulflash bo'limida](../patterns/28-taqsimlangan-malumot-replikatsiya-va.md#2822-ikki-fazali-qulflash-two-phase-locking).
+
+SSI optimistik: u bloklamaydi, konfliktni commit paytida topadi va tranzaksiyani abort qiladi. PostgreSQL ning `SERIALIZABLE` darajasi aynan shu va uning mexanikasi [predikat lock bo'limida](#224-serializable-izolyatsiya-predikat-lock-va-uning-narxi) ko'rsatilgan.
+
+| Yo'l | Bloklaydi | Narxi | PostgreSQL da |
+|---|---|---|---|
+| Ketma-ket bajarish | Hammani navbatga qo'yadi | Bitta yadro, kichik tranzaksiya | Yo'q; advisory lock yoki navbat bilan taqlid |
+| 2PL | O'qish va yozish bir-birini | Latency bashoratsiz, deadlock | Yo'q; `FOR SHARE` plus `FOR UPDATE` bilan qo'lda |
+| SSI | Bloklamaydi | Abort darajasi, `40001` retry | `SERIALIZABLE` darajasi |
+
+```sql
+-- Ketma-ket bajarishning PostgreSQL dagi amaliy ko'rinishi:
+-- bitta agregat kaliti ustida bir vaqtda bitta tranzaksiya.
+BEGIN;
+SELECT pg_advisory_xact_lock(hashtext('order:' || 4215));
+-- ... shu buyurtma ustidagi hamma o'qish va yozish ...
+COMMIT;   -- advisory lock shu yerda o'zi bo'shaydi
+```
+
+Tanlov qoidasi: konflikt kamdan kam bo'lsa SSI, konflikt deyarli har safar bo'lsa va invariant bitta kalit atrofida yopilsa advisory lock bilan ketma-ketlashtirish arzonroq, chunki retry bo'roni bo'lmaydi.
+
+## 22.16 `PREPARE TRANSACTION`: shubhadagi tranzaksiya lock ni ushlab turadi
+
+Ikki fazali commit da ishtirokchi `prepared` holatga o'tgandan keyin coordinator qarorini kutadi va shu holat "shubhadagi" (in doubt) deb ataladi. Kleppmann asosiy xavf aynan lock da ekanini ko'rsatadi: tranzaksiya shubhada turgan butun davr mobaynida o'zgartirgan qatorlari ustidagi exclusive lock ni ushlab turishi shart; coordinator qulab 20 daqiqada ko'tarilsa lock lar 20 daqiqa ushlanadi, coordinator logi butunlay yo'qolsa esa lock lar administrator qo'lda hal qilmaguncha, ya'ni amalda cheksiz ushlanadi (*Designing Data-Intensive Applications*, 9-bob, 362-bet).
+
+Yana ikki fakt qarorni belgilaydi. Bazani qayta ishga tushirish yordam bermaydi, chunki to'g'ri 2PC amalga oshirilishi shubhadagi tranzaksiyaning lock larini restart dan keyin ham saqlashi shart, aks holda atomiklik buziladi (9-bob, 362-bet). Va ko'p XA amalga oshirilishida "heuristic decision" degan zaxira yo'l bor: ishtirokchi coordinator qarorisiz o'zi commit yoki abort qiladi, bu esa Kleppmann ning so'zi bilan atomiklikni ehtimol buzish degani va faqat halokatli holat uchun (9-bob, 363-bet).
+
+PostgreSQL da bu mexanizm `PREPARE TRANSACTION` orqali ochiladi va standart holatda o'chirilgan: `max_prepared_transactions` default qiymati 0, ya'ni 2PC ni ishlatish uchun uni ataylab yoqish va serverni qayta ishga tushirish kerak. Yoqilgan bo'lsa, tashlab ketilgan prepared tranzaksiya ikki zarar keltiradi: lock larni ushlaydi va `xmin` gorizontini orqada tutib `VACUUM` ni to'sadi, demak bloat o'sadi va transaction ID wraparound xavfi yaqinlashadi.
+
+```sql
+-- Tashlab ketilgan prepared tranzaksiyani topish: monitoringda majburiy panel.
+SELECT gid, prepared, owner, database,
+       now() - prepared AS yoshi
+FROM pg_prepared_xacts
+ORDER BY prepared;
+
+-- Qaror faqat ikkita: ishtirokchilarning holatini tekshirib, keyin
+COMMIT PREPARED 'tx-4215';
+-- yoki
+ROLLBACK PREPARED 'tx-4215';
+```
+
+Spring da `JtaTransactionManager` va XA DataSource shu yo'lni ochadi, lekin PostgreSQL va Kafka ni bitta XA tranzaksiyaga bog'lash arxitektura qarori sifatida deyarli har doim xato: shubhadagi tranzaksiya bazadagi eng issiq qatorlarni bloklab qo'yadi. To'g'ri yo'l bazani bitta mahalliy tranzaksiyada qoldirib, tashqi tizimga yuborishni [tranzaksion outbox](../patterns/10-malumotlarni-boshqarish-va-taqsimlash.md#1014-tranzaksion-outbox-transactional-outbox) orqali ajratish; Kafka tomonidagi ko'rinishi [Kafka bobida](29-kafka-operatsion-haqiqati-partition-lag.md#2911-tranzaksiya-va-xabar-yuborish-nomuvofiqligi-nega-ikki-fazali-commit-emas).
+
+Operatsion qoida: `max_prepared_transactions > 0` bo'lsa, `pg_prepared_xacts` da bir necha daqiqadan uzoq turgan yozuv critical alert bo'lishi kerak (chegara uchun 5 daqiqa amaliy boshlang'ich nuqta, o'lchanmagan taxmin), chunki uni faqat odam hal qiladi.
+
+## 22.17 Amalda qo'llash
 
 - [ ] Hamma yozuv yo'llarini ro'yxatlab chiq va har biri lost update dan nima bilan himoyalanganini yoz. Himoyasiz yo'llarni darhol tuzat.
 - [ ] Har bir shartli `UPDATE` ning affected rows ini tekshirishni majburiy qil va 0 holatida aniq biznes exception tashla.
@@ -366,6 +550,20 @@ Hajm chegarasini bilib turing: bitta PostgreSQL navbat taxminan minutda 10 mingd
 - [ ] Migratsiya shabloniga `SET lock_timeout = '3s'` ni majburiy qator sifatida kirit va index yaratishni faqat `CONCURRENTLY` bilan ruxsat et.
 - [ ] Pul yoki qoldiq o'zgartiradigan kodda lock lar `id` bo'yicha saralangan tartibda olinishini tekshir va buni test bilan qotir.
 - [ ] Navbat jadvaliga partial index, `SKIP LOCKED` bilan atomik olish va qolib ketgan ishlar uchun reaper job qo'sh.
+
+## Manbalar
+
+- Martin Kleppmann, *Designing Data-Intensive Applications*, 7-bob - tranzaksiyalar, izolyatsiya darajalari va anomaliyalar (lost update, write skew, phantom)
+- Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 5-bob (72-73-betlar) - tranzaksiyada aynan nima lock qilinayotganidan xabardor bo'lish talabi; qator lock lari soni dvigatel ko'targanidan oshganda lock ning butun jadvalga ko'tarilishi (lock escalation) va uning konkurentlikka ta'siri; qatlam ustki turi darajasidagi umumiy "obyekt" jadvalini qurmaslik qoidasi va bunday jadvalning hammani bazadan chiqarib yuborishi
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 13-bob "Row-Level Locks", 210-bet va 12-bob "Relation-Level Locks", 200-201-betlar - qator lock i faqat heap tuple headeridagi `xmax` maydonida saqlanishi, uning xotirada joy egallamasligi va `pg_locks` da ko'rinmasligi, kerakli qadar qatorni qo'shimcha narxsiz lock qilish, lock escalation "ba'zi baza tizimlari" ning yechimi ekani, heavyweight lock soni parallel protsess soniga proportsionalligi va `max_locks_per_transaction` ni `max_connections` ga ko'paytirilgan pul
+- Martin Kleppmann, *Designing Data-Intensive Applications*, O'Reilly, 2017, 7-bob (223-232-betlar) - ACID atamasining noaniqligi va BASE ning "ACID emas" ma'nosi, atomiklik aslida abort qilish qobiliyati ekani, C harfi ilovaga tegishliligi, bir obyektli va ko'p obyektli operatsiya farqi, qayta urinishning to'rt chegarasi
+- Martin Kleppmann, *Designing Data-Intensive Applications*, O'Reilly, 2017, 7-bob (234-266-betlar) - anomaliyalar taksonomiyasi, konfliktni materiallashtirish (251-bet) va serializability ga uch yo'l: ketma-ket bajarish, 2PL, SSI
+- Martin Kleppmann, *Designing Data-Intensive Applications*, O'Reilly, 2017, 9-bob (362-363-betlar) - shubhadagi tranzaksiya lock ni ushlab turishi, restart yordam bermasligi va heuristic decision ning ma'nosi
+- [PostgreSQL 17, `max_prepared_transactions` (config.sgml)](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/config.sgml) - default qiymat nol va u prepared-transaction imkoniyatini butunlay o'chiradi
+- [PostgreSQL 17, `PREPARE TRANSACTION` (ref/prepare_transaction.sgml)](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/ref/prepare_transaction.sgml) - `pg_prepared_xacts` ko'rinishi, `COMMIT PREPARED` va `ROLLBACK PREPARED`, ochiq qolgan prepared tranzaksiya `VACUUM` ni to'sishi va lock larni ushlab turishi
+- [PostgreSQL 17, Exclusion constraints (ddl.sgml)](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/ddl.sgml) - `EXCLUDE USING gist` bilan ustma-ust tushgan oraliqni rad etish
+- [PostgreSQL 17, Transaction Isolation (mvcc.sgml)](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/mvcc.sgml) - Read Committed default ekani, har statement o'z snapshotini olishi, Repeatable Read snapshoti birinchi statementda olinishi, Serializable ning qo'shimcha bloklash kiritmasligi
+- [PostgreSQL 17, Explicit Locking (mvcc.sgml)](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/mvcc.sgml) - lock turlari va ularning mosligi
 
 ---
 

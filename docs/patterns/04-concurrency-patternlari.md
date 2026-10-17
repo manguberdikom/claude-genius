@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 4. Concurrency patternlari (Concurrency Patterns)
 
 <details>
-<summary>Bu bobdagi 28 bo'lim</summary>
+<summary>Bu bobdagi 36 bo'lim</summary>
 
 - [4.1 Oqimlar hovuzi / Bajaruvchi (Thread Pool / Executor)](#41-oqimlar-hovuzi--bajaruvchi-thread-pool--executor)
 - [4.2 Ishlab chiqaruvchi-Iste'molchi (Producer-Consumer)](#42-ishlab-chiqaruvchi-istemolchi-producer-consumer)
@@ -36,7 +36,15 @@
 - [4.25 Qamrovli qiymatlar (Scoped Values)](#425-qamrovli-qiymatlar-scoped-values)
 - [4.26 Asinxron metod chaqiruvi (Asynchronous Method Invocation)](#426-asinxron-metod-chaqiruvi-asynchronous-method-invocation)
 - [4.27 Semaphore va concurrency chegarasi (Semaphore / Concurrency Limit)](#427-semaphore-va-concurrency-chegarasi-semaphore--concurrency-limit)
-- [4.28 Amalda qo'llash](#428-amalda-qollash)
+- [4.28 Nusxaga qamash (Instance Confinement)](#428-nusxaga-qamash-instance-confinement)
+- [4.29 Thread xavfsizligini delegatsiya qilish (Delegating Thread Safety)](#429-thread-xavfsizligini-delegatsiya-qilish-delegating-thread-safety)
+- [4.30 Mijoz tomonida qulflash va kompozitsiya o'rami (Client-Side Locking / Composition)](#430-mijoz-tomonida-qulflash-va-kompozitsiya-orami-client-side-locking--composition)
+- [4.31 Natija keshi (Memoizer / Result Cache)](#431-natija-keshi-memoizer--result-cache)
+- [4.32 Ketma-ket thread qamashi va ownership uzatish (Serial Thread Confinement)](#432-ketma-ket-thread-qamashi-va-ownership-uzatish-serial-thread-confinement)
+- [4.33 Zahar tabletka (Poison Pill)](#433-zahar-tabletka-poison-pill)
+- [4.34 Ochiq chaqiruv (Open Call)](#434-ochiq-chaqiruv-open-call)
+- [4.35 Treiber steki: bloklanmaydigan stek (Treiber Stack / Non-blocking Stack)](#435-treiber-steki-bloklanmaydigan-stek-treiber-stack--non-blocking-stack)
+- [4.36 Amalda qo'llash](#436-amalda-qollash)
 
 </details>
 
@@ -337,9 +345,13 @@ public void reload(RateTable fresh) {
 
 ## 4.11 Ikki marta tekshirilgan lock (Double-Checked Locking)
 
-**Tavsif:** Lazy initsializatsiyada har safar lock olishning narxidan qutulish uchun maydon avval lock'siz tekshiriladi, faqat `null` bo'lsa lock olinadi va lock ichida qayta tekshiriladi. Java'da bu faqat maydon `volatile` bo'lganda to'g'ri ishlaydi, aks holda yarim qurilgan obyektni ko'rish mumkin (Java 5 dan keyingi memory model bilan `volatile` yetarli). Ko'p hollarda uning o'rniga oddiyroq va xatosiz muqobillar mavjud.
+**Tavsif:** Lazy initsializatsiyada har safar lock olishning narxidan qutulish uchun maydon avval lock'siz tekshiriladi, faqat `null` bo'lsa lock olinadi va lock ichida qayta tekshiriladi. Java'da bu faqat maydon `volatile` bo'lganda to'g'ri ishlaydi, aks holda yarim qurilgan obyektni ko'rish mumkin (Java 5 dan keyingi memory model bilan `volatile` yetarli).
 
-**Spring'da qayerda uchraydi:** Spring Framework ichida `DefaultSingletonBeanRegistry.getSingleton(...)` singleton cache'ni avval lock'siz `singletonObjects.get(name)` bilan tekshiradi va faqat topilmasa lock ichida yaratadi - klassik ikki marta tekshirish; `AbstractBeanFactory` va `ConcurrentReferenceHashMap` ham shunga yaqin yondashadi. Ilova kodida ko'pincha kerak bo'lmaydi, chunki `@Lazy`, `ObjectProvider<T>`, `@Configuration` bean metodlari va `Suppliers.memoize` uslubidagi yordamchilar xuddi shu natijani beradi; eng xavfsiz Java idiomasi - initialization-on-demand holder yoki `AtomicReference.updateAndGet`.
+Baholashda halol bo'lish kerak: *Java Concurrency in Practice* bu idiomani **anti-pattern** deb ataydi va listingini "Don't do this" sarlavhasi bilan beradi. Kitobning dalili ikki qismdan iborat. Birinchi, nega u buziladi: DCL ning asosidagi taxmin "sinxronizatsiyasiz o'qishda bo'ladigan eng yomon narsa eskirgan qiymatni (bu holda `null`) ko'rish", holbuki haqiqiy eng yomon holat ancha og'ir, ya'ni havolaning **yangi** qiymatini, lekin obyekt holatining **eskirgan** qiymatlarini ko'rish, demak obyekt yaroqsiz holatda ko'rinishi mumkin. Ikkinchi, nega u endi kerak emas: idiomani tug'dirgan sabablar (sekin raqobatsiz sinxronizatsiya, sekin JVM startup) endi kuchda emas, shuning uchun u optimizatsiya sifatida ham ta'sirsiz; lazy initialization holder idiomasi xuddi shu foydani beradi va tushunish osonroq.
+
+Shuning uchun bu bo'limdagi kod "to'g'ri yozilgan DCL" namunasi sifatida o'qilishi kerak, tavsiya sifatida emas: yangi kodda holder idiomasi yoki `AtomicReference.updateAndGet` tanlanadi.
+
+**Spring'da qayerda uchraydi:** Spring Framework ichida `DefaultSingletonBeanRegistry.getSingleton(...)` singleton cache'ni avval lock'siz `singletonObjects.get(name)` bilan tekshiradi va faqat topilmasa lock ichida yaratadi, ya'ni klassik ikki marta tekshirish. Ikki tafsilot muhim: `singletonObjects` `ConcurrentHashMap`, demak birinchi tekshiruv rostdan lock'siz va ko'rinuvchanlik map ning o'zi tomonidan kafolatlanadi; qurish esa Spring 6 dan boshlab `synchronized` emas, `ReentrantLock` (`singletonLock`) bilan o'raladi, bu virtual thread da pinning ni oldini oladi (architect 12.4). `AbstractBeanFactory` va `ConcurrentReferenceHashMap` ham shunga yaqin yondashadi. Ilova kodida ko'pincha kerak bo'lmaydi, chunki `@Lazy`, `ObjectProvider<T>`, `@Configuration` bean metodlari va `Suppliers.memoize` uslubidagi yordamchilar xuddi shu natijani beradi; eng xavfsiz Java idiomasi - initialization-on-demand holder yoki `AtomicReference.updateAndGet`.
 
 ```java
 private volatile Config config;
@@ -561,7 +573,9 @@ start.countDown();           // start berildi
 
 **Tavsif:** Katta vazifani rekursiv ravishda mayda bo'laklarga bo'lib (fork), ularni parallel bajarib, natijalarni birlashtirish (join) usuli. Har bir worker thread o'zining deque'siga ega; o'z navbati bo'shab qolgan thread boshqa thread'ning navbati oxiridan vazifa "o'g'irlaydi" (work stealing), natijada yuk o'z-o'zidan tenglashadi va thread'lar bekor turmaydi. Bu divide-and-conquer tipidagi CPU-bound hisoblar uchun eng samarali model.
 
-**Spring'da qayerda uchraydi:** `java.util.concurrent.ForkJoinPool`, `RecursiveTask`/`RecursiveAction`, `ForkJoinPool.commonPool()`, `Executors.newWorkStealingPool()`; `parallelStream()` va parametrsiz `CompletableFuture.supplyAsync(...)` standart holda `commonPool`'da ishlaydi. Java 21+ virtual thread scheduler'i ham ichida `ForkJoinPool`'ga asoslangan. Spring Framework'da `org.springframework.scheduling.concurrent.ForkJoinPoolFactoryBean` orqali `ForkJoinPool`'ni bean sifatida e'lon qilish mumkin, so'ng uni `@Async` yoki `TaskExecutor` sifatida (`ConcurrentTaskExecutor` bilan o'rab) ishlatish mumkin.
+**Spring'da qayerda uchraydi:** `java.util.concurrent.ForkJoinPool`, `RecursiveTask`/`RecursiveAction`, `ForkJoinPool.commonPool()`, `Executors.newWorkStealingPool()`; `parallelStream()` va parametrsiz `CompletableFuture.supplyAsync(...)` standart holda `commonPool`'da ishlaydi.
+
+`commonPool` ning hajmi aynan nechta ekani konteynerda muhim bo'lib qoladi: JDK manbasida u `Math.max(1, availableProcessors() - 1)`, ya'ni yadro sonidan **bittaga kam** (chaqiruvchi thread ham ishga qo'shilgani uchun). Konteynerga ikki yadro berilgan bo'lsa parallelism 1 ga tushadi va `parallelStream()` amalda ketma-ket ishlaydi; bir yadroda ham 1 qoladi. Shuning uchun konteynerdagi CPU limiti `parallelStream()` ning foydasini jim ravishda yo'q qilishi mumkin va bu `-XX:ActiveProcessorCount` yoki cgroup limiti bilan bog'liq (architect 31.2). Qiymatni `java.util.concurrent.ForkJoinPool.common.parallelism` system property si bilan ham berish mumkin. Java 21+ virtual thread scheduler'i ham ichida `ForkJoinPool`'ga asoslangan. Spring Framework'da `org.springframework.scheduling.concurrent.ForkJoinPoolFactoryBean` orqali `ForkJoinPool`'ni bean sifatida e'lon qilish mumkin, so'ng uni `@Async` yoki `TaskExecutor` sifatida (`ConcurrentTaskExecutor` bilan o'rab) ishlatish mumkin.
 
 **Qo'llanish keyslari:**
 - Katta hisobot uchun millionlab satrni xotirada parallel agregatlash.
@@ -864,7 +878,341 @@ public Quote fetch(QuoteRequest r) throws InterruptedException {
 }
 ```
 
-## 4.28 Amalda qo'llash
+## 4.28 Nusxaga qamash (Instance Confinement)
+
+**Tavsif:** Thread-safe bo'lmagan obyektni thread-safe sinf ichiga to'liq berkitadi va unga kirishning barcha yo'llarini sinfning o'z metodlariga va o'z qulfiga bo'ysundiradi. G'oya oddiy: inkapsulyatsiya qamashni qo'llab-quvvatlaydi, chunki berkitilgan obyektga tegadigan kod yo'llari ma'lum va sanoqli bo'lib qoladi, demak ularni tahlil qilish butun dastur bo'ylab tarqalgan havolalarni tahlil qilishdan ancha oson. Qamash va qulflash intizomi birga ishlatilsa, ichida thread-safe bo'lmagan `HashSet` yoki `ArrayList` saqlagan sinf ham thread-safe bo'ladi. Shart bitta: qamalgan obyekt mo'ljallangan qamrovidan chiqib ketmasligi kerak, obyektlar esa o'zlari qochib ketmaydi, ularni dasturchi nashr qilib yuboradi.
+
+**Spring'da qayerda uchraydi:** Bu `@Service` va `@Component` singleton beanlarda holat saqlashning asosiy to'g'ri shakli: ichki to'plam `private final`, hamma metod bitta `private final Object lock` yoki `ReentrantLock` ostida ishlaydi, getter esa ichki to'plamni emas, `List.copyOf(...)` nusxasini qaytaradi. JDK ichida `Collections.synchronizedList`, `synchronizedMap` va `synchronizedSet` o'ramlari aynan shu patternga quriladi: asosdagi to'plam o'ramga qamalgan va hamma metod o'ramning monitorini oladi. Spring Framework da `ConcurrentReferenceHashMap` segment holatini shu uslubda berkitadi, `AbstractApplicationContext` esa `applicationListeners` to'plamini qamab, kirishni o'z metodlariga tor qiladi.
+
+**Qo'llanish keyslari:**
+- Singleton bean ichida ishlatiladigan `HashMap` yoki `ArrayList` ni qulf ostida berkitib thread-safe API chiqarish.
+- Uchinchi tomon kutubxonasining thread-safe bo'lmagan klientini o'z adapteringiz ichiga qamab ishlatish.
+- `SimpleDateFormat` yoki shunga o'xshash mutable yordamchini sinf ichida qulf ostida yoki thread ga qamab ishlatish.
+- Hisoblagichlar va jamlanmalardan iborat ichki statistika holatini bitta qulf ostida yig'ish.
+- Legacy sinfni o'zgartirmasdan uning ustiga thread-safe fasad qurish.
+
+**Ehtiyot bo'ling:** Patternni buzadigan narsa bitta: qamalgan havolaning chiqib ketishi. Ichki to'plamni to'g'ridan-to'g'ri qaytarish, uni listener yoki callback ga berish, `Iterator` chiqarish yoki konstruktorda `this` ni ro'yxatga yozib qo'yish qamashni bekor qiladi va sinxronlash siyosati jim buziladi (architect 11.13). Qulf ichidan begona kod chaqirmang: `forEach` ga tashqaridan kelgan lambda berish qulfni sizga tanish bo'lmagan kodga uzatadi.
+
+```java
+@Service
+public class PersonRegistry {
+    private final Set<Person> people = new HashSet<>();   // thread-safe EMAS
+    private final Object lock = new Object();             // qamalgan holatning qulfi
+
+    public void add(Person p) {
+        synchronized (lock) { people.add(p); }
+    }
+
+    public boolean contains(Person p) {
+        synchronized (lock) { return people.contains(p); }
+    }
+
+    public Set<Person> snapshot() {
+        synchronized (lock) { return Set.copyOf(people); } // nusxa, "live" ko'rinish emas
+    }
+}
+```
+
+**Kitob asosi:** Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 4.2-bo'lim (39-40-bet).
+
+## 4.29 Thread xavfsizligini delegatsiya qilish (Delegating Thread Safety)
+
+**Tavsif:** Sinf o'zi qulf ishlatmaydi, balki holatini allaqachon thread-safe bo'lgan komponentga topshiradi va o'zining thread safety ini shu komponentdan "meros" qilib oladi. Bu eng arzon yo'l, chunki hech qanday sinxronlash kodi yozilmaydi: `ConcurrentHashMap` yoki `AtomicLong` o'z ichidagi kafolatni beradi, o'rab turuvchi sinf esa faqat API ni shakllantiradi. Lekin delegatsiya shartli ishlaydi va shart aniq: delegatsiya faqat holat o'zgaruvchilari **mustaqil** bo'lganda, ya'ni ular orasida birgalikdagi invariant bo'lmaganda to'g'ri bo'ladi. Ikki mustaqil thread-safe maydon ustida ishlaydigan sinf thread-safe; ikki maydon bir-biriga bog'liq shart bilan bog'langan bo'lsa (masalan `lower <= upper`), ikkisi ham `AtomicInteger` bo'lsa ham sinf thread-safe emas, chunki ikkisini birga atomar o'zgartirish mumkin emas.
+
+**Spring'da qayerda uchraydi:** Micrometer `MeterRegistry` implementatsiyalari hisoblagichlarni `ConcurrentHashMap` va atomic sinflarga delegatsiya qiladi. Spring ning ichki cache larining ko'pi (`ConcurrentReferenceHashMap`, `AnnotationUtils` cache lari, `DefaultSingletonBeanRegistry.singletonObjects`) xuddi shu uslubda: sinfning o'zida `synchronized` yo'q, kafolat map dan keladi. `ConcurrentMapCacheManager` esa `Cache` abstraksiyasini `ConcurrentHashMap` ga delegatsiya qiladi. Ilova kodida bu `@Service` ichidagi `ConcurrentHashMap` yoki `LongAdder` maydonlari shaklida uchraydi.
+
+**Qo'llanish keyslari:**
+- Mustaqil hisoblagichlar va o'lchovlarni `LongAdder` yoki `AtomicLong` maydonlarga topshirish.
+- Kalit bo'yicha mustaqil yozuvlarni saqlovchi registr yoki ro'yxatni `ConcurrentHashMap` ga topshirish.
+- Faqat almashtiriladigan (o'zgartirilmaydigan) konfiguratsiya snapshotini `AtomicReference` ga topshirish.
+- Ishlab chiqaruvchi va iste'molchi orasidagi buferni `BlockingQueue` ga topshirish.
+- Immutable qiymat obyektlarini saqlaydigan `CopyOnWriteArrayList` ustida listener ro'yxatini qurish.
+
+**Ehtiyot bo'ling:** Eng ko'p uchraydigan xato invariantni sezmaslik. Agar ikki maydon birgalikda shart saqlasa, delegatsiya yetarli emas va qulf kerak bo'ladi; `AtomicInteger` lar sonini oshirish yordam bermaydi. Ikkinchi tuzoq asosdagi holatni nashr qilib yuborish: `ConcurrentHashMap` ni yoki uning `values()` ko'rinishini to'g'ridan-to'g'ri qaytarsangiz, chaqiruvchi sizning invariantingizni buzadigan o'zgarish kirita oladi; `Collections.unmodifiableMap` esa faqat o'ramni himoyalaydi, ichidagi mutable obyektlarni emas. Uchinchisi: bir nechta delegatga ketma-ket chaqiruv atomar emas, ya'ni `map.get` keyin `map.put` qo'shma amal bo'lib qoladi (architect 11.16).
+
+```java
+@Service
+public class VehicleTracker {
+    // delegat: kalitlar mustaqil, Point immutable, invariant yo'q
+    private final ConcurrentMap<String, Point> locations = new ConcurrentHashMap<>();
+
+    public void setLocation(String id, int x, int y) {
+        if (locations.replace(id, new Point(x, y)) == null) {
+            throw new IllegalArgumentException("noma'lum vosita: " + id);
+        }
+    }
+
+    public Map<String, Point> snapshot() {
+        return Map.copyOf(locations);      // ichki map chiqib ketmaydi
+    }
+}
+
+record Point(int x, int y) {}              // immutable bo'lishi SHART
+```
+
+**Kitob asosi:** Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 4.3-bo'lim, jumladan 4.3.2 (mustaqil holat o'zgaruvchilari) va 4.3.4 (asosdagi holatni nashr qilish), 41-47-bet.
+
+## 4.30 Mijoz tomonida qulflash va kompozitsiya o'rami (Client-Side Locking / Composition)
+
+**Tavsif:** Mavjud thread-safe sinfga yangi atomar amal qo'shish kerak bo'lganda to'rt yo'l bor va ularning narxi bir xil emas. Eng xavfsizi amalni sinfning o'ziga qo'shish, chunki sinxronlash siyosatini amalga oshiruvchi butun kod bitta faylda qoladi. Ikkinchisi sinfni extend qilish: `Vector` ni extend qilib `putIfAbsent` qo'shish ishlaydi, lekin kitob buni mo'rt deb ataydi, chunki sinxronlash siyosati endi alohida saqlanadigan bir nechta faylga tarqaladi; asosdagi sinf holatini himoyalash uchun boshqa qulfga o'tsa, subclass jim va sezdirmasdan buziladi. Uchinchisi mijoz tomonida qulflash: yordamchi sinfga kod yoziladi, lekin **mijoz obyektning o'z qulfini** oladi. To'rtinchisi va eng mustahkami kompozitsiya: o'z qulfi bilan o'ram yoziladi va asosdagi to'plam shu o'ramga qamaladi.
+
+Mijoz tomonidagi qulflashning asosiy tuzog'i aynan shu yerda: yordamchi sinfda `synchronized` metod yozish **noto'g'ri qulfni** oladi (yordamchining o'zini), demak hech narsa himoyalanmaydi. To'g'ri shakl ro'yxatning o'zi ustida `synchronized` blok ochish, ya'ni `Collections.synchronizedList` o'rami ishlatadigan qulfni olish. Bu ishlaydi, lekin sinfning sinxronlash siyosatiga tashqaridan bog'lanish degani, shuning uchun kitob kompozitsiyani afzal ko'radi.
+
+**Spring'da qayerda uchraydi:** `Collections.synchronizedXxx` o'ramlari qaytargan obyektlar o'zlarining monitorini qulf sifatida ishlatadi, shuning uchun ular ustida qo'shma amal bajarish uchun mijoz tomonida qulflash yoki kompozitsiya kerak bo'ladi. Amalda zamonaviy Java da bu patternlarning ko'pi kerak emas, chunki `ConcurrentMap` tayyor atomar amallar beradi: `putIfAbsent`, `replace`, `remove(k, v)`, `compute`, `computeIfAbsent` va `merge`. Spring Framework da kompozitsiya shaklini `ConcurrentWebSocketSessionDecorator` ko'rsatadi: u asosdagi `WebSocketSession` ni o'rab, yozishni o'z qulfi va buferi ostida seriyalashtiradi.
+
+**Qo'llanish keyslari:**
+- Thread-safe to'plamga "yo'q bo'lsa qo'sh" turidagi atomar amal qo'shish.
+- `Collections.synchronizedList` ustida ikki amaldan iborat tekshiruv plus o'zgartirishni atomar qilish.
+- Manba kodini o'zgartirish imkoni bo'lmagan uchinchi tomon thread-safe sinfiga amal qo'shish.
+- Iteratsiya va o'zgartirishni bitta atomar oynada ushlash.
+- Asosdagi to'plamni butunlay berkitib, faqat kerakli amallarni chiqaradigan tor API berish.
+
+**Ehtiyot bo'ling:** Yordamchi sinfda `synchronized` metod yozish eng mashhur xato: u yordamchining qulfini oladi, ro'yxatning qulfini emas, va test da hech qachon ko'rinmaydi. Extend qilish yo'lini tanlasangiz, asosdagi sinfning sinxronlash siyosati spetsifikatsiyada qotirilganini tekshiring (`Vector` da qotirilgan, ko'p sinfda yo'q). Kompozitsiya bitta qo'shimcha qulf qatlami qo'shadi, ya'ni ikki marta qulflash narxi bor, lekin odatda bu narx mustahkamlikka arzonli to'lov.
+
+```java
+// yomon: yordamchining o'z qulfini oladi, ro'yxat qulfini EMAS
+public class BadListHelper<E> {
+    public final List<E> list = Collections.synchronizedList(new ArrayList<>());
+    public synchronized boolean putIfAbsent(E x) {        // noto'g'ri qulf
+        boolean absent = !list.contains(x);
+        if (absent) { list.add(x); }
+        return absent;
+    }
+}
+
+// yaxshi: kompozitsiya, o'ram o'z qulfi bilan asosdagi ro'yxatni qamaydi
+public class SafeList<E> {
+    private final List<E> list;                           // qamalgan
+    private final Object lock = new Object();
+
+    public SafeList(List<E> list) { this.list = list; }
+
+    public boolean putIfAbsent(E x) {
+        synchronized (lock) {
+            boolean absent = !list.contains(x);
+            if (absent) { list.add(x); }
+            return absent;
+        }
+    }
+}
+```
+
+**Kitob asosi:** Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 4.4-bo'lim (47-bet) va 4.4.1-bo'lim (47-49-bet).
+
+## 4.31 Natija keshi (Memoizer / Result Cache)
+
+**Tavsif:** Qimmat hisoblash natijasini kalit bo'yicha keshlaydi, lekin bitta qo'shimcha talab bilan: bir xil kalit uchun hisoblash **bir marta** bajarilishi kerak, hatto bir necha thread bir vaqtda so'rasa ham. Sodda yechimlar ketma-ket buziladi. Butun metodni `synchronized` qilish keshni ketma-ketlashtiradi, ya'ni keshning butun maqsadi yo'qoladi. `HashMap` ni `ConcurrentHashMap` ga almashtirish parallellikni tiklaydi, lekin ikki thread bir vaqtda "yo'q" deb ko'rib bir xil qiymatni ikki marta hisoblaydi. Yechim kitobning asosiy nayrangi: map da **qiymat emas, `Future` saqlanadi**. Birinchi kelgan thread `FutureTask` ni `putIfAbsent` bilan atomar joylaydi va hisoblashni boshlaydi; keyingilar mavjud `Future` ni topib `get()` da kutadi, demak hisoblash takrorlanmaydi. `putIfAbsent` ning atomarligi zarur, chunki `get` keyin `put` qo'shma amali bu oynani yopmaydi.
+
+**Spring'da qayerda uchraydi:** Bu idioma `ConcurrentHashMap.computeIfAbsent` sifatida tilga kirib keldi: mapper atomar bajariladi va bir xil kalit uchun bir marta chaqiriladi. Caffeine ning `LoadingCache` i aynan shu semantikani beradi va uni "cache stampede" dan himoya sifatida reklama qiladi; Spring Cache abstraksiyasi (`@Cacheable`) esa o'zi bu kafolatni bermaydi, shuning uchun Caffeine da `sync = true` yoki provayder darajasidagi loader ishlatiladi. Spring ichida `AnnotationUtils` va `ReflectionUtils` cache lari, `ConcurrentReferenceHashMap` ustida qurilgan metadata cache lari shu naqshga tayanadi.
+
+**Qo'llanish keyslari:**
+- Qimmat parsing yoki kompilyatsiya natijasini (regex, template, sxema) kalit bo'yicha bir marta hisoblash.
+- Tashqi tizimdan kelgan ma'lumotni keshlab, bir vaqtda kelgan bir xil so'rovlar uchun bitta chaqiruv qilish.
+- Reflection yoki annotatsiya metadatasini sinf bo'yicha bir marta yig'ish.
+- Og'ir klient yoki ulanish obyektini kalit bo'yicha bir marta qurish.
+- Cache stampede ni oldini olish: issiq kalit muddati tugaganda yuzlab thread bir xil hisoblashni boshlamasligi.
+
+**Ehtiyot bo'ling:** `Future` ni keshlash kitobning o'zi ogohlantirgan yangi muammoni keltiradi: kesh ifloslanishi (cache pollution). Hisoblash bekor qilinsa yoki xato bilan tugasa, keyingi urinishlar ham shu bekor qilish yoki xatoni ko'radi, chunki map da buzilgan `Future` qolgan. Shuning uchun bekor qilishni (va qayta urinish ma'noli bo'lsa `RuntimeException` ni) sezib `Future` ni map dan olib tashlash kerak. Kitob yana ikki narsani oshkor qoldiradi va ularni o'zingiz hal qilasiz: muddati o'tishi (expiration) va siqib chiqarish (eviction). Shu sababli amalda o'z `Memoizer` ini yozish o'rniga Caffeine olinadi. Oxirgi tuzoq: `computeIfAbsent` ichida uzoq I/O qilish map segmentini bloklaydi va shu map ga qayta kirish (rekursiv `computeIfAbsent`) deadlock beradi.
+
+```java
+@Service
+public class SchemaCache {
+    private final ConcurrentMap<String, Future<Schema>> cache = new ConcurrentHashMap<>();
+
+    public Schema get(String name) throws InterruptedException {
+        while (true) {
+            Future<Schema> f = cache.get(name);
+            if (f == null) {
+                FutureTask<Schema> task = new FutureTask<>(() -> compile(name));
+                f = cache.putIfAbsent(name, task);     // atomar: faqat bittasi o'tadi
+                if (f == null) { f = task; task.run(); }
+            }
+            try {
+                return f.get();
+            } catch (CancellationException e) {
+                cache.remove(name, f);                 // kesh ifloslanishini tozalash
+            } catch (ExecutionException e) {
+                cache.remove(name, f);
+                throw new IllegalStateException(e.getCause());
+            }
+        }
+    }
+
+    private Schema compile(String name) { /* qimmat ish */ return new Schema(name); }
+}
+```
+
+**Kitob asosi:** Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 5.6-bo'lim (64-69-bet), `Memoizer` ning yakuniy implementatsiyasi 69-bet.
+
+## 4.32 Ketma-ket thread qamashi va ownership uzatish (Serial Thread Confinement)
+
+**Tavsif:** Mutable obyektni sinxronlashsiz xavfsiz ishlatishning yana bir yo'li: obyekt bir vaqtda faqat bitta threadga tegishli bo'ladi, lekin bu egalik (ownership) bir threaddan ikkinchisiga **uzatiladi**. Uzatish uchun uch shart bajariladi: obyekt xavfsiz nashr qilinadi, uni faqat bitta boshqa thread oladi, va uzatgan thread undan keyin obyektga qaytib tegmaydi. Xavfsiz nashr obyekt holatining yangi egaga ko'rinishini ta'minlaydi, uzatganning qaytib tegmasligi esa obyektni endi yangi threadga qamalgan qiladi. Natijada yangi ega obyektni erkin o'zgartirishi mumkin, chunki unga eksklyuziv kirish bor. `java.util.concurrent` dagi bloklovchi navbatlar bu uzatishni osonlashtiradi: ularning ichida obyektni ishlab chiqaruvchi threaddan iste'molchi threadga xavfsiz nashr qilish uchun yetarli sinxronlash bor.
+
+**Spring'da qayerda uchraydi:** `BlockingQueue` orqali qurilgan har qanday ishlab chiqaruvchi-iste'molchi oqimi (4.2) shu patternga tayanadi: navbatga qo'yilgan DTO yoki buferni iste'molchi erkin o'zgartiradi. Spring Integration ning `QueueChannel` i va Spring AMQP, Spring Kafka listener container lari xabarni ichki navbat orqali ishchi threadga uzatganda xuddi shu kafolatga tayanadi. Obyekt pool lari ham shu patternni ekspluatatsiya qiladi: HikariCP `Connection` ni so'ragan threadga "qarzga" beradi va qaytarilmaguncha boshqasiga bermaydi, shuning uchun `Connection` so'rov davomida shu threadga qamalgan bo'ladi (architect 11.17).
+
+**Qo'llanish keyslari:**
+- Og'ir mutable bufer yoki yig'ma obyektni `BlockingQueue` orqali ishchi threadga topshirish.
+- Fayl yoki hisobot bo'lagini tayyorlab, uni yozuvchi threadga uzatish.
+- Obyekt pool i (ulanish, bufer, parser) orqali resursni vaqtincha bitta threadga berish.
+- Bir bosqichli konveyerda (pipeline) har bosqich o'z navbatidan obyekt olib, o'zgartirib, keyingisiga uzatish.
+- `ConcurrentMap.remove` yoki `AtomicReference.compareAndSet` bilan obyektni aniq bitta oluvchiga topshirish.
+
+**Ehtiyot bo'ling:** Patternning yagona, lekin jim buziladigan sharti uzatgandan keyin tegmaslik. Ishlab chiqaruvchi navbatga qo'ygan obyektga log yozish uchun yoki "oxirgi yuborilgan" maydonida saqlab qo'yish uchun qaytib tegsa, pattern buziladi va natija poyga bo'ladi. Shuning uchun navbatga qo'yilgan obyektga mahalliy havolani darhol yo'qotish amaliy intizom. Pool bilan ishlaganda ikkinchi shart: obyektni qaytargandan keyin ishlatish (`Connection` ni `close` dan keyin ishlatish) xuddi shu buzilishning klassik ko'rinishi. Agar uzatishni navbat o'rniga boshqa mexanizm bilan qursangiz, obyektni **aniq bitta** thread olishini ta'minlash sizning zimmangizda qoladi.
+
+```java
+// ishlab chiqaruvchi: obyekt navbatga qo'yilgandan keyin unga TEGILMAYDI
+public void produce(Path file) throws InterruptedException {
+    ReportChunk chunk = new ReportChunk(file);   // mutable, hozir bizga tegishli
+    chunk.fill();
+    queue.put(chunk);                            // egalik uzatildi
+    // chunk ga bu yerdan keyin TEGMAYMIZ: havolani ham saqlamaymiz
+}
+
+// iste'molchi: endi eksklyuziv ega, sinxronlashsiz o'zgartiradi
+public void consume() throws InterruptedException {
+    while (!Thread.currentThread().isInterrupted()) {
+        ReportChunk chunk = queue.take();        // xavfsiz nashr qilingan
+        chunk.compress();                        // qulf kerak emas
+        write(chunk);
+    }
+}
+```
+
+**Kitob asosi:** Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 5.3.2-bo'lim (57-58-bet).
+
+## 4.33 Zahar tabletka (Poison Pill)
+
+**Tavsif:** Ishlab chiqaruvchi-iste'molchi servisini to'xtatishning navbat orqali ishlaydigan usuli: navbatga tanib olinadigan maxsus obyekt qo'yiladi va uning ma'nosi "buni olgan bo'lsang, to'xta". FIFO navbat bilan birga bu muhim kafolat beradi: zahar tabletkadan **oldin** yuborilgan barcha ish tabletkadan oldin olinadi, demak iste'molchi to'xtashdan avval navbatdagi ishini oxiriga yetkazadi. Shu sababli poison pill `shutdownNow()` dan farq qiladi: `shutdownNow` navbatni bo'shatadi va bajarilayotganlarni uzadi, poison pill esa toza, ishni yo'qotmaydigan to'xtashni beradi. Protokolning qat'iy sharti: ishlab chiqaruvchi tabletkani navbatga qo'ygandan keyin boshqa hech qanday ish yubormaydi.
+
+**Spring'da qayerda uchraydi:** Java da bu `BlockingQueue` ustidagi qo'l bilan yoziladigan protokol, tayyor API emas. Spring tomonida xuddi shu g'oya boshqa nomlar ostida uchraydi: Spring Batch da `ItemReader` ning `null` qaytarishi "ma'lumot tugadi" signali, Reactor da `onComplete` terminal signali, Spring Integration da esa `QueueChannel` ustida yozilgan to'xtatish xabari. Kafka va xabar brokerlari kontekstida "poison message" butunlay boshqa narsani bildiradi (qayta ishlab bo'lmaydigan, DLT ga ketadigan xabar) va ikkisini aralashtirmaslik kerak; brokerlar nuqtasidan bu patterns 16.35 da.
+
+**Qo'llanish keyslari:**
+- `BlockingQueue` ustida qurilgan indekslash yoki fayl crawler servisini ishni yo'qotmasdan to'xtatish.
+- Ishlab chiqaruvchi tugaganini iste'molchiga bildirish, navbat bo'shashini kutish o'rniga.
+- Graceful shutdown da navbatdagi barcha ishni bajarib keyin chiqish.
+- Bir martalik batch oqimida oxirgi element belgisini oshkor qilish.
+- Testda ishchi tsiklini aniq va deterministik to'xtatish.
+
+**Ehtiyot bo'ling:** Kitobning cheklovi aniq: poison pill faqat ishlab chiqaruvchi va iste'molchi soni **ma'lum** bo'lganda ishlaydi. N iste'molchi bo'lsa N ta tabletka qo'yish kerak, chunki har biri bittasini iste'mol qiladi; M ishlab chiqaruvchi bo'lsa, har biri tugaganini sanab, oxirgisi tabletka qo'yishi kerak. Soni noma'lum bo'lsa pattern ishlamaydi. Ikkinchi cheklov: navbat chegarasiz bo'lsa yoki to'lib qolgan bo'lsa, `put` ning o'zi bloklanadi, shuning uchun tabletkani qo'yish ham kafolatlanmaydi. Uchinchisi: tabletka sifatida ishlatilgan obyekt haqiqiy ma'lumot bilan tasodifan teng bo'lmasligi kerak, shuning uchun identifikatsiya `equals` emas, havola tengligi (`==`) bilan qilinadi. Interrupt siyosati nuqtasidan bu architect 11.14 da.
+
+```java
+public class IndexingService {
+    private static final Path POISON = Path.of("");          // tanib olinadigan belgi
+    private final BlockingQueue<Path> queue = new LinkedBlockingQueue<>(1000);
+
+    // ishlab chiqaruvchi tugaganda bitta tabletka qo'yadi va boshqa ish yubormaydi
+    public void finishProducing() throws InterruptedException {
+        queue.put(POISON);
+    }
+
+    // iste'molchi: havola tengligi bilan tekshiradi, equals bilan emas
+    public void consume() throws InterruptedException {
+        while (true) {
+            Path file = queue.take();
+            if (file == POISON) {
+                return;                                      // navbatdagi ish tugagan
+            }
+            index(file);
+        }
+    }
+
+    private void index(Path file) { /* ... */ }
+}
+```
+
+**Kitob asosi:** Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 7.2.3-bo'lim (97-98-bet).
+
+## 4.34 Ochiq chaqiruv (Open Call)
+
+**Tavsif:** Hech qanday qulf ushlanmagan holda metod chaqirish ochiq chaqiruv deb ataladi va faqat ochiq chaqiruvlarga tayanadigan sinflar ancha yaxshi xulqli va kompozitsiyaga qulay bo'ladi. Dalil dizayn darajasida: metod chaqiruvi abstraksiya to'sig'i, uning maqsadi narigi tomonda nima bo'layotganidan sizni himoyalash. Lekin aynan shuning uchun qulf ushlab turib begona (alien) metodni chaqirish tahlil qilib bo'lmaydigan va shuning uchun xavfli ish: narigi tomonda yana qulf olinishi mumkin va u sizga ko'rinmaydi. Kitob o'xshatishni aniq beradi: deadlock dan qochish uchun ochiq chaqiruvdan foydalanish thread safety uchun inkapsulyatsiyadan foydalanishga o'xshaydi. Inkapsulyatsiyasiz ham thread-safe dastur yozish mumkin, lekin tahlili ancha qiyin; xuddi shunday, faqat ochiq chaqiruvlarga tayanadigan dasturning liveness tahlili ancha oson, chunki bir nechta qulf oladigan kod yo'llarini aniqlash va ularda qulf tartibini bir xil ushlash osonlashadi.
+
+**Spring'da qayerda uchraydi:** Eng ko'p uchraydigan buzilish listener va event ni qulf ostida chaqirish: `synchronized` blok ichida `ApplicationEventPublisher.publishEvent` qilish yoki callback ro'yxatini qulf ostida aylantirish. Spring ning o'zi bu tuzoqdan qochish uchun `CopyOnWriteArrayList` da listener larni saqlab, snapshot ustida qulfsiz iteratsiya qiladi. Xuddi shu qoida `@Transactional` ga ham tegishli: tranzaksiya ichida tashqi HTTP chaqiruvi qilish DB qulflarini tarmoq timeout i davomida ushlab turadi va bu architect 11.10 va architect 19 dagi klassik tuzoq. `@EventListener` ni `@Async` qilish yoki `TransactionSynchronization.afterCommit` ga ko'chirish amalda shu patternning qo'llanishi.
+
+**Qo'llanish keyslari:**
+- Listener, callback yoki `publishEvent` chaqiruvini qulf qamrovidan tashqariga chiqarish.
+- Qulf ostida holat snapshot ini olib, qulfni bo'shatib, keyin snapshot ustida ishlash.
+- Tranzaksiya yoki qulf ichidan tashqi HTTP va broker chaqiruvlarini `afterCommit` ga ko'chirish.
+- Bir-biriga murojaat qiladigan ikki komponent orasidagi deadlock ni qulfni chiqarish bilan yechish.
+- Override qilinadigan (`protected`, `public`) metodni qulf ostida chaqirmaslik, chunki subclass nima qilishini bilmaysiz.
+
+**Ehtiyot bo'ling:** Qulfni chiqarish bepul emas: amal endi atomar bo'lmaydi. Qulf ichida holatni o'qib, qulfdan chiqib, keyin ish qilsangiz, oraliqda holat o'zgargan bo'lishi mumkin, demak yo kodni shu o'zgarishga chidamli (idempotent yoki versiya tekshiradigan) qilish, yo o'zgarish sodir bo'lganini sezib qayta urinish kerak. Shuning uchun refaktoring mexanik emas: avval amalning qaysi qismi rostdan atomar bo'lishi kerakligini aniqlash kerak. Ikkinchi ogohlantirish: ochiq chaqiruv deadlock ni imkonsiz qilmaydi, u faqat tahlilni mumkin qiladi; bir nechta qulf oladigan yo'llar qolsa, qulf tartibini global belgilash hamon kerak (architect 11.10).
+
+```java
+@Service
+public class OrderBook {
+    private final Object lock = new Object();
+    private final List<Order> orders = new ArrayList<>();
+    private final ApplicationEventPublisher events;
+
+    public OrderBook(ApplicationEventPublisher events) { this.events = events; }
+
+    public void add(Order order) {
+        List<Order> snapshot;
+        synchronized (lock) {           // qulf qamrovi faqat holat o'zgarishi
+            orders.add(order);
+            snapshot = List.copyOf(orders);
+        }
+        // ochiq chaqiruv: qulf bo'shatilgan, listener nima qilsa ham deadlock yo'q
+        events.publishEvent(new OrderAdded(order, snapshot));
+    }
+}
+```
+
+**Kitob asosi:** Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 10.1.4-bo'lim (131-132-bet).
+
+## 4.35 Treiber steki: bloklanmaydigan stek (Treiber Stack / Non-blocking Stack)
+
+**Tavsif:** Bloklanmaydigan bog'langan tuzilma qurishning kanonik namunasi va uning kaliti bitta g'oyada: atomar o'zgarish qamrovini **bitta o'zgaruvchiga** cheklash, shu bilan birga ma'lumot izchilligini saqlash. Stek buning uchun eng oson tuzilma, chunki har bir element faqat bitta boshqa elementga ishora qiladi va har bir elementga faqat bitta havola ishora qiladi. Shuning uchun butun stekning holati bitta `AtomicReference<Node> top` da ifodalanadi. `push` yangi node tayyorlaydi, uning `next` maydonini joriy `top` ga qaratadi va CAS bilan uni cho'qqiga o'rnatishga urinadi: cho'qqi o'zgarmagan bo'lsa CAS muvaffaqiyatli, o'zgargan bo'lsa CAS yiqiladi va `push` joriy holatga qarab node ni yangilab qaytadan urinadi. Ikki holatda ham stek CAS dan keyin izchil holatda qoladi.
+
+Kitob shu misoldan barcha bloklanmaydigan algoritmlarning umumiy xususiyatini chiqaradi: ishning bir qismi **spekulyativ** bajariladi va qayta bajarilishi mumkin. Thread yangi node ni qurganda `next` havolasi o'rnatish paytigacha to'g'ri qolishiga umid qiladi, lekin raqobat bo'lsa qayta urinishga tayyor turadi. Thread safety esa `compareAndSet` ning o'zidan keladi: CAS, qulf kabi, atomarlikni ham, ko'rinuvchanlikni ham beradi. Holatni o'zgartirish `compareAndSet` bilan bajariladi va u volatile yozuvning xotira effektiga ega; holatni o'qish esa o'sha `AtomicReference` ning `get` i bilan bo'ladi va u volatile o'qishning effektiga ega. Shuning uchun bir thread kiritgan o'zgarish stekka qaragan har qanday boshqa threadga xavfsiz nashr qilinadi.
+
+**Spring'da qayerda uchraydi:** O'z qo'lingiz bilan yozish kerak bo'lmaydi: JDK da `ConcurrentLinkedQueue` va `ConcurrentLinkedDeque` shu uslubda qurilgan, `ConcurrentSkipListMap` esa murakkabroq variantini beradi. Spring va Reactor ichida bu daraja ko'rinmaydi, lekin Reactor ning `Operators` dagi request accounting va Micrometer ning `DoubleAdder` ga tayangan hisoblagichlari xuddi shu CAS plus retry naqshiga quriladi. Umumiy CAS yozuvi 4.21 da.
+
+**Qo'llanish keyslari:**
+- Juda yuqori throughput li va qisqa kritik bo'limli LIFO bufer yoki free-list.
+- Qulf raqobati o'lchangan va bloklanmaydigan tuzilmaga o'tish asoslangan issiq yo'l.
+- Kontekst almashinuvi narxini yo'qotish kerak bo'lgan past latency li yo'l.
+- Obyekt pool i ichidagi bo'sh elementlar steki.
+- JDK dagi bloklanmaydigan to'plamlarning xulqini tushunish va thread dump da ularni o'qish.
+
+**Ehtiyot bo'ling:** Kitobning birinchi gapi ogohlantirish: bloklanmaydigan algoritmlar qulfga asoslangan ekvivalentlaridan sezilarli murakkabroq. Qo'lda yozish deyarli har doim xato qaror, chunki memory model nozikliklari (`volatile`, happens-before) va ABA ehtimoli (architect 11.21) oson sezilmaydi; JDK dagi tayyor tuzilma deyarli har doim yaxshiroq. Ikkinchisi: stek oson, lekin navbat allaqachon qiyin, chunki bosh va dum ikkita havolani atomar yangilashni talab qiladi va bu bitta CAS ga sig'maydi. Uchinchisi: yuqori raqobatda retry tsikli CPU ni behuda yoqadi, demak bloklanmaydigan degani tezroq degani emas.
+
+```java
+// Treiber steki: butun holat bitta AtomicReference da
+public class ConcurrentStack<E> {
+    private final AtomicReference<Node<E>> top = new AtomicReference<>();
+
+    public void push(E item) {
+        Node<E> newHead = new Node<>(item);
+        Node<E> oldHead;
+        do {
+            oldHead = top.get();
+            newHead.next = oldHead;          // spekulyativ ish, qayta bajarilishi mumkin
+        } while (!top.compareAndSet(oldHead, newHead));
+    }
+
+    public E pop() {
+        Node<E> oldHead;
+        Node<E> newHead;
+        do {
+            oldHead = top.get();
+            if (oldHead == null) { return null; }
+            newHead = oldHead.next;
+        } while (!top.compareAndSet(oldHead, newHead));
+        return oldHead.item;
+    }
+
+    private static final class Node<E> {
+        final E item;
+        Node<E> next;
+        Node(E item) { this.item = item; }
+    }
+}
+```
+
+**Kitob asosi:** Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 15.4.1-bo'lim (201-203-bet); Listing 15.6 Treiber (1986) algoritmiga havola qiladi, 203-bet.
+
+## 4.36 Amalda qo'llash
 
 - [ ] Loyihadagi har bir `ExecutorService` va `TaskExecutor` ni ro'yxatga olib, pool kattaligi, navbat hajmi va rejection siyosatini yozib qo'ying.
 - [ ] Chegarasiz navbat (`LinkedBlockingQueue` parametrsiz) ishlatadigan pool'larni toping - ular xotira tugashiga olib keladi.
@@ -880,6 +1228,26 @@ public Quote fetch(QuoteRequest r) throws InterruptedException {
 - [JEP 506: Scoped Values](https://openjdk.org/jeps/506) - `ScopedValue` Java 25 da yakuniy holat
 - [openjdk/jdk, `java/lang/ScopedValue.java` (jdk-25-ga)](https://raw.githubusercontent.com/openjdk/jdk/jdk-25-ga/src/java.base/share/classes/java/lang/ScopedValue.java) - `Carrier.run(Runnable)`, `Carrier.call(CallableOp)` va `CallableOp<T, X extends Throwable>`
 - [JLS 18.4, Resolution](https://docs.oracle.com/javase/specs/jls/se25/html/jls-18.html#jls-18.4) - lambda tashlagan istisnolardan `X` ning chiqarilishi
+- Brian Goetz, *Java Concurrency in Practice*, 5-bob - qurilish bloklari: bloklovchi navbat, sinxronizatorlar, `Memoizer`
+- Brian Goetz, *Java Concurrency in Practice*, 6-bob - vazifani bajarish va Producer-Consumer
+- Brian Goetz, *Java Concurrency in Practice*, 8-bob - thread pool ni qo'llash va to'yinish siyosati
+- Brian Goetz, *Java Concurrency in Practice*, 14-bob - shart navbatlari va Guarded Suspension
+- Brian Goetz, *Java Concurrency in Practice*, 15-bob - atomik o'zgaruvchilar va bloklamaydigan algoritmlar
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 4.2-bo'lim (39-40-bet) - nusxaga qamash (instance confinement), inkapsulyatsiyaning qamashni qo'llab-quvvatlashi va qamalgan obyektning qamrovidan chiqib ketmasligi sharti
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 4.3-bo'lim (41-47-bet) - thread xavfsizligini delegatsiya qilish, mustaqil holat o'zgaruvchilari sharti va asosdagi holatni nashr qilish xavfi
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 4.4 va 4.4.1-bo'lim (47-49-bet) - mavjud thread-safe sinfga amal qo'shishning to'rt yo'li, extend qilishning mo'rtligi, mijoz tomonida qulflashda noto'g'ri qulf tuzog'i va kompozitsiya o'rami
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 5.6-bo'lim (64-69-bet) - natija keshi: qiymat emas `Future` ni keshlash, `putIfAbsent` ning atomarligi, kesh ifloslanishi va `Memoizer` ning yakuniy implementatsiyasi (69-bet)
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 5.3.2-bo'lim (57-58-bet) - ketma-ket thread qamashi, egalikni uzatish uchun uch shart va obyekt pool ining shu patternga tayanishi
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 7.2.3-bo'lim (97-98-bet) - zahar tabletka, FIFO navbatdagi ishni yo'qotmaslik kafolati va ishlab chiqaruvchi plus iste'molchi soni ma'lum bo'lishi cheklovi
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 10.1.4-bo'lim (131-132-bet) - ochiq chaqiruv, qulf ushlab begona metod chaqirishning tahlil qilinmasligi va liveness tahlilini osonlashtirish dalili
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 15.4.1-bo'lim (201-203-bet) - bloklanmaydigan stek, atomar o'zgarishni bitta o'zgaruvchiga cheklash, spekulyativ ish va `compareAndSet` ning atomarlik plus ko'rinuvchanlik effekti; Listing 15.6 Treiber (1986) ga havola qiladi (203-bet)
+- Craig Walls, *Spring in Action* 6th, 11-bob - Reactor va reaktiv oqim
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, 16.2.4 - double-checked locking ni anti-pattern deb belgilash, haqiqiy xavf (havolaning yangi, obyekt holatining eskirgan qiymati) va idiomaning endi keraksizligi
+- [OpenJDK 25, `ForkJoinPool.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/util/concurrent/ForkJoinPool.java) - `commonPool` parallelizmi `Math.max(1, availableProcessors() - 1)` va `ForkJoinPool.common.parallelism` property si
+- [OpenJDK 25, `java.util.concurrent` package javadoc](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/util/concurrent/package-info.java) - happens-before munosabati va paket tarkibi
+- [OpenJDK 25, `ConcurrentHashMap.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/util/concurrent/ConcurrentHashMap.java) - lock striping, `computeIfAbsent` ning atomarligi va aggregate status metodlari
+- [spring-framework, `DefaultSingletonBeanRegistry.java`](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/spring-beans/src/main/java/org/springframework/beans/factory/support/DefaultSingletonBeanRegistry.java) - singleton cache da `ConcurrentHashMap` va `ReentrantLock` (`singletonLock`) bilan ikki marta tekshirish
+- [OpenJDK 25, `ScopedValue.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/lang/ScopedValue.java) - `where`/`run`/`call` API si, `StructuredTaskScope` bilan meros va kam sonda ishlatish tavsiyasi
 
 ---
 

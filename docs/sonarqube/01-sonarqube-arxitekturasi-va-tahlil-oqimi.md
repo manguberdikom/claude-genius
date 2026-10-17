@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 1. SonarQube arxitekturasi va tahlil oqimi (Architecture and Analysis Flow)
 
@@ -291,6 +291,13 @@ Ikkinchi sabab hisobot hajmi. Yuz minglab qator va ko'p issue bor loyihada CE is
 - [ ] Generatsiya qilingan kodni `sonar.exclusions` ga kiriting va bu o'zgarish coverage raqamiga qanday ta'sir qilganini yozib qo'ying.
 - [ ] Jamoadagi IDE kengaytmalarini serverga connected mode da ulang, shunda mahalliy va CI natijalari mos keladi.
 - [ ] Server versiyangiz LTA liniyasida ekanini tasdiqlang va yangilashni release oynasidan ajratib rejalashtiring.
+
+## Manbalar
+
+- [sonarqube 9.9 LTA, `ProcessProperties.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-process/src/main/java/org/sonar/process/ProcessProperties.java) - uch process (web, ce, search) va ularning sozlamalari, ya'ni arxitekturaning manbadagi ko'rinishi
+- [sonarqube 9.9 LTA, `ScannerWsClientProvider.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/sonar-scanner-engine/src/main/java/org/sonar/scanner/bootstrap/ScannerWsClientProvider.java) - scanner serverga qanday ulanishi va `sonar.host.url` defaulti
+- [sonarqube 9.9 LTA, `TaskAction.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-webserver-webapi/src/main/java/org/sonar/server/ce/ws/TaskAction.java) - Compute Engine vazifasining holati, ya'ni tahlil oqimining ikkinchi yarmi
+- [sonar-java 8.44, `ClasspathForMain`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/java-frontend/src/main/java/org/sonar/java/classpath/ClasspathForMain.java) - `sonar.java.binaries` va `sonar.java.libraries` ning tahlil aniqligiga ta'siri
 
 ---
 

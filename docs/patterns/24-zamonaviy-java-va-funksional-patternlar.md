@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 24. Zamonaviy Java va funksional patternlar (Modern Java & Functional Patterns)
 
 <details>
-<summary>Bu bobdagi 41 bo'lim</summary>
+<summary>Bu bobdagi 42 bo'lim</summary>
 
 - [24.1 Records qiymat obyekti va DTO sifatida (Records as Value Objects / DTOs)](#241-records-qiymat-obyekti-va-dto-sifatida-records-as-value-objects--dtos)
 - [24.2 Sealed interfeyslar va pattern matching (Sealed Interfaces + Pattern Matching / Algebraic Data Types)](#242-sealed-interfeyslar-va-pattern-matching-sealed-interfaces--pattern-matching--algebraic-data-types)
@@ -49,7 +49,8 @@
 - [24.38 Nomsiz o'zgaruvchilar va pattern'lar (Unnamed Variables & Patterns)](#2438-nomsiz-ozgaruvchilar-va-patternlar-unnamed-variables--patterns)
 - [24.39 Funktor (Functor)](#2439-funktor-functor)
 - [24.40 Temir Yo'l Uslubidagi Dasturlash (Railway Oriented Programming)](#2440-temir-yol-uslubidagi-dasturlash-railway-oriented-programming)
-- [24.41 Amalda qo'llash](#2441-amalda-qollash)
+- [24.41 Generik tur yozish (Favor Generic Types)](#2441-generik-tur-yozish-favor-generic-types)
+- [24.42 Amalda qo'llash](#2442-amalda-qollash)
 
 </details>
 
@@ -91,7 +92,7 @@ Zamonaviy Java (17-25) klassik GoF patternlarining katta qismini til darajasidag
 
 **Tavsif:** Klassik Visitor pattern Java'da ikki marta dispatch (double dispatch) qilish uchun `accept(Visitor)` metodlari va interfeys-per-operatsiya talab qilardi. Sealed tip ustidagi exhaustive `switch` xuddi shu xavfsizlikni beradi: kompilyator barcha variantlar qoplanganini tekshiradi, lekin domain sinflariga hech qanday `accept` metodi qo'shish shart emas. Bu "expression problem" ning operatsiya qo'shish tomonini yengillashtiradi - yangi operatsiya shunchaki yangi metod, domain tiplariga tegmaysiz.
 
-**Spring'da qayerda uchraydi:** Java 21+ (`switch` pattern matching final bo'lgan) til imkoniyati; Spring kodbazalarida odatda `@Service` ichidagi domain logikasi yoki `@RestControllerAdvice` ichidagi xato-mapping uchun ishlatiladi. Spring Framework'ning o'zi hali ham klassik Visitor'dan foydalanadigan joylar bor: `org.springframework.beans.factory.config.BeanDefinitionVisitor` va `org.springframework.jdbc.core.PreparedStatementSetter` ga o'xshash callback'lar - yangi kodda esa ularning o'rniga sealed + switch tanlanadi.
+**Spring'da qayerda uchraydi:** Java 21+ (`switch` pattern matching final bo'lgan) til imkoniyati; Spring kodbazalarida odatda `@Service` ichidagi domain logikasi yoki `@RestControllerAdvice` ichidagi xato-mapping uchun ishlatiladi. Spring Framework'ning o'zida klassik Visitor `org.springframework.beans.factory.config.BeanDefinitionVisitor` ko'rinishida bor; `org.springframework.jdbc.core.PreparedStatementSetter` esa Visitor emas, oddiy callback interfeysi - yangi kodda tur bo'yicha shoxlanish uchun sealed + switch tanlanadi.
 
 **Qo'llanish keyslari:**
 - Domain event'larni handler ichida turga qarab yo'naltirish, `if instanceof` zinapoyasi o'rniga.
@@ -264,7 +265,7 @@ Order ready = pipeline.apply(incoming);
 
 **Tavsif:** Oliy tartibli funksiya - funksiyani argument sifatida qabul qiladigan yoki natija sifatida qaytaradigan funksiya. Java'da bu `java.util.function` paketidagi interfeyslar (`Function`, `BiFunction`, `Supplier`, `Consumer`, `Predicate`, `UnaryOperator`) va lambda/method reference orqali amalga oshiriladi. Bu Strategy va Template Method patternlarining sinfsiz, yengil ko'rinishi: xatti-harakatni sinf ierarxiyasi qurmasdan parametr qilib uzatasiz. `Function.andThen`, `compose` va `Predicate.and/or/negate` kombinatorlari kichik funksiyalardan katta mantiq yig'ishga imkon beradi.
 
-**Spring'da qayerda uchraydi:** `JdbcTemplate.query(String, RowMapper<T>)` va `JdbcClient` RowMapper'ni funksiya sifatida oladi; `TransactionTemplate.execute(TransactionCallback<T>)`; `RestTemplate.execute(..., RequestCallback, ResponseExtractor<T>)`; `WebClient.exchangeToMono(Function<ClientResponse, Mono<T>>)`; `RestClient` va `ClientHttpRequestInterceptor`. Spring Security 6.x/7.x lambda DSL butunlay `Customizer<T>` funksional interfeysiga asoslangan (`http.csrf(csrf -> csrf.disable())`). Spring Cloud Function'da `java.util.function.Function` bean'ning o'zi HTTP endpoint'ga aylanadi (`FunctionCatalog`), Spring Batch'da `ItemProcessor` ham funksional interfeys. Reactor'dagi `map`, `flatMap`, `filter` operatorlari - toza oliy tartibli funksiyalar.
+**Spring'da qayerda uchraydi:** `JdbcTemplate.query(String, RowMapper<T>)` va `JdbcClient` RowMapper'ni funksiya sifatida oladi; `TransactionTemplate.execute(TransactionCallback<T>)`; `RestTemplate.execute(..., RequestCallback, ResponseExtractor<T>)`; `WebClient.RequestHeadersSpec.exchangeToMono(Function<ClientResponse, ? extends Mono<V>>)` (metod `WebClient` da emas, so'rov spetsifikatsiyasida); `RestClient` va `ClientHttpRequestInterceptor`. Spring Security 6.x/7.x lambda DSL butunlay `Customizer<T>` funksional interfeysiga asoslangan (`http.csrf(csrf -> csrf.disable())`). Spring Cloud Function'da `java.util.function.Function` bean'ning o'zi HTTP endpoint'ga aylanadi (`FunctionCatalog`), Spring Batch'da `ItemProcessor` ham funksional interfeys. Reactor'dagi `map`, `flatMap`, `filter` operatorlari - toza oliy tartibli funksiyalar.
 
 **Qo'llanish keyslari:**
 - `JdbcClient.sql(...).query(RowMapper)` bilan ResultSet'ni domain obyektga o'girish, resurs boshqaruvini template'ga qoldirish.
@@ -314,7 +315,7 @@ Order ready = pipeline.apply(incoming);
 **Qo'llanish keyslari:**
 - Bazaga yozishdan oldin elementlarni `windowFixed(500)` bilan batch'larga bo'lish (`JdbcClient` batch update).
 - Vaqt seriyasida harakatlanuvchi o'rtachani `windowSliding` bilan hisoblash (metrika, moliyaviy ko'rsatkichlar).
-- Kalit bo'yicha takrorlanishni olib tashlash (`distinctBy`) - `Gatherer` holatida ko'rilgan kalitlar to'plamini saqlash.
+- Kalit bo'yicha takrorlanishni olib tashlash - `Gatherer` holatida ko'rilgan kalitlar to'plamini saqlab o'zingiz yozasiz (`Gatherers` sinfida tayyor `distinctBy` yo'q; undagi factory metodlar faqat `windowFixed`, `windowSliding`, `fold`, `scan`, `mapConcurrent`).
 - Tashqi API'ga parallel, lekin chegaralangan sonli so'rov yuborish: `gather(Gatherers.mapConcurrent(8, this::fetch))`.
 - Oqimda to'plangan natijani bosqichma-bosqich ko'rsatish uchun `Gatherers.scan` bilan kumulyativ summa.
 
@@ -326,7 +327,7 @@ List<List<Order>> batches = orders.stream()
 batches.forEach(orderRepository::saveAllAndFlush);
 ```
 
-**Ehtiyot bo'ling:** Java 22/23'da bu API preview bo'lgani uchun `--enable-preview` talab qiladi va binar moslik kafolatlanmaydi - production kodida faqat Java 24+ da ishlatish kerak, aks holda LTS'ga ko'chishda kod sinadi. `mapConcurrent` har element uchun virtual thread yaratadi. API final bo'lgan Java 24 da [JEP 491](https://openjdk.org/jeps/491) ham keldi: `synchronized` blok va `Object.wait()` ichida bloklangan virtual thread endi carrier thread ni pin qilmaydi, shuning uchun `synchronized` ishlatadigan legacy kod (masalan ba'zi eski JDBC driver'lari) Java 24+ da o'z-o'zidan muammo emas. Pin faqat Java 22/23 preview da `synchronized` ichida bloklanganda, Java 24+ da esa native metod yoki Foreign Function chaqiruvi ichida bloklanganda qoladi.
+**Ehtiyot bo'ling:** Java 22/23'da bu API preview bo'lgani uchun `--enable-preview` talab qiladi va binar moslik kafolatlanmaydi - production kodida faqat Java 24+ da ishlatish kerak, aks holda LTS'ga ko'chishda kod sinadi. `mapConcurrent` har element uchun virtual thread yaratadi. API final bo'lgan Java 24 da [JEP 491](https://openjdk.org/jeps/491) ham keldi: `synchronized` blok va `Object.wait()` ichida bloklangan virtual thread endi carrier thread ni pin qilmaydi, shuning uchun `synchronized` ishlatadigan legacy kod (masalan ba'zi eski JDBC driver'lari) Java 24+ da o'z-o'zidan muammo emas. Java 24+ da pin asosan native metod yoki Foreign Function chaqiruvi ichida bloklanganda qoladi. Diqqat: `synchronized` ichidagi pin virtual thread'ning JDK 21 GA versiyasida ham mavjud edi, ya'ni u "preview davrining muammosi" emas edi - bu tafsilotni JDK kodidan tasdiqlab bo'lmadi, HotSpot darajasida yotadi.
 
 ## 24.18 O'rab bajarish / qarz patterni (Execute Around / Loan Pattern)
 
@@ -347,7 +348,7 @@ batches.forEach(orderRepository::saveAllAndFlush);
 
 **Tavsif:** Oddiy `Map<String, Object>` turdan ajralgan, cast bilan to'la bo'ladi. Bu patternda kalit sifatida qiymatning turi - `Class<T>` (yoki tur bilan parametrlangan maxsus `Key<T>`) ishlatiladi, shuning uchun konteyner har xil turdagi qiymatlarni saqlaydi, lekin olish paytida cast xavfsiz bo'ladi. Odatda `Map<Class<?>, Object>` ichida saqlanib, `type.cast(value)` bilan qaytariladi, bu runtime'da ham tekshiruv beradi.
 
-**Spring'da qayerda uchraydi:** `ApplicationContext.getBean(Class<T>)` va `BeanFactory.getBeanProvider(Class<T>)` - eng ko'p uchraydigan misol; `Environment.getProperty(String, Class<T>)`; `ConversionService.convert(Object, Class<T>)`; `ApplicationContext.getBeansOfType(Class<T>)`. `org.springframework.core.AttributeAccessor` va uning `AttributeAccessorSupport` implementatsiyasi (`BeanDefinition`, `MessageHeaders`) nomli atributlar uchun ishlatiladi. Reactor'ning `Context`/`ContextView` (`contextWrite`, `deferContextual`) kalit-obyekt asosidagi geterogen konteyner bo'lib, reaktiv oqimda tenant yoki trace ma'lumotini uzatadi. Generiklar uchun `ParameterizedTypeReference<T>` (`RestClient`, `WebClient`) va `ResolvableType` to'liq generic turni saqlaydi.
+**Spring'da qayerda uchraydi:** `ApplicationContext.getBean(Class<T>)` va `BeanFactory.getBeanProvider(Class<T>)` - eng ko'p uchraydigan misol; `Environment.getProperty(String, Class<T>)`; `ConversionService.convert(Object, Class<T>)`; `ApplicationContext.getBeansOfType(Class<T>)`. `org.springframework.core.AttributeAccessor` va uning `AttributeAccessorSupport` bazasi nomli atributlar uchun ishlatiladi: `BeanDefinition` shu interfeysni meros oladi, haqiqiy implementatsiya esa `BeanMetadataAttributeAccessor`. `MessageHeaders` bu ro'yxatga kirmaydi - u `Map<String, Object>` implementatsiyasi, `AttributeAccessor` emas. Reactor'ning `Context`/`ContextView` (`contextWrite`, `deferContextual`) kalit-obyekt asosidagi geterogen konteyner bo'lib, reaktiv oqimda tenant yoki trace ma'lumotini uzatadi. Generiklar uchun `ParameterizedTypeReference<T>` (`RestClient`, `WebClient`) va `ResolvableType` to'liq generic turni saqlaydi.
 
 **Qo'llanish keyslari:**
 - Plugin registry: `Map<Class<? extends Event>, Handler<?>>` ko'rinishida event handler'larni turga bog'lash.
@@ -362,7 +363,7 @@ batches.forEach(orderRepository::saveAllAndFlush);
 
 **Tavsif:** Java enum'lari konstanta emas, to'laqonli obyektlar: ularda maydon, konstruktor, abstract metod va konstantaga xos implementatsiya bo'lishi mumkin. Shuning uchun har bir holat (yoki strategiya) enum konstantasi sifatida ifodalanadi va o'tish qoidalari (`canTransitionTo`) yoxud xatti-harakat (`apply`) shu konstantaning o'zida yashaydi. Bu kompilyatsiya vaqtida to'liqlikni (`switch` ustida exhaustiveness), singleton kafolatini va `EnumMap`/`EnumSet` kabi tez, kam xotira talab qiladigan tuzilmalarni beradi.
 
-**Spring'da qayerda uchraydi:** Sof Java tomonda: abstract metodli enum, `EnumMap`, `EnumSet`, Java 21+ `switch` pattern matching bilan holat o'tishlari. JPA'da holat maydoni `@Enumerated(EnumType.STRING)` bilan saqlanadi, Spring Data konvertorlari esa `Converter<MyState, String>` orqali sozlanadi. Murakkab, ierarxik yoki persistent holat mashinasi kerak bo'lsa Spring Statemachine (`spring-statemachine-core`, `StateMachineBuilder`, `StateMachineFactory`, `@WithStateMachine`, `StateMachinePersister`) ishlatiladi. Framework ichida ham ko'p enum-strategiya bor: `HttpStatus`, `Propagation`, `Isolation`, `RequestMethod`, `CacheMode`; `@ConfigurationProperties` esa `application.yml`dagi matnni enum'ga avtomatik bind qiladi.
+**Spring'da qayerda uchraydi:** Sof Java tomonda: abstract metodli enum, `EnumMap`, `EnumSet`, Java 21+ `switch` pattern matching bilan holat o'tishlari. JPA'da holat maydoni `@Enumerated(EnumType.STRING)` bilan saqlanadi, Spring Data konvertorlari esa `Converter<MyState, String>` orqali sozlanadi. Murakkab, ierarxik yoki persistent holat mashinasi kerak bo'lsa Spring Statemachine (`spring-statemachine-core`, `StateMachineBuilder`, `StateMachineFactory`, `@WithStateMachine`, `StateMachinePersister`) ishlatiladi. Framework ichida ham ko'p enum-strategiya bor: `HttpStatus`, `Propagation`, `Isolation`, `RequestMethod`, `ScopedProxyMode`; `@ConfigurationProperties` esa `application.yml`dagi matnni enum'ga avtomatik bind qiladi.
 
 **Qo'llanish keyslari:**
 - Buyurtma hayot tsikli (`NEW → PAID → SHIPPED → DELIVERED`) o'tishlarini enum ichida tekshirish va noto'g'ri o'tishda exception tashlash.
@@ -433,7 +434,7 @@ batches.forEach(orderRepository::saveAllAndFlush);
 
 **Tavsif:** `NullPointerException`ni runtime'dan kompilyatsiya/analiz vaqtiga ko'chirish strategiyasi: API shartnomasida qaysi qiymat `null` bo'lishi mumkinligini annotatsiyalar bilan e'lon qilish va chegaralarda (konstruktor, public metod) tezda "fail fast" tekshirish. Deklarativ qism statik analizatorlar va Kotlin/IDE uchun mo'ljallangan, imperativ qism esa `Objects.requireNonNull` yoki `Assert` bilan noto'g'ri holatni darhol to'xtatadi.
 
-**Spring'da qayerda uchraydi:** Spring Framework 5.x/6.x'da `org.springframework.lang.Nullable`, `@NonNull`, `@NonNullApi`, `@NonNullFields` paket darajasidagi annotatsiyalari ishlatilgan; Spring Framework 7.0 esa butun kod bazasini JSpecify'ga ko'chirdi - `org.jspecify.annotations.Nullable`, `@NonNull`, `@NullMarked`, `@NullUnmarked` (eski `org.springframework.lang` annotatsiyalari deprecated). Imperativ tekshiruvlar: `java.util.Objects.requireNonNull`, `requireNonNullElse`, `org.springframework.util.Assert.notNull/hasText/state`, `Optional` (qaytuvchi qiymat uchun). Validatsiya chegarasida `jakarta.validation.constraints.NotNull` + `@Valid`/`@Validated`. Statik analiz uchun NullAway (Error Prone) yoki IDE inspection'lari JSpecify annotatsiyalarini o'qiydi; Kotlin kompilyatori esa Spring API'ning nullability'sini to'g'ridan-to'g'ri ishlatadi.
+**Spring'da qayerda uchraydi:** Spring Framework 5.x/6.x'da `org.springframework.lang.Nullable`, `@NonNull`, `@NonNullApi`, `@NonNullFields` paket darajasidagi annotatsiyalari ishlatilgan; Spring Framework 7.0 esa JSpecify'ga ko'chdi - `org.jspecify.annotations.Nullable`, `@NonNull`, `@NullMarked`, `@NullUnmarked`; eski `org.springframework.lang.Nullable` `@Deprecated(since = "7.0")` bilan belgilangan va ko'chish keng qamrovli (faqat `spring-core` da 395 fayl JSpecify annotatsiyasini ishlatadi). Imperativ tekshiruvlar: `java.util.Objects.requireNonNull`, `requireNonNullElse`, `org.springframework.util.Assert.notNull/hasText/state`, `Optional` (qaytuvchi qiymat uchun). Validatsiya chegarasida `jakarta.validation.constraints.NotNull` + `@Valid`/`@Validated`. Statik analiz uchun NullAway (Error Prone) yoki IDE inspection'lari JSpecify annotatsiyalarini o'qiydi; Kotlin kompilyatori esa Spring API'ning nullability'sini to'g'ridan-to'g'ri ishlatadi.
 
 **Qo'llanish keyslari:**
 - Public API va SDK'da `@NullMarked` paket deklaratsiyasi bilan "default: non-null" shartnomasini e'lon qilish.
@@ -592,7 +593,7 @@ int code = switch (order.state()) {
 
 **Tavsif:** [Concurrency patternlari bobidagi strukturaviy concurrency yozuvi](04-concurrency-patternlari.md#424-strukturaviy-concurrency-structured-concurrency) bu patternning to'liq yozuvi, bu yerda faqat zamonaviy Java nuqtai nazari: `StructuredTaskScope` subtask'lar hayot muddatini try-with-resources blokiga bog'laydi, xato va cancellation bir joyda boshqariladi.
 
-**Spring'da qayerda uchraydi:** Java 25 da ham preview (`StructuredTaskScope.open(Joiner.allSuccessfulOrThrow())`, `--enable-preview`), Spring'da maxsus abstraksiya yo'q, production uchun stabil muqobil `CompletableFuture.allOf()`.
+**Spring'da qayerda uchraydi:** API hamon preview: `@PreviewFeature(STRUCTURED_CONCURRENCY)` annotatsiyasi JDK 21 dan 27 gacha har bir GA tegida saqlanib turadi, ya'ni Java 25, 26 va 27 da ham `--enable-preview` kerak (`StructuredTaskScope.open(Joiner.allSuccessfulOrThrow())`). Spring'da maxsus abstraksiya yo'q, production uchun stabil muqobil `CompletableFuture.allOf()`.
 
 **Qo'llanish keyslari:**
 - Bitta so'rov uchun bir nechta servisga parallel murojaat qilib (fan-out/fan-in), biri yiqilsa qolganini avtomatik bekor qilish.
@@ -677,7 +678,49 @@ public Page<UserDto> findAll(Pageable pageable) {
 
 **Ehtiyot bo'ling:** Eng keng tarqalgan xato - `Result` qaytaradigan metodni `@Transactional` ichida ishlatib, xatolik holatida rollback bo'lishini kutish: bunda tranzaksiya muvaffaqiyatli commit bo'ladi, shuning uchun `TransactionAspectSupport.currentTransactionStatus().setRollbackOnly()` chaqirish yoki chegarada exception'ga aylantirish kerak. Bu patternni butun kodbazaga majburan tatbiq etmang - infratuzilma nosozliklari (DB uzilishi, timeout) uchun exception tabiiyroq, `Result` esa faqat kutilayotgan biznes xatoliklari uchun; aks holda har bir metod signaturasi va zanjir shovqinli bo'lib, o'qilishi exception'li koddan ham qiyinlashadi.
 
-## 24.41 Amalda qo'llash
+## 24.41 Generik tur yozish (Favor Generic Types)
+
+**Tavsif:** `Object` asosidagi konteyner (`Object[] elements`, `Object pop()`) tur xavfsizligini mijozga yuklaydi: chaqiruvchi har o'qishda cast yozadi va xato kompilyatsiyada emas, runtime da `ClassCastException` bo'lib chiqadi. Pattern sinf e'loniga tur parametri qo'shishdan boshlanadi (element uchun konvensional nom `E`), keyin `Object` ning har bir ishlatilishi shu parametrga almashtiriladi. Bitta to'siq qoladi: `new E[n]` yozilmaydi, chunki `E` reifiable emas. Bloch ikki yechim beradi. Birinchisi: `Object` massiv yasab `E[]` ga cast qilish va `@SuppressWarnings("unchecked")` ni faqat konstruktorga qo'yish; bitta cast kifoya, shuning uchun amalda keng tarqalgan va muallif shuni afzal biladi, narxi esa heap pollution. Ikkinchisi: maydonni `Object[]` qoldirib, har o'qishda qiymatni `E` ga cast qilish; cast soni ko'payadi, lekin heap pollution yo'q. Mavjud `Object` li turni keyinroq generiklashtirish eski mijozlarni buzmaydi, shuning uchun bu qaytarib bo'lmaydigan qaror emas (Joshua Bloch, *Effective Java*, 3-nashr, Addison-Wesley, 2018, "Item 29: Favor generic types", 130-134-betlar).
+
+**Spring'da qayerda uchraydi:** Spring API sining katta qismi shu pattern bilan yozilgan: `ResponseEntity<T>`, `ObjectProvider<T>`, `CrudRepository<T, ID>`, `Converter<S, T>`, `RowMapper<T>` va `ApplicationListener<E extends ApplicationEvent>`. Oxirgisi chegaralangan tur parametriga namuna: bound tufayli implementatsiya event metodlarini cast qilmasdan chaqiradi. Erasure sababli tur argumentini runtime da tiklash kerak bo'lganda Spring buni alohida vositalar bilan hal qiladi: `ParameterizedTypeReference<List<Order>>` (`RestClient` va `WebClient` javoblari uchun), `ResolvableType` (konteyner ichida generik bean turini solishtirish), Jackson tomonida `TypeReference`. Bu o'z generik turingizda ham takrorlanadigan naqsh: tur argumenti runtime da kerak bo'lsa, uni `Class<T>` yoki tur tokeni sifatida ochiq qabul qilasiz.
+
+**Qo'llanish keyslari:**
+- Domen o'ramlari: `Result<T>`, `Page<T>`, `Versioned<T>` - bitta mantiq, har xil payload turi.
+- Massivga tayangan o'z buffer yoki object pool abstraksiyasi (`ArrayList` va `HashMap` ning o'zi ham shu sababli massiv ustida qurilgan).
+- Bazaviy mapper turi: `abstract class BaseMapper<E, D>` - entity va DTO turlari imzoda ko'rinadi.
+- Chegaralangan tur parametri bilan protokol majburlash: `<E extends DomainEvent>`, `<T extends Comparable<T>>`.
+- Eski `Object` li ichki utility turni mijozlarni buzmasdan generiklashtirish.
+
+```java
+// Chegaralangan tur parametri: E ning erasure i DomainEvent, shuning uchun
+// massivning runtime turi DomainEvent[] bo'ladi va heap pollution yuzaga kelmaydi
+public final class BoundedEventBuffer<E extends DomainEvent> {
+
+    private E[] events;
+    private int size;
+
+    // Massiv faqat push(E) dan to'ldiriladi va tashqariga chiqmaydi,
+    // shuning uchun tekshirilmagan cast zarar qilmaydi
+    @SuppressWarnings("unchecked")
+    public BoundedEventBuffer(int initialCapacity) {
+        this.events = (E[]) new DomainEvent[initialCapacity];
+    }
+
+    public void push(E event) {
+        events[size++] = Objects.requireNonNull(event, "event");
+    }
+
+    public E pop() {
+        E result = events[--size];
+        events[size] = null;   // eskirgan havolani tozalash
+        return result;
+    }
+}
+```
+
+**Ehtiyot bo'ling:** `@SuppressWarnings("unchecked")` ni butun sinfga yoki butun metodga qo'ymang, faqat cast turgan e'lonning o'ziga qo'yiladi, aks holda keyinroq qo'shilgan haqiqiy xato ham jim bo'ladi. Cast xavfsizligi isboti massivning sinf ichida qolishiga tayanadi: uni getter orqali tashqariga chiqarsangiz, chegaralanmagan `<E>` da kompilyator chaqiruv joyiga yashirin cast qo'yadi va u `[Ljava.lang.Object;` ni kutilgan massiv turiga o'tkaza olmay yiqiladi (JDK 21.0.12 da tekshirildi) - bu Bloch ogohlantirgan heap pollution ning amaliy ko'rinishi; yuqoridagi chegaralangan shakl shu tuzoqni yo'q qiladi. Kitob Java 9 davrida yozilgan, lekin ikki taqiq Java 25 da ham o'zgarmagan: massiv yaratishda element turi reifiable bo'lishi shart (JLS 25, 15.10.1) va tur argumenti faqat reference tur yoki wildcard bo'ladi (JLS 25, 4.5.1), shuning uchun `Stack<int>` bugun ham kompilyatsiya qilinmaydi. O'zgargan narsa boshqa: Java 21 dan keyin yopiq variantlar to'plami uchun generik konteyner emas, `sealed interface` plus `record` to'g'riroq modellashtirish beradi (qarang: [Sealed interfeyslar va pattern matching](#242-sealed-interfeyslar-va-pattern-matching-sealed-interfaces--pattern-matching--algebraic-data-types)).
+
+## 24.42 Amalda qo'llash
 
 - [ ] `record` ga o'tkazilishi mumkin bo'lgan DTO va qiymat obyektlarini ro'yxatga oling.
 - [ ] Yopiq ierarxiya bo'lishi kerak bo'lgan interfeyslarni toping va `sealed` qo'llash foydasini qaror qiling.
@@ -687,6 +730,21 @@ public Page<UserDto> findAll(Pageable pageable) {
 - [ ] `var` ishlatilgan joylarni tekshirib, tur o'ng tomondan aniq ko'rinmaydigan holatlarni tuzating.
 - [ ] Loyihaning Java versiyasini `pom.xml` dan tasdiqlab, keyingi LTS ga o'tish uchun to'siqlar ro'yxatini tuzing.
 - [ ] Tekshirilgan istisnolarni (`checked exception`) oqimlar ichida ishlatadigan joylarni toping va ularni o'rash usulini birlashtiring.
+- [ ] `Object` yoki xom tur ustida qurilgan ichki konteyner va utility sinflarni toping, ularni generiklashtirib mijoz tomonidagi cast larni olib tashlang.
+
+## Manbalar
+
+- Herbert Schildt, *Java The Complete Reference*, 15-bob - lambda ifodalari
+- Joshua Bloch, *Effective Java*, 3-nashr, Addison-Wesley, 2018, "Item 29: Favor generic types", 130-134-betlar - `Object` li konteynerni generik turga aylantirish, generik massiv taqiqining ikki yechimi va heap pollution narxi
+- *The Java Language Specification, Java SE 25 Edition* (Gosling, Joy, Steele, Bracha, Buckley, Smith, Bierman), 15.10.1 - massiv yaratishda element turi reifiable bo'lishi shart; 4.5.1 - tur argumenti faqat reference tur yoki wildcard
+- Herbert Schildt, *Java The Complete Reference*, 17-bob - `switch` ifodasi, record va boshqa yangi imkoniyatlar
+- Herbert Schildt, *Java The Complete Reference*, 16-bob - modullar tizimi (JPMS)
+- Boyarsky/Selikoff, *OCP Java SE 17 Study Guide*, 8, 10-boblar - lambda, funksional interfeyslar va oqim
+- JDK: javac xususiyat jadvali (`Source.Feature` - har bir til imkoniyati qaysi versiyada final bo'lgani) va `Preview` (qaysisi hali preview). openjdk/jdk, tag `jdk-27-ga` (commit `815ff4dc327fe17f2433c7d115a5a503af10f3c4`); solishtirish uchun `jdk-21-ga`, `jdk-22-ga`, `jdk-23-ga`, `jdk-24-ga`, `jdk-25-ga`, `jdk-26-ga` teglari ham o'qildi. GPL-2.0 with Classpath Exception. https://github.com/openjdk/jdk/blob/815ff4dc327fe17f2433c7d115a5a503af10f3c4/src/jdk.compiler/share/classes/com/sun/tools/javac/code/Source.java
+- JDK: `StructuredTaskScope` (`@PreviewFeature` 21 dan 27 gacha saqlanib turadi), `ScopedValue` (25 da final), `Gatherer` va `Gatherers` (24 da final, faqat besh factory metod), `Stream.gather`. openjdk/jdk, tag `jdk-27-ga`. GPL-2.0 with Classpath Exception. https://github.com/openjdk/jdk/blob/815ff4dc327fe17f2433c7d115a5a503af10f3c4/src/java.base/share/classes/java/util/concurrent/StructuredTaskScope.java
+- JDK: `Collectors` (takroriy kalitda `IllegalStateException`, null qiymatda NPE, default `HashMap`), `Optional` (final, `Serializable` emas), `Map.of`/`List.copyOf` (null da NPE, tartib aniqlanmagan), `ServiceLoader`, `AbstractPipeline` (stream qayta ishlatilsa `IllegalStateException`). openjdk/jdk, tag `jdk-27-ga`. GPL-2.0 with Classpath Exception. https://github.com/openjdk/jdk/blob/815ff4dc327fe17f2433c7d115a5a503af10f3c4/src/java.base/share/classes/java/util/stream/Collectors.java
+- Spring Framework kodi: `AttributeAccessor` va `BeanMetadataAttributeAccessor`, `MessageHeaders`, `Scope` (`value()` String, `ScopedProxyMode` enum), `WebClient.RequestHeadersSpec.exchangeToMono`, `org.springframework.lang.Nullable` (`@Deprecated(since = "7.0")`), `JdbcClient` (`@since 6.1`), `ProblemDetail`, `NestedRuntimeException.getMostSpecificCause`, `ThrowingFunction`. spring-projects/spring-framework, tag `v7.0.9` (commit `82a6b40b9366ec181ededdad282b307ee5381a52`); `HttpMethod` sinf ekani uchun tag `v6.0.0`. Apache-2.0. https://github.com/spring-projects/spring-framework/blob/82a6b40b9366ec181ededdad282b307ee5381a52/spring-beans/src/main/java/org/springframework/beans/factory/config/BeanDefinition.java
+- Spring Boot kodi: `ConstructorBinding` (bitta konstruktorda avtomatik), `Threading`, `ApplicationProperties` (`lazyInitialization`), `AutoConfiguration.imports`. spring-projects/spring-boot, tag `v4.1.1` (commit `6fdf67ea1552691e932604d4bf67a5e08ff0b0ea`). Apache-2.0. https://github.com/spring-projects/spring-boot/blob/6fdf67ea1552691e932604d4bf67a5e08ff0b0ea/core/spring-boot/src/main/java/org/springframework/boot/context/properties/bind/ConstructorBinding.java
 
 ---
 

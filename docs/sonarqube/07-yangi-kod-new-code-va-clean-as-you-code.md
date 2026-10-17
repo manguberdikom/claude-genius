@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 7. Yangi kod (new code) va "clean as you code" tamoyili (New Code and Clean as You Code)
 
@@ -41,23 +41,31 @@ Yangi kod metrikasi esa darhol javob beradi va shu sprintda yozilgan kodning sif
 
 Sonar bir nechta usulni taklif qiladi. Nomlanishi SonarQube versiyasiga qarab farq qiladi, lekin mohiyati bir xil qoladi. Eski liniyalarda bu "leak period" deb atalgan va `sonar.leak.period` xossasi bilan sozlangan. 9.9 LTA va 2025 LTA liniyalarida sozlama loyiha sozlamalarining "New Code" bo'limida turadi va global standart qiymat ham bor.
 
-Birinchi usul: oldingi versiya. Sonar `sonar.projectVersion` qiymatining oxirgi o'zgarishini chegara deb oladi. Versiya `1.4.0` dan `1.5.0` ga o'tganda chegara avtomatik suriladi.
+9.9 LTA da turlar enum bilan qattiq belgilangan va ularning soni **to'rtta** (`NewCodePeriodType`). Muhimi, har bir tur istalgan darajada qo'yilmaydi va bu cheklov Web API ning o'z tavsifida sanab o'tilgan:
 
-Ikkinchi usul: aniq sanadan boshlab. Chegara qo'lda qo'yilgan kalendar sanaga mixlanadi. Shu sanadan keyingi hamma narsa abadiy yangi kod bo'lib qoladi.
+| Tur | Qaysi darajada qo'yiladi | Qiymat |
+|---|---|---|
+| `PREVIOUS_VERSION` | global, loyiha, branch | qiymat kerak emas |
+| `NUMBER_OF_DAYS` | global, loyiha, branch | kun soni |
+| `REFERENCE_BRANCH` | faqat loyiha va branch | branch nomi |
+| `SPECIFIC_ANALYSIS` | faqat branch | tahlil uuid i |
 
-Uchinchi usul: kun soni. Suriluvchi oyna, masalan oxirgi 30 kun. Har kuni chegara bir kun oldinga suriladi.
+`PREVIOUS_VERSION`: Sonar `sonar.projectVersion` qiymatining oxirgi o'zgarishini chegara deb oladi. Versiya `1.4.0` dan `1.5.0` ga o'tganda chegara avtomatik suriladi.
 
-To'rtinchi usul: aniq versiya yoki aniq tahlil. Siz ro'yxatdan bitta tahlilni tanlab, uni baseline qilib mixlaysiz. Bu "modernizatsiya shu nuqtadan boshlandi" degan ma'noni beradi.
+`NUMBER_OF_DAYS`: suriluvchi oyna, masalan oxirgi 30 kun. Har kuni chegara bir kun oldinga suriladi.
 
-Beshinchi usul, branch uchun eng muhimi: reference branch. Branchdagi yangi kod `main` bilan solishtirilib aniqlanadi. Bu `sonar.newCode.referenceBranch` xossasi bilan ham beriladi.
+`SPECIFIC_ANALYSIS`: ro'yxatdan bitta tahlil tanlanib baseline qilib mixlanadi. Bu "modernizatsiya shu nuqtadan boshlandi" degan ma'noni beradi va faqat branch darajasida qo'yiladi.
+
+`REFERENCE_BRANCH`, branch uchun eng muhimi: branchdagi yangi kod `main` bilan solishtirilib aniqlanadi. Bu `sonar.newCode.referenceBranch` xossasi bilan ham beriladi.
+
+**Eskirgan variant:** ilgari "aniq sanadan boshlab" turi bor edi va u `sonar.leak.period` davridan qolgan. 9.9 LTA ning enum ida bunday tur **yo'q**, shuning uchun eski maqolaga qarab kalendar sanani kutish kerak emas; eng yaqin almashtiruv `SPECIFIC_ANALYSIS` (o'sha sanadagi tahlilni tanlash) yoki `NUMBER_OF_DAYS`.
 
 | Usul | Chegara qanday suriladi | Kuchli tomoni | Zaif tomoni | Kimga mos |
 |---|---|---|---|---|
-| Oldingi versiya | `sonar.projectVersion` o'zgarganda | Reliz bilan tabiiy mos | Versiya qo'lda o'zgarmasa chegara muzlaydi | Semantik versiyalangan kutubxona va servis |
-| Aniq sana | Hech qachon, qo'lda o'zgartiriladi | Modernizatsiya boshlanishi aniq qolar | Vaqt o'tib yangi kod massasi o'sib ketadi | Qisqa muddatli tozalash kampaniyasi |
-| Kun soni | Har kuni avtomatik | Sozlashni talab qilmaydi | Oyna ichidan chiqqan issue tabloni tark etadi | Tez-tez deploy qiladigan jamoa |
-| Aniq tahlil / versiya | Faqat qo'lda | Baseline butunlay nazoratda | Unutilsa yillar davomida eskiradi | Legacy audit va shartnomaviy baseline |
-| Reference branch | Har PR uchun avtomatik, diff asosida | PR uchun eng aniq natija | To'liq git tarixi majburiy | Trunk based va GitFlow jamoalari |
+| `PREVIOUS_VERSION` | `sonar.projectVersion` o'zgarganda | Reliz bilan tabiiy mos | Versiya qo'lda o'zgarmasa chegara muzlaydi | Semantik versiyalangan kutubxona va servis |
+| `NUMBER_OF_DAYS` | Har kuni avtomatik | Sozlashni talab qilmaydi | Oyna ichidan chiqqan issue tabloni tark etadi | Tez-tez deploy qiladigan jamoa |
+| `SPECIFIC_ANALYSIS` (faqat branch) | Faqat qo'lda | Baseline butunlay nazoratda | Unutilsa yillar davomida eskiradi | Legacy audit va shartnomaviy baseline |
+| `REFERENCE_BRANCH` | Har PR uchun avtomatik, diff asosida | PR uchun eng aniq natija | To'liq git tarixi majburiy | Trunk based va GitFlow jamoalari |
 
 ## 7.3 Qaysi usul qaysi reliz jarayoniga mos keladi
 
@@ -209,7 +217,7 @@ sonar.scm.forceReloadAll=false
 
 Yangi kod blame sanasiga tayanadi, blame sanasi esa qatorning oxirgi o'zgarishiga qaraydi. Formatlash o'zgarishi ham o'zgarish hisoblanadi.
 
-Agar siz Spotless yoki IDE formatlashini butun repoga bir marta qo'llasangiz, yuz minglab qator yangi blame sanasini oladi. Keyingi tahlilda yangi kod hajmi 200 ming qatorga chiqadi, qoplanganlik 20 foizga tushadi va gate qizil yonadi. Kod mazmunan bir zarra ham o'zgarmagan.
+Agar siz Spotless yoki IDE formatlashini butun repoga bir marta qo'llasangiz, yuz minglab qator yangi blame sanasini oladi. Keyingi tahlilda yangi kod hajmi butun repo hajmiga chiqadi, yangi kod qoplanganligi butun repo qoplanganligiga tushadi va gate qizil yonadi (raqamlar loyihangizga bog'liq, bu yerda ularni misol sifatida ham bermaymiz). Kod mazmunan bir zarra ham o'zgarmagan.
 
 Fayl ko'chirish ham xuddi shunday xatarli. Git faylni ko'chirishni o'zi aniqlaydi, lekin faqat mazmun yetarlicha o'xshash bo'lsa. Faylni ko'chirib, shu commitda uni formatlab va ustiga logikani o'zgartirsangiz, git o'xshashlikni topolmaydi. Natijada butun fayl yangi fayl sifatida ko'rinadi.
 
@@ -340,6 +348,12 @@ New Code sozlamasini o'zgartirganda jamoaga oldin xabar bering. Chegara surilish
 - [ ] Yangi kod coverage sharti 100 foiz bo'lsa uni 80 foizga tushiring va ustiga "assertion yo'q test qabul qilinmaydi" degan review qoidasini kiriting.
 - [ ] Kichik PR'lar uchun absolut shart (qoplanmagan qatorlar soni) qo'shib, foizli shart kelib chiqaradigan noto'g'ri qizil holatlarni kamaytiring.
 - [ ] Oylik hisobotga `coverage`, `new_coverage`, `violations`, `new_violations` trendini `api/measures/search_history` orqali avtomatik yig'ib qo'ying.
+
+## Manbalar
+
+- [sonarqube 9.9 LTA, `NewCodePeriodType.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-db-dao/src/main/java/org/sonar/db/newcodeperiod/NewCodePeriodType.java) - to'rtta tur: `PREVIOUS_VERSION`, `NUMBER_OF_DAYS`, `SPECIFIC_ANALYSIS`, `REFERENCE_BRANCH`
+- [sonarqube 9.9 LTA, `newcodeperiod/ws/SetAction.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-webserver-webapi/src/main/java/org/sonar/server/newcodeperiod/ws/SetAction.java) - har turning qaysi darajada qo'yilishi (global, loyiha, branch) va kutilgan qiymat
+- [sonarqube 9.9 LTA, `RegisterQualityGates.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-webserver-webapi/src/main/java/org/sonar/server/qualitygate/ws/RegisterQualityGates.java) - built-in gate shartlarining hammasi `new_` prefiksli ekani
 
 ---
 

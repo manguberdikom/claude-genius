@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 18. Branch va shart qamrovini to'liq yopish usullari (Covering Every Branch)
 
@@ -439,6 +439,12 @@ keyinchalik yolg'on ishonch beradi.
 - [ ] Har bir `catch` bloki uchun mock bilan xato yuzaga keltiruvchi test yozing va `catch` ichidagi xatti harakatni `verify` bilan tasdiqlang.
 - [ ] Kamida bitta uzun `if` zanjirini `Map` yoki strategiyaga aylantirib, tarmoq soni va cognitive complexity qanchaga kamayganini o'lchab yozib qo'ying.
 - [ ] CI da `fetch-depth: 0` va `sonar.qualitygate.wait=true` yoqilganini tekshirib, gate qizil bo'lganda pipeline haqiqatan yiqilishiga ishonch hosil qiling.
+
+## Manbalar
+
+- [JaCoCo 0.8.12, Coverage Counters](https://raw.githubusercontent.com/jacoco/jacoco/v0.8.12/org.jacoco.doc/docroot/doc/counters.html) - BRANCH va COMPLEXITY hisoblagichlari, McCabe ta'rifi va test holatlari soniga ishora
+- [JaCoCo 0.8.12, Control Flow Analysis](https://raw.githubusercontent.com/jacoco/jacoco/v0.8.12/org.jacoco.doc/docroot/doc/flow.html) - probe joylashuvi va shart tarmoqlarining bytecode dagi ko'rinishi, ya'ni "qator yashil, branch sariq" holatining sababi
+- [JUnit 5.11, Writing Tests](https://raw.githubusercontent.com/junit-team/junit5/r5.11.0/documentation/src/docs/asciidoc/user-guide/writing-tests.adoc) - `@ParameterizedTest`, `@CsvSource` va `@MethodSource` bilan shart kombinatsiyalarini qoplash
 
 ---
 

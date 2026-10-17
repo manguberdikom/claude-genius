@@ -83,3 +83,31 @@ stsenariy|scenariy|\bsenariy	imlo: scenario o'zbekchada "ssenariy" (TL-TL4)	docs
 in['’]ektsiya|injeksiya|injektsiya	imlo: injection o'zbekchada "inyeksiya", GLOSSARY bilan bir xil (TL-TL4)	docs,claude,root,nasr
 ob['’]ekt	imlo: "obyekt", korpusda 750 marta shu shakl (TL-TL4)	docs,claude,root,nasr
 testrovshik(?![\w-]*\.md)	rus so'zi, o'rnida "tester" (TZ-T12); 04-testrovshik-... fayl nomi havolalar uchun qoldirilgan
+
+# Kitob to'lqini (2026-10-17): kitob manbasiga tayantirishda o'chirilgan
+# manbasiz da'volar. Naqsh qaytib kelsa, da'vo ham qaytgan bo'ladi.
+sonarqube:lts-community	mavjud bo'lmagan Docker teg; Community Build teglari `community` yoki `<versiya>-community`	docs
+burn rate[^\n]{0,40}14\\.4	SRE kitobidagi burn rate raqamlari; o'sha kitob korpusda yo'q	docs
+tcp_retries2[^\n]{0,60}(15|o'n besh)\\s*(daqiqa|minut)	tcp_retries2=15 qayta uzatish soni, daqiqa emas; timeout taxminan 20 daqiqa	docs
+(AWS|Slack)[^\n]{0,40}cell-based	manbasiz atribut: korpus kitoblarida bu da'vo yo'q	docs
+Groundhog Day	Fundamentals 19-bob tanasi nusxada yo'q; antipattern nomi tasdiqlanmagan	docs
+1:5 yoki 1:8	developer va QA nisbati; manbasiz	docs
+o'qishga 5-10 barobar	Clean Code 10:1 dan ancha yuqori deydi, aniq oraliq bermaydi	docs
+ishchi xotira[^\n]{0,30}4-7	Miller 1956 taxminan yettita deydi; 4-7 oralig'i manbasiz	docs
+cold start[^\n]{0,60}(yuzlab|bir necha sekund)	serverless cold start oralig'i; Burns kitobida bunday raqam yo'q	docs
+owns[,/ ]+releases[,/ ]+team	mikroservis uchun uch mezon; Hard Parts da bunday qoida yo'q	docs
+23 bayt[^\n]{0,30}(header|sarlavha)	PostgreSQL tuple header hajmi; manbasiz	docs
+wal_writer_delay[^\n]{0,40}(oxirgi|bitta)\\s*orali	asinxron commit da yo'qoladigan oyna 3 x wal_writer_delay, default 0.6 s	docs
+Big Picture / Process Level / Design Level	event storming darajalari; korpus kitoblarida yo'q	docs
+\\bincidental duplication\\b	atama korpus kitoblarida yo'q; mezon Clean Architecture dagi CCP dan olinadi	docs
+4-12 qator	funksiya uzunligi uchun manbasiz chegara; Clean Code 20 va 100 qator deydi	docs
+orthogonal array	test kombinatsiyasi texnikasi; korpusda uni beradigan kitob yo'q	docs
+money tour|bad-neighborhood tour	exploratory tour nomlari; korpusda manbasi yo'q	docs
+severity[^\n]{0,8}x[^\n]{0,8}priority	severity va priority matritsasi; korpusda manbasi yo'q	docs
+haftada 3 soat	o'rganish uchun manbasiz vaqt budjeti; Fundamentals 20 daqiqa qoidasini beradi	docs
+# 2026-10-17: Orosz va GoF nashr ma'lumotlari.
+Guidebook[^\n]{0,60}(O.Reilly|Addison-Wesley|Manning|Pearson)	Orosz ning kitobi Pragmatic Engineer BV da chiqqan, boshqa nashriyotda emas	docs
+Orosz[^\n]{0,60}(2021|2022|2024|2025)	The Software Engineer`s Guidebook 1-nashri 2023-yil noyabrda chiqqan	docs
+Design Patterns[^\n]{0,70}Addison-Wesley, (?!1995)\d{4}	GoF nusxasining copyright yozuvi 1995; korpus shu yilni ishlatadi	docs
+Guidebook[^\n]{0,80}(39[7-9]|4\d\d)-bet	Orosz kitobining tanasi 396-betda tugaydi, undan keyingisi indeks	docs
+Orosz[^\n]{0,80}(39[7-9]|4\d\d)-bet	Orosz kitobining tanasi 396-betda tugaydi, undan keyingisi indeks	docs

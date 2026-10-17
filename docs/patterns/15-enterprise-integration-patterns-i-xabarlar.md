@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 15. Enterprise Integration Patterns I: xabarlar, kanallar, marshrutlash (EIP I: Messaging Systems, Channels, Construction, Routing)
 
 <details>
-<summary>Bu bobdagi 37 bo'lim</summary>
+<summary>Bu bobdagi 39 bo'lim</summary>
 
 - [15.1 Xabar kanali (Message Channel)](#151-xabar-kanali-message-channel)
 - [15.2 Xabar (Message)](#152-xabar-message)
@@ -45,7 +45,9 @@
 - [15.34 Marshrut varaqasi (Routing Slip)](#1534-marshrut-varaqasi-routing-slip)
 - [15.35 Jarayon menejeri (Process Manager)](#1535-jarayon-menejeri-process-manager)
 - [15.36 Xabar brokeri (Message Broker)](#1536-xabar-brokeri-message-broker)
-- [15.37 Amalda qo'llash](#1537-amalda-qollash)
+- [15.37 Fayl uzatish (File Transfer)](#1537-fayl-uzatish-file-transfer)
+- [15.38 Integratsiya uslublarini tanlash (Integration Styles)](#1538-integratsiya-uslublarini-tanlash-integration-styles)
+- [15.39 Amalda qo'llash](#1539-amalda-qollash)
 
 </details>
 
@@ -360,7 +362,7 @@ DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> template) {
 
 **Tavsif:** Xabarni belgilangan iste'molchiga yetkazib bo'lmaganda (bir necha marta retry'dan keyin ham, TTL tugaganda, queue to'lganda yoki handler doimiy xato berganda) broker uni yo'q qilmasdan maxsus kanalga ko'chiradi. Shu tufayli xabar yo'qolmaydi, asosiy navbat bloklanmaydi va operatsion jamoa muammoni keyin tahlil qilib, xabarni qayta jo'natishi mumkin. Odatda bu broker tomonidan taqdim etiladigan infrastruktura imkoniyati.
 
-**Spring'da qayerda uchraydi:** Spring Kafka'da `DefaultErrorHandler` + `DeadLetterPublishingRecoverer` (default `<topic>.DLT`), `@RetryableTopic(attempts = "4", dltTopicSuffix = ".dlt")` va `@DltHandler`; `FixedBackOff`/`ExponentialBackOffWithMaxRetries` bilan retry policy. Spring AMQP'da `x-dead-letter-exchange` / `x-dead-letter-routing-key` argumentlari (`QueueBuilder.durable("orders").deadLetterExchange("dlx").build()`), `RepublishMessageRecoverer`. Spring Cloud Stream'da `spring.cloud.stream.rabbit.bindings.*.consumer.auto-bind-dlq=true` yoki `spring.cloud.stream.kafka.bindings.*.consumer.enable-dlq=true`. JMS'da brokerning o'zidagi `ActiveMQ.DLQ`.
+**Spring'da qayerda uchraydi:** Spring Kafka'da `DefaultErrorHandler` + `DeadLetterPublishingRecoverer` (default suffiks `-dlt`, ya'ni `orders-dlt`, nuqtali `.DLT` emas - uni xohlasangiz `BiFunction` bilan o'zingiz belgilaysiz), `@RetryableTopic(attempts = "4", dltTopicSuffix = ".dlt")` va `@DltHandler`; `FixedBackOff`/`ExponentialBackOffWithMaxRetries` bilan retry policy. Spring AMQP'da `x-dead-letter-exchange` / `x-dead-letter-routing-key` argumentlari (`QueueBuilder.durable("orders").deadLetterExchange("dlx").build()`), `RepublishMessageRecoverer`. Spring Cloud Stream'da `spring.cloud.stream.rabbit.bindings.*.consumer.auto-bind-dlq=true` yoki `spring.cloud.stream.kafka.bindings.*.consumer.enable-dlq=true`. JMS'da brokerning o'zidagi `ActiveMQ.DLQ`.
 
 ```java
 @Bean
@@ -420,7 +422,7 @@ spring:
 
 **Tavsif:** Messaging tizimidan tashqarida turgan tizimni (fayl tizimi, baza, HTTP endpoint, SMTP, legacy API) messaging kanaliga ulaydigan ko'prikdir. Adapter bir tomonda domen/transport protokolini "gaplashadi", ikkinchi tomonda esa `Message<?>` bilan ishlaydi, shu bilan ilova kodi integratsiya mexanikasidan ajraladi. Inbound adapter tashqi tizimdan ma'lumot olib kanalga qo'yadi, outbound adapter kanaldan olib tashqi tizimga uzatadi. Natijada tashqi tizimni almashtirsangiz, faqat adapter o'zgaradi - oqimning qolgan qismi tegmaydi.
 
-**Spring'da qayerda uchraydi:** Spring Integration'ning asosiy qurilish bloki: polling inbound uchun `@InboundChannelAdapter` + `MessageSource` implementatsiyalari (`FileReadingMessageSource`, `JdbcPollingChannelAdapter`, `MailReceivingMessageSource`) `SourcePollingChannelAdapter` ichida ishlaydi; event-driven inbound uchun `MessageProducerSupport` merosxo'rlari (`JmsMessageDrivenEndpoint`, `KafkaMessageDrivenChannelAdapter`, `AmqpInboundChannelAdapter`). Outbound tomonda `@ServiceActivator` bilan ro'yxatga olingan `JmsSendingMessageHandler`, `KafkaProducerMessageHandler`, `FileWritingMessageHandler`. Java DSL'da `IntegrationFlow.from(Files.inboundAdapter(dir))`, `Kafka.messageDrivenChannelAdapter(cf, "topic")`, `.handle(Jms.outboundAdapter(jmsTemplate))`. Spring Cloud Stream 4.x/5.x da `Supplier<T>` va `Consumer<T>` bean'lari binder orqali aynan shu rolni bajaradi, Debezium esa baza uchun CDC inbound adapter sifatida ishlatiladi.
+**Spring'da qayerda uchraydi:** Spring Integration'ning asosiy qurilish bloki: polling inbound uchun `@InboundChannelAdapter` + `MessageSource` implementatsiyalari (`FileReadingMessageSource`, `JdbcPollingChannelAdapter`, `MailReceivingMessageSource`) `SourcePollingChannelAdapter` ichida ishlaydi; event-driven inbound uchun `MessageProducerSupport` merosxo'rlari (`JmsMessageDrivenEndpoint`, `KafkaMessageDrivenChannelAdapter`, `AmqpInboundChannelAdapter`). Outbound tomonda `@ServiceActivator` bilan ro'yxatga olingan `JmsSendingMessageHandler`, `KafkaProducerMessageHandler`, `FileWritingMessageHandler`. Java DSL'da `IntegrationFlow.from(Files.inboundAdapter(dir))`, `Kafka.messageDrivenChannelAdapter(listenerContainer)` (public overload listener container oladi, `ConsumerFactory` + topic shakli public emas), `.handle(Jms.outboundAdapter(jmsTemplate))`. Spring Cloud Stream 4.x/5.x da `Supplier<T>` va `Consumer<T>` bean'lari binder orqali aynan shu rolni bajaradi, Debezium esa baza uchun CDC inbound adapter sifatida ishlatiladi.
 
 **Qo'llanish keyslari:**
 - Legacy tizim tashlab ketgan CSV fayllarni katalogdan o'qib Kafka topic'ga yuborish.
@@ -527,7 +529,7 @@ class KafkaEventBus implements EventBus {
 
 **Tavsif:** Qabul qiluvchidan muayyan amalni bajarishni so'rovchi xabar turidir: payload'da bajarilishi kerak bo'lgan operatsiya nomi va parametrlar bo'ladi. Bu messaging orqali amalga oshirilgan asinxron RPC - jo'natuvchi kimga va nima qilish kerakligini biladi, shuning uchun bog'liqlik (coupling) event xabarga nisbatan yuqori. Odatda bitta aniq qabul qiluvchiga, point-to-point kanal orqali yuboriladi. Nomlash ham buyruq mayliga mos bo'ladi: `CreateInvoice`, `ReserveStock`.
 
-**Spring'da qayerda uchraydi:** Spring Integration'da buyruq oddiy POJO payload bo'lib `Message<ReserveStockCommand>` ko'rinishida ketadi va `@ServiceActivator` yoki `@MessagingGateway` metodi uni qabul qiladi; `GenericMessage` va `MessageBuilder.withPayload(cmd).setHeader("commandType", ...)` bilan quriladi. `@KafkaListener`, `@RabbitListener`, `@JmsListener` metodlari buyruq handler'i sifatida eng ko'p uchraydigan shakl. Spring Integration'ning `ControlBus` (`Integration.controlBus()` / `ExpressionControlBusFactoryBean`) infratuzilma buyruqlari uchun maxsus misoldir. CQRS'ni to'liq qurmoqchi bo'lsangiz, Spring bilan ko'p ishlatiladigan Axon Framework'ning `CommandGateway`/`@CommandHandler` yoki Spring Modulith'ning event/komanda ajratish yondashuvi qo'llanadi.
+**Spring'da qayerda uchraydi:** Spring Integration'da buyruq oddiy POJO payload bo'lib `Message<ReserveStockCommand>` ko'rinishida ketadi va `@ServiceActivator` yoki `@MessagingGateway` metodi uni qabul qiladi; `GenericMessage` va `MessageBuilder.withPayload(cmd).setHeader("commandType", ...)` bilan quriladi. `@KafkaListener`, `@RabbitListener`, `@JmsListener` metodlari buyruq handler'i sifatida eng ko'p uchraydigan shakl. Spring Integration'ning Control Bus'i infratuzilma buyruqlari uchun maxsus misoldir: Java DSL'da oqim ichidagi `.controlBus()` operatori, XML'da `<int:control-bus>` (`Integration.controlBus()` yoki `ExpressionControlBusFactoryBean` degan API yo'q). CQRS'ni to'liq qurmoqchi bo'lsangiz, Spring bilan ko'p ishlatiladigan Axon Framework'ning `CommandGateway`/`@CommandHandler` yoki Spring Modulith'ning event/komanda ajratish yondashuvi qo'llanadi.
 
 **Qo'llanish keyslari:**
 - Buyurtma servisidan omborga `ReserveStock` buyrug'ini navbat orqali yuborish.
@@ -639,7 +641,7 @@ public interface PricingGateway {
 
 **Tavsif:** So'rov xabari ichida javob qaysi kanalga yuborilishi kerakligini ko'rsatuvchi header'dir. Shu bilan qabul qiluvchi javob manzilini hard-code qilmaydi va bitta servis turli chaqiruvchilarga xizmat qila oladi. Manzil odatda header'da bo'ladi, payload'da emas - chunki u marshrutlash metama'lumoti. Natijada request-reply dinamik, ko'p-chaqiruvchili muhitda ham ishlaydi.
 
-**Spring'da qayerda uchraydi:** Spring Integration'da `MessageHeaders.REPLY_CHANNEL` (ko'pincha `TemporaryReplyChannel` obyekti sifatida) va unga juft bo'lgan `MessageHeaders.ERROR_CHANNEL`; gateway javobni shu header asosida topadi. JMS'da `Message.setJMSReplyTo(Destination)` va `JmsHeaders.REPLY_TO`, AMQP'da `MessageProperties.setReplyTo` / `amqp_replyTo` header'i hamda `amq.rabbitmq.reply-to` pseudo-queue; Kafka'da `KafkaHeaders.REPLY_TOPIC` va `KafkaHeaders.REPLY_PARTITION`, ularni `ReplyingKafkaTemplate` to'ldiradi, `@SendTo` esa statik alternativa beradi. `HeaderEnricher` (`.enrichHeaders(h -> h.replyChannel(...))`) bilan qaytish manzilini oqim ichida o'rnatish mumkin.
+**Spring'da qayerda uchraydi:** Spring Integration'da `MessageHeaders.REPLY_CHANNEL` (gateway o'z ichida vaqtinchalik javob kanalini qo'yadi; u `GenericMessagingTemplate` ichidagi private sinf, public API emas, shuning uchun unga tipi bo'yicha tayanmang) va unga juft bo'lgan `MessageHeaders.ERROR_CHANNEL`; gateway javobni shu header asosida topadi. JMS'da `Message.setJMSReplyTo(Destination)` va `JmsHeaders.REPLY_TO`, AMQP'da `MessageProperties.setReplyTo` / `amqp_replyTo` header'i hamda `amq.rabbitmq.reply-to` pseudo-queue; Kafka'da `KafkaHeaders.REPLY_TOPIC` va `KafkaHeaders.REPLY_PARTITION`, ularni `ReplyingKafkaTemplate` to'ldiradi, `@SendTo` esa statik alternativa beradi. `HeaderEnricher` (`.enrichHeaders(h -> h.replyChannel(...))`) bilan qaytish manzilini oqim ichida o'rnatish mumkin.
 
 **Qo'llanish keyslari:**
 - Bitta umumiy "pricing" servisi turli consumer'larga o'z reply topic'iga javob qaytarishi.
@@ -699,7 +701,7 @@ public IntegrationFlow aggregateFlow() {
 
 **Tavsif:** Katta ma'lumotni bir nechta xabarga bo'lib yuborishda har bir bo'lakka ketma-ketlik metama'lumotini qo'shish patterni: guruh identifikatori, tartib raqami va umumiy soni (yoki oxirgi bo'lak belgisi). Qabul qiluvchi shu ma'lumot bilan bo'laklarni to'g'ri tartibda yig'adi va hech biri yo'qolmaganini tekshiradi. Bu splitter-aggregator juftligining asosiy ishlash mexanizmi. Noto'g'ri tartibda kelgan xabarlarni qayta tartiblash ham shu metama'lumotga tayanadi.
 
-**Spring'da qayerda uchraydi:** Spring Integration `IntegrationMessageHeaderAccessor` ning `SEQUENCE_NUMBER`, `SEQUENCE_SIZE`, `SEQUENCE_DETAILS` va `CORRELATION_ID` header'larini `AbstractMessageSplitter` avtomatik qo'yadi (`applySequence` default `true`), `DefaultAggregatingMessageHandler` esa `SequenceSizeReleaseStrategy` bilan guruhni yopadi. Tartiblash uchun `ResequencingMessageHandler` va DSL'dagi `.resequence()`, `.split()`, `.aggregate()` operatorlari mavjud. Kafka'da tartib faqat bitta partition ichida kafolatlanadi, shuning uchun bir xil key bilan yozish (`KafkaHeaders.KEY`, `Partitioner`) amaliy yechim; `MessageGroupStore` (`JdbcMessageStore`, `RedisMessageStore`) bo'laklarni holat sifatida saqlaydi.
+**Spring'da qayerda uchraydi:** Spring Integration `IntegrationMessageHeaderAccessor` ning `SEQUENCE_NUMBER`, `SEQUENCE_SIZE`, `SEQUENCE_DETAILS` va `CORRELATION_ID` header'larini `AbstractMessageSplitter` avtomatik qo'yadi (`applySequence` default `true`), `AggregatingMessageHandler` esa `SequenceSizeReleaseStrategy` bilan guruhni yopadi. Tartiblash uchun `ResequencingMessageHandler` va DSL'dagi `.resequence()`, `.split()`, `.aggregate()` operatorlari mavjud. Kafka'da tartib faqat bitta partition ichida kafolatlanadi, shuning uchun bir xil key bilan yozish (`KafkaHeaders.KEY`, `Partitioner`) amaliy yechim; `MessageGroupStore` (`JdbcMessageStore`, `RedisMessageStore`) bo'laklarni holat sifatida saqlaydi.
 
 **Qo'llanish keyslari:**
 - 1 GB CSV faylni qatorlar bo'yicha bo'lib yuborib, natijalarni yana bitta hisobotga yig'ish.
@@ -729,7 +731,7 @@ public record BatchChunk<T>(
 
 **Tavsif:** Xabarga "shu vaqtdan keyin qiymatsiz" degan muddat belgilash patterni: muddat o'tgach xabar iste'mol qilinmaydi, balki o'chiriladi yoki dead letter kanaliga yo'naltiriladi. Bu eskirgan ma'lumot bilan ish bajarilishini oldini oladi va navbatlarning cheksiz o'sishini cheklaydi. Muddat odatda header'da absolyut vaqt yoki TTL sifatida yuritiladi. Qabul qiluvchi yoki broker muddatni tekshirish mas'uliyatini oladi.
 
-**Spring'da qayerda uchraydi:** Spring Integration'da `MessageHeaders.EXPIRATION_DATE` header'i va uni filtrlash uchun `UnexpiredMessageSelector` (`QueueChannel.setMessageSelector` yoki `MessageFilter` bilan), guruh muddatlari uchun `MessageGroupStoreReaper` + aggregator `groupTimeout`. Transportda: JMS `JmsTemplate.setTimeToLive`/`MessageProducer.setTimeToLive`, AMQP `MessageProperties.setExpiration` (per-message) va queue argumenti `x-message-ttl` + `x-dead-letter-exchange` (Spring AMQP'da `QueueBuilder.ttl(...).deadLetterExchange(...)`), Kafka'da topic darajasidagi `retention.ms`. Request-reply tomonida `@Gateway(replyTimeout = ...)`, `RabbitTemplate.setReplyTimeout`, `ReplyingKafkaTemplate` ning reply timeout'i xuddi shu maqsadga xizmat qiladi; kechiktirish uchun esa `DelayHandler`/`.delay()` ishlatiladi.
+**Spring'da qayerda uchraydi:** Spring Integration'da `IntegrationMessageHeaderAccessor.EXPIRATION_DATE` header'i (`"expirationDate"`; `MessageHeaders` da bunday konstanta yo'q, u Spring Integration tomonidan qo'shiladi) va uni filtrlash uchun `UnexpiredMessageSelector` (`MessageFilter` bilan yoki `QueueChannel.purge(MessageSelector)` orqali - `QueueChannel.setMessageSelector` degan setter yo'q), guruh muddatlari uchun `MessageGroupStoreReaper` + aggregator `groupTimeout`. Transportda: JMS `JmsTemplate.setTimeToLive`/`MessageProducer.setTimeToLive`, AMQP `MessageProperties.setExpiration` (per-message) va queue argumenti `x-message-ttl` + `x-dead-letter-exchange` (Spring AMQP'da `QueueBuilder.ttl(...).deadLetterExchange(...)`), Kafka'da topic darajasidagi `retention.ms`. Request-reply tomonida `@Gateway(replyTimeout = ...)`, `RabbitTemplate.setReplyTimeout`, `ReplyingKafkaTemplate` ning reply timeout'i xuddi shu maqsadga xizmat qiladi; kechiktirish uchun esa `DelayHandler`/`.delay()` ishlatiladi.
 
 **Qo'llanish keyslari:**
 - Birja narx kotirovkalarini 2 sekunddan keyin eskirgan deb tashlab yuborish.
@@ -829,7 +831,7 @@ public class ClaimRouter {
 
 **Tavsif:** Kanaldagi xabarlar oqimidan faqat berilgan shartga javob beradiganlarini o'tkazib, qolganlarini chetlab o'tadi. Routerdan farqi: filter bitta output kanalga ega va "o'tsin yoki o'tmasin" degan binar qarorni qabul qiladi. Bu qabul qiluvchini o'ziga aloqasi yo'q xabarlarni tekshirish yukidan xalos qiladi. Rad etilgan xabarni jimgina tashlash, alohida kanalga yuborish yoki exception bilan qaytarish mumkin.
 
-**Spring'da qayerda uchraydi:** Spring Integration'da `MessageFilter` handler'i `MessageSelector` strategiyasi bilan ishlaydi (`ExpressionEvaluatingMessageSelector`, `PayloadTypeSelector`, `UnexpiredMessageSelector`, `MetadataStoreSelector`). POJO metodiga `@Filter` qo'yib `boolean` qaytarish, Java DSL'da `.filter(...)` yoki `.filter(Order.class, o -> o.getTotal() > 0)` ishlatiladi. Muhim sozlamalar: `discardChannel`, `throwExceptionOnRejection`, `discardWithinAdvice`. Kafka/AMQP darajasida bu `RecordFilterStrategy` (`FilteringMessageListenerAdapter`) va `@KafkaListener(filter = "...")` orqali, Camel'da `filter()` orqali bajariladi.
+**Spring'da qayerda uchraydi:** Spring Integration'da `MessageFilter` handler'i `MessageSelector` strategiyasi bilan ishlaydi (`ExpressionEvaluatingSelector`, `PayloadTypeSelector`, `UnexpiredMessageSelector`, `MetadataStoreSelector`). POJO metodiga `@Filter` qo'yib `boolean` qaytarish, Java DSL'da `.filter(...)` yoki `.filter(Order.class, o -> o.getTotal() > 0)` ishlatiladi. Muhim sozlamalar: `discardChannel`, `throwExceptionOnRejection`, `discardWithinAdvice`. Kafka/AMQP darajasida bu `RecordFilterStrategy` (`FilteringMessageListenerAdapter`) va `@KafkaListener(filter = "...")` orqali, Camel'da `filter()` orqali bajariladi.
 
 **Qo'llanish keyslari:**
 - Kafka topic'idagi barcha event'lardan faqat `tenantId` ushbu instansiyaga tegishli bo'lganlarini qayta ishlash.
@@ -966,7 +968,7 @@ public class OrderSplitter {
 
 **Tavsif:** Bir-biriga bog'liq bir nechta xabarni to'plab, ular to'liq bo'lganda yagona natija xabari hosil qiladi - Splitter'ning teskarisi va Scatter-Gather'ning yig'ish qismi. Uchta qarorga tayanadi: xabarlarni qanday guruhlash (correlation), guruh qachon tugallangan deb hisoblash (release) va natijani qanday birlashtirish (aggregation). Guruhlar hali to'lmagan paytda saqlanishi kerak, shuning uchun agregator - stateful komponent. Timeout mexanizmi hech qachon to'lmaydigan guruhlar tizimda abadiy qolib ketishini oldini oladi.
 
-**Spring'da qayerda uchraydi:** Spring Integration'da `AggregatingMessageHandler` + `CorrelationStrategy` (`HeaderAttributeCorrelationStrategy`), `ReleaseStrategy` (`SequenceSizeReleaseStrategy`, `SimpleSequenceSizeReleaseStrategy`, `MessageCountReleaseStrategy`), `MessageGroupProcessor`. POJO uchun `@Aggregator`, `@CorrelationStrategy`, `@ReleaseStrategy` annotatsiyalari; Java DSL'da `.aggregate(a -> a.correlationStrategy(...).releaseStrategy(...).groupTimeout(5000))`. State uchun `MessageGroupStore`: `SimpleMessageStore` (xotira), `JdbcMessageStore`, `RedisMessageStore`, `MongoDbMessageStore`, `JpaMessageStore`. Muhim sozlamalar: `groupTimeout`, `sendPartialResultOnExpiry`, `expireGroupsUponCompletion`, `MessageGroupStoreReaper`.
+**Spring'da qayerda uchraydi:** Spring Integration'da `AggregatingMessageHandler` + `CorrelationStrategy` (`HeaderAttributeCorrelationStrategy`), `ReleaseStrategy` (`SequenceSizeReleaseStrategy`, `SimpleSequenceSizeReleaseStrategy`, `MessageCountReleaseStrategy`), `MessageGroupProcessor`. POJO uchun `@Aggregator`, `@CorrelationStrategy`, `@ReleaseStrategy` annotatsiyalari; Java DSL'da `.aggregate(a -> a.correlationStrategy(...).releaseStrategy(...).groupTimeout(5000))`. State uchun `MessageGroupStore`: `SimpleMessageStore` (xotira), `JdbcMessageStore`, `RedisMessageStore`, `MongoDbMessageStore`. JPA uchun tayyor `MessageGroupStore` yo'q: `spring-integration-jpa` moduli adapter beradi, message store bermaydi. Muhim sozlamalar: `groupTimeout`, `sendPartialResultOnExpiry`, `expireGroupsUponCompletion`, `MessageGroupStoreReaper`.
 
 ```java
 @Bean
@@ -996,7 +998,7 @@ IntegrationFlow aggregateOrderLines(JdbcMessageStore store) {
 
 **Tavsif:** Tartibi buzilib kelgan xabarlarni ularning tartib raqami bo'yicha qayta to'g'ri ketma-ketlikka keltirib chiqaradi. Agregatordan farqi: xabarlarni birlashtirmaydi - ularni bittalab, lekin to'g'ri tartibda chiqaradi. Buning uchun kutilayotgan raqam kelmaguncha keyingi xabarlarni buferda ushlab turadi. Parallel ishlov berish yoki bir nechta transport yo'li tartibni buzgan joylarda ketma-ketlikni tiklash uchun kerak.
 
-**Spring'da qayerda uchraydi:** Spring Integration'da `ResequencingMessageHandler` va uning `ResequencingMessageGroupProcessor`'i; POJO darajasida `@Resequencer`, Java DSL'da `.resequence(r -> r.releasePartialSequences(true).messageStore(store))`, XML'da `<int:resequencer>`. U Splitter qo'ygan `correlationId`, `sequenceNumber`, `sequenceSize` header'laridan (`IntegrationMessageHeaderAccessor` konstantalari) foydalanadi va agregator bilan bir xil `MessageGroupStore` infratuzilmasiga tayanadi. Camel'da bu `resequence()` (batch yoki stream rejimi), Kafka'da esa tartib asosan partition kaliti bilan ta'minlanadi.
+**Spring'da qayerda uchraydi:** Spring Integration'da `ResequencingMessageHandler` va uning `ResequencingMessageGroupProcessor`'i; Java DSL'da `.resequence(r -> r.releasePartialSequences(true).messageStore(store))`, XML'da `<int:resequencer>`. U Splitter qo'ygan `correlationId`, `sequenceNumber`, `sequenceSize` header'laridan (`IntegrationMessageHeaderAccessor` konstantalari) foydalanadi va agregator bilan bir xil `MessageGroupStore` infratuzilmasiga tayanadi. Camel'da bu `resequence()` (batch yoki stream rejimi), Kafka'da esa tartib asosan partition kaliti bilan ta'minlanadi.
 
 **Qo'llanish keyslari:**
 - Parallel consumer'lar qayta ishlagan hodisalarni DB'ga yozishdan oldin asl tartibiga keltirish.
@@ -1052,15 +1054,16 @@ public class Resequencer {
 public class OrderValidationProcessor {
 
     public ValidationReport validate(Order order) throws InterruptedException {
-        // Java 21-24 preview; Java 25 (JEP 505) da ShutdownOnFailure yo'q,
-        // o'rniga open(Joiner.awaitAllSuccessfulOrThrow()).
-        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+        // JDK 25 (JEP 505) shakli: ShutdownOnFailure olib tashlangan.
+        // API hamon preview: --enable-preview bilan kompilyatsiya qiladi.
+        try (var scope = StructuredTaskScope.open(
+                StructuredTaskScope.Joiner.awaitAllSuccessfulOrThrow())) {
             // Bo'lish: har tekshiruv mustaqil va parallel ketadi
             var stock  = scope.fork(() -> inventory.check(order.items()));
             var credit = scope.fork(() -> billing.checkCredit(order.customerId()));
             var fraud  = scope.fork(() -> riskEngine.score(order));
 
-            scope.join().throwIfFailed();
+            scope.join();
             // Yig'ish: bitta natija qaytadi
             return new ValidationReport(stock.get(), credit.get(), fraud.get());
         }
@@ -1074,7 +1077,7 @@ public class OrderValidationProcessor {
 
 **Tavsif:** So'rovni bir vaqtda bir nechta qabul qiluvchiga tarqatadi (scatter), ularning javoblarini kutadi va bitta natijaga yig'adi (gather). Scatter qismi publish-subscribe kanal yoki Recipient List bilan, gather qismi esa Aggregator bilan amalga oshiriladi. Asosiy qiymati - parallellik: eng sekin javob qancha bo'lsa, umumiy kechikish shunga teng, ketma-ket chaqiruvlar yig'indisiga emas. Javoblarning hammasini yoki eng yaxshisini, yoki timeout ichida kelganlarini olish strategiyasini tanlash mumkin.
 
-**Spring'da qayerda uchraydi:** Spring Integration'da to'g'ridan-to'g'ri `ScatterGatherHandler` mavjud: Java DSL'da `.scatterGather(scatterer, gatherer, spec -> spec.gatherTimeout(3000))`, XML'da `<int:scatter-gather>`. Scatterer sifatida `RecipientListRouterSpec` yoki `PublishSubscribeChannel`, gatherer sifatida `AggregatorSpec` beriladi; `errorChannel` va `requiresReply` xatolarni boshqaradi. Reaktiv muhitda xuddi shu g'oya `Mono.zip(...)` / `Flux.merge(...)` bilan (Spring WebFlux `WebClient`), imperativ kodda esa `CompletableFuture.allOf(...)` yoki Java 21+ `StructuredTaskScope` bilan yozilishi mumkin; Resilience4j `TimeLimiter` esa timeout qismini qo'shadi.
+**Spring'da qayerda uchraydi:** Spring Integration'da to'g'ridan-to'g'ri `ScatterGatherHandler` mavjud: Java DSL'da `.scatterGather(scatterer, gatherer, spec -> spec.gatherTimeout(3000))`, XML'da `<int:scatter-gather>`. Scatterer sifatida `RecipientListRouterSpec` yoki `PublishSubscribeChannel`, gatherer sifatida `AggregatorSpec` beriladi; xatolarni `errorChannel(...)`, timeout'ni esa `gatherTimeout(...)` boshqaradi (`ScatterGatherSpec` da `requiresReply` yo'q). Reaktiv muhitda xuddi shu g'oya `Mono.zip(...)` / `Flux.merge(...)` bilan (Spring WebFlux `WebClient`), imperativ kodda esa `CompletableFuture.allOf(...)` yoki `StructuredTaskScope` bilan yozilishi mumkin (oxirgisi JDK 25 da ham hamon preview); Resilience4j `TimeLimiter` esa timeout qismini qo'shadi.
 
 ```java
 @Bean
@@ -1212,7 +1215,92 @@ public class OrderEventPublisher {
 // va broker o'zi yuqori mavjudlikda sozlanishi kerak (15.12).
 ```
 
-## 15.37 Amalda qo'llash
+## 15.37 Fayl uzatish (File Transfer)
+
+**Tavsif:** Har ilova bo'lishmoqchi bo'lgan ma'lumotni fayl ko'rinishida chiqaradi, qolganlari esa shu fayllarni o'qiydi; format va nomlash konvensiyasi kelishib olinadi va fayl amalda ilovaning tashqi kontraktiga aylanadi. Kitob buni to'rtta integratsiya uslubining eng soddasi deb beradi: fayl har operatsion tizimda va har tilda bor, maxsus middleware shart emas, integrator ilovaning ichki tuzilishini bilishi kerak emas, shuning uchun ilovalar yaxshi ajralgan holda qoladi. Narxi: fayl biznes tsikliga qarab chiqariladi (kechasi, haftada), demak iste'molchi eskirgan ma'lumot bilan ishlaydi; nomni unikal qilish, eski faylni o'chirish va yarim yozilgan faylni o'qib qo'ymaslik konvensiyasi qo'lda yoziladi. Kitobning o'z izohi: har o'zgarish uchun alohida fayl chiqarilsa, bu amalda Messaging bo'lib qoladi va fayl tizimi bunday mayda donadorlikni ko'tarmaydi.
+
+**Spring'da qayerda uchraydi:** `spring-integration-file` moduli. Java DSL'da `Files.inboundAdapter(dir)` katalogni poller bilan kuzatadi (ichida `file.inbound.FileReadingMessageSource`), `Files.outboundAdapter(dir)` esa `file.outbound.FileWritingMessageHandler` orqali yozadi. Filtrlar `ChainFileListFilter` da ketma-ket qo'yiladi: `SimplePatternFileListFilter` (nom shabloni), `LastModifiedFileListFilter` (`setAge(Duration)` bilan yozilib bitmagan faylni olmaslik), `AcceptOnceFileListFilter` (xotirada) va restartdan keyin ham ishlaydigan `FileSystemPersistentAcceptOnceFileListFilter`. Yozuvchi tomonda `FileWritingMessageHandler` faylni avval vaqtinchalik suffiks bilan yozib keyin nomini o'zgartiradi (`temporaryFileSuffix`, default `.writing`), mavjud faylga munosabat `FileExistsMode` bilan belgilanadi (default `REPLACE`, yana `APPEND`, `FAIL`, `IGNORE`). Masofadagi katalog uchun `Sftp.inboundAdapter(...)`, satrlarga ajratish uchun `Files.splitter()`, to'liq ETL uchun Spring Batch `FlatFileItemReader`.
+
+**Qo'llanish keyslari:**
+- Bank yoki to'lov provayderi kechasi bir marta beradigan tranzaksiya ekstraktini yuklash.
+- Uchinchi tomon katalogi (narx, mahsulot, valyuta kursi) kunlik CSV yoki XML fayl bo'lib kelishi.
+- Faqat fayl bera oladigan, API bermaydigan legacy mainframe tizimidan ma'lumot olish.
+- Reporting uchun kunlik snapshot chiqarib, BI vositasiga umumiy katalog orqali berish.
+- Migratsiya davrida eski va yangi tizim orasidagi bir martalik to'liq eksport va import.
+
+**Ehtiyot bo'ling:** Eng ko'p uchraydigan xato - yozilib bitmagan faylni o'qish: yozuvchi vaqtinchalik nom bilan yozib keyin rename qilsin, o'quvchi esa yosh chegarasini tekshirsin. Ikkinchisi - idempotentlik: bitta faylni ikki marta import qilish ma'lumotni dublikat qiladi, shuning uchun o'qilgan fayllar ro'yxati doimiy `MetadataStore` da va bir nechta instansda umumiy bo'lishi kerak. Uchinchisi - fayl tsiklini qisqartirib "deyarli real vaqt" qilishga urinish: kitob buni Messaging'ga o'tish nuqtasi deb ko'rsatadi.
+
+```java
+@Configuration
+public class PartnerFeedConfig {
+
+    @Bean
+    IntegrationFlow partnerFeedFlow(ConcurrentMetadataStore metadataStore,
+                                    PartnerFeedService service) {
+        LastModifiedFileListFilter stable = new LastModifiedFileListFilter();
+        stable.setAge(Duration.ofSeconds(30));   // yozib bo'lingan fayl
+
+        ChainFileListFilter<File> filters = new ChainFileListFilter<>();
+        filters.addFilter(new SimplePatternFileListFilter("partner-*.csv"));
+        filters.addFilter(stable);
+        // Restartdan keyin ham bir faylni ikki marta o'qimaslik uchun
+        filters.addFilter(new FileSystemPersistentAcceptOnceFileListFilter(
+                metadataStore, "partner-feed-"));
+
+        return IntegrationFlow
+                .from(Files.inboundAdapter(new File("/data/in")).filter(filters),
+                        e -> e.poller(Pollers.fixedDelay(Duration.ofMinutes(1))))
+                .handle(service, "importCsv")
+                .get();
+    }
+}
+// Fayl kontrakti uchta narsa: katalog va nom shabloni, format va
+// chiqarish tsikli. Ular hujjatlashtirilmasa, integratsiya har
+// format o'zgarishida jimgina buziladi.
+```
+
+**Kitobda:** Gregor Hohpe, Bobby Woolf, *Enterprise Integration Patterns: Designing, Building, and Deploying Messaging Solutions*, Addison-Wesley, 2003, 2-bob (65-68-betlar); bo'limni Martin Fowler yozgan. Kitob fayl formatlari darajasida gapiradi (COBOL feed, Unix matn fayli, XML) va Java API bermaydi; yuqoridagi kod shu g'oyaning Spring Integration'dagi ko'rinishi.
+
+## 15.38 Integratsiya uslublarini tanlash (Integration Styles)
+
+**Tavsif:** Kitob pattern tilini bitta savoldan boshlaydi: mustaqil qurilgan, turli tilda va platformada yozilgan ilovalarni qanday birga ishlatish kerak? Javob - to'rtta uslub, murakkablik tartibida joylashtirilgan va har biri avvalgisining kamchiligini yopadi: Fayl uzatish (15.37), Umumiy ma'lumotlar bazasi (10.13), Masofaviy protsedura chaqirig'i (14.15) va Messaging (14.16). Tanlovni kitob yettita mezon bilan o'lchaydi: ilovalar bog'lanishi (coupling), integratsiya soddaligi, kerak bo'ladigan integratsiya texnologiyasi va uning narxi, ma'lumot formati hamda uning evolyutsiyasi, ma'lumot yangiligi (timeliness), faqat ma'lumot yoki funksionallikni ham bo'lishish, va asinxronlik. Asosiy xulosa: bitta "to'g'ri" uslub yo'q, har integratsiya nuqtasi uchun mos uslub tanlanadi va bitta juft ilova bir nechta uslubni birga ishlatishi mumkin.
+
+**Spring'da qayerda uchraydi:** Fayl uzatish - `spring-integration-file` adapterlari va Spring Batch oqimlari (15.37). Umumiy ma'lumotlar bazasi - bir nechta Boot ilovasi bitta `spring.datasource.url` ni ko'rsatishi: modular monolitda ongli tanlov, mikroservislarda anti-pattern (10.13). Masofaviy protsedura chaqirig'i - server tomonda `@RestController`, klient tomonda `RestClient`, deklarativ `@HttpExchange` interfeyslari yoki `WebClient`, shuningdek gRPC va GraphQL starter'lari (14.15). Messaging - `spring-kafka` (`KafkaTemplate`, `@KafkaListener`), `spring-boot-starter-amqp` (`RabbitTemplate`, `@RabbitListener`), `spring-jms`, ular ustida Spring Integration `IntegrationFlow` va Spring Cloud Stream binder'lari (14.16). Aralash holat ham oddiy: SFTP'dan kelgan kunlik fayl oqimda yozuvlarga ajratiladi va har yozuv Kafka topic'iga xabar bo'lib tushadi.
+
+**Qo'llanish keyslari:**
+- Yangi integratsiya nuqtasi uchun uslub tanlash: avval yangilik talabi aniqlanadi, keyin uslub.
+- Tashqi hamkor faqat fayl bera oladigan holat: uslub tanlovi tashqaridan belgilanadi.
+- Monolitni ajratishda bazani bo'lishishdan API yoki event'ga o'tishni bosqichlarga bo'lish.
+- Bitta juft servisda ikki uslub: o'qish so'rovi RPC orqali, holat o'zgarishi event orqali.
+- Legacy JMS tizimini yangi Kafka oqimiga Messaging Bridge bilan bog'lash (15.14).
+
+**Ehtiyot bo'ling:** Uslubni mezondan emas, jamoadagi mavjud ko'nikmadan tanlash eng qimmat xato: hamma narsani sinxron RPC'ga o'tkazish zanjirli nosozlik va latency jamlanishini beradi, hamma narsani event'ga o'tkazish esa debug, tartib va takroriy yetkazish muammolarini keltiradi. Ikkinchi tuzoq - bazani bo'lishishni "vaqtincha" tanlab, o'chirish muddatini yozmaslik: u shunda doimiy arxitekturaga aylanadi. Uchinchisi - fayl tsiklini qisqartirib messaging o'rnini bosishga urinish.
+
+```java
+@Configuration
+public class FeedBridgeConfig {
+
+    // Aralash uslub: fayl uzatish kiraverishda, messaging ichkarida
+    @Bean
+    IntegrationFlow feedToKafkaFlow(KafkaTemplate<String, String> kafkaTemplate) {
+        return IntegrationFlow
+                .from(Files.inboundAdapter(new File("/data/in")).patternFilter("*.csv"),
+                        e -> e.poller(Pollers.fixedDelay(Duration.ofMinutes(5))))
+                .split(Files.splitter())                     // fayl -> satrlar
+                .<String>filter(line -> !line.isBlank())
+                .handle(Kafka.outboundChannelAdapter(kafkaTemplate)
+                        .topic("partner.rows"))
+                .get();
+    }
+}
+// Chegara uslubni tanlaydi: tashqi hamkor bilan fayl, ichkarida xabar.
+// Ko'prik fayl tsiklining kechikishini yo'qotmaydi, faqat uni
+// tizimning bitta chekkasiga qamab qo'yadi.
+```
+
+**Kitobda:** Gregor Hohpe, Bobby Woolf, *Enterprise Integration Patterns: Designing, Building, and Deploying Messaging Solutions*, Addison-Wesley, 2003, 2-bob (63-74-betlar) - "Application Integration Criteria" va "Application Integration Options" bo'limlari hamda to'rtta uslub: File Transfer (65-bet), Shared Database (68-bet), Remote Procedure Invocation (70-bet), Messaging (72-bet). Kitob JMS va MSMQ misollarini beradi, bu yerda ular o'rniga Spring Integration va Spring Kafka DSL ishlatilgan.
+
+## 15.39 Amalda qo'llash
 
 - [ ] Har bir xabar kanali uchun nom, format, egasi va iste'molchilari ro'yxatini tuzing.
 - [ ] Point-to-point va publish-subscribe kanallarini ajratib belgilang; aralashtirilgan joylarni toping.
@@ -1222,6 +1310,26 @@ public class OrderEventPublisher {
 - [ ] Dead letter kanali borligini va unga tushgan xabarlar kuzatilayotganini tekshiring.
 - [ ] Xabar yo'qolishi mumkin bo'lgan nuqtalarni aniqlang: producer ack, broker replikatsiyasi va consumer commit tartibi.
 - [ ] Har bir kanal uchun kutilayotgan hajm va maksimal xabar o'lchamini yozib qo'ying.
+
+## Manbalar
+
+- Craig Walls, *Spring in Action* 6th, 9-bob - xabarni asinxron yuborish: JMS, RabbitMQ, Kafka
+- Craig Walls, *Spring in Action* 6th, 10-bob - Spring Integration va integratsiya oqimi
+- Spring Integration kodi: `AggregatingMessageHandler`, `ResequencingMessageHandler`, `ExpressionEvaluatingSelector`, `UnexpiredMessageSelector`, `QueueChannel`, `ScatterGatherHandler`. spring-projects/spring-integration, tag `v7.1.1` (commit `60931e3b56c32b4457c73e824864bfa2bbfc1aa7`). Apache-2.0. https://github.com/spring-projects/spring-integration/blob/60931e3b56c32b4457c73e824864bfa2bbfc1aa7/spring-integration-core/src/main/java/org/springframework/integration/aggregator/AggregatingMessageHandler.java
+- Spring Integration kodi: `IntegrationMessageHeaderAccessor` (`EXPIRATION_DATE`, `CORRELATION_ID`, `SEQUENCE_NUMBER`, `ROUTING_SLIP`, `DELIVERY_ATTEMPT`). spring-projects/spring-integration, tag `v7.1.1`. Apache-2.0. https://github.com/spring-projects/spring-integration/blob/60931e3b56c32b4457c73e824864bfa2bbfc1aa7/spring-integration-core/src/main/java/org/springframework/integration/IntegrationMessageHeaderAccessor.java
+- Spring Integration kodi: Java DSL (`BaseIntegrationFlowDefinition` - `controlBus()`, `scatterGather(...)`, implicit `DirectChannel`), `MessageChannels`, `ScatterGatherSpec`. spring-projects/spring-integration, tag `v7.1.1`. Apache-2.0. https://github.com/spring-projects/spring-integration/blob/60931e3b56c32b4457c73e824864bfa2bbfc1aa7/spring-integration-core/src/main/java/org/springframework/integration/dsl/BaseIntegrationFlowDefinition.java
+- Spring Integration kodi: `DirectChannel` (default `RoundRobinLoadBalancingStrategy`), `PublishSubscribeChannel`, `AbstractMessageRouter`, `AbstractMessageSplitter` (`applySequence` default `true`), `MessageFilter`. spring-projects/spring-integration, tag `v7.1.1`. Apache-2.0. https://github.com/spring-projects/spring-integration/blob/60931e3b56c32b4457c73e824864bfa2bbfc1aa7/spring-integration-core/src/main/java/org/springframework/integration/channel/DirectChannel.java
+- Spring Integration kodi: Kafka DSL (`Kafka.messageDrivenChannelAdapter` overload'lari). spring-projects/spring-integration, tag `v7.1.1`. Apache-2.0. https://github.com/spring-projects/spring-integration/blob/60931e3b56c32b4457c73e824864bfa2bbfc1aa7/spring-integration-kafka/src/main/java/org/springframework/integration/kafka/dsl/Kafka.java
+- Spring Framework kodi: `MessageHeaders` (mavjud konstantalar ro'yxati) va `GenericMessagingTemplate` (vaqtinchalik javob kanali private sinf). spring-projects/spring-framework, tag `v7.0.9` (commit `82a6b40b9366ec181ededdad282b307ee5381a52`). Apache-2.0. https://github.com/spring-projects/spring-framework/blob/82a6b40b9366ec181ededdad282b307ee5381a52/spring-messaging/src/main/java/org/springframework/messaging/MessageHeaders.java
+- Spring for Apache Kafka kodi: `DeadLetterPublishingRecoverer` va `RetryTopicConstants` (DLT suffiksi `-dlt`), `ExponentialBackOffWithMaxRetries`. spring-projects/spring-kafka, tag `v4.0.7` (commit `e88b35d359e83049c365de12cc96fa9dd48defb3`). Apache-2.0. https://github.com/spring-projects/spring-kafka/blob/e88b35d359e83049c365de12cc96fa9dd48defb3/spring-kafka/src/main/java/org/springframework/kafka/listener/DeadLetterPublishingRecoverer.java
+- Spring AMQP kodi: `AmqpHeaders`, `QueueBuilder` (`deadLetterExchange`, `ttl`). spring-projects/spring-amqp, tag `v4.0.5` (commit `1140ceaf45aa0f3ffcfbcb41bfa3e4411ce3872f`). Apache-2.0. https://github.com/spring-projects/spring-amqp/blob/1140ceaf45aa0f3ffcfbcb41bfa3e4411ce3872f/spring-amqp/src/main/java/org/springframework/amqp/support/AmqpHeaders.java
+- JDK kodi: `StructuredTaskScope` (`@PreviewFeature`, `Joiner`). openjdk/jdk, tag `jdk-25-ga`. GPL-2.0 with Classpath Exception. https://github.com/openjdk/jdk/blob/jdk-25-ga/src/java.base/share/classes/java/util/concurrent/StructuredTaskScope.java
+- Gregor Hohpe, Bobby Woolf, *Enterprise Integration Patterns: Designing, Building, and Deploying Messaging Solutions*, Addison-Wesley, 2003, 2-bob (63-74-betlar) - to'rtta integratsiya uslubi, ularning tartibi va yettita tanlov mezoni; File Transfer bo'limi 65-68-betlarda va uni Martin Fowler yozgan
+- Spring Integration kodi: `Files` DSL (`inboundAdapter`, `outboundAdapter`, `splitter`, `toStringTransformer`) va `FileInboundChannelAdapterSpec` (`filter`, `patternFilter`, `preventDuplicates`). spring-projects/spring-integration, tag `v7.1.1` (commit `60931e3b56c32b4457c73e824864bfa2bbfc1aa7`). Apache-2.0. https://github.com/spring-projects/spring-integration/blob/60931e3b56c32b4457c73e824864bfa2bbfc1aa7/spring-integration-file/src/main/java/org/springframework/integration/file/dsl/Files.java
+- Spring Integration kodi: `FileWritingMessageHandler` - `temporaryFileSuffix` default `.writing`, `fileExistsMode` default `FileExistsMode.REPLACE` (boshqa qiymatlar `APPEND`, `APPEND_NO_FLUSH`, `FAIL`, `IGNORE`). spring-projects/spring-integration, tag `v7.1.1`. Apache-2.0. https://github.com/spring-projects/spring-integration/blob/60931e3b56c32b4457c73e824864bfa2bbfc1aa7/spring-integration-file/src/main/java/org/springframework/integration/file/outbound/FileWritingMessageHandler.java
+- Spring Integration kodi: fayl filtrlari - `ChainFileListFilter`, `CompositeFileListFilter#addFilter`, `SimplePatternFileListFilter`, `FileSystemPersistentAcceptOnceFileListFilter(ConcurrentMetadataStore, String)`. spring-projects/spring-integration, tag `v7.1.1`. Apache-2.0. https://github.com/spring-projects/spring-integration/blob/60931e3b56c32b4457c73e824864bfa2bbfc1aa7/spring-integration-file/src/main/java/org/springframework/integration/file/filters/ChainFileListFilter.java
+- Spring Integration kodi: `AbstractLastModifiedFileListFilter#setAge(Duration)` - `LastModifiedFileListFilter` ning yosh chegarasi shu ota sinfdan keladi. spring-projects/spring-integration, tag `v7.1.1`. Apache-2.0. https://github.com/spring-projects/spring-integration/blob/60931e3b56c32b4457c73e824864bfa2bbfc1aa7/spring-integration-file/src/main/java/org/springframework/integration/file/filters/AbstractLastModifiedFileListFilter.java
+- Spring Integration kodi: Kafka DSL `Kafka.outboundChannelAdapter(KafkaTemplate)` va `KafkaProducerMessageHandlerSpec#topic(String)`. spring-projects/spring-integration, tag `v7.1.1`. Apache-2.0. https://github.com/spring-projects/spring-integration/blob/60931e3b56c32b4457c73e824864bfa2bbfc1aa7/spring-integration-kafka/src/main/java/org/springframework/integration/kafka/dsl/Kafka.java
 
 ---
 

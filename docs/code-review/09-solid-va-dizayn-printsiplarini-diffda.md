@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 9. SOLID va dizayn printsiplarini diffda tekshirish (Principles, Not Slogans)
 
@@ -311,6 +311,12 @@ taxminan 60 satr ko'chirish, mavjud testlar o'zgarmaydi.
 - [ ] Uch va undan ko'p bo'g'inli `get` zanjirlarini grep bilan topib, ularni obyekt metodiga ko'chirish ro'yxatini tuzing.
 - [ ] Entity larda ketma-ket chaqiriladigan `setX` guruhlarini aniqlab, ularni domen metodlariga aylantirishni rejalashtiring.
 - [ ] Nomi `get`/`is` bilan boshlanadigan, lekin holat o'zgartiradigan yoki tarmoqqa chiqadigan metodlarni toping va nomini tuzating.
+
+## Manbalar
+
+- Robert C. Martin, *Clean Architecture*, 7-11 bob - SOLID ning beshta printsipi, SRP ning aktyor shakli va DIP ning to'rtta amaliyoti
+- Joshua Bloch, *Effective Java* 3rd, Item 18 va Item 20 - meros va interfeys bo'yicha amaliy qoidalar
+- [Google, The Standard of Code Review](https://raw.githubusercontent.com/google/eng-practices/3bb3ec25b3b0199f4940b1aa75f0ac5c5753301c/review/reviewer/standard.md) - dizayn masalasining shaxsiy xohish emasligi va printsip bilan tortilishi
 
 ---
 

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 16. O'zgarmaslik va holat boshqaruvi kod darajasida (Immutability in Code)
 
@@ -27,16 +27,17 @@ Holatni kamaytirish murakkablikni boshqarish vositasi sifatida [arxitektor hujja
 
 ## 16.1 `final` maydon, `final` sinf va haqiqiy o'zgarmaslik
 
-`final` maydon faqat **havolani** qotiradi, obyektni emas. `private final List<Order> orders` maydoniga yangi ro'yxat tayinlab bo'lmaydi, lekin `orders.add(...)` ishlaydi. Shu sababli haqiqiy o'zgarmaslik uch shartni talab qiladi.
+`final` maydon faqat **havolani** qotiradi, obyektni emas. `private final List<Order> orders` maydoniga yangi ro'yxat tayinlab bo'lmaydi, lekin `orders.add(...)` ishlaydi. Shu sababli haqiqiy o'zgarmaslik beshta shartni talab qiladi, va ularning har biri boshqa teshikni yopadi.
 
 | Shart | Nega kerak |
 |---|---|
-| Barcha maydonlar `final` | qayta tayinlashni to'sadi |
-| Maydon turlari ham o'zgarmas | ichki obyekt o'zgarmasin |
-| Sinf `final` (yoki konstruktor `private`) | voris sinf o'zgaruvchanlik qo'shmasin |
-| Setter yo'q | oshkor o'zgartirish yo'li yopiladi |
-| To'plamlar nusxalanadi va o'zgartirilmas | 14.7 |
-| `this` chiqib ketmaydi | 14.10 |
+| Holatni o'zgartiradigan metod yo'q | setter va `addX` o'zgartirish yo'lini ochadi |
+| Sinf voris olinmaydi: `final`, yoki konstruktor `private` va statik fabrika | voris sinf o'zini o'zgarganday tutishi mumkin |
+| Barcha maydonlar `final` | qayta tayinlashni to'sadi; thread ga sinxronlashsiz uzatishda to'g'ri ko'rinishni ham kafolatlaydi |
+| Barcha maydonlar `private` | mijoz maydondagi o'zgaradigan obyektga to'g'ridan-to'g'ri yetib bormaydi va ichki tuzilishni keyin almashtirish mumkin bo'ladi |
+| O'zgaradigan komponentga yakka kirish | konstruktorda va getterda nusxa olinadi ([himoyalangan nusxa](14-obyekt-va-malumot-tuzilmasi-inkapsulyatsiya.md#147-ichki-toplamni-oshkor-qilish-va-himoyalangan-nusxa)) |
+
+Ikki qo'shimcha shart Java ga xos: maydon turlarining o'zi ham o'zgarmas bo'lishi (16.2) va `this` ning konstruktordan [chiqib ketmasligi](14-obyekt-va-malumot-tuzilmasi-inkapsulyatsiya.md#1410-this-ning-konstruktordan-qochib-ketishi).
 
 ```java
 // yomon: final bor, lekin obyekt o'zgaradi
@@ -264,6 +265,16 @@ public record RequestContext(UserId user, TraceId trace) { }
 - [ ] Statik o'zgaradigan maydonlarni topib (`static` + `final` emas), kontekst parametriga yoki framework mexanizmiga o'tkazing.
 - [ ] `ThreadLocal` ishlatilgan joylarda `finally` da tozalash borligini tekshiring.
 - [ ] Yangi value object lar uchun `record` ni standart tanlov qilib, uni jamoa kelishuviga yozib qo'ying.
+
+## Manbalar
+
+- Joshua Bloch, *Effective Java* 3rd, Item 17 - o'zgarmas sinfning besh qoidasi, `final` maydonning xotira modeli bilan bog'liqligi
+- Joshua Bloch, *Effective Java* 3rd, Item 15, 16 - a'zolar ko'rinishini kamaytirish, `public` maydon o'rniga accessor
+- Joshua Bloch, *Effective Java* 3rd, Item 50 - o'zgaradigan komponentga himoyalangan nusxa
+- Joshua Bloch, *Effective Java* 3rd, Item 2 - ko'p parametrli konstruktor o'rniga builder
+- [Java API, `List.of`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/List.html#of()) - `null` element taqiqlangan, o'zgarmas ro'yxat
+- [Java API, `Collections.unmodifiableList`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Collections.html#unmodifiableList(java.util.List)) - o'zgartirilmas KO'RINISH, manba o'zgarsa o'zgaradi
+- [Java API, `Stream.toList`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/stream/Stream.html#toList()) - o'zgartirilmas, `null` ga ruxsat beradi
 
 ---
 

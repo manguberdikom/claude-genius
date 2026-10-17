@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 42. Statik tahlil va avtomatik qoidalar (Static Analysis and Automated Rules)
 
@@ -212,6 +212,12 @@ grep -rn "@SuppressWarnings" src/main/java | grep -v "//" | head    # izohsizlar
 - [ ] Review da takrorlanadigan uch izohni tanlab, ularni ArchUnit yoki maxsus qoidaga aylantiring.
 - [ ] Yangi qoidalarni 42.6 dagi besh bosqichli tartib bo'yicha joriy qiling.
 - [ ] `@SuppressWarnings` sonini o'lchab, izohsizlarini tuzatib, o'sishini CI da kuzatib turing.
+
+## Manbalar
+
+- [SpotBugs, hujjat](https://raw.githubusercontent.com/spotbugs/spotbugs/6fc14ff38f4ebfbb4457caaa6df9a0ddd23a18c6/docs/index.rst) - bytecode asosidagi tahlil va qoida toifalari
+- [PIT, README](https://raw.githubusercontent.com/hcoles/pitest/f7fe5adfa5fb6e727c12d2403a48f5e4e9dd2fc6/README.md) - mutatsiya testlash va qamrov bilan farqi
+- [ArchUnit, README](https://raw.githubusercontent.com/TNG/ArchUnit/a0640ffa3ea5806c4fbab0dfbd29e363646d0fa3/README.md) - arxitektura qoidasini test sifatida yozish
 
 ---
 

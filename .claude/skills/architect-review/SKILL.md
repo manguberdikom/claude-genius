@@ -5,7 +5,7 @@ description: Review a design or diagnose runtime behaviour in a Java/Spring syst
 
 # Arxitektor ko'rigi
 
-39 bob, 482 bo'lim. To'liq hujjat: `docs/architect/README.md`.
+41 bob, 517 bo'lim. To'liq hujjat: `docs/architect/README.md`.
 
 ## Qoida
 
@@ -69,6 +69,8 @@ Bu qism uchun `postgres-tuning` skilliga qarang (21-27 boblar).
 |---|---|
 | Kesh invalidatsiyasi, stampede, Redis haqiqati | `docs/architect/28-keshlash-amaliyoti-invalidatsiya-stampede.md` |
 | Kafka: partition, lag, rebalance, idempotentlik | `docs/architect/29-kafka-operatsion-haqiqati-partition-lag.md` |
+| To'liq matn qidiruv, FTS chegarasi, alohida qidiruv dvigateli | `docs/architect/40-qidiruv-postgresql-fts-va-alohida-dvigatel.md` |
+| Ko'p region, ma'lumot rezidentligi, failover va RPO | `docs/architect/41-kop-region-kechikish-rezidentlik-failover.md` |
 | Log, metrika, trace va ularning narxi | `docs/architect/30-kuzatuvchanlik-amaliyoti-log-metrika-trace.md` |
 | Konteyner, cgroup, JVM limitlari, probe | `docs/architect/31-deployment-haqiqati-konteyner-cgroup-jvm-va.md` |
 | Timeout budjeti, retry, tarmoq haqiqati | `docs/architect/32-tarmoq-timeout-va-integratsiya-haqiqati.md` |

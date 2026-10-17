@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 11. Concurrency: thread, lock, atomic, happens-before (Java Concurrency)
 
 <details>
-<summary>Bu bobdagi 12 bo'lim</summary>
+<summary>Bu bobdagi 23 bo'lim</summary>
 
 - [11.1 Parallellik va konkurentlik farqi, qaysi muammoni hal qilamiz](#111-parallellik-va-konkurentlik-farqi-qaysi-muammoni-hal-qilamiz)
 - [11.2 Thread holatlari, kontekst almashinuvi va uning narxi](#112-thread-holatlari-kontekst-almashinuvi-va-uning-narxi)
@@ -20,7 +20,18 @@
 - [11.9 `CompletableFuture` bilan asinxron oqim qurish va xato tarqalishi](#119-completablefuture-bilan-asinxron-oqim-qurish-va-xato-tarqalishi)
 - [11.10 Deadlock, livelock va ochlik (starvation): sabab va oldini olish](#1110-deadlock-livelock-va-ochlik-starvation-sabab-va-oldini-olish)
 - [11.11 Konkurentlik xatolarini topish: thread dump o'qish](#1111-konkurentlik-xatolarini-topish-thread-dump-oqish)
-- [11.12 Amalda qo'llash](#1112-amalda-qollash)
+- [11.12 Thread safety darajasini hujjatlash va ortiqcha sinxronlashdan qochish](#1112-thread-safety-darajasini-hujjatlash-va-ortiqcha-sinxronlashdan-qochish)
+- [11.13 Xavfsiz nashr (safe publication) va obyektning qochib ketishi](#1113-xavfsiz-nashr-safe-publication-va-obyektning-qochib-ketishi)
+- [11.14 Bekor qilish, interrupt siyosati va thread starvation deadlock](#1114-bekor-qilish-interrupt-siyosati-va-thread-starvation-deadlock)
+- [11.15 Qulf raqobatini kamaytirish: qamrov, bo'lish, striping va issiq maydon](#1115-qulf-raqobatini-kamaytirish-qamrov-bolish-striping-va-issiq-maydon)
+- [11.16 Qo'shma amal, intrinsic lock va reentrancy mexanikasi](#1116-qoshma-amal-intrinsic-lock-va-reentrancy-mexanikasi)
+- [11.17 Thread ga qamash: ad-hoc, stack va `ThreadLocal` qamashi](#1117-thread-ga-qamash-ad-hoc-stack-va-threadlocal-qamashi)
+- [11.18 Condition queue mexanikasi: shart predikati, yo'qolgan signal va kirish-chiqish protokoli](#1118-condition-queue-mexanikasi-shart-predikati-yoqolgan-signal-va-kirish-chiqish-protokoli)
+- [11.19 `AbstractQueuedSynchronizer`: acquire va release protokoli](#1119-abstractqueuedsynchronizer-acquire-va-release-protokoli)
+- [11.20 Qayta tartiblash, piggybacking va initsializatsiya xavfsizligi](#1120-qayta-tartiblash-piggybacking-va-initsializatsiya-xavfsizligi)
+- [11.21 ABA muammosi va atomic field updater](#1121-aba-muammosi-va-atomic-field-updater)
+- [11.22 Sinxronlashning o'lchangan narxi: kontekst almashinuvi va memory barrier](#1122-sinxronlashning-olchangan-narxi-kontekst-almashinuvi-va-memory-barrier)
+- [11.23 Amalda qo'llash](#1123-amalda-qollash)
 
 </details>
 
@@ -35,6 +46,24 @@ Konkurentlik bir nechta ishni bir vaqtda boshqarish haqida, parallellik esa ular
 Amalda arxitektor ikki qonunga tayanadi. Birinchisi Little qonuni: kerakli bir vaqtdagi ish soni throughput ni latency ga ko'paytirganga teng. Hisobot servisi 500 RPS ni 200 ms latency bilan ushlasa, tizimda doim taxminan 100 ta faol so'rov yashaydi, demak thread pool va DB connection pool shuni ko'tarishi kerak. Ikkinchisi Amdahl qonuni: agar ishning 5 foizi ketma-ket bo'lsa, 32 yadroda maksimal tezlanish taxminan 14 barobar, 64 yadroda esa faqat 15 barobar. Ya'ni bitta global lock ostidagi 5 foizlik kod butun gorizontal o'sishni o'ldiradi.
 
 Shu sababli birinchi qaror doim arxitektura darajasida bo'ladi: umumiy holatni yo'q qilish, bo'lib tashlash yoki tashqi tizimga (PostgreSQL, Redis) ko'chirish. Lock qo'yish uchinchi variant, eng oxirgi variant.
+
+Amdahl qonunining to'liq yozuvi va ketma-ket ulush jadvali [napkin math bobida](08-ishlash-va-resurs-hissi-napkin-math.md#811-amdahl-qonuni-ketma-ket-ulush-masshtablanishning-chegarasi).
+
+Ikkinchi qaror kodni joylashtirishga tegishli: konkurentlik bilan ishlaydigan kod biznes mantiqidan ajratiladi. Thread yaratish, pool sozlash, qulf olish va bekor qilishni kuzatish alohida sinflarda yashaydi, biznes qoidasi esa bitta threadda bajarilayotgandek yoziladi. Sababi ikki tomonlama: aralash kod ikki xil o'zgarish sababiga ega bo'ladi (biznes qoidasi va konkurentlik strategiyasi), va konkurentlik xatosini test bilan ushlash uchun konkurentlik qismini alohida sinash kerak bo'ladi. Amalda bu Spring da `@Async`, `ExecutorService` bean i va `TaskExecutor` sozlamasini infratuzilma qatlamida ushlash, domen servisini esa ulardan xabarsiz qoldirish shaklini oladi.
+
+Uchinchi qaror atamada. "Bu kod thread-safe mi" savoliga javob berishdan oldin gap qaysi bajarilish konteksti haqida ketayotganini aniqlash kerak, aks holda suhbat bir-biriga tegmaydigan ikki narsa haqida boradi. Fowler bu atamalar uchun standart lug'at yo'qligini ochiq aytadi va o'zi ishlatadiganlarini sanab beradi (Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 5-bob, 65-66-betlar):
+
+| Kontekst | Fowler ning ta'rifi | Spring va PostgreSQL tomonda |
+|---|---|---|
+| So'rov (request) | Tashqaridan kelgan bitta chaqiruv; ishlov asosan serverda, klient javobni kutadi deb hisoblanadi | bitta HTTP chaqiruv, `DispatcherServlet` dan controller gacha |
+| Sessiya (session) | Klient va server orasidagi uzoq muloqot; odatda foydalanuvchi bitta izchil mantiqiy ketma-ketlik deb ko'radigan bir nechta so'rov | `HttpSession`, va server o'zi klient bo'lgan joyda baza sessiyasi |
+| Jarayon (process) | Odatda og'ir kontekst, ichki ma'lumoti uchun ko'p izolyatsiya beradi | JVM processi; PostgreSQL tomonda har ulanish uchun alohida backend |
+| Thread | Yengilroq faol agent, bitta jarayonda bir nechtasi ishlaydi | `ExecutorService`, request-per-thread model |
+| Tranzaksiya | Klient bitta so'rov kabi ko'rishni xohlagan bir nechta so'rovni birlashtiradi; tizim tranzaksiyasi va biznes tranzaksiyasi deb ikkiga bo'linadi | `@Transactional` va uning tashqarisidagi biznes oqimi |
+
+Fowler ikki nozik joyni ta'kidlaydi. Birinchi: klient ketma-ket ikki so'rov yuborib, ikkinchisi birinchisiga xalaqit berishi mumkin (buyurtma berish, keyin uni bekor qilish), va klient ko'zida bu ikki so'rov aniq bog'liq bo'lsa ham, protokolga qarab server uchun bu bog'liqlik ko'rinmasligi mumkin (65-bet). Ikkinchi: server ham so'rov, ham sessiyani ikki tomondan ko'radi, ya'ni klientga nisbatan server va boshqa tizimlarga nisbatan klient sifatida, shuning uchun bir vaqtda bir nechta sessiya bo'ladi: klientdan kelgan HTTP sessiyasi va bazalar bilan baza sessiyalari (66-bet).
+
+Asosiy qiyinchilik esa kontekstlarning bir-biriga tushmasligida. Nazariy jihatdan har sessiya butun umri davomida bitta jarayon bilan eksklyuziv bog'langan bo'lardi va jarayonlar o'zaro izolyatsiyalangani uchun bu konkurentlik konfliktlarini kamaytirardi, lekin Fowler bunday ishlashga ruxsat beradigan server asbobini bilmasligini aytadi; yaqin variant har so'rov uchun yangi jarayon ochish (erta Perl veb tizimlarining usuli), undan hozir voz kechilgan, chunki jarayon ochish ko'p resurs band qiladi; shunga qaramay bitta jarayon bir vaqtda faqat bitta so'rovni ishlashi keng tarqalgan va bu ko'p konkurentlik bosh og'rig'ini yo'q qiladi (66-bet). PostgreSQL ning [process modeli](21-postgresql-arxitekturasi-process-model-wal.md#211-protsess-modeli-postmaster-backend-protsess-fon-ishchilari) aynan shu oxirgi holat, ilovaning request-per-thread modeli esa emas: shuning uchun ilova tomonida umumiy holat muammosi bor, baza backendi ichida esa yo'q.
 
 ## 11.2 Thread holatlari, kontekst almashinuvi va uning narxi
 
@@ -127,7 +156,7 @@ Muhim eslatma: JDK 21-23 da `synchronized` ichida blokirovka bo'lgan virtual thr
 
 ## 11.5 Atomic sinflar va CAS: qachon lock dan tezroq
 
-`AtomicInteger`, `AtomicLong` va `AtomicReference` lock ishlatmaydi, ular CPU ning compare-and-swap buyrug'iga tayanadi: eski qiymatni o'qish, yangi qiymatni hisoblash, atomar almashtirish, muvaffaqiyatsiz bo'lsa qaytadan urinish. Raqobat past bo'lganda bu lock dan 2-5 barobar tez. Raqobat yuqori bo'lganda esa teskari effekt: har bir muvaffaqiyatsiz urinish cache line ni boshqa yadrodan tortib oladi, CPU bo'sh aylanadi.
+`AtomicInteger`, `AtomicLong` va `AtomicReference` lock ishlatmaydi, ular CPU ning compare-and-swap buyrug'iga tayanadi: eski qiymatni o'qish, yangi qiymatni hisoblash, atomar almashtirish, muvaffaqiyatsiz bo'lsa qaytadan urinish. Raqobat past bo'lganda bu lock dan arzonroq, chunki kontekst almashtirish va monitor olish yo'q (necha barobar ekani protsessor va yuklamaga bog'liq, o'lchanmagan taxmin bermaymiz). Raqobat yuqori bo'lganda esa teskari effekt: har bir muvaffaqiyatsiz urinish cache line ni boshqa yadrodan tortib oladi, CPU bo'sh aylanadi.
 
 Shu sababli yuqori raqobatli hisoblagich uchun `LongAdder` ishlatiladi. U qiymatni bir nechta cell ga bo'lib tashlaydi, har bir thread o'z cell iga yozadi, `sum()` esa hammasini qo'shadi. 16 yadroda `LongAdder` `AtomicLong` dan taxminan 5-10 barobar tez bo'lishi mumkin, lekin `sum()` aniq snapshot bermaydi.
 
@@ -172,7 +201,13 @@ Spring da `@Value` bilan to'ldirilgan maydonlar konstruktor tugaganidan keyin se
 
 `Collections.synchronizedMap` butun map ni bitta monitorga o'raydi, shuning uchun u 4 yadrodan keyin o'smaydi. `ConcurrentHashMap` esa bucket darajasida ishlaydi: bo'sh bucket ga qo'yish CAS bilan, to'lgan bucket ga qo'yish o'sha bucket ning birinchi nodesi ustida `synchronized` bilan. Natijada o'qish deyarli lock siz, yozish esa faqat bir xil bucket ga tushganda raqobatlashadi.
 
-Ikki tuzog'i bor. Birinchisi `size()` va `isEmpty()`: ular bir nechta counter cell ni qo'shadi va aniq snapshot bermaydi, shuning uchun biznes qarorini `size()` ga qurmaslik kerak. Ikkinchisi `computeIfAbsent`: mapping funksiyasi bucket lock ostida bajariladi, demak uning ichida shu map ga yozish yoki uzoq IO qilish deadlock va stall sababi bo'ladi.
+Ikki tuzog'i bor va javadoc ikkisini ham aniq ta'riflaydi.
+
+Birinchisi `size()`, `isEmpty()` va `containsValue()`: javadoc ularni "aggregate status" metodlari deb ataydi va aytadi-ki, ular faqat map boshqa thread larda o'zgarmayotgan holatda foydali. Aks holda natija o'tkinchi holatni ko'rsatadi: **monitoring va taxmin uchun yetarli, programma boshqaruvi uchun yo'q**. Shuning uchun biznes qarorini `size()` ga qurmaslik kerak; element soni rostdan kerak bo'lsa, `mappingCount()` ishlatiladi (u `long` qaytaradi va `int` ga sig'maydigan hollarda to'g'ri javob beradi), lekin uning ham aniqlik kafolati o'zgarmaydi.
+
+Shu yerda iterator ning xulqi ham aytib o'tilgan: iterator, spliterator va enumeration jadvalning yaratilish paytidagi yoki undan keyingi biror nuqtadagi holatini ko'rsatadi, `ConcurrentModificationException` tashlamaydi, lekin **bir vaqtda faqat bitta thread** ishlatishi uchun mo'ljallangan.
+
+Ikkinchisi `computeIfAbsent` va uning sharti kodga to'g'ridan-to'g'ri qoida bo'ladi. Metod chaqiruvi atomar bajariladi, funksiya kalit yo'q bo'lsa aynan bir marta chaqiriladi, va **hisoblash davomida boshqa thread larning shu map ga yozish urinishlari bloklanishi mumkin**, shuning uchun javadoc hisoblashni "qisqa va sodda" qilishni talab qiladi: uzoq IO yoki tashqi chaqiruv bu yerga tushmaydi. Alohida qattiq shart ham bor: mapping funksiyasi hisoblash davomida shu map ni **o'zgartirmasligi kerak**, va rekursiv yangilash aniqlansa metod `IllegalStateException` tashlaydi. Funksiya istisno tashlasa, mapping o'rnatilmagan holda qoladi.
 
 ```java
 @Component
@@ -328,7 +363,313 @@ Shu sababli `thread-name-prefix` ni har bir pool uchun ma'noli qo'yish kerak. `p
 
 Konkurentlikni testlash alohida mavzu, [testlash qo'llanmasidagi](../testing/README.md) asinxron va konkurentlik testlari bo'limi unga bag'ishlangan. Bu yerda muhimi shuki, bitta ham konkurentlik qarori o'lchovsiz qabul qilinmaydi: har bir lock ortida raqobat metrikasi, har bir pool ortida navbat uzunligi grafigi turishi kerak.
 
-## 11.12 Amalda qo'llash
+## 11.12 Thread safety darajasini hujjatlash va ortiqcha sinxronlashdan qochish
+
+Sinf thread safe ekani kodda ko'rinmaydi: `synchronized` kalit so'zi implementatsiya detali, chaqiruvchi esa shartnomani biladigan bo'lishi kerak. Shu sababli har bir ko'p threadda ishlatiladigan sinf uchun daraja hujjatda yoziladi. Amalda ishlatiladigan beshta daraja bor.
+
+| Daraja | Ma'nosi | Namuna |
+|---|---|---|
+| O'zgarmas (immutable) | holat o'zgarmaydi, sinxronlash kerak emas | `String`, `Instant`, `Money` |
+| So'zsiz thread safe | ichida yetarli sinxronlash bor | `ConcurrentHashMap`, `AtomicLong` |
+| Shartli thread safe | ba'zi ketma-ketliklar tashqi sinxronlashni talab qiladi | `Collections.synchronizedMap` iteratsiyasi |
+| Thread safe emas | chaqiruvchi o'zi sinxronlaydi | `ArrayList`, `HashMap` |
+| Thread-hostile | tashqi sinxronlash bilan ham xavfli | global holatni o'zgartiradigan statik metod |
+
+"Shartli thread safe" darajasi eng ko'p xato keltiradi, chunki u qanday qulfdan foydalanish kerakligini ham aytishi kerak. Javadoc da bu bitta gap bo'ladi: "iteratsiya paytida obyektning o'zida sinxronlanadi".
+
+Ikkinchi qoida sinxronlashning ichida nima qilinishiga tegishli: sinxronlangan blok ichida boshqaruvni begona kodga bermaslik. Begona kod - siz nazorat qilmaydigan metod: override qilinishi mumkin bo'lgan metod, listener, lambda yoki argument sifatida kelgan funksiya. U nima qilishini bilmaysiz: qulfni ushlab turib boshqa qulf so'rashi (deadlock) yoki shu obyektni qaytib o'zgartirishi mumkin.
+
+```java
+// yomon: qulf ichida listener chaqirilyapti - u nima qilishi noma'lum
+public void add(Order order) {
+    synchronized (lock) {
+        orders.add(order);
+        for (OrderListener l : listeners) {
+            l.onAdded(order);          // deadlock yoki qayta kirish
+        }
+    }
+}
+
+// yaxshi: qulf faqat holatni o'zgartiradi, chaqiruv tashqarida
+public void add(Order order) {
+    List<OrderListener> snapshot;
+    synchronized (lock) {
+        orders.add(order);
+        snapshot = List.copyOf(listeners);
+    }
+    snapshot.forEach(l -> l.onAdded(order));
+}
+```
+
+Uchinchi qoida: `wait` va `notify` ni yangi kodda yozmaslik. Ular to'g'ri ishlatilishi qiyin (qulf ichida tekshirish sikli, `notifyAll` tanlovi, soxta uyg'onish) va yuqori darajadagi vositalar shu ishni qiladi: `CountDownLatch`, `Semaphore`, `CyclicBarrier`, `BlockingQueue`, `CompletableFuture` va [`ExecutorService`](#118-executorservice-thread-pool-turlari-va-navbat-tanlash). To'rtinchi qoida esa to'g'rilikka tegishli: dastur to'g'riligi thread rejalashtiruvchisining tartibiga tayanmasligi kerak. `Thread.yield()` va prioritet bilan tuzatilgan xato tuzatilmagan hisoblanadi, chunki u boshqa platformada yoki boshqa yuk ostida qaytadi; bunday joyda haqiqiy sabab odatda ishlab turgan thread sonining noto'g'riligi yoki yo'qolgan shart tekshiruvi bo'ladi.
+
+## 11.13 Xavfsiz nashr (safe publication) va obyektning qochib ketishi
+
+Obyektni boshqa threadga ko'rinadigan qilish nashr (publication) deyiladi. Muammo shu: obyektga havola ko'rinishi uning **maydonlari** ham ko'rinishini kafolatlamaydi. Havolani oddiy maydonga yozib qo'yish bilan nashr qilingan obyektni boshqa thread yarim qurilgan holatda ko'rishi mumkin: havola bor, maydonlar esa hali default qiymatda.
+
+```java
+// yomon: xavfsiz bo'lmagan nashr - boshqa thread yarim qurilgan obyektni ko'radi
+public Config config;                     // oddiy maydon
+
+void init() {
+    config = new Config(loadAll());       // havola ko'rinadi, maydonlar kafolatlanmaydi
+}
+```
+
+To'g'ri nashr yo'llari chekli va ularning hammasi happens-before bog'lanishini yaratadi: statik ishga tushirgichda yozish, `volatile` yoki `AtomicReference` ga yozish, `final` maydonda to'g'ri qurilgan obyektni saqlash, yoki qulf bilan himoyalangan maydonga qulf ostida yozish. Eng arzon va eng ishonchli yo'l esa obyektni [o'zgarmas qilish](../clean-code/16-ozgarmaslik-va-holat-boshqaruvi-kod.md#161-final-maydon-final-sinf-va-haqiqiy-ozgarmaslik): `final` maydonlardan iborat o'zgarmas obyektni har qanday yo'l bilan nashr qilish xavfsiz.
+
+Teskari tomoni qochib ketish (escape): obyekt o'zi tayyor bo'lmagan holda tashqariga chiqib ketadi. Eng ko'p uchraydigan ikki shakli - konstruktorda `this` ni ro'yxatga berish ([`this` ning konstruktordan qochib ketishi](../clean-code/14-obyekt-va-malumot-tuzilmasi-inkapsulyatsiya.md#1410-this-ning-konstruktordan-qochib-ketishi)) va ichki holatni o'zgartirib bo'ladigan ko'rinishda qaytarish (`getItems()` ichki `List` ni qaytaradi). Ikkinchisi ko'p threadda shunchaki xato emas, sinxronlash siyosatini butunlay buzadi: qulf ichida himoyalangan ma'lumot qulfdan tashqarida o'zgartiriladigan bo'lib qoladi.
+
+Shu sababli sinxronlash siyosati har bir o'zgaradigan holat uchun yozib qo'yiladi: qaysi maydon qaysi qulf bilan himoyalangan. JCiP shu uchun `@GuardedBy("lock")` annotatsiyasini taklif qiladi va u hujjat sifatida ishlaydi, statik tahlil esa uni tekshirishi mumkin.
+
+## 11.14 Bekor qilish, interrupt siyosati va thread starvation deadlock
+
+Java da threadni majburan to'xtatish yo'li yo'q: `Thread.stop` ishlatilmaydi, chunki u obyektni buzilgan holatda qoldiradi. Buning o'rniga hamkorlik mexanizmi bor: interrupt - bu **so'rov**, uni qabul qiluvchi kod tekshirishi va hurmat qilishi kerak. Shu sababli har bir uzoq ishlaydigan vazifa uchun bekor qilish siyosati yoziladi: bekor qilish qanday so'raladi, kim so'raydi, vazifa qanday javob beradi va qancha vaqt ichida.
+
+Eng ko'p uchraydigan xato interruptni yo'qotish: `InterruptedException` ushlanadi, log yoziladi va ish davom etadi. Natijada bekor qilish ishlamaydi va shutdown muddatsiz kutadi. Qoida: ya istisnoni yuqoriga uzatish, yoki holatni tiklash.
+
+```java
+// yaxshi: o'z thread ida emas, shuning uchun holat tiklanadi va sikl to'xtaydi
+while (!Thread.currentThread().isInterrupted()) {
+    try {
+        Task task = queue.poll(1, TimeUnit.SECONDS);
+        if (task != null) {
+            task.run();
+        }
+    } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();   // holatni yo'qotmaslik
+        break;
+    }
+}
+```
+
+Navbatga asoslangan ishchilarni to'xtatishning ikkinchi usuli - poison pill: navbatga maxsus "tugadi" belgisi qo'yiladi va ishchi uni ko'rgach chiqadi. U faqat ishlab chiqaruvchi va iste'molchi soni ma'lum bo'lganda ishlaydi, cheksiz navbat bilan esa umuman ishlamaydi.
+
+`ExecutorService` to'xtatishning ikki shakli bor va farqi muhim: `shutdown()` yangi vazifa qabul qilmaydi, lekin navbatdagini bajaradi; `shutdownNow()` navbatni bo'shatadi, bajarilayotganlarga interrupt yuboradi va bajarilmagan vazifalar ro'yxatini qaytaradi - shu ro'yxat tashlab yuborilmasligi kerak, aks holda ish jim yo'qoladi.
+
+Oxirgi tuzoq thread starvation deadlock: bitta pool dagi vazifa shu pool ga qo'yilgan boshqa vazifaning natijasini kutadi. Bitta threadli pool da bu darhol muzlaydi, kattaroq pool da esa yuk oshganda muzlaydi, ya'ni test da chiqmaydi. Qoida: bir-biriga tayanadigan vazifalar bir pool da bo'lmaydi; `CompletableFuture` zanjirlarida ham har bosqich uchun pool ni oshkor berish shu sababdan kerak.
+
+## 11.15 Qulf raqobatini kamaytirish: qamrov, bo'lish, striping va issiq maydon
+
+Qulf to'g'rilik vositasi, lekin u bir vaqtda bitta threadni o'tkazadi, ya'ni masshtablanishning chegarasi. Qulf raqobati (contention) o'lchanadi: JFR da `jdk.JavaMonitorEnter` hodisasi va thread dump da bir xil monitorda `BLOCKED` turgan threadlar shuni ko'rsatadi. Tuzatish yo'llari tartib bilan, arzondan qimmatga.
+
+| Yo'l | Nima qilinadi | Qachon |
+|---|---|---|
+| Qamrovni qisqartirish | qulf ichidan I/O, hisob va log chiqariladi | har doim birinchi |
+| Qulfni bo'lish (splitting) | mustaqil holat uchun alohida qulf | bitta qulf bir necha mustaqil maydonni himoyalayotganda |
+| Striping | holat N bo'lakka bo'linib, har biriga o'z qulfi | bitta katta to'plam ustida raqobat bo'lsa |
+| Qulfni olib tashlash | o'zgarmas obyekt, thread-local, atomic | holat haqiqatda umumiy bo'lmasa |
+
+```java
+// yomon: bitta qulf ikki mustaqil holatni himoyalaydi, ikkisi bir-birini kutadi
+public synchronized void addOrder(Order o) { orders.add(o); }
+public synchronized void addUser(User u) { users.add(u); }
+
+// yaxshi: qulf bo'lindi, ikki oqim bir-birini kutmaydi
+private final Object ordersLock = new Object();
+private final Object usersLock = new Object();
+```
+
+Issiq maydon (hot field) alohida holat: hamma operatsiya bitta hisoblagichni o'zgartiradi, shuning uchun qulfni qanday bo'lsang ham raqobat o'sha maydonda qoladi. Yechim hisoblagichni ham bo'lish: `LongAdder` aynan shu uchun bor, u ichida bir nechta yacheyka saqlaydi va yig'indini faqat o'qishda hisoblaydi. `AtomicLong` o'rniga `LongAdder` ni tanlash mezoni oddiy: yozish ko'p va o'qish kam bo'lsa `LongAdder`, har yozishdan keyin aniq qiymat kerak bo'lsa `AtomicLong`.
+
+Oxirgi ogohlantirish: qulfni almashtirishdan oldin o'lchash kerak. Raqobat yo'q qulf deyarli bepul (JVM uni biased yoki thin lock sifatida bajaradi), shuning uchun "sinxronlash sekin" degan taxmin bilan qilingan refaktoring odatda faqat xato kiritadi. Tartib: o'lchash, qamrovni qisqartirish, qayta o'lchash, keyin tuzilmani o'zgartirish.
+
+## 11.16 Qo'shma amal, intrinsic lock va reentrancy mexanikasi
+
+Konkurentlikdagi xatolarning aksariyati bitta sinfga tushadi: qo'shma amal (compound action). JCiP uni ikki shaklga ajratadi va shu ajratish diagnostikada ishlatiladi. Birinchisi check-then-act: holat tekshiriladi, keyin tekshiruv natijasiga qarab ish qilinadi, lekin tekshiruv bilan ish orasida holat o'zgargan bo'lishi mumkin. Ikkinchisi read-modify-write: yangi qiymat avvalgi qiymatdan hisoblanadi, demak hisoblash davomida hech kim o'sha qiymatni o'zgartirmasligi kerak. Kitob ikkisini birgalikda qo'shma amal deb ataydi va qoidani bitta gapda beradi: thread safety uchun check-then-act va read-modify-write ketma-ketliklari doim atomar bajarilishi shart.
+
+Nega bu ajratish amaliy: ikki shakl ikki xil yechim talab qiladi. Read-modify-write bitta o'zgaruvchiga tegsa, uni `AtomicLong` yoki `LongAdder` ga almashtirish yetarli. Check-then-act esa odatda bir nechta maydonni yoki tashqi tizimni qamraydi, shuning uchun atomic sinf yordam bermaydi: u yerda qulf, `ConcurrentMap.putIfAbsent` kabi tayyor atomar amal, yoki DB darajasidagi shartli `UPDATE` kerak bo'ladi.
+
+```java
+@Service
+public class CouponService {
+    private final Map<String, Coupon> issued = new ConcurrentHashMap<>();
+
+    // yomon: check-then-act, ikki thread bir kuponni ikki marta beradi
+    public Coupon issueBroken(String code) {
+        if (!issued.containsKey(code)) {        // tekshiruv
+            issued.put(code, new Coupon(code)); // amal, oraliqda holat o'zgargan
+        }
+        return issued.get(code);
+    }
+
+    // yaxshi: tekshiruv va amal bitta atomar chaqiruvda
+    public Coupon issue(String code) {
+        return issued.computeIfAbsent(code, Coupon::new);
+    }
+}
+```
+
+Qulfning o'zi qanday ishlaydi. Har bir Java obyekti sinxronlash uchun qulf bo'lib xizmat qilishi mumkin va bu ichki qulflar intrinsic lock yoki monitor lock deb ataladi. `synchronized` metod butun metod tanasini qamragan blokning qisqartmasi, qulf esa metod chaqirilgan obyekt; statik `synchronized` metod `Class` obyektini qulf sifatida oladi. Qulf avtomatik olinadi va blokdan chiqishda, hatto istisno uchib ketganda ham avtomatik bo'shaydi. Intrinsic lock mutex sifatida ishlaydi: bir vaqtda ko'pi bilan bitta thread uni egallaydi.
+
+Reentrancy shu mexanizmdagi ikkinchi muhim tafsilot: intrinsic lock reentrant, ya'ni thread o'zi ushlab turgan qulfni qayta so'rasa, so'rov muvaffaqiyatli bo'ladi. Kitob buni aniq ifodalaydi: qulf chaqiruv boshiga emas, thread boshiga beriladi. JVM har bir qulf uchun egasi (owning thread) va olish hisoblagichini (acquisition count) saqlaydi: hisoblagich nolga tushganda qulf bo'shaydi. Bu shart emas, zarurat: reentrancy bo'lmaganda `synchronized` metodni override qilib super versiyasini chaqirgan subclass o'zini deadlock ga olib keladi, chunki ikki metod ham bir xil obyekt qulfini so'raydi. Amalda bundan kelib chiqadigan xulosa: reentrancy qulflashni inkapsulyatsiya qilish imkonini beradi, lekin u qulf ichida begona kod chaqirishni xavfsiz qilmaydi (buni [11.10](#1110-deadlock-livelock-va-ochlik-starvation-sabab-va-oldini-olish) va patterns 4.34 ko'rsatadi).
+
+Manba: Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 2.2.3-bo'lim (15-bet), 2.3.1-bo'lim (17-bet) va 2.3.2-bo'lim (18-bet).
+
+## 11.17 Thread ga qamash: ad-hoc, stack va `ThreadLocal` qamashi
+
+Umumiy o'zgaradigan ma'lumotga kirish sinxronlashni talab qiladi, demak eng arzon yechim umuman bo'lishmaslik. Ma'lumotga faqat bitta threaddan kirilsa, sinxronlash kerak emas. JCiP bu usulni thread confinement deb ataydi va uch darajaga ajratadi, mustahkamligi bo'yicha pastdan yuqoriga.
+
+Ad-hoc qamash (ad-hoc thread confinement): qamashni ta'minlash to'liq implementatsiya vijdonida qoladi, tilda hech qanday tayanch yo'q. Kitob uni mo'rt (fragile) deb ataydi va imkon bo'lsa kuchliroq shaklga o'tishni tavsiya qiladi. Shu darajaning bitta foydali xususiy holati bor: `volatile` o'zgaruvchi ustida read-modify-write bajarish xavfsiz, agar unga **faqat bitta thread yozsa**. Bu holda o'zgartirish bitta threadga qamalgani uchun poyga yo'q, `volatile` esa qolgan threadlarga eng yangi qiymatni ko'rsatadi. Hisoblagichni bitta writer thread yuritadigan metrika yig'uvchilarda shu naqsh uchraydi.
+
+Stack qamashi (stack confinement): obyektga faqat lokal o'zgaruvchi orqali yetib borish mumkin. Lokal o'zgaruvchilar tabiatan ishlayotgan threadga qamalgan, chunki ular shu threadning stack ida yashaydi va boshqa thread uchun ochiq emas. Primitiv tipli lokal o'zgaruvchi uchun qamashni buzish umuman mumkin emas: primitivga havola olishning yo'li yo'q, demak tilning semantikasi kafolat beradi. Havola tipli lokal o'zgaruvchi uchun esa bitta shart qoladi: obyektni metoddan chiqarib yubormaslik.
+
+`ThreadLocal` qamashi: eng oshkor shakl, qiymat thread bilan bog'lanadi. Spring da bu naqsh hamma joyda: `SecurityContextHolder`, `TransactionSynchronizationManager`, `RequestContextHolder` va `MDC` shu mexanizmga tayanadi.
+
+```java
+// stack qamashi: TreeSet metoddan chiqmaydi, shuning uchun sinxronlash kerak emas
+public int pairUp(Collection<Animal> candidates) {
+    SortedSet<Animal> sorted = new TreeSet<>(BY_SPECIES);  // lokal, qamalgan
+    sorted.addAll(candidates);
+    int pairs = 0;
+    Animal pending = null;
+    for (Animal a : sorted) {
+        if (pending == null) { pending = a; } else { pairs++; pending = null; }
+    }
+    return pairs;                      // sorted tashqariga chiqmaydi
+}
+```
+
+Kitobning muhim ogohlantirishi: tilda o'zgaruvchi qulf bilan himoyalanganini majburlash mexanizmi bo'lmagani kabi, obyektni threadga qamashni majburlash mexanizmi ham yo'q. Qamash dizayn elementi va uni implementatsiya ta'minlaydi. Server ilovalarida eng ko'p uchraydigan amaliy misol JDBC `Connection`: spetsifikatsiya `Connection` ning thread-safe bo'lishini talab qilmaydi, lekin pool bitta ulanishni so'rov davomida bitta threadga beradi va qaytarilmaguncha boshqasiga bermaydi, ya'ni ulanish so'rov davomida shu threadga bilvosita qamalgan bo'ladi.
+
+Pool da `ThreadLocal` ni tozalamaslik ma'lumotni keyingi so'rovga oqizadi; `ThreadLocal` ning virtual thread davridagi o'rnini [architect 12.8](12-virtual-threads-structured-concurrency-va.md#128-scoped-values-va-threadlocal-orniga-ishlatish) `ScopedValue` bilan solishtiradi, pattern yozuvi esa patterns 4.15 da.
+
+Manba: Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 3.3-bo'lim (28-bet), 3.3.1-bo'lim (28-29-bet) va 3.3.2-bo'lim (29-bet).
+
+## 11.18 Condition queue mexanikasi: shart predikati, yo'qolgan signal va kirish-chiqish protokoli
+
+`wait` va `notify` atrofidagi chalkashlikning asosiy sababi JCiP ga ko'ra bitta: shart predikati (condition predicate) tushunchasi API da moddiy ko'rinishga ega emas. U til spetsifikatsiyasida ham, Javadoc da ham bevosita tilga olinmaydi, lekin usiz shartli kutish ishlamaydi. Shart predikati operatsiyani holatga bog'liq qiladigan dastlabki shart: chegaralangan buffer uchun `take` ning predikati "buffer bo'sh emas", `put` ning predikati "buffer to'la emas".
+
+Mexanikaning yuragida uch tomonli bog'liqlik turadi: qulf, `wait` metodi va shart predikati. Predikat holat o'zgaruvchilaridan tuziladi, holat o'zgaruvchilari qulf bilan himoyalangan, demak predikatni tekshirishdan oldin o'sha qulf ushlab turilishi kerak. Bundan tashqari qulf obyekti va condition queue obyekti (ya'ni `wait` va `notify` chaqirilayotgan obyekt) bir xil obyekt bo'lishi shart. `wait` qulfni bo'shatadi, threadni bloklaydi, uyg'ongandan keyin esa qaytishdan oldin qulfni qayta oladi. Muhim tafsilot: `wait` dan uyg'ongan thread qulfni qayta olishda hech qanday ustunlikka ega emas, u boshqa har qanday thread bilan teng raqobatlashadi.
+
+Shundan ikkinchi qoida chiqadi: `wait` qaytgani kutilgan predikat rost bo'lganini bildirmaydi. Sababi uchta. Bitta intrinsic condition queue bir nechta predikat bilan ishlatilishi mumkin, demak `notifyAll` sizni uyg'otgani sizning predikatingiz uchun emas (kitobning tashbehi: toster va kofe qaynatgich bitta qo'ng'iroqni bo'lishadi, qo'ng'iroq jiringlasa qaysi qurilma signal berganini borib ko'rish kerak). `wait` spurious, ya'ni hech kim `notify` chaqirmagan holda ham qaytishi mumkin. Va nihoyat, siz uyg'onganingiz bilan qulfni qayta olganingiz orasida boshqa thread holatni qaytarib buzgan bo'lishi mumkin. Shuning uchun `wait` doim tsikl ichida chaqiriladi va predikat har iteratsiyada qayta tekshiriladi.
+
+```java
+public final class BoundedBuffer<E> {
+    private final Object lock = new Object();
+    private final Deque<E> items = new ArrayDeque<>();
+    private final int capacity;
+
+    public BoundedBuffer(int capacity) { this.capacity = capacity; }
+
+    public void put(E item) throws InterruptedException {
+        synchronized (lock) {
+            while (items.size() == capacity) {   // kirish protokoli: predikat
+                lock.wait();                     // while, if emas
+            }
+            items.addLast(item);
+            lock.notifyAll();                    // chiqish protokoli: xabar berish
+        }
+    }
+
+    public E take() throws InterruptedException {
+        synchronized (lock) {
+            while (items.isEmpty()) {
+                lock.wait();
+            }
+            E item = items.pollFirst();
+            lock.notifyAll();
+            return item;
+        }
+    }
+}
+```
+
+Kitob bu intizomni kirish va chiqish protokoli (entry and exit protocol) sifatida rasmiylashtiradi: holatga bog'liq har bir operatsiya va boshqa operatsiya bog'liq bo'lgan holatni o'zgartiradigan har bir operatsiya uchun protokol belgilanadi va hujjatlashtiriladi. Kirish protokoli operatsiyaning shart predikati. Chiqish protokoli esa operatsiya o'zgartirgan holat o'zgaruvchilarini ko'rib chiqib, ular boshqa biror predikatni rost qilib qo'ymadimi degan savolga javob berish va qilib qo'ygan bo'lsa tegishli condition queue da xabar berish. `AbstractQueuedSynchronizer` aynan shu chiqish protokoli g'oyasini ekspluatatsiya qiladi: sinxronizator metodlari o'zlari xabar bermaydi, balki amal kutayotgan threadlarni bo'shatgan bo'lishi mumkinligini ko'rsatuvchi qiymat qaytaradi, shu bilan "xabar berishni esdan chiqarish" qiyinlashadi.
+
+Amalda esa yuqori darajadagi vosita tanlanadi: `BlockingQueue`, `Semaphore`, `CountDownLatch` yoki `Condition`. Pattern nuqtasidan bu Guarded Suspension yozuvi, patterns 4.12 da.
+
+Manba: Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 14.2.1-bo'lim (183-bet), 14.2.2-bo'lim (184-bet) va 14.2.8-bo'lim (187-188-bet).
+
+## 11.19 `AbstractQueuedSynchronizer`: acquire va release protokoli
+
+`java.util.concurrent` dagi holatga bog'liq sinflarning ko'pi bitta asos ustida qurilgan: `AbstractQueuedSynchronizer` (AQS). Kitob ochiq aytadi: ko'p dasturchi AQS ni bevosita hech qachon ishlatmaydi, lekin standart sinxronizatorlar qanday qurilganini ko'rish ularning xulqini tushunishga yordam beradi. Arxitektor uchun bu amaliy foyda beradi, chunki thread dump da `ReentrantLock`, `Semaphore` va `CountDownLatch` ni kutayotgan threadlar bir xil `AbstractQueuedSynchronizer$ConditionObject` yoki `LockSupport.park` kadrida ko'rinadi.
+
+AQS ikki asosiy amal atrofida qurilgan: acquire va release. Acquire holatga bog'liq amal va u doim bloklashi mumkin. Uning ma'nosi sinxronizatorga qarab o'zgaradi: qulf yoki ruxsat olish, `CountDownLatch` uchun "latch terminal holatga yetguncha kut", `FutureTask` uchun "vazifa tugaguncha kut". Release bloklamaydi: u faqat acquire da turgan threadlarga o'tish imkonini berishi mumkin. Acquire ikki qismdan iborat: avval sinxronizator joriy holat o'tishga ruxsat beradimi degan qarorni qabul qiladi, keyin esa sinxronizator holatini yangilashi mumkin.
+
+Holatni AQS o'zi yuritadi: u bitta `int` sinxronlash holatini saqlaydi va unga `getState`, `setState` va `compareAndSetState` protected metodlari orqali tegiladi. Shu bitta butun son turli ma'no oladi va bu AQS ning asosiy nayrangi: `ReentrantLock` unda qulf egasi qulfni necha marta olganini, `Semaphore` qolgan ruxsatlar sonini, `FutureTask` esa vazifa holatini (hali boshlanmagan, ishlayotgan, tugagan, bekor qilingan) saqlaydi. Sinxronizator qo'shimcha holat o'zgaruvchilarini o'zi ham yuritishi mumkin: masalan `ReentrantLock` joriy qulf egasini alohida saqlaydi, shu bilan reentrant va raqobatli so'rovni ajratadi.
+
+Acquire eksklyuziv (`ReentrantLock`) yoki noeksklyuziv (`Semaphore`, `CountDownLatch`) bo'lishi mumkin. AQS kutayotgan threadlarni FIFO navbatga qo'yish kabi tafsilotlarni o'z ustiga oladi, sinxronizator esa faqat o'tish mezonini belgilaydi.
+
+AQS ustida qurishning kitob ko'rsatgan asosiy foydasi implementatsiya hajmini qisqartirish emas, bloklanish nuqtalarini birga tushirish. Agar sinxronizatorni boshqa sinxronizator ustida qursangiz, raqobat nuqtalari qo'shiladi: semaforni qulf ustida yozsangiz, ruxsat olish ikki joyda bloklanishi mumkin, avval semafor holatini himoyalagan qulfda, keyin ruxsat yo'q bo'lsa yana bir marta. AQS bilan qurilgan sinxronizatorda bloklanish nuqtasi bitta, bu kontekst almashinuvi narxini kamaytiradi va throughput ni oshiradi.
+
+JDK da AQS ustida qurilganlar ro'yxati qisqa va foydali: `ReentrantLock`, `Semaphore`, `CountDownLatch`, `FutureTask` va `ReentrantReadWriteLock`. Amaliy xulosa: o'z sinxronizatoringizni yozish kerak bo'lsa, avval shu beshtadan biri yoki ularning kompozitsiyasi yetmasligini isbotlang; yetmasa, AQS ni `wait`/`notify` dan afzal ko'ring, chunki chiqish protokoli uning API sida majburlangan.
+
+Manba: Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 14.4-bo'lim (189-190-bet), 14.5-bo'lim (190-191-bet) va 14.6-bo'lim (192-194-bet).
+
+## 11.20 Qayta tartiblash, piggybacking va initsializatsiya xavfsizligi
+
+Dasturchilar ko'pincha ketma-ket izchillikni (sequential consistency) taxmin qiladi: amallar dasturda yozilgan tartibda bajariladi va har bir o'qish o'sha o'zgaruvchiga oxirgi yozilgan qiymatni ko'radi. JCiP buni ochiq rad etadi: hech bir zamonaviy ko'p protsessorli tizim ketma-ket izchillikni bermaydi va Java Memory Model ham bermaydi. Kechikish yoki tartibsiz bajarilishning barcha sabablari kitobda bitta nom ostida yig'iladi: qayta tartiblash (reordering). Kitobning ko'rsatkich misoli ikki thread ikki maydonni yozib ikkitasini o'qiydi va natija `(0, 0)` bo'lishi mumkin, ya'ni ikki thread ham boshqasining yozuvini ko'rmaydi: amallar orasida ma'lumot bog'liqligi yo'q, shuning uchun ularni tartibsiz bajarish mumkin.
+
+happens-before qoidalarining o'zi va `volatile` bilan `final` maydon kafolatlari [architect 9.9](09-jvm-ichki-tuzilishi-class-loading-memory.md#99-java-memory-model-happens-before-volatile-final-maydon-kafolatlari) da yozilgan, bu yerda esa ulardan kelib chiqadigan ikki amaliy natija ko'rib chiqiladi.
+
+Birinchisi piggybacking: mavjud sinxronlashga "osilib" qo'shimcha ma'lumotni arzonroq uzatish. JDK dagi kanonik misol `FutureTask`. U AQS ning butun son holatida vazifa holatini saqlaydi, lekin natijaning o'zini alohida maydonda yuritadi. Natijani yozgan thread bilan uni o'qigan thread orasida happens-before bo'lishi kerak. Buni natija havolasini `volatile` qilish bilan yechish mumkin edi, lekin `FutureTask` arzonroq yo'ldan boradi: natija `releaseShared` chaqiruvidan **oldin** yoziladi va `acquireShared` chaqiruvidan **keyin** o'qiladi. `tryReleaseShared` volatile o'zgaruvchiga yozadi, `tryAcquireShared` esa uni o'qiydi, demak dastur tartibi qoidasi volatile qoidasi bilan birlashib kerakli happens-before ni beradi. Amaliy xulosa ikki tomonli: tayyor sinxronizator ichidagi bunday nozik bog'lanishlar sizning kodingizda ham ishlaydi (masalan `BlockingQueue` orqali uzatilgan obyekt xavfsiz nashr qilinadi), lekin o'z kodida piggybacking ga tayanish mo'rt, chunki u ichki implementatsiya tafsilotiga bog'lanadi.
+
+Ikkinchisi initsializatsiya xavfsizligi (initialization safety). `final` maydonlar konstruktor tugaganda "muzlatiladi" va `final` maydonlar orqali yetib boriladigan qiymatlar shu muzlatilgan holatdan kam bo'lmagan darajada yangi ko'rinadi; shu maydonlarni initsializatsiya qiladigan yozuvlar konstruktordan keyingi amallar bilan qayta tartiblanmaydi. Natijada juda kuchli kafolat chiqadi: faqat `final` maydonlardan iborat va holatini konstruktordan keyin o'zgartirmaydigan obyekt **xavfsiz bo'lmagan nashr bilan ham** xavfsiz ko'rinadi, hatto ichida thread-safe bo'lmagan `HashMap` saqlasa ham.
+
+```java
+// initsializatsiya xavfsizligi: final maydon, konstruktordan keyin o'zgarmaydi
+public final class RateTable {
+    private final Map<String, BigDecimal> rates;      // final SHART
+
+    public RateTable(Map<String, BigDecimal> source) {
+        this.rates = Map.copyOf(source);              // konstruktorda to'liq quriladi
+    }
+
+    public BigDecimal rateOf(String code) { return rates.get(code); }
+}
+```
+
+Kafolatning chegaralari aniq va ularni buzish oson. `final` ni olib tashlash, konstruktordan boshqa metodda tarkibni o'zgartirish, qo'shimcha `final` bo'lmagan maydon qo'shish yoki konstruktor davomida obyektni tashqariga chiqarib yuborish (escape) kafolatni bekor qiladi. `final` bo'lmagan maydonlar orqali yetib boriladigan yoki qurilishdan keyin o'zgaradigan qiymatlar uchun ko'rinuvchanlikni sinxronlash bilan ta'minlash kerak. Shuning uchun [11.13](#1113-xavfsiz-nashr-safe-publication-va-obyektning-qochib-ketishi) dagi xavfsiz nashr yo'llari o'zgaradigan obyektlar uchun hamon majburiy qoladi.
+
+Manba: Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 16.1.1-16.1.2-bo'lim (207-208-bet), 16.1.4-bo'lim (210-211-bet) va 16.3-bo'lim (214-215-bet).
+
+## 11.21 ABA muammosi va atomic field updater
+
+CAS ning semantikasi aniq bitta savol beradi: "V ning qiymati hamon A mi?" va shunday bo'lsa yangilashni davom ettiradi. Ko'pchilik holatda bu yetarli. Lekin ba'zi algoritmlar uchun kerakli savol boshqa: "V ni oxirgi marta A deb ko'rganimdan beri u o'zgardimi?" Agar V ni A dan B ga, keyin yana A ga qaytarish algoritm uchun qayta urinishni talab qiladigan o'zgarish bo'lsa, oddiy CAS buni sezmaydi. JCiP buni ABA muammosi (ABA problem) deb ataydi.
+
+Muhim nuans: kitob bu anomaliyani asosan node larni qayta ishlatadigan, ya'ni xotirani o'zi boshqaradigan algoritmlarga (va garbage collection bo'lmagan muhitlarga) tegishli deb belgilaydi. Bunday holatda ro'yxat boshi avval ko'rilgan node ga hamon ishora qilayotgani ro'yxat tarkibi o'zgarmaganini bildirmaydi. Java da link node larni GC boshqarganda muammo odatda o'zi yo'qoladi. Agar yo'qolmasa, yechim oddiy: havolaning o'zini yangilash o'rniga juftlikni yangilash kerak, havola va versiya belgisi. JDK da bu `AtomicStampedReference` (havola plus `int` stamp) va `AtomicMarkableReference` (havola plus `boolean` belgi).
+
+```java
+// ABA ga qarshi: havola plus versiya belgisi bir vaqtda almashtiriladi
+private final AtomicStampedReference<Node> top =
+        new AtomicStampedReference<>(null, 0);
+
+public boolean replaceTop(Node expected, Node next) {
+    int[] stampHolder = new int[1];
+    Node current = top.get(stampHolder);              // havola va stamp birga o'qiladi
+    if (current != expected) {
+        return false;
+    }
+    return top.compareAndSet(current, next, stampHolder[0], stampHolder[0] + 1);
+}
+```
+
+Shu bobning ikkinchi mavzusi atomic field updater. `AtomicIntegerFieldUpdater`, `AtomicLongFieldUpdater` va `AtomicReferenceFieldUpdater` mavjud `volatile` maydon ustidagi refleksiyaga asoslangan "ko'rinish" beradi, shu bilan oddiy `volatile` maydonga CAS qo'llash mumkin bo'ladi. Ularda konstruktor yo'q, `newUpdater` fabrika metodiga sinf va maydon nomi beriladi. Updater muayyan nusxaga bog'lanmaydi: bitta updater maqsadli sinfning har qanday nusxasidagi maydonni yangilashi mumkin.
+
+Ikki tafsilot muhim. Birinchisi: updater ning atomarlik kafolati oddiy atomic sinflarga nisbatan **kuchsizroq**, chunki asosdagi maydon bevosita yozilmasligini kafolatlash mumkin emas; `compareAndSet` va arifmetik metodlar atomarlikni faqat shu updater ni ishlatadigan boshqa threadlarga nisbatan kafolatlaydi. Ikkinchisi: kitob uni nega umuman ishlatishini aytadi va sabab faqat unumdorlik. `ConcurrentLinkedQueue` har bir `Node` ni `AtomicReference` bilan ifodalash o'rniga oddiy `volatile` maydon va `AtomicReferenceFieldUpdater` ni ishlatadi, chunki tez-tez ajratiladigan va qisqa umr ko'radigan navbat node lari uchun har bitta node ga `AtomicReference` yaratmaslik qo'yish amalining narxini sezilarli kamaytiradi.
+
+Kitobning xulosasi to'g'ridan-to'g'ri amaliy qoida beradi: deyarli barcha holatlarda oddiy atomic o'zgaruvchilar yetarli ishlaydi va field updater faqat sanoqli holatda kerak bo'ladi (qo'shimcha holat: mavjud sinfning serializatsiya shaklini saqlab atomar yangilash kerak bo'lganda). Zamonaviy kodda bu rolni `VarHandle` egallaydi: u refleksiyasiz, tiplangan va JIT uchun qulayroq, shuning uchun yangi kodda `AtomicReferenceFieldUpdater` emas, `VarHandle` tanlanadi.
+
+Manba: Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 15.4.3-bo'lim (205-206-bet) va 15.4.4-bo'lim (206-bet).
+
+## 11.22 Sinxronlashning o'lchangan narxi: kontekst almashinuvi va memory barrier
+
+Thread qo'shadigan narxni baholashda ikki manba ajratiladi: rejalashtirish (scheduling) va xotira sinxronlashi. Ikkisining tartibini bilish refaktoring qarorini o'zgartiradi, shuning uchun JCiP bergan raqamlar foydali, lekin ular 2006 yilda o'lchangan va shuni oshkor aytish kerak.
+
+Kontekst almashinuvi. Agar ishga tayyor threadlar soni CPU sonidan ko'p bo'lsa, OS bir threadni to'xtatib boshqasini qo'yadi va bu joriy threadning bajarilish kontekstini saqlab, yangisini tiklashni talab qiladi. Kitobning qoidasi: kontekst almashinuvining haqiqiy narxi platformaga qarab o'zgaradi, lekin yaxshi taxmin sifatida u 5000 dan 10000 gacha protsessor taktiga, ya'ni ko'pchilik zamonaviy protsessorda bir necha mikrosekundga teng (143-bet). Lekin asosiy narx takt soni emas: yangi thread kirganda unga kerak bo'lgan ma'lumot lokal protsessor cache ida bo'lmaydi, demak almashinuv cache miss toshqinini keltiradi va thread ishga tushgandan keyin birinchi vaqtda sekinroq ishlaydi. Rejalashtiruvchi har bir threadga minimal vaqt kvantini berishining sababi ham shu: almashinuv narxini uzunroq uzluksiz bajarilish ustiga amortizatsiya qilish.
+
+Shundan amaliy xulosa chiqadi: ko'p bloklanadigan dastur (bloklovchi I/O, raqobatli qulfni kutish, condition o'zgaruvchisini kutish) CPU-bound dasturdan ko'proq kontekst almashinuviga uchraydi, chunki threadlar o'z kvantini to'liq ishlatib bo'lmaydi. O'lchash vositalari ham kitobda aytilgan va hamon haqiqiy: Unix da `vmstat`, Windows da `perfmon` almashinuv sonini va kernel da o'tgan vaqt ulushini ko'rsatadi; kernel ulushi 10 foizdan oshsa, bu og'ir rejalashtirish faolligini bildiradi va sababi odatda I/O yoki qulf raqobati bo'ladi.
+
+Xotira sinxronlashi. `synchronized` va `volatile` beradigan ko'rinuvchanlik kafolati memory barrier deb ataladigan maxsus instruksiyalarni talab qilishi mumkin: ular cache ni tozalaydi yoki yaroqsiz qiladi, apparat yozuv buferlarini bo'shatadi va bajarilish konveyerini to'xtatadi. Kitob bilvosita narxni ham ko'rsatadi va u ko'pincha e'tibordan qoladi: barrier kompilyator optimizatsiyalarini to'sadi, chunki ko'p amal memory barrier bilan qayta tartiblanmaydi.
+
+Eng muhim ajratish esa raqobatli va raqobatsiz sinxronlash orasida. `synchronized` mexanizmi raqobatsiz holat uchun optimallashtirilgan (`volatile` esa doim raqobatsiz) va kitob yozilgan paytda raqobatsiz "fast-path" sinxronlashning narxi ko'pchilik tizimda 20 dan 250 gacha protsessor takti edi (143-bet). Bu nol emas, lekin kitobning xulosasi aniq: kerakli raqobatsiz sinxronlashning umumiy ilova unumdorligiga ta'siri kamdan-kam sezilarli bo'ladi, alternativa esa xavfsizlikni qurbon qilishni talab qiladi.
+
+Shuning uchun "sinxronlash sekin" taxmini bilan qilinadigan refaktoring deyarli doim noto'g'ri qaror va ketma-ketlik [11.15](#1115-qulf-raqobatini-kamaytirish-qamrov-bolish-striping-va-issiq-maydon) da berilgan tartibda qoladi: o'lchash, qamrovni qisqartirish, qayta o'lchash. Buning yana bir ko'rinishi kitobdagi "hech qanday ta'sir bermaydigan sinxronlash" misoli: `synchronized (new Object())` bloki hech narsa himoyalamaydi, chunki qulfni boshqa hech kim ko'rmaydi, va JIT uni butunlay olib tashlashi mumkin (lock elision).
+
+Manba: Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 11.3-bo'lim (142-bet), 11.3.1-bo'lim (142-143-bet) va 11.3.2-bo'lim (143-144-bet).
+
+## 11.23 Amalda qo'llash
 
 - [ ] Hamma singleton bean larni ko'rib chiq va o'zgaruvchi maydon topilgan har bir joyni stateless qil yoki immutable obyektga almashtir; `SimpleDateFormat` va `Random` maydonlarini alohida qidir.
 - [ ] `Executors.newFixedThreadPool` va `newCachedThreadPool` chaqiruvlarini loyihada qidirib, ularni chekli `queue-capacity` va ongli rad etish siyosatiga ega `ThreadPoolExecutor` ga ko'chir.
@@ -338,6 +679,39 @@ Konkurentlikni testlash alohida mavzu, [testlash qo'llanmasidagi](../testing/REA
 - [ ] Bir nechta instansiyada ishlaydigan har qanday `synchronized` blokni aniqla va uni PostgreSQL advisory lock yoki `SELECT ... FOR UPDATE` ga ko'chir, `lock_timeout` ni albatta qo'y.
 - [ ] Yuklama testi paytida 2 sekund oraliq bilan uchta thread dump olib, `BLOCKED` threadlar sonini va lock egalarini qaydnomaga yozib qo'y.
 - [ ] Pool metrikalarini (active, queue size, rejected, completed) Micrometer orqali chiqarib, navbat uzunligi va rad etish soniga alert qo'y.
+- [ ] Ko'p threadda ishlatiladigan har bir sinf uchun thread safety darajasini Javadoc da bir gap bilan yozib qo'ying.
+- [ ] `synchronized` bloklari ichidan listener, lambda va override qilinadigan metod chaqiruvlarini chiqarib tashlang.
+- [ ] `wait`/`notify` ishlatadigan joylarni toping va ularni yuqori darajadagi konkurentlik vositasiga o'tkazing.
+- [ ] O'zgaradigan umumiy holatning har bir maydoni uchun qaysi qulf himoyalaganini yozib qo'ying (`@GuardedBy`).
+- [ ] Uzoq ishlaydigan har bir vazifa uchun bekor qilish siyosatini yozing va `InterruptedException` yo'qotilgan joylarni tuzating.
+- [ ] Bir-biriga tayanadigan vazifalar bitta pool da bajarilmayotganini tekshiring.
+- [ ] JFR yoki thread dump bilan qulf raqobatini o'lchab, eng band monitorni aniqlang va qamrovni qisqartirishdan boshlang.
+
+## Manbalar
+
+- Joshua Bloch, *Effective Java* 3rd, Item 78 - umumiy o'zgaradigan holatga kirishni sinxronlash
+- Joshua Bloch, *Effective Java* 3rd, Item 79 - ortiqcha sinxronlashdan qochish, qulf ichida begona kod chaqirmaslik
+- Joshua Bloch, *Effective Java* 3rd, Item 80, 81 - thread o'rniga executor va vazifa, `wait`/`notify` o'rniga konkurentlik vositalari
+- Joshua Bloch, *Effective Java* 3rd, Item 82 - thread safety darajasini hujjatlash
+- Joshua Bloch, *Effective Java* 3rd, Item 84 - thread rejalashtiruvchisiga tayanmaslik
+- Brian Goetz, *Java Concurrency in Practice*, 2-bob - thread safety ta'rifi va atomarlik
+- Brian Goetz, *Java Concurrency in Practice*, 4-bob - obyektlarni kompozitsiya qilish va sinxronlash siyosatini hujjatlash
+- Brian Goetz, *Java Concurrency in Practice*, 3-bob - xavfsiz nashr, obyektning qochib ketishi, `@GuardedBy`
+- Brian Goetz, *Java Concurrency in Practice*, 7-bob - bekor qilish va interrupt siyosati, poison pill, `shutdownNow` semantikasi
+- Brian Goetz, *Java Concurrency in Practice*, 8-bob - thread starvation deadlock va to'yinish (saturation) siyosati
+- Brian Goetz, *Java Concurrency in Practice*, 10-bob - qulf tartibi va deadlock
+- Brian Goetz, *Java Concurrency in Practice*, 16-bob - Java xotira modeli va happens-before
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 2.2.3, 2.3.1 va 2.3.2-bo'lim (15, 17 va 18-bet) - qo'shma amal (check-then-act plus read-modify-write), intrinsic lock va monitor lock, reentrancy ning thread boshiga berilishi, olish hisoblagichi va egasi
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 3.3-bo'lim (28-30-bet) - thread ga qamashning uch darajasi: ad-hoc, stack va `ThreadLocal`; bitta thread yozadigan `volatile` ustida read-modify-write; JDBC `Connection` ning so'rov davomida bilvosita qamalishi
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 14.2-bo'lim (183-188-bet) - shart predikati, qulf bilan condition queue obyektining bir xil bo'lishi sharti, erta uyg'onish va spurious wakeup, `wait` ni tsiklda chaqirish, kirish va chiqish protokoli
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 14.4-14.6-bo'lim (189-194-bet) - AQS ning acquire va release protokoli, bitta `int` sinxronlash holati, bloklanish nuqtasini birga tushirish, AQS ustida qurilgan JDK sinxronizatorlari
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 16.1.1-16.1.2, 16.1.4 va 16.3-bo'lim (207-211 va 214-215-bet) - ketma-ket izchillikning yo'qligi, qayta tartiblash, `FutureTask` dagi piggybacking, `final` maydonlarning muzlatilishi va initsializatsiya xavfsizligining chegaralari
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 15.4.3-15.4.4-bo'lim (205-206-bet) - atomic field updater ning refleksiyaga asoslangan ko'rinishi va kuchsizroq kafolati, `ConcurrentLinkedQueue` da uning unumdorlik sababi, ABA muammosi va havola plus belgi juftligi bilan yechimi
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 11.3-bo'lim (142-144-bet) - kontekst almashinuvi 5000-10000 takt (143-bet), cache miss toshqini va vaqt kvanti, memory barrier ning to'g'ri va bilvosita narxi, raqobatsiz fast-path sinxronlash 20-250 takt (143-bet); raqamlar 2006 yilgi o'lchov
+- Robert C. Martin, *Clean Code*, 13-bob va A ilovasi - konkurentlik kodini ajratish, sinxronlangan bo'limni kichik ushlash, bajarilish modellari
+- [OpenJDK 25, `java.util.concurrent` package javadoc](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/util/concurrent/package-info.java) - "Memory Consistency Properties": happens-before munosabati va uni yaratadigan konstruksiyalar (`synchronized`, `volatile`, `Thread.start()`, `Thread.join()`)
+- [OpenJDK 25, `ConcurrentHashMap.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/util/concurrent/ConcurrentHashMap.java) - `size`, `isEmpty`, `containsValue` ning aggregate status ekani (monitoring uchun, programma boshqaruvi uchun emas), `mappingCount()`, iteratorning weakly consistent xulqi, `computeIfAbsent` ning atomarligi, boshqa thread larni bloklashi, map ni o'zgartirish taqiqi va `IllegalStateException`
+- Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 5-bob (65-66-betlar) - bajarilish kontekstlari uchun standart lug'at yo'qligi va Fowler ning ta'riflari (so'rov, sessiya, jarayon, thread, tranzaksiya); klientning ketma-ket ikki so'rovi orasidagi bog'liqlik serverga ko'rinmasligi; serverning so'rov va sessiyani ikki tomondan ko'rishi va bir vaqtda bir nechta sessiya bo'lishi; sessiyani butun umri uchun bitta jarayonga bog'laydigan asbob yo'qligi va bitta jarayonning bir vaqtda bitta so'rovni ishlashi
 
 ---
 

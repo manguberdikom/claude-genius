@@ -1,6 +1,6 @@
 # Java, Spring va PostgreSQL bo'yicha oltita qo'llanma
 
-O'zbek tilidagi oltita bir-birini to'ldiruvchi hujjat: 224 bob, 3303 bo'lim,
+O'zbek tilidagi oltita bir-birini to'ldiruvchi hujjat: 226 bob, 3652 bo'lim,
 2300 dan ortiq kod misoli. Har bir hujjat bir savolga javob beradi. Ba'zi
 mavzular bir nechta hujjatda uchraydi, chunki ular har bir nuqtadan
 boshqacha ko'rinadi: masalan N+1 so'rovi pattern, arxitektura, review va
@@ -9,14 +9,14 @@ Mavzuning to'liq yozuvi bitta uy bo'limda (`docs/OWNERS.tsv`), boshqa hujjat o'z
 
 | Hujjat | Hajm | Qanday savolga javob beradi |
 |---|---|---|
-| [Dizayn patternlar](docs/patterns/README.md) | 31 bob, 1038 bo'lim | Bu muammoga qaysi pattern to'g'ri keladi |
-| [Testlash qo'llanmasi](docs/testing/README.md) | 18 bob, 239 bo'lim | Buni qanday test qilaman |
-| [Arxitektor miyasi](docs/architect/README.md) | 39 bob, 484 bo'lim | Ichkarida nima sodir bo'ladi va qanday qaror chiqaraman |
+| [Dizayn patternlar](docs/patterns/README.md) | 31 bob, 1166 bo'lim | Bu muammoga qaysi pattern to'g'ri keladi |
+| [Testlash qo'llanmasi](docs/testing/README.md) | 18 bob, 264 bo'lim | Buni qanday test qilaman |
+| [Arxitektor miyasi](docs/architect/README.md) | 41 bob, 608 bo'lim | Ichkarida nima sodir bo'ladi va qanday qaror chiqaraman |
 | [SonarQube](docs/sonarqube/README.md) | 43 bob, 564 bo'lim | Statik tahlil nimadan shikoyat qilyapti va qanday tuzataman |
-| [Toza kod qoidalari](docs/clean-code/README.md) | 49 bob, 533 bo'lim | Klaviatura ostidagi shu qator toza yoki yo'q |
-| [Kod review](docs/code-review/README.md) | 44 bob, 445 bo'lim | Diffda nimani ko'raman, nimani so'rayman, nimani to'xtataman |
+| [Toza kod qoidalari](docs/clean-code/README.md) | 49 bob, 587 bo'lim | Klaviatura ostidagi shu qator toza yoki yo'q |
+| [Kod review](docs/code-review/README.md) | 44 bob, 463 bo'lim | Diffda nimani ko'raman, nimani so'rayman, nimani to'xtataman |
 
-> Holat: 224 bobdan 0 tasi odam tekshirgan, 5 tasi tekshirilmoqda, qolgan 219 tasi AI yozgan va inson tekshirmagan. Har bob holati: [docs/review.tsv](docs/review.tsv).
+> Holat: 226 bobdan 0 tasi odam tekshirgan, 226 tasi tekshirilmoqda, qolgan 0 tasi AI yozgan va inson tekshirmagan. Har bob holati: [docs/review.tsv](docs/review.tsv).
 
 Har bob alohida faylda. Bu ataylab: GitHub 1 MB dan katta markdown faylni
 render qilmaydi, monolit variant brauzerda ochilmaydi.
@@ -43,6 +43,13 @@ Tipik savollar, javob turgan bo'limga to'g'ridan:
 - **HikariCP pool kattaligi qancha bo'lsin** - [pool kattaligini hisoblash formulasi](docs/architect/27-sozlash-connection-pool-va-monitoring.md#276-pool-kattaligini-hisoblash-formulasi-va-amaliy-raqamlar)
 - **Test goh o'tadi, goh yiqiladi (flaky)** - [flaky testni aniqlash](docs/testing/16-flaky-testlar-test-qarzi-va-test-kodini.md#163-flaky-testni-aniqlash)
 - **Testcontainers bilan real PostgreSQL da test** - [Testcontainers asoslari](docs/testing/08-testcontainers-bilan-real-infratuzilmada.md#82-testcontainers-asoslari-docker-api-ustida-hayot-aylanishi)
+
+## O'rnatgan bo'lsangiz
+
+Qo'llanma ombori kengaydi (224 bobdan 226 ga, 3303 bo'limdan 3652 ga) va
+qoidalar kitobga bog'landi. `manguberdi` skillini global o'rnatgan
+mashinada klonni ko'chirmasdan yangilash tartibi
+[MIGRATSIYA.md](MIGRATSIYA.md) da.
 
 ## Claude Code bilan ishlatish
 

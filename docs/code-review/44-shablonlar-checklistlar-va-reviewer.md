@@ -2,14 +2,14 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 44. Shablonlar, checklistlar va reviewer yetukligi (Templates and Maturity)
 
 <details>
 <summary>Bu bobdagi 9 bo'lim</summary>
 
-- [44.1 Universal review o'tishi: 15 daqiqalik ro'yxat](#441-universal-review-otishi-15-daqiqalik-royxat)
+- [44.1 Universal review o'tishi: qisqa ro'yxat](#441-universal-review-otishi-qisqa-royxat)
 - [44.2 Yuqori xavfli PR uchun qo'shimcha o'tish](#442-yuqori-xavfli-pr-uchun-qoshimcha-otish)
 - [44.3 Review izohlari uchun tayyor iboralar](#443-review-izohlari-uchun-tayyor-iboralar)
 - [44.4 Review xulosasi shablonlari](#444-review-xulosasi-shablonlari)
@@ -24,15 +24,26 @@
 
 Bu bob hujjatning ma'lumotnoma qismi: tayyor checklistlar, izoh iboralari va o'zini baholash mezonlari. U boshidan oxirigacha o'qilishi uchun emas, review paytida ochib ishlatish uchun yozilgan.
 
-## 44.1 Universal review o'tishi: 15 daqiqalik ro'yxat
+## 44.1 Universal review o'tishi: qisqa ro'yxat
 
-Har qanday PR uchun, xavf darajasidan qat'i nazar:
+Har qanday PR uchun, xavf darajasidan qat'i nazar. Ro'yxat qancha vaqt
+olishi PR hajmiga bog'liq, shuning uchun unga aniq daqiqa yozilmaydi.
+Muhimi ro'yxat TO'LIQ O'QISHNI ALMASHTIRMASLIGI: Google ning qoidasi
+qat'iy, review qilish uchun berilgan HAR SATRga qarash kerak, va kodni
+o'qib bo'lmasa to'g'ri javob muallifdan tushuntirish so'rash.
 
 ```text
-1.  PR tavsifi va tiket: niyat aniqmi?
+0.  Dizayn: bu o'zgarish shu kodbazaga tegishlimi, tizimning qolgan
+    qismi bilan mos keladimi, hozir qo'shilishi to'g'rimi? Google
+    ro'yxatda buni BIRINCHI o'ringa qo'yadi. Dizaynga savol bo'lsa,
+    satrlarni o'qishdan oldin shuni yuborish kerak (44.4).
+1.  PR tavsifi va tiket: niyat aniqmi? Birinchi qator buyruq shaklida
+    nima qilinganini aytadimi, tavsifda "nega" bormi?
 2.  Fayllar ro'yxati: kutilmagan fayl bormi? Migratsiya, konfiguratsiya,
     xavfsizlik, bog'liqlik o'zgardimi?
-3.  Hajm: mantiq satrlari 400 dan oshdimi? (oshsa - bo'lish taklifi)
+3.  Hajm: PR bitta o'zini o'zi to'ldiradigan o'zgarishmi? Qator soni
+    yagona o'lchov emas, o'zgarish necha faylga tarqalgani ham hisobga
+    olinadi (2.2). Bo'lish taklifi hajm emas, mazmun bo'yicha beriladi.
 4.  Migratsiya va sxema (agar bor): qulf, orqaga moslik, qaytarish.
 5.  Public API (agar o'zgargan): breaking change katalogi (37.1).
 6.  Domen mantiqi: invariantlar, chegaraviy holatlar, holat o'tishlari.
@@ -86,6 +97,17 @@ Konkurentlik:
 
 ## 44.3 Review izohlari uchun tayyor iboralar
 
+Pastdagi iboralar `blocker`, `suggest` va `praise` belgilaridan
+foydalanadi. Belgilar to'plami bu hujjatda 41.3 da belgilangan
+(beshtasi: `blocker`, `suggest`, `question`, `nit`, `praise`); shu
+yerda faqat uchtasi uchraydi, chunki qolgan ikkitasi tayyor ibora
+talab qilmaydi. Google ning o'z to'plami boshqacha nomlanadi (`Nit:`,
+`Optional:` yoki `Consider:`, `FYI:`), lekin maqsad bir xil va manba
+sababini ham aytadi: belgisiz izohni muallif hammasini majburiy deb
+o'qishi mumkin. Arxitektura hujjatidagi 36.4 da yana bir, to'rt
+belgili variant bor; jamoa BITTA to'plamni tanlab, uni PR shablonida
+yozib qo'yishi kerak, uchtasini aralashtirmasligi kerak.
+
 ```text
 # N+1
 blocker: `{metod}` sikl ichida chaqirilgan, ya'ni {N} element uchun {N}
@@ -120,9 +142,15 @@ blocker: `{operatsiya}` `{jadval}` da ACCESS EXCLUSIVE qulf oladi.
 Jadvalda {hajm} qator - bu taxminan {vaqt} to'liq to'xtash. Xavfsiz
 ketma-ketlik: {qadamlar} (25.1).
 
-# Yo'q test
-suggest: `{holat}` qamralmagan. Nega muhim: {oqibat}. Bu `@CsvSource` ga
-bir qator qo'shish bilan hal bo'ladi: `{namuna}`.
+# Yo'q test: YANGI ishlab chiqarish mantig'i uchun
+blocker: `{holat}` qamralmagan. Test ishlab chiqarish kodi bilan BITTA
+PR da keladi (34), favqulodda holatdan boshqa paytda keyinga
+qoldirilmaydi. Nega muhim: {oqibat}. Bu `@CsvSource` ga bir qator
+qo'shish bilan hal bo'ladi: `{namuna}`.
+
+# Yo'q test: avvaldan qamralmagan yo'l uchun
+suggest: `{holat}` qamralmagan va bu PR unga tegmaydi. Nega muhim:
+{oqibat}. Shu PR da qo'shsak yaxshi bo'lardi, lekin ushlab turmaymiz.
 
 # Yolg'on test
 blocker: bu test `assertNotNull` bilan tugaydi, ya'ni `{metod}` ichidagi
@@ -142,16 +170,36 @@ blocker: `{maydon}` o'zgarishi breaking change (37.1). Oxirgi 30 kunda
 bu endpointni {mijozlar} ishlatgan. O'tish rejasi kerak: yangi maydon
 qo'shish, ikkisini to'ldirish, eski maydonni {sana} da olib tashlash.
 
-# Arxitektura
-suggest: `{klass}` `{paket}` da `{bog'liqlik}` ga bog'langan. Oqibati:
-{1,2,3}. Alternativa: {yechim}. Hajmi: {taxmin}. Bu PR da katta bo'lsa,
-tiket ochib keyingi sprintda yopsak bo'ladi.
+# Arxitektura: muammoni SHU PR keltirgan bo'lsa
+blocker: `{klass}` `{paket}` da `{bog'liqlik}` ga bog'langan va bu
+bog'liqlik shu PR da paydo bo'lgan. Oqibati: {1,2,3}. Alternativa:
+{yechim}. Buni merge dan oldin tuzatish kerak: PR keltirgan murakkablik
+"keyin" tozalanmaydi.
 
-# Katta PR
-Bu PR da {N} satr mantiq o'zgargan. Shu hajmda satr-satr review samarasiz
-(2.2) - men xavf nuqtalari bo'yicha o'qidim va buni ochiq aytaman.
-Keyingi marta bo'lib yuborsak: {taklif qilingan bo'laklar}. Hozir
-to'xtatmayman, lekin {aniq joy} ni alohida ko'rib chiqishni so'raymiz.
+# Arxitektura: muammo AVVALDAN bor bo'lsa
+suggest: `{klass}` `{paket}` da `{bog'liqlik}` ga bog'langan, lekin bu
+shu PR ning ishi emas, u avvaldan shunday. Oqibati: {1,2,3}. Hajmi:
+{taxmin}. Shu PR ni ushlab turmaymiz: tiket ochib, muallifga tayinlab
+qo'yamiz, va kerak bo'lsa kodga tiket raqamli `TODO` qoldiramiz.
+
+# Katta PR: birinchi javob bo'lishni so'rash
+Bu PR da {N} satr mantiq {M} faylda o'zgargan. Shu hajmda satr-satr
+review samarasiz (2.2), shuning uchun bo'lishni so'raymiz: {taklif
+qilingan bo'laklar}. Birinchi bo'lakni bugun ko'rib chiqaman.
+
+# Katta PR: bo'lish imkoni bo'lmasa
+Bo'lish imkoni yo'q ekanini tushundim. Bu holatda umumiy dizayn
+bo'yicha izohlarimni hozir yuboraman, chunki to'liq o'qishni kutsak PR
+kunlab turadi: {dizayn izohlari}. Shundan keyin satr-satr o'qib
+chiqaman.
+
+# Katta PR: men faqat bir qismini o'qidim
+Men {qism} ni o'qidim, {qolgan qism} ni o'qimadim, uni {ikkinchi
+reviewer} ko'radi. Buni ochiq yozib qo'yaman, chunki "approve"
+belgisining ma'nosi aks holda noto'g'ri tushuniladi. DIQQAT: bu shakl
+faqat PR da bir nechta reviewer bo'lganda ishlaydi. Yolg'iz reviewer
+sifatida "xavf nuqtalari bo'yicha o'qidim" deb approve berish mumkin
+emas: unda approve belgisi hech narsani bildirmaydi.
 
 # Maqtov
 praise: bu yerda idempotentlik kaliti unique constraint bilan
@@ -163,10 +211,22 @@ tanlovi ham to'g'ri: workerlar bir-birini kutmaydi.
 
 ```text
 # Approve
-Approve (daraja 2).
+Approve ({loyihaning approve darajasi, 1.4 dagi shkala bo'yicha}).
 Tekshirdim: {ro'yxat}.
 Tekshirmadim: {ro'yxat}.
 Qolgan xavf: {bor bo'lsa}. Yo'q bo'lsa: "sezilarli xavf ko'rmadim".
+
+Tasdiqlash chegarasi: PR mukammal bo'lishi shart emas. Google ning
+asosiy prinsipi shu, PR tizimning kod salomatligini aniq yaxshilaydigan
+holatga kelgandan keyin tasdiqlanadi.
+
+# Approve, lekin yopilmagan izohlar bilan (LGTM with comments)
+Approve. Quyidagi izohlar ochiq qoldi, lekin ular merge ni
+to'xtatmaydi, chunki {sabablardan bittasi}: (a) ularni o'zingiz
+to'g'ri hal qilishingizga ishonaman; (b) ularni bajarish shart emas;
+(v) ular mayda (import tartibi, yondagi xato yozilgan so'z).
+Qaysi sababni nazarda tutganimni ataylab yozdim, aks holda "approve"
+ning ma'nosi noaniq qoladi.
 
 # O'zgarish so'rash
 {N} blocker bor, qolgani ixtiyoriy.
@@ -184,6 +244,22 @@ Bu qaror o'zgarsa, {N} fayl ham o'zgaradi. Variantlar: {1}, {2}.
 Men {tanlov} ni taklif qilaman, chunki {sabab}. Kelishib olgandan keyin
 satr-satr o'qib chiqaman.
 
+# "Keyin tozalaymiz" javobiga javob
+Tushunaman, lekin tajriba shuni ko'rsatadi: PR yozilgandan keyin vaqt
+o'tgani sayin tozalash ehtimoli kamayadi, va darhol qilinmasa amalda
+hech qachon bo'lmaydi. Buning sababi mas'uliyatsizlik emas, ish
+oqimida vazifaning yo'qolishi. Shu PR keltirgan murakkablikni hozir
+tozalaymiz; PR ochib bergan AVVALGI muammo uchun esa tiket ochamiz va
+uni o'zingizga tayinlaymiz.
+
+# Kelishmovchilik cho'zilganda
+Yozma izohlarda kelishuvga kelmayapmiz, shuning uchun {15 daqiqalik
+qo'ngiroq} taklif qilaman. Bitta shart: natijani PR ga izoh qilib
+yozib qo'yamiz, chunki review oynasida qolgan tushuntirish kelajakdagi
+o'quvchiga yetib bormaydi. Agar qo'ngiroqdan keyin ham kelishmasak,
+{texnik yetakchi yoki maintainer} ni jalb qilamiz. PR kelishmovchilik
+tufayli turib qolmasligi kerak.
+
 # Bo'lishni so'rash
 Bu PR {N} satr. Review ni foydali qilish uchun bo'lishni so'raymiz:
 1. {bo'lak 1} - mustaqil merge qilinadi
@@ -194,6 +270,12 @@ Birinchi bo'lakni bugun ko'rib chiqaman.
 ```
 
 ## 44.5 Reviewer yetukligi darajalari
+
+Quyidagi beshta daraja shu hujjatning o'z modeli, u Google
+qo'llanmasidan olinmagan va o'lchovga tayanmaydi. Uni jamoada
+o'rgatish uchun til sifatida ishlatish mumkin, baho shkalasi sifatida
+emas. Diqqat: bu yerdagi "daraja" 44.4 dagi approve darajasi (1.4) ga
+umuman aloqasi yo'q, ikkisini aralashtirmaslik kerak.
 
 | Daraja | Nimani ko'radi | Nimani hali ko'rmaydi |
 | --- | --- | --- |
@@ -209,8 +291,8 @@ Yuqori darajaga o'tish mezoni - oldingi darajani avtomatlashtirish. Uslub izohla
 
 ```text
 Fikrlash va jarayon:
-1.  Oxirgi 10 review da nechtasida uch o'qishni (niyat, mexanika, xavf)
-    ongli ajratdim?
+1.  Oxirgi review larimda (so'nggi ikki haftadagilarni oling)
+    nechtasida uch o'qishni (niyat, mexanika, xavf) ongli ajratdim?
 2.  Nechtasida "nimani tekshirmadim" ro'yxatini yozdim?
 3.  Qaysi izohimni uchinchi marta yozdim va uni qoidaga aylantirdimmi?
 
@@ -221,7 +303,7 @@ Java va JVM:
 6.  `equals`/`hashCode`/`compareTo` nomuvofiqligini topa olamanmi?
 
 Spring:
-7.  Proxy ishlamaydigan to'rt holatni yoddan bilamanmi?
+7.  Proxy ishlamaydigan holatlarni yoddan bilamanmi?
 8.  Tranzaksiya ichidagi tashqi chaqiruvning to'rt oqibatini sanab bera olamanmi?
 9.  `REQUIRED` ichida ushlangan istisno nega `UnexpectedRollbackException`
     berishini tushuntirib bera olamanmi?
@@ -248,9 +330,17 @@ Madaniyat:
 
 ## 44.7 Loyihada review ni yo'lga qo'yishning birinchi 30 kuni
 
+Quyidagi to'rt haftalik reja shu hujjatning taklifi, u o'lchovga
+tayanmaydi: tartib mantiqiy (avval arzon avtomatika, keyin o'lchov,
+oxirida madaniyat), lekin har bandning aniq vaqti jamoaga bog'liq.
+Rejadagi yagona manbaga tayangan raqam javob vaqti: `REVIEW.md` ga
+yoziladigan SLA uchun Google ning qoidasi bitta ish kuni maksimum,
+va javob tez kelishi butun jarayonning tez tugashidan ham muhimroq.
+
 ```text
 1-hafta: asos
-[ ] `REVIEW.md` yozish: maqsad, izoh darajalari, SLA, xavfli yo'llar
+[ ] `REVIEW.md` yozish: maqsad, izoh belgilari (44.3), javob vaqti
+    chegarasi (Google: ko'pi bilan bitta ish kuni), xavfli yo'llar
 [ ] `CODEOWNERS` yaratish
 [ ] Branch protection: conversation resolution, stale approvals
 [ ] `spotless` yoki formatter ni CI ga qo'yish
@@ -259,7 +349,7 @@ Madaniyat:
 [ ] ErrorProne ni yoqish (3-5 muhim qoida ERROR darajasida)
 [ ] ArchUnit testlari: qatlam, sikl, inyeksiya, tranzaksiya chegarasi
 [ ] `gitleaks` ni pre-commit va CI ga qo'shish
-[ ] CI ni bosqichlarga bo'lish: tez signal 2 daqiqada
+[ ] CI ni bosqichlarga bo'lish: tez signal alohida, sekin suite keyin
 
 3-hafta: o'lchov va kontekst
 [ ] Review metrikalarini bir marta o'lchash (kutish vaqti, hajm, taqsimot)
@@ -270,7 +360,8 @@ Madaniyat:
 4-hafta: checklist va madaniyat
 [ ] PR shabloni (majburiy qism 6 band)
 [ ] Xavf darajasini avtomatik belgilash
-[ ] Oxirgi 3 incidentni `REVIEW-SMELLS.md` ga kiritish
+[ ] So'nggi incidentlarni `REVIEW-SMELLS.md` ga kiritish (hammasini
+    emas, review topa olishi mumkin bo'lganlarini)
 [ ] Jamoada bitta review ni birga tahlil qilish
 ```
 
@@ -311,6 +402,41 @@ Madaniyat:
 - [ ] 20 savolli o'zini tekshirish ro'yxatini bajarib, javob bera olmagan savollar bo'yicha tegishli bobni o'qing.
 - [ ] 30 kunlik rejani jamoa bilan kelishib, birinchi haftadan boshlang.
 - [ ] Har incidentdan keyin bu hujjatdagi tegishli checklistga bitta band qo'shing - eng qimmatli checklist loyihaning o'z tarixidan o'sadi.
+
+## Manbalar
+
+- Google, *Engineering Practices: The Standard of Code Review*
+  ([https://github.com/google/eng-practices/blob/3bb3ec2/review/reviewer/standard.md](https://github.com/google/eng-practices/blob/3bb3ec2/review/reviewer/standard.md),
+  commit `3bb3ec2`, CC BY 3.0) - 44.4 dagi tasdiqlash chegarasi (PR
+  mukammal bo'lishi shart emas) va kelishmovchilikda eskalatsiya,
+  hamda qarorni PR ga yozib qoldirish talabi.
+- Google, *Engineering Practices: What to Look For in a Code Review*
+  ([https://github.com/google/eng-practices/blob/3bb3ec2/review/reviewer/looking-for.md](https://github.com/google/eng-practices/blob/3bb3ec2/review/reviewer/looking-for.md),
+  commit `3bb3ec2`, CC BY 3.0) - 44.1 dagi dizaynning birinchi o'rni va
+  har satrni o'qish qoidasi, 44.3 dagi testning ishlab chiqarish kodi
+  bilan bitta PR da kelishi.
+- Google, *Engineering Practices: Speed of Code Reviews*
+  ([https://github.com/google/eng-practices/blob/3bb3ec2/review/reviewer/speed.md](https://github.com/google/eng-practices/blob/3bb3ec2/review/reviewer/speed.md),
+  commit `3bb3ec2`, CC BY 3.0) - 44.4 dagi izohlar bilan approve (LGTM
+  with comments) va uning uch sharti, 44.7 dagi bitta ish kunlik javob
+  chegarasi, katta PR uchun bo'lishni so'rash.
+- Google, *Engineering Practices: How to Write Code Review Comments*
+  ([https://github.com/google/eng-practices/blob/3bb3ec2/review/reviewer/comments.md](https://github.com/google/eng-practices/blob/3bb3ec2/review/reviewer/comments.md),
+  commit `3bb3ec2`, CC BY 3.0) - 44.3 dagi izoh belgilari va belgisiz
+  izohning majburiy deb o'qilishi, maqtov izohining sababi bilan
+  kelishi.
+- Google, *Engineering Practices: Handling Pushback in Code Reviews*
+  ([https://github.com/google/eng-practices/blob/3bb3ec2/review/reviewer/pushback.md](https://github.com/google/eng-practices/blob/3bb3ec2/review/reviewer/pushback.md),
+  commit `3bb3ec2`, CC BY 3.0) - 44.3 dagi arxitektura shablonining ikkiga
+  bo'linishi (PR keltirgan murakkablik hozir tozalanadi, avvalgi
+  muammo uchun tiket) va 44.4 dagi "keyin tozalaymiz" javobi.
+- Google, *Engineering Practices: Small CLs*
+  ([https://github.com/google/eng-practices/blob/3bb3ec2/review/developer/small-cls.md](https://github.com/google/eng-practices/blob/3bb3ec2/review/developer/small-cls.md),
+  commit `3bb3ec2`, CC BY 3.0) - 44.1 dagi hajm bandi: qator soni yagona
+  o'lchov emas, fayl soni ham hisobga olinadi.
+- Google, *Engineering Practices: Writing Good CL Descriptions*
+  ([https://github.com/google/eng-practices/blob/3bb3ec2/review/developer/cl-descriptions.md](https://github.com/google/eng-practices/blob/3bb3ec2/review/developer/cl-descriptions.md),
+  commit `3bb3ec2`, CC BY 3.0) - 44.1 dagi tavsif bandi.
 
 ---
 

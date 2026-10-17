@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 3. Xulq-atvor patternlari (Behavioral Patterns)
 
 <details>
-<summary>Bu bobdagi 24 bo'lim</summary>
+<summary>Bu bobdagi 29 bo'lim</summary>
 
 - [3.1 Mas'uliyat zanjiri (Chain of Responsibility)](#31-masuliyat-zanjiri-chain-of-responsibility)
 - [3.2 Buyruq (Command)](#32-buyruq-command)
@@ -32,7 +32,12 @@
 - [3.21 Chekli holatlar mashinasi (Finite State Machine (Spring Statemachine))](#321-chekli-holatlar-mashinasi-finite-state-machine-spring-statemachine)
 - [3.22 Qoidalar dvigateli / Siyosat (Rules Engine / Policy)](#322-qoidalar-dvigateli--siyosat-rules-engine--policy)
 - [3.23 Qora taxta (Blackboard)](#323-qora-taxta-blackboard)
-- [3.24 Amalda qo'llash](#324-amalda-qollash)
+- [3.24 O'zgarish uchun dizayn: qayta dizayn sabablari (Designing for Change: Causes of Redesign)](#324-ozgarish-uchun-dizayn-qayta-dizayn-sabablari-designing-for-change-causes-of-redesign)
+- [3.25 Patternni tanlash va qo'llash tartibi (How to Select and Use a Design Pattern)](#325-patternni-tanlash-va-qollash-tartibi-how-to-select-and-use-a-design-pattern)
+- [3.26 Patternlar orasidagi munosabatlar (Pattern Relationships and Related Patterns)](#326-patternlar-orasidagi-munosabatlar-pattern-relationships-and-related-patterns)
+- [3.27 Kompozit patternlar: patternlardan yasalgan pattern (Compound Patterns)](#327-kompozit-patternlar-patternlardan-yasalgan-pattern-compound-patterns)
+- [3.28 Har pattern nimani o'zgaruvchan qiladi (What Each Pattern Lets You Vary)](#328-har-pattern-nimani-ozgaruvchan-qiladi-what-each-pattern-lets-you-vary)
+- [3.29 Amalda qo'llash](#329-amalda-qollash)
 
 </details>
 
@@ -799,7 +804,187 @@ public class DiagnosisEngine {
 }
 ```
 
-## 3.24 Amalda qo'llash
+## 3.24 O'zgarish uchun dizayn: qayta dizayn sabablari (Designing for Change: Causes of Redesign)
+
+**Tavsif:** Patternlarning asosiy qiymati bugungi masalani hal qilishda emas, ertangi o'zgarishni arzonlashtirishda. Har pattern tizim tuzilishining qaysidir qismini qolganidan mustaqil o'zgartirishga imkon beradi, ya'ni tizimni aniq bir turdagi o'zgarishga chidamli qiladi. GoF buni teskari tomondan beradi: avval qayta dizaynni majburlaydigan sakkizta sabab sanaladi, keyin har sababga qarshi turadigan patternlar ko'rsatiladi. Birinchi sabab - obyektni sinf nomini aniq yozib yaratish: bu sizni interfeysga emas, implementatsiyaga bog'laydi, va yechim yaratishni bilvosita qilish (Abstract Factory, Factory Method, Prototype). Ikkinchisi - aniq amalga bog'liqlik, ya'ni qattiq yozilgan chaqiruv (Chain of Responsibility, Command). Uchinchisi - apparat va platformaga bog'liqlik (Abstract Factory, Bridge). To'rtinchisi - obyektning ichki tasviri yoki implementatsiyasiga bog'liqlik (Abstract Factory, Bridge, Memento, Proxy). Beshinchisi - algoritmga bog'liqlik: algoritm ishlab chiqish davomida kengayadi va almashadi, demak uni ajratish kerak (Builder, Iterator, Strategy, Template Method, Visitor). Oltinchisi - qattiq bog'lanish: bir-biriga chambarchas bog'langan sinflar alohida qayta ishlatilmaydi (Abstract Factory, Bridge, Chain of Responsibility, Command, Facade, Mediator, Observer). Yettinchisi - funksionallikni subclass orqali kengaytirish: har yangi sinf o'z yuki bilan keladi va ierarxiya portlaydi (Bridge, Chain of Responsibility, Composite, Decorator, Observer, Strategy). Sakkizinchisi - sinfni qulay o'zgartirib bo'lmasligi, masalan manba kodi yo'q kutubxona sinfi (Adapter, Decorator, Visitor). Shu ro'yxat pattern tanlashning eng amaliy kirish nuqtasi: avval nima o'zgarishini aniqlang, keyin shu sabab qatoridagi patternlarni o'qing.
+
+**Spring'da qayerda uchraydi:** Spring'ning o'zi shu sakkiz sababga qarshi qurilgan va buni konfiguratsiya darajasida beradi. Sinf nomini qattiq yozishga qarshi `@Bean`, `@ConditionalOnMissingBean` va `ObjectProvider`; platformaga bog'liqlikka qarshi `ServletWebServerFactory` oilasi va `ClientHttpRequestFactory`; ichki tasvirga bog'liqlikka qarshi `Repository` abstraksiyasi va `LazyConnectionDataSourceProxy`; algoritmga bog'liqlikka qarshi `Converter`, `RowMapper` va `AuthorizationManager`; qattiq bog'lanishga qarshi `ApplicationEventPublisher` va Spring Modulith modul event'lari; subclass orqali kengaytirishga qarshi `BeanPostProcessor` va AOP; o'zgartirib bo'lmaydigan sinfga qarshi `@ConfigurationPropertiesBinding` va Jackson mix-in. Shu sabablarning har biri uchun GoF tavsiya qiladigan pattern korpusda alohida yozuv sifatida bor.
+
+**Qo'llanish keyslari:**
+- Yangi funksiya loyihalashda "nima o'zgarishi ehtimoli bor" savoliga javob yozib, shundan keyin pattern tanlash.
+- Legacy modulni rejalashtirishda qayta dizaynni majburlagan sababni aniqlab, aynan shu o'qni ajratish.
+- ADR da tanlangan patternni qaysi sababga qarshi kiritilgani bilan asoslash.
+- Review paytida "bu pattern qanday o'zgarishni arzonlashtiradi" savolini berish va javob bo'lmasa patternni olib tashlash.
+- Uchinchi tomon kutubxonasini o'rab, uning almashtirilishini bitta adapter nuqtasiga qamab qo'yish.
+
+**Ehtiyot bo'ling:** Ro'yxatni "hamma sababni oldindan yopish kerak" degan ma'noda o'qish eng qimmat xato: har mustaqil o'q qo'shimcha bilvosita qatlam va narx. O'zgarish ehtimoli bo'lmagan joyda moslashuvchanlik ortiqcha murakkablik va u YAGNI ga zid. Ilova, kutubxona (toolkit) va framework uchun bu narx bir xil emas: ilovada ichki qayta ishlatish va qo'llab-quvvatlash muhim, kutubxona ko'p ilovada ishlashi kerak, framework esa ilova arxitekturasini belgilab beradi va uning interfeysidagi kichik o'zgarish ham barcha foydalanuvchilarga uriladi. Shu sababli moslashuvchanlik byudjeti framework'da eng katta, ichki ilova kodida eng kichik. Pattern taklif qilishning narxi review nuqtasidan ham yozilgan (qarang: [code-review 10-bo'lim](../code-review/10-dizayn-pattern-review-i-yoq-patternni-korish.md#1011-pattern-taklif-qilishning-narxi), Pattern taklif qilishning narxi).
+
+```text
+Qayta dizayn sababi -> qarshi turadigan pattern (GoF 1.6, 24-25-bet)
+
+  1. Sinf nomini yozib yaratish    Abstract Factory, Factory Method, Prototype
+  2. Aniq amalga bog'liqlik        Chain of Responsibility, Command
+  3. Platformaga bog'liqlik        Abstract Factory, Bridge
+  4. Ichki tasvirga bog'liqlik     Abstract Factory, Bridge, Memento, Proxy
+  5. Algoritmga bog'liqlik         Builder, Iterator, Strategy,
+                                   Template Method, Visitor
+  6. Qattiq bog'lanish             Abstract Factory, Bridge, Chain of
+                                   Responsibility, Command, Facade,
+                                   Mediator, Observer
+  7. Subclass bilan kengaytirish   Bridge, Chain of Responsibility, Composite,
+                                   Decorator, Observer, Strategy
+  8. Sinfni o'zgartirib bo'lmaslik Adapter, Decorator, Visitor
+
+Ishlatish tartibi: sababni toping, keyin qatorni o'qing. Teskarisi emas.
+```
+
+## 3.25 Patternni tanlash va qo'llash tartibi (How to Select and Use a Design Pattern)
+
+**Tavsif:** Yigirma uchta pattern orasidan to'g'risini topish alohida ko'nikma, va GoF buning uchun oltita kirish yo'lini beradi. Birinchisi - patternlar qanday dizayn muammolarini hal qilishini ko'rib chiqish: obyektlarni topish, granularlik, interfeys spetsifikatsiyasi va qolgan mavzular (qarang: [1-bo'lim](01-yaratuvchi-patternlar.md#120-obyektlarni-topish-va-obyekt-granularligi-finding-appropriate-objects-and-object-granularity), Obyektlarni topish va obyekt granularligi). Ikkinchisi - barcha patternlarning Intent qatorlarini ketma-ket o'qib chiqish va tasnif bilan izlash maydonini qisqartirish (qarang: [1-bo'lim](01-yaratuvchi-patternlar.md#119-katalogni-tashkil-etish-maqsad-va-qamrov-organizing-the-catalog-purpose-and-scope), Katalogni tashkil etish). Uchinchisi - patternlarning o'zaro munosabatlarini o'rganish. To'rtinchisi - bir maqsadli patternlarni birga o'qish, chunki ularning farqi aynan solishtirganda ko'rinadi. Beshinchisi - qayta dizayn sabablaridan kirish. Oltinchisi - teskari savol: nima o'zgarishi mumkinligi emas, nimani qayta dizayn qilmasdan o'zgartirishni xohlaysiz. Pattern tanlangandan keyin uni qo'llash ham tartibli ish. GoF yetti qadam beradi: yozuvni bir o'qib chiqish va ayniqsa Applicability bilan Consequences ga e'tibor berish; Structure, Participants va Collaborations ni o'rganish; kod misolini ko'rish; ishtirokchilarga o'z domeniga mos nom berish, lekin pattern rolini nomda saqlash (`TeXLayoutStrategy` uslubida); sinflarni e'lon qilish va mavjud sinflarga ta'sirni aniqlash; metodlarga ilovaga xos nom berish va nomlash konvensiyasini izchil saqlash; so'ngra mas'uliyat va aloqalarni amalga oshirish.
+
+**Spring'da qayerda uchraydi:** To'rtinchi qadam Spring kodida ochiq ko'rinadi: rol nomda saqlanadi va shu tufayli sinf nima qilishini nomidan bilib olish mumkin - `SimpleAsyncTaskExecutor`, `DelegatingFilterProxy`, `CompositeHealthContributor`, `AbstractRoutingDataSource`, `BeanFactoryPostProcessor`, `TransactionAwareDataSourceProxy`. Oltinchi qadam ham izchil: fabrika metodlari Spring'da `create` prefiksi bilan boshlanadi (`createRequest`, `createBeanFactory`, `createApplicationContext`), kengaytirish nuqtalari `postProcess` bilan. Spring hujjatining har moduli xuddi GoF yozuvi kabi tuzilgan: nima uchun kerak, qachon qo'llanadi, cheklovlari nima.
+
+**Qo'llanish keyslari:**
+- Yangi masalada pattern qidirishni "qaysi sababdan qayta dizayn kelishi mumkin" savolidan boshlash, nom ro'yxatini varaqlashdan emas.
+- Ikki o'xshash pattern orasida tanlash: ikkisining Consequences qismini yonma-yon qo'yib solishtirish.
+- Pattern qo'llashdan oldin uning narxini ADR da yozib, jamoa bilan kelishish.
+- Sinf va metod nomlariga pattern rolini kiritish, shunda keyingi o'quvchi niyatni koddan o'qiydi.
+- Klassik tuzilishdan chetlashish bo'lsa, farqni javadoc yoki modul README da aniq yozish.
+
+**Ehtiyot bo'ling:** Patternni tanlab emas, ko'rinib qolgani uchun qo'llash eng keng tarqalgan xato. Patternlar moslashuvchanlikni ko'pincha qo'shimcha bilvosita qatlam kiritish bilan oladi, bu esa dizaynni murakkablashtiradi va unumdorlikka ta'sir qiladi; shuning uchun pattern faqat u beradigan moslashuvchanlik haqiqatan kerak bo'lganda qo'llanadi. Baholash paytida eng foydali bo'lim Consequences: foydani emas, narxni o'qing. Yetti qadamni ketma-ketlikdan chiqarib, to'g'ridan-to'g'ri kod misolidan ko'chirib yozish ham tipik xato: Applicability o'qilmagani uchun pattern noto'g'ri kontekstda paydo bo'ladi.
+
+```text
+Tanlash: oltita kirish yo'li (GoF 1.7, 28-29-bet)
+  1. Patternlar qanday dizayn muammosini hal qiladi
+  2. Intent qatorlarini o'qish + tasnif bilan filtrlash
+  3. Patternlar munosabatlari grafigini o'rganish
+  4. Bir maqsadli patternlarni solishtirish
+  5. Qayta dizayn sabablaridan kirish
+  6. Nimani o'zgaruvchan qoldirmoqchiligingizdan kirish
+
+Qo'llash: yetti qadam (GoF 1.8, 29 va 31-bet)
+  1. Yozuvni bir o'qish (Applicability + Consequences)
+  2. Structure, Participants, Collaborations
+  3. Kod misoli
+  4. Ishtirokchilarga domen nomi, rol nomda qolsin
+  5. Sinflarni e'lon qilish, mavjud sinflarga ta'sirni aniqlash
+  6. Metodlarga ilovaga xos izchil nom
+  7. Mas'uliyat va aloqalarni amalga oshirish
+```
+
+## 3.26 Patternlar orasidagi munosabatlar (Pattern Relationships and Related Patterns)
+
+**Tavsif:** Pattern yolg'iz yashamaydi. GoF katalogidagi har yozuvning oxirgi bo'limi "Related Patterns" deb ataladi va u uch xil savolga javob beradi: qaysi patternlar bunga yaqin, ular orasidagi muhim farq nima, va bu pattern qaysi patternlar bilan birga ishlatiladi. Butun katalogni shu bo'limlar bo'yicha bitta grafikka yig'ish ham mumkin va GoF buni alohida rasmda beradi. Munosabatlar bir necha turga bo'linadi. Birga ishlatiladiganlar: Composite ko'pincha Iterator yoki Visitor bilan keladi, Command zanjiri Composite bilan makro-buyruqqa aylanadi, Flyweight bo'lishiladigan obyektlarni Factory orqali tarqatadi. Muqobillar: Prototype ko'pincha Abstract Factory o'rnini bosadi, Strategy sinf qamrovidagi Template Method ning obyekt qamrovidagi javobi, State va Strategy bir xil tuzilishga ega lekin maqsadi boshqa. Tuzilishi o'xshash, maqsadi boshqalar: Composite va Decorator diagrammasi deyarli bir xil, lekin biri butun-qism ierarxiyasi uchun, ikkinchisi mas'uliyat qo'shish uchun; Proxy ham Decorator ga o'xshaydi, ammo u kirishni boshqaradi, xulq qo'shmaydi. Amalda shu farqlarni bilish patternni to'g'ri tanlashdan ko'ra ko'proq foyda beradi: review paytida eng ko'p uchraydigan savol "bu Decorator mi yoki Proxy mi" va javob maqsaddan chiqadi, tuzilishdan emas.
+
+**Spring'da qayerda uchraydi:** Spring'da patternlar deyarli har doim guruhda keladi. `DispatcherServlet` Front Controller bo'lib, `HandlerMapping` strategiyalarini, `HandlerAdapter` adapterlarini va `HandlerInterceptor` zanjirini birga ishlatadi. `SecurityFilterChain` Chain of Responsibility bo'lib, har filtri ichida Strategy (`AuthenticationProvider`, `AuthorizationManager`) ishlaydi. `CacheInterceptor` Proxy ichida Template Method yuritadi va `CacheResolver` strategiyasini chaqiradi. `JdbcTemplate` Template Method va Strategy (`RowMapper`) ni birga beradi. `BeanFactory` Abstract Factory, `@Bean` Factory Method, singleton scope Singleton va `BeanDefinitionRegistry` Registry: to'rttasi bitta mexanizmning qismi.
+
+**Qo'llanish keyslari:**
+- Patternni tanlashdan oldin yaqin patternlar bilan solishtirish: Decorator, Proxy va Adapter uchligi eng ko'p aralashtiriladi.
+- Mavjud kodga nom berishda maqsadni aniqlab olish: kirishni boshqarsa Proxy, xulq qo'shsa Decorator, interfeysni moslashtirsa Adapter.
+- Composite ierarxiyasiga yangi amal qo'shish kerak bo'lganda Visitor ni, elementlarni kezish kerak bo'lganda Iterator ni ulash.
+- Bir patterndan ikkinchisiga o'tish yo'lini rejalashtirish: Template Method ierarxiyasini Strategy ga ko'chirish.
+- Modul hujjatida ishlatilgan patternlar ro'yxatini va ularning bir-biriga ulanishini yozib qo'yish.
+
+**Ehtiyot bo'ling:** Tuzilish o'xshashligini pattern aynanligi deb o'qish eng ko'p uchraydigan xato: UML diagrammasi bir xil bo'lishi mumkin, lekin niyat boshqa bo'lsa nom ham boshqa bo'ladi va noto'g'ri nom keyingi o'quvchini chalg'itadi. Ikkinchi tuzoq - patternlarni zanjirga ulab, oqimni kuzatib bo'lmaydigan qilish: Proxy ichida Decorator, uning ichida Chain of Responsibility bo'lsa, stack trace o'qilmaydi va xatolik qaysi qatlamdan kelganini aniqlash qiyin. Uchinchisi - munosabatlar grafigini "pattern qancha ko'p bo'lsa shuncha yaxshi" deb tushunish.
+
+```text
+Eng ko'p aralashtiriladigan uchlik: maqsad bo'yicha ajratish
+
+  Adapter    interfeysni MOSLASHTIRADI
+             mijoz kutgan tur boshqa, asl tur o'zgarmaydi
+             -> interfeys boshqa, xulq o'sha
+
+  Decorator  mas'uliyat QO'SHADI
+             bir xil interfeys, zanjir bo'lib ketma-ket ulanadi
+             -> interfeys o'sha, xulq boshqa
+
+  Proxy      kirishni BOSHQARADI
+             bir xil interfeys, lekin kechiktirish, kesh, huquq,
+             masofaviy chaqiruv
+             -> interfeys o'sha, xulq o'sha, kirish shartli
+
+Savol tartibi: interfeys o'zgardimi? xulq o'zgardimi? kirish
+cheklandimi? Uchinchi savolga "ha" bo'lsa, bu Proxy.
+```
+
+## 3.27 Kompozit patternlar: patternlardan yasalgan pattern (Compound Patterns)
+
+**Tavsif:** Patternlar birga ishlatilganda ko'pincha barqaror guruh hosil qiladi, va agar o'sha guruh ko'p masalada qayta ishlatilsa, u kompozit pattern (compound pattern) deb ataladi. Ta'rif aniq: bir nechta patternni birga qo'yish o'zi hali kompozit pattern emas, u faqat bitta yechim; kompozit pattern bo'lishi uchun guruh ko'p masalada qo'llanadigan umumiy yechim bo'lishi kerak. Eng mashhur misoli MVC. MVC uch roldan iborat: Model ma'lumot, holat va ilova mantiqini saqlaydi; View modelni foydalanuvchiga ko'rsatadi; Controller kirishni qabul qilib, uni model ustidagi amalga tarjima qiladi. Lekin MVC ni rollar orqali o'rganish qiyin, patternlar orqali esa oson, chunki u uchta patternning birikmasi. Model View va Controller'ni Observer orqali xabardor qiladi: model o'zgarganda obunachilarga xabar beradi va modelning o'zi View yoki Controller'ga bog'liq emas, shuning uchun bitta modelga bir nechta View ulash mumkin. View va Controller esa Strategy munosabatida: Controller View uchun strategiya bo'lib, interfeys xulqini belgilaydi va boshqasiga almashtirilishi mumkin; View faqat tasvir bilan shug'ullanadi. View ning o'z ichida Composite ishlaydi: yuqori darajadagi komponent boshqa komponentlarni, ular yana boshqalarini saqlaydi. MVC yana Factory Method (View uchun standart Controller sinfini belgilash) va Decorator (View ga scroll qo'shish) dan foydalanadi, lekin asosiy uchligi Observer, Composite va Strategy. MVC ning web va Spring'dagi shakli alohida yozilgan (qarang: [6-bo'lim](06-web-va-taqdimot-qatlami-patternlari.md#61-model-korinish-boshqaruvchi-model-view-controller-mvc), Model-Ko'rinish-Boshqaruvchi).
+
+**Spring'da qayerda uchraydi:** Spring'da ham barqaror pattern guruhlari bor va ularni shu nuqtadan ko'rish osonlashtiradi. `DispatcherServlet` atrofidagi guruh: Front Controller + Strategy (`HandlerMapping`, `ViewResolver`) + Adapter (`HandlerAdapter`) + Chain of Responsibility (`HandlerInterceptor`). Spring Modulith'dagi guruh: Observer (`@ApplicationModuleListener`) + Transactional Outbox (`EventPublicationRegistry`) + Retry. Resilience guruhi: Decorator (`@CircuitBreaker` proxy) + Strategy (fallback) + Observer (holat o'zgarishi event'lari). Spring Batch'dagi guruh: Template Method (`Tasklet`, `Step`) + Strategy (`ItemReader`, `ItemProcessor`, `ItemWriter`) + Composite (`CompositeItemWriter`). Har guruh bitta masala turi uchun qayta-qayta ishlatiladi, demak ular kompozit pattern mezoniga javob beradi.
+
+**Qo'llanish keyslari:**
+- Yangi modul loyihalashda bitta pattern emas, mos guruhni tanlash: masalan event + outbox + retry uchligi.
+- MVC ni o'rgatishda yoki hujjatlashtirishda uni rollar orqali emas, uchta pattern orqali tushuntirish.
+- Mavjud tizimdagi barqaror guruhni aniqlab, uni ichki pattern sifatida nomlash va qayta ishlatish.
+- Ichki framework qurishda guruhni bitta API ortiga yashirish va foydalanuvchiga faqat kengaytirish nuqtalarini ochish.
+- Review paytida guruhning to'liqligini tekshirish: Observer bor, lekin outbox yo'q bo'lsa xabar yo'qolishi mumkin.
+
+**Ehtiyot bo'ling:** Bir nechta patternni bitta yechimda ishlatganda darhol "kompozit pattern yasadim" deb o'ylash xato: u umumiy, ko'p masalada qayta ishlatiladigan bo'lmaguncha oddiy dizayn qarori. Guruhlar narxi qo'shiladi, foydasi esa qo'shilmaydi: to'rt patterndan iborat guruh to'rt barobar moslashuvchanlik bermaydi, lekin to'rt barobar bilvosita qatlam beradi. MVC'da eng tipik buzilish - Controller ichiga biznes mantiq va ma'lumotlarga kirishni joylash: shunda Strategy munosabati yo'qoladi va View model bilan qattiq bog'lanadi. Yana bir buzilish - Model'ni View va Controller'dan xabardor qilish: Observer'ning butun ma'nosi modelning ulardan mustaqil bo'lishida.
+
+```text
+MVC uchta patterndan yasalgan (HFDP 12-bob, 526-527-bet)
+
+  Model  --(Observer)-->  View, Controller
+         model holati o'zgarsa obunachilarga xabar beradi.
+         Model View va Controller'ni bilmaydi.
+
+  View   --(Strategy)-->  Controller
+         Controller View uchun strategiya: interfeys xulqini
+         belgilaydi va almashtirilishi mumkin.
+
+  View   --(Composite)--> View, View, ...
+         ko'rinish komponentlar daraxti: yuqori daraja ichkilarini
+         saqlaydi va ularga bir xil munosabatda bo'ladi.
+
+Web'da shakl o'zgaradi (so'rov asosidagi "Model 2"), lekin
+uchta munosabat saqlanadi.
+```
+
+## 3.28 Har pattern nimani o'zgaruvchan qiladi (What Each Pattern Lets You Vary)
+
+**Tavsif:** Pattern tanlashning eng qisqa yo'li - savolni teskari qo'yish: nima o'zgarishi mumkin deb emas, nimani qayta dizayn qilmasdan o'zgartirishni xohlayman deb so'rash. GoF butun katalogni aynan shu kesimda bitta jadvalga sig'diradi: har pattern yonida u mustaqil o'zgartirishga imkon beradigan aspekt yozilgan. Yaratuvchi patternlar yaratishning turli qirralarini ochadi: Abstract Factory mahsulot obyektlari oilasini, Builder kompozit obyekt qanday qurilishini, Factory Method yaratiladigan obyektning subclass'ini, Prototype yaratiladigan obyektning sinfini, Singleton esa sinfning yagona nusxasini. Strukturaviy patternlar tuzilish va kirishni ochadi: Adapter obyektning interfeysini, Bridge implementatsiyasini, Composite tuzilishi va kompozitsiyasini, Decorator subclass yasamasdan mas'uliyatini, Facade subsystem interfeysini, Flyweight saqlash narxini, Proxy esa obyektga qanday va qayerdan murojaat qilinishini. Xulq-atvor patternlari aloqa va algoritmni ochadi: Chain of Responsibility so'rovni bajaradigan obyektni, Command so'rov qachon va qanday bajarilishini, Interpreter tilning grammatikasi va talqinini, Iterator elementlarga qanday murojaat qilinishi va kezilishini, Mediator kim kim bilan qanday aloqa qilishini, Memento obyektdan tashqarida qanday va qachon yopiq ma'lumot saqlanishini, Observer bog'liq obyektlar soni va ularning qanday yangilanishini, State obyektning holatlarini, Strategy algoritmni, Template Method algoritm qadamlarini, Visitor esa element sinflarini o'zgartirmasdan ularga qo'llanadigan amallarni. Shu jadval "o'zgaruvchan qismni inkapsulyatsiya qilish" printsipining patternlar bo'yicha yoyilgan shakli (qarang: [26-bo'lim](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2624-ozgaruvchan-qismni-inkapsulyatsiya-qilish-encapsulate-what-varies), O'zgaruvchan qismni inkapsulyatsiya qilish).
+
+**Spring'da qayerda uchraydi:** Spring shu jadvalni konfiguratsiya darajasiga chiqaradi, shuning uchun "nimani o'zgartirmoqchiman" savoliga javob ko'pincha tayyor kengaytirish nuqtasi bo'lib chiqadi. Algoritmni almashtirish kerak bo'lsa `Converter`, `RowMapper`, `AuthorizationManager` yoki `CacheResolver` bean'i; mas'uliyat qo'shish kerak bo'lsa AOP aspekti yoki `BeanPostProcessor`; obyektga kirishni boshqarish kerak bo'lsa `@Cacheable`, `@Transactional`, `LazyConnectionDataSourceProxy`; mahsulot oilasini almashtirish kerak bo'lsa `@Profile` bilan `@Configuration` sinfi; so'rovni kim bajarishini o'zgartirish kerak bo'lsa `SecurityFilterChain` yoki `HandlerInterceptor` tartibi; holatlar to'plamini o'zgartirish kerak bo'lsa Spring Statemachine konfiguratsiyasi.
+
+**Qo'llanish keyslari:**
+- Masalani "nimani almashtirmoqchiman" shaklida yozib, shu aspekt bo'yicha patternni topish.
+- Review'da taklif qilinayotgan patterndan "bu nimani mustaqil o'zgartirishga imkon beradi" deb so'rash.
+- Bir nechta pattern mos kelganda ularning o'zgaruvchan aspektini solishtirib tanlash: Strategy algoritmni, Template Method esa qadamlarni ochadi.
+- Kutubxona API'sini loyihalashda ochiladigan aspektlarni ongli sanab chiqish va qolganini yopiq qoldirish.
+- Kodda pattern bor, lekin hech narsa o'zgarmayotgan joylarni topib, ortiqcha qatlamni olib tashlash.
+
+**Ehtiyot bo'ling:** Jadvaldan "har aspektni ochib qo'yish kerak" degan xulosa chiqarmang: ochilgan har aspekt bilvosita qatlam, konfiguratsiya va test yuki. Ikkinchi xato - aspektni noto'g'ri tanlash: algoritmning butunini almashtirish kerak bo'lsa Strategy, faqat ayrim qadamlarini almashtirish kerak bo'lsa Template Method, va ikkisini aralashtirish keraksiz ierarxiya beradi. Uchinchisi - o'zgaruvchan aspekt deklaratsiya darajasida qolib, amalda bitta implementatsiya bilan yashashi: interfeysning bitta implementatsiyasi yillar davomida o'zgarmasa, u abstraksiya emas, ortiqcha fayl.
+
+```text
+"Nimani o'zgartirmoqchiman" -> pattern (GoF Table 1.2, 30-bet)
+
+  mahsulot obyektlari oilasi        Abstract Factory
+  kompozit obyekt qanday qurilishi  Builder
+  yaratiladigan obyekt subclass'i   Factory Method
+  yaratiladigan obyekt sinfi        Prototype
+  sinfning yagona nusxasi           Singleton
+  obyekt interfeysi                 Adapter
+  obyekt implementatsiyasi          Bridge
+  obyekt tuzilishi va kompozitsiyasi Composite
+  mas'uliyat (subclass yasamasdan)  Decorator
+  subsystem interfeysi              Facade
+  obyektlarni saqlash narxi         Flyweight
+  obyektga kirish va joylashuvi     Proxy
+  so'rovni bajaradigan obyekt       Chain of Responsibility
+  so'rov qachon va qanday bajariladi Command
+  grammatika va talqin              Interpreter
+  elementlarga murojaat va kezish   Iterator
+  kim kim bilan qanday aloqa qiladi Mediator
+  tashqarida saqlanadigan yopiq holat Memento
+  bog'liq obyektlar soni va yangilanishi Observer
+  obyekt holatlari                  State
+  algoritm                          Strategy
+  algoritm qadamlari                Template Method
+  sinfni o'zgartirmasdan qo'shiladigan amal Visitor
+```
+
+## 3.29 Amalda qo'llash
 
 - [ ] `switch` yoki `if/else if` zanjiri bilan algoritm tanlaydigan metodlarni toping va har birini Strategy yoki `Map<Enum, Handler>` registriga o'tkazish rejasini yozing.
 - [ ] Domen holatini `String` yoki `int` bilan saqlaydigan maydonlarni `enum` ga o'tkazing va ruxsat etilgan o'tishlarni aniq ro'yxat qilib yozing.
@@ -809,6 +994,28 @@ public class DiagnosisEngine {
 - [ ] Resursni ochib-yopadigan takrorlanuvchi `try` bloklarini qidirib, Execute Around yoki `Template` sinfiga ajratish nomzodlarini belgilang.
 - [ ] Zanjir shaklidagi ishlov (validatsiya, boyitish, transformatsiya) joylarini toping va ularni aniq nomli bosqichlarga ajratilgan Pipeline qilib yozing.
 - [ ] Har bir Observer yoki listener uchun savolga javob yozing: u sinxronmi, xato bersa chaqiruvchi nima qiladi.
+
+## Manbalar
+
+- Freeman/Robson, *Head First Design Patterns* 2nd, 1-bob - Strategy va o'zgaruvchan qismni inkapsulyatsiya qilish
+- Freeman/Robson, *Head First Design Patterns* 2nd, 2-bob - Observer
+- Freeman/Robson, *Head First Design Patterns* 2nd, 6-bob - Command
+- Freeman/Robson, *Head First Design Patterns* 2nd, 8-bob - Template Method
+- Freeman/Robson, *Head First Design Patterns* 2nd, 9-bob - Iterator
+- Freeman/Robson, *Head First Design Patterns* 2nd, 10-bob - State va uning Strategy dan farqi
+- Freeman/Robson, *Head First Design Patterns* 2nd, 14-bob - qolgan patternlar: Bridge, Chain of Responsibility, Flyweight, Interpreter, Mediator, Memento, Prototype, Visitor
+- [Spring Framework, Spring Expression Language (SpEL)](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/spring-expression/src/main/java/org/springframework/expression/spel/support/SimpleEvaluationContext.java) - ishonchsiz ifoda uchun cheklangan kontekst
+- [Java API, `Iterator`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Iterator.html) - iteratsiya vaqtida o'zgartirishda `ConcurrentModificationException`
+- [JEP 441: Pattern Matching for switch](https://openjdk.org/jeps/441) - `sealed` ierarxiya ustida to'liqlik tekshiruvi
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns: Elements of Reusable Object-Oriented Software*, Addison-Wesley, 1995, 1.6-bo'lim (23-25-bet) - qayta dizaynni majburlaydigan sakkizta sabab va har sababga qarshi turadigan patternlar ro'yxati
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, 1.6-bo'lim (25-28-bet) - ilova, kutubxona (toolkit) va framework uchun moslashuvchanlik narxining farqi
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, 1.7-bo'lim (28-29-bet) - patternni tanlashning oltita kirish yo'li
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, 1.8-bo'lim (29 va 31-bet) - patternni qo'llashning yetti qadami va patternni tanlab ishlatish ogohlantirishi
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Table 1.2 (30-bet) - har pattern mustaqil o'zgartirishga imkon beradigan aspekt
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, 1.5-bo'lim va Figure 1.1 (10 va 12-bet) - patternlar birga ishlatilishi, muqobilligi va o'xshash tuzilishi; `Related Patterns` bo'limlari asosidagi munosabatlar grafigi
+- Freeman/Robson, *Head First Design Patterns* 2nd, 12-bob (494-bet) - compound pattern ta'rifi: bir nechta patternni ko'p masalada qayta ishlatiladigan umumiy yechimga birlashtirish
+- Freeman/Robson, *Head First Design Patterns* 2nd, 12-bob (526-527-bet) - MVC compound pattern sifatida: Observer, Strategy va Composite munosabatlari
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, 1.2-bo'lim (4-6-bet) - MVC ichidagi Observer, Composite va Strategy, hamda Factory Method bilan Decorator ning qo'shimcha roli
 
 ---
 

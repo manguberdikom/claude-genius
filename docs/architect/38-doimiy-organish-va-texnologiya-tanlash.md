@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 38. Doimiy o'rganish va texnologiya tanlash (Continuous Learning and Technology Choice)
 
@@ -30,6 +30,8 @@
 Arxitektorning bilimi ikki xil eskiradi. Birinchisi tezda chiriydi: kutubxona versiyasi, konfiguratsiya kaliti, bulut panelining joylashuvi. Ikkinchisi o'n yil yashaydi: tranzaksiya izolyatsiyasi, xotira modeli, indeks tanlash mexanikasi. Bu bob shu ikki qatlamni ajratish, yangi texnologiyani sovuq boshda baholash va o'rganishni chorakka bo'lingan o'lchovli rejaga aylantirish haqida.
 
 ## 38.1 Nimani chuqur o'rganish kerak va nimani yuzaki bilish yetarli
+
+Richards va Ford bilimni uch qatlamli piramida sifatida ko'rsatadi: bilganingiz, bilmasligingizni bilganingiz, va bilmasligingizni ham bilmaganingiz. Piramidaning yuqori qismi texnik chuqurlik (technical depth), o'rta qatlamning pastga qancha kirib borishi esa texnik kenglik (technical breadth). Ularning xulosasi aniq: developer uchun chuqurlik, arxitektor uchun kenglik muhimroq, chunki arxitektor imkoniyatni cheklovga moslashtirar ekan, bitta yechimni chuqur bilgandan ko'ra beshta yechim borligini bilishi foydaliroq. Shu almashuv ongli bo'lishi kerak, aks holda ikki disfunksiyadan biri chiqadi: hamma sohada ekspertlikni saqlashga urinib hech qayerda ulgurmaslik, yoki eskirgan bilimni hamon zamonaviy deb hisoblash (Fundamentals of Software Architecture, 2-bob).
 
 Chuqurlik darajasini ehtimollik bilan tanlang. Agar mexanika buzilganda production incident bo'lsa va uni siz tuzatishingiz kerak bo'lsa, u chuqur bilim. Agar hujjatni ochib 20 daqiqada javob topsa bo'lsa, u yuzaki bilim.
 
@@ -63,17 +65,19 @@ Yuzaki bilim uchun boshqa strategiya: tafsilot o'rniga "qaerga qarash kerak" ni 
 
 ## 38.2 Uzoq yashaydigan bilim va tez eskiradigan bilim farqi
 
-Standart va protokol darajasidagi bilim eng uzoq yashaydi. SQL'ning `SERIALIZABLE` semantikasi 1992 yildan beri o'zgarmagan, HTTP keshlash sarlavhalari 1999 yildan beri o'z kuchida.
+Standart va protokol darajasidagi bilim eng uzoq yashaydi: SQL izolyatsiya darajalarining semantikasi, HTTP keshlash sarlavhalarining ma'nosi, Jakarta Persistence spetsifikatsiyasidagi `flush` qoidasi.
 
-Keyingi qatlam: implementatsiya mexanikasi. PostgreSQL MVCC va vacuum, Hibernate dirty checking, JVM escape analysis. Bu bilim 5 yildan 10 yilgacha yashaydi.
+Keyingi qatlam: implementatsiya mexanikasi. PostgreSQL MVCC va vacuum, Hibernate dirty checking, JVM escape analysis. McConnell texnik muhitning aniq xususiyatlari besh yildan o'n yilgacha oraliqda o'zgarib turishini aytadi (Code Complete, 2-nashr, 33.3, 822-bet), ya'ni bu qatlam ham abadiy emas, faqat yuqorisidan sekin eskiradi.
 
 Eng tez eskiradigani: API sirti va konfiguratsiya nomi. `WebSecurityConfigurerAdapter` Spring Security 5.7 da deprecated bo'ldi va 6.0 da olib tashlandi. Konfiguratsiya nomini yodlash eng past daromadli investitsiya.
 
-Amaliy qoida: o'qish vaqtingizning 60 foizini mexanikaga, 30 foizini joriy stack'ning reliz o'zgarishlariga, 10 foizini yangi texnologiyalarni kuzatishga ajrating.
+Taqsimot uchun tasdiqlangan foiz yo'q, lekin ustuvorlik aniq. McConnell raqamni shunday qo'yadi: raqobatli bozorda bugun ishingiz uchun bilishingiz kerak bo'lgan narsaning yarmi uch yildan keyin eskiradi, va o'rganmay qolgan odam dinozavrga aylanadi (Code Complete, 2-nashr, 33.3, 822-bet). Ford va sheriklari esa ekotizim o'zini bo'lak-bo'lak almashtirib turishini ko'rsatib, shu sababli kitobni implementatsiya tafsilotiga emas, qaror qabul qilish va trade-off tahliliga qaratadi (The Hard Parts, 1-bob, 2-3-bet). Ikki manbadan chiqadigan xulosa: o'qish vaqtining kattasi mexanikaga va qaror usuliga ketadi, kichik qismi joriy stack relizlariga va kuzatuvga.
 
 ## 38.3 Birlamchi manbalar: spetsifikatsiya, hujjat, manba kod, reliz eslatmasi
 
 Blog postidan javob izlash odati arxitektorni sekin zaharlaydi. Blog ikkinchi qo'l, bitta versiyaga bog'langan va ko'pincha noto'g'ri. Birlamchi manbalar ketma-ketligini odat qiling.
+
+Ikki kitob bu nuqtada bir xil gapni aytadi, hatto bir xil jumla bilan: arxitektura - Google'dan javob topib bo'lmaydigan narsa, shuning uchun javob birlamchi manbadan va o'z o'lchovingizdan chiqadi (Fundamentals of Software Architecture, 2-bob; The Hard Parts, 2-bob, 26-bet).
 
 Birinchi: rasmiy reference hujjat. Spring hujjatlari versiya bo'yicha ajratilgan, URL ichida versiya raqami bor. Har doim o'zingiz ishlatadigan versiyaning hujjatini oching, `current` ni emas.
 
@@ -101,15 +105,17 @@ Manba kodni o'qishni odat qiling. Spring'da annotatsiya ortidagi `BeanPostProces
 
 ## 38.4 Yangi kutubxonani baholash mezonlari: qo'llab-quvvatlash, bog'liqlik, chiqish yo'li
 
-Kutubxona tanlashni yozma mezon bilan qiling. Men yetti mezondan foydalanaman va har biriga raqam yoki aniq javob talab qilaman.
+Birinchi savol kutubxona tanlashdan oldin keladi: bu ish platformaning o'zida bormi. JDK va Spring da bor narsani qayta yozish eng qimmat yo'l, chunki yozilgan kod sizning qarzingiz bo'ladi, platformadagisi esa mutaxassislar tomonidan ushlab turiladi va har relizda tezlashadi. Shu sababli standart kutubxonaning yangi qo'shilgan API larini kuzatib borish texnologiya tanlashning bir qismi: `Files`, `HttpClient`, `Random.ints`, `Objects`, `Collectors` va `java.time` da ko'p ehtiyoj allaqachon qoplangan (Joshua Bloch, Effective Java, 3-nashr, Item 59, 267-bet).
 
-Birinchi: tiriklik. Oxirgi 12 oyda kamida 4 ta reliz bo'ldimi, loyihani bitta odam ushlab turadimi.
+Kutubxona tanlashni yozma mezon bilan qiling. Quyidagi yetti mezon shu korpusning amaliy ro'yxati, kitobdagi taksonomiya emas; har biriga raqam yoki aniq javob talab qilinadi.
 
-Ikkinchi: bog'liqlik og'irligi. Bitta JSON yordamchisi 14 ta tranzitiv jar olib kelsa, bu yomon signal.
+Birinchi: tiriklik. Oxirgi bir yilda relizlar muntazam chiqdimi, loyihani bitta odam ushlab turadimi.
+
+Ikkinchi: bog'liqlik og'irligi. Bitta kichik JSON yordamchisi o'zi bilan uzun tranzitiv jar ro'yxatini olib kelsa, bu yomon signal.
 
 Uchinchi: stack bilan to'qnashuv. Kutubxona Jackson yoki Netty ning boshqa major versiyasini talab qilsa, siz versiya urushiga kirasiz.
 
-To'rtinchi: chiqish yo'li. Bir yildan keyin voz kechsangiz, qancha fayl o'zgaradi. Javob "beshdan kam" bo'lishi uchun interface ortiga yashiring.
+To'rtinchi: chiqish yo'li. Bir yildan keyin voz kechsangiz, qancha fayl o'zgaradi. Javob kichik son bo'lishi uchun kutubxonani interface ortiga yashiring.
 
 ```java
 // Chiqish yo'li: tashqi kutubxona faqat bitta adapter ichida ko'rinadi.
@@ -142,7 +148,7 @@ Beshinchi: litsenziya, chunki AGPL kutubxonasi yopiq mahsulotga kirmaydi. Oltinc
 
 Bog'liqlik qo'shganda siz kod emas, majburiyat olasiz. Har bir jar CVE yuzangizni, build vaqtini, startup vaqtini va yangilash ishini oshiradi.
 
-Raqamlar bilan tushunarli bo'ladi. Oddiy Spring Boot web ilovasi taxminan 50 dan 70 ta jar bilan keladi, har bir yangi starter yana 5 dan 15 ta qo'shadi. 200 jar'dan oshgan ilovada yiliga taxminan 15 dan 30 ta CVE e'tiboringizni so'raydi, va ularning ko'pi sizga tegishli bo'lmasa ham, har birini ko'rib chiqish kerak. Startup ham sekinlashadi: har 50 ta qo'shimcha jar classpath skanerlashga taxminan 100 dan 300 millisekund qo'shadi.
+Raqamni taxmin qilmang, o'zingizning build'ingizdan oling. `mvn dependency:list` jar sonini beradi, `mvn dependency:tree` qaysi starter qancha tranzitiv bog'liqlik keltirganini ko'rsatadi, startup ta'sirini esa bog'liqlik qo'shilishidan oldin va keyin bir xil mashinada o'lchab solishtirasiz. Shu uch o'lchov sizning kontekstingizda haqiqiy; boshqa loyihaning o'rtacha raqami emas.
 
 Yangilashni avtomatlashtiring, aks holda u bo'lmaydi.
 
@@ -175,10 +181,10 @@ Qoida: bog'liqlik qo'shish PR'ida uchta savolga yozma javob bo'lsin. Qanday muam
 
 Har bir moda texnologiya haqiqiy muammoni hal qiladi, lekin odatda sizning muammoyingizni emas. Ikki savoldan boshlang: bu texnologiya qaysi og'riqni yo'q qiladi, va shu og'riq sizning metrikangizda ko'rinadimi.
 
-Kafka'ning haqiqiy kuchi yuqori o'tkazuvchanlik va qayta o'qiladigan log. Agar sizda kuniga 50 ming hodisa bo'lsa, PostgreSQL jadvali va `SELECT ... FOR UPDATE SKIP LOCKED` buni osongina ko'taradi.
+Kafka'ning haqiqiy kuchi yuqori o'tkazuvchanlik va qayta o'qiladigan log. Agar hodisa oqimingiz past bo'lsa, PostgreSQL jadvali va `SELECT ... FOR UPDATE SKIP LOCKED` bilan yasalgan navbat yetishi mumkin. "Past" nimani bildirishini o'zingizning hodisa sonini va kechikish talabini o'lchab aytasiz: umumiy chegara yo'q.
 
 ```sql
--- PostgreSQL navbat taxminan 2000 msg/s ko'taradi, SKIP LOCKED consumer'larni to'qnashtirmaydi.
+-- SKIP LOCKED consumer'larni bir-biriga to'qnashtirmaydi; o'tkazuvchanlikni o'z muhitingizda o'lchang.
 CREATE TABLE buyurtma_hodisasi (
     id          bigserial PRIMARY KEY,
     holat       text NOT NULL DEFAULT 'YANGI',
@@ -202,9 +208,11 @@ FROM olingan o WHERE b.id = o.id
 RETURNING b.id, b.yuklama;
 ```
 
-Reactive stack uchun ham shu mantiq. WebFlux ko'p ming parallel ulanishda thread tejaydi, lekin Java 21 dan keyin virtual thread shu muammoning katta qismini oddiy blokirovka qiluvchi kod bilan hal qiladi. Agar servisingiz 500 ta parallel so'rovdan oshmasa, reactive sizga faqat debug qiyinchiligini beradi.
+Reactive stack uchun ham shu mantiq. WebFlux ko'p ming parallel ulanishda thread tejaydi, lekin Java 21 dan keyin virtual thread shu muammoning katta qismini oddiy blokirovka qiluvchi kod bilan hal qiladi. Parallel so'rov soningiz past bo'lsa, reactive sizga asosan debug qiyinchiligini beradi; chegarani metrikadan oling, taxmindan emas.
 
 Baholashni yozma shaklga soling: muammo, joriy metrika, da'vo, o'lchov rejasi, voz kechish sharti. Agar "joriy metrika" qatori bo'sh bo'lsa, bu moda, muammo emas.
+
+Ford va sheriklari shu yondashuvni ikki qoida bilan mustahkamlaydi. Birinchisi kitobning boshlanish nuqtasi: haqiqiy murakkab tizimlarga qo'llanadigan universal "best practice" yo'q, shuning uchun har qarorda trade-off o'z kontekstida tahlil qilinadi (The Hard Parts, 2-bob, 26-bet). Ikkinchisi "out-of-context" tuzog'i: umumiy mezonlar jadvalida g'olib chiqqan yechim kontekst qo'shilganda yutqazishi mumkin, shuning uchun qaror iterativ ravishda, aniq domen holatlarini modellashtirib tekshiriladi (The Hard Parts, 15-bob, 405-407-bet).
 
 ## 38.7 Qurish yoki sotib olish qarori va mezonlari
 
@@ -216,13 +224,15 @@ Agar komponent hamma uchun bir xil bo'lsa, tayyorini oling. Autentifikatsiya, em
 
 Chegara holat: komponent standart, lekin talablaringiz g'alati. Tayyorini oling, interface ortiga yashiring, g'alati qismni o'zingiz yozing.
 
+Qarorni biznes egasiga tushuntirganda butun jadvalni ko'rsatmaslik kerak. Ford va sheriklari buni alohida tavsiya qilib qo'yadi: yig'ilgan hamma dalilni yoyish o'rniga trade-off tahlilini bir nechta asosiy nuqtaga siqish kerak, chunki texnik tafsilot biznes tomoniga qaror qo'shmaydi, faqat diqqatni so'raydi (The Hard Parts, 15-bob, 409-410-bet).
+
 | Mezon | Qurish foydasiga | Sotib olish foydasiga |
 |---|---|---|
 | Biznes farqlovchisi | Ha, mantiq bizga xos | Yo'q, hamma bir xil qiladi |
 | Talablarning barqarorligi | Tez o'zgaradi, nazorat kerak | Yillar davomida o'zgarmaydi |
-| Jamoa ekspertizasi | Bizda shu sohada chuqur bilim bor | Bilim yo'q, o'rganish 6 oy |
-| Ishga tushirish muddati | 3 oy bor | 2 hafta bor |
-| Uch yillik narx | Saqlash yillik 0.2 FTE dan kam | Litsenziya ishlab chiqishdan arzon |
+| Jamoa ekspertizasi | Bizda shu sohada chuqur bilim bor | Bilim yo'q, o'rganish uzoq cho'ziladi |
+| Ishga tushirish muddati | Muddat yetarli | Muddat juda qisqa |
+| Uch yillik narx | Saqlash yuki kichik va o'lchangan | Litsenziya ishlab chiqishdan arzon |
 | Muvofiqlik talabi | Audit izini o'zimiz nazorat qilamiz | Vendor sertifikatlangan |
 | Chiqish narxi | Kod bizda, chiqish shart emas | Adapter ortida, ko'chish mumkin |
 
@@ -230,11 +240,13 @@ Chegara holat: komponent standart, lekin talablaringiz g'alati. Tayyorini oling,
 
 Tajribani kayfiyatga qoldirmang, uni sprintga element qilib kiriting. Uch format ishlaydi.
 
-Spike: vaqt chegarasi qat'iy, odatda 2 kundan 3 kungacha. Savol bitta va yozma. Natija kod emas, balki qaror va o'lchov. Spike kodi production'ga kirmasligini oldindan aytib qo'ying.
+Spike: vaqt chegarasi qat'iy va oldindan yozilgan. Savol bitta va yozma. Natija kod emas, balki qaror va o'lchov.
 
 Ichki loyiha: past xatarli haqiqiy servisda sinash, masalan ichki hisobot generatori. U buzilsa mijoz ko'rmaydi, lekin siz real yuk va real deploy jarayonini ko'rasiz.
 
-O'lchovli tajriba: production'da, lekin trafikning kichik qismida. Yangi kesh strategiyasini 5 foiz so'rovga yoqib, latency taqsimotini solishtirish.
+O'lchovli tajriba: production'da, lekin trafikning kichik qismida. Yangi kesh strategiyasini so'rovlarning kichik ulushiga yoqib, latency taqsimotini solishtirish.
+
+Bu uchlik ThoughtWorks radar halqalariga mos tushadi: `assess` halqasida texnologiya spike va tadqiqot loyihasi bilan baholanadi, `trial` halqasida esa past xatarli real loyihada sinaladi (Fundamentals of Software Architecture, 24-bob). Richards va Ford yana bir ogohlantirish beradi: tashlab yuborish uchun yozilgan proof-of-concept kodi ko'pincha repozitoriyga tushib, boshqalar uchun namuna bo'lib qoladi, shuning uchun POC kodini ham production sifatida yozish kerak (2-bob). Demak "spike kodi production'ga kirmaydi" degan og'zaki kelishuvga tayanmang: spike'ni alohida branch va modulda tuting.
 
 ```java
 // Spike natijasi raqam bo'lishi kerak, taassurot emas.
@@ -265,7 +277,9 @@ Spike hujjati bir sahifadan oshmasin: savol, usul, o'lchov jadvali, qaror, voz k
 
 ## 38.9 Bilimni jamoaga tarqatish: hujjat, suhbat, namuna kod
 
-Bir kishining boshidagi bilim arxitektura xatari. Uni tarqatishning uchta formati ishlaydi.
+Bir kishining boshidagi bilim arxitektura xatari. Google'ning injenerlik amaliyoti bu xatarga nom beradi: kritik ma'lumot faqat bitta odamda bo'lsa, bu single point of failure, va u ko'pincha yaxshi niyatdan ("men o'zim qilib beraman") o'sadi. Natijasi all-or-nothing ekspertiza: bir tomonda "hammasini biladigan" bir necha odam, ikkinchi tomonda yangilar, o'rtada hech kim. Yozilgan bilim va odamdagi bilim bir-birini almashtirmaydi, to'ldiradi: hujjat butun tashkilot darajasiga ko'tariladi, odam esa javobni kontekstga moslab beradi va hujjat hali o'z kuchidami yoki yo'qligini aytadi (Software Engineering at Google, 3-bob).
+
+Uni tarqatishning uchta formati ishlaydi.
 
 Birinchi: qisqa qaror yozuvi, har bir muhim qaror uchun bir sahifa. Kontekst, variantlar, tanlangan yo'l, natijalar, voz kechish sharti. `docs/decisions/` papkasida, kod bilan birga versiyalanadi.
 
@@ -292,15 +306,19 @@ spring.jpa.properties.hibernate.order_inserts=true
 spring.jpa.properties.hibernate.jakarta.persistence.query.timeout=5000
 ```
 
-Namunani CI da test qilib turing: testlanmagan namuna olti oyda eskirib, noto'g'ri bilim tarqatadi.
+Namuna kodning teskari ta'siri ham bor. Google kitobi maqsadini tushunmasdan pattern yoki kodni ko'chirishni "parroting" anti-pattern deb ataydi: kod nima uchun kerakligi bilinmay ko'chiriladi (Software Engineering at Google, 3-bob). Shu sababli namunadagi har bir qiymat izohlanadi va namuna CI da test qilib turiladi: testlanmagan namuna tez eskirib, noto'g'ri bilim tarqatadi.
 
 ## 38.10 Xatolardan o'rganishni odat qilish va o'z qarorlarini qayta ko'rish
 
 Incident'dan keyin "kim aybdor" savoli o'rniga "qaysi signal yetishmadi" savolini bering. Birinchi savol odamni yashirishga o'rgatadi, ikkinchisi tizimni yaxshilaydi.
 
+McConnell buni bitta jumlaga siqadi: samarali programmalashning kalitlaridan biri xatoni tez qilish va har safar undan o'rganish; xato qilish gunoh emas, xatodan o'rganmaslik gunoh (Code Complete, 2-nashr, 33.3, 823-bet). U yana intellektual halollikni alohida xususiyat qilib ajratadi: xatoni darhol tan olish va bilmagan joyda ekspert bo'lib ko'rinmaslik (33.4, 826-bet). Shu odatning tashkiliy sharti psixologik xavfsizlik: bilmasligini yoki xato qilganini tan olish jazolanmasa, jamoa o'rganadi, aks holda qo'rquv madaniyati paydo bo'ladi (Software Engineering at Google, 3-bob).
+
 Har bir incident'dan uchta natija chiqsin: muammoni oldin ko'rsatadigan metrika, shu holatni qaytaradigan test, va qaror xato bo'lgan bo'lsa qaror yozuvining yangilangan versiyasi.
 
 Qarorlarni rejali qayta ko'rish odati kam uchraydi, lekin eng qimmatlisi. Har chorakda qaror papkasini oching va har biriga bitta savol bering: bugungi bilim bilan shu qarorni yana qabul qilarmidim.
+
+Qayta ko'rishning teskari xatosi ham bor. Richards va Ford "frozen caveman" anti-pattern'ini shunday ta'riflaydi: bir marta kuyib chiqqan arxitektor har bir yangi arxitekturada o'sha shaxsiy qo'rquviga qaytadi va ehtimolligi juda past bo'lgan holatni markazga qo'yadi. Shu sababli qayta ko'rishda haqiqiy texnik xatarni o'ylab topilganidan ajratish kerak (Fundamentals of Software Architecture, 2-bob).
 
 ```bash
 # Chorakda bir marta: olti oydan oshgan qarorlarni qayta ko'rishga chiqarish.
@@ -322,7 +340,9 @@ Shu ro'yxatdan chorakda eng ko'pi bilan uchtasini tanlang. Hammasini qayta ko'ri
 
 Maqsad hamma narsani o'qish emas, sizga tegadigan o'zgarishni vaqtida ko'rish.
 
-JDK tomoni. Har yarim yilda feature reliz chiqadi, LTS esa ikki yilda: Java 17, 21 va 25. Har reliz uchun faqat JEP ro'yxatini o'qing, bu 15 daqiqa. Sizga tegadigan JEP bo'lsa, to'liq matnini o'qing.
+Kuzatuvni kayfiyatga qoldirmaslik uchun Richards va Ford "20 daqiqa qoidasi" ni beradi: kuniga kamida 20 daqiqani notanish atamani o'rganishga yoki bitta mavzuni chuqurlashtirishga ajratish. Ularning aniq tavsiyasi shu 20 daqiqani tushlikka yoki kechqurunga qoldirmaslik, balki ertalab, qahvadan keyin va email'ni ochishdan OLDIN bajarish, chunki email ochilgach kun boshqa tomonga ketadi (Fundamentals of Software Architecture, 24-bob).
+
+JDK tomoni. Har yarim yilda feature reliz chiqadi, LTS esa ikki yilda: Java 17, 21 va 25. Har reliz uchun avval faqat JEP ro'yxatini o'qing. Sizga tegadigan JEP bo'lsa, to'liq matnini o'qing.
 
 Yangi JDK ni lokal mashinada sinash bir buyruq ishi.
 
@@ -374,7 +394,9 @@ PostgreSQL tomoni. Har yil bitta major reliz. Faqat "Migration to Version X" va 
 
 "Kafka o'rganaman" maqsad emas, u istak. Maqsad uchta qismdan iborat: nima qilaman, qanday isbotlayman, qancha vaqt.
 
-Chorak uchun uchta maqsaddan oshmang. Haftada 3 soat real vaqt chorakda taxminan 36 soat beradi, har maqsadga 12 soat tushadi.
+Chorak uchun uchta maqsaddan oshmaslik shu korpusning amaliy qoidasi, kitobdan olingan budjet emas. Kitoblar beradigan narsa boshqa va ikkita. Birinchisi kunlik oyna: 20 daqiqa qoidasi (38.11). Ikkinchisi shaxsiy radar, ya'ni texnologiyalarni `hold`, `assess`, `trial` va `adopt` halqalariga joylashtirib yozma holda saqlash; Richards va Ford radarning o'zidan ko'ra uni to'ldirish uchun ajratilgan vaqt muhimroq ekanini aytadi, chunki band arxitektor uchun vaqt ajratishning boshqa bahonasi bo'lmaydi (Fundamentals of Software Architecture, 24-bob).
+
+Tuzilgan o'qish rejasiga tayyor namuna ham bor: McConnell darajalarga bo'lingan o'qish rejasini beradi, kirish, praktik va professional daraja uchun alohida kitob ro'yxati bilan (Code Complete, 2-nashr, 35.4, 860-862-bet). Ro'yxatning o'zi 2004 yilgi, lekin shakli hamon ishlaydi: daraja, ro'yxat va keyingi darajaga o'tish sharti. Shu shaklni o'z stack'ingiz uchun qayta to'ldirishingiz mumkin.
 
 Yaxshi yozilgan maqsad shunday ko'rinadi. "Ombor harakatlari jadvalini oylik partition'ga bo'lish bo'yicha spike qilaman. Isbot: 50 million qatorli test ma'lumotida oylik hisobot so'rovining latency farqini o'lchagan hujjat va qaror yozuvi." Natija ham o'lchanadi, ham ishga tegishli.
 
@@ -384,14 +406,55 @@ Chorak oxirida ikki savol bering: uchta maqsaddan qanchasi isbotlangan natija bi
 
 ## 38.13 Amalda qo'llash
 
-- [ ] O'z stack'ingiz uchun "chuqur" va "yuzaki" ro'yxatini yozing: chuqur ro'yxatda 7 dan ko'p element bo'lmasin, va har biri uchun isbotlovchi test bor-yo'qligini belgilang.
-- [ ] `mvn dependency:tree` va `mvn help:effective-pom` ni ishga tushirib, 50 dan ortiq jar keltirayotgan starter yoki kutubxonani toping, uning kerakligini PR muhokamasiga qo'ying.
+- [ ] O'z stack'ingiz uchun "chuqur" va "yuzaki" ro'yxatini yozing: chuqur ro'yxat qisqa bo'lsin, va har biri uchun isbotlovchi test bor-yo'qligini belgilang.
+- [ ] `mvn dependency:tree` va `mvn help:effective-pom` ni ishga tushirib, eng ko'p tranzitiv bog'liqlik keltirayotgan starter yoki kutubxonani toping, uning kerakligini PR muhokamasiga qo'ying.
 - [ ] `.github/dependabot.yml` faylini guruhlar bilan sozlang, major yangilanishlarni `ignore` ga kiritib, haftada bir marta 30 daqiqalik "yangilash oynasi" ni kalendarga qo'ying.
-- [ ] Eng ko'p ishlatiladigan uchta tashqi kutubxona uchun chiqish yo'lini tekshiring: vendor sinfi nechta faylda import qilinganini `grep` bilan sanab, 5 dan ko'p bo'lsa adapter kiritishni rejaga qo'ying.
-- [ ] Keyingi spike'ni 3 kunlik vaqt chegarasi va bitta yozma savol bilan sprintga element qilib kiritib, natijani JMH yoki `pg_stat_statements` raqami bilan hujjatlashtiring.
+- [ ] Eng ko'p ishlatiladigan uchta tashqi kutubxona uchun chiqish yo'lini tekshiring: vendor sinfi nechta faylda import qilinganini `grep` bilan sanab, bir nechta faylda uchrasa adapter kiritishni rejaga qo'ying.
+- [ ] Keyingi spike'ni yozma vaqt chegarasi va bitta yozma savol bilan sprintga element qilib kiritib, natijani JMH yoki `pg_stat_statements` raqami bilan hujjatlashtiring.
 - [ ] `docs/decisions/` papkasini yarating yoki tartibga soling, olti oydan oshgan qarorlarni skript bilan ro'yxat qilib, ulardan uchtasini bu chorakda qayta ko'rishga belgilang.
 - [ ] Joriy LTS'dan keyingi JDK ni SDKMAN bilan o'rnatib, loyihani shu versiyada kompilyatsiya qiling, deprecated va native access ogohlantirishlarini issue sifatida yozib qo'ying.
-- [ ] Chorak uchun uchta o'rganish maqsadini yozing, har biriga o'lchanadigan isbot va 12 soatlik budjet qo'yib, ularni joriy incident ro'yxatidagi og'riq bilan bog'lang.
+- [ ] Chorak uchun uchta o'rganish maqsadini yozing, har biriga o'lchanadigan isbot va kunlik 20 daqiqalik oyna qo'yib, ularni joriy incident ro'yxatidagi og'riq bilan bog'lang.
+
+## Manbalar
+
+- Mark Richards, Neal Ford, *Fundamentals of Software Architecture*, O'Reilly, 2020,
+  1-bob - "keep current with latest trends" arxitektorning sakkizta asosiy kutilishidan biri
+- Mark Richards, Neal Ford, *Fundamentals of Software Architecture*, O'Reilly, 2020,
+  2-bob - bilim piramidasi (bilganingiz, bilmasligingizni bilganingiz, bilmasligingizni
+  bilmaganingiz), technical breadth va technical depth almashuvi, ikki disfunksiya,
+  "frozen caveman" anti-pattern, "architecture is the stuff you can't Google",
+  proof-of-concept kodini production sifatida yozish talabi
+- Mark Richards, Neal Ford, *Fundamentals of Software Architecture*, O'Reilly, 2020,
+  24-bob - 20 daqiqa qoidasi va uni ertalab email'dan oldin bajarish tavsiyasi, shaxsiy
+  radar, ThoughtWorks Technology Radar halqalari (`hold`, `assess`, `trial`, `adopt`)
+- Neal Ford, Mark Richards, Pramod Sadalage, Zhamak Dehghani, *Software Architecture:
+  The Hard Parts*, 1-nashr, O'Reilly, 2021 (copyright 2022), 1-bob (2-3-bet) - ekotizim o'zini bo'lak-bo'lak
+  almashtiradi, shuning uchun diqqat implementatsiya tafsilotida emas, qaror va
+  trade-off tahlilida
+- Neal Ford, Mark Richards, Pramod Sadalage, Zhamak Dehghani, *Software Architecture:
+  The Hard Parts*, 1-nashr, O'Reilly, 2021 (copyright 2022), 2-bob (26-bet) - murakkab tizimlar uchun universal
+  "best practice" yo'q, javob Google'dan topilmaydi
+- Neal Ford, Mark Richards, Pramod Sadalage, Zhamak Dehghani, *Software Architecture:
+  The Hard Parts*, 1-nashr, O'Reilly, 2021 (copyright 2022), 15-bob (405-410-bet) - "out-of-context" tuzog'i va
+  iterativ qaror tekshiruvi; dalil to'dasi o'rniga bir nechta asosiy nuqtani ko'rsatish
+- Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 33.3 (822-823-bet) -
+  texnik muhit xususiyatlari besh yildan o'n yilgacha oraliqda o'zgaradi, bilimning yarmi
+  uch yilda eskiradi, xatoni tez qilib undan o'rganish
+- Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 33.4 (826-bet) -
+  intellektual halollik: xatoni tan olish va bilmagan joyda ekspert bo'lib ko'rinmaslik
+- Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 35.4 (860-862-bet) -
+  darajalarga bo'lingan o'qish rejasining shakli
+- *Software Engineering at Google*, O'Reilly, 2020, 3-bob - single point of failure va
+  all-or-nothing ekspertiza, yozilgan va odamdagi bilimning bir-birini to'ldirishi,
+  "parroting" anti-pattern, psixologik xavfsizlik o'rganish sharti sifatida
+- Joshua Bloch, *Effective Java*, 3-nashr, Addison-Wesley, 2018, Item 59 (267-bet) -
+  platforma kutubxonasini bilish va ishlatish
+- ESLATMA: 38.4 dagi yetti mezon ro'yxati, 38.7 dagi qurish/sotib olish jadvali, 38.8
+  dagi uch format, 38.9 dagi uch format va 38.12 dagi "chorakda uchta maqsad" qoidasi shu
+  korpusning amaliy tavsiyalari, kitobdan olingan taksonomiya emas
+- ESLATMA: 38.3, 38.5, 38.11 va 38.13 dagi buyruqlar, `dependabot.yml` va namuna
+  `application.properties` qiymatlari shu korpusning amaliy misollari; qiymatlar o'z
+  muhitingizda o'lchanib tanlanadi
 
 ---
 

@@ -223,11 +223,23 @@ def explaining(prose, rule):
     uchun pastga tushadi (S2259: glossariy 1.00, `null` va `Optional`
     bo'limi 0.25).
 
-    Shuning uchun illustrativ uchrash sanalmaydi: kod bloki ichidagisi
-    va "masalan"/"kabi" bilan o'ralgani.
+    Shuning uchun illustrativ uchrash sanalmaydi: kod bloki ichidagisi,
+    "masalan"/"kabi" bilan o'ralgani va tekshiruv punkti (`- [ ]`)
+    ichidagisi.
+
+    Tekshiruv punkti alohida sabab bilan chiqariladi. Punkt harakatni
+    buyuradi ("hamma `finally` ni `try-with-resources` ga o'tkaz va
+    `java:S2095` ogohlantirishi yo'qolganini tekshir"), kalitni esa
+    tushuntirmaydi. Shunday punkt bobdagi yakuniy ro'yxatda turadi va
+    ko'pincha kalitning bobdagi yagona uchrashi bo'ladi, ya'ni
+    `distinct = 1` va ulush 1.00 chiqadi: S2095 da aynan shu sabab
+    tushuntirgan bo'limni (sonarqube 13.6) yakuniy ro'yxatdan (18.16)
+    pastga tushirardi.
     """
     total = 0
     for line in prose:
+        if CHECKBOX_RE.match(line):
+            continue
         start = 0
         while True:
             at = line.find(rule, start)

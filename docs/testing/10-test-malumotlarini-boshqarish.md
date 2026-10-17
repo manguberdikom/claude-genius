@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 10. Test ma'lumotlarini boshqarish (Managing Test Data)
 
@@ -301,6 +301,8 @@ Qoida: **sxema har doim Flyway orqali**, business ma'lumot repository yoki build
 | Alohida tenant/prefiks (logik ajratish) | Juda tez | Yuqori | Kod multi-tenancy'ni qo'llab-quvvatlashi shart |
 | Konteynerni qayta yaratish | Juda sekin | Maksimal | CI vaqti bir necha barobar oshadi |
 
+Tranzaksion test haqida ikki tafsilotni aniq bilish kerak. Birinchi: rollback **default xulq**, uni `@Commit` va `@Rollback` annotatsiyalari bilan deklarativ o'zgartiriladi, ya'ni "commit kerak" degan holat uchun alohida mexanizm bor. Ikkinchi: oqimni kod ichidan boshqarish uchun `TestTransaction` statik metodlari bor (`flagForRollback()`, `flagForCommit()`, tranzaksiyani tugatish va yangisini boshlash) va ular test metodida, `before` hamda `after` metodlarida ishlaydi. Shu sababli `@Transactional(rollbackFor = ...)` ni testda ishlatish ma'noga ega emas: Spring hujjatining jadvali bu atributlar uchun "yo'q, `TestTransaction.flagForRollback()` ishlat" deb yozadi.
+
 `@Transactional` testning eng ko'p uchraydigan tuzog'i: `@SpringBootTest(webEnvironment = RANDOM_PORT)` bilan birga ishlatish. Server so'rovni boshqa thread'da, boshqa tranzaksiyada bajaradi - test yozgan ma'lumotni ko'rmaydi, test esa server yozganini rollback qila olmaydi. Bu holatda tranzaksion rollback'dan voz kechib, aniq tozalash kerak.
 
 Amaliy default: **TRUNCATE strategiyasi**, bir marta yoziladigan umumiy extension bilan.
@@ -472,6 +474,12 @@ Ma'lumotni bazada qo'lda SQL bilan tuzatish - zararli amaliyot: hech kim nima o'
 - [ ] CI'da random test order bilan ishlaydigan nightly job bor va tartibga bog'liq testlar aniqlanadi.
 - [ ] Vaqtga bog'liq kod `Clock` bean orqali ishlaydi; oy/yil oxiri va kun oxiri holatlari uchun fixed Clock testlari mavjud.
 - [ ] Production ma'lumoti test muhitiga faqat subset + deterministik maskalash quvuri orqali o'tadi; QA muhitida `@Profile`-himoyalangan reset mexanizmi bor va qo'lda SQL tuzatish taqiqlangan.
+
+## Manbalar
+
+- [Spring Framework 7.0, Transaction Management in tests](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/testing/testcontext-framework/tx.adoc) - rollback ning default xulq ekani, `@Commit` va `@Rollback`, `TestTransaction` statik metodlari va `@Transactional` atributlari uchun qo'yilgan cheklovlar jadvali
+- [Spring Framework 7.0, Context Caching](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/testing/testcontext-framework/ctx-management/caching.adoc) - test ma'lumotini kontekst bilan birga keshlashning oqibatlari
+- [Testcontainers, Reusable Containers](https://raw.githubusercontent.com/testcontainers/testcontainers-java/9bb3c2dc175672ad33a2eafd7133212c7173ac43/docs/features/reuse.md) - reuse da ma'lumotning ham saqlanib qolishi
 
 ---
 

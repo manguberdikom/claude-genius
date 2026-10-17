@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 23. Legacy loyihani 100% ga olib chiqish rejasi (Bringing a Legacy Project to 100)
 
@@ -31,7 +31,7 @@ Legacy loyihani Sonar ko'rsatkichlari bo'yicha "100% ga olib chiqish" degan gap 
 
 ## 23.1 Birinchi tahlil: minglab issue chiqqanda vahimaga tushmaslik
 
-Birinchi skan deyarli har doim shok beradi. 300 ming qatorlik Spring monolitida 8 mingdan 40 minggacha issue va 2 dan 6 foizgacha coverage ko'rish normal holat. Bu raqam loyihaning yomonligini emas, Sonar hali hech qachon ishlamaganini ko'rsatadi.
+Birinchi skan deyarli har doim shok beradi: hech qachon tekshirilmagan katta monolitda issue soni o'n minglarda, coverage esa bir xona foizda bo'lishi odatiy. Aniq raqam loyihaga bog'liq va uni o'lchamasdan aytib bo'lmaydi. Muhimi talqin: bu raqam loyihaning yomonligini emas, Sonar hali hech qachon ishlamaganini ko'rsatadi.
 
 Birinchi skanni hech kimga ko'rsatmasdan, hech qanday qaror qabul qilmasdan oling. Faqat ma'lumot to'playsiz.
 
@@ -95,14 +95,27 @@ Yangi kod chegarasini to'g'ri tanlash butun rejaning poydevori. Legacy loyiha uc
 ```properties
 # sonar-project.properties yoki pom.xml dagi xossalar
 
-# Yangi kod chegarasi. Legacy uchun uchta real variant bor:
+# Yangi kod chegarasining TURI bu faylga yozilmaydi. U server
+# tomonida saqlanadi va UI yoki `api/new_code_periods/set` Web API
+# orqali qo'yiladi. Faylga yozilgan "new code period" kaliti jimgina
+# e'tiborsiz qoladi: scanner xossalari ro'yxatida bunday kalit yo'q.
+#
+# Legacy uchun uchta real variant bor (hammasi serverda tanlanadi):
 #   previous_version  - oxirgi release dan keyingi o'zgarishlar (monolit uchun eng yaxshi)
-#   number_of_days    - oxirgi N kun (tez release qiladigan jamoa uchun)
+#   number_of_days    - oxirgi N kun; ruxsat etilgan oraliq 1 dan 90 gacha
 #   reference_branch  - main bilan farq (feature branch modeli uchun)
-# Buni UI da ham qo'yish mumkin, lekin faylda saqlash tavsiya etiladi.
+#
+# Faylda faqat shu kalit kerak: `previous_version` uni o'qiydi.
 sonar.projectVersion=14.3.0
 
 # Coverage hisobotini Sonar o'zi hisoblamaydi, JaCoCo dan o'qiydi.
+# Bu kalit majburiy emas: ko'rsatilmasa uchta standart yo'l sinaladi
+# (`target/site/jacoco/jacoco.xml`, `target/site/jacoco-it/jacoco.xml`,
+# `build/reports/jacoco/test/jacocoTestReport.xml`). Ko'p modulli
+# loyihada aggregate hisobot uchun alohida kalit ham bor:
+# `sonar.coverage.jacoco.aggregateXmlReportPaths`.
+# Hisobot topilmasa sensor "No coverage report can be found"
+# ogohlantirishini beradi, ya'ni jim qolmaydi.
 sonar.coverage.jacoco.xmlReportPaths=target/site/jacoco-aggregate/jacoco.xml
 
 # Generatsiya qilingan kodni skandan chiqaramiz: u bizning qarzimiz emas.
@@ -116,7 +129,20 @@ sonar.sources=src/main/java
 sonar.tests=src/test/java
 ```
 
+Davrni serverda qo'yish buyruq qatoridan ham bo'ladi, shunda u skript bilan takrorlanadi:
+
+```bash
+# Yangi kod davrini loyiha uchun serverda qo'yish
+curl -sS -u "$SONAR_TOKEN:" -X POST \
+  "$SONAR_HOST/api/new_code_periods/set" \
+  -d "project=ombor-servisi" -d "type=previous_version"
+```
+
 `previous_version` ni tanlasangiz, har release da chegara avtomatik suriladi. Bu legacy uchun qulay: jamoa ikki hafta ichida yozgan kod ustida javob beradi, ikki yil oldingi kod ustida emas.
+
+Bitta nozik holatni bilish kerak, chunki u birinchi kunda chalg'itadi: agar loyihada versiya hodisasi hali yo'q bo'lsa (yoki faqat joriy versiya bo'lsa), server davrni eng eski tahlildan boshlaydi. Ya'ni birinchi baseline skan chegara bo'lib qoladi va shundan keyingi hamma o'zgarish "yangi kod" sanaladi. Legacy uchun bu aynan kerakli xulq, lekin "nega hamma narsa yangi kod ko'rinadi" degan savolga javob shu.
+
+Community nashrida yana bitta chegara bor: yangi kod davri main branch ga bog'lanadi, shuning uchun branch va PR tahlilida davr kutganingizdan boshqa bo'lishi mumkin.
 
 ## 23.4 Yangi kod shartlarini darhol qattiq qo'yish, eski kodni bosqichma-bosqich tuzatish
 
@@ -162,9 +188,9 @@ Eski kod uchun esa kvota usuli ishlaydi: har sprintda jamoa ma'lum miqdor eski i
 
 Tuzatish: reliability va security toifasidagi, ishlab turgan kodga tegishli issue lar. Null dereference, resurs yopilmasligi, SQL ni qo'lda yig'ish. Bular haqiqiy xavf.
 
-Qoldirish: `Won't Fix` yoki `Accept` holati. Masalan naming konvensiyasi bo'yicha eski DTO lardagi minglab shikoyat. Ularni tuzatish katta diff beradi, foydasi kam.
+Qoldirish: `Accept` holati (eski nomi `Won't Fix`). Atamani aniq ishlatish kerak, chunki `wontfix` o'tishi 10.3 da deprecated qilingan va uning o'rnini 10.4 dan boshlab `accept` egallagan; server hatto "The transitions 'wontfix' and 'confirm' are deprecated. Please use 'accept' instead." deb ogohlantiradi. Masalan naming konvensiyasi bo'yicha eski DTO lardagi minglab shikoyat. Ularni tuzatish katta diff beradi, foydasi kam.
 
-Qoidani o'chirish: agar qoida loyihaning ongli qaroriga qarshi bo'lsa, uni quality profile dan olib tashlash halolroq. Masalan `java:S1192` takrorlangan string literal lar haqida. Jamoa SQL so'rovlarini inline saqlashga qaror qilgan bo'lsa, qoidani o'chirish ming marta `Won't Fix` bosishdan yaxshi.
+Qoidani o'chirish: agar qoida loyihaning ongli qaroriga qarshi bo'lsa, uni quality profile dan olib tashlash halolroq. Masalan `java:S1192` takrorlangan string literal lar haqida. Jamoa SQL so'rovlarini inline saqlashga qaror qilgan bo'lsa, qoidani o'chirish ming marta `Accept` bosishdan yaxshi.
 
 Eng katta xato: issue larni `False Positive` deb belgilash. Bu holat qoida xato ishlaganini bildiradi. Siz shunchaki tuzatmaslikka qaror qilgan bo'lsangiz, `Accept` ishlating. Aks holda bir yildan keyin hech kim nima uchun nima belgilanganini tushunmaydi.
 
@@ -207,7 +233,7 @@ Xavf bo'yicha birinchi o'rinda pul bilan ishlaydigan kod turadi. To'lov, hisob-f
 
 4 foizdan 80 foizga bir sakrashda chiqish mumkin emas va kerak ham emas. To'g'ri reja: new code coverage ni birinchi kundan 80 da tutish, umumiy coverage ni esa tabiiy o'sishga qo'yish.
 
-Matematika oddiy. Jamoa oyda 6 ming qator kod o'zgartirsa va uning 80 foizi qoplansa, umumiy coverage oyiga 1.3 dan 1.8 foizgacha o'sadi. Bir yilda bu 20 foizdan oshadi.
+Matematika oddiy va uni o'z raqamlaringiz bilan bir marta hisoblash kerak. Formulasi: oyda o'zgargan qator soni, o'sha kodning qamrov ulushi va umumiy `ncloc`. Masalan oyda 6 ming qator o'zgarsa, uning 80 foizi qoplansa va loyihada 300 ming qator bo'lsa, bu oyiga bir yarim foiz atrofida o'sish beradi. Diqqat: kirish raqamlari (6 ming, 80 foiz) misol uchun olingan, ularni o'z o'lchovingiz bilan almashtiring.
 
 Oraliq maqsadlarni modul darajasida qo'ying, umumiy raqamda emas. "To'lov moduli coverage 70 foiz" aniq va bajariladigan maqsad. "Loyiha coverage 50 foiz" esa hech kimning mas'uliyatida emas.
 
@@ -241,7 +267,7 @@ Oraliq maqsadlarni modul darajasida qo'ying, umumiy raqamda emas. "To'lov moduli
 </plugin>
 ```
 
-JaCoCo versiyasi 0.8.x liniyasida Java versiyasi bilan moslik muhim. Yangi Java chiqqanda JaCoCo ni ham yangilash kerak, aks holda bytecode o'qilmaydi va coverage jim turib nolga tushadi.
+JaCoCo versiyasi 0.8.x liniyasida Java versiyasi bilan moslik muhim: yangi Java chiqqanda JaCoCo ni ham yangilash kerak, aks holda yangi bytecode o'qilmaydi. Lekin natija "jim turib nolga tushadi" emas, va bu farq tashxis uchun muhim. Ikki bosqich ikki xil ishlaydi. Hisobot bosqichida tahlil XATO bilan to'xtaydi: analizator istisnoni `IOException` ga o'rab tashlaydi, demak build qizil bo'ladi. Agent bosqichida esa xato ushlanadi va faqat log ga yoziladi, klass instrumentatsiyasiz qoladi. Shuning uchun coverage kutilganidan past chiqsa, birinchi qaraladigan joy build log idagi JaCoCo agent xabarlari.
 
 ## 23.8 Testsiz kodga test yozish tartibi: avval xatti-harakatni qayd etish
 
@@ -302,9 +328,9 @@ Rahbarga "texnik qarz" deb tushuntirish deyarli hech qachon ishlamaydi. Ishlaydi
 
 Uchta raqamni oldinga chiqaring: oxirgi olti oydagi production incident soni va ularning qanchasi test bilan tutilishi mumkin edi, bitta release tayyorlash vaqti, yangi developer ning birinchi PR ga chiqish vaqti.
 
-So'rash kerak bo'lgan narsa ham aniq bo'lsin: sprint sig'imining 15 foizi, 12 oy muddat, har chorakda hisobot. Cheksiz "tozalash loyihasi" so'ramang, u birinchi muddat siqilishida bekor qilinadi.
+So'rash kerak bo'lgan narsa ham aniq bo'lsin: sprint sig'imining belgilangan ulushi (raqamni jamoa sig'imi va qarz hajmidan hisoblang), aniq muddat va har chorakda hisobot. Cheksiz "tozalash loyihasi" so'ramang, u birinchi muddat siqilishida bekor qilinadi.
 
-Va'da berishda ehtiyot bo'ling. "Bir yildan keyin 100% o'tadi" deb aytmang. To'g'ri formula: bir yildan keyin har bir PR gate dan o'tadi, yangi kodning 80 foizi qoplangan bo'ladi, umumiy coverage 25 foiz atrofida bo'ladi. Bu kam ko'rinadi, lekin bu bajariladigan va'da.
+Va'da berishda ehtiyot bo'ling. "Bir yildan keyin 100% o'tadi" deb aytmang. To'g'ri formula: bir yildan keyin har bir PR gate dan o'tadi va yangi kodning belgilangan ulushi qoplangan bo'ladi; umumiy coverage esa yuqoridagi formuladan chiqqan qiymatga yetadi. Bu kam ko'rinadi, lekin bu bajariladigan va'da, chunki u o'lchangan o'sish tezligidan kelib chiqadi.
 
 ## 23.11 Muvaffaqiyat o'lchovi: issue soni emas, nimani o'lchash kerak
 
@@ -329,7 +355,7 @@ curl -s -u "$SONAR_TOKEN:" \
 
 ## 23.12 Bir yillik real jadval namunasi
 
-Quyidagi jadval 300 ming qatorlik monolit va sakkiz kishilik jamoa uchun real taqsimlangan reja. Raqamlar sizning loyihangizda boshqacha bo'ladi, lekin bosqichlar tartibi saqlanadi.
+Quyidagi jadval 300 ming qatorlik monolit va sakkiz kishilik jamoa uchun TO'QIB CHIQILGAN misol reja: undagi foizlar o'lchov emas, illyustratsiya. Sizning loyihangizda raqamlar boshqacha bo'ladi va ularni 23.10 dagi formula bilan o'zingiz hisoblaysiz. Jadvalning qiymati raqamda emas, bosqichlar tartibida: avval ko'rinish, keyin profil, keyin gate, keyin modul-modul ish.
 
 | Oy | Asosiy ish | Gate holati | Kutilgan natija |
 |---|---|---|---|
@@ -360,6 +386,45 @@ Yo'l davomida ikkita xavf bor. Birinchisi: gate ni "vaqtincha" o'chirish, chunki
 - [ ] Git tarixidan eng tez o'zgaradigan 15 paketni chiqarib, biznes xavfi bilan kesishtiring va birinchi tozalanadigan modulni tanlang.
 - [ ] Tanlangan modulga JaCoCo `check` chegarasini qo'ying va uni har chorakda qo'lda ko'tarishni kalendarga yozing.
 - [ ] Oylik hisobot uchun gate o'tish foizi, new code coverage medianasi va production incident sonini birga ko'rsatadigan bitta jadval tayyorlang.
+
+## Manbalar
+
+- SonarSource, new code davri Web API si va uning cheklovlari
+  ([https://github.com/SonarSource/sonarqube/blob/26.10.0.133078/server/sonar-webserver-webapi/src/main/java/org/sonar/server/newcodeperiod/ws/SetAction.java](https://github.com/SonarSource/sonarqube/blob/26.10.0.133078/server/sonar-webserver-webapi/src/main/java/org/sonar/server/newcodeperiod/ws/SetAction.java),
+  tag `26.10.0.133078`, LGPL-3.0) - 23.3 dagi davrning server tomonida
+  saqlanishi, `api/new_code_periods/set`, `number_of_days` uchun 1 dan
+  90 oralig'i va Community nashrida davrning main branch ga
+  bog'lanishi.
+- SonarSource, `NewCodePeriodResolver`
+  ([https://github.com/SonarSource/sonarqube/blob/26.10.0.133078/server/sonar-ce-task-projectanalysis/src/main/java/org/sonar/ce/task/projectanalysis/period/NewCodePeriodResolver.java](https://github.com/SonarSource/sonarqube/blob/26.10.0.133078/server/sonar-ce-task-projectanalysis/src/main/java/org/sonar/ce/task/projectanalysis/period/NewCodePeriodResolver.java),
+  tag `26.10.0.133078`, LGPL-3.0) - 23.3 dagi versiya hodisasi
+  bo'lmaganda davrning eng eski tahlildan boshlanishi.
+- SonarSource, issue o'tishlari
+  ([https://github.com/SonarSource/sonarqube/blob/26.10.0.133078/server/sonar-server-common/src/main/java/org/sonar/server/issue/workflow/codequalityissue/CodeQualityIssueWorkflowTransition.java](https://github.com/SonarSource/sonarqube/blob/26.10.0.133078/server/sonar-server-common/src/main/java/org/sonar/server/issue/workflow/codequalityissue/CodeQualityIssueWorkflowTransition.java),
+  tag `26.10.0.133078`, LGPL-3.0) - 23.5 dagi `wontfix` ning 10.3 da
+  deprecated bo'lishi va `accept` ga o'tish.
+- SonarSource, `sonar-plugin-api` dagi metrika va xossa kalitlari
+  ([https://github.com/SonarSource/sonar-plugin-api/blob/14.2.0.5584/plugin-api/src/main/java/org/sonar/api/measures/CoreMetrics.java](https://github.com/SonarSource/sonar-plugin-api/blob/14.2.0.5584/plugin-api/src/main/java/org/sonar/api/measures/CoreMetrics.java)
+  va [`CoreProperties.java`](https://github.com/SonarSource/sonar-plugin-api/blob/14.2.0.5584/plugin-api/src/main/java/org/sonar/api/CoreProperties.java),
+  tag `14.2.0.5584`, LGPL-3.0) - 23.2 dagi `sqale_index` ning
+  daqiqada o'lchanishi, 23.4 va 23.11 dagi `new_coverage`,
+  `new_duplicated_lines_density`, `new_blocker_violations` kabi
+  kalitlar, 23.3 dagi `sonar.exclusions`, `sonar.coverage.exclusions`,
+  `sonar.scm.provider` va `sonar.projectVersion`.
+- SonarSource, `sonar-jacoco` ning `ReportPathsProvider`
+  ([https://github.com/SonarSource/sonar-jacoco/blob/1.7.0.5925/src/main/java/org/sonar/plugins/jacoco/ReportPathsProvider.java](https://github.com/SonarSource/sonar-jacoco/blob/1.7.0.5925/src/main/java/org/sonar/plugins/jacoco/ReportPathsProvider.java),
+  tag `1.7.0.5925`, LGPL-3.0) - 23.3 dagi uchta standart yo'l,
+  `aggregateXmlReportPaths` kaliti va hisobot topilmaganda chiqadigan
+  ogohlantirish.
+- SonarSource, `sonar-scm-git` ning `JGitBlameCommand`
+  ([https://github.com/SonarSource/sonar-scm-git/blob/1.12.1.2064/sonar-scm-git-plugin/src/main/java/org/sonarsource/scm/git/JGitBlameCommand.java](https://github.com/SonarSource/sonar-scm-git/blob/1.12.1.2064/sonar-scm-git-plugin/src/main/java/org/sonarsource/scm/git/JGitBlameCommand.java),
+  tag `1.12.1.2064`, LGPL-3.0) - 23.1 va 23.4 dagi shallow clone
+  aniqlanganda SCM ma'lumotining yo'qolishi va Sonar ning
+  ogohlantirishi.
+- JaCoCo, `Analyzer` va `CoverageTransformer`
+  ([https://github.com/jacoco/jacoco/blob/v0.8.12/org.jacoco.core/src/org/jacoco/core/analysis/Analyzer.java](https://github.com/jacoco/jacoco/blob/v0.8.12/org.jacoco.core/src/org/jacoco/core/analysis/Analyzer.java),
+  tag `v0.8.12`, EPL-2.0) - 23.7 dagi hisobot bosqichida xato bilan
+  to'xtash va agent bosqichida faqat log ga yozish farqi.
 
 ---
 

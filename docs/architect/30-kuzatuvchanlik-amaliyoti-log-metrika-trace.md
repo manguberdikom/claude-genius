@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 30. Kuzatuvchanlik amaliyoti: log, metrika, trace va ularning narxi (Observability in Practice)
 
 <details>
-<summary>Bu bobdagi 13 bo'lim</summary>
+<summary>Bu bobdagi 14 bo'lim</summary>
 
 - [30.1 Uchta manba: log, metrika, trace va har biri qaysi savolga javob beradi](#301-uchta-manba-log-metrika-trace-va-har-biri-qaysi-savolga-javob-beradi)
 - [30.2 Tuzilgan (strukturali) log: JSON format, maydon nomlari, trace id bog'lash](#302-tuzilgan-strukturali-log-json-format-maydon-nomlari-trace-id-boglash)
@@ -21,7 +21,8 @@
 - [30.10 Ogohlantirish (alert) dizayni: belgiga emas, foydalanuvchi ta'siriga qarab](#3010-ogohlantirish-alert-dizayni-belgiga-emas-foydalanuvchi-tasiriga-qarab)
 - [30.11 Dashboard qanday bo'lishi kerak: birinchi ekranda nima turadi](#3011-dashboard-qanday-bolishi-kerak-birinchi-ekranda-nima-turadi)
 - [30.12 Spring Boot Actuator va Micrometer sozlash amaliyoti](#3012-spring-boot-actuator-va-micrometer-sozlash-amaliyoti)
-- [30.13 Amalda qo'llash](#3013-amalda-qollash)
+- [30.13 Statik chegara va anomaliya aniqlash: alert qoidasi qanday shaklda bo'ladi](#3013-statik-chegara-va-anomaliya-aniqlash-alert-qoidasi-qanday-shaklda-boladi)
+- [30.14 Amalda qo'llash](#3014-amalda-qollash)
 
 </details>
 
@@ -149,6 +150,10 @@ public class OrderMetrics {
 ```
 
 Ikki xato tez-tez uchraydi. Birinchisi: `registry.counter(...)` ni har so'rovda chaqirish, bu map lookup va tag massivini qayta yaratish degani; meter ni bir marta oling. Ikkinchisi: percentile ni client tomonda hisoblash. Bitta instansda hisoblangan p99 ni boshqa instans p99 bilan qo'shib bo'lmaydi, o'rtachasi esa ma'nosiz son. Agregatlanadigan p99 uchun histogram bucket lari chiqarilishi shart.
+
+Bu yerda `publishPercentileHistogram` ning narxini bilib qo'yish kerak, chunki u bir qatorga o'xshaydi, lekin time series sonini ko'paytiradi. Micrometer hujjatiga ko'ra default generator 276 ta bucket beradi, Micrometer esa timer ni 1 millisekunddan 1 daqiqagacha oraliqqa qisadi va natijada **har bir timer o'lchami uchun 73 ta histogram bucket** chiqadi. Demak 73 ni teglar kombinatsiyasi soniga ko'paytirish kerak: 20 ta endpoint va 5 ta status bilan bu bitta timer dan 7300 ga yaqin qator. Bucket sonini `minimumExpectedValue` va `maximumExpectedValue` boshqaradi, ular bir vaqtda HdrHistogram strukturasining aniqligi va xotirasini ham belgilaydi.
+
+Ikki muhim shart ham bor. Birinchi: `publishPercentileHistogram` faqat agregatlanadigan percentile ni qo'llaydigan tizimda ishlaydi, ya'ni Prometheus, Atlas va Wavefront da; boshqa tizimga histogram umuman yuborilmaydi va bu qator jim ta'sirsiz qoladi. Ikkinchi: hujjat percentile ni umumiy kutubxonada yoqmaslikni maslahat beradi, chunki u dependency sifatida kirgan hamma ilovaga qo'shimcha time series olib keladi; to'g'ri joy ilovaning o'zida meter filter bilan tanlangan timer larga yoqish. SLO bucket lari esa `serviceLevelObjectives` bilan qo'shiladi va histogram ni qo'llamaydigan tizimda faqat shu bucket lar chiqadi.
 
 ## 30.6 Kardinallik portlashi: metrika tegiga foydalanuvchi id qo'yish xatosi
 
@@ -281,6 +286,8 @@ Amaliy talablar: har bir panelda o'q birligi va SLO chizig'i ko'rinsin, vaqt oyn
 
 ## 30.12 Spring Boot Actuator va Micrometer sozlash amaliyoti
 
+Defaultlardan boshlash kerak, chunki ular ko'pincha yetarli himoyani beradi va sozlash aynan shuni buzadi. Spring Boot da HTTP va JMX orqali default holda **faqat `health` endpoint i** ochiq, `health` ning detallari esa default `never`, ya'ni ko'rinmaydi. Ya'ni xavf Actuator ning o'zida emas, `management.endpoints.web.exposure.include` ga qo'shilgan har bir qatorda. Hujjat buni to'g'ridan-to'g'ri aytadi: ro'yxatni kengaytirishdan oldin ochilgan endpoint da maxfiy ma'lumot yo'qligiga ishonch qilish, yoki uni firewall yoki Spring Security ortiga qo'yish kerak. `show-details` ning `when-authorized` qiymatida esa bitta nozik joy bor: endpoint ga rol berilmagan bo'lsa (default holat), **har qanday autentifikatsiyadan o'tgan** foydalanuvchi authorized hisoblanadi; rolni cheklash uchun `management.endpoint.health.roles` yoziladi.
+
 Actuator ni ochish oson, xatolar ham oson. Birinchi qoida: management port ni ilova portidan ajratib tashqaridan yopish. Ikkinchi: `env`, `heapdump`, `threaddump`, `loggers` himoyalanmagan holda ochilmasin. Uchinchi: health detallari faqat autentifikatsiyadan o'tganlarga ko'rinsin, chunki u ichki infratuzilma xaritasini oshkor qiladi. To'rtinchi: liveness va readiness probe larni ajratish, aks holda baza vaqtincha yo'qolganda Kubernetes pod ni bejiz o'ldiradi.
 
 ```yaml
@@ -306,7 +313,45 @@ otel.exporter.otlp.endpoint: http://otel-collector:4317
 
 `percentiles-histogram` ni global yoqmang: har bir histogram li Timer o'nlab bucket qatori yaratadi, `maximum-expected-value` qo'yilmasa diapazon keraksiz keng bo'ladi. Histogram faqat SLO bor operatsiyada yig'ilsin. Nihoyat, kuzatuv kodi o'zi ham taxminan bir necha foiz CPU va qo'shimcha allokatsiya yeydi, shuning uchun uni yuklama testida o'lchash kerak. Testlash qo'llanmasidagi performance test bo'limi shu o'lchov uchun asos beradi, dizayn [patternlar hujjatidagi](../patterns/README.md) observability patternlari esa strukturaviy tomonni yopadi.
 
-## 30.13 Amalda qo'llash
+JMX alohida eslatmani talab qiladi. Spring Boot Actuator metrikalarini JMX orqali ham chiqarishi mumkin va JVM ning o'z MBean lari (heap, thread, class loading, GC) shu yo'l bilan ko'rinadi. Lekin JMX ni tashqi monitoring kanali sifatida tanlash eskirgan yondashuv: u RMI portini talab qiladi, konteyner va NAT ortida sozlash og'ir, va u pull modelida ishlaydi. Qoida: ishlab chiqarishda metrika Micrometer orqali chiqadi, JMX esa lokal diagnostika uchun qoladi (`jconsole`, `jcmd`, JFR), ya'ni tashqi portga ochilmaydi.
+
+## 30.13 Statik chegara va anomaliya aniqlash: alert qoidasi qanday shaklda bo'ladi
+
+30.10 alert nimaga qo'yilishini aytdi: belgiga emas, foydalanuvchi ta'siriga. Bu bo'lim keyingi savolga javob beradi, ya'ni qoidaning o'zi qanday shaklda yoziladi. Orosz ikki keng tarqalgan yo'lni sanaydi: chegarani odam qo'lda belgilaydi, yoki tizim odatdagi trafik shaklini o'zi o'rganib undan chetga chiqishni topadi (Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr, Pragmatic Engineer, 2023, 24-bob, 348-bet).
+
+Statik chegarada qoida qo'lda yoziladi. Orosz ikki misol beradi: "bu metrika 60 sekunddan ortiq nolga tushsa, alert chiqar" va "odatdagi qiymat daqiqasiga 100 bo'lgan joyda metrika 500 dan oshsa, alert chiqar" (24-bob, 348-bet). Kuchli tomoni uchta: yozish oson, alert nega ishga tushgani darhol tushunarli, va chegarani keyin sozlash oson. Zaif tomoni ham aniq: qaysi chegara to'g'ri ekanini oldindan aytish qiyin, va amalda statik chegara ko'pincha uzilishdan keyin, aynan o'sha uzilishni ushlashi mumkin bo'lgan joyga qo'yiladi (24-bob, 348-bet).
+
+Anomaliya aniqlashda chegara umuman yozilmaydi: tizim metrikaning odatdagi shaklini o'rganadi va sozlanadigan yagona kirish qiymati sezgirlik bo'ladi (24-bob, 348-349-bet). U statik chegara ko'rmaydigan tebranishni ushlaydi, kutilmagan trafik ko'tarilishi va tushishida ham ishlaydi, va tayyor framework bo'lsa ko'p metrikaga arzonga yoyiladi. Zaif tomoni Orosz ning o'z tajribasida ko'ringan: Uber da to'lov tizimiga anomaliya aniqlashni birinchi marta yoqqanda, tizim o'rganayotgan va sozlanayotgan dastlabki bir necha hafta ichida shunchalik ko'p alert kelganki, jonli alertlarni o'chirib qo'yishga to'g'ri kelgan (24-bob, 349-bet). Teskari xato ham bor: sozlash yetarli bo'lmasa tizim haqiqiy anomaliyaga sezgir bo'lmay qoladi, hafta kunlari bo'yicha farq qiladigan odatdagi trafikni hisobga olishi kerak, va Black Friday kabi oldindan ma'lum ko'tarilish yoki tushishda ham alert chiqaradi (24-bob, 349-bet).
+
+| Mezon | Statik chegara | Anomaliya aniqlash |
+|---|---|---|
+| Qoidani yozish | odam raqam qo'yadi | sezgirlik sozlanadi, chegara yo'q |
+| Nega ishga tushdi | darhol ko'rinadi | izohlash qiyinroq |
+| Kutilmagan shakl | sezmaydi | sezadi |
+| Oldindan ma'lum cho'qqi | tinch turadi | soxta alert beradi |
+| Ko'p metrikaga yoyish | har biriga alohida mehnat | framework bo'lsa arzon |
+| Tipik xato | chegara uzilishdan keyin qo'yiladi | sozlanmagan davrda shovqin |
+
+Tanlov ikkisidan biri emas. Orosz amaliy yechimni aralashma deb ataydi: ko'p metrika uchun anomaliya aniqlash, kutilayotgan trafik ko'tarilishi va tushishi uchun hamda asosiy metrikaning nolga tushishini ushlash uchun statik chegara (24-bob, 349-bet). Nolga tushish aynan statik chegaraga mos keladi, chunki u shaklga emas, mavjudlik faktiga qaraydi.
+
+```yaml
+# Statik chegara kuchli bo'ladigan holat: metrika butunlay nolga tushdi.
+# Oyna uzunligi Orosz misolidagi 60 sekund, chegara esa o'z o'lchovingizdan.
+groups:
+  - name: payment-static
+    rules:
+      - alert: PaymentTrafficDroppedToZero
+        expr: sum(rate(http_server_requests_seconds_count{uri="/api/payments"}[1m])) == 0
+        for: 1m                      # 60 sekund davom etsa alert
+        labels: { severity: page }
+        annotations:
+          summary: "To'lov API ga so'rov umuman kelmayapti"
+          runbook_url: "https://wiki.internal/runbook/payment-no-traffic"
+```
+
+30.10 dagi burn rate alert shakli bo'yicha statik chegara: raqam SLO dan chiqadi, shuning uchun u "o'ylab topilgan chegara" emas. Anomaliya aniqlash esa shu qatorga qo'shimcha bo'lib keladi, o'rniga emas.
+
+## 30.14 Amalda qo'llash
 
 - [ ] Bitta tipik so'rovga nechta log qatori yozilayotganini sanang va uni 3 qatorgacha qisqartirish rejasini tuzing.
 - [ ] Log maydon nomlari lug'atini yozib, strukturali formatni (ECS yoki o'z sxemangiz) hamma servisga bir xil qo'ying.
@@ -316,6 +361,16 @@ otel.exporter.otlp.endpoint: http://otel-collector:4317
 - [ ] Ilovada sampling ni 100 foizga olib chiqib, xato va 1.5 sekunddan sekin trace larni to'liq saqlaydigan tail sampling ni Collector da yoqing.
 - [ ] Resurs bo'yicha sahifalaydigan alert larni o'chirib, ularning o'rniga burn rate alert va har biriga runbook havolasi qo'shing.
 - [ ] Har bir servis dashboard ining birinchi ekranini to'rtta signalga qisqartirib, egasini belgilang.
+
+## Manbalar
+
+- Craig Walls, *Spring in Action* 6th, 15, 16, 17-boblar - Actuator, Spring Boot Admin va JMX
+- [Micrometer, Histograms and percentiles](https://raw.githubusercontent.com/micrometer-metrics/micrometer-docs/06f377a95db21894939c6fff39441fe608e804a2/src/docs/concepts/histogram-quantiles.adoc) - client-side percentile ning agregatlanmasligi, default 276 bucket va timer uchun 73 bucket, `minimumExpectedValue`/`maximumExpectedValue`, `serviceLevelObjectives`, kutubxonada yoqmaslik maslahati
+- [Micrometer, Gauges](https://raw.githubusercontent.com/micrometer-metrics/micrometer-docs/06f377a95db21894939c6fff39441fe608e804a2/src/docs/concepts/gauges.adoc) - gauge ning weak reference ushlashi va obyekt GC bo'lganda NaN qaytarishi
+- [Spring Boot 4.0, Actuator Endpoints](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/documentation/spring-boot-docs/src/docs/antora/modules/reference/pages/actuator/endpoints.adoc) - default holda faqat `health` ochiqligi, `show-details` default `never`, rol berilmaganda har qanday autentifikatsiyalangan foydalanuvchining authorized bo'lishi
+- [OpenTelemetry, Tracing API](https://raw.githubusercontent.com/open-telemetry/opentelemetry-specification/bb85bf44e2c032d9958c10b78dcb88cf36e40917/specification/trace/api.md) - span, kontekst va atribut modeli
+- [OpenTelemetry, SDK](https://raw.githubusercontent.com/open-telemetry/opentelemetry-specification/bb85bf44e2c032d9958c10b78dcb88cf36e40917/specification/trace/sdk.md) - sampler turlari va `ParentBased` qarorining trace bo'ylab izchilligi
+- Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr, Pragmatic Engineer, 2023, 24-bob (348-349-bet) - statik chegara va anomaliya aniqlashning kuchli va zaif tomonlari, statik chegara uzilishdan keyin qo'yilishi, Uber to'lov tizimida anomaliya aniqlash sozlanmagan davrda alertlarni o'chirishga majbur qilgani, ikkisining amaliy aralashmasi
 
 ---
 

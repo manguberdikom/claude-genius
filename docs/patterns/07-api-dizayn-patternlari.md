@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 7. API dizayn patternlari (API Design Patterns)
 
@@ -112,7 +112,7 @@ class OrderApi {
 
 **Tavsif:** Javob ichida nafaqat ma'lumot, balki shu holatda bajarilishi mumkin bo'lgan keyingi harakatlarning havolalari ham qaytariladi. Klient URI'larni o'zida hardcode qilmasdan, link relation nomlari (`self`, `next`, `cancel`) bo'yicha harakat qiladi, server esa URI strukturasini va mavjud harakatlar to'plamini runtime'da o'zgartirishi mumkin. Masalan, `PAID` holatidagi buyurtmada `refund` havolasi bo'ladi, `DRAFT` holatida esa yo'q - ya'ni biznes qoidalari javobda deklarativ ko'rinadi.
 
-**Spring'da qayerda uchraydi:** Spring HATEOAS: `EntityModel<T>`, `CollectionModel<T>`, `PagedModel<T>`, `Link`, `LinkRelation`, `WebMvcLinkBuilder.linkTo(methodOn(...))`, `RepresentationModelAssembler` va `RepresentationModelAssemblerSupport`. Media type'lar: HAL (`application/hal+json`, sukut bo'yicha), HAL-FORMS, Collection+JSON, UBER - `@EnableHypermediaSupport(type = HypermediaType.HAL_FORMS)` bilan tanlanadi. Affordance API (`.andAffordance(afford(methodOn(...)))`) HAL-FORMS'da bajarilishi mumkin bo'lgan metod va maydonlarni tasvirlaydi. Klient tomonida `Traverson` yoki `HalExplorer`.
+**Spring'da qayerda uchraydi:** Spring HATEOAS: `EntityModel<T>`, `CollectionModel<T>`, `PagedModel<T>`, `Link`, `LinkRelation`, `WebMvcLinkBuilder.linkTo(methodOn(...))`, `RepresentationModelAssembler` va `RepresentationModelAssemblerSupport`. Media type'lar: HAL (`application/hal+json`, sukut bo'yicha), HAL-FORMS, Collection+JSON, UBER - `@EnableHypermediaSupport(type = HypermediaType.HAL_FORMS)` bilan tanlanadi. Affordance API (`.andAffordance(afford(methodOn(...)))`) HAL-FORMS'da bajarilishi mumkin bo'lgan metod va maydonlarni tasvirlaydi. Klient tomonida `Traverson` yoki `LinkDiscoverer`.
 
 **Qo'llanish keyslari:**
 - Ish jarayoni (workflow) holatiga qarab ruxsat etilgan harakatlar o'zgaradigan API'lar: to'lov, buyurtma, hujjat tasdiqlash.
@@ -141,12 +141,12 @@ EntityModel<AccountDto> get(@PathVariable long id) {
 
 **Tavsif:** URI'larni bashorat qilinadigan va barqaror qiladigan qoidalar to'plami: resurs kolleksiyalari ko'plikda va ot shaklida (`/orders`), ierarxiya sub-resurs sifatida (`/orders/{orderId}/items/{itemId}`), ko'p so'zli segmentlar uchun kebab-case, versiya yoki format URI'da aralashtirilmasligi, so'rov parametrlari faqat filtr/sort/pagination uchun. Maqsad - URI'ni dokumentatsiyasiz ham o'qiladigan qilish va marshrutlash qoidalarini (gateway, rate limit, log grouping) oddiy saqlash.
 
-**Spring'da qayerda uchraydi:** `@RequestMapping` sinf darajasida umumiy prefiksni, `spring.mvc.servlet.path` yoki `server.servlet.context-path` esa global prefiksni belgilaydi. `PathPattern` sintaksisi (Spring Framework 5.3+ dan MVC'da sukut bo'yicha): `{id}`, `{*path}`, `{id:[0-9]+}` regex cheklovlari. `PathMatchConfigurer` orqali `setUseTrailingSlashMatch` (Spring 6'da deprecated/o'chirilgan - oxirgi slash endi alohida yo'l hisoblanadi), `addPathPrefix(prefix, predicate)` esa paket yoki annotatsiya bo'yicha prefiks qo'shadi. `UriComponentsBuilder` va `@PathVariable Map<String,String>` URI qurish va o'qish uchun.
+**Spring'da qayerda uchraydi:** `@RequestMapping` sinf darajasida umumiy prefiksni, `spring.mvc.servlet.path` yoki `server.servlet.context-path` esa global prefiksni belgilaydi. `PathPattern` sintaksisi (MVC'da sukut bo'yicha Spring Framework 6.0 dan; 5.3 da sukut hamon `AntPathMatcher` edi va `PathMatchConfigurer.setPatternParser` bilan yoqilardi): `{id}`, `{*path}`, `{id:[0-9]+}` regex cheklovlari. `PathMatchConfigurer` orqali `setUseTrailingSlashMatch` (Spring 6'da deprecated/o'chirilgan - oxirgi slash endi alohida yo'l hisoblanadi), `addPathPrefix(prefix, predicate)` esa paket yoki annotatsiya bo'yicha prefiks qo'shadi. `UriComponentsBuilder` va `@PathVariable Map<String,String>` URI qurish va o'qish uchun.
 
 **Qo'llanish keyslari:**
 - Ko'p jamoali monorepo yoki mikroservis platformasida umumiy API style guide'ni majburlash.
 - API Gateway'da yo'l prefiksi bo'yicha marshrutlash va per-route rate limiting sozlash.
-- Observability: yo'l shabloni (`/orders/{id}`) bo'yicha metrikalarni guruhlash, aks holda har bir ID alohida metrika kardinalligini oshiradi.
+- Observability: yo'l shabloni (`/orders/{id}`) bo'yicha metrikalarni guruhlash. Spring'ning default observation konvensiyasi `uri` tegiga allaqachon faqat shablonni qo'yadi (mos shablon bo'lmasa `root`, `NOT_FOUND`, `REDIRECTION` yoki `UNKNOWN`), xom URI esa yuqori kardinallikdagi `http.url` ga ketadi: kardinallik portlashi default'da emas, maxsus konvensiya yoki qo'lda qo'shilgan teglarda yuzaga keladi.
 - SDK va kod generatsiyasi: bashorat qilinadigan URI'lar OpenAPI'dan klient generatsiyasini soddalashtiradi.
 - Legacy API'ni konsolidatsiya qilishda yangi konvensiyaga o'tish uchun `addPathPrefix` bilan bosqichma-bosqich migratsiya.
 
@@ -195,7 +195,7 @@ class OrderController {
 
 **Tavsif:** Natijalarni `offset`/`limit` (yoki `page`/`size`) orqali bo'lib berish: server `LIMIT n OFFSET m` bajaradi va odatda umumiy sonni ham qaytaradi. Afzalligi - ixtiyoriy sahifaga sakrash (`?page=57`), umumiy sahifa sonini ko'rsatish va klient tomonida oddiy implementatsiya. Kamchiligi - DB katta offset'da ham barcha oldingi qatorlarni skanerlab tashlab yuborishga majbur, shuningdek ma'lumot o'zgarganda elementlar sahifalar orasida takrorlanishi yoki yo'qolishi mumkin.
 
-**Spring'da qayerda uchraydi:** Spring Data: `Pageable`, `PageRequest.of(page, size, Sort.by(...))`, qaytarish turlari `Page<T>` (umumiy son uchun qo'shimcha `count` query bajaradi) va `Slice<T>` (faqat "keyingisi bormi" ni biladi, count query yo'q). Controller'da `@PageableDefault(size = 20)` va `PageableHandlerMethodArgumentResolver` so'rov parametrlarini avtomatik bind qiladi (`?page=0&size=20&sort=createdAt,desc`); `spring.data.web.pageable.max-page-size` bilan yuqori chegara qo'yiladi. Spring HATEOAS `PagedModel` + `PagedResourcesAssembler` HAL javobida `page` metadata va navigatsiya havolalarini qo'shadi.
+**Spring'da qayerda uchraydi:** Spring Data: `Pageable`, `PageRequest.of(page, size, Sort.by(...))`, qaytarish turlari `Page<T>` (umumiy son uchun qo'shimcha `count` query bajaradi) va `Slice<T>` (faqat "keyingisi bormi" ni biladi, count query yo'q). Controller'da `@PageableDefault(size = 20)` va `PageableHandlerMethodArgumentResolver` so'rov parametrlarini avtomatik bind qiladi (`?page=0&size=20&sort=createdAt,desc`); `spring.data.web.pageable.max-page-size` bilan yuqori chegara qo'yiladi (default 2000 - ya'ni chegara bor, lekin ko'p API uchun juda baland: `?size=2000` bitta so'rovda ikki ming satr tortadi, shuning uchun uni ataylab pasaytiring). Spring HATEOAS `PagedModel` + `PagedResourcesAssembler` HAL javobida `page` metadata va navigatsiya havolalarini qo'shadi.
 
 **Qo'llanish keyslari:**
 - Admin/backoffice jadvallar: foydalanuvchi sahifa raqamlarini ko'radi va ixtiyoriy sahifaga o'tadi.
@@ -308,7 +308,7 @@ ResponseEntity<Receipt> pay(@RequestHeader("Idempotency-Key") @NotBlank String k
 
 ## 7.10 Problem Details - standart xato formati (Problem Details, RFC 9457)
 
-**Tavsif:** HTTP xatolari uchun mashina o'qiy oladigan yagona JSON formati: `type` (xato turini aniqlovchi URI), `title`, `status`, `detail`, `instance`, hamda ixtiyoriy kengaytma maydonlari. Media type - `application/problem+json`. Bu har bir xizmat o'z xato sxemasini ixtiro qilishini to'xtatadi va klientlarga xatolarni `type` bo'yicha programmatik ishlashga imkon beradi (RFC 9457 oldingi RFC 7807'ni almashtirdi va `errors` kabi bir nechta muammoni ko'rsatish yondashuvini aniqlashtirdi).
+**Tavsif:** HTTP xatolari uchun mashina o'qiy oladigan yagona JSON formati: `type` (xato turini aniqlovchi URI), `title`, `status`, `detail`, `instance`, hamda ixtiyoriy kengaytma maydonlari. Media type - `application/problem+json`. Bu har bir xizmat o'z xato sxemasini ixtiro qilishini to'xtatadi va klientlarga xatolarni `type` bo'yicha programmatik ishlashga imkon beradi (RFC 9457 oldingi RFC 7807'ni almashtirdi). Diqqat: `errors` massivini RFC ta'riflamaydi - u faqat spetsifikatsiyadagi misolda uchraydi; RFC ning o'z ko'rsatmasi "eng dolzarb muammoni javobda ko'rsatish tavsiya etiladi", qolgan maydonlar esa kengaytma sifatida sizning shartnomangiz.
 
 **Spring'da qayerda uchraydi:** Spring Framework 6+: `ProblemDetail` sinfi, `ErrorResponse`/`ErrorResponseException` interfeysi, `ResponseEntityExceptionHandler` built-in Spring exception'larni `ProblemDetail`'ga aylantiradi; `spring.mvc.problemdetails.enabled=true` (WebFlux uchun `spring.webflux.problemdetails.enabled=true`) global yoqadi. Maxsus xatolar uchun `@ControllerAdvice`/`@RestControllerAdvice` + `@ExceptionHandler` metodidan `ProblemDetail` qaytarish, `setProperty("traceId", ...)` bilan kengaytma maydonlari qo'shish. Validatsiya xatolari `MethodArgumentNotValidException` dan kelib, `MessageSource` orqali lokalizatsiya qilinadi. Spring Security 6'da `AuthenticationEntryPoint`/`AccessDeniedHandler` ni shu formatga moslash kerak bo'ladi.
 
@@ -319,7 +319,7 @@ ResponseEntity<Receipt> pay(@RequestHeader("Idempotency-Key") @NotBlank String k
 - Partner API'da xato kodlarini `type` URI sifatida dokumentatsiyalash, klient esa shu bo'yicha retry/ko'rsatma logikasini qurish.
 - Gateway darajasidagi xatolarni (rate limit, auth) ham upstream xizmatlar formatiga moslash.
 
-**Ehtiyot bo'ling:** `detail` maydoniga stack trace, SQL matni yoki ichki identifikatorlarni tushirish - ma'lumot oshkor qilish xavfi; foydalanuvchiga mo'ljallangan matn va ichki diagnostika aniq ajratilishi kerak. Shuningdek, 4xx va 5xx larni farqsiz `500 ProblemDetail` ga aylantirish klientning retry qarorini buzadi - status kodni domen xatosiga to'g'ri mapping qiling.
+**Ehtiyot bo'ling:** `detail` maydoniga stack trace, SQL matni yoki ichki identifikatorlarni tushirish - ma'lumot oshkor qilish xavfi; foydalanuvchiga mo'ljallangan matn va ichki diagnostika aniq ajratilishi kerak. Shuningdek, 4xx va 5xx larni farqsiz `500 ProblemDetail` ga aylantirish klientning retry qarorini buzadi - status kodni domen xatosiga to'g'ri mapping qiling. Content negotiation'da esa `ProblemDetail` ni Jackson `application/problem+json` bilan yozishni afzal ko'radi, klient faqat `application/json` so'rasa esa shu turga qaytadi: ya'ni `Accept: application/json` bo'lgan eski klient ham tanani oladi, lekin `Content-Type` kutganidan farq qilishi mumkin - integratsiya testida aynan sarlavhani tekshiring. Oxirgi qoida: `type` URI va kengaytma maydonlari sizning ommaviy shartnomangiz, `title` va `detail` esa lokalizatsiya qilinadigan matn - klient logikasini ularga emas, `type` ga bog'lang, aks holda til o'zgarishi klientni sindiradi.
 
 ```java
 @RestControllerAdvice
@@ -341,7 +341,7 @@ class ApiExceptionHandler {
 
 **Tavsif:** Resurs versiyasini `ETag` (kontent hash yoki versiya) yoki `Last-Modified` header'i bilan belgilash va klientga shartli so'rov yuborish imkonini berish. `If-None-Match` bilan GET o'zgarmagan bo'lsa `304 Not Modified` qaytariladi - tarmoq trafigi va serializatsiya tejaladi; `If-Match` bilan PUT/PATCH/DELETE yuborilsa va ETag mos kelmasa `412 Precondition Failed` qaytariladi - bu HTTP darajasidagi optimistik locking bo'lib, "oxirgi yozgan g'olib" (lost update) muammosini hal qiladi.
 
-**Spring'da qayerda uchraydi:** `ShallowEtagHeaderFilter` javob tanasidan MD5 asosida ETag hisoblaydi (trafikni tejaydi, lekin ishlov berishni emas). Aniq boshqarish uchun `ResponseEntity.ok().eTag("\"v3\"").lastModified(instant).body(...)` va `ServletWebRequest.checkNotModified(etag)` / `WebRequest.checkNotModified(lastModified)` - true qaytarsa controller darhol `304` bilan tugaydi. `@RequestHeader("If-Match")` qiymatini JPA `@Version` (optimistic locking) maydoni bilan solishtirish amaliy yondashuv; mos kelmasa `OptimisticLockingFailureException` dan `412` ga mapping qilinadi. Statik resurslar uchun `WebContentGenerator`/`ResourceHttpRequestHandler` va `spring.web.resources.cache.cachecontrol.*` sozlamalari, `CacheControl` builder'i bilan birga.
+**Spring'da qayerda uchraydi:** `ShallowEtagHeaderFilter` javob tanasidan MD5 asosida ETag hisoblaydi (trafikni tejaydi, lekin ishlov berishni emas). Aniq boshqarish uchun `ResponseEntity.ok().eTag("\"v3\"").lastModified(instant).body(...)` va `ServletWebRequest.checkNotModified(etag)` / `WebRequest.checkNotModified(lastModified)` - true qaytarsa controller tanani yozmasdan tugaydi, status esa metodga qarab belgilanadi: GET va HEAD uchun `304 Not Modified`, qolgan metodlar uchun `412 Precondition Failed` (`setStatus(isHttpGetOrHead ? NOT_MODIFIED : PRECONDITION_FAILED)`), ya'ni bitta chaqiruv ham keshlash, ham optimistik lock holatini qoplaydi. `@RequestHeader("If-Match")` qiymatini JPA `@Version` (optimistic locking) maydoni bilan solishtirish amaliy yondashuv; mos kelmasa `OptimisticLockingFailureException` dan `412` ga mapping qilinadi. Statik resurslar uchun `WebContentGenerator`/`ResourceHttpRequestHandler` va `spring.web.resources.cache.cachecontrol.*` sozlamalari, `CacheControl` builder'i bilan birga.
 
 **Qo'llanish keyslari:**
 - Tez-tez o'qiladigan, kam o'zgaradigan resurslar (konfiguratsiya, katalog, profil) uchun trafikni kamaytirish.
@@ -350,7 +350,7 @@ class ApiExceptionHandler {
 - CDN va reverse proxy bilan validatsiyaga asoslangan keshlash (`Cache-Control: no-cache` + ETag).
 - REST API ustida optimistik locking: JPA `@Version` qiymatini ETag sifatida tashqariga chiqarish.
 
-**Ehtiyot bo'ling:** `ShallowEtagHeaderFilter` javobni to'liq buferlab hash hisoblaydi - ya'ni server ishini tejamaydi va katta javoblarda xotira hamda streaming (SSE, file download) bilan muammo tug'diradi; uni streaming endpointlarda yoqmang. ETag'ni serializatsiya tartibiga bog'liq hash'dan olish (Jackson maydon tartibi, timestamp formati o'zgarishi) soxta cache miss'ga olib keladi - barqaror versiya raqamidan foydalanish ishonchliroq.
+**Ehtiyot bo'ling:** `ShallowEtagHeaderFilter` javobni to'liq buferlab hash hisoblaydi - ya'ni server ishini tejamaydi va katta javoblarda xotira hamda streaming (SSE, file download) bilan muammo tug'diradi; uni streaming endpointlarda yoqmang. ETag'ni serializatsiya tartibiga bog'liq hash'dan olish (Jackson maydon tartibi, timestamp formati o'zgarishi) soxta cache miss'ga olib keladi - barqaror versiya raqamidan foydalanish ishonchliroq. `If-Match` qiymatini qo'lda parse qilganda zaif teg (`W/"3"`) va vergul bilan ajratilgan ro'yxat (`"3", "4"`) ni hisobga oling: `replace("\"", "")` bilan `Long.parseLong` qilish `W/"3"` da `NumberFormatException`, ya'ni 412 o'rniga 500 beradi.
 
 ```java
 @GetMapping("/orders/{id}")
@@ -367,8 +367,24 @@ ResponseEntity<Void> update(@PathVariable long id,
                             @RequestHeader("If-Match") String ifMatch,
                             @RequestBody UpdateOrder cmd) {
     // Optimistik lock: boshqa kishi o'zgartirgan bo'lsa 412 qaytadi
-    service.update(id, cmd, Long.parseLong(ifMatch.replace("\"", "")));
+    service.update(id, cmd, parseVersion(ifMatch));
     return ResponseEntity.noContent().build();
+}
+
+// W/"3" va "3" ikkisini ham qabul qiladi, noto'g'ri tegda 412 beradi
+private long parseVersion(String ifMatch) {
+    String tag = ifMatch.trim();
+    if (tag.startsWith("W/")) {
+        tag = tag.substring(2).trim();
+    }
+    if (tag.length() < 2 || tag.charAt(0) != '"' || !tag.endsWith("\"")) {
+        throw new PreconditionFailedException(ifMatch);
+    }
+    try {
+        return Long.parseLong(tag.substring(1, tag.length() - 1));
+    } catch (NumberFormatException ex) {
+        throw new PreconditionFailedException(ifMatch);
+    }
 }
 ```
 
@@ -376,7 +392,7 @@ ResponseEntity<Void> update(@PathVariable long id,
 
 **Tavsif:** Server javobga `Cache-Control`, `ETag`, `Last-Modified` sarlavhalarini qo'shib, client va oraliq proxy'larga javobni qancha vaqt va qanday shartlar bilan saqlash mumkinligini aytadi. Keyingi so'rovda client `If-None-Match` yoki `If-Modified-Since` yuboradi va server o'zgarish bo'lmasa `304 Not Modified` qaytaradi - body umuman uzatilmaydi. Bu network trafigini, latency'ni va backend yuklamasini bir vaqtda kamaytiradi. Shartli so'rovlar yozish operatsiyalarida optimistic concurrency uchun ham ishlatiladi (`If-Match` bilan `412 Precondition Failed`).
 
-**Spring'da qayerda uchraydi:** `org.springframework.http.CacheControl` (`CacheControl.maxAge(Duration)`, `.noStore()`, `.cachePublic()`) va `ResponseEntity.ok().cacheControl(...).eTag("\"v3\"").body(...)`. Shartli so'rovni qo'lda tekshirish uchun `ServletWebRequest#checkNotModified(String etag)` yoki `checkNotModified(long lastModified)`. Butun ilova uchun `ShallowEtagHeaderFilter` (`OncePerRequestFilter` vorisi) MD5 asosida ETag generatsiya qiladi; static resurslar uchun `WebMvcConfigurer#addResourceHandlers` bilan `ResourceHandlerRegistration#setCacheControl` va `ResourceChainRegistration#addResolver(new VersionResourceResolver())`. Spring Security'ning default `CacheControlHeadersWriter` barcha javobga `no-cache, no-store` qo'yadi - keshlash kerak bo'lsa `http.headers(h -> h.cacheControl(HeadersConfigurer.CacheControlConfig::disable))` orqali o'chiriladi. JPA `@Version` maydoni ETag qiymati uchun tabiiy manba.
+**Spring'da qayerda uchraydi:** `org.springframework.http.CacheControl` (`CacheControl.maxAge(Duration)`, `.noStore()`, `.cachePublic()`) va `ResponseEntity.ok().cacheControl(...).eTag("\"v3\"").body(...)`. Shartli so'rovni qo'lda tekshirish uchun `ServletWebRequest#checkNotModified(String etag)` yoki `checkNotModified(long lastModified)`. Butun ilova uchun `ShallowEtagHeaderFilter` (`OncePerRequestFilter` vorisi) MD5 asosida ETag generatsiya qiladi; static resurslar uchun `WebMvcConfigurer#addResourceHandlers` bilan `ResourceHandlerRegistration#setCacheControl` va `ResourceChainRegistration#addResolver(new VersionResourceResolver())`. Spring Security'ning default `CacheControlHeadersWriter` barcha javobga `Cache-Control: no-cache, no-store, max-age=0, must-revalidate` hamda `Pragma: no-cache` va `Expires: 0` qo'yadi (javobda bu sarlavhalar allaqachon bo'lsa, ustidan yozmaydi) - keshlash kerak bo'lsa `http.headers(h -> h.cacheControl(HeadersConfigurer.CacheControlConfig::disable))` orqali o'chiriladi. JPA `@Version` maydoni ETag qiymati uchun tabiiy manba.
 
 **Qo'llanish keyslari:**
 - Mahsulot katalogi yoki referens ma'lumotlar (davlatlar, valyutalar) uchun `Cache-Control: public, max-age=3600` qo'yib CDN'da keshlash.
@@ -614,7 +630,7 @@ class MobileHomeController {
 
 **Tavsif:** Bitta client so'rovini qondirish uchun bir nechta servisdan ma'lumot olib, ularni xotirada birlashtirib yagona javob qaytarish patterni. Microservice'larda har bir servis o'z DB'siga ega bo'lgani uchun `JOIN` imkoni yo'q - kompozitsiya shu bo'shliqni to'ldiradi. Samaradorlik uchun chaqiruvlar imkon qadar parallel bajariladi, har biriga timeout va fallback beriladi, zaruriy bo'lmagan servis yiqilsa javob qisman (degraded) qaytariladi.
 
-**Spring'da qayerda uchraydi:** `WebClient` + `Mono.zip(...)` yoki `Flux.merge`, blocking stack'da esa Java 21+ virtual thread'lar (`spring.threads.virtual.enabled=true`) bilan `RestClient` chaqiruvlarini `StructuredTaskScope`/`ExecutorService` orqali parallel bajarish; `@Async` + `CompletableFuture.allOf(...).thenApply(...)` klassik varianti. Chidamlilik uchun `spring-cloud-starter-circuitbreaker-resilience4j` va `@CircuitBreaker(fallbackMethod = "...")`, `@TimeLimiter`, `@Bulkhead`. GraphQL'da `spring-boot-starter-graphql`ning `@BatchMapping` va `DataLoader`'i N+1 chaqiruvni partiyaga aylantiradi. Og'ir read model kerak bo'lsa CQRS tomon siljib, `@KafkaListener` bilan read-model'ni oldindan yiqish (materialized view) kompozitsiyani umuman olib tashlaydi.
+**Spring'da qayerda uchraydi:** `WebClient` + `Mono.zip(...)` yoki `Flux.merge`, blocking stack'da esa Java 21+ virtual thread'lar (`spring.threads.virtual.enabled=true`) bilan `RestClient` chaqiruvlarini `StructuredTaskScope`/`ExecutorService` orqali parallel bajarish (`StructuredTaskScope` JDK 25 da ham hamon preview - sinf `@PreviewFeature` bilan belgilangan, shuning uchun ishlab chiqarishda `ExecutorService` ishonchliroq); `@Async` + `CompletableFuture.allOf(...).thenApply(...)` klassik varianti. Chidamlilik uchun `spring-cloud-starter-circuitbreaker-resilience4j` va `@CircuitBreaker(fallbackMethod = "...")`, `@TimeLimiter`, `@Bulkhead`. GraphQL'da `spring-boot-starter-graphql`ning `@BatchMapping` va `DataLoader`'i N+1 chaqiruvni partiyaga aylantiradi. Og'ir read model kerak bo'lsa CQRS tomon siljib, `@KafkaListener` bilan read-model'ni oldindan yiqish (materialized view) kompozitsiyani umuman olib tashlaydi.
 
 **Qo'llanish keyslari:**
 - Buyurtma sahifasi: order, payment, shipping va customer servislaridan bitta javob yig'ish.
@@ -629,13 +645,14 @@ class MobileHomeController {
 // API composition: bir nechta servisdan parallel yig'ish
 @GetMapping("/customers/{id}/overview")
 CustomerOverview overview(@PathVariable long id) throws InterruptedException {
-    // Java 21-24 preview. Java 25 (JEP 505): StructuredTaskScope.open(
-    // Joiner.awaitAllSuccessfulOrThrow()), ShutdownOnFailure olib tashlangan.
-    try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+    // JDK 25 (JEP 505) shakli: ShutdownOnFailure olib tashlangan, o'rniga
+    // Joiner. API hamon preview: --enable-preview bilan kompilyatsiya qiladi.
+    try (var scope = StructuredTaskScope.open(
+            StructuredTaskScope.Joiner.awaitAllSuccessfulOrThrow())) {
         var profile = scope.fork(() -> profiles.get(id));
         var orders  = scope.fork(() -> orderClient.recent(id));
         var balance = scope.fork(() -> billing.balance(id));
-        scope.join().throwIfFailed();        // bittasi yiqilsa hammasi bekor
+        scope.join();                        // bittasi yiqilsa hammasi bekor
         return new CustomerOverview(profile.get(), orders.get(), balance.get());
     }
 }
@@ -800,7 +817,7 @@ class ApiErrors extends ResponseEntityExceptionHandler {
 
 **Tavsif:** Client'ga kerakli maydonlarni o'zi so'rash imkonini beradigan, kuchli tiplangan sxema asosidagi so'rov tili va runtime. Bir request bilan bir necha resursni grafik bo'ylab olish over-fetching va under-fetching muammosini kamaytiradi, endpoint ko'payishini to'xtatadi. Buning evaziga keshlash, rate-limiting va avtorizatsiya HTTP darajasidan sxema darajasiga ko'chadi va N+1 muammosi birinchi darajali xavf bo'lib qoladi.
 
-**Spring'da qayerda uchraydi:** `spring-boot-starter-graphql` (Spring for GraphQL 1.x, ichida `graphql-java`) sxema fayllarini `src/main/resources/graphql/*.graphqls`dan o'qiydi va `/graphql` endpoint'ini ochadi. Handler'lar annotatsiya bilan yoziladi: `@QueryMapping`, `@MutationMapping`, `@SubscriptionMapping`, `@SchemaMapping`, `@Argument`, `@ContextValue`, `@ProjectedPayload`. N+1 ni yechish uchun `@BatchMapping` yoki `BatchLoaderRegistry`/`DataLoader`. Konfiguratsiya `RuntimeWiringConfigurer` va `GraphQlSourceBuilderCustomizer` orqali, instrumentation `graphql-java`ning `MaxQueryDepthInstrumentation`/`MaxQueryComplexityInstrumentation` bilan. Test uchun `GraphQlTester`/`HttpGraphQlTester`, client uchun `HttpGraphQlClient`; GraphiQL `spring.graphql.graphiql.enabled=true` bilan yoqiladi. Spring Security bilan integratsiya metod darajasida `@PreAuthorize` qo'yilgan `@SchemaMapping` metodlari orqali ishlaydi. Spring Data'da `@GraphQlRepository` va `QuerydslDataFetcher`/`QueryByExampleDataFetcher` avtomatik fetcher yasaydi.
+**Spring'da qayerda uchraydi:** `spring-boot-starter-graphql` (Spring for GraphQL 1.x, ichida `graphql-java`) sxema fayllarini `src/main/resources/graphql/*.graphqls`dan o'qiydi va `/graphql` endpoint'ini ochadi. Handler'lar annotatsiya bilan yoziladi: `@QueryMapping`, `@MutationMapping`, `@SubscriptionMapping`, `@SchemaMapping`, `@Argument`, `@ContextValue`. Argument'ni interfeys proyeksiyasi sifatida olish uchun `@ProjectedPayload` ham ishlatiladi, lekin u Spring for GraphQL emas, Spring Data Commons annotatsiyasi (`org.springframework.data.web`) - uning uchun `spring-data-commons` classpath'da bo'lishi kerak. N+1 ni yechish uchun `@BatchMapping` yoki `BatchLoaderRegistry`/`DataLoader`. Konfiguratsiya `RuntimeWiringConfigurer` va `GraphQlSourceBuilderCustomizer` orqali, instrumentation `graphql-java`ning `MaxQueryDepthInstrumentation`/`MaxQueryComplexityInstrumentation` bilan. Test uchun `GraphQlTester`/`HttpGraphQlTester`, client uchun `HttpGraphQlClient`; GraphiQL `spring.graphql.graphiql.enabled=true` bilan yoqiladi. Spring Security bilan integratsiya metod darajasida `@PreAuthorize` qo'yilgan `@SchemaMapping` metodlari orqali ishlaydi. Spring Data'da `@GraphQlRepository` va `QuerydslDataFetcher`/`QueryByExampleDataFetcher` avtomatik fetcher yasaydi.
 
 **Qo'llanish keyslari:**
 - Bir nechta platforma (iOS, Android, web) turlicha maydon to'plamini so'raydigan mahsulot katalogi.
@@ -827,7 +844,7 @@ type Query {
 
 **Tavsif:** Protocol Buffers sxemasi va HTTP/2 ustida ishlaydigan, kod generatsiyasiga asoslangan yuqori unumli RPC framework'i. Binary serialization, multiplexing, ikki tomonlama streaming va qat'iy kontrakt uni servis-servis aloqasi uchun JSON/REST'dan tezroq va xavfsizroq qiladi. Narxi - brauzerdan to'g'ridan-to'g'ri chaqirishning qiyinligi (gRPC-Web/proxy kerak), debug qilishning noqulayligi va proto fayllarini boshqarish zarurati.
 
-**Spring'da qayerda uchraydi:** Rasmiy `Spring gRPC` loyihasi (`spring-grpc`, Spring Boot bilan autoconfiguration beradi) server tomonida `@GrpcService` bilan belgilangan bean'larni ro'yxatga oladi, `grpc.server.port` kabi property'larni o'qiydi; client tomonida `GrpcChannelFactory` orqali nomlangan channel'lardan stub yasaladi va `grpc.client.channels.*` konfiguratsiya qilinadi. Proto'dan Java kodi `protobuf-maven-plugin` (yoki Gradle protobuf plugin) bilan generatsiya qilinadi. Uzun vaqt keng tarqalgan community alternativa - `net.devh:grpc-spring-boot-starter` (`@GrpcService`, `@GrpcClient`). Observability uchun `grpc-java`ning interceptor'lari Micrometer bilan ulanadi, Spring Security `GlobalServerInterceptor`/`AuthenticationProcessInterceptor` uslubidagi interceptor orqali qo'shiladi. Protobuf'ni HTTP ustida uzatish kerak bo'lsa Spring Framework'ning `ProtobufHttpMessageConverter` va `ProtobufJsonFormatHttpMessageConverter` sinflari bor.
+**Spring'da qayerda uchraydi:** Rasmiy `Spring gRPC` loyihasi (`spring-grpc`, Spring Boot bilan autoconfiguration beradi) server tomonida `@GrpcService` bilan belgilangan bean'larni ro'yxatga oladi, `spring.grpc.server.port` kabi property'larni o'qiydi; client tomonida `GrpcChannelFactory` orqali nomlangan channel'lardan stub yasaladi va `spring.grpc.client.channels.*` konfiguratsiya qilinadi (prefiks `spring.grpc.*`, community starter'dagi `grpc.*` emas). Proto'dan Java kodi `protobuf-maven-plugin` (yoki Gradle protobuf plugin) bilan generatsiya qilinadi. Uzun vaqt keng tarqalgan community alternativa - `net.devh:grpc-spring-boot-starter` (`@GrpcService`, `@GrpcClient`). Observability uchun `grpc-java`ning interceptor'lari Micrometer bilan ulanadi, Spring Security `GlobalServerInterceptor`/`AuthenticationProcessInterceptor` uslubidagi interceptor orqali qo'shiladi. Protobuf'ni HTTP ustida uzatish kerak bo'lsa Spring Framework'ning `ProtobufHttpMessageConverter` va `ProtobufJsonFormatHttpMessageConverter` sinflari bor.
 
 **Qo'llanish keyslari:**
 - Ichki mikroservislar o'rtasida past latency talab qiladigan sinxron chaqiruvlar (masalan, narx hisoblash servisi).
@@ -921,14 +938,15 @@ public interface CustomerClient {
 - Sunset sanasi kelganda eski endpoint'ni avval `410 Gone` qilib, keyin butunlay olib tashlash.
 - Internal platform API'larida deprecation header'ini CI smoke-test'lari ushlab, iste'molchi jamoalarga build'da ogohlantirish berishi.
 
-**Ehtiyot bo'ling:** Header'larni qo'yib, lekin haqiqiy foydalanish telemetriyasini yig'maslik eng keng tarqalgan xato - o'chirish paytida kim sinishini bilmay qolasiz. Sunset sanasini o'tkazib yuborish yoki uni bir necha marta surish header'ga ishonchni yo'q qiladi; `Sunset` qiymati esa albatta HTTP-date formatida bo'lishi kerak, ISO-8601 emas.
+**Ehtiyot bo'ling:** Header'larni qo'yib, lekin haqiqiy foydalanish telemetriyasini yig'maslik eng keng tarqalgan xato - o'chirish paytida kim sinishini bilmay qolasiz. Sunset sanasini o'tkazib yuborish yoki uni bir necha marta surish header'ga ishonchni yo'q qiladi. Ikki header'ning formati bir xil emas: `Sunset` (RFC 8594) HTTP-date ishlatadi (ISO-8601 emas), `Deprecation` (RFC 9745) esa Item Structured Header bo'lib, qiymati Structured Fields Date, ya'ni `@` dan keyin Unix sekundlari: `Deprecation: @1688169599`. RFC 9745 ning o'zi "for historical reasons the Sunset HTTP header field uses a different data format" deb bu farqni ataylab qoldirgan, shuning uchun `Deprecation` ga HTTP-date yozish spetsifikatsiyani buzadi va qat'iy parser'da e'tiborsiz qoladi.
 
 ```java
 // Eskirishni e'lon qilish: mijoz oldindan xabardor bo'ladi
 @GetMapping("/v1/orders/{id}")
 ResponseEntity<OrderDto> getV1(@PathVariable long id) {
     return ResponseEntity.ok()
-            .header("Deprecation", "Sat, 01 Mar 2026 00:00:00 GMT")
+            // Deprecation: Structured Fields Date, HTTP-date EMAS
+            .header("Deprecation", "@1772323200")
             .header("Sunset", "Mon, 01 Jun 2026 00:00:00 GMT")
             .header("Link", "</v2/orders/" + id + ">; rel=\"successor-version\"")
             .body(service.view(id));
@@ -941,7 +959,7 @@ ResponseEntity<OrderDto> getV1(@PathVariable long id) {
 
 **Tavsif:** Javobga keyingi mumkin bo'lgan harakatlarning link va forma tavsiflarini kiritib (HATEOAS), client'ni URL'larni qo'lda yasashdan va holat mashinasini takrorlashdan xalos qilish yondashuvi; qarshi qutbda RPC uslubi - `POST /orders/{id}/cancel` kabi fe'l-endpoint'lar va client ichida qattiq kodlangan yo'llar. Hypermedia server tomonda evolyutsiya erkinligi va discoverability beradi, RPC esa soddaligi va kod generatsiyasiga qulayligi bilan ustun. Amalda ko'p tizim o'rtacha yo'lni tanlaydi: resurs-markazli URL'lar + ba'zi fe'l-endpoint'lar, linklar faqat workflow'li joylarda.
 
-**Spring'da qayerda uchraydi:** Spring HATEOAS (`spring-boot-starter-hateoas`) `RepresentationModel`, `EntityModel<T>`, `CollectionModel<T>`, `PagedModel<T>` va `Link` abstraksiyalarini beradi; linklar `WebMvcLinkBuilder.linkTo(methodOn(OrderController.class).one(id)).withSelfRel()` bilan tip-xavfsiz yasaladi, mapping esa `RepresentationModelAssembler`/`RepresentationModelAssemblerSupport` ichida markazlashadi. Media type `@EnableHypermediaSupport(type = {HAL, HAL_FORMS})` bilan tanlanadi (`application/hal+json`, HAL-FORMS, Collection+JSON, UBER, ALPS). Shartli harakatlar `Affordances` API'si (`afford(methodOn(...))`) bilan ifodalanadi; `@ConditionalOnBean` emas, balki business shart asosida link qo'shiladi. Spring Data REST butun repository'ni HAL ko'rinishida avtomatik ochadi, client tomonida `Traverson` yoki `HalExplorer`/HAL Browser ishlatiladi. RPC uslubi esa oddiy `@PostMapping("/orders/{id}/cancel")` controller'lari ko'rinishida qoladi.
+**Spring'da qayerda uchraydi:** Spring HATEOAS (`spring-boot-starter-hateoas`) `RepresentationModel`, `EntityModel<T>`, `CollectionModel<T>`, `PagedModel<T>` va `Link` abstraksiyalarini beradi; linklar `WebMvcLinkBuilder.linkTo(methodOn(OrderController.class).one(id)).withSelfRel()` bilan tip-xavfsiz yasaladi, mapping esa `RepresentationModelAssembler`/`RepresentationModelAssemblerSupport` ichida markazlashadi. Media type `@EnableHypermediaSupport(type = {HAL, HAL_FORMS})` bilan tanlanadi; `HypermediaType` enum'ida HAL, HAL_FORMS, HTTP_PROBLEM_DETAILS, COLLECTION_JSON va UBER bor (ALPS alohida tur emas, u `alps.Alps` modeli va `/profile` endpoint'i orqali beriladi). Shartli harakatlar `Affordances` API'si (`afford(methodOn(...))`) bilan ifodalanadi; `@ConditionalOnBean` emas, balki business shart asosida link qo'shiladi. Spring Data REST butun repository'ni HAL ko'rinishida avtomatik ochadi, client tomonida `Traverson` yoki `LinkDiscoverer` ishlatiladi (spring-hateoas 3.1.0 da `HalExplorer` degan sinf yo'q; brauzerdan ko'rish uchun Spring Data REST ning HAL Explorer starter'i alohida qo'shiladi). RPC uslubi esa oddiy `@PostMapping("/orders/{id}/cancel")` controller'lari ko'rinishida qoladi.
 
 **Qo'llanish keyslari:**
 - Buyurtma holat mashinasi: faqat ruxsat etilgan o'tishlar (`cancel`, `ship`, `refund`) link sifatida qaytariladi va UI tugmalarni shunga qarab ko'rsatadi.
@@ -1043,6 +1061,24 @@ public class PspBroker {
 - [ ] Breaking change ro'yxatini tuzing: olib tashlangan maydon, majburiy bo'lgan parametr, o'zgargan tur va enum qiymati.
 - [ ] Har bir endpoint uchun rate limit va maksimal payload hajmi belgilanganini tekshiring.
 - [ ] Filtrlash va saralash parametrlarini ro'yxatga olib, har biri indekslangan ustunga tushayotganini tasdiqlang.
+
+## Manbalar
+
+- Chris Richardson, *Microservices Patterns*, 8-bob - tashqi API patternlari: API Gateway va BFF
+- Chris Richardson, *Microservices Patterns*, 7-bob - so'rovni amalga oshirish: API Composition va CQRS
+- Chris Richardson, *Microservices Patterns*, 3-bob - jarayonlararo aloqa va shartnoma
+- Spring Framework, `PathMatchConfigurer` va `ServletWebRequest#checkNotModified`. spring-projects/spring-framework, tag `v7.0.9` va `v5.3.39`. Apache-2.0. https://github.com/spring-projects/spring-framework/blob/v7.0.9/spring-web/src/main/java/org/springframework/web/context/request/ServletWebRequest.java
+- Spring Framework hujjati, MVC exception handler'lar va `ProblemDetail` content negotiation. `books/docs/spring/mvc-exceptionhandlers.adoc` (spring-projects/spring-framework, tag `v7.0.9`). Apache-2.0.
+- Spring Boot, `ApiVersion` va web konfiguratsiya property'lari. spring-projects/spring-boot, tag `v4.0.0`. Apache-2.0. https://github.com/spring-projects/spring-boot/tree/v4.0.0
+- Spring Data Commons, `SpringDataWebProperties` (`max-page-size` default) va `@ProjectedPayload`. spring-projects/spring-data-commons, tag `4.1.1`. Apache-2.0. https://github.com/spring-projects/spring-data-commons/blob/4.1.1/src/main/java/org/springframework/data/web/config/SpringDataWebSettings.java
+- Spring Security, `CacheControlHeadersWriter`. spring-projects/spring-security, tag `7.1.1`. Apache-2.0. https://github.com/spring-projects/spring-security/blob/7.1.1/web/src/main/java/org/springframework/security/web/header/writers/CacheControlHeadersWriter.java
+- Spring HATEOAS, `HypermediaType` enum va `LinkDiscoverer`. spring-projects/spring-hateoas, tag `3.1.0`. Apache-2.0. https://github.com/spring-projects/spring-hateoas/blob/3.1.0/src/main/java/org/springframework/hateoas/config/EnableHypermediaSupport.java
+- Spring gRPC, `spring.grpc.*` konfiguratsiya property'lari. spring-projects/spring-grpc, tag `v1.1.1`. Apache-2.0. https://github.com/spring-projects/spring-grpc/tree/v1.1.1
+- Spring for GraphQL, annotatsiyali handler'lar. spring-projects/spring-graphql, tag `v2.0.5`. Apache-2.0. https://github.com/spring-projects/spring-graphql/tree/v2.0.5
+- JDK, `java.util.concurrent.StructuredTaskScope` (`@PreviewFeature`). openjdk/jdk, tag `jdk-25-ga`. GPL-2.0 with Classpath Exception. https://github.com/openjdk/jdk/blob/jdk-25-ga/src/java.base/share/classes/java/util/concurrent/StructuredTaskScope.java
+- RFC 9457, *Problem Details for HTTP APIs*. IETF, 2023. `errors` maydoni faqat misolda, ta'rifda yo'q.
+- RFC 9745, *The Deprecation HTTP Header Field*. IETF, 2025. Qiymat Structured Fields Date (`@<unix sekund>`).
+- RFC 8594, *The Sunset HTTP Header Field*. IETF, 2019. Qiymat HTTP-date.
 
 ---
 

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 18. Xavfsizlik patternlari (Security Patterns)
 
@@ -866,6 +866,21 @@ public class MaskingSerializer extends JsonSerializer<String> {
 - [ ] Javob header'larini tekshiring: CSP, HSTS, `X-Content-Type-Options` qo'yilganmi.
 - [ ] Foydalanuvchi kiritgan ma'lumot SQL, LDAP, OS buyruq yoki fayl yo'liga tushadigan joylarni aniqlab, har birida parametrlash yoki validatsiya borligini tasdiqlang.
 - [ ] Autorizatsiya qarorini ma'lumot egasi bo'yicha tekshiradigan testlar borligini tasdiqlang: boshqa foydalanuvchi resursiga kirish 403 qaytarishi kerak.
+
+## Manbalar
+
+- Laurentiu Spilca, *Spring Security in Action*, 3, 4-boblar - foydalanuvchini boshqarish, `UserDetailsService` va parol hashlash
+- Laurentiu Spilca, *Spring Security in Action*, 7, 8-boblar - avtorizatsiyani sozlash va cheklovlarni qo'llash
+- Laurentiu Spilca, *Spring Security in Action*, 10-bob - CSRF himoyasi va CORS
+- Laurentiu Spilca, *Spring Security in Action*, 12, 13, 14, 15-boblar - OAuth 2, authorization server, resource server, JWT
+- Laurentiu Spilca, *Spring Security in Action*, 16, 17-boblar - metod darajasidagi xavfsizlik va filtrlash
+- Craig Walls, *Spring in Action* 6th, 5, 8-boblar - Spring Security asoslari va REST ni himoyalash
+- [OWASP, Authentication Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Authentication_Cheat_Sheet.md) - autentifikatsiya oqimi, xato xabarining akkaunt borligini oshkor qilmasligi
+- [OWASP, Password Storage Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Password_Storage_Cheat_Sheet.md) - Argon2id, scrypt, bcrypt va PBKDF2 chegaralari, work factor
+- [OWASP, Secrets Management Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Secrets_Management_Cheat_Sheet.md) - secret hayot sikli va rotatsiya
+- [OWASP, SSRF Prevention Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.md) - chiquvchi so'rovni cheklash va tekshirilgan IP ga bog'lash
+- [OWASP, Transaction Authorization Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Transaction_Authorization_Cheat_Sheet.md) - oqimni ketma-ket majburlash va TOCTOU
+- [Spring Security 6.3, CSRF](https://raw.githubusercontent.com/spring-projects/spring-security/6.3.0/docs/modules/ROOT/pages/features/exploits/csrf.adoc) - CSRF himoyasi va token repository
 
 ---
 

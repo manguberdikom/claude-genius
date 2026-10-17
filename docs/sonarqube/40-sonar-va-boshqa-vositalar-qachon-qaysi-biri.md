@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 40. Sonar va boshqa vositalar: qachon qaysi biri (Sonar and Other Tools)
 
@@ -32,7 +32,9 @@ Sonar bitta vosita, u hamma narsani topmaydi. Ko'p jamoa shu yerda ikki xatodan 
 
 Sonar ning asosiy kuchi uchta narsada. Birinchisi, markazlashgan tarix: issue, coverage, duplication va rating bir serverda saqlanadi. Ikkinchisi, "Clean as You Code" modeli: quality gate asosan new code ga qaraydi, shuning uchun eski loyihada ham joriy qilish mumkin. Uchinchisi, issue hayot sikli: false positive, won't fix, assignee, PR decoration.
 
-Sonar yaxshi topadigan narsalar: null dereference ehtimoli (`java:S2259`), haddan tashqari murakkab metod (`java:S3776`), takrorlangan string literal (`java:S1192`), resurs yopilmasligi, o'lik kod, noto'g'ri `equals` va `hashCode` juftligi, SQL injection yo'li, va xavfli joyni security hotspot sifatida belgilash.
+Sonar yaxshi topadigan narsalar: haddan tashqari murakkab metod (`java:S3776`), takrorlangan string literal (`java:S1192`), o'lik kod, noto'g'ri `equals` va `hashCode` juftligi (`java:S1206`), SQL injection yo'li, va xavfli joyni security hotspot sifatida belgilash.
+
+Null dereference (`java:S2259`) va yopilmagan resurs (`java:S2095`) ham shu ro'yxatda, lekin ular bitta muhim shart bilan keladi: bu qoidalar sonar-java ning o'zida emas, alohida symbolic execution pluginida yashaydi. Shuning uchun ular faqat o'sha plugin o'rnatilgan bo'lsa ishlaydi. Ikkisining holati ham bir xil emas: `java:S2095` symbolic execution pluginining `Sonar way` profilida bor, `java:S2259` esa ochiq manbalardagi hech bir `Sonar way` profilida yo'q, ya'ni uni profilda qo'lda yoqish kerak. "Sonar null ni o'zi topadi" degan taxmin shu ikki shartni o'tkazib yuboradi.
 
 Sonar umuman qilmaydigan narsalar esa shu ro'yxat:
 
@@ -47,11 +49,11 @@ Quyidagi jadval butun bobning xaritasi.
 
 | Vosita | Nimani topadi | Qachon ishlaydi | Narxi (vaqt va qo'llab-quvvatlash) |
 | --- | --- | --- | --- |
-| SonarQube / SonarCloud | Bug, code smell, vulnerability, hotspot, coverage, duplication, tarix | Scanner bosqichida, test va JaCoCo dan keyin | Server yoki obuna, scanner 1-5 daqiqa, profil boshqarish doimiy ish |
-| SpotBugs (+ find-sec-bugs) | Bytecode darajasidagi bug naqshlari, generated kod ichidagi muammo | `compile` dan keyin, class fayllar ustida | Tez (odatda 30-90 soniya), noise ko'p, filter fayli kerak |
+| SonarQube / SonarCloud | Bug, code smell, vulnerability, hotspot, coverage, duplication, tarix | Scanner bosqichida, test va JaCoCo dan keyin | Server yoki obuna, profil boshqarish doimiy ish |
+| SpotBugs (+ find-sec-bugs) | Bytecode darajasidagi bug naqshlari, generated kod ichidagi muammo | `compile` dan keyin, class fayllar ustida | Noise ko'p, filter fayli kerak; `effort=max` sezilarli sekinlashtiradi |
 | PMD | Kod naqshlari, ortiqcha murakkablik, ishlatilmagan element | Source ustida, istalgan bosqichda | Tez, lekin Sonar bilan kuchli takrorlanadi |
 | Checkstyle | Uslub, nomlash, import tartibi, Javadoc | Source ustida, odatda `validate` | Juda tez, formatter bo'lsa ko'p qoidasi keraksiz |
-| Error Prone | Kompilyatsiya paytidagi xato naqshlari, tip bilan bog'liq xatolar | Aynan `javac` ichida | Kompilyatsiya 10-30% sekinlashadi, flag sozlash kerak |
+| Error Prone | Kompilyatsiya paytidagi xato naqshlari, tip bilan bog'liq xatolar | Aynan `javac` ichida | Kompilyatsiya sekinlashadi (ulushi loyihaga bog'liq, CI da o'lchab ko'r), flag sozlash kerak |
 | NullAway | Null bilan bog'liq xatolar, annotatsiyaga asoslangan | Error Prone ichida | Boshlanishida annotatsiya qo'yish mehnati, keyin arzon |
 | ArchUnit | Arxitektura va paket qoidalari | Oddiy test sifatida, test bosqichida | Juda arzon, qoidani o'zingiz yozasiz |
 | Semgrep | Loyihaga xos naqsh, ko'p tilli, YAML qoida | Alohida qadam, source ustida | Tez, qoida yozish oson, qoida bazasini saqlash kerak |
@@ -63,9 +65,11 @@ SpotBugs source ni emas, `.class` fayllarni o'qiydi. Shuning uchun u Sonar ko'rm
 
 Amalda eng ko'p foyda beradigan detektorlar: `EI_EXPOSE_REP` (ichki massivni tashqariga berish), `RV_RETURN_VALUE_IGNORED`, `DM_DEFAULT_ENCODING` (platforma encoding iga ishonish), `NP_NULL_ON_SOME_PATH`. Bulardan ba'zilari Sonar da ham bor, lekin SpotBugs ularni generated kodda topadi.
 
+Bu yerda bitta sabab tez-tez noto'g'ri aytiladi. Pastdagi misolda Sonar jim qolsa, bu Lombok tufayli emas: Sonar da shu muammo uchun qoida bor, `java:S2384` ("Private mutable members should not be stored or returned directly"), lekin u default `Sonar way` profilida yoqilmagan. Ya'ni sabab generatsiya emas, profil tanlovi. SpotBugs ning haqiqiy qo'shimcha qiymati esa boshqa joyda: u konstruktorda ham, Lombok yozgan getter da ham bir xil ko'radi, chunki ikkisi ham bytecode da turadi.
+
 ```java
-// Ombor qoldig'i servisi. Sonar bu yerda jim qolishi mumkin,
-// chunki muammo Lombok yaratgan getter ichida.
+// Ombor qoldig'i servisi. Sonar bu yerda jim qolishi mumkin, lekin
+// sababi `java:S2384` ning Sonar way da yoqilmagani.
 @Getter
 public class StockSnapshot {
     private final String warehouseCode;
@@ -109,9 +113,19 @@ Ikki ogohlantirish. Birinchisi: SpotBugs yangi bytecode versiyasini o'qishi uchu
 
 ## 40.3 PMD va Checkstyle: uslub va qoidalar, Sonar bilan takrorlanishi
 
-PMD va Checkstyle Sonar dan oldin paydo bo'lgan. Sonar ning o'z Java analizatori bugun ularning ko'p qoidasini qamrab oladi, shuning uchun uchalasini to'liq yoqish eng ko'p takrorlanish beradigan konfiguratsiya. "Metod juda uzun", "ishlatilmagan o'zgaruvchi", "bo'sh `catch`", "ichma ich shart" turidagi qoidalar har uchtasida bor.
+Sonar ning o'z Java analizatori bu uchlikning ko'p mavzusini qamrab oladi, shuning uchun uchalasini to'liq yoqish eng ko'p takrorlanish beradigan konfiguratsiya. Lekin takrorlanishni tekshirganda ikki narsani ajratish kerak: qoida MAVJUDMI va u DEFAULT PROFILDA yoqilganmi.
 
-Tavsiya: PMD ni yoqmang, uning o'rnini Sonar egallagan. Checkstyle ni faqat Sonar da yo'q narsa uchun qoldiring, amalda bu ikki-uchta modul: import tartibi, package nomining katalogga mosligi, litsenziya sarlavhasi. Qolganini formatter hal qiladi.
+| Mavzu | Sonar | Sonar way da | PMD 7 | Checkstyle |
+|---|---|---|---|---|
+| Ishlatilmagan lokal o'zgaruvchi | `java:S1481` | Ha | `UnusedLocalVariable` | `UnusedLocalVariable` |
+| Bo'sh `catch` | `java:S108` | Ha | `EmptyCatchBlock` | - |
+| Ichma ich shartni birlashtirish | `java:S1066` | Ha | `CollapsibleIfStatements` | - |
+| Metod juda uzun | `java:S138` | **Yo'q** | `NcssCount` | `MethodLength` |
+| Shart chuqurligi chegarasi | - | - | - | `NestedIfDepth` |
+
+Jadvaldan ikkita aniq xulosa chiqadi. Birinchi: "metod juda uzun" uchun default sozlamada takrorlanish YO'Q, chunki `java:S138` Sonar way da yoqilmagan; agar bu sizga kerak bo'lsa, uni Sonar profilida yoqish PMD yoki Checkstyle qo'shishdan arzon. Ikkinchi: Checkstyle ning `NestedIfDepth` i chuqurlik chegarasini qo'yadi, Sonar ning `java:S1066` i esa birlashtirish mumkin bo'lgan shartni ko'rsatadi; bu ikkisi ekvivalent emas va ikkisini bir xil deb hisoblash noto'g'ri taqsimotga olib keladi.
+
+Tavsiya: PMD ni yoqmang, uning o'rnini Sonar egallagan. Checkstyle ni faqat Sonar da yo'q yoki Sonar way da yoqilmagan narsa uchun qoldiring, va ro'yxatni taxminga emas, tekshiruvga tayanib tuzing. Masalan package nomining katalogga mosligi Sonar da BOR va u Sonar way da yoqilgan (`java:S1598`), ya'ni buni Checkstyle ga qoldirish ortiqcha takrorlanish. Litsenziya sarlavhasi uchun esa Sonar da qoida bor (`java:S1451`), lekin u Sonar way da yoqilmagan, shuning uchun bu yerda tanlov bor: Sonar profilida yoqish yoki Checkstyle ga qoldirish. Import tartibini esa formatter hal qiladi.
 
 Agar qoldirsangiz, hisobotni Sonar ga import qiling, shunda developer bitta joydan o'qiydi:
 
@@ -133,7 +147,7 @@ Muhim halol nuqta: import qilingan tashqi issue lar Sonar ichida to'liq boshqari
 
 ## 40.4 Error Prone va NullAway: kompilyatsiya paytida xato topish
 
-Error Prone ning yutug'i joylashuvida: u `javac` ichida ishlaydi va xatoni kompilyatsiya paytida beradi. Developer feedback ni Sonar dan o'n daqiqa oldin, o'z IDE sida oladi. Sonar PR da gapirsa, Error Prone kod yozilayotganda gapiradi.
+Error Prone ning yutug'i joylashuvida: u `javac` ichida ishlaydi va xatoni kompilyatsiya paytida beradi. Ya'ni dasturchi javobni PR ochilishini kutmasdan, o'z kompilyatoridan oladi. Sonar PR da gapirsa, Error Prone kod yozilayotganda gapiradi.
 
 NullAway esa Error Prone ustida ishlaydigan tekshiruv. U `@Nullable` annotatsiyasiga tayanadi va "annotatsiya qilingan paketda hamma narsa non-null" deb qabul qiladi. Sonar ning null tahlili bitta metod ichida kuchli, NullAway esa metodlar orasidagi shartnomani tekshiradi. Ikkisi bir birini almashtirmaydi.
 
@@ -145,9 +159,13 @@ NullAway esa Error Prone ustida ishlaydigan tekshiruv. U `@Nullable` annotatsiya
       <arg>-XDcompilePolicy=simple</arg>
       <!-- Flag to'plami Error Prone va JDK versiyasiga qarab farq qiladi -->
       <arg>--should-stop=ifError=FLOW</arg>
-      <arg>-Xplugin:ErrorProne \
-        -Xep:NullAway:ERROR \
-        -XepOpt:NullAway:AnnotatedPackages=uz.shop.payment</arg>
+      <!-- Har bir flag ALOHIDA <arg> ichida. XML da satr oxiridagi
+           `\` oddiy belgi bo'lib qoladi va javac uni alohida token
+           deb oladi, keyin Error Prone uni tanimaydi va javac ga
+           uzatadi: natijada kompilyatsiya tushunarsiz xato beradi. -->
+      <arg>-Xplugin:ErrorProne</arg>
+      <arg>-Xep:NullAway:ERROR</arg>
+      <arg>-XepOpt:NullAway:AnnotatedPackages=uz.shop.payment</arg>
     </compilerArgs>
     <annotationProcessorPaths>
       <path>
@@ -169,42 +187,62 @@ JDK 16+ da bu blokning o'zi yetmaydi: Error Prone `jdk.compiler` ning yopiq ichk
 
 To'lov servisidagi tipik holat: repository `Optional` emas, `null` qaytaradi, chaqiruvchi esa darhol metod chaqiradi. Sonar bunda ba'zan jim qoladi, chunki `null` boshqa klassdan keladi. NullAway uchun bu kompilyatsiya xatosi, chunki `@Nullable` qaytish tipi tekshirilmagan. Tuzatish: `Optional<Payment>` ga o'tish yoki `null` ni tekshirib, domen xatosini tashlash.
 
-Joriy qilish strategiyasi muhim. Hamma tekshiruvni darhol `ERROR` qilsangiz loyiha kompilyatsiya bo'lmaydi. Avval `-Xep:AllChecks:WARN` bilan ko'ring, keyin eng qimmat besh-o'n tekshiruvni `ERROR` ga ko'taring.
+Joriy qilish strategiyasi muhim. Hamma tekshiruvni darhol `ERROR` qilsangiz loyiha kompilyatsiya bo'lmaydi. Avval hamma o'chirilgan tekshiruvni ogohlantirish sifatida yoqib ko'ring, keyin eng qimmat besh-o'n tekshiruvni `ERROR` ga ko'taring. Flag nomi ko'pincha xato yoziladi: `AllChecks` degan tekshiruv yo'q, demak `-Xep:AllChecks:WARN` hech narsa qilmaydi. To'g'ri flag boshqa shaklda:
+
+```xml
+<arg>-XepAllDisabledChecksAsWarnings</arg>
+```
 
 ## 40.5 ArchUnit: arxitektura qoidalarini test sifatida yozish
 
 ArchUnit shu bobda bitta sababdan turadi: u Sonar ning eng katta bo'shlig'ini yopadi. Sonar paket bog'liqligi haqidagi sizning qoidangizni bilmaydi, ArchUnit esa uni test sifatida yozib, build ni to'xtatadi. ArchUnit sintaksisi [testlash qo'llanmasidagi](../testing/README.md) ArchUnit mavzusida, bu yerda faqat ikkisining birga ishlashi.
 
-Birinchi masala: Sonar ArchUnit testlarini oddiy test deb ko'radi va ba'zan ularga shikoyat qiladi. `@ArchTest` maydon sifatida yozilganda metod ichida `assert` bo'lmaydi, Sonar esa "test assertion siz" qoidasini ishga tushirishi mumkin. Yechim: shu fayllar uchun qoidani `sonar.issue.ignore.multicriteria` bilan o'chirish, yoki qoidani metod ko'rinishida yozib, ichida `rule.check(classes)` chaqirish.
+Birinchi masala keng tarqalgan, lekin u aslida masala emas: "Sonar `@ArchTest` maydonlariga assertion yo'q deb shikoyat qiladi" degan gap tekshiruvga dosh bermaydi. `java:S2699` qoidasi faqat METODlarni ko'radi, maydonni emas, shuning uchun `@ArchTest` maydoni uni ishga tushirmaydi. Metod ko'rinishida yozilgan qoida ham shikoyat chiqarmaydi, chunki qoidaning default assertion naqshi `check.*` bilan boshlanadigan chaqiruvni assertion deb hisoblaydi, ya'ni `rule.check(classes)` yetarli. Demak bu yerda `sonar.issue.ignore.multicriteria` yozish shart emas.
+
+Haqiqiy masala boshqa va u ArchUnit tomonida. `@AnalyzeClasses` annotatsiyasini faqat ArchUnit ning o'z JUnit 5 engine i o'qiydi, va u faqat `@ArchTest` maydonlari va metodlari uchun ishlaydi. Agar sinf ustida `@AnalyzeClasses` yozib, ichida oddiy `@Test` metodlar bo'lsa, annotatsiya umuman ta'sir qilmaydi: `importOptions` ham qo'llanmaydi, ya'ni `DoNotIncludeTests` e'tiborsiz qoladi va qoida test klasslariga ham tegib ketishi mumkin. Ikki to'g'ri shakl bor, ularni aralashtirmaslik kerak.
 
 ```java
-// Arxitektura qoidasi: Sonar bilmaydi, ArchUnit bloklaydi.
-@AnalyzeClasses(packages = "uz.shop", importOptions = DoNotIncludeTests.class)
+// 1-shakl: ArchUnit engine i. @AnalyzeClasses sinflarni o'zi import
+// qiladi va importOptions aynan shu yerda ishlaydi.
+@AnalyzeClasses(packages = "uz.shop",
+                importOptions = ImportOption.DoNotIncludeTests.class)
 class ArchitectureRulesTest {
 
-    @Test
-    void controllerRepositoryGaTogridanTogriMurojaatQilmasin() {
-        JavaClasses classes = new ClassFileImporter().importPackages("uz.shop");
-        // Web qatlami faqat application qatlami orqali ishlaydi
+    // Web qatlami faqat application qatlami orqali ishlaydi
+    @ArchTest
+    static final ArchRule webRepositoryGaTegmasin =
         noClasses().that().resideInAPackage("..web..")
-            .should().dependOnClassesThat().resideInAPackage("..repository..")
-            .check(classes);
-    }
+            .should().dependOnClassesThat().resideInAPackage("..repository..");
+
+    // Domen qoidasi: Sonar da bunday qoida yo'q
+    @ArchTest
+    static final ArchRule pulDoubleDaSaqlanmasin =
+        noFields().that().haveNameMatching(".*[Aa]mount.*")
+            .should().haveRawType(Double.class);
+}
+```
+
+```java
+// 2-shakl: oddiy JUnit. @AnalyzeClasses YO'Q, chunki u ishlamaydi;
+// import opsiyasi importer ga qo'lda beriladi.
+class ArchitectureRulesManualTest {
+
+    private static final JavaClasses CLASSES = new ClassFileImporter()
+        .withImportOption(ImportOption.DoNotIncludeTests.INSTANCE)
+        .importPackages("uz.shop");
 
     @Test
-    void pulniDoubleDaSaqlamaymiz() {
-        JavaClasses classes = new ClassFileImporter().importPackages("uz.shop.payment");
-        // Domen qoidasi: Sonar da bunday qoida yo'q
-        noFields().that().haveNameMatching(".*[Aa]mount.*")
-            .should().haveRawType(Double.class)
-            .check(classes);
+    void webRepositoryGaTegmasin() {
+        noClasses().that().resideInAPackage("..web..")
+            .should().dependOnClassesThat().resideInAPackage("..repository..")
+            .check(CLASSES);
     }
 }
 ```
 
 Ikkinchi masala: takrorlanish. ArchUnit bilan "`System.out` ishlatilmasin" degan qoidani yozish mumkin, lekin bu Sonar da allaqachon bor. Ikki joyda bir xil qoida bo'lsa, bittasi eskiradi va ikkisi bir biriga zid gapiradi. Taqsimot aniq bo'lsin: paket bog'liqligi, qatlam, nomlash va annotatsiya mavjudligi ArchUnit da; kod ichidagi mantiq va xavfsizlik Sonar da.
 
-Uchinchi masala: coverage. ArchUnit testlari JaCoCo hisobotiga tushadi va coverage raqamini oshiradi, lekin biznes mantiqni sinamaydi. Coverage pastligini ArchUnit testlari bilan "tuzatsangiz", quality gate o'tadi, sifat esa joyida qoladi.
+Uchinchi masala: coverage. Bu yerda ham gap aniqlashtirishni talab qiladi. ArchUnit importer klass fayllarni bytecode sifatida o'qiydi va klasslarni YUKLAMAYDI, ya'ni production kod ishga tushmaydi va JaCoCo uni bajarilgan deb hisoblamaydi. Demak ArchUnit testi coverage raqamini o'z-o'zidan ko'tarmaydi. Haqiqiy xavf boshqa shaklda: ArchUnit testi qo'shilganda "test yozdik" degan taassurot paydo bo'ladi, test soni va build vaqti o'sadi, biznes mantiq esa qoplanmagan qoladi. Shuning uchun coverage pastligini arxitektura testi bilan yopishga urinish o'lchov emas, o'zini chalg'itish.
 
 Mavzuning to'liq yozuvi testlash qo'llanmasidagi [arxitektura testlari va kod sifati darvozalari](../testing/14-arxitektura-testlari-va-kod-sifati.md#142-archunit-asoslari) bo'limida; bu yerda faqat Sonar qoidasi nuqtai nazari.
 
@@ -251,9 +289,13 @@ Formatlash haqidagi bahs eng arzon va eng ko'p vaqt yeydigan bahs. Uni kelishuv 
 # CI da faqat tekshirish, tuzatmaslik
 ./mvnw -q spotless:check
 
-# Katta loyihada hamma faylni emas, faqat yangi o'zgarishni formatlash
-# (ratchetFrom sozlamasi bilan) va git tarixini buzmaslik
-./mvnw spotless:apply -Dspotless.ratchetFrom=origin/main
+# Katta loyihada hamma faylni emas, faqat yangi o'zgarishni formatlash.
+# DIQQAT: `ratchetFrom` buyruq qatorida ishlamaydi, plugin uni Maven
+# property sifatida ochmagan. `-Dspotless.ratchetFrom=...` jimgina
+# e'tiborsiz qoladi: xato ham chiqmaydi, ta'sir ham qilmaydi.
+# U faqat pom.xml ichida beriladi:
+#   <configuration><ratchetFrom>origin/main</ratchetFrom></configuration>
+./mvnw spotless:apply
 
 # Pre-commit hook: kommitdan oldin formatlash
 printf '%s\n' '#!/bin/sh' './mvnw -q spotless:apply' > .git/hooks/pre-commit
@@ -308,7 +350,7 @@ Takrorlanishni o'lchash mumkin. Bitta PR da hamma vositani yoqib, topilmalarni f
 | Hamma vosita build ni to'xtatadi | Formatlash xatosi bug bilan bir darajada | Bloklash huquqini faqat tez va aniq tekshiruvga berish |
 | Error Prone darhol `ERROR` | Loyiha kompilyatsiya bo'lmaydi, rollback | Avval `WARN`, keyin tanlab `ERROR` ga ko'tarish |
 | ArchUnit qoidasi Sonar qoidasini takrorlaydi | Ikki joy bir biriga zid gapiradi | Qoida egasini aniq taqsimlash va hujjatlashtirish |
-| `@ArchTest` maydonlariga Sonar shikoyat qiladi | Keraksiz issue, gate buziladi | Shu fayllarda qoidani `multicriteria` bilan o'chirish |
+| `@AnalyzeClasses` oddiy `@Test` metodlari bilan yozilgan | Annotatsiya ta'sirsiz, `importOptions` qo'llanmaydi | `@ArchTest` ga o'tish yoki importer opsiyasini qo'lda berish |
 | Tashqi hisobot Sonar ga import qilingan, lekin gate ga qo'shilmagan | Topilma ko'rinadi, hech narsani to'xtatmaydi | Sinov PR bilan tekshirish, kerak bo'lsa alohida CI qadami bilan bloklash |
 | SpotBugs eski versiya, yangi bytecode | Tahlil xato bilan to'xtaydi, CI qizil | Java versiyasi ko'tarilganda SpotBugs ni ham ko'tarish |
 
@@ -364,11 +406,53 @@ Eslatma, bu to'plam ham sifatni kafolatlamaydi. Vositalar faqat ma'lum naqshlarn
 - [ ] Loyihadagi hamma statik tahlil vositasi uchun "qaysi bo'shliqni yopadi" degan bitta gap yozing. Javobi bo'lmagan vositani o'chiring.
 - [ ] Bitta sinov PR da hamma vositani yoqib, topilmalarni fayl va qator bo'yicha taqqoslang, ikki joyda chiqqan qoidalarning bittasini o'chiring.
 - [ ] Spotless ni qo'shib, `spotless:apply` ni alohida commit qiling va uni `.git-blame-ignore-revs` ga yozing. Keyin Sonar profilidan uslub qoidalarini olib tashlang.
-- [ ] Error Prone ni `AllChecks:WARN` bilan yoqing, eng ko'p takrorlangan beshta ogohlantirishni tuzatib, ularni `ERROR` ga ko'taring.
+- [ ] Error Prone ni `-XepAllDisabledChecksAsWarnings` bilan yoqing, eng ko'p takrorlangan beshta ogohlantirishni tuzatib, ularni `ERROR` ga ko'taring.
 - [ ] NullAway ni bitta modulda, masalan to'lov modulida yoqing. `AnnotatedPackages` ni faqat shu paketga bering va kompilyatsiya tozalanmaguncha kengaytirmang.
 - [ ] ArchUnit testlariga Sonar shikoyat qilayotganini tekshiring. Kerak bo'lsa `sonar.issue.ignore.multicriteria` bilan shu fayllarda qoidani o'chiring.
 - [ ] CI qadamlari vaqtini o'lchaydigan dashboard tuzing va PR pipeline uchun aniq daqiqa byudjetini yozib qo'ying. Byudjetdan chiqqan qadamni `nightly` ga ko'chiring.
 - [ ] Qaysi vosita bloklaydi va qaysi biri ogohlantiradi degan qarorni repository dagi bitta faylga yozing, yangi vosita qo'shishda shu faylni yangilash shart bo'lsin.
+
+## Manbalar
+
+- SonarSource, `sonar-java` ning qoida metadatasi va `Sonar way` profili
+  ([https://github.com/SonarSource/sonar-java/tree/8.44.0.48651/sonar-java-plugin/src/main/resources/profiles/Sonar_way](https://github.com/SonarSource/sonar-java/tree/8.44.0.48651/sonar-java-plugin/src/main/resources/profiles/Sonar_way),
+  tag `8.44.0.48651`, SONAR Source-Available License v1.0) - 40.2 dagi
+  `java:S2384` ning profilda yo'qligi va 40.3 dagi `java:S138`,
+  `java:S1598`, `java:S1451` ning holati.
+- SonarSource, `AssertionsInTestsCheck` va `UnitTestUtils`
+  ([https://github.com/SonarSource/sonar-java/blob/8.44.0.48651/java-checks/src/main/java/org/sonar/java/checks/tests/AssertionsInTestsCheck.java](https://github.com/SonarSource/sonar-java/blob/8.44.0.48651/java-checks/src/main/java/org/sonar/java/checks/tests/AssertionsInTestsCheck.java),
+  tag `8.44.0.48651`) - 40.5 dagi `java:S2699` faqat metodlarni ko'rishi
+  va `check.*` ni assertion deb hisoblashi.
+- SonarSource, `sonar-java-symbolic-execution`
+  ([https://github.com/SonarSource/sonar-java-symbolic-execution/tree/4450911/java-symbolic-execution/java-symbolic-execution-plugin/src/main/java/org/sonar/java/se/checks](https://github.com/SonarSource/sonar-java-symbolic-execution/tree/4450911/java-symbolic-execution/java-symbolic-execution-plugin/src/main/java/org/sonar/java/se/checks),
+  commit `4450911`, SONAR Source-Available License v1.0) - 40.1 dagi
+  `java:S2259` va `java:S2095` ning alohida pluginda turishi.
+- Error Prone, `ErrorProneOptions`
+  ([https://github.com/google/error-prone/blob/v2.36.0/check_api/src/main/java/com/google/errorprone/ErrorProneOptions.java](https://github.com/google/error-prone/blob/v2.36.0/check_api/src/main/java/com/google/errorprone/ErrorProneOptions.java),
+  tag `v2.36.0`, Apache-2.0) - 40.4 dagi
+  `-XepAllDisabledChecksAsWarnings` flagi va tanilmagan tokenning
+  javac ga uzatilishi.
+- ArchUnit, `ArchUnitTestEngine` va `Locations`
+  ([https://github.com/TNG/ArchUnit/blob/v1.4.1/archunit-junit/junit5/engine/src/main/java/com/tngtech/archunit/junit/internal/ArchUnitTestEngine.java](https://github.com/TNG/ArchUnit/blob/v1.4.1/archunit-junit/junit5/engine/src/main/java/com/tngtech/archunit/junit/internal/ArchUnitTestEngine.java),
+  tag `v1.4.1`, Apache-2.0) - 40.5 dagi `@AnalyzeClasses` ning faqat
+  `@ArchTest` bilan ishlashi va importer ning klasslarni yuklamasligi.
+- Spotless Maven plugini, `AbstractSpotlessMojo`
+  ([https://github.com/diffplug/spotless/blob/plugin-maven/2.30.0/plugin-maven/src/main/java/com/diffplug/spotless/maven/AbstractSpotlessMojo.java](https://github.com/diffplug/spotless/blob/plugin-maven/2.30.0/plugin-maven/src/main/java/com/diffplug/spotless/maven/AbstractSpotlessMojo.java),
+  tag `plugin-maven/2.30.0`, Apache-2.0) - 40.7 dagi `ratchetFrom`
+  parametrining Maven property sifatida ochilmagani.
+- PMD, Java qoida to'plamlari
+  ([https://github.com/pmd/pmd/tree/pmd_releases/7.28.0/pmd-java/src/main/resources/category/java](https://github.com/pmd/pmd/tree/pmd_releases/7.28.0/pmd-java/src/main/resources/category/java),
+  tag `pmd_releases/7.28.0`, BSD-style) - 40.3 dagi `NcssCount`,
+  `UnusedLocalVariable`, `EmptyCatchBlock`, `CollapsibleIfStatements`.
+- Checkstyle, tekshiruv sinflari
+  ([https://github.com/checkstyle/checkstyle/tree/checkstyle-14.3.0/src/main/java/com/puppycrawl/tools/checkstyle/checks](https://github.com/checkstyle/checkstyle/tree/checkstyle-14.3.0/src/main/java/com/puppycrawl/tools/checkstyle/checks),
+  tag `checkstyle-14.3.0`, LGPL-2.1) - 40.3 dagi `MethodLength`,
+  `UnusedLocalVariable`, `NestedIfDepth` va `PackageDeclaration`.
+- SpotBugs, `messages.xml` va Maven plugini
+  ([https://github.com/spotbugs/spotbugs/blob/4.10.5/spotbugs/etc/messages.xml](https://github.com/spotbugs/spotbugs/blob/4.10.5/spotbugs/etc/messages.xml),
+  tag `4.10.5`, LGPL-2.1) - 40.2 dagi `EI_EXPOSE_REP`,
+  `RV_RETURN_VALUE_IGNORED`, `DM_DEFAULT_ENCODING`,
+  `NP_NULL_ON_SOME_PATH` detektorlari.
 
 ---
 

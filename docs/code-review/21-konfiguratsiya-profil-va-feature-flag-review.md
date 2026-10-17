@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 21. Konfiguratsiya, profil va feature flag review (Configuration)
 
@@ -312,6 +312,12 @@ Oxirgi buyruq muhim: `application.yml` dagi qiymat prodda ishlamasligi mumkin, c
 - [ ] Mavjud feature flag larni sanab, har biriga egasi va o'chirish sanasini qo'shing; muddati o'tganlarni aniqlaydigan test yozing.
 - [ ] Actuator ro'yxatini `health,info,prometheus` ga qisqartirib, alohida portga chiqaring.
 - [ ] Prodda haqiqatda ishlayotgan konfiguratsiyani `configprops` va K8s env orqali tekshirib, `application.yml` bilan farqini hujjatlashtiring.
+
+## Manbalar
+
+- [Spring Boot 4.0, Externalized Configuration](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/documentation/spring-boot-docs/src/docs/antora/modules/reference/pages/features/external-config.adoc) - manbalar tartibi, `.properties` ning YAML dan ustunligi, `@PropertySource` ning kechligi, test manbalarining yuqoriligi
+- [Spring Boot 4.0, Profiles](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/documentation/spring-boot-docs/src/docs/antora/modules/reference/pages/features/profiles.adoc) - `spring.profiles.active`, `default`, `include` va `group` ning profilga xos hujjatda taqiqlanishi
+- [Spring Boot 4.0, Actuator Endpoints](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/documentation/spring-boot-docs/src/docs/antora/modules/reference/pages/actuator/endpoints.adoc) - default holda faqat `health` ochiqligi va `show-details` default `never`
 
 ---
 

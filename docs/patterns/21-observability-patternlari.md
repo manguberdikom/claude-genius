@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 21. Observability patternlari (Observability Patterns)
 
@@ -471,6 +471,17 @@ MeterFilter cardinalityGuard() {
 - [ ] Health endpoint'lari tashqi tizim holatini qaytarmasligini tekshiring - aks holda bitta tashqi uzilish butun klasterni yiqitadi.
 - [ ] Har bir alert uchun savolga javob yozing: bu alert kelganda odam nima qiladi. Javob yo'q bo'lsa, alertni olib tashlang.
 - [ ] Kuzatuvchanlik narxini oyiga hisoblab chiqing va eng qimmat uch manbani aniqlang.
+
+## Manbalar
+
+- Chris Richardson, *Microservices Patterns*, 11-bob - kuzatuvchanlik patternlari: Health Check API, Application Metrics, Distributed Tracing, Exception Tracking, Audit Logging
+- John Carnell, *Spring Microservices in Action*, 9-bob - taqsimlangan trace va korrelyatsiya identifikatori
+- [Micrometer, Histograms and percentiles](https://raw.githubusercontent.com/micrometer-metrics/micrometer-docs/06f377a95db21894939c6fff39441fe608e804a2/src/docs/concepts/histogram-quantiles.adoc) - client-side percentile ning agregatlanmasligi, bucket soni va kutubxonada yoqmaslik tavsiyasi
+- [Micrometer, Gauges](https://raw.githubusercontent.com/micrometer-metrics/micrometer-docs/06f377a95db21894939c6fff39441fe608e804a2/src/docs/concepts/gauges.adoc) - gauge ning weak reference ushlashi va NaN qaytarishi
+- [Micrometer, Naming](https://raw.githubusercontent.com/micrometer-metrics/micrometer-docs/06f377a95db21894939c6fff39441fe608e804a2/src/docs/concepts/naming.adoc) - metrika nomlash konvensiyasi va teg nomlari
+- [OpenTelemetry, Tracing API](https://raw.githubusercontent.com/open-telemetry/opentelemetry-specification/bb85bf44e2c032d9958c10b78dcb88cf36e40917/specification/trace/api.md) - span, kontekst va atribut modeli
+- [OpenTelemetry, SDK](https://raw.githubusercontent.com/open-telemetry/opentelemetry-specification/bb85bf44e2c032d9958c10b78dcb88cf36e40917/specification/trace/sdk.md) - sampler turlari va `ParentBased` qarorining izchilligi
+- [OpenTelemetry, Baggage API](https://raw.githubusercontent.com/open-telemetry/opentelemetry-specification/bb85bf44e2c032d9958c10b78dcb88cf36e40917/specification/baggage/api.md) - baggage orqali kontekst tarqatish va uning chegarasi
 
 ---
 

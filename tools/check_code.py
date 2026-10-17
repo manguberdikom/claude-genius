@@ -440,26 +440,6 @@ def check_unused_imports(text, code):
     return out
 
 
-def check_duplicate_imports(code):
-    """java:S1128. Bir xil import ikki marta: har ikkisi "ishlatilgan"."""
-    seen = {}
-    out = []
-    for m in IMPORT_RE.finditer(code):
-        key = (bool(m.group(1)), m.group(2), bool(m.group(3)))
-        first = seen.get(key)
-        if first is None:
-            seen[key] = line_of(code, m.start(2))
-            continue
-        static = "statik " if m.group(1) else ""
-        wildcard = ".*" if m.group(3) else ""
-        out.append(_find(
-            "java:S1128", "o'rta", code, m.start(2),
-            "Takroriy %simport `%s%s`: %d-qatorda allaqachon bor; "
-            "shu qator o'chirilsin." % (static, m.group(2), wildcard, first),
-            "Unused Code", ref="sonarqube 28.3"))
-    return out
-
-
 def check_month_literals(code):
     """java:S8694. LocalDate.of(2026, 10, 7): oy int literal, Month kerak."""
     out = []
@@ -3002,7 +2982,6 @@ def check_sonar(text, code, is_test, path=""):
     """Sonar qoidalari: tur ma'lumotisiz aniqlanadiganlari."""
     out = []
     out.extend(check_unused_imports(text, code))
-    out.extend(check_duplicate_imports(code))
     out.extend(check_month_literals(code))
     out.extend(check_restricted_identifiers(code))
     lit = strip_comments(text)

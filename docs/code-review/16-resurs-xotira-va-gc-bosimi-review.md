@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 16. Resurs, xotira va GC bosimi review (Resources and Memory)
 
@@ -277,6 +277,13 @@ kubectl top pod -l app=order-service
 - [ ] `@Transactional` metodlar ichida tashqi chaqiruvlarni grep bilan aniqlab, har biri uchun tranzaksiyani qisqartirish rejasini yozing.
 - [ ] `leak-detection-threshold` ni yoqib, ushlab qolingan ulanishlar haqidagi loglarni bir hafta kuzatib boring.
 - [ ] Eksport va hisobot endpointlarini oqimli javobga o'tkazing va ularga rate limit qo'ying.
+
+## Manbalar
+
+- Joshua Bloch, *Effective Java* 3rd, Item 9 - `try-with-resources` ni `try-finally` dan afzal ko'rish; Item 7 - eskirgan obyekt havolalarini olib tashlash
+- [OpenJDK 25, `ConcurrentHashMap.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/util/concurrent/ConcurrentHashMap.java) - kesh sifatida ishlatilganda xotira xulqi va aggregate status metodlari
+- [JaCoCo 0.8.12, Implementation Design](https://raw.githubusercontent.com/jacoco/jacoco/v0.8.12/org.jacoco.doc/docroot/doc/implementation.html) - `finally` uchun yasalgan implicit kod, ya'ni resurs yopish kodining bytecode dagi ko'rinishi
+- [sonar-java 8.44, `S2093`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S2093.json) - `try-with-resources` qoidasi
 
 ---
 

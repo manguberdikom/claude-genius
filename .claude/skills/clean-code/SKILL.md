@@ -5,7 +5,7 @@ description: Decide whether the line being written is clean and fix it when it i
 
 # Toza kod qoidalari
 
-49 bob, 533 bo'lim. To'liq hujjat: `docs/clean-code/README.md`.
+49 bob, 544 bo'lim. To'liq hujjat: `docs/clean-code/README.md`.
 
 ## Qoida
 

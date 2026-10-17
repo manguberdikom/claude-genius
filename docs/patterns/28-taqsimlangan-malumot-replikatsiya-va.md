@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 28. Taqsimlangan ma'lumot, replikatsiya va konsistentlik patternlari (Distributed Data, Replication & Consistency Patterns)
 
 <details>
-<summary>Bu bobdagi 29 bo'lim</summary>
+<summary>Bu bobdagi 32 bo'lim</summary>
 
 - [28.1 Yozishdan-oldingi jurnal (Write-Ahead Log)](#281-yozishdan-oldingi-jurnal-write-ahead-log)
 - [28.2 Leader asosidagi replikatsiya (Leader-based Replication)](#282-leader-asosidagi-replikatsiya-leader-based-replication)
@@ -37,7 +37,10 @@
 - [28.26 Kappa arxitekturasi (Kappa Architecture)](#2826-kappa-arxitekturasi-kappa-architecture)
 - [28.27 Split brain (Split Brain)](#2827-split-brain-split-brain)
 - [28.28 Gibrid logik soat / soat siljishi (Hybrid Logical Clock / Clock Skew)](#2828-gibrid-logik-soat--soat-siljishi-hybrid-logical-clock--clock-skew)
-- [28.29 Amalda qo'llash](#2829-amalda-qollash)
+- [28.29 Pivot tranzaksiya va saga qadam turlari (Pivot Transaction & Saga Step Types)](#2829-pivot-tranzaksiya-va-saga-qadam-turlari-pivot-transaction--saga-step-types)
+- [28.30 Domen hodisasini boyitish (Event Enrichment)](#2830-domen-hodisasini-boyitish-event-enrichment)
+- [28.31 CQRS ko'rinishini qurish va qayta qurish (Building and Rebuilding CQRS Views)](#2831-cqrs-korinishini-qurish-va-qayta-qurish-building-and-rebuilding-cqrs-views)
+- [28.32 Amalda qo'llash](#2832-amalda-qollash)
 
 </details>
 
@@ -49,16 +52,16 @@ Taqsimlangan ma'lumot patternlari bir nusxadagi ma'lumotni bir necha node o'rtas
 
 **Tavsif:** Har qanday o'zgarish avval ketma-ket (append-only) durable jurnalga yoziladi, keyin esa asosiy ma'lumot strukturasiga (B-tree, heap, memtable) qo'llaniladi. Shu sababli crash paytida tizim jurnalni qaytadan o'qib (replay) tugallanmagan tranzaksiyalarni rollback yoki roll-forward qiladi - durability va atomiclikni bitta mexanizm bilan beradi. Random yozuvlar sequential yozuvga aylanganligi uchun yozish throughput'i ham oshadi. Bundan tashqari aynan shu jurnal replikatsiya va CDC uchun manba bo'lib xizmat qiladi.
 
-**Spring'da qayerda uchraydi:** Bu infratuzilma darajasidagi pattern - PostgreSQL WAL, MySQL InnoDB redo log, Cassandra commitlog, Kafka partition segment fayllari, HBase HLog. Spring ilovasi unga bilvosita tayanadi: `@Transactional` commit qilganda `DataSourceTransactionManager` yoki `JpaTransactionManager` JDBC `Connection.commit()` ni chaqiradi, DB esa WAL fsync qilgandan keyingina muvaffaqiyat qaytaradi - ya'ni `synchronous_commit=off` qo'yilsa Spring tranzaksiya "commit bo'ldi" deydi, lekin durability yo'qoladi. Debezium (Spring Boot bilan `debezium-api` embedded engine orqali) PostgreSQL logical replication slot yoki MySQL binlog'ni, ya'ni WAL'ni o'qib CDC event'lar chiqaradi; Spring tomonda ularni `KafkaListener` iste'mol qiladi. Spring'ning o'zida ham shunga o'xshash g'oya bor: Spring Batch `BATCH_STEP_EXECUTION` jadvaliga progress yozib restart'ni ta'minlaydi, Axon Framework/Eventuate esa event store'ni append-only log sifatida ishlatadi.
+**Spring'da qayerda uchraydi:** Bu infratuzilma darajasidagi pattern - PostgreSQL WAL, MySQL InnoDB redo log, Cassandra commitlog, Kafka partition segment fayllari, HBase HLog. Spring ilovasi unga bilvosita tayanadi: `@Transactional` commit qilganda `DataSourceTransactionManager` yoki `JpaTransactionManager` JDBC `Connection.commit()` ni chaqiradi, DB esa WAL fsync qilgandan keyingina muvaffaqiyat qaytaradi - ya'ni `synchronous_commit=off` qo'yilsa Spring tranzaksiya "commit bo'ldi" deydi, lekin WAL hali fsync bo'lmagan bo'lishi mumkin. Aniq bo'lish kerak: durability butunlay yo'qolmaydi, crash'da faqat oxirgi bir necha yuz millisekund commit'lari yo'qoladi (kechikish oynasi maksimum 3 x `wal_writer_delay`, default `wal_writer_delay` 200ms), bazaning izchilligi esa buzilmaydi - hujjat buni aniq aytadi. Debezium (Spring Boot bilan `debezium-api` embedded engine orqali) PostgreSQL logical replication slot yoki MySQL binlog'ni, ya'ni WAL'ni o'qib CDC event'lar chiqaradi; Spring tomonda ularni `KafkaListener` iste'mol qiladi. Spring'ning o'zida ham shunga o'xshash g'oya bor: Spring Batch `BATCH_STEP_EXECUTION` jadvaliga progress yozib restart'ni ta'minlaydi, Axon Framework/Eventuate esa event store'ni append-only log sifatida ishlatadi.
 
 **Qo'llanish keyslari:**
 - PostgreSQL'da `@Transactional` to'lov operatsiyasidan keyin server o'chsa ham, commit bo'lgan yozuv WAL replay orqali qaytariladi.
 - Debezium + Kafka Connect orqali `orders` jadvalidagi har bir UPDATE'ni WAL'dan o'qib search index'ga stream qilish.
-- Kafka'da `acks=all` va `min.insync.replicas=2` bilan producer yozuvi faqat log'ga durable yozilgach tasdiqlanadi.
+- Kafka'da `acks=all` va `min.insync.replicas=2` bilan producer yozuvi ISR dagi barcha replikalar log'iga yozilgach tasdiqlanadi (diskka fsync emas: `log.flush.interval.messages` default `Long.MAX_VALUE`, ya'ni Kafka OS page cache'ga tayanadi va durability replikatsiya hisobiga keladi).
 - Point-in-time recovery: WAL arxivini saqlab, bazani "kecha 14:32" holatiga qaytarish.
 - Cassandra'da memtable RAM'da bo'lsa ham, commitlog crash'dan keyin yo'qolgan yozuvlarni tiklaydi.
 
-**Ehtiyot bo'ling:** WAL faqat fsync bajarilganda haqiqiy durability beradi - `synchronous_commit=off`, `innodb_flush_log_at_trx_commit=2` yoki Kafka'da `acks=1` ishlatish "commit bo'ldi" degan yolg'on signalni keltiradi. Shuningdek logical replication slot iste'molchisi (Debezium) uzoq vaqt to'xtab qolsa, WAL tozalanmay disk to'lib ketadi va butun baza yozishni to'xtatadi.
+**Ehtiyot bo'ling:** WAL faqat fsync bajarilganda haqiqiy durability beradi - `synchronous_commit=off`, `innodb_flush_log_at_trx_commit=2` yoki Kafka'da `acks=1` ishlatish "commit bo'ldi" degan yolg'on signalni keltiradi. Kafka tomonida `acks=all` ham fsync kafolatini bermaydi, u faqat ISR ga yozilganini bildiradi - shuning uchun `min.insync.replicas` va `unclean.leader.election.enable=false` (default) bilan birga sozlanmasa, durability illyuziya bo'lib qoladi. Shuningdek logical replication slot iste'molchisi (Debezium) uzoq vaqt to'xtab qolsa, WAL tozalanmay disk to'lib ketadi (`max_slot_wal_keep_size` default `-1`, ya'ni cheksiz saqlanadi - uni ataylab chegaralang). Debezium uchun `wal_level = logical` ham shart, default `replica` bilan logical decoding ishlamaydi.
 
 ## 28.2 Leader asosidagi replikatsiya (Leader-based Replication)
 
@@ -118,7 +121,7 @@ public class ReplicaRoutingDataSource extends AbstractRoutingDataSource {
 
 **Tavsif:** N replikadan yozuv kamida W tasiga, o'qish esa kamida R tasidan tasdiq olishi talab qiladi. Agar `R + W > N` bo'lsa, o'qish va yozish to'plamlari albatta kesishadi va o'qish eng yangi qiymatni (yoki uning bir nusxasini) ko'radi - bu kuchli konsistentlikka yaqin kafolat beradi. R va W ni o'zgartirib, latency bilan konsistentlik o'rtasidagi muvozanatni har bir so'rov uchun alohida sozlash mumkin. Masalan `N=3, W=2, R=2` eng keng tarqalgan muvozanat.
 
-**Spring'da qayerda uchraydi:** Parametrlar DB tomonda, lekin Spring ilovasi ularni so'rov darajasida beradi. Spring Data Cassandra'da `spring.cassandra.request.consistency: QUORUM` global, yoki `CassandraTemplate.execute(statement.setConsistencyLevel(DefaultConsistencyLevel.LOCAL_QUORUM))` so'rov bo'yicha; ko'p-regionli klasterda `LOCAL_QUORUM` to'g'ri tanlov, chunki `QUORUM` cross-region latency qo'shadi. MongoDB'da Spring Data `WriteConcern.MAJORITY` (`MongoTemplate.setWriteConcern(...)` yoki `@Document` ustida `MongoTemplate` sozlamasi) va `ReadConcern.MAJORITY` bilan bir xil g'oya ishlaydi - `WriteConcernResolver` bean orqali operatsiya turiga qarab belgilash mumkin. Kafka'da ekvivalenti `acks=all` + `min.insync.replicas` (`spring.kafka.producer.acks: all`), etcd/ZooKeeper'da esa quorum Raft/ZAB ichiga qurilgan.
+**Spring'da qayerda uchraydi:** Parametrlar DB tomonda, lekin Spring ilovasi ularni so'rov darajasida beradi. Spring Data Cassandra'da `spring.cassandra.request.consistency: QUORUM` global, yoki `CassandraTemplate.execute(statement.setConsistencyLevel(DefaultConsistencyLevel.LOCAL_QUORUM))` so'rov bo'yicha; ko'p-regionli klasterda `LOCAL_QUORUM` to'g'ri tanlov, chunki `QUORUM` cross-region latency qo'shadi. MongoDB'da Spring Data `WriteConcern.MAJORITY` (`MongoTemplate.setWriteConcern(...)` yoki `@Document` ustida `MongoTemplate` sozlamasi) va `ReadConcern.MAJORITY` bilan bir xil g'oya ishlaydi - `WriteConcernResolver` bean orqali operatsiya turiga qarab belgilash mumkin. Kafka'da ekvivalenti `acks=all` + `min.insync.replicas` (`spring.kafka.producer.acks: all`), etcd/ZooKeeper'da esa quorum Raft/ZAB ichiga qurilgan. Kafka default'larini biling: producer `acks` default allaqachon `all`, `enable.idempotence` default `true`, `max.in.flight.requests.per.connection` default 5, broker tomonidagi `min.insync.replicas` esa default 1 - ya'ni `acks=all` yozib qo'yib `min.insync.replicas` ni oshirmasangiz, bitta replika bilan ham "hamma ISR tasdiqladi" chiqadi va kafolat yo'qoladi. `min.insync.replicas` tekshiruvi faqat `acks=all` da ishlaydi. Consumer tomonida `isolation.level` default `read_uncommitted`, ya'ni tranzaksion yozuvlarni to'g'ri o'qish uchun uni `read_committed` ga o'zgartirish kerak.
 
 **Qo'llanish keyslari:**
 - Moliyaviy balans yoki buyurtma holati uchun `LOCAL_QUORUM` o'qish/yozish bilan eski qiymat o'qishni oldini olish.
@@ -178,7 +181,7 @@ public class ReplicaRoutingDataSource extends AbstractRoutingDataSource {
 
 **Tavsif:** Yozuv vaqtida maqsadli replika mavjud bo'lmasa, koordinator node yozuvni o'zida "hint" sifatida vaqtincha saqlaydi va yiqilgan node qaytgach unga uzatadi. Bu yozish availability'sini saqlaydi: bir necha replika o'chgan bo'lsa ham yozuv qabul qilinadi (sloppy quorum). Hintlar cheklangan muddat va hajm bilan saqlanadi; muddat o'tsa hint tashlanadi va ma'lumotni faqat anti-entropy repair tiklaydi. Ya'ni bu durability emas, availability patterni.
 
-**Spring'da qayerda uchraydi:** Cassandra (`hinted_handoff_enabled`, `max_hint_window_in_ms`, `hints_directory`), ScyllaDB, DynamoDB va Riak ichida amalga oshiriladi; Spring ilovasi faqat natijasini ko'radi - yozuv `ONE`/`ANY` darajada muvaffaqiyatli qaytadi, lekin ma'lumot hali haqiqiy replikada emas. Shuning uchun Spring Data Cassandra'da `ConsistencyLevel.ANY` ni hech qachon muhim yozuvlar uchun ishlatmaslik kerak. Ilova darajasidagi analogi - mahalliy durable buffer: Spring Boot'da `@Retryable` (Spring Retry) + Kafka producer'ning ichki `buffer.memory`/`retries` mexanizmi, yoki outbox jadvaliga yozib keyin yuborish; Resilience4j `RateLimiter`/`Retry` bilan birga ishlatilganda bu "broker o'chgan paytda ham yozuvni qabul qilish" xatti-harakatini beradi. Kafka tomonida `acks=1` + retry ham o'xshash kompromissni yaratadi.
+**Spring'da qayerda uchraydi:** Cassandra (`hinted_handoff_enabled`, `max_hint_window` - default 3 soat; eski `max_hint_window_in_ms` nomi deprecated alias, `hints_directory`), ScyllaDB, DynamoDB va Riak ichida amalga oshiriladi; Spring ilovasi faqat natijasini ko'radi - yozuv `ONE`/`ANY` darajada muvaffaqiyatli qaytadi, lekin ma'lumot hali haqiqiy replikada emas. Shuning uchun Spring Data Cassandra'da `ConsistencyLevel.ANY` ni hech qachon muhim yozuvlar uchun ishlatmaslik kerak. Ilova darajasidagi analogi - mahalliy durable buffer: Spring Boot'da `@Retryable` (Spring Retry) + Kafka producer'ning ichki `buffer.memory`/`retries` mexanizmi, yoki outbox jadvaliga yozib keyin yuborish; Resilience4j `RateLimiter`/`Retry` bilan birga ishlatilganda bu "broker o'chgan paytda ham yozuvni qabul qilish" xatti-harakatini beradi. Kafka tomonida `acks=1` + retry ham o'xshash kompromissni yaratadi.
 
 **Qo'llanish keyslari:**
 - Cassandra node'ni rolling restart qilganda yozuvlar uzilmasdan davom etadi.
@@ -187,7 +190,7 @@ public class ReplicaRoutingDataSource extends AbstractRoutingDataSource {
 - Spring ilovada Kafka vaqtincha ishlamaganda outbox jadvaliga yozib, keyin publisher bilan uzatish.
 - AZ o'rtasida qisqa muddatli partition paytida yozish availability'sini saqlash.
 
-**Ehtiyot bo'ling:** Hint'lar coordinator diskida to'planib uni to'ldirishi mumkin, va `max_hint_window` o'tgandan keyin jimgina tashlanadi - ya'ni uzoq downtime'da ma'lumot yo'qoladi, shuning uchun uzoq o'chgan node qaytganda albatta repair bajarish kerak. `ANY` konsistentlik darajasi bilan yozish esa "yozildi" degan javobni beradi, lekin hech bir haqiqiy replikada ma'lumot bo'lmasligi mumkin - buni moliyaviy yoki huquqiy ahamiyatli yozuvlar uchun ishlatish qo'pol xato.
+**Ehtiyot bo'ling:** Hint'lar coordinator diskida to'planib uni to'ldirishi mumkin, va `max_hint_window` (default 3 soat) o'tgandan keyin jimgina tashlanadi - ya'ni uzoq downtime'da ma'lumot yo'qoladi, shuning uchun uzoq o'chgan node qaytganda albatta repair bajarish kerak, va bu `gc_grace_seconds` (default 864000, ya'ni 10 kun) ichida bo'lishi shart, aks holda o'chirilgan yozuv tirilib qaytadi. `ANY` konsistentlik darajasi bilan yozish esa "yozildi" degan javobni beradi, lekin hech bir haqiqiy replikada ma'lumot bo'lmasligi mumkin - buni moliyaviy yoki huquqiy ahamiyatli yozuvlar uchun ishlatish qo'pol xato.
 
 ## 28.10 Vektor soat (Vector Clock)
 
@@ -208,7 +211,7 @@ public class ReplicaRoutingDataSource extends AbstractRoutingDataSource {
 
 **Tavsif:** Konflikt yuzaga kelganda eng katta timestamp'ga ega yozuv saqlanadi, qolganlari tashlab yuboriladi. Bu eng oddiy va eng tez konvergatsiya strategiyasi - qo'shimcha metadata yoki merge logikasi talab qilmaydi va har doim bitta yakuniy qiymatga olib keladi. Narxi - jimgina ma'lumot yo'qotish: parallel yozuvlardan biri butunlay yo'qoladi. Node'lar soatlari farq qilsa (clock skew), hatto "eski" yozuv ham g'alaba qozonishi mumkin.
 
-**Spring'da qayerda uchraydi:** Cassandra'da bu standart konflikt yechimi - har bir cell'da yozish timestamp'i bor va eng kattasi g'alaba qozonadi; Spring Data Cassandra bilan yozganda bu avtomatik qo'llanadi, `WriteOptions.builder().timestamp(...)` bilan uni ataylab boshqarish ham mumkin. Redis replikatsiyasi, DynamoDB global table'lari va ko'pchilik cache qatlamlari ham amalda LWW ishlatadi. Spring ilovalarida LWW'ni tasodifiy tanlab qo'yish juda oson: `CrudRepository.save(entity)` to'liq entity'ni UPDATE qiladi, ya'ni ikki parallel HTTP request bir-birining maydonlarini bosib ketadi (lost update) - buning oldini olish uchun `@Version` bilan optimistic locking, `@Lock(LockModeType.PESSIMISTIC_WRITE)`, yoki JPQL'da faqat kerakli maydonni `UPDATE` qilish ishlatiladi. Shuningdek `@DynamicUpdate` (Hibernate) faqat o'zgargan maydonlarni yuboradi va "butun obyektni bosib ketish" muammosini yumshatadi.
+**Spring'da qayerda uchraydi:** Cassandra'da bu standart konflikt yechimi - har bir cell'da yozish timestamp'i bor va eng kattasi g'alaba qozonadi; Spring Data Cassandra bilan yozganda bu avtomatik qo'llanadi, `WriteOptions.builder().timestamp(...)` bilan uni ataylab boshqarish ham mumkin. DynamoDB global table'lari va ko'pchilik cache qatlamlari ham amalda LWW ishlatadi. Redis OSS replikatsiyasini bu ro'yxatga qo'shmang: u single-master, replica default holda yozishni rad etadi (`replica-read-only yes`), shuning uchun konflikt yechish umuman kerak emas; LWW faqat Redis Enterprise ning ko'p-faol CRDB sida uchraydi. Spring ilovalarida LWW'ni tasodifiy tanlab qo'yish juda oson: `CrudRepository.save(entity)` mavjud entity uchun `EntityManager.merge()` chaqiradi va Hibernate default holda barcha ustunni UPDATE ga qo'shadi, ya'ni ikki parallel HTTP request bir-birining maydonlarini bosib ketadi (lost update) - buning oldini olish uchun `@Version` bilan optimistic locking, `@Lock(LockModeType.PESSIMISTIC_WRITE)`, yoki JPQL'da faqat kerakli maydonni `UPDATE` qilish ishlatiladi. Shuningdek `@DynamicUpdate` (Hibernate) faqat o'zgargan maydonlarni yuboradi va "butun obyektni bosib ketish" muammosini yumshatadi.
 
 **Qo'llanish keyslari:**
 - Cache yoki sessiya ma'lumotlari: eng yangi qiymat yetarli, tarix kerak emas.
@@ -223,7 +226,7 @@ public class ReplicaRoutingDataSource extends AbstractRoutingDataSource {
 
 **Tavsif:** Lock yoki leadership berilganda unga monoton o'sadigan raqam (token) ham qo'shib beriladi, va har bir yozuv shu tokenni resursga ko'rsatadi. Resurs o'zi ko'rgan eng katta tokendan kichik tokenli so'rovni rad etadi - shu bilan "muzlab qolgan" (GC pause, tarmoq uzilishi tufayli lease'i allaqachon tugagan) eski leader ma'lumotni buza olmaydi. Bu taqsimlangan lock'ning asosiy xavfi - lease muddati tugaganini bilmaydigan client - ga yagona ishonchli yechim. Oddiy "lock oldim" tekshiruvi bundan himoya qilmaydi.
 
-**Spring'da qayerda uchraydi:** Spring Integration `LockRegistry` (`RedisLockRegistry`, `JdbcLockRegistry`, `ZookeeperLockRegistry`) va ShedLock/Quartz lock'lari o'zidan fencing token bermaydi - ular lease asosida ishlaydi, demak `@SchedulerLock` yoki `RedisLockRegistry` bilan "faqat bitta instansiya ishlaydi" degan taxmin qat'iy kafolat emas. To'g'ri yechim: tokenni manba tomonida tekshirish. ZooKeeper'da `zxid`/znode `czxid`, etcd'da `revision`, Kafka'da `transactional.id` bilan bog'liq producer epoch (`enable.idempotence=true`, Spring Kafka `KafkaTransactionManager`) aynan fencing rolini bajaradi - eski producer `ProducerFencedException` oladi. DB darajasida esa `@Version` ustun yoki `UPDATE ... WHERE epoch < :epoch` shartli yozuv bilan token amalga oshiriladi; Spring Data `@Query` + `@Modifying` bu uchun qulay.
+**Spring'da qayerda uchraydi:** Spring Integration `LockRegistry` (`RedisLockRegistry`, `JdbcLockRegistry`, `ZookeeperLockRegistry`) va ShedLock/Quartz lock'lari o'zidan fencing token bermaydi - ular lease asosida ishlaydi, demak `@SchedulerLock` yoki `RedisLockRegistry` bilan "faqat bitta instansiya ishlaydi" degan taxmin qat'iy kafolat emas. To'g'ri yechim: tokenni manba tomonida tekshirish. ZooKeeper'da `zxid`/znode `czxid`, etcd'da `revision`, Kafka'da `transactional.id` bilan bog'liq producer epoch (`enable.idempotence=true`, Spring Kafka `KafkaTransactionManager`) aynan fencing rolini bajaradi - eski producer `ProducerFencedException` oladi. DB darajasida esa `@Version` ustun yoki `UPDATE ... WHERE epoch <= :epoch` shartli yozuv bilan token amalga oshiriladi (shart yo'nalishini diqqat bilan tanlang: `<=` o'z epoch'i bilan kelgan egaga yozishga ruxsat beradi, `<` esa bermaydi); Spring Data `@Query` + `@Modifying` bu uchun qulay.
 
 ```java
 @Modifying
@@ -247,7 +250,7 @@ int applyIfNotFenced(@Param("id") Long id,
 
 **Tavsif:** Eng kuchli single-object konsistentlik modeli: tizim xuddi bitta nusxa va bitta atomik operatsiyalar ketma-ketligi bordek ko'rinadi, va operatsiya tugagandan keyin barcha keyingi o'qishlar uning natijasini ko'radi. Bu "real vaqt" tartibini hurmat qiladi - shuning uchun compare-and-set, unique constraint va leader election kabi narsalar faqat linearizable store'da to'g'ri ishlaydi. Narxi: konsensus talab qiladi, demak latency yuqori va tarmoq partition'ida availability yo'qoladi (CAP'dagi CP tanlovi). Odatda faqat kichik, kritik metadata uchun ishlatiladi.
 
-**Spring'da qayerda uchraydi:** Spring'da model emas, lekin unga tayanadigan komponentlar ko'p. Koordinatsiya uchun ZooKeeper (`spring-cloud-zookeeper`, Curator), etcd, Consul yoki Raft asosidagi DB (CockroachDB `SERIALIZABLE`) ishlatiladi; Spring Cloud Kubernetes `ConfigMap`/`Lease` orqali leader election ham etcd'ning linearizable o'qishlariga tayanadi (`spring-cloud-kubernetes-fabric8-leader`). PostgreSQL'da yagona primary'ga `SERIALIZABLE` izolyatsiya darajasi (`@Transactional(isolation = Isolation.SERIALIZABLE)`) amalda linearizable xatti-harakat beradi, lekin faqat shu primary chegarasida - asinxron replica'dan o'qish uni darhol buzadi. MongoDB'da `ReadConcern.LINEARIZABLE` + `WriteConcern.MAJORITY` kombinatsiyasi mavjud va Spring Data MongoDB `MongoTemplate` sozlamalari orqali beriladi. Muhim nuqta: `@Transactional` bir necha servis yoki bazaga tarqalganda hech qanday linearizability bermaydi - u yerda saga yoki konsensus kerak.
+**Spring'da qayerda uchraydi:** Spring'da model emas, lekin unga tayanadigan komponentlar ko'p. Koordinatsiya uchun ZooKeeper (`spring-cloud-zookeeper`, Curator), etcd, Consul yoki Raft asosidagi DB (CockroachDB `SERIALIZABLE`) ishlatiladi; Spring Cloud Kubernetes `ConfigMap`/`Lease` orqali leader election ham etcd'ning linearizable o'qishlariga tayanadi (`spring-cloud-kubernetes-fabric8-leader`). PostgreSQL'ning `SERIALIZABLE` izolyatsiya darajasini (`@Transactional(isolation = Isolation.SERIALIZABLE)`) linearizability bilan aralashtirmang: hujjat uni "tranzaksiyalar ketma-ket bajarilgandek natija" deb ta'riflaydi, real vaqt tartibini esa talab qilmaydi. Ya'ni serializability bir necha obyekt ustidagi tranzaksiyalarni tartibga soladi, linearizability esa bitta obyekt ustidagi operatsiyalarning real vaqt tartibini kafolatlaydi - bu ikki xil kafolat. Compare-and-set yoki unique constraint uchun yagona primary yetarli, asinxron replica'dan o'qish esa uni darhol buzadi. MongoDB'da `ReadConcern.LINEARIZABLE` + `WriteConcern.MAJORITY` kombinatsiyasi mavjud va Spring Data MongoDB `MongoTemplate` sozlamalari orqali beriladi. Muhim nuqta: `@Transactional` bir necha servis yoki bazaga tarqalganda hech qanday linearizability bermaydi - u yerda saga yoki konsensus kerak.
 
 **Qo'llanish keyslari:**
 - Leader election: butun klaster bitta leader borligiga kelishishi kerak (ZooKeeper/etcd).
@@ -413,7 +416,7 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
 **Tavsif:** Node'lar to'plami, ularning bir qismi yiqilgan yoki tarmoq kechikkan sharoitda ham bitta qiymat yoki operatsiyalar ketma-ketligi haqida kelishuvga erishish algoritmlari. Raft leader election, log replication va safety fazalariga bo'linib, kvorum (N/2+1) tasdig'i bilan commit qiladi; Paxos nazariy jihatdan ekvivalent, lekin amalga oshirilishi murakkabroq. Bu replikatsiyalangan state machine, linearizable yozuv va split brain'dan himoyaning asosi.
 
-**Spring'da qayerda uchraydi:** Spring'da konsensus algoritmi implementatsiyasi yo'q - u infratuzilma komponentlarida yashaydi: Kafka (KRaft yoki ZooKeeper), etcd, Consul, ZooKeeper, MongoDB replica set election, PostgreSQL Patroni. Spring ilovasi ularga client sifatida tayanadi: Spring Cloud Consul / Spring Cloud Zookeeper discovery va `@EnableDiscoveryClient`, Spring Cloud Kubernetes (etcd ortidagi API server bilan `ConfigMap`/`Lease` orqali). Leader election uchun Spring Integration'ning `LeaderInitiator` abstraksiyasi (`spring-integration-zookeeper`'dagi `LeaderInitiator`, yoki `LockRegistryLeaderInitiator` Hazelcast/JDBC/Redis lock registry bilan) ishlatiladi va ilova `AbstractLeaderEvent` (`OnGrantedEvent`, `OnRevokedEvent`) ni `@EventListener` bilan tinglaydi. Kafka'ga yozishda `acks=all` va `min.insync.replicas` sozlamalari (`spring.kafka.producer.acks`) kvorum semantikasini ilova darajasida ko'rsatadi.
+**Spring'da qayerda uchraydi:** Spring'da konsensus algoritmi implementatsiyasi yo'q - u infratuzilma komponentlarida yashaydi: Kafka (KRaft; ZooKeeper rejimi Kafka 4 da olib tashlangan), etcd, Consul, ZooKeeper, MongoDB replica set election, PostgreSQL Patroni. Spring ilovasi ularga client sifatida tayanadi: Spring Cloud Consul / Spring Cloud Zookeeper discovery va `@EnableDiscoveryClient`, Spring Cloud Kubernetes (etcd ortidagi API server bilan `ConfigMap`/`Lease` orqali). Leader election uchun Spring Integration'ning `LeaderInitiator` abstraksiyasi (`spring-integration-zookeeper`'dagi `LeaderInitiator`, yoki `LockRegistryLeaderInitiator` Hazelcast/JDBC/Redis lock registry bilan) ishlatiladi va ilova `AbstractLeaderEvent` (`OnGrantedEvent`, `OnRevokedEvent`) ni `@EventListener` bilan tinglaydi. Kafka'ga yozishda `acks=all` va `min.insync.replicas` sozlamalari (`spring.kafka.producer.acks`) kvorum semantikasini ilova darajasida ko'rsatadi.
 
 **Qo'llanish keyslari:**
 - Scheduled job'ni klasterda faqat bitta instans bajarishi uchun leader tanlash.
@@ -499,7 +502,95 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
 **Ehtiyot bo'ling:** Biznes qarorini (kim birinchi, kim g'olib) turli serverlarda olingan `System.currentTimeMillis()` ga qurish - klassik va juda qimmat xato; tartib kerak bo'lsa yagona manbadan (DB sequence, Kafka offset, konsensus log) olingan monoton raqam ishlatilishi kerak. NTP soatni orqaga ham suradi, shuning uchun o'tgan vaqt (davomiylik) o'lchash uchun `System.nanoTime()` yoki `Micrometer Timer` ishlatish, `Instant.now()` emas.
 
-## 28.29 Amalda qo'llash
+## 28.29 Pivot tranzaksiya va saga qadam turlari (Pivot Transaction & Saga Step Types)
+
+**Tavsif:** Saga qadamlari bir xil emas: ular uch turga bo'linadi va bu bo'linish saga dizaynining asosiy vositasi. Compensatable tranzaksiya kompensatsiya tranzaksiyasi bilan orqaga qaytarilishi mumkin. Pivot tranzaksiya saganing go/no-go nuqtasi: u commit bo'lsa, saga oxirigacha boradi. Pivot ham compensatable, ham retriable bo'lmagan qadam bo'lishi mumkin, yoki oxirgi compensatable qadam, yoki birinchi retriable qadam bo'lib olinadi. Retriable tranzaksiya pivotdan keyin keladi va muvaffaqiyatli tugashi kafolatlangan, shuning uchun unga kompensatsiya yozilmaydi (Chris Richardson, *Microservices Patterns: With examples in Java*, Manning, 2019, 4-bob, 128-129-betlar). Kitobdagi Create Order sagasida `createOrder` va `createTicket` compensatable, kartani avtorizatsiya qilish pivot, buyurtma va ticket ni tasdiqlash esa retriable qadamlar. Bu tasnif ikki joyda hal qiluvchi: [izolyatsiya yo'qligiga qarshi choralar](14-microservices-patternlari.md#1440-saga-da-izolyatsiya-yoq-anomaliyalar-va-qarshi-choralar) qadam turiga qarab tanlanadi, va monolitni ajratishda monolit faqat retriable qadamlarni bajarsa ko'chish sezilarli oson bo'ladi.
+
+**Spring'da qayerda uchraydi:** Qadam turi kodda ikki xil mexanizmga aylanadi. Compensatable qadam uchun kompensatsiya metodi va `*_PENDING` holati yoziladi; holat `@Version` bilan optimistik tekshiruv ostida o'zgaradi va shartli `UPDATE ... WHERE status = 'PENDING'` ning `rowsAffected` natijasi nazorat qilinadi. Retriable qadam uchun esa at-least-once yetkazib berish va qayta urinish infratuzilmasi kerak: Spring Retry'ning `@Retryable(retryFor = ...)`, Spring for Apache Kafka'da `DefaultErrorHandler` + `ExponentialBackOff` yoki `@RetryableTopic` bilan DLT. Pivot qadam odatda tashqi tizimga (PSP, bank) chaqiruv bo'lgani uchun unga takroriy chaqiruvdan himoya kaliti beriladi va javobi `@Transactional` tashqarisida saqlanadi. Qadamlar ketma-ketligi [orkestratsiya](14-microservices-patternlari.md#149-saga-orkestratsiya-saga-orchestration) holida orchestrator state machine'ida, [xoreografiya](14-microservices-patternlari.md#148-saga-xoreografiya-saga-choreography) holida esa hodisa oqimi tartibida beriladi.
+
+```java
+public enum StepKind { COMPENSATABLE, PIVOT, RETRIABLE }
+
+public record SagaStep(String name, StepKind kind) { }
+
+// Create Order saga: compensatable qadamlar oldinda, pivot o'rtada,
+// retriable qadamlar faqat pivotdan keyin turishi shart.
+List<SagaStep> createOrderSaga = List.of(
+        new SagaStep("createOrder", StepKind.COMPENSATABLE),
+        new SagaStep("createTicket", StepKind.COMPENSATABLE),
+        new SagaStep("authorizeCreditCard", StepKind.PIVOT),
+        new SagaStep("approveTicket", StepKind.RETRIABLE),
+        new SagaStep("approveOrder", StepKind.RETRIABLE));
+```
+
+**Qo'llanish keyslari:**
+- To'lov avtorizatsiyasini pivot qilib belgilash: undan keyin buyurtma bekor qilinmaydi, faqat oldinga ketadi.
+- Xat yuborish yoki ombor hujjatini chiqarish kabi orqaga qaytarilmaydigan qadamni pivotdan keyinga surish.
+- Monolit bilan birgalikdagi sagada monolit qadamini retriable qilib loyihalash.
+- Tashqi kontragentga chaqiruvni oxirgi compensatable qadam qilib, uning xatosida butun sagani bekor qilish.
+- Qadam turini saga definition'ida ochiq yozib, review'da "bu qadamga kompensatsiya kerakmi" savoliga javob berish.
+
+**Ehtiyot bo'ling:** Eng ko'p uchraydigan xato - pivotdan keyin compensatable qadam qo'yish: endi orqaga qaytish yo'li yo'q, lekin kod uni bor deb o'ylaydi va kompensatsiya yarim bajarilgan holatni qoldiradi. Ikkinchi xato - retriable qadamni "kafolatlangan" deb hisoblab, retry va dead-letter oqimini yozmaslik: qadam o'zi qaytarilmaydi, demak u oxir-oqibat o'tishi uchun infratuzilma majbur. Uchinchisi - pivotni tashqi tizimga chaqiruv qilib, javobni saqlamaslik: tarmoq xatosidan keyin takroriy chaqiruv mijozdan ikki marta pul oladi.
+
+## 28.30 Domen hodisasini boyitish (Event Enrichment)
+
+**Tavsif:** Domen hodisasi ikki shaklda chiqariladi. Yupqa (thin) hodisa faqat o'zgarish faktini va aggregate identifikatorini olib yuradi: `OrderCreated` da bitta `orderId` bo'ladi. Iste'molchiga tafsilot kerak bo'lsa, u hodisani chiqargan servisga qaytib so'rov yuboradi va bu qo'shimcha tarmoq chaqirig'i hamda bog'liqlik hisoblanadi. Boyitish (event enrichment) teskari yondashuv: hodisa iste'molchilarga odatda kerak bo'ladigan ma'lumotni o'zida olib yuradi, masalan `OrderCreated` ichida buyurtma qatorlari, yetkazib berish va restoran nomi keladi (Chris Richardson, *Microservices Patterns: With examples in Java*, Manning, 2019, 5-bob, 161-162-betlar). Bu iste'molchini soddalashtiradi, lekin hodisa sinfining barqarorligini kamaytiradi: iste'molchi talabi o'zgarsa hodisa sxemasi ham o'zgaradi va o'zgarish ilovaning bir nechta joyiga urib ketadi. Kitob shu muvozanatni ochiq qo'yadi: ko'p hollarda qaysi maydon kerakligi ayon bo'ladi, lekin har bir iste'molchini qondirishga urinish behuda mehnat.
+
+**Spring'da qayerda uchraydi:** Hodisa sinfi `record` sifatida yoziladi va metadata (hodisa ID si, vaqt, aggregate turi va ID si) alohida envelope yoki ustun sifatida saqlanadi. Boyitish aggregate ichida bajariladi, listener ichida emas: `AbstractAggregateRoot.registerEvent(...)` yoki domen metodidan qaytarilgan hodisa ro'yxati to'liq payload bilan tug'iladi, keyin `@TransactionalEventListener(phase = AFTER_COMMIT)` yoki outbox jadvali orqali tashqariga chiqadi. Kafka'da sxema barqarorligini `spring-kafka` + Schema Registry (Avro yoki Protobuf) bilan nazorat qilinadi: yangi maydon faqat default qiymat bilan qo'shiladi, shunda eski iste'molchi ishlashda davom etadi. Yupqa hodisa tanlansa, iste'molchi tomonida `RestClient` yoki `WebClient` bilan qaytib so'rash kerak bo'ladi va bu [API kompozitsiyasi](14-microservices-patternlari.md#1410-api-kompozitsiyasi-api-composition) ga yaqin shaklga aylanadi.
+
+```java
+// Yupqa hodisa: iste'molchi tafsilot uchun servisga qaytib so'rov yuboradi
+public record OrderCreated(long orderId) { }
+
+// Boyitilgan hodisa: iste'molchiga kerakli ma'lumot hodisa ichida keladi
+public record OrderCreatedEnriched(
+        long orderId,
+        long restaurantId,
+        String restaurantName,
+        List<OrderLineItem> lineItems,
+        DeliveryInformation deliveryInformation) { }
+```
+
+**Qo'llanish keyslari:**
+- Buyurtma tarixi ko'rinishini qurishda `OrderCreated` ichida qatorlar va restoran nomi bo'lishi, shunda ko'rinish hech kimga so'rov yubormaydi.
+- Xabarnoma servisiga `UserRegistered` hodisasi bilan email va tilni berib, uni Profile servisidan ajratish.
+- Analitik oqimda hodisani o'sha paytdagi narx bilan boyitib, keyingi narx o'zgarishidan himoyalash.
+- Audit oqimi uchun hodisaga o'zgarishni kim qilganini qo'shib, keyin uni qidirib yurmaslik.
+- Hodisadan keyin manba servis o'chirilsa ham ma'lumot qolishi kerak bo'lgan holatlar.
+
+**Ehtiyot bo'ling:** Boyitishni cheksiz davom ettirish hodisani aggregate'ning butun nusxasiga aylantiradi va har bir iste'molchi o'zgarishi hodisa sxemasini tortadi: bu taqsimlangan monolitning bir ko'rinishi. Hodisaga shaxsiy ma'lumot solish ham xavf: hodisa uzoq saqlanadi va o'chirish talabi (GDPR) bajarilmaydi, shuning uchun bunday maydon o'rniga identifikator qoldiriladi. Boyitilgan hodisada narx yoki holat nusxalangani uchun uni "hozirgi haqiqat" deb o'qish xato: hodisa o'tmishdagi fakt, hozirgi holat emas.
+
+## 28.31 CQRS ko'rinishini qurish va qayta qurish (Building and Rebuilding CQRS Views)
+
+**Tavsif:** CQRS ko'rinishi bir marta yozilib qolmaydi: yangi so'rov uchun yangi ko'rinish qo'shiladi, sxema o'zgarsa yoki yangilash kodida xato topilsa ko'rinish noldan qayta quriladi. G'oya oddiy ko'rinadi, lekin amalda uchta masala chiqadi (Chris Richardson, *Microservices Patterns: With examples in Java*, Manning, 2019, 7-bob, 241-242-betlar). Birinchisi: broker hodisalarni abadiy saqlamaydi. RabbitMQ xabarni iste'mol qilingach o'chiradi, Kafka esa retention davrida ushlaydi, shuning uchun ko'rinishni faqat brokerdan o'qib qurib bo'lmaydi va arxivlangan hodisalar (masalan obyekt omborida) ham o'qilishi kerak. Ikkinchisi: hodisalar soni o'sgani sari butun tarixni qayta o'qish qimmatlashadi, yechim ikki bosqichli inkremental algoritm, ya'ni avval har bir aggregate uchun oldingi snapshot va undan keyingi hodisalardan yangi snapshot hisoblanadi, keyin ko'rinish snapshot'lar hamda ulardan keyingi hodisalardan quriladi. Uchinchisi: ko'rinishni yangilash takroriy hodisaga chidamli bo'lishi shart, shuning uchun handler qayta ishlangan hodisa ID sini ko'rinish bilan bitta tranzaksiyada yozadi.
+
+**Spring'da qayerda uchraydi:** Ko'rinish handler'i `@KafkaListener` yoki `@RabbitListener` bo'ladi va yangilash `@Transactional` ichida ketadi; SQL ko'rinishida qayta ishlangan hodisa ID si `processed_events` jadvaliga shu tranzaksiyada yoziladi. Kitobdagi NoSQL misolida ID ko'rinishning o'z yozuvi ichida saqlanadi, chunki tranzaksiya modeli cheklangan. Hodisa ID lari monoton bo'lsa, har bir aggregate uchun faqat `max(eventId)` saqlanadi va bu [snapshot](10-malumotlarni-boshqarish-va-taqsimlash.md#1017-snapshot-snapshot) yondashuvi bilan yaxshi birlashadi. Qayta qurish uchun Kafka'da `KafkaConsumer.seekToBeginning` yoki yangi `group.id` bilan boshdan o'qish, Spring Batch bilan esa arxivdan bir martalik yuklash job'i yoziladi. Yangi ko'rinish yonma-yon qurilib, tayyor bo'lgach o'qish unga yo'naltiriladi: patternning o'zi [CQRS](12-arxitektura-uslublari.md#1210-buyruq-va-sorovlar-masuliyatini-ajratish-cqrs---command-query-responsibility-segregation) va [hodisalarni saqlash](12-arxitektura-uslublari.md#1211-hodisalarni-saqlash-event-sourcing) bo'limlarida.
+
+```sql
+-- Ko'rinishni yangilash va hodisa ID sini qayd etish BITTA tranzaksiyada
+-- ketadi, aks holda takroriy yetkazib berish ko'rinishni ikki marta
+-- yangilaydi. 0 qator o'zgarsa, hodisa allaqachon ishlangan.
+BEGIN;
+INSERT INTO processed_events (aggregate_type, aggregate_id, max_event_id)
+VALUES ('Order', 42, '0000015e0c6fc18f')
+ON CONFLICT (aggregate_type, aggregate_id) DO UPDATE
+    SET max_event_id = EXCLUDED.max_event_id
+    WHERE processed_events.max_event_id < EXCLUDED.max_event_id;
+
+UPDATE order_history SET status = 'APPROVED' WHERE order_id = 42;
+COMMIT;
+```
+
+**Qo'llanish keyslari:**
+- Mijozga yangi hisobot ekrani kerak bo'lganda yangi ko'rinish qo'shib, uni tarixdan to'ldirish.
+- Ko'rinish yangilash kodidagi xatodan keyin ko'rinishni noldan qayta qurish va eski nusxani almashtirish.
+- Ko'rinish sxemasiga ustun qo'shilganda eski yozuvlarni hodisalardan qayta hisoblash.
+- Qidiruv indeksini (Elasticsearch) yangi analizator bilan qayta indekslash va keyin alias'ni almashtirish.
+- Yillik tarixni snapshot'lardan qurib, faqat oxirgi oy hodisalarini brokerdan o'qish.
+
+**Ehtiyot bo'ling:** Ko'rinishni qayta qurishni ishlab turgan ko'rinish ustida bajarish eng qimmat xato: yarim qurilgan ko'rinish foydalanuvchiga ko'rinadi. Yangi ko'rinish yonma-yon quriladi va o'qish faqat tayyor bo'lgach unga o'tadi. Hodisa ID sini ko'rinishdan alohida tranzaksiyada yozish ham tuzoq: ikki yozuv orasida process yiqilsa, hodisa ikki marta qo'llanadi va hisoblagichlar siljiydi. Broker retention davrini "tarix shu yerda" deb o'ylash uchinchi tuzoq: retention o'tgach qayta qurish imkoni yo'qoladi, shuning uchun hodisa arxivi boshidan rejalashtiriladi.
+
+## 28.32 Amalda qo'llash
 
 - [ ] Har bir ma'lumot to'plami uchun uning egasi bo'lgan bitta servisni belgilab, qolganlarini o'quvchi deb hujjatlashtiring.
 - [ ] Nusxalangan (replikatsiya qilingan) ma'lumotlarni ro'yxatga olib, har biri uchun ruxsat etilgan kechikishni yozing.
@@ -509,6 +600,25 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 - [ ] Taqsimlangan tranzaksiya ishlatilgan joylarni toping va ularni Saga yoki Outbox ga o'tkazish rejasini tuzing.
 - [ ] Har bir agregat bo'yicha versiyalash yoki optimistik lock borligini tekshiring.
 - [ ] Replikatsiya kechikishini metrika sifatida chiqarib, chegarasidan oshganda alert qo'ying.
+
+## Manbalar
+
+- Martin Kleppmann, *Designing Data-Intensive Applications*, 5-bob - replikatsiya, kechikish va o'qish kafolatlari
+- Martin Kleppmann, *Designing Data-Intensive Applications*, 6-bob - partitioning
+- Martin Kleppmann, *Designing Data-Intensive Applications*, 8-bob - taqsimlangan tizim muammolari, soat va himoya belgisi
+- Martin Kleppmann, *Designing Data-Intensive Applications*, 9-bob - linearizability, tartib va konsensus
+- Chris Richardson, *Microservices Patterns: With examples in Java*, Manning, 2019, 4-bob, 128-129-betlar - saga qadamlarining uch turi: compensatable, pivot va retriable tranzaksiya
+- Chris Richardson, *Microservices Patterns: With examples in Java*, Manning, 2019, 5-bob, 161-162-betlar - domen hodisasini boyitish va uning hodisa sxemasi barqarorligiga ta'siri
+- Chris Richardson, *Microservices Patterns: With examples in Java*, Manning, 2019, 7-bob, 241-242-betlar - CQRS ko'rinishini arxivlangan hodisalardan va snapshot'lar bilan inkremental qurish, takroriy hodisani ko'rinish bilan bitta tranzaksiyada qayd etish
+- PostgreSQL hujjati: Server Configuration (`synchronous_commit`, `wal_writer_delay`, `wal_level`, `max_wal_senders`, `max_slot_wal_keep_size`, `hot_standby_feedback`). postgres/postgres, tag `REL_18_6` (commit `724edf9bde9d356724ad384a2e196edc3c9f80f7`), `doc/src/sgml/config.sgml`. PostgreSQL License. https://github.com/postgres/postgres/blob/724edf9bde9d356724ad384a2e196edc3c9f80f7/doc/src/sgml/config.sgml
+- PostgreSQL hujjati: Concurrency Control (serializability ta'rifi, `REPEATABLE READ` da write skew, SQLSTATE 40001, `READ UNCOMMITTED` ning `READ COMMITTED` kabi ishlashi). postgres/postgres, tag `REL_18_6`, `doc/src/sgml/mvcc.sgml`. PostgreSQL License. https://github.com/postgres/postgres/blob/724edf9bde9d356724ad384a2e196edc3c9f80f7/doc/src/sgml/mvcc.sgml
+- PostgreSQL hujjati: High Availability va Logical Replication (slot WAL to'planishi). postgres/postgres, tag `REL_18_6`, `doc/src/sgml/high-availability.sgml`, `doc/src/sgml/logical-replication.sgml`. PostgreSQL License. https://github.com/postgres/postgres/blob/724edf9bde9d356724ad384a2e196edc3c9f80f7/doc/src/sgml/high-availability.sgml
+- Apache Kafka kodi: `ProducerConfig` (`acks` ISR semantikasi va default, `enable.idempotence`, `max.in.flight`), `ConsumerConfig` (`isolation.level` default), `ServerLogConfigs` (`min.insync.replicas`, `log.flush.interval.messages`), `LogConfig` (`unclean.leader.election.enable`), `Partition.scala` (min ISR faqat `acks=all` da). apache/kafka, tag `4.3.1` (commit `26b251a451ce941d3d7a55e6487bcb7f16b5ad48`). Apache-2.0. https://github.com/apache/kafka/blob/26b251a451ce941d3d7a55e6487bcb7f16b5ad48/clients/src/main/java/org/apache/kafka/clients/producer/ProducerConfig.java
+- Apache Cassandra: `cassandra.yaml` va `Config.java` (`max_hint_window` default 3 soat, eski `max_hint_window_in_ms` deprecated alias), `TableParams` (`gc_grace_seconds` default 864000, `read_repair` default `BLOCKING`), `Cell.java` (cell timestamp bilan LWW). apache/cassandra, tag `cassandra-5.0.9` (commit `b5f2a54210d541339c2e7c17a794195cac0e67c2`). Apache-2.0. https://github.com/apache/cassandra/blob/b5f2a54210d541339c2e7c17a794195cac0e67c2/src/java/org/apache/cassandra/config/Config.java
+- Redis konfiguratsiyasi: `replica-read-only yes` (OSS replikatsiyasi single-master, konflikt yechish yo'q) va `CLUSTER_SLOTS 16384`. redis/redis, tag `7.2.16` (commit `335554f18caf7bbf6b0ac2b3548133d750f00a1b`). BSD-3-Clause. https://github.com/redis/redis/blob/335554f18caf7bbf6b0ac2b3548133d750f00a1b/redis.conf
+- Spring Framework kodi: `SQLStateSQLExceptionTranslator` (SQLSTATE 40001 -> `CannotAcquireLockException`), `AbstractRoutingDataSource`, `LazyConnectionDataSourceProxy`, `TransactionSynchronizationManager`. spring-projects/spring-framework, tag `v7.0.9` (commit `82a6b40b9366ec181ededdad282b307ee5381a52`). Apache-2.0. https://github.com/spring-projects/spring-framework/blob/82a6b40b9366ec181ededdad282b307ee5381a52/spring-jdbc/src/main/java/org/springframework/jdbc/support/SQLStateSQLExceptionTranslator.java
+- Spring Data JPA kodi: `SimpleJpaRepository.save` (mavjud entity uchun `merge()`). spring-projects/spring-data-jpa, tag `4.1.1` (commit `3833be89e36def30b31f47c6b28a95e9bcc590af`). Apache-2.0. https://github.com/spring-projects/spring-data-jpa/blob/3833be89e36def30b31f47c6b28a95e9bcc590af/spring-data-jpa/src/main/java/org/springframework/data/jpa/repository/support/SimpleJpaRepository.java
+- PgJDBC kodi: `PGProperty.targetServerType` qiymatlari. pgjdbc/pgjdbc, tag `REL42.7.14` (commit `ebdd9d0a4017e74182eabb0cc304105a0120b647`). BSD-2-Clause. https://github.com/pgjdbc/pgjdbc/blob/ebdd9d0a4017e74182eabb0cc304105a0120b647/pgjdbc/src/main/java/org/postgresql/PGProperty.java
 
 ---
 

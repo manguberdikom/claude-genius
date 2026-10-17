@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 34. Test to'liqligini review qilish (Test Case Completeness)
 
@@ -36,6 +36,14 @@ Usul to'rt qadamdan iborat:
 2. Har sinf uchun chegaralarni topish.
 3. Shartlar kombinatsiyasini jadvalga yozish.
 4. Xato yo'llari va holat o'tishlarini sanash.
+
+Bu usuldan oldin uchta oddiy qoida turadi va Google ning review qo'llanmasi ularni aniq yozgan.
+
+Birinchi: test **ishlab chiqarish kodi bilan bitta PR da** qo'shiladi, favqulodda holat bundan mustasno. "Testni keyingi PR da yozaman" 41.5 dagi "keyin tozalayman" tuzog'ining aynan o'zi.
+
+Ikkinchi, va u ko'pincha umuman berilmaydi: **testning o'zi to'g'rimi**. Test o'zini test qilmaydi va testga test yozilmaydi, ya'ni uning haqiqiyligini faqat odam tekshiradi. Savollar aniq: kod buzilganda bu test rostdan yiqiladimi; ostidagi kod o'zgarsa u soxta musbat (false positive) berib boshlaydimi; har bir test sodda va foydali tasdiq qiladimi; testlar metodlar orasida to'g'ri taqsimlanganmi. Birinchi savolni amalda tekshirishning eng arzon yo'li ham bor: kodni ataylab buzib, testning qizil bo'lishini ko'rish (mutatsiya testlashning qo'lda qilingan shakli, testing 5.12).
+
+Uchinchi: test ham **saqlanadigan kod**. Asosiy binary ga kirmaydi degan sabab bilan testdagi murakkablikni qabul qilib bo'lmaydi.
 
 ```java
 // Review qilinayotgan kod: chegirma hisobi.
@@ -388,6 +396,10 @@ Birinchi ikkisi @CsvSource ga ikki qator qo'shish bilan hal bo'ladi.
 - [ ] Idempotentlik talab qiladigan har bir operatsiya uchun "ikki marta chaqirish" testini yozing.
 - [ ] Kritik poyga holatlari uchun parallel test yozing (haqiqiy PostgreSQL bilan).
 - [ ] PIT ni domen paketlariga sozlab, mutatsiya ballini o'lchang va 80 foizdan past bo'lsa bo'shliqlarni to'ldiring.
+
+## Manbalar
+
+- [Google, What to Look For in a Code Review](https://raw.githubusercontent.com/google/eng-practices/3bb3ec25b3b0199f4940b1aa75f0ac5c5753301c/review/reviewer/looking-for.md) - testni ishlab chiqarish kodi bilan bitta PR da talab qilish, testning o'zini tekshirish savollari (buzilganda yiqiladimi, soxta musbat beradimi), testning ham saqlanadigan kod ekani
 
 ---
 

@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 14. Obyekt va ma'lumot tuzilmasi: inkapsulyatsiya (Objects vs Data Structures)
 
 <details>
-<summary>Bu bobdagi 11 bo'lim</summary>
+<summary>Bu bobdagi 13 bo'lim</summary>
 
 - [14.1 Ma'lumot abstraksiyasi: getter/setter inkapsulyatsiya emas](#141-malumot-abstraksiyasi-gettersetter-inkapsulyatsiya-emas)
 - [14.2 Obyekt va ma'lumot tuzilmasining teskariligi](#142-obyekt-va-malumot-tuzilmasining-teskariligi)
@@ -19,7 +19,9 @@
 - [14.8 Statik holat, utility sinf va `private` konstruktor](#148-statik-holat-utility-sinf-va-private-konstruktor)
 - [14.9 Obyekt o'z invariantini qanday himoya qiladi](#149-obyekt-oz-invariantini-qanday-himoya-qiladi)
 - [14.10 `this` ning konstruktordan qochib ketishi](#1410-this-ning-konstruktordan-qochib-ketishi)
-- [14.11 Amalda qo'llash](#1411-amalda-qollash)
+- [14.11 Chegara interfeysini tizim bo'ylab uzatmaslik](#1411-chegara-interfeysini-tizim-boylab-uzatmaslik)
+- [14.12 Hali yozilmagan API o'rniga o'zing xohlagan interfeysni yozish](#1412-hali-yozilmagan-api-orniga-ozing-xohlagan-interfeysni-yozish)
+- [14.13 Amalda qo'llash](#1413-amalda-qollash)
 
 </details>
 
@@ -157,6 +159,36 @@ public Order(List<OrderItem> items) {
 }
 ```
 
+Konstruktorda nusxa olish **tartibi** ham qoida: nusxa tekshiruvdan OLDIN olinadi va tekshiruv nusxa ustida bajariladi. Teskari tartibda tekshiruv va saqlash orasida oyna qoladi: boshqa thread (yoki niyati buzuq chaqiruvchi) shu oynada obyektni o'zgartirib, tekshiruvdan o'tgan, lekin yaroqsiz holatni saqlab qo'yadi. Xavfsizlikda bu TOCTOU (time-of-check/time-of-use) deb ataladi.
+
+```java
+// yomon: tekshiruv asl obyekt ustida, keyin nusxa olinadi
+final class DateRangeYomon {
+    private final Date start;
+    private final Date end;
+
+    DateRangeYomon(Date start, Date end) {
+        if (start.after(end)) { throw new IllegalArgumentException(); }
+        this.start = new Date(start.getTime());   // orada start o'zgargan bo'lishi mumkin
+        this.end = new Date(end.getTime());
+    }
+}
+
+// yaxshi: avval nusxa, keyin nusxa ustida tekshiruv
+final class DateRange {
+    private final Date start;
+    private final Date end;
+
+    DateRange(Date start, Date end) {
+        this.start = new Date(start.getTime());
+        this.end = new Date(end.getTime());
+        if (this.start.after(this.end)) { throw new IllegalArgumentException(); }
+    }
+}
+```
+
+Nusxani qanday olish ham ahamiyatli: parametr turi voris olinishi mumkin bo'lsa, nusxa `clone` bilan olinmaydi. `Date` `final` emas, demak `clone` `java.util.Date` nusxasini qaytarishi kafolatlanmagan: u ishonchsiz voris sinf nusxasini qaytarib, o'ziga havolani chetga yozib qo'yishi mumkin. Getterda esa `clone` haqli, chunki u yerda ichki obyektning aniq turi ma'lum; shunda ham nusxa konstruktori yoki statik fabrika afzal.
+
 `Date`, massiv va `Calendar` kabi o'zgaradigan turlar ham shu qoidaga kiradi (22.1 da `Date` dan voz kechish sababi).
 
 ## 14.8 Statik holat, utility sinf va `private` konstruktor
@@ -240,7 +272,58 @@ public final class PaymentListener {
 
 Spring kontekstida bu qoida `@PostConstruct` yoki `ApplicationReadyEvent` da ro'yxatdan o'tish shaklida qo'llanadi (26.1).
 
-## 14.11 Amalda qo'llash
+## 14.11 Chegara interfeysini tizim bo'ylab uzatmaslik
+
+`Map`, `JsonNode`, `ResultSet` va kutubxona turlari keng: ularda sizga kerak bo'lmagan metodlar ham bor. Shu turni tizim bo'ylab uzatsangiz, har bir qabul qiluvchi uning hamma imkoniyatini oladi, shu bilan birga kutubxona imzosi o'zgarganda tuzatiladigan joy soni ham shuncha bo'ladi. Qoida: chegara turi uni ishlatadigan sinf ichida qoladi, `public` API dan qaytarilmaydi va argument sifatida qabul qilinmaydi.
+
+```java
+// yomon: Map butun tizim bo'ylab yuradi, har kim clear() chaqira oladi
+Map<String, Sensor> sensors = new HashMap<>();
+registry.register(sensors);
+
+// yaxshi: chegara turi sinf ichida, tashqariga kerakli uchta metod chiqadi
+public final class Sensors {
+
+    private final Map<String, Sensor> bySerial = new HashMap<>();
+
+    public Sensor byId(String id) {
+        Sensor sensor = bySerial.get(id);
+        if (sensor == null) {
+            throw new UnknownSensorException(id);
+        }
+        return sensor;
+    }
+}
+```
+
+Bu o'ramning ikkinchi foydasi: `Sensors` endi biznes qoidasini majburlashi mumkin (noma'lum id da istisno, qo'shishda tekshiruv), `Map` esa buni qila olmaydi. Har bir `Map` ni o'rash shart emas, lekin chegara turi bir sinf yoki yaqin sinflar guruhidan chiqmasligi shart. To'plamni qaytarish shakli alohida mavzu: [ichki to'plamni oshkor qilish](#147-ichki-toplamni-oshkor-qilish-va-himoyalangan-nusxa).
+
+## 14.12 Hali yozilmagan API o'rniga o'zing xohlagan interfeysni yozish
+
+Chegaraning ikkinchi turi bilim bilan noma'lumlikni ajratadi: qo'shni jamoa interfeysini hali belgilamagan, tashqi servis shartnomasi hali tayyor emas. Kutib turish o'rniga o'zingiz xohlagan interfeysni yozasiz: nomi va metodlari sizning kodingiz ehtiyojidan chiqadi, chaqiruvchi tomon shu nom bilan o'qiladi.
+
+```java
+// bizning ehtiyojimizdan chiqqan interfeys, tashqi API hali yo'q
+public interface Transmitter {
+    void transmit(Frequency frequency, DataStream stream);
+}
+
+// tashqi API kelganda faqat bitta sinf o'zgaradi
+final class VendorTransmitterAdapter implements Transmitter {
+
+    private final VendorRadioApi api;
+
+    @Override
+    public void transmit(Frequency frequency, DataStream stream) {
+        api.keyOn(frequency.hertz());       // vendor imzosi shu sinfda qoladi
+        api.emitAnalog(stream.bytes());
+    }
+}
+```
+
+Shu bilan tashqi API bilan ishlash bitta sinfga to'planadi va test uchun tikuv (seam) paydo bo'ladi: `Transmitter` ning fake implementatsiyasi bilan chaqiruvchini tashqi tizimsiz sinash mumkin. Adapter patternining to'liq yozuvi [Adapter](../patterns/02-strukturaviy-patternlar.md#21-adapter-adapter) da.
+
+## 14.13 Amalda qo'llash
 
 - [ ] Barcha getter lari to'plam qaytaradigan sinflarni topib, `List.copyOf` yoki o'zgartirilmas ko'rinishga o'tkazing.
 - [ ] Konstruktorda tashqaridan kelgan to'plam va massivlarni nusxa qilib saqlashni ta'minlang.
@@ -250,6 +333,17 @@ Spring kontekstida bu qoida `@PostConstruct` yoki `ApplicationReadyEvent` da ro'
 - [ ] Value object larda invariantni konstruktorga ko'chirib, tarqalgan validatsiyani olib tashlang.
 - [ ] Konstruktorda `this` ni tashqariga beradigan joylarni statik fabrikaga yoki `@PostConstruct` ga ko'chiring.
 - [ ] Har bir DTO da biznes mantiqi yo'qligini, har bir domen obyektida esa oshkor setter yo'qligini tekshiring.
+- [ ] `public` metod imzolarida `Map`, `JsonNode` va kutubxona turlarini qidirib, ularni o'z turingiz bilan almashtiring.
+- [ ] Tashqi API ga to'g'ridan-to'g'ri murojaat qiladigan sinflarni sanab, ularni bitta adapter ortiga yig'ing.
+
+## Manbalar
+
+- Robert C. Martin, *Clean Code*, 6-bob - obyekt va ma'lumot tuzilmasi teskariligi, Demeter qonuni, DTO va Active Record
+- Robert C. Martin, *Clean Code*, 8-bob - chegara turini tizim bo'ylab uzatmaslik va hali yozilmagan API uchun interfeys
+- Joshua Bloch, *Effective Java* 3rd, Item 15, 16, 17 - a'zolar ko'rinishini kamaytirish, accessor metod, o'zgarmaslik
+- Joshua Bloch, *Effective Java* 3rd, Item 50 - kerak bo'lganda himoyalangan nusxa olish
+- Joshua Bloch, *Effective Java* 3rd, Item 50 - nusxa tekshiruvdan oldin olinishi (TOCTOU), voris olinadigan turda `clone` bilan nusxa olmaslik
+- Robert C. Martin, *Clean Code*, 6-bob ("The Law of Demeter", "Hiding Structure") - poyezd avariyasi va tuzilmani yashirish
 
 ---
 

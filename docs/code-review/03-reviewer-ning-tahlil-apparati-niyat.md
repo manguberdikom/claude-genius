@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 3. Reviewer ning tahlil apparati: niyat, invariant, xavf yuzasi (The Reviewer's Analytical Apparatus)
 
@@ -41,6 +41,16 @@ Uchinchi o'qish - xavf. Bu kod prodda birinchi marta ishga tushganda nima bo'lad
 | 1. Niyat | Nima uchun va nega shu yerda | PR tavsifi, fayllar ro'yxati, public API | 15% |
 | 2. Mexanika | Kod aytganini qiladimi | Satrlar, shartlar, turlar, chegaralar | 55% |
 | 3. Xavf | Prodda nima bo'ladi | Migratsiya, konfiguratsiya, yuk, nosozlik | 30% |
+
+Uch o'qish ustiga Google ning review qo'llanmasi ikki qattiq qoida qo'yadi va ularning ikkisi ham mexanika o'qishiga tegishli.
+
+Birinchi: **har bir satrga qarash**. Ma'lumot fayli, generatsiya qilingan kod va katta ma'lumot strukturasini ko'z bilan o'tish mumkin, lekin odam yozgan sinf, funksiya yoki blokni "ichi yaxshi bo'lsa kerak" deb o'tkazib yuborish mumkin emas. Qaysi kod ko'proq diqqat talab qilishi reviewer ning qarori, lekin minimal shart bitta: kod nima qilayotganini **tushunish**.
+
+Shundan foydali natija chiqadi: kodni o'qish qiyin bo'lsa va bu review ni sekinlashtirayotgan bo'lsa, to'g'ri harakat taxmin qilish emas, muallifdan aniqlashtirishni so'rash va tushuntirilgunicha kutish. Mantiq oddiy: agar sen tushunmagan bo'lsang, boshqa dasturchilar ham tushunmaydi; ya'ni bu savol kelgusi o'quvchilarga ham xizmat qiladi.
+
+Agar kod tushunarli, lekin uning bir qismini baholashga o'zini malakali hisoblamasa, PR ga shu qism uchun malakali reviewer qo'shilishi kerak. Qo'llanma bu yerda aniq sohalarni nomlaydi: maxfiylik, xavfsizlik, konkurentlik, accessibility, internatsionalizatsiya. Bir nechta reviewer bo'lgan holatda esa qoida sodda: **qaysi qismni o'qiganini izohda yozish**, va LGTM ni izoh bilan berishni afzal ko'rish.
+
+Ikkinchi qoida kontekst haqida: diff ko'rsatgan bir necha satr yetarli emas. To'rtta yangi satr o'zi to'g'ri ko'rinadi, lekin butun faylni ochganda ular endi bo'linishi kerak bo'lgan 50 satrlik metod ichida turgani ko'rinadi. Shuning uchun PR tizim darajasida ham tortiladi: u tizimning kod salomatligini yaxshilayaptimi yoki uni murakkabroq, kamroq testlangan holga olib kelayaptimi. Qo'llanmaning talabi qat'iy: **kod salomatligini pasaytiradigan PR qabul qilinmaydi**, chunki tizimlar ko'pincha bitta katta qarordan emas, qo'shilib ketgan mayda murakkablashuvlardan buziladi.
 
 ## 3.2 Niyatni koddan tiklash, tavsifdan emas
 
@@ -243,6 +253,10 @@ Xulosa yozishning yon foydasi ham bor: u reviewer ni o'z ishini baholashga majbu
 - [ ] Beshta ssenariyni (happy, chegara, ikki marta, ikki parallel, o'rtada yiqilish) oxirgi uchta PR ga qo'llab, nechta yangi savol chiqqanini sanang.
 - [ ] Chuqurlik darajalari jadvalini `REVIEW.md` ga kiritib, har PR da darajani izohda ko'rsatishni odat qiling.
 - [ ] Review xulosasi shablonini (tekshirdim / tekshirmadim / blocker / qolgan xavf) joriy qiling.
+
+## Manbalar
+
+- [Google, What to Look For in a Code Review](https://raw.githubusercontent.com/google/eng-practices/3bb3ec25b3b0199f4940b1aa75f0ac5c5753301c/review/reviewer/looking-for.md) - har satrga qarash talabi va uning istisnolari, kod tushunarsiz bo'lsa muallifdan aniqlashtirish so'rash, malaka talab qiladigan sohalar uchun alohida reviewer, PR ni butun fayl va tizim kontekstida tortish, kod salomatligini pasaytiruvchi PR ni qabul qilmaslik
 
 ---
 

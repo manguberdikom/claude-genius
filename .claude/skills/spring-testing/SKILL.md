@@ -5,7 +5,7 @@ description: Write or fix tests in a Java/Spring project - unit tests, Spring Bo
 
 # Spring loyihasida testlash
 
-18 bob, 239 bo'lim. To'liq qo'llanma: `docs/testing/README.md`.
+18 bob, 240 bo'lim. To'liq qo'llanma: `docs/testing/README.md`.
 
 ## Qoida
 

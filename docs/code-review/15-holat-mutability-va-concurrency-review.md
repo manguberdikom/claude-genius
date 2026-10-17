@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 15. Holat, mutability va concurrency review (State and Concurrency)
 
@@ -403,6 +403,16 @@ public Token refresh() {
 - [ ] `@Async` void metodlarni toping va `AsyncUncaughtExceptionHandler` sozlanganini tekshiring.
 - [ ] `ThreadLocal` ishlatilgan joylarda `remove()` ning `finally` ichida chaqirilganini tasdiqlang.
 - [ ] Virtual thread yoqilgan bo'lsa, uzoq bloklanadigan `synchronized` bloklarini `ReentrantLock` ga o'tkazing.
+
+## Manbalar
+
+- Brian Goetz, *Java Concurrency in Practice*, 10-bob - qulf tartibi va deadlock
+- Brian Goetz, *Java Concurrency in Practice*, 8-bob - thread pool, navbat va to'yinish siyosati
+- Brian Goetz, *Java Concurrency in Practice*, 3-bob - xavfsiz nashr va obyektning qochib ketishi
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, 3-bob - umumiy holat, ko'rinuvchanlik va nashr qilish (publication); 16.2.4 - double-checked locking anti-pattern
+- [OpenJDK 25, `java.util.concurrent` package javadoc](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/util/concurrent/package-info.java) - happens-before munosabati va uni yaratadigan konstruksiyalar
+- [OpenJDK 25, `ConcurrentHashMap.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/util/concurrent/ConcurrentHashMap.java) - `computeIfAbsent` ning atomarligi, boshqa thread larni bloklashi va `IllegalStateException`
+- [Spring Framework 7.0, Bean Scopes](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/core/beans/factory-scopes.adoc) - singleton bean da umumiy holat masalasi
 
 ---
 

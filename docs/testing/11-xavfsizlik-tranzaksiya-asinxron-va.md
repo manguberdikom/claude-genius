@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 11. Xavfsizlik, tranzaksiya, asinxron va konkurentlik testlari (Testing Security, Transactions, Async & Concurrency)
 
@@ -34,6 +34,16 @@ Xavfsizlik, tranzaksiya, asinxronlik va konkurentlik - Spring ilovalarining eng 
 ## 11.1 Spring Security'ni testlash asoslari
 
 `spring-security-test` moduli (`testImplementation 'org.springframework.security:spring-security-test'`) ikki xil mexanizm beradi. Birinchisi - annotatsiyalar: `@WithMockUser` soxta `Authentication` yaratadi, `@WithAnonymousUser` kontekstni anonim holatga qo'yadi, `@WithUserDetails` esa haqiqiy `UserDetailsService` bean'idan foydalanuvchini yuklaydi (shuning uchun u rol xaritalashdagi xatoni ham ushlaydi). Ikkinchisi - `SecurityMockMvcRequestPostProcessors`: `user()`, `jwt()`, `opaqueToken()`, `csrf()`. Post-processor'lar afzal, chunki ularni parametrlashtirilgan testga uzatish mumkin. `@WebMvcTest` sizning `SecurityFilterChain` konfiguratsiyangizni skan qilmaydi - uni `@Import` bilan qo'shish shart, aks holda test real qoidalarni emas, Boot'ning default himoyasini tekshiradi.
+
+`MockMvc` ni qo'lda qurganda yana bir shart bor va uni o'tkazib yuborish "`@WithMockUser` hech narsa qilmaydi" degan holatga olib keladi. Spring Security hujjati aniq aytadi: annotatsiyalar ishlashi uchun `TestSecurityContextHolderPostProcessor` qo'shilishi kerak va bu `SecurityMockMvcConfigurers.springSecurity()` ni qo'llash bilan bo'ladi:
+
+```java
+mockMvc = MockMvcBuilders.webAppContextSetup(context)
+        .apply(springSecurity())        // TestSecurityContextHolderPostProcessor
+        .build();
+```
+
+`@AutoConfigureMockMvc` yoki `@WebMvcTest` bu ishni o'zi qiladi, shuning uchun shart faqat `MockMvcBuilders` bilan qo'lda qurilgan holatga tegishli.
 
 ```java
 @WebMvcTest(OrderController.class)
@@ -550,6 +560,16 @@ Mavzuning to'liq yozuvi patternlar hujjatidagi [zanjirni uzgich](../patterns/17-
 - [ ] Asinxron natijalar faqat Awaitility yoki `CountDownLatch` bilan kutiladi; kodbazada `Thread.sleep` ishlatilgan test yo'q.
 - [ ] Idempotentlik va race condition testlari `@Tag` bilan ajratilgan, alohida CI job'da yurgiziladi va beqaror holda qoldirilmagan.
 - [ ] Retry urinishlari soni, circuit breaker holati va fallback xatti-harakati test bilan tasdiqlangan; penetration test, SAST va DAST alohida reja sifatida yozilgan ([13-bob](13-nofunksional-testlar-performance-resilience.md)).
+
+## Manbalar
+
+- Brian Goetz, *Java Concurrency in Practice*, 12-bob - konkurent programmani testlash: to'g'rilik, ishlash va mo'rtlik
+- Laurentiu Spilca, *Spring Security in Action*, 20-bob - Spring Security ni testlash
+- [Spring Security 6.3, MockMvc Setup](https://raw.githubusercontent.com/spring-projects/spring-security/6.3.0/docs/modules/ROOT/pages/servlet/test/mockmvc/setup.adoc) - `SecurityMockMvcConfigurers.springSecurity()` va `TestSecurityContextHolderPostProcessor` talabi
+- [Spring Security 6.3, Testing Method Security](https://raw.githubusercontent.com/spring-projects/spring-security/6.3.0/docs/modules/ROOT/pages/servlet/test/method.adoc) - `@WithMockUser` va metod xavfsizligini testlash
+- [Spring Security 6.3, Testing](https://raw.githubusercontent.com/spring-projects/spring-security/6.3.0/docs/modules/ROOT/pages/servlet/test/index.adoc) - `spring-security-test` modulining imkoniyatlari
+- [Spring Framework 7.0, Transaction Management in tests](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/testing/testcontext-framework/tx.adoc) - test tranzaksiyasining chegarasi, `TestTransaction` va rollback xulqi
+- [Awaitility, README](https://raw.githubusercontent.com/awaitility/awaitility/4fc23ccbd610ec16d14c2e7728e0593bffa6ac64/README.md) - asinxron natijani kutishning DSL i va `Thread.sleep` o'rniga ishlatilishi
 
 ---
 

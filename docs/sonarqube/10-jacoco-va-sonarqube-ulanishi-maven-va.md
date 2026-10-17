@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 10. JaCoCo va SonarQube ulanishi: Maven va Gradle sozlash (Wiring JaCoCo to SonarQube)
 
@@ -484,6 +484,12 @@ Shuni ham aniq ayting: quality gate shartlari har loyihada boshqacha sozlanadi. 
 - [ ] Integratsion testlar uchun alohida `exec` fayl va `merge` goal sozlang, Failsafe ning `verify` goal ini qo'shing.
 - [ ] CI da test va tahlilni ikki alohida qadamga ajratib, `clean` ni faqat birinchi qadamda qoldiring va `fetch-depth: 0` qo'ying.
 - [ ] Lombok ishlatilsa `lombok.config` ga `addLombokGeneratedAnnotation` qo'shing, konfiguratsiya klasslarini `coverage.exclusions` ga kiriting.
+
+## Manbalar
+
+- [JaCoCo 0.8.12, Agent](https://raw.githubusercontent.com/jacoco/jacoco/v0.8.12/org.jacoco.doc/docroot/doc/agent.html) - agent parametrlari va `jacoco.exec` ning yozilishi
+- [JaCoCo 0.8.12, Implementation Design](https://raw.githubusercontent.com/jacoco/jacoco/v0.8.12/org.jacoco.doc/docroot/doc/implementation.html) - instrumentatsiya mexanizmi va class id
+- [JaCoCo 0.8.12, Class Ids](https://raw.githubusercontent.com/jacoco/jacoco/v0.8.12/org.jacoco.doc/docroot/doc/classids.html) - sinf identifikatori va hisobotni manba bilan moslash sharti
 
 ---
 

@@ -36,7 +36,12 @@ EN_SHARE = 0.08
 # (CLAUDE.md qisqardi, manguberdi ro'yxatdan chiqdi). Zahira 200-400
 # oralig'ida bo'lishini test_cost_report tekshiradi: JAMI ancha kamaysa
 # byudjet ham tushiriladi, aks holda o'sish yana sezilmay qoladi.
-DEFAULT_BUDGET = 5290
+# 2026-10-15: JAMI 5279 ga chiqdi (architect 40-bob, qidiruv
+# taxalluslari va BOOKS.tsv/KITOBLAR.md). Byudjet 5290 bilan 11 token
+# zahira qolgan edi, ya'ni har kichik tahrir CI ni qizil qilardi.
+# Avval MEMORY.md indekslari va CLAUDE.md dagi takror qisqartirildi
+# (6040 dan 5279 ga), keyin byudjet zahirani 300 ga keltirib ko'tarildi.
+DEFAULT_BUDGET = 5579
 
 FRONT_RE = re.compile(r"\A---\n(.*?)\n---\n", re.S)
 # Kalitda `-` bo'ladi: `disable-model-invocation`.

@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 26. Dizayn printsiplari: SOLID, GRASP va umumiy qoidalar (Design Principles: SOLID, GRASP & General Rules)
 
 <details>
-<summary>Bu bobdagi 30 bo'lim</summary>
+<summary>Bu bobdagi 32 bo'lim</summary>
 
 - [26.1 Yagona javobgarlik printsipi (Single Responsibility Principle)](#261-yagona-javobgarlik-printsipi-single-responsibility-principle)
 - [26.2 Ochiq/yopiq printsipi (Open/Closed Principle)](#262-ochiqyopiq-printsipi-openclosed-principle)
@@ -38,7 +38,9 @@
 - [26.27 Mustahkamlik Printsipi (Robustness Principle (Postel's Law))](#2627-mustahkamlik-printsipi-robustness-principle-postels-law)
 - [26.28 Yagona Abstraksiya Darajasi (Single Level of Abstraction)](#2628-yagona-abstraksiya-darajasi-single-level-of-abstraction)
 - [26.29 Barqaror Bog'liqliklar va Barqaror Abstraksiyalar (Stable Dependencies & Stable Abstractions)](#2629-barqaror-bogliqliklar-va-barqaror-abstraksiyalar-stable-dependencies--stable-abstractions)
-- [26.30 Amalda qo'llash](#2630-amalda-qollash)
+- [26.30 Komponent kogeziyasi: REP, CCP va CRP (Component Cohesion Principles)](#2630-komponent-kogeziyasi-rep-ccp-va-crp-component-cohesion-principles)
+- [26.31 Atsiklik bog'liqliklar printsipi (Acyclic Dependencies Principle)](#2631-atsiklik-bogliqliklar-printsipi-acyclic-dependencies-principle)
+- [26.32 Amalda qo'llash](#2632-amalda-qollash)
 
 </details>
 
@@ -48,7 +50,9 @@ Dizayn printsiplari - bu aniq sinf tuzilmasi beruvchi pattern emas, balki patter
 
 ## 26.1 Yagona javobgarlik printsipi (Single Responsibility Principle)
 
-**Tavsif:** Har bir sinf yoki modul faqat bitta o'zgarish sababiga ega bo'lishi kerak - uni faqat bitta manfaatdor tomonning talabi o'zgarganda tahrirlash lozim. Amalda bu biznes qoidalarini, ma'lumotlarga kirishni, transport qatlamini (HTTP, messaging) va konfiguratsiyani alohida sinslarga ajratishni bildiradi. Natijada unit test yozish osonlashadi, regressiya radiusi qisqaradi va bir faylga tegadigan jamoalar soni kamayadi. Printsip "sinf kichik bo'lsin" degani emas - "sinfning auditoriyasi bitta bo'lsin" degani.
+**Tavsif:** Printsipning yakuniy shakli *Clean Architecture* da aniq: **modul bitta, faqat bitta aktyor oldida javobgar bo'lishi kerak**. Kitob bu formulaga uch qadamda keladi va har qadamni sababi bilan izohlaydi. Tarixiy shakl "modulning bitta, faqat bitta o'zgarish sababi bo'lishi kerak" edi; o'zgarish sababi esa aslida foydalanuvchi va manfaatdor tomon, shuning uchun ikkinchi shakl "modul bitta foydalanuvchi yoki manfaatdor tomon oldida javobgar"; lekin bir xil o'zgarishni talab qiladigan odam bittadan ko'p bo'lishi mumkin, shuning uchun to'g'ri so'z guruh, ya'ni **aktyor**.
+
+Kitob yana bir chalkashlikni alohida rad etadi: "modul bitta ishni qilishi kerak" degan gap SOLID printsipi **emas**. Bunday printsip bor, lekin u funksiyaga tegishli (funksiya bitta, faqat bitta ishni qilsin) va katta funksiyani mayda funksiyalarga ajratishda ishlatiladi. SRP esa boshqa darajada ishlaydi. "Modul" so'zi ostida kitob eng sodda holda manba faylni tushunadi; manba fayl ishlatmaydigan muhitda esa bir-biriga bog'langan funksiya va ma'lumot tuzilmalari to'plamini. Amalda bu biznes qoidalarini, ma'lumotlarga kirishni, transport qatlamini (HTTP, messaging) va konfiguratsiyani alohida sinslarga ajratishni bildiradi. Natijada unit test yozish osonlashadi, regressiya radiusi qisqaradi va bir faylga tegadigan jamoalar soni kamayadi. Ya'ni printsip "sinf kichik bo'lsin" degani emas, "sinfning aktyori bitta bo'lsin" degani.
 
 **Spring'da qayerda uchraydi:** Spring stereotype annotatsiyalari shu bo'linishni to'g'ridan-to'g'ri qo'llab-quvvatlaydi: `@RestController` faqat HTTP kontrakti va validatsiyani, `@Service` use case orkestratsiyasini, `@Repository` persistence'ni, `@ConfigurationProperties` esa faqat konfiguratsiya binding va validatsiyasini olib boradi. Spring Batch 5.x'da bitta step ataylab uchta interfeysga ajratilgan - `ItemReader`, `ItemProcessor`, `ItemWriter`; Spring Boot 3.x auto-configuration ham texnologiya bo'yicha mayda `@AutoConfiguration` sinflariga bo'lingan (`DataSourceAutoConfiguration`, `JacksonAutoConfiguration`, `TaskExecutionAutoConfiguration`). Cross-cutting mas'uliyatlar sinfdan tashqariga chiqariladi: logging va metrikalar `@Aspect` yoki `io.micrometer.observation.ObservationHandler` ichiga, xato formatlash `@ControllerAdvice` va `ProblemDetail`ga, header manipulyatsiyasi `HandlerInterceptor` yoki `WebFilter`ga.
 
@@ -91,6 +95,31 @@ Dizayn printsiplari - bu aniq sinf tuzilmasi beruvchi pattern emas, balki patter
 
 **Ehtiyot bo'ling:** Eng ko'p uchraydigan tuzoq - meros orqali kodni qayta ishlatish uchun mos kelmaydigan ierarxiya qurish (`Square extends Rectangle` klassikasi); bunda kompozitsiya yoki delegatsiya xavfsizroq. Subtipda metodni `UnsupportedOperationException` bilan "o'chirish" interfeys juda keng ekanining belgisi - bu ISP muammosiga ishora qiladi.
 
+*Clean Architecture* ning 9-bobi shu klassikani buzilishning kanonik misoli deb ataydi va nega ekanini bitta jumlada beradi: `Rectangle` ning bo'yi va eni mustaqil o'zgaradi, `Square` ning bo'yi va eni esa birga o'zgarishi shart, shuning uchun `Square` `Rectangle` ning to'g'ri subtipi emas. Chaqiruvchi o'zi `Rectangle` bilan gaplashayotganiga ishonadi, shuning uchun uni chalkashtirish oson: eni 5, bo'yi 2 qilib qo'yib, maydon 10 bo'lishini kutadi, `Square` kelsa bu da'vo yiqiladi. Kitobning asosiy xulosasi tuzatish usulida: bunday buzilishdan himoyalanishning yagona yo'li chaqiruvchiga `Rectangle` haqiqatda `Square` emasligini aniqlaydigan mexanizm, masalan `if`, qo'shish, chaqiruvchining xulqi u ishlatgan turlarga bog'liq bo'lib qolgan paytda esa o'sha turlar almashtirilmaydigan bo'ladi. Ya'ni mijoz kodida tur tekshiruvi paydo bo'lishi LSP buzilganining o'lchanadigan belgisi: Java da bu `instanceof` yoki `getClass()` solishtirishi ko'rinishida chiqadi. Yechim ierarxiyani to'g'rilash, ya'ni `Square` ni `Rectangle` dan ajratib [kompozitsiya](#2617-vorislikdan-ustun-kompozitsiya-composition-over-inheritance) ga o'tkazish yoki ikki turni faqat o'qiladigan umumiy interfeys ostida birlashtirish.
+
+```java
+// LSP buzilishining kanonik misoli; kitobdagi g'oya Java ga o'tkazilgan.
+class Rectangle {
+    private int width, height;
+    void setWidth(int width) { this.width = width; }
+    void setHeight(int height) { this.height = height; }
+    int area() { return width * height; }
+}
+
+class Square extends Rectangle {                 // noto'g'ri subtip
+    @Override void setWidth(int width) { super.setWidth(width); super.setHeight(width); }
+    @Override void setHeight(int height) { super.setWidth(height); super.setHeight(height); }
+}
+
+class AreaReport {
+    int area(Rectangle r) {
+        r.setWidth(5);
+        r.setHeight(2);
+        return r.area();                         // Rectangle: 10, Square: 4
+    }
+}
+```
+
 ## 26.4 Interfeys ajratish printsipi (Interface Segregation Principle)
 
 **Tavsif:** Mijoz o'ziga kerak bo'lmagan metodlarga bog'lanishga majbur bo'lmasligi kerak - bitta "yirik" interfeys o'rniga bir nechta tor, rolga mo'ljallangan interfeys yaxshiroq. Bu mock yozishni soddalashtiradi, kompilyatsiya bog'liqliklarini kamaytiradi va implementatsiyalarda bo'sh (stub) metodlar paydo bo'lishini oldini oladi. Tor interfeyslar, qo'shimcha sifatida, LSP buzilishlarini ham kamaytiradi.
@@ -109,6 +138,15 @@ Dizayn printsiplari - bu aniq sinf tuzilmasi beruvchi pattern emas, balki patter
 ## 26.5 Bog'liqliklarni teskari aylantirish printsipi (Dependency Inversion Principle)
 
 **Tavsif:** Yuqori darajali biznes mantiq quyi darajali detallarga emas, ikkisi ham abstraksiyaga bog'lanishi kerak; abstraksiya esa detalga emas, detal abstraksiyaga bog'liq bo'lsin. Amalda domain qatlami port interfeyslarini o'zi e'lon qiladi, infratuzilma esa ularni implement qiladi va bog'lanish yo'nalishi "ichkariga" qaratiladi. Bu ma'lumotlar bazasi, broker yoki tashqi API ni almashtirishni lokal o'zgarishga aylantiradi.
+
+*Clean Architecture* printsipni mavhum qoldirmaydi va uni to'rtta aniq kodlash amaliyotiga aylantiradi. Ularning asosida bitta kuzatuv turadi: abstrakt interfeysdagi har bir o'zgarish uning implementatsiyalariga ham o'zgarish keltiradi, teskarisi esa odatda to'g'ri emas, demak **interfeys implementatsiyadan kam o'zgaradi**. To'rt amaliyot shu kuzatuvdan chiqadi:
+
+- **O'zgaruvchan (volatile) konkret sinfga havola qilmaslik**, uning o'rniga abstrakt interfeysga. Kitob buning obyekt yaratishga qattiq cheklov qo'yishini va odatda Abstract Factory ni talab qilishini ham aytadi.
+- **O'zgaruvchan konkret sinfdan voris olmaslik.** Statik tipli tilda meros manba kodidagi eng kuchli va eng qattiq bog'lanish, shuning uchun u juda ehtiyotkorlik bilan ishlatiladi.
+- **Konkret funksiyani override qilmaslik.** Konkret funksiya odatda manba kodi bog'liqliklarini olib keladi; uni override qilganda sen bu bog'liqliklarni yo'qotmaysan, **meros qilib olasan**. To'g'ri yo'l funksiyani abstrakt qilib, bir nechta implementatsiya yozish.
+- **Konkret va o'zgaruvchan narsaning nomini umuman tilga olmaslik**, bu printsipning o'zini qayta aytishdir.
+
+Shu ro'yxatdan amaliy nuqta chiqadi: DIP buziladigan joy odatda interfeysga bog'lanish emas, **obyekt yaratish**. Shuning uchun Spring da `new` ni konteynerga topshirish DIP ni ta'minlashning asosiy mexanizmi, Abstract Factory esa konteyner bo'lmagan joyda shu vazifani bajaradi.
 
 **Spring'da qayerda uchraydi:** Spring IoC konteyneri (`ApplicationContext`) shu printsipni ishga soladi: konstruktor injection orqali bean interfeys tipida olinadi, konkret implementatsiyani esa konteyner `@Component`, `@Bean`, `@Qualifier`, `@Primary` va `@Profile` asosida tanlaydi. Ixtiyoriy yoki ko'p implementatsiyali holatlar uchun `ObjectProvider<T>` va `List<T>`/`Map<String, T>` injection ishlatiladi; `@ConditionalOnMissingBean` esa Spring Boot 3.x starter'larida default detalni almashtirish imkonini beradi. Spring Boot'ning `JavaMailSender`, `MessageSource`, `TaskExecutor`, `RestClient` (Spring Framework 6.1+) kabi abstraksiyalari ham xuddi shu maqsadda - ilova kodi SMTP yoki HTTP kutubxonasi detallarini bilmaydi.
 
@@ -543,7 +581,46 @@ public interface BillingClient {
 
 **Ehtiyot bo'ling:** Eng keng tarqalgan buzilish - "shared-common" yoki "utils" moduli: unga hamma tayanadi (ya'ni u barqaror), lekin ichida konkret, tez o'zgaradigan kod va entity'lar bo'ladi, natijada har bir o'zgarish butun tizimni qayta deploy qilishni talab qiladi. Ikkinchi tuzoq - metrikalarni (instability, abstractness) maqsadga aylantirib, haqiqiy ehtiyojsiz interfeyslar o'rmonini yaratish.
 
-## 26.30 Amalda qo'llash
+## 26.30 Komponent kogeziyasi: REP, CCP va CRP (Component Cohesion Principles)
+
+**Tavsif:** Sinflarni modulga (deployment birligiga) qanday guruhlash kerakligini aytadigan uchta qoida. REP (Reuse/Release Equivalence Principle): qayta ishlatish birligi reliz birligiga teng, ya'ni modul versiyalanadi va reliz eslatmasi bilan chiqadi, aks holda uni ishonib ishlatib bo'lmaydi. CCP (Common Closure Principle): bir xil sababga ko'ra bir vaqtda o'zgaradigan sinflar bitta modulda turadi, chunki shunda o'zgarish bitta modulga tegadi va bitta reliz bilan chiqadi. CRP (Common Reuse Principle): birga ishlatilmaydigan sinflar bir modulda turmasligi kerak, chunki modulga tayangan har bir foydalanuvchi uning hamma o'zgarishini ham oladi. Uchtasi bir vaqtda qondirilmaydi: REP va CCP modulni kattalashtiradi, CRP kichiklashtiradi, shuning uchun Martin ularni kogeziya uchburchagi deb ataydi va loyiha yoshiga qarab tanlanadi. Boshlanishida CCP ustun (tez o'zgarish, kam modul), barqarorlashganda CRP ustun bo'ladi (ortiqcha bog'liqlik olib tashlanadi).
+
+**Spring'da qayerda uchraydi:** Spring Boot starter larining o'zi REP ning namunasi: `spring-boot-starter-web` versiyalanadi va unga tayangan loyiha aniq reliz oladi. CCP Maven va Gradle ko'p modulli loyihada ko'rinadi: `order-domain`, `order-web`, `order-jpa` bo'linishi "nima o'zgaradi" bo'yicha, "bu qanday texnologiya" bo'yicha emas. Spring Modulith `ApplicationModules.of(App.class).verify()` modul chegarasini tekshiradi va `@ApplicationModule(allowedDependencies = ...)` bilan ruxsat etilgan yo'nalish e'lon qilinadi. CRP buzilishi Gradle da `api` o'rniga `implementation` ishlatish bilan kamayadi: tranzitiv bog'liqlik foydalanuvchiga oqib chiqmaydi.
+
+**Qo'llanish keyslari:**
+- Modular monolitni modulga bo'lishda chegarani "birga o'zgaradi" mezoni bilan tanlash.
+- Umumiy `common` modulini CRP bo'yicha bo'lish: `common-money`, `common-http` kabi aniq maqsadli modullar.
+- Kontrakt modulini (DTO va port interfeyslari) alohida artefakt qilib semantik versiyalash.
+- Spring Modulith `verify()` testini CI ga qo'yib, modul chegarasini mashinaga topshirish.
+- Reliz eslatmasi va `@Deprecated(since, forRemoval)` bilan modul API sini boshqarish.
+
+**Ehtiyot bo'ling:** Eng ko'p uchraydigan buzilish - texnologiya bo'yicha bo'lingan modullar (`dto`, `service`, `repository`): ular CCP ni buzadi, chunki bitta biznes o'zgarishi uchtasiga ham tegadi. Ikkinchi tuzoq - "utils" yoki "shared" moduli: unga hamma tayanadi, ichida esa birga ishlatilmaydigan sinflar yotadi, ya'ni CRP buzilgan va har o'zgarish butun tizimni qayta deploy qiladi. Uchinchisi - modullarni vaqtidan oldin bo'lish: reliz quvuri tayyor bo'lmasa, REP bajarilmaydi va ko'p modul faqat qurilish vaqtini oshiradi.
+
+## 26.31 Atsiklik bog'liqliklar printsipi (Acyclic Dependencies Principle)
+
+**Tavsif:** Modullar orasidagi bog'liqlik grafida tsikl bo'lmasligi kerak. Tsikl paydo bo'lganda modullar bir-biriga mahkamlanib qoladi: ularni alohida qurib, alohida test qilib va alohida reliz qilib bo'lmaydi, chunki har biri ikkinchisining yangi holatini talab qiladi. Tsiklni ikki yo'l bilan uzish mumkin: bog'liqlikni teskari aylantirish (tsiklning bir bo'g'inida interfeys yaratib, uni tayanuvchi tomonga ko'chirish, ya'ni DIP) yoki ikki modulning umumiy ehtiyojini uchinchi yangi modulga chiqarish. Grafni tsiklsiz ushlab turish uchun uni ko'rish kerak, shuning uchun bu qoida mashina tekshiruvi bilan birga yashaydi.
+
+Qoidaning vaqtga tegishli qismi *Clean Architecture* ning 14-bobida ikki kichik bo'limda beriladi va amalda ko'p o'tkazib yuboriladi. "The Jitters": tsiklni uchinchi modul yaratib uzish usuli komponent tuzilmasining talablar o'zgarishiga nisbatan o'zgaruvchan ekanini ko'rsatadi. Ilova o'sgani sari bog'liqlik grafi tebranadi (jitters) va o'sadi, shuning uchun uni tsiklga qarab doim kuzatib turish kerak, tsikl chiqqanda uni uzish esa ba'zan yangi komponent yaratishni, ya'ni tuzilmani yana o'stirishni bildiradi. "Top-Down Design": shundan qochib bo'lmaydigan xulosa chiqadi - komponent tuzilmasini yuqoridan pastga loyihalab bo'lmaydi, u tizimning birinchi loyihalanadigan narsasi emas, tizim o'sishi va o'zgarishi bilan evolyutsiya qiladi. Kitob sababini ham beradi: komponent bog'liqlik diagrammasi ilovaning funksiyasini deyarli tasvirlamaydi, u ilovaning qurilishi va saqlanishi xaritasi, loyiha boshida esa quriladigan va saqlanadigan kod yo'q. Modullar yig'ilgani sari bog'liqliklarni boshqarish zarurati paydo bo'ladi, birga o'zgaradigan sinflar SRP va CCP bo'yicha bir joyga yig'iladi, qayta ishlatiladigan elementlar ko'rinib qolganda CRP ta'sir qila boshlaydi, va oxirida tsikllar chiqqanda ADP qo'llanadi. Grafni shakllantiruvchi asosiy tashvish esa o'zgaruvchanlikni izolyatsiya qilish: tez va arzimas sabablarga ko'ra o'zgaradigan komponent barqaror va qimmatli komponentga tegmasligi kerak, ya'ni GUI ning kosmetik o'zgarishi biznes qoidasiga, yangi hisobot esa eng yuqori darajali siyosatga ta'sir qilmasin.
+
+**Spring'da qayerda uchraydi:** Spring Boot 3 dan beri bean lar orasidagi aylanali bog'liqlik sukut bo'yicha xato beradi (`spring.main.allow-circular-references` bilan yoqiladi, lekin bu vaqtinchalik yechim). Modul darajasida Maven va Gradle o'zi tsiklni qurilish vaqtida rad etadi, lekin bir modul ichidagi paketlar orasidagi tsiklni rad etmaydi: buni ArchUnit `slices()` qoidasi yoki Spring Modulith `verify()` ushlaydi.
+
+```java
+// ArchUnit: paketlar orasida tsikl bo'lmasligi, qurilishdan oldin ushlanadi
+@ArchTest
+static final ArchRule modullar_tsiklsiz = SlicesRuleDefinition.slices()
+        .matching("com.shop.(*)..")
+        .should().beFreeOfCycles();
+```
+
+**Qo'llanish keyslari:**
+- Modular monolitda paket darajasidagi tsiklni ArchUnit testi bilan bloklash.
+- Ikki servis bir-birining REST endpointini chaqiradigan holatni hodisa (event) bilan uzish.
+- Domen va infratuzilma orasidagi tsiklni port interfeysini domenga ko'chirib uzish.
+- Umumiy ehtiyojni yangi kontrakt moduliga chiqarib, ikki modulni mustaqil qilish.
+
+**Ehtiyot bo'ling:** Aylanali bean bog'liqligini `@Lazy` yoki setter inyeksiyasi bilan "tuzatish" tsiklni yashiradi, yo'q qilmaydi: ishga tushish ishlaydi, lekin modullar hali ham bir-biriga mahkam. Ikkinchi tuzoq - tsiklni uzish uchun yaratilgan uchinchi modul `shared` ga aylanib ketishi: unga yangi narsa qo'shilib boraversa, [komponent kogeziyasi](#2630-komponent-kogeziyasi-rep-ccp-va-crp-component-cohesion-principles) qoidalari buziladi. Uchinchi tuzoq - komponent chegaralarini loyiha boshida, hali hech narsa yozilmaganda qat'iy belgilab qo'yish: kitob bunday urinishni muvaffaqiyatsizlikka mahkum deb ataydi, chunki o'sha paytda common closure ham, qayta ishlatiladigan element ham ma'lum emas.
+
+## 26.32 Amalda qo'llash
 
 - [ ] Eng katta 10 sinfni topib, har biri uchun savolga javob yozing: uning o'zgarish sababi nechta.
 - [ ] `instanceof` yoki tur bo'yicha `switch` ishlatadigan joylarni qidirib, polimorfizm bilan almashtirish nomzodlarini belgilang.
@@ -553,6 +630,23 @@ public interface BillingClient {
 - [ ] Zanjir shaklidagi chaqiruvlarni (`a.getB().getC().getD()`) qidirib, Demeter qonunini buzadigan joylarni ro'yxat qiling.
 - [ ] DRY nomi bilan yaratilgan umumiy kodni tekshiring: u haqiqatan bir xil qoidami yoki tasodifan o'xshash ikki qoidami.
 - [ ] YAGNI bo'yicha ishlatilmaydigan abstraksiya va konfiguratsiya nuqtalarini topib, olib tashlash ro'yxatini tuzing.
+- [ ] Modul bo'linishini tekshiring: chegara "birga o'zgaradi" mezoni bo'yicha turganini yoki texnologiya bo'yicha turganini aniqlang.
+- [ ] `common` va `utils` modullarini CRP bo'yicha ko'rib chiqib, birga ishlatilmaydigan sinflarni ajratish rejasini tuzing.
+- [ ] ArchUnit `slices().should().beFreeOfCycles()` testini qo'shib, paket tsiklini CI da bloklang.
+
+## Manbalar
+
+- Robert C. Martin, *Clean Architecture*, 13-bob - REP, CCP, CRP va kogeziya uchburchagi
+- Robert C. Martin, *Clean Architecture*, 14-bob - atsiklik bog'liqliklar, barqaror bog'liqliklar va barqaror abstraksiyalar
+- Robert C. Martin, *Clean Architecture*, 7-11 boblar - SOLID printsiplari
+- [Spring Framework, Circular dependencies](https://docs.spring.io/spring-framework/reference/core/beans/dependencies/factory-collaborators.html#beans-dependency-resolution) - aylanali bog'liqlik va uni hal qilish
+- Robert C. Martin, *Clean Architecture*, 7-bob (SRP) - printsipning yakuniy shakli "modul bitta, faqat bitta aktyor oldida javobgar", uch qadamli keltirib chiqarish va "modul bitta ishni qilsin" degan gapning SOLID printsipi emasligi
+- Robert C. Martin, *Clean Architecture*, 11-bob (DIP) - "Stable Abstractions" bo'limidagi to'rtta kodlash amaliyoti va Abstract Factory ning roli
+- Robert C. Martin, *Clean Architecture*, Prentice Hall, 2018, 9-bob (LSP) - kvadrat va to'rtburchak masalasi buzilishning kanonik misoli ekani, bo'y bilan enning mustaqil o'zgarishi, hamda chaqiruvchida tur tekshiruvi paydo bo'lishi almashtirilmaslikning belgisi ekani
+- Robert C. Martin, *Clean Architecture*, Prentice Hall, 2018, 14-bob ("The Jitters" va "Top-Down Design") - komponent grafining talablar o'zgarishi bilan tebranishi va o'sishi, uni yuqoridan pastga loyihalab bo'lmasligi, diagrammaning funksiya emas, qurilish va saqlash xaritasi ekani, SRP/CCP, CRP va ADP ning navbati, o'zgaruvchanlikni izolyatsiya qilish
+- Joshua Bloch, *Effective Java* 3rd, Item 20 - interfeys va abstrakt sinf tanlovi; Item 18 - kompozitsiyani merosdan afzal ko'rish
+- [spring-framework, `Bean.java`](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/spring-context/src/main/java/org/springframework/context/annotation/Bean.java) - `autowireCandidate` va `defaultCandidate` bilan kandidat tanlovini boshqarish
+- [Spring Framework 7.0, Proxying Mechanisms](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/core/aop/proxying.adoc) - interfeys va sinf asosidagi proxy farqi, ya'ni ISP va LSP ning Spring dagi mexanik oqibati
 
 ---
 

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 30. Autentifikatsiya va avtorizatsiya review (Authentication and Authorization)
 
@@ -327,6 +327,16 @@ public class TenantConnectionInitializer {
 
 Bu zaiflik sinfi avtomatik instrumentlar uchun ko'rinmas, chunki kodda hech qanday "xavfli funksiya" yo'q.
 
+Pul tegadigan oqimlarda OWASP ning tranzaksiyani avtorizatsiya qilish bo'yicha yozuvi aniq talablar beradi va ular review savoliga to'g'ridan-to'g'ri aylanadi.
+
+Birinchi talab tartib haqida: biznes oqimi **ketma-ket** bajarilishi majburlanishi kerak, ya'ni foydalanuvchi ham, hujumchi ham qadamlarni tartibsiz bajara olmasligi va birini o'tkazib yubora olmasligi kerak. Bu yuqoridagi "Naqsh 3" ning rasmiy shakli va u ikki hujumni to'sadi: avtorizatsiya ma'lumotini kiritishdan oldin tranzaksiya ma'lumotini ustiga yozish, va avtorizatsiyani butunlay o'tkazib yuborish.
+
+Ikkinchi talab shu birinchisining davomi va ko'pincha e'tibordan qoladi: tranzaksiya ma'lumoti **avtorizatsiya paytida** o'zgartirilishdan himoyalangan bo'lishi kerak. Klassik hujum shunday ketadi: hujumchi birinchi qadamni (ma'lumot yuborish) fonda qayta yuboradi va foydalanuvchi OTP ni kiritishidan oldin tranzaksiya detallarini almashtiradi; yoki avtorizatsiya so'roviga yangi parametr qo'shadi, natijada tizim boshlang'ich tranzaksiyani avtorizatsiya qilib, keyin boshqasini bajaradi. Bu TOCTOU ning aniq ko'rinishi. Himoya uchta yo'ldan biri: ma'lumot o'zgarsa avval berilgan OTP va challenge ni bekor qilish; o'zgarish avtorizatsiya jarayonini qaytadan boshlashi; va har qanday o'zgartirish urinishini hujum deb log ga yozib, kuzatib borish.
+
+Uchinchi talab oxirgi darvoza haqida: bajarishdan **oldin** tranzaksiya rostdan foydalanuvchi tomonidan avtorizatsiya qilinganini tekshiradigan yakuniy nazorat bo'lishi kerak, va u bajarishga bog'langan bo'lishi kerak. Ya'ni "avtorizatsiya qilingan" belgisini oqimning o'rtasida qo'yib, keyin bajarishda tekshirmaslik tipik xato.
+
+Oxirgi ikki talab credential ning o'ziga tegishli: avtorizatsiya ma'lumoti **cheklangan vaqt oynasida** amal qilishi kerak (challenge yoki OTP berilgandan to avtorizatsiya tugaguncha), va **har bir operatsiya uchun unikal** bo'lishi kerak, aks holda replay ishlaydi. Unikallik timestamp, ketma-ket raqam yoki tasodifiy qiymat bilan beriladi.
+
 ```java
 // Naqsh 1: narx mijozdan keladi.
 public record CheckoutRequest(List<LineRequest> lines, BigDecimal totalPrice) { }
@@ -385,6 +395,13 @@ public void refund(OrderId id, Money amount) { ... }
 - [ ] Narx, chegirma va summa mijozdan keladigan joylarni toping va serverda hisoblashga o'tkazing.
 - [ ] Har bir holat o'tishi va ko'p qadamli jarayon uchun oldingi qadam tekshiruvini qo'shing.
 - [ ] Avtorizatsiya uchun kamida uchta test yozing: egasi ko'radi, boshqa foydalanuvchi ko'rmaydi, anonim rad etiladi.
+
+## Manbalar
+
+- [OWASP, Transaction Authorization Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Transaction_Authorization_Cheat_Sheet.md) - oqimni ketma-ket majburlash, avtorizatsiya paytida tranzaksiya ma'lumotini o'zgartirishdan himoya (TOCTOU), bajarishdan oldingi yakuniy nazorat, credential ning vaqt oynasi va har operatsiya uchun unikalligi
+- [OWASP, Authentication Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Authentication_Cheat_Sheet.md) - identifikatsiya va sessiya qoidalari, xato xabarining akkaunt borligini oshkor qilmasligi
+- [OWASP, Multifactor Authentication Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Multifactor_Authentication_Cheat_Sheet.md) - ikkinchi faktor turlari va ularning chegaralari
+- [spring-security 6.3, `JwtDecoders.java`](https://raw.githubusercontent.com/spring-projects/spring-security/6.3.0/oauth2/oauth2-jose/src/main/java/org/springframework/security/oauth2/jwt/JwtDecoders.java) - `fromIssuerLocation` ning generik qaytish turi, ya'ni 30.6 dagi misol kompilyatsiya bo'ladi
 
 ---
 

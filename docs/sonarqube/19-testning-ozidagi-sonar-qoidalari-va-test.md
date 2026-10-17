@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 19. Testning o'zidagi Sonar qoidalari va test sifati (Sonar Rules on Test Code)
 
@@ -47,7 +47,7 @@ Natijada test fayli Sonar hisobotida ikki marta ko'rinadi. Birinchi marta covera
 
 ## 19.2 Assertion siz test va u nega buzilgan hisoblanadi
 
-`java:S2699` qoidasi test metodida hech qanday assertion yo'qligini topadi va bu Bug kategoriyasiga tushadi, ya'ni Reliability o'lchovini buzadi. Sonar buni shunday izohlaydi: assertion siz test faqat "exception tashlanmadi" degan faktni tekshiradi, lekin natijani tekshirmaydi. Bunday test yashil bo'lib turadi va coverage beradi, holbuki mantiq buzilgan bo'lsa ham sezmaydi.
+`java:S2699` qoidasi test metodida hech qanday assertion yo'qligini topadi. Turini aniq bilish kerak: ochiq metadata da u **CODE_SMELL**, darajasi esa **Blocker**, scope i `Tests`, ta'siri `MAINTAINABILITY: BLOCKER`. Ya'ni u Reliability emas, Maintainability o'lchovini buzadi, lekin Blocker darajasi sababli maintainability reytingini darhol pasaytiradi va gate ni qizartiradi. Sonar buni shunday izohlaydi: assertion siz test faqat "exception tashlanmadi" degan faktni tekshiradi, lekin natijani tekshirmaydi. Bunday test yashil bo'lib turadi va coverage beradi, holbuki mantiq buzilgan bo'lsa ham sezmaydi.
 
 Eng xavfli ko'rinish shundaki, assertion bor ko'rinadi, lekin yarim. AssertJ'da `assertThat(x)` yozilib, keyin hech qanday tekshiruv metodi chaqirilmasa, bu to'liqsiz assertion bo'ladi va `java:S2970` shunga reaksiya qiladi. Shuningdek `assertThrows` ichiga bir nechta chaqiruv solinsa, qaysi biri exception tashlaganini bilmaymiz va `java:S5778` shuni belgilaydi.
 
@@ -258,7 +258,7 @@ void shouldAddVatToLineTotalForTwoUnits() {
 }
 ```
 
-Testda hardcoded ma'lumotning yana bir turi Sonar'ni chindan ham qo'zg'atadi: `java:S2068`, kodga yozilgan parol. Test resource'laridagi `spring.datasource.password=test` qatori security hotspot sifatida chiqadi. Buni fayl bo'yicha exclude qilmang, aniq qoida va aniq yo'l bo'yicha `issue.ignore` yozib, sababini izohda qoldiring.
+Testda hardcoded ma'lumotning yana bir turi Sonar'ni chindan ham qo'zg'atadi: `java:S2068`, kodga yozilgan parol. Test resource'laridagi `spring.datasource.password=test` qatori topilma sifatida chiqadi (`java:S2068` ochiq metadata da VULNERABILITY, `former-hotspot`), ya'ni uni "ko'rib chiqdim, xavfsiz" deb yopib qo'yish yo'li yo'q. Buni fayl bo'yicha exclude qilmang, aniq qoida va aniq yo'l bo'yicha `issue.ignore` yozib, sababini izohda qoldiring.
 
 Mavzuning to'liq yozuvi [magic number](../patterns/25-anti-patternlar.md#258-sehrli-sonlar-va-satrlar-magic-numbers--strings) bo'limida; son va pul qiymatlari toza kod hujjatidagi [primitiv, son va pul](../clean-code/20-primitiv-son-va-pul.md) bobida ham bor; bu yerda faqat Sonar qoidasi nuqtai nazari.
 
@@ -329,6 +329,12 @@ Bu yerda halol bo'lish kerak: Sonar bu bo'shliqni yopa olmaydi. U sintaksis va b
 - [ ] Quality profile'da `java:S100` qoidasining `format` parametrini jamoangiz nomlash uslubiga moslashtir, qoidani o'chirmay.
 - [ ] Test klasslarida `static` o'zgaruvchan maydonlarni qidirib, holatni `@BeforeEach` ga ko'chir va `java:S2386` issue'larini yop.
 - [ ] Cognitive complexity'si limitdan oshgan test metodlarini ro'yxatga ol va har biri uchun qaror yoz: fake'ga ko'chirish, yoki asosiy kodni bo'lish.
+
+## Manbalar
+
+- [sonar-java 8.44, `S2699.json`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S2699.json) - "Tests should include assertions": CODE_SMELL, Blocker, scope `Tests`, ta'siri `MAINTAINABILITY: BLOCKER`
+- [sonar-java 8.44, `S2970.json`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S2970.json) - to'liqsiz assertion
+- [sonar-java 8.44, `S5778.json`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S5778.json) - `assertThrows` ichida bir nechta chaqiruv
 
 ---
 

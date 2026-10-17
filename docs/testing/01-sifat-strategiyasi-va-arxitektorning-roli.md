@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 1. Sifat strategiyasi va arxitektorning roli (Quality Strategy & the Architect's Role)
 
 <details>
-<summary>Bu bobdagi 9 bo'lim</summary>
+<summary>Bu bobdagi 11 bo'lim</summary>
 
 - [1.1 Testlash maqsadi: qaror uchun ishonch](#11-testlash-maqsadi-qaror-uchun-ishonch)
 - [1.2 Shift-left va shift-right](#12-shift-left-va-shift-right)
@@ -17,7 +17,9 @@
 - [1.6 Testability'ni arxitektura talabiga aylantirish](#16-testabilityni-arxitektura-talabiga-aylantirish)
 - [1.7 Testlash xarajati va qiymati balansi](#17-testlash-xarajati-va-qiymati-balansi)
 - [1.8 Arxitektorning aniq vazifalari](#18-arxitektorning-aniq-vazifalari)
-- [1.9 Arxitektor nazorat ro'yxati](#19-arxitektor-nazorat-royxati)
+- [1.9 Reliz tekshiruvining og'irligini kontekst belgilaydi](#19-reliz-tekshiruvining-ogirligini-kontekst-belgilaydi)
+- [1.10 Test spetsifikatsiya va hujjat sifatida](#110-test-spetsifikatsiya-va-hujjat-sifatida)
+- [1.11 Arxitektor nazorat ro'yxati](#111-arxitektor-nazorat-royxati)
 
 </details>
 
@@ -27,13 +29,13 @@ Java va Spring ekotizimida testlash ko'pincha "qoplama foizini oshirish" vazifas
 
 ## 1.1 Testlash maqsadi: qaror uchun ishonch
 
-Keng tarqalgan noto'g'ri tasavvur - testlash xatolarni topish uchun kerak. Haqiqatda xatoni topish bu yon mahsulot. Asosiy maqsad - **qaror qabul qilish uchun ishonch darajasini oshirish**. Har bir test aslida bitta savolga javob beradi: "Shu o'zgarishni production'ga chiqarsam bo'ladimi?"
+Keng tarqalgan noto'g'ri tasavvur - testlash faqat xatolarni topish uchun kerak. Xato topish motivatsiyaning bir qismi, lekin hammasi emas: asosiy maqsad - **kodni ishonch bilan o'zgartirish imkoniyatini saqlash**. Google ning muhandislik kitobi buni shunday qo'yadi: testlar yozishdan ko'zlangan natija xato topish emas, balki tizimni ishonch bilan o'zgartira olish. Har bir test aslida bitta savolga javob beradi: "Shu o'zgarishni production'ga chiqarsam bo'ladimi?"
 
 Bu farq amaliy natijalarga olib keladi. Agar maqsad xato topish bo'lsa, jamoa topilgan xatolar sonini o'lchaydi va test yozishdan ko'ra bug tracker'ni to'ldirishga qiziqadi. Agar maqsad ishonch bo'lsa, savol o'zgaradi: "Qaysi test release haqidagi qo'rquvimni kamaytiradi?" Natijada test to'plami release jarayonining bir qismiga aylanadi, nafaqat developer'ning shaxsiy odatiga.
 
 Ikkinchi muhim tamoyil - sifat butun jamoaning mas'uliyati. QA mustaqil "tekshiruvchi devor" emas; u sifat bo'yicha ekspert va jarayon dizayneri. Agar developer "men kod yozaman, QA sinaydi" deb o'ylasa, siz allaqachon arxitektura muammosiga egasiz: feedback loop uzun, mas'uliyat tarqoq, sifat esa oxirgi bosqichga surilgan. Arxitektor sifatida siz bu modelni buzishingiz kerak - kod yozgan odam o'z kodining testini ham yozadi, QA esa risk tahlili, test dizayni va avtomatlashtirish strategiyasiga javob beradi (batafsil taqsimot - [3-bobga](03-kim-nima-yozadi-rollar-va-masuliyat.md) qarang).
 
-Shuni ham aytib o'tish kerak: testlar hech qachon xatolar yo'qligini isbotlay olmaydi. Ular faqat tekshirilgan ssenariylarda tizim kutilgandek ishlashini ko'rsatadi. Shuning uchun "100% coverage" maqsad emas - bu ko'rsatkichni maqsadga aylantirish (Goodhart qonuni) test sifatini pasaytiradi.
+Shuni ham aytib o'tish kerak: Dijkstra ning mashhur jumlasiga ko'ra, testlash xatolarning borligini ko'rsatadi, yo'qligini esa hech qachon isbotlamaydi. Ular faqat tekshirilgan ssenariylarda tizim kutilgandek ishlashini ko'rsatadi. Shuning uchun "100% coverage" maqsad emas - bu ko'rsatkichni maqsadga aylantirish (Goodhart qonuni) test sifatini pasaytiradi.
 
 ## 1.2 Shift-left va shift-right
 
@@ -82,7 +84,7 @@ Qoida: **modul bo'yicha differensiallangan sifat talabi**. Bitta global coverage
 
 ## 1.4 Test strategiyasi hujjati
 
-Ko'p jamoalar "test strategiyasi" va "test rejasi" ni aralashtirib yuboradi. Farq quyidagicha:
+Ko'p jamoalar "test strategiyasi" va "test rejasi" ni aralashtirib yuboradi. Avval bitta eslatma: bu ikkisining ierarxiyasi adabiyotda bir xil emas. Google ning muhandislik kitobida strategiya rejaning ICHIDAGI bo'lim deb qaraladi - reja qanday test turlari va qancha hajmda kerakligini belgilaydigan strategik qisqa bayonni o'z ichiga oladi. Quyidagi jadval esa boshqa, tashkilot darajasidagi ajratishni beradi: u yirik tashkilotda amalda qulay, lekin kitob ta'rifi emas, shuning uchun jamoangizda qaysi ma'noda ishlatayotganingizni oldindan kelishib oling.
 
 | Mezon | Test strategiyasi | Test rejasi (test plan) |
 |---|---|---|
@@ -197,11 +199,12 @@ Amaliy qoidalar:
 - Qiymat bermaydigan testni o'chirish - bu yo'qotish emas, tejamkorlik. Hech qachon buzilmagan va hech narsani ushlamagan test faqat saqlash narxini keltiradi.
 - Ishga tushish vaqtini kuzatib boring. PR pipeline 10 daqiqadan oshsa, developer kutmay boshqa ishga o'tadi - feedback loop buziladi va testning qiymati tushadi.
 - Spring context'ni qayta ishlatish (context caching) - eng arzon tezlashtirish usuli. Har bir test klassida har xil `@MockitoBean`/`@TestConfiguration` kombinatsiyasi yangi context yaratadi; bu sekinlikning asosiy manbai.
-- Flaky test qiymati manfiy: u ishonchni yo'qotadi va jamoani "qayta ishga tushirish" odatiga o'rgatadi ([16-bobga](16-flaky-testlar-test-qarzi-va-test-kodini.md) qarang).
+- Flaky test qiymati manfiy: u ishonchni yo'qotadi va jamoani "qayta ishga tushirish" odatiga o'rgatadi ([16-bobga](16-flaky-testlar-test-qarzi-va-test-kodini.md) qarang). Google ning o'lchoviga ko'ra flakiness 1% ga yaqinlashganda testlar qiymatini yo'qota boshlaydi; Google ning o'zidagi daraja taxminan 0.15% atrofida. Bu ikki raqam byudjet qo'yish uchun qulay mo'ljal: 1% chegara, 0.15% erishilgan amaliyot.
+- Testni "hermetic" qilishga harakat qiling: tashqi muhitga, tarmoqqa va umumiy holatga tayanmagan test parallel ishlaydi va flaky bo'lmaydi. Nondeterminizmning eng ko'p uchraydigan manbalari: tizim soati, tasodifiy son, thread tartibi va tashqi servis.
 
 ## 1.8 Arxitektorning aniq vazifalari
 
-Sifat strategiyasida arxitektorning roli "maslahat berish" emas, balki konkret, tekshiriladigan ishlardan iborat:
+Sifat strategiyasida arxitektorning roli "maslahat berish" emas, balki konkret, tekshiriladigan ishlardan iborat. Bir eslatma: bu rol taqsimoti universal emas. Google ning modelida test strategiyasi Test Engineer rolida, arxitektura esa tech lead da bo'ladi - alohida "arxitektor" lavozimi yo'q. Quyidagi ro'yxat arxitektor lavozimi mavjud tashkilotlar uchun yozilgan; sizda bu vazifalar tech lead yoki Test Engineer o'rtasida bo'linishi mumkin, muhimi ularning EGASI borligi:
 
 1. **Strategiyani belgilash va hujjatlashtirish.** Risk matritsasini modul egalari bilan birga to'ldirish, modul bo'yicha chuqurlik talabini kelishish.
 2. **Test infratuzilmasini tanlash.** JUnit 5 platformasi, mocking kutubxonasi, Testcontainers moduli, contract testing yondashuvi, coverage va mutation vositalari. Tanlov ADR bilan asoslanadi, versiyalar Spring Boot BOM va `dependencyManagement` orqali markazlashtiriladi.
@@ -212,7 +215,53 @@ Sifat strategiyasida arxitektorning roli "maslahat berish" emas, balki konkret, 
 7. **Jamoani o'rgatish.** Pair testing sessiyalari, ichki workshop, misol bo'ladigan reference modul ("shunday yozamiz" namunasi). Yangi odamga onboarding'da test standartini ko'rsatish.
 8. **Testability'ni dizayn review'ning majburiy kriteriyasiga aylantirish.** Har bir yangi komponent uchun: "bu qanday sinaladi?" savolini so'rash.
 
-## 1.9 Arxitektor nazorat ro'yxati
+## 1.9 Reliz tekshiruvining og'irligini kontekst belgilaydi
+
+Risk matritsasi "qaysi modulga qancha test" savoliga javob beradi, ikkinchi savol esa jarayon darajasida turadi: bitta o'zgarish production'ga yetguncha necha qatlam tekshiruvdan o'tsin? Orosz buni ikki chekka orasidagi o'lchov deb qo'yadi. Bir chekkada o'zgarish to'g'ridan-to'g'ri production'da qilinadi va o'sha yerda tekshiriladi: server'ga ulanib faylni tahrirlash, review'siz merge qilish, ma'lumot xatosini production bazasida qo'lda tuzatish. Ikkinchi chekkada har bir o'zgarish ketma-ket qatlamlardan o'tadi: lokal tekshiruv, CI, test muhitiga chiqishdan oldingi qimmat avtomat testlar, QA ishlaydigan muhit, ichki foydalanuvchi yoki beta tester ishlatadigan ikkinchi muhit, pre-prod, bosqichli yoyish va yoyishdan keyingi kuzatuv (Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr, Pragmatic Engineer, 2023, 17-bob, 241-243-bet). Qaysi biri o'rinli ekani mahsulot bosqichi va xatoning narxi bilan belgilanadi.
+
+| Kontekst | Qayerda uchraydi | O'rinli og'irlik |
+|---|---|---|
+| Mijozi yo'q mahsulot | Side project, erta bosqich startup, alpha/beta versiya | Eng yengil: xato narxi deyarli nol, tezlik muhimroq |
+| Mijoz paydo bo'lgan mahsulot | Product-market fit topgan startup | Review, CI va avtomat test bazasi qo'yiladi |
+| Yirik texnologiya kompaniyasi | Trunk'da ishlaydigan jamoalar | Tez avtomat test, feature flag, canary, bosqichli yoyish |
+| QA jamoasi bor an'anaviy kompaniya | Branch'da ishlash, UAT muhiti | QA tasdig'i, haftalik yoki siyrakroq reliz |
+| Tartibga solingan soha | Sog'liqni saqlash, aviatsiya, avtomobil, bank, telekom | Ko'p bosqichli tekshiruv; telekomda yirik o'zgarish relizdan oldin olti oy sinalishi odatiy |
+
+Og'irlikni tanlash uchun Orosz beshta savol beradi (o'sha bob, 254-255-bet): vositalarga qancha investitsiya qilishga tayyormiz; biznes qanday xato byudjetini ko'taradi (bitta xato pul yo'qotadimi yoki tez tuzatilsa mijoz ketmaydimi); maqsad qilingan minimal iteratsiya tezligi qancha; QA funksiyasi nima uchun bor va u nimaga aylanishi kerak; legacy stack'ga avtomat test, bosqichli yoyish va avtomatik rollback'ni o'rnatish qanchaga tushadi. Tezlik mo'ljali sifatida u DORA ni keltiradi: elite jamoalar kuniga bir necha marta talab bo'yicha deploy qiladi va commit'dan production'gacha bir kundan kam vaqt o'tadi, lekin muallifning o'zi faqat shu raqamlarga qarashni to'g'ri deb hisoblamaydi.
+
+Arxitektor uchun xulosa: tanlangan og'irlik 1.5-bo'limdagi darvoza ro'yxatida qotiriladi, og'zaki kelishuvda emas. Shoshilinch holat uchun ikkinchi qoida: qaysi qadamni hech qachon chetlab o'tib bo'lmasligi oldindan nomlangan bo'lsin; qolganini ataylab chetlab o'tish mumkin, lekin shunda manfaatdorlar (jamoadoshlar, bog'liq jamoalarning oncall'i, qo'llab-quvvatlash) ogohlantiriladi va qaytarish rejasi tayyor turadi (o'sha bob, 252-bet).
+
+## 1.10 Test spetsifikatsiya va hujjat sifatida
+
+Birinchi bo'lim testning maqsadini "qaror uchun ishonch" deb qo'ydi. Meszaros shu umumiy maqsadni nomlangan, mayda maqsadlarga bo'ladi va ulardan ikkitasi test yozish tartibini bevosita o'zgartiradi: test spetsifikatsiya va test hujjat bo'lib ham ishlaydi.
+
+**Tests as Specification** (kitobdagi taxallusi Executable Specification). Agar test kodidan oldin yozilsa, u SUT nima qilishi kerakligini kod qurilishidan avval qayd etadi: xulq ssenariylarda, bajariladigan shaklda belgilanadi. Kitob ikki shartni qo'yadi. Birinchisi: "to'g'ri mahsulotni qurdikmi" savoliga javob berish uchun testlar tizim amalda qanday ishlatilishini aks ettirishi kerak. Ikkinchisi va amaliy jihatdan muhimrog'i: ssenariyni testga aylantirish uchun yetarli tafsilotda o'ylab chiqishning o'zi talabning noaniq yoki o'ziga zid joylarini ochadi, shu bilan spetsifikatsiya sifatini, demak undan chiqadigan kod sifatini ko'taradi (Meszaros, *xUnit Test Patterns*, Addison-Wesley, 2007, 3-bob, 22-bet).
+
+**Tests as Documentation.** Avtomat test bo'lmasa, "agar kirish shunday bo'lsa natija qanday bo'lishi kerak?" savoliga javob topish uchun SUT kodini o'qib chiqish kerak. Test bor bo'lsa javob testda turadi: o'zini tasdiqlaydigan (self-checking) test kutilgan natijani assertion sifatida yozib qo'ygan. "Tizim buni qanday qiladi" savoliga javob kerak bo'lsa, debugger ostida testni yurgizib kod bo'ylab qadam tashlash yetarli; shu ma'noda test to'plami SUT hujjatining bir shakli (o'sha joy, 23-bet).
+
+Bu ikki maqsad test nomiga va tasdiqlashga talab qo'yadi: nom qoidani jumla sifatida aytadi, assertion esa kutilgan natijani oshkor yozadi.
+
+```java
+@DisplayName("Kredit limiti: daromad chegarasidan past mijoz boshlang'ich limit oladi")
+class CreditLimitPolicySpec {
+
+    private final CreditLimitPolicy policy = new CreditLimitPolicy();
+
+    @Test
+    @DisplayName("KYC tasdiqlanmagan bo'lsa limit berilmaydi va sabab qaytadi")
+    void refusesLimitWhenKycMissing() {
+        Decision decision = policy.decide(new Applicant("UZ", new BigDecimal("8000000"), false));
+
+        // Kutilgan natija spetsifikatsiya sifatida: qiymat ham, sabab ham yozilgan
+        assertThat(decision.limit()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(decision.reason()).isEqualTo(Reason.KYC_REQUIRED);
+    }
+}
+```
+
+Ikki chegara. Birinchisi: hujjat qiymati testning o'qilishiga bog'liq, shuning uchun [Obscure Test ning olti sababi](16-flaky-testlar-test-qarzi-va-test-kodini.md#1623-obscure-test-ning-olti-sababi) ro'yxatidagi har bir sabab shu qiymatni yo'q qiladi. Ikkinchisi: spetsifikatsiya maqsadi test-first tartibini talab qiladi, ya'ni u [shift-left](#12-shift-left-va-shift-right) qarorining davomi; keyin yozilgan test regressiya to'ri bo'lib qoladi, lekin talabdagi ziddiyatni ochmaydi.
+
+## 1.11 Arxitektor nazorat ro'yxati
 
 - [ ] Loyihada `docs/testing-strategy.md` mavjud, oxirgi 6 oyda yangilangan va PR orqali boshqariladi.
 - [ ] Modul bo'yicha risk matritsasi (ehtimollik x ta'sir) to'ldirilgan va har bir modul uchun test chuqurligi hamda coverage maqsadi alohida belgilangan.
@@ -223,6 +272,16 @@ Sifat strategiyasida arxitektorning roli "maslahat berish" emas, balki konkret, 
 - [ ] Domain qatlami infratuzilma paketlariga bog'liq emasligi arxitektura testi bilan majburlangan.
 - [ ] PR pipeline davomiyligi 10 daqiqadan oshmaydi va u haftalik kuzatiladigan metrika.
 - [ ] Flaky testlar ro'yxati mavjud, har biri uchun egasi va muddati belgilangan.
+
+## Manbalar
+
+- Titus Winters, Tom Manshreck, Hyrum Wright (tahr.), *Software Engineering at Google*, O'Reilly, 2020, 11-bob "Testing Overview" - testlashdan ko'zlangan natija xato topish emas, kodni ishonch bilan o'zgartirish; muhandislar testlarni o'zi yozadi; flakiness 1% ga yaqinlashganda testlar qiymatini yo'qotadi, Google dagi daraja ~0.15%; nondeterminizm manbalari
+- Titus Winters, Tom Manshreck, Hyrum Wright (tahr.), *Software Engineering at Google*, O'Reilly, 2020, 1-bob - xatoni ishlab chiqish oqimida erta topish arzonroq (shift-left)
+- Titus Winters, Tom Manshreck, Hyrum Wright (tahr.), *Software Engineering at Google*, O'Reilly, 2020, 13-bob - dependency injection va test double, tizim soatini almashtirish
+- Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr, Pragmatic Engineer, 2023, 17-bob "Shipping to Production" (241-243, 252, 254-255-bet) - production'ga chiqarishning ikki chekkasi va oraliq qatlamlar, og'ir jarayon qaysi sohalarda qo'llanishi hamda telekomdagi olti oylik sinov, yondashuvni tanlash savollari va DORA mo'ljali, chetlab o'tib bo'lmaydigan qadamni oldindan belgilash qoidasi
+- Titus Winters, Tom Manshreck, Hyrum Wright (tahr.), *Software Engineering at Google*, O'Reilly, 2020, 14-bob - test rejasi ichidagi strategik bayon; test strategiyasi Test Engineer rolida
+- Gerard Meszaros, *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley, 2007, 3-bob "Goals of Test Automation" (22-23-bet) - Tests as Specification (Executable Specification) va Tests as Documentation maqsadlari, hamda ularning test-first tartibiga qo'ygan sharti
+- ESLATMA: 1.2 dagi shift-right ro'yxati, 1.5 dagi raqamli darvozalar (diff coverage, mutation score), 1.7 dagi vaqt diapazonlari va Goodhart qonuniga ishora shu korpusning amaliy tavsiyasi, kitobdan olingan emas
 
 ---
 

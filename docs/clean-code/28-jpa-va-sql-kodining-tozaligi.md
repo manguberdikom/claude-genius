@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 28. JPA va SQL kodining tozaligi (Clean JPA and SQL)
 
@@ -109,7 +109,9 @@ Qo'shimcha qoida: ikki tomonli assotsiatsiya faqat haqiqatan kerak bo'lganda qo'
 
 ## 28.4 `fetch`, `cascade`, `orphanRemoval` ni oshkor yozish
 
-Standart `fetch` qiymatlari xavfli: `@ManyToOne` va `@OneToOne` standart holatda `EAGER`, ya'ni har bir so'rov butun grafni tortadi. Qoida: har bir assotsiatsiyada `fetch` oshkor yoziladi va u deyarli har doim `LAZY`.
+Standart `fetch` qiymatlari xavfli: `@ManyToOne` va `@OneToOne` standart holatda `EAGER`, ya'ni har bir so'rov butun grafni tortadi. Bu bitta shaxsning fikri emas: Hibernate hujjati o'z tavsiyasini `IMPORTANT` blokida beradi, **hamma assotsiatsiyani statik ravishda lazy belgilash va eagerlikni dinamik fetch strategiyasi bilan olish**, va darhol qo'shadi-ki, bu tavsiya Jakarta Persistence spetsifikatsiyasiga **zid**: spetsifikatsiya hamma one-to-one va many-to-one assotsiatsiyani default eager deb belgilaydi, Hibernate esa Jakarta Persistence provayderi sifatida shu defaultni bajaradi.
+
+Shuning uchun qoida mavhum emas, aniq: default ga tayanmaslik kerak, chunki default spetsifikatsiyadan keladi va u provayderning o'z tavsiyasiga qarama-qarshi. Har bir assotsiatsiyada `fetch` oshkor yoziladi va u deyarli har doim `LAZY`; eagerlik kerak bo'lgan joyda u so'rov darajasida (`join fetch`, entity graph) beriladi.
 
 ```java
 // yomon: standart EAGER - har bir Payment o'qilganda Order ham yuklanadi
@@ -268,6 +270,11 @@ Qoidalar: bir faylda bir mantiqiy o'zgarish, migratsiyani qo'lda tahrirlamaslik 
 - [ ] Uch shartdan uzun derived query nomlarini `@Query` ga o'tkazib, matn bloki bilan yozing.
 - [ ] Entitet qaytaradigan API metodlarini projeksiya yoki DTO ga o'tkazing.
 - [ ] SQL fayllarini 28.8 qoidalariga keltirib, `select *` ni ustun ro'yxatiga almashtiring.
+
+## Manbalar
+
+- [Hibernate 6.6 User Guide, Fetching](https://raw.githubusercontent.com/hibernate/hibernate-orm/6.6/documentation/src/main/asciidoc/userguide/chapters/fetching/Fetching.adoc) - hamma assotsiatsiyani statik lazy belgilash tavsiyasi va uning Jakarta Persistence default i bilan ziddiyati, entity graph va fetch rejimlari
+- [Hibernate 6.6 User Guide, Persistence Context](https://raw.githubusercontent.com/hibernate/hibernate-orm/6.6/documentation/src/main/asciidoc/userguide/chapters/pc/PersistenceContext.adoc) - persistence context, entitet holatlari va identifikator bo'yicha tenglik
 
 ---
 

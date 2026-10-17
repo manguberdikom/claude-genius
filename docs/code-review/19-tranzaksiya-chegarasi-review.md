@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 19. Tranzaksiya chegarasi review (Transaction Boundaries)
 
@@ -106,7 +106,9 @@ public List<OrderView> recent(CustomerId id) { ... }
 
 `readOnly = true` nima beradi: Hibernate flush ni o'tkazib yuboradi va dirty checking qilmaydi (tezlik), ba'zi marshrutlovchilar so'rovni replikaga yuboradi, va PostgreSQL da tranzaksiya `READ ONLY` sifatida belgilanadi.
 
-Nima bermaydi: u yozuvni taqiqlashning ishonchli usuli emas - JDBC orqali to'g'ridan-to'g'ri yozuv o'tishi mumkin, va `readOnly` bilan belgilangan metod ichidan boshqa yozadigan metod chaqirilsa, xulq propagation ga bog'liq.
+Nima bermaydi: u yozuvni taqiqlashning ishonchli usuli emas, JDBC orqali to'g'ridan-to'g'ri yozuv o'tishi mumkin.
+
+Propagation bilan bog'liq qism esa review da aniq savolga aylanadi, chunki Spring hujjati ikki qattiq qoida beradi. Birinchi: `readOnly` atributi **faqat `REQUIRED` va `REQUIRES_NEW`** qiymatlarida qo'llanadi. Ikkinchi: qo'shilgan tranzaksiya tashqi scope ning xususiyatlarini oladi va o'zining isolation, timeout hamda `readOnly` flagini **jimgina** e'tiborsiz qoldiradi. Demak `@Transactional(readOnly = true)` qo'yilgan metod tashqi read-write tranzaksiyaga qo'shilsa, flag hech narsa qilmaydi va bu hech qanday ogohlantirish bermaydi. Review qoidasi shundan chiqadi: `readOnly` chegara ochadigan metodda (eng tashqi `@Transactional` da) turishi kerak, ichki yordamchi metodda turgan `readOnly` esa shubhali.
 
 Review savollari: o'qish metodlarida `readOnly` qo'yilganmi (katta o'qishlarda sezilarli farq beradi), va `readOnly` metod ichida yozuv yo'qligi tasdiqlanganmi.
 
@@ -309,6 +311,12 @@ public class OrderTx {                        // ichki bean: tranzaksiya chegara
 - [ ] `spring.jpa.open-in-view` bo'yicha jamoa pozitsiyasini `REVIEW.md` ga yozing (tavsiya: `false`).
 - [ ] `pg_stat_activity` dan 30 sekunddan uzoq tranzaksiyalar va `idle in transaction` holatlarini bir hafta kuzatib boring.
 - [ ] `@Retryable` va `@Transactional` birga ishlatilgan joylarda tartibni tekshirib, retry ni tashqi bean ga chiqaring.
+
+## Manbalar
+
+- [Spring Framework 7.0, Transaction Propagation](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/data-access/transaction/declarative/tx-propagation.adoc) - qo'shilgan tranzaksiyaning isolation, timeout va `readOnly` ni jimgina e'tiborsiz qoldirishi, `rollback-only` va `UnexpectedRollbackException`, `REQUIRES_NEW` da pool va deadlock chegarasi
+- [Spring Framework 7.0, `@Transactional` sozlamalari](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/data-access/transaction/declarative/annotations.adoc) - default qiymatlar, `readOnly` ning faqat `REQUIRED` va `REQUIRES_NEW` da qo'llanishi, 6.0 dan metod ko'rinishi qoidasi
+- [PostgreSQL 17, MVCC](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/mvcc.sgml) - izolyatsiya darajalari va `READ ONLY` tranzaksiyaning ma'nosi
 
 ---
 

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 8. Clean code review: nomlash, kognitiv yuk, metod shakli (Clean Code at the Review Table)
 
@@ -214,6 +214,21 @@ grep -rn --include='*.java' -E 'TODO|FIXME|HACK|XXX' src/main/java \
 # Konvensiya: TODO(ism, 2026-06): sabab va shart.
 ```
 
+Izohning eskirishini review da ushlash uchun bitta qadam yetadi va u review dan oldin, muallif tomonida bajariladi. Ousterhout buni qoida qilib qo'yadi: hujjatning yangi qolishini ta'minlashning yaxshi yo'li commit dan oldin bir necha daqiqa ajratib shu commit dagi hamma o'zgarishni ko'zdan kechirish va har bir o'zgarish hujjatda to'g'ri aks etganini tekshirish; commit dan oldingi bunday ko'rib chiqish yana bir qancha muammoni ham topadi, masalan tizimda tasodifan qolib ketgan debug kodini yoki tuzatilmagan TODO bandlarini (Ousterhout, *A Philosophy of Software Design*, 1-nashr, Yaknyam Press, 2018, 16.5).
+
+Review tomonida bu ikki aniq topilmaga aylanadi. Birinchi: diffda metodning xulqi o'zgargan, lekin uning ustidagi izoh o'zgarmagan bo'lsa, bu izoh endi yolg'on va u blok qiladigan izoh emas, lekin so'raladigan izoh. Ikkinchi: diffga qolib ketgan debug chiqishi va yangi TODO lar [o'lik kod va yarim ishlangan narsalar](#87-olik-kod-va-yarim-ishlangan-narsalar) qoidasiga tushadi.
+
+```bash
+# O'z-o'zini review: diffni katta kontekst bilan o'qish, shunda o'zgargan
+# kod ustidagi izoh ham ekranga tushadi va mos kelmagani ko'rinadi.
+git diff --unified=10 origin/main...HEAD -- '*.java'
+
+# Shu diffdan qolib ketgan debug kodi va yangi TODO larni ajratish.
+git diff -U0 origin/main...HEAD -- '*.java' \
+  | grep -E '^\+' \
+  | grep -nE 'System\.out|printStackTrace|TODO|FIXME|@Disabled'
+```
+
 ## 8.7 O'lik kod va yarim ishlangan narsalar
 
 Diffda qo'shilgan, lekin hech kim chaqirmaydigan kod - kelajakdagi chalg'itish manbasi. Keyingi odam uni ishlaydi deb o'ylaydi.
@@ -294,6 +309,14 @@ Foydali odat: muallif review savoliga javob yozganida o'zidan so'rashi kerak - s
 - [ ] `TODO(ism, sana)` konvensiyasini joriy qilib, egasi yo'q TODO larni CI da ogohlantirishga chiqaring.
 - [ ] Yangi qo'shilgan, lekin chaqirilmaydigan public metodlarni aniqlaydigan skriptni review oqimiga qo'shing.
 - [ ] Review izohlarining qanchasi `nit` ekanini sanab, ularning 20 foizdan ko'pi bo'lsa, instrumentlarga ko'chirish mumkinligini tekshiring.
+
+## Manbalar
+
+- Robert C. Martin, *Clean Code*, 2-bob - nomlash qoidalari; 3-bob - funksiya shakli va argument soni
+- Robert C. Martin, *Clean Code*, 17-bob - smell va evristikalar ro'yxati
+- [Google Java Style Guide](https://raw.githubusercontent.com/google/styleguide/aee99aa581bd852c8a40814c1c8d0f8aa79a0ba2/javaguide.html) - mashina tekshiradigan uslub qoidalari
+- [Google, What to Look For in a Code Review](https://raw.githubusercontent.com/google/eng-practices/3bb3ec25b3b0199f4940b1aa75f0ac5c5753301c/review/reviewer/looking-for.md) - nomlash, izoh va uslub bo'yicha review savollari
+- John Ousterhout, *A Philosophy of Software Design*, 1-nashr, Yaknyam Press, 2018, 16.5 - commit dan oldin butun diffni ko'zdan kechirish va har bir o'zgarish hujjatda aks etganini tekshirish; shu ko'rib chiqishning qolib ketgan debug kodini va tuzatilmagan TODO bandlarini ham topishi
 
 ---
 

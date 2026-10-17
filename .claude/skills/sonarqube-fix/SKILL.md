@@ -5,7 +5,7 @@ description: Fix a SonarQube finding or pass a quality gate in a Java/Spring/Pos
 
 # SonarQube: issue tuzatish va gate'dan o'tish
 
-43 bob, 557 bo'lim. To'liq hujjat: `docs/sonarqube/README.md`.
+43 bob, 564 bo'lim. To'liq hujjat: `docs/sonarqube/README.md`.
 Atamalar: `docs/sonarqube/43-tezkor-malumotnoma-parametrlar-buyruqlar.md#4314-glossariy`.
 
 ## Qoida

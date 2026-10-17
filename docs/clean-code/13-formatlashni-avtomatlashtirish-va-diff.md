@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 13. Formatlashni avtomatlashtirish va diff gigiyenasi (Automated Formatting and Diff Hygiene)
 
 <details>
-<summary>Bu bobdagi 9 bo'lim</summary>
+<summary>Bu bobdagi 10 bo'lim</summary>
 
 - [13.1 Bitta jamoa, bitta uslub: tanlov emas, sozlama](#131-bitta-jamoa-bitta-uslub-tanlov-emas-sozlama)
 - [13.2 `.editorconfig` va IDE sozlamalarini repoda saqlash](#132-editorconfig-va-ide-sozlamalarini-repoda-saqlash)
@@ -17,7 +17,8 @@
 - [13.6 Formatlash o'zgarishini mantiq o'zgarishidan ajratish](#136-formatlash-ozgarishini-mantiq-ozgarishidan-ajratish)
 - [13.7 Katta formatlash commiti va `.git-blame-ignore-revs`](#137-katta-formatlash-commiti-va-git-blame-ignore-revs)
 - [13.8 Generatsiya qilingan kodni formatlashdan chiqarish](#138-generatsiya-qilingan-kodni-formatlashdan-chiqarish)
-- [13.9 Amalda qo'llash](#139-amalda-qollash)
+- [13.9 Mavjud konvensiyaga moslash: When in Rome](#139-mavjud-konvensiyaga-moslash-when-in-rome)
+- [13.10 Amalda qo'llash](#1310-amalda-qollash)
 
 </details>
 
@@ -211,7 +212,56 @@ Generatsiya qilingan kod (MapStruct, jOOQ, protobuf, Lombok delombok natijasi, O
 
 Shu bilan birga, generatsiya qilingan kod `target/` ichida turishi va `git` ga tushmasligi kerak (39.6).
 
-## 13.9 Amalda qo'llash
+## 13.9 Mavjud konvensiyaga moslash: When in Rome
+
+13.1-13.5 uslubni tanlash va uni mashinaga tekshirtirish haqida. Qolgan qism mashinaga tushmaydi: yangi faylga kirgan programmist shu fayldagi konvensiyani qanday topadi va "menda yaxshiroq g'oya bor" degan holatda nima qiladi.
+
+Izchillik kognitiv kuch beradi: bir joyda bir narsa qanday qilinganini o'rgangan odam xuddi shu yondashuvni ishlatgan boshqa joyni darhol tushunadi. U xatoni ham kamaytiradi: izchil tizimda tanish ko'rinishga asoslangan taxmin to'g'ri bo'lib chiqadi, izchil bo'lmaganida esa bir xil ko'rinadigan ikki holat aslida boshqa bo'lib chiqadi (Ousterhout, *A Philosophy of Software Design*, 1-nashr, Yaknyam Press, 2018, 17-bob kirishi).
+
+**When in Rome: atrofga qara.** Ousterhout eng muhim konvensiya deb shuni ataydi: yangi faylda ishlayotganda mavjud kod qanday tuzilganiga qarash kerak. Public a'zolar private lardan oldin e'lon qilinganmi, metodlar alifbo tartibidami, nomlar `camelCase` dami. Konvensiyaga o'xshagan har qanday narsa ko'rinsa, unga bo'ysuniladi. Dizayn qarori qilinayotganda esa savol beriladi: loyihada shunga o'xshash qaror allaqachon qilingan bo'lishi mumkinmi; mumkin bo'lsa, mavjud misol topiladi va yangi kodda xuddi shu yondashuv ishlatiladi (shu yerda, 17.2).
+
+**Mavjud konvensiyani o'zgartirmaslik.** "Yaxshiroq g'oya" izchillikni buzish uchun yetarli sabab emas: yondashuvlar orasidagi farqning qiymati deyarli har doim izchillikning qiymatidan kichik. Ousterhout o'zgartirishdan oldin ikki savolga javob talab qiladi (shu yerda, 17.2):
+
+1. Eski konvensiya o'rnatilganda mavjud bo'lmagan, sizning yondashuvingizni oqlaydigan muhim yangi ma'lumot bormi?
+2. Yangi yondashuv shunchalik yaxshimi, eski ishlatishlarning HAMMASINI yangilashga vaqt sarflashga arziydimi?
+
+Ikkisiga ham javob "ha" bo'lsa va jamoa shunga qo'shilsa, o'zgarish qilinadi va tugaganda eski konvensiyadan iz qolmasligi kerak. Shundan keyin ham xavf bor: boshqa programmistlar yangi konvensiyani bilmay, eski shaklni qaytarib kiritishi mumkin. Shuning uchun o'rnatilgan konvensiyani qayta ko'rib chiqish kamdan-kam hollarda vaqtning foydali sarfi bo'ladi.
+
+```java
+// mavjud konvensiya: value tur final, static factory `of`, tekshiruv
+// private konstruktorda
+public final class SettlementRow {
+    private final PaymentId id;
+
+    public static SettlementRow of(PaymentId id) {
+        return new SettlementRow(id);
+    }
+
+    private SettlementRow(PaymentId id) {
+        this.id = Objects.requireNonNull(id, "id");
+    }
+}
+
+// yangi tur xuddi shu shaklda yoziladi. Builder yoki public konstruktor
+// o'zicha yomon emas, lekin bu paketda u ikkinchi konvensiyani tug'diradi
+public final class RefundRow {
+    private final RefundId id;
+
+    public static RefundRow of(RefundId id) {
+        return new RefundRow(id);
+    }
+
+    private RefundRow(RefundId id) {
+        this.id = Objects.requireNonNull(id, "id");
+    }
+}
+```
+
+Qoidaning chegarasi ham bor: izchillik o'xshash narsalarni o'xshash qilishni talab qiladi va shu bilan birga o'xshamagan narsalarni boshqacha qilishni talab qiladi. O'xshamagan ikki narsani bitta shaklga tiqish (bir xil nom, mos kelmaydigan pattern) murakkablik va chalkashlik beradi; izchillik foyda beradigan shart - o'quvchi "x ga o'xshasa, demak u x" deb ishonishi (shu yerda, 17.3).
+
+Bo'linish shunday: mashina tekshira oladigan qismi 13.4 va 13.5 ga, tekshira olmaydigani (e'lon tartibi, qaysi abstraksiya, qaysi pattern) review ga qoladi; review dagi talabchanlik qanchalik baland bo'lsa, jamoa konvensiyani shuncha tez o'rganadi (shu yerda, 17.2).
+
+## 13.10 Amalda qo'llash
 
 - [ ] `.editorconfig` faylini repoga qo'shib, kodirovka, indentatsiya va qator uzunligini belgilang.
 - [ ] Spotless ni `googleJavaFormat` (yoki Spring Java Format) bilan o'rnatib, `validate` fazasida `check` qiling.
@@ -221,6 +271,18 @@ Shu bilan birga, generatsiya qilingan kod `target/` ichida turishi va `git` ga t
 - [ ] Generatsiya qilingan manbalarni formatlash va statik tahlildan chiqarib tashlang.
 - [ ] "Formatlash va mantiq bir commitda bo'lmaydi" qoidasini jamoa kelishuviga kiriting.
 - [ ] Review da formatlash haqidagi izohlarni taqiqlab, ularni CI xatosiga aylantiring.
+- [ ] Mavjud konvensiyani o'zgartirish uchun ikki savol qoidasini (yangi ma'lumot bormi, hamma eski ishlatishni yangilashga arziydimi) jamoa kelishuviga kiriting (13.9).
+
+## Manbalar
+
+- [Google Java Style Guide](https://raw.githubusercontent.com/google/styleguide/aee99aa581bd852c8a40814c1c8d0f8aa79a0ba2/javaguide.html) - formatlash qoidalarining mashina tekshiradigan qismi
+- [SpotBugs, hujjat](https://raw.githubusercontent.com/spotbugs/spotbugs/6fc14ff38f4ebfbb4457caaa6df9a0ddd23a18c6/docs/index.rst) - CI da statik tahlilni qo'yish
+- John Ousterhout, *A Philosophy of Software Design*, 1-nashr, Yaknyam Press,
+  2018, 17-bob kirishi, 17.2, 17.3 - izchillikning kognitiv kuchi va xatoni
+  kamaytirishi; "When in Rome" qoidasi; mavjud konvensiyani o'zgartirish
+  uchun ikki savol va eski konvensiyadan iz qoldirmaslik talabi; review ning
+  konvensiyani o'rgatishdagi roli; izchillikni o'xshamagan narsalarga
+  majburlashning narxi
 
 ---
 

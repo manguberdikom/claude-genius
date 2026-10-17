@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 6. Murakkablikni boshqarish (Managing Complexity)
 
 <details>
-<summary>Bu bobdagi 11 bo'lim</summary>
+<summary>Bu bobdagi 16 bo'lim</summary>
 
 - [6.1 Muhim murakkablik va tasodifiy murakkablik farqi](#61-muhim-murakkablik-va-tasodifiy-murakkablik-farqi)
 - [6.2 Murakkablik qayerda to'planadi: shart, holat, integratsiya nuqtalari](#62-murakkablik-qayerda-toplanadi-shart-holat-integratsiya-nuqtalari)
@@ -19,7 +19,12 @@
 - [6.8 Servislar soni va operatsion murakkablik narxi](#68-servislar-soni-va-operatsion-murakkablik-narxi)
 - [6.9 Umumiylashtirish tuzog'i: uchta foydalanuvchiga mo'ljallangan platforma](#69-umumiylashtirish-tuzogi-uchta-foydalanuvchiga-moljallangan-platforma)
 - [6.10 Murakkablikni jamoaga tushuntirish va qarorni himoya qilish](#610-murakkablikni-jamoaga-tushuntirish-va-qarorni-himoya-qilish)
-- [6.11 Amalda qo'llash](#611-amalda-qollash)
+- [6.11 Arxitektura qarzi: eskirgan qaror qanday sekinlashtiradi](#611-arxitektura-qarzi-eskirgan-qaror-qanday-sekinlashtiradi)
+- [6.12 Umumiylashtirish qachon chuqurlashtiradi: interfeys umumiy, funksionallik hozirgi ehtiyoj bo'yicha](#612-umumiylashtirish-qachon-chuqurlashtiradi-interfeys-umumiy-funksionallik-hozirgi-ehtiyoj-boyicha)
+- [6.13 Murakkablikni pastga tortishning chegarasi: modul hamma qarorni o'ziga olmasin](#613-murakkablikni-pastga-tortishning-chegarasi-modul-hamma-qarorni-oziga-olmasin)
+- [6.14 Inkrement birligi: xususiyat emas, abstraksiya](#614-inkrement-birligi-xususiyat-emas-abstraksiya)
+- [6.15 Dizayn jarayonining nomukammalligi: wicked problem va qo'pol yechim](#615-dizayn-jarayonining-nomukammalligi-wicked-problem-va-qopol-yechim)
+- [6.16 Amalda qo'llash](#616-amalda-qollash)
 
 </details>
 
@@ -29,7 +34,7 @@ Arxitektorning asosiy ishi tezlik emas, murakkablikni boshqarish. Kod ishlayotga
 
 ## 6.1 Muhim murakkablik va tasodifiy murakkablik farqi
 
-Muhim murakkablik (essential) biznesning o'zidan keladi. Ombor qoldig'i rezervatsiya, bekor qilish, qaytarish va inventarizatsiya hisobiga o'zgaradi, va bu to'rt oqim bir-biri bilan kesishadi. Bu murakkablikni yo'qotib bo'lmaydi, uni faqat ko'chirish mumkin: kodga, ma'lumotlar modeliga yoki operator qo'llanmasiga.
+Muhim murakkablik (essential) biznesning o'zidan keladi. Ombor qoldig'i rezervatsiya, bekor qilish, qaytarish va inventarizatsiya hisobiga o'zgaradi, va bu to'rt oqim bir-biri bilan kesishadi. Bu murakkablikni butunlay yo'qotib bo'lmaydi, uni ko'chirish mumkin: kodga, ma'lumotlar modeliga yoki operator qo'llanmasiga. Bir eslatma: *Code Complete* bu ajratishni bergan joyda muhim murakkablikni ham MINIMALLASHTIRISH kerakligini aytadi, ya'ni "muhim" degani "tegmaslik kerak" degani emas - domenni soddalashtirish bo'yicha biznes bilan suhbat ham arxitektorning ishi.
 
 Tasodifiy murakkablik (accidental) bizning qarorlarimizdan keladi. Uch qatlamli mapper, keraksiz event bus, har bir DTO uchun abstract factory, oltita profil, ikkita ORM. Buni o'lchash oson: biznes qoidasini bitta gap bilan aytib bo'ladimi, lekin uni kodda topish uchun beshta faylni ochish kerakmi. Agar shunday bo'lsa, qolgan to'rtta fayl tasodifiy murakkablik.
 
@@ -60,7 +65,9 @@ boolean readyForReservation(Instant now) {
 
 ## 6.2 Murakkablik qayerda to'planadi: shart, holat, integratsiya nuqtalari
 
-Murakkablik tizimda bir tekis tarqalmaydi, u uchta joyga yig'iladi. Birinchi joy shartlar. Har bir `if` ikkita yo'l hosil qiladi, ketma-ket beshta mustaqil shart esa nazariy jihatdan 32 holat beradi. Amalda ularning yarmi hech qachon test qilinmaydi va aynan shu yarmidan incident chiqadi.
+Oldin murakkablikni QANDAY sezish mumkinligini aytib olaylik, chunki bu joyni topishdan oson. Ousterhout murakkablikning uch belgisini sanaydi va ular amalda tashxis savoli sifatida ishlaydi. **Change amplification**: oddiy ko'rinadigan o'zgarish uchun ko'p joyni tahrirlash kerak. **Cognitive load**: biror narsani o'zgartirish uchun qancha bilim boshda bo'lishi kerak. **Unknown unknowns**: qaysi kodga tegish kerakligini oldindan bilish umuman imkonsiz - Ousterhout shu uchinchisini eng yomoni deb ataydi, chunki boshqa ikkisini hech bo'lmaganda o'lchash mumkin, buni esa faqat production'da bilib olasiz. Sabablarni esa u ikkiga qaytaradi: bog'liqlik (dependency) va noaniqlik (obscurity).
+
+Shu ramkada quyidagi uchta joy - shart, holat, integratsiya - murakkablik TO'PLANADIGAN joylar. Bu taqsimot shu korpusning amaliy ajratishi, kitob ta'rifi emas, lekin yuqoridagi uch belgi bilan birga ishlaganda tashxis aniq bo'ladi. Birinchi joy shartlar. Har bir `if` ikkita yo'l hosil qiladi, ketma-ket beshta mustaqil shart esa nazariy jihatdan 32 holat beradi. Amalda ularning yarmi hech qachon test qilinmaydi va aynan shu yarmidan incident chiqadi.
 
 Ikkinchi joy holat. O'zgaradigan maydon vaqt o'qini kiritadi: javob endi "qaysi tartibda chaqirildi" degan savolga bog'liq. Spring kontekstida singleton bean ichidagi o'zgaradigan maydon eng qimmat xato, chunki u barcha request thread'lari bilan bo'linadi.
 
@@ -118,6 +125,8 @@ public final class Pricing {
 Kolleksiyalarni ham himoyalash kerak. `record` maydonidagi `List` havolasi hali ham o'zgaradi, shuning uchun konstruktorda `List.copyOf(items)` chaqiriladi. Hibernate 6.x bilan ishlaganda entity o'zgaruvchan bo'lib qoladi, lekin uning atrofida immutable projection va read model yarating. Bitta amaliy qoida: tranzaksiyadan tashqariga entity emas, record chiqsin, shunda lazy loading va detached holat muammosi tug'ilmaydi.
 
 ## 6.4 Konfiguratsiya murakkabligi: har bir flag kelajakdagi xato
+
+Ousterhout bu mavzuda boshqa boblardan keskinroq turadi va uni bilib qo'yish foydali: konfiguratsiya parametri qo'shish murakkablikni YUQORIGA, foydalanuvchiga suradi, va ko'pincha bu "oson bahona" bo'ladi - modul to'g'ri qiymatni o'zi aniqlashi kerak bo'lgan joyda, mas'uliyat tashqariga chiqariladi. Uning misoli aynan shu bobdagi mavzuga tegadi: protokol retry intervalini foydalanuvchidan so'ramasligi, o'zi hisoblashi kerak. Shuning uchun har bir yangi flag uchun savol bitta: bu qiymatni ilovaning o'zi runtime'da aniqlay oladimi? Agar ha, flag kerak emas.
 
 Feature flag arzon ko'rinadi, chunki uni qo'shish bir qator. Narx esa kombinatsiyada. Oltita boolean flag 64 ta konfiguratsiya varianti beradi, va siz ulardan ikkitasini test qilasiz. Qolgan 62 tasi production'da "bizda shunday sozlanmagan edi" degan incident sifatida ochiladi.
 
@@ -196,7 +205,11 @@ Qarzning ikki turi bor va ular bilan muomala butunlay boshqacha. Ongli qarz qaro
 
 Tasodifiy loyqalik hech qanday qaror bilan olinmagan. U shunchaki paydo bo'ladi: nomlash buzilgan, qatlam chegarasi yo'q, bitta servis ikki xil tranzaksiya modelini ishlatadi. Bu turdagi qarz foizi yuqori, chunki uning mavjudligini hech kim bilmaydi.
 
+Shuni bilib qo'ying: "texnik qarz" atamasi bu yerda shu korpusning tili, Ousterhout uni ishlatmaydi. Uning ramkasida muammo taktik dasturlash deb ataladi va u "taktik bo'ron" (tactical tornado) figurasini keskin tanqid qiladi: tez ishlaydigan, lekin har safar murakkablik qoldirib ketadigan muhandis tashkilotda ko'pincha samarali deb qabul qilinadi, aslida esa qarzni boshqalar to'laydi. Ousterhout murakkablik bosqichma-bosqich o'sishini (complexity is incremental) alohida ta'kidlaydi: bitta qaror hech qachon halokatli ko'rinmaydi, yig'indisi esa halokatli bo'ladi.
+
 Arxitektor vazifasi loyqalikni ongli qarzga aylantirish. Bu ADR (arxitektura qaror yozuvi) orqali qilinadi: muammo, variantlar, tanlangan yo'l, narxi va qaytish sharti yoziladi. Qaytish sharti eng muhim qism, chunki u "bir kun kelib tozalaymiz" degan gapni o'lchanadigan narsaga aylantiradi. Masalan: "kunlik hisobot 90 sekunddan oshsa, yoki jadval 50 mln qatordan o'tsa, read model kiritiladi".
+
+Startap sharoiti bu qarorga alohida bosim beradi, va Ousterhout bosimni nomlab, javobini ham beradi. Erta bosqichdagi kompaniyada birinchi relizni tez chiqarish zarurati shunchalik kuchli ko'rinadi, hatto 10-20 foizlik investitsiya ham ko'tarib bo'lmaydigan narx bo'lib tuyuladi; o'rniga taktik yo'l tanlanadi va "muvaffaqiyat kelsa, tozalashga qo'shimcha muhandis yollaymiz" degan fikr bilan asoslanadi. Kitobning uch qarshi dalili bor. Birinchi: kod bazasi spagettiga aylangandan keyin uni tuzatish deyarli imkonsiz va yuqori ishlab chiqish narxi mahsulotning butun umri davomida to'lanadi. Ikkinchi: yaxshi yoki yomon dizaynning natijasi tez ko'rinadi, shuning uchun taktik yo'l hatto birinchi relizni ham tezlashtirmasligi ehtimoli katta. Uchinchi: eng kuchli muhandislar dizaynga e'tibor beradi, kod bazasi buzuq degan gap tarqalsa yollash qiyinlashadi, natijada o'rtamiyona jamoa qoladi va tuzilish yana yemiriladi. Kitob "tez yur va buz" (move fast and break things) shiorini aynan shu misolda ko'rib chiqadi: o'sha madaniyat bilan kompaniya juda muvaffaqiyatli bo'lgan, lekin kodi beqaror, izohsiz va testsiz bo'lib qolgan va keyinchalik shior "mustahkam infratuzilma bilan tez yur" ga o'zgargan. Teskari misol ham bor: taxminan shu davrda strategik yondashuvni tanlagan kompaniyalarning texnik madaniyati ularga eng kuchli muhandislarni yollashda ustunlik bergan. Kitobning xulosasi ehtiyotkor, ikki yo'l bilan ham muvaffaqiyat qozonish mumkin, demak bu prognoz emas, narx haqidagi dalil.
 
 | Tuzoq | Nimaga olib keladi | Yechim |
 |---|---|---|
@@ -216,6 +229,18 @@ Murakkablikni "chiroyli emas" degan his bilan himoya qilib bo'lmaydi, raqam kera
 Mo'ljal raqamlari: kichik o'zgarish uchun lead time 1-3 kun, deploy chastotasi kuniga kamida bir marta, change failure rate 15 foizdan past, yangi odamning birinchi PR'i 3-5 ish kuni. Agar yangi odam ikki haftada ham mustaqil PR yubora olmasa, bu tizim murakkabligining to'g'ridan-to'g'ri o'lchovi.
 
 Kodga tegishli yordamchi signal: churn va bog'lanish. Oyiga 30 martadan ko'p o'zgaradigan va 40 ta boshqa klassga bog'langan fayl keyingi incident manbai. Bunday fayllarni git tarixidan topish oson, va u sub'ektiv bahsni ma'lumotga aylantiradi.
+
+Hajmning o'zi ham o'lchov, va bu yerda o'lchangan ma'lumot bor. *Code Complete* loyiha kattaligining nuqsonlarga ta'sirini to'plab, ikki xulosaga keladi. Birinchi, nuqsonning turi o'zgaradi: kichik loyihalarda topilgan xatolarning taxminan 75 foizi konstruksiya, ya'ni kod yozish xatosi; katta loyihalarda bu ulush 50 foizga tushadi va farqni talab hamda arxitektura xatolari egallaydi (ba'zi juda katta loyihalarda esa konstruksiya ulushi baribir 75 foizda qoladi). Ikkinchi va muhimrog'i: zichlikning o'zi o'sadi, ya'ni ikki barobar katta mahsulotda ikki barobardan ko'p xato bo'ladi.
+
+| Loyiha hajmi (kod satri) | Odatiy xato zichligi |
+|---|---|
+| 2K dan kichik | 1000 satrga 0-25 xato |
+| 2K-16K | 1000 satrga 0-40 xato |
+| 16K-64K | 1000 satrga 0.5-50 xato |
+| 64K-512K | 1000 satrga 2-70 xato |
+| 512K va ko'proq | 1000 satrga 4-100 xato |
+
+Kitob bu raqamlarni aniq loyihalardan olingan deb ogohlantiradi va ularni o'z loyihangizga ko'chirishni taklif qilmaydi; sanoat suratida muhim bo'lgan narsa yo'nalish. Juda katta loyihada 1000 satrga to'g'ri keladigan xato soni kichik loyihadagidan to'rt barobarga ko'p bo'lishi mumkin, demak katta loyiha bir xil xato darajasiga erishish uchun ko'proq ishlashi kerak. Arxitektor uchun bu [6.5](#65-kodni-ochirish-eng-kam-baholangan-arxitektura-ishi) va [6.8](#68-servislar-soni-va-operatsion-murakkablik-narxi) qarorlarining asosi: hajmni kamaytirish sifat ishi ham, nafaqat tartib ishi.
 
 ```bash
 # Eng ko'p o'zgargan fayllar: murakkablik issiq nuqtalari
@@ -241,6 +266,8 @@ git log --since="6 months ago" --format='%an' -- \
 | Qaror | Eng yangi texnologiya tanlanadi | Operatsion narx va jamoa tajribasi hisobga olinadi |
 
 ## 6.8 Servislar soni va operatsion murakkablik narxi
+
+Chegara qo'yishdan oldin Ousterhout ning asosiy mezonini eslang, chunki u servis darajasida ham, sinf darajasida ham bir xil ishlaydi: **chuqur modul** kuchli funksionallikni sodda interfeys ortida yashiradi, **yuzaki modul** esa interfeysi o'z mazmuniga nisbatan qimmat. Yaxshi modul - interfeysi kichik, ichi katta bo'lgani. Bundan ikki amaliy qoida chiqadi. Birinchisi - **ma'lumotni yashirish** (information hiding): modul o'z qarorini ichida ushlasin, tashqariga chiqarmasin. Ikkinchisi - **murakkablikni pastga tortish** (pull complexity downwards): tanlov bo'lganda qiyin ishni modulning o'zi bajarsin, chaqiruvchiga topshirmasin. Yuzaki mikroservis eng qimmat xato: u tarmoq chaqiruvi, deploy, monitoring va versiyalash narxini oladi, lekin almashtirgan narsasi bitta metod chaqiruvi bo'ladi.
 
 Har bir yangi servis kod emas, operatsion birlik qo'shadi. Unga pipeline, sekretlar, monitoring, alert, on-call egasi, versiya yangilash jadvali va migratsiya mexanizmi kerak. Taxminiy hisob: bitta servisni "bor" holatda saqlash yiliga bir muhandisning 10-15 foiz vaqtini oladi, hech qanday yangi funksiya qo'shilmasa ham.
 
@@ -290,7 +317,11 @@ VatSummaryReport       r2 = reports.vatSummary(from, to);
 StockSnapshotReport    r3 = reports.stockSnapshot(asOf);
 ```
 
-Takrorlanishning o'zi ham narx, shuni inkor qilmaymiz. Farq shundaki, takrorlangan kodni birlashtirish keyinroq oson, noto'g'ri abstraksiyani yechish esa qiyin. Shu sababli tanlov nosimmetrik: shubha bo'lsa, takrorlanishni qoldiring.
+Takrorlanishning o'zi ham narx, shuni inkor qilmaymiz. Farq shundaki, takrorlangan kodni birlashtirish keyinroq oson, noto'g'ri abstraksiyani yechish esa qiyin. Shu sababli tanlov nosimmetrik: shubha bo'lsa, takrorlanishni vaqtincha qoldiring.
+
+Lekin bu qoidani juda uzoqqa olib bormang, chunki adabiyotda teskari pozitsiya ham bor va u kuchli. Ousterhout takrorlanishni "qizil bayroq" deb ataydi: bir xil kod qayta-qayta uchrayotgan bo'lsa, bu siz hali to'g'ri abstraksiyani topmaganingiz belgisi. Ikki pozitsiyani birlashtiradigan amaliy o'rta yo'l shunday: takrorlanishga vaqtincha chidash mumkin, lekin uni NORMA deb qabul qilmaslik kerak. Uchinchi nusxa paydo bo'lganda endi savol "birlashtirsammi?" emas, "qaysi abstraksiyani o'tkazib yubordim?" bo'ladi.
+
+Ziddiyatning to'liq yechimi va ikki pozitsiyani ajratadigan shart [6.12](#612-umumiylashtirish-qachon-chuqurlashtiradi-interfeys-umumiy-funksionallik-hozirgi-ehtiyoj-boyicha) da: bu bo'lim implementatsiyani oldindan umumiy qilish tuzog'i haqida, 6.12 esa yozilayotgan modulning interfeysini umumiy shaklda qo'yish haqida, va ikkisi bir modulda bir vaqtda to'g'ri bo'ladi.
 
 ## 6.10 Murakkablikni jamoaga tushuntirish va qarorni himoya qilish
 
@@ -298,11 +329,103 @@ Murakkablikni kamaytirish taklifi deyarli har doim "bu biznes qiymati bermaydi" 
 
 Taklifni uchta ustunda bering. Birinchisi hozirgi narx raqamda. Ikkinchisi taklif va uning hajmi (masalan ikki hafta, bitta developer). Uchinchisi natija qanday o'lchanadi (lead time 9 kundan 3 kunga, incident oyiga 2 dan 0-1 ga). Agar uchinchi ustunni yozolmasangiz, taklif hali tayyor emas.
 
-Bir vaqtda hamma narsani tozalashni so'ramang. Issiq nuqta ro'yxatidan eng qimmat bittasini tanlang va uni oqim ichida qiling: har bir funksional ishga 20 foiz tozalash qo'shing. Bu rejani buzmaydi va bir chorakda sezilarli natija beradi.
+Bir vaqtda hamma narsani tozalashni so'ramang. Issiq nuqta ro'yxatidan eng qimmat bittasini tanlang va uni oqim ichida qiling: har bir funksional ishga tozalash ulushini qo'shing. Ousterhout umumiy ish vaqtining 10-20 foizini investitsiya deb ataydi - bu bitta ishga emas, umumiy byudjetga nisbatan o'lchov. Bu rejani buzmaydi va bir chorakda sezilarli natija beradi.
 
 Teskari yo'nalishni ham unutmang. Ba'zan to'g'ri qaror murakkablikni ataylab qabul qilish: to'lovda idempotency, reconciliation va audit log kerak, chunki pul yo'qolishining narxi kodning chiroyliligidan baland. Arxitektorning mahorati murakkablikni yo'qotishda emas, uni qayerga qo'yishni tanlashda.
 
-## 6.11 Amalda qo'llash
+## 6.11 Arxitektura qarzi: eskirgan qaror qanday sekinlashtiradi
+
+[Texnik qarz](#66-texnik-qarz-ongli-qarz-va-tasodifiy-loyqalik) kod darajasida yig'iladi, arxitektura qarzi esa qaror darajasida. Orosz uni texnik qarzning bir ko'rinishi deb ta'riflaydi: eski arxitektura qarorlari dasturni yoki servisni kengaytirishni, yuritishni, hatto ishlatishni sekinlashtiradi; va hech bir jamoa uni ataylab yaratmaydi, bir paytlar oqilona bo'lgan qaror vaqt o'tib nooptimal bo'lib qoladi (Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr, Pragmatic Engineer, 2023, 25-bob, 361-bet). Shu sababli bu qarzni axloqiy baho bilan emas, belgilari bilan topish kerak. Orosz to'rt namunani sanaydi.
+
+Birinchisi tezlik uchun ochilgan alohida servislar. Jamoaga yangi funksiya kerak, eng to'g'ri yo'l mavjud backend servisini kengaytirish, lekin uning egasi boshqa jamoa va u o'zgarishga qarshi chiqadi. Jamoa tez chiqish uchun yangi servis quradi va keyingi safar ham shunday qiladi. Vaqt o'tib narxi ko'rinadi: funksiyani o'zgartirish uchun avval qaysi servis ekanini va uning konvensiyasini topish kerak, servislar turli tilda yozilgani kontekst almashtirishni qiyinlashtiradi, va har biri bir xil kutubxonaning turli versiyasiga bog'lanadi; qarz tizimni yuritishdan ko'ra tezlikni ustun qo'yishdan tug'ildi (362-bet). Operatsion narx hisobi [6.8](#68-servislar-soni-va-operatsion-murakkablik-narxi) da.
+
+Ikkinchisi teskari: monolitni ajratmaslik. Boshida bitta kod bazasini bitta birlik qilib deploy qilish oqilona. Jamoa o'sgach og'riq paydo bo'ladi: monolitning ichki tuzilishi yetarlicha mayda bo'lmasa, turli funksiya ustida ishlayotgan odamlar bir xil fayllarda uzoq ishlaydi va merge conflict yechadi; monolit faqat yaxlit deploy qilinsa, deploy vaqti o'sadi va hali chiqarishni xohlamagan jamoa bilan chiqarmoqchi bo'lgan jamoa o'rtasida ziddiyat ehtimoli ortadi (362-bet).
+
+Uchinchisi funksional bo'lmagan xossalarning yemirilishi. Qaror qurilish paytida yaxshi ishlaydi, lekin yuk oshib, use case lar qo'shilgach, unum (latency qabul qilib bo'lmas darajaga chiqadi, CPU yoki xotira sarfi qo'ldan ketadi, throughput yetmaydi), masshtablanish va ishonchlilik seziladigan darajada yomonlashadi (362-363-betlar). Bu turdagi qarzni faqat o'lchov ko'rsatadi, shuning uchun u [murakkablik o'lchovlari](#67-murakkablikni-olchash-ozgarish-vaqti-incident-soni-yangi-odam-vaqti) bilan birga kuzatiladi.
+
+To'rtinchisi eskirgan til yoki framework. Qo'llab-quvvatlanmaydigan versiya xavfsizlik riski va interoperability muammosini keltiradi, ba'zan unumi zamonaviy muqobilidan sezilarli past bo'ladi; almashtirish katta ish, shuning uchun qayta yozish doirasida eski arxitektura qarorlarini ham qayta ko'rish o'rinli. Orosz misol qiladi: Khan Academy Python 2 dan Go ga o'tganda monolitni kichik servislarga bo'lgan va REST endpoint laridan GraphQL ga ko'chgan (363-bet).
+
+Shu yerda qarshi shart bor: eski stack avtomatik ravishda qarz emas. Barqaror, lekin modadan chiqqan framework da kutilmagan to'siq kamroq uchraydi; faol ishlab chiqilayotganida esa boshqa jamoalar duch kelmagan muammoga tushish riski bor. Riskni kamaytirish yo'li sodda: alpha va beta emas, barqaror versiyalarda qolish (363-bet).
+
+## 6.12 Umumiylashtirish qachon chuqurlashtiradi: interfeys umumiy, funksionallik hozirgi ehtiyoj bo'yicha
+
+[6.9](#69-umumiylashtirish-tuzogi-uchta-foydalanuvchiga-moljallangan-platforma) erta umumiylashtirish tuzog'ini yozadi va "uchinchi real holatni kut" deydi. Ousterhout ning P7 printsipi esa teskari tomonda turadi: umumiy maqsadli modullar chuqurroq (general-purpose modules are deeper). Ikki pozitsiya bir xil narsa haqida emas, va ularni ajratadigan shartni kitobning o'zi beradi: modulni "birmuncha umumiy" (somewhat general-purpose) qil, ya'ni **modulning funksionalligi hozirgi ehtiyojni aks ettirsin, interfeysi esa aks ettirmasin**. Interfeys bir nechta ishlatishni ko'taradigan darajada umumiy bo'lishi kerak, lekin bugungi ehtiyoj uchun ishlatishga qulay qolishi shart; "birmuncha" so'zi aynan shuni ushlab turadi.
+
+| Savol | Javob qaysi bo'limda |
+|---|---|
+| Abstraksiyani qachon chiqarish kerak | 6.9: uchinchi real holat paydo bo'lganda, chunki undan oldin o'zgaruvchanlik o'qi ma'lum emas |
+| Chiqarilgan modulning interfeysi qanday shaklda bo'lishi kerak | shu bo'lim: bitta ishlatish uchun ham umumiy shaklda, chunki umumiy interfeys chuqurroq va ma'lumotni yaxshiroq yashiradi |
+| Implementatsiya necha holatni qoplashi kerak | faqat bugungi holatni; bu yerda 6.9 ning ogohlantirishi to'liq amal qiladi |
+
+Ya'ni 6.9 implementatsiyani oldindan umumiy qilish haqida (ikki mijozni qoplaydigan platforma, sakkiz argumentli metod va `Map<String, Object>`), bu bo'lim esa yoziladigan modulning interfeys shakli haqida. Bir modulda ikkisi bir vaqtda to'g'ri bo'ladi: implementatsiya bitta holatni qoplaydi, interfeys esa chaqiruvchining atamalarini o'ziga olmaydi.
+
+Kitobning misoli matn tahrirlagich. Talabalar `Text` sinfiga `backspace(Cursor)`, `delete(Cursor)` va `deleteSelection(Selection)` metodlarini yozgan, chunki har biri UI ning bitta tugmasiga mos edi. Natijada `Text` da ko'p sayoz metod paydo bo'lgan, UI atamalari (kursor, tanlov, backspace tugmasi) matn sinfiga oqib o'tgan, va har yangi UI amali `Text` da yangi metod talab qilgan. Umumiy interfeys esa uch metodga tushadi (misol Java ga o'tkazilgan):
+
+```java
+public interface Text {
+    void insert(Position position, String newText);
+    void delete(Position start, Position end);
+    Position changePosition(Position position, int charCount);
+}
+
+// backspace endi UI tomonida va u nimani o'chirayotgani o'qilib turadi
+text.delete(text.changePosition(cursor, -1), cursor);
+```
+
+Dalil ikki qismli. Birinchi, bu ma'lumotni yashirishni yaxshilaydi: `Text` endi UI tafsilotini bilmaydi, yangi UI amali `Text` ga tegmasdan qo'shiladi, va UI da ishlayotgan odam uchta sodda metodni o'rganadi, o'n beshtasini emas. Ikkinchi, eski `backspace` metodi yolg'on abstraksiya edi: u qaysi belgi o'chirilishini yashirayotgandek ko'rinadi, lekin UI ga aynan shu ma'lumot kerak, shuning uchun UI developeri baribir `backspace` ning kodini o'qishga boradi. Tafsilot muhim bo'lsa, uni interfeys ortiga yashirish aniqlik bermaydi, loyqalik beradi.
+
+Chegara qayerda? Kitob uchta tekshirish savolini beradi: hozirgi hamma ehtiyojni qoplaydigan eng sodda interfeys qanday; bu metod necha xil holatda ishlatiladi (bitta holat uchun yozilgan metod qizil bayroq); bu API hozirgi ehtiyoj uchun ishlatishga qulaymi. Uchinchi savol 6.9 bilan tutashadigan joy: sinfni bugungi maqsad uchun ishlatish uchun ko'p qo'shimcha kod yozish kerak bo'lsa, umumiylashtirish uzoqqa ketgan. Signal esa o'lchanadigan: metodlar soni kamaygan va har bir metodning API si sodda qolgan bo'lsa, umumiylashtirish to'g'ri; metodlar soni kamaygan, lekin argumentlar soni o'sgan bo'lsa, bu 6.9 dagi plash.
+
+## 6.13 Murakkablikni pastga tortishning chegarasi: modul hamma qarorni o'ziga olmasin
+
+Murakkablikni pastga tortish qoidasi [6.8](#68-servislar-soni-va-operatsion-murakkablik-narxi) da aytilgan: tanlov bo'lganda qiyin ishni modulning o'zi bajarsin, chaqiruvchiga topshirmasin. Ousterhout bu qoidaga alohida bo'lim bilan chek qo'yadi, chunki uni oshirib yuborish oson: chegaraviy holatda butun ilovaning funksionalligi bitta sinfga tortiladi, bu esa aniq ma'nosizlik.
+
+Kitobning uchta sharti bor va ular birgalikda tekshiriladi: (a) pastga tortilayotgan murakkablik sinfning mavjud funksionalligiga yaqin bo'lsin; (b) tortish ilovaning boshqa joylarida ko'p soddalashtirishga olib kelsin; (c) tortish sinfning interfeysini soddalashtirsin. Maqsad tizimning umumiy murakkabligini kamaytirish, bitta sinfni "kuchli" qilish emas.
+
+Kitobning o'z qarshi misoli [6.12](#612-umumiylashtirish-qachon-chuqurlashtiradi-interfeys-umumiy-funksionallik-hozirgi-ehtiyoj-boyicha) dagi matn sinfi: `backspace` metodini `Text` ga qo'yish murakkablikni pastga tortishdek ko'rinadi, lekin yuqori darajadagi kodni deyarli soddalashtirmaydi va UI bilimi matn sinfining asosiy vazifasiga tegishli emas. Natija soddalashtirish emas, ma'lumot oqib chiqishi bo'ladi.
+
+ESLATMA, Spring kontekstidagi quyidagi jadval shu korpusning tarjimasi, kitobdan olingan emas:
+
+| Pastga tortilayotgan narsa | (a) yaqin | (b) yuqorida soddalashtiradi | (c) interfeysni soddalashtiradi | Qaror |
+|---|---|---|---|---|
+| Repository ichida sahifalash va saralash standart qiymati | ha | ha | ha | torting |
+| Aggregate ichida invariant tekshiruvi | ha | ha | ha | torting |
+| Repository ichida retry va circuit breaker | yo'q | yo'q | yo'q, sozlama qo'shiladi | tortmang |
+| Domen servisi ichida HTTP status kodini tanlash | yo'q | yo'q | yo'q | tortmang |
+| Servis metodiga `boolean dryRun` qo'shib ikki xatti-harakat berish | ha | yo'q | yo'q | tortmang |
+
+```java
+// Chegaradan o'tgan holat: sinf o'ziga tegishli bo'lmagan qarorni ham oldi
+public interface OrderRepository {
+    // (c) buzilgan: interfeys sodda bo'lmadi, retry va tenant qarori chiqib qoldi
+    List<Order> findRecent(TenantId tenant, int retries, boolean includeCancelled);
+}
+
+// Chegarada qolgan holat: qiyin ish ichida, interfeys bitta savolga javob beradi
+public interface OrderRepository {
+    List<Order> findRecent(OrderQuery query);   // standart qiymatlar va saralash ichida
+}
+```
+
+## 6.14 Inkrement birligi: xususiyat emas, abstraksiya
+
+Bosqichma-bosqich ishlab chiqish to'g'ri yondashuv, chunki murakkab tizimni boshida yetarlicha aniq ko'rib, eng yaxshi dizaynni tanlab bo'lmaydi. Ousterhout ning qo'shimchasi esa inkrementning birligi haqida va u printsip darajasiga ko'tarilgan (P15): **ishlab chiqish inkrementlari abstraksiyalar bo'lishi kerak, xususiyatlar emas**. Har bir inkrement bir necha yangi abstraksiya qo'shadi va mavjud abstraksiyalarni tajribaga qarab refaktoring qiladi.
+
+Kitob xavfni ham nomlaydi: agile ning bir xavfi taktik dasturlashga olib borishi, chunki u developerlarni abstraksiyalarga emas, xususiyatlarga qaratadi va ishlaydigan dasturni imkon qadar tez chiqarish uchun dizayn qarorlarini keyinga qoldirishni rag'batlantiradi. Bu esa murakkablikning tez to'planishiga olib keladi. Ba'zi agile amaliyotchilarining dalili aynan shunday yangraydi: umumiy maqsadli mexanizmni darhol qurmang, minimal maxsus yechim bilan boshlang va keyin, kerak bo'lgani ma'lum bo'lganda, umumiyroq narsaga refaktoring qiling. Ousterhout bu dalilni ma'lum darajada o'rinli deb tan oladi, lekin u investitsiya yondashuviga qarshi ishlaydi deb hisoblaydi.
+
+Kitobning o'z chizgan chizig'i aniq va u [6.9](#69-umumiylashtirish-tuzogi-uchta-foydalanuvchiga-moljallangan-platforma) bilan ziddiyatda emas: ma'lum bir abstraksiya haqida o'ylashni u xususiyatga kerak bo'lgunicha butunlay qoldirib qo'yish mumkin. Lekin kerak bo'lgan paytda uni toza loyihalashga vaqt sarflash kerak va [6.12](#612-umumiylashtirish-qachon-chuqurlashtiradi-interfeys-umumiy-funksionallik-hozirgi-ehtiyoj-boyicha) ning qoidasi bo'yicha birmuncha umumiy qilish kerak. Ya'ni qoldirish ruxsat etilgan, abstraksiyani umuman chiqarmasdan xususiyatni "tayyor" deb yopish ruxsat etilmagan.
+
+ESLATMA, shu korpusning amaliy shakli: sprint natijasini xususiyat nomi bilan emas, qo'shilgan yoki tozalangan abstraksiya nomi bilan ham yozib qo'yish. "To'lovni Click orqali qabul qilish" xususiyati, "`PaymentProvider` porti va uning ikki implementatsiyasi" esa inkrement. Agar ketma-ket uch sprintda bitta ham yangi yoki tozalangan abstraksiya yo'q bo'lsa, jamoa [6.6](#66-texnik-qarz-ongli-qarz-va-tasodifiy-loyqalik) dagi taktik rejimga o'tgan, va buni retrospektivada raqam bilan ko'rsatish mumkin.
+
+## 6.15 Dizayn jarayonining nomukammalligi: wicked problem va qo'pol yechim
+
+Murakkablikni boshqarish haqidagi bob ikkita noqulay haqiqat bilan yopiladi. Ikkisi ham *Code Complete* ning dizayn bobidan keladi va ikkisi ham arxitektorning rejasini emas, uning kutishini tuzatadi.
+
+**Dizayn "wicked problem".** Horst Rittel va Melvin Webber 1973 yilda "wicked" muammoni shunday ta'riflagan: uni faqat yechib, yoki bir qismini yechib aniq ta'riflash mumkin. Bundan paradoks chiqadi: muammoni aniq ta'riflash uchun uni bir marta "yechish" kerak, keyin esa ishlaydigan yechim qurish uchun uni yana yechish kerak. Kitobning misoli Tacoma Narrows ko'prigi: qurilish paytida asosiy mezon ko'prikning rejalashtirilgan yukni ko'tarishi edi, shamol hosil qilgan yon tomonga garmonik tebranish esa hisobga olinmagan, va 1940 yilda tebranish o'sib ko'prikni yiqitgan. Aerodinamikani shu darajada hisobga olish kerakligi faqat muammo "yechilgandan" keyin ma'lum bo'lgan. Kitob maktab topshirig'i bilan professional ishning farqini ham shu yerda qo'yadi: maktab topshirig'i boshidan oxiriga to'g'ri chiziq bo'lib tuzilgan, professional ishda esa talab siz dizaynni tugatganingizda o'zgaradi. Arxitektor uchun amaliy natija bitta: birinchi tuzilishni tashlab yuborish ehtimolini rejaga kiritish kerak, va shu sababli qaror [6.6](#66-texnik-qarz-ongli-qarz-va-tasodifiy-loyqalik) dagi qaytish sharti bilan birga yoziladi.
+
+**Qo'pol kuch (brute force).** Butler Lampson ning qoidasi kitobda shunday keltirilgan: shubha bo'lsa, qo'pol kuch ishlat. Ishlaydigan qo'pol yechim ishlamaydigan nozik yechimdan yaxshiroq, chunki nozik yechimni ishlaydigan holatga keltirishga uzoq vaqt ketishi mumkin. Kitobning dalili tarixiy: ikkilik qidiruv algoritmining birinchi tavsifi 1946 yilda chop etilgan, lekin hamma hajmdagi ro'yxatlarni to'g'ri qidiradigan algoritm chop etilishiga yana 16 yil ketgan. Ikkilik qidiruv nozikroq, lekin ketma-ket qidiruv ko'p holatda yetarli. Spring kontekstida bu odatda shunday chiqadi: 300 qatorli jadvalni xotiraga olib oddiy tsikl bilan tekshirish, murakkab SQL yoki kesh invalidatsiyasi qurishdan oldin yoziladigan to'g'ri yechim, va uni almashtirish qarori o'lchovdan keyin keladi. Qo'pol yechimning sharti bitta: u [6.6](#66-texnik-qarz-ongli-qarz-va-tasodifiy-loyqalik) ma'nosida ongli qarz bo'lsin, ya'ni qaytish mezoni yozilgan bo'lsin, aks holda u tasodifiy loyqalikka aylanadi.
+
+## 6.16 Amalda qo'llash
 
 - [ ] Eng ko'p incident bergan uch modulni aniqlang va har biri uchun lead time hamda incident sonini raqamda yozib qo'ying.
 - [ ] Git tarixidan oxirgi 6 oyda eng ko'p o'zgargan 15 faylni chiqarib, ularning bog'lanish sonini tekshiring va ikkitasini bo'lishni rejalashtiring.
@@ -312,6 +435,22 @@ Teskari yo'nalishni ham unutmang. Ba'zan to'g'ri qaror murakkablikni ataylab qab
 - [ ] `pg_stat_user_indexes` va `pg_stat_user_tables` asosida o'lik indeks va jadvallar ro'yxatini tuzing, statistika yig'ilgan muddatni tekshirib, bosqichli o'chirish rejasini yozing.
 - [ ] Modul chegaralari uchun kamida uchta ArchUnit qoidasi qo'shib, ularni CI darvozasiga ulang.
 - [ ] Mavjud eng katta nomsiz texnik qarz uchun ADR yozing: shart, narx, qaytish mezoni va muddat.
+
+## Manbalar
+
+- John Ousterhout, *A Philosophy of Software Design*, 1-nashr (v1.0), 2018, 2-bob - murakkablikning uch belgisi (change amplification, cognitive load, unknown unknowns) va ikki sababi (dependency, obscurity); murakkablik bosqichma-bosqich o'sishi
+- John Ousterhout, *A Philosophy of Software Design*, 1-nashr, 2018, 3-bob, 13-15-betlar - strategik va taktik dasturlash, "taktik bo'ron" figurasi, umumiy vaqtning 10-20 foizini investitsiya qilish
+- John Ousterhout, *A Philosophy of Software Design*, 1-nashr, 2018, 4-bob, 22 va 25-betlar - chuqur va yuzaki modul; 5-bob, 29-bet - ma'lumotni yashirish; 8-bob, 55-56-betlar - murakkablikni pastga tortish va konfiguratsiya parametrlari tanqidi
+- John Ousterhout, *A Philosophy of Software Design*, 1-nashr, 2018, 6-bob, 39-40-betlar - modulni "birmuncha umumiy" qilish; 9-bob, 62-bet - takrorlanish qizil bayroq sifatida
+- Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 5.2 "Key Design Concepts", 77-79-betlar - muhim va tasodifiy murakkablik, muhim murakkablikni ham minimallashtirish; 5.3, 95-bet - global holat
+- Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr, Pragmatic Engineer BV, 2023, 25-bob, 361-363-betlar - arxitektura qarzining ta'rifi va to'rt namunasi (tezlik uchun ochilgan alohida servislar, monolitni ajratmaslik, funksional bo'lmagan xossalarning yemirilishi, eskirgan til yoki framework), Khan Academy ning Python 2 dan Go ga o'tishi, eski stack avtomatik qarz emasligi va barqaror versiyada qolish qoidasi
+- John Ousterhout, *A Philosophy of Software Design*, 1-nashr, Yaknyam Press, 2018, 3.4 - startap sharoitida dizayn investitsiyasi, spagetti kod bazasining butun umr narxi, "tez yur va buz" shiorining tanqidi va dizayn sifatining yollashga ta'siri
+- John Ousterhout, *A Philosophy of Software Design*, 1-nashr, Yaknyam Press, 2018, 6.1 va 6.3-6.5, hamda P7 printsipi ("umumiy maqsadli modullar chuqurroq") - funksionallik hozirgi ehtiyoj bo'yicha, interfeys umumiy; umumiylashtirish ma'lumotni yashirishni yaxshilashi; `backspace` yolg'on abstraksiya sifatida; o'zingizga beradigan uchta savol
+- John Ousterhout, *A Philosophy of Software Design*, 1-nashr, Yaknyam Press, 2018, 8.3 - murakkablikni pastga tortishning uchta sharti va chegarasi
+- John Ousterhout, *A Philosophy of Software Design*, 1-nashr, Yaknyam Press, 2018, 19.2 va P15 printsipi - inkrement birligi abstraksiya bo'lishi, xususiyat emas; agile ning taktik dasturlashga og'ish xavfi; abstraksiyani kerak bo'lgunicha qoldirish mumkinligi
+- Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 5.1 (74-75-betlar) - dizayn "wicked problem" ekani (Rittel va Webber, 1973), Tacoma Narrows ko'prigi misoli, dizayn jarayonining loyqa ekani; 5.3 (107-bet) - qo'pol kuch evristikasi (Lampson) va ikkilik qidiruv tarixi misoli
+- Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 27.3 (651-652-betlar) - loyiha hajmi oshganda xato turining o'zgarishi (kichik loyihada 75 foiz konstruksiya xatosi, kattada 50 foiz) va hajm bo'yicha xato zichligi jadvali
+- ESLATMA: 6.2 dagi uch joy modeli, 6.7 dagi raqamli mo'ljallar (lead time, change failure rate, churn chegaralari), 6.8 dagi mavjudlik hisobi va jamoa o'lchami qoidasi, 6.9 dagi "uchinchi real holat" qoidasi, 6.10 dagi taklif shabloni, 6.13 dagi Spring jadvali va 6.14 dagi sprint o'lchovi shu korpusning amaliy tavsiyasi, kitobdan olingan emas
 
 ---
 

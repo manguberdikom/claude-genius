@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 26. Spring kodining tozaligi (Clean Code in Spring)
 
@@ -244,6 +244,13 @@ Lombok kodni qisqartiradi, lekin ba'zi annotatsiyalari yashirin xatti-harakat qo
 - [ ] Mapping joyini bitta konvensiyaga keltirib (DTO fabrikasi yoki mapper), takrorlangan mappinglarni birlashtiring.
 - [ ] `@Primary` ishlatilgan joylarni `@Qualifier` yoki konfiguratsiyadagi oshkor tanlovga almashtiring.
 - [ ] Lombok siyosatini yozib, `@Data`, `@SneakyThrows` va entitetdagi `@EqualsAndHashCode` ni ArchUnit bilan taqiqlang.
+
+## Manbalar
+
+- Craig Walls, *Spring in Action* 6th, 1-bob - bean va bog'liqlikni kiritish asoslari
+- Craig Walls, *Spring in Action* 6th, 6-bob - `@ConfigurationProperties` bilan konfiguratsiyani bog'lash va validatsiya
+- [Spring Framework, Constructor-based Dependency Injection](https://docs.spring.io/spring-framework/reference/core/beans/dependencies/factory-collaborators.html#beans-constructor-injection) - konstruktor inyeksiyasi tavsiya etilishi va `final` maydon
+- [Spring Boot, Type-safe Configuration Properties](https://docs.spring.io/spring-boot/reference/features/external-config.html#features.external-config.typesafe-configuration-properties) - record bilan bog'lash va `@Validated`
 
 ---
 

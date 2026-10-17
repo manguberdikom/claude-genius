@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 33. Serverni o'rnatish, sozlash va resurs rejalashtirish (Installing and Sizing the Server)
 
@@ -169,6 +169,18 @@ Yana ikki talab. Birinchi: SonarQube jarayoni root sifatida ishlamasligi kerak, 
 
 Bu bobning eng muhim joyi. Uchta jarayonning har biriga alohida JVM parametri beriladi va ularni birga "server xotirasi" deb o'ylash xato. Standart qiymatlar kichik va faqat kichik instansiya uchun mos, aniq standart raqam versiyaga qarab farq qiladi.
 
+Defaultlardan boshlash kerak, chunki ular kichik va ko'p o'rnatishda o'zgartirilmagan holda qoladi. SonarQube manbasidagi (`ProcessProperties`) qiymatlar:
+
+| Kalit | Default |
+|---|---|
+| `sonar.web.javaOpts` | `-Xmx512m -Xms128m -XX:+HeapDumpOnOutOfMemoryError` |
+| `sonar.ce.javaOpts` | `-Xmx512m -Xms128m -XX:+HeapDumpOnOutOfMemoryError` |
+| `sonar.search.javaOpts` | `-Xmx512m -Xms512m -XX:MaxDirectMemorySize=256m -XX:+HeapDumpOnOutOfMemoryError` |
+
+Uchta narsa shundan ko'rinadi. Birinchi: search ning defaultida `Xms` va `Xmx` allaqachon **teng** (512m), ya'ni pastdagi "teng bo'lsin" qoidasi SonarQube ning o'z tanlovini davom ettiradi. Ikkinchi: web va CE da `Xms` `Xmx` dan kichik, ya'ni ular o'sishga mo'ljallangan. Uchinchi: uchtasida ham `HeapDumpOnOutOfMemoryError` default yoqilgan, demak OOM da dump olish uchun diskda joy bo'lishi kerak va `sonar.search.javaOpts` ni qo'lda yozganda bu flagni tushirib qoldirmaslik kerak.
+
+Yana bir default e'tiborga loyiq: `sonar.ce.gracefulStopTimeOutInMs` olti soat. Ya'ni CE to'xtatilganda ishlayotgan vazifani juda uzoq kutadi; konteynerdagi deploy da bu qiymatni pasaytirish kerak, aks holda pod `terminationGracePeriodSeconds` tugaguncha turib, SIGKILL bilan uziladi.
+
 ```properties
 # $SONARQUBE_HOME/conf/sonar.properties
 # Web server: foydalanuvchi soni va API yuklamasiga bog'liq
@@ -319,6 +331,11 @@ grep -i "executed task" logs/ce.log | tail -20
 - [ ] `sonar.core.serverBaseURL` ni tashqi HTTPS manzilga qo'yib, PR dagi havolaning to'g'ri ochilishini bitta real PR da sinab ko'ring.
 - [ ] Baza hajmi bo'yicha so'rovni oyda bir marta ishlatib o'sish tezligini yozib boring va housekeeping siyosatini shunga qarab qisqartiring.
 - [ ] `/api/system/status`, CE navbat uzunligi va disk bandligi uchun uchta alert qo'ying, keyin baza dump dan tiklanishni sinov muhitida bir marta bajarib ko'ring.
+
+## Manbalar
+
+- [sonarqube 9.9 LTA, `ProcessProperties.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-process/src/main/java/org/sonar/process/ProcessProperties.java) - `sonar.web.javaOpts`, `sonar.ce.javaOpts`, `sonar.search.javaOpts` defaultlari, `sonar.web.host`, `sonar.web.port`, `sonar.web.context` va `sonar.ce.gracefulStopTimeOutInMs` (olti soat)
+- [sonarqube 9.9 LTA, `SystemStatusAction`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-webserver-webapi/src/main/java/org/sonar/server/platform/ws/StatusAction.java) - `api/system/status` javobi va holat qiymatlari
 
 ---
 

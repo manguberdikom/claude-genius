@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 10. Garbage collection va xotira sozlash (Garbage Collection and Memory Tuning)
 
@@ -62,6 +62,10 @@ java -XX:+UseG1GC -XX:MaxRAMPercentage=70.0 \
   -jar payment-service.jar
 ```
 
+`MaxGCPauseMillis` ning G1 dagi defaulti **200 ms** va bu HotSpot manbasida ikki qadamda qo'yilgan: umumiy default `max_uintx - 1` (ya'ni amalda cheklovsiz), G1 esa ishga tushganda flag o'zgartirilmagan bo'lsa uni 200 ga qo'yadi (`g1Arguments.cpp` da `FLAG_SET_DEFAULT(MaxGCPauseMillis, 200)`) va `GCPauseIntervalMillis` ni `MaxGCPauseMillis + 1` qilib belgilaydi. Shundan amaliy xulosa: `-XX:MaxGCPauseMillis=200` yozish G1 da hech narsani o'zgartirmaydi, haqiqiy qaror uni **pasaytirish** yoki qoldirishdan iborat.
+
+Yondosh default ham shu yerda: `InitiatingHeapOccupancyPercent` (IHOP) 45, ya'ni old generation 45 foizga to'lganda concurrent mark boshlanadi. Manbadagi izoh muhim shartni qo'shadi: adaptive IHOP yoqilgan bo'lsa bu qiymat vaqt o'tib **o'zgaradi**, o'chirilgan bo'lsa o'zgarmaydi. Shuning uchun `-XX:InitiatingHeapOccupancyPercent` ni qo'lda qo'yish adaptivlikni yo'qotadi va ko'pincha zarar keltiradi.
+
 `MaxGCPauseMillis` kafolat emas, maqsad. G1 uni ushlash uchun young hududni kichraytiradi, natijada collection lar tez-tez bo'ladi va throughput pasayadi. 50 ms dan past qiymat ko'p holda teskari natija beradi: pauza qisqarmaydi, GC CPU iste'moli oshadi. Amalda 100 dan 200 ms oralig'i sog'lom.
 
 G1 ning eng xavfli holati: to-space exhausted. Evakuatsiya uchun bo'sh region qolmaganda G1 full GC ga tushadi va bu bir necha sekund davom etadi. Sabab odatda juda tez allokatsiya yoki humongous obyektlar. Region yarmidan katta array (16 MB region da 10 MB lik `byte[]`) humongous hisoblanadi va ketma-ket region larni band qiladi. Hisobot servisida butun CSV ni bitta `byte[]` ga yuklash shu muammoni tug'diradi.
@@ -72,7 +76,7 @@ ZGC va Shenandoah bir maqsadni ko'zlaydi: pauzani heap hajmidan mustaqil qilish.
 
 ZGC da pauzalar bir necha yuz mikrosekund darajasida va 128 GB heap da ham shunday qoladi. JDK 21 da generational ZGC qo'shildi, JDK 23 dan boshlab u standart rejim. Eski ZGC yuqori allokatsiya tezligida heap ni to'ldirib qo'yardi.
 
-Evaziga uch narsa to'lanadi. Throughput: barrier lar har reference o'qishga instruksiya qo'shadi, G1 ga nisbatan 5 dan 15 foizgacha yo'qotish odatiy. Xotira: concurrent evakuatsiya uchun zaxira joy kerak, heap ni to'liq to'ldirib ishlatish mumkin emas. Allocation stall: allokatsiya tezligi GC ning bo'shatish tezligidan oshsa thread lar to'xtaydi, bu "pauzasiz" GC da eng chalkash muammo.
+Evaziga uch narsa to'lanadi. Throughput: barrier lar har reference o'qishga instruksiya qo'shadi, ya'ni G1 ga nisbatan throughput tushadi. Yo'qotish hajmini bu yerda raqam bilan bermaymiz: u yuklamaga (reference o'qish zichligi, jonli to'plam hajmi, allokatsiya tezligi) qattiq bog'liq va faqat o'z yuklamangizdagi o'lchov bilan aniqlanadi. O'lchash usuli esa oddiy: bir xil yuk profilida ikki kollektorni almashtirib, so'rov/sekund va p99 ni taqqoslash. Xotira: concurrent evakuatsiya uchun zaxira joy kerak, heap ni to'liq to'ldirib ishlatish mumkin emas. Allocation stall: allokatsiya tezligi GC ning bo'shatish tezligidan oshsa thread lar to'xtaydi, bu "pauzasiz" GC da eng chalkash muammo.
 
 ```bash
 # Past latency talab qilinadigan API gateway: 16 vCPU, 32 GB
@@ -293,6 +297,14 @@ Beshinchisi: obyekt pool dan ehtiyot bo'lish. Kichik obyektlar uchun pool deyarl
 - [ ] Eng katta trafikli servisda 120 sekundlik JFR profili oling va `ObjectAllocationSample` bo'yicha top 5 allokatsiya manbasiga ticket yarating.
 - [ ] Butun jadvalni yoki faylni xotiraga yuklaydigan kodlarni pagination yoki stream ga o'tkazib humongous allokatsiyani yo'qoting.
 - [ ] Yuklama testiga GC regressiya tekshiruvini qo'shing: release dan oldin va keyin p99 pauza va after-GC qoldiqni solishtirib, farq 20 foizdan oshsa to'xtating.
+
+## Manbalar
+
+- Joshua Bloch, *Effective Java* 3rd, Item 7 - eskirgan obyekt havolasi va xotira sizishining uch manbasi
+- Joshua Bloch, *Effective Java* 3rd, Item 8 - finalizer va cleaner ning GC bilan munosabati
+- [OpenJDK 25, `gc_globals.hpp`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/hotspot/share/gc/shared/gc_globals.hpp) - `MaxGCPauseMillis` ning umumiy defaulti `max_uintx - 1`, `InitiatingHeapOccupancyPercent` defaulti 45 va adaptive IHOP izohi
+- [OpenJDK 25, `g1Arguments.cpp`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/hotspot/share/gc/g1/g1Arguments.cpp) - G1 ning `MaxGCPauseMillis` ni 200 ga va `GCPauseIntervalMillis` ni `MaxGCPauseMillis + 1` ga qo'yishi
+- [OpenJDK 25, `g1_globals.hpp`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/hotspot/share/gc/g1/g1_globals.hpp) - `G1HeapRegionSize` ning defaulti 0 (ergonomika hisoblaydi) va ruxsat etilgan oralig'i
 
 ---
 

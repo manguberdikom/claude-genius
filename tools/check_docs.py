@@ -53,7 +53,8 @@ Tekshiradi:
                     soni README_LINK_BASE dan oshmaydi (ratchet).
  14. Summary      - har raqamli bobda `<summary>Bu bobdagi N bo'lim`
                     bor va N haqiqiy bo'lim soniga teng.
- 11. Sonar        - korpusdagi har `java:S` kaliti tools/sonar_rules.tsv
+ 11. Sonar        - korpusdagi har qoida kaliti (java, xml, docker,
+                    kubernetes) tools/sonar_rules.tsv
                     snapshotida bor; jadval qatorida kalit yonida tur yoki
                     daraja yozilgan bo'lsa, snapshotga mos. Ochiq metadata
                     da yo'q kalitlar ogohlantirish bilan o'tadi.
@@ -308,11 +309,24 @@ SONAR_TYPE_WORDS = (
     ("vulnerability", 'VULNERABILITY'), ("(bug)", 'BUG'),
 )
 SONAR_SEVS = ('Blocker', 'Critical', 'Major', 'Minor', 'Info')
-SONAR_KEY_RE = re.compile(r"java:(S\d+)")
+SONAR_KEY_RE = re.compile(r"\b(%s):(S\d+)\b"
+                          % "|".join(sonar_snapshot.LANGS))
+# Jadvalda "Sonar way da" ustuni bo'lsa, uning qiymati snapshotdagi
+# `profil` bilan solishtiriladi. Faqat shu ikki so'z tan olinadi,
+# chunki jadvallarda aynan shular yozilgan.
+SONAR_PROFILE_WORDS = (('ha', sonar_snapshot.IN_PROFILE),
+                       ("yo'q", sonar_snapshot.NOT_IN_PROFILE))
 
 
 def check_sonar(files):
-    """11. java:S kalitlari snapshot bilan mos."""
+    """11. Qoida kalitlari (java, xml, docker, kubernetes) snapshot bilan mos.
+
+    Tekshiriladigan uch narsa: kalit snapshotda bormi (ya'ni qoida
+    haqiqatan mavjudmi), jadvalda yozilgan tur va daraja metadata ga
+    mos kelami, va jadval `Sonar way` a'zoligini to'g'ri aytganmi.
+    Uchinchisi 2026-10 da qo'shildi: sonarqube 38-bobda mavjud bo'lmagan
+    uchta qoida va default profilda yo'q bitta qoida haqiqat sifatida
+    yozilgan edi."""
     snapshot, date = sonar_snapshot.read_snapshot(
         os.path.join(ROOT, 'tools', 'sonar_rules.tsv'))
     if not snapshot:
@@ -325,7 +339,7 @@ def check_sonar(files):
             continue
         text = open(os.path.join(ROOT, rel), encoding='utf-8').read()
         for number, line in enumerate(text.split('\n'), 1):
-            keys = SONAR_KEY_RE.findall(line)
+            keys = ["%s:%s" % pair for pair in SONAR_KEY_RE.findall(line)]
             for key in set(keys):
                 row = snapshot.get(key)
                 if row is None:
@@ -333,7 +347,7 @@ def check_sonar(files):
                     continue
                 if row.get('tur') == sonar_snapshot.MISSING:
                     unchecked.add(key)
-            # Jadval qatori va aynan bitta kalit: tur va daraja solishtiriladi.
+            # Jadval qatori va aynan bitta kalit: tur, daraja va profil.
             if not line.lstrip().startswith('|') or len(keys) != 1:
                 continue
             row = snapshot.get(keys[0])
@@ -345,19 +359,29 @@ def check_sonar(files):
             cells = [c.strip() for c in line.strip().strip('|').split('|')]
             said_sev = next((c for c in cells if c in SONAR_SEVS), None)
             if said_type and said_type != row['tur']:
-                err(f"{rel}:{number}: java:{keys[0]} turi {said_type}, "
+                err(f"{rel}:{number}: {keys[0]} turi {said_type}, "
                     f"metadata da {row['tur']} (tools/sonar_rules.tsv)")
             if said_sev and said_sev != row['daraja']:
-                err(f"{rel}:{number}: java:{keys[0]} darajasi {said_sev}, "
+                err(f"{rel}:{number}: {keys[0]} darajasi {said_sev}, "
                     f"metadata da {row['daraja']} (tools/sonar_rules.tsv)")
+            # Profil: jadvalda `ha` yoki `yo'q` yozilgan alohida yacheyka.
+            if row.get('profil') == sonar_snapshot.MISSING:
+                continue
+            said_prof = next((canon for word, canon in SONAR_PROFILE_WORDS
+                              for c in cells
+                              if c.strip('*').lower() == word), None)
+            if said_prof and said_prof != row['profil']:
+                err(f"{rel}:{number}: {keys[0]} `Sonar way` da "
+                    f"{said_prof}, metadata da {row['profil']} "
+                    f"(tools/sonar_rules.tsv)")
     for key, where in sorted(unknown.items()):
-        err(f"{where}: java:{key} snapshotda yo'q -> "
+        err(f"{where}: {key} snapshotda yo'q (qoida mavjud emasmi?) -> "
             f"`python3 tools/sonar_snapshot.py {key}`")
     if unchecked:
-        warn("ochiq sonar-java metadata da yo'q, tur va daraja "
-             "tekshirilmadi (%d): %s"
-             % (len(unchecked), " ".join("java:" + k for k in
-                                         sorted(unchecked, key=lambda x: int(x[1:])))))
+        warn("ochiq metadata da yo'q (yopiq analizator: taint analysis va "
+             "bir qism SE qoidalari), tur va daraja tekshirilmadi (%d): %s"
+             % (len(unchecked), " ".join(sorted(
+                 unchecked, key=sonar_snapshot.sort_key))))
     if not date:
         warn("tools/sonar_rules.tsv da sana yo'q: snapshot qachon "
              "olinganini bilib bo'lmaydi")

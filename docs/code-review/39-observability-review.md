@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 39. Observability review (Observability)
 
@@ -311,6 +311,13 @@ groups:
 - [ ] Mavjud alertlarni ko'rib chiqib, harakatga chaqirmaydiganlarini o'chiring yoki `warning` ga tushiring.
 - [ ] Har bir `critical` alert uchun egasi va runbook havolasi borligini tasdiqlang.
 - [ ] Kamida uchta biznes metrikasi (buyurtmalar, to'lovlar, ro'yxatdan o'tish) va ularga anomaliya alertini qo'shing.
+
+## Manbalar
+
+- [Micrometer, Histograms and percentiles](https://raw.githubusercontent.com/micrometer-metrics/micrometer-docs/06f377a95db21894939c6fff39441fe608e804a2/src/docs/concepts/histogram-quantiles.adoc) - client-side percentile ning agregatlanmasligi va bucket narxi
+- [Micrometer, Gauges](https://raw.githubusercontent.com/micrometer-metrics/micrometer-docs/06f377a95db21894939c6fff39441fe608e804a2/src/docs/concepts/gauges.adoc) - weak reference va NaN
+- [OpenTelemetry, Tracing API](https://raw.githubusercontent.com/open-telemetry/opentelemetry-specification/bb85bf44e2c032d9958c10b78dcb88cf36e40917/specification/trace/api.md) - span va atribut modeli
+- [Spring Boot 4.0, Actuator Endpoints](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/documentation/spring-boot-docs/src/docs/antora/modules/reference/pages/actuator/endpoints.adoc) - default holda faqat `health` ochiqligi va `show-details` default `never`
 
 ---
 

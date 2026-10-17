@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 31. Deployment haqiqati: konteyner, cgroup, JVM va probe (Deployment Reality)
 
@@ -174,6 +174,8 @@ livenessProbe:
   failureThreshold: 3            # faqat jiddiy holatda restart
 ```
 
+Startup probe ning ikkita xulqi ko'pincha e'tibordan qoladi. Birinchi: startup probe e'lon qilingan bo'lsa, Kubernetes u muvaffaqiyatli tugamaguncha liveness va readiness probe larini **umuman bajarmaydi**. Shuning uchun sekin ko'tariladigan JVM ilovasi uchun to'g'ri yo'l liveness ning `initialDelaySeconds` ini cho'zish emas, startup probe qo'yish. Ikkinchi: startup probe yiqilsa, kubelet konteynerni o'ldiradi, ya'ni `failureThreshold` × `periodSeconds` ko'tarilish uchun real kerak bo'lgan vaqtdan katta bo'lishi shart.
+
 Spring tomonida bu `management.endpoint.health.probes.enabled=true` bilan yoqiladi, Kubernetes aniqlangan muhitda avtomatik ham ishlaydi. Baza health indicator readiness guruhiga qo'shiladi, liveness guruhi esa bo'sh qoldiriladi.
 
 ```properties
@@ -208,6 +210,10 @@ Startup probe mavjud bo'lsa, liveness probe faqat startup tugagandan keyin ishla
 ## 31.7 Ishga tushish va to'xtash: SIGTERM, graceful shutdown, terminationGracePeriodSeconds
 
 Pod o'chirilganda kubelet konteynerga `SIGTERM` yuboradi va `terminationGracePeriodSeconds` kutadi, sukut bo'yicha 30 sekund. Muhlat tugasa `SIGKILL` keladi va uni ushlab qolish mumkin emas. Shu 30 sekund ichida ilova ishni toza tugatishi kerak.
+
+Tartib aniq va uni bilish `preStop` ni to'g'ri yozish uchun kerak. Kubelet avval `preStop` hook ni ishga tushiradi, **keyin** konteyner ichidagi 1-process ga TERM yuboradi. Ikki shart bor: `terminationGracePeriodSeconds` 0 ga qo'yilgan bo'lsa, `preStop` umuman ishlamaydi; hook muhlat tugaganda hali ishlayotgan bo'lsa, kubelet faqat bir martalik 2 sekund qo'shimcha so'raydi, undan ortiq emas. Demak hook ga kerakli vaqt grace period ichiga sig'ishi kerak, aks holda uni cheklash foydasiz.
+
+Ko'p konteynerli pod da yana bir nozik joy bor: sidecar container e'lon qilinmagan bo'lsa, konteynerlar TERM ni turli vaqtda va **ixtiyoriy tartibda** oladi. Ya'ni ilova o'z yonidagi proxy yoki agent dan oldin o'lishiga kafolat yo'q. To'xtash tartibi muhim bo'lsa, uni `preStop` bilan sinxronlash yoki sidecar container ga o'tish kerak.
 
 Muhim nuance bor: endpoint'ni Service'dan olib tashlash va SIGTERM yuborish parallel sodir bo'ladi. Ya'ni SIGTERM kelganda load balancer hali bir necha so'rov yuborishi mumkin. Shu sababli `preStop` hook'da qisqa kutish qo'yiladi. Bu vaqtda ilova hali so'rovlarga javob beradi, lekin endpoint ro'yxatdan chiqib bo'lgan.
 
@@ -258,9 +264,13 @@ Uzoq tranzaksiyalar alohida qaror talab qiladi. 10 minutlik hisobot generatsiyas
 
 RollingUpdate strategiyasi ikki parametr bilan boshqariladi. `maxSurge` desired replica sonidan qancha ortiq pod yaratilishi mumkinligini belgilaydi. `maxUnavailable` qancha pod bir vaqtda yetishmasligi mumkinligini belgilaydi. Sukut qiymatlar 25 foiz va 25 foiz.
 
-Arxitektor uchun bu sig'im masalasi. 4 replika ishlayotgan to'lov servisida `maxUnavailable: 25%` bitta podni olib tashlaydi, qolgan uchtasi 33 foiz ko'proq trafik ko'taradi. Agar har bir pod allaqachon 80 foiz yuklangan bo'lsa, deploy paytida servis qulab tushadi. Shuning uchun yuqori yuklamali servislarda `maxUnavailable: 0` va `maxSurge: 1` tanlanadi. Bu deploy'ni sekinlashtiradi, lekin sig'im kamaymaydi.
+Arxitektor uchun bu sig'im masalasi. 4 replika ishlayotgan to'lov servisida `maxUnavailable: 25%` bitta podni olib tashlaydi, qolgan uchtasi har biri avvalgidan to'rtdan uch nisbatida ko'proq, ya'ni taxminan 33 foiz ko'proq trafik ko'taradi (bu o'lchov emas, 4 dan 3 ga bo'lishning arifmetikasi). Agar har bir pod allaqachon 80 foiz yuklangan bo'lsa, deploy paytida servis qulab tushadi. Shuning uchun yuqori yuklamali servislarda `maxUnavailable: 0` va `maxSurge: 1` tanlanadi. Bu deploy'ni sekinlashtiradi, lekin sig'im kamaymaydi.
 
 `maxUnavailable: 0` qo'ysa cluster'da qo'shimcha resurs bo'lishi shart. Aks holda yangi pod `Pending` holatida qotib qoladi va deploy to'xtaydi. Shuning uchun bu qarorni node sig'imi bilan birga ko'rib chiqish kerak.
+
+Yana bir qattiq shart: ikkisi bir vaqtda 0 bo'lmaydi. `maxUnavailable` 0 bo'lsa `maxSurge` 0 bo'la olmaydi va teskarisi, aks holda rollout qimirlay olmaydi. Foizdan sonning hisoblanishi ham ikki xil: `maxUnavailable` pastga, `maxSurge` yuqoriga yumaloqlanadi. 4 replika va 25 foiz da bu `maxUnavailable = 1` va `maxSurge = 1` beradi.
+
+Deploy qotib qolganini qanday bilish ham sozlamada turadi. `progressDeadlineSeconds` default **600 sekund**: shu vaqt ichida rollout qimirlamasa, Deployment da `Progressing` sharti `False` va `reason: ProgressDeadlineExceeded` bilan belgilanadi, controller esa urinishni davom ettiradi. Ya'ni yomon image yoki yiqilayotgan readiness probe bilan deploy 10 daqiqa jim turadi va shundan keyin xato ko'rinadi. CI dagi deploy qadamiga shu chegaradan kichik timeout qo'yilsa, muammo tezroq ko'rinadi. Qiymat `minReadySeconds` dan katta bo'lishi shart.
 
 Yana bir nozik joy: rolling update faqat probe'lar to'g'ri bo'lsa ishlaydi. Readiness probe `true` qaytarsa, lekin ilova hali JIT'ni qizdirmagan bo'lsa, yangi pod birinchi minutda sekin javob beradi. Bu "deploy paytida latency spike" deb nomlanadi. Yechim: readiness'dan oldin kichik warmup qilish, yoki `minReadySeconds` qo'yib podning trafikka kirishini kechiktirish.
 
@@ -337,7 +347,7 @@ UPDATE orders
 
 HPA yuklamaga javoban yangi pod yaratadi, lekin pod trafikka kirishi uchun startup tugashi kerak. Agar Spring ilovasi 60 sekundda ishga tushsa, HPA'ning reaksiyasi amalda bir daqiqa kechikadi. Trafik spike 30 sekund davom etsa, yangi pod spike tugaganda tayyor bo'ladi. Bu masshtablashni foydasiz qiladi.
 
-Shu sababli startup vaqti arxitektura ko'rsatkichi. Uni qisqartirishning amaliy yo'llari bor. Birinchisi lazy initialization'dan voz kechish va kerakli bean'larni kamaytirish: `spring.main.lazy-initialization=true` startup'ni tezlashtiradi, lekin birinchi so'rov latency'sini oshiradi, shuning uchun u faqat dev uchun. Ikkinchisi auto configuration sonini kamaytirish, chunki har bir starter classpath skanerlash qo'shadi. Uchinchisi Class Data Sharing arxivi: Spring Boot 3.3 dan boshlab buning uchun qulay mexanizm bor va startup 20 dan 30 foizgacha tezlashadi. To'rtinchisi JDK 24 dan paydo bo'lgan AOT cache. Beshinchisi GraalVM native image, u startup'ni 100 millisekundga tushiradi, lekin reflection konfiguratsiyasi va build vaqti narxi bilan keladi.
+Shu sababli startup vaqti arxitektura ko'rsatkichi. Uni qisqartirishning amaliy yo'llari bor. Birinchisi lazy initialization'dan voz kechish va kerakli bean'larni kamaytirish: `spring.main.lazy-initialization=true` startup'ni tezlashtiradi, lekin birinchi so'rov latency'sini oshiradi, shuning uchun u faqat dev uchun. Ikkinchisi auto configuration sonini kamaytirish, chunki har bir starter classpath skanerlash qo'shadi. Uchinchisi Class Data Sharing arxivi: Spring Boot 3.3 dan boshlab buning uchun qulay mexanizm bor va startup sezilarli tezlashadi; aniq ulushni bu yerda bermaymiz, chunki u bean soni va classpath hajmiga bog'liq va `-verbose:class` hamda startup vaqtini o'lchab solishtirish bilan aniqlanadi. To'rtinchisi JDK 24 dan paydo bo'lgan AOT cache. Beshinchisi GraalVM native image, u startup'ni 100 millisekundga tushiradi, lekin reflection konfiguratsiyasi va build vaqti narxi bilan keladi.
 
 ```yaml
 # HPA: startup vaqti hisobga olingan sozlama
@@ -374,6 +384,13 @@ Agar startup'ni tezlashtirish imkoni bo'lmasa, qaror boshqa tomondan keladi: `mi
 - [ ] Fat jar deploy'larini layered jar'ga o'tkazing va registry'ga yuklanadigan qatlam hajmini deploy oldidan va keyin o'lchang.
 - [ ] Yuqori yuklamali servislarda `maxUnavailable: 0` va `maxSurge: 1` ga o'tib, cluster'da yetarli zahira sig'im borligini tekshiring.
 - [ ] `@Scheduled` metodlar ro'yxatini chiqarib, har biri uchun lock yoki CronJob yechimini tanlang va replikani 2 ga ko'tarib tekshirib ko'ring.
+
+## Manbalar
+
+- Craig Walls, *Spring in Action* 6th, 18-bob - Spring ilovasini deploy qilish
+- John Carnell, *Spring Microservices in Action*, 10-bob - konteyner va bulutga deploy
+- [Kubernetes, Pod Lifecycle](https://raw.githubusercontent.com/kubernetes/website/e91eff3b59c0bf813193202a4f193d37beb7efd7/content/en/docs/concepts/workloads/pods/pod-lifecycle.md) - `preStop` ning TERM dan oldin ishlashi, `terminationGracePeriodSeconds` default 30 va 2 sekundlik bir martalik uzaytirish, sidecar siz konteynerlarning ixtiyoriy tartibda TERM olishi, startup probe ning liveness va readiness ni to'sishi
+- [Kubernetes, Deployment](https://raw.githubusercontent.com/kubernetes/website/e91eff3b59c0bf813193202a4f193d37beb7efd7/content/en/docs/concepts/workloads/controllers/deployment.md) - `maxSurge` va `maxUnavailable` defaultlari, yumaloqlash yo'nalishi, ikkisi bir vaqtda 0 bo'lmasligi, `progressDeadlineSeconds` default 600 va `ProgressDeadlineExceeded`
 
 ---
 

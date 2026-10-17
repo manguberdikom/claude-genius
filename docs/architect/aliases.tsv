@@ -43,3 +43,6 @@ bolim	nom
 28.6	Cache stampede
 32.2	Timeout types
 32.4	Timeout budget
+10.6	G1 vs ZGC
+27.5	Connection pool exhaustion
+14.5	HikariPool connection timeout

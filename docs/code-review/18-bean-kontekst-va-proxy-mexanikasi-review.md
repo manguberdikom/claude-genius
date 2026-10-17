@@ -2,14 +2,14 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 18. Bean, kontekst va proxy mexanikasi review (Beans, Context and Proxies)
 
 <details>
 <summary>Bu bobdagi 10 bo'lim</summary>
 
-- [18.1 Proxy ishlamaydigan to'rt holat](#181-proxy-ishlamaydigan-tort-holat)
+- [18.1 Proxy ishlamaydigan holatlar](#181-proxy-ishlamaydigan-holatlar)
 - [18.2 Bean scope va holat](#182-bean-scope-va-holat)
 - [18.3 Konfiguratsiya va bean e'lonlari](#183-konfiguratsiya-va-bean-elonlari)
 - [18.4 Inyeksiya shakllari](#184-inyeksiya-shakllari)
@@ -25,7 +25,7 @@
 
 Spring kodidagi eng jim xatolar annotatsiya ishlamaganda paydo bo'ladi: `@Transactional` qo'yilgan, lekin tranzaksiya yo'q; `@Cacheable` bor, lekin kesh ishlamaydi; `@Async` yozilgan, lekin kod sinxron ketadi. Kompilyator jim, test ko'pincha o'tadi, va xato prodda yuk ostida chiqadi. Sababi bitta: proxy mexanikasi. Shu sababli bu bob review ning Spring bo'limida birinchi turadi. Proxy ichki tuzilishi [Arxitektor miyasi](../architect/README.md) da; bu yerda diffda ko'rinadigan buzilishlar.
 
-## 18.1 Proxy ishlamaydigan to'rt holat
+## 18.1 Proxy ishlamaydigan holatlar
 
 | Holat | Nega ishlamaydi | Diffdagi belgisi |
 | --- | --- | --- |
@@ -35,6 +35,13 @@ Spring kodidagi eng jim xatolar annotatsiya ishlamaganda paydo bo'ladi: `@Transa
 | `static` metod | Instansga bog'liq emas | `@Cacheable static` |
 | Konstruktor yoki `@PostConstruct` ichida | Proxy hali qurilmagan | `@PostConstruct` ichida `@Transactional` chaqiruvi |
 | `new` bilan yaratilgan obyekt | Spring boshqarmaydi | `new OrderService(...)` |
+| Boshqa paketdagi ota-sinfning package-private metodi | CGLIB uni override qila olmaydi, amalda private | yondosh paketdagi bazaviy sinf + annotatsiya |
+
+Ikki qatorni aniqlashtirish kerak, chunki ular review da noto'g'ri aytiladi.
+
+`private` metod haqida: u hamon ushlanmaydi, lekin "faqat `public` ishlaydi" degan gap Spring 6.0 dan boshlab to'liq to'g'ri emas. Class-based proxy (CGLIB) da `protected` va package-visible metod ham ushlanadi; interfeys asosidagi proxy da esa metod `public` va interfeysda e'lon qilingan bo'lishi shart. Shuning uchun diffda `@Transactional protected` ko'rinsa, bu avtomatik xato emas, savol: bu bean class-based proxy bilan o'ralganmi.
+
+`final` haqida: Spring Boot da `spring.aop.proxy-target-class` defaulti `true`, ya'ni interfeys bo'lsa ham CGLIB ishlatiladi. Demak `final` sinf va `final` metod muammosi istisno emas, **odatdagi holat**. Kotlin da sinflar default `final` bo'lgani uchun bu yerda ayniqsa tez chiqadi.
 
 ```java
 // Eng ko'p uchraydigan: ichki chaqiruv (12.3 da ko'rilgan, bu yerda yechimlar).
@@ -334,6 +341,13 @@ static final ArchRule no_self_injection =
 - [ ] `@EnableFeignClients(basePackages)` dagi har bir kutubxona paketi uchun kutubxona auto-configuration i shu client larni o'zi ro'yxatdan o'tkazmasligini `javap` bilan tekshiring va buni unit test bilan mahkamlang.
 - [ ] Prototype va request scope bean larning singleton ga inyeksiya qilinganini tekshiring.
 - [ ] Tranzaksiya chegarasi uchun `isActualTransactionActive()` tekshiruvi bilan kamida bitta test yozing.
+
+## Manbalar
+
+- [Spring Framework 7.0, Proxying Mechanisms](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/core/aop/proxying.adoc) - `final`, `private` va boshqa paketdagi package-private metodning advise qilinmasligi, proxy nusxasining Objenesis orqali yaratilishi
+- [Spring Framework 7.0, `@Transactional` sozlamalari](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/data-access/transaction/declarative/annotations.adoc) - 6.0 dan class-based proxy da `protected` va package-visible metodning tranzaksion bo'la olishi, interfeys proxy sida `public` talabi
+- [spring-boot, `AopAutoConfiguration.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/core/spring-boot-autoconfigure/src/main/java/org/springframework/boot/autoconfigure/aop/AopAutoConfiguration.java) - `spring.aop.proxy-target-class` defaulti `true`, ya'ni CGLIB odatdagi holat
+- [Spring Framework 7.0, Bean Scopes](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/core/beans/factory-scopes.adoc) - prototype da destruction callback chaqirilmasligi, singleton ichidagi prototype bog'liqligi
 
 ---
 

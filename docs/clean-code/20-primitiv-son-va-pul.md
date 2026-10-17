@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 20. Primitiv, son va pul (Primitives, Numbers and Money)
 
@@ -53,6 +53,8 @@ Qo'shimcha muhim qoida: `new BigDecimal(0.1)` **xato** - u `double` ni oladi va 
 | Ilmiy hisob, grafika | `double` |
 | Sanoq, identifikator | `long`, `int` |
 | Bazadagi ustun | `numeric(19,4)`, `double precision` emas |
+
+`BigDecimal` va butun son orasidagi tanlov taxmin bilan emas, raqam soni bilan qilinadi. `BigDecimal` ikki narxga ega: u primitivdan sekinroq va chaqiruvi noqulayroq. Shuning uchun o'nlik kasrni o'zingiz hisobga olishga tayyor bo'lsangiz, qiymat hajmiga qarab tanlanadi: to'qqizta o'nlik raqamdan oshmasa `int`, o'n sakkiztadan oshmasa `long`, oshsa `BigDecimal`. Buning ustiga `BigDecimal` ning foydasi ham bor: yaxlitlash rejimi oshkor tanlanadi, bu esa qonun talab qilgan yaxlitlash qoidasi bor hisobda hal qiluvchi bo'ladi.
 
 ## 20.2 `BigDecimal` scale, rounding va `equals` tuzog'i
 
@@ -136,7 +138,20 @@ int c = 128, d = 128;
 c == d;        // true
 ```
 
-Qoida: hisob va mahalliy o'zgaruvchilarda primitiv; `null` ma'noga ega bo'lgan joyda (ixtiyoriy maydon, baza ustuni) boxed tur.
+Xatoning eng chalg'ituvchi shakli solishtirgichda chiqadi: u ko'p testdan o'tadi va faqat kesh oralig'idan tashqarida yoki yangi obyektda yiqiladi.
+
+```java
+// yomon: ikkinchi solishtiruv havolalarni solishtiradi
+Comparator<Integer> naturalOrder = (i, j) -> (i < j) ? -1 : (i == j ? 0 : 1);
+// compare(new Integer(42), new Integer(42)) -> 1, holbuki 0 bo'lishi kerak
+
+// yaxshi: boxed turni unbox qilib yoki tayyor solishtirgich bilan
+Comparator<Integer> naturalOrder = Comparator.naturalOrder();
+```
+
+Birinchi shart (`i < j`) ikkisini ham unbox qiladi va to'g'ri ishlaydi, ikkinchisi (`i == j`) esa unbox qilmaydi: boxed turda `==` havolalarni solishtiradi. Shu sababli boxed tur bilan primitiv aralashgan ifodada boxed tomon unbox qilinadi, ikki boxed tomon esa qilinmaydi.
+
+Qoida: hisob va mahalliy o'zgaruvchilarda primitiv; `null` ma'noga ega bo'lgan joyda (ixtiyoriy maydon, baza ustuni) boxed tur. Uchta haqiqiy farq bor va uchtasi ham shu bobda ko'rildi: boxed turda ayniylik (identity) bor, `null` qiymati bor, va u primitivdan ko'p vaqt va xotira oladi.
 
 ## 20.6 Avtoboxing narxi va `null` unboxing
 
@@ -246,6 +261,17 @@ static String newToken() {
 - [ ] Issiq sikllardagi boxed hisoblagichlarni primitiv turlarga almashtiring.
 - [ ] `new Random()` ishlatilgan xavfsizlikka tegishli joylarni `SecureRandom` ga o'tkazing.
 - [ ] ArchUnit qoidasi bilan `amount`, `price`, `total` nomli maydonlarda `double` ni taqiqlang.
+
+## Manbalar
+
+- Joshua Bloch, *Effective Java* 3rd, Item 60 - `1.03 - 0.42` natijasi `0.6100000000000001`; to'qqiz raqamgacha `int`, o'n sakkizgacha `long`, undan ko'pi uchun `BigDecimal`
+- Joshua Bloch, *Effective Java* 3rd, Item 61 - boxed turning uchta farqi va buzilgan `naturalOrder` solishtirgichi
+- Joshua Bloch, *Effective Java* 3rd, Item 6 - keraksiz obyekt yaratmaslik, avtoboxing narxi
+- [JLS 5.1.7, Boxing Conversion](https://docs.oracle.com/javase/specs/jls/se21/html/jls-5.html#jls-5.1.7) - `-128..127` oralig'ida bir xil obyekt qaytishi kafolati
+- [Java API, `Math.floorMod`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Math.html#floorMod(int,int)) - qoldiq belgisi bo'linuvchiga mos keladi
+- [Java API, `BigDecimal.divide`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/math/BigDecimal.html#divide(java.math.BigDecimal)) - aniq bo'linmasa `ArithmeticException`
+- [Java API, `BigDecimal.equals`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/math/BigDecimal.html#equals(java.lang.Object)) - scale ni ham solishtiradi, `compareTo` dan farqi
+- Herbert Schildt, *Java The Complete Reference*, 3, 4-boblar - butun son arifmetikasi, bo'lish va qoldiq xatti-harakati
 
 ---
 

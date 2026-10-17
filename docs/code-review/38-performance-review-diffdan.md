@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 38. Performance review diffdan (Performance from a Diff)
 
@@ -29,7 +29,13 @@ Reviewer yuk sinovini o'tkaza olmaydi, lekin ikki narsani qila oladi: operatsiya
 
 Har bir yangi kod yo'li uchun uch savol: nechta DB so'rovi, nechta tarmoq chaqiruvi, nechta obyekt yaratiladi. Javob "ma'lumot hajmiga bog'liq" bo'lsa, bu muammo belgisi.
 
-| Operatsiya | Taxminiy narx | 1000 marta bajarilganda |
+Quyidagi jadvaldagi raqamlar o'lchanmagan taxmin: ular apparat, tarmoq,
+baza sozlamasi va ma'lumot hajmiga qarab bir necha barobar farq qiladi.
+Jadvalning maqsadi aniq qiymat berish emas, KATTALIK TARTIBINI eslatish:
+xotira nanosekund, tarmoq millisekund, tashqi provayder yuz millisekund.
+Review da raqam kerak bo'lsa, u o'z tizimingizdagi metrikadan olinadi.
+
+| Operatsiya | Kattalik tartibi (o'lchanmagan taxmin) | 1000 marta bajarilganda |
 | --- | --- | --- |
 | Xotiradagi hisob | nanosekundlar | sezilmaydi |
 | Log yozish (buferlangan) | mikrosekundlar | millisekundlar |
@@ -70,9 +76,15 @@ List<OrderDto> enrich(List<Order> orders) {
                                products.get(o.firstProductId())))
         .toList();
 }
-// Review diqqati: `findAllById` ham chegarasiz bo'lmasligi kerak -
-// 100 000 ID bilan `IN` so'rovi PostgreSQL da rejani buzadi. Bo'laklash
-// kerak: Lists.partition(ids, 1000).
+// Review diqqati: `findAllById` ham chegarasiz bo'lmasligi kerak.
+// Sabab rejada emas, protokolda: PostgreSQL ning bitta Bind xabari
+// ko'pi bilan 65535 parametr ko'taradi, va pgjdbc bu chegaradan
+// oshganda so'rov bazaga yetib bormasdan istisno beradi:
+// "Tried to send an out-of-range integer as a 2-byte unsigned int
+// value: 100000". Ya'ni bu sekinlik emas, ishlamaydigan kod.
+// Bo'laklash kerak, lekin `ids` to'plam bo'lsa `Lists.partition`
+// kompilyatsiya qilinmaydi: u `List` talab qiladi. To'plam uchun
+// `Iterables.partition(ids, 1000)`.
 ```
 
 ## 38.3 Hajm: nima tashiladi
@@ -125,9 +137,17 @@ private final Cache<String, Rate> cache = Caffeine.newBuilder()
     .build(this::loadFromProvider);               // LoadingCache: bitta yuklash
 
 // refreshAfterWrite va expireAfterWrite farqi:
-// - refresh: eski qiymat qaytariladi, fonda yangilanadi (foydalanuvchi kutmaydi);
-// - expire: qiymat o'chadi, keyingi so'rov kutadi.
+// - refresh: qiymat muddati o'tgandan keyin kelgan so'rov yangilashni
+//   BOSHLAYDI (`asyncReload` ni sinxron chaqiradi) va agar qaytgan
+//   future allaqachon tugagan bo'lsa yangi qiymatni, aks holda eski
+//   qiymatni qaytaradi. Ya'ni "foydalanuvchi hech qachon kutmaydi"
+//   degani emas: yuklovchi sinxron ishlasa, o'sha bitta so'rov kutadi.
+// - expire: qiymat o'chadi, keyingi so'rov albatta kutadi.
 // Review tavsiyasi: tashqi servisga bog'liq keshda ikkisi birga.
+// Uchinchi narsa esa ko'pincha e'tibordan chetda qoladi: refresh
+// paytidagi istisnolar log ga yoziladi va yutiladi. Demak tashqi
+// servis uzilsa, kesh eski qiymatni muddat tugaguncha jimgina
+// berib turadi va buni faqat log yoki metrika ko'rsatadi.
 ```
 
 ## 38.5 Performance regressiyasini diffdan ko'rish
@@ -163,7 +183,8 @@ echo "=== findAll va chegarasiz so'rovlar ==="
 echo "$D" | grep -nE '^\+.*(findAll\(\)|\.toList\(\)\s*;\s*$)' | head
 
 echo "=== yangi EAGER ==="
-echo "$D" | grep -nE '^\+.*FetchType\.EAGER|^\+.*@(ManyToOne|OneToOne)\s*$'
+# `\s*$` talab qilinmaydi: `@ManyToOne(optional = false)` ham EAGER.
+echo "$D" | grep -nE '^\+.*FetchType\.EAGER|^\+.*@(ManyToOne|OneToOne)\b'
 
 echo "=== siklda log ==="
 echo "$D" | grep -nE '^\+.*log\.(info|debug)' | head
@@ -184,7 +205,10 @@ private final int[] lookupTable = buildLookupTable();           // 200 satr
 // 3) Yangi vaqti qancha? (o'lchanmagan)
 // 4) Bu yo'l profilda ko'rindimi? (yo'q)
 // Xulosa: kuniga 400 marta chaqiriladigan 3 ms lik kod uchun 200 satr
-// murakkablik - foyda kuniga bir sekunddan kam, narx esa doimiy.
+// murakkablik arzimaydi. Raqamni ehtiyot bilan o'qish kerak: 400 x 3 ms
+// bu kuniga 1,2 sekund, va u ham yuqori chegara, chunki 3 ms p99 emas,
+// o'rtacha emas. Ya'ni "jami vaqt" raqami aniq emas; aniq bo'lgani shu
+// foyda foydalanuvchining birorta so'rovida ham sezilmasligi.
 
 // Review izohi: "Optimallashtirishdan oldin o'lchov kerak. Agar bu yo'l
 // haqiqatan muammo bo'lsa, profil natijasini (async-profiler yoki JFR)
@@ -206,9 +230,17 @@ git switch pr-1423 && ./mvnw -q spring-boot:run &
 hey -n 2000 -c 20 -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/orders
 # Taqqoslash: p50, p95, p99 va so'rovlar/sekund.
 
-# 2) So'rovlar sonini taqqoslash (eng tez signal).
-#    hibernate.generate_statistics=true bilan loglardan:
+# 2) So'rovlar sonini taqqoslash (eng tez signal). Bu yerda ikki xil
+#    narsa aralashtiriladi: `hibernate.generate_statistics` SQL MATNINI
+#    loglamaydi, u faqat sanoq qatorlarini chiqaradi. SQL matni uchun
+#    `org.hibernate.SQL` logeri DEBUG bo'lishi kerak.
+#    SQL matnini sanash uchun:
+#      logging.level.org.hibernate.SQL=DEBUG
 grep -c 'select ' app.log
+#    Yoki statistikadan to'g'ridan-to'g'ri sanoqni olish (aniqroq,
+#    chunki log formatiga bog'liq emas):
+#      hibernate.generate_statistics=true
+#      sessionFactory.getStatistics().getPrepareStatementCount()
 
 # 3) Profil olish: CPU vaqti qayerga ketadi.
 #    async-profiler (eng foydali vosita):
@@ -248,20 +280,44 @@ endpoints:
     async: true                # natija fayl sifatida beriladi
 ```
 
+Bu testda bitta tuzoq bor va u testni foydasiz qiladi: Hibernate
+statistikasi default holatda O'CHIQ, chunki u qo'shimcha CPU va xotira
+talab qiladi. Yoqilmagan statistikada hisoblagich oshmaydi, ya'ni
+`getPrepareStatementCount()` har doim 0 qaytaradi va byudjet testi
+hech qachon yiqilmaydi. Shuning uchun test profilida statistikani
+yoqish va hisoblagichning haqiqatan ishlayotganini tasdiqlash kerak.
+
+```properties
+# src/test/resources/application-test.properties
+spring.jpa.properties.hibernate.generate_statistics=true
+```
+
 ```java
 // Byudjetni test bilan qulflash: so'rovlar soni (23.2) va javob hajmi.
 @Test
 void orderListStaysWithinBudget() {
     seedOrders(500);
-    Statistics stats = statistics(); stats.clear();
+    Statistics stats = statistics();
+    // Himoya: statistika o'chiq bo'lsa test yashil yolg'on gapiradi.
+    assertThat(stats.isStatisticsEnabled())
+        .as("hibernate.generate_statistics test profilida yoqilgan")
+        .isTrue();
+    stats.clear();
 
     MvcTestResult result = mvc.get().uri("/api/orders?size=20").exchange();
 
-    assertThat(stats.getPrepareStatementCount()).as("DB so'rovlari").isLessThanOrEqualTo(3);
+    long queries = stats.getPrepareStatementCount();
+    assertThat(queries).as("DB so'rovlari").isBetween(1L, 3L);
     assertThat(result.getResponse().getContentAsByteArray().length / 1024)
         .as("javob hajmi (KB)").isLessThanOrEqualTo(50);
 }
 ```
+
+Yuqori chegara bilan birga PASTKI chegara ham qo'yilgani bejiz emas:
+`isBetween(1, 3)` so'rov umuman bajarilmagan holatni ham ushlaydi, ya'ni
+endpoint keshdan javob bergan yoki test umuman boshqa yo'ldan ketgan
+holatni. Faqat `isLessThanOrEqualTo(3)` yozilganda bu holat yashil
+chiqadi.
 
 ## 38.9 Review checklisti: performance
 
@@ -290,6 +346,42 @@ void orderListStaysWithinBudget() {
 - [ ] Tashqi servisga bog'liq keshlarda `refreshAfterWrite` + `expireAfterWrite` kombinatsiyasini qo'ying.
 - [ ] Yuqori xavfli PR lar uchun `hey` yoki `k6` bilan oldin/keyin o'lchov qilish amaliyotini joriy qiling.
 - [ ] Prodda async-profiler yoki JFR bilan muntazam profil olishni sozlab, optimallashtirish qarorlarini dalilga asoslang.
+
+## Manbalar
+
+- Hibernate ORM, *Statistics* va *Fetching* qo'llanmasi
+  ([https://github.com/hibernate/hibernate-orm/blob/7.4.13/documentation/src/main/asciidoc/userguide/chapters/statistics/Statistics.adoc](https://github.com/hibernate/hibernate-orm/blob/7.4.13/documentation/src/main/asciidoc/userguide/chapters/statistics/Statistics.adoc),
+  tag `7.4.13`, Apache-2.0) - 38.8 dagi statistikaning default o'chiqligi
+  va 38.5 dagi `@ManyToOne` bilan `@OneToOne` ning spetsifikatsiya
+  bo'yicha EAGER bo'lishi.
+- Hibernate ORM, `SqlStatementLogger`
+  ([https://github.com/hibernate/hibernate-orm/blob/7.4.13/hibernate-core/src/main/java/org/hibernate/engine/jdbc/spi/SqlStatementLogger.java](https://github.com/hibernate/hibernate-orm/blob/7.4.13/hibernate-core/src/main/java/org/hibernate/engine/jdbc/spi/SqlStatementLogger.java),
+  tag `7.4.13`, Apache-2.0) - 38.7 dagi SQL matni `org.hibernate.SQL`
+  logeri DEBUG bo'lganda chiqishi.
+- pgjdbc, `PGStream` va `BatchedQuery`
+  ([https://github.com/pgjdbc/pgjdbc/blob/REL42.7.14/pgjdbc/src/main/java/org/postgresql/core/PGStream.java](https://github.com/pgjdbc/pgjdbc/blob/REL42.7.14/pgjdbc/src/main/java/org/postgresql/core/PGStream.java),
+  tag `REL42.7.14`, BSD-2-Clause) - 38.2 dagi bitta Bind xabaridagi
+  65535 parametr chegarasi va undan oshganda chiqadigan istisno.
+- Guava, `Lists` va `Iterables`
+  ([https://github.com/google/guava/blob/v33.7.2/guava/src/com/google/common/collect/Iterables.java](https://github.com/google/guava/blob/v33.7.2/guava/src/com/google/common/collect/Iterables.java),
+  tag `v33.7.2`, Apache-2.0) - 38.2 dagi `Lists.partition` ning `List`
+  talab qilishi va to'plam uchun `Iterables.partition`.
+- Caffeine, `Caffeine` javadoc i
+  ([https://github.com/ben-manes/caffeine/blob/v3.3.1/caffeine/src/main/java/com/github/benmanes/caffeine/cache/Caffeine.java](https://github.com/ben-manes/caffeine/blob/v3.3.1/caffeine/src/main/java/com/github/benmanes/caffeine/cache/Caffeine.java),
+  tag `v3.3.1`, Apache-2.0) - 38.4 dagi `refreshAfterWrite` ning sinxron
+  `asyncReload` chaqiruvi va refresh istisnolarining yutilishi.
+- Spring Framework, `MockMvcTester`
+  ([https://github.com/spring-projects/spring-framework/blob/v7.0.9/spring-test/src/main/java/org/springframework/test/web/servlet/assertj/MockMvcTester.java](https://github.com/spring-projects/spring-framework/blob/v7.0.9/spring-test/src/main/java/org/springframework/test/web/servlet/assertj/MockMvcTester.java),
+  tag `v7.0.9`, Apache-2.0) - 38.8 dagi `mvc.get().uri(...).exchange()`
+  API si.
+- async-profiler, *Profiler Options*
+  ([https://github.com/async-profiler/async-profiler/blob/v4.5/docs/ProfilerOptions.md](https://github.com/async-profiler/async-profiler/blob/v4.5/docs/ProfilerOptions.md),
+  tag `v4.5`, Apache-2.0) - 38.7 dagi `event=cpu` va `event=alloc`
+  bilan agent chaqiruvi.
+- OpenJDK, `jfr` vositasining `print` va `summary` buyruqlari
+  ([https://github.com/openjdk/jdk/blob/jdk-28+20/src/jdk.jfr/share/classes/jdk/jfr/internal/tool/Print.java](https://github.com/openjdk/jdk/blob/jdk-28+20/src/jdk.jfr/share/classes/jdk/jfr/internal/tool/Print.java),
+  tag `jdk-28+20`, GPLv2 + Classpath istisnosi) - 38.7 dagi
+  `jfr print --events jdk.ExecutionSample` va `jfr summary`.
 
 ---
 

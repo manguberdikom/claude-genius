@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 20. Spring Security: filter chain, OAuth2, JWT (Spring Security)
 
@@ -325,6 +325,16 @@ Ortiqcha huquq eng sekin seziladigan xato. Odatda `SCOPE_orders.read` yetarli bo
 - [ ] `@Async` va batch kodda `DelegatingSecurityContextExecutorService` ishlatilayotganini tekshiring, aks holda `@PreAuthorize` va audit nomlari bo'sh qoladi.
 - [ ] Ko'p ijarachi jadvallarda RLS ni yoqib, `SET LOCAL` ishlatilayotganini va sozlama yo'q holatda hech qanday qator qaytmasligini tekshiring.
 - [ ] Chiqishdan oldin tokensiz `curl` skriptini CI ga qo'shib, `/actuator/env`, `/actuator/heapdump` va yangi versiya prefikslarini har deploy da sinab turing.
+
+## Manbalar
+
+- Laurentiu Spilca, *Spring Security in Action*, 2-bob - Spring Security ning birinchi sozlamalari
+- Laurentiu Spilca, *Spring Security in Action*, 9-bob - filtrlar va filter chain mexanikasi
+- Laurentiu Spilca, *Spring Security in Action*, 12-15-boblar - OAuth 2 oqimlari, resource server va JWT
+- Craig Walls, *Spring in Action* 6th, 5, 8-boblar - Spring Security va REST ni himoyalash
+- John Carnell, *Spring Microservices in Action*, 7-bob - mikroservisni himoyalash
+- [Spring Security 6.3, CSRF](https://raw.githubusercontent.com/spring-projects/spring-security/6.3.0/docs/modules/ROOT/pages/features/exploits/csrf.adoc) - CSRF himoyasi, token repository va SPA holati
+- [OWASP, CSRF Prevention Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.md) - himoya usullari va ularning chegaralari
 
 ---
 

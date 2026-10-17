@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 8. Izoh qoidalari: yaxshi izohlar (Comments: The Good Ones)
 
 <details>
-<summary>Bu bobdagi 10 bo'lim</summary>
+<summary>Bu bobdagi 11 bo'lim</summary>
 
 - [8.1 Izoh - muvaffaqiyatsizlikni tan olish](#81-izoh---muvaffaqiyatsizlikni-tan-olish)
 - [8.2 O'zini kodda tushuntirish: izohni funksiyaga aylantirish](#82-ozini-kodda-tushuntirish-izohni-funksiyaga-aylantirish)
@@ -18,7 +18,8 @@
 - [8.7 TODO, FIXME va ularning hayot muddati](#87-todo-fixme-va-ularning-hayot-muddati)
 - [8.8 Kuchaytiruvchi izoh](#88-kuchaytiruvchi-izoh)
 - [8.9 Formula, standart va huquqiy asos havolasi](#89-formula-standart-va-huquqiy-asos-havolasi)
-- [8.10 Amalda qo'llash](#810-amalda-qollash)
+- [8.10 Izohni qachon va qaysi darajada yozish](#810-izohni-qachon-va-qaysi-darajada-yozish)
+- [8.11 Amalda qo'llash](#811-amalda-qollash)
 
 </details>
 
@@ -143,7 +144,37 @@ private static final BigDecimal VAT_RATE = new BigDecimal("0.12");
 public boolean isValid(String iban) { ... }
 ```
 
-## 8.10 Amalda qo'llash
+## 8.10 Izohni qachon va qaysi darajada yozish
+
+Avvalgi bo'limlar qaysi izoh haqli ekanini aytdi. Qolgan ikki savol izohning sifatini belgilaydi: izoh qachon yoziladi va qanchalik yuqori darajada yoziladi.
+
+**Keyinga qoldirilgan izoh yomon izoh bo'ladi.** Ko'pchilik izohni oxiriga, kod barqarorlashgandan keyinga qoldiradi. Ousterhout buning oqibatini aniq ko'rsatadi: kechiktirish ko'pincha izoh umuman yozilmasligi bilan tugaydi, chunki kod ko'paygan sari ish hajmi kattalashadi va to'xtab izoh yozish uchun qulay payt hech qachon kelmaydi. Agar yozilsa ham, yaxshi chiqmaydi: bu paytda muallif aqlan boshqa ishga o'tgan, dizayn qarorlarini eslamaydi va koddan ko'chirib yozadi, natijada izoh kodni takrorlaydi va eng muhim narsalar yozilmay qoladi (Ousterhout, *A Philosophy of Software Design*, 1-nashr, Yaknyam Press, 2018, 15.1).
+
+Shundan tartib chiqadi: interfeys izohi metod tanasidan OLDIN yoziladi. Yangi sinf uchun avval sinf izohi, keyin muhim public metodlarning izohi va imzosi (tanasi bo'sh), keyin maydonlar, keyin tanalar; har yangi metod uchun izoh yana tanadan oldin yoziladi, shuning uchun yozilmagan izoh qarzi yig'ilmaydi (shu yerda, 15.2).
+
+**Yuqori darajadagi izoh kamroq eskiradi.** Izoh koddan abstraktroq bo'lsa, u kodning tafsilotlarini takrorlamaydi va mayda o'zgarishdan buzilmaydi: faqat xatti-harakatning o'zi o'zgarsa tegish kerak bo'ladi (shu yerda, 16.6). Shu sababli umumiy qoida: izoh tasvirlayotgan koddan qancha uzoqda tursa, shuncha abstrakt bo'lishi kerak (shu yerda, 16.2). Bu 8.1 dagi "izoh eskiradi" muammosining eng arzon yechimi: izohni o'chirish emas, uning darajasini ko'tarish.
+
+```java
+public SettlementResult settle(SettlementBatch batch) {
+    // yaxshi: metod ustidagi yuqori daraja, ichki o'zgarishdan buzilmaydi
+    // Uch bosqich: (1) valyuta va summa tekshiruvi, (2) bank bilan
+    // yopish, (3) rad etilgan qatorlarni audit log'ga yozish.
+    List<SettlementRow> valid = validator.accept(batch.rows());
+
+    // yomon: kodni so'zma-so'z takrorlaydi va har refaktoringda eskiradi
+    // valid ro'yxati bo'yicha aylanib, har qatorni bankka yuboradi
+    for (SettlementRow row : valid) {
+        bank.close(row);
+    }
+    return SettlementResult.of(valid, batch.rejected());
+}
+```
+
+**Izoh sonining mo'ljali bor, lekin u maqsad emas.** IBM da o'tkazilgan va Capers Jones keltirgan o'lchovga ko'ra o'n gapga taxminan bitta izoh zichligida kodning tushunarliligi eng yuqori bo'lgan: izoh kamayganda kod qiyin o'qilgan, ko'paytirilganda ham tushunarlilik pasaygan (McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 32.4 (792-bet)). Shu bilan birga McConnell bu raqamni standartga aylantirishdan ogohlantiradi: "har besh qatorga bitta izoh" talabi programmist aniq kod yozmasligining simptomini davolaydi, sababini emas. Izoh soni to'g'ri jarayonning yon natijasi bo'lishi kerak, mezon esa boshqa: har bir izoh foydali ekanmi (shu yerda, 32.4 (792-bet)).
+
+Izoh uzun chiqqan holat alohida signal: u izohni qisqartirish emas, abstraksiyaga qaytish kerakligini bildiradi. Bu signal Javadoc bobidagi [hujjatni tasvirlash qiyinligi](10-javadoc-va-api-hujjati.md#1011-hujjatni-tasvirlash-qiyinligi-red-flag-hard-to-describe) qoidasida ko'rilgan.
+
+## 8.11 Amalda qo'llash
 
 - [ ] Kod bazasidagi barcha izohlarni sanab, har birini 8-9 boblardagi toifalarga ajratib belgilang.
 - [ ] Shartni yoki hisobni tushuntiradigan izohlarni metod yoki o'zgaruvchi nomiga aylantirib o'chiring.
@@ -153,6 +184,23 @@ public boolean isValid(String iban) { ... }
 - [ ] Soliq, tarif va huquqiy hisoblar yonida rasmiy asos havolasi borligini tekshirib, yo'qlarini qo'shing.
 - [ ] Litsenziya sarlavhalarini Spotless `licenseHeader` bilan avtomatlashtiring.
 - [ ] Tashqi tizim cheklovlari (limit, format, thread-safety) kodda izohlanganini tekshirib, yetishmaganini qo'shing.
+- [ ] Yangi sinf va metodda interfeys izohini tanadan oldin yozish tartibini joriy qilib, past darajadagi izohlarni yuqori darajaga ko'taring (8.10).
+
+## Manbalar
+
+- Robert C. Martin, *Clean Code*, 4-bob - izoh yomon kodni qoplamasligi, o'zini kodda tushuntirish
+- Robert C. Martin, *Clean Code*, 4-bob ("Good Comments") - huquqiy, ma'lumot beruvchi, maqsadni tushuntiruvchi, aniqlashtiruvchi, ogohlantiruvchi izoh, TODO va kuchaytirish
+- Robert C. Martin, *Clean Code*, 17-bob, C1-C5 - izoh evristikalari
+- John Ousterhout, *A Philosophy of Software Design*, 1-nashr, Yaknyam Press,
+  2018, 15.1, 15.2 - izohni keyinga qoldirishning oqibatlari va interfeys
+  izohini metod tanasidan oldin yozish tartibi
+- John Ousterhout, *A Philosophy of Software Design*, 1-nashr, Yaknyam Press,
+  2018, 16.2, 16.6 - izoh koddan qancha uzoq bo'lsa shuncha abstrakt
+  bo'lishi va yuqori darajadagi izohning kamroq eskirishi
+- Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 32.4
+  (792) - Capers Jones keltirgan IBM o'lchovi: o'n gapga bitta izoh
+  zichligida tushunarlilik eng yuqori; izoh sonini standartga aylantirish
+  simptomni davolashi
 
 ---
 

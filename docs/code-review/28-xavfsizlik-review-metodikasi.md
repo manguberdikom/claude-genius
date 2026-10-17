@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 28. Xavfsizlik review metodikasi (How to Review for Security)
 
@@ -249,6 +249,14 @@ rules:
 - [ ] Bir sahifali threat model yozing: kim hujum qiladi, nimaga, qanday himoya bor.
 - [ ] Oxirgi uchta xavfsizlik topilmasini `REVIEW-SMELLS.md` ga "qanday qidiramiz" ustuni bilan qo'shing.
 - [ ] Zaiflik sinflari jadvalini review checklistiga kiritib, har chorakda bitta sinf bo'yicha maqsadli audit o'tkazing.
+
+## Manbalar
+
+- [OWASP, SQL Injection Prevention Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.md) - to'rtta himoya varianti tartibi
+- [OWASP, SSRF Prevention Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.md) - DNS rebinding, kodlash bilan chetlab o'tish va to'siladigan diapazonlar
+- [OWASP, Deserialization Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Deserialization_Cheat_Sheet.md) - tekshiriladigan API ro'yxati va serialization filter
+- [OWASP, Authentication Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Authentication_Cheat_Sheet.md) - autentifikatsiya va sessiya qoidalari
+- [OWASP, Password Storage Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Password_Storage_Cheat_Sheet.md) - hash parametrlari va work factor
 
 ---
 

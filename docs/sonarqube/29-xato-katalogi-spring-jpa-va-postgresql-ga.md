@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 29. Xato katalogi: Spring, JPA va PostgreSQL ga xos xatolar (Catalog: Spring, JPA and PostgreSQL)
 
@@ -619,6 +619,14 @@ curl -s -u "$SONAR_TOKEN": \
 - [ ] Native query larni ko'rib chiq, qiymatlarni nomli parametrga, `ORDER BY` ni ruxsat ro'yxatiga o'tkaz.
 - [ ] Konfiguratsiya va `@Value` dagi har bir credential ni muhit o'zgaruvchisiga ko'chir, keyin kalitlarni rotatsiya qil.
 - [ ] Har bir HTTP mijoziga connect va read timeout belgilab, test profilida kichik qiymat bilan tekshir.
+
+## Manbalar
+
+- [sonar-java 8.44, `S6813.json`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S6813.json) - maydonga inyeksiya qoidasi
+- [sonar-java 8.44, `S2221.json`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S2221.json) - umumiy `Exception` ni ushlash qoidasi
+- [sonar-java 8.44, qoida metadata si](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S1192.json) - bobdagi har qoidaning rasmiy sarlavhasi, turi va darajasi shu metadata dan olingan
+- `tools/sonar_rules.tsv` - tur va daraja da'volari `check_docs.py` da shu snapshotga solishtiriladi; snapshot sonar-java va sonar-java-symbolic-execution metadata sidan olinadi
+- `tools/claims_data/sonar_messages.tsv` - keltirilgan inglizcha xabarlar check manbasidagi matnga `verify_claims.py --faqat xabar` bilan solishtiriladi
 
 ---
 

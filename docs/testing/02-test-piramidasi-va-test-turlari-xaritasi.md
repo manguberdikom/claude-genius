@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 2. Test piramidasi va test turlari xaritasi (Test Pyramid & the Map of Test Types)
 
@@ -35,6 +35,8 @@ Piramidaning muhim, lekin ko'pincha e'tibordan chetda qolgan sharti: pastdagi te
 
 ## 2.2 Zamonaviy variantlar: Testing Trophy, Honeycomb, Test Diamond
 
+Quyidagi uch shakl sanoat amaliyotidan kelib chiqqan taklif: ularning manbasi kitob emas, muallif blogi va konferensiya materiallari. Shuning uchun ularni "kanonik model" deb emas, kontekstga qarab tanlanadigan variant deb qarang.
+
 Klassik piramida 2009-yilda, DI konteynerlari sekin va konteynerlashtirish mavjud emas paytda shakllangan. Testcontainers, tez Spring kontekst keshi va kuchli statik analiz piramidani qayta muvozanatlashtirishga imkon berdi.
 
 **Testing Trophy** (Kent C. Dodds) to'rt qatlamdan iborat: statik analiz (compiler, linter, null-check), unit, integration (eng keng qism), E2E. Asosiy g'oya - "integration" darajasi eng yaxshi ishonch/narx nisbatini beradi, chunki u real wiring'ni tekshiradi, lekin brauzer yoki to'liq muhitni talab qilmaydi. Java olamida bu Spring'ning slice testlari (`@WebMvcTest`, `@DataJpaTest`) va Testcontainers bilan ishlaydigan modul testlari.
@@ -55,13 +57,15 @@ Shaklni tanlash qarori ADR (Architecture Decision Record) sifatida yozilishi ker
 
 ## 2.3 Teskari piramida (ice-cream cone) anti-patterni
 
-Ice-cream cone - asosi yupqa unit testlardan, tanasi integratsion testlardan va keng cho'qqisi E2E/manual testlardan iborat teskari shakl (atama Alister Scott tomonidan ommalashtirilgan). U hech qachon ongli tanlov natijasi bo'lmaydi: u "release oldidan QA hammasini bosib ko'radi" degan jarayonning avtomatizatsiyaga ko'chirilishidan kelib chiqadi.
+Ice-cream cone - teskari shakl: E2E va qo'lda testlar ko'p, integratsion va unit testlar esa ikkisi ham kam. Ta'rifni aniq ushlang: bu yerda o'rta qatlam ham semiz emas, aynan pastki ikki qatlam birga yupqa.
+
+Yonidagi ikkinchi anti-pattern - **soat qumi (hourglass)**: unit testlar ko'p, E2E testlar ko'p, o'rtadagi integratsion qatlam esa bo'sh. Bu ice-cream cone dan ham chalg'ituvchi, chunki suite tashqaridan sog'lom ko'rinadi - pastda minglab unit test bor - lekin qatlamlar o'rtasidagi wiring hech qayerda tekshirilmaydi, shuning uchun har bir regressiya to'g'ridan-to'g'ri E2E da, ya'ni eng qimmat va eng sekin joyda ushlanadi. U hech qachon ongli tanlov natijasi bo'lmaydi: u "release oldidan QA hammasini bosib ko'radi" degan jarayonning avtomatizatsiyaga ko'chirilishidan kelib chiqadi.
 
 Narxi aniq o'lchanadi:
 
 - **Feedback vaqti.** PR pipeline 10 daqiqadan 60-90 daqiqaga chiqadi, developer kontekstni yo'qotadi, batch'lar kattalashadi.
 - **Flakiness.** E2E testlar zanjiridagi har bir bo'g'in ishonchliligi 99% bo'lsa ham, 40 bo'g'inli suite'ning barqarorligi ~67% ga tushadi. Natijada "qayta ishga tushir" madaniyati va yashil build'ga ishonchsizlik paydo bo'ladi.
-- **Diagnostika narxi.** Bitta yiqilgan E2E test uchun o'rtacha tahlil vaqti unit testdan 10-30 barobar ko'p.
+- **Diagnostika narxi.** Bitta yiqilgan E2E test uchun tahlil vaqti unit testdan ancha ko'p, chunki yiqilish sababi butun zanjirda bo'lishi mumkin (brauzer, tarmoq, ma'lumot, boshqa servis). Nisbatni o'z suite ingizda o'lchash kerak: yiqilgan testdan to sababni topishgacha ketgan vaqtni bir oy yozib yuring.
 - **Refactoring to'xtaydi.** Ichki tuzilma testlar bilan qoplanmagani uchun har qanday o'zgarish regressiya qo'rquvini keltiradi.
 - **Infrastruktura xarajati.** Har bir PR uchun to'liq muhit ko'tarish CI hisobining asosiy qismiga aylanadi.
 
@@ -86,7 +90,9 @@ Tuzatish yo'li - testni o'chirish emas, **pastga ko'chirish**: yiqilgan E2E test
 | Exploratory | Noma'lumni topish | Avtomat test o'ylamagan holatlar | Qo'lda, sessiyali | QA | Har release uchun vaqt oynasi |
 | Mutation | Testlar sifati | Testlar haqiqatan xatoni tutadimi (PIT) | Minutlar-soatlar | Developer | Kritik domain paketlarida; nightly |
 
-Jadvaldagi "qancha" ustuni mutlaq raqam emas, nisbat haqida: Spring loyihasida suite tarkibini `@Tag` bo'yicha hisoblab, bu nisbatlardan chetlanishni metrika sifatida kuzatish mumkin.
+Jadvaldagi "qancha" ustuni mutlaq raqam emas, nisbat haqida: Spring loyihasida suite tarkibini `@Tag` bo'yicha hisoblab, bu nisbatlardan chetlanishni metrika sifatida kuzatish mumkin. Ustundagi foizlar shu korpusning amaliy mo'ljali, biror kitobdan ko'chirilgan emas. Manbaga tayangan yagona nisbat Google ning o'z taqsimoti: test soni bo'yicha taxminan 80% kichik (unit), 15% o'rta qamrovli integratsion va 5% uchidan-uchiga test, va kitobning o'zi buni "juda qo'pol mo'ljal" deb ataydi. Tez-tez keltiriladigan 70/20/10 nisbatining esa aniq birlamchi manbasi yo'q, uni iqtibos sifatida ishlatmang.
+
+Google ning modelida yana bir ajratish bor va u bu jadvalda yo'q: har bir test ikki MUSTAQIL o'lchov bilan tavsiflanadi. Birinchisi hajm (size): kichik test bitta process ichida ishlaydi, o'rta test bitta mashinada, katta test esa istalgan joyda (Google da to'rtinchi daraja ham bor: enormous). Ikkinchisi qamrov (scope): test kodning qancha qismini tekshiradi - bitta metodmi, bir necha sinf wiring'imi, butun tizimmi. Bu ikkisi bir-biriga bog'lanmagan: kichik hajmli test keng qamrovli bo'lishi mumkin va teskarisi. Yuqoridagi jadvalning "Tezlik" ustuni aslida hajm xususiyati, qatorlar esa qamrov bo'yicha ajratilgan - shuning uchun uni o'qiyotganda ikki o'lchovni aralashtirmang. Amalda hajmni belgilash foydali, chunki parallellik va izolyatsiya aynan hajmga bog'liq: faqat kichik testlar cheklovsiz parallel ishlaydi.
 
 ## 2.5 Qaysi mantiqni qaysi darajada testlash kerak
 
@@ -106,6 +112,8 @@ Jadvaldagi "qancha" ustuni mutlaq raqam emas, nisbat haqida: Spring loyihasida s
 ## 2.6 Test duplication: bir xil narsani ikki darajada testlash
 
 Duplication piramidani ichdan buzadi: suite o'sadi, lekin ishonch o'smaydi. Tipik ko'rinishlari - bir xil hisob-kitob unit va E2E'da; validatsiyaning har bir qoidasi uchun alohida controller testi; `@SpringBootTest` ichida mapper'ni tekshirish.
+
+Duplication'ni kesishdan oldin teskari chegarani ham belgilab oling. Google da bu "Beyonce qoidasi" deb ataladi: buzilishini xohlamagan har bir narsani test bilan qoplang. Ya'ni duplication'ni kamaytirish hech narsani qoplamay qoldirish degani emas - har bir xatti-harakat kamida BITTA darajada tekshirilsin, lekin birdan ortiq darajada qiymat tekshirilmasin.
 
 Kesish uchun amaliy qoida - **har bir assertion uchun bitta "egasi" daraja**:
 
@@ -246,6 +254,14 @@ Test nomi esa xatti-harakatni o'qiydigan gap bo'lishi kerak: metod nomi uchun `s
 - [ ] E2E testlar soni uchun qattiq kvota mavjud; yangisini qo'shish eskisini pastga ko'chirishni talab qiladi.
 - [ ] Integratsion testlar real DB/broker (Testcontainers) bilan ishlaydi, in-memory o'rnini bosuvchilar prod dialektini yashirmaydi.
 - [ ] Duplication davriy ravishda tekshiriladi (suite tarkibi `@Tag` bo'yicha hisoblanadi, kritik paketlarda mutation score o'lchanadi).
+
+## Manbalar
+
+- Robert C. Martin, *Clean Architecture*, 28-bob - test chegarasi, testlar tizimning qismi ekani va mo'rt test muammosi
+- Titus Winters, Tom Manshreck, Hyrum Wright (tahr.), *Software Engineering at Google*, O'Reilly, 2020, 11-bob "Testing Overview" - Google ning piramida versiyasi va taqsimoti (~80% kichik, ~15% o'rta qamrovli, ~5% uchidan-uchiga, kitobning o'zi "juda qo'pol mo'ljal" deb ataydi); hajm (size) va qamrov (scope) ikki mustaqil o'lchov; kichik/o'rta/katta test ta'riflari; ice-cream cone va soat qumi anti-patternlari; "buzilishini xohlamagan narsani qopla" qoidasi
+- Mike Cohn, *Succeeding with Agile*, 2009 - klassik test piramidasining asl manbasi (Google kitobidagi havola orqali)
+- Gerard Meszaros, *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley, 2007, 6-bob, 51-53-betlar - test turlari taksonomiyasi va "component test" atamasi; "integration" va "subsystem" atamalarining turli ma'nolari haqida ogohlantirish
+- ESLATMA: 2.2 dagi Testing Trophy, Honeycomb va Test Diamond shakllari muallif blogi va konferensiya materiallaridan, kitob manbasi emas; 2.4 va 2.7 dagi foizlar va vaqt chegaralari shu korpusning amaliy mo'ljali
 
 ---
 

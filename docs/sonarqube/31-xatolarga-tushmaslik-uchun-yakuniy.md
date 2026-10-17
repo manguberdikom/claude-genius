@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 31. Xatolarga tushmaslik uchun yakuniy tavsiyalar (Preventive Checklist)
 
@@ -182,9 +182,13 @@ test -f target/site/jacoco/jacoco.xml && echo "coverage hisoboti bor"
 git diff --stat
 git diff --cached
 
-# 4. Lokal Sonar tahlili (server manzili va token muhit o'zgaruvchisida)
-./mvnw -q sonar:sonar -Dsonar.host.url="$SONAR_HOST" \
-  -Dsonar.token="$SONAR_TOKEN"
+# 4. Lokal Sonar tahlili (server manzili va token muhit o'zgaruvchisida).
+#    DIQQAT: `sonar.token` property si hamma versiyada yo'q, u yangi
+#    scanner larda paydo bo'lgan (22.4). Eski o'rnatmada token
+#    `SONAR_TOKEN` muhit o'zgaruvchisi orqali yoki `sonar.login`
+#    bilan beriladi. O'z versiyangizni tekshirib yozing.
+export SONAR_TOKEN
+./mvnw -q sonar:sonar -Dsonar.host.url="$SONAR_HOST"
 ```
 
 Shaxsiy ro'yxat quyidagicha: yangi sehrli son yo'q, yangi `System.out` yo'q, yangi bo'sh `catch` yo'q, yangi `TODO` havolasiz emas, debug uchun qo'yilgan vaqtinchalik kod olib tashlangan, test nomi nimani tekshirayotganini aytadi.
@@ -252,7 +256,9 @@ sonar.exclusions=**/generated/**,**/dto/**Mapper*.java
 sonar.coverage.exclusions=**/config/**,**/*Application.java
 ```
 
-Maven tomonida JaCoCo ni to'g'ri bog'lash muhim: `prepare-agent` test fazasidan oldin, `report` esa `verify` dan oldin ishlashi kerak. Aks holda hisobot bo'sh bo'ladi va Sonar coverage ni nol deb ko'rsatadi.
+Maven tomonida JaCoCo ni bog'lashda ikki narsani aralashtirmaslik kerak. Plugin ning ikki goal i allaqachon to'g'ri fazaga qo'yilgan: `prepare-agent` ning default fazasi `initialize`, `report` ning default fazasi `verify`. Ya'ni pastdagi blokdagi `<phase>verify</phase>` qatori hech narsani o'zgartirmaydi, u default ni takrorlaydi; uni yozish faqat niyatni ko'rsatadi.
+
+Hisobot bo'sh chiqishining haqiqiy sabablari boshqa: agent `argLine` orqali uzatiladi va Surefire da `argLine` qo'lda qayta yozilgan bo'lsa (yoki Lombok kabi boshqa agent qo'shilgan bo'lsa), JaCoCo agent yo'qoladi. Bunday holda Surefire konfiguratsiyasida `@{argLine}` ni saqlash kerak. Ikkinchi sabab: `sonar:sonar` ni `verify` dan OLDIN yurgizish, ya'ni hisobot hali yozilmaganda. Shuning uchun pastdagi CI da `clean verify` va `sonar:sonar` ataylab alohida qadamda.
 
 ```xml
 <plugin>
@@ -266,7 +272,10 @@ Maven tomonida JaCoCo ni to'g'ri bog'lash muhim: `prepare-agent` test fazasidan 
     </execution>
     <execution>
       <id>report</id>
-      <phase>verify</phase>              <!-- hisobot verify da yaratiladi -->
+      <!-- `report` ning default fazasi allaqachon `verify`, shuning
+           uchun bu qator shart emas. Niyatni ko'rsatish uchun
+           qoldirilgan. -->
+      <phase>verify</phase>
       <goals><goal>report</goal></goals>
     </execution>
   </executions>
@@ -289,7 +298,7 @@ CI tomonida tahlilni alohida qadam qiling va gate natijasini kuting. Kutmasangiz
     -Dsonar.qualitygate.wait=true      # gate natijasi kutiladi
 ```
 
-Shuni ham eslatib o'tish kerak: `sonar.qualitygate.wait` xulq-atvori va mavjudligi versiyaga qarab farq qiladi, shuning uchun o'z serveringiz versiyasi hujjatida tasdiqlang.
+Shuni ham eslatib o'tish kerak: `sonar.qualitygate.wait` ni ochiq manbadagi scanner kodidan tasdiqlab bo'lmadi (u yopiq komponentda yoki server tomonida ishlanadi), shuning uchun uning xulqi va mavjudligini o'z serveringiz versiyasi hujjatida tekshirish kerak. Amaliy tekshiruv oson: ataylab gate ni yiqitadigan o'zgarish bilan bir marta CI yurgizib, qadam qizil bo'lishini ko'rish.
 
 ## 31.10 Eng ko'p uchraydigan o'nta xatoni oldini oluvchi o'nta odat
 
@@ -299,7 +308,7 @@ To'rtinchi odat: har bir `catch` ichida nima bo'layotganini bir qatorda tushunti
 
 Yettinchi odat: uchinchi takrorlanishda umumiy metod ajratish. Sakkizinchi odat: yangi test yozganda assertion ni testdan oldin o'ylab qo'yish. To'qqizinchi odat: `TODO` yozganda unga issue raqami qo'shish. O'ninchi odat: PR ni yuborishdan oldin o'z diff ini boshqa odam ko'zi bilan bir marta o'qish.
 
-Bu o'nta odatning hammasi birgalikda kuniga besh daqiqa vaqt oladi. Ularning o'rnini bosadigan vosita yo'q, chunki Sonar xatoni topadi, lekin odatni yarata olmaydi.
+Bu o'nta odat qancha vaqt olishi odamga va kodga bog'liq, shuning uchun bu yerda daqiqa yozilmaydi. Aniq bo'lgani shu: ularning o'rnini bosadigan vosita yo'q, chunki Sonar xatoni topadi, lekin odatni yarata olmaydi.
 
 ## 31.11 Sonar ni dushman emas, vosita sifatida ishlatish
 
@@ -321,6 +330,24 @@ Oxirgi fikr: o'lchovni maqsadga aylantirmang. Maqsad, o'zgartirish oson va buzil
 - [ ] Barcha ochiq security hotspot larni ko'rib chiqing va har biriga qarorni izoh bilan yozing.
 - [ ] Assertion siz va `@Disabled` holatidagi testlarni toping, har biriga qaror qabul qiling: to'ldirish yoki o'chirish.
 - [ ] Oylik bir marta trendga qarang: yangi kod issue zichligi kamayayotganini yoki o'sayotganini yozib boring.
+
+## Manbalar
+
+- JaCoCo Maven plugini, `AgentMojo` va `ReportMojo`
+  ([https://github.com/jacoco/jacoco/blob/v0.8.15/jacoco-maven-plugin/src/org/jacoco/maven/AgentMojo.java](https://github.com/jacoco/jacoco/blob/v0.8.15/jacoco-maven-plugin/src/org/jacoco/maven/AgentMojo.java)
+  va [`ReportMojo.java`](https://github.com/jacoco/jacoco/blob/v0.8.15/jacoco-maven-plugin/src/org/jacoco/maven/ReportMojo.java),
+  tag `v0.8.15`, EPL-2.0) - 31.9 dagi default fazalar:
+  `prepare-agent` uchun `initialize`, `report` uchun `verify`.
+- SonarScanner CLI, `SystemInfo`
+  ([https://github.com/SonarSource/sonar-scanner-cli/blob/8.1.0.6389/src/main/java/org/sonarsource/scanner/cli/SystemInfo.java](https://github.com/SonarSource/sonar-scanner-cli/blob/8.1.0.6389/src/main/java/org/sonarsource/scanner/cli/SystemInfo.java),
+  tag `8.1.0.6389`, LGPL-3.0) - 31.6 dagi `sonar.token` property sining
+  yangi scanner larda mavjudligi (u maskalanadigan property lar
+  ro'yxatida).
+- SonarSource, `sonar-java` ning `Sonar way` profili
+  ([https://github.com/SonarSource/sonar-java/tree/8.44.0.48651/sonar-java-plugin/src/main/resources/profiles/Sonar_way](https://github.com/SonarSource/sonar-java/tree/8.44.0.48651/sonar-java-plugin/src/main/resources/profiles/Sonar_way),
+  tag `8.44.0.48651`, SONAR Source-Available License v1.0) - 31.2,
+  31.3 va 31.4 dagi qoidalarning default profilda yoqilgani
+  `tools/sonar_rules.tsv` snapshotidan tekshiriladi.
 
 ---
 

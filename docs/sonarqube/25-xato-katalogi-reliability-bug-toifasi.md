@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 25. Xato katalogi: reliability (bug) toifasi (Catalog: Reliability)
 
@@ -52,7 +52,7 @@ Reliability toifasi Sonar uchun eng qattiq toifa, chunki bu yerdagi issue "kod i
 | `Collectors.toMap` da takroriy kalit | merge funksiyasi berilmagan | reliability (bug) | Major | `IllegalStateException`, hisobot tushadi |
 | `static SimpleDateFormat` ni baham ko'rish | thread-safe bo'lmagan maydon static | reliability (bug) | Blocker yoki Major | Yuk ostida sana buzilib chiqadi |
 | `compareTo` bor, `equals` moslanmagan | ikkisi mos kelishi kerak (`java:S1210`) | maintainability (code smell) | Minor | `TreeSet` va `List.contains` turlicha javob beradi |
-| Sikl o'zgaruvchisi tanada o'zgartirilgan (`java:S127`) | counter tanada o'zgartirilmasin | maintainability (code smell) | Major | Qatorlar o'tkazib yuboriladi |
+| To'xtash sharti o'zgaruvchan (`java:S127`) | shart invariant bo'lsin: counter tanada o'zgartirilmasin, shart metod chaqiruviga yoki obyekt xossasiga bog'lanmasin | maintainability (code smell) | Major | Qatorlar o'tkazib yuboriladi, chegara har iteratsiyada qayta hisoblanadi |
 | Sikl shartiga ta'sir qilmaydigan tana (`java:S2189`) | cheksiz sikl | reliability (bug) | Blocker | CPU 100 foiz, pod restart |
 
 ## 25.1 Toifa va jiddiylik qanday o'qiladi
@@ -430,6 +430,17 @@ while (attempt < maxAttempts) {
 
 Birinchi holatda Sonar sikl counteri tanada o'zgartirilganini, ikkinchisida sikl shartiga ta'sir qiluvchi hech narsa o'zgarmasligini aniqlaydi. Cheksiz sikl to'lov yuborishni takrorlab, bir buyurtmani o'nlab marta hisobdan chiqarishi mumkin.
 
+`java:S127` ning rasmiy tavsifi esa yuqoridagidan kengroq va qolgan ikki holat kodda tez-tez uchraydi. Qoida **uch turdagi** o'zgaruvchan to'xtash shartini kuzatadi: counter sikl tanasida yangilangani; to'xtash sharti **metod chaqiruviga** bog'liq bo'lgani (`for (int i = 0; i < foo(); i++)`); va to'xtash sharti **obyekt xossasiga** bog'liq bo'lgani, chunki shu xossa sikl ishlashi davomida o'zgarishi mumkin. Talab bitta: to'xtash sharti sikl davomida o'zgarmaydigan invariant qiymatga solishtirilsin, ya'ni konstanta yoki oldindan hisoblangan lokal o'zgaruvchiga.
+
+```java
+// SHIKOYAT: shart metod chaqiruviga bog'liq, u har iteratsiyada chaqiriladi
+for (int i = 0; i < repository.countPending(); i++) { ... }
+
+// TUZATILGAN: chegara bir marta hisoblanadi va o'zgarmaydi
+int pending = repository.countPending();
+for (int i = 0; i < pending; i++) { ... }
+```
+
 ```java
 // TUZATILGAN: niyat aniq ifodalangan
 lines.stream().filter(line -> !line.isCancelled()).forEach(this::ship);
@@ -528,6 +539,14 @@ Har bir tuzatishga test kerak, lekin test uslublari [testlash qo'llanmasidagi](.
 - [ ] `catch (InterruptedException` ni qidirib, har birida `Thread.currentThread().interrupt()` borligini tasdiqlang.
 - [ ] Har bir yopilgan reliability issue uchun xatoni qayta chiqaradigan regress test yozib, uni PR ga qo'shing.
 - [ ] Quality gate ga "yangi kod bug soni = 0" shartini qo'ying va `sonar.qualitygate.wait=true` bilan pipeline ni bloklang.
+
+## Manbalar
+
+- [sonar-java 8.44, qoida metadata si va tavsiflari](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S127.html) - `java:S127` ning uch turdagi o'zgaruvchan to'xtash sharti (counter tanada yangilangani, shart metod chaqiruviga yoki obyekt xossasiga bog'langani)
+- [sonar-java 8.44, `S1244`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S1244.json) - suzuvchi nuqtali sonlarni tenglikka solishtirmaslik (BUG, Major)
+- [sonar-java 8.44, `S2142`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S2142.json) - `InterruptedException` va `ThreadDeath` ni e'tiborsiz qoldirmaslik (BUG, Major)
+- [sonar-java 8.44, `S2201`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S2201.json) - yon ta'siri yo'q funksiyaning qaytish qiymatini tashlab yubormaslik (BUG, Major)
+- `tools/sonar_rules.tsv` - bobda keltirilgan har qoidaning turi va darajasi shu snapshotga solishtiriladi (`check_docs.py`), snapshot esa sonar-java va sonar-java-symbolic-execution metadata sidan olinadi
 
 ---
 

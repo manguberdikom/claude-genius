@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 13. Zamonaviy Java tili va API dizayni (Modern Java and API Design)
 
 <details>
-<summary>Bu bobdagi 12 bo'lim</summary>
+<summary>Bu bobdagi 14 bo'lim</summary>
 
 - [13.1 Record: qachon ishlatish, qachon oddiy sinf kerak](#131-record-qachon-ishlatish-qachon-oddiy-sinf-kerak)
 - [13.2 Sealed interface va pattern matching bilan to'liq qamrovli tanlov](#132-sealed-interface-va-pattern-matching-bilan-toliq-qamrovli-tanlov)
@@ -20,7 +20,9 @@
 - [13.9 Orqaga moslik: metod qo'shish, nomini o'zgartirish, deprecate qilish siyosati](#139-orqaga-moslik-metod-qoshish-nomini-ozgartirish-deprecate-qilish-siyosati)
 - [13.10 Null xavfsizligi: annotatsiyalar va chegaraviy tekshiruv](#1310-null-xavfsizligi-annotatsiyalar-va-chegaraviy-tekshiruv)
 - [13.11 Java versiyalari: LTS tanlash va yangilanish strategiyasi](#1311-java-versiyalari-lts-tanlash-va-yangilanish-strategiyasi)
-- [13.12 Amalda qo'llash](#1312-amalda-qollash)
+- [13.12 Native metod: JNI, Foreign Function API va qachon haqli](#1312-native-metod-jni-foreign-function-api-va-qachon-haqli)
+- [13.13 Til cheklov sifatida: paradigma nimani olib qo'yadi va til imkoniyati bilan cheklanmaslik](#1313-til-cheklov-sifatida-paradigma-nimani-olib-qoyadi-va-til-imkoniyati-bilan-cheklanmaslik)
+- [13.14 Amalda qo'llash](#1314-amalda-qollash)
 
 </details>
 
@@ -395,7 +397,99 @@ Yangilanish paytida uchta narsa ko'p muammo beradi. Birinchi, bytecode manipulya
 
 Qaror mezoni oddiy. Agar Spring Boot 3.x da bo'lsangiz, Java 17 minimal, lekin Java 21 virtual thread uchun amalda majburiy. Spring Boot 4.x va Spring Framework 7.x ham Java 17 ni minimal baseline deb oladi, shunga qaramay yangi loyihani Java 25 da boshlash to'g'ri, chunki keyingi ikki yil davomida yangilanish talab qilinmaydi.
 
-## 13.12 Amalda qo'llash
+## 13.12 Native metod: JNI, Foreign Function API va qachon haqli
+
+Bloch native metodlarning uch tarixiy ehtiyojini sanaydi: platformaga xos imkoniyatga kirish (registry va shunga o'xshash), Java da muqobili yo'q mavjud native kutubxonadan foydalanish, va tezlik uchun kritik qismni native tilda yozish. Birinchisi haqli, lekin kamdan kam zarur, chunki platforma o'sib bordi va avval faqat host tizimda bo'lgan narsalar JDK ga kirdi. Ikkinchisi haqli. Uchinchisini muallif ochiq rad etadi va buni o'z misoli bilan ko'rsatadi: `BigInteger` dastlab C da yozilgan ko'p aniqlikli arifmetika kutubxonasiga tayangan, keyin Java da qaytadan yozilib, asl native implementatsiyadan tezroq ishlagan (Joshua Bloch, *Effective Java*, 3-nashr, Addison-Wesley, 2018, "Item 66: Use native methods judiciously", 285-bet).
+
+Narx ro'yxati arxitektor uchun muhim, chunki u bitta metodda tugamaydi. Native til xotira xavfsizligini bermaydi, demak butun process endi xotira buzilishiga ochiq: native koddagi bitta xato Java tomonini ham yiqitadi. Portativlik yo'qoladi, debug qiyinlashadi, GC native xotirani kuzatmaydi va chegaradan o'tishning o'z narxi bor. Oxirida esa o'qilmaydigan glue kod qoladi. Shuning uchun qoida sodda: native kod miqdorini minimal ushlang va uni alohida sinovdan o'tkazing.
+
+Kitob Java 9 davrida yozilgan va o'sha paytda yagona yo'l JNI edi. Bugun ikkinchi yo'l bor: `java.lang.foreign` paketi (`Linker`, `SymbolLookup`, `Arena`, `MemorySegment`, `FunctionDescriptor`). U glue C kodini butunlay yo'q qiladi, chaqiruv `MethodHandle` ga aylanadi va muhimi, Bloch shikoyat qilgan "GC native xotirani kuzatmaydi" muammosiga javob beradi: xotira hayot tsikli `Arena` da ochiq, try-with-resources bilan chegaralangan va deterministik bo'shatiladi. Java 21 LTS da bu API hali preview: kompilyator `Arena is a preview API and is disabled by default` deb to'xtatadi, shuning uchun 21 da qolgan loyiha uni production da ishlatmaydi. Preview API nomlari relizlar orasida o'zgaradi, demak yangi JDK ga ko'chganda imzolarni qaytadan tekshirish kerak.
+
+```java
+// JDK 21.0.12 da tekshirildi: javac --release 21 --enable-preview
+public final class NativeStrlen {
+
+    private static final Linker LINKER = Linker.nativeLinker();
+    private static final SymbolLookup STDLIB = LINKER.defaultLookup();
+
+    public static long length(String text) throws Throwable {
+        MethodHandle strlen = LINKER.downcallHandle(
+                STDLIB.find("strlen").orElseThrow(),
+                FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS));
+        // Arena chegarasi: blok tugashi bilan native xotira bo'shatiladi
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment cString = arena.allocateUtf8String(text);
+            return (long) strlen.invokeExact(cString);
+        }
+    }
+}
+```
+
+Ikkinchi yangilik - native kirish endi jim emas. Yuqoridagi kod ishga tushganda JDK 21 ogohlantirish beradi va uni ochiq ruxsat bilan yopish kerak bo'ladi:
+
+```bash
+# JDK 21.0.12 dagi haqiqiy chiqish
+WARNING: A restricted method in java.lang.foreign.Linker has been called
+WARNING: java.lang.foreign.Linker::downcallHandle has been called by the unnamed module
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for this module
+
+# Ruxsat berilgandan keyin ogohlantirish yo'qoladi. Modullashgan ilovada
+# ALL-UNNAMED o'rniga modul nomi yoziladi, shunda ruxsat butun classpath ga
+# emas, aynan native kod turgan modulga tegishli bo'ladi.
+java --enable-preview --enable-native-access=ALL-UNNAMED -cp app.jar com.shop.Main
+```
+
+Arxitektura qarori uchun yana bitta nuqta bor: native metod ichida bloklangan virtual thread carrier thread ni pin qiladi, ya'ni native chegara virtual thread modelining kam sonli qolgan tuzoqlaridan biri (qarang: [virtual thread va pinning](12-virtual-threads-structured-concurrency-va.md)). Shuning uchun native chaqiruv qisqa va bloklanmaydigan bo'lishi, uzoq ishlar esa alohida platform thread pool ga chiqarilishi kerak.
+
+| Ehtiyoj | Bugungi Java javobi | Native kerakmi |
+|---|---|---|
+| OS process boshqarish | `ProcessHandle`, `ProcessBuilder` | Yo'q |
+| Fayl tizimi, kuzatuv, qulf | `Files`, `WatchService`, `FileChannel.lock` | Yo'q |
+| Kriptografiya | JCA provayderlari | Yo'q |
+| Tezlik uchun kritik sikl | JIT, `VarHandle`, Vector API | Deyarli har doim yo'q |
+| Java da muqobili yo'q native kutubxona (GPU, GMP, qurilma SDK si) | `java.lang.foreign` yoki JNI | Ha |
+| Platformaga xos, JDK qamramagan API | `java.lang.foreign` yoki JNI | Ha, lekin avval JDK ni tekshiring |
+
+## 13.13 Til cheklov sifatida: paradigma nimani olib qo'yadi va til imkoniyati bilan cheklanmaslik
+
+Bu bobdagi qarorlarning ko'pi "tilda nima bor" savoliga tayanadi. Ikkita qoida shu savolni teskari qo'yadi va ikkisi ham til imkoniyatini yangi xususiyat emas, intizom deb ko'radi.
+
+- **Har bir paradigma programmerdan bitta imkoniyatni olib qo'yadi.** Martin uch paradigmani ataylab bir xil qolipda keltiradi: har biri programmerdan imkoniyat olib qo'yadi, hech biri yangi imkoniyat qo'shmaydi; har biri niyati bo'yicha salbiy bo'lgan qo'shimcha intizom o'rnatadi, ya'ni paradigma nima qilish kerakligidan ko'proq nima qilmaslik kerakligini aytadi (Martin, *Clean Architecture*, Prentice Hall, 2018, 3-bob). Qolip aniq: strukturali programmalash boshqaruvni bevosita uzatishga (goto) intizom o'rnatadi, obyektga yo'naltirilgan programmalash boshqaruvni bilvosita uzatishga (funksiya ko'rsatkichi) intizom o'rnatadi, funksional programmalash esa tayinlashga (assignment) intizom o'rnatadi. Uchtasi birgalikda goto ni, funksiya ko'rsatkichini va tayinlashni olib tashlaydi, va Martin "olib tashlashga yana nima qoldi" savoliga "ehtimol hech narsa" deb javob beradi: shuning uchun kamida salbiy paradigmalar shu uchtasi bilan tugaydi, buning yana bir dalili esa uchalasining ham 1958 va 1968 yillar orasida topilgani va undan keyingi o'n yilliklarda yangi paradigma qo'shilmagani (3-bob). Arxitektura bilan bog'lanishi ham shu bobda: polimorfizm arxitektura chegarasini kesib o'tish mexanizmi, funksional programmalash ma'lumotning joyi va unga kirishga intizom o'rnatish usuli, strukturali programmalash esa modullarning algoritmik asosi, va bu uchlik arxitekturaning uch tashvishiga (funksiya, komponentlarni ajratish, ma'lumotni boshqarish) mos tushadi (3-bob).
+
+  Amaliy natijasi: Java ning yangi xususiyatlari ro'yxat emas, intizom tanlovi. `record` va `final` maydon tayinlashni cheklaydi, [sealed interface](#132-sealed-interface-va-pattern-matching-bilan-toliq-qamrovli-tanlov) implementatsiya qiluvchilar to'plamini cheklaydi, [Optional](#135-optional-ni-togri-ishlatish-qaytish-qiymati-maydon-emas) esa `null` ni qaytish qiymatida ishlatishni cheklaydi. Savol "bu xususiyat nima beradi" emas, "bu xususiyat nimani taqiqlaydi va menga shu taqiq kerakmi" bo'ladi.
+
+- **Til imkoniyati fikrlash chegarasi emas.** McConnell qoidaga nom beradi: fikrlashingizni tilingiz avtomatik qo'llab-quvvatlaydigan tushunchalar bilan cheklamang; eng yaxshi programmerlar nima qilishni xohlayotganini o'ylaydi, keyin maqsadga qo'lida bor asboblar bilan qanday erishishni baholaydi (McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 34.4 (843-bet)). Misollari qat'iy: sinf abstraksiyasiga mos kelmaydigan metodni faqat qulay bo'lgani uchun ishlatmaslik, ya'ni kodni sinf interfeysi ifodalagan abstraksiyani iloji boricha saqlaydigan tarzda yozish; til global ma'lumot yoki goto ni qo'llab-quvvatlagani uchun ulardan foydalanish shart emas, tilning kuchsiz joylarini konvensiya bilan to'ldirish mumkin. Eng ko'rinib turgan yo'ldan borish aynan "tilning ichida" programmalash bo'ladi, kerakli narsani qurish esa "tilga" programmalash (34.4 (843-bet)). Kitobning o'z misoli: til assertion ni qo'llab-quvvatlamasa, o'zingizning `assert()` funksiyangizni yozasiz, u o'rnatilganidek ishlamasa ham foydasining ko'p qismini beradi. Chegarasi ham aytilgan: juda ibtidoiy asboblar bo'lsa, yondashuvni sezilarli o'zgartirishga majbur bo'lishingiz mumkin, lekin odatiy holatda farq faqat kichik yon berishlarni talab qiladi (34.4 (843-bet)).
+
+Quyidagi misol kitobdagi g'oyani Java ga o'tkazadi: McConnell da misol o'z `assert()` ini yozish edi, bu yerda esa til bermagan domen tekshiruvi konvensiya bilan quriladi.
+
+```java
+// Til domen invariantini bermaydi: uni o'zimiz quramiz va hamma
+// konstruktor shu yerdan o'tadi. Konvensiya tilning o'rnini bosadi.
+public final class Require {
+
+    private Require() { }
+
+    public static BigDecimal positive(BigDecimal value, String name) {
+        if (value == null || value.signum() <= 0) {
+            throw new IllegalArgumentException(
+                    name + " musbat bo'lishi kerak, kelgan qiymat: " + value);
+        }
+        return value;
+    }
+}
+
+public record Payment(String orderId, BigDecimal amount) {
+
+    public Payment {
+        Objects.requireNonNull(orderId, "orderId");
+        amount = Require.positive(amount, "amount");
+    }
+}
+```
+
+Ikki qoida birga ishlaydi: paradigma sizdan imkoniyat olib qo'yadi, siz esa qolgan imkoniyatlardan kerakli abstraksiyani qurasiz. Ikkisining teskarisi ham bitta: tilda bor bo'lgan hamma narsani ishlatish ham, tilda yo'q narsani qurishdan voz kechish ham dizayn qarorini tilga topshirish bo'ladi.
+
+## 13.14 Amalda qo'llash
 
 - [ ] Loyihadagi barcha DTO va read model sinflarini ko'rib chiqing, mutable POJO larni record ga o'tkazing va validatsiyani compact konstruktorga yig'ing.
 - [ ] `String type` yoki `int status` maydoni bilan boshqarilayotgan eng katta `if-else` zinapoyasini toping va uni sealed interface plus `switch` ifodasiga aylantiring.
@@ -405,6 +499,22 @@ Qaror mezoni oddiy. Agar Spring Boot 3.x da bo'lsangiz, Java 17 minimal, lekin J
 - [ ] Ommaviy paketlarga `package-info.java` da `@NullMarked` qo'ying va NullAway ni build darvozasi qilib yoqing.
 - [ ] Kutubxona modullariga `japicmp` ni ulang va binary moslik buzilishini build yiqilishiga aylantiring, deprecate oynasini yozib hujjatlashtiring.
 - [ ] CI matritsasiga production LTS dan tashqari keyingi JDK ni qo'shing va nightly build da uni ham sinaydigan qilib qo'ying.
+- [ ] JNI yoki `java.lang.foreign` ishlatadigan joylarni ro'yxatga oling, har biri uchun JDK da muqobil bor-yo'qligini tekshiring va qolganlariga `--enable-native-access` ni modul nomi bilan bering.
+
+## Manbalar
+
+- Robert C. Martin, *Clean Architecture*, 3, 4, 5, 6-boblar - paradigmalar: strukturali, obyektga yo'naltirilgan, funksional
+- Robert C. Martin, *Clean Architecture*, Prentice Hall, 2018, 3-bob ("Food for Thought") - har paradigma programmerdan imkoniyat olib qo'yishi va yangi imkoniyat qo'shmasligi, intizomning niyati bo'yicha salbiyligi; uch paradigmaning goto, funksiya ko'rsatkichi va tayinlashni olib tashlashi; 1958-1968 oralig'ida topilgani va keyin yangi paradigma qo'shilmagani; polimorfizm, funksional programmalash va strukturali programmalashning arxitekturaning uch tashvishiga mos tushishi
+- Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 34.4 (843-bet) - fikrlashni tilning avtomatik qo'llab-quvvatlagan tushunchalari bilan cheklamaslik; sinf abstraksiyasini buzadigan qulay metoddan voz kechish; tilning kuchsiz joyini konvensiya bilan to'ldirish; o'z `assert()` ini yozish misoli; ibtidoiy asbob holatidagi chegara
+- Herbert Schildt, *Java The Complete Reference*, 17-bob - record, `sealed`, `switch` ifodasi va matn bloki
+- Joshua Bloch, *Effective Java* 3rd, Item 21 - chiqarilgan interfeysni keyin o'zgartirishning xavfi
+- Martin Kleppmann, *Designing Data-Intensive Applications*, 4-bob - API moslik turlari
+- [OpenJDK 25, `ScopedValue.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/lang/ScopedValue.java) - `where`/`run`/`call` API si, bog'lanish merosi va kam sonda ishlatish tavsiyasi
+- [OpenJDK 25, `VirtualThread.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/lang/VirtualThread.java) - JDK 24 dan monitorda kutishning carrier ni bo'shatishi
+- Joshua Bloch, *Effective Java* 3rd, Item 10, 17 va 50 - `equals` kontrakti, o'zgarmaslik va himoyalangan nusxa
+- Joshua Bloch, *Effective Java*, 3-nashr, Addison-Wesley, 2018, "Item 66: Use native methods judiciously", 285-bet - native metodning uch tarixiy ehtiyoji, `BigInteger` misoli va native kodning narxi
+- [sonar-java 8.44, `S6878.json`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S6878.json) - record pattern ishlatish qoidasi
+- [sonar-java 8.44, `S6126.json`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S6126.json) - ko'p qatorli satr konkatenatsiyasini text block bilan almashtirish
 
 ---
 

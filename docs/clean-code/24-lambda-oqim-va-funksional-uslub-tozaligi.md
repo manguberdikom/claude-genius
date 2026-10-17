@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 24. Lambda, oqim va funksional uslub tozaligi (Lambdas and Streams)
 
@@ -126,6 +126,10 @@ try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
 }
 ```
 
+Parallel oqim foyda beradigan shart ham aniq va u manbaga bog'liq: `ArrayList`, `HashMap`, `HashSet`, `ConcurrentHashMap`, massiv, `int` va `long` oraliqlari. Ularning umumiy xususiyati ikkita: ular kerakli o'lchamdagi bo'laklarga arzon va aniq bo'linadi (buni `spliterator` bajaradi) va ketma-ket o'qilganda havolalar xotirada yonma-yon yotadi. Teskari tomoni: `Stream.iterate` va `limit` bilan qurilgan oqim parallelda yomon ishlaydi, chunki uni bo'lib bo'lmaydi.
+
+Terminal amal ham ahamiyatli: parallel uchun eng mos amallar reduksiyalar (`reduce`, `min`, `max`, `count`, `sum`). `collect` esa to'plamni qo'shib yurishni talab qiladi, shuning uchun parallelda qimmat. Ya'ni parallel oqim qarori uch savolga javob bo'ladi: manba bo'linadimi, terminal amal reduksiyami, va o'lchov haqiqatda foyda ko'rsatdimi.
+
 `forEachOrdered` tartibni saqlaydi, lekin parallel oqimning foydasini yo'qotadi - bu ikkisining birga kerak bo'lishi parallel oqim noto'g'ri tanlov ekanini bildiradi.
 
 ## 24.6 `Optional` ni zanjirda toza ishlatish
@@ -236,6 +240,17 @@ Stream<Payment> streamSettledIn(DateRange range);
 - [ ] `orElse(<qimmat chaqiruv>)` holatlarini `orElseGet` ga o'tkazing.
 - [ ] `@SneakyThrows` ishlatilgan joylarni oshkor o'rashga almashtirib, annotatsiyani taqiqlang.
 - [ ] Ikki darajadan chuqur `groupingBy` zanjirlarini oraliq record bilan tekislang.
+
+## Manbalar
+
+- Joshua Bloch, *Effective Java* 3rd, Item 42 - anonim sinf o'rniga lambda, lambdaning uzunligi
+- Joshua Bloch, *Effective Java* 3rd, Item 43 - metod havolasi qachon o'qiladi
+- Joshua Bloch, *Effective Java* 3rd, Item 44 - standart funksional interfeyslardan foydalanish
+- Joshua Bloch, *Effective Java* 3rd, Item 45, 46 - oqimni o'lchov bilan ishlatish, yon ta'sirsiz funksiyalar
+- Joshua Bloch, *Effective Java* 3rd, Item 47 - qaytish turi sifatida `Stream` emas `Collection`
+- Joshua Bloch, *Effective Java* 3rd, Item 48 - parallel oqim: qaysi manba bo'linadi, qaysi terminal amal mos keladi
+- Joshua Bloch, *Effective Java* 3rd, Item 55 - `Optional` ni o'rinli qaytarish
+- [Java API, `Stream.peek`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/stream/Stream.html#peek(java.util.function.Consumer)) - debug uchun mo'ljallangani va chaqirilmasligi mumkinligi
 
 ---
 

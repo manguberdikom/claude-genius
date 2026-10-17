@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 26. Ma'lumot to'g'riligi va turlar review (Data Correctness)
 
@@ -271,6 +271,12 @@ SELECT count(*) FROM customer
 - [ ] Nullable ustunlar uchun NULL ning ma'nosini `GLOSSARY.md` yoki jadval izohida (`COMMENT ON COLUMN`) yozib qo'ying.
 - [ ] Soft delete ishlatiladigan jadvallar uchun aktiv qatorlar view ini yoki RLS ni joriy qiling.
 - [ ] Ma'lumot ko'chiradigan PR lar uchun "20 qator namuna + ko'chirilmaydiganlar soni" talabini kiriting.
+
+## Manbalar
+
+- [PostgreSQL 17, Data Types](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/datatype.sgml) - raqam, sana va matn turlarining aniq chegaralari
+- [PostgreSQL 17, Functions and Operators](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/func.sgml) - solishtirish, tur konversiyasi va `NULL` semantikasi
+- [PostgreSQL 17, MVCC](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/mvcc.sgml) - izolyatsiya darajasining ma'lumot to'g'riligiga ta'siri
 
 ---
 

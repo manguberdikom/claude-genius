@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 9. Coverage qanday o'lchanadi: JaCoCo mexanikasi (How Coverage Is Measured)
 
@@ -56,6 +56,8 @@ Qator qamrovi bilvosita hisoblanadi. JaCoCo `.class` fayldagi `LineNumberTable` 
 Standart rejim bu Java agent. JVM ishga tushganda `-javaagent` orqali JaCoCo o'rnatiladi va u `ClassFileTransformer` sifatida ro'yxatdan o'tadi. Classloader har bir klassni yuklaganda JaCoCo baytlarni ushlab oladi, probe qo'shadi va o'zgartirilgan versiyani JVM ga beradi. Diskdagi `.class` fayl o'zgarmaydi.
 
 Offline instrumentatsiya boshqacha ishlaydi. Bu rejimda `jacoco:instrument` goal `.class` fayllarni build vaqtida o'zgartiradi va diskka qaytib yozadi. Test shu o'zgartirilgan klasslar bilan ishlaydi, keyin `jacoco:restore-instrumented-classes` asl holatni tiklaydi. Bu rejim faqat agent ishlamaydigan holatlarda kerak bo'ladi: o'z classloader ini yozadigan konteynerlar, Android, yoki bytecode ni qattiq nazorat qiladigan muhitlar.
+
+Agentning bir texnik tafsiloti diagnostikada qo'l keladi. Agent ilova classloader i tomonidan yuklanadi, ya'ni uning sinflari ilova sinflari bilan **bitta nom maydonida** yashaydi va bu uchinchi tomon kutubxonasi, ayniqsa ASM bilan to'qnashishga olib kelishi mumkin. Shu sababli JaCoCo build i `jacocoagent.jar` ichidagi hamma sinfni unikal paketga ko'chiradi (`org.jacoco.agent...` ostiga). Amaliy natija: classpath da `org.jacoco.agent.rt.internal...` ko'rinishidagi paket nomlari ko'rinsa, bu normal holat, dublikat kutubxona emas.
 
 Spring Boot loyihasida deyarli har doim agent rejimi to'g'ri tanlov. Offline rejim ikki xavf olib keladi. Birinchisi, instrumentatsiya qilingan klass `jacoco-agent` ni runtime dependency sifatida talab qiladi. Ikkinchisi, tiklash bosqichi o'tkazib yuborilsa, instrumentatsiya qilingan klasslar artifact ga tushib qolishi mumkin.
 
@@ -113,11 +115,11 @@ java -jar jacococli.jar report target/jacoco.exec \
 
 ## 9.4 Instruction, line, branch, complexity va method qamrovi farqi
 
-JaCoCo bitta o'tishda beshta hisoblagich chiqaradi va ular bir narsani o'lchamaydi. Instruction eng mayda birlik: har bir bytecode instruksiyasi. Bu ko'rsatkich kompilyator chiqargan hamma narsani sanaydi, shuning uchun u debug ma'lumotiga bog'liq emas va eng barqaror hisoblanadi.
+JaCoCo bitta o'tishda oltita hisoblagich chiqaradi va ular bir narsani o'lchamaydi. Instruction eng mayda birlik: har bir bytecode instruksiyasi. Bu ko'rsatkich kompilyator chiqargan hamma narsani sanaydi, shuning uchun u debug ma'lumotiga bog'liq emas va eng barqaror hisoblanadi.
 
-Line qamrovi manba qatorlari ustida ishlaydi. Qator qisman qoplangan bo'lishi mumkin: agar qatorga tegishli instruksiyalarning bir qismi bajarilgan bo'lsa, HTML hisobotda sariq rombcha chiqadi. Branch qamrovi faqat `if` va `switch` dan tug'ilgan tarmoqlarni sanaydi. Bu yerda muhim nozik jihat bor: `try/catch` dagi exception yo'li branch emas, chunki bytecode da u `IFEQ` kabi shart instruksiyasi bilan emas, exception table orqali ifodalanadi.
+Line qamrovi manba qatorlari ustida ishlaydi va u yagona debug ma'lumotiga bog'liq hisoblagich: hujjat aniq aytadi-ki, qator darajasidagi qamrov va manbani bo'yash uchun sinflar debug ma'lumoti bilan kompilyatsiya qilingan bo'lishi kerak. Qator qisman qoplangan bo'lishi mumkin: agar qatorga tegishli instruksiyalarning bir qismi bajarilgan bo'lsa, HTML hisobotda sariq rombcha chiqadi. Branch qamrovi faqat `if` va `switch` dan tug'ilgan tarmoqlarni sanaydi. Bu yerda muhim nozik jihat bor: `try/catch` dagi exception yo'li branch emas, chunki bytecode da u `IFEQ` kabi shart instruksiyasi bilan emas, exception table orqali ifodalanadi.
 
-Complexity bu metod bo'yicha cyclomatic complexity. JaCoCo uni shart tarmoqlari sonidan hisoblaydi va qoplangan complexity ni "nechta mustaqil yo'l bosib o'tilgan" ma'nosida beradi. Method va class hisoblagichlari esa shunchaki "hech bo'lmasa bir instruksiya bajarildi mi" degan savolga javob beradi, shuning uchun ular eng yumshoq ko'rsatkich.
+Complexity bu metod bo'yicha cyclomatic complexity va JaCoCo uning ta'rifini McCabe dan oladi: metod bo'ylab o'tadigan barcha mumkin bo'lgan yo'llarni (chiziqli) kombinatsiyada hosil qila oladigan **minimal yo'llar soni**. Hujjat shundan amaliy xulosa ham chiqaradi: shu son kodni to'liq qoplash uchun kerak bo'ladigan unit test holatlari sonining ko'rsatkichi bo'la oladi. Qoplangan complexity esa "nechta mustaqil yo'l bosib o'tilgan" ma'nosida beradi. Method va class hisoblagichlari esa shunchaki "hech bo'lmasa bir instruksiya bajarildi mi" degan savolga javob beradi, shuning uchun ular eng yumshoq ko'rsatkich.
 
 | Hisoblagich | Nimani sanaydi | Debug ma'lumotiga bog'liq | Qachon ishonchli |
 |---|---|---|---|
@@ -238,7 +240,9 @@ Ko'p modulli Maven loyihasida har bir modul o'z `.exec` va o'z hisobotini chiqar
 
 Yechim bu `report-aggregate` goal. Alohida, odatda `coverage` deb nomlangan modul yaratiladi. U hech qanday kod saqlamaydi, lekin barcha boshqa modullarni dependency qilib oladi. `report-aggregate` har bir dependency modulning `.exec` va `.class` fayllarini topadi va ulardan bitta birlashgan XML chiqaradi. Bu modul reactor da oxirgi bo'lishi kerak.
 
-Keyin Sonar ga faqat shu bitta XML yo'li beriladi. Alternativa sifatida har bir modulning XML yo'lini vergul bilan sanash ham ishlaydi, lekin modul qo'shilganda yo'lni yangilashni esdan chiqarish xavfi bor. Gradle da bu vazifa `JacocoReport` task ini barcha subproject ning `executionData` va `sourceSets` i bilan sozlash orqali hal qiladi.
+Keyin Sonar ga faqat shu bitta XML yo'li beriladi. Alternativa sifatida har bir modulning XML yo'lini vergul bilan sanash ham ishlaydi, lekin modul qo'shilganda yo'lni yangilashni esdan chiqarish xavfi bor.
+
+Shu yerda `sonar-jacoco` plagini beradigan uchinchi parametr ham bor va u ko'p modulli loyihada aynan shu masala uchun: `sonar.coverage.jacoco.aggregateXmlReportPaths`. U `xmlReportPaths` dan ajratilgan, chunki yig'ilgan hisobot boshqa modullarning sinflarini ham qamraydi va Sonar uni modul chegarasidan tashqariga moslashi kerak. Gradle da bu vazifa `JacocoReport` task ini barcha subproject ning `executionData` va `sourceSets` i bilan sozlash orqali hal qiladi.
 
 ```xml
 <!-- coverage/pom.xml: kodsiz, faqat yig'uvchi modul -->
@@ -341,6 +345,14 @@ generatorning xulqi o'zgarganini ko'rishga yordam beradi.
 - [ ] HTML hisobotdagi eng past branch qamrovi bo'lgan beshta metodni oching va har bir sariq rombcha uchun qaysi shart sinalmaganini yozib chiqing.
 - [ ] Har bir `orElseThrow` va `Optional` lambda si uchun uni bajaradigan alohida test holati borligini tasdiqlang.
 - [ ] PIT mutation testing ni eng muhim ikki paketga ulab, mutation score bilan line coverage o'rtasidagi farqni o'lchang.
+
+## Manbalar
+
+- [JaCoCo 0.8.12, Coverage Counters](https://raw.githubusercontent.com/jacoco/jacoco/v0.8.12/org.jacoco.doc/docroot/doc/counters.html) - oltita hisoblagich, instruction (C0) va branch (C1) ning debug ma'lumotidan mustaqilligi, LINE ning debug ma'lumotini talab qilishi, exception ishlovining branch hisoblanmasligi, complexity ning McCabe ta'rifi va test holatlari soniga ishora bo'lishi
+- [JaCoCo 0.8.12, Implementation Design](https://raw.githubusercontent.com/jacoco/jacoco/v0.8.12/org.jacoco.doc/docroot/doc/implementation.html) - on-the-fly instrumentatsiya va Java agent hook, agent sinflarining ilova nom maydonida yashashi hamda ASM to'qnashuvi uchun unikal paketga ko'chirilishi, implicit kod (default konstruktor, `finally` uchun yasalgan boshqaruv tuzilmasi) tufayli kutilmagan bo'yash
+- [JaCoCo 0.8.12, Agent](https://raw.githubusercontent.com/jacoco/jacoco/v0.8.12/org.jacoco.doc/docroot/doc/agent.html) - agent parametrlari (`destfile`, `append`, `output`, `address`, `port`, `includes`)
+- [JaCoCo 0.8.12, Control Flow Analysis](https://raw.githubusercontent.com/jacoco/jacoco/v0.8.12/org.jacoco.doc/docroot/doc/flow.html) - probe joylashuvi va shart tarmoqlarining bytecode dagi ko'rinishi
+- [sonar-jacoco, `ReportPathsProvider.java`](https://raw.githubusercontent.com/SonarSource/sonar-jacoco/301ac5a760f3d21922f5062ca810e456f6f86cad/src/main/java/org/sonar/plugins/jacoco/ReportPathsProvider.java) - `sonar.coverage.jacoco.aggregateXmlReportPaths` ning alohida parametr ekani va standart joylar
 
 ---
 

@@ -25,14 +25,14 @@ Review izohlari uchun tayyor iboralar oxirgi bobda.
 
 **Versiya bazasi:** Java 21 LTS (pol: 17, Java 25 eslatmalari bilan), Spring Boot 3.2-3.5 (4.0 eslatmalari bilan), PostgreSQL 16+ (15-18 havolalari bilan), JUnit 5.
 
-> Holat: 44 bobdan 0 tasi odam tekshirgan, 1 tasi tekshirilmoqda, qolgan 43 tasi AI yozgan va inson tekshirmagan. Har bob holati: [docs/review.tsv](../review.tsv).
+> Holat: 44 bobdan 0 tasi odam tekshirgan, 44 tasi tekshirilmoqda, qolgan 0 tasi AI yozgan va inson tekshirmagan. Har bob holati: [docs/review.tsv](../review.tsv).
 
 ## Mundarija
 
 ### I. Review ning mohiyati va iqtisodi
 
-- **1.** [Review nima uchun bor va nimani haqiqatda beradi (Why Review Exists)](01-review-nima-uchun-bor-va-nimani-haqiqatda.md) - 11 bo'lim
-- **2.** [Review iqtisodi: xato narxi, navbat va PR hajmi (The Economics of Review)](02-review-iqtisodi-xato-narxi-navbat-va-pr.md) - 11 bo'lim
+- **1.** [Review nima uchun bor va nimani haqiqatda beradi (Why Review Exists)](01-review-nima-uchun-bor-va-nimani-haqiqatda.md) - 14 bo'lim
+- **2.** [Review iqtisodi: xato narxi, navbat va PR hajmi (The Economics of Review)](02-review-iqtisodi-xato-narxi-navbat-va-pr.md) - 14 bo'lim
 - **3.** [Reviewer ning tahlil apparati: niyat, invariant, xavf yuzasi (The Reviewer's Analytical Apparatus)](03-reviewer-ning-tahlil-apparati-niyat.md) - 11 bo'lim
 - **4.** [Diffni o'qish mexanikasi (Reading a Diff)](04-diffni-oqish-mexanikasi.md) - 11 bo'lim
 - **5.** [Mashina va odam: SonarQube dan oldin topish (Beating the Tools)](05-mashina-va-odam-sonarqube-dan-oldin-topish.md) - 11 bo'lim
@@ -94,9 +94,9 @@ Review izohlari uchun tayyor iboralar oxirgi bobda.
 
 ### IX. Jarayon, madaniyat va o'lchov
 
-- **40.** [Review jarayonini qurish (Building the Process)](40-review-jarayonini-qurish.md) - 10 bo'lim
-- **41.** [Review madaniyati, til va kelishmovchilik (Culture, Language, Disagreement)](41-review-madaniyati-til-va-kelishmovchilik.md) - 10 bo'lim
-- **42.** [Review metrikalari (Measuring Review)](42-review-metrikalari.md) - 8 bo'lim
+- **40.** [Review jarayonini qurish (Building the Process)](40-review-jarayonini-qurish.md) - 15 bo'lim
+- **41.** [Review madaniyati, til va kelishmovchilik (Culture, Language, Disagreement)](41-review-madaniyati-til-va-kelishmovchilik.md) - 14 bo'lim
+- **42.** [Review metrikalari (Measuring Review)](42-review-metrikalari.md) - 11 bo'lim
 - **43.** [AI yozgan kodni review qilish va AI bilan review qilish (Reviewing AI-Generated Code)](43-ai-yozgan-kodni-review-qilish-va-ai-bilan.md) - 9 bo'lim
 - **44.** [Shablonlar, checklistlar va reviewer yetukligi (Templates and Maturity)](44-shablonlar-checklistlar-va-reviewer.md) - 9 bo'lim
 

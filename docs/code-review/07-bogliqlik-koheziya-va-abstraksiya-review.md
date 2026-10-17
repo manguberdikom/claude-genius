@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 7. Bog'liqlik, koheziya va abstraksiya review (Coupling, Cohesion, Abstraction)
 
@@ -327,6 +327,14 @@ grep -rn --include='*.java' -A2 'public .* [a-z].*(' src/main/java/**/service \
 - [ ] Portlardan oqib chiqadigan detallarni toping: `HttpClientErrorException`, `Pageable`, vendor turlari domen interfeyslarida.
 - [ ] Konstruktorida 6 dan ko'p bog'liqlik bo'lgan klasslarni sanab, ularning har bir metodi nechta maydonni ishlatishini tekshiring.
 - [ ] Faqat delegatsiya qiladigan servis qatlamlari va 1:1 mapperlarni toping va olib tashlash taklifini kiritiladigan PR ga qo'shing.
+
+## Manbalar
+
+- Robert C. Martin, *Clean Code*, 10-bob - sinf kichikligi, yagona javobgarlik va koheziya
+- Robert C. Martin, *Clean Code*, 17-bob, G6, G34 - abstraksiya darajasi va bir darajadan pastga tushish
+- Robert C. Martin, *Clean Architecture*, 13-14 bob - komponent kohezi (REP, CCP, CRP) va bog'lanish (ADP, SDP, SAP) printsiplari
+- Joshua Bloch, *Effective Java* 3rd, Item 18 - kompozitsiyani merosdan afzal ko'rish; Item 20 - interfeys va abstrakt sinf
+- [ArchUnit, README](https://raw.githubusercontent.com/TNG/ArchUnit/a0640ffa3ea5806c4fbab0dfbd29e363646d0fa3/README.md) - qatlam va bog'liqlik qoidalarini test sifatida yozish, tsikl tekshiruvi
 
 ---
 

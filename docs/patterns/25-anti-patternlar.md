@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 25. Anti-patternlar (Anti-Patterns)
 
 <details>
-<summary>Bu bobdagi 84 bo'lim</summary>
+<summary>Bu bobdagi 101 bo'lim</summary>
 
 - [25.1 Xudo obyekt (God Object)](#251-xudo-obyekt-god-object)
 - [25.2 Spagetti kod (Spaghetti Code)](#252-spagetti-kod-spaghetti-code)
@@ -92,7 +92,24 @@
 - [25.81 Mo'ri tizim (Stovepipe System)](#2581-mori-tizim-stovepipe-system)
 - [25.82 Katta portlash bilan qayta yozish (Big-Bang Rewrite)](#2582-katta-portlash-bilan-qayta-yozish-big-bang-rewrite)
 - [25.83 Rejalashtirishdan o'lim (Death by Planning)](#2583-rejalashtirishdan-olim-death-by-planning)
-- [25.84 Amalda qo'llash](#2584-amalda-qollash)
+- [25.84 Integratsiya nuqtalari (Integration Points)](#2584-integratsiya-nuqtalari-integration-points)
+- [25.85 Zanjirli reaksiya (Chain Reactions)](#2585-zanjirli-reaksiya-chain-reactions)
+- [25.86 Kaskadli nosozlik (Cascading Failures)](#2586-kaskadli-nosozlik-cascading-failures)
+- [25.87 Foydalanuvchilar (Users)](#2587-foydalanuvchilar-users)
+- [25.88 Bloklangan thread'lar (Blocked Threads)](#2588-bloklangan-threadlar-blocked-threads)
+- [25.89 O'z-o'ziga qilingan hujum (Attacks of Self-Denial)](#2589-oz-oziga-qilingan-hujum-attacks-of-self-denial)
+- [25.90 Masshtab effektlari (Scaling Effects)](#2590-masshtab-effektlari-scaling-effects)
+- [25.91 Nomutanosib sig'imlar (Unbalanced Capacities)](#2591-nomutanosib-sigimlar-unbalanced-capacities)
+- [25.92 Sekin javoblar (Slow Responses)](#2592-sekin-javoblar-slow-responses)
+- [25.93 SLA inversiyasi (SLA Inversion)](#2593-sla-inversiyasi-sla-inversion)
+- [25.94 Cheklanmagan natija to'plami (Unbounded Result Sets)](#2594-cheklanmagan-natija-toplami-unbounded-result-sets)
+- [25.95 Resurs pool uchun kurash (Resource Pool Contention)](#2595-resurs-pool-uchun-kurash-resource-pool-contention)
+- [25.96 Sessiyaning ortiq turishi (Overstaying Sessions)](#2596-sessiyaning-ortiq-turishi-overstaying-sessions)
+- [25.97 Reload tugmasi (The Reload Button)](#2597-reload-tugmasi-the-reload-button)
+- [25.98 Qo'lda yozilgan SQL (Handcrafted SQL)](#2598-qolda-yozilgan-sql-handcrafted-sql)
+- [25.99 Ma'lumotlar bazasi evtrofikatsiyasi (Database Eutrophication)](#2599-malumotlar-bazasi-evtrofikatsiyasi-database-eutrophication)
+- [25.100 Integratsiya nuqtasi latency'si (Integration Point Latency)](#25100-integratsiya-nuqtasi-latencysi-integration-point-latency)
+- [25.101 Amalda qo'llash](#25101-amalda-qollash)
 
 </details>
 
@@ -233,7 +250,7 @@ public record BillingProps(
 
 **Tavsif:** Hard-Coding - muhitga yoki kontekstga bog'liq qiymatni kodning o'ziga yozib qo'yish: URL, host, port, fayl yo'li, kredensial, muhit nomi. Bu ilovani bir muhitdan boshqasiga ko'chirishni imkonsiz qiladi va har bir o'zgarish uchun qayta build va deploy talab qiladi. Kredensiallar qattiq kodlanganda bu to'g'ridan-to'g'ri xavfsizlik hodisasiga aylanadi, chunki sir Git tarixiga abadiy tushadi. Magic String'dan farqi: bu yerda muammo nom emas, qiymatning tashqariga chiqarilmagani.
 
-**Spring'da qayerda uchraydi:** `new RestTemplate()` yoki `RestClient.create("https://api.prod.example.com")` ko'rinishida kodda yozilgan host; `DataSource` bean'ida qattiq yozilgan JDBC URL, foydalanuvchi va parol; `@Value` default qiymatida yashiringan production endpoint. Spring buning uchun to'liq to'plam beradi: `application.yml` + `spring.profiles.active` bilan muhitga qarab ajratish, `@ConfigurationProperties`, `Environment` abstraksiyasi, tashqi konfiguratsiya uchun Spring Cloud Config Server, sirlar uchun `spring-cloud-starter-vault-config` yoki Kubernetes Secret'lari (`spring-cloud-kubernetes-config`), lokal rivojlanish uchun `spring-boot-docker-compose` va `spring-boot-testcontainers` modullari. Spring Boot'ning konfiguratsiya ustuvorligi (environment variable > command line > profile fayli > `application.yml`) aynan shu anti-patternni yechish uchun mavjud.
+**Spring'da qayerda uchraydi:** `new RestTemplate()` yoki `RestClient.create("https://api.prod.example.com")` ko'rinishida kodda yozilgan host; `DataSource` bean'ida qattiq yozilgan JDBC URL, foydalanuvchi va parol; `@Value` default qiymatida yashiringan production endpoint. Spring buning uchun to'liq to'plam beradi: `application.yml` + `spring.profiles.active` bilan muhitga qarab ajratish, `@ConfigurationProperties`, `Environment` abstraksiyasi, tashqi konfiguratsiya uchun Spring Cloud Config Server, sirlar uchun `spring-cloud-starter-vault-config` yoki Kubernetes Secret'lari (`spring-cloud-kubernetes-config`), lokal rivojlanish uchun `spring-boot-docker-compose` va `spring-boot-testcontainers` modullari. Spring Boot'ning konfiguratsiya ustuvorligi aynan shu anti-patternni yechish uchun mavjud, lekin tartibni to'g'ri biling: command line argumentlari OS environment variable'dan YUQORI turadi (tartib yuqoridan pastga: command line, `SPRING_APPLICATION_JSON`, ServletConfig/ServletContext, JNDI, Java system property, OS environment variable, keyin profile-specific fayl, oxirida oddiy `application.yml`). Ya'ni muhit o'zgaruvchisi bilan qo'yilgan qiymatni `--app.url=...` argumenti bosib ketadi, teskarisi emas.
 
 **Qo'llanish keyslari:**
 - Integratsiya testida `jdbc:postgresql://localhost:5432/dev` yozilgan, CI muhitida test ishlamaydi.
@@ -351,7 +368,7 @@ public void process(Order o) {
 
 **Tavsif:** Bitta interfeys juda ko'p metodga ega bo'lib ketadi va implementatsiya qiluvchilar o'zlariga kerak bo'lmagan metodlarni ham amalga oshirishga majbur bo'ladi. Bu SOLID'ning Interface Segregation Principle (ISP) buzilishi hisoblanadi. Ko'pincha "universal servis" yoki "god interface" sifatida o'sadi: har bir yangi talab shu interfeysga yana bitta metod qo'shadi. Oqibatda mock yozish qiyinlashadi, implementatsiyalar `UnsupportedOperationException` bilan to'lib ketadi.
 
-**Spring'da qayerda uchraydi:** Spring Data'ning `JpaRepository` o'zi 20+ metodni olib keladi (`findAll`, `deleteAllInBatch`, `flush`, `saveAllAndFlush`) - read-only aggregate uchun bu ortiqcha; buning yechimi `Repository<T, ID>` yoki `CrudRepository` o'rniga faqat kerakli metodlarni e'lon qiladigan o'z interfeysingiz. Spring Framework o'zi ISP'ga yaxshi misol: `BeanFactory`, `ApplicationEventPublisher`, `EnvironmentCapable`, `ResourceLoader` alohida interfeyslar bo'lib, `ApplicationContext` ularni kompozitsiya qiladi. Java 8+ `default` metodlari bu muammoni yumshatadi - `WebMvcConfigurer` va `HandlerInterceptor` barcha metodlarini `default` qilgani uchun implementatsiya faqat kerakligini override qiladi (eski `WebMvcConfigurerAdapter` Spring 5'dan deprecated). `@RepositoryDefinition` annotatsiyasi ham tor repository e'lon qilish imkonini beradi.
+**Spring'da qayerda uchraydi:** Spring Data'ning `JpaRepository` o'zi 20+ metodni olib keladi (`findAll`, `deleteAllInBatch`, `flush`, `saveAllAndFlush`) - read-only aggregate uchun bu ortiqcha; buning yechimi `Repository<T, ID>` yoki `CrudRepository` o'rniga faqat kerakli metodlarni e'lon qiladigan o'z interfeysingiz. Spring Framework o'zi ISP'ga yaxshi misol: `BeanFactory`, `ApplicationEventPublisher`, `EnvironmentCapable`, `ResourceLoader` alohida interfeyslar bo'lib, `ApplicationContext` ularni kompozitsiya qiladi. Java 8+ `default` metodlari bu muammoni yumshatadi - `WebMvcConfigurer` va `HandlerInterceptor` barcha metodlarini `default` qilgani uchun implementatsiya faqat kerakligini override qiladi (eski `WebMvcConfigurerAdapter` Spring 5 da deprecated qilingan va Spring Framework 7 da butunlay olib tashlangan). `@RepositoryDefinition` annotatsiyasi ham tor repository e'lon qilish imkonini beradi.
 
 **Qo'llanish keyslari:**
 - Read-only `ProductCatalogQuery` interfeysini `JpaRepository` o'rniga faqat `findBySku` va `findActive` metodlari bilan e'lon qilish.
@@ -366,7 +383,7 @@ public void process(Order o) {
 
 **Tavsif:** Obyekt metodlari faqat ma'lum tartibda chaqirilganda to'g'ri ishlaydi, lekin bu tartib API'da hech qanday tarzda majburlanmagan. Klient `init()` → `configure()` → `execute()` ketma-ketligini eslab qolishga majbur, aks holda `IllegalStateException` yoki jim buzilish yuz beradi. Bu "temporal coupling" deb ham ataladi va holatni (state) tashqariga oshkor qiladigan mutable obyektlarda ko'p uchraydi. Yechim - konstruktorda to'liq initsializatsiya, builder pattern yoki template method bilan tartibni kodning o'zida qulflash.
 
-**Spring'da qayerda uchraydi:** Spring o'zi bu muammoni lifecycle callback'lari bilan boshqaradi: `InitializingBean.afterPropertiesSet()`, `@PostConstruct` (`jakarta.annotation.PostConstruct`), `SmartInitializingSingleton.afterSingletonsInstantiated()` va `DisposableBean.destroy()`. Mutable konteyner API'larida tartib muhim: `GenericApplicationContext`da `registerBean(...)` chaqiruvlari `refresh()`dan oldin bo'lishi shart, aks holda `IllegalStateException` otiladi. `RestTemplateBuilder` va `WebClient.Builder` immutable builder bo'lgani uchun xavfsiz, lekin xom `RestTemplate`ga `setInterceptors` chaqirish ishlatilgandan keyin ta'sir qilmaydi. `MockMvc` va `RestClient.Builder` zanjirlari ham `build()`dan keyin o'zgartirishni qabul qilmaydi. `@Transactional` metod ichida `EntityManager.flush()` tartibiga tayanadigan kod ham shu anti-patternning ko'rinishi.
+**Spring'da qayerda uchraydi:** Spring o'zi bu muammoni lifecycle callback'lari bilan boshqaradi: `InitializingBean.afterPropertiesSet()`, `@PostConstruct` (`jakarta.annotation.PostConstruct`), `SmartInitializingSingleton.afterSingletonsInstantiated()` va `DisposableBean.destroy()`. Mutable konteyner API'larida tartib muhim: `GenericApplicationContext`da `registerBean(...)` chaqiruvlari `refresh()`dan oldin bo'lishi kerak. Diqqat: `refresh()`dan keyin chaqirsangiz `IllegalStateException` otilmaydi - `DefaultListableBeanFactory` bean yaratish boshlangandan keyin copy-on-write yo'liga o'tadi va ro'yxatga olishni qabul qiladi. Shuning uchun xato jim qoladi: bean ro'yxatda paydo bo'ladi, lekin konteyner lifecycle'ining bir qismidan o'tmay qolishi mumkin. `IllegalStateException` esa `refresh()` ikki marta chaqirilganda otiladi. `RestTemplateBuilder` va `WebClient.Builder` immutable builder bo'lgani uchun xavfsiz, lekin xom `RestTemplate`ga `setInterceptors` chaqirish ishlatilgandan keyin ta'sir qilmaydi. `MockMvc` va `RestClient.Builder` zanjirlari ham `build()`dan keyin o'zgartirishni qabul qilmaydi. `@Transactional` metod ichida `EntityManager.flush()` tartibiga tayanadigan kod ham shu anti-patternning ko'rinishi.
 
 **Qo'llanish keyslari:**
 - `@PostConstruct` o'rniga konstruktor injection ishlatib, bean yaratilgan payti to'liq valid bo'lishini ta'minlash.
@@ -513,7 +530,7 @@ public record Money(BigDecimal amount, Currency currency) {
 
 ## 25.26 Singleton'dan Suiiste'mol / Statik Yopishqoqlik (Singleton abuse / Static Cling)
 
-**Tavsif:** Global holat va statik metodlarga tayanish: `MyUtil.getInstance()`, statik mutable maydonlar, statik servis lokatori. Bu bog'liqliklarni yashiradi (konstruktorda ko'rinmaydi), test izolyatsiyasini buzadi (testlar bir-biriga holat orqali ta'sir qiladi), mock qilishni qiyinlashtiradi va konkurensiya xatolarini keltiradi. "Static cling" - kod statik chaqiruvga shunday mahkam yopishib qolgani sababli uni almashtirib bo'lmasligi. Yechim - Dependency Injection: bog'liqlikni konstruktor orqali oshkor qilish.
+**Tavsif:** Global holat va statik metodlarga tayanish: `MyUtil.getInstance()`, statik mutable maydonlar, statik servis lokatori. Bu bog'liqliklarni yashiradi (konstruktorda ko'rinmaydi), test izolyatsiyasini buzadi (testlar bir-biriga holat orqali ta'sir qiladi), mock qilishni qiyinlashtiradi va konkurensiya xatolarini keltiradi. "Static cling" - kod statik chaqiruvga shunday mahkam yopishib qolgani sababli uni almashtirib bo'lmasligi. Yechim - Dependency Injection: bog'liqlikni konstruktor orqali oshkor qilish. Legacy kodda bu yechim bitta qadamda bajarilmaydi: testsiz sinfda konstruktorni o'zgartirish xatti-harakatni buzish xavfini tug'diradi. Feathers oraliq qadamlarni beradi: birga ishlatiladigan globallarni sinfga yig'ish (Encapsulate Global References), global murojaatni override qilinadigan getter ortiga olish (Replace Global Reference with Getter), instance holatiga tegmaydigan metodni `static` qilib ajratish (Expose Static Method), statik utility ga delegat instance metod qo'shish (Introduce Instance Delegator) va singleton nusxasini almashtirish uchun statik setter kiritish (Introduce Static Setter). Bu texnikalarning katalog yozuvi, Java misoli va qachon ishlatilmasligi [global murojaatni testga ochish](23-testing-patternlari.md#2384-global-murojaatni-testga-ochish-encapsulate-global-references--replace-global-reference-with-getter) va [statik metodni test uchun ochish](23-testing-patternlari.md#2385-statik-metodni-test-uchun-ochish-expose-static-method--introduce-instance-delegator--introduce-static-setter) da; hammasi vaqtinchalik seam, manzil hali ham konstruktor injection (Feathers, *Working Effectively with Legacy Code*, Prentice Hall PTR, 2004 (copyright 2005), 25-bob, 339, 345, 369, 372 va 399-bet).
 
 **Spring'da qayerda uchraydi:** Spring'ning bean'lari default `singleton` scope'da - bu GoF Singleton pattern'i emas, balki konteyner boshqaradigan, inyeksiya qilinadigan va test'da almashtiriladigan nusxa; shuning uchun o'z `getInstance()`ingiz kerak emas. Xavfli naqshlar: statik `ApplicationContextProvider implements ApplicationContextAware` orqali `context.getBean(...)` chaqirish (Service Locator anti-pattern), `SecurityContextHolder.getContext()`ni domen qatlamida to'g'ridan-to'g'ri ishlatish (`ThreadLocal`ga bog'lanish, virtual thread va reaktiv kontekstda muammoli - reaktivda `ReactiveSecurityContextHolder`), singleton bean ichida mutable instance maydon saqlash (thread-safety buzilishi; `@Scope("prototype")`, `@RequestScope` yoki stateless dizayn kerak). Statik vaqt uchun `LocalDate.now()` o'rniga `java.time.Clock` bean'ini inyeksiya qilish test qilishni osonlashtiradi (`Clock.fixed(...)`). Statik yordamchilar faqat toza funksiya bo'lsa maqbul: `StringUtils`, `Objects.requireNonNull`, `Assert.notNull`.
 
@@ -545,7 +562,7 @@ public record Money(BigDecimal amount, Currency currency) {
 
 **Tavsif:** `boolean` parametr yoki qaytaruvchi qiymat ma'noni yo'qotadi: `true`/`false` o'zi hech narsa aytmaydi va chaqiruv joyida `process(order, true, false, true)` ko'rinishidagi o'qib bo'lmaydigan kod paydo bo'ladi. Bir xil tipdagi flag'larni almashtirib qo'ysangiz, kompilyator jim turadi. Bundan tashqari, `boolean` faqat ikki holatni ifodalaydi - talab uchinchi holatni (masalan "noma'lum") qo'shsa, kod `Boolean` null bilan yoki qo'shimcha flag bilan buziladi. Yechim - `enum`, sealed interface, `Optional`, yoki flag'ni alohida nomlangan metodga ajratish.
 
-**Spring'da qayerda uchraydi:** Java standart kutubxonasi va Spring bunga yaxshi misollar beradi: `Collectors.partitioningBy` o'rniga `groupingBy` + `enum`, `Boolean` o'rniga `java.time`ning `DayOfWeek` kabi aniq tiplari. Spring API'larida `boolean` flag'lar `enum`ga ko'chirilgan: `FetchType.LAZY/EAGER`, `Propagation.REQUIRED/REQUIRES_NEW`, `Isolation`, `MediaType`, `HttpStatus`, `RoundingMode`. Java 17+ sealed interface va pattern matching `switch` bilan natija turlarini `boolean` o'rniga aniq modellashtirish mumkin: `sealed interface PaymentResult permits Approved, Declined, Pending`. Metod darajasida flag o'rniga ikki metod to'g'riroq: `@Transactional(readOnly = true)` kabi framework flag'lari o'rinli, lekin domen metodida `save(order, true)` emas, `saveDraft(order)` va `publish(order)` bo'lishi kerak. Bean Validation'da `Boolean` uch holatli bo'lib qolmasligi uchun `@NotNull` majburlash, DTO'larda esa `Optional<Boolean>` o'rniga `enum` ishlatish tavsiya etiladi.
+**Spring'da qayerda uchraydi:** Java standart kutubxonasi va Spring bunga yaxshi misollar beradi: `Collectors.partitioningBy` o'rniga `groupingBy` + `enum`, `Boolean` o'rniga `java.time`ning `DayOfWeek` kabi aniq tiplari. Spring API'larida `boolean` flag'lar `enum`ga ko'chirilgan: `FetchType.LAZY/EAGER`, `Propagation.REQUIRED/REQUIRES_NEW`, `Isolation`, `HttpStatus`, `RoundingMode` (`MediaType` esa `enum` emas, oddiy sinf - lekin u ham `String` literal o'rniga tiplangan konstantalar beradi). Java 17+ sealed interface va pattern matching `switch` bilan natija turlarini `boolean` o'rniga aniq modellashtirish mumkin: `sealed interface PaymentResult permits Approved, Declined, Pending`. Metod darajasida flag o'rniga ikki metod to'g'riroq: `@Transactional(readOnly = true)` kabi framework flag'lari o'rinli, lekin domen metodida `save(order, true)` emas, `saveDraft(order)` va `publish(order)` bo'lishi kerak. Bean Validation'da `Boolean` uch holatli bo'lib qolmasligi uchun `@NotNull` majburlash, DTO'larda esa `Optional<Boolean>` o'rniga `enum` ishlatish tavsiya etiladi.
 
 **Qo'llanish keyslari:**
 - `sendEmail(user, true, false)` → `sendEmail(user, EmailFormat.HTML, Tracking.DISABLED)`.
@@ -575,7 +592,7 @@ public record Money(BigDecimal amount, Currency currency) {
 
 **Tavsif:** Spring'ning AOP-asosidagi annotatsiyalari proxy orqali ishlaydi: tashqi chaqiruvchi proxy'ga murojaat qiladi, proxy esa interceptor zanjirini ishga tushirib, keyin haqiqiy obyektni chaqiradi. Agar bean o'z metodini `this.method()` orqali chaqirsa, chaqiruv proxy'dan o'tmaydi va annotatsiya butunlay e'tiborsiz qoladi. Shu sababli `@Transactional`, `@Cacheable`, `@Async`, `@Retryable`, `@PreAuthorize` indamay ishlamay qo'yadi - exception ham, warning ham bo'lmaydi. Bu Spring'dagi eng ko'p takrorlanadigan "jim xato".
 
-**Spring'da qayerda uchraydi:** `JdkDynamicAopProxy` va CGLIB-asosidagi `ObjenesisCglibAopProxy`, `TransactionInterceptor`, `CacheInterceptor`, `AsyncAnnotationAdvisor` - barchasi proxy darajasida tutadi. Yechimlar: dependency'ni ikkita bean'ga ajratish; `@EnableAspectJAutoProxy(exposeProxy = true)` bilan `AopContext.currentProxy()`; `ObjectProvider<SelfType>` yoki `@Lazy` bilan o'ziga reference olish; yoki `@EnableTransactionManagement(mode = AdviceMode.ASPECTJ)` bilan compile/load-time weaving. Spring Framework 6.x'da bu semantika o'zgarmagan va `TransactionalProxyTests` hali ham shu xatti-harakatni tasdiqlaydi.
+**Spring'da qayerda uchraydi:** `JdkDynamicAopProxy` va CGLIB-asosidagi `ObjenesisCglibAopProxy`, `TransactionInterceptor`, `CacheInterceptor`, `AsyncAnnotationAdvisor` - barchasi proxy darajasida tutadi. Yechimlar: dependency'ni ikkita bean'ga ajratish; `@EnableAspectJAutoProxy(exposeProxy = true)` bilan `AopContext.currentProxy()`; `ObjectProvider<SelfType>` yoki `@Lazy` bilan o'ziga reference olish; yoki `@EnableTransactionManagement(mode = AdviceMode.ASPECTJ)` bilan compile/load-time weaving. Bu semantika Spring Framework 7 da ham o'zgarmagan: rasmiy hujjat proxy rejimida faqat tashqaridan kelgan chaqiruv ushlanishini aniq yozadi.
 
 **Qo'llanish keyslari:**
 - Service ichidagi public `importAll()` metodi har bir qator uchun `this.saveOne()` (`@Transactional(propagation = REQUIRES_NEW)`) ni chaqiradi - har biri alohida transaction bo'lishi kutilgan, lekin hammasi bitta transaction'da ketadi.
@@ -607,7 +624,7 @@ Mavzuning to'liq yozuvi [transactional self-invocation](../architect/19-spring-t
 
 **Tavsif:** Hibernate sessiyasi (yoki JPA `EntityManager`) HTTP so'rov tugaguniga qadar ochiq qoldiriladi, shunda view yoki serializer lazy collection'larni kerak bo'lganda yuklay oladi. Bu `LazyInitializationException`'ni "hal qiladi", lekin aslida uni yashiradi: DB chaqiruvlari service qatlamidan chiqib, rendering vaqtiga tarqaladi. Natijada N+1 so'rovlar nazoratdan chiqadi, DB connection har bir so'rov davomida ushlab turiladi va transaction chegaralari tushunarsiz bo'lib qoladi. Bugun bu Spring hamjamiyatida ochiq anti-pattern deb tan olingan.
 
-**Spring'da qayerda uchraydi:** `OpenEntityManagerInViewInterceptor` va `OpenEntityManagerInViewFilter` (JPA), `OpenSessionInViewFilter` (Hibernate native). Spring Boot'da `spring.jpa.open-in-view` property'si standart holda `true` bo'lib, startup'da `JpaBaseConfiguration` WARN log yozadi: uni `false` qilib qo'yish deyarli har doim to'g'ri. O'rniga DTO projection (`interface`-based yoki `record`-based Spring Data projection), `JOIN FETCH` bilan JPQL, `@EntityGraph`, yoki `Hibernate.initialize()` service ichida ishlatiladi.
+**Spring'da qayerda uchraydi:** `OpenEntityManagerInViewInterceptor` va `OpenEntityManagerInViewFilter` (JPA). Eski `OpenSessionInViewFilter` Hibernate native Session uchun edi va Spring Framework 7 da `spring-orm` dan olib tashlangan, shuning uchun yangi kodda faqat JPA variantlari uchraydi. Spring Boot'da `spring.jpa.open-in-view` property'si standart holda `true` bo'lib, startup'da `JpaBaseConfiguration` WARN log yozadi - lekin bu WARN faqat property umuman yozilmaganda chiqadi, ya'ni `true` ni aniq yozib qo'ysangiz ogohlantirish yo'qoladi va muammo ko'rinmas bo'lib qoladi. Uni `false` qilib qo'yish deyarli har doim to'g'ri. O'rniga DTO projection (`interface`-based yoki `record`-based Spring Data projection), `JOIN FETCH` bilan JPQL, `@EntityGraph`, yoki `Hibernate.initialize()` service ichida ishlatiladi.
 
 **Qo'llanish keyslari:**
 - Thymeleaf/JSP template `${order.items}` ni iterate qilib, har bir satr uchun yangi SELECT yuborishi.
@@ -712,7 +729,7 @@ Mavzuning to'liq yozuvi [transactional self-invocation](../architect/19-spring-t
 
 **Tavsif:** `@Profile` annotatsiyasi konfiguratsiya farqlarini boshqarish uchun haddan tashqari ko'p ishlatilib, o'nlab profil va ularning kombinatsiyalari paydo bo'ladi (`dev`, `qa`, `staging`, `prod`, `prod-eu`, `no-kafka`, `mock-payments`). Natijada hech kim qaysi profil to'plamida qaysi bean aktiv bo'lishini aniq bilmaydi va production konfiguratsiyasi faqat deploy paytida tekshiriladi. Profil bo'yicha shartli bean'lar kod bazasiga tarqalib, muhitlar orasidagi xatti-harakat farqi kodning o'zida yashiringan bo'ladi. Testda esa bitta yetishmagan profil butunlay boshqa bean grafikasini beradi.
 
-**Spring'da qayerda uchraydi:** `@Profile`, `spring.profiles.active`, `spring.profiles.group` (Spring Boot 2.4+), `application-{profile}.yml`, `@ActiveProfiles` testlarda. Spring Boot 2.4'dan `spring.profiles.include` o'rniga `spring.config.import` va profil guruhlari tavsiya etiladi; `spring.config.activate.on-profile` esa YAML hujjat ichida shartli blok yozishga imkon beradi. Toza alternativalar: oddiy `@ConfigurationProperties` qiymatlari bilan boshqarish, `@ConditionalOnProperty` orqali xususiyat (feature) flag'lari, tashqi konfiguratsiya (Spring Cloud Config, Kubernetes ConfigMap/Secret) va `Environment` abstraksiyasi.
+**Spring'da qayerda uchraydi:** `@Profile`, `spring.profiles.active`, `spring.profiles.group` (Spring Boot 2.4+), `application-{profile}.yml`, `@ActiveProfiles` testlarda. `spring.profiles.include` hamon ishlaydi va deprecated emas, lekin Boot 2.4+ da ko'p holatda `spring.profiles.group` (profil guruhlari) yoki `spring.config.import` aniqroq yechim beradi; `spring.config.activate.on-profile` esa YAML hujjat ichida shartli blok yozishga imkon beradi. Toza alternativalar: oddiy `@ConfigurationProperties` qiymatlari bilan boshqarish, `@ConditionalOnProperty` orqali xususiyat (feature) flag'lari, tashqi konfiguratsiya (Spring Cloud Config, Kubernetes ConfigMap/Secret) va `Environment` abstraksiyasi.
 
 **Qo'llanish keyslari:**
 - `@Profile("!prod")` bilan yozilgan mock bean tasodifan production'da aktiv bo'lib qolishi (profil nomi o'zgargani uchun).
@@ -789,7 +806,7 @@ Mavzuning to'liq yozuvi arxitektor hujjatidagi [N+1 so'rov muammosi](../architec
 
 **Tavsif:** Entity'da optimistic locking maydoni bo'lmasa, bir vaqtda ikki transaction bir xil satrni o'qib, o'zgartirib, saqlaganda oxirgi yozuv birinchisini jimgina yo'q qiladi - klassik "lost update". Hech qanday xato tashlanmaydi, shuning uchun ma'lumot yo'qolishi faqat biznes shikoyati orqali bilinadi. `@Version` maydoni har `UPDATE` da `WHERE version = ?` shartini qo'shib, konfliktni aniq xatoga aylantiradi.
 
-**Spring'da qayerda uchraydi:** JPA entity'da `@Version` bilan `int`/`long`/`short` yoki `java.time.Instant` maydoni. Konflikt yuz berganda Hibernate `StaleObjectStateException` tashlaydi, Spring uni `ObjectOptimisticLockingFailureException` ga tarjima qiladi. Spring Data JPA `save()` da `@Version == null` bo'lsa yangi entity deb hisoblaydi (`JpaEntityInformation` orqali). Retry uchun Spring Retry'ning `@Retryable(retryFor = OptimisticLockingFailureException.class)`, agar kuchli kafolat kerak bo'lsa `@Lock(LockModeType.PESSIMISTIC_WRITE)` ishlatiladi.
+**Spring'da qayerda uchraydi:** JPA entity'da `@Version` bilan `int`/`long`/`short` yoki `java.time.Instant` maydoni. Konflikt yuz berganda Hibernate `StaleObjectStateException` tashlaydi, Spring uni `ObjectOptimisticLockingFailureException` ga tarjima qiladi. Spring Data JPA `save()` da `@Version == null` bo'lsa yangi entity deb hisoblaydi (`JpaEntityInformation` orqali). Retry uchun `spring-retry` kutubxonasining `@Retryable(retryFor = OptimisticLockingFailureException.class)` (diqqat: Spring Framework 7 ning o'zida ham `org.springframework.resilience.annotation.Retryable` paydo bo'ldi, lekin uning atributlari boshqacha - `retryFor` emas, `includes`/`excludes`/`maxRetries`; ikkisini aralashtirmang), agar kuchli kafolat kerak bo'lsa `@Lock(LockModeType.PESSIMISTIC_WRITE)` ishlatiladi.
 
 **Qo'llanish keyslari:**
 - Hisob balansi yoki ombor qoldig'i ikki parallel buyurtma tomonidan bir vaqtda kamaytirilganda qoldiq noto'g'ri chiqadi.
@@ -804,7 +821,7 @@ Mavzuning to'liq yozuvi arxitektor hujjatidagi [N+1 so'rov muammosi](../architec
 
 **Tavsif:** Testlar in-memory H2 da (yoki HSQLDB da) ishlatiladi, production esa PostgreSQL yoki Oracle da turadi. H2 ning SQL dialekti, tip tizimi, locking semantikasi va index xatti-harakati boshqa - shuning uchun testlar yashil bo'lsa ham production'da xato chiqadi. Bu yolg'on ishonch beradigan anti-pattern: migratsiyalar, JSON/array ustunlar, window funksiyalar va `ON CONFLICT` kabi narsalar hech qachon haqiqiy DB'da sinalmaydi.
 
-**Spring'da qayerda uchraydi:** `@DataJpaTest` ning default `@AutoConfigureTestDatabase(replace = ANY)` xatti-harakati H2 ga almashtiradi. To'g'ri yondashuv - Testcontainers (Boot 3.5 / TC 1.x da `org.testcontainers:postgresql`, Boot 4 / TC 2.x da `org.testcontainers:testcontainers-postgresql`, qarang: [testlash hujjatidagi Testcontainers asoslari](../testing/08-testcontainers-bilan-real-infratuzilmada.md#82-testcontainers-asoslari-docker-api-ustida-hayot-aylanishi)) bilan `@Testcontainers` + `@Container PostgreSQLContainer<?>` (TC 2.x da generiksiz `org.testcontainers.postgresql.PostgreSQLContainer`) va Spring Boot 3.1+ dagi `@ServiceConnection` annotatsiyasi, yoki `spring-boot-testcontainers` moduli hamda `@DynamicPropertySource`. Shuningdek `@AutoConfigureTestDatabase(replace = NONE)` bilan real DB'ga ulanib, Flyway/Liquibase migratsiyalarini tekshirish mumkin.
+**Spring'da qayerda uchraydi:** `@DataJpaTest` DataSource'ni avtomatik almashtiradi, lekin default `ANY` emas: `@AutoConfigureTestDatabase` ning default qiymati `Replace.NON_TEST`, ya'ni faqat test uchun mo'ljallanmagan DataSource almashtiriladi. Testcontainers, `@ServiceConnection` yoki `@DynamicPropertySource` orqali bergan DB'ingiz esa o'z joyida qoladi - shuning uchun "@DataJpaTest doim H2 ga o'tkazadi" degan tasavvur noto'g'ri, H2 ga o'tish faqat oddiy, test bo'lmagan DataSource da yuz beradi. To'g'ri yondashuv - Testcontainers (Boot 3.5 / TC 1.x da `org.testcontainers:postgresql`, Boot 4 / TC 2.x da `org.testcontainers:testcontainers-postgresql`, qarang: [testlash hujjatidagi Testcontainers asoslari](../testing/08-testcontainers-bilan-real-infratuzilmada.md#82-testcontainers-asoslari-docker-api-ustida-hayot-aylanishi)) bilan `@Testcontainers` + `@Container PostgreSQLContainer<?>` (TC 2.x da generiksiz `org.testcontainers.postgresql.PostgreSQLContainer`) va Spring Boot 3.1+ dagi `@ServiceConnection` annotatsiyasi, yoki `spring-boot-testcontainers` moduli hamda `@DynamicPropertySource`. Shuningdek `@AutoConfigureTestDatabase(replace = NONE)` bilan real DB'ga ulanib, Flyway/Liquibase migratsiyalarini tekshirish mumkin.
 
 **Qo'llanish keyslari:**
 - PostgreSQL `jsonb` ustuni yoki `text[]` massiv mapping'i H2 da umuman ishlamaydi, Testcontainers'da esa real tekshiriladi.
@@ -862,7 +879,7 @@ Mavzuning to'liq yozuvi arxitektor hujjatidagi [N+1 so'rov muammosi](../architec
 
 ## 25.49 Executor sozlanmagan @Async (@Async Without Executor Configuration)
 
-**Tavsif:** `@Async` ni executor ko'rsatmasdan ishlatish Spring'ni default executor'ga tayanishga majbur qiladi - bu qaysi thread'larda, qancha parallellik bilan va qanday navbat bilan ishlashini nazoratsiz qoldiradi. Natijada yoki cheksiz thread yaratiladi, yoki navbat cheksiz o'sib OOM beradi, yoki task'lar jimgina tashlanadi. Shuningdek default holatda `SecurityContext`, `MDC` va request-scoped kontekst asinxron thread'ga ko'chmaydi.
+**Tavsif:** `@Async` ni executor ko'rsatmasdan ishlatish Spring'ni default executor'ga tayanishga majbur qiladi - bu qaysi thread'larda, qancha parallellik bilan va qanday navbat bilan ishlashini nazoratsiz qoldiradi. Spring executor'ni shu tartibda tanlaydi: yagona `TaskExecutor` bean, keyin `taskExecutor` nomli `Executor` bean, keyin esa yangi `SimpleAsyncTaskExecutor` - oxirgisi har task uchun yangi thread yaratadi va hech qanday chegara qo'ymaydi. Spring Boot ilovasida esa odatda uchinchi holatga yetilmaydi: Boot `applicationTaskExecutor` ni avtomatik beradi (`ThreadPoolTaskExecutor`, core 8 thread, navbat sig'imi `Integer.MAX_VALUE`). Ya'ni Boot'da xavf cheksiz thread emas, cheksiz NAVBAT: yuklama core'dan oshsa task'lar xotirada to'planadi va OOM gacha boradi, javob vaqti esa jimgina o'sadi. Shuningdek default holatda `SecurityContext`, `MDC` va request-scoped kontekst asinxron thread'ga ko'chmaydi (`spring.task.execution.propagate-context` default `false`).
 
 **Spring'da qayerda uchraydi:** `@EnableAsync` + `@Async("taskExecutor")`. Spring Boot 3.x da `spring.task.execution.*` property'lari (`pool.core-size`, `pool.max-size`, `pool.queue-capacity`, `shutdown.await-termination`) `ThreadPoolTaskExecutor` ni sozlaydi; Boot 3.2+ da `spring.threads.virtual.enabled=true` bo'lsa `SimpleAsyncTaskExecutor` virtual thread'lar bilan ishlaydi. Kontekst uzatish uchun `DelegatingSecurityContextAsyncTaskExecutor`, `TaskDecorator` (MDC uchun), xatolar uchun `AsyncUncaughtExceptionHandler` va `AsyncConfigurer` interfeysi mavjud.
 
@@ -873,13 +890,13 @@ Mavzuning to'liq yozuvi arxitektor hujjatidagi [N+1 so'rov muammosi](../architec
 - `TaskDecorator` orqali `traceId` ni MDC'da saqlab, async log'larni distributed trace bilan bog'lash.
 - Graceful shutdown'da `spring.task.execution.shutdown.await-termination=true` bilan yarim bajarilgan task'lar yo'qolishini oldini olish.
 
-**Ehtiyot bo'ling:** `@Async` metodni bir xil bean ichidan chaqirsangiz proxy chetlab o'tiladi va metod sinxron ishlaydi; `void` qaytaradigan async metodda tashlangan exception esa `AsyncUncaughtExceptionHandler` bo'lmasa butunlay yo'qoladi. Bitta umumiy executor'dan hamma narsa uchun foydalanish esa bir sekin task'ning butun ilovani bloklashiga olib keladi.
+**Ehtiyot bo'ling:** `@Async` metodni bir xil bean ichidan chaqirsangiz proxy chetlab o'tiladi va metod sinxron ishlaydi; `void` qaytaradigan async metodda tashlangan exception chaqiruvchiga yetib bormaydi, lekin butunlay yo'qolmaydi: `AsyncUncaughtExceptionHandler` bermasangiz default `SimpleAsyncUncaughtExceptionHandler` ishlaydi va uni ERROR darajasida log'ga yozadi. Ya'ni muammo xatoning yo'qolishi emas, uning faqat log'da qolib, biznes oqimiga va metrikaga ta'sir qilmasligi - shuning uchun o'z handler'ingizni yozib, xatoni metrika yoki alert bilan bog'lang. Bitta umumiy executor'dan hamma narsa uchun foydalanish esa bir sekin task'ning butun ilovani bloklashiga olib keladi.
 
 ## 25.50 rollbackFor'siz checked exception (Checked Exception Without rollbackFor)
 
 **Tavsif:** Spring'ning deklarativ tranzaksiya menejeri default holatda faqat `RuntimeException` va `Error` da rollback qiladi; checked exception'da tranzaksiya commit bo'ladi. Shuning uchun `throws IOException` tashlagan metod yarim bajarilgan ma'lumotni DB'ga yozib yuborishi mumkin. Bu jimgina ma'lumot buzilishiga olib keladigan eng ko'p uchraydigan Spring tuzog'i.
 
-**Spring'da qayerda uchraydi:** `@Transactional(rollbackFor = Exception.class)` yoki `noRollbackFor` atributi; past darajada `org.springframework.transaction.interceptor.DefaultTransactionAttribute#rollbackOn` shu qoidani belgilaydi. Imperativ variantda `TransactionTemplate` ichida `TransactionStatus#setRollbackOnly()` chaqirish mumkin. Spring Framework 6.x da `@Transactional` ni `jakarta.transaction.Transactional` bilan almashtirish ham mumkin, lekin uning `rollbackOn` semantikasi farq qiladi - shuni bilib ishlash kerak.
+**Spring'da qayerda uchraydi:** `@Transactional(rollbackFor = Exception.class)` yoki `noRollbackFor` atributi; past darajada `org.springframework.transaction.interceptor.DefaultTransactionAttribute#rollbackOn` shu qoidani belgilaydi. Imperativ variantda `TransactionTemplate` ichida `TransactionStatus#setRollbackOnly()` chaqirish mumkin. `@Transactional` ni `jakarta.transaction.Transactional` bilan almashtirish ham mumkin: Spring uni `JtaTransactionAnnotationParser` orqali o'qiydi va qoida berilmaganda xuddi shu default'ga qaytadi (faqat `RuntimeException` va `Error` rollback qiladi). Farq semantikada emas, atribut nomlarida: `rollbackFor`/`noRollbackFor` o'rniga `rollbackOn`/`dontRollbackOn` yoziladi.
 
 **Qo'llanish keyslari:**
 - Fayl yuklash + DB yozuvi bir tranzaksiyada: `IOException` da yozuv commit bo'lib "orphan" record qoladi.
@@ -924,7 +941,7 @@ Mavzuning to'liq yozuvi arxitektor hujjatidagi [N+1 so'rov muammosi](../architec
 
 **Tavsif:** Konfiguratsiya yuzlab nomsiz `@Value("${...}")` injection'lari sifatida kod bo'ylab tarqalib ketadi: bir xil property bir nechta joyda, turli default qiymatlar bilan o'qiladi, nomlash konvensiyasi yo'q, validatsiya yo'q. Natijada noto'g'ri yoki yetishmayotgan konfiguratsiya faqat runtime'da, ko'pincha production'da aniqlanadi. Hech kim ilovaning haqiqiy konfiguratsiya sirtini (surface) bilmaydi.
 
-**Spring'da qayerda uchraydi:** `@ConfigurationProperties(prefix = "app.billing")` + `@EnableConfigurationProperties` yoki `@ConfigurationPropertiesScan`, Java `record` yoki immutable klass bilan constructor binding. Validatsiya uchun `@Validated` + Jakarta Bean Validation (`@NotBlank`, `@Min`, `@DurationUnit`). Qo'shimcha: `spring-boot-configuration-processor` metadata generatsiyasi (IDE autocomplete), profile'lar va `spring.config.import`, Actuator `/actuator/configprops` va `/actuator/env` endpoint'lari, hamda `spring.config.activate.on-profile` bilan muhit-ga xos qiymatlar.
+**Spring'da qayerda uchraydi:** `@ConfigurationProperties(prefix = "app.billing")` + `@EnableConfigurationProperties` yoki `@ConfigurationPropertiesScan`, Java `record` yoki immutable klass bilan constructor binding. Validatsiya uchun `@Validated` + Jakarta Bean Validation (`@NotBlank`, `@Min`). `@DurationUnit` esa validatsiya constraint'i emas, Boot'ning binding annotatsiyasi: u raqamga qanday vaqt birligi qo'llanishini aytadi, qiymatni tekshirmaydi. Qo'shimcha: `spring-boot-configuration-processor` metadata generatsiyasi (IDE autocomplete), profile'lar va `spring.config.import`, Actuator `/actuator/configprops` va `/actuator/env` endpoint'lari, hamda `spring.config.activate.on-profile` bilan muhit-ga xos qiymatlar.
 
 **Qo'llanish keyslari:**
 - Barcha billing sozlamalarini bitta `BillingProperties` record'ga yig'ib, `@Validated` bilan ishga tushishda fail-fast qilish.
@@ -1074,7 +1091,7 @@ Mavzuning to'liq yozuvi arxitektor hujjatidagi [N+1 so'rov muammosi](../architec
 
 **Tavsif:** Improper Instantiation - yaratilishi qimmat va thread-safe bo'lgan obyektlarni har bir so'rov yoki har bir iteratsiyada qaytadan yaratish. Bunday obyektlar o'z ichida connection pool, thread pool, kesh yoki kompilyatsiya qilingan metadata saqlaydi; ularni qayta yaratish CPU, xotira va socket resurslarini isrof qiladi hamda GC bosimini oshiradi. Eng og'ir holatda bu file descriptor yoki ephemeral port tugashiga olib keladi.
 
-**Spring'da qayerda uchraydi:** Tipik xatolar: metod ichida `new RestTemplate()` yoki `WebClient.create()` chaqirish (o'rniga Spring Boot'ning `RestClient.Builder` / `RestTemplateBuilder` / `WebClient.Builder` bean'laridan foydalanish kerak), har safar `new ObjectMapper()` yaratish (Boot allaqachon sozlangan singleton `ObjectMapper` bean beradi), loop ichida `Pattern.compile(...)` yoki `DateTimeFormatter.ofPattern(...)` chaqirish, har bir xabar uchun yangi `KafkaProducer` yoki `EntityManagerFactory` ochish. To'g'ri yondashuv - bularni singleton `@Bean` qilib e'lon qilish yoki `static final` maydonga chiqarish.
+**Spring'da qayerda uchraydi:** Tipik xatolar: metod ichida `new RestTemplate()` yoki `WebClient.create()` chaqirish (o'rniga Spring Boot'ning `RestClient.Builder` / `RestTemplateBuilder` / `WebClient.Builder` bean'laridan foydalanish kerak), har safar `new ObjectMapper()` yaratish (Boot allaqachon sozlangan singleton `ObjectMapper` bean beradi; Boot 4 da u Jackson 3 paketidan - `tools.jackson.databind.ObjectMapper`, eski `com.fasterxml.jackson.databind` emas), loop ichida `Pattern.compile(...)` yoki `DateTimeFormatter.ofPattern(...)` chaqirish, har bir xabar uchun yangi `KafkaProducer` yoki `EntityManagerFactory` ochish. To'g'ri yondashuv - bularni singleton `@Bean` qilib e'lon qilish yoki `static final` maydonga chiqarish.
 
 ```java
 @Configuration
@@ -1091,7 +1108,7 @@ class HttpClients {
 - `new ObjectMapper()` har bir serializatsiyada yaratilib, reflection keshi har safar bo'shatiladi.
 - Validatsiya metodida regex har chaqiruvda qayta kompilyatsiya qilinadi.
 - Har bir event uchun yangi Kafka producer ochilib, metadata fetch qilinadi.
-- Test konfiguratsiyasida har bir test uchun yangi `EntityManagerFactory` ko'tarilib, suite 10 barobar sekinlashadi.
+- Test konfiguratsiyasida har bir test uchun yangi `EntityManagerFactory` ko'tarilib, suite bir necha barobar sekinlashadi.
 
 **Ehtiyot bo'ling:** Teskari xato ham bor - thread-safe bo'lmagan obyektni (masalan `SimpleDateFormat`, Hibernate `Session`, `StringBuilder`) singleton bean qilib ulashish ma'lumot buzilishiga olib keladi. Shuningdek singleton bean ichiga request-scoped holatni saqlamang; kerak bo'lsa `ObjectProvider` yoki `@Scope("prototype")` ishlatib, holatni aniq ajratib oling.
 
@@ -1181,7 +1198,7 @@ class HttpClients {
 public void confirm(Order order) {
   order.confirm();
   repository.save(order);
-  events.publishEvent(new OrderConfirmed(order.getId())); // outbox'ga yoziladi
+  events.publishEvent(new OrderConfirmed(order.getId())); // outbox uchun Modulith kerak
 }
 ```
 
@@ -1273,7 +1290,7 @@ public void confirm(Order order) {
 
 **Tavsif:** Tizim hodisalar orqali bog'langan, lekin hodisalar oqimi hech qayerda hujjatlashtirilmagan va kuzatilmaydi - bir hodisa ikkinchisini, u uchinchisini chaqiradi va yakuniy ta'sirni oldindan aytib bo'lmaydi. Debug qilish uchun muhandis loglar bo'ylab hodisalarni qo'lda bog'lashga majbur bo'ladi, cheksiz tsikllar esa production'da aniqlanadi. Bu ko'pincha "biz loosely coupled bo'lamiz" niyati bilan boshlanadi, ammo bog'liqlik yo'qolmaydi - faqat ko'rinmas bo'lib qoladi. Yechim - hodisalar chegaralarini modullar bilan moslashtirish va oqimni avtomatik hujjatlashtirish.
 
-**Spring'da qayerda uchraydi:** `ApplicationEventPublisher.publishEvent()` va `@EventListener` metodlari butun kod bazasiga sochilib ketishi; `@TransactionalEventListener` fazasi (`AFTER_COMMIT` va `BEFORE_COMMIT`) noto'g'ri tanlanib, ma'lumotlar bazasiga yozuv yo'qolishi; `@Async` listener'larda xatolik yutilib ketishi, chunki `AsyncUncaughtExceptionHandler` sozlanmagan; Spring Cloud Stream yoki `@KafkaListener` zanjirlari bir topic'dan boshqasiga cheksiz ko'payishi. Spring Modulith (`spring-modulith-starter-core`, `@ApplicationModuleListener`, `spring-modulith-events-jpa` bilan Event Publication Registry) hodisalarni modul chegaralariga bog'lash, qayta urinish va `Documenter` orqali oqim diagrammasini generatsiya qilish imkonini beradi; Micrometer Tracing esa korrelyatsiya ID'si bilan zanjirni kuzatiladigan qiladi.
+**Spring'da qayerda uchraydi:** `ApplicationEventPublisher.publishEvent()` va `@EventListener` metodlari butun kod bazasiga sochilib ketishi; `@TransactionalEventListener` fazasi (`AFTER_COMMIT` va `BEFORE_COMMIT`) noto'g'ri tanlanib, ma'lumotlar bazasiga yozuv yo'qolishi; `@Async` listener'larda xatolik chaqiruvchiga yetib bormasligi (lekin yutilib ketmasligi: `void` metodda default `SimpleAsyncUncaughtExceptionHandler` uni ERROR log'ga yozadi, `Future` qaytaruvchi metodda esa istisno `Future` orqali chiqadi - muammo xatoning yo'qolishi emas, uning metrikaga va biznes oqimiga ta'sir qilmasligi); Spring Cloud Stream yoki `@KafkaListener` zanjirlari bir topic'dan boshqasiga cheksiz ko'payishi. Spring Modulith (`spring-modulith-starter-core`, `@ApplicationModuleListener`, `spring-modulith-events-jpa` bilan Event Publication Registry) hodisalarni modul chegaralariga bog'lash, qayta urinish va `Documenter` orqali oqim diagrammasini generatsiya qilish imkonini beradi; Micrometer Tracing esa korrelyatsiya ID'si bilan zanjirni kuzatiladigan qiladi.
 
 ```java
 @ApplicationModuleListener // = @Async + @Transactional + @TransactionalEventListener(AFTER_COMMIT)
@@ -1419,7 +1436,338 @@ public Rate fetch(String code) {
 
 **Ehtiyot bo'ling:** Buning aksi - rejasiz "shunchaki kod yozish" ham xavfli, ayniqsa qaytarib bo'lmaydigan qarorlar (ma'lumot modeli, public kontrakt, muvofiqlik talablari) uchun. Rejani qisqa va yangilanadigan ushlang (ADR + yupqa roadmap), har bir rejalashtirish fazasini ishlaydigan artefakt bilan tasdiqlang - hujjat kodni almashtirmaydi, faqat uning yo'nalishini belgilaydi.
 
-## 25.84 Amalda qo'llash
+## 25.84 Integratsiya nuqtalari (Integration Points)
+
+**Tavsif:** Boshqa tizimga qilingan har bir chaqiruv nosozlik kirib keladigan teshik. Nygard bu anti-patternni "zaruriy yovuzlik" deb ataydi: integratsiya nuqtasi kerak, lekin u ertami-kechmi ishdan chiqadi, va nosozlik protokol ichidagi chiroyli xato javobi ko'rinishida kelmaydi. Keladigani boshqa: protokol buzilishi, yarim o'qilgan javob, sekin javob yoki umuman osilib qolish. Yiqilgan tomon tez orada sizning muammoyingizga aylanadi, chunki himoyasiz kod kaskadli nosozlikni o'tkazib yuboradi. Kitobning yana bir kuzatuvi: integratsiya nosozligini ilova qatlamida tuzatish ko'pincha imkonsiz, chunki xato yuqori darajali protokolni buzadi va tahlil qilish uchun paket darajasiga tushish kerak bo'ladi.
+
+**Spring'da qayerda uchraydi:** Har bir `RestClient`, `WebClient`, `@FeignClient`, `JdbcTemplate`, `KafkaTemplate` va `JmsTemplate` chaqiruvi integratsiya nuqtasi. Eng ko'p uchraydigan xato - timeout yozilmasligi: `HttpClientSettings` (Spring Boot 4.0 gacha `ClientHttpRequestFactorySettings`) sozlanmagan bo'lsa, chaqiruv asosdagi `HttpClient` xulqiga tayanadi. Himoya vositalari shu korpusda alohida: [timeout](17-resilience-va-cloud-dizayn-patternlari.md#174-timeout-timeout), [zanjirni uzgich](17-resilience-va-cloud-dizayn-patternlari.md#172-zanjirni-uzgich-circuit-breaker), [ajratuvchi middleware](17-resilience-va-cloud-dizayn-patternlari.md#1712-ajratuvchi-middleware-decoupling-middleware) va [qo'l berib so'rashuv](17-resilience-va-cloud-dizayn-patternlari.md#1710-qol-berib-sorashuv-handshaking). Nosoz xulqni test qilish uchun [sinov qurilmasi](17-resilience-va-cloud-dizayn-patternlari.md#1711-sinov-qurilmasi-test-harness) (WireMock `Fault.CONNECTION_RESET_BY_PEER`, Toxiproxy) kerak, oddiy mock yetmaydi. Ko'rinish uchun Micrometer `http.client.requests` metrikasi va `ClientHttpRequestInterceptor` darajasidagi log.
+
+**Qo'llanish keyslari:**
+- Partner API ning TLS sertifikati muddati tugab, chaqiruvlar handshake bosqichida osilib qoladi.
+- Firewall ulanish jadvalidan eskirgan yozuvni o'chiradi va paketlar javobsiz ketadi, chaqiruvchi esa TCP qayta uzatishlarini kutadi.
+- Downstream HTTP 200 bilan HTML xato sahifasini qaytaradi, JSON parser esa tushunarsiz joyda yiqiladi.
+- Vendor beradigan client kutubxonasi ichida yashirin, sozlanmaydigan cheksiz kutish bor.
+- DB ga ketgan ulanish switch nosozligi sababli yo'qoladi va `Statement` javobsiz qoladi.
+
+**Ehtiyot bo'ling:** Integratsiya nuqtasini sanab chiqish yetmaydi, har biri uchun uch narsa yozilishi kerak: connect va read timeout, xato holatidagi xulq, va qanchalik tez tez qayta urinish. Qayta urinishni cheklamasa, himoya o'zi [qayta urinish bo'roni](#2561-qayta-urinish-boroni-retry-storm-anti-pattern) ga aylanadi. Arxitektorning nosozlik haqidagi fikrlash tartibi [nosozlik turlari](../architect/07-nosozlik-haqida-fikrlash.md#72-nosozlik-turlari-toliq-toxtash-sekinlashuv-qisman-javob-yolgon-javob) bo'limida.
+
+Manba: Michael T. Nygard, *Release It! Design and Deploy Production-Ready Software*, 1-nashr, Pragmatic Bookshelf, 2007, 4-bob (4.1 Integration Points), 46-60-betlar.
+
+## 25.85 Zanjirli reaksiya (Chain Reactions)
+
+**Tavsif:** Gorizontal masshtablangan qatlamda bitta node yiqilsa, uning yuklamasi qolganlariga taqsimlanadi va ularning yiqilish ehtimoli oshadi. Nygard sonlar bilan ko'rsatadi: sakkiz serverli farmda har biri yuklamaning 12.5 foizini ko'taradi, bittasi yiqilgach qolgan yettitasi 14.3 foizga o'tadi, ya'ni har bir serverning yuklamasi taxminan 15 foizga oshadi; ikki nodeli klasterda tirik qolgan node yuklamasi ikki barobar bo'ladi. Birinchi node yuklamaga bog'liq sabab bilan yiqilgan bo'lsa (xotira sizishi yoki yuklamada chiqadigan race condition), bu sabab qolganlarida ham bor, chunki qatlam bir xil kod bilan ishlaydi. Shuning uchun zanjirli reaksiyani faqat asosdagi defektni tuzatib to'xtatish mumkin.
+
+**Spring'da qayerda uchraydi:** Belgisi - Kubernetes'da pod'lar navbat bilan `OOMKilled` bo'lishi yoki `restartCount` ning zinapoyasimon o'sishi. Sabablarni izlash joyi: `jvm.memory.used` va `jvm.gc.pause` Micrometer metrikalari, heap dump (`-XX:+HeapDumpOnOutOfMemoryError`), singleton bean ichidagi o'suvchi `Map` yoki `List` (qarang: [singleton bean ichida mutable state](#2548-singleton-bean-ichida-mutable-state-mutable-state-in-singleton-beans)), cheklanmagan Caffeine kesh. Qatlamni ikki pool'ga bo'lish (`@Bulkhead`, alohida `Deployment` va alohida `Service`) zanjirni ikkiga ajratadi va ikki tezlikda ketishga majbur qiladi, lekin uni yo'q qilmaydi.
+
+**Qo'llanish keyslari:**
+- Xotira sizishi bor servisning pod'lari navbat bilan o'ladi va har o'limdan keyin qolganlari tezroq siza boshlaydi.
+- Autoscaler yangi pod ko'tarishga ulgurmasdan qolganlari yiqilib, replica soni nolga tushadi.
+- `@Scheduled` job bir vaqtda bitta instance da ishlashi kerak edi, lekin leader election yo'q va har yiqilishda yuklama qayta taqsimlanadi.
+- Barcha instance bir xil versiyada, shuning uchun yuklamaga bog'liq deadlock hammasida bor.
+- Readiness probe sog'lom javob berib turgan, lekin thread pool allaqachon to'lgan pod'ga trafik kelishda davom etadi.
+
+**Ehtiyot bo'ling:** Replica sonini oshirish zanjirli reaksiyani to'xtatmaydi, faqat uning davomiyligini uzaytiradi. Bitta qatlamdagi zanjirli reaksiya oson kaskadli nosozlikka aylanadi, shuning uchun chaqiruvchi qatlam o'zini himoya qilishi kerak. Kitob yana bir bog'liqlikni ko'rsatadi: zanjirli reaksiyani ko'pincha bloklangan thread'lar boshlaydi, chunki hamma thread bloklangan ilova tashqaridan o'lgan ko'rinadi va yuklamasi qo'shnilarga ketadi.
+
+Manba: Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 4-bob (4.2 Chain Reactions), 61-64-betlar.
+
+## 25.86 Kaskadli nosozlik (Cascading Failures)
+
+**Tavsif:** Kaskadli nosozlik - yoriqning bir tizim yoki qatlamdan ikkinchisiga sakrashi. Zanjirli reaksiya nosozlikni bitta qatlam ichida tarqatsa, kaskadli nosozlik uni qatlamlar orasida, integratsiya nuqtasi orqali o'tkazadi. Nygard asosiy mexanizmni aniq ko'rsatadi: resurs pool. Pastdagi qatlam javob bermay qolganda uning chaqiruvlari qaytmaydi, ulanish olgan thread'lar abadiy bloklanadi, qolgan thread'lar esa pool'dan ulanish kutib turadi; natijada pastdagi bitta servis yuqoridagi butun ilovani to'xtatadi. Shuning uchun xavfsiz pool har doim thread ulanish kutishi mumkin bo'lgan vaqtni cheklaydi.
+
+**Spring'da qayerda uchraydi:** HikariCP da `spring.datasource.hikari.connection-timeout` aynan shu chegara: muddat tugaganda pool `SQLTransientConnectionException` tashlaydi va thread bo'shaydi. HTTP tomonida `HttpClientSettings` ning connect va read timeout'i, reaktiv tomonda `Mono.timeout(...)` va `HttpClient.responseTimeout(...)`. Tashqi servis bo'yicha ajratish uchun Resilience4j `@Bulkhead(type = SEMAPHORE)` yoki `THREADPOOL`, Spring Framework 7 da `@ConcurrencyLimit`. Degradatsiya rejasi [bosqichma-bosqich funksionallikni pasaytirish](17-resilience-va-cloud-dizayn-patternlari.md#1737-bosqichma-bosqich-funksionallikni-pasaytirish-graceful-degradation) bo'limida, nosozlik ta'sirini cheklash esa [bulkhead va alohida resurs hovuzlari](../architect/07-nosozlik-haqida-fikrlash.md#78-nosozlik-tasirini-cheklash-bulkhead-va-alohida-resurs-hovuzlari) bo'limida.
+
+**Qo'llanish keyslari:**
+- Tavsiya servisi sekinlashadi va buyurtma servisining butun Tomcat thread pool'i unda kutib qoladi.
+- Bitta integratsiya uchun ishlatilgan umumiy `RestClient` pool'i to'lib, boshqa barcha tashqi chaqiruvlar ham to'xtaydi.
+- DB da deadlock sababli ulanishlar qaytmaydi va ilova `connection-timeout` yozilmagani uchun butunlay muzlaydi.
+- Chaqiruvchi qatlam vaqtinchalik xatoni doimiy xatodan ajrata olmaydi va agressiv qayta urinib, pastdagi qatlamga qo'shimcha yuk beradi.
+- Gateway ortidagi bitta nosoz marshrut butun gateway ning worker thread'larini egallaydi.
+
+**Ehtiyot bo'ling:** Timeout qo'yish yetmaydi: timeout nosozlikni aniqlaydi, uni to'xtatish uchun zanjirni uzgich kerak, aks holda yiqilgan servisga yuklama berish davom etadi. Fallback'ni boshqa sinxron chaqiruv qilib qo'yish kaskadni kengaytiradi. Umumiy pool'ni integratsiyalar bo'yicha bo'lmasa, bitta sekin partner butun ilovani o'ziga bog'lab oladi.
+
+Manba: Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 4-bob (4.3 Cascading Failures), 65-67-betlar.
+
+## 25.87 Foydalanuvchilar (Users)
+
+**Tavsif:** Nygard foydalanuvchilarni alohida anti-pattern qilib qo'yadi, chunki haqiqiy trafik test skriptidan tubdan farq qiladi. Uchta xavf bor. Birinchisi: har bir foydalanuvchi xotira talab qiladi, demak sessiyada saqlangan narsa to'g'ridan-to'g'ri sig'imni kamaytiradi; kitobning maslahati sessiyani faqat kesh sifatida ishlatish, shunda xotira tanqis bo'lganda uni tashlab yuborish mumkin. Ikkinchisi: foydalanuvchilar oldindan aytib bo'lmaydigan ishlarni qiladi, va ularning soni ko'p bo'lgani uchun ilovadagi har qanday bo'sh joyni topadi; test skripti funksional tekshiruv uchun foydali, lekin barqarorlik sinovi uchun juda bashoratli. Uchinchisi: foydalanuvchilar bir vaqtda to'da bo'lib kelishi mumkin, va katta to'da osilish, deadlock va kamdan-kam uchraydigan race condition'larni ochadi.
+
+**Spring'da qayerda uchraydi:** Sessiya hajmi - `HttpSession` ga qo'yilgan domen obyektlari; `spring-session-data-redis` yoki `spring-session-jdbc` sessiyani ilovadan tashqariga chiqaradi (qarang: [ma'lumotlar bazasidagi sessiya holati](06-web-va-taqdimot-qatlami-patternlari.md#627-malumotlar-bazasidagi-sessiya-holati-database-session-state)) va `spring.session.timeout` muddatini belgilaydi; stateless yo'l - JWT yoki har so'rovda qayta o'qiladigan `SecurityContext`. Kutilmagan kirish uchun `@Valid` va Bean Validation chegarada, `spring.mvc.async.request-timeout`, `server.tomcat.max-http-form-post-size` va `spring.servlet.multipart.max-file-size` chegaralari. To'da yuklamasi uchun Gateway'da `RequestRateLimiter` va [yuklamani tashlash](17-resilience-va-cloud-dizayn-patternlari.md#1714-yuklamani-tashlash-shed-load--load-shedding).
+
+**Qo'llanish keyslari:**
+- Sessiyaga butun savat va qidiruv natijalari solinadi, 5 ming parallel foydalanuvchida heap tugaydi.
+- Bot ko'rinishida kelgan trafik pagination parametriga juda katta `size` yuborib, bir so'rovda million qator so'raydi.
+- Reklama e'loni bir daqiqada juda katta to'da keltiradi va shu paytda ilk marta deadlock chiqadi.
+- Fayl yuklash endpoint'i hajm chegarasi yozilmagani uchun disk va xotirani to'ldiradi.
+- Foydalanuvchi brauzerning orqaga tugmasi bilan bir xil formani ikki marta yuboradi va ikkita buyurtma yaratiladi.
+
+**Ehtiyot bo'ling:** Sinov ma'lumotlari va sinov xulqi haqiqiy trafikni taqlid qilmaydi, shuning uchun barqarorlik sinovi alohida yoziladi: tasodifiy navigatsiya, noto'g'ri parametr, uzilgan ulanish va to'da yuklamasi. Zararli foydalanuvchi ham shu ro'yxatda: chegarada validatsiya, parametrlangan so'rov va yangilanib turgan framework versiyasi majburiy. Foydalanuvchi sonini kamaytirish yechim emas, chegaralarni aniq yozish yechim.
+
+Manba: Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 4-bob (4.4 Users), 68-80-betlar.
+
+## 25.88 Bloklangan thread'lar (Blocked Threads)
+
+**Tavsif:** Nygard bu anti-patternni ko'pchilik nosozlikning bevosita sababi deb ataydi: ilova protsessi ishlab turadi, lekin barcha so'rov qabul qiluvchi thread'lar bloklangani uchun hech narsa qilmaydi, va tashqaridan tizim o'lgan ko'rinadi. "Asta-sekin sekinlashuv" va "osilgan server" shikoyatlari odatda shu. Bloklangan thread deyarli har doim integratsiya nuqtasi yoki resurs pool'i atrofida paydo bo'ladi, ayniqsa DB connection pool'i: bazadagi deadlock yoki noto'g'ri istisno ishlovi ulanishni abadiy yo'qotadi. Kitobning uchta amaliy maslahati: o'z navbat va qulf primitivlarini yozmaslik, ko'rinmaydigan uchinchi tomon kodiga ishonmaslik, va kutishning hamma shaklida timeout ishlatish.
+
+**Spring'da qayerda uchraydi:** `synchronized` bloklar va `Object.wait()` ning timeout'siz shakli o'rniga `java.util.concurrent` dagi tayyor vositalar: `ReentrantLock.tryLock(long, TimeUnit)`, `BlockingQueue.poll(long, TimeUnit)`, `Future.get(long, TimeUnit)`. Pool tomonida `spring.datasource.hikari.connection-timeout` va `leak-detection-threshold`. Reaktiv stack'da bloklovchi chaqiruv alohida anti-pattern (qarang: [reactive pipeline ichida bloklash](#2542-reactive-pipeline-ichida-bloklash-blocking-in-reactive-pipeline)). Ko'rinish uchun `jvm.threads.states` metrikasi, `/actuator/threaddump` va JFR; Java 21 virtual thread'larda `jdk.VirtualThreadPinned` hodisasi.
+
+```java
+// Timeout'siz kutish: thread abadiy bloklanadi
+Object value = queue.take();
+
+// Timeout bilan: kutish chegaralangan va interrupt saqlanadi
+try {
+    Object value2 = queue.poll(2, TimeUnit.SECONDS);
+    if (value2 == null) {
+        throw new QueueEmptyException("navbat 2 sekundda bo'sh qoldi");
+    }
+} catch (InterruptedException e) {
+    Thread.currentThread().interrupt();
+    throw new ProcessingInterruptedException(e);
+}
+```
+
+**Qo'llanish keyslari:**
+- Tashqi API javob bermaydi, read timeout yozilmagan va Tomcat ning barcha thread'lari shu chaqiruvda turadi.
+- `@Transactional` metod ichida uzoq HTTP chaqiruv bajariladi va ulanish shu vaqt davomida pool'dan chiqib turadi.
+- Qo'lda yozilgan producer-consumer navbatida `wait()` va `notify()` juftligi yo'qolib, consumer abadiy kutadi.
+- Vendor client kutubxonasi ichida sozlanmaydigan cheksiz kutish bor va u faqat thread dump da ko'rinadi.
+- `InterruptedException` tutilib tashlab yuboriladi, shutdown esa thread to'xtashini kutib muzlab qoladi.
+
+**Ehtiyot bo'ling:** Thread sonini oshirish vaqtni uzaytiradi, muammoni hal qilmaydi. Deadlock yo'qligini isbotlash imkonsiz, lekin har bir kutishga timeout qo'yib hech bir deadlock abadiy bo'lmasligini kafolatlash mumkin. Virtual thread'lar bloklanishni arzonlashtiradi, lekin pool va qulf kabi tashqi chegaralarni olib tashlamaydi, shuning uchun timeout talabi o'z kuchida qoladi.
+
+Manba: Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 4-bob (4.5 Blocked Threads), 81-87-betlar.
+
+## 25.89 O'z-o'ziga qilingan hujum (Attacks of Self-Denial)
+
+**Tavsif:** Denial of service hujumi tashqaridan kelishi shart emas: ko'pincha uni tashkilotning o'zi uyushtiradi. Marketing aksiyasi, ommaviy email yoki cheklangan deb e'lon qilingan taklif bir daqiqada juda katta to'da keltiradi va tizim o'zini o'zi yiqitadi. Nygard ning birinchi maslahati texnik emas, tashkiliy: muloqot kanalini ochiq tutish, chunki nima kelayotganini bilsa, tizimni tayyorlash mumkin. Texnik tomoni ham aniq: ommaviy xatda chuqur havola yubormaslik, birinchi bosish uchun statik "landing" sahifa qo'yish, va URL ichidagi sessiya identifikatorlaridan ehtiyot bo'lish. Kitob yana bir xavfni ko'rsatadi: umumiy resurs va kutilmagan masshtab effektlari sababli front-end yuklamasi ortganda back-end ishi geometrik o'sishi mumkin.
+
+**Spring'da qayerda uchraydi:** Himoya qatlamlari - Spring Cloud Gateway `RequestRateLimiter` filtri (`redis-rate-limiter.replenishRate`, `burstCapacity`) va `KeyResolver`, Resilience4j `@RateLimiter` hamda `@Bulkhead`, Bucket4j kabi kutubxona. Statik sahifa va kesh tomonida `spring.web.resources.cache.cachecontrol.max-age` va CDN. Kesh bilan ishlashda bir vaqtda bekor qilish o'zi hujumga aylanadi, shuning uchun [kesh bosqini himoyasi](11-keshlash-patternlari.md#1111-kesh-bosqini-himoyasi-cache-stampede--thundering-herd-protection) kerak. Autoscaling oldindan ko'tarilishi uchun HPA ning `behavior.scaleUp` sozlamasi va zaxira sig'im.
+
+**Qo'llanish keyslari:**
+- Ommaviy email bir vaqtda juda ko'p odamni mahsulot sahifasiga yuboradi va o'sha sahifa dinamik hisoblanadi.
+- Aksiya boshlanishi aniq daqiqaga belgilanadi, barcha mijoz ayni o'sha daqiqada keladi.
+- Keshni to'liq tozalash deploy skriptiga qo'yilgan va har deploy da baza bir zumda yuklanadi.
+- Barcha instance bir xil cron daqiqasida ishga tushadigan `@Scheduled` job bilan DB ni bir vaqtda uradi.
+- Mobil ilova yangilanish tekshiruvini aniq soatda qilib, server uchun sun'iy cho'qqi yasaydi.
+
+**Ehtiyot bo'ling:** Cheklangan taklif degan narsa yo'q: foydali taklif darhol tarqaladi va kutilgan sondan ko'p odam keladi. Rate limiter'ni faqat tashqi IP bo'yicha qo'yish CDN yoki korporativ proxy ortidagi barcha mijozni bitta deb ko'rsatadi. Aksiya vaqtini barcha mijoz uchun bir xil daqiqaga emas, oynaga yoyish ko'pincha eng arzon yechim.
+
+Manba: Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 4-bob (4.6 Attacks of Self-Denial), 88-90-betlar.
+
+## 25.90 Masshtab effektlari (Scaling Effects)
+
+**Tavsif:** Kichik muhitda to'g'ri ishlagan yechim katta muhitda sekinlashadi yoki butunlay ishdan chiqadi. Nygard ikkita asosiy manbani ko'rsatadi. Birinchisi nuqta-nuqta aloqa: ulanishlar soni qatnashuvchilar sonining kvadratiga mutanosib o'sadi, shuning uchun o'nlab serverga yetganda uni bir-ko'pga aloqaga almashtirish kerak bo'ladi. Ikkinchisi umumiy resurs: u bir vaqtda bo'g'iz, sig'im chegarasi va barqarorlik xavfi, chunki u sekinlashsa yoki qulflanib qolsa, hamma mijoz to'xtaydi. Asosiy sabab muhitlarning nomutanosibligi: ishlab chiqish va QA da bir-bir nisbat, ishlab chiqarishda esa butunlay boshqa nisbat bo'ladi.
+
+**Spring'da qayerda uchraydi:** Nuqta-nuqta xabar almashinuvi o'rniga broker orqali bir-ko'pga tarqatish: Kafka topic yoki RabbitMQ fanout exchange, `spring-cloud-stream` binder'lari. Kesh bekor qilishni har instance ga alohida yuborish shu muammoning klassik ko'rinishi; yechim - Redis pub/sub yoki Kafka orqali bitta xabar (qarang: [kesh invalidation strategiyalari](11-keshlash-patternlari.md#1114-kesh-invalidation-strategiyalari-cache-invalidation-strategies-event-based-versioned-keys)). Umumiy resurs tomonida DB ning `max_connections` chegarasi, taqsimlangan qulf (`ShedLock`, Redis), va umumiy fayl tizimi. Nisbatlarni hisoblash uchun [thread pool va connection pool kattaligini hisoblash](../architect/08-ishlash-va-resurs-hissi-napkin-math.md#84-thread-pool-va-connection-pool-kattaligini-hisoblash).
+
+**Qo'llanish keyslari:**
+- Ikki instance da ishlagan nuqta-nuqta kesh bekor qilish 40 instance da tarmoqni to'ldiradi.
+- 20 replica x 50 connection birga DB ning `max_connections` chegarasidan oshadi va deploy paytida klaster yiqiladi.
+- Umumiy NFS katalogiga yozadigan servis instance soni oshgach qulf kutishida bo'g'iladi.
+- QA da bitta front-end bitta back-end bilan ishlagan, ishlab chiqarishda nisbat o'n birga chiqadi.
+- Taqsimlangan qulf uchun ishlatilgan bitta Redis instance butun platformaning yagona nosozlik nuqtasiga aylanadi.
+
+**Ehtiyot bo'ling:** Masshtab effektini kichik muhitda o'lchash mumkin emas, shuning uchun nisbatlar hujjatda yoziladi: nechta front-end, nechta back-end, har tomonda nechta thread. Umumiy resursni og'ir yuklama bilan alohida sinash va u sekinlashganda mijozlar ishlashda davom etishini tekshirish kerak. Nuqta-nuqta aloqa har doim yomon degani emas: u qancha o'sishga yetishini oldindan hisoblab, chegarani yozib qo'yish kifoya.
+
+Manba: Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 4-bob (4.7 Scaling Effects), 91-95-betlar.
+
+## 25.91 Nomutanosib sig'imlar (Unbalanced Capacities)
+
+**Tavsif:** Nomutanosib sig'im - munosabatning bir tomoni ikkinchisidan ancha kattalashib ketishi, ya'ni masshtab effektlarining xususiy holati. Front-end back-end ko'tara oladigan miqdordan ko'p so'rov yuboradi va back-end sekinlashadi yoki yiqiladi. Nygard tekshiruv savolini aniq qo'yadi: ishlab chiqarishda front-end va back-end serverlar nisbati qanday, va har tomonda nechta thread bor. QA da bu nisbat odatda bir-bir, ishlab chiqarishda esa o'n birga bo'lishi mumkin. Trafik shaklining mavsumiy yoki reklama tufayli o'zgarishi odatdagi beozor front-end ni bir zumda back-end ni cho'ktiradigan manbaga aylantiradi. Kitobning talabi: interfeysning ikki tomonini ham sinash. Yiqilish o'rniga sekinlashib keyin tiklanish maqbul, osilish va bo'sh javob esa kaskadli nosozlik boshlanishi.
+
+**Spring'da qayerda uchraydi:** Chaqiruvchi tomonda Resilience4j `@Bulkhead` yoki Spring Framework 7 `@ConcurrencyLimit` bilan bir vaqtdagi chaqiruvlar sonini back-end ko'tara oladigan darajada cheklash; `HttpClientSettings` timeout'lari. Qabul qiluvchi tomonda `server.tomcat.threads.max`, `server.tomcat.accept-count` va `spring.task.execution.pool.*` chegaralari, hamda [qo'l berib so'rashuv](17-resilience-va-cloud-dizayn-patternlari.md#1710-qol-berib-sorashuv-handshaking): back-end `HealthIndicator` ni `OUT_OF_SERVICE` qilib yoki 429 qaytarib o'zi "hozir qabul qilolmayman" deydi. Yuklamani tekislash uchun [queue asosida yukni tekislash](17-resilience-va-cloud-dizayn-patternlari.md#1718-queue-asosida-yukni-tekislash-queue-based-load-leveling).
+
+**Qo'llanish keyslari:**
+- 30 replica li front-end 2 replica li legacy SOAP servisga parallel chaqiruv yuboradi.
+- Autoscaler front-end ni osongina ko'taradi, back-end esa statik va qo'lda masshtablanadi.
+- Front-end ning har bir so'rovi back-end da beshta og'ir chaqiruvga aylanadi va ko'paytirgich sezilmaydi.
+- Mavsumiy cho'qqida front-end thread soni oshiriladi, back-end pool'i esa o'zgarmaydi.
+- Batch import bir vaqtda minglab so'rov yuborib, interaktiv trafikni back-end navbatida kutishga majbur qiladi.
+
+**Ehtiyot bo'ling:** Chegarani faqat chaqiruvchida qo'yish yetarli emas: back-end o'zini himoya qilishi kerak, chunki kelajakda yangi chaqiruvchi paydo bo'ladi. Yuklamani navbatga olish sig'imni oshirmaydi, faqat cho'qqini tekislaydi, shuning uchun navbat o'sishini kuzatish va chegara qo'yish kerak. Sekin servis o'lgan servisdan xavfliroq ekani [sekin servis o'lgan servisdan xavfliroq](../architect/07-nosozlik-haqida-fikrlash.md#73-sekin-servis-olgan-servisdan-xavfliroq-navbat-tolishi-va-orqaga-bosim) bo'limida batafsil.
+
+Manba: Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 4-bob (4.8 Unbalanced Capacities), 96-99-betlar.
+
+## 25.92 Sekin javoblar (Slow Responses)
+
+**Tavsif:** Sekin javob ulanishni rad etishdan va xato qaytarishdan yomonroq. Tez xato chaqiruvchiga tranzaksiyani tez yakunlash imkonini beradi, sekin javob esa ikki tomonda ham resursni band qiladi. Nygard sabablarni sanaydi: so'rovlar soni imkoniyatdan oshib ketgani, xotira sizishi (bunda CPU band ko'rinadi, lekin ish garbage collector da bo'ladi), tarmoq tiqilishi va past darajadagi socket protokolining buferlarini to'liq o'qimasligi. Sekin javob qatlamdan qatlamga asta-sekin tarqaladi va kaskadli nosozlikning sekin shakliga aylanadi. Veb tizimda u o'zini kuchaytiradi: kutgan foydalanuvchi sahifani qayta yuklaydi va allaqachon ortiqcha yuklangan tizimga yana trafik qo'shadi.
+
+**Spring'da qayerda uchraydi:** O'z javobini o'zi o'lchash uchun Micrometer `http.server.requests` taymerlari va `ObservationRegistry`; chegaradan oshganda tez xato berish uchun [tez ishdan chiqish](17-resilience-va-cloud-dizayn-patternlari.md#178-tez-ishdan-chiqish-fail-fast) va [yuklamani tashlash](17-resilience-va-cloud-dizayn-patternlari.md#1714-yuklamani-tashlash-shed-load--load-shedding). Sabab izlash joylari: `jvm.gc.pause` va GC log, `hikaricp.connections.pending`, Hibernate statistikasi va sekin so'rov log'i (PostgreSQL `log_min_duration_statement`). Kirish nuqtasida `spring.mvc.async.request-timeout`, chiqishda `HttpClientSettings` read timeout'i. Sekin so'rovni tekshirish tartibi [sekin so'rovni tekshirish tartibi](../architect/24-planner-statistika-va-explain-analyze-oqish.md#2412-sekin-sorovni-tekshirish-tartibi-aniq-qadamlar-royxati) bo'limida.
+
+**Qo'llanish keyslari:**
+- Xotira sizishi sababli GC pauzalari o'sadi va p99 javob vaqti bir necha sekundga chiqadi.
+- Connection pool da kurash boshlanadi: javob sekinlashadi, sekin javob kurashni yana oshiradi.
+- Downstream servis javobni chaqiruvchining read timeout'idan kamroq vaqtda beradi, shuning uchun timeout ishga tushmaydi va thread shu vaqt davomida band turadi.
+- Foydalanuvchi sahifani qayta yuklaydi, server esa birinchi so'rovni bajarishda davom etadi.
+- Mijozning timeout'i serverning timeout'idan kichik va server allaqachon ketgan mijoz uchun ishlaydi.
+
+**Ehtiyot bo'ling:** O'rtacha javob vaqti sekin javobni yashiradi, shuning uchun p95 va p99 kuzatiladi. Chegaradan oshganda xato qaytarish qarori chaqiruvchilar bilan kelishiladi va protokolda hujjatlashtiriladi, aks holda ular bu javobni kutilmagan nosozlik deb oladi. Timeout'ni oshirish sekin javobni tuzatmaydi, faqat bloklangan thread'lar sonini oshiradi.
+
+Manba: Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 4-bob (4.9 Slow Responses), 100-101-betlar.
+
+## 25.93 SLA inversiyasi (SLA Inversion)
+
+**Tavsif:** SLA inversiyasi - tizim o'zi tayanadigan bog'liqliklarning SLA sidan yuqori SLA ni va'da qilishi. Nygard buni "bo'sh va'da" deb ataydi: bunday majburiyatni faqat omad bilan bajarish mumkin, chunki ketma-ket bog'liqlikda mavjudlik ko'paytma sifatida hisoblanadi. Kitob bog'liqliklarni oxirigacha sanab chiqishni talab qiladi, chunki SLA inversiyasi kutilmagan joylarda yashiringan: korporativ DNS klasteri, SMTP servisi, xabar navbati va brokerlar, umumiy SAN. Ikkita javob bor. Birinchisi - past SLA li tizimdan ajralish: ilova u yo'q bo'lganda ham ishlashi kerak, ajratuvchi middleware yoki hech bo'lmasa zanjirni uzgich bilan. Ikkinchisi - SLA ni butun tizim uchun bitta son sifatida yozmaslik: tashqi tomonga bog'liq bo'lmagan funksiyalar yuqori SLA oladi, bog'liq bo'lganlari esa faqat uchinchi tomon beradigan darajani.
+
+**Spring'da qayerda uchraydi:** Funksiya darajasidagi SLO va xato budjeti [SLI / SLO / xato budjeti](21-observability-patternlari.md#218-sli--slo--xato-budjeti-sli--slo--error-budget) bo'limida. Ajralish vositalari: `@KafkaListener` va `@RabbitListener` orqali asinxron ishlash, Transactional Outbox, hamda [bosqichma-bosqich funksionallikni pasaytirish](17-resilience-va-cloud-dizayn-patternlari.md#1737-bosqichma-bosqich-funksionallikni-pasaytirish-graceful-degradation). Bog'liqliklarni inventarizatsiya qilish uchun `/actuator/health` tarkibidagi `HealthIndicator` lar ro'yxati yaxshi boshlanish nuqtasi, lekin DNS, SMTP va SAN kabi infratuzilma bog'liqliklari u yerda ko'rinmaydi va qo'lda yoziladi. Degradatsiya rejasi [qisman nosozlikda nima qilish](../architect/07-nosozlik-haqida-fikrlash.md#76-qisman-nosozlikda-nima-qilish-degradatsiya-rejasi-va-zaxira-javob) bo'limida.
+
+**Qo'llanish keyslari:**
+- Ilova shartnomada o'zining mavjudlik darajasini to'lov provayderi beradigan darajadan yuqori yozadi, to'lov esa kritik yo'lda turadi.
+- Katalogni ko'rish tashqi tavsiya servisiga bog'lanadi va u o'chganda butun sahifa xato beradi.
+- Readiness probe tashqi API ni tekshiradi, u o'chganda butun klaster bir vaqtda trafikdan chiqadi.
+- SMTP servisi javob bermaganda ro'yxatdan o'tish oqimi to'liq to'xtaydi, chunki email sinxron yuboriladi.
+- Umumiy SAN ning rejali xizmat ko'rsatishi hujjatda hech qayerda bog'liqlik sifatida yozilmagan.
+
+**Ehtiyot bo'ling:** Health check ni downstream bog'liqliklarga bog'lash SLA inversiyasini kuchaytiradi: liveness va readiness semantikasi aniq ajratiladi. Bir butun son sifatida yozilgan SLA muzokarada qulay ko'rinadi, lekin u qaysi funksiya qanday kafolat olgani haqidagi savolni yashiradi. Zanjirni uzgich mavjudlikni oshiradi faqat ochiq holatda ma'noli javob bo'lsa: ma'nosiz xato ham nosozlik hisoblanadi.
+
+Manba: Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 4-bob (4.10 SLA Inversion), 102-105-betlar.
+
+## 25.94 Cheklanmagan natija to'plami (Unbounded Result Sets)
+
+**Tavsif:** Ko'p kodda bir xil tuzilma bor: bazaga so'rov yuborib, natija to'plami bo'ylab aylanib, har qatorni obyektga aylantirish. Odatdagi yuzta qator o'rniga baza bir kun besh million qator qaytarsa, ilova xotirasini tugatadi yoki foydalanuvchi allaqachon ketganidan keyin ham aylanishda davom etadi. Nygard buni qo'l berib so'rashuvning buzilishi deb ta'riflaydi: chaqiruvchi qancha javob qabul qilishga tayyor ekanini aytmasdan, shartni ikkinchi tomonga topshirib qo'yadi. Kitobning qoidasi qattiq: faqat "nol", "bir" va "ko'p" ma'noli sonlar, shuning uchun aniq bitta qator tanlamaydigan har qanday so'rov ko'p qaytarishi mumkin. Alohida xavf - cheksiz o'sishi mumkin bo'lgan munosabatlar: buyurtma va uning qatorlari, profil va tashriflar tarixi, hamda audit jadvallari.
+
+**Spring'da qayerda uchraydi:** Repository metodlari `List` emas, `Page` yoki `Slice` qaytarishi va `Pageable` qabul qilishi; `PageRequest.of(page, size)` va `spring.data.web.pageable.max-page-size` chegarasi. Assotsiatsiya bo'ylab yurganda ORM chegara qo'ymaydi, shuning uchun `@BatchSize`, `hibernate.default_batch_fetch_size` va alohida sahifalangan so'rov kerak. Katta eksport uchun `Stream` yoki `ScrollableResults` bilan `@Transactional(readOnly = true)` va `setFetchSize`. API tomonida javob o'lchamini kontraktda cheklash, `size` parametrini serverda clamp qilish.
+
+```java
+public interface OrderRepository extends JpaRepository<Order, Long> {
+
+    // Xavfli: qancha qator kelishini chaqiruvchi hal qilmaydi
+    List<Order> findByCustomerId(Long customerId);
+
+    // Xavfsiz: chegara chaqiruvchida va server tomonda clamp qilinadi
+    Page<Order> findByCustomerId(Long customerId, Pageable pageable);
+}
+```
+
+**Qo'llanish keyslari:**
+- Hisobot endpoint'i `findAll()` chaqirib, bir yillik ma'lumotni heap ga yuklaydi.
+- `@OneToMany` kolleksiyasi ko'p yillik audit yozuvlarini ushlab turadi va bitta entity yuklash OOM beradi.
+- API `size` parametrini tekshirmaydi va mijoz `size=1000000` yuboradi.
+- Integratsiya partneri "hamma o'zgarishni ber" deydi va javob bir necha gigabaytga chiqadi.
+- Test ma'lumotlari kichik bo'lgani uchun muammo faqat ishlab chiqarishda ko'rinadi.
+
+**Ehtiyot bo'ling:** Aylanishni maksimal qatordan keyin to'xtatish to'liq yechim emas: baza baribir butun natijani hisoblaydi va sig'im behuda sarflanadi, chegara so'rovning o'zida bo'lishi kerak. Sinov ma'lumotlari ishlab chiqarish hajmida bo'lmasa, bu anti-pattern testdan o'tib ketadi. Ma'lumot ishlab chiqaruvchi tomonga ishonib chegara qo'ymaslik eng ko'p uchraydigan sabab: bugun yuzta qator qaytaradigan so'rov ertaga boshqa modul tufayli millionni qaytaradi.
+
+Manba: Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 4-bob (4.11 Unbounded Result Sets), 106-109-betlar.
+
+## 25.95 Resurs pool uchun kurash (Resource Pool Contention)
+
+**Tavsif:** Pool sig'imni oshiradi, chunki ulanish yasash qimmat. Lekin qarovsiz qolgan pool ilovaning eng katta bo'g'ziga aylanadi. Kurash pool'dagi resurslardan ko'p thread resurs so'raganda boshlanadi, va ko'pchilik pool amalga oshirishining standart xulqi so'ragan thread'ni resurs bo'shaguncha cheksiz bloklash. Nygard ning grafikasi muammo shaklini ko'rsatadi: thread soni resurs sonidan oshmaguncha kurash nol, oshgach esa CPU vaqtining katta qismi foydasiz kutishga ketadi va o'tkazuvchanlik egri chizig'i "tizza" beradi, ya'ni qo'shimcha thread hech narsa qo'shmaydi. Kitob yana bir yopiq tsiklni ko'rsatadi: kurash tranzaksiyani uzaytiradi, uzun tranzaksiya kurashni oshiradi. Ikkinchi oqibat barqarorlikka tegishli: cheksiz bloklanish sig'im muammosini bloklangan thread'lar muammosiga aylantiradi.
+
+**Spring'da qayerda uchraydi:** HikariCP da cheksiz kutishni `spring.datasource.hikari.connection-timeout` kesadi: muddat tugaganda `SQLTransientConnectionException` tashlanadi va thread bo'shaydi. Ko'rinish Micrometer metrikalari bilan: `hikaricp.connections.pending` (kutayotganlar), `hikaricp.connections.usage` (checkout davomiyligi), `hikaricp.connections.active` va `hikaricp.connections.max`; `leak-detection-threshold` qaytarilmagan ulanishni log'ga chiqaradi. Pool o'lchamini thread soniga nisbatan tanlash hisobi [thread pool va connection pool kattaligini hisoblash](../architect/08-ishlash-va-resurs-hissi-napkin-math.md#84-thread-pool-va-connection-pool-kattaligini-hisoblash) bo'limida, o'lcham qiymatining o'zi esa shu bobdagi [cheklanmagan connection pool](#2546-cheklanmagan-connection-pool--notogri-pool-olchami-unbounded-connection-pool--wrong-pool-size) bo'limida.
+
+**Qo'llanish keyslari:**
+- Tomcat da 200 thread, HikariCP da 10 ulanish: yuklama cho'qqisida 190 thread navbatda turadi.
+- `@Transactional` metod ichida tashqi HTTP chaqiruv bajariladi va ulanish shu vaqt davomida band.
+- `connection-timeout` yozilmagani uchun DB deadlock paytida barcha thread abadiy kutib qoladi.
+- Failover paytida klasterning bitta nodesi barcha so'rovni va barcha ulanishni ko'tarishi kerak bo'ladi.
+- `hikaricp.connections.pending` metrikasi kuzatilmagani uchun kurash incident bo'lgandan keyin aniqlanadi.
+
+**Ehtiyot bo'ling:** Pool o'lchamini thread soniga teng qilish ilovadagi kurashni olib tashlaydi, lekin muammoni bazaga ko'chiradi: har bir ulanish baza tomonida xotira talab qiladi va instance soni ko'p bo'lsa umumiy son chegaradan oshadi. Oddiy yuklama cho'qqisida kurash umuman bo'lmasligi kerak: kurash ko'rinsa, bu allaqachon chegaradan o'tilgani belgisi. Bir nechta pool bo'lsa tsikl tezroq ketadi, shuning uchun pool'lar orasidagi checkout tartibi hamma yo'lda bir xil bo'lishi kerak.
+
+Manba: Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 9-bob (9.1 Resource Pool Contention), 176-179-betlar; pool'ning foydali tomoni 10-bob (10.1 Pool Connections), 206-207-betlar.
+
+## 25.96 Sessiyaning ortiq turishi (Overstaying Sessions)
+
+**Tavsif:** Servlet spetsifikatsiyasining tarixiy standart sessiya muddati o'ttiz daqiqa, ya'ni foydalanuvchining oxirgi so'rovidan keyin sessiya shu vaqt davomida xotirada qoladi. Muammo shunda: qaysi so'rov oxirgisi bo'lishini oldindan bilish mumkin emas, shuning uchun aniq aytish mumkin bo'lgan yagona narsa - sessiya foydalanuvchi ketganidan keyin ham xotirada turadi va xotirada turgan vaqtiga mutanosib ravishda tizim salomatligiga tahdid qiladi. Nygard muddatni trafikdan hisoblashni taklif qiladi: sahifa so'rovlari orasidagi vaqtning o'rtachasidan bir standart og'ish narisi. Yaxshiroq yo'l esa sessiyani umuman keraksiz qilish: agar sessiyadagi hamma narsa saqlangan holatning xotiradagi nusxasi bo'lsa, sessiyani istalgan paytda tashlab, keyin qayta yasash mumkin, ya'ni u sof keshga aylanadi. Bu ham sig'im uchun, ham foydalanuvchi uchun yaxshi: savat va qidiruv natijalari foydalanuvchi bir muddat yo'q bo'lgani uchun yo'qolmasligi kerak.
+
+**Spring'da qayerda uchraydi:** `server.servlet.session.timeout` va Spring Session uchun `spring.session.timeout`. Sessiyani ilovadan tashqariga chiqarish: `spring-session-data-redis` yoki `spring-session-jdbc` (qarang: [ma'lumotlar bazasidagi sessiya holati](06-web-va-taqdimot-qatlami-patternlari.md#627-malumotlar-bazasidagi-sessiya-holati-database-session-state)). Umuman sessiyasiz yo'l: JWT yoki har so'rovda qayta tiklanadigan `SecurityContext` bilan `SessionCreationPolicy.STATELESS`. Xavfsizlik uchun `spring.session.redis.flush-mode` va `HttpSessionEventPublisher`, hamda `SessionRegistry` bilan parallel sessiya chegarasi. Xotira o'sishini kuzatish uchun `jvm.memory.used` va sessiya sonining metrikasi.
+
+**Qo'llanish keyslari:**
+- Savat va qidiruv natijalari `HttpSession` da saqlanadi, ko'p parallel foydalanuvchida heap tugaydi.
+- Standart o'ttiz daqiqa shunchaki qoldirilgan, holbuki real think time o'n daqiqa atrofida.
+- Sessiya Redis ga chiqarilgan, lekin TTL yozilmagan va Redis xotirasi asta to'ladi.
+- Foydalanuvchi boshqa saytda yigirma daqiqa o'tkazib qaytganda savati bo'sh bo'ladi.
+- Sessiyada entity obyektlari saqlanadi va ular eskirgan ma'lumot bilan ekranni to'ldiradi.
+
+**Ehtiyot bo'ling:** Muddatni qisqartirish sig'imni oshiradi, lekin foydalanuvchi uchun og'riqni ham oshiradi: shuning uchun avval sessiyadan davomli holatni (savat, afzalliklar, qidiruv natijasi) bazaga ko'chirish kerak, keyin muddatni qisqartirish. Moliyaviy ma'lumot (karta raqami va shunga o'xshash) bu qoidadan mustasno va imkon qadar tez o'chiriladi. Xavfsizlik uchun avtomatik chiqish va sig'im uchun sessiya muddati bitta son emas: ular alohida qarorlar.
+
+Manba: Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 9-bob (9.4 Overstaying Sessions), 185-186-betlar.
+
+## 25.97 Reload tugmasi (The Reload Button)
+
+**Tavsif:** Foydalanuvchi brauzer oldida o'tirib, server tomonda qancha ish ketayotganini bilmaydi. Sahifa o'n sekundda kelmasa, u qayta yuklash tugmasini bosadi. Shu paytda brauzer avvalgi so'rovning ulanishini tashlab, yangi socket ochib, yangi HTTP so'rov yuboradi. Serverga esa avvalgi so'rovni to'xtatish haqida hech kim aytmaydi: u ishlashda davom etadi va eng yaxshi holatda javobni yuborishga urinayotganda uzilgan ulanish xatosini oladi. Agar so'rov tranzaksion ish qilsa, ikkinchi so'rov birinchisini kutib bloklanishi yoki u bilan deadlock ga tushishi mumkin. Nygard ning xulosasi quruq: bu tugma uchun yaxshi javob yo'q, yagona yechim saytni shunchalik tez qilish, ya'ni foydalanuvchi uni bosishni o'ylamaydigan darajaga yetkazish.
+
+**Spring'da qayerda uchraydi:** Spring MVC da mijoz uzilganda ish o'z-o'zidan to'xtamaydi; bekor qilish signalini olish uchun WebFlux (reaktiv `Publisher` ning `cancel` signali) yoki `DeferredResult`/`SseEmitter` bilan `onTimeout` va `onCompletion` ishlovchilari kerak. Takroriy yuborishni zararsiz qilish uchun [idempotentlik kaliti](07-api-dizayn-patternlari.md#79-idempotentlik-kaliti-idempotency-key) va `POST` dan keyin `redirect:` (post-redirect-get). Server tomonda uzun ishni so'rov yo'lidan olib chiqish: `@Async`, Kafka yoki [asinxron so'rov-javob](17-resilience-va-cloud-dizayn-patternlari.md#1722-asinxron-sorov-javob-asynchronous-request-reply). Chegaralar: `spring.mvc.async.request-timeout`, `@Transactional(timeout = ...)` va `jakarta.persistence.query.timeout`.
+
+**Qo'llanish keyslari:**
+- Og'ir hisobot so'rovi yigirma sekund ishlaydi, foydalanuvchi uch marta qayta yuklaydi va uch nusxa parallel ishlaydi.
+- To'lov formasi ikki marta yuboriladi va idempotentlik kaliti yo'q, natijada ikkita to'lov yaratiladi.
+- Profil yangilash so'rovining ikki nusxasi bir xil qatorni yangilashga urinib deadlock beradi.
+- GC pauzasi sabab bir so'rov sekinlashadi, qayta yuklash to'lqini esa sekinlashuvni kuchaytiradi.
+- Server allaqachon ketgan mijoz uchun javob yasaydi va ulanish uzilganini faqat oxirida biladi.
+
+**Ehtiyot bo'ling:** So'rovlarni manba IP bo'yicha ketma-ketlashtirish yechim emas: CDN yoki korporativ proxy ortida hamma mijoz bitta IP bilan keladi, va foydalanuvchi birinchi javobni baribir kutmayotgani uchun ketma-ketlashtirish faqat kutishni uzaytiradi. Uzun ishni so'rov yo'lida qoldirib, faqat timeout qo'yish takroriy yuborish muammosini hal qilmaydi: o'zgartiruvchi amallar idempotent bo'lishi kerak.
+
+Manba: Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 9-bob (9.6 The Reload Button), 191-192-betlar.
+
+## 25.98 Qo'lda yozilgan SQL (Handcrafted SQL)
+
+**Tavsif:** ORM bashoratli va takrorlanadigan SQL yasaydi, va aynan bashoratlilik sig'im uchun yaxshi: DBA shu so'rovlarni tanilgan shakli bo'yicha sozlashi mumkin. Har bir ORM qatlami to'g'ridan-to'g'ri SQL yozish yo'lini qoldiradi va bu odatda tezlashtirish vositasi deb tanitiladi. Nygard uni sig'im qotili deb ataydi, chunki qo'lda yozilgan so'rov o'ziga xos va bashoratsiz bo'ladi: ilovaning qolgan qismi uchun qilingan sozlash bu so'rovga yordam bermaydi, hatto zarar qilishi mumkin, va teskarisi ham to'g'ri. Kitob tipik xatolarni sanaydi: indekslanmagan ustun bo'yicha join, juda ko'p jadvalni birga ulash, SQL ni to'plam tili emas, protsedura tili sifatida ishlatish (bitta qatorni topish uchun besh jadvalli join ni yuz marta takrorlash), va kerak bo'lmagan SQL imkoniyatlarini ishlatish. Alohida xavf - shart va join lari tsiklda yig'iladigan dinamik SQL: u hisobot tizimida o'rinli, tranzaksion tizimda emas.
+
+**Spring'da qayerda uchraydi:** Spring Data JPA da `@Query(nativeQuery = true)` va Hibernate ning nomlangan native so'rovlari, hamda `JdbcTemplate`/`JdbcClient` bilan satrdan yig'ilgan `WHERE`. Bashoratlilikni saqlashning yo'llari: dinamik shart uchun Criteria API yoki `Specification` (parametrlar baribir bind qilinadi), takrorlanadigan so'rovlar uchun `@EntityGraph` va `JOIN FETCH`, N+1 ni esa [N+1 muammosi yechimlari](09-malumotlarga-kirish-va-orm-patternlari.md#927-n1-muammosi-yechimlari-n1-problem-solutions) bo'yicha hal qilish. Yozilgan SQL ni ko'rish uchun Hibernate statistikasi (`hibernate.generate_statistics`), PostgreSQL da `pg_stat_statements` va `log_min_duration_statement`. Qachon JPA dan voz kechish mantiqli ekani [qachon JPA dan voz kechib JdbcClient yoki to'g'ridan-to'g'ri SQL yozish kerak](../architect/18-spring-data-jpa-va-hibernate-chuqur.md#1811-qachon-jpa-dan-voz-kechib-jdbcclient-yoki-togridan-togri-sql-yozish-kerak) bo'limida.
+
+**Qo'llanish keyslari:**
+- Qidiruv ekrani uchun `WHERE` sharti tsiklda satr sifatida yig'iladi va har kombinatsiya yangi query plan talab qiladi.
+- Native so'rov indekslanmagan ustun bo'yicha join qiladi va ishlab chiqarish hajmida table scan beradi.
+- Sakkiz tarmoqli `UNION` yoziladi, har tarmoq besh jadvalni ulaydi va plan o'nlab scan dan iborat bo'ladi.
+- Ishlab chiqishdagi kichik ma'lumotda tez ishlagan so'rov ishlab chiqarishda boshqa plan oladi va sekinlashadi.
+- Hisobot so'rovlari tranzaksion bazada bajarilib, OLTP trafikni sekinlashtiradi.
+
+**Ehtiyot bo'ling:** Qo'lda SQL yozish taqiq emas: avval bazada yechim bor-yo'qligini (indeks, view, statistikani yangilash) tekshirish kerak, keyin yozish. Yozilgan so'rov ishlab chiqarish hajmidagi ma'lumotda sinovdan o'tishi shart, aks holda o'lchangan foyda plan o'zgarishi bilan yo'qoladi. Satrni konkatenatsiya qilib so'rov yasash alohida xavfsizlik muammosi ham: parametr har doim bind qilinadi.
+
+Manba: Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 9-bob (9.7 Handcrafted SQL), 193-195-betlar.
+
+## 25.99 Ma'lumotlar bazasi evtrofikatsiyasi (Database Eutrophication)
+
+**Tavsif:** Ekologiyada ko'l evtrofikatsiya orqali "qariydi": cho'kma asta yig'ilib, suvdan kislorodni olib, hayotni to'xtatadi. Nygard shu o'xshatishni bazaga qo'yadi. Ishlab chiqish va QA da ma'lumot hajmi kulgili darajada kichik, QA da o'tgan vaqt esa qisqa, shuning uchun sxema jiddiy hajm sinovidan o'tmasdan ishlab chiqarishga tushadi. Keyin uch narsa birga ishlaydi. Birinchisi indekslar: ORM da yozilgan munosabat DBA ko'rigidan o'tmaydi, shuning uchun tashqi kalit yoki assotsiatsiya nishoni bo'lgan ustun indekssiz qolishi mumkin va u bo'yicha tanlash table scan beradi. Ikkinchisi joylashuv: o'sish tezligi haqidagi dastlabki taxminlar odatda noto'g'ri bo'lib chiqadi, jadval ko'p fizik bo'lakka yoyiladi va javob vaqti disk I/O tufayli yomonlashadi; yechim - partitsiyalash. Uchinchisi tarix: eng yaxshi javob arxivlash va o'chirishning qat'iy tartibi, hamda hisobot va ad-hoc tahlilni ishlab chiqarish bazasidan chiqarish.
+
+**Spring'da qayerda uchraydi:** Indeks qo'yish migratsiyaning bir qismi: Flyway yoki Liquibase skriptida `CREATE INDEX`, va JPA tomonida `@Table(indexes = @Index(...))` hujjat sifatida. Assotsiatsiya nishonlarini topish uchun Hibernate statistikasi va `pg_stat_user_tables.seq_scan`. Tarixni tozalash uchun `@Scheduled` yoki Spring Batch job (kichik porsiyalarda `DELETE`, keyin partitsiyani `DROP`), hamda [barqaror holat](17-resilience-va-cloud-dizayn-patternlari.md#179-barqaror-holat-steady-state) patterni. O'qish yuklamasini ajratish uchun alohida read-only `DataSource` va read model. Indeks tanlash va partitsiyalash mexanikasi `postgres-tuning` skilli qamrovida.
+
+```sql
+-- O'suvchi audit jadvalini sanaga qarab partitsiyalash
+CREATE TABLE audit_event (
+    id          bigint       NOT NULL,
+    occurred_at timestamptz  NOT NULL,
+    payload     jsonb        NOT NULL
+) PARTITION BY RANGE (occurred_at);
+
+CREATE TABLE audit_event_2026_10 PARTITION OF audit_event
+    FOR VALUES FROM ('2026-10-01') TO ('2026-11-01');
+
+-- Arxivlash: butun partitsiyani uzib olish, qatorlab DELETE emas
+ALTER TABLE audit_event DETACH PARTITION audit_event_2026_10;
+```
+
+**Qo'llanish keyslari:**
+- ORM da qo'shilgan `@ManyToOne` ustuni indekssiz qoladi va bir yildan keyin oddiy ekran daqiqalarda ochiladi.
+- Audit log hajmi bir relizda yiliga bir gigabayt edi, keyingisida kuniga bir gigabaytga chiqadi.
+- Hisobotlar ishlab chiqarish bazasida bajariladi va OLTP so'rovlari ular bilan bellashadi.
+- Tozalash job'i bitta katta `DELETE` qilib jadvalni bloklaydi va incident keltiradi.
+- Jadval ko'p fizik bo'lakka yoyilib, ketma-ket o'qish tasodifiy I/O ga aylanadi.
+
+**Ehtiyot bo'ling:** Indeksni ko'paytirish yozishni sekinlashtiradi, shuning uchun indeks kerakli kirish shabloniga qarab qo'yiladi, "har ehtimolga" emas. Tozalash tartibi mahsulot talabi bilan kelishiladi: foydalanuvchiga ko'rinishi kerak bo'lgan tarix (buyurtmalar) o'chirilmaydi, u arzon saqlashga ko'chiriladi. Partitsiyalash ustunini noto'g'ri tanlash foyda bermaydi: ustunda qiymatlar to'plami cheklangan va har qiymat bog'liq qatorlar klasterini bildirishi kerak.
+
+Manba: Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 9-bob (9.8 Database Eutrophication), 196-198-betlar.
+
+## 25.100 Integratsiya nuqtasi latency'si (Integration Point Latency)
+
+**Tavsif:** Har bir tashqi aloqa o'z latency'sini qo'shadi va Nygard o'lchovni aniq beradi: masofaviy chaqiruv lokal chaqiruvdan kamida ming marta uzoq davom etadi. Demak chaqiruvchi hech bo'lmaganda chaqirilgan tizim javob bergan vaqtcha javob beradi. Muammo "joy shaffofligi" falsafasi bilan kuchayadi: chaqiruvchi lokal va masofaviy chaqiruvning farqini bilmasligi kerak degan qarash ikki sababdan rad etilgan. Birinchisi, masofaviy chaqiruvning nosozlik turlari boshqa. Ikkinchisi, bu qarash dasturchini masofaviy interfeysni lokal obyekt kabi loyihalashga undaydi, natijada bitta ish uchun ko'p chaqiruv qilinadigan suhbatkash interfeys chiqadi va har chaqiruv o'z latency'sini qo'shadi. Bitta foydalanuvchining tezlik muammosi butun tizimning sig'im muammosiga aylanadi, chunki kutayotgan thread xotira, CPU vaqti, ehtimol DB ulanishi va hatto qator qulflarini ushlab turadi.
+
+**Spring'da qayerda uchraydi:** Chaqiruv sonini kamaytirish: element-element chaqirish o'rniga bulk endpoint, GraphQL da `@BatchMapping` va `DataLoader`, Kafka da partiyalab yuborish. Chaqiruvlarni parallellashtirish: `CompletableFuture.allOf(...)`, `Mono.zip(...)`, yoki virtual thread'lar bilan `ExecutorService`; agregatsiya uchun [gateway agregatsiyasi](17-resilience-va-cloud-dizayn-patternlari.md#1731-gateway-agregatsiyasi-gateway-aggregation). Chaqiruvni butunlay yo'q qilish: ma'lumotni oldinga ko'chirish (read model, CQRS) yoki keshlash. O'lchash: Micrometer `http.client.requests` va distributed tracing span'lari. Chaqiruvlar sonining o'zi alohida anti-pattern sifatida shu bobdagi [suhbatkash I/O](#2557-suhbatkash-io-chatty-io) va [sinxron chaqiruv zanjirlari](#2560-sinxron-chaqiruv-zanjirlari-synchronous-call-chains) bo'limlarida.
+
+**Qo'llanish keyslari:**
+- Daraxt ko'rinishini ochish uchun client ota tugunni bir marta, keyin har farzandni uch marta chaqiradi.
+- Bitta ekran uchun ketma-ket yettita downstream chaqiruv qilinadi va latency'lar qo'shiladi.
+- Chaqiruvchi va chaqirilgan tizim turli mintaqada joylashadi va har chaqiruv o'nlab millisekund qo'shadi.
+- Kutayotgan thread `@Transactional` ichida bo'lgani uchun DB ulanishi va qator qulfi ham band turadi.
+- Mahalliy test muhitida latency sezilmaydi va muammo faqat haqiqiy mintaqalarda chiqadi.
+
+**Ehtiyot bo'ling:** Masofaviy chaqiruvni kamaytirish kerak, lekin javobni keraksiz kattalashtirish teskari muammo beradi: faqat kerakli maydonlarni qaytaradigan summary obyekt yoki projection ishlatiladi. Parallellashtirish latency'ni kamaytiradi, lekin mavjudlik ko'paytmasini o'zgartirmaydi va downstream yuklamasini oshiradi, shuning uchun har chaqiruvga timeout va umumiy byudjet kerak. Kutish "bo'sh" ko'ringani bilan bepul emas: thread ushlab turgan resurslar ro'yxati har integratsiya uchun yoziladi.
+
+Manba: Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 9-bob (9.9 Integration Point Latency), 199-200-betlar.
+
+## 25.101 Amalda qo'llash
 
 - [ ] Bu bo'limdagi anti-patternlar ro'yxatini loyiha ustidan bir marta o'tkazib, topilgan har birini fayl va qator bilan yozib qo'ying.
 - [ ] Topilgan anti-patternlarni ikki guruhga ajratib belgilang: hozir tuzatiladigan va ADR bilan qabul qilinadigan.
@@ -1436,6 +1784,22 @@ public Rate fetch(String code) {
 - [Spring Framework, Proxying mechanisms](https://docs.spring.io/spring-framework/reference/core/aop/proxying.html) - CGLIB `final` va `private` metodni advise qila olmaydi
 - [Spring Framework v6.2.0, Spring projects in Kotlin: Final by Default](https://github.com/spring-projects/spring-framework/blob/v6.2.0/framework-docs/modules/ROOT/pages/languages/kotlin/spring-projects-in.adoc#final-by-default) - Kotlin sinf va metodlari standart `final`, yechim `kotlin-spring` (allopen) plugini
 - [sonar-java, S2230](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S2230.html) - qoida 5.x gacha har qanday public bo'lmagan metodni, 6.x da faqat `private` ni belgilaydi
+- Freeman/Robson, *Head First Design Patterns* 2nd, 13-bob - patternni haddan oshirib ishlatish va pattern kasalligi
+- Michael C. Feathers, *Working Effectively with Legacy Code*, Prentice Hall PTR, 2004 (copyright 2005), 25-bob (339, 345, 369, 372 va 399-bet) - statik yopishqoqlikdan chiqishning oraliq qadamlari: Encapsulate Global References, Expose Static Method, Introduce Instance Delegator, Introduce Static Setter va Replace Global Reference with Getter
+- Robert C. Martin, *Clean Code*, 17-bob - kod hidlari va evristikalar
+- Spring Boot kodi: `AutoConfigureTestDatabase` (default `Replace.NON_TEST` va uning javadoc'i: Testcontainers, `@ServiceConnection`, `@DynamicPropertySource` almashtirilmaydi). spring-projects/spring-boot, tag `v4.1.1` (commit `6fdf67ea1552691e932604d4bf67a5e08ff0b0ea`). Apache-2.0. https://github.com/spring-projects/spring-boot/blob/6fdf67ea1552691e932604d4bf67a5e08ff0b0ea/module/spring-boot-jdbc-test/src/main/java/org/springframework/boot/jdbc/test/autoconfigure/AutoConfigureTestDatabase.java
+- Spring Boot kodi: `TaskExecutorConfigurations` va `TaskExecutionProperties` (default `applicationTaskExecutor`: core 8, navbat `Integer.MAX_VALUE`; `propagate-context` default `false`). spring-projects/spring-boot, tag `v4.1.1`. Apache-2.0. https://github.com/spring-projects/spring-boot/blob/6fdf67ea1552691e932604d4bf67a5e08ff0b0ea/core/spring-boot/src/main/java/org/springframework/boot/task/TaskExecutionProperties.java
+- Spring Boot kodi: `JpaBaseConfiguration` (`open-in-view` default `true`, WARN faqat property yozilmaganda). spring-projects/spring-boot, tag `v3.5.0`. Apache-2.0. https://github.com/spring-projects/spring-boot/blob/v3.5.0/spring-boot-project/spring-boot-autoconfigure/src/main/java/org/springframework/boot/autoconfigure/orm/jpa/JpaBaseConfiguration.java
+- Spring Framework kodi: `SimpleAsyncUncaughtExceptionHandler` (ERROR log), `AsyncExecutionAspectSupport` (executor tanlash tartibi va `Future` uchun rethrow), `JtaTransactionAnnotationParser`, `DefaultTransactionAttribute.rollbackOn`, `resilience.annotation.Retryable`. spring-projects/spring-framework, tag `v7.0.9` (commit `82a6b40b9366ec181ededdad282b307ee5381a52`). Apache-2.0. https://github.com/spring-projects/spring-framework/blob/82a6b40b9366ec181ededdad282b307ee5381a52/spring-aop/src/main/java/org/springframework/aop/interceptor/SimpleAsyncUncaughtExceptionHandler.java
+- Spring Framework kodi: `DefaultListableBeanFactory.registerBeanDefinition` (`refresh()` dan keyin copy-on-write yo'li), `GenericApplicationContext.refresh`, `MediaType` (sinf, `enum` emas), `WebMvcConfigurer`. spring-projects/spring-framework, tag `v7.0.9`. Apache-2.0. https://github.com/spring-projects/spring-framework/blob/82a6b40b9366ec181ededdad282b307ee5381a52/spring-beans/src/main/java/org/springframework/beans/factory/support/DefaultListableBeanFactory.java
+- Spring Boot hujjati: Externalized Configuration (property manbalarining aniq ustuvorlik tartibi - command line argumentlari OS environment variable'dan yuqori). `books/docs/spring-boot/external-config.adoc` (spring-projects/spring-boot, tag `v3.5.0`). Apache-2.0. https://github.com/spring-projects/spring-boot/blob/v3.5.0/spring-boot-project/spring-boot-docs/src/docs/antora/modules/reference/pages/features/external-config.adoc
+- Michael T. Nygard, *Release It! Design and Deploy Production-Ready Software*, 1-nashr, Pragmatic Bookshelf, 2007, 4-bob - Stability Antipatterns ro'yxati o'n bir elementdan iborat: Integration Points (46-bet), Chain Reactions (61-bet), Cascading Failures (65-bet), Users (68-bet), Blocked Threads (81-bet), Attacks of Self-Denial (88-bet), Scaling Effects (91-bet), Unbalanced Capacities (96-bet), Slow Responses (100-bet), SLA Inversion (102-bet), Unbounded Result Sets (106-bet)
+- Michael T. Nygard, *Release It!*, 1-nashr, 2007, 9-bob - Capacity Antipatterns ro'yxati o'n elementdan iborat: Resource Pool Contention (176-bet), Excessive JSP Fragments (180-bet), AJAX Overkill (182-bet), Overstaying Sessions (185-bet), Wasted Space in HTML (187-bet), The Reload Button (191-bet), Handcrafted SQL (193-bet), Database Eutrophication (196-bet), Integration Point Latency (199-bet), Cookie Monsters (201-bet)
+- Michael T. Nygard, *Release It!*, 1-nashr, 2007, 4.2, 61-64-betlar - sakkiz serverli farmda bitta node yiqilsa qolganlari 12.5 foizdan 14.3 foizga o'tadi, ya'ni har bir serverning yuklamasi taxminan 15 foizga oshadi; ikki nodeli klasterda yuklama ikki barobar bo'ladi
+- Michael T. Nygard, *Release It!*, 1-nashr, 2007, 9.9, 199-bet - masofaviy chaqiruv lokal chaqiruvdan kamida ming marta uzoq davom etadi
+- Michael T. Nygard, *Release It!*, 1-nashr, 2007, 9.4, 185-bet - Servlet spetsifikatsiyasining tarixiy standart sessiya muddati o'ttiz daqiqa; muddatni think time o'rtachasidan bir standart og'ish narisiga qo'yish maslahati
+- ESLATMA: mavjud nusxa 1-nashr (2007). Excessive JSP Fragments, AJAX Overkill, Wasted Space in HTML va Cookie Monsters bugungi Spring Boot kontekstida ma'nosini yo'qotgani uchun bu bobga kiritilmadi; 2-nashr (2018) ga xos nomlar ham iqtibos qilinmaydi
+- Spring Boot kodi: `DurationUnit` (binding annotatsiyasi, validatsiya constraint'i emas) va `JacksonAutoConfiguration` (Boot 4 da default `ObjectMapper` Jackson 3 paketidan). spring-projects/spring-boot, tag `v4.1.1`. Apache-2.0. https://github.com/spring-projects/spring-boot/blob/6fdf67ea1552691e932604d4bf67a5e08ff0b0ea/core/spring-boot/src/main/java/org/springframework/boot/convert/DurationUnit.java
 
 ---
 

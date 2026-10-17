@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 31. TDD intizomi va kod dizayniga ta'siri (TDD Discipline)
 
 <details>
-<summary>Bu bobdagi 8 bo'lim</summary>
+<summary>Bu bobdagi 9 bo'lim</summary>
 
 - [31.1 Uchta qoida va qisqa sikl](#311-uchta-qoida-va-qisqa-sikl)
 - [31.2 Red-green-refactor: har bir qadamning maqsadi](#312-red-green-refactor-har-bir-qadamning-maqsadi)
@@ -16,7 +16,8 @@
 - [31.5 Test yozish qiyin bo'lsa, dizayn signal beradi](#315-test-yozish-qiyin-bolsa-dizayn-signal-beradi)
 - [31.6 TDD qachon mos emas](#316-tdd-qachon-mos-emas)
 - [31.7 Transformatsiya prioritet gipotezasi](#317-transformatsiya-prioritet-gipotezasi)
-- [31.8 Amalda qo'llash](#318-amalda-qollash)
+- [31.8 Sodda dizaynning to'rt qoidasi](#318-sodda-dizaynning-tort-qoidasi)
+- [31.9 Amalda qo'llash](#319-amalda-qollash)
 
 </details>
 
@@ -27,7 +28,7 @@ Test yozish texnikasi [testlash qo'llanmasida](../testing/README.md). Bu bobda b
 
 TDD uchta qoidaga qisqaradi. Birinchi, yiqiladigan test yozilmaguncha ishlab chiqarish kodi yozilmaydi. Ikkinchi, testni yiqitish uchun yetarlicha test yozilgach to'xtash. Uchinchi, testni o'tkazish uchun yetarlicha ishlab chiqarish kodi yozilgach to'xtash.
 
-Natija: sikl bir-ikki daqiqa davom etadi. Shu qisqalik eng muhim xususiyat, chunki har bir qadamda ishlaydigan tizim bo'ladi va xato oynasi ikki daqiqadan oshmaydi.
+Natija: sikl juda qisqa bo'ladi. Martin uning uzunligini taxminan o'ttiz sekund deb beradi: test va ishlab chiqarish kodi birga yoziladi, test esa kod oldida bir necha sekund yuradi. Shu qisqalik eng muhim xususiyat, chunki har bir qadamda ishlaydigan tizim bo'ladi va xato oynasi shu sikl uzunligidan oshmaydi.
 
 ```java
 // 1) Yiqiladigan test (kompilyatsiya ham bo'lmasligi mumkin)
@@ -114,7 +115,34 @@ Qolgan hamma joyda, ayniqsa biznes qoidalari va hisob mantiqida, TDD eng arzon y
 
 Amaliy foydasi: har qadamda eng oddiy transformatsiyani tanlash kodni tabiiy ravishda sodda holatda ushlab turadi va vaqtidan oldin umumiylashtirishni ([patternlar hujjatidagi](../patterns/README.md) spekulyativ umumiylik anti-patterni) to'sadi.
 
-## 31.8 Amalda qo'llash
+## 31.8 Sodda dizaynning to'rt qoidasi
+
+TDD sikli o'z-o'zidan dizayn bermaydi: refaktoring qadamida nimaga qarab qaror qilish kerakligi aytilishi kerak. Kent Beck ning to'rt qoidasi shu o'lchov bo'lib ishlatiladi va ular **muhimlik tartibida** yoziladi: yuqoridagi qoida pastdagisidan ustun.
+
+| Tartib | Qoida | Amalda nimani tekshiradi |
+|---|---|---|
+| 1 | Hamma test o'tadi | tizim tekshirilishi mumkin, demak deploy qilinishi mumkin |
+| 2 | Takrorlanish yo'q | bir qoida bitta joyda yashaydi |
+| 3 | Dasturchi niyatini ifodalaydi | nom, funksiya o'lchami va tuzilma o'qiladi |
+| 4 | Sinf va metod soni minimal | ikkinchi va uchinchi qoida ortiqcha abstraksiya tug'dirmaydi |
+
+Birinchi qoida boshqalarini imkonli qiladi: testsiz refaktoring qilib bo'lmaydi, testlanadigan dizaynga intilish esa sinfni kichik va bitta maqsadli qiladi, bog'lanishni esa interfeys va inyeksiya orqali kamaytiradi. Qolgan uchtasi refaktoring qadamida qo'llanadi.
+
+Ikkinchi qoida faqat bir xil qatorlar haqida emas: implementatsiya takrorlanishi ham shunga kiradi. `isEmpty()` ni alohida `boolean` maydon bilan yuritish `size()` ni takrorlaydi, holbuki uni ta'rif bilan bog'lash mumkin.
+
+```java
+// yomon: ikkita hisob bir xil haqiqatni ikki joyda saqlaydi
+public boolean isEmpty() { return itemCount == 0; }
+public int size() { return items.size(); }
+
+// yaxshi: isEmpty size ta'rifidan kelib chiqadi
+public boolean isEmpty() { return size() == 0; }
+public int size() { return items.size(); }
+```
+
+To'rtinchi qoida uchinchisiga tormoz bo'ladi: "niyatni ifodalash" uchun har gapga interfeys va sinf yasash dogma bo'lib ketsa, dizayn soddalashmaydi, kattalashadi. Shu sababli tartib muhim: sinf soni faqat yuqoridagi uch qoida talab qilgan joyda o'sadi. Mayda takrorlanishni chiqarish esa SRP buzilishini ko'rsatib beradi: chiqarilgan metod odatda boshqa sinfga tegishli bo'lib chiqadi va shu joyda u ko'rinadigan, qayta ishlatiladigan bo'ladi.
+
+## 31.9 Amalda qo'llash
 
 - [ ] Keyingi yangi biznes qoidasini to'liq TDD sikli bilan yozib, siklni ikki daqiqada ushlashga harakat qiling.
 - [ ] Har bir yangi test yozilganda uning **yiqilishini** ko'rishni odat qiling.
@@ -123,7 +151,14 @@ Amaliy foydasi: har qadamda eng oddiy transformatsiyani tanlash kodni tabiiy rav
 - [ ] `Instant.now()` va statik chaqiruvlarni inyeksiyaga o'tkazib, testlarni frameworksiz ishga tushiradigan qiling.
 - [ ] Spike kodini alohida branch da ushlab, uni to'g'ridan-to'g'ri merge qilmaslikni kelishib oling.
 - [ ] Jamoada bir hafta TDD bilan ishlab, keyin test qarzining o'zgarishini o'lchab ko'ring.
+- [ ] Refaktoring qadamida to'rt qoidani tartib bilan yurgizib, qaysi biri eng ko'p ishlaganini yozib boring.
 - [ ] "Green" qadamida eng oddiy transformatsiyani tanlash qoidasini mashq sessiyasida (46.7) sinab ko'ring.
+
+## Manbalar
+
+- Robert C. Martin, *Clean Code*, 9-bob - TDD ning uchta qoidasi
+- Robert C. Martin, *Clean Code*, 12-bob - Kent Beck ning sodda dizayn to'rt qoidasi va ularning tartibi
+- Robert C. Martin, *Clean Code*, 9-bob ("The Three Laws of TDD") - uchta qoida va taxminan o'ttiz sekundlik sikl
 
 ---
 

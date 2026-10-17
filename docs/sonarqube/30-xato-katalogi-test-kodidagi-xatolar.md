@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 30. Xato katalogi: test kodidagi xatolar (Catalog: Test Code)
 
@@ -688,6 +688,15 @@ assertThat(first.days()).isNotEmpty().extracting(Day::status).doesNotContain(Sta
 - [ ] `sonar.tests`, `sonar.test.inclusions` va `sonar.test.exclusions` qiymatlarini aniq yozib, yordamchi klasslarni test to'plamidan chiqaring.
 - [ ] Bitta modulda mutation testing ni ishga tushirib, coverage bilan haqiqiy tekshiruv orasidagi farqni ko'rsating.
 - [ ] Yangi test faylida `python3 tools/check_code.py <fayl>` toza bo'lsin: `Month` enum, qotirilgan `Clock`, `assertThrows` lambdasida bitta chaqiruv, AssertJ maxsus assertionlari.
+
+## Manbalar
+
+- [sonar-java 8.44, `S2699.json`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S2699.json) - assertion siz test: CODE_SMELL, Blocker, scope `Tests`
+- [sonar-java 8.44, `S5961.json`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S5961.json) - testdagi assertion soni chegarasi
+- [JUnit 5.11, Writing Tests](https://raw.githubusercontent.com/junit-team/junit5/r5.11.0/documentation/src/docs/asciidoc/user-guide/writing-tests.adoc) - `@Disabled`, lifecycle va assertion
+- [sonar-java 8.44, qoida metadata si](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S1192.json) - bobdagi har qoidaning rasmiy sarlavhasi, turi va darajasi shu metadata dan olingan
+- `tools/sonar_rules.tsv` - tur va daraja da'volari `check_docs.py` da shu snapshotga solishtiriladi; snapshot sonar-java va sonar-java-symbolic-execution metadata sidan olinadi
+- `tools/claims_data/sonar_messages.tsv` - keltirilgan inglizcha xabarlar check manbasidagi matnga `verify_claims.py --faqat xabar` bilan solishtiriladi
 
 ---
 

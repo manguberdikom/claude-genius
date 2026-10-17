@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 8. Testcontainers bilan real infratuzilmada test (Integration Testing with Testcontainers)
 
@@ -189,7 +189,23 @@ Bu naqsh Spring'ning kontekst keshi bilan birga ishlaganda haqiqiy samara beradi
 
 ## 8.5 Konteynerni qayta ishlatish (reuse)
 
-Reuse - JVM tugaganda ham konteynerni tirik qoldirish: keyingi test ishga tushganda tayyor konteyner topiladi va start vaqti nolga yaqinlashadi. Yoqish uchun ikki shart birga kerak: konteynerda `.withReuse(true)` va developer mashinasida `~/.testcontainers.properties` faylida `testcontainers.reuse.enable=true`. Bu fayl **repoga qo'shilmaydi** - bu developer'ning shaxsiy sozlamasi.
+Reuse - JVM tugaganda ham konteynerni tirik qoldirish: keyingi test ishga tushganda tayyor konteyner topiladi va start vaqti nolga yaqinlashadi. Hujjatda u **eksperimental** deb belgilangan va xatti-harakati o'zgarishi mumkin, shuning uchun unga jamoa oqimi qurilmaydi: u faqat lokal tezlik uchun.
+
+Yoqish uchun ikki shart birga kerak: konteynerda `.withReuse(true)` va muhitda opt-in. Opt-in ikki yo'l bilan beriladi: `TESTCONTAINERS_REUSE_ENABLE=true` muhit o'zgaruvchisi yoki `~/.testcontainers.properties` faylida `testcontainers.reuse.enable=true`. Uchinchi yo'l ishlamaydi: classpath dagi properties fayli bilan reuse yoqilmaydi. Foydalanuvchi fayli **repoga qo'shilmaydi**, u developer'ning shaxsiy sozlamasi.
+
+Mexanik tuzoq shu yerda: reuse ishlashi uchun konteyner **qo'lda** `start()` bilan ko'tariladi va `stop()` hech qanday yo'l bilan chaqirilmaydi - na to'g'ridan-to'g'ri, na `try-with-resources` orqali, na JUnit integratsiyasi orqali. Ya'ni `@Container` annotatsiyasi bilan e'lon qilingan maydon reuse bilan ishlamaydi, chunki JUnit kengaytmasi testdan keyin konteynerni to'xtatadi.
+
+```java
+// yaxshi: statik maydon, qo'lda start, @Container YO'Q
+static final PostgreSQLContainer<?> POSTGRES =
+        new PostgreSQLContainer<>("postgres:16.4-alpine").withReuse(true);
+
+static {
+    POSTGRES.start();        // stop() chaqirilmaydi
+}
+```
+
+JDBC URL shaklida ishlatilsa, qayta ishlatish URL parametri bilan beriladi: `jdbc:tc:postgresql:16.4:///app?TC_REUSABLE=true`.
 
 Reuse yoqilganda Ryuk o'sha konteynerni o'chirmaydi va Testcontainers konteyner konfiguratsiyasidan hash hisoblab mavjudini topadi; konfiguratsiyani o'zgartirsangiz (image tag, env, buyruq) yangi konteyner ko'tariladi.
 
@@ -424,6 +440,13 @@ Qo'shimcha ikki xato: **`FixedHostPortGenericContainer`** (parallellikni o'ldira
 - [ ] Testlar orasidagi tozalash strategiyasi yozib qo'yilgan (rollback / TRUNCATE / schema-per-class) va reuse yoqilgan lokal muhitda ham ishlaydi.
 - [ ] Migratsiya testlari bor: to'liq Flyway/Liquibase ishga tushishi, eski ma'lumot bilan yangi migratsiya, forward-only va zero-downtime (expand/contract) tekshiruvi.
 - [ ] CI'da Docker mavjudligi tasdiqlangan, image'lar pre-pull qilinadi, reuse o'chirilgan va integratsion test to'plami kelishilgan vaqt byudjetidan oshmaydi.
+
+## Manbalar
+
+- [Testcontainers, Reusable Containers](https://raw.githubusercontent.com/testcontainers/testcontainers-java/9bb3c2dc175672ad33a2eafd7133212c7173ac43/docs/features/reuse.md) - reuse eksperimental; `start()` qo'lda chaqiriladi va `stop()` na to'g'ridan-to'g'ri, na `try-with-resources`, na JUnit integratsiyasi orqali chaqirilmaydi; opt-in `TESTCONTAINERS_REUSE_ENABLE` yoki `~/.testcontainers.properties`, classpath fayli ishlamaydi; JDBC URL da `TC_REUSABLE=true`
+- [Testcontainers, JUnit 5 Quickstart](https://raw.githubusercontent.com/testcontainers/testcontainers-java/9bb3c2dc175672ad33a2eafd7133212c7173ac43/docs/quickstart/junit_5_quickstart.md) - `@Testcontainers` va `@Container` hayot aylanishi
+- [JUnit 5, Writing Tests](https://raw.githubusercontent.com/junit-team/junit5/r5.11.0/documentation/src/docs/asciidoc/user-guide/writing-tests.adoc) - lifecycle annotatsiyalari va test nusxasi hayoti
+- [JUnit 5, Extensions](https://raw.githubusercontent.com/junit-team/junit5/r5.11.0/documentation/src/docs/asciidoc/user-guide/extensions.adoc) - kengaytma nuqtalari, Testcontainers shu mexanizm ustida ishlaydi
 
 ---
 

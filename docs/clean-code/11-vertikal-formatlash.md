@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 11. Vertikal formatlash (Vertical Formatting)
 
 <details>
-<summary>Bu bobdagi 10 bo'lim</summary>
+<summary>Bu bobdagi 12 bo'lim</summary>
 
 - [11.1 Fayl o'lchami va sinf uzunligi](#111-fayl-olchami-va-sinf-uzunligi)
 - [11.2 Gazeta metaforasi: yuqoridan pastga ma'lumot zichligi](#112-gazeta-metaforasi-yuqoridan-pastga-malumot-zichligi)
@@ -18,7 +18,9 @@
 - [11.7 Bog'liq funksiyalarni yonma-yon qo'yish](#117-bogliq-funksiyalarni-yonma-yon-qoyish)
 - [11.8 Tushunchaviy yaqinlik](#118-tushunchaviy-yaqinlik)
 - [11.9 Vertikal tartib: chaqiruvchi yuqorida](#119-vertikal-tartib-chaqiruvchi-yuqorida)
-- [11.10 Amalda qo'llash](#1110-amalda-qollash)
+- [11.10 Lokal o'zgaruvchi qamrovini kichik ushlash va faylda bitta top-level sinf](#1110-lokal-ozgaruvchi-qamrovini-kichik-ushlash-va-faylda-bitta-top-level-sinf)
+- [11.11 Formatlashning asosiy teoremasi va yaxshi joylashuv maqsadlari](#1111-formatlashning-asosiy-teoremasi-va-yaxshi-joylashuv-maqsadlari)
+- [11.12 Amalda qo'llash](#1112-amalda-qollash)
 
 </details>
 
@@ -164,7 +166,91 @@ Java va C# da konvensiya bir xil: chaqiruvchi funksiya chaqiriladigan funksiyada
 
 Istisno: `equals`, `hashCode`, `toString` va boshqa shartnoma metodlari sinf oxirida to'planadi (11.6), chunki ular hikoyaning qismi emas, shartnomaning qismi.
 
-## 11.10 Amalda qo'llash
+## 11.10 Lokal o'zgaruvchi qamrovini kichik ushlash va faylda bitta top-level sinf
+
+Oldingi bo'limlar e'lon va ishlatish orasidagi masofani o'lchadi. Buning teskari tomoni ham qoida: o'zgaruvchi birinchi ishlatiladigan joyda e'lon qilinadi, metod boshida emas. Metod boshida e'lon qilingan o'zgaruvchi metod oxirigacha yashaydi, qiymati esa orada o'zgarishi mumkin va o'quvchi uni butun metod bo'ylab kuzatishi kerak.
+
+```java
+// yomon: uchta o'zgaruvchi metod boshida, qiymati keyin to'ladi
+void settle(List<Payment> payments) {
+    Money total;
+    Instant settledAt;
+    SettlementResult result;
+    // ... yigirma qator ...
+}
+
+// yaxshi: har biri birinchi ishlatilishida, deyarli hammasi final
+void settle(List<Payment> payments) {
+    Money total = payments.stream().map(Payment::amount).reduce(Money.ZERO, Money::plus);
+    Instant settledAt = clock.instant();
+    SettlementResult result = ledger.record(total, settledAt);
+}
+```
+
+Shu qoidaning amaliy foydasi: o'zgaruvchi e'lon joyida ishga tushirilsa, uni `final` qilib qo'yish mumkin bo'ladi va kompilyator keyingi o'zgartirishni to'sadi. Sikl o'zgaruvchisi ham shunga kiradi: `for` va `for-each` da e'lon qilingan o'zgaruvchi sikldan tashqarida ko'rinmaydi, `while` dan oldin e'lon qilingani esa ko'rinadi va keyin tasodifan ishlatiladi.
+
+Qamrovni kichik ushlashning ikkinchi yarmi: **bitta o'zgaruvchi bitta maqsad uchun**. Bir o'zgaruvchini metod ichida ikki xil ish uchun qayta ishlatish uni ikki marta yashatadi, lekin o'quvchiga ikki ishning orasida bog'liqlik bor degan yolg'on ishora beradi. Ikkinchi shakli yashirinroq: o'zgaruvchining ayrim qiymatlari **boshqa ma'no** tashiydi. `pageCount` chop etilgan betlar soni, `-1` bo'lsa esa xato belgisi; `customerId` mijoz raqami, `500000` dan katta bo'lsa esa qarzdor hisobning raqami. Bunday o'zgaruvchi ikki ishga cho'zilgan va shu ikkitadan kamida biri uchun turi noto'g'ri: `pageCount` ning `-1` i butun son qiyofasida yurgan `boolean`. Bu holatning atamasi **hybrid coupling** (McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 10.8 (255-257-bet)). Java da yechim arzon: ikkinchi ma'no o'z o'zgaruvchisiga, `Optional` ga, enum ga yoki istisnoga chiqadi.
+
+```java
+// yomon: temp ikki ishda, pageCount ning -1 i esa qiymat emas, xato belgisi
+double temp = Math.sqrt(b * b - 4 * a * c);
+double[] root = { (-b + temp) / (2 * a), (-b - temp) / (2 * a) };
+temp = root[0];                     // butunlay boshqa ish: ildizlarni almashtirish
+root[0] = root[1];
+root[1] = temp;
+int pageCount = render(doc);        // -1 qaytishi mumkin, u "xato" degani
+
+// yaxshi: har ma'no o'z nomida, xato esa qiymat emas
+double discriminant = Math.sqrt(b * b - 4 * a * c);
+double[] roots = { (-b + discriminant) / (2 * a), (-b - discriminant) / (2 * a) };
+double firstRoot = roots[0];
+roots[0] = roots[1];
+roots[1] = firstRoot;
+int pageCount = render(doc);        // xatoda istisno tashlaydi, -1 qaytarmaydi
+```
+
+Fayl darajasidagi qoida ham shu mantiqdan chiqadi: bitta `.java` faylda bitta top-level sinf turadi. Java bir faylda bir nechta package-private sinfga ruxsat beradi, lekin unda sinfni qaysi fayldan topish kerakligi noaniq bo'ladi va bir xil nomdagi sinf ikki faylda paydo bo'lsa kompilyatsiya natijasi fayl tartibiga bog'liq bo'lib qoladi. Yordamchi tur kerak bo'lsa, u ichki statik sinf bo'ladi (shunda uning egasi nomdan ko'rinadi) yoki o'z fayliga chiqadi.
+
+## 11.11 Formatlashning asosiy teoremasi va yaxshi joylashuv maqsadlari
+
+Bu bobdagi qoidalarning hammasi bitta da'vodan chiqadi va uning nomi bor: **Formatlashning asosiy teoremasi** (Fundamental Theorem of Formatting) - yaxshi joylashuv programmaning **mantiqiy tuzilishini** ko'rsatadi (McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 31.1 (732-bet)). Kodning chiroyli ko'rinishi ham qadrga ega, lekin tuzilishni ko'rsatishdan arzonroq: bir usul tuzilishni yaxshiroq ko'rsatsa, boshqasi chiroyliroq ko'rinsa, tuzilishni ko'rsatadigani tanlanadi. McConnell shu o'lchovni yana bir tomondan beradi: hamma kodni chiroyli ko'rsatadigan usuldan, yaxshi kodni yaxshi va yomon kodni yomon ko'rsatadigan usul foydaliroq.
+
+Teoremaning amaliy ma'nosi: joylashuv kompilyatorga va odamga **bir xil** gapni aytishi kerak. Ikkisi ajralgan joy xato tug'adi.
+
+```java
+// yomon: indentatsiya uch qator bir blok deb aytadi, kompilyator esa
+// faqat birinchi qatorni takrorlaydi
+int left = 0;
+int i;
+for (i = 0; i < size; i++)
+    left = leftValues[i];
+    leftValues[i] = rightValues[i];
+    rightValues[i] = left;
+
+// yomon: bo'shliq (3+4) * (2+7) = 63 deb aytadi, kompilyator 3 + 8 + 7 = 18 hisoblaydi
+int x = 3+4 * 2+7;
+
+// yaxshi: qavs va qavs juftligi ikki o'quvchiga bitta gapni aytadi
+for (int i = 0; i < size; i++) {
+    int left = leftValues[i];
+    leftValues[i] = rightValues[i];
+    rightValues[i] = left;
+}
+int x = (3 + 4) * (2 + 7);
+```
+
+Teorema uslub bahsini hal qilmaydi, lekin uni oshkor qiladi: McConnell joylashuv sxemasiga qo'yiladigan talablarni sanab beradi va shu talablar bahsni "menga shunisi yoqadi" dan chiqaradi (31.1 (735-736-bet)):
+
+- **Mantiqiy tuzilishni aniq ko'rsatsin.** Bu teoremaning o'zi. Amalda buni indentatsiya va bo'sh qator qiladi ([tushunchalar orasida bo'sh qator](#113-tushunchalar-orasida-bosh-qator), [indentatsiya va uni buzmaslik](12-gorizontal-formatlash-va-kod-uslubi.md#124-indentatsiya-va-uni-buzmaslik)).
+- **Tuzilishni izchil ko'rsatsin.** Istisnolari shunchalik ko'p bo'lgan sxema izchil qo'llanmaydi; yaxshi sxema holatlarning katta qismiga tegishli bo'ladi.
+- **O'qilishni yaxshilasin.** Mantiqan to'g'ri, lekin o'qishni qiyinlashtiradigan sxema foydasiz: faqat kompilyator talab qilgan joyda bo'shliq qo'yadigan uslub mantiqan nuqsonsiz va o'qilmaydi.
+- **O'zgarishga bardosh bersin.** Eng yaxshi sxemada bitta qatorni o'zgartirish boshqa bir necha qatorni o'zgartirishni talab qilmaydi.
+
+McConnell beshinchi mezonni ham eslatadi, lekin uni ixtiyoriy deb beradi: oddiy gap yoki blok uchun sarflanadigan qator sonini kamaytirish. Mezonlarni boshqa-boshqa vaznlash boshqa-boshqa xulosaga olib boradi, shuning uchun bahs mezon ustida boriladi, did ustida emas.
+
+Shu ro'yxat korpusdagi bir qancha qoidaning sababini bir joyda tushuntiradi. [Gorizontal tekislash nega zarar qiladi](12-gorizontal-formatlash-va-kod-uslubi.md#123-gorizontal-tekislash-nega-zarar-qiladi) bo'limidagi uch zarar aslida shu mezonlarning uchtasi buzilgani: tekislangan ustun o'zgarishga bardosh bermaydi (bitta nom o'zgarsa blok o'zgaradi), o'qishni yaxshilamaydi (ko'z turga emas, nomga tushadi) va formatter bilan izchil emas. [Bitta jamoa, bitta uslub](13-formatlashni-avtomatlashtirish-va-diff.md#131-bitta-jamoa-bitta-uslub-tanlov-emas-sozlama) qarori esa ikkinchi mezonni mashinaga topshirish: izchillikni odam emas, formatter ta'minlaydi.
+
+## 11.12 Amalda qo'llash
 
 - [ ] 11.1 dagi skript bilan fayl uzunligi taqsimotini chiqarib, 500 qatordan katta fayllarni bo'lish ro'yxatiga kiriting.
 - [ ] Sinf a'zolari tartibini 11.6 jadvaliga keltirib, Checkstyle `DeclarationOrder` bilan mahkamlang.
@@ -174,6 +260,23 @@ Istisno: `equals`, `hashCode`, `toString` va boshqa shartnoma metodlari sinf oxi
 - [ ] Maydonlar orasidagi keraksiz Javadoc bloklarini olib tashlab, vertikal zichlikni tiklang.
 - [ ] Paket, import va sinf e'lonlari orasida bo'sh qator borligini formatter bilan ta'minlang.
 - [ ] `equals`/`hashCode`/`toString` ni sinf oxiriga ko'chiring va shu konvensiyani hujjatlashtiring.
+- [ ] Metod boshida e'lon qilinib keyin to'ladigan o'zgaruvchilarni birinchi ishlatilish joyiga ko'chirib, `final` qo'yib ko'ring.
+- [ ] Bir faylda bir nechta top-level sinf bor fayllarni toping va ularni ajratish yoki ichki statik sinfga aylantirish qarorini qabul qiling.
+- [ ] Ikki ishda ishlatilgan `temp` turidagi o'zgaruvchilarni va `-1` kabi yashirin ma'noli qiymatlarni topib, har ma'noni o'z nomiga chiqaring.
+- [ ] Uslub bahsini mezon ustiga ko'chiring: taklif qilingan sxema mantiqiy tuzilishni, izchillikni, o'qilishni va o'zgarishga bardoshni qanday o'zgartirishini yozib qo'ying.
+
+## Manbalar
+
+- Joshua Bloch, *Effective Java* 3rd, Item 57 - lokal o'zgaruvchi qamrovini kichik ushlash
+- Joshua Bloch, *Effective Java* 3rd, Item 25 - manba faylda bitta top-level sinf
+- Robert C. Martin, *Clean Code*, 5-bob - vertikal masofa, gazeta metaforasi, tushunchaviy yaqinlik
+- Robert C. Martin, *Clean Code*, 5-bob ("Vertical Formatting") - gazeta metaforasi, tushunchalar orasidagi bo'shliq, vertikal zichlik va masofa
+- Robert C. Martin, *Clean Code*, 5-bob ("Vertical Ordering") - chaqiruvchi chaqiriladigandan yuqorida
+- Joshua Bloch, *Effective Java* 3rd, Item 57 - lokal o'zgaruvchini birinchi ishlatilish joyida e'lon qilish
+- Joshua Bloch, *Effective Java* 3rd, Item 25 - manba faylda bitta top-level sinf
+- Steve McConnell, *Code Complete*, 2-nashr, 10.8 (255-257-bet) - bitta o'zgaruvchi bitta maqsad uchun, yashirin ma'no va hybrid coupling
+- Steve McConnell, *Code Complete*, 2-nashr, 31.1 (732-bet) - Formatlashning asosiy teoremasi
+- Steve McConnell, *Code Complete*, 2-nashr, 31.1 (735-736-bet) - yaxshi joylashuvning mezonlari
 
 ---
 

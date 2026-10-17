@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 27. Xato katalogi: maintainability, tuzilish va murakkablik (Catalog: Maintainability, Structure)
 
@@ -41,7 +41,7 @@ Bu bob maintainability toifasidagi eng ko'p uchraydigan code smell larni katalog
 | Parametrlar soni ko'p (`java:S107`) | "Metodda 7 dan ko'p parametr bor" | maintainability (code smell) | Major | Chaqiruv joyida argument almashib ketadi |
 | Nazorat strukturalari chuqur ichma-ich (`java:S134`) | "Uch darajadan chuqur joylashtirma" | maintainability (code smell) | Critical | Shart kombinatsiyalari ko'rinmay qoladi |
 | Birlashtirilishi mumkin bo'lgan `if` lar (`java:S1066`) | "Merge this if statement with the enclosing one" | maintainability (code smell) | Major | Ortiqcha ichma-ich daraja, keraksiz murakkablik |
-| Bo'sh blok (`java:S108`) | "Either remove or fill this block of code" | maintainability (code smell) | Major | Yozilmagan mantiq yo'q bo'lib ketadi |
+| Bo'sh blok (`java:S108`) | "Remove this block of code, fill it in, or add a comment explaining why it is empty." | maintainability (code smell) | Major | Yozilmagan mantiq yo'q bo'lib ketadi |
 | Bo'sh `catch` va yo'q qilingan exception | "Handle this exception or rethrow it" | maintainability (code smell) | Major | Xato jim yutiladi, incident tahlili imkonsiz |
 | Takrorlangan kod bloki (duplication metrikasi) | "Duplicated Blocks" o'sadi, quality gate shartiga tegadi | maintainability (o'lchov) | Quality gate sharti | Tuzatish bir joyda qilinadi, boshqasida qolib ketadi |
 | Takrorlangan satr literali (`java:S1192`) | "Literal takrorlanmasin, konstanta kirit" | maintainability (code smell) | Critical | Matn yoki kalit bir joyda o'zgaradi, boshqasida yo'q |
@@ -560,6 +560,15 @@ CI da gate natijasini kutish kerak, aks holda build yashil, gate esa qizil qolad
 - [ ] Eski uslubdagi enum `switch` larni `switch` expression ga o'tkaz va kutilmagan qiymatga xato tashla.
 - [ ] CI pipeline ga `-Dsonar.qualitygate.wait=true` qo'shib, gate qizil bo'lsa build yiqilishini ta'minla.
 - [ ] Refactoring dan oldin mavjud xulqni test bilan qulfla, [testlash qo'llanmasidagi](../testing/README.md) xulq-markazli test mavzusiga tayan.
+
+## Manbalar
+
+- [sonar-java 8.44, `EmptyBlockCheck.java`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/java-checks/src/main/java/org/sonar/java/checks/EmptyBlockCheck.java) - `java:S108` ning hozirgi xabari: "Remove this block of code, fill it in, or add a comment explaining why it is empty."
+- [sonar-java 8.44, `DeadStoreCheck.java`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/java-checks/src/main/java/org/sonar/java/checks/DeadStoreCheck.java) - `java:S1854` xabari
+- [sonar-java 8.44, `MagicNumberCheck.java`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/java-checks/src/main/java/org/sonar/java/checks/MagicNumberCheck.java) - `java:S109` xabari
+- [sonar-java 8.44, `CollapsibleIfCandidateCheck.java`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/java-checks/src/main/java/org/sonar/java/checks/CollapsibleIfCandidateCheck.java) - `java:S1066` xabari
+- [sonar-java 8.44, `CognitiveComplexityMethodCheck.java`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/java-checks/src/main/java/org/sonar/java/checks/CognitiveComplexityMethodCheck.java) - `java:S3776` xabari va chegara parametri
+- `tools/sonar_rules.tsv` - bobdagi tur va daraja da'volari shu snapshotga solishtiriladi
 
 ---
 

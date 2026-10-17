@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 41. Lombok, record va generatsiya qilingan kod (Lombok, Records and Generated Code)
 
@@ -497,6 +497,14 @@ Oxirgi va eng muhim ogohlantirish. JaCoCo va Sonar ning Lombok hamda record ga m
 - [ ] Har bir `@Builder` ni private konstruktor ustiga ko'chirib, majburiy maydonlar uchun `Objects.requireNonNull` tekshiruvini qo'shing va initsializatorli maydonlarga `@Builder.Default` qo'ying.
 - [ ] `sonar.exclusions`, `sonar.coverage.exclusions` va `sonar.cpd.exclusions` ni alohida yozib, MapStruct, OpenAPI va protobuf chiqishini mos parametrga joylashtiring.
 - [ ] `log.debug` va `log.info` chaqiriqlarida satr birlashtirish qolganini qidirib, ularni placeholder shakliga o'tkazing.
+
+## Manbalar
+
+- [sonar-java 8.44, `S6213.json`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S6213.json) - cheklangan identifikatorlar (`record`, `sealed`, `yield`)
+- [sonar-java 8.44, `S6878.json`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S6878.json) - record pattern ishlatish
+- [sonar-java 8.44, qoida metadata si](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S1192.json) - bobdagi har qoidaning rasmiy sarlavhasi, turi va darajasi shu metadata dan olingan
+- `tools/sonar_rules.tsv` - tur va daraja da'volari `check_docs.py` da shu snapshotga solishtiriladi; snapshot sonar-java va sonar-java-symbolic-execution metadata sidan olinadi
+- `tools/claims_data/sonar_messages.tsv` - keltirilgan inglizcha xabarlar check manbasidagi matnga `verify_claims.py --faqat xabar` bilan solishtiriladi
 
 ---
 

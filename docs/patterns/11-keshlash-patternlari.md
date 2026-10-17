@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 11. Keshlash patternlari (Caching Patterns)
 
@@ -197,7 +197,7 @@ public class CatalogService {
 
 **Tavsif:** Kesh yozuvi muddati tugashini kutmasdan, TTL'ning oxiriga yaqinlashganda fonda proaktiv yangilanadi. Agar yozuvga murojaat bo'lsa, chaqiruvchi eski (lekin hali yaroqli) qiymatni darhol oladi, yangilash esa asinxron ravishda alohida thread'da ketadi. Shu tariqa foydalanuvchi hech qachon "sovuq" miss latency'siga duch kelmaydi.
 
-**Spring'da qayerda uchraydi:** Caffeine'ning `refreshAfterWrite(Duration)` + `LoadingCache` juftligi aynan shu pattern (`expireAfterWrite`dan farqli - eski qiymat qaytariladi, yangilash fonda). Spring Boot'da `spring.cache.caffeine.spec=maximumSize=1000,refreshAfterWrite=5m` bilan sozlanadi, lekin `CacheLoader` bean'i kerak. Alternativ: `@Scheduled(fixedDelay = ...)` method ichida `@CachePut` chaqirib keshni oldindan to'ldirish, yoki Caffeine'ga `Executor` berib (`Caffeine.newBuilder().executor(taskExecutor)`) refresh'ni boshqarish.
+**Spring'da qayerda uchraydi:** Caffeine'ning `refreshAfterWrite(Duration)` + `LoadingCache` juftligi aynan shu pattern (`expireAfterWrite`dan farqli - eski qiymat qaytariladi, yangilash fonda). Spring Boot'da `spring.cache.caffeine.spec=maximumSize=1000,refreshAfterWrite=5m` bilan sozlanadi, lekin `CacheLoader` bean'i kerak. Spec satrida nima yozish mumkinligi Caffeine manbasida (`CaffeineSpec`) qattiq belgilangan va u o'nta kalitni qabul qiladi: `initialCapacity`, `maximumSize`, `maximumWeight`, `weakKeys`, `weakValues`, `softValues`, `expireAfterAccess`, `expireAfterWrite`, `refreshAfterWrite`, `recordStats`. Ro'yxatda yo'q narsa (masalan `Expiry` bilan per-entry TTL yoki `executor`) spec orqali berilmaydi, u faqat kodda `Caffeine.newBuilder()` bilan qo'yiladi. Alternativ: `@Scheduled(fixedDelay = ...)` method ichida `@CachePut` chaqirib keshni oldindan to'ldirish, yoki Caffeine'ga `Executor` berib (`Caffeine.newBuilder().executor(taskExecutor)`) refresh'ni boshqarish.
 
 ```java
 LoadingCache<String, Rate> rates = Caffeine.newBuilder()
@@ -694,6 +694,12 @@ public void updatePrice(long id, Money price) {
 - [ ] Stampede himoyasi borligini tekshiring: bitta kalit bir vaqtda ko'p so'rovga tushganda nima bo'ladi.
 - [ ] Redis ishlatilsa, serializatsiya formati va versiyalashni hujjatlashtiring; sinf o'zgarsa eski qiymatlar o'qiladimi.
 - [ ] Kesh hit nisbatini metrika sifatida chiqarib, 80 foizdan past keshlarni qayta ko'rib chiqish ro'yxatiga qo'ying.
+
+## Manbalar
+
+- [Caffeine, README](https://raw.githubusercontent.com/ben-manes/caffeine/92cd6cca5fed23d8343ef7caf338631c977ae9ec/README.md) - `maximumSize`, `expireAfterWrite`, `expireAfterAccess`, `refreshAfterWrite` semantikasi va eskirgan qiymatning qaytarilishi
+- [caffeine, `CaffeineSpec.java`](https://raw.githubusercontent.com/ben-manes/caffeine/92cd6cca5fed23d8343ef7caf338631c977ae9ec/caffeine/src/main/java/com/github/benmanes/caffeine/cache/CaffeineSpec.java) - spec satrida qo'llanadigan o'nta kalit (`initialCapacity`, `maximumSize`, `maximumWeight`, `weakKeys`, `weakValues`, `softValues`, `expireAfterAccess`, `expireAfterWrite`, `refreshAfterWrite`, `recordStats`), ya'ni `spring.cache.caffeine.spec` da nima yozish mumkinligi
+- [Micrometer, Gauges](https://raw.githubusercontent.com/micrometer-metrics/micrometer-docs/06f377a95db21894939c6fff39441fe608e804a2/src/docs/concepts/gauges.adoc) - kesh metrikasini gauge bilan o'lchashdagi weak reference tuzog'i
 
 ---
 

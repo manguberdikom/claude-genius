@@ -28,10 +28,9 @@ tools/doc.sh path patterns 17.2  # fayl, satr oralig'i, anchor
 tools/doc.sh toc  # hujjat kalitlari
 ```
 
-`tools/suggest_sections.py` har so'rovda kontekstga nomzod bo'lim
-raqamlarini qo'shadi. Nomzod tartibi ishonchli emas: javob nomzodga emas,
-`show` bilan o'qilgan matnga tayanadi, mos kelmasa shuni ayting. Nomzod
-yo'qligi mavzu yo'q degani emas, `find` bilan qidiring.
+`suggest_sections.py` har so'rovga nomzod bo'lim qo'shadi. Tartibi
+ishonchli emas: javob `show` bilan o'qilgan matnga tayanadi, mos
+kelmasa shuni ayting. Nomzod yo'qligi mavzu yo'q degani emas.
 
 - `guard.py` 16 KB dan katta bo'lakni o'qishni to'sadi. Havolani qo'lda
   yozmang, `doc.sh path` tayyor anchor beradi.
@@ -50,8 +49,7 @@ marshrut va hujjat tahriri.
 
 ## Arzon yo'ldan borish
 
-Javob ko'pincha kodda yoki chiqishda; natijani yaxshilamagan qimmat yo'l
-faqat pul va vaqt.
+Javob ko'pincha kodda yoki chiqishda.
 
 | Kerak bo'lsa | Arzon yo'l |
 |---|---|
@@ -61,10 +59,8 @@ faqat pul va vaqt.
 | Qoida nima deydi | `tools/doc.sh show <hujjat> <raqam>` |
 | Diff to'g'rimi | `manguberdi` faol bo'lsa `review` aktyori, aks holda `code-review` skilli |
 
-`guard.py` docker, bazaga ulanish, `flyway:clean` va PowerShell ni
-so'raydi (`ask`, subagentda `deny`), katta bob, xom to'liq suite va
-`.java` ga Bash bilan yozishni to'sadi
-(`.claude/skills/manguberdi/references/taqiq.md`).
+`guard.py` nimani so'raydi va nimani to'sadi:
+`.claude/skills/manguberdi/references/taqiq.md`.
 
 `tools/rules_for.py` Java yozishdan OLDIN majburiy (tegishli boblar,
 tekshiruv punktlari, avvalgi xatolar), `check_code.py` hooki buni talab
@@ -72,14 +68,14 @@ qiladi.
 
 ## Hujjat yoki asbob o'zgarsa
 
-`docs/` tahririda `CONTRIBUTING.md` amal qiladi: bob shakli, pattern yozuvi
-va kod misoli tartibi, 900 KB chegara, havolalar. Mavzuning to'liq yozuvi bitta uy bo'limda (`docs/OWNERS.tsv`), boshqa hujjat o'z nuqtai nazarini yozadi va uyga mavzu nomi bilan havola beradi.
-Keyin `python3 tools/check_docs.py` xatosiz o'tishi shart, CI ham
-shuni ishlatadi. Asbob o'zgarsa uning `tools/test_<nom>.py` si, keyin
+`docs/` tahririda `CONTRIBUTING.md` amal qiladi: bob shakli, pattern
+yozuvi, kod misoli, 900 KB chegara, havolalar va uy bo'lim
+(`docs/OWNERS.tsv`). Keyin `python3 tools/check_docs.py` xatosiz
+o'tishi shart. Asbob o'zgarsa `tools/test_<nom>.py`, keyin
 `eval_skill.py`, `eval_find.py` va `cost_report.py`.
 
 ## Memory
 
-Ish boshida `memory/claude-genius/MEMORY.md` (shu proyekt) va
-`memory/umumiy/MEMORY.md` (hamma proyekt) indekslari o'qiladi, topic
-fayl indeksga qarab. Yozish va tozalash qoidasi `memory/README.md` da.
+Ish boshida ikki indeks o'qiladi: `memory/claude-genius/MEMORY.md` va
+`memory/umumiy/MEMORY.md`; topic fayl indeksga qarab. Qoida
+`memory/README.md` da.

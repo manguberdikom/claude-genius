@@ -7,7 +7,7 @@
 # 9. Ma'lumotlarga kirish va ORM patternlari (Data Access & ORM Patterns)
 
 <details>
-<summary>Bu bobdagi 38 bo'lim</summary>
+<summary>Bu bobdagi 43 bo'lim</summary>
 
 - [9.1 Ma'lumotlarga kirish obyekti (Data Access Object - DAO)](#91-malumotlarga-kirish-obyekti-data-access-object---dao)
 - [9.2 Repository (Repository - Spring Data)](#92-repository-repository---spring-data)
@@ -46,7 +46,12 @@
 - [9.35 Spetsifikatsiya (Specification - Spring Data JPA)](#935-spetsifikatsiya-specification---spring-data-jpa)
 - [9.36 Domen ombori (Domain Store)](#936-domen-ombori-domain-store)
 - [9.37 Yozuvlar to'plami (Record Set)](#937-yozuvlar-toplami-record-set)
-- [9.38 Amalda qo'llash](#938-amalda-qollash)
+- [9.38 Shlyuz (Gateway)](#938-shlyuz-gateway)
+- [9.39 Mappingni qurish tartibi va ikki qadamli mapping (Building the Mapping & Double Mapping)](#939-mappingni-qurish-tartibi-va-ikki-qadamli-mapping-building-the-mapping--double-mapping)
+- [9.40 Unit of Work registratsiya strategiyalari (Caller, Object & Unit of Work Controller Registration)](#940-unit-of-work-registratsiya-strategiyalari-caller-object--unit-of-work-controller-registration)
+- [9.41 Oflayn qulf turlari (Offline Lock Types)](#941-oflayn-qulf-turlari-offline-lock-types)
+- [9.42 Lock manager va yagona lock jadvali (Lock Manager & Lock Table)](#942-lock-manager-va-yagona-lock-jadvali-lock-manager--lock-table)
+- [9.43 Amalda qo'llash](#943-amalda-qollash)
 
 </details>
 
@@ -225,7 +230,7 @@ public class Subscription {
 - Read-model DTO'larini MapStruct bilan compile-time, reflection'siz generatsiya qilish.
 - Sxema o'zgarganda domen kodini o'zgartirmasdan faqat mapping metadatasini yangilash.
 
-**Ehtiyot bo'ling:** Mapping metadatasi (annotatsiyalar) domen sinfiga tushib qolsa, "ajratish" faqat nomigagina bo'ladi - `orm.xml` yoki alohida persistence model bu holda yaxshiroq. Shuningdek chuqur obyekt grafiklarini avtomatik mapping qilishga ishonib, fetch strategiyasini e'tibordan chetda qoldirmang.
+**Ehtiyot bo'ling:** Mapping metadatasi (annotatsiyalar) domen sinfiga tushib qolsa, "ajratish" faqat nomigagina bo'ladi - `orm.xml` yoki alohida persistence model bu holda yaxshiroq. Shuningdek chuqur obyekt grafiklarini avtomatik mapping qilishga ishonib, fetch strategiyasini e'tibordan chetda qoldirmang. Qaysi pattern qaysi vaziyatga mos kelishi va bir xil ma'lumot bir nechta manbadan kelganda nima qilish [mappingni qurish tartibi va ikki qadamli mapping](#939-mappingni-qurish-tartibi-va-ikki-qadamli-mapping-building-the-mapping--double-mapping) bo'limida.
 
 ```java
 // Data Mapper: domen va jadval bir-birini bilmaydi, o'rtada mapper turadi
@@ -257,7 +262,7 @@ class OrderMapper {                       // aylantirish mas'uliyati
 - Optimistik locking (`@Version`) bilan bir vaqtda yozishni aniqlash va konfliktni qaytarish.
 - Domain event'larni `TransactionSynchronization`/`@TransactionalEventListener(AFTER_COMMIT)` orqali commit'dan keyin chiqarish.
 
-**Ehtiyot bo'ling:** Katta hajmli batch'da persistence context cheksiz o'sadi va `OutOfMemoryError` keltiradi - har N satrdan keyin `flush()` + `clear()` qiling yoki Hibernate `StatelessSession` ishlating. Shuningdek `@Transactional` ni bir sinf ichidagi self-invocation bilan chaqirish proxy'ni chetlab o'tadi va tranzaksiya umuman boshlanmaydi.
+**Ehtiyot bo'ling:** Katta hajmli batch'da persistence context cheksiz o'sadi va `OutOfMemoryError` keltiradi - har N satrdan keyin `flush()` + `clear()` qiling yoki Hibernate `StatelessSession` ishlating. Shuningdek `@Transactional` ni bir sinf ichidagi self-invocation bilan chaqirish proxy'ni chetlab o'tadi va tranzaksiya umuman boshlanmaydi. JPA siz (`JdbcClient`, Spring Data JDBC) Unit of Work ni qo'lda yozish kerak bo'lsa, qaysi obyekt kuzatilishini kim bildirishi [Unit of Work registratsiya strategiyalari](#940-unit-of-work-registratsiya-strategiyalari-caller-object--unit-of-work-controller-registration) bo'limida.
 
 ```java
 // Unit of Work: tranzaksiya ichidagi o'zgarishlar yig'iladi va bir marta yoziladi
@@ -771,7 +776,7 @@ try {
 - Scheduled task'ni klasterda faqat bitta node bajarishi - ShedLock yoki `JdbcLockRegistry`.
 - Ketma-ket raqam generatsiyasi (hisob-faktura nomeri) - bo'shliqsiz (gapless) seriya kerak bo'lganda.
 
-**Ehtiyot bo'ling:** Qulfni tranzaksiya ichida uzoq ushlash (tashqi HTTP chaqiruvi, foydalanuvchi kutishi) tizimni to'xtatib qo'yadi va deadlock keltiradi - har doim lock timeout bering va qulflarni barcha kodda bir xil tartibda oling. Foydalanuvchi o'ylab turgan paytga DB qulfini qoldirmang: uzun biznes tranzaksiyasi uchun optimistik qulf yoki ochiq-oydin (explicit) "kim tahrirlab turibdi" belgisi bilan ishlovchi alohida lock jadvalidan foydalaning.
+**Ehtiyot bo'ling:** Qulfni tranzaksiya ichida uzoq ushlash (tashqi HTTP chaqiruvi, foydalanuvchi kutishi) tizimni to'xtatib qo'yadi va deadlock keltiradi - har doim lock timeout bering va qulflarni barcha kodda bir xil tartibda oling. Foydalanuvchi o'ylab turgan paytga DB qulfini qoldirmang: uzun biznes tranzaksiyasi uchun optimistik qulf yoki ochiq-oydin (explicit) "kim tahrirlab turibdi" belgisi bilan ishlovchi alohida lock jadvalidan foydalaning. Qaysi qulf turini tanlash [oflayn qulf turlari](#941-oflayn-qulf-turlari-offline-lock-types) da, jadvalni va unga murojaat protokolini qanday qurish [lock manager va yagona lock jadvali](#942-lock-manager-va-yagona-lock-jadvali-lock-manager--lock-table) da.
 
 ```java
 // Pessimistik qulf: qator o'qishda bloklanadi
@@ -1165,7 +1170,235 @@ while (rs.next()) {                         // connection allaqachon yopilgan
 
 **Ehtiyot bo'ling:** Record Set type-safe emas - ustun nomidagi xato yoki tur nomuvofiqligi faqat runtime'da chiqadi, bundan tashqari baza sxemasi service va web qatlamlariga "oqib" ketadi, shuning uchun uning ustiga domen mantiqini qurmang va tashqi API javobi sifatida bermang. Katta natijani butunlay xotiraga yuklash OOM keltiradi: bunday holatda `RowCallbackHandler` va mos `fetchSize` bilan stream qilish yoki kursor/pagination bo'yicha ishlash kerak.
 
-## 9.38 Amalda qo'llash
+## 9.38 Shlyuz (Gateway)
+
+**Tavsif:** Gateway tashqi tizim yoki resursga kirishni bitta oddiy obyekt ichiga yopadi: chaqiruvchi odatdagi metodni chaqiradi, Gateway esa uni o'sha resursning maxsus API'siga (SQL, HTTP, broker protokoli, XML) tarjima qiladi. Fowler uni "tashqi tizim yoki resursga kirishni qamrab oladigan obyekt" deb ta'riflaydi va Facade'dan farqini ko'rsatadi: Facade'ni xizmat egasi umumiy foydalanish uchun yozadi, Gateway'ni esa mijoz o'zining aniq ehtiyoji uchun yozadi, shuning uchun u o'ralgan interfeysni nusxalashi ham mumkin (Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 18-bob "Base Patterns", 466-472-betlar). Jadval ma'lumotlari shlyuzi (9.3) va satr ma'lumotlari shlyuzi (9.4) shu bazaviy patternning relyatsion jadvalga xoslangan ko'rinishlari.
+
+**Spring'da qayerda uchraydi:** Deklarativ HTTP interfeysi - `@HttpExchange` va `HttpServiceProxyFactory` (Spring Framework 6.0+), imperativ varianti `RestClient` (6.1+); baza uchun `JdbcClient` ustida yozilgan shlyuz sinflari; broker uchun `JmsTemplate`, `KafkaTemplate` yoki `RabbitTemplate` ustidagi ingichka wrapper. Kitobdagi "Gateway'ni generatsiya qiling" tavsiyasining bugungi shakli - OpenAPI yoki gRPC sxemasidan client kodini generatsiya qilish. Gateway Servis stub (23.27) uchun ham qulay nuqta: interfeysni test'da WireMock yoki `@MockitoBean` bilan almashtirish mumkin.
+
+**Qo'llanish keyslari:**
+- To'lov, SMS yoki soliq xizmati kabi tashqi HTTP API'ni domenga tushunarli metodlar ortiga yashirish.
+- Legacy SOAP yoki fayl almashinuvi protokolini bitta sinfda ushlab, qolgan kodni undan himoyalash.
+- Tashqi javob DTO'larini ilova ichiga tarqatmaslik: Gateway ularni domen turlariga o'girib qaytaradi.
+- Resursni almashtirish rejasi bo'lganda o'zgarishni bitta sinfga qamash, masalan fayl saqlashni diskdan obyekt storage'ga ko'chirishda.
+- Integratsiyani test ostiga olish: Gateway interfeysi stub qo'yiladigan tabiiy chegara.
+
+**Ehtiyot bo'ling:** Kitobning qoidasi hamon amal qiladi - Gateway yupqa qolsin, murakkab mantiq uning mijozlarida yashasin, aks holda u yashirin service qatlamiga aylanadi. Kitobdagi mexanika esa eskirgan: misol CICS, DOM va `int send(String, Object[])` ko'rinishidagi xususiy EAI interfeysi atrofida qurilgan hamda xatoni qaytish kodi bilan beradi. Bugun bu rolni deklarativ client'lar bajaradi va xato exception bo'ladi. Timeout, retry va circuit breaker Gateway chegarasiga qo'yiladi, domen ichiga emas.
+
+```java
+// Gateway: tashqi to'lov API'si ilovaga faqat shu interfeys orqali ko'rinadi
+public interface PaymentGateway {
+    PaymentResult charge(String orderId, Money amount);
+}
+
+@Component
+class StripePaymentGateway implements PaymentGateway {
+    private final RestClient http;
+
+    StripePaymentGateway(RestClient.Builder builder) {
+        this.http = builder.baseUrl("https://api.stripe.example").build();
+    }
+
+    @Override
+    public PaymentResult charge(String orderId, Money amount) {
+        StripeChargeResponse res = http.post()
+                .uri("/v1/charges")
+                .body(new StripeChargeRequest(orderId, amount.minorUnits()))
+                .retrieve()
+                .body(StripeChargeResponse.class);   // tashqi DTO shu sinfdan chiqmaydi
+        return res.paid() ? PaymentResult.ok(res.id())
+                          : PaymentResult.declined(res.failureCode());
+    }
+}
+```
+
+## 9.39 Mappingni qurish tartibi va ikki qadamli mapping (Building the Mapping & Double Mapping)
+
+**Tavsif:** Fowler mapping ishini uch vaziyatga ajratadi: sxemani o'zingiz tanlaysiz, o'zgartirib bo'lmaydigan mavjud sxemaga maplaysiz, yoki mavjud sxemaga maplaysiz va o'zgartirish muzokara qilinadi (Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 3-bob "Mapping to Relational Databases", 47-48-betlar). Pattern tanlovi shu vaziyat bilan domen mantiqi murakkabligining kesishmasidan chiqadi:
+
+- **Sxema sizning, mantiq oddiy.** Jadvalni ma'lumot atrofida klassik baza dizayni bilan loyihalang, SQL ni mantiqdan [jadval ma'lumotlari shlyuzi](#93-jadval-malumotlari-shlyuzi-table-data-gateway) yoki [satr ma'lumotlari shlyuzi](#94-satr-malumotlari-shlyuzi-row-data-gateway) bilan ajrating.
+- **Sxema sizning, domen modeli bor.** Model baza dizayniga o'xshab ketmasligi kerak: avval modelni bazani o'ylamasdan quring, bazani esa obyekt ma'lumotini saqlash usuli deb qarang. Erkinlikni [ma'lumot mapper'i](#96-malumot-mapperi-data-mapper) beradi, narxi murakkablik; sxema modelga izomorf bo'lsa [faol yozuv](#95-faol-yozuv-active-record) arzonroq.
+- **Sxema allaqachon bor.** Oddiy mantiqda bazani takrorlaydigan gateway sinflari yoziladi va mantiq ularning ustiga qo'yiladi. Murakkab mantiqda domen modeli sxemaga mos kelishi ehtimoldan yiroq: modelni asta qurib, uni Data Mapper bilan bog'lang.
+
+"Avval modelni qur" maslahati muddat bilan cheklangan: u faqat qisqa iteratsiya ichida amal qiladi. Bazadan xoli modelni yarim yil qurib, keyin saqlashga urinish tuzatish qimmatga tushadigan performance muammolarini beradi, shuning uchun baza har iteratsiyada model bilan birga quriladi va iteratsiya olti haftadan oshmaydi.
+
+**Double Mapping** - bir xil ma'lumot bir nechta manbadan kelganda ishlatiladigan ikki qadamli variant (3-bob, 48-49-betlar): sxemasi kichik farqlangan bir nechta baza, yoki bir xil ma'lumotning ba'zan bazada, ba'zan xabarda yashashi. Har manba uchun alohida mapping qatlami sodda, lekin ko'p takrorlanish beradi. Birinchi qadam xotiradagi sxemani mantiqiy data store sxemasiga o'giradi (u manba formatlari orasidagi o'xshashlikni maksimal qiladigan shaklda tanlanadi), ikkinchi qadam mantiqiydan fizik sxemaga o'tadi va barcha farq faqat shu yerda yashaydi. Ikkinchi qadamni kitob [shlyuz](#938-shlyuz-gateway) deb qaraydi.
+
+**Spring'da qayerda uchraydi:** Mavjud sxemada Hibernate sxemani yasamasligi uchun `spring.jpa.hibernate.ddl-auto=validate` qo'yiladi, sxemani esa Flyway boshqaradi; nomlar mos kelmaganda `@Table(name = ...)`, `@Column(name = ...)` yoki Spring Data JDBC `NamingStrategy`, tur mos kelmaganda `AttributeConverter`. Ikki qadamli mappingda mantiqiy sxema Java `record` to'plami bo'ladi: birinchi qadamni MapStruct (`@Mapper`) generatsiya qiladi, ikkinchi qadam har fizik manba uchun alohida gateway bo'ladi.
+
+**Qo'llanish keyslari:**
+- Tegib bo'lmaydigan legacy ERP sxemasida domen modelini asta qurib, mapper orqali ulash.
+- Yangi mahsulotda bazani har iteratsiyada model bilan birga qurib, performance teskari aloqasini erta olish.
+- Bir xil mijoz ma'lumotini ikki mamlakatning farqlangan bazasidan bitta mantiqiy sxema orqali o'qish.
+- Bir xil hodisani Kafka xabari va jadval ko'rinishida qabul qilganda yagona yozuv shaklini saqlash.
+- Sxema muzokara qilinadigan holatda ustun o'zgartirish narxini mapping murakkabligi bilan taqqoslash.
+
+**Ehtiyot bo'ling:** Ikki qadamli mapping har doim ortiqcha qatlam: farqlar katta bo'lsa mantiqiy sxema ikki manbaning birlashmasiga aylanadi va hech qaysini yaxshi ifodalamaydi. Kitobning mezoni oddiy - u faqat umumiylik ko'p, farq esa kichik bo'lganda to'lanadi. Ikkinchi tuzoq - "avval domen modeli" ni bazani keyinga qoldirish uchun bahona qilish: bazaga ulanmagan model tekshirilmagan taxmin.
+
+```java
+// Ikki qadamli mapping: xotira modeli -> mantiqiy sxema -> fizik manba.
+// Kitob misoli CICS va XML atrofida, bu yerda g'oya Java ga o'tkazilgan.
+record CustomerRow(String customerId, String fullName, String countryCode) {}
+
+interface CustomerSource {                    // ikkinchi qadam: farqlar shu yerda
+    Optional<CustomerRow> findById(String id);
+}
+
+@Component
+class LegacyDbCustomerSource implements CustomerSource {
+
+    private final JdbcClient jdbc;
+
+    LegacyDbCustomerSource(JdbcClient jdbc) { this.jdbc = jdbc; }
+
+    @Override
+    public Optional<CustomerRow> findById(String id) {
+        return jdbc.sql("SELECT cust_no, cust_name, iso2 FROM legacy_cust WHERE cust_no = ?")
+                .param(id)
+                .query((rs, n) -> new CustomerRow(rs.getString(1), rs.getString(2), rs.getString(3)))
+                .optional();                  // birinchi qadam alohida mapper da
+    }
+}
+```
+
+## 9.40 Unit of Work registratsiya strategiyalari (Caller, Object & Unit of Work Controller Registration)
+
+**Tavsif:** [Ish birligi](#97-ish-birligi-unit-of-work---persistence-context) commit paytida nima yozilishini o'zi hal qiladi, lekin buning uchun qaysi obyektni kuzatishi kerakligini bilishi shart. Fowler buni hal qiladigan uchta strategiyaga nom beradi (Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 11-bob "Object-Relational Behavioral Patterns", 185-187-betlar):
+
+- **Caller registration.** Obyektni o'zgartirgan kod Unit of Work ga o'zi bildiradi (`registerDirty(obj)`); ro'yxatga olinmagan obyekt commit da yozilmaydi. Bu xotirada o'zgartirib bazaga yozmaslik erkinligini beradi, lekin Fowler bu erkinlik foydasidan ko'ra ko'proq chalkashlik keltiradi deb hisoblaydi va bunday maqsad uchun aniq nusxa olishni tavsiya qiladi.
+- **Object registration.** Registratsiya chaqiruvi obyektning o'z metodlarida turadi: bazadan o'qilgan obyekt `registerClean`, setter esa `registerDirty` chaqiradi. Chaqiruvchi hech narsa eslamaydi, lekin endi sinf muallifi chaqiruvni to'g'ri joyga qo'yishni eslashi kerak va tushib qolgan chaqiruv jim xato beradi. Fowler bu joyni kod generatsiyasi va aspektga yo'naltirilgan programmalash uchun tabiiy deb ataydi va `.class` fayllarini post-processing qilib chaqiruvni bytecode ga qo'ygan amaliyotni ham ko'rganini yozadi.
+- **Unit of Work controller.** Unit of Work bazadan o'qishni o'zi boshqaradi: o'qilgan obyektni clean deb ro'yxatga oladi va nusxasini oladi, commit da esa obyektni nusxasi bilan solishtiradi. "Dirty" belgisi umuman yo'q. Narxi - commit dagi qo'shimcha ish va nusxalar xotirasi; foydasi - domen obyektida registratsiya chaqiruvi yo'qligi va faqat haqiqatan o'zgargan maydonni yozish. Gibrid variant nusxani faqat o'zgargan obyekt uchun oladi. Kitob bunga TOPLink ni misol qiladi.
+
+JPA ni tanlash bu qarorni yashiradi, lekin yo'q qilmaydi. Hibernate obyektni yuklanishida clean deb ro'yxatga oladi (object registration), lekin o'zgarishni setter orqali emas, yuklash paytidagi snapshot bilan solishtirib topadi (unit of work controller uslubi); setter hech narsa chaqirmaydi. Bytecode enhancement bilan dirty tracking yoqilganda u aynan Fowler aytgan `.class` post-processing yo'liga o'tadi. JPA dan voz kechib `JdbcClient` yoki Spring Data JDBC ga o'tgan jamoa esa shu uchtadan birini ongli tanlashi kerak.
+
+**Spring'da qayerda uchraydi:** JPA tomoni [Hibernate flush rejimlari va dirty checking](#933-hibernate-flush-rejimlari-va-dirty-checking-hibernate-flush-modes--dirty-checking) bo'limida. [Spring Data JDBC](#934-spring-data-jdbc-aggregate-yonaltirilgan-mapping-spring-data-jdbc-aggregate-oriented-mapping) da Unit of Work yo'q: `repository.save(aggregate)` har chaqiruvda yozadi, ya'ni registratsiya caller registration shaklida chaqiruvchida qoladi. Qo'lda yoziladigan Unit of Work uchun tabiiy ilgak - `TransactionSynchronizationManager.registerSynchronization(...)`: `beforeCommit` da yig'ilgan o'zgarish yoziladi, `afterCompletion` da registr tozalanadi. Uni oqimga bog'lash uchun `ThreadLocal` yetadi; Fowler buni oqimga bog'langan Registry deb ataydi.
+
+**Qo'llanish keyslari:**
+- Spring Data JDBC loyihasida bir use case ichidagi bir nechta aggregate yozuvini bitta joyga yig'ish.
+- Testda domen obyektini bazaga yozmasdan yaratish: caller registration bunda qulay, aks holda commit da hech narsa qilmaydigan Unit of Work beriladi.
+- Faqat o'zgargan ustunni yozish talab qilinganda (audit trigger narxi) snapshot solishtirishga o'tish.
+- Referensial butunlikni har SQL da tekshiradigan bazada yozish tartibini bitta joyda saqlash.
+- Deadlock ehtimolini kamaytirish: Unit of Work jadvallarga doim bir xil ketma-ketlikda yozadi.
+
+**Ehtiyot bo'ling:** Object registration ni qo'lda yozish jim xato manbai: bitta setter da `registerDirty` tushib qolsa o'zgarish commit da yo'qoladi va test ham buni ko'rmasligi mumkin; kitob buni "izchillik odatga aylanadi, lekin o'tkazib yuborilganda noqulay bug bo'ladi" deb yozadi. Unit of Work controller esa har o'qilgan obyekt uchun nusxa oladi, shuning uchun katta ro'yxat o'qiganda xotira ikki baravar bo'ladi.
+
+```java
+// Qo'lda Unit of Work: caller registration va commit da qat'iy yozish tartibi.
+// JPA siz loyihada (JdbcClient) Spring tranzaksiya sinxronizatsiyasiga ulanadi.
+class JdbcUnitOfWork {                                // bitta tranzaksiyaga bitta nusxa
+
+    private final List<Order> dirtyOrders = new ArrayList<>();
+    private final List<OrderLine> dirtyLines = new ArrayList<>();
+
+    void registerDirty(Order order) { dirtyOrders.add(order); }     // chaqiruvchi bildiradi
+    void registerDirty(OrderLine line) { dirtyLines.add(line); }
+
+    void enlist(OrderWriter orders, LineWriter lines) {
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void beforeCommit(boolean readOnly) {
+                        dirtyOrders.forEach(orders::write);  // tartib doim bir xil:
+                        dirtyLines.forEach(lines::write);    // deadlock ehtimoli tushadi
+                    }
+                });
+    }
+}
+```
+
+## 9.41 Oflayn qulf turlari (Offline Lock Types)
+
+**Tavsif:** [Pessimistik oflayn qulf](#924-pessimistik-oflayn-qulf-pessimistic-offline-lock) bo'limi DB qulfini beradi, ya'ni bitta tizim tranzaksiyasi ichida ushlanadigan qulfni. Fowler patterni boshqa masalani hal qiladi: foydalanuvchi ekranda o'ylab turgan, bir necha tizim tranzaksiyasiga cho'ziladigan uzun BIZNES tranzaksiyasini. DB qulfi bunga yaramaydi, chunki uni ushlash uchun tizim tranzaksiyasini ochiq qoldirish kerak. Patternning birinchi qadami - uchta qulf turidan birini tanlash, va tanlov konkurentlik, biznes talabi va kod murakkabligi muvozanatidan chiqadi (Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 16-bob "Offline Concurrency Patterns", 427-428-betlar):
+
+- **Exclusive write lock.** Qulf faqat tahrirlash uchun olinadi. Ikki biznes tranzaksiyasi bir yozuvni birga o'zgartirmaydi, lekin o'qish umuman tekshirilmaydi: ko'rish sessiyasi eng yangi ma'lumotni ko'rishi kritik bo'lmasa shu yetadi.
+- **Exclusive read lock.** Qulf yozuvni yuklash uchun ham olinadi: biznes tranzaksiyasi tahrir niyatidan qat'i nazar doim eng yangi ma'lumotni ko'radi, lekin bu konkurentlikni qattiq cheklaydi. Kitob ko'pchilik enterprise tizimda exclusive write lock ancha ko'p parallel kirish berishini aytadi.
+- **Read/write lock.** Ikkisini birlashtiradi: read va write qulflari o'zaro istisno (yozuvda boshqa tranzaksiyaning read qulfi bo'lsa write qulf berilmaydi va teskarisi), lekin bir nechta read qulfi bir vaqtda bo'lishi mumkin, chunki bitta read qulfning o'zi tahrirni allaqachon to'sib qo'ygan. Konkurentlikni aynan shu oshiradi, narxi - implementatsiya va modellashtirish murakkabligi.
+
+Kitob qulflashni faqat texnik masala deb qaramaslikni aytadi: noto'g'ri qulf turi, hamma yozuvni qulflash yoki noto'g'ri turdagi yozuvni qulflash samarasiz strategiya beradi va uni hech qanday to'g'ri texnik implementatsiya qutqarmaydi. Samarasiz degani ikki narsadan biri - qulf konfliktni biznes tranzaksiyasining boshida to'xtatmaydi, yoki ko'p foydalanuvchili tizimni bir foydalanuvchilikka aylantiradi. Shuning uchun qulf turi domen eksperti va analitik tushunadigan shaklda belgilanadi va Fowler patternni domen modelining o'ziga kiritishni yomon fikr emas deb hisoblaydi.
+
+**Spring'da qayerda uchraydi:** Bu qulflar JPA `LockModeType` emas: ular tizim tranzaksiyasidan uzoqroq yashaydi, shuning uchun ilovaning o'z jadvalida saqlanadi va ularni beradigan komponent [lock manager va yagona lock jadvali](#942-lock-manager-va-yagona-lock-jadvali-lock-manager--lock-table) bo'limida. Java ichidagi `ReadWriteLock` ham bu emas: u bitta JVM ning xotirasidagi oqimlarni muvofiqlashtiradi, bu yerdagi read/write lock esa bazadagi yozuvni bir necha HTTP so'rov davomida band qiladi. Eng yaqin Spring vositasi - `@Version` bilan ishlaydigan [optimistik oflayn qulf](#923-optimistik-oflayn-qulf-optimistic-offline-lock): u konfliktni oldini olmaydi, faqat aniqlaydi.
+
+**Qo'llanish keyslari:**
+- Shartnoma tahriri bir necha ekranga cho'ziladigan ilovada exclusive write lock bilan yozuvni band qilish.
+- Narx jadvali kabi ko'p o'qiladigan, kam o'zgaradigan ma'lumotda read/write lock bilan parallel o'qishni saqlab qolish.
+- Buxgalteriya yopilishida exclusive read lock: operator eskirgan raqamni ko'rishi ham qabul qilinmaydi.
+- Qulf turini talab sifatida yozib, uni domen eksperti bilan kelishish va keyin kodga tushirish.
+- Optimistik qulf konflikti ko'p bo'lgan oqimda qulf turini qayta ko'rib, pessimistik variantga o'tish.
+
+**Ehtiyot bo'ling:** Hamma entitetni qulflash deyarli har doim katta data contention beradi, shuning uchun bu pattern [optimistik oflayn qulf](#923-optimistik-oflayn-qulf-optimistic-offline-lock) ni to'ldiradi va faqat haqiqatan kerak joyda ishlatiladi. Qulf turini kuchliroq tanlash xavfsizroq ko'rinadi, lekin exclusive read lock tizim throughput ini keskin tushiradi: avval exclusive write lock yetadimi degan savolga javob bering. Biznes tranzaksiyangiz bitta tizim tranzaksiyasiga sig'sa, bu uchlikni umuman tanlamang: `SELECT ... FOR UPDATE` allaqachon bor va timeout, qulf ko'rinishi va yo'qolgan sessiya haqida o'ylash shart emas.
+
+```text
+Qulf turini tanlash:
+  o'qish eskirgan bo'lsa ham bo'ladimi?
+    ha  -> exclusive write lock        (qulf faqat tahrirga)
+    yo'q -> parallel o'qish kerakmi?
+             yo'q -> exclusive read lock   (qulf yuklashga ham)
+             ha   -> read/write lock       (read lar birga, write yakka)
+
+Qoida: read va write o'zaro istisno; read lar bir-biriga istisno emas.
+Chegara: bu qulflar tizim tranzaksiyasidan uzoq yashaydi, shuning uchun
+ularni DB qulfi emas, ilovaning lock jadvali beradi.
+```
+
+## 9.42 Lock manager va yagona lock jadvali (Lock Manager & Lock Table)
+
+**Tavsif:** Oflayn qulf turi tanlangandan keyin ikkinchi qadam - uni beradigan komponentni qurish. Qulfni berish va bo'shatish qarorini bitta joy, lock manager qabul qiladi; unga ikki narsa kerak: nima qulflanadi va qulf egasi kim (Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 16-bob "Offline Concurrency Patterns", 428-430-betlar). Biznes tranzaksiyasini yakka identifikatsiya qilish doim mumkin emas, shuning uchun ega sifatida sessiya identifikatori olinadi: biznes tranzaksiyalari sessiya ichida ketma-ket ketsa bu yetarli va kitob "sessiya" bilan "biznes tranzaksiyasi" ni shu ma'noda o'zaro almashtiradi.
+
+Lock manager mazmunan qulfni egasiga bog'laydigan jadvaldan ortiq emas, lekin jadval YAGONA bo'lishi shart. Xotirada bo'lsa u singleton bo'ladi va bitta instansiyaga qadaladi; klasterlangan ilovada xotiradagi jadval umuman ishlamaydi, shuning uchun bazadagi jadval to'g'ri keladi. Qulfning o'zi, obyekt yoki SQL ko'rinishida, lock manager uchun xususiy qoladi: biznes tranzaksiyasi faqat lock manager bilan gaplashadi, qulf obyekti bilan hech qachon.
+
+**Protokol.** Uchinchi qadam - biznes tranzaksiyasi lock manager dan qanday foydalanishi:
+
+- Qulf ma'lumotni YUKLASHDAN oldin olinadi, va qulflanadigan narsa obyekt emas, uni topadigan ID: shunda qulfni yuklashdan oldin olish mumkin bo'ladi. Qulflangandan keyin eng yangi nusxa borligiga kafolat bo'lmasa, qulfning ma'nosi qolmaydi.
+- Qulf biznes tranzaksiyasi tugaganda bo'shatiladi; erta bo'shatish uchun juda aniq sabab bo'lmasa shu qoidadan chiqilmaydi.
+- Qulf olinmasa biznes tranzaksiyasi darhol to'xtaydi. Kutish yo'q: biznes tranzaksiyasi uzoq davom etishi mumkin, kutish esa timeout va deadlock kodini keltiradi; lock manager darhol exception beradi va deadlock yuki yo'qoladi.
+- Imkon bo'lsa barcha qulf foydalanuvchi ishni boshlashidan oldin olinadi; eng raqobatli qulfni tranzaksiyaning oxiriga qoldirmang.
+- Lock jadvaliga kirish serializatsiya qilinadi: exclusive read va write uchun bu qulflanadigan ID ustuniga unique constraint, read/write uchun esa jadvalni o'qish ham kerak bo'lgani uchun qulf olishni alohida serializable tranzaksiyada bajarish.
+- Yo'qolgan sessiya uchun timeout kerak: klient qulfni bo'shatmasdan yiqilsa qulf abadiy qoladi. Yechim - sessiya yaroqsiz bo'lganda barcha qulfni bo'shatadigan obyekt yoki har qulfdagi timestamp.
+
+**Spring'da qayerda uchraydi:** Spring bu patternni tayyor bermaydi, u ilovada quriladi: lock jadvali Flyway migratsiyasida, lock manager `JdbcClient` ustidagi `@Component` sifatida, unique constraint buzilishi esa `DuplicateKeyException` bo'lib keladi va aynan "qulf band" signali bo'ladi. Qulf olish `@Transactional` ichida, read/write qulfi uchun `@Transactional(isolation = Isolation.SERIALIZABLE)` alohida metodda bajariladi. Ega sifatida `HttpSession` identifikatori ishlatiladi, sessiya tugaganda bo'shatish uchun `HttpSessionListener` ulanadi. [Taqsimlangan lock](10-malumotlarni-boshqarish-va-taqsimlash.md#1029-taqsimlangan-lock-distributed-lock---redis-shedlock-database) bu pattern emas: u node lar o'rtasida qisqa texnik qulf beradi va egasi sessiya emas, protsess bo'ladi.
+
+**Qo'llanish keyslari:**
+- Uzun tahrir oqimida "bu hujjatni Ali tahrirlab turibdi" xabarini lock jadvalidan o'qib ko'rsatish.
+- Oylik yopish yoki inventarizatsiyani bir vaqtda ikki operator boshlab yubormasligini kafolatlash.
+- Hujjat workflow ida bosqichni bitta tekshiruvchiga biriktirib, qolganlarga darhol "band" javobini berish.
+- Sessiya tugaganda yoki chiqib ketganda o'sha foydalanuvchining barcha qulfini bitta chaqiruvda bo'shatish.
+- Bir nechta node da ishlaydigan ilovada qulfni bazaga ko'chirib, xotiradagi jadvaldan voz kechish.
+
+**Ehtiyot bo'ling:** Lock jadvaliga kirishning serial tabiati performance tiqilinchi bo'lib chiqadi, shuning uchun granularlik asosiy qaror: qulf kam bo'lsa tiqilinch kam, va lock jadvali uchun raqobatni [yirik donali qulf](#925-yirik-donali-qulf-coarse-grained-lock) kamaytiradi. Ikkita lock jadvali yoki klasterda xotirada ushlangan jadval patternni butunlay buzadi: jadval yagona bo'lmasa qulf kafolat bermaydi. Timeout ni ilovaga yozishdan oldin ilova serveri yoki sessiya mexanizmi buni o'zi bera oladimi degan savolga javob bering. Muqobil variant - uzun tranzaksiya: u yomon narsa, lekin ayrim holatda bu patterndan ko'proq zarar qilmaydi va programmalash osonroq, shuning uchun tanlashdan oldin yuk testi o'tkazing.
+
+```java
+// Oflayn exclusive write qulfi: yagona lock jadvali va uning oldidagi lock manager.
+// Flyway: create table business_lock (
+//   lockable_id varchar(64) primary key,   -- unique constraint serializatsiyani beradi
+//   owner_id    varchar(64) not null,
+//   acquired_at timestamptz not null default now());
+@Component
+public class JdbcLockManager {
+
+    private final JdbcClient jdbc;
+
+    JdbcLockManager(JdbcClient jdbc) { this.jdbc = jdbc; }
+
+    /** Qulf band bo'lsa darhol xato: biznes tranzaksiyasi kutmaydi. */
+    @Transactional
+    public void acquire(String lockableId, String ownerId) {
+        try {
+            jdbc.sql("INSERT INTO business_lock (lockable_id, owner_id) VALUES (?, ?)")
+                    .params(lockableId, ownerId).update();
+        } catch (DuplicateKeyException heldByOther) {
+            throw new LockUnavailableException(lockableId);
+        }
+    }
+
+    /** Sessiya yoki biznes tranzaksiyasi tugaganda hammasi birga bo'shatiladi. */
+    @Transactional
+    public void releaseAll(String ownerId) {
+        jdbc.sql("DELETE FROM business_lock WHERE owner_id = ?").param(ownerId).update();
+    }
+}
+```
+
+## 9.43 Amalda qo'llash
 
 - [ ] Hibernate statistikasini yoqib, eng ko'p so'rov chiqaradigan 10 endpointni aniqlang va N+1 holatlarini ro'yxatga oling.
 - [ ] `FetchType.EAGER` ishlatadigan har bir aloqani toping va uni `LAZY` ga o'tkazib, kerakli joyda `JOIN FETCH` yoki entity graph qo'llang.
@@ -1185,6 +1418,11 @@ while (rs.next()) {                         // connection allaqachon yopilgan
 - [spring-boot, `JpaBaseConfiguration.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/module/spring-boot-jpa/src/main/java/org/springframework/boot/jpa/autoconfigure/JpaBaseConfiguration.java) - "spring.jpa.open-in-view is enabled by default" ogohlantirish matni
 - [hibernate-orm, `SqlTypes.java`](https://raw.githubusercontent.com/hibernate/hibernate-orm/7.0.0/hibernate-core/src/main/java/org/hibernate/type/SqlTypes.java) - `JSON` va `JSON_ARRAY` doimiylari
 - [mapstruct, `SubclassMapping.java`](https://raw.githubusercontent.com/mapstruct/mapstruct/1.6.3/core/src/main/java/org/mapstruct/SubclassMapping.java) - `@since 1.5`
+- Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 18-bob (466-472) - Gateway ta'rifi, Facade va Adapter dan farqi, back end va front end ga ajratish, Service Stub uchun qulay nuqta (9.38)
+- Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 3-bob (47-49) - mappingni qurishning uch vaziyati va ularga mos pattern tanlovi, "avval modelni qur" maslahatining iteratsiya bilan cheklanishi, Double Mapping va mantiqiy data store sxemasi orqali ikki qadamli mapping (9.39)
+- Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 11-bob (185-188) - Unit of Work ning uch registratsiya strategiyasi: caller registration, object registration va unit of work controller, selective update hamda gibrid nusxa olish varianti, bytecode post-processing bilan registratsiya chaqiruvini qo'shish, referensial butunlik uchun yozish tartibi va topologik saralash, bir xil ketma-ketlik bilan deadlock ni kamaytirish, obyekt o'z Unit of Work ini oqimga bog'langan Registry orqali topishi (9.40)
+- Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 16-bob (427-428) - oflayn qulfning uch turi: exclusive write, exclusive read va read/write lock, ularning o'zaro istisno qoidalari va samarasiz qulf strategiyasining belgilari (9.41)
+- Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 16-bob (428-430) - lock manager ning roli va qulf egasi sifatida sessiya, yagona lock jadvali talabi, qulfning lock manager uchun xususiy qolishi, qulfni yuklashdan oldin ID bo'yicha olish, kutmasdan abort qilish, unique constraint va serializable tranzaksiya bilan serializatsiya, yo'qolgan sessiya uchun timeout (9.42)
 
 ---
 

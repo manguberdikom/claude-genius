@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 9. Tashqi servislarni taqlid qilish va contract testing (Faking External Services & Contract Testing)
 
 <details>
-<summary>Bu bobdagi 14 bo'lim</summary>
+<summary>Bu bobdagi 15 bo'lim</summary>
 
 - [9.1 Muammo va yechim variantlari ierarxiyasi](#91-muammo-va-yechim-variantlari-ierarxiyasi)
 - [9.2 WireMock bilan HTTP stub server](#92-wiremock-bilan-http-stub-server)
@@ -22,7 +22,8 @@
 - [9.11 OpenAPI'ni contract sifatida ishlatish](#911-openapini-contract-sifatida-ishlatish)
 - [9.12 Contract testni CI'ga qo'yish](#912-contract-testni-ciga-qoyish)
 - [9.13 Anti-patternlar](#913-anti-patternlar)
-- [9.14 Arxitektor nazorat ro'yxati](#914-arxitektor-nazorat-royxati)
+- [9.14 O'rganish testi (learning test) va kutubxona yangilanishi](#914-organish-testi-learning-test-va-kutubxona-yangilanishi)
+- [9.15 Arxitektor nazorat ro'yxati](#915-arxitektor-nazorat-royxati)
 
 </details>
 
@@ -446,7 +447,32 @@ Contract'da hamma narsani aniq qiymat bilan qotirish. Timestamp, UUID, hisoblang
 
 Verification natijasini e'tiborsiz qoldirish: qizil provider verification'ini `@Disabled` yoki doimiy pending flag bilan yashirish contract testing'ni dekoratsiyaga aylantiradi.
 
-## 9.14 Arxitektor nazorat ro'yxati
+## 9.14 O'rganish testi (learning test) va kutubxona yangilanishi
+
+Yangi kutubxonani ishlab chiqarish kodida sinab ko'rish ikki qiyin ishni birga qiladi: kutubxonani o'rganish va uni integratsiya qilish. Xato chiqqanda u sizdami yoki kutubxonadami ekani darhol ko'rinmaydi. Arzon yo'l: kutubxonani alohida testda, siz ishlatmoqchi bo'lgan shaklda chaqirib ko'rish. Bunday test o'rganish testi deyiladi va uning maqsadi kutubxonani tekshirish emas, **o'z tushunchangizni** tekshirish.
+
+```java
+// o'rganish testi: Caffeine ning expireAfterWrite xatti-harakati bizga mos keladimi
+@Test
+void expiresEntryAfterWriteWindow() {
+    FakeTicker ticker = new FakeTicker();
+    Cache<String, String> cache = Caffeine.newBuilder()
+            .expireAfterWrite(Duration.ofMinutes(5))
+            .ticker(ticker::read)
+            .build();
+
+    cache.put("order-1", "PAID");
+    ticker.advance(Duration.ofMinutes(6));
+
+    assertThat(cache.getIfPresent("order-1")).isNull();
+}
+```
+
+Bu testning narxi nolga teng: kutubxonani baribir o'rganish kerak edi, test esa o'rganishni yozib qo'ydi. Keyingi foydasi kattaroq: kutubxonaning yangi versiyasiga o'tishda shu testlar birinchi yiqiladi va xatti-harakat o'zgarganini ishlab chiqarish kodidan oldin aytadi. Shu sababli o'rganish testi bir martalik emas, u chegara testi bo'lib qoladi va kutubxona versiyasi ko'tarilganda qayta yurgiziladi.
+
+Chegarada nimani sinash kerakligi: siz haqiqatda tayanadigan xatti-harakat (timeout, retry, serializatsiya shakli, sana formati, exception turi), kutubxonaning hamma imkoniyati emas. Kutubxonaning o'z testini qaytarib yozish shart emas. Qoida: chegara testi ishlab chiqarish kodi API ni qanday chaqirsa, shunday chaqiradi. Tashqi turni kodga tarqatmaslik qoidasi [toza kod hujjatidagi chegara interfeysi](../clean-code/14-obyekt-va-malumot-tuzilmasi-inkapsulyatsiya.md#1411-chegara-interfeysini-tizim-boylab-uzatmaslik) da.
+
+## 9.15 Arxitektor nazorat ro'yxati
 
 - [ ] Har bir tashqi integratsiya uchun qaysi qatlam ishlatilayotgani (mock, in-process stub, WireMock, contract test, sandbox) ro'yxatlangan va asoslangan.
 - [ ] Barcha stub server port'lari dinamik va Spring'ga `@DynamicPropertySource` orqali beriladi; test kodida qotirilgan port yo'q.
@@ -456,6 +482,14 @@ Verification natijasini e'tiborsiz qoldirish: qizil provider verification'ini `@
 - [ ] Deploy oldidan gate mavjud (`can-i-deploy` yoki stub versiyasi va provider verification tartibi) va u qo'lda chetlab o'tilmaydi.
 - [ ] Kafka/AMQP integratsiyalari uchun messaging contract va schema registry compatibility tekshiruvi (BACKWARD/FORWARD siyosati tanlangan) CI'da ishlaydi.
 - [ ] Record-and-replay fixture'lari maxfiy ma'lumotdan tozalangan, sanasi belgilangan va qayta yozib olish jadvali bor.
+
+## Manbalar
+
+- Robert C. Martin, *Clean Code*, 8-bob - o'rganish testi, uning narxi va kutubxona yangilanishidagi roli
+- [WireMock, README](https://raw.githubusercontent.com/wiremock/wiremock/2d93d2677b46bcee55068f6516b38faade249e42/README.md) - stubbing imkoniyatlari ro'yxati: URL, header va tana naqshi bo'yicha moslash, record/playback, so'rov bo'yicha shartli proxy, brauzer proxy si
+- [Spring Cloud Contract, README](https://raw.githubusercontent.com/spring-cloud/spring-cloud-contract/2d38ddc8fe5c28b460783617af2cb1d01f80d122/README.adoc) - contract dan stub va test generatsiyasi, stub larning WireMock orqali berilishi
+- [Spring Framework 7.0, MockRestServiceServer](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/testing/spring-mvc-test-client.adoc) - jarayon ichidagi stub va uning chegarasi
+- [Testcontainers, JUnit 5 Quickstart](https://raw.githubusercontent.com/testcontainers/testcontainers-java/9bb3c2dc175672ad33a2eafd7133212c7173ac43/docs/quickstart/junit_5_quickstart.md) - tashqi servisni konteynerda ko'tarish varianti
 
 ---
 

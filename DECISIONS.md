@@ -8,6 +8,45 @@ Hamma o'zgarish bu yerga yozilmaydi. Yoziladigani: foydalanuvchi
 muhitiga tegadigan, ma'lumot yo'qotishi mumkin bo'lgan yoki ruxsat
 qarorini o'zgartiradigan o'zgarish.
 
+## 2026-10-15: Kontekst byudjeti 5290 dan 5579 ga, avval takror qisqartirildi
+
+**Nima o'zgardi.** `tools/cost_report.py` dagi `DEFAULT_BUDGET` 5290 dan
+5579 ga ko'tarildi. Undan oldin JAMI 6040 dan 5279 ga tushirildi: ikki
+`MEMORY.md` indeksidagi tavsiflar qisqartirildi (2282 dan 1386 belgiga,
+yozuv soni o'zgarmadi) va `CLAUDE.md` dagi takror olib tashlandi (3549
+dan 3088 belgiga): `guard.py` tafsiloti `taqiq.md` ga, OWNERS bandi
+`CONTRIBUTING.md` havolasiga qoldirildi.
+
+**Nega.** `cost_report.py` byudjetdan oshganda 1 bilan chiqadi va CI uni
+qadam sifatida yurgizadi, ya'ni `main` qizil turgan: 6040 token, 750
+ortiqcha. Bu holat bu sessiyadan oldin ham bor edi (`git stash` bilan
+tekshirildi). Faqat qisqartirish bilan 5279 ga tushdi, lekin byudjet
+5290 bo'lganda 11 token zahira qoladi va har kichik tahrir yana qizil
+beradi.
+
+**Rad etilgan variantlar.** Byudjetni 6000 ga ko'tarish: `test_cost_report.py`
+zahira 200-400 oralig'ida bo'lishini talab qiladi, 6000 bilan zahira 721
+bo'lib testni buzadi va o'sishni sezilmas qiladi. Skill `description`
+maydonlarini qisqartirish: `eval_skill.py` marshrutni aynan shu
+tavsiflar bilan o'lchaydi va u hozir 100%, qisqartirish uni buzishi
+mumkin edi. Byudjetni tekshirmaslik (CI qadamini olib tashlash): o'sishni
+hech kim sezmay qoladi.
+
+**Xavf.** Byudjet ko'tarilgani uchun kontekst o'sishiga 300 token joy
+berildi. Shundan oshsa, yangi narsa qo'shishdan oldin eskisi
+qisqartiriladi. Memory indeksi qisqargani uchun yozuvni tanlash biroz
+qiyinlashishi mumkin: fayl nomi va qisqa tavsif qoldirildi, demak
+noto'g'ri fayl ochilishi ehtimoli bor.
+
+**Qaysi tekshiruv o'tdi.** `cost_report.py` 5279 token, 300 zahira;
+`test_cost_report.py` 11/11; `test_skill.py` 8 skill 6 agent;
+`eval_skill.py` 100%; `check_docs.py` xatosiz.
+
+**Orqaga qaytarish.** `DEFAULT_BUDGET` ni 5290 ga qaytarish byudjetni
+tiklaydi, lekin CI yana qizil bo'ladi. Qisqartirishni qaytarish uchun shu
+commitdagi `memory/*/MEMORY.md` va `CLAUDE.md` diffini teskari qo'llash
+kifoya; ikkisi ham mazmunga tegmaydi, faqat so'z sonini kamaytiradi.
+
 ## 2026-10-06: Global o'rnatishda hooklar pin qilingan snapshotdan yuradi, yangilash tasdiq bilan
 
 **Nima o'zgardi.** Hook buyruqlari, `permissions.allow`, `<docs>`

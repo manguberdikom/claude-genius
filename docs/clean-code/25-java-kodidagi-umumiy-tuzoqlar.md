@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 25. Java kodidagi umumiy tuzoqlar (Common Java Pitfalls)
 
 <details>
-<summary>Bu bobdagi 11 bo'lim</summary>
+<summary>Bu bobdagi 12 bo'lim</summary>
 
 - [25.1 `Optional` maydon, parametr va seriyalash](#251-optional-maydon-parametr-va-seriyalash)
 - [25.2 Statik ishga tushirish tartibi va sinf yuklanishi](#252-statik-ishga-tushirish-tartibi-va-sinf-yuklanishi)
@@ -19,7 +19,8 @@
 - [25.8 Anonim sinf va lambda tanlovi](#258-anonim-sinf-va-lambda-tanlovi)
 - [25.9 `enum` da xatti-harakat, `EnumMap`, `EnumSet`, `valueOf`](#259-enum-da-xatti-harakat-enummap-enumset-valueof)
 - [25.10 Kompilyator ogohlantirishlari: `-Xlint`, `-Werror`, Error Prone, NullAway](#2510-kompilyator-ogohlantirishlari--xlint--werror-error-prone-nullaway)
-- [25.11 Amalda qo'llash](#2511-amalda-qollash)
+- [25.11 `ordinal()` ga tayanmaslik, enum ni interfeys bilan kengaytirish va `@Override`](#2511-ordinal-ga-tayanmaslik-enum-ni-interfeys-bilan-kengaytirish-va-override)
+- [25.12 Amalda qo'llash](#2512-amalda-qollash)
 
 </details>
 
@@ -122,6 +123,32 @@ public final class SessionData implements Serializable {
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         if (userId == null) throw new InvalidObjectException("userId bo'sh");
+    }
+}
+```
+
+`Serializable` majbur bo'lgan joyda yana uchta qoida bor. Birinchisi: sukut bo'yicha seriyalangan shakl sinfning **ichki tuzilishini** oqimga chiqaradi, ya'ni maydon nomi va turi public API ga aylanadi va keyin ularni o'zgartirib bo'lmaydi. Ichki tuzilma mantiqiy mazmunga mos kelmasa (ikki tomonli ro'yxat tugunlari, kesh maydonlari), `writeObject`/`readObject` bilan o'z shakli yoziladi va unda faqat mantiqiy ma'lumot qoladi.
+
+Ikkinchisi: nusxa nazorati. `readObject` har chaqiruvda yangi obyekt yasaydi, shu sababli singleton deseriyalashdan keyin ikkinchi nusxa bo'lib qoladi. `readResolve` bilan tuzatish mumkin, lekin enum ishlatish ishonchliroq: enum nusxasining yagonaligini JVM kafolatlaydi va unda `readResolve` ni unutish xavfi yo'q.
+
+Uchinchisi: seriyalash proxysi. Obyekt `writeReplace` da kichik statik ichki sinfga aylanadi, u faqat mantiqiy maydonlarni saqlaydi va `readResolve` da obyektni **konstruktor orqali** qaytaradi. Shu bilan deseriyalash konstruktorni chetlab o'tmaydi, invariant tekshiriladi va `readObject` ni himoyaviy yozish kerak bo'lmaydi.
+
+```java
+// yaxshi: seriyalash proxysi - deseriyalash konstruktordan o'tadi
+private Object writeReplace() {
+    return new Proxy(start, end);
+}
+
+private static final class Proxy implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+    private final LocalDate start;
+    private final LocalDate end;
+
+    Proxy(LocalDate start, LocalDate end) { this.start = start; this.end = end; }
+
+    private Object readResolve() {
+        return DateRange.of(start, end);   // invariant shu yerda tekshiriladi
     }
 }
 ```
@@ -259,7 +286,44 @@ Kompilyator alohida jarayonda ishlasa (`<fork>true</fork>` yoki `maven-toolchain
 
 Error Prone bu hujjatdagi ko'p qoidalarni avtomatik tekshiradi: `EqualsHashCode`, `Finally`, `ClassCanBeStatic`, `StringSplitter`, `DefaultCharset`, `JavaUtilDate`, `BigDecimalEquals`, `UnusedVariable` (42.2).
 
-## 25.11 Amalda qo'llash
+## 25.11 `ordinal()` ga tayanmaslik, enum ni interfeys bilan kengaytirish va `@Override`
+
+Enum bilan ishlashda uchta qoida ko'p xatoni to'sadi va ularning hammasi bir xil sababga ega: enum e'loni o'zgaradi, kod esa o'zgarmaganday ishlaydi.
+
+Birinchisi `ordinal()`. U enum a'zosining e'londagi tartibini qaytaradi, ya'ni a'zolar o'rin almashsa yoki orasiga yangi a'zo qo'shilsa qiymat jim o'zgaradi. Bazaga, faylga yoki tashqi API ga `ordinal()` yozilgan bo'lsa, ma'lumot buziladi.
+
+```java
+// yomon: tartibga tayanish - yangi a'zo qo'shilsa qiymat siljiydi
+int code = status.ordinal();
+
+// yaxshi: o'z maydoni, e'lon tartibidan mustaqil
+enum SettlementStatus {
+    PENDING(10), SETTLED(20), REJECTED(30);
+
+    private final int code;
+
+    SettlementStatus(int code) { this.code = code; }
+
+    public int code() { return code; }
+}
+```
+
+Ikkinchisi kengaytirish. Enum dan voris olib bo'lmaydi, lekin enum interfeys implementatsiya qilishi mumkin: shu bilan bir xil shartnomani qo'shimcha enum lar ham bajaradi va chaqiruvchi kod interfeys turi bilan ishlaydi.
+
+```java
+public interface FeeRule {
+    Money apply(Money amount);
+}
+
+enum StandardFeeRule implements FeeRule {
+    FLAT { public Money apply(Money a) { return a.plus(Money.of("0.50")); } },
+    PERCENT { public Money apply(Money a) { return a.multiply(new BigDecimal("0.015")); } }
+}
+```
+
+Uchinchisi `@Override`. Uni har bir ustiga yozilgan metodga qo'yish qoida: imzo mos kelmasa (nom xato, parametr turi boshqa) kompilyator darhol xato beradi, aks holda metod yangi metod bo'lib qoladi va hech kim chaqirmaydi. Bu ayniqsa `equals(Object)` da ko'p uchraydi: `equals(MyType)` yozilsa kod kompilyatsiya bo'ladi, lekin `HashMap` eski `equals` ni chaqiradi. Abstrakt metodni implementatsiya qilganda ham yoziladi: kompilyator talab qilmaydi, lekin niyatni qayd qiladi.
+
+## 25.12 Amalda qo'llash
 
 - [ ] `Optional` tipidagi maydon va parametrlarni topib, maydonni `null` ga va getter ni `Optional` ga o'tkazing.
 - [ ] Statik initializator ichidagi I/O va tashqi chaqiruvlarni bean konstruktoriga yoki lazy supplier ga ko'chiring.
@@ -269,6 +333,25 @@ Error Prone bu hujjatdagi ko'p qoidalarni avtomatik tekshiradi: `EqualsHashCode`
 - [ ] Nostatik ichki sinflarni `static` qilib, Error Prone `ClassCanBeStatic` ni yoqing.
 - [ ] `Enum.valueOf` tashqi ma'lumot bilan chaqirilgan joylarni xavfsiz parslashga o'tkazing.
 - [ ] `-Xlint:all -Werror` va Error Prone + NullAway ni build ga qo'shib, chiqqan ogohlantirishlarni bosqichma-bosqich tuzating.
+- [ ] `ordinal()` chaqiruvlarini grep bilan topib, saqlanadigan yoki uzatiladigan joylarini o'z kod maydoniga o'tkazing.
+- [ ] Ustiga yozilgan metodlarda `@Override` yo'qligini linter qoidasi bilan ushlang.
+
+## Manbalar
+
+- Joshua Bloch, *Effective Java* 3rd, Item 34, 35 - int konstanta o'rniga enum, ordinal o'rniga instance maydon
+- Joshua Bloch, *Effective Java* 3rd, Item 36, 37 - `EnumSet` va `EnumMap`
+- Joshua Bloch, *Effective Java* 3rd, Item 38 - enum ni interfeys bilan kengaytirish
+- Joshua Bloch, *Effective Java* 3rd, Item 40 - `@Override` ni izchil ishlatish
+- Joshua Bloch, *Effective Java* 3rd, Item 85, 86 - Java serializatsiyasiga alternativa va ehtiyotkorlik
+- Joshua Bloch, *Effective Java* 3rd, Item 8 - finalizer va cleaner dan voz kechish
+- Joshua Bloch, *Effective Java* 3rd, Item 87 - o'z seriyalangan shakli
+- Joshua Bloch, *Effective Java* 3rd, Item 89 - nusxa nazorati uchun `readResolve` emas enum
+- Joshua Bloch, *Effective Java* 3rd, Item 90 - seriyalash proxysi
+- Joshua Bloch, *Effective Java* 3rd, Item 6, 7 - keraksiz obyekt yaratmaslik, eskirgan havolani tozalash
+- Joshua Bloch, *Effective Java* 3rd, Item 8 - finalizer va cleaner dan voz kechish
+- Joshua Bloch, *Effective Java* 3rd, Item 24 - statik ichki sinfni nostatikdan afzal ko'rish
+- Joshua Bloch, *Effective Java* 3rd, Item 65 - refleksiya o'rniga interfeys
+- Herbert Schildt, *Java The Complete Reference*, 13-bob - `try-with-resources` va boshqa mavzular
 
 ---
 

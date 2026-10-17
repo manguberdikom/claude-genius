@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 37. API moslik va breaking change review (API Compatibility)
 
@@ -37,6 +37,7 @@ API o'zgarishi diffda oddiy ko'rinadi: maydon nomi tuzatildi, tur aniqlashtirild
 | Maydonni nullable qilish | Ha | Mijoz null ni kutmaydi |
 | Maydonni majburiy qilish | Ha | Eski so'rovlar rad etiladi |
 | Enum ga yangi qiymat (javobda) | Ehtimol | Mijoz `switch` da `default` siz bo'lsa |
+| `sealed` iyerarxiyaga yangi subklass | Ha | Chaqiruvchining `switch` i to'liq qamramaydi |
 | Enum dan qiymat olib tashlash | Ha | - |
 | Status kodini o'zgartirish | Ha | Mijoz mantiqi unga tayanadi |
 | Xato javob shaklini o'zgartirish | Ha | Xato ishlash kodi sinadi |
@@ -50,6 +51,16 @@ API o'zgarishi diffda oddiy ko'rinadi: maydon nomi tuzatildi, tur aniqlashtirild
 | Autentifikatsiya talabini qo'shish | Ha | - |
 
 Eng xavfli qator - standart qiymatni o'zgartirish, chunki u hech qanday xato bermaydi: mijoz ishlaydi, lekin boshqa natija oladi.
+
+Oxirgi ikki qatorning farqi muhim. Enum yoki `sealed` iyerarxiyaga
+qiymat qo'shilganda buzilish jim bo'lmaydi: switch-expression hamma
+qiymatni qamramasa, javac "the switch expression does not cover all
+possible input values" degan XATO beradi, ogohlantirish emas. Ya'ni
+chaqiruvchi kodi umuman kompilyatsiya qilinmaydi. Bu yaxshi xabar,
+chunki muammo ishlab chiqarishda emas, build da chiqadi; lekin
+chaqiruvchini qayta build qilmasdan kutubxonani ko'tarib qo'ysa,
+eski bayt-kod `IncompatibleClassChangeError` yoki
+`MatchException` bilan ish vaqtida yiqilishi mumkin.
 
 ## 37.2 Kim ishlatayotganini aniqlash
 
@@ -111,15 +122,25 @@ public record OrderResponse(
 ```java
 // Mijoz tomonda: qattiq deserializatsiya yangi maydonga sindiradi.
 ObjectMapper mapper = new ObjectMapper();
-mapper.enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);   // standart yoqilgan!
+// Jackson 2 (`com.fasterxml`) da bu feature standart YOQILGAN, ya'ni
+// `new ObjectMapper()` noma'lum maydonga darhol sinadi. Jackson 3
+// (`tools.jackson`) da esa standart O'CHIQ. Spring boshqaradigan
+// mapper da ham o'chiq: Spring Framework uni ataylab o'chirib qo'yadi.
+// Demak xavf asosan Spring tashqarisidagi, Jackson 2 dagi mijozda.
+mapper.enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 // Agar sizning servisingiz javobga yangi maydon qo'shsa, shunday
 // sozlangan mijoz sinadi - ya'ni "mos" o'zgarish ham breaking bo'ladi.
 
 // Review tavsiyasi ikki tomonga:
 // 1) Iste'molchi sifatida: noma'lum maydonlarga chidamli bo'lish
 //    (Spring Boot da spring.jackson.deserialization.fail-on-unknown-properties=false).
+//    Spring boshqaradigan mapper da bu allaqachon shunday, shuning
+//    uchun qatorni yozish faqat niyatni qayd qiladi.
 // 2) Provayder sifatida: mijozlarning qattiqligini bilish va
 //    yangi maydon qo'shishni ham e'lon qilish.
+// 3) Mijoz qaysi Jackson da ekanini aniqlash: ikki versiyada standart
+//    teskari, shuning uchun "bizda sinamaydi" degan dalil mijoz
+//    versiyasini bilmasdan hech narsa isbotlamaydi.
 ```
 
 ## 37.5 Ichki API: modullar orasidagi shartnoma
@@ -146,17 +167,36 @@ public Money calculateTotal(Order order) {
 <plugin>
   <groupId>com.github.siom79.japicmp</groupId>
   <artifactId>japicmp-maven-plugin</artifactId>
+  <version>0.26.3</version>
+  <executions>
+    <!-- Goal ni aniq bog'lash kerak: `cmp` ning default fazasi
+         `verify` bo'lsa ham, execution yozilmasa Maven uni
+         lifecycle ga qo'shmaydi va plugin jimgina ishlamaydi. -->
+    <execution>
+      <phase>verify</phase>
+      <goals><goal>cmp</goal></goals>
+    </execution>
+  </executions>
   <configuration>
     <oldVersion>
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>${project.artifactId}</artifactId>
-        <version>LATEST_RELEASE</version>
+        <!-- japicmp bu qiymatni o'zi talqin qilmaydi, to'g'ridan-to'g'ri
+             Maven ga beradi. Maven esa faqat `RELEASE` va `LATEST`
+             meta-versiyalarini taniydi, `LATEST_RELEASE` degan qiymat
+             yo'q. Eng ishonchli yo'l aniq versiya: oldingi reliz
+             raqamini property da saqlash. -->
+        <version>${api.baseline.version}</version>
       </dependency>
     </oldVersion>
     <parameter>
       <onlyModified>true</onlyModified>
       <breakBuildOnBinaryIncompatibleModifications>true</breakBuildOnBinaryIncompatibleModifications>
+      <!-- Binary moslik yetarli emas: overload qo'shilishi chaqiruvni
+           noaniq qilishi mumkin, bu binary da emas, source da buzadi.
+           Kutubxona chiqarayotgan bo'lsangiz ikkinchisini ham yoqing. -->
+      <breakBuildOnSourceIncompatibleModifications>true</breakBuildOnSourceIncompatibleModifications>
       <includes><include>com.acme.api</include></includes>   <!-- faqat public API -->
     </parameter>
   </configuration>
@@ -167,14 +207,37 @@ public Money calculateTotal(Order order) {
 
 Xabar sxemasi API dan ham qattiqroq: iste'molchilar mustaqil deploy qilinadi va eski xabarlar navbatda turgan bo'lishi mumkin.
 
-| O'zgarish | Orqaga mos (eski iste'molchi yangi xabarni o'qiydi) | Oldinga mos (yangi iste'molchi eski xabarni o'qiydi) |
+Atamalarda bitta tuzoq bor va u jamoani soatlab chalg'itadi. Schema
+registry da `BACKWARD` so'zi "eski iste'molchi yangi xabarni o'qiydi"
+degani EMAS. Confluent ning ta'rifi teskari tomondan qaraydi: `BACKWARD`
+yangi sxema oldingi sxema yozgan ma'lumotni o'qiy oladimi (ya'ni yangi
+iste'molchi, eski xabar), `FORWARD` esa yangi sxema yozgan ma'lumotni
+oldingi sxema o'qiy oladimi (eski iste'molchi, yangi xabar). Shuning
+uchun jadvalda yo'nalish so'z bilan yoziladi, `backward` va `forward`
+yorliqlari esa registry sozlamasi bo'lgani uchun alohida ustunda.
+
+| O'zgarish | Yangi iste'molchi eski xabarni o'qiydi (registry: `BACKWARD`) | Eski iste'molchi yangi xabarni o'qiydi (registry: `FORWARD`) |
 | --- | --- | --- |
-| Standart qiymatli maydon qo'shish | Ha | Ha |
-| Majburiy maydon qo'shish | Ha | Yo'q |
-| Ixtiyoriy maydon olib tashlash | Yo'q (agar o'qilsa) | Ha |
-| Maydon nomini o'zgartirish | Yo'q | Yo'q |
-| Turni kengaytirish (`int` -> `long`) | Ehtimol | Yo'q |
-| Enum qiymat qo'shish | Iste'molchiga bog'liq | Ha |
+| Standart qiymatli maydon qo'shish | Ha (o'quvchi default bilan to'ldiradi) | Ha (eski o'quvchi maydonni e'tiborsiz qoldiradi) |
+| Majburiy maydon qo'shish | Yo'q | Ha |
+| Ixtiyoriy maydon olib tashlash | Ha | Yo'q (agar o'qilsa) |
+| Maydon nomini o'zgartirish | Faqat alias bilan | Faqat eski sxemada ham alias bo'lsa |
+| `int` dan `long` ga kengaytirish | Ha (`int` `long` ga promotsiya qilinadi) | Yo'q (`long` ni `int` o'quvchi qabul qilmaydi) |
+| Enum qiymat qo'shish | Ha | Iste'molchiga bog'liq |
+
+Oxirgi ikki qator alohida izoh talab qiladi. Avro da tur promotsiyasi
+bir tomonlama: `int` ni `long`, `float` yoki `double` sifatida o'qish
+mumkin, `long` ni `int` sifatida esa yo'q. Shuning uchun maydonni
+`int` dan `long` ga kengaytirish yangi o'quvchi uchun xavfsiz, eski
+o'quvchi uchun esa buzadi, va ko'p jamoa buni teskari eslab qoladi.
+
+Maydon nomini o'zgartirish ham "umuman mumkin emas" emas: Avro da
+nomlangan turlar va maydonlar `aliases` olishi mumkin, va o'quvchi
+sxemasidagi alias yozuvchi sxemasidagi eski nomga moslanadi. Ya'ni
+yangi o'quvchi `aliases: ["oldName"]` bilan eski ma'lumotni o'qiy
+oladi. Teskari yo'nalish uchun esa eski sxemaning o'zida ham alias
+bo'lishi kerak edi, shuning uchun nomni "keyinchalik" o'zgartirish
+amalda yangi maydon qo'shib eskisini deprecate qilishga teng.
 
 ```java
 // Event sxemasini versiyalash: eng oddiy ishlaydigan shakl.
@@ -237,6 +300,7 @@ public OrderResponse get(@PathVariable UUID id,
 | Standart qiymat o'zgardimi | Xatosiz xulq o'zgarishi |
 | Validatsiya qattiqlashdimi | Avval o'tgan so'rovlar |
 | Enum ga yangi qiymat qo'shildimi | Mijoz `switch` i |
+| `sealed` iyerarxiyaga subklass qo'shildimi | Chaqiruvchining `switch` i, kompilyatsiya xatosi |
 | Xato javob shakli o'zgardimi | Mijoz xato ishlash kodi |
 | Deprecation sanasi va rejasi bormi | Abadiy ikki shakl |
 | OpenAPI hujjati yangilandimi | Mijoz noto'g'ri ma'lumot oladi |
@@ -254,6 +318,41 @@ public OrderResponse get(@PathVariable UUID id,
 - [ ] Event sxemalariga aniq versiya maydonini kiritib, iste'molchida noma'lum versiya uchun xulq belgilang.
 - [ ] Deprecated maydon va endpointlar ro'yxatini o'chirish sanasi bilan yuritib boring.
 - [ ] API javob shakllari uchun snapshot testlarini qo'shib (36.5), tasodifiy o'zgarishlarni tuting.
+
+## Manbalar
+
+- Apache Avro, *Specification* (Schema Resolution va Aliases)
+  ([https://github.com/apache/avro/blob/release-1.12.2/doc/content/en/docs/++version++/Specification/_index.md](https://github.com/apache/avro/blob/release-1.12.2/doc/content/en/docs/++version++/Specification/_index.md),
+  tag `release-1.12.2`, Apache-2.0) - 37.6 dagi tur promotsiyasi
+  (`int` dan `long` ga, teskarisi emas), default bilan to'ldirish va
+  `aliases` orqali nom o'zgartirish.
+- Confluent Schema Registry, `CompatibilityChecker`
+  ([https://github.com/confluentinc/schema-registry/blob/v8.5.0-335/client/src/main/java/io/confluent/kafka/schemaregistry/CompatibilityChecker.java](https://github.com/confluentinc/schema-registry/blob/v8.5.0-335/client/src/main/java/io/confluent/kafka/schemaregistry/CompatibilityChecker.java),
+  tag `v8.5.0-335`, fayl Apache-2.0) - 37.6 dagi `BACKWARD` va
+  `FORWARD` yorliqlarining aniq ma'nosi.
+- japicmp, `ConfigParameters`, `JApiCmpMojo` va README
+  ([https://github.com/siom79/japicmp/tree/japicmp-base-0.26.3/japicmp-maven-plugin](https://github.com/siom79/japicmp/tree/japicmp-base-0.26.3/japicmp-maven-plugin),
+  tag `japicmp-base-0.26.3`, Apache-2.0) - 37.5 dagi plugin
+  parametrlari, `executions` zarurati va source moslik bayrog'i.
+- Maven Resolver, `VersionResolver`
+  ([https://github.com/apache/maven-resolver/blob/maven-resolver-2.0.24/maven-resolver-impl/src/main/java/org/eclipse/aether/impl/VersionResolver.java](https://github.com/apache/maven-resolver/blob/maven-resolver-2.0.24/maven-resolver-impl/src/main/java/org/eclipse/aether/impl/VersionResolver.java),
+  tag `maven-resolver-2.0.24`, Apache-2.0) - 37.5 dagi meta-versiyalar
+  ro'yxati: faqat `RELEASE` va `LATEST`.
+- Jackson Databind, `DeserializationFeature`
+  ([https://github.com/FasterXML/jackson-databind/blob/jackson-databind-2.22.3/src/main/java/com/fasterxml/jackson/databind/DeserializationFeature.java](https://github.com/FasterXML/jackson-databind/blob/jackson-databind-2.22.3/src/main/java/com/fasterxml/jackson/databind/DeserializationFeature.java),
+  tag `jackson-databind-2.22.3` va
+  [3.2.3 dagi `tools.jackson` varianti](https://github.com/FasterXML/jackson-databind/blob/jackson-databind-3.2.3/src/main/java/tools/jackson/databind/DeserializationFeature.java),
+  Apache-2.0) - 37.4 dagi `FAIL_ON_UNKNOWN_PROPERTIES` standart
+  qiymatining Jackson 2 va 3 da teskari bo'lishi.
+- Spring Framework, `Jackson2ObjectMapperBuilder`
+  ([https://github.com/spring-projects/spring-framework/blob/v7.0.9/spring-web/src/main/java/org/springframework/http/converter/json/Jackson2ObjectMapperBuilder.java](https://github.com/spring-projects/spring-framework/blob/v7.0.9/spring-web/src/main/java/org/springframework/http/converter/json/Jackson2ObjectMapperBuilder.java),
+  tag `v7.0.9`, Apache-2.0) - 37.4 dagi Spring boshqaradigan mapper da
+  feature ning ataylab o'chirilishi.
+- OpenJDK, `Deprecated`, `Lint` va `Flow`
+  ([https://github.com/openjdk/jdk/blob/jdk-28+9/src/jdk.compiler/share/classes/com/sun/tools/javac/comp/Flow.java](https://github.com/openjdk/jdk/blob/jdk-28+9/src/jdk.compiler/share/classes/com/sun/tools/javac/comp/Flow.java),
+  tag `jdk-28+9`, GPLv2 + Classpath istisnosi) - 37.1 va 37.8 dagi
+  to'liq qamramagan `switch` uchun kompilyatsiya xatosi, va 37.5 dagi
+  `forRemoval = true` ogohlantirishining standart yoqilganligi.
 
 ---
 

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 21. CI/CD ga ulash, PR decoration va blokirovka (CI/CD Integration)
 
@@ -221,7 +221,7 @@ Default holda scanner ma'lumotni serverga yuboradi va darhol muvaffaqiyat bilan 
 
 Bu parametr yoqilganda scanner fon vazifasi tugashini kutadi, keyin gate natijasini so'raydi. Gate ERROR bo'lsa scanner nolga teng bo'lmagan exit code bilan tugaydi va CI qadami yiqiladi.
 
-Kutish cheksiz emas. `sonar.qualitygate.timeout` parametri sekundda belgilanadi va default qiymati odatda 300 sekund atrofida. Aniq qiymat versiyaga qarab farq qiladi, shuning uchun uni ataylab o'zingiz yozib qo'ying. Katta monorepo da server navbati band bo'lsa 300 sekund yetmaydi va build timeout dan yiqiladi, garchi kod toza bo'lsa ham.
+Kutish cheksiz emas. `sonar.qualitygate.timeout` parametri sekundda belgilanadi va 9.9 LTA scanner manbasida default qiymati **aniq 300 sekund** (`ScanProperties.qualityGateWaitTimeout()` da `orElse(300)`), `sonar.qualitygate.wait` ning defaulti esa `false` (`orElse(false)`). Shu yerda yondosh parametr ham bor va u ko'pincha chalkashtiriladi: `sonar.ws.report.timeout` hisobotni yuborish timeout i, gate ni kutish timeout i emas. Katta monorepo da server navbati band bo'lsa 300 sekund yetmaydi va build timeout dan yiqiladi, garchi kod toza bo'lsa ham.
 
 ```bash
 # CI dagi tahlilni lokalda aynan takrorlash
@@ -400,6 +400,12 @@ Ikkinchi test bo'lmasa, branch coverage to'liq bo'lmaydi va gate qizil qoladi. Y
 - [ ] Fork dan kelgan PR uchun `if` sharti yozib, tahlilni ataylab o'tkazib yuboring va log da sababni yozdiring.
 - [ ] `~/.m2` va `~/.sonar/cache` keshini yoqib, tahlil vaqtini o'lchang, keyin generatsiya qilingan kodni exclusions ga qo'shib qayta o'lchang.
 - [ ] Mavjud barcha `continue-on-error` va `allow_failure: true` holatlarini ro'yxatlang, har biriga sana va sabab yozing, muddati o'tganini olib tashlang.
+
+## Manbalar
+
+- [sonarqube 9.9 LTA, `ScanProperties.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/sonar-scanner-engine/src/main/java/org/sonar/scanner/scan/ScanProperties.java) - `sonar.qualitygate.wait` defaulti `false`, `sonar.qualitygate.timeout` defaulti 300 sekund va `sonar.ws.report.timeout` ning alohida ma'nosi
+- [sonarqube 9.9 LTA, `ProjectStatusAction.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-webserver-webapi/src/main/java/org/sonar/server/qualitygate/ws/ProjectStatusAction.java) - `api/qualitygates/project_status` orqali gate natijasini CI da o'qish
+- [sonarqube 9.9 LTA, `TaskAction.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-webserver-webapi/src/main/java/org/sonar/server/ce/ws/TaskAction.java) - `api/ce/task`, fon vazifasining holati
 
 ---
 

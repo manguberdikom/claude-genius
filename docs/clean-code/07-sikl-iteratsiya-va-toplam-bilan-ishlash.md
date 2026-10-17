@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 7. Sikl, iteratsiya va to'plam bilan ishlash (Loops and Iteration)
 
 <details>
-<summary>Bu bobdagi 10 bo'lim</summary>
+<summary>Bu bobdagi 11 bo'lim</summary>
 
 - [7.1 Sikl tanasini chiqarish va sikl o'zgaruvchisi nomi](#71-sikl-tanasini-chiqarish-va-sikl-ozgaruvchisi-nomi)
 - [7.2 Indeksli sikl, `for-each` va iterator tanlovi](#72-indeksli-sikl-for-each-va-iterator-tanlovi)
@@ -18,7 +18,8 @@
 - [7.7 Sikldan quvurga o'tish mezoni](#77-sikldan-quvurga-otish-mezoni)
 - [7.8 Off-by-one va chegarani hujjatlashtirish](#78-off-by-one-va-chegarani-hujjatlashtirish)
 - [7.9 Katta siklda resurs va xotira xatti-harakati](#79-katta-siklda-resurs-va-xotira-xatti-harakati)
-- [7.10 Amalda qo'llash](#710-amalda-qollash)
+- [7.10 Rekursiya: tugashini kafolatlash, stek va sikl bilan almashtirish](#710-rekursiya-tugashini-kafolatlash-stek-va-sikl-bilan-almashtirish)
+- [7.11 Amalda qo'llash](#711-amalda-qollash)
 
 </details>
 
@@ -46,6 +47,23 @@ for (SettlementRow settlement : settlements) {
     accumulate(settlement);
 }
 ```
+
+Murakkab siklni birinchi urinishda to'g'ri yozishning oddiy texnikasi bor: **ichdan tashqariga** qurish. Avval bitta aniq holat uchun kod yoziladi, indekslar o'rniga literal qiymat bilan; keyin shu kod ichkariga suriladi va atrofiga sikl o'raladi, literal esa sikl o'zgaruvchisi bilan almashtiriladi; kerak bo'lsa yana bitta sikl o'raladi va yana bitta literal almashtiriladi; oxirida ishga tushirishlar qo'shiladi (McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 16.3 (385-bet)). Foydasi psixologik: har qadamda bitta narsa o'ylanadi va ko'rsatkichni, chegarani va tanani bir vaqtda boshda ushlab turish kerak bo'lmaydi.
+
+```java
+// 1-qadam: bitta aniq holat, literal bilan
+Money premium = rateTable.rateFor(42, Gender.FEMALE);
+Money total = premium;
+
+// 2-qadam: atrofiga sikl, literal sikl o'zgaruvchisidan keladi
+Money total = Money.ZERO;
+for (Person person : group) {
+    Money premium = rateTable.rateFor(person.age(), person.gender());
+    total = total.plus(premium);
+}
+```
+
+Qadamlarni qat'iy ketma-ketlikda bajarish shart emas; muhimi aniq holatdan boshlash va umumlashtirishni kichik, tekshirib boriladigan qadamlarga bo'lish. Sikl tayyor bo'lgandan keyin tanasi uch qatordan uzun bo'lib chiqsa, yuqoridagi qoida bo'yicha u metodga chiqadi.
 
 ## 7.2 Indeksli sikl, `for-each` va iterator tanlovi
 
@@ -189,7 +207,46 @@ for (OrderId id : ids) {
 orderRepository.markShipped(ids);     // ichida: update ... where id = any(?)
 ```
 
-## 7.10 Amalda qo'llash
+## 7.10 Rekursiya: tugashini kafolatlash, stek va sikl bilan almashtirish
+
+Rekursiya masalaning kichik bir qismini o'zi hal qiladi, qolganini maydalab, har bo'lagi uchun o'zini chaqiradi. U kam hollarda kerak bo'ladi, lekin o'rinli ishlatilganda yechim chindan ham chiroyli chiqadi: daraxt bo'ylab yurish, ichma-ich JSON ni yoyish, katalog daraxtini aylanib chiqish, [Kompozit](../patterns/02-strukturaviy-patternlar.md#23-kompozit-composite) tuzilmasini hisoblash (McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 17.2 (393-bet)). Shu bilan birga rekursiya siklning "chiroyliroq" varianti emas: oddiy takrorlanishni rekursiya bilan yozish sekinroq ishlaydi, xotira sarfini oldindan aytib bo'lmaydigan qiladi va o'qilishini yomonlashtiradi. Faktorial va Fibonachchi shunga klassik misol: ikkisi ham siklda yoziladi.
+
+Rekursiv metodga to'rt talab qo'yiladi (McConnell, 17.2 (396-397-bet)):
+
+- **Tugashi kafolatlangan bo'lsin.** Metodda rekursiv bo'lmagan yo'l, ya'ni chaqiruvni to'xtatadigan shart bo'lishi shart. Bu shart kirish ma'lumotining har qanday shaklida ishga tushishi tekshiriladi, faqat "normal" ma'lumotda emas.
+- **To'xtatish sharti yo'q joyda xavfsizlik hisoblagichi bo'lsin.** Oddiy to'xtash shartini yozish mumkin bo'lmasa (masalan tuzilma halqa bo'lib chiqishi mumkin bo'lsa), chuqurlik hisoblagichi parametr yoki maydon sifatida uzatiladi va chegaradan oshganda metod to'xtaydi. Hisoblagich har chaqiruvda qaytadan yaratilmasligi kerak, aks holda u hech narsani sanamaydi.
+- **Rekursiya bitta metod ichida qolsin.** `A` `B` ni, `B` `C` ni, `C` esa yana `A` ni chaqiradigan halqali rekursiyani kod o'qib aniqlash deyarli imkonsiz. Bitta metod ichidagi rekursiyani boshda ushlab turishning o'zi qiyin.
+- **Stekni ko'zdan qochirmang.** Rekursiya qancha stek yeyishini oldindan aytib bo'lmaydi. Ikki natija bundan chiqadi: xavfsizlik chegarasi stek sig'imidan kelib chiqib tanlanadi, va rekursiv metod ichida og'ir obyektlarni lokal o'zgaruvchiga yig'ib ketmaslik kerak.
+
+Java da bu talablarning oxirgisi eng qattiq, chunki JVM da tail call optimizatsiyasi kafolatlanmagan: chuqurlik `-Xss` bilan belgilangan stek hajmiga urilganda `StackOverflowError` keladi va u `Error`, ya'ni tutib davom etiladigan narsa emas ([`Throwable`, `Error` va `OutOfMemoryError` siyosati](19-istisno-mexanikasi-va-resurslar.md#196-throwable-error-va-outofmemoryerror-siyosati)). Shuning uchun chuqurligi tashqi ma'lumotdan kelgan joyda (foydalanuvchi yuborgan JSON, tashqi katalog daraxti) rekursiya o'rniga o'z stekida yuradigan sikl yoziladi: rekursiya bilan qilinadigan har qanday ishni stek va sikl bilan ham qilish mumkin.
+
+```java
+// yomon: chuqurlik tashqi ma'lumotdan keladi, to'xtash chegarasi yo'q
+long countNodes(Node node) {
+    long count = 1;
+    for (Node child : node.children()) {
+        count += countNodes(child);
+    }
+    return count;
+}
+
+// yaxshi: o'z steki bilan sikl - stek chuqurligi JVM ga bog'liq emas
+long countNodes(Node root) {
+    Deque<Node> pending = new ArrayDeque<>();
+    pending.push(root);
+    long count = 0;
+    while (!pending.isEmpty()) {
+        Node node = pending.pop();
+        count++;
+        node.children().forEach(pending::push);
+    }
+    return count;
+}
+```
+
+Chuqurligi kod bilan chegaralangan joyda (ikki-uch darajali domen tuzilmasi) rekursiya o'qilishi uchun afzal qoladi. Qaror mezoni shunday: chuqurlikni kim belgilaydi. Kod belgilasa rekursiya mumkin, tashqi ma'lumot belgilasa sikl.
+
+## 7.11 Amalda qo'llash
 
 - [ ] Tanasi uch qatordan uzun bo'lgan sikllarni topib, tanani nomlangan metodga chiqaring.
 - [ ] Sikl o'zgaruvchilari nomlarini (`e`, `o`, `item`) elementning roliga qarab qayta nomlang.
@@ -199,6 +256,18 @@ orderRepository.markShipped(ids);     // ichida: update ... where id = any(?)
 - [ ] Chegara parametrlari nomiga inklyuzivlikni yozing yoki oraliqni `record` ga oling.
 - [ ] Siklda ulanish ochadigan yoki so'rov yuboradigan joylarni paketli amalga aylantiring.
 - [ ] Har bir chegaraviy shart uchun uch holatli test (oldin, chegarada, keyin) yozilganini tekshiring.
+- [ ] Rekursiv metodlarni sanab, har birida to'xtash sharti yoki chuqurlik chegarasi borligini tekshiring.
+- [ ] Chuqurligi tashqi ma'lumotdan keladigan rekursiyalarni o'z steki bilan yurgan siklga o'tkazing.
+
+## Manbalar
+
+- Joshua Bloch, *Effective Java* 3rd, Item 58 - an'anaviy `for` o'rniga `for-each`
+- Joshua Bloch, *Effective Java* 3rd, Item 57 - lokal o'zgaruvchi qamrovini kichik ushlash, sikl o'zgaruvchisi
+- Joshua Bloch, *Effective Java* 3rd, Item 46 - oqimda yon ta'sirsiz funksiyalar
+- [Java API, `ConcurrentModificationException`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/ConcurrentModificationException.html) - iteratsiya vaqtida to'plamni o'zgartirish
+- Steve McConnell, *Code Complete*, 2-nashr, 16.3 (385-bet) - siklni ichdan tashqariga qurish texnikasi
+- Steve McConnell, *Code Complete*, 2-nashr, 17.2 (393, 396-398-bet) - rekursiyaning tugashi, xavfsizlik hisoblagichi, stek chuqurligi va sikl bilan almashtirish
+- [Java API, `StackOverflowError`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/StackOverflowError.html) - rekursiya juda chuqur bo'lganda tashlanadi
 
 ---
 

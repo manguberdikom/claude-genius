@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 12. End-to-end va UI testlar (End-to-End & UI Testing)
 
@@ -170,9 +170,18 @@ Locator strategiyasi barqarorlikning yarmi: birinchi tanlov - `data-testid` (diz
 ```java
 public final class AuthState {
     private static final Path STATE = Path.of("target/e2e/admin-state.json");
+    private static final Duration TTL = Duration.ofMinutes(30);
 
-    public static synchronized Path adminState(Browser browser, String baseUrl) {
-        if (Files.exists(STATE)) return STATE;
+    public static synchronized Path adminState(Browser browser, String baseUrl)
+            throws IOException {
+        // Playwright hujjati buni ochiq talab qiladi: holat muddati tugaganda
+        // saqlangan fayl o'chirilishi kerak. Faqat Files.exists ga qarash
+        // sessiya tugagandan keyin hamma testni 401 bilan yiqitadi.
+        if (Files.exists(STATE)) {
+            Instant yozilgan = Files.getLastModifiedTime(STATE).toInstant();
+            if (yozilgan.isAfter(Instant.now().minus(TTL))) return STATE;
+            Files.delete(STATE);
+        }
         try (BrowserContext ctx = browser.newContext(
                 new Browser.NewContextOptions().setBaseURL(baseUrl))) {
             Page page = ctx.newPage();
@@ -189,6 +198,8 @@ public final class AuthState {
 ```
 
 Keyin har test `browser.newContext(new Browser.NewContextOptions().setStorageStatePath(AuthState.adminState(...)))` bilan allaqachon kirgan holda boshlanadi. Login yo'lining o'zi esa alohida, bitta aniq test bilan tekshiriladi.
+
+`storageState` nimani ko'chirganini bilish shart, chunki u hamma narsani ko'chirmaydi. Playwright hujjatiga ko'ra u cookie, local storage, IndexedDB va passkey (WebAuthn) asosidagi autentifikatsiyani qamraydi. Session storage esa qamrovda yo'q: u domenga xos va sahifa yuklanishlari orasida saqlanmaydi, va Playwright uni saqlash uchun API bermaydi. Ya'ni ilova token ni `sessionStorage` da ushlasa, saqlangan holatni qayta ishlatish jimgina ishlamaydi va test login sahifasiga qaytib tushadi. Bu holatda yo token ni cookie yoki local storage ga ko'chirish kerak, yo holatni `page.evaluate("JSON.stringify(sessionStorage)")` bilan olib, yangi context da `context.addInitScript(...)` orqali tiklash kerak; hujjatda shu chetlab o'tish yo'lining namunasi bor.
 
 ## 12.7 Test muhiti va ma'lumot
 
@@ -222,7 +233,7 @@ Feature flag'lar E2E uchun ikki tomonlama foyda beradi: yangi yo'lni testda yoqi
 
 E2E suite uchun vaqt byudjeti oldindan e'lon qilinadi: smoke 2-5 daqiqa, to'liq suite 15-20 daqiqa. Byudjet buzilganda testlar qo'shilmaydi - ular qisqartiriladi yoki pastroq qatlamga ko'chiriladi.
 
-Byudjetga erishishning uch vositasi bor. Birinchi - **suite ichidagi parallelizm**: JUnit 5'da `junit-platform.properties` orqali `junit.jupiter.execution.parallel.enabled=true`, `junit.jupiter.execution.parallel.mode.classes.default=concurrent` va `...config.fixed.parallelism=4`. Bu faqat testlar bir-biridan mustaqil ma'lumot ishlatganda ishlaydi. Ikkinchi - **sharding**: testlarni `@Tag` bo'yicha domenlarga bo'lib, CI matritsasida parallel joblar sifatida ishga tushirish. Uchinchi - **brauzer konteynerlari**: Selenium Grid 4 (hub + node-chrome), Testcontainers'ning `BrowserWebDriverContainer` (video yozish bilan) yoki Playwright'ning rasmiy `mcr.microsoft.com/playwright/java:v<versiya>-jammy` image'i - bu oxirgisi lokal va CI o'rtasida bir xil brauzer/font muhitini kafolatlaydi.
+Byudjetga erishishning uch vositasi bor. Birinchi - **suite ichidagi parallelizm**: JUnit 5'da `junit-platform.properties` orqali `junit.jupiter.execution.parallel.enabled=true`, `junit.jupiter.execution.parallel.mode.classes.default=concurrent` va `...config.fixed.parallelism=4`. Bu faqat testlar bir-biridan mustaqil ma'lumot ishlatganda ishlaydi. Ikkinchi - **sharding**: testlarni `@Tag` bo'yicha domenlarga bo'lib, CI matritsasida parallel joblar sifatida ishga tushirish. Uchinchi - **brauzer konteynerlari**: Selenium Grid 4 (hub + node-chrome), Testcontainers'ning `BrowserWebDriverContainer` (video yozish bilan) yoki Playwright'ning rasmiy `mcr.microsoft.com/playwright/java:v<versiya>-noble` image'i (Ubuntu 24.04; `-jammy` tegi Ubuntu 22.04 uchun hali chiqadi, tegsiz `:v<versiya>` esa noble ni beradi) - bu oxirgisi lokal va CI o'rtasida bir xil brauzer/font muhitini kafolatlaydi.
 
 ```yaml
 e2e:
@@ -279,13 +290,31 @@ public class PlaywrightArtifacts implements TestWatcher {
 }
 ```
 
-Tracing test boshida `context.tracing().start(new Tracing.StartOptions().setScreenshots(true).setSnapshots(true).setSources(true))` bilan yoqiladi. Playwright trace viewer (`npx playwright show-trace trace.zip` yoki `trace.playwright.dev`) har qadamni DOM snapshot, network va console bilan ko'rsatadi - bu flaky testni tashxislashda eng kuchli vosita. Selenium tomonida ekvivalenti: `BrowserWebDriverContainer.withRecordingMode(VncRecordingMode.RECORD_FAILING, dir)` bilan video va BiDi/CDP orqali log yig'ish. Artefaktlar CI'da har shard uchun alohida yuklanadi va kamida bir necha hafta saqlanadi.
+Tracing test boshida, sahifa yaratilishidan va navigatsiyadan oldin `context.tracing().start(new Tracing.StartOptions().setScreenshots(true).setSnapshots(true).setSources(true))` bilan yoqiladi, so'ngra `context.tracing().stop(new Tracing.StopOptions().setPath(Paths.get("trace.zip")))` arxivni yozadi. Trace viewer har qadamni DOM snapshot, network va console bilan ko'rsatadi, bu flaky testni tashxislashda eng kuchli vosita.
+
+Trace ni ochish buyrug'i tilga bog'liq va Java jamoasi ko'pincha shu yerda qoqiladi: `npx playwright show-trace` JS uchun. Java da buyruq boshqa:
+
+```bash
+# Lokal fayl
+mvn exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI \
+    -D exec.args="show-trace trace.zip"
+
+# CI artefaktini yuklab olmasdan, to'g'ridan-to'g'ri URL dan
+mvn exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI \
+    -D exec.args="show-trace https://ci.shop.io/artifacts/checkout-trace.zip"
+```
+
+Ikkinchi yo'l `trace.playwright.dev` sahifasi: trace ni drag and drop bilan tashlash yoki `?trace=<url>` so'rov parametrida berish (bu holda CORS qoidalari amal qiladi). Maxfiylik savoli ham shu yerda tug'iladi va hujjat javobini beradi: Trace Viewer trace ni butunlay brauzer ichida yuklaydi va hech qanday ma'lumotni tashqariga yubormaydi.
+
+Selenium tomonida ekvivalenti Testcontainers ning `BrowserWebDriverContainer` i, lekin uning sozlamasini tushunishda bitta nozik joy bor: yozib olish rejimi allaqachon `RECORD_FAILING` ga qo'yilgan (konteynerning o'zidagi default), ya'ni video yig'ilishi uchun hech narsa yozish shart emas. Agar katalog berilmasa, konteyner vaqtinchalik katalog yaratadi va video CI da yo'qoladi. Demak `withRecordingMode(VncRecordingMode.RECORD_FAILING, new File("target/e2e"))` chaqiruvining haqiqiy foydasi rejim emas, katalogni qayd qilish; rejimni o'zgartirish kerak bo'lsa tanlov uchta: `SKIP`, `RECORD_ALL`, `RECORD_FAILING`.
+
+Artefaktlar CI'da har shard uchun alohida yuklanadi va kamida bir necha hafta saqlanadi.
 
 ## 12.10 Vizual regressiya testlash
 
 Vizual regressiya screenshot'ni ma'lum (baseline) rasm bilan piksel darajasida taqqoslaydi. U funksional test topa olmaydigan xatolarni ko'radi: buzilgan CSS, ustma-ust tushgan elementlar, yo'qolgan logotip, dark mode'da o'qilmaydigan matn.
 
-Flakiness sabablari deyarli har doim bir xil: font yuklanishi va antialiasing (OS'ga bog'liq), animatsiya va `transition`, kursor miltillashi, scrollbar, dinamik ma'lumot (sana, ID, avatar), va viewport o'lchamining o'zgarishi. Shuning uchun qoidalar qat'iy: baseline faqat CI bilan **bir xil Docker image**da generatsiya qilinadi; animatsiya `page.addStyleTag` bilan o'chiriladi (`*, *::before { animation: none !important; transition: none !important; }`); vaqt va dinamik bloklar mask qilinadi yoki fixture bilan muzlatiladi; tolerance esa 0 emas, lekin juda kichik (0.1-0.5% piksel) bo'ladi - katta tolerance haqiqiy regressiyani yashiradi.
+Flakiness sabablari deyarli har doim bir xil: font yuklanishi va antialiasing (OS'ga bog'liq), animatsiya va `transition`, kursor miltillashi, scrollbar, dinamik ma'lumot (sana, ID, avatar), va viewport o'lchamining o'zgarishi. Playwright hujjati ro'yxatni kutilmagan omil bilan to'ldiradi: brauzer renderi host OS va uning versiyasiga, sozlamalarga, apparatga, quvvat manbaiga (batareya yoki adapter) va headless rejimiga qarab farq qiladi. Shuning uchun hujjatning yagona tavsiyasi shu: testlar baseline qaysi muhitda yaratilgan bo'lsa, o'sha muhitda yurgiziladi. Shuning uchun qoidalar qat'iy: baseline faqat CI bilan **bir xil Docker image**da generatsiya qilinadi; animatsiya `page.addStyleTag` bilan o'chiriladi (`*, *::before { animation: none !important; transition: none !important; }`); vaqt va dinamik bloklar mask qilinadi yoki fixture bilan muzlatiladi; tolerance esa 0 emas, lekin juda kichik (0.1-0.5% piksel) bo'ladi - katta tolerance haqiqiy regressiyani yashiradi.
 
 Java ekosistemasida tayyor snapshot assertion yo'q: Playwright'ning `toHaveScreenshot` imkoniyati faqat TypeScript runner'ida. Java uchun amaliy variantlar - `ashot` kutubxonasi (Selenium bilan), Applitools Eyes yoki Percy kabi cloud SDK'lar (AI/DOM asosida farqlarni filtrlaydi), yoki frontend tomonida Storybook + BackstopJS. Eng oqilona qarori: vizual testni E2E ssenariylaridan ajratish va komponent galereyasi darajasida ishlatish - u yerda sahifa holati deterministik, baseline'lar esa arzon.
 
@@ -293,7 +322,9 @@ Java ekosistemasida tayyor snapshot assertion yo'q: Playwright'ning `toHaveScree
 
 Brauzer matritsasi analitika bilan asoslanadi, "har ehtimolga qarshi" bilan emas. Amaliy model: har PR'da faqat Chromium; kechasi (nightly) Firefox va WebKit qo'shiladi; legacy brauzerlar faqat real foydalanuvchi ulushi bo'lsa. Playwright bitta API bilan uchta engine'ni beradi, bu matritsani kengaytirishni arzonlashtiradi.
 
-Responsive tekshiruv alohida E2E ssenariy emas: bir necha asosiy sahifani belgilangan breakpoint viewport'larida (masalan 390x844, 768x1024, 1440x900) ochib, kritik elementlar ko'rinishini va bosilishini tasdiqlash yetarli. Playwright'da `new Browser.NewContextOptions().setViewportSize(390, 844).setHasTouch(true)` yoki `playwright.devices()` dan qurilma deskriptori ishlatiladi.
+Responsive tekshiruv alohida E2E ssenariy emas: bir necha asosiy sahifani belgilangan breakpoint viewport'larida (masalan 390x844, 768x1024, 1440x900) ochib, kritik elementlar ko'rinishini va bosilishini tasdiqlash yetarli. Playwright'da bu `new Browser.NewContextOptions().setViewportSize(390, 844).setHasTouch(true)` bilan qilinadi.
+
+Bu yerda Java uchun aniq chegara bor: Playwright ning tayyor qurilma registri (`playwright.devices()`, `devices['iPhone 15']` ko'rinishidagi deskriptorlar) faqat JavaScript, C# va Python da mavjud, Java da yo'q. Java da qurilma `Browser.newContext` ga berilgan parametrlar bilan tasvirlanadi: `setDeviceScaleFactor`, `setHasTouch`, `setIsMobile`, `setScreenSize`, `setUserAgent`, `setViewportSize`. Amaliy yechim shu olti parametrni bir nechta konstantaga yig'ish, masalan `Devices.IPHONE_15` va `Devices.IPAD_MINI` deb nomlangan `NewContextOptions` fabrikasiga, shunda testlar registr bo'lmaganini sezmaydi.
 
 Native mobil ilova - bu butunlay boshqa suite. Appium 2.x (`java-client`, UiAutomator2 va XCUITest drayverlari) web E2E bilan bir xil Page Object yondashuvini qo'llaydi, lekin o'z infratuzilmasi (emulyator yoki real device cloud), o'z vaqt byudjeti va o'z mas'ul jamoasini talab qiladi. Uni web E2E quvuriga qo'shmaslik kerak: deploy'ni 40 daqiqalik emulyator jobiga bog'lab qo'yish mahsulot tezligini o'ldiradi.
 
@@ -323,6 +354,36 @@ Smoke ssenariylari production'da ham xavfsiz bo'lishi uchun ular ko'proq o'qishg
 - [ ] Nosozlikda screenshot, trace/video, brauzer va server log'lari avtomatik yig'iladi va CI artefakti sifatida saqlanadi.
 - [ ] Smoke to'plam 5 daqiqadan oshmaydi, deploy gate'iga ulangan va synthetic monitoring bilan ssenariylarni bo'lishadi.
 - [ ] To'liq suite uchun vaqt byudjeti e'lon qilingan, sharding va parallelizm sozlangan, retry faqat infratuzilma xatolari uchun ruxsat etilgan.
+
+## Manbalar
+
+- Chris Richardson, *Microservices Patterns*, 9, 10-boblar - mikroservisni testlash: test piramidasi, komponent va uchidan uchiga test
+- Playwright, *Authentication*
+  ([https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/auth.md](https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/auth.md), tag `v1.63.0`, Apache-2.0) - 12.6 dagi
+  `storageState` qamrovi, muddati tugagan holatni o'chirish talabi va
+  session storage chetlab o'tish yo'li.
+- Playwright, *Trace Viewer*
+  ([https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/trace-viewer.md](https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/trace-viewer.md), tag `v1.63.0`, Apache-2.0) -
+  12.9 dagi Java uchun `show-trace` buyrug'i, URL dan ochish va trace ning
+  brauzerdan tashqariga chiqmasligi.
+- Playwright, *Docker*
+  ([https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/docker.md](https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/docker.md), tag `v1.63.0`, Apache-2.0) - 12.8 dagi
+  rasmiy image teglari (`-noble`, `-jammy`).
+- Playwright, *Visual comparisons*
+  ([https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/test-snapshots-js.md](https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/test-snapshots-js.md), tag `v1.63.0`,
+  Apache-2.0) - 12.10 dagi render farqi omillari; hujjatning faqat JS
+  variantida borligi `toHaveScreenshot` ning Java da yo'qligini ko'rsatadi.
+- Playwright, *Emulation*
+  ([https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/emulation.md](https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/emulation.md), tag `v1.63.0`, Apache-2.0) -
+  12.11 dagi qurilma registrining tillar ro'yxati va Java dagi
+  `newContext` parametrlari.
+- Playwright, *Locators*
+  ([https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/locators.md](https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/locators.md), tag `v1.63.0`, Apache-2.0) - 12.5
+  dagi `setTestIdAttribute`.
+- Testcontainers for Java, `BrowserWebDriverContainer`
+  ([https://github.com/testcontainers/testcontainers-java/blob/1.21.4/modules/selenium/src/main/java/org/testcontainers/containers/BrowserWebDriverContainer.java](https://github.com/testcontainers/testcontainers-java/blob/1.21.4/modules/selenium/src/main/java/org/testcontainers/containers/BrowserWebDriverContainer.java),
+  tag `1.21.4`, MIT) - 12.9 dagi `RECORD_FAILING` default i va katalog
+  berilmaganda vaqtinchalik katalog.
 
 ---
 

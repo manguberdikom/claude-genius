@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 6. Shart, mantiq va boshqaruv oqimi (Conditionals and Control Flow)
 
 <details>
-<summary>Bu bobdagi 11 bo'lim</summary>
+<summary>Bu bobdagi 12 bo'lim</summary>
 
 - [6.1 Shartni nomlash va inkapsulyatsiya qilish](#61-shartni-nomlash-va-inkapsulyatsiya-qilish)
 - [6.2 Inkor shartdan qochish va De Morgan qoidasi](#62-inkor-shartdan-qochish-va-de-morgan-qoidasi)
@@ -19,7 +19,8 @@
 - [6.8 `null` tekshiruvi zinapoyasi va undan chiqish](#68-null-tekshiruvi-zinapoyasi-va-undan-chiqish)
 - [6.9 Yashirin vaqt bog'liqligini ko'rinadigan qilish](#69-yashirin-vaqt-bogliqligini-korinadigan-qilish)
 - [6.10 Takrorlangan `switch` va turga qarab shoxlanish](#610-takrorlangan-switch-va-turga-qarab-shoxlanish)
-- [6.11 Amalda qo'llash](#611-amalda-qollash)
+- [6.11 Jadvalga asoslangan kirish: indeks jadvali va pog'onali jadval](#611-jadvalga-asoslangan-kirish-indeks-jadvali-va-pogonali-jadval)
+- [6.12 Amalda qo'llash](#612-amalda-qollash)
 
 </details>
 
@@ -89,6 +90,18 @@ return customer.isBlocked() || customer.hasOverdueInvoice();
 return customer.isCreditSuspended();
 ```
 
+Ifoda qisqargandan keyin ham bir savol qoladi: operatorlar qaysi tartibda bajariladi. Bu yerda qoida qat'iy - **tilning ustunlik jadvaliga tayanmang, qavs qo'ying**. Qavs o'quvchidan `&&` ning `||` dan yuqori turishini, `<` ning `==` dan oldin bajarilishini yoddan bilishni talab qilmaydi; ikki tilda parallel ishlaydigan odam uchun esa bu yod umuman ishonchsiz. McConnell buni shunday ifodalaydi: qavs qo'yish telegramma yuborish emas, har belgi uchun pul to'lamaysiz (McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 19.1 (437-bet)). Shubha bo'lsa, qavs qo'yiladi.
+
+```java
+// yomon: && ning ustunligi || dan yuqori - o'quvchi buni eslab turishi kerak
+if (order.isPaid() || order.isPending() && !order.isExpired()) { ... }
+
+// yaxshi: qavs maqsadni ifodaning o'zida aytadi
+if (order.isPaid() || (order.isPending() && !order.isExpired())) { ... }
+```
+
+Qavslar balansini ko'z bilan tekshirishning oson yo'li ham bor: ifoda bo'ylab chapdan o'ngga yurib, ochuvchi qavsda sanoqni bittaga oshirasiz, yopuvchida bittaga kamaytirasiz; oxirida nol chiqsa, qavslar juft.
+
 ## 6.4 `else` ni yo'q qilish usullari
 
 `else` bloki ko'pincha keraksiz va uni yo'qotish kodni tekislaydi. To'rt usul bor: guard clause bilan erta qaytish, standart qiymatni oldin belgilash, `switch` ifodasiga o'tish, va polimorfizm ([patternlar hujjatidagi](../patterns/README.md) polimorfizm printsipi).
@@ -152,6 +165,14 @@ return switch (status) {
 };
 ```
 
+Uchta-to'rtta shoxli `switch` da `case` lar tartibi ahamiyatsiz, lekin o'nlab hodisa turini qayta ishlaydigan `switch` da tartib o'qilishni belgilaydi. McConnell uchta tartiblash qoidasini beradi va ular bir-biriga alternativa, birga ishlatilmaydi (McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 15.2 (361-bet)):
+
+- **Alifbo yoki raqam bo'yicha.** Shoxlar bir xil ahamiyatga ega bo'lsa shu tartib eng yaxshisi: kerakli `case` ni ro'yxatdan ko'z bilan topish oson. Enum ustidagi `switch` da bu enum e'lon tartibiga ergashish bilan bir xil natija beradi va IDE ning "add remaining cases" harakati ham shuni yozadi.
+- **Normal holat birinchi.** Bitta normal va bir nechta istisno shox bo'lsa, normali yuqoriga chiqadi; qolganlari pastda turadi. Qaysi biri normal ekani kodda ko'rinmasa, bir qatorlik izoh buni aytadi.
+- **Chastota bo'yicha.** Eng ko'p bajariladigan shox yuqorida: o'quvchi ro'yxatni ko'pincha aynan shu shoxni izlab ochadi.
+
+Tanlangan tartibni buzadigan yangi `case` ni "oxiriga qo'shib qo'yish" vaqt o'tishi bilan tartibni yo'qotadi, shuning uchun tartib qaysi ekani bir marta kelishiladi va code review da tekshiriladi.
+
 ## 6.7 Chegaraviy shartlarni inkapsulyatsiya qilish
 
 `i + 1`, `level - 1`, `<=` va `<` farqlari kod bo'ylab tarqalsa, off-by-one xatolari paydo bo'ladi va ularni topish qiyin. Yechim: chegara hisobini bir joyda nomlab qo'yish.
@@ -175,6 +196,22 @@ record DateRange(LocalDate fromInclusive, LocalDate toExclusive) {
     }
 }
 ```
+
+Chegara shartining o'zi ham ma'lum shaklda yoziladi: **son o'qi tartibida**, ya'ni kichikdan kattaga chapdan o'ngga. Oraliq ichida ekanini tekshirganda chegaralar ikki tomonda, tekshirilayotgan qiymat o'rtada turadi; oraliqdan tashqarida ekanini tekshirganda esa teskarisi - qiymat ikki chetda, chegaralar o'rtada. Shunda shart matni tekshirilayotgan rasmni takrorlaydi va `<` bilan `<=` ni almashtirib yuborish ko'zga tashlanadi (McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 19.1 (440-bet)).
+
+```java
+// yomon: chegaralar bir xil tomonda, rasm ko'rinmaydi
+if (page >= MIN_PAGE && page <= MAX_PAGE) { ... }
+if (page < MIN_PAGE || page > MAX_PAGE) { ... }
+
+// yaxshi: oraliq ichida - chegaralar chetda, qiymat o'rtada
+if (MIN_PAGE <= page && page <= MAX_PAGE) { ... }
+
+// yaxshi: oraliqdan tashqarida - qiymat chetda, chegaralar o'rtada
+if (page < MIN_PAGE || MAX_PAGE < page) { ... }
+```
+
+Bir tomonli tekshiruvda ham shu mantiq saqlanadi: qiymat kichik bo'lishi kutilsa `while (i < MIN_PAGE)`, katta bo'lishi kutilsa `while (MIN_PAGE < i)`. Qiymatni doim chapga qo'yish odati ikkinchi holatni `while (i > MIN_PAGE)` ga aylantiradi va rasm yo'qoladi.
 
 ## 6.8 `null` tekshiruvi zinapoyasi va undan chiqish
 
@@ -239,7 +276,34 @@ public enum ShippingMethod {
 }
 ```
 
-## 6.11 Amalda qo'llash
+## 6.11 Jadvalga asoslangan kirish: indeks jadvali va pog'onali jadval
+
+Oldingi bo'lim shoxlanishni enum yoki polimorfizmga ko'chirdi. Uchinchi yo'l ham bor: shoxlanishni **ma'lumotga** ko'chirish. Shart zanjiri qiymatni toifaga bog'lashdan boshqa ish qilmasa, bu bog'lanish jadvalda saqlanadi, kod esa faqat qidirish qiladi. Kalitni to'g'ridan-to'g'ri jadval indeksiga aylantirish mumkin bo'lmaganda ikki sxema qoladi (McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 18.3-18.4 (425-426-bet)).
+
+**Indeks jadvali.** Birlamchi ma'lumot bilan avval indeksdan kalit topiladi, keyin shu kalit bilan asosiy jadvaldan yozuv olinadi. Kalit maydoni siyrak bo'lganda shu sxema yutadi: to'rt raqamli artikul `0000`-`9999` oralig'ida bo'lsa-yu omborda yuzta mahsulot bo'lsa, o'n ming elementli asosiy jadval o'rniga o'n ming elementli yengil indeks va yuz elementli asosiy jadval tutiladi. Ikkinchi foydasi: bitta jadval ustiga bir nechta indeks qurish mumkin (nom bo'yicha, sana bo'yicha, summa bo'yicha) va indeksni ko'chirish asosiy yozuvni ko'chirishdan arzon. Java da indeks `Map<String, Integer>` yoki `Map<Sku, ProductRow>` bo'ladi, ya'ni til bu sxemani o'zi beradi.
+
+**Pog'onali jadval.** Bu yerda jadval yozuvi bitta nuqta uchun emas, **oraliq** uchun amal qiladi: chegirma darajalari, tarif pog'onalari, baho shkalasi. Oraliqlar notekis bo'lsa yoki chegaralar kasr son bo'lsa, kalitni indeksga aylantiradigan funksiya topilmaydi, shuning uchun har oraliqning cheti jadvalga yoziladi va qiymat tushgan pog'ona qidiriladi. McConnell buni massiv va sikl bilan yozadi; Java da buning tayyor shakli `NavigableMap` va uning `floorEntry` metodi, quyida shu ishlatilgan.
+
+```java
+// Chegirma darajalari: chegaralar kodda emas, ma'lumotda
+public final class DiscountTable {
+
+    private static final NavigableMap<Long, BigDecimal> RATE_BY_MIN_AMOUNT = new TreeMap<>(Map.of(
+            0L, new BigDecimal("0.00"),
+            1_000_000L, new BigDecimal("0.03"),
+            5_000_000L, new BigDecimal("0.05"),
+            20_000_000L, new BigDecimal("0.08")));
+
+    public BigDecimal rateFor(long amount) {
+        // floorEntry: kalitlardan amount dan katta bo'lmagan eng kattasi
+        return RATE_BY_MIN_AMOUNT.floorEntry(amount).getValue();
+    }
+}
+```
+
+Pog'onali jadvalning uchta tuzog'i bor va ularning hammasi chegarada. Birinchisi: eng yuqori va eng past pog'ona yopilgan bo'lishi kerak, aks holda chetdagi qiymat hech bir oraliqqa tushmaydi (yuqoridagi kodda `0L` pog'onasi shu uchun turadi, bo'lmasa `floorEntry` `null` qaytaradi). Ikkinchisi: `<` va `<=` ni almashtirib yuborish; qidirishni `floorEntry` ga topshirish shu savolni ma'lumot tuzilmasi darajasida bir marta hal qiladi, qo'lda yozilgan siklda esa u har tahrirda qaytadi ([chegaraviy shartlarni inkapsulyatsiya qilish](#67-chegaraviy-shartlarni-inkapsulyatsiya-qilish)). Uchinchisi: jadval uzun bo'lsa ketma-ket qidirish qimmatga tushadi, shuning uchun binar qidirish yoki indeks sxemasiga o'tiladi - `NavigableMap` da bu allaqachon logarifmik. Qidirishning o'zi esa har doim alohida metodda turadi: jadval sxemasi keyin o'zgarsa, chaqiruvchilar o'zgarmaydi.
+
+## 6.12 Amalda qo'llash
 
 - [ ] Uch va undan ko'p operandli shart ifodalarini topib, har birini nomlangan `boolean` yoki domen metodiga chiqaring.
 - [ ] `!(...)` shaklidagi inkor ifodalarni De Morgan bilan soddalashtirib, ijobiy shartga aylantiring.
@@ -249,6 +313,21 @@ public enum ShippingMethod {
 - [ ] Ichma-ich ternar operatorlarni topib, domen metodi yoki `switch` ifodasiga aylantiring.
 - [ ] `null` tekshiruvi zanjirlari bor joylarni `Optional` yoki manbadagi `null` ni yo'qotish bilan tekislang.
 - [ ] Ma'lum tartibda chaqirilishi shart bo'lgan metod guruhlarini topib, tartibni qaytish turlari orqali majburiy qiling.
+- [ ] `&&` va `||` aralashgan shartlarni topib, ustunlikni qavs bilan oshkor qiling.
+- [ ] Oraliq tekshiruvlarini son o'qi tartibiga keltiring: chegaralar chetda, qiymat o'rtada.
+- [ ] Qiymatni toifaga bog'lashdan boshqa ish qilmaydigan shart zanjirlarini jadvalga (`Map`, `NavigableMap`) ko'chiring.
+
+## Manbalar
+
+- Robert C. Martin, *Clean Code*, 3-bob ("Switch Statements") - `switch` ni past darajali sinfga ko'chirish va polimorfizm bilan almashtirish
+- Robert C. Martin, *Clean Code*, 17-bob, G23, G28, G29, G33 - `if/else` o'rniga polimorfizm, shartni inkapsulyatsiya qilish, inkor shartdan qochish, chegaraviy shartni inkapsulyatsiya
+- Herbert Schildt, *Java The Complete Reference*, 5-bob - boshqaruv gaplari, `switch` va fallthrough semantikasi
+- Boyarsky/Selikoff, *OCP Java SE 17 Study Guide*, 3-bob - `switch` ifodasi, pattern matching va to'liqlik talabi
+- Steve McConnell, *Code Complete*, 2-nashr, 15.2 (361-bet) - `case` larni tartiblashning uch yo'li: alifbo, normal holat birinchi, chastota
+- Steve McConnell, *Code Complete*, 2-nashr, 18.3-18.4 (425-426-bet) - indeks jadvali va pog'onali jadval orqali kirish
+- Steve McConnell, *Code Complete*, 2-nashr, 19.1 (437-bet) - ustunlikka tayanmasdan qavs qo'yish
+- Steve McConnell, *Code Complete*, 2-nashr, 19.1 (440-bet) - sonli ifodani son o'qi tartibida yozish
+- [Java API, `java.util.NavigableMap`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/NavigableMap.html) - `floorEntry`: berilgan kalitdan katta bo'lmagan eng katta kalit
 
 ---
 

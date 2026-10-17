@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 28. Keshlash amaliyoti: invalidatsiya, stampede, Redis haqiqati (Caching in Practice)
 
@@ -60,7 +60,7 @@ Hisob oddiy formula bilan qilinadi. O'rtacha latency teng: `h * T_kesh + (1 - h)
 | 0.95 | taxminan 3 ms | 500 |
 | 0.99 | taxminan 1.4 ms | 100 |
 
-Jadvaldan ikki xulosa chiqadi. Latency bo'yicha foyda 0.8 dan keyin to'yinadi, 0.9 dan 0.95 ga ko'tarilish foydalanuvchi uchun 2 ms beradi. DB yuklamasi bo'yicha foyda to'xtamaydi, 0.9 dan 0.99 ga o'tish DB so'rovini yana 10 barobar kamaytiradi. Maqsad latency bo'lsa 0.85 atrofi yetarli, maqsad DB ni saqlab qolish bo'lsa 0.97 dan past natija yetarli emas.
+Jadvaldan ikki xulosa chiqadi. Latency bo'yicha foyda 0.8 dan keyin to'yinadi, 0.9 dan 0.95 ga ko'tarilish foydalanuvchi uchun 2 ms beradi. DB yuklamasi bo'yicha foyda to'xtamaydi va buni arifmetika beradi, o'lchov emas: DB ga tushadigan so'rov ulushi miss rate ga teng, ya'ni hit rate 0.9 da 10 foiz, 0.99 da 1 foiz, demak DB so'rovi o'n barobar kamayadi. Maqsad latency bo'lsa 0.85 atrofi yetarli, maqsad DB ni saqlab qolish bo'lsa 0.97 dan past natija yetarli emas.
 
 Teskari holat ham bor. `T_db` birlamchi kalit bo'yicha 2 ms bo'lsa, foyda bor yo'g'i 1 ms. Bunday joyga tarmoq orqali kesh qo'yish faqat nomuvofiqlik va yana bitta ishdan chiqish nuqtasini qo'shadi.
 
@@ -89,7 +89,9 @@ class KeshSozlamasi {
 }
 ```
 
-`recordStats()` chaqirilmasa hit nisbati ko'rinmaydi va siz kesh foydasini isbotlay olmaysiz. `refreshAfterWrite` muddati `expireAfterWrite` dan kichik bo'lishi shart, aks holda ishga tushmaydi.
+`recordStats()` chaqirilmasa hit nisbati ko'rinmaydi va siz kesh foydasini isbotlay olmaysiz. `refreshAfterWrite` muddati `expireAfterWrite` dan kichik bo'lishi shart, aks holda ishga tushmaydi. `refreshAfterWrite` ning xatti-harakatini aniq bilish kerak, chunki uni ko'pincha teskari tushunadilar: muddat o'tgandan keyin **birinchi** so'rov eski qiymatni oladi va yangilash fon rejimida boshlanadi. Ya'ni u chaqiruvchini bloklamaydi va yangi qiymatni darhol bermaydi; uning maqsadi aynan shu - eskirgan qiymatni berib turib, orqada yangilash. Shu sababli u stampede ni yumshatadi, lekin "har doim yangi ma'lumot" talabini bajarmaydi.
+
+Mahalliy keshning o'qish tezligi haqidagi raqamlar bu bobda o'lchanmagan: ular tartibni ko'rsatish uchun keltirilgan va o'z muhitida o'lchanishi kerak.
 
 ## 28.4 Spring Cache abstraksiyasi mexanikasi va proxy chegarasi
 
@@ -342,6 +344,11 @@ Zaxira yo'l yozilgan bo'lsa yetarli emas, u sinovdan o'tishi kerak. Produksiyaga
 - [ ] `maxmemory` ni fizik xotiraning 70 foizida, siyosatni `allkeys-lru` da belgila, navbat va idempotentlik kalitlarini alohida instance ga ko'chir.
 - [ ] Komanda timeout ini 100 dan 200 ms orasida sozla, `CacheErrorHandler` ni ula, Redis o'chirilgan holatda kritik yo'lni sinab ko'r.
 - [ ] Kesh qiymatlarini entity dan barqaror DTO ga o'tkaz, eng katta kalitlarni `MEMORY USAGE` bilan o'lchab, 100 KB dan oshganini bo'lakla.
+
+## Manbalar
+
+- [Caffeine, README](https://raw.githubusercontent.com/ben-manes/caffeine/92cd6cca5fed23d8343ef7caf338631c977ae9ec/README.md) - `maximumSize`, `expireAfterWrite`, `refreshAfterWrite`; eskirgan yozuvga birinchi so'rov kelganda yangilash asinxron boshlanishi
+- [Micrometer, Concepts](https://raw.githubusercontent.com/micrometer-metrics/micrometer-docs/06f377a95db21894939c6fff39441fe608e804a2/src/docs/concepts/index.adoc) - kesh metrikasi va teg kardinalligi
 
 ---
 

@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 29. Kafka operatsion haqiqati: partition, lag, rebalance, idempotentlik (Kafka in Production)
 
 <details>
-<summary>Bu bobdagi 14 bo'lim</summary>
+<summary>Bu bobdagi 18 bo'lim</summary>
 
 - [29.1 Kafka modeli: topic, partition, offset, consumer group](#291-kafka-modeli-topic-partition-offset-consumer-group)
 - [29.2 Partition soni tanlash: parallellik chegarasi va keyin o'zgartirish qiyinligi](#292-partition-soni-tanlash-parallellik-chegarasi-va-keyin-ozgartirish-qiyinligi)
@@ -21,8 +21,12 @@
 - [29.10 Sxema o'zgarishi va orqaga moslik](#2910-sxema-ozgarishi-va-orqaga-moslik)
 - [29.11 Tranzaksiya va xabar yuborish nomuvofiqligi: nega ikki fazali commit emas](#2911-tranzaksiya-va-xabar-yuborish-nomuvofiqligi-nega-ikki-fazali-commit-emas)
 - [29.12 Spring Kafka da asosiy sozlamalar va xato ishlovchisi](#2912-spring-kafka-da-asosiy-sozlamalar-va-xato-ishlovchisi)
-- [29.13 Qaror jadvali: oddiy yondashuv va arxitektor yondashuvi](#2913-qaror-jadvali-oddiy-yondashuv-va-arxitektor-yondashuvi)
-- [29.14 Amalda qo'llash](#2914-amalda-qollash)
+- [29.13 Xabar brokeri va log asosidagi broker: farq va tanlov mezoni](#2913-xabar-brokeri-va-log-asosidagi-broker-farq-va-tanlov-mezoni)
+- [29.14 Iste'molchi yetib olmaganda: retention chegarasidan ortda qolish](#2914-istemolchi-yetib-olmaganda-retention-chegarasidan-ortda-qolish)
+- [29.15 Eski xabarlarni qayta o'qish: offset ni siljitish tartibi](#2915-eski-xabarlarni-qayta-oqish-offset-ni-siljitish-tartibi)
+- [29.16 Oqim holatini nosozlikdan keyin tiklash: changelog topic va tiklash vaqti](#2916-oqim-holatini-nosozlikdan-keyin-tiklash-changelog-topic-va-tiklash-vaqti)
+- [29.17 Qaror jadvali: oddiy yondashuv va arxitektor yondashuvi](#2917-qaror-jadvali-oddiy-yondashuv-va-arxitektor-yondashuvi)
+- [29.18 Amalda qo'llash](#2918-amalda-qollash)
 
 </details>
 
@@ -40,7 +44,7 @@ Broker hech qachon "bu xabarni kim o'qidi" ni bilmaydi. U faqat group ning commi
 
 ## 29.2 Partition soni tanlash: parallellik chegarasi va keyin o'zgartirish qiyinligi
 
-Bitta consumer group ichidagi samarali parallellik partition sonidan oshmaydi. Agar topic da 6 partition bo'lsa, 10 instansiya ishga tushirsang, 4 tasi bo'sh turadi. Shuning uchun partition soni kelgusidagi eng katta instansiya sonidan kamida 2-3 barobar ko'p bo'lishi kerak. Buyurtma topic uchun amaliy boshlang'ich nuqta: 12 yoki 24 partition, chunki ular 2, 3, 4, 6, 8, 12 instansiyaga teng bo'linadi.
+Bitta consumer group ichidagi samarali parallellik partition sonidan oshmaydi. Agar topic da 6 partition bo'lsa, 10 instansiya ishga tushirsang, 4 tasi bo'sh turadi. Shuning uchun partition soni kelgusidagi eng katta instansiya sonidan bir necha barobar ko'p bo'lishi kerak; mo'ljal sifatida 2 dan 3 barobargacha olinadi, lekin bu o'lchanmagan taxmin va to'g'ri zaxira o'sish tezligiga bog'liq. Buyurtma topic uchun amaliy boshlang'ich nuqta: 12 yoki 24 partition, chunki ular 2, 3, 4, 6, 8, 12 instansiyaga teng bo'linadi.
 
 Lekin partition bepul emas. Har bir partition broker da ochiq fayl deskriptorlari, alohida index va replikatsiya uchun fetch oqimi talab qiladi. Bitta broker da bir necha ming partition replikasi bo'lsa, controller ishi va ishga tushish vaqti sezilarli oshadi. Amaliy mo'ljal: bitta broker ga 2000-4000 partition replikasi, klaster bo'ylab 50000 dan oshmaslik. Producer tomonida ham har partition uchun alohida batch buferi ushlanadi, ya'ni `batch.size` ni partition soniga ko'paytirib xotirani hisobla.
 
@@ -81,9 +85,9 @@ public void publishOrderEvent(OrderEvent event) {
 
 `acks` yozuvning qachon "muvaffaqiyatli" deb hisoblanishini belgilaydi. `acks=1` leader diskka yozishini kutadi, lekin leader o'sha zahoti qulasa xabar yo'qoladi. `acks=all` barcha in-sync replika tasdiqlashini kutadi va `min.insync.replicas=2` bilan birgalikda replikatsiya faktori 3 da bitta broker yo'qolishiga chidaydi. To'lov va buyurtma hodisalari uchun yagona to'g'ri tanlov `acks=all`. Narxi: taxminan 2-5 ms qo'shimcha latency bir xil data center ichida.
 
-`enable.idempotence=true` producer ga sequence number beradi, shunda tarmoq retry sababli paydo bo'ladigan dublikat broker tomonida tashlanadi. Kafka 3.0 dan keyin bu standart qiymat, lekin u `acks=all`, `retries>0` va `max.in.flight.requests.per.connection<=5` ni talab qiladi. Agar kimdir `acks=1` qo'ysa, idempotentlik jim o'chadi yoki konfiguratsiya xatosi beradi. Shuning uchun bu uchta parametrni birga ko'rib chiqish kerak.
+`enable.idempotence=true` producer ga sequence number beradi, shunda tarmoq retry sababli paydo bo'ladigan dublikat broker tomonida tashlanadi. Kafka 3.0 dan keyin bu standart qiymat, lekin u `acks=all`, `retries>0` va `max.in.flight.requests.per.connection<=5` ni talab qiladi. Xulq esa aniq ikki xil va bu farq muhim. `enable.idempotence=true` ni **o'zingiz aniq yozgan** bo'lsangiz va `acks` `all` dan boshqa bo'lsa (yoki `retries=0`), `ConfigException` chiqadi va ilova ko'tarilmaydi. Agar idempotentlik defaultdan kelgan bo'lsa, xato chiqmaydi: u **jim o'chadi** va faqat INFO log yoziladi ("Idempotence will be disabled because acks is set to 1, not set to 'all'"). Ya'ni `acks=1` yozgan odam dublikatlar qaytganini bir necha hafta sezmasligi mumkin. `max.in.flight.requests.per.connection` 5 dan katta bo'lsa esa har qanday holatda `ConfigException` chiqadi, `transactional.id` ni idempotentliksiz berish ham shunday. Shuning uchun bu to'rtta parametrni birga ko'rib chiqish kerak.
 
-`linger.ms` va `batch.size` throughput va latency o'rtasidagi tanlovni boshqaradi. Standart `linger.ms=0` degani producer kutmaydi, natijada kichik batch lar ko'p bo'ladi. `linger.ms=5` qo'yish ko'p hollarda throughput ni 2-3 barobar oshiradi va faqat 5 ms latency qo'shadi. `batch.size=16384` standart, yuqori oqim uchun 65536 ga ko'tarish va `compression.type=lz4` yoqish amaliy kombinatsiya.
+`linger.ms` va `batch.size` throughput va latency o'rtasidagi tanlovni boshqaradi. Bu yerda eski maslahatlarni yangilash kerak: Kafka 4.0 da `linger.ms` ning default qiymati 0 emas, **5**. Ya'ni "linger.ms ni 0 dan 5 ga ko'tar" degan keng tarqalgan tavsiya 4.0 da allaqachon bajarilgan va undan qo'shimcha foyda chiqmaydi. Default 0 bo'lgan eski klasterda bu o'zgartirish throughput ni sezilarli oshiradi va faqat 5 ms latency qo'shadi; 4.0 da esa savol teskari tomonga buriladi, ya'ni latency ga qattiq talab bo'lsa `linger.ms` ni pasaytirish kerakmi degan savolga. `batch.size=16384` standart, yuqori oqim uchun 65536 ga ko'tarish va `compression.type=lz4` yoqish amaliy kombinatsiya.
 
 ```properties
 # Producer: ishonchlilik birinchi, keyin throughput.
@@ -94,7 +98,7 @@ retries=2147483647
 # Umumiy muddat: shu vaqt ichida yetib bormasa xato qaytadi (standart 120000).
 delivery.timeout.ms=120000
 request.timeout.ms=30000
-# Batching: 5 ms kutish throughput ni sezilarli oshiradi.
+# Batching: 4.0 da default allaqachon 5, bu qator niyatni aniq qiladi.
 linger.ms=5
 batch.size=65536
 compression.type=lz4
@@ -213,7 +217,7 @@ kafka-consumer-groups.sh --bootstrap-server kafka-1:9092 \
 
 Spring Boot ichida Micrometer Kafka client metrikalarini chiqaradi, eng muhimi `kafka.consumer.fetch.manager.records.lag.max`. Ogohlantirish chegarasi uchun amaliy qoida: ikki pog'ona. Birinchi pog'ona lag 5 daqiqadan oshsa warning, ikkinchisi 20 daqiqadan oshsa yoki lag 15 daqiqa davomida monoton o'ssa critical. Bitta cho'qqi (spike) ogohlantirish sababi emas, trend sabab.
 
-Alohida kuzatish kerak bo'lgan ikki narsa bor. Birinchisi: lag nolga teng, lekin iste'molchi yo'q, ya'ni group bo'sh. Ikkinchisi: bitta partition lag i qolganlaridan 10 barobar katta, bu kalit taqsimoti nosozligi. Ikkalasi ham oddiy "umumiy lag" grafigida ko'rinmaydi.
+Alohida kuzatish kerak bo'lgan ikki narsa bor. Birinchisi: lag nolga teng, lekin iste'molchi yo'q, ya'ni group bo'sh. Ikkinchisi: bitta partition lag i qolganlaridan bir necha barobar katta, bu kalit taqsimoti nosozligi (chegarani o'z taqsimotingizga qarab tanlaysiz). Ikkalasi ham oddiy "umumiy lag" grafigida ko'rinmaydi.
 
 ## 29.9 Xato xabar bilan nima qilish: qayta urinish topic va dead letter topic
 
@@ -337,7 +341,123 @@ DefaultErrorHandler kafkaErrorHandler(KafkaTemplate<Object, Object> template) {
 
 Deserializatsiya xatosi alohida holat: u listener ga yetib bormaydi, shuning uchun `ErrorHandlingDeserializer` ni o'rab ishlatish kerak. Aks holda buzilgan xabar cheksiz qayta o'qiladi va partition to'xtaydi. Testlash tomonidan nimani tekshirish kerakligi [testlash qo'llanmasidagi](../testing/README.md) Testcontainers bo'limida ko'rsatilgan.
 
-## 29.13 Qaror jadvali: oddiy yondashuv va arxitektor yondashuvi
+## 29.13 Xabar brokeri va log asosidagi broker: farq va tanlov mezoni
+
+Kafka ni "navbat" deb atash qarorlarni buzadi, chunki klassik xabar brokeri va log asosidagi broker boshqa narsa. Kleppmann farqni aniq sanaydi: baza ma'lumotni ataylab o'chirilmaguncha saqlaydi, ko'pchilik xabar brokeri esa xabarni iste'molchiga muvaffaqiyatli yetkazilgandan keyin o'zi o'chiradi, shuning uchun ular uzoq muddatli saqlashga yaroqsiz; xabar tez o'chirilgani uchun broker navbatlar qisqa bo'lishini kutadi va iste'molchi sekinlashib broker ko'p xabarni buferga, keyin diskka to'kishi kerak bo'lsa, har bir xabarning ishlov vaqti oshadi va umumiy throughput pasayadi (*Designing Data-Intensive Applications*, 11-bob, 443-bet). Bu an'anaviy ko'rinish JMS va AMQP standartlarida qotirilgan va RabbitMQ, ActiveMQ, IBM MQ kabi vositalarda amalga oshirilgan (11-bob, 443-bet).
+
+Log asosidagi broker boshqa savdoni taklif qiladi. Xabarni o'qish uni log dan o'chirmaydi, shuning uchun fan-out tabiiy ravishda ishlaydi va yuk taqsimoti alohida xabarlarni emas, butun partition larni group a'zolariga berish orqali amalga oshiriladi. Kleppmann bu dag'al taqsimotning ikki kamchiligini sanaydi: topic ni iste'mol qiladigan node soni partition sonidan oshmaydi, va bitta sekin xabar shu partition dagi keyingi xabarlarni ushlab turadi, ya'ni head-of-line blocking yuzaga keladi (11-bob, 448-449-betlar).
+
+Shundan kitobning tanlov qoidasi chiqadi va u to'g'ridan to'g'ri arxitektura qarori: xabarlarni ishlash qimmat bo'lsa, parallellikni har bir xabar darajasida olish kerak bo'lsa va tartib muhim bo'lmasa, JMS yoki AMQP uslubidagi broker afzal; xabar oqimi katta, har bir xabar tez ishlanadigan va tartib muhim bo'lgan holatda log asosidagi yondashuv juda yaxshi ishlaydi (11-bob, 449-bet).
+
+| Savol | JMS/AMQP brokeri | Log asosidagi broker (Kafka) |
+|---|---|---|
+| Xabar o'chishi | Ack dan keyin broker o'chiradi | Faqat retention tugaganda |
+| Parallellik birligi | Bitta xabar | Bitta partition |
+| Tartib | Kafolat yo'q yoki qimmat | Partition ichida kafolat |
+| Sekin xabar | Qolganlarni to'smaydi | Partition ni to'xtatadi |
+| Qayta o'qish | Yo'q, o'qish buzuvchi amal | Offset ni siljitish yetarli |
+| Bir ma'lumotni ko'p iste'molchi | Har biriga alohida navbat | Bitta log, ko'p group |
+
+```java
+// Ikki broker bir loyihada yashashi normal: mezon tartib va ishlov narxi.
+// 1) Tartib muhim, ishlov tez: Kafka, kalit bo'yicha partition.
+@KafkaListener(topics = "order.events", groupId = "settlement")
+public void onOrderEvent(ConsumerRecord<String, OrderEvent> record) {
+    settlementService.apply(record.value());   // bir necha millisekund
+}
+
+// 2) Tartib muhim emas, bitta ish uzoq (PDF yasash, tashqi API):
+//    har xabarni alohida ack qiladigan navbat to'g'ri keladi.
+@RabbitListener(queues = "invoice.render")
+public void onRenderRequest(RenderCommand cmd) {
+    invoiceRenderer.render(cmd);               // bir necha sekund
+}
+```
+
+Amaliy tekshiruv: agar bitta xabarning ishlov vaqti o'rtacha qiymatdan ko'p marta uzun bo'lishi mumkin bo'lsa va tartib talab qilinmasa, uni Kafka partition iga qo'yish head-of-line blocking ni ataylab sotib olish degani.
+
+## 29.14 Iste'molchi yetib olmaganda: retention chegarasidan ortda qolish
+
+Iste'molchi producer tezligiga yetib olmasa uch yo'l bor: xabarni tashlash, buferlash yoki orqaga bosim qo'yish. Kleppmann log asosidagi yondashuvni shu taksonomiyada buferlashning bir turi deb joylaydi: bufer katta, lekin o'lchami diskda chegaralangan (*Designing Data-Intensive Applications*, 11-bob, 450-bet). Mexanikasi oddiy: log segment larga bo'linadi va eski segment lar vaqti-vaqti bilan o'chiriladi yoki arxivga ko'chiriladi, shuning uchun sekin iste'molchining offset i o'chirilgan segment ga ishora qilib qolsa, u xabarlarning bir qismini ko'rmaydi; log amalda to'lganda eski xabarni bosib ketadigan aylanma bufer bo'lib ishlaydi (11-bob, 449-bet).
+
+Kitob ikki muhim xulosa qo'shadi. Birinchi: bufer katta bo'lgani uchun operatorda sekin iste'molchini tuzatib, uni xabar yo'qotishdan oldin yetib olishga majburlash uchun vaqt bor, shuning uchun iste'molchining log boshidan qancha orqada qolganini kuzatish va sezilarli ortda qolganda alert berish kerak (11-bob, 450-bet). Ikkinchi: iste'molchi haqiqatan ortda qolib xabar yo'qotsa ham, bu faqat shu iste'molchiga ta'sir qiladi va boshqalarga xalal bermaydi, shu sababli produksiya log ini ishlab chiqish yoki debug uchun eksperimental o'qish xavfsiz (11-bob, 450-451-betlar).
+
+Kafka da bu xavf juda aniq ko'rinishga ega. Iste'molchi offset i o'chirilgan segment dan orqada qolsa, keyingi `poll()` da `OffsetOutOfRangeException` bo'ladi va `auto.offset.reset` qiymati qarorni belgilaydi: `latest` bo'lsa iste'molchi jimgina log oxiriga sakraydi va ortda qolgan hamma xabarni tashlab ketadi, `earliest` bo'lsa boshidan o'qiydi va dublikat to'foni keladi, `none` bo'lsa listener xato bilan to'xtaydi. Jim yo'qotishning sababi deyarli har doim `latest` ning standart qiymat ekani.
+
+```java
+// To'lov kabi yo'lda jim sakrash yo'l qo'yilmaydi: xato ko'rinsin.
+@Bean
+public ConsumerFactory<String, PaymentEvent> paymentConsumerFactory() {
+    Map<String, Object> props = new HashMap<>();
+    props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "none");
+    props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+    props.put(ConsumerConfig.GROUP_ID_CONFIG, "payment-settlement");
+    return new DefaultKafkaConsumerFactory<>(props);
+}
+```
+
+Retention ni byudjet sifatida hisoblash kerak, chunki u iste'molchi o'chganda qolgan tiklash oynasining uzunligi. Hisob oddiy: kuniga yoziladigan bayt hajmini replikatsiya faktoriga ko'paytirib, broker lardagi bo'sh diskka solishtirish. Operatsion qoida: `retention.ms` eng uzun kutilgan tiklash vaqtidan sezilarli katta bo'lishi kerak (zaxira sifatida ikki barobar, o'lchanmagan taxmin), va [lag monitoringi](#298-consumer-lag-ni-olchash-va-ogohlantirish-chegarasi-qoyish) lag ni retention bilan solishtirib ogohlantirishi kerak, aks holda alert xabar yo'qolganidan keyin keladi.
+
+## 29.15 Eski xabarlarni qayta o'qish: offset ni siljitish tartibi
+
+AMQP va JMS uslubidagi brokerda xabarni ishlab ack qilish buzuvchi amal, chunki xabar broker dan o'chadi; log asosidagi brokerda esa iste'mol fayldan o'qishga o'xshaydi va log ni o'zgartirmaydi. Kleppmann shundan amaliy imkoniyat chiqaradi: ishlovning yagona yon ta'siri offset ning oldinga siljishi, offset esa iste'molchi nazoratida, demak kechagi offset lar bilan iste'molchining nusxasini ishga tushirib natijani boshqa joyga yozish va buni ishlov kodini o'zgartirib qancha xohlasa takrorlash mumkin (*Designing Data-Intensive Applications*, 11-bob, 451-bet).
+
+Bu xususiyat Kafka ni batch ishlovga yaqinlashtiradi: hosila ma'lumot kirish ma'lumotidan takrorlanadigan o'zgartirish orqali ajratilgan bo'ladi, shu sababli eksperiment osonlashadi va xato yoki bug dan tiklanish yengillashadi (11-bob, 451-bet).
+
+Amalda qayta o'qish uchta qattiq shartga bog'langan. Birinchi: yangi `group.id` olinadi, mavjud group ning offset ini siljitish produksiya iste'molchisini buzadi. Ikkinchi: offset ni siljitish uchun group bo'sh bo'lishi kerak, ya'ni iste'molchilar to'xtatiladi. Uchinchi: ishlov idempotent bo'lmasa, qayta o'qish ikkinchi marta pul o'tkazadi, shuning uchun [idempotent iste'molchi](#297-idempotent-istemolchi-qurish-postgresql-da-ishlov-berilgan-xabar-jadvali) qayta o'qishning sharti, qo'shimchasi emas.
+
+```bash
+# Avval nima bo'lishini ko'rish: --dry-run standart xulq, --execute yo'q.
+kafka-consumer-groups.sh --bootstrap-server kafka-1:9092 \
+  --group settlement-replay --topic order.events \
+  --reset-offsets --to-datetime 2026-10-16T00:00:00.000 --dry-run
+
+# Group to'xtatilgan bo'lishi shart, aks holda buyruq xato beradi.
+kafka-consumer-groups.sh --bootstrap-server kafka-1:9092 \
+  --group settlement-replay --topic order.events \
+  --reset-offsets --to-datetime 2026-10-16T00:00:00.000 --execute
+
+# Natijani asosiy jadvalga emas, alohida sxemaga yozish: kitobdagi
+# "natijani boshqa joyga yozish" qoidasi shu.
+```
+
+Reprocessing ni arxitektura imkoniyatiga aylantirish uchun uch narsa oldindan qilinadi: hodisa to'liq bo'lishi kerak (iste'molchi boshqa servisga so'rov qilmasdan ishlashi mumkin bo'lsin), natija yozilgan joy almashtirilishi mumkin bo'lsin, va retention qayta o'qish oynasidan uzun bo'lsin. Uchtasi ham bo'lmasa, "Kafka da hammasi saqlanadi" degan gap amalda yolg'on bo'lib chiqadi.
+
+## 29.16 Oqim holatini nosozlikdan keyin tiklash: changelog topic va tiklash vaqti
+
+Oyna agregatlari, join uchun jadvallar va hisoblagichlar oqim ishlovchisida holat hosil qiladi va bu holat nosozlikdan keyin tiklanishi shart. Kleppmann ikki yo'lni solishtiradi: holatni masofadagi omborda saqlash va replikatsiya qilish, yoki holatni ishlovchiga lokal saqlab vaqti-vaqti bilan replikatsiya qilish; birinchi yo'lning kamchiligi har bir xabar uchun masofadagi bazaga so'rov qilish sekinligida (*Designing Data-Intensive Applications*, 11-bob, 478-bet).
+
+Kafka ning o'z yechimi kitobda nomi bilan aytilgan: Samza va Kafka Streams holat o'zgarishlarini log siqilishi yoqilgan alohida Kafka topic iga yuborib replikatsiya qiladi va bu change data capture ga o'xshaydi; Flink esa operator holatining snapshot larini davriy ravishda bardoshli omborga yozadi (11-bob, 478-bet). Kitob yana bir muhim variantni ko'rsatadi: ba'zi holatda holatni replikatsiya qilish shart emas, chunki uni kirish oqimidan qayta qurish mumkin, masalan agregat qisqa oyna ustida bo'lsa shu oynaga tegishli hodisalarni qayta o'qish yetarli (11-bob, 479-bet).
+
+Arxitektor uchun bu qaror ikki raqamga aylanadi: changelog topic hajmi va uni o'qish tezligi. Tiklash vaqti taxminan changelog hajmini tiklash paytidagi o'qish o'tkazuvchanligiga bo'lish bilan baholanadi. Agar bu vaqt SLO dan oshsa, ikkita vosita bor: `num.standby.replicas` ni oshirib issiq zaxira holat ushlab turish, yoki holat hajmini kichraytirish uchun oyna muddatini qisqartirish.
+
+```java
+// Holat lokal RocksDB da, changelog esa avtomatik yaratiladigan
+// siqilgan topic da: <application.id>-<store>-changelog.
+@Bean
+public KStream<String, OrderEvent> settlement(StreamsBuilder builder) {
+    KStream<String, OrderEvent> events = builder.stream("order.events");
+    events.groupByKey()
+          .windowedBy(TimeWindows.ofSizeWithNoGrace(Duration.ofMinutes(5)))
+          .aggregate(SettlementState::empty,
+                     (key, event, state) -> state.apply(event),
+                     Materialized.as("settlement-state"))
+          .toStream()
+          .to("settlement.totals");
+    return events;
+}
+```
+
+```properties
+# Tiklash vaqtini qisqartirish: zaxira instansiya holatni oldindan ushlaydi.
+# num.standby.replicas standart qiymati 0, ya'ni zaxira holat yo'q.
+spring.kafka.streams.properties[num.standby.replicas]=1
+spring.kafka.streams.properties[application.id]=settlement-v1
+```
+
+Eng ko'p uchraydigan operatsion xato: `application.id` ni relizda o'zgartirish. U o'zgarsa changelog topic nomi ham o'zgaradi, holat noldan qayta quriladi va iste'molchi hamma retention oynasini qaytadan o'qiydi. Shuning uchun `application.id` biznes nomi bilan emas, ataylab versiyalangan nom bilan belgilanadi va uni o'zgartirish aniq migratsiya qarori bo'ladi.
+
+## 29.17 Qaror jadvali: oddiy yondashuv va arxitektor yondashuvi
 
 | Savol | Oddiy yondashuv | Arxitektor yondashuvi |
 |---|---|---|
@@ -352,7 +472,7 @@ Deserializatsiya xatosi alohida holat: u listener ga yetib bormaydi, shuning uch
 | Sxema | POJO o'zgaradi, deploy qilinadi | Registry, `FULL` moslik, maydon standart qiymati bilan |
 | Rebalance | Sezilmaydi, "shunchaki sekinlashdi" | `CooperativeStickyAssignor`, rebalance metrikasi |
 
-## 29.14 Amalda qo'llash
+## 29.18 Amalda qo'llash
 
 - [ ] Har bir topic uchun partition sonini va kalit tanlovini yozib chiq, kalit bo'yicha xabar taqsimotini `kafka-consumer-groups.sh` lag chiqishi orqali tekshir va issiq partition bor-yo'qligini aniqla.
 - [ ] Barcha producer da `acks=all`, `enable.idempotence=true` va `max.block.ms` 10 sekunddan oshmasligini tasdiqla, konfiguratsiyani kodga qattiq yozib qo'y.
@@ -362,6 +482,18 @@ Deserializatsiya xatosi alohida holat: u listener ga yetib bormaydi, shuning uch
 - [ ] Retry topic va DLT zanjirini sozlab, `addNotRetryableExceptions` ro'yxatini to'ldir va DLT ga tushgan har xabar uchun alert yoq.
 - [ ] Lag ni sondan vaqtga aylantiradigan dashboard panelini qur, 5 daqiqa warning va 20 daqiqa critical chegarasini qo'y, rebalance sonini ham shu panelga qo'sh.
 - [ ] DB va Kafka ni bitta tranzaksiyada yozayotgan joylarni topib, ularni outbox jadvali va `FOR UPDATE SKIP LOCKED` publisher ga ko'chir.
+
+## Manbalar
+
+- Martin Kleppmann, *Designing Data-Intensive Applications*, 11-bob - oqimni qayta ishlash, hodisa jurnali, partition va tartib
+- Martin Kleppmann, *Designing Data-Intensive Applications*, O'Reilly, 2017, 11-bob (443-451-betlar) - xabar brokeri va bazaning farqi, JMS/AMQP uslubi bilan log asosidagi brokerni tanlash mezoni, partition darajasidagi yuk taqsimoti va head-of-line blocking, log ning aylanma bufer sifatida ishlashi, sekin iste'molchini kuzatish va eski xabarlarni qayta o'qish
+- Martin Kleppmann, *Designing Data-Intensive Applications*, O'Reilly, 2017, 11-bob (476-479-betlar) - microbatching va checkpointing, atomik commit, idempotentlik va nosozlikdan keyin holatni tiklash (changelog topic yoki kirish oqimidan qayta qurish)
+- [kafka 4.0.0, `StreamsConfig.java`](https://raw.githubusercontent.com/apache/kafka/4.0.0/streams/src/main/java/org/apache/kafka/streams/StreamsConfig.java) - `num.standby.replicas` default qiymati 0
+- [kafka 4.0.0, `ConsumerGroupCommandOptions.java`](https://raw.githubusercontent.com/apache/kafka/4.0.0/tools/src/main/java/org/apache/kafka/tools/consumer/group/ConsumerGroupCommandOptions.java) - `--reset-offsets` da `--dry-run` standart rejim, `--execute` esa o'zgarishni qo'llaydi
+- [kafka 4.0.0, `ConsumerGroupCommand.java`](https://raw.githubusercontent.com/apache/kafka/4.0.0/tools/src/main/java/org/apache/kafka/tools/consumer/group/ConsumerGroupCommand.java) - offset ni faqat group nofaol bo'lganda siljitish mumkinligi
+- Martin Kleppmann, *Designing Data-Intensive Applications*, 8-bob - taqsimlangan tizimdagi nosozliklar
+- [kafka 4.0.0, `ProducerConfig.java`](https://raw.githubusercontent.com/apache/kafka/4.0.0/clients/src/main/java/org/apache/kafka/clients/producer/ProducerConfig.java) - defaultlar (`acks=all`, `enable.idempotence=true`, `retries=Integer.MAX_VALUE`, `linger.ms=5`, `batch.size=16384`, `delivery.timeout.ms=120000`, `buffer.memory=32MB`, `max.block.ms=60000`) va idempotentlikning jim o'chishi bilan `ConfigException` orasidagi farq
+- [kafka 4.0.0, `ConsumerConfig.java`](https://raw.githubusercontent.com/apache/kafka/4.0.0/clients/src/main/java/org/apache/kafka/clients/consumer/ConsumerConfig.java) - `max.poll.records=500`, `max.poll.interval.ms=300000`, `session.timeout.ms=45000`, `heartbeat.interval.ms=3000`, `auto.offset.reset=latest`, `enable.auto.commit=true`, `max.partition.fetch.bytes=1MB`
 
 ---
 

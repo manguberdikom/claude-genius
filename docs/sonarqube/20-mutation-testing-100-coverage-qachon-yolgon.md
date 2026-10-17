@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 20. Mutation testing: 100% coverage qachon yolg'on (Mutation Testing)
 
@@ -114,8 +114,16 @@ score.
 ## 20.3 Mutant turlari: shart chegarasi, qaytish qiymati, matematik amal, chaqiruvni olib tashlash
 
 PIT mutantlarni mutator deb atalgan qoidalar bilan yaratadi. Default to'plam
-kichik va tez, kuchaytirilgan to'plam esa kengroq. Eng ko'p foyda beradigan
-to'rt guruh quyidagicha.
+PIT manbasida aniq sanalgan (`Mutator.newDefaults()`) va u o'n bir
+mutatordan iborat: `INVERT_NEGS`, `MATH`, `VOID_METHOD_CALLS`,
+`NEGATE_CONDITIONALS`, `CONDITIONALS_BOUNDARY`, `INCREMENTS`, hamda
+qaytish qiymati guruhi `TRUE_RETURNS`, `FALSE_RETURNS`,
+`PRIMITIVE_RETURNS`, `EMPTY_RETURNS`, `NULL_RETURNS`. Manbadagi izoh
+oxirgi beshtaning paydo bo'lish sababini ham aytadi: ular eski
+`RETURN_VALS` mutatorini almashtirgan, chunki yangi to'plam **barqarorroq**
+(eski mutator bir xil o'zgarishni turli tipda turlicha qilardi).
+
+Eng ko'p foyda beradigan oltita guruh quyidagicha.
 
 | Mutator guruhi | Nima o'zgaradi | Qanday xatoni ochadi |
 | --- | --- | --- |
@@ -488,6 +496,11 @@ Test yozish texnikasining o'zi, parametrli testlar va mock strategiyasi
   ikki alohida job qilib qo'ying.
 - [ ] Hozirgi o'lchangan score ni chegara qilib qotiring va uni pasaytirmaslik
   shartini pipeline ga mustaqil qadam sifatida kiritib qo'ying.
+
+## Manbalar
+
+- [pitest, `Mutator.java`](https://raw.githubusercontent.com/hcoles/pitest/f7fe5adfa5fb6e727c12d2403a48f5e4e9dd2fc6/pitest/src/main/java/org/pitest/mutationtest/engine/gregor/config/Mutator.java) - `newDefaults()` dagi o'n bir mutator va `RETURN_VALS` ning barqarorroq to'plam bilan almashtirilgani
+- [PIT, README](https://raw.githubusercontent.com/hcoles/pitest/f7fe5adfa5fb6e727c12d2403a48f5e4e9dd2fc6/README.md) - mutatsiya testlashning qamrovdan farqi va PIT ning ishlash modeli
 
 ---
 

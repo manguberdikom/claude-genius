@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 16. Spring Boot mexanikasi: auto-configuration, starter, Actuator (Spring Boot Mechanics)
 
 <details>
-<summary>Bu bobdagi 13 bo'lim</summary>
+<summary>Bu bobdagi 14 bo'lim</summary>
 
 - [16.1 Auto-configuration qanday ishlaydi: `AutoConfiguration.imports` va shartli annotatsiyalar](#161-auto-configuration-qanday-ishlaydi-autoconfigurationimports-va-shartli-annotatsiyalar)
 - [16.2 `@ConditionalOnClass`, `@ConditionalOnMissingBean` va tartib (`@AutoConfigureAfter`)](#162-conditionalonclass-conditionalonmissingbean-va-tartib-autoconfigureafter)
@@ -21,7 +21,8 @@
 - [16.10 Ishga tushish vaqti: lazy initialization, AOT va native image ta'siri](#1610-ishga-tushish-vaqti-lazy-initialization-aot-va-native-image-tasiri)
 - [16.11 Spring Boot 3 ga o'tish: Jakarta nomlari va konfiguratsiya o'zgarishlari](#1611-spring-boot-3-ga-otish-jakarta-nomlari-va-konfiguratsiya-ozgarishlari)
 - [16.12 `@ConditionalOnBean` ni olib tashlash: majburiy bog'liqlik va test kontekstlari](#1612-conditionalonbean-ni-olib-tashlash-majburiy-bogliqlik-va-test-kontekstlari)
-- [16.13 Amalda qo'llash](#1613-amalda-qollash)
+- [16.13 Bog'lanish vaqtini ongli tanlash: besh daraja](#1613-boglanish-vaqtini-ongli-tanlash-besh-daraja)
+- [16.14 Amalda qo'llash](#1614-amalda-qollash)
 
 </details>
 
@@ -136,6 +137,16 @@ Spring Boot konfiguratsiyani `Environment` ichidagi tartiblangan `PropertySource
 
 Bu tartibdan kelib chiqadigan amaliy qoida: Kubernetes da sirlarni environment o'zgaruvchisi sifatida bering, chunki u jar ichidagi har qanday qiymatni yopadi va image ni qayta qurishni talab qilmaydi. Relaxed binding tufayli `ACME_PAYMENT_BASE_URL` o'zgaruvchisi `acme.payment.base-url` xossasiga avtomatik tushadi.
 
+Shu ro'yxatda uchta nozik joy bor va ularning har biri amalda vaqt yo'qotadi.
+
+Birinchi: **bitta joyda `.properties` va YAML birga bo'lsa, `.properties` ustun turadi**. Ya'ni migratsiya yarim qolgan loyihada `application.properties` jim ravishda `application.yaml` ni yopib turadi. Hujjatning maslahati sodda: butun ilova uchun bitta formatda qolish.
+
+Ikkinchi: `@PropertySource` boshqalar bilan bir qatorda turmaydi. U `Environment` ga kontekst refresh boshlangandagina qo'shiladi, bu esa refresh dan oldin o'qiladigan xossalar uchun **kech**: `logging.*` va `spring.main.*` ni `@PropertySource` bilan bera olmaysiz.
+
+Uchinchi: test manbalari **command line dan ham yuqori** turadi. Tartib shunday: `@SpringBootTest` (va slice annotatsiyalari) ning `properties` atributi, keyin `@DynamicPropertySource`, keyin `@TestPropertySource`, eng yuqorida esa devtools faol bo'lganda `$HOME/.config/spring-boot` dagi global sozlamalari. Testda qiymat kutilmaganda boshqa chiqsa, qidirishni shu uchtadan boshlash kerak.
+
+Ro'yxatda yana bitta manba bor va u ko'pincha e'tibordan qoladi: `RandomValuePropertySource`, ya'ni `random.*` prefiksi (`random.int`, `random.uuid`). Test port i yoki unikal nom kerak bo'lganda qo'l keladi.
+
 ```yaml
 # application.yaml - bitta fayl, profil bo'limlari `---` bilan ajratiladi
 acme:
@@ -190,7 +201,11 @@ Yaml tuzilishi haqida: bitta ildiz prefiks (`acme`) ostida barcha o'z xossalarin
 
 Profil ikki xil narsa uchun ishlatiladi va faqat bittasi to'g'ri. To'g'ri ishlatish: muhitga bog'liq QIYMATLARNI almashtirish (URL, pool kattaligi, log darajasi). Noto'g'ri ishlatish: `@Profile` bilan bean larni almashtirib, muhitlar o'rtasida har xil kod yo'lini yaratish. Ikkinchi holatda prod da ishlaydigan kod hech qachon test qilinmagan bo'lib chiqadi.
 
-`spring.profiles.active` ni `application.yaml` ichida yozish zararli odat, chunki u bilan dev profil jar ga kirib ketadi. Faqat tashqaridan bering: `SPRING_PROFILES_ACTIVE=prod`. `spring.profiles.group` bilan bir profil ostida bir nechtasini birlashtirish mumkin, masalan `prod` ichiga `prod-db` va `prod-cache` kiradi. Profilga xos faylda `spring.profiles.active` ni qayta e'lon qilish mumkin emas, Boot bunda xato bilan to'xtaydi.
+`spring.profiles.active` ni `application.yaml` ichida yozish zararli odat, chunki u bilan dev profil jar ga kirib ketadi. Faqat tashqaridan bering: `SPRING_PROFILES_ACTIVE=prod`. `spring.profiles.group` bilan bir profil ostida bir nechtasini birlashtirish mumkin, masalan `prod` ichiga `prod-db` va `prod-cache` kiradi. Bu cheklov `spring.profiles.active` dan kengroq: `spring.profiles.active`, `spring.profiles.default`, `spring.profiles.include` va `spring.profiles.group` ning **hammasi** faqat profilga xos bo'lmagan hujjatda ishlatiladi. Ya'ni ularni na `application-prod.yaml` ga, na `spring.config.activate.on-profile` bilan faollashtirilgan bo'limga yozib bo'lmaydi; Boot bunda xato bilan to'xtaydi.
+
+`spring.profiles.include` da yana bir nozik joy bor: u har bir property source uchun alohida ishlanadi, shuning uchun unga ro'yxatlarning odatdagi merge qoidalari **qo'llanmaydi**. Agar bitta profil ostida bir nechtasini yoqish kerak bo'lsa, ishonchli yo'l `spring.profiles.group`.
+
+Bir nechta profil faol bo'lganda tartib ham ahamiyatli va u e'tibordan qoladi: `spring.profiles.active=prod,live` da `application-live.properties` dagi qiymat `application-prod.properties` dagisini yopadi, ya'ni keyingisi ustun.
 
 | Tuzoq | Nega sodir bo'ladi | Yechim |
 |---|---|---|
@@ -361,7 +376,58 @@ qo'lda qidirishda esa nomga tayanish yetib bo'lmagan testni qoldiradi.
 skan qilinadigan `@Repository`, iste'molchi o'zi beradigan klient) shartli qolishi kerak va buning sababi
 javadoc da yoziladi. Aks holda keyingi o'quvchi "qolgan shartlar ham unutilgan" deb o'ylaydi.
 
-## 16.13 Amalda qo'llash
+## 16.13 Bog'lanish vaqtini ongli tanlash: besh daraja
+
+[Konfiguratsiya manbalari tartibi](#165-konfiguratsiya-manbalari-tartibi-va-ustunlik-qoidasi) qiymat qayerdan kelishini aytadi. Undan oldin keladigan savol esa boshqa: qiymat QACHON o'z o'zgaruvchisiga bog'lanadi. McConnell bu savolni bog'lanish vaqti (binding time) deb nomlaydi va uni dizayn evristikasi darajasiga ko'taradi: bu qiymatlarni ertaroq bog'lasam nima bo'ladi, kechroq bog'lasam nima bo'ladi, bu jadvalni shu yerda kodda initsializatsiya qilsam nima bo'ladi, bu o'zgaruvchining qiymatini ish vaqtida foydalanuvchidan o'qisam nima bo'ladi (McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 5.3 (107-bet)).
+
+Darajalar beshta va ular tartibda yotadi (10.6 (253-bet)):
+
+| Daraja | Kitobdagi shakl | Java va Spring tomonda |
+|---|---|---|
+| Kodlash vaqti | literal qiymat kodga qotiriladi | metod ichidagi `3`, `"UZS"` |
+| Kompilyatsiya vaqti | nomlangan konstanta | `private static final int MAX_RETRY = 3;` |
+| Yuklanish vaqti | qiymat tashqi manbadan, masalan properties faylidan o'qiladi | `@ConfigurationProperties`, `application.yaml`, environment |
+| Obyekt yaratilish vaqti | qiymat har obyekt qurilganda o'qiladi | prototype scope bean, har so'rovda qurilgan obyekt |
+| Kerak bo'lganda (just in time) | qiymat har foydalanishda o'qiladi | har chaqiruvda feature flag yoki `Supplier` dan o'qish |
+
+Umumiy yo'nalish shunday: iloji boricha kech bog'lanishdan foyda ko'rish mumkin, chunki bog'lanish qanchalik kech bo'lsa, kodga shuncha moslashuvchanlik kiradi (10.6 (252-bet)). Lekin kitob shu yerda to'xtamaydi va teskari tomonni ham o'lchaydi: bog'lanish qanchalik erta bo'lsa, moslashuvchanlik ham, murakkablik ham shuncha past bo'ladi; birinchi ikki variant orasida nomlangan konstanta kodga qotirilgan qiymatdan har holda afzal, undan keyin esa qancha ko'p moslashuvchanlik so'rasangiz, uni ta'minlaydigan kod shuncha murakkab va shuncha xatoga moyil bo'ladi (10.6 (254-bet)).
+
+Shundan kitobning qat'iy xulosasi chiqadi va u bu bobdagi har bir sozlama kaliti uchun tekshiruv bo'ladi: muvaffaqiyatli programmalash murakkablikni kamaytirishga tayangani uchun malakali programmer talabni qondirish uchun qancha moslashuvchanlik kerak bo'lsa, shunchasini quradi, talabdan tashqari moslashuvchanlik va unga bog'liq murakkablikni qo'shmaydi (10.6 (254-bet)). Ya'ni "keyin kerak bo'lsa yaml dan o'qiymiz" degan odat bepul emas: har bir kalit sinov matritsasini va nosozlik holatlarini kengaytiradi, buning narxi [konfiguratsiya murakkabligi](06-murakkablikni-boshqarish.md#64-konfiguratsiya-murakkabligi-har-bir-flag-kelajakdagi-xato) bo'limida yozilgan.
+
+```java
+// Uch daraja yonma-yon: har biri boshqa narxga ega.
+// 1. Kompilyatsiya vaqti: domen qoidasi, muhitga bog'liq emas.
+public final class RetryRule {
+    public static final int MAX_ATTEMPTS = 3;
+    private RetryRule() { }
+}
+
+// 2. Yuklanish vaqti: muhitga qarab o'zgaradi, o'zgarish restart talab qiladi.
+@Validated
+@ConfigurationProperties("payment")
+public record PaymentProperties(@NotNull Duration timeout, @Min(1) int maxAttempts) { }
+
+// 3. Kerak bo'lganda: har chaqiruvda o'qiladi, restart kerak emas,
+// lekin endi "qaysi qiymat bilan ishladi" savoli log yoki metrikada
+// yozilmasa, nosozlikni qayta tiklab bo'lmaydi.
+@Component
+public class PaymentPolicy {
+
+    private final Supplier<Integer> maxAttempts;
+
+    public PaymentPolicy(Supplier<Integer> maxAttempts) {
+        this.maxAttempts = maxAttempts;
+    }
+
+    public int attempts() {
+        return maxAttempts.get();
+    }
+}
+```
+
+Amaliy qoida: darajani talab belgilaydi, qulaylik emas. Qiymat domen qoidasi bo'lsa kompilyatsiya vaqtida qoladi; muhitga qarab farq qilsa yuklanish vaqtiga chiqadi va [`@ConfigurationProperties` va validatsiya](#166-configurationproperties-va-validatsiya-applicationyaml-tuzilishi) qoidalariga bo'ysunadi; ishlab turgan tizimda o'zgarishi kerak bo'lsagina kerak bo'lganda o'qiladigan darajaga ko'tariladi, va bu daraja tanlangan paytdan boshlab har chaqiruvdagi qiymat kuzatuvda ko'rinishi shart.
+
+## 16.14 Amalda qo'llash
 
 - [ ] Servisni `--debug` bilan bir marta ishga tushirib, `Negative matches` ro'yxatini ko'rib chiqing va kutilmagan tarzda o'chib qolgan auto-configuration borligini aniqlang.
 - [ ] `management.endpoints.web.exposure.include` qiymatini tekshiring: `*` bo'lsa aniq ro'yxatga almashtiring va `management.server.port` ni 8081 ga ajratib, Ingress dan olib tashlang.
@@ -371,6 +437,17 @@ javadoc da yoziladi. Aks holda keyingi o'quvchi "qolgan shartlar ham unutilgan" 
 - [ ] `application.yaml` ichida `spring.profiles.active` yozilgan bo'lsa olib tashlang va uni faqat `SPRING_PROFILES_ACTIVE` orqali bering.
 - [ ] Jamoaning umumiy kodini `acme-*-spring-boot-starter` va `acme-*-spring-boot-autoconfigure` juftligiga ajratib, `ApplicationContextRunner` bilan kamida uchta shart holatini (bean bor, bean yo'q, o'chirilgan) qamrab oling.
 - [ ] Startup vaqtini o'lchang va 3 sekunddan oshsa avval CDS arxivi bilan sinab ko'ring, native image ga o'tish qarorini faqat scale-to-zero talabi bo'lganda qabul qiling.
+
+## Manbalar
+
+- Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 10.6 (252-254-betlar) va 5.3 (107-bet) - bog'lanish vaqtining ta'rifi va besh darajasi (kodlash, kompilyatsiya, yuklanish, obyekt yaratilish, kerak bo'lganda); kech bog'lanish moslashuvchanlik berishi; erta bog'lanishning murakkabligi past bo'lishi va nomlangan konstantaning qotirilgan qiymatdan afzalligi; talabdan tashqari moslashuvchanlik qo'shmaslik qoidasi; bog'lanish vaqtini dizayn evristikasi sifatida so'raladigan savollar
+- Craig Walls, *Spring in Action* 6th, 1-bob - Spring Boot avtomatik sozlash va starter
+- Craig Walls, *Spring in Action* 6th, 15-bob - Actuator va uning endpointlari
+- Robert C. Martin, *Clean Architecture*, 32-bob - framework detal ekani va unga bog'lanmaslik
+- John Carnell, *Spring Microservices in Action*, 2-bob - Spring Boot bilan servis qurish
+- [Spring Boot 4.0, Externalized Configuration](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/documentation/spring-boot-docs/src/docs/antora/modules/reference/pages/features/external-config.adoc) - manbalar tartibi (test manbalari command line dan yuqori), config data fayllarining tartibi, bitta joyda `.properties` ning YAML dan ustun turishi, `@PropertySource` ning refresh gacha qo'shilmasligi, `RandomValuePropertySource`
+- [Spring Boot 4.0, Profiles](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/documentation/spring-boot-docs/src/docs/antora/modules/reference/pages/features/profiles.adoc) - `spring.profiles.active`, `default`, `include` va `group` ning faqat profilga xos bo'lmagan hujjatda ishlatilishi, `include` da ro'yxat merge qoidalarining qo'llanmasligi, bir nechta faol profilda keyingisining ustun turishi
+- [Spring Boot 4.0, Actuator Endpoints](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/documentation/spring-boot-docs/src/docs/antora/modules/reference/pages/actuator/endpoints.adoc) - default holda faqat `health` ning ochiqligi, `show-details` default `never`, probe guruhlari
 
 ---
 

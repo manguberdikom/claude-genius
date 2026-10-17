@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: AI yozgan, inson tekshirmagan.
+> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
 
 # 30. Spring AI va LLM integratsiya patternlari (Spring AI & LLM Integration Patterns)
 
@@ -374,6 +374,10 @@ meterRegistry.counter("llm.tokens", "model", modelName, "tenant", tenantId)
 - [ ] Tool calling ishlatilsa, har bir tool uchun ruxsat chegarasini yozib qo'ying; model buyruq bermasligi kerak.
 - [ ] Token sarfini metrika sifatida chiqarib, so'rov turi bo'yicha oyiga narxni hisoblang.
 - [ ] Model javobini keshlash mumkin bo'lgan holatlarni aniqlab, kesh kaliti prompt va model versiyasini qamrab olishini tasdiqlang.
+
+## Manbalar
+
+- [Spring AI, reference](https://raw.githubusercontent.com/spring-projects/spring-ai/e3887d23b57621d5d967ef4419528d97116f4c1c/spring-ai-docs/src/main/antora/modules/ROOT/pages/index.adoc) - `ChatClient`, model abstraksiyasi va RAG qurilmalari
 
 ---
 
