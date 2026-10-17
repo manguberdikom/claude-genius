@@ -16,3 +16,5 @@ Barcha proyektlarga tegishli yozuvlar. Bitta yozuv bitta qator.
 - `feedback_umumiy-daraxt-kompilyatsiya-buzilgan.md` - boshqa sessiyaning yarim ishi umumiy daraxtni yig'ilmas qilsa, testni ajratilgan worktree da yurgizish
 - `feedback_token-egalik-identifikatorga-bogliq.md` - egalik identifikatordan hisoblanadigan tokenlashtirishda identifikatorni o'zgartirish tuzog'i
 - `feedback_tashqi-sinxda-bosh-qiymat.md` - tashqi manbadan sinxda bo'sh qiymat va placeholder mavjud ma'lumotni o'chirishi
+- `feedback_windows-bash-asbob-tuzoqlari.md` - bashdan `cmd /c` jim o'tkazib yuboriladi (yolg'on yashil), uzun yo'lda worktree ochilmaydi
+- `feedback_darvoza-bosh-royxat.md` - tashqi ro'yxatga tayangan darvozada bo'sh ro'yxat ochiq qiymat; sukut stubni bitta joyda ber
