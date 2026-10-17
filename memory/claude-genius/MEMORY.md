@@ -5,6 +5,7 @@ qator.
 
 - `feedback_hujjat-yigish.md` - parallel agentlar bilan hujjat yozishda yiqilish va kirill tuzog'i
 - `feedback_saboq-bolimini-qoyish.md` - yangi bo'lim yopish bo'limidan oldin, footer oxirida, to'rt joyda son
+- `project_run-tests-exit-kodi.md` - yiqilgan testda ham exit 0 qaytargan hol, snapshot yangilash rejimi bilan birga chaqirilganda
 - `project_check-code-kutilayotgan-qoidalar.md` - Sonar topgan, check_code hali ushlamaydigan Java qoidalari ro'yxati (S1700, S6548, S1141, S135, S2187)
 
 Til va uslub talablari bu papkada emas, `../umumiy/user_til-va-uslub.md` da:
