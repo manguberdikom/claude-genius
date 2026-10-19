@@ -20,3 +20,11 @@ type: feedback
   `C:/src/<nom>`. Yarim qolganini `git worktree remove --force`, so'ng
   `git worktree prune` bilan tozalang; papka o'chmasa `rmdir /s /q` yoki
   `\?\` prefiksi bilan `Remove-Item`.
+- Python dan papka o'chirishda ham shu cheklov: `shutil.rmtree` 260 belgidan
+  uzun ichki yo'lda `WinError 3` beradi (ichida klon yoki `node_modules` kabi
+  chuqur daraxt bo'lsa oson oshadi). Yo'lni `os.path.abspath` qilib boshiga
+  `\\?\` qo'ying; POSIX da yo'l o'zgarmasin.
+- Tozalash asosiy amalni **to'xtatmasin**. O'chirilmagan qoldiq hisobot
+  masalasi, natija emas: har o'chirishni alohida `try/except OSError` ga oling,
+  sababi bilan ayting va davom eting. Aks holda bitta eski papka butun
+  o'rnatishni yiqitadi va foydalanuvchi yarim holatda qoladi.
