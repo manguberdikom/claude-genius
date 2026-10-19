@@ -68,6 +68,13 @@ inson tekshirmagan, shuning uchun u muhokama qilinishi mumkin.
    Kartada `reja:` bo'lsa u ham mezon: rejaning "yozilmaydi" bandi
    buzilgan yoki rejadan sababsiz chetga chiqilgan bo'lsa topilma
    (`o'rta`, xato yoki xavf bo'lsa `yuqori`).
+   Refaktoringda: test fayllari diffda o'zgarmagan bo'lsin (o'zgargan
+   bo'lsa `yuqori`: xulq qayta yozilgan bo'lishi mumkin), testlar yashil,
+   `metod_bormi.py --audit` sonlari rejadagidan kamaygan, public imzo va
+   xato matni saqlangan (clean-code 38.4, 38.11). Audit "tashqi yozuvchi"
+   0 emas yoki servis egasining getterlari bilan qoida hisoblab qolgan
+   (feature envy, clean-code 33.18) `o'rta`; qolgan public setter
+   `@Deprecated` va ichki chaqiruvsiz bo'lmasa `past` (36.12).
    Diffda yangi metod bo'lsa `python3 tools/metod_bormi.py <src> <nom
    bo'laklari>`: shu ishni qiladigan metod bor edi bo'lsa topilma. Pul,
    balans yoki holat maydoniga tegilgan bo'lsa `--ozgartiradi <maydon>`:

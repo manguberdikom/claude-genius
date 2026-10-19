@@ -3,6 +3,7 @@
 
     python3 tools/metod_bormi.py <papka> refund charge      # o'xshash metodlar
     python3 tools/metod_bormi.py <papka> --ozgartiradi amount   # maydonni o'zgartiradigan metodlar
+    python3 tools/metod_bormi.py <papka> --audit   # eski kod rentgeni: refaktoring ro'yxati va sonlar
 
 Birinchi rejim: metod nomi (camelCase bo'laklari) so'zlardan biri bilan
 boshlansa yoki uni o'z ichiga olsa chiqadi; bor metod qayta yozilmaydi,
@@ -70,12 +71,20 @@ def similar(root, words):
     return found
 
 
+def is_test(path):
+    return "/test/" in path.replace("\\", "/") or path.endswith(("Test.java", "Tests.java"))
+
+
 def writers(root, field):
-    """{(fayl, metod)}: maydonga yozadigan metodlar (`this.f =`, `f =`, `setF(`)."""
+    """{(fayl, metod)}: maydonga yozadigan metodlar (`this.f =`, `f =`, `setF(`), testsiz."""
     write = re.compile(r"(?:\bthis\.%s|(?<![.\w])%s)\s*(?:[-+*/]?=)(?!=)" % (field, field))
-    setter = re.compile(r"\bset%s\s*\(" % re.escape(field[:1].upper() + field[1:]))
+    # Setter chaqiruvi (`a.setX(`), e'loni (`void setX(`) emas.
+    setter = re.compile(r"(?<![\w\s])\s*\bset%s\s*\(|\.set%s\s*\("
+                        % ((re.escape(field[:1].upper() + field[1:]),) * 2))
     out = []
     for path in java_files(root):
+        if is_test(path):
+            continue
         text = read(path)
         spans = sorted([(pos, name) for pos, name, _ in methods(text)]
                        + [(c.start(1), c.group(1)) for c in CTOR_RE.finditer(text)])
@@ -87,11 +96,93 @@ def writers(root, field):
     return out
 
 
+FIELD_RE = re.compile(r"^[ \t]*(?:private|protected|public)\s+(?:static\s+)?"
+                      r"(?!final\b)[\w<>\[\],.? ]+\s+(\w+)\s*(?:=[^;]*)?;", re.M)
+LONG_METHOD = 30
+
+
+def bodies(text):
+    """[(nom, qator, tana)]: qavs balansi bilan metod tanalari."""
+    out = []
+    for pos, name, _ in methods(text):
+        start = text.find("{", pos)
+        semi = text.find(";", pos)
+        if start < 0 or (0 <= semi < start):
+            continue
+        depth, i = 0, start
+        while i < len(text):
+            depth += {"{": 1, "}": -1}.get(text[i], 0)
+            if depth == 0:
+                break
+            i += 1
+        out.append((name, line_of(text, pos), text[start + 1:i]))
+    return out
+
+
+def audit(root):
+    """Eski kod rentgeni: bir teshik buzilishi, takror tana, uzun metod.
+
+    Bir teshik: maydon o'z sinfidagi domen metodlari orqali o'zgarsa to'g'ri
+    (`registerOverdraft`, `close`); buzilish - boshqa sinfdan yozish
+    (`a.setBalance(..)`, `a.balance = ..`) va ochiq `public` setter
+    (clean-code 16.6, 36.12). Test fayllari hisobga olinmaydi. Sonlar
+    refaktoringdan oldin va keyin solishtiriladi (architect 34.10).
+    """
+    outside, open_setters, dup, long_ = [], [], [], []
+    seen = {}
+    files = [p for p in java_files(root) if not is_test(p)]
+    texts = {p: read(p) for p in files}
+    for path in files:
+        text, rel = texts[path], os.path.relpath(path, root)
+        for field in sorted(set(FIELD_RE.findall(text))):
+            cap = field[:1].upper() + field[1:]
+            if re.search(r"\bpublic\s+\w+\s+set%s\s*\(" % re.escape(cap), text):
+                open_setters.append("%s: `set%s` ochiq" % (rel, cap))
+            call = re.compile(r"\.set%s\s*\(|\.%s\s*(?:[-+*/]?=)(?!=)" % (re.escape(cap), re.escape(field)))
+            where = []
+            for other in files:
+                if other == path:
+                    continue
+                spans = methods(texts[other])
+                for m in call.finditer(texts[other]):
+                    owner = [n for pos, n, _ in spans if pos < m.start()]
+                    where.append("%s.%s" % (os.path.basename(other)[:-5], owner[-1] if owner else "?"))
+            if where:
+                outside.append("%s: `%s` tashqaridan %d joyda yoziladi (%s)"
+                               % (rel, field, len(where), ", ".join(sorted(set(where)))))
+        for name, line, body in bodies(text):
+            lines = [l.strip() for l in body.split("\n") if l.strip()]
+            if len(lines) > LONG_METHOD:
+                long_.append("%s:%d `%s` %d qator" % (rel, line, name, len(lines)))
+            for i in range(len(lines) - 2):
+                key = re.sub(r"\s+", "", "".join(lines[i:i + 3]))
+                if len(key) < 60:
+                    continue
+                spot = "%s:%d `%s`" % (rel, line, name)
+                if key in seen and seen[key] != spot:
+                    dup.append("%s va %s" % (seen[key], spot))
+                else:
+                    seen.setdefault(key, spot)
+    return outside, open_setters, sorted(set(dup)), long_
+
+
 def main(argv):
     if len(argv) < 2 or (argv[1] == "--ozgartiradi" and len(argv) != 3):
         print(__doc__.strip().split("\n\n")[1])
         return 2
     root = argv[0]
+    if argv[1] == "--audit":
+        outside, open_setters, dup, long_ = audit(root)
+        for title, rows in (("Tashqaridan yoziladigan maydon (clean-code 16.6, 33.18)", outside),
+                            ("Ochiq setter (clean-code 36.12)", open_setters),
+                            ("Takror blok (clean-code 32.2)", dup),
+                            ("Uzun metod > %d qator (clean-code 32.3)" % LONG_METHOD, long_)):
+            print("# %s: %d" % (title, len(rows)))
+            for row in rows[:MAX_SHOWN]:
+                print("  " + row)
+        print("\naudit: %d tashqi yozuvchi, %d ochiq setter, %d takror, %d uzun metod"
+              % (len(outside), len(open_setters), len(dup), len(long_)))
+        return 0
     if argv[1] == "--ozgartiradi":
         rows = writers(root, argv[2])
         owners = sorted({(path, name) for path, name, _ in rows})

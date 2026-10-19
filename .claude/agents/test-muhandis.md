@@ -25,7 +25,11 @@ commit qilinmaydi: ular hujjatlar papkasida (`python3 tools/handoff.py
 "Faza N:" yozilmaydi; `guard.py` to'sadi. Push qilinmaydi.
 
 Kartada `reja:` bloki bo'lsa, undagi test qismi (xatti-harakat, tur)
-bajariladi; chetga chiqilsa sababi hisobotda.
+bajariladi; chetga chiqilsa sababi hisobotda. Refaktoringda
+xarakterizatsiya testi yoziladi: kodning HOZIRGI xulqi (qiymat, xato
+matni, log, chegara holatlari), to'g'ri deb o'ylangani emas; u eski
+kodda yashil bo'lishi shart va ishlab chiqarish kodiga tegilmaydi
+(patterns 23.24, architect 34.3).
 
 ## Ish tartibi
 

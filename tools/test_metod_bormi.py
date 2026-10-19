@@ -30,17 +30,30 @@ public class OrderService {
     public void refundPayment(Long id) { if (id == null) return; }
 }
 """
+TICKET = """package shop;
+public class Ticket {
+    private String state;
+    public void setState(String state) { this.state = state; }
+}
+"""
+SERVICE_TEST = """package shop;
+public class OrderServiceTest {
+    void t(Order o, Ticket k) { o.setStatus("X"); k.setState("Y"); }
+}
+"""
 
 
 def main():
     tmp = tempfile.mkdtemp(prefix="metod-")
     try:
-        for name, text in (("Order.java", ORDER), ("OrderService.java", SERVICE)):
+        for name, text in (("Order.java", ORDER), ("OrderService.java", SERVICE),
+                           ("Ticket.java", TICKET), ("OrderServiceTest.java", SERVICE_TEST)):
             with open(os.path.join(tmp, name), "w", encoding="utf-8") as handle:
                 handle.write(text)
         found = M.similar(tmp, ["refund", "status"])
         status_writers = {name for _, name, _ in M.writers(tmp, "status")}
         amount_writers = {name for _, name, _ in M.writers(tmp, "amount")}
+        outside, open_setters, _, _ = M.audit(tmp)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     checks = [
@@ -51,6 +64,10 @@ def main():
          status_writers == {"markPaid", "cancel"}),
         ("amount: konstruktor va domen metodi, getter emas",
          amount_writers == {"Order", "applyDiscount"}),
+        ("audit: servis setteri tashqi yozuvchi, test fayli sanalmaydi",
+         len(outside) == 1 and "OrderService.cancel" in outside[0] and "Test" not in outside[0]),
+        ("audit: ochiq public setter alohida sanaladi",
+         len(open_setters) == 1 and "setState" in open_setters[0]),
     ]
     failures = 0
     for name, ok in checks:

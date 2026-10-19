@@ -216,6 +216,9 @@ SIGNALS = [
      [("clean-code", "24"), ("clean-code", "23")]),
     ("shart va sikl", r"\bswitch\s*\(|\belse\s+if\b|\bfor\s*\(|\bwhile\s*\(",
      [("clean-code", "6"), ("clean-code", "7"), ("sonarqube", "15")]),
+    # Vazifadan keladi (TASK_WORDS): eski kodni qayta tuzish tartibi.
+    ("refaktoring", r"(?!)",
+     [("architect", "34"), ("clean-code", "38"), ("clean-code", "32")]),
 ]
 
 # Build fayllari. Ular kod kabi tekshiruvga muhtoj, lekin .java emas.
@@ -402,6 +405,7 @@ TASK_WORDS = {
     "sana va vaqt": r"\bsana|vaqt zona|timezone|\bdate\b|muddat",
     "loglash": r"\blog(?:la|ga|ging)?\b|loglash",
     "test": r"\btest",
+    "refaktoring": r"refaktor|optimiz|eski kod|legacy|soddalashtir|qayta tuz|takror",
 }
 
 
@@ -409,7 +413,7 @@ TASK_WORDS = {
 # xato bo'lsa ma'lumot yoki xavfsizlik buziladi, shuning uchun aktyor va
 # review ga boradi.
 FAST_BLOCK = {"tranzaksiya", "sxema migratsiyasi", "sozlama", "konkurentlik",
-              "asinxron"}
+              "asinxron", "refaktoring"}
 
 
 def fast_path(labels):

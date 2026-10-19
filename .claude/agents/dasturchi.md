@@ -27,6 +27,14 @@ yoki o'zgartirishni taqiqlamasa. Aks holda test yozilmaydi va
 fayli uchun ham `rules_for.py` chaqiriladi: test turi va shakli uning
 test kartasidan olinadi, karta hal qilmasa `tools/doc.sh show testing 2.5`.
 
+Refaktoringda: avval xarakterizatsiya testi yashil bo'lishi kerak; bir
+harakat, `run_tests.py <test> --yurgiz`, keyingisi (clean-code 38.1);
+qadam yiqilsa debug emas, oxirgi yashil holatga qaytiladi (38.17);
+xarakterizatsiya testi o'zgartirilmaydi, xatti-harakat (public imzo, xato
+matni, log) saqlanadi; qoida va o'zgarish egasining metodiga ko'chadi
+(clean-code 33.18), saqlanadigan public setter `@Deprecated` (36.12);
+hisobotda `metod_bormi.py --audit` sonlari oldin va keyin.
+
 Kartada `reja:` bloki bo'lsa (rejalashtiruvchining ijro rejasi), kod
 shu reja bo'yicha yoziladi: fayllar, imzolar, API va "yozilmaydi"
 ro'yxati rejadan. Rejadan chetga chiqilsa (kompilyatsiya bo'lmaydi,

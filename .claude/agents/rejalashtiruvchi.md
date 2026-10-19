@@ -38,7 +38,15 @@ qabul qilinadi, yozuvchiga qoldirilmaydi. Avval `rules_for --no-mark
    pattern, vazifadan tashqari o'zgarish (eng ko'p uchraydiganini
    aniq nomlang, masalan "`TransactionTemplate` yo'q: `save` o'z
    tranzaksiyasida").
-4. **Test** (M da): qaysi xatti-harakat, qaysi tur.
+4. **Test** (M da): qaysi xatti-harakat, qaysi tur. Refaktoringda
+   xarakterizatsiya testi (hozirgi xulq, xato matni va log ham) birinchi
+   qadam, `python3 tools/metod_bormi.py <src> --audit` sonlari rejaga
+   yoziladi va qaysi topilma qaysi qadamda yo'qolishi aytiladi; harakat
+   bittadan (clean-code 38.1), refaktoring va mantiq o'zgarishi alohida
+   (clean-code 38.4). Servisdagi qoida egasining getterlari bilan
+   hisoblansa, qoida va o'zgarish egasiga ko'chadi (clean-code 33.18);
+   saqlanishi shart public setter `@Deprecated`, ichki chaqiruvsiz,
+   o'chirish Ochiq qaror (clean-code 36.12).
 5. **Asos:** har qaror yonida bo'lim raqami.
 6. **Qabul mezoni:** bir-ikki tekshiriladigan jumla.
 

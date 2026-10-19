@@ -3,6 +3,26 @@
 Har versiya `VERSION` faylida, o'rnatilgani `python3 tools/versiya.py`
 da ko'rinadi. Yangi versiya chiqqanda shu ro'yxatning boshiga yoziladi.
 
+## 0.4.1 (2026-10-19)
+
+- `metod_bormi.py --audit` bir teshik buzilishini aniq sanaydi: boshqa
+  sinfdan yozish (`a.setX(..)`, `a.x = ..`) va ochiq public setter alohida;
+  test fayllari hisobga olinmaydi (`--ozgartiradi` da ham).
+- Refaktoringda feature envy (clean-code 33.18): servisdagi qoida va
+  o'zgarish egasining metodiga ko'chadi; saqlanishi shart public setter
+  `@Deprecated`, o'chirish Ochiq qaror (36.12). Reja, dasturchi, review
+  va retsept kartasida.
+
+## 0.4.0 (2026-10-19)
+
+- Eski kod refaktoringi alohida zanjirda (Feathers tartibi, architect
+  34.1): opus ijro rejasi `metod_bormi.py --audit` ro'yxati bilan,
+  `test-muhandis` xarakterizatsiya testi (eski kodda yashil), `dasturchi`
+  bir harakat va test, `review` testlar o'zgarmaganini va audit sonlari
+  kamayganini tekshiradi. Tez yo'l refaktoringda yopiq.
+- `metod_bormi.py --audit`: ko'p yozuvchili maydon, takror blok, uzun
+  metod; `refaktoring` belgisi va retsept kartasi.
+
 ## 0.3.1 (2026-10-19)
 
 - `tools/metod_bormi.py`: metod yozishdan oldin shu ish bormi; muhim

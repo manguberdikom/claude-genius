@@ -36,6 +36,15 @@ tegiladigan ishlab chiqarish fayllari kiradi, ularning testlari kirmaydi.
 | M | 4 va undan ko'p fayl yoki bir necha qatlam, qaytarib bo'lmaydigan qaror yo'q | `rejalashtiruvchi` (ijro rejasi, test qismi bilan) -> `dasturchi` -> `test-muhandis` va `review` parallel -> bitta tuzatish aylanasi | ijro |
 | L | qaytarib bo'lmaydigan qaror (sxema migratsiyasi, API shartnomasi, tashqi bog'liqlik, ma'lumot formati), talab hujjatdan yoki bir necha modul | `rejalashtiruvchi` (to'liq reja) -> har guruhga `dasturchi`, guruhlar parallel worktree da -> birlashgan diffga bitta `review` va `test-muhandis` | to'liq |
 
+**Refaktoring** (vazifada refaktor, optimallashtir, eski kod, takror;
+`rules_for` belgisi `refaktoring`, Tez yo'l yopiq) hajmidan qat'i nazar
+shu zanjirda (architect 34.1, Feathers tartibi): `rejalashtiruvchi`
+(ijro rejasi: `metod_bormi.py --audit` ro'yxati va sonlari, qadamlar,
+tegilmaydigan joy) -> `test-muhandis` (xarakterizatsiya testi, eski
+kodda yashil) -> `dasturchi` (bitta harakat, test, keyingisi;
+xarakterizatsiya testiga tegilmaydi) -> `review` (testlar o'zgarmagan,
+audit sonlari kamaygan, public imzo va xato matni saqlangan).
+
 Shubha bo'lsa kichigi olinadi: S dan M ga o'tish arzon (review topilmasi
 test muhandisini chaqiradi), M o'rniga L esa butun reja bosqichini
 qo'shadi.
