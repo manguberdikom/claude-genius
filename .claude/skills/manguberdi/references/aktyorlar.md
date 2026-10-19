@@ -34,6 +34,8 @@ hajm: S | M | L
 fayllar: <tegiladigan ishlab chiqarish fayllari>
 cheklov: <normallashtirilgan Cheklov> | yo'q
 vazifa: <bir jumla: rules_for --vazifa qiymati>
+reja: ijro | to'liq | yo'q
+<ijro rejasi matni, rejalashtiruvchi javobidan aynan>   (reja: ijro bo'lsa)
 ```
 
 `vazifa:` fayl hali o'z ichiga olmagan mavzuning kartasini beradi (kesh,

@@ -1,8 +1,8 @@
 ---
 name: dasturchi
-description: "Kodni qoidaga muvofiq o'zgartiradi: bug tuzatish, dizayn pattern, toza kod refaktoringi, reja qadami. Kichik vazifani rejasiz bajaradi."
+description: "Kodni ijro rejasi va qoidaga muvofiq o'zgartiradi: bug tuzatish, dizayn pattern, toza kod refaktoringi, reja qadami."
 tools: Bash, Read, Grep, Glob, Edit, Write
-model: opus
+model: sonnet
 ---
 
 # Dasturchi
@@ -26,6 +26,11 @@ yoki o'zgartirishni taqiqlamasa. Aks holda test yozilmaydi va
 `Testlar:` qatorida xatoni qaysi mavjud test qoplashi aytiladi. Test
 fayli uchun ham `rules_for.py` chaqiriladi: test turi va shakli uning
 test kartasidan olinadi, karta hal qilmasa `tools/doc.sh show testing 2.5`.
+
+Kartada `reja:` bloki bo'lsa (rejalashtiruvchining ijro rejasi), kod
+shu reja bo'yicha yoziladi: fayllar, imzolar, API va "yozilmaydi"
+ro'yxati rejadan. Rejadan chetga chiqilsa (kompilyatsiya bo'lmaydi,
+fayl boshqacha) sababi hisobotda bir jumla bilan.
 
 ## Ish tartibi
 

@@ -92,7 +92,8 @@ har aktyorga topshiriqdan oldin amal qiladi:
    Fayllar topshiriq kartasidan olinadi, u har aktyor promptining
    boshida va zanjirning har chaqiruviga aynan ko'chiriladi:
    `hajm: S|M|L`, `fayllar: <ishlab chiqarish fayllari>`,
-   `cheklov: <...>|yo'q`, `vazifa: <bir jumla>` (`--vazifa` qiymati).
+   `cheklov: <...>|yo'q`, `vazifa: <bir jumla>` (`--vazifa` qiymati),
+   rejadan keyin `reja:` bloki (rejalashtiruvchi javobi, aynan).
    Kirish bir xil, chiqish bir xil. Ikkinchi aylana shundan kamayadi. Chiqish boshidagi
    `# Retsept` kartasi (`tools/retsept/<belgi>.md`) eng kichik to'g'ri
    shaklni, Spring yoki JDK allaqachon beradigan narsani va tuzoqlarni
@@ -177,20 +178,22 @@ kartasi, oxirida bitta birlashtirish va bitta to'liq suite
 Hajm S bo'lsa qaror bitta qisqa chaqiruvdan:
 `python3 tools/rules_for.py --no-mark --belgilar --vazifa="<vazifa>" <fayllar>`,
 oxirgi qatori `tez_yol: ha|yo'q (<sabab>)`. `ha` bo'lsa asosiy sessiya
-o'zi bajaradi: to'liq `rules_for` (kartadagi shakldan) -> Edit ->
+o'zi bajaradi (agent yo'q, eng tez): to'liq `rules_for` (kartadagi shakldan) -> Edit ->
 `run_tests.py --diff --yurgiz`. Yozib bo'lgach
 `python3 tools/rules_for.py --no-mark --belgilar --diff` (yangi fayllar
 ham kiradi) `tez_yol: yo'q` desa yoki diff 40 qatordan katta bo'lsa
-`review` chaqiriladi. `yo'q` bo'lsa zanjir `dasturchi` -> `review`.
+`review` chaqiriladi. `yo'q` bo'lsa zanjir `rejalashtiruvchi`
+(`reja: ijro`) -> `dasturchi` (kartada `reja:` bloki bilan) -> `review`.
 
 ## Model tanlash
 
-`dasturchi` opus, `rejalashtiruvchi` sonnet, `test-muhandis` sonnet,
-`review` sonnet: to'rtalasi bir xil bilim bilan, qoidalar agent faylida
-emas, `rules_for` chiqishida. Kod yozuvchi opus (minimal kod), qolganlari
-narx uchun sonnet; sabab va istisno `references/yakun.md` da. Qaytarib bo'lmaydigan qarorli rejada
-`rejalashtiruvchi` bitta marta `model: "opus"` bilan; 5 tadan ko'p agent
-`budget.py` tasdig'ini so'raydi. Tafsilot: `references/yakun.md`.
+`rejalashtiruvchi` opus, `dasturchi` sonnet, `test-muhandis` sonnet,
+`review` sonnet: to'rtalasi bir xil bilim bilan (`rules_for`). Qaror
+opus da, ijro sonnet da: opus har kod vazifasiga (Tez yo'ldan
+tashqari) bitta qisqa ijro rejasi beradi, yozuvchi va review shu reja
+bilan ishlaydi. Vazifaga bitta opus chaqiruvi, guruhlarga bo'lish
+rejaning ichida; 5 tadan ko'p agent `budget.py` tasdig'ini so'raydi.
+Sabab va o'lchov: `references/yakun.md`.
 
 ## Zanjir oxiri
 

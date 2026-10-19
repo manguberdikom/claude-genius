@@ -32,9 +32,9 @@ tegiladigan ishlab chiqarish fayllari kiradi, ularning testlari kirmaydi.
 
 | Hajm | Belgisi | Zanjir | Reja |
 |---|---|---|---|
-| S | 1-3 fayl, bitta qatlam, qaytariladi | `rules_for --belgilar` da `tez_yol: ha`: asosiy sessiya o'zi, `review` faqat diff xavfli yoki 40 qatordan katta bo'lsa; `tez_yol: yo'q`: `dasturchi` -> `review` | yo'q |
-| M | 4 va undan ko'p fayl yoki bir necha qatlam, qaytarib bo'lmaydigan qaror yo'q | `dasturchi` -> `test-muhandis` va `review` parallel -> bitta tuzatish aylanasi | yo'q |
-| L | qaytarib bo'lmaydigan qaror (sxema migratsiyasi, API shartnomasi, tashqi bog'liqlik, ma'lumot formati), talab hujjatdan yoki bir necha modul | `rejalashtiruvchi` -> har guruhga `dasturchi`, guruhlar parallel worktree da -> birlashgan diffga bitta `review` va `test-muhandis` | bor |
+| S | 1-3 fayl, bitta qatlam, qaytariladi | `rules_for --belgilar` da `tez_yol: ha`: asosiy sessiya o'zi, `review` faqat diff xavfli yoki 40 qatordan katta bo'lsa; `tez_yol: yo'q`: `rejalashtiruvchi` (ijro rejasi) -> `dasturchi` -> `review` | ijro (25 qatorgacha, fayl yo'q) |
+| M | 4 va undan ko'p fayl yoki bir necha qatlam, qaytarib bo'lmaydigan qaror yo'q | `rejalashtiruvchi` (ijro rejasi, test qismi bilan) -> `dasturchi` -> `test-muhandis` va `review` parallel -> bitta tuzatish aylanasi | ijro |
+| L | qaytarib bo'lmaydigan qaror (sxema migratsiyasi, API shartnomasi, tashqi bog'liqlik, ma'lumot formati), talab hujjatdan yoki bir necha modul | `rejalashtiruvchi` (to'liq reja) -> har guruhga `dasturchi`, guruhlar parallel worktree da -> birlashgan diffga bitta `review` va `test-muhandis` | to'liq |
 
 Shubha bo'lsa kichigi olinadi: S dan M ga o'tish arzon (review topilmasi
 test muhandisini chaqiradi), M o'rniga L esa butun reja bosqichini
@@ -56,7 +56,7 @@ ketma-ket bajariladi, aralashtirilmaydi.
 | Niyat | Aktyor | Izoh |
 |---|---|---|
 | Holatni bilish, kamchilik topish | `review` | kod o'zgarmaydi; diff bo'lmasa doira va modul ro'yxati beriladi |
-| Yo'lni belgilash | `rejalashtiruvchi` | hajm L yoki ochiq so'ralganda |
+| Yo'lni belgilash | `rejalashtiruvchi` | S/M da ijro rejasi (Tez yo'ldan tashqari), L yoki so'ralganda to'liq reja |
 | Kodni o'zgartirish | `dasturchi` | bug, pattern, refaktoring, reja qadami; "tuzat" va "yiqildi" birga kelsa ham |
 | Testlar | `test-muhandis` | qoplash so'ralganda yoki xato test kodining o'zida ekani aniq bo'lganda |
 | Qoida matnini keltirish | aktyor yo'q | `doc.sh show` bilan, qisqartmasiz |

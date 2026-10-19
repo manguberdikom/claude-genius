@@ -5,24 +5,20 @@ oxirida yoki model tanlashda o'qiladi.
 
 ## Model tanlash
 
-To'rt aktyor bir xil bilim bilan ishlaydi; `dasturchi` opus da (kod
-sifati: 2026-10-19 dagi 6 vazifali A/B da bir xil karta bilan sonnet
-minimal kodda 7.3, opus 8.8; 4 vazifali sinovda opus takror metodsiz), `rejalashtiruvchi`, `test-muhandis`, `review` sonnet da (narx): qoidalar agent
-faylida emas, `rules_for` chiqishida (retsept kartasi, `Umumiy yozish
-qoidalari`, boblar, punktlar, avvalgi xatolar). Bir xil fayl va
-`--vazifa` bilan chaqirgan har aktyor bir xil matnni oladi; agent
-faylida faqat rolning tartibi turadi. Bu taqsimot `.claude/agents/` da
-yozilgan, har vazifada qayta o'ylanmaydi.
+Qaror opus da, ijro sonnet da: `rejalashtiruvchi` opus, `dasturchi`,
+`test-muhandis`, `review` sonnet. To'rtalasi bir xil bilimni `rules_for`
+dan oladi (retsept kartasi, `Umumiy yozish qoidalari`, boblar, punktlar,
+avvalgi xatolar); agent faylida faqat rolning tartibi.
 
-Istisno, sifat uchun: reja `references/marshrut.md` dagi qaytarib
-bo'lmaydigan qarorni o'z ichiga olsa (sxema migratsiyasi, API
-shartnomasi, tashqi bog'liqlik, ma'lumot formati) `rejalashtiruvchi`
-Agent chaqiruvida `model: "opus"` bilan, lekin **bitta** marta
-chaqiriladi: butun reja bitta opus chaqiruvida, guruhlarga bo'lish
-shu rejaning ichida. Guruh bo'yicha qayta rejalashtirish va oddiy reja
-sonnet da. Sabab: 2026-10-06 da har guruhga alohida opus
-rejalashtiruvchi (7 ta) $199 turdi; qimmat model faqat qaytarib
-bo'lmaydigan qarorda o'zini oqlaydi.
+O'lchov (2026-10-19, 6 vazifa, bitta baholovchi, har birida bitta
+urinish): opus ijro rejasi + sonnet kod: to'g'rilik 9.0, minimal 9.2,
+takror 0; sonnet yolg'iz: 8.7, 7.5, takror 2; opus yolg'iz: 8.9, 8.5,
+takror 2. Reja "yozilmaydi" ro'yxati bilan qarorni yozuvchidan oladi.
+
+Opus vazifaga bir marta chaqiriladi: guruhlarga bo'lish shu rejaning
+ichida, guruh bo'yicha qayta rejalashtirish yo'q. Sabab: 2026-10-06 da
+har guruhga alohida opus rejalashtiruvchi (7 ta) $199 turdi. Ijro rejasi
+25 qatorgacha va fayl yozmaydi, shuning uchun to'liq rejadan ancha arzon.
 
 Bitta so'rovda 5 tadan ko'p agent (`Explore` sanalmaydi) bo'lsa `budget.py` har 5-chaqiruvdan keyin narx taxmini
 bilan tasdiq so'raydi (`GENIUS_AGENT_MAX`). Ko'p guruhli ishni boshlashdan

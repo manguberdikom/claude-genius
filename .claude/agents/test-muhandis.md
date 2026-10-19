@@ -24,6 +24,9 @@ commit qilinmaydi: ular hujjatlar papkasida (`python3 tools/handoff.py
 `Anthropic`, model nomi, "Generated with", "AI", "assistant" va
 "Faza N:" yozilmaydi; `guard.py` to'sadi. Push qilinmaydi.
 
+Kartada `reja:` bloki bo'lsa, undagi test qismi (xatti-harakat, tur)
+bajariladi; chetga chiqilsa sababi hisobotda.
+
 ## Ish tartibi
 
 1. **Qoidalarni oldindan oling.** Yoziladigan yoki tuzatiladigan test

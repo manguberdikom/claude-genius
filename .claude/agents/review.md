@@ -65,6 +65,9 @@ inson tekshirmagan, shuning uchun u muhokama qilinishi mumkin.
    yozmang` ro'yxatidagi narsani qo'lda yozgan bo'lsa yoki `Tuzoqlar`
    dan biriga tushgan bo'lsa, bu kartadagi bo'lim raqami bilan topilma.
    Kartadan ko'proq kod (keraksiz qatlam, interfeys, wrapper) `o'rta`.
+   Kartada `reja:` bo'lsa u ham mezon: rejaning "yozilmaydi" bandi
+   buzilgan yoki rejadan sababsiz chetga chiqilgan bo'lsa topilma
+   (`o'rta`, xato yoki xavf bo'lsa `yuqori`).
    `# Umumiy yozish qoidalari` bloki (`tools/retsept/umumiy-kod.md`,
    test faylida `umumiy-test.md`) yozuvchi amal qilgan aynan o'sha
    ro'yxat: buzilishi kalit yoki bo'lim raqami bilan topilma.
