@@ -872,8 +872,31 @@ def case_zaxira_tozala_ozi():
 
     boshqa = uy()
     out_boshqa = tozala_chaqir(SoxtaCtx(boshqa, backup_to=os.path.join(boshqa, "z")), True)
+    # O'chmaydigan zaxira (Windows da uzun yo'l, POSIX da ruxsat): o'rnatish to'xtamaydi.
+    qaysar = uy()
+    asl_olib_tashla = I.olib_tashla
+
+    def yiqiladigan(path):
+        if eski[0] in path:
+            raise OSError(3, "The system cannot find the path specified")
+        return asl_olib_tashla(path)
+
+    I.olib_tashla = yiqiladigan
+    try:
+        out_qaysar = tozala_chaqir(SoxtaCtx(qaysar), True)
+    finally:
+        I.olib_tashla = asl_olib_tashla
     return [
         ("tozala: 7 dan 5 qoldi", zaxiralar_of(ochir) == eski[2:]),
+        ("tozala: o'chmagan zaxira xato otmaydi, qolgani o'chadi",
+         zaxiralar_of(qaysar) == [eski[0]] + eski[2:]),
+        ("tozala: o'chmagani sababi bilan aytiladi va o'rnatish davom etadi",
+         "o'chirildi: 1 ta" in out_qaysar
+         and ("o'chmadi (joyida qoldi, o'rnatish davom etadi): %s" % eski[0]) in out_qaysar),
+        ("uzun yo'l: Windows da `\\\\?\\` prefiksi, POSIX da yo'l o'zgarmaydi",
+         (I.uzun_yol("C:\\a\\b").startswith("\\\\?\\") and
+          I.uzun_yol("\\\\?\\C:\\a").count("\\\\?\\") == 1) if os.name == "nt"
+         else I.uzun_yol("/a/b") == "/a/b"),
         ("tozala: o'chirilgani nomi bilan aytildi va yig'ma qator chiqdi",
          all(n in out_ochir for n in eski[:2])
          and "eski zaxira o'chirildi: 2 ta, oxirgi 5 tasi qoldi" in out_ochir),

@@ -604,11 +604,27 @@ def zaxira_ol(paths, backup_to):
         nusxa(path, os.path.join(backup_to, "%s--%s" % (parent, leaf)))
 
 
+def uzun_yol(path):
+    """Windows `MAX_PATH` (260) cheklovidan o'tkazadigan `\\\\?\\` prefiksi.
+
+    Zaxira ichida eski klon nusxasi bo'lishi mumkin va uning ichidagi yo'l 260
+    belgidan oshadi: prefikssiz `shutil.rmtree` `WinError 3` beradi. POSIX da
+    yo'l o'zgarmaydi.
+    """
+    if os.name != "nt":
+        return path
+    full = os.path.abspath(path)
+    return full if full.startswith("\\\\?\\") else "\\\\?\\" + full
+
+
 def zaxira_tozala(ctx, apply):
     """Yangi zaxira yozilgandan keyin eskilarini o'chiradi va har birini nomi bilan aytadi.
 
     `--backup-to` berilgan bo'lsa tegilmaydi: joyni foydalanuvchi tanlagan, uning
     saqlash siyosati ham o'ziniki. `--apply` siz faqat ro'yxat ko'rsatiladi.
+
+    O'chirilmagan zaxira o'rnatishni TO'XTATMAYDI: u o'rnatishning natijasi emas,
+    qoldiq tozalash. Sababi aytiladi va zaxira joyida qoladi.
     """
     if ctx.opts.backup_to:
         return
@@ -620,10 +636,18 @@ def zaxira_tozala(ctx, apply):
     if not apply:
         step("--apply yo'q: %d ta eski zaxira o'chirilmadi" % len(eski))
         return
+    o_chdi, qoldi = 0, []
     for path in eski:
-        olib_tashla(path)
+        try:
+            olib_tashla(uzun_yol(path))
+        except OSError as exc:
+            qoldi.append((os.path.basename(path), exc))
+        else:
+            o_chdi += 1
     step("eski zaxira o'chirildi: %d ta, oxirgi %d tasi qoldi"
-         % (len(eski), ctx.opts.zaxira_saqlash))
+         % (o_chdi, ctx.opts.zaxira_saqlash))
+    for nom, exc in qoldi:
+        step("o'chmadi (joyida qoldi, o'rnatish davom etadi): %s -- %s" % (nom, exc))
 
 
 class Ctx(object):
