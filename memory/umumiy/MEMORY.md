@@ -3,6 +3,7 @@
 Barcha proyektlarga tegishli. Bir yozuv bir qator.
 
 - `user_til-va-uslub.md` - javob tili, uslub, hisobot shakli
+- `feedback_commitdan-oldin-git-identity.md` - repo darajasida identity yo'q bo'lsa commit begona nom bilan ketadi
 - `feedback_birlashtirish-commit.md` - birlashtirgandan keyingi commit tuzog'i
 - `feedback_startup-xatosini-tuzatish.md` - startup xatosi: trace, bean, migratsiya
 - `feedback_pdf-vizual-tekshiruv.md` - chizilgan hujjatni PNG ga render qilib ko'rish
