@@ -21,3 +21,4 @@ Barcha proyektlarga tegishli. Bir yozuv bir qator.
 - `feedback_windows-bash-asbob-tuzoqlari.md` - bashdan `cmd /c` yolg'on yashil, uzun yo'lda worktree
 - `feedback_darvoza-bosh-royxat.md` - tashqi ro'yxatli darvozada bo'sh ro'yxat ochiq qiymat
 - `feedback_anonim-credential-ruxsat-guardi.md` - anonim link endpointiga egalik guardi
+- `feedback_lazy-oqim-mock-bilan-yashil.md` - klient qaytargan lazy oqim chaqiruvdan keyin yopiladi, mock testlar buni yashiradi
