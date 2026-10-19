@@ -15,5 +15,10 @@ Ish bir nechta modulga tegsa ham, bu o'z-o'zidan reja uchun sabab emas.
   takrorlash bog'liq ketma-ketlik emas: ikki ijrochi parallel ishlaydi.
 - Reja o'rniga: har ijrochiga bir xil kontrakt bloki, aniq fayl ro'yxati
   va "chetga chiqma" cheklovi berilsa, parite reja bo'lmasa ham saqlanadi.
+- Fayl soni ham o'z-o'zidan sabab emas. Bir repoda bajarilgan ishni
+  ikkinchisiga port qilish 31 faylga tegdi, ya'ni hajm jadvali bo'yicha L
+  edi, lekin shartnoma talab hujjatida va namuna commitida allaqachon
+  qotirilgan edi. Reja boshlandi va foydalanuvchi "reja tuzma, bajar,
+  oddiy narsaku" dedi. Hajmni fayl soni emas, ochiq qarorlar belgilaydi.
 - Reja to'xtatilsa, ishni boshidan boshlash shart emas: to'xtatib,
   o'sha kontrakt bloki bilan to'g'ridan-to'g'ri ijroga o'tiladi.
