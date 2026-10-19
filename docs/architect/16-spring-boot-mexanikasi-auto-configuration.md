@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 16. Spring Boot mexanikasi: auto-configuration, starter, Actuator (Spring Boot Mechanics)
 
 <details>
-<summary>Bu bobdagi 14 bo'lim</summary>
+<summary>Bu bobdagi 15 bo'lim</summary>
 
 - [16.1 Auto-configuration qanday ishlaydi: `AutoConfiguration.imports` va shartli annotatsiyalar](#161-auto-configuration-qanday-ishlaydi-autoconfigurationimports-va-shartli-annotatsiyalar)
 - [16.2 `@ConditionalOnClass`, `@ConditionalOnMissingBean` va tartib (`@AutoConfigureAfter`)](#162-conditionalonclass-conditionalonmissingbean-va-tartib-autoconfigureafter)
@@ -22,7 +22,8 @@
 - [16.11 Spring Boot 3 ga o'tish: Jakarta nomlari va konfiguratsiya o'zgarishlari](#1611-spring-boot-3-ga-otish-jakarta-nomlari-va-konfiguratsiya-ozgarishlari)
 - [16.12 `@ConditionalOnBean` ni olib tashlash: majburiy bog'liqlik va test kontekstlari](#1612-conditionalonbean-ni-olib-tashlash-majburiy-bogliqlik-va-test-kontekstlari)
 - [16.13 Bog'lanish vaqtini ongli tanlash: besh daraja](#1613-boglanish-vaqtini-ongli-tanlash-besh-daraja)
-- [16.14 Amalda qo'llash](#1614-amalda-qollash)
+- [16.14 DevTools va Spring Boot CLI: ishlab chiqish vositalarining o'rni](#1614-devtools-va-spring-boot-cli-ishlab-chiqish-vositalarining-orni)
+- [16.15 Amalda qo'llash](#1615-amalda-qollash)
 
 </details>
 
@@ -194,6 +195,8 @@ public record PaymentProperties(
 ```
 
 `@Validated` bo'lmasa `@NotBlank` hech narsa qilmaydi, bu juda keng tarqalgan jim xato. Validatsiya ishga tushishda bajariladi va noto'g'ri konfiguratsiya pod ni Readiness ga chiqarmaydi. Bu xohlangan xatti-harakat: noto'g'ri sozlangan to'lov servisi ishlamagani yaxshi, yarim ishlagandan ko'ra. `spring-boot-configuration-processor` ni `annotationProcessor` sifatida qo'shsangiz, `META-INF/spring-configuration-metadata.json` generatsiya bo'ladi va jamoa IDE da xossa nomlarini taklif sifatida ko'radi.
+
+Generatsiya qilinadigan metadata faqat `@ConfigurationProperties` sinflarini qoplaydi. `@Value` bilan o'qiladigan yoki shablonda ishlatiladigan kalit IDE da "Unknown Property" ogohlantirishi bo'lib qolaveradi va bunday kalit uchun metadata qo'lda yoziladi: `src/main/resources/META-INF/additional-spring-configuration-metadata.json` fayliga `name`, `type` va `description` maydonlari bilan (Walls, 6-bob, 153-bet). Metadata ixtiyoriy va xossaning ishlashiga ta'sir qilmaydi; uning foydasi boshqa, u xossa uchun minimal hujjat bo'ladi va IDE da avtomatik to'ldirish beradi. Nomlashda bitta nuans bor: metadata da kalit kebab-case shaklida (`acme.payment.max-retries`) yoziladi, Boot ning moslashuvchan nomlash qoidasi esa uni `maxRetries` shakli bilan bir xil deb qabul qiladi (Walls, 6-bob, 154-bet). ESLATMA: shu faylga qiymat takliflari uchun `hints` massivi ham yoziladi, kitob faqat `properties` ni ko'rsatadi.
 
 Yaml tuzilishi haqida: bitta ildiz prefiks (`acme`) ostida barcha o'z xossalaringizni saqlang, `spring.*` ichiga hech narsa qo'shmang. Bu konflikt ehtimolini nolga tushiradi va `configprops` endpoint da sizning sozlamalaringiz bir joyda ko'rinadi.
 
@@ -427,7 +430,35 @@ public class PaymentPolicy {
 
 Amaliy qoida: darajani talab belgilaydi, qulaylik emas. Qiymat domen qoidasi bo'lsa kompilyatsiya vaqtida qoladi; muhitga qarab farq qilsa yuklanish vaqtiga chiqadi va [`@ConfigurationProperties` va validatsiya](#166-configurationproperties-va-validatsiya-applicationyaml-tuzilishi) qoidalariga bo'ysunadi; ishlab turgan tizimda o'zgarishi kerak bo'lsagina kerak bo'lganda o'qiladigan darajaga ko'tariladi, va bu daraja tanlangan paytdan boshlab har chaqiruvdagi qiymat kuzatuvda ko'rinishi shart.
 
-## 16.14 Amalda qo'llash
+## 16.14 DevTools va Spring Boot CLI: ishlab chiqish vositalarining o'rni
+
+DevTools ishlab chiqish vaqtiga mo'ljallangan modul va u to'rt narsani beradi: kod o'zgarganda ilovani avtomatik qayta ishga tushirish, brauzerga ketadigan resurs (shablon, JavaScript, stil) o'zgarganda brauzerni LiveReload orqali yangilash, shablon keshini o'chirish va H2 ishlatilsa H2 console ni yoqish (Walls, 1-bob, 23-bet). U IDE plagini emas va biror IDE ni talab qilmaydi; ishlab chiqarishga deploy qilinganda esa o'zini o'zi o'chiradi. Qayta ishga tushirishning ikki class loader bilan ishlaydigan mexanikasi va dependency o'zgarganda nega qo'lda restart kerakligi [class loader ierarxiyasi bo'limida](09-jvm-ichki-tuzilishi-class-loading-memory.md#92-class-loading-bosqichlari-va-class-loader-ierarxiyasi) yozilgan.
+
+```xml
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-devtools</artifactId>
+  <optional>true</optional>   <!-- artefaktga va tranzitiv bog'liqlikka o'tmaydi -->
+</dependency>
+```
+
+Arxitektor uchun bu modulning ikkita yon ta'siri qoidaga aylanadi. Birinchisi o'lchov: DevTools shablon keshini o'chiradi, shuning uchun lokal muhitda o'lchangan latency ishlab chiqarish qiymati emas va unga tayanib qaror qabul qilinmaydi. Ikkinchisi konfiguratsiya: DevTools faol bo'lganda `$HOME/.config/spring-boot` dagi global sozlamalar command line argumentidan ham yuqori turadi, ya'ni qiymat kutilmaganda boshqa chiqsa, [konfiguratsiya manbalari tartibi](#165-konfiguratsiya-manbalari-tartibi-va-ustunlik-qoidasi) bo'yicha shu fayl birinchi tekshiriladi. Shundan qoida: DevTools `optional` yoki `developmentOnly` qamrovida qoladi va hech qachon ishlab chiqarish artefaktining bog'liqlik ro'yxatiga o'tmaydi.
+
+Spring Boot CLI boshqa narsa: u Groovy skriptlariga asoslangan alternativ dasturlash modeli, ya'ni butun ilovani Groovy skriptlari to'plami sifatida yozib, buyruq satridan ishga tushirish mumkin (Walls, 1-bob, 27-bet). Uning ikkinchi, amaliy foydasi loyiha yasash: `spring init` Initializr ga murojaat qilib skeletni yuklab beradi va bog'liqlik, build turi, artifact nomi kabi parametrlarni qabul qiladi (Walls, ilova, 475-bet).
+
+```bash
+# Skeletni qotirilgan bog'liqlik va build turi bilan yasash
+spring init --dependencies=web,actuator,postgresql \
+            --type=maven-project \
+            --artifact-id=payment-service payment-service
+
+# Mavjud parametr va bog'liqliklar ro'yxati
+spring init --list
+```
+
+ESLATMA: quyidagi baho korpusning qo'shimchasi, kitob CLI ga ko'p vaqt ajratmasligini aytadi va uni taqqoslamaydi. Groovy skript modeli ishlab chiqarish servisi uchun tanlanmaydi: unda build fayli, bog'liqlik versiyalari va test quvuri yo'q, ya'ni korpusdagi barcha qoidalar (starter, auto-configuration tekshiruvi, quality gate) qo'llanmay qoladi. CLI ning qoladigan o'rni tor va foydali: yangi servis skeletini qo'lda emas, `spring init` bilan bir xil parametrlardan yasash, shunda jamoada barcha servis bir xil tuzilishdan boshlanadi.
+
+## 16.15 Amalda qo'llash
 
 - [ ] Servisni `--debug` bilan bir marta ishga tushirib, `Negative matches` ro'yxatini ko'rib chiqing va kutilmagan tarzda o'chib qolgan auto-configuration borligini aniqlang.
 - [ ] `management.endpoints.web.exposure.include` qiymatini tekshiring: `*` bo'lsa aniq ro'yxatga almashtiring va `management.server.port` ni 8081 ga ajratib, Ingress dan olib tashlang.
@@ -443,6 +474,8 @@ Amaliy qoida: darajani talab belgilaydi, qulaylik emas. Qiymat domen qoidasi bo'
 - Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 10.6 (252-254-betlar) va 5.3 (107-bet) - bog'lanish vaqtining ta'rifi va besh darajasi (kodlash, kompilyatsiya, yuklanish, obyekt yaratilish, kerak bo'lganda); kech bog'lanish moslashuvchanlik berishi; erta bog'lanishning murakkabligi past bo'lishi va nomlangan konstantaning qotirilgan qiymatdan afzalligi; talabdan tashqari moslashuvchanlik qo'shmaslik qoidasi; bog'lanish vaqtini dizayn evristikasi sifatida so'raladigan savollar
 - Craig Walls, *Spring in Action* 6th, 1-bob - Spring Boot avtomatik sozlash va starter
 - Craig Walls, *Spring in Action* 6th, 15-bob - Actuator va uning endpointlari
+- Craig Walls, *Spring in Action* 6th, 6-bob - konfiguratsiya xossalari va qo'lda yoziladigan metadata fayli
+- Craig Walls, *Spring in Action* 6th, 1-bob va ilova - DevTools xususiyatlari, Spring Boot CLI va `spring init`
 - Robert C. Martin, *Clean Architecture*, 32-bob - framework detal ekani va unga bog'lanmaslik
 - John Carnell, *Spring Microservices in Action*, 2-bob - Spring Boot bilan servis qurish
 - [Spring Boot 4.0, Externalized Configuration](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/documentation/spring-boot-docs/src/docs/antora/modules/reference/pages/features/external-config.adoc) - manbalar tartibi (test manbalari command line dan yuqori), config data fayllarining tartibi, bitta joyda `.properties` ning YAML dan ustun turishi, `@PropertySource` ning refresh gacha qo'shilmasligi, `RandomValuePropertySource`

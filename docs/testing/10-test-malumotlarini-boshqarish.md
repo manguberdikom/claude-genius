@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 10. Test ma'lumotlarini boshqarish (Managing Test Data)
 
@@ -361,6 +361,20 @@ Amaliy yondashuvlar:
 
 Tavsiya: subset + deterministik maskalash quvuri avtomatlashtiriladi va u faqat himoyalangan muhitda ishlaydi; natija artifact sifatida versiyalanadi, repository'ga emas, object storage'ga joylanadi.
 
+**Boshlang'ich ma'lumotni SUT ning o'z API si orqali yozing.** Google ning katta testlar bo'yicha ko'rsatmasi ma'lumot kiritishning uchta yo'lini ajratadi va ularning narxini aytadi: qo'lda yozilgan ma'lumot (kichik testdagiday, lekin katta SUT da bir nechta servis uchun sozlash ko'proq mehnat talab qiladi), production dan nusxa va tanlab olingan namuna (sampling: "aqlli namuna" maksimal qamrov uchun minimal ma'lumotni ko'chiradi). Bu uchtasi korpusning yuqoridagi uch yondashuviga mos tushadi.
+
+To'rtinchi, mustaqil o'lchov - **qaysi interfeys orqali yozish**. Ma'lumot ombori sxemasiga bevosita yozish (SQL `INSERT`, `TestEntityManager.persist`) tezroq, lekin yozishni bajaradigan real binar o'tkazadigan trigger va tekshiruvlarni chetlab o'tadi: shunda test ko'tarilmaydigan holatdan boshlanadi va yiqilish sababi noto'g'ri joyda izlanadi. Katta testda SUT ning o'z API si orqali yozish afzal.
+
+Yana ikki talab aytilgan. **Domen ma'lumotlari**: ba'zi bazalar jadvallariga oldindan to'ldirilgan va muhit konfiguratsiyasi bo'lib ishlaydigan yozuvlar bor, va ular berilmasa real servis binari ishga tushishda yiqiladi. **Realistik asos**: SUT realistik deb qabul qilinishi uchun boshlang'ich ma'lumot ham sifat, ham hajm bo'yicha ishonarli bo'lishi kerak (ijtimoiy tarmoq testi uchun realistik profil va o'zaro aloqalar bilan yetarli foydalanuvchi kerak).
+
+```java
+// Yomon: trigger va validatsiyani chetlab o'tadi
+jdbcTemplate.update("insert into orders(id, status) values (?, 'PENDING')", id);
+
+// Yaxshi: SUT ning o'z API si, real yo'l bilan
+OrderId id = orderClient.create(new CreateOrderRequest("SKU-1", 2)).id();
+```
+
 ## 10.11 Vaqtga bog'liq ma'lumot
 
 "Bugun" ga bog'langan test - kechiktirilgan nosozlik. `LocalDate.now()` ishlatgan kod oyning 31-kunida, yil oxirida yoki kun o'zgarishida boshqacha natija beradi.
@@ -477,6 +491,7 @@ Ma'lumotni bazada qo'lda SQL bilan tuzatish - zararli amaliyot: hech kim nima o'
 
 ## Manbalar
 
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 14-bob ("Test Data") - katta testda boshlang'ich ma'lumotni SUT ning o'z API si orqali yozish (bevosita ma'lumot omboriga yozish trigger va tekshiruvlarni chetlab o'tadi), domen ma'lumotlari va realistik asos talabi, qo'lda yozilgan, nusxa olingan va tanlab olingan ma'lumot farqi. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
 - [Spring Framework 7.0, Transaction Management in tests](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/testing/testcontext-framework/tx.adoc) - rollback ning default xulq ekani, `@Commit` va `@Rollback`, `TestTransaction` statik metodlari va `@Transactional` atributlari uchun qo'yilgan cheklovlar jadvali
 - [Spring Framework 7.0, Context Caching](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/testing/testcontext-framework/ctx-management/caching.adoc) - test ma'lumotini kontekst bilan birga keshlashning oqibatlari
 - [Testcontainers, Reusable Containers](https://raw.githubusercontent.com/testcontainers/testcontainers-java/9bb3c2dc175672ad33a2eafd7133212c7173ac43/docs/features/reuse.md) - reuse da ma'lumotning ham saqlanib qolishi

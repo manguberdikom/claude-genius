@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 8. Biznes logika va Service qatlam patternlari (Business & Service Layer Patterns)
 
@@ -58,6 +58,27 @@ Biznes logika va Service qatlam patternlari - ilovaning eng qimmatbaho qismi, ya
 - Prototip yoki MVP: domen hali noma'lum, ortiqcha abstraksiya zararli.
 
 **Ehtiyot bo'ling:** Biznes qoidalari o'sgach skriptlar o'rtasida logika copy-paste bo'lib ketadi va bitta qoidani o'zgartirish uchun o'nlab joyni tahrirlashga to'g'ri keladi. Murakkab, ko'p invariantli domen (sug'urta, narxlash, buxgalteriya) uchun ishlatmang - bunda Domain Model afzal.
+
+**Pragmatik bo'lish: izchillikni ongli ravishda yumshatish:**
+Transaction Script ning asosiy xavfi yarim bajarilgan amal, ya'ni
+ma'lumot buzilishi, shuning uchun qoida har bir amalni tranzaksiya
+ichiga olish va idempotent qilish. Lekin Khononov bitta istisnoni
+ochiq qoldiradi va u aynan shu bobda turadi: biznes ma'lumoti
+muhim va kod uning butunligini himoya qilishi kerak bo'lsa ham,
+pragmatik yondashuv ma'qulroq bo'ladigan holatlar bor. Ayniqsa
+yuqori masshtabda izchillik kafolatlarini yumshatish mumkin, va
+tekshirish savoli aniq: million yozuvdan bittasining holati
+buzilishi biznes uchun haqiqatan to'xtatuvchi muammomi va bu
+biznesning samaradorligi hamda foydasiga salbiy ta'sir qiladimi.
+Khononov ning misoli: kuniga milliardlab hodisani IoT
+qurilmalaridan qabul qiladigan tizimda hodisalarning 0.001 foizi
+takrorlanishi yoki yo'qolishi katta masalami. Shart esa ikki
+tomonga aytilgan: universal qonun yo'q, hammasi domenga bog'liq,
+va "burchakni kesish" mumkin bo'lgan joyda mumkin, faqat xavf va
+biznes oqibatlarini **baholab** bo'lishi kerak. Ya'ni bu qoida
+yumshatishga ruxsat emas, yumshatishni **ongli va hujjatlashtirilgan
+qaror** qilish talabi; tanlov yozilmagan bo'lsa, u yumshatish emas,
+e'tibordan chetda qolgan nuqson.
 
 ```java
 // Transaction Script: bitta amal, boshdan oxir protsedura
@@ -914,6 +935,8 @@ class WarehouseNotifier {
 
 **Ehtiyot bo'ling:** Maxsus holat xatoni jimgina yashirishi mumkin: agar yo'q mijoz haqiqatda bug bo'lsa, nol chegirma exception'dan ko'ra qimmatga tushadi, shuning uchun pul va buxgalteriya oqimlarida uni ehtiyot bilan qo'llang va holatni log yoki metrikada belgilang. Chaqiruvchi holatni ajratishi shart bo'lsa, maxsus holat emas, `Optional` yoki natija obyekti (8.19) to'g'ri keladi. Kitobning mexanikasi eskirgan: misol C# da `INull` marker interfeysi va `isNull` metodi bilan yozilgan, bugungi Java'da `sealed` ierarxiya aniqroq va kompilyator to'liqlikni o'zi tekshiradi. Holatsiz maxsus holatni har marta yangilab yaratmang: kitob aytganidek, bitta nusxa (flyweight) yetadi.
 
+Tashqi API javobini maxsus holatga aylantirganda mapping yo'nalishini to'g'ri tanlang, chunki ikki yo'nalishning xato rejimi bir xil emas. Allowlist: faqat ataylab sanab chiqilgan kodlar muvaffaqiyat deb olinadi, qolgani xato. Blocklist: sanab chiqilgan kodlar xato, qolgani muvaffaqiyat. Blocklist xavfliroq, chunki provayder keyingi versiyada yangi xato kodi qo'shsa, u sizning kodingizda muvaffaqiyat deb o'qiladi va noto'g'ri natija jim tarqaladi; allowlist da esa o'sha yangi kod xato bo'lib chiqadi va siz uni ko'rib, ataylab qaror qilasiz. Shuning uchun javob kodini muvaffaqiyat yoki xatoga aylantirish allowlist bilan yoziladi, va ro'yxatga tushmagan noma'lum kod umumiy `null` emas, aniq nomlangan maxsus holatga (`UnknownProviderOutcome`) o'giriladi.
+
 ```java
 public sealed interface Customer permits RegisteredCustomer, MissingCustomer {
     String displayName();
@@ -947,6 +970,13 @@ public enum MissingCustomer implements Customer {
 
 ## Manbalar
 
+- Vlad Khononov, *Learning Domain-Driven Design*, O'Reilly, 2021,
+  5-bob (72), "Be Pragmatic" - 8.1 dagi yuqori masshtabda izchillik
+  kafolatlarini yumshatish mumkinligi, million yozuvdan bittasining
+  buzilishi biznes uchun to'xtatuvchi muammomi degan tekshirish
+  savoli, kuniga milliardlab IoT hodisasi va 0.001 foiz misoli hamda
+  xavf va biznes oqibatlarini baholash talabi
+
 - [spring-framework, `JdbcClient.java`](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/spring-jdbc/src/main/java/org/springframework/jdbc/core/simple/JdbcClient.java) - `@since 6.1`
 - [spring-framework, `ApplicationEventPublisher.java`](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/spring-context/src/main/java/org/springframework/context/ApplicationEventPublisher.java) - `publishEvent(Object)` `@since 4.2`
 - [JEP 441: Pattern Matching for switch](https://openjdk.org/jeps/441) - Java 21 da yakuniy holat; `javac --release 17` "patterns in switch statements are not supported in -source 17" deydi
@@ -954,6 +984,8 @@ public enum MissingCustomer implements Customer {
 - Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 18-bob (496-498) - Special Case ta'rifi, Missing va Unknown holatlarini ajratish hamda Null Object ni Special Case ning xususiy holi deb hisoblash (8.27)
 - Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 2-bob (31) - controller-entity style nomi va uning Jacobson ta'sirida tarqalishi, use-case controller atamasining MVC controller idan farqi, Transaction Script tufayli takroriy kod xavfi va "domen modeli tanlangan bo'lsa uni dominant qilish kerak" pozitsiyasi (8.15)
 - Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 5-bob (72) - request transaction, long transaction va late transaction nomlari, late transaction ning liveness foydasi, nomuvofiq o'qish narxi va uni faqat og'ir contention da qo'llash tavsiyasi (8.17)
+- Gergely Orosz, *The Software Engineer's Guidebook*, 2023, 8-bob (120-bet) - tashqi API javob kodini muvaffaqiyat yoki xatoga aylantirishda allowlist (faqat sanalganlari muvaffaqiyat) blocklist dan xavfsizroq ekani: blocklist da provayder qo'shgan yangi xato kodi muvaffaqiyat deb o'qiladi (8.27)
+- ESLATMA: Orosz kitobining shu korpusdagi nusxasi skanerlangan PDF va undan matn chiqarib bo'lmaydi, shuning uchun yuqoridagi bet raqami avvalgi auditdan olingan va qayta tekshirilmagan; qoidaning mazmuni esa korpusda mustaqil tekshiriladigan shaklda yozilgan
 
 ---
 

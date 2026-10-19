@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 5. Abstraksiya hissi, bog'liqlik va chegaralar (Abstraction, Coupling and Boundaries)
 
 <details>
-<summary>Bu bobdagi 16 bo'lim</summary>
+<summary>Bu bobdagi 23 bo'lim</summary>
 
 - [5.1 Abstraksiya nima uchun qo'yiladi: o'zgarishni bitta joyga to'plash](#51-abstraksiya-nima-uchun-qoyiladi-ozgarishni-bitta-joyga-toplash)
 - [5.2 Erta abstraksiya va takrorlanish: qaysi biri arzonroq](#52-erta-abstraksiya-va-takrorlanish-qaysi-biri-arzonroq)
@@ -24,7 +24,14 @@
 - [5.13 Ajratish rejimi: manba, deploy va servis darajasi](#513-ajratish-rejimi-manba-deploy-va-servis-darajasi)
 - [5.14 Temporal dekompozitsiya: tartib bo'yicha bo'lish va uning qizil bayrog'i](#514-temporal-dekompozitsiya-tartib-boyicha-bolish-va-uning-qizil-bayrogi)
 - [5.15 Yuqoridan pastga va pastdan yuqoriga: bog'liqlik grafi loyihalanmaydi, o'sadi](#515-yuqoridan-pastga-va-pastdan-yuqoriga-bogliqlik-grafi-loyihalanmaydi-osadi)
-- [5.16 Amalda qo'llash](#516-amalda-qollash)
+- [5.16 Umumiy egalik: ko'p servis yozadigan jadvalga yagona ega](#516-umumiy-egalik-kop-servis-yozadigan-jadvalga-yagona-ega)
+- [5.17 Birgalikda egalik: bitta jadvalga ikki yozuvchi va to'rt yechim](#517-birgalikda-egalik-bitta-jadvalga-ikki-yozuvchi-va-tort-yechim)
+- [5.18 Bazani bo'lish sabablari: oltita disintegrator va ikkita integrator](#518-bazani-bolish-sabablari-oltita-disintegrator-va-ikkita-integrator)
+- [5.19 O'tkazuvchi bog'liqlik: pastdagi servis uchun uzatilgan ma'lumot](#519-otkazuvchi-bogliqlik-pastdagi-servis-uchun-uzatilgan-malumot)
+- [5.20 Cheklov yo'naltiruvchi sifatida: foydasi va kiritish tartibi](#520-cheklov-yonaltiruvchi-sifatida-foydasi-va-kiritish-tartibi)
+- [5.21 Har darajada hikoya: ierarxiya, element soni va domen otlari](#521-har-darajada-hikoya-ierarxiya-element-soni-va-domen-otlari)
+- [5.22 Dekompozitsiya strategiyasini ongli tanlash: katalog va ADD](#522-dekompozitsiya-strategiyasini-ongli-tanlash-katalog-va-add)
+- [5.23 Amalda qo'llash](#523-amalda-qollash)
 
 </details>
 
@@ -65,6 +72,8 @@ Bu evristikaning kitobdagi nomi bor va u review da ishlatishga qulay. *Code Comp
 Ikki xato bir xil og'ir emas. Takrorlangan kodni birlashtirish mexanik ish: IDE refaktoringi bilan bajariladi va natijasi testlar bilan tekshiriladi. Noto'g'ri abstraksiyani yechish esa chaqiruvchilar zanjirini buzadi, chunki hamma allaqachon o'sha interfeysga suyangan. Shuning uchun amaliy qoida: shubha bo'lsa takrorlashni tanla.
 
 Takrorlanishning o'zi ham bir xil emas, va ajratish mezoni *Clean Architecture* ning Umumiy Yopilish Printsipidan (Common Closure Principle) chiqadi: bir xil sabablardan va bir vaqtda o'zgaradigan sinflar bitta komponentga yig'iladi, boshqa vaqtda va boshqa sabablardan o'zgaradiganlari esa ajratiladi. Demak tekshirish savoli kodning o'xshashligi emas, o'zgarish sababi: "bu ikki joy bir xil sababdan va bir vaqtda o'zgaradimi?". Javob "yo'q" bo'lsa, kod hozir o'xshash bo'lsa ham qo'shilmaydi. Javob "ha" bo'lsa, ya'ni bitta biznes qoidasi ikki joyda yozilgan bo'lsa, birlashtirmaslik xatolikka olib keladi; Ousterhout da bunday takrorlanish alohida qizil bayroq - bir xil kod qayta-qayta uchrasa, to'g'ri abstraksiya hali topilmagan.
+
+Ikki variant orasida tanlashning ikkinchi o'qi ham shu kitobdan keladi va u "hozir kerakmi" savolidan mustaqil. Fowler dizayn variantini tanlashda refaktoringni oldindan tasavvur qilishni maslahat beradi: bir dizayndan ikkinchisiga keyin o'tish oson bo'lsa eng soddasini oling, oson bo'lmasa dizaynga hozir ko'proq kuch sarflang (Martin Fowler, *Refactoring: Improving the Design of Existing Code*, 1-nashr, Addison-Wesley, 1999, 2-bob, 57-bet). Mezoni arzon, chunki u hech qanday o'lchov talab qilmaydi: "bu qarorni teskari qilish uchun qancha fayl va qancha chaqiruvchi o'zgaradi" degan savolga javob bir necha daqiqada topiladi. Natija esa yuqoridagi qoidaga ziddiyatsiz qo'shiladi: takrorlash arzon bo'lgani uchun soddani olasiz, lekin keyin o'tish qimmat bo'lgan joyda (tranzaksiya chegarasi, wire formati, ID strategiyasi) soddalik yetarli dalil emas. Shu ikkinchi guruhning to'liq ro'yxati [qaytarib bo'lmaydigan qarorlar](01-arxitektorning-fikrlash-modeli.md#15-qaytarib-boladigan-va-qaytarib-bolmaydigan-qarorlar) bo'limida.
 
 Sanoq bo'yicha chegara ham bor va u o'ylab topilgan emas: Fowler *Refactoring* da buni "uchlik qoidasi" deb ataydi (qoidani unga Don Roberts bergan) - birinchi marta shunchaki qilasiz, ikkinchi marta takrorlanishdan noqulay bo'lsangiz ham takrorlaysiz, uchinchi marta refaktoring qilasiz. Ousterhout boshqa tomondan chegara qo'yadi: yangi modulni "birmuncha umumiy" qilish kerak, ya'ni funksionallik hozirgi ehtiyojni aks ettirsin, lekin interfeys unga qotib qolmasin, va "birmuncha" so'zi muhim - juda umumiy qilib qo'yilgan narsa hozirgi ehtiyoj uchun noqulay bo'ladi. Spring loyihalarida yana bitta signal bor: agar bir xil `@Transactional` + repository + mapping ketma-ketligi uch xil servisda takrorlansa, u yerda yashirin domen amali turgan bo'ladi.
 
@@ -120,12 +129,33 @@ Quyidagi jadval shu ikki o'qni Spring loyihasida uchraydigan to'rtta amaliy hola
 | Vaqt | Sinxron zanjir bir necha servisdan o'tadi, javob kutiladi | Event yoki outbox, kutish shart bo'lsa timeout va fallback | Dinamik bog'liqlik: sinxron aloqa |
 | Joylashuv | URL va port kodda yozilgan | Config, discovery, abstraksiyalangan client | Statik bog'liqlik: operatsion bog'liqlik |
 | Sxema egaligi | Ikki servis bitta jadvalga yozadi | Egalik bitta servisga, qolganlarga API yoki view | Birgalikda egalik (joint ownership) |
+| O'tkazuvchi ma'lumot | Shartnomada chaqiruvchi o'zi o'qimaydigan, faqat pastdagi servisga keraklik maydon turadi | Oraliq servis o'z tilida so'rab, pastdagi shartnomani o'zi yasaydi | O'tkazuvchi bog'liqlik (pass-through coupling) |
 
-Ikki holat alohida izoh talab qiladi. Ma'lumot shakli bo'yicha bog'liqlikning narxini *Clean Architecture* ning interfeys ajratish bobi bitta gapda aytadi: sizga kerak bo'lmagan yukni ko'tarib yurgan narsaga bog'lanish kutilmagan muammo keltiradi, chunki o'sha keraksiz qismdagi o'zgarish ham sizni qayta deploy qilishga majbur qiladi. Sxema bo'yicha bog'liqlik esa eng og'iri: ikki servis bitta jadvalga yozsa, hech qanday kod refaktoringi yordam bermaydi, chunki bog'liqlik ma'lumotlar bazasi darajasida (yechimi 5.9 da).
+Ikki holat alohida izoh talab qiladi. Ma'lumot shakli bo'yicha bog'liqlikning narxini *Clean Architecture* ning interfeys ajratish bobi bitta gapda aytadi: sizga kerak bo'lmagan yukni ko'tarib yurgan narsaga bog'lanish kutilmagan muammo keltiradi, chunki o'sha keraksiz qismdagi o'zgarish ham sizni qayta deploy qilishga majbur qiladi. Sxema bo'yicha bog'liqlik esa eng og'iri: ikki servis bitta jadvalga yozsa, hech qanday kod refaktoringi yordam bermaydi, chunki bog'liqlik ma'lumotlar bazasi darajasida (yechimi 5.9 da). O'tkazuvchi bog'liqlikning o'z yozuvi [o'tkazuvchi bog'liqlik](#519-otkazuvchi-bogliqlik-pastdagi-servis-uchun-uzatilgan-malumot) bo'limida.
+
+Taksonomiya ro'yxat bo'lib qolmasligi uchun *Fundamentals of Software Architecture* connascence ga uch xossa va uchta qoida qo'shadi. Xossalar bitta bahsni tugatadi: "bu yomon bog'liqlikmi" degan savol kontekstdan ajralib javob bermaydi.
+
+- **Kuch (strength).** Connascence kuchi uni refaktoring qilish qanchalik osonligi bilan o'lchanadi, ya'ni turlar o'zaro teng emas va bir turdan boshqasiga ongli o'tish mumkin. Kitobning aniq tavsiyasi: statik connascence ni dinamikdan afzal ko'r, chunki statikni oddiy manba kodi tahlili topadi va zamonaviy asboblar uni yaxshilashni arzonlashtiradi. Amaliy harakat ham nomlangan: ma'no bo'yicha connascence ni nom bo'yicha connascence ga aylantirish, ya'ni sehrli qiymat o'rniga nomlangan konstanta qo'yish.
+- **Yaqinlik (locality).** Bir xil shakl ikki sinf bitta komponentda bo'lsa, ikki alohida komponentda bo'lganidan kam zarar qiladi. Shuning uchun kuch va yaqinlik birga baholanadi: modul ichidagi kuchli shakl modullar orasiga tarqalgan o'sha shakldan kichik hid.
+- **Daraja (degree).** Ta'sir bir nechta sinfgami yoki ko'piga: kichik daraja kam zarar beradi. Kitobning ogohlantirishi shu yerda: kod bazasi o'sishga moyil, shuning uchun bugun kichik ko'ringan muammo mutanosib ravishda kattalashadi.
+
+Page-Jones ning modullilikni yaxshilash uchun bergan uch qoidasi shu xossalardan chiqadi va ular aynan chegara haqida: tizimni inkapsulyatsiyalangan elementlarga bo'lib umumiy connascence ni kamaytir; inkapsulyatsiya chegarasini kesib o'tadigan connascence ni minimallashtir; chegara ichidagi connascence ni maksimallashtir. Uchinchi qoida ko'pincha noto'g'ri o'qiladi: modul ichida qattiq bog'lanish ayb emas, maqsad ham shu, faqat u chegaradan chiqmasin.
+
+Servis darajasida bir belgi alohida ahamiyatli. Newman domen bog'liqligini (bir servis boshqasining funksionalligiga muhtoj bo'lishi) yengil shakl deb hisoblaydi va mikroservis arxitekturasida uni deyarli muqarrar deb ataydi, lekin minimumda ushlashni aytadi. Ogohlantirish aniq: bitta servis bir nechta quyi servisga bog'langan bo'lsa, bu o'sha servis juda ko'p ish qilayotgani yoki mantiq bir joyga markazlashib ketganiga ishora. Ya'ni uzun chaqiruv zanjiri ([5.10](#510-chegara-notogri-qoyilganini-bildiradigan-belgilar)) bilan bir qatorda tarmoqlanish kengligi ham chegara xatosining ko'rsatkichi.
 
 ## 5.5 Koheziya: nima birga o'zgarsa, birga tursin
 
 Koheziya bog'liqlikning teskari tomoni emas, uning sherigi. *Fundamentals of Software Architecture* koheziyani "modul qismlari bir-biriga qanchalik bog'liq" sifatida ta'riflaydi va uning darajalarini eng yaxshisidan eng yomoniga sanab beradi: funksional, ketma-ket, kommunikatsion, protsedural, vaqtga bog'liq, mantiqiy va tasodifiy koheziya. Kitob shu yerda halol ogohlantirish beradi: koheziya bog'liqlikka qaraganda kamroq aniq o'lchov, va modulning koheziya darajasini baholash ko'p holda arxitektorning qaroriga qoladi. Shu sababli amalda ishlaydigan mezon *Clean Architecture* ning Umumiy Yopilish Printsipi bo'ladi: bitta sababdan va bitta vaqtda o'zgaradigan kod bitta joyda turadi. Spring loyihalarida eng keng tarqalgan xato texnik qatlamlar bo'yicha paketlash: `controller`, `service`, `repository`, `dto`. Bu ko'rinishda chiroyli, lekin har bir biznes o'zgarishi to'rt paketga tegadi, demak koheziya past. Mantiqiy koheziyaning kanonik misoli ham shu kitobda bor va u Java dasturchisiga tanish: `StringUtils` kabi paket, ya'ni bir tipda ishlaydigan, lekin bir-biriga aloqasi yo'q statik metodlar to'plami.
+
+Koheziya subyektiv bo'lgani uchun kitob qarorni uchta savolga aylantiradi va misolni ham beradi: `Customer Maintenance` moduli `add customer`, `update customer`, `get customer`, `notify customer` bilan birga `get customer orders` va `cancel customer orders` ni ham ushlab turadi, ya'ni oxirgi ikkitasini alohida `Order Maintenance` ga chiqarish kerakmi degan savol tug'iladi. Javob uch savoldan chiqadi.
+
+- Ikkinchi modulda **faqat shu ikki amal** bo'ladimi? Shunday bo'lsa, ularni birinchi modulga qaytarib yig'ish mantiqli: ikki metodli modul chegara emas.
+- Birinchi modul **ancha kattalashishi** kutiladimi? Kutilsa, bu dasturchini xatti-harakatni ajratish imkoniyatini qidirishga undaydi, ya'ni ajratish foydasi o'sadi.
+- Ajratilgan ikkinchi modul birinchisi haqida **shunchalik ko'p bilim** talab qiladimi, ishlashi uchun kuchli bog'lanish kerak bo'lib qolsinmi? Kerak bo'lsa, ajratish koheziyani emas, bog'liqlikni oshiradi.
+
+Uchinchi savol eng muhimi, chunki u ikki o'lchovni bir qarorda uchrashtiradi: chegara koheziyani oshirsa ham, chegaradan o'tadigan bilim hajmi oshsa, umumiy natija yomonlashadi.
+
+Strukturaviy tomonda bitta metrika yordam beradi. *Fundamentals of Software Architecture* Chidamber va Kemerer to'plamidagi LCOM (Lack of Cohesion in Methods) metrikasini keltiradi; kitobning tushunarli ta'rifi formula emas, bitta jumla: maydonlarni bo'lishish orqali bog'lanmagan metod to'plamlari yig'indisi. Amalda bu shunday ko'rinadi: sinfda `a` va `b` maydonlari bor, metodlarning bir qismi faqat `a` ga, qolgani faqat `b` ga tegadi, demak LCOM yuqori va sinf ikkiga bo'linsa xatti-harakat umuman o'zgarmaydi. Kitob metrikaning foydasini aniq joyga qo'yadi: bir arxitektura uslubidan boshqasiga o'tayotgan arxitektor uchun umumiy utility sinflari eng ko'p bosh og'rig'i beradi, va LCOM aynan tasodifiy bog'langan, boshidan bitta sinf bo'lmasligi kerak bo'lgan sinflarni topadi. Cheklov ham shu yerda yozilgan: LCOM faqat strukturaviy koheziya yo'qligini ko'radi, bo'laklar mantiqan birga turishi kerakmi degan savolga javob bera olmaydi. Shuning uchun uni yuqoridagi uch savolning o'rniga emas, ularga nomzod topuvchi sifatida ishlatish kerak.
 
 Alternativa: xususiyat bo'yicha paketlash. `order`, `payment`, `inventory`, `reporting`. Har birining ichida o'z controller, servis va repository turadi. Bunda "buyurtmani bekor qilish" talabi bitta paket ichida bajariladi. Qo'shimcha foyda: paket darajasida ko'rinishni cheklash mumkin bo'ladi, chunki sinflarning ko'pchiligi `public` bo'lishi shart emas.
 
@@ -174,6 +204,10 @@ Birinchi buyruq o'zgarish zichligini beradi. Ikkinchisi birga o'zgaradigan fayll
 
 Yana bitta tuzatish kerak: chegara bitta chiziq emas. *Clean Architecture* ning "qatlamlar va chegaralar" bobi buni sodda o'yin misolida ko'rsatadi. Boshida ma'lumot oqimi ikkiga bo'linadi, bir tomoni foydalanuvchi bilan muloqot, ikkinchi tomoni saqlash, va ikkisi yuqorida o'yin qoidalarida uchrashadi. Tarmoq komponenti qo'shilsa oqim uchga bo'linadi, va kitob shu yerda "oqimlar bir-birini kesib o'tadi" degan xulosaga keladi: tizim murakkablashgani sayin komponent tuzilishi bir nechta bunday oqimga bo'linib ketadi. Keyin oqimlarning o'zi ham bo'linadi: o'yin qoidalari ichida xarita mexanikasi va o'yinchi holatini boshqarish ikki xil darajadagi siyosat bo'lib chiqadi, va ikkisi o'rtasida yana to'laqonli chegara paydo bo'ladi. Amaliy natija: "chegara qatlamlar o'rtasida o'tadi" degan tasvir yetarli emas, chegaralar bir necha o'lchovda bir vaqtda turadi. Shuning uchun qaror bir martalik ham emas; kitobning o'z formulasi shunday - arxitektor tizim o'sishini kuzatib turadi va chegarani aynan egilish nuqtasida qo'yadi, ya'ni uni qurish narxi uni qo'ymaslik narxidan arzonlashgan paytda.
 
+Chegara faqat modul yoki servis atrofida bo'lishi shart emas. Newman servis chegarasidan yirikroq birlikni ham chegara deb belgilashni tavsiya qiladi: masalan marketing jamoasining mas'uliyatiga tushadigan servislar guruhi bitta zona bo'ladi. Zona ichida kelishilgan tashqi xulq saqlansa, istalgan o'zgarish erkin kiritiladi; zonalar orasidagi o'zaro ta'sirni o'zgartirish esa ancha qimmat, chunki unda boshqa jamoalar bilan muvofiqlashish bor. Bu axborotni yashirishni servis darajasidan jamoa darajasiga ko'taradi va natijasi team API deb ataladi. Zonani qayerdan o'tkazish uchun arzon ko'rsatkich bor: jamoa tuzilmasi qiyin o'zgaradigan narsalar qatoriga kiradi, shuning uchun mavjud jamoa chegarasi zona nomzodini o'zi ko'rsatib turadi. Jamoa va arxitektura munosabatining to'liq yozuvi [36-bobda](36-code-review-va-jamoada-texnik-yetakchilik.md).
+
+Shu o'rinda bitta keng tarqalgan xatoni to'g'rilash kerak: chegarani qayta foydalanish maqsadida qo'yish. *The Hard Parts* ning formulasi qisqa: qayta foydalanish abstraksiyadan keladi, lekin uni ishga soladigan narsa o'zgarish tezligining pastligi. Operatsion tizim va tashqi ochiq kutubxonalar yaxshi bog'lanish nishoni, chunki ularning o'zgarish tezligi va yangilanish ritmi ma'lum; ichki domen qobiliyati yoki tez o'zgaradigan texnik freymvork esa yomon nishon. Kitobning misoli to'g'ridan to'g'ri shu bobga tegishli: kompaniyadagi hamma bo'limning mijoz haqidagi qarashini bitta markaziy `Customer` servisiga yig'ish mantiqli ko'rinadi, lekin natija ikki tomondan buziladi. Birinchisi, yagona joyda turgan entity har qanday domen va ssenariyni ko'tarishi uchun shunchalik murakkab bo'lishi kerak, oqibatda oddiy ish uchun ham noqulay bo'ladi. Ikkinchisi, u arxitekturani mo'rt qiladi: `CustomerService` bitta domen uchun yangi qobiliyat qo'shsa, o'zgarish qolgan hamma domenga urilib, muvofiqlashish va qayta testlash talab qiladi. Ya'ni "mijoz bitta bo'lsin" degan mezon chegara mezoni emas; mezon avvalgidek o'zgarish tezligi va egalik bo'lib qoladi.
+
 ## 5.7 Interfeys kimga tegishli: foydalanuvchi tomonda e'lon qilish
 
 Klassik xato: interfeys implementatsiya bilan bir paketda turadi. Bunda interfeys "men nimani taklif qilaman" degan ma'noni beradi. To'g'ri yondashuv teskari: interfeysni muhtoj tomon e'lon qiladi va unda "menga nima kerak" yoziladi. Shunda interfeys ehtiyoj bilan o'zgaradi, provayder bilan emas. Buning ortida ikki printsip turadi va ikkisi ham *Clean Architecture* da yozilgan: bog'liqlikni teskari aylantirish printsipi (DIP) manba kodidagi bog'liqlik faqat abstraksiyalarga ishora qilishini talab qiladi va "o'zgaruvchan konkret sinfga bog'lanmang" degan aniq amaliy qoidani beradi; interfeys ajratish printsipi (ISP) esa iste'molchini o'ziga kerak bo'lmagan narsaga bog'lamaslikni aytadi. Printsiplarning to'liq yozuvi [patterns 26](../patterns/26-dizayn-printsiplari-solid-grasp-va-umumiy.md#261-yagona-javobgarlik-printsipi-single-responsibility-principle) da; bu yerda faqat ularning joylashuv natijasi muhim.
@@ -208,6 +242,40 @@ class AcmeAuthorizerAdapter implements PaymentAuthorizer {
 ```
 
 Bu joylashuvning yana bir foydasi bor: bog'liqlik yo'nalishi avtomatik to'g'ri bo'lib qoladi. `payment.acme` paketi `order.spi` paketini biladi, teskarisi yo'q. *Clean Architecture* buning sababini ham aytadi: interfeysga qilingan har bir o'zgarish implementatsiyani ham o'zgartiradi, lekin implementatsiyadagi o'zgarish interfeysni odatda o'zgartirmaydi, demak interfeys implementatsiyadan kamroq o'zgaradi va unga bog'lanish xavfsizroq. Spring konteyner `PaymentAuthorizer` ni inyeksiya qilganda implementatsiya qaysi paketda ekani ahamiyatsiz, chunki bog'lanish tip bo'yicha amalga oshadi.
+
+Interfeys bilan birga ikkinchi, odatda unutiladigan narsa ham almashtiriladigan bo'lishi kerak: aloqa usulining o'zi. Fairbanks buni connector deb ataydi va savolni aniq qo'yadi: komponentni interfeysi bo'yicha almashtirish mumkin bo'lgani kabi, quvurni (pipe) event bus ga almashtirish ham mijozga tegmasligi kerak. Arxitektura modelida javob "ha", lekin kodga o'girilganda bu xossa yo'qoladi: komponentni amalga oshiradigan kod odatda interfeys e'lon qiladi va mijoz shu interfeysga tayanadi, connector ni amalga oshiradigan kod esa kamdan kam interfeys e'lon qiladi, natijada mijoz aniq implementatsiyaga bog'lanib qoladi, ya'ni o'zining event bus ga qo'yayotganini yoki masofaviy chaqiruv qilayotganini biladi. Kitob buni ongli tanlov deb qoldiradi: ba'zan mijozning masofaviy chaqiruv qilayotganini bilishi xato ishlovini yaxshilaydi. Lekin asosiy tavsiya boshqa yo'nalishda: bugun alohida turgan tizim ertaga kattaroq tizimga integratsiya qilinadi, shuning uchun komponentlar orasidagi aloqa uchun connector ni birinchi darajali va almashtiriladigan qilish arzon va unumli, hamda ishlashga sezilarli ta'sir qilmaydi. Komponent ichidagi aloqa bundan ta'sirlanmaydi, qoida faqat chegaradan o'tadigan aloqaga tegishli.
+
+```java
+// Buyurtma moduli xabarni qanday yuborishini bilmaydi: bu connector interfeysi.
+public interface OrderEventPublisher {
+    void publish(OrderCancelled event);
+}
+
+// Bugungi implementatsiya: Spring ning ichki event bus i.
+@Component
+class LocalOrderEventPublisher implements OrderEventPublisher {
+
+    private final ApplicationEventPublisher delegate;
+
+    @Override
+    public void publish(OrderCancelled event) {
+        delegate.publishEvent(event);
+    }
+}
+
+// Ertaga Kafka ga o'tilsa faqat shu sinf qo'shiladi, buyurtma moduli o'zgarmaydi.
+@Component
+@Primary
+class KafkaOrderEventPublisher implements OrderEventPublisher {
+
+    private final KafkaTemplate<String, OrderCancelled> kafka;
+
+    @Override
+    public void publish(OrderCancelled event) {
+        kafka.send("order.cancelled", event.orderId().value(), event);
+    }
+}
+```
 
 ## 5.8 Bog'liqlik yo'nalishini boshqarish: ichki qatlam tashqarini bilmasin
 
@@ -285,6 +353,10 @@ spring:
 ```
 
 Pool o'lchami ham chegara masalasi. Har bir servis o'z pooliga ega bo'lishi kerak, chunki umumiy pool bir servisning sekin so'rovini boshqasining muammosiga aylantiradi. Yuqoridagi qiymatlar misol: instance soni va har biridagi pool ko'paytmasi serverning `max_connections` chegarasidan past bo'lishi va replikatsiya hamda admin ulanishlari uchun zaxira qoldirishi kerak (4.5 dagi hisob bilan bir xil mantiq). Pool to'lib qolsa `connection-timeout` cheksiz kutish o'rniga xato qaytaradi, va bu afzal. Bu paragrafdagi sozlash tavsiyasi shu korpusning amaliy qoidasi, yuqoridagi kitoblardan olingan emas.
+
+Qoidaning yozilmagan tomoni ham bor: egasi bo'lmagan ma'lumotni **o'qish** kerak bo'lsa nima qilinadi. *The Hard Parts* bu uchun bir necha yo'lni ketma-ket sanaydi va umumiy sxemani (ma'lumot domeni) oxirgi yo'l qilib qo'yadi. Tartib shunday o'qiladi: servislararo chaqiruv ishonchlilik va kechikish sababli yaramasa, ustunni replikatsiya qilish ma'lumot izchilligi talabi sababli yaramasa, replikatsiyalangan kesh ma'lumot hajmi sababli yaramasa, qolgan yechim ikki servisning jadvallarini bitta umumiy sxemaga qo'yish bo'ladi.
+
+Narxi aniq va u ikki tomonli. Foydasi: servislar bir-biridan butunlay ajraladi, mavjudlik va javob tezligi bog'liqligi yo'qoladi, ma'lumotni uzatish, replikatsiya qilish yoki sinxronlashtirish kerak emas, jadvallar orasida tashqi kalit cheklovi hamda view va trigger kabi baza vositalari ishlashda qoladi, va o'qish oddiy SQL `JOIN` ga aylanadi. Kamchiligi: jadval sxemasi shartnomaga aylanadi, chunki abstraksiya qatlami yo'q, demak domen ichidagi istalgan jadval tuzilishi o'zgarsa bir nechta servisni o'zgartirish kerak bo'lishi mumkin; bounded context kengayadi; va xavfsizlik riski paydo bo'ladi, chunki sxemaga ulangan servis undagi barcha ma'lumotga kirish huquqini oladi, holbuki ba'zi ma'lumotga uning kirishi kerak emas. Shuning uchun bu yo'lni tanlash chegarani qayta baholash sharti bilan boradi ([5.17](#517-birgalikda-egalik-bitta-jadvalga-ikki-yozuvchi-va-tort-yechim) dagi to'rt yechim jadvali shu qarorning kengaytirilgan shakli).
 
 ## 5.10 Chegara noto'g'ri qo'yilganini bildiradigan belgilar
 
@@ -410,6 +482,8 @@ public class OrderPlacement {
 
 Amaliy xulosa: monolitdan boshqa deyarli hamma tizim bir vaqtda bir nechta rejimni ishlatadi, shuning uchun savol "biz monolitmi yoki mikroservismi" emas, "qaysi chegara qaysi rejimda" bo'ladi. Rejim ham, uni ko'tarish signali ham 5.11 dagi ADR yozuvining bir qatori, operatsion narxi esa [6.8](06-murakkablikni-boshqarish.md#68-servislar-soni-va-operatsion-murakkablik-narxi) da hisoblangan.
 
+Oxirgi qoida rejim tanlovining ustiga qo'yiladi: konfiguratsiyani ish vaqtida o'zgartiradigan dizayndan iloji boricha qochish kerak. Fairbanks sababini ikki qatorda beradi va ikkisi ham tahlilga tegishli. Birinchisi, statik arxitekturani dasturchi osonroq tushunadi, bu esa yaxshiroq modifiability va kamroq xatoga olib keladi. Ikkinchisi, statik arxitekturani sifat atributlari bo'yicha tahlil qilish osonroq: bitta barqaror konfiguratsiyani tekshirish ish vaqtida yuzaga keladigan barcha konfiguratsiyalarni tekshirishdan arzon. Muammoning tabiati majbur qilgan holatlar bor (peer-to-peer tizim, komponentni dinamik yuklaydigan freymvork), lekin unda arxitektor empirik ma'lumot va asbob kam bo'lgan hududda ishlayotganini bilishi kerak. Qo'shimcha eslatma: ko'p tizim komponent konfiguratsiyasini faqat ishga tushish va o'chish paytida o'zgartiradi, qolgan vaqtda barqaror turadi, va diagramma odatda shu barqaror holatni ko'rsatadi; bu soddalashtirish ekanini unutish startup va shutdown dinamikasida xato keltiradi. Konfiguratsiyani bajariladigan koddan deklarativ faylga chiqarish mantiqi ham shundan chiqadi va uning yozuvi [6.4](06-murakkablikni-boshqarish.md#64-konfiguratsiya-murakkabligi-har-bir-flag-kelajakdagi-xato) da.
+
 ## 5.14 Temporal dekompozitsiya: tartib bo'yicha bo'lish va uning qizil bayrog'i
 
 [4.8](04-kod-muloqot-vositasi-nomlash-aniqlik.md#48-paket-tuzilishi-xususiyat-boyicha-bolish) paket tuzilishi uchun ikki variantni qarama-qarshi qo'yadi: qatlam bo'yicha va xususiyat bo'yicha. Amalda uchinchi variant ham uchraydi va u ikkisidan ham xavfliroq, chunki xususiyat bo'yicha bo'lishga o'xshab ko'rinadi. Ousterhout uni temporal dekompozitsiya deb ataydi: tizimning tuzilishi amallar bajarilish vaqti tartibiga mos qilib qo'yiladi.
@@ -459,7 +533,273 @@ Lekin bir narsa yuqoridan pastga loyihalanmaydi, va *Clean Architecture* buni ke
 
 ESLATMA, shu korpusning amaliy tarjimasi: birinchi hafta mahsuloti modul diagrammasi emas, chegara nomzodlari ro'yxati va ularni tasdiqlaydigan o'lchov bo'ladi ([5.6](#56-modul-chegarasini-qayerdan-otkazish-ozgarish-tezligi-va-egalik-boyicha) dagi git buyruqlari shu uchun). Diagramma kodda chegara paydo bo'lgandan keyin yoziladi, ArchUnit qoidasi esa chegara haqiqatan mavjud bo'lganda qo'shiladi, aks holda qoida hali bo'lmagan narsani qotirib qo'yadi.
 
-## 5.16 Amalda qo'llash
+## 5.16 Umumiy egalik: ko'p servis yozadigan jadvalga yagona ega
+
+[Sxema chegarasi](#59-sxema-chegarasi-boshqa-servisning-jadvaliga-tegmaslik-qoidasi) bo'limidagi qoida sodda holatda yetadi: jadvalga yozadigan servis uning egasi. Umumiy egalik (common ownership) shu qoidani buzadigan birinchi holat, ya'ni ko'pchilik yoki hamma servis bitta jadvalga yozadi. *The Hard Parts* ning misoli audit jadvali: wishlist, katalog va ombor servislari foydalanuvchi bajargan amalni shu bitta jadvalga yozadi. Kitob darhol eslatadi, misolda uch servis bor, haqiqiy tizimda esa bunday jadvalga yuzlab yoki minglab servis yozishi mumkin, shuning uchun jadvalning egasini aniqlash umuman mumkin bo'lmaydi (Neal Ford va boshqalar, *Software Architecture: The Hard Parts*, 1-nashr, O'Reilly, 2021, 9-bob, 252-bet).
+
+Eng oson ko'rinadigan yechim xato. Jadvalni umumiy bazaga yoki umumiy sxemaga qo'yib, hamma servisga yozish huquqini berish ma'lumotni bo'lishishning hamma muammosini qaytarib keltiradi: o'zgarish nazorati, ulanishlarning qurib qolishi, masshtab va nosozlikka chidamlilik (9-bob, 252-bet). Shu sabablarning to'liq ro'yxati [bazani bo'lish sabablari](#518-bazani-bolish-sabablari-oltita-disintegrator-va-ikkita-integrator) da.
+
+Kitobning yechimi boshqa: jadvalga bitta maxsus servis yagona ega qilib tayinlanadi, faqat u yozadi, qolganlari esa ma'lumotni unga uzatadi va yozish amalini ega bajaradi (9-bob, 252-bet). Audit misolida bu yangi audit servisi degani: u jadvalga yozadigan va undan o'qiydigan yagona servis bo'lib qoladi. Aloqa shaklini bitta savol belgilaydi, ya'ni chaqiruvchiga yozuv natijasidan biror ma'lumot qaytishi kerakmi.
+
+Quyidagi jadval kitobning o'z jadvali emas: u 252-253-betlardagi ikki variantni yonma-yon qo'yadi.
+
+| Chaqiruvchiga javob kerakmi | Aloqa shakli | Nega shunday |
+| --- | --- | --- |
+| Kerak emas | doimiy (persisted) navbat, asinxron fire-and-forget | chaqiruvchi yozuvni kutmaydi; broker xabarni diskka yozgani uchun servis yoki brokerning yiqilishida ham xabar yo'qolmaydi |
+| Kerak, masalan tasdiq raqami yoki baza kaliti | REST, gRPC yoki request-reply messaging | javob kutiladi, demak sinxron chaqiruvning kutish narxi ataylab qabul qilinadi |
+
+Spring tomonidan bu qoida bitta gapga aylanadi: audit yozuvini o'z tranzaksiyangda yozma, egasiga yubor. Yuborish faktini mahalliy tranzaksiya bilan atomar qilish kerak bo'lsa, xabar avval o'z sxemangdagi jadvalga yoziladi va keyin jo'natiladi; bu [tranzaksion outbox](../patterns/10-malumotlarni-boshqarish-va-taqsimlash.md#1014-tranzaksion-outbox-transactional-outbox) yozuvi.
+
+```java
+// Audit jadvalining yagona egasi AuditService. Wishlist servisi unga faqat
+// xabar yuboradi: javob kutilmaydi, shuning uchun doimiy navbat yetarli.
+@Service
+public class WishlistService {
+
+    private final WishlistRepository wishlists;
+    private final ApplicationEventPublisher events;
+
+    public WishlistService(WishlistRepository wishlists, ApplicationEventPublisher events) {
+        this.wishlists = wishlists;
+        this.events = events;
+    }
+
+    @Transactional
+    public void addItem(long customerId, String productId) {
+        wishlists.save(new WishlistItem(customerId, productId));
+        // Hodisa tranzaksiya commit bo'lgandan keyin brokerga ketadi:
+        // audit jadvaliga bu servis hech qachon o'zi yozmaydi.
+        events.publishEvent(new WishlistItemAdded(customerId, productId));
+    }
+}
+
+@Component
+class WishlistAuditForwarder {
+
+    private final KafkaTemplate<String, WishlistItemAdded> kafka;
+
+    WishlistAuditForwarder(KafkaTemplate<String, WishlistItemAdded> kafka) {
+        this.kafka = kafka;
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    void forward(WishlistItemAdded event) {
+        kafka.send("audit.events", event);
+    }
+}
+```
+
+Qoida teskari tomonga ham ishlaydi: ega bo'lmagan servis umumiy ma'lumotni o'qishi kerak bo'lsa, bu alohida masala va kitob unga faqat o'qish uchun kirish usullarini ajratib, 10-bobda ko'rib chiqadi (9-bob, 253-bet). Ya'ni "yozish bitta egada" qoidasi o'qishni avtomatik hal qilmaydi.
+
+## 5.17 Birgalikda egalik: bitta jadvalga ikki yozuvchi va to'rt yechim
+
+Birgalikda egalik (joint ownership) umumiy egalikdan miqdori bilan farq qiladi: bu yerda bitta domen ichidagi bir necha servis bitta jadvalga yozadi, umumiy egalikda esa deyarli hamma servis yozadi (9-bob, 253-bet). Kitobning misoli mahsulot jadvali: katalog servisi yangi mahsulot qo'shadi, olib tashlaydi va statik ma'lumotini yangilaydi, ombor servisi esa shu jadvaldagi joriy qoldiqni o'qiydi va yangilaydi (9-bob, 254-bet). JPA bilan ishlaganda bu holat eng tez taniladi: ikki servisda bir xil `@Entity` nusxasi paydo bo'ladi va ikkisi bir jadvalga `update` yozadi.
+
+Kitob to'rt yechim beradi va har birining kelishuvini jadval bilan sanaydi (9-bob, 254-262-betlar).
+
+**Jadvalni bo'lish (table split).** Jadval ikkiga bo'linadi, har servis o'z bo'lagiga ega bo'ladi: mahsulot qoldig'i alohida `inventory` jadvaliga ko'chadi va `product` dan qoldiq ustuni olib tashlanadi (254-bet). Natijada birgalikda egalik yagona egalikka aylanadi, lekin yangi vazifa paydo bo'ladi: mahsulot qo'shilganda yoki o'chirilganda ikki servis bir-biri bilan gaplashishi kerak (255-bet). Shu yerda kitob to'g'ridan-to'g'ri CAP ga boradi: katalog ombor servisi ishlamayotganda ham mahsulot qo'shaversin desangiz, mavjudlikni tanlaysiz; ikki jadval doim mos tursin desangiz, izchillikni tanlaysiz va ombor ko'tarilmaganda mahsulot qo'shish amali yiqiladi (256-bet). Aloqa shakli ham shu tanlovdan chiqadi: tasdiq kerak bo'lsa sinxron, kerak bo'lmasa fire-and-forget.
+
+```sql
+-- Jadvalni bo'lish: qoldiq ustuni alohida jadvalga ko'chadi.
+-- Ikki qadam alohida migratsiyada ketadi, orasida ikkala servis ishlaydi.
+CREATE TABLE inventory (
+    product_id text PRIMARY KEY,
+    inv_cnt    integer NOT NULL DEFAULT 0
+);
+
+INSERT INTO inventory (product_id, inv_cnt)
+SELECT product_id, inv_cnt FROM product;
+
+-- Faqat ombor servisi yozadi, katalog hatto o'qimaydi ham.
+GRANT SELECT, INSERT, UPDATE, DELETE ON inventory TO inventory_app;
+
+-- Keyingi relizda, barcha o'qishlar yangi jadvalga o'tgandan keyin:
+ALTER TABLE product DROP COLUMN inv_cnt;
+```
+
+**Ma'lumot domeni (data domain).** Jadval ikki servisga ham tegishli bo'lib qoladi: ular bo'lishadigan jadvallar bitta sxemaga yoki bazaga yig'iladi va servislar bilan ma'lumot orasida kengroq bounded context hosil bo'ladi (256-bet). Servislar bir-biriga bog'liq bo'lmaydi, lekin sxemaning har bir o'zgarishi ikkisiga ham tegadi (257-258-betlar). Kitob bu yechimni tanlaganda majburiy savol qo'yadi: ma'lumot ikkisiga umumiy bo'lsa, nega bu ikki servis alohida turadi? Javob masshtab farqi, nosozlikka chidamlilik, o'tkazuvchanlik farqi yoki kod o'zgarish tezligini ajratish bo'lishi kerak (257-bet).
+
+**Delegatsiya (delegate).** Jadval bitta servisga beriladi va u delegat bo'ladi, boshqalar esa yozuvni uning nomidan bajarishini so'raydi (258-bet). Qiyin savol delegatni tanlash, va kitob ikki variantni nomlab beradi: birlamchi domen ustuvorligi jadvalni entitetning asosiy CRUD amallarini bajaradigan servisga beradi (katalog), operatsion xarakteristika ustuvorligi esa ishlash, masshtab yoki mavjudlik talabi yuqori servisga beradi (ombor, chunki qoldiq statik mahsulot ma'lumotidan tez-tez o'zgaradi) (258-259-betlar). Mualliflar odatda domen ustuvorligini tanlashni, ishlash va chidamlilik muammosini esa replikatsiyalangan yoki taqsimlangan cache bilan yumshatishni tavsiya qiladi, chunki ombor servisi mahsulot ma'lumotining baza amallari va xatolarini boshqarishga mas'ul emas (260-bet). Delegat kim bo'lishidan qat'i nazar, egasi bo'lmagan servis uchun atomar tranzaksiya yo'qoladi; shu sababli usul eventual izchillikka toqat qiladigan yozuvlarga mos keladi (260-bet).
+
+**Servislarni birlashtirish (service consolidation).** Ikki servis bitta servisga qo'shiladi va birgalikda egalik yana yagona egalikka aylanadi (261-bet). Atomar tranzaksiya saqlanadi, lekin masshtab endi faqat birga bo'ladi: kam yuklangan katalog qismi ham ombor yuki uchun ko'tarilishi kerak (261-262-betlar).
+
+| Yechim | Nima yutiladi | Nima yo'qotiladi |
+| --- | --- | --- |
+| Jadvalni bo'lish | bounded context saqlanadi, egalik yagona bo'ladi | jadvalni qayta tuzish kerak, ikki jadval orasida ACID yo'q, sinxronlash qiyin |
+| Ma'lumot domeni | tez kirish, masshtab muammosi yo'q, ma'lumot izchil, servislar bog'liq emas | sxema o'zgarishi ko'p servisga tegadi, test qamrovi va deploy xavfi oshadi, yozish huquqini boshqarish kerak |
+| Delegatsiya | yagona egalik hosil bo'ladi, sxema o'zgarishi nazoratda, ma'lumot tuzilishi boshqalardan yashiriladi | servislar qattiq bog'lanadi, ega bo'lmagan yozuv sekin, atomar tranzaksiya yo'q, chidamlilik past |
+| Servislarni birlashtirish | atomar tranzaksiya saqlanadi, umumiy ishlash yaxshi | masshtab yiriklashadi, chidamlilik kamayadi, deploy xavfi va test qamrovi oshadi |
+
+Kitobning o'z misolida tanlov delegatsiyaga tushadi: mahsulot jadvalining yagona egasi katalog servisi bo'ladi, ombor esa yangilash so'rovlarini unga yuboradi (9-bob, 262-bet). Bu yagona to'g'ri javob emas: yuqoridagi jadval aynan shu qaror uchun [mezon jadvali](03-qaror-qabul-qilish-va-uni-hujjatlashtirish.md#32-variantlarni-taqqoslash-mezon-jadvali-va-ogirlik-berish) o'rnida ishlatiladi.
+
+## 5.18 Bazani bo'lish sabablari: oltita disintegrator va ikkita integrator
+
+"Monolit bazani bo'laylik" degan taklif texnik emas, qaror: *The Hard Parts* uni oltita bo'luvchi va ikkita birlashtiruvchi kuch orasidagi muvozanat deb qo'yadi, va ikki tomonning kelishuvini tahlil qilish ma'lumot granulyarligini to'g'ri tanlashning kaliti deb ataladi (Neal Ford va boshqalar, *Software Architecture: The Hard Parts*, 1-nashr, O'Reilly, 2021, 6-bob, 132-bet). Dasturchi uchun buning qiymati amaliy: bu ro'yxat bazani ajratish taklifini DBA bilan muhokama qiladigan tilga aylantiradi.
+
+Oltita disintegrator, ya'ni bo'lishni oqlaydigan sabab (6-bob, 133-bet):
+
+- **O'zgarish nazorati (change control).** Jadval o'zgarishi nechta servisga tegadi. Ustun yoki jadvalni o'chirish, nomini yoki turini o'zgartirish buzadigan o'zgarish bo'ladi va shu jadvalga tegadigan hamma servis baza bilan birga deploy qilinishi kerak; haqiqiy xavf esa jadvalga murojaat qiladigan servisni unutib qo'yish, chunki u production da qayta deploy qilinmaguncha ishlamay turadi (6-bob, 134-135-betlar). Bounded context shuning uchun yechim: servis o'z ma'lumoti bilan birga bitta kontekstda bo'lsa, o'zgarish shu kontekst ichida qoladi, tashqariga esa shartnoma chiqadi va shartnoma sxemadan farq qilishi mumkin (6-bob, 136-137-betlar).
+- **Ulanishlarni boshqarish (connection management).** Kitobning hisobi: 200 ulanishli monolit 50 servisga bo'linsa va har servisning pooli 10 ulanishdan, minimal ikki instance bilan 1000 ulanish chiqadi; servislarning yarmi o'rtacha beshta instance gacha ko'tarilsa, son 1700 ga yetadi (6-bob, 139-bet). Yechim sifatida kitob har servisga ulanish kvotasi berishni, dastlab teng taqsimlashni va keyin o'lchovga qarab farqli taqsimlashga o'tishni, kvota qiymatlarini esa tashqi konfiguratsiyada saqlashni tavsiya qiladi (6-bob, 139-140-betlar).
+- **Masshtab (scalability).** Taqsimlangan tizim masshtablanishi uchun bazasi ham masshtablanishi kerak. Kitobning jadvalida 100 ulanishga moslangan kvota servislar ko'tarilgandan keyin 242 ulanishga aylanadi, ya'ni mavjud ulanishdan 142 ta ko'p (6-bob, 142-143-betlar).
+- **Nosozlikka chidamlilik (fault tolerance).** Umumiy baza yagona nosozlik nuqtasi bo'lib qoladi va u yiqilganda hamma servis ishlamaydi; ma'lumot bo'linganda esa faqat o'sha bazaga bog'liq servislar ta'sirlanadi (6-bob, 143-144-betlar).
+- **Arxitektura kvanti (architectural quanta).** Umumiy baza hamma servisni bitta kvantga qamab qo'yadi, demak ikki servisga boshqa arxitektura xarakteristikasi kerak bo'lsa, ularni ajratish uchun ma'lumot ham ajralishi shart (6-bob, 144-145-betlar).
+- **Baza turini moslash (database type optimization).** Monolit bazada hamma ma'lumot bitta tur qoidasiga bo'ysunadi. Kitobning misoli: relyatsion bazada yashayotgan kalit-qiymat shaklidagi ma'lumotnoma (mamlakat, mahsulot, ombor kodlari) uchun kalit-qiymat baza mosroq yechim beradi (6-bob, 146-bet). Tur tanlash mezonlarining o'zi [baza turini tanlash](38-doimiy-organish-va-texnologiya-tanlash.md#3813-baza-turini-tanlash-yettita-mezon-va-nega-ular-birga-ishlaydi) bo'limida.
+
+Qarshi tomonda ikkita integrator, ya'ni ma'lumotni birga ushlashni oqlaydigan sabab (6-bob, 146-149-betlar): **ma'lumot munosabatlari**, ya'ni foreign key, trigger, view va stored procedure jadvallarni bir-biriga bog'lab turadi va ular boshqa sxemaga ko'chganda olib tashlanishi kerak; hamda **baza tranzaksiyalari**, ya'ni bir servis bir necha jadvalga yozganda bu bitta ACID ish birligi bo'ladi, bo'linishdan keyin esa bunday birlik qolmaydi.
+
+Qarorning o'zi shu ikki ro'yxatni to'qnashtirishdan chiqadi, va kitob savolni aynan shu shaklda beradi: o'zgarish nazorati jadvallar orasidagi foreign key ni saqlashdan muhimmi, nosozlikka chidamlilik materialized view ni saqlashdan muhimmi (6-bob, 148-bet). Qaysi biri muhimroq ekani aniq bo'lgandan keyingina bo'lish va natijadagi sxema granulyarligi haqida gapirish mumkin. Monolit bazani bosqichma-bosqich ajratish tartibi esa alohida mavzu: uning korpusdagi yozuvi [ma'lumotlar bazasini ajratish](34-legacy-kod-va-bosqichma-bosqich-refaktoring.md#348-malumotlar-bazasini-ajratish-eng-qiyin-qism-va-uning-tartibi) bo'limida.
+
+Ulanish tomonidagi dalilni raqamga aylantirish uchun o'lchov kerak, va PostgreSQL buni o'zi beradi.
+
+```sql
+-- Har servis (alohida rol) qancha ulanish ushlab turgani va chegara.
+-- Dalil shu: kvota muhokamasi taxmin bilan emas, shu jadval bilan boshlanadi.
+SELECT usename                             AS servis_roli,
+       count(*)                            AS hozir,
+       count(*) FILTER (WHERE state = 'idle') AS bekor_turgan,
+       current_setting('max_connections')::int AS server_chegarasi
+FROM pg_stat_activity
+WHERE backend_type = 'client backend'
+GROUP BY usename
+ORDER BY hozir DESC;
+```
+
+ESLATMA: yuqoridagi so'rov shu korpusning qo'shimchasi, kitobda yo'q. Kitob kvotani o'lchash uchun fitness function dan foydalanishni tavsiya qiladi (6-bob, 140-bet); bu so'rov shu o'lchovning eng arzon shakli.
+
+## 5.19 O'tkazuvchi bog'liqlik: pastdagi servis uchun uzatilgan ma'lumot
+
+[Bog'liqlik turlari](#54-bogliqlik-turlari-malumot-vaqt-joylashuv-sxema-boyicha-bogliqlik) jadvalidagi shakllardan biri alohida nom bilan yuradi. O'tkazuvchi bog'liqlik (pass-through coupling) shunda paydo bo'ladi: servis ma'lumotni qo'shnisiga faqat o'sha ma'lumot zanjirning pastidagi uchinchi servisga kerak bo'lgani uchun uzatadi. Newman buni implementatsiya bog'liqligining eng muammoli shakllaridan biri deb ataydi, chunki chaqiruvchi nafaqat chaqirayotgan servisning yana kimnidir chaqirishini biladi, balki o'sha bir qadam uzoqdagi servis qanday ishlashini ham bilishi kerak bo'ladi (Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 2-bob, "Pass-Through Coupling" bo'limi).
+
+Newman ning misoli uch bo'g'inli: buyurtma protsessori omborga buyurtmani jo'natishga tayyorlashni so'raydi va so'rov tarkibida yetkazib berish varaqasini (shipping manifest) uzatadi, ombor esa varaqani o'zgartirmasdan yetkazib berish servisiga beradi. Asosiy muammo shu: pastdagi servisga kerakli ma'lumot o'zgarsa, yuqoridagi servislar ham o'zgaradi, ya'ni yetkazib berish servisi varaqaning formatini yoki tarkibini o'zgartirsa, ombor ham, buyurtma protsessori ham o'zgarishi kerak bo'ladi (2-bob).
+
+Newman uchta chiqish yo'lini ko'rib chiqadi va hech birini bepul deb atamaydi.
+
+| Yo'l | Nima o'zgaradi | Narxi |
+| --- | --- | --- |
+| Oraliq bo'g'inni chetlab o'tish | buyurtma protsessori yetkazib berish servisiga o'zi murojaat qiladi | domen bog'liqligi oshadi va ombor ichida yashiringan mantiq (avval qoldiqni band qilish, keyin jo'natish, so'ng qoldiqni yangilash) yuqoriga ko'chadi |
+| Talabni yashirish | ombor o'z shartnomasida kerakli maydonlarni oladi va varaqani o'zi yasaydi | yetkazib berish shartnomasi o'zgarganda buyurtma protsessori sezmaydi, lekin ombor har o'zgarishda yangilanadi |
+| Ma'lumotni shaffof blob sifatida uzatish | ombor varaqaga qaramaydi va tekshirmaydi, shunchaki o'tkazib yuboradi | format o'zgarsa buyurtma protsessori va yetkazib berish servisi o'zgaradi, ombor esa o'zgarmaydi |
+
+Ikkinchi yo'l to'liq himoya bermaydi va Newman buni ochiq aytadi: yetkazib berish servisiga xalqaro jo'natish uchun bojxona deklaratsiyasi kerak bo'lsa va u ixtiyoriy parametr bo'lsa, faqat o'sha servis yangilanadi; majburiy bo'lsa, ombor uni yasashi kerak va buning uchun ma'lumot yetmasa, buyurtma protsessoridan qo'shimcha maydon so'raladi. Farq shundaki, uchta servisni bitta qadamda birga chiqarish (lockstep rollout) majburiyati yo'qoladi va deploy bosqichga ajratiladi (2-bob).
+
+Java tomonida belgi aniq: shartnoma DTO sida chaqiruvchining o'ziga kerak bo'lmagan va u hech qachon o'qimaydigan maydonlar paydo bo'ladi.
+
+```java
+// Yomon shakl (shu yerda izohda qoldirilgan, chunki nom bitta bo'ladi):
+// ombor shartnomasi yetkazib berish servisining tipini olib yuradi.
+//
+// public record PrepareOrderRequest(String orderId, List<OrderLine> lines,
+//                                   ShippingManifest manifest) { }
+
+// Yaxshi: ombor o'z tilida so'raydi va varaqani o'zi yasaydi.
+public record PrepareOrderRequest(String orderId, List<OrderLine> lines,
+                                  Address deliveryAddress, ShippingType shippingType) { }
+
+@Service
+public class WarehouseService {
+
+    private final ShippingClient shipping;
+
+    public WarehouseService(ShippingClient shipping) {
+        this.shipping = shipping;
+    }
+
+    public DispatchId prepare(PrepareOrderRequest request) {
+        reserveStock(request.lines());
+        // Yetkazib berish shartnomasi faqat shu metod ichida ko'rinadi:
+        // uning o'zgarishi PrepareOrderRequest ga tegmaydi.
+        ShippingManifest manifest = new ShippingManifest(
+                request.deliveryAddress(), request.shippingType());
+        return shipping.dispatch(manifest);
+    }
+}
+```
+
+Tanlov mezoni oddiy: oraliq servis ma'lumotni **ishlatadimi**. Ishlatsa, u maydonlarni o'z tilida qabul qilib, pastdagi shartnomani o'zi yasashi kerak. Ishlatmasa va faqat o'tkazib yuborsa, ma'lumot ataylab shaffof blob bo'lib qolgani yaxshi, chunki shunda formatning o'zgarishi oraliq servisni chetlab o'tadi.
+
+## 5.20 Cheklov yo'naltiruvchi sifatida: foydasi va kiritish tartibi
+
+Bu bobdagi hamma qoida bitta shaklga ega: biror narsa taqiqlanadi. Import yo'nalishi bir tomonga, jadvalga bitta yozuvchi, interfeys iste'molchi tomonda. Fairbanks shu shaklning o'ziga nom beradi va uni to'siq emas, yo'naltiruvchi (guide rail) deb o'qiydi: dizaynda qilinadigan tanlov tizimni bir xil bo'lishga va boshqacha bo'lmaslikka majbur qiladi, va ba'zi tanlovlar aynan tizimni siz xohlagan manzilga olib borish uchun qo'yiladi.
+
+Shundan bitta kuchli xulosa chiqadi: tizim **nima qilmasligi** ham nima qilishi kadar muhim. Xavfsiz tizim ishonchsiz tomon bilan ma'lumot almashmaydi, qulay tizim bekor qilish imkonini bermasdan uzoq hisobni boshlamaydi. Sabab tahlilga tegishli: cheklanmagan dizayn ta'rifi bo'yicha istalgan narsani qila oladi, demak uni tahlil qilishga umid qilish uchun avval cheklash kerak. Kitobning misoli tanish: Android kodning tizim servislariga kirishini cheklaydi, shuning uchun internetga chiqmoqchi bo'lgan kod buni e'lon qilishga majbur va foydalanuvchi ilovani ishga tushirishdan oldin shu xossani ko'ra oladi.
+
+Cheklovning to'rt foydasi alohida sanalgan va ularning har biri arxitektorning kundalik ishiga tegadi.
+
+- **Tajribani uzatadi.** Katta tajribali injener domenni nozik tushunadi va bu bilimni to'liq uzatish uzoq vaqt oladi. Dizaynga qo'yilgan cheklov boshqalarni qabul qilinadigan yechimga yo'naltiradi, bilimni to'liq uzatmasdan.
+- **Conceptual integrity beradi.** Brooks ning fikri: izchil qo'llangan bitta yaxshi g'oya tizim bo'ylab sochilgan bir necha ajoyib g'oyadan afzal. D'Souza ning formulasi esa qisqaroq: arxitektura cheklovi "keraksiz ijodkorlikni" kamaytiradi va ijodkorlikni haqiqatan kerak bo'lgan joyga qoldiradi.
+- **Murakkablikni kamaytiradi.** Cheklanmagan tizim o'xshash ishlarni turli joyda turlicha bajaradi va tushunish uchun mayda tafsilotlarni o'zlashtirishni talab qiladi. Cheklov buni kesib tashlaydi va tayanadigan narsa beradi: agar ma'lumot faqat bazaga saqlanadigan bo'lsa, uni qayerdan izlashni bilasiz.
+- **Runtime xulqni oydinlashtiradi.** Manba kodini ko'rish mumkin, lekin uning ish vaqtida qanday xulq qilishini oldindan aytish qiyin. Kodni shunday cheklash mumkin, ish vaqtidagi xulqi ko'rinib turadi.
+
+Cheklov bepul emas: u boshqa yechimlarni yopadi va siz yolg'iz dasturchi bo'lmasangiz, boshqalar o'ylab topishi mumkin bo'lgan yechimlarni ham oldindan rad etadi. Shu sababli kitob kiritish tartibini beradi va u to'rt qadam.
+
+1. **Cheklovsiz boshlanadi.** Dastlabki holat bo'sh ro'yxat, taxmin qilingan qoidalar to'plami emas.
+2. **Tizim maqsadlari aniqlanadi.** Masalan boshqa tizimlar bilan ishlash, yuqori xavfsizlik yoki tezlik. Bu maqsadlar arxitektura driver lari bilan ustma-ust tushadi.
+3. **"Qanday muvaffaqiyatsiz bo'lishi mumkin" deb so'raladi.** Maqsadga qanday erishiladi, tizim maqsadini qanday bajarmay qolishi mumkin, qaysi cheklov uni muvaffaqiyatga yo'naltiradi, bu cheklov qanchalik og'ir va kelishuvlari nima.
+4. **Keyin cheklov qo'yiladi**, ya'ni kerakli xossa, sifat yoki riskni ta'minlaydigan cheklov tanlanadi.
+
+Tartibning yo'nalishi ongli: u kafolat tomoniga emas, erkinlik tomoniga xato qiladi. Kitobning kuzatuvi shu bilan bog'liq, agar shu jarayon kuzatilsa ko'p holda arxitektura uslubi tanlanadi, chunki uslublarning cheklovi nisbatan yumshoq, lekin loyihani maqsadga erishish uchun to'g'ri poydevorga qo'yadi; qattiq talabli loyihada esa qattiqroq cheklov kiritiladi.
+
+Amalda bu shu bobdagi ArchUnit qoidalariga aniq ta'sir qiladi: qoida avval yozilmaydi. Avval maqsad ("domen kodi web freymvorkiga bog'lanmasin, chunki API o'zgarishi migratsiya talab qilmasligi kerak"), keyin nosozlik ssenariysi ("qulaylik uchun entity to'g'ridan to'g'ri controller ga qaytariladi"), keyin qoida. Teskari tartib qoidani hali mavjud bo'lmagan chegarani qotirib qo'yadigan to'siqqa aylantiradi ([5.15](#515-yuqoridan-pastga-va-pastdan-yuqoriga-bogliqlik-grafi-loyihalanmaydi-osadi) dagi eslatma bilan bir xil mantiq).
+
+## 5.21 Har darajada hikoya: ierarxiya, element soni va domen otlari
+
+Chegara qo'yilgandan keyin keladigan savol: nechta chegara va qaysi darajada. Fairbanks javobni tushunarlilik tilida beradi: tizim har darajada hikoya aytadigan qilib tuzilsin, ya'ni tizimni bilmagan dasturchini istalgan darajaga tushirganda u ma'no topa olsin, cho'kib ketmasin. Hikoya qurishning to'rt yo'riqnomasi sanalgan va ular ketma-ket qo'llanadi.
+
+1. **Elementlarni ichma-ich joylab** abstraksiya darajalari yaratiladi (asosan modul, komponent va muhit elementlari).
+2. **Har darajadagi element soni cheklanadi.**
+3. **Har elementga yaxlit maqsad beriladi.**
+4. **Har element inkapsulyatsiyalanadi** va keraksiz ichki tafsilotni ko'rsatmaydi.
+
+Shu to'rttasi har darajada bajarilsa, dasturchi ko'zi tushadigan joyda mantiqiy miqdordagi element ko'radi va ular qanday birga ishlashi haqida hikoyani o'zi tiklaydi. Foydasi kognitiv, texnik emas: katta tizimda masshtab bilan ishlash mumkin bo'ladi, quyi komponentlar qora quti sifatida qabul qilinadi va bir vaqtda tushunilishi kerak bo'lgan murakkablik chegaralanadi.
+
+Element sonining o'zi uchun kitob ochiq evristika beradi: bitta abstraksiya darajasida mantiqiy miqdor taxminan 5 dan 50 gacha, 50 esa allaqachon juda katta. Ya'ni komponent odatda 5 dan 50 gacha quyi komponent yoki sinfdan, modul esa 5 dan 50 gacha quyi modul yoki fayldan iborat bo'ladi. Qoida ikki tomonga ishlaydi: 50 ga yaqinlashganda sonni pasaytirish uchun refaktoring qilinadi, element juda kam bo'lsa esa darajalarni birlashtirib "o'rta menejerlarni yo'q qilish" kerak. Ikkinchi tomoni muhim, chunki ko'p daraja bepul emas: ierarxiyani ushlab turish byurokratik yuk va uni bog' kabi parvarishlash kerak, shuning uchun kognitiv foyda va texnik xizmat narxi o'rtasida kelishuv qilinadi.
+
+Darajalar ichida nimani element qilish kerak degan savolga esa model-in-code printsipi javob beradi va uning asosi oddiy kuzatuv: domendagi otlar fe'llardan sekinroq o'zgaradi. Shuning uchun sinflarni domen turlariga (`Account`, `Address`, `Order`) moslash, funksional yoki protsedural dasturda bo'lgani kabi fe'llarga (amallarga) moslashdan kam churn beradi. Kitob halol eslatma qo'shadi: fe'llar tezroq o'zgarishini ko'rsatish qiyin, va nazorat qilingan tajriba yo'q, printsipning asosiy dalili uning dasturchilar orasida uzluksiz mashhurligi. Ikkinchi dalil kuchliroq: kodni o'qiyotgan dasturchi domen turlarini kodning o'zidan chiqarib oladi, bu tushunishga va evolyutsiyaga to'g'ridan to'g'ri yordam beradi. Shu sababli [5.5](#55-koheziya-nima-birga-ozgarsa-birga-tursin) dagi xususiyat bo'yicha paketlash tanlovi tasodifiy emas: paket nomlari domen otlari bo'lsa, daraja o'zi hikoya aytadi.
+
+```java
+// Daraja 1: domen otlari paket bo'ladi (5-50 ta), ierarxiya shu yerdan boshlanadi.
+// com.shop.order
+// com.shop.payment
+// com.shop.inventory
+
+// Daraja 2: paket ichida yana domen otlari, amal nomlari emas.
+// com/shop/order/Order.java              otdan: entity
+// com/shop/order/OrderCancellation.java  otdan: amalni nomlagan tur
+// com/shop/order/spi/PaymentAuthorizer.java
+
+// Qizil bayroq: amal nomi paket bo'lsa daraja hikoya aytmaydi.
+// com.shop.create, com.shop.validate, com.shop.send  <- fe'llar bo'yicha bo'lish
+```
+
+## 5.22 Dekompozitsiya strategiyasini ongli tanlash: katalog va ADD
+
+Loyiha oxirida qo'lda modul va komponentlar bo'ladi, ularning ichida yana modul, komponent va oxirida obyektlar. Bu bo'linishlar qanday tanlanadi degan savolga ko'p dasturchi "intuitsiya bilan" deb javob beradi. Fairbanks shu javobni almashtirish uchun strategiyalar katalogini beradi, maqsadi aniq: tajribali dasturchilarning strategiyalarini bilish taraqqiyotni tezlashtiradi va dizayn sifatini ko'taradi. Katalog quyidagicha va uning qiymati har birining qaysi elementni **dominant jihat** qilib olishida.
+
+| Strategiya | Elementlar qayerdan keladi | Qachon tanlanadi |
+|---|---|---|
+| Funksionallik | bog'liq funksiyalar to'dasi | eng ko'rinadigan yo'l; sifat atributlari ekstremal bo'lmagan holatda yetarli |
+| Archetype | domendagi asosiy turlar (`Contact`, `Advertisement`, `User`) | tur mustaqil mavjudligi va boshqa turga majburiy bog'lanishi kam bo'lsa |
+| Arxitektura uslubi | uslub belgilagan nomlangan elementlar (filter, pipe) | sifat atributi dominant bo'lganda |
+| Attribute Driven Design | sifat atributi jadvalidan olingan tactic lar | katta tizimda sifat atributi talabi qattiq bo'lsa |
+| Port bo'yicha | har portga bitta element yoki mediator | kirish turlarini ajratish kerak bo'lsa (a'zo va a'zo bo'lmagan) |
+| Ortogonal abstraksiya | boshqa domendan olingan formalizm (graf, matritsa) | muammoni o'rganilgan domenga o'girish mumkin bo'lsa |
+| Jigsaw puzzle | mavjud komponentlar, qolgani yelim | mavjud qismlardan qaytish mumkin bo'lmasa |
+
+Katalogdan ikki qator alohida izoh talab qiladi.
+
+**Arxitektura uslubini dominant jihat qilish sifat atributiga eng qisqa yo'l.** Sababi: har uslubning o'zi rag'batlantiradigan ma'lum xossalari bor, masalan pipe-and-filter modifiability ni beradi. Kitob darajalarni aralashtirishga ham ruxsat beradi va bu amalda eng ko'p uchraydigan shakl: birinchi darajada bitta uslub (3-tier: interfeys, biznes mantiq, saqlash), keyin shu uslubning bitta komponenti ichida boshqa jihat bo'yicha, masalan funksionallik bo'yicha bo'lish. Spring loyihasida bu tanish ko'rinadi: tashqi daraja qatlamlar, biznes mantiq qatlami ichida esa `order`, `payment`, `inventory`.
+
+**ADD katalogdagi boshqa strategiyalardan bir narsa bilan farq qiladi**, va bu farq jadvalga tayanish. Jarayonning o'zi uch qadam: (1) dekompozitsiya qilinadigan modulni tanlash, (2) modulni aniqlashtirish, ya'ni arxitektura driver larini tanlash, mos pattern ni tanlash yoki o'ylab topish, modullar yaratib mas'uliyatlarni taqsimlash, modul interfeyslarini belgilash, funksionallik va sifat atributi ssenariylarini tekshirish, (3) har modul uchun takrorlash. Uslubga asoslangan oddiy dekompozitsiyadan farq esa shu: ADD sifat atributini tactic larga bog'laydigan jadvaldan foydalanadi. Tactic bu dizayn patternidan kattaroq, arxitektura uslubidan kichikroq birlik, va kitobda sanalgan misollari Ping/Echo, Active Redundancy, Runtime Registration, Authenticate Users va Intrusion Detection. Jadval sifat atributidan umumiy tactic ga, undan maxsus tactic ga olib boradi, ya'ni ma'lum driver dan boshlab kerakli tactic to'plamiga chiqish mumkin bo'ladi. Shu korpusdagi mos yozuvlar: Ping/Echo va Active Redundancy uchun [7.13](07-nosozlik-haqida-fikrlash.md#713-xavfni-taqsimlash-bitta-host-bitta-fizik-quti-bitta-zona), Authenticate Users uchun [20-bob](20-spring-security-filter-chain-oauth2-jwt.md).
+
+**Jigsaw puzzle** eng ko'p e'tibordan qoladigan va eng ko'p uchraydigan holat. Ba'zan qo'lda allaqachon bir necha quyi komponent bor va ularni qayta ishlatish istagi dizaynni yo'naltiradi: relatsion baza, vendor komponenti, oldingi loyihadan qolgan va qayta paketlanadigan kod. Bu bo'laklar talab qilingan xususiyat va sifatlarning bir qismini qoplaydi, qolganini esa yangi kod, ko'pincha connector yoki adapter shaklida to'ldiradi. Kitobning tasviri aniq: bu bo'laklari bitta to'plamdan olinmagan puzzle ni yig'ishga o'xshaydi. Tanlov yakunida ham xulosa ochiq qoldirilgan: ko'p tizim uchun istalgan dekompozitsiya qabul qilish darajasida ishlaydi, lekin sifat atributi talabiga mos tanlangani ishni osonlashtiradi, va bu talabga eng to'g'ridan to'g'ri bog'langan ikki yondashuv arxitektura uslubi va ADD.
+
+Katalog strategiyani tanlashni beradi, lekin tanlangandan keyingi qadamlarni bermaydi. Richardson shu bo'shliqni uch qadamli jarayon bilan to'ldiradi va u servisga bo'lish uchun yozilgan. Birinchi qadam: talablardan tizim amallarini (system operation) chiqarish, ya'ni command va query larga ajratish, va har command ni abstrakt domen model ustida precondition va post-condition bilan spetsifikatsiya qilish. Ikkinchi qadam: ishni servislarga bo'lish. Uchinchi qadam: har servisning API sini, ya'ni unga ko'chgan amallar to'plamini va servislar orasidagi hamkorlikni aniqlash (Chris Richardson, *Microservices Patterns*, Manning, 2019, 2-bob, 46-bet). Kitob jarayonning tabiatini ham aytadi va bu muhim: u mexanik emas, iterativ va ijodiy, ya'ni ikkinchi qadamdagi chegara birinchi qadamdagi post-condition larni qayta ko'rishga majbur qilishi normal holat.
+
+Birinchi qadamning qiymati eng ko'p e'tibordan qoladi. Amallarni precondition va post-condition bilan yozish chegarani tanlashdan OLDIN tranzaksiya talabini ko'rsatadi: ikki amalning post-condition i bitta invariant ga tegsa, ularni ikki servisga ajratish [saga](../patterns/14-microservices-patternlari.md#149-saga-orkestratsiya-saga-orchestration) majburiyatini keltiradi, va bu qaror chegara chizilgandan keyin emas, chizilayotganda ko'rinishi kerak. Shu sababli jarayon tartibi almashtirilmaydi: avval amallar, keyin chegara, keyin API.
+
+Oxirgi va eng noqulay haqiqat: ba'zi masalalar tanlangan dekompozitsiyani kesib o'tadi va uni ifodalash qiyin bo'ladi. Fairbanks konkurentlikni aynan shunday masala deb ataydi. Toza varaqdan boshlanadigan dizaynda thread va jarayonlarni komponent chegarasiga mukammal moslash mumkin bo'lishi ham mumkin, shunda komponent va connector larni konkurentlikni ko'rsatish uchun annotatsiyalash yetadi. Lekin masala dekompozitsiyani kesib o'tishi bilan uni ifodalashda muammo paydo bo'ladi, va kitobning kuzatuvi bo'yicha konkurentlik bunda ayniqsa qiyin. Gorizontal masshtablanish ham shu toifada. Amaliy natija: dekompozitsiya strategiyasi tanlangandan keyin kesib o'tadigan masalalar ro'yxati alohida yuritiladi va ular diagrammada emas, [7-bob](07-nosozlik-haqida-fikrlash.md) va [11-bob](11-concurrency-thread-lock-atomic-happens.md) dagi apparat bilan hal qilinadi; dekompozitsiyani ularga moslashtirish uchun buzish deyarli har doim xato.
+
+## 5.23 Amalda qo'llash
 
 - [ ] Git tarixidan oxirgi 6 oylik o'zgarish zichligini paket bo'yicha hisoblab chiqing va eng ko'p o'zgaradigan 5 paketni chegara nomzodi sifatida belgilang.
 - [ ] Loyihadagi har bir interfeysni ko'rib chiqing va implementatsiyasi bitta bo'lganlarini ro'yxatga oling, ularning qanchasi haqiqatan kerak ekanini qaror qiling.
@@ -490,6 +830,8 @@ ESLATMA, shu korpusning amaliy tarjimasi: birinchi hafta mahsuloti modul diagram
 - Neal Ford va boshqalar, *Software Architecture: The Hard Parts*, 1-nashr, O'Reilly, 2021 (copyright 2022), 8-bob (224-bet) - mayda umumiy kutubxonalar bog'liqlik matritsasini "taqsimlangan loyqa to'p" ga aylantirishi
 - Neal Ford va boshqalar, *Software Architecture: The Hard Parts*, 1-nashr, O'Reilly, 2021 (copyright 2022), 9-bob (250-bet) - jadvalga yozadigan servis uning egasi; birgalikda va umumiy egalik bu qoidani murakkablashtirishi
 - Martin Fowler, *Refactoring*, Addison-Wesley, 1999, 2-bob - "uchlik qoidasi" (Don Roberts): uchinchi marta refaktoring qilinadi
+- Martin Fowler, *Refactoring: Improving the Design of Existing Code*, 1-nashr, Addison-Wesley, 1999, 2-bob (57-bet) - dizayn variantini tanlashda refaktoringni oldindan tasavvur qilish: keyin o'tish oson bo'lsa eng soddasini olish, oson bo'lmasa dizaynga ko'proq kuch sarflash
+- Chris Richardson, *Microservices Patterns*, Manning, 2019, 2-bob (46-bet) - arxitekturani aniqlashning uch qadami: talablardan tizim amallarini (command va query) chiqarish va har command ni abstrakt domen model ustida precondition hamda post-condition bilan spetsifikatsiya qilish, keyin servislarga bo'lish, keyin servis API larini aniqlash; jarayonning mexanik emas, iterativ va ijodiy bo'lishi
 - Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr, Pragmatic Engineer BV, 2023, 25-bob, 367-368-betlar - masshtablanishning ikki ma'nosi (yangi biznes use case lari va yuk), to'lov usullari misoli va kengaytirish nuqtasining vaqt hisobi, framework qurish qarorini biznesning ishlash tartibi va kompaniya roadmap i belgilashi
 - Robert C. Martin, *Clean Architecture*, Prentice Hall, 2018, 14-bob ("Component Coupling", "Top-Down Design" bo'limi) - komponent bog'liqlik tuzilmasi yuqoridan pastga loyihalanmasligi, u funksiya emas qurilish va texnik xizmat xaritasi ekani, grafning SRP/CCP, o'zgaruvchanlikni izolyatsiya qilish, keyin CRP va ADP bilan o'sishi
 - Robert C. Martin, *Clean Architecture*, Prentice Hall, 2018, 16-bob ("Independence", "Decoupling Mode" va "Decoupling Modes (Again)" bo'limlari) - ajratishning uch rejimi (manba, deploy, servis), maqbul rejim loyiha yetilgani sayin o'zgarishi, servis darajasini standart qilib olishning narxi, servis hosil qilish imkonini ochiq qoldirib bir adres maydonida ushlab turish, rejimni teskari yo'nalishda ham o'zgartirish
@@ -497,7 +839,24 @@ ESLATMA, shu korpusning amaliy tarjimasi: birinchi hafta mahsuloti modul diagram
 - Robert C. Martin, *Clean Architecture*, Prentice Hall, 2018, 25-bob ("Layers and Boundaries", "Crossing the Streams" va "Splitting the Streams" bo'limlari) - ma'lumot oqimi ikkitadan ko'p bo'lishi, oqimlarning yuqori darajadagi siyosatda yana bo'linishi, chegarani egilish nuqtasida qo'yish qoidasi
 - John Ousterhout, *A Philosophy of Software Design*, 1-nashr, Yaknyam Press, 2018, 5.3 - temporal dekompozitsiya, uning ma'lumot oqib chiqishiga olib kelishi va "Red Flag: Temporal Decomposition" qizil bayrog'i; 5.5 - HTTP so'rovini o'qish va parse qilishni ikki sinfga bo'lish misoli
 - Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 5.2 (82-83-betlar) - dizaynning besh darajasi va quyi tizimlar o'rtasidagi aloqa qoidalarining zarurati; 5.3 (107-bet) - "markaziy boshqaruv nuqtalarini yarat" evristikasi va Plauger ning Bitta To'g'ri Joy printsipi; 5.4 (111-113-betlar) - yuqoridan pastga (dekompozitsiya) va pastdan yuqoriga (kompozitsiya) yondashuvlar
-- ESLATMA: 5.4 dagi to'rtta amaliy holatga guruhlash, 5.6 dagi git buyruqlari va egalik o'lchovi, 5.9 dagi pool sozlash hisobi, 5.10 dagi belgilar ro'yxati, 5.14 dagi Spring nom belgilari ro'yxati, 5.15 dagi birinchi hafta mahsuloti haqidagi tavsiya va 5.16 dagi checklist shu korpusning amaliy tavsiyasi, kitobdan olingan emas
+- Neal Ford va boshqalar, *Software Architecture: The Hard Parts*, 1-nashr, O'Reilly, 2021 (copyright 2022), 6-bob (132-149-betlar) - bazani bo'lish sabablari: oltita disintegrator (o'zgarish nazorati, ulanishlarni boshqarish, masshtab, nosozlikka chidamlilik, arxitektura kvanti, baza turini moslash) va ikkita integrator (ma'lumot munosabatlari, baza tranzaksiyalari); 200 ulanishli monolitdan 1000 va 1700 ulanishga o'sish hisobi, ulanish kvotasi va uni teng hamda farqli taqsimlash, 100 kvotaning masshtabdan keyin 242 ga aylanishi, bounded context shartnomasi sxemadan farq qilishi
+- Neal Ford va boshqalar, *Software Architecture: The Hard Parts*, 1-nashr, O'Reilly, 2021 (copyright 2022), 9-bob (252-253-betlar) - umumiy egalik: umumiy baza yoki sxemaga qo'yish ma'lumotni bo'lishish muammolarini qaytarishi, yagona ega servis tayinlash, javob kerak bo'lmaganda doimiy navbat bilan fire-and-forget va javob kerak bo'lganda REST, gRPC yoki request-reply
+- Neal Ford va boshqalar, *Software Architecture: The Hard Parts*, 1-nashr, O'Reilly, 2021 (copyright 2022), 9-bob (253-262-betlar) - birgalikda egalik va to'rt yechim: jadvalni bo'lish (DDL qadamlari, CAP tanlovi, sinxron va asinxron aloqa), ma'lumot domeni (umumiy sxema, kengroq bounded context, servis ajratilishini qayta baholash sharti), delegatsiya (birlamchi domen ustuvorligi va operatsion xarakteristika ustuvorligi, mualliflarning domen ustuvorligi tavsiyasi), servislarni birlashtirish; har to'rttasining afzallik va kamchilik jadvali
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 2-bob ("Pass-Through Coupling" bo'limi) - o'tkazuvchi bog'liqlik ta'rifi, yetkazib berish varaqasi misoli, pastdagi format o'zgarishining yuqoriga tarqalishi va uchta chiqish yo'li (oraliqni chetlab o'tish, talabni yashirish, shaffof blob), bojxona deklaratsiyasi misoli va lockstep rollout dan qutulish. Bu nashrning qo'limizdagi elektron nusxasida barqaror bet raqami yo'q, shuning uchun faqat bob va bo'lim nomi ko'rsatilgan
+- Mark Richards, Neal Ford, *Fundamentals of Software Architecture*, O'Reilly, 2020, 3-bob ("Cohesion" bo'limi) - `Customer Maintenance` misoli va modulni bo'lish-bo'lmaslikni hal qiladigan uch savol (ikkinchi modulda faqat shu ikki amalmi, birinchi modul kattalashadimi, ajratish kuchli bog'lanish talab qiladimi)
+- Mark Richards, Neal Ford, *Fundamentals of Software Architecture*, O'Reilly, 2020, 3-bob ("Cohesion" bo'limi) - LCOM metrikasi (maydonlarni bo'lishish orqali bog'lanmagan metod to'plamlari yig'indisi), uning umumiy utility sinflarini topishdagi foydasi va faqat strukturaviy koheziyani ko'rishdagi cheklovi
+- Mark Richards, Neal Ford, *Fundamentals of Software Architecture*, O'Reilly, 2020, 3-bob ("Connascence Properties" bo'limi) - connascence ning uch xossasi (kuch, yaqinlik, daraja), statikni dinamikdan afzal ko'rish va ma'no bo'yicha connascence ni nom bo'yicha connascence ga aylantirish; Page-Jones ning uch qoidasi (umumiy connascence ni kamaytir, chegarani kesib o'tadiganini minimallashtir, chegara ichidagisini maksimallashtir). Qo'limizdagi nusxada chop etilgan bet raqami yo'q, shuning uchun faqat bob va bo'lim nomi ko'rsatilgan
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 2-bob ("Domain Coupling" bo'limi) - domen bog'liqligi yengil shakl ekani, uni minimumda ushlash va bitta servisning bir nechta quyi servisga bog'lanishi u juda ko'p ish qilayotgani yoki mantiq markazlashib ketgani belgisi ekani
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 16-bob ("Defining System Boundaries" bo'limi) - servis chegarasidan yirikroq zona (jamoa servislari guruhi) ham chegara bo'lishi, zona ichidagi o'zgarish zonalar orasidagi o'zgarishdan arzonligi, jamoa tuzilmasining qiyin o'zgarishi zona nomzodini ko'rsatishi va team API orqali jamoa darajasidagi axborotni yashirish
+- Neal Ford va boshqalar, *Software Architecture: The Hard Parts*, 1-nashr, O'Reilly, 2021 (copyright 2022), 8-bob (243-244-betlar) - markaziy `Customer` servisining ikki tomonlama buzilishi (entity har domenni ko'tarishi kerakligi va o'zgarishning hamma domenga urilishi); qayta foydalanish abstraksiyadan kelib, o'zgarish tezligining pastligi bilan ishga solinishi
+- Neal Ford va boshqalar, *Software Architecture: The Hard Parts*, 1-nashr, O'Reilly, 2021 (copyright 2022), 10-bob (293-295-betlar) - ma'lumot domeni (umumiy sxema) o'qish uchun oxirgi yo'l ekani, jadval sxemasining shartnomaga aylanishi, tashqi kalit va baza vositalarining saqlanishi hamda butun sxemaga kirishdan kelib chiqadigan xavfsizlik riski
+- George Fairbanks, *Just Enough Software Architecture*, 1-nashr, 2010, 2.2 - cheklov to'siq emas yo'naltiruvchi ekani, tizim nima qilmasligi muhimligi, cheklanmagan dizaynni tahlil qilib bo'lmasligi va cheklovning to'rt foydasi (tajribani uzatish, conceptual integrity, murakkablikni kamaytirish, runtime xulqni oydinlashtirish)
+- George Fairbanks, *Just Enough Software Architecture*, 1-nashr, 2010, 9.7 - ish vaqtida arxitektura konfiguratsiyasini o'zgartiradigan dizayndan qochish (statik arxitektura tushunish va sifat atributi tahlili uchun oson) hamda startup va shutdown dinamikasini e'tiborsiz qoldirmaslik; 12.4 - connector ni birinchi darajali va almashtiriladigan qilish, kodda connector interfeysi yo'qligi mijozni aniq implementatsiyaga bog'lashi
+- George Fairbanks, *Just Enough Software Architecture*, 1-nashr, 2010, 10.5 - model-in-code printsipi, domen otlarining fe'llardan sekinroq o'zgarishi va otlarga moslashning kam churn berishi
+- George Fairbanks, *Just Enough Software Architecture*, 1-nashr, 2010, 11.1 - har darajada hikoya aytadigan tizim va uning to'rt yo'riqnomasi, har darajada taxminan 5 dan 50 gacha element, 50 ga yaqinlashganda refaktoring va element juda kam bo'lsa darajalarni birlashtirish
+- George Fairbanks, *Just Enough Software Architecture*, 1-nashr, 2010, 11.3-11.3.8 - dekompozitsiya strategiyalari katalogi (funksionallik, archetype, arxitektura uslubi, ADD, port, ortogonal abstraksiya, jigsaw puzzle), uslubni dominant jihat qilishning sifat atributiga samarasi, ADD ning uch qadami va tactic jadvali, jigsaw puzzle da mavjud komponentlarni adapter bilan to'ldirish
+- George Fairbanks, *Just Enough Software Architecture*, 1-nashr, 2010, 16.1 - konkurentlik va gorizontal masshtablanish kabi masalalarning tanlangan dekompozitsiyani kesib o'tishi va ularni ifodalash qiyinligi; 16.4 - cheklov kiritishning to'rt qadamli tartibi va erkinlik tomoniga xato qilish
+- ESLATMA: 5.4 dagi amaliy holatlarga guruhlash (o'tkazuvchi bog'liqlik qatori ham), 5.6 dagi git buyruqlari va egalik o'lchovi, 5.9 dagi pool sozlash hisobi, 5.10 dagi belgilar ro'yxati, 5.14 dagi Spring nom belgilari ro'yxati, 5.15 dagi birinchi hafta mahsuloti haqidagi tavsiya 5.18 dagi `pg_stat_activity` so'rovi, 5.7 dagi `OrderEventPublisher` kod misoli, 5.20 oxiridagi ArchUnit tartibi haqidagi tavsiya, 5.21 dagi paket nomlari misoli va 5.23 dagi checklist shu korpusning amaliy tavsiyasi, kitobdan olingan emas
 
 ---
 

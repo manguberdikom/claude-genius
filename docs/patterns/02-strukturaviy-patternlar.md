@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 2. Strukturaviy patternlar (Structural Patterns)
 
 <details>
-<summary>Bu bobdagi 22 bo'lim</summary>
+<summary>Bu bobdagi 23 bo'lim</summary>
 
 - [2.1 Adapter (Adapter)](#21-adapter-adapter)
 - [2.2 Ko'prik (Bridge)](#22-koprik-bridge)
@@ -30,7 +30,8 @@
 - [2.19 Sinf merosi va interfeys merosi (Class versus Interface Inheritance)](#219-sinf-merosi-va-interfeys-merosi-class-versus-interface-inheritance)
 - [2.20 Qayta ishlatish mexanizmlari: white-box, black-box va parametrlangan turlar (Putting Reuse Mechanisms to Work)](#220-qayta-ishlatish-mexanizmlari-white-box-black-box-va-parametrlangan-turlar-putting-reuse-mechanisms-to-work)
 - [2.21 Ish vaqtidagi va kompilyatsiya vaqtidagi struktura (Run-Time and Compile-Time Structures)](#221-ish-vaqtidagi-va-kompilyatsiya-vaqtidagi-struktura-run-time-and-compile-time-structures)
-- [2.22 Amalda qo'llash](#222-amalda-qollash)
+- [2.22 Kompozitni qurish qarorlari (Implementing Composite)](#222-kompozitni-qurish-qarorlari-implementing-composite)
+- [2.23 Amalda qo'llash](#223-amalda-qollash)
 
 </details>
 
@@ -73,6 +74,10 @@ class TwilioSmsAdapter implements SmsGateway {
 }
 ```
 
+**Qurish qarorlari:** Ikki variant orasidagi tanlov murosa bilan keladi, shuning uchun uni oldin hal qilish kerak. Sinf adapteri (meros) konkret Adaptee'ga bog'lanadi va uning subclass'larini adaptatsiya qilmaydi, lekin Adaptee xulqini qayta yozishga ruxsat beradi. Obyekt adapteri (kompozitsiya) teskari: bitta adapter Adaptee va uning barcha subclass'lari bilan ishlaydi, lekin xulqni qayta yozish uchun avval Adaptee'dan voris olish kerak bo'ladi. ESLATMA: Java'da bitta sinfdan meros olish mumkin bo'lgani uchun obyekt adapteri default tanlov, sinf adapteri esa interfeysni implement qilib default metodlarni qayta yozish ko'rinishida qoladi.
+
+Ikkinchi qaror adaptatsiya yuzasining kattaligiga tegishli: adaptee'dan kerak bo'lgan eng kichik amallar to'plamini, ya'ni tor interfeysni tanlang. Ikki-uch metodli interfeysni adaptatsiya qilish o'nlab metodlini adaptatsiya qilishdan beqiyos oson, va tor interfeys adapterni test qilishni ham arzonlashtiradi (qarang: [26-bo'lim](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#264-interfeys-ajratish-printsipi-interface-segregation-principle), Interfeys ajratish printsipi). Shu yerdan uchinchi qaror chiqadi: adaptatsiyani sinfning o'ziga qurib, boshqa sinflarga "mening interfeysimni implement qil" talabini qo'ymaslik mumkin - sinf adaptatsiya nuqtasini parametr sifatida qabul qiladi va kutilmagan interfeyslarga ega tizimlarga ulanadi. ESLATMA: Java'da bu `Function`, `Supplier` yoki metod havolasini parametr qilib olish bilan yoziladi, alohida adapter sinfi kerak bo'lmaydi. Oxirgi tafsilot shaffoflikka tegishli: adaptatsiya qilingan obyekt endi Adaptee interfeysiga mos kelmaydi, demak adapter hamma klient uchun shaffof emas; ikki klient uni ikki xil ko'rishi kerak bo'lsa adapter ikkala interfeysni implement qiladi.
+
 ## 2.2 Ko'prik (Bridge)
 
 **Tavsif:** Bridge abstraksiyani uning implementatsiyasidan ajratib, ikkisini mustaqil ravishda rivojlantirish imkonini beradi. Abstraksiya ierarxiyasi implementatsiya ierarxiyasiga kompozitsiya orqali murojaat qiladi, meros orqali emas. Bu sinflar sonining kombinator portlashini (M×N o'rniga M+N) oldini oladi. Adapter'dan farqi: Bridge dizayn vaqtida ataylab rejalashtiriladi, Adapter esa mavjud nomuvofiqlikni keyin tuzatadi.
@@ -107,6 +112,10 @@ public class InvoiceReport extends Report {
 }
 // PdfRenderer, XlsxRenderer va HtmlRenderer Report ierarxiyasini o'zgartirmaydi
 ```
+
+**Qurish qarorlari:** Birinchi savol yuqoridagi YAGNI ogohlantirishi bilan to'qnashadi: implementatsiya bitta bo'lsa ham ajratish kerakmi. GoF "ha" deydi, sababi implementatsiya o'zgarganda klient qayta kompilyatsiya qilinmaydi, faqat qayta linklanadi. Ikki javob ham to'g'ri, ajratuvchi shart esa iste'molchini kim qayta qurishida: iste'molchini siz qayta kompilyatsiya qilasizmi. Alohida deploy qilinadigan va boshqa jamoalar bog'lanadigan kutubxonada ajratish haqli - bu Java'da binar moslik masalasi, chunki abstraksiya va implementatsiya bitta sinfda bo'lsa implementatsiyadagi har o'zgarish iste'molchining artefaktini qayta qurishni talab qiladi. Bitta ilova bitta build ichida, hamma modul birga kompilyatsiya qilinadigan joyda esa yuqoridagi YAGNI amal qiladi va ikkinchi implementatsiya paydo bo'lganda ajratish arzonroq tushadi.
+
+Ikkinchi qaror: Implementor obyektini kim, qachon va qayerda yaratadi. Uch yo'l bor. Abstraction konstruktorida parametrga qarab tanlash eng oddiy, lekin Abstraction konkret implementatsiya sinflarini biladi. Default bilan boshlab keyin ishlatishga qarab almashtirish (kolleksiya o'sganda bir tuzilmadan boshqasiga o'tish) moslashuvchan, lekin almashtirish momentini kodda ushlab turish kerak. Qarorni fabrikaga topshirish esa Abstraction'ni Implementor sinflaridan butunlay uzadi va kengaytirishni konfiguratsiyaga chiqaradi. ESLATMA: Spring'da uchinchi yo'l standart - implementatsiya `@ConditionalOnProperty` yoki `@Profile` bilan tanlanadi, kerak bo'lsa `ObjectProvider` orqali kech olinadi, shuning uchun abstraksiya ichida tanlov kodi qolmaydi.
 
 ## 2.3 Kompozit (Composite)
 
@@ -175,7 +184,11 @@ public class RetryingPaymentClient implements PaymentClient {
 }
 ```
 
-**Ehtiyot bo'ling:** Uzun decorator zanjiri stack trace'ni o'qishni qiyinlashtiradi va har bir qatlam latency qo'shadi - zanjir tartibi (masalan, transaction decorator cache'dan oldinmi yoki keyinmi) natijaga ta'sir qiladi. Decorator ichida `this` orqali o'z metodini chaqirish wrapper'ni chetlab o'tadi; Spring'da ham self-invocation proxy'ni aylanib o'tib, `@Transactional` yoki `@Cacheable` ishlamay qolishiga sabab bo'ladi.
+**Ehtiyot bo'ling:** Uzun decorator zanjiri stack trace'ni o'qishni qiyinlashtiradi va har bir qatlam latency qo'shadi - zanjir tartibi (masalan, transaction decorator cache'dan oldinmi yoki keyinmi) natijaga ta'sir qiladi. Decorator ichida `this` orqali o'z metodini chaqirish wrapper'ni chetlab o'tadi; Spring'da ham self-invocation proxy'ni aylanib o'tib, `@Transactional` yoki `@Cacheable` ishlamay qolishiga sabab bo'ladi. Shu muammoning umumiy shakli o'rovchi sinflarni callback framework'ida yaroqsiz qiladi: o'ralgan obyekt o'rovchini bilmaydi va callback'ni ro'yxatdan o'tkazganda `this` ni, ya'ni o'zini uzatadi, shuning uchun qaytib kelgan chaqiruv o'rovchini butunlay chetlab o'tadi. Bu SELF muammosi deb ataladi va o'rash orqali qo'shilgan xulq (retry, audit, metrika) callback yo'lida yo'qoladi.
+
+**Qurish qarorlari:** Abstrakt Decorator sinfi har doim kerak emas: faqat bitta mas'uliyat qo'shilsa, uzatish mas'uliyatini to'g'ridan-to'g'ri konkret dekoratorga joylash kifoya va bu mavjud ierarxiya bilan ishlaganda ko'pincha shunday bo'ladi. Abstrakt dekorator ikki yoki undan ko'p dekorator paydo bo'lgandan keyin, uzatish kodining takrorlanishini yo'qotish uchun ochiladi. Ikkinchi qaror umumiy Component sinfiga tegishli va uni buzish qimmat tushadi: Component interfeysni belgilashi kerak, ma'lumot saqlashi emas. Og'ir Component dekoratorlarni ham og'ir qiladi, chunki har o'rov qatlami shu ma'lumotni qayta oladi, va ko'p sonli dekorator bilan ishlash imkonsiz bo'lib qoladi; ma'lumot saqlash kerak bo'lsa u konkret sinfga tushadi.
+
+Uchinchi qaror Decorator bilan Strategy orasidagi tanlov: Decorator obyektning terisini, Strategy esa ichini o'zgartiradi. Component og'ir bo'lsa uni o'rash qimmat tushadi va Strategy afzal; Strategy o'zining maxsus interfeysiga ega bo'la oladi, dekorator esa komponent interfeysiga bog'langan. Teskari tomoni bor: Strategy ishlatish uchun komponent o'z kengaytirishlarini bilishi va ularga yuza ochishi kerak, dekorator esa komponentdan hech narsa talab qilmaydi (qarang: [Strategiya](03-xulq-atvor-patternlari.md#39-strategiya-strategy)). Oxirgi va amalda eng ko'p tishlaydigan oqibat: dekorator va u o'ragan komponent bir xil obyekt EMAS, shuning uchun dekorator ishlatilgan joyda obyekt identifikatoriga tayanmaslik kerak (qarang: [`==` emas, `equals`](../clean-code/21-satr-matn-va-regex.md#211--emas-equals-intern-va-literal-pool)). ESLATMA: Spring'da bu aniq ko'rinadi - AOP proxy'langan bean `==` bilan o'z target'iga teng emas, shuning uchun bean'larni `==` bilan solishtirish yoki `IdentityHashMap` da kalit qilish proxy yoqilganda jim sinadi.
 
 ## 2.5 Fasad (Facade)
 
@@ -210,6 +223,9 @@ public class OrderQueries {
 // Connection, PreparedStatement, ResultSet va try-with-resources ko'rinmaydi
 ```
 
+**Qurish qarorlari:** Klient bog'lanishini yana bir pog'ona kamaytirish mumkin: fasadni abstrakt sinf yoki interfeys qilib, quyi tizimning har implementatsiyasi uchun alohida konkret fasad yozish - shunda klient quyi tizimning qaysi variantda ishlayotganini ham bilmaydi. Bu qimmat yechim, shuning uchun arzonroq muqobil ko'pincha yetadi: bitta fasad obyektini turli quyi tizim obyektlari bilan sozlash, ya'ni implementatsiyani konstruktorga berish. ESLATMA: Spring'da arzon variant default - fasad bean'i bitta, uning bog'liqliklari esa profil yoki property bilan almashtiriladi; abstrakt fasad faqat chaqiruv shakli ham o'zgarganda kerak bo'ladi.
+
+Ikkinchi qaror arxitektura darajasida ishlaydi va fasadning kam eslanadigan vazifasi shu: fasad quyi tizimlarni qatlamlashga va aylanma bog'liqlikni yo'q qilishga xizmat qiladi. Bir-biriga bog'liq ikki quyi tizim faqat o'z fasadlari orqali gaplashsa, ularning ichki sinflari orasida havola qolmaydi va bog'liqlik grafigi yo'naltirilgan bo'lib turadi. Modulli monolitda bu qoida modul chegarasini belgilashning eng arzon vositasi: har modul bitta ochiq fasad beradi, qolgani `package-private` qoladi (qarang: [Modulli monolit](12-arxitektura-uslublari.md#126-modulli-monolit-modular-monolith--spring-modulith)). Fasadni orkestratordan ajratadigan chiziq esa alohida yozilgan (qarang: [Orkestrator vs fasad](08-biznes-logika-va-service-qatlam-patternlari.md#825-orkestrator-vs-fasad-orchestrator-vs-facade)).
 ## 2.6 Flyweight (Flyweight)
 
 **Tavsif:** Flyweight ko'p sonli mayda obyektlarning umumiy (intrinsic) holatini ulashib, xotira iste'molini kamaytiradi. O'zgaruvchi (extrinsic) holat esa tashqaridan parametr sifatida uzatiladi. Shart - obyekt immutable bo'lishi, aks holda ulashish race condition va kutilmagan mutatsiyalarga olib keladi.
@@ -244,6 +260,9 @@ Integer small = Integer.valueOf(42);   // -128..127 oralig'i keshlangan
 Boolean yes = Boolean.valueOf(true);   // har doim bir xil nusxa
 ```
 
+**Qurish qarorlari:** Tashqi holatni ajratish bepul emas, shuning uchun u foyda berishini oldin tekshirish kerak: ajratish faqat tashqi holat turlari obyekt sonidan ancha kam bo'lganda tejaydi. Eng yaxshi hol - tashqi holatni umuman saqlamasdan hisoblab olish; shunda xotira vaqtga almashadi va bu almashtirish ongli qilinadi, chunki hisoblash har murojaatda takrorlanadi. Ikkinchi qaror bo'lishishni kim boshqarishiga tegishli va uni buzish patternni butunlay yo'q qiladi: klient flyweight'ni o'zi yaratmasligi kerak. Fabrika yagona olish nuqtasi bo'lib, bor nusxani qaytaradi va yo'q bo'lsa yaratadi; klientga `new` qoldirilsa, bo'lishish jim buziladi va kesh ikki xil nusxa saqlaydi. ESLATMA: Java'da bu konventsiya `valueOf` nomi bilan belgilangan va `new Integer(42)` ning deprecate qilinishi aynan shu qoidani tilning o'zida majburlash uchun.
+
+Uchinchi qaror Composite bilan birga ishlatganda chiqadi va u shunchaki tafsilot emas, ierarxiyadagi muloqotni butunlay o'zgartiradi: bo'lishilgan barg o'z otasini saqlay olmaydi, chunki u bir vaqtda ko'p otaga tegishli. Demak ota havolasi tashqi holatga aylanadi va obxod paytida parametr sifatida pastga uzatiladi; daraxt ustidagi har amal "men qayerdaman" degan ma'lumotni o'zi olib yurishi kerak bo'ladi (qarang: [Kompozitni qurish qarorlari](#222-kompozitni-qurish-qarorlari-implementing-composite)).
 ## 2.7 Proxy (Proxy - static, JDK dynamic proxy, CGLIB)
 
 **Tavsif:** Proxy haqiqiy obyekt bilan bir xil interfeysni taqdim etib, unga murojaatni nazorat qiladi: kechiktirilgan yaratish (lazy), huquq tekshiruvi, caching, remoting yoki logging qo'shishi mumkin. Static proxy qo'lda yoziladi; JDK dynamic proxy `java.lang.reflect.Proxy` orqali runtime'da faqat interfeys asosida generatsiya qilinadi; CGLIB (Spring'da `spring-core` ichiga repackage qilingan) subclass yaratib, interfeyssiz sinflarni ham proxy qiladi. Decorator'dan farqi - maqsad: Decorator xatti-harakat qo'shadi, Proxy esa kirishni boshqaradi.
@@ -283,6 +302,18 @@ public class ReportFacade {
 }
 ```
 
+**Qurish qarorlari:** Birinchi qadam - qanday proxy qurayotganingizni nomlash, chunki to'rt tur bir xil tuzilishga ega bo'lsa ham turli masalani yechadi va turlicha sinadi.
+
+| Tur | Nima qiladi | Spring yoki platformadagi ko'rinishi |
+|---|---|---|
+| Remote proxy | Boshqa adres maydonidagi obyektning mahalliy vakili | `@HttpExchange` + `HttpServiceProxyFactory`, eski RMI eksportyorlari |
+| Virtual proxy | Qimmat obyektni talab bo'yicha yaratadi | Hibernate lazy association, `LazyConnectionDataSourceProxy` |
+| Protection proxy | Murojaat huquqini tekshiradi | `@PreAuthorize` va `@Secured` uchun yasalgan proxy |
+| Smart reference | Murojaatda qo'shimcha ish bajaradi | `@Transactional`, `@Cacheable`, `@Observed` interceptor zanjiri |
+
+Ikkinchi qaror proxy'ning subject haqidagi bilimiga tegishli: proxy haqiqiy obyektning konkret turini bilishi shart emas. Abstrakt interfeys orqali ishlasa bitta proxy barcha subject sinflariga yetadi; konkret turni faqat subject'ni o'zi yaratadigan virtual proxy bilishi kerak. ESLATMA: Java'da bu ajratish mexanizm darajasida ko'rinadi - JDK dynamic proxy interfeysga, CGLIB esa subclass'ga tayanadi, shuning uchun interfeysga qurilgan proxy avtomatik ravishda umumiyroq bo'ladi.
+
+Uchinchi qaror virtual proxy uchun hal qiluvchi: subject hali yaratilmagan paytda proxy unga qanday murojaat qiladi. Javob - adres maydonidan mustaqil identifikator saqlanadi: fayl nomi, ID yoki host va manzil. ESLATMA: Hibernate'ning lazy proxy'si aynan shunday ishlaydi, u faqat identifikatorni ushlaydi va `getId()` chaqirig'i uchun bazaga bormaydi; `LazyInitializationException` esa shu identifikatordan haqiqiy obyektga o'tish yo'li yopilganda chiqadi. Oxirgi tafsilot shartnomaga tegishli: protection proxy interfeysi subject interfeysining qism to'plami bo'lib qolishi mumkin, chunki u subject bajaradigan amalni rad etishi mumkin. Demak "proxy bir xil interfeys beradi" da'vosi aslida "ko'pi bilan bir xil" degani va klient rad etishni kutishi shart - `@PreAuthorize` rad etgan metod aynan shu holat.
 ## 2.8 Marker interfeys (Marker Interface)
 
 **Tavsif:** Marker interface hech qanday metod e'lon qilmaydi - uning yagona vazifasi sinfga tip darajasidagi metadata "yorliq" qo'yish. Runtime yoki framework `instanceof` tekshiruvi orqali shu yorliqni ko'rib, maxsus xatti-harakat qo'llaydi. Annotatsiyalardan avvalgi davrda metadata berishning asosiy usuli bo'lgan, hozir esa compile-time tip xavfsizligi kerak bo'lganda qiymatli.
@@ -317,6 +348,11 @@ class AuditingDispatcher {
 public @interface Audited { String category() default "default"; }
 ```
 
+**Qurish qarorlari:** Yuqoridagi "zamonaviy Java'da annotatsiya afzal" tavsiyasi umumiy qoida, lekin tanlov mezoni aniq va u ikki savoldan iborat. Birinchi savol: belgi sinf va interfeysdan boshqa elementga (maydon, metod, parametr, paket) qo'yiladimi. Qo'yilsa annotatsiya majburiy, chunki marker interfeys faqat turga yopishadi. Ikkinchi savol: faqat shu belgini olgan obyektlarni qabul qiladigan metod yozish ehtimoli bormi. Bor bo'lsa marker interfeys tanlanadi, chunki u turni beradi va kompilyator parametrni tekshiradi; annotatsiya bilan bu tekshiruv ish vaqtiga suriladi. `@Target(ElementType.TYPE)` li marker annotatsiya yozayotgan bo'lsangiz, shu ikkinchi savolga javob berib ko'rish arzon tekshiruv: javob "ha" bo'lsa interfeys to'g'ri tanlov.
+
+Marker interfeysning yana bir afzalligi aniqroq nishonlash: u o'zi qo'llanadigan yagona interfeysni kengaytirib, barcha markerlangan turlar shu interfeysning subtipi bo'lishini kafolatlaydi; `@Target(TYPE)` li annotatsiya esa har qanday sinf va interfeysga tushadi va noto'g'ri joyda turganini hech kim aytmaydi.
+
+Annotatsiyaga tayanganda ikki chegarani bilish kerak. Birinchi: annotatsiya annotatsiyalangan kodning semantikasini o'zgartirmaydi, u faqat asboblarga ma'lumot beradi - xulq o'zgarishi annotatsiyani o'qiydigan kodda (framework, processor, proxy) yuz beradi, annotatsiyaning o'zida emas. Ikkinchi: ko'p qiymatli annotatsiyaning ikki shakli bor, massiv parametri va `@Repeatable`, va ikkinchisi jim tuzoq beradi - takrorlangan annotatsiya konteyner turiga aylangani uchun `isAnnotationPresent` uni KO'RMAYDI. Shuning uchun refleksiya bilan o'qiganda ikki turni ham tekshirish kerak (takrorlanadigan annotatsiyaning mexanikasi va Spring'dagi ko'rinishi: qarang [Meta-annotatsiyalar va kompozit annotatsiyalar](05-spring-core-ichidagi-patternlar-xaritasi.md#538-meta-annotatsiyalar-va-kompozit-annotatsiyalar-meta-annotations--composed-annotations)).
 ## 2.9 Modul (Module)
 
 **Tavsif:** Bir-biriga bog'liq sinflar, interfeyslar va resurslarni yagona mantiqiy birlikka to'plab, uning faqat ozgina qismini tashqariga ochadi, qolganini yashiradi. Shu orqali kod bazasidagi bog'liqliklar yo'naltirilgan va nazoratli bo'ladi - modul ichidagi o'zgarish tashqariga sizib chiqmaydi. Strukturaviy pattern sifatida u obyektlar emas, balki butun kod birliklari darajasida kompozitsiya yaratadi. Ko'pincha "public API + internal implementation" ajratmasi ko'rinishida amalga oshiriladi.
@@ -731,7 +767,60 @@ Birinchisini `grep` ko'rsatadi. Ikkinchisini faqat
 `/actuator/beans` va `/actuator/conditions` ko'rsatadi.
 ```
 
-## 2.22 Amalda qo'llash
+## 2.22 Kompozitni qurish qarorlari (Implementing Composite)
+
+**Tavsif:** [Kompozit](#23-kompozit-composite) niyati sodda, lekin uni qurishda beshta qaror bor va ularning har biri keyinchalik qimmat tushadi. Birinchisi - ota havolasi. Component'da otaga havola saqlash obxodni va o'chirishni soddalashtiradi, bolaga "men qayerdaman" degan savolga javob beradi va yuqoriga ko'tariladigan so'rov uchun tayyor zanjir yasaydi ([Mas'uliyat zanjiri](03-xulq-atvor-patternlari.md#31-masuliyat-zanjiri-chain-of-responsibility) shu havolalar ustida ishlashi mumkin). Narxi invariantda: bolaning otasi faqat `add` va `remove` ichida o'zgaradi, boshqa hech bir joyda. Invariant buzilsa daraxt ikki xil haqiqatni saqlaydi - ota bolani ko'radi, bola boshqa otani ko'rsatadi - va bu xato obxodda emas, o'chirish yoki ko'chirish paytida chiqadi. Ikkinchi qaror - Component interfeysining kengligi. Patternning maqsadi klient Leaf va Composite farqini bilmasligi bo'lgani uchun interfeys maksimal qilinadi: Leaf uchun ma'nosiz ko'rinadigan amal ham Component'ga default implementatsiya bilan chiqariladi, masalan bolalarni so'rash Leaf'da bo'sh ro'yxat qaytaradi. Uchinchi qaror esa teskari yo'nalishda cheklaydi: bolalar ro'yxatini Component'da maydon sifatida saqlamang. Har Leaf hech qachon ishlatilmaydigan maydonni ko'tarib yuradi va bargi ko'p daraxtda bu sof xotira yo'qotishi; ro'yxat Composite'da turadi, Component'da faqat uni o'qiydigan amal qoladi. To'rtinchi qaror tartibga tegishli: bolalar tartibi ahamiyatli bo'lsa (menyu, hujjat bo'limlari, filter zanjiri), kirish va boshqarish interfeysi shu ketma-ketlikni oshkora ifodalashi kerak, aks holda tartib `List` ning tasodifiy xulqiga qoladi. Beshinchi qaror - keshlash. Composite obxod yoki qidiruv natijasini keshlashi mumkin, lekin bola o'zgarganda ota keshi invalidatsiya qilinishi shart, demak bolada otaga "keshing eskirdi" deb aytadigan amal bo'lishi kerak; aynan shu talab yuqoridagi ota havolasini majburiy qiladi.
+
+**Spring'da qayerda uchraydi:** Spring'ning kompozitlari odatda bu qarorlarning soddalashtirilgan shaklini oladi: `CompositeHealthContributor` va `CompositeMeterRegistry` bolalarni faqat o'qish uchun ushlaydi, ota havolasi yo'q va tartib ahamiyatsiz. Tartib ahamiyatli bo'lgan joyda Spring uni interfeys darajasiga chiqaradi: `FilterChainProxy` ichidagi `SecurityFilterChain` ro'yxati va `MutablePropertySources` ning `addFirst`, `addLast`, `addBefore` metodlari ketma-ketlikni oshkora boshqaradi. Keshlash va invalidatsiya juftligi `ResolvableType` va `AnnotationUtils` keshlarida ko'rinadi: kesh o'zgarmas tuzilma ustida qurilgani uchun invalidatsiya kerak emas, o'zgaradigan tuzilmada esa `ConfigurableApplicationContext.refresh()` keshni butunlay tashlab yuboradi. JPA tomonida `@OneToMany(mappedBy = ...)` bilan ikki tomonlama bog'lanish aynan ota havolasi invariantini talab qiladi va uni `addChild` yordamchi metodi ichida saqlash odatiy amaliyot.
+
+**Qo'llanish keyslari:**
+- Kategoriya daraxtida mahsulot narxini yuqoriga agregatlash va natijani ota tugunda keshlash, bola o'zgarganda zanjirni ildizga qadar invalidatsiya qilish.
+- Hujjat tuzilmasida bo'limlar tartibini saqlash: `addAfter(existing, node)` kabi amal bilan ketma-ketlikni interfeysga chiqarish.
+- Tashkilot ierarxiyasida xodimdan yuqoriga ko'tarilib mas'ul rahbarni topish - ota havolasi ustidagi zanjir.
+- Katta daraxtda bargi juda ko'p bo'lganda bolalar ro'yxatini faqat kompozit tugunlarda saqlab, xotirani o'lchab ko'rish.
+- Takrorlanadigan barg tugunlarini (bir xil o'lchov birligi, bir xil tarif) bo'lishib, otani obxod parametri sifatida uzatish.
+
+**Ehtiyot bo'ling:** Komponentlarni bo'lishish bitta ota cheklovi sababli qiyin: bo'lishilgan tugun bir vaqtda ko'p joyda turgani uchun o'z otasini saqlay olmaydi. [Flyweight](#26-flyweight-flyweight) bu muammoni ota havolasini tashqi holatga chiqarib yechadi, lekin yechimning narxi bor - endi har amal otani parametr sifatida olib yurishi kerak va ota havolasiga tayangan qulaylik (yuqoriga ko'tarilish, invalidatsiya) yo'qoladi. Ikkinchi tuzoq - `add` va `remove` ni Leaf ga kelganda nima qilish. Bu yerda ikki qarama-qarshi tavsiya bor va ajratuvchi shart bitta: shu amalni kim chaqiradi. Klient butun daraxtni bir xil ko'rishi kerak bo'lsa (masalan generic daraxt tahrirlovchisi) `add` Component'da qoladi va Leaf'da istisno tashlaydi, lekin bu xulq shartnomada OSHKORA yoziladi: Javadoc "bu amal barg tugunda `UnsupportedOperationException` tashlaydi" deb aytsa, subtip kutilgan xulqdan chetga chiqmaydi va [Liskov almashtirish printsipi](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#263-liskov-almashtirish-printsipi-liskov-substitution-principle) buzilmaydi; yozilmagan istisno esa aynan shu printsipni buzadi va [rad etilgan meros](../clean-code/17-vorislik-kompozitsiya-va-polimorfizm.md#176-rad-etilgan-meros-va-interfeysni-bolish) belgisi bo'ladi. Daraxt qurish koddan ajratilgan bo'lsa (konfiguratsiya yoki fabrika daraxtni bir marta yig'adi, klient faqat o'qiydi) `add` Component'da umuman kerak emas va Composite'da qoladi - shunda istisno masalasi yo'q. ESLATMA: Java 17+ da uchinchi yo'l bor - `sealed` ierarxiya va pattern matching bilan klient Leaf va Composite ni tur darajasida ajratadi, demak `add` ni umumiy interfeysga chiqarish zarurati yo'qoladi.
+
+```java
+// Ota havolasi faqat add/remove ichida o'zgaradi, kesh esa yuqoriga invalidatsiya qilinadi
+public sealed interface CatalogNode permits Category, Product {
+    Money total();
+}
+
+public final class Category implements CatalogNode {
+    private final List<CatalogNode> children = new ArrayList<>();   // faqat kompozitda
+    private Category parent;                                       // ota havolasi
+    private Money cachedTotal;                                     // obxod keshi
+
+    public void add(CatalogNode child, int index) {                 // tartib oshkora
+        children.add(index, child);
+        if (child instanceof Category c) c.parent = this;           // invariant shu yerda
+        invalidateUpwards();
+    }
+
+    public void remove(CatalogNode child) {
+        if (children.remove(child) && child instanceof Category c) c.parent = null;
+        invalidateUpwards();
+    }
+
+    private void invalidateUpwards() {
+        cachedTotal = null;
+        if (parent != null) parent.invalidateUpwards();              // ildizga qadar
+    }
+
+    @Override public Money total() {
+        if (cachedTotal == null) {
+            cachedTotal = children.stream().map(CatalogNode::total)
+                    .reduce(Money.zero("UZS"), Money::add);
+        }
+        return cachedTotal;
+    }
+}
+// Product barg: bolalar ro'yxati ham, ota havolasi ham yo'q - maydon narxini to'lamaydi
+```
+
+## 2.23 Amalda qo'llash
 
 - [ ] Tashqi kutubxona tiplari domen paketiga kirib kelgan joylarni qidiring va har biri uchun Adapter chegarasini belgilang.
 - [ ] `@Transactional`, `@Cacheable` va `@Async` annotatsiyasi bor metodlarning `public` va tashqaridan chaqirilayotganini tekshiring - self-invocation proxy'ni chetlab o'tadi.
@@ -759,6 +848,27 @@ Birinchisini `grep` ko'rsatadi. Ikkinchisini faqat
 - Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, 1.6-bo'lim (22-23-bet) - ish vaqtidagi va kompilyatsiya vaqtidagi tuzilish mustaqilligi, agregatsiya va tanishlik farqi
 - [Spring Boot, Beans endpoint](https://docs.spring.io/spring-boot/api/rest/actuator/beans.html) - `/actuator/beans` ish vaqtidagi bean grafini beradi
 - [JLS 4.6, Type Erasure](https://docs.oracle.com/javase/specs/jls/se21/html/jls-4.html#jls-4.6) - generik tur parametri kompilyatsiyada o'chirilishi, shuning uchun ish vaqtida mavjud emasligi
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Adapter, Implementation (141-145-bet) - sinf va obyekt adapteri murosasi, tor interfeysni tanlash, pluggable adapter va ikki interfeysli adapter
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Bridge, Implementation (154-bet) - implementatsiya bitta bo'lganda ham ajratish: iste'molchi qayta kompilyatsiya qilinmaydi
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Bridge, Implementation (155-bet) - Implementor obyektini kim, qachon va qayerda yaratishining uch varianti
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Composite, Implementation (166-168-bet) - ota havolasi va uning `add`/`remove` ichidagi invarianti, Component interfeysini maksimal qilish
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Composite, Implementation (171-bet) - bolalar ro'yxatini Component'da saqlamaslik, bolalar tartibini interfeysga chiqarish, obxod keshi va invalidatsiya
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Composite, Implementation (167-bet) - komponentlarni bo'lishish bitta ota cheklovi bilan qiyin, Flyweight ota havolasini tashqi holatga chiqaradi
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Composite, Implementation (170-bet) - Component'dagi default `add` barg tugunda xato tashlashi
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Decorator, Implementation (177-178-bet) - bitta mas'uliyatda abstrakt Decorator kerak emasligi, Component sinfini yengil ushlash, dekorator va komponent bir xil obyekt emasligi
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Decorator, Related Patterns (178-180-bet) - teri va ich qiyosi: Decorator va Strategy orasidagi tanlov
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Facade, Implementation (186-187-bet) - abstrakt facade bilan klient bog'lanishini kamaytirish, quyi tizimlarni qatlamlash va aylanma bog'liqlikni yo'q qilish
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Flyweight, Implementation (199-200-bet) - tashqi holatni ajratish qachon foyda berishi va fabrikaning yagona olish nuqtasi bo'lishi
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Flyweight, Applicability (196-bet) - Composite bilan birga ishlatilganda ota havolasi tashqi holatga aylanishi
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Proxy, Applicability (208-209-bet) - proxy'ning to'rt turi: remote, virtual, protection va smart reference
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Proxy, Implementation (213-214-bet) - proxy subject'ning konkret turini bilishi shart emasligi va yaratilmagan subject'ga identifikator orqali murojaat
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Proxy, Consequences (216-bet) - protection proxy interfeysi subject interfeysining qism to'plami bo'lishi
+- Joshua Bloch, *Effective Java* 3rd, Item 18 (91-bet) - SELF muammosi: o'rovchi sinf callback framework'ida yaramaydi
+- Joshua Bloch, *Effective Java* 3rd, Item 39 (182-bet) - annotatsiya annotatsiyalangan kodning semantikasini o'zgartirmasligi
+- Joshua Bloch, *Effective Java* 3rd, Item 39 (186-bet) - `@Repeatable` da `isAnnotationPresent` takrorlangan annotatsiyani ko'rmasligi
+- Joshua Bloch, *Effective Java* 3rd, Item 41 (191-bet) - marker interfeysning aniqroq nishonlanishi: u faqat o'zi kengaytirgan interfeys ostida qoladi
+- Joshua Bloch, *Effective Java* 3rd, Item 41 (192-bet) - marker annotatsiya va marker interfeys orasidagi tanlov mezoni: belgi qaysi elementga qo'yiladi va faqat belgilanganlarni qabul qiladigan metod kerakmi
+- ESLATMA: kitoblarda yo'q, korpus qo'shgan qism - obyekt adapteri Java'da default ekani va pluggable adapterning `Function`/`Supplier` bilan yozilishi; Bridge uchun `@ConditionalOnProperty`, `@Profile` va `ObjectProvider` ko'rinishi; proxy to'rt turining Spring mexanizmlariga xaritasi va Hibernate lazy proxy misoli; AOP proxy'langan bean'ning `==` bilan teng emasligi; Composite qarorlari uchun Spring va JPA ko'rinishi, `CatalogNode` kod misoli va `sealed` uchinchi yo'li; marker tanlovining `sealed` bilan bog'lanishi
 
 ---
 

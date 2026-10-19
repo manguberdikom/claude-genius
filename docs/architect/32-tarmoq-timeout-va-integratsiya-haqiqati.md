@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 32. Tarmoq, timeout va integratsiya haqiqati (Network, Timeouts and Integration)
 
@@ -49,6 +49,8 @@ cat /proc/sys/net/ipv4/tcp_keepalive_time
 # Blackhole ni imitatsiya qilish: RST emas, paketni jim tashlash
 sudo iptables -A OUTPUT -d 10.20.0.15 -p tcp --dport 8443 -j DROP
 ```
+
+Shu yerda bitta tez-tez qilinadigan xulosa xato bo'ladi: TCP darajasidagi tasdiq ilova darajasidagi tasdiq emas. Kleppmann buni ochiq aytadi, TCP paket yetkazilganini tasdiqlasa ham, ilova uni ishlashdan oldin qulab tushgan bo'lishi mumkin; so'rov muvaffaqiyatli bo'lganiga ishonch kerak bo'lsa, ilovaning o'zidan ijobiy javob olish shart (8-bob, 281-bet). Amalda bu ikki narsani bildiradi. Birinchisi, `send()` qaytgani yoki `Send-Q` bo'shagani "qabul qilindi" degani emas, shuning uchun yozish amallari uchun ilova darajasidagi tasdiq (HTTP javobi, Kafka `acks`, baza `COMMIT`) kutiladi. Ikkinchisi, javob kelmasa nima bo'lgani umuman noma'lum qoladi: so'rov yetib bormagan, yetib borib bajarilgan, yoki bajarilib javobi yo'qolgan bo'lishi mumkin, va bu uchta holat farqlanmaydi. Shuning uchun har yozish chaqiruvi [idempotentlik](07-nosozlik-haqida-fikrlash.md#75-idempotentlik-bir-xil-sorovni-ikki-marta-bajarish-xavfsiz-bolsin) talab qiladi.
 
 ## 32.2 Timeout turlari: ulanish, o'qish, yozish, umumiy so'rov, va ularning farqi
 
@@ -107,6 +109,8 @@ Timeout qiymati o'rtacha latency dan emas, taqsimot dumidan chiqadi. To'lov serv
 Qatlamlar tartibi qattiq qoida. Tashqi qatlam ichki qatlamdan uzunroq bo'lishi kerak, aks holda ichki chaqiruv tugamasdan tashqi tomon bekor qiladi va siz natijasi bor ishni tashlab yuborasiz. Ayni paytda tashqi qatlam ichki qatlamlar yig'indisidan sezilarli kattaroq bo'lmasligi kerak, aks holda deadline ma'nosini yo'qotadi. Amalda qadam sifatida 100 dan 300 ms gacha zahira qo'yiladi.
 
 Ikkinchi qoida: statement timeout ni ilovada emas, bazada ham qo'ying. Ilova timeout da thread ni qo'yib yuboradi, lekin PostgreSQL so'rovni davom ettiradi va CPU ni yeydi. JDBC `socketTimeout` ulanishni buzadi, `statement_timeout` esa so'rovni haqiqatda to'xtatadi.
+
+Uchinchi qoida: qiymatni abadiy deb hisoblamaslik. Kleppmann timeout ni sozlanadigan konstanta sifatida qoldirmaslikni, kuzatilgan javob vaqti taqsimotiga qarab avtomatik moslashtirishni taklif qiladi: tizim javob vaqtini va uning tarqalishini (jitter) uzluksiz o'lchab, timeout ni shunga qarab o'zgartiradi (8-bob, 284-bet). Buning nomlangan mexanizmi Phi Accrual failure detector va u Akka hamda Cassandra da ishlatiladi; TCP ning qayta uzatish timeout i ham shunga o'xshash ishlaydi. Bu yondashuvning narxi diagnostikada: timeout dinamik bo'lsa, "nega bu so'rov uzildi" savoliga javob berish uchun o'sha paytdagi hisoblangan qiymat ham metrikaga yozilishi kerak, aks holda incident tahlili tayanadigan raqam qolmaydi. Shu sababli korpusning tavsiyasi aralash: tashqi integratsiya uchun yuqoridagi p99.9 hisobidan chiqqan qat'iy qiymat, klaster ichidagi tugun sog'lig'ini aniqlash uchun esa moslashuvchan detektor.
 
 ```sql
 -- Har bir rolga o'z chegarasi: hisobot OLTP ni cho'ktirmaydi
@@ -378,6 +382,8 @@ server.tomcat.accept-count=50
 spring.datasource.hikari.max-lifetime=1500000
 ```
 
+Bu nomuvofiqlikni kod review topmaydi, uni faqat test ochadi, va test skriptining shakli muhim. Nygard longevity test skriptida kunning bir qismida yukni ataylab pasaytirishni talab qiladi: connection pool va firewall ning idle timeout lari faqat ulanishlar bo'sh turgan oynada ko'rinadi (Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 3-bob, 38-bet). Doimiy yuk ostida pool dagi hech bir ulanish idle chegarasiga yetmaydi, shuning uchun bir tekis 24 soatlik yuk bu xatoni hech qachon ochmaydi. Amaliy shakl: soak test profiliga tunga taqlid qiladigan past yuk oynasi (masalan ikki soat) kiritiladi va shu oynadan keyingi birinchi so'rovlar alohida kuzatiladi. Yuk testi turlarining ro'yxati va qaysi biri nimani ochishi [testlash hujjatidagi performance test turlari](../testing/13-nofunksional-testlar-performance-resilience.md#132-performance-test-turlari) bo'limida.
+
 ## 32.12 Integratsiyani sinash: tashqi servis sekinlashganda nima bo'ladi
 
 Integratsiyani sinashda asosiy savol "xato qaytsa nima bo'ladi" emas, "sekinlashsa nima bo'ladi". Toza xato oson, u darhol qaytadi. Haqiqiy avariya esa dependency 5 sekundda javob berganda boshlanadi: thread pool to'ladi, navbat o'sadi, deadline tugaydi va sizning servis ham o'ladi, garchi o'zi sog'ligi joyida bo'lsa.
@@ -422,6 +428,10 @@ Duration took = Duration.ofNanos(System.nanoTime() - start);
 Uchinchi qatorning ma'nosi muhim: ikki mashinaning timestamp ini solishtirib tartib chiqarish ishlamaydi, chunki soatlar orasidagi farq (clock skew) odatdagi holat. Shundan ikkita amaliy qoida kelib chiqadi. Birinchisi: tartib kerak bo'lsa, vaqt emas, ketma-ketlik ishlatiladi - baza sekvensiyasi, Kafka offseti, versiya raqami yoki mantiqiy soat. "Oxirgi yozuv g'alaba qiladi" qoidasini timestamp bilan qurish jim ma'lumot yo'qotishga olib keladi.
 
 Ikkinchisi: taqsimlangan qulf va lease ni faqat TTL ga ishonib qurish xavfli. Qulf egasi GC pauzasi yoki uzun stop-the-world dan keyin o'zini hali ega deb o'ylab ishni davom ettirishi mumkin, holbuki TTL tugagan va qulfni boshqa olgan. Himoya - himoya belgisi (fencing token): qulf bilan birga o'sib boruvchi raqam beriladi va resurs eski raqamli yozuvni rad etadi. Shu qoida JWT va token muddati uchun ham amal qiladi: `exp` tekshiruvi mashinalar orasidagi kichik farqga toqat qiladigan oraliq (clock skew allowance) bilan yoziladi, aks holda to'g'ri token chekka holatda rad etiladi.
+
+Uchinchi qoida kuzatuvga tegishli va u ko'pincha o'tkazib yuboriladi: soat farqining o'zi metrika bo'lishi kerak. Kleppmann ning talabi aniq, sinxronlangan soatga tayanadigan dasturiy ta'minot ishlatilsa, barcha mashinalar orasidagi soat farqini diqqat bilan kuzatish shart, va soati boshqalardan juda og'ib ketgan node o'lgan deb e'lon qilinib klasterdan chiqarilishi kerak; shunday kuzatuv buzuq soatni zarar yetkazguncha sezish imkonini beradi (8-bob, 290-bet). Sababi xavfning shaklida: aniq sinxronlangan soatga tayanadigan dasturiy ta'minot nosozlik holatida dramatik qulash emas, jim va nozik ma'lumot yo'qolishi beradi.
+
+Soat o'qishining o'zi ham nuqta emas. Kitobning formulasi: soat ko'rsatkichini vaqtdagi nuqta deb o'ylash ma'nosiz, u ishonch oralig'i ichidagi vaqt diapazoni, masalan tizim 95 foiz ishonch bilan hozirgi vaqt daqiqadan keyingi 10.3 va 10.5 sekund orasida ekanini biladi, undan aniqroq bilmaydi (8-bob, 293-bet). Noaniqlik chegarasi vaqt manbaidan hisoblanadi: GPS qabul qiluvchi yoki atom soati to'g'ridan to'g'ri ulangan bo'lsa, kutilgan xato oralig'ini ishlab chiqaruvchi beradi; serverdan olinsa, noaniqlik oxirgi sinxronizatsiyadan keyingi kutilgan kvarts og'ishi, NTP serverining noaniqligi va serverga tarmoq borish-kelish vaqtidan yig'iladi. Muammo shu, ko'p tizim bu noaniqlikni ko'rsatmaydi: `clock_gettime()` qaytargan qiymat kutilgan xatoni aytmaydi, demak ishonch oralig'i besh millisekundmi yoki besh yilmi, bilib bo'lmaydi. Istisno sifatida Google ning Spanner dagi TrueTime API si keltirilgan: u vaqtni so'raganda ikki qiymat qaytaradi, `[earliest, latest]`, ya'ni eng erta va eng kech mumkin bo'lgan timestamp, va oraliq kengligi, boshqa narsalar qatorida, mahalliy kvarts soatining aniqroq manba bilan oxirgi sinxronlanganidan beri qancha vaqt o'tganiga bog'liq. Amaliy xulosa: mikrosekund aniqligiga tayanadigan mantiq (masalan "bir mikrosekund oldin yozilgan qiymat eskiroq") yozilmaydi, va tartib kerak bo'lsa yuqoridagi birinchi qoidaga qaytiladi.
 
 ## 32.14 Amalda qo'llash
 
@@ -497,6 +507,21 @@ Ikkinchisi: taqsimlangan qulf va lease ni faqat TTL ga ishonib qurish xavfli. Qu
   ([https://github.com/nginx/nginx/blob/release-1.27.5/src/http/modules/ngx_http_proxy_module.c](https://github.com/nginx/nginx/blob/release-1.27.5/src/http/modules/ngx_http_proxy_module.c),
   tag `release-1.27.5`, BSD tipidagi litsenziya) - 32.11 dagi
   `proxy_read_timeout` ning 60 sekundlik default i.
+- Martin Kleppmann, *Designing Data-Intensive Applications*, 1-nashr, O'Reilly, 2017,
+  8-bob (281 va 284-betlar) - TCP paketning yetganini tasdiqlashi ilova uni qayta
+  ishlaganini bildirmasligi va muvaffaqiyat uchun ilovadan ijobiy javob zarurligi;
+  timeout ni konstanta qilib qoldirmay kuzatilgan javob vaqti va jitter taqsimotiga
+  qarab moslashtirish (Phi Accrual failure detector, Akka va Cassandra)
+- Martin Kleppmann, *Designing Data-Intensive Applications*, 1-nashr, O'Reilly, 2017,
+  8-bob (290 va 293-betlar) - mashinalar orasidagi soat farqini kuzatish va juda og'gan
+  node ni klasterdan chiqarish hamda nosozlikning jim ma'lumot yo'qolishi shaklida
+  kelishi; soat ko'rsatkichining ishonch oralig'i, noaniqlik chegarasining vaqt
+  manbaidan hisoblanishi, `clock_gettime()` ning xatoni ko'rsatmasligi va Spanner
+  dagi TrueTime API ning `[earliest, latest]` juftligi
+- ESLATMA: 32.3 dagi tashqi integratsiya uchun qat'iy qiymat va klaster ichida
+  moslashuvchan detektor aralash tavsiyasi hamda dinamik timeout ni metrikaga yozish
+  talabi shu korpusning qo'shimchasi
+- Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 3-bob (38-bet) - longevity test skriptida kunning bir qismida yukni pasaytirish talabi: connection pool va firewall ning idle timeout lari faqat bo'sh oynada ko'rinadi
 
 ---
 

@@ -264,6 +264,9 @@ Qoidalar:
    tasodifiy bo'ladi, eng oson bob emas.
 4. **`tekshirilgan` holatini faqat ODAM qo'yadi.** Sessiya ko'pi bilan
    `tekshirilmoqda` ga o'tkazadi va topilmalarini hisobotda beradi.
+   Odam sessiyada tasdiqlasa, commitni sessiya qilishi mumkin, lekin
+   xabarda `Tasdiqladi: <login>` qatori turadi: tasdiq kimniki ekani
+   ochiq qoladi, muallif soxtalashtirilmaydi.
 5. **Yangi bob faqat tekshirilgan holatda qo'shiladi.** Yangi
    `ai-draft` bob qo'shilsa, qarz o'sadi.
 6. **Tuzatilgan xato `tools/known_errors.tsv` ga naqsh bo'lib

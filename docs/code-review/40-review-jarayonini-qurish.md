@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 40. Review jarayonini qurish (Building the Process)
 
@@ -68,6 +68,19 @@ Yaxshi reviewer lar bo'lgan jamoada ham review yomon ishlashi mumkin, agar jaray
 # - Require status checks: build, test, sonar, dependency-check
 # - Require conversation resolution: yoqilgan (javobsiz izoh qolmaydi)
 ```
+
+CODEOWNERS egani beradi, lekin eganing o'zi reviewer tanlovini
+tugatmaydi. Google ning Critique asbobi reviewer to'plamini taklif
+qilganda to'rt narsani birga hisobga oladi: o'zgarayotgan kodning
+egasi, kodni eng yaqinda o'zgartirgan, ya'ni eng tanish odam,
+reviewer ning mavjudligi (ta'tilda emas va imkon bo'lsa bir vaqt
+mintaqasida) va jamoa aliasi sozlamasi. Oxirgisi amaliy jihatdan
+eng qimmat: jamoaga umumiy alias berilsa, kelgan review lar a'zolar
+orasida teng taqsimlanadi va "hamma bitta odamdan so'raydi" holati
+yo'qoladi. GitHub da shu xulq `CODEOWNERS` dagi jamoa nomiga team
+review assignment (round robin yoki load balance) sozlamasini
+qo'shib olinadi; mavjudlikni esa a'zolarning ta'til holati bilan
+bog'lash kerak, aks holda alias PR ni ta'tildagi odamga tashlaydi.
 
 ## 40.2 Xavf bo'yicha tabaqalash
 
@@ -155,6 +168,23 @@ jobs:
               }
             }
 ```
+
+SLA vaqtni o'lchaydi, lekin navbatning asosiy savoli boshqa: hozir
+kim harakat qilishi kerak. Google kitobi buni har o'zgarish uchun
+aniq saqlanadigan ro'yxat bilan hal qiladi va unga attention set deb
+nom beradi: o'zgarish hozir kimda bloklangan bo'lsa, shu odamlar shu
+ro'yxatda turadi va ulardan javob kutiladi. Ro'yxat izoh e'lon
+qilinganda avtomatik ko'chadi, lekin muallif ham, reviewer ham uni
+qo'lda o'zgartira oladi. Qiymati reviewer soni ortganda ko'tariladi:
+uch reviewer bo'lgan PR da "men kutyapman" degan holat uchta
+odamning hammasida bir vaqtda bo'lishi mumkin va PR shunday
+kunlarcha turadi. Review har doim kamida bir kishining navbati
+bo'lishi kerak. GitHub da bunday maydon yo'q, shuning uchun uni
+yorliq bilan taqlid qilish mumkin: `kutilmoqda:reviewer` va
+`kutilmoqda:muallif` yorliqlari, ularni review va push hodisasida
+almashtiradigan workflow, va yuqoridagi eslatma skripti faqat
+`kutilmoqda:reviewer` dagi PR larni sanaydi (ESLATMA: yorliq orqali
+taqlid korpus qo'shimchasi, kitobda GitHub uchun ko'rsatma yo'q).
 
 ## 40.4 PR shabloni
 
@@ -271,6 +301,51 @@ jobs:
 
 Review qoidasi: muallif CI yashil bo'lgandan keyin review so'raydi. Qizil CI bilan review so'rash reviewer vaqtini isrof qiladi.
 
+Tartibdan tashqari ikkinchi savol bor: qaysi tekshiruv commit ni
+to'saydi. Review da ko'rsatilgan ogohlantirishni muallif e'tiborsiz
+qoldira oladi, shuning uchun Google statik tahlilning bir qismini
+commit ni bloklaydigan presubmit ga chiqaradi. Kitob bu yerda eng
+oddiy, lekin eng ko'p foyda beradigan uch tekshiruvni sanaydi va
+ularning hammasi o'zgarishning mazmuniga emas, shakliga qaraydi:
+o'zgarish tavsifida `DO NOT SUBMIT` yo'qligi, kod fayli bilan birga
+unga mos test faylining kiritilganligi va kodning formatlanganligi.
+Yana bir tur: juftlashgan o'zgarish tekshiruvi. Google ning
+IfThisThenThat analizatori ikki faylning birga o'zgarishi kerak
+bo'lgan bo'laklarini e'lon qilish imkonini beradi va biri o'zgarib
+ikkinchisi o'zgarmasa ogohlantiradi. Java loyihasida bunga eng ko'p
+mos keladigan juftliklar: entity va Flyway migratsiyasi, enum va
+uning `CHECK` constraint i, DTO va OpenAPI fayli, `application.yml`
+kaliti va uni o'qiydigan `@ConfigurationProperties`.
+
+```yaml
+  guard:                             # bloklovchi: mazmun emas, shakl
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: DO NOT SUBMIT
+        run: |
+          # PR tavsifi va commit xabarlari.
+          if git log --format=%B origin/${{ github.base_ref }}..HEAD                | grep -qiE 'DO NOT (SUBMIT|MERGE)|WIP:'; then
+            echo "tavsifda DO NOT SUBMIT bor"; exit 1
+          fi
+      - name: Juftlashgan o'zgarish
+        run: |
+          # Entity o'zgarsa, migratsiya ham o'zgarishi kerak.
+          chg() { git diff --name-only origin/${{ github.base_ref }}..HEAD | grep -qE "$1"; }
+          if chg 'src/main/java/.*/domain/.*\.java$' && ! chg 'db/migration/'; then
+            echo "domen o'zgardi, migratsiya yo'q"; exit 1
+          fi
+      - run: ./mvnw -q -B spotless:check
+```
+
+Bu tekshiruvlarni jamoa o'ziga qo'shishi mumkin, lekin kitob bitta
+ogohlantirish beradi: jamoaga xos presubmit kodbaza bo'ylab
+yuritiladigan katta o'zgarishni qiyinlashtiradi, chunki uni yurituvchi
+asbob har jamoaning o'z qoidasini bilmaydi. Shuning uchun Google da
+bunday tekshiruvlarning bir qismi tavsifida `CLEANUP=` bo'lgan
+o'zgarishlar uchun o'tkazib yuboriladi.
+
 ## 40.7 Merge strategiyasi va review
 
 | Strategiya | Review ga ta'siri |
@@ -363,6 +438,8 @@ Google kitobi review ni bir xil ish deb qaramaydi va o'zgarishlarni to'rtta sava
 
 Greenfield review eng kam uchraydigan tur va kitob uni eng mas'uliyatli payt deb ataydi, chunki keyin shu kodning taxminlari vaqt va masshtab bilan o'zgaradi. Shuning uchun Google da yangi kod va yangi loyiha code review dan **alohida** keng dizayn review dan o'tadi; review esa API kelishilgan dizaynga mosligini, har bir API nuqtasida test borligini va bu testlarning kod taxminlari o'zgarganda yiqilishini, egalar belgilanganini va loyihaning CI ga ulanganini tekshiradi. Kitob yangi loyihadagi birinchi review lardan biri odatda bitta `OWNERS` faylining review i ekanini ham aytadi.
 
+Refactoring turi uchun Fowler yana bitta mexanikani qo'shadi va u review ning foydasini oshiradi: review paytida taklifni darhol refaktoring bilan amalga oshirib ko'rish, ya'ni kichik guruhda, bitta reviewer va muallif birga ishlab, o'zgarishni shu yerning o'zida sinab ko'rish (Martin Fowler, *Refactoring: Improving the Design of Existing Code*, 1-nashr, Addison-Wesley, 1999, 2-bob, 51-bet). Foydasi ikki tomonlama: taklif amalda ishlashi tekshiriladi (ko'p taklif shu yerda yiqiladi), va muallif usulni o'rganadi. Chegarasi ham bor va u yuqoridagi jadvalga mos: bu usul refactoring va xulq o'zgarishi savatlarida ishlaydi, greenfield da esa ishlamaydi, chunki u yerda savol kodning shakli emas, dizaynning o'zi.
+
 Xato tuzatishda kitobning qoidasi qisqa: boshqa muammolarga tegish vasvasasidan voz kechish kerak, chunki u PR hajmini oshiradi va regressiya testini ham, keyinchalik qaytarishni ham qiyinlashtiradi. Qaytarish o'zgarishi (rollback) soniyalarda yasaladi, lekin u ham review dan o'tadi; va aynan shu sabab har bir o'zgarish kichik va atomar bo'lishini talab qiladi, aks holda qaytarish boshqa bog'liqliklarni sindiradi.
 
 Mashina yasagan o'zgarish alohida qoidaga ega va u [1.7](01-review-nima-uchun-bor-va-nimani-haqiqatda.md#17-qachon-review-foyda-bermaydi) dagi "generatsiya qilingan kodni o'qish vaqtni yoqish" qoidasidan farq qiladi. Bu yerda gap repodagi generatsiya natijasi haqida emas, butun kodbaza bo'ylab yuritilgan avtomatik o'zgarish haqida, va kitob uni review dan o'tkazadi. Lekin review ning qamrovi toraytiriladi: reviewer izohni faqat o'z kodiga xos tashvishlar bilan cheklaydi, asbob yoki jarayonning o'ziga tegmaydi, chunki jarayon allaqachon alohida review dan o'tgan va alohida jamoa unga veto qo'ysa bunday o'zgarishni masshtablash imkonsiz bo'ladi. Asbobga e'tiroz bo'lsa, u PR dan tashqarida, mas'ul guruhga eskalatsiya qilinadi. Qamrovni kengaytirmaslik ham talab qilinadi: asbobni yurgizgan odamda bir vaqtda yuzlab o'zgarish bo'lishi mumkin, shuning uchun bog'liq bo'lmagan savol butun ishni to'xtatadi.
@@ -380,6 +457,38 @@ void nolMiqdordaKomissiyaOlinmaydi() {                 // INC-102 regressiyasi
 Jadvaldagi to'rt savat bir o'q bo'ylab, ya'ni o'zgarishning turi bo'ylab yotadi. Review deb ataladigan yana bir tur esa boshqa o'qda turadi va uni review hisobiga qo'shish eng ko'p uchraydigan chalkashlik. McConnell unga nom beradi: dog-and-pony show, ya'ni mahsulot mijozga namoyish qilinadigan review. Bunday mijoz review lari davlat shartnomalari ostida yozilgan dasturlarda keng tarqalgan, chunki shartnoma ko'pincha talab, dizayn va kod uchun review o'tkazilishini majburiy qiladi; maqsadi esa mijozga loyihaning holati yaxshi ekanini ko'rsatish, demak bu texnik review emas, boshqaruv review i (McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 21.4 (495-bet)).
 
 Kitobning qoidasi qat'iy: mahsulotning texnik sifatini yaxshilash uchun dog-and-pony show ga tayanmang. Unga tayyorgarlik texnik sifatga bilvosita ta'sir qilishi mumkin, lekin odatda vaqtning ko'pi dasturning sifatini oshirishga emas, chiroyli ko'rinadigan taqdimot slaydlarini yasashga ketadi; texnik sifat uchun inspeksiya, walk-through yoki kod o'qishga tayaniladi (21.4 (495-bet)). Jarayon tilida bu ikki amaliy natija beradi: demo yoki steering ko'rsatuv PR ning approve i hisoblanmaydi va review SLA siga kirmaydi, va demo dan chiqqan texnik e'tiroz alohida issue yoki PR ga aylantiriladi, chunki uning o'z review i kerak. Texnik sifat beradigan shakl [rasmiy inspeksiya anatomiyasi](#4012-rasmiy-inspeksiya-anatomiyasi-rollar-bosqichlar-va-tezlik) bo'limida.
+
+Mashina yasagan katta o'zgarishda ruxsat beruvchining o'zi ham
+boshqacha tanlanadi. Google tajribasi: mahalliy egalar bunday
+o'zgarishni oddiy PR dek qattiq o'qimaydi, chunki ular asbobni
+yurituvchi jamoaga juda ishonadi, ya'ni yuzlab egaga yuborilgan
+o'zgarish yuzlab yuzaki approve oladi. Shuning uchun o'zgarish
+mahalliy egalarga emas, global approver ga beriladi: repozitoriyaning
+har qanday joyini tasdiqlash huquqi bor va o'zgarayotgan til yoki
+kutubxonani biladigan odam. U har bo'lakni qo'lda o'qimaydi, naqsh
+asosidagi alohida asbob bilan kutilgan shaklga mos kelganini
+avtomatik tasdiqlaydi va faqat anomaliyani (merge konflikt, asbob
+xatosi) qo'lda ko'radi. Mahalliy egaga esa faqat uning konteksti
+haqiqatan kerak bo'lgan bo'laklar yuboriladi, ruxsat olish uchun
+emas. GitHub da bunga eng yaqin shakl: tozalash PR lari uchun
+`CODEOWNERS` da alohida yo'l yozmaslik va ularni bitta platforma
+jamoasiga yo'naltirish, plus diff ning kutilgan naqshdan
+chetga chiqmaganini tekshiradigan skript.
+
+Yana bir tur review kodga emas, hujjatga tegishli va u ham xuddi
+kod kabi review talab qiladi. Kitob texnik hujjat uchun uch xil
+review ni ajratadi, har biri boshqa narsani o'lchaydi: texnik review
+aniqlikni tekshiradi va uni soha mutaxassisi, odatda jamoa a'zosi
+bajaradi (ko'pincha code review ning o'zi ichida); auditoriya review i
+tushunarlilikni tekshiradi va uni sohani bilmaydigan odam, masalan
+jamoaga yangi kelgan yoki API ning iste'molchisi bajaradi; yozuv
+review i izchillikni tekshiradi va uni technical writer yoki shunga
+ko'ngilli odam bajaradi. Hujjat tashqariga chiqadigan bo'lsa, uch
+turning hammasidan o'tkazish kerak; lekin kitobning amaliy qoidasi
+yumshoq - bitta reviewer ham reviewersizdan yaxshi. Java loyihasida
+bu `README.md`, ADR va `docs/` o'zgarishini PR dan chetlab
+o'tkazmaslikni va `CODEOWNERS` da hujjat yo'liga ham ega belgilashni
+bildiradi.
 
 ## 40.12 Rasmiy inspeksiya anatomiyasi: rollar, bosqichlar va tezlik
 
@@ -480,8 +589,28 @@ Amaliy o'lchov shundan chiqadi: agar oxirgi o'ttiz PR dagi izohlarning aksariyat
 - [ ] Review SLA sini kelishib, kutayotgan PR lar haqida kunlik eslatmani sozlang.
 - [ ] Katta o'zgarishlar uchun dizayn eskizi va draft PR bosqichlarini joriy qiling.
 - [ ] Hotfix siyosatini `REVIEW.md` ga yozib, post-review majburiyatini belgilang.
+- [ ] Jamoa uchun umumiy review aliasini sozlab, kelgan PR larni a'zolar orasida teng taqsimlang va ta'til holatini hisobga oling.
+- [ ] `kutilmoqda:reviewer` va `kutilmoqda:muallif` yorliqlarini joriy qilib, har PR da navbat kimda ekanini ko'rinadigan qiling.
+- [ ] Bloklovchi presubmit ga uch shakl tekshiruvini qo'shing: `DO NOT SUBMIT`, kod bilan birga test fayli, format.
+- [ ] Birga o'zgarishi shart juftliklarni (entity va migratsiya, DTO va OpenAPI) tekshiradigan guard ni CI ga qo'shing.
+- [ ] Mexanik katta o'zgarishlar uchun global approver ni va naqshni tekshiradigan skriptni belgilang.
+- [ ] `docs/` va ADR yo'llariga `CODEOWNERS` da ega belgilab, hujjat review ini PR ichiga kiriting.
 
 ## Manbalar
+
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at
+  Google*, O'Reilly, 2020, 10-bob ("Documentation Reviews"), 19-bob
+  ("Stage 2: Request Review", "Stage 5: Change Approvals"), 20-bob
+  ("Presubmits", "Integrated Tools") va 22-bob ("Reviewing",
+  "Authorization") - 40.1 dagi reviewer tanlashning to'rt mezoni va
+  jamoa aliasi bilan teng taqsimlash, 40.3 dagi attention set, 40.6
+  dagi bloklovchi presubmit tekshiruvlari (`DO NOT SUBMIT`, kod bilan
+  birga test fayli, format), IfThisThenThat juftlashgan o'zgarish
+  tekshiruvi va jamoaga xos presubmit ning katta o'zgarishga
+  to'sqinligi, 40.11 dagi global approver va naqsh asosidagi avtomatik
+  tasdiq hamda hujjatning uch turdagi review i. Bu nashrning
+  qo'limizdagi nusxasida chop etilgan bet raqami yo'q, shuning uchun
+  bob va bo'lim nomi ko'rsatilgan
 
 - [Google, Speed of Code Reviews](https://raw.githubusercontent.com/google/eng-practices/3bb3ec25b3b0199f4940b1aa75f0ac5c5753301c/review/reviewer/speed.md) - bir ish kunlik chegara, javob tezligi va izohli LGTM
 - [Google, The Standard of Code Review](https://raw.githubusercontent.com/google/eng-practices/3bb3ec25b3b0199f4940b1aa75f0ac5c5753301c/review/reviewer/standard.md) - approve mezoni va kelishmovchilikni hal qilish tartibi
@@ -501,6 +630,7 @@ Amaliy o'lchov shundan chiqadi: agar oxirgi o'ttiz PR dagi izohlarning aksariyat
 - Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 8-bob, "Applying the Rules" - majburlashni avtomatlashtirish sabablari; hukm talab qiladigan qoidalar; ijtimoiy qoidani texnik yechim bilan hal qilmaslik; satr chegarasi bo'yicha avtomatik rad etish yo'qligi
 - Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 8-bob, "Code Formatters" - avtomatik formatter o'rtacha odamdan yaxshi; presubmit bilan majburlash; formatlash review da mavzu bo'lmay qolishi
 - Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr, Pragmatic Engineer, 2023, 12-bob, "Code Reviews" (165-168-betlar) - review ning ikki darajasi (diff va tizim konteksti); nitpick ko'payishi instrument yoki standart yo'qligining belgisi; takrorlanuvchi muammoni review dan tashqarida hal qilish
+- Martin Fowler, *Refactoring: Improving the Design of Existing Code*, 1-nashr, Addison-Wesley, 1999, 2-bob (51-bet) - review paytida taklifni darhol refaktoring bilan amalga oshirib ko'rish: kichik guruh, bitta reviewer va muallif birga ishlaydi
 
 ---
 

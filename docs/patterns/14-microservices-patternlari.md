@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 14. Microservices patternlari (Microservices Patterns)
 
 <details>
-<summary>Bu bobdagi 42 bo'lim</summary>
+<summary>Bu bobdagi 48 bo'lim</summary>
 
 - [14.1 Monolitik arxitektura va mikroservis arxitekturasi qarori (Monolithic Architecture vs Microservice Architecture (decision))](#141-monolitik-arxitektura-va-mikroservis-arxitekturasi-qarori-monolithic-architecture-vs-microservice-architecture-decision)
 - [14.2 Biznes imkoniyati bo'yicha dekompozitsiya (Decompose by Business Capability)](#142-biznes-imkoniyati-boyicha-dekompozitsiya-decompose-by-business-capability)
@@ -50,7 +50,13 @@
 - [14.39 Service granularligi bo'yicha qaror (Service Granularity Decision)](#1439-service-granularligi-boyicha-qaror-service-granularity-decision)
 - [14.40 Saga da izolyatsiya yo'q: anomaliyalar va qarshi choralar](#1440-saga-da-izolyatsiya-yoq-anomaliyalar-va-qarshi-choralar)
 - [14.41 Tilga xos paketlash formati (Language-specific Packaging Format)](#1441-tilga-xos-paketlash-formati-language-specific-packaging-format)
-- [14.42 Amalda qo'llash](#1442-amalda-qollash)
+- [14.42 Saga ning sakkiz varianti: uch o'lchamli tanlov (Transactional Saga Patterns)](#1442-saga-ning-sakkiz-varianti-uch-olchamli-tanlov-transactional-saga-patterns)
+- [14.43 Oqim holatini kontraktda uzatish: stamp coupling (Stamp Coupling for Workflow Management)](#1443-oqim-holatini-kontraktda-uzatish-stamp-coupling-stamp-coupling-for-workflow-management)
+- [14.44 Granularlik chegaralarining o'lchanadigan qoidalari](#1444-granularlik-chegaralarining-olchanadigan-qoidalari)
+- [14.45 Saga amaliyoti: qadam tartibi va orkestrator egaligi](#1445-saga-amaliyoti-qadam-tartibi-va-orkestrator-egaligi)
+- [14.46 Saga nimani hal qiladi va nima qilmaydi](#1446-saga-nimani-hal-qiladi-va-nima-qilmaydi)
+- [14.47 Bir nechta jamoa bitta servisga muhtoj bo'lganda](#1447-bir-nechta-jamoa-bitta-servisga-muhtoj-bolganda)
+- [14.48 Amalda qo'llash](#1448-amalda-qollash)
 
 </details>
 
@@ -62,6 +68,8 @@ Mikroservis patternlari - bu bitta deployment birligiga sig'maydigan tizimni mus
 
 **Tavsif:** Bu pattern emas, balki boshlang'ich arxitektura qarori: tizim bitta deployment birligi bo'lib qoladimi yoki mustaqil deploy qilinadigan servislarga bo'linadimi. Monolit oddiy: bitta build, bitta tranzaksiya, bitta ma'lumotlar bazasi, refactoring kompilyator yordamida amalga oshadi; lekin jamoa va kod bazasi o'sgach, release'lar bir-birini bloklay boshlaydi va modullar orasidagi chegaralar yemiriladi. Mikroservislar mustaqil release, texnologiya tanlash erkinligi va alohida masshtablash beradi, biroq tarmoq, eventual consistency, tarqatilgan tracing va infratuzilma narxini qo'shadi. Amaliy javob ko'pincha "modular monolit" dan boshlash va chegaralar barqarorlashgach ajratishdir.
 
+Qarorni aniqlashtiradigan vosita - masshtab kubining uch o'qi. X o'qi: ilovaning bir xil nusxalarini ko'paytirib yuk balansi orqasiga qo'yish. Z o'qi: so'rovni uning atributi bo'yicha bo'lib (mijoz identifikatori, tenant, geografiya) har bo'lakni o'z nusxasiga yuborish. Ikkisi ham hajm muammosini hal qiladi va ikkisi ham arzon, lekin ikkisi ham murakkablik muammosini hal qilmaydi: kod bazasi, build va release hamon bitta, har nusxa butun ilovani olib yuradi va har o'zgarish butun ilovani qayta deploy qilishni talab qiladi. Faqat Y o'qi, ya'ni funksional dekompozitsiya, murakkablikka javob beradi: ilova vazifasi bo'yicha mustaqil servislarga bo'linadi. Shuning uchun "yuk ko'tarmayapti" degan muammo odatda mikroservisga o'tish sababi emas (X va Z o'qi arzonroq); mikroservisga o'tish sababi "jamoalar bir-birini bloklayapti va kod bazasini hech kim tushunmaydi" bo'ladi. Ma'lumot darajasidagi X va Z o'qi [partitioning va replikatsiya](../architect/26-partitioning-replikatsiya-va-katta-hajm.md#261-jadval-qachon-katta-hisoblanadi-qaror-uchun-raqamlar) mavzusiga tegishli.
+
 **Spring'da qayerda uchraydi:** Monolit tomoni - bitta Spring Boot 3.x ilovasi, `spring-boot-starter-web`, Spring Data JPA va `@Transactional`. Modular monolit uchun Spring Modulith: `@ApplicationModule`, `ApplicationModules.of(App.class).verify()` testda modul chegaralarini buzilishidan saqlaydi, `@ApplicationModuleListener` modullar orasini event bilan bo'shashtiradi, `spring-modulith-starter-jpa` va `spring-modulith-docs` hujjat/diagramma chiqaradi. Mikroservis tomoni - ko'p Spring Boot ilovasi, Spring Cloud Gateway, Spring Cloud Config, Spring Cloud OpenFeign yoki `RestClient`, Micrometer Tracing va `spring-boot-starter-actuator`. `spring.threads.virtual.enabled=true` (Java 21+) I/O ga bog'liq servislarda thread narxini sezilarli kamaytiradi.
 
 **Qo'llanish keyslari:**
@@ -70,6 +78,12 @@ Mikroservis patternlari - bu bitta deployment birligiga sig'maydigan tizimni mus
 - Hisobot va ML inference qismi asosiy ilovadan bir necha barobar ko'proq CPU talab qilsa, faqat shu qism alohida servis qilinadi.
 - Legacy monolitni butunlay yozmasdan, eng tez o'zgaradigan domen (masalan, narxlash) birinchi mikroservis sifatida ajratiladi.
 - Regulyator talabi bilan kartalar ma'lumoti alohida compliance zonasida ishlashi kerak bo'lgan tizim.
+
+**Qarordan oldingi uch savol.** Newman tashkilot bilan ishlaganda har doim bir xil uch savolni beradi va ko'p holda shu uch savolning o'zi kompaniyani qaytadan o'ylashga majbur qiladi: (1) **nimaga erishmoqchisiz** - javob biznes maqsadiga bog'langan natijalar to'plami bo'lishi va tizimning oxirgi foydalanuvchisiga keltiradigan foydasi bilan tushuntirilishi kerak; (2) **mikroservisga muqobil yo'llarni ko'rdingizmi** - bir xil foydaning ko'pini ancha oson va "zerikarli" usul bilan olish mumkin, ko'rmagan bo'lsangiz nega ko'rmaganingizni ayting; (3) **o'tish ishlayotganini qanday bilasiz** - yo'nalish to'g'riligini qanday o'lchaysiz. Uchinchi savolga javobi bo'lmagan migratsiya qorong'ida qo'l bilan izlashdan farq qilmaydi.
+
+**Mijoz o'rnatadigan dasturda mikroservis tanlanmaydi.** Agar dastur paketlanib mijozga yuborilsa va mijoz uni o'zi ishlatsa, mikroservis odatda yomon tanlov: migratsiya murakkablikning katta qismini operatsion sohaga suradi, operatsion soha esa bu yerda mijozning qo'lida. Monolitni mijoz tanish mexanizm bilan oladi ("Windows 2016 Server kerak" kabi aniq platforma, tanish o'rnatuvchi paket), bir jarayon o'rniga 10-20 jarayon yoki Kubernetes klasteri talab qilish esa mijozda yo'q ko'nikma va platformani talab qiladi. Mijozda Kubernetes bo'lsa ham, u sizdagi Kubernetes emas - o'rnatmalar orasidagi farq katta.
+
+**Xarajatni kamaytirish maqsad bo'lsa mikroservis yomon tanlov.** Newman buni alohida ajratib aytadi: qisqa muddatda xarajat deyarli har doim oshadi, chunki ko'proq jarayon, ko'proq mashina, ko'proq tarmoq, ko'proq saqlash va ko'proq litsenziyalanadigan yordamchi dastur ishlatiladi; bundan tashqari jamoaga kiritilgan har qanday o'zgarish qisqa muddatda tezlikni pasaytiradi, ya'ni yoki yangi funksiya sekinlashadi yoki shu narxni yopish uchun odam qo'shiladi. IT ni daromad manbasi emas, xarajat markazi deb ko'radigan tashkilotda bu mentalitet arxitekturadan foyda olishga doimiy tormoz bo'ladi. Mikroservis pul topishga yordam berishi mumkin - ko'proq mijozga yetib borish yoki funksiyalarni parallel ishlab chiqish orqali; pulni tejashga esa yo'q.
 
 **Ehtiyot bo'ling:** Domen chegaralari hali aniq bo'lmaganda mikroservislarga bo'lish eng qimmat xato - har bir refactoring API versiyalash, migratsiya va koordinatsiyaga aylanadi ("distributed monolith"). Jamoa CI/CD, observability va on-call madaniyatiga tayyor bo'lmasa, mikroservislar tezlikni oshirmaydi, balki kamaytiradi.
 
@@ -101,6 +115,16 @@ Microservice hisobi: har servis uchun CI, deploy, monitoring va on-call.
 - Sug'urta tizimida Policy Administration va Claims Processing mustaqil release tsikliga ega bo'ladi.
 
 **Ehtiyot bo'ling:** Imkoniyatlar ro'yxatini tashkiliy struktura bo'yicha emas, balki haqiqiy biznes funksiyasi bo'yicha tuzing - aks holda kompaniya reorganizatsiya qilinganda arxitektura yaroqsiz bo'lib qoladi. Juda mayda imkoniyatlar (masalan, "EmailSender service") mustaqil biznes qiymatiga ega bo'lmagani uchun faqat operatsion yukni oshiradi.
+
+**Nomzodni topishning uchta signali:** imkoniyat xaritasi tayyor bo'lmasa, Carnell domen suhbatining o'zidan chiqadigan uchta signalni beradi (Carnell, 2-bob, 39-bet):
+
+- **Otlarni sanash.** Muammoni ovoz chiqarib tasvirlab, qaytarilib keladigan otlarni yozib boring. Takrorlangan ot ko'pincha o'zak biznes domenini va servis nomzodini ko'rsatadi: `contract`, `license`, `asset`.
+- **Fe'llarga qarash.** Fe'l harakat chegarasini ochadi. "Bu tranzaksiya ma'lumotni A dan ham, B dan ham oladi" degan gap eshitilsa, bitta emas, bir nechta servis ishtirok etadi va ikkisi orasidagi o'zaro ta'sir keyinchalik servis interfeysiga aylanadi.
+- **Ma'lumot yaxlitligi (data cohesion).** Suhbat davomida o'qilayotgan yoki yangilanayotgan ma'lumot birdan butunlay boshqa narsaga aylansa, bu yangi servis nomzodi: har bir servis o'z ma'lumotiga to'liq egalik qiladi.
+
+Uchinchi signal jadvallarning GURUHINI (bitta mantiqiy entity) ko'rsatadi, jadvalning o'zini chegara qilib olishni emas. Ikkisini ajratadigan shart shu bobdagi [service granularligi bo'yicha qaror](#1439-service-granularligi-boyicha-qaror-service-granularity-decision) bo'limida yozilgan.
+
+**Dekompozitsiyadan keyingi qadam - servis API larini aniqlash.** Richardson da servislar ro'yxati oxirgi natija emas: undan keyin har bir servisning operatsiyalari va hodisalari belgilanadi. Avval har bir tizim operatsiyasi bitta servisga biriktiriladi va bu biriktirish har doim ravshan bo'lmaydi. Kitobdagi misol: `noteUpdatedLocation()` kuryer joylashuvini yangilaydi - nomiga ko'ra Courier servisiga tegishli, lekin joylashuv Delivery servisiga kerak, shuning uchun operatsiya ma'lumot KERAK bo'lgan servisga biriktiriladi. Boshqa holatlarda teskari qoida ishlaydi: operatsiyani bajarish uchun kerakli ma'lumotga EGA servis tanlanadi. Keyin har bir operatsiya uchun "bu servis yolg'iz bajara oladimi" savoli beriladi; bajara olmasa, hamkorlik uchun qanday servislararo operatsiya va hodisa kerakligi aniqlanadi. Shunday paydo bo'ladigan ikkinchi toifa operatsiyalar faqat boshqa servislar tomonidan chaqiriladi va tashqi klientga ko'rinmaydi.
 
 ```yaml
 services:
@@ -187,7 +211,16 @@ public class ShippingService {
 - On-call rotatsiyasi servis bo'yicha tuziladi - alert to'g'ridan-to'g'ri egasiga boradi.
 - Release train'dan voz kechib, har bir jamoa kuniga mustaqil deploy qila boshlaydi.
 
-**Ehtiyot bo'ling:** Reorganizatsiyada jamoalar o'zgaradi, servis chegarasi esa oson o'zgarmaydi - shuning uchun jamoa strukturasini domen chegarasiga moslashtirish, teskarisi emas, to'g'ri yo'l. "Hamma hamma joyni o'zgartira oladi" degan madaniyatda bu pattern faqat qog'ozda qoladi va egasiz servislar paydo bo'ladi.
+**Kuchli va jamoaviy egalik.** "Egalik" so'zi ikki xil rejimni yashiradi va ikkisining avtonomiyaga ta'siri boshqa.
+
+- **Kuchli egalik (strong ownership).** Servis bitta jamoaga tegishli va unga qanday o'zgarish kiritilishini shu jamoa hal qiladi. Tashqi jamoa o'zgarish kerak bo'lsa egadan so'raydi yoki PR yuboradi, PR qanday shartlarda qabul qilinishini esa yana ega jamoa belgilaydi. Bitta jamoa bir nechta servisga ega bo'lishi mumkin. Kuchli egalik faqat kod o'zgarishi bilan cheklanmaydi: jamoa kod standarti, idiomalar, qachon deploy qilish, qanday texnologiya ishlatish va deploy platformasi haqida ham o'zi qaror qabul qiladi. Bu pattern aynan avtonomiyani maksimallashtirish uchun mavjud.
+- **Jamoaviy egalik (collective ownership).** Istalgan jamoa istalgan servisni o'zgartiradi. Jamoalar bir-birining yo'lini to'smasligi uchun ehtiyotkor koordinatsiya kerak bo'ladi, ya'ni avtonomiya aynan koordinatsiya hisobiga pasayadi.
+
+Kuchli egalik lokal xilma-xillikka ruxsat beradi, lekin ruxsat cheksiz emas: faqat jamoa ichida ta'sir qiladigan tanlov (masalan Java ni funksional uslubda yozish) erkin, boshqalarga ta'sir qiladigan tanlov esa muvofiqlashtirishni talab qiladi - hamma REST-over-HTTP ishlatganda bitta jamoaning gRPC endpoint chiqarishi iste'molchilarga muammo keltiradi. Qoida: qarorning radiusi jamoa chegarasidan chiqsa, qaror ham jamoa chegarasidan chiqadi.
+
+**Teskari Conway qonuni.** Odatda tashkilot tuzilishi tizim dizaynini shakllantiradi deyiladi; Newman teskari yo'nalishni ham kuzatgan, lekin uni dalil sifatida emas, anekdot sifatida beradi (teskari ta'sirga Conway qonunining o'zi darajasidagi dalil topilmagan). Misoli: bir vaqtlar kichik veb-sayti bo'lgan yirik bosma nashr kompaniyasida sayt uch qismdan (kirish, yadro, chiqish) tuzilgan va bu bo'linish o'sha paytdagi tasodifiy texnik qarordan chiqqan edi; yillar o'tib IT tarafda aynan shu uch qismga mos uch kanal va alohida jamoalar paydo bo'lgani ma'lum bo'ldi - tashkiliy tuzilma dizayndan OLDIN mavjud emas, uning atrofida o'sgan edi. Natijasi amaliy: dizayn eskirganda uni o'zgartirish uchun tashkiliy tuzilmani ham o'zgartirish kerak bo'ladi va bu yillar oladi.
+
+**Ehtiyot bo'ling:** Reorganizatsiyada jamoalar o'zgaradi, servis chegarasi esa oson o'zgarmaydi - shuning uchun jamoa strukturasini domen chegarasiga moslashtirish, teskarisi emas, to'g'ri yo'l. Teskari Conway kuzatuvi bunga zid emas, uni shartlaydi: tashkilot allaqachon eski dizayn atrofida o'sgan bo'lsa, yangi chegaralarga o'tish tashkiliy o'zgarishni ham talab qiladi, ya'ni "jamoani domenga moslash" bir martalik emas, migratsiyaning bir qismi. "Hamma hamma joyni o'zgartira oladi" degan madaniyatda bu pattern faqat qog'ozda qoladi va egasiz servislar paydo bo'ladi.
 
 ```yaml
 teams:
@@ -248,6 +281,8 @@ spring:
 - Analitika uchun har bir servis o'z event'larini chiqaradi, DWH esa ularni yig'adi - hech kim boshqa servis jadvalini o'qimaydi.
 - Monolitdan ajratishda avval sxema ajratiladi (grant olib tashlanadi), keyin alohida instansga ko'chiriladi.
 
+**"Bazani bo'lishmang" qoidasi bir servisning nusxalariga tegishli emas.** Qoida bir nechta TURLI servisning bitta bazaga yozishini taqiqlaydi, chunki o'sha holatda ma'lumotni o'qish va o'zgartirish mantiqi servislar orasiga tarqalib ketadi. Bitta mantiqiy servisning bir nechta nusxasi uchun esa teskarisi talab qilinadi: `order-service` ning qaysi nusxasiga borsangiz ham bir xil buyurtmani ko'rishingiz kerak, demak nusxalar o'rtasida umumiy holat SHART. Bu qoidani buzmaydi, chunki holatga kirish va uni o'zgartirish mantiqi hamon bitta mantiqiy servis ichida qoladi. Shuning uchun "har bir nusxaga alohida baza" degan talqin xato; fizik darajada o'sha bitta baza ko'p mashinada joylashishi va o'qish uchun read replica'larga bo'linishi mumkin.
+
 **Ehtiyot bo'ling:** "Shared database" ga qaytish eng keng tarqalgan regress - hisobot uchun bo'lsa ham boshqa servis jadvaliga to'g'ridan-to'g'ri SELECT qilish chegarani yo'q qiladi. Shuningdek, cross-service `@Transactional` ishlamaydi: XA/2PC ni tiklashga urinmasdan, saga yoki outbox patternini loyihalashtiring.
 
 ```sql
@@ -279,7 +314,9 @@ GRANT SELECT ON payments.payment_summary TO orders_app;
 - Kontent yuklash: fayl saqlash → transcoding → katalogda e'lon qilish.
 - Obunani bekor qilish: billing to'xtatish → kirish huquqini olib tashlash → arxivlash.
 
-**Ehtiyot bo'ling:** Qadamlar soni oshgani sayin oqim hech bir kodda ko'rinmay qoladi - debug va "hozir saga qayerda?" savoliga javob berish qiyinlashadi, shuning uchun 4-5 qadamdan ko'pida orkestratsiyaga o'ting. Tsiklik bog'liqlik (A eventi B'ni, B eventi yana A'ni uyg'otishi) va kompensatsiya qilib bo'lmaydigan qadamlar (yuborilgan email) ni oldindan hisobga oling.
+**Xoreografiyali saga holatini correlation ID bilan kuzatish.** Xoreografiyada biznes jarayonining aniq ko'rinishi yo'qolishi bir muammo; ikkinchisi - saga hozir qaysi holatda ekanini biladigan joy yo'qligi, bu esa kerak bo'lganda kompensatsiya ulashning imkonini yo'q qiladi. Yechim: saga uchun unikal identifikator yaratib, uni shu saga chiqaradigan BARCHA hodisalarga qo'yish (correlation ID), keyin hodisalarni yig'ib har bir buyurtma qaysi holatda ekanini ko'rsatadigan proyeksiya quradigan alohida servis yozish. O'sha servis holat ko'rinishini berish bilan birga, ishtirokchilar o'zi hal qila olmagan muammolarni dasturiy ravishda tuzatishi ham mumkin. Spring'da correlation ID Micrometer Tracing ning `traceId` idan alohida, biznes identifikatori sifatida hodisa payload'ida va Kafka header'ida uzatiladi, holat proyeksiyasini esa `@KafkaListener` + read model jadvali quradi.
+
+**Ehtiyot bo'ling:** Qadamlar soni oshgani sayin oqim hech bir kodda ko'rinmay qoladi - debug va "hozir saga qayerda?" savoliga javob berish qiyinlashadi, shuning uchun 4-5 qadamdan ko'pida orkestratsiyaga o'ting. Xoreografiya va orkestratsiya tanlovning faqat bir o'lchami: aloqa va izchillik bilan birga olinganda sakkizta nomlangan birikma chiqadi, ularning jadvali va qaror qoidasi [14.42](#1442-saga-ning-sakkiz-varianti-uch-olchamli-tanlov-transactional-saga-patterns) da. Tsiklik bog'liqlik (A eventi B'ni, B eventi yana A'ni uyg'otishi) va kompensatsiya qilib bo'lmaydigan qadamlar (yuborilgan email) ni oldindan hisobga oling.
 
 ```java
 // Xoreografiya: markaz yo'q, har servis hodisaga javob beradi
@@ -318,7 +355,9 @@ class OrderCancellation {
 - Katta buyurtmani bo'lib yuborish va qaytarishlarni (refund) kompensatsiya bilan boshqarish.
 - Bulutli resurs provisioning: VM → tarmoq → DNS → monitoring, xatoda teskari tozalash.
 
-**Ehtiyot bo'ling:** Orchestrator "god service" ga aylanib, ishtirokchilar anemik CRUD'ga tushib qolmasligi uchun unda faqat koordinatsiya mantiqi qolsin. Saga ACID emas: oraliq holatlar tashqariga ko'rinadi, shuning uchun `PENDING`/`CONFIRMED` statuslarini UI va API shartnomasida ochiq modellashtirish shart.
+**Saga va process manager: bitta narsami?** Korpusdagi [jarayon menejeri](15-enterprise-integration-patterns-i-xabarlar.md#1535-jarayon-menejeri-process-manager) bo'limi process manager ni "taqsimlangan tranzaksiyalarda orchestration-based saga sifatida tanilgan" deb beradi, Khononov esa ikkisini ataylab ajratadi. Zid emas, ikki xil darajadagi gap va ajratuvchi shart modellashtirish darajasida. **Topologiya darajasida** ikkisi bir xil: markaziy stateful komponent qadamlarni boshqaradi, holatni saqlaydi va kompensatsiyani ishga tushiradi - EIP ning ta'rifi shu haqda. **Modellashtirish darajasida** Khononovning uch mezoni ikkisini ajratadi: (1) saga hodisani buyruqqa ODDIY moslaydi, ya'ni ichida if-else yo'q; shart paydo bo'lsa u endi saga emas, process manager; (2) saga ma'lum hodisa kuzatilganda yashirin paydo bo'ladi (`CampaignActivated` kelsa saga bor), process manager esa bitta manba hodisaga bog'lanmaydi va aniq identifikator bilan ochiq yaratiladi; (3) process manager bir butun biznes jarayoni (xizmat safarini bron qilish: marshrutni hisoblash, xodimdan tasdiq, boshqa marshrut tanlansa rahbardan tasdiq, mehmonxona bo'lmasa chiptani bekor qilish) va holat saqlashi majburiy. Amaliy foydasi: agar sizning "saga" ingizda shartli tarmoqlanish bor va u foydalanuvchi so'rovidan ochiq yaratilsa, uni saga deb emas, process manager deb loyihalashtiring; shunda shart va tarmoqlanishni state machine bilan modellashtirish tabiiy bo'ladi.
+
+**Ehtiyot bo'ling:** Orchestrator "god service" ga aylanib, ishtirokchilar anemik CRUD'ga tushib qolmasligi uchun unda faqat koordinatsiya mantiqi qolsin. Saga ACID emas: oraliq holatlar tashqariga ko'rinadi, shuning uchun `PENDING`/`CONFIRMED` statuslarini UI va API shartnomasida ochiq modellashtirish shart. Orkestratsiya o'zi ham bitta pattern emas: aloqa sinxronmi yoki asinxron, izchillik atomarmi yoki yakuniy - bu ikki savol natijasini keskin o'zgartiradi ([14.42](#1442-saga-ning-sakkiz-varianti-uch-olchamli-tanlov-transactional-saga-patterns)).
 
 ```java
 // Orkestratsiya: qadamlar va kompensatsiya bitta joyda ko'rinadi
@@ -370,6 +409,8 @@ public Mono<OrderView> load(String id) {
 - Dashboard'da bir necha servis `/actuator/health` natijasi jamlanib ko'rsatiladi.
 
 **Ehtiyot bo'ling:** Katta ro'yxatlarni xotirada join qilib keyin filtrlash va sahifalash - yashirin performance bombasi; bunday keyslarda CQRS read model yoki qidiruv indeksi kerak. Har bir qo'shilgan chaqiruv umumiy availability'ni pasaytiradi, shuning uchun timeout, circuit breaker va partial response (ba'zi bo'lagi bo'sh) strategiyasini oldindan belgilang.
+
+Mavjudlik ko'paytmaga aylanishidan qutulish uchun uchta yo'l bor va har birining narxi bor; tanlov shu uchtasi orasida qilinadi. Birinchi: kerakli ma'lumotni chaqiruvchi tomonga replikatsiya qilib, chaqiruvni butunlay yo'q qilish - katta hajmda yoki tez o'zgaradigan ma'lumotda samarasiz, chunki replikatsiya trafigi va eskirgan ma'lumot muammosi chaqiruvdan qimmatroq bo'lib qoladi ([Materiallashtirilgan ko'rinish](10-malumotlarni-boshqarish-va-taqsimlash.md#1018-materiallashtirilgan-korinish-materialized-view)). Ikkinchi: so'rovni to'liq ishlashdan oldin javob qaytarish - servis "qabul qildim" deb javob beradi va ishni keyin tugatadi; narxi mijozga ko'chadi, u endi natijani polling qilishi yoki xabarnoma olishi kerak ([Asinxron so'rov-javob](07-api-dizayn-patternlari.md#715-asinxron-sorov-javob-asynchronous-request-reply)). Uchinchi: servisni umuman faqat asinxron API bilan ta'riflash, ya'ni sinxron shartnoma bermaslik; ichki servislar orasida bu ishlaydi, ommaviy API da esa ko'pincha mumkin emas, chunki mijozlar sinxron chaqiruv kutadi.
 
 ## 14.11 Domen hodisasi (Domain Event (microservice view))
 
@@ -509,6 +550,19 @@ public void publish() {
 - Autentifikatsiya servisidan token validation (introspection) uchun sinxron so'rov.
 - To'lov provayderining sinxron authorize API'siga murojaat qilib darhol natija ko'rsatish.
 
+**Besh ta'sirga ega uchta kechikish.** Boshqa servis ma'lumotini chaqiruv bilan o'qish Ford va boshqalarda uch qismdan iborat kechikish beradi (Hard Parts, 10-bob, 285-bet): **tarmoq kechikishi** so'rov va javobning yo'lda o'tgan vaqti, odatda 30-300 ms; **xavfsizlik kechikishi** maqsad endpoint qo'shimcha avtorizatsiya talab qilganda qo'shiladi va endpointning qattiqligiga qarab 20-400 ms oralig'ida; **ma'lumot kechikishi** esa javobni yasash uchun qo'shimcha baza chaqirig'i kerak bo'lganda (SQL join o'rniga alohida so'rov) 10-50 ms qo'shadi. Eng yomon holatda uchtasi birga faqat tavsifni olish uchun bir soniyaga yetadi. Narxning ikkinchi qismi bog'lanish: chaqiruvchi chaqirilganning mavjudligiga tayanadi, ya'ni ikkisi semantik va statik bog'lanadi va birga masshtablanishga majbur bo'ladi.
+
+**Temporal coupling ikki servis orasida emas, ikki nusxa orasida.** Sinxron bloklovchi chaqiruvda javob odatda kelgan tarmoq ulanishining o'zi bilan qaytariladi. Demak chaqirilgan servis javob yuborishga tayyor bo'lganda chaqiruvchining AYNAN O'SHA nusxasi o'lgan bo'lsa, javob yo'qoladi - bog'lanish `order-processor` va `loyalty` orasida emas, ularning ikki konkret nusxasi orasida. Asinxron request-response ga o'tganda shu nuqtani hisobga olish kerak: javobni upstream servisning istalgan nusxasi qayta ishlay olishi shart, aks holda asinxronlik faqat nomda qoladi.
+
+**Chaqiruv uslublarini ikki o'lchamda tasniflash.** Richardson IPC texnologiyasini tanlashdan OLDIN o'zaro ta'sir uslubini tanlashni aytadi va uni ikki o'lchamga joylaydi (Microservices Patterns, 3-bob, 67-68-betlar): birinchi o'lcham bir-bir yoki bir-ko'p (so'rovni bitta servis ishlaydimi yoki bir nechtasi), ikkinchisi sinxron yoki asinxron (klient javobni tez kutadi va bloklanadi, yoki bloklanmaydi).
+
+| | bir-bir | bir-ko'p |
+|---|---|---|
+| Sinxron | request/response | - |
+| Asinxron | async request/response, one-way notification | publish/subscribe, publish/async responses |
+
+Muhim nuqta: sinxron request/response uslubi IPC texnologiyasiga deyarli ortogonal. Servis boshqa servis bilan request/response uslubida REST bilan ham, xabar brokeri bilan ham gaplashishi mumkin va broker ishlatilgani klient javobni kutib bloklanmasligini bildirmaydi, ya'ni broker o'zi bo'sh bog'lanish bermaydi. Har servis amalda bu uslublarning birikmasini ishlatadi.
+
 **Ehtiyot bo'ling:** Sinxron chaqiriqlar zanjiri (A→B→C→D) availability'ni ko'paytma qilib kamaytiradi va latency'ni jamlaydi - har bir hop'da timeout, bulkhead va circuit breaker (Resilience4j) bo'lishi kerak. Yozuv operatsiyalarida retry'ni idempotency key'siz qilmang va distributed transaction o'rniga RPC zanjirini ishlatmang - bunday holatda Saga yoki Messaging to'g'ri tanlov.
 
 ```java
@@ -540,6 +594,8 @@ RestClient inventoryClient(RestClient.Builder b, ServiceProperties p) {
 - Saga orkestratsiyasida qadamlar orasida command/reply xabarlari almashish.
 - CQRS'da read model'ni event stream'dan asinxron yangilash.
 - Peak trafik paytida tashqi provayder rate limit'ini queue bilan tekislash (load leveling).
+
+**Sekin tekshiruvni kritik yo'ldan chiqarish.** Buyurtma oqimida `order-processor` to'lovni, to'lov servisi firibgarlik tekshiruvini, u esa mijoz servisini sinxron chaqirsa, to'rt servisdan yoki ular orasidagi tarmoqdan birortasidagi muammo butun amalni yiqitadi. Bundan tashqari uzun zanjir resurs uchun kurash yaratadi: `order-processor` to'lovdan javob kutib ulanishni ochiq ushlab turadi, to'lov servisi firibgarlik tekshiruvidan javob kutib o'zining ulanishini ushlab turadi va shu davom etadi, natijada bo'sh ulanish tugashi yoki tarmoq tirbandligi ehtimoli oshadi. Yechim oqimni qayta chizishdan boshlanadi: firibgarlik tekshiruvini asosiy xarid oqimidan chiqarib fonda yuritish, u muammo topsa mijoz yozuvini belgilash va to'lov jarayonining boshida shu belgini tekshirish. Natijada ish qismi parallel bajariladi, zanjir qisqaradi va kritik operatsiya uchun bitta bog'liqlik kamayadi.
 
 **Ehtiyot bo'ling:** Broker at-least-once yetkazadi, shuning uchun consumer idempotent bo'lishi va retry + DLQ strategiyasi aniq belgilanishi kerak; `@KafkaListener`'da cheksiz retry poison message bilan partition'ni butunlay to'xtatib qo'yadi. Xabar sxemasini (schema) versiyalamasdan o'zgartirish barcha consumer'larni buzadi - Avro/Protobuf + Schema Registry yoki tolerant reader yondashuvini qo'llang.
 
@@ -605,6 +661,8 @@ public class Iso20022PaymentAdapter {
 - Email yuborish consumer'ida duplikat xabarga ikkinchi email jo'natmaslik.
 
 **Ehtiyot bo'ling:** Dedup yozuvini biznes o'zgarishidan alohida transaction'da yozish pattern'ni buzadi - ikkisi bir atomar birlikda bo'lishi shart, aks holda crash oynasida duplikat yoki yo'qotish yuz beradi. Dedup jadvali cheksiz o'smasligi uchun TTL/retention (masalan 7 kun) qo'ying, lekin retention broker'ning maksimal retry/replay oynasidan uzunroq bo'lsin.
+
+Alohida `processed_message` jadvali o'rniga [event store](10-malumotlarni-boshqarish-va-taqsimlash.md#1024-event-sourcing-ombori-event-sourcing-store)ning o'zini idempotentlik ombori sifatida ishlatish mumkin: kelgan xabarning identifikatorini shu xabar natijasida chiqadigan event ichiga yozib qo'yish va keyin shu identifikator bo'yicha tekshirish. Bu alohida jadvaldan qutqaradi, lekin bitta tuzog'i bor va u jim ishlaydi: xabarni ishlash hech qanday event chiqarmasa (agregat holati o'zgarmasa, biznes qoidasi bo'yicha hech narsa qilinmasa), xabar ishlangani haqida hech qanday yozuv ham qolmaydi. Xabar qayta yetkazilganda esa u "yangi" bo'lib ko'rinadi va ikkinchi marta ishlanadi - bu holatda birinchi urinishdan keyin holat o'zgargan bo'lsa, ikkinchisi boshqa natija beradi. Yechim: har holatda, hatto hech narsa o'zgarmaganda ham, soxta (pseudo) event yozish va iste'molchilarni uni e'tiborsiz qoldirishga majburlash. Shu majburiyat esa patternning yashirin narxi: endi har iste'molchi bu event turini bilishi va o'tkazib yuborishi kerak, aks holda oqimga ma'nosiz event chiqadi.
 
 ```java
 // Idempotent iste'molchi: bir xil xabar ikki marta kelsa bir marta ishlanadi
@@ -673,6 +731,15 @@ class InventoryClient {
 
 **Ehtiyot bo'ling:** Qo'shimcha hop latency va single point of failure xavfini keltiradi - LB/gateway'ni albatta bir nechta replika va health-check bilan ishlating. Gateway'ga biznes logikani (validatsiya, transformatsiya, orkestratsiya) yuklash klassik anti-pattern: u yangi monolitga aylanadi; gateway faqat routing, auth va cross-cutting masalalar bilan shug'ullansin.
 
+**Markaziy DNS va load balancer nega yetmaydi:** an'anaviy modelda klient umumiy DNS nomiga uradi, LB marshrut jadvalidan fizik manzilni topadi va statik serverlar guruhiga uzatadi. Carnell bu modelning bulut uchun to'rtta kamchiligini sanaydi (Carnell, 4-bob, 99-bet):
+
+- **Yagona nosozlik nuqtasi.** LB ni HA qilsa ham, u butun infratuzilmaning markaziy bo'g'izi bo'lib qoladi: u o'chsa, unga tayangan hamma ilova o'chadi.
+- **Gorizontal masshtab cheklangan.** Tijorat LB lari odatda hot-swap zaxira modelida ishlaydi: yukni bitta server ko'taradi, ikkinchisi faqat fail-over uchun turadi; litsenziya ham o'zgaruvchan emas, qat'iy sig'imga sozlangan.
+- **Statik boshqariladi.** An'anaviy LB tez ro'yxatga olish va chiqarish uchun loyihalanmagan: marshrutlar markaziy bazada turadi va yangi marshrut ko'pincha vendor API si orqali qo'shiladi.
+- **Murakkab.** LB proxy bo'lgani uchun klient so'rovini fizik servisga moslash qoidalari qo'lda yozilib deploy qilinadi, ya'ni yangi nusxa startupda o'zini ro'yxatga olmaydi.
+
+Bu LB ni rad etish emas. LB SSL termination ni markazlashtirish va port xavfsizligini boshqarish uchun o'z o'rnida qoladi: u orqasidagi hamma serverning kirish (ingress) va chiqish (egress) portlarini qulflaydi, bu esa PCI kabi sertifikatsiya talablarida kerak bo'ladi.
+
 ```yaml
 apiVersion: v1
 kind: Service
@@ -734,6 +801,10 @@ eureka:
 - Consul health-check sifatida Actuator readiness probe'ni ulab, DB uzilganda instansiyani trafikdan chiqarish.
 
 **Ehtiyot bo'ling:** Heartbeat interval va lease expiration sozlamalari noto'g'ri bo'lsa, o'lgan instansiya registry'da uzoq "tirik" turadi yoki tirik instansiya noto'g'ri chiqarib tashlanadi - Eureka'ning self-preservation rejimi ham bu xatti-harakatni o'zgartiradi, uni production'da bilib turing. Graceful shutdown'da de-register bo'lmasa klientlar o'chgan instansiyaga so'rov yuboraveradi; shuningdek registration kodi ilovaga kirishi polyglot muhitda 3rd Party Registration'ni afzal qiladi.
+
+**Warm-up kechikishi: yangi nusxa darhol ko'rinmaydi:** Eureka nusxani registratsiyadan keyin darhol emas, 30 soniya ichidagi uchta ketma-ket muvaffaqiyatli health check dan keyin mijozlarga ochadi (Carnell, 4-bob, 110-bet). Shuning uchun servis ko'tarilgan zahoti uni chaqirsangiz, servisning o'zi ishlab turgan bo'lsa ham "servis topilmadi" degan 404 olasiz. Bu ayniqsa hamma narsa birga ko'tariladigan lokal va `docker compose` muhitida seziladi; productionda registry allaqachon ishlab turadi va eski nusxalar so'rovni qabul qilib turgani uchun kechikish ko'rinmaydi. Amalda: smoke check va integratsiya testi registratsiya oynasini kutsin, deploy skripti esa "nusxa ko'tarildi" degan signalni emas, registry da ko'rindi degan signalni kutsin.
+
+ESLATMA: uch heartbeat va 30 soniya - kitobdagi Eureka ning standart sozlamasi. Consul, Spring Cloud Kubernetes yoki Kubernetes `Endpoints` propagatsiyasi uchun oyna boshqa, lekin "ro'yxatga olish bilan ko'rinish bir vaqtda emas" qoidasi o'zgarmaydi.
 
 ```java
 // Self registration: nusxa o'zini ro'yxatga oladi va heartbeat yuboradi
@@ -819,6 +890,8 @@ SecurityFilterChain api(HttpSecurity http) throws Exception {
 - Admin portalda modullarni (billing, users, reports) mustaqil deploy qiladigan jamoalarga ajratish.
 - Past quvvatli qurilmalar uchun JavaScript bundle'ni kamaytirib, HTML'ni serverda yig'ish.
 
+**Veb sayt uchun standart tanlov sahifa asosidagi dekompozitsiya.** Newman UI dekompozitsiyasini ikki texnikaga ajratadi: widget asosidagi (bir ekranga mustaqil bo'laklarni ulash) va sahifa asosidagi (frontend mustaqil veb sahifalarga bo'linadi). Interfeys veb sayt bo'lsa, uning standart tanlovi sahifa asosidagi dekompozitsiya: `/albums/` so'rovlari to'g'ridan-to'g'ri Albums servisiga, `/artists/` esa Artists servisiga yo'naltiriladi, har biri o'z sahifasini to'liq render qiladi va ularni umumiy navigatsiya bog'laydi. Servisga egalik qilgan jamoa UI ni uchidan uchiga ko'radi, shuning uchun o'z o'zgarishi foydalanuvchiga qanday ta'sir qilishini tushunadi. Texnik jihati ham sodda: brauzerda hech qanday maxsus JavaScript ham, muammoli iFrame ham kerak emas - foydalanuvchi havolani bosadi va yangi sahifa so'raladi; qurilma turiga moslashish esa progressive enhancement bilan hal qilinadi. Newman shu yerda tez-tez uchraydigan xatoni aytadi: SPA texnologiyasiga shoshilish natijasida veb sayt sifatida yaxshi ishlaydigan tajriba zo'rlab single-page application ga joylashtiriladi. Sahifa asosidagi bo'linishni widget bilan birga ishlatish mumkin: sahifa ichida widgetlar bo'lishi mumkin.
+
 **Ehtiyot bo'ling:** Bir sekin fragment butun sahifani ushlab turmasligi uchun har bir fragment chaqirig'iga qat'iy timeout, circuit breaker va bo'sh/keshlangan fallback bering. Umumiy CSS, dizayn tokenlari va versiyalanishini boshqarmasa, sahifa vizual jihatdan tarqalib ketadi va kompozitsiya qatlami yangi muvofiqlashtirish bo'yni (coupling point) bo'lib qoladi.
 
 ```html
@@ -846,6 +919,12 @@ SecurityFilterChain api(HttpSecurity http) throws Exception {
 - Legacy Angular portaliga yangi React widget'ini web component sifatida qo'shish.
 - Dashboard'da har bir widget o'z servisidan ma'lumot olishi va biri ishlamasa qolgani ishlashi.
 - Mobil va web klientlar uchun alohida BFF qurib, har biriga mos payload shakllantirish.
+
+**Widget larni iFrame bilan ulamang.** iFrame tarixda ko'p ishlatilgan, lekin bo'laklarni bitta sahifaga ulash uchun undan qochish kerak: o'lcham masalalari va sahifa bo'laklari orasida aloqa qurishning qiyinligi. O'rniga widget server tomonda shablon bilan qo'yiladi yoki mijoz tomonda brauzerga dinamik kiritiladi. Ikki holatda ham widget sahifaning boshqa qismlari bilan bir xil brauzer sahifasida ishlaydi, shuning uchun ular bir-biriga xalaqit bermasligini ta'minlash kerak; widgetlar orasidagi aloqa uchun esa brauzerning o'z hodisa mexanizmi ishlatiladi (masalan chart widget `Album Selected` custom event chiqaradi, tavsiya va tafsilot widgetlari unga obuna bo'ladi) - bu servislar orasidagi hodisaga asoslangan aloqaning sahifa ichidagi ko'rinishi.
+
+**Sahifa og'irligi uchun avtomatik ogohlantirish.** Widget asosidagi SPA da bitta widget bog'liqligining kichik o'zgarishi juda ko'p yangi tranzitiv bog'liqlik olib kirib sahifa hajmini keskin oshirishi mumkin: natijada bir sahifaga React freymvorkining bir nechta versiyasi va ularning bog'liqliklari tushadi. Shuning uchun sahifa og'irligi muhim bo'lgan interfeysda hajm belgilangan chegaradan oshganda ogohlantiradigan avtomatik tekshiruv qo'yiladi. Alohida bundle qilish ishi bir martalik narx, sahifa hajmi esa doimiy nazorat talab qiladi.
+
+**Kesishgan imkoniyat widget ga ham, sahifaga ham sig'maydi.** Mikro frontend modelining Newman hal qila olmagan deb ataydigan muammosi: servis imkoniyati ba'zan widget yoki sahifaga tabiiy joylashmaydi. Tavsiyalarni sahifadagi qutida ko'rsatish oson, lekin qidiruvda yozish paytida tavsiyalarni avtomatik yangilash kerak bo'lsa, u bir nechta bo'lakni kesib o'tadi. Qoida: o'zaro ta'sir qancha ko'p kesishsa, model shuncha kam mos keladi va yechim oddiy API chaqiruviga qaytadi.
 
 **Ehtiyot bo'ling:** Shared dependency (React, dizayn tizimi) versiyalarini muvofiqlashtirmasa bundle hajmi va runtime konflikt muammolari paydo bo'ladi, SEO va first-contentful-paint esa server-side kompozitsiyadan yomonroq bo'lishi mumkin. Autentifikatsiya tokenini brauzer `localStorage`'ida saqlash XSS xavfini oshiradi - BFF + `HttpOnly` cookie yondashuvi afzal; shuningdek cross-module global state'ni iloji boricha kamaytiring, aks holda mustaqillik illyuziyaga aylanadi.
 
@@ -877,7 +956,23 @@ async function renderHome() {
 - Legacy monolitdan microservice'ga bosqichma-bosqich o'tishda trafikni path bo'yicha yangi service'ga yo'naltirish (strangler).
 - Canary release'da header yoki weight predicate bilan trafikning 5%'ini yangi versiyaga berish.
 
+**Gateway umumiy qolishi kerak: agregatsiya ham, protokolni qayta yozish ham unda emas.** Newman gateway va mesh dagi umumiy xulq servisning aniq xulqidan mustaqil bo'lishi shartini qo'yadi va uch xil noto'g'ri ishlatishni sanaydi. **Agregatsiya:** boshi zararsiz ko'rinadi (ikki chaqiruvni birlashtirib bitta payload qaytarish), keyin o'sha oqimga yana bir downstream chaqiruv qo'shiladi, keyin shartli mantiq kerak bo'ladi va oxirida asosiy biznes jarayoni bu ishga mos bo'lmagan uchinchi tomon vositasining ichiga yozilgan bo'lib chiqadi. Agregatsiya va filtrlash kerak bo'lsa GraphQL yoki BFF ni oling; agregatsiya mohiyatan biznes jarayoni bo'lsa uni aniq modellashtirilgan saga qiladi. **Protokolni qayta yozish:** "har qanday SOAP API ni REST ga aylantiramiz" degan da'vo noto'g'ri, chunki REST butun arxitektura yondashuvi va proxy qatlamida amalga oshmaydi; protokol tarjimasi oraliq qatlamga emas, servisning o'ziga tegishli. **Ichki chaqiruvlar:** gateway ni barcha servislararo (east-west) chaqiruv uchun vositachi qilish kamida bitta qo'shimcha tarmoq hop qo'shadi va bu masala uchun service mesh ancha mos.
+
+Ikkisining ildizi bitta: "pipe lar sodda, endpointlar aqlli" qoidasi buziladi. Aqlni kodda ushlash mustaqil deploy qilish imkonini saqlaydi, oraliq qatlamga ko'chirilgan mantiq esa qattiq nazorat ostida bo'ladi - jamoalarga markaziy gateway ni o'zi o'zgartirishga ruxsat berilmaydi, demak har o'zgarish gateway jamoasiga tiket bo'lib boradi va yetkazish sekinlashadi. Mahsulot DSL ida ishlash buni kuchaytiradi: Java o'rniga vendor ning JSON konfiguratsiyasida marshrut qoidalari yoziladi, keyin o'sha agregatsiya naqshi aslida alohida servisga arzigulik domen funksiyasi ekani ma'lum bo'lganda uni ko'chirish qiyin bo'ladi, chunki mantiqni qaytadan yozish kerak. Eng yomon holatda agregatsiya qiladigan gateway o'ziga alohida jamoa talab qiladi va bitta funksiyani chiqarish uchun frontend jamoasi, gateway jamoasi va servis jamoasi ketma-ket o'zgarish kiritishi kerak bo'ladi. Newman ning yon sharti: API kalitlarini boshqarish, autentifikatsiya va marshrutlash kabi umumiy vazifalar uchun tayyor gateway mahsulotini olish to'g'ri, filtrlash va agregatsiyani esa undan tashqarida qoldirish kerak.
+
 **Ehtiyot bo'ling:** Gateway'ga business logika yuklash eng keng tarqalgan xato - u tezda yangi monolitga va har bir jamoa uchun deployment bottleneck'ga aylanadi. Shuningdek Spring Cloud Gateway reactive bo'lgani uchun filter ichida blocking JDBC yoki `RestTemplate` chaqirmang, aks holda Netty event loop thread'lari band bo'lib butun gateway qotib qoladi.
+
+**Gateway ning o'zi SPOF bo'lib qolmasin:** gateway hamma trafik o'tadigan bo'g'iz, shuning uchun Carnell uchta ekspluatatsiya qoidasini qo'yadi (Carnell, 6-bob, 156-bet):
+
+- **Gateway nusxalarini LB orqasiga qo'ying.** Bir nechta gateway nusxasining oldiga load balancer qo'yish to'g'ri dizayn va gateway ni masshtablanadigan qiladi; lekin LB ni har bir servis nusxasining oldiga qo'yish bo'g'iz yasaydi.
+- **Gateway kodi stateless bo'lsin.** Xotirada hech qanday ma'lumot saqlanmaydi: aks holda uni hamma nusxaga replikatsiya qilish kerak bo'ladi va masshtab cheklanadi.
+- **Gateway kodi yengil bo'lsin.** Filter ichidagi murakkab mantiq va bir nechta baza chaqirig'i keyinchalik topilishi qiyin performance muammosining manbasiga aylanadi.
+
+**Filter zanjiri va tartibi:** Carnell filterlarni uch turga ajratadi (Carnell, 6-bob, 170-bet): **pre** - maqsadga yuborishdan oldin ishlaydi, xabar shaklini bir xillashtiradi (muhim HTTP header lar joyidami) va darvozabon sifatida autentifikatsiya va avtorizatsiyani tekshiradi; **route** - chaqiruvdan oldin aralashib, marshrutni dinamik o'zgartiradi, masalan trafikning kichik qismini servisning yangi versiyasiga yuboradi; **post** - javob klientga qaytayotganda ishlaydi, javobni loglaydi, xatoni ishlaydi yoki maxfiy ma'lumot chiqib ketmayotganini tekshiradi. Har bir filter o'z turi ichidagi tartib raqamini e'lon qiladi (Carnell, 6-bob, 174-bet), ya'ni "qaysi filter avval ishlaydi" savoli taxminga qoldirilmaydi.
+
+Spring Cloud Gateway da bu uch tur alohida sinf emas: `GlobalFilter` yoki `AbstractGatewayFilterFactory` ichida `chain.filter(exchange)` dan OLDINGI kod pre, qaytgan `Mono` ga ulangan `.then(Mono.fromRunnable(...))` esa post vazifasini bajaradi; marshrutni o'zgartirish `exchange.getAttributes().put(GATEWAY_REQUEST_URL_ATTR, ...)` bilan route filter o'rnini bosadi, tartib esa `Ordered` yoki `OrderedGatewayFilter` bilan beriladi. Global filter hamma marshrutga, `GatewayFilterFactory` esa faqat o'zi yozilgan marshrutga tegadi. ESLATMA: kitobda bu Netflix Zuul ning `ZuulFilter` sinfi va uning `filterType()`, `filterOrder()`, `shouldFilter()`, `run()` metodlari bilan ko'rsatilgan; Zuul endi maintenance rejimida, shuning uchun qoida bu yerda Spring Cloud Gateway nomlari bilan yozilgan.
+
+**Timeout ni gateway dan servisga qarab moslash:** gateway ning timeouti orqadagi servisning javob vaqtidan kichik bo'lsa, servis ishlab tursa ham klient 500 oladi. Carnell ning stackida ikki qiymat bir-birining ustida turadi: circuit breaker standart bir soniyadan keyin uzadi, uning tashqarisidagi klient kutubxonasi esa besh soniyadan keyin uzadi, shuning uchun besh soniyadan uzun chaqiruv uchun IKKALASI ham ko'tarilishi kerak (Carnell, 6-bob, 169-bet). Spring Cloud Gateway da bu global `spring.cloud.gateway.server.webflux.httpclient.connect-timeout` va `.response-timeout`, marshrut darajasida `metadata.response-timeout`, hamda `CircuitBreaker` filtri ishlatilsa Resilience4j `TimeLimiter` ning `timeoutDuration` qiymati. Qiymatlarni yakka emas, zanjir sifatida sozlash qoidasi [timeout budjeti](17-resilience-va-cloud-dizayn-patternlari.md#1741-timeout-budjeti--deadline-propagatsiyasi-timeouts-budget--deadline-propagation) bo'limida.
 
 ```yaml
 spring:
@@ -912,6 +1007,14 @@ spring:
 - Smart TV yoki kiosk kabi kam imkoniyatli client'ga yengillashtirilgan, oldindan formatlangan response berish.
 - Hamkorlar (partner) uchun public API'ni ichki model'dan ajratilgan alohida shartnoma bilan taqdim etish.
 - Web va mobil UI'ni turli tezlikda rivojlantirish: har bir BFF mustaqil release cycle'da bo'ladi.
+
+**Qancha BFF kerak: bitta tajriba, bitta BFF.** Bir xil tajribani turli platformada yetkazishda ikki model uchraydi. Newman afzal ko'rgani va amalda ko'proq ko'rgani qat'iy model: har mijoz turiga alohida BFF (REA da iOS va Android ilovalari o'xshash funksiyani qoplasa ham har biri o'z BFF iga ega edi). Varianti - bir xil TURDAGI interfeys uchun bitta BFF ni bo'lishish: SoundCloud ning Listener ilovasi Android va iOS da bitta BFF ishlatadi. Ikkinchi modelning xavfi oshkor: bitta BFF ga qancha ko'p mijoz turi tushsa, u bir nechta mas'uliyatni o'z ichiga olib shishish ehtimoli shuncha yuqori; muhim sharti esa mijozlar bir SINF interfeysga tegishli bo'lishi, ya'ni SoundCloud ning boshqa native ilovalari boshqa BFF ishlatadi. Ajratuvchi mezon tashkiliy: Android va iOS ilovasiga hamda BFF ga bitta jamoa egalik qilsa umumiy BFF maqbul, jamoalar ayri bo'lsa qat'iy model tavsiya qilinadi (Conway qonuni). Stewart Gleadow ning qisqa qoidasi: "bitta tajriba, bitta BFF" - tajribalar o'xshash bo'lsa bitta BFF ni oqlash oson, keskin ajralsa alohida BFF to'g'ri. SoundCloud injenerlari o'zlari ham bitta mobil jamoa amalda Android va iOS mutaxassislariga bo'linib, har biri ko'proq bitta ilovada ishlagani uchun qarorni qayta ko'rib chiqishi mumkinligini aytgan. BFF lar orasidagi takrorlanishni darhol birlashtirishga shoshilmaslik kerak; umumiy kodni ajratish vaqti kelganda ikki yo'l bor - umumiy kutubxona (arzon, lekin bog'lanish manbai) yoki yangi servis (ajratilgan narsa domen funksiyasi bo'lsa to'g'ri), va "uchinchi marta ishlatilganda abstraksiya yasash" qoidasi servis darajasida ham ishlaydi.
+
+**BFF qachon o'zini oqlaydi.** Faqat veb interfeysi bo'lgan ilovada BFF server tomonda sezilarli agregatsiya kerak bo'lgandagina ma'noga ega, chunki desktop veb odatda quvvatli qurilma va yaxshi ulanishda ishlaydi, ya'ni bir nechta downstream chaqiruvni brauzer o'zi ko'taradi; aks holda yuqoridagi UI kompozitsiya texnikalari yetadi. Server tomonda UI ning katta qismi shablon bilan yasalsa, BFF shu ish uchun tabiiy joy va keshlash ham osonlashadi: BFF oldiga reverse proxy qo'yib agregatsiya natijasini keshlash mumkin. Mobil interfeys yoki uchinchi tomon uchun maxsus funksiya kerak bo'lishi bilan esa har mijoz uchun BFF ni boshidan ko'rib chiqish kerak; qo'shimcha servis deploy qilish narxi yuqori bo'lsa qayta o'ylash mumkin, lekin UI quruvchi odamlar va downstream servislar orasida masofa katta bo'lsa BFF yanada kuchli tanlovga aylanadi.
+
+**Tashqi tomonga alohida BFF buzuvchi o'zgarish ta'sirini cheklaydi.** Royalti ma'lumotini oladigan hamkor yoki set-top box kabi tashqi iste'molchilar foydalanuvchi interfeysi emas, lekin bir xil pattern ishlaydi. Ularning qiymati shundaki, tashqi tomonlar o'z chaqiruvlarini o'zgartirish imkoniga (yoki xohishiga) deyarli ega emas: markaziy API da ularning kichik qismi uchun eski versiyalarni ushlab turishga majbur bo'lasiz. Har tomonga alohida BFF berilsa bu muammo sezilarli kamayadi: bitta tomon uchun API ni mos kelmaydigan tarzda o'zgartirish qolgan tomonlarga tegmaydi.
+
+**Foydalanuvchi turi bo'yicha alohida gateway.** Mijoz turi bo'yicha ajratishning yonida ikkinchi o'q bor: foydalanuvchi turi. Richards va Ford ning risk storming misolida tibbiy tashxis tizimining hamma chaqiruvlari (o'z-o'ziga xizmat, administrator va hamshira) bitta API gateway orqali o'tgani, har chaqiruvda xavfsizlik tekshiruvi bo'lishiga qaramay, yuqori xavf deb baholangan: administrator yoki o'z-o'ziga xizmat interfeysidan kelgan so'rov tibbiy yozuvlar almashish interfeysiga yetib borishi mumkin. Yechim - har foydalanuvchi turi uchun alohida gateway, shunda noto'g'ri turdagi so'rov nozik servisga hech qachon yetmaydi. BFF dan farqi: BFF payload shaklini mijoz turiga moslaydi, bu ajratish esa hujum yuzasini foydalanuvchi turiga qarab kesadi.
 
 **Ehtiyot bo'ling:** Client turlari ko'paygani sayin BFF'lar soni ortib, ularda bir xil logika takrorlanadi - umumiy qoidalarni downstream service'ga yoki shared kutubxonaga chiqarmasa, maintenance narxi keskin oshadi. BFF'ni "hamma uchun bitta" qilib qo'ysangiz, u oddiy API Gateway'ga aylanadi va BFF pattern'ining asosiy foydasi yo'qoladi.
 
@@ -986,6 +1089,10 @@ public class ChassisAutoConfiguration {
 
 **Ehtiyot bo'ling:** Config server yagona nosozlik nuqtasiga aylanmasligi uchun client'da fail-fast va retry sozlanishi, startup paytdagi config'ni esa keshlab qo'yish kerak. `@RefreshScope` hamma narsani qayta yoqmaydi - connection pool, Kafka listener yoki `@Value` qotirilgan primitive'lar jonli yangilanmasligi mumkin, shuning uchun muhim o'zgarishlarda rolling restart'ga tayanganingiz xavfsizroq.
 
+**Strategiyani kech tanlash tasodifiy murakkablik yasaydi:** Carnell bir moliya kompaniyasidagi holatni keltiradi: ilova sozlamalari qo'lda boshqarilgan property fayllarda, source control dan tashqarida yashagan; 120 ilova, to'rt muhit va har ilovaga bir necha node ko'paytmasi natijasida ko'chirish kerak bo'lgan sozlama fayllari soni 12 000 ga chiqqan (Carnell, 3-bob, 66-bet). Boshida strategiya kichik ilovalar guruhi uchun o'ylangan, keyin ilovalar soni besh yil ichida portlagan, qayta ishlash uchun esa vaqt ham, pul ham ajratilmagan. Ikki oylik konsolidatsiyadan keyin hammasi 20 ta versiyalangan faylga tushgan.
+
+Bundan ikkita amaliy qoida chiqadi. Birinchisi: konfiguratsiyani tashqariga chiqarish qarorining o'zi yetarli emas, uni qanday saqlash va versiyalash ham birinchi servisdan oldin hal qilinadi - tashqi konfiguratsiya bu yangi tashqi bog'liqlik va u boshqarilishi kerak. Ikkinchisi: fayl soni ilova soniga emas, muhit va node soniga ko'paytirilib o'sadi, shuning uchun "nechta fayl bo'ladi" savoliga javob ko'paytma shaklida hisoblanadi.
+
 ```yaml
 spring:
   config:
@@ -1019,6 +1126,15 @@ spring:
 
 **Ehtiyot bo'ling:** Template bir marta generatsiya qilinadi, shuning uchun unda jiddiy kamchilik bo'lsa, u o'nlab repo'ga tarqab ketadi va keyin orqaga qaytarish qiyin - tez-tez o'zgaradigan qismlarni template'da emas, versiyalanadigan chassis starter'da ushlab turing. Shuningdek template "majburiy qolip" bo'lmasin: boshqa stack'ga haqiqatan ehtiyoj bo'lgan holatlar uchun chetga chiqish yo'li qoldirilsin.
 
+**Initializr ni to'rt yo'ldan chaqirish:** Spring Initializr - bitta veb sahifa emas, bir vaqtda brauzer ilovasi va REST API (Walls, 1-bob, 7-bet). Shu sababli shablonni odam ham, skript ham bir xil manbadan oladi:
+
+- **Veb:** `start.spring.io` da build tizimi, til, Boot versiyasi, group va artifact ID tanlanadi, bog'liqlik qidiruv maydonidan qo'shiladi va `Explore` tugmasi generatsiya qilinadigan loyihani yuklamasdan ko'rsatadi (Walls, A-ilova, 469-471-betlar).
+- **`curl`:** `curl https://start.spring.io/starter.zip -o demo.zip` eng sodda shakl; parametrlar `-d dependencies=web,data-jpa`, `-d type=gradle-project`, `-d baseDir=my-dir` ko'rinishida beriladi, `starter.tgz` esa to'g'ridan-to'g'ri `tar -xzvf -` ga quvur qilinadi. Parametrlar va standart qiymatlar ro'yxatini `curl https://start.spring.io` ning o'zi qaytaradi (Walls, A-ilova, 472-475-betlar).
+- **Boot CLI:** `spring init` xuddi shu API ni buyruq qatoridan chaqiradi.
+- **IDE:** Spring Tool Suite, IntelliJ IDEA va NetBeans da yangi loyiha ustasi shu API ga uradi; ustadagi `Base Url` maydoni esa kompaniya ichidagi o'z Initializr nusxasiga yo'naltirish uchun (Walls, 1-bob, 11-bet).
+
+Natija har qanday yo'lda bir xil Maven yoki Gradle tuzilmasi: kod `src/main/java`, test `src/test/java`, Java bo'lmagan resurslar `src/main/resources` ichida (Walls, 1-bob, 11-bet). Shablon uchun muhimi shu: generatsiya skript qilinadigani uchun "yangi servis" qadamini CI ga yoki o'z scaffolding asbobingizga ulash mumkin, qo'lda tugma bosish shart emas.
+
 ```text
 my-service/
   pom.xml                   # chassis starter, qadalgan versiyalar
@@ -1045,6 +1161,8 @@ moslaydi: CI, kuzatuvchanlik, xavfsizlik va test darvozalari tayyor.
 - Vault Agent Injector sidecar'i bilan secret'larni fayl ko'rinishida yangilab berish.
 - Legacy non-Java service'ga TLS va retry'ni proxy sidecar orqali qo'shish.
 - Database'ga ulanish uchun Cloud SQL Auth Proxy sidecar'ini ishlatish va ilovada oddiy localhost JDBC URL qoldirish.
+
+**Sidecar faqat operatsion bog'lanish uchun.** Sidecar va service mesh ning maqsadi operatsion bog'lanishni bir joyga yig'ish: logging, monitoring, service discovery, autentifikatsiya va avtorizatsiya, circuit breaker - infratuzilmaning domen mas'uliyati yo'q qismlari. Ford va boshqalarning qat'iy qoidasi: `Address` yoki `Customer` kabi umumiy DOMEN sinflarini sidecar ga qo'ymang. Ikki servisga bir xil sinf ta'rifi kerak bo'lsa, uni sidecar ga qo'yish "ikkisini bir vaqtda o'zgartirishga majburlash" degani, ya'ni mikroservisda aynan qochiladigan bog'lanish; bu masala sinf ulashish bilan emas, kontrakt bilan hal qilinadi. Chegara chizig'i har doim keskin emas: texnik utility (masalan 17 jamoadan 5 tasi ishlatadigan JSON dan XML ga o'girgich) uchun javob trade-off tahliliga qoladi va ikki mezonga qarab beriladi - yetarlicha jamoa ishlatadimi va sidecar hajmi oshishi maqbulmi. Sidecar arxitekturaning eng katta qismiga aylanmasligi kerak. Egalik modeli ham aniqlanadi: sidecar jamoalar o'rtasida bo'linadi yoki markazlashgan infratuzilma jamoasi uni yuritadi; Ford va boshqalarning misolida alohida infratuzilma jamoasi sidecar ni servisga ulangandan keyin avtomatik tekshiradigan fitness funksiyali deploy pipeline'i bilan birga boshqaradi.
 
 **Ehtiyot bo'ling:** Sidecar asosiy container bilan CPU va memory'ni bo'lishadi - resource request/limit'ni to'g'ri bermasangiz, log agent ilovangizni OOMKill'ga olib keladi. Startup va shutdown tartibini ham hisobga oling: proxy sidecar ilovadan oldin tayyor bo'lishi va undan keyin to'xtashi kerak, aks holda deploy paytida qisqa muddatli xatolar paydo bo'ladi.
 
@@ -1114,6 +1232,8 @@ spec:
 
 **Ehtiyot bo'ling:** Mesh'ni kichik landscape'ga (masalan 5-10 service) kiritish ko'pincha foydadan ko'proq operatsion yuk keltiradi - control plane, sertifikat rotatsiyasi va upgrade'lar alohida jamoa ishini talab qiladi. Retry'ni mesh'da ham, Resilience4j'da ham yoqib qo'yish klassik xato: natijada bitta so'rov downstream'da o'nlab chaqiruvga aylanadi.
 
+Mesh ning kam aytiladigan, lekin reliz ishonchliligiga eng ko'p ta'sir qiladigan foydasi trafikni boshqarishdan keladi: u deploy ni relizdan ajratadi. Mesh bo'lmagan holatda servisning yangi versiyasini productionga qo'yish uni darhol trafik qabul qiladigan qilib qo'yadi, demak deploy va reliz bitta hodisa. Mesh bo'lsa, yangi versiyani productionga joylab, unga hali trafik yubormasdan sinab ko'rish va faqat shundan keyin trafikni yo'naltirish mumkin bo'ladi (avval nol foiz, keyin bir necha foiz, keyin hammasi). Bu reliz qarorini texnik deploy qarorining ustidan ko'taradi va orqaga qaytarishni trafik yo'nalishini o'zgartirish darajasiga tushiradi. Shu imkoniyat mesh'ga xos emas, lekin mesh uni ilova kodiga tegmasdan beradi; shu g'oyaning boshqa shakllari [Yashirin ishga tushirish](22-deployment-va-operatsion-patternlar.md#2211-yashirin-ishga-tushirish-dark-launch) bo'limida.
+
 ```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -1176,6 +1296,10 @@ Mono<Dashboard> load(String id) {
 - Domain class'lar o'rniga OpenAPI/Avro schema asosida generatsiya qilingan client'ga o'tish.
 - Shared kutubxonani faqat texnik chassis starter'iga qisqartirish va domain qismini o'chirish.
 - Contract test (Spring Cloud Contract/Pact) joriy qilib, umumiy kod o'rniga shartnomani tekshirish.
+
+**Kodni nusxalash qachon maqbul.** Umumiy kodni har servis repozitoriyasiga nusxalash (code replication) "hech narsa ulashmaydigan arxitektura" davrida mashhur bo'lgan va amalda tez yiqilgan: nusxadagi nuqsonni yoki muhim o'zgarishni hamma servisda tuzatish juda qiyin va ko'p vaqt oladi. Shunga qaramay u haqli texnika bo'lib qoladi - lekin faqat juda statik, bir martalik koda uchun. Ford va boshqalarning misoli: servisning kirish nuqtasini belgilaydigan `@ServiceEntrypoint` markeri, ya'ni ichida hech qanday funksiya yo'q, nuqsoni yo'q va kelajakda ham paydo bo'lishi kutilmaydigan annotatsiya. Qoida: bu yo'ldan borishdan oldin boshqa usullarni (kutubxona, servis, sidecar) ko'rib chiqing, chunki nusxalash bounded context ni saqlaydi, lekin kod o'zgarishi kerak bo'lganda o'zgartirishni qiyinlashtiradi.
+
+**Kutubxona yoki servis: tanlov ikki mezonda.** Umumiy funksiyani kutubxona qilish va servis qilish orasidagi tanlovni Ford va boshqalar ikki mezonga bog'laydi. **Kutubxona** bir xil texnologiya stekida va umumiy kod kam yoki o'rtacha o'zgaradigan holatda to'g'ri: compile vaqtidagi bog'lanish runtime da hech narsa buzmaydi. **Umumiy servis** polyglot muhitda (bir nechta til va platforma) va umumiy funksiya tez-tez o'zgaradigan holatda to'g'ri: kodni takrorlamaydi va bounded context ni saqlaydi. Servisning narxi ochiq va faqat kechikish emas: endpointni versiyalash kutubxona versiyalashdan ko'ra sub'ektivroq va qiyinroq, chaqiruv kechikish qo'shadi, bog'liqlik tufayli fault tolerance, mavjudlik, masshtab va throughput pasayadi, eng muhimi o'zgarish RUNTIME da ta'sir qiladi - umumiy servisga chiqarilgan nuqson darhol hamma iste'molchiga tegadi, kutubxonada esa yangi versiyani olish qarori iste'molchida qoladi.
 
 **Ehtiyot bo'ling:** "Kod takrorlanmasin" degan niyat bilan domain model'ni ulashish - microservice'da DRY prinsipi coupling'dan muhimroq emas; biroz dublikat kod mustaqil deploy'dan arzonroq turadi. Agar shared kutubxona qolsa, uning backward-compatible versiyalash siyosatini va bir necha major versiyani parallel qo'llab-quvvatlash majburiyatini oldindan belgilang.
 
@@ -1271,6 +1395,12 @@ class TaxRateController {                      // butun servis bitta endpoint
 
 **Ehtiyot bo'ling:** Chegarani texnik qatlam (controller-service-repository) yoki ma'lumotlar jadvali bo'yicha emas, business capability bo'yicha torting - jadval asosidagi bo'linish deyarli har doim distributed monolitga olib keladi. Qarorni bir martalik va abadiy deb qaramang: granularlikni vaqti-vaqti bilan release coupling, latency va incident ma'lumotlari asosida qayta ko'rib chiqing, va ajratishdan avval ma'lumot egaligi (data ownership) masalasini hal qilmasdan boshlamang.
 
+Qarordan oldin tekshiriladigan beshta to'siq bor va ularning har biri dekompozitsiyani imkonsiz yoki juda qimmat qilib qo'yishi mumkin. Birinchi: tarmoq kechikishi - juda mayda bo'linishda bitta so'rov o'nlab servis chaqiruviga aylanadi va kechikish yig'iladi. Ikkinchi: sinxron IPC mavjudlikni tushiradi, chunki zanjirdagi har servisning mavjudligi ko'paytmaga kiradi; buni hal qilish uchun aloqani asinxron qilish kerak va bu o'z navbatida yangi murakkablik. Uchinchi: servislararo ma'lumot izchilligini saqlash tranzaksiya o'rniga [saga](#149-saga-orkestratsiya-saga-orchestration)ni talab qiladi. To'rtinchi va eng ko'p e'tibordan chetda qolgani: ma'lumotning global izchil ko'rinishini olish imkonsiz bo'ladi - agar biznes talabi aynan shunday ko'rinishni so'rasa (bitta so'rovda hamma narsani izchil holatda ko'rish), o'sha ma'lumot bitta servisda qolishi shart. Beshinchisi esa kodda yotadi: god sinflar, ya'ni butun ilova bo'ylab ishlatiladigan va hamma narsani biladigan yirik sinflar, dekompozitsiyani to'sadi va ularni avval bo'lish kerak. Shuning uchun ajratish rejasi diagrammadan emas, shu beshtasini tekshirishdan boshlanadi.
+
+**Yirik servis belgilari:** Carnell granularlikni uchta belgiga qarab tekshiradi (Carnell, 2-bob, 42-bet). **Mas'uliyat ko'pligi:** servisdagi biznes oqimi chalkash va bir-biriga bog'lanmagan juda xilma-xil qoidalarni majburlaydi. **Jadval ko'pligi:** servis o'zi boshqargan ma'lumot uchun yozuv manbasi, shuning uchun bir nechta jadvalga yozish yoki o'z bazasidan tashqaridagi jadvalga murojaat qilish belgi hisoblanadi; Carnell ning mezoni - bitta servis uchtadan beshtagacha jadvalga egalik qilsin, undan ko'pi mas'uliyat ortib ketganini ko'rsatadi. **Test soni:** kichik to'plamdan yuzlab unit va integratsiya testiga o'sgan servis bo'linish arafasida. Teskari tomonda mayda servis belgilari bor: har biri bitta jadval bilan ishlaydigan o'nlab servis, bitta so'rovni bajarish uchun bir-birini doimiy chaqirib turadigan servislar va faqat CRUD dan iborat servis. Shuning uchun **avval servislar bir-biri bilan qanday gaplashishini chizing**: qo'pol interfeysdan maydaga refaktoring qilish teskarisidan arzonroq.
+
+**Jadval bo'yicha bo'lish qachon dalil, qachon xato:** yuqoridagi ogohlantirish jadval asosidagi bo'linishni distributed monolit yo'li deb ataydi, Carnell esa ma'lumot yaxlitligini dekompozitsiya signali qilib beradi va mavjud monolitni soddalashtirilgan data model asosida bo'lakka ajratadi (Carnell, 2-bob, 39-41-betlar). Ikkisi ikki xil narsa haqida va ikkita shart bilan ajraladi. **Bosqich:** Carnell ning keysi mavjud, jadvallari allaqachon qattiq bog'langan monolit; u yerda biznes intervyusidan chiqqan otlar fizik jadvallarga qaytib mos tushadi, ya'ni jadval ro'yxati chegarani YARATMAYDI, intervyudan chiqqan chegarani TASDIQLAYDI. Yangi tizimda esa tasdiqlanadigan jadval yo'q, shuning uchun chegara faqat biznes imkoniyatidan chiqadi. **Donadorlik:** yaxlitlik signali bir-biriga bog'liq jadvallar guruhini (bitta mantiqiy entity, Carnell mezonida uchtadan beshtagacha jadval) bitta egaga beradi; Carnell ning o'zi har biri bitta jadval bilan ishlaydigan servislarni mayda servis belgisi deb sanaydi. Demak zid pozitsiya bitta: jadval ro'yxatini yagona manba qilib olib, har jadvalga bitta servis yozish - bu ikki manbaning ikkisi ham xato deb ataydigan yo'l va u [taqsimlangan monolit](#1437-taqsimlangan-monolit-distributed-monolith---antipattern) bilan tugaydi. Signalning o'zi [biznes imkoniyati bo'yicha dekompozitsiya](#142-biznes-imkoniyati-boyicha-dekompozitsiya-decompose-by-business-capability) bo'limida yozilgan.
+
 ```text
 Granularlik qarori uchun uch mezon (har biriga raqam bilan javob):
 
@@ -1343,7 +1473,186 @@ systemd-run --unit=orders --property=MemoryMax=2G --property=CPUQuota=150% \
     java -XX:MaxRAMPercentage=70 -jar orders-1.4.2.jar
 ```
 
-## 14.42 Amalda qo'llash
+## 14.42 Saga ning sakkiz varianti: uch o'lchamli tanlov (Transactional Saga Patterns)
+
+**Tavsif:** 14.8 va 14.9 saga ning ikki ko'rinishini beradi - xoreografiya va orkestratsiya. Bu haqiqatning bir uchdan biri: `Software Architecture: The Hard Parts` saga ni uch mustaqil o'lcham kesishmasi deb ko'rsatadi va natijada sakkizta nomlangan birikma chiqadi. O'lchamlar: **aloqa** (sinxron yoki asinxron), **izchillik** (atomar yoki yakuniy), **koordinatsiya** (orkestratsiya yoki xoreografiya). Nomlar yonidagi uch harfli ko'rsatkich o'sha uch qiymatni alifbo tartibida qaytaradi, masalan `sao` = synchronous, atomic, orchestrated. Nomlar o'zi qiziq, lekin ularni yodlash shart emas: qiymat uch harfda va reytinglarda.
+
+| Pattern | Aloqa | Izchillik | Koordinatsiya | Bog'lanish | Murakkablik | Javob berish | Masshtab |
+|---|---|---|---|---|---|---|---|
+| Epic Saga (sao) | sinxron | atomar | orkestratsiya | juda yuqori | past | past | juda past |
+| Phone Tag Saga (sac) | sinxron | atomar | xoreografiya | yuqori | yuqori | past | past |
+| Fairy Tale Saga (seo) | sinxron | yakuniy | orkestratsiya | yuqori | juda past | o'rta | yuqori |
+| Time Travel Saga (sec) | sinxron | yakuniy | xoreografiya | o'rta | past | o'rta | yuqori |
+| Fantasy Fiction Saga (aao) | asinxron | atomar | orkestratsiya | yuqori | yuqori | past | past |
+| Horror Story (aac) | asinxron | atomar | xoreografiya | o'rta | juda yuqori | past | o'rta |
+| Parallel Saga (aeo) | asinxron | yakuniy | orkestratsiya | past | past | yuqori | yuqori |
+| Anthology Saga (aec) | asinxron | yakuniy | xoreografiya | juda past | yuqori | yuqori | juda yuqori |
+
+Har birining bir qatorli mazmuni:
+
+- **Epic Saga (sao)** - "an'anaviy" saga: mediator barcha qadamlarni kuzatadi va xatoda kompensatsion yangilanish yuboradi. Monolit xulqini takrorlagani uchun eng tanish, ammo ro'yxatdagi eng ko'p bog'langan variant; mediator timing bottleneck yaratadi.
+- **Phone Tag Saga (sac)** - mediator yo'q, lekin atomarlik talab qilinadi: birinchi chaqirilgan servis koordinatsiya nuqtasiga (**front controller**) aylanadi va har bir servis kompensatsiyani zanjir bo'ylab orqaga qaytarish mantiqini o'zida yuritadi. Happy path tezroq, xato yo'li ancha sekin.
+- **Fairy Tale Saga (seo)** - mediator bor, atomarlik yo'q: har servis o'z tranzaksiyasiga egalik qiladi, mediator faqat so'rov, javob va xatoni boshqaradi. Mikroservislarda eng keng tarqalgan va eng muvozanatli variant.
+- **Time Travel Saga (sec)** - mediator ham, umumiy tranzaksiya ham yo'q: har servis so'rovni qabul qiladi, bajaradi va keyingisiga uzatadi. Chain of Responsibility yoki Pipes and Filters shakli; "fire and forget" oqimlar (ma'lumot yuklash, bulk amallar) uchun juda yaxshi, murakkab oqim uchun yaroqsiz.
+- **Fantasy Fiction Saga (aao)** - asinxron va atomar, mediator bilan: mediator barcha pending tranzaksiyalarning holatini ushlab turishi kerak, bir oqim ikkinchisining tugamagan natijasiga tayansa murakkablik portlaydi. Deyarli har doim `Parallel Saga (aeo)` yaxshiroq tanlov.
+- **Horror Story (aac)** - **eng yomon birikma**: eng qattiq talab (atomarlik) eng bo'sh ikki mexanizm (asinxronlik va xoreografiya) bilan birga. Mediator yo'q, shuning uchun har servis bir necha pending tranzaksiyaning undo ma'lumotini o'zi saqlaydi va xato bo'lganda kutilmagan tartibda bekor qiladi. Murakkablik reytingi "juda yuqori" - ro'yxatda eng yuqorisi.
+- **Parallel Saga (aeo)** - `Epic Saga (sao)` ning ikki cheklovi bo'shatilgani: mediator saqlanadi, aloqa asinxron, izchillik yakuniy. Murakkab oqimga mediator, yuqori masshtabga asinxronlik ishlaydi; trade-off lari eng jozibali to'plamlardan biri.
+- **Anthology Saga (aec)** - `Epic Saga (sao)` ning to'liq teskarisi va **eng kam bog'langan** variant: navbatlar orqali asinxron xabar, mediator yo'q, izchillik yakuniy. Masshtab va javob berish eng yuqori, lekin murakkablik ham yuqori - faqat oddiy, asosan chiziqli oqimlar uchun.
+
+**Qaror qoidasi.** Birinchi o'lchamni izchillik hal qiladi: atomarlik majburiy bo'lsa to'rtta variant qoladi va to'rttasi ham qimmat, `Horror Story (aac)` esa butunlay chiqarib tashlanadi. Yakuniy izchillikka ruxsat bo'lsa, ikkinchi savol oqim murakkabligi: murakkab oqim va ko'p xato shartlari bo'lsa orkestratsiya (`Fairy Tale Saga (seo)` yoki `Parallel Saga (aeo)`), oddiy va chiziqli oqimda xoreografiya (`Time Travel Saga (sec)` yoki `Anthology Saga (aec)`). Uchinchi savol - throughput: yuqori bo'lsa asinxron variantni ol. Kitobning qoidasi qisqa: implementatsiya semantik bog'lanishni yaxshilay olmaydi, faqat yomonlashtiradi - oqim mohiyatan murakkab bo'lsa mediatorni olib tashlash murakkablikni yo'qotmaydi, uni servislarga tarqatadi.
+
+**State Owner and Coupling.** Oqim holatining egasi ham shu qarorning bir qismi: orkestratsiyada u mediatorda, xoreografiyada esa front controller da. Mediatorni olib tashlash holat egasini yo'qotadi va servislar orasidagi aloqa hajmini oshiradi. Bu almashtirish ba'zan to'g'ri: masshtab kerak va xato shartlari kam uchraydigan oqimda xoreografiyaning masshtabi xato boshqaruvi murakkabligiga arziydi, lekin oqim murakkabligi oshgani sayin orkestratorning foydasi proporsional ortadi. Uchinchi yechim ham bor - holatni kontrakt ichida uzatish, ya'ni stamp coupling (14.43).
+
+**Spring'da qayerda uchraydi:** Uch o'lcham Spring da uch texnologiya tanloviga aylanadi. Aloqa: sinxron tomoni `RestClient` yoki `@HttpExchange` + `HttpServiceProxyFactory`; asinxron tomoni Spring for Apache Kafka (`KafkaTemplate`, `@KafkaListener`), Spring AMQP yoki Spring Cloud Stream `Supplier`/`Consumer` bean'lari. Izchillik: atomar tomoni ilova darajasidagi kompensatsiya, yakuniy tomoni Transactional Outbox (Spring Modulith `@Externalized`, `spring-modulith-events-kafka`) va `@TransactionalEventListener(phase = AFTER_COMMIT)`. Koordinatsiya: orkestrator - `@Service` ichidagi holat mashinasi yoki Spring Statemachine; xoreografiya - faqat listener'lar va kompensatsion event'lar.
+
+**Ehtiyot bo'ling:** Ikki eng ko'p uchraydigan xato ro'yxatdan ko'rinadi. Birinchisi - `Epic Saga (sao)` ni "standart" deb olish: u tanish bo'lgani uchun tanlanadi, lekin bog'lanish va masshtab bo'yicha eng yomon qatorni egallaydi. Ikkinchisi - sekin ishlayotgan `Epic Saga (sao)` ni tezlashtirish uchun aloqani asinxron qilish va mediatorni olib tashlash, atomarlikni esa saqlab qolish: natija aynan `Horror Story (aac)`. Asinxronlik alohida olinganda tezlikni oshiradi, lekin izchillik va koordinatsiya o'lchamlari bilan chalkashganda oshirmaydi; shuning uchun uch o'lchamdan birini o'zgartirishdan oldin qolgan ikkisi qanday javob berishini yozib ko'rish kerak.
+
+```text
+Saga variantini tanlash tartibi (har qatorga loyihadan javob yoziladi):
+
+  1. Atomarlik majburiymi?  ha -> sao yoki sac; aac ni YOZMA
+                            yo'q -> 2 ga o't
+  2. Oqim murakkabligi?     4+ qadam yoki ko'p xato sharti -> seo / aeo
+                            2-3 qadam, chiziqli            -> sec / aec
+  3. Throughput chegarami? ha -> asinxron (aeo / aec)
+                            yo'q -> sinxron (seo / sec), debug osonroq
+  4. Xoreografiyada holat egasi kerakmi?
+                            ha -> front controller yoki stamp coupling (14.43)
+```
+
+## 14.43 Oqim holatini kontraktda uzatish: stamp coupling (Stamp Coupling for Workflow Management)
+
+**Tavsif:** Stamp coupling - servislar orasida katta ma'lumot tuzilmasi uzatilib, har servis uning faqat kichik qismi bilan ishlashi; kontrakt dizayni nuqtasidan uning uch yuzi (soha standarti hujjati, ortiqcha e'lon qilingan kontraktning mo'rtligi, bandwidth narxi) [7.37 Shtamp bog'liqligi](07-api-dizayn-patternlari.md#737-shtamp-bogliqligi-stamp-coupling) bo'limida yozilgan. Bu bo'lim bitta yuzini oladi: uni **ataylab**, taqsimlangan oqimni mediatorsiz boshqarish uchun ishlatish. Savol shunday tug'iladi: murakkab oqimga odatda mediator qo'yiladi, lekin masshtab kabi boshqa kuchlar arxitektorni bir vaqtda xoreografiyali va murakkab yechimga haydasa nima qilish kerak? Javob - oqim holatini kontrakt ichida olib yurish: kontraktga domen ma'lumoti bilan birga oqim holati (qaysi qadam bajarildi, tranzaksiya holati, xato xabarlari) qo'shiladi. Har servis kontraktni qabul qiladi, o'z qismini va oqim holatini yangilaydi va keyingisiga uzatadi; oxirgi qabul qiluvchi butun natijani - muvaffaqiyat yoki xato, holat va xato matni - bitta kontraktdan o'qiydi. Atomar izchillik kerak bo'lsa, servislar kontraktni avval o'tgan servislarga qayta e'lon qiladi.
+
+Bu yechim 14.42 dagi `Phone Tag Saga (sac)` va `Anthology Saga (aec)` variantlarida front controller yoki holat egasi o'rnini bosadi va 14.8 dagi "oqim hech bir kodda ko'rinmaydi" muammosini qisman yumshatadi: holat hech bo'lmasa xabarning o'zida turadi.
+
+| Afzalligi | Narxi |
+|---|---|
+| Xoreografiyali yechim ichida murakkab oqim mumkin bo'ladi | Hamkorlar orasida nominal darajadan yuqori, ba'zan sun'iy bog'lanish |
+| Domen servisi holat egasiga qo'shimcha so'rov yubormaydi | Kontrakt oqim holatini sig'dirish uchun kattalashadi |
+| Mediatorga ehtiyoj qolmaydi | Yuqori masshtabda bandwidth muammosi chiqadi |
+| Oqim davomida har servis qo'shimcha kontekst oladi | "Oqim hozir qayerda" degan so'rovni bitta joydan bermaydi |
+
+**Spring'da qayerda uchraydi:** Oqim holati Kafka xabari payload'idagi alohida nomlangan bo'lim sifatida yoziladi va domen maydonlari bilan aralashtirilmaydi; `@KafkaListener` o'z kalitini yangilab, `KafkaTemplate` bilan keyingi topic'ga uzatadi. Spring Cloud Stream da bu `Function<Message<ShipmentContract>, Message<ShipmentContract>>` bean'i shaklini oladi, holatning kichik qismi esa `Message` header'lariga (`MessageBuilder.setHeader(...)`) chiqarilishi mumkin. Kontraktning versiyalanishi muhim bo'ladi, chunki oqim holati sxemasi domen sxemasidan tezroq o'zgaradi: Avro yoki Protobuf sxema reyestri, yoki eng kamida `schemaVersion` maydoni kerak. Kontrakt hajmini kuzatish uchun payload baytini Micrometer `DistributionSummary` ga yozib, RPS bilan ko'paytmasini dashboard'da ushlab turish kifoya.
+
+```java
+// Oqim holati domen maydonlaridan ajratilgan: `workflow` bo'limi ATAYLAB bor
+public record ShipmentContract(
+        String orderId,
+        List<Item> items,                       // domen ma'lumoti
+        int schemaVersion,
+        Map<String, StepStatus> workflow        // oqim holati: kalit - qadam nomi
+) {}
+
+public record StepStatus(String state, Instant at, String error) {}
+
+@Component
+class PackagingStep {
+    private final KafkaTemplate<String, ShipmentContract> kafka;
+    PackagingStep(KafkaTemplate<String, ShipmentContract> kafka) { this.kafka = kafka; }
+
+    @KafkaListener(topics = "shipment.reserved")
+    void on(ShipmentContract in) {
+        Map<String, StepStatus> wf = new LinkedHashMap<>(in.workflow());
+        try {
+            packer.pack(in.orderId(), in.items());
+            wf.put("packaging", new StepStatus("DONE", Instant.now(), null));
+            kafka.send("shipment.packed", in.orderId(), withWorkflow(in, wf));
+        } catch (PackagingException e) {
+            wf.put("packaging", new StepStatus("FAILED", Instant.now(), e.getMessage()));
+            kafka.send("shipment.failed", in.orderId(), withWorkflow(in, wf));
+        }
+    }
+
+    private ShipmentContract withWorkflow(ShipmentContract c, Map<String, StepStatus> wf) {
+        return new ShipmentContract(c.orderId(), c.items(), c.schemaVersion(), Map.copyOf(wf));
+    }
+}
+```
+
+**Qo'llanish keyslari:**
+- Xoreografiyali yuk tashish oqimida har servis `workflow` bo'limining o'z kalitini yangilab, oxirgi iste'molchi butun natijani bitta kontraktdan o'qishi.
+- `Anthology Saga (aec)` da mediator kiritmasdan oqimni bir pog'ona murakkablashtirish.
+- Xato matnini oqim davomida olib yurib, oxirida bitta joyda hisobot qilish.
+- Bir nechta boyituvchi servis ketma-ket bitta hodisa payload'ini to'ldirishi.
+
+**Ehtiyot bo'ling:** Bu qisman yechim: kitob uni holat egasining o'rnini to'liq bosmaydi deb aniq aytadi - foydalanuvchiga "oqim hozir qayerda" degan so'rovni beradigan bitta joy baribir yo'q, shuning uchun monitoring va qo'lda tuzatish uchun trace yoki alohida read model kerak bo'ladi. Ikkinchi chegara - masshtab: kontrakt hajmi va RPS ko'paytmasini oldindan hisoblab ko'rmasa, yechim bandwidth cheklovida sinadi. Va eng muhimi: semantik bog'lanish qayergadir joylashishi shart, stamp coupling uni kontraktga ko'chiradi, yo'q qilmaydi - shuning uchun oqim murakkabligi oshib ketsa to'g'ri javob mediatorga qaytish bo'ladi (14.42).
+
+## 14.44 Granularlik chegaralarining o'lchanadigan qoidalari
+
+**Tavsif:** Oltita disintegrator va to'rtta integrator sababining ro'yxati [mikroservislar](12-arxitektura-uslublari.md#1212-mikroservislar-microservices) bo'limida berilgan, bu yerda esa shu sabablarni qarorga aylantiradigan o'lchanadigan chegaralar yozilgan. Ford va boshqalar har bir sabab uchun "qachon yetarli" savoliga raqam yoki aniq sinov beradi, chunki jamoalar aynan shu nuqtada tortishadi.
+
+- **Kohesiya yolg'iz o'zi bo'lish uchun sabab emas.** SMS, email va qog'oz xat yuboradigan Notification servisi uchta bir maqsadli servisga bo'linishi mumkin ko'rinadi, lekin uning kohesiyasi allaqachon kuchli: uchtasi ham bitta ishni, mijozni xabardor qilishni bajaradi. "Bir maqsadli" iborasi sub'ektiv, kohesiyani o'lchaydigan LCOM kabi metrikalar esa servis darajasida ishonchsiz, shuning uchun bo'lishni oqlash uchun ikkinchi disintegrator (volatility, scale, fault tolerance, security) ko'rsatilishi kerak. Teskari misol: profil, sozlamalar va sayt sharhlarini birga boshqaradigan Customer servisining kohesiyasi zaif, chunki uchtasi "mijoz" degan ancha keng doiraga tegishli, u esa bo'linishga yaxshi nomzod.
+- **Qoldiq nom sinovi.** Bo'lishdan oldin qoldiq funksiyaga yaxshi nom topilishini tekshiring. `Notification -> Email + Other Notification`, `Email + Non-Email` va `Email + SMS-Letter` variantlarining uchtasida ham qoldiq nomi yomon, ya'ni qoldiqning kohesiyasi zaif; yagona mazmunli natija `Email + SMS + Letter`. Sinovning ikkinchi savoli: yangi kanal (ijtimoiy tarmoq) qo'shilsa u qaysi servisga tushadi.
+- **Extensibility faqat rejalashtirilgan kengayishda.** To'lov servisi uchun yangi to'lov turlari (bonus ball, do'kon krediti, ApplePay) kelishi deyarli aniq, shuning uchun to'lov turi bo'yicha bo'lish oqlanadi: yangi tur qo'shish faqat bitta servisni ishlab chiqish, test qilish va deploy qilish bo'lib qoladi. Bildirishnoma kanallari esa SMS, email va xatdan tashqariga kengayishi shubhali. Qoida: kengayish oldindan ma'lum yoki domen uchun odatiy bo'lmasa, naqsh tasdiqlanmaguncha bu drayverni ishlatmang.
+- **Sinxron bog'liq bo'laklarni ajratish fault tolerance BERMAYDI.** A servis B va C ni, B servis C ni, E servis C ni chaqiradigan tarmoqda C yiqilsa qolgan hammasi ishlamaydi: tranzitiv bog'liqlik butun foydadan voz kechtiradi. Fault tolerance disintegrator ro'yxatida bor, lekin ajratilgan bo'laklar bir-biri bilan sinxron gaplashishi kerak bo'lsa, biznes so'rovi darajasida hech narsa yaxshilanmaydi va ularni birga qoldirish to'g'ri bo'ladi.
+- **Besh hop, har biri 300 ms, jami 1500 ms.** Bitta mijoz so'roviga javob berish uchun beshta servisni ketma-ket chaqirish kerak bo'lsa va har bir chaqiruvda tarmoq va xavfsizlik kechikishi 300 ms bo'lsa, so'rov faqat kechikish hisobiga 1500 ms qo'shib oladi. Nisbat qoidasi: so'rovlarning 30 foizi servislararo oqimni talab qilsa va 70 foizi atomar (bitta servis bilan tugaydigan) bo'lsa, servislarni alohida qoldirish maqbul; nisbat teskari bo'lsa birlashtirishni ko'rib chiqing. Ikkinchi mezon kritiklik: o'ta tez javob talab qiladigan so'rov o'sha 30 foiz ichida bo'lsa, qolgan 70 foiz atomar bo'lishiga qaramay birlashtirish to'g'ri. Foydalanuvchi natijani kutmayotgan backend ishida esa erkinlik ko'proq.
+- **Ulashilgan domen kodi ~40 foizdan oshsa birlashtiring.** Mijoz bilan bog'liq funksiyalar (profil, sozlama, sharh) uchun umumiy kod jamlangan kodbazaning 40 foizidan ko'pini egallasa, ajratish kodning deyarli yarmini faqat shu uchta servis ishlatadigan umumiy kutubxonaga chiqaradi: bu holda ularni umumiy kod bilan birga bitta servisda qoldirish ma'qul. Yana ikki shart kuchaytiradi: umumiy kod tez-tez o'zgarsa (har o'zgarish muvofiqlashtirilgan reliz talab qiladi) va nuqsonni versiyalab bo'lmasa (biznes qoidasi hammaga bir vaqtda qo'llanishi shart). Infratuzilma kodi (logging, audit, autentifikatsiya, avtorizatsiya, monitoring) bu hisobga kirmaydi: u birlashtirish sababi emas.
+- **Ikki servis bir-birining jadvaliga muhtoj bo'lsa birlashtiring.** Funksiya-jadval xaritasini tuzing: qalin chiziq yozuv, ya'ni egalik; punktir chiziq faqat o'qish. Agar bo'lishdan keyin B servisining har bir operatsiyasi C egalik qiladigan jadvalni, C ning har bir operatsiyasi esa B egalik qiladigan jadvalni talab qilsa, bounded context ularga to'g'ridan-to'g'ri so'rov berishga ruxsat bermaydi (B ustunni o'chirsa C buziladi), demak ikkisi orasida doimiy ikki tomonlama chaqiruv paydo bo'ladi. Bu integrator eng kam trade-off beradi: ularni birlashtirish to'g'ri javob.
+
+**Spring'da qayerda uchraydi:** 30/70 nisbati taxmindan emas, o'lchovdan olinadi: Micrometer Tracing va Zipkin/Tempo service graph'i qaysi so'rov bir servis bilan tugaganini va qaysi biri zanjirga kirganini ko'rsatadi, `http.server.requests` timer'i esa o'sha zanjirning kechikish ulushini beradi. Ulashilgan domen kodi ulushini `jdeps`, ArchUnit yoki jQAssistant bilan modul bo'yicha hisoblash mumkin; umumiy kod tezligi uchun git tarixidagi o'zgarish chastotasi ishlatiladi. Funksiya-jadval xaritasini Hibernate metamodelidan yoki Flyway migratsiyalaridan chiqarib, Spring Modulith `ApplicationModules.of(App.class).verify()` bilan chegara buzilishini CI'da to'xtatish mumkin.
+
+**Ehtiyot bo'ling:** Bu chegaralar qattiq qoida emas, trade-off tarozisi: faqat disintegrator ro'yxatiga qarab, integrator sabablarini hisobga olmaslik kitobda eng keng tarqalgan xato deb ko'rsatilgan. Raqamlarni kontekstsiz ko'chirmang: 300 ms Ford va boshqalarning misolidagi qiymat, sizdagi tarmoq va xavfsizlik kechikishi o'lchanishi kerak.
+
+```text
+Granularlik qarori uchun hisob varaqasi:
+
+  hop soni x (tarmoq + xavfsizlik kechikishi) = qo'shilgan kechikish
+     misolda: 5 x 300 ms = 1500 ms
+
+  oqimli 30% / atomar 70%                    -> ajratib qoldirish mumkin
+  nisbat teskari (oqimli 70% / atomar 30%)   -> birlashtirish
+  o'sha 30% ichida kritik tez so'rov bor     -> birlashtirish
+  ulashilgan DOMEN kodi ulushi 40% dan oshsa -> birlashtirish
+  umumiy kod tez o'zgaradi yoki nuqsoni versiyalanmaydi -> birlashtirish
+  ikki servis bir-birining jadvaliga muhtoj  -> birlashtirish
+
+  qoldiqqa yaxshi nom yo'q                   -> bo'lmaslik
+  ikkinchi disintegrator ko'rsatilmagan      -> bo'lmaslik
+  kengayish rejalashtirilmagan               -> kutish
+```
+
+## 14.45 Saga amaliyoti: qadam tartibi va orkestrator egaligi
+
+**Tavsif:** Saga ning ikki topologiyasi [14.8](#148-saga-xoreografiya-saga-choreography) va [14.9](#149-saga-orkestratsiya-saga-orchestration) da, sakkiz varianti esa [14.42](#1442-saga-ning-sakkiz-varianti-uch-olchamli-tanlov-transactional-saga-patterns) da berilgan. Bu bo'lim ularni amalda yozishda qabul qilinadigan qarorlarni to'playdi.
+
+- **Qadamlarni qayta tartiblab rollback ni kamaytirish.** Kompensatsiyani yozishdan oldin qadamlar tartibini ko'rib chiqing. Buyurtma oqimida bonus ballni buyurtma yaratilganda emas, jo'natilganda berish qadamni oxirga suradi va paketlash muvaffaqiyatsiz bo'lsa uni orqaga qaytarish kerak bo'lmaydi. Ikki yo'nalishli qoida: yiqilish ehtimoli yuqori qadamni oldinga tortib oqimni erta to'xtatish (keyingi kompensatsiyalar umuman ishga tushmaydi), kompensatsiyasi qiyin qadamni esa orqaga surish. Kompensatsiya yozmaslik - kompensatsiyani to'g'ri yozishdan arzon.
+- **Orkestratsiyani BPM vositasida emas, kodda yozing.** BPM vositalarining asosiy da'vosi - dasturchi bo'lmagan odam biznes oqimini o'zi chizadi - amalda deyarli bajarilmaydi: asbobni oxirida dasturchilar ishlatadi, oqim GUI'da o'zgaradi, versiya nazoratiga tushmaydi yoki qiyin tushadi va test qilish hisobga olinmagan. Vizual ko'rinish kerak bo'lsa uni koddan hosil qilish, kod qanday ishlashini vizual chizmadan chiqarishdan ancha oson. Dasturchilarga qaratilgan zamonaviy vositalar (Camunda, Zeebe, Temporal) bu tanqidning bir qismini yopadi, lekin tanlov hamon "oqim kodda yoziladi" tomonida.
+- **Har oqimga alohida orkestrator, global ESB emas.** Mantiq markazlashishi mumkin bo'lgan joyda markazlashadi, shuning uchun buyurtma berish, qaytarish va tovar qabuli uchun uchta alohida orkestrator servis bo'ladi: Order Processor, Returns, Goods Receiving. Umumiy Warehouse servisi uchtasiga ham xizmat qiladi va shu sababli o'z mantiqini o'zida saqlab qoladi. Butun tashkilot uchun bitta global orkestrator (enterprise service bus) esa kerakli bo'shashishni yo'q qiladigan bog'lanish nuqtasi. Orkestratorning o'zida boshqaradigan oqimdan tashqari domen xatti-harakati bo'lmasligi kerak.
+- **Bitta jamoa ichida orkestratsiya, jamoalar o'rtasida xoreografiya.** Butun saga bitta jamoa egaligida bo'lsa orkestratsiyaning qattiqroq bog'lanishi jamoa chegarasi ichida boshqariladi va qulay. Bir nechta jamoa ishtirok etsa xoreografiya afzal: mas'uliyat jamoalarga taqsimlanadi va bo'shroq bog'langan arxitektura ularni mustaqil ishlashga qo'yadi. Ikki uslubni aralashtirish ham mumkin: xoreografiyali umumiy oqim ichida bitta servisning chegarasida (paketlash va jo'natish) orkestratsiya qilingan ichki oqim bo'lishi normal, sharti - saga da nima bo'lganini tushunadigan yo'l qolishi.
+- **Saga reyestrini kodda belgilang.** Saga tayyor kutubxona emas, loyihalanadi; shuning uchun qaysi servis qaysi sagada ishtirok etishini kodda e'lon qiling. Ford va boshqalarning usuli: saga nomlarini bitta `enum` ga yig'ib (`NEW_TICKET`, `CANCEL_TICKET`, ...), har servisning kirish sinfiga `@Saga(Transaction.NEW_TICKET)` annotatsiyasini qo'yish va kodbazani aylanib o'tadigan oddiy CLI bilan "`NEW_TICKET` sagasida qaysi servislar bor" savoliga javob olish. Bu test skopini va o'zgarish ta'sirini aniqlaydi.
+
+**Spring'da qayerda uchraydi:** Orkestrator har oqim uchun alohida Spring Boot komponenti bo'ladi va holatini `SagaInstance` entity'sida `@Version` bilan saqlaydi; vizual ko'rinishni koddan chiqarish uchun state machine ta'rifini Spring Statemachine `StateMachineFactory` dan yoki Spring Modulith `Documenter` dan generatsiya qilish mumkin. Xoreografiyali oqimda holatni kuzatish [14.8](#148-saga-xoreografiya-saga-choreography) da. Saga reyestri uchun o'z `@Saga` annotatsiyangiz va `@Retention(RUNTIME)` yetarli, skaner sifatida Spring'ning `ClassPathScanningCandidateComponentProvider` sinfi ishlatiladi.
+
+**Ehtiyot bo'ling:** Qadam tartibini o'zgartirish biznes semantikasini ham o'zgartiradi: bonus ballni jo'natilgandan keyin berish mijozga boshqacha ko'rinadi, shuning uchun tartib qarori texnik emas, mahsulot qarori. Bir nechta oqimga bitta orkestrator berish BPM vositasini olib tashlagandan keyin ham global ESB ni qaytarib keltiradi.
+
+## 14.46 Saga nimani hal qiladi va nima qilmaydi
+
+**Tavsif:** Saga ning chegarasi odatda loyihaning o'rtasida, birinchi texnik nosozlikda topiladi. To'rtta qoida bu chegarani oldindan aniq qilib qo'yadi.
+
+- **Saga biznes xatosini hal qiladi, texnik xatoni emas.** Mijozning mablag'i yetmasligi - biznes xatosi va saga aynan shuni boshqarishi kerak; to'lov gateway'ining timeout'i yoki `500 Internal Server Error` esa texnik nosozlik va u alohida hal qilinadi. Saga asosiy qoida sifatida ishtirokchilarni ishonchli deb qabul qiladi: u ishonchli komponentlarning ishini muvofiqlashtiradi, ishonchsizligini tuzatmaydi. Demak har bir ishtirokchi chaqirig'i atrofida timeout, retry va circuit breaker bo'lishi shart, aks holda saga texnik xatoni biznes kompensatsiyasiga aylantirib yuboradi.
+- **Undo odatda do dan qimmat.** Kompensatsiyani ikki yo'l bilan yozish mumkin: har so'rovni pending holatda ushlab turib, mediator umumiy muvaffaqiyatni bildirgach tasdiqlash (koordinatsiya trafigi ko'p, asinxron so'rovlar va pending holatga bog'langan yangi so'rovlar bilan murakkablashadi), yoki har operatsiya uchun `do` va `undo` juftligini qurish. Ikkinchi yo'lda koordinatsiya kamayadi, lekin `undo` amallari `do` dan sezilarli murakkabroq chiqadi va dizayn, implementatsiya hamda debug mehnatini ikki baravardan ko'proq oshiradi. Shuning uchun sagani kamdan-kam ishlatish tavsiya qilinadi: servislar orasida bir nechta tranzaksiya kerak bo'lishi normal, ular arxitekturaning asosiy belgisiga aylansa chegaralar xato qo'yilgan.
+- **Muhim bo'lmagan qadamda kompensatsiya o'rniga holat belgisi.** So'rovnoma yuborish kabi ikkinchi darajali qadam yiqilsa, butun sagani orqaga qaytarish o'rniga saga holatini `NO_SURVEY` ga o'tkazib, foydalanuvchiga muvaffaqiyat qaytarish to'g'ri bo'ladi; orkestrator fonda qayta urinib ko'radi, hal qila olmasa ishni administratorga yuboradi. Natijada foydalanuvchi biznes jarayonining qolgan qismi bilan keraksiz bog'lanmaydi va boshqa ishini davom etadi. Narxi oshkor: ma'lumot manbalari tuzatilguncha bir-biri bilan mos emas.
+- **Holatli saga ni buyruqlar bilan birga bajarmang.** Kompensatsiya uchun qanday amallar bajarilganini bilish kerak bo'lsa, saga holat saqlaydi va uni hodisa manbali agregat qilib yozish mumkin: qabul qilingan hodisalar va chiqarilgan buyruqlarning to'liq tarixi saqlanadi. Lekin buyruqni bajarish mantiqi saganing ichidan chiqarilishi kerak: saga `CommandIssued` hodisasini yozadi, uni esa outbox relay asinxron bajaradi. Holat o'tishini buyruq bajarilishidan ajratish buyruqning jarayon istalgan nuqtada qulasa ham ishonchli bajarilishini kafolatlaydi.
+
+**Spring'da qayerda uchraydi:** Ishtirokchi chaqiruvlarini Resilience4j (`@CircuitBreaker`, `@Retry`, `@TimeLimiter`) himoyalaydi va texnik nosozlik kompensatsiyaga aylanmasligi uchun saga faqat biznes javobiga (masalan `InsufficientFunds`) reaksiya qiladi. Holat belgisi oddiy `enum` maydon (`NO_SURVEY`) bo'lib, fon urinishlari `@Scheduled` + ShedLock yoki Quartz bilan yuritiladi. `CommandIssued` hodisasini outbox orqali chiqarish uchun Spring Modulith `@Externalized` va `spring-modulith-events-jpa`/`-kafka` (`EventPublicationRegistry`) yoki `@TransactionalEventListener(phase = AFTER_COMMIT)` ishlatiladi; outbox patternining o'zi [14.12](#1412-tranzaksion-outbox-transactional-outbox-microservice-view) da.
+
+**Ehtiyot bo'ling:** Texnik nosozlikni biznes kompensatsiyasi bilan hal qilish eng qimmat xato: to'lov gateway'i timeout bergani to'lov o'tmaganini bildirmaydi, shuning uchun zaxirani bo'shatish mijozdan pul olingan holatda ham sodir bo'lishi mumkin. Holat belgisi bilan tugash esa faqat ikkinchi darajali qadam uchun: asosiy qadamni `NO_*` holatiga qoldirish yakuniy izchillikni nomuvofiqlikka aylantiradi.
+
+## 14.47 Bir nechta jamoa bitta servisga muhtoj bo'lganda
+
+**Tavsif:** [14.5](#145-har-bir-jamoaga-bitta-servis-service-per-team) bitta servisga bitta jamoa egalik qilishini talab qiladi. Amalda bu qoida buziladi va buzilish aniq belgilar beradi; bu bo'lim belgilarni va chiqish yo'llarini beradi.
+
+- **Jamoaviy egalikning o'lcham chegarasi.** Jamoaviy egalik (hamma hamma joyni o'zgartiradi) bir joyda o'tirgan, taxminan 20 gacha dasturchidan iborat jamoada ishlaydi, chunki "yaxshi o'zgarish qanday bo'ladi" degan umumiy tushuncha shu o'lchamda saqlanadi. Tez o'sishda yoki 100 dan ortiq dasturchida kuchli egalik (har jamoa o'z servisini boshqaradi) amalda yagona ishlaydigan model. Buzilish ko'rinishi aniq: 30-40 dan 100 dan ortiq dasturchiga o'sgan va hech qanday egalik belgilanmagan kompaniyada arxitektura "kolander" (elak) ga aylangan - kim xohlasa yangi teshik ochadi, ya'ni ma'lumotni ochib qo'yadi yoki to'g'ridan-to'g'ri chaqiruv qo'shadi; natija taqsimlangan monolit va uni yechish monolitni yechishdan ancha qimmat.
+- **Ko'p kiruvchi pull request ulashilgan servis belgisi.** Servis egasi jamoaga boshqa jamoalardan pull request oqimi kelsa, bu PR larni tez ishlash bilan hal bo'lmaydi: bu servis amalda bir nechta jamoa tomonidan bo'lishib ishlatilayotganining belgisi. Birinchi savol - PR lar jiddiy qabul qilinayaptimi, ikkinchisi - egalik o'zgarishi kerak emasmi. Manba bitta jamoa bo'lsa javob oson: servis eng ko'p o'zgartirgan jamoaga o'tadi.
+- **Umumiy skelet va har variantga alohida instance.** Manba bir nechta jamoa bo'lsa (har mamlakat jamoasi markaziy servisga o'z mantig'ini kiritishi kerak), markaziy jamoa servisni faqat umumiy xulqdan iborat framework ko'rinishida beradi va har jamoa o'z instansini o'z plaginlari bilan ishga tushiradi. Umumiy funksiya takrorlanmaydi, lekin narxi bor: umumiy kodni hamma variantda bir vaqtda yangilab bo'lmaydi (bu keng qamrovli lockstep reliz talab qiladi), yangi versiyani har jamoa o'zi olib deploy qiladi. Ichki framework shishib ketishi yoki jamoalarni cheklab qo'yishi mumkin va bu birinchi kuni ko'rinmaydi, shuning uchun boshqa variantlar tugamaguncha bu yo'lga shoshilmang.
+- **Kutubxona orqali tashqi hissa.** Variant: har jamoa o'z mantiqini kutubxona qilib beradi va markaziy servis ularni bitta build'ga paketlaydi. Qo'shimcha servis ishlatilmaydi, lekin jamoa o'z kodi qachon production'ga chiqishini hal qilmaydi (deploy ni markaziy jamoa rejalashtiradi) va kutubxonadagi nuqson production muammosini markaziy jamoaga qaytaradi, ya'ni nosozlikni tekshirish murakkablashadi. Bu yo'l servisni bir nechta variantda ishga tushirishni oqlab bo'lmaganda va jamoaviy egalikdan chiqish kerak bo'lganda ko'rib chiqiladi.
+
+**Spring'da qayerda uchraydi:** Umumiy skelet amalda [service template](#1431-service-shabloni-service-template) va [chassis](#1429-microservice-shassi-microservice-chassis) bilan bir xil mexanizm: umumiy xulq `*-spring-boot-starter` va `@AutoConfiguration` sifatida chiqariladi, mamlakatga xos mantiq esa `@ConditionalOnMissingBean` yoki `ObjectProvider` bilan ulanadigan plugin nuqtasi bo'ladi. Kutubxona orqali hissa qo'shish holatida har kutubxona o'z modulida, markaziy servis esa ularni `spring.factories` o'rnidagi `AutoConfiguration.imports` bilan yig'adi; nuqsonni manbaga qaytarish uchun har plugin o'z `@Timed`/`@Counted` metrikasi va alohida logger nomi bilan ajratiladi. Egalik ma'lumoti `/actuator/info` va `build-info` da ko'rsatiladi.
+
+**Ehtiyot bo'ling:** Uchala yo'l ham egalikni to'g'rilashning o'rnini bosmaydi: Newman o'zi avval servis mas'uliyatini bo'lish yoki egalikni ko'chirish yo'lini izlashni va faqat ular tugagandan keyin framework yoki kutubxona modeliga o'tishni aytadi. Plugin modeliga o'tish qarori qaytarilishi qiyin, chunki ichki framework atrofida bir yilda yangi bog'liqliklar o'sadi.
+
+## 14.48 Amalda qo'llash
 
 - [ ] Servislar xaritasini chizib, har bir sinxron chaqiruv zanjirini va uning umumiy timeout budjetini yozib qo'ying.
 - [ ] Ikki yoki undan ko'p servis bitta bazaga ulanadigan joylarni toping - bu taqsimlangan monolit belgisi.
@@ -1354,6 +1663,9 @@ systemd-run --unit=orders --property=MemoryMax=2G --property=CPUQuota=150% \
 - [ ] Servislar o'rtasida umumiy kutubxona (`shared`, `common`) borligini tekshirib, undagi har bir sinfni egasi bor servisga ko'chirish rejasini yozing.
 - [ ] Strangler fig bilan ajratilayotgan funksiyalar uchun o'tish mezoni va orqaga qaytish yo'lini yozib qo'ying.
 - [ ] Har bir saga uchun uchta anomaliyadan qaysi biri mumkinligini yozib chiqing va har biriga qarshi chora tanlang (semantic lock, reread value, commutative update).
+- [ ] Har bir saga uchun uchta o'lchamni (aloqa, izchillik, koordinatsiya) yozib chiqib, qaysi nomlangan variantga tushganini aniqlang; `Horror Story (aac)` ga tushsa dizaynni qaytadan ko'rib chiqing.
+- [ ] Xoreografiyali oqimlarda oqim holatining egasi kim ekanini yozib qo'ying: front controller, kontrakt ichidagi holat, yoki hech kim.
+- [ ] Servislararo kontraktlarni ko'rib chiqib, iste'molchi ishlatmaydigan maydonlar ro'yxatini chiqaring va payload hajmini RPS ga ko'paytirib bandwidth hisobini yozing.
 - [ ] Saga o'zgartiradigan entity larda holat maydoni va `@Version` borligini tekshirib, shartli `UPDATE` ning `rowsAffected` natijasi nazorat qilinishiga ishonch hosil qiling.
 
 ## Manbalar
@@ -1369,6 +1681,42 @@ systemd-run --unit=orders --property=MemoryMax=2G --property=CPUQuota=150% \
 - Chris Richardson, *Microservices Patterns*, 7-bob - API composition va CQRS bilan so'rovlarni birlashtirish
 - Chris Richardson, *Microservices Patterns*, 13-bob - Strangler Fig va monolitni bosqichma-bosqich ajratish
 - Chris Richardson, *Microservices Patterns: With examples in Java*, Manning, 2019, 12-bob, 386-390-betlar - tilga xos paketlash formati patterni, uning ikki foydasi (tez deploy, resurs tejamkorligi) va to'rt kamchiligi (technology stack kapsulalanmasligi, resurs chegarasi yo'qligi, izolyatsiya yo'qligi, joylashtirishni avtomatlashtirishning qiyinligi)
+- John Carnell, *Spring Microservices in Action*, 2-bob (39-43-betlar) - dekompozitsiya signallari (ot, fe'l, ma'lumot yaxlitligi), data modelni mavjud monolit uchun boshlang'ich xarita qilish va granularlik belgilari (uchtadan beshtagacha jadval, test soni, mas'uliyat ko'pligi)
+- John Carnell, *Spring Microservices in Action*, 3-bob (66-67-betlar) - konfiguratsiya strategiyasini erta belgilash: 12 000 sozlama faylining 20 taga konsolidatsiyasi
+- John Carnell, *Spring Microservices in Action*, 4-bob (99, 110-betlar) - markaziy DNS va load balancer modelining to'rt kamchiligi, Eureka ning uch heartbeat va 30 soniyalik warm-up kechikishi
+- John Carnell, *Spring Microservices in Action*, 6-bob (156, 169, 170, 174-betlar) - gateway oldiga load balancer qo'yish, gateway kodining stateless va yengil bo'lishi, pre/route/post filter turlari va filter tartibi, gateway va servis timeout larining mosligi
+- Craig Walls, *Spring in Action* 6th, 1-bob va A-ilova (7, 11, 469-475-betlar) - Spring Initializr ni veb, `curl`, Boot CLI va IDE orqali chaqirish, API parametrlari va hosil bo'ladigan loyiha tuzilmasi
+- Neal Ford, Mark Richards, Pramod Sadalage, Zhamak Dehghani, *Software Architecture: The Hard Parts*, 1-nashr, O'Reilly, 2021 (copyright 2022), 12-bob (323-350-betlar) - saga ning uch o'lchami (aloqa, izchillik, koordinatsiya) va sakkiz nomlangan birikmasi, har biri uchun bog'lanish, murakkablik, javob berish va masshtab reytinglari; `Epic Saga(sao)` eng ko'p bog'langan, `Horror Story(aac)` eng murakkab, `Anthology Saga(aec)` eng kam bog'langan (14.42)
+- Neal Ford, Mark Richards, Pramod Sadalage, Zhamak Dehghani, *Software Architecture: The Hard Parts*, 1-nashr, O'Reilly, 2021 (copyright 2022), 11-bob (313-316-betlar) - oqim holati egasi orkestratorda yoki front controller da; mediatorni olib tashlash servislararo aloqani oshirishi, oqim murakkabligi oshgani sayin orkestratorning foydasi ortishi, xoreografiyada holatni kontrakt ichida uzatish qisman yechim bo'lishi (14.42, 14.43)
+- Neal Ford, Mark Richards, Pramod Sadalage, Zhamak Dehghani, *Software Architecture: The Hard Parts*, 1-nashr, O'Reilly, 2021 (copyright 2022), 13-bob (378-379-betlar) - oqim holatini kontrakt ichida uzatib xoreografiyali yechimda murakkab oqimni boshqarish, atomarlik kerak bo'lsa kontraktni avval o'tgan servislarga qayta e'lon qilish, trade-off jadvali (sun'iy yuqori bog'lanish va yuqori masshtabda bandwidth muammosi) (14.43)
+- Sam Newman, *Monolith to Microservices*, O'Reilly, 2019, 2-bob (35, 44) - mikroservisga o'tishdan oldingi uch savol va mijoz o'rnatib boshqaradigan dasturda mikroservisning yomon tanlov bo'lishi (14.1)
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 15-bob, "Strong Versus Collective Ownership" va "Conway's Law in Reverse" bo'limlari - kuchli va jamoaviy egalik farqi hamda ularning avtonomiyaga ta'siri, tizim dizayni tashkilotni shakllantirishi (dalil anekdot darajasida). Bu nashrning qo'limizdagi elektron nusxasida barqaror bet raqami yo'q, shuning uchun faqat bob va bo'lim nomi ko'rsatilgan (14.5)
+- Chris Richardson, *Microservices Patterns: With examples in Java*, Manning, 2019, 2-bob, 61-62-betlar - dekompozitsiyadan keyingi qadam: tizim operatsiyalarini servislarga biriktirish (ma'lumot kerak bo'lgan yoki ma'lumotga ega servisga) va hamkorlik uchun servislararo operatsiya hamda hodisalarni aniqlash (14.2)
+- Neal Ford, Mark Richards, Pramod Sadalage, Zhamak Dehghani, *Software Architecture: The Hard Parts*, 1-nashr, O'Reilly, 2021 (copyright 2022), 7-bob (189-206-betlar) - granularlik qarorining o'lchanadigan chegaralari: kuchli kohesiyali servisni funksiya bo'yicha bo'lmaslik va LCOM ning sub'ektivligi, qoldiq nom sinovi, extensibility faqat rejalashtirilgan kengayishda, tranzitiv sinxron bog'liqlik fault tolerance ni yo'q qilishi, besh hop x 300 ms = 1500 ms va 30/70 nisbati hamda kritik so'rov mezoni, ulashilgan domen kodining ~40 foiz chegarasi, funksiya-jadval xaritasi bo'yicha birlashtirish (14.44)
+- Neal Ford, Mark Richards, Pramod Sadalage, Zhamak Dehghani, *Software Architecture: The Hard Parts*, 1-nashr, O'Reilly, 2021 (copyright 2022), 8-bob (220-222, 233-235, 239-241-betlar) - kodni nusxalash faqat statik bir martalik kod uchun (`@ServiceEntrypoint` markeri), kutubxona va umumiy servis orasidagi tanlov (bir xil stek va kam o'zgarish, yoki polyglot va tez o'zgarish) hamda servisning runtime xavfi, sidecar va service mesh faqat operatsion bog'lanish uchun va domen sinflari sidecar ga qo'yilmasligi (14.32, 14.36)
+- Neal Ford, Mark Richards, Pramod Sadalage, Zhamak Dehghani, *Software Architecture: The Hard Parts*, 1-nashr, O'Reilly, 2021 (copyright 2022), 10-bob (284-286-betlar) - servislararo o'qish kechikishining uch qismi: tarmoq 30-300 ms, xavfsizlik 20-400 ms, qo'shimcha baza chaqirig'i 10-50 ms, jami bir soniyagacha; semantik va statik bog'lanish (14.15)
+- Neal Ford, Mark Richards, Pramod Sadalage, Zhamak Dehghani, *Software Architecture: The Hard Parts*, 1-nashr, O'Reilly, 2021 (copyright 2022), 11-bob (300-302-betlar) - mikroservislarda har workflow uchun alohida orkestrator, global ESB bog'lanish nuqtasi bo'lishi va orkestratorda oqimdan tashqari domen xatti-harakati bo'lmasligi (14.45)
+- Neal Ford, Mark Richards, Pramod Sadalage, Zhamak Dehghani, *Software Architecture: The Hard Parts*, 1-nashr, O'Reilly, 2021 (copyright 2022), 12-bob (351, 354-357-betlar) - muhim bo'lmagan qadam yiqilganda kompensatsiya o'rniga saga holatini o'zgartirish (`NO_SURVEY`) va orkestratorning fonda tuzatishi, saga larni `enum` va `@Saga` annotatsiyasi bilan reyestrga olish hamda kod skaner CLI (14.45, 14.46)
+- Sam Newman, *Monolith to Microservices*, O'Reilly, 2019, 4-bob (198, 201-205-betlar) - qadamlarni qayta tartiblab rollback ni kamaytirish, BPM vositalaridan qochib orkestratsiyani kodda yozish, turli oqimlarga turli orkestrator servis, xoreografiyali saga holatini correlation ID bilan proyeksiya qilish, jamoa egaligi mezoni (bitta jamoa - orkestratsiya, bir nechta jamoa - xoreografiya) va uslublarni aralashtirish (14.8, 14.45)
+- Sam Newman, *Monolith to Microservices*, O'Reilly, 2019, 5-bob (209-210-betlar) - jamoaviy egalik taxminan 20 gacha bir joyda o'tirgan dasturchida ishlashi, 100 dan ortiq dasturchida kuchli egalik, egalik belgilanmaganda "kolander arxitekturasi" va taqsimlangan monolit (14.47)
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 1-bob, "Cost" bo'limi - xarajatni kamaytirish asosiy maqsad bo'lsa mikroservis yomon tanlov, foyda ko'proq mijoz va parallel ishlab chiqishdan keladi. Bu nashrda barqaror bet raqami yo'q, shuning uchun faqat bob va bo'lim nomi ko'rsatilgan (14.1)
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 4-bob, "Pattern: Synchronous Blocking" bo'limi - temporal coupling ikki servis emas, ikki konkret nusxa orasida bo'lishi va javob kutilayotgan nusxa o'lsa javobning yo'qolishi; sekin tekshiruvni (firibgarlik) kritik yo'ldan chiqarib fonda yuritish. Bu nashrda barqaror bet raqami yo'q, shuning uchun faqat bob va bo'lim nomi ko'rsatilgan (14.15, 14.16)
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 5-bob, "Service Meshes and API Gateways" va 14-bob, "Multiple Concerns" bo'limlari - gateway da agregatsiya, protokolni qayta yozish va ichki (east-west) chaqiruvlardan qochish, "dumb pipes, smart endpoints" qoidasi, mahsulot DSL ida ishlash va mantiqni keyin ko'chirishning qiyinligi, gateway jamoasi tiket navbatiga aylanishi. Bu nashrda barqaror bet raqami yo'q, shuning uchun faqat bob va bo'lim nomi ko'rsatilgan (14.27)
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 6-bob, "Saga Failure Modes" bo'limi - saga biznes xatosini (mablag' yetmasligi) hal qiladi, texnik xatoni (payment gateway timeout, 500) emas va ishtirokchilarni ishonchli deb faraz qiladi. Bu nashrda barqaror bet raqami yo'q, shuning uchun faqat bob va bo'lim nomi ko'rsatilgan (14.46)
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 8-bob, "The Database" bo'limi - "bazani bo'lishmang" qoidasi bir mantiqiy servisning bir nechta nusxasiga tegishli emas, holatni boshqaradigan mantiq bitta servis ichida qoladi. Bu nashrda barqaror bet raqami yo'q, shuning uchun faqat bob va bo'lim nomi ko'rsatilgan (14.7)
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 14-bob, "Pattern: Page-Based Decomposition", "Pattern: Widget-Based Decomposition", "Pattern: Micro Frontends", "How Many BFFs?", "Reuse and BFFs" va "BFFs for Desktop Web and Beyond" bo'limlari - veb sayt uchun sahifa asosidagi dekompozitsiya standart tanlov, iFrame dan qochish va widgetlar orasida custom event, sahifa og'irligi uchun avtomatik ogohlantirish, kesishgan imkoniyat widget ga sig'masligi, "one experience, one BFF" qoidasi va jamoa egaligi mezoni, faqat veb UI uchun BFF ning sharti, tashqi tomonga alohida BFF. Bu nashrda barqaror bet raqami yo'q, shuning uchun faqat bob va bo'lim nomlari ko'rsatilgan (14.25, 14.26, 14.28)
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 15-bob, "Pluggable, Modular Microservices" bo'limi (`Changing ownership`, `Run multiple variations`, `External contribution through libraries`) - ko'p kiruvchi pull request ulashilgan servis belgisi, egalikni ko'chirish, umumiy skelet framework va har variantga alohida instance (lockstep reliz narxi), kutubxona orqali tashqi hissa. Bu nashrda barqaror bet raqami yo'q, shuning uchun faqat bob va bo'lim nomi ko'rsatilgan (14.47)
+- Vlad Khononov, *Learning Domain-Driven Design*, O'Reilly, 2021, 9-bob (149-152-betlar) - holatli sagani hodisa manbali agregat qilib `CommandIssued` hodisasini outbox relay orqali asinxron bajarish, hamda saga va process manager farqi (hodisadan buyruqqa oddiy moslash va yashirin yaralish, if-else bo'lsa process manager, ochiq yaratiladigan ko'p qadamli jarayon) (14.9, 14.46)
+- Mark Richards, Neal Ford, *Fundamentals of Software Architecture*, O'Reilly, 2020, 17-bob, "Transactions and Sagas" bo'limi - kompensatsiya freymvorkining ikki ko'rinishi (pending holat yoki do/undo juftligi), `undo` ning `do` dan murakkabroq bo'lishi va dizayn, implementatsiya hamda debug mehnatini ikki baravardan oshirishi, sagani kamdan-kam ishlatish tavsiyasi (14.46)
+- Mark Richards, Neal Ford, *Fundamentals of Software Architecture*, O'Reilly, 2020, 20-bob, "Security" bo'limi - foydalanuvchi turi (administrator, o'z-o'ziga xizmat, hamshira) uchun alohida API gateway, shunda noto'g'ri turdagi so'rov nozik servisga (tibbiy yozuvlar interfeysiga) yetmaydi (14.28)
+- Chris Richardson, *Microservices Patterns: With examples in Java*, Manning, 2019, 3-bob, 67-68-betlar - o'zaro ta'sir uslublarining ikki o'lchamli tasnifi (bir-bir yoki bir-ko'p, sinxron yoki asinxron) va beshta uslub; request/response ning IPC texnologiyasiga ortogonalligi, broker orqali ham bloklanishi mumkinligi (14.15)
+- ESLATMA: Carnell ning nusxasi 1-nashr (2017) va misollarda Netflix Zuul, Ribbon hamda Eureka ishlatilgan. Bu bobdagi qoidalar mohiyati o'zgarmagan holda Spring Cloud Gateway, Spring Cloud LoadBalancer va zamonaviy discovery nomlari bilan yozilgan; kitobning asl komponenti tegishli joyda ESLATMA bilan ko'rsatilgan
+- Chris Richardson, *Microservices Patterns: With Examples in Java*, Manning, 2019, 1-bob (11-bet) - masshtab kubining uch o'qi: X o'qi klonlash va yuk balansi, Z o'qi so'rovni atributi bo'yicha bo'lish (ikkisi hajm muammosini hal qilib murakkablik muammosini hal qilmasligi), faqat Y o'qi (funksional dekompozitsiya) murakkablikni kamaytirishi (14.1)
+- Chris Richardson, *Microservices Patterns: With Examples in Java*, Manning, 2019, 2-bob (57-59-betlar, 2.2.5-bo'lim "Obstacles to decomposing an application into services") - dekompozitsiyaning besh to'sig'i: tarmoq kechikishi, sinxron IPC mavjudlikni tushirishi, servislararo ma'lumot izchilligi, ma'lumotning izchil ko'rinishini olish (izchil ko'rinish kerak bo'lsa ma'lumot bitta servisda qolishi sharti) va god sinflar (14.39)
+- Chris Richardson, *Microservices Patterns: With Examples in Java*, Manning, 2019, 3-bob (105-bet) - sinxron so'rovni sinxron chaqiruvsiz bajarishning uch yo'li va narxi: ma'lumotni replikatsiya qilish (katta hajmda samarasiz), so'rovni to'liq ishlashdan oldin javob qaytarish (mijozni murakkablashtiradi, polling yoki xabarnoma kerak), servisni faqat asinxron API bilan ta'riflash (ommaviy API da ko'pincha mumkin emas) (14.10)
+- Chris Richardson, *Microservices Patterns: With Examples in Java*, Manning, 2019, 6-bob (198-bet) - event store ni idempotentlik ombori sifatida ishlatgandagi bo'sh natija tuzog'i: xabarni ishlash hech qanday event chiqarmasa xabar ishlangani haqida yozuv qolmasligi va qayta yetkazilganda noto'g'ri xulq paydo bo'lishi, yechim esa har holatda soxta (pseudo) event yozish va iste'molchilarni uni e'tiborsiz qoldirishga majburlash (14.18)
+- Chris Richardson, *Microservices Patterns: With Examples in Java*, Manning, 2019, 12-bob (427-bet) - service mesh ning kam aytiladigan foydasi deploy ni relizdan ajratishi: servisni productionga joylab sinab, faqat shundan keyin unga haqiqiy trafikni yo'naltirish mumkin bo'lishi va bu yangi versiya chiqarishning ishonchliligini oshirishi (14.34)
+- ESLATMA: Richardson ning kitobidan faqat pattern darajasidagi qoidalar olingan; uning vendor freymvorkiga xos tafsiloti (Eventuate Tram, Eventuate Local) korpus qamrovidan tashqarida qoldirilgan
 
 ---
 

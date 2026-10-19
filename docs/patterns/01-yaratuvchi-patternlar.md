@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 1. Yaratuvchi patternlar (Creational Patterns)
 
@@ -67,6 +67,8 @@ public final class AppClock {
     public static AppClock getInstance() { return INSTANCE; }
 }
 ```
+
+**Qurish qarorlari:** Patternning qo'llanish sharti ikkita, lekin ikkinchisi ko'pincha unutiladi: nusxa bitta bo'lishi yetmaydi, "yagona nusxa subclass bilan kengaytirilishi va klient kodi o'zgarmasdan kengaytirilgan nusxani ishlatishi kerak" degan holat ham shu patternga tegishli. Shu ikkinchi shart paydo bo'lganda kirish metodi ichida `if` yoki `switch` bilan sinf tanlash qotib qolgan yechim: har yangi variant kirish nuqtasini o'zgartiradi va mumkin variantlar ro'yxati kodga yoziladi. O'rniga nomlangan reyestr qo'yiladi - sinflar o'zini nom bilan ro'yxatdan o'tkazadi, kirish nuqtasi reyestrdan nom bo'yicha so'raydi va mumkin sinflar to'plamini bilmaydi (qarang: [Reyestr](#117-reyestr-registry)). Spring'da bu qaror sinfdan konteynerga ko'chadi: variant `@Profile` yoki `@ConditionalOnProperty` bilan tanlanadi, `@Primary` default ni belgilaydi, shuning uchun tanlov kodi bean ichida qolmaydi. Yagonalikni majburlash kerak bo'lgan joyda yana bir tafsilot bor: `private` konstruktor o'zi kafolat bermaydi, imtiyozli klient uni refleksiya (`setAccessible(true)`) bilan chaqirib ikkinchi nusxa yasaydi; himoya talab qilinsa konstruktor ikkinchi nusxa so'ralganini aniqlab istisno tashlashi lozim, `enum` singleton esa bu hujumga tilning o'zi bilan chidaydi.
 
 ## 1.2 Kalit bo'yicha yagona nusxalar (Multiton)
 
@@ -209,7 +211,7 @@ public final class SchemaValidator {
 - API'da konkret sinfni yashirib, interfeys qaytarish - keyinchalik implementatsiyani o'zgartirish erkinligi.
 - Tashqi event turiga (`enum EventType`) qarab tegishli `Handler` yaratish - kichik tizimlarda `switch` bilan.
 
-**Ehtiyot bo'ling:** Static metodlar polimorfik emas - ularni mock qilish va subclass'da o'zgartirish qiyin, shuning uchun Spring bean'lari orasidagi bog'liqlik uchun DI afzal. Simple Factory'dagi `switch` har yangi tur qo'shilganda o'zgaradi (Open/Closed buziladi) - turlar ko'paysa `Map<Key, Supplier>` (1.9) yoki Factory Method / Strategy registry'ga o'ting. `public` konstruktorsiz sinflar JPA/Jackson kabi reflection asosidagi kutubxonalar bilan muammo tug'dirishi mumkin (`@JsonCreator` kerak).
+**Ehtiyot bo'ling:** Static metodlar polimorfik emas - ularni mock qilish va subclass'da o'zgartirish qiyin, shuning uchun Spring bean'lari orasidagi bog'liqlik uchun DI afzal. Simple Factory'dagi `switch` har yangi tur qo'shilganda o'zgaradi (Open/Closed buziladi) - turlar ko'paysa `Map<Key, Supplier>` (1.9) yoki Factory Method / Strategy registry'ga o'ting. `public` konstruktorsiz sinflar JPA/Jackson kabi reflection asosidagi kutubxonalar bilan muammo tug'dirishi mumkin (`@JsonCreator` kerak). Yana bir oqibat ko'pincha e'tibordan qoladi: faqat statik fabrika beradigan sinfda `public` yoki `protected` konstruktor bo'lmaydi, demak uni subclass qilib bo'lmaydi; bu cheklov vorislik o'rniga kompozitsiyani rag'batlantiradi va ko'p holatda maqsadga mos, lekin kutubxona sinfini kengaytirmoqchi bo'lgan iste'molchi uchun to'siq - shuning uchun u ongli qabul qilinadi, tasodifan emas.
 
 ```java
 // Statik fabrika: konstruktorga nisbatan nomi bor, keshlashi va tur tanlashi mumkin
@@ -258,6 +260,8 @@ public class PdfExporter extends ReportExporter {
 }
 ```
 
+**Qurish qarorlari:** Fabrika metodi ikki variantda keladi va tanlov ongli bo'lsin. Birinchisi: Creator abstrakt bo'lib fabrika metodiga implementatsiya bermaydi, ya'ni aqlli default yo'q va subclass yozish majburiy - qaror kompilyator tomonidan talab qilinadi. Ikkinchisi: Creator konkret bo'lib ishlaydigan default beradi, meros esa faqat moslashuvchanlik uchun kerak bo'ladi - tipik holat o'zi ishlaydi, chetga chiqadigan holatgina subclass yozadi. Qaysi variant tanlanganini bob ichidagi `protected` metod imzosi emas, Javadoc aytib turishi kerak, aks holda kengaytiruvchi "bu metodni qayta yozishim shartmi" degan savolga javob topa olmaydi. Ikkinchi qurish qarori patternning kam ko'rinadigan ishlatilishiga tegishli: fabrika metodi parallel sinf ierarxiyalarini bog'laydi. Sinf mas'uliyatining bir qismi alohida sinfga topshirilganda (hujjat elementi va uni tahrirlaydigan boshqaruvchi, `ItemReader` va unga mos `ItemWriter`) qaysi sinflar birga ishlashi haqidagi bilim koddan tarqalib ketadi; fabrika metodi shu juftlikni bitta joyda lokalizatsiya qiladi va klient juftlikni o'zi yig'ishdan xalos bo'ladi.
+
 ## 1.8 Abstrakt fabrika (Abstract Factory)
 
 **Tavsif:** Bir-biriga bog'liq yoki bir "oila"ga mansub obyektlar to'plamini (masalan, Connection + Statement + ResultSet) konkret sinflarni ko'rsatmasdan yaratish interfeysi. Klient faqat fabrika interfeysi va mahsulot interfeyslari bilan ishlaydi; konkret fabrika almashtirilsa, butun oila bir vaqtda almashadi va mahsulotlar bir-biriga mos bo'lishi kafolatlanadi. Factory Method'dan farqi - bir metod emas, bir nechta o'zaro mos mahsulot yaratuvchi metodlar to'plami.
@@ -287,6 +291,8 @@ class AwsCloudConfig {
     }
 }
 ```
+
+**Qurish qarorlari:** Mahsulot oilalari ko'paygan sayin har oila uchun yangi fabrika sinfi yozish qimmatga tushadi. Muqobil yo'l: fabrikani prototiplar bilan initsializatsiya qilish - fabrika har mahsulotning namunasini saqlaydi va so'ralganda uning nusxasini qaytaradi, shunda yangi oila yangi sinf emas, yangi namunalar to'plami bo'lib qoladi (qarang: [Prototip](#111-prototip-prototype)). Ikkinchi qaror fabrika interfeysining shakliga tegishli: har mahsulotga alohida metod o'rniga parametrli bitta `make(kind)` qo'yish fabrikani kengaytiriladigan qiladi, lekin narxi bor va u jim to'lanadi - hamma mahsulot bitta abstrakt tur orqali qaytgani uchun tur xavfsizligi yo'qoladi va klient subclass-spetsifik amalga yetish uchun downcast qilishga majbur bo'ladi, downcast esa ish vaqtida sinadi. Shuning uchun parametrli shakl faqat mahsulot turlari to'plami ochiq va klientga umumiy interfeys yetarli bo'lganda tanlanadi; oila a'zolari bir-biridan keskin farq qilsa va klient ularning o'ziga xos amallarini chaqirsa, alohida metodlar qoladi. Parametrli shaklning kalit bo'yicha yozilishi alohida pattern sifatida berilgan (qarang: [Fabrika to'plami](#19-fabrika-toplami-factory-kit)).
 
 ## 1.9 Fabrika to'plami (Factory Kit)
 
@@ -354,6 +360,44 @@ public static NeedsCustomer order() {
 // Chaqiruv: order().customer(id).item(line).note("gift").build();
 ```
 
+**Qurish qarorlari:** Builder interfeysi barcha konkret builder uchun yetarlicha umumiy bo'lishi kerak, lekin "yetarlicha" ning darajasini mahsulot shakli belgilaydi. Natijaga qism qo'shib borish modeli (`addHeader`, `addRow`) ko'pincha yetadi; daraxt quriladigan holda yetmaydi, chunki avval qurilgan qismga qaytish kerak bo'ladi va interfeys bola tugunni direktorga qaytarishi shart, aks holda direktor daraxtning qayerida turganini bilmaydi. Ikkinchi qaror: konkret builderlarning mahsulotlari uchun umumiy abstrakt tur majburlanmaydi. Natijalar odatda bir-biridan juda farq qiladi, klient esa qaysi builder ishlayotganini bilgani uchun natijani to'g'ri turda qabul qiladi; sun'iy umumiy ota tur faqat bo'sh interfeys yasaydi. Uchinchi qaror qurish metodlarining shakliga tegishli: ularni abstrakt qilmasdan bo'sh default implementatsiya bilan berish konkret builderga faqat o'zi qiziqqan qadamni qayta yozish imkonini beradi. ESLATMA: Java'da bu qaror tilning o'zida tayyor, `interface` va `default` metod bilan yoziladi.
+
+Builder'ni Abstract Factory'dan ajratadigan chiziq ham qurish paytida ko'rinadi: Builder mahsulotni faqat oxirgi qadamda qaytaradi, Abstract Factory esa so'ralgan mahsulotni darhol qaytaradi (qarang: [Abstrakt fabrika](#18-abstrakt-fabrika-abstract-factory)). Demak jarayon bosqichli va oxirida yaxlit natija kerak bo'lsa Builder, har mahsulot mustaqil so'ralsa Abstract Factory tanlanadi. Narx klient tomonida: Builder klientdan fabrikaga nisbatan ko'proq domen bilimini talab qiladi - u qanday qadamlar borligini va qanday tartibda kelishini biladi; fabrikada esa klient faqat nima kerakligini aytadi. Shuning uchun tashqi jamoaga beriladigan API da fabrika, o'z moduli ichidagi murakkab qurilish uchun builder qulayroq tushadi.
+
+```java
+// Ierarxiyali builder: rekursiv tur parametri va abstrakt self() cast siz zanjir beradi
+public abstract class Pizza {
+    final Set<Topping> toppings;
+
+    abstract static class Builder<T extends Builder<T>> {
+        private final EnumSet<Topping> toppings = EnumSet.noneOf(Topping.class);
+
+        public T addTopping(Topping topping) { toppings.add(topping); return self(); }
+
+        abstract Pizza build();              // voris kovariant tur qaytaradi
+        protected abstract T self();         // "simulated self-type": cast kerak emas
+    }
+
+    Pizza(Builder<?> builder) { this.toppings = EnumSet.copyOf(builder.toppings); }
+}
+
+public class Calzone extends Pizza {
+    private final boolean sauceInside;
+
+    public static class Builder extends Pizza.Builder<Builder> {
+        private boolean sauceInside;
+        public Builder sauceInside() { this.sauceInside = true; return self(); }
+
+        @Override public Calzone build() { return new Calzone(this); }   // kovariant
+        @Override protected Builder self() { return this; }
+    }
+
+    private Calzone(Builder builder) { super(builder); this.sauceInside = builder.sauceInside; }
+}
+// Chaqiruv: new Calzone.Builder().addTopping(HAM).sauceInside().build();
+// Lombok da shu shakl @SuperBuilder bilan generatsiya qilinadi
+```
+
 ## 1.11 Prototip (Prototype)
 
 **Tavsif:** Yangi obyekt noldan yaratilmaydi - mavjud "namunaviy" obyektning nusxasi (clone/copy) olinadi va kerak bo'lsa o'zgartiriladi. Bu yaratish qimmat (ma'lumot yuklash, parsing) yoki konkret sinf runtime'da aniqlanadigan hollarda foydali. Java'da `Cloneable`/`clone()` muammoli hisoblanadi (Effective Java, Item 13); afzal yo'llar - copy constructor, `toBuilder()`, record uchun yangi qiymatlar bilan `new`, immutable obyekt uchun "wither" metodlar. Chuqur (deep) va yuzaki (shallow) nusxa farqini aniq belgilash shart.
@@ -382,6 +426,8 @@ class ReportService {
 }
 ```
 
+**Qurish qarorlari:** Birinchi qaror - prototiplarni kim ushlab turadi. Namunalarni kod bo'ylab statik maydonlarda tarqatib yuborish o'rniga prototip reyestri qo'yiladi: namunalar kalit bo'yicha saqlanadi, ish vaqtida qo'shiladi va olib tashlanadi, shu tufayli yangi mahsulot turi klientni o'zgartirmasdan paydo bo'ladi (umumiy mexanizm sifatida qarang: [Reyestr](#117-reyestr-registry) - prototip reyestri uning nusxalash bilan birlashgan holi). Ikkinchi qaror nusxadan keyingi holatga tegishli: konstruktor argumentlari klonda ishlamaydi, shuning uchun nusxalash va sozlash ikki qadamga ajraladi va ikkinchi qadam uchun alohida initsializatsiya nuqtasi kerak bo'ladi; `toBuilder()` va wither metodlar aynan shu qadamni beradi, `clone()` esa bermaydi va shu sababli ham noqulay. Uchinchi va eng ko'p e'tibordan qoladigan foyda: prototip yangi turni programmalashtirmasdan ta'riflash imkonini beradi. Qiymatni yoki tuzilmani o'zgartirib reyestrga qo'yish yangi sinf yozishni almashtiradi va tizimdagi sinf sonini sezilarli kamaytiradi - har chegirma turi uchun alohida sinf emas, bitta `Discount` namunasining sozlangan nusxalari.
+
 ## 1.12 Obyektlar hovuzi (Object Pool)
 
 **Tavsif:** Yaratish va yo'q qilish qimmat bo'lgan obyektlar (ulanish, thread, katta buffer) oldindan yaratilib hovuzda saqlanadi; klient obyektni "oladi" (borrow), ishlatadi va "qaytaradi" (return), hovuz esa minimal/maksimal o'lcham, validatsiya, kutish vaqti va eskirganlarni yangilash siyosatini boshqaradi. Pattern latency'ni kamaytiradi va resurs sarfini cheklaydi - shu bilan backpressure vositasi sifatida ham xizmat qiladi.
@@ -396,6 +442,8 @@ class ReportService {
 - Litsenziya yoki tashqi quota bilan cheklangan resurslar (masalan, bir vaqtda N ta SFTP sessiya).
 
 **Ehtiyot bo'ling:** Qaytarilmagan obyekt - leak (HikariCP `leakDetectionThreshold` bilan aniqlang); hovuzga qaytarilayotgan obyekt holatini tozalash (reset) shart, aks holda bir klient holati boshqasiga "oqadi". Hovuz o'lchami noto'g'ri bo'lsa, u o'zi bottleneck bo'ladi (qarang: [25-bo'lim](25-anti-patternlar.md), Unbounded connection pool / wrong pool size). Virtual thread'lar (Java 21+) thread pool'ga ehtiyojni kamaytiradi, lekin ulanish hovuzlariga emas - DB ulanishlari hali ham cheklangan resurs.
+
+Eng muhim chegara patternning qo'llanish doirasida: hovuz qimmat resurs uchun vosita, GC bosimini kamaytirish uchun emas. JVM da obyekt allokatsiyasi arzon va har thread o'zining allokatsiya blokidan foydalanib sinxronlashdan butunlay qochadi; pooldan obyekt so'rash esa aynan sinxronlashni va bloklanish ehtimolini qaytaradi, shuning uchun oddiy obyektni pooling qilish ko'p thread ostida masshtablanishni pasaytiradi va kutilgan foydaning teskarisini beradi. Ajratuvchi shart bitta: obyekt yaratilishi tashqi resursni (ulanish, thread, fayl deskriptori, katta ajratilgan buffer) talab qilsa hovuz haqli; obyekt shunchaki heap da joy olsa hovuz zarar va uning o'rniga allokatsiyaga ishonish kerak.
 
 ```yaml
 # Hovuz deyarli hech qachon qo'lda yozilmaydi - tayyorini sozlang
@@ -728,6 +776,18 @@ public class PriceCalculator {
 - Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, 1.5-bo'lim va Table 1.1 (9-10-bet) - tasnifning ikki o'lchovi (purpose va scope) va sinf qamrovidagi patternlar kamligi
 - Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, 1.6-bo'lim (11 va 13-bet) - obyektlarni topish, hamda Facade va Flyweight granularlikning ikki chekkasi sifatida
 - Freeman/Robson, *Head First Design Patterns* 2nd, 13-bob (565 va 568-bet) - "pattern kontekst ichidagi muammoning yechimi" ta'rifi va forces (maqsad bilan cheklov muvozanati)
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Singleton, Applicability (127-bet) - patternning ikkinchi qo'llanish sharti: yagona nusxa subclass bilan kengaytirilishi va klient kodi o'zgarmasligi
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Singleton, Implementation (130-132-bet) - kirish metodidagi sinf tanlash o'rniga nomlangan reyestr
+- Joshua Bloch, *Effective Java* 3rd, Item 3 (17-bet) - `private` konstruktorni refleksiya bilan chaqirish va ikkinchi nusxa so'ralganda istisno tashlash
+- Joshua Bloch, *Effective Java* 3rd, Item 1 (8-bet) - faqat statik fabrika beradigan sinf subclass qilinmasligi va buning kompozitsiyaga ta'siri
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Factory Method, Implementation (108-110-bet) - patternning ikki varianti (abstrakt yoki default beradigan Creator) va parallel sinf ierarxiyalarini bog'lash
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Abstract Factory, Implementation (90-91-bet) - fabrikani prototiplar bilan initsializatsiya qilish va parametrli `make(kind)` ning tur xavfsizligi narxi
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Builder, Implementation (99-100-bet) - qurish interfeysining umumiyligi, mahsulotlar uchun abstrakt tur majburlanmasligi, bo'sh default metodlar; 99-bet Builder va Abstract Factory ning qaytarish momenti farqi
+- Freeman/Robson, *Head First Design Patterns* 2nd, 14-bob (601-bet) - Builder klientdan fabrikaga nisbatan ko'proq domen bilimini talab qilishi
+- Joshua Bloch, *Effective Java* 3rd, Item 2 (14-bet) - ierarxiyali builder: rekursiv tur parametri, abstrakt `self()` va kovariant `build()`
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Prototype, Implementation (118-120-bet) - prototip reyestri, nusxadan keyingi initsializatsiya qadami va sinf yozmasdan yangi tur ta'riflash
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 11-bob (149-150-bet) - allokatsiya sinxronlashdan arzon, shuning uchun oddiy obyektni pooling qilish masshtablanishni pasaytiradi
+- ESLATMA: kitoblarda yo'q, korpus qo'shgan qism - Singleton variantini `@Profile`, `@ConditionalOnProperty` va `@Primary` bilan tanlash; fabrika metodi variantini Javadoc da e'lon qilish talabi; `interface` + `default` metodni GoF ning bo'sh qurish metodlari uchun Java javobi deb ko'rsatish; `Pizza`/`Calzone` builder kod misoli va uning Lombok `@SuperBuilder` ga bog'lanishi; hovuz uchun ajratuvchi shartning tashqi resurs ro'yxati
 
 ---
 

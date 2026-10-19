@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 13. Zamonaviy Java tili va API dizayni (Modern Java and API Design)
 
@@ -61,6 +61,10 @@ public record PaymentRequest(
 }
 ```
 
+Normalizatsiyani aynan shu yerda qilishning ikkinchi, kuchliroq sababi bor. Record ning asosiy invarianti shunday: komponentlardan qayta qurilgan record asl record ga teng bo'lishi kerak, ya'ni `new R(r.c1(), ..., r.cn()).equals(r)` rost bo'lishi kerak. Accessor ni qo'lda yozib qiymatni o'zgartirib qaytarish shu invariantni buzadi, va spetsifikatsiyaning o'z misoli aynan shuni ko'rsatadi: komponentlarni kesib qaytaradigan accessor li `SmallPoint` da `p1.equals(p2)` rost, lekin `new SmallPoint(p1.x(), p1.y())` dan chiqqan obyekt `p1` ga teng emas (*The Java Language Specification, Java SE 25*, 8.10.3, 348-bet). Oqibati jim: `Map` kaliti, `distinct()`, deserializatsiya va kesh invalidatsiyasi noto'g'ri ishlaydi, lekin hech qayerda xato chiqmaydi. Shuning uchun qiymatni o'zgartiradigan yagona joy kanonik konstruktor bo'lib qoladi, accessor esa saqlangan qiymatni o'zgartirmasdan qaytaradi.
+
+Record ning qolgan cheklovlari API dizaynini ham belgilaydi. Record boshqa sinfdan voris olmaydi va o'zi yashirin `final`, lekin interfeys amalga oshirishi va generic bo'lishi mumkin; komponentlardan tashqari qo'shimcha maydon esa faqat `static` bo'lishi mumkin, ya'ni record ichiga hisoblangan qiymatni saqlaydigan instans maydoni (kesh) qo'shib bo'lmaydi (Schildt, *Java The Complete Reference*, 12-nashr, 17-bob, 466-bet). To'liq kanonik konstruktor ham cheklangan: u generic bo'la olmaydi, `throws` bandi yoza olmaydi, boshqa konstruktorni chaqira olmaydi va record ning o'zidan kam ko'rinishga ega bo'lishi mumkin emas, har bir komponent esa to'liq initsializatsiya qilinishi shart (17-bob, 467-bet). `throws` yoza olmasligi validatsiya uslubini bir yo'lga qamaydi: compact konstruktorda checked istisno tashlab bo'lmaydi, shuning uchun u yerda `IllegalArgumentException` yoki domen `RuntimeException` i ishlatiladi, checked istisno talab qiladigan validatsiya esa record dan tashqarida, fabrika metodida bajariladi.
+
 Oddiy sinf quyidagi hollarda kerak. Birinchi, JPA entity: Hibernate argumentsiz konstruktor, o'zgaruvchan maydon va proxy uchun ochiq sinf talab qiladi, record bunga yaramaydi. Ikkinchi, identity semantikasi kerak bo'lsa: buyurtma entity si ID bo'yicha teng bo'lishi kerak, barcha maydonlari bo'yicha emas. Uchinchi, komponentlar soni oltitadan oshsa va ularning yarmi ixtiyoriy bo'lsa: bu yerda builder li oddiy sinf o'qilishi yaxshiroq. To'rtinchi, keyinchalik maydon qo'shilishi kutilayotgan ommaviy API da record komponentlari tartibi konstruktor imzosining bir qismi, shuning uchun har bir qo'shimcha binary moslikni buzadi.
 
 Record DTO va read model uchun ideal. Spring Data JPA interface va sinf asosidagi projection larda record ni to'g'ridan to'g'ri qabul qiladi, JPQL da `select new` konstruktor ifodasi ham ishlaydi. Jackson record ni 2.12 dan beri komponent nomlari bo'yicha serialize va deserialize qiladi, qo'shimcha annotatsiya shart emas.
@@ -100,11 +104,19 @@ Record pattern komponenti faqat pattern bo'ladi (`var x`, tur pattern yoki ichki
 
 `permits` ro'yxatini faqat barcha implementatsiya sealed tur bilan bitta faylda (bitta compilation unit) e'lon qilinganda tushirib qoldirish mumkin: kompilyator ro'yxatni shu fayldan o'zi chiqaradi. Boshqa fayldagi implementatsiya bir paketda bo'lsa ham `permits` da yozilishi shart, aks holda javac "not listed in its 'permits' clause" xatosini beradi. `permits` dagi sinf nomli modulda sealed tur bilan bir modulda, nomsiz modulda (classpath) esa bir paketda bo'lishi kerak ([JLS 21, 8.1.6](https://docs.oracle.com/javase/specs/jls/se21/html/jls-8.html#jls-8.1.6), interfeys uchun 9.1.4; javac xabarlari [jdk-21+35 compiler.properties](https://github.com/openjdk/jdk/blob/jdk-21%2B35/src/jdk.compiler/share/classes/com/sun/tools/javac/resources/compiler.properties) da). Nested record lar shu sababli ko'p qulay: butun ierarxiya bitta faylda ko'rinadi va `permits` kerak emas.
 
+`permits` ro'yxati ruxsat berishdan tashqari vorislarga **majburiyat** ham yuklaydi, va uni bilmaslik kutilmagan kompilyatsiya xatolari beradi. Birinchi: ro'yxatda sanalgan har bir sinf sealed sinfning **bevosita** vorisi bo'lishi shart, ya'ni nabera sinfni `permits` ga yozib bo'lmaydi. Ikkinchi: sealed bevosita superklassi yoki sealed bevosita superinterfeysi bor har qanday sinf oshkor yoki yashirin ravishda `final`, `sealed` yoki `non-sealed` deb e'lon qilinishi shart, aks holda kompilyatsiya xatosi. `sealed` kalit so'zining ta'siri aynan shu: har bir bevosita vorisni o'z holatini oshkor aytishga majburlash va sealed ierarxiyani tasodifiy vorislikka ochib qo'yishning oldini olish (*The Java Language Specification, Java SE 25*, 8.1.1.2, 249-250-betlar). Uchinchi, teskari tomoni: `non-sealed` deb e'lon qilingan sinfning na sealed superklassi, na sealed superinterfeysi bo'lmasa, bu ham xato, demak `non-sealed` sinfning vorisi o'zini `non-sealed` deb e'lon qila olmaydi. `record` yashirin `final`, `enum` esa yashirin `final` yoki yashirin `sealed` bo'lgani uchun ular modifikator yozmasdan sealed interfeysni implementatsiya qila oladi, va yuqoridagi misol shu sababdan modifikatorsiz kompilyatsiya qilinadi.
+
+`permits` ni tushirib qoldirish sharti ham spetsifikatsiyada aniq: ro'yxat bo'lmasa, ruxsat etilgan bevosita vorislar shu compilation unit da e'lon qilingan, kanonik nomga ega va bevosita superklassi shu sinf bo'lgan sinflar deb chiqariladi; kanonik nom talabi lokal va anonim sinflar hisobga olinmasligini bildiradi, va `permits` yo'q sealed sinfning bitta ham ruxsat etilgan bevosita vorisi bo'lmasa, bu kompilyatsiya xatosi (JLS 8.1.6, 264-266-betlar). Interfeys uchun qoida ayni bir xil, faqat vorislar qatoriga subinterfeyslar ham kiradi (JLS 9.1.4, 358-bet). Yuqoridagi JLS 21 havolasi va bu yerdagi JLS 25 bandlari bir xil qoidani yozadi: Java 17 da doimiy bo'lgan sealed sinflar qoidasi o'zgarmagan.
+
+Sealed ning kamdan-kam aytiladigan yana bitta foydasi kompilyator tekshiruvida. `final` sinf uchun amal qilgan qoida sealed ga ham yoyilgan: kompilyator isbotlab bo'ladigan darajada imkonsiz `instanceof` tekshiruvini va cast ni kompilyatsiya xatosi deb rad etadi. `sealed class C permits D` da `D` `final` bo'lsa va `I` interfeysini amalga oshirmasa, `c instanceof I` kompilyatsiya xatosi beradi, chunki ierarxiya yopiq va kelgusida paydo bo'ladigan hech qanday tur bu tekshiruvni rost qila olmaydi ([JEP 409](https://openjdk.org/jeps/409)). Chegarasi ham bor va u diqqat talab qiladi: ruxsat etilgan vorislardan bittasi `non-sealed` bo'lsa, ierarxiya shu nuqtada yana ochiladi va ayni shu tekshiruv kompilyatsiya xatosi bermaydi. Amaliy natija: yopiq ierarxiyada "ehtimol to'g'ri keladi" degan cast kompilyatsiyada tutiladi, runtime da emas, lekin bu kafolat ierarxiyaga `non-sealed` voris qo'shilgan kunda jim yo'qoladi.
+
 Muhim chegara: sealed ierarxiya sizning kodingizda bo'lishi kerak. Agar siz kutubxona chiqarayotgan bo'lsangiz, sealed interface mijozga yangi variant qo'shishga ruxsat bermaydi. Bu ataylab qilinadigan qaror. Agar kengaytirish nuqtasi kerak bo'lsa, oddiy interface qoldiring va visitor o'rnini saqlang. Agar variantlar sizda to'liq nazoratda bo'lsa, sealed ni tanlang, chunki u har bir yangi holatni qamrab olishga majbur qiladi.
 
 ## 13.3 `switch` ifodasi va deconstruction pattern
 
 `switch` endi ifoda, ya'ni qiymat qaytaradi. Bu uch narsani beradi. Birinchi, `->` shoxlari fall through qilmaydi, shuning uchun unutilgan `break` dan kelib chiqadigan xatolar yo'qoladi. Ikkinchi, har bir shox qiymat qaytarishi shart, demak kompilyator to'liqlikni tekshiradi. Uchinchi, record pattern bilan ma'lumotni darhol ochib olish mumkin, alohida cast va getter chaqiruvlari kerak emas.
+
+Shakliy chegarasi ham bitta: `switch` ifodasi faqat bitta qiymat qaytaradi. Shoxdan ikki natija kerak bo'lganda (masalan yangi holat va chiqariladigan hodisa) ularni ikki alohida o'zgaruvchiga yozib olish uchun `switch` ni ifodadan blokka aylantirish shart emas, ikki qiymatni record ichiga yig'ib, shu record qaytariladi (Schildt, *Java The Complete Reference*, 12-nashr, 17-bob, 457-bet). Shu bilan `switch` ifoda bo'lib qoladi va kompilyatorning to'liqlik tekshiruvi saqlanadi; shox ichida qiymat o'zgartirish yoki yon ta'sir qilish esa aynan shu tekshiruvning qiymatini yo'qotadi.
 
 `when` guard shart ni pattern ustiga qo'yadi. Guard tartibi muhim: aniqroq shart avval yozilishi kerak, aks holda kompilyator "pattern dominated" xatosini beradi.
 
@@ -127,7 +139,7 @@ int delta(StockEvent event) {
 }
 ```
 
-Ikki tuzoqni bilib turish kerak. Birinchi, `case null` yozilmasa pattern switch `NullPointerException` tashlaydi. Eski `switch` ham shunday qilardi, lekin endi `case null` ni ochiq yozish imkoni bor va u niyatni ko'rsatadi. Ikkinchi, sealed ierarxiya alohida kompilyatsiya qilingan modul da o'zgarsa, eski `switch` runtime da `MatchException` beradi. Shuning uchun sealed ierarxiya va uni ishlatuvchi kod bir deploy birligida bo'lishi afzal. Nomsiz pattern `_` Java 22 dan boshlab to'liq qo'llanadi va ishlatilmaydigan komponentni ko'rsatishga xizmat qiladi.
+Ikki tuzoqni bilib turish kerak. Birinchi, `case null` yozilmasa pattern switch `NullPointerException` tashlaydi. Eski `switch` ham shunday qilardi, lekin endi `case null` ni ochiq yozish imkoni bor va u niyatni ko'rsatadi. Bu yerda eng ko'p adashtiradigan tafsilot `default` bilan bog'liq: `default` shoxi `null` ni USHLAMAYDI, ya'ni `default` bor bo'lsa ham `case null` yozilmagan `switch` `null` selektorda `NullPointerException` beradi ([JEP 441](https://openjdk.org/jeps/441) buni ochiq yozadi: `default` label `null` selektorga mos kelmaydi). Shuning uchun "default hamma qolgan qiymatni oladi" degan intuitsiya aynan `null` da buziladi va `null` ni kiruvchi ma'lumotda kutadigan `switch` da `case null` yoki `case null, default` ochiq yoziladi. Ikkinchi, sealed ierarxiya alohida kompilyatsiya qilingan modul da o'zgarsa, eski `switch` runtime da `MatchException` beradi. Shuning uchun sealed ierarxiya va uni ishlatuvchi kod bir deploy birligida bo'lishi afzal. Nomsiz pattern `_` Java 22 dan boshlab to'liq qo'llanadi va ishlatilmaydigan komponentni ko'rsatishga xizmat qiladi.
 
 ## 13.4 Text block, `var` va o'qilishi: foyda va chegara
 
@@ -253,6 +265,8 @@ public interface Retryable { Duration retryAfter(); }
 
 Uch amaliy qoida. Birinchi, xato kodini `enum` yoki konstanta sifatida saqlang va uni API kontraktining bir qismi deb bilib, hech qachon o'zgartirmang. Xato matni o'zgarishi mumkin, kod o'zgarmasligi kerak. Ikkinchi, `cause` ni hech qachon yo'qotmang: `throw new MyException(msg)` yozib asl istisnoni tashlab ketish eng ko'p uchraydigan diagnostika yo'qotishi. Uchinchi, boshqaruv oqimi uchun istisno ishlatmang. Agar holat kutilgan bo'lsa, sealed natija turi qaytaring, yuqoridagi `PaymentResult` kabi.
 
+Tilning bitta cheklovi ham shu dizaynga bevosita ta'sir qiladi: generik sinf `Throwable` ni kengaytira olmaydi, ya'ni `class NotFoundException<T> extends RuntimeException` yozib bo'lmaydi (Schildt, *Java The Complete Reference*, 12-nashr, 14-bob, 389-bet). Sababi tur o'chirilishi: `catch` shoxi ish vaqtida istisno turini aniq bilishi kerak, generik parametr esa o'sha paytda yo'q. Amalda bu ikki yo'lni qoldiradi: turga bog'liq ma'lumotni istisnoning oddiy maydoni qilib uzatish (`Class<?> resourceType`, `String resourceId`), yoki kutilgan holatni umuman istisno bilan emas, yuqoridagi `PaymentResult` kabi sealed natija turi bilan ifodalash. `Result<T>` uslubidagi API ni tanlashning sababi ko'pincha ayni shu cheklov.
+
 Yuqori chastotali kodda stack trace yig'ish qimmat. Kutilgan, soniyada minglab marta yuz beradigan holat uchun `super(message, cause, false, false)` konstruktori bilan suppression va writableStackTrace ni o'chirish mumkin. Bu optimizatsiyani faqat o'lchov ko'rsatganda qiling.
 
 ## 13.8 Kutubxona API si dizayni: kirish nuqtasi kam, nom aniq, standart qiymat xavfsiz
@@ -289,6 +303,8 @@ Nom berishda uch qoida. Birinchi, `get` prefiksi faqat haqiqiy accessor uchun. H
 
 Standart qiymat har doim xavfsiz tomonga qarashi kerak. PII standart holda o'chirilgan, retry standart holda o'chirilgan yoki chegaralangan, timeout standart holda cheksiz emas. Mijoz xavfli rejimni ongli ravishda yoqadi.
 
+Qaytish turi ham nomning bir qismi kabi qaror. Metod imzosi aytganidan aniqroq turni qaytarayotganini bilsangiz, chaqiruvchini cast qilishga majburlamang: eng aniq turni o'zingiz qaytaring (Fowler, *Refactoring*, Addison-Wesley, 1999, 10-bob, 249-bet). 1999 dagi asl sabab (generiklar yo'q edi, shuning uchun `Collection` qaytargan metoddan keyin cast yozilardi) eskirgan, qoidaning o'zi esa amal qiladi va bugun boshqa shaklda chiqadi: `Object` yoki juda keng supertip qaytarish, `List<?>` qaytarish, yoki fabrikadan interfeys emas, `Object` qaytarish. Teskari chegara ham bor: eng aniq tur deganda implementatsiya sinfini qaytarish tushunilmaydi, chunki u keyinchalik almashtirilmaydigan majburiyatga aylanadi; qoida "chaqiruvchi cast yozmasin" degan darajada aniq turni, ya'ni kontraktdagi eng aniq **turni** qaytarishni talab qiladi.
+
 | Mezon | Oddiy yondashuv | Arxitektor yondashuvi |
 |---|---|---|
 | Ma'lumot modeli | Hamma joyda mutable POJO, setter bilan | Record, compact konstruktorda validatsiya, yaroqsiz holat mavjud emas |
@@ -304,7 +320,9 @@ Standart qiymat har doim xavfsiz tomonga qarashi kerak. PII standart holda o'chi
 
 ## 13.9 Orqaga moslik: metod qo'shish, nomini o'zgartirish, deprecate qilish siyosati
 
-Binary moslik va source moslik ikki xil narsa. Interface ga metod qo'shsangiz, source moslik buziladi, chunki implementatsiya qiluvchilar kompilyatsiya qilinmaydi. `default` metod qo'shsangiz ikkisi ham saqlanadi. Record ga komponent qo'shsangiz konstruktor imzosi o'zgaradi va eski kompilyatsiya qilingan mijoz `NoSuchMethodError` oladi.
+Binary moslik va source moslik ikki xil narsa. Interface ga metod qo'shsangiz, source moslik buziladi, chunki implementatsiya qiluvchilar kompilyatsiya qilinmaydi. `default` metod qo'shsangiz ikkisi ham saqlanadi, lekin bitta istisno bilan, u pastda alohida yozilgan. Record ga komponent qo'shsangiz konstruktor imzosi o'zgaradi va eski kompilyatsiya qilingan mijoz `NoSuchMethodError` oladi.
+
+Bu narxning oldidagi savol esa boshqa: interfeys published bo'lishi shart edimi. Fowler ning qoidasi qisqa va u texnik emas, tashkiliy: interfeysni erta published qilmang, va kod egaligi siyosatini refaktoringga xalal bermaydigan qilib o'zgartiring (Fowler, *Refactoring*, Addison-Wesley, 1999, 2-bob, 56-bet). Published interfeys deganda `public` modifikatori emas, sizning nazoratingizdan tashqaridagi kod unga tayanib qolgani tushuniladi: shu kundan boshlab har o'zgarish yuqoridagi hisobga kiradi. Amaliy natijasi ikkita. Birinchi, modul ichidagi tur `public` bo'lishi mumkin, lekin published bo'lmasligi kerak, va bu chegara kod egaligi bilan belgilanadi: qaysi paket kimning mas'uliyatida va kim unga bog'lanishga haqli. Ikkinchi, refaktoring imkonini saqlab qolish uchun avval egalik qoidasi o'zgartiriladi (masalan hamma modul bitta repozitoriyda va bitta jamoada), keyin interfeys o'zgartiriladi: teskari tartib ishlamaydi.
 
 Metod nomini "o'zgartirish" degan amal yo'q. Yangi nom bilan metod qo'shiladi, eskisi eski nomda qoladi va `@Deprecated(since = "...", forRemoval = true)` bilan belgilanadi. Eski metod yangisiga delegatsiya qiladi. Olib tashlash faqat major versiyada bo'ladi.
 
@@ -322,10 +340,37 @@ jdeps --multi-release 25 -summary target/report-exporter-2.4.0.jar
 
 Deprecate siyosatini yozib qo'ying va unga rioya qiling. Amaliy shakl: belgilangan metod kamida ikki minor reliz yoki taxminan oltita oy yashaydi. Javadoc da `@deprecated` tegi o'rnini aniq ko'rsatadi, ya'ni "`exportCsv(Pii)` ni ishlating". Metrika qo'ying: eski metod chaqirilganda counter oshadi, shunda olib tashlashdan oldin uni hali kim ishlatayotganini bilasiz.
 
+Binar moslikning uch nozik holati spetsifikatsiyada aniq yozilgan, va ularning ikkitasida kompilyator ham, binar tekshiruvchi ham jim qoladi.
+
+**`throws` bandi.** Metod yoki konstruktorning `throws` bandidagi o'zgarishlar mavjud binarlar bilan moslikni **buzmaydi**, chunki bu bandlar faqat kompilyatsiya vaqtida tekshiriladi (*The Java Language Specification, Java SE 25*, 13.4.21, 488-bet). Demak `japicmp` bu o'zgarishni buzilish deb ko'rsatmaydi, lekin chaqiruvchining **manba kodi** sinadi: yangi checked istisno qo'shilsa, chaqiruvchi qayta kompilyatsiya qilinmaydi. Shundan qoida: `throws` ga checked istisno qo'shish mijoz uchun API o'zgarishi va u patch yoki minor relizda chiqmaydi.
+
+**Yangi overload.** Mavjud metodni overload qiladigan yangisini qo'shish mavjud binarlarni buzmaydi: har bir chaqiruv uchun ishlatiladigan imzo o'sha binarlar kompilyatsiya qilinganda aniqlangan, shuning uchun yangi qo'shilgan metod, hatto imzosi mos va aniqroq bo'lsa ham, ishlatilmaydi (13.4.23, 488-bet). Lekin chaqiruvchi **qayta kompilyatsiya** qilinganda bog'lanish o'zgaradi, va spetsifikatsiyaning o'z misoli shu farqni ko'rsatadi: `out(float)` bor sinfda `out(2)` chaqiruvi `float` chiqaradi; sinfga `out(int)` qo'shilib faqat sinf qayta kompilyatsiya qilinsa chiqish hali ham `float`, chaqiruvchi ham qayta kompilyatsiya qilinganda esa chiqish `int` ga o'zgaradi. Ya'ni xulq jim o'zgaradi, hech qanday xato chiqmaydi. Ikkinchi tomoni ham bor: yangi overload keyingi kompilyatsiyada "eng aniq metod yo'q" xatosiga olib kelishi mumkin, lekin bajarilish vaqtida bunday xato chiqmaydi, chunki overload tanlovi bajarilishda qilinmaydi.
+
+**Ierarxiyani o'zgartirish.** Sinfning bevosita superklass turini yoki bevosita superinterfeyslar to'plamini o'zgartirish mavjud binarlarni buzmaydi, **agar** sinfning umumiy superklasslar yoki superinterfeyslar to'plami a'zo yo'qotmasa (13.4.4, 475-bet). Agar o'zgarish natijasida biror sinf yoki interfeys endi supertip bo'lmay qolsa, eski binarlar yangi binar bilan yuklanganda linkage xatosi chiqishi mumkin, va bunday o'zgarish keng tarqatilgan sinflar uchun tavsiya etilmaydi. Shu sababli abstrakt bazaviy sinfni interfeysga almashtirish kabi "tozalash" refaktoringi chiqarilgan API da major reliz ishi bo'ladi.
+
+**Konstanta inlining.** Eng ko'p zarar keltiradigan holat esa oddiy ko'rinadi: `public static final` konstanta. Qoida avvalo uslub darajasida: kelgusi versiyalarda qiymati o'zgarishi mumkin bo'lgan narsani konstanta qilib qo'ymaslik kerak (Deitel, *Java How to Program*, 10-nashr, Pearson, 8-bob, 331-bet). Sababi spetsifikatsiyada va u binar moslik masalasi: maydon constant variable bo'lsa, ya'ni `static final` bo'lib constant expression bilan initsializatsiya qilingan bo'lsa, uning qiymati mijoz binariga **kompilyatsiya vaqtida** ko'chadi; shuning uchun qiymatni o'zgartirish yoki `final` ni olib tashlash eski binarni ishdan chiqarmaydi, lekin eski binar yangi qiymatni **umuman ko'rmaydi**, hatto constant ifodadan tashqarida ishlatilgan joyda ham, va faqat qayta kompilyatsiya qilinganda ko'radi (*The Java Language Specification, Java SE 25*, 13.4.9, 482-bet). Spetsifikatsiyaning o'z tavsiyasi ham qat'iy: "inconstant constants" muammosidan qochishning eng yaxshi yo'li `static` konstantani faqat haqiqatan hech qachon o'zgarmaydigan qiymatlar uchun ishlatish, haqiqiy matematik konstantadan boshqa joyda ulardan juda tejamkor foydalanish, va o'qish uchun o'zgarmaslik kerak bo'lganda `private static` maydon va accessor metodni tanlash (483-bet). Amalda bu kutubxona versiyalashda real buzilish sababi: `public static final int MAX_BATCH = 500` ni 1000 ga o'zgartirib yangi versiya chiqarsangiz, qayta kompilyatsiya qilinmagan mijoz hamon 500 bilan ishlaydi va buni hech qanday log ko'rsatmaydi. To'g'ri shakl: `public static int maxBatch()` yoki konfiguratsiya qiymati.
+
+**`default` metod qo'shish.** Interfeysga `default` metod qo'shish yoki `abstract` metodni `default` ga aylantirish binar mos, lekin ish vaqtida chaqiruv `IncompatibleClassChangeError` bilan yiqilishi mumkin. Shart aniq: chaqiruvning kvalifikatsiyalovchi interfeysi K bir-birining subinterfeysi bo'lmagan I va J interfeyslarining subinterfeysi bo'lsa va I ham, J ham bir xil imzo va natija turiga ega `default` metod e'lon qilsa, chaqiruv shu xato bilan tugaydi (JLS, 13.5.7, 493-bet). Ya'ni o'zgarish link vaqtida xato bermaydi, shuning uchun `japicmp` ham jim qoladi, lekin mijozning allaqachon kompilyatsiya qilingan binari ishlamay qolishi mumkin va bu uchun uni qayta kompilyatsiya qilish ham shart emas. Shundan qoida: keng ishlatiladigan interfeysga `default` metod qo'shish yangi nom bilan qilinadi (`exportCsvStrict` emas, `export` ni qayta ishlatmaslik), yoki yangi interfeys ajratiladi.
+
+Qolgan holatlar spetsifikatsiyaning 13.4 bo'limida katalog sifatida yozilgan va ularning har biri "kompilyator jim, mijoz yiqiladi" toifasiga kiradi.
+
+| O'zgarish | Nima bo'ladi | Manba |
+|---|---|---|
+| Sinfni `abstract` qilish | Eski binar instansiya yaratishga urinsa, link vaqtida `InstantiationError`, refleksiyada `InstantiationException` | JLS 13.4.1, 473-bet |
+| `public` ni olib tashlash yoki ko'rinishni kamaytirish (package dan private ga, protected dan package yoki private ga, public dan protected, package yoki private ga) | Eski binar bog'langanda linkage xatosi, sinf uchun `IllegalAccessError` | JLS 13.4.3 va 13.4.7, 475 va 478-betlar |
+| Maydonni o'chirish | Shu maydonga murojaat qilgan eski binarda `NoSuchFieldError`; faqat `private` maydonni xavfsiz o'chirish mumkin | JLS 13.4.8, 481-bet |
+| Maydonni `final` qilish | Unga qiymat yozadigan eski binarda `IllegalAccessError` | JLS 13.4.9, 482-bet |
+| Instans metodni `final` qilish | Uni override qilishga tayangan eski binar buziladi | JLS 13.4.17, 487-bet |
+| Konstruktori yo'q sinfga birinchi konstruktorni qo'shish | Yashirin default konstruktor yo'qoladi, ya'ni konstruktor o'chirilgan hisoblanadi; almashtiruvchi parametrsiz konstruktor sinf bilan bir xil yoki kengroq ko'rinishda bo'lishi kerak | JLS 13.4.12, 484-bet |
+
+Katalogdan chiqadigan umumiy xulosa bitta: "kodni tozalash" deb ataladigan o'zgarishlarning yarmi (sinfni `abstract` qilish, metodni `final` qilish, ko'rinishni toraytirish, ishlatilmaydiganga o'xshagan maydonni o'chirish) chiqarilgan API da major reliz ishi. Shu sababli kutubxonaning ichki qismini `package private` qoldirish [API sirtini kichik ushlash qoidasi](#138-kutubxona-api-si-dizayni-kirish-nuqtasi-kam-nom-aniq-standart-qiymat-xavfsiz) bilan bir xil sababga ega: chiqarilmagan narsani bu katalog umuman bog'lamaydi.
+
 | Tuzoq | Nima bo'ladi | Yechim |
 |---|---|---|
 | Record ga yangi komponent qo'shish | Eski mijozda `NoSuchMethodError` | Yangi record turi chiqarish yoki builder li sinfga o'tish |
 | Interface ga abstrakt metod qo'shish | Mijoz implementatsiyasi kompilyatsiya qilinmaydi | `default` metod qo'shish yoki yangi interface ajratish |
+| `public static final` konstanta qiymatini o'zgartirish | Mijoz binarida eski qiymat qoladi, hech qanday xato chiqmaydi | Konstanta o'rniga accessor metod yoki konfiguratsiya qiymati |
+| Keng ishlatiladigan interfeysga `default` metod qo'shish | Mijoz ikki interfeysni implementatsiya qilgan bo'lsa, chaqiruvda `IncompatibleClassChangeError` | Yangi nom tanlash yoki yangi interfeys ajratish |
 | `Optional` ni entity maydoni qilish | JPA map qilmaydi, serializatsiya yiqiladi | Maydon nullable, accessor `Optional` qaytaradi |
 | `parallelStream` ichida bloklanadigan I/O | `commonPool` to'lib qoladi, butun JVM sekinlashadi | Alohida executor yoki virtual thread ishlatish |
 | Sealed ierarxiyani alohida modulda o'zgartirish | Runtime da `MatchException` | Ierarxiya va iste'molchini bir deploy birligida saqlash |
@@ -334,6 +379,9 @@ Deprecate siyosatini yozib qo'ying va unga rioya qiling. Amaliy shakl: belgilang
 | `orElse` ichida qimmat chaqiruv | Qiymat bor bo'lsa ham hisoblanadi | `orElseGet` ishlatish |
 | Istisno `cause` sini tashlab ketish | Asl sabab log da yo'q, diagnostika imkonsiz | `cause` ni har doim konstruktorga uzatish |
 | Xato matniga qarab mijoz mantiq yozishi | Matn o'zgarsa integratsiya yiqiladi | Barqaror xato kodi, matn faqat odam uchun |
+| `throws` ga yangi checked istisno qo'shish | Binar mos, lekin chaqiruvchi manbasi kompilyatsiya qilinmaydi | Major relizda chiqarish yoki unchecked istisnoga o'tish |
+| Mavjud metodga yangi overload qo'shish | Eski binar ishlaydi, qayta kompilyatsiyada chaqiruv jim boshqa metodga bog'lanadi | Overload emas, boshqa nom (`findByIdOrNull`) |
+| Supertipni olib tashlash yoki almashtirish | Eski binarda linkage xatosi | Supertiplar to'plamini kamaytirmaslik |
 
 ## 13.10 Null xavfsizligi: annotatsiyalar va chegaraviy tekshiruv
 
@@ -396,6 +444,32 @@ maven.compiler.parameters=true
 Yangilanish paytida uchta narsa ko'p muammo beradi. Birinchi, bytecode manipulyatsiya qiladigan kutubxonalar: ByteBuddy, ASM asosidagi agentlar va eski mock kutubxonalari yangi class file versiyasini tanimasligi mumkin, shuning uchun ularni avval ko'taring. Ikkinchi, JDK ichki API siga kirish: yangi relizlarda u qattiqroq yopiladi va `--add-opens` flaglari tobora kamroq ishlaydi. Uchinchi, GC standartining o'zgarishi: heap va pauza o'lchovlarini yangilanishdan keyin qaytadan oling, chunki eski tuning parametrlari yangi kollektorda ma'noni o'zgartiradi.
 
 Qaror mezoni oddiy. Agar Spring Boot 3.x da bo'lsangiz, Java 17 minimal, lekin Java 21 virtual thread uchun amalda majburiy. Spring Boot 4.x va Spring Framework 7.x ham Java 17 ni minimal baseline deb oladi, shunga qaramay yangi loyihani Java 25 da boshlash to'g'ri, chunki keyingi ikki yil davomida yangilanish talab qilinmaydi.
+
+Versiya siyosatining ikkinchi qismi til imkoniyatlariga tegishli: preview xususiyatini ishlatish qarori. Preview xususiyati to'liq spetsifikatsiya qilingan, to'liq realizatsiya qilingan va shunga qaramay **o'tkinchi** til, JVM yoki API imkoniyati; u haqiqiy foydalanishga asoslangan fikr-mulohaza olish uchun chiqariladi va keyingi relizda doimiy bo'lishi mumkin (*The Java Language Specification, Java SE 25*, 1.5, 7-bet). Platforma realizatsiyalari preview xususiyatlarini kompilyatsiya vaqtida ham, bajarilish vaqtida ham o'chirib qo'yadi, foydalanuvchi ikki joyda ham ularni yoqishni oshkor aytmaguncha; va berilgan relizning preview xususiyatlaridan faqat ba'zilarini yoqish yo'li berilmaydi, ya'ni tanlov hammasi yoki hech biri (1.5, 8-bet). Preview o'chirilgan holda preview til imkoniyatiga yoki shu imkoniyat bilan e'lon qilingan sinfga har qanday manba havolasi kompilyatsiya xatosi beradi; yoqilgan holda esa kompilyator o'chirib bo'lmaydigan ogohlantirish berishga qattiq undaladi.
+
+Qaror uchun eng muhim tafsilot class fayl darajasida. Preview xususiyatlariga bog'liq class faylning minor versiyasi 65535 bo'ladi va major versiyasi shu relizning eng yangi major versiyasi bo'ladi (Java SE 25 uchun 69.65535); bunday class fayl shu Java SE reliziga bog'lanib qoladi va boshqa hech bir relizda yuklanmaydi, hatto u yerda ham preview yoqilgan bo'lsa ham, chunki u tayangan preview imkoniyatlari boshqa relizda boshqacha yoki yo'q bo'lishi mumkin (*The Java Virtual Machine Specification, Java SE 25*, 1.5.1, 7-bet va 4.1, 76-77-betlar). Ya'ni preview bilan kompilyatsiya qilingan artefakt JDK yangilanganda majburan qayta kompilyatsiya qilinadi.
+
+Shundan siyosat kelib chiqadi. Kutubxona chiqarayotgan bo'lsangiz, preview xususiyati API da ham, kompilyatsiya qilingan artefaktda ham ko'rinmasin: aks holda artefakt mijozning JDK versiyasini bitta relizga qotirib qo'yadi. Ilova kodida preview ni yoqish faqat keyingi LTS ga tayyorlanadigan ikkinchi CI trekda haqli, prod artefaktida emas. `--enable-preview` kompilyatsiya va ishga tushirish buyruqlarining ikkisida ham bo'lishi kerak. Va preview ga tayangan har bir joy migratsiya rejasiga alohida qator bo'lib yoziladi, chunki imkoniyat keyingi relizda o'zgarishi mumkin.
+
+```xml
+<!-- Preview faqat tajriba trekida yoqiladi: prod profilida bu blok yo'q -->
+<plugin>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-compiler-plugin</artifactId>
+  <configuration>
+    <release>25</release>
+    <compilerArgs><arg>--enable-preview</arg></compilerArgs>
+  </configuration>
+</plugin>
+<plugin>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-surefire-plugin</artifactId>
+  <configuration>
+    <!-- bajarilish vaqtida ham kerak, aks holda class fayl yuklanmaydi -->
+    <argLine>--enable-preview</argLine>
+  </configuration>
+</plugin>
+```
 
 ## 13.12 Native metod: JNI, Foreign Function API va qachon haqli
 
@@ -515,6 +589,18 @@ Ikki qoida birga ishlaydi: paradigma sizdan imkoniyat olib qo'yadi, siz esa qolg
 - Joshua Bloch, *Effective Java*, 3-nashr, Addison-Wesley, 2018, "Item 66: Use native methods judiciously", 285-bet - native metodning uch tarixiy ehtiyoji, `BigInteger` misoli va native kodning narxi
 - [sonar-java 8.44, `S6878.json`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S6878.json) - record pattern ishlatish qoidasi
 - [sonar-java 8.44, `S6126.json`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S6126.json) - ko'p qatorli satr konkatenatsiyasini text block bilan almashtirish
+- *The Java Language Specification, Java SE 25 Edition* (Gosling, Joy, Steele, Bracha, Buckley, Smith, Bierman), 1.5 (7-9-betlar), 8.1.1.2 (249-250-betlar), 8.1.6 (264-266-betlar) va 9.1.4 (358-bet) - preview xususiyatining ta'rifi, kompilyatsiya va bajarilish vaqtida yoqilishi, qismiy yoqishning yo'qligi, o'chirilgan holdagi kompilyatsiya xatosi va yoqilgan holdagi ogohlantirish; sealed vorisning `final` / `sealed` / `non-sealed` bo'lish majburiyati va `non-sealed` ning sharti, `record` va `enum` ning yashirin `final` yoki `sealed` ekani; `permits` ro'yxatining bevosita voris talabi va ro'yxat tushirib qoldirilganda compilation unit bo'yicha chiqarish qoidasi, interfeys uchun bir xil qoida
+- *The Java Language Specification, Java SE 25 Edition*, 13.4.4 (475-bet), 13.4.21 va 13.4.23 (488-489-betlar) - supertiplar to'plami a'zo yo'qotmasa ierarxiya o'zgarishining binar mos ekani va supertipni olib tashlashda linkage xatosi; `throws` bandi o'zgarishining binar moslikni buzmasligi, chunki u faqat kompilyatsiyada tekshiriladi; yangi overload qo'shishning eski binarlarni buzmasligi va chaqiruvchi qayta kompilyatsiya qilinganda chaqiruvning boshqa metodga bog'lanishi (`out(float)` va `out(int)` misoli)
+- *The Java Language Specification, Java SE 25 Edition*, 8.10.3 (348-bet) - record ning komponentlardan qayta qurilganda tenglik invarianti va accessor ni qo'lda yozib qiymatni o'zgartirishning uni buzishi (`SmallPoint` misoli)
+- *The Java Language Specification, Java SE 25 Edition*, 13.4.1 (473-bet), 13.4.3 (475-bet), 13.4.7 (478-bet), 13.4.8 (481-bet), 13.4.9 (482-483-betlar), 13.4.12 (484-bet) va 13.4.17 (487-bet) - sinfni `abstract` qilishda `InstantiationError`; `public` ni olib tashlashda `IllegalAccessError`; ko'rinishni kamaytirishning linkage xatosi berishi; maydonni o'chirishda `NoSuchFieldError` va faqat `private` maydonni xavfsiz o'chirish; maydonni `final` qilishda `IllegalAccessError` hamda `static` constant variable qiymatining mijoz binariga kompilyatsiya vaqtida ko'chishi, o'zgargan qiymatni eski binarning umuman ko'rmasligi va "inconstant constants" uchun `private static` maydon plus accessor tavsiyasi; birinchi konstruktor qo'shilganda yashirin default konstruktorning yo'qolishi va almashtiruvchi konstruktor ko'rinishi talabi; instans metodni `final` qilishning override ga tayangan binarni buzishi
+- *The Java Language Specification, Java SE 25 Edition*, 13.5.7 (493-bet) - `default` metod qo'shish yoki `abstract` ni `default` ga aylantirish binar mos bo'lsa ham chaqiruvda `IncompatibleClassChangeError` berishi mumkinligi va uning aniq sharti (K ikki aloqasiz interfeysning subinterfeysi, ikkisida bir xil imzo va natijali `default` metod)
+- Herbert Schildt, *Java The Complete Reference*, 12-nashr, McGraw-Hill, 2022, 14-bob (389-bet) va 17-bob (457, 466 va 467-betlar) - generik sinfning `Throwable` ni kengaytira olmasligi; `switch` ifodasining bitta qiymat qaytarishi va ikki natijani record ga yig'ish; record ning voris olmasligi, yashirin `final` ekani, interfeys amalga oshirishi va generic bo'lishi mumkinligi, komponentdan boshqa maydonining `static` bo'lishi sharti; kanonik konstruktorning generic bo'la olmasligi, `throws` yoza olmasligi, boshqa konstruktorni chaqira olmasligi va record dan kam ko'rinmasligi
+- Martin Fowler, *Refactoring: Improving the Design of Existing Code*, Addison-Wesley, 1999, 2-bob (56-bet) va 10-bob (249-bet) - interfeysni erta published qilmaslik va kod egaligi siyosatini refaktoringga xalal bermaydigan qilib o'zgartirish; imzo aytganidan aniqroq turni qaytarib chaqiruvchini cast qilishga majburlamaslik. ESLATMA: 1999 dagi asl sabab generiklarning yo'qligi edi va u eskirgan, qoidaning o'zi amal qiladi
+- Paul Deitel va Harvey Deitel, *Java How to Program*, 10-nashr, Pearson, 8-bob (331-bet) - kelgusi versiyalarda qiymati o'zgarishi mumkin bo'lgan narsani `public static final` konstanta qilmaslik
+- [JEP 409: Sealed Classes](https://openjdk.org/jeps/409) - sealed ierarxiyada isbotlab bo'ladigan darajada imkonsiz `instanceof` va cast ning kompilyatsiya xatosi bo'lishi, va ruxsat etilgan vorislardan bittasi `non-sealed` bo'lganda bu tekshiruvning yo'qolishi
+- [JEP 441: Pattern Matching for switch](https://openjdk.org/jeps/441) - `default` label ning `null` selektorga mos kelmasligi, shuning uchun `case null` yozilmagan `switch` da `default` bor bo'lsa ham `NullPointerException` chiqishi
+- *The Java Virtual Machine Specification, Java SE 25 Edition* (Lindholm, Yellin, Bracha, Buckley, Smith), 1.5.1 (7-bet) va 4.1 (76-77-betlar) - preview xususiyatlariga bog'liq class faylning minor versiyasi 65535 ekani va major versiyasi relizning eng yangi major versiyasi bo'lishi; bunday class faylning shu relizga bog'lanib qolishi va boshqa relizda yuklanmasligi; Java SE 25 uchun major versiyalar oralig'i 45-69 va minor versiya 0 yoki 65535
+
 
 ---
 

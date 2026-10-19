@@ -76,7 +76,7 @@ Issue toifasiga qarab:
 ## Asboblar
 
 ```bash
-python3 tools/rules_for.py <fayl>...  # Java tuzatishdan OLDIN majburiy: boblar, punktlar, avvalgi xatolar
+python3 tools/rules_for.py --vazifa="<vazifa>" <fayl>...  # Java tuzatishdan OLDIN majburiy: retsept, boblar, punktlar
 tools/doc.sh rule java:S3776          # shu kalit tilga olingan bo'limlar
 tools/doc.sh outline sonarqube <bob>  # bobdagi bo'limlar ro'yxati
 tools/doc.sh show sonarqube <raqam>   # faqat o'sha bo'lim, butun bob emas

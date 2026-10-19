@@ -29,3 +29,4 @@ docs/code-review/16-resurs-xotira-va-gc-bosimi-review.md	447e82119b6159319978175
 docs/code-review/35-test-sifati-review-assertion-izolyatsiya.md	1652e7aef146604d2733422d87c85c91420a1dbc	a'zo e'loni va chaqiruv bir blokda (yomon/yaxshi taqqoslash)
 docs/code-review/37-api-moslik-va-breaking-change-review.md	31ef7c63258cea8b24bcd641f66aaba464fa5f89	a'zo e'loni va chaqiruv bir blokda (yomon/yaxshi taqqoslash)
 docs/sonarqube/11-qamralmay-qoladigan-kod-va-unga-test-yozish.md	ff9d8ae34e7c2d1b62e6842fd7403777538abc9b	osilgan catch: faqat tutish qismi ko'rsatilgan
+docs/clean-code/24-lambda-oqim-va-funksional-uslub-tozaligi.md	34350d58e8df8814d0f09b7fba73398e37543498	zanjir bo'lagi: lambda parametr turi taqqoslovi, oqim manbasi tushirib qoldirilgan

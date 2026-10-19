@@ -62,7 +62,9 @@ import json
 import os
 import re
 import statistics
+import subprocess
 import sys
+import time
 
 import geniuslib
 import hookio
@@ -582,6 +584,63 @@ def read_payload():
     return hookio.read_payload() or {}
 
 
+# Shundan katta sessiya (transkriptlar jami, MB) Stop hookida fonda
+# saqlanadi: 58 MB sessiyada sinxron o'qish har navbat oxiriga ~3.4 s
+# qo'shardi. Natija bir xil, faqat kutilmaydi.
+BACKGROUND_MB = float(os.environ.get("GENIUS_USAGE_FON_MB", "5"))
+LOCK_STALE = 600
+
+
+def session_bytes(main):
+    total = 0
+    for path in session_files(main):
+        try:
+            total += os.path.getsize(path)
+        except OSError:
+            pass
+    return total
+
+
+def in_background(main, project, session):
+    """Saqlashni ajralgan jarayonga beradi; bittadan ortiq bir vaqtda yurmaydi."""
+    cmd = [sys.executable, os.path.abspath(__file__), "--saqlash-fon", main,
+           project, session]
+    kwargs = {"stdin": subprocess.DEVNULL, "stdout": subprocess.DEVNULL,
+              "stderr": subprocess.DEVNULL, "close_fds": True}
+    if os.name == "nt":
+        kwargs["creationflags"] = 0x00000008 | 0x00000200  # DETACHED, NEW_GROUP
+    else:
+        kwargs["start_new_session"] = True
+    try:
+        subprocess.Popen(cmd, **kwargs)
+    except OSError:
+        return save_session(main, project, session)
+    return 0
+
+
+def save_locked(main, project, session):
+    """--saqlash-fon: lock bilan; band bo'lsa keyingi navbat hammasini qayta o'qiydi."""
+    lock = os.path.join(STATE_DIR, "usage-%s.lock" % session)
+    os.makedirs(STATE_DIR, exist_ok=True)
+    try:
+        if time.time() - os.path.getmtime(lock) > LOCK_STALE:
+            os.remove(lock)
+    except OSError:
+        pass
+    try:
+        fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except OSError:
+        return 0
+    try:
+        os.close(fd)
+        return save_session(main, project, session)
+    finally:
+        try:
+            os.remove(lock)
+        except OSError:
+            pass
+
+
 def save_session(main, project, session):
     scan = Scan()
     rows, _ = collect(session_files(main), scan)
@@ -598,7 +657,10 @@ def save_hook():
     if path and path.endswith(".jsonl") and os.path.isfile(path):
         session = (payload.get("session_id")
                    or os.path.basename(path)[:-len(".jsonl")])
-        return save_session(path, os.path.basename(os.path.dirname(path)), session)
+        project = os.path.basename(os.path.dirname(path))
+        if session_bytes(path) > BACKGROUND_MB * 1024 * 1024:
+            return in_background(path, project, session)
+        return save_session(path, project, session)
     base = None if path else project_base()
     if base is None:
         print("usage.py: transkript topilmadi, sarf yozilmadi.", file=sys.stderr)
@@ -841,6 +903,8 @@ def session_main(arg, as_json):
 
 
 def main():
+    if sys.argv[1:2] == ["--saqlash-fon"] and len(sys.argv) == 5:
+        return save_locked(*sys.argv[2:5])
     parser = argparse.ArgumentParser(add_help=True)
     parser.add_argument("--kun")
     parser.add_argument("--davr", type=int)

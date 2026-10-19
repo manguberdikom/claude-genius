@@ -52,7 +52,7 @@ def case_ozbekcha_matnlar(_):
     paths = [os.path.join(SKILLS, "manguberdi", "SKILL.md")]
     paths += [os.path.join(AGENTS, f) for f in sorted(os.listdir(AGENTS))
               if f.endswith(".md")]
-    if len(paths) < 7:
+    if len(paths) < 5:
         return False
     texts = [description(p) for p in paths]
     texts.append(cost_report.read(os.path.join(ROOT, "CLAUDE.md")))

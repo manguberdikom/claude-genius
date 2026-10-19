@@ -82,6 +82,9 @@ PY_CALL = re.compile(r"(?<![\w/.])(?:python3?|py -3) (?:\./)?tools/([a-z_]+\.py)
 PY_BARE = re.compile(r"(?<![\w/.])(?:\./)?tools/([a-z_]+\.py)\b")
 SH_CALL = re.compile(r"(?<![\w/.])(?:(?:bash|sh) )?(?:\./)?tools/(doc\.sh)\b")
 MEM_PATH = re.compile(r"(?<![\w/])memory/(?=[\w<])")
+# Agent fayllaridagi skill reference havolasi: boshqa proyektda cwd uning
+# ildizi, nisbiy yo'l ochilmaydi. Snapshotda skill nusxasi bor.
+SKILL_REF = re.compile(r"(?<![\w/.])\.claude/skills/manguberdi/(references/[\w-]+\.md)")
 # Klon ildizidagi, skill matni nomi bilan tilga oladigan fayllar. Ular
 # Read bilan ham, shell argumenti sifatida ham (`awk '...' <fayl>`)
 # o'qiladi, shuning uchun tools/ yo'li kabi qo'shtirnoqqa olinadi.
@@ -185,13 +188,19 @@ def rewrite(text, root, bash="bash", python="python3", clone=None):
     text = SH_CALL.sub(sh, text)
     text = MEM_PATH.sub(mem, text)
     text = ROOT_FILE.sub(root_file, text)
+
+    def skill_ref(match):
+        count[0] += 1
+        return "%s/.claude/skills/manguberdi/%s" % (root, match.group(1))
+
+    text = SKILL_REF.sub(skill_ref, text)
     return text, count[0]
 
 
 def relative_left(text):
     """Almashtirilmagan nisbiy yo'llar. Bo'sh bo'lishi kerak."""
     out = []
-    for pattern in (LEFT_TOOLS, BARE_DOC, MEM_PATH, ROOT_FILE, PROJECT_TOOLS):
+    for pattern in (LEFT_TOOLS, BARE_DOC, MEM_PATH, ROOT_FILE, PROJECT_TOOLS, SKILL_REF):
         out.extend(match.group(0) for match in pattern.finditer(text))
     return out
 

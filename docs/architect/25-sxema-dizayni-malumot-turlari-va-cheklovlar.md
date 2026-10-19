@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 25. Sxema dizayni, ma'lumot turlari va cheklovlar (Schema Design and Data Types)
 
@@ -185,6 +185,10 @@ ALTER TABLE payment ALTER COLUMN gateway_response SET STORAGE EXTERNAL;
 
 Tuzoq: 100 KB lik `jsonb` ni `SELECT *` bilan har so'rovda tortib olish. TOAST dan o'qish taxminan 0.2-1 ms qo'shadi. Minglab so'rovda bu sezilarli, shuning uchun bunday ustunni alohida entity ga chiqarish kerak.
 
+Hujjat hajmi haqidagi qoida bitta kitob gapi bilan yopiladi va u TOAST dan oldin ham amal qiladi. Kleppmann hujjat modelining lokalik afzalligini aytib, darhol uning chegarasini qo'yadi: afzallik faqat hujjatning katta qismi bir vaqtda kerak bo'lsa ishlaydi, baza esa odatda butun hujjatni yuklaydi, hatto siz uning kichik qismigagina murojaat qilsangiz ham, bu katta hujjatlarda ortiqcha sarf bo'ladi; yangilashda esa odatda butun hujjat qayta yoziladi, chunki joyida bajarish faqat hujjatning kodlangan hajmini o'zgartirmaydigan modifikatsiyalar uchun oson. Shundan kitobning umumiy tavsiyasi chiqadi: hujjatlarni nisbatan kichik ushlash va hujjat hajmini oshiradigan yozuvlardan qochish (2-bob, 41-bet). Amalda bu `jsonb` ustuniga massiv qo'shib borishni (`gateway_response = gateway_response || '[...]'::jsonb`) qizil bayroq qiladi: bunday yozuv har safar butun qiymatni qayta yozadi va TOAST qatorini ham qayta yaratadi. To'g'ri shakl o'suvchi ro'yxatni alohida jadvalga chiqarish.
+
+Ikkinchi, chuqurroq qoida sxemaning o'ziga tegishli. Hujjat bazasini "sxemasiz" deb atash chalg'ituvchi, chunki ma'lumotni o'qiydigan kod baribir biror tuzilmani nazarda tutadi: sxema bor, lekin u baza tomonidan majburlanmaydi, va aniqroq atama schema-on-read (tuzilma yashirin va faqat o'qishda talqin qilinadi), uning qarshisida esa schema-on-write turadi, ya'ni relatsion bazaning an'anaviy yondashuvi, u sxemani oshkor qiladi va yozilgan hamma ma'lumotning unga mos kelishini ta'minlaydi. Farq ma'lumot formati o'zgarganda sezilarli bo'ladi: hujjat bazasida yangi maydonlar bilan yozishni boshlab, eski hujjatlarni o'qiganda ishlatiladigan kodni ilovaning o'ziga qo'shish kerak, ya'ni o'qish kodi eski hujjat uchun default berishi shart (2-bob, 39-bet). PostgreSQL da `jsonb` ishlatish aynan shu kelishuvni tanlash degani: ustun sxemasi bazada majburlanmaydi, demak har o'qishda yo'q maydon uchun default beradigan kod yozilishi kerak, va bu kod bitta joyda, mapper da turishi lozim, aks holda har chaqiruvchi o'z talqinini yozadi.
+
 ## 25.7 Massiv, `enum` va alohida lug'at jadvali orasidagi tanlov
 
 PostgreSQL `enum` turi 4 bayt egallaydi va eng tez ishlaydi. Lekin qiymat qo'shish `ALTER TYPE ... ADD VALUE` talab qiladi, o'chirish esa mumkin emas. Shuning uchun `enum` faqat haqiqatan o'zgarmas ro'yxatga yaraydi.
@@ -356,6 +360,8 @@ Asosiy xulosa: sxemadagi har bir qaror keyinchalik migratsiya narxiga aylanadi, 
 - Martin Kleppmann, *Designing Data-Intensive Applications*, 4-bob - sxema evolyutsiyasi va kodlash
 - [PostgreSQL 17, Data Types (datatype.sgml)](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/datatype.sgml) - `numeric` aniqligi, `text` va `varchar` farqi, vaqt turlari
 - [PostgreSQL 17, Data Definition (ddl.sgml)](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/ddl.sgml) - cheklovlar, generatsiya qilingan ustun, partitioning
+- Martin Kleppmann, *Designing Data-Intensive Applications*, 1-nashr, O'Reilly, 2017, 2-bob (39 va 41-betlar) - hujjat bazasining "sxemasiz" emas, schema-on-read ekani (sxema ilova kodiga ko'chadi) va yangi maydon qo'shilganda eski hujjatlar uchun o'qish kodining default berishi; hujjat lokaligining faqat katta qismi kerak bo'lganda ishlashi, o'qishda butun hujjat yuklanishi va yangilashda odatda butun hujjat qayta yozilishi, shuning uchun hujjatni kichik ushlash va hajmni oshiradigan yozuvlardan qochish
+- ESLATMA: 25.6 dagi `jsonb` ga massiv qo'shib borish qizil bayrog'i va default ni mapper da bitta joyda ushlash tavsiyasi shu korpusning qo'shimchasi
 
 ---
 

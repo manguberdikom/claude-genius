@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 17. Spring MVC va WebFlux: so'rov yo'li, thread modeli, REST dizayni (Spring MVC and WebFlux)
 
 <details>
-<summary>Bu bobdagi 13 bo'lim</summary>
+<summary>Bu bobdagi 15 bo'lim</summary>
 
 - [17.1 So'rovning to'liq yo'li: konteyner, filter, `DispatcherServlet`, handler, converter](#171-sorovning-toliq-yoli-konteyner-filter-dispatcherservlet-handler-converter)
 - [17.2 Thread modeli: har so'rovga bitta thread va uning chegarasi](#172-thread-modeli-har-sorovga-bitta-thread-va-uning-chegarasi)
@@ -21,7 +21,9 @@
 - [17.10 `RestClient` va `WebClient`: timeout, connection pool, qayta urinish sozlamalari](#1710-restclient-va-webclient-timeout-connection-pool-qayta-urinish-sozlamalari)
 - [17.11 Filter va interceptor: qayerda kontekst (trace id, foydalanuvchi) o'rnatiladi](#1711-filter-va-interceptor-qayerda-kontekst-trace-id-foydalanuvchi-ornatiladi)
 - [17.12 Reaktiv ma'lumotga kirish (R2DBC) va RSocket: event loop ni bloklamaslik](#1712-reaktiv-malumotga-kirish-r2dbc-va-rsocket-event-loop-ni-bloklamaslik)
-- [17.13 Amalda qo'llash](#1713-amalda-qollash)
+- [17.13 RSocket ning to'rt o'zaro ta'sir modeli va model tanlash](#1713-rsocket-ning-tort-ozaro-tasir-modeli-va-model-tanlash)
+- [17.14 Spring da RSocket: `@MessageMapping`, `RSocketRequester` va transport tanlovi](#1714-spring-da-rsocket-messagemapping-rsocketrequester-va-transport-tanlovi)
+- [17.15 Amalda qo'llash](#1715-amalda-qollash)
 
 </details>
 
@@ -381,9 +383,86 @@ Mono<Invoice> invoice = Mono.fromCallable(() -> jpaRepository.findById(id).orEls
 
 `Schedulers.boundedElastic()` yechim emas, yamoq: u bloklashni boshqa thread ga ko'chiradi, ya'ni thread soni yana chegara bo'lib qoladi. Haqiqiy tanlov ikkita: butun yo'lni reaktiv qilish yoki MVC da [virtual thread bilan qolish](#175-virtual-thread-bilan-mvc-webflux-ga-ehtiyoj-qanday-kamayadi). Bloklovchi chaqiruvni topish uchun BlockHound kabi vosita test profilida yoqiladi: u event loop thread ida bloklaydigan chaqiruvni aniqlab, testni yiqitadi.
 
-RSocket shu modelning transport darajasidagi davomi: TCP yoki WebSocket ustida ishlaydigan, to'rt o'zaro ta'sir shakliga (request-response, request-stream, fire-and-forget, channel) ega va orqaga bosimni protokol darajasida tashiydigan protokol. Amaliy o'rni tor: ikki yo'nalishli oqim yoki uzoq yashaydigan stream kerak bo'lgan ichki servislar orasida. Oddiy so'rov-javob uchun u HTTP ga nisbatan foyda bermaydi va operatsion narxi (proxy, kuzatuvchanlik, debug vositalari) HTTP dan baland.
+RSocket shu modelning transport darajasidagi davomi: TCP yoki WebSocket ustida ishlaydigan va orqaga bosimni protokol darajasida tashiydigan binary protokol. Amaliy o'rni tor: ikki yo'nalishli oqim yoki uzoq yashaydigan stream kerak bo'lgan ichki servislar orasida. Oddiy so'rov-javob uchun u HTTP ga nisbatan foyda bermaydi va operatsion narxi (proxy, kuzatuvchanlik, debug vositalari) HTTP dan baland. To'rt o'zaro ta'sir modeli va ular orasidagi tanlov [RSocket modellari bo'limida](#1713-rsocket-ning-tort-ozaro-tasir-modeli-va-model-tanlash), Spring tomoni esa [RSocket ning Spring dagi shakli bo'limida](#1714-spring-da-rsocket-messagemapping-rsocketrequester-va-transport-tanlovi) yoziladi.
 
-## 17.13 Amalda qo'llash
+## 17.13 RSocket ning to'rt o'zaro ta'sir modeli va model tanlash
+
+RSocket Reactive Streams ustiga qurilgan asinxron binary ilova protokoli: u HTTP ning so'rov-javob shaklidan tashqari yana uch xil o'zaro ta'sirni beradi va orqaga bosimni protokol darajasida tashiydi (Walls, 14-bob, 370-bet). Arxitektor uchun eng muhim mexanika shu: modelni alohida sozlama tanlamaydi, uni handler metodining imzosi tanlaydi. Parametr va qaytish turi qanday bo'lsa, shu model qo'llanadi.
+
+```java
+@Controller
+class PriceController {
+
+    private final PriceService prices;
+
+    PriceController(PriceService prices) {
+        this.prices = prices;
+    }
+
+    @MessageMapping("price.latest")                  // request-response
+    Mono<Quote> latest(Mono<String> symbolMono) {
+        return symbolMono.map(prices::latest);
+    }
+
+    @MessageMapping("price.stream.{symbol}")         // request-stream
+    Flux<Quote> stream(@DestinationVariable("symbol") String symbol) {
+        return Flux.interval(Duration.ofSeconds(1))
+                .map(tick -> prices.latest(symbol));
+    }
+
+    @MessageMapping("price.audit")                   // fire-and-forget
+    Mono<Void> audit(Mono<AuditEvent> eventMono) {
+        return eventMono.doOnNext(prices::audit).then();
+    }
+
+    @MessageMapping("price.watchlist")               // channel
+    Flux<Quote> watchlist(Flux<String> symbolFlux) {
+        return symbolFlux.map(prices::latest);
+    }
+}
+```
+
+| Model | Handler parametri | Handler qaytaradi | Qachon tanlanadi |
+|---|---|---|---|
+| request-response | `Mono` | `Mono` | bitta javob kerak va HTTP dan voz kechishga alohida sabab bor |
+| request-stream | `Mono` | `Flux` | bitta so'rovdan keyin uzoq yangilanish oqimi kerak |
+| fire-and-forget | `Mono` | `Mono<Void>` | javob kerak emas va xabar yo'qolsa zarar yo'q |
+| channel | `Flux` | `Flux` | ikki tomon ham oqim yuboradi |
+
+Jadvalning teshigi ham qoida: `Flux` qabul qilib `Mono` qaytaradigan shakl RSocket da model sifatida mavjud emas, shuning uchun u qo'llab-quvvatlanmaydi (Walls, 14-bob, 382-bet). Kanal ochib, javob o'rniga bitta tasdiq qaytarish kerak bo'lsa, bu channel modeli ustida ilova darajasida quriladi.
+
+Qaror tartibi uch savoldan iborat. Birinchisi RSocket haqida emas: javob bitta bo'lsa va mijoz tashqi bo'lsa HTTP qoladi, chunki RSocket ning operatsion narxi (proxy, kuzatuvchanlik, debug vositalari) baland va request-response modeli HTTP ga nisbatan yangi imkoniyat bermaydi; buning sababi [reaktiv ma'lumotga kirish bo'limida](#1712-reaktiv-malumotga-kirish-r2dbc-va-rsocket-event-loop-ni-bloklamaslik) yozilgan. Ikkinchisi: oqim kim tomondan keladi. Faqat serverdan kelsa request-stream yetadi va bu yerda SSE ham raqobatchi; ikki tomondan kelsa channel tanlanadi va aynan shu model RSocket ni oqlaydigan asosiy dalil, chunki HTTP da uning to'g'ridan-to'g'ri ekvivalenti yo'q. Uchinchisi: fire-and-forget ni "tezroq" degan sababga ko'ra tanlamaslik. Protokol javob qaytarmagani uchun xabarning yetib borgani haqida tasdiq ham yo'q. ESLATMA: shu sababli to'lov yoki buyurtma kabi yo'qotilmasligi kerak bo'lgan xabar uchun bu model emas, broker kerak; kitob modelni yo'qotishga chidamli signal misolida ko'rsatadi va bu chegarani alohida aytmaydi.
+
+## 17.14 Spring da RSocket: `@MessageMapping`, `RSocketRequester` va transport tanlovi
+
+Server tomoni web controller ga o'xshaydi, lekin yo'l emas, route bo'yicha ishlaydi: `@GetMapping` o'rniga `@MessageMapping` turadi va u kelgan xabarni route nomi bo'yicha metodga bog'laydi (Walls, 14-bob, 373-bet). Route path ko'rinishida bo'lishi va `{...}` o'rin egasini o'z ichiga olishi mumkin; uning qiymati `@DestinationVariable` bilan parametrga tushadi, ya'ni MVC dagi `@PathVariable` ning aynan analogi (Walls, 14-bob, 374-bet). Ikki annotatsiya ham `spring-boot-starter-rsocket` bilan keladi va server va mijoz uchun bitta xil bog'liqlik ishlatiladi.
+
+Serverni yoqadigan narsa annotatsiya emas, sozlama: `spring.rsocket.server.port` qo'yilmasa, ilova faqat mijoz deb hisoblanadi va hech qanday port tinglanmaydi (Walls, 14-bob, 374-bet). Mijoz tomonida auto-configuration `RSocketRequester.Builder` bean ini beradi, undan `tcp(host, port)` yoki `websocket(uri)` bilan requester yasaladi; model esa chaqiruvning oxirgi bo'g'ini bilan tanlanadi: `retrieveMono`, `retrieveFlux` yoki javob kutilmaganda `send`.
+
+```java
+@Bean
+ApplicationRunner priceClient(RSocketRequester.Builder builder) {
+    return args -> {
+        RSocketRequester requester = builder.tcp("localhost", 7000);
+        requester.route("price.stream.{symbol}", "AAPL")   // o'rin egasi mijozda to'ldiriladi
+                .retrieveFlux(Quote.class)
+                .doOnNext(quote -> log.info("narx: {}", quote))
+                .subscribe();
+    };
+}
+```
+
+```yaml
+spring:
+  rsocket:
+    server:
+      transport: websocket     # TCP o'rniga WebSocket
+      mapping-path: /rsocket   # WebSocket yo'li, port o'rniga
+```
+
+Transport tanlovi arxitektura qaroriga tegadi. Standart transport TCP va u o'z portini tinglaydi, lekin ikki holatda TCP yaramaydi: mijoz brauzerda ishlaydigan JavaScript bo'lsa, yoki yo'lda ixtiyoriy portni o'tkazmaydigan gateway va firewall bo'lsa (Walls, 14-bob, 382-bet). Shunda RSocket WebSocket ustiga qo'yiladi: server tomonida `spring-boot-starter-webflux` qo'shiladi, `spring.rsocket.server.transport` va `spring.rsocket.server.mapping-path` o'rnatiladi, `spring.rsocket.server.port` esa kerak emas, chunki endi aloqa portga emas, HTTP yo'liga bog'lanadi (Walls, 14-bob, 383-bet). Mijozda `tcp(...)` chaqiruvi `websocket(URI)` ga almashadi, qolgan kod o'zgarmaydi; routing esa RSocket dan keladi, chunki WebSocket ning o'zida routing yo'q. Qoida: ichki servislar orasida TCP, tashqi chegaradan o'tadigan yoki brauzer mijozi bor joyda WebSocket.
+
+## 17.15 Amalda qo'llash
 
 - [ ] Har bir tashqi HTTP client uchun `connect` va `read` timeout qiymatini aniq yozib chiqing, default qolgan joy bo'lmasin.
 - [ ] `threads.max` ni Little qonuni bo'yicha p99 latency asosida qayta hisoblang va DB pool o'lchami bilan nisbatini tekshiring.

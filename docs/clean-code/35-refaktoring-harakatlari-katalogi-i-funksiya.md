@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 35. Refaktoring harakatlari katalogi I: funksiya va o'zgaruvchi (Refactoring Moves I)
 
@@ -48,6 +48,8 @@ Legacy kodni refaktoring qilish strategiyasi, chok (seam) topish va strangler us
 
 **Teskari**: Inline Function (35.2).
 
+**Nom to'qnashuvi (2-nashr, 21)**: ajratilgan funksiyaga kerakli nom shu qamrovdagi o'zgaruvchi tomonidan egallangan bo'lsa, tartib shunday - funksiyaga vaqtincha ma'nosiz nom berib ajratish → o'zgaruvchini inline qilish (35.4) yoki so'rovga almashtirish (36.9) → nom bo'shagach funksiyani to'g'ri nomga o'tkazish (35.7). Bu Replace Temp with Query bilan Extract Function birga qo'llanganda deyarli har safar chiqadi, shuning uchun uni nom tanlashdagi tutilish deb emas, ketma-ketlikning oddiy qadami deb qarash kerak.
+
 **Testsiz va IDE siz**: yuqoridagi mexanika kompilyatsiya va testga tayanadi. Test ham, ishlaydigan refaktoring asbobi ham yo'q bo'lsa, boshqa taktika kerak: sezgir o'zgaruvchi, coupling count va kichik bo'laklardan boshlash ([testsiz monstr metodni qo'lda bo'lish](38-refaktoringni-xavfsiz-bajarish.md#3813-testsiz-monstr-metodni-qolda-bolish-introduce-sensing-variable-extract-what-you-know-coupling-count-gleaning-dependencies)), hamda shart va tanani qanday bo'lish qarori ([qo'lda ajratish strategiyasi](38-refaktoringni-xavfsiz-bajarish.md#3814-qolda-ajratish-strategiyasi-skeletonize-methods-find-sequences-extract-to-the-current-class-first-be-prepared-to-redo-extractions)).
 
 ```java
@@ -80,6 +82,8 @@ void printOwing(Invoice invoice) {
 
 **Teskari**: Extract Function (35.1).
 
+**Qachon (yana ikki holat, 1-nashr, 95)**: ikkinchi motivatsiya guruhga tegishli - metodlar guruhi yomon bo'lingan bo'lsa, hammasini bitta katta metodga inline qilib, keyin qaytadan ajratish mumkin. Kent Beck shu yo'lni Replace Method with Method Object qo'llashdan oldin tavsiya qiladi: avval hamma narsa bir joyga yig'iladi, keyin chegaralar qaytadan o'tkaziladi. Uchinchi motivatsiya vositachilikka tegishli: haddan ortiq vositachilik bo'lganda hammasini inline qilib ko'rish foydali vositachilikni ajratib oladi. Ya'ni "qaysi vositachi qoladi" qarorini ro'yxatni ko'zdan kechirish bilan emas, inline qilib sinab ko'rish bilan qilish arzonroq (32.12, 36.4).
+
 ## 35.3 O'zgaruvchi ajratish (Extract Variable)
 
 **Nom**: 1-nashr - Introduce Explaining Variable (101, 6-bob); 2-nashr - Extract Variable (119, 6-bob).
@@ -102,6 +106,8 @@ return basePrice.minus(quantityDiscount).plus(shipping);
 ```
 
 **Teskari**: Inline Variable (35.4).
+
+**35.1 bilan tanlov (1-nashr, 101)**: ifodani nomlash kerak bo'lganda birinchi tanlov Extract Function, o'zgaruvchi esa ikkinchi. Sabab qamrovda: o'zgaruvchi faqat bitta metod ichida ko'rinadi, ajratilgan funksiya esa butun obyekt uchun foydali bo'ladi va boshqa joydan ham chaqiriladi, ya'ni bir xil mehnatdan ko'proq foyda chiqadi. O'zgaruvchiga o'tiladigan shart bitta: mahalliy o'zgaruvchilar ajratishni qiyinlashtirsa, ya'ni bo'lak bittadan ko'p mahalliy o'zgaruvchini o'zgartirsa (35.1 chegarasi).
 
 ## 35.4 O'zgaruvchini ichkariga kiritish (Inline Variable)
 
@@ -132,6 +138,8 @@ ESLATMA: public API uchun eski funksiyani `@Deprecated` holda qoldirib "parallel
 **Mexanika (1-nashr, 167)**: maydon uchun getter va setter yaratish → sinf tashqarisidagi barcha mijozlarni topish: qiymatni o'qisa getter, qiymatni o'zgartirsa setter chaqiruvi bilan almashtirish → har o'zgarishdan keyin kompilyatsiya va test → barcha mijozlar ko'chgach maydonni `private` qilish → kompilyatsiya va test.
 
 1-nashr nozikligi (167): maydon obyekt bo'lsa va mijoz shu obyektning o'zgartiruvchi metodini chaqirsa, bu o'qish hisoblanadi; setter faqat tayinlashni almashtirish uchun ishlatiladi. Self Encapsulate Field (138) esa bir qadam uzoqroq boradi: sinfning o'zi ham maydonga faqat getter va setter orqali murojaat qiladi.
+
+Ikki maktab va tanlov (1-nashr, 138): sinf o'z maydoniga qanday tegishi bo'yicha ikki amaliyot bor - to'g'ridan-to'g'ri kirish va hamisha akssessor orqali kirish. 1-nashr tanlovni ochiq beradi: to'g'ridan-to'g'ri kirishni standart qilib olish, noqulay bo'lgan joyda akssessorga o'tish. Self Encapsulate Field ning eng muhim holati esa vorislikda chiqadi: voris sinf super sinf maydonini hisoblangan qiymat bilan override qilishi kerak bo'lsa, buni faqat maydon akssessor ortida yashirilgan bo'lsa qilish mumkin. Shuning uchun maydonni vorislik uchun `protected` qilib ochib qo'yish o'rniga (14.6) akssessorni `protected` qilish arzonroq chiqadi.
 
 ```java
 // Oldin: global ma'lumot
@@ -222,6 +230,10 @@ Money price(Order order) {
 **Mexanika (1-nashr, 115-117)**: manba metod ishlatadigan va manba sinfda e'lon qilingan barcha elementlarni ko'rib chiqish, ularni ham ko'chirish kerakmi deb qarash → manba sinfning super va voris sinflarida metodning boshqa e'lonlari bormi tekshirish → metodni maqsad sinfda e'lon qilish, kerak bo'lsa maqsad sinfda mazmunliroq nom bilan → kodni ko'chirib yangi joyga moslashtirish → maqsad sinfni kompilyatsiya qilish → manbadan to'g'ri maqsad obyektga qanday murojaat qilishni aniqlash → asl metodni delegatsiya metodiga aylantirish → kompilyatsiya va test → asl metodni o'chirish yoki delegatsiya sifatida qoldirishni hal qilish → o'chirilsa barcha murojaatlarni maqsad metodga o'tkazish → kompilyatsiya va test.
 
 1-nashr nozikliklari (116): metodning boshqa e'lonlari bo'lsa, polimorfizm maqsad sinfda ham ifodalanmasa ko'chirish bo'lmaydi; metod o'z manbasiga murojaat qilsa va maqsad sinfda mexanizm bo'lmasa, manba obyekt havolasi parametr sifatida uzatiladi; istisno ishlovchilari qolishi kerakmi degan qaror alohida qabul qilinadi. Murojaat ko'p bo'lsa, asl metodni delegatsiya sifatida qoldirish osonroq.
+
+**Yo'nalish tanlash mezoni (1-nashr, 36)**: ikki ma'lumotdan qaysi birini uzatish va hisobni qaysi tomonda bajarish kerakligini **o'zgaruvchanlik** belgilaydi. Tur bo'yicha farq qiladigan hisob tur egasida bajariladi, chunki tur ma'lumoti ikkinchi tomondagi ma'lumotdan tezroq o'zgaradi: yangi tur qo'shilganda faqat bitta sinf o'zgaradi. Bu [modul chegarasini o'zgarish tezligi bo'yicha o'tkazish](../architect/05-abstraksiya-hissi-bogliqlik-va-chegaralar.md#56-modul-chegarasini-qayerdan-otkazish-ozgarish-tezligi-va-egalik-boyicha) qoidasining metod darajasidagi shakli: ikki darajada ham uy o'zgarish tezligi bo'yicha tanlanadi.
+
+**Qaror qiyin bo'lsa (1-nashr, 115)**: metodni qaysi sinfga ko'chirish qiyin qaror bo'lsa, bu ko'pincha farqi yo'q degani. Sezgi bilan tanlab davom etiladi, chunki qaror qaytarib bo'ladigan: keyinroq yana ko'chirish mumkin. Qaytarib bo'ladigan qarorga ko'p vaqt sarflash o'zi zarar, va bu qoida 38.1 dagi "bir vaqtda bitta harakat" intizomining iqtisodiy tomoni.
 
 ## 35.13 Gaplarni funksiyaga ko'chirish va chaqiruvchiga chiqarish
 
@@ -341,7 +353,14 @@ Unumdorlik tashvishi bo'lsa, 1-nashrning Replace Temp with Query bo'limidagi (98
 - Martin Fowler, *Refactoring: Improving the Design of Existing Code*, 1-nashr, Addison-Wesley, 1999, 10-bob (221-224, 238-242) - Rename Method, Add Parameter, Remove Parameter va Introduce Parameter Object mexanikasi, `deprecated` qoldirish qadami
 - Martin Fowler, *Refactoring: Improving the Design of Existing Code*, 1-nashr, Addison-Wesley, 1999, 6-bob (97-98) - Replace Temp with Query ichidagi sikl nusxalash va unumdorlik maslahati
 - Martin Fowler, *Refactoring: Improving the Design of Existing Code*, 2-nashr, Addison-Wesley, 2019, "List of Refactorings" va 6, 8, 9-boblar mundarijasi - 2-nashrdagi nomlar va betlar: Extract Function (106), Inline Function (115), Extract Variable (119), Inline Variable (123), Change Function Declaration (124), Encapsulate Variable (132), Rename Variable (137), Introduce Parameter Object (140), Combine Functions into Class (144), Combine Functions into Transform (149), Split Phase (154), Move Function (198), Move Statements into Function (213), Move Statements to Callers (217), Replace Inline Code with Function Call (222), Slide Statements (223), Split Loop (227), Replace Loop with Pipeline (231), Remove Dead Code (237), Split Variable (240), Rename Field (244), Replace Derived Variable with Query (248)
+- Martin Fowler, *Refactoring: Improving the Design of Existing Code*, 1-nashr, Addison-Wesley, 1999, 1-bob (36-bet) - hisobni qaysi tomonda bajarish kerakligini o'zgaruvchanlik belgilashi: tur bo'yicha farq qiladigan hisob tur egasida turadi, chunki tur ma'lumoti tezroq o'zgaradi
+- Martin Fowler, *Refactoring: Improving the Design of Existing Code*, 1-nashr, Addison-Wesley, 1999, 6-bob (95-bet) - Inline Method ning ikkinchi va uchinchi motivatsiyasi: yomon bo'lingan metodlar guruhini bitta metodga yig'ib qaytadan ajratish (Kent Beck ning Replace Method with Method Object dan oldingi tavsiyasi) va haddan ortiq vositachilikni inline qilib sinab ko'rish
+- Martin Fowler, *Refactoring: Improving the Design of Existing Code*, 1-nashr, Addison-Wesley, 1999, 6-bob (101-bet) - Extract Method ni Introduce Explaining Variable dan ustun qo'yish sababi (o'zgaruvchining qamrovi bitta metod, funksiya esa butun obyekt uchun) va o'zgaruvchiga o'tiladigan shart
+- Martin Fowler, *Refactoring: Improving the Design of Existing Code*, 1-nashr, Addison-Wesley, 1999, 7-bob (115-bet) - metodni qaysi sinfga ko'chirish qiyin qaror bo'lsa farqi yo'qligi va sezgi bilan tanlab davom etish
+- Martin Fowler, *Refactoring: Improving the Design of Existing Code*, 1-nashr, Addison-Wesley, 1999, 8-bob (138-bet) - maydonga kirishdagi ikki maktab va tanlov qoidasi (to'g'ridan-to'g'ri kirish standart, noqulay bo'lganda akssessor), Self Encapsulate Field ning super sinf maydonini voris sinfda hisoblangan qiymat bilan override qilish holati
+- Martin Fowler, *Refactoring*, 2-nashr, Addison-Wesley, 2019, 1-bob (21-22-betlar, nashriyotning ochiq preview nusxasi) - ajratilgan funksiyaga kerakli nom o'zgaruvchi tomonidan egallanganda vaqtincha nom berib keyin qayta nomlash ketma-ketligi; ajratilgan funksiyadagi qaytish o'zgaruvchisi uchun bitta kelishilgan nom (`result`)
 - ESLATMA: 1-nashr betlari shu korpusda ishlatilgan elektron nusxaning raqamlanishi bo'yicha va kitobning o'z mundarijasi bilan mos; qog'oz nashrining bet raqamlari boshqa bo'lishi mumkin
+- ESLATMA: Move Function ning yo'nalish mezonini `architect` hujjatidagi modul chegarasi qoidasi bilan bog'lash korpus qo'shimchasi; Fowler mezonni metod darajasida beradi, modul darajasiga ko'tarish korpusning o'zi
 - ESLATMA: 35.7, 35.9, 35.10, 35.11, 35.13, 35.14, 35.15, 35.16, 35.17, 35.18 va 35.20 dagi qadamlar ro'yxati shu korpusning amaliy tavsiyasi, kitobdan olingan emas - bu harakatlar 2-nashrda yangi, 2-nashrning matni esa bizda yo'q (faqat mundarija bor), 1-nashrda esa bu nomlar uchramaydi
 
 ---

@@ -527,7 +527,7 @@ def check_java_write(command):
 
 # Ochiq klonga yoziladigan memory papkalari (docref.SHARED_MEMORY bilan bir
 # xil, test_guard solishtiradi). Boshqa proyekt memorysi klondan tashqarida
-# turadi: GENIUS_MEMORY_DIR, sukut ~/.claude/genius-memory (R0.5).
+# turadi: GENIUS_MEMORY_DIR, sukut <workspace>/docs-local/memory (R0.5).
 SHARED_MEMORY = ("umumiy", "claude-genius")
 # `git [-C yo'l] [-c k=v] add|commit ...`. Global bayroqlar va argumentlar
 # asl matndan olinadi, o'rni esa niqoblangan matndan (mask_quoted).
@@ -543,7 +543,7 @@ MEMORY_HINT = (
     "Klon ochiq repo: boshqa proyektning vazifa, qaror va fayl nomlari\n"
     "unga yozilmaydi (memory/README.md, \"Qayerga va qanday\"). Proyekt\n"
     "memorysi klondan tashqarida: GENIUS_MEMORY_DIR, sukut\n"
-    "~/.claude/genius-memory/<slug>/, push siz. Klonga faqat memory/umumiy/\n"
+    "<workspace>/docs-local/memory/<slug>/, git siz. Klonga faqat memory/umumiy/\n"
     "va memory/claude-genius/ yoziladi.")
 
 

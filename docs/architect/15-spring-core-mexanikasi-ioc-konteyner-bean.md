@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 15. Spring Core mexanikasi: IoC konteyner, bean lifecycle, AOP proxy (Spring Core Mechanics)
 
@@ -403,6 +403,8 @@ Lazy init uchta narxni birga olib keladi: `renderer` ning aniq turi va uning kon
 
 Shu chegaraning ikkinchi oqibati: ishga tushish kodining o'zi testdan tashqarida qoladi va unda qaror bo'lmaydi. Agar `main` yoki `@Configuration` sinfida `if` lar o'sib ketsa, qaror profil, `@ConditionalOnProperty` yoki alohida konfiguratsiya sinfiga ko'chiriladi. Ulanish grafini qurish nuqtasini bitta joyda ushlash Clean Architecture da Main komponenti deb ataladi: u eng tashqi qatlam, hamma narsani biladi va hech kim uni bilmaydi.
 
+Bu ajratishning review uchun qulay mezoni ham bor: yaxshi API ko'p vaqt ko'rinmay turadi, va agar u doim ko'rinib tursa, arxitektura cheklovi mijozga qiymat yetkazishni to'sayotgan bo'ladi (Robert C. Martin, *Clean Code*, Prentice Hall, 2009, 11-bob, 167-bet). Amalda bu domen kodida `ApplicationContext`, `BeanFactory`, `@Autowired` maydoni yoki `new PdfRenderer(...)` ko'rinib turganini savol ostiga qo'yish degani: konteyner mexanikasi biznes kodida ko'rinmasligi kerak, u faqat qurish nuqtasida ko'rinadi.
+
 ## 15.13 Amalda qo'llash
 
 - [ ] `/actuator/startup` ni `BufferingApplicationStartup` bilan yoqib, eng sekin 15 ta qadamni yozib ol va ishga tushish vaqtini bazaviy raqam sifatida qayd qil.
@@ -423,6 +425,7 @@ Shu chegaraning ikkinchi oqibati: ishga tushish kodining o'zi testdan tashqarida
 - [Spring Framework 7.0, Bean Scopes](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/core/beans/factory-scopes.adoc) - prototype da destruction callback chaqirilmasligi, singleton ichidagi prototype bog'liqligining instantiation vaqtida hal bo'lishi, `Scope.registerDestructionCallback`
 - [spring-boot, `AopAutoConfiguration.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/core/spring-boot-autoconfigure/src/main/java/org/springframework/boot/autoconfigure/aop/AopAutoConfiguration.java) - `spring.aop.proxy-target-class` ning default `true` ekani (`matchIfMissing`)
 - [spring-boot, `SpringApplication.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/core/spring-boot/src/main/java/org/springframework/boot/SpringApplication.java) - `allowCircularReferences` sozlamasi Boot 4 da ham mavjudligi
+- Robert C. Martin, *Clean Code*, Prentice Hall, 2009, 11-bob (167-bet) - yaxshi API ning ko'p vaqt ko'rinmay turishi va API doim ko'rinib turgan joyda arxitektura cheklovi mijozga qiymat yetkazishni to'sayotgani
 
 ---
 

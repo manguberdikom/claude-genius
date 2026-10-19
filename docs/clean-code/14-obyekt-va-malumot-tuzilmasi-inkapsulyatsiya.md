@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 14. Obyekt va ma'lumot tuzilmasi: inkapsulyatsiya (Objects vs Data Structures)
 
@@ -135,6 +135,31 @@ Ko'rinish darajasi eng arzon inkapsulyatsiya vositasi va u ko'pincha ishlatilmay
 
 `public` maydon faqat bir holatda haqli: `record` ichidagi komponentlar (ular allaqachon `final` va getter avtomatik).
 
+Shu qoidaning chegarasi muhim va u ko'pincha o'tkazib yuboriladi: qoida maydonga emas, **sinfning o'z ko'rinishiga** bog'liq. `public` sinfda maydon oshkor qilinsa, u API ga chiqadi: ichki tasvir shartnomaga aylanadi, uni keyin almashtirib bo'lmaydi va invariantni himoya qilish uchun joy qolmaydi. `package-private` sinfning yoki `private` ichki sinfning maydonini oshkor qilishda esa yomon narsa yo'q, agar maydonlar abstraksiyani yetarli tasvirlasa. Sabab mexanik: bunday sinfning hamma mijozi paket (yoki tashqi sinf) ichida, demak maydon o'zgarsa ta'sir shu paket yoki shu fayl bilan chegaralanadi va accessor yozish faqat shovqin qo'shadi. Ikki yo'lni ajratadigan savol bitta: **maydon o'zgarsa, nechta joy qayta yoziladi**.
+
+| Sinf ko'rinishi | Maydonga nima qilinadi |
+|---|---|
+| `public` sinf | maydon `private`, tashqariga accessor |
+| `record` | komponent: avtomatik `private final` va accessor |
+| `package-private` sinf | maydonni oshkor qilish mumkin, agar u abstraksiyani tasvirlasa |
+| `private` ichki sinf (holat tashuvchi) | maydonni oshkor qilish mumkin, ko'pincha eng toza shakl |
+
+```java
+// yaxshi: private ichki sinf - accessor shovqin qo'shadi, maydon oshkor
+public final class SettlementLedger {
+
+    private static final class Entry {
+        final SettlementRow row;       // oshkor: faqat shu fayl ko'radi
+        final Instant recordedAt;
+
+        Entry(SettlementRow row, Instant recordedAt) {
+            this.row = row;
+            this.recordedAt = recordedAt;
+        }
+    }
+}
+```
+
 ## 14.7 Ichki to'plamni oshkor qilish va himoyalangan nusxa
 
 Eng ko'p uchraydigan yashirin inkapsulyatsiya buzilishi: getter ichki `List` ni to'g'ridan-to'g'ri qaytaradi va chaqiruvchi uni o'zgartiradi. Obyekt invarianti buziladi va buzilish joyi stack trace da ko'rinmaydi.
@@ -150,6 +175,8 @@ public List<OrderItem> items() { return List.copyOf(items); }
 // yaxshi: o'zgartirilmas ko'rinish (nusxa qilmaydi, lekin yozishni to'sadi)
 public List<OrderItem> items() { return Collections.unmodifiableList(items); }
 ```
+
+Nusxa olish keraksiz obyekt yaratadi va shuning uchun "ishlash" dalili bilan tashlanadi. Lekin ikki xatoning narxi teng emas va qarorni shu farq hal qiladi: nusxa olmaslik xatoga va **xavfsizlik tuynugiga** olib keladi, keraksiz obyekt yaratish esa faqat uslub va tezlikka tegadi. Birinchisini tuzatish uchun xato chiqishini kutish kerak, ikkinchisini esa profiler ko'rsatganda tuzatish mumkin. Shuning uchun shubha bo'lsa nusxa olinadi.
 
 Xuddi shu qoida konstruktorga tegishli: tashqaridan kelgan to'plamni nusxa qilmasdan saqlash chaqiruvchiga ichki holatni o'zgartirish imkonini qoldiradi.
 
@@ -189,6 +216,10 @@ final class DateRange {
 
 Nusxani qanday olish ham ahamiyatli: parametr turi voris olinishi mumkin bo'lsa, nusxa `clone` bilan olinmaydi. `Date` `final` emas, demak `clone` `java.util.Date` nusxasini qaytarishi kafolatlanmagan: u ishonchsiz voris sinf nusxasini qaytarib, o'ziga havolani chetga yozib qo'yishi mumkin. Getterda esa `clone` haqli, chunki u yerda ichki obyektning aniq turi ma'lum; shunda ham nusxa konstruktori yoki statik fabrika afzal.
 
+Nusxa olish kerak bo'lgan turlarning ro'yxati ko'rinishdan kengroq: `final` bo'lmagan **har qanday** tur o'zgaradigan voris sinfga ega bo'lishi mumkin. `BigInteger` va `BigDecimal` shu toifaga kiradi: ikkisi ham `final` emas, demak ularning metodlari override qilinishi mumkin va "o'zgarmas" degan taxmin kafolat emas. Shuning uchun xavfsizligi argumentning o'zgarmasligiga bog'liq kod ikki yo'ldan birini tanlaydi: argument haqiqatan shu sinfdan ekanini tekshirish (`arg.getClass() == BigInteger.class`), yoki argumentni himoyalangan nusxa qilish (`new BigInteger(arg.toByteArray())`). Ishonchsiz manbadan kelgan qiymat uchun bu majburiy ([code-review hujjatidagi](../code-review/README.md) xavfsizlik review i).
+
+Nusxa olish narxi hamisha haqli ham emas, va uni tashlashning yagona qonuniy sharti **ishonch**: chaqiruvchi va sinf bir xil paket ichida bo'lsa yoki chaqiruvchining kodini siz nazorat qilsangiz, nusxa tashlanishi mumkin. Lekin unda shart qo'shiladi: hujjatda chaqiruvchi parametrni uzatgandan keyin uni o'zgartirmasligi **aniq yozilishi** kerak. Yozilmagan taxmin keyingi dasturchida yo'qoladi va xato ikki yil keyin, boshqa paketdan chaqirilganda chiqadi.
+
 `Date`, massiv va `Calendar` kabi o'zgaradigan turlar ham shu qoidaga kiradi (22.1 da `Date` dan voz kechish sababi).
 
 ## 14.8 Statik holat, utility sinf va `private` konstruktor
@@ -209,6 +240,8 @@ public final class Counters {
     public static int processed;          // har bir test oldingisiga ta'sir qiladi
 }
 ```
+
+`private` konstruktor tanlovining sababi ham aniq. Sinfni `abstract` qilish instantiate qilishni **to'smaydi**: voris sinf yozib, uning nusxasi yaratiladi. Bundan tashqari `abstract` noto'g'ri signal beradi, ya'ni sinf vorislik uchun mo'ljallangandek ko'rinadi (17.1). `private` konstruktor esa ikki ishni birga bajaradi: nusxa yaratilmaydi, va yon ta'sir sifatida sinf voris olinmaydi ham, chunki voris chaqiradigan oshkor superclass konstruktori yo'q. Tanadagi `throw new AssertionError(...)` esa sinf ichidan tasodifan chaqirishni ham to'sadi.
 
 Statik holat qachon haqli: `static final` konstantalar, `Logger`, va `Pattern` kabi thread-safe o'zgarmas obyektlar (21.6).
 
@@ -239,6 +272,24 @@ public final class DateRange {
     }
 }
 ```
+
+Invariant bir nechta maydonni **bog'lab** turgan bo'lsa (masalan `x` va `y` juftligi, yoki `from`/`to` oralig'i), himoya o'qish tomoniga ham kerak bo'ladi. Bog'liq qiymatlar uchun alohida getter berilmaydi: ular bitta chaqiruvda birga qaytariladi. Alohida getter berilsa, chaqiruvchi `x` ni o'qib, keyin `y` ni o'qiydi va orada boshqa thread ikkisini ham yangilab qo'yishi mumkin: natijada chaqiruvchi obyekt hech qachon bo'lmagan juftlikni ko'radi. Ya'ni invariant atomar **yozilishi** kerak bo'lsa, u atomar **o'qilishi** ham kerak.
+
+```java
+// yomon: ikki getter - chaqiruvchi mos kelmagan juftlikni ko'radi
+public synchronized int x() { return x; }
+public synchronized int y() { return y; }
+
+// yaxshi: juftlik bitta chaqiruvda, bitta o'qishda
+public synchronized Point location() { return new Point(x, y); }
+
+public synchronized void moveTo(int x, int y) {   // yozish ham atomar
+    this.x = x;
+    this.y = y;
+}
+```
+
+O'zgarmas tur bilan bu muammo umuman tug'ilmaydi: `record Point(int x, int y)` juftlikni bitta havolaga bog'laydi va atomar o'qish bepul keladi. Shuning uchun birinchi yechim o'zgarmaslik, `synchronized` juft getter esa faqat o'zgaradigan obyekt majburiy bo'lganda ([arxitektor hujjatidagi](../architect/11-concurrency-thread-lock-atomic-happens.md#113-umumiy-holat-shared-state-muammosi-poyga-sharti-va-korinuvchanlik) umumiy holat muammosi).
 
 Qoida: "yaroqsiz obyekt yaratib bo'lmaydi" tamoyili validatsiyani butun kod bazasidan bir joyga yig'adi.
 
@@ -337,6 +388,14 @@ Shu bilan tashqi API bilan ishlash bitta sinfga to'planadi va test uchun tikuv (
 - [ ] Tashqi API ga to'g'ridan-to'g'ri murojaat qiladigan sinflarni sanab, ularni bitta adapter ortiga yig'ing.
 
 ## Manbalar
+
+- Joshua Bloch, *Effective Java* 3rd, Item 4 (19-bet) - sinfni `abstract` qilish instantiate qilishni to'smasligi va vorislik uchun mo'ljallangan degan noto'g'ri signal berishi; `private` konstruktorning yon ta'sir sifatida sinfni voris olishdan ham to'sishi
+- Joshua Bloch, *Effective Java* 3rd, Item 6 (25-bet) - nusxa olmaslikning jazosi (xato va xavfsizlik tuynugi) keraksiz obyekt yaratishning jazosidan (uslub va ishlash) katta bo'lishi
+- Joshua Bloch, *Effective Java* 3rd, Item 16 (78-bet) - `package-private` sinf yoki `private` ichki sinf maydonini oshkor qilishda yomon narsa yo'qligi, agar maydonlar abstraksiyani yetarli tasvirlasa
+- ESLATMA: `public` maydon faqat `record` da haqli degan qoida bilan Bloch ning `package-private` istisnosi qarama-qarshi ko'rinadi. Ikkisini ajratuvchi shart (maydon ko'rinishi SINFNING o'z ko'rinishiga bog'liq: `public` API da accessor, paket ichida qolgan yoki `private` ichki sinfda maydon) va uning jadvali korpus qo'shimchasi, kitobda shu shaklda yo'q
+- Joshua Bloch, *Effective Java* 3rd, Item 17 (85-bet) - `BigInteger` va `BigDecimal` ning `final` emasligi, metodlari override qilinishi va ishonchsiz voris sinf uchun tur tekshiruvi yoki himoyalangan nusxa talabi
+- Joshua Bloch, *Effective Java* 3rd, Item 50 (234-bet) - nusxa olish narxini chaqiruvchiga ishonib tashlash sharti va bu holda hujjatda chaqiruvchi parametrni o'zgartirmasligini aniq yozish talabi
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 4-bob (46-bet) - bir-biriga bog'liq ikki qiymat uchun alohida getter berilmasligi va ularning bitta chaqiruvda birga qaytarilishi
 
 - Robert C. Martin, *Clean Code*, 6-bob - obyekt va ma'lumot tuzilmasi teskariligi, Demeter qonuni, DTO va Active Record
 - Robert C. Martin, *Clean Code*, 8-bob - chegara turini tizim bo'ylab uzatmaslik va hali yozilmagan API uchun interfeys

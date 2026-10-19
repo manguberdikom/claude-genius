@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 12. Virtual threads, structured concurrency va scoped values (Modern Concurrency)
 
@@ -152,6 +152,8 @@ Bu flag bir nechta joyni bir vaqtda o'zgartiradi: Tomcat (yoki Jetty) har so'rov
 
 Nimalar o'zgarmaydi: `@Transactional` bemalol ishlaydi, chunki Spring tranzaksiya kontekstini `ThreadLocal` da saqlaydi va har virtual thread o'zining `ThreadLocal` nusxasiga ega. Security context ham xuddi shunday. Muammo faqat shunda chiqadi, agar kodda "thread kam bo'ladi" deb qurilgan `ThreadLocal` keshlar bo'lsa: masalan har thread uchun `SimpleDateFormat` yoki og'ir `ObjectMapper` nusxasi. 100 ta thread'da bu 100 nusxa, 200000 virtual thread'da bu xotira portlashi.
 
+Migratsiyaning ikkinchi, kamdan-kam aytiladigan xavfi uzilish semantikasida. `Socket`, `ServerSocket` va `DatagramSocket` ning bloklovchi amallari virtual thread kontekstida chaqirilganda endi uzilishga javob beradi: virtual thread ni interrupt qilish uni uyg'otadi va socket ni YOPADI ([JEP 444](https://openjdk.org/jeps/444)). Shuning uchun interrupt ni "yumshoq to'xtatish" signali deb ishlatadigan eski kod virtual threadga o'tgandan keyin boshqacha ishlaydi: avval shunchaki e'tiborsiz qolgan interrupt endi ulanishni uzadi va qayta ishlatiladigan socket yaroqsiz bo'lib qoladi. Migratsiyadan oldin `Thread.interrupt` chaqiriladigan hamma joy ko'rib chiqiladi.
+
 ## 12.6 Connection pool virtual thread bilan: nega pool hali ham chegara
 
 Virtual thread baza bilan ishlashni o'zgartirmaydi. PostgreSQL har ulanish uchun alohida backend jarayon ochadi va u taxminan 5-15 MB xotira oladi. `max_connections` default 100, odatda 200-300 gacha ko'tariladi, undan yuqorisi context switch va lock contention tufayli unumdorlikni pasaytiradi. Ya'ni ilova 100000 virtual thread ko'tarsa ham, baza 20 ta ulanishdan oshig'ini qabul qilmaydi.
@@ -209,11 +211,13 @@ Bekor qilish `Thread.interrupt` orqali ishlaydi, shuning uchun vazifa ichidagi k
 
 ## 12.8 Scoped values va `ThreadLocal` o'rniga ishlatish
 
-`ThreadLocal` ikki muammo keltiradi. Birinchisi: uning qiymati thread yashash davomida qoladi, shuning uchun uni tozalashni eslab qolish kerak va pool'da `remove()` qilinmasa ma'lumot oqib ketadi. Ikkinchisi: inheritable variant yaratilganda qiymat har bir child thread'ga nusxalanadi va million virtual thread'da bu xotirada sezilarli bo'ladi.
+`ThreadLocal` uch muammo keltiradi. Birinchisi: uning qiymati thread yashash davomida qoladi, shuning uchun uni tozalashni eslab qolish kerak va pool'da `remove()` qilinmasa ma'lumot oqib ketadi. Ikkinchisi: inheritable variant yaratilganda qiymat har bir child thread'ga nusxalanadi va million virtual thread'da bu xotirada sezilarli bo'ladi. Uchinchisi va dizayn uchun eng muhimi: cheklanmagan o'zgaruvchanlik, ya'ni `get()` ga kira oladigan har qanday kod `set()` ham qila oladi, natijada ma'lumot oqimi ikki tomonli bo'lib qoladi va kontekst qayerda o'zgarganini kuzatib bo'lmaydi ([JEP 446](https://openjdk.org/jeps/446) uchta nuqsonni shu tartibda sanaydi). `ScopedValue` da `set()` metodining umuman yo'qligi aynan shu nuqsonning javobi.
 
 `ScopedValue` Java 25 da final bo'ldi. U immutable va uning amal qilish doirasi leksik blok bilan belgilanadi: blok tugashi bilan bog'lanish o'z-o'zidan yo'qoladi, tozalash kerak emas. Meros faqat `StructuredTaskScope.fork(...)` bilan tug'ilgan child thread larda ishlaydi: ular qiymatni nusxalamaydi, ota bog'lanishini ko'radi ([JEP 506](https://openjdk.org/jeps/506)). Oddiy `Thread.ofVirtual().start(...)` yoki executor ga uzatilgan vazifada qiymat bog'lanmagan bo'ladi (`isBound()` false), shuning uchun kontekst u yerga alohida uzatiladi.
 
 Javadoc ikki nozik joyni ham aniq aytadi. Birinchi: bog'lanishlar `StructuredTaskScope` **yaratilganda** olinadi (captured) va shundan keyin `fork` bilan boshlangan hamma thread ularni meros qiladi. Ya'ni scope yaratilgandan keyin qo'yilgan bog'lanish o'sha scope ning thread lariga tushmaydi.
+
+Qiymatni o'zgartirish kerak bo'lgan holat uchun esa `set()` o'rniga qayta bog'lash bor: chaqirilgan metod `ScopedValue.where(...)` ni o'zining ichki blokida qayta bog'lashi mumkin va yangi qiymat faqat o'sha ichki blokda amal qiladi, chaqiruvchining ko'rgan qiymati o'zgarmaydi ([JEP 446](https://openjdk.org/jeps/446), Rebinding bo'limi). Ya'ni kontekstni "vaqtincha almashtirish" oshkor va chegarasi ko'rinadigan amalga aylanadi.
 
 Ikkinchi: thread lar o'rtasida ulashiladigan `ScopedValue` ning qiymati **immutable** bo'lishi kerak, aks holda unga kirish to'liq sinxronlangan bo'lishi shart. `ScopedValue` ning o'zi immutable bo'lishi uning ichidagi obyektni immutable qilmaydi, va bu xato review da ko'rinmay o'tib ketadi.
 
@@ -260,6 +264,8 @@ jfr summary /tmp/vt.jfr
 
 Metrikalar tomonida eng katta o'zgarish: `executor.pool.size`, `executor.queued`, `tomcat.threads.busy` kabi ko'rsatkichlar ma'nosini yo'qotadi. Oldin "pool to'ldi" signali yuk oshganini bildirardi, endi bunday signal yo'q va ilova jim turib latency'ni o'stiradi. Shuning uchun kuzatuvni boshqa joylarga ko'chirish kerak: in-flight so'rov soni (`Gauge` sifatida), semaphore'dagi kutish vaqti, Hikari `hikaricp.connections.pending` va `hikaricp.connections.acquire` taqsimoti. Bu uchtasi birgalikda haqiqiy bo'g'izni ko'rsatadi.
 
+Metrikadan tashqari API darajasida ham chegara bor va u monitoring kodini jim yolg'onga aylantiradi: `ThreadMXBean` faqat platform thread larni boshqaradi va kuzatadi, `Thread.getAllStackTraces()` endi faqat platform thread lar xaritasini qaytaradi, JVM TI ning `GetAllThreads` va `GetAllStackTraces` funksiyalari ham virtual thread larni qaytarmaydi ([JEP 444](https://openjdk.org/jeps/444)). Shuning uchun "ishlab turgan thread soni" ni shu API lardan o'qiydigan dashboard yoki agent virtual thread li ilovada kichik va o'zgarmas raqam ko'rsatadi; haqiqiy holat uchun `Thread.dump_to_file` va JFR hodisalari ishlatiladi.
+
 Tracing bilan ishlashda bitta nozik joy bor: Micrometer `Observation` konteksti `ThreadLocal` orqali tarqaladi va `executor.submit` chegarasida avtomatik ko'chmaydi. Context propagation kutubxonasi orqali executor'ni o'rash kerak, aks holda trace virtual thread chegarasida uzilib qoladi.
 
 ## 12.10 Reactive dasturlashga nisbatan tanlov: qachon qaysi biri
@@ -299,6 +305,8 @@ Migratsiyada arxitektor tekshiradigan narsa: yoqishdan oldin va keyin latency'ni
 - [OpenJDK 25, `VirtualThread.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/lang/VirtualThread.java) - holat mashinasi: JDK 24 dan monitor uchun `BLOCKING -> BLOCKED -> UNBLOCKED` va `Object.wait` uchun `WAITING -> WAIT` o'tishlari, ya'ni monitorda kutish carrier ni ushlab turmaydi; `PINNED` va `TIMED_PINNED` esa `cont.yield` muvaffaqiyatsiz bo'lgan holatlar uchun qoladi
 - [OpenJDK 25, `ScopedValue.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/lang/ScopedValue.java) - `where(key, value)` va `Carrier.run/call` API si, bog'lanishning `StructuredTaskScope` yaratilganda olinishi, ulashiladigan qiymatning immutable bo'lish talabi, kam sonda ishlatish tavsiyasi va `get()` ning kesh mexanikasi
 - [OpenJDK 21, `VirtualThread.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-21%2B35/src/java.base/share/classes/java/lang/VirtualThread.java) - JDK 21 da monitor uchun alohida holat yo'qligi, taqqoslash uchun
+- [JEP 444: Virtual Threads](https://openjdk.org/jeps/444) - `Socket`, `ServerSocket` va `DatagramSocket` ning bloklovchi amallari virtual thread kontekstida uzilishga javob berishi va interrupt ning socket ni yopishi; `ThreadMXBean` ning faqat platform thread larni boshqarishi, `Thread.getAllStackTraces()` ning faqat platform thread lar xaritasini qaytarishi, JVM TI dagi `GetAllThreads` va `GetAllStackTraces` ning virtual thread larni qaytarmasligi
+- [JEP 446: Scoped Values](https://openjdk.org/jeps/446) - `ThreadLocal` ning uchinchi nuqsoni bo'lgan cheklanmagan o'zgaruvchanlik (`get()` ga kirgan kod `set()` ham qila olishi) va `ScopedValue` da `set()` ning yo'qligi; `where(...)` bilan ichki blokda qayta bog'lash va qiymatning faqat shu blokda amal qilishi
 
 ---
 

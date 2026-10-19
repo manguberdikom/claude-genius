@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 11. Vertikal formatlash (Vertical Formatting)
 
@@ -123,6 +123,20 @@ public void importFile(Path file) {
 }
 ```
 
+E'lonning shakli ham qoida: bir e'londa bitta o'zgaruvchi, har biri o'z qatorida. Shunda har bir o'zgaruvchi yoniga izoh sig'adi va diff da bitta o'zgaruvchining o'zgarishi bitta qatorga tushadi. Massivda bu qoida yana bir xatoni oldini oladi: `int[] a, b, c;` e'lonida kvadrat qavs faqat birinchi nomga tegadi deb o'ylash oson, holbuki turga yozilgan qavs uchalasiga ham tegadi. Shuning uchun massiv o'zgaruvchilari bitta e'londa birga e'lon qilinmaydi.
+
+```java
+// yomon: bitta e'londa uchta nom, qavs qaysi biriga tegadi - o'quvchi o'ylab chiqaradi
+int[] rowCounts, columnCounts, totals;
+int page = 0, limit = 50;
+
+// yaxshi: har e'lon o'z qatorida, izoh yoniga sig'adi
+int[] rowCounts;         // har bir sahifadagi qator soni
+int[] columnCounts;
+int page = 0;
+int limit = 50;
+```
+
 ## 11.6 Maydonlar joylashuvi va a'zolar tartibi
 
 Sinf a'zolarining tartibi konvensiya bilan belgilanadi va u butun kod bazasida bir xil bo'lishi kerak, chunki o'quvchi odatlanadi.
@@ -141,6 +155,27 @@ Sinf a'zolarining tartibi konvensiya bilan belgilanadi va u butun kod bazasida b
 | 10 | ichki (nested) turlar |
 
 Checkstyle `DeclarationOrder` va `OverloadMethodsDeclarationOrder` qoidalari shu tartibni mashinaga topshiradi.
+
+**Bir xil elementlar ro'yxati hamma joyda bir xil tartibda.** Yuqoridagi jadval sinf a'zolarining tartibini belgiladi; qoida kengroq ishlaydi: maydon, parametr, tayinlash, konstruktor argumenti, JSON kalitlari kabi istalgan bir turdagi ro'yxat **ma'noli tartibda** yoziladi va shu tartib kod bazasining hamma joyida takrorlanadi. Tartib tanlovining uch asosli variantini Boswell va Foucher sanaydi: formadagi maydonlar tartibiga moslash (o'quvchi ikki joyni yonma-yon solishtira oladi), muhimlikdan kamayib borish, yoki alifbo tartibi.
+
+Tartibning o'zi emas, **izchilligi** qiymat beradi. Bir joyda `details, location, phone, email, url` yozilib, boshqa joyda `details, phone, email, url, location` yozilsa, o'quvchi "location qayerga ketdi" degan savol bilan to'xtaydi va unutilgan maydonni tekshirish uchun qo'shimcha kuch sarflaydi. Yonma-yon tekislangan ro'yxatda esa teskari foyda bor: tartib buzilishi va yozuv xatosi darhol ko'zga tashlanadi.
+
+```java
+// Yomon: bir joyda bir tartib, boshqa joyda boshqa
+public record ContactForm(String details, String location, String phone,
+                          String email, String url) {}
+
+Contact toContact(ContactForm form) {
+    return new Contact(form.details(), form.phone(), form.email(),
+                       form.url(), form.location());   // location oxirga ketdi
+}
+
+// Yaxshi: bitta tartib, hamma joyda
+Contact toContact(ContactForm form) {
+    return new Contact(form.details(), form.location(), form.phone(),
+                       form.email(), form.url());
+}
+```
 
 ## 11.7 Bog'liq funksiyalarni yonma-yon qo'yish
 
@@ -209,6 +244,30 @@ roots[1] = firstRoot;
 int pageCount = render(doc);        // xatoda istisno tashlaydi, -1 qaytarmaydi
 ```
 
+Qamrovning nom tomoni ham bor: lokal o'zgaruvchiga yoki metod parametriga maydon nomini bermaslik. Java bunga ruxsat beradi va lokal nom maydonni **yashiradi**, shuning uchun metod ichidagi nom maydonga emas, lokal o'zgaruvchiga tegadi. Xato jim chiqadi: kompilyatsiya o'tadi, metod ishlaydi, faqat maydon hech qachon o'zgarmaydi. Yagona an'anaviy istisno - konstruktor va setter dagi `this.amount = amount` shakli, u yerda yashirish ataylab qilingan va o'quvchiga tanish; qolgan joyda nomlar farq qiladi.
+
+```java
+// yomon: lokal o'zgaruvchi maydonni yashiradi, maydon eski qiymatda qoladi
+class Cart {
+    private Money total = Money.ZERO;
+
+    void add(Item item) {
+        Money total = this.total.plus(item.price());   // lokal nom, maydon o'zgarmadi
+    }
+}
+
+// yaxshi: nomlar to'qnashmaydi
+class Cart {
+    private Money total = Money.ZERO;
+
+    void add(Item item) {
+        this.total = total.plus(item.price());
+    }
+}
+```
+
+Qamrov qoidasining xotira tomonidagi natijasi ham shu yerda turadi: havolani `null` qilib qo'yish qoida emas, istisno bo'lishi kerak. O'zgaruvchi eng tor qamrovda e'lon qilinsa, u qamrovdan chiqishi bilan havola ham yo'qoladi va `null` tayinlashga hojat qolmaydi. Qo'lda `null` qilish faqat o'z xotirasini o'zi boshqaradigan tuzilmalarda asosli bo'ladi, masalan massiv ustida qurilgan stekda element olingandan keyin bo'shagan katakda; qolgan joylarda u kodni shovqinli qiladi va o'quvchiga mavjud bo'lmagan muammo borligini ishora qiladi.
+
 Fayl darajasidagi qoida ham shu mantiqdan chiqadi: bitta `.java` faylda bitta top-level sinf turadi. Java bir faylda bir nechta package-private sinfga ruxsat beradi, lekin unda sinfni qaysi fayldan topish kerakligi noaniq bo'ladi va bir xil nomdagi sinf ikki faylda paydo bo'lsa kompilyatsiya natijasi fayl tartibiga bog'liq bo'lib qoladi. Yordamchi tur kerak bo'lsa, u ichki statik sinf bo'ladi (shunda uning egasi nomdan ko'rinadi) yoki o'z fayliga chiqadi.
 
 ## 11.11 Formatlashning asosiy teoremasi va yaxshi joylashuv maqsadlari
@@ -267,6 +326,7 @@ Shu ro'yxat korpusdagi bir qancha qoidaning sababini bir joyda tushuntiradi. [Go
 
 ## Manbalar
 
+- Dustin Boswell, Trevor Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011 (copyright 2012), 4-bob (39-40-betlar) - bir xil elementlar ro'yxatini ma'noli tartibda yozish (forma maydonlari tartibi, muhimlik, alifbo) va shu tartibni hamma joyda saqlash; tekislangan ro'yxatda tartib buzilishi va yozuv xatosining ko'zga tashlanishi
 - Joshua Bloch, *Effective Java* 3rd, Item 57 - lokal o'zgaruvchi qamrovini kichik ushlash
 - Joshua Bloch, *Effective Java* 3rd, Item 25 - manba faylda bitta top-level sinf
 - Robert C. Martin, *Clean Code*, 5-bob - vertikal masofa, gazeta metaforasi, tushunchaviy yaqinlik
@@ -277,6 +337,12 @@ Shu ro'yxat korpusdagi bir qancha qoidaning sababini bir joyda tushuntiradi. [Go
 - Steve McConnell, *Code Complete*, 2-nashr, 10.8 (255-257-bet) - bitta o'zgaruvchi bitta maqsad uchun, yashirin ma'no va hybrid coupling
 - Steve McConnell, *Code Complete*, 2-nashr, 31.1 (732-bet) - Formatlashning asosiy teoremasi
 - Steve McConnell, *Code Complete*, 2-nashr, 31.1 (735-736-bet) - yaxshi joylashuvning mezonlari
+- Paul Deitel va Harvey Deitel, *Java How to Program*, 10-nashr, Early Objects, Pearson, 2-bob (47-bet) - har o'zgaruvchini alohida e'londa va alohida qatorda e'lon qilish, shunda yoniga izoh sig'ishi
+- Paul Deitel va Harvey Deitel, *Java How to Program*, 10-nashr, Early Objects, Pearson, 7-bob (247-bet) - bitta e'londa bir necha massiv o'zgaruvchisini e'lon qilmaslik (ikkinchi, massivga xos shakli)
+- Y. Daniel Liang, *Introduction to Java Programming*, 9-nashr, Pearson, 2013, 10-bob (372-bet) - lokal o'zgaruvchiga instans yoki statik maydon nomini bermaslik (metod parametridan tashqari)
+- Paul Deitel va Harvey Deitel, *Java How to Program*, 9-nashr, Pearson, 6-bob (220-bet) va 8-bob (319-bet) - maydon va lokal o'zgaruvchiga har xil nom berish, nomlar bir xil bo'lsa metod chaqirilganda chiqadigan nozik mantiq xatosi (uchinchi mustaqil manba)
+- Joshua Bloch, *Effective Java* 3rd, Item 7 (27-bet) - havolani `null` qilish qoida emas istisno bo'lishi, eng to'g'ri yo'lning o'zgaruvchini eng tor qamrovda e'lon qilib qamrovdan chiqarish ekani
+- ESLATMA: `Cart` va `rowCounts` kod misollari korpus qo'shimchasi; kitoblar qoidani boshqa misollarda beradi
 
 ---
 

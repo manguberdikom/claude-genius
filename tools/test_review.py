@@ -93,8 +93,17 @@ def case_qisqa_fayl_buzilmaydi():
 
 
 def case_navbat_normallashadi():
-    """Katta shkalali dalil qolganini bosib ketmaydi."""
-    rows = Q.build()
+    """Katta shkalali dalil qolganini bosib ketmaydi.
+
+    Holatsiz o'lchanadi: hamma bob imzolanganda tekshirilgan boblar -1
+    oladi va birinchi o'rinda dalilsiz hosila sahifa qolardi.
+    """
+    saved = Q.review_status.read_review
+    Q.review_status.read_review = lambda *a, **k: {}
+    try:
+        rows = Q.build()
+    finally:
+        Q.review_status.read_review = saved
     if not rows:
         return False
     top = rows[0]

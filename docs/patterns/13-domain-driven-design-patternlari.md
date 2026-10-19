@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 13. Domain-Driven Design patternlari (DDD Patterns)
 
 <details>
-<summary>Bu bobdagi 63 bo'lim</summary>
+<summary>Bu bobdagi 79 bo'lim</summary>
 
 - [13.1 Umumiy til (Ubiquitous Language)](#131-umumiy-til-ubiquitous-language)
 - [13.2 Chegaralangan kontekst (Bounded Context)](#132-chegaralangan-kontekst-bounded-context)
@@ -71,7 +71,23 @@
 - [13.60 Dizayn qarorlari evolyutsiyasi (Evolving Design Decisions)](#1360-dizayn-qarorlari-evolyutsiyasi-evolving-design-decisions)
 - [13.61 Analiz patternlarini qo'llash (Applying Analysis Patterns)](#1361-analiz-patternlarini-qollash-applying-analysis-patterns)
 - [13.62 Strategiyani birga yig'ish (Bringing the Strategy Together)](#1362-strategiyani-birga-yigish-bringing-the-strategy-together)
-- [13.63 Amalda qo'llash](#1363-amalda-qollash)
+- [13.63 Taktik dizayn migratsiyasi (Migrating Between Business Logic Patterns)](#1363-taktik-dizayn-migratsiyasi-migrating-between-business-logic-patterns)
+- [13.64 Subdomen topiladi, Bounded Context loyihalanadi (Subdomains Versus Bounded Contexts)](#1364-subdomen-topiladi-bounded-context-loyihalanadi-subdomains-versus-bounded-contexts)
+- [13.65 Yashirin tushunchani aniq qilish (Making Implicit Concepts Explicit)](#1365-yashirin-tushunchani-aniq-qilish-making-implicit-concepts-explicit)
+- [13.66 Subdomenni tasniflash sinovlari (Subdomain Classification Tests)](#1366-subdomenni-tasniflash-sinovlari-subdomain-classification-tests)
+- [13.67 Generic subdomenni ta'minlashning to'rt yo'li (Four Options for a Generic Subdomain)](#1367-generic-subdomenni-taminlashning-tort-yoli-four-options-for-a-generic-subdomain)
+- [13.68 Umumiy tilni ekspert bilan sinash (Validating the Language with Domain Experts)](#1368-umumiy-tilni-ekspert-bilan-sinash-validating-the-language-with-domain-experts)
+- [13.69 Assotsiatsiyani cheklash (Constraining Associations)](#1369-assotsiatsiyani-cheklash-constraining-associations)
+- [13.70 Identifikatsiya qarori va ID dizayni (Identity Decision and ID Design)](#1370-identifikatsiya-qarori-va-id-dizayni-identity-decision-and-id-design)
+- [13.71 Agregat chegarasini chizish sinovlari (Testing an Aggregate Boundary)](#1371-agregat-chegarasini-chizish-sinovlari-testing-an-aggregate-boundary)
+- [13.72 Fabrika interfeysi va invariant joyi (Factory Interface and Invariant Placement)](#1372-fabrika-interfeysi-va-invariant-joyi-factory-interface-and-invariant-placement)
+- [13.73 Repozitoriyni amalga oshirish qoidalari (Implementing a Repository)](#1373-repozitoriyni-amalga-oshirish-qoidalari-implementing-a-repository)
+- [13.74 Spetsifikatsiyani joylashtirish va qamrovi (Placing and Scoping a Specification)](#1374-spetsifikatsiyani-joylashtirish-va-qamrovi-placing-and-scoping-a-specification)
+- [13.75 Kontekstlarni birlashtirish (Merging Bounded Contexts)](#1375-kontekstlarni-birlashtirish-merging-bounded-contexts)
+- [13.76 Core domenga investitsiya qarorlari (Investing in the Core Domain)](#1376-core-domenga-investitsiya-qarorlari-investing-in-the-core-domain)
+- [13.77 Mas'uliyat qatlamlarining tipik oilasi (A Typical Family of Responsibility Layers)](#1377-masuliyat-qatlamlarining-tipik-oilasi-a-typical-family-of-responsibility-layers)
+- [13.78 Framework va DSL modelni bo'g'masligi (Keeping Frameworks and DSLs Out of the Model's Way)](#1378-framework-va-dsl-modelni-bogmasligi-keeping-frameworks-and-dsls-out-of-the-models-way)
+- [13.79 Amalda qo'llash](#1379-amalda-qollash)
 
 </details>
 
@@ -108,6 +124,9 @@ public class Policy {                      // "shartnoma" emas, sug'urta tilida 
 // paydo bo'lsa, u lug'atga qo'shiladi, sinonim ishlatilmaydi.
 ```
 
+**Model nusxa emas, maqsadli abstraksiya.** Khononov 2-bobda umumiy til nimani qamrashini aniq cheklaydi: har model maqsad uchun tuziladi va samarali model faqat shu maqsadni bajarishga yetadigan tafsilotni saqlaydi. Uning misoli: dunyo xaritasida metro bekatlari yo'q, metro xaritasi bilan esa masofa o'lchanmaydi, har xarita o'zi berishi kerak bo'lgan ma'lumotni beradi. Foydali model haqiqiy dunyoning nusxasi emas, u muammoni hal qilish uchun tuzilgan abstraksiya; samarasiz abstraksiya esa kerakli ma'lumotni olib tashlaydi yoki keraksizini qoldirib shovqin tug'diradi. Shu sababli umumiy til domenning har tafsilotini qamramaydi, aks holda har bir ishtirokchini domen ekspertiga aylantirish kerak bo'ladi; u faqat talab qilingan tizimni qurishga yetadigan qismini oladi. Model nimani ifodalashi ham aytilgan: biznes entitetlari va ularning xulqi, sabab-oqibat munosabatlari va invariantlar, ya'ni ekspertlarning aqliy modeli. Modelni tekshirishning yagona ishonchli yo'li esa bitta: ekspert bilan uning tilida, biznes tilida gaplashish.
+**Atama, sinonim va til qamrovi.** Khononov 2-bobda uch amaliy qoidani beradi. Bitta kontekst ichida bir atama ikki ma'noga ega bo'lib qolsa (`policy` ham me'yoriy qoida, ham sug'urta shartnomasi) kod bunga chidamaydi: ikki aniq atama bilan ifodalang. Teskari holat ham xato: almashtirib ishlatiladigan atamalar (`user`, `visitor`, `account`) ko'pincha turli tushuncha va turli xulqni bildiradi, ularni sinonim deb birlashtirish emas, har birini o'z ma'nosida aniq ishlatish modelni soddalashtiradi. Ingliz tilida so'zlashmaydigan jamoada ham domen entitetlarining nomini kamida ingliz otlari bilan bering, shunda kodda bir xil atama ishlatish osonlashadi. Appendix A da esa Khononov tilning qamrovini aniq cheklovdan chiqaradi: umumiy til core, supporting va generic subdomenlarning hammasi uchun kerak; supporting deb boshlangan loyihada tilga investitsiya qilmagan jamoa murakkablik o'sganda qimmat to'laydi, til qanchalik erta qurilsa shuncha arzon, bir marta tarqalgan noto'g'ri atamani tuzatish esa yillar oladi.
+
 ## 13.2 Chegaralangan kontekst (Bounded Context)
 
 **Tavsif:** Domen modelining ma'noga ega bo'lgan aniq chegarasini belgilaydi: shu chegara ichida har bir atama bitta aniq ma'noga ega, chegaradan tashqarida esa boshqa model boshlanadi. Bu katta tizimda bitta yagona model qurish imkonsizligi muammosini hal qiladi - model o'sgani sari ichki qarama-qarshiliklar paydo bo'ladi. Amalda kontekst o'z modeli, o'z ma'lumotlar bazasi sxemasi va o'z jamoasiga ega bo'ladi; tashqi dunyo bilan faqat aniq belgilangan API yoki eventlar orqali gaplashadi. Pattern Evans kitobining 14-bobida (BOUNDED CONTEXT) beriladi. Mikroservis chegarasi bilan aralashtirmang: Khononov 14-bobda munosabat nosimmetrik ekanini ko'rsatadi - har bir mikroservis bounded context, lekin har bir bounded context mikroservis emas; bounded context eng keng maqbul chegara ("eng katta maqbul monolit") ni, agregat esa eng tor chegarani belgilaydi. Servis chegarasi uchun Khononov muvozanatli evristika sifatida subdomen chegarasini tavsiya qiladi (13.12).
@@ -132,6 +151,8 @@ package com.acme.billing;
 - Jamoa o'sganda (Team Topologies) kontekst chegarasini jamoa chegarasi bilan moslashtirish.
 
 **Ehtiyot bo'ling:** Kontekstni texnik qatlam (controller/service/repository) bo'yicha emas, biznes qobiliyati bo'yicha ajratish kerak - aks holda "distributed monolith" chiqadi. Juda mayda kontekstlar esa bitta use-case uchun ko'p tarmoq chaqiruvini keltiradi va Khononov 14-bobda buni "taqsimlangan big ball of mud" deb ataydi; chegarani ma'lumot bir joyda o'zgarishi (tranzaksiya yaxlitligi) talab qiladigan joyda chizing.
+
+**Chegara prefiks bilan yasalmaydi.** Ikki kitob bu yerda bitta qoidani aytadi. Khononov 3-bobda to'qnashgan atamani prefiks bilan ajratishni (`marketing lead`, `sales lead`) kontekstning o'rnini bosa olmasligini ko'rsatadi: qaysi model qachon ishlatilishi bo'yicha kognitiv yuk ortadi va kod suhbatdagi tilga mos kelmay qoladi. Evans 14-bobda shu fikrni modul darajasida beradi: modul yoki namespace kontekst chegarasi emas, alohida namespace tasodifiy model ajralishini ko'rinmas qiladi, shuning uchun avval model farqini tanib hal qilish kerak. Teskari yo'nalishda, agregatni mustaqil mikroservis qilishdan oldin Khononov 14-bobda uch savolni so'raydi: u subdomendagi boshqa agregatlar bilan gaplashadimi, ular bilan qiymat obyekti ulashadimi, uning mantig'i o'zgarishi boshqa komponentlarga ta'sir qiladimi; aloqa qanchalik kuchli bo'lsa servis shunchalik yuzaki bo'ladi va global murakkablik ko'pincha oshadi. Nihoyat kontekst strategiyasi deployment ga chiqadi: Evans 14-bobda mijoz-ta'minotchi jamoalari birga sinalgan versiyalarni chiqarishi kerakligini, Shared Kernel deployment koordinatsiyasini og'irlashtirishini va Separate Ways hayotni soddalashtirishini aytadi; taqsimlangan tizimda kontekstlar orasidagi tarjima qatlamini bitta jarayonda tutish bir necha versiyaning birga yashashini oldini oladi, deployment rejasining amaliyligi esa chegara chizishga qaytib ta'sir qiladi.
 
 ## 13.3 Kontekst xaritasi (Context Map)
 
@@ -164,6 +185,9 @@ Har strelka uchun uch savolga javob yozilishi kerak:
 Xarita kodda emas, hujjatda yashaydi va har chorakda qayta ko'riladi.
 ```
 
+**Mavjud dizaynni o'rganish (brownfield).** Khononov 13-bobda xaritani mavjud tizim ustida qurish tartibini beradi va u nolda chizishdan farq qiladi. Birinchi qadam yuqori darajadagi komponentlarni ajratish: ular DDD ma'nosidagi bounded context bo'lishi shart emas, qidiriladigan belgi esa ajralgan lifecycle, ya'ni mono-repo yoki monolit bo'lsa ham qaysi qismlar mustaqil rivojlanadi, testdan o'tadi va deploy qilinadi. Keyin har komponentning taktik dizayni muammo murakkabligiga mos kelishi baholanadi: qaysi joyda puxtaroq pattern kerak, qaysi joyda tayyor yechim yetarli. Uchinchi qadam shu komponentlarni bounded context deb olib joriy kontekst xaritasini chizish va munosabatlarni integratsiya patternlari tilida belgilash. Xarita tayyor bo'lgach suboptimal belgilar qidiriladi: bitta komponentda bir necha jamoa ishlashi, core subdomen implementatsiyasining takrorlanishi, core ning outsource qilinishi, muntazam yiqiladigan integratsiyadan kelgan ishqalanish va tashqi servislardan tarqayotgan noqulay model. Oxirgi qadam yo'qolgan domen bilimini qidirish: muammo ayniqsa core subdomenda keskin, va Khononov uni [Event Storming](#1332-event-storming-texnika-event-storming-technique) sessiyasi bilan tiklashni, shu sessiyani ayni paytda umumiy tilni o'stirish uchun asos qilishni tavsiya qiladi.
+**Xaritani kim yuritadi va kontekst nomi tilga qanday kiradi.** Khononov 4-bobda xaritani loyiha boshidan kiritishni va har jamoa o'z integratsiyasini yangilashini aytadi, ya'ni yuritish markaziy emas; xaritani kod sifatida ham yuritish mumkin (Context Mapper). Bir ogohlantirish: bir juft kontekst orasida bir vaqtda bir nechta pattern bo'lishi mumkin va xarita buni chalkash ko'rsatadi, shuning uchun har strelka ustiga qaysi funksiya uchun qaysi pattern ishlayotganini yozish kerak. Evans 14-bobda xaritaning ikki majburiy talabini beradi: har bounded context nom olishi va bu nom jamoaning umumiy tiliga kirishi, va har kim istalgan kod yoki holatning qaysi kontekstga tegishli ekanini tanib olishi. Amalda bu gapirish uslubini o'zgartiradi: "Jorj jamoasining kodi o'zgaryapti" emas, "Transport Network modeli o'zgaryapti, demak Booking konteksti translatorini o'zgartirishimiz kerak". Xarita hujjat shakli erkin, lekin xaritani muhokamaga kiritmaslik nomlarning tilga kirishini to'xtatadi. Shu bobda Evans kontekstlar orasida kodni qayta ishlatishni oldini olish kerak xavf deb beradi: funksiya va ma'lumot integratsiyasi tarjima orqali o'tishi kerak, uning misolida bir jamoaning `Charge` sinfiga boshqa jamoa maydon qo'shib ishlatishi ikkala jamoani buzdi va yechim uni `CustomerCharge` va `SupplierCharge` ga ajratish bo'ldi.
+
 ## 13.4 Umumiy yadro (Shared Kernel)
 
 **Tavsif:** Ikki yoki undan ko'p Bounded Context ataylab modelning kichik bir qismini - kod, sxema yoki umumiy value object'larni - birgalikda egallaydi va birgalikda boshqaradi. Bu takrorlanishni kamaytiradi, lekin juda qattiq bog'liqlik yaratadi: yadroni bir tomonlama o'zgartirish mumkin emas, har qanday o'zgarish barcha egalar bilan kelishiladi. Shuning uchun yadro iloji boricha kichik va barqaror bo'lishi kerak - odatda faqat o'zgarmas value object'lar va umumiy identifikatorlar. Pattern Evans 14-bobida (SHARED KERNEL) va Khononov 4-bobida (kooperatsiya guruhi) bayon qilinadi.
@@ -191,6 +215,8 @@ public record TaxId(String value) { }
 //  - yadroga entity, repository yoki servis kirmaydi
 // Yadro o'sib ketsa, u taqsimlangan monolitning sababiga aylanadi.
 ```
+
+**Yadroni qachon ochish va qanday yuritish.** Khononov 4-bobda qo'llash mezonini bitta tarozi qilib beradi: Shared Kernel faqat takrorlash narxi koordinatsiya narxidan yuqori bo'lganda. Model qancha tez o'zgarsa takrorlash shuncha qimmat, shuning uchun pattern tabiiy ravishda [core subdomenlarda](#1312-core--supporting--generic-subdomenlar-core--supporting--generic-subdomains) uchraydi. Yuritish talabi qat'iy: yadro o'zgarishi darhol barcha kontekstlarga yetib borishi va har o'zgarish ularning integratsiya testlarini ishga tushirishi shart, aks holda eskirgan yadro nusxasi ma'lumot buzilishiga olib keladi; yadroning tarkibi esa ideal holda faqat integratsiya kontraktlari va chegaradan o'tadigan ma'lumot tuzilmalari bo'ladi. Khononov bitta jamoa egaligi qoidasidan pragmatik istisnolarni ham sanaydi: geografiya yoki tashkiliy siyosat partnership ni to'sganda, legacy ni bosqichma-bosqich bo'lishda vaqtincha, va bitta jamoaning ichki kontekstlari orasida shartnomani aniq qilib chegara yuvilib ketmasligi uchun. Evans 14-bobda bu patternni talab qiladigan holatni ko'rsatadi: ikki jamoa bir-biriga tegishli lekin alohida modelda ishlayotganini tan olmay vaqti-vaqti bilan obyekt ulashsa xavf tug'iladi, shuning uchun munosabat (masalan Shared Kernel) rasman belgilanmaguncha kod yoki ma'lumot ulashishni to'xtatish kerak.
 
 ## 13.5 Mijoz-ta'minotchi (Customer-Supplier)
 
@@ -257,6 +283,8 @@ public class TaxReportService {
 // o'sha holatda Anti-Corruption Layer kerak.
 ```
 
+**Konformist yarim yo'lda to'xtamaydi.** Evans 14-bobda qarorning shartini qat'iy qo'yadi: konformist dizayn tanlangach unga to'liq ergashiladi, ya'ni o'zingizni faqat kengaytma bilan cheklab, mavjud modelni o'zgartirmaysiz. Shu bilan birga patternning qo'llanish doirasi tor: yirik yangi tizim uchun u mos kelmaydi, chunki interfeys kichik bo'lmasa yoki boshqa tizim yomon loyihalangan bo'lsa o'z bounded context ingiz, ya'ni tarjima yoki [ACL](#137-buzilishdan-himoya-qatlami-anti-corruption-layer) kerak bo'ladi. Konformist esa katta tizimning periferik kengaytmasi uchun to'g'ri tanlov (Evans tabelli hisobot uchun Excel ustida qurilgan qo'llab-quvvatlash vositasini misol qiladi). Ikki amaliy ogohlantirish: interfeys katta bo'lsa tarjima ishi ilovaning o'z funksiyasidan ham kattaroq bo'lib chiqishi mumkin, va upstream jamoaning va'dalariga tayanib reja qurmaslik kerak, chunki bu munosabatda sizda ta'sir o'tkazish vositasi yo'q.
+
 ## 13.7 Buzilishdan himoya qatlami (Anti-Corruption Layer)
 
 **Tavsif:** Downstream kontekst bilan upstream o'rtasiga qo'yiladigan tarjima qatlami: tashqi modelni ichki domen modeliga va teskarisiga o'giradi, shu bilan tashqi tizimning "yomon" yoki o'zgaruvchan modeli ichki toza modelni ifloslantirmasligini ta'minlaydi. ACL adapter, facade va translator'lar to'plamidan iborat bo'lib, domen uchun faqat o'z tilida ifodalangan port interfeysini ko'rsatadi. Legacy tizimlar va strangler-fig migratsiyalarida bu asosiy himoya mexanizmi. Evans kitobida pattern nomi bitta so'z bilan yoziladi: ANTICORRUPTION LAYER (14-bob); Khononov 4-bobda uni downstream tomonning model tarjimasi deb beradi.
@@ -285,6 +313,8 @@ class BureauCreditScoreAdapter implements CreditScoreProvider {
 - Monolit bazasiga read-only view orqali kirib, yangi servisning modelini undan ajratish.
 
 **Ehtiyot bo'ling:** ACL "anemik mapper"ga aylanib, tashqi maydonlarni bir-bir ichki DTO'ga ko'chirsa, u faqat qo'shimcha kod bo'lib qoladi - tarjima semantik bo'lishi, ya'ni ma'noni o'zgartirishi kerak. Har bir integratsiya uchun ACL yozish ham ortiqcha: barqaror ichki Published Language bilan ishlaganda Conformist arzonroq.
+
+**Tarjima qamrovi, tashqi tizim chegarasi va facade joyi.** Evans 14-bobda uch aniq qoida beradi. Birinchisi qamrov: ikki model orasida hammasini emas, faqat kerakli tarjimalarni qiling, uning misolida ikki yo'nalish yetarli bo'ldi va ulardan birining teskarisi printsipial noaniq edi, shuning uchun tarjima yo'nalishli bo'ladi; tarjimon yagona obyekt, ikki jamoa uni birga sinaydi va chegarada testlar "ishon, lekin tekshir" tartibida yuritiladi, interfeys [yon ta'sirsiz funksiyalardan](#1326-yon-tasirsiz-funksiyalar-side-effect-free-functions) tursa sinash osonlashadi. Ikkinchisi faraz haqida: tashqi yoki legacy tizim o'zi bitta izchil bounded context deb hisoblanmaydi, chunki kontekst modelni chegara ichida birlashtirish niyati bilan belgilanadi; legacy jamoasi uyg'un ishlayaptimi tekshirish kerak, chunki bunday tizimlarda semantik ziddiyatlar uchrab turadi. Uchinchisi facade ning joyi: facade tashqi tizimning o'z modelida qat'iy yoziladi va tashqi tizim kontekstiga tegishli bo'ladi, aks holda tarjima mas'uliyati bir necha obyektga tarqaladi yoki na tashqi tizimga na sizga tegishli bo'lgan yana bir begona model paydo bo'ladi. Adapter servis interfeysini qo'llaydi, translator esa holatsiz yengil obyekt bo'lib, kerak bo'lganda yasaladi. Ikki qo'shimcha: primitiv darajadagi interfeys tashqi modelning tushuntirish kuchini yo'qotadi, va ACL ga shu munosabatga xos funksiya qo'shilishi mumkin, masalan tashqi tizim ishlatilishining audit izi yoki chaqiruvlarni kuzatish mantig'i.
 
 ## 13.8 Ochiq xizmat interfeysi (Open Host Service)
 
@@ -380,6 +410,15 @@ class PublicOrderApi {
 // "unutilgan integratsiya" deb o'ylab, keraksiz bog'liqlik qo'shadi.
 ```
 
+Khononov 4-bobda bu patternga keltiradigan sabablarni nomlab beradi va ular bir xil emas:
+
+- **`Communication Issues`:** tashkilot kattaligi yoki ichki siyosat tufayli jamoalar kelisha olmasa, funksiyani bir necha kontekstda takrorlash hamkorlikdan arzonroq bo'lib chiqadi.
+- **`Model Differences`:** modellar shunchalik farq qilsa ki, conformist munosabat mumkin bo'lmaydi va anti-corruption layer yozish funksiyani takrorlashdan qimmatroq tushadi.
+- **Generic subdomen:** integratsiyasi oson tayyor yechim (Khononovning misoli - logging framework) har kontekstda lokal ulanadi, uni kontekstlardan biri servis sifatida ochishi ma'nosiz, chunki integratsiya murakkabligi takrorlanmaslik foydasidan oshadi.
+
+Khononov aniq cheklov ham qo'yadi: core subdomenlarni integratsiya qilganda Separate Ways ishlatilmaydi, chunki core ni takrorlash kompaniyaning uni eng samarali va optimal shaklda qurish strategiyasiga zid.
+**Bog'liq use case integratsiyani talab qilmaydi.** Evans 14-bobda shartni aniq sanaydi: ikki funksiya bir use case da bog'liq bo'lgani ularni integratsiya qilishni anglatmaydi. Agar ular bir-birining funksiyasini chaqirmasa, ikkalasi tegadigan obyektlarni birga o'zgartirmasa va ish paytida ma'lumot ulashmasa, integratsiya, hatto tarjima qatlami orqali ham, kerak emas: menyu, havola yoki UI darajasida birlashtirish yetadi. Uning misolida sug'urta loyihasi hammasini bitta tizimga birlashtirishga urinib qotib qolgan, integratsiya qiymat bermaydigan funksiyalarni ajratib yuborgach esa bir necha qobiliyat deyarli bir kechada yetkazilgan. Shu bobda ikkinchi ogohlantirish bor: ixtisoslashgan guruhlarning o'z jargonini alohida kontekstda ushlab turish mumkin va bu ularning aniq tilini saqlaydi, lekin narxi bor, umumiy til yo'qoladi, integratsiya yuki va takrorlangan ish ko'payadi. Eng katta xavf esa boshqa: bu qaror o'zgarishga qarshi dalil va har qanday g'alati mahalliy model uchun oqlov bo'lib qolishi mumkin, shuning uchun shu guruh jargonining haqiqiy qiymati o'lchanishi kerak. Ikki tilni birlashtiradigan chuqur model keyinroq topilishi mumkin, lekin uni rejalashtirib bo'lmaydi.
+
 ## 13.11 Hamkorlik (Partnership)
 
 **Tavsif:** Partnership Evans kitobidagi pattern emas - uning 14-bobidagi munosabat ro'yxatida bu nom yo'q. Atama Khononov kitobining 4-bobidan keladi va u yerda Shared Kernel bilan birga "kooperatsiya" guruhiga kiradi. Ikki kontekst va ularning jamoalari shunday chambarchas bog'liq bo'ladi, birining muvaffaqiyatsizligi ikkinchisini ham muvaffaqiyatsiz qiladi - shuning uchun ular rejalashtirish, integratsiya va chiqarishni (release) birgalikda muvofiqlashtiradi. Bu yerda upstream/downstream ierarxiyasi yo'q: interfeys o'zgarishi ikki tomonning kelishuvi bilan bo'ladi va ikkisi bir vaqtda deploy qilinadi. Bu eng qimmat munosabat turi, shuning uchun uzoq muddat saqlanmasligi, vaqtincha holat bo'lishi kerak.
@@ -410,7 +449,7 @@ class PublicOrderApi {
 
 ## 13.12 Core / Supporting / Generic subdomenlar (Core / Supporting / Generic Subdomains)
 
-**Tavsif:** Uch turli taksonomiya Evans kitobining emas: Evans 15-bobda faqat CORE DOMAIN va GENERIC SUBDOMAINS patternlarini beradi, "supporting subdomain" nomi unda yo'q. To'liq uchlik Khononov kitobining 1-bobidan keladi. Domenni uch turga ajratish: Core - kompaniyaga raqobat ustunligi beradigan, eng murakkab va eng qimmatli qism; Supporting - biznes uchun zarur, lekin raqobat ustunligi bermaydigan, mantiqi oddiy qism; Generic - barcha kompaniyalarda bir xil bo'lgan, murakkab lekin raqobat ustunligi bermaydigan qism (autentifikatsiya, hisob-kitob, bildirishnoma, hujjat saqlash). Bu klassifikatsiya investitsiya qarorini belgilaydi: eng kuchli injenerlar va eng puxta DDD modellashtirish Core'ga, Supporting'ga oddiy CRUD yetarli, Generic esa sotib olinadi yoki tayyor yechim bilan yopiladi. Arxitektor uchun bu "qayerga kuch sarflash kerak" degan savolning asosiy javobi. Khononov 1-bobda uch turni murakkablik va raqobat ustunligi bo'yicha solishtiradi: supporting subdomen mantiqi sodda (asosan ETL va shaklga to'ldirish), generic subdomen esa murakkab bo'lishi mumkin, lekin ikkisi ham ustunlik bermaydi. Mikroservis chegarasi uchun Khononov 14-bobda va Richardson 2-bobda (`Decompose by subdomain` patterni) aynan subdomen chegarasi tavsiya qilinadi.
+**Tavsif:** Uch turli taksonomiya Evans kitobining emas: Evans 15-bobda faqat CORE DOMAIN va GENERIC SUBDOMAINS patternlarini beradi, "supporting subdomain" nomi unda yo'q. To'liq uchlik Khononov kitobining 1-bobidan keladi. Domenni uch turga ajratish: Core - kompaniyaga raqobat ustunligi beradigan, eng murakkab va eng qimmatli qism; Supporting - biznes uchun zarur, lekin raqobat ustunligi bermaydigan, mantiqi oddiy qism; Generic - barcha kompaniyalarda bir xil bo'lgan, murakkab lekin raqobat ustunligi bermaydigan qism (autentifikatsiya, hisob-kitob, bildirishnoma, hujjat saqlash). Bu klassifikatsiya investitsiya qarorini belgilaydi: eng kuchli injenerlar va eng puxta DDD modellashtirish Core'ga, Supporting'ga oddiy CRUD yetarli, Generic esa sotib olinadi yoki tayyor yechim bilan yopiladi. Arxitektor uchun bu "qayerga kuch sarflash kerak" degan savolning asosiy javobi. Turni aniqlashning sinovlari [subdomenni tasniflash sinovlari](#1366-subdomenni-tasniflash-sinovlari-subdomain-classification-tests) bo'limida, generic subdomenni qanday ta'minlash esa [to'rt yo'l](#1367-generic-subdomenni-taminlashning-tort-yoli-four-options-for-a-generic-subdomain) bo'limida yoziladi. Khononov 1-bobda uch turni murakkablik va raqobat ustunligi bo'yicha solishtiradi: supporting subdomen mantiqi sodda (asosan ETL va shaklga to'ldirish), generic subdomen esa murakkab bo'lishi mumkin, lekin ikkisi ham ustunlik bermaydi. Mikroservis chegarasi uchun Khononov 14-bobda va Richardson 2-bobda (`Decompose by subdomain` patterni) aynan subdomen chegarasi tavsiya qilinadi.
 
 **Spring'da qayerda uchraydi:** Core subdomen aggregate'lar, domen eventlari va boy modellashtirish bilan yoziladi (jMolecules `@AggregateRoot`, Spring Modulith `@ApplicationModule`, `ApplicationEventPublisher`, `@DomainEvents` Spring Data'da). Supporting subdomenlar uchun tez yechimlar: Spring Data REST (`@RepositoryRestResource`), Spring Boot `JdbcClient` bilan oddiy CRUD, Spring Batch bilan ommaviy ishlov. Generic subdomenlar odatda tashqi mahsulot bilan yopiladi: autentifikatsiya - Keycloak yoki Spring Authorization Server, to'lov - Stripe SDK, email/SMS - `spring-boot-starter-mail` yoki provayder API'si, qidiruv - Elasticsearch/OpenSearch (`spring-data-elasticsearch`), fayl saqlash - S3. Bu holatda Generic tizimlar bilan aloqa ACL yoki Conformist orqali quriladi.
 
@@ -473,6 +512,8 @@ public class Customer {
 // identifikator esa o'zgarmaydi.
 ```
 
+**Entity ni identifikatsiyagacha qisqartirish.** Evans 5-bobda modellash tartibini aniq beradi: entity identifikatsiyasi bilan belgilanadi, atributlar esa unga yopishadi va o'zgaradi, shuning uchun entity ta'rifini eng zaruriy, ya'ni uni identifikatsiya qiladigan yoki uni topish va moslashda doimiy ishlatiladigan xossalargacha qisqartirish kerak; qolgan xossalar esa entity bilan bog'langan boshqa obyektlarga ajratiladi. Uning misolida `Customer` da `name` va aloqa ma'lumotlari qoladi, `average sales volume` va `product category` esa alohida `Business Line` obyektiga, sotuvchi ma'lumoti esa `Sales Contact` ga chiqadi. Qaysi atribut identifikatsiyaga kirishi oldindan ma'lum emas, u identifikatsiyani tanlash usulidan chiqadi: tabiiy kalit tanlansa shu kalitni tashkil qiladigan atributlar qoladi, sun'iy ID tanlansa esa entity yanada yupqa bo'ladi.
+
 ## 13.14 Qiymat obyekti (Value Object)
 
 **Tavsif:** Value Object identifikatorga ega bo'lmagan, to'liq o'z qiymatlari bilan aniqlanadigan immutable domain tushunchasi: `Money`, `Address`, `EmailAddress`, `DateRange`. Ikki Value Object barcha maydonlari teng bo'lsa teng hisoblanadi, shuning uchun ularni erkin ulashish, cache qilish va thread'lar orasida uzatish xavfsiz. Ular primitive obsession'ni yo'q qiladi: `BigDecimal amount` + `String currency` juftligi o'rniga valyuta mosligini o'zi tekshiradigan `Money` paydo bo'ladi. Validatsiya konstruktorda bir marta bajarilgach, keyin noto'g'ri qiymat umuman mavjud bo'lolmaydi. Pattern ikki kitobda ham bor: Evans 5-bob (VALUE OBJECTS) va Fowler, *Patterns of Enterprise Application Architecture*, 18-bob (Value Object).
@@ -510,6 +551,8 @@ public record Money(BigDecimal amount, Currency currency) implements Comparable<
 // `record` equals, hashCode va toString ni beradi: qiymat semantikasi tekin
 ```
 
+**Ulashish shartlari va mutability istisnolari.** Evans 5-bobda ulashishni tekin deb hisoblamaydi va uni faqat uch shart bir vaqtda bajarilganda tavsiya qiladi: bazada joy yoki obyekt sonini tejash haqiqatan muhim bo'lsa, aloqa narxi past bo'lsa (masalan markazlashgan server) va ulashilayotgan obyekt qat'iy o'zgarmas bo'lsa. Taqsimlangan tizimda hisob boshqa tomonga og'adi: nusxa uzatilganda bitta xabar ketadi va nusxa qabul qiluvchi mashinada mustaqil yashaydi, bitta nusxa ulashilganda esa faqat havola uzatiladi va har o'zaro ta'sir uchun obyektga qayta xabar yuborish kerak bo'ladi, ya'ni ulashish tizimni sekinlashtiradi. Shu bobdagi alohida qaydda Evans mutable qiymatga ruxsat beradigan sabablarni ham sanaydi: qiymat juda tez o'zgarsa, obyekt yaratish yoki o'chirish qimmat bo'lsa, almashtirish (o'zgartirish o'rniga) klasterlashni buzsa, yoki ulashish kam bo'lsa. Shart esa bitta va qat'iy: mutable qiymat hech qachon ulashilmaydi.
+
 ## 13.15 Agregat va Agregat ildizi (Aggregate & Aggregate Root)
 
 **Tavsif:** Aggregate - bir-biri bilan chambarchas bog'liq entity va Value Object'larning yagona tranzaksion va konsistentlik chegarasi; tashqi dunyo unga faqat Aggregate Root orqali murojaat qiladi (Evans, 6-bob, AGGREGATES). Root invariantlarni himoya qiladi: ichki obyektlarga havola tashqariga chiqmaydi, ichki o'zgarishlar faqat root metodlari orqali bo'ladi. Agregatlar o'zaro ID bilan bog'lanishi va bitta tranzaksiyada bitta agregat o'zgarishi - bu ikki qoida Evans dan keyin qat'iylashgan va manbasi boshqa: Richardson *Microservices Patterns* 5-bobida (5.2.3 `Aggregate rules`) uchta qoidani raqamlab beradi - (1) tashqaridan faqat agregat ildiziga havola, (2) agregatlar o'zaro birlamchi kalit (ID) bilan bog'lanadi, (3) bitta tranzaksiya bitta agregatni yaratadi yoki o'zgartiradi. Khononov 6-bobda ham "bir tranzaksiyaga bitta agregat nusxasi" qoidasini shu shaklda beradi. Evans ning o'zi 6-bobda bundan yumshoqroq yozadi: agregat ichidagi obyektlar boshqa agregat ildizlariga havola ushlashi mumkin, chegara faqat agregat ichiga tashqi havolani taqiqlaydi.
@@ -546,9 +589,11 @@ public class Order {                        // agregat ildizi
 // OrderLine uchun repository yo'q va u tashqaridan o'zgartirilmaydi
 ```
 
+**Agregat mantig'i protsedurada yashamaydi, nusxa esa chegara ichida qoladi.** Khononov 13-bobda bitta amaliy taqiqni beradi: agregat funksiyasini saqlangan protseduraga o'tkazmang. Mantiq jismonan va mantiqan uzoq joylarda takrorlanadi, sinxronidan chiqadi va ma'lumotni buzadi. Appendix A da u real natijani keltiradi: protsedurani boshqa jamoaga berish yashirin kontekst chegarasi hosil qilib, `Lead` agregatini amalda ikkiga bo'lib qo'ygan. Evans 7-bobda agregatni nusxalash tartibini beradi va u faqat chegara haqida: agregatni prototip sifatida nusxalaganda ichki entity tarixi nusxalanmaydi, u yangi va bo'sh yaratiladi, tashqi entity larga havolalar esa nusxalanadi, lekin entity ning o'zi nusxalanmaydi, chunki ular chegaradan tashqarida; yangi identifikator esa yangi obyekt yasalgandagi manbadan olinadi. Natijada nusxalash chegara ichini o'zgartiradi va chegaradan tashqariga umuman ta'sir qilmaydi.
+
 ## 13.16 Repozitoriy (Repository - DDD view)
 
-**Tavsif:** DDD'dagi Repository - aggregate root'lar uchun xotiradagi kolleksiya illyuziyasini beradigan, domain tilida yozilgan abstraksiya; u SQL, jadval yoki ORM haqida hech narsa oshkor qilmaydi. Interfeys domain qatlamida (`OrderRepository`), implementatsiya esa infrastructure qatlamida yashaydi - bu Dependency Inversion'ning amaliy ko'rinishi. Metod nomlari domain niyatini aks ettiradi (`findOverdueInvoices()`), CRUD jargonini emas. Har bir aggregate uchun bitta repository bo'ladi, ichki entity'lar uchun alohida repository yaratilmaydi. Repository ikki kitobda ham mustaqil pattern sifatida bor: Evans 6-bob (REPOSITORIES) va Fowler PoEAA 13-bob (Repository, Edward Hieatt va Rob Mee yozgan). Shu bilan bog'liq Unit of Work esa DDD patterni emas - u faqat PoEAA 11-bobida (Object-Relational Behavioral Patterns) turadi; Evans kitobida bu nom uchramaydi, shuning uchun uni "DDD patterni" deb atash xato.
+**Tavsif:** DDD'dagi Repository - aggregate root'lar uchun xotiradagi kolleksiya illyuziyasini beradigan, domain tilida yozilgan abstraksiya; u SQL, jadval yoki ORM haqida hech narsa oshkor qilmaydi. Interfeys domain qatlamida (`OrderRepository`), implementatsiya esa infrastructure qatlamida yashaydi - bu Dependency Inversion'ning amaliy ko'rinishi. Metod nomlari domain niyatini aks ettiradi (`findOverdueInvoices()`), CRUD jargonini emas. Har bir aggregate uchun bitta repository bo'ladi, ichki entity'lar uchun alohida repository yaratilmaydi; tranzaksiya chegarasi, qamrov va implementatsiyaning narxi [repozitoriyni amalga oshirish qoidalari](#1373-repozitoriyni-amalga-oshirish-qoidalari-implementing-a-repository) bo'limida. Repository ikki kitobda ham mustaqil pattern sifatida bor: Evans 6-bob (REPOSITORIES) va Fowler PoEAA 13-bob (Repository, Edward Hieatt va Rob Mee yozgan). Shu bilan bog'liq Unit of Work esa DDD patterni emas - u faqat PoEAA 11-bobida (Object-Relational Behavioral Patterns) turadi; Evans kitobida bu nom uchramaydi, shuning uchun uni "DDD patterni" deb atash xato.
 
 **Spring'da qayerda uchraydi:** `org.springframework.data.repository.Repository` va uning avlodlari (`CrudRepository`, `JpaRepository`, `PagingAndSortingRepository`), `@Repository` annotatsiyasi va `PersistenceExceptionTranslationPostProcessor` orqali exception translation. Derived query'lar (`findByCustomerIdAndStatus`), `@Query`, `@Modifying`, Specification/`QueryByExampleExecutor` va murakkab holatlar uchun custom fragment interfeys + `...Impl` sinfi mavjud. Spring Data JDBC yoki `JdbcClient` (Spring Framework 6.1+) toza DDD repository yozish uchun JPA'dan ko'ra ko'proq nazorat beradi; `ListCrudRepository` (Spring Data 3.x) `List` qaytaradi.
 
@@ -611,6 +656,8 @@ public final class OrderFactory {
 // Konstruktor murakkab qoidani ifodalay olmasa, fabrika kerak
 ```
 
+**Element qo'shadigan fabrika ildizda turadi.** Evans 6-bobda fabrikaning joyini bitta qoida bilan beradi: fabrika yaratilish tafsilotini yashirish uchun ochiladi va nazorat qayerda bo'lishi kerak bo'lsa shu yerga qo'yiladi, qaror esa odatda agregat atrofida aylanadi. Mavjud agregat ichiga element qo'shish kerak bo'lsa, factory method agregat ildizida yoziladi (`PurchaseOrder.newItem(part, quantity)`): shunda agregatning ichki tuzilishi tashqi mijozdan yashirin qoladi va element qo'shilganda butunlikni ta'minlash mas'uliyati ildizda bo'ladi. Boshqa agregatga tegishli mahsulotni yaratishda ham, agar yaratish uchun kerak ma'lumot va qoida asosan bitta obyektda bo'lsa, factory method shu obyektda tursa to'g'ri bo'ladi (`BrokerageAccount.newBuy(...)`); tabiiy host topilmasa alohida fabrika obyekti yaratiladi. Fabrika interfeysini loyihalash va invariantni qayerda tutish qoidalari [alohida bo'limda](#1372-fabrika-interfeysi-va-invariant-joyi-factory-interface-and-invariant-placement).
+
 ## 13.18 Domen servisi (Domain Service)
 
 **Tavsif:** Domain Service - tabiiy ravishda biror entity yoki Value Object'ga tegishli bo'lmagan, bir nechta aggregate yoki murakkab domain qoidasini qamrab oladigan stateless domain operatsiyasi. U domain tilida nomlanadi (`PricingService`, `TransferService`, `RiskScoring`) va faqat domain turlari bilan ishlaydi: HTTP, tranzaksiya yoki DTO'lar haqida bilmaydi. Holat saqlamaydi, shuning uchun thread-safe va oson test qilinadi. Domain Service'ni Application Service bilan aralashtirmaslik kerak: birinchisi *nima* qoida, ikkinchisi *qanday* orkestratsiya. Evans bu patternni 5-bobda SERVICES nomi bilan beradi va servisni qatlam bo'yicha (domen, ilova, infratuzilma) ajratadi; Khononov 6-bobda domen servisi ham "bir tranzaksiyaga bitta agregat" qoidasidan chetlab o'tish yo'li emasligini alohida ta'kidlaydi.
@@ -640,6 +687,9 @@ public class TransferService {              // domen paketida, Spring'siz
 // Farqi ilova servisidan: domen servisi tranzaksiya, xabar yoki
 // repository bilan ishlamaydi. U faqat domen qoidasini ifodalaydi.
 ```
+
+**Jarayonni qachon modelga chiqarish kerak.** Evans 9-bobda domendagi jarayonni aniq obyekt bilan ifodalash masalasini alohida ko'radi va avval chegara qo'yadi: protseduralarni modelning ko'rinadigan qismiga aylantirish maqsad emas, obyektlar protsedurani yopib, uning niyati haqida o'ylash imkonini berishi kerak. Lekin domenda real mavjud jarayonlar bor va ular obyekt dizaynida noqulaylik tug'diradi. Ikki shakl beriladi: jarayonni domen servisi bilan ochiq ifodalash, murakkab algoritmni esa uning ichida yopiq qoldirish; jarayonni bajarishning bir necha yo'li bo'lsa, algoritmning o'zini yoki uning kalit qismini obyektga aylantirib, tanlovni [siyosat](#1323-siyosat-policy) obyektlari orasidagi tanlovga aylantirish. Ajratish mezoni bitta va sodda: domen ekspertlari shu jarayon haqida gapiradimi yoki u faqat dasturning mexanikasimi. Birinchisi bo'lsa jarayon modelga chiqadi, ikkinchisi bo'lsa yashiriladi.
+**Donadorlik va hosilani kim hisoblaydi.** Evans 5-bobda servisning ikkinchi foydasini ko'rsatadi: mayda domen obyektlari o'rtasidagi murakkab o'zaro ta'sir ilova qatlamida muvofiqlashtirilsa, shu o'zaro ta'sirning murakkabligi ilova qatlamida hal qilinadi va domen bilimi ilova yoki UI kodiga sizib domen qatlamidan yo'qoladi. O'rta donadorlikdagi holatsiz domen servislari esa bu chegarani saqlaydi va katta tizimda qayta ishlatish osonroq bo'ladi, chunki ular sezilarli funksiyani sodda interfeys orqasiga o'raydi. 7-bobda Evans shu qoidani aniq keysga qo'llaydi: hisoblanadigan qiymatni (uning misolida `Enterprise Segment`) ma'lumotga ega obyekt emas, segmentatsiya qoidasini biladigan obyekt hosil qilishi kerak. Sabab ikkita: bir xil entity turli maqsadlar uchun turlicha segmentlanadi (bron uchun bir xil, soliq hisobi uchun boshqa xil) va sotuv strategiyasi o'zgarganda segmentatsiya o'zgaradi, shuning uchun ma'lumot egasi bu qoidani bilsa u o'zining tushunchaviy mas'uliyatidan chiqib ketadi va bir nechta kontekstga xos metodlar bilan to'lib ketadi. Qoida bu bilan ilova koordinatoriga ham berilmaydi: Evans buni alohida kamchilik deb belgilaydi va biznes qoidasini domen mas'uliyati deb qoldiradi.
 
 ## 13.19 Ilova servisi (Application Service - DDD view)
 
@@ -672,6 +722,8 @@ class PlaceOrderService {
 - `@TransactionalEventListener(phase = AFTER_COMMIT)` orqali commit'dan keyin email yuborish topshirig'ini qo'yish.
 
 **Ehtiyot bo'ling:** Application service'ga `if` lar bilan narx hisoblash yoki status o'tishlarini yozib qo'yish - klassik anemic model tuzog'i; bu mantiqni aggregate yoki domain service'ga qaytaring. Shuningdek, bitta `@Transactional` metod ichida bir nechta aggregate'ni o'zgartirib, uzoq davom etuvchi tranzaksiya va deadlock yaratmang.
+
+**Ilova qatlami biznes holatini saqlamaydi.** Evans 4-bobda qatlamlarning mas'uliyatini ajratganda ilova qatlamiga aniq chegara qo'yadi: u biznes holatini saqlamaydi, lekin foydalanuvchi yoki dastur vazifasining bajarilish holatini (masalan jarayon qaysi qadamda ekanini) saqlashi mumkin. Biznes qoidasi va biznes holati esa domen qatlamida qoladi; uning pul o'tkazish misolida har kredit uchun mos debit bo'lishi kerak degan qoida ilova servisida emas, domen modelida turadi. Amalda bu farq quyidagi sinov bilan ko'rinadi: application service dagi maydon yoki kesh yiqilib ketganda biznes ma'nosi yo'qoladimi; javob "ha" bo'lsa, u holat domen qatlamiga tegishli.
 
 ## 13.20 Domen hodisasi (Domain Event)
 
@@ -798,6 +850,8 @@ public final class DailyLateFeePolicy implements LateFeePolicy {
 // Qoida o'zgarsa yangi Policy qo'shiladi: Invoice kodi o'zgarmaydi
 ```
 
+**Yashirin qoidani nomlashning tushunchaviy sababi.** Evans 1-bobda teskari yo'nalishdan keladi: biznes qoidasi (uning misolida yuk kemasida ruxsat etilgan 10 foizlik overbooking) ilova metodidagi guard clause ichida yashiringan bo'lsa, domen eksperti uni o'qib tasdiqlay olmaydi va qoidaning o'zgarishi kodda ko'rinmaydi, shuning uchun u nomlangan Policy obyektiga chiqariladi. Bu yuqoridagi "bitta implementatsiyali Policy ortiqcha abstraksiya" qoidasiga zid ko'rinadi, lekin shart ikki holatni ajratadi: agar chiqarishning tushunchaviy sababi bor bo'lsa, ya'ni qoida biznesga tegishli, ekspert tilida nomi bor va ekspert uni ko'rib tasdiqlashi kerak bo'lsa, almashtiriladigan ikkinchi implementatsiya bo'lmasa ham nomlangan obyekt oqlanadi; agar sabab faqat texnik bo'lsa, ya'ni qoida o'zgarmaydi va nomi faqat sinf nomi bo'lib qoladi, interfeys va `@Component` qo'shish ortiqcha abstraksiya bo'ladi. Qisqa sinov: qoidani domen ekspertiga ko'rsatganda u uni o'z nomi bilan tanimasa, Policy obyekti kerak emas. Bir qo'shimcha chegara: ketma-ket qadamlarni muvofiqlashtiradigan kodda shartli tarmoqlanish paydo bo'lsa, u endi siyosat emas, [jarayon menejeri](15-enterprise-integration-patterns-i-xabarlar.md#1535-jarayon-menejeri-process-manager) bo'ladi, [orkestratsion saga](14-microservices-patternlari.md#149-saga-orkestratsiya-saga-orchestration) esa shartsiz ketma-ketlikni yuritadi; Khononov shu farqni ajratuvchi shart qilib beradi.
+
 ## 13.24 Invariantlar (Invariants)
 
 **Tavsif:** Invariant - agregat ichida har qanday tranzaksiya tugaganda doimo rost bo'lishi shart bo'lgan biznes qoidasi ("buyurtma qatorlari summasi jami summaga teng", "hisob qoldig'i limitdan past tushmaydi"). Invariantlar aggregate root'ning konsistentlik chegarasini belgilaydi: root o'z ichidagi barcha o'zgarishlarni nazorat qiladi va har bir public metod oxirida qoidani tekshiradi. Shu sababli agregat hajmi invariantlar to'plamidan kelib chiqadi, ma'lumotlar bazasi jadvallari tuzilishidan emas. Invariant buzilganda obyekt yaratilmaydi yoki amal bajarilmaydi - noto'g'ri holat hech qachon xotirada paydo bo'lmasligi kerak. Evans 6-bobda (AGGREGATES) bu chegarani aniq ajratadi: agregat ichidagi invariantlar har bir tranzaksiya tugashida majburlanadi, agregatlar orasidagi qoidalar esa kelishilgan vaqt ichida hal qilinishi mumkin - ya'ni darhol emas.
@@ -832,6 +886,8 @@ public class Order {
 // Invariant agregat chegarasida tekshiriladi: shuning uchun agregat
 // chegarasi "nimani bir vaqtda izchil saqlash kerak" savolidan chiqadi.
 ```
+
+**Murakkablik erkinlik darajasi, cheklov esa alohida obyekt.** Khononov 6-bobda invariantning qiymatini o'lchov bilan bog'laydi: tizimning murakkabligi uning erkinlik darajasi, ya'ni holatini to'liq tasvirlash uchun kerak bo'lgan mustaqil ma'lumot soni. Bir maydondan hisoblanadigan maydonlar erkinlik darajasini oshirmaydi, shuning uchun invariantni o'z ichiga qamragan qiymat obyekti va agregat murakkablikni kamaytiradi, holatni erkin maydonlar to'plami qilib yoyish esa oshiradi. Evans 9-bobda cheklovni kodda qanday ko'rsatishni aytadi: cheklovni niyatni ochib beruvchi nomli alohida metodga chiqaring (uning misolida idish sig'imi tekshiruvi), va cheklov host obyektining dizaynini buzayotganini ko'rsatadigan belgilar paydo bo'lsa uni butunlay alohida obyektga chiqaring. Belgilar uchta: cheklovni baholash uchun host obyektining mas'uliyatiga mos kelmaydigan ma'lumot kerak bo'lsa, bog'liq qoidalar bir necha obyektda takrorlanayotgan bo'lsa, va muhokama va talablar cheklov atrofida aylanib tursa-yu kodda u protsedura ichida yashirin bo'lsa.
 
 ## 13.25 Agregatlar orasida yakuniy izchillik (Eventual Consistency Between Aggregates)
 
@@ -938,6 +994,8 @@ public class Order {
 }
 // Setter'lar to'plami chaqiruvchini qoidani bilishga majbur qiladi
 ```
+
+**Nomni mijoz testi kashf qiladi.** Evans 10-bobda nom tanlashning amaliy usulini beradi: xulqni yozishdan oldin uni ishlatadigan testni yozing, shunda fikr implementator rejimidan mijoz dasturchi rejimiga o'tadi va interfeys mijozga qulay shaklda chiqadi. Uning misolida bo'yoqlarni qo'shish amali `paint(Paint)` emas `mixIn(Paint)` bo'lib chiqadi, chunki testni yozgan odam "bu bo'yoqqa shu bo'yoqni qo'shaman" deb o'ylaydi. Nomlar umumiy tilga mos bo'lishi kerak, test esa hali kompilyatsiya bo'lmasa ham foyda beradi: u kod yozish vositasidan ko'ra ko'proq interfeys dizaynini kashf etish vositasi bo'lib ishlaydi.
 
 ## 13.28 Amallarning yopiqligi (Closure of Operations)
 
@@ -1104,6 +1162,8 @@ Natija: hodisa ro'yxati, agregat ro'yxati va kontekst xaritasining
 birinchi qoralamasi. Bu kod emas, lekin keyingi butun dizayn shundan chiqadi.
 ```
 
+**Burilish hodisalari va qachon o'tkazmaslik.** Khononov 12-bobda to'rtinchi qadamning natijasiga alohida ma'no beradi: burilish hodisalari (savat ochildi, buyurtma jo'natildi, buyurtma qaytarildi) kontekst yoki fazaning o'zgarishini bildiradi va bo'lajak bounded context chegarasining ko'rsatkichi bo'lib ishlaydi, shuning uchun ularni taymlaynda alohida belgilash kerak. Sakkizinchi qadam oxirida esa tekshiruv bor: har bir buyruq aktor, siyosat yoki tashqi tizim tomonidan chaqirilgan bo'lishi kerak, chaqiruvchisi topilmagan buyruq yo yetishmayotgan tushunchani, yo noto'g'ri modellangan jarayonni ko'rsatadi. Texnikaning qo'llanish chegarasi ham aytiladi: jarayon oddiy yoki ravshan bo'lsa, ya'ni ketma-ket qadamlardan iborat va qiziq biznes logikasi bo'lmasa, EventStorming kam foyda beradi va sessiyaga sarflangan vaqt o'zini oqlamaydi.
+
 ## 13.33 Spring Data bilan domen hodisalari (Domain Events with Spring Data: AbstractAggregateRoot, @DomainEvents)
 
 **Tavsif:** Agregat o'zida ro'y bergan muhim o'zgarishlarni hodisa sifatida ro'yxatga oladi, hodisalar esa agregat saqlanganda avtomatik publish qilinadi - shunday qilib domen kodi `ApplicationEventPublisher`ga bog'lanmaydi. Spring Data buni `@DomainEvents` (publish qilinadigan kolleksiyani qaytaruvchi metod) va `@AfterDomainEventPublication` (ro'yxatni tozalovchi metod) annotatsiyalari bilan qo'llaydi; tayyor baza sinfi - `org.springframework.data.domain.AbstractAggregateRoot<A>` va uning `registerEvent(...)` metodi. Repository proxy `save`/`delete` chaqirig'ida bu metodlarni topib, hodisalarni `ApplicationEventPublisher` orqali yuboradi.
@@ -1228,6 +1288,8 @@ public final class Cargo {                       // Aggregate root
 // kodda aynan shu nomlar bilan turadi, izohda emas.
 ```
 
+**Modelni erta bog'lash, bilvosita tushuncha va UI dagi ikkinchi model.** Evans 1-bobda muvaffaqiyat sabablarining birinchisini modelni imkon qadar tez ishlaydigan kodga bog'lash deb beradi: uning loyihasida infratuzilmasiz, ya'ni persistence va UI siz, avtomatlashtirilgan testlar bilan boshqariladigan sodda prototip shu bog'lanishni yasagan va ekspertlar modelning dasturga qanday aloqadorligini ko'rgach munosabat interaktiv bo'lgan. Shu bobda yondashuv ham o'zgaradi: ekspertdan "dastur nima qilsin" deb so'rash o'rniga ular tilidagi tushunchalarni modellash kerak. 3-bobda Evans teskari holatni ko'rsatadi: tushuncha modelda yo'q bo'lib, skriptlar uni nom konvensiyasi, sort va satr moslash orqali bilvosita keltirib chiqarsa, har yangi format va har yangi funksiya noldan boshlanadi va yagona mumkin test fayldan-faylga solishtirish bo'lib qoladi; yechim tushunchani aniq obyekt qilish va mantiqini nom asosidagi tanishdan mustaqil test qilish. Uchinchi qoida foydalanuvchiga ko'rinadigan model haqida: ko'rsatilgan model implementatsiya modelidan farq qilsa (uning misolida "favorites" aslida fayl bo'lib chiqadi) chalkashlik va xato paydo bo'ladi, shuning uchun ikki modelni bittaga keltirish kerak; ma'lumotni foydalanuvchiga aytmay jimgina o'zgartirish, masalan nomdan noqonuniy belgilarni tashlab yuborish, alohida katta xavf.
+
 ## 13.37 Qo'li ishda bo'lgan modelchilar (Hands-On Modelers)
 
 **Tavsif:** Evans 3-bobda ishlab chiqarish (manufacturing) metaforasini tanqid qiladi: "malakali injener loyihalaydi, kam malakali ishchi yig'adi" taqsimoti dasturda ishlamaydi, chunki dasturlashning hammasi dizayn. Modelchi implementatsiyadan uzilganda u implementatsiya cheklovlarini his qilishni yo'qotadi va modeli amaliy bo'lmaydi; kod yozuvchilar esa model uchun javobgarlikni sezmaganda model dasturga aloqasiz qoladi. Evans buni o'z tajribasi bilan ko'rsatadi: model yaxshi edi, lekin modelning niyati topshiriq paytida yo'qoldi va texnologik platformadagi samarasizlik haqidagi fikr unga oylar o'tib yetib keldi. Xulosa qat'iy: dasturchilar modelchi, kimga yoqsa yoqmasa; shuning uchun loyihani dasturchilar yaxshi modellashtiradigan tarzda tashkil qilish kerak. Bu rollarni butunlay yo'q qilishni talab qilmaydi, faqat modellashtirish va implementatsiyani ikki odamga bo'lishni taqiqlaydi.
@@ -1324,6 +1386,8 @@ jobs:
       - run: ./gradlew test                      # domen invariantlari
       - run: ./gradlew archTest modulithVerify   # model parchalanishi
 ```
+
+**Jamoa hajmi va kontekst soni.** Evans 14-bobda loyihaning o'z tizimi uchun kontekst sonini jamoa hajmiga bog'laydi: zich bog'liq funksiya to'plami ustida ishlayotgan o'n kishidan kam jamoa uchun butun tizimga bitta bounded context aniq tanlov bo'ladi. Jamoa kattalashganda uzluksiz integratsiyani saqlab turish qiyinlashadi (Evans bu ancha kattaroq jamoalarda ham saqlanganini ko'rganini qo'shadi), shunda [Shared Kernel](#134-umumiy-yadro-shared-kernel) qidiriladi va nisbatan mustaqil funksiya to'plamlari har biri o'n kishidan kam bo'lgan alohida kontekstlarga ajratiladi. Agar ikki kontekst orasidagi bog'liqlik faqat bir yo'nalishda bo'lsa, [mijoz-ta'minotchi](#135-mijoz-taminotchi-customer-supplier) munosabati o'rnatiladi. Umumiy nisbat esa bitta: bir kontekstga bir jamoa; bitta jamoa bir necha kontekstni yuritishi mumkin, lekin bitta kontekstda bir necha jamoa ishlashi qiyin, garchi imkonsiz bo'lmasa ham.
 
 ## 13.40 Assertions (Assertions)
 
@@ -1447,6 +1511,9 @@ public record DeliveryWindow(LocalDate earliest, LocalDate latest) {
 // Nom o'zgardi, mas'uliyat ko'chdi: bu kosmetik emas, model refactoringi.
 ```
 
+**Refactoringni boshlash va to'xtatish.** Evans 13-bobda shu jarayonni boshlashning amaliy tartibini beradi. Boshlanish nuqtasi kodda muammo bo'lishi shart emas: kod toza turgan holda ham, agar modelning tili domen ekspertlaridan uzoqlashgan bo'lsa yoki yangi talablar tabiiy joylashmasa, muammoning ildizi domen modelida bo'ladi va buni sezish jarayonning eng qiyin qismi. Keyingi qadam uchun Evans kichik exploration team ni tavsiflaydi: tashabbuskorlar shu domen sohasini biladigan yoki modellashtirishda kuchli bir-ikki dasturchini, nozik joylar bo'lsa domen ekspertini qo'shadi, to'rt-besh kishi yarim soatdan bir yarim soatgacha brainstorm qiladi, UML eskizlari va ssenariylar bilan model sinaladi. Jamoa bir necha kun oralab ikki-uch qisqa uchrashuv o'tkazadi; cho'zish yordam bermaydi, ish to'xtab qolsa, bu bir vaqtda juda katta qismni olishning belgisi va dizaynning kichikroq qismiga diqqat qilish kerak. Evans refactoring qachon qilinishini uch shart bilan beradi: dizayn jamoaning domen haqidagi joriy tushunchasini ifodalamasa, muhim tushunchalar dizaynda yashirin bo'lsa va ularni aniq qilish yo'li ko'rinsa, yoki dizaynning muhim qismini suppleroq qilish imkoni tug'ilsa. Teskari tomoni ham aytilgan: bu har qanday o'zgarishni oqlamaydi va reliz arafasida refactoring qilinmaydi.
+**Bartaraf etilmayotgan nuqson model nuqsoni belgisi.** Evans 8-bobda chuqur modelga o'tish zaruratining yana bir belgisini beradi va u algoritm darajasida ko'rinmaydi. Uning keysida dizayn o'zi yaroqli edi, lekin kutilmagan talablar uni tobora murakkablashtirdi, maxsus holatlar (`Loan Adjustment` kabi) ko'paydi va eng muhimi, algoritmlarni murakkablashtirish bilan ham bartaraf etilmaydigan nuqson, ya'ni yaxlitlash xatolari, saqlanib qoldi. Shu uch belgining birgalikda turishi algoritmning emas, modelning asosiy dizayn muammosini ko'rsatadi: tushunchalar noto'g'ri joylashtirilgani uchun hisob-kitob har qadamda qayta yaxlitlanishga majbur bo'lgan. Amalda bu shunday sinov beradi: bitta nuqsonni ikki-uch marta tuzatib ham u boshqa shaklda qaytib kelsa, keyingi tuzatish algoritmda emas, modelda qidiriladi.
+
 ## 13.44 Breakthrough (Breakthrough)
 
 **Tavsif:** Evans 8-bobni butunlay bitta hikoyaga bag'ishlaydi: ketma-ket refactoringlardan keyin loyihada modelning sakrashi (breakthrough) yuz berdi va qattiq kodning katta bo'lagi chuqurroq modelning sodda ifodasiga almashdi. Evans ikki muhim xususiyatini ko'rsatadi. Birinchisi, bu rejalashtirilmaydi: imkoniyat ko'pincha qo'rqinchli ko'rinadi, chunki oddiy refactoringdan ko'ra ham imkoniyati, ham xavfi katta, vaqti esa noqulay bo'lishi mumkin. Ikkinchisi, u bo'sh joydan chiqmaydi: Evans "Focus on Basics" deb maslahat beradi - sakrashni ko'zlab falaj bo'lmaslik kerak, aksincha bilim yig'ish va mustahkam umumiy tilni o'stirish, yashirin tushunchalarni aniq qilish, dizaynni egiluvchan qilish va modelni distillash kerak; bular oldindan aytib bo'ladigan va aniqlikni oshiradigan vositalar va sakrash odatda shulardan keyin keladi. Hikoyadagi qaror ham ibratli: jamoa menejerga aniq savollarga aniq javob berdi (qancha vaqt ketadi, muammoni bu o'zgarishsiz hal qilish mumkinmi, keyingi relizda yurish mumkinmi, bu to'g'ri ishmi) va natijada uch haftalik ish bilan model butun ilovaning birlashtiruvchi mavzusiga aylandi, marketing ham shu til bilan gapira boshladi.
@@ -1532,7 +1599,7 @@ narx keshining TTL qiymati.
 **Spring'da qayerda uchraydi:** Belgilash uchun jMolecules `@AggregateRoot` va `@ValueObject` annotatsiyalari, paket darajasida `package-info.java` izohi va Spring Modulith modul metadatasi ishlatiladi. Distillash hujjati uchun esa `Documenter` yasagan C4 va PlantUML diagrammalari qulay, chunki ular koddan olinadi. ArchUnit testi bilan core paketga faqat ruxsat etilgan bog'liqlik kirishini majburlash mumkin: bu belgini hujjatdan qoidaga aylantiradi.
 
 **Qo'llanish keyslari:**
-- Core modul uchun bir sahifalik distillash hujjati yozib, uni repozitoriyda saqlash.
+- Core modul uchun 3-7 siyrak sahifalik distillash hujjati yozib, uni repozitoriyda saqlash.
 - `package-info.java` da modulning core ekanini va asosiy agregatlarni sanab o'tish.
 - Modulith `Documenter` ni build'ga qo'shib, diagrammani har relizda qayta yasash.
 - Core paketdagi sinflarni jMolecules annotatsiyalari bilan belgilab, rolni kodda ko'rinadigan qilish.
@@ -1554,6 +1621,8 @@ public final class PriceList { /* ... */ }
 @ValueObject
 public record Share(Percentage percentage) { }
 ```
+
+**Hujjat hajmi va uning jarayon asbobi sifatidagi roli.** Evans 15-bobda distillash hujjatining hajmini aniq beradi: juda qisqa, 3-7 siyrak sahifa, diagrammalar bilan birga. Bir sahifalik hajm boshqa narsa uchun: [domen qarashlari bayonoti](#1346-domen-qarashlari-bayonoti-domain-vision-statement) uchun Evans taxminan bir sahifalik matn aytadi, u core domain va uning qiymatini umumiy so'zlar bilan tasvirlaydi. Ikki hujjat ikki vazifada: bayonot umumiy yo'nalish beradi, distillash hujjati esa aniq core elementlari va ular orasidagi asosiy o'zaro ta'sirlarni ko'rsatib, o'quvchini kodning kerakli joyiga yo'naltiradi. Hujjat shu bilan jarayon asbobiga ham aylanadi. Evans buni XP konteksida beradi: nazariyada har juft istalgan kodni o'zgartira oladi, lekin core o'zgarishi katta ta'sirga ega. Distillash hujjatini o'zgartirishni talab qilmaydigan o'zgarish, ya'ni core dan tashqaridagi yoki faqat tafsilotga tegadigan ish, to'liq avtonom bajariladi. Agar kod o'zgarishi hujjatni ham o'zgartirishni talab qilsa, chunki core elementlari yoki munosabatlari asosiy darajada o'zgaryapti yoki core chegarasi kengayib yoki torayib ketyapti, u holda avval jamoa bilan maslahatlashiladi, o'zgarishdan keyin esa hamma a'zoga darhol xabar beriladi va hujjatning yangi versiyasi tarqatiladi. Epilogda Evans shu hujjatning topshirishdagi qiymatini keltiradi: loyihani yangi jamoaga berganda to'liq test to'plami va distillash hujjati birga topshirilgan, jamoa hujjatni tadqiqotlarida yo'riqnoma qilgan va umumiy til jonli qolgan. Qo'shimcha xulosa: dizayn muvaffaqiyati uning uzoq yashashi bilan o'lchanmaydi, asosiy tizimni shaffof bo'lmagan qilsangiz u tegib bo'lmaydigan legacy bo'lib abadiy qoladi, chuqur model va egiluvchan dizayn esa yangi talab chiqqanda breakthrough ga yo'l beradi.
 
 ## 13.48 Kogeziyali mexanizmlar (Cohesive Mechanisms)
 
@@ -1672,6 +1741,8 @@ static final ArchRule struktura_yonalishi = layeredArchitecture().consideringOnl
 // Qoida buzilsa build yiqiladi: struktura tili jamoada saqlanadi.
 ```
 
+**Struktura qanchalik qat'iy bo'lishi kerak.** Evans 16-bobda katta masshtabli struktura patternlarini qat'iylik bo'yicha oraliqqa joylaydi: eng yumshog'i [tizim metaforasi](#1353-tizim-metaforasi-system-metaphor), eng qat'iyi [ulanadigan komponent frameworki](#1356-ulanadigan-komponent-frameworki-pluggable-component-framework), va hatto bitta pattern ichida qoidalarni qanchalik qat'iy qilish bo'yicha tanlov qoladi. Tarozi ikki tomonga tortadi: qat'iyroq struktura bir xillikni oshiradi, dizaynni o'qishni osonlashtiradi va mos tushsa dasturchilarni yaxshi dizaynga undaydi, lekin ular muhim qarorlar uchun zarur erkinlikni ham olib qo'yadi. Aniq belgilangan aloqa yo'llari bounded context lar orasida va turli implementatsiya texnologiyalari bo'lgan heterogen tizimda umuman amaliy emas. Shuning uchun Evans bitta maslahatni qat'iy qo'yadi: framework qurib, katta masshtabli strukturaning amalga oshirilishini tartibga solish vasvasasiga qarshi turing. Strukturaning eng muhim hissasi tushunchaviy izchillik va domen haqidagi tushuncha, shu sababli har bir struktura qoidasi ishlab chiqishni osonlashtirishi kerak, aks holda u qoida emas to'siq bo'ladi.
+
 ## 13.52 Rivojlanuvchi tartib (Evolving Order)
 
 **Tavsif:** Evans 16-bobni aynan shu pattern bilan boshlaydi, chunki u qolgan struktura patternlariga shart qo'yadi. Tartibsiz dizaynning narxini ko'rgan jamoalar ishlab chiqishni cheklaydigan arxitekturalar joriy qiladi. Ba'zi texnik arxitekturalar haqiqiy texnik muammoni (tarmoq, persistence) hal qiladi, lekin arxitektura ilova va domen modeli hududiga kirganda o'zi muammo tug'diradi: dasturchilarga muammoga mos model qurishga xalaqit beradi, eng ambitsiyali variantlari esa ularni dasturlash tilining tanish kuchidan ham mahrum qiladi. Texnik yoki domen yo'nalishli bo'lishidan qat'i nazar, arxitekturalar ko'p oldindan qabul qilingan dizayn qarorini qotirib qo'yadi va talablar o'zgargan, tushuncha chuqurlashgan sari bu qisqich bo'lib qoladi. Evans ikki chetni ham rad etadi: nazoratsiz erkinlik hech kim butun holda tushunmaydigan tizim beradi, qattiq arxitektura esa ilovani struktura ostida soddalashtirishga yoki strukturani buzib tashlashga olib keladi. Muammo qoidalarning borligida emas, balki ularning qattiqligi va manbasida. Shuning uchun struktura ilova bilan birga rivojlanishi, hatto butunlay boshqa turga o'tishi kerak va u detalli dizayn qarorlarini haddan ortiq cheklamasligi lozim.
@@ -1698,6 +1769,7 @@ static final ArchRule modul_mustaqilligi = slices()
 // Qoida ham shu PR da o'zgaradi, alohida qo'mitada emas.
 ```
 
+**Strukturani keyinroq o'zgartirish narxini boshqarish.** Evans 16-bobda yakuniy strukturaning boshida ma'lum bo'lmasligini tan oladi: foydali struktura faqat domen va muammoni chuqur tushunishdan chiqadi, bunga esa iterativ yo'l bilan boriladi, ya'ni strukturani yo'l-yo'lakay refactoring bilan joriy qilish kerak bo'ladi. Narxni kamaytirishning uch yo'li beriladi. Minimalizm: strukturani sodda va yengil ushlash, qamrovli qilishga urinmaslik, faqat eng jiddiy masalani hal qilib qolganini alohida ko'rish; boshida [tizim metaforasi](#1353-tizim-metaforasi-system-metaphor) yoki [mas'uliyat qatlamlari](#1354-masuliyat-qatlamlari-responsibility-layers) kabi bo'sh struktura ham tartibsizlikdan saqlaydi. Muloqot va intizom: strukturaga yangi kodda ham, refactoringda ham amal qilish uchun uni butun jamoa tushunishi kerak, shuning uchun atamalari va munosabatlari umumiy tilga kirishi shart, aks holda struktura kodda ko'rinmagani va funksional testlar unga tayanmagani uchun asta yemiriladi. Distillash: mexanizmlar va generic subdomenlarni core domen'dan ajratish qayta tuzish yukini kamaytiradi, chunki qayta tuziladigan narsaning o'zi kamayadi. Evans kutilmagan kuzatuvni ham qo'shadi: katta masshtabli strukturasi bor dizaynni o'zgartirish strukturasi yo'q dizaynni o'zgartirishdan osonroq, hatto bir tur strukturadan boshqasiga o'tganda ham, va ikki marta struktura almashgan tizim yana osonroq o'zgaradi.
 ## 13.53 Tizim metaforasi (System Metaphor)
 
 **Tavsif:** Metaforik fikrlash dasturlashda, ayniqsa modellashtirished, hamma joyda uchraydi, lekin Extreme Programming'dagi "metaphor" amaliyoti undan aniq ma'noda foydalanadi: butun tizimni tartibga soluvchi metafora. Evans 16-bobda firewall misolini beradi: bino yonmasligi uchun qurilgan devor kabi dasturiy "devor" mahalliy tarmoqni tashqi tarmoq xavflaridan himoya qiladi; shu metafora tarmoq arxitekturalariga ta'sir qildi va butun mahsulot kategoriyasini shakllantirdi, yangi odamlar ham uni darhol tushunadi. Lekin Evans metaforaning ikkinchi yuzini ham ko'rsatadi: bu noaniq analogiya va u haddan ortiq tanlovchi bo'lmagan, kerakli almashinuvga ham to'sqinlik qiladigan va devor ichidagi tahdiddan himoya qilmaydigan to'siqlarning paydo bo'lishiga olib keldi. Struktura sifatida tizim metaforasi bo'sh va oson tushuniladigan bo'lgani uchun turli modellar unga taqribiy mos kelishi mumkin, shuning uchun u bir necha bounded context'da ishlatilib, ular orasidagi ishni muvofiqlashtirishga yordam beradi. Evans ogohlantirishni ham aniq beradi: metafora XP ning asosiy amaliyotlaridan biri bo'lgani uchun mashhur bo'ldi, lekin kam loyiha haqiqatan foydali metafora topdi va uni zarar keltiradigan domenlarga ham tiqishtirishga urindilar.
@@ -1754,6 +1826,8 @@ Capability   TransitLeg, VesselSchedule, Customer     <- tayanch resurslar, seki
 # Relaxed layered: Operations bir necha pastdagi qatlamga murojaat qilishi mumkin.
 ```
 
+**Pastki qatlam yuqoriga event orqali xabar beradi.** Evans 16-bobda yo'nalish qoidasining amaliy muammosini ochadi. Operations qatlami dunyoni borligicha qabul qilishi kerak: detal noto'g'ri mashinaga qo'yilgan bo'lsa ham bu fakt shartsiz yoziladi, chunki qatlamning vazifasi haqiqatni aks ettirish. Lekin shu istisno holat yuqoridagi qaror qabul qiladigan qatlamga yetib borishi kerak, Operations esa yuqori qatlamlar haqida hech narsa bilmaydi va ikki tomonlama bog'liqlik yaratilmasligi kerak. Yechim event mexanizmi: pastki qatlam obyektlari holati o'zgarganda event chiqaradi, yuqoridagi Policy obyektlari o'zlariga qiziq eventlarni tinglaydi, qoida buzilganda esa qoidaning o'z ta'rifiga kiritilgan harakat bajariladi yoki yana yuqoriroq qatlam uchun navbatdagi event chiqariladi. Evans bank misolida buni ko'rsatadi: aktiv qiymati o'zgaradi (operations), portfel segmentlarining qiymati siljiydi, taqsimlash limitidan oshganda (policy) treyder ogohlantiriladi va u balansni tiklaydi.
+
 ## 13.55 Bilim darajasi (Knowledge Level)
 
 **Tavsif:** Evans 16-bobda bu patternni Martin Fowler ning *Analysis Patterns* kitobidan oladi va ta'rifni ham shu manbadan keltiradi: bir guruh obyekt boshqa guruh obyekt qanday xatti-harakat qilishi kerakligini tavsiflaydi. Pattern modelning bir qismini foydalanuvchi qo'lida plastik qilish kerak bo'lganda, lekin uni kengroq qoidalar to'plami bilan cheklash lozim bo'lganda ishlatiladi: entity'lar orasidagi rol va munosabatlar o'rnatish paytida yoki hatto ishlash vaqtida o'zgarishi kerak bo'lgan konfiguratsiyalanadigan xatti-harakat talablariga javob beradi. Evans muammoni "accountability" modeli misolida ko'rsatadi: tashkilotlar odam, kichik tashkilot, ular o'ynaydigan rol va munosabatlardan tashkil topgan, lekin bu rol va munosabatlarni boshqaruvchi qoidalar har tashkilotda juda farq qiladi - bir kompaniyada "Director" boshqaradigan "department" "Vice President" ga hisobot beradi, boshqasida nomlar ham, ierarxiya ham boshqa. Taxminlarga qurilgan odatiy ilovada foydalanuvchilar maydonlarni boshqacha ishlatishni boshlaydi, ilovaning xatti-harakati esa semantika o'zgargani uchun xato ishlaydi; keyin ular chetlab o'tish yo'llarini o'ylab topadi va tizimni o'zgartirish yoki almashtirish paytida funksiyalarning haqiqiy ma'nosi boshqa ekani ma'lum bo'ladi. Evans buni REFLECTION patternining domen qatlamiga qo'llanishi deb ham ta'riflaydi.
@@ -1792,6 +1866,8 @@ public class Ticket {
     }
 }
 ```
+
+**Bilim darajasi til reflection i emas va qatlam ham emas.** Evans 16-bobda ikki aniq chegara qo'yadi. Birinchisi: dasturlash tilining reflection vositalari domen modelining bilim darajasini qurishda ishlatilmaydi, chunki ular til konstruksiyalarining o'z strukturasini va xulqini tavsiflaydi; bilim darajasi esa oddiy obyektlardan quriladi. Ikkinchisi nom haqida: pattern ataylab "bilim qatlami" deb atalmagan, chunki qatlamlashga o'xshasa ham reflection da bog'liqlik ikki tomonga yuradi, [mas'uliyat qatlamlarida](#1354-masuliyat-qatlamlari-responsibility-layers) esa pastki qatlam yuqorisini bilmaydi; shu sababli bilim darajasi boshqa katta masshtabli strukturalar bilan birga yashay oladi. Pattern borligini ko'rsatadigan bilvosita belgi ham bor: Evans ning `Employee Type` misolida tahrir huquqi cheklangan obyektlar (faqat super foydalanuvchi va faqat kompaniya siyosati o'zgarganda), kundalik tahrir esa operatsion darajada; narsa va narsa turi munosabati bilan birga bu bilim darajasi borligini ko'rsatadi. O'sha misolda shu ko'rinish yashirin tushunchani ham ochgan: `Employee Type` payroll bilan o'zboshimchalik bilan aralashgan edi va keyin nafaqa rejasi hamda payroll ajratilgan. Oxirgi ogohlantirish: sozlashni amalga oshiradigan foydalanuvchi amalda meta-darajali dasturchi ko'nikmasini talab qiladi va xato qilsa ilova noto'g'ri ishlaydi, shuning uchun pattern faqat sozlash haqiqatan hal qiluvchi bo'lgan nuqtalarga qo'llanadi; struktura majburiy emas va foydasi tugasa tashlanishi mumkin.
 
 ## 13.56 Ulanadigan komponent frameworki (Pluggable Component Framework)
 
@@ -1866,6 +1942,8 @@ public final class Ticket {
 // Khononov misoli C# da; bu yerda g'oya Java ga o'tkazilgan:
 // `dynamic` dispatch o'rniga `TicketState.with(event)` ishlatilgan.
 ```
+
+**Snapshot mezoni, log jadvali va parallel yozish.** Khononov 7-bobda uch amaliy qoidani beradi. Snapshot optimizatsiya bo'lib, uni oqlash kerak: hodisalardan holatni tiklash narxi agregat umri bo'yicha kutilgan hodisa soniga qarab o'lchanadi, kitob bo'yicha sezilarli sekinlik agregatda 10000 dan ortiq hodisadan keyin ko'rinadi, ko'p tizimda esa agregat umri 100 hodisadan oshmaydi; shu sababli snapshot ni qo'shishdan oldin agregat chegarasini qayta tekshirish tavsiya qilinadi, chunki muammo ko'pincha hodisa sonida emas chegarada bo'ladi. Ikkinchisi: audit uchun log fayl, log jadvali yoki trigger tarixi hodisa manbaligining o'rnini bosmaydi. Log fayl ikki xotiraga yozish bo'lib eventual nomuvofiqlik beradi, alohida log jadvali keyingi dasturchining yozishni unutishi va sxemaning tartibsizlashishi bilan xavfli, trigger asosidagi tarix esa nima o'zgarganini beradi, lekin nega o'zgarganini bermaydi va shu sababli yangi proyeksiya qurish imkonini cheklaydi. Uchinchisi parallel yozish haqida: hodisa manbali modelda ziddiyat chiqqanda shunchaki xato bermang, o'qish va yozish orasida qo'shilgan hodisalarni o'qib oling va ular urinilayotgan amalga haqiqatan zid yoki zid emasligini biznes qoidasi bilan hal qiling.
 
 ## 13.58 Model tarjimasi (Model Translation)
 
@@ -1956,6 +2034,8 @@ partnership -> customer-supplier    jamoa boshqa joyga ko'chdi, muloqot pasaydi
 customer-supplier -> separate ways  integratsiya narxi takrorlashdan qimmat bo'ldi
 keng bounded context -> ikki kontekst   yangi jamoa qo'shildi, egalik ajratildi
 ```
+**Tur o'zgarsa implementatsiya joyi ko'chadi, o'sishda uch daraja tekshiriladi.** Khononov 11-bobda subdomen turining o'tishi faqat integratsiya patternini emas, implementatsiya joyini ham o'zgartirishini ko'rsatadi. Supporting core ga aylansa uni outsource qilmasdan ichkariga olish kerak, chunki core ustidan nazorat yo'qolmasligi lozim. Core supporting ga tushsa teskarisi: uni outsource qilib ichki jamoani yangi core ga bo'shatish mumkin. Ilgari ajralgan yo'llar bilan takrorlangan subdomen core bo'lib chiqsa, takrorlashni to'xtatib mijoz-ta'minotchi munosabatiga o'tiladi, chunki core ni bitta jamoa yuritishi kerak. O'sish vektori uchun esa Khononov uch darajani qayta tekshirishni aytadi: subdomenni bog'liq use case to'plami bo'yicha bo'lish, kontekstni muammoga yo'naltirilgan kontekstlarga ajratib "hamma ishning ustasi" bo'lishiga yo'l qo'ymaslik, va agregatni kuchli izchil ma'lumot bo'yicha kichik tutish. Qo'shimcha kuzatuv: agregatdan ajratilgan funksiya ko'pincha yashirin modelni ochadi va uni alohida kontekstga chiqarish asosli bo'lib qoladi.
+
 ## 13.61 Analiz patternlarini qo'llash (Applying Analysis Patterns)
 
 **Tavsif:** Evans 11-bobda boshqa loyihada sinalgan tayyor modelni o'z domeniga olib kirishni ko'rib chiqadi va Martin Fowler ning *Analysis Patterns* kitobidagi ta'rifga tayanadi: analiz patterni biznes modellashtirishda takrorlanadigan qurilishni ifodalovchi tushunchalar guruhi. U texnologiya yechimi emas va qutidan chiqqanicha ishlamaydi: boshlang'ich nuqta, undan keyin refactoring va tajriba davom etadi. Evans misolida dasturchilar hisob-kitob bobidan Account, Entry va Transaction tushunchalarini oladi; domen eksperti bilan muhokamada Transaction mos kelmasligi ma'lum bo'ladi, chunki to'lov hisoblangan foizdan kech kelishi mumkin. Transaction tashlanadi, Account va Entry qoladi, muhokamadan esa yangi atama "accrual" umumiy tilga kiradi. Evans bitta qat'iy qoida qo'yadi: taniqli patterndan atama olinsa, tashqi shakl qancha o'zgarsa ham atama ortidagi asosiy tushuncha buzilmasin; ma'no o'zgargan bo'lsa, nom ham o'zgartiriladi. Sababi ikkita: pattern o'zida keyingi og'riqdan qutqaradigan tushunchani saqlaydi va keng tanilgan atama [umumiy til](#131-umumiy-til-ubiquitous-language) ni boyitadi.
@@ -1983,6 +2063,8 @@ record Account(AccountId id, List<Entry> entries) {
 }
 ```
 
+**Posting rule ni kim va qachon ishga tushiradi.** Evans 11-bobda analiz patternini amalga oshirishning aniq bir qarorini ko'rsatadi: yozuvga (`Entry`) reaksiya qiladigan qoidalar to'plami uchun bitta aniq ishga tushirish nuqtasi va kirish yozuvlarini aniqlash mas'uliyati bo'lishi kerak. Uch rejim bor. Eager firing: yozuv hisobga tushgan zahoti qoidalar ishga tushadi va barcha yangilanishlar darhol bajariladi. Hisobga asoslangan rejim: hisobga xabar beriladi va u o'z qoidalarini oxirgi ishga tushishdan keyin qo'shilgan yozuvlar uchun yuritadi. Qoidaga asoslangan rejim: tashqi agent qoidaga ishlash vaqti kelganini aytadi. Rejim nomlari umumiy tilga kiradi, chunki "qoida qachon ishladi" savoli biznes savoliga aylanadi. Tanlov esa domen bilan belgilanadi: kechikib keladigan to'lovlar bor joyda eager rejim ishlamaydi, chunki hisob-kitob natijasi keyinchalik o'zgaradi.
+
 ## 13.62 Strategiyani birga yig'ish (Bringing the Strategy Together)
 
 **Tavsif:** Evans 17-bobda strategik patternlarni alohida emas, birga qo'llash tartibini beradi. Uch asosiy printsip - kontekst, [distillation](#1345-distillation-distillation) va [katta masshtabli struktura](#1351-katta-masshtabli-struktura-large-scale-structure) - bir-birining o'rnini bosmaydi, to'ldiradi: struktura bitta bounded context ichida ham yashashi mumkin, [kontekst xaritasi](#133-kontekst-xaritasi-context-map) ni butun loyiha bo'ylab tashkil qilishi ham mumkin. Legacy tizim tanlangan strukturaga mos tuzilmagan bo'lsa, struktura tashlanmaydi: legacy ning struktura ichidagi haqiqiy o'rni tan olinadi va uning xizmatlari faqat bir necha qatlamga tegishli ekani legacy rolini qisqa tasvirlaydi. Ish baholashdan boshlanadi, Evans buni "assessment first" deb qo'yadi: avval mavjud holat haqida aniq javob olinadi, keyin nima eng shoshilinch ekani ko'rinadi. Strategiyani kim belgilashi ham patternning qismi: yuqoridan beriladigan arxitektura kam ishlaydi, ishlaydigan ikki uslub bor - struktura ilova jamoasida [rivojlanuvchi tartib](#1352-rivojlanuvchi-tartib-evolving-order) bilan o'sishi, yoki ilovaga yo'naltirilgan arxitektura jamoasi ilova jamoalari bilan teng hamkor bo'lishi. Qaror samarali bo'lishi uchun Evans shartlar qo'yadi: butun jamoaga yetib borishi, feedbackni singdirishi, evolyutsiyaga ruxsat berishi, eng kuchli dasturchilarni ilova jamoalaridan tortib ketmasligi, minimalizm bilan yozilishi.
@@ -2007,7 +2089,549 @@ record Account(AccountId id, List<Entry> entries) {
 6. Dasturchilar domenni bilishadimi, ular domenga qiziqadimi?
 ```
 
-## 13.63 Amalda qo'llash
+**Obyekt mutaxassis, dasturchi generalist; master plan o'rniga bosqichma-bosqich o'sish.** Evans 17-bobda strategik dizaynni alohida odamlar ishi deb tushunishdan ogohlantiradi. Yaxshi obyekt dizayni har obyektga tor va aniq mas'uliyat beradi, lekin jamoadagi munosabatlarni shunday tartibga solishga urinish xato: yaxshi loyihada dasturchilar framework bilan o'ynaydi, arxitektorlar ilova kodi yozadi va hamma hamma bilan gaplashadi. Sabab aniq: [egiluvchan dizayn](#1330-egiluvchan-dizayn-supple-design) tafsilotga bog'liq bo'lgani uchun uni kod bilan ishlaydigan odam qiladi, strategik dizayn esa ilova dizaynidan o'sib chiqadi. Dizaynerlar biznesni bilmasin va domen ekspertlari texnologiyani bilmasin degan mutaxassislashtirish domainga yo'naltirilgan dizaynni sustlashtiradi; shart esa ikki tomonlama, strategiya jamoasida domen bilimi, har bir ilova jamoasida esa kuchli dizaynerlar bo'lishi kerak. Shu bobdagi alohida qaydda Evans Alexander ning Oregon tajribasiga tayanib master plan nega ishlamasligini keltiradi: u organik emas totalitar tartib yaratadi, o'zgarishga moslashmaydi va shuning uchun eskiradi va amalda bajarilmay qo'yadi, bajarilgan qismida ham qolgan joylar orasidagi bog'lanishlarni yetarlicha aniqlamaydi, va mavjudligining o'zi foydalanuvchini begonalashtiradi. O'rniga barcha a'zolar har qadamda qo'llaydigan tamoyillar to'plami qo'yiladi va bu [rivojlanuvchi tartib](#1352-rivojlanuvchi-tartib-evolving-order) ning asosi bo'ladi.
+
+## 13.63 Taktik dizayn migratsiyasi (Migrating Between Business Logic Patterns)
+
+**Tavsif:** [Biznes logika shaklini tanlash evristikasi](#1359-biznes-logika-shaklini-tanlash-evristikasi-business-logic-implementation-patterns-heuristic) boshlang'ich tanlovni beradi, lekin shakl bir marta tanlanib qolmaydi: subdomen turi o'zgarsa yoki qoidalar ko'paysa, dizayn yangi murakkablikni ko'tarmay qo'yadi. Khononov 11-bobda signalni ham, o'tish yo'lini ham beradi. Signal: yangi funksiya qo'shish og'riqli bo'lib borsa, bu dizayn muammoning murakkablik darajasini qo'llab-quvvatlamayotganini bildiradi va biznes domen hamda dizayn qarorini qayta baholashga chaqiriq bo'ladi. O'tish zanjiri bosqichli. Transaction Script dan Active Record ga: ikkisi ham protsedural skript, farq faqat ma'lumot strukturasini modellashtirishda, shuning uchun ma'lumot bilan ishlash chigallashganda strukturalar active record obyektlariga yopiladi. Active Record dan Domain Model ga o'tish to'rt qadamli: birinchi, qaysi strukturalar o'zgarmas obyekt bo'la olishini aniqlab, ularga tegishli mantiqni ham [qiymat obyekti](#1314-qiymat-obyekti-value-object) ichiga ko'chirish; ikkinchi, barcha setter larni private qilish, kompilyatsiya ataylab buziladi va aynan shu xatolar holatni tashqaridan o'zgartirayotgan joylarni ko'rsatadi; uchinchi, qat'iy izchillik talab qiladigan ierarxiyalarni topib, eng kichik tranzaksiya chegarasi bo'yicha [agregat](#1315-agregat-va-agregat-ildizi-aggregate--aggregate-root) larga ajratish va tashqi agregatlarga faqat ID bilan havola qoldirish; to'rtinchi, har agregatda ildizni belgilab, ichki obyektlarning metodlarini private qilish. Faqat agregat chegarasi to'g'ri tortilgandan keyin [hodisa manbali domen modeli](#1357-hodisa-manbali-domen-modeli-event-sourced-domain-model) ga o'tiladi, va bu yerdagi yagona qiyin masala mavjud agregatlarning tarixi: holat bazada bor, uni keltirgan o'tishlar yo'q. Khononov ikki yo'lni beradi:
+
+- **`Generating Past Transitions`:** har agregat uchun taxminiy hodisa oqimi hosil qilinadi, shunda oqim proyeksiya qilinganda asl holat ko'rinishi aynan chiqadi; tekshirish shu solishtirish bilan bo'ladi. Kamchiligi: haqiqiy tarix tiklanmaydi. Khononovning misolida mijoz bilan necha marta aloqa qilinganini holat saqlamagan, ya'ni nechta `contacted` hodisasi yo'qolgani noma'lum qoladi.
+- **`Modeling Migration Events`:** tarix yo'qligi tan olinadi va migration hodisasi bilan aniq belgilanadi, mavjud agregatlarning oqimi shu hodisadan boshlanadi. Afzalligi: hech kim oqim butun hayot tsiklini qamragan deb xato taxmin qilmaydi. Kamchiligi: legacy izi event store da abadiy qoladi va proyeksiyalar doim migration hodisasini hisobga olishi shart.
+
+**Spring'da qayerda uchraydi:** Setter larni yopish Spring stack ida hech narsani buzmaydi: Hibernate maydon darajasida ishlashi uchun `@Access(AccessType.FIELD)` yetarli, Jackson uchun esa DTO alohida bo'ladi. Yopilgan setter qaytib kelmasligini ArchUnit qoidasi ushlab turadi. Migratsiya bir relizda bajarilmaydi, shuning uchun eski va yangi shakl vaqtincha birga yashaydi: domen qatlamida yangi model, repozitoriy implementatsiyasida eski jadvalga mapping. Migration hodisasi oddiy hodisa turi (`LeadMigratedFromLegacy`) bo'lib, event jadvaliga boshqalar bilan bir xil yoziladi va proyeksiya tinglovchisi uni alohida `case` bilan qabul qiladi.
+
+**Qo'llanish keyslari:**
+- Supporting subdomen core ga aylanganda Active Record kodini bosqichma-bosqich Domain Model ga o'tkazish.
+- Setter larni yopib, kompilyatsiya xatolari ro'yxatini holat o'zgartiruvchi mantiq inventarizatsiyasi sifatida ishlatish.
+- To'lov subdomen'ini event-sourced ga o'tkazishdan oldin agregat chegarasini state-based modelda sinash.
+- Legacy dan ko'chirilgan agregatlarni migration hodisasi bilan belgilab, proyeksiyani shunga moslash.
+
+**Ehtiyot bo'ling:** Eng qimmat xato - Transaction Script yoki Active Record dan to'g'ridan-to'g'ri event-sourced modelga sakrash. Agregat chegarasi noto'g'ri tortilgan bo'lsa, state-based modelda uni o'zgartirish oddiy refactoring, event store da esa yozilgan va o'zgarmas hodisalarni qayta talqin qilish demakdir. `Generating Past Transitions` ni "tarix tiklandi" deb taqdim qilish ham xato: u faqat joriy holatga teng keladigan taxmin va auditga shu sifatda ko'rsatiladi.
+
+```java
+// Oldin: active record, holatni tashqaridagi skript o'zgartiradi
+// public class Player { public int points; }
+// p.points *= 1 + pct / 100.0;   // mantiq obyekt tashqarisida
+
+// Keyin: setter yo'q, mantiq chegara ichida, nom biznes tilidan
+public class Player {
+    private final PlayerId id;
+    private Points points;
+
+    public Player(PlayerId id, Points points) {
+        this.id = id;
+        this.points = points;
+    }
+
+    public void applyBonus(BonusPercentage bonus) {
+        this.points = points.increasedBy(bonus);   // invariant shu yerda
+    }
+
+    public Points points() { return points; }
+}
+// Ikkinchi qadamning foydasi aynan kompilyatsiya xatosida: `p.points *= ...`
+// endi yozilmaydi va xatolar ro'yxati holat o'zgartiruvchi mantiqning
+// hamma joyini ko'rsatadi.
+```
+
+## 13.64 Subdomen topiladi, Bounded Context loyihalanadi (Subdomains Versus Bounded Contexts)
+
+**Tavsif:** [Core / supporting / generic subdomenlar](#1312-core--supporting--generic-subdomenlar-core--supporting--generic-subdomains) va [chegaralangan kontekst](#132-chegaralangan-kontekst-bounded-context) yozuvlari ikki chegarani alohida beradi, lekin ularni ajratadigan asosiy farq boshqa: Khononov 3-bobda aytadiki subdomen biznes strategiyasini tahlil qilish orqali topiladi, Bounded Context esa loyihalanadi. Use case larni va talablarni biznes belgilaydi, injener ularni faqat aniqlaydi; model chegarasini tanlash esa strategik dizayn qarori. Shundan muhim natija chiqadi: ikki chegaraning 1:1 mos kelishi majburiy emas. Khononov uch variantni ham qonuniy deb sanaydi: kichik tizim uchun butun biznes domenga bitta model; modellar bir-biriga zid kelganda domen ekspertlarining aqliy modeliga qarab bo'lish; modellar hamon katta bo'lsa har subdomenga alohida kontekst. Kontekst o'lchami o'zi qaror emas: keng chegarada umumiy tilni izchil ushlash qiyinlashadi, mayda chegarada integratsiya ustamasi oshadi, shuning uchun o'lcham biznes ehtiyoji va tashkiliy cheklovga moslanadi. Bitta qat'iy taqiq bor: bir-biriga bog'liq funksiyani bir necha kontekstga bo'lib tashlamaslik, aks holda bir xil talab ikki kontekstni birga o'zgartirishga va birga deploy qilishga majbur qiladi.
+
+- **Subdomen chegarasini topish usuli:** boshlang'ich nuqta kompaniyaning tashkiliy sxemasi va bo'limlari, lekin bu juda yirik bo'laklar, shuning uchun har bo'limning ichki ishi distillanadi. Khononovning misolida mijozlarga xizmat bo'limi ichidan help desk va telefoniya generic, smena jadvali supporting, murojaatni o'xshash tajribaga ega agentga yo'naltirish algoritmi esa core bo'lib chiqadi. To'xtash mezoni ham bor: subdomen bir-biriga bog'liq use case to'plamiga o'xshaydi, ular odatda bir aktyor, bir xil biznes entitetlar va yaqin bog'langan ma'lumot bilan ishlaydi.
+- **Brownfield da core ni aniqlash:** birinchi belgi raqobatchida yo'q "secret sauce", ya'ni patent yoki o'zi yozilgan algoritm, va u texnik bo'lishi shart emas. Khononov ikkinchi, kuchli lekin yoqimsiz evristikani ham beradi: hamma injener yomon ko'radigan, lekin biznes qayta yozishga jur'at etmaydigan legacy ko'pincha aynan core bo'lib chiqadi. Mezon shu: uni tayyor yechim bilan almashtirib bo'lmaydi (bo'lsa, u generic edi) va unga har tegish biznes xavfi. Generic belgisi tayyor mahsulot, obuna yoki open source bilan yopilishi, supporting esa qolgani. Hammasini topish shart emas: umumiy tuzilish chiziladi va diqqat siz ishlayotgan tizimga tegishli subdomenlarga qaratiladi.
+
+**Spring'da qayerda uchraydi:** Ajratishning amaliy natijasi paket va modul tuzilishida ko'rinadi. Subdomen chegarasi avval mantiqiy chegara bo'ladi: Spring Modulith `@ApplicationModule` va paket nomi subdomenga qarab tanlanadi, kontekst chegarasi esa alohida deploy birligiga aylanishi ham, aylanmasligi ham mumkin. Bitta kontekst ichida bir necha subdomen yashashi mumkin, shuning uchun `ApplicationModules.verify()` qoidalari subdomen chegarasini modul darajasida ushlaydi. Baza tomonida shu chegarani alohida PostgreSQL `schema` ifodalaydi va bu stored procedure bilan yozilgan mantiqni ham chegaraga tortadi.
+
+**Qo'llanish keyslari:**
+- Tashkiliy sxemadan boshlab subdomen ro'yxatini tuzib, keyin har bo'limni distillab core ni topish.
+- Mikroservis chegarasini dizayn qaroriga asoslangan kontekstga qo'yib, sababini ADR da yozish.
+- Brownfield tizimda "hamma yomon ko'radigan modul" ni core nomzodi sifatida belgilash.
+- Bitta subdomen uchun ikki model kerak bo'lsa, buni xato emas, qaror sifatida hujjatlashtirish.
+
+**Ehtiyot bo'ling:** Eng ko'p uchraydigan xato - 1:1 ni qoida deb qabul qilib, har subdomenga majburan alohida servis chiqarish: integratsiya ustamasi foydadan oshadi. Teskari xato ham bor: bog'liq use case larni "mayda servis yaxshi" degan e'tiqod bilan bo'lib tashlash, keyin har talabda ikki servisni birga deploy qilish. Subdomen turini bir marta aniqlab, uni abadiy deb hisoblash ham xato: tur o'zgaradi va u bilan dizayn ham o'zgaradi.
+
+```text
+Ikki chegara, ikki xil kelib chiqish:
+
+  Biznes strategiyasi  --(tahlil, TOPILADI)-->    subdomen
+  Dizayn qarori        --(tanlov, LOYIHALANADI)-> Bounded Context
+
+Uchta joylashuv, hammasi qonuniy:
+  1) butun domenga bitta model                   (kichik tizim)
+  2) ekspertlarning aqliy modeli bo'yicha kontekstlar
+  3) har subdomenga bitta kontekst               (1:1, majburiy emas)
+
+Tekshiruv savoli: "bu chegarani biznes bergandimi yoki biz tanladikmi?"
+Javob "biz tanladik" bo'lsa, u kontekst chegarasi va ADR talab qiladi.
+```
+
+## 13.65 Yashirin tushunchani aniq qilish (Making Implicit Concepts Explicit)
+
+**Tavsif:** Evans 9-bobning tezisi: domen modelini o'zgartirishning asosiy shakli - ishorasi bor, lekin yashirin turgan tushunchani tanib olib, uni modelda bir yoki bir necha aniq obyekt yoki munosabat bilan ifodalash. Chuqur model odatda shu bitta harakatdan tug'ilmaydi: bir necha muhim tushuncha aniq bo'lgandan, mas'uliyat qayta taqsimlangandan va nom bir necha marta o'zgargandan keyin model joyiga tushadi. Lekin boshlanishi doim shu: tushunchani qanchalik qo'pol shaklda bo'lsa ham tanib olish. Evans buni [chuqur tushunchaga qarab refactoring](#1343-chuqur-tushunchaga-qarab-refactoring-refactoring-toward-deeper-insight) ning birinchi qadami deb qo'yadi va tanib olishning to'rt yo'lini beradi.
+
+- **`Listen to Language`:** domen ekspertlari ishlatgan, dizaynda esa yo'q atama yashirin tushunchaning belgisi. Evans uch savolni beradi: ekspert murakkab narsani qisqa aytadigan atama ishlatdimi, sizning so'z tanlovingizni tuzatdimi, qaysi ibora aytilganda uning yuzidagi ikkilanish yo'qoldimi. Bu "otlar obyekt bo'ladi" qoidasi emas: yangi so'z faqat suhbat va bilim yig'ish uchun ko'rsatma. Atama dizaynda yo'q bo'lsa, bu ogohlantirish, ayni paytda umumiy tilni kengaytirish imkoniyati.
+- **`Scrutinize Awkwardness`:** kerakli tushuncha har doim suhbatda suzib yurmaydi, uni qazish kerak. Qazish joyi dizaynning eng noqulay qismi: protsedura chigal ishlarni bajaradigan va tushuntirish qiyin bo'lgan joy, har yangi talab murakkablik qo'shadigan joy. Ba'zan tushuncha yetishmayotganini tan olishning o'zi qiyin: obyektlar hamma ishni bajaradi, lekin ba'zi mas'uliyatlar o'zini noqulay tutadi.
+- **`Contemplate Contradictions`:** turli ekspertlar narsalarni boshqacha ko'radi, hatto bitta odam ham puxta tahlildan keyin mantiqan nomuvofiq ma'lumot beradi. Ziddiyatlarning bir qismi faqat terminologiya farqi yoki tushunmovchilik, lekin qoldiq bor: ekspertlarning ikki faktik bayoni bir-biriga zid ko'rinadi va shu qoldiq chuqurroq modelga ishora. Evans cheklov ham qo'yadi: hamma ziddiyatni hal qilish amaliy emas va hatto maqsadga muvofiq ham emas, lekin ziddiyat joyida qolsa ham, ikki bayon bir xil voqelikka qanday mos kelishi haqida o'ylash ko'p narsani ochadi.
+- **`Read the Book`:** ko'p sohada asosiy tushunchalar tushuntirilgan kitob bor. Evansning misolida dasturchi band ekspertni jalb qila olmaydi va kirish darajasidagi buxgalteriya kitobidan `Accrual Basis Accounting` tushunchasini topib, foizni hisoblaydigan chigal kodni Asset, Accrued Income va Interest Payment tizimiga aylantiradi. Kitob tayyor javob bermaydi: ekspert bilan birga undan muammoga tegishli qismni distillash kerak, lekin siz puxta o'ylangan qarashdan boshlaysiz.
+
+**Spring'da qayerda uchraydi:** Natija kodda yangi tur bo'lib ko'rinadi: `if` shartlari ketma-ketligi `record` yoki `sealed interface` ga, takroriy tekshiruv [spetsifikatsiya](#1322-spetsifikatsiya-specification---ddd-view) ga, chigal protsedura esa [domen servisi](#1318-domen-servisi-domain-service) yoki [siyosat](#1323-siyosat-policy) obyektiga aylanadi. Noqulaylikni qidirishning ikki amaliy ko'rsatmasi: git tarixida eng ko'p commit tekkan domen sinflari va cognitive complexity eng yuqori metodlar. Ziddiyatni esa [Event Storming](#1332-event-storming-texnika-event-storming-technique) ochiq ko'rsatadi, chunki bir hodisani ikki ekspert turlicha nomlashi devorda ko'rinib qoladi.
+
+**Qo'llanish keyslari:**
+- Ekspert suhbatidan keyin dizaynda yo'q atamalar ro'yxatini chiqarib, har biri uchun alohida tur kerakmi degan savolni berish.
+- Har yangi talabda o'sib boradigan metodni noqulaylik belgisi deb olib, undan yetishmagan tushunchani ajratish.
+- Ikki ekspertning zid bayonini yozib qo'yib, ularni ajratuvchi shartni topish va uni modelga kiritish.
+- Sohaning standart kitobidan (buxgalteriya, sug'urta, logistika) tayyor tushunchalar tizimini olish.
+
+**Ehtiyot bo'ling:** Birinchi tuzoq - har eshitilgan otdan sinf yasash: Evans buni ataylab rad etadi. Ikkinchisi - hamma ziddiyatni hal qilishga urinish: bu sun'iy umumiy model tug'diradi va ziddiyatning asl sababi kontekst chegarasi ekanini yashiradi. Uchinchisi - kitobdagi tushunchalar tizimini to'liq ko'chirib olish, chunki kitob soha uchun yozilgan, sizning muammoingiz uchun emas. Va bu ishni core domen'dan tashqarida qilish o'zini oqlamaydi.
+
+```java
+// Oldin: ekspert "itinerary" deb gapiradi, dizaynda bu nom yo'q:
+// marshrut qatorlari bazadan o'qilib, vaqtlar hisobotda hisoblanadi.
+// List<Object[]> legs = jdbc.query("select voyage_id, load_loc from cargo_bookings ...");
+
+// Keyin: atama modelga chiqdi, mas'uliyat ham u bilan ko'chdi
+public record Leg(VoyageId voyage, UnLocode load, UnLocode unload) {
+    public Instant loadTime(VoyageSchedule schedule) {
+        return schedule.departureOf(load);
+    }
+}
+
+public record Itinerary(List<Leg> legs) {
+    public UnLocode origin() { return legs.get(0).load(); }
+    public UnLocode destination() { return legs.get(legs.size() - 1).unload(); }
+}
+// Foydasi faqat nomda emas: Routing Service endi jadval emas, Itinerary
+// qaytaradi va vaqt hisoblash ikki joyda takrorlanmaydi.
+```
+
+**Ekspert tanimagan nom va ekspert oddiy deydigan maxsus holat.** Evans 8-bobda yashirin tushunchani ko'rsatadigan ikki aniq belgini beradi. Birinchisi dasturchilar o'ylab topgan sinf: uning keysida to'liq bo'lmagan tushuncha asosida yaratilgan `Loan Investment` bank atamasi emas edi va ekspertlar buni bir necha marta tushunmasliklarini aytgan, lekin oxirida dasturchilarning bilimiga bo'ysunib qo'ya qolgan. Shu bilan bog'liq ikkinchi belgi: ekspertga diagramma "juda texnik" tuyulishi modelning noto'g'ri yoki yomon ifodalanganining belgisi, uni ekspertning tayyorgarligi haqidagi masala deb hisoblamaslik kerak. 9-bobda uchinchi belgi aniq nomlanadi: dasturchi "maxsus holat" deb atagan narsani ekspert oddiy holat deb aytsa, bu yetishmayotgan tushuncha borligining to'g'ridan-to'g'ri ko'rsatkichi. Uning misolida to'lov muddatida qilinmagan holat dasturchilar uchun maxsus, ekspert uchun esa kundalik edi, chunki to'lov va foiz alohida postlanadi, va shu suhbatdan `accrual` tushunchasi chiqdi. Shu bobda ogohlantirish ham bor: ekspert faol ishtirok etmasa u shunchaki tasdiqlovchi bo'lib qoladi, shuning uchun ifoda tanlanganda uning qiyofasidagi noqulaylik yoki tanishlik alomatini kuzatish kerak.
+
+## 13.66 Subdomenni tasniflash sinovlari (Subdomain Classification Tests)
+
+**Tavsif:** Subdomen turini aniqlash ([core / supporting / generic](#1312-core--supporting--generic-subdomenlar-core--supporting--generic-subdomains)) taxminga qoldirilmaydi: Khononov 1-bobda uchta aniq sinov beradi. Nolinchi eslatma: raqobat ustunligi dasturdan tashqarida bo'lishi mumkin. Zargarlik ustasining ustunligi zargarlik dizaynida, firibgarlikni qo'lda tahlil qiladigan kompaniyada esa tahlilchilarning mahoratida; shu holda ularni qo'llaydigan dastur core emas, u hujjatni ko'rsatadi va izohni saqlaydi. Birinchi sinov core bilan supporting ni ajratadi: subdomenni alohida yon biznesga aylantirish mumkinmi, kimdir buning uchun alohida to'larmidi; "ha" bo'lsa u core. Ikkinchi sinov supporting bilan generic ni ajratadi: tayyor yechimni integratsiya qilishdan o'zingiz sodda yozib qo'yish arzonroq va osonroqmi; "ha" bo'lsa supporting, "yo'q" bo'lsa generic. Khononov supporting va generic chegarasini ataylab kulrang zona deb qoldiradi: bu yerda javob faqat narx hisobidan chiqadi. Uchinchi sinov dasturga qaraydi: modellanadigan biznes logikasi ma'lumot kiritish uchun CRUD interfeysiga o'xshaydimi yoki murakkab algoritm va invariantlar bilan boshqariladigan jarayonmi; birinchisi supporting, ikkinchisi tipik core belgisi.
+
+**Spring'da qayerda uchraydi:** Sinov natijasi kod shakliga aylanadi. Core chiqsa boy model: jMolecules `@AggregateRoot`, `@ValueObject`, Spring Modulith `@ApplicationModule` va `ApplicationEventPublisher`. Supporting chiqsa tez yo'l: `JdbcClient`, Spring Data REST (`@RepositoryRestResource`), Spring Batch. Generic chiqsa tashqi mahsulot va uning oldiga [ACL](#137-buzilishdan-himoya-qatlami-anti-corruption-layer): Keycloak, Stripe SDK, `spring-boot-starter-mail`. Tasnif qarori ADR sifatida `/docs` da yozilsa, keyingi sprintda "bu modulga qancha kuch beramiz" savoli qayta ochilmaydi.
+
+**Qo'llanish keyslari:**
+- Yon biznes sinovini marshrut optimizatsiyasiga qo'llash: alohida SaaS qilib sotish mumkin, demak core.
+- Bildirishnoma shablonlari uchun narx sinovi: tashqi provayder SDK sidan o'z jadvalingiz arzonroq, demak supporting.
+- Autentifikatsiya uchun narx sinovi: o'zini yozish qimmat va xatarli, demak generic.
+- Zargarlik do'konida onlayn do'kon dasturini core deb hisoblamaslik: ustunlik dizaynda.
+- CRUD sinovi bilan "core" deb atalgan, lekin shaklga to'ldirishdan iborat modulni supporting ga tushirish.
+
+**Ehtiyot bo'ling:** Biznes biror qismni "bizning core imiz" deb atagani uni dasturda core qilmaydi. Khononov logikasi bo'yicha ikki narsa alohida: biznes ustunligi va shu ustunlikni qo'llaydigan dastur murakkabligi. Biznes core desa-yu kodda modellanadigan logika oddiy bo'lsa, dasturni oddiy pattern bilan yozish to'g'ri qaror bo'ladi. Teskari xato ham bor: kulrang zonada turgan subdomenni "ehtiyot uchun" core deb belgilash eng kuchli muhandislarni qiymati past joyga bog'lab qo'yadi.
+
+```text
+Subdomen tasnifi: uch sinov ketma-ket
+
+0) Ustunlik dasturdami?  yo'q -> dastur core emas (hujjat ko'rsatadi, izoh saqlaydi)
+                          ha  -> davom et
+
+1) Yon biznes sinovi: alohida sotilsa kimdir to'larmidi?
+     ha  -> CORE
+     yo'q -> davom et
+
+2) Narx sinovi: o'zim yozsam tayyor yechimni ulashdan arzonroqmi?
+     ha  -> SUPPORTING
+     yo'q -> GENERIC          (bu chegara kulrang zona, javob narxdan chiqadi)
+
+3) Nazorat sinovi: logika CRUD mi yoki algoritm va invariantmi?
+     CRUD -> supporting belgisi      algoritm -> core belgisi
+```
+
+## 13.67 Generic subdomenni ta'minlashning to'rt yo'li (Four Options for a Generic Subdomain)
+
+**Tavsif:** Generic subdomen "sotib olinadi" degan bir og'iz javob emas. Evans 15-bobda (GENERIC SUBDOMAINS) to'rt yo'lni tarozisi bilan beradi. **Tayyor yechim**: kod kam yoziladi, qo'llab-quvvatlash tashqariga chiqadi, kod ko'p joyda ishlatilgani uchun yetukroq; lekin baholash va tushunishga vaqt ketadi, sifat kafolatlanmagan, maqsadingiz uchun ortiqcha murakkab bo'lishi mumkin, begona elementlar silliq integratsiya qilinmaydi va ko'pincha alohida [bounded context](#132-chegaralangan-kontekst-bounded-context) bo'lib qoladi, platforma va versiya bog'liqligi qo'shiladi. **E'lon qilingan model**: soha allaqachon rasmiy va qat'iy modelga ega bo'lsa (Evans buxgalteriya va fizikani misol qiladi) uni oling; to'liq modelni qo'llash shart emas, o'zingizga yetadigan izchil kichik qismini olish mumkin. **Outsource**: core jamoa core da qoladi, jamoa doimiy o'smaydi va spetsifikatsiya tashqariga chiqqani uchun dizayn interfeysga yo'naltirilgan bo'ladi; lekin interfeys va kod standartlarini tushuntirishga core jamoadan vaqt ketadi, egalikni qaytarib olish esa qo'shimcha xarajat. **In-house**: integratsiya oson va aynan kerakli narsa chiqadi; lekin doimiy qo'llab-quvvatlash yuki bor va bunday paketlarni yozish vaqti muntazam kam baholanadi. Evans ikki qo'shimcha qoida beradi: outsource qilingan komponent uchun implementatorlardan unit test talab qilinadi, eng kuchli yo'l esa avtomatik qabul testlarini oldindan spetsifikatsiya qilish yoki yozib berish, bu sifatni kafolatlaydi, talabni aniqlashtiradi va qayta integratsiyani yengillashtiradi. Ikkinchisi: generic degani qayta ishlatiladigan degani emas.
+
+**Spring'da qayerda uchraydi:** Tayyor yechim Keycloak yoki Spring Authorization Server, Stripe SDK, Elasticsearch (`spring-data-elasticsearch`), S3 SDK ko'rinishida keladi va oldiga ACL qo'yiladi. E'lon qilingan model esa kodda tayyor sxema sifatida ko'rinadi: ISO 20022 to'lov xabarlari, HL7 FHIR, CloudEvents konverti. Outsource qilingan modul uchun kontrakt `spring-cloud-contract` yoki Testcontainers ustida yozilgan `@SpringBootTest` qabul testlari bo'ladi va ular build ga topshiriq bilan birga kiradi. In-house yo'l tanlanganda modul `:generic-notifications` kabi alohida Gradle moduli bo'lib, core modulga bog'lanmaydi.
+
+**Qo'llanish keyslari:**
+- Autentifikatsiya uchun tayyor yechim: Keycloak, lekin domen faqat `UserId` ni ko'radi.
+- To'lov xabarlari uchun e'lon qilingan model: ISO 20022 ning faqat kerakli xabar turlarini olish.
+- PDF generatsiyasini outsource qilish va topshiriqqa qabul testlarini oldin yozib berish.
+- Oddiy bildirishnoma navbatini in-house yozish, chunki tayyor platforma ortiqcha murakkab.
+- Generic modulga sohaga xos maydon (`cargoType`) kirmoqchi bo'lganda uni core modulga qaytarish.
+
+**Ehtiyot bo'ling:** Generic subdomenga core dasturchilarini qo'yish ikki tomondan zarar: core bo'sh qoladi va bu ish ularga domen bilimi bermaydi. O'zingiz yozsangiz kodni qayta ishlatishga mo'ljallamang, bu distillashning asosiy motiviga zid; Evans qayta ishlatish ko'pincha kod emas model darajasida bo'lishini aytadi va faqat kerakli qismini modellashni tavsiya qiladi. Lekin generic tushuncha doirasidan chiqmang: sohaga xos elementni generic modulga kiritish keyinroq kengaytirishni qiyinlashtiradi va bu elementlar aslida core yoki o'zining ixtisoslashgan subdomeniga tegishli, ya'ni generic dan qimmatliroq.
+
+```text
+Generic subdomen uchun to'rt yo'l va qaror mezoni
+
+tayyor yechim     | kod kam, sifat tashqarida  | baholash vaqti, ortiqcha
+                  |                            | murakkablik, alohida kontekst
+e'lon qilingan    | rasmiy va keng tanilgan    | faqat izchil kichik qismini ol
+  model           | model, trening yuki kam    |
+outsource         | core jamoa bo'sh qoladi,   | interfeysni tushuntirish vaqti,
+                  | interfeysga yo'naltiradi   | egalikni qaytarish xarajati
+in-house          | integratsiya oson,         | doimiy qo'llab-quvvatlash,
+                  | aynan kerakli narsa        | vaqt muntazam kam baholanadi
+
+Outsource qilinsa: unit test majburiy, qabul testlari OLDIN yoziladi.
+Generic kodni qayta ishlatishga mo'ljallamang; lekin generic doirasidan chiqmang.
+```
+
+## 13.68 Umumiy tilni ekspert bilan sinash (Validating the Language with Domain Experts)
+
+**Tavsif:** [Umumiy til](#131-umumiy-til-ubiquitous-language) qoida sifatida e'lon qilinmaydi, u sinovdan o'tadi. Avval kim bilan sinalayotgani aniq bo'lishi kerak: Khononov 1-bobda domen eksperti tahlilchi ham, tizimni loyihalaydigan injener ham emasligini aytadi, u biznesni ifodalaydi, ya'ni talabni aytgan yoki dasturning oxirgi foydalanuvchisi bo'lgan, bilim manbai bo'lgan odam; qamrovi turlicha, ba'zisi butun domenni, ba'zisi bitta subdomenni biladi. Evans 2-bobda sinovning ikki texnikasini beradi. Birinchisi modelni ovoz chiqarib sinash: ssenariyni model elementlari bilan gapirib bering, "Routing Service ga manzil va vaqtni beramiz, u to'xtashlarni topib bazaga tiqadi" bilan "Routing Service Route Specification ni qanoatlantiradigan Itinerary topadi" orasidagi farq quloqqa darhol uriladi, qulayroq ibora topilsa uni diagramma va kodga qaytaring. Ikkinchisi ssenariyni qadamma-qadam yurib chiqish: ekspert va dasturchi model obyektlari bilan jarayonni norasmiy o'ynab ko'radi, ekspertlar use case ni model tilida yozadi va qabul testlarini belgilashda ishtirok etadi. Khononov 2-bobda lug'atning chegarasini ko'rsatadi: wiki lug'at yangi a'zoni tezda ishga kiritadi, lekin u asosan otlarni ushlaydi (entity, jarayon va rol nomlari), xulq va invariant esa lug'atga sig'maydi, shuning uchun lug'at use case yoki Gherkin testlari bilan juft yuritiladi; lug'atni butun jamoa yangilaydi, markaziy arxitektor emas.
+
+**Spring'da qayerda uchraydi:** Xulq uchun bajariladigan spetsifikatsiya: `io.cucumber:cucumber-java` va `cucumber-spring` bilan `src/test/resources/features/*.feature`, yoki soddaroq yo'l - `@DisplayName` matni domen tilida yozilgan JUnit 5 testlari. Lug'at repozitoriyda `GLOSSARY.md` yoki wiki bo'lib turadi, atama kodda `record`/`sealed interface` nomi bo'lib qaytadi. ArchUnit testi lug'atdan tashqaridagi nomlarni (`*Manager`, `*Helper`) domen paketida taqiqlaydi, Spring Modulith `Documenter` esa modul nomlarini hujjatga chiqaradi.
+
+**Qo'llanish keyslari:**
+- Yangi epikni boshlashdan oldin ekspert bilan ssenariyni model obyektlari nomi bilan gapirib chiqish.
+- Aytishga noqulay iborani (`OrderManager.processData`) model nuqsoni belgisi deb qabul qilish va nomni o'zgartirish.
+- Qabul kriteriyasini ekspert bilan birga Gherkin da yozib, shu faylni talab hujjati sifatida saqlash.
+- Lug'atga yangi atama qo'shishni review da har dasturchining mas'uliyati qilish.
+- Domen eksperti kim ekanini subdomen bo'yicha ro'yxatlash: kim butun domenni, kim bitta subdomenni biladi.
+
+**Ehtiyot bo'ling:** Khononov aniq ogohlantiradi: domen ekspertlari Gherkin testlarini o'zi yozadi deb o'ylash tuzoq; ular ishtirok etadi, matnni dasturchi yozadi. Hujjat va test jonli muloqotni almashtirmaydi: lug'at va feature fayllar muloqot natijasini saqlaydi, uning o'rnini bosmaydi. Modelni ekspert tushunmaydigan texnik diagramma bilan ko'rsatish sinov emas, chunki ekspert bunday diagrammani o'qiy olmaganda muammo ko'rinmay qoladi.
+
+```java
+// Stsenariyni model tilida gapirib sinash: ikki ibora, ikki model
+// 1) "servisga manzil beramiz, u to'xtashlarni bazaga tiqadi"  -> noqulay
+// 2) "RoutingService RouteSpecification ni qanoatlantiruvchi Itinerary topadi"
+public interface RoutingService {
+    Itinerary satisfy(RouteSpecification specification);  // ikkinchi ibora kodda
+}
+
+// Xulq lug'atga sig'maydi, u bajariladigan spetsifikatsiyada turadi
+@Test
+@DisplayName("Muddati o'tgan polis uchun endorsement qabul qilinmaydi")
+void lapsedPolicyRejectsEndorsement() { /* ... */ }
+```
+
+## 13.69 Assotsiatsiyani cheklash (Constraining Associations)
+
+**Tavsif:** Haqiqiy domenda ko'pga-ko'p va ikki yo'nalishli munosabatlar ko'p, lekin ularni modelga shu holda ko'chirish dizaynni og'irlashtiradi: Evans 5-bobda ikki yo'nalishli assotsiatsiya ikki obyektni faqat birga tushunish mumkin qilishini aytadi, umumiy ko'pga-ko'p munosabat esa ham ifodasiz, ham qiyin. Uch vosita bor: yo'nalish berish, qualifier qo'shib ko'plikni kamaytirish va keraksizini butunlay olib tashlash. Yo'nalish tanlash texnik qisqartirish emas, domen haqidagi tushuncha: "Jorj Vashington qaysi davlatning prezidenti edi" deb so'ralmaydi, shuning uchun munosabat davlatdan prezidentga qarab yuritiladi va `Person` sinfi `President` tushunchasidan mustaqil qoladi. Qualifier ko'plikni kamaytiradi: davlatda bir vaqtda bitta prezident bor, brokerlik hisobidagi investitsiya aksiya belgisi bo'yicha qidiriladi. Evans 7-bobda shu qoidani jo'natish domeniga qo'llaydi: `Customer` har bir `Cargo` ga havola ushlasa doimiy mijozda og'irlashadi va `Customer` tushunchasi `Cargo` ga bog'lanib qoladi, teskari yo'nalish esa [repozitoriy](#1316-repozitoriy-repository---ddd-view) so'rovi bilan beriladi; `Location` kabi ko'p ishlatiladigan entity ham o'z foydalanuvchilarini kuzatmasligi kerak. [Qiymat obyektlari](#1314-qiymat-obyekti-value-object) orasida ikki yo'nalishli assotsiatsiya esa umuman ma'nosiz: identifikatsiya yo'q joyda "menga ishora qilgan qiymatga ishora qilaman" degan gap faqat tenglik haqida bo'ladi; uni butunlay yo'q qiling, kerak bo'lib qolsa obyekt aslida tan olinmagan identifikatsiyaga ega entity emasmi deb qayta o'ylang.
+
+**Spring'da qayerda uchraydi:** JPA da bu `@OneToMany(mappedBy = ...)` ni butunlay olib tashlab, teskari yo'nalishni `CargoRepository.findByCustomerId(...)` so'rovi bilan berish demakdir: shunda `Customer` yuklanganda minglab `Cargo` qatori ortidan kelmaydi. Qualifier `Map<Symbol, Investment>` yoki `@MapKey` bilan ifodalanadi. Spring Data JDBC bu qoidani kuchaytiradi, chunki u agregat chegarasidan tashqariga assotsiatsiyani umuman qo'llab-quvvatlamaydi va faqat ID havolasini (`AggregateReference`) beradi.
+
+**Qo'llanish keyslari:**
+- `Customer` dan `Cargo` ga kolleksiyani olib tashlab, so'rovni repozitoriyga ko'chirish.
+- `CarrierMovement` dan `HandlingEvent` ga yo'nalishni yopish, chunki biznes faqat yukni kuzatadi.
+- `BrokerageAccount` ichidagi investitsiyalarni aksiya belgisi bo'yicha qualifier bilan berish.
+- `Country -> President` kabi munosabatda faqat bitta yo'nalishni qoldirish.
+- Ikki qiymat obyekti orasidagi o'zaro havolani ko'rib, ulardan birini entity qilish kerakligini aniqlash.
+
+**Ehtiyot bo'ling:** "Ikki tomonga yurish qulay" degan sabab yetarli emas: talab bir yo'nalishni so'ramasa, uni qo'shish bog'liqlikni ikki baravar qiladi. Teskari yo'nalishni repozitoriy so'rovi bilan berish tekin emas: so'rov indekslanmagan ustun ustida ketsa, kolleksiyadan ko'ra qimmatroq bo'lib chiqadi, shuning uchun yo'nalishni olib tashlash bilan birga indeks rejasi ham ko'riladi.
+
+```java
+// Yo'nalish talabdan chiqadi, qulaylikdan emas
+public class Customer {                  // Cargo lar kolleksiyasi YO'Q
+    private CustomerId id;
+    private CustomerName name;
+}
+
+public interface Cargoes {               // teskari yo'nalish so'rov bilan
+    List<Cargo> shippedBy(CustomerId customer);
+}
+
+// Qualifier ko'plikni kamaytiradi: hisobda bir belgiga bitta investitsiya
+public class BrokerageAccount {
+    private Map<Symbol, Investment> investments;   // List emas
+}
+// Qiymat obyektlari orasida ikki yo'nalishli havola yozilmaydi.
+```
+
+## 13.70 Identifikatsiya qarori va ID dizayni (Identity Decision and ID Design)
+
+**Tavsif:** [Entity](#1313-entity-entity) yoki [qiymat obyekti](#1314-qiymat-obyekti-value-object) degan qaror narsaning o'zidan chiqmaydi. Evans 5-bobda buni ochiq aytadi: identifikatsiya dunyodagi narsaning xossasi emas, u foydali bo'lgani uchun ustiga qo'yilgan ma'no. Shu sababli bir narsa bir ilovada entity, boshqasida qiymat bo'ladi. Stadion o'rindig'i joy belgilangan chiptada entity, chunki o'rindiq raqami uni ajratadi; umumiy kirishda esa faqat joylar soni muhim va o'rindiqlarni raqam bilan kuzatish modeldagi xato bo'ladi. Manzil ham shunday: pochta zonasini qayta chizadigan ilovada manzil entity, oddiy yetkazib berishda esa qiymat. Identifikatsiya qarori qabul qilinsa, ID dizayni qat'iy: kalit tizimda yagona bo'lishi kerak, tizim taqsimlangan bo'lsa ham, obyektlar arxivlangan bo'lsa ham. Sun'iy ID olingach u o'zgarmas deb belgilanadi va bazaga yozilib qayta tiklanganda o'sha qiymat saqlanadi; tilning obyekt tengligi bunga yaramaydi, chunki bazadan har o'qishda va tarmoqdan har o'tishda yangi nusxa paydo bo'ladi. Tashqi ID (pasport, telefon raqami, gazeta nomi va sanasi) ishonchli bo'lib ko'rinadi, lekin qo'shimcha nashr va nom o'zgarishi bu yagonalikni buzadi, shu holda yagonalikni foydalanuvchi ta'minlashi uchun unga asbob kerak. Teskari belgisi ham bor: Evans 6-bobda qiymat obyektlariga global qidiruv kerak emasligini aytadi, chunki xossalari bo'yicha qiymat topish uni yangidan yaratishga teng; bazadan oldindan mavjud qiymatni qidirishga ehtiyoj paydo bo'lsa, bu aslida tan olinmagan identifikatsiyali entity borligining belgisi.
+
+**Spring'da qayerda uchraydi:** O'zgarmas typed ID `record OrderId(UUID value)` ko'rinishida yoziladi va JPA da `@EmbeddedId` yoki `@Converter` bilan mapping qilinadi. Dastur bergan ID uchun `UUID.randomUUID()` yoki ketma-ketlikka yaqin `UUIDv7`, baza bergan ID uchun `@GeneratedValue(strategy = SEQUENCE)` ishlatiladi; Spring Data JDBC da `@Id` maydoni tiklashda ham saqlanadi. Tashqi ID (telefon, soliq raqami) kalit emas, u `@NaturalId` yoki oddiy unikal indeksli ustun bo'ladi va yagonalik buzilishini ko'rsatadigan admin ekrani talab qiladi.
+
+**Qo'llanish keyslari:**
+- Joy belgilangan chipta tizimida `Seat` ni entity, umumiy kirishda esa faqat sanoq qilish.
+- Manzilni yetkazib berishda `record Address(...)` qiymat, pochta zonasi ilovasida entity qilish.
+- `record CustomerId(UUID value)` ni ID null bo'lganda ham barqaror ishlashi uchun oldindan generatsiya qilish.
+- Telefon raqamini birlamchi kalit qilmaslik: raqam egasi o'zgaradi.
+- `findByAllAttributes(...)` so'rovi paydo bo'lgan qiymat obyektini entity ga aylantirish.
+
+**Ehtiyot bo'ling:** Bir xil tushunchani barcha kontekstlarda bir xil tasniflashga urinish xato: [bounded context](#132-chegaralangan-kontekst-bounded-context) ichida qaror alohida olinadi va bitta kontekstda entity bo'lgan narsa boshqasida qiymat bo'lishi normal. Taqsimlangan tizimda ID generatsiyasi alohida muammo: ikki tugun bir vaqtda ID bersa, yagonalik kafolatini baza ketma-ketligi emas, generatsiya sxemasi (UUID yoki markazlashgan navbat) beradi.
+
+```java
+// Identifikatsiya foydalilik uchun qo'yiladi: bir narsa, ikki qaror
+// Joy belgilangan tadbir: o'rindiq ajratiladi -> entity
+public class Seat {
+    private final SeatNumber number;     // o'zgarmas, tizimda yagona
+    public SeatNumber number() { return number; }
+}
+
+// Umumiy kirish: faqat sanoq muhim -> qiymat obyekti ham shart emas
+public record Capacity(int total, int sold) {
+    public boolean isFull() { return sold >= total; }
+}
+// Qiymat obyektini xossasi bo'yicha bazadan qidirish kerak bo'lsa,
+// u aslida identifikatsiyasi tan olinmagan entity.
+```
+
+## 13.71 Agregat chegarasini chizish sinovlari (Testing an Aggregate Boundary)
+
+**Tavsif:** [Agregat](#1315-agregat-va-agregat-ildizi-aggregate--aggregate-root) chegarasi "qancha kichik bo'lsa shuncha yaxshi" degan qoidadan chiqmaydi, u uch sinovdan chiqadi. Birinchi sinov tranzaksiya talablarini ikki yo'nalishda tekshiradi: Khononov 13-bobda kuchli izchillik talab qiladigan qarorlar eventual izchil ma'lumot ustida ishlayotgan joylarni, va teskarisi, kuchli izchillik kerak bo'lmagan joyda uni majburlab turgan joylarni qidirishni aytadi; bu qarorni texnologiya emas, biznes belgilaydi. Ikkinchi sinov obyektning ichkarida qolishi yoki o'z ildizi bo'lishini hal qiladi: Evans 7-bobda `Delivery History` ni agregat ichida qoldiradi, chunki uning shaxsiy identifikatori faqat egasidan olinadi va uni egasisiz hech kim bevosita qidirmaydi; `Handling Event` esa egasidan alohida ma'noga ega va kam contention li tranzaksiyada yaratilishi kerak, shuning uchun o'z agregatining ildizi bo'ladi. Uchinchi sinov contention ga qaraydi: Evans 6-bobda `Part` kabi ko'p agregat ishlatadigan va kam o'zgaradigan obyektga bog'lanishni bo'shatadi, buyurtma qatori narxni o'zida saqlaydi va katalogdagi narx o'zgarishi mavjud qatorlarga darhol ta'sir qilmaydi, limit invarianti esa agregat ichida qat'iy qoladi. Umumiy qoida: chegara assotsiatsiya zichligi va o'zgarish chastotasini hisobga olib chiziladi, contention yuqori joy bo'sh qoldiriladi, qat'iy invariant esa tig'iz o'raladi.
+
+**Spring'da qayerda uchraydi:** Ichkarida qolgan obyekt uchun repozitoriy yozilmaydi, u faqat ildiz orqali ochiladi; Spring Data JDBC buni tabiiy majburlaydi, chunki u bitta agregatni bir yozuvda saqlaydi. Bo'shatilgan bog'liqlik `AggregateReference<Part, Long>` yoki oddiy `PartId` maydoni bo'ladi. Kuchli izchillik kerak joyda `@Version` bilan optimistik qulf va `@Transactional` bir agregatga, eventual izchillik yetadigan joyda esa `@DomainEvents` va `ApplicationEventPublisher` ishlatiladi.
+
+**Qo'llanish keyslari:**
+- `Order` va `OrderLine` ni bitta agregatda qoldirish, chunki yig'indi limiti invariant.
+- `HandlingEvent` ni alohida agregat qilish: contention past tranzaksiyada yaratiladi.
+- Katalog narxini buyurtma qatoriga nusxalab, katalogga bog'liqlikni bo'shatish.
+- Hisobot sonini eventual izchil o'qish modeliga ko'chirib, agregatdan chiqarish.
+- Har agregat uchun invariantni bir gapda yozib, chegarani shu gap talab qilgan hajmga qisqartirish.
+
+**Ehtiyot bo'ling:** Chegarani faqat tezlik uchun kichraytirish invariantni yo'qotadi, faqat qulaylik uchun kattalashtirish esa contention ni oshiradi; ikkisini bir sinovda hal qilish mumkin emas, shuning uchun uch sinov ketma-ket yuritiladi. Khononov ta'kidlagan asimmetriyani yodda tuting: eventual izchillik yetadigan joyni topish odatda oson, kuchli izchillik yashirin kerak bo'lgan joyni topish esa qiyin va aynan u ma'lumotni buzadi.
+
+```text
+Agregat chegarasi: uch sinov
+
+1) Tranzaksiya sinovi (ikki yo'nalish)
+   - kuchli izchillik kerak qaror eventual izchil ma'lumot ustida ishlayaptimi?
+   - kuchli izchillik kerak bo'lmagan joyda majburlanyaptimi?
+   qarorni biznes beradi, texnologiya emas
+
+2) Ichkarida qolish sinovi
+   shaxsiy ID faqat egasidan olinadimi va egasisiz qidirilmaydimi?
+     ha  -> agregat ichida qoladi (repozitoriy yo'q)
+     yo'q -> o'z ildizi (alohida ma'no, past contention li tranzaksiya)
+
+3) Contention sinovi
+   ko'p agregat ishlatadigan, kam o'zgaradigan ma'lumotga bog'liqlik bo'shatiladi
+   (narx qatorga nusxalanadi), qat'iy invariant esa chegara ichida qoladi
+```
+
+## 13.72 Fabrika interfeysi va invariant joyi (Factory Interface and Invariant Placement)
+
+**Tavsif:** [Fabrika](#1317-fabrika-factory---ddd-view) interfeysi ikki qoidaga bo'ysunadi. Evans 6-bobda birinchisi: har amal atomar bo'lishi kerak, ya'ni to'liq mahsulotni yasash uchun kerak hamma narsa bitta chaqiruvda beriladi, va invariant bajarilmaganda nima bo'lishi (exception yoki null) oldindan tanlanadi, jamoada esa buning uchun bitta kodlash standarti bo'ladi. Ikkinchisi: fabrika o'z argumentlariga bog'lanadi va bog'liqlik darajasi argument bilan nima qilinishiga qarab o'sadi, argumentdan qismlar olib qurilsa bog'liqlik qattiqlashadi; eng xavfsiz argumentlar pastki dizayn qatlamidan yoki mahsulot bilan modelda allaqachon zich bog'liq obyektdan keladi, va argumentning konkret sinfi emas abstrakt turi ishlatiladi. Invariant qayerda turishi alohida qaror: Evans invariantni mahsulotning o'ziga topshirishni ko'pincha eng yaxshi deydi, lekin obyekt hayoti davomida hech qachon amal qilmaydigan qoidalarni (entity identifikatorining tayinlanishi, to'liq o'zgarmas qiymat obyektining yaratilishi) fabrikada tutish mahsulotni soddalashtiradi; bu agregat qoidalari uchun ayniqsa qulay, boshqa domen obyektiga yopishgan factory method uchun esa ayniqsa noqulay. Entity va qiymat fabrikasi ham farq qiladi: qiymat o'zgarmas bo'lgani uchun uning fabrikasi to'liq tavsifni oladi, entity fabrikasi esa faqat yaroqli agregat uchun zaruriy xossalarni oladi va qolgani keyin qo'shiladi. Nihoyat, bazadan tiklash yangi obyekt yaratish emas, bu hayotning o'rtasi: tiklashda yangi ID berilmaydi, aks holda obyektning o'tmishi bilan uzluksizlik yo'qoladi, va buzilgan invariantni yaratishdagidek shunchaki rad etib bo'lmaydi, chunki obyekt allaqachon mavjud, shuning uchun nomuvofiqlikni tuzatish strategiyasi kerak.
+
+**Spring'da qayerda uchraydi:** Atomar yaratish `static` factory metod yoki `@Component` fabrika bo'ladi va argumentlarda interfeys turlari (`PricingPolicy`, `Clock`, `IdGenerator`) beriladi. Tiklash yo'li boshqa: JPA `@Entity` uchun argumentsiz konstruktor, Spring Data JDBC uchun esa barcha maydonlarni oladigan konstruktor ishlatiladi va u ID ni ham oladi, shuning uchun tiklash yo'lini yaratish yo'lidan ajratib qo'yish kerak. Buzilgan invariantni tiklashda rad etmaslik uchun domenda `Order.reconstitute(...)` kabi alohida yo'l ochiladi va nomuvofiqlik `WARN` log va tuzatish vazifasi bilan belgilanadi.
+
+**Qo'llanish keyslari:**
+- `Order.placeFor(customerId, cart, pricing)` ga hamma narsani bitta chaqiruvda berish.
+- Fabrika argumentida `PricingPolicy` interfeysini olish, `JdbcPricingPolicy` ni emas.
+- `record Money(...)` fabrikasiga to'liq tavsifni berish, `Order` fabrikasiga faqat zaruriy xossalarni.
+- ID tayinlash qoidasini fabrikada qoldirib, `Order` sinfini shu tekshiruvdan xalos qilish.
+- Tiklash yo'lida ID ni argumentdan olish va invariant buzilsa exception emas, tuzatish navbatiga qo'yish.
+
+**Ehtiyot bo'ling:** Invariantni hamma joyda fabrikaga ko'chirish mahsulotni anemik qiladi: faqat obyekt hayoti davomida hech qachon qayta tekshirilmaydigan qoidalar fabrikada qoladi, qolgani mahsulotda. Tiklash yo'lida yangi ID generatsiya qilish eng jim xato: obyekt bazadan har o'qishda yangi identifikatorga ega bo'lsa, tenglik, kesh va audit izi birdan ishdan chiqadi.
+
+```java
+// Yaratish va tiklash: ikki boshqa yo'l
+public final class Order {
+
+    // Yaratish: ID ni fabrika nazorat qiladi, invariant rad etadi
+    public static Order placeFor(CustomerId customer, Cart cart, PricingPolicy pricing) {
+        if (cart.isEmpty()) throw new EmptyCartException(cart.id());
+        return new Order(OrderId.next(), customer, pricing.priceOf(cart));
+    }
+
+    // Tiklash: ID tashqaridan keladi, yangi ID BERILMAYDI
+    public static Order reconstitute(OrderId id, CustomerId customer, Money total) {
+        return new Order(id, customer, total);   // buzilgan invariant tuzatiladi, rad etilmaydi
+    }
+}
+```
+
+## 13.73 Repozitoriyni amalga oshirish qoidalari (Implementing a Repository)
+
+**Tavsif:** [Repozitoriy](#1316-repozitoriy-repository---ddd-view) interfeysi domen tilida bo'lishi yetarli emas, uning implementatsiyasi uchun Evans 6-bobda uch qoida beriladi. Birinchisi tranzaksiya haqida: repozitoriy bazaga qo'shadi va o'chiradi, lekin odatda commit qilmaydi. Saqlagandan keyin darhol commit qilish vasvasasi bor, ammo ish birligini qayerda boshlash va qayerda yakunlash kontekstini mijoz biladi, shuning uchun tranzaksiya nazorati mijozda qoladi va repozitoriy unga tegmasa hammasi soddalashadi. Ikkinchisi enkapsulyatsiya chegarasi haqida: mijoz kodi implementatsiyani bilmasligi mumkin, dasturchi esa bilishi shart. Evans Kyle Brown aytgan keysni keltiradi: ishlab chiqarishga chiqqan ilova bir necha soatdan keyin xotirasini tugatdi, chunki hisobot uchun "all objects" so'rovi har bir obyektni yasab butun bazani xotiraga yuklardi va bu sinovda kam ma'lumot tufayli ko'rinmagan edi. Shuning uchun repozitoriyning ishlatilishi va so'rov implementatsiyasi orasida ikki tomonlama teskari aloqa bo'lishi kerak. Uchinchisi qamrov haqida: repozitoriy faqat bevosita kirish kerak bo'lgan agregat ildizlari uchun yoziladi. Evans 7-bobda beshta agregat ildizini sanaydi, lekin ilova talabiga qarab faqat to'rttasiga repozitoriy yaratadi; talab chiqqanda beshinchisi qo'shiladi.
+
+**Spring'da qayerda uchraydi:** Tranzaksiya chegarasi `@Transactional` bilan ilova servisida e'lon qilinadi, repozitoriy implementatsiyasida emas; `JpaRepository.save()` ichidagi `flush` commit emas. Implementatsiyani bilish `spring.jpa.show-sql`, `datasource-micrometer` yoki `p6spy` bilan ko'rinadi, `findAll()` o'rniga `Pageable` va `Slice` ishlatiladi, `@EntityGraph` esa N+1 ni yopadi. Qamrovni cheklash uchun `CrudRepository` ni ochib qo'ymasdan domen interfeysi (`interface Orders`) e'lon qilinadi va faqat ilova talab qilgan metodlar yoziladi.
+
+**Qo'llanish keyslari:**
+- `@Transactional` ni application service ga qo'yib, repozitoriy implementatsiyasidan commit ni olib tashlash.
+- `findAll()` chaqiruvini CI da taqiqlab, `Pageable` talab qilish.
+- Hisobot so'rovini repozitoriydan chiqarib, alohida o'qish modeliga berish.
+- Talab yo'q agregat uchun repozitoriy yozmaslik va talab chiqqanda qo'shish.
+- Yuklash hajmini sinov ma'lumoti emas, ishlab chiqarishga yaqin hajm bilan o'lchash.
+
+**Ehtiyot bo'ling:** Repozitoriy ichida commit qilish eng qimmat xato: bir use case ikki agregatni o'zgartirsa, birinchisi commit bo'lib ikkinchisi yiqilganda tizim yarim holatda qoladi. Enkapsulyatsiyani "dasturchi ham bilmaydi" deb tushunish ikkinchi xato: interfeys domen tilida bo'lgani so'rovning narxini yashirmaydi, u faqat uni ko'rinmas qiladi.
+
+```java
+// Tranzaksiya chegarasi mijozda, repozitoriyda emas
+@Service
+class PlaceOrderService {
+    private final Orders orders;
+
+    @Transactional                      // ish birligi shu yerda boshlanadi va yakunlanadi
+    public OrderId place(PlaceOrder command) {
+        Order order = Order.placeFor(command.customerId(), command.cart(), pricing);
+        orders.add(order);              // add qiladi, commit QILMAYDI
+        return order.id();
+    }
+}
+
+public interface Orders {
+    void add(Order order);
+    Optional<Order> byId(OrderId id);
+    Slice<Order> awaitingPayment(Pageable page);   // findAll() yo'q
+}
+```
+
+## 13.74 Spetsifikatsiyani joylashtirish va qamrovi (Placing and Scoping a Specification)
+
+**Tavsif:** [Spetsifikatsiya](#1322-spetsifikatsiya-specification---ddd-view) ni qachon ochish va uni qayerda bajarish Evans 9 va 10-boblarda alohida ko'riladi. Ochish sababi: oddiy test metodi (`invoice.isOverdue()`) yaxshi, lekin qoida murakkablashganda (`isDelinquent`: imtiyozli davr mijoz holatiga bog'liq) `Invoice` ning ma'nosi qoida kodi ichida yo'qoladi va u keraksiz bog'liqliklar oladi; qoidani ilova qatlamiga chiqarish eng yomon variant, chunki domen ma'lumot konteyneriga aylanadi. To'g'ri yo'l qoidani spetsifikatsiya qiymat obyektiga chiqarish va uni fabrika orqali boshqa manbalardan sozlash. Bajarish joyi ikkinchi qaror: spetsifikatsiyadan SQL hosil qilish jadval tuzilmasini domen qatlamiga sizdiradi. ORM so'rovni model atributlarida ifodalashga imkon bersa shuni ishlating, aks holda repozitoriyda umumiy so'rov (masalan "to'lov muddati shu sanadan oldin") qoldirib, aniq qoidani spetsifikatsiya xotirada filtrlasin: qoida bir joyda qoladi, narxi esa kerakdan ko'proq qator yuklash bo'ladi. Saqlangan protsedura ishlatilsa spetsifikatsiya faqat parametr beradi. Uchinchi qaror qamrov: Evans buyurtmaga yaratish holatida generatorni (masalan omborda joylashtirish) yozishdan oldin validatsiyadan boshlashni aytadi, chunki shu bitta spetsifikatsiya ham generatorga kirish talabi, ham natijani tekshirish bo'ladi, interfeys implementatsiyadan ajraladi va test oson yoziladi. Nihoyat, operatorlar to'plami: `and`, `or` va `not` ning hammasi shart emas, ko'pincha faqat `and` yetadi va murakkablikni kam oshiradi; `subsumes` (qat'iyroq qoida yumshoqrog'ini o'z ichiga oladimi) kam kerak va `or`/`not` bilan birga uni isbotlash juda qiyin, shuning uchun operatorlardan yoki subsumption dan biri tanlanadi.
+
+**Spring'da qayerda uchraydi:** Domen qoidasi `interface Specification<T> { boolean isSatisfiedBy(T candidate); }` bo'lib domen paketida turadi. Repozitoriyda esa `findByDueDateBefore(LocalDate)` kabi keng so'rov qoldirib, aniq filtr xotirada bajariladi. Spring Data ning `org.springframework.data.jpa.domain.Specification` i boshqa narsa: u `Root`, `CriteriaQuery` va `CriteriaBuilder` ni oladi, ya'ni domenni JPA ga bog'laydi, shuning uchun u infratuzilma paketida qoladi va domen spetsifikatsiyasidan alohida adapter bilan ulanadi.
+
+**Qo'llanish keyslari:**
+- `isDelinquent` qoidasini `Invoice` dan `DelinquentInvoiceSpecification` ga chiqarish.
+- Qoidani ilova servisidagi `if` daraxtidan domen spetsifikatsiyasiga ko'chirish.
+- Repozitoriyda `findByDueDateBefore` qoldirib, imtiyozli davrni xotirada tekshirish.
+- Ombor joylashtirish generatorini yozishdan oldin joylashtirish qoidalarini spetsifikatsiya qilish.
+- Faqat `and` operatorini qo'llab, `or`/`not` va `subsumes` ni talab chiqmaguncha yozmaslik.
+
+**Ehtiyot bo'ling:** Xotirada filtrlash tekin emas: so'rov ko'proq qator qaytaradi va bu to'g'ridan-to'g'ri performance hit. Agar yuklanadigan qator soni katta bo'lsa, so'rovni model atributlarida ifodalaydigan ORM imkoniyatini qidiring yoki o'qish modelini ajratib oling. Pattern kerak bo'lmagan imkoniyatni qurishni anglatmaydi: to'liq buluv algebrasi va subsumption yozib qo'yish ularni hech kim chaqirmasa ham qo'llab-quvvatlash yuki beradi.
+
+```java
+// Qoida domen paketida, bajarish joyi alohida qaror
+public interface InvoiceSpecification {
+    boolean isSatisfiedBy(Invoice invoice);
+    default InvoiceSpecification and(InvoiceSpecification other) {
+        return invoice -> isSatisfiedBy(invoice) && other.isSatisfiedBy(invoice);
+    }
+}
+
+@Service
+class DelinquencyFinder {
+    // Repozitoriy keng so'rov beradi, aniq qoida xotirada ishlaydi:
+    // qoida bir joyda qoladi, narxi ortiqcha yuklangan qatorlar.
+    List<Invoice> delinquent(LocalDate today, InvoiceSpecification rule) {
+        return invoices.dueBefore(today).stream().filter(rule::isSatisfiedBy).toList();
+    }
+}
+```
+
+## 13.75 Kontekstlarni birlashtirish (Merging Bounded Contexts)
+
+**Tavsif:** [Kontekstni](#132-chegaralangan-kontekst-bounded-context) bo'lish oson, birlashtirish qiyin, shuning uchun Evans 14-bobda birlashtirishni ikki bosqichli transformatsiya qilib beradi. Avval birlashtirish kerakligi aniqlanadi: bitta kontekst ichidagi yashirin parchalanishning ikki belgisi bor. Birinchisi bir tushunchaning ikki nusxasi: har ma'lumot o'zgarganda u ikki joyda konvertatsiya bilan yangilanishi kerak bo'ladi, amalda yangilanmaydi, natijada bir tushunchaning turli qoidalarga va hatto turli ma'lumotga ega ikki versiyasi qoladi. Ikkinchisi "false cognates": ikki odam bir atamani ishlatib, bir narsa haqida gaplashayotganini o'ylaydi, aslida yo'q; natijada jamoalar bir-birining kodini buzadi va bazada g'alati ziddiyatlar paydo bo'ladi. Erta ogohlantirish belgisi odatda til chalkashligi, qo'shimcha belgilar esa mos kelmaydigan interfeys va kutilmagan xulq. Birlashtirish qaroridan keyin to'liq birlashtirishni ham [Shared Kernel](#134-umumiy-yadro-shared-kernel) dan boshlang: ikkala kontekstning ichki izchilligini tekshirib, kod ulashish va modul nomlash tartibini belgilang, hech qanday umumiy kod yozishdan oldin kamida haftada bir integratsiya va test to'plamini qo'ying, keyin ikkala kontekstda takrorlangan va core bo'lmagan kichik subdomendan boshlang. Ikki jamoadan 2-4 dasturchi umumiy modelni va uning asosiy testlarini belgilaydi, implementatsiya ikkala jamoadan birov tomonidan qilinadi, oxirida keraksiz tarjimalar olib tashlanadi; keyingi iteratsiyalarda shu qadamlar takrorlanadi. Shared Kernel dan uzluksiz integratsiyaga o'tish uchun avval har jamoada CI jarayonlari alohida o'rnatiladi va uyg'unlashtiriladi, jamoalar orasida odamlar aylantiriladi, har model alohida distillanadi, keyin core domenni yadroga ko'chirish bajariladi; bu yuqori xarajatli va xatoga moyil bosqich, shuning uchun tez o'tiladi va yangi ishdan ustun qo'yiladi, integratsiya chastotasi esa haftalikdan kunlikka va uzluksizga oshiriladi.
+
+**Spring'da qayerda uchraydi:** Birlashtirish yo'li kodda bosqichma-bosqich ko'rinadi: avval ikki modulni bitta Gradle loyihasida `:shared-kernel` moduli bilan ulash, Spring Modulith `@ApplicationModule(allowedDependencies = { "shared" })` bilan yangi bog'liqlikni e'lon qilish va `ApplicationModules.of(...).verify()` testini CI ga qo'yish. Umumiy model testlari Testcontainers ustida ikkala kontekstning integratsiya testini birgalikda ishga tushiradi; eski tarjima qatlami `@Deprecated` bo'lib, oxirgi iste'molchi ketganda o'chiriladi.
+
+**Qo'llanish keyslari:**
+- Bir atama ikki kontekstda boshqa narsani bildirayotganini aniqlab, uni ikki aniq nomga ajratish.
+- Birlashtirishni core emas, takrorlangan kichik subdomendan boshlash.
+- Umumiy model uchun ikki jamoadan 2-4 dasturchidan vaqtincha guruh yig'ish.
+- Yadro kengayganda integratsiya chastotasini haftalikdan kunlikka oshirish.
+- Birlashgach keraksiz tarjima qatlamlarini bosqichma-bosqich o'chirish.
+
+**Ehtiyot bo'ling:** Ixtisoslashgan jargonga moslangan qismlarni yadroga tortmang: Evans ularni ikkalasini bosib o'tadigan chuqurroq model topilmaguncha qoldirishni aytadi, aks holda ikki foydalanuvchi guruhining aniq tilini bitta yuvilgan modelga almashtirasiz. Vaqtinchalik umumiy baza yoki umumiy yadro ko'prigi ham faqat yakuni belgilangan migratsiya rejasi bilan oqlanadi: reja va yopilish sanasi bo'lmasa, u doimiy holatga aylanadi va kontekst chegarasi yo'qoladi; umumiy bazani [bo'g'uvchi anjir ilovasi](27-monolitdan-microservicega-migratsiya.md#271-boguvchi-anjir-ilovasi-strangler-fig-application) migratsiyasida qanday ko'rish kerakligi alohida mavzu.
+
+```text
+Birlashtirish: parchalanishni tanish, keyin ikki transformatsiya
+
+Belgilar: bir tushunchaning ikki nusxasi | false cognates
+          til chalkashligi (eng erta) | mos kelmagan interfeys, kutilmagan xulq
+
+SEPARATE WAYS -> SHARED KERNEL
+  1 ikkala kontekst ichki izchilligini tekshir
+  2 kod ulashish tartibi + haftalik integratsiya + test to'plami (kod yozishdan OLDIN)
+  3 takrorlangan, core bo'lmagan kichik subdomendan boshla
+  4 ikki jamoadan 2-4 dasturchi umumiy model va testlarni belgilaydi
+  5-7 implementatsiya, integratsiya, keraksiz tarjimani olib tashlash
+
+SHARED KERNEL -> CONTINUOUS INTEGRATION
+  1 har jamoada CI ni o'rnat va uyg'unlashtir
+  2 odamlarni jamoalar orasida aylantir
+  3 har modelni distilla
+  4 core ni yadroga ko'chir (yuqori xarajat, tez bajar)
+  5 integratsiya chastotasini haftalik -> kunlik -> uzluksiz
+```
+
+## 13.76 Core domenga investitsiya qarorlari (Investing in the Core Domain)
+
+**Tavsif:** "Eng kuchli muhandislar core da" qoidasi Evans 15-bobda sabab bilan beriladi va yana uch qarorni ochadi. Sabab yomon doira: eng kuchli texnik odamlar odatda domenni bilmaydi, bu ularning foydasini cheklaydi va menejerlarni ularni texnik qiziqarli yordamchi qismlarga qo'yishga undaydi, natijada bilim yig'ish imkoni ham yo'qoladi va core kuchsiz dasturchilar qo'lida qoladi. Doirani buzish uchun uzoq muddatli majburiyatli, domen bilimining omboriga aylanishdan manfaatdor kuchli dasturchilar va biznesni chuqur biladigan bir yoki bir necha domen eksperti bitta jamoada yig'iladi; qisqa muddatli tashqi dizayner core uchun "chelakdagi teshik" bo'ladi, chunki bilim u bilan ketadi, lekin mentor rolidagi ekspert jamoaning dizayn ko'nikmasini o'stirishda juda qimmatli. Ikkinchi qaror: core ni sotib olib bo'lmaydi. Sohaviy model frameworklari (Evans yarimo'tkazgich sanoatining Sematech CIM va IBM ning San Francisco frameworklarini misol qiladi) hozircha ishonchli natija bermadi, ular ko'pincha faqat [e'lon qilingan til](#139-elon-qilingan-til-published-language) sifatida foydali; maxsus dasturning eng katta qiymati core ustidagi to'liq nazoratdan keladi. Framework sizni bundan ko'proq cheklasa uch ehtimol bor: muhim aktivni yo'qotyapsiz (cheklovchi frameworkdan voz kechish kerak), soha o'ylagandek hal qiluvchi emas (core chegarasini qayta chizish kerak) yoki core da maxsus ehtiyoj yo'q (tayyor dastur sotib olish past xatarli yechim). Uchinchi qaror refactoring ustuvorligi: Evans "hamma joyni refactor qil" ni amaliy emas, "og'riyotgan joyni tuzat" ni esa chetini qirqadigan va eng chalkash tugunlardan qochadigan yo'l deb ikkalasini rad etadi. O'rniga: og'riqqa asoslangan refactoring da ildiz core ga yoki core bilan yordamchi element munosabatiga tegsa avval shuni tuzat, erkin refactoring imkoni bo'lsa avval core ni, core ning ajratilishini va yordamchi subdomenlarni generic ga tozalashni ol.
+
+**Spring'da qayerda uchraydi:** Qaror kod tashkilotida ko'rinadi: core modul alohida Gradle moduli bo'lib, framework annotatsiyalaridan toza qoladi (`jmolecules-ddd` va JDK dan boshqa bog'liqlik yo'q), ArchUnit testi esa core paketga Spring, JPA va Jackson importlarini kiritmaydi. Framework core ni cheklayotgani `@Entity` majburiyatlari domen invariantini buzganda ko'rinadi: shunda Spring Data JDBC ga yoki domen va persistence modelini ajratishga o'tiladi. Refactoring ustuvorligi `/docs` dagi ADR va tech debt ro'yxatida core belgisi bilan yuritiladi.
+
+**Qo'llanish keyslari:**
+- Core jamoasiga uzoq muddatli majburiyatli dasturchilar va domen ekspertini birga biriktirish.
+- Tashqi maslahatchini core kodini yozishga emas, jamoani o'qitishga olish.
+- Sohaviy framework core ni cheklaganda uning o'rniga faqat xabar sxemasini (published language) olish.
+- Og'riqqa asoslangan refactoring da ildiz core ga tegishini aniqlab, chetini emas ildizni tuzatish.
+- Bo'sh vaqt chiqqanda yordamchi subdomenni generic ga tozalab, core ni ochish.
+- Maxfiylik talabini faqat core ga qo'llab, qolgan qismni yashirishga kuch sarflamaslik.
+
+**Ehtiyot bo'ling:** Birinchi end-to-end tizimni chetdagi generic subdomendan qurish vasvasasi katta, chunki uni tahlil qilish oson; lekin Evans buni xavf boshqarishning maqsadini buzadi deb ogohlantiradi. End-to-end tizim xavfni faqat qiyin qismlarning homila shakli bo'lsa kamaytiradi, shuning uchun jamoa isbotlangan ko'nikmaga va juda tanish domenga ega bo'lmasa, birinchi kesim core ning biror qismiga (qanchalik oddiy bo'lsa ham) asoslanadi: core kutilmagan qiyin bo'ladi va u bo'lmasa loyiha muvaffaqiyatsiz chiqadi. Qisqa yo'l va sehrli o'q yo'q: natija barqaror jamoaning to'plangan bilimidan chiqadi.
+
+```text
+Core ga investitsiya: to'rt qaror
+
+kim yozadi     uzoq muddatli kuchli dasturchi + domen eksperti bitta jamoada
+               qisqa muddatli tashqi dizayner = chelakdagi teshik
+               mentor roli = foydali
+
+sotib olinadimi  yo'q. sohaviy framework ko'pincha faqat published language
+                 framework ko'proq cheklasa: aktivni yo'qotyapsiz / soha hal
+                 qiluvchi emas / maxsus ehtiyoj yo'q (tayyor dastur ol)
+
+refactoring      og'riqli: ildiz core ga tegsa avval shuni tuzat
+                 erkin: core -> core ni ajratish -> yordamchini generic ga tozalash
+
+birinchi kesim   core ning bir qismidan, chetdagi generic subdomendan emas
+```
+
+## 13.77 Mas'uliyat qatlamlarining tipik oilasi (A Typical Family of Responsibility Layers)
+
+**Tavsif:** [Mas'uliyat qatlamlari](#1354-masuliyat-qatlamlari-responsibility-layers) ni har yangi modelda noldan o'ylash shart emas: Evans 16-bobda bir-biriga bog'liq domenlar oilasida qaytariladigan qatlamlarni sanaydi. **Potential** (Capability): nima qila olamiz, ya'ni tashkilotning resurslari, odamlari va ularning tashkil etilishi, shuningdek ta'minotchilar bilan shartnomalar; bu qatlam deyarli har domenda tanilsa ham, hikoyaning ko'rinadigan qismi bo'lib transport va ishlab chiqarish kabi katta asosiy kapitali bor bizneslarda chiqadi. **Operation**: nima qilinyapti, ya'ni o'z faoliyatimiz va rejalarimiz; Operation obyektlari Potential obyektlariga murojaat qiladi yoki ulardan tuziladi, teskarisi esa taqiqlanadi. Evans ko'p mavjud tizimda shu ikki qatlam hammasini qoplashini aytadi. **Decision Support**: qanday harakat qilish yoki qanday siyosat qo'yish kerak, ya'ni tahlil va qaror; u Potential yoki Operation ga tayanadi va ko'p loyihada data warehouse texnologiyasi bilan qurilgani uchun alohida [bounded context](#132-chegaralangan-kontekst-bounded-context) bo'lib, Operations bilan [mijoz-ta'minotchi](#135-mijoz-taminotchi-customer-supplier) munosabatida turadi. **Policy**: qoida va maqsadlar; ular asosan passiv va boshqa qatlamlarning xulqini cheklaydi, ba'zan pastki metodga argument bo'lib uzatiladi, ba'zan Strategy patterni qo'llanadi va Decision Support bilan juftlikda yaxshi ishlaydi. **Commitment**: nimani va'da qildik; bu qatlam Policy ga o'xshaydi, chunki kelgusi operatsiyalarni yo'naltiradigan maqsadlarni e'lon qiladi, lekin Operations ga ham o'xshaydi, chunki majburiyatlar kundalik biznes faoliyati bilan paydo bo'ladi va o'zgaradi. Sug'urta va moliyaviy xizmatlarda imkoniyat ko'p jihatdan joriy operatsiyalardan belgilanadi, shuning uchun Potential Operations ga qo'shilib ketadi va boshqa qatlamlash evolyutsiya qiladi; Potential va Commitment bir-birini inkor etmaydi va ikkalasi birga ishlatilishi mumkin.
+
+**Spring'da qayerda uchraydi:** Qatlam top-level paket bo'ladi (`com.acme.potential`, `com.acme.operation`, `com.acme.policy`) va yo'nalish Spring Modulith `@ApplicationModule(allowedDependencies = ...)` yoki ArchUnit `layeredArchitecture()` qoidasi bilan majburlanadi. Decision Support alohida kontekst bo'lsa, u o'z `DataSource` i va read-model sxemasi bilan yuritiladi. Policy qatlami qoidalar mexanizmida (Drools, Camunda DMN) yozilganda ham domen tiplari o'zgarmaydi: qoidalar bir xil `record` va `enum` lar ustida ishlaydi.
+
+**Qo'llanish keyslari:**
+- Zavod avtomatizatsiyasida uskuna imkoniyatini Potential, ishlab chiqarish holatini Operation qatlamiga qo'yish.
+- Decision Support ni data warehouse ustida alohida kontekst qilib, Operations ga customer-supplier qilib bog'lash.
+- Rezerv limitlari va aktiv taqsimlash maqsadlarini Policy qatlamiga chiqarish.
+- Sug'urtada Potential ni Operations ga qo'shib, Commitment qatlamini alohida ajratish.
+- Qatlam yo'nalishini ArchUnit testi bilan qotirib, Operation dan Policy ga chaqiruvni taqiqlash.
+
+**Ehtiyot bo'ling:** Qatlamlar sonini oshirmang: Evans to'rt va ehtimol beshtadan oshsa tizim noqulay bo'lishini, hikoyani aytmay qo'yishini va katta masshtabli struktura hal qilmoqchi bo'lgan murakkablik yangi shaklda qaytishini aytadi, struktura esa shafqatsiz distillanishi kerak. Bu besh qatlam barcha domenlarga mos kelmaydi: boshqa domenda dizaynni shu shaklga majburlash zararli bo'ladi va qatlamlar butunlay original bo'lishi mumkin. Policy ni qoidalar mexanizmida yozish uni alohida kontekstga aylantirmaydi: turli texnologiyalarni muvofiqlashtirish qiyinligi qoida va u qo'llanadigan obyektlar uchun bir xil modelni qat'iy ishlatish bilan yengillashadi, qoidalar boshqa modelga asoslansa yo murakkablik keskin oshadi yoki obyektlar soddalashtirilib qoladi.
+
+```text
+Tipik qatlam oilasi va bog'liqlik yo'nalishi (yuqoridan pastga qarab bog'lanadi)
+
+Decision Support  qanday qaror / siyosat?   tahlil; ko'pincha alohida kontekst
+                                            (data warehouse, customer-supplier)
+Policy            qoida va maqsad?           passiv; argument yoki Strategy
+Commitment        nimani va'da qildik?       Policy + Operations tabiati
+Operation         nima qilinyapti?           Potential ga murojaat qiladi
+Potential         nima qila olamiz?          resurs, odam, ta'minotchi shartnomasi
+
+Qoidalar: pastki qatlam yuqorisini BILMAYDI. Qatlam soni 4, ehtimol 5 dan oshmaydi.
+Aktiv og'ir bo'lmagan sohada (sug'urta, moliya) Potential Operations ga qo'shiladi.
+```
+
+## 13.78 Framework va DSL modelni bo'g'masligi (Keeping Frameworks and DSLs Out of the Model's Way)
+
+**Tavsif:** Texnik framework domen qatlamini ham tezlashtirishi mumkin, lekin Evans 17-bobda xavfni aniq qo'yadi: arxitektura domen modelining ifodali implementatsiyasiga va oson o'zgarishiga xalaqit berishi mumkin, hatto framework dizaynerlari domen qatlamiga kirishni mo'ljallamagan bo'lsa ham. Strategik dizaynning cheklovlari bu yerda ham amal qiladi: evolyutsiya, minimalizm va ilova jamoasi bilan haqiqiy aloqa; bu yo'ldan bormagan arxitektura yo ishlab chiqishni bo'g'adi, yo chetlab o'tiladi va amalda hech qanday arxitektura qolmaydi. Evans bitta munosabatni frameworkni buzadigan narsa deb ajratadi: "dummies uchun framework yozmang". Ba'zi odamlarni dizayn qila olmaydi deb hisoblaydigan bo'linma muvaffaqiyatsiz chiqadi, chunki ilova dizaynining qiyinligini kam baholaydi; agar u odamlar dizayn qila olmasa, ularni dastur yozishga qo'ymaslik kerak, agar qila olsa, ularni ehtiyotlab o'ralashtirish faqat ular bilan kerakli asboblar orasiga to'siq qo'yadi. Farq noaniq va Evans buni bitta savolga qisqartiradi: asbobdan foydalanadigan odamdan nima kutilyapti; agar unga yuqori hurmat ko'rinsa, yo'l to'g'ri. Bir xil ehtiyotkorlik ikkita aniq holatda kerak. Birinchisi arxitektura frameworkini tanlab qo'llash: Evans 4-bobda har domen obyektini EJB entity bean qilib yozgan loyiha ham tezlikni, ham rivojlanishni sekinlashtirganini keltiradi, shuning uchun framework imkoniyatlarining hammasidan foydalanmaslik to'g'ri qaror bo'ladi va biznes obyektlari o'qiladigan qolishi kerak. Ikkinchisi [deklarativ dizayn](#1342-deklarativ-dizayn-declarative-design) uchun DSL: Evans 10-bobda uning narxini sanaydi, modelni aniqlashtirish uchun tilning o'zini (grammatika va sinf kutubxonasini) o'zgartirish kerak bo'ladi, mijoz kodini yangi modelga refactor qiladigan vosita yo'q, va ilova bilan model bitta tilda yozilishining uzluksizligi yo'qoladi; shuning uchun DSL faqat juda yetuk modelda va mijoz kodi boshqa jamoada bo'lganda oqlanadi, aks holda framework quruvchilar bilan oddiy ilova yozuvchilar orasida zaharli bo'linish paydo bo'ladi.
+
+**Spring'da qayerda uchraydi:** Tanlab qo'llash amalda shunday ko'rinadi: JPA olinadi, lekin `@Entity` domen invariantini buzsa Spring Data JDBC ga yoki domen va persistence modelini ajratishga o'tiladi; Spring Modulith olinadi, lekin faqat `@ApplicationModule` va `verify()` qismi; Spring Security olinadi, lekin domen qarori `@PreAuthorize` ifodasiga emas domen metodiga yoziladi. Ichki platforma jamoasi yozgan starter uchun o'lchov oddiy: ilova jamoasi uni chetlab o'tishga harakat qilayotgan bo'lsa, starter ularga yordam bermayapti. DSL o'rniga Java ning o'zidagi fluent interfeys va `sealed interface` yetadi.
+
+**Qo'llanish keyslari:**
+- Framework imkoniyatining faqat kerakli qismini olish va qolganini ishlatmaslik.
+- Domen sinflarini framework annotatsiyalaridan toza qoldirib, mapping ni infratuzilmada qilish.
+- Ichki starter ni "majburiy" qilishdan oldin ilova jamoalaridan haqiqiy fikr olish.
+- DSL o'rniga domen tilida nomlangan fluent API va `record` lar bilan cheklanish.
+- Platforma jamoasi a'zolarini ilova kodini yozishga qaytarib, teskari aloqani tiklash.
+
+**Ehtiyot bo'ling:** Keraksiz texnik tafsilotni yopish yaxshi, foydalanuvchini bolalarcha kutish esa yomon, va chegara kodda emas munosabatda ko'rinadi. DSL ni "deklarativ bo'lsin" degan sabab bilan kiritish eng qimmat xato: refactoring vositasi yo'qligi uchun mijoz kodi til o'zgarganda qo'lda tuzatiladi va bu modelni rivojlantirishni to'xtatadi. Framework qaror erkinligini cheklab qo'yganini erta sezish uchun bitta amaliy sinov bor: yangi biznes qoidasini qo'shish uchun framework konfiguratsiyasini o'zgartirish kerak bo'lsa, chegara allaqachon buzilgan.
+
+```java
+// Frameworkni tanlab qo'llash: domen toza, mapping chetda
+public final class Policy {              // Spring, JPA va Jackson annotatsiyasi YO'Q
+    private final PolicyNumber number;
+    private final Premium premium;
+    public void endorse(Endorsement e) { /* invariant shu yerda */ }
+}
+
+@Table("policy")                         // persistence modeli alohida
+record PolicyRow(@Id Long id, String number, long premiumMinor, String currency) { }
+
+@Component
+class PolicyMapper {                     // framework faqat chegarada turadi
+    Policy toDomain(PolicyRow row) { /* ... */ return null; }
+}
+// Yangi biznes qoidasi uchun framework konfiguratsiyasini o'zgartirish kerak bo'lsa,
+// chegara allaqachon buzilgan.
+```
+
+## 13.79 Amalda qo'llash
 
 - [ ] Domen tilidagi atamalarni ro'yxat qiling va kodda boshqa nom bilan atalganlarini toping.
 - [ ] Har bir agregat uchun invariantni bir gapda yozing va u qayerda majburlanayotganini ko'rsating.
@@ -2062,13 +2686,51 @@ record Account(AccountId id, List<Entry> entries) {
 - Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 13-bob (322-327) - Repository (Edward Hieatt va Rob Mee): Repository ning ikkinchi manbasi, Evans 6-bobi bilan birga (13.16)
 - Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 18-bob (486-495) - Value Object va Money: valyutani miqdor bilan birga saqlash, yaxlitlashda tiyin yo'qolishi va `allocate` amali (13.14, 13.35)
 - Robert C. Martin, *Clean Architecture*, Prentice Hall, 2017, 20-bob (Business Rules: Entities, Use Cases) - 13.19 va 13.34 dagi entity va use case mas'uliyatlarining ajratilishi
+- Vlad Khononov, *Learning Domain-Driven Design*, O'Reilly, 2021, 11-bob (173-177, `Tactical Design Concerns`) - dizayn shaklini almashtirish signali, transaction script dan active record ga va active record dan domain model ga o'tishning to'rt qadami, `Generating Past Transitions` va `Modeling Migration Events` (13.63)
+- Vlad Khononov, *Learning Domain-Driven Design*, O'Reilly, 2021, 3-bob (38-40, `Bounded Contexts Versus Subdomains`) - subdomen tahlil bilan topiladi, bounded context esa loyihalanadi; 1:1 majburiy emasligi, kontekst o'lchamining o'zi qaror emasligi va bog'liq funksiyani bo'lmaslik qoidasi (13.64)
+- Vlad Khononov, *Learning Domain-Driven Design*, O'Reilly, 2021, 1-bob (11-12, `Identifying Subdomain Boundaries`) - subdomen chegarasini tashkiliy sxemadan boshlab distillash va "bir aktyor, bir xil ma'lumot, bog'liq use case to'plami" to'xtash mezoni (13.64)
+- Vlad Khononov, *Learning Domain-Driven Design*, O'Reilly, 2021, 13-bob (202-204) - brownfield da core ni aniqlash evristikasi ("secret sauce" va biznes qayta yozishga jur'at etmaydigan legacy), generic hamda supporting belgilari, mavjud dizaynni o'rganish tartibi va yo'qolgan bilimni EventStorming bilan tiklash (13.64, 13.3)
+- Vlad Khononov, *Learning Domain-Driven Design*, O'Reilly, 2021, 2-bob (28, `Effective Modeling` va `Modeling the Business Domain`) - samarali model maqsadli abstraksiya ekani, umumiy tilning cheklangan qamrovi va modelni faqat ekspert tilida tekshirish mumkinligi (13.1)
+- Vlad Khononov, *Learning Domain-Driven Design*, O'Reilly, 2021, 4-bob (56-57, `Separate Ways`) - uch sabab (`Communication Issues`, `Generic Subdomains`, `Model Differences`) va patternning core subdomenda ishlatilmasligi (13.10)
+- Eric Evans, *Domain-Driven Design*, Addison-Wesley, 2004, 9-bob (MAKING IMPLICIT CONCEPTS EXPLICIT: Listen to Language, Scrutinize Awkwardness, Contemplate Contradictions, Read the Book, Representing Processes as Domain Objects) - 13.65 dagi to'rt usul va 13.18 dagi jarayonni modelga chiqarish mezoni; ziddiyatlarning hammasini hal qilish amaliy emasligi ham shu bobda aytiladi
+- Eric Evans, *Domain-Driven Design*, Addison-Wesley, 2004, 13-bob (Bringing the Pieces Together: Initiation, Exploration Teams, Timing) - 13.43 dagi exploration team tarkibi va davomiyligi, refactoring uchun uch shart va reliz arafasida refactoring qilinmasligi
+- Eric Evans, *Domain-Driven Design*, Addison-Wesley, 2004, 16-bob (REFACTORING TOWARD A FITTING STRUCTURE: Minimalism, Communication and Self-Discipline, Distillation Lightens the Load) - 13.52 dagi strukturani keyinroq o'zgartirish narxini kamaytirishning uch yo'li va strukturasi bor dizaynning osonroq o'zgarishi
+- Eric Evans, *Domain-Driven Design*, Addison-Wesley, 2004, 1-bob (Crunching Knowledge: Why It Worked; Knowledge Rich Design: Extracting a Hidden Concept) - 13.36 dagi modelni ishlaydigan prototip bilan erta bog'lash va 13.23 dagi yashirin qoidani nomlangan obyektga chiqarish; muvaffaqiyat sabablarining birinchisi aynan "model va implementatsiyani imkon qadar tez bog'lash" deb beriladi, overbooking qoidasi misoli esa shu bobda
+- Eric Evans, *Domain-Driven Design*, Addison-Wesley, 2004, 2-bob (Modeling Out Loud, Scenario Walkthroughs) - 13.68 dagi modelni ovoz chiqarib sinash va ssenariyni model obyektlari bilan qadamma-qadam yurib chiqish; `Routing Service` iborasining uch varianti shu bobda solishtiriladi
+- Eric Evans, *Domain-Driven Design*, Addison-Wesley, 2004, 3-bob (From Procedural to Model-Driven, Letting the Bones Show) - 13.36 dagi nom konvensiyasi orqali bilvosita keltirilgan tushuncha xavfi va foydalanuvchiga ko'rsatilgan modelning implementatsiya modeliga mos bo'lishi talabi
+- Eric Evans, *Domain-Driven Design*, Addison-Wesley, 2004, 4-bob (Architectural Frameworks) - 13.78 dagi arxitektura frameworkini tanlab qo'llash qoidasi; har domen obyektini EJB entity bean qilgan loyiha misoli va ilova qatlamining biznes holatini saqlamasligi (13.19) shu bobda
+- Eric Evans, *Domain-Driven Design*, Addison-Wesley, 2004, 5-bob (Associations, Modeling ENTITIES, Designing the Identity Operation, Designing VALUE OBJECTS, Special Cases: When to Allow Mutability, SERVICES: Granularity) - 13.69, 13.70, 13.13, 13.14 va 13.18; assotsiatsiyani cheklashning uch vositasi, ID ning taqsimlangan va arxivlangan holda ham yagona va o'zgarmas bo'lishi, ulashishning uch sharti hamda mutability ga ruxsat beradigan sabablar ro'yxati shu bobda
+- Eric Evans, *Domain-Driven Design*, Addison-Wesley, 2004, 6-bob (FACTORIES: Designing the Interface, Where Does Invariant Logic Go?, ENTITY FACTORIES Versus VALUE OBJECT FACTORIES, Reconstitution of Stored Objects, Choosing FACTORIES and Their Sites; REPOSITORIES: Client Code Ignores REPOSITORY Implementation, Implementing a REPOSITORY) - 13.72, 13.73, 13.17, 13.70 va 13.71; "Leave transaction control to the client" aynan shu bobdagi repozitoriy implementatsiyasi ro'yxatida turadi, "all objects" so'rovi xotirani tugatgan keys ham shu yerda
+- Eric Evans, *Domain-Driven Design*, Addison-Wesley, 2004, 7-bob (Designing Associations in the Shipping Domain, AGGREGATE Boundaries, Selecting REPOSITORIES, Sample Application Feature: Repeat Business, New Feature: Allocation Checking) - 13.69, 13.71, 13.73, 13.15 va 13.18; beshta agregat ildizidan faqat to'rttasiga repozitoriy yaratilishi va `Enterprise Segment` ni ma'lumot egasi emas qoida egasi hisoblashi shu bobda
+- Eric Evans, *Domain-Driven Design*, Addison-Wesley, 2004, 8-bob (A Decent Model, and Yet...; A Deeper Model) - 13.43 va 13.65; murakkablashgan algoritm bilan bartaraf etilmagan yaxlitlash nuqsoni va ekspertlar tanimagan `Loan Investment` sinfi shu bobda
+- Eric Evans, *Domain-Driven Design*, Addison-Wesley, 2004, 9-bob (SPECIFICATION: Querying, Building to Order; Explicit Constraints; Clearing Development Logjams with Working Prototypes) - 13.74 va 13.24; spetsifikatsiyadan SQL hosil qilish jadval tuzilmasini domen qatlamiga sizdirishi va cheklov host obyekt dizaynini buzayotganining uch belgisi shu bobda
+- Eric Evans, *Domain-Driven Design*, Addison-Wesley, 2004, 10-bob (Extending SPECIFICATIONS in a Declarative Style, Domain-Specific Languages) - 13.74 dagi operatorlar to'plamini cheklash va subsumption tanlovi, 13.78 dagi DSL ning kamchiliklari (grammatikani o'zgartirish, mijoz kodini refactor qilish vositasining yo'qligi)
+- Eric Evans, *Domain-Driven Design*, Addison-Wesley, 2004, 11-bob (Posting Rules, Executing Posting Rules) - 13.61 dagi uch ishga tushirish rejimi: eager firing, hisobga asoslangan va qoidaga asoslangan
+- Eric Evans, *Domain-Driven Design*, Addison-Wesley, 2004, 14-bob (Recognizing Splinters Within a BOUNDED CONTEXT, Organizing and Documenting CONTEXT MAPS, Accepting That Which We Cannot Change, Relationships With the External Systems, The System Under Design, Catering to Special Needs With Distinct Models, Deployment, Transformations: Merging CONTEXTS) - 13.75, 13.2, 13.3, 13.4, 13.6, 13.7, 13.10 va 13.39; "fewer than ten people" chegarasi, duplicate concepts va false cognates belgilari hamda kontekstlarni birlashtirishning yetti qadami shu bobda
+- Eric Evans, *Domain-Driven Design*, Addison-Wesley, 2004, 15-bob (CORE DOMAIN: Who Does the Work, Choosing Refactoring Targets, Project Risk Management; GENERIC SUBDOMAINS: to'rt variant va Generic doesn't mean reusable; HIGHLIGHTED CORE: Distillation Document, Distillation Document as Process Tool) - 13.76, 13.67 va 13.47; distillash hujjati uchun "3-7 siyrak sahifa" va domen qarashlari bayonoti uchun "~1 sahifa" aynan shu bobda, ikkisi alohida hujjat
+- Eric Evans, *Domain-Driven Design*, Addison-Wesley, 2004, 16-bob (Choosing Appropriate Layers, How Restrictive Should a Structure Be?, KNOWLEDGE LEVEL) - 13.77, 13.51, 13.54 va 13.55; qatlam sonining "to'rt va ehtimol besh" chegarasi, Potential/Operation/Decision Support/Policy/Commitment oilasi va bilim darajasining qatlam emasligi shu bobda
+- Eric Evans, *Domain-Driven Design*, Addison-Wesley, 2004, 17-bob (Objects are Specialists; Developers are Generalists; The Same Goes for the Technical Frameworks; Alexander ning Oregon Experiment qaydasi) - 13.62 va 13.78; "don't write frameworks for dummies" va master plan ning muvaffaqiyatsizligi haqidagi iqtibos shu bobda
+- Eric Evans, *Domain-Driven Design*, Addison-Wesley, 2004, Epilogue (Seven Years Later) - 13.47 dagi topshirish paketi (to'liq test to'plami va distillash hujjati) va dizayn muvaffaqiyati uning uzoq yashashi bilan o'lchanmasligi
+- Vlad Khononov, *Learning Domain-Driven Design*, O'Reilly, 2021, 1-bob (4-9, 17) - 13.66 dagi uch sinov (yon biznes, narx, CRUD) va 13.68 dagi domen eksperti ta'rifi; supporting bilan generic chegarasining kulrang zona ekani va raqobat ustunligi dasturdan tashqarida bo'lishi mumkinligi shu bobda
+- Vlad Khononov, *Learning Domain-Driven Design*, O'Reilly, 2021, 2-bob (26-31) - 13.1 dagi atama ikki ma'noga ega bo'lishi, sinonimlarni birlashtirmaslik, ingliz otlari bilan nomlash va lug'atning faqat otlarni ushlashi; domen ekspertlari Gherkin testlarini o'zi yozadi degan faraz shu bobda tuzoq deb belgilanadi (13.68)
+- Vlad Khononov, *Learning Domain-Driven Design*, O'Reilly, 2021, 3-bob (35) - 13.2 dagi prefiks bilan ajratishning bounded context o'rnini bosa olmasligi
+- Vlad Khononov, *Learning Domain-Driven Design*, O'Reilly, 2021, 4-bob (51-52, 58) - 13.4 dagi takrorlash va koordinatsiya narxi mezoni, yadro o'zgarishida barcha kontekstlarning integratsiya testlari talabi va Shared Kernel ni oqlaydigan holatlar; 13.3 dagi xaritani jamoalar o'zi yuritishi
+- Vlad Khononov, *Learning Domain-Driven Design*, O'Reilly, 2021, 6-bob (94) - 13.24 dagi murakkablikning erkinlik darajasi, ya'ni holatni tasvirlash uchun kerak mustaqil ma'lumot soni sifatida ta'riflanishi
+- Vlad Khononov, *Learning Domain-Driven Design*, O'Reilly, 2021, 7-bob (111-114) - 13.57 dagi snapshot mezoni (sezilarli sekinlik agregatda 10000 dan ortiq hodisadan keyin), log fayl, log jadvali va trigger tarixining event sourcing o'rnini bosmasligi, parallel yozishda ziddiyatni biznes qoidasi bilan hal qilish
+- Vlad Khononov, *Learning Domain-Driven Design*, O'Reilly, 2021, 11-bob (173, 181) - 13.60 dagi subdomen turi o'zgarganda implementatsiya joyining ko'chishi va o'sish paytida subdomen, kontekst hamda agregat darajalarini qayta tekshirish
+- Vlad Khononov, *Learning Domain-Driven Design*, O'Reilly, 2021, 12-bob (190, 196) - 13.32 dagi burilish hodisalarining kontekst chegarasi ko'rsatkichi bo'lishi, har buyruqning chaqiruvchisi tekshiruvi va EventStorming ning oddiy jarayonda kam foyda berishi
+- Vlad Khononov, *Learning Domain-Driven Design*, O'Reilly, 2021, 13-bob (210-212) - 13.71 dagi tranzaksiya talablarini ikki yo'nalishda tahlil qilish va 13.15 dagi agregat mantig'ini saqlangan protseduraga o'tkazmaslik
+- Vlad Khononov, *Learning Domain-Driven Design*, O'Reilly, 2021, 14-bob (227) - 13.2 dagi agregatni mustaqil servis qilishdan oldingi uch savol va aloqa kuchli bo'lsa servisning yuzaki bo'lib qolishi
+- Vlad Khononov, *Learning Domain-Driven Design*, O'Reilly, 2021, Appendix A (277-278, 283-285) - 13.1 dagi umumiy tilning core, supporting va generic subdomenlar uchun bir xil zarurligi va 13.15 dagi saqlangan protsedurani boshqa jamoaga berish yashirin kontekst chegarasi hosil qilishi
 - ESLATMA: Evans kitobi uchun bet raqami yozilmadi. Repodagi nusxa 2003-yil aprel "Final Manuscript" bo'lib, uning betlari 2004-yilda chop etilgan nashr betlari bilan mos kelmaydi; shuning uchun iqtibos bob raqami va pattern nomi bilan beriladi
 - ESLATMA: har bo'limdagi "Spring'da qayerda uchraydi" qismi va butun 13.33 (`AbstractAggregateRoot`, `@DomainEvents`) framework tafsiloti - yuqoridagi kitoblardan olingan emas
-- ESLATMA: 13.63 dagi tekshiruv ro'yxati shu korpusning amaliy tavsiyasi, kitobdan olingan emas
+- ESLATMA: 13.66 dagi tekshiruv ro'yxati shu korpusning amaliy tavsiyasi, kitobdan olingan emas
 - ESLATMA: 13.15 va 13.24 dagi kod misollaridagi aniq sonlar (masalan 100 qator chegarasi) namuna qiymatlar - kitoblarda agregat hajmi uchun bunday son yo'q
 - ESLATMA: 13.61 dagi kod misoli Evans ning hisob-kitob modelidan (Account, Entry, Accrual) chiqarilgan Java shakli, kitobdagi diagramma yoki kodning ko'chirmasi emas
 - ESLATMA: 13.57 dagi kod misoli Khononov kitobidagi C# misolining g'oyasi Java ga o'tkazilgan shakli, aynan ko'chirma emas
 - ESLATMA: 13.36-13.56 dagi "Spring'da qayerda uchraydi" qismlari (Spring Modulith, jMolecules, ArchUnit, Spring Cloud Gateway, Axon) framework tafsiloti va Evans kitobidan olingan emas
+- ESLATMA: 13.66-13.78 dagi "Spring'da qayerda uchraydi" qismlari (Keycloak, Spring Data JDBC, `AggregateReference`, Cucumber, Drools va Camunda DMN, `spring-cloud-contract`) framework tafsiloti, kitoblardan olingan emas
+- ESLATMA: 13.66-13.78 dagi kod va diagramma bloklari kitoblardagi qoidalardan chiqarilgan Java va matn shakli, Evans yoki Khononov kitobidagi listinglarning ko'chirmasi emas; `Order`, `Policy`, `Cargoes` kabi nomlar shu korpusning misollari
 
 ---
 

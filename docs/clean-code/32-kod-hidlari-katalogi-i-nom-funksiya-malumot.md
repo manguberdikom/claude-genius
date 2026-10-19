@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 32. Kod hidlari katalogi I: nom, funksiya, ma'lumot (Code Smells I)
 
@@ -298,6 +298,15 @@ Subclasses (362-bet). Java da xatti-harakatni enum ichiga ko'chirish
 yoki `sealed` ierarxiya va pattern matching (25.3) shu harakatning
 tilga xos shakli.
 
+**Arzon mezon**: `switch` kimning ma'lumoti ustida ekanini so'rash.
+1-nashr qoidani shunday beradi - `switch` o'z ma'lumotingiz ustida
+bo'lishi kerak, boshqa obyektning atributi bo'yicha `switch`
+qilinmaydi (35-bet). Bu takrorlanishdan mustaqil, ya'ni bitta joyda
+turgan `switch` ham shu mezon bo'yicha hid bo'lishi mumkin: shox
+tanlovi boshqa sinfning holatiga qarab qilinsa, mantiq ham o'sha
+sinfda turishi kerak. Shuning uchun bu Feature Envy ning `switch`
+shakli (33.18).
+
 ## 32.8 Sikllar (Loops)
 
 **Belgisi**: filtrlash, mapping va yig'ish qo'lda sikl bilan yozilgan.
@@ -586,6 +595,9 @@ emas: chegara kodida (adapter, DTO) ataylab qoldirilgan hid (32.12,
 - Martin Fowler, *Refactoring*, 1-nashr, Addison-Wesley, 1999, 4-bob
   "Building Tests" (73-bet) - mustahkam testlar refaktoringning muhim
   sharti
+- Martin Fowler, *Refactoring*, 1-nashr, Addison-Wesley, 1999, 1-bob
+  (35-bet) - `switch` o'z ma'lumoti ustida bo'lishi kerakligi va boshqa
+  obyektning atributi bo'yicha `switch` qilinmasligi
 - Martin Fowler, *Refactoring*, 1-nashr, Addison-Wesley, 1999, 6-11
   boblar (89-292 bet) - 32.2-32.13 da keltirilgan harakatlarning
   1-nashrdagi nomlari va betlari: Inline Method (95), Hide Delegate

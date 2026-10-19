@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 7. API dizayn patternlari (API Design Patterns)
 
 <details>
-<summary>Bu bobdagi 34 bo'lim</summary>
+<summary>Bu bobdagi 39 bo'lim</summary>
 
 - [7.1 Resurs-yo'naltirilgan REST (Resource-oriented REST)](#71-resurs-yonaltirilgan-rest-resource-oriented-rest)
 - [7.2 Richardson yetuklik modeli (Richardson Maturity Model)](#72-richardson-yetuklik-modeli-richardson-maturity-model)
@@ -42,7 +42,12 @@
 - [7.31 Hypermedia boshqaruvlari va RPC uslubi (Hypermedia Controls vs RPC-style)](#731-hypermedia-boshqaruvlari-va-rpc-uslubi-hypermedia-controls-vs-rpc-style)
 - [7.32 Chegarada API Key va token autentifikatsiyasi (API Key / Token Auth at the Edge)](#732-chegarada-api-key-va-token-autentifikatsiyasi-api-key--token-auth-at-the-edge)
 - [7.33 Veb-servis brokeri (Web Service Broker)](#733-veb-servis-brokeri-web-service-broker)
-- [7.34 Amalda qo'llash](#734-amalda-qollash)
+- [7.34 PUT va PATCH semantikasi (Full Replacement vs Partial Update)](#734-put-va-patch-semantikasi-full-replacement-vs-partial-update)
+- [7.35 Spring Data REST yo'li va resurs nomlari (Spring Data REST base path and resource names)](#735-spring-data-rest-yoli-va-resurs-nomlari-spring-data-rest-base-path-and-resource-names)
+- [7.36 Texnologiyadan mustaqil API (Technology-Agnostic API)](#736-texnologiyadan-mustaqil-api-technology-agnostic-api)
+- [7.37 Shtamp bog'liqligi (Stamp Coupling)](#737-shtamp-bogliqligi-stamp-coupling)
+- [7.38 Wire format aniqligi: noma'lum maydon, katta son, binar yuk (Wire Format Fidelity)](#738-wire-format-aniqligi-nomalum-maydon-katta-son-binar-yuk-wire-format-fidelity)
+- [7.39 Amalda qo'llash](#739-amalda-qollash)
 
 </details>
 
@@ -190,6 +195,42 @@ class OrderController {
 ```
 
 **Ehtiyot bo'ling:** Versiyalarni ko'paytirish eng qimmat yo'l - har bir aktiv versiya test, monitoring va bug-fix xarajati. Avval qo'shimcha (additive) o'zgarishlar va tolerant reader printsipi bilan versiyasiz yashashga harakat qiling; versiya ochganda sunset sanasini va o'chirish rejasini birgalikda e'lon qiling, aks holda "v1 abadiy" muammosiga tushasiz.
+
+**Zarurat bo'lsa versiyalarni ichkarida zanjirlang:** Newman eski
+interfeysni emulatsiya qilish yo'lini afzal ko'radi, lekin bir vaqtda
+uchta versiyani ushlab turishga tushib qolgan tajribasini ochiq
+tavsiya qilinmaydigan holat deb ataydi: har versiyaning kodi va
+uning ishlashini tasdiqlaydigan testlar qo'shimcha yuk bo'ladi.
+Shu holatni boshqarsa bo'ladigan qiladigan yechim: V1 so'rovini
+ichki V2 so'roviga, V2 ni esa V3 ga aylantirish. Foydasi kodni
+emas, **o'chirishni** osonlashtirishda: eski endpoint o'lganda qaysi
+kod bo'lagi birga ketishi aniq ajralib turadi. Marshrutlash uchun
+Newman ikki shaklni ko'rgan va ikkisi orasida qat'iy tanlov
+qilmaydi: so'rov header idagi versiya raqami va URI dagi `/v1/`,
+`/v2/` (URI ni shaffof emas qilib qoldirish mijozni shablon yozib
+qo'yishdan tiyadi, lekin ochiq shakl marshrutlashni soddalashtiradi).
+RPC tomonida bu qiyinroq: Newman protobuf da metodlarni alohida
+namespace ga (`v1.createCustomer`, `v2.createCustomer`) qo'ygan,
+lekin bir xil turning turli versiyalarini tarmoqdan uzatish kerak
+bo'lsa yondashuv og'riqli bo'lib qolgan.
+
+```java
+// V1 ni V2 ga, V2 ni V3 ga zanjirlash: o'chirish chegarasi aniq.
+@RestController
+class OrderV1Controller {
+
+    private final OrderV2Controller v2;      // zanjirning keyingi bo'g'ini
+
+    @PostMapping("/v1/orders")               // V1 o'lganda shu sinf butunlay ketadi
+    ResponseEntity<OrderV1Response> create(@RequestBody OrderV1Request eski) {
+        OrderV2Request yangi = new OrderV2Request(
+                eski.customerId(),
+                Money.of(eski.amount(), "UZS"),   // V2 da pul turi paydo bo'lgan
+                eski.items());
+        return ResponseEntity.ok(OrderV1Response.from(v2.create(yangi).getBody()));
+    }
+}
+```
 
 ## 7.6 Offset pagination (Offset Pagination)
 
@@ -593,6 +634,8 @@ public class WebhookSender {
 
 **Ehtiyot bo'ling:** Ma'lumot transformatsiyasi va orkestratsiya gateway'ga yuklansa u distributed monolit va yakka failure point'ga aylanadi, client'ga moslangan javob esa [Frontend uchun backend](#719-frontend-uchun-backend-backend-for-frontend-bff) da quriladi.
 
+Texnik tuzoqdan tashqari tashkiliy tuzoq ham bor va u ko'pincha kechroq seziladi, lekin qimmatroq tushadi: gateway ni alohida jamoaga berib qo'yish. Shunda har API o'zgarishi shu jamoaning navbatidan o'tadi - mobil ilova dasturchisi o'ziga kerakli servis API sini ochish uchun so'rov yuborib kutadi, servis jamoasi esa o'z API sini mustaqil chiqara olmaydi. Bu ESB jamoasi modelining qaytishi: markazda hamma o'zgarishni ko'radigan va hamma uchun to'siq bo'ladigan jamoa. To'g'ri taqsimot egalik chizig'i bo'yicha boradi: gateway ning platforma qismi (routing mexanizmi, autentifikatsiya, rate limit, kuzatuv) platforma jamoasiga, har marshrut va har moslangan javobning konfiguratsiyasi esa o'sha API ni iste'mol qiladigan yoki beradigan jamoaga tegishli bo'ladi ([Har bir jamoaga bitta servis](14-microservices-patternlari.md#145-har-bir-jamoaga-bitta-servis-service-per-team)); frontend uchun moslash esa gateway ga emas, frontend jamoasi egallagan BFF ga tushadi.
+
 ## 7.19 Frontend uchun backend (Backend for Frontend, BFF)
 
 **Tavsif:** BFF - har bir client turi (iOS, Android, web SPA, smart TV, partner portal) uchun alohida, o'ziga xos backend qatlami; u ichki servislarni chaqirib, aynan shu UI ehtiyojiga moslashtirilgan javob shaklini beradi. Bu "bitta universal API hammani qoniqtirmaydi" muammosini hal qiladi: mobil kam maydonli va kam so'rovli javob xohlaydi, web esa boshqa kesim. Har bir frontend jamoasi o'z BFF'siga egalik qilgani uchun reliz tezligi oshadi va umumiy API'da kelishuv muzokaralari kamayadi.
@@ -606,7 +649,23 @@ public class WebhookSender {
 - Smart TV yoki kiosk kabi kuchsiz client uchun og'ir hisob-kitoblarni serverga ko'chirish.
 - Legacy va yangi servislarni bitta UI uchun vaqtincha birlashtirish.
 
-**Ehtiyot bo'ling:** Har bir client uchun BFF ko'paygan sari bir xil kod nusxalanadi - umumiy mantiqni kutubxona yoki downstream domain servisiga chiqaring, aks holda 5 ta BFF'da 5 xil biznes qoida paydo bo'ladi. BFF faqat moslashtirish qatlami: u DB'ga to'g'ridan-to'g'ri yozishni yoki domain qoidalarini o'z ichiga olsa, domain mas'uliyati tarqalib ketadi.
+**Ehtiyot bo'ling:** Har bir client uchun BFF ko'paygan sari bir xil kod nusxalanadi - umumiy mantiqni kutubxona yoki downstream domain servisiga chiqaring, aks holda 5 ta BFF'da 5 xil biznes qoida paydo bo'ladi. Newman bu takrorni ikki tomondan yoritadi. Birinchisi: takrorni TOPISH ning o'zi qiyin, chunki u BFF larda ham, turli stekda yozilgan client larda ham yashiringan bo'lishi mumkin; server tomonida stek bir xil bo'lgani uchun BFF lar orasidagi takror hech bo'lmasa ko'rinadi. Ikkinchisi va muhimrog'i - yechim tartibi: takrorni ko'rib darhol BFF larni qayta birlashtirish va umumiy aggregating gateway ga qaytish yutqazadi; umumiy kutubxona arzonroq, lekin bog'liqlikning asosiy manbasi, ayniqsa downstream chaqiruvlar uchun client kutubxonasi yasalsa. Shuning uchun ustunlik PASTDAGI servisga beriladi: chiqarilayotgan narsa biznes domen funksiyasi bo'lsa, u yangi mikroservis bo'ladi yoki aggregatsiya mas'uliyati quyi oqimdagi servisga ko'chiriladi, va shundagina BFF lar yupqa qoladi (Newman, 14-bob, "Reuse and BFFs"). BFF faqat moslashtirish qatlami: u DB'ga to'g'ridan-to'g'ri yozishni yoki domain qoidalarini o'z ichiga olsa, domain mas'uliyati tarqalib ketadi.
+
+Yechimni qachon boshlash kerakligi uchun ham chegara bor. Newman
+servislar orasidagi takrorga bitta servis ichidagi takror kabi
+qattiq munosabatda bo'lmaydi, chunki umumiy kodni ajratish servislar
+orasida qattiq bog'liqlik keltirishi mumkin. Shuning uchun chegara
+vaqt bo'yicha qo'yiladi: abstraksiyani uchinchi marta yozishga
+to'g'ri kelganda ajratish eski qoidasi servis darajasida ham yaxshi
+ishlaydi. Ikki joyda ishlatilishi o'zi servis ajratishga sabab
+bo'lmaydi; lekin yangi servis yaratishning tranzaksiya narxi
+yetarlicha past bo'lsa, yoki kod ikkitadan ko'p joyda ishlatilsa,
+ajratish asosli bo'ladi. Newman ning misoli: mijozning
+wishlist ini ko'rsatish uchun iOS va Android BFF lari bir xil uch
+chaqiruvni (Customer dan element ID lari, Catalog dan nom va narx,
+Inventory dan qoldiq) qiladi; web interfeysi ham qo'shilsa,
+alohida Wishlist mikroservisi aniq jozibali bo'ladi (Newman,
+14-bob, "Reuse and BFFs").
 
 ```java
 // BFF: bitta mijoz turi uchun moslashtirilgan API
@@ -828,6 +887,36 @@ class ApiErrors extends ResponseEntityExceptionHandler {
 
 **Ehtiyot bo'ling:** Ochiq internetda query depth/complexity limiti, `DataLoader` bilan batching va persisted queries bo'lmasa, bitta chuqur so'rov bazani o'ldiradigan DoS vektoriga aylanadi. GraphQL'ni "REST o'rnini bosuvchi" deb hamma joyda ishlatish xato: fayl yuklash/yuklab olish, CDN keshlanadigan oddiy resurslar va servis-servis ichki chaqiruvlari uchun REST yoki gRPC qulayroq.
 
+**Sxema ma'lumot omborini aks ettirmasin:** Newman GraphQL ning eng
+nozik xavfini texnik emas, tushunchaviy deb hisoblaydi. GraphQL
+ishlashda "shunchaki ma'lumot bilan ishlayapmiz" degan hissiyot
+beradi va bu mikroservisni baza ustidagi wrapper deb o'ylashni
+kuchaytiradi (kitob GraphQL ni bazadan ma'lumot olishning umumiy
+API si sifatida loyihalangan OData bilan solishtirganlarni ham
+keltiradi). Mikroservis esa tarmoq interfeysi ustidan funksiyani
+ochadi: ba'zi funksiya ma'lumotni ochishni talab qilishi yoki
+natijasida ma'lumot chiqishi mumkin, lekin servisda o'z ichki
+mantiqi va xulqi bo'lishi shart. Qoida qisqa: GraphQL API si
+mikroservislarning ostidagi ma'lumot omborlariga bog'lanmasligi
+kerak. Shu yerdan yozish tomonidagi kuzatish ham chiqadi: GraphQL
+nazariy jihatdan yozishni qo'llab-quvvatlasa ham, u o'qishdek yaxshi
+o'tirmaydi, shuning uchun jamoalar amalda o'qish uchun GraphQL,
+yozish uchun REST ishlatadigan aralashmaga tushadi. Bu aralashma
+sabab bilan tanlangan bo'lishi kerak, tasodifiy emas.
+
+**Bitta umumiy GraphQL server o'rniga jamoa chegarasi:** GraphQL ning
+asosiy foydasi mijoz so'rovni o'zgartirib aggregatsiya va
+filtrlashni server tomonini o'zgartirmasdan boshqarishi (resolver
+so'rovni servis chaqiruviga xaritalaydi, round trip lar kamayadi,
+ortiqcha maydon uzatilmaydi). Shu sabab GraphQL server umumiy
+aggregating gateway dek bahsli umumiy resursga aylanish ehtimoli
+kamroq. Lekin chegara bor: yangi tur ochish yoki mavjud turga
+maydon qo'shish uchun server tomoni baribir o'zgaradi. Shuning
+uchun Newman bitta umumiy GraphQL server o'rniga jamoa chegaralari
+bo'ylab bir nechta GraphQL backend ni tavsiya qiladi, ya'ni
+GraphQL ning o'zi [BFF](#719-frontend-uchun-backend-backend-for-frontend-bff)
+ni amalga oshirish usuli bo'lib qoladi (Newman, 14-bob, "GraphQL").
+
 ```graphql
 type Order {
   id: ID!
@@ -852,6 +941,8 @@ type Query {
 - Polyglot muhit: Java servisi Go yoki Python client'lari bilan bitta `.proto` kontrakt orqali ishlashi.
 - Mobil client uchun trafikni qisqartirish (binary payload) - gRPC yoki gRPC-Web gateway bilan.
 - Service mesh ichida mTLS va deadline/retry siyosatlarini protokol darajasida qo'llash.
+
+**Sxema evolyutsiyasining to'rt qoidasi.** Kleppmann Thrift va Protobuf uchun ularni mexanizmdan keltirib chiqaradi: kodlangan yozuv maydon NOMINI emas, tag raqamini saqlaydi, shuning uchun (1) maydon nomini o'zgartirish mumkin, lekin tag raqamini o'zgartirish mavjud barcha kodlangan ma'lumotni yaroqsiz qiladi; (2) yangi maydon faqat YANGI tag raqami bilan qo'shiladi, eski kod tanimagan tagni tur annotatsiyasi yordamida nechta bayt o'tkazib yuborishni hisoblab tashlab ketadi (forward compatibility); (3) sxema birinchi deploy qilingandan keyin qo'shilgan har maydon ixtiyoriy yoki default qiymatli bo'lishi shart, aks holda yangi kod eski ma'lumotni o'qiganda majburiylik tekshiruvi yiqiladi (backward compatibility); (4) olib tashlash teskari: faqat ixtiyoriy maydon olib tashlanadi va uning tag raqami boshqa hech qachon qayta ishlatilmaydi (Kleppmann, 4-bob, 120-121-betlar). Tur o'zgarishi alohida xavf: 32 bitli butun sonni 64 bitga aylantirsangiz yangi kod eski ma'lumotni o'qiydi, lekin eski kod yangi ma'lumotni o'qiganda qiymat kesiladi (Kleppmann, 4-bob, 121-bet).
 
 **Ehtiyot bo'ling:** Proto evolyutsiyasi qoidalarini buzish (field raqamini qayta ishlatish, `reserved` qo'ymaslik, `required` semantikasini o'zgartirish) jimgina data corruption keltiradi - buf yoki protolock kabi breaking-change linter'ini CI'ga qo'ying. Public, uchinchi tomon integratsiyalari uchun gRPC'ni yagona yo'l qilib qo'ymang: ko'p client firewall, proxy va brauzer cheklovlari sabab REST/`problem+json` fasad'ini talab qiladi.
 
@@ -937,6 +1028,29 @@ public interface CustomerClient {
 - Partner integratsiyalarida qaysi tenant hali eski endpoint'ga urayotganini metrika bilan aniqlab, maqsadli xabar yuborish.
 - Sunset sanasi kelganda eski endpoint'ni avval `410 Gone` qilib, keyin butunlay olib tashlash.
 - Internal platform API'larida deprecation header'ini CI smoke-test'lari ushlab, iste'molchi jamoalarga build'da ogohlantirish berishi.
+
+**Iste'molchi bilan shartni oldindan kelishib oling:** header va
+sunset sanasi mexanizm, kelishuv esa undan oldin keladi. Newman
+ko'p holatda bu masala umuman muhokama qilinmaganini va shundan
+muammolar chiqqanini aytadi. Lockstep reliz yo'liga bormasangiz,
+servis egasi va iste'molchi to'rt narsada aniq bo'lishi kerak:
+interfeys o'zgarishi kerakligi masalasini qanday ko'tarasiz;
+iste'molchi va servis jamoasi o'zgarish qanday ko'rinishi haqida
+qanday birga kelishadi; iste'molchini yangilash ishini kim
+bajarishi kutiladi; va kelishilgandan keyin iste'molchiga eski
+interfeys olib tashlanguncha qancha vaqt beriladi. Buning uchun
+qalin hujjat va katta majlis shart emas, lekin aniqlik shart.
+Fonidagi tamoyil - iste'molchi birinchi yondashuv: mikroservis
+boshqalar chaqirishi uchun bor, shuning uchun yuqori oqimdagi
+iste'molchiga muammo keltiradigan o'zgarish shuni hisobga olishi
+kerak. Ba'zan iste'molchini o'zgartirish imkonsiz: Newman
+Netflix ning eski set-top box lari misolini keltiradi, ularni
+osongina yangilab bo'lmagani uchun eski endpointlar soni
+yetarlicha kamaymaguncha ochiq qolgan. Shundan eng ochiq xulosa
+chiqadi: eski iste'molchini endpointdan uzish qarori ba'zan
+texnik emas, **moliyaviy** bo'ladi - eski interfeysni
+qo'llab-quvvatlash qancha turadi va o'sha iste'molchilardan
+qancha daromad keladi.
 
 **Ehtiyot bo'ling:** Header'larni qo'yib, lekin haqiqiy foydalanish telemetriyasini yig'maslik eng keng tarqalgan xato - o'chirish paytida kim sinishini bilmay qolasiz. Sunset sanasini o'tkazib yuborish yoki uni bir necha marta surish header'ga ishonchni yo'q qiladi. Ikki header'ning formati bir xil emas: `Sunset` (RFC 8594) HTTP-date ishlatadi (ISO-8601 emas), `Deprecation` (RFC 9745) esa Item Structured Header bo'lib, qiymati Structured Fields Date, ya'ni `@` dan keyin Unix sekundlari: `Deprecation: @1688169599`. RFC 9745 ning o'zi "for historical reasons the Sunset HTTP header field uses a different data format" deb bu farqni ataylab qoldirgan, shuning uchun `Deprecation` ga HTTP-date yozish spetsifikatsiyani buzadi va qat'iy parser'da e'tiborsiz qoladi.
 
@@ -1051,7 +1165,246 @@ public class PspBroker {
 }
 ```
 
-## 7.34 Amalda qo'llash
+## 7.34 PUT va PATCH semantikasi (Full Replacement vs Partial Update)
+
+**Tavsif:** Ikkisi ham resursni o'zgartiradi, lekin ma'nosi boshqa. PUT - "shu URI ga shu ma'lumotni qo'y": u resursni butunlay almashtiradi va GET ning semantik teskarisi (GET serverdan mijozga, PUT mijozdan serverga uzatadi). Shuning uchun mijoz to'liq tanani yuborishi shart: tushib qolgan maydon `null` bilan ustiga yoziladi, yuborilmagan bola kolleksiyasi esa resursdan yo'qoladi. PATCH esa qisman yangilash uchun: faqat o'zgaradigan maydonlar keladi, qolgani serverda o'z holida qoladi (Walls, 7-bob, 171-bet).
+
+**Spring'da qayerda uchraydi:** `@PutMapping` va `@PatchMapping` (`consumes` bilan media turini cheklab), tana `@RequestBody` bilan, resurs identifikatori `@PathVariable` bilan olinadi. Eng muhim nuqta - bu annotatsiyalar faqat qaysi so'rovni ushlashni belgilaydi, resursni QANDAY o'zgartirishni belgilamaydi: PATCH semantikasini metod tanasi beradi, ya'ni kelgan obyektning `null` bo'lmagan maydonlarini mavjud obyektga ko'chirish kerak (Walls, 7-bob, 172-bet). ESLATMA: korpusning qo'shimchasi - domen obyektini emas, o'zgarishlar tavsifini yuboradigan standart formatlar ham bor: JSON Patch (`application/json-patch+json`) va JSON Merge Patch (`application/merge-patch+json`); ularda handler domen DTO sini emas, patch hujjatini qabul qiladi.
+
+**Qo'llanish keyslari:**
+- Sozlama yoki shablon hujjatini to'liq almashtirish: mijoz butun hujjatni yuboradi, server esa farqni o'zi hisoblamaydi (PUT).
+- Buyurtmaning yetkazib berish manzilini yoki bitta holat maydonini o'zgartirish (PATCH).
+- Mobil mijoz tarmoqni tejash uchun faqat o'zgargan maydonni yuborishi kerak bo'lgan API.
+- Takroriy yuborish natijani o'zgartirmasligi kerak bo'lgan import/sinxronizatsiya oqimi: to'liq holat PUT bilan yuboriladi (qarang: [Idempotentlik kaliti](#79-idempotentlik-kaliti-idempotency-key)).
+- Kolleksiyaga element qo'shish yoki undan element o'chirish kerak bo'lganda: patch hujjati formati bilan.
+
+**Ehtiyot bo'ling:** `@PatchMapping` yozib, tanasida kelgan obyektni to'g'ridan-to'g'ri `save()` qilish - review da eng ko'p uchraydigan xato: bu PUT ning xulqi, mijoz yubormagan maydonlar `null` bo'lib qoladi. `null` ni "o'zgarmasin" deb talqin qiladigan patch ning ikki cheklovi bor: mijoz maydonni ataylab `null` qilishni ifodalay olmaydi va kolleksiyadan bitta elementni qo'shib yoki o'chirib bo'lmaydi - to'liq o'zgargan kolleksiya yuborilishi kerak (Walls, 7-bob, 173-bet). Teskari tomoni ham xavfli: PUT ga qisman tana kelsa, server ma'lumotni jim o'chiradi, shuning uchun PUT da to'liq tana talab qilinishi validatsiya darajasida tekshiriladi.
+
+```java
+// PUT: to'liq almashtirish - kelgan tana resursning yangi holati
+@PutMapping(path = "/{orderId}", consumes = "application/json")
+public Order put(@PathVariable Long orderId, @RequestBody Order incoming) {
+    incoming.setId(orderId);
+    return repo.save(incoming);          // yuborilmagan maydon null bo'ladi
+}
+
+// PATCH: faqat kelgan maydonlar ko'chiriladi, qolgani saqlanadi
+@PatchMapping(path = "/{orderId}", consumes = "application/json")
+public Order patch(@PathVariable Long orderId, @RequestBody OrderPatch patch) {
+    Order order = repo.findById(orderId).orElseThrow();
+    if (patch.deliveryName() != null) order.setDeliveryName(patch.deliveryName());
+    if (patch.deliveryCity() != null) order.setDeliveryCity(patch.deliveryCity());
+    return repo.save(order);
+}
+```
+
+## 7.35 Spring Data REST yo'li va resurs nomlari (Spring Data REST base path and resource names)
+
+**Tavsif:** `spring-boot-starter-data-rest` Spring Data repository'laridan tayyor HTTP API yasaydi: kolleksiya va element endpointlari, javobdagi `_links` gipermedia havolalari, POST/PUT/DELETE, hamda `page`, `size` va `sort` parametrlari (Walls, 7-bob, 175-179-bet). Shu avtomatik API ni ishlab chiqarishga qo'yishdan oldin ikki narsa sozlanadi. Birinchisi - ildiz yo'li: `spring.data.rest.base-path` generatsiya qilingan endpointlarni alohida prefiksga ko'chiradi, shunda ular o'zingiz yozgan controller yo'llari bilan to'qnashmaydi. Ikkinchisi - resurs nomi: u entity nomini ko'plikka aylantirishdan olinadi va bu avtomatik ko'plik xato chiqishi mumkin (kitobdagi misolda "taco" uchun "tacoes"), shuning uchun `@RestResource(rel = "tacos", path = "tacos")` bilan havola nomi ham, yo'l ham qo'lda qulflanadi (Walls, 7-bob, 177-179-bet).
+
+**Spring'da qayerda uchraydi:** `spring-boot-starter-data-rest`; repository darajasida `@RepositoryRestResource(path = ..., collectionResourceRel = ...)`, entity va property darajasida `@RestResource(rel = ..., path = ..., exported = ...)`; sozlamalar `spring.data.rest.base-path`, `spring.data.rest.default-page-size`, `spring.data.rest.max-page-size`. Base-path dagi home resource ekspozitsiya qilingan hamma havolani ro'yxat qilib beradi - qaysi nom qanday ko'plikka aylanganini aynan shu yerdan ko'rish mumkin; `RepositoryRestConfigurer` (masalan `exposeIdsFor`) va `@RepositoryRestController` esa generatsiya qilingan xulqni qo'lda ustidan yozish uchun.
+
+**Qo'llanish keyslari:**
+- Admin yoki backoffice CRUD API ni tez ko'tarish: o'z controller'laringiz `/api` da, generatsiya qilingani `/data-api` da.
+- Prototip bosqichida ma'lumot modelini mijozga havolalar bilan ko'rsatib sinab ko'rish.
+- Entity nomi o'zgarganda mijozlarni buzmaslik uchun `path` va `rel` ni qulflab qo'yish.
+- Hisobot ro'yxatlarini qo'shimcha kod yozmasdan `sort`, `page` va `size` bilan berish.
+- Ichki vositalar (support paneli, ma'lumot tozalash skriptlari) uchun arzon API.
+
+**Ehtiyot bo'ling:** Generatsiya qilingan API entity ni to'g'ridan-to'g'ri ko'rsatadi, ya'ni schema o'zgarishi bir vaqtda API o'zgarishi bo'ladi - tashqi mijozlar uchun DTO li o'z controller'ingiz afzal (qarang: [Resurs-yo'naltirilgan REST](#71-resurs-yonaltirilgan-rest-resource-oriented-rest)). Standart holatda hamma repository ochiladi: ochilishi kerak bo'lmagan repository va maydonni `@RestResource(exported = false)` bilan yoping va yo'lni xavfsizlik konfiguratsiyasiga kiritishni unutmang. `base-path` berilmasa yo'llar sizning `/api` controller'laringiz bilan to'qnashadi, avtomatik ko'plikka tayanish esa mijozlarni "tacoes" kabi nomga bog'lab qo'yadi.
+
+```yaml
+spring:
+  data:
+    rest:
+      base-path: /data-api
+```
+
+```java
+// Resurs nomini qo'lda qulflash: rel (havola nomi) va path (yo'l)
+@Entity
+@RestResource(rel = "tacos", path = "tacos")
+public class Taco { /* ... */ }
+
+// Repository darajasida ham shu ish: ekspozitsiyani yopish uchun exported = false
+@RepositoryRestResource(path = "orders", collectionResourceRel = "orders")
+public interface OrderRepository extends CrudRepository<TacoOrder, Long> { }
+```
+
+## 7.36 Texnologiyadan mustaqil API (Technology-Agnostic API)
+
+**Tavsif:** Servislararo aloqa uchun ishlatiladigan API shunday tanlanadiki, u servislarni qaysi stek, til yoki framework bilan yozish mumkinligini BELGILAB QO'YMASIN. Newman buni mikroservis dizaynining alohida qoidasi qilib qo'yadi: yangi vosita, framework va til doimiy chiqadi va bugungi `.NET` do'koni bir yoki besh yildan keyin boshqa stekda unumliroq ishlashi mumkin, shuning uchun integratsiya texnologiyasi tanlovni oldindan yopib qo'ymasligi kerak; ya'ni stekni diktat qiladigan integratsiya texnologiyasidan qochiladi (Newman, 5-bob, "Keep Your APIs Technology Agnostic"). Shu qoidaning ikki hamrohi bor: ichki implementatsiya tafsilotini ko'rsatadigan har qanday texnologiyadan qochish va iste'molchi uchun oson qilish, lekin client kutubxonasi bilan kelgan bog'liqlikni ochiq hisobga olish.
+
+**Spring'da qayerda uchraydi:** Amalda bu Java RMI, `java.io.Serializable` ustidagi uzatish va Spring'ning tarixiy `HttpInvoker` kabi mexanizmlardan voz kechishni bildiradi: ularning har biri iste'molchini JVM ga va ko'pincha bir xil sinf versiyasiga bog'laydi. O'rniga sxemasi til ustidan turadigan shartnoma: OpenAPI plus JSON (`spring-boot-starter-web`), gRPC plus Protobuf ([7.27](#727-grpc-grpc-with-spring)), yoki broker ustida Avro/JSON Schema. Agar client kutubxonasi berilsa, u faqat transport va serializatsiyani yashirsin, domen qoidasini emas, va majburiy bo'lmasin: polyglot iste'molchi uchun sxema plus HTTP yetarli bo'lishi shart. Java `record` va Jackson bilan DTO yozganda `@JsonProperty` nomlari shartnomaning bir qismi bo'ladi, shuning uchun ularni refactoring bilan birga o'zgartirib yubormaslik kerak.
+
+**Qo'llanish keyslari:**
+- Ichki REST yoki gRPC shartnomasi orqali Java servisga Go yoki Python iste'molchi qo'shish.
+- Monolitdan ajratilgan servisga eski RMI yoki `Serializable` interfeysi o'rniga OpenAPI shartnomasi berish.
+- Partner integratsiyasida JVM ga bog'langan client kutubxonasini majburiy qilmaslik.
+- Ikki jamoa bir xil shartnomani turli framework versiyasida implement qilishi (Boot 3 va Boot 4 yonma-yon).
+
+**Interfeysni tashqaridan ichkariga loyihalang:** texnologiya
+tanlovidan oldin shaklni kim belgilashi savoli turadi. Newman
+"outside-in" fikrlashni tavsiya qiladi: interfeysni avval servis
+iste'molchilarining nuqtai nazaridan o'ylab, keyin shu shartnomani
+qanday amalga oshirishni hal qiling. Teskari yo'l (Newman uni
+afsuski juda keng tarqalgan deb kuzatadi) shunday ko'rinadi: jamoa
+ma'lumot modelini yoki boshqa ichki implementatsiya tafsilotini
+oladi va uni tashqariga chiqarishni o'ylaydi. Qoidaning amaliy
+qismi esa ko'pincha o'tkazib yuboriladi: "iste'molchimga nima
+kerak" degan savolni **o'zingizga** emas, servisingizni
+chaqiradigan odamlarga berish kerak. Newman shartnomani
+foydalanuvchi interfeysi kabi ko'rishni taklif qiladi: UI
+loyihalaganda foydalanuvchidan nima kerakligini so'raysiz va dizaynni
+ular bilan iteratsiya qilasiz, servis shartnomasini ham shunday
+shakllantirish kerak. Ikkinchi foydasi: bu tashqi shartnoma bilan
+ichki implementatsiya o'rtasida ajratmani saqlab turadi
+(Newman, *Monolith to Microservices*, 1-bob, 21-bet).
+
+**Ehtiyot bo'ling:** Texnologiyadan mustaqillikni "sxemasiz" deb tushunish teskari natija beradi: Newman aniq sxemani kuchli tavsiya qiladi, chunki aks holda mikroservisdagi o'zgarish moslikni tasodifan buzadi. Ikkinchi tuzoq - mustaqillikni faqat protokol darajasida ta'minlab, DTO larda til xususiyatlarini (Java enum tartibi, `BigDecimal` ning matnsiz uzatilishi, sana uchun platforma formati) qoldirish: iste'molchi boshqa tilda bo'lsa aynan shu joyda sinadi.
+
+```java
+// Shartnoma til ustidan turadi: sxema plus HTTP. Iste'molchi JVM bo'lishi shart emas.
+@RestController
+@RequestMapping(path = "/api/profiles", produces = "application/json")
+class ProfileController {
+
+    private final ProfileService profiles;
+
+    ProfileController(ProfileService profiles) {
+        this.profiles = profiles;
+    }
+
+    @GetMapping("/{id}")
+    ProfileView get(@PathVariable String id) {
+        return profiles.view(id);
+    }
+}
+
+// DTO: nom va tur shartnomaning qismi. Pul matn, sana ISO-8601, enum nomi barqaror.
+record ProfileView(
+        @JsonProperty("id") String id,
+        @JsonProperty("display_name") String displayName,
+        @JsonProperty("balance") String balance,        // BigDecimal matn sifatida
+        @JsonProperty("created_at") OffsetDateTime createdAt) {
+}
+```
+
+## 7.37 Shtamp bog'liqligi (Stamp Coupling)
+
+**Tavsif:** Servislar orasida katta tuzilma uzatiladi, lekin har servis uning faqat kichik qismini o'qiydi yoki yozadi. Ford va boshqalar buni taqsimlangan arxitekturada keng tarqalgan pattern, ayni paytda ko'pincha tasodifiy anti-pattern deb beradi: sanoat standarti hujjat formati bo'lganda (masalan sayohat sanoatining XML itinerariy formati) butun hujjatni uzatib, har tizim o'z bo'limini yangilashi qonuniy yechim (Ford, 13-bob, 376-bet). Patternning uch yuzi bor va ular alohida qaraladi:
+
+- **Qonuniy qo'llanish.** Standart hujjat formati yoki workflow holatini olib yurish: har servis o'z qismini yangilab, kontraktni keyingisiga uzatadi, oxirida qabul qiluvchi holat va xatolarni kontraktdan o'qiydi (Ford, 13-bob, 378-bet). Oqim boshqaruvi nuqtai nazari, ya'ni holatni kontraktda tashishning qaror apparati va uning chegarasi, [14.43 Oqim holatini kontraktda uzatish](14-microservices-patternlari.md#1443-oqim-holatini-kontraktda-uzatish-stamp-coupling-stamp-coupling-for-workflow-management) bo'limida.
+- **Ortiqcha bog'liqlik (over-coupling).** Qat'iy kontrakt plus shtamp bog'liqligi birga kelsa, mo'rtlik paydo bo'ladi: Wishlist servisiga faqat `name` kerak bo'lsa ham arxitektor "kelajak uchun" butun Profile tuzilmasini kontrakt qilib qo'ygan bo'lsa, Profile dagi `state` kabi Wishlist hech ishlatmaydigan maydon o'zgarganda ham kontrakt sinadi (Ford, 13-bob, 376-bet).
+- **Tarmoq o'tkazuvchanligi.** Taqsimlangan hisoblashning "bandwidth cheksiz" yolg'oni shu yerda qimmat turadi: sekundda 2 000 so'rov va 500 KB payload sekundda 1 000 000 KB beradi, faqat kerakli `name` uzatilsa esa bu 400 KB ga tushadi (Ford, 13-bob, 377-bet).
+
+**Spring'da qayerda uchraydi:** Eng ko'p uchraydigan shakli - JPA entitetini yoki ichki agregat DTO sini REST javobi qilib qaytarish: iste'molchi uchta maydonni o'qiydi, kontraktda esa o'ttizta turadi. Yechim o'sha javobni iste'molchi ehtiyojiga qisqartirish ([7.8](#78-filtrlash-tartiblash-va-maydon-tanlash-filtering-sorting-field-selection) da maydon tanlash, [7.26](#726-graphql-graphql-with-spring-for-graphql) da so'rov bilan), iste'molchi tomonida esa faqat kerakli maydonni o'qib qolganini e'tiborsiz qoldirish ([7.21](#721-bagrikeng-oquvchi-tolerant-reader)). Spring Data `@ProjectedPayload` va interfeys proyeksiyalari shu maqsadda bor. Workflow holatini olib yurish kerak bo'lsa, u kontraktda ATAYLAB va nomlangan bo'lim sifatida turadi, domen maydonlari bilan aralashmaydi.
+
+**Qo'llanish keyslari:**
+- Sayohat, sug'urta yoki to'lov sanoatining standart hujjatini o'zgartirmasdan uzatish.
+- Xoreografiyali saga da workflow holatini kontrakt ichida tashish (mediator kiritmaslik uchun).
+- Bir nechta boyituvchi servis ketma-ket bitta hodisa payload ini to'ldirishi.
+
+**Ehtiyot bo'ling:** Shtamp bog'liqligini "kelajak uchun" ataylab tanlamang: ortiqcha spetsifikatsiya qilingan kontrakt breaking change chastotasini oshiradi va [7.23](#723-kengaytirqisqartir-expandcontract---parallel-change) dagi bosqichli o'zgarishni ham qiyinlashtiradi. Workflow uchun ishlatilganda bog'liqlik nominal darajadan yuqori bo'ladi va buni bilib tanlash kerak: Ford ning dalili shuki, semantik bog'liqlik baribir biror joyda turadi va uni implementatsiya bilan kamaytirib bo'lmaydi, shuning uchun tanlov mediatorli workflow bilan throughput o'rtasida bo'ladi.
+
+```java
+// Shtamp bog'liqligi: Wishlist ga faqat name kerak, kontrakt esa butun Profile.
+record ProfileDto(String id, String displayName, String email, String phone,
+                  String street, String city, String state, String zip,
+                  String locale, String timezone) { }      // `state` o'zgarsa sinadi
+
+interface ProfileClient {                                  // mo'rt kontrakt
+    ProfileDto profile(String id);
+}
+
+// Qisqartirilgan kontrakt: o'zgarish yuzasi bitta maydonga tushadi.
+record ProfileNameDto(String id, String displayName) { }
+
+interface ProfileNameClient {
+    @GetExchange("/api/profiles/{id}/name")
+    ProfileNameDto name(@PathVariable String id);
+}
+
+// Workflow holati kerak bo'lsa, u ATAYLAB va alohida bo'lim sifatida turadi.
+record ShipmentContract(OrderPayload order, WorkflowState workflow) { }
+
+record WorkflowState(String step, String status, List<String> errors) { }
+```
+
+## 7.38 Wire format aniqligi: noma'lum maydon, katta son, binar yuk (Wire Format Fidelity)
+
+**Tavsif:** Sxema mos kelsa ham ma'lumot uzatishda yo'qoladigan uch
+joy bor va ularning hammasi JSON ning o'z xususiyatidan kelib
+chiqadi. [7.21](#721-bagrikeng-oquvchi-tolerant-reader) noma'lum
+maydonni **o'qishda** e'tiborsiz qoldirishni o'rgatadi; bu bo'lim
+o'qigandan keyin nima bo'lishi, sonning aniqligi va binar yukning
+narxi haqida.
+
+- **Noma'lum maydonni saqlab qoling.** Kleppmann ning kuzatishi:
+  eski versiyadagi ilova yangi versiya yozgan ma'lumotni
+  yangilaganda ma'lumot yo'qolishi mumkin. Mexanizmi oddiy, shuning
+  uchun ko'pincha sezilmaydi: bazadan qiymatni o'qib model
+  obyektiga aylantirsangiz, keyin shu obyektni qayta kodlab yozsangiz,
+  tarjima jarayonida noma'lum maydon yo'qoladi. Kleppmann buni qiyin
+  muammo deb hisoblamaydi, faqat bundan xabardor bo'lish kerakligini
+  aytadi. Xuddi shu xavf xabarlarda ham bor: iste'molchi xabarni
+  boshqa topic ga qayta publish qilsa, noma'lum maydonlarni saqlab
+  qolishga ehtiyot bo'lish kerak. Ya'ni qoida read-modify-write
+  oqimiga tegishli, sof o'qishga emas. Java tomonidagi yechim:
+  Jackson ning `@JsonAnyGetter` va `@JsonAnySetter` bilan noma'lum
+  maydonlarni xaritada ushlab, qayta yozishda chiqarish, yoki
+  yangilashni butun obyektni almashtirish orqali emas, maydon
+  darajasidagi `UPDATE` bilan qilish
+  ([7.34](#734-put-va-patch-semantikasi-full-replacement-vs-partial-update)).
+- **2^53 dan katta butun sonni matn qiling.** JSON satr va sonni
+  ajratadi, lekin butun son bilan suzuvchi nuqtali sonni ajratmaydi
+  va aniqlikni belgilamaydi. Natijada 2^53 dan katta butun son IEEE
+  754 double da aniq ifodalanmaydi, ya'ni suzuvchi nuqtali son
+  ishlatadigan tilda (JavaScript) tahlil qilinganda noto'g'ri
+  bo'ladi. Kleppmann ning misoli: Twitter har tvitni 64 bitli son
+  bilan belgilaydi va API javobida tvit ID sini **ikki marta**
+  qaytaradi, biri JSON soni, ikkinchisi o'nlik satr sifatida, aynan
+  shu muammoni chetlab o'tish uchun. Java va Spring da bu
+  `Long` yoki `BigInteger` turidagi ID ni `String` sifatida
+  seriyalashni bildiradi.
+- **Base64 hajmni 33 foiz oshiradi.** JSON va XML Unicode matnni
+  yaxshi qo'llab-quvvatlaydi, lekin binar satrni (belgi kodlanishi
+  yo'q bayt ketma-ketligini) qo'llab-quvvatlamaydi. Odamlar bu
+  cheklovni binar ma'lumotni Base64 bilan matnga aylantirib
+  chetlab o'tadi, sxema esa qiymatni Base64 deb o'qish kerakligini
+  ko'rsatadi. Kleppmann buni ishlaydigan, lekin biroz qo'pol yo'l
+  deb ataydi va narxini aniq beradi: ma'lumot hajmi 33 foiz oshadi.
+  Shuning uchun katta binar yuk JSON tanasiga solinmaydi: multipart
+  (`multipart/form-data`), alohida kanal yoki oldindan imzolangan
+  URL bilan obyekt omboriga to'g'ridan-to'g'ri yuklash tanlanadi
+  va JSON da faqat havola qoladi.
+
+```java
+// Katta ID ni matn qilish va noma'lum maydonni saqlash.
+public record OrderResponse(
+        @JsonSerialize(using = ToStringSerializer.class)   // 2^53 dan katta
+        long id,
+        String status,
+        @JsonAnyGetter Map<String, Object> qoshimcha) {     // noma'lum maydonlar
+
+    @JsonAnySetter
+    void qoshimchaMaydon(String nom, Object qiymat) {
+        qoshimcha.put(nom, qiymat);                        // qayta yozishda yo'qolmaydi
+    }
+}
+```
+
+**Ehtiyot bo'ling:** Noma'lum maydonni saqlash bag'rikenglikni
+"jim yutish" ga aylantirmasin: saqlangan maydonlar ustida biznes
+qarori qabul qilinmaydi, ular faqat qayta yozishda uzatiladi va
+kutilmagan nom paydo bo'lganda log qilinadi. ID ni matnga
+o'girganda ikki tomonda ham bir xil qilish kerak: javobda matn,
+so'rovda son qabul qilinsa, mijoz ikki shaklni bir vaqtda
+qo'llab-quvvatlashga majbur bo'ladi va bu
+[37.1](../code-review/37-api-moslik-va-breaking-change-review.md#371-breaking-change-katalogi)
+dagi tur o'zgarishi qatoriga tushadi.
+
+## 7.39 Amalda qo'llash
 
 - [ ] Har bir public endpoint uchun versiyalash strategiyasini yozib qo'ying va bitta loyihada bir nechta strategiya aralashmaganini tasdiqlang.
 - [ ] Xato javoblarini tekshiring: hammasi bir xil formatdami, `stack trace` yoki ichki xabar tashqariga chiqmayaptimi.
@@ -1061,8 +1414,54 @@ public class PspBroker {
 - [ ] Breaking change ro'yxatini tuzing: olib tashlangan maydon, majburiy bo'lgan parametr, o'zgargan tur va enum qiymati.
 - [ ] Har bir endpoint uchun rate limit va maksimal payload hajmi belgilanganini tekshiring.
 - [ ] Filtrlash va saralash parametrlarini ro'yxatga olib, har biri indekslangan ustunga tushayotganini tasdiqlang.
+- [ ] Servislararo integratsiyalarni ko'rib chiqing: ularning birortasi iste'molchini JVM ga yoki bitta framework versiyasiga bog'lamayaptimi.
+- [ ] Har bir servis-servis kontrakti uchun iste'molchi qaysi maydonlarni haqiqatda o'qiyotganini sanab chiqing va ishlatilmaydigan maydonlarni kontraktdan chiqaring.
+- [ ] Read-modify-write oqimlarini toping va ularda noma'lum maydon yo'qolmayotganini tekshiring (xabarni qayta publish qilish ham shu ro'yxatda).
+- [ ] 2^53 dan katta bo'lishi mumkin ID larni sanab chiqing va ularni JSON da matn sifatida uzatishga o'tkazing.
+- [ ] JSON tanasida Base64 bilan uzatilayotgan binar yuklarni toping va ularni multipart yoki obyekt omboriga ko'chirish rejasini tuzing.
+- [ ] Buzuvchi o'zgarishdan oldin iste'molchi bilan to'rt savolni (qanday ko'tarasiz, qanday kelishasiz, kim bajaradi, qancha vaqt) yozma kelishib qo'ying.
+- [ ] GraphQL sxemasini ma'lumot ombori tuzilmasi bilan solishtirib, aks ettirilgan joylarni toping.
+- [ ] Har bir tashqi interfeys uchun notexnik savollarga ham javob yozing: interfeysga kim egalik qiladi, u qanchalik tez-tez o'zgaradi, versiyalash qanday boshqariladi va SLA bormi. Javobsiz qolgan har savol jamoaga aniq ish bandi bo'ladi, chunki javobsiz interfeys incident paytida kimga murojaat qilishni ham bilmaslik degani.
 
 ## Manbalar
+
+- Martin Kleppmann, *Designing Data-Intensive Applications*, O'Reilly,
+  2017, 4-bob (114, 129, 138-betlar) - 7.38 dagi JSON da 2^53 dan
+  katta butun sonning IEEE 754 double da aniqligini yo'qotishi va
+  Twitter ning tvit ID sini ikki shaklda qaytarishi, Base64 ning
+  ma'lumot hajmini 33 foiz oshirishi, bazadan o'qilgan qiymatni model
+  obyektiga aylantirib qayta kodlaganda noma'lum maydonning
+  yo'qolishi va xabarni boshqa topic ga qayta publish qilganda ham
+  shu ehtiyot chorasi
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*,
+  2-nashr, O'Reilly, 2021, 5-bob ("Emulate the Old Interface",
+  "The Social Contract", "GraphQL", "Challenges") - 7.5 dagi uch
+  versiyani ushlab turmaslik tavsiyasi va V1 dan V2 ga, V2 dan V3 ga
+  ichki zanjir bilan o'chirish chegarasini aniq qilish, marshrut
+  uchun header yoki URI tanlovi va RPC dagi namespace yondashuvi;
+  7.30 dagi buzuvchi o'zgarishdan oldin kelishiladigan to'rt savol,
+  iste'molchi birinchi yondashuv, Netflix set-top box misoli va eski
+  mijozni uzish qarorining moliyaviy ekani; 7.26 dagi GraphQL
+  sxemasining ostidagi ma'lumot omborlariga bog'lanmasligi talabi,
+  OData bilan solishtirish va o'qish uchun GraphQL, yozish uchun REST
+  aralashmasining sababi. Bu nashrning nusxasida barqaror bet raqami
+  yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*,
+  2-nashr, O'Reilly, 2021, 14-bob ("Reuse and BFFs", "GraphQL") -
+  7.19 dagi abstraksiyani uchinchi marta yozishda ajratish chegarasi,
+  yangi servis narxi past bo'lsa yoki kod ikkitadan ko'p joyda bo'lsa
+  ajratish, wishlist misoli (Customer, Catalog, Inventory uchligi va
+  web interfeysi qo'shilishi); 7.26 dagi resolver ning so'rovni
+  servis chaqiruviga xaritalashi, yangi tur yoki maydon qo'shilganda
+  server o'zgarishi va shu sababli jamoa chegaralari bo'ylab bir
+  nechta GraphQL backend. Bu nashrning nusxasida barqaror bet raqami
+  yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
+- Sam Newman, *Monolith to Microservices*, O'Reilly, 2019, 1-bob
+  (21-bet) - 7.36 dagi outside-in fikrlash: interfeysni iste'molchi
+  nuqtai nazaridan boshlab loyihalash, ichki ma'lumot modelini
+  tashqariga chiqarishning keng tarqalgan xato ekani, iste'molchi
+  jamoalaridan haqiqatan so'rash va shartnomani foydalanuvchi
+  interfeysi kabi iteratsiya bilan shakllantirish
 
 - Chris Richardson, *Microservices Patterns*, 8-bob - tashqi API patternlari: API Gateway va BFF
 - Chris Richardson, *Microservices Patterns*, 7-bob - so'rovni amalga oshirish: API Composition va CQRS
@@ -1076,9 +1475,18 @@ public class PspBroker {
 - Spring gRPC, `spring.grpc.*` konfiguratsiya property'lari. spring-projects/spring-grpc, tag `v1.1.1`. Apache-2.0. https://github.com/spring-projects/spring-grpc/tree/v1.1.1
 - Spring for GraphQL, annotatsiyali handler'lar. spring-projects/spring-graphql, tag `v2.0.5`. Apache-2.0. https://github.com/spring-projects/spring-graphql/tree/v2.0.5
 - JDK, `java.util.concurrent.StructuredTaskScope` (`@PreviewFeature`). openjdk/jdk, tag `jdk-25-ga`. GPL-2.0 with Classpath Exception. https://github.com/openjdk/jdk/blob/jdk-25-ga/src/java.base/share/classes/java/util/concurrent/StructuredTaskScope.java
+- Craig Walls, *Spring in Action* 6th, 7-bob - PUT va PATCH semantikasi, Spring Data REST ning base-path va resurs nomlari
+- RFC 6902, *JavaScript Object Notation (JSON) Patch*. IETF, 2013. Media turi `application/json-patch+json`.
+- RFC 7396, *JSON Merge Patch*. IETF, 2014. Media turi `application/merge-patch+json`.
 - RFC 9457, *Problem Details for HTTP APIs*. IETF, 2023. `errors` maydoni faqat misolda, ta'rifda yo'q.
 - RFC 9745, *The Deprecation HTTP Header Field*. IETF, 2025. Qiymat Structured Fields Date (`@<unix sekund>`).
 - RFC 8594, *The Sunset HTTP Header Field*. IETF, 2019. Qiymat HTTP-date.
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 5-bob ("Keep Your APIs Technology Agnostic", "Hide Internal Implementation Detail") - servislararo API stekni diktat qilmasligi, stekni belgilaydigan integratsiya texnologiyasidan qochish, aniq sxemaning zarurati va client kutubxonasining bog'liqlik narxi. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 14-bob ("Reuse and BFFs") - BFF lar orasidagi takrorni topishning qiyinligi, yagona aggregating gateway ga qaytishning zarari, umumiy kutubxona bog'liqlik manbasi ekani va takrorni pastdagi servisga yoki yangi mikroservisga ko'chirish ustunligi. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
+- Neal Ford va boshqalar, *Software Architecture: The Hard Parts*, 1-nashr, O'Reilly, 2021 (copyright 2022), 13-bob (376-378-betlar) - shtamp bog'liqligi ta'rifi va standart hujjat formati misoli; qat'iy kontrakt plus shtamp bog'liqligidan kelgan mo'rtlik (Wishlist va Profile, ishlatilmaydigan `state` maydoni); 2 000 so'rov va 500 KB payload uchun sekundda 1 000 000 KB hisobi va kerakli maydonda 400 KB; workflow holatini kontraktda olib yurish va semantik bog'liqlikni implementatsiya bilan kamaytirib bo'lmasligi
+- Martin Kleppmann, *Designing Data-Intensive Applications*, O'Reilly, 2017, 4-bob (117, 120-121-betlar) - Thrift va Protobuf da maydon tag raqami, nomni o'zgartirish mumkinligi va tagni o'zgartirish mumkin emasligi; yangi maydonning ixtiyoriy yoki default qiymatli bo'lishi sharti; olib tashlashda tagni qayta ishlatmaslik; tur o'zgarishida eski kodda qiymat kesilishi
+- Chris Richardson, *Microservices Patterns: With Examples in Java*, Manning, 2019, 8-bob (258-bet) - API gateway ni alohida jamoaga berib qo'yish ESB jamoasi modelini qaytarishi: mobil ilova dasturchisi servis API sini ochish uchun so'rov yuborib navbatda kutishi va markazlashgan to'siq paydo bo'lishi (7.18)
+- Simon Brown, *Software Architecture for Developers*, Leanpub, 54-bo'lim ("External Interfaces") - tashqi interfeys uchun notexnik savollar: interfeysga kim egalik qiladi, qanchalik tez-tez o'zgaradi, versiyalash qanday boshqariladi va SLA bormi (7.39)
 
 ---
 

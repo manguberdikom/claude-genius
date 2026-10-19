@@ -401,8 +401,9 @@ def case_update_begonani_saqlaydi():
          and os.path.join(claude, "skills", "manguberdi", "SKILL.md") in fs
          and os.path.join(claude, "skills", "manguberdi", "manguberdi") not in fs),
         ("update: begona aktyor joyida", "begona.md" in st["update_agents"]),
-        ("update: zaxirada skills--manguberdi va .claude--settings.json",
-         os.path.isdir(os.path.join(backup, "skills--manguberdi"))
+        # Manifest tasdiqlagan o'z skill git dan qayta yasaladi, zaxiralanmaydi.
+        ("update: zaxirada faqat .claude--settings.json, o'z skill yo'q",
+         not os.path.exists(os.path.join(backup, "skills--manguberdi"))
          and os.path.isfile(os.path.join(backup, ".claude--settings.json"))),
     ]
 
@@ -708,11 +709,11 @@ def case_symlink_zaxirasi():
     os.makedirs(os.path.join(claude, "skills"))
     os.makedirs(os.path.join(claude, "agents"))
     os.symlink(target, os.path.join(claude, "skills", "manguberdi"))
-    os.symlink(os.path.join(target, "yoq.md"), os.path.join(claude, "agents", "qidiruv.md"))
+    os.symlink(os.path.join(target, "yoq.md"), os.path.join(claude, "agents", "review.md"))
     zaxira = os.path.join(home, "z")
     res = run_install(home, "--apply", "--backup-to", zaxira)
     link = os.path.join(zaxira, "skills--manguberdi")
-    broken = os.path.join(zaxira, "agents--qidiruv.md")
+    broken = os.path.join(zaxira, "agents--review.md")
     return [
         ("symlink: rc 0, traceback yo'q", res.returncode == 0 and "Traceback" not in res.stdout + res.stderr),
         ("symlink: zaxirada havola havola bo'lib turadi",
@@ -723,8 +724,8 @@ def case_symlink_zaxirasi():
          and not os.path.islink(os.path.join(claude, "skills", "manguberdi"))
          and os.path.isfile(os.path.join(claude, "skills", "manguberdi", "SKILL.md"))),
         ("symlink: singan havola o'rniga aktyor fayli",
-         not os.path.islink(os.path.join(claude, "agents", "qidiruv.md"))
-         and os.path.isfile(os.path.join(claude, "agents", "qidiruv.md"))),
+         not os.path.islink(os.path.join(claude, "agents", "review.md"))
+         and os.path.isfile(os.path.join(claude, "agents", "review.md"))),
     ]
 
 
@@ -800,7 +801,11 @@ def case_eski_zaxira_royxati():
     zaxira_yasa(home, ".claude-backup-zaxira", ".claude-backup-2026-01-08",
                 ".claude-backup-20260108-00000", "zaxira-1", ".claude")
     put(os.path.join(home, ".claude-backup-20250101-000000"), "fayl, papka emas")
+    # --reset zaxirasi foydalanuvchining to'liq sozlamasi: hech qachon o'chmaydi.
+    put(os.path.join(home, ".claude-backup-20200101-000000", ".claude--CLAUDE.md"), "eski")
     rows = [
+        ("eski ro'yxati: --reset zaxirasi (begona birlik) o'chirilmaydi",
+         not any("20200101" in p for p in I.eski_zaxiralar(home, 1))),
         ("eski ro'yxati: 7 dan 5 saqlanib 2 ta eng eskisi qaytadi",
          [os.path.basename(p) for p in I.eski_zaxiralar(home, 5)] == eski[:2]),
         ("eski ro'yxati: saqlash soni papkadan katta bo'lsa bo'sh",
@@ -1576,7 +1581,7 @@ def case_paritet_doimiylar():
     agents = {name[:-3] for name in os.listdir(os.path.join(ROOT, ".claude", "agents"))}
     return [
         ("doimiylar: aktyorlar .claude/agents da bor (%d)" % len(I.ACTORS),
-         set(I.ACTORS) <= agents and len(I.ACTORS) == 6),
+         set(I.ACTORS) <= agents and len(I.ACTORS) == 4),
         ("doimiylar: eski aktyor hozirgi ro'yxatda va fayllarda yo'q",
          not set(I.RETIRED) & (set(I.ACTORS) | agents)),
         ("doimiylar: klon fayllari (%d) mavjud va `/` ajratgichli" % len(I.REQUIRED),

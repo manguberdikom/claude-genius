@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 12. End-to-end va UI testlar (End-to-End & UI Testing)
 
@@ -39,6 +39,12 @@ Narx tomoni ham aniq. Bitta unit test millisekundlar, integration test (Testcont
 Shu sababli miqdor cheklanadi. Amaliy mo'ljal: o'rta kattalikdagi mahsulot uchun 15-40 ta E2E ssenariy, ulardan 5-10 tasi smoke to'plamda. Statistika buni majburlaydi: agar har bir test 1% ehtimol bilan "sababsiz" uzilsa, 20 testlik to'plam uchun muvaffaqiyat ehtimoli 0.99^20 ≈ 0.82 bo'ladi, ya'ni har beshinchi ishga tushirish asossiz qizil. 100 testda esa bu ko'rsatkich 0.37 ga tushadi va hech kim natijaga ishonmaydi. Demak E2E qatlamda flakiness byudjeti test soniga teng darajada muhim resurs.
 
 Har bir E2E test uchun arxitektor bitta savolga javob talab qilishi kerak: "bu test uzilsa, qaysi daromad yoki majburiyat yo'li to'xtaydi?". Javob bo'lmasa, test pastroq qatlamga ko'chiriladi.
+
+**E2E to'plami "yordamchi g'ildirak" sifatida.** Newman production dan oldingi E2E testlarni velosipeddagi yordamchi g'ildirakka o'xshatadi: CDC qanday ishlashini o'rganayotganda va production monitoringi hamda deploy texnikasini yaxshilayotganda ular foydali xavfsizlik to'ri bo'ladi, va bunda sikl vaqti xavfning kamayishiga ayirboshlanadi. Mexanizmlar yetilgani sari (aniq sxemalar, consumer-driven contract, production da testlash, canary release) E2E ga ishonch kamayadi, E2E yozish narxi esa nisbatan o'sadi, shuning uchun bir nuqtada ular endi kerak bo'lmaydi. Newman ning amalda ko'rgani: mikroservislarni kattalashtirgan jamoalarning ko'pi vaqt o'tishi bilan E2E dan butunlay voz kechgan.
+
+Ikki ogohlantirish bilan. Birinchisi: **nimani yo'qotayotganingizni tushunmasdan tashlash yomon qaror**, chunki E2E ushlagan wiring xatolari o'z-o'zidan yo'qolmaydi, ularni o'rniga kelgan mexanizmlar ushlashi kerak. Ikkinchisi: hamma jamoa ishlatadigan **umumiy E2E to'plami mustaqil deploy qilish imkonini buzadi**, chunki bitta jamoa reliz qilish uchun boshqalarning testlari yashil bo'lishini kutadi. Ya'ni savol "E2E bormi" emas, "qancha E2E haqiqatda kerak va u kimga tegishli" bo'ladi.
+
+Shundan korpusning kvota qoidasi kelib chiqadi: yangi E2E qo'shish uchun eskisini olib tashlash. Yordamchi g'ildirak modelida bu kvota vaqt o'tishi bilan **pasayadigan** son bo'ladi, qotib qolgan son emas.
 
 ## 12.2 Qaysi senariylarni E2E qilish kerak
 
@@ -357,6 +363,7 @@ Smoke ssenariylari production'da ham xavfsiz bo'lishi uchun ular ko'proq o'qishg
 
 ## Manbalar
 
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 9-bob ("The Final Word") - production dan oldingi E2E testlarni yordamchi g'ildirak deb qarash, CDC, aniq sxemalar, production da testlash va canary yetilgani sari E2E ga ishonchni kamaytirib oxir-oqibat olib tashlash, nimani yo'qotishni tushunmasdan tashlamaslik va umumiy E2E to'plamining mustaqil deploy qilishni buzishi. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
 - Chris Richardson, *Microservices Patterns*, 9, 10-boblar - mikroservisni testlash: test piramidasi, komponent va uchidan uchiga test
 - Playwright, *Authentication*
   ([https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/auth.md](https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/auth.md), tag `v1.63.0`, Apache-2.0) - 12.6 dagi

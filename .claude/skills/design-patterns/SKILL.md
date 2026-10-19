@@ -26,7 +26,7 @@ allaqachon bo'lsa** oling, dizayn jiddiy ko'rinsin uchun emas.
    `Ehtiyot bo'ling` bor.
 4. Qo'llashdan oldin anti-patternni tekshiring: `tools/doc.sh outline patterns 25`
    (83 anti-pattern), mosini `tools/doc.sh show patterns 25.N` bilan oching.
-5. Kodga tegishdan oldin `python3 tools/rules_for.py <tegiladigan fayllar>`
+5. Kodga tegishdan oldin `python3 tools/rules_for.py --vazifa="<vazifa>" <tegiladigan fayllar>`
    chaqiring (yangi fayl bo'lsa ham). Aks holda `check_code.py` hook birinchi
    Java yozuvini qaytaradi.
 6. Muammoni hal qiladigan **eng kichik** variantni qo'llang.
@@ -35,6 +35,10 @@ Spring loyihasida ko'p pattern allaqachon konteyner ichida bor: qo'lda
 Singleton, Factory yoki Registry yozishdan oldin
 `tools/doc.sh outline patterns 5` ga qarang (Spring core ichidagi patternlar
 xaritasi).
+
+`/manguberdi` shu sessiyada chaqirilgan bo'lsa pattern qo'llash aktyorga
+beriladi (`dasturchi`, reja kerak bo'lsa `rejalashtiruvchi`); bu skill
+o'shanda faqat bob jadvali.
 
 ## Muammo - bob jadvali
 
@@ -83,7 +87,7 @@ Asosiy o'qish yo'li shu buyruqlar, jadval faqat bob raqamini beradi. Indeks
 inglizcha taxallusni ham biladi (`circuit breaker`, `saga`, `outbox`):
 
 ```bash
-python3 tools/rules_for.py <fayl>...     # Java yozishdan OLDIN majburiy: boblar, punktlar, avvalgi xatolar
+python3 tools/rules_for.py --vazifa="<vazifa>" <fayl>...   # Java yozishdan OLDIN majburiy: retsept, boblar, punktlar
 tools/doc.sh find "<pattern nomi>"       # bob.bo'lim raqamini beradi (masalan 3.9)
 tools/doc.sh outline patterns <bob>      # bobdagi bo'limlar ro'yxati
 tools/doc.sh show patterns <bob.bo'lim>  # faqat o'sha bo'lim (masalan 17.2)

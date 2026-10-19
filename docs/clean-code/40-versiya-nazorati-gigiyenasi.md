@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 40. Versiya nazorati gigiyenasi (Version Control Hygiene)
 
@@ -111,6 +111,16 @@ Amaliy maqsad: branch bir-ikki kundan oshmasin. Buning uchun ish kichik bo'lishi
 | 1 hafta | konfliktlar, katta review |
 | 2+ hafta | merge alohida loyihaga aylanadi |
 
+**Avval: haqiqat manbasi bo'lgan bitta branch e'lon qilinadi.** Markazlashgan VCS larda (Subversion, Perforce) bu tushuncha tizim dizayniga kiritilgan: trunk ga oxirgi commit qilingan holat joriy versiya, va o'zgarish shu versiya ustiga qayta commit qilinganda "tugagan" hisoblanadi. Taqsimlangan VCS da, ya'ni Git da, bunday tushuncha yo'q: nazariyada commit teglari va PR lar markazsiz aylanib yurishi mumkin, va shunda "Taqdimot v5 - final - tuzatmalar - Joshning varianti v2" holatiga qaytiladi. Shuning uchun Git markazlashgan tizimdan **ko'proq** oshkor siyosat talab qiladi.
+
+Yaxshi boshqarilgan loyihada bitta repozitoriyning bitta branchi haqiqat manbasi deb e'lon qilinadi: ish shu branchga tushganda tugaydi. GitHub va GitLab amalda shu modelni qaytargan - har kim fork va klon qilishi mumkin, lekin asosiy repozitoriy bitta. Aks holda reliz uchun qaysi o'zgarish kiritilganini kuzatishni kimdir qo'lda bajaradi va bu ish jamoa o'sgani sari chiziqli o'sadi, ya'ni masshtablanmaydi. Shu manba nisbiy bo'lishi mumkin: tashkilot o'z ichida o'z manbasini belgilaydi va undan yuqoriga davriy push qiladi (ochiq manba loyihasiga hissa qo'shish modeli), muhim shart faqat bitta - **o'zgarishni qayerga push qilish kerakligi haqida tanlov va noaniqlik qolmasligi**.
+
+**Merge ni muvofiqlashtirish sababni tuzatishning o'rnini bosmaydi.** Tashkilotlarning tipik xatosi: "bu uzoq yashagan branchni merge qilish barqarorlikni pasaytirdi" degan kuzatuvdan "branch merge xavfli" degan xulosa chiqariladi, va keyin sababni ("yaxshiroq test" va "branch ga asoslangan strategiyadan voz kechish") emas, alomatni boshqarishga o'tiladi: merge larni muvofiqlashtirish. Keyin jamoalar boshqa branchlar ustida branch ochadi, kimdir Merge Coordinator bo'lib qoladi va haftalik "merge strategiyasini kelishib olish" uchrashuvlari paydo bo'ladi. Bu mehnatning hammasi sarflanadigan ortiqcha xarajat (pure overhead). Muqobili: trunk ga asoslangan rivojlanish, test va CI ga tayanish, buildni yashil ushlash va tugamagan funksiyani runtime da o'chirish (41.5). Ya'ni merge kalendari paydo bo'lsa, u texnik muammoning emas, tanlangan branch modelining alomati.
+
+**Uzoq yashaydigan branch faqat vaqt bo'yicha moslik talab qilinganda.** Dev branchni uzoq ushlash deyarli hamma holatda xato, lekin bitta o'rinli sabab bor: tizim **vaqt bo'yicha moslikni** va'da qilgan bo'lsa. Ikki tipik shakli - saqlangan ma'lumot formati (fayl yoki jadval formatini o'qiydigan va yozadigan kod versiyalar bo'ylab bir xil formatga kelishishi kerak) va API moslik va'dasi (mijozning eski versiyasi serverning yangi versiyasi bilan ishlashi kerak). Bu talab qimmat va buni ochiq tan olish kerak: vaqt bo'ylab bog'liqlik vaqtdan mustaqil koddan ancha qimmat va murakkab. Shuning uchun faol rivojlanayotgan API uchun bunday va'da yengil berilmaydi, va berilgan bo'lsa, moslik oynasi jim o'sib ketmasligi uchun aniq chegara qo'yiladi.
+
+ESLATMA: Google da bu chegara "build horizon" bilan qo'yilgan - production dagi har job maksimum olti oyda qayta qurilib qayta joylashtiriladi; korpusda bu raqam Google ning o'z siyosati, umumiy tavsiya emas.
+
 ## 40.5 Rebase, merge va tarixni o'qiladigan ushlash
 
 Rebase va merge o'rtasidagi tanlov jamoa kelishuviga bog'liq, lekin bitta qoida universal: **boshqa odam ishlatayotgan branch ning tarixini qayta yozmaslik**.
@@ -218,6 +228,7 @@ ESLATMA: cherry-pick ning release branchiga ishlatilishi, konflikt tartibi va `r
 
 ## Manbalar
 
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 16-bob ("Source of Truth", "How Did We Become Addicted to Dev Branches?", "(Nearly) No Long-Lived Branches") - taqsimlangan VCS da bitta repozitoriyning bitta branchini haqiqat manbasi deb e'lon qilish zarurati, merge larni muvofiqlashtirishning sababni tuzatish o'rnini bosmasligi, uzoq yashaydigan branchning faqat vaqt bo'yicha moslik talab qilinganda oqlanishi va qimmat ekani. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
 - Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr,
   Pragmatic Engineer, 2023, 10-bob (136) - 40.9 dagi to'rt operatsiya
   (branching, rebasing, konflikt va merge, cherry-pick) va Git ni

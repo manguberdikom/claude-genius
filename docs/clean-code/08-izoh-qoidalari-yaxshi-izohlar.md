@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 8. Izoh qoidalari: yaxshi izohlar (Comments: The Good Ones)
 
 <details>
-<summary>Bu bobdagi 11 bo'lim</summary>
+<summary>Bu bobdagi 12 bo'lim</summary>
 
 - [8.1 Izoh - muvaffaqiyatsizlikni tan olish](#81-izoh---muvaffaqiyatsizlikni-tan-olish)
 - [8.2 O'zini kodda tushuntirish: izohni funksiyaga aylantirish](#82-ozini-kodda-tushuntirish-izohni-funksiyaga-aylantirish)
@@ -19,7 +19,8 @@
 - [8.8 Kuchaytiruvchi izoh](#88-kuchaytiruvchi-izoh)
 - [8.9 Formula, standart va huquqiy asos havolasi](#89-formula-standart-va-huquqiy-asos-havolasi)
 - [8.10 Izohni qachon va qaysi darajada yozish](#810-izohni-qachon-va-qaysi-darajada-yozish)
-- [8.11 Amalda qo'llash](#811-amalda-qollash)
+- [8.11 Izoh matnining aniqligi va zichligi](#811-izoh-matnining-aniqligi-va-zichligi)
+- [8.12 Amalda qo'llash](#812-amalda-qollash)
 
 </details>
 
@@ -174,7 +175,35 @@ public SettlementResult settle(SettlementBatch batch) {
 
 Izoh uzun chiqqan holat alohida signal: u izohni qisqartirish emas, abstraksiyaga qaytish kerakligini bildiradi. Bu signal Javadoc bobidagi [hujjatni tasvirlash qiyinligi](10-javadoc-va-api-hujjati.md#1011-hujjatni-tasvirlash-qiyinligi-red-flag-hard-to-describe) qoidasida ko'rilgan.
 
-## 8.11 Amalda qo'llash
+## 8.11 Izoh matnining aniqligi va zichligi
+
+Avvalgi bo'limlar qaysi izoh haqli va qachon yozilishini aytdi. Bu bo'lim izohning o'z matni haqida: yozilishi qaror qilingan izoh qanday so'z bilan yoziladi. Mezon bitta - izohning ma'lumot zichligi yuqori bo'lsin, ya'ni egallagan joyiga nisbatan ko'p narsa aytsin (Boswell/Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011, 6-bob (59-bet)). Beshta amaliy harakat shundan chiqadi.
+
+**Olmosh o'rniga aniq ot.** `it` va `this` ni hal qilish o'quvchidan qo'shimcha ish talab qiladi va ba'zan umuman hal qilinmaydi. "Ma'lumotni keshga qo'yish, lekin oldin uning kattaligini tekshirish" izohida "u" ma'lumotmi yoki keshmi - noaniq; javobni koddan izlash kerak bo'lsa, izohning foydasi qolmaydi (shu yerda, 60-bet). Olmosh aniq ot bilan almashtiriladi yoki gap qayta tuzilib olmosh umuman yo'qotiladi.
+
+**Chalkash gapni qayta yozish.** Aniqlashtirish ko'pincha qisqartirish bilan birga keladi. Kitob crawler misolini beradi: "URL ni avval o'tgan yoki o'tmaganiga qarab boshqa ustuvorlik berish" gapi "oldin hech o'tilmagan URL larga yuqori ustuvorlik berish" shaklida qisqaroq, to'g'ridan-to'g'ri va qo'shimcha fakt beradi - ustuvorlik qaysi tomonga yuqori (shu yerda, 61-bet).
+
+**Ixchamlik.** Uch qatorlik tushuntirish bir qatorga sig'sa, bir qatorga yoziladi. Kitob `ScoreMap` typedef i uchun uch qatorlik tushuntirishni `CategoryType -> (score, weight)` sxemasiga aylantiradi (shu yerda, 60-bet).
+
+**Tayyor ibora bilan zich yozish.** Ko'p takrorlanadigan vaziyat va yechimlarning nomi bor; shu nomni ishlatish izohni bir necha barobar qisqartiradi. Kitob misoli: bazadagi ma'lumotni tezlik uchun maydonlarda saqlab, o'qishda avval shu maydonlarni tekshiradigan sinfni to'rt qatorda tushuntirish o'rniga "bu sinf bazaga keshlash qatlami bo'lib ishlaydi" deb yoziladi. Shu toifadagi so'zlar: `heuristic`, `brute-force`, `naive solution`, `canonicalize` (shu yerda, 64-65-bet).
+
+**Burchak holatni ko'rsatadigan kirish/chiqish misoli.** Yaxshi tanlangan misol uzun ta'rifdan ko'proq aytadi. `Strip(src, chars)` izohi `chars` butun satrmi yoki harflar to'plamimi degan savolga javob bermaydi; `Strip("abba/a/ba", "ab") -> "/a/"` misoli javob beradi, soddaroq misol (`Strip("ab","a") -> "b"`) esa bermaydi. Misolni tanlashda kitob to'rt mezon beradi: chegaraviy holat ko'rinsin, takroriy qiymat bo'lsin (ruxsat etilganini ko'rsatadi), natija tasodifan saralangan chiqmasin, va qaytish qiymati massiv elementlaridan biriga teng bo'lib chalkashtirmasin (shu yerda, 61-62-bet).
+
+```java
+// yomon: olmosh noaniq, gap chalkash, burchak holat aytilmagan
+// Qatorlarni sanaydi. Uni keshga qo'yamiz, lekin oldin kattaligini tekshiramiz.
+int countLines(Path file);
+
+// yaxshi: aniq ot, aniq xatti-harakat, misol burchak holatni ko'rsatadi
+// Fayldagi '\n' baytlarini sanaydi: '\r' hisobga olinmaydi, bo'sh fayl 0 beradi.
+// Misol: "hello\n\r cruel\n world\r" uchun 2.
+// Natija keshga qo'yiladi, agar fayl hajmi CACHE_LIMIT_BYTES dan kichik bo'lsa.
+int countNewlineBytes(Path file);
+```
+
+Oxirgi misoldagi "aniq xatti-harakat" qoidasi alohida arziydi: "fayldagi qatorlar sonini qaytaradi" aniq emas, chunki "qator" ning bir necha ta'rifi bor (bo'sh fayl 0 mi yoki 1 mi, `"hello\n"` bir qatormi yoki ikkimi). `'\n'` baytlarini sanashni aytgan izoh deyarli xuddi shuncha joy egallaydi, lekin ikki qo'shimcha faktni beradi: `'\r'` e'tiborsiz qoladi va newline bo'lmasa natija 0 (shu yerda, 61-bet).
+
+## 8.12 Amalda qo'llash
 
 - [ ] Kod bazasidagi barcha izohlarni sanab, har birini 8-9 boblardagi toifalarga ajratib belgilang.
 - [ ] Shartni yoki hisobni tushuntiradigan izohlarni metod yoki o'zgaruvchi nomiga aylantirib o'chiring.
@@ -201,6 +230,8 @@ Izoh uzun chiqqan holat alohida signal: u izohni qisqartirish emas, abstraksiyag
   (792) - Capers Jones keltirgan IBM o'lchovi: o'n gapga bitta izoh
   zichligida tushunarlilik eng yuqori; izoh sonini standartga aylantirish
   simptomni davolashi
+- Dustin Boswell, Trevor Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011 (copyright 2012), 6-bob (59-62-betlar) - izohning ma'lumot/joy nisbati mezoni, `ScoreMap` typedef ini bir qatorga siqish, noaniq olmosh (`it`, `this`), crawler ustuvorligi gapini qayta yozish, `CountLines` ning burchak holatlari va `Strip` uchun misol tanlashning to'rt mezoni
+- Dustin Boswell, Trevor Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011 (copyright 2012), 6-bob (64-65-betlar) - `heuristic`, `brute-force`, `naive solution` kabi zich iboralar va "keshlash qatlami", "canonicalize" misollari
 
 ---
 

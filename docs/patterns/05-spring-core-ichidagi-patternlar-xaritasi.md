@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 5. Spring Core ichidagi patternlar xaritasi (Patterns inside Spring Core)
 
@@ -1218,6 +1218,28 @@ class StorageConfig { }
 
 **Ehtiyot bo'ling:** Chuqur annotatsiya iyerarxiyasi kodni "sehrli" qiladi - o'quvchi haqiqiy xatti-harakatni ko'rish uchun bir necha fayl ochishga majbur bo'ladi, shuning uchun 2-3 ta annotatsiyani birlashtirishdan nariga ketmaslik ma'qul. Atributni ustki annotatsiyaga chiqarish uchun `@AliasFor` shart; `@Retention(RUNTIME)` ni unutsang annotatsiya umuman ko'rinmaydi va standart `java.lang.reflect` chaqiruvlari merged semantikani bilmaydi - `AnnotatedElementUtils` ishlatilsin.
 
+**Annotatsiya e'lonining o'z cheklovlari:** kompozit annotatsiya yozishdan oldin tilning qoidalarini bilish kerak, chunki ularning uchtasi odatdagi sinf dizayni odatlariga zid. Annotatsiya metodlari parametrsiz bo'lishi shart, ya'ni atribut hisoblanadigan qiymat emas, faqat konstanta bo'ladi. Annotatsiya generic bo'la olmaydi, demak turni atribut qilib uzatish uchun `Class<?>` maydoni ishlatiladi (`@Validated` guruhlari aynan shunday yozilgan). Va annotatsiya boshqa annotatsiyadan voris olmaydi: `@RestController` ning `@Controller` ga "merosi" tilning emas, Spring ning `MergedAnnotations` apparatining ishi - shuning uchun o'z kompozit annotatsiyangiz faqat Spring o'qiydigan joyda merged bo'lib ko'rinadi, yalang'och `getAnnotation()` esa uni ko'rmaydi.
+
+Takrorlanadigan annotatsiya alohida mexanizm: annotatsiya `@Repeatable` bilan belgilanadi va unga massiv atributi bo'lgan konteyner annotatsiya kerak bo'ladi. Spring da buning tanish ko'rinishi `@Scheduled` ning bir metodda bir necha marta turishi. Refleksiya tomonida tuzoq bor va u marker tanlovida yozilgan (qarang: [Marker interfeys](02-strukturaviy-patternlar.md#28-marker-interfeys-marker-interface)): `isAnnotationPresent` takrorlangan annotatsiyani ko'rmaydi, chunki u konteyner turiga aylanadi.
+
+```java
+// Takrorlanadigan annotatsiya: konteyner majburiy, generic va voris olish mumkin emas
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+@Repeatable(Windows.class)                 // konteynerga ishora
+public @interface Window {
+    String cron();                         // parametrsiz metod, konstanta qiymat
+    Class<?> group() default Default.class; // generic emas: tur Class bilan uzatiladi
+}
+
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Windows { Window[] value(); }   // konteyner: massiv atributi
+
+// O'qish: ikki yo'ldan biri bilan, chunki isAnnotationPresent(Window.class) false qaytaradi
+Window[] windows = method.getAnnotationsByType(Window.class);
+```
+
 ```java
 // Meta-annotatsiya: takrorlanuvchi annotatsiya to'plamini bitta nom ostiga yig'ish
 @Target(ElementType.TYPE)
@@ -1336,6 +1358,9 @@ SecurityFilterChain chain(HttpSecurity http) throws Exception {
 - [Spring Framework 7.0, Bean Scopes](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/core/beans/factory-scopes.adoc) - singleton va prototype lifecycle i
 - [Spring Framework 7.0, Proxying Mechanisms](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/core/aop/proxying.adoc) - JDK proxy va CGLIB tanlovi, proxy chegaralari
 - [spring-framework, `DefaultSingletonBeanRegistry.java`](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/spring-beans/src/main/java/org/springframework/beans/factory/support/DefaultSingletonBeanRegistry.java) - singleton registry va `ObjectFactory` (lazy lookup) mexanikasi
+- Herbert Schildt, *Java The Complete Reference*, 12-bob (314-bet) - annotatsiya metodlari parametrsiz bo'lishi, annotatsiya generic bo'la olmasligi va boshqa annotatsiyadan voris olmasligi
+- Herbert Schildt, *Java The Complete Reference*, 12-bob (312-bet) - takrorlanadigan annotatsiya uchun `@Repeatable` va konteyner annotatsiya talabi
+- ESLATMA: kitobda yo'q, korpus qo'shgan qism - `@RestController` ning merosi tilning emas, `MergedAnnotations` apparatining ishi ekani; `@Scheduled` ning takrorlanishi misol sifatida; `Window`/`Windows` kod misoli va `getAnnotationsByType` bilan o'qish
 
 ---
 

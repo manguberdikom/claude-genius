@@ -33,28 +33,28 @@ ma'lumotnoma va o'z-o'zini baholash uchun.
 
 **Versiya bazasi:** Java 21 LTS (pol: 17, Java 25 eslatmalari bilan), Spring Boot 3.2-3.5 (4.0 eslatmalari bilan), PostgreSQL 16+ (15-18 havolalari bilan), JUnit 5.
 
-> Holat: 49 bobdan 0 tasi odam tekshirgan, 49 tasi tekshirilmoqda, qolgan 0 tasi AI yozgan va inson tekshirmagan. Har bob holati: [docs/review.tsv](../review.tsv).
+> Holat: 49 bobdan 49 tasi odam tekshirgan, 0 tasi tekshirilmoqda, qolgan 0 tasi AI yozgan va inson tekshirmagan. Har bob holati: [docs/review.tsv](../review.tsv).
 
 ## Mundarija
 
 ### I. Toza kodning asosi
 
 - **1.** [Toza kod nima va nega qimmat (What Clean Code Is)](01-toza-kod-nima-va-nega-qimmat.md) - 11 bo'lim
-- **2.** [Nomlash qoidalari: maqsadni ochib beruvchi nom (Naming: Intention-Revealing Names)](02-nomlash-qoidalari-maqsadni-ochib-beruvchi.md) - 17 bo'lim
-- **3.** [Nom turlari bo'yicha aniq konvensiyalar (Naming Conventions by Kind)](03-nom-turlari-boyicha-aniq-konvensiyalar.md) - 17 bo'lim
+- **2.** [Nomlash qoidalari: maqsadni ochib beruvchi nom (Naming: Intention-Revealing Names)](02-nomlash-qoidalari-maqsadni-ochib-beruvchi.md) - 19 bo'lim
+- **3.** [Nom turlari bo'yicha aniq konvensiyalar (Naming Conventions by Kind)](03-nom-turlari-boyicha-aniq-konvensiyalar.md) - 18 bo'lim
 
 ### II. Funksiya va boshqaruv oqimi
 
 - **4.** [Funksiya: kichiklik va bitta ish (Functions: Small and Doing One Thing)](04-funksiya-kichiklik-va-bitta-ish.md) - 14 bo'lim
 - **5.** [Funksiya argumentlari (Function Arguments)](05-funksiya-argumentlari.md) - 12 bo'lim
-- **6.** [Shart, mantiq va boshqaruv oqimi (Conditionals and Control Flow)](06-shart-mantiq-va-boshqaruv-oqimi.md) - 12 bo'lim
-- **7.** [Sikl, iteratsiya va to'plam bilan ishlash (Loops and Iteration)](07-sikl-iteratsiya-va-toplam-bilan-ishlash.md) - 11 bo'lim
+- **6.** [Shart, mantiq va boshqaruv oqimi (Conditionals and Control Flow)](06-shart-mantiq-va-boshqaruv-oqimi.md) - 13 bo'lim
+- **7.** [Sikl, iteratsiya va to'plam bilan ishlash (Loops and Iteration)](07-sikl-iteratsiya-va-toplam-bilan-ishlash.md) - 12 bo'lim
 
 ### III. Izoh va hujjat
 
-- **8.** [Izoh qoidalari: yaxshi izohlar (Comments: The Good Ones)](08-izoh-qoidalari-yaxshi-izohlar.md) - 11 bo'lim
+- **8.** [Izoh qoidalari: yaxshi izohlar (Comments: The Good Ones)](08-izoh-qoidalari-yaxshi-izohlar.md) - 12 bo'lim
 - **9.** [Yomon izohlar katalogi (Comments: The Bad Ones)](09-yomon-izohlar-katalogi.md) - 15 bo'lim
-- **10.** [Javadoc va API hujjati (Javadoc and API Documentation)](10-javadoc-va-api-hujjati.md) - 12 bo'lim
+- **10.** [Javadoc va API hujjati (Javadoc and API Documentation)](10-javadoc-va-api-hujjati.md) - 13 bo'lim
 
 ### IV. Formatlash va kod uslubi
 
@@ -67,21 +67,21 @@ ma'lumotnoma va o'z-o'zini baholash uchun.
 - **14.** [Obyekt va ma'lumot tuzilmasi: inkapsulyatsiya (Objects vs Data Structures)](14-obyekt-va-malumot-tuzilmasi-inkapsulyatsiya.md) - 13 bo'lim
 - **15.** [Tenglik, hash va obyekt shartnomalari (Equality, Hashing and Object Contracts)](15-tenglik-hash-va-obyekt-shartnomalari.md) - 11 bo'lim
 - **16.** [O'zgarmaslik va holat boshqaruvi kod darajasida (Immutability in Code)](16-ozgarmaslik-va-holat-boshqaruvi-kod.md) - 10 bo'lim
-- **17.** [Vorislik, kompozitsiya va polimorfizm mexanikasi (Inheritance Mechanics)](17-vorislik-kompozitsiya-va-polimorfizm.md) - 11 bo'lim
+- **17.** [Vorislik, kompozitsiya va polimorfizm mexanikasi (Inheritance Mechanics)](17-vorislik-kompozitsiya-va-polimorfizm.md) - 12 bo'lim
 
 ### VI. Xato bilan ishlash
 
 - **18.** [Xato bilan ishlash qoidalari (Error Handling Rules)](18-xato-bilan-ishlash-qoidalari.md) - 14 bo'lim
-- **19.** [Istisno mexanikasi va resurslar (Exception Mechanics and Resources)](19-istisno-mexanikasi-va-resurslar.md) - 15 bo'lim
+- **19.** [Istisno mexanikasi va resurslar (Exception Mechanics and Resources)](19-istisno-mexanikasi-va-resurslar.md) - 16 bo'lim
 
 ### VII. Java tilining toza ishlatilishi
 
-- **20.** [Primitiv, son va pul (Primitives, Numbers and Money)](20-primitiv-son-va-pul.md) - 9 bo'lim
+- **20.** [Primitiv, son va pul (Primitives, Numbers and Money)](20-primitiv-son-va-pul.md) - 12 bo'lim
 - **21.** [Satr, matn va regex (Strings, Text and Regex)](21-satr-matn-va-regex.md) - 10 bo'lim
 - **22.** [Sana, vaqt va mintaqa (Date, Time and Zone)](22-sana-vaqt-va-mintaqa.md) - 10 bo'lim
-- **23.** [To'plamlar va generiklar gigiyenasi (Collections and Generics)](23-toplamlar-va-generiklar-gigiyenasi.md) - 13 bo'lim
+- **23.** [To'plamlar va generiklar gigiyenasi (Collections and Generics)](23-toplamlar-va-generiklar-gigiyenasi.md) - 14 bo'lim
 - **24.** [Lambda, oqim va funksional uslub tozaligi (Lambdas and Streams)](24-lambda-oqim-va-funksional-uslub-tozaligi.md) - 10 bo'lim
-- **25.** [Java kodidagi umumiy tuzoqlar (Common Java Pitfalls)](25-java-kodidagi-umumiy-tuzoqlar.md) - 12 bo'lim
+- **25.** [Java kodidagi umumiy tuzoqlar (Common Java Pitfalls)](25-java-kodidagi-umumiy-tuzoqlar.md) - 13 bo'lim
 
 ### VIII. Spring va ma'lumot qatlamida toza kod
 
@@ -92,7 +92,7 @@ ma'lumotnoma va o'z-o'zini baholash uchun.
 
 ### IX. Test kodining tozaligi
 
-- **30.** [Test kodi ham ishlab chiqarish kodi (Test Code Is Production Code)](30-test-kodi-ham-ishlab-chiqarish-kodi.md) - 10 bo'lim
+- **30.** [Test kodi ham ishlab chiqarish kodi (Test Code Is Production Code)](30-test-kodi-ham-ishlab-chiqarish-kodi.md) - 11 bo'lim
 - **31.** [TDD intizomi va kod dizayniga ta'siri (TDD Discipline)](31-tdd-intizomi-va-kod-dizayniga-tasiri.md) - 9 bo'lim
 
 ### X. Hid katalogi va refaktoring harakatlari
@@ -102,8 +102,8 @@ ma'lumotnoma va o'z-o'zini baholash uchun.
 - **34.** [Toza kod evristikalarining to'liq ro'yxati (Clean Code Heuristics)](34-toza-kod-evristikalarining-toliq-royxati.md) - 13 bo'lim
 - **35.** [Refaktoring harakatlari katalogi I: funksiya va o'zgaruvchi (Refactoring Moves I)](35-refaktoring-harakatlari-katalogi-i-funksiya.md) - 21 bo'lim
 - **36.** [Refaktoring harakatlari katalogi II: ma'lumot va inkapsulyatsiya (Refactoring Moves II)](36-refaktoring-harakatlari-katalogi-ii-malumot.md) - 17 bo'lim
-- **37.** [Refaktoring harakatlari katalogi III: shart, API va ierarxiya (Refactoring Moves III)](37-refaktoring-harakatlari-katalogi-iii-shart.md) - 17 bo'lim
-- **38.** [Refaktoringni xavfsiz bajarish (Safe Refactoring Mechanics)](38-refaktoringni-xavfsiz-bajarish.md) - 16 bo'lim
+- **37.** [Refaktoring harakatlari katalogi III: shart, API va ierarxiya (Refactoring Moves III)](37-refaktoring-harakatlari-katalogi-iii-shart.md) - 19 bo'lim
+- **38.** [Refaktoringni xavfsiz bajarish (Safe Refactoring Mechanics)](38-refaktoringni-xavfsiz-bajarish.md) - 18 bo'lim
 
 ### XI. Kod bazasi va jarayon gigiyenasi
 

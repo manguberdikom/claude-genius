@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 38. Refaktoringni xavfsiz bajarish (Safe Refactoring Mechanics)
 
 <details>
-<summary>Bu bobdagi 16 bo'lim</summary>
+<summary>Bu bobdagi 18 bo'lim</summary>
 
 - [38.1 Bir vaqtda bitta harakat](#381-bir-vaqtda-bitta-harakat)
 - [38.2 Kompilyator va test bilan boshqarish](#382-kompilyator-va-test-bilan-boshqarish)
@@ -24,7 +24,9 @@
 - [38.13 Testsiz monstr metodni qo'lda bo'lish (Introduce Sensing Variable, Extract What You Know, Coupling Count, Gleaning Dependencies)](#3813-testsiz-monstr-metodni-qolda-bolish-introduce-sensing-variable-extract-what-you-know-coupling-count-gleaning-dependencies)
 - [38.14 Qo'lda ajratish strategiyasi (Skeletonize Methods, Find Sequences, Extract to the Current Class First, Be Prepared to Redo Extractions)](#3814-qolda-ajratish-strategiyasi-skeletonize-methods-find-sequences-extract-to-the-current-class-first-be-prepared-to-redo-extractions)
 - [38.15 Farq bilan programmalash (Programming by Difference)](#3815-farq-bilan-programmalash-programming-by-difference)
-- [38.16 Amalda qo'llash](#3816-amalda-qollash)
+- [38.16 Kodbaza bo'ylab mexanik o'zgarish (Large-Scale Change)](#3816-kodbaza-boylab-mexanik-ozgarish-large-scale-change)
+- [38.17 Qadam yiqilganda: debug emas, oxirgi yaxshi commitga qaytish](#3817-qadam-yiqilganda-debug-emas-oxirgi-yaxshi-commitga-qaytish)
+- [38.18 Amalda qo'llash](#3818-amalda-qollash)
 
 </details>
 
@@ -286,6 +288,14 @@ keltirilgan metaforasi: tugallanmagan refaktoring - qarzga kirish; ko'p
 tashkilot samarali ishlash uchun biror qarzga kiradi, lekin qarz bilan
 foiz ham keladi - haddan oshgan murakkab kod keltirgan qo'shimcha
 qo'llab-quvvatlash va kengaytirish narxi.
+
+Shu toifadagi ikkinchi signal xato xabari: xato xabari kelsa, bu kod xatoni
+ko'rishga yetarlicha ravshan bo'lmaganini bildiradi, ya'ni refaktoring kerak
+ekanining belgisi (2-nashr, 51-bet). Shuning uchun xato tuzatish ikki
+qadamdan iborat bo'ladi - avval xatoni ko'rinadigan qiladigan refaktoring,
+keyin tuzatishning o'zi. Tartib teskari bo'lsa, kod shu joyda yana xato
+yashirish qobiliyatini saqlab qoladi va keyingi xato ham shu yerdan
+chiqadi.
 
 ## 38.7 Refaktoring va ishlash: o'lchovsiz qadam qo'ymaslik
 
@@ -785,7 +795,87 @@ Bu harakatning teskari tomoni korpusda bor:
 Farq bilan programmalash shu harakatning kirish nuqtasini beradi: vorislik -
 boshlang'ich holat, delegatsiya esa test qo'yilgandan keyingi maqsad.
 
-## 38.16 Amalda qo'llash
+## 38.16 Kodbaza bo'ylab mexanik o'zgarish (Large-Scale Change)
+
+38.5 katta refaktoringni bitta jamoa ichida bo'lishni ko'rsatdi. Ba'zi o'zgarishlar esa butun kodbazaga tegadi: eskirgan API dan yangisiga ko'chish, kutubxona nomini o'zgartirish, til konstruksiyasini almashtirish. Google bunday ishni **large-scale change** deb ataydi va u alohida apparat talab qiladi.
+
+- **O'zgarish mexanik asbob bilan yaratiladi, qo'lda emas.** Mezon: o'zgarish yaratish uchun ketgan **inson mehnati kodbaza hajmi bilan chiziqli o'smasligi** kerak, ya'ni repozitoriy ikki baravar kattalashganda ham to'plamni yaratish taxminan bir xil vaqt olishi lozim. Ikkinchi talab - asbob kodbaza bo'ylab **to'liq** bo'lishi: muallif o'zgarish u tuzatmoqchi bo'lgan hamma holatni qamraganiga ishonishi kerak. Vositalar: AST ga asoslangan transformatsiya (Java da OpenRewrite yoki Error Prone ning `Refaster` shablonlari), kichik hajmda esa regulyar ifoda, `sed` yoki oddiy skript. Google ning qo'pol mo'ljali: o'zgarish taxminan 500 tahrirdan oshsa, asbobni o'rganib ishlatish qo'lda bajarishdan samaraliroq; tajribali "kod farroshi" uchun bu son ancha kichik.
+- **O'zgarish mustaqil commit qilinadigan bo'laklarga shardlanadi.** Atomik katta commit amalda ishlamaydi: VCS operatsiyalari o'zgarish hajmi bilan chiziqli o'sadi, minglab faylni bir commitda yozish xotira yoki quvvat yetmasligi sababli umuman imkonsiz bo'lishi mumkin, markazlashgan tizimda esa katta commit boshqa yozuvchilarni to'sib qo'yadi. Ikkinchi sabab - **merge konflikti**: o'zgarishdagi fayllar soni oshgani sari konflikt ehtimoli oshadi, va u repozitoriydagi muhandislar soni bilan ko'payadi. Shuning uchun global o'zgarish egalik chegarasi bo'yicha bo'laklanadi, har bo'lak o'z test, review va submit quvuridan mustaqil o'tadi, bir-biriga bog'liq bo'laklar esa birga guruhlanadi.
+- **Bo'lak kichik bo'lgani uchun xato sababi oson topiladi.** Kichik o'zgarishda qaysi tahrir regressiya berganini aniqlash arzon. Qayta ishga tushgan testlarning hisob-kitob narxi esa muhandis vaqtidan arzon: Google da har bo'lak unga tegishli testlarning tranzitiv yopilishida yurgiziladi va bu CI ga katta yuk beradi, lekin bu almashtiruv ongli qilingan.
+- **Yaratilgan o'zgarish "uy hayvoni" emas, "mol".** Qo'lda yozilgan commit muallif uchun shaxsiy: unga kunlar sarflanadi va rad etilishi og'ir qabul qilinadi. Avtomatik yaratilgan o'zgarish esa nomsiz: rad etilsa yoki merge konfliktga tushsa, u qo'lda yamalmaydi, **asbob uni qayta yaratadi**. Shu sababli asosiy o'zgarishni yaratish jarayoni avtomatlashtirilgan bo'lishi kerak: tizimda yangi eski foydalanishlar paydo bo'lsa (kimdir eski API ni yana ishlatsa) yoki matnli konflikt chiqsa, asosiy o'zgarish yangilanib qayta shardlanadi.
+- **Yo'naltiruvchi alias migratsiya qadami bo'ladi.** Til yordam beradigan joyda eski tur yoki metod yangisiga yo'naltiriladi: tur aliasi yoki eskirgan delegatlovchi metod. Chaqiruvchilar bosqichma-bosqich almashtiriladi, oxirida alias olib tashlanadi. Google ning `scoped_ptr` dan `std::unique_ptr` ga ko'chishi aynan shunday yakunlangan: avval eski nom yangisining aliasiga aylantirilgan, keyin matnli almashtirish bajarilgan, oxirida eski alias o'chirilgan. Bunday imkon bo'lmasa (til alias bermasa yoki tur API imzosida parametr bo'lsa) ko'chish atomik bajarilishi kerak, va bu ancha qimmat. Java da bu `@Deprecated(forRemoval = true)` delegatlovchi metod.
+- **Arzon mexanika bilan kichik nomuvofiqliklar ham tuzatiladi.** Katta o'zgarish apparati bo'lsa, ilgari "arzimas" deb qoldirilgan nuqsonlarni tuzatish mumkin bo'ladi. Google ning misoli: ichki kutubxonada bir fayl `stl_util.h`, boshqasi `map-util.h` deb nomlangan edi, ya'ni ajratgich belgisi har xil. Bitta belgi farqi, lekin u muhandislarni qaysi fayl qaysi belgini ishlatganini eslab yurishga majbur qilgan va noto'g'ri yozilganda uzoq kompilyatsiya siklidan keyin xato bergan; o'zgarish bir necha haftalik fon ishi bilan bajarilgan va build nosozliklari soni o'lchangan holda kamaytirilgan.
+
+```java
+// Alias qadami: eski nom saqlanadi, yangisiga yo'naltiriladi
+public final class PaymentService {
+
+    /** @deprecated o'rniga {@link #settle(PaymentId)}; 3.0 da o'chiriladi. */
+    @Deprecated(since = "2.4", forRemoval = true)
+    public void settleLegacy(long paymentId) {
+        settle(new PaymentId(paymentId));
+    }
+
+    public void settle(PaymentId id) { ... }
+}
+```
+
+```bash
+# AST ga asoslangan o'zgarish: barcha chaqiruvchilarni bir yurishda ko'chirish
+./mvnw -U org.openrewrite.maven:rewrite-maven-plugin:run \
+  -Drewrite.activeRecipes=uz.shop.MigrateSettleLegacy
+```
+
+Shardlashda birinchi mezon - **egalik chegarasi**: Maven modul, paket yoki `CODEOWNERS` yozuvi. Har bo'lak o'z PR i bo'lib, o'z egalari tomonidan review qilinadi; bir modulning ikki faylini bo'lib tashlash esa foydasiz, chunki ular birga test qilinadi.
+
+## 38.17 Qadam yiqilganda: debug emas, oxirgi yaxshi commitga qaytish
+
+Oldingi bo'limlar oldinga qarab intizomni beradi: bitta harakat,
+kompilyatsiya, test. Yiqilgandan keyin nima qilish kerakligi esa alohida
+qoida, chunki tabiiy reaksiya - debug qilib oldinga ketish - eng qimmat yo'l.
+
+Qoida: test yiqilib, qaysi o'zgarish sababchi ekani darhol ko'rinmasa, debug
+bilan oldinga ketilmaydi. Oxirgi ishlagan holatga qaytiladi va o'zgarishlar
+bittalab qayta qo'yiladi, har biridan keyin test yurgiziladi. Fowler buni ikki
+nashrda ikki marta aytadi: 1-nashrda qoida "orqaga qaytish" shaklida
+(15-bob, 334-bet), 2-nashrda esa commit tilida - oxirgi yaxshi commitga
+qaytib, o'sha ishni kichikroq qadamlar bilan qaytadan bajarish (1-bob,
+21-bet).
+
+Qoidaning ostida Beck ning iqtisodi turadi: bir soatlik ishni kichik qadamlar
+bilan qayta qo'yish o'n daqiqa oladi, xatoni debug qilish esa besh sekunddan
+ikki soatgacha cho'zilishi mumkin va qancha cho'zilishini oldindan bilib
+bo'lmaydi. Ya'ni qaytish narxi ma'lum, debug narxi noma'lum; shuning uchun
+qaytish tanlanadi. Bu 38.6 dagi "kod ishlamayotgani aniqlandi" shartidan
+farq qiladi: u yerda refaktoring to'xtatiladi, bu yerda esa refaktoring davom
+etadi, faqat boshqa yo'ldan.
+
+Buning ishlashi uchun qaytish nuqtalari zich bo'lishi kerak, va bu ikkinchi
+qoida: har bir mikro-qadamdan keyin kompilyatsiya, test va **mahalliy**
+repozitoriyga commit. 2-nashrning birinchi bobi Split Loop, Slide Statements,
+Extract Function va Inline Variable ketma-ketligini aynan shu tarzda
+yurgizadi (1-bob, 20-bet). Bu 38.8 dagi commit gigiyenasiga qarshi emas:
+mahalliy commitlar ishchi nuqtalar bo'lib, push qilishdan oldin bitta mantiqiy
+o'zgarish darajasiga yig'iladi (40.1).
+
+Uchinchi qoida qadam o'lchamiga tegishli: ish qiyinlashsa, qadam
+qisqartiriladi. Qiyinlashish belgilari - test bir necha harakatdan keyin
+yiqilishi, diff kutilgandan katta bo'lishi, "bu yerda nima bo'layotganini
+bilmayman" holati. Javob har safar bir xil: oxirgi yaxshi commitga qaytib,
+shu ishni kichikroq qadamlar bilan qaytadan bajarish. Juftlikda ishlanayotgan
+bo'lsa, buning yana bitta signali bor - sherikning tushunmasligi (41.7).
+
+```bash
+# Yiqildi va sababchi o'zgarish ko'rinmaydi: oldinga debug qilinmaydi
+git stash                            # yarim ish yo'qolmasligi uchun
+git reset --hard HEAD                # oxirgi yaxshi commit
+
+# keyin o'zgarishlar bittalab qayta qo'yiladi, har biridan keyin test va commit
+./mvnw -q -pl payment test -Dtest='*Test' -DfailIfNoTests=false
+git commit -am "refactor: Split Loop (1/4)"
+```
+
+## 38.18 Amalda qo'llash
 
 - [ ] Refaktoringni bittadan bajarib, har biridan keyin kompilyatsiya va tez
       testlarni yurgizish odatini joriy qiling (McConnell 580).
@@ -836,6 +926,9 @@ boshlang'ich holat, delegatsiya esa test qo'yilgandan keyingi maqsad.
 
 ## Manbalar
 
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 22-bob ("Codebase Insight", "Change Management", "Filling Potholes") - kodbaza bo'ylab o'zgarishni AST ga asoslangan asbob bilan yaratish, inson mehnatining kodbaza hajmi bilan chiziqli o'smasligi va o'zgarishning to'liq bo'lishi talabi, 500 tahrir mo'ljali, hamda arzon mexanika bilan kichik nomuvofiqliklarni tuzatish. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 22-bob ("Barriers to Atomic Changes", "Sharding and Submitting", "Cattle Versus Pets", "Change Creation") - katta o'zgarishni atomik commit qilishga to'siqlar (VCS cheklovlari va merge konflikti), egalik chegarasi bo'yicha shardlash va har bo'lakning mustaqil test-review-submit quvuri, yaratilgan o'zgarishning qayta yaratiladigan bo'lishi. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 22-bob ("scoped_ptr to std::unique_ptr", "Language Support") - eski turni yangisining aliasiga aylantirib bosqichma-bosqich ko'chirish va oxirida aliasni olib tashlash, til alias va yo'naltiruvchi funksiya bermasa ko'chirishning atomik bo'lishi kerakligi. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
 - Martin Fowler, *Refactoring: Improving the Design of Existing Code*,
   1-nashr, Addison-Wesley, 1999, 2-bob "Principles in Refactoring" (46-62) -
   refaktoring ta'rifi (46), Kent Beck ning ikki shlyapa metaforasi (47),
@@ -869,6 +962,28 @@ boshlang'ich holat, delegatsiya esa test qo'yilgandan keyingi maqsad.
 - Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 24.5
   "Refactoring Strategies" (582-583) - refaktoringning kamayuvchi qaytim
   qonuniga bo'ysunishi va 80/20 qoidasi
+- Martin Fowler, *Refactoring: Improving the Design of Existing Code*,
+  1-nashr, Addison-Wesley, 1999, 15-bob (334-bet) - test yiqilib sababchi
+  o'zgarish ko'rinmaganda debug bilan oldinga ketmaslik: oxirgi ishlagan
+  holatga qaytib o'zgarishlarni bittalab qayta qo'yish, va buning iqtisodi
+  (qayta qo'yish narxi ma'lum, debug narxi noma'lum)
+- Martin Fowler, *Refactoring*, 2-nashr, Addison-Wesley, 2019, 1-bob (20-bet,
+  nashriyotning ochiq preview nusxasi) - har bir mikro-qadamdan keyin
+  kompilyatsiya, test va mahalliy repozitoriyga commit; Split Loop, Slide
+  Statements, Extract Function va Inline Variable ketma-ketligining shu
+  tarzda yurgizilishi
+- Martin Fowler, *Refactoring*, 2-nashr, Addison-Wesley, 2019, 1-bob (21-bet,
+  nashriyotning ochiq preview nusxasi) - ish qiyinlashsa qadamni qisqartirish
+  va test yiqilib muammo darhol ko'rinmasa oxirgi yaxshi commitga qaytib
+  ishni kichikroq qadamlar bilan qaytadan bajarish (1-nashr, 334-bet dagi
+  qoidaning commit tilidagi shakli)
+- Martin Fowler, *Refactoring*, 2-nashr, Addison-Wesley, 2019, 2-bob (51-bet,
+  nashriyotning ochiq preview nusxasi) - xato xabarini refaktoring kerak
+  ekanining belgisi deb o'qish: kod xatoni ko'rishga yetarlicha ravshan
+  bo'lmagan
+- ESLATMA: 38.17 dagi `git` va Maven buyruqlari hamda mahalliy commitlarni
+  push dan oldin yig'ish tavsiyasi korpus qo'shimchasi; Fowler qoidani
+  vositadan mustaqil shaklda beradi
 - Michael Feathers, *Working Effectively with Legacy Code*, Prentice Hall PTR,
   2004 (copyright 2005), 4-bob (31-32) va 13-bob (186-187) - chok (seam) ta'rifi,
   characterization test ta'rifi va uni yozishning besh qadami

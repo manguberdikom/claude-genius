@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 47. Birgalikda ishlash va o'rgatish (Collaboration and Mentoring)
 
@@ -129,6 +129,19 @@ Jamoa kelishuvi - og'zaki qoidalarni yozma shaklga keltirish. Uning birinchi qiy
 
 Kelishuvning mazmuni jamoaga bog'liq, lekin ikki xususiyati umumiy: unda faqat bahsga sabab bo'lgan qoidalar turadi, va har bir qoidaning yoniga uni kim tekshiradi (mashina yoki odam) deb yoziladi. Mashina tekshiradigan qoida kelishuvdan statik tahlilga ko'chadi ([42-bob](42-statik-tahlil-va-avtomatik-qoidalar.md)).
 
+**Har qoida yonida uning sababi va tortilgan foyda-zarari yoziladi.** Google ning uslub ko'rsatmalarida bu majburiy amaliyot: qoida qo'shilganda uning ustunligi va kamchiligi muhokama qilinadi va bu mulohaza qoidaning o'zi bilan birga yoziladi. Foydasi uzoq muddatli: **qoidani qayta ko'rish vaqti kelganini bilish mumkin bo'ladi**. Qoidaga ta'sir qilgan omillar ochiq yozilgan bo'lsa, ulardan biri o'zgarganda (til yangi versiya chiqardi, vositani saqlash qimmatlashdi, muhandislar qoidani chetlab o'tishga vaqt sarflay boshladi) qoidani qayta baholash kerakligi ko'rinadi. Sabab yozilmagan qoida esa jim eskiradi va "shunday qabul qilingan" holatiga o'tadi.
+
+Qoidani o'zgartirish ham shu asosda ishlaydi: o'zgarish **aniq namunalarda ko'rsatilgan muammoga** tayanadi, shaxsiy didga emas. Google da bu qarorlarni uslub arbitrlari guruhi qabul qiladi va qaror ovoz berish bilan emas, konsensus bilan chiqadi, chunki har qaror shaxsiy afzallik emas, tortilgan foyda-zarar bahosi.
+
+**Istisno (waiver) kamdan-kam beriladi.** Istisno faqat qoidani buzish undan qochishdan foydaliroq bo'lgan holatda beriladi. Rad etiladigan tipik sabab - "nom uzun chiqadi" yoki "loyiha ichidagi izchillik buziladi": kod bazasining butunligi bitta loyihaning izchilligidan ustun. Agar bitta qoida uchun o'rinli ko'rinadigan, lekin aslida o'rinsiz istisno so'rovlari ko'p kelsa, bu qoidani aniqlashtirish kerakligining signali.
+
+```markdown
+## Istisnolar
+- `UZB_` prefiksi: taqiqlangan (42.3). Istisno yo'q.
+- `@SuppressWarnings`: faqat sabab izohi bilan va ticket havolasi bilan.
+  Istisnoni ikki reviewer tasdiqlaydi; "nom uzun" sabab emas.
+```
+
 ## 47.6 Yordam so'rash va yordam berish: blokni ochish odobi
 
 Katta tashkilotda to'siqlarning ko'pi texnik emas. Orosz ro'yxatini beradi: kerakli funksiyaga qaysi jamoa egalik qilishini bilmaslik, konfiguratsiyani o'zgartirish huquqi yo'qligi, boshqa jamoadan code review kutish, ya'ni hamkasbning kiritishiga bog'liq deyarli har qanday ish (Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr, Pragmatic Engineer, 2023, 7-bob, 95-bet). Bunday to'siqda kodni emas, suhbatni to'g'ri olib borish kerak. Qachon to'xtash va "men qotib qoldim" deb tan olish kerakligi [ko'r yo'lak va botqoqdan chiqish](46-vaqt-diqqat-va-mashq.md#465-kor-yolak-va-botqoqdan-chiqish) bo'limida.
@@ -165,6 +178,7 @@ Jamoadan tashqaridagi to'siq uchun Orosz to'rt qadamli zinani beradi va tartibni
 
 ## Manbalar
 
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 8-bob ("Changing the Rules", "Exceptions") - har qoida bilan birga uning sababi va tortilgan foyda-zararini yozish va bu yozuvning qoidani qayta ko'rish vaqtini ko'rsatishi, qoida o'zgarishining aniq namunalarga tayanishi va konsensus bilan qabul qilinishi, istisnoning kamdan-kam berilishi hamda kodbaza butunligining loyiha izchilligidan ustunligi. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
 - Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 21-bob, "Collective Ownership Applies to All Forms of Collaborative Construction" (482-bet) - jamoaviy egalikning uch foydasi va uning muvofiqlashtirish narxi
 - Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 21-bob, "Collaborative Construction Provides Mentoring in Corporate Culture and Programming Expertise" (482-bet) - yozilgan standart o'z-o'zidan bajarilmasligi; review orqali kasbni uzatish; inspeksiya jamoani eng yaxshi dasturchi darajasiga ko'targan hisobot
 - Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 21.3 "Egos in Inspections" (490-bet) - maqsad muallifni tanqid qilish emas; "Java ni biladigan har kim" uslubidagi izohning nomaqbulligi; tuzatish yo'lini tanlash huquqi muallifda

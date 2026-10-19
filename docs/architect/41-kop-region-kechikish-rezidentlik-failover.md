@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 41. Ko'p region: kechikish, ma'lumot rezidentligi va failover (Multi-Region: Latency, Data Residency and Failover)
 
@@ -95,6 +95,10 @@ Ikkinchisi: ajratish qanday bajariladi. Ikki yo'l bor: regionga biriktirilgan al
 
 Uchinchisi: identifikatorlar. Foydalanuvchi qaysi regionda ekani so'rovning boshida ma'lum bo'lishi kerak, aks holda marshrutlash uchun avval ma'lumotni qidirish kerak bo'ladi va bu cross-region safar qo'shadi. Shu sababli region belgisi identifikatorning o'ziga joylanadi yoki markaziy yengil katalogda saqlanadi.
 
+To'rtinchisi: geografik bo'lish qaysi sababdan qilinayotgani. Newman geografik partitioning ning ikki haqiqiy foydasini sanaydi va ikkisi ham rezidentlikdan iborat emas. Birinchisi qonun talabi, ya'ni ma'lumot ma'lum yurisdiksiyadan chiqmasligi, masalan EU fuqarolari ma'lumotining EU ichida saqlanishi. Ikkinchisi operatsion: partitsiyalar yaratilishi texnik ishlarning ta'sirini va qamrovini kamaytiradi, yangilanishni partitsiya bo'yicha chiqarish mumkin bo'ladi, va aks holda to'xtash talab qiladigan amallar faqat bitta partitsiyaga ta'sir qiladi; geografik bo'lishda esa xizmat uzilishiga olib kelishi mumkin amallarni kunning eng kam ta'sirli vaqtida, masalan erta tongda bajarish mumkin bo'ladi, va bu vaqt har region uchun boshqacha.
+
+Shu bilan birga kitob teskari tomonni ham aniq ko'rsatadi, va bu qaror mezoni bo'ladi: biznes yangi mamlakatlarga kengayib, bir nechta geografik hududni bitta tizimdan xizmat qilib samaradorlik olishni rejalashtirgan bo'lsa, geografik partitioning noto'g'ri tanlov. Asosiy muammo aniq, har yangi mamlakat uchun doimiy ravishda yangi partitsiya ko'tarish yangi mamlakatga chiqish xarajatini keskin oshiradi. Ya'ni mezon sodda: geografik bo'lish qonun yoki operatsion oyna uchun qilinadi, kengayish uchun qilinmaydi. Qonun talabi bo'lmagan holatda [41.1](#411-uchta-turli-sabab-uchta-turli-yechim) dagi uch sabab qayta ko'riladi.
+
 ## 41.7 Failover: RTO, RPO va split brain
 
 Ikkinchi region chidamlilik uchun qo'yilgan bo'lsa, uning qiymati failover **mashq qilinganida** paydo bo'ladi. Mashq qilinmagan failover ishlamaydi: DNS TTL, ulanish satrlari, sertifikatlar, migratsiya holati va keshdagi eski ma'lumot hammasi real o'tishda chiqadi.
@@ -148,6 +152,7 @@ Ko'p region narxini kamaytirishning eng samarali yo'li uni kichik qoldirish. Quy
 - Martin Kleppmann, *Designing Data-Intensive Applications*, 5-bob - ko'p yetakchili replikatsiya, konflikt va "o'z yozuvini o'qish" kafolati
 - Martin Kleppmann, *Designing Data-Intensive Applications*, 8-bob - soat farqi va "oxirgi yozuv g'alaba qiladi" qoidasining ma'lumot yo'qotishi
 - Martin Kleppmann, *Designing Data-Intensive Applications*, 9-bob - kvorum, fencing va split brain
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 13-bob ("Data Partitioning" bo'limi) - geografik partitioning ning ikki foydasi (yurisdiksiyadan chiqmaslik talabi va texnik ishni partitsiya bo'yicha eng kam ta'sirli vaqtda bajarish) hamda biznes yangi mamlakatlarga kengayib bir tizimdan xizmat qilmoqchi bo'lsa har mamlakatga yangi partitsiya ochish xarajatni keskin oshirishi. Bu nashrning qo'limizdagi elektron nusxasida barqaror bet raqami yo'q, shuning uchun faqat bob va bo'lim nomi ko'rsatilgan
 
 ---
 

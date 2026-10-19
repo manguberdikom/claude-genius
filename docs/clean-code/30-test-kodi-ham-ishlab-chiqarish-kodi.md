@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 30. Test kodi ham ishlab chiqarish kodi (Test Code Is Production Code)
 
 <details>
-<summary>Bu bobdagi 10 bo'lim</summary>
+<summary>Bu bobdagi 11 bo'lim</summary>
 
 - [30.1 Toza test nega kod bazasini saqlab qoladi](#301-toza-test-nega-kod-bazasini-saqlab-qoladi)
 - [30.2 DRY va DAMP muvozanati testda](#302-dry-va-damp-muvozanati-testda)
@@ -18,7 +18,8 @@
 - [30.7 Test dublyorlarini nomlash va chegaralash](#307-test-dublyorlarini-nomlash-va-chegaralash)
 - [30.8 Testlar orasidagi bog'liqlik va tartib](#308-testlar-orasidagi-bogliqlik-va-tartib)
 - [30.9 Test hidlari katalogi](#309-test-hidlari-katalogi)
-- [30.10 Amalda qo'llash](#3010-amalda-qollash)
+- [30.10 Test kirish qiymatini tanlash](#3010-test-kirish-qiymatini-tanlash)
+- [30.11 Amalda qo'llash](#3011-amalda-qollash)
 
 </details>
 
@@ -30,6 +31,10 @@ Test strategiyasi, piramida, FIRST printsiplari, AAA tuzilishi va test nomlash [
 Test kodi iflos bo'lsa, u o'zgarishga qarshilik qiladi: har bir refaktoring o'nlab testni buzadi va jamoa refaktoringdan voz kechadi. Natijada ishlab chiqarish kodi ham eskiradi. Shu sababli test kodining tozaligi ishlab chiqarish kodining tozaligidan kam ahamiyatli emas.
 
 Teskari tomoni ham bor: ishonchli test to'plami refaktoringni **bepul** qiladi. Bu hujjatdagi deyarli har bir refaktoring harakati (35-37 boblar) xavfsizlik to'rini talab qiladi, va u to'r - testlar.
+
+"Kam ahamiyatli emas" iborasi hamma o'lchovga tegmaydi va buni aniq aytish kerak, aks holda qoida ortiqcha ishga olib keladi. Standart ikkiga bo'linadi: test kodi sodda, qisqa va ifodali bo'lishi **shart**, lekin ishlab chiqarish kodi kabi **samarali** bo'lishi shart emas, chunki test muhiti xotira va protsessor cheklovida ishlamaydi. Ajratuvchi shart shu: **tozalik** o'lchovi ikkala kodda bir xil, **samaradorlik** o'lchovi bir xil emas.
+
+Amalda bu shunday ko'rinadi: testda satrni oddiy konkatenatsiya bilan qurish, har bir testda ma'lumotni noldan yasash yoki ortiqcha nusxa olish haqli, chunki o'qilishni oshiradi va narxi sezilmaydi; ishlab chiqarish kodida esa shu tanlovlar o'lchanadi. Chegara ham bor: yon ta'sir bitta testdan chiqib to'plam darajasiga o'tsa, qoida teskarisiga aylanadi - sekin test to'plami tez qaytish halqasini buzadi (39.7), shuning uchun samaradorlikdan voz kechish bitta test ichida haqli, butun to'plam darajasida esa emas.
 
 ## 30.2 DRY va DAMP muvozanati testda
 
@@ -175,6 +180,26 @@ Ikkinchi qoida: **o'zingiz yozmagan** turlarni mock qilmaslik. Uchinchi tomon ku
 @Mock PaymentGateway gateway;
 ```
 
+**Yordamchi metod nomi assert qilishini ko'rsatadi.** Test kodidagi yordamchi metodlar ikki turga bo'linadi va ularni nomdan ajratish kerak: biri o'zi tasdiqlash bajaradi, ikkinchisi oddiy, "testdan bexabar" yordamchi (fixture quradi, ma'lumot qo'shadi). Boswell va Foucher ning konvensiyasi: tasdiqlash bajaradigan metodga `assert` yoki `check` prefiksi qo'yiladi (`checkScoresBeforeAfter`), oddiy yordamchi esa oddiy nom oladi (`addScoredDoc`). Shunda testni o'qiyotgan odam qaysi qator muvaffaqiyatsizlikka olib kelishi mumkinligini nomdan ko'radi va yiqilish sababini qidirish tezlashadi.
+
+Test metodining o'z nomi uchun qoida boshqa: u **tekshirilayotgan sinf, funksiya va holat** haqida ma'lumot beradi. `Test1`, `Test2` kabi nomlar taqiqlanadi; nom uzun chiqishi muammo emas, chunki uni hech kim chaqirmaydi va aksariyat freymvork xato hisobotida aynan shu nomni chiqaradi, ya'ni nom izoh vazifasini o'taydi.
+
+```java
+// Tasdiqlash bajaradi: nomi shuni aytadi
+private void assertScoresAfterFiltering(String input, String expected) {
+    assertThat(sorter.sortAndFilter(parse(input)))
+            .extracting(ScoredDoc::score)
+            .containsExactlyElementsOf(parse(expected));
+}
+
+// Testdan bexabar oddiy yordamchi: oddiy nom
+private ScoredDoc scoredDoc(String url, double score) {
+    return new ScoredDoc(url, score);
+}
+```
+
+ESLATMA: `assert` yoki `check` prefiksi tanlovi jamoa kelishuviga qoladi, muhimi bitta prefiks butun kod bazasida ishlatilishi (2.11).
+
 ## 30.8 Testlar orasidagi bog'liqlik va tartib
 
 Testlar bir-biridan mustaqil bo'lishi kerak: har qanday tartibda, alohida yoki parallel ishga tushirilganda bir xil natija berishi lozim. Bog'liqlik odatda umumiy o'zgaradigan holatdan keladi: statik maydon (16.9), umumiy baza yozuvi, fayl tizimi.
@@ -215,7 +240,65 @@ Test kodidagi hidlar alohida katalogga ega va ularning har biri aniq muammoni bi
 | Izohga olingan test | `// @Test` | o'chirish yoki tuzatish |
 | `@Disabled` sababsiz | sababsiz o'chirilgan | sabab va ticket yozish |
 
-## 30.10 Amalda qo'llash
+## 30.10 Test kirish qiymatini tanlash
+
+Test ma'lumoti qanday qurilishi [test data builder](#303-test-malumot-quruvchilari-builder-va-object-mother)
+bo'limida ko'rildi; bu bo'lim boshqa savolga javob beradi: builder ga qanday
+QIYMAT berish kerak. Mezon ikkita va ular bir-biriga qarshi ishlaydi: qiymatlar
+kodni to'liq tekshirsin, va ayni paytda o'qishga sodda bo'lsin. Boswell va
+Foucher qoidani shunday beradi: kodni to'liq ishlatadigan eng sodda qiymatlar
+to'plamini tanlash kerak (Boswell/Foucher, *The Art of Readable Code*, 1-nashr,
+O'Reilly, 2011, 14-bob (156-bet)).
+
+Ikki tomonga ham xato bo'ladi. `"1, 2, 3"` kirishi sodda, lekin manfiy qiymatni
+filtrlash xatti-harakatini umuman tekshirmaydi. `"123014, -1082342, 823423,
+234205, -235235"` esa keraksiz murakkab va ayni paytda kodni to'liq ham
+tekshirmaydi. Kitob o'z misolidagi `-99998.7` qiymatini tanqid qiladi: u shunchaki
+"biror manfiy son" degani edi, demak `-1` yetadi; agar "juda katta manfiy son"
+nazarda tutilgan bo'lsa, `-1e100` kabi aniq qiymat yozilishi kerak. Natijada
+`"-5, 1, 4, -99998.7, 3"` kirishi `"1, 2, -1, 3"` ga qisqaradi va samarasini
+yo'qotmaydi (shu yerda, 156-157-bet).
+
+```java
+// yomon: qiymatlar shovqinli, nega aynan shular ekani ko'rinmaydi
+@Test
+void filtersNegativeScores() {
+    List<Integer> result = ranking.sortAndFilter(
+            List.of(-5, 1, 4, -99998, 3));
+    assertThat(result).containsExactly(4, 3, 1);
+}
+
+// yaxshi: eng sodda qiymatlar, lekin manfiy filtri ham tekshiriladi
+@Test
+void filtersNegativeScores() {
+    List<Integer> result = ranking.sortAndFilter(List.of(1, 2, -1, 3));
+    assertThat(result).containsExactly(3, 2, 1);
+}
+```
+
+Ikkita qo'shimcha qoida shundan chiqadi. Birinchi: bitta xatti-harakatni
+tekshirish uchun bitta namuna yetadi - manfiy qiymat filtrlanishini ko'rsatish
+uchun ro'yxatda bitta manfiy son bo'lishi kifoya. Ikkinchi: katta va "vahshiy"
+kirish bilan sinash foydali (bufer chegarasi va kutilmagan xatolarni ochadi),
+lekin u testda qo'lda yozilmaydi - katta kirish programma yo'li bilan quriladi,
+chunki qo'lda yozilgan uzun ro'yxat o'qilmaydi va stress test sifatida ham
+to'liq ishlamaydi (shu yerda, 157-bet).
+
+```java
+// yaxshi: katta kirish qo'lda yozilmaydi, generatsiya qilinadi
+@Test
+void handlesLargeInput() {
+    List<Integer> scores = IntStream.rangeClosed(1, 100_000).boxed().toList();
+    assertThat(ranking.sortAndFilter(scores)).hasSize(100_000);
+}
+```
+
+Qiymat tanlash chegaraviy holat bilan birga ishlaydi: eng sodda qiymat to'plami
+odatiy yo'lni qamraydi, chegara (bo'sh ro'yxat, bitta element, maksimal qiymat)
+esa alohida test bo'ladi, chunki ularni bitta testga tiqish
+[bir tushuncha, bir test](#305-bir-tushuncha-bir-test) qoidasini buzadi.
+
+## 30.11 Amalda qo'llash
 
 - [ ] Test ma'lumoti qurish takrorlanishini topib, har bir agregat uchun test data builder yozing.
 - [ ] Testlardagi `if`, sikl va hisobni topib, parametrlangan testga aylantiring.
@@ -225,13 +308,19 @@ Test kodidagi hidlar alohida katalogga ega va ularning har biri aniq muammoni bi
 - [ ] `Thread.sleep` ishlatilgan testlarni Awaitility yoki qotirilgan `Clock` ga o'tkazing.
 - [ ] `@Disabled` testlarni ro'yxatlab, har biriga sabab va ticket qo'shing yoki o'chiring.
 - [ ] 30.9 jadvalidagi hidlar bo'yicha test kodini bir marta to'liq ko'rib chiqib, ro'yxat tuzing.
+- [ ] Testlardagi uzun va "shovqinli" kirish qiymatlarini (`-99998.7`, `123014`) eng sodda ekvivalentiga almashtirib, assertion o'zgarmasligini tekshiring.
+- [ ] Qo'lda yozilgan uzun kirish ro'yxatlarini generatsiya qiluvchi kodga o'tkazing.
 
 ## Manbalar
 
+- Dustin Boswell, Trevor Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011 (copyright 2012), 14-bob (158-159-betlar) - test yordamchisi nomida uning o'zi assert qilishini ko'rsatish (`assert` yoki `check` prefiksi, `checkScoresBeforeAfter` va `addScoredDoc` farqi), test metodi nomining sinf, funksiya va holatni aytishi hamda uzun nomning izoh vazifasini o'tashi
 - Robert C. Martin, *Clean Code*, 9-bob ("Keeping Tests Clean") - test kodi ishlab chiqarish kodi bilan bir xil standartda
 - Robert C. Martin, *Clean Code*, 9-bob ("One Assert per Test", "Single Concept per Test") - bir testda bir tushuncha, assert soni minimallashtiriladi
 - Robert C. Martin, *Clean Code*, 9-bob ("F.I.R.S.T.") - tez, mustaqil, qaytariladigan, o'zini tasdiqlaydigan, o'z vaqtida
 - Robert C. Martin, *Clean Code*, 17-bob, T1-T9 - test evristikalari
+- Dustin Boswell, Trevor Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011 (copyright 2012), 14-bob (156-157-betlar) - kodni to'liq ishlatadigan eng sodda kirish to'plami mezoni, `-99998.7` ni `-1` ga qisqartirish, bitta manfiy qiymat yetishi, va katta "smasher" kirishni qo'lda yozmasdan programma yo'li bilan qurish
+- Robert C. Martin, *Clean Code*, 9-bob ("Dual Standard") (127-130-betlar) - ikki standart: test kodi sodda, qisqa va ifodali bo'lishi shart, lekin ishlab chiqarish kodi kabi samarali bo'lishi shart emas, chunki test muhiti resurs cheklovida ishlamaydi
+- ESLATMA: tozalik o'lchovi bir xil, samaradorlik o'lchovi bir xil emas degan ajratuvchi shart korpus qarori: kitob ikki standartni sanaydi, korpusning o'zi esa test kodini ishlab chiqarish kodi bilan bir xil standartda deb yozadi; shart ikkisini o'lchov bo'yicha ajratadi. Qoidaning to'plam darajasidagi chegarasi ham korpus qo'shimchasi
 
 ---
 

@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 36. Code review va jamoada texnik yetakchilik (Code Review and Technical Leadership)
 
 <details>
-<summary>Bu bobdagi 16 bo'lim</summary>
+<summary>Bu bobdagi 17 bo'lim</summary>
 
 - [36.1 Code review nimani topishi kerak: xatti-harakat, chegara, nom, xavfsizlik](#361-code-review-nimani-topishi-kerak-xatti-harakat-chegara-nom-xavfsizlik)
 - [36.2 Nimani topmasligi kerak: formatlash, uslub, mashina tekshiradigan narsalar](#362-nimani-topmasligi-kerak-formatlash-uslub-mashina-tekshiradigan-narsalar)
@@ -24,7 +24,8 @@
 - [36.13 Review standarti: tasdiqlash chegarasi qayerda](#3613-review-standarti-tasdiqlash-chegarasi-qayerda)
 - [36.14 "Keyin tozalaymiz" va'dasi va qat'iylikdan shikoyat](#3614-keyin-tozalaymiz-vadasi-va-qatiylikdan-shikoyat)
 - [36.15 Bog'liq jamoalar xaritasi va chegaradagi takroriy ishqalanish](#3615-bogliq-jamoalar-xaritasi-va-chegaradagi-takroriy-ishqalanish)
-- [36.16 Amalda qo'llash](#3616-amalda-qollash)
+- [36.16 Yaxshi xulqli servis standarti: nimada bir xillik majburiy](#3616-yaxshi-xulqli-servis-standarti-nimada-bir-xillik-majburiy)
+- [36.17 Amalda qo'llash](#3617-amalda-qollash)
 
 </details>
 
@@ -281,6 +282,8 @@ spring.lifecycle.timeout-per-shutdown-phase=25s
 | Migratsiya yarim yo'lda qoladi | Eski yo'l o'chirilmagan | Oxirgi PR da eski kodni o'chirish sharti |
 | Faqat bitta odam domenni biladi | Review doim bir odamda | Juftlik review va rotatsiya |
 
+Majburlashning MIQDORI esa alohida qaror va u ko'pincha o'ylanmaydi. Brown nazoratni ikki holatli tugma emas, richag deb ko'radi: diktatorlik va umuman yo'l-yo'riq bermaslik oralig'ida uzluksiz shkala bor, va qancha nazorat kerakligini to'rt narsa belgilaydi, ya'ni jamoa tajribasi, jamoa hamda loyihaning kattaligi, talablarning murakkabligi va kodbazaning hozirgi holati; uning tavsiyasi "bir oz nazorat bilan boshla, keyin fikr-mulohazaga qarab sozla" (Simon Brown, *Software Architecture for Developers*, Leanpub, 15-bob, 41-bet). Sozlash signallari amaliy: jamoa ko'p "nega" so'rasa yo'l-yo'riq kam berilgan, jamoa doim qarshilik qilsa ko'p berilgan. Shu richag yuqoridagi vositalarga ham tegishli, chunki ArchUnit qoidasi ham nazoratning bir shakli: barcha chegarani birinchi kundan qattiq qilib qo'yish jamoani qoidani chetlab o'tishga o'rgatadi, hech bir chegarani majburlamaslik esa qoidani yozilgan joyida qoldiradi. Tartib: qoidani avval ogohlantirish rejimida yurgizasiz, keyin takrorlangan buzilishlarni ko'rib qattiqlashtirasiz.
+
 Mavzuning to'liq yozuvi testlash qo'llanmasidagi [arxitektura testlari va kod sifati darvozalari](../testing/14-arxitektura-testlari-va-kod-sifati.md#142-archunit-asoslari) bo'limida; bu yerda faqat arxitektura nuqtai nazari.
 
 ## 36.10 Jamoaning bilim xaritasi va bitta odamga bog'liqlikni kamaytirish
@@ -296,6 +299,8 @@ Ikki rol aralashganda ikkisi ham buziladi. Menejer odamlar uchun javob beradi: o
 Eng muhim farq ta'sir usulida. Menejer qaror qabul qilib buyruq berishi mumkin. Yetakchi esa odamlarni ishontirishi kerak, chunki uning qo'lida majburlash vositasi yo'q. Shuning uchun yetakchining asosiy quroli dalil, prototip va yozma hujjat. Agar yetakchi "men shunday dedim" ga tayansa, u menejer rolini noto'g'ri o'zlashtirgan bo'ladi.
 
 Bir xil narsada ikki rol birlashadi: ikkisi ham odamlar ishini bloklaydigan to'siqlarni olib tashlashi kerak. Yetakchi uchun bu ko'pincha review navbati, sekin build va noaniq talab.
+
+Yetakchilik uslubining o'zi esa doimiy emas va u jamoaning yetukligiga qarab o'zgaradi. Brown bu yerda Roy Osherove ning *Elastic Leadership* modeliga ishora qiladi: omon qolish modelida, ya'ni jamoa tartibsizlik ichida bo'lganda, to'g'ridan-to'g'ri buyruq uslubi kerak bo'ladi, yetuklik oshgani sari esa uslub o'zgaradi; "o'zini tashkil qiluvchi jamoa" ga intilish yaxshi, lekin ko'p jamoa uchun bu yurishdan oldin yugurishga urinish bo'ladi (Simon Brown, *Software Architecture for Developers*, Leanpub, 18-bob, 47-48-betlar). Amaliy oqibati yuqoridagi "majburlash vositasi yo'q" qoidasini cheklaydi: tartibsizlik holatidagi jamoada ishontirish uchun vaqt yo'q va qaror aytiladi, keyin sababi yoziladi. Tartibsizlik belgilari ham kuzatiladigan: hamma qaror bir odamdan kutiladi, PR lar bir haftadan ko'p turadi, hech qanday standart bajarilmaydi. Shu holatdan chiqqandan keyin uslub [nazorat richagi](#369-standart-ornatish-linter-formatlash-archunit-qoidalari-shablon-loyiha) bo'yicha pasaytiriladi, aks holda buyruq uslubi o'z o'rnidan oshib ketadi va [huquqni qozonish](39-birinchi-90-kun-va-oz-ozini-baholash.md#393-ikkinchi-oy-kichik-korinadigan-yaxshilanish-bilan-ishonch-qozonish) mantiqini buzadi.
 
 ## 36.12 Vaqtni taqsimlash: kod, hujjat, suhbat, o'rganish
 
@@ -392,6 +397,10 @@ Orosz xaritaga besh ro'yxat kiritadi, va ulardan ikkitasi texnik, qolgani mahsul
 
 Xarita tayyor bo'lgach, uni hamkasblar va menejerga ko'rsatish kerak: bo'shliq aynan shu yerda ko'rinadi (12-bob, 177-bet). Kim bilan gaplashish kerakligini topishning eng arzon usuli ham shu bobda: tegishli kod satrini oxirgi marta kim o'zgartirganini qarash va o'shanga murojaat qilish.
 
+Xarita bog'liqlikni ko'rsatadi, lekin blokdan chiqarmaydi. Orosz bog'liqlikni kritik yo'ldan chiqarishning uch taktikasini sanaydi: bog'liqlikni mock qilib o'zingizni blokdan chiqarish va shartnoma kelgach ulanish; tashkilotda ichki open source modeli bo'lsa, kerakli ishni o'zingiz qilib berish va o'sha jamoaning review idan o'tkazish; yoki o'zingizning soddaroq variantingizni qurish (Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr, Pragmatic Engineer, 2023, 16-bob, 235-bet). Uchtasining narxi bir xil emas va oxirgisi eng qimmat: o'z variantingizni qurgan paytdan boshlab uni saqlash majburiyati sizga o'tadi, ya'ni CVE, migratsiya va chegaraviy holatlar ham sizning navbatingizga tushadi.
+
+Shu sababli uchinchi taktikaga chegara kerak, va u [bog'liqliklarni kamaytirish](../sonarqube/39-bogliqlik-zaifliklari-va-litsenziya.md#3911-bogliqliklarni-kamaytirish-eng-yaxshi-himoya) bilan bir xil shaklda: kichik va tushunarli qismni o'zingiz yozasiz, murakkab yoki xavfsizlikka tegishli qismni esa kutmasdan ham boshqaga topshirasiz. Birinchi ikki taktika uchun qaror arzon: mock qilish faqat shartnoma yozma bo'lsa ishlaydi (aks holda integratsiya kuni boshqa API chiqadi), ichki open source esa review navbati va kod egalari belgilangan joyda ishlaydi.
+
 Xaritaning arxitektura qiymati review chegarasida ochiladi. Orosz tajribali reviewer ning xulqini shunday ta'riflaydi: vaqt zonasi farqidan kelgan ishqalanishni bir necha marta uchratsa, u yechimni review jadvalida emas, review doirasidan tashqarida qidiradi, va bunday yechim ko'pincha oddiy emas: refaktoring, yangi servis yoki interfeys yaratish, instrument yaxshilash. Bog'liqlikni shu yo'l bilan hal qilish ikkala jamoaning ham ishini yengillashtiradi (12-bob, 168-bet).
 
 | Takrorlanuvchi belgi | Noto'g'ri o'qish | Arxitektura o'qishi |
@@ -403,7 +412,72 @@ Xaritaning arxitektura qiymati review chegarasida ochiladi. Orosz tajribali revi
 
 Xulosa bitta qoidaga yig'iladi: review da takrorlanuvchi ishqalanish odam yoki jadval muammosi emas, chegara muammosining belgisi. Chegara to'g'ri qo'yilganda o'sha ishqalanish o'zidan yo'qoladi, va bu arxitektorning ishi, reviewer niki emas.
 
-## 36.16 Amalda qo'llash
+## 36.16 Yaxshi xulqli servis standarti: nimada bir xillik majburiy
+
+[Standart o'rnatish](#369-standart-ornatish-linter-formatlash-archunit-qoidalari-shablon-loyiha) bo'limi standartni qanday majburlashni ko'rsatdi. Undan oldin keladigan savol esa boshqa: standart nimani qamrab olishi kerak. Newman buni amaliyotlar bo'yicha ishlaganda topilishi kerak bo'lgan eng muhim muvozanat deb ataydi, ya'ni tizimda qancha o'zgaruvchanlikka ruxsat berish, va javobni topishning kaliti sifatida bitta savolni qo'yadi: yaxshi xulqli, "yaxshi fuqaro" (good citizen) servis sizning tizimingizda qanday ko'rinadi? Qaysi imkoniyatlar unda bo'lishi kerak, shunda tizim boshqariladigan bo'lib qoladi va bitta yomon servis butun tizimni yiqitmaydi (Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 16-bob, "The Required Standard" bo'limi).
+
+Newman javobning kontekstga bog'liq ekanini oldindan tan oladi: odamlarda bo'lgani kabi, bir muhitdagi "yaxshi fuqaro" boshqa joydagiga o'xshamaydi. Shunga qaramay u uchta sohani ajratadi, chunki aynan ularda juda ko'p chetga chiqish yomon natija beradi. Maqsadni esa Ben Christensen ning gapi bilan qo'yadi: bu avtonom hayot tsiklidagi ko'p kichik qismdan tashkil topgan, lekin birga keladigan yaxlit tizim bo'lishi kerak (16-bob, "The Required Standard").
+
+| Soha | Nima majburiy bo'ladi | Nima erkin qoladi |
+| --- | --- | --- |
+| Monitoring | sog'liq va monitoring metrikalarini hamma servis bir xil usulda chiqarishi; log bitta joyda yig'ilishi | servis ichidagi texnologiya; monitoring tizimi quti ichini bilishi shart emas |
+| Interfeys | aniqlangan integratsiya texnologiyalari soni kichik bo'lishi; HTTP/REST tanlangan bo'lsa resurs nomlanishi, sahifalash va endpoint versiyalash qoidalari | ichki implementatsiya, saqlash va kutubxona tanlovi |
+| Arxitektura xavfsizligi | pastdagi sog'lom bo'lmagan chaqiruvdan o'zini himoyalash; javob kodlarini to'g'ri ishlatish | himoya mexanizmining aniq kutubxonasi |
+
+Birinchi soha haqida Newman ning talabi aniq: tizim sog'lig'ining izchil, servislar bo'ylab kesib o'tuvchi ko'rinishi bo'lishi kerak, va bu tizim darajasidagi ko'rinish, bitta servisga xos ko'rinish emas; yakka servisning sog'lig'ini bilish ko'pincha faqat kengroq muammoni tashxis qilganda yoki umumiy tendensiyani tushunganda qiymat beradi (16-bob, "Monitoring"). Mexanizm push yoki pull bo'lishi mumkin, muhimi standartlashtirilgan bo'lishi; quti ichidagi texnologiya esa shaffof bo'lmasin, ya'ni uni qo'llab-quvvatlash uchun monitoring tizimini o'zgartirish talab qilinmasin. Korpusda majburiy metrikalar ro'yxati [qaysi metrikalar majburiy](30-kuzatuvchanlik-amaliyoti-log-metrika-trace.md#307-qaysi-metrikalar-majburiy-sorov-soni-xato-ulushi-kechikish-taqsimoti-resurs) bo'limida.
+
+Ikkinchi soha ko'pincha yetarlicha chuqur olinmaydi. Newman ning o'lchovi sodda: bitta standart yaxshi, ikkitasi ham yomon emas, yigirma xil integratsiya uslubi yomon. Lekin gap faqat texnologiya va protokolni tanlashda emas: HTTP/REST tanlansa, fe'l yoki ot ishlatilishi, resurslarning sahifalanishi va endpoint larning versiyalanishi ham shu standartga kiradi (16-bob, "Interfaces").
+
+Uchinchi soha eng ko'p ko'z yumiladigani, chunki uning buzilishi faqat nosozlik paytida ko'rinadi. Newman qoidani shunday qo'yadi: bitta yomon xulqli servis hammaning bayramini buzishiga yo'l qo'yib bo'lmaydi, shuning uchun servislar pastdagi sog'lom bo'lmagan chaqiruvlardan o'zini himoyalashi kerak, va bu [zanjirni uzgich](../patterns/17-resilience-va-cloud-dizayn-patternlari.md#172-zanjirni-uzgich-circuit-breaker) kabi amaliyotlarni servislararo aloqa uchun majburiy qilish degani bo'lishi mumkin (16-bob, "Architectural Safety"). Ikkinchi qism esa javob kodlariga tegishli va u e'tibordan eng tez chiqadigan qoida: zanjirni uzgich HTTP kodlariga tayansa va bitta servis xato uchun 2XX qaytarsa yoki 4XX bilan 5XX ni aralashtirsa, himoya mexanizmlari ishdan chiqadi. HTTP ishlatilmasa ham talab o'zgarmaydi: so'rov to'g'ri bajarilgani, so'rov yomon bo'lgani uchun servis hech narsa qilmagani, va so'rov to'g'ri bo'lishi mumkin, lekin server o'chiq bo'lgani uchun aniq bo'lmagani bir-biridan ajralib turishi kerak, chunki tez yiqilish va muammoni topish shunga tayanadi (16-bob, "Architectural Safety").
+
+Standartni yozma ro'yxat sifatida qoldirish kam ta'sir beradi. Amaliy shakl shu uchta sohani kompaniya starter iga joylashtirish: yangi servis uni bog'laganda talab qilingan xulqni avtomatik oladi.
+
+```java
+// Kompaniya starter i: "yaxshi fuqaro" talablari yangi servisda o'zi paydo bo'ladi.
+// Servis faqat starter ni bog'laydi, monitoring va xato formatini o'zi yozmaydi.
+@AutoConfiguration
+public class GoodCitizenAutoConfiguration {
+
+    // Monitoring: hamma servis bir xil teglar bilan chiqadi, nom qo'lda yozilmaydi.
+    @Bean
+    MeterRegistryCustomizer<MeterRegistry> commonTags(
+            @Value("${spring.application.name}") String application,
+            @Value("${app.team:unknown}") String team) {
+        return registry -> registry.config().commonTags("application", application, "team", team);
+    }
+
+    // Interfeys: xato javobi yagona formatda (RFC 9457 ProblemDetail), har servis
+    // o'z formatini o'ylab topmaydi.
+    @Bean
+    @ConditionalOnMissingBean(ApiErrorHandler.class)
+    ApiErrorHandler apiErrorHandler() {
+        return new ApiErrorHandler();
+    }
+
+    // Arxitektura xavfsizligi: tashqi chaqiruvlar timeout va uzgich bilan ketadi.
+    @Bean
+    RestClientCustomizer resilientDefaults(CircuitBreakerRegistry breakers) {
+        return builder -> builder
+                .requestFactory(timeoutAwareFactory())
+                .requestInterceptor(new CircuitBreakerInterceptor(breakers.circuitBreaker("downstream")));
+    }
+
+    private static ClientHttpRequestFactory timeoutAwareFactory() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(Duration.ofSeconds(2));   // qiymat o'z o'lchovingizdan
+        factory.setReadTimeout(Duration.ofSeconds(3));
+        return factory;
+    }
+}
+```
+
+Standartning doirasiga texnologiya tanlovi ham kiradi va bu yerda erkinlik narxi aniq o'lchanadi. Newman jamoalarga o'z zonasi ichida boshqa texnologiya steki yoki ma'lumot omborini tanlash erkinligini berishni printsipial to'g'ri deb hisoblaydi, lekin ikki cheklovni darhol qo'shadi. Birinchisi odamlar: qo'llab-quvvatlanishi kerak bo'lgan 10 xil texnologiya steki bo'lsa, yollash ham, jamoalar orasida odam o'tkazish ham qiyinlashadi. Ikkinchisi tajriba: har jamoa butunlay boshqa ma'lumot omborini tanlasa, ularning birortasini katta masshtabda yuritish uchun yetarli tajriba yig'ilmaydi. Netflix misoli shu kelishuvni ko'rsatadi: kompaniya asosan Cassandra ga standartlashgan, va bu uning hamma holat uchun eng yaxshi tanlov bo'lgani uchun emas; Netflix Cassandra atrofida asbob va tajriba yig'ishdan keladigan qiymatni muayyan vazifalar uchun ko'proq mos bo'lishi mumkin bitta nechta platformani katta masshtabda qo'llab-quvvatlash va yuritishdan ustun deb hisoblaydi (16-bob, "Defining System Boundaries").
+
+Shu yerda bir nozik farqni saqlash kerak. Yuqoridagi standart "servis chegarasidan tashqarida nima bo'lishi" haqida, texnologiya erkinligi esa chegara ichida. Newman ning o'z yo'riqnomasi shunday: qutilar orasida nima bo'layotganidan tashvishlanish, qutilar ichida esa erkin bo'lish. Interfeys darajasida bu qattiq qoida bo'ladi, chunki bitta servis REST, ikkinchisi gRPC, uchinchisi Java RMI ni tanlasa, integratsiya koshmarga aylanadi va iste'molchi bir necha almashinuv uslubini tushunishga va qo'llab-quvvatlashga majbur bo'ladi. Ya'ni standartning chegarasi texnologiyaning o'zida emas, uning ko'rinish darajasida: tashqariga chiqadigan narsa standart, ichkarida qolgan narsa jamoa qarori, bundan faqat yuqoridagi yollash va masshtab argumenti istisno qiladi.
+
+ESLATMA: yuqoridagi starter, uning bean lari va timeout qiymatlari shu korpusning misoli. Newman uchta sohani va ularning talablarini sanaydi, aniq Spring konfiguratsiyasini bermaydi; timeout qiymatlari esa [timeout byudjeti](32-tarmoq-timeout-va-integratsiya-haqiqati.md#324-timeout-byudjeti-zanjirdagi-har-bir-chaqiruvga-vaqt-taqsimlash) bo'yicha o'z o'lchovingizdan chiqadi. Standartning ko'rinish darajasi bo'yicha chegarasini shunday ifodalash ham shu korpusning xulosasi.
+
+## 36.17 Amalda qo'llash
 
 - [ ] Review izohlari uchun to'rtta prefiks kelishib ol (`blocker`, `kerak`, `fikr`, `maqtov`) va PR shablonida ularni yoz.
 - [ ] Oxirgi 30 ta PR dagi izohlarni o'qib chiq, formatlash va uslubga tegishli hamma izohni Spotless yoki static analyzer qoidasiga ko'chir.
@@ -447,6 +521,33 @@ Xulosa bitta qoidaga yig'iladi: review da takrorlanuvchi ishqalanish odam yoki j
   (168 va 177-betlar) - 36.15 dagi bog'liq jamoalar xaritasining besh
   ro'yxati, oxirgi o'zgartirgan odamni topish usuli va takrorlanuvchi
   review ishqalanishini review dan tashqarida hal qilish.
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr,
+  O'Reilly, 2021, 16-bob ("The Required Standard", "Monitoring", "Interfaces",
+  "Architectural Safety" bo'limlari) - 36.16 dagi standart qamrovi: tizimda qancha
+  o'zgaruvchanlikka ruxsat berish muvozanati, "yaxshi fuqaro" servis savoli, Ben
+  Christensen ning avtonom hayot tsiklidagi qismlardan yaxlit tizim haqidagi gapi;
+  monitoring uchun tizim darajasidagi izchil ko'rinish, bir xil chiqarish usuli,
+  log ning bitta joyda yig'ilishi va quti ichidagi texnologiyaning shaffof emasligi;
+  interfeys uchun texnologiya sonining kichikligi hamda fe'l yoki ot, sahifalash va
+  versiyalash qoidalari; arxitektura xavfsizligi uchun pastdagi chaqiruvdan himoya,
+  zanjirni uzgichni majburiy qilish imkoniyati va javob kodlarini to'g'ri ishlatish
+  (xato uchun 2XX, 4XX bilan 5XX ni aralashtirish himoyani ishdan chiqarishi).
+  Bu nashrning qo'limizdagi elektron nusxasida barqaror bet raqami yo'q, shuning
+  uchun faqat bob va bo'lim nomi ko'rsatilgan
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr,
+  O'Reilly, 2021, 16-bob ("Defining System Boundaries" bo'limi) - jamoaga zonasi
+  ichida texnologiya steki va ma'lumot ombori tanlash erkinligi, lekin 10 xil stek
+  yollashni va jamoalar orasida odam o'tkazishni qiyinlashtirishi hamda har jamoa
+  boshqa ma'lumot omborini tanlasa birortasini katta masshtabda yuritish tajribasi
+  yig'ilmasligi; Netflix ning asosan Cassandra ga standartlashishi va asbob hamda
+  tajriba yig'ish qiymatini ko'p platformani yuritishdan ustun qo'yishi;
+  "qutilar orasida nima bo'layotganidan tashvishlanish, ichida erkin bo'lish"
+  yo'riqnomasi va interfeysda REST, gRPC hamda Java RMI aralashuvining narxi.
+  Bu nashrning qo'limizdagi elektron nusxasida barqaror bet raqami yo'q, shuning
+  uchun faqat bob va bo'lim nomi ko'rsatilgan
+- Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr, Pragmatic Engineer, 2023, 16-bob (235-bet) - boshqa jamoaga bog'liqlikni kritik yo'ldan chiqarishning uch taktikasi: bog'liqlikni mock qilish, ichki open source modelida ishni o'zingiz qilib berish, yoki o'zingizning soddaroq variantingizni qurish (oxirgisida saqlash majburiyati sizga o'tadi)
+- Simon Brown, *Software Architecture for Developers*, Leanpub, 15-bob (41-bet) - nazoratning tugma emas richag bo'lishi, diktatorlik va yo'l-yo'riq bermaslik oralig'idagi uzluksiz shkala, nazorat miqdorini belgilovchi to'rt omil (jamoa tajribasi, jamoa va loyiha kattaligi, talab murakkabligi, kodbaza holati) va "bir oz nazorat bilan boshlab keyin sozlash" tavsiyasi
+- Simon Brown, *Software Architecture for Developers*, Leanpub, 18-bob (47-48-betlar) - yetakchilik uslubini jamoa yetukligiga qarab o'zgartirish (Roy Osherove, *Elastic Leadership*): omon qolish modelida to'g'ridan-to'g'ri buyruq uslubi, yetuklik oshgani sari uslubning o'zgarishi, "o'zini tashkil qiluvchi jamoa" ga intilish ko'p jamoa uchun yurishdan oldin yugurishga urinish bo'lishi
 
 ---
 

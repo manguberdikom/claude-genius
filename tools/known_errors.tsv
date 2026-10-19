@@ -111,3 +111,11 @@ Orosz[^\n]{0,60}(2021|2022|2024|2025)	The Software Engineer`s Guidebook 1-nashri
 Design Patterns[^\n]{0,70}Addison-Wesley, (?!1995)\d{4}	GoF nusxasining copyright yozuvi 1995; korpus shu yilni ishlatadi	docs
 Guidebook[^\n]{0,80}(39[7-9]|4\d\d)-bet	Orosz kitobining tanasi 396-betda tugaydi, undan keyingisi indeks	docs
 Orosz[^\n]{0,80}(39[7-9]|4\d\d)-bet	Orosz kitobining tanasi 396-betda tugaydi, undan keyingisi indeks	docs
+# 2026-10-19: faza 1 auditi topgan PostgreSQL raqam xatolari (Rogov bilan tekshirilgan).
+geqo_threshold[^\n]{0,40}\b8\b|\b8\b[^\n]{0,40}geqo_threshold	geqo_threshold standarti 12; 8 bu from_collapse_limit va join_collapse_limit (Rogov 16.2, 260-261-bet)	docs
+(1[1-9]|[2-9]\d)-versiyagacha[^\n]{0,40}pg_clog	pg_clog katalogi pg_xact ga 10-versiyada nomlangan (Rogov 3.4, 70-bet)	docs
+oxirgi .?wal_writer_delay.? ichidagi	synchronous_commit = off da yo`qotish oynasi 3 x wal_writer_delay, standartda 0.6 s (Rogov 11.1, 184-bet)	docs
+8\.1[^\n]{0,20}136-bet	Rogov 8.1 dagi pg_table_size / pg_indexes_size misoli 137-betda	docs
+(?<!Platform thread uchun )yangi thread o.zini yaratgan threadning daemon statusini meros	daemon merosi faqat platform thread uchun: virtual thread har doim daemon va setDaemon unga ta'sir qilmaydi (JEP 444)	docs
+//\s*Hech qanday @Transactional yo'q	kod izohi yo'q narsani tasvirlamaydi, nega tranzaksiyasiz ekanini aytadi (connection tashqi chaqiruvda ushlanmasin)	docs
+EnableResilientMethods[^\n]{0,150}avtomatik (sozla|yoq)|avtomatik (sozla|yoq)[^\n]{0,150}EnableResilientMethods	Spring Boot 4.0.0 auto-configuration ro'yxatida @EnableResilientMethods ni yoqadigan sinf yo'q; uni konfiguratsiya sinfiga qo'yish kerak	docs

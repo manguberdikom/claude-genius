@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 30. Kuzatuvchanlik amaliyoti: log, metrika, trace va ularning narxi (Observability in Practice)
 
 <details>
-<summary>Bu bobdagi 14 bo'lim</summary>
+<summary>Bu bobdagi 19 bo'lim</summary>
 
 - [30.1 Uchta manba: log, metrika, trace va har biri qaysi savolga javob beradi](#301-uchta-manba-log-metrika-trace-va-har-biri-qaysi-savolga-javob-beradi)
 - [30.2 Tuzilgan (strukturali) log: JSON format, maydon nomlari, trace id bog'lash](#302-tuzilgan-strukturali-log-json-format-maydon-nomlari-trace-id-boglash)
@@ -22,7 +22,12 @@
 - [30.11 Dashboard qanday bo'lishi kerak: birinchi ekranda nima turadi](#3011-dashboard-qanday-bolishi-kerak-birinchi-ekranda-nima-turadi)
 - [30.12 Spring Boot Actuator va Micrometer sozlash amaliyoti](#3012-spring-boot-actuator-va-micrometer-sozlash-amaliyoti)
 - [30.13 Statik chegara va anomaliya aniqlash: alert qoidasi qanday shaklda bo'ladi](#3013-statik-chegara-va-anomaliya-aniqlash-alert-qoidasi-qanday-shaklda-boladi)
-- [30.14 Amalda qo'llash](#3014-amalda-qollash)
+- [30.14 Actuator ni kengaytirish: `base-path`, `/scheduledtasks`, `InfoContributor` va o'z endpoint](#3014-actuator-ni-kengaytirish-base-path-scheduledtasks-infocontributor-va-oz-endpoint)
+- [30.15 Spring Boot Admin: server, client registratsiyasi va uni himoyalash](#3015-spring-boot-admin-server-client-registratsiyasi-va-uni-himoyalash)
+- [30.16 O'z MBean i: `@ManagedResource`, `@ManagedOperation` va JMX notification](#3016-oz-mbean-i-managedresource-managedoperation-va-jmx-notification)
+- [30.17 Kuzatuvchanlik asbobini tanlash: beshta mezon va to'rtta kontekst](#3017-kuzatuvchanlik-asbobini-tanlash-beshta-mezon-va-tortta-kontekst)
+- [30.18 Kuzatuvchanlik dizayn qarori: keyin qo'shilmaydi va bitta ilovaga qarab bo'lmaydi](#3018-kuzatuvchanlik-dizayn-qarori-keyin-qoshilmaydi-va-bitta-ilovaga-qarab-bolmaydi)
+- [30.19 Amalda qo'llash](#3019-amalda-qollash)
 
 </details>
 
@@ -41,6 +46,10 @@ Log bitta hodisaning batafsil yozuvi, metrika vaqt bo'yicha agregatlangan son, t
 | Log | Aynan qaysi qiymat bilan nima qilindi | Ingest GB va indekslangan hodisa soni | 7-30 kun, arxiv 1 yil |
 
 Metrika hamma so'rovni qamraydi, lekin detalsiz. Trace detalli, lekin faqat namuna. Log eng qimmat, demak eng tanlangan. Uchlikni bog'lovchi yagona narsa trace id, va u uchala manbada bir xil nomda bo'lsin.
+
+Uchlikning o'zi haqida bitta e'tirozni ham yozib qo'yish kerak, chunki u bu bo'limning tuzilishiga tegishli. Newman "observability ning uch ustuni" modelini haddan tashqari soddalashtirish deb ataydi va ikki sabab beradi. Birinchisi atamalarning o'rni: observability tizimning xossasi, ya'ni tashqi chiqishlardan ichki holatni qanchalik tushunish mumkinligi, monitoring esa faoliyat; xossani implementatsiya tafsilotlariga qisqartirish teskari yo'nalish bo'ladi va natijada faoliyat (ko'p asbob qo'yish) natija bilan (tizimni tushunarli qilish) almashtiriladi. Ikkinchisi tushunchalar orasidagi chegaraning noaniqligi: metrikani log fayliga yozish mumkin, log qatorlari ketma-ketligidan taqsimlangan trace qurish esa odatiy ish. Kitobning o'z formulasi: log, hodisa va metrika narsalarni kuzatiladigan qilishga yordam berishi mumkin, lekin asosiy diqqat tizimni tushunarli qilishga qaratilsin, ko'p asbob qo'yishga emas.
+
+Korpus shu e'tirozga qarshi emas: yuqoridagi jadval uch manbani saqlab turadi, chunki har biri Spring tomonida alohida sozlanadi va alohida pul turadi. Lekin tekshiruv savoli uch ustunlik emas, bitta: "bu chiqish qaysi savolga javob beradi". Agar yangi asbob qo'shilayotgan bo'lsa va u hech qanday yangi savolga javob bermasa, u kuzatuvchanlikni oshirmaydi, faqat ingest hisobini oshiradi. Shu sababli tizim chiqishlarini umumiy hodisa (event) sifatida o'ylash foydali: hodisa qanday shaklda saqlanishi (log qatori, metrika nuqtasi, trace span i) ikkinchi darajali qaror, birinchi qaror esa qaysi hodisalar chiqarilishi.
 
 ## 30.2 Tuzilgan (strukturali) log: JSON format, maydon nomlari, trace id bog'lash
 
@@ -89,6 +98,30 @@ logging.pattern.level=%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-
 
 Trace id MDC ga Micrometer Tracing tomonidan avtomatik qo'yiladi. Agar siz `@Async` yoki o'z `ExecutorService` ingizdan foydalansangiz, MDC yangi thread ga ko'chmaydi va log trace siz qoladi. Yechim: Spring taqdim etadigan context propagation mexanizmi orqali executor ni o'rash, yoki `TaskDecorator` ishlatish. Buni bir marta infratuzilma darajasida qiling, har bir servisda emas.
 
+Formatni kelishishda bitta amaliy talab va bitta taqiq bor. Talab: sana, vaqt, mikroservis nomi va log darajasi har logda bir xil joyda turishi kerak, aks holda log aggregation vositasi qatorni parse qilib kerakli maydonni ajratib ola olmaydi va so'rov yozish qiyin yoki imkonsiz bo'lib qoladi. Newman sanoat bo'ylab umumiy standart hali shakllanmaganini ham qo'shadi, shuning uchun asosiy narsa o'z arxitekturangiz ichida bitta formatga standartlashish.
+
+Taqiq esa shakli bo'yicha kutilmagan: log formatini forwarding agent da o'zgartirishdan iloji boricha qochish kerak. Sabab o'lchangan, log ni qayta formatlash hisoblash jihatidan qimmat, va Newman bu ishga ketgan CPU tufayli haqiqiy production muammolari yuzaga kelganini ko'rgan. To'g'ri yo'l log ni mikroservisning o'zi yozayotganda to'g'ri shaklda yozish; agent dagi qayta formatlash esa faqat manba formatini o'zgartirish imkoni bo'lmagan joylarda, ya'ni legacy yoki uchinchi tomon dasturlari uchun qoldiriladi. Amaliy natija: `logback-spring.xml` dagi encoder umumiy kutubxonaga chiqariladi va hamma servis uni bir xil versiyada ishlatadi, Fluent Bit yoki Vector dagi parser esa faqat o'zgartira olmaydigan manbalar uchun yoziladi.
+
+Yuqoridagi JSON talabi bitta e'tirozga uchraydi va uni oshkora hal qilish kerak. Nygard log faylni odam interfeysi deb qaraydi va shu asosda boshqa narsani talab qiladi: maydonlar ustunga tekislangan va bitta hodisa bitta qatorda yozilgan format, chunki operator log ni grep bilan emas, ko'zi bilan ham o'qiydi va xato darajasini bir qarashda topishi kerak (Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 17.4-bo'lim, 280-281-betlar). Ajratuvchi shart formatning O'QUVCHISI: JSON mashina va agregator uchun, ya'ni production dagi markazlashtirilgan log uchun; ustunli matn odam uchun, ya'ni lokal ishlash va konteyner konsolini `kubectl logs` bilan o'qish uchun. Ikkisi bir-birini almashtirmaydi va tanlov ham qilinmaydi: ikki profil bitta konfiguratsiyada yoniladi. Nygard ning talabidan o'zgarmagan qismi esa ikki formatga ham tegishli va u shart: xato darajasi ko'zga tashlanadigan joyda bo'lishi, va bir hodisa bir qatorda tugashi, ya'ni ko'p qatorli xabar va formatlangan stack trace odam o'qiydigan oqimda ham bitta hodisaning chegarasini buzmasligi kerak.
+
+```properties
+# application-dev.properties - o'quvchi odam.
+# Ustunga tekislangan, bitta hodisa bitta qatorda, daraja boshida va
+# ko'zga tashlanadigan joyda. Strukturali format o'chirilgan.
+logging.pattern.console=%d{HH:mm:ss.SSS} %-5level %-28logger{28} %-32X{traceId:-} %msg%n
+
+# application-prod.properties - o'quvchi mashina.
+# Bir xil hodisalar, bir xil maydon nomlari, faqat kodlash boshqa.
+logging.structured.format.console=ecs
+logging.structured.ecs.service.name=order-service
+# Ikki profilda ham o'zgarmaydigan shart: xato darajasi ko'rinadigan joyda
+# (`%-5level` va ECS dagi `log.level`) va bir hodisa bir yozuvda tugaydi.
+```
+
+Formatdan keyingi qaror xabarning o'zi haqida. Nygard log xabarlari katalogini yuritishni va har xabarga aniq kod berishni talab qiladi: kod ilova bilan operatsiya o'rtasidagi muloqotni aniq qiladi, chunki "to'lov qaytdi" degan matn vaqt o'tishi bilan o'zgaradi, kod esa o'zgarmaydi va run book yoki bilim bazasida izlashga yaraydi (17-bob, 278-bet). Amalda bu strukturali log ning yana bitta maydoni bo'ladi va u xabar matnidan mustaqil: `log.atWarn().setMessage("payment capture timeout").addKeyValue("event.code", "PAY-0412")`. Kodlar ro'yxati repozitoriyda bitta faylda turadi, har kod yonida sabab va birinchi qadam yoziladi, va [runbook](../patterns/22-deployment-va-operatsion-patternlar.md#2233-runbooklar-runbooks) dagi bo'lim shu kodga nom bilan ishora qiladi. Shu bog'lanish bo'lmasa alert matni "nimadir g'alati" darajasida qoladi va navbatchi log ni qaytadan o'qiydi.
+
+ESLATMA: `event.code` maydonining aniq nomi, kodlash sxemasi (`PAY-0412`) va yuqoridagi ikki profilga bo'lish shu korpusning qo'shimchasi; Nygard katalog va kod talabini beradi, nom shaklini ham, Spring sozlamasini ham bermaydi.
+
 ## 30.3 Log darajalari siyosati va ishlab chiqarishda nimani yozmaslik kerak
 
 Daraja siyosati yozilmagan loyihada hamma narsa INFO bo'lib qoladi. Amaliy mezon: ERROR faqat odam aralashuvi kerak bo'lgan holat, WARN tizim o'zi tiklandi lekin bilish kerak, INFO biznes holati o'zgarishi, DEBUG prodda o'chiq. Eng ko'p uchraydigan xato: kutilgan biznes rad etishni ("ombor qoldig'i yetmadi") ERROR deb yozish. Bu bir oy ichida hamma ERROR ni e'tiborsiz qoldiradi.
@@ -115,6 +148,8 @@ ls -l --block-size=M /var/log/app/app.json
 ```
 
 Arxitektor qarori: qatorlar sonini kamaytirish eng arzon optimizatsiya. Bitta so'rovga bitta yakuniy access log qatori va biznes holat o'zgarishi uchun 1-2 qator kifoya. Qolgan diagnostikani span attributlariga ko'chiring: span vaqt va ierarxiyani o'zi beradi. Ingest va indeks narxi ajratilgan tizimda esa hajmli, lekin kam qidiriladigan oqimni arzon arxivga yuborish mumkin.
+
+Hajm faqat hisob emas, nosozlik manbai ham. Nygard log yozadigan ilovaning fayl tizimi to'lishini alohida holat sifatida ko'rsatadi: disk to'lsa yozuv I/O xatosi beradi, va logging kutubxonasi bu `IOException` ni o'zi hal qilmaydi, uni ilovaga tashlaydi (Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 5-bob, 127-bet). Ya'ni to'lgan disk kuzatuvchanlikni yo'qotish bilan tugamaydi, u biznes oqimini ham to'xtatadi, va buning sababi monitoring tizimida emas, ilova stack trace ida ko'rinadi. Shundan ikki talab chiqadi: log hajmi rotatsiya va saqlash siyosati bilan chegaralangan bo'lishi, va disk band ulushi uchun alert log hajmi alertidan alohida turishi kerak. Nygard yana bitta talab qo'yadi, ya'ni log faylining joyi sozlanadigan bo'lishi, aks holda administrator log larni alohida diskka ko'chirish uchun symlink yasashga majbur bo'ladi (17-bob, 277-bet). ESLATMA: konteynerda bu talab shaklini o'zgartiradi, chunki log stdout ga chiqadi va rotatsiyani orkestrator bajaradi; shu holatda sozlanadigan bo'lishi kerak narsa fayl yo'li emas, chiqish oqimi va uning buferi. Shu nuance korpusning qo'shimchasi.
 
 ## 30.5 Micrometer bilan metrika: counter, gauge, timer, distribution summary
 
@@ -351,7 +386,200 @@ groups:
 
 30.10 dagi burn rate alert shakli bo'yicha statik chegara: raqam SLO dan chiqadi, shuning uchun u "o'ylab topilgan chegara" emas. Anomaliya aniqlash esa shu qatorga qo'shimcha bo'lib keladi, o'rniga emas.
 
-## 30.14 Amalda qo'llash
+## 30.14 Actuator ni kengaytirish: `base-path`, `/scheduledtasks`, `InfoContributor` va o'z endpoint
+
+Actuator ni ochish va himoyalash [sozlash amaliyoti bo'limida](#3012-spring-boot-actuator-va-micrometer-sozlash-amaliyoti) yozilgan; bu bo'lim uning ustiga qo'yiladigan to'rt kengaytmani va ularning narxini qoplaydi.
+
+Birinchisi prefiks. Barcha endpointlar `/actuator` ostida turadi va prefiksni `management.endpoints.web.base-path` o'zgartiradi (Walls, 15-bob, 389-bet). Bu bir martalik qaror: prefiks o'zgarsa, Spring Security qoidalari, Ingress yo'llari va Kubernetes probe URL lari birga o'zgaradi, shuning uchun uni gateway sxemasi bilan birga tanlash kerak, keyin tegmaslik kerak.
+
+Ikkinchisi `/scheduledtasks`: u ilovadagi barcha rejalashtirilgan vazifalarni, ya'ni cron ifodasi, `fixedDelay` va `fixedRate` qiymatlari bilan ro'yxatlaydi (Walls, 15-bob, 389-bet). "Bu `@Scheduled` haqiqatan ro'yxatdan o'tdimi va qaysi cron bilan" savoliga eng arzon javob shu, kodni o'qish emas.
+
+Uchinchisi `/info`. U standart holda bo'sh: ichini `info.` prefiksli xossalar bilan yoki `InfoContributor` bean i bilan to'ldirish mumkin, ikkinchisi dinamik qiymat uchun (Walls, 15-bob, 408-bet). Qoida: u yerda birinchi navbatda reliz metadatasi (build versiyasi, git commit) turishi kerak, chunki inshident tahlili "hozir qaysi versiya ishlayapti" savolidan boshlanadi.
+
+```java
+@Component
+@Endpoint(id = "featureflags")                 // HTTP va JMX da bir vaqtda ochiladi
+class FeatureFlagsEndpoint {
+
+    private final Map<String, Boolean> flags = new ConcurrentHashMap<>();
+
+    @ReadOperation
+    public Map<String, Boolean> flags() {
+        return Map.copyOf(flags);
+    }
+
+    @WriteOperation                            // holatni o'zgartiradi: himoya va audit shart
+    public Map<String, Boolean> setFlag(String name, boolean enabled) {
+        flags.put(name, enabled);
+        return Map.copyOf(flags);
+    }
+
+    @DeleteOperation
+    public Map<String, Boolean> removeFlag(String name) {
+        flags.remove(name);
+        return Map.copyOf(flags);
+    }
+}
+```
+
+To'rtinchisi aynan shu: o'z endpoint. Actuator endpointi controller emas, u `@Endpoint` bilan belgilanadi va operatsiyalari `@ReadOperation`, `@WriteOperation`, `@DeleteOperation` bilan e'lon qilinadi; bu annotatsiyalar transportni nazarda tutmaydi, shuning uchun bitta sinf HTTP va JMX da birga ko'rinadi (Walls, 15-bob, 417-bet). Faqat HTTP kerak bo'lsa `@WebEndpoint`, faqat MBean kerak bo'lsa `@JmxEndpoint` yoziladi (Walls, 15-bob, 419-bet). Qaror apparati qisqa: o'z endpointi kerak bo'ladigan holat kam, chunki tayyor endpointlar maydonning katta qismini qoplaydi; uni faqat operatsion harakat uchun yozish mantiqli (bayroqni o'zgartirish, keshni bo'shatish). Va ikkita shart: `@WriteOperation` bilan `@DeleteOperation` holatni o'zgartiradi, demak ular rol bilan cheklanadi va audit logiga yoziladi; HTTP dan boshqasi kerak emas bo'lsa `@WebEndpoint` yoziladi, aks holda endpoint jim turib MBean ham bo'lib chiqadi.
+
+ESLATMA: kitob Spring Boot 2.5 ga tayanadi, shuning uchun uning endpoint jadvalida `/httptrace` turadi. Boot 3 dan bu endpoint `/httpexchanges` deb ataladi va `/env` qiymatlari standart holda maskalanadi (`management.endpoint.env.show-values`), ya'ni kitobning chiqishlari bilan bugungi chiqish bir xil bo'lmaydi.
+
+## 30.15 Spring Boot Admin: server, client registratsiyasi va uni himoyalash
+
+Spring Boot Admin Actuator ustiga qo'yiladigan tashqi UI va u codecentric AG tomonidan yuritiladi. Ikki qismdan iborat: Admin server ma'lumotni yig'adi va ko'rsatadi, Admin client lar esa o'z Actuator ma'lumotini beradi (Walls, 16-bob, 424-bet). Server alohida ilova bo'ladi: `spring-boot-admin-starter-server` bog'liqligi, konfiguratsiya sinfida `@EnableAdminServer` va o'z porti (Walls, 16-bob, 425-bet). Client tomonida `spring-boot-admin-starter-client` va `spring.boot.admin.client.url` yoziladi; `spring.application.name` esa UI da ilova nomi bo'lib ko'rinadi (Walls, 16-bob, 426-bet). Ikkinchi yo'l ham bor: server ilovalarni Eureka service registry orqali topishi mumkin.
+
+Xom Actuator ga nisbatan foydasi ko'rinishda: health va info detallari, JVM xotirasi, thread va protsessor grafiklari, `/metrics` ustidagi kuzatuvlar, environment ekranidagi qiymatlar va `/loggers` ustidagi log darajasi ekrani (Walls, 16-bob, 427-430-betlar). Ya'ni u snapshot ni jonli ko'rinishga aylantiradi.
+
+```yaml
+# Admin client (har bir servis)
+spring:
+  application:
+    name: payment-service
+  boot:
+    admin:
+      client:
+        url: http://admin.internal:9090
+        username: ${ACTUATOR_USER}      # Actuator himoyalangan bo'lsa majburiy
+        password: ${ACTUATOR_PASSWORD}
+```
+
+Asosiy qoida esa xavfsizlik, chunki Admin server standart holda himoyalanmagan (Walls, 16-bob, 431-bet) va u bitta joyda barcha servislarning Actuator ini, ichida environment qiymatini va log darajasini o'zgartiradigan yozish operatsiyalarini ham to'playdi. Himoyalanmagan Admin server bitta oyna orqali butun landshaftni o'zgartirish imkonini beradi, shuning uchun u ishlab chiqarish xavfsizlik yuzasi deb qaraladi. Uch shart: serverda haqiqiy autentifikatsiya bo'lsin; client lar Actuator ga kirish uchun `spring.boot.admin.client.username` va `password` ni bersin (Walls, 16-bob, 433-bet); va server tashqi tarmoqqa chiqmasin.
+
+```java
+@Configuration
+class AdminSecurityConfig {
+
+    @Bean
+    SecurityFilterChain adminFilterChain(HttpSecurity http) throws Exception {
+        return http
+                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+                .formLogin(Customizer.withDefaults())
+                // CSRF client registratsiyasini to'sadi: faqat shu yo'llarda ochiladi
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/instances", "/instances/*"))
+                .build();
+    }
+}
+```
+
+ESLATMA: kitob CSRF ni butunlay o'chiradi, chunki u client registratsiyasini bloklaydi; yuqoridagi shaklda u faqat registratsiya yo'llarida o'chiriladi va bu korpusning qo'shimchasi. Ikkinchi versiya nuansi: kitobning Actuator ni himoyalash misoli (15-bob, 420-bet) `WebSecurityConfigurerAdapter` ning `configure()` metodini override qiladi; u Spring Security 5.7 dan deprecated, shuning uchun yuqorida `SecurityFilterChain` bean shakli berilgan.
+
+## 30.16 O'z MBean i: `@ManagedResource`, `@ManagedOperation` va JMX notification
+
+JMX tomoni ikkita asimmetriyadan boshlanadi. Birinchisi: Spring Boot 2.2 dan beri JMX ning o'zi standart holda o'chirilgan va uni `spring.jmx.enabled: true` yoqadi (Walls, 17-bob, 435-bet). Ikkinchisi va xavflirog'i: yoqilgandan keyin barcha Actuator endpointlari MBean bo'lib ochiladi, ya'ni HTTP dagidek "faqat `health`" himoyasi yo'q; ro'yxatni `management.endpoints.jmx.exposure.include` va `exclude` bilan toraytirish kerak (Walls, 17-bob, 436-437-betlar).
+
+O'z bean ini MBean qilish uchun uch annotatsiya yetadi: sinfda `@ManagedResource`, o'qiladigan xossada `@ManagedAttribute`, chaqiriladigan metodda `@ManagedOperation` (Walls, 17-bob, 437-438-betlar). Qiymat o'zgarganini bilish uchun esa bean `NotificationPublisherAware` ni implement qiladi va `sendNotification` bilan obuna bo'lgan JMX client larga xabar yuboradi (Walls, 17-bob, 440-bet).
+
+```java
+@Service
+@ManagedResource(objectName = "com.shop:type=OrderCounter")
+class OrderCounter implements NotificationPublisherAware {
+
+    private final AtomicLong counter = new AtomicLong();
+    private NotificationPublisher publisher;
+
+    @Override
+    public void setNotificationPublisher(NotificationPublisher publisher) {
+        this.publisher = publisher;
+    }
+
+    @ManagedAttribute
+    public long getOrderCount() {
+        return counter.get();
+    }
+
+    @ManagedOperation
+    public long increment(long delta) {
+        long before = counter.get();
+        long after = counter.addAndGet(delta);
+        if (after / 1000 > before / 1000) {    // har mingtada bitta xabar
+            publisher.sendNotification(
+                    new Notification("order.count", this, before, after + " buyurtma"));
+        }
+        return after;
+    }
+}
+```
+
+Mexanika oson bo'lgani uchun qaror apparati kerak, aks holda monitoring ikkiga bo'linadi. Korpusning pozitsiyasi [sozlash amaliyoti bo'limida](#3012-spring-boot-actuator-va-micrometer-sozlash-amaliyoti) aytilgan va o'zgarmaydi: ishlab chiqarishda metrika Micrometer orqali chiqadi, JMX esa lokal diagnostika uchun qoladi. Shundan uch yo'nalish chiqadi. Vaqt bo'yicha kuzatiladigan son kerak bo'lsa, u `@ManagedAttribute` emas, [Micrometer counter yoki gauge](#305-micrometer-bilan-metrika-counter-gauge-timer-distribution-summary) bo'ladi, chunki MBean atributi pull modelida va tarixsiz. Operatsion harakat kerak bo'lsa, u [Actuator endpointi](#3014-actuator-ni-kengaytirish-base-path-scheduledtasks-infocontributor-va-oz-endpoint) bo'ladi, chunki bitta sinf HTTP va JMX da birga ochiladi va himoyasi umumiy. Konfiguratsiyani o'zgartirish kerak bo'lsa, u konfiguratsiya manbasidan o'tadi, MBean setteridan emas, aks holda o'zgarish deploy dan keyin jim yo'qoladi.
+
+Demak o'z MBean i faqat bitta holatda oqlanadi: iste'molchi HTTP ni bilmaydigan, allaqachon o'rnatilgan JMX agenti bo'lsa. Notification uchun ham shu chegara kuchli: xabar o'sha paytda obuna bo'lmagan client ga yetib bormaydi va hech qayerda saqlanmaydi, shuning uchun ahamiyatli voqea notification emas, metrika yoki log yozuvi bo'lishi kerak.
+
+## 30.17 Kuzatuvchanlik asbobini tanlash: beshta mezon va to'rtta kontekst
+
+Bu bob asboblarni nomlab o'tdi, lekin tanlov mezonini bermadi. Newman shu bo'shliqni ataylab to'ldiradi va sababini aytadi: bu soha tez o'zgaradi, kelasi yilda ishlatadigan asboblar bugungisiga o'xshamasligi mumkin, shuning uchun aniq mahsulot nomidan ko'ra mezon qimmatroq (Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 10-bob, "Selecting Tools" bo'limi). Newman beshta mezon sanaydi.
+
+**Demokratik.** Asbob shunchalik qiyin bo'lsa, undan faqat tajribali operator foydalana olsa, production ishida qatnashadigan odam soni cheklanadi. Narx ham shu mezonga kiradi: asbob faqat eng muhim production muhitida oqlanadigan darajada qimmat bo'lsa, dasturchi u bilan juda kech tanishadi. Amaliy natija bitta: tanlangan asbob dev va test muhitida ham ishlatiladigan bo'lishi kerak.
+
+Mezonlardan oldin bitta ajratma turadi va u integratsiya narxini oldindan aytadi. Nygard asboblarni black-box va white-box ga bo'ladi: black-box asbob tizimdan tashqarida ishlaydi va shuning uchun ilova yozilib bo'lgandan keyin ham qo'shiladi, white-box asbob esa ilovaning ichida yoziladi va shu sababli ilova bilan qattiqroq bog'lanadi (Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 17-bob, 276-bet). Amaliy natija: black-box qatoriga sintetik so'rov, tashqi probe va log agenti tushadi va ularni keyin qo'shish mumkin; white-box qatoriga Micrometer o'lchovlari, OpenTelemetry instrumentatsiyasi va o'z MBean i tushadi, ya'ni ularning narxi [kuzatuvchanlik dizayn qarori](#3018-kuzatuvchanlik-dizayn-qarori-keyin-qoshilmaydi-va-bitta-ilovaga-qarab-bolmaydi) bo'limidagi birinchi qarorga bog'langan va keyinga qoldirilmaydi.
+
+**Integratsiya osonligi.** Ilovadan va u ishlaydigan tizimdan kerakli ma'lumotni chiqarish bu ishning o'zagi, demak shu jarayon imkon qadar oson bo'lishi kerak. Newman yo'lni aniq ko'rsatadi: OpenTracing kabi tashabbuslar klient kutubxonalari va platformalar qo'llab-quvvatlaydigan standart API bergan, OpenTelemetry esa ko'p tomon tomonidan olib borilayotgan yangi tashabbus; ochiq standartni qo'llab-quvvatlaydigan asbobni tanlash integratsiyani osonlashtiradi va keyinchalik vendorni almashtirishni ham arzonlashtiradi (10-bob, "Easy to Integrate"). Korpusdagi mexanika [OpenTelemetry](#308-opentelemetry-trace-span-kontekst-tarqalishi-va-namuna-olish-sampling) bo'limida; bu yerda muhimi shu standart tanlov mezoniga aylanishi.
+
+**Kontekst berishi.** Newman asbobdan bitta ko'rsatkichni ko'rganda keyin nima qilish kerakligini tushunish uchun imkon qadar ko'p kontekst talab qiladi va Lightstep blogidan olingan to'rt toifani keltiradi (10-bob, "Provide Context").
+
+| Kontekst turi | Savol | Asbobda nima bo'lishi kerak |
+| --- | --- | --- |
+| Vaqt bo'yicha (temporal) | Bu bir daqiqa, bir soat, bir kun yoki bir oy oldingiga nisbatan qanday ko'rinadi? | o'tgan davr bilan yonma-yon taqqoslash |
+| Nisbiy (relative) | Bu tizimdagi boshqa narsalarga nisbatan qanday o'zgardi? | bir xil o'qdagi boshqa servis va endpoint lar |
+| Bog'liqlik bo'yicha (relational) | Bunga biror narsa bog'liqmi, bu o'zi biror narsaga bog'liqmi? | servis bog'liqlik grafi va trace |
+| Ulush bo'yicha (proportional) | Bu qanchalik yomon, qamrovi katta yoki kichikmi, kimga ta'sir qiladi? | ta'sirlangan so'rov va foydalanuvchi ulushi |
+
+To'rtinchi qator alert dizayniga to'g'ridan-to'g'ri ulanadi: [alert dizayni](#3010-ogohlantirish-alert-dizayni-belgiga-emas-foydalanuvchi-tasiriga-qarab) foydalanuvchi ta'siridan boshlanadi, va asbob shu ulushni ko'rsatmasa, alert matni "nimadir g'alati" darajasida qolib ketadi.
+
+**Real vaqtda.** Ma'lumotni uzoq kutish mumkin emas. Newman "hozir" ning o'lchovini ham beradi: amalda bu sekundlar, daqiqa yoki soat emas, chunki muammoni foydalanuvchidan oldin ko'rish imkoniyati yoki hech bo'lmasa u murojaat qilganda ma'lumotning qo'lda bo'lishi kerak (10-bob, "Real-Time").
+
+**O'z masshtabingga mos bo'lishi.** Bu mezon eng ko'p xato qilinadigan joy. Taqsimlangan tizimlarni kuzatish bo'yicha ishlarning ko'pi juda katta masshtabdagi tizimlardan ilhomlangan, natijada jamoalar o'z masshtabidan ancha katta tizim uchun qilingan yechimni, uning kelishuvlarini tushunmasdan takrorlaydi. Katta masshtab o'ziga xos kelishuv talab qiladi: Dapper Google masshtabini ko'tarish uchun ma'lumotning katta qismini tashlab yuboradigan juda tajovuzkor tasodifiy namuna olishga majbur bo'lgan. Newman LightStep asoschisi va Dapper muallifi Ben Sigelman ning fikrini keltiradi: Google mikroservislari sekundiga taxminan 5 milliard RPC hosil qiladi, shuning uchun shu masshtabga chiqadigan kuzatuv asbobini qurish uni imkoniyatlari juda kambag'al qilib qurish bilan bir narsa; sekundiga 5 million RPC da, ya'ni mingdan bir masshtabda, siz ancha kuchli imkoniyatlarni o'zingizga ruxsat bera olasiz (10-bob, "Suitable for Your Scale"). Bu yerdan ikkinchi savol chiqadi va u texnik emas: asbob sizning o'sishingiz bilan masshtablana olsa ham, shu o'sishdagi narxini to'lashga qurbingiz yetadimi.
+
+Namuna olish darajasini o'z masshtabingga qarab tanlash shu mezonning eng ko'rinadigan oqibati, va Spring tomonida u bitta sozlamaga tushadi.
+
+```bash
+# "Google qanday qilsa, shunday qilamiz" mezoni emas, o'z masshtabi mezoni:
+# kichik tizimda namuna olish darajasini pasaytirish uchun sabab yo'q.
+export OTEL_SERVICE_NAME=order-service
+export OTEL_TRACES_SAMPLER=parentbased_always_on          # hamma trace saqlanadi
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318  # ochiq standart
+export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+# Masshtab o'sganda o'zgaradigan yagona qator shu bo'ladi:
+# export OTEL_TRACES_SAMPLER=parentbased_traceidratio
+# export OTEL_TRACES_SAMPLER_ARG=0.05
+```
+
+Oxirgi ogohlantirish mezonlar ro'yxatidan tashqarida, lekin tanlovga ta'sir qiladi. Newman o'n yildan ortiq vaqt davomida vendorlarning o'z tizimi muammoni sehrli ravishda aniqlab, nima qilish kerakligini aytib beradi degan da'volarini ko'rganini, mashinali o'rganish atrofidagi shov-shuv bilan avtomatik anomaliya aniqlash haqidagi da'volar ko'payganini, va bu to'liq avtomatik shaklda qanchalik ishlashiga shubha qilishini aytadi; xulosasi esa aniq, ya'ni hozircha va yana uzoq vaqt tizimdagi ekspert odam bo'lib qoladi, asbob esa operatorga nima qilish kerakligini yaxshiroq aytib berishi mumkin (10-bob, "The Expert in the Machine"). Shuning uchun [anomaliya aniqlash](#3013-statik-chegara-va-anomaliya-aniqlash-alert-qoidasi-qanday-shaklda-boladi) statik chegara qatoriga qo'shimcha bo'lib keladi, uni almashtirmaydi.
+
+Mezonlar ro'yxatiga kirmaydigan ikkinchi narsa esa tanlangan asbobning o'ziga qanday munosabat kerakligi. Newman buni ochiq aytadi: log aggregation platformasi, tracing vositasi va alert tizimi ham production tizimi, va ular bizning o'z dasturimiz kabi, ba'zan undan ham ko'proq, mission-critical; shuning uchun ularga xizmat ko'rsatishda biz o'z kodimizga qo'llaydigan diqqat darajasi qo'llanishi kerak. Amalda bu to'rt savolga aylanadi: kuzatuv platformasining o'zi uchun SLO bormi, uning yangilanish jadvali kimda, uning sig'imi (ingest, retention, kardinallik) hisoblanganmi, va u o'chganda qanday zaxira yo'l bor.
+
+Ikkinchi va ko'pincha umuman o'ylanmagan tomoni xavfsizlik: bu vositalar tashqi tomon uchun hujum vektoriga aylanishi mumkin. Newman SolarWinds hodisasini keltiradi: tarmoqni boshqarish dasturidagi buzilish ta'minot zanjiri (supply chain) hujumi deb hisoblanadi, va dastur mijoz saytlariga o'rnatilgandan keyin (SolarWinds AQSh Fortune 500 kompaniyalaridan 425 tasida ishlatiladi) zararli tomonlarga mijozlarning tarmoqlariga tashqaridan kirish imkonini bergan. Bundan ikki amaliy qoida chiqadi. Birinchisi, log larda nozik ma'lumot bo'ladi, shuning uchun ularga kirishni cheklash kerak. Ikkinchisi va kuchliroq: saqlanmagan ma'lumotni o'g'irlab bo'lmaydi, ya'ni log ga nima yozilmaydi degan qaror xavfsizlik qarori bo'ladi va uning yozuvi [log darajalari siyosati](#303-log-darajalari-siyosati-va-ishlab-chiqarishda-nimani-yozmaslik-kerak) bo'limida.
+
+## 30.18 Kuzatuvchanlik dizayn qarori: keyin qo'shilmaydi va bitta ilovaga qarab bo'lmaydi
+
+Bobning qolgani asbob, format va sozlamani beradi. Bu bo'lim ulardan oldin turadigan uch dizayn qarorini yozadi, chunki uchalasi ham asbob tanlanishidan oldin qilinadi va keyin tuzatilmaydi.
+
+Birinchi qaror: kuzatuvchanlik ilovaning xossasi, ustiga qo'yiladigan qatlam emas. Nygard buni sifat bilan taqqoslaydi: kuzatuvchanlikni keyin "qo'shib qo'yish" sifatni keyin qo'shishdek qimmat va samarasiz, chunki ikkisi ham mavjud dizaynni emas, dizaynning o'zini talab qiladi (Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 17-bob, 275-bet). Amalda bu ikki savolni loyihaning birinchi haftasiga ko'chiradi: bu servis qanday hodisalarni tashqariga chiqaradi, va ularni kim o'qiydi. Javob keyin topilsa, chiqish nuqtalari kodga tarqalib ketgan bo'ladi va ularni bir xil shaklga keltirish qayta yozish ishiga aylanadi. [Uchta manba](#301-uchta-manba-log-metrika-trace-va-har-biri-qaysi-savolga-javob-beradi) bo'limidagi "bu chiqish qaysi savolga javob beradi" tekshiruvi shu qarorning kundalik shakli.
+
+Ikkinchi qaror: kuzatuv birligi ilova emas, tizim. Nygard mahalliy ko'rinishning zararini aniq misol bilan beradi: bitta ilovaga qarab optimallashtirilgan batch ikki soat tez tugaydi, lekin element saytda baribir ertalab paydo bo'ladi, chunki uning yo'lidagi keyingi bo'g'in o'z jadvali bo'yicha ishlaydi (17-bob, 275-bet). Ya'ni mahalliy ko'rinish mahalliy optimizatsiyaga olib keladi va u butun yo'lning vaqtiga hech narsa qo'shmaydi. Shuning uchun yaxshilanish [kritik yo'l](08-ishlash-va-resurs-hissi-napkin-math.md#815-kritik-yol-atrofida-qayta-loyihalash-va-past-darajali-chegara) bo'yicha o'lchanadi, bitta komponent bo'yicha emas, va bu o'lchov faqat uchidan uchigacha ko'rinish bo'lsa mumkin.
+
+Uchinchi qaror ikkinchisining nusxalar bo'yicha shakli: bitta serverni kuzatish masshtab effektini yashiradi. Nygard ning misoli kesh: har bir nusxa o'z keshi statistikasini alohida ko'rsatsa, hammasi sog'lom ko'rinadi; shu statistika barcha nusxa bo'yicha bitta sahifaga yig'ilsa, bir ko'rinish boshqa serverlar keshini buzayotgani darhol bilinadi (17-bob, 275-bet). Shu sababli [dashboard](#3011-dashboard-qanday-bolishi-kerak-birinchi-ekranda-nima-turadi) ning birinchi ekrani agregat bo'ladi, instans bo'yicha ajratish esa drill-down da qoladi: agregat bo'lmasa masshtabdan tug'ilgan muammo hech bir panelda ko'rinmaydi.
+
+Uch qarorning birgalikdagi natijasi bitta talab bo'lib tushadi: nusxa o'zining qaysi nusxa ekanini har chiqishida aytib turishi kerak, aks holda agregat ko'rinishni keyin yasab bo'lmaydi.
+
+```properties
+# Agregat ko'rinishning sharti: har chiqishda nusxa va yo'l identifikatori
+spring.application.name=order-service
+management.metrics.tags.instance=${HOSTNAME:local}
+management.metrics.tags.region=${APP_REGION:eu-central-1}
+# Log tomonida bir xil maydonlar: agregatorda metrika bilan birga filtrlanadi
+logging.structured.format.console=ecs
+logging.structured.ecs.service.name=${spring.application.name}
+logging.structured.ecs.service.node-name=${HOSTNAME:local}
+# Uchidan uchigacha o'lchov uchun trace kontekstini chegarada uzatish
+management.tracing.propagation.type=w3c
+management.tracing.sampling.probability=1.0
+```
+
+ESLATMA: yuqoridagi uch qaror Nygard ning 17-bobidan, Spring sozlamasi va "nusxa o'zini aytib turishi kerak" talabining aniq shakli esa shu korpusning qo'shimchasi.
+
+## 30.19 Amalda qo'llash
 
 - [ ] Bitta tipik so'rovga nechta log qatori yozilayotganini sanang va uni 3 qatorgacha qisqartirish rejasini tuzing.
 - [ ] Log maydon nomlari lug'atini yozib, strukturali formatni (ECS yoki o'z sxemangiz) hamma servisga bir xil qo'ying.
@@ -365,12 +593,21 @@ groups:
 ## Manbalar
 
 - Craig Walls, *Spring in Action* 6th, 15, 16, 17-boblar - Actuator, Spring Boot Admin va JMX
+- Craig Walls, *Spring in Action* 6th, 15-bob - Actuator `base-path`, `/scheduledtasks`, `InfoContributor` va `@Endpoint` bilan o'z endpoint yozish
+- Craig Walls, *Spring in Action* 6th, 16-bob - Spring Boot Admin server, client registratsiyasi, server ko'rinishlari va uni himoyalash
+- Craig Walls, *Spring in Action* 6th, 17-bob - JMX ning Boot 2.2 dan o'chirilganligi, Actuator MBean lari, `@ManagedResource` va notification
 - [Micrometer, Histograms and percentiles](https://raw.githubusercontent.com/micrometer-metrics/micrometer-docs/06f377a95db21894939c6fff39441fe608e804a2/src/docs/concepts/histogram-quantiles.adoc) - client-side percentile ning agregatlanmasligi, default 276 bucket va timer uchun 73 bucket, `minimumExpectedValue`/`maximumExpectedValue`, `serviceLevelObjectives`, kutubxonada yoqmaslik maslahati
 - [Micrometer, Gauges](https://raw.githubusercontent.com/micrometer-metrics/micrometer-docs/06f377a95db21894939c6fff39441fe608e804a2/src/docs/concepts/gauges.adoc) - gauge ning weak reference ushlashi va obyekt GC bo'lganda NaN qaytarishi
 - [Spring Boot 4.0, Actuator Endpoints](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/documentation/spring-boot-docs/src/docs/antora/modules/reference/pages/actuator/endpoints.adoc) - default holda faqat `health` ochiqligi, `show-details` default `never`, rol berilmaganda har qanday autentifikatsiyalangan foydalanuvchining authorized bo'lishi
 - [OpenTelemetry, Tracing API](https://raw.githubusercontent.com/open-telemetry/opentelemetry-specification/bb85bf44e2c032d9958c10b78dcb88cf36e40917/specification/trace/api.md) - span, kontekst va atribut modeli
 - [OpenTelemetry, SDK](https://raw.githubusercontent.com/open-telemetry/opentelemetry-specification/bb85bf44e2c032d9958c10b78dcb88cf36e40917/specification/trace/sdk.md) - sampler turlari va `ParentBased` qarorining trace bo'ylab izchilligi
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 10-bob ("Selecting Tools", "Democratic", "Easy to Integrate", "Provide Context", "Real-Time", "Suitable for Your Scale", "The Expert in the Machine" bo'limlari) - asbob tanlashning beshta mezoni; ochiq standart (OpenTracing va OpenTelemetry) integratsiyani va vendor almashtirishni arzonlashtirishi; Lightstep dan olingan to'rt kontekst (vaqt bo'yicha, nisbiy, bog'liqlik bo'yicha, ulush bo'yicha); "hozir" ning o'lchovi sekundlar ekani; Dapper ning Google masshtabi uchun tajovuzkor namuna olishga majbur bo'lgani va Ben Sigelman ning sekundiga 5 milliard hamda 5 million RPC taqqoslashi; avtomatik anomaliya aniqlash da'volariga shubha va tizimdagi ekspert odam bo'lib qolishi. Bu nashrning qo'limizdagi elektron nusxasida barqaror bet raqami yo'q, shuning uchun faqat bob va bo'lim nomi ko'rsatilgan
 - Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr, Pragmatic Engineer, 2023, 24-bob (348-349-bet) - statik chegara va anomaliya aniqlashning kuchli va zaif tomonlari, statik chegara uzilishdan keyin qo'yilishi, Uber to'lov tizimida anomaliya aniqlash sozlanmagan davrda alertlarni o'chirishga majbur qilgani, ikkisining amaliy aralashmasi
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 10-bob ("The Pillars of Observability? Not So Fast", "Common format" bo'limlari va "Monitoring and Observability Systems Are Production Systems" qutisi) - observability tizimning xossasi, monitoring esa faoliyat ekani va uch ustun modelining haddan tashqari soddalashtirish bo'lishi, tushunchalar chegarasining noaniqligi (metrikani log ga yozish, log qatorlaridan trace qurish); sana, vaqt, servis nomi va daraja har logda bir xil joyda bo'lishi hamda formatni forwarding agent da o'zgartirishning CPU narxi va production muammolari, qayta formatlashni faqat legacy yoki uchinchi tomon manbalari uchun qoldirish; kuzatuv platformalarining o'zi mission-critical production tizimi ekani, SolarWinds ta'minot zanjiri hujumi, log larda nozik ma'lumot borligi uchun kirishni cheklash va saqlanmagan ma'lumotni o'g'irlab bo'lmasligi. Bu nashrning qo'limizdagi elektron nusxasida barqaror bet raqami yo'q, shuning uchun faqat bob va bo'lim nomi ko'rsatilgan
+- Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 17-bob (275-278-betlar) - kuzatuvchanlikni keyin qo'shish sifatni keyin qo'shishdek qimmat va samarasiz bo'lishi; mahalliy ko'rinishning mahalliy optimizatsiyaga olib kelishi (batch tez tugadi, element saytda baribir ertalab chiqdi); barcha nusxa statistikasini bitta sahifada ko'rish masshtab effektini ochishi (bir ko'rinish boshqa serverlar keshini buzishi); black-box asbobning tizimdan tashqarida ishlashi va keyin qo'shilishi, white-box asbobning ilova ichida yozilishi va qattiqroq bog'lanishi; log fayl joyining sozlanadigan bo'lishi; log xabarlari katalogi va har xabarga aniq kod berish
+- Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 17.4-bo'lim (280-281-betlar) - log faylning odam interfeysi ekani, maydonlarning ustunga tekislanishi, bitta hodisa bitta qatorda bo'lishi va xato darajasini ko'z bilan topish talabi
+- Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 5-bob (127-bet) - fayl tizimi to'lishi I/O xatosiga olib kelishi va logging kutubxonasining `IOException` ni ilovaga tashlashi
+- ESLATMA: 30.1 dagi "bu chiqish qaysi savolga javob beradi" tekshiruv savoli, 30.2 dagi umumiy encoder tavsiyasi, `event.code` maydonining nomi va ikki log profilining Spring sozlamasi, 30.4 dagi konteyner nuance i, 30.17 dagi kuzatuv platformasi uchun to'rt savol hamda 30.18 dagi "nusxa o'zini aytib turishi kerak" talabi shu korpusning qo'shimchasi
 
 ---
 

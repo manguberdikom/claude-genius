@@ -24,9 +24,12 @@ aytiladi.
 
 ## Ish boshida
 
-Ikki indeks o'qiladi: `memory/umumiy/MEMORY.md` va proyektniki (klonda `memory/claude-genius/`, boshqa proyektda `GENIUS_MEMORY_DIR`, sukut `~/.claude/genius-memory`).
+Ikki indeks o'qiladi: `memory/umumiy/MEMORY.md` va proyektniki (klonda `memory/claude-genius/`, boshqa proyektda `GENIUS_MEMORY_DIR`, sukut `<workspace>/docs-local/memory/<slug>/`).
 Ikkalasini bitta chaqiruv beradi: `python3 tools/handoff.py --memory`. Yo'q indeks to'siq emas.
 `user_*` yozuvlari javob uslubiga qo'llanadi, topic fayl indeksdagi tavsifga qarab faqat keragi o'qiladi.
+"Qaysi versiya", "nima o'zgardi", "yangilanish ishlayaptimi" so'ralsa:
+`python3 tools/versiya.py` (o'rnatilgan versiya, commit, sana, klonda
+yangi commit bormi va shu versiyadagi o'zgarishlar ro'yxati).
 
 Proyekt ishida keyin `dev` yangilanadi (`## Proyekt qoidalari`, 2-band):
 `git fetch` va `git merge --ff-only origin/dev`.
@@ -42,9 +45,14 @@ har aktyorga topshiriqdan oldin amal qiladi:
    hisoboti, talab, handover, frontend va devops o'zgarish hujjatlari,
    ADR, runbook, README repoda YARATILMAYDI va commit QILINMAYDI. Ular
    umumiy papkada turadi: `GENIUS_DOCS_DIR/<repo-nomi>/`, sukut
-   `<workspace>/docs-local/<repo>/` (proyekt git ildizining ota papkasi;
-   workspace git repo bo'lmasa u git ga tushmaydi). Yo'lni bitta funksiya
-   beradi (`docref.docs_dir`), buyruq: `python3 tools/handoff.py --docs`.
+   `<workspace>/docs-local/<repo>/` (proyekt git ildizining ota papkasi),
+   proyekt memorysi ham shu yerda: `<workspace>/docs-local/memory/<slug>/`.
+   `python3 tools/handoff.py --docs` va `--memory` papkani o'zi yaratadi
+   va workspace git repo bo'lsa `docs-local/` ni `.git/info/exclude` ga
+   qo'shadi: u commit ham, push ham qilinmaydi. Kompyuterning boshqa
+   joyiga hech narsa yozilmaydi: `.bak`, `.orig`, `*-copy` kabi zaxira
+   nusxa yaratilmaydi (o'zgarish tarixi git da), vaqtinchalik fayl ham
+   `docs-local` da.
    Guruh worktree si ham shu papkani mutlaq yo'l bilan o'qiydi, nusxa
    kerak emas. `.claude/`, `.idea/` kabi lokal asbob papkalari git ga
    qo'shilmaydi; repo `.gitignore` iga tegilmaydi, `.git/info/exclude`
@@ -75,14 +83,22 @@ har aktyorga topshiriqdan oldin amal qiladi:
    **foydalanuvchi qaroriga** qo'yiladi (`ask`): ularni o'z-o'zidan
    yurgizmang, nega arzon yo'l yetmaganini aytib so'rang. Batafsil:
    `references/taqiq.md`.
-3. **Og'ir o'qish asosiy sessiyada emas.** Ko'p o'qib oz qaytaradigan ish
-   aktyorga uzatiladi, uzun chiqish ularning kontekstida qoladi.
+3. **Og'ir o'qish asbob orqali.** Uzun chiqishni asbob o'zi qisqartiradi
+   (`run_tests` birinchi sabab, `schema_from_entities --only-findings`,
+   `doc.sh show` bo'lim); butun modul review i `review` aktyorida.
 4. **Mezon bitta.** Dasturchi, test muhandisi va reviewer ishni
-   boshlashdan oldin `python3 tools/rules_for.py <fayllar>` chaqiradi
+   boshlashdan oldin `python3 tools/rules_for.py --vazifa="<topshiriq>" <fayllar>` chaqiradi
    (reviewer `--no-mark` bilan: belgini faqat yozuvchi qo'yadi).
-   Fayllar topshiriq kartasining `fayllar:` qatoridan olinadi
-   (`references/aktyorlar.md`, `Topshiriq kartasi`): kirish bir xil,
-   chiqish bir xil. Ikkinchi aylana shundan kamayadi.
+   Fayllar topshiriq kartasidan olinadi, u har aktyor promptining
+   boshida va zanjirning har chaqiruviga aynan ko'chiriladi:
+   `hajm: S|M|L`, `fayllar: <ishlab chiqarish fayllari>`,
+   `cheklov: <...>|yo'q`, `vazifa: <bir jumla>` (`--vazifa` qiymati).
+   Kirish bir xil, chiqish bir xil. Ikkinchi aylana shundan kamayadi. Chiqish boshidagi
+   `# Retsept` kartasi (`tools/retsept/<belgi>.md`) eng kichik to'g'ri
+   shaklni, Spring yoki JDK allaqachon beradigan narsani va tuzoqlarni
+   bo'lim raqami bilan beradi: yechim hajmi modelning o'z mulohazasiga
+   qolmaydi, shuning uchun sonnet aktyor ham opus bilan bir xil shaklda
+   yozadi.
 5. **Test faqat asbob bilan.** Aktyor ish oxirida bir marta
    `python3 tools/run_tests.py --diff --yurgiz`: o'zgarishga ta'sir
    qilgan testlar, modul bilan, log faylda. To'liq suite partiyada bir
@@ -104,15 +120,21 @@ tanlanadi:
 | "tuzat", "qo'sh", "refaktoring qil", bug, kichik vazifa; "yiqildi, tuzat" ham | `dasturchi` |
 | "test yoz", "qoplash"; xato test kodining o'zida ekani aniq | `test-muhandis` |
 | "qayerda yozilgan", "qoida nima deydi" (bir-uch bo'lim) | aktyor yo'q: taklif hookidagi raqam yoki `tools/doc.sh find`, keyin `tools/doc.sh show` |
-| ko'p bo'limni o'qib taqqoslash (uchtadan ko'p) | `qidiruv` |
-| "nega yiqildi", "sxema qanday" (chiqish uzun) | `tahlil` |
+| ko'p bo'limni o'qib taqqoslash (uchtadan ko'p) | aktyor yo'q: har bo'lim `tools/doc.sh show` bilan, qisqartmasiz |
+| "nega yiqildi", "sxema qanday" | aktyor yo'q: `python3 tools/parse_test_output.py <log>`, `python3 tools/schema_from_entities.py <src> --only-findings` |
 
-Qisqa chiqishni asosiy sessiya o'zi o'qiydi: test uchun birinchi xato,
-sxema uchun `python3 tools/schema_from_entities.py <src>`.
+Kod vazifasida (aktyor yoki Tez yo'l) taklif hookidagi nomzod bo'limlar
+`show` qilinmaydi: mezon `rules_for` kartasi va bo'lim raqamlari.
+Nomzod faqat "qoida nima deydi" marshrutida o'qiladi.
+
+Asboblar chiqishni o'zi qisqartiradi (birinchi yiqilgan test, faqat
+topilma), shuning uchun uni asosiy sessiya o'qiydi. Bo'lim matni oraliq
+aktyor orqali emas, `doc.sh show` bilan to'g'ridan olinadi: qoidani
+qisqartiradigan qatlam bilimni aktyorlar orasida farqli qilardi.
 
 Review doirasi modul yoki butun proyekt bo'lsa yoki diff bo'sh bo'lsa,
 `review` ga doira va modul ro'yxati beriladi: u agent faylidagi
-`Diff yo'q bo'lsa` tartibida ishlaydi. Doira bitta chaqiruvga sig'masa,
+`Diff yo'q bo'lsa` tartibida ishlaydi (`references/review-diffsiz.md`). Doira bitta chaqiruvga sig'masa,
 ish boshida modullarga bo'linadi (`references/aktyorlar.md`).
 
 Manguberdi faol bo'lsa yettala marshrut skilli (`code-review`,
@@ -152,120 +174,37 @@ kartasi, oxirida bitta birlashtirish va bitta to'liq suite
 
 ## Tez yo'l
 
-Holat: tajriba, A/B smoke dan keyin tasdiqlanadi. Hajm S va `rules_for` belgilarida tranzaksiya, xavfsizlik,
-migratsiya, sozlama va parallel yo'q bo'lsa, asosiy sessiya o'zi
-bajaradi: `rules_for` -> Edit -> `run_tests.py --diff --yurgiz`.
-`review` faqat xavf belgisi bo'lsa yoki diff 40 qatordan katta bo'lsa
-chaqiriladi.
+Hajm S bo'lsa qaror bitta qisqa chaqiruvdan:
+`python3 tools/rules_for.py --no-mark --belgilar --vazifa="<vazifa>" <fayllar>`,
+oxirgi qatori `tez_yol: ha|yo'q (<sabab>)`. `ha` bo'lsa asosiy sessiya
+o'zi bajaradi: to'liq `rules_for` (kartadagi shakldan) -> Edit ->
+`run_tests.py --diff --yurgiz`. Yozib bo'lgach
+`python3 tools/rules_for.py --no-mark --belgilar --diff` (yangi fayllar
+ham kiradi) `tez_yol: yo'q` desa yoki diff 40 qatordan katta bo'lsa
+`review` chaqiriladi. `yo'q` bo'lsa zanjir `dasturchi` -> `review`.
 
 ## Model tanlash
 
-Aktyorlar o'z modelini olib yuradi va u vazifaga qarab tanlangan:
-`qidiruv` va `tahlil` haiku (ko'p o'qiydi, oz qaytaradi), `dasturchi`
-va `test-muhandis` sonnet (amalga oshirish), `review` sonnet (diffni
-qoidaga solishtiradi), `rejalashtiruvchi` sukut bo'yicha sonnet. Bu
-taqsimot `.claude/agents/` da yozilgan, har vazifada qayta o'ylanmaydi.
+`dasturchi` opus, `rejalashtiruvchi` sonnet, `test-muhandis` sonnet,
+`review` sonnet: to'rtalasi bir xil bilim bilan, qoidalar agent faylida
+emas, `rules_for` chiqishida. Kod yozuvchi opus (minimal kod), qolganlari
+narx uchun sonnet; sabab va istisno `references/yakun.md` da. Qaytarib bo'lmaydigan qarorli rejada
+`rejalashtiruvchi` bitta marta `model: "opus"` bilan; 5 tadan ko'p agent
+`budget.py` tasdig'ini so'raydi. Tafsilot: `references/yakun.md`.
 
-Istisno, sifat uchun: reja `references/marshrut.md` dagi qaytarib
-bo'lmaydigan qarorni o'z ichiga olsa (sxema migratsiyasi, API
-shartnomasi, tashqi bog'liqlik, ma'lumot formati) `rejalashtiruvchi`
-Agent chaqiruvida `model: "opus"` bilan, lekin **bitta** marta
-chaqiriladi: butun reja bitta opus chaqiruvida, guruhlarga bo'lish
-shu rejaning ichida. Guruh bo'yicha qayta rejalashtirish va oddiy reja
-sonnet da. Sabab: 2026-10-06 da har guruhga alohida opus
-rejalashtiruvchi (7 ta) $199 turdi; qimmat model faqat qaytarib
-bo'lmaydigan qarorda o'zini oqlaydi.
+## Zanjir oxiri
 
-Bitta so'rovda 5 tadan ko'p agent (`qidiruv`, `tahlil`, `Explore`
-sanalmaydi) bo'lsa `budget.py` har 5-chaqiruvdan keyin narx taxmini
-bilan tasdiq so'raydi (`GENIUS_AGENT_MAX`). Ko'p guruhli ishni boshlashdan
-oldin taxminiy narx foydalanuvchiga aytiladi; review har guruhga emas,
-birlashgan diffga bir marta.
+**Partiya**: push dan oldingi commitlar to'plami. To'liq suite
+(`run_tests.py --hammasi --yurgiz`) va `sonar_local.py tahlil`
+foydalanuvchi commit yoki push so'raganda yoki partiya yopilganda bir
+marta yuradi. Yolg'iz S vazifa `run_tests.py --diff --yurgiz` bilan
+tugaydi va hisobotda `to'liq suite: partiya oxirida` deyiladi.
 
-## Sonar darvozasi
-
-Zanjir oxirining tartibi: proyekt commiti -> to'liq suite (unit va
-integration, jacoco bilan, partiyada bir marta) -> `sonar_local.py
-tahlil` -> push (foydalanuvchi) -> memory -> genius saboq -> tozala.
-
-```bash
-python3 tools/sonar_local.py tahlil     # chiqish kodi 0 / 1 / 2, oxirida yig'ma qator
-```
-
-Lokal SonarQube asosiy server bilan bir xil sozlanadi (versiya, profil,
-gate, loyiha sozlamalari, qo'lda qo'yilgan statuslar), shuning uchun
-natija serverniki bilan bir xil. Darvoza: gate `OK` va ochiq issue 0
-(TO_REVIEW hotspot ham topilma) bo'lmaguncha push tavsiya qilinmaydi.
-Topilma bo'lsa u egasiga (`dasturchi` yoki `test-muhandis`) qaytadi va
-tahlil qayta yuradi. Exit 2 (docker, tarmoq, token yo'q) darvozani
-yopmaydi: sabab hisobotda aytiladi. Coverage to'liq bo'lishi uchun suite
-shu partiyada jacoco bilan yurgan bo'lishi kerak (eskirgan exec ni asbob
-o'zi aytadi; `--testlar` testlarni ham yurgizadi).
-
-Birinchi marta konteyner yaratish (`docker run`, image yuklanadi) va
-`ishga --yangila` foydalanuvchi roziligi bilan: asbob docker ni
-`subprocess` bilan chaqirgani uchun `guard.py` buni ko'rmaydi, shuning
-uchun asbob uni oldindan bir qator bilan aytadi. Konteyner bor bo'lsa
-docker ga tegilmaydi.
-
-Serverda (asosiy Sonar) lokalda chiqmagan issue topilsa, tuzatish va
-proyekt commitidan keyin ikki ish PARALLEL yuradi: (a) genius saboq
-(`check_code.py` qoidasi va qo'llanma, pastdagi tartib); (b)
-`sonar_local.py moslik` va o'sha commit da `solishtir`: lokal nega
-o'tkazib yuborganini topish. Konfiguratsiya farqi chiqsa `moslik` uni
-tuzatadi, farq asbob bilmagan joyda bo'lsa `tools/sonar_local.py` ga
-qo'shiladi. Ikkalasi yakunda bitta genius commitida.
-
-## Memory
-
-Memory bosqichi har zanjir oxirida bajariladi: toza tugaganda ham,
-budjet tugab to'xtaganda ham. Qoida bitta faylda: `memory/README.md`.
-Nima yoziladi, nima yozilmaydi, qayerga va qanday format. To'rt savol
-darvozasidan o'tmagan narsa yozilmaydi.
-
-Memorydan keyin genius saboq bosqichi keladi. U zanjirning oxirida,
-proyekt commiti (va so'ralgan bo'lsa pushi) tugagandan keyin bajariladi,
-shuning uchun proyekt commitiga ham, pushiga ham xalaqit bermaydi.
-Ishda yangi Sonar yoki test saboqi chiqqan bo'lsa (Sonar topgan,
-lekin `check_code` ushlamagan holat; tuzatish yangi issue ochgani;
-test infratuzilmasi tuzog'i), u klonga yoziladi:
-
-1. Qoida `tools/check_code.py` ga musbat va manfiy test bilan yoziladi.
-   Tushuntirish `docs/` dagi mos bobga yoziladi.
-2. Klon ochiq repo: proyekt nomi, modul, sinf va fayl nomlari
-   yozilmaydi, misol umumiy bo'ladi (`memory/README.md`).
-3. Tekshiriladi: `tools/test_check_code.py`, `tools/check_docs.py`.
-4. Klonning `main` branchida bitta qisqa commit qilinadi va `main` ga push
-   qilinadi. Klonda `main` dan boshqa branch ochilmaydi va boshqa branchga
-   push qilinmaydi: butun bilim bitta tarmoqda turadi.
-5. Snapshot yangilanadi:
-   `python install/install.py --genius-path <klon> --apply`.
-
-Saboq yo'q bo'lsa bosqich bir qator bilan "yangi saboq yo'q" deb
-yopiladi.
-
-Zanjirning haqiqiy oxiri tozalash (memory va saboq bosqichidan keyin):
-ish tugagan hujjatlarning boshiga `Holat: tugadi` yoziladi, keyin
-avtomatik yurgiziladi:
-
-```bash
-python3 tools/tozala.py            # --quruq: hech narsa o'chirmay ro'yxat
-```
-
-U `.claude/worktrees/` dagi ro'yxatda yo'q (yetim) papkalarni,
-worktree siz `genius/*` branchlarni o'chiradi. Hujjatlar papkasidagi
-`Holat: tugadi` (yoki `status: done`) hujjat o'chirilmaydi: u
-`<docs-local>/.arxiv/<yyyymmdd>/` ga ko'chadi va 14 kundan keyin o'chadi.
-Hujjat yoki uning papkasidagi biror fayl oxirgi 3 kunda o'zgargan bo'lsa
-unga tegilmaydi: faol ishning tugagan bo'lagi (review qismi, faza) joyida
-qoladi. Ro'yxatdagi (faol) worktree ga va tugamagan hujjatga tegmaydi.
-Workspace da bir nechta sessiya ishlashi mumkin: `tozala` ning to'liq
-chiqishi (har ko'chgan fayl nomi) ko'rsatiladi, faqat yig'ma qator emas. Repoda git ga
-qo'shilgan hujjat yoki asbob fayli (`*.md`, `.claude/`, `.idea/`,
-`*.http`, `adr/`, `docs/`) bo'lsa o'chirmaydi, "git da ortiqcha: ..."
-deb ro'yxatini beradi: ularni olib tashlash commit talab qiladi,
-foydalanuvchi bilan hal qilinadi. Chiqish bir necha qator va oxirida
-yig'ma qator.
+Zanjir oxiri tartibi (har zanjirda, budjet tugasa ham): proyekt commiti
+-> partiyada to'liq suite va Sonar darvozasi (gate `OK`, 0 issue) ->
+push (foydalanuvchi) -> memory (`memory/README.md`) -> genius saboq
+yoki "yangi saboq yo'q" -> `python3 tools/tozala.py`. Har qadamning
+tafsiloti `references/yakun.md` da.
 
 ## Kontekst
 

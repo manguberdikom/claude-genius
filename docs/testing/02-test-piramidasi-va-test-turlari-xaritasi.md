@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 2. Test piramidasi va test turlari xaritasi (Test Pyramid & the Map of Test Types)
 
@@ -71,6 +71,10 @@ Narxi aniq o'lchanadi:
 
 Tuzatish yo'li - testni o'chirish emas, **pastga ko'chirish**: yiqilgan E2E testdagi har bir assertion uchun "bu holat eng past qaysi darajada tasdiqlanishi mumkin?" savolini berib, mos darajada test yozib, keyin E2E'dan o'sha assertion'ni olib tashlash.
 
+**Shakl qanday paydo bo'ladi: prototip bir necha kunda legacy ga aylanadi.** Google ning izohi ice-cream cone ning kelib chiqishini vaqt o'lchoviga bog'laydi. Kod bir necha daqiqa yashaydi deb o'ylanganda qo'lda sinash to'g'ri tanlov: skript yoziladi, ishga tushirib ko'riladi, funksiya qo'shiladi, yana ishga tushirib ko'riladi. Keyin skript ishlay boshlaydi, boshqalarga beriladi, lekin avtomatik testi yo'q. Eng yomon holat esa kodning o'zi unit test yozishga qulay bo'lmagan shaklda yozilgani: shunda yozish mumkin bo'lgan yagona avtomatik test E2E bo'lib qoladi va **bir necha kun ichida legacy kod** paydo bo'ladi.
+
+Shundan amaliy qoida: prototip bo'lsa ham, **rivojlanishning birinchi kunlarida** piramidaga o'tish kerak, ya'ni unit testlar yoziladi va shundan keyin ustiga avtomatik integratsion testlar qo'shiladi, qo'lda E2E dan esa chiqib ketiladi. Google buni submit sharti qilib qo'ygan: unit test bo'lmasa o'zgarish qabul qilinmaydi. Qolgan bo'shliq - unit test va qo'lda test orasidagi oraliq qatlam - alohida ish talab qiladi va u uzoq muddatli sog'liq uchun zarur.
+
 ## 2.4 Test turlari to'liq xaritasi
 
 | Tur | Maqsadi | Nimani tasdiqlaydi | Tezlik | Kim yozadi | Qancha bo'lishi kerak |
@@ -92,7 +96,27 @@ Tuzatish yo'li - testni o'chirish emas, **pastga ko'chirish**: yiqilgan E2E test
 
 Jadvaldagi "qancha" ustuni mutlaq raqam emas, nisbat haqida: Spring loyihasida suite tarkibini `@Tag` bo'yicha hisoblab, bu nisbatlardan chetlanishni metrika sifatida kuzatish mumkin. Ustundagi foizlar shu korpusning amaliy mo'ljali, biror kitobdan ko'chirilgan emas. Manbaga tayangan yagona nisbat Google ning o'z taqsimoti: test soni bo'yicha taxminan 80% kichik (unit), 15% o'rta qamrovli integratsion va 5% uchidan-uchiga test, va kitobning o'zi buni "juda qo'pol mo'ljal" deb ataydi. Tez-tez keltiriladigan 70/20/10 nisbatining esa aniq birlamchi manbasi yo'q, uni iqtibos sifatida ishlatmang.
 
+Xaritaning o'zi haqida bitta shart ham bor va uni yozib qo'yish kerak: xarita universal emas. Orosz integratsion va UI test atamalarining chegarasi haqida tortishishni foydasiz deb hisoblaydi va muhim narsa boshqa deydi: jamoa qaysi atamada nimani nazarda tutishini kelishib olishi (Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr, Pragmatic Engineer, 2023, 14-bob, 198-bet). Amaliy natija: yuqoridagi jadval korpus ichidagi atama kelishuvi bo'lib qoladi, lekin boshqa jamoada "integratsion test" boshqa narsani bildirishi mumkin, shuning uchun test strategiyasi hujjatining birinchi bo'limi atamalar ta'rifi bo'ladi. Atama kelishilmagan joyda qamrov raqamlari ham taqqoslanmaydi.
+
 Google ning modelida yana bir ajratish bor va u bu jadvalda yo'q: har bir test ikki MUSTAQIL o'lchov bilan tavsiflanadi. Birinchisi hajm (size): kichik test bitta process ichida ishlaydi, o'rta test bitta mashinada, katta test esa istalgan joyda (Google da to'rtinchi daraja ham bor: enormous). Ikkinchisi qamrov (scope): test kodning qancha qismini tekshiradi - bitta metodmi, bir necha sinf wiring'imi, butun tizimmi. Bu ikkisi bir-biriga bog'lanmagan: kichik hajmli test keng qamrovli bo'lishi mumkin va teskarisi. Yuqoridagi jadvalning "Tezlik" ustuni aslida hajm xususiyati, qatorlar esa qamrov bo'yicha ajratilgan - shuning uchun uni o'qiyotganda ikki o'lchovni aralashtirmang. Amalda hajmni belgilash foydali, chunki parallellik va izolyatsiya aynan hajmga bog'liq: faqat kichik testlar cheklovsiz parallel ishlaydi.
+
+**Hajm cheklovlari asbob bilan majburlanadi, kelishuv bilan emas.** Google da hajm ta'riflari test infratuzilmasida kodlangan: kichik test bitta processda (ko'p tilda bitta threadda) ishlaydi, uxlamaydi, I/O bajarmaydi va bloklanadigan chaqiruv qilmaydi, ya'ni tarmoq va diskka chiqmaydi. Bu ta'rif hujjatda qolmaydi: Java testlari maxsus security manager ostida yurgiziladi va `small` deb belgilangan test taqiqlangan amalni bajarsa (masalan tarmoq ulanishi ochsa) **yiqiladi**. Sabab aniq: cheklovlar kichik testni sekinlik va nondeterminizmning asosiy manbalaridan uzadigan qum qutisi (sandbox) yasaydi. O'rta testga bitta mashina ichida qolish sharti bilan ko'proq erkinlik beriladi, lekin tarmoq murojaati faqat `localhost` ga ruxsat etiladi; katta test esa istalgan joyda ishlaydi va E2E hamda legacy tizim uchun saqlanadi. Katta testlar kichiklaridan ajratilib, har push da emas, build va reliz bosqichida yurgiziladi.
+
+JVM da security manager Java 17 dan beri o'chirilgan ([JEP 411](https://openjdk.org/jeps/411)), shuning uchun zamonaviy shakli boshqa: cheklov `@Tag` va build konfiguratsiyasi bilan ajratiladi, taqiqni esa ArchUnit qoidasi (`noClasses().that().haveSimpleNameEndingWith("Test")...`) va Testcontainers/HTTP client importini bloklash bilan majburlanadi.
+
+```java
+@Test
+void smallTestsDoNotTouchNetworkOrDisk() {
+    ArchRuleDefinition.noClasses()
+            .that().haveSimpleNameEndingWith("Test")
+            .and().areAnnotatedWith(Tag.class)
+            .should().dependOnClassesThat()
+            .resideInAnyPackage("java.net..", "org.testcontainers..", "java.nio.file..")
+            .check(new ClassFileImporter().importPackages("com.example"));
+}
+```
+
+ESLATMA: Google ning security manager yechimi JDK 17+ da ishlamaydi; yuqoridagi ArchUnit shakli korpus qo'shimchasi, kitobda bu variant yo'q.
 
 ## 2.5 Qaysi mantiqni qaysi darajada testlash kerak
 
@@ -259,9 +283,13 @@ Test nomi esa xatti-harakatni o'qiydigan gap bo'lishi kerak: metod nomi uchun `s
 
 - Robert C. Martin, *Clean Architecture*, 28-bob - test chegarasi, testlar tizimning qismi ekani va mo'rt test muammosi
 - Titus Winters, Tom Manshreck, Hyrum Wright (tahr.), *Software Engineering at Google*, O'Reilly, 2020, 11-bob "Testing Overview" - Google ning piramida versiyasi va taqsimoti (~80% kichik, ~15% o'rta qamrovli, ~5% uchidan-uchiga, kitobning o'zi "juda qo'pol mo'ljal" deb ataydi); hajm (size) va qamrov (scope) ikki mustaqil o'lchov; kichik/o'rta/katta test ta'riflari; ice-cream cone va soat qumi anti-patternlari; "buzilishini xohlamagan narsani qopla" qoidasi
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 11-bob ("Test Size", "Test sizes in practice") - kichik testning cheklovlari (bitta process, sleep yo'q, I/O va bloklanadigan chaqiruv yo'q) va ularning test infratuzilmasi orqali majburlanishi, taqiqlangan amal qilgan kichik testning yiqilishi, o'rta testga `localhost` ruxsati va katta testning qolgan hollar uchun saqlanishi. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 14-bob ("Larger Tests and Time") - qo'lda sinalgan prototipning bir necha kunda legacy ga aylanishi, unit test yozish qiyin bo'lsa faqat E2E qolishi va rivojlanishning birinchi kunlarida piramidaga o'tish zarurati. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
+- [JEP 411, Deprecate the Security Manager for Removal](https://openjdk.org/jeps/411) - Java 17 dan security manager eskirgan, shuning uchun Google ning hajm cheklovini majburlash yechimi zamonaviy JDK da ishlamaydi
 - Mike Cohn, *Succeeding with Agile*, 2009 - klassik test piramidasining asl manbasi (Google kitobidagi havola orqali)
 - Gerard Meszaros, *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley, 2007, 6-bob, 51-53-betlar - test turlari taksonomiyasi va "component test" atamasi; "integration" va "subsystem" atamalarining turli ma'nolari haqida ogohlantirish
 - ESLATMA: 2.2 dagi Testing Trophy, Honeycomb va Test Diamond shakllari muallif blogi va konferensiya materiallaridan, kitob manbasi emas; 2.4 va 2.7 dagi foizlar va vaqt chegaralari shu korpusning amaliy mo'ljali
+- Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr, Pragmatic Engineer, 2023, 14-bob (198-bet) - integratsion va UI test atamalarining chegarasi muhim emasligi, jamoa qaysi atamada nimani nazarda tutishini kelishib olishi muhim bo'lishi
 
 ---
 

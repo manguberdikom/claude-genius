@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 40. Qidiruv: PostgreSQL FTS chegarasi va alohida dvigatelga o'tish (Search: Postgres FTS and Moving to a Dedicated Engine)
 

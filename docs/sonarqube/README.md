@@ -12,7 +12,7 @@ Hujjat ikkalasini ham ko'rsatadi: shartni qanday qondirish, va qayerda bu raqam 
 
 **Versiya bazasi:** Java 21 LTS (pol: 17, Java 25 eslatmalari bilan), Spring Boot 3.2-3.5 (4.0 eslatmalari bilan), PostgreSQL 16+ (15-18 havolalari bilan), JUnit 5, SonarQube 2025.x LTA (9.9 LTA merosiy eslatmalari bilan).
 
-> Holat: 43 bobdan 0 tasi odam tekshirgan, 43 tasi tekshirilmoqda, qolgan 0 tasi AI yozgan va inson tekshirmagan. Har bob holati: [docs/review.tsv](../review.tsv).
+> Holat: 43 bobdan 42 tasi odam tekshirgan, 1 tasi tekshirilmoqda, qolgan 0 tasi AI yozgan va inson tekshirmagan. Har bob holati: [docs/review.tsv](../review.tsv).
 
 ## Mundarija
 

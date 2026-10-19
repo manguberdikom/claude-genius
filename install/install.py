@@ -99,12 +99,13 @@ if HERE not in sys.path:
 import snapshot  # noqa: E402  (snapshot joyi va git mantig'i: barcha platformada bitta)
 
 # O'rnatiladigan aktyorlar. Skill shu nomlar bilan chaqiradi.
-ACTORS = ("qidiruv", "tahlil", "review", "dasturchi", "test-muhandis",
-          "rejalashtiruvchi")
+ACTORS = ("review", "dasturchi", "test-muhandis", "rejalashtiruvchi")
 
 # Olib tashlangan yoki qayta nomlangan aktyorlar: yangilash va --uninstall
-# ularni zaxira bilan oladi (dab9314: arxitektor dasturchi bo'ldi).
-RETIRED = ("arxitektor",)
+# ularni zaxira bilan oladi (dab9314: arxitektor dasturchi bo'ldi;
+# qidiruv va tahlil: haiku qoida matnini qisqartirib yetkazardi, bilim
+# har aktyorda bir xil bo'lishi uchun bo'limni aktyor o'zi o'qiydi).
+RETIRED = ("arxitektor", "qidiruv", "tahlil")
 
 # --reset o'chiradigan sozlama birliklari. Tarix, todo va kirish bu yerda
 # yo'q: ular sozlama emas.
@@ -120,6 +121,11 @@ ZAXIRA_SAQLASH = 5
 # Avtomatik faqat shu nomdagi papka o'chiriladi: `--backup-to` bergan boshqa
 # nomli zaxira hisobga ham olinmaydi.
 ZAXIRA_NAQSH = re.compile(r"\A\.claude-backup-\d{8}-\d{6}\Z")
+# Avtomatik o'chiriladigan zaxira faqat shu birliklardan iborat: yangilash
+# zaxirasi (settings.json, o'z skill va aktyorlar). `--reset` zaxirasi
+# foydalanuvchining manguberdidan oldingi to'liq sozlamasi, u o'chirilmaydi.
+OWN_BACKUP_RE = re.compile(r"\A(?:\.claude--settings\.json|skills--manguberdi"
+                           r"|agents--[\w-]+\.md)\Z")
 
 # Klon to'liqligi (`/` ajratgich bilan). install/merge_settings.py (--reset
 # siz) va install/uninstall_settings.py ni kod o'zi qo'shadi.
@@ -393,9 +399,18 @@ def eski_zaxiralar(home, saqlash):
     found = []
     for name in names:
         path = os.path.join(home, name)
-        if ZAXIRA_NAQSH.match(name) and os.path.isdir(path) and not os.path.islink(path):
+        if (ZAXIRA_NAQSH.match(name) and os.path.isdir(path) and not os.path.islink(path)
+                and _faqat_yangilash(path)):
             found.append(path)
     return found[:-saqlash]
+
+
+def _faqat_yangilash(path):
+    """Zaxirada faqat yangilash birliklari bormi (OWN_BACKUP_RE)."""
+    try:
+        return all(OWN_BACKUP_RE.match(n) for n in os.listdir(path))
+    except OSError:
+        return False
 
 
 def managed_ogohlantirish(plat):
@@ -614,7 +629,11 @@ def uzun_yol(path):
     if os.name != "nt":
         return path
     full = os.path.abspath(path)
-    return full if full.startswith("\\\\?\\") else "\\\\?\\" + full
+    if full.startswith("\\\\?\\"):
+        return full
+    if full.startswith("\\\\"):   # UNC: \\srv\share -> \\?\UNC\srv\share
+        return "\\\\?\\UNC\\" + full[2:]
+    return "\\\\?\\" + full
 
 
 def zaxira_tozala(ctx, apply):
@@ -899,7 +918,13 @@ def ornatish(ctx, allow):
                 step("eski aktyor: %s (endi o'rnatilmaydi)" % actor)
                 own.append(stale)
         to_remove = [p for p in own if os.path.lexists(p)]
-        to_backup = list(to_remove)
+        # Manifest bor bo'lsa skill va aktyor fayllari o'rnatuvchiniki va git
+        # dan qayta yasaladi: ularni har yangilashda zaxiralash uy papkasida
+        # keraksiz `.claude-backup-*` to'plardi. Manifestsiz egasi noma'lum.
+        listed = manifest_aktyorlar(ctx.manifest_path)
+        ours = ({ctx.skill_dst} | {os.path.join(ctx.agents_dst, a + ".md") for a in listed}
+                if listed is not None else set())
+        to_backup = [p for p in to_remove if p not in ours]
         if os.path.exists(ctx.settings_path):
             to_backup.append(ctx.settings_path)
     else:
@@ -1146,7 +1171,8 @@ def olib_tashlash(ctx):
 
     say()
     say("1. Zaxira -> %s" % ctx.backup_to)
-    to_backup = list(own)
+    # Manifest tasdiqlagan o'z fayllar zaxiralanmaydi (git dan qayta yasaladi).
+    to_backup = [] if listed is not None else list(own)
     if os.path.exists(ctx.settings_path):
         to_backup.append(ctx.settings_path)
     if not to_backup:
@@ -1297,6 +1323,10 @@ def ish(ctx, opts):
     say()
     say("Manba : %s" % root)
     say("Snapshot: %s (commit %s)" % (ctx.root, ctx.sha[:snapshot.SHA_UZUNLIK]))
+    version_file = os.path.join(root, "VERSION")
+    version = (open(version_file, encoding="utf-8").read().strip()
+               if os.path.isfile(version_file) else "?")
+    say("Versiya : %s (o'rnatilgandan keyin: python3 tools/versiya.py)" % version)
     say("Klon  : %s (hooklar shu klonning commitidan olinadi)" % root)
     # Ro'yxatsiz o'tishni yashirmaslik: hook kodi o'rnatilgan commitdan farq qilsa
     # nima kelayotgani ko'rsatiladi (to'smaydi; tasdiqli yo'l tools/yangilash.py).

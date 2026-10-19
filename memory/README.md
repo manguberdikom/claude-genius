@@ -7,7 +7,8 @@ va cloud konteyneri qaytarib olinadi: commit qilinmagan bilim yo'qoladi.
 Bu klon ochiq git repo. Unga faqat ikki papka yoziladi: `umumiy/`
 (hammaga tegishli) va `claude-genius/` (klonning o'z proyekti). Boshqa
 proyekt memorysi klondan tashqarida, `GENIUS_MEMORY_DIR` da, sukut
-bo'yicha `~/.claude/genius-memory/<slug>/`, push siz.
+bo'yicha `<workspace>/docs-local/memory/<slug>/`: proyekt hujjatlari
+yonida, git ga kirmaydi (`.git/info/exclude`), push qilinmaydi.
 
 ## Nima yoziladi
 
@@ -51,7 +52,7 @@ Proyekt papkasi qayerda (`docref.memory_dir`):
 |---|---|---|
 | hammasi | `<klon>/memory/umumiy/` | ha |
 | klonning o'zi | `<klon>/memory/claude-genius/` | ha |
-| boshqa har proyekt | `$GENIUS_MEMORY_DIR/<slug>/`, sukut `~/.claude/genius-memory/<slug>/` | yo'q |
+| boshqa har proyekt | `$GENIUS_MEMORY_DIR/<slug>/`, sukut `<workspace>/docs-local/memory/<slug>/` | yo'q |
 
 `GENIUS_MEMORY_DIR` ni xususiy git repoga qo'yish mumkin, unda commit
 va push shu repoga va foydalanuvchi qaroriga ko'ra.

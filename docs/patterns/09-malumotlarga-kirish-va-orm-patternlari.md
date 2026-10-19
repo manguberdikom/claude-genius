@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 9. Ma'lumotlarga kirish va ORM patternlari (Data Access & ORM Patterns)
 
@@ -72,7 +72,7 @@ Ma'lumotlarga kirish va ORM patternlari - domen modeli bilan relyatsion ma'lumot
 - Unit test'da DAO interfeysini mock qilib, service qatlamini DB'siz sinash.
 - Multi-tenant tizimda tenant filtrini DAO ichida markazlashtirib qo'llash.
 
-**Ehtiyot bo'ling:** Spring Data JPA mavjud bo'lgan loyihada har bir entity uchun qo'lda DAO yozish ortiqcha boilerplate keltiradi - bu holda `Repository` patternini tanlang. Shuningdek DAO'ni "anemic passthrough" ga aylantirmang: agar metodlar faqat `em.find()` ni o'raydigan bo'lsa, qatlam qiymat qo'shmaydi.
+**Ehtiyot bo'ling:** Spring Data JPA mavjud bo'lgan loyihada har bir entity uchun qo'lda DAO yozish ortiqcha boilerplate keltiradi - bu holda `Repository` patternini tanlang. Shuningdek DAO'ni "anemic passthrough" ga aylantirmang: agar metodlar faqat `em.find()` ni o'raydigan bo'lsa, qatlam qiymat qo'shmaydi. Legacy JDBC DAO larini tozalaganda yana bitta ortiqcha qator uchraydi: drayverni yuklash uchun `Class.forName("org.postgresql.Driver")` chaqirish shart emas. U faqat eski JDBC versiyalari uchun talab qilingan; hozir `DriverManager` classpath dagi drayverlarni o'zi topadi va `getConnection` chaqirilganda mos kelganini tanlaydi. Shuning uchun bu qator yangi kodga yozilmaydi va eski kodda ko'rinsa olib tashlanadi.
 
 ```java
 // DAO: ma'lumotga kirish interfeysi, SQL tafsiloti ichda qoladi
@@ -129,7 +129,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
 **Tavsif:** Bitta jadval (yoki view) uchun barcha SQL operatsiyalarini o'z ichiga oladigan yagona obyekt. U domen obyektlarini qaytarmaydi, balki primitiv qiymatlar, `Map` yoki record/DTO ko'rinishidagi natijalar bilan ishlaydi va har bir metod bitta SQL bayonotiga mos keladi. Bu pattern jadval sxemasi bilan kod o'rtasida yupqa, oldindan aytib bo'ladigan qatlam yaratadi.
 
-**Spring'da qayerda uchraydi:** `JdbcTemplate` / `JdbcClient` asosida yozilgan gateway sinflari; `RowMapper`, `DataClassRowMapper` (Java record'lar uchun), `BeanPropertyRowMapper`, `ResultSetExtractor` natijani mapping qiladi. Yozish uchun `SimpleJdbcInsert` (`usingGeneratedKeyColumns`) va `batchUpdate` qo'llaniladi. jOOQ generatsiya qilgan `TableRecord`/DAO sinflari ham aynan shu patternning sanoat implementatsiyasi hisoblanadi.
+**Spring'da qayerda uchraydi:** `JdbcTemplate` / `JdbcClient` asosida yozilgan gateway sinflari; `RowMapper`, `DataClassRowMapper` (Java record'lar uchun), `BeanPropertyRowMapper`, `ResultSetExtractor` natijani mapping qiladi. Yozish uchun `SimpleJdbcInsert` (`usingGeneratedKeyColumns`) va `batchUpdate` qo'llaniladi. Baza generatsiya qilgan kalitni o'qish kerak bo'lsa yo'l uchtaligi aniq: `PreparedStatementCreatorFactory` SQL va ustun tiplarini e'lon qiladi, `setReturnGeneratedKeys(true)` kalitni qaytarishni yoqadi, `GeneratedKeyHolder` esa `update(psc, keyHolder)` dan keyin `getKey()` orqali qiymatni beradi (Walls, 3-bob, 74-bet). jOOQ generatsiya qilgan `TableRecord`/DAO sinflari ham aynan shu patternning sanoat implementatsiyasi hisoblanadi.
 
 **Qo'llanish keyslari:**
 - Reporting va read-model jadvallarini ORM'siz, aniq SQL bilan o'qish.
@@ -138,7 +138,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 - Legacy sxemadagi kompozit kalitli, ORM'ga mos kelmaydigan jadvallar bilan ishlash.
 - Hibernate second-level cache'ni chetlab o'tib, aniq va yangi ma'lumot kerak bo'lgan query'larni bajarish.
 
-**Ehtiyot bo'ling:** Bu pattern boy domen mantiqini qo'ymaslik uchun - agar gateway ichida biznes qoidalari ko'paysa, Data Mapper + domen modeliga o'tish kerak. Shuningdek bir xil JPA entity va gateway bir tranzaksiyada bir jadvalga yozsa, persistence context stale bo'lib qolishi mumkin.
+**Ehtiyot bo'ling:** Bu pattern boy domen mantiqini qo'ymaslik uchun - agar gateway ichida biznes qoidalari ko'paysa, Data Mapper + domen modeliga o'tish kerak. Shuningdek bir xil JPA entity va gateway bir tranzaksiyada bir jadvalga yozsa, persistence context stale bo'lib qolishi mumkin. `GeneratedKeyHolder` ishlatilganda `setReturnGeneratedKeys(true)` ni o'tkazib yuborish eng ko'p uchraydigan xato: `getKey()` kalit topilmagani uchun yiqiladi. Bitta INSERT bir nechta ustun qaytarsa `getKey()` emas, `getKeys()` ishlatiladi.
 
 ```java
 // Table Data Gateway: bitta jadval uchun bitta shlyuz, obyekt grafini bilmaydi
@@ -154,6 +154,20 @@ public class AuditLogGateway {
     public List<AuditRow> byActor(String actor, Limit limit) { /* ... */ }
 }
 // Hisobot va audit kabi "jadval markazli" vazifalarda ORM dan arzon
+```
+
+```java
+// Baza bergan id ni o'qish: PreparedStatementCreator + GeneratedKeyHolder
+var factory = new PreparedStatementCreatorFactory(
+        "INSERT INTO orders (customer_id, placed_at) VALUES (?, ?)",
+        Types.BIGINT, Types.TIMESTAMP);
+factory.setReturnGeneratedKeys(true);          // busiz kalit qaytmaydi
+PreparedStatementCreator psc = factory.newPreparedStatementCreator(
+        List.of(customerId, Timestamp.from(Instant.now())));
+
+GeneratedKeyHolder keys = new GeneratedKeyHolder();
+jdbcTemplate.update(psc, keys);
+long orderId = keys.getKey().longValue();      // bir nechta ustun bo'lsa getKeys()
 ```
 
 ## 9.4 Satr ma'lumotlari shlyuzi (Row Data Gateway)
@@ -1418,11 +1432,13 @@ public class JdbcLockManager {
 - [spring-boot, `JpaBaseConfiguration.java`](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/module/spring-boot-jpa/src/main/java/org/springframework/boot/jpa/autoconfigure/JpaBaseConfiguration.java) - "spring.jpa.open-in-view is enabled by default" ogohlantirish matni
 - [hibernate-orm, `SqlTypes.java`](https://raw.githubusercontent.com/hibernate/hibernate-orm/7.0.0/hibernate-core/src/main/java/org/hibernate/type/SqlTypes.java) - `JSON` va `JSON_ARRAY` doimiylari
 - [mapstruct, `SubclassMapping.java`](https://raw.githubusercontent.com/mapstruct/mapstruct/1.6.3/core/src/main/java/org/mapstruct/SubclassMapping.java) - `@since 1.5`
+- Craig Walls, *Spring in Action* 6th, 3-bob - `PreparedStatementCreator` va `GeneratedKeyHolder` bilan baza bergan kalitni o'qish
 - Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 18-bob (466-472) - Gateway ta'rifi, Facade va Adapter dan farqi, back end va front end ga ajratish, Service Stub uchun qulay nuqta (9.38)
 - Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 3-bob (47-49) - mappingni qurishning uch vaziyati va ularga mos pattern tanlovi, "avval modelni qur" maslahatining iteratsiya bilan cheklanishi, Double Mapping va mantiqiy data store sxemasi orqali ikki qadamli mapping (9.39)
 - Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 11-bob (185-188) - Unit of Work ning uch registratsiya strategiyasi: caller registration, object registration va unit of work controller, selective update hamda gibrid nusxa olish varianti, bytecode post-processing bilan registratsiya chaqiruvini qo'shish, referensial butunlik uchun yozish tartibi va topologik saralash, bir xil ketma-ketlik bilan deadlock ni kamaytirish, obyekt o'z Unit of Work ini oqimga bog'langan Registry orqali topishi (9.40)
 - Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 16-bob (427-428) - oflayn qulfning uch turi: exclusive write, exclusive read va read/write lock, ularning o'zaro istisno qoidalari va samarasiz qulf strategiyasining belgilari (9.41)
 - Martin Fowler, *Patterns of Enterprise Application Architecture*, Addison-Wesley, 2003, 16-bob (428-430) - lock manager ning roli va qulf egasi sifatida sessiya, yagona lock jadvali talabi, qulfning lock manager uchun xususiy qolishi, qulfni yuklashdan oldin ID bo'yicha olish, kutmasdan abort qilish, unique constraint va serializable tranzaksiya bilan serializatsiya, yo'qolgan sessiya uchun timeout (9.42)
+- Jeanne Boyarsky, Scott Selikoff, *OCP Oracle Certified Professional Java SE 17 Developer Study Guide*, Wiley, 2022, 15-bob (872-873-betlar) - `DriverManager` drayverlarni o'zi topishi va `Class.forName()` chaqirish faqat eski JDBC versiyalari uchun talab qilingani (9.1)
 
 ---
 

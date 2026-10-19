@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 4. Tester qanday ishlashi kerak: QA ish jarayoni (How a Tester Actually Works - The QA Workflow)
 

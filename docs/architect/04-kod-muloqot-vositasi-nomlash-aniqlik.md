@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 4. Kod - muloqot vositasi: nomlash, aniqlik, kognitiv yuk (Code as Communication)
 
 <details>
-<summary>Bu bobdagi 11 bo'lim</summary>
+<summary>Bu bobdagi 13 bo'lim</summary>
 
 - [4.1 Kod yozishdan ko'ra o'qishga ko'p vaqt ketadi](#41-kod-yozishdan-kora-oqishga-kop-vaqt-ketadi)
 - [4.2 Nomlash: domen tilidan nom olish](#42-nomlash-domen-tilidan-nom-olish)
@@ -19,7 +19,9 @@
 - [4.8 Paket tuzilishi: xususiyat bo'yicha bo'lish](#48-paket-tuzilishi-xususiyat-boyicha-bolish)
 - [4.9 Kodda yashirin bilim](#49-kodda-yashirin-bilim)
 - [4.10 O'zini hujjatlaydigan API](#410-ozini-hujjatlaydigan-api)
-- [4.11 Amalda qo'llash](#411-amalda-qollash)
+- [4.11 Architecturally-evident coding style: arxitektura niyatini kodda qoldirish](#411-architecturally-evident-coding-style-arxitektura-niyatini-kodda-qoldirish)
+- [4.12 Komponent, connector va portni kodda reify qilish](#412-komponent-connector-va-portni-kodda-reify-qilish)
+- [4.13 Amalda qo'llash](#413-amalda-qollash)
 
 </details>
 
@@ -250,6 +252,8 @@ com/shop/inventory/{StockReservation,StockLevel,InventoryRepository}.java
 com/shop/shared/money/{Money,Currency}.java   # faqat haqiqiy umumiy narsalar
 ```
 
+Xususiyat bo'yicha bo'lishning arxitektura darajasidagi asosi ham bor. Fairbanks modul va komponent nomlarini moslashtirishni aytadi: kodda komponentni sochilgan modullardan, ya'ni bu moduldan bir oz, undan bir oz kod olib tashkil qilishga hech narsa to'smaydi, lekin modul bilan komponentni moslashtirish, ya'ni komponent butun modullardan iborat bo'lishi ravshanroq (*Just Enough Software Architecture*, 10.7-bo'lim). Keyingi qadam ham bor: bitta modul yaratib uning ichida har bir komponent uchun submodul ochish, va alohida modulda komponentlar orasida oqadigan ma'lumot almashinuv turlarini saqlash. Fairbanks chegarani ham aytadi: qayta ishlatiladigan modullar bu patternni buzadi, chunki ularni modul ierarxiyasiga o'zingiz xohlagan joyga qo'ya olmaysiz. Buning kodda qanday ifodalanishi [4.11](#411-architecturally-evident-coding-style-arxitektura-niyatini-kodda-qoldirish) va [4.12](#412-komponent-connector-va-portni-kodda-reify-qilish) bo'limlarida.
+
 Bu qarorni gap bilan emas, test bilan ushlab turish kerak. ArchUnit qoidasi `payment` paketidan `order` ning ichki sinflariga ulanishni taqiqlaydi, va shu bilan chegara hujjatdan kodga ko'chadi. Batafsil qoidalarni [testing 14.2](../testing/14-arxitektura-testlari-va-kod-sifati.md#142-archunit-asoslari) bo'limida ko'rish mumkin.
 
 ## 4.9 Kodda yashirin bilim
@@ -291,7 +295,116 @@ public Invoice issueInvoice(OrderId orderId, VatPolicy vatPolicy) { ... }
 
 Test nomlari shu hujjatning davomi. `testCreate1` nomi hech kimga yordam bermaydi, `issueInvoice_returnsExistingInvoice_whenCalledTwiceForSameOrder` esa shartnomani takrorlaydi va buzilganda aynan qaysi kelishuv buzilganini aytadi. Arxitektor uchun amaliy o'lchov shu (shu korpusning tavsiyasi): public metod uchun yozilgan test nomlarini ketma-ket o'qib chiqqanda, u metodning shartnomasi tiklanishi kerak.
 
-## 4.11 Amalda qo'llash
+## 4.11 Architecturally-evident coding style: arxitektura niyatini kodda qoldirish
+
+Dasturning minimal talabi ikkita: ishlasin va foydali ish qilsin. Fairbanks bu barni past deb hisoblaydi va sababini aytadi: chigal kodni qo'llab-quvvatlash qiyin, ishlaydigan lekin o'zingiz ham zo'rg'a tushunadigan kodni rivojlantirish katta kuch talab qiladi (*Just Enough Software Architecture*, 10.3-bo'lim). Shu sababli deyarli hamma developer standart boshqaruv oqimi konstruksiyalarini ishlatadi va o'zgaruvchiga `t` emas, `totalExpenses` deb nom beradi. Bu kompilyator uchun emas: kompilyatorga nomning farqi yo'q. Bu keyin kodni o'qiydigan odam, ya'ni ko'pincha o'zingiz, dizayn niyatini to'g'ri chiqarib olishi uchun ataylab qoldirilgan ishora.
+
+Fairbanks shu mantiqni ikki qadam yuqoriga ko'taradi. Birinchi qadam allaqachon odat: obyektga yo'naltirilgan uslubda domen turlari kod sinflarida aks etadi, ya'ni manzil va hisob bilan ishlaydigan dasturda `Address` va `Account` sinflari bo'lishi kutiladi; muallifning domen haqidagi aqliy modeli kodda ko'rinadi, shuning uchun qo'llab-quvvatlash osonlashadi (10.3-bo'lim). Ikkinchi qadam shu odatning arxitektura darajasidagi davomi: developer kodga boshqa modellar, jumladan arxitektura modeli haqidagi ishoralarni ham joylashi mumkin, ya'ni uslub, cheklov, komponent va xossalar haqida. Shu uslub **architecturally-evident coding style** deb ataladi.
+
+Uning to'rt foydasi Fairbanks da sanalgan (10.3-bo'lim): kelgusi kod evolyutsiyasidagi muammolarni oldini oladi; developerlar niyatni koddan taxmin qilishga sarflaydigan vaqtni kamaytirib loyiha samaradorligini oshiradi; niyatni hujjat va diagramma emas, kodda ushlab turgani uchun hujjat yukini tushiradi; va yangi developerning ishga kirishish vaqtini qisqartiradi. Shu uslub [model va kod sinxronligi](03-qaror-qabul-qilish-va-uni-hujjatlashtirish.md#324-model-va-kod-sinxronligi-toqat-qilinadigan-nomuvofiqlik-va-strategiyalar) bo'limidagi ikki qadamning birinchisi: Fairbanks uzilishdagi tasodifiy murakkablikni arxitektura elementlarini dasturlash tili elementlariga moslashtirish va arxitektura tushunchalarini kodda ifodalash bilan kamaytirishni aytadi, qolgan qismi esa davriy sinxronlash bilan boshqariladi (10.1-bo'lim).
+
+Ishoralarni ikki turga ajratish kerak, chunki ular turlicha ishonchli (10.4-bo'lim). **Soft mexanizm** samarali bo'lishi uchun odamning talqiniga tayanadi: sinf va metod nomlari, paket tartibi, kod izohi, va hatto meros ierarxiyasi yoki bog'liq funksionallikni bitta modul ichida saqlash. Fairbanks oxirgisini alohida ta'kidlaydi: kod tartibi hard mexanizmga o'xshab ko'rinadi, lekin kompilyator xuddi shu kod boshqacha tartiblansa ham xursand bo'ladi, shuning uchun u o'quvchining to'g'ri xulosa chiqarishiga tayangan soft mexanizm. **Hard mexanizm** esa mashina tekshiradi: oldingi va keyingi shartlar, invariantlar, `assert`, tur tizimi, modul va paket ko'rinish cheklovlari, virtual metod va interfeyslar, hamda `Facade` kabi kirishni cheklaydigan patternlar. Fairbanks to'g'rilikning tabiatini ham aniqlaydi: ko'p holatda obyektiv to'g'rilik yo'q, faqat aytib qo'yilgan dizayn niyatiga nisbatan to'g'rilik bor; X bilan Y muloqot qilishi obyektiv ravishda to'g'ri yoki noto'g'ri emas, lekin ular qilmasligi kerak degan niyatni e'lon qilsangiz, shu niyatni tekshirish mumkin bo'ladi.
+
+```java
+// Soft mexanizm: nom va paket. Kompilyator tekshirmaydi.
+package com.shop.infrastructure.pipeandfilter;
+
+// Hard mexanizm: ArchUnit testi. Niyat e'lon qilingani uchun tekshiriladi.
+@AnalyzeClasses(packages = "com.shop", importOptions = DoNotIncludeTests.class)
+class UslubCheklovlariTest {
+
+    // Uslub qoidasi: filter faqat pipe orqali gaplashadi.
+    @ArchTest
+    static final ArchRule filter_faqat_pipe_orqali =
+            noClasses().that().areAssignableTo(Filter.class)
+                    .should().dependOnClassesThat()
+                    .areAssignableTo(Filter.class);
+}
+```
+
+Xossalarni ham kodda ifodalash mumkin. Fairbanks ro'yxat beradi: connector sinxron yoki asinxron bo'lishi, modul Java 5 da kiritilgan xususiyatlarga bog'liqligi, komponentning ishlashi uchun 50 MB xotira talab qilishi (10.7-bo'lim). Ikki usul bor. Birinchisi annotation, va bu Java hamda C# da ishlaydi; annotation tilda birinchi darajali bo'lgan elementga qo'yiladi, shuning uchun qancha ko'p arxitektura elementini reify qilsangiz, annotation qo'yish joyi shuncha ko'p bo'ladi. Ikkinchisi va har qanday tilda ishlaydigani xossani nomga kiritish, masalan `asynchronousSendMessage`. Fairbanks ikkinchisining chegarasini ham aytadi: bitta metod nomiga bir nechta xossani siqish noqulay bo'ladi, va metod nomlari interfeys ta'rifi bilan allaqachon cheklangan bo'lsa, usul umuman ishlamaydi.
+
+Uslubni ko'rinadigan qilish esa uchta qadamdan iborat (10.7-bo'lim). Birinchisi nom: pipes and filters yoki clients and servers haqida gapiradigan kodni o'qiyotgan developer qaysi arxitektura uslubi ishlatilayotgani haqida kuchli ishora oladi, xuddi kodda "visitor" so'zi Visitor patterni ishlatilayotganini aytganidek. Ikkinchisi uslub elementlarini ifodalaydigan superklass yoki interfeyslarni berish, masalan pipe va filter uchun. Uchinchisi joylashuv: shu superklasslarni mos nomli paketga, masalan `infrastructure.pipeAndFilterStyle` ga qo'ysangiz, uslub bilan aloqa ancha ravshan bo'ladi. To'rtinchi qadam ixtiyoriy va hard mexanizmga o'tadi: uslubda qismlarni qanday birlashtirish mumkinligiga cheklov bor, shuning uchun annotation ishlatsangiz cheklovning bajarilishini tekshiradigan test yoki tahlil yozish imkoni paydo bo'ladi.
+
+ESLATMA: yuqoridagi ArchUnit testi shu korpusning tanlovi. Fairbanks "annotation plus tahlil" imkonini aytadi, lekin aniq asbobni nomlamaydi; Java da uning shakli [testing 14.2](../testing/14-arxitektura-testlari-va-kod-sifati.md#142-archunit-asoslari) bo'limida.
+
+## 4.12 Komponent, connector va portni kodda reify qilish
+
+Arxitektura modelidagi eng muhim uch element, ya'ni komponent, connector va port, dasturlash tilida umuman yo'q. Fairbanks muammoni aniq qo'yadi: tillar ma'lumot tuzilmasi va sinfni e'lon qilishga ruxsat beradi, lekin komponent, connector va port turlari kabi kattaroq arxitektura elementlarini e'lon qilishga ruxsat bermaydi, shuning uchun qaysi sinflar to'plami komponentni yoki connector turini tashkil qilishini ko'rish qiyin; bundan tashqari sinf va interfeys qanday xizmat *taqdim etilganini* ifodalaydi, lekin qanday xizmat *talab qilinganini* ifodalamaydi (*Just Enough Software Architecture*, 10.6-bo'lim). Yechim nomlangan: **reification**, ya'ni tushunchani ifodalash uchun obyekt yaratish (10.7-bo'lim).
+
+**Komponent turi.** Komponent sinfdan kattaroq, lekin til kattarog'ini bermaydi, shuning uchun komponent sinf sifatida reify qilinadi. Fairbanks ikki ishorani birga ishlatishni aytadi: nom konvensiyasi, masalan `FooComponent`, va ustiga metodsiz abstrakt superklass yoki `Component` deb nomlangan interfeys, ya'ni `Serializable` kabi faqat belgi (marker) vazifasini bajaradigan tur. Amaliy foyda IDE dan keladi: odatdagi obyektga yo'naltirilgan tizimda sinflar shunchalik ko'p bo'ladiki komponentni ajratish qiyin, lekin ko'pchilik IDE subclass larni izlash yoki ko'rish imkonini bergani uchun `Component` ning avlodlarini ko'rib tizimdagi komponentlar to'plamini bir qarashda olish mumkin. Komponent sinfining ikkinchi foydasi joy beradi: unda komponent bo'ylab yoyilgan tekshiruvlar, masalan initsializatsiya tekshiruvi, hamda komponent bo'ylab amal qiladigan invariantlar haqidagi izoh va ularni tekshiradigan metodlar turadi. Uchinchi qoida nomlashga tegishli: modul va komponent nomlari moslashtiriladi, ya'ni komponent butun modullardan tashkil topsin, modullarning bo'laklaridan emas.
+
+```java
+package com.shop.infrastructure;
+
+// Bo'sh belgi: IDE da "Component" ning avlodlari = tizimdagi komponentlar.
+public interface Component { }
+
+package com.shop.order;
+
+// Nom konvensiyasi + belgi. Komponent chegarasi koddan ko'rinadi.
+@Service
+public class OrderPlacementComponent implements Component {
+
+    // Talab qilinadigan xizmat port obyekti bilan ifodalanadi.
+    private final InventoryPort requiredInventoryPort;
+    private final PaymentPort requiredPaymentPort;
+
+    // Komponent bo'ylab invariant: ikki port ham ulangan bo'lishi shart.
+    @PostConstruct
+    void komponentInvariantiniTekshir() {
+        Objects.requireNonNull(requiredInventoryPort, "inventory port ulanmagan");
+        Objects.requireNonNull(requiredPaymentPort, "payment port ulanmagan");
+    }
+}
+```
+
+**Connector turi.** Fairbanks connectorni ko'rinadigan qilishni komponentdan ham muhimroq deb hisoblaydi, chunki eng keng tarqalgan connector, ya'ni protsedura chaqiruvi, eng kichik obyektlar orasidagi oddiy xabardan farq qilmaydi (10.8-bo'lim). Reify qilish shakli bir xil: `EventBroadcastConnector` kabi nom va ustiga `Connector` abstrakt sinfi yoki interfeysi. Asl foyda esa javobgarlikning ko'chishida: umumiy xotirani aniq connectorsiz ishlatish komponentni xavfsiz konkurent kirishga javobgar qiladi, aniq connector bilan esa bu javobgarlik connector ga o'tadi va komponent soddalashadi (10.7-bo'lim). Ikkinchi foyda keyin chiqadi: javobgarlik connector da bo'lsa, lokal connectorni taqsimlangan connectorga almashtirish imkoni paydo bo'ladi. Uchinchisi qoida shaklida: aniq connector borligi komponent ichidagi ixtiyoriy sinflar komponentdan tashqariga to'g'ridan-to'g'ri gaplashmasligi va aloqani connector orqali yo'naltirishi kerakligini bildiradi, va bu kodni keyin o'qishni osonlashtiradi hamda protokol xatosini debug qilishni yengillashtiradi, chunki barcha xabar bitta joydan oqadi.
+
+**Port turi.** Taqdim etiladigan xatti-harakatni Java da interfeys ifodalaydi, komponent sinfi shu interfeysni implement qiladi. Talab qilinadigan xizmat uchun esa tilda mos mexanizm yo'q, shuning uchun Fairbanks portni ifodalaydigan obyekt yaratishni va uni `InventoryPort` kabi nomlashni aytadi; komponent sinfida shu portga ishora qiladigan maydon turadi, masalan `requiredInventoryPort`, chiqayotgan aloqa esa port orqali chiqib connector ga boradi (10.7-bo'lim). Taqdim etilgan xatti-harakatni ham port obyekti bilan ifodalash mumkin va u holda port `Facade` patterniga o'xshab ishlaydi.
+
+**Protokol.** Aniq port yoki connector borligi protokolni ifodalaydigan joy beradi: port obyekti protokolni ishlash vaqtida tekshirishi, buzilishni log ga yozishi yoki protokolni buzadigan xabarni rad etishi mumkin (10.7-bo'lim). Port holatli bo'lishi mumkin, aynan protokol holatini kuzatish uchun, va holat mashinasi amallarning ketma-ketligini cheklaydi. Fairbanks ning misoli savat porti: `newCart()`, `addItem(Item)`, `removeItem(Item)` va `checkout()` amallari holat mashinasida shunday tartiblangan, ya'ni avval `newCart()`, keyin `addItem` va `removeItem` istalgan marta, keyin `checkout()` (12.9-bo'lim). Qachon yozish kerakligi riskka bog'liq: holat mashinasi murakkablashgani sayin uni yozib qo'yish foydaliroq bo'ladi, va protokolda xato qilish riskini ustuvor deb belgilagan bo'lsangiz, port protokolini ehtiyotkorlik bilan modellash to'g'ri qaror. Fairbanks alohida ogohlantirish ham beradi: obyektga yo'naltirilgan freymvorkda ishlayotgan bo'lsangiz, callback metodlarining protokolini tushunib oling, chunki bu ilovani yiqitadigan xato qilish oson bo'lgan joy. Spring da bu `@PostConstruct`, `InitializingBean`, `ApplicationRunner` va `@EventListener` ning chaqirilish tartibi.
+
+```java
+// Holatli port: protokol holat mashinasi bilan majburlanadi.
+public final class CartPort {
+
+    private enum Holat { YANGI, OCHIQ, YOPILGAN }
+
+    private Holat holat = Holat.YANGI;
+
+    public void newCart() {
+        if (holat != Holat.YANGI) {
+            throw new IllegalStateException("savat allaqachon ochilgan");
+        }
+        holat = Holat.OCHIQ;
+    }
+
+    // addItem va removeItem faqat OCHIQ holatda, istalgan marta.
+    public void addItem(Item item) { ochiqligiShart(); /* ... */ }
+
+    public void removeItem(Item item) { ochiqligiShart(); /* ... */ }
+
+    // checkout OCHIQ dan YOPILGAN ga o'tkazadi va qaytishga yo'l yo'q.
+    public OrderId checkout() {
+        ochiqligiShart();
+        holat = Holat.YOPILGAN;
+        return OrderId.yangi();
+    }
+
+    private void ochiqligiShart() {
+        if (holat != Holat.OCHIQ) {
+            throw new IllegalStateException("port holati: " + holat);
+        }
+    }
+}
+```
+
+**Runtime tuzilishi deklarativ bo'lsin.** Oxirgi pattern komponent nusxalarining ishlash vaqtida qanday ulanishiga tegishli va Fairbanks uni ikki shaklda qo'yadi (10.7-bo'lim). Arxitektura statik bo'lsa, ya'ni sozlash bosqichidan o'tib keyin o'zgarmasa, sozlash kodini bir joyga yig'ish tushunishni osonlashtiradi; sozlash odatda uch qismdan iborat, ya'ni komponent va connector nusxalarini yaratish, komponentlarni connector orqali ulash, va ishni boshlash, va bu qismlarni kod bo'ylab sochish kodni tushunarsiz qiladi. Yaxshiroq shakl esa hoisting: sozlash bosqichi standartlashtirilishi mumkin bo'lgani uchun uni freymvorkka ko'tarish mumkin, va shunda bootstrap kod konfiguratsiyani tasvirlaydigan deklarativ faylni o'qib yaratish, ulash va ishga tushirishni o'zi bajaradi; natijada developer protsedurali kodni boshida "animatsiya qilib" tasavvur qilishdan ozod bo'ladi va deklarativ faylni o'qiydi. Fairbanks misol qilib Struts, EJB va OSGi ni keltiradi; Spring loyihasida bu rol `@Configuration` sinflari va `application.yml` da. Shu yerda uning oxirgi ogohlantirishi ham o'rinli: OSGi, .NET yoki Java EE kabi komponent freymvorkidan foydalansangiz, u shu bobdagi ko'p pattern bilan to'qnashadi, chunki freymvorkning manifest fayli ishoralardan ko'ra to'g'ridan-to'g'ri va aniqroq, lekin freymvork qurilishi mumkin bo'lgan tizim turlarini ham cheklaydi.
+
+ESLATMA: Java kodining o'zi shu korpusning tarjimasi. Fairbanks `Filter` va `Pipe` sinflarini email ishlovchi tizim misolida beradi, savat protokolini esa holat mashinasi diagrammasi sifatida; Spring dagi `@PostConstruct` va `@Configuration` ga bog'lash korpusning qo'shimchasi.
+
+## 4.13 Amalda qo'llash
 
 - [ ] Eng ko'p o'zgaradigan 5 ta sinfni tanlab, nomlaridan `Manager`, `Helper`, `Util`, `Processor` qo'shimchalarini olib tashlang va javobgarlik bo'yicha bo'ling.
 - [ ] Domen eksperti ishlatadigan 15 ta atamani ro'yxat qilib, kodda ularning qanday yozilganini tekshiring; farq bo'lsa kodni domenga moslang.
@@ -323,6 +436,9 @@ Test nomlari shu hujjatning davomi. `testCreate1` nomi hech kimga yordam bermayd
 - Martin Fowler, *Refactoring*, Addison-Wesley, 1999, 3-bob - "primitive obsession" kod hidi, pul sinfi va maxsus satrlar misoli
 - Mark Richards, Neal Ford, *Fundamentals of Software Architecture*, O'Reilly, 2020, 3-bob - Page-Jones ning connascence taksonomiyasi, bajarilish tartibi bo'yicha connascence
 - Herbert Schildt, *Java The Complete Reference*, 9-bob - paket va interfeys, ko'rinish qoidalari
+- George Fairbanks, *Just Enough Software Architecture: A Risk-Driven Approach*, Marshall & Brainerd, 2010, 10.1, 10.3 va 10.4-bo'limlar - model-kod uzilishidagi tasodifiy murakkablikni arxitektura elementlarini til elementlariga moslash va arxitektura tushunchalarini kodda ifodalash bilan kamaytirish; dasturning minimal talabi past bar ekani, `totalExpenses` kabi nom va standart boshqaruv oqimi o'quvchi uchun qoldirilgan ishora bo'lishi; domen turlarini sinflarda aks ettirish odati va uning arxitektura modeliga ko'tarilishi; architecturally-evident coding style ta'rifi va uning to'rt foydasi (evolyutsiya muammosini oldini olish, niyatni taxmin qilish vaqtini kamaytirish, hujjat yukini tushirish, yangi developerni tezlashtirish); soft va hard mexanizm farqi, kod tartibining soft mexanizm ekani, to'g'rilikning e'lon qilingan dizayn niyatiga nisbatan ekani
+- George Fairbanks, *Just Enough Software Architecture: A Risk-Driven Approach*, Marshall & Brainerd, 2010, 10.6, 10.7, 10.8 va 12.9-bo'limlar - tillar komponent, connector va port turlarini e'lon qila olmasligi hamda sinf talab qilinadigan xizmatni ifodalamasligi; reification patterni; komponentni sinf sifatida reify qilish, nom konvensiyasi (`FooComponent`), bo'sh `Component` belgi interfeysi va IDE da avlodlarni ko'rish, komponent bo'ylab invariant va tekshiruv uchun joy; modul va komponent nomlarini moslashtirish, komponent uchun submodul va almashinuv turlari uchun alohida modul, qayta ishlatiladigan modulning bu patternni buzishi; connectorni reify qilish va javobgarlikning (umumiy xotiraga xavfsiz konkurent kirish) komponentdan connector ga ko'chishi, lokal connectorni taqsimlangan connectorga almashtirish imkoni, aloqani faqat connector orqali o'tkazish qoidasi; talab qilinadigan xizmat uchun port obyekti (`requiredInventoryPort`), taqdim etilgan port ning `Facade` ga o'xshashligi; xossalarni annotation yoki nom patterni (`asynchronousSendMessage`) bilan kodlash va nomga ko'p xossa siqishning noqulayligi; uslubni nom, superklass va nomlangan paket (`infrastructure.pipeAndFilterStyle`) bilan ko'rinadigan qilish hamda annotation plus test bilan cheklovni tekshirish; statik arxitekturada sozlash kodini bir joyga yig'ish (yaratish, ulash, ishga tushirish) va sozlash bosqichini deklarativ faylga hoisting qilish (Struts, EJB, OSGi), komponent freymvorkining patternlar bilan to'qnashishi; holatli port va protokolni holat mashinasi bilan ifodalash (`newCart`, `addItem`, `removeItem`, `checkout`), protokol xatosi ustuvor risk bo'lsa modellash, obyektga yo'naltirilgan freymvorkdagi callback protokolining xatoga moyilligi
+- ESLATMA: 4.11 dagi ArchUnit testi, 4.12 dagi `OrderPlacementComponent` va `CartPort` misollari hamda Spring dagi `@PostConstruct`, `@Configuration` va `application.yml` ga bog'lash shu korpusning tarjimasi: Fairbanks misollarini `Filter` va `Pipe` sinflari hamda holat mashinasi diagrammasi shaklida beradi
 - ESLATMA: 4.1 dagi debugger mezoni, 4.3 dagi "yodda tutish kerak bo'lgan narsalarni sanash" o'lchovi, 4.6 dagi xato kodi qoidasi, 4.10 dagi test nomlarini ketma-ket o'qish mezoni va 4.11 dagi checklist shu korpusning amaliy tavsiyasi, kitobdan olingan emas
 
 ---

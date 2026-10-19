@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 34. Legacy kod va bosqichma-bosqich refaktoring (Legacy Code and Refactoring)
 
 <details>
-<summary>Bu bobdagi 19 bo'lim</summary>
+<summary>Bu bobdagi 22 bo'lim</summary>
 
 - [34.1 Legacy kodga birinchi kun: o'qish, o'lchash, hech narsani o'zgartirmaslik](#341-legacy-kodga-birinchi-kun-oqish-olchash-hech-narsani-ozgartirmaslik)
 - [34.2 Tizimni tushunish usullari: kirish nuqtalari, ma'lumot oqimi, eng ko'p o'zgargan fayllar](#342-tizimni-tushunish-usullari-kirish-nuqtalari-malumot-oqimi-eng-kop-ozgargan-fayllar)
@@ -27,7 +27,10 @@
 - [34.16 Metod ichidagi `new` ni testda almashtirish: Extract and Override uchligi](#3416-metod-ichidagi-new-ni-testda-almashtirish-extract-and-override-uchligi)
 - [34.17 Statik chaqiruv va singleton: instance delegator va static setter](#3417-statik-chaqiruv-va-singleton-instance-delegator-va-static-setter)
 - [34.18 Interface ajratish ishlamaganda: Adapt Parameter va Extract Implementer](#3418-interface-ajratish-ishlamaganda-adapt-parameter-va-extract-implementer)
-- [34.19 Amalda qo'llash](#3419-amalda-qollash)
+- [34.19 Nimadan boshlash: qiymat va qiyinlik kvadranti](#3419-nimadan-boshlash-qiymat-va-qiyinlik-kvadranti)
+- [34.20 Bazani ajratishning besh qadami va ma'lumot suvereniteti narxi](#3420-bazani-ajratishning-besh-qadami-va-malumot-suvereniteti-narxi)
+- [34.21 Deprecation ni jarayon sifatida yuritish: ega, almashtirish va orqaga qaytishni to'sish](#3421-deprecation-ni-jarayon-sifatida-yuritish-ega-almashtirish-va-orqaga-qaytishni-tosish)
+- [34.22 Amalda qo'llash](#3422-amalda-qollash)
 
 </details>
 
@@ -77,6 +80,22 @@ Birinchi kun oxirida sizda o'zgarish emas, o'lchov bo'lishi kerak: startup
 vaqti, bean soni, eng ko'p chaqirilgan endpoint'lar, eng sekin so'rovlar. Bu
 raqamlarning "normal" qiymati yo'q, ularning qiymati taqqoslashda: keyinchalik
 "yaxshilandi" degan gapni dalilga aylantiradigan boshlang'ich nuqta.
+
+O'qishning o'zida bitta tuzoq bor va u birinchi kunning oxirida paydo bo'ladi:
+kod arxitektura abstraksiyalariga mos kelmaydi. Fairbanks buni muqarrar deb
+ataydi, chunki kitoblardagi arxitektura abstraksiyalari dasturlash tilida,
+freymvorkda va eski kodda mavjud bo'lgan abstraksiyalar bilan ustma-ust
+tushmaydi; shuning uchun modelni kodga tushirishda yoki kodning arxitekturasini
+o'qishda ishqalanish bo'ladi. Vasvasa ham oldindan ma'lum: kodni aniq modul va
+komponentlarga refaktoring qilib moslashtirish. Kitobning javobi qat'iy, bu
+odatda juda qimmat; amaliyroq yo'l mavjud tizimni yirik modul yoki
+komponentlar to'plami deb qarash va ularning ichki quyi komponentlarini
+modellashtirmaslik. Birinchi kunda bu shunday ko'rinadi: `legacy-core` ni bitta
+qora quti deb belgilab, uning tashqi qirralarini (endpoint, jadval, navbat,
+cron) ro'yxatga olasiz, ichidagi paketlar ierarxiyasini qayta chizmaysiz.
+Moslikni oldindan oson qilish esa faqat yangi kodda mumkin, va u
+[5.20](05-abstraksiya-hissi-bogliqlik-va-chegaralar.md#520-cheklov-yonaltiruvchi-sifatida-foydasi-va-kiritish-tartibi)
+dagi cheklov tartibi bilan boradi.
 
 ## 34.2 Tizimni tushunish usullari: kirish nuqtalari, ma'lumot oqimi, eng ko'p o'zgargan fayllar
 
@@ -367,6 +386,27 @@ shu ishni osonlashtiradigan kutubxonalar bor, masalan GitHub Scientist
 | Jadvalni ikkiga bo'lish (split table) | migratsiya | Shartli | backfill qayta ishlatiladi, tez emas |
 | Butun modulni qayta yozish | butun modul | Yo'q | yo'q, 34.6 ga qarang |
 
+Kichik qadam o'z-o'zidan ishlamaydi, u uchlik bilan keladi. Fairbanks
+evolyutsion dizaynning kamchiliklarini aynan uch amaliyot yopadi deb yozadi:
+refaktoring (xatti-harakatni saqlaydigan o'zgarish) mahalliy va
+muvofiqlashtirilmagan dizaynlarni tozalaydi, test-driven dizayn o'zgarish
+mavjud funksionallikni buzmaganini ta'minlaydi, continuous integration esa
+butun jamoani bitta kod bazasida ushlaydi. Uchtadan refaktoring asosiy ish
+hayvoni: u eski va mahalliy muammoni yechgan dizaynni hozirgi va global
+muammoni yechadigan dizaynga almashtiradi.
+
+Shu yerda ikki chegara ham ochiq aytilgan va ikkisi ham bu bobga tegishli.
+Birinchisi, refaktoring arxitektura miqyosidagi o'zgarish uchun kam yo'l-yo'riq
+beradi: Amazon ning qatlamli va bitta bazali arxitekturadan servisga o'tishini
+sinf va metod darajasidagi kichik refaktoring qadamlaridan chiqqan deb
+tasavvur qilish qiyin. Ikkinchisi, legacy kodda odatda ishonch bilan
+refaktoring qilish uchun test yetarli emas, holbuki deyarli har tizimda legacy
+kod bor. Ya'ni bu bobning tartibi tasodifiy emas: avval
+[34.3](#343-xavfsizlik-tori-qurish-xatti-harakatni-qayd-etuvchi-test) dagi
+xavfsizlik to'ri, keyin kichik qadamlar, va arxitektura miqyosidagi o'zgarish
+uchun refaktoring emas, [34.7](#347-boguvchi-anjir-strangler-usuli-bilan-bosqichma-bosqich-almashtirish)
+dagi strangler kabi alohida apparat.
+
 ## 34.6 Katta qayta yozish nega deyarli har doim muvaffaqiyatsiz bo'ladi
 
 Noldan qayta yozish amalda kam muvaffaqiyat qiladi. Fowler'ning Newman keltirgan
@@ -471,6 +511,18 @@ delivery deb atalgan guruhga kiradi (118-bet).
 Har bosqichda error rate va p99 latency taqqoslanadi. Kitobdan keladigan talab
 bitta: oldingi bosqichga qaytish bitta konfiguratsiya o'zgarishi bo'lib
 qolsin.
+
+Qachon "tugadi" deyish mumkin degan savolga Newman qat'iy javob beradi: servis
+ajratish production da ishlab turmaguncha va haqiqatan ishlatilmaguncha
+tugallangan hisoblanmaydi (53-bet). Sabab bosqichma-bosqich ajratishning
+maqsadi bilan bir xil: darslarning aksariyati faqat production da ko'rinadi.
+Kitob ularni sanaydi ham, nosozlikni izlash va oqimni kuzatish qiyinlashishi,
+latency, referential integrity va cascading failure. Shundan amaliy qoida
+chiqadi: birinchi ajratilgan servislar imkon qadar tez production ga
+chiqariladi, hatto funksionallik kichik bo'lsa ham, chunki maqsad qiymat
+yetkazish bilan birga o'rganish. Bu [34.5](#345-kichik-qadamlar-har-bir-qadamdan-keyin-ishlaydigan-tizim)
+dagi kichik qadam qoidasining davomi: kichik o'zgarishda muammoni ko'rish ham,
+tuzatish ham osonroq.
 
 ## 34.8 Ma'lumotlar bazasini ajratish: eng qiyin qism va uning tartibi
 
@@ -617,6 +669,26 @@ monolitdan oson ajraladigan funksionallik ro'yxatning boshida turadi (51-bet).
 | "Yaxshilandi" deb his bilan aytadi | Cycle time, change failure rate va p99 latency raqamini ko'rsatadi |
 | Eski kodni "ehtimol kerak bo'ladi" deb saqlaydi | Trafik nolga tushganini metrikada ko'rib, o'chiradi |
 
+Suhbatni boshlashdan oldin bajarilishi kerak bitta ish bor va u ko'pincha
+o'tkazib yuboriladi: g'oyadan production gacha yo'lni modellash. Newman buni
+time to market sekin bo'lgan har holatda tavsiya qiladi va o'z misolini
+keltiradi (37-bet). Yirik investitsiya bankidagi loyihada "dasturchilar
+production ga chiqarishga juda uzoq vaqt sarflaydi" deb aytilgan; hamkasbi
+yetkazib berishning hamma bosqichini product owner g'oya o'ylab topgan
+paytdan to production gacha xaritaga tushirgan. Dasturchi ish boshlaganidan
+deploy gacha o'rtacha olti hafta ketgan va avtomatlashtirish bilan bundan ikki
+hafta qisqartirish mumkin edi. Lekin haqiqiy to'siq boshqa joyda chiqdi: g'oya
+product owner dan dasturchilar ish boshlay oladigan nuqtaga yetib kelishiga
+ko'pincha 40 haftadan oshiq ketgan.
+
+Amaliy natija aniq: har bosqichni va uning davomiyligini (o'tgan vaqt va
+haqiqiy band vaqt alohida) yozib chiqing, keyin og'riq nuqtalarini belgilang.
+Shundan keyin mikroservis yoki refaktoring yechimning bir qismi bo'lishi
+mumkin, lekin yonida bir vaqtda sinab ko'rish mumkin bo'lgan boshqa ko'p narsa
+ham ko'rinadi. Biznes bilan suhbatda bu xarita eng kuchli dalil: u
+"arxitekturani tuzatamiz" degan taklifni "yo'lning qaysi bosqichi qancha vaqt
+oladi" degan o'lchovga aylantiradi.
+
 ## 34.10 O'lchov: refaktoring ishladimi yoki yo'qligini qanday bilish
 
 Refaktoring natijasi kod chiroyliligi bilan o'lchanmaydi. Newman o'lchovni
@@ -672,6 +744,22 @@ yo'nalishi va aylanma bog'liqliklar soni. Ikkisini ham ArchUnit qoidalari bilan
 qulflash mumkin, batafsili [testlash qo'llanmasidagi ArchUnit
 asoslari](../testing/14-arxitektura-testlari-va-kod-sifati.md#142-archunit-asoslari)
 bo'limida.
+
+Bitta o'lchov esa ro'yxatga umuman kirmaydi va uni maqsad qilib qo'yish
+ko'pincha xato bo'ladi: qayta foydalanish. Newman buni ochiq aytadi, reuse
+odamlarning haqiqiy maqsadi emas, u boshqa natijaga olib borishi kutilgan
+vosita; agar maqsad tezroq yetkazish yoki xarajatni kamaytirish bo'lsa, aynan
+shu narsalarni o'lchash kerak, aks holda noto'g'ri narsa optimallashtiriladi
+(42-bet). Kitobning misoli tanish: mijozlarga xizmat jamoasiga hisob-faktura
+uchun PDF kerak, tizimda PDF yasash qobiliyati allaqachon bor, lekin u boshqa
+tashkilot qismidagi boshqa jamoa qo'lida. Reuse maqsadiga amal qilinsa, endi
+o'sha jamoa bilan muvofiqlashish kerak: ishni ular bajaradi yoki o'zgarishni
+o'zingiz yozib pull request yuborasiz. Hisob shuni ko'rsatishi mumkin, o'z
+implementatsiyasini yozish muvofiqlashishdan tezroq. Agar haqiqiy maqsad time
+to market bo'lsa, bu to'g'ri tanlov; reuse uchun optimallashtirish esa aynan
+shu maqsadni sekinlashtiradi. Shu sababli refaktoring hisobotida "n modul
+qayta ishlatildi" qatori o'lchov emas: o'lchov [34.9](#349-refaktoringni-biznes-bilan-kelishish-qiymat-tilida-tushuntirish)
+da yozilgan maqsaddan chiqadi.
 
 ## 34.11 Qachon tegmaslik kerak: ishlayotgan, o'zgarmaydigan kod
 
@@ -1250,7 +1338,265 @@ eski nomni, ya'ni endi interface'ni, ko'rib turadi. Patternning umumiy
 katalog yozuvi [Adapter](../patterns/02-strukturaviy-patternlar.md#21-adapter-adapter)
 bo'limida, bu yerda esa uning bog'liqlik uzish uchun ishlatilishi.
 
-## 34.19 Amalda qo'llash
+## 34.19 Nimadan boshlash: qiymat va qiyinlik kvadranti
+
+[Bazani ajratish](#348-malumotlar-bazasini-ajratish-eng-qiyin-qism-va-uning-tartibi)
+tartibi "qanday" savoliga javob beradi, bu bo'lim esa undan oldin keladigan
+"nimadan" savoliga. Newman javobni ikki qadamga bo'ladi: avval chegarani eng
+arzon joyda sinash, keyin nomzodlarni ikki o'q bo'yicha tartiblash.
+
+**Xatoni eng arzon joyda qilish.** Kod bazasi ichida kodni ko'chirish narxi
+kichik: asboblar yordam beradi va muammo chiqsa tuzatish tez bo'ladi. Bazani
+ajratish esa ancha ko'p ish, va baza o'zgarishini qaytarish ham xuddi shunday
+murakkab; bir nechta iste'molchi ishlatadigan API ni butunlay qayta yozish yoki
+ortiqcha bog'langan integratsiyani yechish ham katta ish bo'ladi. O'zgarish
+narxi katta bo'lgani uchun bu amallar xavfli, va Newman ning yondashuvi oddiy:
+xatoni ta'siri eng past bo'lgan joyda qilish (Sam Newman, *Monolith to
+Microservices*, O'Reilly, 2020, 2-bob, 56-bet).
+
+Eng past joy doska. Newman fikrlashning ko'p qismini aynan shu yerda bajaradi,
+chunki o'zgarish va xato narxi shu yerda eng kichik: taklif qilinayotgan dizayn
+chiziladi, keyin servis chegaralari deb o'ylanayotgan chiziqlar bo'ylab
+use-case lar yurgiziladi (56-bet). Musiqa do'koni misolida bu shunday ko'rinadi:
+mijoz plastinka qidirsa, saytda ro'yxatdan o'tsa, albom sotib olsa nima
+bo'ladi? Qanday chaqiruvlar ketadi? G'alati aylanma havolalar ko'rinayaptimi?
+Juda gaplashuvchi ikki servis chiqyaptimi, bu esa ular bitta narsa bo'lishi
+kerakligini bildirmaydimi (56-bet). Uchta savolning har biri chegarani kod
+yozilmasdan rad etishi mumkin.
+
+**Nomzodlarni tartiblash.** Qiyinlik bahosi domen modelidan chiqadi: bounded
+context lar orasidagi kiruvchi va chiquvchi bog'liqliklar soniga qarab qaysi
+funksionallikni ajratish oson yoki qiyin bo'lishini taxmin qilish mumkin.
+Newman ning misolida xabarnoma funksionalligiga ko'p joy murojaat qiladi,
+shuning uchun uni ajratish mavjud kodda ko'p ish talab qiladi; hisob-faktura
+esa kiruvchi bog'liqliksiz, shuning uchun uni ajratish osonroq va bu yerda
+[bo'g'uvchi anjir](#347-boguvchi-anjir-strangler-usuli-bilan-bosqichma-bosqich-almashtirish)
+yaxshi ishlaydi, chunki kiruvchi chaqiruvlarni monolitga yetib borishidan oldin
+proxy qilish mumkin (58-59-betlar).
+
+Bu baho taxmin ekanini Newman alohida eslatadi: domen modeli mavjud tizimning
+mantiqiy ko'rinishi, monolitning kod tuzilmasi aynan shunday bo'lishiga hech
+qanday kafolat yo'q, shuning uchun chalkashlik darajasini aniqlash uchun kodning
+o'ziga ham qarash kerak bo'ladi; model yana bitta narsani ko'rsatmaydi, ya'ni
+qaysi bounded context bazada ma'lumot saqlashini, shuning uchun oson ko'ringan
+hisob-faktura ko'p ma'lumot boshqarayotgan bo'lsa, baza dekompozitsiyasi ishi
+qo'shiladi va u birinchi ikki servis uchun tanlanmasligi mumkin (59-60-betlar).
+
+Qiyinlikning o'zi yetarli emas. Newman ikkinchi o'qni qo'shadi va sababini
+aytadi: tez g'alabalar harakat hissi va yondashuvning samarasi haqida erta
+qayta aloqa beradi, shuning uchun ular oson narsalarni tanlashga undaydi, lekin
+dekompozitsiyadan foyda ham olish kerak. Shuning uchun ikki o'qli sodda
+tuzilma ishlatiladi: x o'qi dekompozitsiya keltiradigan qiymat, y o'qi
+qiyinlik; har bir nomzod shu tekislikka qo'yiladi, va yuqori o'ng burchakdagi
+funksionallik, ya'ni oson va foydali bo'lgani birinchi ajratiladi; shu
+guruhdan bitta yoki ikkita servis birinchi nomzod bo'ladi (60-61-betlar).
+
+```text
+qiyin
+  ^
+  |  Xabarnoma            |  To'lov
+  |  (ko'p kiruvchi       |  (foyda katta, lekin
+  |   bog'liqlik)         |   baza ajratish kerak)
+  |-----------------------+-----------------------
+  |  Statik ma'lumotnoma  |  Hisob-faktura
+  |  (oson, lekin foyda   |  (oson va foydali:
+  |   kam)                |   birinchi nomzod)
+oson
+  +-------------------------------------------> qiymat
+     kam                                   katta
+```
+
+Tartib bir marta tuzilib qotib qolmaydi. Newman ning so'zi bilan: o'zgarishlar
+boshlangandan keyin ko'proq narsa bilinadi, oson deb o'ylangan narsaning bir
+qismi qiyin bo'lib chiqadi, qiyin deb o'ylangan narsaning bir qismi oson bo'lib
+chiqadi, va bu tabiiy; shuning uchun ustuvorlik mashqini qaytarib, rejani
+yangilash muhim (61-bet).
+
+Bitta tuzoq ro'yxatdan tashqarida va u maqsadga tegishli. Newman hisob-faktura
+haqiqatan oson birinchi qadam bo'lishi mumkin, lekin maqsad bozorga chiqish
+vaqtini yaxshilash bo'lsa va hisob-faktura funksionalligi deyarli o'zgarmasa,
+bu vaqtni yaxshi sarflash bo'lmasligini aytadi (60-bet). Ya'ni x o'qidagi
+"qiymat" mavhum foyda emas, aynan sizning yozilgan maqsadingiz bo'yicha
+qiymat; uni biznes tilida ifodalash esa
+[refaktoringni biznes bilan kelishish](#349-refaktoringni-biznes-bilan-kelishish-qiymat-tilida-tushuntirish)
+bo'limida.
+
+Kvadrant birinchi nomzodni tanlaydi, lekin uning ustiga yana bitta filtr
+qo'yiladi: ko'rinadiganlik. Newman ning The Guardian misolida reja sahifa
+bo'yicha ko'chirish edi va birinchi vertikal sifatida Travel tanlandi, qisman
+kategoriyalash muammosi qiziq bo'lgani uchun, qisman esa u saytning eng ko'zga
+ko'rinadigan qismi emasligi uchun (99-bet). Butun Travel bo'limini birdan
+chiqarish o'rniga esa yanada kichik qadam qilingan: yangi tizimda
+belgilangan, eng ko'p boriladigan 10 manzilni ko'rsatadigan bitta vidjet eski
+sahifaga joylashtirildi. Maqsad ikki qatorda aytilgan: biror narsani tirik
+qilib o'rganish, va xato chiqsa saytning asosiy qismlariga zarar
+bermasligini ta'minlash. Ya'ni kvadrantdagi "oson va foydali" nomzodlar
+ichidan eng kam ko'rinadigani birinchi boriladi; UI darajasida vidjet bo'yicha
+kompozitsiyaning o'zi [patterns 27.2](../patterns/27-monolitdan-microservicega-migratsiya.md#272-ui-kompozitsiyasi-ui-composition)
+da.
+
+ESLATMA: yuqoridagi kvadrant chizmasidagi nomlar va joylashuv korpusning
+namunasi: Newman o'qlarni va yuqori o'ng burchak qoidasini beradi, aniq
+nomzodlarni esa o'z tizimingizdan qo'yasiz.
+
+## 34.20 Bazani ajratishning besh qadami va ma'lumot suvereniteti narxi
+
+[34.8](#348-malumotlar-bazasini-ajratish-eng-qiyin-qism-va-uning-tartibi)
+Newman ning tanlovini va ko'chirish patternlarini beradi. *The Hard Parts*
+xuddi shu ishni boshqa tomondan, baza jamoasining qadamlari sifatida yozadi va
+besh qadamni raqamlab beradi (6-bob, 155-161-betlar). Ikki yozuv raqobatchi
+emas: Newman qaysi tomondan boshlashni, bu ro'yxat esa bazaning o'zida nima
+ketma-ketlikda bajarilishini aytadi.
+
+| Qadam | Nima qilinadi | Oxirida nima bo'ladi |
+|---|---|---|
+| 1 | Bazani tahlil qilib data domain larni aniqlash: bog'liq jadvallar guruhlarga yig'iladi | domen nomzodlari ro'yxati, kod o'zgarmaydi |
+| 2 | Jadvallar bounded context bo'yicha o'z sxemasiga biriktiriladi | har domen o'z sxemasida, servislar hali hamma narsaga tegadi |
+| 3 | Servis ulanishlari faqat o'z sxemasiga qoldiriladi, boshqa domen ma'lumoti egasi orqali olinadi | servisga ma'lumot suvereniteti |
+| 4 | Sxemalar alohida fizik baza serveriga ko'chiriladi | arxitektura kvanti bo'linadi |
+| 5 | Eski serverga ulanish va undagi sxemalar olib tashlanadi | mustaqil deploy qilinadigan birliklar |
+
+Ikkinchi qadamda ikki amaliy tafsilot bor. Birinchisi, jadvalni sxemaga
+ko'chirish oddiy DDL: `ALTER SCHEMA payment TRANSFER sysops.billing` (kitob
+misoli SQL Server sintaksisida, PostgreSQL da `ALTER TABLE ... SET SCHEMA`).
+Ikkinchisi, o'z sxemasiga tegishli bo'lmagan jadval uchun vaqtincha synonym
+yaratish mumkin, ya'ni symlink ga o'xshash, boshqa sxemadagi obyektga
+alternativ nom beradigan konstruksiya; maqsadi sxemalararo so'rovni yo'qotish,
+lekin unga kirish uchun ham o'qish yoki yozish huquqi kerak bo'ladi. Shu
+sababli synonym o'tish vositasi, yechim emas. Domenlar bir-biriga qattiq
+bog'langan bo'lsa, domenlarni birlashtirish kerak bo'ladi va natijada bir
+nechta servis bitta data domain ga egalik qiladigan kengroq bounded context
+hosil bo'ladi.
+
+Uchinchi qadamda baza darajasidagi hamma kesib o'tuvchi narsa olib tashlanadi:
+domenlar orasidagi tashqi kalit, view va trigger, hamda boshqa domen
+jadvaliga tegadigan stored procedure va funksiyalar servis qatlamiga
+ko'chiriladi. Natija kitobda "nirvana holati" deb atalgan, lekin narxi ochiq
+yozilgan.
+
+| Foydasi | Narxi |
+|---|---|
+| Jamoa sxemani boshqa domenga ta'sirini o'ylamasdan o'zgartiradi | Katta hajmli ma'lumotga kirish kerak bo'lganda ishlash muammosi chiqadi |
+| Har servis o'z holatiga mos baza texnologiyasi va turini tanlaydi | Bazada referential integrity saqlanmaydi, demak yomon sifatli ma'lumot ehtimoli paydo bo'ladi |
+| | Boshqa domen jadvallariga tegadigan baza kodi servis qatlamiga ko'chirilishi kerak |
+
+Ikkinchi qator eng ko'p e'tibordan qoladigani: `FOREIGN KEY` yo'qolgani
+tekshiruvni yo'q qilmaydi, uni ilovaga ko'chiradi. Spring loyihasida bu
+amalda nimani bildiradi: `orders.customer_id` uchun baza endi kafolat
+bermaydi, shuning uchun buyurtma yaratishda mijoz mavjudligini tekshirish
+chaqiruvi, uning timeout i va mijoz o'chirilganda qoladigan yetim qatorlar
+uchun muntazam tekshiruv (reconciliation) kerak bo'ladi. Buning shakli
+[32-bob](32-tarmoq-timeout-va-integratsiya-haqiqati.md) dagi timeout va
+integratsiya apparati bilan boradi.
+
+To'rtinchi qadamda bitta tanlov qoladi va u to'xtash vaqti haqida. Kitob ikki
+variantni beradi (160-bet). **Backup va restore**: har bir domen sxemasi
+backup qilinadi, yangi serverlar ko'tariladi, sxemalar restore qilinadi,
+servislar yangi serverdagi sxemalarga ulanadi va oxirida sxemalar eski
+serverdan olib tashlanadi; bu yo'l odatda migratsiya uchun to'xtash talab
+qiladi. **Replikatsiya**: avval yangi serverlar ko'tariladi, sxemalar
+replikatsiya qilinadi, ulanishlar yangi serverlarga o'tkaziladi, keyin
+sxemalar eski serverdan olib tashlanadi; to'xtash bo'lmaydi, lekin
+replikatsiyani sozlash va muvofiqlashtirish uchun ancha ko'p ish talab
+qiladi. Tanlov mezoni oddiy: ruxsat etilgan to'xtash oynasi bormi. Oyna
+bo'lsa backup va restore arzonroq, bo'lmasa replikatsiya narxi ongli
+qabul qilinadi.
+
+Beshinchi qadamdan keyin ochiladigan imkoniyat ham yozilgan: domenlar
+ajratilgandan keyin har bir baza serverini mavjudlik va masshtab uchun alohida
+optimallashtirish, hamda ma'lumotni tahlil qilib eng mos baza turini tanlash
+mumkin bo'ladi, ya'ni polyglot saqlash shu nuqtada mantiqiy bo'ladi, oldin
+emas.
+
+## 34.21 Deprecation ni jarayon sifatida yuritish: ega, almashtirish va orqaga qaytishni to'sish
+
+Refaktoring va ajratishning oxirgi qadami eskisini o'chirish. Amalda aynan shu
+qadam tugamay qoladi va tizimda ikki yo'l (eskisi va yangisi) yillab yonma-yon
+yashaydi. *Software Engineering at Google* bu ishni alohida jarayon deb
+qaraydi va boshlanish nuqtasi sifatida bitta tasdiqni oladi: kod aktiv emas,
+majburiyat. Shundan bir nechta amaliy qoida chiqadi.
+
+**Faqat yoshi uchun deprecate qilinmaydi.** Tizim yillar davomida sayqallanib,
+shakl va funksiya namunasiga aylangan bo'lishi mumkin; LaTeX misolida
+o'zgarishlar kam va kamdan kam bo'lsa ham tizim eskirgan emas. Kitobning
+mezoni ikki shartli: deprecation isbotlanadigan darajada eskirgan tizimlar
+uchun, va teng yoki yaxshi funksionallik beradigan almashtiruvchi mavjud
+bo'lganda to'g'ri keladi.
+
+**Deprecation qiyin, chunki almashtiruvchi boshqacha.** Hyrum qonuni shu
+yerda ham ishlaydi: foydalanuvchi ko'p bo'lsa, kimdir tizimni kutilmagan
+usulda ishlatayotgan bo'lish ehtimoli yuqori, va olib tashlash eng radikal
+o'zgarish bo'lgani uchun eng ko'p yashirin bog'liqlikni ochib tashlaydi.
+Yangi tizim yaxshiroq bo'lishi mumkin, lekin u boshqacha; agar aynan bir xil
+bo'lsa, ko'chishning foydalanuvchi uchun foydasi bo'lmaydi. Natijada eski va
+yangi tizim orasida birma-bir moslik kam uchraydi va eski tizimning har bir
+ishlatilishi yangisi kontekstida alohida baholanishi kerak bo'ladi. Qarshilik
+emotsional ham bo'ladi, "men bu kodni yaxshi ko'raman" degan javob tanish; bu
+tushunarli, lekin tizim eskirgan bo'lsa u tashkilot uchun sof xarajat.
+
+**Jarayonning aniq egasi bo'ladi.** Google ning xulosasi keskin: aniq ega
+bo'lmasa, tizim qancha ogohlantirish va alert chiqarsa ham deprecation
+sezilarli natijaga erishmaydi. Alternativalar yomonroq: hech narsani
+deprecate qilmaslik, ya'ni har eski tizimni cheksiz ushlab turishga majburiyat
+olish; yoki ishni tizim foydalanuvchilariga topshirish, ya'ni organik ravishda
+hech qachon tugamaydigan advisory deprecation. Egasiz qolgan loyihalar ham
+o'z-o'zidan yo'qolmaydi, va bunday ishni yon vazifa sifatida bergan jamoa uni
+bajarmaydi: ustuvorlik raqobatida deprecation deyarli har doim pastga tushadi,
+shuning uchun olib tashlash jamoaning asosiy maqsadi bo'lishi kerak.
+
+**Ko'chish ishini eski tizimning egasi bajaradi.** Katta ko'lamli
+o'zgarishlar (LSC) haqidagi bobdagi sabab uch qatorda: infratuzilma jamoasida
+yuzlab ming havolani tuzatish uchun kerakli domen bilimi bor va har jamoani shu
+bilimni qaytadan o'rganishga majburlash global jihatdan samarasiz; "moliyalash
+berilmagan mandat" ni hech kim yoqtirmaydi, chunki yangi tizimning foydasi
+tashkilot bo'ylab tarqaladi va bitta jamoa uchun o'z tashabbusi bilan
+ko'chishga arzimaydi; va organik ko'chish deyarli tugamaydi, chunki dasturchi
+yangi kod yozganda mavjud kodni namuna qilib oladi. Shuning uchun eskisini
+olib tashlashdan manfaatdor jamoa ko'chishga mas'ul bo'lishi kerak.
+
+**Orqaga qaytish (backsliding) to'siladi.** Eng ko'p e'tibordan qoladigan
+qism: deprecate qilinayotgan narsaga yangi ishlatish qo'shilishini
+to'xtatadigan asbob. Bo'lmasa, deprecation whack-a-mole ga aylanadi,
+foydalanuvchi tanish tizimga yangi chaqiruv qo'shadi yoki kod bazasidan
+namuna topadi, jamoa esa shu yangi chaqiruvlarni muntazam ko'chiradi; bu ham
+samarasiz, ham ruhni tushiradi. Google da ikki daraja ishlatiladi: mikro
+darajada statik tahlil review paytida muallifga yangi chaqiruv haqida xabar
+beradi (eski simvollarga `@Deprecated` kabi annotatsiya qo'yiladi va xabar
+matnini eski tizim egasi boshqaradi), makro darajada esa build dagi
+ko'rinish ro'yxati (visibility whitelist) yangi bog'liqlik qo'shilishini
+umuman to'sadi.
+
+```java
+// Mikro daraja: review da ko'rinadigan belgi.
+@Deprecated(since = "4.2", forRemoval = true)
+public interface LegacyPaymentClient {
+    // Almashtiruvchi: com.shop.order.spi.PaymentAuthorizer
+    AuthorizationResult authorize(String orderId, long amountMinor);
+}
+```
+
+```java
+// Makro daraja: build da to'siladigan qoida. Ro'yxat qisqarib boradi.
+@ArchTest
+static final ArchRule legacy_mijozga_yangi_bogliqlik_qoshilmaydi = noClasses()
+        .that().resideOutsideOfPackages("com.shop.legacy..", "com.shop.migration..")
+        .should().dependOnClassesThat()
+        .haveFullyQualifiedName("com.shop.legacy.LegacyPaymentClient");
+```
+
+**Dizayn paytida deprecation o'ylanadi.** Kitob buni dasturiy injeneriyada
+radikal, boshqa injeneriya sohalarida esa oddiy deb ataydi: atom
+elektrostansiyasi loyihalanganda uning xizmat muddati tugagandan keyin
+yopilishi hisobga olinadi va bunga mablag' ham ajratiladi. Dasturiy tizimlar
+uchun Google jamoalariga beradigan savollar shu bobga to'g'ridan to'g'ri mos
+tushadi: iste'molchi boshqa yechimga qanchalik oson o'ta oladi, tizim
+qismlarini bosqichma-bosqich almashtirish mumkinmi. Shundan ham bitta
+tashkiliy qoida chiqadi: tashkilot qo'llab-quvvatlashga tayyor bo'lmagan
+loyiha boshlanmaydi, va bir vaqtda yuritiladigan deprecation ishlari soni
+cheklanadi, chunki ikki tizimni ushlab turish va eski bilan moslikni saqlash
+yangisining rivojini sekinlashtiradi.
+
+## 34.22 Amalda qo'llash
 
 Quyidagi ro'yxat shu korpusning o'z checklisti: boblardagi kitob qoidalarini
 bitta ish tartibiga yig'adi.
@@ -1306,6 +1652,7 @@ bitta ish tartibiga yig'adi.
 - Sam Newman, *Monolith to Microservices*, O'Reilly, 2020, 2-bob (43-bet) - SnapCI misoli: chegara noto'g'ri chizilgach servislar qaytib bitta ilovaga qo'shilgani
 - Sam Newman, *Monolith to Microservices*, O'Reilly, 2020, 2-bob (47-52-bet) - John Kotter ning sakkiz qadamli modeli, shoshilinchlik hissi (48-bet) va qisqa muddatli g'alabalar (51-bet)
 - Sam Newman, *Monolith to Microservices*, O'Reilly, 2020, 2-bob (53-bet) - Fowler ning big bang qayta yozish haqidagi gapi va bosqichma-bosqich ko'chish majburiyati
+- Sam Newman, *Monolith to Microservices*, O'Reilly, 2020, 2-bob (56-61-bet) - xatoni ta'siri eng past joyda qilish va doskada use-case yurgizish (aylanma havola va juda gaplashuvchi servis savollari); domen modeli bo'yicha ustuvorlash, xabarnoma va hisob-faktura misoli; modelning mantiqiy ko'rinish ekani va kodga hamda ma'lumot saqlashga baribir qarash kerakligi; ikki o'qli kvadrant (x qiymat, y qiyinlik), yuqori o'ngdagi bir-ikki servisni birinchi tanlash va o'rganilgach ustuvorlikni qayta ko'rish; oson lekin o'zgarmaydigan funksionallik maqsadga xizmat qilmasligi
 - Sam Newman, *Monolith to Microservices*, O'Reilly, 2020, 2-bob (71-73-bet) - o'lchov maqsaddan chiqadi, metrikani o'ynash mumkin, cycle time boshida yomonlashishi, kvalitativ fikr, checkpoint va sunk cost tuzog'i
 - Sam Newman, *Monolith to Microservices*, O'Reilly, 2020, 3-bob (79-82-bet) - strangler fig: uch qadam, qayta yo'naltirishgacha tirik emasligi, to'xtatish imkoni va pattern ishlamaydigan holat
 - Sam Newman, *Monolith to Microservices*, O'Reilly, 2020, 3-bob (104-105 va 112-bet) - branch by abstraction ning besh qadami va uning uzoq yashaydigan branch dan afzalligi
@@ -1325,6 +1672,15 @@ bitta ish tartibiga yig'adi.
 - ESLATMA: 34.16 dagi Spring shartlari (fabrika metodi private yoki final bo'lmasligi, override qiluvchi subclass faqat test manbasida turishi, keyin konstruktor injection ga o'tish) shu korpusning qo'shimchasi
 - ESLATMA: 34.18 dagi Extract Implementer va `@Component` ning yangi production sinfiga ko'chishi haqidagi kuzatish shu korpusning qo'shimchasi
 - ESLATMA: 34.2 dagi listingni fayl nusxasida belgilash moslashtirishi shu korpusning qo'shimchasi
+- George Fairbanks, *Just Enough Software Architecture*, 1-nashr, 2010, 3.7 - evolyutsion dizaynning refaktoring, test-driven dizayn va continuous integration bilan juftlashishi, refaktoringning arxitektura miqyosidagi o'zgarishga kam yo'l-yo'riq berishi (Amazon misoli) va legacy kodda test yetishmasligi
+- George Fairbanks, *Just Enough Software Architecture*, 1-nashr, 2010, 16.1.1 - mavjud kodning arxitektura abstraksiyalariga mos kelmasligi, uni modul va komponentlarga refaktoring qilish qimmatligi, tizimni yirik modul yoki komponentlar to'plami deb qarash va ichki quyi komponentlarini modellashtirmaslik
+- Sam Newman, *Monolith to Microservices*, 1-nashr, O'Reilly, 2020, 2-bob (37-bet) - g'oyadan production gacha yo'lni modellash, bosqich davomiyligini o'lchash va investitsiya bankidagi olti hafta hamda 40 haftadan oshiq misoli; (42-bet) - qayta foydalanish maqsad emas vosita ekani va PDF generatsiyasi misolida muvofiqlashish narxi
+- Sam Newman, *Monolith to Microservices*, 1-nashr, O'Reilly, 2020, 2-bob (53-bet) - servis ajratish production da ishlatilmaguncha tugallanmagan hisoblanishi va tracing, latency, referential integrity hamda cascading failure darslarining faqat production da ko'rinishi
+- Sam Newman, *Monolith to Microservices*, 1-nashr, O'Reilly, 2020, 3-bob (99-bet) - The Guardian misolida birinchi ko'chiriladigan bo'lak saytning eng ko'zga ko'rinadigan qismi bo'lmasligi va Travel vertikalida bitta vidjetdan boshlash
+- Neal Ford va boshqalar, *Software Architecture: The Hard Parts*, 1-nashr, O'Reilly, 2021 (copyright 2022), 6-bob (155-161-betlar) - monolit bazani ajratishning besh qadami (data domain larni aniqlash, jadvallarni sxemaga biriktirish va synonym, ulanishni o'z sxemasiga qoldirish, sxemalarni alohida serverga ko'chirish, o'tish), ma'lumot suvereniteti kelishuvi (mustaqil sxema o'zgarishi va mos baza turi tanlash foydasi; katta hajm, referential integrity yo'qolishi va baza kodini servis qatlamiga ko'chirish narxi) hamda sxemani ko'chirishda backup-restore va replikatsiya tanlovi
+- Titus Winters, Tom Manshreck, Hyrum Wright (tahr.), *Software Engineering at Google*, O'Reilly, 2020, 15-bob ("Why Deprecate?", "Why Is Deprecation So Hard?", "Deprecation During Design", "Process Owners", "Preventing Backsliding" bo'limlari) - kod majburiyat ekani, faqat yoshi uchun deprecate qilinmasligi va teng funksiyali almashtiruvchi sharti, Hyrum qonuni va emotsional qarshilik, deprecation jarayonining aniq egasi bo'lishi (advisory deprecation tugamasligi), dizayn paytida deprecation savollari, hamda orqaga qaytishni statik tahlil annotatsiyasi va build dagi ko'rinish ro'yxati bilan to'sish
+- Titus Winters, Tom Manshreck, Hyrum Wright (tahr.), *Software Engineering at Google*, O'Reilly, 2020, 22-bob ("Who Deals with LSCs?" bo'limi) - ko'chish ishini eski tizim egasi bajarishi, moliyalashtirilmagan mandat muammosi va organik ko'chishning tugamasligi (yangi kod mavjud kodni namuna qilib yoziladi)
+- ESLATMA: 34.1 dagi `legacy-core` ni qora quti deb belgilash misoli, 34.20 dagi PostgreSQL sintaksisi eslatmasi va `orders.customer_id` misoli, 34.21 dagi `@Deprecated` hamda ArchUnit kod misollari shu korpusning qo'shimchasi
 - ESLATMA: 34.19 dagi nazorat ro'yxati shu korpusning o'z checklisti
 
 ---

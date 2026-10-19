@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 35. Incident, on-call va post-mortem (Incidents and Post-mortems)
 
@@ -118,6 +118,8 @@ Sog'liq tekshiruvi mazmunli bo'lishi shart. Shu aviakompaniya incidentida monito
 ## 35.5 Diagnostika tartibi: nima o'zgardi, qachon boshlandi, nima umumiy
 
 Birinchi savol: nima o'zgardi. Kleppmann yirik internet xizmatlari bo'yicha bir tadqiqotga tayanadi: uzilishlarning yetakchi sababi operatorlarning konfiguratsiya xatolari bo'lgan, apparat nosozliklari esa uzilishlarning faqat 10-25 foizida rol o'ynagan (1-bob, 9-bet). Nygard operatsiyada "post hoc, ergo propter hoc", ya'ni yaqin vaqt bo'yicha sababni belgilash mantiqiy xato bo'lsa ham, ko'p holatda yaxshi boshlang'ich nuqta ekanini aytadi, va buni "oxirgi bo'lib tegdingiz" deb nomlanishini eslatadi (2-bob, 27-bet). O'zgarishni topishning arzon yo'li ham shu kitobda: joriy konfiguratsiya fayllarini tungi zaxira nusxasidagi fayllar bilan solishtirish, shunda zaxiradan keyin nima o'zgargani ko'rinadi (2-bob, 28-bet).
+
+Diagnostika paytidagi eng kam hisobga olinadigan o'zgarish manbasi esa operatorning o'zi. Nygard interaktiv murakkablik yuqori bo'lgan tizimda operatorning fikrlash modeli to'g'ri bo'lmasligini odatiy holat deb oladi, va natijasi aniq: operatorning "tuzatish" uchun qilgan harakati yashirin bog'lanishni qo'zg'atadi va incident ni kengaytiradi (Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 4-bob, 45-bet). Shuning uchun birinchi savoldagi "nima o'zgardi" ro'yxatiga incident boshlanganidan KEYIN qilingan harakatlar ham kiradi: qayta ishga tushirilgan pod, qo'lda o'chirilgan feature flag, kesh tozalash, pool kattalashtirish. Amaliy qoida ikkita. Birinchisi: har qo'lda harakat vaqti bilan incident kanaliga yoziladi, aks holda keyingi o'lchov o'zgarishi hodisaga emas, harakatga tegishli ekani bilinmaydi. Ikkinchisi: fikrlash modeli tasdiqlanmagan holatda qaytarib bo'lmaydigan harakat (ma'lumot o'chirish, failover, sxema o'zgartirish) qilinmaydi, chunki model noto'g'ri bo'lsa shu harakat yangi nosozlik qo'shadi.
 
 Ikkinchi savol: qachon boshlandi, chunki aniq daqiqa o'zgarish ro'yxatini filtrlaydi.
 
@@ -470,6 +472,7 @@ Natija ikki ro'yxat: yetishmayotgan alertlar va yetishmayotgan to'siqlar. Ikkala
 - Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr, Pragmatic Engineer, 2023, 15-bob (215-bet) - pre-mortem mashqi: rollout barbod bo'lsa sabablari nima bo'lishi mumkinligini sanash, ssenariylarni xaritaga tushirish, har biri uchun aniqlash va to'sish usulini topish
 - ESLATMA: 35.2 dagi uch rolni ovoz chiqarib e'lon qilish va almashish davri, 35.3 dagi ma'lumot buzilishi xavfida trafikni avval to'xtatish, 35.6 dagi xabar yuborish ritmi va intervallar, 35.7 dagi majburiy nuqtalar to'plami, 35.8 dagi "nima yaxshi ishladi" bo'limi va hujjat muddati, 35.10 dagi tekshiruv usuli rekviziti, 35.11 dagi navbat kompensatsiyasi, runbook tarkibi va tungi uyg'otish chegarasi, 35.12 dagi chegara raqamlari shu korpusning amaliy tavsiyasi, kitobdan olingan emas
 - ESLATMA: 35.13 dagi to'ldirilgan post-mortem o'quv uchun o'ylab topilgan misol, haqiqiy incident hisoboti emas
+- Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 4-bob (45-bet) - yuqori interaktiv murakkablikda operatorning fikrlash modeli noto'g'ri bo'lishi va uning harakati yashirin bog'lanishni qo'zg'atishi
 
 ---
 

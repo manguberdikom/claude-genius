@@ -30,7 +30,8 @@ tools/doc.sh toc  # hujjat kalitlari
 
 `suggest_sections.py` har so'rovga nomzod bo'lim qo'shadi. Tartibi
 ishonchli emas: javob `show` bilan o'qilgan matnga tayanadi, mos
-kelmasa shuni ayting. Nomzod yo'qligi mavzu yo'q degani emas.
+kelmasa shuni ayting. Nomzod yo'qligi mavzu yo'q degani emas. Kod
+vazifasida nomzod o'qilmaydi: mezon `rules_for` kartasi.
 
 - `guard.py` 16 KB dan katta bo'lakni o'qishni to'sadi. Havolani qo'lda
   yozmang, `doc.sh path` tayyor anchor beradi.
@@ -44,8 +45,8 @@ kelmasa shuni ayting. Nomzod yo'qligi mavzu yo'q degani emas.
 
 Java/Spring ishi uchun foydalanuvchi `/manguberdi` ni chaqiradi. Qoidalar,
 aktyor modellari va asboblar katalogi `.claude/skills/manguberdi/` da.
-Og'ir o'qish `qidiruv` va `tahlil` subagentida, asosiy sessiyada qaror,
-marshrut va hujjat tahriri.
+To'rt aktyor bir xil bilimni `rules_for` dan oladi; asosiy sessiyada
+qaror, marshrut va hujjat tahriri.
 
 ## Arzon yo'ldan borish
 
@@ -76,6 +77,7 @@ o'tishi shart. Asbob o'zgarsa `tools/test_<nom>.py`, keyin
 
 ## Memory
 
-Ish boshida ikki indeks o'qiladi: `memory/claude-genius/MEMORY.md` va
-`memory/umumiy/MEMORY.md`; topic fayl indeksga qarab. Qoida
+Ish boshida ikki indeks bitta chaqiruvda o'qiladi:
+`python3 tools/handoff.py --memory` (`memory/claude-genius/MEMORY.md` va
+`memory/umumiy/MEMORY.md`); topic fayl indeksga qarab. Qoida
 `memory/README.md` da.

@@ -614,6 +614,7 @@ def case_boshqa_papka():
         raw_drift = run_hook(later, cwd=tmp)
         drift = (json.loads(raw_drift).get("hookSpecificOutput", {})
                  .get("additionalContext", "") if raw_drift else "")
+        raw_again = run_hook(later, cwd=tmp)
         prepare(later, cwd=tmp)
         raw_same = run_hook(later, cwd=tmp)
     finally:
@@ -625,6 +626,7 @@ def case_boshqa_papka():
         ("hook mutlaq yo'lda jim", raw_rel == ""),
         ("yozilgandan keyingi yangi belgi aytiladi",
          "tranzaksiya" in drift and "web qatlami" not in drift),
+        ("yangi belgi xabari ikkinchi Edit da qaytmaydi", "yangi belgi" not in raw_again),
         ("qayta chaqirilgandan keyin jim", raw_same == ""),
     ]
 
@@ -708,6 +710,20 @@ SONAR_CASES = [
           "import static org.mockito.ArgumentMatchers.contains;\n"), True),
     ("S1128 wildcard import tegilmaydi", "java:S1128", MAIN,
      wrap("void f() {}", "import java.util.*;\n"), False),
+    ("S1128 takroriy import", "java:S1128", MAIN,
+     wrap("Set<String> s;", "import java.util.Set;\nimport java.util.Set;\n"), True),
+    ("S1128 takroriy statik import", "java:S1128", TEST,
+     wrap("void f() { when(x); }",
+          "import static org.mockito.Mockito.when;\n"
+          "import static org.mockito.Mockito.when;\n"), True),
+    ("S1128 takroriy wildcard import", "java:S1128", MAIN,
+     wrap("Set<String> s;", "import java.util.*;\nimport java.util.*;\n"), True),
+    ("S1128 bir xil nom boshqa paketdan takror emas", "java:S1128", MAIN,
+     wrap("Set<String> s; shop.Set t;",
+          "import java.util.Set;\nimport shop.Set;\n"), False),
+    ("S1128 statik va oddiy import takror emas", "java:S1128", MAIN,
+     wrap("Set<String> s = of(1);",
+          "import java.util.Set;\nimport static java.util.Set.of;\n"), False),
     ("S1128 annotatsiyada ishlatish", "java:S1128", MAIN,
      wrap("@Marker void f() {}", "import shop.Marker;\n"), False),
     # java:S8694 oy int literal

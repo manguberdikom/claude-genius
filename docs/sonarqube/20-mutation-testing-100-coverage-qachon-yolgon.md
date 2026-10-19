@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 20. Mutation testing: 100% coverage qachon yolg'on (Mutation Testing)
 

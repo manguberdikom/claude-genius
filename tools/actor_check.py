@@ -20,7 +20,7 @@ ya'ni budjetga tushmaydi.
 Jim qoladigan holatlar (fail-open, hook o'z noaniqligi bilan ishni
 to'smaydi):
 
-- boshqa aktyor (`review`, `qidiruv`, general-purpose, ...);
+- boshqa aktyor (`review`, `rejalashtiruvchi`, general-purpose, ...);
 - `hookio.active()` false: Java proyekti ham, klon ham emas;
 - `stop_hook_active`: aktyor allaqachon shu hook tufayli davom etyapti.
   Ikkinchi to'xtashda u sababni yozgan bo'ladi (masalan rc 2, build

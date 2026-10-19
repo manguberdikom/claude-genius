@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 19. Reactive patternlar (Reactive Patterns)
 
 <details>
-<summary>Bu bobdagi 26 bo'lim</summary>
+<summary>Bu bobdagi 28 bo'lim</summary>
 
 - [19.1 Reactive Streams (Reactive Streams)](#191-reactive-streams-reactive-streams)
 - [19.2 Backpressure strategiyalari (Backpressure Strategies)](#192-backpressure-strategiyalari-backpressure-strategies)
@@ -34,7 +34,9 @@
 - [19.23 java.util.concurrent.Flow](#1923-javautilconcurrentflow)
 - [19.24 Observable / Reactive Extensions merosi (Observable / Reactive Extensions Heritage)](#1924-observable--reactive-extensions-merosi-observable--reactive-extensions-heritage)
 - [19.25 Sovuq start va subscription hayot sikli (Cold Start & Subscription Lifecycle)](#1925-sovuq-start-va-subscription-hayot-sikli-cold-start--subscription-lifecycle)
-- [19.26 Amalda qo'llash](#1926-amalda-qollash)
+- [19.26 Oqimlarni birlashtirish: mergeWith va zip (Merging and Zipping Streams)](#1926-oqimlarni-birlashtirish-mergewith-va-zip-merging-and-zipping-streams)
+- [19.27 R2DBC da aggregate root servisi (Aggregate Root Service with R2DBC)](#1927-r2dbc-da-aggregate-root-servisi-aggregate-root-service-with-r2dbc)
+- [19.28 Amalda qo'llash](#1928-amalda-qollash)
 
 </details>
 
@@ -102,11 +104,13 @@ Reactive patternlar - bu bloklanmaydigan (non-blocking), hodisaga asoslangan va 
 
 **Ehtiyot bo'ling:** `DataBuffer`lar pool'dan olinadi - ularni iste'mol qilmasangiz yoki `DataBufferUtils.release(...)` qilmasangiz xotira leak bo'ladi; shuning uchun request body'ni o'qimay tashlab yuborish ham xavfli. Shu bilan birga, CPU-bound yoki kodingiz baribir JDBC'ga tayanadigan holatlarda non-blocking I/O deyarli hech narsa bermaydi - bunday paytda virtual thread'lar bilan oddiy MVC ko'proq mos keladi.
 
+Bu ayniqsa API gateway va proxy kabi ko'p ulanishli chegara komponentlariga tegishli, chunki aynan o'sha joyda "bloklanmaydigan albatta tezroq" degan taxmin ko'p qilinadi. Bloklanmaydigan model thread narxidan qutqaradi va ko'p sekin ulanishni kam thread bilan ushlab turish imkonini beradi, lekin uning uch narxi bor: callback yoki reaktiv zanjirga asoslangan kodni yozish, o'qish va debug qilish ancha qiyinroq; har handler event loop ni bloklamaslik uchun tez qaytishi shart va bitta e'tibordan chetda qolgan bloklovchi chaqiruv butun loop ni to'xtatadi; va foydaning o'zi so'rovni ishlash mantiqiga bog'liq. Oxirgi nuqta o'lchovga tayanadi: Netflix Zuul ni bloklanmaydigan modelga o'tkazganda natija aralash chiqdi, ya'ni ba'zi ssenariyda yaxshilandi, ba'zisida sezilarli foyda bermadi. Shuning uchun gateway ni reaktiv modelga o'tkazish qarori taxmin bilan emas, o'z trafik profilida o'lchov bilan qabul qilinadi ([Reactive va Virtual Threads tanlovi](#1921-reactive-va-virtual-threads-tanlovi-reactive-vs-virtual-threads-decision)).
+
 ## 19.5 Mono va Flux (Mono / Flux)
 
 **Tavsif:** `Mono<T>` - 0 yoki 1 element qaytaradigan asinxron natija, `Flux<T>` - 0..N elementli oqim; ikkisi ham `Publisher` implementatsiyasi va boy operator to'plamiga ega. Ular natijani emas, balki hisoblash retseptini ifodalaydi: `subscribe()` qilinmaguncha hech narsa bajarilmaydi (lazy). Bu `CompletableFuture`dan ikki jihati bilan farq qiladi - birinchisi lazy (future esa odatda eager), ikkinchisi backpressure va ko'p elementli oqimni qo'llab-quvvatlaydi. Tip tanlovi API kontraktining bir qismi: `Mono<Void>` "tugadi" signalini, `Flux<T>` esa potentsial cheksiz oqimni anglatadi.
 
-**Spring'da qayerda uchraydi:** `reactor.core.publisher.Mono` va `reactor.core.publisher.Flux` (Reactor 3.6+/3.7+, Spring Framework 6.x/7.x bilan keladi). WebFlux controller'lari `Mono<ResponseEntity<T>>`, `Flux<T>` qaytaradi; `WebClient` `Mono<ClientResponse>`/`bodyToFlux(...)` beradi; `ReactiveCrudRepository` `Mono`/`Flux` qaytaradi; `ReactiveRedisTemplate`, `ReactiveMongoTemplate`, `R2dbcEntityTemplate`, `ReactiveTransactionManager`, `ReactiveAuthenticationManager` ham shu tiplarga tayanadi. `Mono.fromCallable(...)`, `Flux.fromIterable(...)`, `Mono.defer(...)`, `Flux.interval(...)` asosiy fabrikalar; `block()` esa reactive dunyodan imperativ dunyoga chiqish uchun (testdan tashqarida ehtiyotkorlik bilan).
+**Spring'da qayerda uchraydi:** `reactor.core.publisher.Mono` va `reactor.core.publisher.Flux` (Reactor 3.6+/3.7+, Spring Framework 6.x/7.x bilan keladi). WebFlux controller'lari `Mono<ResponseEntity<T>>`, `Flux<T>` qaytaradi; `WebClient` `Mono<ClientResponse>`/`bodyToFlux(...)` beradi; `ReactiveCrudRepository` `Mono`/`Flux` qaytaradi; `ReactiveRedisTemplate`, `ReactiveMongoTemplate`, `R2dbcEntityTemplate`, `ReactiveTransactionManager`, `ReactiveAuthenticationManager` ham shu tiplarga tayanadi. `Mono.fromCallable(...)`, `Flux.fromIterable(...)`, `Mono.defer(...)`, `Flux.interval(...)` asosiy fabrikalar; `block()` esa reactive dunyodan imperativ dunyoga chiqish uchun (testdan tashqarida ehtiyotkorlik bilan). WebFlux controller'i bu tiplarni kirishda ham qabul qiladi: `@RequestBody Mono<Taco>` deb yozilgan metod so'rov tanasi to'liq o'qilishini kutmasdan chaqiriladi va `tacoRepo.saveAll(tacoMono).next()` yoki `tacoMono.flatMap(tacoRepo::save)` bilan `Mono<Taco>` qaytaradi - shu bilan so'rov ikki marta bloklanmaydi (Walls, 12-bob, 315-bet).
 
 **Qo'llanish keyslari:**
 - Bitta entity'ni ID bo'yicha olish uchun `Mono<User>`, ro'yxat uchun `Flux<User>` qaytaradigan servis API'si.
@@ -114,6 +118,7 @@ Reactive patternlar - bu bloklanmaydigan (non-blocking), hodisaga asoslangan va 
 - `Flux` + `MediaType.TEXT_EVENT_STREAM` orqali SSE kanali ochish.
 - `Mono<Void>` bilan "fire and complete" operatsiyalar (delete, publish) kontraktini ifodalash.
 - `Flux.interval(...)` asosida davriy health/poll vazifalarini reactive pipeline ichida yuritish.
+- `@RequestBody Mono<T>` bilan so'rov tanasini reaktiv qabul qilib, repository ga to'g'ridan-to'g'ri uzatish.
 
 **Ehtiyot bo'ling:** `Mono`/`Flux` lazy bo'lgani uchun `subscribe()` yoki framework tomonidan iste'mol qilinmasa kod umuman ishlamaydi - "metodni chaqirdim, lekin hech narsa bo'lmadi" muammosining asosiy sababi shu. `block()`ni event loop thread'ida chaqirmang: Reactor bunda `IllegalStateException` tashlaydi yoki deadlock yuzaga keladi.
 
@@ -166,9 +171,9 @@ Reactive patternlar - bu bloklanmaydigan (non-blocking), hodisaga asoslangan va 
 
 ## 19.9 Operatorlar kompozitsiyasi (Operator Composition)
 
-**Tavsif:** Reactive pipeline - manba, bir qator transformatsiya operatorlari va terminal subscriber'dan iborat deklarativ zanjir; har bir operator yangi `Publisher` qaytaradi va mutatsiya qilmaydi. Asosiy mahorat to'g'ri operatorni tanlashda: `map` sinxron o'girish, `flatMap` asinxron va tartibsiz kengaytirish, `concatMap` tartibni saqlash, `flatMapSequential` parallel bajarib tartibli chiqarish, `switchMap` oldingisini bekor qilish. Kompozitsiya qayta ishlatilishi uchun `transform`/`transformDeferred` va `as` operatorlari bilan nomlangan bloklarga ajratiladi. Yaxshi tuzilgan pipeline imperativ callback do'zaxini o'qiladigan oqim diagrammasiga aylantiradi.
+**Tavsif:** Reactive pipeline - manba, bir qator transformatsiya operatorlari va terminal subscriber'dan iborat deklarativ zanjir; har bir operator yangi `Publisher` qaytaradi va mutatsiya qilmaydi. Asosiy mahorat to'g'ri operatorni tanlashda: `map` sinxron o'girish, `flatMap` asinxron va tartibsiz kengaytirish, `concatMap` tartibni saqlash, `flatMapSequential` parallel bajarib tartibli chiqarish, `switchMap` oldingisini bekor qilish. Kompozitsiya qayta ishlatilishi uchun `transform`/`transformDeferred` va `as` operatorlari bilan nomlangan bloklarga ajratiladi. Yaxshi tuzilgan pipeline imperativ callback do'zaxini o'qiladigan oqim diagrammasiga aylantiradi. Operatorni tanlashda uning marble diagrammasi o'qiladi: yuqorida manba oqimining vaqt chizig'i, o'rtada operator, pastda natijadagi oqim turadi; vertikal chiziq oqim tugaganini, X esa xato bilan uzilishni bildiradi, `Mono` diagrammasida esa ko'pi bilan bitta element bo'ladi (Walls, 11-bob, 285-bet).
 
-**Spring'da qayerda uchraydi:** Reactor operatorlari `Flux`/`Mono` API'sida: `map`, `filter`, `flatMap(f, concurrency)`, `concatMap`, `switchMap`, `zip`, `zipWhen`, `then`, `thenMany`, `expand`, `groupBy`, `window`, `buffer`, `distinct`, `takeUntil`, `doOnNext`, `doFinally`, `handle`. Xatolarni kuzatish uchun `checkpoint("name")` va `Hooks.onOperatorDebug()` (yoki `reactor-tools`ning `ReactorDebugAgent`) ishlatiladi. Spring kontekstida bu zanjirlar `@Service` metodlarida, `WebClient` javobini qayta ishlashda, `RouterFunction` handler'larida va `ReactiveMongoTemplate` natijalari ustida quriladi. `StepVerifier` (`reactor-test`) esa butun zanjirni signal-signal tekshiradi.
+**Spring'da qayerda uchraydi:** Reactor operatorlari `Flux`/`Mono` API'sida: `map`, `filter`, `flatMap(f, concurrency)`, `concatMap`, `switchMap`, `zip`, `zipWhen`, `then`, `thenMany`, `expand`, `groupBy`, `window`, `buffer`, `distinct`, `takeUntil`, `doOnNext`, `doFinally`, `handle`. Xatolarni kuzatish uchun `checkpoint("name")` va `Hooks.onOperatorDebug()` (yoki `reactor-tools`ning `ReactorDebugAgent`) ishlatiladi. Zanjirni kuzatishning eng arzon vositasi - `log()` operatori: u Reactive Streams signallarini (`onSubscribe`, `request(n)`, `onNext`, `onComplete`) thread nomi bilan logga yozadi, shuning uchun parallel ishlayotgan ichki oqimlarni ajratib ko'rsatadi (Walls, 11-bob, 303-bet). Predikat operatorlari `all(p)` va `any(p)` esa `Mono<Boolean>` qaytaradi: birinchisi hamma element shartga mos kelsa `true`, ikkinchisi kamida bittasi mos kelsa `true` (Walls, 11-bob, 305-306-bet). Spring kontekstida bu zanjirlar `@Service` metodlarida, `WebClient` javobini qayta ishlashda, `RouterFunction` handler'larida va `ReactiveMongoTemplate` natijalari ustida quriladi. `StepVerifier` (`reactor-test`) esa butun zanjirni signal-signal tekshiradi.
 
 **Qo'llanish keyslari:**
 - Mijoz ro'yxatini olib, har biri uchun `flatMap` bilan parallel profil chaqirig'i qilish (`concurrency` chegarasi bilan).
@@ -176,6 +181,8 @@ Reactive patternlar - bu bloklanmaydigan (non-blocking), hodisaga asoslangan va 
 - Foydalanuvchi qidiruvida `switchMap` orqali eski so'rovni avtomatik bekor qilish.
 - `groupBy` + `window` bilan hodisalarni tenant bo'yicha guruhlab, batch agregatsiya qilish.
 - `transform(this::withMetrics)` bilan umumiy metrika/logging bloklarini bir nechta pipeline'da qayta ishlatish.
+- `all(...)` yoki `any(...)` bilan oqimdagi elementlar shartga mos ekanini `Mono<Boolean>` sifatida tekshirish.
+- `log()` ni zanjirning shubhali bo'g'iniga qo'yib, signal ketma-ketligini va qaysi threadda ishlayotganini ko'rish.
 
 **Ehtiyot bo'ling:** Chegarasiz `flatMap` standart holatda 256 tagacha ichki subscription ochadi - downstream servisni DDoS qilib qo'yish mumkin, shuning uchun `flatMap(f, n)` bilan konkurentlikni aniq belgilash kerak. `doOnNext` ichida bloklovchi yoki yon ta'sirli kod yozish va `map` ichida `Mono` qaytarish (`Mono<Mono<T>>` paydo bo'lishi) ham tez-tez uchraydigan xatolar.
 
@@ -281,7 +288,27 @@ RouterFunction<ServerResponse> userRoutes(UserHandler handler) {
 
 **Tavsif:** Klassik Spring Security `SecurityContextHolder` ni `ThreadLocal` da saqlaydi, lekin reactive zanjirda bitta request bir necha threadda bajarilishi mumkin, shuning uchun `ThreadLocal` yaroqsiz. Reactive Security xavfsizlik kontekstini Reactor Contextga ko'chiradi va barcha autentifikatsiya/avtorizatsiya qarorlarini non-blocking, `Mono`-asosli qiladi. Natijada filter zanjiri, user lookup va token tekshiruvi ham to'liq asinxron bo'ladi.
 
-**Spring'da qayerda uchraydi:** `@EnableWebFluxSecurity`, `SecurityWebFilterChain` bean va `ServerHttpSecurity` DSL (`authorizeExchange()`, `pathMatchers()`, `oauth2ResourceServer()`); kontekst `ReactiveSecurityContextHolder.getContext()` orqali olinadi. Foydalanuvchini yuklash uchun `ReactiveUserDetailsService` / `MapReactiveUserDetailsService`, autentifikatsiya uchun `ReactiveAuthenticationManager`, metod darajasida esa `@EnableReactiveMethodSecurity` bilan `@PreAuthorize` (faqat `Mono`/`Flux` qaytaruvchi metodlarda). Spring Security 6.x da JWT uchun `ReactiveJwtDecoder`, OAuth2 client uchun `ServerOAuth2AuthorizedClientExchangeFilterFunction` bilan `WebClient` integratsiyasi, sessiya uchun `WebSessionServerSecurityContextRepository` yoki Spring Session Reactive Redis ishlatiladi.
+**Spring'da qayerda uchraydi:** `@EnableWebFluxSecurity`, `SecurityWebFilterChain` bean va `ServerHttpSecurity` DSL (`authorizeExchange()`, `pathMatchers()`, `oauth2ResourceServer()`); kontekst `ReactiveSecurityContextHolder.getContext()` orqali olinadi. Foydalanuvchini yuklash uchun `ReactiveUserDetailsService` / `MapReactiveUserDetailsService`, autentifikatsiya uchun `ReactiveAuthenticationManager`, metod darajasida esa `@EnableReactiveMethodSecurity` bilan `@PreAuthorize` (faqat `Mono`/`Flux` qaytaruvchi metodlarda). Spring Security 6.x da JWT uchun `ReactiveJwtDecoder`, OAuth2 client uchun `ServerOAuth2AuthorizedClientExchangeFilterFunction` bilan `WebClient` integratsiyasi, sessiya uchun `WebSessionServerSecurityContextRepository` yoki Spring Session Reactive Redis ishlatiladi. `hasRole()`, `hasAuthority()`, `permitAll()` va `denyAll()` yetmaganda `access(...)` ishlatiladi: u `Mono<Authentication>` va `AuthorizationContext` (so'rov yo'li, header, query parametr, cookie) oladi va `Mono<AuthorizationDecision>` qaytaradi - `new AuthorizationDecision(true)` ruxsat, `false` esa rad etish (Spilca, 19-bob, 481-bet).
+
+```java
+@Bean
+SecurityWebFilterChain security(ServerHttpSecurity http) {
+    return http
+            .authorizeExchange(ex -> ex.anyExchange().access(this::decide))
+            .httpBasic(Customizer.withDefaults())
+            .build();
+}
+
+// access(): Mono<Authentication> + AuthorizationContext -> Mono<AuthorizationDecision>
+private Mono<AuthorizationDecision> decide(Mono<Authentication> auth,
+                                           AuthorizationContext context) {
+    String path = context.getExchange().getRequest().getPath().value();
+    return auth.map(a -> a.getAuthorities().stream()
+                    .anyMatch(g -> "ROLE_ADMIN".equals(g.getAuthority())))
+            .map(isAdmin -> isAdmin && path.startsWith("/admin"))
+            .map(AuthorizationDecision::new);
+}
+```
 
 **Qo'llanish keyslari:**
 - WebFlux API gatewayda (Spring Cloud Gateway) JWT ni non-blocking tekshirib, downstream'ga propagate qilish.
@@ -290,7 +317,7 @@ RouterFunction<ServerResponse> userRoutes(UserHandler handler) {
 - `WebClient` chaqiruvlarida OAuth2 access tokenni avtomatik qo'shish va refresh qilish.
 - Tenant/user ma'lumotini Reactor Context orqali audit loggerga uzatish.
 
-**Ehtiyot bo'ling:** `SecurityContextHolder` ni WebFlux ichida ishlatish eng ko'p uchraydigan xato - u `null` qaytaradi yoki noto'g'ri foydalanuvchini beradi, chunki kontekst threadga emas, subscriptionga bog'langan. Shuningdek `@PreAuthorize` ni `void`/oddiy obyekt qaytaruvchi metodda ishlatish jim qolib ketadi, blocking `UserDetailsService` yoki blocking JWK yuklash esa event loopni to'sib qo'yadi.
+**Ehtiyot bo'ling:** `SecurityContextHolder` ni WebFlux ichida ishlatish eng ko'p uchraydigan xato - u `null` qaytaradi yoki noto'g'ri foydalanuvchini beradi, chunki kontekst threadga emas, subscriptionga bog'langan. Shuningdek `@PreAuthorize` ni `void`/oddiy obyekt qaytaruvchi metodda ishlatish jim qolib ketadi, blocking `UserDetailsService` yoki blocking JWK yuklash esa event loopni to'sib qo'yadi. `access(...)` ni faqat boshqa yo'l qolmaganda tanlang: u eng moslashuvchan, lekin konfiguratsiyani o'qishni qiyinlashtiradi (Spilca, 19-bob, 481-bet). ESLATMA: kitob Spring Security 5.x DSL ini (`authorizeExchange().anyExchange().access(...).and().httpBasic()`) ishlatadi; 6.x da yuqoridagi lambda DSL yoziladi.
 
 ## 19.16 Reactive tranzaksiyalar (Reactive Transactions)
 
@@ -450,7 +477,80 @@ Mono<Order> findOrder(Long id) {
 
 **Ehtiyot bo'ling:** `subscribe()` ni unutish (`fireAndForget()` deb yozilgan, lekin hech kim subscribe qilmagan `Mono`) jim nosozlikning klassik ko'rinishi; teskarisi - bitta cold `Mono` ni ikki joyda ishlatib, tashqi API ga ikki marta so'rov yuborish. `cache()` ni muddatsiz ishlatish eskirgan ma'lumotni va xotira o'sishini beradi, `share()` esa subscriber yo'q qolganda manbani bekor qilib, keyingi subscriberga kutilmagan natija berishi mumkin.
 
-## 19.26 Amalda qo'llash
+## 19.26 Oqimlarni birlashtirish: mergeWith va zip (Merging and Zipping Streams)
+
+**Tavsif:** Ikki oqimni bittaga keltirishning ikki semantikasi bor va ularni almashtirib yuborish jim xatoga olib keladi. `a.mergeWith(b)` elementlarni manbalarning chiqarish vaqti bo'yicha aralashtiradi: ikki manba teng tezlikda chiqarsa natija navbatma-navbat keladi, lekin bu kafolat emas - timing o'zgarsa ketma-ket ikki element bitta manbadan kelishi mumkin (Walls, 11-bob, 291-293-bet). `zip` esa har manbadan bittasini olib tuple yasaydi: juftlik kafolatlangan, lekin oqim sekin manba tezligida boradi. Tartib kafolati kerak bo'lsa birlashtirish emas, ketma-ketlik operatorlari ishlatiladi (qarang: [Operatorlar kompozitsiyasi](#199-operatorlar-kompozitsiyasi-operator-composition)).
+
+**Spring'da qayerda uchraydi:** Reactor'da `Flux#mergeWith`, `Flux.merge`, `Flux#zipWith`, `Flux.zip` va `Mono.zip`. Spring kontekstida tipik joylar: bir nechta `WebClient` chaqirig'ini `Mono.zip` bilan parallel bajarib javobni yig'ish, bir nechta hodisa manbasini (`Sinks`, reactor-kafka, R2DBC oqimi) `mergeWith` bilan bitta SSE kanaliga qo'shish, `StepVerifier` bilan natijadagi tartibni qulflash. Testda timing ni aniq qilish uchun `delayElements` va `delaySubscription` ishlatiladi: shu ikki operator bo'lmasa manbalar imkon boricha tez chiqaradi va aralashtirish tartibi tasodifiy bo'ladi (Walls, 11-bob, 292-bet).
+
+```java
+Flux<String> characters = Flux.just("Garfield", "Kojak")
+        .delayElements(Duration.ofMillis(500));
+Flux<String> foods = Flux.just("Lasagna", "Lollipops")
+        .delaySubscription(Duration.ofMillis(250))
+        .delayElements(Duration.ofMillis(500));
+
+// mergeWith: tartib faqat chiqarish vaqtiga bog'liq, navbat kafolatlanmagan
+Flux<String> merged = characters.mergeWith(foods);
+
+// zip: har manbadan bittasi, juftlik kafolatlangan
+Flux<String> zipped = Flux.zip(characters, foods, (c, f) -> c + " - " + f);
+```
+
+**Qo'llanish keyslari:**
+- Kafka, baza oqimi va ichki `Sinks` dan kelayotgan hodisalarni bitta SSE kanaliga `mergeWith` bilan qo'shish.
+- Ikki mustaqil downstream chaqirig'ini parallel bajarib, javobni `Mono.zip` bilan bitta DTO ga yig'ish.
+- Narx va mavjudlik oqimini element-element juftlab hisoblash - `zipWith`.
+- Audit uchun bir nechta manbadagi hodisani vaqt bo'yicha aralashtirib bitta logga yozish.
+- Testda `delayElements` bilan timing ni qo'lda belgilab, kutilgan tartibni `StepVerifier` da qulflash.
+
+**Ehtiyot bo'ling:** `mergeWith` dan qat'iy navbatma-navbat tartib kutish eng ko'p uchraydigan xato: tartib timing ga bog'liq, shuning uchun bunday test bir mashinada o'tib, CI da yiqiladi. Juftlik kerak bo'lsa `zip`, tartib kerak bo'lsa `concat` oilasi tanlanadi. `zip` da sekin manba butun oqimni sekinlashtiradi, qisqa manba tugaganda esa natija tugaydi va ortda qolgan elementlar jim yo'qoladi. Birlashtirish ikki manbaga ham subscribe qiladi: cold manbalarda bu yon ta'sirni ikki marta bajarish degani (qarang: [Hot va Cold publisher'lar](#196-hot-va-cold-publisherlar-hot-vs-cold-publishers)).
+
+## 19.27 R2DBC da aggregate root servisi (Aggregate Root Service with R2DBC)
+
+**Tavsif:** Spring Data R2DBC domen sinflaridagi aloqalarni qo'llab-quvvatlamaydi: ota obyekt bola ID larini saqlaydi, bola kolleksiyasini saqlashga urinish esa xato beradi. Shuning uchun bola kolleksiyasi `@Transient` bilan belgilanadi - u bazaga yozilmaydi, lekin obyektda bolalarni ushlab turish uchun joy bo'lib qoladi. Aggregate ni butun holida saqlash va o'qish vazifasi ikki repository oldida turgan servisga chiqadi: saqlashda avval bolalar yoziladi va ularning yangi ID lari otaga qaytariladi, keyin ota yoziladi; o'qishda ota olinib, ID lar bo'yicha bolalar yuklanadi va otaga qo'shiladi (Walls, 13-bob, 347-350-bet). Bu - [Agregat va agregat ildizi](13-domain-driven-design-patternlari.md#1315-agregat-va-agregat-ildizi-aggregate--aggregate-root) qoidasining reaktiv stackdagi shakli: hamma qadam `Mono`/`Flux` ichida qoladi.
+
+**Spring'da qayerda uchraydi:** `ReactiveCrudRepository`/`R2dbcRepository`, `org.springframework.data.annotation.Transient`, va aggregate ni yig'adigan `@Service`. Zanjirda ikki operator qaroriy: `flatMap` natija `Mono<Mono<T>>` bo'lib qolmasligi uchun kerak (`map` shu joyda xato bo'ladi), `last()` esa bolalar ustidan `map` qilinganda otaning har bola uchun bitta nusxasi qaytmasligi uchun (Walls, 13-bob, 348-349-bet). Butun yozishni bitta tranzaksiyada ushlash uchun reactive `@Transactional` yoki `TransactionalOperator` qo'shiladi (qarang: [Reactive tranzaksiyalar](#1916-reactive-tranzaksiyalar-reactive-transactions)).
+
+```java
+@Service
+public class TacoOrderAggregateService {
+    private final TacoRepository tacoRepo;
+    private final OrderRepository orderRepo;
+    // konstruktor qisqartirildi
+
+    public Mono<TacoOrder> save(TacoOrder tacoOrder) {
+        return Mono.just(tacoOrder)
+                .flatMap(order -> {
+                    List<Taco> tacos = order.getTacos();
+                    order.setTacos(new ArrayList<>());
+                    return tacoRepo.saveAll(tacos)       // ID lar shu yerda tug'iladi
+                            .map(taco -> { order.addTaco(taco); return order; })
+                            .last(order);                // otaning bitta nusxasi,
+                                                         // bola bo'lmasa standart qiymat
+                })
+                .flatMap(orderRepo::save);               // map emas: Mono<Mono<...>> bo'lmasin
+    }
+
+    public Mono<TacoOrder> findById(Long id) {
+        return orderRepo.findById(id)
+                .flatMap(order -> tacoRepo.findAllById(order.getTacoIds())
+                        .map(taco -> { order.addTaco(taco); return order; })
+                        .last(order));
+    }
+}
+```
+
+**Qo'llanish keyslari:**
+- WebFlux va `r2dbc-postgresql` da buyurtma hamda uning satrlarini bitta servis chaqirig'ida saqlash.
+- Bolalarning baza bergan ID lari otaga kerak bo'lgan holat: `saveAll` natijasidan ID ni qaytarib olish.
+- Aggregate ni to'liq o'qish: `findAllById` bilan bolalarni bitta so'rovda olib, har bola uchun alohida so'rovdan qochish.
+- JPA modelini R2DBC ga ko'chirishda aloqalarni servis qatlamiga chiqarish.
+- `@DataR2dbcTest` ichida butun aggregate ni `StepVerifier` bilan tekshirish.
+
+**Ehtiyot bo'ling:** `@Transient` ni qo'ymaslik birinchi xato: R2DBC bola kolleksiyasini saqlashga urinib xato beradi (Walls, 13-bob, 348-bet). `map` va `flatMap` ni almashtirib yuborish `Mono<Mono<TacoOrder>>` beradi va natija jim yo'qoladi; `last()` ni unutish esa har bola uchun bitta ota nusxasini qaytaradi. ESLATMA: korpusning qo'shimchasi - kitobdagi `last()` bo'sh oqimda `NoSuchElementException` bilan yiqiladi, shuning uchun misolda standart qiymatli `last(order)` shakli turadi. Eng muhimi, bu qo'lda yig'ish o'zidan atomik emas: bolalar yozilib ota yozilmasa, yetim qatorlar qoladi - zanjirni reaktiv tranzaksiya ichiga oling.
+
+## 19.28 Amalda qo'llash
 
 - [ ] Reactive zanjir ichida blocking chaqiruv borligini BlockHound bilan test muhitida tekshirib, topilganlarini ro'yxat qiling.
 - [ ] Har bir reactive oqim uchun backpressure strategiyasini yozib qo'ying; `onBackpressureBuffer` chegarasiz bo'lmasligi kerak.
@@ -465,10 +565,15 @@ Mono<Order> findOrder(Long id) {
 
 - Laurentiu Spilca, *Spring Security in Action*, 19-bob - reaktiv ilovalar uchun Spring Security
 - Craig Walls, *Spring in Action* 6th, 11, 12, 13-boblar - Reactor, reaktiv API va reaktiv saqlash
+- Craig Walls, *Spring in Action* 6th, 11-bob - marble diagramma, `mergeWith` va `zip` semantikasi, `log()`, `all()` va `any()`
+- Craig Walls, *Spring in Action* 6th, 12-bob - WebFlux controller'ida `Mono` ni so'rov tanasi sifatida qabul qilish
+- Craig Walls, *Spring in Action* 6th, 13-bob - R2DBC da aggregate root servisi va `@Transient` bola kolleksiyasi
+- Laurentiu Spilca, *Spring Security in Action*, 19-bob - reaktiv `access()` da `AuthorizationDecision` va `AuthorizationContext`
 - [reactor-core v3.7.0, `Schedulers.java`](https://raw.githubusercontent.com/reactor/reactor-core/v3.7.0/reactor-core/src/main/java/reactor/core/scheduler/Schedulers.java) - `boundedElastic()` ning thread cap i (`10 * availableProcessors()`), har thread uchun 100 000 navbat chegarasi va `RejectedExecutionException`, hamda virtual thread variantidagi maslahat
 - [Reactor, README](https://raw.githubusercontent.com/reactor/reactor-core/v3.7.0/README.md) - Reactor ning asosiy tiplari va `Schedulers` fabrikalari
 - [reactor-netty v1.2.0, `LoopResources.java`](https://raw.githubusercontent.com/reactor/reactor-netty/v1.2.0/reactor-netty-core/src/main/java/reactor/netty/resources/LoopResources.java) - event loop worker soni `Math.max(availableProcessors(), 4)`
 - [Spring Framework 7.0, Reactive Core](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/web/webflux/reactive-spring.adoc) - WebFlux ning thread modeli va bloklamaslik sharti
+- Chris Richardson, *Microservices Patterns: With Examples in Java*, Manning, 2019, 8-bob (266-bet) - gateway da bloklanmaydigan I/O ni "albatta tezroq" deb qabul qilmaslik: u thread narxidan qutqarishi lekin callback ga asoslangan modelni yozish, tushunish va debug qilish qiyinligi, handler larning event loop ni bloklamaslik uchun tez qaytishi sharti, va foydasi so'rovni ishlash mantiqiga bog'liqligi (Netflix Zuul ni bloklanmaydigan modelga o'tkazganda natija aralash chiqqani) (19.4)
 
 ---
 

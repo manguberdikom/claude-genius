@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 29. Kafka operatsion haqiqati: partition, lag, rebalance, idempotentlik (Kafka in Production)
 
@@ -248,6 +248,7 @@ Avro maydon nomini o'zgartirishni qo'llab-quvvatlamaydi, lekin `aliases` beradi.
 
 Alohida eslatma: enum. Avro enum ga yangi qiymat qo'shish eski iste'molchi uchun buzuvchi o'zgarish, chunki u noma'lum qiymatni o'qiy olmaydi. Buyurtma holati kabi o'sib boradigan ro'yxatni `string` sifatida saqlash va validatsiyani kodga qo'yish ko'pincha to'g'riroq.
 
+Avro qoidalari yonida ikkinchi oilani ham bilish kerak, chunki Protobuf va Thrift Kafka da kam uchramaydi: ularda maydonni nom emas, **tag raqami** belgilaydi. Kleppmann qoidalarni aniq sanaydi (*Designing Data-Intensive Applications*, 4-bob, 119-121-betlar). Kodlangan yozuv maydon nomini umuman saqlamaydi, faqat tag raqami va tur belgisi bo'ladi, shuning uchun sxemada nomni o'zgartirish mumkin, tag ni esa yo'q: tag o'zgarsa, mavjud hamma kodlangan ma'lumot yaroqsiz bo'ladi. Yangi maydonga faqat yangi tag beriladi; eski kod tanimagan tag ni tur belgisiga qarab necha bayt tashlab ketishni bilgani uchun uni e'tiborsiz qoldiradi va forward moslik saqlanadi. Teskari moslik uchun esa boshlang'ich deploy dan keyin qo'shilgan har maydon `optional` bo'lishi yoki standart qiymatga ega bo'lishi shart, aks holda eski kod yozgan ma'lumotni yangi kod o'qiganda majburiy maydon tekshiruvi yiqiladi. O'chirish oynasi ham torroq: faqat ixtiyoriy maydonni o'chirish mumkin va o'chirilgan tag raqami hech qachon qayta ishlatilmaydi, chunki eski tag bor yozuv hali qaysidir joyda saqlanib turishi mumkin. Avro bilan farqi shu yerda ko'rinadi: Avro nomga tayanadi va nom o'zgarishini `aliases` bilan yopadi, Protobuf va Thrift esa tag ga tayanadi, nomni bepul o'zgartiradi, lekin tag raqamlari registrini doimiy yuritishni talab qiladi.
 ## 29.11 Tranzaksiya va xabar yuborish nomuvofiqligi: nega ikki fazali commit emas
 
 Klassik muammo: `@Transactional` metod ichida PostgreSQL ga buyurtma yoziladi va Kafka ga hodisa yuboriladi. DB commit muvaffaqiyatli, Kafka esa tarmoq uzilishi sababli yozilmadi. Natijada buyurtma bazada bor, lekin ombor servisi uni ko'rmaydi. Teskari holat ham bor: Kafka yozildi, DB rollback bo'ldi, mavjud bo'lmagan buyurtma uchun hodisa tarqaldi.
@@ -488,6 +489,7 @@ Eng ko'p uchraydigan operatsion xato: `application.id` ni relizda o'zgartirish. 
 - Martin Kleppmann, *Designing Data-Intensive Applications*, 11-bob - oqimni qayta ishlash, hodisa jurnali, partition va tartib
 - Martin Kleppmann, *Designing Data-Intensive Applications*, O'Reilly, 2017, 11-bob (443-451-betlar) - xabar brokeri va bazaning farqi, JMS/AMQP uslubi bilan log asosidagi brokerni tanlash mezoni, partition darajasidagi yuk taqsimoti va head-of-line blocking, log ning aylanma bufer sifatida ishlashi, sekin iste'molchini kuzatish va eski xabarlarni qayta o'qish
 - Martin Kleppmann, *Designing Data-Intensive Applications*, O'Reilly, 2017, 11-bob (476-479-betlar) - microbatching va checkpointing, atomik commit, idempotentlik va nosozlikdan keyin holatni tiklash (changelog topic yoki kirish oqimidan qayta qurish)
+- Martin Kleppmann, *Designing Data-Intensive Applications*, O'Reilly, 2017, 4-bob (119-121-betlar, `Field tags and schema evolution`) - Thrift va Protobuf da maydonni tag raqami belgilashi, nomni o'zgartirish mumkinligi va tag ni o'zgartirish mumkin emasligi, yangi maydon uchun yangi tag va `optional` yoki standart qiymat sharti, faqat ixtiyoriy maydonni o'chirish va tag raqamini qayta ishlatmaslik qoidasi
 - [kafka 4.0.0, `StreamsConfig.java`](https://raw.githubusercontent.com/apache/kafka/4.0.0/streams/src/main/java/org/apache/kafka/streams/StreamsConfig.java) - `num.standby.replicas` default qiymati 0
 - [kafka 4.0.0, `ConsumerGroupCommandOptions.java`](https://raw.githubusercontent.com/apache/kafka/4.0.0/tools/src/main/java/org/apache/kafka/tools/consumer/group/ConsumerGroupCommandOptions.java) - `--reset-offsets` da `--dry-run` standart rejim, `--execute` esa o'zgarishni qo'llaydi
 - [kafka 4.0.0, `ConsumerGroupCommand.java`](https://raw.githubusercontent.com/apache/kafka/4.0.0/tools/src/main/java/org/apache/kafka/tools/consumer/group/ConsumerGroupCommand.java) - offset ni faqat group nofaol bo'lganda siljitish mumkinligi

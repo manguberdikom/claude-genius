@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 15. CI/CD da test pipeline (The Test Pipeline in CI/CD)
 
@@ -55,6 +55,10 @@ Pipeline tartibini belgilovchi yagona printsip - fail fast: eng tez va eng arzon
 
 Bu jadval shablon, dogma emas. Asosiy qaror: 1-5 bosqichlar PR darvozasi (pull request gate), 6-9 merge pipeline, og'ir suite'lar nightly.
 
+**Continuous delivery va continuous deployment bir narsa emas.** Newman ning ta'rifi: continuous delivery - har check-in ni release candidate deb baholash va uning production ga chiqishga tayyorligi haqida doimiy qaytarma aloqa olish; continuous deployment esa avtomatik tekshiruvdan o'tgan hamma narsani inson aralashuvisiz deploy qilish, ya'ni continuous delivery ning davomi. Continuous delivery siz continuous deployment bo'lmaydi, teskarisi esa mumkin va normal: ko'p jamoa deploy qarorini odam qabul qilishini xohlaydi va bu continuous delivery ga to'liq mos. Shuning uchun yuqoridagi 11-bosqichni avtomatlashtirmagan loyiha ham CD qilayotgan bo'ladi. Amaliy maslahat: CI vositasini CD ga moslab hack qilmang, pipeline ni birinchi darajali tushuncha sifatida modellaydigan vositani oling, aks holda qo'lda tasdiq bosqichini ham, manual UAT ni ham pipeline da ko'rsatib bo'lmaydi.
+
+**Release candidate kod va konfiguratsiyani birga oladi va yashil commitdan kesiladi.** Google ning CD amaliyotida statik konfiguratsiya release candidate ga kod bilan birga qo'shiladi va shu kod bilan birga sinaladi; konfiguratsiya ham versiya nazoratida turadi va shu review jarayonidan o'tadi. Nomzod oxirgi tasdiqlangan (yashil) commitdan kesiladi, keyin muhitlar bo'ylab ko'tariladi va **qayta qurilmaydi**: artefakt yoki konteyner image i bir marta yasalib, test, staging va production da aynan shu nusxa ishlatiladi. Shu ikki qoida versiya nomuvofiqligini (version skew) nomzodni ko'tarish paytida ushlaydi, production da emas.
+
 ## 15.2 Feedback vaqti byudjeti
 
 Feedback vaqti - arxitektura talabidir, SLA kabi o'lchanishi va kuzatilishi kerak. Amaliy byudjet: PR tekshiruvi 10 daqiqadan kam (ideal 7), merge pipeline 25-30 daqiqadan kam, nightly 2-3 soatdan kam. Sabab oddiy: 10 daqiqa - ishlab chiquvchi kontekstni yo'qotmasdan kutadigan oraliq. 20 daqiqadan oshsa, odam boshqa ishga o'tadi; 40 daqiqadan oshsa, jamoa pipeline'ni chetlab o'tish yo'llarini izlay boshlaydi.
@@ -65,6 +69,8 @@ Feedback vaqti - arxitektura talabidir, SLA kabi o'lchanishi va kuzatilishi kera
 | Merge | < 20 daq | < 30 daq | Og'ir testni nightly'ga ko'chirish |
 | Nightly | < 90 daq | < 180 daq | Parallel runner, scope qisqartirish |
 | Hotfix yo'li | < 5 daq | < 8 daq | Faqat smoke + critical unit |
+
+Byudjet yonida **sekin o'sadigan xarajatlar** ham kuzatiladi. Google ning formulasi: tashkilot takrorlab bajaradigan har narsa o'sish bo'yicha o'lchanishi kerak. To'liq build qancha vaqt oladi, toza klon qancha davom etadi, til yoki framework versiyasini yangilash qancha turadi: bu uch raqam odatda hech kim tomonidan kuzatilmaydi va juda sekin yomonlashadi. Shuning uchun ular qaynatilayotgan baqa kabi: hech qachon inqiroz momenti bo'lib ko'rinmaydi, lekin bir kun "endi yangilay olmaymiz" holatiga olib keladi. Praktik yechim - bu uchtasini ham pipeline davomiyligi bilan bir xil metrika sifatida saqlash va choraklik ko'rib chiqish.
 
 Byudjetni ushlab turish uchun pipeline davomiyligini metrika sifatida saqlang va p95 ni haftalik ko'rib chiqing. Byudjet buzilganda uchta vosita bor: parallellashtirish (resurs qo'shish), scope'ni ko'chirish (testni keyingi bosqichga olib o'tish), va testni tezlashtirish (Spring kontekstini kamaytirish, Testcontainers reuse). To'rtinchi "vosita" - testni o'chirish - faqat o'sha test haqiqatan qiymat bermasa qo'llanadi va bu qaror ongli, hujjatlashtirilgan bo'lishi kerak.
 
@@ -267,6 +273,14 @@ Jenkins'da declarative pipeline `stage` va `parallel` bloklaridan iborat; `junit
 
 Required check sifatida nimani belgilash - arxitektura qarori. Majburiy: build, unit test, slice/integration test, contract test, coverage darvozasi ([14-bobda](14-arxitektura-testlari-va-kod-sifati.md) belgilangan chegaralar bo'yicha), critical security scan. Ogohlantirish sifatida qoldirish mumkin: yangi statik tahlil qoidalari (grace period bilan), performance trend, informational dependency advisory'lar. Qoida: majburiy check faqat deterministik va tez bo'lishi kerak - flaky check majburiy bo'lsa, jamoa uni chetlab o'tishni o'rganadi.
 
+**CI ogohlantirish tizimi, mutlaq yashillik emas.** Winters ning qarashi CI ni production monitoringining "chapga surilgan" shakli deb oladi: ikkisi ham muammoni iloji boricha tez topish uchun ishlaydi va ikkisida ham sifat mezoni bir xil - signal faqat muhim invariant buzilganda chiqishi kerak. Har necha CI yurishida yiqiladigan flaky test har necha daqiqada navbatchini uyg'otadigan yolg'on alert bilan bir xil zararli. Shundan uch xulosa chiqadi, va ular korpusning "majburiy check deterministik bo'lsin" qoidasining asosi:
+
+- 100 foiz yashil CI ni ta'minlash production uchun 100 foiz uptime ni ta'minlash kabi qimmat, va buni maqsad qilish test bilan commit orasida poyga holatiga olib keladi.
+- Har nosozlikni teng darajada signal deb olish to'g'ri emas. Production da servisga ta'sir qilmayotgan alertni o'chirish to'g'ri qaror; sababi tushunarli va production ga ta'sir qilmaydigan test nosozligida ham testni o'chirishni ancha liberal qabul qilish mumkin.
+- "CI yashil bo'lmasa hech kim commit qilmaydi" siyosati har holatda to'g'ri emas: nosozlik albatta tekshiriladi, lekin asosiy sabab aniq va production ga tegmasa, commitni bloklash asossiz.
+
+Buning teskari tomoni ham bor: cause-based alert va mo'rt test butunlay qiymatsiz emas, ular nosozlikni tekshirishda qo'shimcha dalil beradi ("rasm pipeline i buzildi, unit testlardan biri JPEG siqishdan boshqa baytlar kelayotganini aytadi"). Ular faqat birlamchi signal bo'lishga yaramaydi.
+
 Merge queue (GitHub merge queue yoki GitLab merge train) ikki muammoni yechadi: semantik konflikt (ikki PR alohida yashil, birga qizil) va "main doim yashil" kafolati. Merge queue'da pipeline PR branch'ida emas, PR'ning main bilan birlashgan natijasida ishlaydi. Narxi - qo'shimcha pipeline run; foydasi - buzilgan main va undan keluvchi barcha blokirovkalarning yo'qolishi. Katta jamoada (kuniga 20+ merge) merge queue praktik zarurat.
 
 ## 15.9 Test natijalari va hisobot
@@ -310,6 +324,23 @@ Deploy tugadi degani ishlayapti degani emas. Post-deploy verification zanjirida:
 
 Canary release'da yangi versiya trafikning 5-10% ini oladi va metrikalar solishtiriladi: error rate, p99 latency, business metrika (masalan, muvaffaqiyatli to'lov ulushi). Avtomatik rollback sharti aniq raqamlar bilan ifodalanishi kerak: "5 daqiqa oynada canary error rate baseline'dan 2x yuqori bo'lsa" yoki "p99 baseline'dan 50% yuqori". Argo Rollouts yoki Flagger bu analizni deklarativ ravishda bajaradi. Shartlarni noaniq qoldirmang - "agar yomon ko'rinsa" degan shart hech qachon avtomatik ishlamaydi.
 
+**Bitta to'plamni ham build ga, ham production ga qarshi yurgizish nosozlikni ajratadi.** Google ning Takeout jamoasi topgan arzon usul: postsubmit CI da yangi build bilan yurgan test to'plamining aynan o'zi production ga qarshi ham doimiy yurgiziladi. Shunda yangi qizil natija ikki manbaga ajraladi - o'zimizning so'nggi o'zgarishlarimizdan yoki production dagi boshqa mikroservisning relizidan. Bu usul ayniqsa ko'p servisga tayanadigan tizimda ishlaydi, chunki aks holda CI "butun tashkilotni" testlab, o'ziga tegishli bo'lmagan nosozlikni ko'rsatadi. Implementatsiyasi: bitta suite, ikki profil (`-Dtarget=rc` va `-Dtarget=prod`), natijalar bir hisobotda yonma-yon.
+
+**Konfiguratsiyani ishga tushirish sinovi (deployment configuration test).** Google da katta nosozliklarning birinchi sababi kod emas, konfiguratsiya o'zgarishi. Sabab tuzilishda: konfiguratsiya production kodidan boshqa tilda yoziladi, binardan tezroq tarqaladi va testlash qiyinroq. Shuning uchun konfiguratsiya kod bilan bir qatorda versiya nazoratida turadi (shunda nosozlik sababi tasodifiy "flakiness" emas, aniq commit bo'ladi) va alohida katta test yoziladi: SUT production konfiguratsiyasi bilan ko'tariladi, qo'shimcha ma'lumot ham, assertion ham kerak emas - ko'tarilsa test o'tadi, ko'tarilmasa yiqiladi. Spring da buning eng yaqin shakli kontekst yuklanishini tekshiradigan smoke test:
+
+```java
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+@ActiveProfiles("prod")
+@TestPropertySource(properties = "spring.config.import=optional:configtree:/run/secrets/")
+class ProdConfigurationSmokeTest {
+
+    @Test
+    void contextStartsWithProductionConfiguration(ApplicationContext context) {
+        assertThat(context.isActive()).isTrue();
+    }
+}
+```
+
 Synthetic monitoring - bu production'da doimiy ishlaydigan smoke test: har 1-5 daqiqada muhim user journey'larni tashqaridan bajaradi va nosozlikni foydalanuvchi shikoyatidan oldin topadi. Amalda bu sizning E2E test kodingizning qayta ishlatilgan qismi bo'lishi mumkin, bu esa ikki marta yozishdan qutqaradi.
 
 ## 15.12 Production'da testlash
@@ -317,6 +348,13 @@ Synthetic monitoring - bu production'da doimiy ishlaydigan smoke test: har 1-5 d
 Production'da testlash - qoidalarni buzish emas, balki test muhiti hech qachon production'ga to'liq teng bo'lmasligini tan olish. To'rt asosiy texnika:
 
 Feature flag bilan dark launch - yangi kod deploy qilinadi, lekin flag o'chiq; ichki foydalanuvchilar uchun yoqiladi, keyin bosqichma-bosqich kengaytiriladi. Spring'da bu oddiy `@ConditionalOnProperty` dan to'liq flag platformasiga (Unleash, LaunchDarkly, OpenFeature SDK) qadar bo'lishi mumkin. Shadow traffic - real so'rovlar nusxasi yangi versiyaga yuboriladi, lekin javobi foydalanuvchiga qaytmaydi; bu yangi implementatsiyani real yuklama va real ma'lumot shakli bilan sinashning eng halol usuli. A/B test - ikki variant o'rtasida business metrikani solishtirish, bu texnik emas, mahsulot qarori. Va barcha uchun asos - kuzatuvchanlik: distributed tracing, strukturalangan log, per-variant metrika.
+
+Beshinchi texnika - **A/B diff regression test**, shadow traffic ning tekshiruv bilan to'ldirilgan shakli. Google da bu eng ko'p ishlatiladigan katta test turi: eski va yangi versiya ikki alohida muhitda ko'tariladi, ikkisiga bir xil trafik yuboriladi (ko'pincha production dan ko'chirilgan yoki tanlab olingan) va uchinchi binar javoblarni solishtiradi. Har farq ikki qatordan biriga tushadi: kutilgan o'zgarish yoki regressiya. Ikki variant ham foydali:
+
+- **A-A taqqoslash** (tizimni o'zi bilan solishtirish) nondeterminizm, shovqin va flakiness manbalarini topadi va ularni keyingi A-B natijalaridan chiqarib tashlashga imkon beradi.
+- **A-B-C taqqoslash** oxirgi production versiyasi, baseline build va kutilayotgan o'zgarishni birga qo'yadi: shunda bir qarashda ham shu o'zgarishning ta'siri, ham keyingi relizga yig'ilgan umumiy farq ko'rinadi.
+
+Asosiy sababi Hyrum qonuni: tizimning haqiqiy public API si e'lon qilingani emas, foydalanuvchiga ko'rinadigan hamma narsa, shuning uchun nosozlik rejimlarining ko'pini oldindan test bilan qoplab bo'lmaydi. Kamchiliklari to'rtta va ular aniq: **tasdiqlash qo'lda** (farq yaxshimi yoki yomonmi, hatto baseline to'g'rimi - buni odam hal qiladi), **shovqin** (kutilmagan farq har safar qo'lda tekshirishni talab qiladi, shuning uchun shovqinni yo'qotish bunday testni qurishning asosiy murakkabligi), **qamrov** (burchak holatlarini ochadigan trafikni qo'lda yig'ish qiyin) va **sozlash** (bitta SUT ni ushlab turish ham qiyin, ikkitasi murakkablikni ikki baravar oshiradi, ayniqsa ular umumiy bog'liqliklarga ega bo'lsa).
 
 Xavfsiz qilish shartlari: yozish operatsiyalarida yon ta'sir bo'lmasligini kafolatlash (shadow traffic'da yozishni mock qilish yoki alohida sxemaga yo'naltirish), test ma'lumotini real ma'lumotdan ajratish (test akkauntlarni belgilash va ularni analitikadan chiqarish), har bir flag uchun o'chirish mexanizmi va muddati (eskirgan flag - texnik qarz), va blast radius'ni cheklash. Agar siz canary metrikasini kuzatolmasangiz, production'da testlashga tayyor emassiz.
 
@@ -346,6 +384,17 @@ Tozalash majburiy qadam: `-P` ni `~/.gradle/gradle.properties` ga yozib qo'ymang
 ## 15.14 Pipeline'ni ishonchli qilish
 
 Pipeline'ning ishonchliligi uning tezligidan muhimroq. Birinchi qoida - infratuzilma nosozligini test nosozligidan ajratish. Docker registry javob bermadi, runner diski to'ldi, network timeout - bular test nosozligi emas, lekin odatiy pipeline ularni bir xil "failed" sifatida ko'rsatadi. Yechim: infra bosqichlarini (image pull, dependency download, container startup) alohida step sifatida ajratish va ularning exit code'ini alohida ko'rish; keyin retry'ni faqat o'sha step'larga qo'llash.
+
+**Main buzilganda birinchi harakat - rollback.** Google da har jamoada build uchun mas'ul navbatchi (Build Cop) bor: uning ishi testlarni kim buzganidan qat'i nazar yashil holatga qaytarish, va u xabar olganda qo'lidagi ishni qoldirib buni qiladi. Eng kuchli vositasi - rollback: aybdor o'zgarishni qaytarish tizimni ma'lum yaxshi holatga eng tez va eng xavfsiz tiklaydi, oldinga tuzatish esa xavfliroq taklif. Shu bilan birga **ma'lum yiqilgan test ustiga yangi ish commit qilinmaydi**: bu norma bo'lmasa, buzilgan main ustiga yangi o'zgarishlar yotib, sababni ajratish qiyinlashadi. Test va rollback bir-biriga tayanadi: testlar o'zgartirishga ishonch beradi, rollback qaytarishga; testsiz rollback xavfsiz emas, rollbacksiz buzilgan test tez tuzalmaydi.
+
+**Aybdorni to'plamni bo'lib topish (culprit finding).** Bir necha o'zgarish birga sinalganda (bu tezlik uchun qilinadi) qizil natija to'plamning qaysi a'zosidan kelganini aytmaydi. Google da ikki yondashuv birga ishlaydi: tizim yiqilgan to'plamni alohida o'zgarishlarga bo'lib qayta yurgizadi, va muhandis qo'lida to'plam bo'ylab binar qidiruv qiladigan vosita bor. Muhim shart - avval nosozlikning haqiqiyligini tasdiqlash: flaky test va infratuzilma xatosi tufayli qizil bergan to'plamni bo'lib yurgizish bekor ish. Git da bu `git bisect run` bilan amalda bir xil ishlaydi.
+
+```bash
+# Yiqilgan to'plamda aybdor commitni topish
+git bisect start HEAD <oxirgi-yashil-commit>
+git bisect run ./mvnw -q -Dtest=OrderPaymentIT test
+git bisect reset
+```
 
 Retry siyosati qat'iy bo'lishi kerak: `docker pull` va dependency download uchun retry - to'g'ri; test bajarilishi uchun retry - flaky testni yashirish, bu [16-bobda](16-flaky-testlar-test-qarzi-va-test-kodini.md) ko'rilgan jarayonni buzadi. Agar test retry kerak bo'lsa, u hodisa sifatida qayd etilsin va flaky sifatida belgilansin, jimgina yashil bo'lmasin.
 
@@ -535,6 +584,11 @@ ESLATMA: Spring loyihasida stub va driver nomlari boshqacha ko'rinadi. Stub roli
 - [maven-surefire, `TestSuiteXmlParser.java`](https://raw.githubusercontent.com/apache/maven-surefire/0c970adeb11e8a59b449be5b3be2a50c478c2a65/surefire-report-parser/src/main/java/org/apache/maven/plugins/surefire/report/TestSuiteXmlParser.java) - JUnit XML hisobotining tarkibi, CI da yig'iladigan maydonlar
 - [Google, Speed of Code Reviews](https://raw.githubusercontent.com/google/eng-practices/3bb3ec25b3b0199f4940b1aa75f0ac5c5753301c/review/reviewer/speed.md) - javob tezligining jamoa oqimiga ta'siri, ya'ni pipeline vaqtining tashkiliy narxi
 - [sonarqube 9.9 LTA, `ScanProperties.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/sonar-scanner-engine/src/main/java/org/sonar/scanner/scan/ScanProperties.java) - `sonar.qualitygate.wait` bilan pipeline ni bloklash va 300 sekundlik default timeout
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 23-bob ("Continuous Delivery", "CI Is Alerting", "Scenario #3: Debugging 'All of Google'") - release candidate ning kod va statik konfiguratsiyani birga olishi va muhitlar bo'ylab qayta qurilmasligi, CI ning ogohlantirish tizimi sifatida qarashi va 100 foiz yashillikning narxi, bitta to'plamni production ga qarshi ham yurgizib nosozlikni ajratish. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 23-bob ("Culprit Finding", "Failure Management") - yiqilgan to'plamni alohida o'zgarishlarga bo'lib qayta yurgizish va binar qidiruv, Build Cop roli, rollback ning oldinga tuzatishdan xavfsizligi, ma'lum yiqilgan test ustiga commit qilmaslik normasi. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 14-bob ("Configuration Issues", "Deployment Configuration Testing") - konfiguratsiya o'zgarishi katta nosozliklarning birinchi sababi ekani va konfiguratsiyani versiya nazoratida saqlab ishga tushirish sinovini katta test sifatida yurgizish. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 1-bob ("Scale and Efficiency") - to'liq build vaqti, toza klon vaqti va til versiyasini yangilash narxi kabi sekin o'sadigan xarajatlarning kuzatilmasligi va ularning birdan inqirozga aylanmasligi. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 7-bob ("Continuous Delivery Versus Continuous Deployment", "Tooling") - continuous delivery har check-in ni release candidate deb baholashi, continuous deployment uning davomi ekani va hamma uchun shart emasligi, qo'lda tasdiqning CD bilan mosligi, pipeline ni birinchi darajali tushuncha sifatida modellaydigan vosita tanlash. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
 - Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr, Pragmatic Engineer, 2023, 17-bob "Shipping to Production" (251-bet) va 14-bob "Testing" (205-bet) - ijara konteksti so'rov bilan tarqaladi va servislar unga qarab boshqacha yo'naltiradi, test ijarasidagi to'lov mock qilinadi, ko'p ijara qo'yilganda alohida test muhitlariga ehtiyoj kamayadi
 - Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 29.2-29.3 "Integration" (691-701-bet) - fazali va inkremental integratsiya farqi, inkremental integratsiyaning oltita foydasi va olti tartib strategiyasi: yuqoridan-pastga (stub), pastdan-yuqoriga (test driver), sendvich, xavf bo'yicha, xususiyat bo'yicha va T shaklida
 

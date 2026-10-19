@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 25. Migratsiya review: qulf, backfill, orqaga moslik (Reviewing Migrations)
 

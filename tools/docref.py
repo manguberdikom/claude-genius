@@ -180,18 +180,19 @@ def _top(here):
     return _git(["rev-parse", "--show-toplevel"], here).strip() or here
 
 
-def memory_home():
+def memory_home(cwd=None):
     """Klondan tashqari proyektlar memorysi: GENIUS_MEMORY_DIR, sukut
-    `~/.claude/genius-memory`. Har chaqiruvda o'qiladi, import paytida emas.
+    `<workspace>/docs-local/memory` (docs_base). Har chaqiruvda o'qiladi.
 
     Global o'rnatishda boshqa proyektning vazifa, qaror va fayl nomlari
-    ochiq klon reposiga tushmasligi uchun (R0.5). Bu papka push qilinmaydi;
-    xususiy git repo bo'lsa, uni foydalanuvchi o'zi boshqaradi.
+    ochiq klon reposiga tushmasligi uchun (R0.5). Memory proyekt
+    hujjatlari yonida turadi, git ga kirmaydi va push qilinmaydi
+    (ensure_local); uy papkasiga yozilmaydi.
     """
     given = os.environ.get("GENIUS_MEMORY_DIR", "").strip()
     if given:
         return os.path.abspath(os.path.expanduser(given))
-    return os.path.join(os.path.expanduser("~"), ".claude", "genius-memory")
+    return os.path.join(docs_base(cwd), "memory")
 
 
 def clone():
@@ -213,7 +214,7 @@ def memory_root(cwd=None):
     memory_home()."""
     if is_clone_project(cwd):
         return os.path.join(clone(), "memory")
-    return memory_home()
+    return memory_home(cwd)
 
 
 def memory_dir(slug, cwd=None):
@@ -221,6 +222,54 @@ def memory_dir(slug, cwd=None):
     if slug in SHARED_MEMORY:
         return os.path.join(clone(), "memory", slug)
     return os.path.join(memory_root(cwd), slug)
+
+
+def ensure_local(path):
+    """Papkani yaratadi va uning `docs-local` ildizini git dan chiqaradi.
+
+    `docs-local` git daraxti ichida bo'lsa (workspace o'zi repo), u shu
+    reponing `.git/info/exclude` iga qo'shiladi: commit ham, push ham
+    bo'lmaydi, repo `.gitignore` iga tegilmaydi. Yo'lni qaytaradi.
+    """
+    try:
+        os.makedirs(path, exist_ok=True)
+        _exclude_docs_local(path)
+    except (OSError, ValueError) as exc:
+        # Papka yozilmasa (read-only mount, `docs-local` fayl) yo'l baribir
+        # qaytadi: chaqiruvchi yiqilmasin, sabab bir qatorda.
+        print("docs-local: %s (%s)" % (path, exc), file=sys.stderr)
+    return path
+
+
+def _exclude_docs_local(path):
+    """`docs-local` ildizini o'z reposining `.git/info/exclude` iga qo'shadi."""
+    base = os.path.realpath(path)
+    while os.path.basename(base) != "docs-local":
+        parent = os.path.dirname(base)
+        if parent == base:
+            return
+        base = parent
+    parent = os.path.dirname(base)
+    top = _git(["rev-parse", "--show-toplevel"], parent).strip()
+    git_dir = _git(["rev-parse", "--git-common-dir"], parent).strip()
+    if not top or not git_dir:
+        return
+    rel = os.path.relpath(base, os.path.realpath(top))
+    if rel.startswith(".."):
+        return
+    # --path-format=absolute git 2.31+ da: eski gitda ham ishlashi uchun
+    # nisbiy natija chaqiruv papkasiga qo'shiladi.
+    exclude = os.path.join(parent, git_dir, "info", "exclude")
+    line = "/" + rel.replace(os.sep, "/") + "/"
+    text = ""
+    if os.path.exists(exclude):
+        with open(exclude, encoding="utf-8") as handle:
+            text = handle.read()
+    if line in {l.strip() for l in text.split("\n")}:
+        return
+    os.makedirs(os.path.dirname(exclude), exist_ok=True)
+    with open(exclude, "a", encoding="utf-8", newline="\n") as handle:
+        handle.write(("\n" if text and not text.endswith("\n") else "") + line + "\n")
 
 
 def project_slug(cwd=None, memory=None):
@@ -302,19 +351,38 @@ def docs_dir(cwd=None):
     yozuvchi `os.makedirs` qiladi. Har chaqiruvda o'qiladi.
     """
     here = cwd or os.getcwd()
-    if not _git(["rev-parse", "--show-toplevel"], here).strip():
+    top = _repo_top(here)
+    if not top:
         # Git bo'lmagan workspace (bir nechta repo turgan papka): hujjatlar uning o'zida, repo nomisiz.
-        given = os.environ.get("GENIUS_DOCS_DIR", "").strip()
-        return os.path.abspath(os.path.expanduser(given)) if given else os.path.join(here, "docs-local")
+        return docs_base(here)
+    return os.path.join(docs_base(here), os.path.basename(os.path.normpath(top)))
+
+
+def _repo_top(here):
+    """Asosiy repo ildizi (guruh worktree si ham asosiy repoga); git yo'q bo'lsa ''."""
+    if not _git(["rev-parse", "--show-toplevel"], here).strip():
+        return ""
     top = _top(here)
     common = _git(["rev-parse", "--path-format=absolute", "--git-common-dir"],
                   here).strip()
     if common and os.path.basename(os.path.normpath(common)) == ".git":
         top = os.path.dirname(os.path.normpath(common))
-    name = os.path.basename(os.path.normpath(top))
+    return top
+
+
+def docs_base(cwd=None):
+    """`docs-local` ildizi: GENIUS_DOCS_DIR, aks holda repo ildizining ota
+    papkasidagi (git bo'lmasa joriy papkadagi) `docs-local`."""
     given = os.environ.get("GENIUS_DOCS_DIR", "").strip()
     if given:
-        base = os.path.abspath(os.path.expanduser(given))
-    else:
-        base = os.path.join(os.path.dirname(os.path.normpath(top)), "docs-local")
-    return os.path.join(base, name)
+        return os.path.abspath(os.path.expanduser(given))
+    here = cwd or os.getcwd()
+    top = _repo_top(here)
+    if not top and not cwd and os.environ.get("CLAUDE_PROJECT_DIR"):
+        # Git bo'lmagan workspace ning pastki papkasidan chaqirilsa ham
+        # docs-local workspace ildizida bitta bo'lsin.
+        here = os.environ["CLAUDE_PROJECT_DIR"]
+        top = _repo_top(here)
+    if not top:
+        return os.path.join(here, "docs-local")
+    return os.path.join(os.path.dirname(os.path.normpath(top)), "docs-local")

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 4. Funksiya: kichiklik va bitta ish (Functions: Small and Doing One Thing)
 
@@ -158,6 +158,67 @@ private boolean isStalePending(Order order) {
 ```
 
 Ajratishdan keyin darhol tekshirish: yangi funksiya nomi `And`, `Or`, `Then` so'zlarini o'z ichiga olmasligi kerak. Olsa, u bitta ish qilmaydi.
+
+Ajratishning uchinchi sababi bor va u ko'pincha e'tibordan chetda qoladi:
+**takrorlanadigan kodni bir xil shaklga keltirish**. Boswell va Foucher
+misolida to'rtta tekshiruv bir xil narsani qiladi, lekin har biri boshqa
+uzunlikda, qatorlari ko'chib ketgan va foydali qism (`"Doug Adams"`,
+`"Mr. Douglas Adams"`) `database_connection` va `error` kabi takroriy
+tokenlar orasida ko'milgan. Yordamchi metod chiqarilgandan keyin to'rt chaqiruv
+to'rt qatorga sig'adi va to'rtta test borligi, har birining parametrlari bilan,
+bir qarashda ko'rinadi (Boswell/Foucher, *The Art of Readable Code*, 1-nashr,
+O'Reilly, 2011, 4-bob (37-38-bet)).
+
+```java
+// Oldin: shakl tartibsiz, muhim qism takroriy tokenlar orasida
+assertThat(expander.expandFullName(connection, "Doug Adams", errors))
+        .isEqualTo("Mr. Douglas Adams");
+assertThat(errors.message()).isEmpty();
+assertThat(expander.expandFullName(connection, " Jake Brown ", errors))
+        .isEqualTo("Mr. Jacob Brown III");
+assertThat(errors.message()).isEmpty();
+assertThat(expander.expandFullName(connection, "No Such Guy", errors)).isEmpty();
+assertThat(errors.message()).isEqualTo("no match found");
+
+// Keyin: shakl bir xil, har qatorda faqat o'zgaradigan qism qoldi
+checkFullName("Doug Adams", "Mr. Douglas Adams", "");
+checkFullName(" Jake Brown ", "Mr. Jacob Brown III", "");
+checkFullName("No Such Guy", "", "no match found");
+checkFullName("John", "", "more than one result");
+```
+
+Kitob bu harakatni "kodni chiroyli qilish" bo'limida beradi va natijasini oshkor
+aytadi: maqsad estetik bo'lsa ham, foydasi estetik emas - takrorlanish
+yo'qoladi, har holatning muhim qismi ko'zga tashlanadi va yangi holat qo'shish
+arzonlashadi (shu yerda, 38-bet). Shaklni bir xillashtirish, demak, ajratishni
+boshlash uchun yetarli sabab: tana uzun bo'lishi shart emas.
+
+**Bog'liq bo'lmagan quyi masalani ajratish.** Uzunlik va izoh ehtiyoji ajratish uchun yetarli sabab, lekin eng ishonchli mezon boshqa: **qator funksiyaning maqsadiga ishlayaptimi**. Boswell va Foucher uch qadamli tartib beradi:
+
+1. Funksiya yoki blokka qarab "bu kodning yuqori darajadagi maqsadi nima?" deb so'rang.
+2. Har qator uchun "bu qator shu maqsadga bevosita ishlaydimi, yoki maqsadga erishish uchun kerak bo'lgan **bog'liq bo'lmagan quyi masalani** yechayaptimi?" deb so'rang.
+3. Yetarlicha qator quyi masalaga tegishli bo'lsa, o'sha kod alohida funksiyaga chiqadi.
+
+Ajralgan funksiyaning asosiy xususiyati - u **nima uchun chaqirilayotganini bilmaydi**: `sphericalDistance`, `makeUrlFriendly`, `urlSafeEncrypt` o'z chaqiruvchisidan butunlay mustaqil. Kitobdagi misol: eng yaqin joyni topadigan funksiya ichida sferik masofa formulasi turgan edi; formula alohida funksiyaga chiqarilgandan keyin asosiy funksiya o'z maqsadiga qaytdi va o'quvchi geometriyaga chalg'imaydigan bo'ldi.
+
+Foydasi uch tomonli va u estetik emas: ajralgan kod **alohida testlanadi**, chegara holatlarini yaxshilash osonlashadi (chunki o'zgartirish chaqiruvchiga ta'sir qilmaydi), va u qayta ishlatiladigan bo'ladi.
+
+```java
+// Maqsad: eng yaqin joyni topish. Geometriya - bog'liq bo'lmagan quyi masala.
+Location findClosest(double lat, double lng, List<Location> locations) {
+    return locations.stream()
+            .min(comparingDouble(l -> sphericalDistance(lat, lng, l.lat(), l.lng())))
+            .orElse(null);
+}
+
+// Chaqiruvchidan bexabar, alohida testlanadi
+static double sphericalDistance(double lat1, double lng1, double lat2, double lng2) {
+    double phi1 = toRadians(lat1);
+    double phi2 = toRadians(lat2);
+    return acos(sin(phi1) * sin(phi2)
+            + cos(phi1) * cos(phi2) * cos(toRadians(lng2) - toRadians(lng1)));
+}
+```
 
 ## 4.6 Funksiya nomi uzunligi va aniqligi
 
@@ -325,6 +386,7 @@ Bu usulning nomlangan shakli "rubber ducking": kitob bir universitet laboratoriy
 
 ## Manbalar
 
+- Dustin Boswell, Trevor Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011 (copyright 2012), 10-bob (109-111-betlar) - funksiyaning yuqori darajadagi maqsadini so'rash, har qatorni shu maqsadga ishlayotgani bo'yicha tekshirish va bog'liq bo'lmagan quyi masalani chaqiruvchidan bexabar alohida funksiyaga chiqarish; ajratilgan kodning alohida testlanishi va qayta ishlatilishi
 - Robert C. Martin, *Clean Code*, 3-bob - funksiya 100 qator bo'lmasligi, 20 qator deyarli hech qachon bo'lmasligi; qoida tadqiqotga emas tajribaga tayanishi
 - Robert C. Martin, *Clean Code*, 3-bob ("Blocks and Indenting") - blok bir qator bo'lishi, indentatsiya darajasi birdan yoki ikkidan oshmasligi
 - Robert C. Martin, *Clean Code*, 3-bob ("Do One Thing", "One Level of Abstraction per Function") - bitta ish qilish sinovi va pastga tushish qoidasi
@@ -336,6 +398,7 @@ Bu usulning nomlangan shakli "rubber ducking": kitob bir universitet laboratoriy
 - Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 9-bob (232-233-bet) - ortiqcha bo'lib qolgan pseudokod izohini o'chirish; PPP ga uch alternativa: test-first, refactoring va design by contract (4.12)
 - Dustin Boswell, Trevor Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011 (copyright 2012), 12-bob (131-133-bet) - mantiqni sodda tilda bayon qilib keyin kodga aylantirishning uch qadami va ruxsat tekshiruvi misolida inkorlarning yo'qolishi (4.13)
 - Dustin Boswell, Trevor Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011 (copyright 2012), 12-bob (135-138-bet) - bayonning chigal gapi ajratiladigan bo'limni ko'rsatishi, usulni rekursiv qo'llaganda nomlarning umumiylashishi, "rubber ducking" va so'z bilan aytilmagan dizayn tugallanmagani (4.13)
+- Dustin Boswell, Trevor Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011 (copyright 2012), 4-bob (37-38-bet) - `CheckFullName` misolida tartibsiz takrorlanadigan kodni yordamchi metod bilan bir xil shaklga keltirish va uning uch foydasi (takrorlanish yo'qolishi, muhim qismning ko'rinishi, yangi holat qo'shish arzonligi)
 
 ---
 

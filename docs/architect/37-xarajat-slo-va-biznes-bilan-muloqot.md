@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 37. Xarajat, SLO va biznes bilan muloqot (Cost, SLO and Business Communication)
 
@@ -200,6 +200,19 @@ groups:
           1 - ((1 - avg_over_time(tolov:sli_muvaffaqiyat:ratio5m[30d])) / 0.0005)
 ```
 
+Availability SLI si alohida e'tibor talab qiladi, chunki uning o'lchovi so'rov oqimidan emas, sintetik tranzaksiyadan olinadi va shu sababli kelishuvda ko'p joy noaniq qoladi. Nygard SLA ga yoziladigan savollarni sanab beradi va ularning har biri keyinchalik tortishuvga aylanadigan nuqta: sintetik tranzaksiya qanday chastotada yuboriladi; har qadam uchun maksimal javob vaqti qancha; muvaffaqiyat va nosozlik qanday belgilar bilan aniqlanadi; tekshiruv qayerdan va nechta joydan yuboriladi; natija qayerga yoziladi; va availability foizi qaysi formula bilan hisoblanadi (Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 13-bob, 231-bet). Ro'yxat checklist bo'lib ishlaydi: SLA matnida shu olti band yozilmasa, uzilishdan keyin ikki tomon boshqa raqam hisoblaydi va kelishuv ishlamaydi.
+
+| Band | Nima yoziladi | Noaniq qolsa nima bo'ladi |
+|---|---|---|
+| Chastota | tekshiruv oralig'i va kuzatuv oynasi | bir daqiqalik uzilish bir tomonda ko'rinadi, boshqasida yo'q |
+| Qadam bo'yicha chegara | har qadam uchun maksimal javob vaqti | sekin, lekin ishlagan oqim bir tomonda nosozlik, boshqasida emas |
+| Muvaffaqiyat belgisi | HTTP kodi va javob tanasidagi aniq marker | 200 qaytargan xato javob muvaffaqiyat deb sanaladi |
+| Manba va soni | qaysi joylardan va nechta nuqtadan | bitta nuqtadagi tarmoq muammosi uzilish deb yoziladi |
+| Natija joyi | o'lchov qayerda saqlanadi va kim o'qiydi | hisobot paytida ma'lumot topilmaydi |
+| Formula | foiz qanday hisoblanadi (vaqt yoki so'rov bo'yicha) | 99.9 ikki tomonda ikki xil raqam beradi |
+
+Sintetik monitoringning texnik tomoni [sintetik monitoring](../patterns/21-observability-patternlari.md#2118-sintetik-monitoring-synthetic-monitoring) yozuvida; bu yerdagi qism faqat kelishuvga yoziladigan bandlar.
+
 ## 37.6 Xato byudjeti (error budget) va u qanday qaror qabul qilishga yordam beradi
 
 Newman error budget nima uchun kerakligini sabab bilan boshlaydi: yangi narsa sinaganda tizimga qo'shimcha beqarorlik kiritamiz, shuning uchun barqarorlikni saqlash yoki yaxshilash istagi o'zgarishni tormozlashi mumkin; error budget esa qancha xato maqbul ekanini ochiq aytib shu muammoni chetlab o'tish urinishi (10-bob, "Error budgets").
@@ -233,6 +246,12 @@ awk -v q="$QOLDIQ" 'BEGIN { exit (q < 25) ? 1 : 0 }' || {
   echo "BYUDJET TUGAYAPTI: yangi funksiya relizi to'xtatiladi"; exit 1; }
 ```
 
+Byudjet reliz qarorini faqat uzilish tomonidan yopadi; nuqson tomonida unga juftlik kerak bo'ladi. *Software Engineering at Google* ning boshlanish nuqtasi mukammal binar yo'qligi: o'nlab yirik xususiyatni mustaqil ishlab chiqayotgan o'nlab yoki yuzlab dasturchining ishini birlashtiradigan build da har xatoni tuzatish imkonsiz, shuning uchun har safar savollarni tortib ko'rish kerak bo'ladi, masalan chiziq ikki piksel chapga ko'chgani reklama ko'rinishiga va daromadga ta'sir qiladimi, yoki quti soyasining ozgina o'zgarishi ko'rish qobiliyati cheklangan foydalanuvchiga matnni o'qishni qiyinlashtiradimi. Kitobning javobi mexanizm shaklida: aniq chegaralari bo'lgan asosiy ko'rsatkichlar (KPI) xususiyatni mukammal bo'lmasa ham chiqarishga ruxsat beradi va aks holda bahsli bo'ladigan reliz qarorlarida tiniqlik yaratadi. Shu bog'lanish ham ochiq yozilgan: bu error budget mantiqining o'zi, ya'ni mukammallik kamdan kam eng yaxshi maqsad, qancha xatoga joy borligini tushunib, byudjetning qanchasi sarflanganiga qarab tezlik va barqarorlik o'rtasidagi kelishuv sozlanadi.
+
+Kitobning o'z misoli chegaraning qattiq emasligini ham ko'rsatadi: Filippinda faqat bitta orolda gaplashiladigan kam tarqalgan sheva aniqlangan, unda qidiruv so'rovi berilsa javob o'rniga bo'sh sahifa qaytgan. Savol yirik yangi xususiyat relizini kechiktirishga arziydimi bo'ldi; ma'lumot yig'ilgandan keyin qaror yuqori darajada qabul qilingan va reliz kechiktirilib xato tuzatilgan. Darsi KPI ni bekor qilmaydi, uni to'g'ri joyga qo'yadi: KPI qarorni ma'lumotga asoslangan qiladi, qarorning o'zini avtomatlashtirmaydi.
+
+Amalda bu reliz qaydida ikki qatorni bildiradi: byudjet qoldig'i (foiz) va bloklovchi nuqsonlar ro'yxati har biri uchun chegara qiymati bilan. Chegarasi yozilmagan nuqson "muhim" yoki "muhim emas" bahsiga aylanadi va bahsni tajriba emas, ovoz balandligi yechadi.
+
 ## 37.7 Mavjudlik raqamlari: 99.9 va 99.99 orasidagi amaliy farq va narxi
 
 Nygard muzokaraning to'g'ri shaklini beradi: mavjudlik qaroriga to'g'ri yondashuv uni sodda moliyaviy atamalarda qo'yish, ya'ni haqiqiy xarajatni oldi olingan yo'qotishga qarshi qo'yish. U misol ham ko'rsatadi: 98 foiz mavjudlik har oyda 864 daqiqa uzilishga aylanadi; sayt kun cho'qqisida soatiga 1 500 dollar keltirsa, 98 foizda eng yomon holatdagi yo'qotish oyiga taxminan 21 600 dollar, mavjudlikni 99.99 foizga oshirish esa kutilgan uzilish narxini oyiga 108 dollarga tushiradi. O'sha misolda beshyillik hayot davri uchun qo'shimcha narx 98 700 dollarni tashkil qilgan, va Nygard 1 289 520 dollarni tejash uchun 98 700 dollar sarflash puxta moliyaviy tanlov ko'rinishini aytadi (13-bob, 229-230-bet).
@@ -255,6 +274,18 @@ Amaliy farq shunda. 99.9 foizda oyda 43.2 daqiqa bor, bu bitta sekin deploy yoki
 Eng muhim ogohlantirish: zanjirdagi mavjudlik pasayadi, oshmaydi. Nygard buni SLA Inversion antipatterni sifatida yozadi va hisobini ko'rsatadi: agar tizim beshta tashqi xizmatni talab qilsa va har biri 99.9 foiz mavjudlikka ega bo'lsa, tizimning eng yaxshi erishishi mumkin bo'lgani 99.5 foiz. Umumiy qoidani ham beradi: har bir bog'liqligingiz siz bermoqchi bo'lgan SLA uchun loyihalanmagan bo'lsa, qila oladiganingizning eng yaxshisi eng yomon xizmat ko'rsatuvchingizning SLA si; u buni IT dagi termodinamikaning ikkinchi qonuni deb ataydi, ya'ni xizmat darajalari faqat pasayadi (4-bob, 102-105-bet). Javobi ikkita: past SLA li tizimdan ajralish, ilovani masofaviy tizimsiz ishlaydigan qilish va yumshoq degradatsiya, hamda SLA ni funksiya bo'yicha qayta ta'riflash, chunki tashqi tomonga tayanmagan funksiyalar sizning maksimal SLA ingizni olishi mumkin (4-bob, 104-105-bet).
 
 Kechikish ham shu zanjirda kuchayadi. Kleppmann bitta oxirgi foydalanuvchi so'rovi bir necha orqa chaqiruvni talab qilsa, sekin chaqiruvga tushish ehtimoli oshishini va natijada oxirgi foydalanuvchi so'rovlarining kattaroq ulushi sekin bo'lishini "dum kechikishining kuchayishi" deb nomlaydi (1-bob, 16-bet).
+
+Oxirgi tuzatish zanjir emas, rol haqida: mavjudlik tizim bo'ylab bir xil emas. *Fundamentals of Software Architecture* ning auksion tizimi misoli buni aniq ko'rsatadi. Auksion o'tkazuvchi (auctioneer) ulana olmasa, hech kim taklif bera olmaydi, ya'ni ta'sir butun auksionga tarqaladi. Bitta taklif beruvchi (bidder) ulana olmasa, ta'sir faqat o'shaning o'zida qoladi. Shuning uchun kitob arxitektura xarakteristikalarini butun tizim uchun emas, rol yoki quantum bo'yicha alohida belgilaydi, va natija gibrid arxitektura bo'ladi: bir qismda yuqori mavjudlik va qimmat zaxira, boshqa qismda arzonroq yechim.
+
+SLO yozishda bu amaliy farq keltiradi. "Tizim 99.95 foiz mavjud" degan bitta raqam o'rniga rol bo'yicha jadval yoziladi, va byudjet ham rol bo'yicha hisoblanadi.
+
+| Rol yoki funksiya | Nosozlik ta'siri | SLO va byudjet |
+|---|---|---|
+| Auksionni boshqarish (auctioneer) | hamma uchun taklif to'xtaydi | eng yuqori SLO, alohida zaxira, eng kichik byudjet |
+| Taklif berish (bidder) | faqat shu foydalanuvchi ta'sirlanadi | o'rtacha SLO, qayta urinish va navbat |
+| Tarix va hisobot | foydalanuvchi kechiktirilgan ma'lumot ko'radi | eng past SLO, degradatsiya maqbul |
+
+Shu taqsimot [37.8](#378-nofunksional-talabni-biznes-tiliga-ogirish) dagi muloqotni ham osonlashtiradi: suhbat "tizim qancha ishonchli bo'lsin" degan abstrakt savoldan "qaysi funksiya o'chsa biznes qancha yo'qotadi" degan aniq savolga ko'chadi.
 
 ## 37.8 Nofunksional talabni biznes tiliga o'girish
 
@@ -449,8 +480,12 @@ class PaymentOutcomeMetrics {
 - Mark Richards, Neal Ford, *Fundamentals of Software Architecture*, 2020, 5-bob (Table 5-1) - arxitektor va biznes tilining "tarjimada yo'qolish" muammosi, domen tashvishlarini arxitektura xarakteristikalariga tarjima jadvali, agility bozorga chiqish vaqtiga teng emasligi
 - Mark Richards, Neal Ford, *Fundamentals of Software Architecture*, 2020, 6-bob - xarakteristikalarning noaniq, turlicha ta'riflangan va tarkibli bo'lishi, obyektiv ta'rifning shu uch muammoni hal qilishi, faqat o'rtachani o'lchash tuzog'i va maksimalni o'lchash
 - Paul Clements va boshqalar, *Documenting Software Architectures: Views and Beyond*, 2-nashr, Addison-Wesley, 2011, Prologue (P.2.3) - har sifat atributi talabining manfaatdorlar doirasi bo'lishi va ularning talab bajarilishini bilishni xohlashi, sifat chegaralarining interfeys hujjatida Quality of Service shaklida yozilishi
+- Titus Winters, Tom Manshreck, Hyrum Wright (tahr.), *Software Engineering at Google*, O'Reilly, 2020, 24-bob ("No Binary Is Perfect" bo'limi) - mukammal binar yo'qligi va har relizda kelishuv qilish zarurati, aniq chegaralari bo'lgan asosiy ko'rsatkichlar (KPI) kamchilikli relizga ruxsat berishi va bahsli qarorlarda tiniqlik yaratishi, error budget bilan bog'lanishi, hamda Filippindagi bitta orol shevasi misolida relizni kechiktirish qarori
+- Mark Richards, Neal Ford, *Fundamentals of Software Architecture*, O'Reilly, 2020, 7-bob ("Case Study: Going, Going, Gone") - mavjudlik tizim bo'ylab bir xil emasligi (auksion o'tkazuvchi ulanmasa hamma uchun taklif to'xtashi, bitta taklif beruvchi ulanmasa faqat o'zi ta'sirlanishi) va xarakteristikalarni rol hamda quantum bo'yicha belgilash gibrid arxitekturaga olib kelishi. Qo'limizdagi nusxada chop etilgan bet raqami yo'q, shuning uchun faqat bob va bo'lim nomi ko'rsatilgan
+- ESLATMA: 37.6 dagi reliz qaydidagi ikki qator tavsiyasi va 37.7 dagi rol bo'yicha SLO jadvali shu korpusning qo'shimchasi
 - ESLATMA: 37.1 dagi litsenziyaning CPU yoki node soniga bog'lanishi haqidagi kuzatuv, 37.6 dagi 25 foizli to'xtash chegarasi, 37.10 dagi yoyish pog'onalari va kutish vaqti, 37.12 dagi raqam soni va bir sahifa shakli shu korpusning amaliy tavsiyasi, kitobdan olingan emas
 - ESLATMA: 37.2, 37.3, 37.4 va 37.9 dagi barcha dollar va foiz qiymatlari misol uchun berilgan arifmetika kirishlari, o'lchangan qoida emas: ularni o'z hisob-fakturangizdan va o'z o'lchovingizdan olish kerak
+- Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 13-bob (231-bet) - availability ni sintetik tranzaksiya bilan avtomatik tekshirish va SLA da aniq yozilishi kerak bo'lgan bandlar: chastota, har qadam uchun maksimal javob vaqti, muvaffaqiyat va nosozlik belgilari, qayerdan va nechta joydan, natija qayerga yoziladi, foiz qaysi formula bilan hisoblanadi
 
 ---
 

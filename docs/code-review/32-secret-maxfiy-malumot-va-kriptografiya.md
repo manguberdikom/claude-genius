@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 32. Secret, maxfiy ma'lumot va kriptografiya review (Secrets, PII and Crypto)
 
@@ -134,6 +134,8 @@ Work factor ning o'zi uchun esa oltin qiymat yo'q: u serverga va foydalanuvchi s
 
 Work factor ni oshirish rejasi ham review savoli. Odatdagi yo'l: foydalanuvchi keyingi marta kirganda parolni yangi work factor bilan qayta hash qilish. Buning kamchiligi bor va u e'tibordan qoladi: qaytib kirmagan foydalanuvchining hash i hech qachon yangilanmaydi. Shuning uchun ba'zi holatda to'g'ri qaror eski hash larni o'chirib, foydalanuvchini parol tiklashga majburlash bo'ladi.
 
+Hash parametri qoidaning yarmi, ikkinchi yarmi parolning o'zi. Kitob buni bitta aniq ogohlantirish bilan qo'yadi: foydalanuvchiga `12345` kabi sodda parol o'rnatishga ruxsat berilmasligi kerak, bunday parol oson taxmin qilinadi va xavf hisoblanadi (Spilca, 6-bob, 151-bet). Review da bu ikki savolga aylanadi. Birinchi: parol kuchi siyosati bormi (minimal uzunlik va ma'lum sizgan parollar ro'yxatiga qarshi tekshiruv)? Ikkinchi: siyosat registratsiya va parol o'zgartirish yo'lining ikkisida ham qo'llanadimi, yoki faqat birida? Siyosat bo'lmasa, kuchli hash funksiyasi har ro'yxatning boshida turgan parolni taxmin qilishni faqat sekinlashtiradi, to'smaydi.
+
 ```java
 // Parol: faqat moslashuvchan hash funksiyasi bilan.
 @Bean
@@ -263,6 +265,15 @@ SSLContext ctx = SSLContextBuilder.create()
     .build();
 ```
 
+Sertifikat tekshiruvini o'chirishga bo'lgan bosim odatda test muhitidan keladi, shuning uchun review da o'z-o'zi imzolagan (self-signed) sertifikatning to'g'ri yo'lini bilish kerak. Uni OpenSSL ikki buyruq bilan yasaydi: birinchisi yopiq kalit va ochiq sertifikat beradi, ikkinchisi ulardan PKCS12 faylini yig'adi. Sertifikat odatda PKCS12 formatida bo'ladi, Java KeyStore (JKS) kamroq uchraydi (Spilca, 2-bob, 41-42-bet).
+
+```bash
+openssl req -newkey rsa:2048 -x509 -keyout key.pem -out cert.pem -days 365
+openssl pkcs12 -export -in cert.pem -inkey key.pem -out certificate.p12 -name "certificate"
+```
+
+Spring Boot tomonida u uch property bilan ulanadi: `server.ssl.key-store-type=PKCS12`, `server.ssl.key-store=classpath:certificate.p12` va `server.ssl.key-store-password`. Review ning asosiy savoli shundan kelib chiqadi: self-signed sertifikat bilan gaplashish uchun klientga `curl -k` yoki uning ekvivalenti kerak bo'ladi, ya'ni kodda yoki konfiguratsiyada "tekshiruvni o'tkazib yuborish" belgisi paydo bo'ladi. Shu belgi test profilidan prod profiliga o'tib ketmaganini tasdiqlash kerak, va key-store paroli property faylida emas, secret omborida turishi shart. Oxirgi eslatma kitobning o'zidan: HTTPS xavfsizlik devorining faqat bitta g'ishti, "buni endi shifrlamayman, HTTPS bor" degan xulosa noto'g'ri (Spilca, 2-bob, 43-bet).
+
 ## 32.8 Review checklisti: secret va kriptografiya
 
 | Savol | Nega |
@@ -297,6 +308,8 @@ SSLContext ctx = SSLContextBuilder.create()
 
 ## Manbalar
 
+- Laurentiu Spilca, *Spring Security in Action*, 2-bob - HTTPS, self-signed sertifikat, PKCS12 va `server.ssl` sozlamasi
+- Laurentiu Spilca, *Spring Security in Action*, 6-bob - sodda parolga ruxsat berishning xavfi
 - [OWASP, Password Storage Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Password_Storage_Cheat_Sheet.md) - Argon2id uchun 19 MiB, 2 iteratsiya, 1 parallelism; scrypt, bcrypt va PBKDF2 chegaralari; work factor uchun bir sekundlik mo'ljal va DoS xavfi; work factor ni oshirish rejasi
 - [spring-security 6.3, `Argon2PasswordEncoder.java`](https://raw.githubusercontent.com/spring-projects/spring-security/6.3.0/crypto/src/main/java/org/springframework/security/crypto/argon2/Argon2PasswordEncoder.java) - konstruktor tartibi va `defaultsForSpringSecurity_v5_8` ning xotira defaulti 16 MiB, ya'ni OWASP chegarasidan past
 - [OWASP, Secrets Management Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Secrets_Management_Cheat_Sheet.md) - secret ning hayot sikli, rotatsiya va saqlash joyi

@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 18. Xavfsizlik patternlari (Security Patterns)
 
 <details>
-<summary>Bu bobdagi 49 bo'lim</summary>
+<summary>Bu bobdagi 57 bo'lim</summary>
 
 - [18.1 Autentifikatsiya va avtorizatsiya ajratilishi (Authentication vs Authorization)](#181-autentifikatsiya-va-avtorizatsiya-ajratilishi-authentication-vs-authorization)
 - [18.2 Xavfsizlik filtrlar zanjiri (SecurityFilterChain - Chain of Responsibility)](#182-xavfsizlik-filtrlar-zanjiri-securityfilterchain---chain-of-responsibility)
@@ -57,7 +57,15 @@
 - [18.46 Munosabatga asoslangan kirish nazorati (Relationship-Based Access Control (ReBAC))](#1846-munosabatga-asoslangan-kirish-nazorati-relationship-based-access-control-rebac)
 - [18.47 Tokenizatsiya (Tokenization)](#1847-tokenizatsiya-tokenization)
 - [18.48 Ma'lumotni maskalash (Data Masking)](#1848-malumotni-maskalash-data-masking)
-- [18.49 Amalda qo'llash](#1849-amalda-qollash)
+- [18.49 Foydalanuvchini moslash va boshqarish (UserDetails mapping, UserDetailsManager)](#1849-foydalanuvchini-moslash-va-boshqarish-userdetails-mapping-userdetailsmanager)
+- [18.50 Authentication obyekti shartnomasi (Authentication contract)](#1850-authentication-obyekti-shartnomasi-authentication-contract)
+- [18.51 Maxsus filtr yozish mexanikasi (Custom filter mechanics - OncePerRequestFilter)](#1851-maxsus-filtr-yozish-mexanikasi-custom-filter-mechanics---onceperrequestfilter)
+- [18.52 So'rovni kalit bilan imzolash (Request signing)](#1852-sorovni-kalit-bilan-imzolash-request-signing)
+- [18.53 CSRF token shartnomasi va repository (CsrfToken, CsrfTokenRepository)](#1853-csrf-token-shartnomasi-va-repository-csrftoken-csrftokenrepository)
+- [18.54 OAuth 2 client registratsiyasi (ClientRegistration, ClientRegistrationRepository)](#1854-oauth-2-client-registratsiyasi-clientregistration-clientregistrationrepository)
+- [18.55 Metod argumenti va natijasini filtrlash (Method filtering - @PreFilter, @PostFilter)](#1855-metod-argumenti-va-natijasini-filtrlash-method-filtering---prefilter-postfilter)
+- [18.56 Repository so'rovida avtorizatsiya ifodasi (SpEL in repository queries)](#1856-repository-sorovida-avtorizatsiya-ifodasi-spel-in-repository-queries)
+- [18.57 Amalda qo'llash](#1857-amalda-qollash)
 
 </details>
 
@@ -69,7 +77,7 @@ Xavfsizlik patternlari - ilovaga kim kirishi mumkin (authentication) va u nima q
 
 **Tavsif:** Autentifikatsiya - "sen kimsan?" degan savolga javob berib, taqdim etilgan credential'lar (parol, token, sertifikat) asosida principal'ning identity'sini tasdiqlaydi. Avtorizatsiya - "senga ruxsat bormi?" degan savolga javob berib, allaqachon tasdiqlangan identity'ning ma'lum resursga yoki operatsiyaga huquqini tekshiradi. Bu ikki concern'ni qat'iy ajratish Spring Security'ning asosiy arxitektura prinsipi: identity bir marta aniqlanadi va keyin barcha access qarorlari uchun ishonchli manba bo'lib xizmat qiladi. Ajratish tufayli autentifikatsiya mexanizmini (form login → OIDC) avtorizatsiya qoidalariga tegmasdan almashtirish mumkin.
 
-**Spring'da qayerda uchraydi:** Spring Security 6.x'da autentifikatsiya `AuthenticationManager`, `Authentication` va `AuthenticationException` iyerarxiyasi orqali; avtorizatsiya esa `AuthorizationManager<T>`, `AuthorizationDecision` va `AccessDeniedException` orqali ifodalanadi. Konfiguratsiyada ajratish ko'rinadi: `http.formLogin()` / `http.oauth2ResourceServer()` - autentifikatsiya, `http.authorizeHttpRequests()` - avtorizatsiya. Xatolarni ishlovchilar ham ajralgan: `AuthenticationEntryPoint` (401, kim ekanligi aniqlanmagan) va `AccessDeniedHandler` (403, aniqlangan lekin huquqi yo'q).
+**Spring'da qayerda uchraydi:** Spring Security 6.x'da autentifikatsiya `AuthenticationManager`, `Authentication` va `AuthenticationException` iyerarxiyasi orqali; avtorizatsiya esa `AuthorizationManager<T>`, `AuthorizationDecision` va `AccessDeniedException` orqali ifodalanadi. Konfiguratsiyada ajratish ko'rinadi: `http.formLogin()` / `http.oauth2ResourceServer()` - autentifikatsiya, `http.authorizeHttpRequests()` - avtorizatsiya. Xatolarni ishlovchilar ham ajralgan: `AuthenticationEntryPoint` (401, kim ekanligi aniqlanmagan) va `AccessDeniedHandler` (403, aniqlangan lekin huquqi yo'q). Autentifikatsiya natijasining shakli ham shu tomonga tegishli va u ikki alohida shartnoma bilan boshqariladi: `AuthenticationSuccessHandler.onAuthenticationSuccess()` muvaffaqiyatdan keyin nima bo'lishini hal qiladi (masalan foydalanuvchining authority'siga qarab boshqa sahifaga yo'naltirish), `AuthenticationFailureHandler` esa muvaffaqiyatsiz login javobini shakllantiradi: 401 dan boshqa status, javob tanasida so'rov identifikatori yoki hodisani keyinchalik tekshirish uchun log qilish (Spilca, 5-bob, 130, 131-bet). `defaultSuccessUrl()` shu ikkisining eng qisqa, sozlanmaydigan shakli.
 
 **Qo'llanish keyslari:**
 - Mikroservislar: API gateway JWT'ni validate qilib identity'ni aniqlaydi, downstream servis faqat avtorizatsiya qiladi.
@@ -78,7 +86,7 @@ Xavfsizlik patternlari - ilovaga kim kirishi mumkin (authentication) va u nima q
 - Audit log'da "kim kirdi" va "nimaga urinib ko'rdi" hodisalarini alohida yozish (`AuthenticationSuccessEvent`, `AuthorizationDeniedEvent`).
 - Service account'lar uchun autentifikatsiya mTLS orqali, avtorizatsiya esa oddiy RBAC orqali bo'lishi.
 
-**Ehtiyot bo'ling:** Eng ko'p uchraydigan xato - autentifikatsiya qilingan foydalanuvchini avtomatik "ruxsat berilgan" deb hisoblash, ya'ni `authenticated()` bilan cheklanib qolish va resource ownership'ni tekshirmaslik (IDOR zaifligi). Shuningdek 403 o'rniga 401 qaytarish token'ni refresh qilish tsiklini cheksiz aylantirib yuborishi mumkin.
+**Ehtiyot bo'ling:** Eng ko'p uchraydigan xato - autentifikatsiya qilingan foydalanuvchini avtomatik "ruxsat berilgan" deb hisoblash, ya'ni `authenticated()` bilan cheklanib qolish va resource ownership'ni tekshirmaslik (IDOR zaifligi). Shuningdek 403 o'rniga 401 qaytarish token'ni refresh qilish tsiklini cheksiz aylantirib yuborishi mumkin. `AuthenticationFailureHandler` da javobni tozalash alohida mas'uliyat: xato javobi akkaunt bor-yo'qligini, ichki sinf nomlarini yoki stack trace'ni tashqariga chiqarmasligi kerak (Spilca, 5-bob, 131-bet).
 
 ## 18.2 Xavfsizlik filtrlar zanjiri (SecurityFilterChain - Chain of Responsibility)
 
@@ -111,7 +119,7 @@ SecurityFilterChain api(HttpSecurity http) throws Exception {
 
 **Tavsif:** `AuthenticationManager` - autentifikatsiya uchun yagona kirish nuqtasi (facade), lekin o'zi hech qanday tekshiruv qilmaydi. Uning asosiy implementatsiyasi `ProviderManager` ro'yxatdagi provider'larni ketma-ket aylanib, so'rov turini qo'llab-quvvatlaydigan birinchi provider'ga ishni topshiradi (delegation + composite). Birinchi muvaffaqiyatli natija qaytariladi; hech biri ishlamasa, oxirgi xato yoki `ProviderNotFoundException` tashlanadi. Bu tuzilish bitta ilovada bir nechta credential turini parallel qo'llab-quvvatlashga imkon beradi.
 
-**Spring'da qayerda uchraydi:** `org.springframework.security.authentication.AuthenticationManager` interfeysi va `ProviderManager` sinfi; `ProviderManager` ichida `List<AuthenticationProvider>` va ixtiyoriy `parent` manager bo'ladi. Konfiguratsiyada `AuthenticationManagerBuilder` yoki Spring Security 6.x'da to'g'ridan-to'g'ri `ProviderManager`'ni bean sifatida e'lon qilish keng tarqalgan. `AuthenticationManagerResolver<HttpServletRequest>` esa so'rovga qarab (masalan tenant yoki issuer bo'yicha) butunlay boshqa manager tanlashga xizmat qiladi.
+**Spring'da qayerda uchraydi:** `org.springframework.security.authentication.AuthenticationManager` interfeysi va `ProviderManager` sinfi; `ProviderManager` ichida `List<AuthenticationProvider>` va ixtiyoriy `parent` manager bo'ladi. Konfiguratsiyada `AuthenticationManagerBuilder` yoki Spring Security 6.x'da to'g'ridan-to'g'ri `ProviderManager`'ni bean sifatida e'lon qilish keng tarqalgan. `AuthenticationManagerResolver<HttpServletRequest>` esa so'rovga qarab (masalan tenant yoki issuer bo'yicha) butunlay boshqa manager tanlashga xizmat qiladi. Bitta narsani bir necha xil yo'l bilan sozlash mumkin bo'lgani Spring Security'ning eng chalkash tomoni: `UserDetailsService` va `PasswordEncoder` ni bean sifatida e'lon qilish ham, ularni `AuthenticationManagerBuilder` orqali berish ham ishlaydi. Qoida shu: bitta ilovada bu ikki uslub aralashtirilmaydi, aks holda qaysi sozlama amalda kuchga kirganini konfiguratsiyaga qarab aytib bo'lmaydi (Spilca, 2-bob, 50-bet). ESLATMA: kitobdagi `configure(AuthenticationManagerBuilder auth)` shakli `WebSecurityConfigurerAdapter` ichida yoziladi; adapter Spring Security 5.7 dan deprecated va 6.x da olib tashlangan, shuning uchun bugun bean uslubi (`UserDetailsService`, `PasswordEncoder`, kerak bo'lsa `AuthenticationManager` bean'i) yagona uslub bo'lib qoladi va aralashtirish xavfi o'z-o'zidan yo'qoladi.
 
 **Qo'llanish keyslari:**
 - DAO (ma'lumotlar bazasi) va LDAP provider'larini bitta manager'da birlashtirish.
@@ -156,7 +164,7 @@ SecurityFilterChain api(HttpSecurity http) throws Exception {
 
 **Tavsif:** Hozirgi autentifikatsiyalangan principal'ni har bir metodga parametr sifatida uzatmaslik uchun u thread'ga bog'langan ambient holatda saqlanadi. `SecurityContextHolder` odatda `ThreadLocal` ichida `SecurityContext`'ni ushlab turadi va ilovaning har qanday qatlamidan "hozir kim ishlayapti" degan savolga javob beradi. Bu Thread-Specific Storage (Context Object) pattern - qulaylik beradi, lekin yashirin global holat hisoblanadi.
 
-**Spring'da qayerda uchraydi:** `SecurityContextHolder`, `SecurityContext`, `Authentication`; strategiyalar: `MODE_THREADLOCAL` (standart), `MODE_INHERITABLETHREADLOCAL`, `MODE_GLOBAL`. Spring Security 6.x'da kontekstni so'rovlar orasida saqlash `SecurityContextRepository` (`HttpSessionSecurityContextRepository`, `RequestAttributeSecurityContextRepository`) va `SecurityContextHolderFilter` orqali boshqariladi. Async uchun `DelegatingSecurityContextExecutor`, `DelegatingSecurityContextAsyncTaskExecutor`, `@EnableAsync` bilan birga ishlatiladi; reactive stack'da esa o'rniga `ReactiveSecurityContextHolder` va Reactor Context ishlatiladi.
+**Spring'da qayerda uchraydi:** `SecurityContextHolder`, `SecurityContext`, `Authentication`; strategiyalar: `MODE_THREADLOCAL` (standart), `MODE_INHERITABLETHREADLOCAL`, `MODE_GLOBAL`. `MODE_GLOBAL` da butun ilovada bitta `SecurityContext` bo'ladi va unga hamma thread kiradi; Spilca buni web server uchun mos emas deb ataydi, chunki backend har so'rovni mustaqil ishlaydi va kontekst so'rov bo'yicha ajralgani mantiqliroq, shuning uchun bu strategiya faqat standalone ilova uchun qoladi (Spilca, 5-bob, 118, 119-bet). Strategiya `SecurityContextHolder.setStrategyName()` yoki `spring.security.strategy` system property bilan qo'yiladi (Spilca, 5-bob, 119-bet). Spring Security 6.x'da kontekstni so'rovlar orasida saqlash `SecurityContextRepository` (`HttpSessionSecurityContextRepository`, `RequestAttributeSecurityContextRepository`) va `SecurityContextHolderFilter` orqali boshqariladi. Async uchun `DelegatingSecurityContextExecutor`, `DelegatingSecurityContextAsyncTaskExecutor`, `@EnableAsync` bilan birga ishlatiladi; reactive stack'da esa o'rniga `ReactiveSecurityContextHolder` va Reactor Context ishlatiladi.
 
 **Qo'llanish keyslari:**
 - Audit maydonlarini (`createdBy`, `updatedBy`) `AuditorAware` orqali avtomatik to'ldirish.
@@ -165,11 +173,11 @@ SecurityFilterChain api(HttpSecurity http) throws Exception {
 - `@Async` task'larga kontekstni ko'chirish uchun delegating executor sozlash.
 - Log'larga MDC orqali username qo'shib, so'rovlarni kuzatish.
 
-**Ehtiyot bo'ling:** `ThreadLocal` yangi thread'ga avtomatik ko'chmaydi - `@Async`, `CompletableFuture`, virtual thread'lar yoki o'z thread pool'ingizda kontekst `null` bo'lib chiqadi va tekshiruvlar jim o'tib ketadi. Bundan tashqari Spring Security 6.x'da kontekst endi avtomatik session'ga saqlanmaydi: `SecurityContextHolder.setContext()` dan keyin `SecurityContextRepository.saveContext()` chaqirilmasa, login keyingi so'rovda yo'qoladi.
+**Ehtiyot bo'ling:** `ThreadLocal` yangi thread'ga avtomatik ko'chmaydi - `@Async`, `CompletableFuture`, virtual thread'lar yoki o'z thread pool'ingizda kontekst `null` bo'lib chiqadi va tekshiruvlar jim o'tib ketadi. Bundan tashqari Spring Security 6.x'da kontekst endi avtomatik session'ga saqlanmaydi: `SecurityContextHolder.setContext()` dan keyin `SecurityContextRepository.saveContext()` chaqirilmasa, login keyingi so'rovda yo'qoladi. `MODE_GLOBAL` ning o'z tuzog'i bor: `SecurityContext` thread-safe emas, shuning uchun hamma thread bitta obyektni o'zgartirganda poyga (race condition) yuzaga keladi va sinxronizatsiya sizning zimmangizda qoladi (Spilca, 5-bob, 119-bet).
 
 ## 18.7 Parol hash'lash va yangilanuvchan kodlash (Password hashing - DelegatingPasswordEncoder, upgradable encoding)
 
-**Tavsif:** Parollar hech qachon ochiq yoki qaytariladigan shaklda saqlanmasligi kerak; ular sekin, salt'li, hisoblash jihatidan qimmat one-way funksiya bilan hash qilinadi. `DelegatingPasswordEncoder` hash qiymatining oldiga `{bcrypt}`, `{argon2}` kabi prefix qo'yib, bir vaqtning o'zida bir nechta algoritmni qo'llab-quvvatlaydi: tekshiruvda prefix bo'yicha mos encoder tanlanadi, yangi parollar esa faqat joriy standart bilan kodlanadi. Bu Strategy + Adapter kombinatsiyasi algoritmni to'xtatmasdan migratsiya qilishga imkon beradi.
+**Tavsif:** Parollar hech qachon ochiq yoki qaytariladigan shaklda saqlanmasligi kerak; ular sekin, salt'li, hisoblash jihatidan qimmat one-way funksiya bilan hash qilinadi. `DelegatingPasswordEncoder` hash qiymatining oldiga `{bcrypt}`, `{argon2}` kabi prefix qo'yib, bir vaqtning o'zida bir nechta algoritmni qo'llab-quvvatlaydi: tekshiruvda prefix bo'yicha mos encoder tanlanadi, yangi parollar esa faqat joriy standart bilan kodlanadi. Bu Strategy + Adapter kombinatsiyasi algoritmni to'xtatmasdan migratsiya qilishga imkon beradi. Uchta atamani ajratib olish shart, chunki ularni aralashtirish parolni qaytarib olinadigan shaklda saqlashga olib keladi: **encoding** - kirishning har qanday almashtirilishi (`x -> y`), masalan satrni teskari o'girish; **encryption** - kalit bilan qilinadigan encoding (`(x, k) -> y`), teskarisi decryption, shifrlash va ochish kaliti bir xil bo'lsa simmetrik, boshqa bo'lsa (`k1` public, `k2` private) assimmetrik kalit juftligi; **hashing** - bir tomonlama encoding, ya'ni `y` dan `x` ni qaytarib olinmaydi, shuning uchun u juft funksiya bo'lib keladi: hash qilish `x -> y` va solishtirish `(x, y) -> boolean`. **Salt** esa hash kirishiga qo'shiladigan tasodifiy qiymat (`(x, k) -> y`), u teskari funksiya qurishni qimmatlashtiradi (Spilca, 4-bob, 96-bet). Parol uchun faqat uchinchisi to'g'ri: `PasswordEncoder` ning `encode` va `matches` juftligi aynan shu hashing modelining shakli.
 
 **Spring'da qayerda uchraydi:** `PasswordEncoder` interfeysi; `PasswordEncoderFactories.createDelegatingPasswordEncoder()`; implementatsiyalar `BCryptPasswordEncoder`, `Argon2PasswordEncoder`, `Pbkdf2PasswordEncoder`, `SCryptPasswordEncoder`. Avtomatik yangilash uchun `PasswordEncoder.upgradeEncoding()` va `UserDetailsPasswordService` birgalikda ishlaydi: muvaffaqiyatli login paytida `DaoAuthenticationProvider` eski hash'ni yangi algoritm bilan qayta yozadi. Spring Security 6.x'da `NoOpPasswordEncoder` deprecated va faqat test uchun.
 
@@ -186,7 +194,7 @@ SecurityFilterChain api(HttpSecurity http) throws Exception {
 
 **Tavsif:** Ruxsatlar foydalanuvchiga to'g'ridan-to'g'ri emas, balki rol (yoki authority) orqali beriladi: foydalanuvchi → rol → ruxsatlar. Bu indirection ruxsatlarni boshqarishni soddalashtiradi, chunki yuzlab foydalanuvchi o'rniga bir nechta rolni tahrirlash kifoya. Spring Security'da rollar `GrantedAuthority` ro'yxati sifatida `Authentication` ichida tashiladi va avtorizatsiya qarorlari shu ro'yxat asosida qabul qilinadi.
 
-**Spring'da qayerda uchraydi:** `GrantedAuthority`, `SimpleGrantedAuthority`, `AuthorityUtils`; konfiguratsiyada `authorizeHttpRequests(a -> a.requestMatchers("/admin/**").hasRole("ADMIN"))` yoki `hasAuthority("SCOPE_orders:read")`. `hasRole("X")` avtomatik `ROLE_` prefix qo'shadi - bu prefix `GrantedAuthorityDefaults` bean'i bilan o'zgartiriladi. Rol iyerarxiyasi uchun `RoleHierarchy` / `RoleHierarchyImpl` (6.3+ da `RoleHierarchyImpl.withDefaultRolePrefix()` builder'i) `AuthorizationManager`'ga ulanadi. JWT'dan authority ajratish `JwtGrantedAuthoritiesConverter` orqali.
+**Spring'da qayerda uchraydi:** `GrantedAuthority`, `SimpleGrantedAuthority`, `AuthorityUtils`; konfiguratsiyada `authorizeHttpRequests(a -> a.requestMatchers("/admin/**").hasRole("ADMIN"))` yoki `hasAuthority("SCOPE_orders:read")`. `hasRole("X")` avtomatik `ROLE_` prefix qo'shadi - bu prefix `GrantedAuthorityDefaults` bean'i bilan o'zgartiriladi. Rol iyerarxiyasi uchun `RoleHierarchy` / `RoleHierarchyImpl` (6.3+ da `RoleHierarchyImpl.withDefaultRolePrefix()` builder'i) `AuthorizationManager`'ga ulanadi. JWT'dan authority ajratish `JwtGrantedAuthoritiesConverter` orqali. Bir nechta nomni birga tekshirish uchun `hasAnyAuthority(...)` va `hasAnyRole(...)` ishlatiladi: ikkisi ham bir nechta argument qabul qiladi va foydalanuvchida ulardan kamida bittasi bo'lsa ruxsat beradi (Spilca, 7-bob, 157, 166-bet). Spilca bu aniq metodlarni umumiy `access()` SpEL ifodasidan afzal ko'radi, chunki ular konfiguratsiyada o'qiladi va debug qilish osonroq; `access()` esa cheklovsiz, lekin shuning uchun ham qiyinroq (Spilca, 7-bob, 158-bet). Foydalanuvchi yasashda ham ikki metod bor: `authorities("ROLE_ADMIN")` da prefiksni o'zingiz yozasiz, `roles("ADMIN")` esa `GrantedAuthority` ni yasab `ROLE_` prefiksini o'zi qo'shadi va parametrda prefiks berilsa exception tashlaydi (Spilca, 7-bob, 168-bet).
 
 **Qo'llanish keyslari:**
 - Admin panelini `/admin/**` yo'llari uchun `ROLE_ADMIN` bilan yopish.
@@ -195,7 +203,7 @@ SecurityFilterChain api(HttpSecurity http) throws Exception {
 - Keycloak yoki Entra ID'dan kelgan group claim'larini lokal rollarga konvertatsiya qilish.
 - Read-only auditor roli yaratib, barcha GET endpoint'larga ruxsat berish.
 
-**Ehtiyot bo'ling:** `hasRole("ROLE_ADMIN")` yozish `ROLE_ROLE_ADMIN` degan mavjud bo'lmagan authority'ga aylanadi va tekshiruv doim `false` qaytaradi - bu klassik tuzoq. RBAC "role explosion"ga moyil: `ROLE_MANAGER_REGION_EU_READONLY` kabi nomlar paydo bo'lsa, bu ABAC'ga o'tish vaqti kelganining signali.
+**Ehtiyot bo'ling:** `hasRole("ROLE_ADMIN")` yozish `ROLE_ROLE_ADMIN` degan mavjud bo'lmagan authority'ga aylanadi va tekshiruv doim `false` qaytaradi - bu klassik tuzoq. Xuddi shu tuzoqning ikkinchi tomoni foydalanuvchi builder'ida: `roles("ROLE_ADMIN")` exception bilan yiqiladi, `authorities("ADMIN")` esa jim ishlaydi, lekin `hasRole("ADMIN")` uni ko'rmaydi, chunki tekshiruv `ROLE_ADMIN` ni qidiradi. RBAC "role explosion"ga ham moyil: `ROLE_MANAGER_REGION_EU_READONLY` kabi nomlar paydo bo'lsa, bu ABAC'ga o'tish vaqti kelganining signali.
 
 ## 18.9 Atribut va siyosatga asoslangan kirish nazorati (Attribute-Based / Policy-Based Access Control - ABAC)
 
@@ -234,6 +242,46 @@ public Document findById(Long id) { /* ... */ }
 - Meta-annotatsiya (`@IsTenantAdmin`) yaratib, SpEL takrorlanishini kamaytirish.
 
 **Ehtiyot bo'ling:** Annotatsiyalar Spring AOP proxy orqali ishlaydi - xuddi shu bean ichidagi `this.method()` chaqiruvi proxy'ni chetlab o'tadi va tekshiruv umuman bajarilmaydi; shuningdek `private` yoki `final` metodlarda proxy ishlamaydi. `@PostAuthorize` metod allaqachon bajarilgandan keyin ishlaydi, demak yozuv operatsiyasi `@Transactional` ichida bo'lsa ham side-effect sodir bo'lib, faqat exception tufayli rollback'ga tayanadi - bu ishonchsiz pattern.
+
+**Qarorni servis ichida ushlab, ma'lumotni IdP ga chiqarmang:**
+gateway qo'pol autentifikatsiya va rol tekshiruvini yaxshi bajaradi
+(tizimga kirmagan foydalanuvchini helpdesk ilovasiga qo'ymaslik,
+yoki faqat `STAFF` roliga ruxsat berish). Aniq operatsiya qarori esa
+servisning o'zida qolishi kerak. Newman ning misoli chegarani aniq
+ko'rsatadi: `CALL_CENTER` guruhidagi odam mijoz haqida hamma
+ma'lumotni ko'rishi mumkin, to'lov tafsilotidan tashqari, va
+qaytarish (refund) chiqarishi mumkin, lekin summasi cheklangan;
+`CALL_CENTER_TEAM_LEADER` esa kattaroq summani qaytarishi mumkin.
+Shu qarorlar servisga lokal bo'lishi shart. Anti-naqsh ham aniq
+nomlangan: identity provider yoki direktoriya xizmatiga
+`CALL_CENTER_50_DOLLAR_REFUND` kabi juda tor rollarni qo'yish, ya'ni
+bitta servis funksiyasiga xos ma'lumotni tashqariga chiqarish. Buni
+yuritish og'riqli va servisning mustaqil hayot tsikli yo'qoladi,
+chunki uning xulqi haqidagi bir bo'lak ma'lumot boshqa joyda,
+ehtimol tashkilotning boshqa qismi boshqaradigan tizimda yashaydi.
+Newman ning tavsiyasi: tashkilot qanday ishlashiga mos qo'pol
+rollarni tanlash.
+
+Bu [18.37](#1837-eng-kam-imtiyoz-least-privilege) dagi "huquqlarni
+qo'pol rol emas, fine-grained permission sifatida modellash"
+talabiga zid ko'rinadi, lekin ikkisi boshqa savolga javob beradi va
+**ajratuvchi shart** - tekshiruvning nozikligi emas, nozik
+ma'lumotning qayerda yashashi:
+
+- **Nozik tekshiruv servis ichida bo'ladi.** 18.37 ning talabi
+  kuchida qoladi: `@PreAuthorize("hasAuthority('SCOPE_orders:read')")`
+  yoki `PermissionEvaluator` bilan tor tekshiruv qilish to'g'ri va
+  qo'pol `ROLE_ADMIN` dan afzal.
+- **Nozik biznes parametri IdP ga chiqmaydi.** Qaytarish limiti,
+  mijoz chegarasi yoki hisob turi kabi domenga xos qiymat servisning
+  o'z ma'lumotidan olinadi, direktoriyadagi rol nomiga
+  kodlanmaydi. Scope delegatsiya chegarasini ("bu klient
+  foydalanuvchi nomidan nima so'rashi mumkin") bildiradi, biznes
+  chegarasini tashuvchi joy emas.
+- **Nomi o'zgarsa kim deploy qiladi degan test.** Chegara 50 dan 100
+  ga o'zgarganda faqat servis deploy qilinsa, joy to'g'ri; IdP
+  konfiguratsiyasini ham o'zgartirish kerak bo'lsa, ma'lumot noto'g'ri
+  joyda.
 
 ## 18.11 Ifodaga asoslangan xavfsizlik (Expression-based security - SpEL)
 
@@ -325,6 +373,28 @@ public Document findById(Long id) { /* ... */ }
 
 **Ehtiyot bo'ling:** Token'ni "hamma joyga" uzatish eng keng tarqalgan xato - tashqi yoki kam ishonchli xizmatga uzatilgan token o'g'irlansa, butun foydalanuvchi huquqlari bilan ishlatiladi; `audience`ni toraytirish yoki Token Exchange afzal. Shuningdek `@Async` yoki yangi thread'da `SecurityContext` yo'qoladi - `DelegatingSecurityContextExecutor`siz token relay ishlamaydi.
 
+**Gateway da har so'rov uchun yangi JWT yasash:** Newman
+mikroservis arxitekturasida eng ko'p uchraydigan shaklni shunday
+beradi. Foydalanuvchi odatdagicha tizimga kiradi va sessiyasini
+ifodalaydigan token (odatda OAuth token) klient qurilmasida
+saqlanadi. Shu qurilmadan keladigan keyingi so'rovlar gateway ga
+tushadi, gateway esa **faqat o'sha so'rov davomida** amal
+qiladigan JWT yasab, uni quyi oqimdagi mikroservislarga uzatadi;
+ular tokenni tekshirib, payload dagi claim lardan qanday
+avtorizatsiya kerakligini aniqlaydi. Muqobil variant foydalanuvchi
+kirgan paytda bitta JWT yasab, uni klientda saqlash, lekin u
+butun sessiya davomida amal qilishi kerak bo'ladi, ya'ni tizim
+yasagan credential ning amal qilish muddatini qisqa tutish
+tamoyiliga qarshi boradi va kalitlarni almashtirish kerak bo'lsa
+ta'siri katta bo'ladi. Shu sababli har so'rov uchun yasash eng keng
+tarqalgan yechim. Migratsiya nuqtai nazaridan ikkinchi foydasi ham
+bor: token almashtirishni gateway da qilish JWT ga o'tishni
+klient qurilmasi bilan bo'ladigan autentifikatsiya oqimini
+o'zgartirmasdan amalga oshirish imkonini beradi, ya'ni ishlab
+turgan SSO yechimi bo'lsa, JWT ishlatilayotganini asosiy
+autentifikatsiya oqimidan yashirish o'zgarishni kamroq buzuvchi
+qiladi.
+
 ## 18.17 Refresh token aylanishi (Refresh Token Rotation)
 
 **Tavsif:** Refresh token har ishlatilganda yangisi berilib, oldingisi bekor qilinadi. Agar bekor qilingan (ishlatilgan) refresh token qayta kelsa, bu o'g'irlanish belgisi sanalib, butun token oilasi (token family) bekor qilinadi. Bu uzoq muddatli refresh token'ni saqlash riskini kamaytiradi va public client'lar uchun ayniqsa muhim.
@@ -352,7 +422,7 @@ TokenSettings settings = TokenSettings.builder()
 
 **Tavsif:** OAuth2 ustiga qurilgan identifikatsiya qatlami: access token'dan tashqari `id_token` (imzolangan JWT) beriladi va unda foydalanuvchi haqidagi claim'lar (`sub`, `email`, `name`, `nonce`) bo'ladi. OAuth2 avtorizatsiya uchun, OIDC esa autentifikatsiya uchun - ya'ni "bu foydalanuvchi kim" savoliga standart javob. Qo'shimcha ma'lumotlar `UserInfo` endpoint'idan olinadi, provayder metadata'si `/.well-known/openid-configuration` orqali topiladi.
 
-**Spring'da qayerda uchraydi:** `HttpSecurity.oauth2Login()` scope'da `openid` bo'lsa OIDC rejimida ishlaydi; natijada principal `OidcUser` (`DefaultOidcUser`), uning ichida `OidcIdToken` va `OidcUserInfo` bo'ladi. `OidcUserService`, `OidcIdTokenDecoderFactory`, `OidcAuthorizationCodeAuthenticationProvider` asosiy sinflar; logout uchun `OidcClientInitiatedLogoutSuccessHandler` (reactive: `OidcClientInitiatedServerLogoutSuccessHandler`) va back-channel logout uchun `OidcBackChannelLogoutFilter` (Spring Security 6.2+). Konfiguratsiya `spring.security.oauth2.client.provider.<id>.issuer-uri` bilan metadata'ni avtomatik yuklaydi.
+**Spring'da qayerda uchraydi:** `HttpSecurity.oauth2Login()` scope'da `openid` bo'lsa OIDC rejimida ishlaydi; natijada principal `OidcUser` (`DefaultOidcUser`), uning ichida `OidcIdToken` va `OidcUserInfo` bo'ladi. `OidcUserService`, `OidcIdTokenDecoderFactory`, `OidcAuthorizationCodeAuthenticationProvider` asosiy sinflar; logout uchun `OidcClientInitiatedLogoutSuccessHandler` (reactive: `OidcClientInitiatedServerLogoutSuccessHandler`) va back-channel logout uchun `OidcBackChannelLogoutFilter` (Spring Security 6.2+). Konfiguratsiya `spring.security.oauth2.client.provider.<id>.issuer-uri` bilan metadata'ni avtomatik yuklaydi. OAuth 2 va OIDC login tugagach `SecurityContext` ga qo'yiladigan `Authentication` implementatsiyasi `OAuth2AuthenticationToken` bo'ladi: uni kontekstdan olish yoki to'g'ridan-to'g'ri controller metodining parametri sifatida qabul qilish mumkin, `getPrincipal()` esa `OidcUser` (OIDC) yoki `OAuth2User` (oddiy OAuth 2) ni qaytaradi (Spilca, 12-bob, 311-bet).
 
 **Qo'llanish keyslari:**
 - Korporativ SSO: xodim bir marta Entra ID'ga kirib, barcha ichki ilovalarga kiradi.
@@ -367,7 +437,7 @@ TokenSettings settings = TokenSettings.builder()
 
 **Tavsif:** Spring'ning o'z authorization server amalga oshirishi: OAuth2.1 va OIDC 1.0 spetsifikatsiyalarini qo'llab-quvvatlaydigan, Spring Security ustiga qurilgan mustaqil loyiha. U token endpoint, authorization endpoint, JWK Set, introspection, revocation, device authorization va OIDC discovery endpoint'larini beradi. Deprecated bo'lgan Spring Security OAuth loyihasining o'rnini bosadi va o'z client/token saqlashini to'liq moslashtirish mumkin.
 
-**Spring'da qayerda uchraydi:** `spring-boot-starter-oauth2-authorization-server` (Spring Authorization Server 1.x/2.x). Asosiy konfiguratsiya `OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http)` yoki `OAuth2AuthorizationServerConfigurer`; asosiy bean'lar - `RegisteredClientRepository` (`JdbcRegisteredClientRepository`), `OAuth2AuthorizationService`, `OAuth2AuthorizationConsentService`, `JWKSource<SecurityContext>` va `AuthorizationServerSettings`. Token tarkibini `OAuth2TokenCustomizer<JwtEncodingContext>` bilan o'zgartiriladi; `RegisteredClient` ichida `ClientSettings` va `TokenSettings` sozlanadi.
+**Spring'da qayerda uchraydi:** `spring-boot-starter-oauth2-authorization-server` (Spring Authorization Server 1.x/2.x). Asosiy konfiguratsiya `OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http)` yoki `OAuth2AuthorizationServerConfigurer`; asosiy bean'lar - `RegisteredClientRepository` (`JdbcRegisteredClientRepository`), `OAuth2AuthorizationService`, `OAuth2AuthorizationConsentService`, `JWKSource<SecurityContext>` va `AuthorizationServerSettings`. Token tarkibini `OAuth2TokenCustomizer<JwtEncodingContext>` bilan o'zgartiriladi; `RegisteredClient` ichida `ClientSettings` va `TokenSettings` sozlanadi. ESLATMA: Spilca 1-nashri eski, bugun deprecated bo'lgan Spring Security OAuth loyihasini tasvirlaydi va u yerda token'ni boshqaruvchi shartnoma `TokenStore` bo'lgan. Uning standart implementatsiyasi `InMemoryTokenStore` token'ni ilova xotirasida saqlagan, demak authorization server restart bo'lsa undan oldin berilgan token'lar yaroqsiz bo'lib qolgan (Spilca, 14-bob, 352-bet). `JdbcTokenStore` esa authorization server va resource server bitta bazani umumiy doska sifatida ishlatishiga (blackboarding) imkon bergan: resource server token'ni tekshirish uchun authorization server'ga chaqiruv qilmaydi, baza o'zi almashish nuqtasi bo'ladi, lekin shu umumiy baza bo'g'izga aylanishi mumkin (Spilca, 14-bob, 350-bet). Spring Authorization Server'da shu shartnomaning o'rnini `OAuth2AuthorizationService` (`InMemoryOAuth2AuthorizationService`, `JdbcOAuth2AuthorizationService`) egallaydi: qoidaning mohiyati o'zgarmaydi, nomi va API si o'zgaradi.
 
 **Qo'llanish keyslari:**
 - Keycloak/Auth0'ga tashqi bog'liqlikni xohlamagan korporativ IdP qurish.
@@ -376,7 +446,7 @@ TokenSettings settings = TokenSettings.builder()
 - On-premise, air-gapped muhitda litsenziyasiz OAuth2 server joylash.
 - Legacy Spring Security OAuth (`AuthorizationServerConfigurerAdapter`) loyihasini migratsiya qilish.
 
-**Ehtiyot bo'ling:** Authorization server - xavfsizlikning eng kritik komponenti: signing key'ni kodga qo'shib qo'yish yoki har restart'da yangi RSA kalit generatsiya qilish (in-memory `JWKSource`) production'da barcha token'larni buzadi - kalitni KMS/Vault/keystore'da saqlab, rotation qo'yish kerak. Shuningdek `InMemory*` repository va service'lar faqat demo uchun; klasterda JDBC yoki Redis asosidagi saqlash shart.
+**Ehtiyot bo'ling:** Authorization server - xavfsizlikning eng kritik komponenti: signing key'ni kodga qo'shib qo'yish yoki har restart'da yangi RSA kalit generatsiya qilish (in-memory `JWKSource`) production'da barcha token'larni buzadi - kalitni KMS/Vault/keystore'da saqlab, rotation qo'yish kerak. Shuningdek `InMemory*` repository va service'lar faqat demo uchun; klasterda JDBC yoki Redis asosidagi saqlash shart. Bitta client ga bir nechta grant turini berish texnik jihatdan mumkin, lekin bu ko'pincha arxitektura xatosining belgisi: Spilca `authorization_code` va `client_credentials` ni bir xil `read` scope bilan bitta client ga bergan konfiguratsiyani keltiradi - natijada client xuddi shu token'ni ham foydalanuvchini autentifikatsiya qilib, ham faqat o'z credential'i bilan olishi mumkin bo'ladi, ya'ni foydalanuvchi ishtirokisiz ham o'sha huquqni oladi (Spilca, 13-bob, 329, 330-bet). Shuning uchun har client alohida ro'yxatdan o'tadi (hodisani client bo'yicha audit qilish va credential yo'qolganda izolyatsiya) va scope grant turi bo'yicha ajratiladi; grant turi enum emas, string bo'lgani uchun mavjud bo'lmagan nom ham jim qabul qilinadi va uni ishlatishga urinmaguncha ilova ishlab turadi (Spilca, 13-bob, 330-bet).
 
 ## 18.20 Federatsiyalangan identifikatsiya (Federated Identity)
 
@@ -532,7 +602,7 @@ TokenSettings settings = TokenSettings.builder()
 
 **Tavsif:** Parollar, API kalitlari, sertifikatlar va DB credential'larini kod, `application.yml` yoki Git repozitoriyda emas, markazlashtirilgan, audit qilinadigan va aylantirib (rotate) turiladigan secret store'da saqlash. Ilova ishga tushganda yoki ish vaqtida sirni autentifikatsiya qilingan kanal orqali oladi, kerak bo'lsa dinamik, qisqa muddatli credential generatsiya qiladi. Bu sirning yashash muddatini qisqartirib, kompromis oynasini kamaytiradi va rotatsiyani deploy'siz qilish imkonini beradi.
 
-**Spring'da qayerda uchraydi:** Spring Cloud Vault (`spring-cloud-starter-vault-config`) - HashiCorp Vault'dan `PropertySource` sifatida sir o'qiydi, `VaultTemplate` bilan programmatik kirish, database secrets engine orqali dinamik DB credential va `spring.cloud.vault.*` konfiguratsiyasi; token aylanishi uchun `LeaseContainer`/`SecretLeaseContainer`. Spring Cloud Config Server `{cipher}` prefiksli shifrlangan qiymatlarni va `/encrypt`, `/decrypt` endpoint'larini qo'llab-quvvatlaydi (symmetric kalit yoki JKS keystore bilan). Kubernetes'da `spring-cloud-starter-kubernetes-client-config` Secret'larni mount yoki API orqali o'qiydi; AWS uchun Spring Cloud AWS `spring-cloud-aws-starter-secrets-manager` va `spring-cloud-aws-starter-parameter-store`. Rotatsiyadan keyin yangilash uchun `@RefreshScope` va Actuator'ning `/actuator/refresh` endpoint'i ishlatiladi.
+**Spring'da qayerda uchraydi:** Spring Cloud Vault (`spring-cloud-starter-vault-config`) - HashiCorp Vault'dan `PropertySource` sifatida sir o'qiydi, `VaultTemplate` bilan programmatik kirish, database secrets engine orqali dinamik DB credential va `spring.cloud.vault.*` konfiguratsiyasi; token aylanishi uchun `LeaseContainer`/`SecretLeaseContainer`. Spring Cloud Config Server `{cipher}` prefiksli shifrlangan qiymatlarni va `/encrypt`, `/decrypt` endpoint'larini qo'llab-quvvatlaydi (symmetric kalit yoki JKS keystore bilan). Kubernetes'da `spring-cloud-starter-kubernetes-client-config` Secret'larni mount yoki API orqali o'qiydi; AWS uchun Spring Cloud AWS `spring-cloud-aws-starter-secrets-manager` va `spring-cloud-aws-starter-parameter-store`. Rotatsiyadan keyin yangilash uchun `@RefreshScope` va Actuator'ning `/actuator/refresh` endpoint'i ishlatiladi. Config Server'ning simmetrik kaliti `ENCRYPT_KEY` muhit o'zgaruvchisi orqali beriladi va Carnell shu kalit uchun ikki qoidani qo'yadi: kalit kamida 12 belgi va ideal holda tasodifiy belgilar to'plami bo'lsin, va kalit yo'qotilmasin - u bilan shifrlangan qiymatni boshqa hech narsa bilan ochib bo'lmaydi (Carnell, 3-bob, 91-bet). Qo'shimcha ikki gigiena qoidasi: har muhit uchun alohida kalit ishlatiladi, va kalit Dockerfile ichida qattiq yozilmaydi, chunki Dockerfile source control'da turadi (Carnell, 3-bob, 91-bet). Shifrni kim ochishi ham tanlov: standart holatda Config Server qiymatni server tomonida ochib, mijozga ochiq matnda uzatadi, shuning uchun konfiguratsiyani qaytaradigan endpoint javobida parol ko'rinib qoladi; `spring.cloud.config.server.encrypt.enabled: false` bilan yechish mas'uliyati mijozga o'tadi va bunda mijozda ham xuddi shu `ENCRYPT_KEY` hamda `spring-security-rsa` bog'liqligi bo'lishi kerak (Carnell, 3-bob, 93-bet). ESLATMA: Carnell 1-nashri (2017) Zuul va Hystrix ustiga qurilgan, lekin `{cipher}` prefiksi, `/encrypt` va `/decrypt` endpoint'lari va `ENCRYPT_KEY` mexanizmi Spring Cloud Config'da o'zgarmagan.
 
 **Qo'llanish keyslari:**
 - Production DB parolini Git'dan olib tashlab, Vault database secrets engine orqali har bir pod uchun dinamik, 1 soatlik credential berish.
@@ -542,6 +612,49 @@ TokenSettings settings = TokenSettings.builder()
 - Audit talabiga ko'ra "kim, qachon, qaysi sirni o'qidi" jurnalini markazlashtirish.
 
 **Ehtiyot bo'ling:** Sirlarni Vault'ga ko'chirish "bootstrap secret" muammosini yo'q qilmaydi - Vault'ga kirish token'ining o'zi xavfsiz berilishi kerak (Kubernetes auth, AppRole, IAM), uni `application.yml`ga yozish butun g'oyani buzadi. Shuningdek sirlarni environment variable sifatida uzatish `/proc`, crash dump va `/actuator/env` orqali oqib ketishiga olib kelishi mumkin, shuning uchun Actuator endpoint'larini yopib, `@ConfigurationProperties`da sanitizatsiyani tekshirib turing.
+
+Uchinchi oqish yo'li process xotirasining o'zi: sir qanchalik yaxshi saqlansa ham, ilova uni ishlatish uchun xotiraga oladi va xotira nusxasiga tushadigan har narsa sirni ham oladi. Linux da core dump aslida ilova xotirasining nusxasi, demak hujumchi core dump ni chiqarishga majburlay olsa va fayl tizimiga kirish huquqi bo'lsa, parollarni shundan o'qiydi; Windows da kernel xatosidagi memory dump serverning sozlamasiga qarab butun fizik xotira nusxasini o'z ichiga olishi mumkin. Shuning uchun production da core dump o'chiriladi (`ulimit -c 0`, konteynerda `RLIMIT_CORE`), dump yozish kerak bo'lsa u faqat tahlil davriga yoqiladi, chiqqan fayl esa sir kabi muomala qilinadi: cheklangan ruxsat, qisqa saqlash muddati va tahlildan keyin o'chirish. Xuddi shu mulohaza JVM heap dump iga ham tegishli - u ham sir va shaxsiy ma'lumotni o'z ichiga oladi.
+
+**Bulut akkaunt kalitlari alohida toifa:** sirlar ro'yxatida eng
+qimmat qator ilovaning DB paroli emas, bulut provayderining API
+kalitlari. Newman ikki natijani keltiradi va ikkisi ham oxirigacha
+boradi. Birinchi: kalit zararli tomon qo'liga tushsa, u akkauntda
+ishlab turgan hamma narsani yo'q qilish qarorini qabul qilishi
+mumkin; Code Spaces kompaniyasi shu sababli faoliyatini tugatgan,
+chunki uning barcha resursi va zaxiralari bitta akkauntda bo'lgan.
+Ikkinchi: yo'q qilmasa ham, kripto-mining uchun qimmat virtual
+mashinalar ko'tarib, siz sezmasligingizga umid qilishi mumkin;
+Newman ning bir mijozida akkaunt o'chirilgunga qadar 10 ming
+dollardan ortiq sarflangan. Hujumchilar ham avtomatlashtiradi:
+kalitlarni skanerlab, topilgani bilan mashina ko'tarishga
+urinadigan botlar bor. Shundan uch amaliy qoida chiqadi: root
+akkaunt kalitining doirasini cheklash, zaxirani ishlab turgan
+resurslardan **alohida akkauntda** saqlash va xarajat anomaliyasini
+kuzatib, alert qo'yish. Credential o'g'irlanishining masshtabi ham
+eslatiladi: Verizon ning 2020 yilgi hisobotida hacking keltirgan
+hodisalarning 80 foizida credential o'g'irlashning qaysi bir shakli
+ishlatilgan.
+
+**Rotatsiyaga o'rgangan tashkilot favqulodda bekor qilishga ham
+tayyor:** rotatsiya nazariyada oddiy, amalda og'riqli. Newman
+kalit almashtirilganda tizim ishlamay qolgan hodisalarni ko'rgan va
+sababini aniq aytadi: biror credential ni nima ishlatayotgani
+noaniq bo'lsa, o'zgarish ta'sirini hisoblab bo'lmaydi. Shundan
+yechim ham chiqadi - credential ning **doirasini cheklash**
+(doira tor bo'lsa, rotatsiya ta'siri ham keskin kamayadi) va
+jarayonni avtomatlashtiradigan asbob olish. Ikkinchi va muhimrog'i:
+rotatsiya tayyorligi bekor qilish (revocation) tayyorligini
+beradi. Credential noto'g'ri qo'lga tushgani aniq bo'lsa, rejali
+rotatsiyani kutish amaliy emas; kerak bo'ladigan narsa esa aynan
+shu - servis yangi yasalgan sirni qayta o'qiy olishi (Kubernetes
+secret store yoki Vault dan to'g'ridan-to'g'ri o'qiyotgan servisga
+qiymat o'zgargani haqida xabar beriladi) yoki rolling restart ning
+tayyor bo'lishi. Newman ning xulosasi: muntazam rotatsiya qilib
+turgan bo'lsangiz, bu muammoni allaqachon hal qilgan bo'lasiz,
+demak favqulodda bekor qilishga ham tayyorsiz. Kalitning
+repozitoriyaga tushib qolmasligi uchun esa commit hook darajasidagi
+skanerlash tavsiya qilinadi (`git-secrets`, `gitleaks`), ya'ni
+commit umuman bo'lmasligi.
 
 ## 18.31 Zero Trust (Zero Trust Architecture)
 
@@ -633,7 +746,7 @@ public class ApiKeyFilter extends AbstractPreAuthenticatedProcessingFilter {
 
 **Tavsif:** Hech bir yagona nazorat mexanizmiga to'liq ishonmaslik printsipi: bir qatlam buzilganda keyingi qatlam hujumni to'xtatadi. Amalda bu edge (WAF, API gateway), transport (mTLS), application (authentication, authorization, validation), data (shifrlash, row-level security) va infratuzilma (network policy, container isolation) qatlamlarida bir-birini qoplaydigan nazoratlar o'rnatish degani. Har bir qatlam mustaqil ishlashi va boshqasining mavjudligiga tayanmasligi kerak.
 
-**Spring'da qayerda uchraydi:** Gateway qatlamida Spring Cloud Gateway (`RouteLocator`, `RedisRateLimiter`) va u yerda birinchi JWT tekshiruvi; resource server ichida esa yana `oauth2ResourceServer().jwt()` orqali mustaqil tekshiruv. `SecurityFilterChain` ichida URL-level `authorizeHttpRequests` va metod-level `@PreAuthorize`/`@PostAuthorize` (`@EnableMethodSecurity`) birgalikda ishlaydi. Data qatlamida Hibernate `@Filter`/`@FilterDef` yoki PostgreSQL row-level security, ustun shifrlash uchun Spring Security Crypto `AesBytesEncryptor` yoki Hibernate `AttributeConverter`. Transport uchun `server.ssl.client-auth=need` bilan mTLS va `X509AuthenticationFilter`. Header'lar: HSTS, `X-Content-Type-Options`, CSP - barchasi `HttpSecurity#headers` orqali. Actuator endpoint'lari alohida port va alohida `SecurityFilterChain` bilan ajratiladi.
+**Spring'da qayerda uchraydi:** Gateway qatlamida Spring Cloud Gateway (`RouteLocator`, `RedisRateLimiter`) va u yerda birinchi JWT tekshiruvi; resource server ichida esa yana `oauth2ResourceServer().jwt()` orqali mustaqil tekshiruv. `SecurityFilterChain` ichida URL-level `authorizeHttpRequests` va metod-level `@PreAuthorize`/`@PostAuthorize` (`@EnableMethodSecurity`) birgalikda ishlaydi. Data qatlamida Hibernate `@Filter`/`@FilterDef` yoki PostgreSQL row-level security, ustun shifrlash uchun Spring Security Crypto `AesBytesEncryptor` yoki Hibernate `AttributeConverter`. Transport uchun `server.ssl.client-auth=need` bilan mTLS va `X509AuthenticationFilter`. Header'lar: HSTS, `X-Content-Type-Options`, CSP - barchasi `HttpSecurity#headers` orqali. Actuator endpoint'lari alohida port va alohida `SecurityFilterChain` bilan ajratiladi. Infratuzilma qatlamidagi eng arzon chora - hujum yuzasini portlar bilan qisqartirish: xizmat ishlayotgan OS yoki konteynerda faqat xizmatning o'ziga va unga kerak bo'lgan infratuzilmaga (monitoring, log agregatsiyasi) tegishli portlar ochiq qoldiriladi. Carnell ayniqsa chiqish (outbound) portlarini eslatadi: ko'pchilik faqat kirish portini o'ylaydi, chiqishni cheklash esa xizmat allaqachon buzilgan holatda ma'lumotning tashqariga olib chiqilishini to'sadi, va bu qoida public hamda private zonaning ikkisiga ham tegishli (Carnell, 7-bob, 226-bet). Xuddi shu mantiq bilan IP bo'yicha tekshiruv ham ilovada emas, tarmoq qatlamida qilinadi: Spilca so'rov keladigan manzil yoki manzil oralig'i oldindan ma'lum bo'lsa IP validatsiyasini qo'shimcha qatlam sifatida tavsiya qiladi, lekin ko'p holatda u ilova darajasida emas, ancha oldin - tarmoqda bajarilishini aytadi (Spilca, 1-bob, 31-bet). ESLATMA: Carnell misolidagi chekka nuqta Zuul gateway; bugun uning o'rnida Spring Cloud Gateway, Kubernetes'da esa kirish va chiqishni `NetworkPolicy` cheklaydi - qoidaning mohiyati o'zgarmaydi.
 
 **Qo'llanish keyslari:**
 - Gateway JWT'ni tekshirsa ham, har bir microservice o'z ichida token signature va audience'ni qayta tekshirishi (internal network buzilgan holatga qarshi).
@@ -663,7 +776,7 @@ public class ApiKeyFilter extends AbstractPreAuthenticatedProcessingFilter {
 
 **Tavsif:** Tizim hech qanday qo'shimcha konfiguratsiyasiz ham xavfsiz holatda ishga tushishi kerak: yopiq port, o'chirilgan debug, majburiy authentication, shifrlangan transport va ruxsat etilmagan amalga standart "deny". Xavfsizlikni yoqish uchun emas, kamaytirish uchun ongli qadam talab qilinadi - ya'ni xavfsizlikni o'chirish aniq, ko'rinadigan va review'dan o'tadigan o'zgarish bo'ladi. Bu pattern inson xatosini kamaytiradi, chunki "esdan chiqarib qo'yilgan" holat xavfsiz holat bo'ladi.
 
-**Spring'da qayerda uchraydi:** Spring Boot `spring-boot-starter-security` dependency qo'shilishining o'zi barcha endpoint'larni himoyalaydi va CSRF, session fixation protection, xavfsizlik header'larini yoqadi. Spring Security 6.x/7.x'da `authorizeHttpRequests` ichida mos qoida topilmagan request `AuthorizationFilter` tomonidan rad etiladi, `anyRequest().denyAll()` esa buni ochiq yozish usuli. Spring Boot 3.x'da Actuator'dan faqat `health` web'ga ochiq, qolganlari `management.endpoints.web.exposure.include` bilan ongli qo'shiladi. Parollar uchun `PasswordEncoderFactories.createDelegatingPasswordEncoder()` standart sifatida bcrypt'ni tanlaydi va `{bcrypt}` prefiksi bilan migratsiyaga yo'l beradi. `server.error.include-stacktrace=never` va `include-message=never` Boot'ning standart qiymatlari (Boot 4 da kalitlar `spring.web.error.*`). Spring Boot 4.x / Framework 7.x'da `@Nullable` va null-safety annotatsiyalari (JSpecify) standart sifatida non-null'ni nazarda tutadi.
+**Spring'da qayerda uchraydi:** Spring Boot `spring-boot-starter-security` dependency qo'shilishining o'zi barcha endpoint'larni himoyalaydi va CSRF, session fixation protection, xavfsizlik header'larini yoqadi. Spring Security 6.x/7.x'da `authorizeHttpRequests` ichida mos qoida topilmagan request `AuthorizationFilter` tomonidan rad etiladi, `anyRequest().denyAll()` esa buni ochiq yozish usuli. Spring Boot 3.x'da Actuator'dan faqat `health` web'ga ochiq, qolganlari `management.endpoints.web.exposure.include` bilan ongli qo'shiladi. Parollar uchun `PasswordEncoderFactories.createDelegatingPasswordEncoder()` standart sifatida bcrypt'ni tanlaydi va `{bcrypt}` prefiksi bilan migratsiyaga yo'l beradi. `server.error.include-stacktrace=never` va `include-message=never` Boot'ning standart qiymatlari (Boot 4 da kalitlar `spring.web.error.*`). Spring Boot 4.x / Framework 7.x'da `@Nullable` va null-safety annotatsiyalari (JSpecify) standart sifatida non-null'ni nazarda tutadi. Buni eng sodda loyihada ko'rish mumkin: faqat `spring-boot-starter-web` va `spring-boot-starter-security` qo'shilgan, bitta konfiguratsiya sinfi ham yo'q ilova barcha endpoint'ni HTTP Basic bilan yopadi, `user` nomli standart in-memory foydalanuvchi yaratadi va har ishga tushishda yangi tasodifiy parol generatsiya qilib uni konsolga yozadi (`Using generated security password: ...`); credential'siz chaqiruv 401 oladi (Spilca, 2-bob, 35, 37-bet). Ya'ni ilova ochiq holatda emas, yopiq holatda tug'iladi va uni ochish uchun ongli qadam kerak bo'ladi.
 
 **Qo'llanish keyslari:**
 - Yangi microservice template'ida `anyRequest().authenticated()` bilan boshlab, ochiq endpoint'larni faqat aniq ro'yxat bilan qo'shish.
@@ -672,7 +785,7 @@ public class ApiKeyFilter extends AbstractPreAuthenticatedProcessingFilter {
 - `spring.jpa.open-in-view=false`, TLS majburiy, HTTP → HTTPS redirect kabi xavfsiz default'larni umumiy parent POM / shared starter'ga kiritish.
 - Feature flag'larni standart holatda `off` qilib, yangi funksiyani ongli ravishda yoqish.
 
-**Ehtiyot bo'ling:** Lokal ishlab chiqishni osonlashtirish uchun yozilgan `permitAll()`, `csrf().disable()` yoki self-signed sertifikatga ishonish kodi profile ajratilmasa production'ga chiqib ketadi - bunday sozlamalarni faqat `@Profile("dev")` ichida saqlang va CI'da production konfiguratsiyasini test bilan tekshiring. Shuningdek "secure default"ni global holda o'chiradigan bitta flag yaratmang, chunki u albatta bosiladi.
+**Ehtiyot bo'ling:** Lokal ishlab chiqishni osonlashtirish uchun yozilgan `permitAll()`, `csrf().disable()` yoki self-signed sertifikatga ishonish kodi profile ajratilmasa production'ga chiqib ketadi - bunday sozlamalarni faqat `@Profile("dev")` ichida saqlang va CI'da production konfiguratsiyasini test bilan tekshiring. Shuningdek "secure default"ni global holda o'chiradigan bitta flag yaratmang, chunki u albatta bosiladi. Standart generatsiya qilingan parol ham qulaylik emas, vaqtinchalik holat: u konsol log'ida qoladi, har restart'da o'zgaradi va klasterda har nusxada boshqacha bo'ladi, shuning uchun birinchi qadam o'z `UserDetailsService` va `PasswordEncoder` ini e'lon qilish bo'ladi (Spilca, 2-bob, 37-bet).
 
 ## 18.39 Xavfsiz tarzda yiqilish (Fail Securely)
 
@@ -735,7 +848,7 @@ private boolean deny(String user, String orderId, Throwable t) {
 
 **Tavsif:** `SecurityContext` standart holda `ThreadLocal`da saqlanadi, shuning uchun amal boshqa thread'ga (async, executor, reactive scheduler, scheduled job, messaging listener) o'tganda authentication ma'lumoti yo'qoladi va metod-level authorization ishlamay qoladi yoki `AuthenticationCredentialsNotFoundException` paydo bo'ladi. Pattern kontekstni thread chegaralari orqali ongli ravishda ko'chirishni (yoki reactive'da `Context`ga bog'lashni) va ishdan keyin majburiy tozalashni talab qiladi. Distributed tizimda bu service chegarasidan token yoki on-behalf-of token uzatishni ham qamrab oladi.
 
-**Spring'da qayerda uchraydi:** Servlet/imperative tomonda `DelegatingSecurityContextExecutor`, `DelegatingSecurityContextExecutorService`, `DelegatingSecurityContextRunnable`/`Callable` va `DelegatingSecurityContextAsyncTaskExecutor` kontekstni ko'chiradi; `SecurityContextHolder.setStrategyName(MODE_INHERITABLETHREADLOCAL)` child thread'larga meros beradi (thread pool bilan xavfli). Spring Security 6.x'da `SecurityContextHolderStrategy` bean sifatida inject qilinadi. Java 21+ virtual thread'lar bilan `ScopedValue` yondashuvi ham ishlatiladi, lekin Spring Security hali `ThreadLocal`ga tayanadi - har bir task uchun kontekstni aniq o'rnatish zarur. Reactive tomonda `ReactiveSecurityContextHolder.getContext()` Reactor `Context`dan o'qiydi, `AuthorizationWebFilter` uni o'rnatadi; `.contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth))` bilan qo'lda qo'yiladi va `@PreAuthorize` reactive metodlarda `Mono`/`Flux` qaytarganda ishlaydi. Micrometer Context Propagation (`ContextSnapshot`, `ContextRegistry`) imperative va reactive o'rtasida ko'chirishni soddalashtiradi; `Hooks.enableAutomaticContextPropagation()` Boot 3.x'da ko'p holatni hal qiladi. Service'lar orasida token uzatish uchun `ServletBearerExchangeFilterFunction` (WebClient) yoki `OAuth2AuthorizedClientManager` bilan token exchange.
+**Spring'da qayerda uchraydi:** Servlet/imperative tomonda `DelegatingSecurityContextExecutor`, `DelegatingSecurityContextExecutorService`, `DelegatingSecurityContextRunnable`/`Callable` va `DelegatingSecurityContextAsyncTaskExecutor` kontekstni ko'chiradi; `SecurityContextHolder.setStrategyName(MODE_INHERITABLETHREADLOCAL)` child thread'larga meros beradi (thread pool bilan xavfli). Spring Security 6.x'da `SecurityContextHolderStrategy` bean sifatida inject qilinadi. Java 21+ virtual thread'lar bilan `ScopedValue` yondashuvi ham ishlatiladi, lekin Spring Security hali `ThreadLocal`ga tayanadi - har bir task uchun kontekstni aniq o'rnatish zarur. Reactive tomonda `ReactiveSecurityContextHolder.getContext()` Reactor `Context`dan o'qiydi, `AuthorizationWebFilter` uni o'rnatadi; `.contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth))` bilan qo'lda qo'yiladi va `@PreAuthorize` reactive metodlarda `Mono`/`Flux` qaytarganda ishlaydi. Micrometer Context Propagation (`ContextSnapshot`, `ContextRegistry`) imperative va reactive o'rtasida ko'chirishni soddalashtiradi; `Hooks.enableAutomaticContextPropagation()` Boot 3.x'da ko'p holatni hal qiladi. Service'lar orasida token uzatish uchun `ServletBearerExchangeFilterFunction` (WebClient) yoki `OAuth2AuthorizedClientManager` bilan token exchange. Rejalashtirilgan ish uchun alohida dekorator bor: `DelegatingSecurityContextScheduledExecutorService` `ScheduledExecutorService` ni o'raydi va mexanizmi `DelegatingSecurityContextExecutorService` bilan bir xil, farqi faqat o'raladigan shartnomada; eng abstrakt variant `DelegatingSecurityContextExecutor` oddiy `Executor` ni o'raydi, shuning uchun thread pool implementatsiyasini keyin almashtirish ehtimoli bo'lsa shuni tanlash qulay (Spilca, 5-bob, 123-bet).
 
 **Qo'llanish keyslari:**
 - `@Async` metodda audit yozuvini yozishda `@CreatedBy` maydonining bo'sh qolmasligini ta'minlash.
@@ -763,7 +876,7 @@ private boolean deny(String user, String orderId, Throwable t) {
 
 ## 18.44 Authorization Server yoki ichki auth tanlovi (Authorization Server vs Embedded Auth)
 
-**Tavsif:** Bu arxitektura qarori: authentication va token berish mas'uliyatini alohida Authorization Server (OAuth2/OIDC provider) ga ajratish yoki har bir application ichida parol tekshirish va sessiya boshqaruvini saqlash. Alohida AS ko'p client, SSO, federatsiya, token exchange va markazlashgan audit kerak bo'lganda to'g'ri tanlov; embedded auth esa bitta monolit, kam foydalanuvchi va oddiy talablar uchun ancha arzon va tushunarli. Qaror client turlari soni, SSO talabi, compliance, operatsion imkoniyat va kalit boshqaruvi (key rotation) bo'yicha baholanadi.
+**Tavsif:** Bu arxitektura qarori: authentication va token berish mas'uliyatini alohida Authorization Server (OAuth2/OIDC provider) ga ajratish yoki har bir application ichida parol tekshirish va sessiya boshqaruvini saqlash. Alohida AS ko'p client, SSO, federatsiya, token exchange va markazlashgan audit kerak bo'lganda to'g'ri tanlov; embedded auth esa bitta monolit, kam foydalanuvchi va oddiy talablar uchun ancha arzon va tushunarli. Qaror client turlari soni, SSO talabi, compliance, operatsion imkoniyat va kalit boshqaruvi (key rotation) bo'yicha baholanadi. Qarorning ortida bitta tamoyil turadi: credential va sir tizimda imkon qadar kam komponentga ma'lum bo'lishi kerak (Spilca, 11-bob, 248-bet). Shuning uchun parolni faqat autentifikatsiya serveri ko'radi, business logic server esa parolni emas, token'ni oladi; client parolni ikki joyga yuborayotgan bo'lsa, model allaqachon buzilgan va uni "soddalashtirish" deb oqlash mumkin emas.
 
 **Spring'da qayerda uchraydi:** Alohida AS uchun Spring Authorization Server (`spring-boot-starter-oauth2-authorization-server`, `OAuth2AuthorizationServerConfigurer`, `RegisteredClientRepository`, `JWKSource`) yoki tashqi provider (Keycloak, Auth0, Okta, Entra ID). Resource service tomonida `spring-boot-starter-oauth2-resource-server` va `oauth2ResourceServer(o -> o.jwt(...))`; browser client uchun `spring-boot-starter-oauth2-client` va `oauth2Login()` (`ClientRegistrationRepository`, `OAuth2AuthorizedClientManager`). Embedded auth uchun `formLogin()`, `UserDetailsService`/`JdbcUserDetailsManager`, `DaoAuthenticationProvider`, `DelegatingPasswordEncoder`, `rememberMe()` va `spring-session-data-redis` bilan distributed session. Service-to-service uchun client credentials grant yoki mTLS (`X509AuthenticationFilter`). Spring Security 6.x'dan `WebSecurityConfigurerAdapter` olib tashlangan - konfiguratsiya `SecurityFilterChain` bean'lari bilan yoziladi.
 
@@ -830,6 +943,47 @@ AuthorizationManager<RequestAuthorizationContext> docViewer(OpenFgaClient fga) {
 - Test va staging muhitiga productiondan ma'lumot ko'chirilganda maxfiy maydonlar tokenga almashtiriladi.
 - Ko'p servisli arxitekturada faqat bitta "vault service" asl qiymatni ko'radi, qolgan 30 servis token bilan yashaydi.
 
+**Zonalar: servisni eng nozik ma'lumotiga qarab joylashtirish:**
+tokenizatsiya compliance perimetrini qisqartiradi, zonalash esa
+shu perimetrni deploy topologiyasiga aylantiradi. Newman ning
+MedicalCo keysida ma'lumot uch toifaga bo'lingan: **public**
+(har qanday tashqi tomon bilan erkin bo'lishish mumkin),
+**private** (faqat tizimga kirgan foydalanuvchiga, avtorizatsiya
+bilan yana cheklanishi mumkin, masalan mijozning sug'urta rejasi)
+va **secret** (shaxs haqidagi juda nozik ma'lumot, masalan sog'liq
+ma'lumoti, unga o'sha shaxsdan boshqa odam faqat juda aniq
+holatlarda kira oladi). Keyin har mikroservis **o'zi
+ishlatadigan eng nozik ma'lumotga** qarab toifalanadi va mos
+nazoratlari bor muhitda (zonada) ishlaydi: public zonadagi servis
+faqat public ma'lumotdan foydalanadi, public va private ma'lumotni
+ishlatadigan servis private zonada ishlashi shart, secret
+ma'lumotga tegadigan servis esa har doim secret zonada.
+Oqim qoidasi assimetrik: zona ichidagi servislar bir-biri bilan
+gaplashadi, lekin pastdagi, ya'ni xavfsizroq zonadagi ma'lumot yoki
+funksiyaga to'g'ridan-to'g'ri qo'l uzata olmaydi; xavfsizroq
+zonadagi servis esa yuqoridagi kamroq xavfsiz zonadagi
+funksiyadan foydalanishi mumkin.
+
+Ikkinchi keys perimetrni moliyaviy tomondan oqlaydi. PaymentCo da
+yashil zonadagi servislar karta ma'lumotini **hech qachon**
+ko'rmaydi, u faqat qizil zonadagi jarayon va tarmoqlarda qoladi;
+gateway karta ma'lumotini o'tkazgani uchun o'zi ham qizil zonada
+hisoblanadi. Natijasi aniq: karta ma'lumoti yashil zonaga
+oqmagani uchun bu yerdagi barcha servis to'liq PCI auditdan ozod
+qilinadi, qizil zonadagilar esa nazorat doirasida qoladi (PaymentCo
+hajmi sababli eng qattiq PCI Level 1 ga, ya'ni choraklik tashqi
+baholashga tushgan). Ajratishning buzilish nuqtasi ham ko'rsatiladi:
+yashil zonadagi mikroservis bu ma'lumotni so'ray olsa yoki qizil
+zonadagi servis uni yashil zonaga qaytarib yuborsa, aniq chegara
+yo'qoladi. Zero trust bilan munosabati: butun tizimga zero trust
+qo'llanilsa, har servislararo chaqiruv alohida autentifikatsiya va
+avtorizatsiya talab qilgani uchun alohida zonaga deploy qilish
+texnik jihatdan shart bo'lmay qoladi, lekin Newman ma'lumotning
+nozikligi sababli qatlamli himoya nuqtai nazaridan zonalashni
+baribir saqlashni afzal ko'radi
+([18.36](#1836-qatlamli-himoya-defense-in-depth),
+[18.31](#1831-zero-trust-zero-trust-architecture)).
+
 **Ehtiyot bo'ling:** Token vault yangi yagona nuqta bo'lib qoladi - uning backup, HA va kalit boshqaruvi butun tizim xavfsizligini belgilaydi, va detokenizatsiya API'si yetarlicha qattiq avtorizatsiya qilinmasa tokenizatsiyadan hech qanday foyda qolmaydi. Deterministik tokenlarni (bir xil PAN → bir xil token) joining uchun ishlatish qulay, lekin bu korrelyatsiya va lug'at hujumiga yo'l ochadi; tokenizatsiyani shifrlash, TLS yoki access control o'rnini bosuvchi deb emas, ularga qo'shimcha qatlam deb qaraganingiz to'g'ri.
 
 ## 18.48 Ma'lumotni maskalash (Data Masking)
@@ -856,7 +1010,300 @@ public class MaskingSerializer extends JsonSerializer<String> {
 
 **Ehtiyot bo'ling:** Maskani faqat UI yoki DTO darajasida qo'yish mumkin emas - asl qiymat baribir API javobi, GraphQL, export (CSV/Excel), Actuator endpoint'lari yoki stack trace orqali chiqib ketishi odatiy xato; masking qoidasini mumkin bo'lgan eng chuqur qatlamda (DB view, repository projection) qo'llang. Yana bir tuzoq - qisman masking deanonimizatsiyaga yo'l qoldirishi: tug'ilgan sana + pochta indeksi + jins kabi bir nechta "zararsiz" niqoblangan maydon birlashtirilganda shaxsni aniqlash mumkin, shuning uchun masking'ni shifrlash va access control o'rnini bosuvchi chora deb hisoblamang.
 
-## 18.49 Amalda qo'llash
+## 18.49 Foydalanuvchini moslash va boshqarish (UserDetails mapping, UserDetailsManager)
+
+**Tavsif:** 18.5 `UserDetailsService` ning o'qish shartnomasini beradi, lekin ilovada foydalanuvchini yaratish, o'chirish va parolini almashtirish ham kerak bo'ladi. `UserDetailsManager` shu operatsiyalarni `UserDetailsService` ustiga qo'shadi: autentifikatsiya faqat `loadUserByUsername` ni ko'radi, administratsiya esa to'liq shartnomani - ya'ni interface segregation saqlanadi (Spilca, 3-bob, 78-bet). Ikkinchi masala `UserDetails` ni qayerga joylash: JPA entity ga ham `UserDetails` ni implement qildirish bitta sinfga ikki mas'uliyat yuklaydi, shuning uchun uni dekorator bilan ajratish to'g'ri (Spilca, 3-bob, 71-bet).
+
+**Spring'da qayerda uchraydi:**
+- **`UserDetailsManager` shartnomasi** - `createUser`, `updateUser`, `deleteUser`, `changePassword`, `userExists` metodlari `UserDetailsService` ga qo'shiladi; `InMemoryUserDetailsManager` ham aslida manager, shuning uchun unda `createUser()` ni chaqirish mumkin (Spilca, 3-bob, 78-bet).
+- **`JdbcUserDetailsManager`** - foydalanuvchini SQL bazada to'g'ridan-to'g'ri JDBC orqali boshqaradi, hech qanday ORM yoki spetsifikatsiyaga bog'lanmaydi. Standart jadval nomlari `users` va `authorities`, `users` da `username`, `password` va foydalanuvchini o'chirib qo'yish uchun `enabled` ustunlari kutiladi (Spilca, 3-bob, 79-bet).
+- **So'rovni almashtirish** - jadval yoki ustun nomlari boshqa bo'lsa, `setUsersByUsernameQuery` va `setAuthoritiesByUsernameQuery` bilan so'rovlar qayta beriladi, qolganlari ham xuddi shu yo'l bilan (Spilca, 3-bob, 82-bet).
+- **`LdapUserDetailsManager`** - xuddi shu shartnomaning LDAP varianti; `JdbcUserDetailsManager` dan kam ishlatiladi, lekin foydalanuvchi LDAP tizimida boshqarilsa tayyor yechim bo'ladi (Spilca, 3-bob, 83-bet).
+- **`User.withUsername(...)` builder** - alohida `UserDetails` sinfi yozmaslik uchun `User.UserBuilder` immutable instance yasaydi: kamida username (bo'sh satr bo'lmasligi shart) va parol beriladi, `User.withUserDetails(existing)` esa mavjud obyektdan boshlaydi (Spilca, 3-bob, 70-bet).
+
+```java
+public class SecurityUser implements UserDetails {
+
+    private final UserEntity user;   // @Entity: faqat persistence mas'uliyati qoladi
+
+    public SecurityUser(UserEntity user) {
+        this.user = user;
+    }
+
+    @Override public String getUsername() { return user.getUsername(); }
+    @Override public String getPassword() { return user.getPassword(); }
+
+    @Override public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority(user.getAuthority()));
+    }
+
+    @Override public boolean isAccountNonExpired() { return true; }
+    @Override public boolean isAccountNonLocked() { return !user.isLocked(); }
+    @Override public boolean isCredentialsNonExpired() { return true; }
+    @Override public boolean isEnabled() { return user.isEnabled(); }
+}
+```
+
+**Qo'llanish keyslari:**
+- Mavjud `users` / `authorities` jadvallari bo'lgan ilovada `JdbcUserDetailsManager` ni hech qanday kod yozmasdan ulash.
+- Legacy sxemada ustun nomlari boshqa bo'lsa, migratsiya qilish o'rniga ikki so'rovni almashtirish.
+- JPA entity ni `UserDetails` dan ozod qilib, `SecurityUser` dekoratorini `UserDetailsService` ichida yasash.
+- Admin paneli uchun `UserDetailsManager` ni inject qilib, foydalanuvchi yaratish va parol almashtirishni bitta shartnoma orqali qilish.
+- Test fixture'ini `User.withUsername(...)` builder'i bilan uch qatorda yasash.
+
+**Ehtiyot bo'ling:** Builder'dagi `passwordEncoder(...)` - bu `PasswordEncoder` bean'i emas, oddiy `Function<String, String>`: uning yagona vazifasi parolni berilgan kodlashga o'tkazish, shuning uchun uni ilovaning parol hash'lash siyosati deb o'ylash xato (Spilca, 3-bob, 71-bet). Entity ga `UserDetails` ni implement qildirish `getAuthority()` va `getAuthorities()` kabi ikki o'xshash metodni bir sinfda to'qnashtiradi va bog'liq entity'lar qo'shilgach kod o'qilmas bo'lib qoladi (Spilca, 3-bob, 72-bet). ESLATMA: Spilca 1-nashrida bu bean'lar `WebSecurityConfigurerAdapter` li konfiguratsiya sinfida e'lon qilinadi; Spring Security 5.7+ da xuddi shu bean'lar adapter'siz, oddiy `@Configuration` sinfida qoladi.
+
+## 18.50 Authentication obyekti shartnomasi (Authentication contract)
+
+**Tavsif:** `Authentication` autentifikatsiya jarayonining o'zini ifodalaydi, faqat natijasini emas: u jarayon davom etayotgan holatda (credential olindi, hali tekshirilmadi) yoki tugagan holatda bo'lishi mumkin. Shu farq obyektning "authenticated" bayrog'ida turadi va u konstruktor tanlovi bilan belgilanadi: `UsernamePasswordAuthenticationToken` ning ikki argumentli konstruktori (principal, credentials) obyektni autentifikatsiya qilinmagan deb yasaydi, uch argumentli konstruktori (principal, credentials, authorities) esa autentifikatsiya qilingan deb belgilaydi va uchinchi argument - authority'lar to'plami - tugagan jarayon uchun majburiy (Spilca, 11-bob, 269-bet). Demak filtr birinchi shaklni yasaydi, `AuthenticationProvider` esa muvaffaqiyatda ikkinchi shaklni qaytaradi.
+
+**Spring'da qayerda uchraydi:**
+- **Ikki argumentli konstruktor** - `new UsernamePasswordAuthenticationToken(username, password)`: obyekt tekshirilmagan, shuning uchun `AuthenticationManager` unga mos `AuthenticationProvider` qidirishda davom etadi (Spilca, 11-bob, 269-bet).
+- **Uch argumentli konstruktor** - provider muvaffaqiyatda shu shaklni qaytaradi; `ProviderManager` natijani zanjirdan chiqaradi va `SecurityContext` ga aynan shu obyekt tushadi (Spilca, 11-bob, 269-bet).
+- **`supports(Class<?>)` bilan juftlik** - o'z `Authentication` turingizni yasasangiz, uni qabul qiladigan provider ham shu turni e'lon qiladi (18.4).
+- **Framework shartnomasiga tayanish** - Spilca faqat filtr zanjiriga tayanib framework funksiyalarini custom kod bilan qaytadan yozgan tizimni keltiradi: vaqt o'tgani sayin har bir yangi talab qiyinlashgan va ayb framework'ga qo'yilgan, holbuki muammo shartnomalardan (`AuthenticationProvider`, `UserDetailsService`, `Authentication`) foydalanmaslikda bo'lgan (Spilca, 5-bob, 111, 112-bet). Qoida: konfiguratsiyadan ko'ra ko'proq custom kod yozayotganingizni sezsangiz, nega shunday bo'lgani savolini qo'ying.
+- **ESLATMA** - `UsernamePasswordAuthenticationToken` da `setAuthenticated(true)` ni qo'lda chaqirish `IllegalArgumentException` beradi; bu korpusning qo'shimchasi, kitob bu cheklovni aytmaydi.
+
+```java
+public class OtpAuthentication extends UsernamePasswordAuthenticationToken {
+
+    public OtpAuthentication(String username, String otp) {
+        super(username, otp);                 // filtr yasaydi: hali tekshirilmagan
+    }
+
+    public OtpAuthentication(String username, String otp,
+                             Collection<? extends GrantedAuthority> authorities) {
+        super(username, otp, authorities);    // provider qaytaradi: tekshirilgan
+    }
+}
+```
+
+**Qo'llanish keyslari:**
+- OTP, SMS kodi yoki imzolangan so'rov uchun o'z `Authentication` turini yasab, uni o'z provider'iga bog'lash.
+- Filtrda credential'ni o'qib, tekshiruvni `AuthenticationManager` ga topshirish (filtrda parol solishtirmaslik).
+- Provider'da muvaffaqiyatda authority'lar bilan yangi obyekt qaytarish va kirish obyektini o'zgartirmaslik.
+- Test'da tekshirilgan kontekst qurish uchun uch argumentli konstruktordan foydalanish.
+- Legacy custom auth kodni ko'chirishda qaysi qism filtr, qaysi qism provider ekanini ajratib olish.
+
+**Ehtiyot bo'ling:** Ikki konstruktorni aralashtirib yuborish eng jim xato: filtr uch argumentli konstruktorni ishlatsa, `AuthenticationManager` obyektni allaqachon tekshirilgan deb qabul qiladi va hech qanday provider chaqirilmaydi, ya'ni parol umuman tekshirilmaydi. Teskari holatda provider ikki argumentli obyekt qaytarsa va exception ham tashlamasa, manager boshqa provider qidirishda davom etadi va oqim `ProviderNotFoundException` bilan tugaydi (Spilca, 11-bob, 269-bet). `Authentication` ichidagi credential autentifikatsiyadan keyin tozalanadi (18.3 dagi `eraseCredentials`), shuning uchun uni downstream'da parol manbasi sifatida ishlatish mumkin emas.
+
+## 18.51 Maxsus filtr yozish mexanikasi (Custom filter mechanics - OncePerRequestFilter)
+
+**Tavsif:** Zanjirga o'z filtrini qo'shishning uch yo'li bor: `addFilterBefore`, `addFilterAfter` va `addFilterAt`. Uchinchisi eng ko'p noto'g'ri tushuniladigani: `addFilterAt` filtrni ko'rsatilgan filtrning pozitsiyasiga qo'yadi, lekin uni almashtirmaydi. Bir pozitsiyada bir nechta filtr turishi mumkin va bunda ularning qaysi tartibda ishlashi aniqlanmagan, shuning uchun bir joyga bir nechta filtr qo'yish tavsiya etilmaydi (Spilca, 9-bob, 208-bet). Ikkinchi mexanika - filtrni qaysi sinfdan meros olish: framework filtr bir so'rovda faqat bir marta chaqirilishini kafolatlamaydi, `OncePerRequestFilter` esa aynan shuni kafolatlaydi (Spilca, 9-bob, 210-bet).
+
+**Spring'da qayerda uchraydi:**
+- **`addFilterAt(...)` almashtirmaydi** - HTTP Basic o'rniga o'z autentifikatsiyangizni qo'ysangiz, `httpBasic()` ni umuman yoqmaslik kerak, aks holda ikki filtr bir pozitsiyada qoladi (Spilca, 9-bob, 208, 209-bet).
+- **`OncePerRequestFilter`** - faqat HTTP so'rovlarni qo'llab-quvvatlaydi va shuning uchun `doFilterInternal()` ga `HttpServletRequest` hamda `HttpServletResponse` tayyor turlar bo'lib keladi: `Filter` interfeysidagi cast kerak emas (Spilca, 9-bob, 211-bet).
+- **`shouldNotFilter(HttpServletRequest)`** - filtr zanjirda bo'lsa ham qaysi so'rovga tegmasligini shu metod hal qiladi, standart holatda filtr hamma so'rovga qo'llanadi (Spilca, 9-bob, 211-bet). Spilca `InitialAuthenticationFilter` ni aynan shu metod bilan faqat `/login` yo'liga cheklaydi (Spilca, 11-bob, 275-bet).
+- **`shouldNotFilterAsyncDispatch()` va `shouldNotFilterErrorDispatch()`** - standart holatda `OncePerRequestFilter` asinxron va error dispatch so'rovlariga qo'llanmaydi; kerak bo'lsa shu ikki metod bilan o'zgartiriladi (Spilca, 9-bob, 211-bet).
+- **`GenericFilterBean`** - `OncePerRequestFilter` shu sinfdan meros oladi; uning `web.xml` initialization parametrlari kerak bo'lmasa undan meros olishning ma'nosi yo'q va Spilca sababini bilmasdan `GenericFilterBean` ni kengaytirishni keng tarqalgan ko'chirma xato deb ataydi (Spilca, 9-bob, 210-bet).
+
+```java
+@Component
+public class InitialAuthenticationFilter extends OncePerRequestFilter {
+
+    private final AuthenticationManager manager;
+
+    public InitialAuthenticationFilter(AuthenticationManager manager) {
+        this.manager = manager;
+    }
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+                                    FilterChain chain) throws ServletException, IOException {
+        var auth = manager.authenticate(
+                new OtpAuthentication(request.getHeader("username"), request.getHeader("otp")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
+        chain.doFilter(request, response);
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return !"/login".equals(request.getServletPath());   // filtr faqat /login da ishlaydi
+    }
+}
+```
+
+**Qo'llanish keyslari:**
+- API kalitini yoki so'rov imzosini tekshiruvchi filtrni `UsernamePasswordAuthenticationFilter` pozitsiyasiga qo'yish va `httpBasic()` ni yoqmaslik.
+- Login va qolgan endpoint'lar uchun ikki alohida filtr: birinchisi `shouldNotFilter` bilan faqat `/login` da, ikkinchisi qolgan hamma yo'lda.
+- Log yozuvchi filtrni `OncePerRequestFilter` dan meros olib, bitta so'rovni ikki marta yozmaslik.
+- `/actuator/health` yoki statik resurs yo'llarini `shouldNotFilter` bilan chetlab o'tish.
+- Async dispatch da ham tekshiruv kerak bo'lsa `shouldNotFilterAsyncDispatch()` ni `false` qaytarishga o'zgartirish.
+
+**Ehtiyot bo'ling:** `addFilterAt` ni "almashtirish" deb o'ylash zanjirda ikki autentifikatsiya filtrini qoldiradi va tartib aniqlanmagani uchun xulq oldindan aytib bo'lmaydigan bo'ladi (Spilca, 9-bob, 208-bet). Filtrda `UserDetailsService` kerak bo'lmasa ham Spring Boot uni avtomatik sozlaydi; Spilca bunday holatda `UserDetailsServiceAutoConfiguration` ni `exclude` qilishni ko'rsatadi (Spilca, 9-bob, 210-bet). ESLATMA: yo'lni `shouldNotFilter` ichida oddiy string tenglik bilan tekshirish korpusning tavsiyasiga ko'ra yetarli emas (`/login/` yoki kodlangan shakl chetlab o'tishi mumkin), shuning uchun `RequestMatcher` ishlatish ishonchliroq; kitob misoli soddalik uchun string solishtiradi.
+
+## 18.52 So'rovni kalit bilan imzolash (Request signing)
+
+**Tavsif:** Ikki backend o'rtasidagi chaqiruvning haqiqiyligini tekshirishning uch darajasi bor: statik kalitni header'da yuborish, so'rovni kriptografik imzo bilan imzolash va IP ni tekshirish (Spilca, 1-bob, 29, 30-bet). Statik kalit eng kuchsizi, chunki qiymat har chaqiruvda tarmoqdan o'tadi va ushlab olingan kalit bilan chaqiruvni takrorlash mumkin, shuning uchun u odatda IP allowlist bilan birga ishlatiladi. Imzolashda esa kalit tarmoqqa chiqmaydi: client so'rovning bir qismini (masalan ma'lum header'larni) kalit bilan imzolaydi, server esa o'z kaliti bilan imzoni tekshiradi. Simmetrik kalitda ikki tomon bitta kalitni biladi va uni bir marta almashish kerak, assimmetrik juftlikda esa private kalit umuman almashinmaydi; narxi - imzoni hisoblash ko'proq resurs yeydi (Spilca, 1-bob, 30-bet).
+
+**Spring'da qayerda uchraydi:**
+- **Imzolangan autentifikatsiya filtri** - Spilca HTTP Basic o'rniga qo'yiladigan sxemalar ro'yxatida aynan "so'rovni simmetrik kalit bilan imzolab autentifikatsiya qilish" ni sanaydi (Spilca, 9-bob, 205-bet); amalda bu `OncePerRequestFilter` dan meros olgan filtr bo'ladi va tekshiruvni `AuthenticationManager` ga topshiradi (18.51).
+- **Kalitni saqlash** - server har client uchun alohida kalitni bazada yoki secret vault'da saqlaydi, shuning uchun bir client kaliti yo'qolsa qolganlari ta'sirlanmaydi (Spilca, 9-bob, 206-bet).
+- **HMAC** - simmetrik variant uchun JDK ning `Mac` sinfi (`HmacSHA256`) kifoya, qo'shimcha kutubxona kerak emas.
+- **Assimmetrik variant** - server client'ning public kalitini biladi, client private kalit bilan imzolaydi; xuddi shu model JWT ning `RS256` imzosida va 18.14 dagi resource server tekshiruvida ishlatiladi.
+- **ESLATMA** - imzoni `equals()` bilan emas, `MessageDigest.isEqual` bilan solishtirish va imzolanadigan matnga timestamp yoki nonce kiritib replay'ni to'sish korpusning qo'shimchasi: kitob bu ikki tafsilotni aytmaydi.
+
+```java
+static boolean signatureMatches(String payload, String signature, byte[] secret) throws Exception {
+    Mac mac = Mac.getInstance("HmacSHA256");
+    mac.init(new SecretKeySpec(secret, "HmacSHA256"));
+    byte[] expected = mac.doFinal(payload.getBytes(StandardCharsets.UTF_8));   // kalit tarmoqqa chiqmaydi
+    return MessageDigest.isEqual(expected, Base64.getDecoder().decode(signature));
+}
+```
+
+**Qo'llanish keyslari:**
+- Ichki servislararo chaqiruvda statik API kalit o'rniga imzo qo'yib, kalitni tarmoqdan umuman o'tkazmaslik.
+- To'lov provayderi yoki boshqa tashqi tizim webhook'ini qabul qilishda yuboruvchi imzosini tekshirish.
+- Har partnerga alohida kalit berib, imzoni partner identifikatori bo'yicha tekshirish.
+- Assimmetrik juftlik bilan server client'ning maxfiy kalitini umuman bilmasligini ta'minlash.
+- Imzo tekshiruvini filtr sifatida yozib, uni business kod'ga tegmasdan butun API ga qo'llash.
+
+**Ehtiyot bo'ling:** Imzo nimani qoplasa, faqat shuni himoyalaydi: faqat bitta header imzolangan bo'lsa, tana yoki query parametri o'zgartirilganda imzo baribir to'g'ri chiqadi, shuning uchun imzolanadigan kanonik matnni (metod, yo'l, timestamp, tana hash'i) aniq belgilash kerak. Simmetrik kalitning o'zi ham xavf nuqtasi: u ikki tomonda saqlanadi, demak kompromis ikki tomondan kelishi mumkin, assimmetrik variantda esa faqat public kalit tarqaladi (Spilca, 1-bob, 30-bet). Imzolash hisoblash narxiga ega, shuning uchun uni har chaqiruvga qo'yishdan oldin yuklamani o'lchang (Spilca, 1-bob, 30-bet). Imzoni autentifikatsiya deb hisoblab avtorizatsiyani tashlab ketmang: imzo kim chaqirganini aytadi, nimaga haqli ekanini aytmaydi.
+
+## 18.53 CSRF token shartnomasi va repository (CsrfToken, CsrfTokenRepository)
+
+**Tavsif:** CSRF himoyasi ikki shartnomaga tayanadi: `CsrfToken` token'ning o'zini, `CsrfTokenRepository` esa token'ni yaratish, saqlash va yuklashni tasvirlaydi (Spilca, 10-bob, 228-bet). Standart holatda token HTTP session'da server tomonida saqlanadi: kichik ilova uchun bu yetarli, lekin session stateful bo'lgani uchun ko'p so'rovli va gorizontal kengayadigan ilovada scalability'ni cheklaydi (Spilca, 10-bob, 228-bet). Saqlash joyini almashtirish uchun `CsrfFilter` ni qayta yozish kerak emas: `CsrfTokenRepository` ni implement qilib, uni framework'ga ulash kifoya.
+
+**Spring'da qayerda uchraydi:**
+- **`CsrfToken` ning uch xususiyati** - so'rovdagi header nomi (standart `X-CSRF-TOKEN`), token qiymatini saqlaydigan so'rov atributi nomi (standart `_csrf`) va token qiymatining o'zi; interfeys shunga mos uch metoddan iborat: `getHeaderName()`, `getParameterName()`, `getToken()` (Spilca, 10-bob, 228, 229-bet).
+- **`DefaultCsrfToken`** - shu shartnomaning tayyor implementatsiyasi, immutable instance yasaydi, shuning uchun o'z repository'ingizda token yasaganda shuni qaytarish kifoya (Spilca, 10-bob, 229-bet).
+- **`CsrfTokenRepository`** - `generateToken`, `saveToken`, `loadToken` mas'uliyati; `HttpSessionCsrfTokenRepository` (standart) va `CookieCsrfTokenRepository` tayyor variantlar, bazada saqlash uchun o'z implementatsiyangiz yoziladi (Spilca, 10-bob, 229-bet).
+- **Identifikatorga bog'langan token** - token foydalanuvchini aniqlaydigan identifikator bilan birga saqlanadi va bu identifikator login paytida beriladi, ya'ni u session ID ning o'rnini bosadi (Spilca, 10-bob, 230-bet).
+- **Muddatli token** - ikkinchi variant: token foydalanuvchiga umuman bog'lanmaydi, faqat bazada bor-yo'qligi va muddati o'tmaganligi tekshiriladi (Spilca, 10-bob, 230-bet).
+
+```java
+public class JpaCsrfTokenRepository implements CsrfTokenRepository {
+
+    private final TokenRepository tokens;   // Spring Data repository
+
+    public JpaCsrfTokenRepository(TokenRepository tokens) {
+        this.tokens = tokens;
+    }
+
+    @Override
+    public CsrfToken generateToken(HttpServletRequest request) {
+        return new DefaultCsrfToken("X-CSRF-TOKEN", "_csrf", UUID.randomUUID().toString());
+    }
+
+    @Override
+    public void saveToken(CsrfToken token, HttpServletRequest request, HttpServletResponse response) {
+        String id = request.getHeader("X-IDENTIFIER");
+        tokens.save(new TokenEntity(id, token == null ? null : token.getToken()));
+    }
+
+    @Override
+    public CsrfToken loadToken(HttpServletRequest request) {
+        return tokens.findByIdentifier(request.getHeader("X-IDENTIFIER"))
+                .map(t -> new DefaultCsrfToken("X-CSRF-TOKEN", "_csrf", t.getToken()))
+                .orElse(null);
+    }
+}
+```
+
+**Qo'llanish keyslari:**
+- Gorizontal kengayadigan ilovada token'ni session'dan bazaga ko'chirib, sticky session talabidan qutulish.
+- Muddatli CSRF token: bazada muddat ustuni bilan saqlab, eski yozuvlarni tozalaydigan job qo'yish.
+- Token header nomini frontend kutgan nomga (`X-XSRF-TOKEN`) moslash.
+- Mobil client uchun login paytida beriladigan identifikator bo'yicha token yuklash.
+- Bir nechta ilova bir xil CSRF siyosatini ishlatishi uchun repository'ni umumiy kutubxonaga chiqarish.
+
+**Ehtiyot bo'ling:** `saveToken` token `null` qiymat bilan ham chaqiriladi - bu token'ni bekor qilish signali va uni `NullPointerException` ga aylantirmaslik kerak. Bazadagi token identifikatorga bog'langan bo'lsa, identifikator har login'da yangilanishi shart, aks holda u doimiy sirga aylanadi va CSRF token'ning ma'nosi qolmaydi (Spilca, 10-bob, 230-bet). ESLATMA: har so'rovda bazaga borish CSRF tekshiruvini bazaga bog'laydi, shuning uchun token'ni o'qish yo'lini indeks bilan qoplash va cache'ni o'ylash korpusning qo'shimchasi. Token qiymatini log'ga yozmang va uni GET so'rov URL'ida uzatmang.
+
+## 18.54 OAuth 2 client registratsiyasi (ClientRegistration, ClientRegistrationRepository)
+
+**Tavsif:** OAuth 2 client ilovasi har bir authorization server haqida bir to'plam ma'lumotni bilishi kerak: client ID va secret, authorization va token endpoint URL'lari, redirect URI, scope'lar. Bu to'plam `ClientRegistration` obyektida turadi, uni esa `ClientRegistrationRepository` registratsiya ID bo'yicha topib beradi. Spilca bu juftlikni `UserDetailsService` bilan solishtiradi: `UserDetailsService` `UserDetails` ni username bo'yicha topsa, `ClientRegistrationRepository` `ClientRegistration` ni registration ID bo'yicha topadi (Spilca, 12-bob, 308-bet). Shu ajratish tufayli client ro'yxati konfiguratsiyada, bazada yoki tashqi servisda bo'lishi mumkin, autentifikatsiya oqimi esa o'zgarmaydi.
+
+**Spring'da qayerda uchraydi:**
+- **`CommonOAuth2Provider`** - Google, GitHub, Facebook va Okta uchun URL'lari oldindan to'ldirilgan `ClientRegistration` builder'ini beradi, siz faqat registration ID va credential qo'shasiz (Spilca, 12-bob, 306-bet).
+- **To'liq qo'lda `ClientRegistration`** - provayder shu ro'yxatda bo'lmasa yoki URL'lar konfiguratsiya faylida turishi kerak bo'lsa, butun registratsiya qo'lda e'lon qilinadi (Spilca, 12-bob, 306-bet).
+- **`InMemoryClientRegistrationRepository`** - framework beradigan tayyor implementatsiya, `ClientRegistration` larni xotirada saqlaydi va `InMemoryUserDetailsManager` bilan bir xil rolni bajaradi (Spilca, 12-bob, 308-bet).
+- **O'z implementatsiyangiz** - registratsiya ma'lumoti bazada yoki web servisda bo'lsa `ClientRegistrationRepository` ni o'zingiz yozasiz (Spilca, 12-bob, 311-bet).
+- **Bean sifatida e'lon qilish** - `ClientRegistrationRepository` ni Spring kontekstiga qo'yishning o'zi kifoya, Spring Security uni topib ishlatadi (Spilca, 12-bob, 308-bet); Spring Boot'da xuddi shu natija `spring.security.oauth2.client.registration.*` xususiyatlari bilan ham olinadi.
+
+```java
+@Bean
+ClientRegistrationRepository clientRegistrationRepository() {
+    ClientRegistration github = CommonOAuth2Provider.GITHUB   // URL'lar oldindan to'ldirilgan
+            .getBuilder("github")                             // registration ID
+            .clientId(clientId)
+            .clientSecret(clientSecret)                       // vault'dan keladi, kodda yozilmaydi
+            .build();
+    return new InMemoryClientRegistrationRepository(github);
+}
+```
+
+**Qo'llanish keyslari:**
+- "GitHub bilan kirish" tugmasini `CommonOAuth2Provider` bilan bir nechta qatorda yoqish.
+- `CommonOAuth2Provider` da yo'q korporativ Keycloak uchun registratsiyani `issuer-uri` orqali to'ldirish.
+- Multi-tenant SaaS'da har tenant o'z IdP'si bilan kirishi uchun repository'ni bazaga bog'lash.
+- Bitta ilovada bir nechta provayderni (Google va ichki IdP) registration ID bo'yicha ajratish.
+- Test'da bitta soxta registratsiya bilan `oauth2Login()` oqimini tekshirish.
+
+**Ehtiyot bo'ling:** `clientId` va `clientSecret` - credential: Spilca ularni manba kodda yozmasdan secret vault'dan olishni talab qiladi (Spilca, 12-bob, 307-bet). `CommonOAuth2Provider` ga tayanish provayder URL'larini o'zgartirmasligiga tayanish degani: ehtimoli past, lekin siz boshqarmaydigan bog'liqlik, shuning uchun URL'lar konfiguratsiyadan kelishi kerak bo'lgan muhitda to'liq `ClientRegistration` yoziladi (Spilca, 12-bob, 306-bet). `InMemoryClientRegistrationRepository` dinamik ro'yxat uchun mos emas: yangi tenant qo'shilsa ilovani qayta ishga tushirish kerak bo'ladi. ESLATMA: Spilca misollari `WebSecurityConfigurerAdapter` ichida yozilgan; yuqoridagi bean shakli Spring Security 5.7+ uchun.
+
+## 18.55 Metod argumenti va natijasini filtrlash (Method filtering - @PreFilter, @PostFilter)
+
+**Tavsif:** Filtrlash avtorizatsiyaning boshqa turi: `@PreAuthorize` qoida buzilsa metodni umuman chaqirmaydi va exception tashlaydi, filtrlash esa metodni chaqiradi, lekin qoidaga mos kelmagan elementlarni olib tashlaydi va hech qanday exception tashlamaydi (Spilca, 17-bob, 414-bet). Shu sababdan filtrlash faqat collection va array uchun ishlaydi: `@PreFilter` metod parametri collection yoki array bo'lganda, `@PostFilter` esa metod collection yoki array qaytarganda qo'llanadi (Spilca, 17-bob, 414-bet). Qoida SpEL bo'lib, undagi `filterObject` collection ichidagi har bir elementga ishora qiladi (Spilca, 17-bob, 416-bet).
+
+**Spring'da qayerda uchraydi:**
+- **`@PreFilter`** - aspekt chaqiruvni ushlaydi va metodga faqat qoidaga mos elementlarni beradi; natijada mas'uliyat ajraladi: aspekt avtorizatsiyani, metod esa faqat business logikani bajaradi (Spilca, 17-bob, 415-bet).
+- **`@PostFilter`** - qaytarilgan collection'dan ruxsatsiz elementlarni olib tashlaydi; Spring Data repository metodida ham ishlaydi, lekin bu ma'lumotni bazadan ortiqcha o'qish degani (Spilca, 17-bob, 429, 430-bet).
+- **Exception yo'q** - filtrlash "ruxsat yo'q" deb xato bermaydi, jim qisqartiradi: chaqiruvchi bo'sh yoki qisqargan ro'yxat oladi va buni "ma'lumot yo'q" deb tushunishi mumkin (Spilca, 17-bob, 414-bet).
+- **Argument joyida o'zgaradi** - aspekt yangi `List` qaytarmaydi, kirish instance'ining o'zidan mos kelmagan elementlarni o'chiradi (Spilca, 17-bob, 419-bet).
+- **`@Secured` va `@RolesAllowed`** - metodga rol talabini qo'yadigan eski annotatsiyalar; `@PreAuthorize` va `@PostAuthorize` dan kuchsizroq (SpEL yo'q, faqat rol nomlari) va amalda kam uchraydi, yoqish uchun esa alohida bayroqlar kerak (Spilca, 16-bob, 410-bet). ESLATMA: kitobda bayroqlar `@EnableGlobalMethodSecurity(jsr250Enabled = true, securedEnabled = true)` ko'rinishida; Spring Security 6.x da annotatsiya `@EnableMethodSecurity` bo'ldi va `@PreAuthorize` standart holatda yoqilgan, JSR-250 va `@Secured` esa xuddi shu nomli atributlar bilan yoqiladi.
+
+```java
+@Service
+public class ProductService {
+
+    @PreFilter("filterObject.owner == authentication.name")
+    public List<Product> sellProducts(List<Product> products) {
+        return products;   // metod faqat business logikani bajaradi, filtrlashni aspekt qiladi
+    }
+}
+```
+
+**Qo'llanish keyslari:**
+- Faqat o'z mahsulotini sotishi mumkin bo'lgan foydalanuvchi uchun kirish ro'yxatini `@PreFilter` bilan tozalash.
+- Batch import'da boshqa tenant'ga tegishli qatorlarni metodga umuman kirgizmaslik.
+- Kichik ro'yxat qaytaradigan metodda `@PostFilter` bilan egalik tekshiruvi.
+- JSR-250 ga tayanadigan legacy modulda `@RolesAllowed` ni joyida qoldirib, yangi kodda `@PreAuthorize` yozish.
+- Avtorizatsiya qoidasini metodning o'ziga bog'lab, uni chaqiradigan har bir joyda takrorlamaslik.
+
+**Ehtiyot bo'ling:** `@PreFilter` argumentdagi collection'ni joyida o'zgartirgani uchun immutable collection berilsa (`List.of(...)`, `Collections.unmodifiableList(...)`) chaqiruv runtime'da exception bilan yiqiladi: aspekt collection tarkibini o'zgartira olmaydi, shuning uchun argument albatta o'zgartirilishi mumkin bo'lgan instance bo'lishi kerak (Spilca, 17-bob, 419-bet). Chaqiruvchi o'zi uzatgan ro'yxatning o'zgarib ketishini kutmasligi mumkin - bu ko'rinmas side-effect. Filtrlash exception tashlamagani uchun u avtorizatsiya buzilganini ham ko'rsatmaydi: audit yoki aniq 403 kerak bo'lsa `@PreAuthorize` ishlatiladi. Katta collection'ni `@PostFilter` bilan filtrlash avval hammasini bazadan o'qib, keyin tashlab yuborish degani; so'rov darajasida filtrlash afzal (18.56).
+
+## 18.56 Repository so'rovida avtorizatsiya ifodasi (SpEL in repository queries)
+
+**Tavsif:** Agar foydalanuvchi faqat o'z yozuvlarini ko'rishi kerak bo'lsa, ularni bazadan o'qib keyin filtrlashning o'rniga shartni so'rovning o'ziga qo'yish to'g'ri: shunda keraksiz qator umuman o'qilmaydi va natija tezroq hamda ishonchliroq bo'ladi (Spilca, 17-bob, 430, 431-bet). Spring Data so'rovida autentifikatsiyalangan foydalanuvchiga murojaat qilish uchun ikki qadam kerak: kontekstga `SecurityEvaluationContextExtension` bean'ini qo'shish va `@Query` ichida `?#{authentication.name}` SpEL parametridan foydalanish (Spilca, 17-bob, 430-bet).
+
+**Spring'da qayerda uchraydi:**
+- **`SecurityEvaluationContextExtension`** - `spring-security-data` moduli beradigan kengaytma; oddiy `@Bean` metod bilan kontekstga qo'shilsa, Spring Data so'rovlarida `authentication` o'zgaruvchisi paydo bo'ladi (Spilca, 17-bob, 430-bet).
+- **`?#{authentication.name}`** - `@Query` ichidagi SpEL parametri, u `WHERE` shartiga yozuv egasini qo'shadi (Spilca, 17-bob, 430-bet).
+- **`@PostFilter` o'rniga** - natija bir xil, lekin ma'lumot bazadan ortiqcha o'qilmaydi, shuning uchun repository qatlamida `@PostFilter` emas, so'rov sharti tanlanadi (Spilca, 17-bob, 429, 430-bet).
+- **Qatlam tanlovi** - Spilca amaliy misolida o'qish uchun filtrni repository qatlamida, yozishni tekshirishni `@PreAuthorize` bilan service qatlamida, o'chirishni esa endpoint qatlamida qoldiradi: har operatsiya uchun qatlam ongli tanlanadi (Spilca, 18-bob, 456-bet).
+- **Derived query bilan farqi** - SpEL `@Query` ichida ishlaydi; metod nomidan yasalgan so'rovda egalik shartini argument sifatida uzatish kerak bo'ladi (18.41 dagi `findByIdAndOwnerId` shakli).
+
+```java
+public interface WorkoutRepository extends JpaRepository<Workout, Integer> {
+
+    // kontekstda SecurityEvaluationContextExtension bean'i bo'lishi shart
+    @Query("SELECT w FROM Workout w WHERE w.user = ?#{authentication.name}")
+    List<Workout> findAllByUser();   // boshqa foydalanuvchi qatori umuman o'qilmaydi
+}
+```
+
+**Qo'llanish keyslari:**
+- Foydalanuvchining o'z buyurtmalari ro'yxatini bazadan allaqachon filtrlangan holda olish.
+- Multi-tenant jadvalda tenant shartini so'rovga qo'yib, `@PostFilter` ni olib tashlash.
+- Pagination bilan ishlaydigan ro'yxatda filtrni so'rovga ko'chirish, chunki post-filtering sahifa hajmini buzadi.
+- "Men ko'rishim mumkin bo'lgan yozuvlar" shartini bitta so'rovda, bitta joyda ifodalash.
+- `@PostFilter` ishlatilgan eski repository metodlarini bosqichma-bosqich so'rov darajasiga ko'chirish.
+
+**Ehtiyot bo'ling:** SpEL `@Query` string'i ichida yozilgani uchun kompilyatsiyada tekshirilmaydi: bean kontekstda bo'lmasa yoki ifoda xato yozilsa xato faqat runtime'da chiqadi, shuning uchun har bunday so'rov integration test bilan qoplanishi shart. Bu filtr avtorizatsiyaning o'rnini to'liq bosmaydi: ID bo'yicha bitta yozuv qaytaradigan metodda shart yozilmay qolsa IDOR paydo bo'ladi, shuning uchun qatlam tanlovini har operatsiya uchun alohida qiling (Spilca, 18-bob, 456-bet). ESLATMA: `authentication.name` - username, barqaror texnik identifikator emas; foydalanuvchi nomi o'zgarishi mumkin bo'lgan tizimda so'rovni ID bo'yicha qurish korpusning tavsiyasi, kitob misoli username bilan solishtiradi.
+
+## 18.57 Amalda qo'llash
 
 - [ ] `SecurityFilterChain` konfiguratsiyasini o'qib, har bir yo'l uchun kim ruxsat olgani jadval shaklida yozib qo'ying.
 - [ ] `permitAll()` qo'yilgan yo'llarni sanab chiqing va har biri ataylab ochiq ekanini tasdiqlang.
@@ -869,11 +1316,39 @@ public class MaskingSerializer extends JsonSerializer<String> {
 
 ## Manbalar
 
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*,
+  2-nashr, O'Reilly, 2021, 2-bob ("Data") va 11-bob ("User
+  credentials", "Rotation", "Revocation", "Fine-Grained
+  Authorization", "Using tokens", "It's a Spectrum") - 18.10 dagi
+  gateway ning qo'pol rol tekshiruvi, qaytarish limiti misoli va
+  `CALL_CENTER_50_DOLLAR_REFUND` anti-naqshi hamda tashkilot
+  ishlashiga mos qo'pol rol tavsiyasi; 18.16 dagi gateway da har
+  so'rov uchun JWT yasash, sessiya davomida amal qiluvchi tokenning
+  kamchiligi va mavjud SSO oqimini o'zgartirmay o'tish; 18.30 dagi
+  bulut akkaunt kalitlari (Code Spaces keysi, kripto-mining va 10
+  ming dollar, kalit skanerlovchi botlar, Verizon 2020 hisobotidagi
+  80 foiz), rotatsiyaning og'riqli tomoni va doirani cheklash,
+  rotatsiya tayyorligining favqulodda bekor qilishni ham berishi,
+  `git-secrets` va `gitleaks` bilan commit hook darajasida
+  skanerlash; 18.47 dagi MedicalCo ning public, private, secret
+  zonalari va oqimning assimetrikligi, PaymentCo ning yashil va
+  qizil zonasi, PCI Level 1 va auditdan ozod qilish hamda zero
+  trust bilan birga zonalashni defense in depth sifatida saqlash.
+  Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun
+  bob va bo'lim nomi ko'rsatilgan
+
+- Laurentiu Spilca, *Spring Security in Action*, 1, 2-boblar - xavfsizlik arxitekturalari, so'rovni imzolash va Spring Boot ning standart konfiguratsiyasi
 - Laurentiu Spilca, *Spring Security in Action*, 3, 4-boblar - foydalanuvchini boshqarish, `UserDetailsService` va parol hashlash
+- Laurentiu Spilca, *Spring Security in Action*, 5-bob - autentifikatsiya oqimi, `SecurityContext` saqlash rejimlari va natija handler'lari
 - Laurentiu Spilca, *Spring Security in Action*, 7, 8-boblar - avtorizatsiyani sozlash va cheklovlarni qo'llash
+- Laurentiu Spilca, *Spring Security in Action*, 9-bob - filtrlar, `OncePerRequestFilter` va zanjirdagi joylashuv
 - Laurentiu Spilca, *Spring Security in Action*, 10-bob - CSRF himoyasi va CORS
+- Laurentiu Spilca, *Spring Security in Action*, 11-bob - mas'uliyatlarni ajratish, `Authentication` obyekti va token
 - Laurentiu Spilca, *Spring Security in Action*, 12, 13, 14, 15-boblar - OAuth 2, authorization server, resource server, JWT
 - Laurentiu Spilca, *Spring Security in Action*, 16, 17-boblar - metod darajasidagi xavfsizlik va filtrlash
+- Laurentiu Spilca, *Spring Security in Action*, 18-bob - OAuth 2 ilovasida avtorizatsiya qatlamini tanlash
+- John Carnell, *Spring Microservices in Action*, 3-bob - konfiguratsiya sirlarini shifrlash va simmetrik kalit
+- John Carnell, *Spring Microservices in Action*, 7-bob - mikroservislarni himoyalash va hujum yuzasini qisqartirish
 - Craig Walls, *Spring in Action* 6th, 5, 8-boblar - Spring Security asoslari va REST ni himoyalash
 - [OWASP, Authentication Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Authentication_Cheat_Sheet.md) - autentifikatsiya oqimi, xato xabarining akkaunt borligini oshkor qilmasligi
 - [OWASP, Password Storage Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Password_Storage_Cheat_Sheet.md) - Argon2id, scrypt, bcrypt va PBKDF2 chegaralari, work factor
@@ -881,6 +1356,7 @@ public class MaskingSerializer extends JsonSerializer<String> {
 - [OWASP, SSRF Prevention Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.md) - chiquvchi so'rovni cheklash va tekshirilgan IP ga bog'lash
 - [OWASP, Transaction Authorization Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Transaction_Authorization_Cheat_Sheet.md) - oqimni ketma-ket majburlash va TOCTOU
 - [Spring Security 6.3, CSRF](https://raw.githubusercontent.com/spring-projects/spring-security/6.3.0/docs/modules/ROOT/pages/features/exploits/csrf.adoc) - CSRF himoyasi va token repository
+- Michael T. Nygard, *Release It! Design and Deploy Production-Ready Software*, 1-nashr, Pragmatic Bookshelf, 2007, 12-bob (228-bet) - xotirada turgan parol memory dump ga tushishi: UNIX da core fayl ilova xotirasining nusxasi bo'lishi va hujumchi core dump ni chiqarib parollarni o'qishi mumkinligi, Windows da kernel xatosidagi dump butun fizik xotirani o'z ichiga olishi, shuning uchun production da core dump o'chirilishi (18.30)
 
 ---
 

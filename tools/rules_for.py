@@ -5,6 +5,8 @@
     python3 tools/rules_for.py --diff           # staged, unstaged va yangi fayllar (joriy repo)
     python3 tools/rules_for.py --diff --cached  # faqat staged
     python3 tools/rules_for.py --no-mark <fayllar>   # o'qish uchun, belgilamaydi
+    python3 tools/rules_for.py --vazifa="keshlang" <fayllar>  # vazifa belgilari ham
+    python3 tools/rules_for.py --belgilar --vazifa="..." <fayllar>  # faqat belgilar (Tez yo'l qarori)
 
 Nega: aktyor ikkinchi marta chaqirilsa, sababi deyarli har doim bitta -
 qoidani oldindan bilmagan. Qidirib topish esa har aktyorda boshqacha
@@ -18,8 +20,10 @@ chiqish bir xil, kelishmovchilik qolmaydi.
 Nisbiy yo'l va `--diff` joriy papkadan olinadi, klondan emas: global
 o'rnatishda skript klonda turadi, ish esa boshqa proyektda boradi.
 
-Chiqish uch qism: tegishli boblar, ularning tekshiruv punktlari va
-mashina allaqachon topgan muammolar. Kerak bo'lsa boshida ogohlantirish:
+Chiqish boshida belgining retsept kartasi (`tools/retsept/`): eng kichik
+to'g'ri shakl, Spring yoki JDK allaqachon beradigan narsa va asosiy
+tuzoqlar, har biri bo'lim raqami bilan. Keyin uch qism: tegishli boblar,
+ularning tekshiruv punktlari va mashina allaqachon topgan muammolar. Kerak bo'lsa boshida ogohlantirish:
 Kotlin fayl (mexanik tekshiruv yo'q), Spring bo'lmagan JVM proyekt
 (Quarkus, Micronaut) yoki qo'llanma bazasidan eski Boot va Java.
 """
@@ -63,6 +67,19 @@ MAX_CHAPTERS = 8
 # Avvalgi xatolardan shuncha, eng yangisi oldin: memory o'sgani sari
 # ro'yxat har chaqiruvda cho'zilmasin.
 MAX_MISTAKES = 5
+# Retsept kartasi ~1.5 KB: uchtasi chiqishni ~4.5 KB ga oshiradi, qolgani
+# yo'l bilan aytiladi.
+MAX_RECIPES = 3
+RECIPES = os.path.join(HERE, "retsept")
+# Har aktyorda bir xil bo'lishi kerak bo'lgan yozish qoidalari. Avval ular
+# agent fayllarida edi va farq qilardi: test qoidalari faqat
+# test-muhandisda, `hajm: S` da test yozadigan dasturchida esa yo'q edi.
+SHARED_CODE = os.path.join(RECIPES, "umumiy-kod.md")
+SHARED_TEST = os.path.join(RECIPES, "umumiy-test.md")
+# Shartli band: `... <!-- agar: <regex> -->`. Regex fayl matni, yo'li yoki
+# vazifa matnida topilsagina band chiqadi; yozuvchi ham, reviewer ham bir
+# xil fayl va vazifa bilan chaqiradi, ya'ni bir xil bandlarni oladi.
+TRIGGER_RE = re.compile(r"\s*<!--\s*agar:\s*(.+?)\s*-->\s*$")
 
 # Kod ichidagi belgi -> tegishli boblar. Jadval qo'lda tuzilgan, lekin
 # har bob ishga tushishdan oldin indeksda borligi tekshiriladi, shuning
@@ -356,6 +373,98 @@ def ordered(scanned):
 def detect(paths):
     """Fayllardan belgilarni topadi: (belgi, boblar, fayl)."""
     return ordered(scan(paths))
+
+
+# Vazifa matnidagi so'z -> belgi. Fayl belgisi faqat bor koddan chiqadi:
+# kesh qo'shish vazifasida fayl hali `@Cacheable` siz, va kesh kartasi
+# kelmasdi (2026-10-19 sonnet/opus sinovida ikkala model `@EnableCaching`
+# siz yozdi). Ildiz so'z yetadi: o'zbek qo'shimchalari ortidan keladi.
+TASK_WORDS = {
+    "xavfsizlik: SQL": r"\bsql\b|so'rov qur|query",
+    "xavfsizlik: sir va kripto": r"parol|password|shifrla|kripto|\btoken|hash(?!code)|(?<!')\bsir\b",
+    "xavfsizlik: ruxsat": r"ruxsat|\brol\b|rollar|auth|login|kirish huquq",
+    "entity va ORM": r"entity|jadval|\borm\b|jpa",
+    "tranzaksiya": r"tranzaksiya|transaction|rollback",
+    "hodisa": r"\bevent|hodisa",
+    "sxema migratsiyasi": r"migratsiya|flyway|liquibase|ustun qo'sh|indeks qo'sh",
+    "tashqi chaqiruv": r"tashqi (?:servis|api|chaqiruv|tizim)|\bhttp\b|rest ?client|webclient|to'lov",
+    "chidamlilik": r"retry|qayta urin|circuit|timeout|bulkhead|rate ?limit",
+    "broker": r"kafka|rabbit|\bnavbat|queue|consumer|listener",
+    "sozlama": r"sozlama|application\.ya?ml|properties fayl",
+    "web qatlami": r"endpoint|controller|\b(?:get|post|put|patch|delete) /|\bapi\b",
+    "mapper": r"mapper|mapping|dto ga",
+    "keshlash": r"kesh|cache",
+    "rejalashtirilgan ish": r"scheduled|\bcron|rejalashtir|har (?:kuni|soat|daqiqa)",
+    "konkurentlik": r"thread|parallel|concurren|race|\block\b|qulf",
+    "asinxron": r"async|asinxron|fonda",
+    "xato bilan ishlash": r"istisno|exception|xato qaytar|\b404\b",
+    "pul va son": r"\bpul\b|summa|narx|money|valyuta",
+    "sana va vaqt": r"\bsana|vaqt zona|timezone|\bdate\b|muddat",
+    "loglash": r"\blog(?:la|ga|ging)?\b|loglash",
+    "test": r"\btest",
+}
+
+
+# Tez yo'lni yopadigan vazifa belgilari (SKILL.md, `Tez yo'l`): ular
+# xato bo'lsa ma'lumot yoki xavfsizlik buziladi, shuning uchun aktyor va
+# review ga boradi.
+FAST_BLOCK = {"tranzaksiya", "sxema migratsiyasi", "sozlama", "konkurentlik",
+              "asinxron"}
+
+
+def fast_path(labels):
+    """(ha|yo'q, sabab): vazifa belgilarida xavfli belgi bo'lmasa Tez yo'l."""
+    risky = [l for l in labels if l in FAST_BLOCK or l.startswith("xavfsizlik:")]
+    return ("yo'q", ", ".join(risky)) if risky else ("ha", "xavfli belgi yo'q")
+
+
+def task_labels(text):
+    """Vazifa matnidan belgilar (TASK_WORDS), SIGNALS tartibida."""
+    low = text.lower().replace("\u2019", "'").replace("\u02bb", "'")
+    return [label for label, _, _ in SIGNALS
+            if label in TASK_WORDS and re.search(TASK_WORDS[label], low)]
+
+
+def recipe_path(label):
+    """Belgining retsept kartasi: `tranzaksiya` -> tools/retsept/tranzaksiya.md."""
+    slug = re.sub(r"[^a-z0-9]+", "-", label.lower().replace("'", "")).strip("-")
+    return os.path.join(RECIPES, slug + ".md")
+
+
+def recipes(labels):
+    """Mavjud kartalar belgi tartibida: (belgi, yo'l).
+
+    Kartani yozuvchi ham, reviewer ham bir xil oladi: eng kichik shakl
+    modelga qoldirilsa, har model va har chaqiruv boshqa hajmdagi kod
+    yozardi.
+    """
+    return [(label, path) for label in labels
+            for path in [recipe_path(label)] if os.path.exists(path)]
+
+
+def _read(path):
+    try:
+        with open(_full(path), encoding="utf-8", errors="replace") as handle:
+            return handle.read()
+    except OSError:
+        return ""
+
+
+def shared_rules(path, haystack):
+    """Umumiy qoidalar fayli: trigger i mos kelmagan shartli band tashlanadi."""
+    out = []
+    with open(path, encoding="utf-8") as handle:
+        for line in handle.read().strip().split("\n"):
+            hit = TRIGGER_RE.search(line)
+            if hit:
+                try:
+                    if not re.search(hit.group(1), haystack, re.IGNORECASE):
+                        continue
+                except re.error:
+                    pass
+                line = line[:hit.start()]
+            out.append(line)
+    return "\n".join(out)
 
 
 def checklist_for(wanted, skip=None):
@@ -724,6 +833,31 @@ def main():
     titles = chapter_titles()
     scanned = scan(paths)
     signals = ordered(scanned)
+    task = " ".join(a.split("=", 1)[1] for a in args if a.startswith("--vazifa="))
+    if task:
+        have = {label for label, _, _ in signals}
+        extra = set(task_labels(task)) - have
+        signals = [(label, chapters, "vazifa") if label in extra else
+                   next(s for s in signals if s[0] == label)
+                   for label, _, chapters in SIGNALS if label in have | extra]
+        # Vazifa mavzusi oldin: aks holda faylning xavfsizlik va ORM
+        # belgilari kartalar va boblar chegarasini egallab, vazifaning
+        # asosiy kartasi "boshqa kartalar" ga tushardi.
+        topic = set(task_labels(task))
+        signals.sort(key=lambda s: s[0] not in topic)
+        # Faylda ham bor belgi vazifaga tegsa ham `vazifa`: Tez yo'l qarori
+        # faqat shu ustunga qaraydi.
+        signals = [(label, chapters, "vazifa" if label in topic else where)
+                   for label, chapters, where in signals]
+    else:
+        topic = set()
+    if "--belgilar" in args:
+        print("# %d fayl, %d belgi\n" % (len(paths), len(signals)))
+        for label, _, where in signals:
+            print("%-22s %s" % (label, where))
+        verdict, why = fast_path(topic if task else [l for l, _, _ in signals])
+        print("\ntez_yol: %s (%s)" % (verdict, why))
+        return 0
     # Zanjirning birinchi qadami bajarilgani belgilanadi: check_code Java
     # yozuvidan keyin shu belgini tekshiradi. Belgilar ham saqlanadi:
     # yozilgan fayldan yangi belgi chiqsa, check_code uni aytadi.
@@ -741,7 +875,9 @@ def main():
     # Test fayli berilsa uning testing boblari chegaradan tashqarida:
     # aks holda sinalayotgan kodning entity, tranzaksiya va HTTP belgilari
     # MAX_CHAPTERS ni to'ldirib, test-muhandis birorta test bobini olmasdi.
-    if any(re.search(NAME_SIGNALS["test"], "/" + p.replace("\\", "/")) for p in paths):
+    is_test = any(re.search(NAME_SIGNALS["test"], "/" + p.replace("\\", "/"))
+                  for p in paths)
+    if is_test:
         for label, chapters, _ in signals:
             for ch in chapters:
                 if label.startswith("test") and ch[0] == "testing" and ch not in wanted:
@@ -776,12 +912,44 @@ def main():
         print()
     print("# %d fayl, %d belgi\n" % (len(paths), len(signals)))
     for label, chapters, where in signals:
-        print("%-22s %-14s -> %s" % (label, where,
-                                     ", ".join("%s %s" % c for c in chapters)))
+        # Bob raqamlari `# Tegishli boblar` da sarlavhasi bilan keladi.
+        print("%-22s %s" % (label, where))
     absent = [name for name, exists, _ in scanned if not exists]
     if absent:
         print("hali yo'q: %s (belgi fayl nomidan)" % ", ".join(absent))
     print()
+
+    # Test fayli berilsa uning kartasi oldin: test-muhandisga sinalayotgan
+    # kodning tranzaksiya kartasidan test kartasi kerakroq.
+    found_labels = [label for label, _, _ in signals]
+    if is_test:
+        found_labels.sort(key=lambda label: not label.startswith("test"))
+    cards = recipes(found_labels)
+    if cards:
+        print("# Retsept (yozishdan oldin: shu shakldan boshlang)\n")
+        for label, path in cards[:MAX_RECIPES]:
+            with open(path, encoding="utf-8") as handle:
+                text = handle.read().strip()
+            # Vazifa berilgan bo'lsa unga tegmaydigan kartaning kod bloki
+            # tushadi: shakl faylda allaqachon bor, yozuvchiga "yozmang" va
+            # tuzoqlar kerak.
+            if topic and label not in topic:
+                text = re.sub(r"\nMinimal shakl[^\n]*\n\n```.*?```\n",
+                              "\nShakl: %s\n" % os.path.relpath(path, ROOT),
+                              text, count=1, flags=re.S)
+            print("#" + text + "\n")
+        if len(cards) > MAX_RECIPES:
+            print("(boshqa kartalar: %s)\n" % ", ".join(
+                os.path.relpath(p, ROOT) for _, p in cards[MAX_RECIPES:]))
+    sources = any(p.endswith(SOURCES) for p in paths)
+    # Trigger tegilgan fayl, vazifa va build fayllarida qidiriladi: Lombok
+    # bandi `pom.xml` dagi bog'liqlikdan chiqadi.
+    haystack = "\n".join([task] + list(paths) + [l for l, _, _ in signals]
+                         + [_read(p) for p in paths]
+                         + [text for _, text in _project_texts(paths)])
+    for path, wanted_here in ((SHARED_CODE, sources), (SHARED_TEST, is_test)):
+        if wanted_here and os.path.exists(path):
+            print(shared_rules(path, haystack) + "\n")
 
     print("# Tegishli boblar\n")
     # Holat belgisi: `!` tekshirilmagan bob (AI yozgan), `?`

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 42. Review metrikalari (Measuring Review)
 
@@ -166,6 +166,37 @@ charchagan). Farqni ajratish: prodda topilgan xatolar tendentsiyasi.
 Testlar qo'shildi, lekin ular hech narsa tekshirmaydi (5.9, 34.7).
 ```
 
+Bu to'rt tuzoqning hammasi bitta savolga olib keladi: metrika
+o'zi o'lchamoqchi bo'lgan narsani o'lchayaptimi. Winters/Manshreck/
+Wright buni raqamning o'zi bilan hal qilib bo'lmasligini aytadi va
+miqdoriy metrikani sifat ma'lumoti (so'rov, intervyu) bilan
+tekshirishni talab qiladi. Kitobning keysi aniq: Google har
+muhandis uchun build kechikishining medianini o'lchab, "tipik
+tajriba" ni ushlamoqchi bo'ldi. Keyin experience sampling
+tadqiqoti o'tkazildi, ya'ni build boshlangach muhandisga darhol
+qisqa so'rov yuborildi. Bir qancha muhandis "men build
+boshlamadim" deb javob berdi: build ni avtomatik asboblar
+boshlagan, muhandis ularning natijasini kutib turmagan, demak
+bunday build ning kechikishi uning "tipik tajribasi" ga umuman
+kirmasligi kerak edi. Metrika shu build larni chiqarib
+tashlaydigan qilib tuzatildi.
+
+Qoida shundan chiqadi: raqam kuch va masshtab beradi, lekin
+kontekst va sababni bermaydi. Nega muhandis eskirgan asbobni
+tanladi, nega g'alati workflow bilan ketdi, nega standart
+jarayonni chetlab o'tdi degan savollarga faqat sifat tadqiqoti
+javob beradi, va keyingi qadamni ham faqat u ko'rsatadi. Amalda bu
+ikki manbani birga ishlatishni bildiradi: log metrikasi va
+so'rov. Ikkisi bir xil javob bersa, raqamga ishonch ortadi; farq
+qilsa, ikkisidan biri noto'g'ri va buni tekshirish kerak. Review
+metrikalarida bu, masalan, "birinchi javob vaqti" ni bot va
+avtomatik reviewer harakatlaridan tozalashni, va "review foydali
+bo'ldimi" degan savolni choraklik so'rovda alohida so'rashni
+bildiradi. Ba'zi signal uchun esa metrika umuman bo'lmaydi: kitob
+kod sifatini shu toifaga qo'yadi va yomon proxy bilan qaror
+qilishdan ko'ra, bu nuqta hozircha o'lchanmaydi deb tan olishni
+tanlaganini aytadi.
+
 ## 42.8 O'lchov checklistni yasaydi: inspeksiyaning ma'lumot halqasi
 
 Code Complete rasmiy inspeksiyani oddiy review dan ajratadigan belgilar orasiga bittasini alohida qo'yadi: har inspeksiyada ma'lumot yig'iladi va u keyingi inspeksiyalarni yaxshilash uchun qaytariladi. Shu halqa bo'lmasa inspeksiya oddiy yig'ilishdan farq qilmaydi.
@@ -279,6 +310,16 @@ Diqqat: 10 foiz va 5 foiz raqamlari Google ning o'z platformasi chegaralari, san
 - [ ] Mutatsiya ballini coverage bilan birga kuzatib, ikkisining farqini tahlil qiling.
 
 ## Manbalar
+
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at
+  Google*, O'Reilly, 2020, 7-bob ("Using Data to Validate Metrics",
+  "Goals, Signals, and Metrics") - 42.7 dagi miqdoriy metrikani sifat
+  ma'lumoti bilan tekshirish talabi, median build kechikishi keysi
+  (avtomatik asboblar boshlagan build metrikani buzgani va keyin
+  chiqarib tashlanishi), raqamning kontekst va sabab bermasligi hamda
+  ba'zi signal uchun metrika yo'qligini tan olish. Bu nashrning
+  qo'limizdagi nusxasida chop etilgan bet raqami yo'q, shuning uchun
+  bob va bo'lim nomi ko'rsatilgan
 
 - [Google, Speed of Code Reviews](https://raw.githubusercontent.com/google/eng-practices/3bb3ec25b3b0199f4940b1aa75f0ac5c5753301c/review/reviewer/speed.md) - nimani o'lchash kerakligi: javob vaqti, umumiy o'tish vaqti emas
 - [Google, The Standard of Code Review](https://raw.githubusercontent.com/google/eng-practices/3bb3ec25b3b0199f4940b1aa75f0ac5c5753301c/review/reviewer/standard.md) - sifat mezoni o'lchovga aylantirilganda nima saqlanishi kerakligi

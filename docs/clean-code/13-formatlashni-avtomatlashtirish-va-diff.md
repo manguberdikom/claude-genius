@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 13. Formatlashni avtomatlashtirish va diff gigiyenasi (Automated Formatting and Diff Hygiene)
 
@@ -257,6 +257,14 @@ public final class RefundRow {
 }
 ```
 
+**Izchillik ierarxik va "hammasi yoki hech narsa" emas.** Google ning uslub ko'rsatmalarida izchillik mahalliydan boshlanadi va shu tartibda ko'tariladi: **fayl ichidagi** norma, keyin **jamoa**, keyin **loyiha**, keyin butun kod bazasi. Yaqin doiradagi norma uzoqroq doiradagi normadan ustun turadi, va ko'rsatmalarning o'zida mahalliy konvensiyaga ataylab yo'l beradigan qoidalar bor: mahalliy izchillik ba'zi hollarda ilmiy jihatdan to'g'ri texnik tanlovdan afzal ko'riladi.
+
+Ierarxiyaning tepasida yana bitta qatlam bor - **tashqi dunyo**. Konvensiya hamjamiyatda allaqachon mavjud bo'lsa, unga moslashish ma'qul. Google ning o'z misoli: Python kodi uchun boshida ikki bo'shliqli chekinish qabul qilingan edi, chunki o'sha paytdagi Python kodi asosan C++ loyihalariga xizmat qilardi va C++ kodi shunday formatlangan edi. Vaqt o'tib bu asos qulagan: Python yozadigan muhandis C++ dan ko'ra ko'proq Python kodini o'qiydi va yozadi, tashqi misolga qarash har safar qo'shimcha kuch talab qilgan, kodni ochiq manbaga chiqarish esa har marta ichki va tashqi shakllarni muvofiqlashtirishni talab qilgan. Starlark uchun ko'rsatma yozilganda tashqi dunyo bilan izchil bo'lish uchun to'rt bo'shliq tanlangan. Qoida: kichik, o'zi ichida yopiq va qisqa yashaydigan ish uchun ichki izchillik muhimroq; vaqt va masshtab o'yinga kirganda keng qabul qilingan standart o'zini oqlaydi.
+
+**To'liq izchillik maqsad qilinmaydi.** Google ning C++ ko'rsatmasi bir vaqt eski kodni nomuvofiq qiladigan o'zgarishlardan voz kechishni va'da qilgan edi; kod bazasi o'sgach bu va'da olib tashlandi va C++ kod bazasi hech qachon to'liq izchil bo'lmasligi ochiq aytildi. Sabab narx: qoidalarni zamonaviy amaliyotga yangilash bir ish, shu qoidani yozilgan hamma kodga qo'llash butunlay boshqa ish, va u bir nuqtada qiymatidan qimmatroq bo'lib qoladi. Shuning uchun katta kod bazasida avtomatik o'zgarish vositalari eskini yangiga keltiradi (38-bob), lekin har burchakka yetib bormaydi va bu qabul qilinadi.
+
+Shundan eng amaliy xulosa: muhim narsa **bitta javob borligi**, javobning o'zi emas. Chekinish bo'shliqlari soni yoki qator uzunligi chegarasi kabi qoidalarning qiymati tanlangan qiymatda emas, narsa faqat bitta usulda qilinishida. Shu sababli uslub bahsi "qaysi variant to'g'ri" dan "variant birmi" ga ko'chiriladi.
+
 Qoidaning chegarasi ham bor: izchillik o'xshash narsalarni o'xshash qilishni talab qiladi va shu bilan birga o'xshamagan narsalarni boshqacha qilishni talab qiladi. O'xshamagan ikki narsani bitta shaklga tiqish (bir xil nom, mos kelmaydigan pattern) murakkablik va chalkashlik beradi; izchillik foyda beradigan shart - o'quvchi "x ga o'xshasa, demak u x" deb ishonishi (shu yerda, 17.3).
 
 Bo'linish shunday: mashina tekshira oladigan qismi 13.4 va 13.5 ga, tekshira olmaydigani (e'lon tartibi, qaysi abstraksiya, qaysi pattern) review ga qoladi; review dagi talabchanlik qanchalik baland bo'lsa, jamoa konvensiyani shuncha tez o'rganadi (shu yerda, 17.2).
@@ -275,6 +283,7 @@ Bo'linish shunday: mashina tekshira oladigan qismi 13.4 va 13.5 ga, tekshira olm
 
 ## Manbalar
 
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 8-bob ("Be Consistent", "Setting the Standard", "Changing the Rules") - izchillikning ierarxik tartibi (fayl, jamoa, loyiha, kod bazasi), mavjud tashqi konvensiyaga moslashishning afzalligi va Python chekinishi misoli, to'liq izchillikdan voz kechish qarori, hamda muhimi bitta javob borligi ekani. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
 - [Google Java Style Guide](https://raw.githubusercontent.com/google/styleguide/aee99aa581bd852c8a40814c1c8d0f8aa79a0ba2/javaguide.html) - formatlash qoidalarining mashina tekshiradigan qismi
 - [SpotBugs, hujjat](https://raw.githubusercontent.com/spotbugs/spotbugs/6fc14ff38f4ebfbb4457caaa6df9a0ddd23a18c6/docs/index.rst) - CI da statik tahlilni qo'yish
 - John Ousterhout, *A Philosophy of Software Design*, 1-nashr, Yaknyam Press,

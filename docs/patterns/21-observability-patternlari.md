@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 21. Observability patternlari (Observability Patterns)
 
@@ -42,6 +42,8 @@
 
 Observability (kuzatuvchanlik) patternlari - tizimning ichki holatini tashqariga chiqayotgan signallar (loglar, metrikalar, trace'lar) orqali tiklab tushunish imkonini beruvchi yechimlar to'plami. Mikroservislar, async messaging va elastik bulut muhitida bitta foydalanuvchi so'rovi o'nlab process va thread orqali o'tadi, shuning uchun "aslida nima sindi va qayerda sekinlashdi?" degan savolga javob faqat oldindan loyihalangan telemetriya bilan beriladi. Arxitektor uchun bu patternlar "keyin qo'shamiz" turidagi qo'shimcha emas: signal modeli, metrika kardinalligi, trace sampling, retention va telemetriya cost'i arxitektura qarori sifatida tizim dizayni bilan birga qabul qilinadi. Spring ekotizimida bu sohaning deyarli barchasi Micrometer, Micrometer Tracing/OpenTelemetry va Spring Boot Actuator abstraksiyalari orqali standartlashtirilgan, shu sababli asosiy ish - to'g'ri patternni tanlash va uni izchil qo'llash.
 
+Mas'uliyat esa ikkiga bo'linadi va bu taqsimot bobning hamma patterniga tegishli. Operatsiya jamoasi INFRATUZILMANI beradi: log agregatsiyasi, metrika saqlash va dashboard, xatolarni kuzatish tizimi, taqsimlangan trassirovka serverlari. Dasturchi esa servisning KUZATILADIGAN bo'lishini ta'minlaydi: health check endpoint ini ochadi, ma'noli log yozuvi chiqaradi, metrikani e'lon qiladi, xatoni yuboradi va tracing ni joriy etadi. Chegarani aytib qo'yish kerak, chunki ikki tomon ham ikkinchisini kutib turgan holat tez-tez uchraydi: platforma Prometheus ko'targan, lekin servisda metrika yo'q, yoki servis trace yuboradi, lekin uni qabul qiladigan collector hech kimga tegishli emas.
+
 ## 21.1 Loglarni markazlashtirish (Log Aggregation)
 
 **Tavsif:** Har bir instance o'z diskiga yozadigan loglar taqsimlangan tizimda foydasiz bo'lib qoladi: pod o'chadi, fayl yo'qoladi, bitta so'rov esa bir nechta servisda iz qoldiradi. Log Aggregation patterni barcha servis va instance loglarini bitta markaziy tizimga (indeks + qidiruv + saqlash) yuboradi, shu orqali bir joydan qidirish, filtrlash va alert qo'yish mumkin bo'ladi. Odatda ilova loglarni faqat `stdout`ga yozadi, infrastruktura darajasidagi collector (sidecar yoki node agent) ularni yig'ib backend'ga uzatadi. Natijada log hayot aylanishi ilovadan ajratiladi va ilova kodi transport detallarini bilmaydi.
@@ -56,6 +58,14 @@ Observability (kuzatuvchanlik) patternlari - tizimning ichki holatini tashqariga
 - Kubernetes'da `kubectl logs` bilan yetib bo'lmaydigan o'chgan pod loglarini tekshirish.
 
 **Ehtiyot bo'ling:** Log hajmi va indeks narxi tez o'sadi - `DEBUG`ni productionda yoqib qo'yish yoki har bir HTTP so'rov body'sini loglash hisobni va latency'ni portlatadi; sensitiv ma'lumot (token, PAN, parol, shaxsiy ma'lumot) markaziy logga tushsa, uni o'chirish juda qiyin bo'ladi, shuning uchun maskirovka loglash nuqtasida bo'lishi kerak. Logni asosiy metrika manbasiga aylantirmang: "count by log line" yondashuvi metrikadan qimmat va sekin.
+
+**Uchta saboq: strategiya, infratuzilma va so'rov tili:** Carnell bitta xatoni topish uchun agregatsiyalangan loglarda bir yarim hafta so'rov yozib, o'nlab noyob holatning trace chiqishini ko'rib chiqqan keysini keltiradi. Agregatsiya platformasi bo'lmasa muammo umuman topilmagan bo'lardi va bu tajriba uchta xulosani tasdiqlagan (Carnell, 9-bob, 271-bet):
+
+- **Loglash strategiyasini servis ishlab chiqishning boshida belgilang va joriy qiling.** Loyiha o'rtasida log infratuzilmasini qurish zerikarli, qiyin va uzoq cho'ziladi, chunki u o'nlab servisning hammasiga teng tegadi.
+- **Loglash kritik infratuzilma qismi.** O'z log yechimini yozishdan, hatto hammasini o'z serveringizda ko'tarishdan oldin uzoq o'ylab ko'ring: bulut log platformasi unga to'lanadigan pulga arziydi.
+- **O'z asbobingizning so'rov tilini o'rganing.** Deyarli har bir platforma konsolidatsiya qilingan logni so'rash uchun o'z tiliga ega. Log aslida yana bir baza turi, shuning uchun so'rov tilini o'rganishga ketgan vaqt katta foyda bilan qaytadi.
+
+Birinchi saboqning amaliy shakli shu: markazlashtirish va format qarori birinchi servisdan oldin qabul qilinadi. Aks holda har bir jamoa o'z maydon nomlarini tanlaydi va keyin ularni bitta so'rov bilan birga tekshirish mumkin bo'lmaydi.
 
 ## 21.2 Strukturalangan loglash (Structured Logging)
 
@@ -116,6 +126,8 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
 
 **Ehtiyot bo'ling:** 100% sampling yuqori trafikda storage va CPU jihatidan qimmat, 0.01% esa kerakli xatoni ushlamaydi - odatda past head sampling + xatoga asoslangan tail sampling (OTel Collector'da) birlashtiriladi; span atributlariga katta body yoki PII solish xavfli va qimmat. Bitta ilovada bir vaqtda OTel Java agent va Micrometer Tracing bridge'ini yoqib qo'yish ikki xil instrumentatsiya va ikki marta hisoblangan span'larga olib keladi.
 
+**Tracing APM emas:** taqsimlangan tracing asboblari tranzaksiyaning servislar bo'ylab oqimini ko'rsatadi va har bir servisning javob vaqtini taxminan beradi, lekin ularni to'liq Application Performance Management paketi bilan adashtirmaslik kerak: APM paketlari servis ichidagi haqiqiy kod darajasida past darajali performance ma'lumotini beradi va javob vaqtidan tashqari ko'rsatkichlarni - xotira, CPU va I/O dan foydalanishni - tayyor holda ko'rsatadi (Carnell, 9-bob, 274-bet). Shu sababli trace "qaysi servis va qaysi chaqiruv sekin" savoliga javob beradi, lekin "nega sekin", ya'ni qaysi metod, qaysi lock yoki qancha allocation sababli degan savolni ochiq qoldiradi. Ikkisi bir-birini almashtirmaydi, zanjir qilinadi: trace sizni servisga va span ga olib keladi, keyin [uzluksiz profiling](#2122-uzluksiz-profiling-continuous-profiling-jfr) yoki APM kodning ichini ko'rsatadi. Shuning uchun trace ni ko'rib "APM kerak emas" degan xulosa chiqarmang va teskarisi ham to'g'ri emas.
+
 ## 21.5 Baggage - kontekstni olib yurish (Baggage)
 
 **Tavsif:** Baggage - trace kontekstiga ilashtirilgan kalit-qiymat juftliklari to'plami bo'lib, servislar chegarasidan o'tib keyingi barcha downstream chaqiruvlarga avtomatik uzatiladi. Bu `tenantId`, `region`, `feature-flag`, `syntheticTest=true` kabi "butun so'rov bo'ylab kerak bo'ladigan" ma'lumotni har bir metodga parametr qilib tashlamasdan tarqatish imkonini beradi. W3C Baggage standarti `baggage` header'ini belgilaydi va u `traceparent` bilan birga ketadi. Qiymatlarni kerak joyda log fieldi yoki span atributi sifatida chiqarish mumkin.
@@ -158,6 +170,10 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
 - Alertlarni infrastruktura emas, foydalanuvchi ko'radigan signal (xato ulushi, latency) ustiga qurish.
 - Yuk testida bottleneck resursni USE jadvali orqali bir qarashda aniqlash.
 - Release'dan keyin `outcome="SERVER_ERROR"` ulushini oldingi versiya bilan solishtirish.
+
+**USE ni o'qish tartibi: avval Errors.** Uchta komponentni bir vaqtda ko'rish shart emas, tartib bor va u eng arzon signaldan boshlanadi. Avval xatolarga qaraladi: ularni tekshirish eng tez va natijasini talqin qilish eng oson, chunki xato nol yoki noldan katta bo'ladi va "shu normami" degan savol tug'ilmaydi. CPU uchun bu toifaga resursning o'zi joyidami degan savol ham kiradi - hamma CPU onlayn turibdimi, ularning soni kutilganmi. Keyin saturation (navbat, kutish vaqti), oxirida utilizatsiya ko'riladi, chunki utilizatsiyaning qiymati faqat kontekst bilan ma'noli bo'ladi.
+
+**CPU utilizatsiyasi har CPU bo'yicha o'qiladi.** Tizim bo'ylab o'rtacha CPU utilizatsiyasi muhim nosozlikni yashiradi: bitta yadro 100 foizda qizib turgan, qolganlari bo'sh bo'lsa, sakkiz yadroli mashinada o'rtacha taxminan 12 foiz chiqadi va dashboard tinch ko'rinadi. Shuning uchun ko'rsatkich har CPU bo'yicha ajratib o'qiladi va bitta to'lgan yadro alohida signal sifatida qaraladi. Sababi deyarli har doim bir xil: ish bitta thread da bajarilyapti va parallellashmaydi, ya'ni bu thread masshtablash muammosining belgisi. Spring tomonida bu `@Async` ga berilmagan sinxron zanjir, bitta consumer bilan o'qilayotgan partition yoki hammasini bitta scheduler thread ida bajaradigan `@Scheduled` bo'lib chiqadi.
 
 **Ehtiyot bo'ling:** O'rtacha (mean) latency'ga tayanish eng tipik xato - foydalanuvchi og'rig'i p95/p99 va histogram'da ko'rinadi, shuning uchun timer'larda histogram yoqilgan bo'lishi kerak. Faqat resurs utilizatsiyasiga (CPU 80%) alert qo'yish yolg'on signal keltiradi: utilizatsiya yuqori bo'lsa ham servis sog'lom bo'lishi mumkin, muhimi - saturation va xato ulushi.
 
@@ -230,6 +246,8 @@ class CacheWarmupHealth implements HealthIndicator {
 - `@Async`/`@Scheduled` ichida jim yo'qolayotgan xatolarni ushlab olish.
 - Xato bilan birga `traceId`ni olib, to'liq trace'ga sakrash.
 - Mijozga barqaror `ProblemDetail` kontraktini qaytarib, ichki stack trace'ni yashirish.
+
+**Konteynerning oxirgi xabari.** Ilova darajasidagi xato kuzatuvi konteynerning o'lim sababini bermaydi: pod yo'qolganda uning log oqimi ham yo'qoladi va `kubectl describe` faqat chiqish kodini ko'rsatadi. Shu bo'shliqni yopadigan oddiy mexanizm bor - konteyner tugashdan oldin chiqish sababini `/dev/termination-log` ga yozadi va Kubernetes shu matnni pod holatida saqlab qoladi, ya'ni konteyner o'chgandan keyin ham o'qish mumkin bo'ladi. Bu konteynerning vasiyati: bir-ikki qator, inson o'qiy oladigan sabab ("migratsiya yiqildi: ...", "konfiguratsiya kaliti yo'q: ..."). Spring Boot ilovasida uni startup yiqilishiga biriktirish ma'noli - `SpringApplication.run` dan chiqqan istisnoning qisqa xabarini shu faylga yozib, keyin nolga teng bo'lmagan kod bilan chiqish, chunki startup xatosi aynan log markaziga yetib bormaydigan toifa.
 
 **Ehtiyot bo'ling:** Exception'ni log qilib, keyin yana yuqoriga tashlash (log-and-rethrow) bir xatoni bir necha marta hisoblaydi va tracker statistikasini buzadi - mas'uliyatni bitta qatlamda belgilang. Business validation xatolarini (kutilgan 4xx) texnik xato sifatida tracker'ga yubormang: shovqin alert charchoqqa olib keladi; shuningdek xato kontekstiga body va PII solishda maskirovka qoidalarini unutmang.
 
@@ -446,6 +464,10 @@ MeterFilter cardinalityGuard() {
 
 **Ehtiyot bo'ling:** Markaziy gateway Collector'ni bitta replika qilib qo'yish yagona nosozlik nuqtasi (SPOF) yaratadi va u o'lgan paytda butun observability ko'r bo'ladi - gorizontal scale, `memory_limiter` va `sending_queue` bilan backpressure'ni sozlang. OpenTelemetry javaagent'ni Micrometer Tracing bridge bilan birga ishlatganda bir operatsiya uchun ikki marta span paydo bo'lishi mumkin, shuning uchun bitta instrumentatsiya yo'lini tanlang.
 
+**Span ni broker orqali yuborish: nega HTTP yetarli emas:** Carnell tracing ma'lumotini Zipkin ga HTTP bilan ham, RabbitMQ yoki Kafka bilan ham yuborish mumkinligini ko'rsatadi va funksional jihatdan farq yo'q deydi: HTTP da ma'lumot alohida asinxron thread bilan ketadi. Farq nosozlik paytida ochiladi - broker ishlatilsa, tracing xabarlari Zipkin ishlamay turgan vaqtda navbatda to'planib turadi va server ko'tarilganda o'qiladi; HTTP variantida esa o'sha oynada yuborilishi kerak bo'lgan ma'lumot butunlay yo'qoladi (Carnell, 9-bob, 276-277-betlar). Qoidaning umumiy shakli: telemetriya yo'lida hech bo'lmasa bitta bufer bo'lishi kerak va u ilova jarayonining ichida bo'lmasin. OpenTelemetry da bufer uch joyda bo'lishi mumkin: SDK ning `BatchSpanProcessor` navbati (jarayon o'lsa yo'qoladi), node yoki sidecar Collector ning `sending_queue` (`file_storage` kengaytmasi bilan diskka ham yozadi) va transport sifatida Kafka (`kafka` exporter va `kafka` receiver).
+
+ESLATMA: kitobda tanlov Zipkin ning `@EnableZipkinServer` va `@EnableZipkinStreamServer` annotatsiyalari orqali qilinadi, birinchisi HTTP, ikkinchisi RabbitMQ yoki Kafka uchun. Spring Cloud Sleuth va Zipkin ning bu shakli Micrometer Tracing hamda OpenTelemetry ga ko'chgan, shuning uchun bufer yuqorida OpenTelemetry atamalari bilan yozilgan.
+
 ## 21.25 Exemplar'lar (Exemplars (logs-metrics-traces correlation))
 
 **Tavsif:** Exemplar - agregat metrika namunasiga (masalan latency histogram bucket'iga) aniq bir so'rovning `traceId`si ilova qilib qo'yilishi. Bu "p99 latency sakrab ketdi" degan grafikdan bir klik bilan aynan shu sekin so'rovning trace'iga o'tish imkonini beradi, ya'ni agregatdan individual holatga ko'prik quradi. Loglar bilan korrelyatsiya esa MDC'ga yozilgan `traceId`/`spanId` orqali ishlaydi, natijada uch signal (metrics → traces → logs) bir-biriga bog'lanadi. Shu tarzda debug qilish vaqti (MTTR) sezilarli qisqaradi, chunki "qaysi so'rovni ko'rish kerak" degan izlanish yo'qoladi.
@@ -474,6 +496,10 @@ MeterFilter cardinalityGuard() {
 
 ## Manbalar
 
+- Brendan Gregg, *Systems Performance: Enterprise and the Cloud*, Prentice Hall, 2014, 6-bob (216-bet) - USE ni CPU ga qo'llaganda avval Errors ga qarash (tekshirish eng tez, talqin eng oson, hamma CPU onlayn turibdimi savoli shunga kiradi) va CPU utilizatsiyasini butun tizim bo'yicha emas har CPU bo'yicha o'qish, bitta to'lgan yadro thread masshtablash muammosining belgisi ekani (21.7)
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 4-bob (39-bet) - konteyner chiqish sababini `/dev/termination-log` ga yozish va bu xabarning konteyner yo'qolgandan keyin ham o'qilishi (21.11)
+- Chris Richardson, *Microservices Patterns: With examples in Java*, Manning, 2019, 11-bob, 379-bet - kuzatuvchanlik mas'uliyatining ikkiga bo'linishi: operatsiya jamoasi infratuzilmani (log agregatsiyasi, metrika, exception tracking, taqsimlangan trassirovka serverlari), dasturchi esa servisning kuzatiladigan bo'lishini (health check endpoint, log yozuvi, metrika chiqarish, exception yuborish, tracing joriy etish) beradi (21 kirishi)
+- ESLATMA: 21.7 dagi bitta to'lgan yadroning Spring dagi tipik sabablari (`@Async` ga berilmagan zanjir, bitta consumer, umumiy scheduler thread i) va 21.11 dagi `SpringApplication.run` istisnosini `/dev/termination-log` ga yozish maslahati shu korpusning amaliy qo'shimchasi, kitoblarda yo'q
 - Chris Richardson, *Microservices Patterns*, 11-bob - kuzatuvchanlik patternlari: Health Check API, Application Metrics, Distributed Tracing, Exception Tracking, Audit Logging
 - John Carnell, *Spring Microservices in Action*, 9-bob - taqsimlangan trace va korrelyatsiya identifikatori
 - [Micrometer, Histograms and percentiles](https://raw.githubusercontent.com/micrometer-metrics/micrometer-docs/06f377a95db21894939c6fff39441fe608e804a2/src/docs/concepts/histogram-quantiles.adoc) - client-side percentile ning agregatlanmasligi, bucket soni va kutubxonada yoqmaslik tavsiyasi
@@ -482,6 +508,8 @@ MeterFilter cardinalityGuard() {
 - [OpenTelemetry, Tracing API](https://raw.githubusercontent.com/open-telemetry/opentelemetry-specification/bb85bf44e2c032d9958c10b78dcb88cf36e40917/specification/trace/api.md) - span, kontekst va atribut modeli
 - [OpenTelemetry, SDK](https://raw.githubusercontent.com/open-telemetry/opentelemetry-specification/bb85bf44e2c032d9958c10b78dcb88cf36e40917/specification/trace/sdk.md) - sampler turlari va `ParentBased` qarorining izchilligi
 - [OpenTelemetry, Baggage API](https://raw.githubusercontent.com/open-telemetry/opentelemetry-specification/bb85bf44e2c032d9958c10b78dcb88cf36e40917/specification/baggage/api.md) - baggage orqali kontekst tarqatish va uning chegarasi
+- John Carnell, *Spring Microservices in Action*, Manning, 2017, 9-bob (271, 274, 276-277-betlar) - log agregatsiyasidan chiqqan uchta saboq (strategiyani erta belgilash, loglashning kritik infratuzilma ekani, so'rov tilini o'rganish), taqsimlangan tracing va to'liq APM farqi, tracing ma'lumotini HTTP o'rniga RabbitMQ yoki Kafka orqali yuborish
+- ESLATMA: Carnell ning nusxasi 1-nashr (2017) va misollari Spring Cloud Sleuth hamda Zipkin ning `@EnableZipkinServer`/`@EnableZipkinStreamServer` shaklida. Qoidalar mohiyati saqlanib, Micrometer Tracing va OpenTelemetry atamalari bilan yozilgan; kitobning asl komponenti tegishli joyda ESLATMA bilan ko'rsatilgan
 
 ---
 

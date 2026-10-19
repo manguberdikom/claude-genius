@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 33. Kod hidlari katalogi II: sinf, ierarxiya, bog'liqlik (Code Smells II)
 
@@ -712,6 +712,15 @@ guruhdagi metodlardan birini o'zgartirish kerak bo'lganda sinfni
 ajratish haqida qaror qilinadi (shu yerda, 250-bet). Ajratishning o'zi
 33.19 dagi Extract Class va 36-bobdagi mexanika.
 
+Ajratishdan keyin bitta kutilmagan natija chiqadi va unga oldindan
+tayyor bo'lish kerak: refaktoring qilingan kod ko'pincha **uzunroq**
+bo'ladi. Uchta sabab bor va uchalasi ham ataylab: nom uzunroq va
+tavsifiy bo'ladi, izoh o'rniga funksiya va sinf e'lonlari paydo
+bo'ladi, hamda bo'sh joy bilan formatlash o'qish guruhlarini ajratadi.
+Qator soni ortgani sifat pasaygani emas: review da "refaktoring kodni
+uzaytirdi" e'tirozi chiqsa, javob shu - o'lchov qator soni emas,
+bo'lakning tushunarliligi va o'zgarishga tayyorligi.
+
 ESLATMA: feature sketch ni jadval shaklida yozish shu korpusning matn
 uchun moslashtirilgan shakli; kitobda u doira va chiziqlardan iborat
 qo'lda chizma. Yuqoridagi `SettlementImporter` misoli ham korpusning
@@ -739,6 +748,9 @@ o'zi: kitobdagi misol `Reservation` sinfi.
   evristikasi (67), Parallel Inheritance Hierarchies (68), Inappropriate
   Intimacy, Alternative Classes with Different Interfaces, Incomplete
   Library Class va Data Class (70), Refused Bequest (71)
+- Robert C. Martin, *Clean Code*, 10-bob (146-bet) - refaktoring qilingan
+  kodning uzunroq bo'lishi va uning uchta sababi: uzunroq tavsifiy nom,
+  izoh o'rnidagi funksiya va sinf e'lonlari, bo'sh joy bilan formatlash
 - Martin Fowler, *Refactoring*, 1-nashr, Addison-Wesley, 1999, 7, 10 va
   11 boblar - 33.7 va 33.16 da keltirilgan harakatlarning betlari:
   Introduce Foreign Method (131), Introduce Local Extension (133,

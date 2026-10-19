@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 21. Satr, matn va regex (Strings, Text and Regex)
 
@@ -72,6 +72,18 @@ log.debug("to'lov " + paymentId + " yopildi " + settledAt);
 log.debug("to'lov {} yopildi {}", paymentId, settledAt);
 ```
 
+`StringBuilder` ning yonida `StringBuffer` ham turadi va ikkisining farqi bitta: `StringBuffer` metodlari `synchronized`, `StringBuilder` metodlari esa yo'q. Amalda satr yig'ish deyarli har doim bitta metod ichida, bitta thread da bo'ladi, shuning uchun standart tanlov `StringBuilder`: sinxronlash narxi tekin emas va bu yerda u hech narsa himoya qilmaydi. `StringBuffer` faqat bitta holatda ma'noli: bitta buferni bir nechta thread tashqi sinxronlashsiz o'zgartirsa. Meros kodda `StringBuffer` uchraganda avtomatik almashtirmaslik kerak, chunki u ulashilgan bo'lishi mumkin: avval kim yozayotgani tekshiriladi.
+
+Uzunligi oldindan taxmin qilinadigan natijada `StringBuilder` ga **boshlang'ich hajm** berish ham qoida: standart konstruktor kichik bufer bilan boshlaydi va har to'lganda yangi massiv ajratib ko'chiradi. Hajm berilsa, bu o'sish zanjiri umuman bo'lmaydi.
+
+```java
+// yaxshi: natija uzunligi taxmin qilinadi, bufer bir marta ajratiladi
+StringBuilder sb = new StringBuilder(rows.size() * ROW_WIDTH);
+for (SettlementRow row : rows) {
+    sb.append(row.code()).append(';').append(row.amount()).append('\n');
+}
+```
+
 ## 21.3 Kodirovka va `Charset` ni oshkor berish
 
 `new String(bytes)`, `String.getBytes()`, `new FileReader(file)` platformaning standart kodirovkasini ishlatadi. Bu mahalliy mashinada UTF-8, serverda boshqa bo'lishi mumkin va natijada kirill yoki o'zbek harflari buziladi. Java 18 dan beri standart UTF-8, lekin eski kod va eski JVM lar uchun oshkor berish qoidasi qoladi.
@@ -134,6 +146,19 @@ String[] parts = version.split(Pattern.quote("."));
 String[] columns = line.split(",");         // "a,b,," -> 2 element
 // yaxshi
 String[] columns = line.split(",", -1);     // "a,b,," -> 4 element
+```
+
+Shu ro'yxatga oqim bilan bog'liq bitta tuzoq qo'shiladi: `String.chars()` `char` emas, **`int` oqimini** (`IntStream`) qaytaradi. Natijada `forEach(System.out::print)` belgi emas, son chop etadi, chunki overload tanlashda `print(int)` tanlanadi va xato jim o'tadi (kompilyator ham, Sonar ham hech narsa demaydi). Shuning uchun `char` qiymatlari ustida oqim bilan ishlamaslik kerak; kerak bo'lsa har element oshkor `(char)` ga keltiriladi. Surrogat juftlik (emoji, kamdan-kam ishlatiladigan belgilar) bilan ishlanganda esa `chars()` umuman yaramaydi va `codePoints()` ishlatiladi.
+
+```java
+// yomon: belgi emas, son chiqadi - "7210810810") kabi
+"Hello".chars().forEach(System.out::print);
+
+// yaxshi: oshkor keltirish
+"Hello".chars().forEach(c -> System.out.print((char) c));
+
+// yaxshi: oddiy sikl o'qiladi va tuzoq yo'q
+for (int i = 0; i < s.length(); i++) { System.out.print(s.charAt(i)); }
 ```
 
 ## 21.6 Regexni oldindan kompilyatsiya qilish va nomlash
@@ -213,11 +238,25 @@ void transfer(Iban from, Iban to, Money amount);
 
 Qaysi tushunchalar satrda qolishi mumkin: erkin matn (izoh, tavsif, ism), va tashqi chegaradan kelgan xom qiymat (lekin u darhol turga aylantiriladi).
 
+Qoidaning xavfsizlik tomoni ham bor va u jiddiyroq: **satr "qobiliyat" (capability) ning yomon o'rnini bosadi**. Qobiliyat - obyektga kirish huquqini tashiydigan kalit. Agar kalit klient bergan satr bo'lsa, hamma klient bitta **global nom maydonini** ulashadi: ikki modul bir xil nom tanlasa (`"userId"`, `"context"`), ular bir-birining ma'lumotini ko'radi va bu tasodifan ham, ataylab ham bo'ladi, chunki nomni taxmin qilish arzon. To'g'ri yechim - soxtalashtirilmaydigan kalit obyekti: kalit sifatida satr emas, obyektning o'zi ishlatiladi, demak kalitga ega bo'lmagan kod ma'lumotga umuman yetib bormaydi. Platformadagi namuna `ThreadLocal`: uning dastlabki dizayni satr kalitli xarita edi va aynan shu sababdan hozirgi shaklga o'tgan, ya'ni `ThreadLocal` nusxasining o'zi kalit bo'lib qoldi.
+
+```java
+// yomon: satr kalit - global nom maydoni, ikki modul to'qnashadi
+sharedContext.put("tenantId", tenantId);
+
+// yaxshi: kalit obyektning o'zi, ko'rinishi bilan huquq chegaralanadi
+private static final ScopedValue<TenantId> TENANT = ScopedValue.newInstance();
+```
+
 ## 21.9 Matn blokida SQL va JSON
 
 Matn bloki (`"""`) indentatsiyani avtomatik normallashtiradi va qochirishni (escaping) yo'qotadi, shuning uchun SQL, JSON va XML uchun to'g'ri tanlov (12.9). Uch mexanik tafsilot bilish kerak.
 
 Birinchi, yopiluvchi `"""` ning joylashuvi indentatsiyani belgilaydi: eng chapdagi mazmun qatori va yopiluvchi qator orasidagi eng kichik indentatsiya olib tashlanadi. Ikkinchi, `\` qator oxirida yangi qatorni bostiradi. Uchinchi, `\s` bo'shliqni saqlab qoladi (orqa bo'shliqlar aks holda olib tashlanadi).
+
+Bu uch tafsilotning **tartibi** ham qoida va u ba'zi xatolarni tushuntiradi: escape ketma-ketliklari eng oxirida ishlanadi. Kompilyator avval qator tugatuvchilarni bir shaklga (LF) keltiradi, keyin ortiqcha chap bo'shliqni olib tashlaydi, va faqat shundan keyin `\n`, `\s`, `\"` kabi escape larni ishlaydi. Shundan ikki natija chiqadi. Birinchi: matn blokidagi `\n` indentatsiya hisobiga ta'sir qilmaydi, chunki u hisob tugagandan keyin paydo bo'ladi. Ikkinchi: manba faylida CRLF bo'lsa ham, natijadagi qator tugatuvchi LF bo'lib qoladi, ya'ni matn bloki Windows va Linux da bir xil satr beradi (bu xususiyat testdagi kutilgan qiymat uchun muhim).
+
+Yana ikki tafsilot amalda chiqadi. Matn bloki ham **konstant ifoda**, demak u intern qilinadi: bir xil mazmunli ikki matn bloki bitta `String` nusxasiga ishora qiladi, xuddi oddiy literal kabi (21.1). Va matn bloki ichida ketma-ket **uch qo'shtirnoq** kerak bo'lsa, kamida bittasi escape qilinadi (`\"""` yoki `""\"`), aks holda u yopuvchi ajratgich bo'lib ketadi va kompilyatsiya xatosi yoki noto'g'ri qiymat beradi.
 
 ```java
 // Yopiluvchi """ chapda bo'lsa, indentatsiya saqlanadi - odatda keraksiz
@@ -247,6 +286,15 @@ String query = """
 - [ ] `+` bilan qurilgan SQL va JSON literallarini matn blokiga o'tkazing.
 
 ## Manbalar
+
+- *The Java Language Specification, Java SE 25 Edition* (Gosling, Joy, Steele, Bracha, Buckley, Smith, Bierman), 3.10.6 (50-bet) - matn bloki ichida ketma-ket uch qo'shtirnoqdan kamida bittasining escape qilinishi sharti
+- *The Java Language Specification, Java SE 25 Edition* (Gosling, Joy, Steele, Bracha, Buckley, Smith, Bierman), 3.10.6 (51-bet) - matn blokini ishlash tartibi: qator tugatuvchini LF ga keltirish, ortiqcha chap bo'shliqni olib tashlash, keyin escape ketma-ketliklarini ishlash
+- *The Java Language Specification, Java SE 25 Edition* (Gosling, Joy, Steele, Bracha, Buckley, Smith, Bierman), 3.10.6 (52-bet) - matn blokining konstant ifoda bo'lishi va bir xil mazmunli ikki blokning bitta `String` nusxasiga ishora qilishi
+- Herbert Schildt, *Java The Complete Reference*, 12-nashr, McGraw Hill, 2022, 18-bob (509-bet) - `StringBuffer` metodlarining sinxronlangani va `StringBuilder` metodlarining sinxronlanmagani, tanlov sharti
+- Joshua Bloch, *Effective Java* 3rd, Item 45 (206-bet) - `String.chars()` ning `char` emas `int` oqimini qaytarishi va noto'g'ri overload chaqirilishi
+- Joshua Bloch, *Effective Java* 3rd, Item 62 (277-bet) - satrning qobiliyat (capability) o'rnini bosishi, klient bergan satr kalitlarning umumiy global nom maydonini yaratishi va yechim sifatida soxtalashtirilmaydigan kalit obyekti
+- Joshua Bloch, *Effective Java* 3rd, Item 63 (279-bet) - natija sig'adigan boshlang'ich hajm berilgan `StringBuilder` ning avtomatik o'sishini yo'qotishi
+- ESLATMA: Bloch `StringBuilder` ga boshlang'ich hajm berishning foydasini aniq koeffitsiyent bilan beradi, lekin u 2018 da uning o'z mashinasida o'lchangan; korpus raqamni ko'chirmaydi va faqat qoidaning o'zini oladi. Shuningdek `ScopedValue` misoli korpus qo'shimchasi: Bloch `ThreadLocal` ning tarixiy dizaynini keltiradi, zamonaviy Java dagi shakl bu korpusning tavsiyasi
 
 - Joshua Bloch, *Effective Java* 3rd, Item 62 - boshqa tur mos keladigan joyda satr ishlatmaslik
 - Joshua Bloch, *Effective Java* 3rd, Item 63 - satr birlashtirishning narxi

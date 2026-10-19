@@ -543,7 +543,7 @@ def case_bulut_vazifa_memoryga(tmp):
 
 def case_memory_klondan_tashqarida(tmp):
     """R0.5: boshqa proyekt memorysi GENIUS_MEMORY_DIR da (sukut
-    ~/.claude/genius-memory), umumiy esa klonda."""
+    <workspace>/docs-local/memory, uy papkasida emas), umumiy esa klonda."""
     memory = os.path.join(tmp, "xususiy_mem")
     os.makedirs(os.path.join(memory, "shop-api"))
     with io.open(os.path.join(memory, "shop-api", "MEMORY.md"), "w",
@@ -559,13 +559,41 @@ def case_memory_klondan_tashqarida(tmp):
     with isolated(tmp, "mem_uy") as (home, project):
         git_in(project, "init", "-q")
         default = dict(handoff.memory_paths())
+        workspace = os.path.dirname(os.path.realpath(project))
     clone = os.path.realpath(ROOT) + os.sep
     return (code == 0 and paths["shop-api"].startswith(memory)
             and not os.path.realpath(paths["shop-api"]).startswith(clone)
             and paths["umumiy"] == os.path.join(ROOT, "memory", "umumiy", "MEMORY.md")
             and "sinov yozuvi" in out.getvalue()
-            and default["my_proj.v2"].startswith(
-                os.path.join(home, ".claude", "genius-memory") + os.sep))
+            and os.path.realpath(default["my_proj.v2"]).startswith(
+                os.path.join(workspace, "docs-local", "memory") + os.sep)
+            and not os.path.realpath(default["my_proj.v2"]).startswith(
+                os.path.realpath(home) + os.sep + ".claude"))
+
+
+def case_docs_local_git_dan_tashqarida(tmp):
+    """docs-local workspace repo ichida bo'lsa .git/info/exclude ga tushadi."""
+    from docref import ensure_local
+    workspace = os.path.join(tmp, "ws_git")
+    os.makedirs(os.path.join(workspace, "svc"))
+    git_in(workspace, "init", "-q")
+    target = os.path.join(workspace, "docs-local", "memory", "svc")
+    with io.open(os.path.join(workspace, ".git", "info", "exclude"), "a",
+                 encoding="utf-8") as handle:
+        handle.write("*.log")   # oxirida yangi qator yo'q: naqsh buzilmasin
+    ensure_local(target)
+    ensure_local(target)
+    with io.open(os.path.join(workspace, ".git", "info", "exclude"), encoding="utf-8") as handle:
+        lines = handle.read().split("\n")
+    status = subprocess.run(["git", "-C", workspace, "status", "--porcelain",
+                             "--untracked-files=all"], capture_output=True, text=True).stdout
+    with io.open(os.path.join(target, "MEMORY.md"), "w", encoding="utf-8") as handle:
+        handle.write("x")
+    after = subprocess.run(["git", "-C", workspace, "status", "--porcelain",
+                            "--untracked-files=all"], capture_output=True, text=True).stdout
+    return (os.path.isdir(target) and lines.count("/docs-local/") == 1
+            and "*.log" in lines
+            and "docs-local" not in status + after)
 
 
 def case_memory_klonning_ozida(tmp):
@@ -577,6 +605,7 @@ def case_memory_klonning_ozida(tmp):
 
 
 CASES = [
+    ("docs-local git dan tashqarida", case_docs_local_git_dan_tashqarida),
     ("current, peak, navbat va model", case_olchov),
     ("siqish ikki qator, bitta sanaladi", case_siqish_sanaladi),
     ("eski formatdagi xulosa sanaladi", case_eski_format_xulosa_sanaladi),

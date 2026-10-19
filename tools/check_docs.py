@@ -98,6 +98,9 @@ INTERNAL_LINK_RE = re.compile(r'\[[^\]\n]*\]\((?!https?://|mailto:)[^)\s]*\)')
 EXTERNAL_URL_RE = re.compile(r'\]\((https?://[^)\s]*)\)')
 CLAUDE_AUTHOR_RE = re.compile(r'noreply@anthropic\.com', re.I)
 CLAUDE_COAUTHOR_RE = re.compile(r'^Co-Authored-By:\s*Claude\b', re.I | re.M)
+# Odam sessiyada tasdiqlab, commitni Claude qilgan bo'lsa: tasdiq egasi
+# commitda ochiq yoziladi, muallif soxtalashtirilmaydi.
+HUMAN_SIGNOFF_RE = re.compile(r'^Tasdiqladi:\s*\S+', re.M)
 
 errors, warnings = [], []
 
@@ -607,8 +610,8 @@ def check_signoff(review_rows):
             continue
         info = git_out('log', '-1', '--format=%an <%ae>%n%B', sha) or ''
         author = info.split('\n', 1)[0]
-        if (CLAUDE_AUTHOR_RE.search(author) or re.match(r'Claude\b', author)
-                or CLAUDE_COAUTHOR_RE.search(info)):
+        if ((CLAUDE_AUTHOR_RE.search(author) or re.match(r'Claude\b', author)
+                or CLAUDE_COAUTHOR_RE.search(info)) and not HUMAN_SIGNOFF_RE.search(info)):
             err(f"docs/review.tsv:{where}: {doc} {num} ni `tekshirilgan` ga "
                 f"{sha[:10]} commiti o'tkazgan, u Claude muallifligida: bu "
                 f"holatni faqat odam qo'yadi (CONTRIBUTING.md, Tekshiruv tartibi)")

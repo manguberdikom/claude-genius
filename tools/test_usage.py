@@ -503,6 +503,30 @@ def case_saqlash_hook_payload(tmp):
     return set(day) == {U.MAIN, "dasturchi"}
 
 
+def case_saqlash_katta_sessiya_fonda(tmp):
+    """Katta sessiya fonda saqlanadi: hook darhol qaytadi, natija bir xil."""
+    _, main = session(tmp, "pf", "s1", [row(total_read=10)], {
+        "agent-a.jsonl": ([row(total_read=500, side=True)],
+                          {"agentType": "dasturchi"}),
+    })
+    store = os.path.join(tmp, "st_fon")
+    proc = subprocess.run(
+        [sys.executable, os.path.join(HERE, "usage.py"), "--saqlash"],
+        capture_output=True, text=True, cwd=tmp,
+        input=json.dumps({"transcript_path": main, "session_id": "s1"}),
+        env=hermetic_env(tmp, USAGE_STORE=store, GENIUS_USAGE_FON_MB="0",
+                         CLAUDE_PROJECT_DIR=maven(tmp)))
+    path = os.path.join(store, "2026-10", "pf", "s1.json")
+    for _ in range(100):
+        if os.path.isfile(path):
+            break
+        time.sleep(0.1)
+    if proc.returncode != 0 or proc.stdout.strip() or not os.path.isfile(path):
+        return False
+    day = json.load(io.open(path, encoding="utf-8")).get(DAY, {})
+    return set(day) == {U.MAIN, "dasturchi"}
+
+
 def case_saqlash_hook_jim(tmp):
     """--saqlash hech narsa chiqarmaydi va 0 qaytaradi: Stop hook uchun.
 
@@ -816,6 +840,7 @@ CASES = [
     ("qayta saqlash ikki marta qo'shmaydi", case_saqlash_ikki_marta_qoshmaydi),
     ("ikki sessiya bir-birini bosmaydi", case_ikki_sessiya_bosmaydi),
     ("hook payloaddagi sessiyani yozadi", case_saqlash_hook_payload),
+    ("katta sessiya fonda saqlanadi", case_saqlash_katta_sessiya_fonda),
     ("--saqlash jim va 0 qaytaradi", case_saqlash_hook_jim),
     ("sessiya bloki: usd, faol daqiqa, tool, aktyor, to'siq", case_sessiya_bloki),
     ("guard deny attachment dan, ask sanalmaydi", case_guard_deny_attachment_dan),

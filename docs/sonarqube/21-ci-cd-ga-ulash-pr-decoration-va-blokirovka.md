@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 21. CI/CD ga ulash, PR decoration va blokirovka (CI/CD Integration)
 

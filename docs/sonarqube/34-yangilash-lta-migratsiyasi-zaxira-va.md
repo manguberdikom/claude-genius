@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 34. Yangilash, LTA migratsiyasi, zaxira va housekeeping (Upgrades, Backup and Housekeeping)
 

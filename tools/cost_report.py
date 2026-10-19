@@ -41,7 +41,11 @@ EN_SHARE = 0.08
 # zahira qolgan edi, ya'ni har kichik tahrir CI ni qizil qilardi.
 # Avval MEMORY.md indekslari va CLAUDE.md dagi takror qisqartirildi
 # (6040 dan 5279 ga), keyin byudjet zahirani 300 ga keltirib ko'tarildi.
-DEFAULT_BUDGET = 5579
+# 2026-10-19: qidiruv va tahlil aktyorlari olib tashlandi, JAMI 5078;
+# byudjet zahirani 300 da saqlab tushirildi.
+# 2026-10-19: manguberdikom dan 9 memory saboqi ko'chdi; indeks avval
+# qisqartirildi (5605 dan 5393 ga), keyin zahira 300 bilan ko'tarildi.
+DEFAULT_BUDGET = 5693
 
 FRONT_RE = re.compile(r"\A---\n(.*?)\n---\n", re.S)
 # Kalitda `-` bo'ladi: `disable-model-invocation`.

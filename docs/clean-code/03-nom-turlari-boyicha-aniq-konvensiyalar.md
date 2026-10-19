@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 3. Nom turlari bo'yicha aniq konvensiyalar (Naming Conventions by Kind)
 
 <details>
-<summary>Bu bobdagi 17 bo'lim</summary>
+<summary>Bu bobdagi 18 bo'lim</summary>
 
 - [3.1 Mantiqiy nomlar: `is`, `has`, `can`, `should` va inkor tuzog'i](#31-mantiqiy-nomlar-is-has-can-should-va-inkor-tuzogi)
 - [3.2 To'plam, massiv va oqim nomlari](#32-toplam-massiv-va-oqim-nomlari)
@@ -25,7 +25,8 @@
 - [3.14 Jamoa lug'ati va uni majburlash](#314-jamoa-lugati-va-uni-majburlash)
 - [3.15 Nomni o'zgartirish intizomi](#315-nomni-ozgartirish-intizomi)
 - [3.16 Hisoblangan qiymat qo'shimchasi va juft nomlar](#316-hisoblangan-qiymat-qoshimchasi-va-juft-nomlar)
-- [3.17 Amalda qo'llash](#317-amalda-qollash)
+- [3.17 Registr, akronim va grammatik shakl](#317-registr-akronim-va-grammatik-shakl)
+- [3.18 Amalda qo'llash](#318-amalda-qollash)
 
 </details>
 
@@ -94,6 +95,24 @@ Money price;                                   // eng yaxshi: value object
 
 Qoida tartibi: birlikni turga ko'chirish (`Duration`, `Money`, `Percentage`) eng yaxshi; nomga yozish ikkinchi; hech qayerda yozmaslik xato.
 
+Birlik qoidasining umumlashmasi bor: nomga **xavfli yoki kutilmagan har qanday xususiyat** yoziladi, nafaqat o'lchov birligi. Boswell va Foucher buni xavfsizlik tomonidan ko'rsatadi: ko'p ekspluatatsiya programma olgan ma'lumot hali xavfsiz holatda emasligini payqamaslikdan chiqadi, shuning uchun `untrustedUrl` va `unsafeMessageBody` nomlari tozalashdan keyin `trustedUrl` va `safeMessageBody` ga aylanadi (Boswell/Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011, 2-bob (16-17-bet)). Kitob jadvali to'rt holatni beradi: shifrlanmagan parol `plaintextPassword`, ekranlanmagan foydalanuvchi matni `unescapedComment`, UTF-8 ga o'tkazilgan HTML `htmlUtf8`, URL kodlangan kirish `dataUrlenc`.
+
+```java
+// yomon: nom bir xil, holat esa har xil - almashtirib yuborish jim o'tadi
+String password = request.password();
+String comment = request.comment();
+render(comment);                              // XSS: ekranlanmagan
+
+// yaxshi: xavfli holat nomda, tozalanganidan keyin nom o'zgaradi
+String plaintextPassword = request.password();
+String passwordHash = encoder.encode(plaintextPassword);
+String unescapedComment = request.comment();
+String safeComment = HtmlUtils.htmlEscape(unescapedComment);
+render(safeComment);
+```
+
+Chegara muhim: bu prefikslar har o'zgaruvchiga yopishtirilmaydi, aks holda ular shovqinga aylanadi va [shovqin so'zlar](02-nomlash-qoidalari-maqsadni-ochib-beruvchi.md#24-shovqin-sozlar-info-data-object-variable-the) qoidasiga tushadi. Mezon aniq: o'quvchi o'zgaruvchining holatini xato tushunsa xato oson sizib kiradigan va oqibati og'ir bo'ladigan joyda yoziladi, ya'ni avvalo xavfsizlik chegarasida. Shu bilan bu Hungarian notation emas: Hungarian turni kodlaydi va rasmiy tizim, bu yerda esa faqat muhim xususiyat va faqat kerak bo'lganda kodlanadi (shu yerda, 17-bet).
+
 ## 3.4 Konstanta, `static final` va enum a'zolari
 
 Java konvensiyasi: `UPPER_SNAKE_CASE` faqat haqiqiy konstantalar uchun, ya'ni kompilyatsiya vaqtida ma'lum va o'zgarmas qiymatlar. O'zgarmas, lekin ish vaqtida hisoblanadigan maydon (`private final Clock clock`) oddiy `camelCase` oladi.
@@ -113,6 +132,19 @@ static final String SETTLEMENT_FAILED_CODE = "SETTLEMENT_FAILED";
 ```
 
 Konstantani interfeysga qo'yib voris olish (constant interface) qoldirilgan amaliyot (17.8). Konstantalar `enum` ga yoki `final` utility sinfga yoki eng yaxshisi tegishli domen sinfiga joylashadi.
+
+Bitta istisno nomlashdan kattaroq: `public static final` massiv maydoni konstanta emas. Uzunligi noldan katta massivning elementi hamisha almashtirilishi mumkin, shuning uchun bunday maydon va shu maydonni qaytaruvchi accessor inkapsulyatsiyada tuynuk qoldiradi. Ikki yechim bor: massivni `private` qilib o'zgarmas `List` ko'rinishini ochish, yoki har chaqiruvda nusxa qaytarish (14.6).
+
+```java
+// yomon: klient PERMITTED_CODES[0] = "ANY" deb yozib qo'yadi
+public static final String[] PERMITTED_CODES = { "OK", "RETRY" };
+
+// yaxshi: o'zgarmas ko'rinish
+private static final String[] CODES = { "OK", "RETRY" };
+public static final List<String> PERMITTED_CODES = List.of(CODES);
+```
+
+Konstantaning yana bir oqibati binar moslikda ko'rinadi: `static final int` qiymati klient kodiga kompilyatsiya vaqtida ko'chiriladi. Shuning uchun kutubxonada qiymat o'zgartirilsa va klient qayta kompilyatsiya qilinmasa, klient eski qiymat bilan jim ishlashda davom etadi. `enum` da bu muammo yo'q: yangi a'zo qo'shish yoki a'zolar tartibini o'zgartirish klientni qayta kompilyatsiya qilishga majburlamaydi, chunki a'zoga havola ish vaqtida yechiladi (3.5, 25.9).
 
 ## 3.5 Enum turi va holat nomlari
 
@@ -171,7 +203,14 @@ public interface Repository<T, ID> { Optional<T> findById(ID id); }
 public interface Pipeline<InputT, OutputT, ContextT> {
     OutputT run(InputT input, ContextT context);
 }
+
+// istisno turi uchun an'anaviy harf X
+public interface ThrowingSupplier<T, X extends Exception> {
+    T get() throws X;
+}
 ```
+
+Bu yerda til spetsifikatsiyasining o'z konvensiyasi bilan ziddiyat chiqadi: JLS tur parametri nomini qisqa, afzal bitta harf va kichik harf bo'lmagan shaklda talab qiladi, shunda u oddiy sinf nomidan ko'zga darhol ajralib turadi; istisno turi uchun an'anaviy harf `X`. Ajratuvchi shart - **parametr soni**. Bir yoki ikki parametrda JLS shakli amal qiladi (`T`, `E`, `K`/`V`, `X`), uchta va undan ko'pida o'qilish ustun turadi; JLS ning o'zi bu yo'lni ochiq qoldiradi, chunki konvensiya ko'r-ko'rona qo'llanmaydi (3.14). Uzun nomga o'tganda ikki shart saqlanadi: nom bosh harf bilan boshlanadi va `T` suffiksi qoladi, shunda tur parametri sinf nomi bilan aralashmaydi.
 
 ## 3.9 Metod nomi va qaytish turi muvofiqligi
 
@@ -189,6 +228,10 @@ Nom qaytish turiga mos bo'lmasa, o'quvchi chalg'iydi. `getOrders()` bitta `Order
 | yon ta'sirli va qiymatli | ikkiga bo'lish | `reserve()` + `reservationId()` |
 
 Oxirgi qator buyruq-so'rov ajratilishiga ([patternlar hujjatidagi](../patterns/README.md) buyruq-so'rov ajratilishi printsipi) ishora qiladi: bir metod ham o'zgartirsa, ham qiymat qaytarsa, nomi ikkisini ham aytolmaydi.
+
+Jadvalning `to`/`as` qatori amalda uch aniq naqshga bo'linadi va ularni aralashtirish tez-tez uchraydi. `toType` turni o'zgartirib **mustaqil** obyekt qaytaradi (`toString`, `toArray`): manba keyin o'zgarsa, natija o'zgarmaydi. `asType` bir xil ma'lumotning boshqa turdagi **ko'rinishini** qaytaradi (`asList`): manba o'zgarsa, ko'rinish ham o'zgaradi. `typeValue` esa qiymati bir xil primitivni qaytaradi (`intValue`, `longValue`). Nomni to'g'ri tanlash klientga nusxa oldimi yoki ko'rinish oldimi degan savolga imzoning o'zida javob beradi.
+
+O'zgarmas sinfda metod nomining shakli ham boshqacha: amal obyektni o'zgartirmaydi, yangi obyekt qaytaradi, shuning uchun nom buyruq fe'li emas predlog bo'ladi: `plus`, `minus`, `times`, `dividedBy`. `add` nomi obyektni joyida o'zgartirayotgandek o'qiladi. `BigInteger` va `BigDecimal` shu konvensiyani buzgani uchun ularning natijasini o'zlashtirmasdan tashlab yuborish klassik xatoga aylandi (16.4).
 
 ## 3.10 Istisno sinflari nomlari
 
@@ -219,6 +262,8 @@ Paket nomi kichik harflarda, ko'plik yoki birlikda izchil, va xususiyatni anglat
 | Jar/image nomi | artefakt + versiya | `shop-payment:1.4.2` |
 | Test paketi | ishlab chiqarish bilan bir xil | `uz.shop.payment` |
 | Konfiguratsiya prefiksi | modul nomi | `shop.payment.gateway.*` |
+
+Jadvalga til tomonidan qo'yilgan uch cheklov qo'shiladi. Birinchi: paket yoki modul nomi `java` identifikatori bilan boshlanmaydi, chunki u Java SE platformasining o'zi uchun ajratilgan. Ikkinchi: modul nomi uning asosiy eksport qilinadigan paketi nomiga mos keladi, ya'ni `uz.shop.payment` moduli `uz.shop.payment` paketini eksport qiladi; aks holda `module-info.java` va `import` qatorlari bir-biriga ishora qilmaydi va bog'liqlikni o'qish qiyinlashadi. Uchinchi: nomsiz paket, ya'ni `package` e'lonisiz fayl, faqat kichik yoki vaqtinchalik ilova uchun qoldirilgan - ishlab chiqarish kodida har bir fayl o'z paketiga joylanadi, chunki nomsiz paketdagi sinfni nomlangan paketdan `import` qilib bo'lmaydi.
 
 ## 3.12 Test metodi va test sinfi nomlari
 
@@ -255,6 +300,8 @@ Nomlash qoidalari lug'at bo'lmasa, har bir ishlab chiquvchining xotirasiga tayan
 ```
 
 Majburlash uchun ikki vosita bor: review paytida lug'atga havola qilish, va ArchUnit yoki custom lint qoidasi bilan taqiqlangan nomlarni bloklash (42.4).
+
+Lug'at konvensiyaning chegarasini ham yozadi, chunki konvensiya ko'r-ko'rona qo'llanmaydi: uzoq vaqt qaror topgan an'anaviy nom konvensiyadan ustun turadi. `Math.sin` va `Math.cos` metod nomi uchun to'liq so'z talabini buzadi, lekin ularni `sine` va `cosine` ga o'zgartirish matematika tilidan kelgan o'quvchini chalg'itadi. Shuning uchun lug'atda "istisno" ustuni bo'ladi va har bir istisno sababi bilan yoziladi; aks holda bir xil istisno har review da qaytadan bahsga aylanadi.
 
 ## 3.15 Nomni o'zgartirish intizomi
 
@@ -315,9 +362,52 @@ int orderCount;
 int orderIndex;
 ```
 
+**Chegara nomi `max_` yoki `min_` bilan boshlanadi va inklyuzivlikni hal qiladi.** Yuqoridagi jadval juftliklarni sanadi, lekin chegaraning o'zi qiymatga kiradimi yoki yo'qmi degan savolga javob bermaydi, va aynan shu joyda off-by-one xatosi tug'iladi. Boswell va Foucher ning misoli: savatda 10 dan ortiq element bo'lmasligi kerak va doimiy `CART_TOO_BIG_LIMIT = 10` deb nomlangan. Nom "shu qiymatgacha" yoki "shu qiymat ham kiradi" degan savolga javob bermaydi, shuning uchun tekshiruvda `>=` va `>` orasidagi tanlov tasodifiy bo'ladi va kod klassik bir-birlik xato beradi.
+
+Yechim nomda: chegaralanayotgan narsaning oldiga `max` yoki `min` qo'yiladi, ya'ni `MAX_ITEMS_IN_CART = 10`. Shunda `max` so'zining o'zi chegara **inklyuziv** ekanini aytadi va tekshiruv o'z-o'zidan to'g'ri chiqadi.
+
+```java
+// yomon: nom inklyuzivlikni aytmaydi, tekshiruv tasodifiy
+private static final int CART_TOO_BIG_LIMIT = 10;
+if (cart.itemCount() >= CART_TOO_BIG_LIMIT) {   // 10 ta ham taqiqlandi
+    throw new CartTooLargeException();
+}
+
+// yaxshi: max_ inklyuziv chegarani aytadi, tekshiruv aniq
+private static final int MAX_ITEMS_IN_CART = 10;
+if (cart.itemCount() > MAX_ITEMS_IN_CART) {     // 10 ta ruxsat
+    throw new CartTooLargeException();
+}
+```
+
 Shu ikki konvensiya 2.11 dagi "bitta tushunchaga bitta so'z" qoidasining nom qismiga tegishli aniqlashtirishi: jamoa lug'ati qo'shimcha va juftlik ro'yxatini ham o'z ichiga oladi (3.14).
 
-## 3.17 Amalda qo'llash
+Ajratilgan funksiya ichidagi qaytish o'zgaruvchisi bu qoidadan chetda qoladi: unga har safar yangi tavsifiy nom o'ylab topish o'rniga jamoada bitta kelishilgan nom beriladi, Fowler ning ikkinchi nashri `result` ni ishlatadi. Sabab shunda: qiymatning ma'nosi funksiya nomida allaqachon aytilgan, o'zgaruvchi nomi esa faqat "bu qaytariladigan qiymat" degan rolni belgilaydi, shuning uchun bu yerda izchillik tavsifiylikdan ustun turadi. Shu konvensiya funksiya ajratish mexanikasini (35.1) hamma joyda bir xil ko'rinishda ushlab turadi va diff ni o'qishni osonlashtiradi.
+
+## 3.17 Registr, akronim va grammatik shakl
+
+O'zgaruvchini kichik, turni bosh harf bilan yozish shunchaki uslub emas: u nomga murojaat qilish imkonini saqlab turadi. Bitta oddiy nom bir vaqtda o'zgaruvchi, tur va paket bo'lishi mumkin, shunday to'qnashuvda til o'zgaruvchini turdan, turni paketdan ustun tanlaydi (obscuring). Ya'ni tur `payment` deb nomlansa va shu nomli o'zgaruvchi qamrovda bo'lsa, turga oddiy nom bilan murojaat qilish imkoni yo'qoladi va har joyda to'liq nom yozishga to'g'ri keladi.
+
+Identifikatorda `$` belgisi tilda ruxsat etilgan, lekin u mashina generatsiya qilgan nomlar (ichki sinf, proxy, kompilyator yasagan ko'prik metod) uchun qoldirilgan: qo'lda yozilgan kodda `$` ishlatilmaydi.
+
+Akronim registri alohida kelishuvni talab qiladi, chunki ikki shakl ham uchraydi: faqat birinchi harfni katta yozish (`HttpUrl`, `XmlParser`) yoki butun akronimni katta yozish (`HTTPURL`). Birinchisi tanlanadi, chunki ikkinchi shaklda ketma-ket kelgan ikki akronimning chegarasi ko'rinmaydi. Metod yoki maydon nomi akronim bilan boshlansa, akronim butunlay kichik yoziladi: `httpUrl`, `xmlParser`.
+
+Grammatik shakl ham nom turiga bog'lanadi: instansiyalanadigan sinf birlikdagi ot (`Order`, `PaymentGateway`), instansiyalanmaydigan utility sinf ko'plikdagi ot (`Collections`, `Files`, 14.8), interfeys esa sinf kabi ot yoki `-able` va `-ible` bilan tugaydigan sifat (`Runnable`, `Comparable`).
+
+```java
+// yomon: tur kichik harf bilan, akronim butunlay katta, utility sinf birlikda
+class payment { }
+class HTTPURLBuilder { }
+final class StringUtil { private StringUtil() { } }
+
+// yaxshi
+class Payment { }
+class HttpUrlBuilder { }
+final class Strings { private Strings() { } }
+interface Retryable { void retry(); }
+```
+
+## 3.18 Amalda qo'llash
 
 - [ ] Barcha mantiqiy maydon va metodlarni ko'rib, inkor nomlarni (`isNot...`, `disable...`) ijobiy shaklga o'tkazing.
 - [ ] Vaqt, hajm va pul bilan ishlaydigan public imzolarda birlikni turga ko'chiring: `Duration`, `Money`, `Percentage`.
@@ -331,6 +421,7 @@ Shu ikki konvensiya 2.11 dagi "bitta tushunchaga bitta so'z" qoidasining nom qis
 
 ## Manbalar
 
+- Dustin Boswell, Trevor Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011 (copyright 2012), 3-bob (25-bet) - chegara nomini `max_` yoki `min_` bilan boshlash, `CART_TOO_BIG_LIMIT` ning inklyuzivlikni aytmasligi va shundan kelib chiqadigan off-by-one xatosi
 - Robert C. Martin, *Clean Code*, 2-bob ("Class Names", "Method Names") - sinf nomi ot, metod nomi fe'l, getter konvensiyasi
 - Joshua Bloch, *Effective Java* 3rd, Item 68 - umumiy qabul qilingan nomlash konvensiyalari (tipografik va grammatik)
 - Joshua Bloch, *Effective Java* 3rd, Item 34 - `int` konstanta o'rniga enum va enum a'zolari nomi
@@ -339,6 +430,20 @@ Shu ikki konvensiya 2.11 dagi "bitta tushunchaga bitta so'z" qoidasining nom qis
   (263-264) - hisoblangan qiymat qo'shimchasining nom oxirida turishi va uning
   uch sababi, `Num` qo'shimchasining ikki ma'nosi va `Count`/`Index` ga
   o'tish tavsiyasi, qarama-qarshi nom juftliklari ro'yxati
+- Dustin Boswell, Trevor Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011 (copyright 2012), 2-bob (16-17-betlar) - birlik qoidasining umumlashmasi: xavfli yoki kutilmagan xususiyatni nomga yozish (`plaintext_password`, `unescaped_comment`, `html_utf8`, `data_urlenc`), chegarasi va Hungarian notation dan farqi
+- Joshua Bloch, *Effective Java* 3rd, Item 15 (76-bet) - `public static final` massiv maydonining xavfsizlik tuynugi: uzunligi noldan katta massiv hamisha o'zgaradi, yechim `private` massiv va o'zgarmas `List` yoki nusxa qaytaruvchi metod
+- Joshua Bloch, *Effective Java* 3rd, Item 34 (158-bet) - `int` enum qiymatlarining klientga kompilyatsiya vaqtida ko'chirilishi va qiymat o'zgarganda klientning qayta kompilyatsiyasiz jim xato ishlashi; `enum` da a'zo qo'shish yoki tartibini o'zgartirish klientni buzmasligi
+- Joshua Bloch, *Effective Java* 3rd, Item 17 (82-bet) - o'zgarmas sinfda amal yangi obyekt qaytarishi va metod nomining fe'l emas predlog bo'lishi (`plus`, `minus`), `BigInteger` ning shu konvensiyani buzgani
+- Joshua Bloch, *Effective Java* 3rd, Item 68 (290-bet) - akronimda faqat birinchi harfni katta yozish (`HttpUrl`, `HTTPURL` emas) va metod yoki maydon nomining boshidagi akronimning butunlay kichik yozilishi
+- Joshua Bloch, *Effective Java* 3rd, Item 68 (291-bet) - grammatik konvensiya: instansiyalanadigan sinf birlikda ot, utility sinf ko'plikda ot (`Collections`), interfeys sinf kabi yoki `-able`/`-ible` bilan tugaydigan sifat
+- Joshua Bloch, *Effective Java* 3rd, Item 68 (292-bet) - `toType`, `asType` va `typeValue` metod nomlarining uch xil ma'nosi: mustaqil obyekt, boshqa turdagi ko'rinish, bir xil qiymatli primitiv
+- *The Java Language Specification, Java SE 25 Edition* (Gosling, Joy, Steele, Bracha, Buckley, Smith, Bierman), 6-bob (155-bet) - tur parametri nomi qisqa, afzal bitta harf va kichik harf bo'lmasligi, istisno turi uchun `X`, va konvensiyaning ko'r-ko'rona qo'llanmasligi ("should not be followed slavishly")
+- *The Java Language Specification, Java SE 25 Edition* (Gosling, Joy, Steele, Bracha, Buckley, Smith, Bierman), 6-bob (156-157-betlar) - paket va modul nomi `java` identifikatori bilan boshlanmasligi, modul nomining asosiy eksport qilinadigan paket nomiga mos kelishi
+- *The Java Language Specification, Java SE 25 Edition* (Gosling, Joy, Steele, Bracha, Buckley, Smith, Bierman), 6-bob (180-bet) - obscuring: bir xil oddiy nomda o'zgaruvchining turdan, turning paketdan ustun tanlanishi va shundan kelib chiqadigan registr konvensiyasining sababi
+- *The Java Language Specification, Java SE 25 Edition* (Gosling, Joy, Steele, Bracha, Buckley, Smith, Bierman), 7-bob (422-bet) - nomsiz paketning faqat kichik yoki vaqtinchalik ilova uchun qoldirilgani
+- Y. Daniel Liang, *Introduction to Java Programming*, 9-nashr, Pearson, 2013, 2-bob (40-bet) - identifikatorda `$` belgisining mashina generatsiya qilgan kod uchun qoldirilgani
+- Martin Fowler, *Refactoring*, 2-nashr, Addison-Wesley, 2019, 1-bob (22-bet) - ajratilgan funksiyadagi qaytish o'zgaruvchisini bitta kelishilgan nom (`result`) bilan atash konvensiyasi
+- ESLATMA: `PERMITTED_CODES` va registr konvensiyasining kod misollari korpus qo'shimchasi; kitoblar qoidani nasr bilan beradi, bu misollar uni Java shaklida ko'rsatish uchun yozilgan
 
 ---
 

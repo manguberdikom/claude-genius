@@ -100,9 +100,26 @@ SCOPE_RE = re.compile(
     r"|ro['\u02bb\u02bc\u2019]yxatga oling|sanab", re.IGNORECASE)
 
 
+# Faqat qidirish yoki o'lchashni so'raydigan punkt ham audit: yozuvchiga u
+# hech narsa bermaydi va yozish punktini MAX_POINTS dan siqib chiqaradi.
+# "toping va almashtiring" kabi o'zgartirish fe'li bori tegilgan kodga
+# qo'llanadi, shuning uchun `kod` da qoladi.
+SEARCH_RE = re.compile(
+    r"\b(?:toping|topib|grep|o['\u02bb\u02bc\u2019]lcha(?:b|ng)|aniqlang"
+    r"|ro['\u02bb\u02bc\u2019]yxat\w* (?:tuz|qiling)|jadval\w* tuz"
+    r"|(?:tekshirib|ko['\u02bb\u02bc\u2019]rib) chiqing)",
+    re.IGNORECASE)
+CHANGE_RE = re.compile(
+    r"almashtir|o['\u02bb\u02bc\u2019]tkaz|aylantir|ko['\u02bb\u02bc\u2019]chir|olib tashla"
+    r"|qo['\u02bb\u02bc\u2019]sh|qo['\u02bb\u02bc\u2019]y|chiqar|yoz|bering|kiriting|yoping",
+    re.IGNORECASE)
+
+
 def scope(item):
-    """Punkt doirasi: `loyiha` yoki `kod` (SCOPE_RE)."""
-    return "loyiha" if SCOPE_RE.search(item) else "kod"
+    """Punkt doirasi: `loyiha` yoki `kod` (SCOPE_RE, faqat qidirish)."""
+    if SCOPE_RE.search(item) or (SEARCH_RE.search(item) and not CHANGE_RE.search(item)):
+        return "loyiha"
+    return "kod"
 
 WORD_RE = re.compile(r"[a-z0-9_.@#]+(?:\+\+|\+\d+)?(?:'[a-z0-9]+)*")
 

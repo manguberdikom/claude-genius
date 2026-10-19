@@ -101,7 +101,7 @@ Step importStep(JobRepository repo, PlatformTransactionManager tx,
 - Bir nechta turdagi yozuvni turli jadvallarga yo'naltirish (`ClassifierCompositeItemWriter`).
 - Validatsiyadan o'tmagan qatorlarni filtrlab, qolganini yuklash va rad etilganlarni alohida faylga chiqarish.
 
-**Ehtiyot bo'ling:** `JdbcCursorItemReader` bitta ochiq cursor va bitta connection ushlaydi - ko'p thread yoki uzoq ishlov uchun `JdbcPagingItemReader` ma'qul, lekin paging'da `ORDER BY` barqaror va unique bo'lishi shart, aks holda yozuvlar takrorlanadi yoki tushib qoladi. JPA reader'larda `EntityManager` cache'i o'sib ketadi, shuning uchun chunk oxirida flush/clear va `saveState` sozlamalariga e'tibor bering.
+**Ehtiyot bo'ling:** `JdbcCursorItemReader` bitta ochiq cursor va bitta connection ushlaydi - ko'p thread yoki uzoq ishlov uchun `JdbcPagingItemReader` ma'qul, lekin paging'da `ORDER BY` barqaror va unique bo'lishi shart, aks holda yozuvlar takrorlanadi yoki tushib qoladi. JPA reader'larda `EntityManager` cache'i o'sib ketadi, shuning uchun chunk oxirida flush/clear va `saveState` sozlamalariga e'tibor bering. Processor ichida har yozuv uchun tarmoq so'rovi qilish (`RestClient` chaqiruvi yoki boshqa servis bazasiga lookup) ikki sababdan xato: Kleppmann buni batch ning normal o'tkazuvchanligidan bir necha daraja sekin deb ko'rsatadi va natijani nodeterministik qiladi, chunki masofadagi ma'lumot job davomida o'zgaradi. To'g'ri yo'l - kerakli ma'lumot nusxasini job boshida lokal olib (staging jadval yoki ichki kesh) processor ni faqat lokal ma'lumot ustida ishlatish.
 
 ## 20.4 Job / Step / Flow (Job / Step / Flow)
 
@@ -350,7 +350,7 @@ ClassifierCompositeItemWriter<Txn> writer(ItemWriter<Txn> ok, ItemWriter<Txn> re
 - Moliyaviy hisobot uchun kunlik agregatlarni hisoblab, reporting jadvaliga yozish.
 - CRM va billing tizimlari o'rtasida tungi sinxronizatsiya.
 
-**Ehtiyot bo'ling:** Transformatsiyani writer yoki reader ichiga yashirish fazalar ajratilishini buzadi va job'ni test qilishni deyarli imkonsiz qiladi - biznes mantiqni `ItemProcessor` da saqlang. Juda katta hajmda row-by-row ETL tabiiy chegaraga uriladi: bunda set-based SQL (ELT) yoki partitioning'ga o'tishni oldindan rejalashtiring, va qayta yuklashda idempotentlikni (`MERGE`/upsert) ta'minlamasang duplikatlar paydo bo'ladi.
+**Ehtiyot bo'ling:** Transformatsiyani writer yoki reader ichiga yashirish fazalar ajratilishini buzadi va job'ni test qilishni deyarli imkonsiz qiladi - biznes mantiqni `ItemProcessor` da saqlang. Juda katta hajmda row-by-row ETL tabiiy chegaraga uriladi: bunda set-based SQL (ELT) yoki partitioning'ga o'tishni oldindan rejalashtiring, va qayta yuklashda idempotentlikni (`MERGE`/upsert) ta'minlamasang duplikatlar paydo bo'ladi. Load fazasini ishlab turgan bazaga yozuvma-yozuv bajarish alohida tuzoq: Kleppmann uchta zararni sanaydi - har yozuv uchun tarmoq so'rovi sekin, bir vaqtda ishlayotgan parallel task'lar bazani bo'g'adi va job yarim yo'lda to'xtasa qisman natija tashqi tizimlarga ko'rinib qoladi, ya'ni "yo hammasi yo hech narsa" kafolati yo'qoladi. Yechim - natijani alohida yangi ma'lumot to'plami sifatida qurib (fayl yoki yangi jadval), keyin uni bulk yuklash va faqat yuklash tugagach o'qish yo'lini yangisiga o'tkazish; eski to'plam o'z joyida qolgani uchun orqaga qaytish ham arzon.
 
 ## 20.20 Backfill (Backfill)
 
@@ -393,6 +393,19 @@ ClassifierCompositeItemWriter<Txn> writer(ItemWriter<Txn> ok, ItemWriter<Txn> re
 @SchedulerLock(name = "dailySettlement", lockAtMostFor = "PT30M", lockAtLeastFor = "PT1M")
 public void runDailySettlement() {
     settlementService.settleForDate(LocalDate.now().minusDays(1));
+}
+```
+
+Lock muddati qaysi soat bilan o'lchanishi ham muhim. `JdbcTemplateLockProvider` sozlamasida `usingDbTime()` berilsa, provider DB server soatidagi UTC vaqtdan foydalanadi; berilmasa app server soati ishlatiladi va instance'lar soati sinxron bo'lmasa lock noto'g'ri ishlaydi. ShedLock README si bu opsiyani qat'iy tavsiya qiladi, chunki u DB ga xos SQL bilan INSERT konfliktining oldini oladi; README bo'yicha u Postgres, MySQL, MariaDB, MS SQL, Oracle, DB2, HSQL va H2 da ishlaydi.
+
+```java
+@Bean
+public LockProvider lockProvider(DataSource dataSource) {
+    return new JdbcTemplateLockProvider(
+        JdbcTemplateLockProvider.Configuration.builder()
+            .withJdbcTemplate(new JdbcTemplate(dataSource))
+            .usingDbTime() // instance soatlari farqi lock muddatini buzmasin
+            .build());
 }
 ```
 
@@ -508,7 +521,7 @@ public void runDailySettlement() {
 - Kunlik agregatni `MERGE`/upsert bilan qayta hisoblab, eski qiymat ustiga yozish.
 - Bildirishnoma yuborish step'ida `notification_sent` dedup jadvali bilan takroriy email'ni to'sish.
 
-**Ehtiyot bo'ling:** `ExecutionContext`ga tayangan restart faqat reader deterministik tartibda o'qiganda to'g'ri ishlaydi - `ORDER BY` bo'lmagan paging reader restart'da qatorlarni tashlab ketadi yoki takrorlaydi. Chunk ichidagi tashqi side-effect'lar (email, tashqi API chaqiruvi) DB tranzaksiyasiga kirmaydi, shuning uchun ularni alohida idempotentlik kaliti bilan himoyalang va "retry = xavfsiz" degan taxminni har bir writer uchun alohida tekshirib chiqing.
+**Ehtiyot bo'ling:** `ExecutionContext`ga tayangan restart faqat reader deterministik tartibda o'qiganda to'g'ri ishlaydi - `ORDER BY` bo'lmagan paging reader restart'da qatorlarni tashlab ketadi yoki takrorlaydi. Chunk ichidagi tashqi side-effect'lar (email, tashqi API chaqiruvi) DB tranzaksiyasiga kirmaydi, shuning uchun ularni alohida idempotentlik kaliti bilan himoyalang va "retry = xavfsiz" degan taxminni har bir writer uchun alohida tekshirib chiqing. Idempotentlikning eng arzon shakli kirishni o'zgarmas (immutable) saqlashdan keladi: Kleppmann buni human fault tolerance deb ataydi - kod xato yozgan bo'lsa, kirish o'zgarmagani uchun kodni tuzatib job ni qaytadan yurgizish to'g'ri natijani tiklaydi, eski chiqish esa alohida joyda turgani uchun unga qaytish ham mumkin. Avtomatik retry ning xavfsizligi ham shu shartdan chiqadi; kirishni job ning o'zi joyida o'zgartirsa (masalan manba jadvalni update qilib boraversa), bu xossa yo'qoladi va retry ni endi faqat upsert va dedup saqlaydi.
 
 Mavzuning to'liq yozuvi [idempotency](07-api-dizayn-patternlari.md#79-idempotentlik-kaliti-idempotency-key) bo'limida; bu yerda faqat shu bo'limning nuqtai nazari.
 
@@ -553,6 +566,9 @@ return new StepBuilder("importStep", jobRepository)
 
 - Martin Kleppmann, *Designing Data-Intensive Applications*, 10-bob - batch qayta ishlash, idempotentlik va qayta urinish
 - Martin Kleppmann, *Designing Data-Intensive Applications*, 11-bob - oqim va batch orasidagi farq, aniq bir marta semantikasi
+- Martin Kleppmann, *Designing Data-Intensive Applications*, O'Reilly, 2017, 10-bob (405-bet) - batch da hisoblash iloji boricha bitta mashinada lokal bo'lishi, har yozuv uchun masofaviy so'rov sekinligi va masofadagi baza o'zgarishi job ni nodeterministik qilishi; manba nusxasini lokal olib ishlash (20.3)
+- Martin Kleppmann, *Designing Data-Intensive Applications*, O'Reilly, 2017, 10-bob (412-413-betlar) - batch natijasini ishlab turgan bazaga yozuvma-yozuv yozishning uch zarari (sekinlik, bazaning bo'g'ilishi, qisman natijaning tashqariga ko'rinishi) va o'rniga yangi ma'lumot to'plamini qurib bulk yuklash (20.19)
+- Martin Kleppmann, *Designing Data-Intensive Applications*, O'Reilly, 2017, 10-bob (413-414-betlar) - kirishni o'zgarmas saqlash va side-effect dan qochish, kodni tuzatib qayta yurgizish bilan natijani tiklash (human fault tolerance), avtomatik retry ning xavfsizligi shu shartga tayanishi (20.29)
 - Spring Batch kodi: `StepBuilder`, `ChunkOrientedStepBuilder`, `SimpleStepBuilder` (chunk API va default commit interval), `JobStepBuilder`, `FaultTolerantStepBuilder`. spring-projects/spring-batch, tag `v6.0.5` (commit `f62a2a66bdfec8df59e60d0a62295228fd8a7ee0`). Apache-2.0. https://github.com/spring-projects/spring-batch/blob/f62a2a66bdfec8df59e60d0a62295228fd8a7ee0/spring-batch-core/src/main/java/org/springframework/batch/core/step/builder/StepBuilder.java
 - Spring Batch kodi: `ChunkProcessorChunkRequestHandler` va `RemoteChunkingWorkerBuilder` (remote chunking). spring-projects/spring-batch, tag `v6.0.5`. Apache-2.0. https://github.com/spring-projects/spring-batch/blob/f62a2a66bdfec8df59e60d0a62295228fd8a7ee0/spring-batch-integration/src/main/java/org/springframework/batch/integration/chunk/ChunkProcessorChunkRequestHandler.java
 - Spring Batch kodi: `AbstractJob` va `AbstractStep` observation teglari (`job.name`, `job.status`, `step.name`, `step.type`). spring-projects/spring-batch, tag `v6.0.5`. Apache-2.0. https://github.com/spring-projects/spring-batch/blob/f62a2a66bdfec8df59e60d0a62295228fd8a7ee0/spring-batch-core/src/main/java/org/springframework/batch/core/job/AbstractJob.java
@@ -560,6 +576,7 @@ return new StepBuilder("importStep", jobRepository)
 - Spring Batch metadata sxemasi: `BATCH_*` jadvallari. spring-projects/spring-batch, tag `v6.0.5`, `spring-batch-core/src/main/resources/org/springframework/batch/core/schema-postgresql.sql`. Apache-2.0. https://github.com/spring-projects/spring-batch/blob/f62a2a66bdfec8df59e60d0a62295228fd8a7ee0/spring-batch-core/src/main/resources/org/springframework/batch/core/schema-postgresql.sql
 - Spring Batch 5.x solishtirish uchun (paket nomlari, `ChunkProcessorChunkHandler`, `throttleLimit` deprecation). spring-projects/spring-batch, tag `v5.2.6` (commit `39c91c1c47eb752a5e64eb612c5e411c5e7f86d8`). Apache-2.0. https://github.com/spring-projects/spring-batch/tree/39c91c1c47eb752a5e64eb612c5e411c5e7f86d8
 - Spring Batch hujjati: scalability va externalizing execution (remote chunking va remote partitioning qachon tanlanadi), thread-safety eslatmasi. spring-projects/spring-batch, tag `v6.0.5`, `spring-batch-docs/`. Apache-2.0. https://github.com/spring-projects/spring-batch/tree/f62a2a66bdfec8df59e60d0a62295228fd8a7ee0/spring-batch-docs
+- [ShedLock, `README.md` (tag `shedlock-parent-7.10.1`), JdbcTemplate bo'limi](https://github.com/lukas-krecan/ShedLock/blob/shedlock-parent-7.10.1/README.md#jdbctemplate) - `JdbcTemplateLockProvider.Configuration.builder().usingDbTime()`: DB server soatidagi UTC vaqt, opsiya qat'iy tavsiya qilinadi va INSERT konfliktini oldini oladi (20.22)
 - Hibernate ORM migration guide (`@Where` 7.0 da olib tashlangan, `@SQLRestriction` bilan almashtiriladi). hibernate/hibernate-orm, tag `7.0.0` (commit `9ff2e66565a8b398cf1015dafef3306ad0d31ba9`). Apache-2.0. https://github.com/hibernate/hibernate-orm/blob/9ff2e66565a8b398cf1015dafef3306ad0d31ba9/migration-guide.adoc
 
 ---

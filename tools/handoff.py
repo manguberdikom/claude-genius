@@ -405,6 +405,13 @@ def memory_report():
     if not paths:
         print("docref.py yuklanmadi: memory joyi aniqlanmadi.")
         return 2
+    from docref import SHARED_MEMORY, ensure_local, is_clone_project
+    # Klonning o'zida memory klonda (memory/), u yerda papka yaratilmaydi:
+    # fork nomida bo'sh `memory/<fork>/` qolardi.
+    if not is_clone_project():
+        for slug, path in paths:
+            if slug not in SHARED_MEMORY:
+                ensure_local(os.path.dirname(path))
     for slug, path in paths:
         try:
             with open(path, encoding="utf-8", errors="replace") as handle:
@@ -739,7 +746,8 @@ def main():
     if "--memory" in args:
         return memory_report()
     if "--docs" in args:
-        print(docs_path().replace(os.sep, "/"))
+        from docref import ensure_local
+        print(ensure_local(docs_path()).replace(os.sep, "/"))
         return 0
     if "--prompt" in args or "--vazifa" in args:
         vazifa = None

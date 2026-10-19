@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 2. Nomlash qoidalari: maqsadni ochib beruvchi nom (Naming: Intention-Revealing Names)
 
 <details>
-<summary>Bu bobdagi 17 bo'lim</summary>
+<summary>Bu bobdagi 19 bo'lim</summary>
 
 - [2.1 Nom javob berishi kerak bo'lgan uchta savol](#21-nom-javob-berishi-kerak-bolgan-uchta-savol)
 - [2.2 Yolg'on ma'lumot beradigan nom](#22-yolgon-malumot-beradigan-nom)
@@ -25,7 +25,9 @@
 - [2.14 Kontekst qo'shish va ortiqcha kontekst qo'shmaslik](#214-kontekst-qoshish-va-ortiqcha-kontekst-qoshmaslik)
 - [2.15 Nom uzunligi qamrovga mutanosib](#215-nom-uzunligi-qamrovga-mutanosib)
 - [2.16 Qisqartma qoidalari va psixologik masofa](#216-qisqartma-qoidalari-va-psixologik-masofa)
-- [2.17 Amalda qo'llash](#217-amalda-qollash)
+- [2.17 Nomga ma'lumot zichlash: aniq so'z va aniq nom](#217-nomga-malumot-zichlash-aniq-soz-va-aniq-nom)
+- [2.18 Nomni xato talqinlarga sinash](#218-nomni-xato-talqinlarga-sinash)
+- [2.19 Amalda qo'llash](#219-amalda-qollash)
 
 </details>
 
@@ -67,6 +69,8 @@ public Order markOrderSeen(OrderId id);   // o'zgartirishi nomda ko'rinadi
 ```
 
 Shunga yaqin tuzoq: `l`, `O`, `I` harflari. Ular `1` va `0` bilan aralashadi va hech qanday shriftda ishonchli farqlanmaydi.
+
+Yolg'onning eng qimmat shakli esa standart kutubxona sinfi nomini takrorlash: o'z sinfingizga `System`, `List`, `Date` yoki `Timer` deb nom bermang. Kompilyator bunga ruxsat beradi, lekin shundan keyin bir faylda `java.util.List` ishlab turadi, boshqasida o'z `List` ingiz, va o'quvchi qaysi biri nazarda tutilganini `import` qatoridan izlab topishga majbur bo'ladi. Xato esa `import` o'zgarganda, masalan IDE avtomatik `import` qo'shganda, jim paydo bo'ladi.
 
 ## 2.3 Ma'noli farq: `a1`, `a2`, `Info` va `Data`
 
@@ -298,7 +302,58 @@ int clientReportCount = repository.countReports(clientId);
 
 Qoida nega debug paytida qimmat: odam kutgan narsasini ko'radi, shuning uchun masofasi kichik juft nomlar xatoni o'qish paytida ko'rinmas qiladi. Shu mexanizm va uning debugdagi oqibati [xatoni topish va tuzatish tartibida](46-vaqt-diqqat-va-mashq.md#4610-xatoni-topish-va-tuzatish-tartibi) ko'rilgan.
 
-## 2.17 Amalda qo'llash
+## 2.17 Nomga ma'lumot zichlash: aniq so'z va aniq nom
+
+Nom kichik izoh: joyi oz, lekin o'quvchi uni o'zgaruvchi har ko'ringanda o'qiydi. Shuning uchun nomga ma'lumot zichlanadi, ya'ni bo'sh so'z aniq so'z bilan almashtiriladi (Boswell/Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011, 2-bob (8-bet)).
+
+**Bo'sh fe'l o'rniga aniq fe'l.** `get` manbani ajratmaydi: keshdanmi, bazadanmi, tarmoqdanmi. Tarmoqdan olsa `fetch` yoki `download` aniqroq. `size()` ham shunday bo'sh: daraxt balandligimi, tugun sonimi, bayt hajmimi. `stop()` qaytarib bo'lmaydigan amal bo'lsa `kill()`, `resume()` juftligi bor bo'lsa `pause()`. Chegara ham bor: aniqlik maqsad, chiroylilik emas. PHP dagi `explode` jonli nom, lekin uning `split` dan farqini nom aytmaydi, demak u ma'lumot bermaydi (shu yerda, 9-bet).
+
+```java
+// yomon: fe'l manbani ham, o'lchovni ham aytmaydi
+Page getPage(URI uri);
+int size();
+
+// yaxshi: manba va o'lchov nomda
+Page downloadPage(URI uri);
+int nodeCount();
+```
+
+**Mavhum nom o'rniga aniq nom.** Nom predmetni mavhum emas, aniq tasvirlasin. Kitob misoli: TCP portni tinglash mumkinligini tekshiradigan metod `serverCanStart()` deb nomlangan, aniq shakli `canListenOnPort()` - u metod nima qilishini to'g'ridan-to'g'ri aytadi (shu yerda, 13-bet). Ikkinchi misol bayroq nomi haqida: `--run_locally` nom ishlatilish holatidan olingan, shuning uchun yangi jamoadosh u nima qilishini bilmaydi va masofadagi serverda log kerak bo'lganda nom kulgili ko'rinadi; to'g'ri shakl `--extra_logging`, ya'ni bayroq nima qilishini aytadi. Bayroq ikki ishni boshqarsa, nomni mavhumlashtirish emas, ikkinchi bayroq (`--use_local_database`) qo'shish to'g'ri: ikki ortogonal g'oyani bitta nomga siqish nomni ataylab noaniq qilishdir (shu yerda, 14-15-bet).
+
+```java
+// yomon: nom ishlatilish holatidan olingan, xatti-harakatdan emas
+@Value("${app.run-locally:false}")
+private boolean runLocally;
+
+// yaxshi: har bayroq o'z xatti-harakatini aytadi
+@Value("${app.extra-logging:false}")
+private boolean extraLogging;
+@Value("${app.use-local-database:false}")
+private boolean useLocalDatabase;
+```
+
+Bu ikki harakat [bitta tushunchaga bitta so'z](#211-bitta-tushunchaga-bitta-soz) qoidasi bilan birga ishlaydi: avval har tushuncha uchun aniq so'z tanlanadi, keyin shu so'z kod bazasida izchil ishlatiladi.
+
+## 2.18 Nomni xato talqinlarga sinash
+
+2.1 nom javob berishi kerak savollarni berdi, 2.2 esa yolg'on ma'lumot beradigan nomni ko'rsatdi. Bu bo'lim jarayon haqida: nomni yozib qo'ygandan keyin uni **ataylab noto'g'ri o'qishga urinib ko'rish**. Boswell va Foucher ning asosiy g'oyasi shu: nomni tanqid qilish uchun "bu nomdan boshqa qanday ma'no o'qilishi mumkin?" savoli beriladi va javob izlanadi.
+
+**Ikki qarama-qarshi ma'noga ega so'z nom qilinmaydi.** `filter` buning klassik misoli: `Database.allObjects.filter("year <= 2011")` natijasida sharti to'g'ri chiqqan obyektlar qoladimi yoki olib tashlanadimi - nom aytmaydi. Tanlab qoldirish uchun `select`, olib tashlash uchun `exclude` yoziladi. Shu guruhdagi ikkinchi misol - `clip(text, length)`: u oxiridan `length` ni kesadimi yoki matnni `length` uzunligigacha qisqartiradimi? Niyat ikkinchisi bo'lsa, nom `truncate(text, maxChars)` bo'ladi, chunki `max` chegarani aytadi ([chegara nomlari](03-nom-turlari-boyicha-aniq-konvensiyalar.md#316-hisoblangan-qiymat-qoshimchasi-va-juft-nomlar)) va `chars` birlikni aytadi: `length` baytmi, belgimi yoki so'zmi noaniq edi. Uchinchi shakl - ot ham, fe'l ham bo'la oladigan metod nomi: `count()` "sanani qaytaradi" ham, "sanab chiq" ham bo'lib o'qiladi.
+
+| Shubhali nom | Ikki talqin | Aniq shakl |
+|---|---|---|
+| `filter(predicate)` | tanlab qoldirish yoki olib tashlash | `select` yoki `exclude` |
+| `clip(text, length)` | oxiridan kesish yoki chegaraga qisqartirish | `truncate(text, maxChars)` |
+| `count()` | sonni qaytaradi yoki sanashni boshlaydi | `itemCount()` yoki `recountItems()` |
+| `check(order)` | tekshirib natija qaytaradi yoki istisno tashlaydi | `isValid(order)` yoki `validate(order)` |
+
+**Baho beruvchi va hissiy so'z nomga qo'yilmaydi.** Google ning C++ kodida nusxa konstruktori va `operator=` ni taqiqlovchi makro uzoq vaqt `DISALLOW_EVIL_CONSTRUCTORS` deb nomlangan. Ikki muammo bor edi. Birinchisi: "evil" so'zi bahsli pozitsiyani juda qattiq ifodalaydi, ya'ni nom texnik faktni emas, muallifning fikrini aytadi. Ikkinchisi va amaliyroq: nom nimani taqiqlayotganini aytmaydi, va aslida u konstruktorni emas, nusxa olish va tayinlashni taqiqlardi (`operator=` konstruktor ham emas). Makro keyinchalik `DISALLOW_COPY_AND_ASSIGN` deb qayta nomlangan. Java da bu `UglyHackUtil`, `StupidLegacyMapper` yoki `TemporaryBadFix` kabi nomlar: ular o'quvchiga nima qilinayotganini emas, muallifning kayfiyatini aytadi.
+
+**Nomzodlar bittadan sinaladi.** Nom tanlashda bir nechta variant bo'lsa, har biri alohida tekshiriladi: bu nom nimani anglatmasligi mumkin? Boswell va Foucher ning misoli - bir tajribaning sozlamalarini boshqasidan qayta ishlatish uchun kalit nomi. `template` noaniq ("men shablonmanmi yoki shablonni ishlatayapmanmi?") va shablon ko'pincha to'ldirilmagan narsa deb tushuniladi. `reuse: 100` "bu tajriba 100 martagacha qayta ishlatiladi" deb o'qilishi mumkin. `copy: 100` "100 marta nusxa ol" yoki "bu 100-nusxa" deb o'qiladi. `inherit` esa programmistga tanish va undan keyin o'zgartirish kiritilishi kutilishini aytadi. Yechim ikki qadamli: aniqroq so'z tanlanadi va **nom qaysi obyektga ishora qilishini ham aytadi**, ya'ni `copyExperiment` yoki `inheritFromExperimentId`.
+
+Oxirgi va eng arzon tekshiruv - **hamkasbdan so'rash**: nom yoki izoh nimani anglatishini so'rang va uning birinchi taassurotini kelajakdagi o'quvchining taassuroti deb oling. Tushuntirib bergandan keyin "ha, endi tushunarli" degan javob natija emas: o'quvchi yonida siz turmaysiz.
+
+## 2.19 Amalda qo'llash
 
 - [ ] Kod bazasida `Info`, `Data`, `Object`, `temp`, `flag`, `result` so'zlarini grep qilib, har birini rolga qarab qayta nomlang.
 - [ ] `IOrderRepository` turidagi interfeys prefikslarini olib tashlab, implementatsiyalarga mexanika nomini bering (`JdbcOrderRepository`).
@@ -312,6 +367,7 @@ Qoida nega debug paytida qimmat: odam kutgan narsasini ko'radi, shuning uchun ma
 
 ## Manbalar
 
+- Dustin Boswell, Trevor Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011 (copyright 2012), 2-bob (14-bet) va 3-bob (24, 29-31-betlar) - nomga baho beruvchi so'z qo'ymaslik va `DISALLOW_EVIL_CONSTRUCTORS` ning `DISALLOW_COPY_AND_ASSIGN` ga qayta nomlanishi; ikki qarama-qarshi ma'noli so'z (`filter`, `clip`); nom nomzodlarini bittadan xato talqinlarga sinash (`template`, `reuse`, `copy`, `inherit`) va nomning qaysi obyektga ishora qilishini aytishi
 - Robert C. Martin, *Clean Code*, 2-bob - maqsadni ochib beruvchi nom, yolg'on ma'lumot, ma'noli farq, talaffuz qilinadigan va qidiriladigan nom
 - Robert C. Martin, *Clean Code*, 2-bob ("Avoid Encodings") - Hungarian notation, a'zo prefiksi, interfeys va implementatsiya nomlari
 - Robert C. Martin, *Clean Code*, 2-bob ("Add Meaningful Context") - kontekst qo'shish va ortiqcha kontekst qo'shmaslik
@@ -325,6 +381,9 @@ Qoida nega debug paytida qimmat: odam kutgan narsasini ko'radi, shuning uchun ma
   ikki harf farq talabi
 - Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 23.4
   (556) - psixologik masofa ta'rifi va nomlar jadvali
+- Dustin Boswell, Trevor Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011 (copyright 2012), 2-bob (8-9-betlar) - `get` va `size` bo'sh so'zligi, `fetch`/`download` va `nodeCount` aniq shakllari, `stop`/`kill`/`pause` tanlovi, `explode` va `split` misolida "aniq va to'g'ri, chiroyli emas" mezoni
+- Dustin Boswell, Trevor Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011 (copyright 2012), 2-bob (13-15-betlar) - `ServerCanStart` o'rniga `CanListenOnPort`, `--run_locally` nomining uch muammosi va `--extra_logging` bilan `--use_local_database` ga bo'linishi
+- Y. Daniel Liang, *Introduction to Java Programming*, 9-nashr, Pearson, 2013, 2-bob (44-bet) - Java kutubxonasida mavjud sinf nomini (`System`, `List`) o'z sinfiga bermaslik
 
 ---
 

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 28. Keshlash amaliyoti: invalidatsiya, stampede, Redis haqiqati (Caching in Practice)
 
@@ -48,6 +48,7 @@ Savollar ro'yxati qisqa. Bu ma'lumot qancha vaqt eskirishi mumkin. O'qish va yoz
 | Xotira | Chegara yo'q | `maxmemory` va eviction siyosati aniq belgilangan |
 | Kesh kaliti | `toString()` ga tayanadi | Aniq, versiyalangan, prefiksli kalit |
 
+**Keshning oltin qoidasi.** Newman qoidani bir gapda beradi: siz va yangi ma'lumot manbai o'rtasida qancha kesh qatlami bo'lsa, ma'lumot shuncha eskiradi, mijoz ko'rgan qiymat qanchalik yangi ekanini aniqlash va invalidatsiya qaysi joyda kerakligi haqida fikrlash shuncha qiyinlashadi (*Building Microservices*, 2-nashr, 13-bob, "The Golden Rule of Caching"). Misoli tanish: `Inventory` server tomonda bir daqiqalik TTL bilan keshlaydi, `Recommendation` esa mijoz tomonda yana bir daqiqalik TTL bilan keshlaydi; mijoz keshi eskirganda yangi qiymat so'raydi, lekin so'rov server keshiga tushadi va u ham bir daqiqa eski bo'lishi mumkin, natijada qiymat ikki daqiqagacha eski bo'ladi, holbuki `Recommendation` o'zini bir daqiqa ichida deb hisoblaydi. Shundan ikki amaliy qoida chiqadi: keshni avvalo ishlash optimizatsiyasi deb qarash va iloji boricha kam joyda keshlash, Newmanning so'zi bilan ideal joy soni nol; kesh kesh ustiga qo'yilgan holatda esa TTL o'rniga timestamp asosidagi eskirish yaxshiroq, chunki u qatlamlar bo'ylab qo'shilib ketmaydi.
 ## 28.2 Hit nisbati qanchadan boshlab foyda beradi
 
 Hisob oddiy formula bilan qilinadi. O'rtacha latency teng: `h * T_kesh + (1 - h) * (T_kesh + T_db)`. Bir ma'lumot markazi ichida Redis uchun `T_kesh` taxminan 1 ms, og'ir agregatsiya uchun `T_db` taxminan 40 ms deb olamiz.
@@ -92,6 +93,20 @@ class KeshSozlamasi {
 `recordStats()` chaqirilmasa hit nisbati ko'rinmaydi va siz kesh foydasini isbotlay olmaysiz. `refreshAfterWrite` muddati `expireAfterWrite` dan kichik bo'lishi shart, aks holda ishga tushmaydi. `refreshAfterWrite` ning xatti-harakatini aniq bilish kerak, chunki uni ko'pincha teskari tushunadilar: muddat o'tgandan keyin **birinchi** so'rov eski qiymatni oladi va yangilash fon rejimida boshlanadi. Ya'ni u chaqiruvchini bloklamaydi va yangi qiymatni darhol bermaydi; uning maqsadi aynan shu - eskirgan qiymatni berib turib, orqada yangilash. Shu sababli u stampede ni yumshatadi, lekin "har doim yangi ma'lumot" talabini bajarmaydi.
 
 Mahalliy keshning o'qish tezligi haqidagi raqamlar bu bobda o'lchanmagan: ular tartibni ko'rsatish uchun keltirilgan va o'z muhitida o'lchanishi kerak.
+
+Mahalliy va taqsimlangan kesh tanlovining ustiga uchinchi o'lcham qo'yiladi: kesh **kimning tomonida** turadi. Newman uch joyni ajratadi va har birining kelishuvini maqsad bilan bog'laydi.
+
+| Joy | Nimaga eng mos | Narxi |
+|---|---|---|
+| Client-side (iste'molchi ichida) | latency va robustness: tarmoq chaqiruvi umuman yo'qoladi | invalidatsiya tanlovi cheklangan; iste'molchilar orasida nomuvofiq ko'rinish |
+| Server-side (ma'lumot egasi ichida) | invalidatsiya nazorati va hamma iste'molchiga bir vaqtda foyda | round trip qoladi, demak latency va robustness uchun kuchsiz |
+| Request cache (butun javob) | tezlik: Sales ham, Catalog ham chaqirilmaydi | juda tor, faqat o'sha so'rov shakliga xizmat qiladi |
+
+Client-side keshning kuchi tarmoq chaqiruvidan qutulishida, shuning uchun u latency uchun ham, chidamlilik uchun ham eng samarali. Lekin iste'molchi ko'p bo'lsa muammo o'sadi: `Sales`, `Recommendation` va `Promotions` servislari `Catalog` ma'lumotini mahalliy keshlaganda, `Catalog` o'zgarsa hech qanday invalidatsiya mexanizmi uch iste'molchida ma'lumot aynan bir vaqtda yangilanishini kafolatlay olmaydi, ya'ni ular bir vaqtda turli ko'rinish ko'radi. Umumiy Redis ni iste'molchilar o'rtasida bo'lishish bu nomuvofiqlikni yo'qotadi va xotira sarfini ham kamaytiradi, lekin iste'molchi endi keshgacha round trip qilishi kerak bo'ladi, ya'ni client-side keshning asosiy afzalligi qisman yo'qoladi.
+
+Server-side kesh iste'molchi uchun ko'rinmas, ya'ni ichki implementatsiya tafsiloti: shakli ilovadagi kesh ham, servis chegarasi ichidagi teskari proxy, yashirin Redis node i yoki o'qishni read replica ga yo'naltirish ham bo'lishi mumkin. Shundan ikki natija chiqadi: write-through kabi murakkabroq invalidatsiya mexanizmini shu yerda qurish osonroq, va hamma iste'molchi hech narsa qilmasdan foyda oladi. Narxi esa o'zgarmaydi, chaqiruv baribir qilinishi kerak, shuning uchun bu shakl latency ni qisqartirish va nosozlikka chidash uchun kuchsiz.
+
+Qaror mezoni bitta savolga qisqaradi: nimadan qo'rqamiz. Agar tashvish uchidan uchiga latency bo'lsa client-side afzal; agar tashvish ma'lumot egasining yuki va invalidatsiya izchilligi bo'lsa server-side afzal. Korpusning [mahalliy va taqsimlangan kesh](#283-mahalliy-kesh-va-taqsimlangan-kesh-tanlovi) tanlovi shu uchlikning ustiga qo'yiladi, uning o'rnini bosmaydi.
 
 ## 28.4 Spring Cache abstraksiyasi mexanikasi va proxy chegarasi
 
@@ -334,6 +349,12 @@ Lekin xatoni yutish yetarli emas. Redis o'chganda hit nisbati nolga tushadi va 1
 
 Zaxira yo'l yozilgan bo'lsa yetarli emas, u sinovdan o'tishi kerak. Produksiyaga o'xshash muhitda Redis ni ataylab o'chirib, latency va DB connection pool holatini o'lchash kerak. Texnikani [testlash qo'llanmasidagi](../testing/README.md) resilience testlari bo'limi beradi, arxitektorning ishi bu sinovni rejaga kiritish.
 
+Sig'im hisobining o'zi uchun esa Google ning qoidasi tayyor formula beradi: keshni latency maqsadiga yetish uchun, asosiy ilovani esa umumiy yukka qarab ta'minlang. Kitob bu qoidani production dan chiqqan dars deb ataydi va natijasini ham aytadi: kesh qatlami yo'qolganda nosozlik bo'lmagan, chunki keshsiz yo'l butun yukni ko'tarishga ta'minlangan edi, garchi yuqoriroq latency bilan. Kelishuv ham ochiq yozilgan: kesh sig'imi yo'qolishi riskini yumshatish uchun ortiqcha zaxiraga qancha sarflash kerakligi ongli qaror.
+
+Amalda bu [8.2](08-ishlash-va-resurs-hissi-napkin-math.md#82-oddiy-hisob-kuniga-n-sorov-nechta-rps-boladi-choqqi-koeffitsienti) dagi hisobni ikki marta bajarishni bildiradi. Birinchi hisob kesh bor holat uchun: 10 000 QPS, hit nisbati 0.95, demak DB ga 500 QPS. Ikkinchi hisob kesh yo'q holat uchun: DB ga 10 000 QPS. Ikkinchi raqam uchun connection pool, `statement_timeout` va CPU sig'imi yetmasa, yechim uchtadan biri bo'ladi: DB sig'imini oshirish, zaxira yo'lda semafor bilan parallellikni cheklash, yoki quyidagi qoida bo'yicha funksiyani vaqtincha o'chirish.
+
+Oxirgi variant alohida izoh talab qiladi, chunki u birinchi qarashda yechim emas, taslim bo'lish ko'rinadi. Newman esa uni ochiq tavsiya qiladi: ba'zan eng xavfsiz yo'l kesh ishlamay qolganda funksiyani o'chirish bo'ladi, aynan origin ortiqcha yuklanib jiddiyroq muammo keltirmasligi uchun. Shaklining tanlovi biznes savoliga qisqaradi: "eng ko'p sotilgan 10 mahsulot" bloki vaqtincha ko'rinmasligi butun katalogning sekinlashishidan arzonroqmi. Shu sababli har kesh uchun ADR da bitta qator bo'ladi: kesh o'lganda zaxira yo'l ishlaydimi, parallellik cheklanadimi, yoki funksiya o'chadimi.
+
 ## 28.13 Amalda qo'llash
 
 - [ ] Har bir `@Cacheable` metod uchun jadval tuz: kesh nomi, TTL, kutilayotgan hit nisbati, toqat qilinadigan eskirish, qiymat hajmi. Bo'sh katak qolsa, o'sha kesh asossiz.
@@ -347,8 +368,12 @@ Zaxira yo'l yozilgan bo'lsa yetarli emas, u sinovdan o'tishi kerak. Produksiyaga
 
 ## Manbalar
 
+- Sam Newman, *Building Microservices*, 2-nashr, O'Reilly, 2021, 13-bob ("The Golden Rule of Caching") - kesh qatlami ko'paygan sari ma'lumotning eskirishi va yangiligini aniqlash qiyinlashishi, ikki qatlamli bir daqiqalik TTL ning ikki daqiqaga aylanishi, keshni ishlash optimizatsiyasi deb qarash va ideal joy soni nol. Bu nashrning elektron nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
 - [Caffeine, README](https://raw.githubusercontent.com/ben-manes/caffeine/92cd6cca5fed23d8343ef7caf338631c977ae9ec/README.md) - `maximumSize`, `expireAfterWrite`, `refreshAfterWrite`; eskirgan yozuvga birinchi so'rov kelganda yangilash asinxron boshlanishi
 - [Micrometer, Concepts](https://raw.githubusercontent.com/micrometer-metrics/micrometer-docs/06f377a95db21894939c6fff39441fe608e804a2/src/docs/concepts/index.adoc) - kesh metrikasi va teg kardinalligi
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 13-bob ("Where to Cache", "Freshness Versus Optimization" bo'limlari) - client-side, server-side va request keshning kelishuvlari (tarmoq chaqiruvini yo'qotish va robustness; invalidatsiya tanlovining cheklanishi va iste'molchilar orasidagi nomuvofiqlik; umumiy Redis ning round trip qo'shishi; server-side keshning iste'molchiga ko'rinmasligi va write-through ni osonlashtirishi), hamda kesh ishlamay qolganda origin ni ortiqcha yuklamaslik uchun funksiyani o'chirish. Bu nashrning qo'limizdagi elektron nusxasida barqaror bet raqami yo'q, shuning uchun faqat bob va bo'lim nomi ko'rsatilgan
+- Titus Winters, Tom Manshreck, Hyrum Wright (tahr.), *Software Engineering at Google*, O'Reilly, 2020, 25-bob ("Managing State" bo'limi) - keshni latency maqsadiga, asosiy ilovani esa umumiy yukka qarab ta'minlash, keshsiz yo'lning butun yukni (yuqoriroq latency bilan) ko'tarishi va ortiqcha zaxira narxining ongli kelishuv ekani
+- ESLATMA: 28.12 dagi ikki marta sig'im hisobi (10 000 QPS va 0.95 hit nisbati misoli) hamda har kesh uchun ADR qatori tavsiyasi shu korpusning qo'shimchasi
 
 ---
 

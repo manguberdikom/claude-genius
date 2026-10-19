@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 26. Dizayn printsiplari: SOLID, GRASP va umumiy qoidalar (Design Principles: SOLID, GRASP & General Rules)
 
@@ -523,7 +523,7 @@ public interface BillingClient {
 
 ## 26.26 Gollivud Printsipi (Hollywood Principle (Inversion of Control))
 
-**Tavsif:** "Bizga qo'ng'iroq qilmang, biz o'zimiz chaqiramiz" - komponent framework'ni chaqirmaydi, framework komponentning callback'larini kerakli vaqtda chaqiradi. Bu nazoratni ilova kodidan konteynerga o'tkazish (Inversion of Control) degani; natijada lifecycle, resurs boshqaruvi va xatolarni qayta ishlash framework zimmasida qoladi. Dependency Injection - IoC'ning eng keng tarqalgan ko'rinishi, Template Method esa uning sinf darajasidagi variantidir.
+**Tavsif:** "Bizga qo'ng'iroq qilmang, biz o'zimiz chaqiramiz" - komponent framework'ni chaqirmaydi, framework komponentning callback'larini kerakli vaqtda chaqiradi. Bu nazoratni ilova kodidan konteynerga o'tkazish (Inversion of Control) degani; natijada lifecycle, resurs boshqaruvi va xatolarni qayta ishlash framework zimmasida qoladi. Dependency Injection - IoC'ning eng keng tarqalgan ko'rinishi, Template Method esa uning sinf darajasidagi variantidir. Gollivud printsipini Dependency Inversion bilan chalkashtirmaslik kerak, chunki ular bir xil darajada turmaydi: DIP bog'liqlikdan qochish haqida kuchliroq va umumiy da'vo (konkret emas, abstraksiyaga tayan), Gollivud esa quyi komponent bilan yuqori qatlam orasida ajralish quradigan TEXNIKA - kim kimni chaqirishini teskari qiladi. Amalda bu farq savolni ajratadi: DIP "bu bog'liqlik yo'nalishi to'g'rimi" degan savolga javob beradi, Gollivud esa "bu ajralishni qanday quraman" degan savolga.
 
 **Spring'da qayerda uchraydi:** Bu Spring'ning mavjudlik asosi: `ApplicationContext` bean'larni yaratadi, bog'laydi va lifecycle callback'larini chaqiradi - `@PostConstruct`/`@PreDestroy` (Jakarta annotatsiyalari), `InitializingBean`, `DisposableBean`, `SmartLifecycle`, `BeanPostProcessor`. Startup'da `ApplicationRunner` va `CommandLineRunner`, event'larda `@EventListener` va `ApplicationListener` sizning metodingizni framework chaqiradi. Template Method ko'rinishi: `JdbcTemplate.query(sql, rowMapper)` resurs boshqaruvini o'ziga oladi va faqat `RowMapper` callback'ingizni chaqiradi, `TransactionTemplate.execute(callback)` esa commit/rollback'ni o'zi hal qiladi. Xuddi shunday `@Scheduled`, `@KafkaListener`, `@RabbitListener`, `@JmsListener`, `HandlerInterceptor` va Spring Security'ning `OncePerRequestFilter` ham callback modelida ishlaydi.
 
@@ -644,6 +644,7 @@ static final ArchRule modullar_tsiklsiz = SlicesRuleDefinition.slices()
 - Robert C. Martin, *Clean Architecture*, 11-bob (DIP) - "Stable Abstractions" bo'limidagi to'rtta kodlash amaliyoti va Abstract Factory ning roli
 - Robert C. Martin, *Clean Architecture*, Prentice Hall, 2018, 9-bob (LSP) - kvadrat va to'rtburchak masalasi buzilishning kanonik misoli ekani, bo'y bilan enning mustaqil o'zgarishi, hamda chaqiruvchida tur tekshiruvi paydo bo'lishi almashtirilmaslikning belgisi ekani
 - Robert C. Martin, *Clean Architecture*, Prentice Hall, 2018, 14-bob ("The Jitters" va "Top-Down Design") - komponent grafining talablar o'zgarishi bilan tebranishi va o'sishi, uni yuqoridan pastga loyihalab bo'lmasligi, diagrammaning funksiya emas, qurilish va saqlash xaritasi ekani, SRP/CCP, CRP va ADP ning navbati, o'zgaruvchanlikni izolyatsiya qilish
+- Freeman/Robson, *Head First Design Patterns* 2nd, 8-bob (316-bet) - Gollivud printsipi bilan Dependency Inversion ning darajalar farqi: DIP bog'liqlikdan qochish haqida kuchliroq va umumiy da'vo, Gollivud esa quyi komponent bilan yuqori qatlam orasida ajralish quradigan texnika (26.26)
 - Joshua Bloch, *Effective Java* 3rd, Item 20 - interfeys va abstrakt sinf tanlovi; Item 18 - kompozitsiyani merosdan afzal ko'rish
 - [spring-framework, `Bean.java`](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/spring-context/src/main/java/org/springframework/context/annotation/Bean.java) - `autowireCandidate` va `defaultCandidate` bilan kandidat tanlovini boshqarish
 - [Spring Framework 7.0, Proxying Mechanisms](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/core/aop/proxying.adoc) - interfeys va sinf asosidagi proxy farqi, ya'ni ISP va LSP ning Spring dagi mexanik oqibati

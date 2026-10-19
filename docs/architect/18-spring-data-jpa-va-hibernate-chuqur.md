@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 18. Spring Data JPA va Hibernate chuqur (Spring Data JPA and Hibernate)
 
@@ -329,6 +329,8 @@ public List<KunlikTushum> kunlikTushum(LocalDate dan, LocalDate gacha) {
 
 Qaror mezoni sodda. Natija domen obyekti bo'lmasa va o'zgartirilmasa, JPA shart emas. So'rov aniq SQL konstruksiyasiga tayansa, JPA shart emas. Bir operatsiya 10 mingdan ortiq qatorga tegsa, `update ... from` yoki `insert ... on conflict` shaklidagi bitta SQL deyarli har doim entity sikldan tez. Shu paytda ikki narsa esda bo'lsin: bunday SQL persistence context ni bilmaydi, shuning uchun bir tranzaksiyada entity bilan aralashtirmaslik yaxshi, va u keshni ham chetlab o'tadi.
 
+To'g'ridan-to'g'ri JDBC ga tushgan joyda yana bitta eski, lekin hamon amal qiladigan qoida bor: `DatabaseMetaData` ning `getBestRowIdentifier`, `getColumns`, `getPrimaryKeys` va `getTables` kabi chaqiruvlari qimmat, shuning uchun ulardan so'rov yo'lida foydalanilmaydi; metadata faqat keyingi uzatishlar sonini kamaytirish uchun, bir marta o'qiladi (Shirazi, *Java Performance Tuning*, O'Reilly, 2003, 16.2.12-bo'lim). ESLATMA: 2003 dagi sabab har chaqiruvning tarmoq safari ekani edi; bugun bu narx boshqa joyda ko'rinadi, ya'ni ishga tushish vaqtida va konteyner probe ida, chunki metadata ni odatda sizning kodingiz emas, Hibernate ning sxema validatsiyasi va migratsiya vositalari o'qiydi. Qoida o'sha: metadata ni so'rov yo'lida emas, ishga tushishda bir marta, va sxema tekshiruvini ishlab chiqarishda o'chirib qo'yish mumkinligini ongli hal qilish.
+
 ## 18.12 Ikkinchi daraja kesh: foydasi va xavfi
 
 Ikkinchi daraja kesh session lar orasida yashaydi va `SessionFactory` ga tegishli. U birlamchi kalit bo'yicha entity yuklashni tezlashtiradi, yoqish uchun provider va entity da concurrency strategiyasi talab qiladi. Foydali joyi aniq: kam o'zgaradigan ma'lumot. Valyuta ro'yxati, soliq stavkasi, mahsulot kategoriyasi, mamlakat kodi. Bunday jadvallar yiliga bir necha marta o'zgaradi, ularni har so'rovda bazadan olish bekor.
@@ -354,6 +356,7 @@ Shuning uchun qoida: ikkinchi daraja keshni butun ilovaga yoqmaslik. Faqat sanab
 - [Hibernate User Guide, Batching](https://raw.githubusercontent.com/hibernate/hibernate-orm/6.6/documentation/src/main/asciidoc/userguide/chapters/batch/Batching.adoc) - "Hibernate disables insert batching at the JDBC level transparently if you use an identity identifier generator"
 - [Hibernate User Guide, Identifiers](https://raw.githubusercontent.com/hibernate/hibernate-orm/6.6/documentation/src/main/asciidoc/userguide/chapters/domain/identifiers.adoc) - `allocation-size` aynan sequence ning "increment by" si; pooled va pooled-lo optimizerlari shu qiymatga tayanadi
 - [jakartaee/persistence, `SequenceGenerator.java`](https://raw.githubusercontent.com/jakartaee/persistence/3.2-3.2.0-RELEASE/api/src/main/java/jakarta/persistence/SequenceGenerator.java) - `allocationSize() default 50`
+- Jack Shirazi, *Java Performance Tuning*, 2-nashr, O'Reilly, 2003, 16.2.12-bo'lim - sekin `DatabaseMetaData` chaqiruvlaridan (`getBestRowIdentifier`, `getColumns`, `getPrimaryKeys`, `getTables`) qochish va metadata ni keyingi uzatishlar sonini kamaytirish uchun ishlatish. ESLATMA: nusxada bet raqami yo'q, iqtibos bo'lim raqami bilan; 2003 dagi sabab (har chaqiruvning tarmoq safari) o'zgargan, bugungi narx ishga tushish vaqtida ko'rinadi
 
 ---
 

@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 9. JVM ichki tuzilishi: class loading, memory model, JIT (JVM Internals)
 
 <details>
-<summary>Bu bobdagi 12 bo'lim</summary>
+<summary>Bu bobdagi 13 bo'lim</summary>
 
 - [9.1 JVM xotira hududlari: heap, metaspace, stack, code cache, direct buffer](#91-jvm-xotira-hududlari-heap-metaspace-stack-code-cache-direct-buffer)
 - [9.2 Class loading bosqichlari va class loader ierarxiyasi](#92-class-loading-bosqichlari-va-class-loader-ierarxiyasi)
@@ -20,7 +20,8 @@
 - [9.9 Java memory model: happens-before, volatile, final maydon kafolatlari](#99-java-memory-model-happens-before-volatile-final-maydon-kafolatlari)
 - [9.10 JVM ni kuzatish uchun asosiy flaglar va `-XX:+PrintFlagsFinal` dan foydalanish](#910-jvm-ni-kuzatish-uchun-asosiy-flaglar-va--xxprintflagsfinal-dan-foydalanish)
 - [9.11 AOT, CDS va GraalVM native image: qachon mantiqli](#911-aot-cds-va-graalvm-native-image-qachon-mantiqli)
-- [9.12 Amalda qo'llash](#912-amalda-qollash)
+- [9.12 Sinf o'zligi, `<clinit>` va initsializatsiya qulfi](#912-sinf-ozligi-clinit-va-initsializatsiya-qulfi)
+- [9.13 Amalda qo'llash](#913-amalda-qollash)
 
 </details>
 
@@ -72,6 +73,24 @@ jcmd <pid> Compiler.codecache
 
 Class yuklash uch bosqichdan iborat. Loading da bytecode topiladi va `Class` obyekti yaratiladi. Linking uch qismga bo'linadi: verification bytecode ni xavfsizlik va tiplar bo'yicha tekshiradi, preparation static maydonlarga default qiymat beradi, resolution esa constant pool dagi havolalarni haqiqiy class va method ga bog'laydi. Initialization da `static` blok va `static` maydon initsializatorlari ishlaydi, aynan shu bosqich faqat bir marta va thread-safe bajariladi.
 
+Initialization bosqichining qachon boshlanishini bilish amalda ko'p g'alati holatni tushuntiradi, chunki ro'yxat qisqa va intuitiv emas. Sinf yoki interfeys T quyidagilardan birinchisi yuz berishidan oldin ishga tushiriladi: T sinf bo'lib, uning instansiyasi yaratilganda; T e'lon qilgan statik metod chaqirilganda; T e'lon qilgan statik maydonga qiymat yozilganda; T e'lon qilgan statik maydon ishlatilganda va u constant variable bo'lmaganda. Sinf ishga tushganda uning superklasslari va `default` metod e'lon qilgan superinterfeyslari ham ishga tushadi, lekin interfeysning ishga tushishi uning superinterfeyslarini o'z-o'zidan ishga tushirmaydi (*The Java Language Specification, Java SE 25*, 12.4.1, 446-bet). Teskari tomoni ham shu yerda: sinfning initsializatsiyasi uning vorisi ishga tushganda boshlanadi, `default` metodi bor interfeys esa uni bevosita yoki bilvosita implementatsiya qilgan sinf ishga tushganda ishga tushadi (*The Java Virtual Machine Specification, Java SE 25*, 5.5, 397-bet).
+
+Shu ro'yxatdan amalda eng ko'p adashtiradigan natija chiqadi: statik maydonga voris sinf nomi bilan murojaat qilish voris sinfni ishga tushirmaydi, faqat maydonni e'lon qilgan sinf ishga tushadi. Spetsifikatsiyaning misoli shuni ko'rsatadi: `Super` da `static int taxi = 1729` bo'lsa, `Sub` da esa statik blok bo'lsa, `Sub.taxi` o'qilganda `Sub` ning statik bloki umuman ishlamaydi, chunki `taxi` aslida `Super` da e'lon qilingan (12.4.1, 447-448-betlar).
+
+```java
+class Config {
+    static final Map<String, String> VALUES = load();
+}
+
+class DevConfig extends Config {
+    static { registerDevOverrides(); }        // bu blok ishlamasligi mumkin
+}
+
+// DevConfig.VALUES o'qilganda registerDevOverrides() CHAQIRILMAYDI:
+// VALUES maydoni Config da e'lon qilingan, shuning uchun faqat Config ishga tushadi.
+// Ro'yxatga olish kerak bo'lsa, DevConfig ning o'z statik a'zosiga tegish shart.
+```
+
 JDK 9 dan beri ierarxiya shunday: bootstrap loader platform modullarini yuklaydi, platform loader JDK ning qolgan qismini, application loader esa classpath ni. Eski `ext` mexanizmi yo'q. Qoida oddiy: bola loader avval otasidan so'raydi, faqat u topa olmasa o'zi qidiradi. Shu sabab `javax.sql.DataSource` ni classpath ga qo'shib qo'yishning ma'nosi yo'q, platform loader uni har doim birinchi topadi.
 
 ```bash
@@ -87,6 +106,8 @@ java -Xlog:class+unload=info -jar order-service.jar
 ```
 
 Bundan ikkita amaliy xulosa chiqadi. Birinchisi, `class+load` logida bitta class ikkita turli jar dan ko'rinsa, bu dependency konflikti va uning oqibati runtime da `NoSuchMethodError` bo'ladi. Ikkinchisi, static blokda fayl yoki tarmoq chaqiruvi bo'lsa, bu class ga birinchi tegadigan thread qolgan thread larni initialization lock da kutishga majbur qiladi.
+
+Shu ierarxiyaning eng ko'p uchraydigan amaliy ko'rinishi DevTools ning avtomatik restartida. DevTools faol bo'lganda ilova bitta emas, ikkita alohida class loader ga yuklanadi: biriga `src/main/` dagi hamma narsa (Java kodi va xossa fayllari), ya'ni tez o'zgaradigan qism tushadi, ikkinchisiga esa kam o'zgaradigan dependency kutubxonalari tushadi. O'zgarish sezilganda faqat birinchi loader qayta yuklanadi va Spring application context qayta ishga tushadi, ikkinchi loader bilan JVM esa o'z joyida qoladi; ishga tushish vaqti shu hisobdan qisqaradi (Walls, 1-bob, 24-bet). Bundan chiqadigan narsa qulaylik emas, chegara: build faylidagi bog'liqlik qo'shilsa, o'zgarsa yoki olib tashlansa, bu avtomatik restartda ko'rinmaydi, chunki uni ushlab turgan loader qayta yuklanmaydi; o'sha o'zgarish kuchga kirishi uchun ilovani qo'lda to'liq qayta ishga tushirish kerak.
 
 ## 9.3 Spring Boot fat jar va uning class loading ga ta'siri
 
@@ -111,6 +132,8 @@ Dependency lar alohida Docker qatlamida bo'lsa, faqat ilova kodi o'zgargan deplo
 ## 9.4 Bytecode va interpretatsiya: ishga tushish paytidagi sekinlik
 
 Java kompilyatori bytecode chiqaradi, mashina kodi emas. JVM ishga tushganda hamma method interpreter da bajariladi, ya'ni har bir bytecode instruksiya uchun JVM alohida ish qiladi. Interpreter da bajarilish kompilyatsiya qilingan koddan taxminan 10 dan 50 barobar sekin. Ishga tushish paytida nafaqat sizning kodingiz, balki Spring konteyner, Hibernate metamodel qurilishi, Jackson reflection tahlili ham interpreter da ketadi.
+
+Class fayl faqat bajarilish uchun kerak bo'lgan narsani saqlaydi va bitta yo'qotish amalda ko'p joyni buzadi: metod parametrining NOMI class faylda faqat `MethodParameters` atributi chiqarilgan bo'lsa saqlanadi, ya'ni kod `javac -parameters` bilan kompilyatsiya qilinganda; aks holda refleksiya parametrlarni `arg0`, `arg1` deb ko'radi (*The Java Virtual Machine Specification, Java SE 25*, 4.7.24, 175-bet). Nomga tayangan hamma bog'lanish shundan jim buziladi: `@RequestParam` va `@PathVariable` ni nomsiz yozish, konstruktor orqali bog'lanish va `@ConfigurationProperties`. Spring Boot ning rasmiy build sozlamasi (`spring-boot-starter-parent` va Spring Boot Gradle plugini) bu flagni o'zi qo'yadi, shuning uchun muammo odatda qo'lda yozilgan Maven yoki Gradle konfiguratsiyasida, IDE ning alohida kompilyatorida yoki kod generatsiya qiladigan qadamda chiqadi. Belgisi aniq: Spring argument nomini aniqlay olmaganini aytib ishga tushishdan yoki so'rovni bog'lashdan bosh tortadi, yoki parametr jim bog'lanmay qoladi.
 
 Shu sababli 2.5 sekundlik start vaqtining katta qismi haqiqiy ish emas, balki hali qizimagan kodning sekin bajarilishi. Arxitektura xulosasi: start vaqti muhim bo'lgan joyda avval ishlar sonini kamaytirish kerak, flaglarni emas. Keraksiz avtomatik konfiguratsiyani o'chirish, classpath scanning hududini toraytirish, keyin interpretatsiya narxini CDS yoki AOT bilan kamaytirish.
 
@@ -199,6 +222,8 @@ Arxitektura xulosasi: exception ni oqim boshqarish uchun ishlatmaslik, issiq yo'
 
 Yangi pod ko'tarilganda u darhol to'liq tezlikda ishlamaydi. Odatiy manzara: birinchi 5 sekundda context quriladi, keyingi taxminan 30 dan 90 sekundda JIT issiq yo'llarni C2 ga olib chiqadi, shu bilan birga Hibernate query plan cache va HikariCP connection lar to'ladi. Agar load balancer pod ni readiness dan keyin darhol to'liq trafik bilan to'ldirsa, o'sha oynada p99 bir necha barobar oshadi.
 
+Isinishning bir qismi esa JIT emas, bog'lanish (linkage) ishi. Lambda va metod havolasining chaqiruv joyi `invokedynamic` instruksiyasiga kompilyatsiya qilinadi va u faqat BIRINCHI bajarilganda hal qilinadi: shu payt bootstrap metod chaqiriladi, bootstrap metodning sinfi ishga tushadi va chaqiruv joyi uchun implementatsiya bog'lanadi; keyingi chaqiruvlarda bu ish qaytarilmaydi (*The Java Virtual Machine Specification, Java SE 25*, 5.5, 397-bet). Amalda bu birinchi so'rovning keyingilaridan sezilarli sekin bo'lishining yana bitta sababi, va u har bir chaqiruv joyi uchun alohida to'lanadi, ya'ni stream va lambda zich ishlatilgan kod yo'lida narx bir marta emas, chaqiruv joylari soniga ko'paytirilgan holda keladi. Shundan ikki amaliy natija: [mikro o'lchovda](14-jvm-profiling-va-diagnostika-jfr-async.md#148-mikro-olchov-tuzoqlari-va-jmh-nega-kerak) warmup iteratsiyalari majburiy, aks holda o'lchov bog'lanish narxini o'lchaydi; va "birinchi so'rov sekin" hodisasini diagnoz qilganda GC va JIT dan tashqari shu bog'lanish ishi ham hisobga olinadi.
+
 Eng arzon yechim bosqichma bosqich trafik berish.
 
 | Masala | Oddiy yondashuv | Arxitektor yondashuvi |
@@ -276,6 +301,10 @@ public final class OmborQoldigi {
 }
 ```
 
+`final` maydonni konstruktordan keyin o'zgartirish alohida holat va u deserializatsiya hamda reflection da uchraydi. JLS buning uchun yagona mantiqiy semantikasi bor shaklni ko'rsatadi: obyekt quriladi, keyin uning `final` maydonlari yangilanadi, va obyekt boshqa threadlarga ko'rinadigan qilinmasligi hamda `final` maydonlari o'qilmasligi kerak, toki barcha yangilanish tugamaguncha; `final` maydonning "freeze" nuqtasi konstruktor oxirida ham, reflection yoki boshqa maxsus mexanizm bilan har bir o'zgartirishdan keyin ham yuzaga keladi (*The Java Language Specification, Java SE 25 Edition*, 17.5.3 (799-bet)).
+
+Ikki chalkashlik qoladi. Birinchisi: `final` maydon e'londa constant expression bilan initsializatsiya qilingan bo'lsa, o'zgarish umuman ko'rinmasligi mumkin, chunki o'sha maydonning ishlatilishi kompilyatsiya vaqtida constant expression qiymati bilan almashtiriladi. Ikkinchisi: spetsifikatsiya `final` maydonlar ustida agressiv optimizatsiyaga ruxsat beradi, ya'ni bitta thread ichida `final` maydonni o'qishlarni konstruktorda bo'lmagan o'zgartirishlar bilan qayta tartiblash joiz; JLS ning misolida reflection bilan maydonni o'zgartiradigan metod chaqiruvi ikki o'qish orasida turadi va natija -1, 0 yoki 1 bo'lishi mumkin (17.5.3 (799-800-betlar)). Amaliy qoida: `final` maydonni keyin o'zgartiradigan kodni faqat deserializatsiya yo'lida qoldiring, o'zgartirish tugamaguncha obyekt havolasini hech kimga bermang, va o'qiladigan qiymat uchun constant expression dan foydalanmang.
+
 `final` maydon kafolati shartli: konstruktor ichida `this` havolasi tashqariga chiqmasligi shart. Listener ni konstruktor ichida registratsiya qilish aynan shu kafolatni buzadi. Amaliy qoida: umumiy mutable holatni imkon qadar yo'q qilish, qolganida happens-before zanjirini ongli loyihalash. Immutable record, `AtomicLong`, `ConcurrentHashMap` va `BlockingQueue` kafolatni o'zi beradi. `volatile` faqat ko'rinishni beradi, atomiklikni emas: `counter++` ustida u hech narsa hal qilmaydi.
 
 ## 9.10 JVM ni kuzatish uchun asosiy flaglar va `-XX:+PrintFlagsFinal` dan foydalanish
@@ -326,7 +355,40 @@ java -XX:AOTCache=app.aot -jar /app/payment-service.jar
 
 Qaror mezoni oddiy. Uzoq ishlaydigan va yuqori throughput talab qiladigan to'lov servisi uchun CDS yoki AOT cache yetarli va xavfsiz tanlov. Scale-to-zero funksiya yoki kamdan kam ishlaydigan ichki yordamchi servis uchun native image mantiqli. Hibernate va keng reflection ishlatadigan monolitni native image ga ko'chirish odatda foydadan ko'p vaqt oladi.
 
-## 9.12 Amalda qo'llash
+## 9.12 Sinf o'zligi, `<clinit>` va initsializatsiya qulfi
+
+Yuqoridagi uch bosqich sinf qanday yuklanishini aytadi, lekin ikki savolni ochiq qoldiradi: yuklangan sinf aslida KIM va uning statik qismi QACHON ishlaydi. Ikkisining javobi ham diagnostikada tez-tez kerak bo'ladi, chunki ularning buzilishi chalg'ituvchi xato xabari bilan chiqadi.
+
+Birinchi savolning javobi qisqa: yaratilgandan keyin sinf nomi bilan emas, `(binar nom, aniqlovchi class loader)` juftligi bilan aniqlanadi (*The Java Virtual Machine Specification, Java SE 25*, 5.3, 365-bet). Ya'ni bir xil nomli sinf ikki loader da yuklangan bo'lsa, bu ikki boshqa tur va ular orasidagi cast `ClassCastException` beradi; xato matni esa "`com.shop.Order` ni `com.shop.Order` ga aylantirib bo'lmaydi" shaklida chiqadi va dasturchini butunlay noto'g'ri yo'nalishga olib ketadi. Amalda bu DevTools ning ikki loaderi, plugin yuklaydigan arxitektura, eski ilova serverlari va o'z `URLClassLoader` ini yozgan kod bilan uchrashganda chiqadi. Diagnozning to'g'ri birinchi qadami ham shundan kelib chiqadi: sinf nomini emas, loader ni solishtirish (`obj.getClass().getClassLoader()` ni kutilgan tur loaderi bilan).
+
+Shu juftlikdan ikkinchi, kamdan-kam bilinadigan natija chiqadi: ish vaqtidagi paket ham paket nomi VA aniqlovchi loader bilan aniqlanadi (5.3, 365-bet). Demak `package private` ko'rinish class loader chegarasidan o'tmaydi: nomi bir xil paketdagi, lekin boshqa loader yuklagan sinflar bir-birining paket ichidagi a'zosini ko'rmaydi va `IllegalAccessError` chiqadi. Testni "bir xil paket" deb yozib, ishlab chiqarishda boshqa loaderga tushib qolgan kod shu yerda yiqiladi.
+
+Spetsifikatsiya yaxshi yozilgan loader uchun uchta xossani ham sanaydi: bir xil nom uchun har doim bir xil `Class` obyektini qaytarish; L1 loader C ni yuklashni L2 ga delegatsiya qilgan bo'lsa, C ning bevosita superklassi va superinterfeyslari, maydon turlari, metod parametrlari va qaytish turlari uchun L1 ham, L2 ham bir xil `Class` qaytarishi; va oldindan yuklash (prefetch) yoki guruh bilan yuklash qilgan loader xatoni faqat prefetch bo'lmasa ham yuzaga kelishi mumkin bo'lgan nuqtada ko'rsatishi (5.3, 365-bet). Uchinchi xossa umumiy qoidaning xususiy holati: yuklashdagi xato uning yuzaga kelgan joyida emas, sinf bevosita yoki bilvosita ISHLATILGAN nuqtada tashlanadi. Shuning uchun `NoClassDefFoundError` ning stack trace i aybdor jar ni ko'rsatmaydi, u faqat qurbonni ko'rsatadi, va haqiqiy sababni `-Xlog:class+load` yoki `VM.classloader_stats` bilan izlash kerak bo'ladi.
+
+Ikkinchi savol statik qismga tegishli. Sinfning hamma statik initializatori va statik maydon initsializatorlari bitta `<clinit>` metodiga, matn tartibida yig'iladi (*The Java Virtual Machine Specification, Java SE 25*, 2.9.2, 26-bet). Shundan ikki narsa chiqadi: statik blok bilan statik maydonning tartibi faylda yozilgan tartib bo'lib qoladi (pastdagi blok yuqoridagi maydonni ko'radi, teskarisi yo'q), va butun statik qism bitta amal sifatida, bitta qulf ostida bajariladi. Har bir sinf uchun alohida initsializatsiya qulfi bor va JVM shu qulf bilan bir vaqtdagi hamda rekursiv initsializatsiyani boshqaradi (*The Java Language Specification, Java SE 25*, 12.4.2, 449-bet).
+
+Shu qulfning ikki oqibati amalda og'riq beradi. Birinchi: ikki thread bir-biriga murojaat qiladigan ikki sinfni bir vaqtda ishga tushirsa, klassik aylana deadlock chiqadi, va u oddiy deadlock dan yomonroq, chunki thread dump da `BLOCKED` emas, sinf initsializatsiyasini kutish holati ko'rinadi va kod ichida hech qanday `synchronized` yo'q. Ikkinchi: bitta thread o'zi ishga tushirayotgan sinfni rekursiv so'rasa, deadlock bo'lmaydi (spetsifikatsiya bu holatni "rekursiv so'rov" deb tanib, qulfni bo'shatib normal davom etadi), lekin shu threadga sinf YARIM ishga tushgan holatda ko'rinadi: statik maydonlarning bir qismi hali default qiymatda (`null`, `0`) bo'ladi.
+
+```java
+// Ikki sinf bir-birini statik initsializatsiyada chaqiradi.
+class Registry {
+    static final Map<String, Handler> ALL = Loader.buildAll();   // Loader ni ishga tushiradi
+}
+
+class Loader {
+    static final int LIMIT = Registry.ALL.size();                // Registry ni ishga tushiradi
+
+    static Map<String, Handler> buildAll() { return Map.of(); }
+}
+
+// Bitta thread: deadlock yo'q, lekin LIMIT yoki ALL yarim initsializatsiya qilingan
+// holatda o'qiladi va natija jim noto'g'ri bo'ladi.
+// Ikki thread Registry va Loader ni bir vaqtda birinchi marta ishlatsa: deadlock.
+```
+
+Shundan amaliy qoida: statik initsializatorda boshqa sinfning statik a'zosiga tegmaslik, ayniqsa o'zaro bog'liq sinflar orasida; statik blokda I/O, tarmoq va `ExecutorService` ga vazifa yuborish qilmaslik; ishga tushish tartibini sinfning statik qismiga emas, konteynerning hayot sikliga (`@PostConstruct`, `SmartLifecycle`) bermaslik. Spring da bu qoida tabiiy bajariladi, chunki bean grafini konteyner quradi, lekin statik `Holder` va statik registrlar bu himoyadan tashqarida qoladi.
+
+## 9.13 Amalda qo'llash
 
 - [ ] Har bir servis uchun `jcmd VM.native_memory summary` chiqarib, heap tashqarisidagi xotirani hisoblang va `MaxRAMPercentage` ni shunga qarab 65 dan 75 foizga qo'ying.
 - [ ] GC log, `HeapDumpOnOutOfMemoryError` va JFR ni barcha production profilga doimiy yoqib, dump papkasini mount qiling.
@@ -339,8 +401,13 @@ Qaror mezoni oddiy. Uzoq ishlaydigan va yuqori throughput talab qiladigan to'lov
 
 ## Manbalar
 
+- Craig Walls, *Spring in Action* 6th, 1-bob - DevTools ning ikki class loader bilan avtomatik restarti va dependency o'zgarishidagi chegarasi
 - [OpenJDK 25, `java.util.concurrent` package javadoc](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/util/concurrent/package-info.java) - happens-before munosabati va memory model ning amaliy ko'rinishi
 - [OpenJDK 25, `VirtualThread.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/lang/VirtualThread.java) - thread holat mashinasi va mount/unmount mexanikasi
+- *The Java Language Specification, Java SE 25 Edition* (Gosling, Joy, Steele, Bracha, Buckley, Smith, Bierman), 17.5.3 (799-800-betlar) - `final` maydonni konstruktordan keyin reflection yoki deserializatsiya bilan o'zgartirishning yagona mantiqiy shakli: obyekt barcha yangilanish tugamaguncha boshqa threadlarga ko'rinmasligi va maydonlari o'qilmasligi; freeze nuqtasining konstruktor oxirida va har bir keyingi o'zgartirishdan keyin yuzaga kelishi; constant expression bilan initsializatsiya qilingan maydondagi o'zgarishning kompilyatsiya vaqtidagi inline sabab ko'rinmasligi; `final` maydon o'qishlarini konstruktorda bo'lmagan o'zgartirishlar bilan qayta tartiblashga ruxsat va natijaning -1, 0 yoki 1 bo'lishi (17.5.3-1-misol)
+- *The Java Language Specification, Java SE 25 Edition* (Gosling, Joy, Steele, Bracha, Buckley, Smith, Bierman), 12.4.1 (446-448-betlar) va 12.4.2 (449-bet) - sinf yoki interfeys initsializatsiyasini boshlaydigan to'rt hodisa va constant variable ning istisno ekani; sinf ishga tushganda superklasslar va `default` metodli superinterfeyslarning ishga tushishi, interfeysning superinterfeyslarini ishga tushirmasligi; statik maydonga voris sinf nomi bilan murojaatning faqat e'lon qilgan sinfni ishga tushirishi (`Sub.taxi` misoli); har bir sinf uchun alohida initsializatsiya qulfi, boshqa thread initsializatsiya qilayotganda kutish va rekursiv so'rovda qulfni bo'shatib normal davom etish
+- *The Java Virtual Machine Specification, Java SE 25 Edition* (Lindholm, Yellin, Bracha, Buckley, Smith), 2.9.2 (26-bet), 4.7.24 (175-bet), 5.3 (365-bet) va 5.5 (397-bet) - statik initializator va statik maydon initsializatorlarining bitta `<clinit>` metodiga matn tartibida yig'ilishi; `MethodParameters` atributi bo'lmasa parametr nomlarining class faylda saqlanmasligi; sinf o'zligining `(binar nom, aniqlovchi loader)` juftligi bilan aniqlanishi, ish vaqtidagi paketning paket nomi va loader bilan aniqlanishi, yaxshi yozilgan loader ning uch xossasi va yuklash xatosining sinf ishlatilgan nuqtada tashlanishi; initsializatsiyaning voris ishga tushganda va `default` metodli interfeys uchun implementatsiya qiluvchi sinf ishga tushganda boshlanishi, hamda bootstrap metod sinfining `invokedynamic` ni hal qilish paytida ishga tushishi
+- ESLATMA: `Config`/`DevConfig` va `Registry`/`Loader` misollari hamda ulardan chiqadigan Spring konteksti (statik `Holder` va registrlarning konteyner hayot siklidan tashqarida qolishi, `-parameters` flagining Spring bog'lanishiga ta'siri) korpusning qo'shimchasi: spetsifikatsiyalar qoidani beradi, bu kod shakllari va amaliy xulosalar shu korpusda yozilgan
 - [OpenJDK 25, `gc_globals.hpp`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/hotspot/share/gc/shared/gc_globals.hpp) - heap va GC bilan bog'liq bayroqlarning haqiqiy defaultlari
 - [OpenJDK 25, `ForkJoinPool.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/util/concurrent/ForkJoinPool.java) - `commonPool` ning yadro soniga bog'lanishi
 

@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 31. Deployment haqiqati: konteyner, cgroup, JVM va probe (Deployment Reality)
 
 <details>
-<summary>Bu bobdagi 13 bo'lim</summary>
+<summary>Bu bobdagi 14 bo'lim</summary>
 
 - [31.1 Konteyner nima va nima emas](#311-konteyner-nima-va-nima-emas)
 - [31.2 JVM konteyner limitlarini qanday ko'radi](#312-jvm-konteyner-limitlarini-qanday-koradi)
@@ -21,7 +21,8 @@
 - [31.10 Konfiguratsiya va maxfiy ma'lumotlarni konteynerga berish](#3110-konfiguratsiya-va-maxfiy-malumotlarni-konteynerga-berish)
 - [31.11 Gorizontal masshtablash: holatsizlik sharti va sessiya muammosi](#3111-gorizontal-masshtablash-holatsizlik-sharti-va-sessiya-muammosi)
 - [31.12 Ishga tushish vaqti va avtomatik masshtablashning bog'liqligi](#3112-ishga-tushish-vaqti-va-avtomatik-masshtablashning-bogliqligi)
-- [31.13 Amalda qo'llash](#3113-amalda-qollash)
+- [31.13 JVM ning o'zi qanday to'xtaydi: daemon thread, shutdown hook va `halt`](#3113-jvm-ning-ozi-qanday-toxtaydi-daemon-thread-shutdown-hook-va-halt)
+- [31.14 Amalda qo'llash](#3114-amalda-qollash)
 
 </details>
 
@@ -97,6 +98,10 @@ kubectl exec -it payment-7f9c-xkm2 -- cat /proc/1/status | grep VmRSS
 ```
 
 Amaliy formula: limit = heap + 250Mi (metaspace va code cache) + thread soni × 1Mi + 150Mi (GC va boshqa native) + 100Mi zahira. 1Gi limitli pod uchun bu taxminan 450Mi heap qoldiradi, agar thread soni 150 atrofida bo'lsa.
+
+Thread sonining ikkinchi, operatsion tomoni ham bor va u xotira hisobidan tashqarida. *Software Engineering at Google* Borg da 2011 yilda topilgan izolyatsiya nosozligini keltiradi: jarayon identifikatori (PID) maydonining tugashi (sukut bo'yicha 32 000 PID) izolyatsiya nosozligiga aylangan, va bitta replika yarata oladigan jarayon hamda thread larning umumiy soniga chegara kiritishga to'g'ri kelgan. Birinchi qadam aynan shu bo'lgan: bitta konteyner ishlata oladigan PID soniga vaqtinchalik yuqori chegara, shunda bitta thread sizdirayotgan ish butun mashinani yaroqsiz qilib qo'ya olmaydi. Shundan keyin thread va jarayon PID maydonlari ajratilgan, chunki thread larga berilgan PID lar uchun 32 000 kafolatiga kam odam tayangan edi.
+
+Kubernetes da bu `pids` cgroup chegarasi: kubelet dagi `podPidsLimit` har pod uchun maksimal jarayon va thread sonini belgilaydi. Qoida ikki qatorda: har pod uchun PID chegarasi qo'yiladi, va chegara JVM ning kutilgan maksimal thread sonidan (Tomcat, Hikari, async executor, Kafka consumer, scheduler va GC thread lari yig'indisi) sezilarli, lekin cheksiz bo'lmagan zaxira bilan yuqori turadi. Chegarasiz qolgan pod da thread sizdirgan xato o'z pod ini emas, butun node ni ishdan chiqaradi, chunki PID maydoni node darajasida bo'lishiladi. Diagnostikada esa `ThreadMXBean` dan olingan `jvm.threads.live` metrikasi va `cat /sys/fs/cgroup/pids.current` birga o'qiladi: birinchisi JVM thread larini, ikkinchisi jarayon va native thread larni ham ko'rsatadi.
 
 Thread soni bu yerda yashirin xavf. Tomcat `server.tomcat.threads.max` sukut bo'yicha 200, har biri Hikari connection kutishi mumkin. Agar yana async executor, Kafka consumer va scheduler thread'lari qo'shilsa, 400 thread oson yig'iladi. Bu 400Mi faqat stack uchun. Virtual thread'lar bu muammoni kamaytiradi, chunki ularning stack'i heap'da yashaydi va o'sib boradi, lekin carrier thread soni yadro soniga bog'liq qoladi.
 
@@ -374,7 +379,71 @@ spec:
 
 Agar startup'ni tezlashtirish imkoni bo'lmasa, qaror boshqa tomondan keladi: `minReplicas` ni oshirib doimiy zahira sig'im ushlab turish. Bu pul turadi, lekin ishonchli. Target utilization'ni 60 foizga tushirish ham shu maqsadga xizmat qiladi, chunki podlar spike'ni o'zi ko'tarishga joy qoldiradi. Bu yerda ehtiyotkorlik patternlari kerak bo'lsa, dizayn [patternlar hujjatidagi](../patterns/README.md) resilience bo'limiga qaralsin.
 
-## 31.13 Amalda qo'llash
+## 31.13 JVM ning o'zi qanday to'xtaydi: daemon thread, shutdown hook va `halt`
+
+[Graceful shutdown](#317-ishga-tushish-va-toxtash-sigterm-graceful-shutdown-terminationgraceperiodseconds) bo'limi orkestrator bilan ilova o'rtasidagi shartnomani yozadi. Uning ostida yana bir qatlam bor: SIGTERM ni Spring ushlagandan keyin ham JVM processi o'z qoidalari bo'yicha o'ladi, va bu qoidalar `terminationGracePeriodSeconds` ga bo'ysunmaydi. Shu qatlamni bilmaslik ikki aniq nosozlik beradi: pod grace period ni to'liq kutib o'tirib keyin SIGKILL olish, va `finally` blokidagi tozalash kodi hech qachon ishlamasligi.
+
+Spetsifikatsiya chiqish yo'llarini sanab beradi (*The Java Language Specification, Java SE 25*, 12.8, 461-462-betlar): dastur barcha **daemon bo'lmagan** threadlari tugaganda chiqadi, yoki thread `System.exit` / `Runtime.exit` chaqirganda, yoki JVM realizatsiyasi OS signalini to'xtash so'rovi deb tan olganda; uch holatda ham shu sababli ishga tushgan shutdown hook lar tugashi kutiladi. `Runtime.halt` esa alohida: unda hook lar **umuman ishga tushmaydi**. JCiP shu ikki guruhni tartibli (orderly) va to'satdan (abrupt) to'xtash deb ajratadi, `SIGKILL` bilan process o'ldirishni ikkinchi guruhga qo'yadi (Goetz, 7.4, 102-bet).
+
+Daemon va daemon bo'lmagan thread faqat bitta narsada farq qiladi: ular tugaganda nima bo'ladi. Platform thread uchun yangi thread o'zini yaratgan threadning daemon statusini meros qilib oladi, demak `main` dan yaratilgan hamma platform thread sukut bo'yicha daemon emas. Virtual thread da bu meros qoidasi amal qilmaydi, va farqi executor misolidan keyin yoziladi. JVM thread tugaganini ko'rib qolgan threadlarni sanaydi va faqat daemon lar qolsa tartibli to'xtashni boshlaydi (Goetz, 7.4.2, 103-bet). Chiqish paytidagi qoida qat'iy: hali tugamagan har qanday thread, daemon bo'ladimi yo'qmi, boshqa Java kodini bajarmaydi, uning joriy metodi na normal na abrupt tugaydi, **hech bir `finally` bandi ishlamaydi** va uncaught exception handler ham chaqirilmaydi (JLS 12.8, 462-bet). Shuning uchun fayl yopish, offset commit yoki vaqtinchalik katalogni tozalash daemon threadning `finally` bandiga ishonib topshirilmaydi.
+
+Amaliy oqibat executor da ko'rinadi. Pool thread lari sukut bo'yicha daemon emas, va thread executor birinchi vazifada aynan daemon bo'lmagan thread yaratadi, shuning uchun `shutdown()` chaqirilmasa ilova hech qachon tugamaydi (Boyarsky/Selikoff, *OCP Java SE 17 Study Guide*, 13-bob, 731-bet). Konteynerda bu "SIGTERM dan keyin pod 30 sekund osilib turdi" shaklida namoyon bo'ladi.
+
+**Yuqoridagi uch qoida platform thread uchun, virtual thread uchun emas.** Virtual thread har doim daemon, va `setDaemon` uni daemon bo'lmagan qilib o'zgartira olmaydi; uning priority si ham qotib qolgan `NORM_PRIORITY` va `setPriority` ta'sir qilmaydi (JEP 444, "Virtual Threads", "Scheduling and virtual threads" hamda "Thread API" bo'limlari). Demak virtual thread ichida meros qilish qoidasi ham ishlamaydi: `main` dan yaratilgan virtual thread yaratuvchidan daemon bo'lmaslikni meros qilib olmaydi, va JVM uni chiqish shartini hisoblashda umuman sanamaydi. Amaliy oqibati yuqoridagining teskarisi: `Executors.newVirtualThreadPerTaskExecutor()` yoki `Thread.ofVirtual().start(...)` bilan ishga tushgan ish JVM ni bir lahza ham tirik ushlab turmaydi. Pod osilib qolmaydi, buning o'rniga yarmida qolgan ish jim yo'qoladi: `main` qaytsa yoki oxirgi platform thread tugasa, hali bajarilayotgan virtual thread lar yuqoridagi JLS 12.8 qoidasi bo'yicha to'xtatiladi va ularning `finally` bandi ishlamaydi.
+
+Shuning uchun virtual thread da ish kuzatuvchisi `setDaemon` emas, chegaradan chiqishni kutadigan konstruksiya bo'ladi: `ExecutorService` ni `try`-with-resources ichida yopish (`close()` o'zi `awaitTermination` ni kutadi), yoki `StructuredTaskScope` bilan ishni leksik chegara ichida ushlab turish. Spring tomonida `spring.threads.virtual.enabled=true` bo'lsa, ish `ApplicationContext` ning shutdown hook i ichida tugaydi, demak kafolatni hook beradi, thread turi emas.
+
+```java
+// Virtual thread daemon, shuning uchun JVM uni kutmaydi: chegarani o'zimiz ushlaymiz
+void reconcileAll(List<PaymentId> ids) throws InterruptedException {
+    // close() = shutdown + awaitTermination: hamma vazifa tugamaguncha qaytmaydi
+    try (ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor()) {
+        ids.forEach(id -> pool.submit(() -> reconcile(id)));
+    }
+    // Bu yerga yetib kelish hamma reconcile tugaganining yagona kafolati.
+    // try bloki bo'lmasa `main` qaytib ketadi va yarim ish jim yo'qoladi.
+}
+```
+
+```java
+// Spring boshqarmaydigan har bir executor uchun to'xtatish egasi bo'lishi kerak
+@Component
+class SettlementExecutor implements AutoCloseable {
+
+    private final ExecutorService pool = Executors.newFixedThreadPool(
+            4, Thread.ofPlatform().name("settlement-", 0).factory());
+
+    public Future<?> submit(Runnable task) { return pool.submit(task); }
+
+    @PreDestroy
+    @Override
+    public void close() throws InterruptedException {
+        pool.shutdown();                                  // yangi vazifa qabul qilinmaydi
+        if (!pool.awaitTermination(20, TimeUnit.SECONDS)) { // grace period ichida
+            pool.shutdownNow();                           // qolganlariga interrupt
+        }
+    }
+}
+```
+
+Shutdown hook lar bu tozalashning oxirgi chorasi, va ularning xulqi hisobga olinmasa ular muammo manbasiga aylanadi. JVM hook larni **qanday tartibda** ishga tushirishini kafolatlamaydi, hammasi bir vaqtda ishlaydi, va ilova threadlari shutdown jarayoni bilan parallel ishlashda davom etadi. Shundan to'rt talab chiqadi (Goetz, 7.4.1, 102-bet): hook thread-safe bo'lishi va umumiy ma'lumotga sinxronlash bilan murojaat qilishi kerak; boshqa servis allaqachon to'xtagan deb yoki JVM nima sababdan to'xtayotgani haqida taxmin qilib bo'lmaydi, shuning uchun u o'ta himoyalangan yoziladi; u imkon qadar tez chiqishi kerak, chunki uning mavjudligi JVM tugashini kechiktiradi; va u ilova yoki boshqa hook to'xtatishi mumkin bo'lgan servisga tayanmasligi kerak. Oxirgi talabning yechimi kitobda aniq: har servis uchun alohida hook o'rniga **bitta** hook yoziladi va u to'xtatish amallarini ketma-ket chaqiradi, shunda ular bitta threadda tartib bilan bajariladi va amallar orasidagi poyga ham, deadlock ham yo'qoladi.
+
+| Holat | Hook ishlaydimi | `finally` ishlaydimi |
+|---|---|---|
+| Oxirgi daemon bo'lmagan thread tugadi | ha | ha, o'sha threadda |
+| Oxirgi platform thread tugadi, virtual thread hali ishlayapti | ha | yo'q, virtual thread larda |
+| `System.exit` / `Runtime.exit` | ha | yo'q, qolgan threadlarda |
+| SIGTERM (JVM tanigan signal) | ha | yo'q, qolgan threadlarda |
+| `Runtime.halt` | yo'q | yo'q |
+| `SIGKILL`, OOM killer, node o'chishi | yo'q | yo'q |
+
+Yana ikki chegara. Birinchi: hook yoki finalizer tugamasa tartibli to'xtash osilib qoladi va JVM ni to'satdan to'xtatishga to'g'ri keladi, ya'ni cheksiz kutadigan hook grace period ni o'zi yeb qo'yadi. Ikkinchi: hook lar ishlayotganda kimdir `Runtime.halt` chaqirsa, hali tugamagan hook ham boshqa Java kodini bajarmaydi (JLS 12.8, 462-bet). Shuning uchun `-XX:+ExitOnOutOfMemoryError` kabi flaglar, va `halt` chaqiradigan har qanday kutubxona, tozalash kodini o'tkazib yuborishi hisobga olinishi kerak: tashqi tizimdagi holat (Kafka offset, taqsimlangan lock, yarim yozilgan fayl) faqat shu tozalashga tayanmasligi, balki ishga tushishda tiklanadigan shaklda bo'lishi kerak.
+
+Spring ilovasida odatiy taqsimot shunday: `ApplicationContext` ning o'z shutdown hook i `@PreDestroy` va `SmartLifecycle.stop` ni chaqiradi, demak o'z hook ingizni `Runtime.addShutdownHook` bilan qo'shish faqat konteyner boshqarmaydigan resurs uchun kerak bo'ladi. Vazifani bekor qilish va interrupt siyosatining o'zi [bekor qilish bo'limida](11-concurrency-thread-lock-atomic-happens.md#1114-bekor-qilish-interrupt-siyosati-va-thread-starvation-deadlock).
+
+Manba: *The Java Language Specification, Java SE 25 Edition* (Gosling, Joy, Steele, Bracha, Buckley, Smith, Bierman), 12.8 (461-462-betlar); Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 7.4-7.4.2-bo'lim (102-103-bet); Boyarsky/Selikoff, *OCP Java SE 17 Study Guide*, 13-bob (725-726 va 731-betlar); JEP 444, "Virtual Threads" (virtual threadning doimiy daemon statusi va o'zgarmas priority si).
+
+## 31.14 Amalda qo'llash
 
 - [ ] Har bir servis uchun `kubectl exec` bilan `cpu.stat` o'qib `nr_throttled / nr_periods` nisbatini hisoblang, 0.05 dan oshganlarga CPU limitini oshiring.
 - [ ] Barcha deployment'larda `-Xmx` ni `-XX:MaxRAMPercentage` ga o'zgartiring va NMT hisoboti bilan xotira taqsimotini tasdiqlang.
@@ -391,6 +460,13 @@ Agar startup'ni tezlashtirish imkoni bo'lmasa, qaror boshqa tomondan keladi: `mi
 - John Carnell, *Spring Microservices in Action*, 10-bob - konteyner va bulutga deploy
 - [Kubernetes, Pod Lifecycle](https://raw.githubusercontent.com/kubernetes/website/e91eff3b59c0bf813193202a4f193d37beb7efd7/content/en/docs/concepts/workloads/pods/pod-lifecycle.md) - `preStop` ning TERM dan oldin ishlashi, `terminationGracePeriodSeconds` default 30 va 2 sekundlik bir martalik uzaytirish, sidecar siz konteynerlarning ixtiyoriy tartibda TERM olishi, startup probe ning liveness va readiness ni to'sishi
 - [Kubernetes, Deployment](https://raw.githubusercontent.com/kubernetes/website/e91eff3b59c0bf813193202a4f193d37beb7efd7/content/en/docs/concepts/workloads/controllers/deployment.md) - `maxSurge` va `maxUnavailable` defaultlari, yumaloqlash yo'nalishi, ikkisi bir vaqtda 0 bo'lmasligi, `progressDeadlineSeconds` default 600 va `ProgressDeadlineExceeded`
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 7.4-7.4.2-bo'lim (102-103-bet) - tartibli va to'satdan to'xtash farqi; shutdown hook larning tartibsiz va bir vaqtda ishlashi, thread-safe va tez bo'lish talabi, boshqa servis holati haqida taxmin qilmaslik, hamma servis uchun bitta hook; to'satdan to'xtashda hook larning ishlamasligi; daemon statusining meros bo'lishi va JVM halt qilganda daemon threadlarning tashlab ketilishi
+- *The Java Language Specification, Java SE 25 Edition* (Gosling, Joy, Steele, Bracha, Buckley, Smith, Bierman), 12.8 (461-462-betlar) - dastur chiqishining besh yo'li; `Runtime.halt` da shutdown hook ishga tushmasligi; chiqish paytida tugamagan threadning boshqa Java kodini bajarmasligi, `finally` va uncaught exception handler ishlamasligi; hook lar ishlayotganda `halt` chaqirilsa hook ning ham to'xtashi
+- Boyarsky/Selikoff, *OCP Java SE 17 Study Guide*, 13-bob (725-726 va 731-betlar) - system thread va user-defined thread farqi, daemon thread JVM ni ushlab turmasligi; thread executor birinchi vazifada daemon bo'lmagan thread yaratishi va `shutdown()` chaqirilmasa ilovaning tugamasligi
+- [JEP 444: Virtual Threads](https://openjdk.org/jeps/444) - virtual thread har doim daemon bo'lishi va `setDaemon` uni daemon bo'lmagan qilib o'zgartira olmasligi; priority ning `NORM_PRIORITY` da qotib qolishi va `setPriority` ning ta'sir qilmasligi. Shu ikki xossa 31.13 dagi daemon statusini meros qilish qoidasini platform thread bilan cheklaydi
+- Titus Winters, Tom Manshreck, Hyrum Wright (tahr.), *Software Engineering at Google*, O'Reilly, 2020, 25-bob ("Containers and Implicit Dependencies" va PID maydoni misoli) - 2011 yilda Borg da PID maydonining tugashi izolyatsiya nosozligiga aylanishi, bitta konteyner yarata oladigan jarayon va thread soniga umumiy chegara kiritish (thread sizdirgan ish butun mashinani yaroqsiz qilmasligi uchun) va keyin thread hamda jarayon PID maydonlarini ajratish
+- ESLATMA: 31.3 dagi `podPidsLimit` tavsiyasi, zaxira hisobi va `jvm.threads.live` bilan `pids.current` ni birga o'qish shu korpusning qo'shimchasi
+
 
 ---
 

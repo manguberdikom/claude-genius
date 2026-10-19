@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 33. Bog'liqlik va supply chain review (Dependencies and Supply Chain)
 
 <details>
-<summary>Bu bobdagi 7 bo'lim</summary>
+<summary>Bu bobdagi 8 bo'lim</summary>
 
 - [33.1 Yangi bog'liqlik uchun savollar](#331-yangi-bogliqlik-uchun-savollar)
 - [33.2 Transitive bog'liqliklar va versiya konflikti](#332-transitive-bogliqliklar-va-versiya-konflikti)
@@ -15,7 +15,8 @@
 - [33.4 Versiya yangilash PR larini review qilish](#334-versiya-yangilash-pr-larini-review-qilish)
 - [33.5 Build va CI ning o'zi](#335-build-va-ci-ning-ozi)
 - [33.6 Review checklisti: bog'liqliklar](#336-review-checklisti-bogliqliklar)
-- [33.7 Amalda qo'llash](#337-amalda-qollash)
+- [33.7 Bog'liqlik shartnomasi: va'da, qadam va egalik](#337-bogliqlik-shartnomasi-vada-qadam-va-egalik)
+- [33.8 Amalda qo'llash](#338-amalda-qollash)
 
 </details>
 
@@ -306,7 +307,99 @@ COPY --chown=10001:10001 target/app.jar /app/app.jar
 | CI huquqlari minimalmi | Token o'g'irlanishi |
 | SBOM yaratiladimi | Incidentda tez javob |
 
-## 33.7 Amalda qo'llash
+## 33.7 Bog'liqlik shartnomasi: va'da, qadam va egalik
+
+33.2 va 33.4 mexanikani beradi: konfliktni topish, yangilash PR ini
+qanday o'qish. Bu bo'lim jarayonning o'zi haqida, ya'ni versiya
+raqamiga qancha ishonish mumkin va yangilash ishini kim bajaradi.
+
+- **SemVer kafolat emas, baho.** Winters/Manshreck/Wright SemVer ni
+  "odam bu o'zgarishni qanchalik xavfli deb biladi" degan yo'qotishli
+  (lossy) qisqartma deb ataydi. Ikki tomondan noto'g'ri chiqadi.
+  Kam himoya: patch va minor ham kuzatiladigan xulq orqali
+  sindiradi, chunki Hyrum qonuni API sintaksisi bilan cheklanmaydi
+  (log chiqishi formati, bog'liqlik import tartibi, "tartiblanmagan"
+  oqimning tartibi). Ortiqcha cheklov: kutubxona ichidagi siz
+  ishlatmaydigan funksiya buzilgani uchun major ko'tarilsa, SemVer
+  yechuvchisi (SAT-solver) sizga yangilanishni man etadi, holbuki
+  kod birga ishlar edi. Shuning uchun mosligning yagona haqiqiy
+  dalili versiya raqami emas, iste'molchi testlari va CI natijasi.
+  Review da bundan amaliy savol chiqadi: "patch, CI yashil" degan
+  izoh yetarlimi, yoki bu kutubxonaning kuzatiladigan xulqiga
+  tayanadigan joyimiz bormi.
+- **Eng kichik qadam bilan ko'tarilish (minimum version selection).**
+  Kitob Go ekotizimidan kelgan MVS yondashuvini ko'rsatadi: `liba`
+  `libbase >= 1.7` desa, 1.8 mavjud bo'lsa ham avval aynan 1.7 ga
+  o'tiladi. Sababi oddiy: `>= 1.7` deb yozilgan bo'lsa, `liba`
+  muallifi aynan 1.7 bilan ishlagan, demak kamida shu juftlik bir
+  marta birga sinalgan. Umumiy qoida: kelajakni aniq bilmaganda eng
+  kichik qadamni tashlang va har qadamda testlarni yurgizing. Katta
+  sakrash bir yillik ishni bir commitga yig'ishga o'xshaydi: xato
+  chiqsa, uni qaysi qadam keltirganini ajratib bo'lmaydi. Java da
+  bu Maven ning standart xulqi emas, shuning uchun Renovate yoki
+  Dependabot da bir necha minor ni bitta PR ga qo'shmaslik va
+  `separateMinorPatch` kabi sozlama bilan qadamni mayda ushlash
+  kerak (ESLATMA: MVS Maven da o'rnatilgan qoida emas, kitob uni Go
+  misolida tushuntiradi).
+- **Diamond konflikti: oldinga, orqaga, keyin lokal patch.** 33.2
+  konfliktni topishni beradi, yechish tartibi esa shunday. Birinchi
+  va eng oson yo'l: konflikt keltirgan bog'liqliklarning birini
+  oldinga yoki orqaga surib, mos keladigan juftlikni topish.
+  Orqaga surish xavfsizlik yangilanishi majburlagan holatda yopiq
+  yo'l, chunki zaif versiyaga qaytib bo'lmaydi. Ikkinchi yo'l:
+  bog'liqlikni lokal patch qilish. Bu qiyin, chunki mos kelmaslik
+  sababini na provayder, na iste'molchi biladi: `liba` muallifi
+  hamon `libbase` v1 bilan to'g'ri ishlaydi, `libb` esa allaqachon
+  v2 ga o'tgan, muammoni faqat ikkisini birga tortgan odam ko'radi.
+  Java da shading (Maven Shade bilan paketni qayta nomlash) qisman
+  yordam beradi: ikki versiyani yonma-yon joylashtirish mumkin,
+  lekin ikki versiya o'rtasida tur uzatilsa (v1 dagi `Map` v2 ning
+  API siga tushsa) yechim yo'q.
+- **Ta'minotchi nimani va'da qilganini ochiq yozadi.** Bog'liqlik
+  shartnoma: ikki tomonning ham huquqi va majburiyati bor. Kitob
+  ta'minotchidan to'rt savolga ochiq javob talab qiladi: qancha
+  moslik ko'zda tutilgan, qanday evolyutsiya kutiladi, o'zgarish
+  qanday boshqariladi va reliz qancha vaqt qo'llab-quvvatlanadi.
+  Kitobdagi qiyoslash: C++ standart kutubxonasi va Java deyarli
+  cheksiz orqaga moslik (Java da eski JAR yangi versiyada ishlaydi),
+  Go faqat manba mosligi, binar moslik yo'q, Abseil ABI ni
+  va'da qilmaydi lekin buzuvchi API o'zgarishi bilan birga avtomatik
+  refaktoring asbobini beradi, Boost esa versiyalar orasida umuman
+  moslik va'da qilmaydi. Mashhur, lekin moslik va'dasi yo'q
+  kutubxonani uzoq yashaydigan kodning tanasiga kiritish eng katta
+  xavf. Review savoli: bu bog'liqlikning qo'llab-quvvatlash siyosati
+  qayerda yozilgan va biz unga tayanamizmi.
+- **Yetim va kritik bir vaqtda bo'lmasin.** Kitobning keysi: biror
+  paket demo uchun kiritiladi, egasi uni yengil narsa deb biladi,
+  keyin boshqa jamoa uni tizimning markaziga tortadi. To'g'ridan
+  to'g'ri ishlatish o'smaydi, tranzitiv ishlatish o'sadi, egasi esa
+  buni ko'rmaydi. Oradan vaqt o'tib zaiflik e'lon qilinadi: `OWNERS`
+  faylini hech kim yangilamagan, asl ikki odam boshqa jamoada,
+  minglab loyiha tranzitiv tayangan, va yangilash paketning butun
+  tarixini bir sakrashda bosib o'tishi kerak. Qoida: egalik darajasi
+  pastki chegarasini ko'tarish, muntazam yangilashni arzon qilish va
+  paketning yetim hamda kritik bo'lishiga yo'l qo'ymaslik. Review da
+  bu `CODEOWNERS` savoli: bu bog'liqlikni ko'targan PR da uni
+  keyin kim ko'taradi degan javob bormi.
+- **Kutubxonani qo'llab-quvvatlash rejasisiz chiqarmang.** Teskari
+  tomon: siz bog'liqlik ishlab chiqarsangiz. Google ning 2006
+  yildagi flags kutubxonasini ochiq chiqarishi kitobda nomuvaffaqiyat
+  sifatida keltiriladi: ichki va tashqi nusxa asta-sekin ajralib
+  ketdi, tashqi nusxaga mas'ul jamoa qolmadi va u qarovsiz qoldi.
+  Kitobning xulosasi aniq: uzoq muddat qo'llab-quvvatlash rejasi va
+  vakolati bo'lmasa, chiqarmang. Yana bir oqibat: "vaqt o'tgach
+  hamma fork eskiradi", ya'ni ichki va tashqi nusxa ajralib ketishi
+  injiniring samaradorligiga soliq bo'lib tushadi.
+
+Shu yerdagi ikki qoida boshqa boblarga tegishli. Eskirish oynasini
+kutubxona o'zgarish tezligiga qarab belgilash va eskirishni
+majburlash jarayoni
+[37.9](37-api-moslik-va-breaking-change-review.md#379-eskirish-jarayoni-advisory-compulsory-va-qaytmaslik)
+da; versiya raqamini BOM bilan boshqarish mexanikasi
+[patterns 22.32](../patterns/22-deployment-va-operatsion-patternlar.md#2232-semantik-versiyalash-va-bom-bilan-dependency-boshqarish-semantic-versioning--bom-dependency-management)
+da.
+
+## 33.8 Amalda qo'llash
 
 - [ ] `dependency-check` yoki `osv-scanner` ni CI ga qo'shib, `failBuildOnCVSS` ni 7.0 ga qo'ying.
 - [ ] Mavjud suppression larni ko'rib chiqib, izohi va `until` sanasi yo'qlarini tuzating yoki olib tashlang.
@@ -317,9 +410,26 @@ COPY --chown=10001:10001 target/app.jar /app/app.jar
 - [ ] Barcha GitHub Action larni SHA bilan pin qiling va workflow huquqlarini `contents: read` ga tushiring.
 - [ ] Konteyner bazasini digest bilan pin qilib, uni yangilash jarayonini belgilang.
 - [ ] Yangi bog'liqlik qo'shadigan PR lar uchun shablonga 8 savolli ro'yxatni kiriting.
+- [ ] Har kritik bog'liqlik uchun `CODEOWNERS` da egani belgilang, shunda u yetim va kritik bir vaqtda bo'lmaydi.
+- [ ] Yangilashni bir necha minor ni bitta PR ga yig'maydigan qilib sozlab, qadamni mayda ushlang.
+- [ ] Asosiy bog'liqliklarning qo'llab-quvvatlash siyosatini (moslik turi va reliz muddati) bitta jadvalga yozib qo'ying.
+- [ ] O'z kutubxonangizni chiqarishdan oldin uni kim va qancha vaqt qo'llab-quvvatlashini yozma qayd qiling.
 
 ## Manbalar
 
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at
+  Google*, O'Reilly, 2020, 21-bob ("Conflicting Requirements and
+  Diamond Dependencies", "Compatibility Promises", "The Limitations of
+  SemVer", "Minimum Version Selection", "Exporting Dependencies",
+  "Dependency Management, In Theory") - 33.7 dagi SemVer ning
+  yo'qotishli baho ekani va ikki tomonlama xatosi, eng kichik qadam
+  bilan ko'tarilish asosi, diamond konfliktini yechish tartibi hamda
+  shading ning chegarasi, ta'minotchidan talab qilinadigan to'rt
+  savol va C++/Java, Go, Abseil, Boost qiyosi, paketning yetim va
+  kritik bir vaqtda bo'lishi keysi, flags kutubxonasi misolidan
+  chiqqan "qo'llab-quvvatlash rejasisiz chiqarmang" qoidasi. Bu
+  nashrning qo'limizdagi nusxasida chop etilgan bet raqami yo'q,
+  shuning uchun bob va bo'lim nomi ko'rsatilgan
 - Apache Maven, `DefaultDependencyManagementImporter` va
   `DefaultDependencyManagementInjector`
   ([https://github.com/apache/maven/blob/maven-3.9.16/maven-model-builder/src/main/java/org/apache/maven/model/composition/DefaultDependencyManagementImporter.java](https://github.com/apache/maven/blob/maven-3.9.16/maven-model-builder/src/main/java/org/apache/maven/model/composition/DefaultDependencyManagementImporter.java),

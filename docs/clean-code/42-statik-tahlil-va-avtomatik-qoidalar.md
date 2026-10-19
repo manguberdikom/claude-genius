@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 42. Statik tahlil va avtomatik qoidalar (Static Analysis and Automated Rules)
 
@@ -37,6 +37,18 @@ Kompilyator eng tez va eng arzon statik tahlilchi, lekin uning ogohlantirishlari
 | PMD | murakkablik, o'lik kod | o'rtacha |
 | ArchUnit | arxitektura qoidalari | test sifatida |
 | SonarQube | hammasi + tarix va gate | server |
+
+**Kompilyator darajasida nimani xato qilish mumkin.** Google ning statik tahlil siyosati kompilyatorda xato qilinadigan tekshiruvlarga uch shart qo'yadi, va u `-Xlint:all -Werror` dan ko'ra tanlanganroq:
+
+1. **Bajarilishi mumkin va oson tuzatiladi** - iloji bo'lsa xato mexanik qo'llanadigan tuzatma taklif qiladi.
+2. **Amalda yolg'on pozitiv bermaydi** (no effective false positives) - to'g'ri kod uchun build hech qachon to'xtamaydi.
+3. **Faqat to'g'rilikka ta'sir qiladi** - uslub yoki yaxshi amaliyot emas. Uslub qoidasi review ga yoki alohida linterga qoladi.
+
+Shuning uchun Error Prone ning `ERROR` darajasidagi qoidalari Google ning Java kompilyatorida yoqilgan: ular aynan shu uchta shartni qondiradi. Yangi tekshiruvni yoqishdan oldin kod bazasidagi hamma mavjud buzilish tozalanadi, aks holda kompilyator rivojlangani uchun mavjud loyihalarning buildi qiziladi; ya'ni yangi tekshiruvning qiymati hamma mavjud holatni tuzatishga arzishi kerak.
+
+Ikkinchi qoida qattiqroq: **kompilyator ogohlantirishi chiqarilmaydi**. Google ning tajribasi - muhandislar kompilyator ogohlantirishini e'tiborsiz qoldiradi, shuning uchun tekshiruv yoki xato darajasida yoqiladi (build to'xtaydi), yoki kompilyator chiqishida umuman ko'rsatilmaydi. Build ni to'xtata olmaydigan tekshiruv yo bostiriladi, yo review vositasida ko'rsatiladi. Java va C++ kompilyatorlari aynan shunday sozlangan, Go esa buni chegaraga olib boradi: boshqa tillarda ogohlantirish bo'lgan narsa (ishlatilmagan o'zgaruvchi yoki import) Go da xato.
+
+Shundan amaliy xulosa: `-Xlint:all -Werror` ni butun loyihaga bir zarb bilan yoqish 42.6 dagi bosqichli tartibdan o'tadi, lekin oxirgi holat **ogohlantirish qolmaslik** bo'lishi kerak - "ogohlantirishlar bor, lekin ularga qaramaydi" holati Google ning pozitsiyasida eng yomon variant.
 
 ## 42.2 Error Prone va NullAway
 
@@ -166,6 +178,10 @@ public class NoStringConcatInLog extends BugChecker implements MethodInvocationT
 }
 ```
 
+Shu yo'lning ikkinchi ishlatilishi annotatsiyalarga tegishli. Annotatsiya o'zining qo'llanish shartini to'liq ifodalay olmaydi: `@Target(ElementType.METHOD)` annotatsiyani metodga cheklaydi, lekin "faqat parametrsiz statik metodda" kabi shartni kompilyator majburlay olmaydi, chunki bunday shartni annotatsiya e'lonida yozib bo'lmaydi. Natijada annotatsiya noto'g'ri joyga qo'yilsa, xato kompilyatsiyada emas, ish vaqtida yoki umuman chiqmaydi.
+
+Yechim shu bo'limdagi bilan bir xil: shartni asbobga yozish. Ikki variant bor va tanlov shartning qayerda ko'rinishiga qarab qilinadi. Shart faqat annotatsiya e'lonidan kelib chiqsa va annotatsiyani kutubxona sifatida tarqatayotgan bo'lsangiz, `javax.annotation.processing` API si bilan annotation processor yoziladi: u kompilyatsiya vaqtida ishlaydi va shartni buzgan ishlatishga kompilyator xatosi beradi, ya'ni annotatsiya bilan birga tarqaladi. Shart kod bazasining o'z konvensiyasi bo'lsa, Error Prone tekshiruvi yoki ArchUnit qoidasi (42.4) arzonroq chiqadi, chunki u annotatsiya egasi bo'lishni talab qilmaydi.
+
 ## 42.6 Qoidani joriy qilish tartibi: ogohlantirish, keyin xato
 
 Yangi qoidani darhol xato darajasida yoqish mavjud kod bazasida yuzlab xato beradi va jamoa uni o'chiradi. Ishlaydigan tartib bosqichli.
@@ -179,6 +195,15 @@ Yangi qoidani darhol xato darajasida yoqish mavjud kod bazasida yuzlab xato bera
 | 5 | Qoida sababini hujjatda yozib qo'yish ([48-bob](48-tezkor-malumotnoma-qoidalar-va-tekshiruv.md)) |
 
 Ikkinchi bosqich eng muhim: Sonar ning "new code" tushunchasi ([SonarQube hujjatidagi](../sonarqube/README.md) "clean as you code" va yangi kod bo'limi) shu yondashuvni to'g'ridan-to'g'ri qo'llab-quvvatlaydi.
+
+**Qoida sonining o'zi narx.** Bosqichli tartib "qoidani qanday yoqish" ga javob beradi; undan oldin turadigan savol - **bu qoida umuman kerakmi**. Google ning uslub ko'rsatmasidagi birinchi printsipi: qoida o'z vaznini tortishi kerak. Har yangi qoida tashkilotdagi barcha muhandisga o'rganish va unga moslashish xarajati qo'shadi. Qoidalar ko'paygan sari ularning hammasini yozish paytida esda tutish qiyinlashadi, yangi odamni o'rgatish ham qiyinlashadi, qoidalar to'plamini saqlash ham qimmatlashadi.
+
+Shundan ikki amaliy qoida chiqadi:
+
+- **O'z-o'zidan ravshan narsa uchun qoida yozilmaydi.** Google ning C++ ko'rsatmasida `goto` ni taqiqlovchi qoida yo'q, chunki C++ muhandislari uni o'zi ishlatmaydi va qoida qo'shish ortiqcha yuk bo'lardi. Uslub ko'rsatmasi yuridik hujjat emas: aniq taqiqlanmagan narsa ruxsat etilgan degani emas.
+- **Bir-ikki odam xato qilayotgan narsa uchun qoida yozilmaydi.** Hammaning esida tutishi kerak narsalar ro'yxatini uzaytirish bu holatda o'zini oqlamaydi; to'g'ri yo'l - o'sha ikki odam bilan gaplashish.
+
+Jamoa ro'yxatini tekshirish usuli oddiy: har qoida uchun "bu qoidani bilmagan odam qanday xato qiladi va bu xato oxirgi bir yilda nechta marta sodir bo'ldi" savoliga javob yozib ko'rish. Javob yo'q bo'lsa, qoida ro'yxatdan chiqadi.
 
 ## 42.7 False positive va bostirishni hujjatlashtirish
 
@@ -215,9 +240,13 @@ grep -rn "@SuppressWarnings" src/main/java | grep -v "//" | head    # izohsizlar
 
 ## Manbalar
 
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 20-bob ("Compiler Integration") - kompilyator darajasida faqat bajarilishi mumkin, amalda yolg'on pozitiv bermaydigan va to'g'rilikka tegishli tekshiruvlarni xato qilib yoqish, yangi tekshiruvdan oldin mavjud buzilishlarni tozalash, hamda kompilyator ogohlantirishi chiqarilmasligi (yo xato, yo ko'rsatilmaydi). Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 8-bob ("Rules Must Pull Their Weight") - har yangi qoidaning barcha muhandisga o'rganish xarajati qo'shishi, o'z-o'zidan ravshan narsa uchun qoida yozilmasligi (`goto` misoli) va bir-ikki odam xato qilayotgan narsa uchun qoida qo'shish masshtablanmasligi. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
 - [SpotBugs, hujjat](https://raw.githubusercontent.com/spotbugs/spotbugs/6fc14ff38f4ebfbb4457caaa6df9a0ddd23a18c6/docs/index.rst) - bytecode asosidagi tahlil va qoida toifalari
 - [PIT, README](https://raw.githubusercontent.com/hcoles/pitest/f7fe5adfa5fb6e727c12d2403a48f5e4e9dd2fc6/README.md) - mutatsiya testlash va qamrov bilan farqi
 - [ArchUnit, README](https://raw.githubusercontent.com/TNG/ArchUnit/a0640ffa3ea5806c4fbab0dfbd29e363646d0fa3/README.md) - arxitektura qoidasini test sifatida yozish
+- Joshua Bloch, *Effective Java* 3rd, Item 39 (181-bet) - annotatsiya bilan ifodalanmaydigan shartni ("faqat parametrsiz statik metodda") kompilyator majburlay olmasligi va buning uchun annotation processor yozish kerakligi
+- ESLATMA: annotation processor bilan Error Prone yoki ArchUnit o'rtasidagi tanlov sharti (shart annotatsiya e'lonidanmi yoki kod bazasining konvensiyasidanmi kelib chiqadi) korpus qo'shimchasi
 
 ---
 

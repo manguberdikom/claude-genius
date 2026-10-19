@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 7. Integratsion test: Spring Boot slice testlari (Integration Testing - Spring Boot Test Slices)
 
@@ -34,6 +34,35 @@ Unit testlar biznes qoidalarini tasdiqlaydi, ammo Spring ilovasining katta qismi
 Oddiy `@SpringBootTest` `@SpringBootApplication`'ni topadi va uning barcha auto-configuration'larini qo'llaydi: DataSource, JPA, Flyway, Security, Kafka, cache, scheduler. Bu 5-15 sekundlik startup va yuzlab bean degani. Slice annotatsiyalari esa boshqa yo'ldan boradi - ular `@BootstrapWith` + `TypeExcludeFilter` + aniq auto-configuration ro'yxati ustiga qurilgan. Masalan `@WebMvcTest` `AutoConfiguration.imports` metadatasidan faqat web qatlamiga tegishli auto-configuration'larni tanlaydi, qolganini o'chiradi. Shu bilan birga component scanning ham cheklanadi: slice o'z filtri ruxsat bergan stereotype'lardan boshqasini kontekstga kiritmaydi.
 
 Arxitektor uchun muhim xulosa: slice test tezlik uchun emas, **cheklangan mas'uliyat** uchun kerak. `@WebMvcTest`'da repository mavjud emas, demak unda service logikasini test qilishning imkoni ham, ma'nosi ham yo'q. Har bir slice bitta kontraktni tekshiradi.
+
+**Integratsion testda ham "eng kichik mumkin bo'lgan test" qoidasi ishlaydi.** Google ning formulasi: bir nechta katta test bitta ulkan testdan afzal, va testning qamrovi SUT ning qamroviga bog'langani uchun SUT ni kichraytirish yo'li testni kichraytiradi. Bu aynan slice annotatsiyalarining mantiqiy asosi.
+
+Ko'p ichki tizimdan o'tadigan foydalanuvchi yo'lini bitta testda qamrash kerak bo'lsa, yechim uni **zanjirlash**: yo'l bir necha kichik juftlik integratsion testiga bo'linadi va bir testning chiqishi keyingisining kirishi bo'ladi, buning uchun chiqish ma'lumot omboriga saqlanadi. Zanjir bajarilish tartibi bilan bog'lanmaydi (`@TestMethodOrder` bilan testlarni bir-biriga bog'lash alohida anti-pattern): har bo'g'in o'z kirishini saqlangan holatdan oladi va mustaqil yurgiziladi.
+
+Buning sababi matematik. Fidelity i past double lar soni oshgan sari xato ehtimoli keskin oshadi: ikkita double ning har biri 10 foiz noto'g'ri bo'lsa, ularning ikkisi ham to'g'ri ishlashi ehtimoli past bo'lib qoladi, ya'ni katta N da past aniqlikdagi double lar bilan qurilgan to'plam ishonchsiz. Shuning uchun katta testni kichraytirish ham uning tezligi, ham ishonchliligi uchun ishlaydi.
+
+```java
+// 1-bo'g'in: buyurtma yaratildi va DB da PENDING holatda
+@Test
+@Order(1) // faqat hisobot tartibi uchun, bog'liqlik uchun emas
+void createsPendingOrder() {
+    OrderId id = orderService.create(cartOf("SKU-1"));
+
+    assertThat(orderRepository.findById(id)).get()
+            .extracting(Order::status).isEqualTo(PENDING);
+}
+
+// 2-bo'g'in: kirishni testdan emas, saqlangan holatdan oladi
+@Test
+void settlesPendingOrder() {
+    OrderId id = orderRepository.save(pendingOrder("SKU-1")).id();
+
+    orderService.settle(id);
+
+    assertThat(orderRepository.findById(id)).get()
+            .extracting(Order::status).isEqualTo(PAID);
+}
+```
 
 Spring Boot 4 da slice annotatsiyalarining joyi o'zgargan va bu migratsiyada e'tibordan qoladigan narsa. Avval hammasi bitta `spring-boot-test-autoconfigure` da va `org.springframework.boot.test.autoconfigure.*` paketida turardi; endi har biri o'z moduli va o'z paketida: `@WebMvcTest` `spring-boot-webmvc-test` modulida va `org.springframework.boot.webmvc.test.autoconfigure` paketida, `@WebFluxTest` `spring-boot-webflux-test` da, `@DataJpaTest` `spring-boot-data-jpa-test` da (`org.springframework.boot.data.jpa.test.autoconfigure`), `TestEntityManager` esa `org.springframework.boot.jpa.test.autoconfigure` da, `@JdbcTest` `spring-boot-jdbc-test` da, `@DataJdbcTest` `spring-boot-data-jdbc-test` da, `@RestClientTest` `spring-boot-restclient-test` da. Demak Boot 4 ga o'tishda faqat import yo'li emas, test uchun kerakli dependency ro'yxati ham o'zgaradi: slice ishlatadigan modul `pom.xml` yoki `build.gradle` ga qo'shilmasa, annotatsiya topilmaydi.
 
@@ -475,6 +504,7 @@ E'tibor bering: bu sinfda `@Transactional` **yo'q**, tozalash esa `@Sql`'ning AF
 
 ## Manbalar
 
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 14-bob ("Larger Tests at Google Scale", "TIP: The Smallest Possible Test") - integratsion testda ham eng kichik test afzalligi, foydalanuvchi yo'lini juft integratsion testlarga bo'lib zanjirlash va bir testning chiqishini keyingisining kirishi qilish, past fidelity li double lar soni oshganda xato ehtimolining keskin oshishi. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
 - [Spring Boot 4.0, Testing Spring Boot Applications](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/documentation/spring-boot-docs/src/docs/antora/modules/reference/pages/testing/spring-boot-applications.adoc) - har bir slice annotatsiyasining Boot 4 dagi moduli va paketi, `@WebMvcTest` skanerlaydigan stereotype ro'yxati, `@DataJpaTest` ning tranzaksiya va `show-sql` defaultlari, `@AutoConfigureTestDatabase`
 - [Spring Framework 7.0, Context Caching](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/testing/testcontext-framework/ctx-management/caching.adoc) - kesh kaliti tarkibi, default hajm 32 va LRU, static keshning fork da ishlamasligi, 7.0 dagi pauza va qayta ishga tushirish
 - [Spring Framework 7.0, Transaction Management in tests](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/testing/testcontext-framework/tx.adoc) - test tranzaksiyasi, rollback default i va `@Sql` bilan birgalikdagi xulqi

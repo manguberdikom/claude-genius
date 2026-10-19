@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 23. Indekslar: B-tree, GIN, GiST, BRIN va tanlov (Indexes)
 
 <details>
-<summary>Bu bobdagi 19 bo'lim</summary>
+<summary>Bu bobdagi 23 bo'lim</summary>
 
 - [23.1 B-tree tuzilishi va u qaysi so'rovlarga yordam beradi](#231-b-tree-tuzilishi-va-u-qaysi-sorovlarga-yordam-beradi)
 - [23.2 Ko'p ustunli indeks va ustunlar tartibining ahamiyati](#232-kop-ustunli-indeks-va-ustunlar-tartibining-ahamiyati)
@@ -27,7 +27,11 @@
 - [23.16 Hash indeks: qachon mantiqiy, qachon B-tree afzal](#2316-hash-indeks-qachon-mantiqiy-qachon-b-tree-afzal)
 - [23.17 SP-GiST: quadtree, k-d tree va radix tree](#2317-sp-gist-quadtree-k-d-tree-va-radix-tree)
 - [23.18 B-tree ichida: deduplication va suffix truncation](#2318-b-tree-ichida-deduplication-va-suffix-truncation)
-- [23.19 Amalda qo'llash](#2319-amalda-qollash)
+- [23.19 Operator class tanlov sifatida: `text_pattern_ops`, collation va `LIKE` prefiksi](#2319-operator-class-tanlov-sifatida-text_pattern_ops-collation-va-like-prefiksi)
+- [23.20 Korrelyatsiya: bir xil tanlanuvchanlik, boshqa narx](#2320-korrelyatsiya-bir-xil-tanlanuvchanlik-boshqa-narx)
+- [23.21 GIN qidiruvi: leksema chastotasi, majburiy bitmap va `gin_fuzzy_search_limit`](#2321-gin-qidiruvi-leksema-chastotasi-majburiy-bitmap-va-gin_fuzzy_search_limit)
+- [23.22 BRIN ni sozlash: `pages_per_range`, `autosummarize` va qo'lda summarizatsiya](#2322-brin-ni-sozlash-pages_per_range-autosummarize-va-qolda-summarizatsiya)
+- [23.23 Amalda qo'llash](#2323-amalda-qollash)
 
 </details>
 
@@ -41,7 +45,7 @@ PostgreSQL ning standart indeksi B-tree, aniqrog'i B+tree ning Lehman-Yao varian
 
 Chuqurlik juda sekin o'sadi. Taxminan 100 million qatorli `bigint` kalit uchun daraxt 4 qatlamdan oshmaydi va yuqori qatlamlar deyarli doim `shared_buffers` da yotadi.
 
-B-tree quyidagilarga yordam beradi: `=`, `<`, `>`, `BETWEEN`, `IN`, `IS NULL`, `ORDER BY` uchun tayyor tartib, `MIN`/`MAX`, merge join, va unique constraint. U yordam bermaydigan holatlar: `LIKE '%mato%'` kabi prefiksi yo'q qidiruv, ustun ustida funksiya chaqirilgan shart, va jadvalning 10 foizidan ko'pini qaytaradigan so'rov. Oxirgi holatda planner ataylab seq scan ni tanlaydi, chunki random IO ketma-ket o'qishdan qimmatroq.
+B-tree quyidagilarga yordam beradi: `=`, `<`, `>`, `BETWEEN`, `IN`, `IS NULL`, `ORDER BY` uchun tayyor tartib, `MIN`/`MAX`, merge join, va unique constraint. U yordam bermaydigan holatlar: `LIKE '%mato%'` kabi prefiksi yo'q qidiruv, ustun ustida funksiya chaqirilgan shart, va jadvalning katta ulushini qaytaradigan so'rov. Oxirgi holatda planner ataylab seq scan ni tanlaydi, chunki random IO ketma-ket o'qishdan qimmatroq. Bu yerda aniq foiz chegarasi yo'q: seq scan narxi selektivlikka bog'liq emas, index scan narxi esa selektivlik oshgani sari o'sadi, shuning uchun ma'lum ulushdan keyin seq scan ustun chiqadi, chegara esa korrelyatsiyaga, `effective_cache_size` ga va index-only scan mumkinligiga bog'liq (Rogov, 20.5, 348-349-betlar). Qiyoslashning to'liq yozuvi [skan turlari bo'limida](24-planner-statistika-va-explain-analyze-oqish.md#244-skan-turlari-sequential-index-index-only-bitmap-heap-scan), korrelyatsiyaning narxga ta'siri esa [quyida](#2320-korrelyatsiya-bir-xil-tanlanuvchanlik-boshqa-narx).
 
 ```sql
 -- buyurtmalar jadvali: taxminan 80 mln qator
@@ -84,6 +88,22 @@ WHERE customer_id = 48213
 ORDER BY created_at DESC
 LIMIT 20;
 ```
+
+Uchinchi mezon ustunlarning emas, TARTIBNING o'zi. Bitta ustunli indeksda yo'nalish ahamiyatsiz, chunki uni ikki tomonga ham skanlash mumkin; ko'p ustunli indeksda esa yo'nalish muhim bo'lib qoladi. `(a, b)` indeksi `ORDER BY a, b` ni ham, `ORDER BY a DESC, b DESC` ni ham to'liq qoplaydi (ikkinchisi teskari skan bilan), lekin `ORDER BY a ASC, b DESC` ni qoplamaydi: indeks qisman tartiblangan ma'lumot beradi va reja ustiga `Incremental Sort` qo'yiladi (Rogov, 25.4, 440-bet). Aralash yo'nalish kerak bo'lsa, u indeks ta'rifining o'zida yoziladi.
+
+`NULL` larning joyi ham shu qatorga kiradi. Standart holatda `NULL` saralash uchun oddiy qiymatlardan "katta" hisoblanadi, ya'ni o'sish tartibida daraxtning o'ng tomonida, kamayish tartibida chap tomonida turadi; joyni `NULLS FIRST` va `NULLS LAST` bilan o'zgartirish mumkin (Rogov, 25.4, 441-bet). So'rovda `NULLS FIRST` turib, indeksda turmasa, reja `Sort` node qo'yadi va `LIMIT` ning foydasi yo'qoladi.
+
+```sql
+-- So'rov: ORDER BY passenger_name NULLS FIRST, book_ref DESC
+-- Mos kelmaydigan indeks: reja Gather Merge ustida Sort qo'yadi
+CREATE INDEX idx_name_bref ON tickets (passenger_name, book_ref);
+
+-- Mos indeks: Index Scan, saralash yo'q
+CREATE INDEX idx_name_bref_2
+    ON tickets (passenger_name NULLS FIRST, book_ref DESC);
+```
+
+Tenglik va oraliq farqi indeksdan tashqarida ham davom etadi va bu join rejasiga tegadi: merge join faqat tenglik operatorini qo'llaydi, ya'ni u faqat equi-join uchun ishlaydi (Rogov, 23.1, 388-bet). Demak `BETWEEN` yoki `<` kabi oraliq shartli join uchun indeks skanni tezlashtiradi, lekin merge join variantini ochmaydi; join algoritmlarining to'liq tanlovi [planner bobida](24-planner-statistika-va-explain-analyze-oqish.md#245-join-algoritmlari-nested-loop-hash-join-merge-join-va-qachon-qaysi-biri-tanlanadi).
 
 ## 23.3 Qamrab oluvchi indeks (`INCLUDE`) va index-only scan sharti
 
@@ -200,6 +220,8 @@ SELECT id, name FROM products WHERE name ILIKE '%simsiz quloqchin%';
 ALTER INDEX idx_payments_payload SET (fastupdate = off);
 ```
 
+GIN ni yadrodan tashqaridagi turlarga kengaytiradigan uchta kengaytma bor va ular ko'pincha unutiladi. `intarray` butun sonlar massivi uchun `gin__int_ops` operator classini beradi: u standart `array_ops` ga juda o'xshaydi, lekin hujjatni qidiruv so'roviga solishtiradigan `@@` operatorini qo'llaydi. `hstore` kalit-qiymat saqlagichini va `gin_hstore_ops` ni beradi, bunda kalit ham, qiymat ham indekslanadi. `jsquery` esa `jsonb` uchun o'z so'rov tilini va GIN qo'llovini beradi, lekin kitob uni tavsiya qilmaydi: SQL/JSON standarti qabul qilinib PostgreSQL da SQL/JSON path tili amalga oshirilgandan keyin standart ichki imkoniyatlar yaxshiroq tanlov bo'lib ko'rinadi (Rogov, 28.6, 516-bet). Qidiruv tartibi, bitmap majburiyligi va natija sonini cheklash haqidagi qaror [GIN qidiruvining uch xossasi bo'limida](#2321-gin-qidiruvi-leksema-chastotasi-majburiy-bitmap-va-gin_fuzzy_search_limit).
+
 ## 23.7 GiST, matn o'xshashligi va oraliq turlar
 
 GiST umumlashgan qidiruv daraxti: har bir ichki tugun o'z farzandlarini qamrab oluvchi predikatni saqlaydi. Bu tuzilma lossy, ya'ni indeks faqat nomzod qatorlarni qaytaradi va yakuniy tekshiruv heap da bajariladi. Shuning uchun GiST tenglik qidiruvida B-tree dan sekin, lekin u B-tree ifodalay olmaydigan munosabatlarni ifodalaydi: kesishish, qamrash, masofa.
@@ -239,7 +261,7 @@ BRIN lossy indeks: u mos kelishi mumkin bo'lgan blok oraliqlarini qaytaradi, key
 
 Shart bitta va qattiq: jadvalning fizik tartibi ustun qiymati bilan korrelyatsiya qilishi kerak. Append-only log, `created_at` yoki `bigserial` ID buni tabiiy beradi. Korrelyatsiyani `pg_stats.correlation` dan tekshirish mumkin, qiymat 1 ga yaqin bo'lsa BRIN ishlaydi, 0 ga yaqin bo'lsa foydasiz. Ko'p `UPDATE` bo'ladigan jadvalda tartib buziladi va BRIN sekin asta o'z ma'nosini yo'qotadi.
 
-PostgreSQL 14 dan `minmax_multi` opclass bor: u bitta oraliq uchun bir nechta chegara to'plamini saqlaydi, shuning uchun bir nechta chetlab ketgan qiymat butun oraliqni buzmaydi. `bloom` opclass esa korrelyatsiyasiz ustunda tenglik qidiruvi uchun ishlaydi. Yangi sahifalarni avtomatik umumlashtirish uchun `autosummarize = on` yoqiladi.
+PostgreSQL 14 dan `minmax_multi` opclass bor: u bitta oraliq uchun bir nechta chegara to'plamini saqlaydi, shuning uchun bir nechta chetlab ketgan qiymat butun oraliqni buzmaydi. `bloom` opclass esa korrelyatsiyasiz ustunda tenglik qidiruvi uchun ishlaydi. Yangi sahifalarni avtomatik umumlashtirish uchun `autosummarize = on` yoqiladi, lekin uning standarti o'chiq va narxi bor: `pages_per_range`, `autosummarize` va qo'lda summarizatsiya tanlovi [BRIN ni sozlash bo'limida](#2322-brin-ni-sozlash-pages_per_range-autosummarize-va-qolda-summarizatsiya).
 
 ```sql
 -- audit log: append-only, 300 GB, kunlik oraliq so'rovlari
@@ -460,6 +482,15 @@ FROM unnest(array['orderable','distance_orderable','returnable',
 
 Bu uchta so'rov amalda ko'p bahsni yopadi. `can_order` faqat B-tree da rost, demak `ORDER BY` ni indeks bilan qoplash boshqa turlarda mumkin emas va reja baribir `Sort` node qo'yadi. `can_unique` ham faqat B-tree da, shuning uchun unikal cheklov boshqa turda qurilmaydi. `can_include`, ya'ni `INCLUDE` ustunlari qo'shish, hamma turda yo'q. `returnable` esa eng aniq savolga javob beradi: shu ustun bo'yicha index-only scan umuman mumkinmi.
 
+Indeks darajasidagi to'rtta xossaning ma'nosi ko'pincha nomidan taxmin qilinadi va shu yerda xato chiqadi, shuning uchun ularni aniq ta'riflash kerak (Rogov, 19.3, 326-bet).
+
+- **`clusterable`** heap tuple larini indeks skani qaytaradigan `TID` tartibida jismonan ko'chirish imkonini bildiradi, ya'ni shu indeks ustida `CLUSTER` buyrug'i qo'llanadimi yoki yo'q.
+- **`index_scan`** indeks `TID` larni bittalab qaytara olishini bildiradi. Hamma indeks buni qila olmaydi va bu birinchi qarashda g'alati tuyuladi.
+- **`bitmap_scan`** indeks hamma `TID` ni bir yo'la bitmap qilib qura olishini bildiradi.
+- **`backward_scan`** natijani indeks yaratilgandagi tartibga teskari yo'nalishda qaytara olishni bildiradi va u faqat `index_scan` qo'llanganda ma'noga ega.
+
+B-tree da to'rttasi ham rost (Rogov, 25.5, 442-bet), BRIN da esa faqat `bitmap_scan` rost: `clusterable`, `index_scan` va `backward_scan` yolg'on, chunki BRIN doim bitmap qaytaradi (Rogov, 29.6, 529-bet). Amaliy xulosa shundan chiqadi: `CLUSTER` ni BRIN ustida bajarib bo'lmaydi, `Index Scan` node ini BRIN rejasida hech qachon ko'rmaysiz, va GIN ham xuddi shunday faqat bitmap beradi.
+
 Unikal indeks bilan unikal cheklov farqini ham shu yerda aytish kerak. Cheklov hech qachon buzilmasligi kerak bo'lgan xossani e'lon qiladi, indeks esa uni ta'minlaydigan mexanizm. Farq amaliy: partitsiyalangan jadvalda global indeks yo'q, lekin partition kalitini o'z ichiga olgan unikal cheklov qo'yish mumkin va global unikallikni har bir partition ning lokal indeksi ta'minlaydi.
 
 JPA tomonida bundan ikki xulosa chiqadi. Birinchisi: `Pageable` bilan berilgan `Sort` ustuni B-tree indeksida bo'lishi shart, GIN yoki BRIN bu ishni bajarmaydi. Ikkinchisi: projection interfeysida faqat indeksdagi ustunlarni so'rash index-only scan uchun nomzod yaratadi, lekin faqat `returnable` rost bo'lgan tur uchun.
@@ -543,7 +574,124 @@ Ikkinchi zichlashtirish mexanizmi ichki sahifalarda ishlaydi. Ichki yozuvdagi ka
 
 Arxitektor uchun xulosa: ustun turini tanlash indeks hajmiga bevosita ta'sir qiladi. Pul qiymati uchun `numeric` to'g'ri tanlov, lekin unga qo'yilgan nounikal indeks deduplication dan foyda ko'rmaydi; `jsonb` ustiga qo'yilgan B-tree ham shunday. Takrorlanadigan kalitli ustunlar (status, mijoz identifikatori) `bigint` yoki `text` bo'lsa esa deduplication indeks hajmini sezilarli kamaytiradi va buni `pgstatindex` bilan o'lchab tasdiqlash mumkin.
 
-## 23.19 Amalda qo'llash
+## 23.19 Operator class tanlov sifatida: `text_pattern_ops`, collation va `LIKE` prefiksi
+
+[Indeks interfeysi bo'limida](#2314-indeks-interfeysi-pg_am-operator-class-va-operator-family) operator class mexanizm sifatida ko'rsatilgan. Bu yerda u QAROR sifatida ko'riladi, chunki bir xil ma'lumot turini ko'pincha bir nechta operator class qo'llaydi va ulardan eng mos xulqlisini foydalanuvchi tanlaydi (Rogov, 19.1, 315-bet). `text` turi uchun B-tree da to'rtta class bor: `text_ops` (standart), `varchar_ops`, `text_pattern_ops` va `varchar_pattern_ops` (Rogov, 19.2, 316-bet).
+
+Farq collation da. Har bir B-tree operator class beshta majburiy taqqoslash operatorini e'lon qiladi va ularning semantikasi strategiya raqami bilan belgilanadi: 1 kichik, 2 kichik yoki teng, 3 teng, 4 katta yoki teng, 5 katta (Rogov, 19.2, 317-bet; 25.4, 432-433-betlar). `text_ops` buning uchun odatdagi `<`, `<=`, `=`, `>=`, `>` ni ishlatadi, `text_pattern_ops` esa tildali `~<~`, `~<=~`, `=`, `~>=~`, `~>~` ni: ikkinchi to'plam collation ni hisobga olmaydi va satrlarni baytma-bayt taqqoslaydi (Rogov, 19.2, 317-bet).
+
+Shundan amaliy natija chiqadi. `C` dan boshqa collation ishlatadigan bazada `LIKE 'ELENA%'` sharti oddiy indeksni ishlata olmaydi va reja `Seq Scan` bo'ladi. `text_pattern_ops` bilan qurilgan indeks esa shartni taqqoslash operatorlariga qayta yozadi va `Bitmap Index Scan` beradi, bunda `%` dan oldingi prefiks ishlatiladi, yolg'on moslar esa `Filter` bilan qayta tekshiruvda tashlanadi (Rogov, 19.2, 318-bet).
+
+```sql
+SHOW lc_collate;   -- en_US.UTF-8
+
+-- Standart class: LIKE prefiksi indeksni ishlatmaydi, Seq Scan
+CREATE INDEX idx_tickets_name ON tickets (passenger_name);
+
+-- Pattern class: Index Cond
+--   (passenger_name ~>=~ 'ELENA' AND passenger_name ~<~ 'ELENB')
+CREATE INDEX idx_tickets_name_pattern
+    ON tickets (passenger_name text_pattern_ops);
+
+EXPLAIN (COSTS OFF)
+SELECT * FROM tickets WHERE passenger_name LIKE 'ELENA%';
+```
+
+ESLATMA: korpus qo'shimchasi. Kitob buni bevosita aytmaydi, lekin mexanizmdan kelib chiqadi: `text_pattern_ops` indeksi bayt tartibida saralangani uchun u baza collation idagi `ORDER BY passenger_name` ni qoplamaydi. Demak prefiks qidiruvi ham, tartiblash ham kerak bo'lsa ikkita indeks turadi va bu yozuv narxiga qo'shiladi. Shu sababli birinchi savol doim bitta: prefiks qidiruvi haqiqatan kerakmi yoki `ILIKE '%...%'` uchun baribir `gin_trgm_ops` kerakmi.
+
+| Qaror | Tanlanadigan operator class | Nega |
+|---|---|---|
+| `LIKE 'prefiks%'`, collation `C` emas | `text_pattern_ops` (B-tree) | tildali operatorlar collation ni hisobga olmaydi |
+| `ILIKE '%ichki%'` | `gin_trgm_ops` (GIN) | prefiks yo'q, trigramma bo'yicha nomzod |
+| `jsonb @>` ustunlik qiladi | `jsonb_path_ops` (GIN) | kichikroq va `@>` da tezroq |
+| `jsonb ?`, `?|`, `?&` ham kerak | `jsonb_ops` (GIN) | kalit mavjudligini tekshiradi |
+| Korrelyatsiyasi past, lekin tenglik | `bloom` (BRIN) | minmax oraliq bermaydi |
+| Chetlab ketgan qiymatlari bor oraliq | `minmax_multi` (BRIN) | bitta oraliqqa bir nechta chegara to'plami |
+
+Operator class faqat indeks uchun emasligini ham bilish kerak. Hash algoritmi hash join va guruhlash uchun ham ishlatiladi, va tizim qaysi tur uchun qaysi hash funksiyasi borligini aynan hash indeksining operator classidan biladi, chunki PostgreSQL yangi turlarni ish davomida qo'shishga ruxsat beradi va bu moslikni bir marta qotirib qo'yib bo'lmaydi (Rogov, 24.3, 417-bet). Hash operator class esa faqat tenglik operatorini beradi (Rogov, 24.3, 418-bet).
+
+## 23.20 Korrelyatsiya: bir xil tanlanuvchanlik, boshqa narx
+
+Indeks skanining narxi ikki qismdan iborat: indeksga murojaat va heap sahifalarini o'qish. Ikkinchi qism faqat tanlanuvchanlikka emas, diskdagi tuple larning jismoniy tartibi bilan access method `TID` larni qaytaradigan tartib orasidagi korrelyatsiyaga ham bog'liq (Rogov, 20.1, 331-bet). Korrelyatsiya ideal bo'lsa har bir sahifaga faqat bir marta murojaat qilinadi va `Index Scan` node sahifadan sahifaga ketma-ket o'tadi (Rogov, 20.1, 331-bet).
+
+Farqning kattaligini kitob ikki o'lchov bilan ko'rsatadi, ikkalasida ham jadvalning taxminan bir xil ulushi qaytadi. `book_ref` ustunida korrelyatsiya 1, tanlanuvchanlik 0.0630, 132999 qator: `Index Scan` narxi 4638.91 (Rogov, 20.1, 332-bet). `book_date` ustunida korrelyatsiya 8.02188e-05, 132403 qator: o'sha jadvalda `Index Scan` narxi 56957.48, va planner bu rejani faqat seq scan ham, bitmap scan ham ataylab o'chirilganda tanlaydi (Rogov, 20.1, 334-bet). Sabab mexanik: korrelyatsiya past bo'lganda keyingi tuple boshqa sahifada bo'lish ehtimoli oshadi, shuning uchun `Index Scan` sahifalar orasida sakraydi va eng yomon holatda sahifaga murojaatlar soni olingan tuple lar soniga tenglashadi (Rogov, 20.1, 334-bet).
+
+```sql
+-- Qaror shu ustundan boshlanadi, EXPLAIN dan emas
+SELECT attname, correlation, n_distinct
+FROM pg_stats
+WHERE tablename = 'orders'
+ORDER BY abs(correlation) DESC;
+
+-- 1 ga yaqin: index scan katta ulushda ham arzon
+-- 0 ga yaqin: index scan tez orada seq scan dan qimmatlashadi
+```
+
+Korrelyatsiya o'zgarmas xossa emas. Har qanday qator yangilanishi natijaviy tuple ni jadval oxiriga ko'chiradi, shuning uchun tez-tez `UPDATE` bo'ladigan ustunda korrelyatsiya asta buziladi; bundan tashqari ideal korrelyatsiya ham natijaning tartibini KAFOLATLAMAYDI, chunki boshqa ustun bo'yicha index scan boshqa tartib beradi va seq scan jadvalning boshidan boshlamasligi mumkin, demak tartib kerak bo'lsa u `ORDER BY` da aniq yoziladi (Rogov, 20.1, 332-bet).
+
+Arxitektor uchun uchta aniq qaror chiqadi. Birinchi: korrelyatsiyasi past ustunda keng oraliq so'rovi uchun indeks qo'shish ko'pincha foyda bermaydi, chunki planner uni baribir tanlamaydi. Ikkinchi: shunday so'rov uchun to'g'ri yechim heap ga borishni butunlay yo'q qilish, ya'ni [qamrab oluvchi indeks bilan index-only scan](#233-qamrab-oluvchi-indeks-include-va-index-only-scan-sharti). Uchinchi: korrelyatsiya tabiiy bo'lgan jadvalda (append-only log) arzon variant [BRIN](#238-brin-katta-tartibli-jadvallar-uchun-arzon-indeks), chunki u aynan shu xossaga tayanadi.
+
+## 23.21 GIN qidiruvi: leksema chastotasi, majburiy bitmap va `gin_fuzzy_search_limit`
+
+GIN ning qidiruv tezligi so'rovdagi eng KAM uchraydigan elementga bog'liq. Agar so'rovda ham tez-tez, ham kam uchraydigan leksema bo'lsa, kam uchraydigani majburiy deb olinadi, tez-tez uchraydigani esa ixtiyoriy: algoritm leksemalarni chastota bo'yicha saralaydi, ularni birin-ketin majburiylar ro'yxatiga qo'shadi va qolganlari natijani kafolatlay olmay qolganda to'xtaydi (Rogov, 28.2, 499-bet). Natijada skan kam uchraydigan leksemaning `TID` lari bo'yicha boradi va tez-tez uchraydiganining butun boshli sahifa oraliqlarini o'tkazib yuboradi (Rogov, 28.2, 500-bet).
+
+Kitob buni o'lchov bilan ko'rsatadi: pgsql-hackers arxividagi `wrote` 231173 hujjatda, `tattoo` esa 2 hujjatda uchraydi. `wrote & tattoo` so'rovi 0.631 ms, yolg'iz `tattoo` 2.227 ms, yolg'iz `wrote` esa 343.556 ms ketadi (Rogov, 28.2, 501-bet). Ya'ni tez-tez uchraydigan so'zni so'rovdan olib tashlash emas, unga kam uchraydigan so'zni QO'SHISH tezlashtiradi.
+
+Ikkinchi xossa rejani belgilaydi: GIN natijani doim bitmap ko'rinishida qaytaradi va `TID` larni bittalab berolmaydi, ya'ni `bitmap_scan` xossasi rost, `index_scan` esa yolg'on (Rogov, 28.2, 503-bet). Sababi tartibsiz pending list: skan paytida u asosiy daraxt bilan birlashsa, bitta qiymat ikki marta qaytishi mumkin, bitmap da esa bir bit ikki marta o'rnatilgani zarar qilmaydi (Rogov, 28.2, 503-bet).
+
+Buning amaliy oqibati `LIMIT` ga tegadi: GIN bilan `LIMIT` ishlatish samarasiz, chunki bitmap baribir to'liq quriladi va uning narxi umumiy narxning katta qismini tashkil qiladi (Rogov, 28.2, 504-bet). Shuning uchun FTS sahifalashini `LIMIT` ga tayanib "tez" deb hisoblash xato.
+
+```sql
+-- Natija sonini cheklash: standart 0, ya'ni o'chiq
+SHOW gin_fuzzy_search_limit;
+
+SET gin_fuzzy_search_limit = 1000;
+SELECT count(*) FROM mail_messages WHERE tsv @@ to_tsquery('hacker');
+-- 727
+SELECT count(*) FROM mail_messages WHERE tsv @@ to_tsquery('hacker');
+-- 791   ayni so'rov, boshqa natija
+RESET gin_fuzzy_search_limit;
+```
+
+`gin_fuzzy_search_limit` indeks skani qaytaradigan natija sonini cheklaydi va PostgreSQL 14 da standart holatda o'chirilgan (qiymati nol). Yoqilsa, access method taxminan ko'rsatilgan songa yetish uchun ba'zi qiymatlarni TASODIFIY tashlab ketadi, shuning uchun bir xil so'rov bir xil natija bermaydi; planner esa bu parametr haqida hech narsa bilmaydi va uni narx baholashda hisobga olmaydi (Rogov, 28.2, 504-bet).
+
+Arxitektura qoidasi shundan chiqadi va u qat'iy: `gin_fuzzy_search_limit` sahifalash vositasi emas va determinizm talab qiladigan hech qaysi yo'lda ishlatilmaydi. U faqat "yetarlicha natija bo'lsa bo'ldi" degan qidiruv ekranida mantiqli, va u yerda ham `count(*)` ko'rsatkichini buzadi. Sifat va relevantlik bo'yicha qaror [PostgreSQL FTS ning qattiq chegaralari](40-qidiruv-postgresql-fts-va-alohida-dvigatel.md#403-postgresql-fts-ning-qattiq-chegaralari) bo'limida.
+
+## 23.22 BRIN ni sozlash: `pages_per_range`, `autosummarize` va qo'lda summarizatsiya
+
+BRIN da sozlanadigan asosiy parametr bitta: oraliqdagi sahifalar soni, `pages_per_range`, PostgreSQL 14 da standarti 128 (Rogov, 29.1, 517-bet). Uni tanlash uchun `EXPLAIN` emas, bitta o'lchov kerak: bitta so'rov oralig'iga tushadigan ma'lumot necha sahifani egallaydi.
+
+Kitobning o'lchovi aniq. `flights_bi` jadvalida bir kunlik ma'lumot 1192 dan 1512 gacha sahifani egallaydi, o'rtacha 1447 (Rogov, 29.6, 526-bet). Bir kunlik so'rov uchun uch xil oraliq hajmi solishtirilganda indeks hajmi shunday chiqadi: 32 sahifa uchun 529 kB, standart 128 sahifa uchun 184 kB, 512 sahifa uchun 72 kB; samaradorlik esa katta oraliqlarda ham yuqori qoladi (Rogov, 29.6, 528-bet). Ya'ni savdo bir tomonlama emas: oraliqni kichraytirish aniqlikni oshiradi, lekin indeks hajmi shunga yarasha o'sadi va BRIN ning asosiy afzalligi, ya'ni kichikligi yo'qoladi.
+
+```sql
+-- Bitta kunlik oraliq necha sahifada yotadi: pages_per_range shu yerdan chiqadi
+SELECT min(numblk), round(avg(numblk)) AS avg, max(numblk)
+FROM (
+  SELECT count(DISTINCT (ctid::text::point)[0]::integer) AS numblk
+  FROM audit_log
+  GROUP BY created_at::date
+) t;
+```
+
+Yangi sahifalar masalasi alohida. PostgreSQL 14 da standart holatda indeks qurilgandan keyin paydo bo'lgan yangi oraliqlar darhol umumlashtirilmaydi va bu indeks to'g'riligiga ta'sir qilmaydi, chunki summary ma'lumoti yo'q oraliq doim skanlanadi; umumlashtirish asinxron, ya'ni jadval vacuum i paytida yoki `brin_summarize_new_values` (bitta oraliq uchun `brin_summarize_range`) chaqirilganda bajariladi (Rogov, 29.5, 523-bet). `autosummarize = on` yoqilsa yangi oraliq darhol umumlashtiriladi, lekin ma'lumot omborida, ya'ni qatorlar bittalab emas katta paket bilan qo'shiladigan joyda bu rejim qo'shishni jiddiy sekinlashtirishi mumkin (Rogov, 29.5, 523-bet).
+
+```sql
+CREATE INDEX idx_audit_created_brin
+    ON audit_log USING brin (created_at) WITH (pages_per_range = 64);
+
+-- Paketli yuklashdan keyin: autosummarize o'rniga aniq chaqiruv
+SELECT brin_summarize_new_values('idx_audit_created_brin');
+
+-- Faqat bitta oraliqni qayta hisoblash kerak bo'lsa
+SELECT brin_desummarize_range('idx_audit_created_brin', 128);
+SELECT brin_summarize_range('idx_audit_created_brin', 128);
+```
+
+Yana bir xossa qarorga ta'sir qiladi: summary ma'lumoti hech qachon qisqarmaydi, u faqat kengayadi, va qaysi oraliqni qayta hisoblash foyda berishini aytadigan belgi yo'q (Rogov, 29.5, 523-bet). Demak BRIN ko'p `UPDATE` va `DELETE` bo'ladigan jadvalda asta ma'nosini yo'qotadi va uni qayta tiklashning avtomatik yo'li yo'q. Kitobning o'z xulosasi ham shu: BRIN birinchi navbatda juda katta, ya'ni yo faqat oxiriga yangi qator qo'shiladigan, yo umuman yangilanmaydigan jadvallar uchun va asosan analitik hisobotlar uchun mo'ljallangan (Rogov, 29.5, 523-bet).
+
+Spring tomonida bundan bitta operatsion qoida chiqadi: paketli yuklovchi job `autosummarize` ga tayanmaydi, balki yuklash tugagach `brin_summarize_new_values` ni aniq chaqiradi. Shunda yuklash tezligi tushmaydi va keyingi hisobot to'liq summary ustida ishlaydi.
+
+## 23.23 Amalda qo'llash
 
 - [ ] Eng og'ir 10 so'rovni `pg_stat_statements` dan oling va har biriga `EXPLAIN (ANALYZE, BUFFERS)` yozib, `Heap Fetches` va `Rows Removed by Filter` qiymatlarini qayd qiling.
 - [ ] Mijoz kabinetidagi ro'yxat so'rovi uchun ustunlar tartibini tekshirib, tenglik ustunini oldinga, `ORDER BY` ustunini oxiriga qo'ygan bitta indeks qoldiring.
@@ -566,6 +714,15 @@ Arxitektor uchun xulosa: ustun turini tanlash indeks hajmiga bevosita ta'sir qil
 - Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 27-bob "SP-GiST", 472-491-betlar - quadtree, k-d tree, satrlar uchun radix tree, `inet` va oraliq operator classlari
 - Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 25-bob "B-tree", 429-431-betlar - deduplication sharti va `allequalimage`, ichki yozuvlarda suffix truncation
 - Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 28-bob "GIN", 505-506-betlar - GIN xossalari, leksema pozitsiyasi indeksga tushmasligi va `rum` kengaytmasi
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 19-bob "Index Access Methods", 315-318-betlar - bir turni bir nechta operator class qo'llashi va tanlov foydalanuvchida bo'lishi, `text` uchun to'rtta B-tree class, tildali operatorlar collation ni hisobga olmasligi, `text_pattern_ops` bilan `LIKE 'prefiks%'` indeksga tushishi
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 19-bob "Index Access Methods", 326-bet - `clusterable`, `index_scan`, `bitmap_scan` va `backward_scan` xossalarining ta'rifi
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 20-bob "Index Scans", 331-334-betlar - indeks skan narxining korrelyatsiyaga bog'liqligi, `pg_stats.correlation`, yuqori korrelyatsiyada 4638.91 va past korrelyatsiyada 56957.48 narx, yangilanish korrelyatsiyani buzishi va tartib uchun `ORDER BY` majburiyligi
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 20-bob "Index Scans", 348-349-betlar - seq scan va index scan narxining selektivlikka bog'liqligi egri chiziq sifatida, aniq foiz chegarasi yo'qligi
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 23-bob "Sorting and Merging", 388-bet - merge join faqat tenglik operatorini qo'llashi
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 24-bob "Hash", 417-418-betlar - hash funksiyasini tur bilan bog'lashni operator class qilishi va uning hash join hamda guruhlashda ishlatilishi, hash classda faqat tenglik operatori
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 25-bob "B-tree", 432-442-betlar - taqqoslash semantikasi va beshta strategiya, ko'p ustunli indeksda `ASC`/`DESC` aralashuvi va `Incremental Sort`, `NULL` larning standart joyi hamda `NULLS FIRST` va `NULLS LAST`, B-tree ning to'rtta indeks darajasidagi xossasi
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 28-bob "GIN", 499-504-betlar va 516-bet - kam uchraydigan leksemaning majburiy bo'lishi va o'lchovlar (`wrote` 231173, `tattoo` 2 hujjat; 0.631, 2.227 va 343.556 ms), GIN doim bitmap qaytarishi va `LIMIT` ning samarasizligi, `gin_fuzzy_search_limit` standarti nol va tasodifiy tashlab ketishi, `intarray`, `hstore` va `jsquery` kengaytmalari
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 29-bob "BRIN", 517-529-betlar - `pages_per_range` standarti 128, `autosummarize` standarti o'chiq va paketli yuklashni sekinlashtirishi, `brin_summarize_new_values` va `brin_desummarize_range`, summary ning qisqarmasligi, oraliq hajmi va indeks hajmi savdosi (32 sahifa 529 kB, 128 sahifa 184 kB, 512 sahifa 72 kB), BRIN ning indeks darajasidagi xossalari
 
 ---
 

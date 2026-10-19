@@ -1,0 +1,21 @@
+# Umumiy yozish qoidalari: har Java fayl (sonarqube 28.17)
+
+- Kartadan ortiq qatlam, interfeys, wrapper yo'q, pattern faqat kodda bor muammoga (patterns 25.25), chetga chiqilsa sababi hisobotda; Singleton, Factory, Registry qo'lda emas: bean, `@Bean`, `Map<String, T>` (patterns 1.1, 1.17, 5.3).
+- Bitta ish bitta metod: faqat qiymati (status, path, stavka) farq qilsa parametrli metod yoki private yordamchi (clean-code 37.8); takror blok Extract Method (clean-code 32.2, sonarqube 27.7); boshqa sababdan o'zgaradigan o'xshash kod birlashtirilmaydi, flag parametr yo'q (code-review 7.5, patterns 26.19).
+- Erta qaytish, guard clause (clean-code 37.3); izoh "nega" ni aytadi, kodni takrorlamaydi (clean-code 8.4, 9.2).
+- Bo'sh `catch`, `catch (Exception)` yo'q: aniq tur, `cause` saqlanadi (`java:S108`, `S2221`, sonarqube 13.5).
+- `@SuppressWarnings`, `NOSONAR`, `sonar.exclusions` faqat false positive da, izohda sabab; coverage uchun exclusion emas, test (sonarqube 12.8, 12.9).
+- Deprecated API o'rniga Javadoc dagi almashtirish (`java:S1874`, `S5738`, sonarqube 28.7).
+- `@Deprecated` ga Javadoc `@deprecated`, `since`, `forRemoval`; eski deprecated kod qolmaydi (`java:S1123`, `S6355`, `S1133`, sonarqube 28.7). <!-- agar: @Deprecated -->
+- Resurs `try-with-resources` da (`PdfReader` ham), `finally` da `close()` yo'q (`java:S2093`); tozalash `AutoCloseable` (`close() throws SQLException`) + lambda, qayta `close()` yo'q (`S4087`, sonarqube 13.6). <!-- agar: close\(|Files\.|(In|Out)putStream|Reader|Writer|Connection|ResultSet|AutoCloseable|try\s*\(|finally -->
+- `@Transactional` metod `this` orqali chaqirilmaydi (`java:S6809`); value-based tur (`Instant`, `Optional`) `==` emas (`S8696`); `int` bo'linma `float` dan oldin cast (`S2184`); `record`, `var`, `yield` nom emas (`S6213`); otilmaydigan `throws` yo'q (`S1130`).
+- `TODO`, ishlatilmagan import, `private` a'zo, konstanta, metod qolmaydi; Sonar uchun getter, metod yo'q (`java:S1068`, `S1144`, sonarqube 28.3, 31.11).
+- `\n` li satr text block (`java:S6126`); formatda `%n`, aniq `\n` bayt: `append('\n')` (`S3457`, sonarqube 30.15). <!-- agar: \\n|String\.format|\.formatted\(|printf -->
+- Lambda emas metod havolasi: `Objects::isNull`, `X::getId` (`java:S1612`, sonarqube 30.15). <!-- agar: (?<!-)->|:: -->
+- `Calendar` emas `java.time`; `setTimestamp(.., calendar)` emas `setObject(i, satr, Types.OTHER)`, `OffsetDateTime`/`LocalDateTime` emas (`java:S2143`, clean-code 22.9). <!-- agar: Calendar|setTimestamp -->
+- Lombok bor: konstruktor `@RequiredArgsConstructor`, logger `@Slf4j`; yo'q: qo'lda konstruktor (clean-code 26.1, 26.10). <!-- agar: lombok|@RequiredArgsConstructor|@Slf4j -->
+- Karta talab qilgan `@EnableCaching`, `@EnableScheduling`, `@EnableResilientMethods` sinfi yo'qsa yaratiladi (ro'yxatdan tashqari, hisobotda) (patterns 11.10, 5.31, 17.40). <!-- agar: keshlash|rejalashtirilgan ish|chidamlilik|@Cacheable|@Scheduled|@Retryable -->
+- Coverage: try-with-resources ichida `return` emas, bitta chiqish; enum ga exhaustive `switch`; yetib bo'lmaydigan shart olinadi; faqat `test` task, o'lchash `run_tests.py --coverage`, `GENIUS_GRADLE_INIT=0` emas (sonarqube 11.9). <!-- agar: coverage|qoplash|jacoco -->
+- Build: `mavenLocal()` `content { includeModule(..) }` bilan; checksum: `--write-verification-metadata sha256 --refresh-dependencies`; yangi versiya sinfi `AutoCloseable` mi, `javap` bilan (code-review 33.5, sonarqube 13.6). <!-- agar: pom\.xml|build\.gradle|\.toml|verification-metadata -->
+- `@EnableFeignClients`, `@ComponentScan` ga kutubxona paketi yo'q (bir nomli `FeignClientSpecification` yiqitadi), overriding yo'q, `AutoConfiguration.imports` ni `javap` ko'rsatadi (code-review 18.7). <!-- agar: @EnableFeignClients|@ComponentScan -->
+- Zaxira nusxa (`.bak`, `.orig`, `*-copy`) yo'q, tarix git da; hujjat, memory faqat `docs-local` ga (manguberdi SKILL.md).

@@ -85,24 +85,117 @@
 # qatorda qoida bor, lekin uning har bir jumlasi kitobga solishtirilgan
 # emas: bu `docs/review.tsv` dagi bob tekshiruvining ishi.
 #
-# BO'LIM DARAJASIDAGI AUDIT (2026-10-17). Bob darajasidagi `bor`
-# bobning har bir nomlangan qoidasi borligini bildirmaydi. Shuni
-# tekshirish uchun olti kitob bo'lim darajasida audit qilindi:
-# clean-arch, code-complete, legacy-code, philosophy, poeaa, xunit.
-# 1218 nomlangan qoidadan 979 tasi korpusda bor edi, 155 tasi yo'q
-# edi va shu sessiyada yozildi, 84 tasi `tashqari`. Eng past qamrov
-# legacy-code da: 123 dan 44 tasi yo'q edi.
+# BO'LIM DARAJASIDAGI AUDIT (2026-10-19, faza 4 dan keyin: YOPILDI).
+# Bob darajasidagi `bor` bobning har bir qoidasi borligini
+# bildirmaydi. Shuni tekshirish uchun manbalarning bob TANASI
+# o'qildi. Hozirgi holat:
 #
-# Qolgan 34 kitob HAMON BOB DARAJASIDA. Ular uchun `bor` qatori
-# "bobning mavzusi korpusda bor" degani, "bobning har bir nomlangan
-# qoidasi bor" degani EMAS. Quyidagilarga audit kerak emas, chunki
-# ularning qatori allaqachon eng mayda birlik: effective-java (Item),
-# gof va doc-sa (bo'lim), sa-for-devs (uch betlik bob), jeps (bitta
-# JEP), orosz, schildt11, sys-perf, wgjd, evolutionary-keynote,
-# learning-ddd-html.
+# 1) TANASI O'QILGAN, 49 manba. `bor` qatori o'qilgan matnga tayanadi.
+#    birinchi to'lqin (6): clean-arch, code-complete, legacy-code,
+#      philosophy, poeaa, xunit. 1218 nomlangan qoidadan 979 bor, 155
+#      yo'q edi va yozildi, 84 `tashqari`; eng past qamrov
+#      legacy-code, 123 dan 44 yo'q edi.
+#    faza 1 (4): spring-action, spring-security, spring-micro,
+#      pg-internals. 264 bo'shliqdan 52 bo'lim.
+#    faza 3 (11): swe-google, fundamentals, just-enough,
+#      building-micro2, m2m, ddia, hard-parts, ddd-evans,
+#      learning-ddd, arc, ocp-practice. 526 bo'shliqdan 51 bo'lim.
+#    faza 4 (28): clean-code-book, jcip, refactoring, refactoring2,
+#      java-perf, jls, jvms, ocp-study, java-ref, clrs, deitel,
+#      deitel10, liang9, micro-patterns, eip, k8s-patterns,
+#      release-it, hfdp, dds, effective-java, gof, sa-for-devs,
+#      orosz, jeps, doc-sa, sys-perf, wgjd, schildt11.
+#      613 bo'shliqdan 11 bo'lim.
 #
-# Holat (2026-10-17): 1155 qatordan 684 tasi `bor`, 236 tasi `qoshildi`,
-# 230 tasi `tashqari`, 5 tasi `kirmagan`.
+# 2) QAMROVDA BOB YO'Q, 2 manba: evolutionary-keynote (taqdimot),
+#    learning-ddd-html (Google Books sahifasi). O'qiladigan narsa yo'q.
+#
+# NEGA FAZA 4 DA QAMROV 13 DAN 28 KITOBGA KENGAYTIRILDI. Avval 6
+# pattern katalogi (micro-patterns, eip, k8s-patterns, release-it,
+# hfdp, dds) "nom qidiruvi qoida darajasiga teng" deb yopilgan, 11
+# manba esa "qatori eng mayda birlikda, audit kerak emas" deb
+# chetga qo'yilgan edi. Ikki asos ham o'lchov bilan rad etildi:
+# ddd-evans ham nomlangan pattern kitobi va unda nom qidiruvi 9
+# bo'shliq ko'rsatgan, tana o'qilganda 89 chiqqan. Qator Item yoki
+# bo'lim darajasida bo'lishi o'sha Item ICHIDAGI qoidalar
+# tekshirilganini bildirmaydi: effective-java ning 89 Item idan 69
+# tasining holati sarlavhani qidirish bilan qo'yilgan edi va tana
+# o'qilganda 165 bo'shliq chiqdi.
+#
+# BO'SHLIQ ULUSHI (faza 4, kitob guruhi bo'yicha): clean-code-book
+# va jcip 2.6%, deitel/deitel10/liang9 6%, refactoring oilasi 10%,
+# release-it/hfdp/dds 12%, java-ref/clrs 21%, jls/jvms/ocp-study 38%,
+# gof/sa-for-devs 41%, micro-patterns/eip/k8s-patterns 46%. Ya'ni eng
+# katta bo'shliq korpus "yetarli ko'rilgan" deb hisoblagan joyda edi.
+#
+# QOLGAN QISMLAR (kitob emas, qism). Ikki toifa:
+#   a) nusxada fizik yo'q, kitobsiz yopilmaydi: doc-sa 1-11 va
+#      ilovalar, sys-perf 1-5 va 7-13 (USE metodining to'liq ta'rifi
+#      2-bobda va u yo'q), fundamentals 21-23, refactoring2 ning
+#      bosma 24-betdan keyingi hammasi.
+#   b) ataylab o'qilmagan, sababi yozilgan: jvms 4 va 6-bob (class
+#      fayl formati, instruksiya to'plami), jls 18-bob, clrs isbot va
+#      asimptotika, gof ning Intent/Structure/Sample Code qismlari va
+#      2-bobi, deitel/liang ramka tashqarisidagi nasri, java-ref
+#      19-22 va 29-boblarning jadval qismi, refactoring ning Example
+#      bo'limlari, eip 9 va 13-bob, schildt11 (java-ref 12-nashri
+#      qoplaydi, mundarija diffi bilan isbotlangan), java-perf ning
+#      VM o'lchov jadvallari, hamma kitobda rasm izohlari
+#      (pdftotext ularni bermaydi).
+#
+# BET SILJISHI (pdf_beti = bosma_bet + siljish). Kolontituldagi bosma
+# raqamni o'qib aniqlangan, taxmin qilinmagan; qavs ichida namuna soni.
+# Iqtibos yozishdan oldin shu jadvalga qaraladi, siljish qayta
+# hisoblanmaydi: men to'rt kitobda nol deb o'ylab 139 iqtibosni
+# butunlay boshqa betlarda tekshirib yuborgandim.
+#   effective-java +21   jcip +17   clean-code-book +31   gof +20
+#   refactoring 0        jls +16    jvms +10              java-ref +35
+#   clrs +21             k8s-patterns +20   micro-patterns +30
+#   release-it 0         hfdp +38   spring-action +27
+#   spring-security +30  spring-micro +25   pg-internals 0
+#   hard-parts +18       m2m +18    ddia +22   learning-ddd +26
+#   sa-for-devs +16      liang9 +33 deitel +38 deitel10 +44
+#   ocp-study +1         code-complete +37  legacy-code +23
+#   poeaa +25            xunit +63  arc +12    sys-perf -150
+#   dds +14              doc-sa +24
+# Bosma bet YO'Q yoki siljish doimiy emas, iqtibos bob va bo'lim nomi
+# bilan beriladi: eip (Word qo'lyozmasi, siljish o'zgaruvchan),
+# java-perf va schildt11 (kolontitul yo'q), orosz (skanerlangan,
+# matn qatlami yo'q), philosophy va clean-arch (kolontitul topilmadi),
+# swe-google, fundamentals, just-enough, building-micro2,
+# ocp-practice (bosma bet yo'q), ddd-evans (2003 qo'lyozmasi,
+# pattern nomi bilan).
+#
+# IQTIBOS TEKSHIRUVI (2026-10-19). `## Manbalar` dagi 894 bet
+# iqtibosi kitob betiga mexanik solishtirildi. Usul: da'vo o'zbekcha,
+# bet inglizcha, shuning uchun moslik tildan mustaqil langarga
+# tayanadi (backtick ichidagi kod identifikatori, o'nli qiymat,
+# jumla o'rtasidagi bosh harfli inglizcha atama).
+#   464 iqtibosda langar bor -> 464 tasi TO'G'RI chiqdi;
+#   430 tasi mexanik tekshirilmaydi (langar yo'q yoki kitobda bosma
+#   bet yo'q).
+# Xato bet raqami TOPILMADI. Skript dastlab 56 nomzod ko'rsatgan,
+# hammasi o'zining aybi bo'lib chiqdi: noto'g'ri siljish (44),
+# korpusning o'z bo'lim raqamini langar deb olish, yunon harfining
+# o'zbekcha transliteratsiyasi (`theta`, `alfa`), o'zbekcha bosh
+# harfli nom, bitta bulletdagi ikkinchi bet guruhini tekshirmaslik.
+# Shu sababli skript hukm chiqarmaydi, faqat qo'lda ko'rish uchun
+# nomzod beradi.
+#
+# ENDI QOLGAN ASOSIY ISH KITOBLARDA EMAS, KORPUSDA: `docs/review.tsv`
+# da 226 bobning 226 tasi `tekshirilmoqda`, bittasi ham inson
+# tasdiqlagan emas. Faza 1-4 "kitobdagi qoida korpusda bormi" degan
+# savolga javob beradi; "korpusdagi da'voning manbasi bormi" degan
+# savol ochiq. Shu yo'nalishda tasodifan topilgan xatolar: to'rtta
+# noto'g'ri PostgreSQL qiymati, architect 31.13 ning virtual thread
+# uchun noto'g'ri umumlashtirishi, clean-code 15 va architect 3 dagi
+# yetim iqtiboslar, patterns 13.47 dagi hujjat chalkashuvi, ikki
+# joyda o'zi-o'ziga qarshi seq-scan chegarasi. Tizimli o'tish uchun
+# tekshiriladigan yuza: 2568 bet iqtibosi, 383 standart qiymat, 999
+# versiya da'vosi.
+#
+# Holat (2026-10-19): 1156 qatordan 682 tasi `bor`, 240 tasi
+# `qoshildi`, 229 tasi `tashqari`, 5 tasi `kirmagan`.
 #
 # Qolgan besh `kirmagan` ning sababi bitta: bob tanasi nusxada yo'q
 # (fundamentals 21-23, doc-sa 1-11, sys-perf 1-5 va 7-13). Ular
@@ -198,7 +291,7 @@ hfdp	10	419	10: the State Pattern: The State of Things	patterns	bor	patterns 3.8
 hfdp	11	463	11: the Proxy Pattern: Controlling Object Access	patterns	bor	patterns 2.7 Proxy
 hfdp	12	531	12: compound patterns: Patterns of Patterns	patterns	bor	patterns 3.27 kompozit pattern, 6.1 MVC
 hfdp	13	601	13: better living with patterns: Patterns in the Real World	patterns	bor	patterns 25 anti-pattern, 26 printsiplar
-hfdp	14	635	14: appendix: Leftover Patterns	-	tashqari	korpus qamrovidan tashqari
+hfdp	14	635	14: appendix: Leftover Patterns	patterns	bor	to`qqiz pattern korpusda o`z bo`limi bilan: Bridge 2.2, Builder 1.10, Chain of Responsibility 3.1, Flyweight 2.6, Interpreter 3.3, Mediator 3.5, Memento 3.6, Prototype 1.11, Visitor 3.11. Audit 2026-10-19: avval xato `tashqari` edi
 jcip	1	18	Chapter 1 - Introduction	architect	bor	architect 11.1
 jcip	2	28	Chapter 2. Thread Safety	architect	bor	architect 11.3, 11.12
 jcip	3	40	Chapter 3. Sharing Objects	architect	qoshildi	architect 11.13 xavfsiz nashr
@@ -232,11 +325,11 @@ ocp-study	14	786	Chapter 14 I/O	clean-code	bor	clean-code 19.13 Path va Files
 ocp-study	15	864	Chapter 15 JDBC	clean-code	bor	patterns 9.34 Spring Data JDBC, architect 18
 ocp-study	AA	910	Appendix Answers to the Review Questions	-	tashqari	korpus qamrovidan tashqari
 spring-micro	1	26	1 Welcome to the cloud, Spring	patterns	bor	patterns 12, 14 mikroservis arxitekturasi
-spring-micro	2	60	2 Building microservices with Spring Boot	patterns	bor	architect 16 Spring Boot mexanikasi
+spring-micro	2	60	2 Building microservices with Spring Boot	patterns	bor	patterns 14.39 granularity, 22.1; architect 17.6. Audit 2026-10-19: avvalgi manzil (architect 16) auto-configuration haqida edi, bobga tegishli emas
 spring-micro	3	89	3 Controlling your configuration with Spring Cloud configuration server	patterns	bor	patterns 14.30 Externalized Configuration
 spring-micro	4	121	4 On service discovery	patterns	bor	patterns 14.x servis topish; Eureka o`rnida Spring Cloud Discovery
 spring-micro	5	144	5 When bad things happen: client resiliency patterns with Spring Cloud and Netflix Hystrix	patterns	bor	patterns 17.2 Circuit Breaker, 17.39 Resilience4j; Hystrix EOL
-spring-micro	6	178	6 Service routing with Spring Cloud and Zuul	patterns	bor	patterns 17.31, 14 API Gateway; Zuul o`rnida Spring Cloud Gateway
+spring-micro	6	178	6 Service routing with Spring Cloud and Zuul	patterns	bor	patterns 14.27 API Gateway, 17.33 routing, 17.32 offloading; Zuul o`rnida Spring Cloud Gateway. Audit 2026-10-19: 17.31 Gateway Aggregation, bu bobning mavzusi emas
 spring-micro	7	217	7 Securing your microservices	patterns	bor	architect 20, patterns 18 xavfsizlik
 spring-micro	8	253	8 Event-driven architecture with Spring Cloud Stream	patterns	bor	patterns 16.37 Spring Cloud Stream
 spring-micro	9	284	9 Distributed tracing with Spring Cloud Sleuth and Zipkin	patterns	bor	patterns 21.4 Distributed Tracing; Sleuth o`rnida Micrometer Tracing
@@ -377,7 +470,8 @@ spring-action	15	414	15 Working with Spring Boot Actuator	architect	bor	architec
 spring-action	16	450	16 Administering Spring	architect	bor	architect 30.12
 spring-action	17	462	17 Monitoring Spring with JMX	architect	qoshildi	architect 30.12 JMX qoidasi
 spring-action	18	470	18 Deploying Spring	architect	bor	architect 31 deployment
-spring-security	1	33	1 Security today	architect	bor	architect 20.1 filter chain
+spring-action	A	486	Appendix A Bootstrapping Spring applications	-	tashqari	IDE bilan loyiha boshlash qadamlari (IntelliJ, NetBeans, STS); start.spring.io va CLI qismi patterns 14.31 ga tegishli
+spring-security	1	33	1 Security today	architect	bor	code-review 28-33 zaiflik sinflari, patterns 18.x. Audit 2026-10-19: avvalgi manzil (architect 20.1 filter chain) xato, 1-bobda filter chain umuman yo`q
 spring-security	2	63	2 Hello Spring Security	architect	bor	architect 20, patterns 18
 spring-security	3	91	3 Managing users	architect	bor	patterns 18.5 UserDetailsService
 spring-security	4	116	4 Dealing with passwords	architect	bor	patterns 18.7 PasswordEncoder
@@ -995,7 +1089,7 @@ refactoring	10	220	Chapter 10. Making Method Calls Simpler	clean-code	bor	clean-
 refactoring	11	259	Chapter 11. Dealing with Generalization	clean-code	bor	clean-code 36.15, 37.13-37.15; patterns 3.10 Template Method, 26.4 ISP
 refactoring	12	293	Chapter 12. Big Refactorings	architect	bor	architect 34.7 strangler, 34.12; clean-code 38.5; patterns 12.2
 refactoring	13	311	Chapter 13. Refactoring, Reuse, and Reality	architect	bor	architect 34.9 biznes bilan kelishish, 34.11 qachon tegmaslik
-refactoring	14	328	Chapter 14. Refactoring Tools	-	tashqari	1999 yilgi Smalltalk Refactoring Browser sharhi, eskirgan
+refactoring	14	328	Chapter 14. Refactoring Tools	clean-code	bor	clean-code 38.3 shu bobning 329-331-betlariga tayanadi (asbobdan nima kutish, semantik tahlil chegarasi). Audit 2026-10-19: avval xato `tashqari` edi; 1999 yilgi asbob sharhining o`zi eskirgan
 refactoring	15	333	Chapter 15. Putting It All Together	clean-code	bor	clean-code 38.6 refaktoringni to`xtatish nuqtasi
 refactoring2	1	1	Chapter 1: Refactoring: A First Example	clean-code	bor	preview: faqat nom va 18 betgacha matn; clean-code 35.1, 35.2, 37.4
 refactoring2	2	45	Chapter 2: Principles in Refactoring	clean-code	bor	preview: faqat mundarija va nomlar, matn yo`q; clean-code 38, 41

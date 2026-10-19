@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 24. Lambda, oqim va funksional uslub tozaligi (Lambdas and Streams)
 
@@ -49,6 +49,41 @@ List<SettlementRow> valid = rows.stream()
 private boolean isValid(SettlementRow row) { ... }
 ```
 
+Lambda tanasi tashqi qamrovdagi lokal o'zgaruvchini faqat **effectively
+final** bo'lsa oladi: o'zgaruvchi e'londan keyin bir marta ham
+o'zgartirilmagan bo'lishi kerak, va bu talab lambda ichida ham,
+tashqarisida ham amal qiladi. Shuning uchun "lambda ichida hisoblagichni
+oshirish" namunasi kompilyatsiyadan o'tmaydi. Kompilyatorni mamnun qilish
+uchun hisoblagichni maydonga ko'chirish esa muammoni yechmaydi, yashiradi
+(24.4).
+
+```java
+// yomon: total effectively final emas - kompilyatsiya xatosi
+int total = 0;
+rows.forEach(row -> total += row.amount());
+
+// yaxshi: hisob oqimning o'zida qoladi
+int total = rows.stream().mapToInt(SettlementRow::amount).sum();
+```
+
+Qolgan ikki qoida lambdaning o'qilishiga tegishli. Birinchisi: **lambda
+parametrlarining turlari yozilmaydi**, agar ularning borligi kodni
+aniqroq qilmasa; kompilyator turni tur xulosasi bilan topadi, yozilgan
+tur esa faqat qatorni uzaytiradi. Ikkinchisi shundan kelib chiqadi:
+turlar ko'rinmaganidan keyin o'qilish butunlay **nomga** tayanadi,
+shuning uchun oqim quvurida lambda parametrini ehtiyotkorlik bilan
+nomlash majburiy, `x`, `a`, `t` kabi harflar bilan emas.
+
+```java
+// yomon: tur ortiqcha, nom hech narsa aytmaydi
+.filter((Payment p) -> p.isSettled())
+.map((Payment x) -> x.amount())
+
+// yaxshi: tur xulosa qilinadi, nom domen nomi
+.filter(payment -> payment.isSettled())
+.map(Payment::amount)
+```
+
 ## 24.2 Metod havolasi qachon o'qiladi
 
 Metod havolasi (`Payment::isSettled`) lambdadan qisqa va nom ma'noni aytadi, shuning uchun mavjud bo'lsa afzal. Lekin u har doim o'qiladi degani emas: argumentlar tartibi ko'rinmasa yoki konstruktor havolasi noaniq bo'lsa, lambda aniqroq.
@@ -70,6 +105,27 @@ Metod havolasi (`Payment::isSettled`) lambdadan qisqa va nom ma'noni aytadi, shu
 .map(line -> SettlementRow.parse(line))
 ```
 
+Metod havolasining besh turi bor va ularni nom bilan bilish review da
+foyda beradi, chunki noaniqlik ko'pincha turlarni aralashtirishdan
+chiqadi.
+
+| Tur | Shakl | Misol |
+|---|---|---|
+| Statik | `Sinf::statikMetod` | `Integer::parseInt` |
+| Bog'langan (bound) nusxa | `obyekt::metod` | `payment::amount` |
+| Bog'lanmagan (unbound) nusxa | `Sinf::nusxaMetodi` | `Payment::amount` |
+| Sinf konstruktori | `Sinf::new` | `ArrayList::new` |
+| Massiv konstruktori | `Tur[]::new` | `String[]::new` |
+
+Bog'langan va bog'lanmagan shakl bir xil ko'rinadi, lekin birinchisida
+obyekt allaqachon tanlangan, ikkinchisida obyekt birinchi argument bo'lib
+keladi. Aynan shu farq `map(Payment::amount)` ni ishlatadi va
+`map(payment::amount)` ni xato qiladi.
+
+Teskari tomoni ham bor: metod havolasi har doim qisqaroq degani emas.
+`Function.identity()` o'rniga `x -> x` yoziladi, chunki u qisqaroq va
+tozaroq; `identity()` nomi qo'shimcha ma'no bermaydi.
+
 ## 24.3 Standart funksional interfeyslar va o'zingiznikini yozmaslik
 
 `java.util.function` paketi 43 ta interfeys beradi va ularning hammasi uchun o'z interfeysingizni yozish keraksiz: standart turlar bilan sizning kodingiz boshqa kutubxonalar bilan birga ishlaydi.
@@ -86,6 +142,32 @@ Metod havolasi (`Payment::isSettled`) lambdadan qisqa va nom ma'noni aytadi, shu
 | primitiv variantlar | `IntPredicate`, `ToLongFunction` va h.k. |
 
 O'z interfeysingizni yozish faqat ikki holatda haqli: nom domen ma'nosini beradi (`interface TaxPolicy { Money taxFor(Region r, Money net); }`), yoki tekshiriladigan istisno tashlanishi kerak (24.7).
+
+Standart turlardan foydalanishning ikki qoidasi bor. Birinchisi: **boxed
+primitiv bilan asosiy funksional interfeysni ishlatmaslik**, primitiv
+variantini olish. `Function<Integer, Integer>` emas `IntUnaryOperator`,
+`Predicate<Long>` emas `LongPredicate`. Ommaviy amalda har element uchun
+boxing va unboxing qilinadi, va bu narx jadvaldagi "primitiv variantlar"
+qatorining butun sababi (20.6).
+
+Ikkinchisi o'z interfeysingizga tegishli: **hamisha
+`@FunctionalInterface` qo'yiladi.** U uch ish qiladi: o'quvchiga interfeys
+lambda uchun mo'ljallanganini aytadi, bitta abstrakt metod shartini
+kompilyatorga majburlatadi, va keyinchalik kimdir tasodifan ikkinchi
+abstrakt metod qo'shishini to'sadi.
+
+```java
+@FunctionalInterface
+public interface TaxPolicy {
+    Money taxFor(Region region, Money net);
+}
+```
+
+Lambdaning o'zi haqida bitta mexanik chegara: **lambda generic bo'la
+olmaydi**, ya'ni unga tur parametri yozilmaydi. Generiklik lambdada emas,
+u amalga oshiradigan funksional interfeysda beriladi, shuning uchun o'z
+funksional interfeysingizni yozganda tur parametri interfeys e'lonida
+turadi.
 
 ## 24.4 Oqim ichida yon ta'sir va `forEach` tuzog'i
 
@@ -110,6 +192,42 @@ List<OrderId> toShip = orders.stream().filter(Order::isReadyToShip).map(Order::i
 repository.markShipped(toShip);
 ```
 
+**Oqim manbasini quvur qurilgandan keyin o'zgartirish natijaga ta'sir qiladi.** Yon ta'sirning ikkinchi, kamroq tanilgan shakli - manbaga tegish. Stream kechiktirib bajariladi: `collection.stream()` chaqiruvi hech narsa o'qimaydi, faqat ma'lumotni kerak bo'lganda qayerdan izlashni biladigan obyekt yaratadi. Shuning uchun manba kolleksiya `stream()` dan **keyin**, lekin terminal operatsiyadan **oldin** o'zgartirilsa, o'zgarish natijaga kiradi.
+
+```java
+var cats = new ArrayList<String>();
+cats.add("Annie");
+cats.add("Ripley");
+var stream = cats.stream();      // hech narsa o'qilmaydi
+cats.add("KC");                  // quvur qurilgandan keyin qo'shildi
+System.out.println(stream.count());   // 3, 2 emas
+```
+
+Bu xatti-harakat JDK hujjatida **non-interference** talabi sifatida yozilgan: quvur bajarilayotganda manbani o'zgartirish `ConcurrentModificationException` yoki yanada yomoni jim noto'g'ri natija beradi. Yuqoridagi misol qonuniy, chunki o'zgarish terminal operatsiyadan oldin sodir bo'lgan, lekin kodni o'qigan odam buni kutmaydi. Qoida: **`stream()` chaqiruvi va terminal operatsiya bitta ifodada tursin**, oraliq `Stream` o'zgaruvchiga saqlanmasin. Saqlash kerak bo'lgan hollarda (quvurni bosqichma-bosqich qurish) manba o'zgarmas bo'lsin: `List.copyOf(cats).stream()`.
+
+Yon ta'sirning uchinchi shakli lambdaning capture qoidasidan chiqadi va u
+ayniqsa jim. Lambda tashqi qamrovdagi lokal o'zgaruvchini faqat
+effectively final bo'lsa oladi (24.1), lekin tashqi sinfning **nusxa va
+statik maydonini** o'qiy ham, o'zgartira ham oladi: maydonga capture
+cheklovi qo'yilmagan. Natijada "hisoblagich lokal o'zgaruvchi bo'lganda
+kompilyatsiya bo'lmadi, maydon qilib qo'ydim" degan tuzatish kompilyatorni
+mamnun qiladi va muammoni kattalashtiradi. Lokal o'zgaruvchi bitta metod
+ichida qolardi, maydon esa butun obyekt bo'ylab umumiy o'zgaradigan
+holat: parallel oqimda poyga holati, ketma-ket oqimda esa oldingi
+chaqiruvdan qolgan qiymat.
+
+```java
+// yomon: capture cheklovini maydon bilan chetlab o'tish - jim umumiy holat
+private int processed;
+
+void run(List<Order> orders) {
+    orders.forEach(order -> processed++);   // kompilyatsiya bo'ladi, thread-safe emas
+}
+
+// yaxshi: hisob natija bo'lib qaytadi
+long processed = orders.stream().filter(this::process).count();
+```
+
 ## 24.5 `peek`, `parallelStream` va tartib
 
 `peek` faqat **debug** uchun mo'ljallangan va uni mantiqda ishlatish xato: terminal amal bo'lmasa oqim umuman bajarilmaydi, va ba'zi optimizatsiyalarda `peek` chaqirilmaydi.
@@ -129,6 +247,57 @@ try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
 Parallel oqim foyda beradigan shart ham aniq va u manbaga bog'liq: `ArrayList`, `HashMap`, `HashSet`, `ConcurrentHashMap`, massiv, `int` va `long` oraliqlari. Ularning umumiy xususiyati ikkita: ular kerakli o'lchamdagi bo'laklarga arzon va aniq bo'linadi (buni `spliterator` bajaradi) va ketma-ket o'qilganda havolalar xotirada yonma-yon yotadi. Teskari tomoni: `Stream.iterate` va `limit` bilan qurilgan oqim parallelda yomon ishlaydi, chunki uni bo'lib bo'lmaydi.
 
 Terminal amal ham ahamiyatli: parallel uchun eng mos amallar reduksiyalar (`reduce`, `min`, `max`, `count`, `sum`). `collect` esa to'plamni qo'shib yurishni talab qiladi, shuning uchun parallelda qimmat. Ya'ni parallel oqim qarori uch savolga javob bo'ladi: manba bo'linadimi, terminal amal reduksiyami, va o'lchov haqiqatda foyda ko'rsatdimi.
+
+Oraliq amallarning ikki toifasi ham shu qarorga kiradi. Holatsiz oraliq
+amal (`filter`, `map`) har elementni mustaqil ko'radi, shuning uchun uni
+bo'laklarga bo'lish bepul. Holatli oraliq amal (`sorted`, `distinct`)
+esa oldingi barcha oraliq amal tugashini talab qiladi va parallel oqimda
+butun oqimni buferlaydi: quvurning o'rtasidagi bitta `sorted`
+parallellashtirishning foydasini yo'qotishi mumkin.
+
+Parallellashtirishning narxi faqat tezlikda emas, **to'g'rilikda** ham:
+noto'g'ri funksiya berilgan parallel oqim sekin ishlamaydi, noto'g'ri
+natija beradi, va bu natija har ishga tushishda boshqacha bo'ladi. Shuning
+uchun `reduce` ga uzatilgan akkumulyator va birlashtirgich uchta shartni
+qanoatlantirishi shart:
+
+- **holatsiz (stateless)** - natija faqat argumentlarga bog'liq, hech
+  qanday tashqi holatni o'qimaydi va yozmaydi;
+- **aralashmaydigan (non-interfering)** - quvur bajarilayotganda manbani
+  o'zgartirmaydi (24.4);
+- **assotsiativ** - `(a op b) op c` va `a op (b op c)` bir xil natija
+  beradi, chunki bo'laklarning birlashtirilish tartibi aniqlanmagan.
+
+Uchta shart ketma-ket oqim uchun ham yozilgan, lekin ketma-ket oqimda
+ularning buzilishi ko'pincha ko'rinmaydi: assotsiativ bo'lmagan
+akkumulyator bitta threadda barqaror natija berib turadi va faqat
+`parallel()` qo'shilganda sinadi.
+
+```java
+// yomon: ayirish assotsiativ emas - parallelda natija har xil chiqadi
+int result = numbers.parallelStream().reduce(0, (a, b) -> a - b);
+
+// yomon: holatli akkumulyator - tashqi obyektni o'zgartiradi
+StringBuilder all = new StringBuilder();
+String joined = words.parallelStream()
+        .reduce("", (acc, word) -> { all.append(word); return acc + word; });
+
+// yaxshi: assotsiativ va holatsiz
+int result = numbers.parallelStream().reduce(0, Integer::sum);
+```
+
+Oxirgi qoida o'z turlaringizga tegishli: `Stream`, `Iterable` yoki
+`Collection` ning o'z implementatsiyasi parallelda yaxshi ishlashi kerak
+bo'lsa, `spliterator` metodini override qilish va parallel ishlashni
+**o'lchash** shart. Standart `spliterator` sizning manbangiz qanday
+bo'linishini bilmaydi, shuning uchun u bo'laklarni teng qilmaydi va
+parallellashtirish foyda bermaydi.
+
+Parallel oqim ichida tasodifiy son kerak bo'lsa, generator tanlovi
+alohida qaror: bitta thread uchun `ThreadLocalRandom`, bo'linadigan
+parallel oqim yoki fork-join uchun `SplittableRandom`; `Random` faqat
+eski kodda qoladi ([tasodifiy son
+generatsiyasi](20-primitiv-son-va-pul.md#208-tasodifiy-son-uuid-va-identifikator-generatsiyasi)).
 
 `forEachOrdered` tartibni saqlaydi, lekin parallel oqimning foydasini yo'qotadi - bu ikkisining birga kerak bo'lishi parallel oqim noto'g'ri tanlov ekanini bildiradi.
 
@@ -158,6 +327,34 @@ return repository.findById(id)
 ```
 
 Qo'shimcha qoidalar: `Optional.get()` ni hech qachon tekshiruvsiz chaqirmaslik, `Optional` ni `null` qilmaslik, va `Optional<List<T>>` o'rniga bo'sh ro'yxat qaytarish (18.8).
+
+`Optional` ni nega umuman tanlash kerak, degan savol ham shu yerga
+tegishli, chunki u `null` bilan taqqoslashni hal qiladi: `Optional`
+**tekshiriladigan istisnoga ruhan o'xshaydi**. U API foydalanuvchisini
+qiymat qaytmasligi ehtimoliga qarashga majbur qiladi, chunki qiymatga
+yetish uchun o'ramni ochish kerak. `null` qaytarish va tekshirilmaydigan
+istisno tashlash esa buni e'tiborsiz qoldirishga yo'l qoldiradi va
+nosozlik chaqiruv joyidan uzoqda chiqadi.
+
+Ikki mexanik qoida zanjirni qisqartiradi. Birinchisi: **boxed primitivni
+o'ragan `Optional` hech qachon qaytarilmaydi**, chunki u ikki qatlam
+o'ram beradi (`Optional` ning o'zi va boxing); `OptionalInt`,
+`OptionalLong`, `OptionalDouble` ishlatiladi. Ikkinchisi: Java 9 dan
+`Optional.stream()` bor, ya'ni `Stream<Optional<T>>` ni `Stream<T>` ga
+aylantirish uchun ikki bosqichli filtr kerak emas.
+
+```java
+// yomon: ikki bosqich va get()
+Stream<Order> found = ids.stream()
+        .map(repository::findById)
+        .filter(Optional::isPresent)
+        .map(Optional::get);
+
+// yaxshi: bitta flatMap
+Stream<Order> found = ids.stream()
+        .map(repository::findById)
+        .flatMap(Optional::stream);
+```
 
 ## 24.7 Tekshiriladigan istisno va lambda
 
@@ -207,6 +404,38 @@ Map<RegionCurrency, Money> totals = payments.stream()
 
 Statik import (`groupingBy` emas `Collectors.groupingBy`) shu kodni ancha o'qiladigan qiladi va bu `Collectors` uchun qabul qilingan istisno (12.7).
 
+`groupingBy` ning jim xulqi haqida ikki tafsilot bor va ikkisi ham enum
+kalit bilan chiqadi. Birinchisi: `groupingBy` qaytaradigan xarita
+implementatsiyasini **o'zi tanlaydi** va u `EnumMap` bo'lmaydi; `EnumMap`
+kerak bo'lsa uch parametrli shakl ishlatiladi, bunda ikkinchi argument
+xarita fabrikasi (`mapFactory`). Ikkinchisi: `groupingBy` faqat **mavjud
+kalitlar** uchun yozuv yaratadi, qo'lda to'ldirilgan `EnumMap` esa barcha
+kalitlar uchun. Ya'ni ikki shakl bir xil ko'rinadi, lekin elementi
+bo'lmagan guruh so'ralganda biri `null`, ikkinchisi bo'sh ro'yxat beradi.
+
+```java
+// yaxshi: xarita fabrikasi oshkor - natija EnumMap, tartib enum e'loni bo'yicha
+Map<Status, List<Payment>> byStatus = payments.stream()
+        .collect(groupingBy(Payment::status,
+                () -> new EnumMap<>(Status.class),
+                toList()));
+```
+
+Oraliq tur haqidagi yuqoridagi qoidaning chegarasi ham bor va u
+adabiyotda qarama-qarshi aytilgan: Bloch quvur ichida juft obyekt
+yasashni qoniqarsiz deb ataydi va buning o'rniga **mappingni teskari
+aylantirishni** tavsiya qiladi. Ikkisini ajratadigan shart oraliq turning
+roliga qaraydi.
+
+| Holat | Yechim |
+|---|---|
+| Oraliq tur agregatsiya KALITI bo'ladi (region va valyuta juftligi bo'yicha guruhlash) | oraliq `record`: kalit nom oladi, `equals` va `hashCode` ni tekin beradi |
+| Quvurning oldingi bosqichidagi QIYMATGA qaytish kerak (eng ko'p sotilgan mahsulot nomi, lekin solishtirish soni bo'yicha) | mappingni teskari aylantirish: kalit va qiymat almashtiriladi, natija `Collectors.maxBy` yoki `toMap` ning merge funksiyasi bilan olinadi |
+
+Ya'ni oraliq tur yangi kalit yaratganda haqli. U faqat yo'qolgan qiymatni
+quvur bo'ylab tashib yurish uchun yasalsa, teskari mapping qisqaroq va
+qo'shimcha tur qoldirmaydi.
+
 ## 24.9 Oqimni qaytarish yoki to'plam qaytarish
 
 Public metod `Stream` qaytarishi mumkin, lekin bu shartnomani o'zgartiradi: oqim bir marta o'qiladi va yopilishi kerak bo'lishi mumkin. Shuning uchun standart tanlov - `List` qaytarish; `Stream` faqat ikki holatda.
@@ -230,6 +459,29 @@ Public metod `Stream` qaytarishi mumkin, lekin bu shartnomani o'zgartiradi: oqim
 Stream<Payment> streamSettledIn(DateRange range);
 ```
 
+Jadvalning `Iterable<T>` qatori bitta tafsilotni yashiradi: JDK `Stream`
+ni `for-each` da ishlatish yo'lini bermaydi. `Stream` da `iterator()`
+metodi bor, lekin `Stream` `Iterable` ni amalga oshirmaydi, shuning uchun
+`for-each` uchun adapter metod yoziladi. Metod havolasini `Iterable` ga
+cast qilish shakli ham ishlaydi (`(Iterable<Payment>)
+payments::iterator`), lekin u amalda o'qilmaydi va review da savol
+tug'diradi.
+
+```java
+// Adapter: Stream ni for-each da ishlatish uchun
+public static <T> Iterable<T> iterableOf(Stream<T> stream) {
+    return stream::iterator;
+}
+
+for (Payment payment : iterableOf(service.streamSettledIn(range))) { ... }
+```
+
+`Collection` ni qaytish turi qilishning chegarasi katta ketma-ketlikda
+chiqadi: `Collection.size()` `int` qaytaradi, demak qaytarilgan
+ketma-ketlik uzunligi `Integer.MAX_VALUE` dan oshmaydi. Shundan kattasi
+kerak bo'lsa yoki hajm oldindan noma'lum bo'lsa, `Stream` va `Iterable`
+qoladi.
+
 ## 24.10 Amalda qo'llash
 
 - [ ] Uch qatordan uzun lambdalarni topib, nomlangan metodlarga chiqaring.
@@ -240,9 +492,14 @@ Stream<Payment> streamSettledIn(DateRange range);
 - [ ] `orElse(<qimmat chaqiruv>)` holatlarini `orElseGet` ga o'tkazing.
 - [ ] `@SneakyThrows` ishlatilgan joylarni oshkor o'rashga almashtirib, annotatsiyani taqiqlang.
 - [ ] Ikki darajadan chuqur `groupingBy` zanjirlarini oraliq record bilan tekislang.
+- [ ] Enum kalit bo'yicha `groupingBy` chaqiruvlarini topib, `EnumMap` kerak bo'lsa `mapFactory` shaklini qo'ying.
+- [ ] O'z funksional interfeyslaringizga `@FunctionalInterface` qo'yib, boxed primitiv parametrlarini primitiv variantga o'tkazing.
+- [ ] `parallelStream` ichidagi `reduce` va `collect` funksiyalarini uch shart bo'yicha tekshiring: holatsiz, aralashmaydigan, assotsiativ.
+- [ ] `filter(Optional::isPresent).map(Optional::get)` namunalarini `flatMap(Optional::stream)` ga almashtiring.
 
 ## Manbalar
 
+- Boyarsky/Selikoff, *OCP Java SE 17 Study Guide*, 10-bob (565-bet) - stream ning kechiktirib bajarilishi: `stream()` chaqiruvi ma'lumotni o'qimasligi, manba kolleksiya quvur qurilgandan keyin va terminal operatsiyadan oldin o'zgartirilsa o'zgarish natijaga kirishi
 - Joshua Bloch, *Effective Java* 3rd, Item 42 - anonim sinf o'rniga lambda, lambdaning uzunligi
 - Joshua Bloch, *Effective Java* 3rd, Item 43 - metod havolasi qachon o'qiladi
 - Joshua Bloch, *Effective Java* 3rd, Item 44 - standart funksional interfeyslardan foydalanish
@@ -250,6 +507,17 @@ Stream<Payment> streamSettledIn(DateRange range);
 - Joshua Bloch, *Effective Java* 3rd, Item 47 - qaytish turi sifatida `Stream` emas `Collection`
 - Joshua Bloch, *Effective Java* 3rd, Item 48 - parallel oqim: qaysi manba bo'linadi, qaysi terminal amal mos keladi
 - Joshua Bloch, *Effective Java* 3rd, Item 55 - `Optional` ni o'rinli qaytarish
+- Joshua Bloch, *Effective Java* 3rd, Item 42 (194-bet) - lambda parametrlarining turlarini yozmaslik
+- Joshua Bloch, *Effective Java* 3rd, Item 43 (198-bet) - metod havolasining besh turi (statik, bog'langan nusxa, bog'lanmagan nusxa, sinf konstruktori, massiv konstruktori); `Function.identity()` o'rniga `x -> x`
+- Joshua Bloch, *Effective Java* 3rd, Item 44 (201-202-betlar) - boxed primitiv bilan asosiy funksional interfeysni ishlatmaslik; `@FunctionalInterface` ning uch vazifasi
+- Joshua Bloch, *Effective Java* 3rd, Item 45 (206-207-betlar) - oqim quvurida lambda parametrlarini ehtiyotkorlik bilan nomlash; oldingi bosqich qiymatiga qaytish uchun mappingni teskari aylantirish
+- Joshua Bloch, *Effective Java* 3rd, Item 37 (173-bet) - `groupingBy` ning xarita implementatsiyasini o'zi tanlashi va `mapFactory` shakli; `groupingBy` faqat mavjud kalitlar uchun yozuv yaratishi
+- Joshua Bloch, *Effective Java* 3rd, Item 47 (217, 219-betlar) - `Stream` ni `for-each` da ishlatish uchun adapter metod; `Collection.size()` ning `int` qaytarishi va `Integer.MAX_VALUE` chegarasi
+- Joshua Bloch, *Effective Java* 3rd, Item 48 (223-224-betlar) - parallellashtirishning xavfsizlik nosozligi va `reduce` funksiyalariga qo'yilgan uch talab; o'z `Stream`, `Iterable` yoki `Collection` implementatsiyasida `spliterator` ni override qilish va o'lchash
+- Joshua Bloch, *Effective Java* 3rd, Item 55 (250, 252-253-betlar) - `Optional` ning tekshiriladigan istisnoga ruhan o'xshashligi; `Optional.stream()` va `flatMap` ko'prigi; boxed primitiv o'rniga `OptionalInt`, `OptionalLong`, `OptionalDouble`
+- Herbert Schildt, *Java The Complete Reference*, 12-nashr, McGraw-Hill, 2022, 15-bob (399, 405-406-betlar) - lambda faqat effectively final lokal o'zgaruvchini olishi; lambdaning tashqi sinf nusxa va statik maydonini o'qib ham, o'zgartira ham olishi; lambdaning o'zi generic bo'la olmasligi
+- Herbert Schildt, *Java The Complete Reference*, 12-nashr, McGraw-Hill, 2022, 30-bob (1014-bet) - `reduce` akkumulyatori uchun holatsiz, aralashmaydigan va assotsiativ bo'lish talabi
+- Paul Deitel va Harvey Deitel, *Java How to Program*, 10-nashr, Pearson, 17-bob (742-bet) - holatli oraliq amalning oldingi oraliq amallar tugashini talab qilishi va parallel oqimda butun oqimni buferlashi
 - [Java API, `Stream.peek`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/stream/Stream.html#peek(java.util.function.Consumer)) - debug uchun mo'ljallangani va chaqirilmasligi mumkinligi
 
 ---

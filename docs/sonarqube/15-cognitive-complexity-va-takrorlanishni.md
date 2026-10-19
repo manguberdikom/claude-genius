@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 15. Cognitive complexity va takrorlanishni kamaytirish (Cognitive Complexity and Duplication)
 
@@ -57,6 +57,33 @@ Cyclomatic complexity (McCabe) qarorlar nuqtasini sanaydi va test yo'llari sonin
 `switch` cyclomatic bo'yicha jazolanadi, cognitive bo'yicha deyarli bepul. Bu to'g'ri, chunki 20 ta valyuta kodini o'girgan `switch` bir qarashda tushuniladi. Teskarisi, uch qavat sikl ichidagi shart cyclomatic bo'yicha arzon, odam uchun esa og'ir.
 
 Amaliy xulosa: cyclomatic complexity ni test qoplamini rejalashtirishda ishlat, cognitive complexity ni refactoring navbatini tuzishda ishlat.
+
+Cyclomatic complexity uchun chegara raqami savoli alohida turadi.
+Richards va Ford sanoatdagi umumiy chegarani 10 dan kam qiymat
+qabul qilinadi deb keltiradi, lekin o'zlari uni juda yuqori deb
+hisoblaydi va 5 dan kam bo'lishini afzal ko'radi: bu kohesiv va
+yaxshi bo'lingan kodni ko'rsatadi. Chegaradan oldin esa bitta
+savol javob olishi kerak: funksiya murakkabmi, chunki domen
+murakkab, yoki kod yomon yozilganmi, yoki kod yomon
+bo'laklanganmi. Algoritmik murakkab masalada murakkab funksiya
+tabiiy; teskarisi, katta metodni mantiqiy bo'laklarga ajratib,
+ishni va murakkablikni yaxshi bo'lingan metodlar orasida
+taqsimlash mumkin bo'lsa, raqam shunchaki yomon
+bo'laklanishni ko'rsatadi.
+
+Ikki qo'shimcha kuzatish shu yerda amaliy. Birinchi: coverage
+murakkablikni qutqarmaydi. Kitob Java dunyosidagi Crap4J
+asbobini keltiradi, u kodning yomonligini CC va coverage ni
+birga baholab aniqlaydi, va qoidasi aniq - CC 50 dan oshsa,
+hech qancha coverage kodni qutqarmaydi. Sonar tilida bu quality
+gate ni faqat coverage ustiga qurmaslik kerakligini bildiradi:
+`complexity` yoki cognitive complexity sharti bo'lmagan gate da
+murakkab metodni testlar bilan qoplab, hisobotni yashil qilib
+qo'yish mumkin. Ikkinchi: TDD o'rtacha hisobda kichikroq va kam
+murakkab metod beradi, chunki avval sodda test, keyin uni
+o'tkazadigan eng kichik kod yoziladi; ya'ni murakkablik
+metrikasi bilan kurashishning eng arzon yo'li uni keyin
+o'lchab refactoring qilish emas, yozish tartibini o'zgartirish.
 
 ## 15.3 Chegaradan oshgan metodni bo'lish usullari
 
@@ -433,6 +460,17 @@ Oxirgi ogohlantirish: `//NOSONAR` qoidani o'chiradi, lekin sababsiz qo'yilsa key
 - [ ] O'zgarish chastotasi va cognitive complexity ko'paytmasi bo'yicha refactoring navbatini tuz va uni har chorakda yangila.
 
 ## Manbalar
+
+- Mark Richards, Neal Ford, *Fundamentals of Software Architecture*,
+  O'Reilly, 2020, 6-bob ("What's a Good Value for Cyclomatic
+  Complexity?") - 15.2 dagi sanoat chegarasi (10 dan kam qabul
+  qilinadi, mualliflar 5 dan kam bo'lishini afzal ko'radi),
+  murakkablik domenlanmi yoki yomon kod va yomon bo'laklashdanmi
+  degan ajratuvchi savol, Crap4J ning CC va coverage ni birga
+  baholashi va CC 50 dan oshganda coverage qutqarmasligi, TDD ning
+  o'rtacha kichikroq va kam murakkab metod berishi. Bu kitobning
+  qo'limizdagi nusxasida chop etilgan bet raqami yo'q, shuning uchun
+  bob va bo'lim nomi ko'rsatilgan
 
 - [sonar-java 8.44, `CognitiveComplexityMethodCheck.java`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/java-checks/src/main/java/org/sonar/java/checks/CognitiveComplexityMethodCheck.java) - `DEFAULT_MAX = 15`, `max` parametri va xabar matni
 - [sonar-java 8.44, `S3776.json`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S3776.json) - CODE_SMELL, Critical va remediation funksiyasi: "Linear with offset", 5 daqiqa offset, chegaradan oshgan har ball uchun 1 daqiqa

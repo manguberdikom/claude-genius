@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 5. Funksiya argumentlari (Function Arguments)
 
@@ -64,6 +64,24 @@ payment.processWithoutRetry(order);
 
 Agar flag argumenti tashqi API dan kelgan bo'lsa va olib tashlab bo'lmasa, uni enum ga aylantirish ikkinchi yaxshi yechim: `render(RenderMode.SUITE)` hech bo'lmasa chaqiruv joyida o'qiladi.
 
+**Tushunarsiz literalning nomi chaqiruv joyida ko'rinadi.** Enum ga aylantirish ham, imzoni o'zgartirish ham imkonsiz bo'lsa (uchinchi tomon kutubxonasi, generatsiya qilingan klient), oxirgi chora - literal yoniga nom izohi qo'yish. Python va Kotlin da nomlangan argument bor, Java da yo'q, shuning uchun Boswell va Foucher taklif qilgan shakl inline izoh bo'ladi va uning joyi muhim: izoh **qiymatdan oldin** turadi.
+
+```java
+void connect(int timeoutMs, boolean useEncryption) { ... }
+
+// Tushunarsiz: 10 nima, false nima
+connect(10, false);
+
+// Yaxshi: izoh qiymatdan OLDIN, birlik nomda
+connect(/* timeoutMs = */ 10, /* useEncryption = */ false);
+
+// Yomon: qiymatdan keyingi izoh false ning ma'nosini ochmaydi
+connect(10, false /* useEncryption */);
+connect(10, false /* = useEncryption */);
+```
+
+Ikki tafsilot muhim. Birinchi: `boolean` argumentda izohning oldinda turishi ayniqsa zarur, chunki keyingi izoh "shifrlashni ishlat" yoki "shifrlashni ishlatma" degan savolga javob bermaydi. Ikkinchi: izoh parametrning haqiqiy nomini emas, **yaxshiroq nomni** ham yozishi mumkin - yuqoridagi misolda parametr `timeout` deb nomlangan bo'lsa ham izohda `timeoutMs` yozilgan, ya'ni izoh birlikni qo'shib nomni "tuzatadi". Eng yaxshi yechim esa hamon imzoni o'zgartirish: parametr nomining o'zi birlikni aytsa, izoh kerak bo'lmaydi.
+
 ## 5.4 Tanlov (selector) argumenti va `enum` bilan almashtirish
 
 Selector argumenti - flag argumentining umumlashgan shakli: funksiya ichida `switch` yoki `if` bilan xatti-harakatni tanlaydi. U funksiyani bir necha vazifaga birlashtirib, har bir chaqiruvchini keraksiz kontekst bilan yuklaydi.
@@ -103,6 +121,31 @@ String withFooter = report.withFooter();
 ```
 
 Xuddi shu qoida to'plamlarga ham tegishli: metodga `List` berib, uni to'ldirib qaytarish o'rniga yangi `List` qaytarish kerak (23.11).
+
+Buning ostida tilning semantikasi turadi va u tez-tez chalkashtiriladi: Java argumentni hamisha **qiymat bo'yicha** uzatadi, ya'ni metod o'zgaruvchining nusxasini oladi. Shuning uchun parametrni metod ichida qayta tayinlash chaqiruvchidagi o'zgaruvchiga hech qanday ta'sir qilmaydi. Havola nusxasi orqali **obyekt holatini** o'zgartirish esa ta'sir qiladi, chunki nusxa ham xuddi shu obyektga ishora qiladi. Chiqish argumenti aynan shu ikkinchi yo'ldan foydalanadi, shuning uchun uni imzodan sezish qiyin.
+
+Shundan parametr bilan ishlashning ikkinchi qoidasi chiqadi: parametrga metod ichida qiymat tayinlanmaydi. Tayinlash chaqiruvchiga ko'rinmaydi, lekin pass-by-reference ga o'rgangan o'quvchi uni chiqish argumenti deb o'qiydi; bundan tashqari bitta nom metod boshida bir ma'noni, o'rtasida boshqa ma'noni tashiydi. O'rniga lokal o'zgaruvchi kiritiladi va parametr faqat "nima uzatilgan" degan ma'noda qoladi (Fowler da bu Remove Assignments to Parameters harakati; u ham temp uchun `result` nomini ishlatadi, 3.16).
+
+```java
+// yomon: parametr metod o'rtasida boshqa ma'noga o'tadi
+int discount(int inputVal, int quantity) {
+    if (inputVal > 50) {
+        inputVal -= 2;        // chaqiruvchida o'zgarmaydi, o'quvchi esa o'zgaradi deb o'ylaydi
+    }
+    return inputVal;
+}
+
+// yaxshi: kirish o'zgarmaydi, natija alohida nomda
+int discount(int inputVal, int quantity) {
+    int result = inputVal;
+    if (inputVal > 50) {
+        result -= 2;
+    }
+    return result;
+}
+```
+
+Jamoa buni kompilyatorga topshirishi ham mumkin: parametrni `final` qilib e'lon qilish tayinlashni umuman taqiqlaydi va Checkstyle ning `FinalParameters` qoidasi buni butun kod bazasida majburlaydi (42.3). Qoida boshqa tillarga ko'chmaydi: chiqish parametri bor tillarda tayinlash qonuniy vosita bo'lib qolaveradi.
 
 ## 5.6 Argument obyekti va parametr guruhlari
 
@@ -174,6 +217,35 @@ void render(Invoice invoice, Locale locale, StringBuilder out);
 String render(Invoice invoice, Locale locale);
 ```
 
+Tartibni eslab qolish muammosini **tur** bilan hal qilish (yuqoridagi
+`AccountNumber`, `Money`) eng ishonchli yo'l, lekin yagona emas. Ikkinchi yo'l
+nom bilan ishlaydi: argument nomlari funksiya nomining o'ziga kodlanadi.
+Martin bu shaklni "keyword" deb ataydi va `assertEquals` ni
+`assertExpectedEqualsActual(expected, actual)` deb yozish mumkinligini
+ko'rsatadi; bu argument tartibini yodda saqlash muammosini keskin
+yumshatadi (Martin, *Clean Code*, 3-bob (43-bet)). Shu yerda bir argumentli
+funksiya uchun qoida ham turadi: funksiya nomi va argumenti fe'l/ot juftini
+tashkil qilsin - `write(name)` yaxshi, `writeField(name)` yanada yaxshi,
+chunki `name` ning nima ekani ham aytiladi.
+
+Ikki yo'lni solishtirish qiyin emas: tur bilan hal qilish kompilyatorni ishga
+soladi va chaqiruv joyini qisqa qoldiradi, nom bilan hal qilish esa hech narsa
+talab qilmaydi, lekin nom uzayadi va kompilyator baribir jim turadi. Shuning
+uchun tartib quyidagicha: bir xil turdagi qo'shni argumentlar bo'lsa, avval
+turni ajratish; tur ajratib bo'lmaydigan joyda (ikki `Money`, ikki `Instant`)
+keyword shakli yoki argument obyekti qoladi.
+
+```java
+// yomon: ikki Instant yonma-yon, tartib faqat hujjatda
+Report build(Instant from, Instant to);
+
+// yaxshi: nom tartibni imzoda aytadi (keyword shakli)
+Report buildFromUntil(Instant from, Instant until);
+
+// eng yaxshi: oraliq tushuncha bo'lib, tartib ichiga ko'chdi
+Report build(DateRange range);
+```
+
 ## 5.9 Varargs, `null` argument va ixtiyoriy parametrlar
 
 `varargs` o'qilishi uchun foydali, lekin uch tuzog'i bor: nol argument bilan chaqirish mumkin (kutilmagan bo'sh holat), avtomatik massiv yaratiladi (issiq yo'lda narx), va overload bilan birga ishlatilsa tanlov qoidalari chalkash bo'ladi. Qoida: `varargs` dan oldin kamida bitta majburiy parametr qo'yish.
@@ -199,6 +271,10 @@ static <T> List<T> concat(List<T>... lists) {
 }
 ```
 
+Shartning kengroq shakli shunday: generik `varargs` massivini boshqa metodga **berish** xavfli, va faqat ikki istisno xavfsiz. Birinchi: to'g'ri `@SafeVarargs` qo'yilgan boshqa `varargs` metodiga berish. Ikkinchi: massiv tarkibidan funksiya hisoblaydigan, `varargs` bo'lmagan metodga berish (masalan `Arrays.stream`). Qolgan hollarda massiv tashqariga chiqadi va xato chaqiruv joyidan ikki qavat uzoqda, `ClassCastException` shaklida chiqadi.
+
+`@SafeVarargs` ni qo'yish joyi ham cheklangan: u faqat override qilinmaydigan metodda qonuniy, ya'ni `static`, `final` va Java 9 dan boshlab `private` metodda. Sababi oddiy: annotatsiya metod tanasining xavfsizligi haqidagi va'da, har qanday override ning tanasi uchun esa bu va'dani berib bo'lmaydi.
+
 ## 5.10 Overload qilish tuzoqlari va nomni aniqlashtirish
 
 Overload qilish bir xil tushunchaning turli kirish shakllari uchun yaxshi (`of(int)`, `of(String)`). Lekin **xatti-harakat** farq qilsa, overload o'quvchini chalg'itadi: qaysi metod chaqirilayotganini tur xulosasi hal qiladi va bu kodda ko'rinmaydi.
@@ -215,6 +291,57 @@ void removeValue(Integer element);
 
 Qo'shimcha qoida: overload qilingan metodlar bir xil sonli argument bilan turlicha ishlamasligi, va `null` uzatilganda qaysi biri tanlanishi aniq bo'lishi kerak.
 
+Tuzoqning sababi kompilyatorning tanlov tartibida. Spetsifikatsiya nomzodlarni
+avval nom, ko'rinish va **arity** bo'yicha yig'adi, keyin tanlovni uch bosqichda
+qiladi: birinchi bosqich boxing, unboxing va varargs siz (strict invocation);
+ikkinchisi boxing va unboxing bilan, lekin varargs siz (loose invocation);
+uchinchisi varargs bilan. Har bosqichda nomzod topilmasa keyingisiga o'tiladi,
+bir bosqichda bir nechtasi mos kelsa esa eng aniqi (most specific) tanlanadi
+(*The Java Language Specification, Java SE 25 Edition*, 15.12.2 (631-632-bet) va
+15.12.2.1 (637-bet)).
+
+Shundan ikki amaliy natija chiqadi. Birinchi: tanlov **statik** turlar bilan,
+kompilyatsiya vaqtida qilinadi; obyektning ish vaqtidagi haqiqiy turi hech
+narsani o'zgartirmaydi, shuning uchun `Object o = "satr"; print(o);` chaqiruvi
+`print(Object)` ni oladi. Ikkinchi va xavflisi: yangi overload qo'shilishi
+mavjud chaqiruvni jim boshqa metodga yo'naltirishi mumkin. Spetsifikatsiya
+misolini beradi: sinfda `m(Object)` bor bo'lsa va unga `m(Object...)` qo'shilsa,
+`m(null)` chaqiruvi endi `m(Object[])` ni oladi, chunki u aniqroq (shu yerda,
+15.12.2 (632-bet)).
+
+```java
+// yomon: ikkinchi overload qo'shilishi m(null) ning ma'nosini o'zgartiradi
+void audit(Object payload);
+void audit(Object... payloads);        // qo'shilgandan keyin audit(null) bu yerga tushadi
+
+// yomon: statik tur hal qiladi, ish vaqtidagi tur emas
+Object value = "satr";
+format(value);                         // format(Object), format(String) emas
+
+// yaxshi: nom farqni aytadi, tanlov kompilyatorga qoldirilmaydi
+void auditOne(Object payload);
+void auditAll(List<Object> payloads);
+```
+
+Qoida: public API ga yangi overload qo'shish binar moslikni saqlasa ham xulqni
+o'zgartirishi mumkin, shuning uchun u yangi metod nomi qo'shishdan qimmatroq
+qaror. `null` bilan chaqiriladigan joyda esa tur oshkor cast bilan yoziladi
+(`audit((Object) null)`) yoki chaqiruv umuman boshqa nomli metodga o'tkaziladi.
+
+Overload qachon haqli ekanini bitta mezon aniqlaydi: bir xil arity li overload lar faqat kamida bitta mos pozitsiyadagi parametr **radikal farqli** turda bo'lsa xavfsiz. Ikki tur radikal farqli deyiladi, agar `null` bo'lmagan hech bir ifodani ikkalasiga ham cast qilib bo'lmasa (`int` va `Collection`, `String` va `int[]`). Shunday bo'lsa chaqiruv joyida qaysi metod tanlanishi argumentning e'lon qilingan turidan ko'rinadi va tanlov kompilyator ichida yashirinmaydi.
+
+Funksional interfeyslar bu mezonni buzadi va alohida tilga olinadi: bir xil argument pozitsiyasida turli funksional interfeyslarni oladigan overload lar yozilmaydi. Lambda va metod havolasining turi kontekstdan chiqadi, shuning uchun klientda noaniqlik tug'iladi va chaqiruv joyi cast yozishga majbur bo'ladi. `ExecutorService.submit` ning `Callable<T>` va `Runnable` overload lari shu holatning kutubxonadagi misoli.
+
+```java
+// yomon: ikki funksional interfeys bir pozitsiyada
+void schedule(Runnable task);
+void schedule(Callable<Void> task);     // klient cast yozishga majbur
+
+// yaxshi: nom farqni aytadi, radikal farqli turlar esa overload bo'lib qolaveradi
+void scheduleTask(Runnable task);
+void scheduleCall(Callable<Void> task);
+```
+
 ## 5.11 Argumentni tekshirish joyi: chegara, konstruktor, domen
 
 Validatsiyani har bir metodda takrorlash kodni shishiradi; umuman tekshirmaslik xatoni chuqurga suradi. To'g'ri yechim - tekshirishni joy bo'yicha taqsimlash.
@@ -230,6 +357,10 @@ Validatsiyani har bir metodda takrorlash kodni shishiradi; umuman tekshirmaslik 
 
 Shu taqsimot "fail fast" ni ta'minlaydi (18.10) va ichki metodlarni toza qoldiradi: ular allaqachon to'g'ri ma'lumot oladi.
 
+Jadvalga bitta istisno qo'shiladi: tekshiruv qimmat yoki amalda bajarilmas bo'lsa va hisob jarayonining o'zi uni bilvosita bajarsa, oshkor tekshiruv shart emas. `Collections.sort` elementlarning bir-biri bilan solishtirilishini saralash paytida o'zi tekshiradi, shuning uchun oldin ro'yxatni aylanib `Comparable` ekanini tasdiqlash ortiqcha ish. Lekin bu istisnoning narxi bor: bilvosita tekshiruvda xato ish o'rtasida chiqadi, ya'ni amal atomarligini yo'qotishi mumkin, shuning uchun u faqat qisman bajarilgan ish zarar qilmaydigan joyda qo'llanadi.
+
+Teskari tomondan ogohlantirish ham bor: parametrga o'zboshimchalik bilan cheklov qo'yish yaxshi narsa emas. Metod amaliy darajada qanchalik umumiy bo'lsa, shuncha yaxshi: "faqat musbat son" yoki "faqat 100 tagacha element" kabi shart amalda kerak bo'lmasa, u faqat chaqiruvchini cheklaydi va keyinroq olib tashlanganda API o'zgarishiga aylanadi. Shuning uchun tekshiruv invariantni himoya qiladi, dasturchining ehtiyotkorligini emas.
+
 ## 5.12 Amalda qo'llash
 
 - [ ] `boolean` parametri bor barcha public metodlarni grep qilib, har birini ikki metodga yoki enum parametriga aylantiring.
@@ -243,6 +374,7 @@ Shu taqsimot "fail fast" ni ta'minlaydi (18.10) va ichki metodlarni toza qoldira
 
 ## Manbalar
 
+- Dustin Boswell, Trevor Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011 (copyright 2012), 6-bob (63-64-betlar) - chaqiruvdagi tushunarsiz literal uchun nom izohi, izohning qiymatdan OLDIN turishi, `boolean` argumentda bu tartibning zarurati va izohda parametr nomiga birlik qo'shish
 - Robert C. Martin, *Clean Code*, 3-bob ("Function Arguments") - nol, bir, ikki, uch argument tartibi va poliadik funksiya
 - Robert C. Martin, *Clean Code*, 3-bob ("Flag Arguments", "Output Arguments") - flag argumenti funksiyani ikkiga bo'ladi, chiqish argumenti o'rniga qaytish qiymati
 - Joshua Bloch, *Effective Java* 3rd, Item 51 - metod imzosini ehtiyotkorlik bilan loyihalash, to'rtta yoki undan kam parametr
@@ -251,6 +383,17 @@ Shu taqsimot "fail fast" ni ta'minlaydi (18.10) va ichki metodlarni toza qoldira
 - Robert C. Martin, *Clean Code*, 17-bob, F1-F3 - ko'p argument, chiqish argumenti, flag argumenti
 - Steve McConnell, *Code Complete*, 2-nashr, 7.5 (174-bet) - parametrlarni kirish-o'zgartirish-chiqish tartibida qo'yish va C an'anasi bilan ziddiyat
 - [Java API, `java.util.Collections`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Collections.html) - `copy(dest, src)` imzosi: nishon birinchi
+- Robert C. Martin, *Clean Code*, 3-bob ("Verbs and Keywords") (43-bet) - fe'l/ot jufti (`write(name)`, `writeField(name)`) va keyword shakli: argument nomlarini funksiya nomiga kodlash, `assertExpectedEqualsActual(expected, actual)`
+- *The Java Language Specification, Java SE 25 Edition* (Gosling, Joy, Steele, Bracha, Buckley, Smith, Bierman), 15.12.2 (631-632-betlar) - overload tanlashning uch bosqichi (strict, loose, variable arity), eng aniq nomzodning tanlanishi va `m(Object...)` qo'shilishi `m(null)` ni boshqa metodga yo'naltirishi
+- *The Java Language Specification, Java SE 25 Edition* (Gosling, Joy, Steele, Bracha, Buckley, Smith, Bierman), 15.12.2.1 (637-bet) - nomzodlarni nom, ko'rinish va arity bo'yicha yig'ish sharti
+- Jeanne Boyarsky, Scott Selikoff, *OCP Oracle Certified Professional Java SE 17 Developer Study Guide*, Sybex, 5-bob (253-bet) - Java ning faqat qiymat bo'yicha uzatishi: metod o'zgaruvchining nusxasini olishi, parametrni qayta tayinlash chaqiruvchiga ta'sir qilmasligi, havola nusxasi orqali obyekt holatini o'zgartirish esa ta'sir qilishi
+- Martin Fowler, *Refactoring*, 1-nashr, Addison-Wesley, 1999, 6-bob (107-bet) - Remove Assignments to Parameters: parametrga tayinlamaslik, o'rniga temp (`result`) kiritish, sabab sifatida pass-by-value va pass-by-reference chalkashligi, qoidaning chiqish parametri bor tillarga ko'chmasligi
+- Joshua Bloch, *Effective Java* 3rd, Item 32 (148-bet) - generik `varargs` massivini boshqa metodga berishning ikki xavfsiz istisnosi: to'g'ri `@SafeVarargs` qo'yilgan `varargs` metodi va massiv tarkibidan funksiya hisoblaydigan `varargs` bo'lmagan metod
+- Joshua Bloch, *Effective Java* 3rd, Item 32 (149-bet) - `@SafeVarargs` faqat override qilinmaydigan metodda (`static`, `final`, Java 9 dan `private`) qonuniy ekani
+- Joshua Bloch, *Effective Java* 3rd, Item 52 (241-bet) - bir xil arity li overload lar uchun "radikal farqli tur" mezoni: `null` bo'lmagan hech bir ifodani ikkala turga ham cast qilib bo'lmasligi
+- Joshua Bloch, *Effective Java* 3rd, Item 44 (202-bet) - bir xil argument pozitsiyasida turli funksional interfeyslarni oladigan overload lar klientda noaniqlik tug'dirishi va cast talab qilishi (`ExecutorService.submit`)
+- Joshua Bloch, *Effective Java* 3rd, Item 49 (230-bet) - hisob jarayonida bilvosita bajariladigan tekshiruv uchun oshkor tekshiruvning shart emasligi (`Collections.sort`) va bunga tayanishning atomarlikka ta'siri; parametrga o'zboshimchalik bilan cheklov qo'ymaslik
+- ESLATMA: `scheduleTask`/`scheduleCall` va `discount` kod misollari korpus qo'shimchasi; `discount` misolining shakli Fowler ning 107-betdagi misoliga tayanadi, Spring va Checkstyle ko'rinishi (`FinalParameters`) esa korpus qo'shimchasi
 
 ---
 

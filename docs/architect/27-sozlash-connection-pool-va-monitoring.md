@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 27. Sozlash, connection pool va monitoring (Configuration, Pooling and Monitoring)
 
@@ -61,6 +61,8 @@ SELECT pg_reload_conf();            -- sighup va user kontekstidagi yangi standa
 | `effective_io_concurrency` | 1 | 200 | NVMe parallel o'qishni ko'taradi |
 | `max_wal_size` | 1GB | 8GB | Checkpoint ni siyraklashtirish |
 | `wal_compression` | off | on | WAL hajmi va replika trafigi kamayadi |
+
+Jadvaldagi `effective_io_concurrency` ni alohida tushunish kerak, chunki u ko'pchilik so'rovga ta'sir qilmaydi. Bu parametr oldindan o'qish (prefetch) chuqurligini belgilaydi va uni ishlatadigan yagona plan node i Bitmap Heap Scan: u bitmapdagi sahifalarni `effective_io_concurrency` donasini oldinga surib asinxron o'qiydi, chunki bitmap bo'yicha o'qiladigan sahifalar bir-biridan keyin kelmaydi va operatsion tizimning o'z prefetch mexanizmi bu holatda yordam bermaydi; mexanizm ba'zi operatsion tizimlarda mavjud `posix_fadvise` funksiyasiga tayanadi (Rogov, 20.3, 341-bet). Ikkita amaliy xulosa chiqadi. Birinchisi, qiymatni global emas, apparat imkoniyatiga qarab tablespace darajasida qo'yish mantiqli. Ikkinchisi, Index Scan yoki Seq Scan sekin bo'lsa bu parametrni ko'tarish yordam bermaydi, chunki ular prefetch qilmaydi. Xizmat ko'rsatish ishlari esa (PostgreSQL 14 da heap qatorlari o'chirilganda indeks sahifalarini va `ANALYZE` paytida heap sahifalarini oldindan o'qish) boshqa parametrdan, `maintenance_io_concurrency` dan foydalanadi (Rogov, 20.3, 341-bet).
 
 ## 27.2 `shared_buffers`, `work_mem`, `maintenance_work_mem`, `effective_cache_size` tanlash
 
@@ -324,6 +326,7 @@ Raqamlarni oldindan belgilash kerak. WAL arxivini har 60 sekundda yuborsang, RPO
 ## Manbalar
 
 - [PostgreSQL, Resource consumption](https://www.postgresql.org/docs/current/runtime-config-resource.html) - `work_mem` va `hash_mem_multiplier` ning ta'rifi va standart qiymati
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 20.3-bo'lim (341-bet) - `effective_io_concurrency` ni faqat Bitmap Heap Scan ishlatishi, `posix_fadvise` ga tayanishi, tablespace darajasida sozlash va `maintenance_io_concurrency` ning alohida roli
 - [postgres, `guc.c` (REL_15_STABLE)](https://raw.githubusercontent.com/postgres/postgres/REL_15_STABLE/src/backend/utils/misc/guc.c) - `work_mem` va `hash_mem_multiplier` `PGC_USERSET`, `log_min_duration_statement` `PGC_SUSET`, `max_wal_size` `PGC_SIGHUP`; `GucContext_Names[]` da `PGC_USERSET` -> `"user"`; `hash_mem_multiplier` standarti 2.0
 - [postgres, `guc.c` (REL_14_STABLE)](https://raw.githubusercontent.com/postgres/postgres/REL_14_STABLE/src/backend/utils/misc/guc.c) - 14 da `hash_mem_multiplier` standarti 1.0
 - [PostgreSQL 17, Resource Consumption (config.sgml)](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/config.sgml) - `shared_buffers` default 128MB va 25 foiz tavsiyasi, `work_mem` default 4MB

@@ -5,8 +5,8 @@
 
 Hisoblagich ishlashi yetarli emas: u sanamasligi kerak bo'lgan narsani
 sanab qo'ysa (o'qish asbobini yoki boshqa hook chaqiruvini), zanjir
-o'rtasida to'xtaydi va hisoblagich o'chiriladi. Shuning uchun qidiruv,
-tahlil va Task bo'lmagan asbob erkin o'tishi tekshiriladi. Parallel
+o'rtasida to'xtaydi va hisoblagich o'chiriladi. Shuning uchun Explore
+va Task bo'lmagan asbob erkin o'tishi tekshiriladi. Parallel
 Agent chaqiruvlari va bir nechta sessiya ham alohida sinaladi: hisob
 yo'qolsa chegara jim aylanib o'tiladi. Aylanib o'tish yo'llari ham
 (o'ylab topilgan guruh id, nomsiz subagent, boshqa prefiks,
@@ -273,10 +273,9 @@ def case_hook_agent_nomi(_):
 
 
 def case_oqish_asbobi_erkin(_):
-    """qidiruv va tahlil zanjir qadami emas, cheklanmaydi."""
+    """Explore zanjir qadami emas, cheklanmaydi."""
     fresh()
-    return all(hook("Task", "qidiruv") == "allow" for _ in range(4)) and \
-        all(hook("Task", "tahlil") == "allow" for _ in range(4))
+    return all(hook("Task", "Explore") == "allow" for _ in range(4))
 
 
 def case_boshqa_asbob_tegilmaydi(_):
@@ -329,7 +328,7 @@ def case_manguberdi_prefiksi(_):
     fresh()
     got = [hook("Agent", "manguberdi:dasturchi"), hook("Agent", "dasturchi"),
            hook("Agent", "manguberdi:dasturchi"),
-           hook("Agent", "manguberdi:qidiruv")]
+           hook("Agent", "manguberdi:rejalashtiruvchi")]
     return got == ["allow", "allow", "deny", "allow"]
 
 
@@ -363,7 +362,7 @@ def case_sendmessage_sanaladi(_):
 def case_sendmessage_boshqa_manzil(_):
     """Asosiy sessiya, agentId yoki o'qish asbobiga xabar sanalmaydi."""
     fresh()
-    got = [message(to) for to in ("main", "a1b2c3d4", "qidiruv",
+    got = [message(to) for to in ("main", "a1b2c3d4", "Explore",
                                   "general-purpose", "")]
     return (got == ["allow"] * 5
             and state()["sessions"][SESSION]["calls"] == {})
@@ -657,13 +656,13 @@ def case_jami_model_override(_):
 
 
 def case_jami_oqish_asbobi_sanalmaydi(_):
-    """qidiruv, tahlil va Explore jami songa ham kirmaydi."""
+    """Explore jami songa ham kirmaydi."""
     saved = budget.AGENT_MAX
     budget.AGENT_MAX = 1
     try:
         call(stdin=json.dumps({"hook_event_name": "UserPromptSubmit",
                                "session_id": SESSION, "prompt": "x"}))
-        free = [hook("Agent", a) for a in ("qidiruv", "tahlil", "Explore")]
+        free = [hook("Agent", "Explore") for _ in range(3)]
         first = hook("Agent", "dasturchi")
         second = hook("Agent", "review")
     finally:
@@ -705,7 +704,7 @@ CASES = [
     ("--holat jadval beradi", case_holat_jadvali),
     ("hook uchinchisini to'sadi", case_hook_tosadi),
     ("Task va Agent bir hisob", case_hook_agent_nomi),
-    ("qidiruv va tahlil erkin", case_oqish_asbobi_erkin),
+    ("Explore erkin", case_oqish_asbobi_erkin),
     ("boshqa asbob tegilmaydi", case_boshqa_asbob_tegilmaydi),
     ("notanish aktyor boshqa hisobida", case_notanish_aktyor),
     ("general-purpose boshqa hisobida", case_umumiy_subagent_boshqa),

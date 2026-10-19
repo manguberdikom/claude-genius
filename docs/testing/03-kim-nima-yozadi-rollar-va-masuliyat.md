@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 3. Kim nima yozadi: rollar va mas'uliyat (Who Writes What - Roles & Responsibilities)
 
@@ -84,6 +84,10 @@ Ikkinchidan, feedback aylanasi uzayadi. Kitob feedback aylanalarini eng tezdan e
 Uchinchidan, developer testining o'z tizimli cheklovlari bor va ularni rolni qattiq ajratish bilan yopib bo'lmaydi. McConnell uchta cheklovni sanaydi: developer "clean test" yozishga moyil, ya'ni kod ishlashini tekshiradi, kodning qanday buzilishini emas - yetuk test tashkilotlarida bitta clean test'ga besh dirty test to'g'ri keladi, yetuk bo'lmaganida esa nisbat teskari; developer o'z qamrovini ortiqcha baholaydi; va developer murakkabroq qamrov turlarini chetlab o'tadi, statement coverage ni yetarli deb hisoblaydi (*Code Complete*, 2-nashr, 22-bob, 503-504-bet). Xulosa shu yerda ham yozilgan: developer testi qimmatli, lekin yolg'iz o'zi sifat kafolati uchun yetarli emas va mustaqil test hamda collaborative construction texnikalari bilan to'ldirilishi kerak.
 
 Shu bilan birga "test dizayni texnikalari QA'ning bilimi" degan qarash noto'g'ri: ekvivalentlik sinflari, chegara tahlili va error guessing *Code Complete* da developer testining asboblari sifatida beriladi (22.3-bo'lim, 512-515-bet). Haqiqiy farq bilimda emas, ko'r nuqtada: barcha collaborative texnikalar developer o'z ishidagi muammoli joylarni ko'rmasligi va boshqa odamning ko'r nuqtasi boshqa joyda bo'lishi g'oyasiga tayanadi (*Code Complete*, 21-bob, 480-bet). Buni raqam ham tasdiqlaydi: inspeksiyada topilgan xatolarning faqat 20 foizini bir nechta tekshiruvchi topgan, ya'ni odamlar bir-biriga o'xshamagan defektlarni ko'radi (o'sha kitob, 20-bob, 471-bet).
+
+To'rtinchidan, unit testni kodni yozgan odam yozadi va shu sabab **tushunmovchilik kodda ham, testda ham bir xil takrorlanadi**. Google buni "working as implemented" deb ataydi: test kod yozilganiday ishlayotganini tasdiqlaydi, niyatga mosligini emas. Uning qarshi vositasi - UAT (user acceptance test): aniq oxirgi mijoz yoki uning vakili (mijoz qo'mitasi, product manager) bo'lgan joyda mahsulotni **ochiq API orqali** o'tadigan foydalanuvchi yo'li testlari yoziladi va ular xulqning niyatga mosligini tekshiradi. Cucumber va RSpec kabi freymvorklar bu testlarni "bajariladigan spetsifikatsiya" shaklida yozishga xizmat qiladi.
+
+ESLATMA: Google ning o'zi avtomatik UAT ni ko'p ishlatmaydi va spetsifikatsiya tillarini deyarli qo'llamaydi, chunki ularning mahsulotlarini tarixiy jihatdan muhandislarning o'zi yaratgan va kutilgan xulqni belgilaydigan odamlar kod tilini biladi. Ya'ni UAT ning qiymati rolga bog'liq: mijoz vakili texnik bo'lmasa, bajariladigan spetsifikatsiya o'zini oqlaydi; bo'lmasa, oddiy integratsion test arzonroq.
 
 To'g'ri yondashuv - "kim yozadi" emas, "kim qaysi riskka javob beradi". Developer kod ichidagi riskni yopadi (unit'dan Testcontainers'gacha), QA esa foydalanuvchi va biznes riskini yopadi (exploratory, qabul, end-to-end ssenariylar). Qatlam emas, risk turi bo'yicha bo'linish barqarorroq.
 
@@ -210,6 +214,7 @@ Bu qoida [3.3](#33-developer-unit-test-yozadi-qa-e2e-yozadi-qoidasining-chegaral
 
 ## Manbalar
 
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 14-bob ("UAT") - unit testni kodni yozgan odam yozgani uchun tushunmovchilik kodda ham, testda ham takrorlanishi ("working as implemented"), mijoz yoki uning vakili uchun ochiq API orqali o'tadigan foydalanuvchi yo'li testlari, hamda Google ning o'zi avtomatik UAT ni ko'p ishlatmasligi. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
 - Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 22-bob "Developer Testing" (499-504-bet) - developer bajaradigan test turlari va maxsus test xodimlari bajaradigan turlar ro'yxati; white-box va black-box farqi; test case'ni talab bosqichida rejalashtirish; developer testining cheklovlari (clean va dirty test nisbati, qamrovni ortiqcha baholash) va uning yolg'iz yetarli emasligi
 - Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 22.3-bo'lim (512-515-bet) - ekvivalentlik sinflari, chegara tahlili va error guessing developer testining texnikalari sifatida
 - Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 20-bob "The Software-Quality Landscape" (470-471-bet) - defekt topish darajalari jadvali (unit test modal 30%, integratsion 35%, formal code inspection 60%), hech bir usul yolg'iz 75% dan oshmaydi, inspeksiyada topilgan xatolarning faqat 20% i bir nechta tekshiruvchi tomonidan topilgan

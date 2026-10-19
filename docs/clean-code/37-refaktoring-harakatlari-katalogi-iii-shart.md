@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 37. Refaktoring harakatlari katalogi III: shart, API va ierarxiya (Refactoring Moves III)
 
 <details>
-<summary>Bu bobdagi 17 bo'lim</summary>
+<summary>Bu bobdagi 19 bo'lim</summary>
 
 - [37.1 Shartni parchalash (Decompose Conditional)](#371-shartni-parchalash-decompose-conditional)
 - [37.2 Shartli ifodalarni birlashtirish (Consolidate Conditional Expression)](#372-shartli-ifodalarni-birlashtirish-consolidate-conditional-expression)
@@ -25,7 +25,9 @@
 - [37.14 Voris sinfni delegatsiyaga almashtirish](#3714-voris-sinfni-delegatsiyaga-almashtirish)
 - [37.15 Voris sinfni va ierarxiyani yo'qotish](#3715-voris-sinfni-va-ierarxiyani-yoqotish)
 - [37.16 Refaktoring harakatini tanlash jadvali](#3716-refaktoring-harakatini-tanlash-jadvali)
-- [37.17 Amalda qo'llash](#3717-amalda-qollash)
+- [37.17 Takrorlangan shart bo'laklarini birlashtirish (Consolidate Duplicate Conditional Fragments)](#3717-takrorlangan-shart-bolaklarini-birlashtirish-consolidate-duplicate-conditional-fragments)
+- [37.18 Nazorat flagini olib tashlash (Remove Control Flag)](#3718-nazorat-flagini-olib-tashlash-remove-control-flag)
+- [37.19 Amalda qo'llash](#3719-amalda-qollash)
 
 </details>
 
@@ -154,6 +156,39 @@ double getPayAmount() {
 Kitobdagi qo'shimcha (1-nashr, 205-bet): guard qaytaradigan qiymat oshkor
 yozilsin (`return 0.0;`), vaqtinchalik o'zgaruvchi orqali emas, shunda guard
 ishga tushgandagi natija darhol ko'rinadi.
+
+**Ichma-ichlik qo'shimcha tahrirlardan jim yig'iladi.** Guard kerakligini sezish uchun sabab bor: ichma-ichlik bitta katta qadamda emas, bir nechta kichik qadamda paydo bo'ladi. Boswell va Foucher ning kuzatuvi: yangi shartni mavjud blok ichiga qo'yish eng oson yo'l, chunki muallif uchun o'sha payt yangi kod diqqat markazida turadi, va **diff toza ko'rinadi** - bir necha qator qo'shilgan, boshqa hech narsa tegilmagan. Keyin kodga kelgan odam esa butun ichma-ichlikni birdan qabul qilishi kerak bo'ladi va avvalgi kontekst yo'q.
+
+Shuning uchun refaktoring harakatining o'zidan oldin bitta odat turadi: **o'zgartirishdan keyin kodga yangi o'quvchi nigohi bilan, butunligicha qarash**. Faqat diffga qarash bu holatda yetmaydi, chunki muammo qo'shilgan qatorlarda emas, umumiy shaklda. Review da shu signalning ishlashi uchun reviewer o'zgargan metodni to'liq, diff kontekstidan tashqari o'qiydi.
+
+```java
+// Tahrirlar jim yig'ildi: har biri alohida toza ko'rinardi
+if (userResult == SUCCESS) {
+    if (permissionResult != SUCCESS) {      // ikkinchi tahrirda qo'shildi
+        reply.writeErrors(permissionResult);
+        reply.done();
+        return;
+    }
+    reply.writeErrors("");
+} else {
+    reply.writeErrors(userResult);
+}
+reply.done();
+
+// Butunligicha qaragandan keyin: guard, bitta daraja
+if (userResult != SUCCESS) {
+    reply.writeErrors(userResult);
+    reply.done();
+    return;
+}
+if (permissionResult != SUCCESS) {
+    reply.writeErrors(permissionResult);
+    reply.done();
+    return;
+}
+reply.writeErrors("");
+reply.done();
+```
 
 ## 37.4 Shartni polimorfizmga almashtirish (Replace Conditional with Polymorphism)
 
@@ -558,6 +593,25 @@ kelgan - demak interfeys sinf nima qilayotganini aytmaydi.
 **Replace Superclass with Delegate** (2-nashr, 399-bet) shu harakatning
 bazaviy sinf tomoni; 1-nashrda ikki tomon bitta yozuv ostida turadi.
 
+**Teskari yo'nalish va uning sharti** (1-nashr, 289-bet): *Replace Delegation
+with Inheritance* delegatsiyani qaytib vorislikka aylantiradi, lekin u faqat
+bitta shartda haqli - siz delegatning **barcha** metodini ishlatayotgan
+bo'lsangiz. Sabab voris sinfning majburiyatida: voris sinf super sinf
+interfeysiga to'liq rioya qilishi kerak, shuning uchun delegatning metodlaridan
+bir qismi ishlatilmasa, vorislik mijozga ishlatilmaydigan interfeysni ham ochib
+beradi va 37.14 ning o'zi yana kerak bo'lib qoladi ([rad etilgan
+meros](17-vorislik-kompozitsiya-va-polimorfizm.md#176-rad-etilgan-meros-va-interfeysni-bolish)).
+Shart bajarilmasa ikki boshqa yo'l qoladi: mijozni delegatga to'g'ridan-to'g'ri
+yuborish, yoki Remove Middle Man (36.4).
+
+Korpus kompozitsiyani vorislikdan ustun qo'yadi (17-bob), bu esa yuqoridagi
+qoidani rad qilmaydi, chunki ikkisi boshqa savolga javob beradi. Ustunlik
+**standart tanlov** haqida: yangi kod yozilayotganda kompozitsiya olinadi.
+Fowler ning sharti esa **mavjud delegatsiyani qaytarish** haqida: delegatsiya
+allaqachon bor va uning hamma metodi ishlatiladigan bo'lsa, delegatsiya metodlari
+shunchaki shovqin bo'lib qoladi va vorislik soddaroq chiqadi. Ajratuvchi shart
+shu ikki holatni bir-biridan ajratadi.
+
 ## 37.15 Voris sinfni va ierarxiyani yo'qotish
 
 **Remove Subclass**. Kitob: 1-nashr *Replace Subclass with Fields* (188),
@@ -591,6 +645,22 @@ Up Field/Pull Up Method yoki Push Down Method/Push Down Field bilan ko'chirish
 → har bir ko'chirishdan keyin kompilyatsiya va test → o'chiriladigan sinfga
 murojaatlarni (o'zgaruvchi e'lonlari, parametr turlari, konstruktorlar)
 tuzatish → bo'sh sinfni o'chirish → kompilyatsiya va test.
+
+**Tease Apart Inheritance**. Kitob: 1-nashr *Tease Apart Inheritance* (295).
+
+Qachon (1-nashr, 295-bet): bitta ierarxiya bir vaqtda ikki ishni bajaradi.
+Aniqlash belgisi arzon va mexanik: ma'lum darajadagi har bir sinfning voris
+sinflari bir xil sifatlovchi bilan boshlanadi, ya'ni bir xil prefiks
+ierarxiyaning har bir shoxida qaytariladi. Takrorlangan sifatlovchining o'zi
+ikkinchi o'qning nomi, shuning uchun tashxis uchun nom prefikslarini sanash
+yetarli.
+
+Yechim: ikki ierarxiya yasash va ular orasiga delegatsiya qo'yish - bitta o'q
+ierarxiyada qoladi, ikkinchisi alohida ierarxiyaga chiqadi va birinchisi uni
+delegat sifatida ishlatadi. Bu kombinatorik portlashning (33.16) ierarxiya
+shakli; uni parallel ierarxiyalar hidi (33.6) bilan aralashtirmaslik kerak -
+u yerda ikki alohida ierarxiya bir-biriga ergashadi, bu yerda esa bitta
+ierarxiya ichida ikki o'q yashiringan.
 
 **Extract Superclass**. Kitob: 1-nashr *Extract Superclass* (272), 2-nashr
 *Extract Superclass* (375).
@@ -650,7 +720,181 @@ harakat orasidagi ko'rsatma deb ataydi, qat'iy mezon deb emas: bob boshida u
 "refaktoring qachon kechikkanini aniq mezon bilan aytmaymiz" deb oshkor
 yozadi (1-nashr, 63-bet).
 
-## 37.17 Amalda qo'llash
+## 37.17 Takrorlangan shart bo'laklarini birlashtirish (Consolidate Duplicate Conditional Fragments)
+
+Kitob: 1-nashr *Consolidate Duplicate Conditional Fragments* (196). 2-nashrning
+"List of Refactorings" ro'yxatida bu yozuv yo'q, shuning uchun bu yerda faqat
+1-nashr mexanikasi beriladi.
+
+**Qachon**: shartning barcha shoxlarida bir xil kod bo'lagi bajariladi. Bunda
+shart nimani o'zgartirayotgani ko'rinmaydi, chunki o'zgaradigan va o'zgarmaydigan
+qism aralashgan.
+
+**Mexanika** (1-nashr, 196-bet):
+
+1. Shartdan qat'i nazar bir xil bajarilgan kodni aniqlash.
+2. Umumiy kod boshida bo'lsa, uni shartdan OLDINGA ko'chirish.
+3. Umumiy kod oxirida bo'lsa, uni shartdan KEYINGA ko'chirish.
+4. Umumiy kod o'rtada bo'lsa, undan oldingi yoki keyingi kod biror narsani
+   o'zgartirayotganini tekshirish. O'zgartirsa, umumiy kodni oldinga yoki
+   orqaga surib chetiga chiqarish, keyin 2 yoki 3-qadamni qo'llash.
+5. Bitta ifodadan ko'p bo'lsa, uni Extract Method bilan metodga chiqarish.
+
+```java
+// Oldin: send() ikki shoxda ham bor, shart nimani o'zgartirayotgani ko'rinmaydi
+if (isSpecialDeal()) {
+    total = price.multiply(new BigDecimal("0.95"));
+    notifier.send(order);
+} else {
+    total = price.multiply(new BigDecimal("0.98"));
+    notifier.send(order);
+}
+
+// Keyin: shart faqat farqni ushlaydi
+if (isSpecialDeal()) {
+    total = price.multiply(new BigDecimal("0.95"));
+} else {
+    total = price.multiply(new BigDecimal("0.98"));
+}
+notifier.send(order);
+```
+
+Fowler alohida aytadigan ikkinchi holat istisnolar bilan: `try` blokida istisno
+tashlashi mumkin bo'lgan ifodadan keyingi kod `catch` bloklarida ham
+takrorlansa, u `finally` ga ko'chiriladi (shu yerda, 197-bet). Java da bu
+shakl eng ko'p resursni bo'shatish va metrikani yozishda uchraydi.
+
+```java
+// Oldin: timer.stop() uch joyda takrorlangan
+try {
+    gateway.settle(batch);
+    timer.stop();
+} catch (GatewayTimeoutException e) {
+    audit.timeout(batch);
+    timer.stop();
+} catch (GatewayRejectedException e) {
+    audit.rejected(batch, e.reason());
+    timer.stop();
+}
+
+// Keyin: takroriy qism finally ga ko'chdi
+try {
+    gateway.settle(batch);
+} catch (GatewayTimeoutException e) {
+    audit.timeout(batch);
+} catch (GatewayRejectedException e) {
+    audit.rejected(batch, e.reason());
+} finally {
+    timer.stop();
+}
+```
+
+Chegara: `finally` ichida `return` yoki istisno bo'lmasligi kerak, aks holda
+asl istisno bostiriladi; bu tuzoq [`finally` ichidagi `return` va bostirilgan
+istisno](19-istisno-mexanikasi-va-resurslar.md#193-finally-ichidagi-return-va-bostirilgan-istisno)
+bo'limida ko'rilgan. Shartning har shoxida bir xil ko'rinadigan, lekin
+aslida boshqa obyekt ustida ishlaydigan kod bu refaktoringga kirmaydi:
+birlashtirishdan oldin bo'laklar haqiqatan bir xil ekani tekshiriladi.
+
+## 37.18 Nazorat flagini olib tashlash (Remove Control Flag)
+
+Kitob: 1-nashr *Remove Control Flag* (197). 2-nashrning "List of Refactorings"
+ro'yxatida bu yozuv ham yo'q.
+
+**Qachon**: bir qator shart tekshiruvi bor va qachon to'xtashni belgilash uchun
+`boolean done` kabi o'zgaruvchi ishlatiladi.
+
+Fowler sababni oshkor aytadi: bunday flaglar foydasidan ko'p tashvish keltiradi
+va ular strukturali programmalashning "bitta kirish, bitta chiqish nuqtasi"
+qoidasidan qolgan. U bitta kirish nuqtasi bilan qo'shiladi (zamonaviy tillar
+buni o'zi majburlaydi), lekin bitta chiqish nuqtasi talabi chalkash shartlarga
+va shu noqulay flaglarga olib kelishini aytadi; tillarda `break` va `continue`
+aynan murakkab shartdan chiqish uchun bor. Flagni yo'qotgandan keyin shartning
+haqiqiy maqsadi ko'rinib qoladi (1-nashr, 197-bet).
+
+**Mexanika** (1-nashr, 198-bet). Birinchi variant, `break` yoki `continue`
+bilan:
+
+1. Flagning qaysi qiymati mantiqdan chiqarishini aniqlash.
+2. Shu chiqish qiymatini tayinlashlarni `break` yoki `continue` bilan
+   almashtirish.
+3. Har bir almashtirishdan keyin kompilyatsiya va test.
+
+Ikkinchi variant, `break` va `continue` yo'q tillarda ham ishlaydi:
+
+1. Mantiqni metodga chiqarish.
+2. Flagning chiqish qiymatini aniqlash.
+3. Chiqish qiymatini tayinlashlarni `return` bilan almashtirish.
+4. Har bir almashtirishdan keyin kompilyatsiya va test.
+
+Fowler `break` bor tilda ham ikkinchi variantni afzal ko'radi: `return` metodda
+boshqa kod bajarilmasligini aniq aytadi, va bunday kodni baribir ajratish kerak
+bo'ladi (shu yerda, 198-bet).
+
+```java
+// Oldin: found flagi ham to'xtatadi, ham tanani o'raydi
+void checkSecurity(List<String> people) {
+    boolean found = false;
+    for (String person : people) {
+        if (!found) {
+            if (person.equals("Don")) {
+                sendAlert();
+                found = true;
+            }
+            if (person.equals("John")) {
+                sendAlert();
+                found = true;
+            }
+        }
+    }
+}
+
+// Keyin: flag yo'q, to'xtash nuqtasi ko'rinadi
+void checkSecurity(List<String> people) {
+    for (String person : people) {
+        if (person.equals("Don") || person.equals("John")) {
+            sendAlert();
+            break;
+        }
+    }
+}
+```
+
+Alohida qaraladigan holat: flag ayni paytda natija ma'lumotini ham tashiyotgan
+bo'lsa (`String found` kabi). Fowler qoidasi: `break` ishlatilsa flag qoladi,
+metodga ajratilsa esa qiymat `return` bilan qaytariladi, shuning uchun ajratish
+afzal (shu yerda, 197-bet va 199-200-bet). Ajratilgan metod ayni paytda
+`sendAlert()` ni ham chaqirsa, keyingi qadam
+[so'rovni o'zgartirishdan ajratish](#377-sorovni-ozgartirishdan-ajratish-separate-query-from-modifier)
+bo'ladi: Fowler misolni aynan shu refaktoringda davom ettiradi.
+
+```java
+// Keyin: flag natija ham bo'lsa, metodga ajratib return qilinadi
+void checkSecurity(List<String> people) {
+    someLaterCode(findMiscreant(people));
+}
+
+Optional<String> findMiscreant(List<String> people) {
+    for (String person : people) {
+        if (person.equals("Don") || person.equals("John")) {
+            return Optional.of(person);
+        }
+    }
+    return Optional.empty();
+}
+```
+
+Boswell va Foucher xuddi shu qoidaga nomlash tomonidan keladi: ular
+programma ma'lumotini saqlamaydigan, faqat bajarilish yo'nalishini boshqaradigan
+o'zgaruvchini "nazorat flagi" deb ataydi va "sikl o'rtasidan chiqmaslik kerak"
+degan aytilmagan qoida yo'qligini ta'kidlaydi; ichma-ich sikl bo'lib oddiy
+`break` yetmasa, yechim siklni yoki tanasini yangi funksiyaga ko'chirish
+(Boswell/Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011, 9-bob
+(96-bet)). Qoidaning sikl tomonidagi bayoni
+[shartni sikl boshiga chiqarish](07-sikl-iteratsiya-va-toplam-bilan-ishlash.md#711-shartni-sikl-boshiga-chiqarish-dowhile-va-nazorat-flagi)
+bo'limida.
+
+## 37.19 Amalda qo'llash
 
 - [ ] Murakkab shartlarni 37.1 va 37.2 bilan soddalashtiring, har bir
       chiqarishdan keyin test yurgizing.
@@ -672,9 +916,16 @@ yozadi (1-nashr, 63-bet).
 - [ ] To'plamlardan voris olgan sinflarni 37.14 bilan tuzating.
 - [ ] 37.16 jadvalini jamoa bilan ko'rib chiqib, review izohlarida harakat
       nomini ishlatishni odat qiling.
+- [ ] Shartning barcha shoxlarida takrorlangan chaqiruvlarni topib, shartdan
+      oldinga yoki keyinga chiqaring; `catch` bloklarida takrorlanganini
+      `finally` ga ko'chiring (37.17).
+- [ ] Sikl va shartlardagi `done`, `found`, `finished` nomli `boolean`
+      o'zgaruvchilarni sanab, `break` yoki ajratish va `return` bilan
+      yo'qoting; flag natija ham tashisa, ajratishni tanlang (37.18).
 
 ## Manbalar
 
+- Dustin Boswell, Trevor Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011 (copyright 2012), 7-bob (78-bet) - yangi shartni mavjud blok ichiga qo'yish diffda toza ko'rinsa ham ichma-ichlikni yig'ishi, o'zgartirishdan keyin kodga yangi o'quvchi nigohi bilan butunligicha qarash va kerak bo'lsa erta qaytishga o'tkazish
 - Martin Fowler, *Refactoring: Improving the Design of Existing Code*,
   1-nashr, Addison-Wesley, 1999, 9-bob "Simplifying Conditional Expressions"
   (192-219) - 37.1-37.6 dagi mexanika qadamlari, guard clause ning ikki shakl
@@ -696,6 +947,16 @@ yozadi (1-nashr, 63-bet).
   Code with Subclasses mexanikasi va uning iskala roli, 37.15 dagi Replace
   Subclass with Fields qadamlari
 - Martin Fowler, *Refactoring: Improving the Design of Existing Code*,
+  1-nashr, Addison-Wesley, 1999, 11-bob (289-bet) - Replace Delegation with
+  Inheritance ning sharti: delegatning barcha metodi ishlatilayotgan bo'lishi,
+  chunki voris sinf super sinf interfeysiga to'liq rioya qilishi kerak; shart
+  bajarilmasa mijozni delegatga yuborish yoki Remove Middle Man
+- Martin Fowler, *Refactoring: Improving the Design of Existing Code*,
+  1-nashr, Addison-Wesley, 1999, 12-bob (295-bet) - Tease Apart Inheritance:
+  bitta ierarxiya ikki ishni bajarayotganining belgisi (ma'lum darajadagi har
+  sinfning voris sinflari bir xil sifatlovchi bilan boshlanishi) va yechim
+  sifatida ikki ierarxiya hamda ular orasida delegatsiya
+- Martin Fowler, *Refactoring: Improving the Design of Existing Code*,
   1-nashr, Addison-Wesley, 1999, 3-bob "Bad Smells in Code" (63-72) -
   37.16 jadvalidagi hid va harakat juftliklari
 - Martin Fowler, *Refactoring: Improving the Design of Existing Code*,
@@ -706,8 +967,26 @@ yozadi (1-nashr, 63-bet).
 - ESLATMA: 37.4 dagi enum va `sealed` interfeys varianti, 37.6 dagi `assert`
   va `Objects.requireNonNull` taqsimoti, 37.15 oxiridagi 17.7 ga havola shu
   korpusning Java uchun amaliy tavsiyasi, kitobdan olingan emas
+- ESLATMA: vorislik bilan delegatsiya o'rtasidagi ziddiyatning ajratuvchi
+  sharti ("standart tanlov" va "mavjud delegatsiyani qaytarish" holatlarini
+  ajratish) korpus qarori: Fowler shartni delegatning hamma metodi ishlatiladimi
+  degan savol bilan beradi, korpus esa kompozitsiyani standart tanlov sifatida
+  saqlab, shartni faqat qaytarish holatiga qo'llaydi
 - ESLATMA: 37.11 dagi Replace Query with Parameter faqat 2-nashrda bor, shu
   sababli uning mexanikasi bu bobda berilmaydi
+- Martin Fowler, *Refactoring: Improving the Design of Existing Code*,
+  1-nashr, Addison-Wesley, 1999, 9-bob (196-200) - 37.17 dagi besh qadamli
+  mexanika va `try/catch` dan `finally` ga ko'chirish holati; 37.18 dagi ikki
+  variant mexanikasi, bitta chiqish nuqtasi qoidasining tanqidi, `return`
+  variantining afzalligi va flag natija ma'lumotini ham tashiydigan holat
+- Dustin Boswell, Trevor Foucher, *The Art of Readable Code*, 1-nashr,
+  O'Reilly, 2011 (copyright 2012), 9-bob (96-bet) - 37.18 ning ikkinchi
+  manbasi: nazorat flagi ta'rifi va ichma-ich siklda funksiyaga ko'chirish
+  yechimi
+- ESLATMA: 37.17 va 37.18 ning 2-nashrdagi nomi va beti yozilmagan, chunki
+  2-nashrning "List of Refactorings" ro'yxatida bu ikki yozuv yo'q
+- ESLATMA: 37.18 dagi `Optional` bilan qaytaruvchi variant shu korpusning
+  Java uchun amaliy shakli; kitob misoli bo'sh satr qaytaradi
 
 ---
 

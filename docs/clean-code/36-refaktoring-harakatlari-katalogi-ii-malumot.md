@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 36. Refaktoring harakatlari katalogi II: ma'lumot va inkapsulyatsiya (Refactoring Moves II)
 
@@ -41,6 +41,8 @@ Bu bob ma'lumot tuzilishini o'zgartiradigan harakatlarni qamrab oladi: sinf ajra
 **Mexanika (1-nashr, 122-124)**: sinf javobgarliklarini qanday bo'lish kerakligini hal qilish → ajratilgan javobgarlikni ifodalovchi yangi sinf yaratish → eski sinfdan yangisiga havola o'rnatish → ko'chirilishi kerak bo'lgan har bir maydonni Move Field bilan ko'chirish → har ko'chirishdan keyin kompilyatsiya va test → metodlarni Move Method bilan ko'chirish, quyi darajadagi metodlardan (chaqiriladigan, chaqirmaydigan) boshlab yuqoriga qarab → har ko'chirishdan keyin kompilyatsiya va test → ikki sinfning interfeyslarini ko'rib chiqib qisqartirish → yangi sinfni tashqariga ochish kerakmi, ochilsa havola obyekti sifatidami yoki o'zgarmas qiymat obyekti sifatidami - shuni hal qilish.
 
 1-nashr nozikliklari (122): eski sinf javobgarliklari endi nomiga mos kelmasa, eski sinf qayta nomlanadi. Ikki tomonlama havola kerak bo'lishi mumkin, lekin teskari havola faqat haqiqatan kerak bo'lganda qo'yiladi va keyin uni bir tomonlama qilish mumkinmi deb tekshiriladi.
+
+**Bo'lish joyini sinash (1-nashr, 122)**: mexanikaning birinchi qadami ("javobgarliklarni qanday bo'lish kerakligini hal qilish") eng qiyini, va uning arzon sinovi bor - olib tashlash sinovi. Bitta ma'lumotni yoki bitta metodni olib tashlab ko'ring, so'ng yana qaysi maydon va metod ma'nosini yo'qotadi deb so'rang. Ma'nosini birga yo'qotadigan to'da bitta javobgarlikni tashiydi va chegara aynan shu to'daning atrofidan o'tadi. Bu ma'lumot to'dasi sinovining (32.6) sinf darajasidagi shakli; u [katta sinfda mas'uliyatni ko'rish](33-kod-hidlari-katalogi-ii-sinf-ierarxiya.md#3321-katta-sinfda-masuliyatni-korish-metod-guruhlash-va-feature-sketch) bo'limidagi feature sketch bilan birga ishlaydi - chizma to'dani ko'rsatadi, olib tashlash sinovi uni tasdiqlaydi.
 
 ```java
 // Oldin: Person ichida telefon ma'lumoti
@@ -341,6 +343,7 @@ ESLATMA: Spring da bu harakatning birinchi alternativasi konstruktor inyeksiyasi
 ## Manbalar
 
 - Martin Fowler, *Refactoring: Improving the Design of Existing Code*, 1-nashr, Addison-Wesley, 1999, 7-bob (119-130) - Move Field, Extract Class, Inline Class, Hide Delegate va Remove Middle Man mexanikasi hamda nozikliklari
+- Martin Fowler, *Refactoring: Improving the Design of Existing Code*, 1-nashr, Addison-Wesley, 1999, 7-bob (122-bet) - sinfni bo'lish joyini sinash: bitta ma'lumot yoki metodni olib tashlab, yana qaysi maydon va metod ma'nosini yo'qotishini so'rash
 - Martin Fowler, *Refactoring: Improving the Design of Existing Code*, 1-nashr, Addison-Wesley, 1999, 8-bob (141-149, 168-169, 175) - Replace Data Value with Object, Change Value to Reference, Change Reference to Value, Encapsulate Collection va Replace Record with Data Class mexanikasi; havola va qiymat o'rtasidagi qaror ko'pincha teskariga o'zgartiriladi
 - Martin Fowler, *Refactoring: Improving the Design of Existing Code*, 1-nashr, Addison-Wesley, 1999, 6-bob (97-98, 110-111) - Replace Temp with Query va Replace Method with Method Object mexanikasi, yon ta'sir tekshiruvi, `compute` metodi
 - Martin Fowler, *Refactoring: Improving the Design of Existing Code*, 1-nashr, Addison-Wesley, 1999, 10-bob (242-243, 246) - Remove Setting Method va Replace Constructor with Factory Method mexanikasi, qadamlar tartibi, `protected` super sinf konstruktori chegarasi

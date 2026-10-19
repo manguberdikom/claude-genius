@@ -335,9 +335,10 @@ Quruq yurish ham skillni vaqtinchalik papkada (`$TMPDIR`) yig'ib sinaydi
 va uni o'chiradi: `~/.claude`, klon va `index/` ga yozilmaydi.
 `CLAUDE_CONFIG_DIR` o'rnatilgan bo'lsa o'rnatish rad etiladi.
 
-Egalik. O'rnatish `skills/manguberdi` va olti aktyor fayli
-(`qidiruv`, `tahlil`, `review`, `dasturchi`, `test-muhandis`,
-`rejalashtiruvchi`) ustidan nom bo'yicha yozadi: shu nomli begona fayl
+Egalik. O'rnatish `skills/manguberdi` va to'rt aktyor fayli
+(`review`, `dasturchi`, `test-muhandis`, `rejalashtiruvchi`) ustidan
+nom bo'yicha yozadi (olib tashlangan `qidiruv`, `tahlil` yangilashda
+zaxiraga olinadi): shu nomli begona fayl
 bo'lsa u almashadi, lekin avval zaxiraga tushadi. `--uninstall` esa
 manifest (`skills/manguberdi/.genius.json`) bo'lsa faqat undagi
 `actors` va skillni oladi, begona `review.md` qoladi. Manifest yo'q
@@ -352,7 +353,9 @@ symlink symlink bo'lib turadi (singani ham), nishon nusxalanmaydi va
 o'chmaydi. `HOME` bo'sh yoki `/` bo'lsa o'rnatish rad etiladi.
 
 Zaxira `~/.claude-backup-<vaqt>` (yoki `--backup-to`) ga
-`<ota>--<nom>` nomi bilan yoziladi. Qaytarish ([Orqaga qaytarish](#orqaga-qaytarish)
+`<ota>--<nom>` nomi bilan yoziladi, faqat zaxiralanadigan narsa bo'lsa:
+manifest tasdiqlagan o'z skill va aktyor fayllari git dan qayta
+yasaladi va zaxiralanmaydi. Qaytarish ([Orqaga qaytarish](#orqaga-qaytarish)
 dagi PowerShell buyruqlarining POSIX nusxasi, `<z>` zaxira papkasi):
 
 ```bash
@@ -414,7 +417,7 @@ memorysi va bulut sessiyasidagi topshirig'i (handoff) klondan tashqarida:
 
 | O'zgaruvchi | Sukut | Push |
 |---|---|---|
-| `GENIUS_MEMORY_DIR` | `~/.claude/genius-memory`, ichida `<slug>/` | yo'q |
+| `GENIUS_MEMORY_DIR` | `<workspace>/docs-local/memory`, ichida `<slug>/` (git dan chiqarilgan) | yo'q |
 
 Boshqa joy kerak bo'lsa (masalan xususiy git repo) `settings.json` dagi
 `env` ga `GENIUS_MEMORY_DIR` ni yozing. Lokal sessiyadagi topshiriq esa
@@ -583,7 +586,7 @@ ishora qiladi. Joyini va git buyrug'ini ikkala o'rnatuvchi ham
 | `tools\`, `docs\`, `index\`, `GLOSSARY.md` (faqat o'qiladi) | snapshot | pin qilingan: `git pull` o'zgartirmaydi |
 | `memory\umumiy`, `memory\claude-genius` | klon | klon reposi bilan push qilinadi, snapshot almashganda yo'qolmasin |
 | `.claude\.state` (budjet, belgilar, `hook_errors.log`, `run_tests.jsonl`, handoff), `.claude\usage` | klon | snapshot almashganda budjet va jurnal yo'qolmasin |
-| `GENIUS_MEMORY_DIR` (boshqa proyekt memorysi) | o'zgarmadi, `~/.claude/genius-memory` | klonga bog'liq emas |
+| `GENIUS_MEMORY_DIR` (boshqa proyekt memorysi) | sukut `<workspace>/docs-local/memory` | klonga bog'liq emas |
 
 `env.GENIUS_CLONE` shu ajratishni beradi: asboblar (`geniuslib.clone_root`)
 yoziladigan yo'lni undan oladi, qiymat mavjud papka bo'lmasa `ROOT` ga

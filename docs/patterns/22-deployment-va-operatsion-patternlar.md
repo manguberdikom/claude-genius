@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 22. Deployment va operatsion patternlar (Deployment & Operations Patterns)
 
 <details>
-<summary>Bu bobdagi 43 bo'lim</summary>
+<summary>Bu bobdagi 47 bo'lim</summary>
 
 - [22.1 O'n ikki faktorli ilova (Twelve-Factor App)](#221-on-ikki-faktorli-ilova-twelve-factor-app)
 - [22.2 Tashqi konfiguratsiya (Externalized Configuration)](#222-tashqi-konfiguratsiya-externalized-configuration)
@@ -51,7 +51,11 @@
 - [22.40 Ish navbati tizimi (Work Queue System)](#2240-ish-navbati-tizimi-work-queue-system)
 - [22.41 Hodisaga asoslangan batch ishlov (Event-Driven Batch Processing)](#2241-hodisaga-asoslangan-batch-ishlov-event-driven-batch-processing)
 - [22.42 Muvofiqlashtirilgan batch ishlov (Coordinated Batch Processing: Join, Reduce)](#2242-muvofiqlashtirilgan-batch-ishlov-coordinated-batch-processing-join-reduce)
-- [22.43 Amalda qo'llash](#2243-amalda-qollash)
+- [22.43 Har mikroservisga bitta repozitoriya (One Repository per Microservice, Multirepo)](#2243-har-mikroservisga-bitta-repozitoriya-one-repository-per-microservice-multirepo)
+- [22.44 Konteyner shartnomasi: parametr, API va hujjat (Container Contract: Parameters, API, Documentation)](#2244-konteyner-shartnomasi-parametr-api-va-hujjat-container-contract-parameters-api-documentation)
+- [22.45 Avtomatik masshtablash qoidalarini qurish (Autoscaling Policy Design)](#2245-avtomatik-masshtablash-qoidalarini-qurish-autoscaling-policy-design)
+- [22.46 Deploy infratuzilmasining xavfsizlik gigiyenasi (Patching and Rebuild Hygiene)](#2246-deploy-infratuzilmasining-xavfsizlik-gigiyenasi-patching-and-rebuild-hygiene)
+- [22.47 Amalda qo'llash](#2247-amalda-qollash)
 
 </details>
 
@@ -83,6 +87,8 @@ Deployment va operatsion patternlar - bu kod yozilib bo'lgandan keyin boshlanadi
 **Qo'llanish keyslari:**
 - Bitta Docker image'ni dev, staging va prod'ga bir xil digest bilan chiqarib, DB paroli va to'lov gateway kalitini Kubernetes Secret yoki Vault'dan olish.
 
+**Xossa nomi administrator uchun interfeys.** Tashqariga chiqarilgan konfiguratsiyaning har bir kaliti ishlab chiqarishda tizimni yuritadigan odam uchun interfeys bo'lib qoladi, shuning uchun u kodning ichki tuzilishi emas, FUNKSIYA bo'yicha nomlanadi. `hostname` yoki `url2` kabi nom qiymatning tabiatini aytadi va nima uchun ishlatilayotganini aytmaydi; `authenticationServer` esa to'g'ridan-to'g'ri aytadi va incident paytida uni o'zgartirayotgan odam nima qilayotganini biladi. Bu clean-code dagi nomlash qoidalarining aynan o'zi, faqat identifikator emas, sozlama kaliti ustida qo'llanadi: `spring.datasource.url` kabi framework kalitlari tegilmaydi, lekin ilovaning o'z kalitlari (`app.partner.timeout` emas, `app.partner.priceFeedTimeout`) shu mezon bilan yoziladi.
+
 **Ehtiyot bo'ling:** `@RefreshScope` bilan DataSource yoki `@Scheduled` holatini runtime'da almashtirish yarim-ishlaydigan holatga olib keladi, shubha bo'lsa pod qayta ishga tushiriladi, Config Server uzilishiga qarshi esa client'da `optional:` prefiksi yoki lokal fallback ongli tanlanadi.
 
 ## 22.3 O'zgarmas infratuzilma (Immutable Infrastructure)
@@ -99,6 +105,15 @@ Deployment va operatsion patternlar - bu kod yozilib bo'lgandan keyin boshlanadi
 - Native image bilan sovuq ishga tushish vaqtini qisqartirib, serverless/scale-to-zero ssenariylarini qo'llab-quvvatlash.
 
 **Ehtiyot bo'ling:** `latest` tegidan foydalanish immutable modelni butunlay buzadi - bir xil teg turli vaqtda turli image'ni bildiradi, shu bilan rollback ham ishonchsiz bo'ladi. Shuningdek, ishlash vaqtida pod ichiga `exec` bilan kirib fayl tuzatish yoki konfiguratsiyani qo'lda o'zgartirish - keyingi deploy'da "sirli regressiya" sifatida qaytadi.
+
+**Phoenix server: serverni ataylab o'ldirib qayta tiklash:** o'zgarmaslik faqat qog'ozda qolmasligi uchun serverni muntazam buzib, machine image dan qayta yaratish kerak. Carnell bu amaliyotni Martin Fowler ning "Phoenix Server" nomi bilan beradi: eski server o'ldirilganda yangisi uning kulidan ko'tariladi, shu sababli server qancha uzoq ishlab turgan bo'lsa, drift ehtimoli shuncha katta (Carnell, 1-bob, 25-bet; 10-bob, 308-bet). Patternning ikki foydasi bor va ikkisi ham tekshiruv:
+
+- **Drift ni ochadi va muhitdan quvib chiqaradi.** Doimiy buzib qayta ko'tarsangiz, konfiguratsiya farqi erta chiqadi. Bu izchillikni ta'minlashning eng kuchli yo'li va "stage da bitta kichik o'zgarish qildim, prod da qilishni esimdan chiqardim" turidagi incident manbasini yopadi.
+- **Tiklanmaydigan holatni fosh qiladi.** Mikroservis stateless bo'lishi va serverning o'limi kichik uzilish bo'lishi kerak. Tasodifiy o'ldirib qayta ko'tarish servisda yoki infratuzilmada holat qolib ketgan va bog'liqlik yashiringan joylarni tez ko'rsatadi; bunday joylarni g'azablangan mijoz bilan telefonda gaplashayotganda emas, deploy pipeline ining o'zida topish arzonroq.
+
+Carnell buni Netflix Chaos Monkey bilan tekshiradi: u muhitdagi server nusxalarini tasodifiy tanlab o'ldiradi, maqsad esa serverni yo'qotganda tiklanmaydigan servisni va yangi server eskisi kabi ishlamaydigan holatni topish (Carnell, 10-bob, 308-bet). Umumiy intizom shaklida bu [chaos engineering](17-resilience-va-cloud-dizayn-patternlari.md#1738-chaos-engineering-chaos-engineering) bo'limida yozilgan.
+
+ESLATMA: kitob 2017 yilgi kontekstda virtual server image lari haqida gapiradi (CI da baked machine image, keyin yangi server deploy). Kubernetes da shu patternning amaliy shakli boshqa nomlar bilan keladi: pod ni qo'lda o'chirish o'rniga `kubectl rollout restart`, tasodifiy o'chirishni `PodDisruptionBudget` bilan chegaralash va chaos uchun Chaos Mesh yoki LitmusChaos.
 
 ## 22.4 Infratuzilma kod sifatida (Infrastructure as Code)
 
@@ -142,6 +157,8 @@ Deployment va operatsion patternlar - bu kod yozilib bo'lgandan keyin boshlanadi
 - Kutubxona yoki Java versiyasini (masalan Java 17 → 21) butun service uchun almashtirishda xavfni kamaytirish.
 - Reliz kechasi rollback vaqtini daqiqalardan sekundlarga tushirish talab qilinganda.
 - Yangi infratuzilma (yangi klaster, yangi ingress) ga ko'chishda eski muhitni zaxira sifatida ushlab turish.
+
+**Reliz strategiyasi va deploy strategiyasining farqi.** Deployment resursining o'z strategiyalari (rolling update, recreate) to'liq avtomatik: ularni yoqib qo'ygandan keyin platforma hech kimdan so'ramasdan oxirigacha olib boradi. Blue-Green va [kanareyka](#227-kanareyka-relizi-canary-release) boshqa toifada: ular platformaning ichiga qurilgan emas va ularning kalit qadami - trafikni yangi versiyaga o'tkazish tetigi - inson qaroriga yoki inson yozgan avtomatik mezonga tayanadi. Shundan amaliy natija chiqadi: bu ikki strategiya uchun "kim va nimaga qarab o'tkazadi" degan savol oldindan javoblanadi va javob reliz tartibida yoziladi, aks holda green muhit haftalar davomida trafiksiz turib, faqat xarajat bo'lib qoladi.
 
 **Ehtiyot bo'ling:** Ma'lumotlar bazasi odatda umumiy bo'ladi - orqaga mos bo'lmagan migratsiya rollback'ni imkonsiz qiladi va blue-green'ning asosiy afzalligini yo'q qiladi. Bir qadamda 100% trafik ko'chishi tufayli bu pattern progressiv "oz-ozdan sinab ko'rish" bermaydi: faqat performans regressiyasi real yuk ostida ko'rinadigan holatlarda canary bilan birga ishlatish to'g'riroq.
 
@@ -215,6 +232,22 @@ public enum BillingFeature implements Feature {
 
 **Ehtiyot bo'ling:** Toggle'lar texnik qarz: olib tashlanmagan flag'lar kodda eksponensial kombinatsiyalar hosil qiladi va test qoplamasini buzadi - har bir reliz toggle'iga yaratilishida yashash muddati va o'chirish uchun mas'ul biriktirilsin. Shuningdek, flag'ni so'rov ichida bir marta hal qilib, keyin uzatish kerak: bitta so'rov oqimida bir nechta joyda qayta o'qilsa, qiymat o'rtada o'zgarib, mos kelmaydigan holat yuzaga keladi.
 
+**Konfiguratsiya faylidan boshlang, keyin vositaga o'ting:** toggle
+uchun to'liq boshqariladigan platforma (Newman LaunchDarkly va Split
+ni nomlaydi) birinchi qadam emas. Newman ning tavsiyasi aniq: ancha
+soddaroq narsa bilan, oddiy konfiguratsiya fayli bilan boshlash
+mumkin, bu vositalarga esa toggle larni qanday ishlatishni
+chuqurlashtirgandan keyin qarash kerak. Ya'ni tanlov ketma-ketligi
+`@ConditionalOnProperty` va `application.yml` dan boshlanadi,
+markaziy boshqaruvga ehtiyoj (audit, real vaqtda o'zgartirish, ko'p
+muhit) paydo bo'lganda Togglz yoki OpenFeature ga o'tiladi.
+Toggle ning ikkinchi qo'llanishi shu yerdan chiqadi: toggle qiymatini
+so'rov qilayotgan foydalanuvchining xususiyatiga qarab boshqacha
+qilish mumkin, masalan beta guruh funksiyani yoqilgan ko'radi,
+qolganlar o'chirilgan ko'radi, va bu [kanareyka
+rollout](#227-kanareyka-relizi-canary-release) ning
+konfiguratsiya darajasidagi shakli.
+
 ## 22.11 Yashirin ishga tushirish (Dark Launch)
 
 **Tavsif:** Yangi funksiya yoki yangi implementatsiya ishlab chiqarishda real trafik bilan ishlaydi, lekin natijasi foydalanuvchiga ko'rsatilmaydi - u faqat log, metrika yoki solishtirish uchun yoziladi. Maqsad - performans, xatolar va natija mosligini sun'iy yuk testlari emas, haqiqiy ma'lumotlar bilan tekshirish. Ko'pincha feature toggle bilan birga, "yoqilgan lekin ko'rinmas" rejimda qo'llanadi.
@@ -258,6 +291,8 @@ public enum BillingFeature implements Feature {
 - Narx siyosati yoki obuna paketlari ko'rinishining daromadga ta'sirini sinash.
 - Push-notification matnining ikki variantini ochilish foizi bo'yicha tekshirish.
 
+**Tajribani qayerga joylashtirish: ambassador yoki alohida servis.** Variantga yo'naltirish mantiqini ikki joyga qo'yish mumkin va tanlov tajribaning umriga bog'liq. Birinchi yo'l - klient yonidagi ambassador konteyner: yo'naltirish pod ichida bajariladi, hech qanday yangi deploy birligi paydo bo'lmaydi va tajriba tugaganda ambassador olib tashlanadi. Ikkinchi yo'l - klient oldidagi alohida servis: u markazlashgan va bir nechta iste'molchi uchun bir xil qaror beradi, lekin o'z saqlanishi, masshtablanishi va monitoringini talab qiladi. Ajratuvchi shart aniq: tajriba doimiy mexanizm bo'lsa (platformada har vaqt A/B oqimi bor) alohida servis o'zini oqlaydi, kamdan-kam o'tkazilsa ambassador arzonroq va tezroq olib tashlanadi.
+
 **Ehtiyot bo'ling:** Statistik ahamiyatga yetmasdan xulosa chiqarish (peeking problem) va bir vaqtda juda ko'p test o'tkazish natijalarni buzadi; shuningdek foydalanuvchini variantga bog'lashda sticky assignment bo'lmasa, bitta sessiya ichida UI o'zgarib ketib, tajriba ham, ma'lumot ham ifloslanadi. A/B testing to'lov, hisob-kitob yoki huquqiy jihatdan muhim oqimlarda ehtiyotkorlik talab qiladi - ba'zi yurisdiksiyalarda narx diskriminatsiyasi sifatida qaralishi mumkin.
 
 ## 22.14 Rollback strategiyasi (Rollback Strategy)
@@ -273,11 +308,13 @@ public enum BillingFeature implements Feature {
 - Liquibase changeset xato ishlaganda `rollbackCount 1` bilan schema o'zgarishini bekor qilish.
 - Performance regressiya aniqlangach, oldingi image tag'iga Helm rollback qilish.
 
+**Deployment rollback i nimani qamramaydi.** `kubectl rollout undo` va unga o'xshash mexanizmlar pod shablonini, ya'ni ReplicaSet darajasidagi holatni qaytaradi. Pod dan BOSHQA hech narsani - ConfigMap ni, Secret ni, bog'liq servisning versiyasini - Deployment yangilamaydi ham, qaytarmaydi ham. Shuning uchun reliz birligi bir necha resursdan iborat bo'lsa, ularning relizi va rollback i yuqori darajadagi mexanizm bilan boshqariladi: reliz skripti, Helm reliz versiyasi yoki GitOps da bitta commit. Amalda eng ko'p uchraydigan nosozlik shu chegarada tug'iladi - image qaytariladi, lekin yangi versiya bilan birga kelgan ConfigMap joyida qolib, eski kod yangi konfiguratsiya bilan ishga tushadi.
+
 **Ehtiyot bo'ling:** Destruktiv migratsiyalar (ustun o'chirish, `NOT NULL` qo'shish, tur o'zgartirish) rollback'ni imkonsiz qiladi - avval expand, keyin contract bosqichini alohida release'larda bajaring. Ikkinchi tuzoq: rollback hech qachon sinalmagan bo'lsa, u inqiroz paytida ishlamaydi; uni release checklist'ida muntazam mashq qilish kerak. Uchinchisi Kubernetes tomonida: `kubectl rollout undo` faqat saqlangan revision'lar hisobidan ishlaydi, `revisionHistoryLimit` esa default 10 - uni "chiqindini kamaytiraman" deb 0 ga qo'ysangiz, Deployment butun tarixini tozalaydi va rollback umuman imkonsiz bo'ladi.
 
 ## 22.15 Sidecar konteyner (Sidecar Container)
 
-**Tavsif:** Asosiy ilova konteyneriga yordamchi funksiyani alohida konteyner sifatida biriktirib, uni bitta Pod ichida yonma-yon ishlatish patterni. Ikki konteyner network namespace'ni (localhost) va kerak bo'lsa volume'ni birga ishlatadi, lekin mustaqil ravishda build qilinadi, versiyalanadi va yangilanadi. Bu cross-cutting vazifalarni (log yig'ish, proxy, konfiguratsiya sinxronizatsiyasi, metrika eksporti) ilova kodidan ajratib olishga imkon beradi. Natijada polyglot tizimda bir xil infratuzilma imkoniyatlari barcha tillarga bir xil tarzda beriladi. Pattern ikki manbada ham kanonik: Burns unga modullilik va qayta ishlatish tomonidan qaraydi va har konteynerning o'z API'sini e'lon qilishi, parametrlanishi va hujjatlashtirilishini talab qiladi, Ibryam va Huss esa uni Pod ichidagi struktura patterni sifatida yozadi.
+**Tavsif:** Asosiy ilova konteyneriga yordamchi funksiyani alohida konteyner sifatida biriktirib, uni bitta Pod ichida yonma-yon ishlatish patterni. Ikki konteyner network namespace'ni (localhost) va kerak bo'lsa volume'ni birga ishlatadi, lekin mustaqil ravishda build qilinadi, versiyalanadi va yangilanadi. Bu cross-cutting vazifalarni (log yig'ish, proxy, konfiguratsiya sinxronizatsiyasi, metrika eksporti) ilova kodidan ajratib olishga imkon beradi. Natijada polyglot tizimda bir xil infratuzilma imkoniyatlari barcha tillarga bir xil tarzda beriladi. Pattern ikki manbada ham kanonik: Burns unga modullilik va qayta ishlatish tomonidan qaraydi va har konteynerning o'z API'sini e'lon qilishi, parametrlanishi va hujjatlashtirilishini talab qiladi (bu uch talab [22.44](#2244-konteyner-shartnomasi-parametr-api-va-hujjat-container-contract-parameters-api-documentation) da alohida yozilgan), Ibryam va Huss esa uni Pod ichidagi struktura patterni sifatida yozadi.
 
 **Spring'da qayerda uchraydi:** Spring Boot ilovasi Pod'da Envoy (Istio `istio-proxy`) yoki Linkerd proxy bilan birga ishlaganda, ilova faqat `http://localhost:...` ga murojaat qiladi va mTLS, retry, circuit breaking sidecar'da bajariladi - bu holda `spring-cloud-starter-circuitbreaker-resilience4j`'ni dublikat qilmaslik kerak. Log sidecar'lari (Fluent Bit, Vector) uchun Spring Boot'da `logging.file.name` bilan shared `emptyDir` volume'ga yoziladi yoki Logback'ning `LogstashEncoder`'i (net.logstash.logback) bilan JSON format beriladi. Konfiguratsiya uchun Vault Agent Injector sidecar fayl yozadi, Spring esa `spring.config.import=file:/vault/secrets/application.yaml` yoki `spring-cloud-vault` bilan o'qiydi. Kubernetes 1.29+ da `initContainers` ichida `restartPolicy: Always` bilan rasmiy "native sidecar" mavjud.
 
@@ -288,7 +325,11 @@ public enum BillingFeature implements Feature {
 - JMX/metrikalarni Prometheus formatiga o'giruvchi exporter sidecar (legacy ilovalar uchun).
 - Config file'ni Git repodan muntazam pull qiluvchi `git-sync` sidecar.
 
-**Ehtiyot bo'ling:** Har bir sidecar Pod'ning CPU/memory sarfini va startup vaqtini oshiradi - yuzlab replica'da bu jiddiy xarajat, shuningdek sidecar ilovadan oldin tayyor bo'lmasa, startup'da connection refused xatolari paydo bo'ladi (native sidecar yoki `holdApplicationUntilProxyStarts` bilan hal qilinadi). Sidecar'ni mikroservisga aylantirib, unga biznes logikasi joylashtirish anti-pattern.
+**Ro'yxatdagi birinchi konteyner default hisoblanadi.** Pod ta'rifidagi `containers` ro'yxati tartibsiz emas: birinchisi asosiy konteyner deb olinadi va `kubectl exec`, `kubectl logs` kabi buyruqlar konteyner nomi berilmaganda shunga boradi. Shuning uchun sidecar ni ro'yxatning boshiga yozmaslik kerak - bu kichik qoida, lekin incident paytida seziladi: `kubectl logs` ilova logi o'rniga proxy logini chiqarsa, birinchi daqiqalar yo'qoladi.
+
+**Keys: introspeksiyani kutubxona emas, sidecar bilan berish.** Sidecar ning qiymatini ko'rsatadigan aniq misol - ishlab turgan protsessning ichini ko'rsatadigan asbob (masalan `top` ga o'xshash introspeksiya endpoint i). Uni har til uchun alohida kutubxona qilib yozish va har ilovaga qo'shish qimmat: kutubxona versiyalari farq qiladi, tillarda imkoniyatlar bir xil bo'lmaydi va qo'shilishi har jamoaning ixtiyorida qoladi. PID namespace ni asosiy konteyner bilan bo'lishadigan sidecar bir xil natijani boshqa narx bilan beradi: orkestrator uni barcha ilovaga avtomatik qo'shadi, vositalar to'plami esa hamma joyda bir xil bo'ladi.
+
+**Ehtiyot bo'ling:** Har bir sidecar Pod'ning CPU/memory sarfini va startup vaqtini oshiradi - yuzlab replica'da bu jiddiy xarajat, shuningdek sidecar ilovadan oldin tayyor bo'lmasa, startup'da connection refused xatolari paydo bo'ladi (native sidecar yoki `holdApplicationUntilProxyStarts` bilan hal qilinadi). Sidecar'ni mikroservisga aylantirib, unga biznes logikasi joylashtirish anti-pattern. Teskari chegara ham bor va u tanlov sharti sifatida yoziladi: kutubxona yo'li ilovaga ko'proq mos tushadi (til, build va konfiguratsiya bir xil), modul konteyner esa umumiyroq va qayta ishlatiladigan bo'ladi, shuning uchun o'z sidecar ini noldan yozish faqat ishlash talablari ekstremal bo'lganda to'g'ri - qolgan holatda mavjud modul konteyner yoki tayyor kutubxona olinadi.
 
 ## 22.16 Ambassador konteyner (Ambassador Container)
 
@@ -318,6 +359,8 @@ public enum BillingFeature implements Feature {
 - Eski ilovaning `/status` HTML javobini standart health formatiga o'girib Kubernetes probe'ga berish.
 - Vendor-specific audit loglarni markazlashgan SIEM kutgan formatga normallashtirish.
 
+**Nega upstream image ga tegilmaydi.** Monitoring yoki log formatini to'g'rilashning ko'rinadigan yo'li bor: mavjud konteynerni (masalan MySQL ning rasmiy image ini) o'zgartirib, unga kerakli eksporterni qo'shib qo'yish. Bu yo'l bir marta ishlaydi va keyin qarz bo'lib qoladi: o'sha image ni endi o'zingiz saqlashga majbur bo'lasiz - har yangi versiyada o'zgarishni qayta qo'llash, xavfsizlik yangilanishlarini kuzatish va farqni hujjatlashtirish. Adapter konteyner shu narxni to'lamaydi: upstream image asl holida qoladi va yangilanishi oddiy tag almashtirishga aylanadi, moslashtirish esa alohida, o'zingizga tegishli konteynerda yashaydi.
+
 **Ehtiyot bo'ling:** Spring Boot allaqachon Micrometer va structured logging beradigan joyda adapter qo'shish ortiqcha murakkablik va ikki marta transformatsiya (format yo'qotish) demakdir - avval ilovaning nativ imkoniyatlarini tekshiring. Adapter'da parse qoidalari log formati o'zgarganda jim buziladi, shuning uchun format shartnomasini test bilan qulflash kerak.
 
 ## 22.18 Init konteyner (Init Container)
@@ -333,11 +376,15 @@ public enum BillingFeature implements Feature {
 - Shared volume'dagi fayllar egasi/ruxsatini (`chown`) ilova non-root user'i uchun to'g'rilash.
 - Statik asset yoki ML modelini S3/GCS'dan yuklab olib, ilova startup'ini tezlashtirish.
 
+**Initsializatsiyani init konteynerga chiqarishning uch sababi.** Tayyorlov ishini asosiy konteyner ichida ham bajarish mumkin, shuning uchun ajratishning sababi aytib qo'yilishi kerak. Uchta sabab bor: tayyorlovga ilova image ida bo'lmagan asbob yoki kutubxona kerak (`curl`, `git`, migratsiya CLI si); tayyorlovga ilova image iga ataylab berilmagan huquq kerak (fayl egasini o'zgartirish, tizim sozlamasiga tegish); yoki tashqi bog'liqlik tayyor bo'lmaguncha startup ni kechiktirish kerak. Birinchi ikkisining natijasi bitta - ilova image i kichik va huquqsiz qoladi, asbob va huquq esa faqat bir martalik konteynerda yashaydi.
+
+**Tanlov zinapoyasi: bash skript, hook, init konteyner.** Startup va shutdown mantiqini joylashtirishning uch yo'li bor va ularning narxi bir xil emas. Eng arzoni - mantiqni konteyner buyrug'i ichidagi bash skriptga qo'yish: u hech qanday platforma imkoniyatini talab qilmaydi, lekin konteynerni skript bilan qattiq bog'laydi, qayta ishlatilmaydi va texnik xizmatni og'irlashtiradi - skript image ichida yashirin qoladi va uni manifestdan ko'rinmaydi. Keyingi pog'ona - lifecycle hook (`postStart`, `preStop`): mantiq manifestga chiqadi va ko'rinadigan bo'ladi, lekin platforma unga kafolat bermaydi. Eng kuchli pog'ona - init konteyner: u tartibni kafolatlaydi, alohida image va huquq bilan ishlaydi va boshqa pod larda qayta ishlatiladi. Kafolat ham, qayta ishlatish ham shu tartibda oshadi, shuning uchun mantiq o'sgan sari pastdan yuqoriga ko'chiriladi.
+
 **Ehtiyot bo'ling:** Init konteyner har Pod restartida qaytadan ishlaydi, shuning uchun u idempotent va tez bo'lishi shart - uzoq migratsiya rolling update'ni sekinlashtiradi va `terminationGracePeriod`/probe sozlamalari bilan ziddiyat keltirishi mumkin. Migratsiyani init konteynerga ko'chirsangiz, backward compatible schema (expand-contract) qoidasiga qat'iy rioya qilish zarur, aks holda eski va yangi Pod'lar bir vaqtda ishlayotganda xato beradi.
 
 ## 22.19 Health probe'lar (Health Probes: Liveness, Readiness, Startup)
 
-**Tavsif:** Orkestratorga ilovaning ishlayotgani (liveness), trafik qabul qilishga tayyorligi (readiness) va hali ishga tushayotgani (startup) haqida mashina o'qiy oladigan signal berish patterni. Liveness muvaffaqiyatsiz bo'lsa konteyner restart qilinadi, readiness muvaffaqiyatsiz bo'lsa Pod Service endpoint'laridan chiqariladi (lekin restart bo'lmaydi), startup probe esa sekin ishga tushadigan ilovada liveness bilan birga readiness'ni ham bloklab turadi - startup probe muvaffaqiyatli bo'lmaguncha kubelet liveness va readiness probe'larning hech birini bajarmaydi. To'g'ri ajratilgan probe'lar rolling update, autoscaling va graceful shutdown'ning asosidir.
+**Tavsif:** Orkestratorga ilovaning ishlayotgani (liveness), trafik qabul qilishga tayyorligi (readiness) va hali ishga tushayotgani (startup) haqida mashina o'qiy oladigan signal berish patterni. Uch probe'dan oldin bitta bepul tekshiruv turadi va u ko'pincha e'tibordan qoladi: process health check. Ibryam va Huss uni eng oddiy tekshiruv deb ataydi: kubelet konteyner jarayonini doimiy kuzatadi va jarayon ishlamay qolsa konteynerni qayta ishga tushiradi, ya'ni boshqa hech qanday probe yozmasdan ham ilova shu umumiy tekshiruv hisobiga bir oz chidamliroq bo'ladi. Shundan amaliy qoida chiqadi: agar ilova har qanday nosozlikni o'zi sezib, o'zini to'xtata olsa (fail fast), process health check yetarli; deadlock kabi "jarayon tirik, lekin ish bajarmaydi" holati esa faqat liveness probe bilan ochiladi, chunki bunday ilova process health check nuqtai nazaridan sog'lom ko'rinadi (Ibryam/Huss, 4-bob, 36-bet). Liveness muvaffaqiyatsiz bo'lsa konteyner restart qilinadi, readiness muvaffaqiyatsiz bo'lsa Pod Service endpoint'laridan chiqariladi (lekin restart bo'lmaydi), startup probe esa sekin ishga tushadigan ilovada liveness bilan birga readiness'ni ham bloklab turadi - startup probe muvaffaqiyatli bo'lmaguncha kubelet liveness va readiness probe'larning hech birini bajarmaydi. To'g'ri ajratilgan probe'lar rolling update, autoscaling va graceful shutdown'ning asosidir.
 
 **Spring'da qayerda uchraydi:** Spring Boot Actuator `/actuator/health/liveness` va `/actuator/health/readiness` endpointlarini beradi; Kubernetes muhitida ular avtomatik yoqiladi yoki `management.endpoint.health.probes.enabled=true` bilan majburan yoqiladi. `ApplicationAvailability`, `LivenessState` va `ReadinessState` interfeyslari orqali holatni kodda o'qish, `AvailabilityChangeEvent.publish(context, ReadinessState.REFUSING_TRAFFIC)` bilan o'zgartirish mumkin. Custom tekshiruvlar `HealthIndicator`/`ReactiveHealthIndicator` implementatsiyasi bilan yoziladi, `management.endpoint.health.group.readiness.include=db,redis` orqali guruhlanadi. Probe endpoint'ini asosiy portdan ajratish uchun `management.server.port` ishlatiladi. Kubernetes tomonidagi default qiymatlarni yodda tuting: `initialDelaySeconds` 0, `periodSeconds` 10, `timeoutSeconds` 1 (minimal qiymat ham 1), `successThreshold` 1 (liveness va startup uchun u faqat 1 bo'lishi mumkin), `failureThreshold` 3. Shulardan eng xavflisi `timeoutSeconds: 1`: yuklama ostida yoki GC pauzasida `/actuator/health/liveness` bir sekundga sig'masa, uchta ketma-ket timeout konteynerni restart qiladi - ya'ni soxta restart'larning eng keng tarqalgan sababi aynan shu sozlanmagan default. Kubernetes 1.25+ da probe darajasida `terminationGracePeriodSeconds` ham bor (liveness va startup uchun; readiness probe'da u taqiqlangan).
 
@@ -347,6 +394,10 @@ public enum BillingFeature implements Feature {
 - JVM va Hibernate sekin ishga tushadigan katta monolitda `startupProbe` bilan `failureThreshold` ni oshirish.
 - Kafka consumer lag kritik bo'lganda custom `HealthIndicator` bilan readiness'ni `DOWN` qilish.
 - Load balancer uchun `management.server.port=8081` da alohida health porti ochish.
+
+**Tekshiruv TASHQARIDAN bajariladi.** Sog'liq tekshiruvini ilovaning o'z ichidagi flag yoki watchdog bilan almashtirish mumkin emas va sababi mexanik: ba'zi nosozliklar ilovani shu nosozlik haqida xabar berishdan ham to'sadi. Thread pool to'lgan, heap tugagan yoki event loop bloklangan ilova o'zining ichki watchdog ini ham ishlata olmaydi va "hammasi joyida" degan oxirgi holatda muzlab qoladi. Shuning uchun qaror tashqarida qabul qilinadi: kubelet tashqaridan probe yuboradi va javob kelmasa yoki kechiksa, ilovaning fikrini so'ramasdan chora ko'radi. Amaliy natija - `/actuator/health/liveness` endpoint i haqiqiy tekshiruv bajarishi kerak, oldindan hisoblangan statik qiymatni qaytarmasligi.
+
+**Restart sababni tuzatmasa, liveness probe foyda bermaydi.** Liveness probe ning yagona chorasi - konteynerni qayta ishga tushirish, shuning uchun uni yozishdan oldin bitta savolga javob beriladi: restart bu nosozlikni tuzatadimi. Deadlock, tugab qolgan ichki navbat yoki buzilgan ichki holat uchun javob "ha". Konfiguratsiya xatosi, yo'q bog'liqlik yoki kod xatosi uchun javob "yo'q" va bu holatda yiqiladigan liveness probe faqat zarar beradi: Kubernetes asosiy muammoni tuzatmasdan konteynerni qayta-qayta ko'taradi, log lar restart bilan yo'qoladi va haqiqiy sabab restart tsikli ortida ko'rinmas bo'lib qoladi. Shunday hollarda probe ni olib tashlab, pod ni yiqilgan holatda qoldirish diagnostikaga ko'proq yordam beradi.
 
 **Ehtiyot bo'ling:** Liveness probe'ga tashqi bog'liqliklarni (DB, boshqa servis) qo'shish eng keng tarqalgan xato - DB qisqa vaqt ishlamasa, butun kluster restart tsikliga tushib ketadi; tashqi bog'liqliklar faqat readiness'ga tegishli. `initialDelaySeconds`/`timeoutSeconds` juda qisqa bo'lsa, yuklama paytida soxta restartlar boshlanadi, juda uzun bo'lsa nosoz Pod uzoq vaqt trafik oladi.
 
@@ -422,6 +473,28 @@ class ConsumerLifecycle implements SmartLifecycle {
 
 **Ehtiyot bo'ling:** Har bir instance'ga alohida JVM degani - o'z heap, metaspace va thread stack'i, shuning uchun ko'p mayda servis image'i memory'ni tez yeydi; `requests`/`limits` va `MaxRAMPercentage` ni birga hisoblash kerak. Shuningdek `latest` tag ishlatish immutable deployment tamoyilini buzadi va rollback'ni imkonsiz qiladi - doim aniq versiya yoki digest bilan deploy qiling.
 
+**Konteyner izolyatsiyasining chegarasi:** `requests` va `limits`
+resursni ajratadi, lekin bu VM yoki alohida jismoniy mashina
+beradigan izolyatsiya darajasi emas. Newman buni ochiq aytadi:
+konteyner resurs nuqtai nazaridan izolyatsiyalangan deb qarash
+mumkin, lekin erta davrda bitta konteynerdagi jarayonning tashqariga
+chiqib boshqa konteyner yoki asos mashina bilan muloqot qilishining
+hujjatlashtirilgan yo'llari bo'lgan. Runtime va orkestrator
+tomonidan katta ish qilingan, lekin qaror hamon sizda va mezon
+oddiy: konteynerni **ishonchli** dasturni izolyatsiya qilishning
+yaxshi vositasi deb qarang. Boshqalar yozgan kodni ishlatsangiz va
+zararli tomon konteyner darajasidagi izolyatsiyani chetlab
+o'tishidan tashvishlansangiz, hozirgi holatni o'zingiz chuqurroq
+tekshirishingiz yoki kuchliroq izolyatsiyaga o'tishingiz kerak.
+Newman o'rtadagi variantni ham nomlaydi: alohida yadro beradigan
+Hyper-V konteynerlari va yengil VM shaklidagi Firecracker (AWS
+Lambda da turli mijoz yuklamalarini to'liq ajratish uchun
+ishlatiladi). Narxi ham aytilgan: bunday izolyatsiya ishga tushish
+vaqtiga ta'sir qiladi va runtime narxini oddiy virtualizatsiyaga
+yaqinlashtiradi. Amaliy qoida: o'z kodingiz va ishonchli base image
+uchun oddiy konteyner, mijoz yuborgan kod yoki plugin uchun yengil
+VM yoki alohida yadro.
+
 ## 22.24 Serverless deployment (Serverless Deployment)
 
 **Tavsif:** Kodni serverlarni boshqarmasdan, provayder tomonidan talab bo'yicha ishga tushiriladigan funksiya yoki konteyner sifatida joylashtirish patterni. Scaling to'liq platformaga o'tadi, to'lov esa faqat haqiqiy ijro vaqti uchun amalga oshiriladi, nol trafikda xarajat ham nolga yaqin bo'ladi. Kamchiliklari - cold start, ijro vaqti va resurs limitlari, hamda cheklangan protokol/ulanish modeli (uzoq ulanishlar, connection pool'lar muammoli). JVM uchun eng muhim savol - ishga tushish tezligi va xotira izi.
@@ -462,7 +535,66 @@ public class OrderFunctionApp {
 - Legacy monolitni Cloud Foundry'ga `cf push` bilan ko'tarib, keyin bo'laklarini Kubernetes'ga ko'chirish.
 - Ko'p-tenant SaaS'da har bir tenant uchun alohida namespace va resource quota ajratish.
 
+**Deploy variantini eng yengilidan boshlab baholash.** Qaysi platformaga chiqish qarori to'rt variantni sanab emas, ularni belgilangan TARTIBDA ko'rib hal qilinadi: avval serverless, keyin konteyner va orkestrator, keyin virtual mashina, oxirida tilga xos paket (JAR ni mashinaga qo'yib servis sifatida yuritish). Tartibning mantiqi shu: ro'yxat boshidagi variant operatsion mas'uliyatning ko'pini platformaga beradi, oxiridagisi esa hammasini o'zingizga qoldiradi. Qoida ham shundan chiqadi - talabni qondiradigan eng yengil variant tanlanadi va keyingisiga faqat oldingisi talabni qondirmaganda o'tiladi. Uzoq yashaydigan ulanish, bir sekunddan katta cold start ga chidamaslik yoki maxsus runtime talabi serverless dan konteynerga, mashinaga kirish yoki agent o'rnatish talabi esa konteynerdan virtual mashinaga o'tkazadigan sabablar bo'ladi.
+
 **Ehtiyot bo'ling:** Kubernetes operatsion murakkablikni yo'qotmaydi, faqat uni boshqa joyga ko'chiradi - 3-4 servis uchun oddiy PaaS yoki hatto systemd + VM arzonroq va ishonchliroq. Platformaga juda chuqur bog'lanib qolish (CRD, service mesh annotation'lari, vendor-specific probe'lar) keyinchalik migratsiyani qimmatlashtiradi, shuning uchun ilova kodi platforma API'sini bilmasligi kerak.
+
+**Bulut xizmat modellari: kim nimani boshqaradi:** platformani tanlashdan oldin qaysi darajada ishlayotganingizni aniqlash kerak, chunki "bulut" so'zi o'zi hech narsa aytmaydi. Carnell uchta modelni ovqatlanish bilan taqqoslab ajratadi (Carnell, 1-bob, 13-14-betlar):
+
+- **On-premise:** ovqatni uyda o'zingiz tayyorlaysiz, o'z pechingiz va uydagi masalliq bilan. Hamma ish sizda.
+- **IaaS (Infrastructure as a Service):** do'kondan yarim tayyor ovqat olasiz: do'konning oshpazi va pechi bilan tayyorlangan, lekin isitish, uyda yeyish va keyin idishni yuvish sizda. Ya'ni provayder asosiy infratuzilmani beradi, texnologiyani tanlash va yakuniy yechimni qurish esa sizning javobgarligingizda qoladi.
+- **PaaS (Platform as a Service):** mas'uliyat baribir sizda, lekin asosiy ishni vendor oladi: idish va mebelni siz qo'yasiz, pech, masalliq va oshpazni restoran beradi.
+- **SaaS (Software as a Service):** restoranga borasiz, hamma narsa tayyor. Siz xizmatning passiv iste'molchisisiz: texnologiya tanlashga ta'siringiz ham, infratuzilmani saqlash majburiyatingiz ham yo'q.
+
+Modellarni ajratadigan haqiqiy o'q ikkita: infratuzilmani kim saqlaydi va ilovani qurish uchun qanday texnologiya tanlovi qoladi. Shu o'q bu bo'limdagi qarorni aniqlaydi. O'zingiz boshqaradigan Kubernetes - IaaS ustiga qurilgan o'z platformangiz: node, tarmoq, versiya yangilanishi va orkestratorning o'zi sizda, evaziga texnologiya tanlovi erkin. Boshqarilgan PaaS operatsion yukning katta qismini oladi, lekin ilova platformaning shakliga moslashadi. Shuning uchun "Kubernetes kerakmi" savoli avval "infratuzilma mas'uliyatining qancha qismini o'zimizda ushlab turishimiz kerak" savoliga aylantiriladi.
+
+**Desired state boshqaruvining oldindan sharti:** platforma (Newman
+Kubernetes, bulut provayderining autoscaling group i va Nomad ni
+nomlaydi) desired state ni o'zi saqlaydi, lekin buning uchun u
+instance ni o'zi ko'tara olishi kerak. Shundan birinchi shart
+chiqadi: mikroservis instance ini **to'liq avtomatik** deploy
+qilish imkoni bo'lishi shart, aks holda desired state haqida gap
+ham yo'q. Ikkinchi shart vaqtga tegishli: yangi instance ko'tarilishi
+uzoq bo'lsa, bittasi o'lganda bo'shliqni yopish uchun ortiqcha
+sig'im ushlab turish kerak, chunki platforma almashtirishni
+boshlaydi, lekin yuk shu vaqt ichida qayergadir tushishi kerak.
+Uchinchi: desired state ni o'zingiz yozmang. Newman buni vaqtni
+yaxshi sarflash deb hisoblamaydi va tushunchani birinchi darajali
+qiladigan tayyor platformani olishni tavsiya qiladi; lekin
+platformani kiritishni bir necha mikroservis ishlab turgandan keyin
+qilish mantiqli, aks holda mikroservis asoslari bilan yangi
+texnologiya bir vaqtda ustingizga tushadi. To'rtinchi, va bu amalda
+eng ko'p vaqt yeydigan tuzoq: platforma o'lgan instance ni qayta
+ko'taradi, shuning uchun ta'mir yoki klasterni o'chirish uchun
+avval desired state qoidasini (minimal instance soni, autoscaling
+group) to'xtatish kerak. Newman ning o'z keysi: dev klasterni
+tungi vaqtga o'chirmoqchi bo'lganda, o'chirilgan har instance
+o'rniga yangisi ko'tarilib turgan va bu o'n besh daqiqa davom
+etgan.
+
+**Hisoblash platformasi: tanlov qaytarilishi qiyin:** platformani
+tanlash lock-in darajasi yuqori qaror va Winters/Manshreck/Wright
+sababini Hyrum qonuniga bog'laydi. Jamoalar tanlangan tizimning
+hamma xususiyatiga tayanadigan kod yozadi: VM asosidagi yechim
+tanlansa, o'z VM obrazlarini sozlaydi; konteyner asosidagi yechim
+tanlansa, klaster menejerining API siga to'g'ridan-to'g'ri
+murojaat qiladi. Arxitektura instance ni pet kabi ko'rishga yo'l
+qo'ysa, jamoalar shunday qiladi, va keyin cattle modeliga o'tish
+qiyin bo'ladi. Kitobning misoli tanlovning qanchalik mayda
+tafsiloti ham qotib qolishini ko'rsatadi: Borg jamoasi
+foydalanuvchi buyrug'ini `bash -c` bilan yurgizar edi, keyin
+masshtabda xotira tejash uchun yengilroq `ash` ga o'tdi; ba'zi
+jamoalar esa `bash` ni o'z fayl tizimi qatlamida o'z kodiga
+almashtirgan bo'lgani uchun ularning xotira iste'moli
+o'zgarishdan keyin **oshdi** va o'zgarish qaytarildi. Ikkinchi
+sabab: har qanday platforma tanlovi atrofida log, monitoring,
+debug, alert, vizualizatsiya, konfiguratsiya tili va interfeys
+vositalaridan katta ekotizim o'sadi; platformani o'zgartirsangiz
+ularning hammasi qayta yozilishi kerak va o'rta yoki katta
+tashkilotda shu vositalarni shunchaki sanab chiqishning o'zi ham
+ish. Amaliy natija: ilova kodi platforma API sini bilmasligi
+talabiga (yuqoridagi "Ehtiyot bo'ling") atrofdagi vositalar
+ro'yxatini yuritish talabi qo'shiladi.
 
 ## 22.26 Container image qurish (Container Image Build - Buildpacks, Jib, layered jar, multi-stage)
 
@@ -577,6 +709,63 @@ class DrainOnShutdown {
 
 **Ehtiyot bo'ling:** Feature flag'lar tozalanmasa texnik qarzga aylanadi - har bir flag kodda eksponensial ko'payadigan yo'llar yaratadi, shuning uchun flag'ga egalik va o'chirish muddati belgilanishi shart. Trunk-based ishlash kuchli avtomatlashtirilgan test va tez CI'siz ishlamaydi: yashil bo'lmagan trunk butun jamoani bloklaydi.
 
+**Chiqarish qobiliyati va chiqarish chastotasi ikki boshqa narsa:**
+Winters/Manshreck/Wright bu ikkisini ataylab ajratadi. Qiymatning
+katta qismini **har kuni chiqara olish qobiliyati** beradi, hatto
+siz har kuni chiqarmasangiz ham: bu qobiliyat hujjatlashtirilgan
+uzluksiz deploy jarayonini, foydalanuvchi mamnunligi va mahsulot
+sog'ligi bo'yicha real vaqtdagi metrikani, nima kiradi va nima
+kirmaydi degan aniq siyosatni, production da sozlanadigan binarni,
+konfiguratsiyani kod kabi versiya nazoratida ushlashni va dry-run
+tekshiruvi, rollback hamda ishonchli patch kabi xavfsizlik
+choralarini talab qiladi. Haqiqiy chiqarish chastotasi esa
+foydalanuvchi ehtiyojiga qarab ataylab tanlanadi. Qo'shimcha
+natija: muntazam va bashorat qilinadigan reliz poyezdi har bir
+relizning narxini pasaytiradi, shuning uchun tashlab ketilgan
+relizning narxi ham juda past bo'ladi va "bu funksiya uchun relizni
+ushlab turamiz" degan bosim yo'qoladi.
+
+**Change-neutral release:** A/B qilish uchun foydalanuvchi bazasi
+yetmasa, kitobning tavsiyasi relizni o'zgarishsiz qilish, ya'ni
+barcha yangi funksiyalarni flag ostiga qo'yish. Shunda tarqatish
+paytida sinaladigan yagona narsa deploy ning barqarorligi bo'ladi.
+Buning sababi aniq: yangilanishni surishning o'zi foydalanuvchi
+metrikalarini statistik jihatdan sezilarli o'zgartirishi mumkin,
+shuning uchun kanareyka yiqilish va barqarorlik haqida yaxshi
+ma'lumot beradi, lekin "yangi versiya eskisidan yaxshiroqmi"
+degan savolga javob bermaydi. Shu savolga javob kerak bo'lsa,
+alohida A/B reliz kerak, ya'ni bir vaqtda yangi versiya va
+placebo sifatida eski versiyani qayta chiqarish.
+
+**Release train maqsad emas, o'tish bosqichi:** korpusdagi tavsif
+release train ni big-bang relizni mayda relizlarga aylantirish
+vositasi sifatida beradi. Newman uni bir qadam oldinga suradi:
+release train foydali texnika, lekin uni to'g'ri release-on-demand
+ga o'tishdagi **o'tish bosqichi** deb ko'rish kerak, oxirgi maqsad
+emas. Sababi deployment coupling: Newman release train jarayoni
+ostida hamma servisni, hatto o'zgarmaganlarini ham, birga
+chiqaradigan tashkilotlarda ishlagan. Deploy xavf tug'diradi va
+xavfni kamaytirish yo'llaridan biri faqat o'zgarishi kerak bo'lgan
+narsani o'zgartirish; kichikroq reliz qamrovi xatoning sababini
+topishni ham, tuzatishni ham osonlashtiradi (Newman,
+*Monolith to Microservices*, 1-bob, 23-bet).
+
+**Branch chegaralari: raqam bilan:** "qisqa umrli branch" ni
+o'lchovsiz qoldirmaslik kerak. DORA va Puppet ning 2016 yilgi State
+of DevOps tadqiqoti yuqori samaradorlik bilan bog'langan uch
+ko'rsatkichni beradi: branch yoki fork ning trunk ga merge
+qilinishigacha umri **bir kundan kam**, jami **uchtadan kam** faol
+branch va trunk ga **kunlik** merge. Newman shu yerda GitFlow
+haqida ham ogohlantiradi: branch ga og'ir yondashuv ochiq kod
+dunyosida keng tarqalgan, chunki u ko'p sonli, vaqti kam,
+"ishonilmagan" committer lardan keladigan ad hoc hissalar bilan
+ishlaydi va ularni kichik "ishonilgan" guruh tekshiradi; yopiq
+jamoada esa hamma a'zoda commit huquqi bor, demak ochiq kod uchun
+ishlagan narsa kundalik ishda ishlamasligi mumkin. 2019 yilgi
+hisobot ikki tomonga umumiy bo'lgan xulosani beradi: qisqa umrli
+branch, kichik va o'qiladigan patch hamda o'zgarishlarning
+avtomatik testi ikki holatda ham samaradorlikni oshiradi.
+
 ## 22.32 Semantik versiyalash va BOM bilan dependency boshqarish (Semantic Versioning & BOM Dependency Management)
 
 **Tavsif:** Semantic Versioning (MAJOR.MINOR.PATCH) versiya raqamini mijoz uchun shartnomaga aylantiradi: MAJOR - buzuvchi o'zgarish, MINOR - orqaga mos yangi funksiya, PATCH - faqat tuzatish. BOM (Bill of Materials) esa o'nlab o'zaro bog'liq kutubxona versiyasini bitta joyda, sinab ko'rilgan to'plam sifatida qotiradi va transitive dependency konfliktlarini ("diamond dependency") oldini oladi. Ikkisi birga katta tashkilotda yangilanishni oldindan bashorat qilinadigan qiladi.
@@ -591,6 +780,31 @@ class DrainOnShutdown {
 - Renovate bilan PATCH yangilanishlarni avtomatik merge qilib, MINOR/MAJOR'ni qo'lda ko'rib chiqish.
 
 **Ehtiyot bo'ling:** BOM'dan bitta kutubxona versiyasini sababsiz override qilish Spring Boot'ning sinab ko'rilgan kombinatsiyasini buzadi va topilishi qiyin `NoSuchMethodError` keltiradi - override qilsangiz, sababini va qaytarish shartini hujjatlashtiring. SemVer faqat e'lon qilingan va kuzatilgan holda ishlaydi: `0.x` da qolib ketish yoki MAJOR'ni ko'tarishdan qo'rqish mijozlarni yashirin buzuvchi o'zgarishlarga duchor qiladi.
+
+**Release train: Spring Cloud versiyasi Boot versiyasiga ergashmaydi:** Spring Cloud o'nlab mustaqil subloyihadan iborat va ular alohida emas, birga, bitta BOM ostida "release train" sifatida chiqariladi. BOM o'sha chiqarishga kiradigan har bir subloyihaning tekshirilgan versiya raqamini va uchinchi tomon kutubxonalarni ushlaydi, shuning uchun siz subdependency larga versiya yozmaysiz va mos kelmaydigan kombinatsiyadan himoyalanasiz (Carnell, 3-bob, 71-72-betlar). Muhim nuqtasi esa shu: Spring Boot release train dan MUSTAQIL chiqariladi, ya'ni Spring Boot ning har bir versiyasi Spring Cloud ning har bir chiqarishi bilan mos kelmaydi va mosligini Spring Cloud ning o'z sahifasidagi jadvaldan tekshirish kerak. Amaliy qoida: `spring-cloud-dependencies` versiyasini Boot versiyasidan ayrim holda ko'tarmang, ikkisini bitta migratsiya qadamida, moslik jadvaliga qarab almashtiring va `spring-boot-dependencies` bilan `spring-cloud-dependencies` ni bir xil commit da yangilang.
+
+ESLATMA: kitobdagi chiqarish nomlari London metro bekatlari bo'yicha harf tartibida berilgan (Angel, Brixton, Camden; kitob misoli `Camden.SR5`). Spring Cloud keyinchalik bu nomlashdan voz kechib kalendar-semantik versiyaga o'tdi, lekin release train mexanizmi va Boot bilan moslik jadvalini tekshirish talabi o'zgarmagan.
+
+**Eskirish oynasi har kutubxona uchun alohida:** versiyalash
+mexanizmidan keyin keladigan savol - eski versiyani qancha vaqt
+qo'llab-quvvatlash. Ford va boshqalar global siyosatni soddaroq,
+lekin kamroq samarali deb ataydi va sababini aytadi: kutubxonalar
+turli tezlikda o'zgaradi. Kitobning misoli ikki chegarani ajratadi:
+kam o'zgaradigan `Security.jar` uchun ikki yoki uch versiyani
+ushlab turish asosli, haftada o'zgaradigan `Calculators.jar` uchun
+esa shu chegara iste'molchini oyda yoki haftada bir marta
+yangilashga majbur qiladi, demak o'n versiya oynasi ancha
+mantiqli. Global siyosat (kitobning misolida to'rt orqaga versiya)
+boshqarish oson, lekin tez o'zgaradigan kutubxona atrofida churn
+keltiradi, ya'ni servislarni faqat moslik uchun doimiy qayta
+testlash va qayta deploy qilish. Narxi ham aytilgan: har kutubxona
+uchun alohida oynani kimdir yuritishi va kuzatishi kerak. Oxirgi
+qoida esa har qanday strategiyani bekor qiladi - umumiy koddagi
+jiddiy nuqson yoki buzuvchi o'zgarish barcha servisni darhol
+oxirgi versiyaga o'tishga majburlaydi. Eskirishning jarayon
+tomoni, ya'ni iste'molchini kim va qanday ko'chiradi,
+[code-review 37.9](../code-review/37-api-moslik-va-breaking-change-review.md#379-eskirish-jarayoni-advisory-compulsory-va-qaytmaslik)
+da.
 
 ## 22.33 Runbook'lar (Runbooks)
 
@@ -842,7 +1056,271 @@ Step mapStep(JobRepository repository, Step countPagesStep,
 
 **Ehtiyot bo'ling:** Join'ning narxi parallellikning yo'qolishi: butun to'plam oldingi qadamdan o'tmaguncha keyingi hisob boshlanmaydi, demak bitta sekin partitsiya butun job'ni ushlab turadi - shuning uchun partitsiya kalitini teng taqsimlanadigan qilib tanlash kerak. Ikkinchi tuzoq - to'liqlik kafolati kerak bo'lmagan joyda join ishlatish: agar yig'ma statistika emas, oddiy oqim kerak bo'lsa, merge yoki bosqichma-bosqich reduce arzonroq va tezroq. Reduce funksiyasi esa assotsiativ bo'lishi shart, aks holda bo'laklarni boshqa tartibda birlashtirish boshqa natija beradi.
 
-## 22.43 Amalda qo'llash
+## 22.43 Har mikroservisga bitta repozitoriya (One Repository per Microservice, Multirepo)
+
+**Tavsif:** Har mikroservisning kodi o'z manba repozitoriysida turadi; shunda manba o'zgarishi va CI build o'rtasida bir-bir moslik bo'ladi: `User` repozitoriysidagi har o'zgarish faqat `User` build ini qo'zg'atadi va o'tsa deploy qilish mumkin bo'lgan yangi versiya chiqadi. Newman bu patternni monorepo bilan yonma-yon qo'yib, uchinchi, eng yomon variantni ham nomlaydi: bitta repozitoriya plus BITTA umumiy build. Shu uchinchi variantda bir servisdagi bir qatorlik o'zgarish hamma servisni qayta qurdiradi, qaysi artefaktni deploy qilish kerakligini aytib bo'lmaydi va natijada jamoalar hammasini birga deploy qilishga qaytadi; bitta build sinsa esa boshqa hech bir servisga o'zgarish kiritilmaydi (Newman, 7-bob, "Pattern: One Repository per Microservice (aka Multirepo)").
+
+Tanlov kelishuvlari:
+
+- **Multirepo foydasi.** Egalikni repozitoriya darajasida berish mumkin (kuchli egalik modeli uchun zarur), build xaritasi oddiy, va bir nechta repozitoriyada ishlashning og'irligi servis chegarasini himoya qiladi: chegarani qayta-qayta kesib o'tish kerak bo'layotgani chegara noto'g'ri joyda turganining signali.
+- **Multirepo narxi.** Repozitoriyalar orasida atomar commit yo'q (hech bo'lmaganda Git da): `Inventory` API sini va uni ishlatadigan `Shipping` ni ikki commit bilan o'zgartirasiz. Newman buni muammo deb tan oladi, lekin uni amalda bosqichli commit bilan hal qiladi (avval API, keyin iste'molchi) va doimiy kesishuvchi o'zgarishni servis chegarasi xatosining ko'rsatkichi deb o'qiydi. Qayta ishlatish esa versiyalangan kutubxona orqali boradi va kutubxonaning yangi versiyasini chiqarish iste'molchi servislarni ham qayta deploy qilishni talab qiladi.
+- **Monorepo foydasi va narxi.** Bir nechta servisga tegadigan o'zgarish bitta commit bo'ladi va mayda qayta ishlatish osonlashadi. Lekin atomar commit atomar rollout bermaydi: hammasini birga chiqarish istagi mustaqil deploy printsipini buzadi. Build xaritasi ham murakkablashadi: papkani build ga bog'lash oddiy boshlanish, keyin bir papka bir nechta build ni qo'zg'atadi, umumiy `common` papkasi esa hammasini; katta loyihada bu graf asosidagi build vositalariga (Bazel) olib boradi, va bunday tizimni joriy qilish jiddiy ish.
+
+**Spring'da qayerda uchraydi:** Multirepo da har servis o'z Maven yoki Gradle build iga ega va umumiy narsalar (BOM, ota-pom, umumiy kutubxona) alohida repozitoriyadan versiyalangan artefakt sifatida keladi; shu yerda [22.32](#2232-semantik-versiyalash-va-bom-bilan-dependency-boshqarish-semantic-versioning--bom-dependency-management) dagi versiyalash qoidalari hal qiluvchi bo'ladi. Monorepo da esa Gradle multi-project (`settings.gradle` da `include`) yoki Maven ko'p modulli reaktor ishlatiladi va CI da o'zgargan modulni aniqlash kerak bo'ladi (Gradle build cache plus `--parallel`, yoki modul bo'yicha path filtri). Spring Boot ilovasining o'zi ikki modelda ham bir xil qoladi: farq build va reliz zanjirida, kodda emas. Test pipeline tomoni [testlash hujjatida](../testing/15-ci-cd-da-test-pipeline.md#1513-monorepo-va-multi-modul-loyihada-test-pipeline).
+
+**Qo'llanish keyslari:**
+- Har servisga alohida jamoa egalik qiladigan tashkilotda repozitoriya bo'yicha ruxsat va CODEOWNERS.
+- Mustaqil deploy talab qilinadigan servislarda build vaqtini faqat o'zgargan servis bilan cheklash.
+- Monorepo: kam sonli jamoa va tez-tez kesishuvchi o'zgarish bo'lgan erta bosqich.
+
+**Ehtiyot bo'ling:** Bitta repozitoriya plus bitta umumiy build ni "oddiy boshlanish" deb tanlash eng qimmat yo'l: u lockstep relizni majburlaydi va keyin undan chiqish qiyin. Monorepo tanlansa, papkadan build ga xaritani boshida yozib qo'ying, aks holda `common` papkasiga tegish butun tizimni qayta qurishga aylanadi. Multirepo tanlansa, kesishuvchi o'zgarishlar sonini o'lchab turing: u o'sib borayotgan bo'lsa muammo build da emas, servis chegarasida.
+
+**Monorepo chekkalarda ishlaydi, o'rtada og'riydi:** Newman tanlovni
+tashkilot kattaligiga bog'laydi va natija chiziqli emas. Bir
+chekkada juda katta, texnologiyaga yo'naltirilgan kompaniyalar
+(Google, Microsoft, Facebook, Twitter, Uber) bor: ularda bu
+patterndan eng ko'p foyda olish uchun katta resurs ajratish imkoni
+mavjud. Ikkinchi chekkada kichik jamoalar bor: 10-20 dasturchi
+bilan egalik chegaralarini boshqarish va build jarayonini sodda
+ushlab turish monorepo da osonroq. Og'riq nuqtalari o'rtadagi
+tashkilotlarda paydo bo'ladi: masshtabi yangi asbob va yangi ish
+usullarini talab qiladigan muammolarga yetgan, lekin shu ishlarga
+ajratadigan ortiqcha vaqti yo'q. Newman ning o'z tanlovi masshtabda
+multirepo, chunki mayda qayta ishlatish va atomar commit ning
+foydasi masshtabda chiqadigan muammolardan ustun kelmaydi.
+Vaqt o'qidagi tuzoq alohida eslatiladi: kichik boshlangan va
+monorepo yaxshi ishlagan tashkilotlar keyinchalik boshqa modelga
+o'tishda qiynaladi, chunki monorepo tushunchasi odatga aylanib
+qolgan; tashkilot o'sgan sari monorepo ning og'rig'i ham,
+migratsiya narxi ham o'sadi va bu sunk cost tuzog'ini keltiradi,
+ya'ni "shuncha sarfladik, yana bir oz sarflasak ishlaydi" degan
+fikr. Oraliq variant ham bor va u korpusdagi jamoaviy egalik
+modeliga mos keladi: monorepo ni bitta jamoa o'z servislari uchun
+ishlatishi.
+
+## 22.44 Konteyner shartnomasi: parametr, API va hujjat (Container Contract: Parameters, API, Documentation)
+
+**Tavsif:** Qayta ishlatiladigan konteyner (ayniqsa [sidecar](#2215-sidecar-konteyner-sidecar-container), ambassador va adapter) uch narsa bilan modullashadi va bu uchtasi birga bitta shartnomani tashkil qiladi.
+
+- **Parametrlangan konteyner.** Konteynerni programmadagi funksiya kabi ko'ring va uning parametrlarini sanang: har parametr umumiy konteynerni aniq holatga moslaydigan kirish. Burns ning misoli: SSL sidecar i amalda foydali bo'lishi uchun kamida ikki parametr kerak, sertifikat nomi va `localhost` dagi legacy ilova porti; bu parametrlarsiz bunday sidecar ni keng qo'llash qiyin. Parametrni berishning ikki yo'li bor, env var va komandalar satri, Burns env var ni afzal ko'radi; konteyner ichida esa oddiy shell skript env var larni o'qib konfiguratsiya faylini sozlaydi (Burns, 2-bob, 17-bet).
+- **Konteyner API si.** Parametrlar bilan birga konteyner "funksiya" e'lon qilgan bo'ladi, lekin API faqat shu emas: konteyner BOSHQA servislarga qiladigan chaqiruvlar va o'zi beradigan HTTP yoki boshqa API lar ham shartnomaning qismi. Shartnoma iste'molchilarning keyingi versiyada ham ishlashi uchun kerak. Burns breaking change ni uch bosqichda ko'rsatadi: `UPDATE_FREQUENCY` nomini `UPDATE_PERIOD` ga o'zgartirish ochiq buzilish; sekundda son qabul qilgan parametrni `10m`, `5s` kabi matnga o'tkazish ham buzilish, chunki eski qiymat (`10`) yangi sxemada parse bo'lmaydi; eng nozigi esa birlikni jimgina o'zgartirish, ya'ni birliksiz qiymatni avval sekund, keyin millisekund deb o'qish: xato chiqmaydi, lekin konfiguratsiya tekshiruvi keskin tezlashib konfiguratsiya serveriga yuk ortadi, demak bu ham breaking change (Burns, 2-bob, 17-18-betlar).
+- **Konteynerni hujjatlashtirish.** Modulli konteynerni hech kim ishlatolmasa, uning moslashuvchanligi behuda. Rasmiy vosita kam, shuning uchun hujjat Dockerfile ning o'zida yoziladi: `EXPOSE` portni e'lon qiladi (shart emas, lekin yozish yaxshi amaliyot) va yonida o'sha portda aynan nima tinglayotganini izoh bilan ko'rsatish kerak; `ENV` parametrlarga default qiymat berib, ularning ma'nosini izohlaydi; `LABEL` esa metadata beradi, masalan maintainer manzili, sahifa va image versiyasi, nomlar esa Label Schema loyihasining umumiy taksonomiyasidan olinadi (Burns, 2-bob, 18-19-betlar).
+
+**Spring'da qayerda uchraydi:** Spring Boot ilovasida env var parametri avtomatik ishlaydi: `SPRING_DATASOURCE_URL` yoki `PROXY_PORT` relaxed binding orqali `spring.datasource.url` va `@ConfigurationProperties` ga tushadi, shuning uchun konteyner shartnomasi amalda `@ConfigurationProperties` sinfining maydonlari bo'ladi. Shu sabab birlik o'zgarishi Spring da ham xuddi shunday xavfli: `Duration` turi `30s` va `PT30S` ni tushunadi, lekin birliksiz `30` ni property ning `@DurationUnit` iga qarab o'qiydi, ya'ni `@DurationUnit` ni o'zgartirish breaking change. Image ni Buildpacks yoki Jib bilan qurganda ham ([22.26](#2226-container-image-qurish-container-image-build---buildpacks-jib-layered-jar-multi-stage)) `LABEL` va `EXPOSE` ni qo'lda bergan ma'qul.
+
+**Qo'llanish keyslari:**
+- Bir nechta jamoa ishlatadigan log yoki metrika sidecar ini sertifikat yo'li va port parametrlari bilan chiqarish.
+- Konfiguratsiya sinxronizatsiyasi sidecar ida yangilanish davrini env var bilan berish va uning birligini shartnomada muhrlash.
+- `LABEL` orqali image versiyasi va egasini yozib, reliz auditini avtomatlashtirish.
+
+**Ehtiyot bo'ling:** Burns ning asosiy ogohlantirishi: konteyner API sidagi buzilish parametr nomini o'zgartirish kabi doim ko'rinadigan bo'lmaydi; birlik, default qiymat va parse qoidasi ham shartnomaning qismi. Shuning uchun sidecar ni versiyalab, o'zgarishni [22.32](#2232-semantik-versiyalash-va-bom-bilan-dependency-boshqarish-semantic-versioning--bom-dependency-management) dagi semantik versiyalash qoidalari bilan belgilang va eski qiymat shaklini hech bo'lmaganda bir reliz davomida qabul qilib turing.
+
+```text
+# Sidecar ning shartnomasi Dockerfile da ko'rinadi: port, parametr va metadata.
+FROM eclipse-temurin:21-jre-alpine
+
+# Config sinxronizatsiyasi sidecar i shu portda status beradi
+EXPOSE 8081
+
+# UPDATE_FREQUENCY: yangilanish davri. QIYMAT BIRLIGI SHARTNOMANING QISMI:
+# birliksiz son millisekund deb o'qiladi, `10s` va `PT10S` ham qabul qilinadi.
+# Birlikni yoki parse qoidasini o'zgartirish breaking change.
+ENV UPDATE_FREQUENCY=30s
+
+# CERT_PATH: SSL sertifikat fayli yo'li. Majburiy, default yo'q.
+ENV CERT_PATH=""
+
+LABEL "org.label-schema.vendor"="platform@musicorp.example"
+LABEL "org.label-schema.version"="1.4.0"
+
+ENTRYPOINT ["java", "-jar", "/app/config-sync.jar"]
+```
+
+```java
+// Konteyner shartnomasining Spring tomoni: env var -> @ConfigurationProperties.
+// UPDATE_FREQUENCY -> config.sync.update-frequency (relaxed binding).
+@ConfigurationProperties(prefix = "config.sync")
+@Validated
+public record ConfigSyncProperties(
+
+        // @DurationUnit birliksiz qiymat qanday o'qilishini belgilaydi.
+        // Uni o'zgartirish - jimgina breaking change.
+        @DurationUnit(ChronoUnit.MILLIS)
+        @DefaultValue("30s")
+        Duration updateFrequency,
+
+        @NotBlank
+        String certPath) {
+}
+```
+
+## 22.45 Avtomatik masshtablash qoidalarini qurish (Autoscaling Policy Design)
+
+**Tavsif:** [22.21](#2221-gorizontal--vertikal-avtomatik-masshtablash-horizontal--vertical-autoscaling)
+masshtablash mexanizmini beradi (HPA, VPA, KEDA, metrika tanlovi).
+Bu bo'lim qoidalarning o'zini qanday tartibda kiritish va qanday
+sinash kerakligi haqida: Newman ning kuzatishi bo'yicha autoscaling
+amalda yukka javob berishdan ko'ra ko'proq instance nosozligini
+boshqarish uchun ishlatiladi, va ketma-ketlikni buzish qimmat
+turadi.
+
+- **Avval nosozlik, keyin yuk.** Autoscaling ni birinchi navbatda
+  nosoz instance ni almashtirish uchun yoqib, shu vaqt ichida
+  yuk ma'lumotini yig'ing. Bulut provayderining "bu guruhda kamida
+  besh instance bo'lsin" qoidasi bittasi o'lganda yangisini
+  avtomatik ko'taradi, bu esa yukdan mustaqil va kutilmagan xulq
+  bermaydi. Yuk bo'yicha qo'shishga o'tgach, **pastga** tushirishda
+  juda ehtiyot bo'lish kerak: ko'p holatda kerakdan ortiq quvvat
+  ushlab turish yetishmovchilikdan ancha yaxshi. Operatsion tuzoq
+  ham shu qoidadan chiqadi: ta'mir uchun instance larni o'chirishdan
+  oldin minimal instance qoidasini vaqtincha to'xtatish kerak, aks
+  holda ular qayta ko'tarilaveradi
+  ([22.25](#2225-servis-deploy-platformasi-service-deployment-platform---kubernetes-paas)
+  dagi desired state sharti).
+- **Autoscaling qoidasini yuk testi bilan sinash.** Turli yuk
+  shakllarini qayta yarata oladigan yuk testlari to'plami bu yerda
+  deyarli majburiy: ular bilan masshtablash qoidalarini sinab
+  ko'rasiz. Qoidani sinamasangiz, uni noto'g'ri yozganingizni faqat
+  production da bilib olasiz va oqibati og'ir bo'ladi. Testdan
+  chiqadigan ikkinchi raqam ham qimmat: qo'shilish vaqti. Yuk
+  ortayotgani haqida ogohlantirish bir necha daqiqa oldin kelsa,
+  yangi instance ko'tarilishi esa kamida o'n daqiqa olsa, oradagi
+  bo'shliqni ortiqcha quvvat bilan yopish kerak (kitobdagi aniq
+  misol shu ikki raqam bilan beriladi).
+- **Bashorat va reaktiv masshtablashni aralashtirish.** Yuk
+  tendensiyasi ma'lum bo'lsa, oldindan masshtablang: kitobning
+  misolida tizimning cho'qqisi 9:00 dan 17:00 gacha bo'lsa, qo'shimcha
+  instance lar 8:45 da ko'tariladi va 17:15 da o'chiriladi. Buning
+  uchun yuk kundan kunga, haftadan haftaga qanday o'zgarishini
+  ko'rsatadigan ma'lumot kerak, mavsumiy davri bor biznesda esa ancha
+  uzoqqa boradigan tarix kerak. Kutilmagan cho'qqi uchun esa reaktiv
+  qoida qo'shiladi. Newman ning misoli yangiliklar sayti: kunlik
+  tendensiya aniq (ertalabdan tushgacha o'sadi, keyin pasayadi,
+  dam olish kunlari pastroq), lekin katta yangilik kutilmagan va
+  tez keladigan cho'qqi beradi.
+
+```yaml
+# Jadvalli (bashoratli) va reaktiv qoidani birga ishlatish.
+# KEDA: cron scaler minimal darajani cho'qqidan oldin ko'taradi,
+# Prometheus scaler kutilmagan cho'qqiga javob beradi.
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: orders-api
+spec:
+  scaleTargetRef:
+    name: orders-api
+  minReplicaCount: 3                 # nosozlik uchun zaxira
+  maxReplicaCount: 30
+  cooldownPeriod: 600                # pastga tushishda shoshilmaslik
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 600
+  triggers:
+    - type: cron                     # bashoratli: cho'qqidan oldin
+      metadata:
+        timezone: Asia/Tashkent
+        start: "45 8 * * 1-5"
+        end: "15 17 * * 1-5"
+        desiredReplicas: "12"
+    - type: prometheus               # reaktiv: kutilmagan cho'qqi
+      metadata:
+        serverAddress: http://prometheus:9090
+        threshold: "50"
+        query: sum(rate(http_server_requests_seconds_count{service="orders-api"}[2m]))
+```
+
+ESLATMA: yuqoridagi `ScaledObject` dagi aniq qiymatlar
+(`minReplicaCount`, `maxReplicaCount`, `cooldownPeriod`,
+`desiredReplicas`) korpusning misoli, kitobdan olingan raqam emas.
+Kitobdan olingan raqamlar faqat ikkitasi: cho'qqi oralig'i (9:00 dan
+17:00 gacha) va unga mos jadval (8:45 da ko'tarish, 17:15 da
+tushirish). O'z qiymatlaringizni shu bo'limdagi ikkinchi qoidaga
+ko'ra, yuk testi bilan toping.
+
+**Ehtiyot bo'ling:** Jadvalli qoidani reaktiv qoida bilan birga
+ishlatganda ikkisi bir xil obyektni qarama-qarshi yo'nalishga tortmasin:
+cron qoidasi minimal darajani ko'taradi, so'rov metrikasi esa undan
+yuqoriga chiqaradi, ya'ni ikkisi bir xil o'qda emas, biri pol, biri
+javob bo'lishi kerak. Ikkinchi xavf: zaxira quvvatning narxi
+ko'rinmas bo'lib qoladi, shuning uchun qo'shilish vaqti qisqargan
+sari (AOT, CDS, native image -
+[22.27](#2227-graalvm-native-image-graalvm-native-image),
+[22.28](#2228-sinflar-arxivi-va-aot-cache-cds--appcds--project-leyden))
+zaxira darajasini qayta ko'rib chiqish kerak.
+
+## 22.46 Deploy infratuzilmasining xavfsizlik gigiyenasi (Patching and Rebuild Hygiene)
+
+**Tavsif:** [22.3](#223-ozgarmas-infratuzilma-immutable-infrastructure)
+o'zgarmas infratuzilmani deploy mexanizmi sifatida beradi; bu bo'lim
+o'sha mexanizmning xavfsizlik tomoni, ya'ni nega almashtirish
+muntazam bo'lishi kerak va izolyatsiya chegarasi qayerda tugaydi.
+
+- **Ma'lum zaiflikni o'z vaqtida yoping.** Newman 2017 yildagi
+  Equifax hodisasini aynan shu qoidaning ahamiyati uchun keltiradi:
+  Apache Struts dagi ma'lum zaiflik orqali ruxsatsiz kirish
+  olingan, 160 milliondan ortiq odamning ma'lumoti zarar ko'rgan
+  va kompaniya 700 million dollarlik kelishuvni to'lagan. Zaiflik
+  hodisadan oylar oldin aniqlangan va tuzatuvchi reliz chiqarilgan
+  edi, lekin yangilanish qo'llanmagan. Zaiflik ilovaning o'z kodida
+  emas, Java web framework ida bo'lgani alohida muhim: uchinchi
+  tomon kodi ham patch doirasiga kiradi va masshtabda qaysi servis
+  ma'lum zaiflikli kutubxonaga bog'langanini aniqlash juda qiyin,
+  shuning uchun bog'liqlik skaneri (Snyk, GitHub code scanning)
+  build ning o'ziga ulanadi va topilma build ni yiqitadi
+  ([code-review 33.3](../code-review/33-bogliqlik-va-supply-chain-review.md#333-skanerlashni-ci-ga-qoyish)).
+- **Patch bitta qatlam emas.** Kubernetes ostida bir nechta qatlam
+  turadi va ularning hammasini o'zingiz yuritsangiz, patch
+  mas'uliyati ham sizda: mashina, OS, konteyner runtime, klaster
+  komponentlari, keyin ilova va uning bog'liqliklari. Boshqariladigan
+  xizmat egalik doirasini keskin qisqartiradi, ya'ni patch
+  qarzini kamaytirishning eng arzon yo'li ko'pincha arxitektura
+  emas, xizmat modeli. Konteyner bu yerda alohida tuzoq beradi:
+  biz konteyner nusxasini o'zgarmas deb qaraymiz, lekin konteyner
+  ichida ilovadan tashqari operatsion tizim ham bor. Olti oy
+  o'zgarmagan konteyner - olti oy qo'llanmagan OS patch i; bundan
+  tashqari base image boshqa image ni meros qilib olishi mumkin,
+  demak asos image larning ishonchli ekani alohida savol.
+- **Serverlarni muntazam qayta qurish bilinmay kirgan hujumchini
+  chiqaradi.** Hujum sodir bo'lgach eng muhim ish tizimni ruxsatsiz
+  tomonning kirishi olib tashlangan holda qayta ko'tarish, va bu
+  har doim oson emas: Newman ning keysida mashinaga rootkit
+  o'rnatilgan, u `ls` va `ps` kabi asosiy buyruqlarni izni
+  yashirish uchun o'zgartirgan, muammo esa faqat ishlab turgan
+  programalarning xeshini rasmiy paketlar bilan solishtirganda
+  ko'rinib qolgan, oqibatda server noldan qayta o'rnatilgan.
+  Qoida shundan chiqadi: serverni butunlay o'chirib qayta qurish
+  qobiliyati nafaqat ma'lum hujumdan keyin, balki **doimiy**
+  hujumchining ta'sirini kamaytirishda ham kuchli. Tizimingizda
+  zararli tomon borligini bilmasligingiz mumkin, lekin serverlarni
+  muntazam qayta qurib va credential larni aylantirib turgan
+  bo'lsangiz, u sezdirmasdan qila oladigan ishni keskin
+  cheklaysiz. Qobiliyat ikki narsaga tayanadi: avtomatlashtirish
+  sifati (har mikroservisni versiya nazoratidagi ma'lumotdan noldan
+  deploy va sozlash) va ma'lumot uchun ishonchli tiklash jarayoni.
+  Ishlayotganini tekshirishning eng oson yo'li uni ko'p marta
+  qilish, ya'ni qayta qurish uchun har deploy da ishlatiladigan
+  aynan bitta jarayonni ishlatish - shunda qayta qurish hodisa ham
+  bo'lmaydi. Bitta istisno alohida aytilgan: konteyner platformasida
+  siz pod larni tez-tez o'chirib qayta yaratasiz, lekin
+  **platformaning o'zini** noldan qayta qura olasizmi degan savol
+  ochiq qoladi; boshqariladigan Kubernetes da yangi klaster
+  ko'tarish qiyin emas, o'zingiz o'rnatgan va yuritgan klasterda esa
+  bu arzimas ish emas.
+
+**Ehtiyot bo'ling:** Patch jarayonini `latest` teg bilan
+almashtirmang: u yangilanishni avtomatik qiladi, lekin bir vaqtda
+rollback ni ham ishonchsiz qiladi
+([22.3](#223-ozgarmas-infratuzilma-immutable-infrastructure)).
+Base image ni yangilashni alohida jadvalga qo'ying, aks holda ilova
+bog'liqliklari yangilanib, OS qatlami qotib qoladi. Credential
+aylantirishni qayta qurish jarayonining bir qismi qilish uchun esa
+servis sirni qayta o'qiy olishi yoki rolling restart tayyor bo'lishi
+kerak ([18.30](18-xavfsizlik-patternlari.md#1830-sirlarni-boshqarish-secrets-management---vault-config-server-encryption)).
+
+## 22.47 Amalda qo'llash
 
 - [ ] Konteyner image'ini tekshiring: qatlamlar ajratilganmi, JAR to'liq nusxalanmayaptimi, base image yangilanadimi.
 - [ ] JVM ning cgroup limitlarini hurmat qilayotganini tasdiqlang va heap foizini yozib qo'ying.
@@ -852,9 +1330,84 @@ Step mapStep(JobRepository repository, Step countPagesStep,
 - [ ] Deploy strategiyasini hujjatlashtiring: rolling, blue-green yoki canary. Orqaga qaytish qadamlarini yozib qo'ying.
 - [ ] Konfiguratsiya image ichiga qotib qolmaganini tekshiring; har bir muhit uchun qiymat tashqaridan kelishi kerak.
 - [ ] Feature flag larni ro'yxatga olib, har biriga yaratilgan sana va o'chirish rejasini qo'shing.
+- [ ] Repozitoriya modelini yozib qo'ying: bitta repozitoriya bitta build ga mos kelayaptimi; monorepo bo'lsa papkadan build ga xarita bormi.
+- [ ] Qayta ishlatiladigan sidecar lar uchun shartnomani hujjatlashtiring: `EXPOSE`, `ENV` default va izohlari, `LABEL` metadata si; parametr nomi va BIRLIGI o'zgarishi breaking change deb belgilangan.
+- [ ] Autoscaling ni avval nosoz instance ni almashtirish uchun yoqib, yuk bo'yicha qoidani ma'lumot yiqqandan keyin kiriting.
+- [ ] Masshtablash qoidalarini turli yuk shakllarini yaratadigan yuk testi bilan sinang va qo'shilish vaqtini o'lchang.
+- [ ] Ma'lum yuk tendensiyasi bo'lsa jadvalli qoidani kiritib, kutilmagan cho'qqi uchun reaktiv qoidani ustiga qo'ying.
+- [ ] Ta'mir oldidan minimal instance va autoscaling qoidasini to'xtatishni runbook ga yozib qo'ying.
+- [ ] Base image va OS qatlamini yangilash jadvalini belgilab, bog'liqlik skanerini build ga ulang.
+- [ ] Butun servisni (va imkon bo'lsa klasterni) noldan qayta qurishni mashq qilib, vaqtini yozib qo'ying.
+- [ ] Konteyner izolyatsiyasi yetarli emasligi mumkin bo'lgan yuklamalarni (boshqalar yozgan kod, plugin) ro'yxatga olib, ular uchun kuchliroq izolyatsiyani tanlang.
 
 ## Manbalar
 
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*,
+  2-nashr, O'Reilly, 2021, 7-bob ("Be Careful About Branches",
+  "Pattern: Monorepo", "Where to use this pattern", "Which Approach
+  Would I Use?") - 22.31 dagi DORA 2016 State of DevOps chegaralari
+  (branch umri bir kundan kam, jami uchtadan kam faol branch, trunk ga
+  kunlik merge), GitFlow ning ochiq kod konteksti va 2019 hisobotining
+  qisqa patch bo'yicha xulosasi; 22.43 dagi monorepo ning kichik
+  (10-20 dasturchi) va juda katta tashkilotda ishlashi, o'rtadagi
+  tashkilotdagi og'riq nuqtasi, atomar commit atomar rollout bermasligi
+  va sunk cost tuzog'i. Bu nashrning nusxasida barqaror bet raqami
+  yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*,
+  2-nashr, O'Reilly, 2021, 8-bob ("Desired State Management",
+  "Prerequisites", "Feature Toggles", "Containers", "Not perfect",
+  "Blurred Lines") - 22.25 dagi desired state ning oldindan shartlari
+  (to'liq avtomatik deploy, sekin ko'tarilishda zaxira sig'im,
+  platformani o'zi yozmaslik, bir necha mikroservisdan keyin kiritish)
+  va autoscaling group ni o'chirmasdan klaster o'chirish keysi; 22.10
+  dagi konfiguratsiya faylidan boshlash tavsiyasi va foydalanuvchi
+  turiga qarab toggle; 22.23 dagi konteyner izolyatsiyasining VM
+  darajasida emasligi, ishonchli dastur mezoni hamda Hyper-V va
+  Firecracker ning ishga tushish vaqtiga ta'siri. Bu nashrning
+  nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim
+  nomi ko'rsatilgan
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*,
+  2-nashr, O'Reilly, 2021, 11-bob ("Patching", "Rebuild") va 13-bob
+  ("Autoscaling") - 22.46 dagi Equifax Apache Struts keysi (zaiflik
+  oylar oldin tuzatilgan, 160 milliondan ortiq odam ma'lumoti, 700
+  million dollarlik kelishuv), Kubernetes ostidagi qatlamlar va
+  managed xizmatning egalik doirasini qisqartirishi, konteyner
+  ichidagi OS patch i va base image ishonchi, rootkit `ls` va `ps`
+  ni o'zgartirgani hamda paket xeshini solishtirish, serverlarni
+  muntazam qayta qurish va credential aylantirishning doimiy
+  hujumchiga ta'sirini cheklashi, platformaning o'zini qayta qurish
+  savoli; 22.45 dagi autoscaling ni avval nosozlik uchun yoqish,
+  pastga tushirishda ehtiyot, minimal instance qoidasi va ta'mir
+  tuzog'i, yuk testi bilan qoidani sinash va qo'shilish vaqti
+  bo'shlig'ini zaxira bilan yopish, 9:00-17:00 cho'qqisi uchun 8:45
+  va 17:15 jadvali hamda yangiliklar sayti misolida bashorat plus
+  reaktiv aralashmasi. Bu nashrning nusxasida barqaror bet raqami
+  yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
+- Sam Newman, *Monolith to Microservices*, O'Reilly, 2019, 1-bob
+  (23-bet) - 22.31 dagi release train ning release-on-demand ga
+  o'tishdagi o'tish bosqichi ekani, o'zgarmagan servislarni ham
+  birga chiqarishning deployment coupling ni saqlashi va kichik
+  reliz qamrovining xavfni kamaytirishi
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at
+  Google*, O'Reilly, 2020, 24-bob ("Striving for Agility: Setting Up a
+  Release Train", "Shifting Left: Making Data-Driven Decisions
+  Earlier", "Conclusion") va 25-bob ("Choosing a Compute Service") -
+  22.31 dagi chiqarish qobiliyatini chastotadan ajratish (qobiliyatning
+  o'zi qiymatning katta qismini berishi va u talab qiladigan jarayon,
+  metrika, siyosat hamda rollback vositalari), tashlab ketilgan
+  relizning narxi pastligi, change-neutral release va kanareyka
+  nimaga javob bermasligi; 22.25 dagi hisoblash platformasining
+  lock-in darajasi, Hyrum qonuni orqali pet va cattle farqi, `bash`
+  dan `ash` ga o'tish keysi va atrofdagi vositalar ekotizimi. Bu
+  nashrning qo'limizdagi nusxasida chop etilgan bet raqami yo'q,
+  shuning uchun bob va bo'lim nomi ko'rsatilgan
+- Neal Ford va boshqalar, *Software Architecture: The Hard Parts*,
+  1-nashr, O'Reilly, 2021 (copyright 2022), 8-bob (226-227-betlar) -
+  22.32 dagi eskirish oynasini har kutubxona uchun alohida belgilash,
+  `Security.jar` uchun ikki-uch va `Calculators.jar` uchun o'n versiya
+  misoli, global strategiyaning (to'rt orqaga versiya) churn
+  keltirishi va jiddiy nuqsonning har qanday strategiyani bekor
+  qilishi
 - Chris Richardson, *Microservices Patterns*, 12-bob - mikroservisni deploy qilish: konteyner, orkestrator, serverless
 - John Carnell, *Spring Microservices in Action*, 10-bob - servisni bulutga deploy qilish
 - Kubernetes hujjati: Deployments. kubernetes/website, commit `2f85f2802e59eb2128543dbfbf114ad641db4be0`, `content/en/docs/concepts/workloads/controllers/deployment.md`. CC BY 4.0. https://github.com/kubernetes/website/blob/2f85f2802e59eb2128543dbfbf114ad641db4be0/content/en/docs/concepts/workloads/controllers/deployment.md
@@ -875,7 +1428,26 @@ Step mapStep(JobRepository repository, Step countPagesStep,
 - Brendan Burns, *Designing Distributed Systems: Patterns and Paradigms for Scalable, Reliable Services*, 1-nashr, O'Reilly, 2018, 12-bob (133-141-betlar) - join (barrier synchronization) va reduce, hamda ularning parallellikka ta'siri
 - Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 14-17-boblar (125-142-betlar) - init container, sidecar, adapter va ambassador Structural Patterns qismi sifatida
 - Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 4-bob (35-40-betlar) - Health Probe: process health check, liveness va readiness ajratmasi
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 4-bob (36-bet) - process health check eng oddiy tekshiruv ekani, jarayon tugasa kubelet ning qayta ishga tushirishi, ilova nosozlikni o'zi sezib o'chsa shu yetarli bo'lishi va deadlock uchun liveness probe zarurati
+- Brendan Burns, *Designing Distributed Systems: Patterns and Paradigms for Scalable, Reliable Services*, 1-nashr, O'Reilly, 2018, 2-bob (17-19-betlar) - konteynerni funksiya kabi parametrlash va env var ni afzal ko'rish (SSL sidecar uchun sertifikat nomi va port); konteyner API siga parametrlar, boshqa servislarga chaqiruvlar va o'zi beradigan API lar kirishi; `UPDATE_FREQUENCY` nomi, qiymat formati va birligi o'zgarishining uchtasi ham breaking change ekani; Dockerfile da `EXPOSE` izoh bilan, `ENV` default va izoh bilan, `LABEL` va Label Schema nomlari
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 7-bob ("Pattern: One Repository per Microservice (aka Multirepo)", "Pattern: Monorepo") - bitta repozitoriya plus bitta umumiy build ning zarari va lockstep reliz; multirepo da manba va build ning bir-bir mosligi, repozitoriya bo'yicha egalik, atomar commit ning yo'qligi va kesishuvchi o'zgarishning chegara xatosi signali bo'lishi; monorepo da atomar commit atomar rollout bermasligi, papkadan build ga xarita va Bazel kabi graf asosidagi build. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomlari ko'rsatilgan
 - *The Twelve-Factor App* (III. Config, IX. Disposability). heroku/12factor, commit `1385d2c80bac38c25647651f6f5ec769561828dc`, `content/en/config.md`, `content/en/disposability.md`. MIT. https://github.com/heroku/12factor/blob/1385d2c80bac38c25647651f6f5ec769561828dc/content/en/config.md
+- John Carnell, *Spring Microservices in Action*, Manning, 2017, 1-bob (13-14, 25-betlar) - IaaS, PaaS va SaaS taksonomiyasi hamda kim nimani boshqaradi savoli; Phoenix server build va deploy patternlari ro'yxatida
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 3-bob (31-32-betlar) - Deployment strategiyalari (rolling update, recreate) avtomatik, Blue-Green va Canary ning o'tish tetigi esa inson qaroriga tayanishi; Deployment pod dan boshqa bog'liqlikni (ConfigMap, Secret, boshqa servis) yangilamasligi va qaytarmasligi, ularning relizi yuqori darajadagi skript yoki GitOps bilan boshqarilishi (22.6, 22.14)
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 4-bob (36-37-betlar) - sog'liq tekshiruvi ilovaning o'z ichidan emas tashqaridan bajarilishi (ba'zi nosozlik ilovani o'z watchdog i haqida xabar berishdan ham to'sadi) va restart sababni tuzatmasa yiqiladigan liveness probe dan foyda yo'qligi (22.19)
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 5-bob (45-bet) - startup va shutdown mantiqini konteyner buyrug'i ichidagi bash skriptga qo'yishning narxi va tanlov zinapoyasi: bash skript, lifecycle hook, init konteyner (kafolat va qayta ishlatish shu tartibda oshadi) (22.18)
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 14-bob (125-bet) - initsializatsiyani init konteynerga chiqarishning uch sababi: ilova image ida bo'lmagan asbob va kutubxona, ilova image iga berilmagan huquq, tashqi bog'liqlik bajarilmaguncha startup ni kechiktirish (22.18)
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 15-bob (133-bet) - Pod dagi `containers` ro'yxatining birinchi elementi asosiy konteyner hisoblanishi va `kubectl exec` kabi buyruqlar uchun default bo'lishi (22.15)
+- Brendan Burns, *Designing Distributed Systems: Patterns and Paradigms for Scalable, Reliable Services*, 1-nashr, O'Reilly, 2018, 2-bob (15-16-betlar) - introspeksiya asbobini har til uchun kutubxona qilish o'rniga PID namespace ni bo'lishadigan sidecar bilan berish va orkestratorning uni hamma ilovaga qo'shishi; kutubxona yo'li ilovaga ko'proq mos tushishi, modul konteynerning umumiyroq bo'lishi va o'z kodini yozish faqat ishlash talablari ekstremal bo'lganda to'g'ri ekani (22.15)
+- Brendan Burns, *Designing Distributed Systems: Patterns and Paradigms for Scalable, Reliable Services*, 1-nashr, O'Reilly, 2018, 3-bob (27-bet) - tajribani (A/B) klient yonidagi ambassador bilan yoki klient oldidagi alohida servis bilan qurish, alohida servisning saqlash, masshtablash va monitoring narxi va shundan chiqadigan ajratuvchi shart (22.13)
+- Brendan Burns, *Designing Distributed Systems: Patterns and Paradigms for Scalable, Reliable Services*, 1-nashr, O'Reilly, 2018, 4-bob (40-bet) - mavjud konteynerni (masalan MySQL ni) monitoring qo'shish uchun o'zgartirish uni o'zi saqlash majburiyatini keltirishi, adapter konteyner esa upstream image ni asl holida qoldirishi (22.17)
+- Chris Richardson, *Microservices Patterns: With examples in Java*, Manning, 2019, 12-bob, 414-bet - deploy variantlarini eng yengilidan boshlab shu tartibda baholash (serverless, konteyner, virtual mashina, tilga xos paket) va talabni qondiradigan eng yengilini tanlash qoidasi (22.25)
+- Michael T. Nygard, *Release It! Design and Deploy Production-Ready Software*, 1-nashr, Pragmatic Bookshelf, 2007, 14-bob (246-bet) - konfiguratsiya xossasi tizimning administrator uchun interfeysi ekani va nomni qiymatning tabiati emas funksiyasi bilan berish qoidasi (`hostname` emas, `authenticationServer`) (22.2)
+- ESLATMA: `k8s-patterns` ning 1-nashri 2019-yilda chiqqan va undagi `apiVersion` qiymatlarining ko'pi hozirgi Kubernetes da yo'q, shuning uchun bu bobga kitobdan faqat tamoyil va mexanizm olingan, `apiVersion` ko'chirilmagan
+- ESLATMA: 22.2 dagi Spring kalit misollari, 22.15 dagi `kubectl logs` diagnostikasi va 22.25 dagi serverless dan konteynerga o'tkazadigan aniq sabablar ro'yxati shu korpusning amaliy qo'shimchasi, kitoblardan olingan emas
+- John Carnell, *Spring Microservices in Action*, Manning, 2017, 3-bob (71-72-betlar) - Spring Cloud release train va BOM, Spring Boot ning release train dan mustaqil chiqishi
+- John Carnell, *Spring Microservices in Action*, Manning, 2017, 10-bob (308-bet) - Phoenix server patternining ikki foydasi (drift ni ochish, tiklanmaydigan holatni topish) va Chaos Monkey bilan tekshirish
+- ESLATMA: Carnell ning nusxasi 1-nashr (2017) va misollari virtual server image hamda o'sha davr Spring Cloud chiqarish nomlari (Camden) bilan berilgan. Qoidalarning mohiyati saqlanib, zamonaviy nomlar bilan yozilgan; kitobning asl shakli tegishli joyda ESLATMA bilan ko'rsatilgan
 
 ---
 

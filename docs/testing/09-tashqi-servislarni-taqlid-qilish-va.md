@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 9. Tashqi servislarni taqlid qilish va contract testing (Faking External Services & Contract Testing)
 
@@ -174,6 +174,13 @@ Consumer-driven contract'da consumer o'z kutganini misollar ko'rinishida yozadi:
 
 Integratsion testdan farqi: integratsion test ikki real tizimni bir muhitda, bir vaqtda ishlatishni talab qiladi va "hozir ishladi" deydi. Contract test juftlik muvofiqligini mustaqil tekshiradi - ikki servis bir vaqtda ishlashi shart emas, shuning uchun tez va deterministik. Narxi: u provider biznes logikasini tekshirmaydi, faqat kelishilgan interaction shakli va semantikasini. Ya'ni contract test E2E'ni emas, stub'larni almashtiradi.
 
+**CDC test emas, suhbat.** Newman ning ta'rifi: Agile da hikoya (story) suhbat uchun joy ushlab turuvchi narsa bo'lgani kabi, CDC ham shunday - u servis API si qanday bo'lishi haqidagi muhokamalar to'plamining kodlangan shakli, va u buzilganda API qanday rivojlanishi haqida suhbat boshlanadi. Shuning uchun uni consumer bir o'zi yozib provider ga tashlab qo'ymaydi: ikki jamoa birga yozadi. Texnik foydasi ham shu: test buzilganda qaysi consumer ta'sirlanishi aniq ko'rinadi, demak buzuvchi o'zgarish haqida kim bilan gaplashish kerakligi ham ma'lum.
+
+Buning sharti - **ikki tomon orasida yetarli muloqot va ishonch**. Ikki tomon bitta jamoada bo'lsa bu muammo emas. Shart bajarilmaydigan ikki holat bor va ularning yechimi boshqa:
+
+- **Uchinchi tomon servisi.** Muloqot chastotasi va ishonch yetmasa, CDC ishlamaydi. Qolgan yo'l - faqat o'sha ishonchsiz komponent atrofida cheklangan, qamrovi kattaroq integratsion test.
+- **Minglab ommaviy consumer.** Ochiq web API da har consumer bilan kelishib bo'lmaydi, shuning uchun consumer rolini o'zingiz o'ynaysiz (yoki consumerlarning tanlangan kichik qismi bilan ishlaysiz) va testlarni shu nomdan yozasiz. Bu holatda CDC ning ahamiyati kamaymaydi, oshadi: ko'p sonli tashqi consumerni buzish juda qimmat.
+
 ## 9.8 Spring Cloud Contract: buyurtma va to'lov servisi
 
 Ish oqimi: contract DSL (Groovy yoki YAML) provider repo'sida `src/test/resources/contracts/` ostida yashaydi va odatda consumer tomonidan pull request sifatida qo'shiladi. `spring-cloud-contract-maven-plugin` undan provider testlarini generatsiya qiladi (`MockMvc`, `WebTestClient` yoki `EXPLICIT` rejim), ular `verify` fazasida ishlaydi. Testlar o'tgach plugin `payment-service-1.4.0-stubs.jar` artefaktini Nexus/Artifactory'ga joylaydi.
@@ -272,6 +279,8 @@ class OrderServiceContractTest {
 ```
 
 Muhim nuqta: `ids` ichidagi `+` eng yangi versiyani oladi; production'da aniq versiya yoki oraliq ko'rsating, aks holda consumer build'i provider release'i bilan tasodifiy sinadi.
+
+Shu mexanikaning narxi ikki asbob orasida ajratuvchi shart beradi. Richardson Spring Cloud Contract ni KOMPONENT testi uchun ishlatishni og'ir deb hisoblaydi va ikki sabab keltiradi: kontrakt JAR lari classpath da emas, Maven repozitoriyasiga deploy qilinishi kerak, va dinamik generatsiya qilinadigan qiymatlar bilan ishlash qiyin; shu holatda stub ni testning o'zidan sozlash oddiyroq yo'l bo'ladi (Chris Richardson, *Microservices Patterns*, Manning, 2019, 10-bob, 370-bet). Ajratuvchi shart maqsadda: kontrakt consumer bilan provider ORASIDAGI shartnomani tekshirish uchun bo'lsa Spring Cloud Contract o'z joyida, chunki shartnoma ikki build ni bog'lashi kerak; maqsad bitta servisning komponent testida tashqi chaqiruvni almashtirish bo'lsa, [WireMock](#92-wiremock-bilan-http-stub-server) testdan to'g'ridan-to'g'ri sozlanadi va deploy qadami umuman kerak bo'lmaydi. Ikkisini bitta maqsad uchun birga ishlatish esa build ni ikki marta bog'laydi va hech narsa qo'shmaydi.
 
 ## 9.9 Pact: consumer test, broker, can-i-deploy
 
@@ -485,11 +494,13 @@ Chegarada nimani sinash kerakligi: siz haqiqatda tayanadigan xatti-harakat (time
 
 ## Manbalar
 
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 9-bob ("It's about conversations") - CDC ning test emas suhbat ekani, uning producer va consumer jamoalari orasidagi muloqot va ishonchga tayanishi, uchinchi tomon servisida cheklangan integratsion testga o'tish va minglab ommaviy consumer bo'lganda consumer rolini o'zi o'ynash. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
 - Robert C. Martin, *Clean Code*, 8-bob - o'rganish testi, uning narxi va kutubxona yangilanishidagi roli
 - [WireMock, README](https://raw.githubusercontent.com/wiremock/wiremock/2d93d2677b46bcee55068f6516b38faade249e42/README.md) - stubbing imkoniyatlari ro'yxati: URL, header va tana naqshi bo'yicha moslash, record/playback, so'rov bo'yicha shartli proxy, brauzer proxy si
 - [Spring Cloud Contract, README](https://raw.githubusercontent.com/spring-cloud/spring-cloud-contract/2d38ddc8fe5c28b460783617af2cb1d01f80d122/README.adoc) - contract dan stub va test generatsiyasi, stub larning WireMock orqali berilishi
 - [Spring Framework 7.0, MockRestServiceServer](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/testing/spring-mvc-test-client.adoc) - jarayon ichidagi stub va uning chegarasi
 - [Testcontainers, JUnit 5 Quickstart](https://raw.githubusercontent.com/testcontainers/testcontainers-java/9bb3c2dc175672ad33a2eafd7133212c7173ac43/docs/quickstart/junit_5_quickstart.md) - tashqi servisni konteynerda ko'tarish varianti
+- Chris Richardson, *Microservices Patterns*, Manning, 2019, 10-bob (370-bet) - Spring Cloud Contract ni komponent testi uchun ishlatishning og'irligi: kontrakt JAR larining Maven repozitoriyasiga deploy qilinishi kerakligi va dinamik generatsiya qilinadigan qiymatlar bilan ishlashning qiyinligi, shu holatda stub ni testning o'zidan sozlash oddiyroq yo'l bo'lishi
 
 ---
 

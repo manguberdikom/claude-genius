@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 21. PostgreSQL arxitekturasi: process model, WAL, checkpoint, vacuum (PostgreSQL Architecture)
 
 <details>
-<summary>Bu bobdagi 17 bo'lim</summary>
+<summary>Bu bobdagi 25 bo'lim</summary>
 
 - [21.1 Protsess modeli: postmaster, backend protsess, fon ishchilari](#211-protsess-modeli-postmaster-backend-protsess-fon-ishchilari)
 - [21.2 Har ulanishga bitta protsess: bundan kelib chiqadigan ulanish narxi](#212-har-ulanishga-bitta-protsess-bundan-kelib-chiqadigan-ulanish-narxi)
@@ -25,7 +25,15 @@
 - [21.14 `pg_xact`, hint bit, virtual transaction va subtransaction](#2114-pg_xact-hint-bit-virtual-transaction-va-subtransaction)
 - [21.15 Nosozlikdan tiklanish: startup protsess, full page write va checksum](#2115-nosozlikdan-tiklanish-startup-protsess-full-page-write-va-checksum)
 - [21.16 Xotira tuzilmalari qulfi: spinlock, lightweight lock va wait event](#2116-xotira-tuzilmalari-qulfi-spinlock-lightweight-lock-va-wait-event)
-- [21.17 Amalda qo'llash](#2117-amalda-qollash)
+- [21.17 Vacuum fazalari: heap scan, index vacuuming va heap truncation](#2117-vacuum-fazalari-heap-scan-index-vacuuming-va-heap-truncation)
+- [21.18 Autovacuum ichida: ishchi soni, `cost_limit` bo'linishi va kuzatish](#2118-autovacuum-ichida-ishchi-soni-cost_limit-bolinishi-va-kuzatish)
+- [21.19 Freeze mexanikasi: hint bit, aggressive freezing, freeze map va CLOG](#2119-freeze-mexanikasi-hint-bit-aggressive-freezing-freeze-map-va-clog)
+- [21.20 Boshlang'ich yuklashda freeze: `COPY FREEZE` va `index_cleanup`](#2120-boshlangich-yuklashda-freeze-copy-freeze-va-index_cleanup)
+- [21.21 Checkpoint bosqichlari va `log_checkpoints` bilan kuzatish](#2121-checkpoint-bosqichlari-va-log_checkpoints-bilan-kuzatish)
+- [21.22 Background writer: `bgwriter_delay` va `bgwriter_lru_maxpages`](#2122-background-writer-bgwriter_delay-va-bgwriter_lru_maxpages)
+- [21.23 WAL segmentlari, `pg_waldump` va `wal_skip_threshold`](#2123-wal-segmentlari-pg_waldump-va-wal_skip_threshold)
+- [21.24 Klaster fayllari: `template0`, forklar va UNLOGGED jadval](#2124-klaster-fayllari-template0-forklar-va-unlogged-jadval)
+- [21.25 Amalda qo'llash](#2125-amalda-qollash)
 
 </details>
 
@@ -116,6 +124,8 @@ FROM pg_statio_user_tables;
 
 `huge_pages` ning standart qiymati allaqachon `try`, shuning uchun uni `try` ga qo'yish hech narsani o'zgartirmaydi: `try` da server huge page so'raydi, olmasa oddiy sahifaga jim qaytadi va sozlama ishlamaganini hech kim bilmaydi. 16 GB dan katta `shared_buffers` da haqiqiy qadam ikki bosqichli: avval OS da huge page hovuzini sozlash, keyin `huge_pages = on` qo'yish. Kerakli sahifa sonini PostgreSQL o'zi hisoblaydi, serverni ko'tarmasdan ham: `postgres -D $PGDATA -C shared_memory_size_in_huge_pages` chiqargan sonni `sysctl -w vm.nr_hugepages=<son>` ga berib, `/etc/sysctl.conf` ga yozib qo'yiladi. `on` da huge page olinmasa server ishga tushmaydi va bu aynan kerakli xulq: xato startupda ko'rinadi, prodda tushunarsiz sekinlashuv bo'lib emas. Parametr `postmaster` kontekstida, ya'ni restart talab qiladi, va faqat Linux bilan Windows da ishlaydi. Foyda tomoni: huge page sahifa jadvalini kichraytiradi va xotira boshqaruviga ketadigan CPU vaqtini kamaytiradi; rasmiy hujjat aniq foiz bermaydi, shuning uchun yutuqni o'z yuklamangizda o'lchash kerak. PostgreSQL 16 dan boshlab `pg_stat_io` ko'rinishi o'qish va yozishni kontekst bo'yicha ajratib beradi, bu checkpoint va vacuum I/O sini aralashtirmasdan o'lchash imkonini beradi.
 
+`pg_statio_user_tables` kabi ko'rinishlar bufer kesh hisoblagichlarini doim beradi, lekin ulardagi I/O VAQTI faqat `track_io_timing` yoqilgan bo'lsa to'ladi; standart holatda bu parametr o'chiq (Rogov, 9.4, 154-bet). Shuning uchun "disk sekin" degan gipotezani tekshirish birinchi qadamdan boshlanadi: `track_io_timing = on` qo'yib, `EXPLAIN (ANALYZE, BUFFERS)` dan `I/O Timings` qatorini olish, aks holda sabab o'rniga faqat o'qilgan bloklar soni ko'rinadi.
+
 ## 21.4 Sahifa (page) tuzilishi, tuple va `ctid`
 
 Heap fayl 8 KB li sahifalarga bo'lingan. Har sahifa boshida 24 baytli header, keyin sahifa oxiridan o'sib keladigan tuple ma'lumotlari va boshidan o'sib keladigan 4 baytli line pointer massivi joylashadi. Har bir tuple o'z headerida `xmin` (qaysi tranzaksiya yaratgan) va `xmax` (qaysi tranzaksiya o'chirgan) ni saqlaydi, header hajmi taxminan 23 bayt, hizalanish bilan 24 bayt.
@@ -141,6 +151,8 @@ FROM pg_class WHERE relname = 'buyurtmalar';
 
 HOT (Heap Only Tuple) update yangi tuple ni shu sahifaning o'zida yaratadi va indeksni umuman yangilamaydi. Buning sharti ikkita: o'zgaruvchi ustunlarning birortasi indekslanmagan bo'lsin va sahifada bo'sh joy qolgan bo'lsin. Tez-tez yangilanadigan `ombor_qoldiq` jadvalida `ALTER TABLE ... SET (fillfactor = 80)` qo'yish va `oxirgi_ozgarish` ustunini indekslamaslik WAL hajmini sezilarli kamaytiradi.
 
+Yuqoridagi so'rovdagi `reltuples` va `relpages` ni aniq son deb o'qish xato. Bular `pg_class` dagi asosiy statistika, ya'ni relationdagi tuple soni, sahifalar soni va visibility map da belgilangan sahifalar soni (`relallvisible`); ularni analiz yig'adi va vacuum aniqlashtiradi (Rogov, 17.1, 271-bet). Filtrsiz so'rovda planner kardinallik bahosini to'g'ridan-to'g'ri `reltuples` dan oladi, shuning uchun eskirgan statistika darhol noto'g'ri planga aylanadi; hech analiz qilinmagan jadvalda `reltuples` qiymati -1 bo'ladi (Rogov, 17.1, 272-bet).
+
 ## 21.5 WAL: yozuv tartibi, `wal_level`, `synchronous_commit` va ma'lumot xavfsizligi
 
 WAL (Write Ahead Log) qoidasi oddiy: ma'lumot sahifasi diskka tushishidan oldin uning o'zgarishini tasvirlaydigan WAL yozuvi diskda bo'lishi shart. COMMIT paytida PostgreSQL ma'lumot fayllarini emas, faqat WAL ni `fsync` qiladi. Shuning uchun commit narxi jadval kattaligiga emas, disk `fsync` latensiyasiga bog'liq. NVMe diskda bu taxminan 0.05-0.2 ms, tarmoqli diskda 1-5 ms bo'lishi mumkin.
@@ -165,7 +177,9 @@ SELECT slot_name, active, pg_size_pretty(
 FROM pg_replication_slots;
 ```
 
-`synchronous_commit` ma'lumot xavfsizligining asosiy tugmasi. `on` (standart) commit ni mahalliy WAL diskka tushmaguncha kutadi. `off` kutmaydi, natijada commit sezilarli tez bo'ladi (qo'llanma buni raqam bilan bermaydi: kritik bo'lmagan tranzaksiyalar uchun `synchronous_commit` ni o'chirish `fsync` ni o'chirishdan keladigan foydaning katta qismini beradi, lekin ma'lumot buzilishi xavfisiz deb yozilgan), lekin crash paytida oxirgi `wal_writer_delay` ichidagi commitlar yo'qoladi; tranzaksiya atomikligi buzilmaydi, faqat tasdiqlangan commit yo'qolishi mumkin. `local` replikani kutmaydi, `remote_write` va `remote_apply` esa sinxron replikadan tasdiq kutadi.
+`synchronous_commit` ma'lumot xavfsizligining asosiy tugmasi. `on` (standart) commit ni mahalliy WAL diskka tushmaguncha kutadi. `off` kutmaydi, natijada commit sezilarli tez bo'ladi (qo'llanma buni raqam bilan bermaydi: kritik bo'lmagan tranzaksiyalar uchun `synchronous_commit` ni o'chirish `fsync` ni o'chirishdan keladigan foydaning katta qismini beradi, lekin ma'lumot buzilishi xavfisiz deb yozilgan), lekin crash paytida oxirgi `3 x wal_writer_delay` ichidagi commitlar yo'qoladi (standart sozlamada 0.6 sekund); tranzaksiya atomikligi buzilmaydi, faqat tasdiqlangan commit yo'qolishi mumkin. `local` replikani kutmaydi, `remote_write` va `remote_apply` esa sinxron replikadan tasdiq kutadi.
+
+Sinxron rejimdan chiqmasdan ham commitlarni paketlash mumkin. Tranzaksiyani yakunlayotgan backend WAL ni diskka tushirishdan oldin `commit_delay` (standart 0) davomida kichik pauza qilishi mumkin, lekin faqat tizimda kamida `commit_siblings` (standart 5) ta faol tranzaksiya bo'lsa: pauza ichida ulardan bir qismi tugaydi va server hamma WAL yozuvini bitta sinxronlashda tushiradi. Rogov buni liftning eshigini yugurib kelayotgan odam uchun ushlab turishga qiyoslaydi va standart holatda pauza yo'qligini, bu parametrni faqat qisqa OLTP tranzaksiyalari ko'p bo'lgan tizimda o'zgartirish mantiqan to'g'riligini aytadi (Rogov, 11.1, 183-bet).
 
 Arxitektorning asosiy qarori shu yerda: xavfsizlik darajasi butun instans uchun bir xil bo'lishi shart emas. To'lov tranzaksiyasi `synchronous_commit = on` bilan ketadi, audit log yoki metrika yozuvi esa o'sha sessionda `SET LOCAL synchronous_commit = off` qilib tezlashtiriladi. `full_page_writes` ni o'chirish esa deyarli har doim xato, chunki u qisman yozilgan sahifadan himoya qiladi.
 
@@ -210,7 +224,7 @@ Sozlash mantiqi: `checkpoint_timeout` ni 15 daqiqaga ko'tarish iflos sahifalarni
 
 MVCC tufayli DELETE va UPDATE hech narsani darhol o'chirmaydi, faqat tuple ni o'lik deb belgilaydi. VACUUM uch ish qiladi. Birinchi, hech bir snapshot ko'rmaydigan o'lik tuple larning joyini qayta ishlatish uchun bo'shatadi. Ikkinchi, indekslardan o'sha tuple larga bo'lgan ko'rsatkichlarni olib tashlaydi. Uchinchi, visibility map ni yangilaydi.
 
-Visibility map har sahifa uchun ikki bit saqlaydi: `all-visible` va `all-frozen`. `all-visible` biti index-only scan uchun hayotiy ahamiyatga ega: agar sahifa to'liq ko'rinarli bo'lsa, planner heap ga murojaat qilmasdan faqat indeksdan javob beradi. Shuning uchun covering indeks qo'ygan odam `EXPLAIN` da `Heap Fetches: 900000` ko'rsa, muammo indeksda emas, vacuum qarzida.
+Visibility map har sahifa uchun ikki bit saqlaydi: `all-visible` va `all-frozen`. `all-visible` biti index-only scan uchun hayotiy ahamiyatga ega: agar sahifa to'liq ko'rinarli bo'lsa, planner heap ga murojaat qilmasdan faqat indeksdan javob beradi. Shuning uchun covering indeks qo'ygan odam `EXPLAIN` da `Heap Fetches: 900000` ko'rsa, muammo indeksda emas, vacuum qarzida. Ikkinchi bit, `all-frozen`, freeze map deb ataladi va uning vazifasi boshqa: u tufayli freeze uchun butun jadvalni skan qilish shart emas ([Freeze mexanikasi](#2119-freeze-mexanikasi-hint-bit-aggressive-freezing-freeze-map-va-clog) bo'limiga qarang).
 
 ```sql
 -- O'lik tuple nisbati va oxirgi vacuum qachon bo'lgani
@@ -229,7 +243,7 @@ SELECT pid, relid::regclass, phase, heap_blks_total, heap_blks_scanned,
        index_vacuum_count FROM pg_stat_progress_vacuum;
 ```
 
-VACUUM tuple larni siqib, faylni kichraytirmaydi, faqat sahifa ichida joy bo'shatadi. Faylni qisqartirish uchun `VACUUM FULL` kerak, lekin u `ACCESS EXCLUSIVE` lock oladi va jadvalni butunlay bloklaydi.
+VACUUM tuple larni siqmaydi va ularni ko'chirmaydi, shuning uchun fayl o'rtasida bo'shagan joy faylning ichida qoladi va faqat yangi qatorlar uchun qayta ishlatiladi. O'rtadagi joyni operatsion tizimga qaytarish uchun `VACUUM FULL` kerak, lekin u `ACCESS EXCLUSIVE` lock oladi va jadvalni butunlay bloklaydi. Fayl oxiridagi uzluksiz bo'sh sahifalar esa istisno: ularni oddiy vacuum ham kesib tashlaydi va bu qaysi shartlarda bo'lishi [Vacuum fazalari](#2117-vacuum-fazalari-heap-scan-index-vacuuming-va-heap-truncation) bo'limida yozilgan.
 
 ## 21.8 Autovacuum sozlamalari va u yetishmay qolganda nima bo'ladi
 
@@ -252,12 +266,16 @@ ALTER TABLE tolov_audit SET (autovacuum_vacuum_insert_threshold = 50000);
 
 -- Instans darajasi (postgresql.conf): 16 yadroli serverda
 -- autovacuum_max_workers = 6
+-- autovacuum_vacuum_cost_limit = 2000   -- ishchi soni bilan BIRGA oshadi
+-- autovacuum_work_mem = '256MB'
 -- autovacuum_naptime = '15s'
 -- maintenance_work_mem = '1GB'
 -- log_autovacuum_min_duration = '1s'
 ```
 
 Autovacuum ni butunlay o'chirish deyarli har doim halokatga olib keladi, chunki u nafaqat joy bo'shatadi, balki transaction ID freeze ishini ham bajaradi. `maintenance_work_mem` vacuum ning o'lik tuple identifikatorlari uchun ishlatadigan xotirasi; u kichik bo'lsa vacuum indekslarni bir necha marta aylanib o'tadi. PostgreSQL 17 da bu struktura samaraliroq bo'ldi va bir xil xotirada ko'proq TID saqlaydi.
+
+Yuqoridagi konfiguratsiyada `autovacuum_max_workers` va `autovacuum_vacuum_cost_limit` ataylab yonma-yon turadi: ishchi sonini yolg'iz oshirish autovacuum ni tezlashtirmaydi, chunki ish birliklari chegarasi barcha ishchilar orasida bo'linadi. Sabab va to'g'ri nisbat [Autovacuum ichida](#2118-autovacuum-ichida-ishchi-soni-cost_limit-bolinishi-va-kuzatish) bo'limida.
 
 ## 21.9 Transaction ID o'ralishi (wraparound) va freeze jarayoni
 
@@ -309,6 +327,8 @@ ORDER BY pg_relation_size(indexrelid) DESC LIMIT 10;
 
 Tuzatishda uch yo'l bor. `REINDEX INDEX CONCURRENTLY` indeksni yozuvni bloklamasdan qayta quradi va ko'pincha yetarli. `pg_repack` extension jadvalni ham online qayta zichlashtiradi, lekin oxirida qisqa vaqt exclusive lock oladi. `VACUUM FULL` eng samarali siqadi, lekin jadvalni to'liq bloklaydi va shuning uchun faqat rejali oynada qo'llanadi. Vaqt bo'yicha o'sadigan `tolov_audit` kabi jadvalda eng to'g'ri yechim umuman boshqacha: partitioning va eski partition ni `DROP TABLE` qilish, chunki u bloat masalasini butunlay yo'q qiladi.
 
+To'rtinchi yo'l `CLUSTER` buyrug'i. U `VACUUM FULL` bilan bir xil ishlaydi, ya'ni eski fayllarni o'chirib jadvalni qaytadan yozadi, lekin tuple larni tanlangan indeks tartibida joylashtiradi va ba'zi hollarda planner index scan dan samaraliroq foydalanishiga yordam beradi. Ikki shart yodda tursin: jadval butun davomida eksklyuziv qulflanadi va klasterlangan tartib saqlanmaydi, ya'ni keyingi har bir yangilash fizik tartibni buzib boradi. `VACUUM FULL` ning o'zi dasturiy jihatdan `CLUSTER` ning tuple larni qayta tartiblamaydigan maxsus holati (Rogov, 8.2, 140-bet).
+
 ## 21.11 `TOAST`: katta qiymatlar qanday saqlanadi
 
 Tuple sahifadan katta bo'lishi mumkin emas, shuning uchun PostgreSQL satr hajmi taxminan 2 KB (`toast_tuple_target`, standart 2032 bayt) dan oshsa, katta ustunlarni siqadi va kerak bo'lsa alohida TOAST jadvaliga 2 KB ga yaqin chunk larga bo'lib chiqaradi. TOAST jadvali `pg_toast` sxemasida yashaydi va o'z indeksiga ega.
@@ -357,7 +377,7 @@ Har bir bufer ikki qismdan iborat: 8 KB li sahifa va uning headeri. Header sahif
 
 Bo'sh bufer qolmaganda PostgreSQL clock sweep algoritmini ishlatadi: strelka buferlar bo'ylab aylanadi va har o'tganda foydalanish hisoblagichini bittaga kamaytiradi; pin qo'yilmagan va hisoblagichi nolga tushgan birinchi bufer tozalanadi. Hisoblagich 5 bilan cheklangan, aks holda strelka bir necha aylanish qilishga majbur bo'lar edi.
 
-Ommaviy operatsiyalar butun keshni yuvib yubormasligi uchun ular kichik buffer ring ichida ishlaydi va siqib chiqarish faqat shu ring chegarasida boradi. Kitob uchta strategiyani sanaydi: kesh hajmining choragidan katta jadvalni ketma-ket o'qishda ring 256 KB (32 sahifa); `COPY FROM`, `CREATE TABLE AS SELECT`, `CREATE MATERIALIZED VIEW` va jadvalni qayta yozadigan `ALTER TABLE` uchun standart 16 MB (2048 sahifa), lekin hech qachon kesh hajmining sakkizdan biridan oshmaydi; vacuum uchun yana 256 KB. Muhim istisno: ko'p qator o'zgartiradigan `UPDATE` yoki `DELETE` da sahifalar doim o'zgarib turgani uchun ring amalda foyda bermay qoladi.
+Ommaviy operatsiyalar butun keshni yuvib yubormasligi uchun ular kichik buffer ring ichida ishlaydi va siqib chiqarish faqat shu ring chegarasida boradi. Kitob uchta strategiyani sanaydi: kesh hajmining choragidan katta jadvalni ketma-ket o'qishda ring 256 KB (32 sahifa); `COPY FROM`, `CREATE TABLE AS SELECT`, `CREATE MATERIALIZED VIEW` va jadvalni qayta yozadigan `ALTER TABLE` uchun standart 16 MB (2048 sahifa), lekin hech qachon kesh hajmining sakkizdan biridan oshmaydi; vacuum uchun yana 256 KB. Muhim istisno: ko'p qator o'zgartiradigan `UPDATE` yoki `DELETE` da sahifalar doim o'zgarib turgani uchun ring amalda foyda bermay qoladi. Ketma-ket o'qishda esa qo'shimcha yutuq bor: jadval allaqachon skan qilinayotgan bo'lsa, ikkinchi skanni boshlagan protsess mavjud ring ga qo'shiladi va hozir ochiq turgan ma'lumotdan qo'shimcha I/O siz foydalanadi, birinchi protsess skanni tugatgach esa o'tkazib yuborilgan qismiga qaytadi (Rogov, 9.5, 156-bet). Shuning uchun bitta katta jadvalni bir vaqtda o'qiydigan ikkita hisobot diskni ikki barobar o'qimaydi.
 
 ```sql
 -- Buferlarning foydalanish hisoblagichi bo'yicha taqsimlanishi
@@ -416,7 +436,7 @@ PostgreSQL 14 dan B-tree da bottom-up index deletion bor: sahifa bo'linishidan o
 
 ## 21.14 `pg_xact`, hint bit, virtual transaction va subtransaction
 
-Tranzaksiya holati `PGDATA/pg_xact` katalogidagi fayllarda saqlanadi (12-versiyagacha katalog nomi `pg_clog` edi) va har bir tranzaksiya uchun ikki bit ajratiladi: committed va aborted. Tuple ni ko'rish uchun `xmin` tranzaksiyasi tugaganmi degan savolga javob kerak: hali faolmi degan qismni umumiy xotiradagi `ProcArray` beradi, tugagan bo'lsa yakuniy holat `pg_xact` dan olinadi.
+Tranzaksiya holati `PGDATA/pg_xact` katalogidagi fayllarda saqlanadi (10-versiyagacha katalog nomi `pg_clog` edi) va har bir tranzaksiya uchun ikki bit ajratiladi: committed va aborted. Tuple ni ko'rish uchun `xmin` tranzaksiyasi tugaganmi degan savolga javob kerak: hali faolmi degan qismni umumiy xotiradagi `ProcArray` beradi, tugagan bo'lsa yakuniy holat `pg_xact` dan olinadi.
 
 Har safar `pg_xact` ga borish qimmat, shuning uchun aniqlangan holat tuple headeridagi hint bit larga yoziladi va keyingi o'quvchi na `pg_xact` ga, na `ProcArray` ga boradi. Bitlarni yozuvchi tranzaksiyaning o'zi qo'ya olmaydi: commit paytida qaysi sahifalar o'zgarganini kuzatib yurish qimmat, ular esa keshda bo'lmasligi ham mumkin. Natijada arxitektor uchun muhim oqibat: yangi yuklangan jadvalni birinchi marta o'qiydigan `SELECT` sahifalarni iflos qiladi, checksum yoqilgan bo'lsa (yoki `wal_log_hints` yoqilgan bo'lsa) bu o'zgarishlar WAL ga full page image bo'lib tushadi. Ommaviy yuklashdan keyin "birinchi hisobot sekin, ikkinchisi tez" hodisasining sababi aynan shu.
 
@@ -449,6 +469,8 @@ class PaymentWriter {
 
 Shu kod 10000 elementli batch da 10000 ta subtransaction ochadi. Kitob subtransaction mexanikasini tavsiflaydi va raqamli chegara bermaydi, lekin mexanizmdan kelib chiqadigan xulosa aniq: har bir savepoint qo'shimcha XID va `pg_subtrans` ga qo'shimcha yozuv degani. Shuning uchun sikl ichida `Propagation.NESTED` ishlatish o'rniga xatoni batch darajasida ushlash arzonroq.
 
+Xato bo'lganda tranzaksiya qanday holatga tushishini ham shu mexanika tushuntiradi. Statement ichida xato chiqsa butun tranzaksiya abort holatiga o'tadi, undan keyingi har qanday buyruq rad etiladi va `COMMIT` ning o'zi `ROLLBACK` bo'lib qaytadi. Sababi atomiklik: allaqachon bajarilgan amallar orqaga qaytarilmaydi, shuning uchun davom etishga ruxsat berilsa, xatodan oldin yozilgan o'zgarishlar ko'rinib qolar va statement atomikligi, demak tranzaksiya atomikligi ham buzilar edi (Rogov, 3.7, 78-bet). ESLATMA: JDBC va Spring tomonida bu holat `SQLSTATE 25P02` bilan keladi; SQLSTATE kodi korpusning qo'shimchasi, kitob uni bermaydi. psql ning `ON_ERROR_ROLLBACK` rejimi har buyruqdan oldin yashirin savepoint qo'yib shu cheklovni yumshatadi, lekin u standart emas, chunki savepoint ochishning o'zi, unga qaytilmasa ham, sezilarli qo'shimcha narx (Rogov, 3.7, 79-bet). Bu narx yuqoridagi `Propagation.NESTED` sikli uchun ham o'sha narx.
+
 ## 21.15 Nosozlikdan tiklanish: startup protsess, full page write va checksum
 
 Server ishga tushganda postmaster birinchi bo'lib startup protsessini yaratadi. U `pg_control` faylini o'qiydi va klaster holatini tekshiradi: to'g'ri to'xtatilgan server `shut down` holatida bo'ladi, ishlamayotgan serverdagi `in production` esa nosozlik bo'lganini bildiradi. Shunda tiklanish oxirgi tugagan checkpoint ning REDO pozitsiyasidan boshlanadi; zaxira nusxadan tiklanayotgan bo'lsa pozitsiya `backup_label` faylidan olinadi.
@@ -465,6 +487,8 @@ pg_test_fsync
 
 Ikki sozlamani aralashtirmaslik kerak. `fsync = off` sinxronlashni butunlay o'chiradi va har qanday nosozlik ma'lumotni qaytarib bo'lmaydigan darajada buzadi. `synchronous_commit = off` esa izchil holatgacha tiklanishni kafolatlaydi va faqat eng oxirgi commit lar yo'qolishi mumkin. Birinchisi prodda ishlatilmaydi, ikkinchisi esa ongli almashtirish.
 
+Yuqoridagi `pg_test_fsync` nima uchun kerakligi shundan kelib chiqadi. Ma'lumot diskka yetguncha operatsion tizim keshi, qurilmaning o'z keshi va RAID kontrolleri keshidan o'tadi, WAL yozuvi esa darhol ishonchli saqlanishi shart. Operatsion tizim buni ikki yo'l bilan beradi: yozuvdan keyin alohida sinxronlash buyrug'i (`fsync`, `fdatasync`) yoki faylni ochish va yozishda sinxronlik talabini ko'rsatish. Qaysi biri tezroq ekani OS va fayl tizimiga bog'liq va aynan shuni `pg_test_fsync` o'lchaydi; tanlangan usul `wal_sync_method` ga yoziladi, qolgan amallar uchun esa usulni server o'zi tanlaydi va uni sozlab bo'lmaydi (Rogov, 11.2, 186-187-bet). Batareyali RAID kontrollerida kontroller keshiga tayanish mumkin, chunki batareya elektr uzilganda ma'lumotni saqlab qoladi.
+
 Sahifa checksum lari prodda doim yoqilgan bo'lishi kerak, lekin ularning chegaralarini bilish shart. Checksum faqat sahifa o'qilganda tekshiriladi, demak buzilish uzoq vaqt sezilmay qolishi va hamma zaxira nusxaga tushib ketishi mumkin; nolga to'ldirilgan sahifa to'g'ri hisoblanadi; va checksum faqat relation ning asosiy fork iga qo'yiladi, `pg_xact` kabi boshqa fayllar himoyalanmagan. Shuning uchun checksum zaxira nusxani muntazam tiklab sinashning o'rnini bosmaydi.
 
 `full_page_writes` sahifa checkpoint boshlangandan keyin birinchi marta o'zgarganda uning to'liq nusxasini WAL ga yozadi va shu bilan qisman yozilgan sahifadan himoya qiladi. Narxi katta: kitobdagi `pgbench` tajribasida full page image lar hosil bo'lgan WAL hajmining taxminan 71 foizini egallagan, chunki test checkpoint dan darhol keyin boshlangan. Checkpoint lar orasida sahifa bir necha marta o'zgarsa bu nisbat kichrayadi, shuning uchun checkpoint ni siyraklashtirish va `wal_compression` ni yoqish bitta muammoning ikki yechimi.
@@ -472,6 +496,8 @@ Sahifa checksum lari prodda doim yoqilgan bo'lishi kerak, lekin ularning chegara
 ## 21.16 Xotira tuzilmalari qulfi: spinlock, lightweight lock va wait event
 
 Relation va qator darajasidagi og'ir qulflardan tashqari PostgreSQL umumiy xotiradagi tuzilmalarni ikki xil yengil qulf bilan himoya qiladi. Spinlock atomar protsessor buyrug'iga (masalan compare-and-swap) tayanadi, faqat eksklyuziv rejimni biladi va band resursni kutayotgan protsess sikl ichida aylanadi. Unda na deadlock aniqlash, na instrumentatsiya bor, shuning uchun uni kuzatib bo'lmaydi. Lightweight lock eksklyuziv va umumiy rejimni qo'llaydi, navbati yo'q (kutayotganlardan qaysi biri o'tishi deyarli tasodifiy), deadlock tekshiruvi ham yo'q, lekin instrumentatsiyasi bor va shuning uchun kuzatuvda ko'rinadi.
+
+Butun qulf oilasini ikkiga ajratadigan mezon qulfning davomiyligi. Uzoq muddatli qulflar potensial uzoq vaqtga, ko'pincha tranzaksiya oxirigacha olinadi va odatda relation hamda qatorlarni himoya qiladi; ularda bir nechta rejim, navbat, deadlock aniqlash va instrumentatsiya bor, chunki bu infratuzilmaning narxi himoyalanayotgan ma'lumot ustidagi amallardan baribir arzon. Qisqa muddatli qulflar esa sekundning ulushiga olinadi, ko'pincha bir nechta protsessor buyrug'idan uzoq cho'zilmaydi va umumiy xotiradagi tuzilmalarni himoya qiladi; ularda rejim kam va instrumentatsiya umuman bo'lmasligi mumkin. Shu bo'linishda heavyweight va qator qulflari uzoq muddatli, shu bo'limda tasvirlanayotgan xotira tuzilmalari qulflari esa qisqa muddatli guruhga kiradi, predicate lock lar esa nomiga qaramay umuman qulf emas va alohida guruh hisoblanadi (Rogov, 12.1, 200-201-bet).
 
 Ikkita amaliy misol. Buffer cache dagi hash jadvalga kirish uchun `BufferMapping` qulfi olinadi; u bitta qulf emas, 128 ta qulfdan iborat tranche, chunki bu jadvalga murojaat juda tez-tez bo'ladi va donadorlik yetishmasa u darhol bo'g'iz joyga aylanadi. WAL tomonida sahifani diskka yozishni bitta `WALWrite` qulfi serializatsiya qiladi, WAL yozuvi uchun joy band qilishni `insert position` spinlocki himoya qiladi, band qilingan joyni to'ldirish esa 8 ta qulfdan iborat `WALInsert` tranche i orqali parallel ketadi.
 
@@ -487,7 +513,201 @@ GROUP BY 1, 2, 3 ORDER BY 4 DESC;
 
 Diagnostikada ikki narsa yodda turishi kerak. Birinchisi: ko'rinishda faqat kodda nomlangan kutishlar aks etadi, qolgan vaqt hisobga olinmagan bo'lib qoladi va bu "protsess hech narsa kutmayapti" degani emas. Ikkinchisi Spring uchun muhim: HikariCP metrikasi `hikaricp.connections.pending` ni ko'rsatsa, sabab har doim pool kichikligida emas. Server tomonidagi profil `IO / WALSync` yoki `LWLock / WALWrite` ni ko'rsatsa, chegarani disk sinxronlashi qo'yadi va pool ni kattalashtirish faqat navbatni serverga ko'chiradi.
 
-## 21.17 Amalda qo'llash
+## 21.17 Vacuum fazalari: heap scan, index vacuuming va heap truncation
+
+VACUUM bitta o'tish emas, bir nechta fazadan iborat, chunki jadval va indekslar boshqa protsesslarni bloklamasdan qayta ishlanishi kerak (Rogov, 6.3, 107-bet). Fazalarni bilish ikki amaliy savolga javob beradi: vacuum nega indekslarni bir necha marta aylanib o'tadi va u qachon faylni qisqartiradi.
+
+- **Heap scan.** Jadval o'lik tuple qidirib skan qilinadi, visibility map da belgilangan sahifalar esa butunlay o'tkazib yuboriladi: ularda eskirgan tuple yo'qligi aniq. Gorizontdan orqada qolgan tuple larning TID i lokal xotiradagi massivga yig'iladi; massiv hajmini `maintenance_work_mem` (standart 64 MB) belgilaydi va u bir yo'la ajratiladi (Rogov, 6.3, 107-bet).
+- **Index vacuuming.** Har bir indeks to'liq skan qilinadi va TID massividagi tuple larga ishora qiladigan yozuvlar olib tashlanadi. `min_parallel_index_scan_size` (standart 512 kB) dan katta indekslarni fon ishchilari parallel tozalashi mumkin: har mos indeksga bitta ishchi, bitta indeksni esa bir nechta ishchi bo'lisha olmaydi; darajani `PARALLEL N` bandi aniq belgilaydi (Rogov, 6.3, 108-bet). Bu parallellik faqat qo'lda chaqirilgan `VACUUM` da bor, autovacuum ga ruxsat etilmagan (Rogov, 6.5, 111-bet).
+- **Faqat INSERT bo'ladigan jadval.** Index vacuuming fazasi free space map ni yangilaydi va vacuum statistikasini hisoblaydi, lekin qatorlar faqat qo'shilgan (o'chirilmagan va yangilanmagan) bo'lsa jadvalda o'lik tuple yo'q va bu faza butunlay o'tkazib yuboriladi; indekslar eng oxirida, alohida index cleanup fazasida bir marta skan qilinadi (Rogov, 6.3, 108-bet).
+- **Heap vacuuming.** Jadval ikkinchi marta skan qilinadi, TID massividagi tuple lar va ularning pointerlari bo'shatiladi; bo'shagan joy free space map da, faqat joriy tuple qolgan sahifalar esa visibility map da aks etadi (Rogov, 6.3, 108-bet).
+
+TID massivi heap scan tugamasdan to'lib qolsa, index vacuuming shu yerda boshlanadi, keyin heap scan to'xtagan joyidan davom etadi. Shuning uchun `pg_stat_progress_vacuum.index_vacuum_count` birdan katta bo'lishi `maintenance_work_mem` kichikligining to'g'ridan-to'g'ri alomati: har qo'shimcha aylanish barcha indekslarni boshidan o'qiydi.
+
+```sql
+-- Ketayotgan vacuum qaysi fazada va indekslarni necha marta aylangan
+SELECT pid, relid::regclass, phase, index_vacuum_count,
+       heap_blks_scanned, heap_blks_total
+FROM pg_stat_progress_vacuum;
+
+-- Rejali oynada: ko'proq xotira va parallel indeks tozalash
+SET maintenance_work_mem = '1GB';
+VACUUM (VERBOSE, PARALLEL 4) buyurtmalar;
+
+-- Truncation qulfi xalaqit bersa, uni jadval darajasida o'chirish
+ALTER TABLE buyurtmalar SET (vacuum_truncate = off);
+```
+
+**Heap truncation va "vacuum faylni qisqartirmaydi" da'vosi.** [Vacuum nima qiladi](#217-vacuum-nima-qiladi-olik-tuple-visibility-map-index-only-scan-bilan-bogliqligi) bo'limi vacuum tuple larni siqmasligini va faylni kichraytirish uchun `VACUUM FULL` kerakligini aytadi; Rogov esa oxirgi faza sifatida heap truncation ni tasvirlaydi: fayl oxirida bir nechta butunlay bo'sh sahifa to'planib qolsa, vacuum shu dumni kesib, joyni operatsion tizimga qaytaradi (Rogov, 6.3, 108-bet). Ikki da'vo zid emas, ularni ajratadigan shart bo'sh joyning fayl ichida qayerda turgani: vacuum tuple larni ko'chirmaydi, shuning uchun fayl o'rtasidagi bo'sh joy faylda qoladi va faqat fayl oxiridagi uzluksiz bo'sh dum kesiladi. Kesish ham har safar bo'lavermaydi: bo'sh dum jadvalning kamida o'n oltidan bir qismi bo'lishi yoki 1000 sahifaga yetishi kerak, bu chegaralar kodda qattiq yozilgan va sozlanmaydi; ustiga truncation qisqa `ACCESS EXCLUSIVE` qulf oladi va qulfni kutishga besh sekunddan ortiq sarflamaydi (Rogov, 6.3, 109-bet). `VACUUM FULL` esa butun faylni qayta yozadi, shuning uchun o'rtadagi bo'sh joyni ham yo'qotadi va aynan shu farq ikkala buyruqning o'z o'rnini belgilaydi.
+
+## 21.18 Autovacuum ichida: ishchi soni, `cost_limit` bo'linishi va kuzatish
+
+Autovacuum launcher har `autovacuum_naptime` da har bir faol baza uchun bitta ishchi ishga tushiradi, parallel ishlaydigan ishchilar soni esa `autovacuum_max_workers` (standart 3) bilan cheklangan. Ishchi o'z ro'yxatini naptime ichida tugatolmasa, launcher o'sha bazaga yana bitta ishchi qo'shadi. Muhimi: jadval darajasida parallellik yo'q, bir vaqtda faqat turli jadvallar ishlanadi (Rogov, 6.5, 110-bet).
+
+**Ishchi sonini oshirishning o'zi tezlashtirmaydi.** Autovacuum ning ish birliklari har siklda `autovacuum_vacuum_cost_limit` bilan cheklanadi va bu chegara barcha ishchilar o'rtasida bo'linadi, shuning uchun ishchilar nechta bo'lishidan qat'i nazar tizimga tushadigan umumiy yuk taxminan o'zgarmaydi. Rogov xulosani to'g'ridan-to'g'ri aytadi: autovacuum ni tezlashtirish kerak bo'lsa `autovacuum_max_workers` va `autovacuum_vacuum_cost_limit` proportsional ravishda birga oshiriladi (Rogov, 6.6, 118-bet). [Autovacuum sozlamalari](#218-autovacuum-sozlamalari-va-u-yetishmay-qolganda-nima-boladi) bo'limidagi instans qatori shuning uchun yolg'iz kelmaydi: ishchi soni bilan birga `cost_limit` ham ko'tariladi, aks holda alohida jadval emas, butun instans o'sha eski tezlikda qoladi. Ishchi sonini oshirish bir vaqtda nechta boshqa-boshqa jadval tozalanishini oshiradi, bitta katta jadvalning tozalanish tezligini emas. Chegaraning qanchalik past ekanini kitobning o'z hisobi ko'rsatadi: standart `vacuum_cost_limit` da vacuum bir siklda eng yaxshi holatda, ya'ni hamma sahifa keshda va hech biri iflos qilinmaganda, 200 sahifani ishlaydi, eng yomon holatda esa, ya'ni hamma sahifa diskdan o'qilib iflos qilinganda, atigi to'qqiz sahifani (Rogov, 6.6, 118-bet).
+
+```sql
+-- Instans darajasi (postgresql.conf): ikkalasi birga oshiriladi
+-- autovacuum_max_workers = 6
+-- autovacuum_vacuum_cost_limit = 2000
+-- autovacuum_work_mem = '256MB'
+-- log_autovacuum_min_duration = '1s'
+
+-- Trigger formulasi tayanadigan baho: analiz qilinmagan jadvalda -1
+SELECT relname, reltuples, relpages, relallvisible,
+       pg_stat_get_dead_tuples(oid) AS olik_tuple
+FROM pg_class WHERE relname = 'buyurtmalar';
+```
+
+- **`autovacuum_work_mem`** (standart -1, ya'ni `maintenance_work_mem` qiymatiga tushadi) har bir ishchining TID massivi uchun ajratiladi. Har ishchi butun bo'lakni bir yo'la oladi, shuning uchun ishchi sonini oshirganda bu parametrni alohida qo'yish kerak, aks holda xotira iste'moli ishchi soniga ko'payadi (Rogov, 6.5, 111-bet).
+- **`autovacuum_enabled`** va **`toast.autovacuum_enabled`** saqlash parametrlari autovacuum ni bitta jadval darajasida o'chiradi. Rogov buning nega kerak bo'lishini tasavvur qilish qiyinligini aytadi (Rogov, 6.5, 111-bet): bu parametr tajriba uchun, prod jadvali uchun emas.
+- **Trigger `pg_class.reltuples` ga tayanadi.** Vacuum sharti `n_dead_tup > autovacuum_vacuum_threshold + autovacuum_vacuum_scale_factor x pg_class.reltuples` ko'rinishida yoziladi (Rogov, 6.5, 112-bet). `reltuples` esa aniq son emas, analiz va vacuum yangilab turadigan baho; hech analiz qilinmagan jadvalda u -1 bo'ladi (Rogov, 17.1, 271-272-bet). Demak statistikasi eskirgan jadvalda trigger kutilgan nuqtada emas, eski satr soniga qarab ishlaydi.
+- **`log_autovacuum_min_duration`** (standart -1; 0 barcha yurishni yozadi) autovacuum ning har bir yurishini server logiga chiqaradi: indeks skanlari soni, o'chirilgan va qolgan sahifalar, o'chirilgan va qolgan tuple lar, hali olib tashlab bo'lmaydigan o'lik tuple lar, eng eski `xmin`, o'qish va yozish tezligi, bufer va WAL sarfi (Rogov, 6.7, 122-bet).
+
+Kuzatuv mantig'i shunday: vacuum kutayotgan jadvallar ro'yxati o'sib borsa, autovacuum yuklamani uddalay olmayapti; Rogov ning yechimi uch qadamdan iborat, ya'ni `autovacuum_vacuum_cost_delay` ni kamaytirish, `autovacuum_vacuum_cost_limit` ni oshirish va ehtimol `autovacuum_max_workers` ni ham ko'tarish (Rogov, 6.7, 122-bet).
+
+## 21.19 Freeze mexanikasi: hint bit, aggressive freezing, freeze map va CLOG
+
+Freeze `xmin` ni o'zgartirmaydi. Tuple muzlatilgani ikkita hint bit ning birikmasi bilan belgilanadi: committed va aborted bitlari birga qo'yiladi va bu kombinatsiya "bu tuple hamma snapshotda ko'rinadi" degan ma'noni bildiradi. `xmin` esa tuple da o'z qiymati bilan qoladi, bu debug va qo'llab-quvvatlash uchun qulay (Rogov, 7.2, 124-bet). `xmax` freeze da umuman qatnashmaydi: u faqat eskirgan tuple da bo'ladi va bunday tuple gorizontdan chiqqanda vacuum uni butunlay olib tashlaydi.
+
+Asosiy mexanizm `vacuum_freeze_min_age` emas, uning yonidagi ikkita yosh:
+
+- **`vacuum_freeze_table_age`** (standart 150 million) vacuum ga visibility map ni e'tiborsiz qoldirishga ruxsat beradi, ya'ni har qanday sahifa muzlatilishi mumkin bo'ladi. Oddiy vacuum to'liq ko'rinadigan sahifaga kirmaydi, shuning uchun bu parametrsiz eski tuple lar muzlamay qolaveradi. Qaror jadvalning `relfrozenxid` yoshini shu chegara bilan solishtirib chiqariladi (Rogov, 7.3, 129-bet).
+- **Freeze map.** Visibility map ning ikkinchi biti, ya'ni `all-frozen`, aynan shu yerda ishlaydi: u tufayli aggressive freezing da ham butun jadvalni skan qilish shart emas, faqat mapda belgilanmagan sahifalar tekshiriladi. Bundan tashqari u nosozlikka chidamlilik beradi: vacuum uzilib qolsa, keyingi yurish allaqachon ishlangan sahifalarga qaytmaydi (Rogov, 7.3, 129-bet).
+- **CLOG ni autovacuum kesadi.** `autovacuum_freeze_max_age` (standart 200 million) nafaqat majburiy autovacuum ni qo'zg'aydi, balki `pg_xact` hajmini ham belgilaydi: muzlatilgan tranzaksiyalarning holatini saqlash shart emas, shuning uchun klasterdagi eng eski `datfrozenxid` dan oldingi CLOG fayllarini autovacuum olib tashlaydi (Rogov, 7.3, 132-bet). Parametrning yuqori chegarasi 2 milliard, standart qiymat esa undan o'n barobar kichik va bu ataylab shunday tanlangan: katta qiymat tuple larni o'z vaqtida muzlatib ulgurmaslik, ya'ni wraparound xavfini oshiradi (Rogov, 7.3, 131-bet). Demak bu parametrni ko'tarishning ikki narxi bor: wraparound xavfi va `pg_xact` ning o'sishi.
+- **Multixact ham muzlatiladi.** Bir qatorni bir nechta tranzaksiya umumiy rejimda qulflasa, `xmax` ga alohida ID beriladigan multixact yoziladi. Multixact ID lar ham 32 bitli va ular ham o'ralishga tobe, shuning uchun eski multixact ID lar yangisi bilan (yoki qulf bitta tranzaksiyada qolgan bo'lsa oddiy XID bilan) almashtiriladi. Bu yerda `xmin` emas, aynan `xmax` muzlatiladi, chunki qatorning joriy versiyasi yangi tranzaksiyalar tomonidan qayta-qayta qulflanishi mumkin; parametrlari `vacuum_multixact_freeze_min_age`, `vacuum_multixact_freeze_table_age`, `autovacuum_multixact_freeze_max_age` va `vacuum_multixact_failsafe_age` (Rogov, 13.3, 215-bet).
+
+```sql
+-- Jadval va baza darajasidagi freeze qarzi yonma-yon
+SELECT c.relname, age(c.relfrozenxid) AS xid_yoshi,
+       mxid_age(c.relminmxid) AS multixact_yoshi
+FROM pg_class c
+WHERE c.relkind = 'r' ORDER BY 2 DESC LIMIT 10;
+
+-- Freeze map qancha ishlaganini ko'rish
+SELECT all_visible, all_frozen FROM pg_visibility_map_summary('buyurtmalar');
+
+-- Freeze chegaralarini bitta jadvalga pasaytirish (nomlar "auto" bilan boshlanadi)
+ALTER TABLE buyurtmalar SET (
+  autovacuum_freeze_min_age = 10000000,
+  autovacuum_freeze_table_age = 50000000
+);
+```
+
+Yuqori yozuvli jadvalda eng ko'p uchraydigan kasallik shu: `age(relfrozenxid)` sekin o'sib boradi, chunki jadvalning issiq qismi doim visibility map da va vacuum uni ochmaydi; keyin `vacuum_freeze_table_age` ga yetganda birdan to'liq jadval skan qilinadi va I/O cho'qqisi paydo bo'ladi. Shuning uchun bu chegarani kichraytirib, freeze ni mayda bo'laklarga yoyish katta jadvalda bir marta katta aggressive vacuum kutishdan arzonroq.
+
+## 21.20 Boshlang'ich yuklashda freeze: `COPY FREEZE` va `index_cleanup`
+
+`VACUUM FREEZE` tuple larning yoshiga qaramasdan hammasini muzlatadi, ya'ni `vacuum_freeze_min_age = 0` bilan ishlagandek bo'ladi. Agar maqsad tezda muzlatish bo'lsa, failsafe rejimidagi kabi indeks tozalashni butunlay o'chirish mantiqan to'g'ri: buni `VACUUM (freeze, index_cleanup false)` buyrug'i yoki `vacuum_index_cleanup` saqlash parametri qiladi. Rogov buni muntazam qilmaslik kerakligini alohida ta'kidlaydi, chunki bunda vacuum o'zining asosiy ishini, sahifani tozalashni bajarmay qoladi (Rogov, 7.4, 133-bet).
+
+O'zgarmaydigan ma'lumotni esa umuman keyin muzlatmaslik mumkin: uni yuklash paytining o'zida muzlatib yuboriladi. Buning uchun `COPY ... WITH FREEZE` ishlatiladi, lekin bitta qattiq shart bor: jadval shu tranzaksiyaning ichida yaratilgan yoki `TRUNCATE` qilingan bo'lishi kerak. Sabab oddiy, ikkala amal ham jadvalga eksklyuziv qulf qo'yadi va boshqa tranzaksiyalar jadvalga kira olmaydi; aks holda muzlatilgan tuple lar izolyatsiya darajasidan qat'i nazar hammaga darhol ko'rinib qolar edi (Rogov, 7.4, 133-bet).
+
+```sql
+-- Ma'lumotni darhol muzlatib yuklash: TRUNCATE va COPY bitta tranzaksiyada
+BEGIN;
+TRUNCATE valyuta_kurslari;
+COPY valyuta_kurslari (sana, kod, kurs) FROM '/tmp/kurslar.csv' WITH (FORMAT csv, FREEZE);
+COMMIT;
+
+-- Tekshirish: sahifalar darhol freeze map ga tushgan bo'lishi kerak
+SELECT all_visible, all_frozen
+FROM pg_visibility_map_summary('valyuta_kurslari');
+```
+
+Yutuq ikki tomonlama: visibility map darhol yaratiladi va sahifa headerlariga ko'rinish atributi qo'yiladi, shuning uchun ma'lumot o'zgarmas ekan, jadval umuman vacuum ga tushmaydi (Rogov, 7.4, 134-bet). Ikki cheklovni yodda tutish kerak. Birinchisi, bu usul izolyatsiyani texnik jihatdan buzadi: `REPEATABLE READ` dagi tranzaksiya o'z snapshotidan keyin yuklangan qatorlarni ko'rib qolishi mumkin, Rogov buni ko'rsatib, yuklash kamdan-kam bo'lgani uchun ko'p holatda muammo tug'dirmasligini aytadi. Ikkinchisi, TOAST jadvallari qo'llab-quvvatlanmaydi: katta qiymat yuklansa, vacuum keyinchalik butun TOAST jadvalini qayta yozishga majbur bo'ladi (Rogov, 7.4, 134-bet). Java tomonida bu migratsiya va reference data yuklash uchun to'g'ridan-to'g'ri qoida beradi: `CREATE TABLE` yoki `TRUNCATE` va `COPY ... FREEZE` bitta tranzaksiyada ketsa, keyinroq bu jadval autovacuum navbatida turmaydi.
+
+## 21.21 Checkpoint bosqichlari va `log_checkpoints` bilan kuzatish
+
+Checkpoint bir lahzalik hodisa emas, vaqtga yoyilgan uch bosqichli jarayon va uni `checkpointer` protsessi bajaradi (Rogov, 10.3, 170-bet).
+
+- **Boshlanish.** Checkpointer darhol yozib bo'ladigan hamma narsani diskka tushiradi: CLOG dagi tranzaksiya holati, subtransaction metadatasi va yana bir nechta tuzilma. Shu nuqta kelajakdagi tiklanishning REDO pozitsiyasi bo'lib qoladi.
+- **Bajarilish.** Vaqtning asosiy qismi iflos sahifalarni yozishga ketadi. Avval checkpoint boshlanishida iflos bo'lgan barcha buferlarning headerlariga belgi qo'yiladi, bu I/O talab qilmagani uchun juda tez bo'ladi. Keyin checkpointer buferlarni aylanib, belgilanganlarini diskka yozadi; sahifalar keshdan chiqarilmaydi, shuning uchun usage va pin hisoblagichlari ahamiyatsiz. Tasodifiy yozuvdan qochish uchun sahifalar ID tartibida ishlanadi va yuk tekis tushishi uchun turli tablespace lar orasida navbatlashtiriladi. Belgilangan buferni backend ham yozib yuborishi mumkin, belgi esa shu bosqichda olib tashlanadi: har bufer checkpoint uchun faqat bir marta yoziladi. Checkpoint davomida iflos bo'lgan yangi buferlar belgilanmagani uchun ular keyingi checkpointga qoladi.
+- **Tugash.** Boshlanishda iflos bo'lgan hamma bufer yozilgandan keyin checkpoint tugagan hisoblanadi va faqat shundan keyin uning boshlanish nuqtasi yangi tiklanish nuqtasi bo'ladi; undan oldingi WAL yozuvlari endi kerak emas. Checkpointer oxirida WAL ga checkpoint tugaganini bildiruvchi yozuv qo'yadi va unda checkpoint boshlangan LSN ko'rsatiladi (Rogov, 10.3, 171-bet).
+
+```sql
+-- Checkpoint sozlamasi: kitobning hisob yo'li
+-- 1) ikki checkpoint orasida qancha WAL yig'ilishini o'lchang
+-- 2) o'sha vaqtni checkpoint_timeout qilib qo'ying
+-- 3) max_wal_size ni yuk sakraganda qo'shimcha checkpoint chaqiradigan
+--    chegara sifatida tanlang
+SELECT name, setting, unit FROM pg_settings
+WHERE name IN ('checkpoint_timeout','checkpoint_completion_target',
+               'max_wal_size','min_wal_size','checkpoint_warning',
+               'log_checkpoints')
+ORDER BY name;
+```
+
+Rogov ning tavsiya qilgan yo'li: avval ikki checkpoint orasida saqlanadigan WAL hajmini tanlash, uni hosil qilishga ketadigan vaqtni o'lchash va shu vaqtni `checkpoint_timeout` qilib qo'yish; standart 5 daqiqa odatda kichik va uni masalan 30 daqiqaga ko'tarish kerak bo'ladi (Rogov, 10.6, 177-bet). Tiklanish uchun kerak bo'ladigan WAL hajmi esa ikki checkpoint orasidagi hajmni `1 + checkpoint_completion_target` ga ko'paytirib baholanadi. `max_wal_size` qattiq chegara emas, faqat maqsadli qiymat: yuk sakrasa yozuv rejadan orqada qolishi mumkin, replikaga yoki arxivga ketmagan segmentlarni esa server o'chirishga haqli emas (Rogov, 10.6, 179-bet).
+
+Kuzatuv ikki asbobdan iborat. `checkpoint_warning` (standart 30 sekund) dan tez-tez hajm bo'yicha checkpoint bo'lsa server ogohlantirish yozadi. `log_checkpoints` esa har checkpointning yozilgan bufer soni, qo'shilgan va o'chirilgan WAL fayllari, `write`, `sync` va umumiy vaqti hamda ikki checkpoint orasidagi masofasini logga chiqaradi (Rogov, 10.6, 179-180-bet). ESLATMA: kitobdagi PostgreSQL 14 da `log_checkpoints` standart holatda `off`, shuning uchun uni ataylab yoqish kerak; o'z instansingizdagi haqiqiy qiymatni yuqoridagi `pg_settings` so'rovi ko'rsatadi.
+
+## 21.22 Background writer: `bgwriter_delay` va `bgwriter_lru_maxpages`
+
+Backend iflos sahifani buferdan siqib chiqarishi kerak bo'lsa, uni o'zi diskka yozishga majbur bo'ladi va bu kutish degani. Shu kutishni yo'qotish uchun `bgwriter` protsessi bor. U siqib chiqarish bilan bir xil bufer qidirish algoritmiga tayanadi, lekin ikki farq bilan: o'zining alohida strelkasi bor va bu strelka siqib chiqarish strelkasidan hech qachon orqada qolmaydi, odatda esa undan o'zib ketadi; ikkinchidan, buferlarni aylanib o'tganda foydalanish hisoblagichini kamaytirmaydi (Rogov, 10.5, 176-bet).
+
+Iflos sahifa buferi pin qilinmagan va hisoblagichi nolga teng bo'lsa diskka yoziladi. Ya'ni bgwriter siqib chiqarishdan oldinda yuradi va tez orada siqib chiqarilishi ehtimoli yuqori bo'lgan sahifalarni oldindan yozib qo'yadi; natijada siqib chiqarish uchun tanlangan buferning toza bo'lish ehtimoli oshadi.
+
+```sql
+-- bgwriter sozlamalari va u qancha ish qilayotgani
+SELECT name, setting, unit FROM pg_settings
+WHERE name LIKE 'bgwriter%' ORDER BY name;
+
+-- buffers_clean bgwriter yozgan sahifalar, maxwritten_clean esa
+-- bgwriter_lru_maxpages ga tegib to'xtagan yurishlar soni
+SELECT buffers_clean, maxwritten_clean, buffers_alloc FROM pg_stat_bgwriter;
+```
+
+Uch parametr xulqni belgilaydi (Rogov, 10.6, 179-bet). `bgwriter_delay` (standart 200 ms) ikki yurish orasidagi pauza. Bir yurishda yoziladigan sahifa soni backendlar oldingi yurishdan beri murojaat qilgan buferlarning harakatlanuvchi o'rtachasiga asoslanadi va u `bgwriter_lru_multiplier` (standart 2) ga ko'paytiriladi. Natija qanday bo'lishidan qat'i nazar, bitta yurishda yoziladigan sahifa soni `bgwriter_lru_maxpages` (standart 100) dan oshmaydi. Iflos bufer umuman topilmasa bgwriter uxlaydi va biror backend buferga murojaat qilganda uyg'onadi.
+
+Sozlash qoidasi amaliy: `maxwritten_clean` muntazam o'sib borsa, bgwriter har yurishda chegaraga tegib to'xtayapti, demak `bgwriter_lru_maxpages` kichik yoki `bgwriter_delay` katta. Kitobdagi `pg_stat_bgwriter` da `buffers_backend` ustuni ham bor va uning `buffers_clean` dan sezilarli katta bo'lishi yomonroq alomat: iflos sahifani asosan backendlar yozyapti, ya'ni yozuv narxi so'rov latency siga tushyapti (Rogov, 10.6, 180-bet). ESLATMA: bu ko'rinishning ustun tarkibi versiyalar orasida o'zgargan, shuning uchun o'z instansingizda avval `\d pg_stat_bgwriter` bilan tekshiring. Checkpointer va bgwriter birga sozlanadi, chunki ikkalasining vazifasi bitta, iflos buferni backend unga muhtoj bo'lgunga qadar diskka tushirish.
+
+## 21.23 WAL segmentlari, `pg_waldump` va `wal_skip_threshold`
+
+WAL `PGDATA/pg_wal` katalogida segment deb ataladigan alohida fayllarda yotadi. Segment hajmini faqat o'qish uchun mo'ljallangan `wal_segment_size` ko'rsatadi, standart qiymati 16 MB; uni faqat klasterni initsializatsiya qilishda o'zgartirish mumkin (`initdb --wal-segsize`) va yuqori yuklamali tizimda kattaroq segment qo'shimcha xarajatni kamaytirishi mumkin (Rogov, 10.2, 168-bet). Fayl nomining yuqori sakkiz o'n oltilik raqami timeline ni, qolgani esa LSN ning yuqori 32 bitini beradi (Rogov, 10.2, 169-bet).
+
+Checkpointdan keyin kerak bo'lmay qolgan segmentlar o'chiriladi, lekin `min_wal_size` (standart 80 MB) gacha bo'lgan bir nechta fayl qayta ishlatish uchun nomi o'zgartirilib saqlanadi; bu doimiy fayl yaratish va o'chirish xarajatini kamaytiradi va `wal_recycle` bilan o'chiriladi (Rogov, 10.6, 178-bet). Diskda WAL uchun joy zaxiralash kerak bo'lsa `wal_keep_size` (standart 0) ishlatiladi (Rogov, 10.6, 179-bet).
+
+```bash
+# WAL ichida nima yotganini va FPI ulushini o'lchash: postgres OS useridan
+pg_waldump --stats -p "$PGDATA/pg_wal" -s 0/44D4C228 -e 0/457653B0
+
+# Tipik natija oxirgi qatori (kitobdagi pgbench o'lchovi):
+# Total   119581   7831904 [76,14%]   2453755 [23,86%]
+#                  ^ yozuv hajmi      ^ full page image hajmi
+```
+
+`pg_waldump` WAL yozuvlarini LSN oralig'i yoki tranzaksiya ID bo'yicha filtrlaydi va `--stats` bilan resurs menejerlari kesimida hajm beradi (Rogov, 10.2, 169-bet va 11.2, 191-bet). Bu `wal_compression` yoqish yoki `checkpoint_timeout` ni ko'tarish qarorini taxminga emas, o'lchovga bog'lab qo'yadi: FPI ulushi katta bo'lsa, ikkala qadam ham ishlaydi, chunki ular bir muammoning ikki yechimi ([Nosozlikdan tiklanish](#2115-nosozlikdan-tiklanish-startup-protsess-full-page-write-va-checksum) bo'limiga qarang).
+
+Yana bitta WAL hajmi tugmasi `minimal` darajada. Bu darajada joriy tranzaksiyada yaratilgan yoki `TRUNCATE` qilingan relationlar ustidagi katta hajmli yozuv amallari (`CREATE TABLE AS SELECT`, `CREATE INDEX` kabi) WAL ga umuman yozilmaydi: ma'lumot to'g'ridan-to'g'ri diskka tushiriladi va katalog o'zgarishi commitdan keyin ko'rinadi. Bu optimizatsiya ishlashi uchun yangi relationga yoziladigan hajm `wal_skip_threshold` (standart 2 MB) dan oshishi kerak (Rogov, 11.3, 192-bet). Amalda bu ETL va reporting bazalari uchun real variant, lekin narxi qattiq: `minimal` da replikatsiya ham, PITR ham bo'lmaydi va `max_wal_senders = 0` qo'yish talab qilinadi, shuning uchun u asosiy OLTP instansi uchun emas, alohida hisobot klasteri uchun qarordir.
+
+## 21.24 Klaster fayllari: `template0`, forklar va UNLOGGED jadval
+
+Klaster initsializatsiya qilinganda `PGDATA` da uchta bir xil baza paydo bo'ladi. `template0` logical zaxiradan tiklash va boshqa kodlashli baza yaratish uchun ishlatiladi va hech qachon o'zgartirilmaydi; `template1` foydalanuvchi yaratadigan barcha bazalar uchun shablon; `postgres` esa oddiy ishchi baza (Rogov, 1.1, 20-bet). Amaliy xulosa: migratsiya skriptlari `template1` ga extension yoki jadval qo'shib qo'ysa, u keyingi har bir yangi bazaga jim ko'chadi, shuning uchun test bazasini yaratish `TEMPLATE template0` bilan ketadi.
+
+Bitta relation diskda bitta fayl emas: u bir nechta forkdan iborat (Rogov, 1.1, 25-bet).
+
+- **Main fork** haqiqiy ma'lumotni, ya'ni jadval yoki indeks qatorlarini saqlaydi va fayl nomi `pg_class.relfilenode` dan olinadi.
+- **Free space map** (`_fsm` qo'shimchasi) sahifalar ichidagi bo'sh joyni kuzatadi va yangi qator qo'shilganda mos sahifani tez topish uchun ishlatiladi. Uning hajmi doim o'zgarib turadi: vacuumdan keyin o'sadi, yangi qator versiyalari paydo bo'lganda kichrayadi. Fayllar darhol yaratilmaydi, ular kerak bo'lganda, eng oson yo'li vacuum paytida paydo bo'ladi; tez qidirish uchun map daraxt shaklida tuzilgani sababli u kamida uchta sahifa egallaydi. Indekslar uchun ham bor, lekin u yerda faqat butunlay bo'shagan va qayta ishlatiladigan sahifalar kuzatiladi (Rogov, 1.1, 26-27-bet).
+- **Visibility map** (`_vm`) har sahifa uchun ikki bit beradi va u faqat jadvallarda bo'ladi, indekslarda emas (Rogov, 1.1, 27-bet).
+- **Initialization fork** (`_init`) faqat `UNLOGGED` jadvallarda va ularning indekslarida bo'ladi.
+
+```sql
+-- UNLOGGED: tez, lekin nosozlikdan keyin bo'sh qoladi va replikaga ketmaydi
+CREATE UNLOGGED TABLE hisobot_vaqtinchalik (
+  id    bigint PRIMARY KEY,
+  hisob jsonb
+);
+
+-- Relation fayllari qayerda yotadi va forklar qanday nomlanadi
+SELECT pg_relation_filepath('hisobot_vaqtinchalik');   -- base/<db oid>/<relfilenode>
+SELECT pg_size_pretty(pg_relation_size('hisobot_vaqtinchalik', 'main')) AS main,
+       pg_size_pretty(pg_relation_size('hisobot_vaqtinchalik', 'fsm'))  AS fsm,
+       pg_size_pretty(pg_relation_size('hisobot_vaqtinchalik', 'vm'))   AS vm;
+```
+
+`UNLOGGED` jadval ustidagi hech bir amal WAL ga yozilmaydi. Bu operatsiyalarni sezilarli tezlashtiradi, lekin nosozlikdan keyin izchil ma'lumotni tiklab bo'lmaydi, shuning uchun tiklanish paytida PostgreSQL bunday obyektning barcha forklarini o'chiradi va main forkni initialization fork bilan qayta yozadi, ya'ni jadval bo'sh qoladi (Rogov, 1.1, 26-bet). Arxitektor uchun chegara shundan kelib chiqadi: WAL ga yozilmagani uchun bunday jadval streaming replikaga ham ketmaydi va replikada o'qib bo'lmaydi. Demak `UNLOGGED` import uchun staging jadvali, qayta hisoblanadigan material va sessiya tashqarisidagi vaqtinchalik natija uchun to'g'ri, lekin biznes ma'lumoti yoki idempotentlik kaliti uchun emas.
+
+## 21.25 Amalda qo'llash
 
 - [ ] `pg_stat_activity` dan `idle in transaction` sessionlarini sanab chiqing va `idle_in_transaction_session_timeout` ni 30 sekundga qo'ying.
 - [ ] HikariCP `maximum-pool-size` ni barcha instanslar bo'yicha qo'shib, PostgreSQL yadro sonining 2-4 barobaridan oshmasligini tekshiring.
@@ -497,6 +717,9 @@ Diagnostikada ikki narsa yodda turishi kerak. Birinchisi: ko'rinishda faqat kodd
 - [ ] Index-only scan kutilgan so'rovlarda `EXPLAIN (ANALYZE, BUFFERS)` dagi `Heap Fetches` ni tekshirib, `pg_visibility_map_summary` bilan vacuum qarzini tasdiqlang.
 - [ ] `pgstattuple_approx` bilan top 10 jadvalning bloat foizini o'lchab, 30 foizdan oshganlar uchun `pg_repack` yoki partitioning rejasini yozing.
 - [ ] Katta JSONB yoki matn ustunlari uchun `pg_column_size` ni o'lchab, `lz4` siqish va lazy fetch ni joriy qiling.
+- [ ] `autovacuum_max_workers` ni oshirgan bo'lsangiz, `autovacuum_vacuum_cost_limit` ni ham shu nisbatda oshirganingizni tekshiring: chegara ishchilar orasida bo'linadi.
+- [ ] `log_checkpoints` yoqilganini tasdiqlab, logdagi `distance` va `write` vaqtini bir hafta kuzating; `maxwritten_clean` o'sib borsa `bgwriter_lru_maxpages` ni ko'taring.
+- [ ] O'zgarmas reference data va migratsiya yuklamalarini `TRUNCATE` va `COPY ... FREEZE` bilan bitta tranzaksiyada yuklab, bu jadvallarni autovacuum navbatidan chiqaring.
 
 ## Manbalar
 
@@ -511,6 +734,23 @@ Diagnostikada ikki narsa yodda turishi kerak. Birinchisi: ko'rinishda faqat kodd
 - Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 3-bob "Pages and Tuples", 70-79-betlar - `pg_xact` ikki biti, hint bit, virtual transaction, savepoint va subtransaction
 - Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 10-bob "Write-Ahead Log" 173-176-betlar va 11-bob "WAL Modes" 185-191-betlar - startup protsess, `pg_control`, roll-back bosqichining yo'qligi, checksum chegaralari, full page write ulushi
 - Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 15-bob "Locks on Memory Structures", 240-247-betlar - spinlock va lightweight lock farqi, `BufferMapping` va `WALInsert` tranche lari, wait event turlari, `pg_wait_sampling`
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 1.1-bo'lim (20, 25-27-betlar) - `template0` va `template1` vazifasi, main, free space map va visibility map forklari, initialization fork va `UNLOGGED` jadvalning tiklanishda bo'shashi
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 3.7-bo'lim (78-79-betlar) - xatodan keyin tranzaksiyaning abort holatiga o'tishi, `COMMIT` ning `ROLLBACK` qaytarishi va `ON_ERROR_ROLLBACK` dagi savepoint narxi
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 6.3-bo'lim (107-109-betlar) - vacuum fazalari, TID massivi va `maintenance_work_mem`, `min_parallel_index_scan_size`, insert-only jadvalda index cleanup, heap truncation sharti va `vacuum_truncate`
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 6.5-bo'lim (110-113-betlar) - autovacuum ishchilari va jadval darajasida parallellik yo'qligi, `autovacuum_work_mem`, `autovacuum_enabled`, vacuum trigger formulasi
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 6.6-bo'lim (118-bet) - `autovacuum_vacuum_cost_limit` barcha ishchilar orasida bo'linishi va uni `autovacuum_max_workers` bilan proportsional oshirish talabi
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 6.7-bo'lim (122-bet) - `log_autovacuum_min_duration` va log qatorining tarkibi, autovacuum yetishmaganda uch qadamli yechim
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 7.2-7.3-bo'limlar (124-132-betlar) - freeze ikki hint bitning birikmasi ekani va `xmin` o'zgarmasligi, `vacuum_freeze_table_age` (150 million), freeze map, `autovacuum_freeze_max_age` va CLOG ni autovacuum kesishi
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 7.4-bo'lim (133-134-betlar) - `VACUUM (freeze, index_cleanup false)` va `vacuum_index_cleanup`, `COPY FREEZE` sharti, visibility map ning darhol yaratilishi va TOAST cheklovi
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 8.2-bo'lim (140-bet) - `CLUSTER` ning indeks tartibida qayta yozishi, tartib saqlanmasligi va `VACUUM FULL` ning uning maxsus holati ekani
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 9.4-9.5-bo'limlar (154, 156-betlar) - `track_io_timing` standart holatda o'chiqligi, ikkinchi skanning mavjud buffer ring ga qo'shilishi
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 10.2-10.3-bo'limlar (168-171-betlar) - `wal_segment_size` 16 MB va uni faqat `initdb` da o'zgartirish, `pg_waldump` filtrlari, checkpointning boshlanish, bajarilish va tugash bosqichlari
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 10.5-10.6-bo'limlar (176-180-betlar) - bgwriter algoritmi va alohida strelkasi, `bgwriter_delay` (200 ms), `bgwriter_lru_multiplier` (2) va `bgwriter_lru_maxpages` (100), `checkpoint_timeout` ni o'lchov bilan tanlash, `min_wal_size`, `wal_keep_size`, `checkpoint_warning` va `log_checkpoints`
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 11.1-bo'lim (183-bet) - `commit_delay` va `commit_siblings` bilan commitlarni paketlash
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 11.2-11.3-bo'limlar (186-192-betlar) - `pg_test_fsync` va `wal_sync_method`, `pg_waldump --stats` dagi full page image ulushi, `minimal` darajada ommaviy amallarning WAL ga yozilmasligi va `wal_skip_threshold`
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 12.1-bo'lim (200-201-betlar) - uzoq va qisqa muddatli qulflar taksonomiyasi va predicate lock larning alohida guruhi
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 13.3-bo'lim (215-bet) - multixact ID larining o'ralishi, `xmax` ning muzlatilishi va `vacuum_multixact_*` parametrlari
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 17.1-bo'lim (271-272-betlar) - `reltuples`, `relpages` va `relallvisible` ning baho ekani, analiz qilinmagan jadvalda `reltuples = -1`
 
 ---
 

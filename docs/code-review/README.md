@@ -25,13 +25,13 @@ Review izohlari uchun tayyor iboralar oxirgi bobda.
 
 **Versiya bazasi:** Java 21 LTS (pol: 17, Java 25 eslatmalari bilan), Spring Boot 3.2-3.5 (4.0 eslatmalari bilan), PostgreSQL 16+ (15-18 havolalari bilan), JUnit 5.
 
-> Holat: 44 bobdan 0 tasi odam tekshirgan, 44 tasi tekshirilmoqda, qolgan 0 tasi AI yozgan va inson tekshirmagan. Har bob holati: [docs/review.tsv](../review.tsv).
+> Holat: 44 bobdan 44 tasi odam tekshirgan, 0 tasi tekshirilmoqda, qolgan 0 tasi AI yozgan va inson tekshirmagan. Har bob holati: [docs/review.tsv](../review.tsv).
 
 ## Mundarija
 
 ### I. Review ning mohiyati va iqtisodi
 
-- **1.** [Review nima uchun bor va nimani haqiqatda beradi (Why Review Exists)](01-review-nima-uchun-bor-va-nimani-haqiqatda.md) - 14 bo'lim
+- **1.** [Review nima uchun bor va nimani haqiqatda beradi (Why Review Exists)](01-review-nima-uchun-bor-va-nimani-haqiqatda.md) - 15 bo'lim
 - **2.** [Review iqtisodi: xato narxi, navbat va PR hajmi (The Economics of Review)](02-review-iqtisodi-xato-narxi-navbat-va-pr.md) - 14 bo'lim
 - **3.** [Reviewer ning tahlil apparati: niyat, invariant, xavf yuzasi (The Reviewer's Analytical Apparatus)](03-reviewer-ning-tahlil-apparati-niyat.md) - 11 bo'lim
 - **4.** [Diffni o'qish mexanikasi (Reading a Diff)](04-diffni-oqish-mexanikasi.md) - 11 bo'lim
@@ -78,7 +78,7 @@ Review izohlari uchun tayyor iboralar oxirgi bobda.
 - **30.** [Autentifikatsiya va avtorizatsiya review (Authentication and Authorization)](30-autentifikatsiya-va-avtorizatsiya-review.md) - 10 bo'lim
 - **31.** [Kirish va chiqish xavfsizligi: SSRF, deserializatsiya, fayllar (Input and Output Safety)](31-kirish-va-chiqish-xavfsizligi-ssrf.md) - 8 bo'lim
 - **32.** [Secret, maxfiy ma'lumot va kriptografiya review (Secrets, PII and Crypto)](32-secret-maxfiy-malumot-va-kriptografiya.md) - 9 bo'lim
-- **33.** [Bog'liqlik va supply chain review (Dependencies and Supply Chain)](33-bogliqlik-va-supply-chain-review.md) - 7 bo'lim
+- **33.** [Bog'liqlik va supply chain review (Dependencies and Supply Chain)](33-bogliqlik-va-supply-chain-review.md) - 8 bo'lim
 
 ### VII. Test review
 
@@ -88,7 +88,7 @@ Review izohlari uchun tayyor iboralar oxirgi bobda.
 
 ### VIII. Kesishgan sifat
 
-- **37.** [API moslik va breaking change review (API Compatibility)](37-api-moslik-va-breaking-change-review.md) - 9 bo'lim
+- **37.** [API moslik va breaking change review (API Compatibility)](37-api-moslik-va-breaking-change-review.md) - 10 bo'lim
 - **38.** [Performance review diffdan (Performance from a Diff)](38-performance-review-diffdan.md) - 10 bo'lim
 - **39.** [Observability review (Observability)](39-observability-review.md) - 9 bo'lim
 

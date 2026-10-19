@@ -15,3 +15,16 @@ bolim	nom
 24.6	Optional chaining
 25.1	Optional field
 32.3	Long method
+2.17	Choose specific words
+3.3	Encoding attributes in names
+5.10	Overload resolution
+6.3	Short-circuit abuse
+7.11	Avoid do/while
+8.11	Precise and compact comments
+12.3	Column alignment
+12.7	Single-module-import
+15.10	Stable sort
+20.9	NaN and Infinity
+20.10	Narrowing conversion
+23.7	Type erasure
+30.10	Choosing good test inputs

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 41. Review madaniyati, til va kelishmovchilik (Culture, Language, Disagreement)
 
@@ -85,6 +85,33 @@ Google ning review izohi qo'llanmasi shu amaliyotni boshqa nomlar bilan beradi v
 Yana bir yo'nalish ham shu hujjatda bor va u korpusdagi `praise` ni oqlaydi: odamlar nimani yaxshi qilganining tasdiqlanishidan ham o'rganadi, faqat nimani yaxshilash kerakligidan emas. CL da yoqqan narsa bo'lsa, u haqda ham yozish kerak, va nega yoqqanini aytish bilan.
 
 Qo'shimcha qoida: `blocker` lar soni cheklangan bo'lishi kerak. Agar PR da 15 blocker bo'lsa, bu alohida muammo - PR dizayn darajasida noto'g'ri yoki muallif kontekstni bilmaydi. Shu holatda 15 izoh yozish o'rniga suhbatlashish kerak.
+
+Prefikslar izohning darajasini ajratadi. Asbobning baholash sxemasi
+esa yana bir darajani ajratishi kerak: salbiy fikrning o'zi aniq
+narsaga bog'langan bo'lishi. Google ning Critique asbobida ataylab
+"yana ishlash kerak" degan baho yo'q, LGTM va approval faqat musbat
+tomonga beriladi. Natijada reviewer o'zgarishga sababsiz rad
+(thumbs down) qo'ya olmaydi: har salbiy fikr tuzatiladigan aniq
+narsaga, ya'ni yopilmagan izohga bog'lanishi shart. Ikkinchi
+o'zgarish kerak bo'lsa, reviewer izoh yozadi va LGTM bermaydi, xolos.
+
+Shu sxemada uch belgi bor va ularning qattiqligi bir xil emas. LGTM
+("men ko'rdim, standartlarimizga mos deb bilaman") va approval
+("darvozabon sifatida bu kodbazaga tushishiga ruxsat beraman") qat'iy
+talab, ularni faqat reviewer beradi va merge dan oldin qaytarib
+olishi mumkin. Yopilmagan izoh esa yumshoq talab: muallif javob
+yozib uni o'zi yopa oladi. Bu ataylab shunday, chunki reviewer
+yopilmagan izoh bilan birga LGTM berib, keyin izohning haqiqatan
+bajarilganini tekshirmasligi mumkin, ya'ni sxemaning o'zi muallifga
+ishonchni ifodalaydi va vaqt mintaqasi farqi katta bo'lganda ancha
+vaqt tejaydi. Yana bir qoida shu sxemadan chiqadi: har o'zgarish
+approval holatidan qat'i nazar kamida bitta LGTM talab qiladi, ya'ni
+kodga kamida ikki juft ko'z qaragan bo'ladi. GitHub da teskari
+tomoni ko'rinadi: "Request changes" ni bo'sh izoh bilan ham qo'yish
+mumkin, shuning uchun jamoa qoidasi kerak - "Request changes" har
+doim kamida bitta `blocker` izohi bilan birga keladi, aks holda u
+approve ni ushlab turadigan, lekin nima tuzatishni aytmaydigan
+to'siqqa aylanadi.
 
 ## 41.4 Junior va senior bilan review
 
@@ -318,6 +345,16 @@ Uchalasining umumiy ildizi bitta: niyat yaxshi bo'lsa ham, kontekst ko'rinmasa h
 - [ ] `praise` izohini ongli ishlatishni boshlang: to'g'ri qilingan qiyin joyni ko'rsatish.
 
 ## Manbalar
+
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at
+  Google*, O'Reilly, 2020, 19-bob ("Stage 5: Change Approvals (Scoring
+  a Change)") - 41.3 dagi baholash sxemasi: LGTM va approval ning
+  farqi va ikkisining ham faqat musbat bo'lishi, sababsiz rad
+  qo'yishning mumkin emasligi, yopilmagan izohning yumshoq talab
+  sifatida muallif va reviewer ishonchiga tayanishi, har o'zgarish
+  uchun kamida bitta LGTM talabi. Bu nashrning qo'limizdagi
+  nusxasida chop etilgan bet raqami yo'q, shuning uchun bob va bo'lim
+  nomi ko'rsatilgan
 
 - [Google, How to Write Code Review Comments](https://raw.githubusercontent.com/google/eng-practices/3bb3ec25b3b0199f4940b1aa75f0ac5c5753301c/review/reviewer/comments.md) - kodga qarash va odamga qaramaslik, nega tushuntirish, tuzatish mas'uliyati muallifda, izoh darajasini belgilash (`Nit:`, `Optional:`, `FYI:`) va belgisiz izohning majburiy o'qilishi, yaxshi qilingan ishni ham aytish
 - [Google, Handling Pushback in Code Reviews](https://raw.githubusercontent.com/google/eng-practices/3bb3ec25b3b0199f4940b1aa75f0ac5c5753301c/review/reviewer/pushback.md) - kim haq ekanini birinchi o'ylash, kod salomatligining kichik qadamlar bilan o'sishi, "keyin tozalayman" tuzog'i, xafalikning izoh shaklidan kelishi

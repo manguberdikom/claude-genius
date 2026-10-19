@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 28. Taqsimlangan ma'lumot, replikatsiya va konsistentlik patternlari (Distributed Data, Replication & Consistency Patterns)
 
 <details>
-<summary>Bu bobdagi 32 bo'lim</summary>
+<summary>Bu bobdagi 33 bo'lim</summary>
 
 - [28.1 Yozishdan-oldingi jurnal (Write-Ahead Log)](#281-yozishdan-oldingi-jurnal-write-ahead-log)
 - [28.2 Leader asosidagi replikatsiya (Leader-based Replication)](#282-leader-asosidagi-replikatsiya-leader-based-replication)
@@ -40,7 +40,8 @@
 - [28.29 Pivot tranzaksiya va saga qadam turlari (Pivot Transaction & Saga Step Types)](#2829-pivot-tranzaksiya-va-saga-qadam-turlari-pivot-transaction--saga-step-types)
 - [28.30 Domen hodisasini boyitish (Event Enrichment)](#2830-domen-hodisasini-boyitish-event-enrichment)
 - [28.31 CQRS ko'rinishini qurish va qayta qurish (Building and Rebuilding CQRS Views)](#2831-cqrs-korinishini-qurish-va-qayta-qurish-building-and-rebuilding-cqrs-views)
-- [28.32 Amalda qo'llash](#2832-amalda-qollash)
+- [28.32 Timeliness va integrity (Timeliness and Integrity)](#2832-timeliness-va-integrity-timeliness-and-integrity)
+- [28.33 Amalda qo'llash](#2833-amalda-qollash)
 
 </details>
 
@@ -222,6 +223,23 @@ public class ReplicaRoutingDataSource extends AbstractRoutingDataSource {
 
 **Ehtiyot bo'ling:** Pul, inventar zaxirasi, hisob balansi yoki hujjat matni kabi "yo'qotish qimmat" ma'lumotlar uchun LWW ishlatish mutlaqo yaroqsiz - u yerda optimistic locking, CRDT yoki event-sourcing kerak. Server soatlari NTP bilan sinxron bo'lmasa LWW noto'g'ri g'olibni tanlaydi; shu sababli timestamp'ni client emas, yagona ishonchli manba yoki hybrid logical clock bersin.
 
+**LWW ni xavfsiz qiladigan yagona shart:** Kleppmann narxni aniq
+aytadi - LWW yakuniy yaqinlashishni ta'minlaydi, lekin
+chidamlilikni (durability) qurbon qiladi: bir kalitga bir vaqtda
+bir nechta yozuv bo'lsa, hammasi mijozga muvaffaqiyatli deb
+qaytarilgan bo'lsa ham, faqat bittasi tirik qoladi va qolganlari
+**jimgina** tashlanadi. Bundan tashqari LWW bir vaqtda bo'lmagan
+yozuvni ham tashlab yuborishi mumkin. Shuning uchun kitob yagona
+xavfsiz ishlatish usulini beradi: kalit **bir marta** yozilib,
+keyin o'zgarmas deb qaralishi, ya'ni bir xil kalit ustida bir
+vaqtda yangilanish bo'lmasligi. Cassandra uchun tavsiya etilgan
+yo'l aynan shu - kalit sifatida UUID ishlatish, shunda har yozuv
+amaliga o'z kaliti tegadi. Amaliy natija: LWW ni "oxirgi holat"
+jadvalida emas, append-only hodisa yoki o'lchov jadvalida
+ishlatish; mavjud qatorni yangilash kerak bo'lsa, LWW mos emas.
+Yo'qolish qabul qilinadigan yagona holat kitobda ham kesh deb
+nomlangan.
+
 ## 28.12 Fencing token (Fencing Token)
 
 **Tavsif:** Lock yoki leadership berilganda unga monoton o'sadigan raqam (token) ham qo'shib beriladi, va har bir yozuv shu tokenni resursga ko'rsatadi. Resurs o'zi ko'rgan eng katta tokendan kichik tokenli so'rovni rad etadi - shu bilan "muzlab qolgan" (GC pause, tarmoq uzilishi tufayli lease'i allaqachon tugagan) eski leader ma'lumotni buza olmaydi. Bu taqsimlangan lock'ning asosiy xavfi - lease muddati tugaganini bilmaydigan client - ga yagona ishonchli yechim. Oddiy "lock oldim" tekshiruvi bundan himoya qilmaydi.
@@ -260,6 +278,64 @@ int applyIfNotFenced(@Param("id") Long id,
 - Feature flag yoki konfiguratsiya o'zgarishini barcha instansiyalar bir xil tartibda ko'rishi.
 
 **Ehtiyot bo'ling:** Linearizability'ni butun tizimga qo'llash eng keng tarqalgan over-engineering - u cross-region latency'ni o'n barobar oshiradi va partition paytida yozishni to'xtatadi, shuning uchun uni faqat haqiqiy constraint talab qiladigan kichik ma'lumotga cheklang. Shuningdek "SERIALIZABLE qo'ydim, demak hamma joyda to'g'ri" degan taxmin xato: cache, read replica, search index va event stream bu kafolatdan tashqarida qoladi.
+
+**PostgreSQL ning `SERIALIZABLE` i linearizable emas:** yuqoridagi
+ajratmaning aniq natijasi shu va u ko'pincha o'tkazib yuboriladi.
+Kleppmann ikki kafolatni shunday ajratadi: serializability
+tranzaksiyalarning natijasi biror ketma-ket tartibda bajarilgandek
+bo'lishini kafolatlaydi (bu tartib haqiqiy bajarilish tartibidan
+boshqa bo'lishi mumkin), linearizability esa bitta registr, ya'ni
+bitta obyekt ustidagi o'qish va yozish uchun **yangilik (recency)**
+kafolati. Linearizability operatsiyalarni tranzaksiyaga
+guruhlamaydi, shuning uchun u o'zi write skew ni to'smaydi. Ikkisini
+birga beradigan tizim strict serializability deb ataladi. Mexanizm
+tomoni muhim: ikki fazali qulflash yoki haqiqiy ketma-ket
+bajarishga asoslangan serializability odatda linearizable bo'ladi,
+**serializable snapshot isolation (SSI) esa emas** - u ataylab
+izchil snapshot dan o'qiydi, snapshot ning butun ma'nosi esa undan
+keyingi yozuvlarni o'z ichiga olmaslik. PostgreSQL ning
+`SERIALIZABLE` darajasi SSI bo'lgani uchun
+`@Transactional(isolation = SERIALIZABLE)` sizga yangilik
+kafolatini bermaydi; u anomaliyadan himoya qiladi, "eng oxirgi
+qiymatni ko'rdim" deyishga asos bermaydi.
+
+**Ikki kanal poygasi (cross-channel timing dependency):** eng
+ko'p uchraydigan amaliy buzilish shakli. Kleppmann ning misoli
+to'g'ridan-to'g'ri mikroservis arxitekturasiga tushadi: foydalanuvchi
+rasm yuklaydi, fon jarayoni esa uni kichraytirib thumbnail yasaydi.
+Rasmning o'zi xabar navbatiga solinmaydi (broker kichik xabarlar
+uchun mo'ljallangan, rasm esa bir necha megabayt), shuning uchun
+avval fayl saqlagichga yoziladi, yozish tugagach kichraytirish
+buyrug'i navbatga qo'yiladi. Agar fayl saqlagich linearizable
+bo'lmasa, poyga paydo bo'ladi: xabar navbati saqlagichning ichki
+replikatsiyasidan tezroq bo'lishi mumkin, va kichraytiruvchi
+rasmni olganda eski versiyani yoki umuman hech narsani ko'radi;
+eski versiyani qayta ishlasa, to'liq va kichraytirilgan rasm
+**doimiy** nomuvofiq bo'lib qoladi. Sabab bitta: ikki tomon
+o'rtasida ikki aloqa kanali bor - fayl saqlagich va xabar navbati.
+Linearizability bu poygani yopadi, lekin yagona yo'l emas:
+qo'shimcha kanalni (navbatni) o'zingiz boshqarsangiz,
+[o'z yozuvingni o'qish](#2815-oz-yozuvingni-oqish-konsistentligi-read-your-writes-consistency)
+dagi usullarga o'xshash yondashuvlarni qo'llash mumkin, qo'shimcha
+murakkablik hisobiga. Spring da amaliy shakli: xabarda faqat
+havola emas, versiya yoki ETag ni ham uzatish va iste'molchi mos
+versiyani ko'rmasa `Acknowledgment` bermasdan qayta urinish.
+
+**O'z izchil omboringizni yozmang:** Newman bu yerda eng qat'iy
+gapiradi. Ko'p tugunli izchillikni to'g'ri qilish shunchalik
+qiyinki, agar u kerak bo'lsa, o'zingiz o'ylab topmang: shu
+xususiyatlarni beradigan tayyor ma'lumot ombori yoki lock xizmatini
+tanlang (Newman Consul ning qat'iy izchil key-value omborini
+nomlaydi). Uning shakli: "do'stlar do'stiga o'z kriptografiyasini
+yozishga yo'l qo'ymaydi" qoidasi yonida "do'stlar do'stiga o'z
+taqsimlangan izchil ma'lumot omborini yozishga yo'l qo'ymaydi"
+turishi kerak; o'z CP omborini yozish niyati bo'lsa, avval barcha
+maqolalarni o'qish, keyin PhD olish va bir necha yilni xato
+qilishga sarflash kutiladi. Ikkinchi, ijobiy tomoni: imkon qadar
+yakuniy izchil AP tizim qurishga harakat qilish. Uchinchi va aniq
+natija: CA tizim taqsimlangan muhitda **mavjud emas** - partition
+tolerance ni qurbon qilish tarmoq ustida ishlamaslikni bildiradi,
+ya'ni bitta lokal jarayon bo'lib qolishni.
 
 ## 28.14 Kauzal konsistentlik (Causal Consistency)
 
@@ -320,6 +396,68 @@ int applyIfNotFenced(@Param("id") Long id,
 - Analytics va reporting uchun operatsion bazadan data warehouse'ga ETL/CDC.
 
 **Ehtiyot bo'ling:** Pul balansi, inventar rezervatsiyasi yoki unique constraint talab qiladigan (masalan email ro'yxatdan o'tish) joylarda eventual consistency ikki marta sarflash yoki dublikat yaratishga olib keladi - bu yerda strong consistency yoki kompensatsiya mexanizmi kerak. UI'da "hali yangilanmagan" holatni yashirish foydalanuvchini chalg'itadi, shuning uchun optimistik ko'rsatish yoki aniq status belgisi berish kerak.
+
+**Haqiqiy dunyo izchillikka chegara qo'yadi:** yuqoridagi
+ogohlantirish inventarni qat'iy izchillik talab qiladigan ro'yxatga
+qo'yadi, Newman esa aynan inventar misolida AP ni oqlaydi. Ikki
+pozitsiya zid emas va ularni **ajratuvchi shart** yuqoridagi
+jumlaning ikkinchi shoxida turadi: kompensatsiya mexanizmi bormi.
+Newman ning dalili sodda: ombor qoldig'i jismoniy dunyoning aksi
+va siz uni boshqarmaysiz. Kun boshida 100 nusxa bor edi, bittasi
+sotildi, tizim 99 deydi; lekin yuborish paytida kimdir bir
+nusxani yerga tushirib bosib qo'ysa, javonda 98 qoladi. Tizim o'zi
+qanchalik izchil bo'lsa ham, sodir bo'lgan hamma narsani bila
+olmaydi, shuning uchun CP tizim qurish muammoni to'liq hal
+qilmaydi. Shundan Newman ning savoli chiqadi: inventar tizimini AP
+qilib, ba'zan mijozga keyin "bu tovar aslida tugagan" deb
+xabar berish eng yomon narsami? Bunday tizimni qurish va
+masshtablash ancha oson, to'g'riligini ta'minlash ham.
+
+Ajratuvchi shartni amaliy savolga aylantirish mumkin. **AP
+yetarli:** nomuvofiqlik vaqtincha va uni uzr plus kompensatsiya
+bilan yopish biznes uchun qabul qilinadigan narxda bo'lsa (tovar
+tugagani haqida xabar, buyurtmani bekor qilish va pulni qaytarish).
+**Qat'iy izchillik kerak:** uzr yo'l qo'yilmaydigan yoki narxi
+nomutanosib bo'lsa (pul balansi, ikki marta yechish, huquqiy yoki
+tartibga soluvchi chegara). Newman ning o'z misoli ikki shoxni
+yonma-yon ko'rsatadi: MusicCorp ning katalogi AP bo'lishi mumkin,
+chunki eskirgan yozuv katta tashvish emas; inventar servisi esa CP
+bo'lishi kerak degan qarorga kelish ham mumkin, chunki mijozga
+bo'lmagan narsani sotib, keyin uzr aytishni xohlamaymiz. Ikkinchi
+muhim nuqta: tanlov butun tizim darajasida emas. Newman ning
+Points Balance misolida balansni **ko'rsatish** eskirgan bo'lishi
+mumkin, lekin balansni **yangilash** izchil bo'lishi kerak, aks
+holda mijoz mavjud bo'lmagan ballni sarflaydi; ya'ni CAP murosasi
+servisning ayrim imkoniyatlari darajasiga tushiriladi. Biznesdan
+so'raladigan savolning shakli esa korpusdagi "qancha vaqt
+nomuvofiq bo'lishi mumkin" dan aniqroq: "inventar yozuvi besh
+daqiqa eskirgan bo'lsa bo'ladimi" - javob ha bo'lsa AP, mijoz
+balansi uchun esa yo'q.
+
+**Fon sinxronizatsiya bounded context ni buzadi:** yakuniy
+izchillikka erishishning eng oson ko'rinadigan yo'li - kechasi
+ishlaydigan batch yoki soatda bir marta uyg'onuvchi jarayon
+ma'lumot manbalarini solishtirib tenglashtirishi. Ford va
+boshqalar uning javob berish tezligi foydasini tan oladi
+(foydalanuvchi butun biznes tranzaksiyasini kutmaydi), lekin eng
+katta kamchiligini ham aniq aytadi: bu jarayon barcha ma'lumot
+manbalarini bir-biriga bog'laydi va ma'lumot bilan servislar
+o'rtasidagi har bir bounded context ni buzadi, chunki fon
+jarayonida har servis egalik qiladigan jadvallarga **yozish
+huquqi** bo'lishi kerak. Ikki aniq oqibati bor. Birinchi: o'zgarish
+nazorati. Servis o'z jadvalida ustun nomini o'zgartirsa yoki
+ustunni olib tashlasa, buni tashqi fon jarayoni bilan kelishish
+kerak. Ikkinchi: biznes mantiqning ikkilanishi. Kitobning misolida
+mijoz obunani bekor qilganda shartnoma va to'lov tarixi uch oy
+saqlanadi, shuning uchun qatorlar o'chirilmaydi, `remove_date`
+ustuni qo'yiladi va har servis kuniga shu ustunni tekshiradi; shu
+qoida esa Support Contract va Billing Payment servislarida ham,
+fon batch jarayonida ham turadi. Xulosa: pattern qattiq bounded
+context talab qiladigan mikroservis arxitekturasi uchun mos emas;
+mos keladigan holat - bir-biri bilan gaplashmaydigan va ma'lumot
+bo'lishmaydigan yopiq, mustaqil tizimlar (kitobning misoli: buyurtma
+qabul qilish tizimi va boshqa platformada yozilgan hisob-faktura
+tizimi).
 
 ## 28.18 Snapshot izolyatsiyasi / MVCC (Snapshot Isolation / MVCC)
 
@@ -442,6 +580,7 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
 **Ehtiyot bo'ling:** Global tartib bitta partition/log'ni talab qilgani uchun gorizontal scaling'ni cheklaydi - tartib faqat haqiqatan kerak bo'lgan kalit chegarasida (per-aggregate) talab qilinishi kerak, aks holda throughput bo'g'ziga aylanadi. Partition sonini keyinroq oshirish mavjud kalitlarning partition'ini o'zgartiradi va o'tmishdagi tartib kafolatini buzadi, shuning uchun partitioning strategiyasini boshida to'g'ri loyihalash muhim.
 
+**Unikallikni majburlash.** Kleppmann 12-bobda bu patternning eng amaliy natijasini beradi: taqsimlangan muhitda unikallik cheklovini majburlash konsensus talab qiladi, chunki bir xil qiymatli parallel so'rovlar kelganda tizim qaysi birini qabul qilib, qolganini cheklov buzilishi deb rad etishni hal qilishi kerak. Eng keng tarqalgan yo'l bitta node ni leader qilish, lekin u yiqilsa masala yana konsensusga qaytadi; asinxron multi-master replikatsiya esa bu yerda umuman yaramaydi, chunki ikki master bir vaqtda zid yozuvni qabul qilishi mumkin. Log asosidagi yechim shu sababli ishlaydi: log hamma iste'molchiga xabarlarni bir xil tartibda beradi va bu kafolat konsensusga ekvivalent. Unikal bo'lishi kerak bo'lgan qiymat (foydalanuvchi nomi, so'rov ID si) bo'yicha partitsiyalangan logni bitta thread li stream processor ketma-ket o'qiydi, shuning uchun zid amallardan qaysi biri birinchi kelganini aniq va deterministik hal qiladi: band bo'lmagan nomga muvaffaqiyat, bandiga rad javobini chiqaradi, mijoz esa natija oqimidan o'z so'rovining javobini kutadi. Printsip unikallikdan kengroq: zid bo'lishi mumkin bo'lgan hamma yozuvni bitta partition ga yo'naltirib ketma-ket qayta ishlash, shuning uchun partition sonini oshirib o'tkazuvchanlikni kengaytirish ham oson. Ko'p partitionga tegadigan amal (A dan B ga pul o'tkazish) atomik commit siz ikki bosqichda yoziladi: so'rov mijoz bergan ID bo'yicha logga bitta xabar sifatida tushadi, stream processor undan debet va kredit buyruqlarini chiqaradi (har biri o'z hisob raqami bo'yicha partitsiyalangan), oxirgi bosqich esa so'rov ID si bo'yicha dublikatni yo'qotib balansni o'zgartiradi.
 ## 28.25 Lambda arxitekturasi (Lambda Architecture)
 
 **Tavsif:** Ma'lumot oqimini ikki parallel yo'lga bo'ladigan analitik arxitektura: batch layer butun tarixiy ma'lumot ustida aniq, qayta hisoblanadigan natijalarni (master dataset) tayyorlaydi, speed layer esa real vaqtda taxminiy natijani beradi, serving layer ikkisini birlashtirib so'rovga javob qaytaradi. Maqsad - kechikish va aniqlik o'rtasidagi kelishuvni hal qilish va batch qayta hisoblash orqali xatolarni tuzatish imkoniyatini saqlash.
@@ -560,6 +699,29 @@ public record OrderCreatedEnriched(
 
 **Ehtiyot bo'ling:** Boyitishni cheksiz davom ettirish hodisani aggregate'ning butun nusxasiga aylantiradi va har bir iste'molchi o'zgarishi hodisa sxemasini tortadi: bu taqsimlangan monolitning bir ko'rinishi. Hodisaga shaxsiy ma'lumot solish ham xavf: hodisa uzoq saqlanadi va o'chirish talabi (GDPR) bajarilmaydi, shuning uchun bunday maydon o'rniga identifikator qoldiriladi. Boyitilgan hodisada narx yoki holat nusxalangani uchun uni "hozirgi haqiqat" deb o'qish xato: hodisa o'tmishdagi fakt, hozirgi holat emas.
 
+**Vaqtga bog'liq ma'lumotnomani versiya identifikatori bilan
+bog'lash:** boyitishning oraliq shakli alohida qoida talab qiladi.
+Hodisani o'zgarib turadigan ma'lumotnoma bilan bog'lash kerak
+bo'lsa (Kleppmann ning misoli - hisob-fakturaga soliq stavkasini
+qo'llash, u mamlakatga, mahsulot turiga va sotish sanasiga bog'liq,
+chunki stavka vaqti-vaqti bilan o'zgaradi), siz **sotuv paytidagi**
+stavka bilan bog'lashni xohlaysiz, hozirgi stavka bilan emas.
+Oqimli ishlov berishda bu alohida muammo: bog'lash deterministik
+bo'lmaydi, ya'ni bir xil ishni bir xil kirish ustida qayta
+yurgizganda bir xil natija olmaysiz, chunki kirish oqimlaridagi
+hodisalar qayta yurgizishda boshqa tartibda aralashishi mumkin.
+Ma'lumot omborlarida bu slowly changing dimension (SCD) nomi bilan
+ma'lum va yechimi bog'lanadigan yozuvning **har bir versiyasiga
+unikal identifikator** berish: soliq stavkasi har o'zgarganda u
+yangi identifikator oladi va hisob-faktura sotuv paytidagi
+stavkaning identifikatorini o'zida saqlaydi. Bu bog'lashni
+deterministik qiladi, lekin narxi bor - ma'lumotnoma jadvalidagi
+hamma versiya saqlanishi kerak, demak log compaction mumkin
+emas. Amaliy natija: hodisaga `taxRateId` yoki `priceListVersion`
+kabi versiya identifikatorini solish, stavkaning qiymatini
+nusxalashga (yuqoridagi "hozirgi haqiqat" tuzog'i) ham, keyin
+qaytib so'rashga ham tayanmaslik.
+
 ## 28.31 CQRS ko'rinishini qurish va qayta qurish (Building and Rebuilding CQRS Views)
 
 **Tavsif:** CQRS ko'rinishi bir marta yozilib qolmaydi: yangi so'rov uchun yangi ko'rinish qo'shiladi, sxema o'zgarsa yoki yangilash kodida xato topilsa ko'rinish noldan qayta quriladi. G'oya oddiy ko'rinadi, lekin amalda uchta masala chiqadi (Chris Richardson, *Microservices Patterns: With examples in Java*, Manning, 2019, 7-bob, 241-242-betlar). Birinchisi: broker hodisalarni abadiy saqlamaydi. RabbitMQ xabarni iste'mol qilingach o'chiradi, Kafka esa retention davrida ushlaydi, shuning uchun ko'rinishni faqat brokerdan o'qib qurib bo'lmaydi va arxivlangan hodisalar (masalan obyekt omborida) ham o'qilishi kerak. Ikkinchisi: hodisalar soni o'sgani sari butun tarixni qayta o'qish qimmatlashadi, yechim ikki bosqichli inkremental algoritm, ya'ni avval har bir aggregate uchun oldingi snapshot va undan keyingi hodisalardan yangi snapshot hisoblanadi, keyin ko'rinish snapshot'lar hamda ulardan keyingi hodisalardan quriladi. Uchinchisi: ko'rinishni yangilash takroriy hodisaga chidamli bo'lishi shart, shuning uchun handler qayta ishlangan hodisa ID sini ko'rinish bilan bitta tranzaksiyada yozadi.
@@ -590,7 +752,79 @@ COMMIT;
 
 **Ehtiyot bo'ling:** Ko'rinishni qayta qurishni ishlab turgan ko'rinish ustida bajarish eng qimmat xato: yarim qurilgan ko'rinish foydalanuvchiga ko'rinadi. Yangi ko'rinish yonma-yon quriladi va o'qish faqat tayyor bo'lgach unga o'tadi. Hodisa ID sini ko'rinishdan alohida tranzaksiyada yozish ham tuzoq: ikki yozuv orasida process yiqilsa, hodisa ikki marta qo'llanadi va hisoblagichlar siljiydi. Broker retention davrini "tarix shu yerda" deb o'ylash uchinchi tuzoq: retention o'tgach qayta qurish imkoni yo'qoladi, shuning uchun hodisa arxivi boshidan rejalashtiriladi.
 
-## 28.32 Amalda qo'llash
+## 28.32 Timeliness va integrity (Timeliness and Integrity)
+
+**Tavsif:** Kleppmann 12-bobda "consistency" atamasi ikki boshqa talabni bir nom ostida yashirayotganini aytadi va ularni alohida ko'rishni taklif qiladi. **Timeliness** - foydalanuvchi tizimni yangi holatda ko'rishi. Eskirgan nusxadan o'qigan mijoz nomuvofiq holat ko'radi, lekin bu nomuvofiqlik vaqtincha: kutib, qayta urinib tuzaladi. [Linearizatsiyalanganlik](#2813-linearizatsiyalanganlik-linearizability) timeliness ga erishishning eng kuchli shakli, [o'z yozuvingni o'qish](#2815-oz-yozuvingni-oqish-konsistentligi-read-your-writes-consistency) kabi kuchsizroq shakllar ham foydali. **Integrity** - buzilish yo'qligi: ma'lumot yo'qolmagan, qarama-qarshi yoki yolg'on ma'lumot yo'q, hosila ma'lumot (indeks, proyeksiya, materiallashgan ko'rinish) asl ma'lumotdan to'g'ri chiqarilgan; yozuvlarning bir qismi tushib qolgan indeks foydasiz. Integrity buzilsa, nomuvofiqlik doimiy: kutish yordam bermaydi, aniq tekshirish va tuzatish kerak. Kleppmannning qisqa shakli: timeliness buzilishi "eventual consistency", integrity buzilishi esa "perpetual inconsistency". Keyingi xulosa amaliyot uchun muhim: ko'p ilovada integrity timeliness dan ancha muhim, chunki timeliness buzilishi bezovta qiladi va chalkashtiradi, integrity buzilishi esa halokatli. Kredit karta hisobotida oxirgi sutkadagi tranzaksiya hali ko'rinmasligi normal, lekin hisobot qoldig'i tranzaksiyalar yig'indisiga teng kelmasligi yoki puldan yechilib, savdogarga o'tmagan to'lov halokat. ACID tranzaksiyasi ikkisini birga beradi, shuning uchun u nuqtadan qaraganda farq sezilmaydi; hodisa oqimiga asoslangan tizim esa ikkisini ajratadi: timeliness kafolati yo'q, lekin integrity oqimli tizimning markazida turadi va to'rt mexanizm bilan saqlanadi: yozuv mazmunini bitta atomik xabar qilish, qolgan holatni shu xabardan deterministik funksiya bilan chiqarish, so'rov ID sini butun zanjir bo'ylab o'tkazib dublikatni yo'qotish va xabarlarni o'zgarmas qilib, hosila ma'lumotni qayta ishlab chiqarish imkonini saqlash.
+
+**Spring'da qayerda uchraydi:** Ajratish monitoring va test qarorini belgilaydi. Timeliness o'lchanadigan kattalik: replikatsiya yoki consumer lag metrikasi va uning SLO si. Integrity esa tekshiriladigan xossa: proyeksiya bilan manbani solishtiradigan reconciliation ishi (Spring Batch yoki `@Scheduled` job) va buzilish topilganda uni tuzatadigan yo'l. Idempotentlik va dublikatni yo'qotish integrity mexanizmi bo'lgani uchun so'rov ID si `ConsumerRecord` kaliti emas, mijozdan kelgan `Idempotency-Key` yoki hodisa ID si bo'ladi va u ishlov berilgan xabar jadvalida saqlanadi.
+
+**Qo'llanish keyslari:**
+- Konsistentlik talabini SLO ga yozganda uni ikkiga bo'lish: lag chegarasi va reconciliation farqining ruxsat etilgan qiymati.
+- Hisobot ekranida ma'lumot eskirishi mumkinligini yozib, hisobotning o'z-o'ziga mos kelishini esa qat'iy talab qilish.
+- Proyeksiyani manba bilan solishtiradigan kechalik ishni yozib, farq topilsa alert berish.
+- To'lov zanjirida so'rov ID sini mijozdan oxirgi bosqichgacha o'tkazib, ikki marta yechishni yo'qotish.
+
+**Unikallikni konsensussiz majburlash:** integrity ni timeliness dan
+ajratishning eng amaliy natijasi shu. Unikallik cheklovi odatda
+konsensus talab qiladi, lekin uni partitsiyalab masshtablash
+mumkin: unikal bo'lishi kerak qiymat bo'yicha partitsiyalasangiz,
+bir xil qiymatga tegishli hamma so'rov bitta partitsiyaga tushadi.
+Log esa hamma iste'molchining xabarlarni bir xil tartibda ko'rishini
+kafolatlaydi (bu total order broadcast bo'lib, konsensusga teng
+kuchli), va stream processor bitta log partitsiyasini **bitta
+thread** da ketma-ket o'qigani uchun qarama-qarshi amallardan
+qaysi biri birinchi kelganini aniq va deterministik hal qiladi.
+Kleppmann ning misoli - bir xil foydalanuvchi nomini olishga
+urinayotgan bir necha foydalanuvchi:
+
+1. Har so'rov xabar sifatida kodlanadi va foydalanuvchi nomining
+   hashi bo'yicha aniqlangan partitsiyaga qo'shiladi.
+2. Stream processor so'rovlarni logdan ketma-ket o'qiydi va
+   qaysi nomlar olinganini lokal bazada yuritadi. Bo'sh nom uchun
+   nomni olingan deb yozadi va chiqish oqimiga muvaffaqiyat
+   xabarini beradi; olingan nom uchun rad xabarini beradi.
+3. So'rov yuborgan mijoz chiqish oqimini kuzatib, o'z so'roviga
+   mos muvaffaqiyat yoki rad xabarini kutadi.
+
+Masshtablash partitsiyalar sonini oshirish bilan bo'ladi, chunki
+har partitsiya mustaqil ishlanadi. Asosiy tamoyil unikallikdan
+kengroq: konflikt keltirishi mumkin har qanday yozuv bitta
+partitsiyaga yo'naltirilib, ketma-ket ishlanadi, va konfliktning
+ta'rifi ilovaga bog'liq bo'lgani uchun stream processor
+tekshirishda ixtiyoriy mantiq ishlatishi mumkin. Kafka va Spring
+tilida: topic ni unikal qiymat (masalan email yoki foydalanuvchi
+nomi) hashi bo'yicha partitsiyalash, iste'molchini shu partitsiya
+uchun bitta `concurrency` bilan yurgizish, va mijozga javobni
+alohida natija topic idan yoki `ReplyingKafkaTemplate` orqali
+qaytarish. Narxi ham aniq: javob sinxron emas, ya'ni API
+chegarasida kutish yoki `202 Accepted` plus holat tekshiruvi
+kerak bo'ladi.
+
+**Ehtiyot bo'ling:** Kleppmann cheklovni ham beradi: unikallik kabi qat'iy cheklovni majburlash timeliness va koordinatsiya talab qiladi, lekin ko'p ilova aslida bo'sh talqin qilingan cheklov bilan yashaydi, ya'ni cheklov vaqtincha buzilib, keyin uzr va kompensatsiya bilan tuzatiladi. Mehmonxona va aviakompaniyaning overbooking qilishi, bankning overdraft uchun jarima olishi aynan shu: cheklov buzilgan, integrity esa saqlangan. Shuning uchun "bizda strong consistency kerak" degan talabni darhol linearizability deb tarjima qilmang: avval buzilish vaqtincha bo'lganda uzr narxi qanchaligini so'rang. Teskari xato ham bor: integrity ni [yakuniy konsistentlik](#2817-yakuniy-konsistentlik-eventual-consistency) qoplaydi deb o'ylash. Yo'qolgan xabar yoki ikki marta qo'llangan hodisa o'zi tuzalmaydi.
+
+```java
+// Integrity tekshiriladi, timeliness o'lchanadi: ikki xil ish.
+// Proyeksiya bilan manba o'rtasidagi farqni topadigan reconciliation ishi.
+@Scheduled(cron = "0 15 3 * * *")
+@Transactional(readOnly = true)
+public void reconcileBalances() {
+    List<BalanceMismatch> mismatches = jdbcClient.sql("""
+                SELECT a.account_id, a.balance AS projected,
+                       COALESCE(SUM(e.amount), 0) AS derived
+                FROM account_balance a
+                LEFT JOIN ledger_entry e ON e.account_id = a.account_id
+                GROUP BY a.account_id, a.balance
+                HAVING a.balance <> COALESCE(SUM(e.amount), 0)
+            """).query(BalanceMismatch.class).list();
+
+    if (!mismatches.isEmpty()) {
+        // Integrity buzilishi o'zi tuzalmaydi: alert va aniq tuzatish yo'li kerak.
+        integrityAlerts.raise(mismatches);
+    }
+}
+```
+
+## 28.33 Amalda qo'llash
 
 - [ ] Har bir ma'lumot to'plami uchun uning egasi bo'lgan bitta servisni belgilab, qolganlarini o'quvchi deb hujjatlashtiring.
 - [ ] Nusxalangan (replikatsiya qilingan) ma'lumotlarni ro'yxatga olib, har biri uchun ruxsat etilgan kechikishni yozing.
@@ -603,9 +837,55 @@ COMMIT;
 
 ## Manbalar
 
+- Martin Kleppmann, *Designing Data-Intensive Applications*, O'Reilly,
+  2017, 5-bob (186-bet, `Last write wins`) - 28.11 dagi LWW ning
+  chidamlilikni qurbon qilishi (bir vaqtda yozuvlarning biri qolib,
+  qolganlari jimgina tashlanishi va mijozga hammasi muvaffaqiyatli
+  deb qaytarilishi), bir vaqtda bo'lmagan yozuvni ham tashlab
+  yuborishi, yagona xavfsiz shart - kalit bir marta yozilib keyin
+  o'zgarmas bo'lishi va Cassandra uchun UUID kalit tavsiyasi
+- Martin Kleppmann, *Designing Data-Intensive Applications*, O'Reilly,
+  2017, 11-bob (476-bet) - 28.30 dagi vaqtga bog'liq ma'lumotnoma
+  bilan bog'lash: soliq stavkasi misoli, sotuv paytidagi stavka bilan
+  bog'lash zarurati, oqimli bog'lashning deterministik emasligi,
+  slowly changing dimension nomi va har versiyaga unikal identifikator
+  berish hamda bundan kelib chiqadigan log compaction cheklovi
+- Martin Kleppmann, *Designing Data-Intensive Applications*, O'Reilly,
+  2017, 9-bob (329, 331-332-betlar) - 28.13 dagi serializability va
+  linearizability ajratmasi (linearizability bitta registr uchun
+  recency kafolati, operatsiyalarni tranzaksiyaga guruhlamaydi va
+  o'zi write skew ni to'smaydi), 2PL va haqiqiy ketma-ket bajarish
+  odatda linearizable, serializable snapshot isolation esa ataylab
+  emas; ikki aloqa kanali (fayl saqlagich va xabar navbati)
+  o'rtasidagi poyga, thumbnail misoli va eski versiyani qayta
+  ishlashning doimiy nomuvofiqlik keltirishi
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*,
+  2-nashr, O'Reilly, 2021, 12-bob ("CAP Theorem", "Sacrificing
+  Partition Tolerance?", "AP or CP?", "It's Not All or Nothing",
+  "And the Real World") - 28.13 dagi o'z taqsimlangan izchil
+  omborini yozmaslik qoidasi (Consul misoli, PhD va yillar shakli),
+  imkon qadar AP qurish va CA tizimning taqsimlangan muhitda
+  mavjud emasligi; 28.17 dagi ombor qoldig'i jismoniy dunyoning
+  aksi ekani (100, 99, 98 keysi), AP qilib keyin mijozga xabar
+  berish varianti, katalog AP va inventar CP qarori hamda Points
+  Balance misolida murosani servis imkoniyatlari darajasiga
+  tushirish va "besh daqiqa eskirgan bo'lsa bo'ladimi" savoli. Bu
+  nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob
+  va bo'lim nomi ko'rsatilgan
+- Neal Ford va boshqalar, *Software Architecture: The Hard Parts*,
+  1-nashr, O'Reilly, 2021 (copyright 2022), 9-bob (269-270-betlar) -
+  28.17 dagi fon sinxronizatsiya patterni: javob berish tezligi
+  foydasi, barcha ma'lumot manbalarini bog'lab bounded context ni
+  buzishi (fon jarayonida har jadvalga yozish huquqi), tuzilma
+  o'zgarishini tashqi jarayon bilan kelishish zarurati,
+  `remove_date` misolida biznes mantiqning ikkilanishi va
+  patternning faqat yopiq, mustaqil tizimlar uchun mosligi
 - Martin Kleppmann, *Designing Data-Intensive Applications*, 5-bob - replikatsiya, kechikish va o'qish kafolatlari
 - Martin Kleppmann, *Designing Data-Intensive Applications*, 6-bob - partitioning
 - Martin Kleppmann, *Designing Data-Intensive Applications*, 8-bob - taqsimlangan tizim muammolari, soat va himoya belgisi
+- ESLATMA: 28.32 dagi reconciliation kod misoli va metrika nomlari shu korpusning qo'shimchasi, Kleppmann ajratishning o'zini beradi, implementatsiyani emas
+- Martin Kleppmann, *Designing Data-Intensive Applications*, O'Reilly, 2017, 12-bob (521-523-betlar, `Enforcing Constraints`) - unikallik cheklovi konsensus talab qilishi, unikal qiymat bo'yicha partitsiyalangan logda bitta thread li stream processor qarori va ko'p partitionli o'tkazmani atomik commit siz ikki bosqichda bajarish (28.24)
+- Martin Kleppmann, *Designing Data-Intensive Applications*, O'Reilly, 2017, 12-bob (524-527-betlar, `Timeliness and Integrity`) - timeliness va integrity ajratilishi, "eventual consistency" va "perpetual inconsistency" shakli, ko'p ilovada integrity ning ustunligi, integritetni saqlaydigan to'rt mexanizm va bo'sh talqin qilingan cheklov hamda uzr yondashuvi (28.32)
 - Martin Kleppmann, *Designing Data-Intensive Applications*, 9-bob - linearizability, tartib va konsensus
 - Chris Richardson, *Microservices Patterns: With examples in Java*, Manning, 2019, 4-bob, 128-129-betlar - saga qadamlarining uch turi: compensatable, pivot va retriable tranzaksiya
 - Chris Richardson, *Microservices Patterns: With examples in Java*, Manning, 2019, 5-bob, 161-162-betlar - domen hodisasini boyitish va uning hodisa sxemasi barqarorligiga ta'siri

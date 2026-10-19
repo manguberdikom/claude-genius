@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 19. Spring tranzaksiyalari va ularning chegaralari (Spring Transactions)
 
@@ -239,7 +239,7 @@ Hisob oddiy. 20 ta connection li pool, har bir tranzaksiya 2 sekund turadi. Dema
 @Service
 public class CheckoutService {
 
-    // Hech qanday @Transactional yo'q: bu orkestrator metod
+    // Metod ataylab tranzaksiyasiz: to'lov gateway iga HTTP chaqiruv kutilayotganda pool dan connection ushlanib turmasin
     public void checkout(Long orderId) {
         // 1-qadam: qisqa tranzaksiya, holatni PENDING ga o'tkazamiz
         Payment p = txTemplate.execute(s -> payments.markPending(orderId));
@@ -254,6 +254,10 @@ public class CheckoutService {
 ```
 
 Bu uch qadamli shakl "tranzaksiya ichida tashqi chaqiruv yo'q" qoidasini kodda ko'rsatadi. Ikkinchi qadam uzilib qolsa, yozuv `PENDING` holatda qoladi va reconciliation jarayoni uni gateway dan so'rab aniqlaydi. Bu yerda idempotency key va holat mashinasi kerak bo'ladi, buni dizayn [patternlar hujjatidagi](../patterns/README.md) saga va idempotent receiver bo'limlari qoplaydi.
+
+Qoidaning eng keng shakli odamga tegishli: tranzaksiya foydalanuvchi javobini kutmaydi. Kleppmann boshlang'ich niyatni eslatadi, boshida baza tranzaksiyasi butun foydalanuvchi faoliyati oqimini qamrab olishi ko'zda tutilgan edi, masalan aviachipta bron qilishning hamma bosqichi (marshrut, narx va bo'sh joy qidirish, marshrutni tanlash, joylarni bron qilish, yo'lovchi ma'lumotini kiritish, to'lov) bitta tranzaksiya bo'lib atomar commit qilinsin. Lekin odam qaror qabul qilishga sekin: tranzaksiya foydalanuvchi kiritishini kutishi kerak bo'lsa, baza juda ko'p sonli parallel, ko'pi bo'sh turgan tranzaksiyani qo'llab-quvvatlashi kerak bo'ladi va ko'p baza buni samarali bajara olmaydi. Natijada deyarli hamma OLTP ilovasi tranzaksiya ichida foydalanuvchini interaktiv kutmaslik yo'li bilan tranzaksiyani qisqa ushlaydi, va web da bu aniq shaklga ega: tranzaksiya bitta HTTP so'rov ichida commit qilinadi, tranzaksiya bir nechta so'rovga yoyilmaydi, har yangi so'rov yangi tranzaksiya boshlaydi (7-bob, 253-bet).
+
+Spring da buning amaliy oqibati ikkita. Birinchisi: ko'p qadamli oqim (wizard) uchun tranzaksiya qadamlar orasida ushlab turilmaydi, oraliq holat `DRAFT` yoki `PENDING` statusli qatorda saqlanadi va har qadam o'z tranzaksiyasida commit qilinadi. Ikkinchisi: `EntityManager` yoki `Session` ni HTTP sessiyasiga bog'lab uzoq ushlash (eski "long conversation" yondashuvi) shu qoidani buzadi; o'rniga har so'rovda qayta yuklash va [optimistic lock](22-mvcc-izolyatsiya-darajalari-lock-va-deadlock.md#225-yoqolgan-yangilanish-lost-update-va-uni-oldini-olish-usullari) ishlatiladi, ya'ni parallel o'zgarish commit paytida aniqlanadi.
 
 ## 19.8 `TransactionSynchronization` va `@TransactionalEventListener` bilan commit dan keyin ish
 
@@ -433,6 +437,8 @@ Testlashda arxitektor uchta narsani tekshiradi: rollback haqiqatan sodir bo'ladi
 - [Spring Framework 7.0, `@Transactional` sozlamalari](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/data-access/transaction/declarative/annotations.adoc) - default qiymatlar, atributlar jadvali, `readOnly` ning faqat `REQUIRED` va `REQUIRES_NEW` da ishlashi, 6.0 dan metod ko'rinishi qoidasi
 - [spring-framework, `DataSourceTransactionManager.java`](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/spring-jdbc/src/main/java/org/springframework/jdbc/datasource/DataSourceTransactionManager.java) - `nestedTransactionAllowed` default `true`
 - [spring-framework, `JpaTransactionManager.java`](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/spring-orm/src/main/java/org/springframework/orm/jpa/JpaTransactionManager.java) - `nestedTransactionAllowed` default `false`; savepoint faqat JDBC `Connection` ga tegadi, persistence context ga tegmaydi
+- Martin Kleppmann, *Designing Data-Intensive Applications*, 1-nashr, O'Reilly, 2017, 7-bob (253-bet) - tranzaksiya boshida butun foydalanuvchi faoliyati oqimini qamrashi ko'zda tutilgani (aviachipta bron misoli), odamning sekinligi tufayli ko'p bo'sh turgan parallel tranzaksiya muammosi, va OLTP ilovasining tranzaksiyani qisqa ushlashi: web da commit bitta HTTP so'rov ichida bo'ladi, tranzaksiya bir nechta so'rovga yoyilmaydi
+- ESLATMA: 19.7 dagi `DRAFT` statusli qator bilan ko'p qadamli oqim va uzoq `EntityManager` ni optimistic lock bilan almashtirish tavsiyasi shu korpusning qo'shimchasi
 
 ---
 

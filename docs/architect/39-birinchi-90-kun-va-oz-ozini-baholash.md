@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 39. Birinchi 90 kun va o'z-o'zini baholash (First 90 Days and Self-Assessment)
 
@@ -103,6 +103,8 @@ Shu oyda yana bitta o'lchov oling: p99 latency va connection pool to'yinganligi.
 
 Ikkinchi oyda bitta qoida bor: natija o'lchanadigan va bir hafta ichida ko'rinadigan bo'lsin. Yaxshi nomzodlar ro'yxati qisqa. Yetishmayotgan timeout qo'yish, bitta og'ir hisobot so'roviga index qo'shish, HikariCP pool o'lchamini to'g'rilash, va metrikani chiqarish.
 
+Bitta oldingi shart bor va u texnik emas. Brown arxitektura tushunarli (accessible) bo'lishini talab qiladi: "logical view" yoki "physical view" kabi atamalarni ishlatishdan oldin jamoa arxitektura nima ekanini va u haqida o'ylamaslikning oqibatini tushunishi shart; menejment ham shuni tushunishi kerak, aks holda "arxitekturani to'xtat va kod yoz" degan ko'rsatma chiqadi (Simon Brown, *Software Architecture for Developers*, Leanpub, 66-bob, 191-192-betlar). Amaliy qadam arzon: ikkinchi oyning birinchi haftasida umumiy lug'at o'rnatiladi, ya'ni jamoa bilan bir sahifada "biz arxitektura deganda nimani tushunamiz" va "u yo'q bo'lsa nima bo'ladi" yoziladi, keyin shu sahifaga qarorlar havola beradi. Bu qadam tashlanib ketilsa, keyingi barcha hujjat atamalar tortishuviga aylanadi va [qarorlarni tarqatish](36-code-review-va-jamoada-texnik-yetakchilik.md#368-arxitektura-qarorlarini-jamoaga-tarqatish-hujjat-ichki-suhbat-namuna-kod) kanali ishlamaydi.
+
 Timeout eng arzon va eng ta'sirli yaxshilanishdir. Ko'p tizimda to'lov provayderiga chaqiruv timeout'siz turadi, shuning uchun provayder sekinlashganda butun thread pool to'lib qoladi.
 
 ```properties
@@ -151,6 +153,10 @@ Kelishib olishning amaliy shakli qisqa qaror hujjati. Bir sahifada kontekst, var
 | Kelishuv shakli | Majlisda og'zaki tasdiqlaydi | Bir sahifali qaror hujjatini repozitoriyga qo'yadi |
 | O'z bilimi | "Bilaman" deb o'tadi | Savol ro'yxati bilan o'zini tekshiradi |
 | Jamoaga ta'sir | Qaror markazida o'zi turadi | Jamoa qaror qabul qiladigan mezonni qoldiradi |
+
+Reja qabul qilingandan keyin keyingi ish uni jamoaning ish usuliga aylantirish bo'ladi, va bu alohida mahorat. Brown arxitekturani joriy etishning beshta amaliy yo'lini sanaydi: odamlarni o'qitish, ya'ni arxitektura nima, nega muhim va qanday amaliyot qabul qilinadi degan savollarni yopish; retrospektivada arxitekturani muhokama mavzulari ro'yxatiga qo'shish; `definition of done` ga arxitekturani kiritish; rolni aniq bir odamga biriktirish (avval bitta egasi bo'lsin, keyin bo'lishiladi); va arxitektura kata o'tkazish, ya'ni jamoa oddiy talablar uchun birga yechim loyihalaydi va uni diagramma bilan tushuntiradi (Simon Brown, *Software Architecture for Developers*, Leanpub, 66-bob, 192-193-betlar). Beshtasi bir-birini almashtirmaydi: birinchisi bilimni, ikkinchi va uchinchisi odatni, to'rtinchisi javobgarlikni, beshinchisi mahoratni beradi. Uchinchi yo'lning testlash tomonidagi shakli [sifat darvozalari va definition of done](../testing/01-sifat-strategiyasi-va-arxitektorning-roli.md#15-sifat-darvozalari-va-definition-of-done) bo'limida yozilgan: `definition of done` ga qo'shilgan band o'lchanadigan bo'lishi kerak, aks holda u reliz kuni e'tiborsiz qoladi.
+
+O'zgarishni qanday boshlash esa jamoaning holatiga bog'liq, va Brown ikki yo'lni ajratadi. Reaktiv yo'lda jamoa faqat yomon narsa yuz bergandan keyin o'zgaradi, ya'ni katalizator kerak bo'ladi, va ko'pchilik jamoa shunday. Proaktiv yo'lda hali hech narsa buzilmagan, lekin yaxshilash ko'rinadi, va ironik tarzda bu yo'ldan boradigan jamoalar allaqachon yaxshi jamoalar (66-bob, 193-195-betlar). Ikki yo'lda taktika ham boshqa. Reaktiv holatda o'zgarishni sotish kerak: hozirgi holat, risk va oqibat qaror qabul qiluvchilarga aniq va qisqa ko'rsatiladi, ya'ni yuqoridagi reja jadvalining uch ustuni aynan shu ish uchun. Proaktiv holatda ruxsat so'rash o'rniga namuna bilan yetaklanadi: bitta muammo topiladi, u mayda qadamlar bilan o'zingiz tuzatiladi va natija ko'rsatiladi; bu [namuna kod](36-code-review-va-jamoada-texnik-yetakchilik.md#368-arxitektura-qarorlarini-jamoaga-tarqatish-hujjat-ichki-suhbat-namuna-kod) yo'lining aynan o'zi.
 
 ## 39.5 Mavjud qarorlarni hurmat qilish: "nega shunday qilingan" savolini birinchi berish
 
@@ -217,6 +223,19 @@ Quyidagi jadval shu g'oyani shu korpusning mavzulariga ko'chiradi: qatorlar va d
 | Deploy | Pipeline ishlatadi | Migratsiyani mos keluvchan yozadi | Nol to'xtovli relizni loyihalaydi | [31](31-deployment-haqiqati-konteyner-cgroup-jvm-va.md), [33](33-sxema-migratsiyasi-va-toxtashsiz-reliz.md) |
 | Xavfsizlik | Autentifikatsiya yoqadi | Avtorizatsiya chegarasini tekshiradi | Sir boshqaruvi va audit izini quradi | [20](20-spring-security-filter-chain-oauth2-jwt.md) |
 | Qaror yuritish | Fikrini aytadi | Variantlarni taqqoslaydi | Mezon va qaytarish yo'lini yozib qoldiradi | [03](03-qaror-qabul-qilish-va-uni-hujjatlashtirish.md) |
+
+Yuqoridagi jadval mavzu bo'yicha baholaydi. Ikkinchi o'q rolning qismlari bo'yicha boradi va u ishga olish suhbatida ham, o'z-o'zini baholashda ham ishlaydi. Brown tajribani yaxshi ko'rsatkich, lekin yetarli emas deb hisoblaydi va rolning oltita qismini alohida baholashni taklif qiladi: nofunksional talabni tutib olish va uni shubha ostiga olish; noldan dizayn qilish yoki mavjudni kengaytirish; texnik riskni isbotlash yoki shunchaki umid qilish; arxitekturani doimiy rivojlantirish yoki uni implementatsiya jamoasiga topshirib qo'yish; qo'l bilan ishlash yoki chetdan kuzatish; sifatni ta'minlash va standart tanlash yoki o'zi baholanish (Simon Brown, *Software Architecture for Developers*, Leanpub, 11-bob, 32-33-betlar).
+
+| Rol qismi | Zaif tomoni | Kuchli tomoni | Tekshirish savoli |
+|---|---|---|---|
+| Nofunksional talab | berilganini qabul qiladi | tutib oladi va shubha ostiga oladi | oxirgi marta qaysi talabni rad etdingiz va nega |
+| Dizayn | faqat noldan quradi | mavjudni ham kengaytiradi | oxirgi uch qaror mavjud tizim ichida bo'ldimi |
+| Texnik risk | umid qiladi | prototip yoki o'lchov bilan isbotlaydi | qaysi risk spike bilan yopildi |
+| Evolyutsiya | topshirib qo'yadi | davomiy rivojlantiradi | reliz chiqqandan keyin arxitektura kim bilan qoldi |
+| Ishtirok | chetdan kuzatadi | qo'l bilan ishlaydi | oxirgi oyda qaysi kodga tegdingiz |
+| Sifat va standart | o'zi baholanadi | standart tanlaydi va ta'minlaydi | qaysi standart sizning tanlovingiz bilan kuchga kirdi |
+
+Jadvalning ikki ustuni ataylab "yoki" shaklida yozilgan, chunki har qatorda ikki tomondan biri ustun bo'ladi va baholash ballda emas, tomon tanlashda bo'ladi. Ishga olish suhbatida shu savollar tajriba yillarini almashtiradi: javob konkret hodisa bilan kelsa qism kuchli, umumiy tavsif bilan kelsa zaif.
 
 ## 39.8 Fikrlash va qarorlar bilimini o'zingizga qo'llash
 
@@ -393,6 +412,8 @@ Oxirgi gap sizning o'zingiz haqida. Arxitektor bo'lish bilim miqdorida emas, qar
 - ESLATMA: 39.9-39.12 dagi sinov savollari shu korpusning o'z ro'yxati; javoblar tegishli
   boblarda (Java va JVM uchun 09-14, Spring uchun 15-20, PostgreSQL uchun 21-27,
   operatsion tayyorlik uchun 30-35)
+- Simon Brown, *Software Architecture for Developers*, Leanpub, 11-bob (32-33-betlar) - tajriba yaxshi ko'rsatkich, lekin yetarli emasligi va rolning oltita qismini alohida baholash (nofunksional talabni tutib olish va shubha ostiga olish, noldan dizayn yoki mavjudni kengaytirish, texnik riskni isbotlash yoki umid qilish, arxitekturani rivojlantirish yoki topshirish, qo'l bilan ishlash yoki chetdan kuzatish, standart tanlash yoki o'zi baholanish)
+- Simon Brown, *Software Architecture for Developers*, Leanpub, 66-bob (191-195-betlar) - arxitekturaning tushunarli (accessible) bo'lishi va atamalardan oldin umumiy lug'at o'rnatish, menejment tushunmasa "arxitekturani to'xtat va kod yoz" ko'rsatmasi chiqishi; joriy etishning beshta yo'li (o'qitish, retrospektiva mavzusi, `definition of done`, rolni bitta odamga biriktirish, arxitektura kata); reaktiv va proaktiv o'zgarish yo'llari, reaktiv yo'lda katalizator va o'zgarishni sotish, proaktiv yo'lda bitta muammoni mayda qadamlar bilan tuzatib namuna bilan yetaklash
 
 ---
 

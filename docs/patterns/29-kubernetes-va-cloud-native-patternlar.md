@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 29. Kubernetes va cloud-native patternlar (Kubernetes & Cloud-Native Patterns)
 
 <details>
-<summary>Bu bobdagi 25 bo'lim</summary>
+<summary>Bu bobdagi 27 bo'lim</summary>
 
 - [29.1 Oldindan aytib beriladigan talablar (Predictable Demands)](#291-oldindan-aytib-beriladigan-talablar-predictable-demands)
 - [29.2 Deklarativ joylashtirish (Declarative Deployment)](#292-deklarativ-joylashtirish-declarative-deployment)
@@ -33,13 +33,17 @@
 - [29.22 Resurs so'rovlari va limitlari (Resource Requests & Limits)](#2922-resurs-sorovlari-va-limitlari-resource-requests--limits)
 - [29.23 Pod uzilish byudjeti (Pod Disruption Budget)](#2923-pod-uzilish-byudjeti-pod-disruption-budget)
 - [29.24 Pod prioriteti va preemption (Pod Priority & Preemption)](#2924-pod-prioriteti-va-preemption-pod-priority--preemption)
-- [29.25 Amalda qo'llash](#2925-amalda-qollash)
+- [29.25 Klasterni bo'lishish: multitenancy va federatsiya (Multitenancy and Federation)](#2925-klasterni-bolishish-multitenancy-va-federatsiya-multitenancy-and-federation)
+- [29.26 Scheduler siyosati va joylashtirishga aralashuv (Scheduler Policy and Placement Intervention)](#2926-scheduler-siyosati-va-joylashtirishga-aralashuv-scheduler-policy-and-placement-intervention)
+- [29.27 Amalda qo'llash](#2927-amalda-qollash)
 
 </details>
 
 
 
 Kubernetes va cloud-native patternlar - bu ilovaning ichki sinflar darajasidagi dizayni emas, balki uning konteyner orkestratori bilan qanday "muloqot qilishi" haqidagi patternlar to'plami. Ular Bilgin Ibryam va Roland Huss'ning "Kubernetes Patterns" ishida tizimlashtirilgan va aslida deklarativ infratuzilma bilan ishlashning umumiy tilini beradi: ilova o'z talablarini oldindan e'lon qiladi, platforma esa joylashtirish, qayta ishga tushirish va masshtablashni o'z zimmasiga oladi. Arxitektor uchun bu muhim, chunki Spring Boot ilovasining kodi mukammal bo'lsa ham, noto'g'ri e'lon qilingan resurs limitlari, probe'lar yoki graceful shutdown sozlamalari butun relizni beqaror qiladi. Shuning uchun bu bo'limdagi patternlarni "YAML detallari" deb emas, ilova arxitekturasining tashqi kontrakti deb qarash kerak.
+
+Bitta shart hammasidan oldin turadi: konteyner patternlari ilovaning ichki sifatini almashtirmaydi. Image ichiga tartibsiz kod solinsa, u yo'qolmaydi, faqat masshtabda tarqaladi va endi bir sinf ichida emas, o'nlab pod bo'ylab qidirishga to'g'ri keladi. Shuning uchun toza kod, domen chegaralari va mikroservisga ajratish qoidalari bu bobdagi patternlardan OLDIN qo'llaniladi: orkestrator noto'g'ri qo'yilgan modul chegarasini tuzatmaydi, uni ko'paytiradi.
 
 ## 29.1 Oldindan aytib beriladigan talablar (Predictable Demands)
 
@@ -53,6 +57,10 @@ Kubernetes va cloud-native patternlar - bu ilovaning ichki sinflar darajasidagi 
 - Latency sezgir to'lov servisini Guaranteed QoS'ga chiqarish uchun `requests` va `limits` ni teng qilib qo'yish.
 - Kafka consumer ilovasida thread pool o'lchamini konteynerga berilgan CPU soniga moslab, `BPL_JVM_THREAD_COUNT` ni to'g'rilash.
 - Native image'ga o'tgan servis uchun xotira `requests` ni bir necha barobar kamaytirib, node zichligini oshirish.
+
+**Runtime bog'liqlikning ikki xil narxi.** E'lon qilingan bog'liqliklar bir xil og'irlikda emas va ularning yo'qligi ikki xil nosozlik beradi. Node bera olmaydigan volume turi yoki mavjud bo'lmagan node imkoniyati pod ni UMUMAN joylashtirmaydi: hech bir node tanlanmaydi va pod `Pending` da qoladi. Yo'q ConfigMap yoki Secret esa boshqacha ishlaydi: scheduler pod ni muvaffaqiyatli joylashtiradi, kubelet konteynerni ishga tushira olmaydi. Diagnostikada farq shu yerda: birinchi holatda scheduler nima deganiga, ikkinchisida pod hodisalari va konteyner holatiga qaraladi.
+
+Yana bir e'lon qilinadigan talab - tarmoq porti. `hostPort` bilan so'ralgan port node da band qilinadi va shu paytdan boshlab bitta node ga shu pod ning faqat bitta nusxasi sig'adi, ya'ni replica soni node sonidan oshmaydi. Legacy ilova `hostPort` ni talab qilsa, masshtab chegarasi manifest yozilayotgan paytda hisoblanadi, aks holda u keyinchalik HPA ning tushunarsiz maksimumi bo'lib chiqadi.
 
 **Ehtiyot bo'ling:** Eng ko'p uchraydigan xato - `limits.memory` ni heap hajmiga teng qilib qo'yish: metaspace, thread stack, code cache va native buffer'lar hisobga olinmaydi va pod kutilmaganda OOMKill bo'ladi. CPU `limits` ni haddan tashqari past belgilash esa JVM startup va GC'ni throttling qilib, readiness probe'ni muddatidan oldin yiqitadi.
 
@@ -95,6 +103,17 @@ class ConsumerLifecycle implements SmartLifecycle {
 - Init container orqali Flyway migratsiyasini ilova pod'laridan oldin bajarish.
 - Uzoq davom etadigan batch ishini SIGTERM'da nazorat ostida to'xtatib, keyin davom ettirish mumkin holatga keltirish.
 
+**`postStart` hook ning uch xossasi.** Faqat protsess signallari bilan hayot siklini boshqarish yetarli emas, shuning uchun Kubernetes `postStart` va `preStop` hook'larini beradi. `postStart` ni to'g'ri ishlatish uchun uchta xossasini birga bilish kerak va ular bir qarashda bir-biriga zid ko'rinadi:
+
+- **Asinxron.** `postStart` konteyner yaratilgandan keyin asosiy konteyner protsessi bilan **parallel** bajariladi, ya'ni asosiy protsess tugashini kutmaydi va asosiy protsess ham uni kutmaydi.
+- **Bloklovchi.** Shunga qaramay chaqiruvning o'zi bloklovchi: `postStart` handler tugamaguncha konteyner holati `Waiting` da qoladi, bu esa Pod ni `Pending` holatida ushlab turadi. Shu xossadan ataylab foydalanish mumkin - asosiy protsessga initsializatsiya uchun vaqt berib, konteynerning "ishga tushgan" holatini kechiktirish.
+- **Nol bo'lmagan chiqish kodi asosiy protsessni o'ldiradi.** `postStart` hook xatoni nol bo'lmagan chiqish kodi bilan qaytarsa, Kubernetes asosiy konteyner protsessini o'ldiradi. Shuning uchun uni Pod oldindan belgilangan shartlarni bajarmasa konteynerni ishga tushirmaslik uchun darvoza sifatida ishlatish mumkin.
+- **Kamida bir marta bajariladi.** Hook ning semantikasi at-least-once: u bir martadan ko'p chaqirilishi mumkin, demak dublikat bajarilishni ilovaning o'zi ko'tarishi kerak va handler idempotent yoziladi. Muvaffaqiyatsiz `httpGet` handler uchun esa platforma qayta urinmaydi, ya'ni "urinib ko'radi, keyin tuzatadi" deb hisoblash xato.
+
+Handler turlari Health Probe (29.3 dagi probe'lar bilan bir xil mexanizm): `exec` - konteyner ichida buyruq, `httpGet` - Pod konteyneri ochgan portga HTTP GET. Kitobning ogohlantirishi aniq: `postStart` da kritik mantiq bajarmang, chunki uning bajarilishiga kafolat yo'q. Spring da bu xossalar odatda kerak ham emas: tartibni init container bilan, kutishni `ApplicationRunner`/`SmartLifecycle` bilan, tayyorlikni esa `/actuator/health/readiness` bilan ifodalash aniqroq va kuzatiladigan bo'ladi.
+
+**`preStop` nimani kafolatlamaydi.** `preStop` konteyner o'chirilishidan oldin bajariladi va chaqiruvi bloklovchi, lekin undan konteyner umrini boshqarish vositasi sifatida foydalanish xato: handler ni ushlab turish ham, undan xato qaytarish ham konteynerning o'chirilishini TO'XTATMAYDI. U `SIGTERM` ga qulay alternativa, boshqa hech narsa emas - signalni o'zi ushlay olmaydigan ilova uchun to'xtatish buyrug'ini chaqirish yo'li. Shu sababli Spring Boot ilovasida graceful shutdown mantiqi `preStop` ga emas, `SIGTERM` da yopiladigan `ApplicationContext` ga biriktiriladi; `preStop` esa faqat Endpoint propagatsiyasini kutish uchun qoladi.
+
 **Ehtiyot bo'ling:** `terminationGracePeriodSeconds` ni Spring'ning shutdown timeout'idan kichik qoldirish eng jimjit xatolardan biri - pod `SIGKILL` oladi va graceful shutdown mantiqi hech qachon tugamaydi. Shuningdek `@PreDestroy` ichida bloklovchi tashqi chaqiruvlar qilish o'chirish vaqtini cho'zadi va deploy'ni sekinlashtiradi.
 
 ## 29.4 Avtomatlashtirilgan joylashtirish (Automated Placement)
@@ -109,6 +128,19 @@ class ConsumerLifecycle implements SmartLifecycle {
 - GPU talab qiladigan Spring AI inference servisini faqat GPU node pool'ga `tolerations` bilan yo'naltirish.
 - Spot node'larda faqat qayta ishga tushirishga chidamli batch ilovalarini ishlatish.
 - Yuqori xotira talab qiladigan in-memory cache servisini memory-optimized node pool'ga biriktirish.
+
+**Node ning haqiqiy sig'imi - Allocatable, node hajmi emas.** Scheduler pod ni joylashtirishdan oldin pod `requests` yig'indisini node ning umumiy hajmiga emas, **Allocatable** qiymatiga solishtiradi. Faqat Kubernetes ga ajratilgan node uchun formula shu:
+
+```text
+Allocatable [ilova pod'lari uchun sig'im] =
+    Node Capacity   [node dagi mavjud sig'im]
+  - Kube-Reserved   [Kubernetes demonlari: kubelet, container runtime]
+  - System-Reserved [OS demonlari: sshd, udev]
+```
+
+Buning ikki amaliy natijasi bor. Birinchisi: OS va Kubernetes demonlari uchun zaxira ajratilmasa, pod'lar node ning to'liq hajmigacha joylashtirilishi mumkin va shu paytdan boshlab pod'lar bilan tizim demonlari resurs uchun kurasha boshlaydi - node da resource starvation paydo bo'ladi. Ikkinchisi: JVM pod hajmini hisoblash ham shu qiymatga tayanadi, chunki `-XX:MaxRAMPercentage` konteyner limitidan foiz oladi, limitlar yig'indisi esa node Allocatable iga sig'ishi kerak; "node 16 GB, demak 16 GB bo'lishaman" hisobi `Pending` pod bilan tugaydi. Uchinchi holat: node da Kubernetes boshqarmaydigan konteynerlar ishlayotgan bo'lsa, ularning iste'moli node sig'imi hisobida aks etmaydi. Kitob bu cheklovning chetlab o'tish yo'lini beradi - hech narsa qilmaydigan, lekin hisobga olinmagan konteynerlarning CPU va xotira iste'moliga teng `requests` ga ega placeholder pod ishga tushirish; u faqat o'sha iste'molni egallab turish va scheduler ga node ning to'g'riroq resurs modelini berish uchun yaratiladi.
+
+**Label va annotation ikki xil maqsad uchun.** Joylashtirish va selector mexanizmlarining hammasi label ustida ishlaydi, shuning uchun har pod ta'rifi scheduling uchun ishlatiladigan noyob label kombinatsiyasiga ega bo'lishi kerak: selector shu kombinatsiya bo'yicha pod to'plamini aniq ajratadi. Label ni oldindan ko'p yozish esa qarz: keyinchalik yangi label qo'shish oson, lekin OLIB TASHLASH xavfli, chunki label ni kim ishlatayotganini - qaysi Service, qaysi selector, qaysi so'rov - ishonchli aniqlashning yo'li yo'q. Annotation boshqa ish uchun: u qidirilmaydigan mashina metadatasi, masalan build raqami, git branch nomi, image hash yoki mas'ul jamoa. Ajratish qoidasi oddiy: selector yoki so'rov tegishi mumkin bo'lgan narsa label bo'ladi, faqat o'qish uchun yozilgan narsa annotation bo'lib qoladi.
 
 **Ehtiyot bo'ling:** Haddan tashqari qattiq qoidalar (`requiredDuringSchedulingIgnoredDuringExecution` ni hamma joyda ishlatish) pod'ning `Pending` holatda muzlab qolishiga olib keladi, ayniqsa kichik cluster'larda. Anti-affinity'ni PodDisruptionBudget bilan muvofiqlashtirmaslik esa node drain vaqtida servisning butunlay yo'qolishiga sabab bo'lishi mumkin.
 
@@ -132,6 +164,16 @@ public static void main(String[] args) {
 - Katta CSV import'ini `Indexed` Job va Spring Batch partitioning bilan parallel ishlatish.
 - Hisobot generatsiyasini alohida pod'da bajarib, asosiy servis resurslarini bo'shatish.
 - ML model uchun feature'larni oldindan hisoblab, object storage'ga yozish.
+
+**Job turini ish bo'lagining narxiga qarab tanlash.** `completions` va `parallelism` ni sozlashdan oldin ish bo'laklari qanday ekanini aytib olish kerak, chunki uch xil shakl bor va ularning narxi boshqa.
+
+- **Fixed completion count.** Bo'lak soni oldindan ma'lum va bitta bo'lak alohida pod ga arziydigan darajada katta bo'lsa, `completions` aniq son bilan beriladi va har bo'lak o'z pod ida bajariladi.
+- **Work queue.** Bo'laklar mayda bo'lsa, har biriga pod ochish samarasiz: `completions` berilmaydi, pod lar navbat orqali o'zaro kelishadi va navbat bo'shligini birinchi topgan pod butun Job ni tugatgan hisoblanadi.
+- **Cheksiz oqim.** Ish hech qachon tugamasa, bu umuman Job emas: doimiy ishlaydigan iste'molchi Deployment yoki ReplicaSet bilan yoziladi.
+
+Granularlik ham ongli qaror: har bo'lakka alohida Job ochish faqat o'sha bo'lak mustaqil kuzatilishi va alohida skale bo'lishi kerak bo'lganda o'zini oqlaydi, aks holda bitta Job ochilib, bo'lak boshqaruvi ilova ichidagi batch framework ga (Spring Batch partitioning) qoldiriladi.
+
+Oxirgi tafsilot `parallelism` haqida: uni baland qo'yish parallellikni KAFOLATLAMAYDI. Amalda bir vaqtda ishlaydigan pod soni platforma throttling i, namespace quota si va qolgan `completions` soni bilan cheklanadi, shuning uchun "20 qo'ydim, demak 20 ishlaydi" hisobi ko'pincha chiqmaydi. Teskari chegara esa foydali: `parallelism: 0` Job ni o'chirmasdan pauza qiladi.
 
 **Ehtiyot bo'ling:** `JobRepository` ni to'g'ri sozlamasdan Job'ni qayta ishga tushirish dublikat ma'lumotga olib keladi - idempotentlik va Spring Batch'ning restart semantikasi (bir xil `JobParameters` bir marta bajariladi) aniq o'ylangan bo'lishi kerak. Tugagan Job'larni tozalashni unutmang: `ttlSecondsAfterFinished` bo'lmasa, cluster ming-minglab tugagan pod bilan to'lib ketadi.
 
@@ -163,6 +205,21 @@ public static void main(String[] args) {
 - Barcha node'larda xavfsizlik agentini (runtime threat detection) ishlatish.
 - CSI driver agenti orqali Spring ilovasiga PersistentVolume mount qilish imkonini berish.
 
+**DaemonSet scheduler ga muhtoj emas.** DaemonSet pod i boshqa pod lardan boshqa yo'l bilan tug'iladi: u darhol `nodeName` to'ldirilgan holda yaratiladi, ya'ni scheduler qarorini kutmaydi. Uchta amaliy natijasi bor. Birinchisi: bunday pod scheduler ning o'zi ishga tushishidan oldin ham ishlay oladi, shu sababli mexanizm Kubernetes ning o'z komponentlarini yuritishga yaraydi. Ikkinchisi: u node ning `unschedulable` bayrog'ini HISOBGA OLMAYDI, demak `kubectl cordon` qilingan node da DaemonSet pod i qolaveradi - "node yopilgan, lekin agent hali ishlayapti" ko'rinishi nosozlik emas, kutilgan xulq. Uchinchisi: joylashuvni cheklash kerak bo'lsa u scheduler qoidalari bilan emas, DaemonSet ning o'z node selector i bilan beriladi.
+
+**Agentga yetishning to'rt yo'li.** Iste'molchi node dagi agentga qanday murojaat qilishi alohida qaror va variantlarning narxi teng emas.
+
+| Yo'l | Nima beradi | Narxi |
+|---|---|---|
+| oddiy Service | trafik tasodifiy node dagi agentga balanslanadi | qaysi node ga tushgani oldindan ma'lum emas |
+| headless Service DNS | hamma agent pod ining IP si A yozuvi bilan qaytadi | tanlash mijoz ishi, balanslash yo'q |
+| `hostPort` plus node IP | aynan shu node dagi agentga yetiladi | node da port band bo'ladi, joylashuv cheklanadi |
+| push | agent o'zi yuboradi, iste'molchi umuman yetmaydi | yo'nalishni agent belgilaydi, so'rov mumkin emas |
+
+Node-local collector ga yozadigan Spring ilovasida amalda uchinchi yo'l ishlatiladi: Downward API `status.hostIP` ni env ga beradi va ilova shu manzildagi portga yuboradi.
+
+**Rad etilgan alternativa: static pod.** Har node da bitta protsess yuritishning ikkinchi yo'li bor - kubelet lokal katalogdan o'qiydigan static pod. U ishlaydi, lekin platformadan tashqarida qoladi: API server uni resurs sifatida ko'rmaydi, demak hech bir controller uni boshqarmaydi, health check va qayta joylashtirish yo'q, kubelet esa faqat crash dan keyin qayta ishga tushiradi. DaemonSet bir xil natijani beradi, lekin API server, RBAC, reliz va kuzatuv mexanizmlariga ulangan holda - shuning uchun static pod faqat kubelet ning o'zini ko'taradigan bootstrap komponentlari uchun qoladi.
+
 **Ehtiyot bo'ling:** DaemonSet pod'lari har bir node'dan resurs "o'g'irlaydi" - ularning `requests` ini hisobga olmaslik ilova pod'lari uchun joy qolmasligiga olib keladi. Shuningdek biznes servisini "har node'da bittadan bo'lsin" degan niyatda DaemonSet'ga qo'yish masshtablashni node soniga bog'lab qo'yadi va HPA bilan boshqarishni yo'qotadi.
 
 ## 29.8 Yakka servis (Singleton Service)
@@ -183,6 +240,8 @@ void publishOutbox() { outboxService.publishPending(); } // faqat bitta pod baja
 - Kunlik reconciliation job'ini dublikatsiz ishga tushirish.
 - Legacy tizim bilan yakka long-lived ulanishni (masalan, bitta JMS consumer) ushlab turish.
 - Cache'ni qayta qurish (cache warm-up) vazifasini bir pod'ga yuklab, bazani ortiqcha yuklamaslik.
+
+**Qamrovni tanlash: butun servis yoki uning bir qismi.** Ikki ko'rinish orasidagi tanlov texnologiyadan emas, singleton QAMROVIdan boshlanadi. Butun servis bir vaqtda bitta nusxada ishlashi kerak bo'lsa, ilovadan tashqaridagi yo'l to'g'ri: `replicas: 1` li StatefulSet izchillikni mavjudlikdan ustun qo'yadi va "ko'pi bilan bitta" kafolatini beradi, narxi esa mavjudlikning pasayishi va qo'shimcha murakkablik. Servisning faqat BIR QISMI yakka bo'lishi kerak bo'lsa - HTTP endpoint lar erkin skale bo'lsin, lekin polling yoki rejalashtiruvchi komponent bitta ishlasin - ilova ichidagi lock to'g'ri tanlov, chunki tashqi lock butun servisni skale bo'lmaydigan qilib qo'yadi. Shu sababli polling komponentini "yakka bo'lishi kerak" degan sabab bilan alohida deploy ga chiqarish ko'pincha keraksiz: lock qamrovini kichraytirish arzonroq va kamroq harakatlanuvchi qismi bor.
 
 **Ehtiyot bo'ling:** Faqat `replicas: 1` ga tayanish xavfli: node drain yoki rolling update vaqtida qisqa muddat ikkita pod birga yashashi mumkin, shuning uchun haqiqiy "aynan bir marta" kafolati ilova darajasidagi lock yoki idempotentlik bilan ta'minlanadi. Lock timeout'ini ishning haqiqiy davomiyligidan kichik qo'yish esa ikki pod'ning bir vaqtda ishlashiga yo'l ochadi.
 
@@ -214,7 +273,13 @@ void publishOutbox() { outboxService.publishPending(); } // faqat bitta pod baja
 - Hazelcast embedded cluster'li Spring ilovasida peer discovery'ni barqaror pod nomlari orqali qurish.
 - Zookeeper quorum'ini `replicas: 3` bilan tartibli ishga tushirish.
 
-**Ehtiyot bo'ling:** Ishlab chiqarishda ma'lumotlar bazasini Kubernetes'da o'zi qo'lda boshqarish (operator'siz, backup va failover strategiyasisiz) jiddiy xavf - ko'p holatda managed DB yoki yetuk operator afzal. StatefulSet'ni oddiy stateless Spring servisi uchun "ehtiyot shart" ishlatish esa deploy'ni sekinlashtiradi va masshtablashni qiyinlashtiradi, foyda bermaydi.
+**Rad etilgan ikki chetlab o'tish yo'li.** Taqsimlangan stateful ilovani StatefulSet siz ko'tarishning ikki ko'rinadigan yo'li bor va ikkisi ham ishlamaydi. Birinchisi: hamma instans bitta umumiy storage ga ulanadi va ilova o'zi ichidan har instansga alohida papka ajratadi. Bu bitta nosozlik nuqtasi yaratadi - storage yoki uni ushlab turgan komponent yiqilsa hamma instans birga to'xtaydi - va skale paytida ikki instans bir papkaga yozib ma'lumotni buzishi mumkin. Ikkinchisi: har instans uchun qo'lda alohida ReplicaSet, PVC va Service yozish. U texnik jihatdan ishlaydi, lekin instans soni o'zgarganda hammasini qo'lda qayta yozishga to'g'ri keladi va ilovani bitta abstraksiya bilan boshqarish imkoniyati yo'qoladi. StatefulSet aynan shu ikki muammoni yopadi.
+
+**Manifest yozishda yiqiladigan shartlar.** `serviceName` bilan boshqaruvchi (governing) Service ga havola MAJBURIY va o'sha Service StatefulSet dan OLDIN yaratilishi kerak: barqaror DNS nomlari shu Service ostida tug'iladi. `volumeClaimTemplates` esa majburiy emas - diski yo'q, lekin barqaror identifikatsiya va tartibli ishga tushish kerak bo'lgan ilova uchun StatefulSet PVC siz ham ma'noli. Klaster a'zolarini dinamik topish kerak bo'lsa headless Service ning SRV yozuvi so'raladi: u boshqaruvchi Service ostidagi hamma ishlayotgan pod ni qaytaradi, A yozuvi esa faqat manzillar ro'yxatini beradi.
+
+**Kvorumni saqlab yangilash va tartibni tezlashtirish.** StatefulSet ning o'z yangilash strategiyasi bor va u Deployment dagidan boshqa. `updateStrategy.rollingUpdate.partition` indeksi partition dan kichik pod larni yangilanmaydigan qiladi: ular o'chirilsa ham eski versiyada qayta yaratiladi, shuning uchun kvorumni ushlab turib bosqichma-bosqich yangilash yoki sinov uchun bitta a'zoni eski versiyada qoldirish mumkin bo'ladi. Teskari holat ham bor: tartib umuman muhim bo'lmasa, `podManagementPolicy: Parallel` pod larni ketma-ket emas, birga ko'taradi va katta klasterda operatsiyani sezilarli tezlashtiradi.
+
+**Ehtiyot bo'ling:** Ishlab chiqarishda ma'lumotlar bazasini Kubernetes'da o'zi qo'lda boshqarish (operator'siz, backup va failover strategiyasisiz) jiddiy xavf - ko'p holatda managed DB yoki yetuk operator afzal. StatefulSet'ni oddiy stateless Spring servisi uchun "ehtiyot shart" ishlatish esa deploy'ni sekinlashtiradi va masshtablashni qiyinlashtiradi, foyda bermaydi. "Ko'pi bilan bitta" kafolatini esa ko'pincha platforma emas, ODAM buzadi: yetib bo'lmaydigan node obyektini API server dan o'chirish yoki `kubectl delete pod --grace-period=0 --force` qilish eski pod hali tirik bo'lgan holatda yangi nusxaga yo'l ochadi - bu ikki amal faqat node ning haqiqatan o'lgani tasdiqlangandan keyin bajariladi.
 
 ## 29.11 Servis topish (Service Discovery (Kubernetes view))
 
@@ -228,6 +293,58 @@ void publishOutbox() { outboxService.publishPending(); } // faqat bitta pod baja
 - Headless Service bilan Hazelcast yoki Kafka Streams peer'larini topish.
 - Eureka'dan Kubernetes-nativ discovery'ga ko'chishda `DiscoveryClient` abstraksiyasini saqlab, implementatsiyani almashtirish.
 - Blue-Green relizda Service selector'ini o'zgartirib, trafikni yangi versiyaga bir qadamda yo'naltirish.
+
+**Klaster tashqarisidagi bog'liqlikka ichki nom berish.** Selector li Service da Kubernetes mos va tayyor pod'lar ro'yxatini Endpoints resursida o'zi yuritadi. Lekin selector ni **yozmaslik** va Endpoints ni **qo'lda yaratish** mumkin - shunda Service nomi klaster tashqarisidagi IP va portga ishora qiladi. Shu uslubda uchta variant bor:
+
+- **Selector siz Service va qo'lda Endpoints.** Service `type: ClusterIP` bilan, lekin `selector` siz yoziladi; keyin **Service bilan bir xil nomli** Endpoints resursi yaratilib, unda maqsad IP va portlar sanaladi. Iste'molchi uchun hech narsa o'zgarmaydi: u xuddi oddiy Service dek, muhit o'zgaruvchisi yoki DNS orqali ishlatadi, faqat endpoint ro'yxatini odam yuritadi. Endpoints pod IP larini ushlashi mumkin, lekin boshqa Service larning virtual IP larini ushlay olmaydi.
+- **`ExternalName`.** `selector` yo'q, `type: ExternalName` va `externalName: my.database.example.com`. Bu variant proxy va IP orqali o'tmaydi: u faqat DNS CNAME yozuvi bilan tashqi endpoint uchun taxallus yaratadi.
+- **Keyinchalik ichkariga ko'chirish.** Asosiy foyda shu: Service resursini o'chirmasdan unga selector qo'shish yoki olib tashlash mumkin, resursni o'chirish esa Service IP sining o'zgarishiga olib kelar edi. Natijada iste'molchi birinchi kuni ishora qilgan Service nomi va IP sida qolaveradi, provider ning implementatsiyasi esa on-premise dan Kubernetes ga ko'chadi - **ilova konfiguratsiyasi o'zgarmaydi**.
+
+```yaml
+# Klaster tashqarisidagi PostgreSQL ga ichki nom: ilova `jdbc:postgresql://orders-db:5432/orders` yozadi
+apiVersion: v1
+kind: Service
+metadata:
+  name: orders-db
+spec:
+  type: ClusterIP          # selector YO'Q: endpoint ro'yxatini o'zimiz yuritamiz
+  ports:
+    - protocol: TCP
+      port: 5432
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: orders-db          # nomi Service nomi bilan AYNAN bir xil bo'lishi shart
+subsets:
+  - addresses:
+      - ip: 10.20.30.40
+      - ip: 10.20.30.41
+    ports:
+      - port: 5432
+# Baza keyin klasterga ko'chsa: shu Service ga `selector` qo'shiladi va
+# Endpoints o'chiriladi. Service nomi, IP si va ilova konfiguratsiyasi tegilmaydi.
+```
+
+**Klaster tashqarisidan topish: NodePort, LoadBalancer va headless.** Yuqoridagi mexanizmlarning hammasi klaster ichidan ko'rinadigan virtual IP ustida ishlaydi, tashqi ilovaga esa pod bergan endpointga yetish kerak. Korpusda tashqi yo'l uchun Ingress va Gateway API qisqa tilga olingan; Service darajasida esa uch variant bor va ularning farqi aniq.
+
+| Tur | Nima qiladi | Narxi |
+|---|---|---|
+| `ClusterIP` | faqat klaster ichida ko'rinadi (standart) | tashqi mijoz ulanmaydi |
+| `NodePort` | hamma node da bitta port ochiladi va trafik backend podlarga taqsimlanadi | firewall qoidalari, sog'lom node ni tanlash mijoz ishi, source NAT |
+| `LoadBalancer` | `NodePort` ustiga provayderning load balancer ini qo'shadi | faqat Kubernetes ni qo'llaydigan provayderda, konfiguratsiya nazorati kam |
+| `clusterIP: None` (headless) | alohida IP so'ralmaydi, DNS to'g'ridan-to'g'ri podlarni beradi | load balancing yo'q, mijoz o'zi tanlaydi |
+
+`NodePort` ning tafsilotlari qarorga ta'sir qiladi. Portni `nodePort: 30036` bilan o'zingiz tanlashingiz yoki Kubernetes diapazonidan bo'sh portni tanlashiga qo'yishingiz mumkin (Richardson ning misolida diapazon 30000-32767). Har node da port ochilgani uchun tashqi mijozlarga ruxsat berish uchun qo'shimcha firewall qoidalari kerak bo'lishi mumkin. Mijoz klasterdagi istalgan node ga ulanishi mumkin, lekin node ishlamay qolsa boshqa sog'lom node ga o'tish mijoz ilovasining mas'uliyatida qoladi - shu sababli node lar oldiga sog'lom node ni tanlaydigan va failover qiladigan load balancer qo'yish yaxshi fikr; `NodePort` ni ataylab tanlashning asosiy sababi ham shu, o'z load balancer ingizni (masalan AWS ELB ni) to'liq nazorat qilish imkoni. Ulanish node port orqali kelganda trafik tasodifiy tanlangan podga, ehtimol boshqa node dagi podga yo'naltiriladi; bu qo'shimcha hop dan `externalTrafficPolicy: Local` bilan qochish mumkin, lekin shunda Kubernetes boshqa node dagi podlarga ulanishga ruxsat bermaydi, ya'ni har node da pod borligini (DaemonSet bilan) ta'minlash yoki mijoz qaysi node da sog'lom pod borligini bilishi kerak. Yana bir tafsilot manba manzili haqida: `NodePort` da mijoz manzili source NAT qilinadi, ya'ni pod ko'rgan manba IP mijozning emas, paket o'tgan node ning ichki manzili bo'ladi; `externalTrafficPolicy: Local` bu muammoni ham yechadi, chunki trafik faqat shu node dagi podga boradi. `LoadBalancer` da manba manzilini saqlash provayderga bog'liq: ba'zilari saqlaydi, ba'zilari uni load balancer manzili bilan almashtiradi, shuning uchun o'z provayderingizning amalga oshirishini tekshirish kerak.
+
+Ingress ni tanlashning sababi ham shu jadvaldan chiqadi: `LoadBalancer` har Service ga alohida tashqi IP va alohida provayder load balancer ini talab qiladi, demak servis soni o'sganda infratuzilma xarajati ham u bilan birga o'sadi. Ingress bitta tashqi load balancer va bitta IP ni ko'p Service uchun qayta ishlatadi, lekin u L7 da ishlagani uchun faqat hamma servis bir xil protokolda (amalda HTTP da) bo'lganda ma'noli; HTTP bo'lmagan trafik uchun `NodePort` yoki `LoadBalancer` qoladi.
+
+**Service abstraksiyasining to'rt cheklovi.** Service nomi oddiy ko'rinadi, lekin uning ortidagi mexanizm to'rt joyda kutilgandan boshqacha ishlaydi va ularning hammasi diagnostika paytida chiqadi.
+
+- **Virtual IP tarmoq interfeysi emas.** Service ning ClusterIP si hech qanday tarmoq interfeysiga mos kelmaydi: kube-proxy iptables ga faqat e'lon qilingan protokol (TCP yoki UDP) uchun qoida yozadi, ICMP uchun yozmaydi. Natijada Service IP siga `ping` ishlamaydi, lekin shu IP ning portiga TCP ulanish ishlaydi - "ping o'tmadi, demak servis yiqilgan" degan xulosa soxta.
+- **Balanslash transport darajasida.** Kubernetes Service L4 da balanslaydi va HTTP cookie bo'yicha sessiya yopishqoqligini QILOLMAYDI; yagona vositasi `sessionAffinity: ClientIP`. Cookie darajasidagi yopishqoqlik kerak bo'lsa, u Ingress controller, gateway yoki service mesh zimmasiga o'tadi.
+- **Muhit o'zgaruvchisi orqali topish vaqtga bog'liq.** Service ni muhit o'zgaruvchisi sifatida olish ishlaydi, lekin env ishlab turgan pod ga kiritilmaydi: Service pod dan OLDIN yaratilgan bo'lishi yoki pod qayta ishga tushirilishi kerak. DNS yo'lida bu cheklov yo'q, shuning uchun Spring ilovasida manzil env emas, DNS nomi bilan beriladi.
+- **`clusterIP` ni qo'lda tanlash istisno.** `spec.clusterIP` ga aniq qiymat yozish tavsiya qilinmaydi va faqat ikki holatda ma'noli: IP si qattiq yozilgan legacy ilova bor, yoki shu IP ga qadalgan mavjud DNS yozuvini qayta ishlatish kerak.
 
 **Ehtiyot bo'ling:** Spring Cloud Kubernetes discovery client Kubernetes API'ga RBAC huquqi talab qiladi va qo'shimcha murakkablik qo'shadi - ko'p loyihalarda oddiy DNS yetarli bo'lgani uchun uni "shunchaki bo'lsin" deb qo'shish ortiqcha. Yana bir tuzoq - JVM'ning DNS cache'i va connection pool'ning eski IP'ni ushlab qolishi: `networkaddress.cache.ttl` va HTTP client'ning keep-alive sozlamalarini tekshirmasa, pod almashganda vaqtinchalik xatolar paydo bo'ladi.
 
@@ -268,6 +385,24 @@ MeterRegistryCustomizer<MeterRegistry> podTags(
 - VPA'ning recommender rejimidan foydalanib Spring Boot servislarining real memory request'ini kalibrlash.
 - Native image yoki CRaC bilan cold start'ni sekundlardan millisekundlarga tushirib, agressiv HPA'ni mumkin qilish.
 
+**Qo'lda masshtablashning ikki uslubi.** Avtomatik masshtablash har doim kerak emas: avtoskalerlar yo'q bo'lganda, yoki sekin o'zgaradigan yuklamada optimal konfiguratsiyani bosqichma-bosqich topish uchun odam o'zi buyruq beradi. Qo'lda yondashuvning avtoskalerda yo'q bir afzalligi bor - u faqat reaktiv emas, **oldindan** harakat qilish imkonini beradi: mavsumni va kutilayotgan yuklamani bilsangiz, yuklama oshgandan keyin reaksiya qilishni kutmasdan, replica sonini avvaldan oshirib qo'yasiz. Ikki uslubini ajratish kerak:
+
+- **Imperativ masshtablash.** `kubectl scale deployment random-generator --replicas=4` - ReplicaSet kerakli replica sonini kuzatganligi uchun o'zgarish bitta buyruq bilan bo'ladi: kontroller yetishmaganini yaratadi, ortiqchasini o'chiradi. Shoshilinch holatda eng tez yo'l.
+- **Deklarativ masshtablash.** `replicas` qiymati manifest ichida o'zgartiriladi va `kubectl apply -f deployment.yaml` bilan qo'llanadi. `kubectl scale` ning kamchiligi shu: u konfiguratsiyani klaster tashqarisida saqlamaydi, shuning uchun ReplicaSet asl ta'rifidan qayta yaratilsa, replica soni oldingi qiymatiga qaytadi. Aynan shu **configuration drift** ni oldini olish va o'zgarishni orqaga ko'chirish protsessini joriy qilish uchun deklarativ yo'l afzal.
+
+Masshtablash bir nechta pod'ni boshqaradigan resurslarga (ReplicaSet, Deployment, StatefulSet) qo'llanadi. Ikki istisnoni bilish kerak: `volumeClaimTemplates` bo'lgan StatefulSet ni kichraytirish asimmetrik - o'sishda PVC yaratiladi, lekin kichrayishda o'chirilmaydi, saqlanishni yo'qotmaslik uchun; Job esa `replicas` emas, `parallelism` maydoni bilan masshtablanadi (semantik natija bir xil). Asimmetriyaning sababi StatefulSet ning qamrovida: u PersistentVolume ni umuman boshqarmaydi, faqat PVC yaratadi, shuning uchun kichraytirish ma'lumotni ataylab joyida qoldiradi va diskni bo'shatish alohida, qo'lda bajariladigan qadam bo'lib qoladi - PVC ni o'zingiz o'chirasiz.
+
+**Masshtablash zinapoyasi: to'rt bosqich shu tartibda.** Uchta avtoskaler mexanizmini bilish yetarli emas - ularni qaysi tartibda yoqish ham qaror va tartib teskari bo'lsa har bosqich oldingisining xatosini kuchaytiradi.
+
+1. **Ilovaning o'zi.** Avval ilova unga berilgan konteyner resursini to'g'ri ishlatishiga ishonch hosil qilinadi: heap limitdan foizda hisoblanganmi, thread va connection pool o'lchami CPU soniga mosmi, startup qancha davom etadi.
+2. **VPA.** Keyin `requests` va `limits` haqiqiy iste'molga keltiriladi; recommender rejimi buni qiymatni o'zgartirmasdan ham ko'rsatadi.
+3. **HPA.** Shundan keyin gorizontal masshtablash yoqiladi, chunki HPA to'g'ri qo'yilgan `requests` ustida ishlaydi.
+4. **Cluster Autoscaler.** Oxirida klaster darajasi: node qo'shish va olib tashlash.
+
+Birinchi ikki bosqich vertikal: ular uzilish beradi, lekin kamida bir marta bajarilishi shart. Keyingi ikkisi gorizontal va regressiya xavfi kamroq. HPA ning ikki sharti majburiy va aynan shu ikkisi "HPA nega hech narsa qilmaydi" savolining eng ko'p uchraydigan javobi: Deployment da CPU uchun `resources.requests` e'lon qilingan bo'lishi va klasterda metrics server yoqilgan bo'lishi kerak.
+
+VPA ning narxi alohida aytiladi: resursni o'zgartirish uchun pod o'chirilib yangidan yaratiladi, demak qisqa yoki kutilmagan servis uzilishi bo'ladi. Ikkinchi yon ta'siri ham bor - resursi yetmagan konteynerga ko'proq resurs berish pod ni joylashtirilmaydigan qilib qo'yishi va yukni qolgan instanslarga surib yuborishi mumkin. Shu zinapoyani oxirigacha olib borishning natijasi faqat chidamlilik emas: to'g'ri sozlangan tizim og'ir yuklamada sinmaydi, balki pod va node sonini oshirib kuchliroq bo'ladi, va Ibryam va Huss buni antifragillik deb ataydi.
+
 **Ehtiyot bo'ling:** Stateful yoki in-memory session/cache'ga tayangan ilovani gorizontal skale qilish ma'lumot yo'qotishga olib keladi - avval holatni Redis yoki DB'ga chiqaring. HPA va VPA'ni bir xil resurs (ayniqsa CPU) bo'yicha birga ishlatish ikki kontrollerning kurashiga va tebranishga (thrashing) sabab bo'ladi; `stabilizationWindowSeconds` va PodDisruptionBudget'ni albatta sozlang.
 
 ## 29.14 Image quruvchi (Image Builder)
@@ -283,6 +418,8 @@ MeterRegistryCustomizer<MeterRegistry> podTags(
 - Kaniko pod'lari orqali daemonsiz, root'siz build qilib, PCI/ISO talablariga mos CI yaratish.
 - Base image CVE chiqqanda ilovani qayta kompilyatsiya qilmasdan buildpack `rebase` bilan yangilash.
 
+**Build va deploy ni bitta tizim bilishining foydasi.** Image ni klaster ichida qurishning asosiy argumenti qulaylik emas, zanjirning yopilishi: build ham, deploy ham bitta tizimga ma'lum bo'lganda bazaviy image dagi zaiflik tuzatilgan paytda unga tayangan hamma ilova image i qayta qurilib, ilovalarning o'zi avtomatik qayta joylashtirilishi mumkin bo'ladi. Tashqi CI bilan bu zanjir qo'lda ulanadi va amalda birinchi bo'g'inda uziladi: image qayta quriladi, lekin uni ishlatayotgan deploy lar eski digest da qolib ketadi.
+
 **Ehtiyot bo'ling:** Klaster ichidagi builder pod'lari registry credential'lariga ega bo'ladi - bu Secret'ni cheklangan namespace va ServiceAccount bilan izolyatsiya qiling, aks holda build infrastrukturasi supply-chain hujum nuqtasiga aylanadi. Buildpack'lar qulay, lekin ular tanlagan JVM, memory calculator va base OS sizning talablaringizga mos kelmasligi mumkin - production'da image tarkibini aniq pinlab va skanerlab turing.
 
 ## 29.15 Konfiguratsiya resursi (Configuration Resource)
@@ -297,6 +434,8 @@ MeterRegistryCustomizer<MeterRegistry> podTags(
 - Feature toggle'ni ConfigMap'da o'zgartirib, `/actuator/refresh` yoki Spring Cloud Kubernetes reload bilan deploy'siz qo'llash.
 - Logging darajasini (`logging.level.*`) ConfigMap orqali incident paytida vaqtincha `DEBUG`ga o'tkazish.
 - GitOps (Argo CD / Flux) bilan konfiguratsiyani Git'da versiyalab, audit va rollback olish.
+
+**ConfigMap va Secret cheksiz emas.** Konfiguratsiyani resursga chiqarish qulay bo'lgani uchun unga katta narsalar ham solinadi, lekin kanalning o'lchami bor. Secret hajmi etcd tufayli 1 MB bilan cheklangan, binar ma'lumot esa Base64 da saqlanadi va shu kodlash hisobiga amalda undan sezilarli kamroq joy qoladi. Bundan tashqari haqiqiy klasterlar namespace boshiga ConfigMap SONIGA ham quota qo'yadi, ya'ni "har sozlama uchun bitta ConfigMap" strategiyasi ma'lum nuqtada to'xtaydi. Shuning uchun katta konfiguratsiya - sertifikat to'plami, ML modeli, uzun statik ma'lumot fayli - ConfigMap ga emas, image ga yoki object storage ga tushadi, qarorni qabul qilishdan oldin esa haqiqiy hajm o'lchanadi.
 
 **Ehtiyot bo'ling:** Secret'ni env variable qilib bersangiz, u `/proc`, crash dump va `kubectl describe pod` chiqishida oson ko'rinadi - volume mount'ni afzal ko'ring va etcd shifrlashni yoqing. `reload` rejimini o'ylamasdan yoqish xavfli: `restart_context` yoki `refresh` bean'larni yarmida qayta yaratib, trafik ostida kutilmagan holatga olib kelishi mumkin, bundan tashqari har bir pod API serverga watch ochadi.
 
@@ -328,6 +467,10 @@ MeterRegistryCustomizer<MeterRegistry> podTags(
 - Downward API `fieldRef` qiymatlarini env sifatida berib, ilovaga pod identitetini uzatish.
 - Sidecar yoki init container bilan umumiy `envFrom` ishlatib, bir necha container'da bir xil endpoint'larni e'lon qilish.
 
+**Profil fayllarini image ga solishning narxi.** Spring loyihalarida eng ko'p uchraydigan shakl - hamma muhit uchun `application-<profil>.yaml` fayllarini bitta image ichiga solib, qaysi biri ishlatilishini bitta muhit o'zgaruvchisi (`SPRING_PROFILES_ACTIVE`) bilan tanlash. U ishlaydi, lekin konfiguratsiyani ilovaga qattiq bog'laydi: dev va prod sozlamalari bitta image da yonma-yon turadi va ikkisidan birining o'zgarishi butun image ni qayta qurishni talab qiladi. Buni [o'zgarmas konfiguratsiya](#2916-ozgarmas-konfiguratsiya-immutable-configuration) bilan adashtirmaslik kerak: o'sha patternda bitta reliz artefaktiga BITTA muhitning konfiguratsiyasi qadaladi va o'zgarish yangi reliz orqali keladi, bu yerda esa hamma muhit bitta artefaktda yashaydi va har kichik o'zgarish hammasiga teng tegadi.
+
+**Qiymat qayerdan kelganini kuzatish.** Env o'zgaruvchisini bir vaqtda bir necha darajada qo'yish mumkin: image ning o'z `ENV` i, Deployment dagi `env`, ConfigMap yoki Secret dan `valueFrom`, butun resursdan `envFrom`. Har daraja o'zidan oldingisining ustidan yozadi, shuning uchun markaziy ta'rif joyi belgilanmasa "bu qiymat qayerdan keldi" savoliga javob topish deyarli imkonsiz bo'ladi va konfiguratsiya xatosi debug qilinmaydigan toifaga o'tadi. Amaliy qoida ikkita: har servis uchun env manbalarining ro'yxati va ustuvorlik tartibi bitta joyda yozib qo'yiladi, va bitta konteynerda `envFrom` bilan alohida `env` qiymatlari aralashtirilmaydi.
+
 **Ehtiyot bo'ling:** Env variable pod umri davomida o'zgarmaydi - ConfigMap yangilansa ham qiymat eski qoladi, shuning uchun dinamik konfiguratsiya uchun yaramaydi. Parol va token'larni env orqali berish tavsiya etilmaydi: ular log'larda, `kubectl describe`da, crash dump va child process'larda oqib ketadi; bunday hollarda volume mount + `configtree:` ishlatish xavfsizroq.
 
 ## 29.18 Konfiguratsiya shabloni (Configuration Template)
@@ -343,6 +486,8 @@ MeterRegistryCustomizer<MeterRegistry> podTags(
 - Init container'da gomplate bilan uzun legacy `.properties` faylini ConfigMap qiymatlaridan render qilish.
 - Multi-tenant SaaS'da har bir tenant namespace'i uchun bir shablondan konfiguratsiya generatsiya qilish.
 
+**Shablonga o'tish chegarasi.** Shablonlash bepul emas, shuning uchun unga bitta shart bajarilganda o'tiladi: katta konfiguratsiyaning faqat kichik qismi muhitga bog'liq bo'lsa. Teskari yo'l - to'liq konfiguratsiyani har muhit ConfigMap iga nusxalash - boshida ishlaydi va hech qanday asbob talab qilmaydi, lekin nusxalar vaqt o'tishi bilan muqarrar bir-biridan uzoqlashadi: biriga tuzatish kiritiladi, boshqasiga unutiladi va farq faqat incident paytida chiqadi. Teskari chegara ham bor: o'zgaruvchi qismning ulushi katta bo'lsa shablon ham yordam bermaydi, chunki unda muhitlar haqiqatan boshqa va ularni alohida boshqarish to'g'ri qaror.
+
 **Ehtiyot bo'ling:** Shablonlashni haddan oshirish ("template of templates", chuqur Helm `if/range` mantiqi) manifestlarni o'qilmas qiladi va render natijasi faqat deploy paytida ma'lum bo'lgani uchun xatoni erta topish imkonini yo'qotadi - `helm template`/`kustomize build` natijasini CI'da albatta validate qiling. Shablonga maxfiy qiymatni default sifatida yozib qo'ymang: u Git'da va render qilingan ConfigMap'da ochiq qoladi.
 
 ## 29.19 Boshqaruvchi halqa (Controller (Kubernetes))
@@ -357,6 +502,8 @@ MeterRegistryCustomizer<MeterRegistry> podTags(
 - Secret rotatsiyasini kuzatib, ilova connection pool'ini yangi credential bilan qayta ochish.
 - Istalgan nosozlikda (pod o'chirilsa, ConfigMap qo'lda o'zgartirilsa) tizimni kerakli holatga o'zi qaytarish.
 - Platforma jamoasi uchun "har bir yangi namespace'ga standart NetworkPolicy va ResourceQuota qo'y" avtomatizatsiyasi.
+
+**Controller ni kuzatish narxi.** Controller yozish qarorining ko'pincha hisobga olinmaydigan tomoni - uni debug qilish qiyinligi. Hodisalar oqimi to'g'ri chiziqda bormaydi: watch uziladi, informer resync qiladi, bitta o'zgarish bir necha reconcile chaqiruviga aylanadi. Hammasini to'xtatib holatni bir joyda ko'rish uchun breakpoint qo'yish ham ishlamaydi, chunki to'xtatilgan reconcile paytida klaster o'zgarishda davom etadi va qaytganingizda holat boshqa bo'ladi. Shuning uchun kuzatuvchanlik controller ga keyin qo'shiladigan narsa emas, uning birinchi versiyasiga yoziladi: har reconcile uchun resurs nomi bilan log, qayta urinish va xato soni uchun metrika, muhim qarorlar uchun esa Kubernetes event.
 
 **Ehtiyot bo'ling:** Reconcile funksiyasi albatta idempotent bo'lishi shart va hodisalar ketma-ketligiga tayanmasligi kerak - watch uzilib, informer resync qilganda bir xil hodisa bir necha marta yoki umuman kelmasligi normal holat. API serverni `list` bilan bombardimon qilish (informer cache'ni ishlatmaslik) yoki xatoda backoff'siz qayta urinish katta klasterda butun control plane'ni cho'ktirishi mumkin.
 
@@ -378,12 +525,23 @@ public class CacheReconciler implements Reconciler<CacheCluster> {
 }
 ```
 
+**CRD ning ikki turi.** Operator yozishdan oldin CRD ni nima uchun kiritayotganingizni ayting, chunki ikki xil toifa bor va ularni aralashtirish resurs modelini chalkashtiradi.
+
+- **Installation CRD** - ilovani Kubernetes platformasiga o'rnatish va boshqarish uchun. Namunasi Prometheus ning CRD lari: ular Prometheus ning o'zini o'rnatish va yuritish uchun ishlatiladi.
+- **Application CRD** - ilovaga xos domen tushunchasini ifodalash uchun. Bu tur ilovaning Kubernetes bilan chuqur integratsiyasini beradi, ya'ni Kubernetes mexanizmini domen xulqi bilan birlashtiradi. Namunasi `ServiceMonitor`: Prometheus operatori uni muayyan Kubernetes Service larni scrape ro'yxatiga qo'shish uchun ishlatadi va server konfiguratsiyasini shunga moslashtiradi.
+
+Bitta operator ikki turga ham ta'sir qilishi mumkin (Prometheus operatori shunday qiladi) va ikki toifa orasidagi chegara xira. Shuningdek "Operator - CRD ishlatadigan Controller" ta'rifi ham qat'iy emas: orasidagi variantlardan biri - CRD o'rniga ConfigMap ni domen konfiguratsiyasi sifatida ishlatadigan controller. Bu yondashuv standart Kubernetes resurslari yetmaganda, lekin CRD yaratish imkoni bo'lmaganda ma'noli: CRD ro'yxatga olish uchun cluster-admin huquqi kerak, ba'zi klaster sozlamalarida esa bu huquq umuman berilmaydi. ConfigMap bilan ham Observe-Analyze-Act halqasi saqlanadi, lekin bir nechta narsa yo'qoladi: CRD lar uchun bo'ladigan `kubectl get` darajasidagi asbob qo'llovi, API Server darajasidagi validatsiya, API versiyalash, `status:` maydonini o'zingiz xohlagancha modellashtirish imkoniyati va CRD turi bo'yicha alohida sozlanadigan nozik RBAC modeli - ConfigMap larda esa bitta namespace dagi barcha ConfigMap lar bir xil ruxsatni bo'lishadi.
+
 **Qo'llanish keyslari:**
 - Ichki Kafka yoki PostgreSQL klasterini CRD orqali deklarativ yaratish, backup va failover'ni avtomatlashtirish.
 - Platforma jamoasi uchun `kind: Microservice` abstraksiyasi - bitta resurs Deployment, Service, Ingress va HPA'ni generatsiya qiladi.
 - Tenant onboarding: `kind: Tenant` yaratilganda namespace, DB schema, quota va credential'larni avtomatik tayyorlash.
 - ML model deploy'ini `kind: ModelServing` resursi orqali versiyalab, canary rollout bilan boshqarish.
 - Sertifikat va credential rotatsiyasini domen qoidalariga mos ravishda o'zi bajaradigan operator.
+
+**Operator va CRD ni tanlash mezonlari.** Bu bo'limning oxiridagi ogohlantirish qarorni bir tomondan yopadi: Helm yoki Kustomize yetadigan joyda operator yozilmaydi. Lekin qaror ikki tomonlik va ikkinchi tomoni ham yozilishi kerak. CRD va operator yo'liga kamida bitta shart bajarilganda o'tiladi: `kubectl` va mavjud Kubernetes asboblariga chuqur integratsiya kerak; loyiha greenfield va eski API ni saqlash majburiyati yo'q; resurs yo'li, API guruhi, versiyalash va namespace tushunchalaridan haqiqatan foyda olasiz; yoki watch, autentifikatsiya, RBAC va selector qo'llovi tayyor bo'lgan client kutubxonasi kerak.
+
+Teskari tomoni ikki pog'onali. Oddiy Controller standart resurslar (ConfigMap, Secret, Deployment) bilan yetarli bo'lsa, CRD ro'yxatga olinmaydi: CRD cluster-admin huquqini talab qiladi, ConfigMap yo'li esa xavfsizlik va validatsiya tomonida cheklangan bo'lsa ham shu huquqsiz ishlaydi. Uchinchi variant esa ko'pincha umuman ko'rilmaydi: use case deklarativ bo'lmasa yoki ma'lumot Kubernetes resurs modeliga sig'masa, Kubernetes API sini cho'zish o'rniga mustaqil API yozib uni Service yoki Ingress orqali chiqarish to'g'riroq bo'ladi.
 
 **Ehtiyot bo'ling:** Operator yozish - jiddiy qaror: u klaster darajasida keng RBAC huquqlariga ega bo'ladi va undagi xato butun platformani buzishi mumkin, shuning uchun huquqlarni minimallashtiring va reconcile'ni og'ir yon ta'sirlardan (idempotent bo'lmagan tashqi chaqiruvlardan) toza tuting. Oddiy deploy ishini Helm yoki Kustomize hal qiladigan joyda operator qurish keraksiz murakkablik; mavjud yetuk operator (Strimzi, CloudNativePG) bo'lsa, o'zingiznikini yozmang.
 
@@ -400,6 +558,10 @@ public class CacheReconciler implements Reconciler<CacheCluster> {
 - Cloud SQL yoki Vault Agent ambassador container'i orqali credential va ulanishni `localhost`da taqdim etish.
 - Legacy ilovaga adapter sidecar qo'shib, uning metrikalarini Prometheus formatiga o'girish.
 
+**Pod ichidagi konteynerlar nimani bo'lishadi.** Pod atomik bo'lgani uchun uning ichidagi konteynerlar IP manzilni, host nomini va PORT DIAPAZONINI birga ishlatadi. Shundan oddiy, lekin amalda tez-tez yiqitadigan talab chiqadi: bitta pod ga qo'shilayotgan konteynerlarning portlari oldindan kelishib olinadi, aks holda ikkinchisi birinchisi egallagan portga bog'lanishga urinib ishga tushmaydi. Spring Boot ilovasi yonida metrika exporter, proxy yoki log sidecar turganda `server.port` va `management.server.port` qiymatlari shu kelishuvning qismi bo'ladi.
+
+**Rad etilgan alternativa: controller siz yaratilgan pod.** Pod ni to'g'ridan-to'g'ri, hech bir controller ostida bo'lmagan holda yaratish mumkin, lekin bu deploy birligi emas: node yiqilsa bunday pod qayta ishga tushmaydi va mavjud pod boshqa node ga HECH QACHON ko'chirilmaydi - Kubernetes pod ni ko'chirmaydi, uni faqat controller qayta yaratadi. Shu sababli bir martalik ish uchun ham yalang pod emas, `Job` yoziladi: evict bo'lgan Job pod i yangi sog'lom node da qayta ishlaydi.
+
 **Ehtiyot bo'ling:** Pod'ga mustaqil skale qilinishi kerak bo'lgan komponentlarni qo'shish katta xato - ularni alohida Deployment qiling, chunki pod ichidagi container'lar faqat birgalikda skale bo'ladi. Sidecar'lar pod'ning resurs so'rovini va ishga tushish vaqtini sezilarli oshiradi; sidecar asosiy container'dan keyin tayyor bo'lsa, Spring Boot ilovasining dastlabki so'rovlari muvaffaqiyatsiz bo'ladi, shuning uchun native sidecar yoki readiness ketma-ketligini aniq sozlang.
 
 ## 29.22 Resurs so'rovlari va limitlari (Resource Requests & Limits)
@@ -414,6 +576,10 @@ public class CacheReconciler implements Reconciler<CacheCluster> {
 - Dev namespace'ida past `requests` bilan node'larni zich to'ldirib, infra xarajatini kamaytirish.
 - VPA recommender yoki Prometheus tarixiga qarab haddan oshirilgan `requests`ni qisqartirib, klaster sig'imini bo'shatish.
 - `LimitRange` va `ResourceQuota` bilan jamoalar o'rtasida klaster resurslarini adolatli taqsimlash.
+
+**`LimitRange` bilan nisbatni cheklash.** `LimitRange` namespace da standart va chegara qiymatlarni beradi, lekin uning kamroq ishlatiladigan qismi amalda muhimroq: `requests` bilan `limits` orasidagi nisbatni cheklash (LimitRequestRatio). Nisbat katta bo'lsa node da `limits` yig'indisi `requests` yig'indisidan ancha oshadi va node overcommit holatiga tushadi: hamma konteyner bir vaqtda so'raganidan ko'proq olishga urinsa, ishlash hammada pasayadi va sababi bitta ilovada ko'rinmaydi. Nisbatni cheklash shu holatning ehtimolini kamaytiradi.
+
+**Klaster sig'imini jadval bilan hisoblash.** Sig'im rejasi pod `requests` va `limits` qiymatlarini instans soniga ko'paytirib yoziladigan jadvaldan boshlanadi: har ilova uchun bitta qator, oxirida yig'indi va uni [node Allocatable qiymati](#294-avtomatlashtirilgan-joylashtirish-automated-placement) bilan taqqoslash. QoS ni muhit bo'yicha taqsimlash ham shu jadvalning qismi: prod da asosan Guaranteed va bir oz Burstable, nonprod da esa Best-Effort va Burstable ma'noli taqsimot bo'ladi. Shundan keyin bitta signal aniq o'qiladi - prod da pod resurs tanqisligi tufayli o'ldirilsa, bu sozlama xatosi emas, klaster sig'imini oshirish kerakligining belgisi.
 
 **Ehtiyot bo'ling:** `limits`ni belgilamaslik ham, `requests`ni real iste'moldan ancha yuqori qo'yish ham zarar: birinchisida bitta ilova node'ni yiqitadi, ikkinchisida klasterning yarmi bo'sh turgan holda to'la hisoblanadi. CPU limitini juda past qo'yish Spring Boot ilovasini startup paytida throttling'ga uchratib, liveness probe'ning noto'g'ri restart tsikliga olib keladi; memory limitida esa heap'ni limitga teng qilib qo'ymang - JVM'ning non-heap qismi ham o'sha limit ichida hisoblanadi.
 
@@ -493,7 +659,71 @@ class CheckpointingWorker implements SmartLifecycle {
 
 **Ehtiyot bo'ling:** Ibryam va Huss prioritetdan ehtiyotkorlik bilan foydalanishni so'raydi: qiymatlarni foydalanuvchi o'zi yozgani uchun mexanizm "o'yinga" ochiq - xabardor bo'lmagan yoki niyati buzuq foydalanuvchi eng baland prioritetli pod yaratib qolganlarini chiqarib tashlashi mumkin, shu sababli `ResourceQuota` `PriorityClass`'ni qo'llashga kengaytirilgan va katta raqamlar tizim pod'lari uchun zaxiralangan. Ikkinchi xavf - preemption vaqtida [Pod uzilish byudjeti](#2923-pod-uzilish-byudjeti-pod-disruption-budget) kafolatlanmaydi, bu esa kvorumga tayangan past prioritetli cluster'ni buzishi mumkin.
 
-## 29.25 Amalda qo'llash
+## 29.25 Klasterni bo'lishish: multitenancy va federatsiya (Multitenancy and Federation)
+
+**Tavsif:** Samaradorlik nuqtasidan eng to'g'ri javob oddiy ko'rinadi: barcha hisoblash resurslarini bitta Kubernetes klasterida yig'ib, tashkilotdagi hamma yuklamani shu yerda ishlatish - ishlatilmayotgan resurs kimga kerak bo'lsa shunga qayta taqsimlanadi, utilizatsiya oshadi, xarajat tushadi. Muammo shunda: Kubernetes turli maqsadlar uchun turli mikroservislarni boshqarishda yaxshi, lekin platformaning **multitenant** darajasi cheklangan. Tashkilotdagi har bir bo'lim turli resurslar ustidan turli darajada nazorat xohlaydi, bu nazorat vositalari esa Kubernetes ga qurib qo'yilmagan - bu Kubernetes qamrovini cheklangan ushlash nuqtasidan asosli qaror. Natijada tashkilotlar ikki yo'ldan birini tanlaydi.
+
+- **Kubernetes ustidagi platforma.** Red Hat ning OpenShift i kabi yechimlar yirik tashkilotlarni hisobga olib qurilgan boy kirish nazorati va boshqa imkoniyatlarni beradi, multitenancy tushunchasini ancha osonlashtiradi. Narxi faqat litsenziya emas: ular ishlashi uchun ba'zan vendor bergan abstraksiyalar bilan ishlashga to'g'ri keladi, ya'ni developer lar nafaqat Kubernetes ni, o'sha vendor platformasini ham bilishi kerak bo'ladi.
+- **Federatsiya.** Bir nechta alohida klaster saqlanadi, ustiga esa kerak bo'lganda hammasiga birdan o'zgarish kiritish imkonini beradigan dasturiy qatlam qo'yiladi. Ko'p holda odamlar bitta klaster bilan to'g'ridan-to'g'ri ishlaydi va tanish Kubernetes tajribasini oladi; ba'zi holatda esa ilovani bir nechta klaster bo'ylab tarqatish kerak bo'ladi, masalan klasterlar turli geografiyada bo'lsa va butun bir klaster yo'qolishiga chidash kerak bo'lsa.
+
+Federatsiyaning o'z narxi bor va u aynan birinchi maqsadga - resurslarni bir joyga yig'ishga - qarshi ishlaydi. A klasteri to'liq band, B klasterida esa ko'p bo'sh sig'im bo'lsa, A da ko'proq yuklama ishlatish faqat unga ko'proq resurs berilsa mumkin, ya'ni B dagi bo'sh node ni A ga ko'chirish kerak bo'ladi; buning qanchalik oson bo'lishi federatsiya dasturiga bog'liq, lekin oson bo'lmasligi kutiladi. Sababi qat'iy: bitta node yoki bir klasterning, yoki boshqasining qismi bo'ladi, ikkisi uchun birga pod ishlata olmaydi. Buning teskari tomoni ham bor: bir nechta klaster klasterning o'zini yangilashni osonlashtiradi - mikroservisni yangilangan klasterga ko'chirish ko'pincha klasterni joyida yangilashdan oson va xavfsizroq.
+
+**Spring'da qayerda uchraydi:** Bu qaror Spring ilovasining kodiga tegmaydi, lekin konfiguratsiyasiga tegadi. Ilova klaster nomiga, namespace nomiga yoki vendor abstraksiyasiga qattiq bog'lanmasligi kerak: ko'p klasterli muhitda ishlashi mumkin bo'lgan Spring Boot ilovasi klaster identifikatorini Downward API orqali `env` ga olib, uni Micrometer tag i qilib qo'yadi (`MeterRegistryCustomizer`) va log hamda trace ga chiqaradi - shunda metrika qaysi klasterdan kelgani ko'rinadi. Konfiguratsiya klaster ichidagi ConfigMap/Secret dan kelsa, federatsiyada u har klasterda takrorlanadi; shuning uchun ko'p klasterli ssenariyda konfiguratsiyani klaster tashqarisidagi manbaga (Spring Cloud Config Server, Vault) chiqarish va klasterga xos qismini faqat `spring.config.import` bilan ustiga qo'shish barqarorroq. Klasterlar orasida ulanish kerak bo'lsa, servis nomi `*.svc.cluster.local` bilan hal bo'lmaydi: tashqi DNS yoki service mesh ning multicluster rejimi talab qilinadi.
+
+**Qo'llanish keyslari:**
+- Bir nechta bo'lim bitta klasterni bo'lishishi kerak bo'lganda, nazorat talablari Kubernetes ning o'z RBAC va quota mexanizmidan oshsa, OpenShift kabi platformani baholash.
+- Ikki geografiyada klaster saqlab, kritik ilovani ikkisiga tarqatish va butun klaster yo'qolishiga chidash.
+- Klaster versiyasini yangilashda ilovani yangi klasterga ko'chirish yo'lini joyida yangilash bilan taqqoslash.
+- Utilizatsiya hisobini federatsiya narxi bilan birga chiqarish: bo'sh node ni klasterlar orasida ko'chirish qanchalik qiyin ekanini oldindan o'lchash.
+- Kichik tashkilotda bitta klasterni bo'lishib, bu masalaga umuman kirmaslik - bu ham haqli javob.
+
+**Ehtiyot bo'ling:** Bu masshtab muammosi, hamma uchun emas: bitta klasterni bo'lishishdan xursand bo'lgan tashkilot bu savollarga hech qachon kelmaydi. Shu sababli multitenancy yoki federatsiyani "to'g'ri arxitektura" deb oldindan qurish tipik ortiqcha injinerlik: u bitta klasterning quota, RBAC va NetworkPolicy imkoniyatlari haqiqatan yetmaganida boshlanadi. Ikkinchi ehtiyot - Kubernetes federatsiyasi qanday ko'rinishi kerakligi haqida bir necha xil qarash va ularni boshqaradigan bir necha xil asboblar zanjiri bor, ya'ni bu yerda bitta standart yechim yo'q; tanlovni o'z talablaringiz ro'yxati bilan tekshiring.
+
+## 29.26 Scheduler siyosati va joylashtirishga aralashuv (Scheduler Policy and Placement Intervention)
+
+**Tavsif:** [Avtomatlashtirilgan joylashtirish](#294-avtomatlashtirilgan-joylashtirish-automated-placement) mexanizmlarni beradi, bu bo'lim esa ulardan qaysi birini QANCHA ishlatish kerakligini beradi. Scheduler siyosati ikki bosqichdan iborat: predicate lar mos kelmaydigan node larni filtrlaydi, priority lar esa qolganlarini vazn bilan tartiblaydi va eng baland bahoni olgan node tanlanadi. Siyosatning o'zini va o'z scheduler ini faqat klaster administratori belgilaydi; oddiy foydalanuvchi pod ta'rifida mavjud scheduler ga havola qila oladi, undan ko'p emas. Ikkinchi yarmi qaror tartibi: joylashtirishga aralashuv vositalari bir xil og'irlikda emas, shuning uchun ular eng oddiydan eng murakkabga qarab tanlanadi va MINIMAL aralash qoidasi amal qiladi. Uchinchi jihati vaqt: scheduler joylashtirgandan keyin qarorini qayta ko'rmaydi, demak klaster o'zgarganda eski joylashuvlarni tuzatish alohida ish bo'lib qoladi.
+
+**Spring'da qayerda uchraydi:** Bu qarorlarga mas'ul Spring sinfi yo'q, lekin natijasi Spring ilovasining xulqida ko'rinadi va diagnostikada aynan shu savol beriladi: "bu pod nega shu node ga tushdi". Joylashuvni ilovaning o'zidan ko'rish uchun Downward API `spec.nodeName` va `metadata.labels['topology.kubernetes.io/zone']` qiymatlarini env ga beradi, Micrometer'ning `MeterRegistryCustomizer` i esa ularni umumiy tag qilib qo'yadi - shunda bitta node dagi pod larning latency i boshqalardan farq qilgani metrikadan ko'rinadi. Aralashuvning Spring tomonidagi narxi ham bor: qattiq joylashuv cheklovlari pod ni `Pending` da ushlab turganda HPA scale-out ga ulgurmaydi va `readinessProbe` vaqtida tayyor bo'lmaydi, shuning uchun cheklovlarni `spring.lifecycle.timeout-per-shutdown-phase` va probe sozlamalari bilan birga baholash kerak.
+
+```yaml
+# Aralashuvning eng yengil pog'onalari: node sinfi label bilan, maxsus pool toleration bilan
+spec:
+  nodeSelector:
+    node-class: memory-optimized    # eng oddiy va eng tushunarli cheklov
+  tolerations:
+    - key: workload                 # taint opt-in: node sukut bo'yicha yopiq
+      operator: Equal
+      value: batch
+      effect: NoSchedule            # NoExecute bo'lsa ishlayotgan pod ham chiqariladi
+  # schedulerName: custom-scheduler # oxirgi pog'ona: faqat administrator beradi
+```
+
+**Qo'llanish keyslari:**
+- Spot node pool ini `taints` bilan yopib, unga faqat chidamli batch ilovalarini `tolerations` orqali kiritish.
+- Pod `Pending` da qolganda sababni predicate (joy yo'q, label mos emas) va priority (bor, lekin boshqa node yaxshiroq baholangan) darajalarida ajratib tekshirish.
+- Klaster o'sgandan keyin joylashuvni descheduler bilan qayta tekislab, node fragmentatsiyasini kamaytirish.
+- Yangi node pool qo'shilganda label ni hamma pod ga tarqatish o'rniga taint va toleration bilan faqat kerakli pod larni yo'naltirish.
+- `nodeName` yozilgan legacy manifestlarni topib, ularni `nodeSelector` yoki node affinity ga ko'chirish.
+
+**Aralashuv zinapoyasi.** Vositalar quyidagi tartibda, eng oddiydan eng murakkabga qarab ko'riladi va talab qondirilgan joyda to'xtaladi:
+
+1. **`nodeName`** - pod ni aniq node ga qattiq bog'lash. Bu Kubernetes dan oldingi davrga qaytarish: joylashtirishni butunlay o'chiradi, node yiqilsa pod ko'chmaydi. Qilmang.
+2. **`nodeSelector`** - node label i bo'yicha oddiy tanlov. Ko'p holat shu bilan tugaydi.
+3. **Default scheduler siyosatini o'zgartirish** - klaster darajasidagi qaror, administrator ishi.
+4. **Pod affinity va antiaffinity** - pod larni bir-biriga nisbatan joylashtirish.
+5. **Node affinity** - label ifodalari bilan yumshoq va qattiq talablar.
+6. **Taint va toleration** - node ni himoyalash va unga ruxsat berish.
+7. **O'z scheduler i** - `spec.schedulerName` yoki scheduler extender. Eng murakkab va eng qimmat pog'ona.
+
+**Taint va toleration teskari yo'naltirilgan.** Affinity bilan taint ni adashtirish keng tarqalgan xato, chunki ular bir xil natijaga qarama-qarshi tomondan keladi. Affinity - pod ning node tanlashi va u opt-out ishlaydi: ifodaga mos kelmagan hamma node chiqarib tashlanadi. Taint - node ning pod ni qabul qilmasligi va u opt-in ishlaydi: node sukut bo'yicha yopiq, faqat mos toleration ga ega pod kiradi. Taint ning uch effekti bor va ularning kuchi teng emas: `NoSchedule` qattiq to'siq, `PreferNoSchedule` yumshoq (imkon bo'lsa boshqa node tanlanadi), `NoExecute` esa allaqachon ishlab turgan pod ni ham node dan chiqaradi - `NoExecute` ni bilmaslik kutilmagan evict larning tez-tez uchraydigan sababi. Mexanizmning kam aytiladigan afzalligi shu tomondan chiqadi: klasterga yangi label li node qo'shilganda label ni HAMMA pod ga tarqatish kerak emas, faqat o'sha node ga tushishi kerak bo'lgan pod larga toleration qo'shiladi.
+
+**Joylashuv statik, uni descheduler tuzatadi.** Scheduler pod ni joylashtirgandan keyin qarorini qayta ko'rmaydi: node qo'shilsa, label o'zgarsa yoki yuklama boshqa shaklga kirsa ham eski joylashuvlar o'z joyida qoladi va vaqt o'tishi bilan resurs fragmentatsiyasi yig'iladi. Buni descheduler hal qiladi: u doimiy ishlaydigan komponent emas, Job sifatida administrator xohlagan paytda ishga tushiriladi va siyosatga mos kelmaydigan pod larni evict qiladi, keyin ularni oddiy scheduler qaytadan joylashtiradi. Descheduler nimani evict QILMASLIGINI bilish ham qarorning qismi: kritik pod lar, controller boshqarmaydigan pod lar, DaemonSet pod lari, lokal diski bor pod lar va [uzilish byudjetini](#2923-pod-uzilish-byudjeti-pod-disruption-budget) buzadigan evict lar ro'yxatdan chiqariladi. Evict tartibi esa QoS ga rioya qiladi, ya'ni kubelet ning node bosimidagi tartibi bilan bir xil: avval Best-Effort, keyin Burstable, oxirida Guaranteed.
+
+**Osilib qolgan resurs.** Scheduler ni haddan tashqari cheklash yoki node bilan konteyner o'lchamini nomutanosib tanlash node da "osilib qolgan" (stranded) resurs qoldiradi: masalan node da bir necha gigabayt xotira bo'sh turadi, lekin CPU qolmagani uchun unga hech narsa joylashmaydi. Hisobda node to'liq ko'rinadi, amalda esa uning bir qismi ishlatilmaydi va bu [sig'im hisobining](#2922-resurs-sorovlari-va-limitlari-resource-requests--limits) teskari tomoni. Ikki yo'li bor: resurs talablarini maydaroq qilib node ga zichroq joylashtirish, yoki yig'ilgan fragmentatsiyani descheduler bilan vaqti-vaqti bilan tozalash.
+
+**Ehtiyot bo'ling:** Aralashuv zinapoyasining har pog'onasi keyingi operatsiyani qimmatlashtiradi: `nodeName` va qattiq affinity yozilgan manifest node almashtirishni, klaster yangilashni va autoscaling ni to'sadi, chunki pod ning boradigan joyi qolmaydi. Ikkinchi tuzoq descheduler da: uni siyosatini o'qimasdan muntazam jadvalga qo'yish pod larni foydasiz aylantirib, kesh isishi va ulanish pool larini doimiy sindirib turadi - avval bir marta qo'lda ishlatib, nimani evict qilganini ko'rib chiqish kerak. Uchinchisi diagnostika tomonida: "pod joylashmadi" degan xabarni predicate va priority bosqichlariga ajratmasdan tekshirish vaqtni behuda sarflaydi, chunki ikki bosqichning yechimi boshqa.
+
+## 29.27 Amalda qo'llash
 
 - [ ] Har bir pod uchun `requests` va `limits` qiymatlarini o'lchangan p95 CPU va maksimal RSS ga asoslab qayta hisoblang.
 - [ ] Readiness, liveness va startup probe'lari uchta alohida maqsadga xizmat qilayotganini tasdiqlang.
@@ -503,6 +733,9 @@ class CheckpointingWorker implements SmartLifecycle {
 - [ ] Pod disruption budget borligini va reliz paytida xizmat uzilmasligini tasdiqlang.
 - [ ] Init container va sidecar larni sanab chiqib, har birining nega kerakligini yozib qo'ying.
 - [ ] Stateless talabini tekshirish uchun bitta podni ataylab o'chirib ko'ring va natijani hujjatlashtiring.
+- [ ] Node larda `kube-reserved` va `system-reserved` berilganini va `requests` yig'indisi Allocatable ga sig'ishini tekshiring.
+- [ ] Klaster tashqarisidagi har bir bog'liqlik (baza, legacy servis) uchun ichki Service nomi borligini tasdiqlang, ilovada tashqi host nomi qattiq yozilmaganini tekshiring.
+- [ ] `kubectl scale` bilan qo'lda qilingan o'zgarishlar git dagi manifestga qaytarilganini tekshirib, configuration drift ro'yxatini yopib qo'ying.
 
 ## Manbalar
 
@@ -510,6 +743,32 @@ class CheckpointingWorker implements SmartLifecycle {
 - [Kubernetes, Pod Lifecycle](https://raw.githubusercontent.com/kubernetes/website/e91eff3b59c0bf813193202a4f193d37beb7efd7/content/en/docs/concepts/workloads/pods/pod-lifecycle.md) - probe turlari va to'xtatish tartibi
 - Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 10-bob (84-85-betlar) - PodDisruptionBudget faqat ixtiyoriy eviction'ni cheklaydi, `minAvailable` va `maxUnavailable` birga berilmaydi
 - Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 2-bob (20-22-betlar) - `PriorityClass`, preemption va QoS bilan ortogonalligi, `ResourceQuota` ning `PriorityClass` ni qo'llashi, prioritetning "o'yinga" ochiqligi
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 6-bob (48-bet) - Allocatable formulasi (node capacity minus kube-reserved minus system-reserved), zaxira berilmasa pod va tizim demonlarining resurs uchun kurashi, Kubernetes bilmagan konteynerlar uchun placeholder pod (29.4)
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 5-bob (43-44-betlar) - `postStart` hook: asosiy protsess bilan asinxron, lekin bloklovchi (Pod `Pending` da qoladi), nol bo'lmagan chiqish kodi asosiy protsessni o'ldirishi, `exec` va `httpGet` handler turlari, bajarilishiga kafolat yo'qligi (29.3)
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 12-bob (104-106-betlar) - selector siz Service va qo'lda yaratilgan Endpoints, `ExternalName` bilan DNS CNAME taxallusi, Service ni o'chirmasdan selector qo'shib provider ni klasterga ko'chirish (29.11)
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 24-bob (204-205-betlar) - qo'lda masshtablashning imperativ (`kubectl scale`) va deklarativ (`kubectl apply`) uslublari, configuration drift, oldindan masshtablash imkoniyati, StatefulSet PVC asimmetriyasi va Job ning `parallelism` maydoni (29.13)
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 23-bob (192-193-betlar) - Installation CRD va Application CRD farqi (Prometheus va `ServiceMonitor` misollari), CRD o'rniga ConfigMap bilan Observe-Analyze-Act va bu almashtirishda yo'qoladigan narsalar (29.20)
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 12-bob (107-110-betlar) - klaster tashqarisidan Service topish: `NodePort` (port tanlash, firewall qoidalari, node ni tanlash mijoz ishi, `externalTrafficPolicy: Local` bilan qo'shimcha hop va source NAT dan qochish va uning narxi), `LoadBalancer` (provayder LB si sog'lom node ni tanlashi, manba manzilining provayderga bog'liqligi) va `clusterIP: None` headless Service (29.11)
+- Chris Richardson, *Microservices Patterns: With examples in Java*, Manning, 2019, 12-bob, 405-407-betlar - API gateway ni klaster tashqarisiga ochish: `ClusterIP` faqat ichki, `NodePort` (30000-32767 diapazoni, o'z load balancer ini to'liq nazorat qilish imkoni) va `LoadBalancer` (avtomatik cloud LB, konfiguratsiya nazorati kam) (29.11)
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 1-bob (2, 7, 8 va 9-betlar) - konteyner patternlari kod sifatini almashtirmasligi, Pod ichidagi konteynerlarning IP, nom va port diapazonini bo'lishishi, scheduling uchun noyob label kombinatsiyasi va label ni olib tashlashning xavfi, label (qidirish va tanlash) bilan annotation (qidirilmaydigan mashina metadatasi) ajratmasi (29 kirishi, 29.4, 29.21)
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 2-bob (17 va 22-betlar) - `hostPort` node da portni band qilib replica sonini node soniga bog'lashi, runtime bog'liqlikning ikki nosozlik rejimi (volume turi pod ni joylashtirmaydi, yo'q ConfigMap joylashtiradi lekin ishga tushirmaydi), `LimitRange` ning `requests`/`limits` nisbatini cheklashi va overcommit, klaster sig'imini jadval bilan hisoblash hamda QoS ni muhit bo'yicha taqsimlash (29.1, 29.22)
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 5-bob (43 va 44-betlar) - `postStart` ning at-least-once semantikasi va muvaffaqiyatsiz `httpGet` uchun qayta urinish yo'qligi, `preStop` ni ushlab turish yoki undan xato qaytarish konteyner o'chirilishini to'xtatmasligi (29.3)
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 6-bob (49, 54-58-betlar) - scheduler siyosatining ikki bosqichi (predicate filtrlaydi, priority tartiblaydi) va uni faqat administrator belgilashi, taint/toleration ning affinity ga nisbatan teskari yo'nalishi va uch effekti (`NoSchedule`, `PreferNoSchedule`, `NoExecute`), yangi label li node da label ni hamma pod ga tarqatmaslik afzalligi, joylashuvning statikligi va descheduler ning Job sifatida ishlatilishi hamda evict istisnolari va QoS tartibi, osilib qolgan (stranded) resurs, joylashtirishga aralashuv zinapoyasi `nodeName` dan o'z scheduler iga (29.26)
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 7-bob (64-67-betlar) - controller siz yaratilgan pod node yiqilganda qayta ishga tushmasligi va pod ning hech qachon ko'chirilmasligi, `parallelism` ning parallellikni kafolatlamasligi va `parallelism: 0` bilan pauza, Job ning uch turi (fixed completion count, work queue, cheksiz oqim uchun ReplicaSet) va bo'lak granularligi qarori (29.5, 29.21)
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 10-bob (81 va 85-betlar) - qat'iy singleton uchun StatefulSet izchillikni mavjudlikdan ustun qo'yishi va "ko'pi bilan bitta" kafolati, servisning faqat bir qismi yakka bo'lishi kerak bo'lganda ilova ichidagi lock ni tanlash (29.8)
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 11-bob (88, 93, 95 va 96-betlar) - rad etilgan ikki alternativa (umumiy storage ni ilova ichidan papkaga bo'lish va har instans uchun qo'lda ReplicaSet plus PVC plus Service), `serviceName` ning majburiyligi va boshqaruvchi Service ning oldin yaratilishi, headless Service ning SRV yozuvi, `updateStrategy.rollingUpdate.partition` va `podManagementPolicy: Parallel`, kafolatni operator amallari (node obyektini o'chirish, `--grace-period=0 --force`) buzishi (29.10)
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 12-bob (103, 104 va 111-betlar) - muhit o'zgaruvchisi orqali topishning vaqt bog'liqligi, virtual IP ning tarmoq interfeysiga mos kelmasligi va ICMP uchun iptables qoidasi yozilmasligi, L4 balanslash va `sessionAffinity: ClientIP` dan boshqa yopishqoqlik yo'qligi, `spec.clusterIP` ni qo'lda tanlashning ikki istisnosi, Ingress ni bitta tashqi IP ni qayta ishlatish uchun tanlash va uning L7 sharti (29.11)
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 18-bob (148 va 149-betlar) - profil fayllarini image ga solib bitta env bilan tanlashning narxi (konfiguratsiya ilovaga bog'lanadi, har o'zgarish image ni qayta qurishni talab qiladi) va env ni ko'p darajada qo'yish qiymat manbasini kuzatishni yo'qotishi (29.17)
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 19-bob (156-bet) - Secret hajmining etcd tufayli 1 MB bilan cheklanishi, Base64 kodlashning amaldagi joyni kamaytirishi va klasterlarning namespace boshiga ConfigMap soniga quota qo'yishi (29.15)
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 21-bob (170-bet) - shablonga o'tish sharti: faqat katta konfiguratsiyaning kichik qismi muhitga bog'liq bo'lganda; to'liq nusxalash vaqt o'tishi bilan uzoqlashishga olib kelishi (29.18)
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 22-bob (186-bet) - controller ni asinxron tabiati tufayli debug qilish qiyinligi va breakpoint ning ishlamasligi, shundan kuzatuvchanlikni controller ga dastlabki versiyadan yozish talabi (29.19)
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 23-bob (201-bet) - operator va CRD ni tanlashning to'rt sharti (asboblarga chuqur integratsiya, greenfield, resurs yo'li va versiyalashdan foyda, tayyor client qo'llovi) hamda rad etish yo'llari: standart resurs bilan Controller, va deklarativ bo'lmagan use case uchun mustaqil API (29.20)
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 24-bob (206 va 218-219-betlar) - HPA ning ikki sharti (CPU uchun `resources.requests` va metrics server), masshtablashning to'rt bosqichi shu tartibda (ilova, VPA, HPA, Cluster Autoscaler) va birinchi ikkisining uzilish berishi, VPA uchun pod ning qayta yaratilishi va joylashtirilmaydigan holatga tushish xavfi, antifragillik tushunchasi (29.13)
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 25-bob (222-bet) - image ni klaster ichida qurishning asosiy foydasi: build va deploy ni bitta tizim bilganda bazaviy image dagi zaiflik tuzatilganda hamma ilova image i qayta qurilib avtomatik qayta joylashtirilishi (29.14)
+- Bilgin Ibryam, Roland Huss, *Kubernetes Patterns: Reusable Elements for Designing Cloud-Native Applications*, 1-nashr, O'Reilly, 2019, 11-bob (91-bet) - StatefulSet PersistentVolume ni boshqarmasligi, skale kamayganda pod o'chib PVC va PV ning ataylab qolishi va diskni bo'shatish uchun PVC ni qo'lda o'chirish qadami (29.13)
+- ESLATMA: `k8s-patterns` ning 1-nashri 2019-yilda chiqqan va undagi `apiVersion` qiymatlarining ko'pi hozirgi Kubernetes da yo'q, shuning uchun bu bobga kitobdan faqat tamoyil va mexanizm olingan, `apiVersion` ko'chirilmagan. Kitob VPA resurs o'zgarishi uchun pod ni qayta yaratish kerakligini 2019-yil holatiga ko'ra aytadi; mexanizmning keyingi versiyalardagi holati korpusda tekshirilmagan
+- ESLATMA: 29.26 dagi Spring tomoni (Downward API bilan `nodeName` va zone ni Micrometer tag qilish, qattiq joylashuv cheklovlarining HPA va probe bilan o'zaro ta'siri) hamda 29.4, 29.17 va 29.22 dagi Spring kalitlari shu korpusning amaliy qo'shimchasi, Ibryam va Huss Spring nomidan gapirmaydi
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 8-bob, "Multitenancy and Federation" bo'limi - bitta klasterni ko'p bo'lim bilan bo'lishish cheklovi, OpenShift kabi platforma va federatsiya yo'llari, federatsiyada node ni klasterlar orasida ko'chirish qiyinligi. Bu nashrning qo'limizdagi elektron nusxasida barqaror bet raqami yo'q, shuning uchun faqat bob va bo'lim nomi ko'rsatilgan (29.25)
 
 ---
 

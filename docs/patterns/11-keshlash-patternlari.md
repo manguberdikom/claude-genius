@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 11. Keshlash patternlari (Caching Patterns)
 
@@ -82,6 +82,8 @@ public Rate rate(String pair) {
 - Konfiguratsiya daraxtini (tenant sozlamalari) loader bilan tenant kaliti bo'yicha yuklash.
 
 **Ehtiyot bo'ling:** Loader ichidagi exception kesh provayderining semantikasiga qarab turlicha ishlanadi - Caffeine `null` qaytarsa kalit umuman keshlanmaydi, bu esa har request'da database'ga urilishga olib keladi. Loader ichida uzun bloklanuvchi I/O qilsangiz, kesh'ni ishlatuvchi barcha thread'lar shu yerda navbatga tizilib qolishi mumkin.
+
+Shu xavfning eng yomon shakli sinxronlashtirilgan registry ustiga qurilgan o'z qo'lidagi read-through keshda chiqadi va u Nygard da aniq keys sifatida yozilgan: `get` va `create` metodlari `synchronized` bo'lgan umumiy kesh sinfini kengaytirib, `create` ichida masofaviy chaqiruv qilish. Funksional jihatdan kod benuqson va unit testda o'tadi; nosozlik rejimi faqat yuklamada ko'rinadi. Masofaviy tizim sekinlashganda `create` ichidagi chaqiruv osilib qoladi, u esa monitorni ushlab turadi, demak keshdan o'qimoqchi bo'lgan har bir thread shu monitorda bloklanadi - kesh bo'yicha hit bo'ladigan so'rovlar ham to'xtaydi va butun thread to'plami tugaydi. Qoida shundan kelib chiqadi: masofaviy chaqiruvni hech qachon umumiy monitorni ushlab turgan holda qilmang. Amalda bu ikki narsani talab qiladi - yuklash kodini keshning qulfidan tashqariga chiqarish (Caffeine ning `LoadingCache` i kalit bo'yicha qulflaydi, butun kesh bo'yicha emas) va yuklash ichidagi chaqiruvga timeout hamda [circuit breaker](17-resilience-va-cloud-dizayn-patternlari.md#172-zanjirni-uzgich-circuit-breaker) qo'yish.
 
 ```java
 // Read-through: keshni abstraksiya boshqaradi, ilova bilmaydi
@@ -246,6 +248,8 @@ CacheManager cacheManager(RedisConnectionFactory redis) {
 // shuning uchun nusxalar orasida farq (stale read) paydo bo'ladi.
 ```
 
+**Qachon bu modeldan voz kechiladi.** Richards va Ford near-cache ni space-based arxitekturada tavsiya qilmaydi: front cache lar umumiy backing cache bilan sinxron, lekin bir-biri bilan sinxron emas, shuning uchun bir xil ma'lumot konteksti ustida ishlayotgan nusxalarda front cache tarkibi har xil bo'ladi va nusxalar orasida javob vaqti hamda responsiveness nomuvofiq chiqadi. Bu yuqoridagi tavsiyaga zid emas, kontekst boshqa. Ajratuvchi shart: nusxalar bir-birining o'rnini bosishi va bir xil xulq ko'rsatishi talab qilinadimi. Ko'p o'qiladigan va kam o'zgaradigan ma'lumotni qisqa TTL bilan instance ichida ushlash tarmoq hop ini kamaytiradi va nusxalar orasidagi farq ahamiyatsiz bo'ladi; elastik masshtablanish nusxalarning teng xulqiga tayangan tizimda (space-based uslub, yoki har so'rovi boshqa nusxaga tushadigan va javob vaqti SLA ga qadalgan API) aynan shu farq muammo bo'ladi va bunda markaziy taqsimlangan kesh tanlanadi. Shu uslub nuqtai nazari [space-based uslubda kesh to'qnashuvi va joylashtirish](12-arxitektura-uslublari.md#1240-space-based-uslubda-kesh-toqnashuvi-va-joylashtirish-space-based-caching-and-deployment-rules) bo'limida.
+
 ## 11.8 Taqsimlangan kesh (Distributed Cache - Redis, Hazelcast)
 
 **Tavsif:** Kesh application process'idan tashqarida, alohida cluster'da yashaydi va barcha instance'lar uchun bitta umumiy haqiqat manbasi bo'ladi. Bu horizontal scaling'da keshning bir xil ko'rinishini kafolatlaydi, deploy va restart'dan keyin ham ma'lumot saqlanib qoladi va JVM heap'ni shishirmaydi. Narxi - har murojaat tarmoq hop'i, serialization va cluster'ga operatsion qaramlik.
@@ -278,6 +282,10 @@ RedisCacheManager cacheManager(RedisConnectionFactory cf) {
 }
 // JDK serializatsiyasi sinf o'zgarsa buziladi: JSON yoki sxema asosida saqlang
 ```
+
+**Taqsimlangan yoki replikatsiyalangan: tanlov mezonlari.** Richards va Ford ikki modelni to'rt mezon bilan ajratadi. Replikatsiyalangan keshda har bir instance o'z in-memory nusxasini ushlaydi va nusxalar bir-biri bilan sinxronlanadi: markaziy server yo'q, shuning uchun yagona nosozlik nuqtasi ham yo'q va o'qish eng tez. Taqsimlangan keshda ma'lumot bitta tashqi serverda turadi: izchillik yuqori, chunki nusxa bitta, lekin har murojaat masofaviy chaqiruv va kesh serveri yiqilsa unga tayangan hamma instance ishlamay qoladi. Kitob mezonlarni shunday beradi: optimallashtirish maqsadi (replikatsiya - performance, taqsimlangan - izchillik), kesh hajmi (replikatsiya kichik, 100 MB atrofi va undan past; taqsimlangan katta, 500 MB va yuqori), ma'lumot tabiati (replikatsiya nisbatan statik, taqsimlangan juda dinamik) va update tezligi (replikatsiya past, taqsimlangan yuqori). Ikki chegara muhim: 100 MB dan katta ichki kesh instance xotirasini yeb, elastik masshtablanishni cheklaydi, juda yuqori update tezligida esa replikatsiya dvigateli nusxalarni izchil ushlab turolmaydi.
+
+**Replikatsiyalangan keshning to'rt cheklovi.** Ford va boshqalar xuddi shu modelni servis egasi bo'lmagan ma'lumotni tezkor o'qish usuli sifatida beradi: egasi keshni yozadi, iste'molchi faqat o'qiydigan nusxani ushlaydi, shuning uchun servislararo chaqiruv umuman yo'qoladi va egalik ham saqlanadi. Cheklovlar aniq: ishga tushish tartibi (iste'molchining birinchi nusxasi ko'tarilayotganda egasi ishlab turishi kerak, keyingi nusxalar ma'lumotni mavjud nusxalardan oladi va keshda ma'lumot bo'lgandan keyin egasining yiqilishi iste'molchiga tegmaydi), hajm (taxminan 500 MB dan oshsa pattern yaroqsizlanadi, chunki har nusxa shu xotirani oladi: 500 MB va beshta nusxa 2.5 GB), tez o'zgaradigan ma'lumot (mahsulot qoldig'i kabi) uchun nusxalar sinxron qolmasligi va bulut hamda konteyner muhitida TCP/IP broadcast va lookup diapazonining konfiguratsiyasi. Shu kontekstda taqsimlangan kesh yechim bo'lmaydi: u bog'liqlikni servisdan kesh serveriga ko'chiradi xolos, ustiga egasi bo'lmagan servis ham markaziy keshni yangilashi mumkin bo'lgani uchun bounded context egaligini buzadi (Ford, 10-bob, 289-292-betlar).
 
 ## 11.9 Hibernate ikkinchi darajali kesh va query kesh (Hibernate Second-Level Cache & Query Cache)
 
@@ -434,7 +442,7 @@ CacheManager cacheManager() {
 - Multi-tenant tizimda tenant konfiguratsiyasi o'zgarganda shu tenant prefiksini invalidate qilish.
 - Deploy vaqtida build raqami kalitga kirgani uchun eski keshni avtomatik chetlab o'tish.
 
-**Ehtiyot bo'ling:** `@CacheEvict`ni o'z-o'zidan transaction commit'dan oldin ishlashi tufayli rollback bo'lsa ham kesh tozalanadi yoki, battarroq, commit'gacha bo'shliqda eski qiymat qaytib yoziladi - transaction-aware rejim yoki after-commit hodisa ishlating. `allEntries = true` ni tez-tez chaqirish esa butun keshni yo'q qilib, DB'ga stampede yuboradi.
+**Ehtiyot bo'ling:** `@CacheEvict`ni o'z-o'zidan transaction commit'dan oldin ishlashi tufayli rollback bo'lsa ham kesh tozalanadi yoki, battarroq, commit'gacha bo'shliqda eski qiymat qaytib yoziladi - transaction-aware rejim yoki after-commit hodisa ishlating. `allEntries = true` ni tez-tez chaqirish esa butun keshni yo'q qilib, DB'ga stampede yuboradi. Hodisaga asoslangan invalidatsiyaning ikkinchi tuzog'i - jimlikning ikki ma'nosi: uzoq vaqt hodisa kelmasligi "ma'lumot o'zgarmadi" degani ham, "bildirish kanali o'lgan" degani ham bo'lishi mumkin va klient ikkisini ajrata olmaydi. Newman yechimni shunday beradi: manba o'zgarish bo'lmaganda ham shu kanal orqali heartbeat hodisasini yuboradi, klient esa heartbeat kelmay qolsa mexanizm buzilgan deb hisoblab ongli qaror qiladi - foydalanuvchiga ma'lumot eskirgani haqida aytadi yoki shu funksiyani vaqtincha o'chiradi.
 
 ```java
 // 1) Hodisaga asoslangan: manba o'zgarganda kesh o'chiriladi
@@ -490,7 +498,7 @@ private String key(long productId) {
 - OpenAPI spetsifikatsiyasi yoki referens ma'lumotnoma (davlatlar, valyutalar) javoblarini uzoq TTL bilan keshlash.
 - Rasm/fayl yuklab olish endpoint'ida `Last-Modified` bilan shartli GET qo'llash.
 
-**Ehtiyot bo'ling:** Autentifikatsiyalangan, foydalanuvchiga xos javobga `public` yoki `s-maxage` qo'yish shared CDN keshi orqali boshqa foydalanuvchiga ma'lumot oqishiga olib keladi - bunday javoblarda `private`/`no-store` va kerakli `Vary` (masalan `Vary: Authorization`) majburiy. `ShallowEtagHeaderFilter` javobni buferlab ETag hisoblaydi, ya'ni CPU va xotira sarflaydi hamda streaming/SSE javoblarni buzadi.
+**Ehtiyot bo'ling:** Autentifikatsiyalangan, foydalanuvchiga xos javobga `public` yoki `s-maxage` qo'yish shared CDN keshi orqali boshqa foydalanuvchiga ma'lumot oqishiga olib keladi - bunday javoblarda `private`/`no-store` va kerakli `Vary` (masalan `Vary: Authorization`) majburiy. `ShallowEtagHeaderFilter` javobni buferlab ETag hisoblaydi, ya'ni CPU va xotira sarflaydi hamda streaming/SSE javoblarni buzadi. Yana bir xususiyat: noto'g'ri qo'yilgan uzoq muddatli kesh sarlavhasini qaytarib olib bo'lmaydi. Newman ning keysida proxy ilovaga kirgan bug tufayli downstream tizimning `Expires: Never` sarlavhasi ustiga yozilmay o'tib ketdi; serverdagi va CDN dagi keshni tozalash yetmadi, chunki javob ISP keshlariga va foydalanuvchi brauzeriga ham tushgan edi va ularni boshqarish imkoni yo'q. Yagona chora sahifa URL larini o'zgartirib javobni qaytadan olishga majburlash bo'ldi. Ommaviy veb ilovada shuning uchun manbadan mijozgacha butun kesh yo'li (origin, CDN, ISP, brauzer) oldindan sanab chiqiladi va `Cache-Control` ning har bir qatlamdagi ta'siri hisobga olinadi.
 
 ```java
 // HTTP kesh: eng arzon kesh, chunki server umuman chaqirilmaydi
@@ -700,6 +708,13 @@ public void updatePrice(long id, Money price) {
 - [Caffeine, README](https://raw.githubusercontent.com/ben-manes/caffeine/92cd6cca5fed23d8343ef7caf338631c977ae9ec/README.md) - `maximumSize`, `expireAfterWrite`, `expireAfterAccess`, `refreshAfterWrite` semantikasi va eskirgan qiymatning qaytarilishi
 - [caffeine, `CaffeineSpec.java`](https://raw.githubusercontent.com/ben-manes/caffeine/92cd6cca5fed23d8343ef7caf338631c977ae9ec/caffeine/src/main/java/com/github/benmanes/caffeine/cache/CaffeineSpec.java) - spec satrida qo'llanadigan o'nta kalit (`initialCapacity`, `maximumSize`, `maximumWeight`, `weakKeys`, `weakValues`, `softValues`, `expireAfterAccess`, `expireAfterWrite`, `refreshAfterWrite`, `recordStats`), ya'ni `spring.cache.caffeine.spec` da nima yozish mumkinligi
 - [Micrometer, Gauges](https://raw.githubusercontent.com/micrometer-metrics/micrometer-docs/06f377a95db21894939c6fff39441fe608e804a2/src/docs/concepts/gauges.adoc) - kesh metrikasini gauge bilan o'lchashdagi weak reference tuzog'i
+- Mark Richards, Neal Ford, *Fundamentals of Software Architecture*, O'Reilly, 2020, 15-bob - near-cache modelida front cache larning bir-biri bilan sinxron bo'lmasligi va shundan kelgan performance hamda responsiveness nomuvofiqligi sababli uning space-based uslubda tavsiya etilmasligi (11.7)
+- Mark Richards, Neal Ford, *Fundamentals of Software Architecture*, O'Reilly, 2020, 15-bob - replikatsiyalangan va taqsimlangan kesh qiyosi hamda tanlov mezonlari jadvali (optimallashtirish maqsadi, kesh hajmi, ma'lumot tabiati, update tezligi, fault tolerance), 100 MB dan katta ichki keshning elastiklikka ta'siri va yuqori update tezligida replikatsiyaning yetib bormasligi (11.8)
+- ESLATMA: *Fundamentals of Software Architecture* ning shu korpusdagi PDF nusxasida chop etilgan bet raqamlari yo'q, shuning uchun bu kitob bob darajasida iqtibos qilingan
+- Neal Ford, Mark Richards, Pramod Sadalage, Zhamak Dehghani, *Software Architecture: The Hard Parts*, 1-nashr, O'Reilly, 2021 (copyright 2022), 10-bob (289-292-betlar) - replikatsiyalangan kesh bilan ma'lumotga kirish patterni va uning to'rt cheklovi (ishga tushish tartibi, 500 MB hajm chegarasi va nusxalar soniga ko'paytirilgan xotira, tez o'zgaradigan ma'lumot, bulut va konteynerda broadcast konfiguratsiyasi) hamda taqsimlangan keshning bog'liqlikni faqat ko'chirishi (11.8)
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 13-bob ("Notification-based") - hodisaga asoslangan invalidatsiyada uzoq jimlikning ikki ma'nosi va heartbeat hodisasi bilan kanalning tirikligini tekshirish, heartbeat kelmasa eskirgan ma'lumot haqida ogohlantirish yoki funksiyani o'chirish. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan (11.14)
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 13-bob ("Cache Poisoning: A Cautionary Tale") - `Expires: Never` sarlavhasi brauzer va ISP keshlariga tushganda serverdan qaytarib olinmasligi va yagona chora sifatida URL larni o'zgartirish, manbadan mijozgacha butun kesh yo'lini tushunish talabi. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan (11.16)
+- Michael T. Nygard, *Release It! Design and Deploy Production-Ready Software*, 1-nashr, Pragmatic Bookshelf, 2007, 4-bob (85-bet) - sinxronlashtirilgan umumiy registry ustiga qurilgan read-through keshning nosozlik rejimi: `create()` ichidagi masofaviy chaqiruv osilganda monitor ushlab turilishi va keshdan o'qiydigan butun thread to'plamining bloklanishi (11.2)
 
 ---
 

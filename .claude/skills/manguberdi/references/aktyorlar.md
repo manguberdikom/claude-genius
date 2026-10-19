@@ -6,7 +6,8 @@ guruhni 40-70 daqiqaga cho'zardi, holbuki kichik bugga u kerak emas.
 Hajm va har hajmning zanjiri bitta jadvalda: `references/marshrut.md`,
 `Hajm: zanjir uzunligi va reja`. Bu yerda zanjirning ishlash tartibi.
 
-S da alohida `test-muhandis` chaqirilmaydi: bitta xatti-harakatning
+Tez yo'lda (S, `tez_yol: ha`) aktyor ochilmaydi: test va review
+topilmasining egasi asosiy sessiya. S da alohida `test-muhandis` chaqirilmaydi: bitta xatti-harakatning
 regressiya testini o'zgarishni yozgan dasturchi yozadi, lekin faqat
 quyidagi `Cheklov va testlar` sharti bajarilsa. Topshiriqda `hajm: S`
 yoziladi va `dasturchi` shu belgidan test yozishga ruxsatni oladi.
@@ -32,12 +33,17 @@ marta yozadi va zanjirning har chaqiruviga aynan ko'chiradi:
 hajm: S | M | L
 fayllar: <tegiladigan ishlab chiqarish fayllari>
 cheklov: <normallashtirilgan Cheklov> | yo'q
+vazifa: <bir jumla: rules_for --vazifa qiymati>
 ```
+
+`vazifa:` fayl hali o'z ichiga olmagan mavzuning kartasini beradi (kesh,
+retry, tashqi chaqiruv); kesh, async, retry, scheduling vazifasida
+`fayllar:` ga kerakli `@Enable*` konfiguratsiya sinfi ham kiradi.
 
 `fayllar:` har hajmda majburiy: yozuvchi ham, reviewer ham `rules_for`
 ni shu ro'yxat bilan chaqiradi, ya'ni ikkalasi bir xil mezonni oladi.
-Reviewer `--diff` ni faqat kartada yo'q fayl diffda paydo bo'lsa
-qo'shimcha chaqiradi. Parallel guruhda bu qatorlar guruh kartasiga
+Diffda kartada yo'q fayl paydo bo'lsa reviewer faqat o'sha fayllar bilan
+qo'shimcha `--no-mark` chaqiruv qiladi. Parallel guruhda bu qatorlar guruh kartasiga
 qo'shiladi (`references/parallel.md`).
 
 ## Cheklov va testlar
@@ -89,7 +95,7 @@ qayta yurish hech narsa bermaydi.
 | `dasturchi` | o'z ishining oxirida bir marta, maqsadli |
 | `test-muhandis` | o'zi yozgan testlar va maqsadli tanlash, bir marta |
 | `review` | yurgizmaydi: topshiriqdagi `run_tests` xulosasini o'qiydi |
-| asosiy sessiya | partiya oxirida bir marta to'liq suite, fonda: `--hammasi`, keyin `sonar_local.py tahlil` (`SKILL.md`, `Sonar darvozasi`) |
+| asosiy sessiya | partiya oxirida bir marta to'liq suite, fonda: `--hammasi`, keyin `sonar_local.py tahlil` (`references/yakun.md`, `Sonar darvozasi`) |
 
 Tashqi yoki fork PR da hech kim yurgizmaydi: "Ishonchsiz kirish" ga qarang.
 
@@ -189,8 +195,8 @@ qilinadi; o'ylab topilgan id va qatorsiz chaqiruv bitta umumiy hisobga
 tushadi.
 
 `PreToolUse` hook har aktyor chaqiruvini hisoblaydi va uchinchisini
-**to'sadi**. `qidiruv`, `tahlil` va `Explore` sanalmaydi: ular zanjir
-qadami emas, o'qish asbobi. Boshqa har qanday subagent (masalan
+**to'sadi**. `Explore` sanalmaydi: u zanjir qadami emas, o'qish
+asbobi. Boshqa har qanday subagent (masalan
 `general-purpose` yoki boshqa plaginning agenti) `boshqa` hisobiga
 xuddi shu chegara bilan tushadi: aktyor ishini nomsiz agentga berish
 budjetni aylanib o'tmaydi. Nomdagi faqat `manguberdi:` prefiksi
@@ -246,7 +252,7 @@ yo'q, budjet sarflanmaydi. Ikkinchi marta to'smaydi.
 
 ## Zanjir qachon qisqaradi
 
-- Faqat savol berilgan bo'lsa (`doc.sh show`, `qidiruv`, `tahlil`),
+- Faqat savol berilgan bo'lsa (`doc.sh show`, `parse_test_output.py`),
   zanjir shu yerda tugaydi: kod o'zgarmaydi, review ishlamaydi.
 - Faqat review so'ralgan bo'lsa, `dasturchi` va `test-muhandis`
   chaqirilmaydi: topilmalar hisobot sifatida beriladi.

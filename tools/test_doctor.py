@@ -233,19 +233,19 @@ def subagent(cfg, sid, name, actor, model, age_days=0):
 
 
 def case_aktyor_modeli(tmp):
-    """review sonnet da OK; dasturchi opus da OGOH va pin yo'li; 40 kunlik
+    """review sonnet da OK; test-muhandis opus da OGOH va pin yo'li; 40 kunlik
     fayl va repo aktyori bo'lmagan tur hisobga kirmaydi."""
     cfg = os.path.join(tmp, "cfg")
     with Env(CLAUDE_CONFIG_DIR=cfg):
         empty = D.check_models(30)
         subagent(cfg, "s1", "agent-a", "review", "claude-sonnet-5-5")
-        subagent(cfg, "s1", "agent-b", "dasturchi", "claude-opus-5-5")
-        subagent(cfg, "s1", "agent-c", "dasturchi", "claude-opus-5-5", age_days=40)
+        subagent(cfg, "s1", "agent-b", "test-muhandis", "claude-opus-5-5")
+        subagent(cfg, "s1", "agent-c", "test-muhandis", "claude-opus-5-5", age_days=40)
         subagent(cfg, "s1", "agent-d", "general-purpose", "claude-opus-5-5")
         results = D.check_models(30)
     texts = dict((text.split(":")[0], (status, text)) for status, text in results)
     review = texts.get("OK   model review")
-    coder = texts.get("OGOH model dasturchi")
+    coder = texts.get("OGOH model test-muhandis")
     return (statuses(empty) == [D.SKIP] and len(results) == 2
             and review is not None and coder is not None
             and "x1" in coder[1] and "ANTHROPIC_DEFAULT_SONNET_MODEL" in coder[1])

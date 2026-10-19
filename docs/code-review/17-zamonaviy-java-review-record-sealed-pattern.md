@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 17. Zamonaviy Java review: record, sealed, pattern matching, virtual thread (Modern Java)
 
@@ -55,6 +55,8 @@ public record Quantity(int value) {
 public record Payload(byte[] data) { }       // equals ishlamaydi, review da e'tibor
 ```
 
+Getterni qo'lda ustiga yozish alohida review nuqtasi, chunki uning shakli spetsifikatsiya bilan cheklangan: qo'lda yozilgan record getteri `public`, generic bo'lmagan, statik bo'lmagan va `throws` siz bo'lishi shart (Herbert Schildt, *Java The Complete Reference*, 12-nashr, McGraw-Hill, 2022, 17-bob, 472-bet). Shakl to'g'ri bo'lsa ham mazmun buzilishi mumkin: getter ichida formatlash yoki hisoblash qilib O'ZGARTIRILGAN qiymat qaytarilsa, record ning o'zgarmaslik shartnomasi buziladi, chunki `equals`, `hashCode` va `toString` maydonning xom qiymatidan, chaqiruvchi esa getterdan boshqa qiymat oladi. Review qoidasi: o'zgartirilgan qiymat uchun boshqa nomli metod yoziladi (`amountFormatted()`), komponent getteri esa maydonni o'z holida qaytaradi.
+
 ## 17.2 sealed: to'liqlikni kompilyatorga topshirish
 
 `sealed` review ning ishini kamaytiradigan eng foydali imkoniyat: yangi holat qo'shilganda barcha `switch` lar kompilyatsiyada xato beradi, ya'ni reviewer "hamma joy yangilandimi" savolini bermasa ham bo'ladi.
@@ -104,6 +106,14 @@ switch (command) {
 // domen obyektiga ko'chirilishi kerak - aks holda qoida `switch` ichida
 // yashiringan bo'ladi va test qilish qiyin.
 ```
+
+Pattern o'zgaruvchining qamrovi (scope) bilan bog'liq uchta aniq xato review da takrorlanadi va kompilyator xabari ularda tushunarsiz bo'ladi (Herbert Schildt, *Java The Complete Reference*, 12-nashr, McGraw-Hill, 2022, 17-bob, 475-476-betlar).
+
+**`&` emas, `&&`.** Pattern o'zgaruvchi faqat `&&` bilan ishlaydi, `&` bilan kompilyatsiya xatosi chiqadi: o'ng tomon baholanishi kafolatlanmasa, o'zgaruvchi qamrovda bo'lmaydi. Bu bitta belgilik xato va diffda ko'zdan qochadi.
+
+**Bitta mantiqiy ifodada bir xil nomli pattern o'zgaruvchini ikki marta yaratish xato.** Odatda `||` bilan ikki shoxni birlashtirishga urinishda chiqadi, va to'g'ri yechim ikki shoxni alohida qoldirish yoki `sealed` bilan `switch` ga o'tish.
+
+**`do` siklining shartida pattern matching amalda ishlamaydi**, chunki pattern o'zgaruvchi sikl tanasida hali qamrovda bo'lmaydi. `do-while` ni pattern bilan yozishga urinish shu sababli to'xtatiladi.
 
 ## 17.4 Virtual threadlar: diffdagi bitta qator, tizimdagi katta o'zgarish
 
@@ -214,6 +224,8 @@ Review da takrorlanadigan bahsni oldini olish uchun jamoa yangi imkoniyatlar bo'
 - [OpenJDK 25, `ScopedValue.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/lang/ScopedValue.java) - `where`/`run`/`call` API si, bog'lanishning `StructuredTaskScope` yaratilganda olinishi va kam sonda ishlatish tavsiyasi
 - Joshua Bloch, *Effective Java* 3rd, Item 10 va Item 17 - record va o'zgarmaslik bilan bog'liq kontraktlar
 - [sonar-java 8.44, `S6878.json`](https://raw.githubusercontent.com/SonarSource/sonar-java/8.44.0.48651/sonar-java-plugin/src/main/resources/org/sonar/l10n/java/rules/java/S6878.json) - record pattern ishlatish qoidasi
+- Herbert Schildt, *Java The Complete Reference*, 12-nashr, McGraw-Hill, 2022, 17-bob (472 va 475-476-betlar) - qo'lda yozilgan record getteri `public`, generic bo'lmagan, statik bo'lmagan va `throws` siz bo'lishi sharti; pattern o'zgaruvchining `&&` bilan ishlashi va `&` da kompilyatsiya xatosi, bitta mantiqiy ifodada bir xil nomli pattern o'zgaruvchini ikki marta yaratishning xato bo'lishi, `do` sikli shartida pattern matching ning amalda ishlamasligi
+- ESLATMA: o'zgartirilgan qiymat uchun boshqa nomli metod yozish tavsiyasi (`amountFormatted()`) shu korpusning qo'shimchasi
 
 ---
 

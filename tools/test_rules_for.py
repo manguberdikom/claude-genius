@@ -103,7 +103,7 @@ def main():
     print("== Jadvaldagi boblar indeksda bormi ==")
     referenced = [ch for _, _, chapters in R.SIGNALS for ch in chapters] + R.ALWAYS
     missing = sorted({ch for ch in referenced if ch not in titles})
-    unknown = sorted((set(R.NAME_SIGNALS) | set(R.PATH_SIGNALS) | R.BUILD_ONLY)
+    unknown = sorted((set(R.NAME_SIGNALS) | set(R.PATH_SIGNALS) | set(R.TASK_WORDS) | R.BUILD_ONLY)
                      - {l for l, _, _ in R.SIGNALS})
     rows = [
         ("%d ta bob tekshirildi%s" % (len(set(referenced)), "" if not missing
@@ -720,6 +720,88 @@ def main():
         shutil.rmtree(tmp_snap, ignore_errors=True)
     rows = [("snapshot ROOT da yo'l klonga nisbatan (memory/umumiy/...), ../ yo'q",
              rel_paths == [os.path.join("memory", "umumiy", "feedback_yol.md")])]
+    failures += report(rows)
+    total += len(rows)
+
+    print("\n== Retsept kartalari ==")
+    with open(os.path.join(ROOT, "index", "sections.tsv"), encoding="utf-8") as handle:
+        sections = {tuple(l.split("\t")[:2]) for l in handle}
+    absent, broken, big, shape = [], [], [], []
+    for label, _, _ in R.SIGNALS:
+        path = R.recipe_path(label)
+        if not os.path.exists(path):
+            absent.append(label)
+            continue
+        with open(path, encoding="utf-8") as handle:
+            text = handle.read()
+        # Har havola mavjud bo'limga olib borishi shart: aks holda karta
+        # aktyorni yo'q qoidaga yuboradi.
+        broken += ["%s: %s %s" % (label, d, n) for d, n in
+                   re.findall(r"\b(patterns|testing|architect|sonarqube|clean-code|code-review)"
+                              r" (\d+\.\d+)\b", text) if (d, n) not in sections]
+        big += [label] if len(text.encode("utf-8")) > 1800 else []
+        shape += [label] if not all(h in text for h in (
+            "Minimal shakl", "Allaqachon bor, yozmang:", "Tuzoqlar:", "```")) else []
+    _, out_tx, _ = run("--no-mark", os.path.join(ROOT, "tools", "testdata", "java", "Bad.java"))
+    _, out_test, _ = run("--no-mark", os.path.join(ROOT, "tools", "testdata", "java", "FlakyTest.java"))
+    trigger_file = os.path.join(tempfile.mkdtemp(prefix="trigger-"), "umumiy.md")
+    with open(trigger_file, "w", encoding="utf-8") as handle:
+        handle.write("a\nb\nc <!-- agar: Calendar|setTimestamp -->\n")
+    for path in (R.SHARED_CODE, R.SHARED_TEST):
+        with open(path, encoding="utf-8") as handle:
+            broken += ["%s: %s %s" % (os.path.basename(path), d, n) for d, n in
+                       re.findall(r"\b(patterns|testing|architect|sonarqube|clean-code|code-review)"
+                                  r" (\d+\.\d+)\b", handle.read()) if (d, n) not in sections]
+    rows = [
+        ("har belgining kartasi bor%s" % ("" if not absent else ": " + ", ".join(absent)),
+         not absent),
+        ("kartadagi havolalar mavjud bo'limga%s" % ("" if not broken else ": " + ", ".join(broken)),
+         not broken),
+        ("karta <= 1800 bayt%s" % ("" if not big else ": " + ", ".join(big)), not big),
+        ("karta shakli: shakl, yozmang, tuzoqlar, kod%s"
+         % ("" if not shape else ": " + ", ".join(shape)), not shape),
+        ("chiqish retsept bilan boshlanadi",
+         out_tx.find("# Retsept") != -1 and out_tx.find("# Retsept") < out_tx.find("# Tegishli boblar")),
+        ("--vazifa: kesh vazifasi kesh kartasini beradi",
+         "## keshlash" in run("--no-mark", "--vazifa=natijani keshlang",
+                              os.path.join(ROOT, "tools", "testdata", "java", "Good.java"))[1]),
+        ("--vazifa: so'z yo'q bo'lsa belgi qo'shilmaydi",
+         R.task_labels("nomini o'zgartir") == []),
+        ("--vazifa: tashqi to'lov chaqiruvi",
+         "tashqi chaqiruv" in R.task_labels("tashqi to'lov chaqiruvi tranzaksiya ichida")),
+        # Bilim bir xil: qoida agent faylida emas, rules_for chiqishida.
+        ("umumiy kod qoidalari har Java faylda", "har Java fayl" in out_tx
+         and "test fayli" not in out_tx.split("# Tegishli boblar")[0]),
+        ("test faylida umumiy test qoidalari ham", "# Umumiy yozish qoidalari: test fayli" in out_test
+         and "har Java fayl" in out_test),
+        ("--vazifa: vazifa kartasi xavfsizlik kartalaridan oldin",
+         run("--no-mark", "--vazifa=natijani keshlang", os.path.join(
+             ROOT, "tools", "testdata", "java", "Insecure.java"))[1].find("## keshlash")
+         < run("--no-mark", "--vazifa=natijani keshlang", os.path.join(
+             ROOT, "tools", "testdata", "java", "Insecure.java"))[1].find("## xavfsizlik")),
+        ("--belgilar: faqat belgilar, retsept va boblar yo'q",
+         "# Retsept" not in run("--no-mark", "--belgilar", os.path.join(
+             ROOT, "tools", "testdata", "java", "Bad.java"))[1]),
+        ("shartli band: trigger mos kelmasa tushadi, mos kelsa izohsiz chiqadi",
+         R.shared_rules(trigger_file, "oddiy kod") == "a\nb"
+         and R.shared_rules(trigger_file, "Calendar c") == "a\nb\nc"),
+        ("--belgilar: tranzaksiya vazifasi Tez yo'lni yopadi",
+         "tez_yol: yo'q (tranzaksiya)" in run("--no-mark", "--belgilar",
+             "--vazifa=tranzaksiya chegarasini to'g'rila",
+             os.path.join(ROOT, "tools", "testdata", "java", "Bad.java"))[1]),
+        ("--belgilar: faylda tranzaksiya bo'lsa ham kesh vazifasi Tez yo'l",
+         "tez_yol: ha" in run("--no-mark", "--belgilar", "--vazifa=natijani keshlang",
+             os.path.join(ROOT, "tools", "testdata", "java", "Bad.java"))[1]),
+        ("--vazifa: ta'sir, hashCode va git commit yolg'on belgi bermaydi",
+         R.task_labels("bu ta'sir qiladi") == [] and R.task_labels("hashCode ni yoz") == []
+         and "tranzaksiya" not in R.task_labels("git commit qil")),
+        ("vazifaga tegmaydigan kartaning kod bloki tushadi",
+         out_tx.count("```") >= 0 and "Shakl: tools/retsept/" in run(
+             "--no-mark", "--vazifa=natijani keshlang",
+             os.path.join(ROOT, "tools", "testdata", "java", "Bad.java"))[1]),
+        ("karta soni MAX_RECIPES dan oshmaydi",
+         out_tx.count("\nMinimal shakl") <= R.MAX_RECIPES),
+    ]
     failures += report(rows)
     total += len(rows)
 

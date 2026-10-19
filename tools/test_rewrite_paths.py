@@ -649,7 +649,16 @@ def case_haqiqiy_skill_toza_qoladi():
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def case_skill_reference_mutlaq():
+    """Agent faylidagi skill reference havolasi snapshot yo'liga aylanadi."""
+    text = "o'qing `.claude/skills/manguberdi/references/review-diffsiz.md`"
+    new, count = R.rewrite(text, GENIUS)
+    return (count == 1 and "%s/.claude/skills/manguberdi/references/review-diffsiz.md"
+            % R.clean_root(GENIUS) in new and not R.relative_left(new))
+
+
 CASES = [
+    ("skill reference yo'li mutlaq", case_skill_reference_mutlaq),
     ("python3 tools/x.py", case_python_chaqiruvi),
     ("backtick ichidagi buyruq", case_backtick_ichida),
     ("python3 siz .py yo'li", case_python3siz_py),

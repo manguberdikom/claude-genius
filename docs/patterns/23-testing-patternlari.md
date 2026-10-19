@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 23. Testing patternlari (Testing Patterns)
 
@@ -275,7 +275,7 @@ void jsonRoundTripPreservesOrder(@ForAll("orders") Order order) throws Exception
 
 **Tavsif:** Spring Boot'ning qisman (sliced) context yuklash mexanizmi: to'liq application context o'rniga faqat testga kerakli infrastruktura qatlami ko'tariladi. Har bir slice annotatsiyasi `@AutoConfigureX` to'plamini va component filtrini (`TypeExcludeFilter`) belgilaydi, natijada context sekundlar emas, millisekundlarda ko'tariladi va xatolar aniq qatlamda lokallashadi. Bu piramidaning "integration" qatlami uchun eng samarali vositadir.
 
-**Spring'da qayerda uchraydi:** `@WebMvcTest` (`MockMvc` / `MockMvcTester` Boot 3.4+, faqat `@Controller`, `@ControllerAdvice`, `WebMvcConfigurer`, `Converter`; service'lar mock qilinishi kerak), `@WebFluxTest` (`WebTestClient`), `@DataJpaTest` (embedded DB + `TestEntityManager` + avtomatik `@Transactional` rollback), `@DataJdbcTest`, `@DataMongoTest`, `@JdbcTest`, `@JsonTest` (`JacksonTester`, `JsonContentAssert`), `@RestClientTest` (`MockRestServiceServer` bilan `RestClient`/`RestTemplate` adapterlarini test qiladi). `@AutoConfigureTestDatabase(replace = NONE)` real DB (Testcontainers) bilan ishlashga imkon beradi.
+**Spring'da qayerda uchraydi:** `@WebMvcTest` (`MockMvc` / `MockMvcTester` Boot 3.4+, faqat `@Controller`, `@ControllerAdvice`, `WebMvcConfigurer`, `Converter`; service'lar mock qilinishi kerak), `@WebFluxTest` (`WebTestClient`), `@DataJpaTest` (embedded DB + `TestEntityManager` + avtomatik `@Transactional` rollback), `@DataJdbcTest`, `@DataMongoTest`, `@DataCassandraTest` (`org.springframework.boot.test.autoconfigure.data.cassandra`; reaktiv Cassandra repository testi ham shu slice bilan yoziladi, farqi faqat annotatsiyada - Walls, 13-bob, 366-bet), `@JdbcTest`, `@JsonTest` (`JacksonTester`, `JsonContentAssert`), `@RestClientTest` (`MockRestServiceServer` bilan `RestClient`/`RestTemplate` adapterlarini test qiladi). `@AutoConfigureTestDatabase(replace = NONE)` real DB (Testcontainers) bilan ishlashga imkon beradi.
 
 **Qo'llanish keyslari:**
 - Controller'ning validatsiya, status kod va JSON mapping xatti-harakatini `@WebMvcTest` + `MockMvcTester` bilan tekshirish.
@@ -1927,6 +1927,7 @@ given(taxRateSource.rateFor(order)).willReturn(new BigDecimal("0.12"));
 
 ## Manbalar
 
+- Craig Walls, *Spring in Action* 6th, 13-bob - `@DataCassandraTest` bilan Cassandra repository slice testi
 - Gerard Meszaros, *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley, 2007, 18-bob "Test Strategy Patterns" (277-345-bet) - Recorded Test, Scripted Test, Data-Driven Test, Minimal Fixture va Standard Fixture yozuvlari
 - Gerard Meszaros, *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley, 2007, 19-bob "xUnit Basics Patterns" (347-406-bet) - Test Method shablonlari, Assertion Method va Assertion Message, Test Runner, Testcase Object, Test Suite Object, Test Discovery, Test Enumeration va Test Selection
 - Gerard Meszaros, *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley, 2007, 20-bob "Fixture Setup Patterns" (407-459-bet) - In-line, Delegated va Implicit Setup ni tanlash mezoni, Setup Decorator va Chained Tests

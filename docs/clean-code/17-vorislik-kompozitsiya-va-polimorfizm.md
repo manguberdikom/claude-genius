@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 17. Vorislik, kompozitsiya va polimorfizm mexanikasi (Inheritance Mechanics)
 
 <details>
-<summary>Bu bobdagi 11 bo'lim</summary>
+<summary>Bu bobdagi 12 bo'lim</summary>
 
 - [17.1 Vorislik uchun dizayn qilish yoki `final` qilish](#171-vorislik-uchun-dizayn-qilish-yoki-final-qilish)
 - [17.2 Konstruktorda override qilinadigan metodni chaqirish](#172-konstruktorda-override-qilinadigan-metodni-chaqirish)
@@ -19,7 +19,8 @@
 - [17.8 Konstantalarni interfeysdan voris olish](#178-konstantalarni-interfeysdan-voris-olish)
 - [17.9 Delegatsiya bilan vorislikni almashtirish](#179-delegatsiya-bilan-vorislikni-almashtirish)
 - [17.10 Teglangan sinf o'rniga ierarxiya yoki `sealed`](#1710-teglangan-sinf-orniga-ierarxiya-yoki-sealed)
-- [17.11 Amalda qo'llash](#1711-amalda-qollash)
+- [17.11 Interfeys evolyutsiyasi va `default` metod cheklovlari](#1711-interfeys-evolyutsiyasi-va-default-metod-cheklovlari)
+- [17.12 Amalda qo'llash](#1712-amalda-qollash)
 
 </details>
 
@@ -31,6 +32,33 @@
 Sinf uch holatdan birida bo'lishi kerak: vorislik uchun mo'ljallangan va hujjatlashtirilgan, `final`, yoki interfeys. "Vorislik mumkin, lekin o'ylanmagan" to'rtinchi holat - xato manbasi, chunki voris sinf bazaviy sinfning ichki qoidalarini bilmaydi va ularni buzadi.
 
 Shu sababli amaliy standart: **sinf `final` bo'lishi standart holat**, vorislik esa ongli qaror. Spring kontekstida istisno bor: `@Configuration` sinflari va CGLIB proxy qilinadigan beanlar `final` bo'lmaydi (26.1).
+
+Vorislikni ochish qarorini qabul qilgandan keyin uchta amaliy talab qoladi.
+
+**Override uchun mo'ljallangan metod `public` yoki `protected` bo'ladi.** `package-private` metod faqat bir xil ish vaqtidagi paketda override qilinadi, ya'ni paket nomi ham, sinf yuklovchisi (class loader) ham bir xil bo'lishi kerak. Boshqa paketdagi bir xil imzoli metod override qilmaydi: u butunlay boshqa metod bo'lib qoladi va bazaviy sinf o'z versiyasini chaqiradi, chaqiruv esa jim kutilmagan implementatsiyaga tushadi. Modul va kutubxona chegarasida bu xato uzoq vaqt ko'rinmaydi. Teskari tomoni kompilyator qoidasi: override qilgan metodning kirish darajasi superclass dagidan **torroq bo'lishi mumkin emas**, chunki voris nusxasi superclass turi orqali ishlatilganda metod chaqirilishi kerak (Liskov printsipi tilga qurib qo'yilgan). Shuning uchun sinf interfeysni amalga oshirsa, interfeys metodlari `public` bo'lishi shart.
+
+**Vorislik uchun dizayn sinovdan o'tadi, va sinovning yagona yo'li - voris sinf yozish.** Hujjat yozib qo'yish yetmaydi: qaysi `protected` a'zo kerak, qaysi biri ortiqcha ekani faqat voris yozilganda ko'rinadi. Amaliy mezon: uchta voris sinf yozib ko'riladi va ulardan kamida bittasi boshqa odam tomonidan yoziladi. O'zi yozgan odam o'zining yashirin taxminlarini ko'rmaydi, boshqa odam esa birinchi kunda ularga urilib qoladi. Har bir ortiqcha `protected` a'zo esa abadiy qarz: u API ning bir qismi va keyin olib tashlanmaydi.
+
+**Vorislikka ruxsat bersangiz, sinf o'z override qilinadigan metodlarini umuman chaqirmasligi kerak.** Self-use (sinfning o'z override qilinadigan metodini ichidan chaqirishi) voris uchun hujjatlashtirilmagan detalga aylanadi (17.9) va uni yo'qotishning mexanik retsepti bor: har bir override qilinadigan metodning tanasi `private` yordamchi metodga ko'chiriladi, keyin sinf ichidagi barcha chaqiruvlar shu yordamchiga yo'naltiriladi. Shundan keyin voris metodni override qilsa ham, bazaviy sinfning ichki ishi o'zgarmaydi.
+
+```java
+// yomon: ichki chaqiruv override qilinadigan metodga tushadi
+public void importFile(Path file) {
+    for (SettlementRow row : rows(file)) {
+        if (validate(row)) { save(row); }      // voris versiyasi chaqiriladi
+    }
+}
+protected boolean validate(SettlementRow row) { return row.isComplete(); }
+
+// yaxshi: tana private yordamchiga ko'chdi, ichki chaqiruv shunga boradi
+public void importFile(Path file) {
+    for (SettlementRow row : rows(file)) {
+        if (validateInternal(row)) { save(row); }
+    }
+}
+private boolean validateInternal(SettlementRow row) { return row.isComplete(); }
+protected boolean validate(SettlementRow row) { return validateInternal(row); }
+```
 
 ```java
 // yaxshi: standart holat
@@ -75,6 +103,8 @@ public class Importer {
 }
 ```
 
+Taqiqning chegarasi ham aniq: konstruktordan `private`, `final` va `static` metodlarni chaqirish **xavfsiz**, chunki ularning hech biri override qilinmaydi va demak voris sinf kodi konstruktor ichida ishga tushmaydi. Shuning uchun konstruktordagi sozlash ishi shu uch toifadan biriga ko'chiriladi, olib tashlanmaydi: `private void initDefaults()` yoki `static ImportSettings defaults()` qonuniy shakl.
+
 Xuddi shu qoida `clone` va `readObject` ga tegishli: ikkisi ham konstruktor rolini bajaradi.
 
 ## 17.3 `protected` maydon va buzilgan inkapsulyatsiya
@@ -108,6 +138,19 @@ Qoida: `protected` maydon bo'lmaydi; `protected` metod bo'lishi mumkin va u `fin
 ## 17.4 `super` chaqiruvi va uni unutish
 
 Agar override qilingan metod `super.method()` ni chaqirishi **shart** bo'lsa, bu yashirin shartnoma va u buziladi: kimdir chaqirmay qo'yadi va xato uzoqda chiqadi.
+
+Bu umumiy printsipning xususiy holati: **niyatning aniq izi kodda qoldiriladi**. Google ning uslub ko'rsatmalari o'quvchi uchun optimallashtirishni muallif uchun optimallashtirishdan ustun qo'yadi, va shundan oshkor belgilar talabi kelib chiqadi: Java, JavaScript va C++ ko'rsatmalari metod ustki sinf metodini override qilganda `@Override` annotatsiyasini yoki `override` kalit so'zini **majburiy** qiladi. Belgi bo'lmasa o'quvchi niyatni taxmin qila oladi, lekin buning uchun qo'shimcha qidirish kerak bo'ladi va bu narx har o'quvchiga qayta-qayta tushadi.
+
+Ikkinchi shakl - niyatni **tur bilan** aytish: masalan egalik (ownership) o'tayotganini parametr turi orqali ko'rsatish, shunda chaqiruv joyini o'qigan odam qo'shimcha kodga qaramasdan mulohaza yuritadi. Java da bunga eng yaqin vositalar `Optional` qaytarish turi (bo'lmasligi mumkinligi oshkor), `@Nullable` va `@NullMarked` (42.2), yopiq ierarxiya uchun `sealed` (17.10) va o'zgarmas uzatish uchun `record`. Mezon bir xil: belgi chaqiruv yoki e'lon joyida ko'rinadi va o'quvchini boshqa faylga yubormaydi.
+
+```java
+// Niyat ko'rinmaydi: bu override mi, yangi metodmi?
+public void process(Row row) { ... }
+
+// Niyat oshkor: kompilyator ham tekshiradi
+@Override
+public void process(Row row) { ... }
+```
 
 To'g'ri yechim - shablon metod (template method) bilan tuzilishni teskari aylantirish: bazaviy sinf `final` metodda tartibni ushlaydi va voris sinfga faqat bo'sh joyni beradi.
 
@@ -173,17 +216,37 @@ Tanlov mezoni oddiy: **holat** kerak bo'lsa abstrakt sinf, faqat shartnoma kerak
 
 `default` metodlar interfeysga xatti-harakat qo'shish imkonini beradi, lekin ularni ehtiyotkorlik bilan ishlatish kerak: ular holatga kira olmaydi, va ikki interfeys bir xil `default` metod bersa konflikt bo'ladi.
 
-Uchinchi ehtiyot nuqtasi muhimroq: chiqarilgan interfeysga `default` metod qo'shish mavjud implementatsiyalarni **jim** buzishi mumkin. Kompilyatsiya o'tadi, chunki metod tayyor, lekin implementatsiya shu metodning invariantini bilmaydi. Platformaning o'zida shu holat bo'lgan: `Collection.removeIf` Java 8 da `default` bo'lib qo'shilgach, chaqiruvchi tomonda sinxronlanadigan o'ramlar uni o'zlarining qulfidan o'tkazmasdan bajaradigan bo'lib qoldi. Shu sababli interfeysni chiqarishdan oldin kamida ikki-uch mustaqil implementatsiya yozib ko'riladi, `default` metod esa faqat haqiqiy moslik ehtiyoji uchun qo'shiladi, qulaylik uchun emas.
+Uchinchi ehtiyot nuqtasi muhimroq: chiqarilgan interfeysga `default` metod qo'shish mavjud implementatsiyalarni **jim** buzishi mumkin. Kompilyatsiya o'tadi, chunki metod tayyor, lekin implementatsiya shu metodning invariantini bilmaydi. Platformaning o'zida shu holat bo'lgan: `Collection.removeIf` Java 8 da `default` bo'lib qo'shilgach, chaqiruvchi tomonda sinxronlanadigan o'ramlar uni o'zlarining qulfidan o'tkazmasdan bajaradigan bo'lib qoldi. Shu sababli interfeysni chiqarishdan oldin kamida ikki-uch mustaqil implementatsiya yozib ko'riladi. Ikki holat esa bir-biridan ajratiladi va aralashtirilmaydi: interfeys **yangi yaratilayotgan** bo'lsa, `default` metod qulaylik uchun ham haqli, chunki hali hech qanday implementatsiya yo'q va shartnoma bir vaqtda e'lon qilinadi; interfeys **chiqarilgan** bo'lsa, `default` metod faqat moslik ehtiyoji kritik bo'lganda qo'shiladi (17.11).
 
 | Ehtiyoj | Tanlov |
 |---|---|
 | Faqat shartnoma | interfeys |
 | Umumiy holat kerak | abstrakt sinf |
-| Mavjud interfeysga metod qo'shish | `default` metod (orqaga moslik) |
-| Qulaylik metodi (boshqalardan hisoblanadi) | `default` metod |
+| Yangi yaratilayotgan interfeysga qulaylik metodi | `default` metod |
+| Chiqarilgan interfeysga metod qo'shish | `default` metod, faqat moslik ehtiyoji uchun (17.11) |
 | Ko'p rolni birlashtirish | bir nechta interfeys |
 | Konstanta to'plami | enum yoki `final` sinf, interfeys emas (17.8) |
 | Shablon tartibi | abstrakt sinf + `final` shablon metod |
+
+Skelet implementatsiyani yozish tartibi uch qadamli va qadamlar joyini almashtirmaydi. Birinchi: interfeysdagi qaysi metodlar **asosiy** (primitiv) ekanini aniqlash, ya'ni qolganlari shu metodlar ustiga qurilishi mumkin bo'lgan eng kichik to'plamni topish. Ikkinchi: qolgan metodlardan qaysi birini interfeysning o'zida `default` qilib yozish mumkinligini ko'rish. Uchinchi: asosiy metodlar `abstract` qoladigan, qolgan hamma metod amalga oshirilgan abstrakt sinf yozish; shu sinf hech qanday `default` qilinmagan metodni ham o'z ichiga oladi. Birinchi qadam tashlab o'tilsa, skelet implementatsiya haqiqiy skelet bo'lmaydi: voris olgan odam baribir ko'p metod yozishga majbur bo'ladi.
+
+Skeletdan voris olish imkonsiz bo'lsa (sinf allaqachon boshqa sinfdan voris olgan), uchinchi yo'l bor: sinf interfeysni o'zi amalga oshiradi va chaqiruvlarni skeletdan voris olgan `private` ichki sinfga o'tkazadi. Bu **simulyatsiya qilingan ko'p vorislik** (simulated multiple inheritance) deb ataladi va kompozitsiyaning aniq shakli: tashqi sinf turni beradi, ichki sinf implementatsiyani.
+
+```java
+// Sinf allaqachon AbstractImporter dan voris olgan, lekin List ham bo'lishi kerak
+public final class SettlementRows extends AbstractImporter implements List<Row> {
+
+    private final class Rows extends AbstractList<Row> {
+        @Override public Row get(int index) { return rows.get(index); }
+        @Override public int size() { return rows.size(); }
+    }
+
+    private final Rows view = new Rows();
+
+    @Override public Row get(int index) { return view.get(index); }
+    @Override public int size() { return view.size(); }
+}
+```
 
 Ikkisini birga ishlatadigan shakl ham bor va u ko'p holatda eng qulay: interfeys turni belgilaydi, uning yonidagi `AbstractXxx` sinfi esa qolgan metodlarni bir nechta asosiy metod ustiga quradi. Implementatsiya qiluvchi tomon xohlasa abstrakt sinfdan voris oladi va faqat asosiy metodlarni yozadi, xohlasa interfeysni o'zi to'liq implementatsiya qiladi. Java to'plamlar kutubxonasining o'zi shu shaklda: `List` va `AbstractList`, `Map` va `AbstractMap`.
 
@@ -229,6 +292,10 @@ class InstrumentedHashSet<E> extends HashSet<E> {
 ```
 
 `addAll` ni override qilmaslik bilan "tuzatish" mumkin, lekin unda kod `HashSet.addAll` ning ichidan `add` ni chaqirishiga tayanib qoladi: bu kafolatlanmagan detal va reliz bilan o'zgarishi mumkin. Ikkinchi sinish yo'li: bazaviy sinfga keyingi relizda yangi metod qo'shilsa, voris sinf uni bilmasdan meros oladi va o'z invariantini u orqali buzadi.
+
+"Unda hech narsani override qilmayman, faqat yangi metod qo'shaman" degan yechim ham xavfsiz emas, chunki uchinchi sinish yo'li bor: bazaviy sinfga keyingi relizda **bir xil imzoli, lekin boshqa qaytish turli** metod qo'shilsa, voris sinf umuman kompilyatsiya bo'lmaydi; qaytish turi mos kelsa esa siz bilmagan shartnomaga ega override bo'lib qoladi. Ya'ni vorislikda bazaviy sinfning har bir keyingi relizi sizning sinfingizni buzishi mumkin, kompozitsiyada esa bunday bog'liqlik yo'q.
+
+To'rtinchi dalil dizayn tomonida: bazaviy sinf API sidagi **nuqsonlar vorisga majburan o'tadi**. Noto'g'ri nomlangan metod, ortiqcha parametr, o'rinsiz `null` qaytarish - hammasi voris sinfning public API sining bir qismi bo'lib qoladi va siz ularni yashira olmaysiz. Kompozitsiyada esa yangi API o'zingiz yozasiz: eski nuqsonlar o'ramchi ichida qoladi va tashqariga chiqmaydi.
 
 ```java
 // yomon: HashMap dan voris olish - butun API meros bo'ladi, invariant himoyalanmaydi
@@ -293,9 +360,55 @@ record Circle(double radius) implements Figure {
 }
 ```
 
+Aylantirish tartibi mexanik va shu tartibda bajariladi. Birinchi: tegga bog'liq **har bir** metod uchun abstrakt ildiz sinfda (yoki interfeysda) abstrakt metod e'lon qilinadi. Ikkinchi: tegga bog'liq bo'lmagan metodlar va hamma turga umumiy maydonlar ildizda qoldiriladi; agar umumiy metod tanasi tegga qaramasa, u ildizda konkret metod bo'ladi. Uchinchi: har bir tur uchun ildizdan voris olgan konkret sinf yoziladi va unga faqat **shu** turga tegishli maydonlar hamda abstrakt metodlarning implementatsiyasi tushadi. Oxirida tur belgisi maydoni va unga qarab shoxlanadigan `switch` lar yo'qoladi: ular konstruktorlarga va polimorfizmga aylangan bo'ladi.
+
+Ierarxiya tanlashning ikkinchi, ko'pincha e'tibordan qoladigan foydasi ham bor: u turlar orasidagi **tabiiy ierarxik munosabatni** kodda ifodalaydi. Kvadrat to'rtburchakning maxsus turi, kredit to'lovi to'lovning maxsus turi; teglangan sinfda bu munosabat `enum` konstantasining nomi bo'lib qoladi, ierarxiyada esa tur tizimining bir qismiga aylanadi. Natijada kompilyator yordam beradigan joy ko'payadi: faqat kvadratga tegishli metod faqat kvadratni qabul qiladi va noto'g'ri chaqiruv kompilyatsiyada chiqadi.
+
 `sealed` qo'shimcha narsa beradi: ruxsat etilgan voris ro'yxati e'londa turadi, shu sababli `switch` to'liqligini kompilyator tekshiradi va `default` shoxi kerak bo'lmaydi. Yangi voris qo'shilsa, to'liq bo'lmagan `switch` lar kompilyatsiyada chiqadi. Turga qarab shoxlanishni polimorfizmga aylantirish [takrorlangan `switch`](06-shart-mantiq-va-boshqaruv-oqimi.md#610-takrorlangan-switch-va-turga-qarab-shoxlanish) da ham ko'rilgan; bu bo'lim ierarxiya shaklini belgilaydi.
 
-## 17.11 Amalda qo'llash
+## 17.11 Interfeys evolyutsiyasi va `default` metod cheklovlari
+
+Interfeys chiqarilgandan keyin u sizga tegishli bo'lmay qoladi: uni mijozlar amalga oshirgan va har o'zgarish ularning kodiga tegadi. Shu sababli interfeysni rivojlantirishning chegaralari aniq.
+
+**`default` metod nima uchun mo'ljallanmagan.** `default` metod interfeysdan metod **olib tashlash** yoki mavjud metod **imzosini o'zgartirish** uchun vosita emas: bu ikki o'zgarishni mijozni buzmasdan qilishning yo'li yo'q. Olib tashlangan metodni chaqirgan kod `NoSuchMethodError` bilan yiqiladi, imzo o'zgarsa esa eski implementatsiya override qilishni to'xtatadi va chaqiruv jim `default` ga tushadi. Amaldagi yo'l: eski metodni `@Deprecated` qilib qoldirish va yangisini yonida qo'shish, interfeysni ikkiga bo'lish, yoki yangi interfeys e'lon qilib eski interfeysni o'z ichiga olmaslik.
+
+**`default` metodning qat'iy cheklovlari.** Birinchi uchtasi tilda qurilgan va ularni chetlab o'tish yo'li yo'q; to'rtinchisi intizom qoidasi:
+
+| Cheklov | Oqibati |
+|---|---|
+| `Object` metodlari (`equals`, `hashCode`, `toString`) uchun `default` berilmaydi | tenglik shartnomasi interfeysda emas, sinfda yoziladi (15.1) |
+| Interfeysda instans maydoni bo'lmaydi | `default` metod holat ushlay olmaydi, faqat boshqa metodlar ustiga quriladi |
+| Interfeysda nopublik statik a'zo bo'lmaydi (`private static` metoddan tashqari) | yordamchi holatni yashirib bo'lmaydi |
+| O'zingizga tegishli bo'lmagan interfeysga `default` qo'shilmaydi | implementatsiyalarni jim buzadi (17.7) |
+
+**`private` interfeys metodi.** JDK 9 dan interfeysda `private` metod yozish mumkin va uning yagona vazifasi shu: bir nechta `default` metod orasidagi umumiy kodni bir joyga chiqarish. U meros olinmaydi va override qilinmaydi, ya'ni implementatsiya qiluvchi sinf uni ko'rmaydi ham: shartnomaga hech narsa qo'shmaydi. Shuning uchun `default` metodlar takrorlanib ketsa, umumiy bo'lakni `private` metodga chiqarish to'g'ri yo'l va bu `AbstractXxx` skelet sinfiga o'tish zaruratini keltirmaydi.
+
+```java
+public interface SettlementWindow {
+
+    LocalDate from();
+    LocalDate to();
+
+    default boolean covers(LocalDate date) {
+        return !date.isBefore(from()) && !date.isAfter(to());
+    }
+
+    default int lengthInDays() {
+        return (int) span().toDays() + 1;
+    }
+
+    // Faqat default metodlar uchun: meros olinmaydi, override qilinmaydi
+    private Duration span() {
+        return Duration.between(from().atStartOfDay(), to().atStartOfDay());
+    }
+}
+```
+
+**Qulaylik metodining chegarasi.** `default` metod qo'shish arzon ko'rinadi, shuning uchun interfeys qulaylik metodlari bilan to'lib ketishi oson. Qoida: har bir metod o'z vaznini tortishi kerak. Metod soni o'sgani sari sinfni o'rganish, hujjatlashtirish, test qilish va qo'llab-quvvatlash qiyinlashadi, implementatsiya qiluvchilar esa har yangi metodni kuzatib borishga majbur bo'ladi. Shubha bo'lsa metod qo'shilmaydi: keyin qo'shish mumkin, olib tashlash esa yo'q.
+
+Shu yerda 17.7 jadvalidagi "qulaylik metodi" qatorining sharti ishlaydi: interfeys **yangi yaratilayotgan** bo'lsa, boshqa metodlardan hisoblanadigan qulaylik metodini `default` qilish haqli, chunki shartnoma bir vaqtda e'lon qilinadi va hech qanday mavjud implementatsiya buzilmaydi. Interfeys allaqachon **chiqarilgan** bo'lsa, qulaylik yetarli sabab emas: `default` metod faqat moslik ehtiyoji kritik bo'lganda qo'shiladi, aks holda qulaylik metodi statik yordamchi sinfga (`SettlementWindows.lengthOf(...)`) chiqariladi.
+
+## 17.12 Amalda qo'llash
 
 - [ ] Vorislik uchun mo'ljallanmagan barcha sinflarni `final` qiling (Spring proxy talab qilgan joylardan tashqari).
 - [ ] Konstruktordan chaqirilayotgan override qilinadigan metodlarni topib, sozlashni konstruktordan chiqaring.
@@ -306,10 +419,31 @@ record Circle(double radius) implements Figure {
 - [ ] Constant interface larni yo'qotib, konstantalarni tegishli sinfga yoki enum ga ko'chiring.
 - [ ] `ArrayList`, `HashMap` kabi to'plamlardan voris olgan sinflarni delegatsiyaga o'tkazing.
 - [ ] Tur belgisi maydoni (`type`, `kind`) bo'yicha shoxlanadigan sinflarni toping va ularni `sealed` ierarxiyaga o'tkazing.
+- [ ] Vorislik uchun ochilgan sinflarda self-use ni topib, tanani `private` yordamchi metodga ko'chiring.
+- [ ] Override uchun mo'ljallangan `package-private` metodlarni `protected` yoki `public` ga o'tkazing.
+- [ ] Chiqarilgan interfeyslarga qo'shilgan `default` metodlarni ko'rib, faqat moslik uchun qo'shilganlarini qoldiring.
+- [ ] `default` metodlar orasidagi takrorlangan kodni `private` interfeys metodiga chiqaring.
 
 ## Manbalar
 
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 8-bob ("Optimize for the Reader") - o'quvchi uchun optimallashtirish printsipi va niyatning oshkor izini qoldirish talabi: metod ustki sinf metodini override qilganda annotatsiya yoki kalit so'zni majburiy qilish, hamda niyatni tur orqali ko'rsatish. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
 - Joshua Bloch, *Effective Java* 3rd, Item 18, 19, 20 - kompozitsiya, vorislik uchun dizayn, interfeys va abstrakt sinf tanlovi
+- Joshua Bloch, *Effective Java* 3rd, Item 15 (75-bet) - override qilgan metodning kirish darajasi superclass dagidan torroq bo'lmasligi va interfeys metodlarining `public` bo'lishi
+- Joshua Bloch, *Effective Java* 3rd, Item 18 (89-bet) - faqat yangi metod qo'shish ham xavfsiz emasligi: bazaviy sinfga bir xil imzoli, boshqa qaytish turli metod qo'shilsa voris kompilyatsiya bo'lmasligi
+- Joshua Bloch, *Effective Java* 3rd, Item 18 (92-bet) - bazaviy sinf API sidagi nuqsonlarning vorisga majburan o'tishi va kompozitsiyaning ularni yashirish imkoni
+- Joshua Bloch, *Effective Java* 3rd, Item 19 (95-bet) - vorislik uchun dizaynni sinashning yagona yo'li voris sinf yozish bo'lishi, uchta voris yetarli ekani va kamida bittasi boshqa odam tomonidan yozilishi
+- Joshua Bloch, *Effective Java* 3rd, Item 19 (96-bet) - konstruktordan `private`, `final` va `static` metodlarni chaqirish xavfsizligi
+- Joshua Bloch, *Effective Java* 3rd, Item 19 (98-bet) - self-use ni yo'qotishning mexanik yo'li: tanani `private` yordamchi metodga ko'chirib ichki chaqiruvlarni shunga yo'naltirish
+- Joshua Bloch, *Effective Java* 3rd, Item 20 (100-bet) - `default` metod cheklovlari: `Object` metodlari uchun berilmasligi, interfeysda instans maydoni va nopublik statik a'zo bo'lmasligi
+- Joshua Bloch, *Effective Java* 3rd, Item 20 (102-bet) - skeletdan voris olish imkonsiz bo'lganda `private` ichki sinf orqali simulyatsiya qilingan ko'p vorislik, va skelet implementatsiyani yozish tartibi
+- Joshua Bloch, *Effective Java* 3rd, Item 21 (106-bet) - `default` metod interfeysdan metod olib tashlash yoki imzoni o'zgartirish uchun mo'ljallanmaganligi
+- Joshua Bloch, *Effective Java* 3rd, Item 23 (110-bet) - teglangan sinfni ierarxiyaga aylantirish tartibi: abstrakt ildiz, umumiy a'zolar ildizda, har tur uchun konkret voris
+- Joshua Bloch, *Effective Java* 3rd, Item 23 (111-bet) - sinf ierarxiyasining turlar orasidagi tabiiy ierarxik munosabatni ifodalashi va kompilyatsiya vaqtidagi tur tekshiruvini kuchaytirishi
+- Joshua Bloch, *Effective Java* 3rd, Item 51 (236-bet) - qulaylik metodlarini ko'paytirib yubormaslik: har metod o'z vaznini tortishi va shubha bo'lsa qo'shilmasligi
+- ESLATMA: 17.7 jadvalidagi "qulaylik metodi -> `default` metod" qatori Bloch ning Item 21 dagi ogohlantirishiga qarama-qarshi ko'rinadi. Ikkisini ajratuvchi shart (interfeys YANGI yaratilayotganda `default` qulaylik uchun ham haqli, CHIQARILGAN interfeysga esa faqat moslik ehtiyoji uchun) korpus qo'shimchasi; kitob ikki holatni bu shaklda ajratmaydi
+- *The Java Language Specification, Java SE 25 Edition* (Gosling, Joy, Steele, Bracha, Buckley, Smith, Bierman), 9.4 (365-bet) - interfeysning `private` metodi meros olinmasligi va override qilinmasligi, u faqat shu interfeysning `default` metodlari uchun yordamchi bo'lishi
+- Herbert Schildt, *Java The Complete Reference*, 12-nashr, McGraw Hill, 2022, 9-bob (226-bet) - JDK 9 dan interfeysda `private` metod va uning `default` metodlar orasidagi umumiy kodni chiqarish uchun ishlatilishi
+- *The Java Virtual Machine Specification, Java SE 25 Edition* (Lindholm, Yellin, Bracha, Buckley, Smith), 5.4.5 (395-bet) - `package-private` metodning faqat bir xil ish vaqtidagi paketda (bir xil paket nomi va bir xil sinf yuklovchisi) override qilinishi
 - Joshua Bloch, *Effective Java* 3rd, Item 22, 23 - interfeys faqat tur uchun, teglangan sinf o'rniga ierarxiya
 - [JEP 409: Sealed Classes](https://openjdk.org/jeps/409) - `sealed` va `permits` semantikasi, switch to'liqligi
 - Joshua Bloch, *Effective Java* 3rd, Item 21 - chiqarilgan interfeysga `default` metod qo'shishning xavfi

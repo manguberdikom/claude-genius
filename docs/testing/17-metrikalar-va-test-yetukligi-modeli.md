@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 17. Metrikalar va test yetukligi modeli (Metrics & Testing Maturity)
 
@@ -38,6 +38,23 @@ Metrika qaror qabul qilish uchun yig'iladi. Agar biror raqamga qarab hech qanday
 Goodhart qonuni: metrika maqsadga aylansa, u metrika sifatida ishlashdan to'xtaydi. Coverage'ni jamoa KPI qilish o'rniga assertion'siz testlar, getter/setter testlari va `toString()` tekshiruvlari paydo bo'ladi - raqam o'sadi, xavf o'zgarmaydi. Bug soni bo'yicha baholash QA'ni mayda-chuyda defekt yozishga undaydi. Shu sababli arxitektor uchun amaliy qoida: outcome metrikalari (production'dagi sifat) maqsad bo'lishi mumkin, process va suite metrikalari esa faqat diagnostika - ularni shaxs yoki jamoa bahosiga bog'lamaslik kerak.
 
 Ikkinchi qoida - metrikalar juftlikda o'qiladi: deploy chastotasi change failure rate bilan, coverage mutation score bilan. Yolg'iz raqam manipulyatsiyaga ochiq.
+
+**Tanlash tartibi: maqsad, signal, metrika (GSM).** Google ning muhandislik mahsuldorligini o'lchash uchun ishlatadigan apparati uch qadamdan iborat va tartibi majburiy. **Maqsad** - erishilishi kerak natija, u yuqori darajada va o'lchov usuliga havolasiz yoziladi. **Signal** - maqsadga erishilganini qanday bilish mumkin; signalning o'zi o'lchanmasligi mumkin. **Metrika** - signalning proksi si, ya'ni amalda o'lchanadigan narsa; u ideal o'lchov bo'lmasligi mumkin, lekin yetarlicha yaqin.
+
+Bu tartib uch nosozlikdan saqlaydi:
+
+- **Streetlight effect.** Atama "kalitni chiroq ostida izlash" dan kelgan: faqat ko'rinadigan joyga qarasangiz, kerakli joyga qaramasligingiz mumkin. Maqsaddan boshlash bu holatning oldini oladi, chunki shunda "qo'limizda nima bor" degan savol o'rniga "maqsadga qaysi raqam yordam beradi" degan savol turadi.
+- **Metrikani natijaga qarab almashtirish.** Metrika printsipsiz tanlangan bo'lsa va natija kutilganidan chiqmasa, manfaatdor taraf boshqa metrika taklif qiladi va uni rad etish uchun asos qolmaydi. GSM da metrika maqsadga bog'langani uchun bu tortishuv oldindan yopiladi.
+- **Qamrovning ko'rinmasligi.** Hamma maqsad va signal yozilgandan keyin qaysi signal uchun metrika yo'qligi ko'rinadi. Bu normal: **o'lchab bo'lmaydigan signal ochiq tan olinadi**, keyin uning uchun yangi metrika yasash arziydimi yoki umuman o'lchash kerakmi deb qaror qilinadi.
+
+Shartning o'zi - **izlanishlilik (traceability)**: har metrikadan uning signaliga, signaldan esa maqsadga qaytib borish mumkin bo'lishi kerak. Shunda nimani va nega o'lchayotganimiz har doim ma'lum.
+
+| Qadam | Namuna |
+|---|---|
+| Maqsad | Flaky test ishlab chiquvchining ishonchini buzmaydi |
+| Signal | Muhandis qizil natijani ko'rib uni tekshiradi, "qayta yurgiz" tugmasini bosmaydi |
+| Metrika | Qayta yurgizishlar ulushi, karantin kvotasi, flake rate |
+| O'lchanmagan signal | Jamoaning suite ga ishonchi (so'rovnoma orqali, taxminiy) |
 
 ## 17.2 Sifat natijasi metrikalari (outcome)
 
@@ -332,6 +349,7 @@ ESLATMA: bu raqamlar 2004 yildagi hisobotlardan va mo'ljal sifatida beriladi, lo
 
 ## Manbalar
 
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 7-bob ("Selecting Meaningful Metrics with Goals and Signals") - maqsad, signal va metrika tartibi (GSM), streetlight effect va natijaga qarab metrikani almashtirishning oldini olish, o'lchab bo'lmaydigan signalni ochiq tan olish va metrikadan signalga, signaldan maqsadga izlanishlilik. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
 - [JaCoCo 0.8.12, Coverage Counters](https://raw.githubusercontent.com/jacoco/jacoco/v0.8.12/org.jacoco.doc/docroot/doc/counters.html) - oltita hisoblagich va ularning farqi, ya'ni "coverage" raqamining nimani o'lchashi
 - [sonar-plugin-api, `CoreMetrics.java`](https://raw.githubusercontent.com/SonarSource/sonar-plugin-api/a9d2a8204d3762cc96ea7bd074a26cbe982745b4/plugin-api/src/main/java/org/sonar/api/measures/CoreMetrics.java) - metrika kalitlari va tavsiflari (`coverage`, `new_coverage`, `sqale_index`)
 - [pitest, `Mutator.java`](https://raw.githubusercontent.com/hcoles/pitest/f7fe5adfa5fb6e727c12d2403a48f5e4e9dd2fc6/pitest/src/main/java/org/pitest/mutationtest/engine/gregor/config/Mutator.java) - default mutator to'plami, ya'ni mutatsiya ballining mazmuni

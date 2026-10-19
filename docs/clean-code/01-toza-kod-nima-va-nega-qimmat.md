@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 1. Toza kod nima va nega qimmat (What Clean Code Is)
 
@@ -31,6 +31,19 @@ Toza kod haqidagi suhbat did haqidagi bahsga aylanib ketsa, u foydasiz. Shuning 
 Toza kodni ta'riflashning eng ishonchli yo'li uni kuzatiladigan xatti-harakat orqali belgilash. Kod toza, agar uni birinchi marta ko'rgan odam debuggersiz o'qib tushunsa; o'zgartirish kiritishda u nimani buzishi mumkinligini oldindan ayta olsa; va o'zgartirishdan keyin test uni tasdiqlasa yoki rad etsa. Uchta shartning hech biri estetika haqida emas.
 
 Shundan amaliy natija chiqadi. "Menga bu uslub yoqmaydi" argumenti toza kod argumenti emas. "Bu metodni o'qish uchun ikkita boshqa faylni ochish kerak" - toza kod argumenti, chunki o'qish narxini oshiradi. "Bu nomni o'zgartirsa, uch joyda kutilmagan xatti-harakat chiqadi" - toza kod argumenti, chunki o'zgartirish ishonchini pasaytiradi.
+
+Uch shartning narxi kodning **kutilgan umriga** bog'liq. Google ning formulasi: "bu kod qancha yashaydi" savoliga berilgan asosli javoblar taxminan 100000 barobar farq qiladi, bir necha daqiqadan o'n yillarga. Spektrning qisqa uchidagi kod vaqtdan ta'sirlanmaydi: bir soat yashaydigan skript uchun yangi OS versiyasi, kutubxona yangilanishi yoki til versiyasi muammo emas, shuning uchun u "shunchaki programmalash masalasi". Uzoq uchida esa bog'liqliklarning deyarli hammasi o'zgaradi va kod shu o'zgarishga javob bera olishi kerak; Google buni **sustainability** deb ataydi: loyihangiz barqaror, agar kutilgan umr davomida kelgan har qanday qimmatli o'zgarishga javob bera olsangiz.
+
+Amaliy natija: bu bobdagi qoidalarning qattiqligi umr bilan birga o'sadi.
+
+| Kutilgan umr | Hiyla (clever) kod | Test | SemVer va moslik |
+|---|---|---|---|
+| Soatlar (bir martalik skript) | maqbul | kerak emas | kerak emas |
+| Haftalar (prototip, MVP) | tavsiya etilmaydi | unit test shart | kerak emas |
+| Yillar (mahsulot moduli) | ayb | unit va integratsion | ichki chaqiruvchilar uchun |
+| O'n yillar (kutubxona, platforma) | ayb | hamma qatlam | oshkor va qattiq |
+
+Shuning uchun "bu kod toza emas" degan e'tiroz bilan birga "bu kod qancha yashaydi" savoli ham so'raladi. Tashlab yuboriladigan skriptga integratsion test yozish va SemVer haqida qayg'urish ortiqcha ish; uzoq yashaydigan modulda esa aynan shu ikkisining yo'qligi keyinchalik eng qimmat qarzga aylanadi. Chegara joyi aniq: loyiha boshidan yangilanishni rejalashtirmagan bo'lsa, birinchi majburiy yangilanish uch sabab bilan juda og'riqli bo'ladi - bu ish loyihada hali qilinmagan (yashirin taxminlar to'planib qolgan), buni bajarayotgan muhandislarda bunday tajriba yo'q, va hajmi odatdagidan katta (bir necha yillik yangilanish birga bajariladi).
 
 | Savol | Iflos kod | Toza kod |
 |---|---|---|
@@ -145,6 +158,7 @@ Muhim chegara: "qarz oldik" degani intizomdan voz kechdik degani emas. Orosz qar
 
 ## Manbalar
 
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 1-bob ("Time and Change", "Software Engineering versus Programming") - kodning kutilgan umri bo'yicha asosli javoblar taxminan 100000 barobar farq qilishi, qisqa umrli kodning vaqtdan ta'sirlanmasligi, sustainability ta'rifi va rejalashtirilmagan birinchi yangilanishning uch sababdan og'riqli bo'lishi. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
 - Robert C. Martin, *Clean Code*, 1-bob ("We Are Authors") - kod o'qishga sarflangan vaqt yozishga nisbatan 10:1 dan ko'p
 - Robert C. Martin, *Clean Code*, 1-bob ("The Total Cost of Owning a Mess") - tartibsizlik narxi va unumdorlikning nolga tushishi
 - Robert C. Martin, *Clean Code*, 1-bob ("What Is Clean Code?") - toza kodning turli ta'riflari va ularning umumiy jihati

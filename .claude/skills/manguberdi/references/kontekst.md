@@ -11,10 +11,12 @@ ularning kontekstida qoladi:
 
 | Ish | Kim bajaradi |
 |---|---|
-| O'nlab bo'limni o'qib taqqoslash | `qidiruv` |
-| 500 qatorlik log yoki test chiqishi | `tahlil` |
+| 500 qatorlik log yoki test chiqishi | `parse_test_output.py`: birinchi yiqilgan test |
 | Butun modul yoki proyektni o'qib review qilish (diffsiz tartib) | `review` |
-| Entity va sxema tahlili | `tahlil` |
+| Entity va sxema tahlili | `schema_from_entities.py --only-findings` |
+
+Bo'lim matni hech qachon qisqartiruvchi agent orqali kelmaydi: qoida
+`doc.sh show` bilan to'liq o'qiladi (bo'lim ~2 KB).
 
 Asosiy sessiyada faqat qaror, yo'naltirish va yakuniy javob qoladi.
 
@@ -89,7 +91,7 @@ to'ldiriladi. Jami ikki navbat.
 - Bulut sessiyasi (`CLAUDE_CODE_REMOTE`): konteyner qaytarib olinadi,
   shuning uchun fayl proyekt memorysiga `project_<nom>.md` bo'lib
   yoziladi. Klonning o'zida bu klondagi memory papkasi, boshqa proyektda
-  `GENIUS_MEMORY_DIR` (sukut `~/.claude/genius-memory`). Asbob kerakli
+  `GENIUS_MEMORY_DIR` (sukut `<workspace>/docs-local/memory`). Asbob kerakli
   `git -C <memory ildizi>` buyrug'ini beradi; ildiz git da bo'lmasa buni
   aytadi.
 

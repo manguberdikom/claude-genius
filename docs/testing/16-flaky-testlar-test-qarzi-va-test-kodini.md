@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 16. Flaky testlar, test qarzi va test kodini saqlash (Flaky Tests, Test Debt & Maintenance)
 
@@ -122,7 +122,29 @@ void shouldSendWelcomeEmail() {
 }
 ```
 
-`Thread.sleep` ikki tomondan yomon: sekin runner'da yetmaydi (flaky), tez runner'da ortiqcha kutadi (sekin suite).
+`Thread.sleep` ikki tomondan yomon: sekin runner'da yetmaydi (flaky), tez runner'da ortiqcha kutadi (sekin suite). Buning tizimli oqibati bor: sleep va timeout ga tayangan testlar runner parki yuklangan paytda **birgalikda** yiqiladi, yiqilgan testlar qayta yurgiziladi, qayta yurgizish yukni yanada oshiradi va spiral yopiladi. Ya'ni bu testlar eng kerak paytda ishonchsiz bo'ladi.
+
+**Production kodidagi timeout test uchun sozlanadigan bo'lishi kerak.** Google ning katta testlar bo'yicha ko'rsatmasi: production konfiguratsiyasi tarqalgan topologiyani hisobga olib qo'yiladi, ya'ni ichki timeout va kutish qiymatlari tarmoq kechikishiga mo'ljallangan. Test esa bitta mashinada yoki yondosh konteynerlarda ishlaydi va shu kechikish yo'q. Shuning uchun production kodidagi qattiq (hardcoded) timeout va sleep sozlanadigan qilinadi va test profilida kamaytiriladi; Spring da bu `@ConfigurationProperties` ga chiqarilgan `Duration` maydoni, test profilida esa kichik qiymat.
+
+```java
+@ConfigurationProperties("payment.gateway")
+public record GatewayProperties(Duration connectTimeout, Duration readTimeout) {}
+```
+
+```yaml
+# application.yaml
+payment.gateway:
+  connect-timeout: 2s
+  read-timeout: 10s
+---
+# application-test.yaml: bitta mashinada shu kechikish yo'q
+spring.config.activate.on-profile: test
+payment.gateway:
+  connect-timeout: 100ms
+  read-timeout: 300ms
+```
+
+**Graceful degradation flaky timeout ni yashiradi.** Production tizimi ichki muammoni foydalanuvchiga ko'rsatmaslik uchun 500 qaytarmasdan javobni kamaytirishi mumkin (Google ning misoli: reklama vaqtida kelmasa, xato emas, reklama ko'rsatilmaydi). Test uchun bu teskari ishlaydi: javob kelgan, lekin ichida kutilgan qism yo'q, demak test "kod buzilgan" deb xabar qiladi, aslida esa faqat ichki timeout o'tgan. Shuning uchun ikki narsa kerak - xato rejimi testga **ko'rinadigan** bo'lishi (degradatsiya bo'lganini aytadigan header, metrika yoki `Actuator` hodisasi) va ichki timeout ni test uchun sozlash imkoni. Resilience4j da bu `CircuitBreaker` va `TimeLimiter` hodisalarini testda o'qish bilan amalga oshadi.
 
 **3. Tartibga bog'liqlik va umumiy holat.**
 
@@ -173,6 +195,8 @@ flake_rate(test) = (bir xil commit'da ham pass, ham fail bo'lgan run'lar) / (umu
 ```
 
 Jamoa darajasidagi metrika: `suite_flake_rate = flake sababli qizil build'lar / umumiy build'lar`. Maqsad < 1%, ideal < 0.3%.
+
+Triage ning birinchi arzon signali JUnit XML ning o'z tuzilishida turadi va u ko'pincha e'tiborsiz qoladi: yiqilish (assertion `false`) va xato (kutilmagan istisno) alohida toifa, va ikkisining diagnostika yo'li boshqa (Martin Fowler, *Refactoring: Improving the Design of Existing Code*, 1-nashr, Addison-Wesley, 1999, 4-bob, 79-bet). Yiqilish sinov ostidagi kod ishlagan, lekin natija kutilganga mos kelmaganini aytadi, demak sabab mantiqda yoki test ma'lumotida; xato kod kutilmagan holatga tushganini aytadi, demak sabab muhitda, tashqi resursda yoki `null` va timeout da. JUnit 5 da bu ajratish saqlangan, chunki XML da `<failure>` va `<error>` elementlari alohida, shuning uchun yuqoridagi `status` maydonini ikki qiymat bilan emas, uch qiymat bilan yozish kerak: `pass`, `failure`, `error`. Flaky test larning katta qismi `error` toifasiga tushadi va shu bitta filtr triage navbatini darhol qisqartiradi.
 
 Maqsadli sinov buyruqlari:
 
@@ -230,6 +254,17 @@ mvn test   -Dgroups='flaky'    # nightly: flake rate'ni o'lchash
 7. **Kvota.** Karantinda bir vaqtda jami testlarning 0.5% dan ko'pi bo'lmasligi kerak. Kvota to'lsa, yangi feature ishi to'xtatiladi.
 
 Zanjir: `flake aniqlandi → @Tag + ticket + egasi + SLA → PR gate'dan chiqarildi → nightly'da kuzatiladi → SLA ichida tuzatildi ? chiqdi : o'chirildi`.
+
+**Belgini olib tashlashni tizim o'zi so'raydi.** Google ning Takeout jamoasida karantin modeli shunday ishlagan: o'chirilgan test o'z bug i bilan belgilanadi va to'plam yashil qoladi, lekin belgilar to'planib qolmasligi uchun tozalash avtomatlashtiriladi. Tizim bug kuzatuv API sidan bug yopilganini so'raydi; belgilangan test aslida o'tib ketsa va sozlangan muddatdan uzoq yashil yursa, tizim belgini olib tashlashni (va kerak bo'lsa bug ni yopishni) so'raydi. Bitta istisno bor va u muhim: **flaky deb belgilangan test bundan chiqariladi**, chunki flaky test vaqtincha o'tishi uning tuzalganini bildirmaydi. Shu ikki qoida karantin ro'yxatini o'z-o'zini saqlaydigan qiladi va yuqoridagi 0.5 foizlik kvotani qo'lda nazorat qilish zaruratini kamaytiradi.
+
+```bash
+# Nightly: flaky bo'lmagan karantin testlari ketma-ket yashil yursa belgini so'rash
+mvn test -Dgroups='quarantine' -Dsurefire.rerunFailingTestsCount=0 \
+  -DtrimStackTrace=false | tee quarantine.log
+python3 tools/quarantine_review.py quarantine.log --kun 14 --skip-tag flaky
+```
+
+ESLATMA: `quarantine_review.py` konkret asbob nomi emas, korpus qo'shimchasi; Google bu avtomatlashtirishni o'z ichki bug tizimi API si ustida qurgan.
 
 ## 16.5 Retry'ning o'rni
 
@@ -355,6 +390,10 @@ Asosiy vositalar:
 
 Texnik yechimlar madaniyatsiz ishlamaydi. Minimal qoidalar: **buzgan tuzatadi** - buzilgan testni kodni o'zgartirgan muhandis tuzatadi, testni yozgan odam emas. **"Red build" qoidasi** - main qizil bo'lsa yangi merge yo'q; tiklash boshqa barcha ishdan ustun, SLA 30 daqiqa, aks holda revert (revert - jazo emas, standart operatsiya). **Egalik xaritasi** - har bir test paketi uchun mas'ul jamoa `CODEOWNERS` da yozilgan; egasiz test - tuzatilmaydigan test. **Haftalik test sog'ligi ko'rib chiqishi** - 20-30 daqiqa: flake rate trendi, karantin ro'yxati va SLA'lar, eng sekin 10 test, yangi `@Disabled` testlar; natija - nomlangan egali ticket'lar, umumiy xohish emas. **Yangi flake'ni darhol to'xtatish** - ikki hafta ichida ikki marta flake bo'lgan test avtomatik karantin nomzodi.
 
+Madaniyatning ikkinchi yarmi - **yomon test yozishni qiyinlashtirish**. Google ning xulosasi: katta to'plam bilan yashashning siri uni hurmat qilish, ya'ni testni production kodi kabi qarash va mo'rt yoki sekin testni refaktoring qilishga vaqt berish. Lekin faqat intizom yetmaydi, asbobga ham sarmoya kerak: linter, hujjat va yordamchi vositalar yomon testni yozishni qiyin qilishi kerak. Shu bilan birga **qo'llab-quvvatlanadigan vositalar soni kamaytiriladi**: har tilda bitta test framework va bitta mock kutubxona. Google yillar oldin yangi Java testlari uchun Mockito ni yagona mock framework deb belgilagan va boshqalarini taqiqlagan; o'sha paytda bu norozilik tug'dirgan, keyin esa testlarni tushunish va ular bilan ishlashni osonlashtirgan to'g'ri qaror deb qabul qilingan. Praktik shakli: ArchUnit yoki Checkstyle qoidasi bilan ikkinchi mock kutubxonaning importini bloklash, va bu qoidani `CODEOWNERS` dagi egalik bilan birga ushlab turish.
+
+Uchinchisi - **umumiy test infratuzilmasining o'z testi bo'lishi**. Bir nechta test to'plami ishlatadigan kod (umumiy fixture builder, maxsus JUnit extension, testcontainer bazasi, assertion kutubxonasi) oddiy test kodi emas: unda ko'p chaqiruvchi bor va uni o'zgartirish ularni buzishi mumkin, ya'ni u xatti-harakati bo'yicha production kodiga yaqin. Shuning uchun u alohida mahsulot kabi qaraladi: o'z egasi, o'z versiyasi va **o'z testlari** bo'ladi. Oddiy muhandis o'z funksiyasini testlash yo'lida umumiy infratuzilmani o'zgartirishi kutilmaydi.
+
 ## 16.12 Anti-patternlar
 
 - **Flaky testni `@Disabled` qilib unutish.** Sababsiz, egasiz, muddatsiz `@Disabled` - qarzni rasmiylashtirish; bir yildan keyin 200 ta o'chirilgan test va hech kim nega ekanini bilmaydi.
@@ -442,6 +481,17 @@ Fragile Test - test SUT ning u tekshirmaydigan qismi o'zgarganda kompilyatsiya q
 | Behavior | Fixture yoki tekshirish mantiqi buzildi | Creation Method va custom assertion |
 | Data | Baza ma'lumoti o'zgardi | Standard Fixture dan [minimal fixture](../patterns/23-testing-patternlari.md#2370-minimal-va-standart-fixture-minimal-fixture--standard-fixture) ga o'tish |
 | Context | Vaqt, tashqi tizim yoki qo'shni kod | [Clock injection](../patterns/23-testing-patternlari.md#2330-clock-injection-clock-injection), SUT chegarasini kichraytirish |
+
+**O'zgarmaydigan test ideali va o'zgarishning to'rt turi.** To'rt sezgirlik "nima buzadi" ni sanaydi; Google esa teskari tomondan qaraydi va mezon beradi: ideal test **o'zgarmaydigan** testdir, ya'ni yozilgandan keyin unga faqat sinovdan o'tayotgan tizimning talabi o'zgarganda tegiladi. Shundan production kodidagi o'zgarishning to'rt turi va har biri uchun kutilgan javob kelib chiqadi:
+
+| O'zgarish turi | Mavjud test | O'zgarsa nima demak |
+|---|---|---|
+| Sof refactoring | o'zgarmaydi | o'zgarish sof refactoring emas, yoki test noto'g'ri abstraksiya darajasida yozilgan |
+| Yangi funksiya | o'zgarmaydi, yangi test qo'shiladi | yangi funksiyaning kutilmagan yon ta'siri bor, yoki test o'rinsiz |
+| Xato tuzatish | o'zgarmaydi, yetishmagan holat uchun test qo'shiladi | xato aslida xulq o'zgarishi edi |
+| Xulq o'zgarishi | o'zgaradi, va bu normal | tizimning oshkor shartnomasi buzilmoqda |
+
+Oxirgi qatorning narxi qolgan uchtasidan sezilarli yuqori, chunki foydalanuvchilar mavjud xulqqa tayangan va o'zgarish ular bilan muvofiqlashtirishni talab qiladi. Shuning uchun past darajadagi kutubxonalar xulq o'zgarishidan umuman qochishga katta kuch sarflaydi. Amaliy foydasi: **test o'zgarganda avval o'zgarishning turi aniqlanadi.** Refactoring deb atalgan diffda test tahrir qilingan bo'lsa, review da birinchi savol shu bo'ladi; bu to'rt sezgirlikni diagnostika qilishning eng tez yo'li.
 
 ## 16.17 Overspecified Software, Sensitive Equality va Fragile Fixture
 
@@ -596,6 +646,23 @@ Obscure Test taxalluslari Verbose Test, Complex Test va Long Test; ta'rifi - tes
 | Hard-Coded Test Data | Nomlangan doimiy yoki hosila qiymat |
 | Indirect Testing | SUT ni to'g'ridan-to'g'ri test qilish, qatlamni pastga tushirish |
 | Eager Test | Har xatti-harakatga alohida test |
+
+**Umumiy `validate` yordamchisi Obscure Test ning yettinchi sababi.** Google ning unit test ko'rsatmasida eng keskin misol - har test metodining oxirida chaqiriladigan `validate()` metodi: u SUT ustida qat'iy belgilangan tekshiruvlar to'plamini bajaradi. Bunday to'plam ikki zarar beradi. Birinchisi - **niyat ko'rinmaydi**: testni o'qigan odam muallif aynan qaysi holatni nazarda tutganini ajrata olmaydi, chunki hamma test bir xil tekshiruv bilan tugaydi. Ikkinchisi - **xato lokalizatsiya qilinmaydi**: bitta xato kiritilsa, bir vaqtda ko'p test qizil beradi va aybdor joy ko'rinmaydi.
+
+Chegara aniq: yordamchi **bitta tushunchaviy faktni** tekshirsa maqbul, bir qator shartni qamrasa emas. Ayniqsa foydali holat - tekshirilayotgan shart tushunchaviy sodda, lekin yozilishi sikl yoki shart talab qiladi: shunda mantiq testdan chiqib yordamchiga ketadi va test o'qiladigan qoladi.
+
+```java
+// Maqbul: bitta tushunchaviy fakt, nomi shu faktni aytadi
+private void assertUserHasAccessToAccount(User user, Account account) {
+    assertThat(account.usersWithAccess())
+            .as("%s hisobga kira olishi kerak", user.name())
+            .extracting(User::id)
+            .contains(user.id());
+}
+
+// Yomon: har testning oxirida chaqiriladigan umumiy tekshiruv to'plami
+private void validate(OrderService service) { /* 12 ta assertion */ }
+```
 
 Sozlash mantiqini qayerga qo'yish bo'yicha tanlov mezoni [fixture sozlashning uch shakli](../patterns/23-testing-patternlari.md#2368-fixture-sozlashning-uch-shakli-in-line-setup--delegated-setup--implicit-setup) bo'limida; qayta ishlatiladigan yordamchi kod uchun [test utility metodi va test helper](../patterns/23-testing-patternlari.md#2375-test-utility-metodi-va-test-helper-test-utility-method--test-helper).
 
@@ -770,12 +837,19 @@ Tanlov mezoni qisqa: resurs mazmunini testga sig'dira olsangiz In-line Resource,
 - Gerard Meszaros, *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley, 2007, 16-bob "Behavior Smells" (223-257-bet) - Assertion Roulette (224), Erratic Test (228), Fragile Test (239), Frequent Debugging (248), Manual Intervention (250) va Slow Tests (253)
 - Gerard Meszaros, *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley, 2007, 17-bob "Project Smells" (259-274-bet) - Buggy Tests (260), High Test Maintenance Cost (265) va Production Bugs (268) hamda ularning sabablari
 - Gerard Meszaros, *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley, 2007, F ilovasi "Smells, Aliases, and Causes" (761-765-bet) - har smell, taxallus va sababning bet raqami va ota-smell i
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 12-bob ("Strive for Unchanging Tests", "Shared Helpers and Validation") - o'zgarmaydigan test ideali va o'zgarishning to'rt turi (sof refactoring, yangi funksiya, xato tuzatish, xulq o'zgarishi) bo'yicha kutilgan javob; har test oxirida chaqiriladigan umumiy `validate` metodining niyatni yashirishi va xato lokalizatsiyasini yo'qotishi, bitta tushunchaviy faktni tekshiradigan yordamchining maqbulligi. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 11-bob ("The Pitfalls of a Large Test Suite") - testni production kodi kabi qarash, linter va hujjat bilan yomon test yozishni qiyinlashtirish, qo'llab-quvvatlanadigan framework va vositalar sonini kamaytirish. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 12-bob ("Defining Test Infrastructure") - bir nechta to'plam ishlatadigan umumiy test infratuzilmasining production kodiga yaqinligi, alohida mahsulot kabi qaralishi va o'z testlariga ega bo'lishi, hamda har tilda bitta mock framework ni belgilash. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 14-bob ("Speeding Up Tests", "Driving Out Flakiness") - production kodidagi qattiq timeout va sleep ni test uchun sozlanadigan qilish, sleep ga tayangan testlarning yuklangan runner da birgalikda yiqilib yukni oshirishi, graceful degradation ning flaky timeout ni noto'g'ri kod bo'lib ko'rsatishi. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 23-bob ("Scenario #4: Keeping It Green") - o'chirilgan testni bug bilan belgilash, bug yopilganda yoki test sozlangan muddatdan uzoq yashil yurganda belgini olib tashlashni avtomatik so'rash, flaky deb belgilangan testning bu qoidadan chiqarilishi. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
 - [maven-surefire, `TestSuiteXmlParser.java`](https://raw.githubusercontent.com/apache/maven-surefire/0c970adeb11e8a59b449be5b3be2a50c478c2a65/surefire-report-parser/src/main/java/org/apache/maven/plugins/surefire/report/TestSuiteXmlParser.java) - `flakyFailure` va `flakyError` elementlari va `incrementNumberOfFlakes` hisoblagichi
 - [JUnit 5.11, Writing Tests](https://raw.githubusercontent.com/junit-team/junit5/r5.11.0/documentation/src/docs/asciidoc/user-guide/writing-tests.adoc) - `@RepeatedTest` ning maqsadi (retry emas), test tartibi uchun `MethodOrderer` va `ClassOrderer`
 - [JUnit 5.11, Extensions](https://raw.githubusercontent.com/junit-team/junit5/r5.11.0/documentation/src/docs/asciidoc/user-guide/extensions.adoc) - `TestTemplateInvocationContextProvider`, ya'ni retry ni qo'lda yozish yo'li
 - [JUnit 5.11, Running Tests](https://raw.githubusercontent.com/junit-team/junit5/r5.11.0/documentation/src/docs/asciidoc/user-guide/running-tests.adoc) - `junit-platform.properties` dagi parallellik sozlamalari
 - Gerard Meszaros, *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley, 2007, A ilovasi "Test Refactorings" (736-737 va 740-bet) - In-line Resource va Setup External Resource refaktoringlari, ya'ni Mystery Guest ning tashqi resurs shakli
 - Gerard Meszaros, *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley, 2007, 18-bob "Test Strategy Patterns" (323-bet) - Immutable Shared Fixture varianti va "nima o'zgarish hisoblanadi" mezoni
+- Martin Fowler, *Refactoring: Improving the Design of Existing Code*, 1-nashr, Addison-Wesley, 1999, 4-bob (79-bet) - yiqilish (assertion false) va xato (kutilmagan istisno) toifalarining farqlanishi va ikkisining diagnostika yo'li boshqa bo'lishi
+- ESLATMA: `status` maydonini uch qiymat (`pass`, `failure`, `error`) bilan yozish va flaky test larning ko'pi `error` toifasiga tushishi haqidagi triage filtri shu korpusning qo'shimchasi
 
 ---
 

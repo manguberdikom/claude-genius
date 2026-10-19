@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 11. Xavfsizlik, tranzaksiya, asinxron va konkurentlik testlari (Testing Security, Transactions, Async & Concurrency)
 
 <details>
-<summary>Bu bobdagi 15 bo'lim</summary>
+<summary>Bu bobdagi 18 bo'lim</summary>
 
 - [11.1 Spring Security'ni testlash asoslari](#111-spring-securityni-testlash-asoslari)
 - [11.2 Avtorizatsiya qoidalarini testlash](#112-avtorizatsiya-qoidalarini-testlash)
@@ -23,7 +23,10 @@
 - [11.12 Konkurentlik va poyga holatini testlash](#1112-konkurentlik-va-poyga-holatini-testlash)
 - [11.13 Retry, timeout va circuit breaker'ni testlash](#1113-retry-timeout-va-circuit-breakerni-testlash)
 - [11.14 Anti-patternlar](#1114-anti-patternlar)
-- [11.15 Arxitektor nazorat ro'yxati](#1115-arxitektor-nazorat-royxati)
+- [11.15 Autentifikatsiya oqimini testlash va maxsus `SecurityContext`](#1115-autentifikatsiya-oqimini-testlash-va-maxsus-securitycontext)
+- [11.16 Konkurent sinfni testlash tartibi](#1116-konkurent-sinfni-testlash-tartibi)
+- [11.17 Konkurentlik testida vaqtni to'g'ri o'lchash](#1117-konkurentlik-testida-vaqtni-togri-olchash)
+- [11.18 Arxitektor nazorat ro'yxati](#1118-arxitektor-nazorat-royxati)
 
 </details>
 
@@ -503,6 +506,8 @@ class PaymentIdempotencyTest {
 
 Bunday testlar tabiatan beqarorlikka moyil. Beqarorlikni kamaytirish uchun: har bir takrorlashda yangi kalit/ID ishlating, hech qachon `Thread.sleep` bilan sinxronlashtirmang, timeout'larni sahiy (lekin cheksiz emas) qo'ying, thread sonini CI mashinasining yadrolaridan kelib chiqib belgilang va bu testlarni `@Tag("concurrency")` bilan ajratib alohida CI job'da yurgizing. Beqaror testni "retry until green" bilan ko'mish - xatoni ko'mish; bu mavzu [16-bobda](16-flaky-testlar-test-qarzi-va-test-kodini.md) batafsil.
 
+Yuqoridagi test shakli bitta aniq savolga javob beradi: post-shart MA'LUM (bitta idempotentlik kalitiga aynan bitta yozuv) va test shu post-shartni barqaror tasdiqlashi kerak, shuning uchun thread soni yadroga moslanadi. Lekin aynan shu shaklni hali noma'lum poygani ochish uchun ishlatish yolg'on xotirjamlik beradi: barrier plus `@RepeatedTest(5)` bilan yashil bo'lgan test "poyga yo'q" degani emas, chunki poyga kam ehtimolli hodisa. Testlash tartibi (ketma-ket sinashdan asbob bilan majburlashgacha) [11.16](#1116-konkurent-sinfni-testlash-tartibi) da, vaqtni to'g'ri o'lchash va benchmark ni real qilish [11.17](#1117-konkurentlik-testida-vaqtni-togri-olchash) da.
+
 ## 11.13 Retry, timeout va circuit breaker'ni testlash
 
 `@Retryable` da eng muhim tekshiruv - urinishlar **soni**: mock gateway'ga `verify(gateway, times(3))` qo'ying, aks holda `maxAttempts` qiymatini o'zgartirgan refactoring sezilmay o'tadi. Test tezligi uchun backoff'ni property orqali kichraytiring. Resilience4j'da circuit breaker holatini kutib o'tirmasdan `transitionToOpenState()` bilan majburan oching va `@BeforeEach` da `reset()` qiling - aks holda testlar bir-biriga ta'sir qiladi. Kechikish va 5xx simulyatsiyasi uchun WireMock ([9-bob](09-tashqi-servislarni-taqlid-qilish-va.md)) ishlatiladi: `withFixedDelay` timeout'ni, `withFault` esa connection reset holatini tekshiradi.
@@ -550,7 +555,201 @@ Mavzuning to'liq yozuvi patternlar hujjatidagi [zanjirni uzgich](../patterns/17-
 - Checked exception'da rollback bo'lishini taxmin qilish va `rollbackFor` yo'qligini test bilan tasdiqlamaslik.
 - Race condition testini yozib, beqarorligi uchun `@Disabled` qo'yish yoki CI'da retry bilan yashirish.
 
-## 11.15 Arxitektor nazorat ro'yxati
+## 11.15 Autentifikatsiya oqimini testlash va maxsus `SecurityContext`
+
+`@WithMockUser`, `@WithUserDetails` va `user()` post-processor'i uchun bitta umumiy haqiqat bor va u ko'pincha e'tibordan qoladi: ularning hammasi autentifikatsiyani CHETLAB O'TADI va faqat avtorizatsiyadan keyingi qismni tekshiradi. Kitobning ko'rsatkichi aniq: maxsus `AuthenticationProvider` faqat `john` ni autentifikatsiya qiladigan loyihada `@WithCustomUser(username = "mary")` bilan yozilgan test muvaffaqiyatli o'tadi, chunki provider umuman chaqirilmaydi (Spilca, 20-bob, 505-bet). Shuning uchun [11.6](#116-xavfsizlik-testining-chegarasi) dagi chegara bu yerda yopiladi: autentifikatsiya mantiqi alohida, haqiqiy klient kabi ishlaydigan test bilan qoplanadi.
+
+Buning vositasi ikkita. `httpBasic(username, password)` - `SecurityMockMvcRequestPostProcessors` dagi post-processor, `.with()` orqali so'rovga qo'shiladi. `formLogin()` esa `SecurityMockMvcRequestBuilders` dagi request builder, u `perform()` ga to'g'ridan to'g'ri uzatiladi. Ikkisi ham so'rovni to'liq filter chain orqali o'tkazadi, demak maxsus `AuthenticationProvider`, `AuthenticationSuccessHandler` va `AuthenticationFailureHandler` ham ishlaydi (Spilca, 20-bob, 507-509-bet). Natijani `SecurityMockMvcResultMatchers` dagi `authenticated()` va `unauthenticated()` bilan tasdiqlash qulay, chunki ular status kodidan ko'ra aniqroq savolga javob beradi: kontekstda autentifikatsiyalangan subyekt bormi.
+
+Autentifikatsiya testini har endpoint uchun takrorlamang: ilovada autentifikatsiya yo'li odatda bitta, avtorizatsiya qoidalari esa o'nlab, shuning uchun autentifikatsiya bir marta sanoqli test bilan qoplanadi, avtorizatsiya esa endpoint bo'yicha alohida (Spilca, 20-bob, 500-bet).
+
+```java
+@SpringBootTest
+@AutoConfigureMockMvc
+class AuthenticationFlowTest {
+
+    @Autowired MockMvc mvc;
+
+    @Test   // httpBasic(): post-processor, `.with()` bilan
+    void basicWithValidCredentialsIsOk() throws Exception {
+        mvc.perform(get("/api/orders").with(httpBasic("john", "12345")))
+           .andExpect(status().isOk())
+           .andExpect(authenticated());
+    }
+
+    @Test
+    void basicWithWrongPasswordIsUnauthorized() throws Exception {
+        mvc.perform(get("/api/orders").with(httpBasic("john", "wrong")))
+           .andExpect(status().isUnauthorized())
+           .andExpect(unauthenticated());
+    }
+
+    @Test   // formLogin(): request builder, perform() ga to'g'ridan to'g'ri
+    void failureHandlerAddsHeader() throws Exception {
+        mvc.perform(formLogin().user("joey").password("12345"))
+           .andExpect(header().exists("failed"))     // AuthenticationFailureHandler
+           .andExpect(unauthenticated());
+    }
+
+    @Test   // AuthenticationSuccessHandler huquqqa qarab yo'naltiradi
+    void successHandlerRedirectsByAuthority() throws Exception {
+        mvc.perform(formLogin().user("mary").password("12345"))
+           .andExpect(redirectedUrl("/error"))
+           .andExpect(authenticated());
+    }
+}
+```
+
+Ikkinchi holat: controller yoki servis `Authentication` ning aniq TURIGA tayanadi (masalan o'z `TenantAuthentication` ingizdan ijarachi kodini oladi). `@WithMockUser` bunday obyektni yaratmaydi, shuning uchun test `SecurityContext` ni o'zingiz qurishingiz kerak. Buning yo'li `@WithSecurityContext` va uch qadam: (1) `RetentionPolicy.RUNTIME` bilan o'z annotatsiyangizni e'lon qilish, Spring uni runtime'da reflection bilan o'qiydi; (2) `WithSecurityContextFactory<T>` ni implement qilib `createSecurityContext()` da kontekstni yasash; (3) annotatsiyani `@WithSecurityContext(factory = ...)` bilan factory'ga bog'lash (Spilca, 20-bob, 501-504-bet).
+
+```java
+@Retention(RetentionPolicy.RUNTIME)
+@WithSecurityContext(factory = TenantUserFactory.class)   // 3-qadam: bog'lash
+public @interface WithTenantUser {
+    String username();
+    String tenant();
+}
+
+// 2-qadam: @WithTenantUser(username = "ali", tenant = "acme") shu factory'ga tushadi
+public class TenantUserFactory
+        implements WithSecurityContextFactory<WithTenantUser> {
+
+    @Override
+    public SecurityContext createSecurityContext(WithTenantUser a) {
+        SecurityContext ctx = SecurityContextHolder.createEmptyContext();
+        // TenantAuthentication - loyihaning o'z Authentication implementatsiyasi
+        ctx.setAuthentication(new TenantAuthentication(a.username(), a.tenant()));
+        return ctx;
+    }
+}
+```
+
+Ikki yondashuv VAQTDA ham farq qiladi va bu xatoni izlaganda kerak bo'ladi: annotatsiya test muhitini so'rov QURILISHIDAN OLDIN sozlaydi, post-processor esa allaqachon qurilgan so'rovni o'zgartiradi (Spilca, 20-bob, 499-bet). Oxirgi tuzoq: zanjirda faqat `formLogin()` bo'lsa, `httpBasic("john", "12345")` bilan yozilgan test 302 oladi, va bu test xatosi emas, [konfiguratsiyaning](../architect/20-spring-security-filter-chain-oauth2-jwt.md#2016-form-login-maxsus-sahifa-handler-lar-va-http-basic-bilan-birga) to'g'ri natijasi.
+
+## 11.16 Konkurent sinfni testlash tartibi
+
+Konkurent sinfni darhol parallel testga tashlash eng keng tarqalgan xato, chunki [11.12](#1112-konkurentlik-va-poyga-holatini-testlash) dagi kabi test yashil bo'lib o'tib ketsa, u hech narsani isbotlamaydi: poyga xatosi kam ehtimolli hodisa, uni ushlamagan test "xato yo'q" degani emas. Goetz tartibni aniq qo'yadi: konkurent sinf uchun unit test ketma-ket sinfdagi bilan BIR XIL tahlildan boshlanadi, ya'ni mexanik tekshirib bo'ladigan invariant va post-shartlarni aniqlashdan (Goetz, 12.1-bo'lim, 153-bet). Keyin birinchi testlar butunlay ketma-ket bo'ladi: yangi yaratilgan bufer o'zini bo'sh va to'la emas deb tanishi; sig'imi N bo'lgan buferga N element qo'yilganda blokirovkasiz o'tib, bufer o'zini to'la va bo'sh emas deb tanishi (Goetz, 12.1.1-bo'lim, 154-bet). Bu testlar poygani topmaydi, lekin muammo konkurentlikka aloqador EMASligini data race izlashdan oldin ko'rsatadi. Martin shu qadamni oldinga suradi: threaddan bexabar POJO ni ajratib, uni thread muhitidan tashqarida ishlatib ko'ring, ya'ni thread xatosi va thread bo'lmagan xatoni bir vaqtda quvmang (Martin, 13-bob, 187-bet).
+
+Ikkinchi qadam parallel test, lekin SOZLANADIGAN shaklda. Martin ning talabi to'rt o'qli: bitta thread va ko'p thread; real hamkor va test dublyori; tez va sekin dublyor; takrorlash soni tashqaridan beriladigan; thread soni ham oson, kerak bo'lsa ish vaqtida o'zgartirilsin (Martin, 13-bob, 187-188-betlar). Sozlanadigan test ustiga Martin Monte Carlo usulini qo'yadi: test serverida sozlash qiymatlarini tasodifiy o'zgartirib qayta-qayta yurgizish va yiqilgan shartni diqqat bilan logga yozish (Martin, A ilovasi, 341-bet).
+
+Uchinchi qadam interleaving ni ataylab ko'paytirish. Goetz: timing ga sezgir data race ni ushlash ehtimolini oshirish uchun CPU dan KO'P aktiv thread bo'lishi kerak, shunda har paytda bir qism ishlaydi, bir qism almashtirilgan turadi va threadlar o'zaro ta'sirining bashoratliligi pasayadi (Goetz, 12.1.3-bo'lim, 157-bet); turli protsessor soni, OS va protsessor arxitekturasida sinash bir tizimda chiqmaydigan xatoni ochadi (Goetz, 12.1.6-bo'lim, 160-bet). Martin ikkisini ham takrorlaydi va platformalar farqiga o'z kuzatuvini keltiradi (Martin, 13-bob, 188-bet). Bu [11.12](#1112-konkurentlik-va-poyga-holatini-testlash) dagi "thread sonini CI yadrolaridan kelib chiqib belgilang" maslahatiga zid ko'rinadi, lekin ajratuvchi shart testning MAQSADI: post-shart deterministik va test barqaror yashil bo'lishi kerak bo'lsa (idempotentlik kaliti bo'yicha aynan bitta yozuv), thread soni yadroga moslanadi; maqsad hali NOMA'LUM poygani ochish bo'lsa, thread soni yadrodan ataylab ko'p olinadi, bunday test esa alohida tag bilan va uzoqroq yuritiladi.
+
+To'rtinchi qadam umumiy holatni o'zgartiradigan amal ICHIDA, ikki yangilash orasida `Thread.yield` yoki qisqa `sleep` bilan kontekst almashishni rag'batlantirish: aynan shu oraliqda invariant buzilgan turadi (Goetz, 12.1.6-bo'lim, 160-bet). Goetz bitta shartni aniq aytadi: JLS 17.9 ga ko'ra JVM `Thread.yield` ni no-op deb qarashi mumkin, shuning uchun nolga teng bo'lmagan qisqa `sleep` sekinroq, ammo ishonchliroq. Bu [11.12](#1112-konkurentlik-va-poyga-holatini-testlash) dagi "`Thread.sleep` bilan sinxronlashtirmang" taqiqiga zid emas: u yerda `sleep` natijani KUTISH vositasi va shu rolda taqiqlangan, bu yerda esa sinov ostidagi kodga ataylab kiritilgan interleaving generatori, u o'lchovdan keyin olib tashlanadi. Martin bu instrumentatsiyani qo'lda va avtomatikka ajratadi: qo'lda kiritishda joyni o'zingiz topasiz, qaysi chaqiruv kerakligini bilmaysiz, production ni keraksiz sekinlashtirasiz va ehtimol baribir past qoladi, shuning uchun avtomatik yo'l (AOP yoki bayt-kod instrumentatsiyasi) afzal (Martin, 13-bob, 188-189-betlar).
+
+Shu tartibda bitta taqiq ham bor va u flaky test ning tez-tez uchraydigan manbasi. `Thread.getState` bilan threadning bloklanganini tasdiqlash ISHONCHSIZ: JVM bloklanishni spin-wait bilan amalga oshirishi mumkin, `wait` va `await` dan tasodifiy uyg'onish (spurious wakeup) spetsifikatsiya bo'yicha ruxsat etilgan, va threadning bloklanish holatiga o'tishi vaqt oladi; shu sababli `Thread.getState` natijasi konkurentlikni boshqarish uchun ishlatilmaydi va u faqat DEBUG ma'lumoti (Goetz, 12.1.2-bo'lim, 155-bet). Amaliy natija: testda `assertEquals(Thread.State.WAITING, t.getState())` yozilmaydi. Bloklanishni tasdiqlashning to'g'ri yo'li xulq orqali boradi, ya'ni bloklangan amal timeout ichida qaytmaganini va qo'yilgan hodisadan keyin qaytganini tekshirish; thread holatlarining o'z semantikasi [arxitektor hujjatidagi thread holatlari](../architect/11-concurrency-thread-lock-atomic-happens.md) bo'limida.
+
+Oltinchi qadam funksional to'g'rilikdan tashqarida: resurs boshqaruvi ham sinaladi. Goetz talabni aniq qo'yadi: obyektni boshqaradigan sinf unga kerak bo'lgandan uzoq havola ushlab turmasligi kerak, va buni heap snapshot oladigan vosita bilan sinash mumkin, ya'ni amaldan oldin va keyin xotira ishlatilishini taqqoslash (Goetz, 12.1.4-bo'lim, 158-159-betlar). Amaliy shakli bir qatorlik xatoni ushlaydi: chegaralangan buferdan element olinganda `items[i] = null` yozishni unutish jim xotira oqishi beradi, chunki olingan element hali massivda havola bilan turadi. Review tomonidagi qoidalar [resurs, xotira va GC bosimi](../code-review/16-resurs-xotira-va-gc-bosimi-review.md) bobida, lekin ularni TEST bilan ushlash usuli shu: `put` va `take` ni sig'im bo'ylab aylanib chiqib, keyin heap dagi tirik obyektlar sonini taqqoslash.
+
+Beshinchi qadam asbob bilan majburlash va u o'lchangan natija beradi: instrumentatsiyadan keyin Martin larning xato topishi taxminan o'n million iteratsiyada bir martadan taxminan o'ttiz iteratsiyada bir martaga chiqqan (Martin, A ilovasi, 342-bet). ESLATMA: Martin nomlagan IBM `ConTest` asbobi 2008 yilning vositasi va bugun qo'llanmaydi; zamonaviy muqobil OpenJDK ning `jcstress` harnessi, u Java Memory Model stress testlarini generatsiya qiladi va natijani "qabul qilinadigan" hamda "qoida buzilgan" interleaving lar bo'yicha ajratadi. `jcstress` nomi korpusning qo'shimchasi, kitobda yo'q.
+
+```java
+class BoundedInventoryTest {
+
+    // Takrorlash soni tashqaridan: -Dconcurrency.iterations=200000
+    private static final int ITERATIONS =
+            Integer.getInteger("concurrency.iterations", 10_000);
+
+    @Test   // 1-qadam: ketma-ket. Poygani topmaydi, poyga EMASligini ko'rsatadi
+    void freshStoreIsEmptyAndNotFull() {
+        BoundedInventory store = new BoundedInventory(10);
+        assertThat(store.isEmpty()).isTrue();
+        assertThat(store.isFull()).isFalse();
+    }
+
+    @Test   // sig'im N ga N element: blokirovkasiz o'tadi va to'la bo'ladi
+    void capacityItemsFitWithoutBlocking() throws InterruptedException {
+        BoundedInventory store = new BoundedInventory(10);
+        for (int i = 0; i < 10; i++) {
+            store.put(i);
+        }
+        assertThat(store.isFull()).isTrue();
+        assertThat(store.isEmpty()).isFalse();
+    }
+
+    // 2-qadam: bitta thread ham, yadrodan ko'p thread ham - bitta test tanasi
+    @Tag("concurrency")
+    @ParameterizedTest(name = "pairs={0}")
+    @ValueSource(ints = {1, 2, 64})
+    void nothingIsLostUnderConcurrentPutTake(int pairs) throws Exception {
+        BoundedInventory store = new BoundedInventory(16);
+        CyclicBarrier gate = new CyclicBarrier(pairs * 2);   // birga boshlanadi
+        AtomicLong put = new AtomicLong();
+        AtomicLong taken = new AtomicLong();
+
+        try (ExecutorService pool = Executors.newFixedThreadPool(pairs * 2)) {
+            for (int i = 0; i < pairs; i++) {
+                pool.submit(loop(gate, put, () -> store.put(1)));
+                pool.submit(loop(gate, taken, store::take));
+            }
+        }   // close() = shutdown + awaitTermination (Java 21+)
+
+        assertThat(taken.get()).isEqualTo(put.get());
+        assertThat(store.isEmpty()).isTrue();
+    }
+
+    @FunctionalInterface
+    interface Step { void run() throws Exception; }   // checked exception uchun
+
+    /** Hamma barrier'da to'planadi, keyin ITERATIONS marta bir amalni uradi. */
+    private Callable<Void> loop(CyclicBarrier gate, AtomicLong counter, Step step) {
+        return () -> {
+            gate.await(10, TimeUnit.SECONDS);
+            for (int i = 0; i < ITERATIONS; i++) {
+                step.run();
+                counter.incrementAndGet();
+            }
+            return null;
+        };
+    }
+}
+```
+
+## 11.17 Konkurentlik testida vaqtni to'g'ri o'lchash
+
+Konkurent kodning o'lchovi ikki joyda buziladi va ikkisi ham arifmetikada emas, test skeletida. Shirazi ikkisini nomlaydi. Birinchisi: to'rtta thread bir xil o'lchovni bir paytda yurgizayotganiga hech qanday kafolat yo'q, bitta thread hali birinchi o'lchovda, boshqasi allaqachon ikkinchisida bo'lishi mumkin; natijada birinchi o'lchov paytida CPU ni boshqa o'lchov iste'mol qiladi va sinxronlash narxi ham noto'g'ri chiqadi, chunki maqsad to'rt threadning BIR VAQTDA bir xil metodga urilishini o'lchash edi. Yechim: barcha threadlar tayyor bo'lmaguncha o'lchov boshlanmasin. Ikkinchisi: vaqt har thread uchun alohida olinmaydi; o'lchov istalgan threaddagi BIRINCHI yangilanishdan istalgan threaddagi OXIRGI yangilanishgacha, ya'ni butun yurish bo'yicha olinadi (Shirazi, 10.5-bo'lim).
+
+Goetz shu ikki talabni bitta vositaga yig'adi: `CyclicBarrier` barrier action bilan quriladi (ishtirokchi soni ishchi threadlar plus bitta test drayveri), action birinchi o'tishda `startTime`, ikkinchisida `endTime` ni yozadi, natija bitta amalning vaqti emas, butun yurishning vaqti bo'lib, keyin amal soniga bo'linadi (Goetz, 12.2.1-bo'lim, 161-bet). ESLATMA: bu skeletni bugun qo'lda yozish shart emas, JMH `@Threads` va `@State(Scope.Benchmark)` bilan start gate ni va butun yurish bo'yicha o'lchovni o'zi bajaradi. JMH 2003 va 2006 yilgi kitoblarda yo'q, bu korpusning qo'shimchasi; JMH ning umumiy mikro o'lchov tuzoqlari (warmup, fork, dead code elimination) arxitektor hujjatidagi [mikro o'lchov tuzoqlari va JMH nega kerak](../architect/14-jvm-profiling-va-diagnostika-jfr-async.md#148-mikro-olchov-tuzoqlari-va-jmh-nega-kerak) bo'limida.
+
+Uchinchi talab raqamning o'zidan muhimroq: benchmark REAL bo'lsin. Goetz: konkurent ilova ikki xil ishni almashtirib bajaradi, umumiy ma'lumotga murojaat va thread-lokal hisob; contention darajasi, demak bottleneck ning joyi aynan shu ikkisining NISBATIGA bog'liq. Testdagi vazifa juda kichik bo'lsa, throughput ni koordinatsiya narxi belgilaydi, bu esa ko'p ilovada haqiqat emas va bottleneck noto'g'ri joyda ko'rinadi (Goetz, 12.3.4-bo'lim, 166-bet). Yonidagi qoida kod yo'llari haqida: JIT profilga qarab optimallashtirgani uchun butunlay bir threadli test programmaga real, hech bo'lmasa qism-qism parallel ilovada qo'llanmaydigan optimizatsiyalar tushishi mumkin, shuning uchun ko'p threadli o'lchov bir threadli o'lchov bilan aralash yuritiladi (Goetz, 12.3.3-bo'lim, 166-bet). Yuk testi darajasidagi o'lchov esa boshqa vosita: u [13-bobda](13-nofunksional-testlar-performance-resilience.md).
+
+To'rtinchi talab kompilyator haqida va uni bilmaslik benchmark ni butunlay yaroqsiz qiladi: o'lik kodni yo'q qilish (dead code elimination) benchmark ni buzadi, chunki optimizator hech narsaga ta'sir qilmaydigan kodni olib tashlaydi, benchmark esa aynan hech narsa hisoblamaydigan kod bo'lib qoladi. Goetz shundan ikki shart chiqaradi: har hisoblangan natija programmada ishlatilishi kerak, va buni sinxronlash yoki sezilarli hisob talab qilmaydigan shaklda qilish kerak; natijalar esa OLDINDAN AYTILMAYDIGAN bo'lishi kerak, aks holda kompilyator amalni oldindan hisoblangan natija bilan almashtiradi (Goetz, 12.3.5-bo'lim, 167-bet). JMH ning `Blackhole` va `@State` abstraksiyalari aynan shu ikki shartni bajaradi: yuqoridagi koddagi `bh.consume(...)` natijani "ishlatilgan" qiladi va `ThreadLocalRandom` kirishni oldindan aytilmaydigan qiladi.
+
+```java
+@BenchmarkMode(Mode.Throughput)
+@OutputTimeUnit(TimeUnit.SECONDS)
+@Warmup(iterations = 5, time = 2)
+@Measurement(iterations = 10, time = 2)
+@Fork(2)
+@State(Scope.Benchmark)          // holat threadlar orasida umumiy
+public class IdempotencyStoreBenchmark {
+
+    private IdempotencyStore store;
+
+    @Setup(Level.Iteration)
+    public void setUp() {
+        store = new IdempotencyStore(100_000);
+    }
+
+    @Benchmark
+    @Threads(32)                 // yadrodan ko'p; start gate va umumiy vaqt JMH da
+    public void sharedPutWithRealisticLocalWork(Blackhole bh) {
+        long key = ThreadLocalRandom.current().nextLong(1_000);
+        bh.consume(store.putIfAbsent(key));
+        // REAL nisbat: umumiy holatga bitta murojaat, keyin thread-lokal hisob
+        bh.consume(PricingRules.total(key));
+    }
+
+    @Benchmark
+    @Threads(1)                  // bir threadli o'lchov yonma-yon turishi shart
+    public void singleThreadedBaseline(Blackhole bh) {
+        long key = ThreadLocalRandom.current().nextLong(1_000);
+        bh.consume(store.putIfAbsent(key));
+        bh.consume(PricingRules.total(key));
+    }
+}
+```
+
+## 11.18 Arxitektor nazorat ro'yxati
 
 - [ ] Har bir himoyalangan endpoint uchun rol x metod x status matritsasi mavjud va parametrlashtirilgan test bilan to'liq qoplangan (401 va 403 ajratilgan).
 - [ ] Kamida bitta test real JWT oqimini (imzo va issuer validatsiyasi bilan) bosib o'tadi, qolganlari `jwt()`/`opaqueToken()` post-processor'laridan foydalanadi.
@@ -559,17 +758,31 @@ Mavzuning to'liq yozuvi patternlar hujjatidagi [zanjirni uzgich](../patterns/17-
 - [ ] Self-invocation va lock konflikti (optimistik, kerak bo'lsa pessimistik) uchun aniq testlar bor.
 - [ ] Asinxron natijalar faqat Awaitility yoki `CountDownLatch` bilan kutiladi; kodbazada `Thread.sleep` ishlatilgan test yo'q.
 - [ ] Idempotentlik va race condition testlari `@Tag` bilan ajratilgan, alohida CI job'da yurgiziladi va beqaror holda qoldirilmagan.
+- [ ] Konkurent sinf uchun avval ketma-ket testlar (bo'sh, to'la, sig'im) bor, parallel test faqat shundan keyin; parallel test thread soni va iteratsiya soni bo'yicha sozlanadigan.
+- [ ] Noma'lum poygani izlaydigan test yadrodan ko'p thread bilan, kamida ikki xil muhitda yuritiladi; o'lchov testi esa butun yurish bo'yicha va bir threadli bazaga nisbatan o'qiladi.
 - [ ] Retry urinishlari soni, circuit breaker holati va fallback xatti-harakati test bilan tasdiqlangan; penetration test, SAST va DAST alohida reja sifatida yozilgan ([13-bob](13-nofunksional-testlar-performance-resilience.md)).
 
 ## Manbalar
 
 - Brian Goetz, *Java Concurrency in Practice*, 12-bob - konkurent programmani testlash: to'g'rilik, ishlash va mo'rtlik
-- Laurentiu Spilca, *Spring Security in Action*, 20-bob - Spring Security ni testlash
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 12.1 va 12.1.1-bo'lim (153-154-betlar) - konkurent sinf testi invariant va post-shartni aniqlashdan boshlanishi; ketma-ket testlar (yangi bufer bo'sh va to'la emas, sig'im N ga N element) va ularning data race izlashdan oldin muammo poyga emasligini ko'rsatishi
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 12.1.3 va 12.1.6-bo'lim (157, 160-betlar) - CPU dan ko'p aktiv thread interleaving ni ko'paytirishi; turli protsessor soni, OS va arxitekturada sinash; umumiy holatni o'zgartirish oralig'ida `Thread.yield`, JLS 17.9 ga ko'ra uning no-op bo'lishi mumkinligi va qisqa `sleep` ning ishonchliroq ekani, AOP bilan kiritish
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 12.2.1-bo'lim (161-bet) - barrier action bilan o'lchash: bitta amal emas, butun yurishning vaqti olinib amal soniga bo'linishi
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 12.3.3 va 12.3.4-bo'lim (166-bet) - JIT ning profilga qarab optimallashtirishi va bir threadli test programmaning noreal optimizatsiya olishi; umumiy ma'lumotga murojaat va thread-lokal hisob nisbatining contention darajasini belgilashi
+- Robert C. Martin, *Clean Code*, Prentice Hall, 2008, 13-bob (187-189-betlar) - thread kodini pluggable va tunable qilish (bitta yoki ko'p thread, real hamkor yoki test dublyori, tez va sekin dublyor, sozlanadigan takrorlash soni); yadrolardan ko'p thread bilan yurgizish; barcha maqsadli platformalarda erta va tez-tez sinash; kodni qo'lda va avtomatik instrumentlash hamda qo'lda kiritishning kamchiliklari
+- Robert C. Martin, *Clean Code*, Prentice Hall, 2008, A ilovasi (341-342-betlar) - Monte Carlo testlash (sozlanadigan test, tasodifiy qiymatlar, yiqilish shartini logga yozish) va instrumentatsiya asbobi bilan xato topish darajasining o'n million iteratsiyada birdan o'ttiz iteratsiyada birga chiqishi
+- Jack Shirazi, *Java Performance Tuning*, 2-nashr, O'Reilly, 2003, 10.5-bo'lim - ko'p threadli testni o'lchashning ikki tuzog'i: threadlar bir xil o'lchovni bir paytda yurgizmasligi (barchasi tayyor bo'lmaguncha boshlanmasin) va vaqtni har thread uchun alohida emas, istalgan threaddagi birinchi yangilanishdan oxirgisigacha olish
+- ESLATMA: 11.16 dagi `jcstress` va 11.17 dagi JMH `@Threads` korpusning qo'shimchasi: Martin ning `ConTest` i va Shirazi ning qo'lda yozilgan timer skeleti o'z davrining vositalari, kitoblarda bu nomlar yo'q
+- Laurentiu Spilca, *Spring Security in Action*, 20-bob - Spring Security ni testlash: mock foydalanuvchi, `WithSecurityContextFactory` va autentifikatsiya oqimini testlash
 - [Spring Security 6.3, MockMvc Setup](https://raw.githubusercontent.com/spring-projects/spring-security/6.3.0/docs/modules/ROOT/pages/servlet/test/mockmvc/setup.adoc) - `SecurityMockMvcConfigurers.springSecurity()` va `TestSecurityContextHolderPostProcessor` talabi
 - [Spring Security 6.3, Testing Method Security](https://raw.githubusercontent.com/spring-projects/spring-security/6.3.0/docs/modules/ROOT/pages/servlet/test/method.adoc) - `@WithMockUser` va metod xavfsizligini testlash
 - [Spring Security 6.3, Testing](https://raw.githubusercontent.com/spring-projects/spring-security/6.3.0/docs/modules/ROOT/pages/servlet/test/index.adoc) - `spring-security-test` modulining imkoniyatlari
 - [Spring Framework 7.0, Transaction Management in tests](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/framework-docs/modules/ROOT/pages/testing/testcontext-framework/tx.adoc) - test tranzaksiyasining chegarasi, `TestTransaction` va rollback xulqi
 - [Awaitility, README](https://raw.githubusercontent.com/awaitility/awaitility/4fc23ccbd610ec16d14c2e7728e0593bffa6ac64/README.md) - asinxron natijani kutishning DSL i va `Thread.sleep` o'rniga ishlatilishi
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 12.1.2-bo'lim (155-bet) - `Thread.getState` bilan bloklanishni tasdiqlashning ishonchsizligi: JVM bloklanishni spin-wait bilan amalga oshirishi mumkinligi, `wait` va `await` dan tasodifiy uyg'onishning ruxsat etilgani, holatga o'tishning vaqt olishi; natija konkurentlikni boshqarish uchun emas, faqat debug uchun ekani
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 12.1.4-bo'lim (158-159-betlar) - resurs boshqaruvini sinash: obyektni boshqaradigan sinf kerak bo'lgandan uzoq havola ushlab turmasligi va buni heap snapshot bilan amaldan oldin va keyin taqqoslab sinash
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 12.3.5-bo'lim (167-bet) - o'lik kodni yo'q qilish benchmark ni buzishi; har hisoblangan natija programmada ishlatilishi (sinxronlash yoki sezilarli hisob talab qilmaydigan shaklda) va natijalar oldindan aytilmaydigan bo'lishi talabi
+- ESLATMA: `assertEquals(Thread.State.WAITING, t.getState())` taqiqi, `items[i] = null` misoli va JMH `Blackhole` hamda `ThreadLocalRandom` ning yuqoridagi ikki shartga mosligi shu korpusning qo'shimchasi: kitobda JMH yo'q
 
 ---
 

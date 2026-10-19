@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 10. Garbage collection va xotira sozlash (Garbage Collection and Memory Tuning)
 
 <details>
-<summary>Bu bobdagi 12 bo'lim</summary>
+<summary>Bu bobdagi 13 bo'lim</summary>
 
 - [10.1 GC nima uchun kerak va u qaysi muammoni hal qiladi](#101-gc-nima-uchun-kerak-va-u-qaysi-muammoni-hal-qiladi)
 - [10.2 Avlodlar farazi (generational hypothesis) va young/old hudud](#102-avlodlar-farazi-generational-hypothesis-va-youngold-hudud)
@@ -20,7 +20,8 @@
 - [10.9 Xotira sizishi (leak) belgilari va heap dump bilan tekshirish](#109-xotira-sizishi-leak-belgilari-va-heap-dump-bilan-tekshirish)
 - [10.10 Off-heap xotira: direct buffer, Netty, metaspace o'sishi](#1010-off-heap-xotira-direct-buffer-netty-metaspace-osishi)
 - [10.11 Allokatsiyani kamaytirish: ortiqcha obyekt yaratmaslik amaliyoti](#1011-allokatsiyani-kamaytirish-ortiqcha-obyekt-yaratmaslik-amaliyoti)
-- [10.12 Amalda qo'llash](#1012-amalda-qollash)
+- [10.12 Kuchsiz havolalar va `WeakHashMap`: keshni GC ga qaytarish](#1012-kuchsiz-havolalar-va-weakhashmap-keshni-gc-ga-qaytarish)
+- [10.13 Amalda qo'llash](#1013-amalda-qollash)
 
 </details>
 
@@ -92,6 +93,14 @@ java -XX:+UseShenandoahGC -Xms8g -Xmx8g -jar order-service.jar
 ```
 
 `SoftMaxHeapSize` ZGC ni shu chegarada ushlashga urinadi, lekin zarurat bo'lsa `-Xmx` gacha o'sishga ruxsat beradi, bu burst trafikda OOM dan saqlaydi.
+
+Qolgan sozlamalarga umuman tegmaslik kerak va bu kollektorning maqsadi: ZGC minimal qo'lda konfiguratsiya bilan ishlashga loyihalangan, shuning uchun avlodlar hajmi, GC thread soni va obyektning young hududda qolish muddati sozlanmaydi ([JEP 439](https://openjdk.org/jeps/439) shu uchtasini aniq sanaydi). Ya'ni G1 dan ko'chirilgan flag to'plami bu yerda foyda bermaydi: ZGC da sozlanadigan narsa amalda ikkita, heap chegarasi va `SoftMaxHeapSize`.
+
+Past pauzali kollektor yagona yo'l emas. Kleppmann ilova darajasidagi muqobilni beradi: tilning runtime i obyekt allokatsiya tezligini va qolgan bo'sh xotirani kuzatib turgani uchun GC ni qachon o'tkazishda ma'lum erkinligi bor, va shundan paydo bo'lgan g'oya GC pauzasini tugunning qisqa rejalashtirilgan o'chishi deb qarash. Ketma-ketlik aniq: runtime ilovani tez orada GC pauzasi kerak bo'lishi haqida ogohlantirsa, ilova o'sha tugunga yangi so'rov yuborishni to'xtatadi, boshlangan so'rovlarning tugashini kutadi, keyin hech qanday so'rov ishlab turmagan paytda GC ni bajaradi; shu hiyla GC pauzasini mijozlardan yashiradi va javob vaqtining yuqori persentillarini pasaytiradi, va uni latency ga sezgir ayrim moliyaviy savdo tizimlari ishlatadi (*Designing Data-Intensive Applications*, 8-bob, 299-bet). O'sha g'oyaning varianti ham bor: GC ni faqat qisqa yashaydigan obyektlar uchun ishlatish va uzoq yashaydigan obyektlar to'planib to'liq GC talab qilgunicha protsesslarni davriy qayta ishga tushirish, bir vaqtda bitta tugunni, trafikni oldin chetga surib, rolling upgrade kabi. Kleppmann chegarani ham aytadi: bu choralar GC pauzasini butunlay yo'q qilmaydi, lekin ularning ilovaga ta'sirini sezilarli kamaytiradi.
+
+Bu yondashuvning narxi uch joyda: tugunni navbatdan chiqarish mexanizmi kerak (Kubernetes da `readinessProbe` ni vaqtincha muvaffaqiyatsiz qilish), yetarlicha zaxira sig'im kerak, va JVM da "GC tez orada keladi" signalini ilova darajasida olish standart emas, shuning uchun amalda u GC log yoki `GarbageCollectorMXBean` kuzatuvi asosida taxminiy qilinadi. Shuning uchun korpusdagi tartib shunday: avval [GC tanlovi](#106-qaysi-gc-ni-tanlash-jadval-bilan-yadro-va-xotira-hajmiga-qarab) va heap sozlash, keyin allokatsiyani kamaytirish, va faqat shundan keyin tugunni navbatdan chiqarish hiylasi.
+
+ESLATMA: `readinessProbe` va `GarbageCollectorMXBean` ga bog'lash shu korpusning qo'shimchasi; Kleppmann mexanizmni til runtime i va ilova orasidagi signal darajasida qoldiradi.
 
 Shenandoah OpenJDK ga 12 da qo'shilgan ([JEP 189](https://openjdk.org/jeps/189)), shuning uchun Temurin, Corretto, Red Hat kabi OpenJDK build larida bor; Oracle JDK uni o'z build iga kiritmaydi. JDK 25 da uning generational rejimi experimental holatdan chiqdi ([JEP 521](https://openjdk.org/jeps/521)).
 
@@ -211,6 +220,8 @@ Eng ishonchli usul: ikki heap dump, orasida 30 dan 60 minut, keyin Eclipse MAT d
 
 Spring ilovalarida leak manbalari aniq: TTL va maksimal hajm belgilanmagan Caffeine cache; `static Map` ga user context yozish; `ThreadLocal` ni pool thread da `remove` qilmaslik; katta tranzaksiyada minglab entity ni persistence context da ushlash. Oxirgisi leak emas, lekin bir xil natija beradi.
 
+O'lchovning o'zini noto'g'ri olish esa butun diagnozni buzadi. Heap holatini `Runtime.totalMemory()` va `freeMemory()` ayirmasi bilan o'lchamaslik kerak: bu raqamlar JVM ning joriy ichki holatini ko'rsatadi, jonli obyektlar hajmini emas, va o'lchovdan oldin `System.gc()` chaqirib "aniq" qiymat olishga urinish ham ishlamaydi, chunki `gc()` faqat maslahat va JVM uni bajarishga majbur emas (Schildt, *Java The Complete Reference*, 11-nashr, 18-bob "Memory Management"). To'g'ri yo'llar: JFR, `jcmd GC.heap_info` va heap dump, ya'ni yuqoridagi buyruqlar. Shu sababli "xotira o'sayaptimi" degan savolga ilovaning o'z ichidagi `Runtime` hisoblagichlari asosida qurilgan metrika emas, GC log va JFR javob beradi.
+
 ## 10.10 Off-heap xotira: direct buffer, Netty, metaspace o'sishi
 
 Heap dump toza, GC log sog'lom, lekin RSS o'sib boradi. Bu deyarli har doim off-heap ni ko'rsatadi, va Native Memory Tracking yagona ishonchli diagnostika vositasi.
@@ -287,7 +298,46 @@ To'rtinchisi: escape analysis ga ishonish. JIT metoddan chiqmaydigan kichik obye
 
 Beshinchisi: obyekt pool dan ehtiyot bo'lish. Kichik obyektlar uchun pool deyarli har doim zarar: u obyektlarni sun'iy uzoq yashatadi, ular old hududga promote bo'ladi. Pool faqat qimmat resurs uchun o'rinli: connection, thread, katta direct buffer.
 
-## 10.12 Amalda qo'llash
+## 10.12 Kuchsiz havolalar va `WeakHashMap`: keshni GC ga qaytarish
+
+[Leak belgilari](#109-xotira-sizishi-leak-belgilari-va-heap-dump-bilan-tekshirish) bo'limi sizishni topishni o'rgatadi. Bu bo'lim bir sinf sizishning oldini **dizayn bilan** olish haqida: obyektni ushlab turish qarorini GC ga qaytarish. `java.lang.ref` paketidagi sinflar aynan shu uchun bor, ya'ni garbage collection jarayoni ustida odatdagi kuchli havoladan ko'proq moslashuvchan nazorat berish uchun (Schildt, *Java The Complete Reference*, 12-nashr, 19-bob, 569-bet).
+
+Havola turlari to'rt xil umr siyosatini bildiradi va tanlov ularning farqida:
+
+| Havola turi | GC qachon obyektni oladi | Amalda qachon |
+|---|---|---|
+| Kuchli (oddiy maydon) | hech qachon, havola yashagancha | normal holat, sukut bo'yicha |
+| `SoftReference` | xotira tanqis bo'lganda | kesh, lekin GC pauzasi va xulqi oldindan aytilmaydi |
+| `WeakReference` | obyektga boshqa kuchli havola qolmasa, keyingi siklda | kalit umri tashqaridan belgilangan kesh, listener ro'yxati |
+| `PhantomReference` | obyekt yig'ib olinishga tayyor bo'lgandan keyin, tozalashni kuzatish uchun | resurs tozalashni kuzatuvchi infratuzilma kodi |
+
+ESLATMA: jadvaldagi havola turlarining aniq semantikasi `java.lang.ref` javadoc idan keladi; Schildt bu bo'limda faqat paketning maqsadini yozadi, har bir turning qoidasini emas.
+
+`WeakHashMap` shu mexanizmning tayyor shakli: u "kuchsiz kalitlar" bilan ishlaydigan map, ya'ni kalit boshqa joydan ishlatilmay qolgan paytda elementni garbage collection qilishga ruxsat beradi (Schildt, 20-bob, 612-bet). Qoidasi esa Effective Java da aniq yozilgan va u tanlovning markazida turadi: `WeakHashMap` faqat kesh elementining kerakli umri **kalitga** tashqaridan qolgan havolalar bilan belgilanganda foydali, qiymat bilan belgilanganda emas (Bloch, *Effective Java*, 3-nashr, Item 7, 28-bet).
+
+```java
+// Kalit umri tashqaridan belgilanadi: sessiya obyekti yashagancha kesh yozuvi yashaydi
+private final Map<UserSession, Permissions> cache =
+        Collections.synchronizedMap(new WeakHashMap<>());
+
+Permissions permissionsOf(UserSession session) {
+    return cache.computeIfAbsent(session, s -> permissionService.load(s.userId()));
+}
+```
+
+Ikkita tuzoq bu misolda ham bor. Birinchi: `WeakHashMap` ning o'zi thread-safe emas, shuning uchun u o'raladi yoki `ConcurrentHashMap` plus ochiq `WeakReference` kombinatsiyasiga o'tiladi. Ikkinchi va jiddiyrog'i: qiymat kalitga kuchli havola saqlasa, kalit hech qachon kuchsiz bo'lmaydi va map o'sishda davom etadi. Shuning uchun qiymat ichida kalitni (yoki kalitni ushlab turadigan obyektni) saqlamaslik qat'iy shart.
+
+Kesh elementining umri kalitdan aniq kelib chiqmaydigan holat esa ko'proq uchraydi: element vaqt o'tgani sari qiymatini yo'qotadi. Bunday keshni vaqti-vaqti bilan ishlatilmaydigan elementlardan tozalash kerak, va buni fon threadi (masalan `ScheduledThreadPoolExecutor`) yoki yangi element qo'shishning yon ta'siri sifatida qilish mumkin; `LinkedHashMap` ning `removeEldestEntry` metodi aynan ikkinchi yo'lni osonlashtiradi. Murakkabroq keshlar uchun `java.lang.ref` ni bevosita ishlatish kerak bo'lishi mumkin (Bloch, Item 7, 28-bet). Amalda Spring loyihasida bu qatlam Caffeine bilan yopiladi: `maximumSize`, `expireAfterWrite` va kerak bo'lsa `weakKeys` / `softValues` bitta sozlamada beriladi, shuning uchun `java.lang.ref` ni qo'lda yozish faqat kutubxona yoki infratuzilma kodida haqli bo'ladi.
+
+Uchinchi qo'llanish listener va callback. Agar siz klient callback ro'yxatdan o'tkazadigan, lekin uni ochiq bekor qilmaydigan API chiqargan bo'lsangiz, callback lar yig'ilib boradi. Ularning o'z vaqtida yig'ib olinishini ta'minlashning bir yo'li faqat kuchsiz havola saqlash, masalan ularni `WeakHashMap` da **kalit** sifatida saqlash (Bloch, Item 7, 28-bet). Bu naqsh Spring ilovasida `ApplicationListener` ni qo'lda ro'yxatdan o'tkazadigan va hech qachon olib tashlamaydigan kodda kerak bo'ladi.
+
+Oxirgi ogohlantirish `SoftReference` ga tegishli va u qaror uchun muhim. Soft havola "xotira kerak bo'lganda bo'shat" degan ma'noni bildiradi, lekin qachon bo'shatilishi kollektor siyosatiga qoladi: natijada kesh to'liq to'lgan holatda GC uzoqroq ishlaydi va heap chegarasida xulq oldindan aytilmaydi. ESLATMA: `SoftReference` ni kesh asosi sifatida tanlamaslik va o'rniga ochiq chegara (`maximumSize`) qo'yish shu korpusning tavsiyasi, Schildt va Bloch bu tanlovni bu shaklda yozmaydi.
+
+Diagnostika tomoni ham bor: bu havolalar sizishni yo'q qilmaydi, faqat uni kim boshqarishini o'zgartiradi. Heap dump da `WeakHashMap` yoki `SoftReference` ko'p bo'lsa, savol o'zgaradi: endi "kim ushlab turibdi" emas, "kalit nega hali tirik" degan savol beriladi, va javob odatda qiymat ichidagi kuchli havola yoki `ThreadLocal` bo'ladi.
+
+Manba: Herbert Schildt, *Java The Complete Reference*, 12-nashr, McGraw-Hill, 2022, 19-bob (569-bet) va 20-bob (612-bet); Joshua Bloch, *Effective Java*, 3-nashr, Addison-Wesley, 2018, Item 7 (28-bet).
+
+## 10.13 Amalda qo'llash
 
 - [ ] Har bir servis uchun GC ni aniq belgilang: 4 vCPU dan kam bo'lsa Serial yoki Parallel, oddiy REST servisga `-XX:+UseG1GC`, qattiq p99 SLA uchun generational ZGC.
 - [ ] `-Xmx` konteyner limitiga teng yozilgan joylarni `-XX:MaxRAMPercentage=70.0` ga o'tkazing va `InitialRAMPercentage` ni ham shu qiymatga qo'ying.
@@ -305,6 +355,12 @@ Beshinchisi: obyekt pool dan ehtiyot bo'lish. Kichik obyektlar uchun pool deyarl
 - [OpenJDK 25, `gc_globals.hpp`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/hotspot/share/gc/shared/gc_globals.hpp) - `MaxGCPauseMillis` ning umumiy defaulti `max_uintx - 1`, `InitiatingHeapOccupancyPercent` defaulti 45 va adaptive IHOP izohi
 - [OpenJDK 25, `g1Arguments.cpp`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/hotspot/share/gc/g1/g1Arguments.cpp) - G1 ning `MaxGCPauseMillis` ni 200 ga va `GCPauseIntervalMillis` ni `MaxGCPauseMillis + 1` ga qo'yishi
 - [OpenJDK 25, `g1_globals.hpp`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/hotspot/share/gc/g1/g1_globals.hpp) - `G1HeapRegionSize` ning defaulti 0 (ergonomika hisoblaydi) va ruxsat etilgan oralig'i
+- Herbert Schildt, *Java The Complete Reference*, 12-nashr, McGraw-Hill, 2022, 19-bob (569-bet) va 20-bob (612-bet) - `java.lang.ref` paketi garbage collection ustida kuchli havoladan ko'proq moslashuvchan nazorat berishi; `WeakHashMap` ning kuchsiz kalitlar bilan ishlashi va kalit boshqa joyda ishlatilmay qolganda elementni yig'ib olishga ruxsat berishi
+- Martin Kleppmann, *Designing Data-Intensive Applications*, O'Reilly, 2017, 8-bob (299-bet) - til runtime ining GC ni qachon o'tkazishdagi erkinligi; GC pauzasini tugunning qisqa rejalashtirilgan o'chishi deb qarash: yangi so'rovni to'xtatish, boshlanganlarni tugatish, GC qilish va qaytish, bu bilan pauzani mijozdan yashirish va javob vaqtining yuqori persentillarini pasaytirish, latency ga sezgir moliyaviy savdo tizimlaridagi qo'llanishi; variant sifatida GC ni faqat qisqa yashaydigan obyektlarga ishlatib protsessni rolling tarzda qayta ishga tushirish; bu choralar pauzani yo'q qilmasligi, lekin ta'sirini kamaytirishi
+- Joshua Bloch, *Effective Java*, 3-nashr, Addison-Wesley, 2018, Item 7 (28-bet) - kesh leak ning uchinchi manbasi bo'lishi; `WeakHashMap` faqat element umri kalitga tashqaridan qolgan havolalar bilan belgilanganda foydali ekani; umri aniq bo'lmagan keshni fon threadi yoki `LinkedHashMap.removeEldestEntry` bilan tozalash va murakkabroq holat uchun `java.lang.ref` ni bevosita ishlatish; ro'yxatdan chiqarilmagan listener va callback larni `WeakHashMap` kaliti sifatida saqlash
+
+- [JEP 439: Generational ZGC](https://openjdk.org/jeps/439) - ZGC ning minimal qo'lda konfiguratsiya maqsadi va sozlanmaydigan uchta narsa: avlodlar hajmi, GC thread soni, obyektning young hududda qolish muddati
+- Herbert Schildt, *Java The Complete Reference*, 11-nashr, McGraw-Hill, 2019, 18-bob ("Memory Management" bo'limi) - heap holatini `Runtime.totalMemory()` va `freeMemory()` ayirmasi bilan o'lchamaslik va `System.gc()` ning faqat maslahat ekani. ESLATMA: bu nasr 12-nashrda yo'q (12-nashrning 19-bobida faqat `Runtime` metodlari jadvali qolgan), shuning uchun iqtibos 11-nashrga qadalgan va bet raqami berilmaydi
 
 ---
 

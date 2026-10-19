@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 25. Anti-patternlar (Anti-Patterns)
 
@@ -768,6 +768,8 @@ Mavzuning to'liq yozuvi [transactional self-invocation](../architect/19-spring-t
 - Xato javobida ichki exception matni va SQL so'rovi fosh bo'lib, ma'lumot oqishi yuzaga kelishi.
 - Haqiqiy fallback handler - eng pastki qatlamda, log yozib `ProblemDetail` bilan `500` qaytaruvchi yagona handler - bu to'g'ri va zarur.
 
+**Handler reentrant bo'lmasligi kerak.** Hammasini tutuvchi handler ning kam o'ylanadigan nosozlik rejimi bor: handler ning o'zi xato bersa nima bo'ladi. Nygard ning misoli aniq - fayl tizimi to'lganda log yozishga urinayotgan universal handler istisno oladi, uni o'zi tutadi, yana log yozishga urinadi va shu sikl o'zini chaqirib CPU ni va xotirani yeb JVM ni o'ldiradi. Shuning uchun fallback handler reentrant bo'lmasligi kerak: ichida qiladigan ish minimal bo'ladi (bitta log chaqiruvi va tayyor `ProblemDetail`), ichida yangi istisno chiqishi mumkin bo'lgan amal (fayl yozish, tashqi chaqiruv, formatlash, serializatsiya) bo'lmaydi, va u o'zi chiqargan istisnoni qayta tutmaydi. Amalda bu handler ichidagi hamma narsani eng oddiy shaklda ushlashni talab qiladi - shu yerda "ehtimolga qarshi himoya" qo'shish aynan xatoga olib keladi.
+
 **Ehtiyot bo'ling:** Fallback handler bo'lishi kerak, lekin u aniq tipli handler'lardan keyin ishlashi va har doim `log.error(ex)` bilan to'liq stack trace yozishi shart; `@Order` bilan advice tartibini aniq belgilang. Xato javobiga hech qachon exception matnini xom holda qo'ymang - `ProblemDetail`'ning `detail` maydoniga faqat tashqariga chiqarish xavfsiz bo'lgan, trace ID bilan birga beriladigan xabarni yozing.
 
 ## 25.42 Reactive Pipeline Ichida Bloklash (Blocking in Reactive Pipeline)
@@ -1419,7 +1421,7 @@ public Rate fetch(String code) {
 - Switchover tunida rollback rejasi yo'qligi aniqlanadi, chunki ma'lumotlar sxemasi mos kelmaydi.
 - Bir vaqtda ham texnologiya, ham domen modeli o'zgartirilgani uchun xatolik manbaini aniqlash imkonsiz bo'ladi.
 
-**Ehtiyot bo'ling:** Ba'zi hollarda qayta yozish haqiqatan yagona yo'l (texnologiya qo'llab-quvvatlanishdan chiqqan, xavfsizlik yamog'i mavjud emas) - bunda ham modul-modul migratsiya va parallel run (shadow traffic) bilan natijalarni taqqoslash majburiy. Bir migratsiyada ikki o'zgarishni (framework yangilash + arxitektura o'zgartirish) birlashtirmang.
+**Ehtiyot bo'ling:** Ba'zi hollarda qayta yozish haqiqatan yagona yo'l (texnologiya qo'llab-quvvatlanishdan chiqqan, xavfsizlik yamog'i mavjud emas) - bunda ham modul-modul migratsiya va parallel run (shadow traffic) bilan natijalarni taqqoslash majburiy. Bir migratsiyada ikki o'zgarishni (framework yangilash + arxitektura o'zgartirish) birlashtirmang. Newman amalda jamoalarning ko'pi monolitni refaktoring qilish o'rniga ajratilgan funksionallikni "toza xona" (clean room) usulida qaytadan yozishini aytadi va bu yo'lni big-bang xatosiga aylanmasligi uchun aniq chegara bilan cheklaydi: bir vaqtda faqat kichik bo'lak qayta yoziladi va natija mijozga muntazam yetkaziladi. Chegara muddat bilan o'lchanadi - bitta servis xulqini qayta yozish bir necha kun yoki hafta olsa maqbul, oylarga cho'zila boshlasa yondashuvning o'zi qayta ko'rib chiqiladi.
 
 ## 25.83 Rejalashtirishdan o'lim (Death by Planning)
 
@@ -1449,7 +1451,7 @@ public Rate fetch(String code) {
 - Vendor beradigan client kutubxonasi ichida yashirin, sozlanmaydigan cheksiz kutish bor.
 - DB ga ketgan ulanish switch nosozligi sababli yo'qoladi va `Statement` javobsiz qoladi.
 
-**Ehtiyot bo'ling:** Integratsiya nuqtasini sanab chiqish yetmaydi, har biri uchun uch narsa yozilishi kerak: connect va read timeout, xato holatidagi xulq, va qanchalik tez tez qayta urinish. Qayta urinishni cheklamasa, himoya o'zi [qayta urinish bo'roni](#2561-qayta-urinish-boroni-retry-storm-anti-pattern) ga aylanadi. Arxitektorning nosozlik haqidagi fikrlash tartibi [nosozlik turlari](../architect/07-nosozlik-haqida-fikrlash.md#72-nosozlik-turlari-toliq-toxtash-sekinlashuv-qisman-javob-yolgon-javob) bo'limida.
+**Ehtiyot bo'ling:** Integratsiya nuqtasini sanab chiqish yetmaydi, har biri uchun uch narsa yozilishi kerak: connect va read timeout, xato holatidagi xulq, va qanchalik tez tez qayta urinish. Ro'yxatning to'rtinchi ustuni ham bor va u ko'pincha boshqa jamoada qoladi: shu chaqiruvga ruxsat beradigan firewall qoidasi. Nygard integratsiya nuqtalari ro'yxatini firewall qoidalari bilan BIRGA yuritishni talab qiladi, chunki aks holda yangi muhitda yoki tarmoq o'zgarishidan keyin ro'yxatdagi nuqta bor, qoida esa yo'q bo'lib chiqadi - va nosozlik integratsiya xatosi emas, osilib qolgan ulanish ko'rinishida keladi. Qayta urinishni cheklamasa, himoya o'zi [qayta urinish bo'roni](#2561-qayta-urinish-boroni-retry-storm-anti-pattern) ga aylanadi. Arxitektorning nosozlik haqidagi fikrlash tartibi [nosozlik turlari](../architect/07-nosozlik-haqida-fikrlash.md#72-nosozlik-turlari-toliq-toxtash-sekinlashuv-qisman-javob-yolgon-javob) bo'limida.
 
 Manba: Michael T. Nygard, *Release It! Design and Deploy Production-Ready Software*, 1-nashr, Pragmatic Bookshelf, 2007, 4-bob (4.1 Integration Points), 46-60-betlar.
 
@@ -1567,7 +1569,7 @@ Manba: Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 4-b
 - QA da bitta front-end bitta back-end bilan ishlagan, ishlab chiqarishda nisbat o'n birga chiqadi.
 - Taqsimlangan qulf uchun ishlatilgan bitta Redis instance butun platformaning yagona nosozlik nuqtasiga aylanadi.
 
-**Ehtiyot bo'ling:** Masshtab effektini kichik muhitda o'lchash mumkin emas, shuning uchun nisbatlar hujjatda yoziladi: nechta front-end, nechta back-end, har tomonda nechta thread. Umumiy resursni og'ir yuklama bilan alohida sinash va u sekinlashganda mijozlar ishlashda davom etishini tekshirish kerak. Nuqta-nuqta aloqa har doim yomon degani emas: u qancha o'sishga yetishini oldindan hisoblab, chegarani yozib qo'yish kifoya.
+**Ehtiyot bo'ling:** Masshtab effektini kichik muhitda o'lchash mumkin emas, shuning uchun nisbatlar hujjatda yoziladi: nechta front-end, nechta back-end, har tomonda nechta thread. Nisbatdan tashqari TOPOLOGIYA ham muhim. Ishlab chiqarishda alohida mashinalarda turadigan ikki ilovani QA da bitta hostga yig'ish yashirin bog'liqlik yaratadi: ular lokal fayl yo'li, port, `localhost` manzili yoki umumiy katalog orqali bir-biriga tayanib qoladi va bu bog'liqlik faqat ishlab chiqarishda, ajratilgandan keyin ko'rinadi - shuning uchun productionda alohida bo'ladigan ilovalar QA da ham ajratiladi. Shu mantiq tarmoq qurilmalariga ham tegishli: firewall va load balancer productionda bo'lsa, QA da ham, imkon bo'lsa shu vendordan bo'lishi kerak, aks holda ularning xulqi (timeout, ulanish jadvali, sog'liq tekshiruvi) sinalmagan qoladi. Umumiy resursni og'ir yuklama bilan alohida sinash va u sekinlashganda mijozlar ishlashda davom etishini tekshirish kerak. Nuqta-nuqta aloqa har doim yomon degani emas: u qancha o'sishga yetishini oldindan hisoblab, chegarani yozib qo'yish kifoya.
 
 Manba: Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 4-bob (4.7 Scaling Effects), 91-95-betlar.
 
@@ -1787,6 +1789,7 @@ Manba: Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 9-b
 - Freeman/Robson, *Head First Design Patterns* 2nd, 13-bob - patternni haddan oshirib ishlatish va pattern kasalligi
 - Michael C. Feathers, *Working Effectively with Legacy Code*, Prentice Hall PTR, 2004 (copyright 2005), 25-bob (339, 345, 369, 372 va 399-bet) - statik yopishqoqlikdan chiqishning oraliq qadamlari: Encapsulate Global References, Expose Static Method, Introduce Instance Delegator, Introduce Static Setter va Replace Global Reference with Getter
 - Robert C. Martin, *Clean Code*, 17-bob - kod hidlari va evristikalar
+- Sam Newman, *Monolith to Microservices*, O'Reilly, 2019, 3-bob (78-bet) - monolitni refaktoring qilish o'rniga funksionallikni toza xona usulida qayta yozish amalda ko'proq uchrashi; bir vaqtda kichik bo'lakni qayta yozib muntazam yetkazish sharti va "kun yoki hafta maqbul, oy bo'lsa yondashuvni qayta ko'rish" chegarasi (25.82)
 - Spring Boot kodi: `AutoConfigureTestDatabase` (default `Replace.NON_TEST` va uning javadoc'i: Testcontainers, `@ServiceConnection`, `@DynamicPropertySource` almashtirilmaydi). spring-projects/spring-boot, tag `v4.1.1` (commit `6fdf67ea1552691e932604d4bf67a5e08ff0b0ea`). Apache-2.0. https://github.com/spring-projects/spring-boot/blob/6fdf67ea1552691e932604d4bf67a5e08ff0b0ea/module/spring-boot-jdbc-test/src/main/java/org/springframework/boot/jdbc/test/autoconfigure/AutoConfigureTestDatabase.java
 - Spring Boot kodi: `TaskExecutorConfigurations` va `TaskExecutionProperties` (default `applicationTaskExecutor`: core 8, navbat `Integer.MAX_VALUE`; `propagate-context` default `false`). spring-projects/spring-boot, tag `v4.1.1`. Apache-2.0. https://github.com/spring-projects/spring-boot/blob/6fdf67ea1552691e932604d4bf67a5e08ff0b0ea/core/spring-boot/src/main/java/org/springframework/boot/task/TaskExecutionProperties.java
 - Spring Boot kodi: `JpaBaseConfiguration` (`open-in-view` default `true`, WARN faqat property yozilmaganda). spring-projects/spring-boot, tag `v3.5.0`. Apache-2.0. https://github.com/spring-projects/spring-boot/blob/v3.5.0/spring-boot-project/spring-boot-autoconfigure/src/main/java/org/springframework/boot/autoconfigure/orm/jpa/JpaBaseConfiguration.java
@@ -1796,6 +1799,8 @@ Manba: Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 9-b
 - Michael T. Nygard, *Release It! Design and Deploy Production-Ready Software*, 1-nashr, Pragmatic Bookshelf, 2007, 4-bob - Stability Antipatterns ro'yxati o'n bir elementdan iborat: Integration Points (46-bet), Chain Reactions (61-bet), Cascading Failures (65-bet), Users (68-bet), Blocked Threads (81-bet), Attacks of Self-Denial (88-bet), Scaling Effects (91-bet), Unbalanced Capacities (96-bet), Slow Responses (100-bet), SLA Inversion (102-bet), Unbounded Result Sets (106-bet)
 - Michael T. Nygard, *Release It!*, 1-nashr, 2007, 9-bob - Capacity Antipatterns ro'yxati o'n elementdan iborat: Resource Pool Contention (176-bet), Excessive JSP Fragments (180-bet), AJAX Overkill (182-bet), Overstaying Sessions (185-bet), Wasted Space in HTML (187-bet), The Reload Button (191-bet), Handcrafted SQL (193-bet), Database Eutrophication (196-bet), Integration Point Latency (199-bet), Cookie Monsters (201-bet)
 - Michael T. Nygard, *Release It!*, 1-nashr, 2007, 4.2, 61-64-betlar - sakkiz serverli farmda bitta node yiqilsa qolganlari 12.5 foizdan 14.3 foizga o'tadi, ya'ni har bir serverning yuklamasi taxminan 15 foizga oshadi; ikki nodeli klasterda yuklama ikki barobar bo'ladi
+- Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 5-bob, 127-bet - universal exception handler reentrant bo'lmasligi kerak: fayl tizimi to'lganda u o'zini qayta chaqirib CPU va xotirani yeb JVM ni o'ldiradi (25.41)
+- Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 14-bob, 242-243-betlar - QA da bir xil hostda ishlayotgan ikki ilova productionda alohida bo'lsa yashirin bog'liqlik paydo bo'lishi va ularni QA da ham ajratish talabi; firewall va load balancer productionda bo'lsa QA da ham shu vendordan bo'lishi va firewall qoidalarining integratsiya nuqtalari ro'yxati bilan birga yuritilishi (25.84, 25.90)
 - Michael T. Nygard, *Release It!*, 1-nashr, 2007, 9.9, 199-bet - masofaviy chaqiruv lokal chaqiruvdan kamida ming marta uzoq davom etadi
 - Michael T. Nygard, *Release It!*, 1-nashr, 2007, 9.4, 185-bet - Servlet spetsifikatsiyasining tarixiy standart sessiya muddati o'ttiz daqiqa; muddatni think time o'rtachasidan bir standart og'ish narisiga qo'yish maslahati
 - ESLATMA: mavjud nusxa 1-nashr (2007). Excessive JSP Fragments, AJAX Overkill, Wasted Space in HTML va Cookie Monsters bugungi Spring Boot kontekstida ma'nosini yo'qotgani uchun bu bobga kiritilmadi; 2-nashr (2018) ga xos nomlar ham iqtibos qilinmaydi

@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 26. Partitioning, replikatsiya va katta hajm (Partitioning, Replication and Scale)
 
 <details>
-<summary>Bu bobdagi 20 bo'lim</summary>
+<summary>Bu bobdagi 22 bo'lim</summary>
 
 - [26.1 Jadval qachon katta hisoblanadi: qaror uchun raqamlar](#261-jadval-qachon-katta-hisoblanadi-qaror-uchun-raqamlar)
 - [26.2 Deklarativ partitioning: range, list, hash va kalit tanlash](#262-deklarativ-partitioning-range-list-hash-va-kalit-tanlash)
@@ -28,7 +28,9 @@
 - [26.17 Sekundar indeksni bo'lish: lokal va global indeks](#2617-sekundar-indeksni-bolish-lokal-va-global-indeks)
 - [26.18 Qayta balanslash strategiyalari va `hash mod N` nega yaramaydi](#2618-qayta-balanslash-strategiyalari-va-hash-mod-n-nega-yaramaydi)
 - [26.19 So'rovni yo'naltirish: uch yondashuv va PostgreSQL dagi ko'rinishi](#2619-sorovni-yonaltirish-uch-yondashuv-va-postgresql-dagi-korinishi)
-- [26.20 Amalda qo'llash](#2620-amalda-qollash)
+- [26.20 Masshtablashning to'rt o'qi va ularni birga qo'llash](#2620-masshtablashning-tort-oqi-va-ularni-birga-qollash)
+- [26.21 Partitsiya kalitini tanlashdagi uch tuzoq](#2621-partitsiya-kalitini-tanlashdagi-uch-tuzoq)
+- [26.22 Amalda qo'llash](#2622-amalda-qollash)
 
 </details>
 
@@ -188,6 +190,8 @@ FROM pg_replication_slots;
 
 Bir data markazda normal `replay_lag` 1 ms dan 50 ms gacha, baytda bir necha megabayt. Lag o'nlab sekundga chiqsa, sabab odatda ikkitadan biri: standby da og'ir `SELECT` replay ni bloklagan, yoki primary da bitta katta tranzaksiya WAL ni to'kib tashlagan. Replication slot himoya beradi, lekin standby o'lsa WAL to'planib diskni to'ldiradi, shuning uchun `max_slot_wal_keep_size` majburiy.
 
+Diskdagi WAL hajmini boshqaradigan parametrlar ikki xil vazifani bajaradi va ularni aralashtirmaslik kerak. `max_slot_wal_keep_size` yuqori chegara: replication slot ushlab turadigan WAL hajmini cheklaydi va diskni himoyalaydi. `wal_keep_size` esa teskari tomondan ishlaydi: u WAL fayllarini saqlash uchun ataylab zaxiralanadigan joy hajmi, ya'ni slot ishlatilmaganda ham standby ga kerak bo'ladigan WAL ni bir muddat ushlab turish usuli; standart qiymati nol, demak zaxira yo'q (Rogov, 10.6, 179-bet). Uchinchi nuqta shu ikkisidan muhimroq: `max_wal_size` qattiq chegara emas, maqsadli qiymat. Yuklama sakraganda yozish jadvaldan orqada qolishi mumkin, va server replikatsiya yoki uzluksiz arxivlash hali olib ketmagan WAL fayllarini o'chirishga haqli emas, shuning uchun diskdagi haqiqiy hajm `max_wal_size` dan oshib ketadi; arxivlash yoqilgan bo'lsa bu doimiy kuzatuvni talab qiladi, aks holda disk to'ladi (Rogov, 10.6, 179-bet).
+
 ## 26.7 Sinxron va asinxron replikatsiya tanlovi va uning narxi
 
 `synchronous_commit` ning narxi bitta raqam bilan o'lchanadi: commit ga qo'shiladigan tarmoq RTT. Bir availability zone ichida bu taxminan 0.3-1 ms, zonalar orasida 1-2 ms, regionlar orasida 20-80 ms. To'lov servisida sekundiga 500 commit bo'lsa, cross-region sinxron rejim to'g'ridan to'g'ri throughput ni o'n baravar pasaytiradi.
@@ -231,6 +235,12 @@ Ikkinchi muammo mantiqiy: foydalanuvchi to'lovni yaratdi, keyingi so'rov standby
 | `DELETE` bilan retention | bloat, uzoq vacuum, WAL to'lishi | `DETACH` + `DROP TABLE` |
 | Logical slot iste'molchisi o'chgan | WAL cheksiz o'sadi | slot lag alert, eskisini `DROP` |
 
+Jadvalda yo'q ikki holat alohida izoh talab qiladi va ikkisi ham Kleppmann dan.
+
+**Bitta foydalanuvchi, bir nechta qurilma.** Read-after-write kafolati bitta qurilma uchun oson: oxirgi yozuvdan keyin ma'lum vaqt ichida o'qish primary dan olinadi. Foydalanuvchining telefoni va noutbuki bo'lsa, bu yetmaydi, chunki bir qurilmada kiritilgan ma'lumot boshqasida ko'rinishi kerak. Kitob ikki talabni sanaydi (5-bob, 164-bet). Birinchisi, oxirgi yozuv vaqti haqidagi metadata markazlashtirilgan bo'lishi kerak, ya'ni u bitta qurilma xotirasida emas, hamma qurilma so'rovi ko'radigan joyda turadi. Ikkinchisi, replikalar turli ma'lumot markazlarida bo'lsa, turli qurilmalardan kelgan ulanish bir xil ma'lumot markaziga tushishi kafolatlanmaydi: uy internetidan kelgan kompyuter va mobil tarmoqdan kelgan telefon butunlay boshqa marshrutdan o'tishi mumkin. Shuning uchun primary dan o'qishga tayanadigan yondashuvda bir foydalanuvchining barcha qurilma so'rovlarini bitta ma'lumot markaziga yo'naltirish kerak bo'ladi.
+
+**Lag daqiqa yoki soatga chiqsa.** Kitobning savoli oldindan beriladi: replikatsiya lag i bir necha daqiqa yoki soatga o'sganda ilova qanday ishlaydi (5-bob, 167-bet). Javob "muammo yo'q" bo'lsa yaxshi, lekin javob foydalanuvchi uchun yomon tajriba bo'lsa, tizimni kuchliroq kafolat beradigan qilib loyihalash kerak, masalan read-after-write. Eng xavfli xulq esa nomlangan: replikatsiya aslida asinxron bo'lgan holda uni sinxron deb o'ylash keyinchalik muammolar uchun tayyor retsept. Amalda bu savol sinovga aylanadi: standby ni ataylab 10 daqiqa orqada qoldirib, qaysi ekranlar noto'g'ri ma'lumot ko'rsatishini ro'yxatga olish.
+
 ## 26.9 Mantiqiy replikatsiya va CDC uchun asos
 
 Streaming replikatsiya butun klasterni bayt darajasida ko'chiradi. Mantiqiy replikatsiya esa jadval darajasida ishlaydi va `pgoutput` plaginidan foydalanadi. Debezium ham shu plagin orqali o'qiydi, ya'ni CDC uchun tashqi C kutubxona o'rnatish shart emas.
@@ -271,6 +281,12 @@ spring.datasource.hikari.keepalive-time=120000
 ```
 
 Failover testi ishlab chiqarishga chiqishdan oldin bajarilishi kerak: [testlash qo'llanmasidagi](../testing/README.md) resilience testlari bo'limida standby ni promote qilib tiklanish vaqtini o'lchash ssenariysi bor.
+
+Failover ning ikki tuzog'i avtomatlashtirish darajasidan qat'i nazar qoladi.
+
+**Tashqi saqlagichdagi kalit to'qnashuvi.** Asinxron replikatsiyada yangi leader eski leader ning hamma yozuvini olmagan bo'lishi mumkin va replikatsiya qilinmagan yozuvlar odatda tashlab yuboriladi. Bu xavf baza chegarasida tugamaydi. Kleppmann GitHub dagi hodisani keltiradi (5-bob, 157-bet): orqada qolgan MySQL follower leader ga ko'tarilgan, baza birlamchi kalitni avto-increment hisoblagichi bilan bergan, yangi leader ning hisoblagichi esa eski leader dan orqada edi, natijada u allaqachon ishlatilgan birlamchi kalitlarni qayta berdi. Shu kalitlar Redis da ham ishlatilgan edi, demak MySQL va Redis orasida nomuvofiqlik paydo bo'ldi va bir qism shaxsiy ma'lumot noto'g'ri foydalanuvchilarga ko'rsatildi. Xulosa amaliy: identifikatorni bazaning ketma-ket hisoblagichidan olish failover da takrorlanmaslikni kafolatlamaydi, shuning uchun tashqi tizimlarga chiqadigan kalit uchun UUID yoki markazlashtirilgan generator afzal.
+
+**Timeout tanlovi.** Leader o'lgan deb hisoblash uchun qanday timeout to'g'ri degan savolga bir qiymatli javob yo'q (5-bob, 158-bet). Uzun timeout nosozlik holatida tiklanish vaqtini uzaytiradi. Qisqa timeout esa keraksiz failover keltiradi: vaqtinchalik yuk sakrashi node ning javob vaqtini timeout dan oshirib yuborishi yoki tarmoq uzilishi paketlarni kechiktirishi mumkin. Tizim allaqachon yuqori yuk yoki tarmoq muammosi bilan kurashayotgan bo'lsa, keraksiz failover holatni yaxshilamaydi, yomonlashtiradi. Shu sababli kitob kuzatuvni beradi: ba'zi operatsiya jamoalari dasturiy ta'minot avtomatik failover ni qo'llab-quvvatlasa ham failover ni qo'lda bajarishni afzal ko'radi.
 
 ## 26.11 Spring da o'qish va yozish uchun alohida DataSource sozlash
 
@@ -518,7 +534,72 @@ Kitob bu bo'limni parallel so'rov bajarilishi bilan yopadi: MPP bazalarda so'rov
 
 Qoida: yo'naltirish qarori bitta joyda yozilgan va testda tekshirilgan bo'lishi kerak. Ikki joyda, masalan ham PgBouncer da ham `targetServerType` da, bir-biriga qarama-qarshi yo'naltirish bo'lsa, failover paytida yozuvlar standby ga tushib xato beradi va sabab topilmaydi.
 
-## 26.20 Amalda qo'llash
+Ikkinchi qoida iste'molchi tomoniga tegishli va uni Newman servis chegarasi tilida aytadi: partitioning ham, o'qishni replica ga yo'naltirish ham mikroservisning ichki implementatsiya tafsiloti bo'lishi kerak. Ya'ni iste'molchi `Customer` servisiga so'rov yuboradi, so'rov dinamik ravishda to'g'ri partition ga yo'naltiriladi, va iste'molchi partitioning borligini ham bilmaydi. Buning sababi arxitektura erkinligi: shunda partition sxemasini o'zgartirish yoki partitioning dan butunlay voz kechish mumkin bo'lib qoladi. Teskari holat narxi ham kitobda bor, mijoz bilan Newman ning suhbatida bir kompaniya asosiy bazasining partition sxemasini o'zgartirish uchun production tizimini uch kunga o'chirib qo'yishga majbur bo'lgan. Shu sababli partition kaliti API shartnomasiga chiqmaydi va `X-Partition-Key` kabi sarlavha iste'molchiga berilmaydi.
+
+## 26.20 Masshtablashning to'rt o'qi va ularni birga qo'llash
+
+Bobning qolgan bo'limlari partitioning va replikatsiya haqida, lekin ikkisi ham kattaroq qarorning bir qismi va qaysi biri kerakligini aralashtirmaslik uchun umumiy model foydali. Newman masshtablash turlarini tavsiflash uchun *The Art of Scalability* kitobidagi Scale Cube ni oladi: model masshtablashni uch toifaga, ya'ni funksional dekompozitsiya, gorizontal nusxalash va ma'lumotni bo'lishga ajratadi. Newman virtualizatsiya va public cloud davrida modelga to'rtinchi o'q, vertikal masshtabni qo'shadi, garchi shundan keyin model kub bo'lib qolmasa ham (*Building Microservices*, 2-nashr, 13-bob, "The Four Axes of Scaling"). To'rt o'q qisqa ta'rifda: vertikal masshtab kattaroq mashina olish; gorizontal nusxalash bir xil ishni bajara oladigan bir necha nusxa qo'yish; ma'lumotni bo'lish ishni ma'lumotning biror xususiyati bo'yicha ajratish; funksional dekompozitsiya ishni turiga qarab ajratish.
+
+Qaysi o'qni tanlash cheklovning turiga bog'liq va PostgreSQL kontekstida ularning narxi juda farq qiladi. Newman relyatsion bazada yozuv raqobati uchun vertikal masshtabni odatdagi birinchi chora deb ataydi, chunki cloud infratuzilmada u tez va deyarli xavfsiz: kod ham, baza sxemasi ham o'zgarmaydi. Lekin shiftini ham ko'rsatadi: uning misolidagi kompaniya bazani bir necha marta yangilagan va bu yo'l tugagan. Gorizontal nusxalash ilova instanslari va [o'qishni standby ga yo'naltirish](#268-oqishni-standby-ga-yonaltirish-va-replikatsiya-lag-dan-kelib-chiqadigan-xatolar) uchun tabiiy, lekin asosiy ish yukni taqsimlash mexanizmiga ko'chadi; sticky session talab qiladigan tizim bu yerda alohida muammo va Newman bunday talabni umuman qurmaslikni maslahat beradi. [Partitioning](#262-deklarativ-partitioning-range-list-hash-va-kalit-tanlash) va [sharding](#2612-sharding-qachon-zarur-boladi-va-nega-eng-oxirgi-chora) ishonchlilikni oshirmaydi: partition yiqilsa, so'rovlarning shu ulushi yiqiladi, shuning uchun u odatda nusxalash bilan birga qo'llanadi. Funksional dekompozitsiya esa alohida servis va alohida baza demak.
+
+Modelning asosiy foydasi o'qlarni birga ko'rishda: Newman ta'kidlaydiki bir o'q bo'yicha masshtablash boshqa o'qni osonlashtiradi. Uning misolida `Order` funksiyasi monolitdan ajratiladi (funksional dekompozitsiya), shundan keyin uni alohida nusxalash mumkin bo'ladi, keyin esa geografik hudud bo'yicha shard larga bo'lish, va har hudud ichida nusxalash saqlanadi; dastlabki funksional ajratish bo'lmasa, bu usullar faqat butun monolitga qo'llanar edi. Teskari bog'lanish ham bor: bazani kattaroq mashinaga ko'chirish yangi servislarning mantiqan ajratilgan bazalarini shu yerda joylash imkonini beradi. Maqsad hamma o'q bo'yicha masshtablash emas: maqsad qaysi mexanizmlar qo'lda borligini bilish va har birining narxini tushunib tanlash.
+
+```text
+Qaror tartibi, arzondan qimmatga:
+
+  1) vertikal        kattaroq mashina            kod o'zgarmaydi, shift bor
+  2) gorizontal      nusxa + o'qish replikasi    yuk taqsimlash kerak
+  3) ma'lumotni bo'lish  partition yoki shard    kalit tanlash qaytarib bo'lmaydi
+  4) funksional      alohida servis va baza      tashkiliy narx eng katta
+
+Tekshiruv savoli: "hozirgi cheklov yozuvmi, o'qishmi, hajmmi yoki jamoami?"
+Yozuv raqobati bo'lsa 1 va 3, o'qish bo'lsa 2, jamoa bo'lsa 4.
+```
+
+Birinchi o'q, ya'ni vertikal masshtab, eng arzon bo'lgani uchun eng ko'p noto'g'ri kutish keltiradi. Newman uch cheklovni ochiq sanaydi.
+
+Vertikal va gorizontal tanlovning narx SHAKLI ham farq qiladi va buni Nygard baza tomonida aniq ko'rsatadi. Birinchisi: baza serverini uchdan ko'p nusxaga klasterlash noqulay bo'lib qoladi, shuning uchun failover li kuchli juftlik afzal. Ikkinchisi: vertikal masshtablashning boshlang'ich narxi yuqori va o'sish qadami forklift upgrade talab qiladi, ya'ni mashinani almashtirishni, bosqichma-bosqich qo'shishni emas (Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 8-bob, 166-bet). Ikki qoida birgalikda qarorni soddalashtiradi: baza tomonida nusxa qo'shish o'q sifatida tez tugaydi, va keyingi qadam qiymati chiziqli emas, pog'onali bo'ladi. Ilova qatlamida esa buning teskarisi, ya'ni nusxa arzon va qadam kichik, shuning uchun gorizontal o'q odatda ilovada, [partitioning](#262-deklarativ-partitioning-range-list-hash-va-kalit-tanlash) esa bazada boshlanadi.
+
+**Yadro soni oshadi, takt tezligi oshmaydi.** Oxirgi 5-10 yilda har yangi avlod CPU takt tezligini sezilarli oshirmaydi, buning o'rniga yadro soni ko'payadi. Agar dastur ko'p yadroli apparatdan foyda olish uchun yozilmagan bo'lsa, 4 yadrodan 8 yadroga o'tish CPU ga bog'liq tizimda ham deyarli hech narsa bermasligi mumkin, va kodni ko'p yadroga moslash katta ish hamda dasturlash idiomalarini butunlay o'zgartirishni talab qilishi mumkin. Shu sababli vertikal masshtabdan oldin [8.11](08-ishlash-va-resurs-hissi-napkin-math.md#811-amdahl-qonuni-ketma-ket-ulush-masshtablanishning-chegarasi) dagi Amdahl hisobi bajariladi: ketma-ket ulush katta bo'lsa yadro qo'shish foyda bermaydi.
+
+**Katta mashina ishonchlilikni oshirmaydi.** Yangiroq va kattaroq server ishonchliligi yaxshilangan bo'lishi mumkin, lekin oxir-oqibat mashina o'chsa tizim o'chadi. Boshqa masshtab o'qlaridan farqli, vertikal masshtab robustness ga deyarli ta'sir qilmaydi, ya'ni uni mavjudlik yechimi deb hisoblash xato.
+
+**Narx chiziqli o'smaydi.** Mashina kattalashgani sayin qimmatlashadi, lekin narx o'sishi har doim berilgan resurs o'sishiga mutanosib bo'lmaydi. Natijada ba'zan ko'p sonli kichik mashina kam sonli katta mashinadan arzonroq chiqadi, ya'ni o'q 1 va o'q 2 orasidagi tanlov faqat texnik emas, hisob masalasi ham.
+
+Shu bilan birga vertikal masshtabning ikki haqiqiy afzalligi qoladi: virtual yoki bulut infratuzilmasida uni sinab ko'rish tez va deyarli xavfsiz, va u boshqa masshtab turlarini osonlashtiradi, masalan bazani kattaroq mashinaga ko'chirish funksional dekompozitsiya natijasida paydo bo'ladigan yangi servislarning mantiqan ajratilgan bazalarini shu yerda joylashtirish imkonini beradi.
+
+## 26.21 Partitsiya kalitini tanlashdagi uch tuzoq
+
+[26.2](#262-deklarativ-partitioning-range-list-hash-va-kalit-tanlash) kalit tanlashning PostgreSQL talablarini beradi: kalit har bir unique constraint tarkibida bo'lishi shart. Bu texnik shart, lekin kalitni qaysi ustundan olish kerakligini aytmaydi. Kleppmann uch tuzoqni nomlaydi va ularning har biri production da boshqacha ko'rinadi.
+
+**Vaqt birinchi kalit bo'lsa, hamma yozuv bitta partitsiyaga tushadi.** Diapazon bo'yicha bo'lishning kamchiligi ma'lum kirish shakllarida issiq nuqta berishida. Kalit timestamp bo'lsa, partitsiyalar vaqt oraliqlariga to'g'ri keladi, masalan kuniga bitta partitsiya. Sensor o'lchovlari sodir bo'lgani sayin yozilgani uchun hamma yozuv bitta partitsiyaga, ya'ni bugungi partitsiyaga boradi: u yozuv bilan to'lib ketadi, qolganlari esa bo'sh turadi (6-bob, 203-bet). Yechim kalitning birinchi elementini almashtirish: har timestamp oldiga sensor nomi yoki foydalanuvchi ID si qo'yiladi, shunda bo'lish avval sensor bo'yicha, keyin vaqt bo'yicha ketadi. Narxi ham aytilgan: bir vaqt oralig'ida bir nechta sensor qiymatini olish uchun endi har sensor nomi uchun alohida diapazon so'rovi bajarilishi kerak.
+
+PostgreSQL da bu tanlov ikki yuk turini ajratadi. `PARTITION BY RANGE (created_at)` retention uchun ideal, chunki eski oyni `DETACH PARTITION` bilan bir zumda olib tashlash mumkin, lekin yozuv har doim oxirgi partitsiyaga tushadi. Yozuv raqobati asosiy muammo bo'lsa, kalit `(customer_id, created_at)` ga o'tadi yoki `PARTITION BY HASH (customer_id)` tanlanadi, va retention endi `DELETE` yoki alohida arxiv jadvali bilan boradi.
+
+**`Object.hashCode()` partitsiyalash uchun yaramaydi.** Hash bo'yicha bo'lishda hash funksiyasi kriptografik kuchli bo'lishi shart emas, kitob Cassandra va MongoDB ning MD5 ishlatishini misol qilib keltiradi. Lekin dasturlash tillarining ichki hash funksiyalari mos kelmaydi: Java ning `Object.hashCode()` va Ruby ning `Object#hash` da bir xil kalit turli jarayonlarda turli hash qiymatiga ega bo'lishi mumkin (6-bob, 203-bet). Bu Java da amaliy xavf, chunki kod to'g'ri ko'rinadi va bitta JVM ichida testlar ham o'tadi; nosozlik faqat bir nechta instance da, masalan rolling deploy dan keyin ko'rinadi va qator "yo'qolgan" bo'lib chiqadi.
+
+```java
+// XATO: String.hashCode() spetsifikatsiyalangan, lekin Object.hashCode()
+// identity ga tayanadi va har jarayonda boshqa qiymat beradi.
+int partition = key.hashCode() % PARTITION_COUNT;   // beqaror
+
+// TO'G'RI: barqaror, spetsifikatsiyalangan hash. Kriptografik kuch shart emas,
+// talab bitta: bir xil kirish har jarayonda bir xil natija bersin.
+private static int partitionOf(String key, int partitionCount) {
+    byte[] digest = MessageDigest.getInstance("MD5")
+            .digest(key.getBytes(StandardCharsets.UTF_8));
+    int hash = ByteBuffer.wrap(digest).getInt();      // birinchi 4 bayt
+    return Math.floorMod(hash, partitionCount);       // manfiy qiymat uchun
+}
+```
+
+PostgreSQL ning `PARTITION BY HASH` ida bu muammo yo'q, chunki hash ni baza o'zi hisoblaydi va u versiyalar orasida barqaror; muammo faqat ilova yoki Kafka producer partitsiyani o'zi hisoblaganda chiqadi. Kafka da `ProducerRecord` ga kalit berilganda standart partitioner barqaror hash ishlatadi, shuning uchun `partition` ni qo'lda hisoblab berish deyarli har doim xato.
+
+**Hash bo'yicha bo'lish diapazon skanini yo'qotadi.** Kalit hashi bo'yicha bo'lishda diapazon so'rovlarini samarali bajarish xossasi yo'qoladi: ilgari qo'shni bo'lgan kalitlar endi barcha partitsiyalarga tarqalgan va saralash tartibi yo'q (6-bob, 204-bet). MongoDB da hash sharding yoqilgan bo'lsa har diapazon so'rovi hamma partitsiyaga yuborilishi kerak, Riak, Couchbase va Voldemort da esa birlamchi kalit bo'yicha diapazon so'rovlari umuman qo'llab-quvvatlanmaydi. Cassandra kelishuv taklif qiladi: jadval bir necha ustundan iborat kompozit birlamchi kalit bilan e'lon qilinadi, kalitning faqat birinchi qismi partitsiyani aniqlash uchun hash qilinadi, qolgan ustunlar esa ma'lumotni saralash uchun birlashtirilgan indeks sifatida ishlatiladi.
+
+PostgreSQL da shu kelishuvning aynan ekvivalenti bor va u ko'pincha e'tibordan qoladi: `PARTITION BY HASH (customer_id)` bilan har partitsiya ichida `(customer_id, created_at DESC)` indeksi. Bitta mijozning vaqt bo'yicha so'rovi bitta partitsiyaga tushadi va u yerda indeks saralangan tartibni beradi; barcha mijozlar bo'yicha global vaqt diapazoni so'rovi esa hamma partitsiyani skan qiladi. Shu sababli kalit tanlashdan oldin savolni teskari qo'yish kerak: eng ko'p bajarilgan so'rov bitta kalit bo'yichami yoki diapazon bo'yicha. Birinchisi bo'lsa hash, ikkinchisi bo'lsa range, ikkisi ham bo'lsa kompozit kalit va [26.3](#263-partition-pruning-qachon-ishlaydi-va-qachon-ishlamaydi) dagi pruning tekshiruvi.
+
+## 26.22 Amalda qo'llash
 
 - [ ] Eng katta 10 jadval uchun `pg_total_relation_size` va `n_live_tup` ni o'lchab, 50 GB dan katta va vaqt bo'yicha o'qiladiganlar ro'yxatini tuzing.
 - [ ] Bitta nomzod jadvalni range partitioning ga o'tkazish rejasini yozing: kalit, PK o'zgarishi, `NOT VALID` check, `ATTACH`, nom almashtirish qadamlari bilan.
@@ -533,7 +614,9 @@ Qoida: yo'naltirish qarori bitta joyda yozilgan va testda tekshirilgan bo'lishi 
 
 ## Manbalar
 
+- Sam Newman, *Building Microservices*, 2-nashr, O'Reilly, 2021, 13-bob ("The Four Axes of Scaling", "Combining Models") - Scale Cube ning uch o'qi (funksional dekompozitsiya, gorizontal nusxalash, ma'lumotni bo'lish), Newman qo'shgan to'rtinchi o'q (vertikal masshtab), vertikal masshtabning relyatsion bazada birinchi chora bo'lishi, partitioning ning ishonchlilikka kam foydasi, sticky session talabidan voz kechish maslahati va bir o'q boshqasini osonlashtirishi. Bu nashrning elektron nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
 - Martin Kleppmann, *Designing Data-Intensive Applications*, 6-bob - partitioning strategiyalari va qayta balanslash
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 10.6-bo'lim (179-bet) - `wal_keep_size` bilan joy zaxiralash, `max_wal_size` ning qattiq chegara emasligi va replikatsiya olmagan WAL ni o'chirib bo'lmasligi
 - Martin Kleppmann, *Designing Data-Intensive Applications*, O'Reilly, 2017, 5-bob (158-166-betlar) - replikatsiya logining to'rt turi, WAL shipping ning bir xil versiya talabi, logical log ning versiyalar orasida ishlashi va izchil prefiks o'qishi
 - Martin Kleppmann, *Designing Data-Intensive Applications*, O'Reilly, 2017, 6-bob (205-216-betlar) - qiyshiq yuklama va issiq kalitni tasodifiy son bilan yoyish, sekundar indeksni hujjat va term bo'yicha bo'lish, `hash mod N` ning kamchiligi, belgilangan partition soni, avtomatik qayta balanslashning xavfi va so'rovni yo'naltirishning uch yondashuvi
 - [PostgreSQL 17, Table Partitioning limitations (ddl.sgml)](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/ddl.sgml) - partitsiyalangan jadvaldagi indeks virtual va har partition ning o'z child indeksida yashashi, `UNIQUE` cheklovi partition kalitini to'liq o'z ichiga olishi shartligi, `MODULUS` va `REMAINDER` bilan hash partitioning
@@ -544,6 +627,12 @@ Qoida: yo'naltirish qarori bitta joyda yozilgan va testda tekshirilgan bo'lishi 
 - [PostgreSQL 17, High Availability (high-availability.sgml)](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/high-availability.sgml) - streaming replikatsiya, sinxron rejim va failover
 - [PostgreSQL 17, Hot Standby (high-availability.sgml)](https://raw.githubusercontent.com/postgres/postgres/REL_17_STABLE/doc/src/sgml/high-availability.sgml) - `hot_standby_feedback`, `max_standby_streaming_delay` va tiklanish bilan konflikt
 - Martin Kleppmann, *Designing Data-Intensive Applications*, 3-bob - OLTP va analitik yuk farqi, ustunli saqlash
+- Martin Kleppmann, *Designing Data-Intensive Applications*, 1-nashr, O'Reilly, 2017, 5-bob (157-158-betlar) - failover da asinxron replikatsiya tufayli replikatsiya qilinmagan yozuvlarning tashlanishi, GitHub hodisasida avto-increment hisoblagich qayta ishlatilib Redis dagi kalitlar bilan to'qnashishi, va failover timeout tanlovi (uzun timeout tiklanishni sekinlashtiradi, qisqa timeout yuk sakrashida yolg'on failover beradi) hamda ba'zi jamoalarning failover ni qo'lda bajarishi
+- Martin Kleppmann, *Designing Data-Intensive Applications*, 1-nashr, O'Reilly, 2017, 5-bob (164 va 167-betlar) - bir foydalanuvchining bir nechta qurilmasi uchun read-after-write (oxirgi yozuv vaqtini markazlashtirish va barcha qurilma so'rovlarini bir ma'lumot markaziga yo'naltirish), hamda lag daqiqa yoki soatga chiqsa ilova qanday ishlashini oldindan so'rash va replikatsiyani sinxron deb o'ylamaslik
+- Martin Kleppmann, *Designing Data-Intensive Applications*, 1-nashr, O'Reilly, 2017, 6-bob (203-204-betlar) - kalitning birinchi elementi timestamp bo'lsa hamma yozuv joriy kun partitsiyasiga tushishi va yechim sifatida sensor nomini oldiga qo'yish, `Object.hashCode()` ning turli jarayonda turli qiymat berishi va partitsiyalash uchun barqaror hash talabi (Cassandra va MongoDB MD5), hash bo'yicha bo'lishning diapazon skanini yo'qotishi va Cassandra ning kompozit kalit kelishuvi
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 13-bob ("Data Partitioning", "Vertical Scaling" bo'limlari) - partitioning va read replica yo'naltirishi mikroservisning ichki implementatsiya tafsiloti bo'lishi va iste'molchining bundan xabardor bo'lmasligi, partition sxemasini o'zgartirish uchun uch kunlik to'xtash misoli; vertikal masshtabda yadro soni oshishi lekin takt tezligi oshmasligi (4 dan 8 yadroga o'tish foyda bermasligi), katta mashinaning robustness ni oshirmasligi va narxning chiziqli o'smasligi. Bu nashrning qo'limizdagi elektron nusxasida barqaror bet raqami yo'q, shuning uchun faqat bob va bo'lim nomi ko'rsatilgan
+- ESLATMA: 26.8 dagi standby ni 10 daqiqa orqada qoldirib sinash tavsiyasi, 26.10 dagi UUID yoki markazlashtirilgan generator tavsiyasi, 26.19 dagi `X-Partition-Key` eslatmasi, 26.21 dagi `partitionOf` kod misoli, Kafka partitioner haqidagi kuzatish va PostgreSQL `PARTITION BY HASH` bilan kompozit indeks ekvivalenti shu korpusning qo'shimchasi
+- Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 8-bob (166-bet) - baza serverini uchdan ko'p nusxaga klasterlashning noqulayligi va failover li kuchli juftlikning afzalligi; vertikal masshtablashning yuqori boshlang'ich narxi va forklift upgrade talabi
 
 ---
 

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 6. Web va taqdimot qatlami patternlari (Web & Presentation Patterns)
 
@@ -192,7 +192,7 @@ class RequestMappingReporter implements ApplicationListener<ContextRefreshedEven
 - Admin yo'llari uchun qo'shimcha IP cheklovi yoki maintenance rejimida 503 qaytarish.
 - Handler metodining annotatsiyasi (`HandlerMethod#getMethodAnnotation`) asosida rate limit yoki feature flag tekshiruvi.
 
-**Ehtiyot bo'ling:** `InputStream` ni filtrda bir marta o'qisangiz, controller unga ega bo'lmaydi - o'rash (wrapper) ishlating. `postHandle` `@ResponseBody` javobi uchun juda kech (javob allaqachon yozilgan), unda `ResponseBodyAdvice` yoki filtr kerak. Filtrdan tashlangan istisnolar `@ControllerAdvice` ga yetmaydi; filtr tartibini `Ordered.HIGHEST_PRECEDENCE` bilan ko'r-ko'rona o'rnatish Security zanjiri bilan ziddiyat tug'diradi.
+**Ehtiyot bo'ling:** `InputStream` ni filtrda bir marta o'qisangiz, controller unga ega bo'lmaydi - o'rash (wrapper) ishlating. `postHandle` `@ResponseBody` javobi uchun juda kech (javob allaqachon yozilgan), unda `ResponseBodyAdvice` yoki filtr kerak. Filtrdan tashlangan istisnolar `@ControllerAdvice` ga yetmaydi; filtr tartibini `Ordered.HIGHEST_PRECEDENCE` bilan ko'r-ko'rona o'rnatish Security zanjiri bilan ziddiyat tug'diradi. Yana bir tuzoq - filtrni zanjirga qo'shish uni so'rovga bir marta chaqirilishini kafolatlamaydi: shu kafolat kerak bo'lsa `OncePerRequestFilter` dan meros olinadi, u `doFilterInternal` da so'rov va javobni cast qilmasdan `HttpServletRequest` / `HttpServletResponse` sifatida beradi, `shouldNotFilter()` bilan tanlangan so'rovlarni chetlab o'tadi va standart holatda async hamda error dispatch ga qo'llanmaydi (`shouldNotFilterAsyncDispatch()`, `shouldNotFilterErrorDispatch()` bilan o'zgartiriladi). Teskari xato ham keng tarqalgan: `web.xml` init parametrlari kerak bo'lmasa `GenericFilterBean` dan meros olishning sababi yo'q, oddiy `Filter` yoki `OncePerRequestFilter` yetarli (Spilca, 9-bob, 210-bet).
 
 ```java
 @Component
@@ -368,7 +368,7 @@ class ReportController {
 
 **Tavsif:** Fowler'ning Template View'i - HTML sahifasida belgilar (markers) joylashtirilib, renderlash paytida ular model qiymatlari bilan to'ldiriladi. Shablon statik tuzilmani (dizayn) saqlaydi, dinamik qismlar esa ifoda tili orqali kiritiladi. Bu web'dagi eng keng tarqalgan view strategiyasi: dizaynerlar HTML bilan ishlaydi, dasturchilar modelni beradi. "Natural templating" (brauzerda statik fayl sifatida ham ochiladigan shablon) Thymeleaf'ning asosiy ustunligi.
 
-**Spring'da qayerda uchraydi:** `spring-boot-starter-thymeleaf` (`thymeleaf-spring6` moduli Spring 6/7 bilan ishlaydi): `SpringTemplateEngine`, `SpringResourceTemplateResolver`, `ThymeleafViewResolver`, `spring.thymeleaf.cache`, `spring.thymeleaf.prefix/suffix`; standart dialect (`th:text`, `th:each`, `th:if`, `th:object`, `th:field`, `th:href="@{...}"`), Spring Security dialect (`thymeleaf-extras-springsecurity6`). Muqobillar: FreeMarker (`spring-boot-starter-freemarker`, `FreeMarkerViewResolver`), Mustache (`spring-boot-starter-mustache`), Groovy Markup, JSP (`InternalResourceViewResolver`, lekin executable jar'da cheklovlar bilan), JTE (uchinchi tomon starter'i, kompilyatsiya qilinadigan shablonlar). Email uchun `TemplateEngine#process` ni to'g'ridan-to'g'ri chaqirish.
+**Spring'da qayerda uchraydi:** `spring-boot-starter-thymeleaf` (`thymeleaf-spring6` moduli Spring 6/7 bilan ishlaydi): `SpringTemplateEngine`, `SpringResourceTemplateResolver`, `ThymeleafViewResolver`, `spring.thymeleaf.cache`, `spring.thymeleaf.prefix/suffix`; standart dialect (`th:text`, `th:each`, `th:if`, `th:object`, `th:field`, `th:href="@{...}"`), Spring Security dialect (`thymeleaf-extras-springsecurity6`). Muqobillar: FreeMarker (`spring-boot-starter-freemarker`, `FreeMarkerViewResolver`), Mustache (`spring-boot-starter-mustache`), Groovy Markup, JSP (`InternalResourceViewResolver`, lekin executable jar'da cheklovlar bilan), JTE (uchinchi tomon starter'i, kompilyatsiya qilinadigan shablonlar). Email uchun `TemplateEngine#process` ni to'g'ridan-to'g'ri chaqirish. Kesh kaliti har kutubxonada alohida va standart holatda yoqilgan: `spring.thymeleaf.cache`, `spring.freemarker.cache`, `spring.groovy.template.cache`, `spring.mustache.cache` (Walls, 2-bob, 59-bet). `spring-boot-devtools` ularning hammasini ishlab chiqish paytida o'chiradi, LiveReload serverini ko'taradi va mos brauzer plagini bilan shablon, stylesheet yoki rasm o'zgarganda sahifani o'zi yangilaydi; production ga deploy qilinganda DevTools o'zini o'chiradi va kesh qaytib yonadi (Walls, 1-bob, 24-bet).
 
 **Qo'llanish keyslari:**
 - Admin panel va back-office ilovalari, bunda SEO va tez ishga tushirish SPA murakkabligidan muhimroq.
@@ -377,7 +377,7 @@ class ReportController {
 - PDF generatsiyasi uchun HTML tayyorlab, keyin OpenHTMLtoPDF kabi vosita bilan PDF'ga aylantirish.
 - htmx bilan birgalikda interaktiv, lekin serverda renderlanadigan "gipermedia" ilovalar.
 
-**Ehtiyot bo'ling:** Shablonda mantiq (murakkab shartlar, hisoblashlar, servis chaqiruvlari) to'planishi - Template View'ning asosiy kasalligi; View Helper ga ko'chiring. Ishlab chiqish rejimida `spring.thymeleaf.cache=false`, ishlab chiqarishda `true` bo'lishi shart. `th:utext` bilan foydalanuvchi kiritgan matnni chiqarish XSS'ga yo'l ochadi - sukutdagi `th:text` escape'ini saqlang (qarang: [18-bo'lim](18-xavfsizlik-patternlari.md), Output Encoding).
+**Ehtiyot bo'ling:** Shablonda mantiq (murakkab shartlar, hisoblashlar, servis chaqiruvlari) to'planishi - Template View'ning asosiy kasalligi; View Helper ga ko'chiring. Ishlab chiqish rejimida `spring.thymeleaf.cache=false`, ishlab chiqarishda `true` bo'lishi shart. `th:utext` bilan foydalanuvchi kiritgan matnni chiqarish XSS'ga yo'l ochadi - sukutdagi `th:text` escape'ini saqlang (qarang: [18-bo'lim](18-xavfsizlik-patternlari.md), Output Encoding). Kesh kalitini qo'lda `false` qilsangiz, uni production profiliga o'tkazib yubormang: DevTools shu ishni o'zi qiladi va o'zini production da o'chiradi, qo'lda yozilgan kalit esa qoladi. JSP ni tanlash esa alohida cheklov keltiradi: servlet konteyner (embedded Tomcat va Jetty ham) JSP ni `/WEB-INF` ichidan qidiradi, executable JAR da bu shartni bajarib bo'lmaydi - JSP faqat WAR qilib an'anaviy konteynerga deploy qilinganda ishlaydi (Walls, 2-bob, 59-bet).
 
 ```html
 <!-- Template View: HTML skeleti statik, qiymatlar server tomonda joylashadi -->
@@ -1175,6 +1175,9 @@ uchun shart aniq yozilishi kerak: `th:if="${not #lists.isEmpty(items)}"`. Obyekt
 
 - Freeman/Robson, *Head First Design Patterns* 2nd, 12-bob - kompozit patternlar va MVC
 - Craig Walls, *Spring in Action* 6th, 2-bob - Spring MVC da controller, model va view
+- Craig Walls, *Spring in Action* 6th, 1-bob - DevTools: LiveReload bilan brauzerni yangilash va shablon keshini o'chirish
+- Craig Walls, *Spring in Action* 6th, 2-bob - shablon kutubxonalarining kesh kalitlari va JSP ning executable JAR dagi cheklovi
+- Laurentiu Spilca, *Spring Security in Action*, 9-bob - `GenericFilterBean` va `OncePerRequestFilter` orasidagi tanlov
 - Spring Framework kodi: `DispatcherServlet` (`doDispatch` tartibi, `NoHandlerFoundException` 7.0 da har doim tashlanadi), `RequestMappingHandlerAdapter` (argument resolver tartibi, flash map'ni modelga qo'shish, `ignoreDefaultModelOnRedirect`), `RequestMappingHandlerMapping`. spring-projects/spring-framework, tag `v7.0.9` (commit `82a6b40b9366ec181ededdad282b307ee5381a52`). Apache-2.0. https://github.com/spring-projects/spring-framework/blob/82a6b40b9366ec181ededdad282b307ee5381a52/spring-webmvc/src/main/java/org/springframework/web/servlet/DispatcherServlet.java
 - Spring Framework kodi: `ContentNegotiationConfigurer` va `ContentNegotiationManagerFactoryBean` (`favorPathExtension` 5.2.4 dan deprecated, 7.0 da yo'q; `favorParameter` default `false`, `parameterName` default `"format"`). spring-projects/spring-framework, tag `v7.0.9`; deprecation holati uchun `v6.1.0`, `v6.2.19` va `v5.3.39` teglari. Apache-2.0. https://github.com/spring-projects/spring-framework/blob/82a6b40b9366ec181ededdad282b307ee5381a52/spring-webmvc/src/main/java/org/springframework/web/servlet/config/annotation/ContentNegotiationConfigurer.java
 - Spring Framework kodi: `PathMatchConfigurer` (`PathPatternParser` MVC'da default 6.0 dan, 5.3 da `AntPathMatcher`; `setUseTrailingSlashMatch` 7.0 da yo'q). spring-projects/spring-framework, teglar `v6.0.0` va `v5.3.39`. Apache-2.0. https://github.com/spring-projects/spring-framework/blob/v6.0.0/spring-webmvc/src/main/java/org/springframework/web/servlet/config/annotation/PathMatchConfigurer.java

@@ -76,7 +76,7 @@ Sonar coverage talablari va JaCoCo mexanikasi boshqa hujjatda:
 python3 tools/run_tests.py <TestFayl>... --yurgiz   # modul, log va birinchi sabab bilan
 python3 tools/run_tests.py --diff --yurgiz        # o'zgarishga ta'sir qilgan testlar
 python3 tools/parse_test_output.py <log>          # faqat tashqi (CI) log uchun
-python3 tools/rules_for.py <test fayli>
+python3 tools/rules_for.py --vazifa="<vazifa>" <test fayli> <sinalayotgan kod>
 tools/doc.sh outline testing <bob>     # bobdagi bo'limlar ro'yxati
 tools/doc.sh show testing <raqam>      # butun bob emas, faqat o'sha bo'lim
 tools/doc.sh checklist testing <bob>

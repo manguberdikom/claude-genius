@@ -15,7 +15,7 @@
     "title": "2. Strukturaviy patternlar (Structural Patterns)",
     "file": "02-strukturaviy-patternlar.md",
     "part": null,
-    "sections": 22
+    "sections": 23
    },
    {
     "num": 3,
@@ -50,7 +50,7 @@
     "title": "7. API dizayn patternlari (API Design Patterns)",
     "file": "07-api-dizayn-patternlari.md",
     "part": null,
-    "sections": 34
+    "sections": 39
    },
    {
     "num": 8,
@@ -71,7 +71,7 @@
     "title": "10. Ma'lumotlarni boshqarish va taqsimlash patternlari (Data Management & Distribution Patterns)",
     "file": "10-malumotlarni-boshqarish-va-taqsimlash.md",
     "part": null,
-    "sections": 32
+    "sections": 34
    },
    {
     "num": 11,
@@ -85,21 +85,21 @@
     "title": "12. Arxitektura uslublari (Architectural Styles)",
     "file": "12-arxitektura-uslublari.md",
     "part": null,
-    "sections": 38
+    "sections": 41
    },
    {
     "num": 13,
     "title": "13. Domain-Driven Design patternlari (DDD Patterns)",
     "file": "13-domain-driven-design-patternlari.md",
     "part": null,
-    "sections": 63
+    "sections": 79
    },
    {
     "num": 14,
     "title": "14. Microservices patternlari (Microservices Patterns)",
     "file": "14-microservices-patternlari.md",
     "part": null,
-    "sections": 42
+    "sections": 48
    },
    {
     "num": 15,
@@ -127,14 +127,14 @@
     "title": "18. Xavfsizlik patternlari (Security Patterns)",
     "file": "18-xavfsizlik-patternlari.md",
     "part": null,
-    "sections": 49
+    "sections": 57
    },
    {
     "num": 19,
     "title": "19. Reactive patternlar (Reactive Patterns)",
     "file": "19-reactive-patternlar.md",
     "part": null,
-    "sections": 26
+    "sections": 28
    },
    {
     "num": 20,
@@ -155,7 +155,7 @@
     "title": "22. Deployment va operatsion patternlar (Deployment & Operations Patterns)",
     "file": "22-deployment-va-operatsion-patternlar.md",
     "part": null,
-    "sections": 43
+    "sections": 47
    },
    {
     "num": 23,
@@ -190,21 +190,21 @@
     "title": "27. Monolitdan microservice'ga migratsiya patternlari (Monolith to Microservices Migration Patterns)",
     "file": "27-monolitdan-microservicega-migratsiya.md",
     "part": null,
-    "sections": 31
+    "sections": 32
    },
    {
     "num": 28,
     "title": "28. Taqsimlangan ma'lumot, replikatsiya va konsistentlik patternlari (Distributed Data, Replication & Consistency Patterns)",
     "file": "28-taqsimlangan-malumot-replikatsiya-va.md",
     "part": null,
-    "sections": 32
+    "sections": 33
    },
    {
     "num": 29,
     "title": "29. Kubernetes va cloud-native patternlar (Kubernetes & Cloud-Native Patterns)",
     "file": "29-kubernetes-va-cloud-native-patternlar.md",
     "part": null,
-    "sections": 25
+    "sections": 27
    },
    {
     "num": 30,
@@ -259,7 +259,7 @@
     "title": "5. Unit test: asoslar, qoidalar va JUnit 5 (Unit Testing - Foundations, Rules & JUnit 5)",
     "file": "05-unit-test-asoslar-qoidalar-va-junit-5.md",
     "part": null,
-    "sections": 15
+    "sections": 17
    },
    {
     "num": 6,
@@ -301,7 +301,7 @@
     "title": "11. Xavfsizlik, tranzaksiya, asinxron va konkurentlik testlari (Testing Security, Transactions, Async & Concurrency)",
     "file": "11-xavfsizlik-tranzaksiya-asinxron-va.md",
     "part": null,
-    "sections": 15
+    "sections": 18
    },
    {
     "num": 12,
@@ -363,49 +363,49 @@
     "title": "1. Arxitektorning fikrlash modeli (The Architect's Mental Model)",
     "file": "01-arxitektorning-fikrlash-modeli.md",
     "part": "I. Fikrlash va qarorlar",
-    "sections": 16
+    "sections": 19
    },
    {
     "num": 2,
     "title": "2. Muammoni tushunish va to'g'ri savol berish (Understanding the Problem)",
     "file": "02-muammoni-tushunish-va-togri-savol-berish.md",
     "part": "I. Fikrlash va qarorlar",
-    "sections": 18
+    "sections": 20
    },
    {
     "num": 3,
     "title": "3. Qaror qabul qilish va uni hujjatlashtirish (Decisions and ADRs)",
     "file": "03-qaror-qabul-qilish-va-uni-hujjatlashtirish.md",
     "part": "I. Fikrlash va qarorlar",
-    "sections": 22
+    "sections": 27
    },
    {
     "num": 4,
     "title": "4. Kod - muloqot vositasi: nomlash, aniqlik, kognitiv yuk (Code as Communication)",
     "file": "04-kod-muloqot-vositasi-nomlash-aniqlik.md",
     "part": "I. Fikrlash va qarorlar",
-    "sections": 11
+    "sections": 13
    },
    {
     "num": 5,
     "title": "5. Abstraksiya hissi, bog'liqlik va chegaralar (Abstraction, Coupling and Boundaries)",
     "file": "05-abstraksiya-hissi-bogliqlik-va-chegaralar.md",
     "part": "I. Fikrlash va qarorlar",
-    "sections": 16
+    "sections": 23
    },
    {
     "num": 6,
     "title": "6. Murakkablikni boshqarish (Managing Complexity)",
     "file": "06-murakkablikni-boshqarish.md",
     "part": "I. Fikrlash va qarorlar",
-    "sections": 16
+    "sections": 17
    },
    {
     "num": 7,
     "title": "7. Nosozlik haqida fikrlash (Thinking About Failure)",
     "file": "07-nosozlik-haqida-fikrlash.md",
     "part": "I. Fikrlash va qarorlar",
-    "sections": 12
+    "sections": 15
    },
    {
     "num": 8,
@@ -419,21 +419,21 @@
     "title": "9. JVM ichki tuzilishi: class loading, memory model, JIT (JVM Internals)",
     "file": "09-jvm-ichki-tuzilishi-class-loading-memory.md",
     "part": "II. Java chuqur bilim",
-    "sections": 12
+    "sections": 13
    },
    {
     "num": 10,
     "title": "10. Garbage collection va xotira sozlash (Garbage Collection and Memory Tuning)",
     "file": "10-garbage-collection-va-xotira-sozlash.md",
     "part": "II. Java chuqur bilim",
-    "sections": 12
+    "sections": 13
    },
    {
     "num": 11,
     "title": "11. Concurrency: thread, lock, atomic, happens-before (Java Concurrency)",
     "file": "11-concurrency-thread-lock-atomic-happens.md",
     "part": "II. Java chuqur bilim",
-    "sections": 23
+    "sections": 26
    },
    {
     "num": 12,
@@ -454,7 +454,7 @@
     "title": "14. JVM profiling va diagnostika: JFR, async-profiler, heap dump (JVM Profiling and Diagnostics)",
     "file": "14-jvm-profiling-va-diagnostika-jfr-async.md",
     "part": "II. Java chuqur bilim",
-    "sections": 12
+    "sections": 13
    },
    {
     "num": 15,
@@ -468,14 +468,14 @@
     "title": "16. Spring Boot mexanikasi: auto-configuration, starter, Actuator (Spring Boot Mechanics)",
     "file": "16-spring-boot-mexanikasi-auto-configuration.md",
     "part": "III. Spring chuqur bilim",
-    "sections": 14
+    "sections": 15
    },
    {
     "num": 17,
     "title": "17. Spring MVC va WebFlux: so'rov yo'li, thread modeli, REST dizayni (Spring MVC and WebFlux)",
     "file": "17-spring-mvc-va-webflux-sorov-yoli-thread.md",
     "part": "III. Spring chuqur bilim",
-    "sections": 13
+    "sections": 15
    },
    {
     "num": 18,
@@ -496,35 +496,35 @@
     "title": "20. Spring Security: filter chain, OAuth2, JWT (Spring Security)",
     "file": "20-spring-security-filter-chain-oauth2-jwt.md",
     "part": "III. Spring chuqur bilim",
-    "sections": 13
+    "sections": 19
    },
    {
     "num": 21,
     "title": "21. PostgreSQL arxitekturasi: process model, WAL, checkpoint, vacuum (PostgreSQL Architecture)",
     "file": "21-postgresql-arxitekturasi-process-model-wal.md",
     "part": "IV. PostgreSQL chuqur bilim",
-    "sections": 17
+    "sections": 25
    },
    {
     "num": 22,
     "title": "22. MVCC, izolyatsiya darajalari, lock va deadlock (MVCC and Isolation)",
     "file": "22-mvcc-izolyatsiya-darajalari-lock-va-deadlock.md",
     "part": "IV. PostgreSQL chuqur bilim",
-    "sections": 17
+    "sections": 22
    },
    {
     "num": 23,
     "title": "23. Indekslar: B-tree, GIN, GiST, BRIN va tanlov (Indexes)",
     "file": "23-indekslar-b-tree-gin-gist-brin-va-tanlov.md",
     "part": "IV. PostgreSQL chuqur bilim",
-    "sections": 19
+    "sections": 23
    },
    {
     "num": 24,
     "title": "24. Planner, statistika va EXPLAIN ANALYZE o'qish (Planner and EXPLAIN ANALYZE)",
     "file": "24-planner-statistika-va-explain-analyze-oqish.md",
     "part": "IV. PostgreSQL chuqur bilim",
-    "sections": 17
+    "sections": 28
    },
    {
     "num": 25,
@@ -538,7 +538,7 @@
     "title": "26. Partitioning, replikatsiya va katta hajm (Partitioning, Replication and Scale)",
     "file": "26-partitioning-replikatsiya-va-katta-hajm.md",
     "part": "IV. PostgreSQL chuqur bilim",
-    "sections": 20
+    "sections": 22
    },
    {
     "num": 27,
@@ -566,14 +566,14 @@
     "title": "30. Kuzatuvchanlik amaliyoti: log, metrika, trace va ularning narxi (Observability in Practice)",
     "file": "30-kuzatuvchanlik-amaliyoti-log-metrika-trace.md",
     "part": "V. Atrof ekotizim: operatsion haqiqat",
-    "sections": 14
+    "sections": 19
    },
    {
     "num": 31,
     "title": "31. Deployment haqiqati: konteyner, cgroup, JVM va probe (Deployment Reality)",
     "file": "31-deployment-haqiqati-konteyner-cgroup-jvm-va.md",
     "part": "V. Atrof ekotizim: operatsion haqiqat",
-    "sections": 13
+    "sections": 14
    },
    {
     "num": 32,
@@ -594,7 +594,7 @@
     "title": "34. Legacy kod va bosqichma-bosqich refaktoring (Legacy Code and Refactoring)",
     "file": "34-legacy-kod-va-bosqichma-bosqich-refaktoring.md",
     "part": "VI. Amaliyot va o'sish",
-    "sections": 19
+    "sections": 22
    },
    {
     "num": 35,
@@ -608,7 +608,7 @@
     "title": "36. Code review va jamoada texnik yetakchilik (Code Review and Technical Leadership)",
     "file": "36-code-review-va-jamoada-texnik-yetakchilik.md",
     "part": "VI. Amaliyot va o'sish",
-    "sections": 16
+    "sections": 17
    },
    {
     "num": 37,
@@ -622,7 +622,7 @@
     "title": "38. Doimiy o'rganish va texnologiya tanlash (Continuous Learning and Technology Choice)",
     "file": "38-doimiy-organish-va-texnologiya-tanlash.md",
     "part": "VI. Amaliyot va o'sish",
-    "sections": 13
+    "sections": 15
    },
    {
     "num": 39,
@@ -970,14 +970,14 @@
     "title": "2. Nomlash qoidalari: maqsadni ochib beruvchi nom (Naming: Intention-Revealing Names)",
     "file": "02-nomlash-qoidalari-maqsadni-ochib-beruvchi.md",
     "part": "I. Toza kodning asosi",
-    "sections": 17
+    "sections": 19
    },
    {
     "num": 3,
     "title": "3. Nom turlari bo'yicha aniq konvensiyalar (Naming Conventions by Kind)",
     "file": "03-nom-turlari-boyicha-aniq-konvensiyalar.md",
     "part": "I. Toza kodning asosi",
-    "sections": 17
+    "sections": 18
    },
    {
     "num": 4,
@@ -998,21 +998,21 @@
     "title": "6. Shart, mantiq va boshqaruv oqimi (Conditionals and Control Flow)",
     "file": "06-shart-mantiq-va-boshqaruv-oqimi.md",
     "part": "II. Funksiya va boshqaruv oqimi",
-    "sections": 12
+    "sections": 13
    },
    {
     "num": 7,
     "title": "7. Sikl, iteratsiya va to'plam bilan ishlash (Loops and Iteration)",
     "file": "07-sikl-iteratsiya-va-toplam-bilan-ishlash.md",
     "part": "II. Funksiya va boshqaruv oqimi",
-    "sections": 11
+    "sections": 12
    },
    {
     "num": 8,
     "title": "8. Izoh qoidalari: yaxshi izohlar (Comments: The Good Ones)",
     "file": "08-izoh-qoidalari-yaxshi-izohlar.md",
     "part": "III. Izoh va hujjat",
-    "sections": 11
+    "sections": 12
    },
    {
     "num": 9,
@@ -1026,7 +1026,7 @@
     "title": "10. Javadoc va API hujjati (Javadoc and API Documentation)",
     "file": "10-javadoc-va-api-hujjati.md",
     "part": "III. Izoh va hujjat",
-    "sections": 12
+    "sections": 13
    },
    {
     "num": 11,
@@ -1075,7 +1075,7 @@
     "title": "17. Vorislik, kompozitsiya va polimorfizm mexanikasi (Inheritance Mechanics)",
     "file": "17-vorislik-kompozitsiya-va-polimorfizm.md",
     "part": "V. Obyekt, ma'lumot va holat",
-    "sections": 11
+    "sections": 12
    },
    {
     "num": 18,
@@ -1089,14 +1089,14 @@
     "title": "19. Istisno mexanikasi va resurslar (Exception Mechanics and Resources)",
     "file": "19-istisno-mexanikasi-va-resurslar.md",
     "part": "VI. Xato bilan ishlash",
-    "sections": 15
+    "sections": 16
    },
    {
     "num": 20,
     "title": "20. Primitiv, son va pul (Primitives, Numbers and Money)",
     "file": "20-primitiv-son-va-pul.md",
     "part": "VII. Java tilining toza ishlatilishi",
-    "sections": 9
+    "sections": 12
    },
    {
     "num": 21,
@@ -1117,7 +1117,7 @@
     "title": "23. To'plamlar va generiklar gigiyenasi (Collections and Generics)",
     "file": "23-toplamlar-va-generiklar-gigiyenasi.md",
     "part": "VII. Java tilining toza ishlatilishi",
-    "sections": 13
+    "sections": 14
    },
    {
     "num": 24,
@@ -1131,7 +1131,7 @@
     "title": "25. Java kodidagi umumiy tuzoqlar (Common Java Pitfalls)",
     "file": "25-java-kodidagi-umumiy-tuzoqlar.md",
     "part": "VII. Java tilining toza ishlatilishi",
-    "sections": 12
+    "sections": 13
    },
    {
     "num": 26,
@@ -1166,7 +1166,7 @@
     "title": "30. Test kodi ham ishlab chiqarish kodi (Test Code Is Production Code)",
     "file": "30-test-kodi-ham-ishlab-chiqarish-kodi.md",
     "part": "IX. Test kodining tozaligi",
-    "sections": 10
+    "sections": 11
    },
    {
     "num": 31,
@@ -1215,14 +1215,14 @@
     "title": "37. Refaktoring harakatlari katalogi III: shart, API va ierarxiya (Refactoring Moves III)",
     "file": "37-refaktoring-harakatlari-katalogi-iii-shart.md",
     "part": "X. Hid katalogi va refaktoring harakatlari",
-    "sections": 17
+    "sections": 19
    },
    {
     "num": 38,
     "title": "38. Refaktoringni xavfsiz bajarish (Safe Refactoring Mechanics)",
     "file": "38-refaktoringni-xavfsiz-bajarish.md",
     "part": "X. Hid katalogi va refaktoring harakatlari",
-    "sections": 16
+    "sections": 18
    },
    {
     "num": 39,
@@ -1312,7 +1312,7 @@
     "title": "1. Review nima uchun bor va nimani haqiqatda beradi (Why Review Exists)",
     "file": "01-review-nima-uchun-bor-va-nimani-haqiqatda.md",
     "part": "I. Review ning mohiyati va iqtisodi",
-    "sections": 14
+    "sections": 15
    },
    {
     "num": 2,
@@ -1536,7 +1536,7 @@
     "title": "33. Bog'liqlik va supply chain review (Dependencies and Supply Chain)",
     "file": "33-bogliqlik-va-supply-chain-review.md",
     "part": "VI. Xavfsizlik review",
-    "sections": 7
+    "sections": 8
    },
    {
     "num": 34,
@@ -1564,7 +1564,7 @@
     "title": "37. API moslik va breaking change review (API Compatibility)",
     "file": "37-api-moslik-va-breaking-change-review.md",
     "part": "VIII. Kesishgan sifat",
-    "sections": 9
+    "sections": 10
    },
    {
     "num": 38,

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 16. O'zgarmaslik va holat boshqaruvi kod darajasida (Immutability in Code)
 
@@ -59,6 +59,28 @@ public final class Order {
 }
 ```
 
+**Enum maydonlari ham `final` bo'ladi.** Enum konstantasining maydonini yaratilgandan keyin o'zgartirish Java da qonuniy: `enum` tanasida oddiy maydon e'lon qilib, unga setter yozish kompilyatsiya qilinadi. Lekin bu tavsiya etilmaydi, chunki enum maydoni semantik jihatdan oddiy maydondan boshqacha ishlaydi: **har bir konstantaning o'z nusxasi bor**, ya'ni setter chaqiruvi faqat shu konstantaning qiymatini o'zgartiradi va qolganlari o'z qiymatini saqlaydi. Natijada enum global, bir martalik yuklanadigan va hamma joyda ulashiladigan obyekt bo'lgani uchun o'zgarish butun JVM bo'ylab ko'rinadi va uni kim o'zgartirganini topish qiyin.
+
+```java
+// yomon: enum maydoni o'zgaruvchan, o'zgarish global ko'rinadi
+enum Bird {
+    CHICKEN(20), PENGUIN(75);
+
+    private int numDays;
+    Bird(int numDays) { this.numDays = numDays; }
+    void setNumDays(int numDays) { this.numDays = numDays; }   // qonuniy, lekin yo'q
+}
+
+// yaxshi: maydon final, hisob-kitob metodda
+enum Bird {
+    CHICKEN(20), PENGUIN(75);
+
+    private final int incubationDays;
+    Bird(int incubationDays) { this.incubationDays = incubationDays; }
+    int incubationDays() { return incubationDays; }
+}
+```
+
 ## 16.2 Chuqur va sayoz o'zgarmaslik
 
 Sayoz o'zgarmaslik - obyektning o'zi o'zgarmas, lekin ichidagi obyektlar o'zgaradi. Bu holat eng xavfli, chunki kod o'zgarmas ko'rinadi va dasturchi himoyaga ishonadi.
@@ -73,6 +95,8 @@ public record Shipment(TrackingNumber trackingNumber, Instant dispatchedAt) { }
 ```
 
 Qoida: o'zgarmas sinf ichida faqat o'zgarmas turlar bo'lishi kerak - `String`, `Instant`, `LocalDate`, `BigDecimal`, `record`, enum, `List.of`. `Date`, `Calendar`, massiv, `ArrayList` esa chegarada nusxalanadi.
+
+Chuqur o'zgarmaslikning qaytim tomoni ham bor va u optimallashtirish imkoni beradi: **o'zgarmas obyektlar ichki tuzilmasini bir-biri bilan erkin ulashishi mumkin**. Ichki tuzilma hech qachon o'zgarmagani uchun ulashish hech qanday xavf tug'dirmaydi va nusxa olish keraksiz bo'lib qoladi. Platformadagi namuna: `BigInteger.negate()` yangi obyekt qaytaradi, lekin kattalikni saqlaydigan ichki massivni nusxalamaydi, faqat ishorani almashtiradi. O'z o'zgarmas sinfingizda ham shu yo'ldan borish mumkin, bitta shart bilan: ulashiladigan tuzilma ham chindan o'zgarmas bo'lishi kerak (`List.of`, `record`, primitiv massiv faqat ichkarida qolsa), aks holda optimallashtirish sayoz o'zgarmaslikka aylanadi.
 
 ## 16.3 O'zgarmas to'plamlar: `List.of`, `unmodifiable*`, nusxa
 
@@ -125,6 +149,17 @@ public record Order(OrderId id, OrderStatus status, List<OrderItem> items) {
 ```
 
 Maydon soni ko'p bo'lsa, har bir `with` metodi uzun bo'lib ketadi; bunda builder dan nusxa olish (`toBuilder()`) ishlatiladi.
+
+`with` uslubining ma'lum narxi bor: ko'p qadamli amal har qadamda yangi obyekt yaratadi va faqat oxirgisi saqlanadi, qolganlari darhol axlatga aylanadi. Qisqa zanjirda bu ahamiyatsiz, lekin siklda yoki uzun zanjirda sezilarli bo'ladi. Narxni yopishning ikki yo'li bor va tanlov amalning **oldindan bilinishiga** bog'liq. Agar eng ko'p kerak bo'ladigan ko'p qadamli amallarni oldindan sanab chiqish mumkin bo'lsa, ularning har biri sinfning primitiv amali qilib beriladi: `money.plus(a).plus(b).plus(c)` o'rniga `Money.sum(a, b, c)`, shunda oraliq obyekt umuman yaratilmaydi. Agar amallarni oldindan bilish mumkin bo'lmasa, o'zgarmas sinfga **o'zgaradigan hamroh sinf** (companion class) beriladi: platformadagi namuna `String` va `StringBuilder` juftligi (21.2). Hamroh sinf `public` bo'lishi shart emas: ko'pincha u sinf ichida qolib, faqat natijani qaytaradi.
+
+```java
+// yaxshi: oldindan bilinadigan amal primitiv sifatida berilgan
+public static Money sum(Collection<Money> amounts) {
+    BigDecimal total = BigDecimal.ZERO;          // oraliq Money yaratilmaydi
+    for (Money each : amounts) { total = total.add(each.amount()); }
+    return new Money(total, currencyOf(amounts));
+}
+```
 
 ## 16.5 Builder: validatsiya va majburiy maydonlar
 
@@ -268,6 +303,10 @@ public record RequestContext(UserId user, TraceId trace) { }
 
 ## Manbalar
 
+- Joshua Bloch, *Effective Java* 3rd, Item 17 (83-bet) - o'zgarmas obyektlarning ichki tuzilmasini bir-biri bilan ulashishi mumkinligi va `BigInteger.negate` ning massivni nusxalamasligi
+- Joshua Bloch, *Effective Java* 3rd, Item 17 (84-bet) - ko'p qadamli amal narxini yopishning ikki yo'li: eng ko'p kerak bo'ladigan amallarni primitiv sifatida berish yoki o'zgaradigan hamroh sinf berish (`String` uchun `StringBuilder`)
+
+- Boyarsky/Selikoff, *OCP Java SE 17 Developer Practice Tests*, 3-bob javoblari (106-savol) - enum maydonini yaratilgandan keyin o'zgartirish qonuniy, lekin tavsiya etilmasligi; har enum konstantasining maydon nusxasi alohida bo'lishi va setter faqat bittasini o'zgartirishi
 - Joshua Bloch, *Effective Java* 3rd, Item 17 - o'zgarmas sinfning besh qoidasi, `final` maydonning xotira modeli bilan bog'liqligi
 - Joshua Bloch, *Effective Java* 3rd, Item 15, 16 - a'zolar ko'rinishini kamaytirish, `public` maydon o'rniga accessor
 - Joshua Bloch, *Effective Java* 3rd, Item 50 - o'zgaradigan komponentga himoyalangan nusxa

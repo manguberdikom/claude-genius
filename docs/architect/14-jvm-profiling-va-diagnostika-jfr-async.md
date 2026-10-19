@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 14. JVM profiling va diagnostika: JFR, async-profiler, heap dump (JVM Profiling and Diagnostics)
 
 <details>
-<summary>Bu bobdagi 12 bo'lim</summary>
+<summary>Bu bobdagi 13 bo'lim</summary>
 
 - [14.1 Diagnostika tartibi: avval o'lchov, keyin faraz, keyin tuzatish](#141-diagnostika-tartibi-avval-olchov-keyin-faraz-keyin-tuzatish)
 - [14.2 Thread dump olish va o'qish: `jstack`, bloklangan thread, lock egasi](#142-thread-dump-olish-va-oqish-jstack-bloklangan-thread-lock-egasi)
@@ -20,7 +20,8 @@
 - [14.9 Ishlab chiqarish muhitida profiling: xavfsizlik va ortiqcha yuk masalasi](#149-ishlab-chiqarish-muhitida-profiling-xavfsizlik-va-ortiqcha-yuk-masalasi)
 - [14.10 Spring Boot Actuator orqali diagnostika endpointlari](#1410-spring-boot-actuator-orqali-diagnostika-endpointlari)
 - [14.11 Tez-tez uchraydigan diagnoz: sekin so'rov, thread pool to'lishi, xotira sizishi](#1411-tez-tez-uchraydigan-diagnoz-sekin-sorov-thread-pool-tolishi-xotira-sizishi)
-- [14.12 Amalda qo'llash](#1412-amalda-qollash)
+- [14.12 Konkurent benchmark: raqobat darajasi, kod yo'llari va vaqtni qanday o'lchash](#1412-konkurent-benchmark-raqobat-darajasi-kod-yollari-va-vaqtni-qanday-olchash)
+- [14.13 Amalda qo'llash](#1413-amalda-qollash)
 
 </details>
 
@@ -47,6 +48,8 @@ Yuqoridagi to'rt qadam o'lchov tartibini beradi, lekin nuqsonni qidirishning to'
 Birinchi va oxirgi qadam amalda eng ko'p tashlab ketiladi, lekin ikkisi ham qimmat. McConnell nuqsonni topish va uni tushunish odatda ishning 90 foizi ekanini aytadi (23.2 (540-bet)) va barqarorlashtirishning shartini aniq qo'yadi: nuqson ishonchli takrorlanmasa, uni diagnoz qilish deyarli imkonsiz; barqarorlashtirish esa xatoni beradigan test holatini topish bilan tugamaydi, uni xatoni hali ham beradigan eng sodda holatga toraytirish kerak, shunchalik sodda bo'lishi kerakki, uning biror jihatini o'zgartirish xato xulqini ham o'zgartirsin (23.2 (542-bet)). Toraytirishning usuli yana farazdan iborat: o'nta omil birgalikda xatoni berayotgan bo'lsa, qaysilari ahamiyatsiz degan faraz tuzasiz, o'sha omillarni o'zgartirib testni qaytarasiz; xato saqlanib qolsa, ularni hisobdan chiqarasiz va test soddalashadi, xato yo'qolsa esa farazni rad etgan bo'lasiz va baribir avvalgidan ko'p narsani bilasiz (23.2 (542-bet)).
 
 Beqaror nuqsonning sabablari ham sanalgan: bashoratsiz chiqadigan xato odatda initsializatsiya xatosi, vaqt (timing) masalasi yoki osilib qolgan ko'rsatkich muammosi bo'ladi (23.2 (542-bet)). ESLATMA: uchinchi sabab Java da bevosita uchramaydi, uning o'rnida bu korpusda bir xil rolni thread lar orasida almashiladigan o'zgaruvchan holat va `ThreadLocal` tozalanmasligi o'ynaydi; tekshirish esa [thread dump](#142-thread-dump-olish-va-oqish-jstack-bloklangan-thread-lock-egasi) va [tez-tez uchraydigan diagnoz](#1411-tez-tez-uchraydigan-diagnoz-sekin-sorov-thread-pool-tolishi-xotira-sizishi) bo'limlariga tushadi.
+
+Asbob tanlashning tartibi ham shu ketma-ketlikka parallel yuradi va u arzondan qimmatga o'sadi. Greggning o'z tavsiyasi aniq: avval performance monitoring, keyin USE metodi, keyin profiling, keyin micro-benchmarking va oxirida statik tahlil (Brendan Gregg, *Systems Performance*, Prentice Hall, 2014, 6.5-bo'lim, 215-bet). Tartibning ma'nosi shunda: birinchi ikki qadam ishlab turgan tizimdan deyarli bepul ma'lumot beradi va ko'pincha javobni shu yerda topadi, profiling esa ortiqcha yuk va tahlil vaqti talab qiladi. Shuning uchun diagnozni profilerdan boshlash tartibni buzish bilan teng.
 
 Oxirgi qadam alohida eslatma talab qiladi: tuzatish test bilan tasdiqlanganidan keyin kodda o'xshash xato izlanadi. Amalda bu bitta `grep` dan boshlanadi, chunki bir xil noto'g'ri qolip odatda ko'chirib yozilgan.
 
@@ -199,6 +202,8 @@ Rejimni to'g'ri tanlash hamma narsani hal qiladi. `cpu` rejimi faqat CPU da ishl
 
 Flame graph ni o'qish qoidasi: gorizontal kenglik vaqt ulushi, vertikal chuqurlik chaqiruv zanjiri. Chapdan o'ngga tartib alifbo bo'yicha, ya'ni u vaqt oqimi emas. Qaraladigan narsa keng va yassi cho'qqilar, chunki ularning ichida chaqiruv kam va ish aynan o'sha metodda bajarilmoqda. Spring ilovalarida grafikning pastki yarmi odatda filter va proxy qatlamlari.
 
+Bitta flag bu yerda alohida ogohlantirish talab qiladi. To'liq stack olish uchun odatda yoqiladigan `-XX:+PreserveFramePointer` virtual thread ishlatadigan ilovada ishlashni keskin yomonlashtiradi ([JEP 444](https://openjdk.org/jeps/444)). Ya'ni profiling uchun yoqilgan flag virtual threadga o'tgan servisda o'chirilishi kerak, aks holda o'lchov o'lchanayotgan narsani o'zgartirib qo'yadi; bunday servisda stack yig'ish uchun JFR hodisalari va `ctimer` rejimi afzal.
+
 ## 14.7 `jcmd` buyruqlari: eng foydali to'plam
 
 `jcmd` bitta kirish nuqtasi va eski alohida utilitalarni almashtiradi. Incident paytida quyidagi to'plam yetarli.
@@ -257,6 +262,8 @@ public class OrderTotalBenchmark {
 JMH shu uch tuzoqni hal qiladi: alohida fork, majburiy warmup va `Blackhole` orqali dead code eliminationni to'xtatish. `-prof gc` bilan ishga tushirsangiz operatsiyaga nechchi bayt allokatsiya qilinganini ham ko'rasiz, bu ko'pincha nanosekunddan muhimroq dalil.
 
 Lekin arxitektor uchun asosiy xulosa boshqa. Mikro benchmark faqat algoritm darajasidagi savolga javob beradi. Servis darajasidagi latency ni u hech qachon izohlamaydi, chunki u yerda pool, tarmoq va GC ta'siri hal qiladi. Shuning uchun mikro o'lchovni tanlov uchun ishlatasiz, qarorni esa JFR va yuk testi tasdiqlaydi.
+
+Buning ostidagi sabab tilning o'zida: Java ning ishlash modeli zaif, u implementatsiya, reliz va protsessordan o'zgaradi, shuning uchun bir nechta platformada ishlaydigan kodning optimallashtirishi har bir platformada alohida o'lchanishi kerak (Bloch, *Effective Java* 3rd, Item 67, 288-bet). Amalda bu ikki natija beradi: lokal mashinada olingan JMH raqamini ishlab chiqarish qarori uchun yetarli dalil deb hisoblamaslik, va GraalVM native image yoki boshqa JDK ga o'tishda eski o'lchovni qaytadan yurgizish.
 
 ## 14.9 Ishlab chiqarish muhitida profiling: xavfsizlik va ortiqcha yuk masalasi
 
@@ -323,6 +330,8 @@ Agar `pg_stat_activity` da uzun so'rov yo'q, lekin ilovada so'rov sekin ko'rinsa
 
 Thread pool to'lishining belgisi: `executor.queued` o'sib boradi, CPU past, latency esa chiziqli ortadi. Yechim pool ni ko'paytirish emas, balki pastki servisga timeout qo'yish va navbatga chegara berish. Timeout siz pool bir kun ichida albatta to'ladi.
 
+Xato xabarini o'qishda bitta kompilyatsiya flagi ham diagnozga ta'sir qiladi. "Helpful NullPointerException" xabari lokal o'zgaruvchi va parametrni haqiqiy nomi bilan emas, `<local2>` va `<parameter4>` shaklida ko'rsatadi, chunki class faylda nomlar yo'q; haqiqiy nomlar chiqishi uchun kod `-g:vars` bilan kompilyatsiya qilinishi kerak (Boyarsky/Selikoff, *OCP Java SE 17 Study Guide*, 11-bob, 602-bet). Ishlab chiqarish build ida bu flag ko'pincha yo'q, shuning uchun bitta `null` ni qidirishga ketadigan vaqt build sozlamasining funksiyasi bo'lib qoladi.
+
 Xotira sizishida uch dalil kerak: `jvm.memory.used` ning full GC dan keyingi pastki chizig'i o'sib borishi, `GC.class_histogram` da bitta sinf sonining monoton o'sishi, va heap dump dominator tree da shu obyektni ushlab turgan ildiz. Uchtasi ham bir xil narsani ko'rsatsa, diagnoz ishonchli.
 
 | Savol | Oddiy yondashuv | Arxitektor yondashuvi |
@@ -339,7 +348,64 @@ Xotira sizishida uch dalil kerak: `jvm.memory.used` ning full GC dan keyingi pas
 | Diagnostika kirishi | Actuator biznes portida | Alohida management port va auth |
 | Xulosa | Tuzatib unutish | Belgi, o'lchov, sabab, tuzatish yozuvi |
 
-## 14.12 Amalda qo'llash
+## 14.12 Konkurent benchmark: raqobat darajasi, kod yo'llari va vaqtni qanday o'lchash
+
+[Mikro o'lchov tuzoqlari](#148-mikro-olchov-tuzoqlari-va-jmh-nega-kerak) bo'limi bitta threadli o'lchovning uchta tuzog'ini yopadi. Ko'p threadli o'lchovda ularning ustiga yana uchta qo'shiladi, va ular JMH bilan ham o'zidan hal bo'lmaydi, chunki ular sozlamada emas, testning **dizaynida** yashaydi.
+
+Birinchi tuzoq raqobat darajasida. Konkurent ilova ikki xil ishni almashtirib bajaradi: umumiy ma'lumotga murojaat (masalan umumiy ish navbatidan keyingi vazifani olish) va thread-lokal hisob (vazifaning o'zini bajarish). Ikkisining nisbati butun xulqni belgilaydi. Agar `N` thread umumiy navbatdan vazifa olib bajarsa va vazifalar hisob og'ir va uzoq bo'lsa, raqobat deyarli bo'lmaydi va throughput ni CPU resursining mavjudligi belgilaydi; vazifalar juda qisqa umrli bo'lsa, navbat uchun ko'p raqobat bo'ladi va throughput ni sinxronlash narxi belgilaydi. Shuning uchun konkurent unumdorlik testi o'rganilayotgan muvofiqlashtirishdan tashqari odatiy ilovaning **thread-lokal hisobini ham** taqlid qilishi kerak; har vazifaga qilinadigan ish test dasturida ilovadagidan tubdan boshqa bo'lsa, bottleneck qayerda degan savolga asossiz javob olish oson (Goetz, 12.3.4, 166-bet).
+
+Buning amaliy ko'rinishi `ConcurrentHashMap` va `synchronizedMap` ni taqqoslashda chiqadi. Faqat map ni urib turadigan test da hatto ikki threadda ham har bir murojaat raqobatga uchraydi, shuning uchun sinxronlangan kolleksiya juda yomon natija beradi; ilova har murojaat orasida sezilarli thread-lokal hisob qilsa, raqobat darajasi yaxshi natija beradigan darajada past bo'lishi mumkin (12.3.4, 166-bet). Ya'ni "`ConcurrentHashMap` sinxronlangan map dan 20 barobar tez" degan o'lchov o'z test dasturining raqobat darajasi haqida gapiradi, sizning ilovangiz haqida emas.
+
+Ikkinchi tuzoq kod yo'llarida. JIT profil ma'lumotiga qarab optimallashtiradi va bajarilishga xos ma'lumotdan foydalanishga haqli, demak `M` metodini bir dasturda kompilyatsiya qilish boshqa dasturda kompilyatsiya qilishdan boshqa kod berishi mumkin. Ba'zi hollarda JVM faqat vaqtincha rost bo'lgan farazga tayanib optimizatsiya qiladi va faraz buzilsa kompilyatsiya qilingan kodni invalidatsiya qilib qaytib oladi; kitobning misoli monomorfik chaqiruv, ya'ni hozircha yuklangan hech bir sinf metodni override qilmasa virtual chaqiruvni bevosita chaqiruvga aylantirish (Goetz, 12.3.3, 166-bet). Shundan aniq talab chiqadi: test dasturi nafaqat odatiy ilovaning ishlatish naqshini, balki uning **kod yo'llari to'plamini** ham yaqinlashtirishi kerak, aks holda dinamik kompilyator sof bitta threadli test dasturiga real ilovada qo'llanmaydigan maxsus optimizatsiya qilishi mumkin. Shuning uchun ko'p threadli unumdorlik testi bitta threadli test bilan **aralashtiriladi**, hatto siz faqat bitta threadli unumdorlikni o'lchayotgan bo'lsangiz ham.
+
+Uchinchi tuzoq vaqtni o'lchash usulida va u eng ko'p uchraydi, chunki u kodda to'g'ri ko'rinadi. Har thread o'z ichida `System.currentTimeMillis()` bilan o'z testini o'lchasa, ikki muammo paydo bo'ladi. Birinchi: to'rt threadning hammasi bir vaqtda **bir xil** testni bajarayotganini hech narsa kafolatlamaydi, ya'ni bitta thread hali birinchi variantni o'lchayotganda boshqasi allaqachon ikkinchisiga o'tib ketgan bo'lishi mumkin; natijada ikki o'lchov ham noto'g'ri bo'ladi, chunki CPU ni boshqa test band qiladi va sinxronlash narxi o'lchanmoqchi bo'lgan shaklda o'lchanmaydi. Ikkinchi: o'lchangan vaqtning o'zi noto'g'ri, chunki har thread o'z yangilanishlarini o'lchaydi, o'lchash kerak bo'lgan oraliq esa **har qanday threaddagi birinchi yangilanishdan har qanday threaddagi oxirgi yangilanishgacha** (Shirazi, *Java Performance Tuning*, 2-nashr, 10.5-bo'lim "Timing Multithreaded Tests"). Yechim ham shu kitobda: testlar hamma thread tayyor bo'lmaguncha boshlanmaydi, shunda ular bir vaqtda ishga tushadi; va birinchi yangilanishda global vaqt qo'yiladi, oxirgi thread tugaganda esa farq chiqariladi.
+
+```java
+// Bir vaqtda boshlash va butun test bo'yicha o'lchash
+@State(Scope.Benchmark)
+public class StockCacheBenchmark {
+
+    private StockCache cache;
+
+    @Setup(Level.Iteration)
+    public void setUp() { cache = new StockCache(); }
+
+    // JMH o'zi start barrier qo'yadi va vaqtni butun iteratsiya bo'yicha
+    // o'lchaydi, shuning uchun qo'lda latch va global vaqt kerak emas.
+    // @Group bir vaqtda ishlaydigan rollarni belgilaydi: 8 o'quvchi, 2 yozuvchi.
+    @Benchmark
+    @Group("mixed")
+    @GroupThreads(8)
+    public int read() { return cache.read(); }
+
+    @Benchmark
+    @Group("mixed")
+    @GroupThreads(2)
+    public void refresh() {
+        cache.refresh(ThreadLocalRandom.current().nextInt(1000));
+        Blackhole.consumeCPU(200);   // thread-lokal hisobni taqlid qilish
+    }
+
+    // Bitta threadli o'lchov ham shu sinfda qoladi: JIT real kod yo'llarini ko'rsin
+    @Benchmark
+    @Threads(1)
+    public int readSingleThreaded() { return cache.read(); }
+}
+```
+
+Shuning uchun qo'lda yozilgan konkurent benchmark deyarli har doim JMH ga ko'chiriladi: `@Group` va `@GroupThreads` bilan bir vaqtda ishga tushirish va butun iteratsiya bo'yicha o'lchash o'zidan keladi. Lekin uchinchi tuzoqni JMH yopadi, birinchi ikkitasini esa yopmaydi: `@Benchmark` metodi ichida bajarilayotgan ish ilovadagi ishga o'xshamasa, raqobat darajasi va kod yo'llari baribir soxta qoladi. Qarorga aylantirilganda tekshiriladigan uch savol shu:
+
+| Savol | Nimani buzadi | Tuzatish |
+|---|---|---|
+| Vazifa ichida qancha thread-lokal ish bor | raqobat darajasi soxta bo'ladi | `Blackhole.consumeCPU` yoki real hisob qo'yish |
+| Test bitta threadli yoki aralashmi | JIT real bo'lmagan optimizatsiya qiladi | ko'p threadli va bitta threadli o'lchovni birga olish |
+| Vaqt qachon boshlanadi va tugaydi | har thread o'z vaqtini o'lchaydi, natija ma'nosiz | `@Group` plus `@GroupThreads`, yoki start barrier plus global oraliq |
+
+Mikro o'lchov natijasini qanday qabul qilish esa o'zgarmaydi: u algoritm darajasidagi tanlov uchun ishlatiladi, servis darajasidagi qarorni esa JFR va yuk testi tasdiqlaydi.
+
+Manba: Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 12.3.3-12.3.4-bo'lim (166-bet); Jack Shirazi, *Java Performance Tuning*, 2-nashr, O'Reilly, 2003, 10.5-bo'lim.
+
+## 14.13 Amalda qo'llash
 
 - [ ] Barcha ishlab chiqarish JVM lariga `-XX:StartFlightRecording` ni `settings=default`, `maxage=4h`, `dumponexit=true` bilan qo'shing va yozuv faylini doimiy volume ga chiqaring.
 - [ ] `-XX:+HeapDumpOnOutOfMemoryError`, `-XX:HeapDumpPath` va `-XX:+ExitOnOutOfMemoryError` ni qo'shing, `HeapDumpPath` volume ida heap dan 2 barobar bo'sh joy borligini tekshirib ko'ring.
@@ -354,6 +420,13 @@ Xotira sizishida uch dalil kerak: `jvm.memory.used` ning full GC dan keyingi pas
 
 - [async-profiler, README](https://raw.githubusercontent.com/async-profiler/async-profiler/c7d6a3614df284bd92b275378a3f8bb07fdb6a5d/README.md) - CPU, allokatsiya va wall-clock rejimlari, safepoint bias muammosi
 - Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 23.2 (540-542-betlar) - debug ning ilmiy usuli: klassik ilmiy usulning besh qadami va nuqson qidirishning besh qadamli shakli (barqarorlashtirish, manbani lokalizatsiya qilish, tuzatish, tuzatishni test qilish, o'xshash xatolarni izlash); nuqsonni topish va tushunish ishning taxminan 90 foizi; barqarorlashtirishning sharti va test holatini eng sodda shaklga toraytirish; ahamiyatsiz omillar haqidagi faraz bilan soddalashtirish; beqaror nuqsonning uch sababi (initsializatsiya, timing, osilib qolgan ko'rsatkich)
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley, 2006, 12.3.3-12.3.4-bo'lim (166-bet) - JIT ning profilga qarab optimallashtirishi va monomorfik chaqiruv misoli, test dasturining real kod yo'llarini qamrashi va ko'p threadli o'lchovni bitta threadlisi bilan aralashtirish talabi; umumiy ma'lumotga murojaat va thread-lokal hisob nisbatining raqobat darajasini belgilashi, `ConcurrentHashMap` va sinxronlangan map taqqoslovining test dasturiga bog'liqligi
+- Jack Shirazi, *Java Performance Tuning*, 2-nashr, O'Reilly, 2003, 10.5-bo'lim ("Timing Multithreaded Tests") - ko'p threadli vaqt o'lchashning ikki tuzog'i: threadlarning bir xil testni bir vaqtda bajarayotgani kafolatlanmasligi va har threadning o'z vaqtini o'lchashi; yechim sifatida testni hamma thread tayyor bo'lgach bir vaqtda boshlash va birinchi yangilanishdan oxirgi thread tugashigacha global oraliqni o'lchash
+
+- Brendan Gregg, *Systems Performance: Enterprise and the Cloud*, Prentice Hall, 2014, 6.5-bo'lim (215-bet) - CPU tahlilining tavsiya etilgan tartibi: performance monitoring, USE metodi, profiling, micro-benchmarking, statik tahlil
+- [JEP 444: Virtual Threads](https://openjdk.org/jeps/444) - `-XX:+PreserveFramePointer` flagining virtual thread ishlashiga keskin salbiy ta'siri
+- Joshua Bloch, *Effective Java* 3rd, Item 67 (288-bet) - Java ning ishlash modeli zaif ekani va u implementatsiya, reliz hamda protsessordan o'zgarishi, shuning uchun optimallashtirishni har platformada o'lchash talabi
+- Jeanne Boyarsky, Scott Selikoff, *OCP Java SE 17 Study Guide*, Wiley, 11-bob (602-bet) - "Helpful NullPointerException" xabarining lokal o'zgaruvchi va parametrni `<local2>`, `<parameter4>` shaklida ko'rsatishi va haqiqiy nomlar uchun `-g:vars` talabi
 
 ---
 

@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 6. Murakkablikni boshqarish (Managing Complexity)
 
 <details>
-<summary>Bu bobdagi 16 bo'lim</summary>
+<summary>Bu bobdagi 17 bo'lim</summary>
 
 - [6.1 Muhim murakkablik va tasodifiy murakkablik farqi](#61-muhim-murakkablik-va-tasodifiy-murakkablik-farqi)
 - [6.2 Murakkablik qayerda to'planadi: shart, holat, integratsiya nuqtalari](#62-murakkablik-qayerda-toplanadi-shart-holat-integratsiya-nuqtalari)
@@ -24,7 +24,8 @@
 - [6.13 Murakkablikni pastga tortishning chegarasi: modul hamma qarorni o'ziga olmasin](#613-murakkablikni-pastga-tortishning-chegarasi-modul-hamma-qarorni-oziga-olmasin)
 - [6.14 Inkrement birligi: xususiyat emas, abstraksiya](#614-inkrement-birligi-xususiyat-emas-abstraksiya)
 - [6.15 Dizayn jarayonining nomukammalligi: wicked problem va qo'pol yechim](#615-dizayn-jarayonining-nomukammalligi-wicked-problem-va-qopol-yechim)
-- [6.16 Amalda qo'llash](#616-amalda-qollash)
+- [6.16 Lokal dasturchi tajribasi: bitta noutbukda nechta servis ko'tariladi](#616-lokal-dasturchi-tajribasi-bitta-noutbukda-nechta-servis-kotariladi)
+- [6.17 Amalda qo'llash](#617-amalda-qollash)
 
 </details>
 
@@ -160,6 +161,8 @@ public record PaymentProperties(
 
 Tipli `@ConfigurationProperties` noto'g'ri qiymatni ishga tushish paytida ushlaydi, ya'ni soat 03:00 dagi incident o'rniga deploy paytidagi xato beradi. Spring Boot'ning `configprops` actuator endpoint'i joriy qiymatlarni ko'rsatadi, shuning uchun "qaysi qiymat ishlayapti" savoli bahsga aylanmaydi. Qoida: `@Value` bilan tarqalgan o'nlab satr o'rniga bitta tipli record yaxshi.
 
+Ikkinchi qoida konfiguratsiyaning qayerda yashashi haqida. Fairbanks komponent konfiguratsiyasini bajariladigan koddan deklarativ konfiguratsiya fayliga chiqarishni tavsiya qiladi va sababi tahlilga tegishli: manba kodini statik tahlil qilish mumkin, lekin bu qiyin ish, deklarativ konfiguratsiya faylini tahlil qilish esa oson. Ya'ni "qaysi komponent qaysi komponentga ulangan" savoliga javob kodni o'qimasdan chiqadi. Spring da bu amalda `@Bean` metodlari ichida shartli mantiq yozish va `if (env.equals("prod"))` ko'rinishidagi tarmoqlanish o'rniga `@ConditionalOnProperty`, profil fayllari va `application-<profil>.yml` ishlatishni bildiradi. Chegarasi ham bor: deklarativ fayl kod bilan tekshirilmaydi, shuning uchun uning o'rnini yuqoridagi tipli `@ConfigurationProperties` bilan validatsiya to'ldiradi.
+
 ## 6.5 Kodni o'chirish: eng kam baholangan arxitektura ishi
 
 Kod o'chirish murakkablikni kamaytiradigan eng ishonchli usul. U yangi abstraksiya qo'shishdan farqli ravishda hech qanday yangi xato kiritmaydi, agar o'chirilayotgan kod haqiqatan ishlatilmayotgan bo'lsa. Muammo faqat bitta: "ishlatilmayapti" degan gapni dalil bilan tasdiqlash kerak.
@@ -199,6 +202,22 @@ grep -rn "@Deprecated" src/main/java | wc -l
 
 O'chirish bosqichli bo'ladi. Avval `@Deprecated` va WARN log qo'yiladi, ikki hafta kuzatiladi, log bo'sh bo'lsa kod olib tashlanadi. Ma'lumotlar bazasida ustun darhol `DROP` qilinmaydi, avval yozishni to'xtatish, keyin o'qishni to'xtatish, so'ng bir release kutib `DROP COLUMN` qilish kerak.
 
+O'chirishdan arzonroq yo'l esa kodni umuman yozmaslik, va bu uchun uch qoida bor.
+
+**Kod aktiv emas, majburiyat.** *Software Engineering at Google* ning formulasi aniq: kodning o'zi majburiyat, ehtimol zarur majburiyat, lekin o'z-o'zidan kelgusida kimgadir tushadigan texnik xizmat vazifasi; samolyot ko'tarib yuradigan yonilg'i kabi, uning og'irligi bor. Shundan ikki amaliy qoida chiqadi. Birinchisi, yangi xususiyat yozishdan oldin uning haqiqatan kerakligi tekshiriladi. Ikkinchisi, dublikat kod shunchaki behuda mehnat emas, u kodning umuman bo'lmasligidan ham qimmatroq tushishi mumkin: bitta shaklda oson bajariladigan o'zgarish kod bazasida takrorlanish bo'lsa ko'proq kuch talab qiladi. Kitob bu fikrni utility va kutubxona kodiga ayniqsa qattiq qo'llaydi: yirik kod bazasida sizdan avval kimdir o'xshash narsa qilgan bo'lish ehtimoli yuqori, shuning uchun qidirish asbobi dublikatni topish va oldini olish uchun hayotiy. Google dagi maqol ham shu haqda: "noldan yozayotgan bo'lsangiz, noto'g'ri qilayotgansiz".
+
+**Ishlatilmaydigan xususiyat o'chiriladi.** Xususiyatning narxi va qiymati u ishlab turganda kuzatiladi, va bu uchun reliz muhandisligi qoidasi nomlangan: ship only what gets used. Ishlatilmaydigan xususiyat build vaqtiga, deploy hajmiga va foydalanuvchi qurilmasidagi resursga xarajat qo'shadi, ya'ni nol foyda bilan doimiy narx beradi. Qaror esa his bilan emas, A/B tajriba bilan muvozanatlanadi: xususiyatning narxi va foydasi o'lchanib taqqoslanadi.
+
+**Ba'zan dastur umuman yozilmaydi.** Boswell va Foucher bir martalik vazifa uchun kod yozishni ochiq tanqid qiladi va misol beradi: web server access log idan eng ko'p 4xx va 5xx xato beradigan URL larni topish. C++ yoki Java da bu oson 20 qator oladi. Unix da esa bitta buyruq quvuri bo'ladi, va kitobning e'tibor qaratgan nuqtasi natija emas: hech qanday "haqiqiy" kod yozilmadi va manba nazoratiga hech narsa qo'shilmadi, demak tekshiruv, review va texnik xizmat yuki ham qolmadi (13-bob, 144-145-betlar).
+
+```bash
+# Log tahlili uchun dastur yozilmaydi: 20 qator kod o'rniga bitta quvur.
+cat access.log | awk '{ print $5 " " $7 }' | egrep "[45]..$" \
+  | sort | uniq -c | sort -nr
+```
+
+Chegara ham ochiq: bu qoida bir martalik tahlil uchun. Takrorlanadigan va boshqalar tayanadigan ish uchun quvur noto'g'ri yechim bo'ladi, chunki unda test ham, xato ishlovi ham yo'q. Mezon shu: natija bir marta kerakmi yoki u kelgusida kimningdir ishiga asos bo'ladimi.
+
 ## 6.6 Texnik qarz: ongli qarz va tasodifiy loyqalik
 
 Qarzning ikki turi bor va ular bilan muomala butunlay boshqacha. Ongli qarz qaror bilan olinadi: "Qora juma oldidan hisobotni to'g'ri modellashtirishga vaqt yo'q, vaqtinchalik SQL view bilan chiqaramiz, yanvarda qaytamiz". Bunda shart ma'lum, muddat ma'lum, egasi ma'lum.
@@ -221,6 +240,10 @@ Startap sharoiti bu qarorga alohida bosim beradi, va Ousterhout bosimni nomlab, 
 | Konfiguratsiya 6 ta profil ichida takrorlanadi | Qaysi qiymat ishlayotgani noma'lum | Bitta asosiy fayl, profil faqat farqni override qiladi |
 | Ko'p mayda servis bitta tranzaksiyani bo'ladi | Taqsimlangan nomuvofiqlik, qo'lda tuzatish | Tranzaksiya chegarasini bitta servisga qaytarish |
 | Qarz hech qayerda yozilmagan | Har yangi odam uni qaytadan kashf qiladi | ADR va kodda `// QARZ: shart, muddat, ega` izohi |
+
+Ta'rifning o'zi ham aniqlanishi kerak, chunki "qarz" so'zi ko'pincha "kod chiroyli emas" degan hissiyot bilan almashtiriladi. Fairbanks Ward Cunningham ning ta'rifini keltiradi va u ancha aniqroq: texnik qarz bu kodning muammo haqidagi **joriy tushunchaga** nisbatan to'plangan nomuvofiqligi. Ya'ni mezon kodning go'zalligi emas, modelning bugungi eng yaxshi tushunchasi bilan kodda ifodalangan model orasidagi farq (divergence). Ta'rifning foydasi amaliy: model kodda ifodalangan bo'lsa, qarzni "kod xunuklashmoqda" degan ichki sezgi orqali emas, modelni kod bilan solishtirib aniq topish mumkin, ya'ni qaysi qism tuzatishga muhtojligi nomlanadi. Bu [5.21](05-abstraksiya-hissi-bogliqlik-va-chegaralar.md#521-har-darajada-hikoya-ierarxiya-element-soni-va-domen-otlari) dagi model-in-code printsipining to'g'ridan to'g'ri natijasi. Kitob ta'rifni domen modelidan tashqariga ham kengaytiradi: bazaning yangi versiyasiga o'tmaslik kabi misollar qarz tushunchasini dizaynning boshqa turlariga, arxitektura ham ichida, yoyadi.
+
+Shu ta'rifdan Newman ning kuzatuvi ham chiqadi va u kutilmagan tomondan keladi: qarz faqat shoshilinch yo'l tanlashdan paydo bo'lmaydi. Tizim haqidagi ko'rinish (vision) o'zgarsa, lekin tizimning hamma qismi unga mos kelmasa, mos kelmagan eski qismlar ham yangi qarz manbaiga aylanadi, hech kim hech qanday shortcut qilmagan bo'lsa ham. Arxitektorning ishi shu yerda ikki qismdan iborat: kattaroq rasmga qarab muvozanatni tushunish, va qarz darajasi hamda qayerga aralashish kerakligi haqida qarashga ega bo'lish. Shaklini tashkilot belgilaydi: ba'zi tashkilotda yumshoq yo'l-yo'riq yetadi va jamoalar qarzni o'zi kuzatib, o'zi to'laydi; boshqalarida muntazam ko'rib chiqiladigan qarz jurnali (debt log) kerak bo'ladi. Ikkisining tanlovi [6.10](#610-murakkablikni-jamoaga-tushuntirish-va-qarorni-himoya-qilish) dagi ishonch darajasi bilan bog'liq.
 
 ## 6.7 Murakkablikni o'lchash: o'zgarish vaqti, incident soni, yangi odam vaqti
 
@@ -297,6 +320,21 @@ class ModuleRulesTest {
             .resideInAPackage("org.springframework.web..");
 }
 ```
+
+Chegaradan nimani chiqarish haqidagi qarorda bitta asimmetriya bor va u tezlikni belgilaydi. Newman uni ochiq aytadi: interfeysga chiqqan narsani qaytarib olish qiyin, lekin bugun yashirilgan narsani keyin istalgan paytda ochish mumkin. Shuning uchun uning o'z yondashuvi modul yoki mikroservis chegarasidan iloji boricha kam narsa ochish. Mantiq Parnas ning axborotni yashirish g'oyasidan keladi: kodning tez o'zgaradigan qismi statik qismidan ajratiladi, chegara barqaror bo'lishi kerak va u modul implementatsiyasining ko'proq o'zgarishi kutiladigan qismlarini yashirishi lozim; shunda modul moslikni saqlagani qadar ichki o'zgarishlar xavfsiz kiritiladi. Amalda bu yangi servis uchun API loyihalashda qo'llanadigan standart: shubha bo'lsa maydon qo'shilmaydi, endpoint ochilmaydi va enum qiymati chiqarilmaydi.
+
+Servislar soni o'sgandan keyin esa teskari muammo paydo bo'ladi: servis bor, lekin uning egasi yo'q. Newman buni egasiz servis (orphaned service) deb ataydi va ikki qarama-qarshi kuchni ajratadi. Bir tomondan, mayda servisning oylar davomida o'zgarmasligi aynan kutilgan natija: mustaqil deploy qilish imkoniyatining jozibasi qolgan tizim barqaror turishida. Boshqa tomondan, agar jamoa tuzilmasi bounded context ga mos bo'lsa, kamdan kam o'zgaradigan servis ham egasiz emas, o'sha kontekstdagi jamoa unga de facto egalik qiladi, va kerak bo'lsa uni qaytadan yozish ham uzoq vaqt olmaydi, chunki mikroservis kichik. Haqiqiy xavf polyglot stek da: jamoa servis yozilgan texnologiyani endi bilmasa, egasiz servisga o'zgarish kiritish qiyinlashadi, va eng og'ir holatda manba kodining qayerda ekani ham ma'lum bo'lmaydi.
+
+Shu muammoni aniqlash uchun Newman ikki vositani keltiradi. Birinchisi metadata reyestri: ba'zi kompaniyalar sodda ichki reyestr qurgan, u manba kodi repozitoriylarini skanerlab metadata fayllarini qidiradi va servislar ro'yxatini yig'adi; bu ma'lumot Consul yoki etcd kabi service discovery tizimidan kelgan haqiqiy ma'lumot bilan birlashtirilsa, nima ishlab turgani va kim bilan gaplashish mumkinligi haqida boyroq rasm chiqadi. Financial Times ning Biz Ops vositasi shu yo'lni eng uzoqqa olib borgan: bir necha yuz servis haqidagi ma'lumotni tarmoq va fayl serverlari kabi boshqa infratuzilma ma'lumoti bilan birga bitta joyda beradi va graf bazasi ustida qurilgani uchun qanday ma'lumot yig'ish va modellashtirishda erkinlik beradi. Ikkinchisi System Operability Score: servis va uning jamoasi servisni oson boshqarilishi uchun bajarishi kerak narsalar ro'yxati ball bilan hisoblanadi, reyestrda to'g'ri ma'lumot berilganidan to health check larning mavjudligigacha; ball ko'rinib turgani uchun jamoa nimani tuzatish kerakligini bir qarashda ko'radi.
+
+| Signal | Qanday o'lchanadi | Qaror |
+|---|---|---|
+| Servisning repozitoriysi topilmaydi | reyestr skaneri metadata faylini topmaydi | servis ro'yxatga olinadi, egasi izlanadi |
+| Discovery da ishlab turgan, reyestrda yo'q | discovery va reyestr farqini solishtirish | ish elementi ochiladi |
+| Health check yo'q yoki metadata to'ldirilmagan | operability ball pasayadi | jamoa biriktiriladi yoki ball oshiriladi |
+| Jamoa servis texnologiyasini bilmaydi | polyglot steklar ro'yxati va jamoa ko'nikmasi | stekni standartlash yoki servisni qayta yozish |
+
+Bu [6.8](#68-servislar-soni-va-operatsion-murakkablik-narxi) dagi asosiy qoidaning davomi: har yangi servis operatsion birlik, unga on-call egasi kerak, va egalik o'z-o'zidan saqlanmaydi, uni o'lchash kerak.
 
 ## 6.9 Umumiylashtirish tuzog'i: uchta foydalanuvchiga mo'ljallangan platforma
 
@@ -425,7 +463,59 @@ Murakkablikni boshqarish haqidagi bob ikkita noqulay haqiqat bilan yopiladi. Ikk
 
 **Qo'pol kuch (brute force).** Butler Lampson ning qoidasi kitobda shunday keltirilgan: shubha bo'lsa, qo'pol kuch ishlat. Ishlaydigan qo'pol yechim ishlamaydigan nozik yechimdan yaxshiroq, chunki nozik yechimni ishlaydigan holatga keltirishga uzoq vaqt ketishi mumkin. Kitobning dalili tarixiy: ikkilik qidiruv algoritmining birinchi tavsifi 1946 yilda chop etilgan, lekin hamma hajmdagi ro'yxatlarni to'g'ri qidiradigan algoritm chop etilishiga yana 16 yil ketgan. Ikkilik qidiruv nozikroq, lekin ketma-ket qidiruv ko'p holatda yetarli. Spring kontekstida bu odatda shunday chiqadi: 300 qatorli jadvalni xotiraga olib oddiy tsikl bilan tekshirish, murakkab SQL yoki kesh invalidatsiyasi qurishdan oldin yoziladigan to'g'ri yechim, va uni almashtirish qarori o'lchovdan keyin keladi. Qo'pol yechimning sharti bitta: u [6.6](#66-texnik-qarz-ongli-qarz-va-tasodifiy-loyqalik) ma'nosida ongli qarz bo'lsin, ya'ni qaytish mezoni yozilgan bo'lsin, aks holda u tasodifiy loyqalikka aylanadi.
 
-## 6.16 Amalda qo'llash
+## 6.16 Lokal dasturchi tajribasi: bitta noutbukda nechta servis ko'tariladi
+
+[Servislar soni](#68-servislar-soni-va-operatsion-murakkablik-narxi) bo'limi operatsion narxni sanadi. Narxning yana bitta qismi odatda hisobga olinmaydi va u JVM stack'ida eng tez seziladi: dasturchining noutbugi. Newman buni ikki kitobida deyarli bir xil yozadi, demak bu kuzatuv emas, qoida. JVM kabi resursga o'ch runtime bitta mashinada ko'tarila oladigan servis sonini cheklaydi, va o'lchov aniq: muallif o'z noutbugida to'rt yoki beshta JVM servisini alohida protsess sifatida ko'tarishi mumkin, o'n yoki yigirmatasini esa ko'tarib bo'lmaydi (Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 1-bob, "Developer Experience" bo'limi; Sam Newman, *Monolith to Microservices*, O'Reilly, 2019, 5-bob, 222-bet). Resursga kamroq talabchan runtime bilan ham chegara bor, faqat u kechroq keladi: Go, Node yoki Python jamoasi ko'proq servisni lokal ko'tara oladi, JVM jamoasi esa muammoga birinchi duch keladi (*Monolith to Microservices*, 222-bet).
+
+Belgilarni oldindan bilish kerak, chunki ular jim keladi. Kunlik ish sekinlashadi, lokal build va ishga tushirish uzayadi, va dasturchilar kattaroq mashina so'ray boshlaydi; Newman buni qisqa muddatli yechim deb ataydi, chunki servis sonining o'sishi davom etsa, kattaroq mashina faqat vaqt sotib beradi (*Monolith to Microservices*, 223-bet). Yana bir belgi egalik modelidan chiqadi: bir nechta servisga jamoaviy egalik qiladigan jamoalar bu muammoga ko'proq moyil, chunki ular ish paytida servislar orasida almashishi kerak bo'ladi; bir nechta servisga qattiq egalik qiladigan jamoa esa asosan o'z servislari bilan ishlaydi va o'zi nazorat qilmaydigan servislarni stub bilan to'sish mexanizmini o'zi quradi (*Monolith to Microservices*, 223-bet). Bulut servislaridan foydalanilsa va ularni lokal ko'tarib bo'lmasa, holat yana murakkablashadi (*Building Microservices*, 1-bob).
+
+Yechim tanlashda Newman ning pozitsiyasi aniq va u moda yo'nalishiga qarshi. "Bulutda ishlab chiqish" (developing in the cloud), ya'ni dasturchining lokal ishlash imkoniyatidan butunlay voz kechishi u ekstremal yechim deb ataydi va bunga tarafdor emasligini aytadi, chunki qayta aloqa tsikli jiddiy zarar ko'radi; uning o'rniga dasturchi ishlashi kerak bo'lgan qismlarning qamrovini cheklash ancha to'g'ri yo'l, lekin bu jamoaviy egalik modeliga intilayotgan jamoada muammo tug'diradi (*Building Microservices*, 1-bob).
+
+| Yechim | Qanday ishlaydi | Narxi |
+| --- | --- | --- |
+| Qamrovni cheklash | dasturchi faqat o'z servisi va uning bir-ikki qo'shnisini ko'taradi | jamoaviy egalik modeli bilan to'qnashadi |
+| Stub bilan to'sish | ko'tarilmaydigan servislar o'rniga stub qo'yiladi | stub shartnomadan ortda qolishi mumkin |
+| Masofaviy nusxaga qaratish | lokal servis boshqa joyda ishlayotgan nusxalarga murojaat qiladi | tarmoq ulanishiga bog'liqlik |
+| To'liq masofaviy muhit | hamma narsa kuchli infratuzilmada ishlaydi | ulanish talabi, qayta aloqa tsikli sekinlashadi, muhit resursi va narxi portlashi mumkin |
+| Gibrid (lokal plus masofaviy) | servis lokal ishlaydi, chaqiruvlar masofaviy klasterga proxy qilinadi | asbobga bog'liqlik, Kubernetes da Telepresence misoli |
+
+Jadvaldagi variantlar *Monolith to Microservices* ning 223-betidagi matndan yig'ilgan: u yerda stub bilan to'sish yoki boshqa joydagi nusxaga qaratish eng keng tarqalgan usul deb ataladi, to'liq masofaviy muhitning uch narxi (ulanish talabi, sekin qayta aloqa, resurs va xarajat portlashi) sanaladi, va Kubernetes foydalanuvchilari uchun gibrid oqimni osonlashtiradigan Telepresence misol qilib keltiriladi.
+
+Bitta tavsiya ro'yxatdan tashqarida va u o'lchovga tegishli: Newman servis soni o'sgani sayin dasturchi tajribasi qanday o'zgarayotganini ko'rib turish muhim ekanini va buning uchun qayta aloqa mexanizmi qo'yilishi kerakligini aytadi (*Monolith to Microservices*, 223-bet). Amalda bu sprint retrospektivasiga bitta savol qo'shish degani: lokal muhitni ko'tarish bugun qancha vaqt oldi.
+
+Spring tomonida qamrovni cheklash sozlamaga tushadi: o'z servisingizning haqiqiy bog'liqliklari ko'tariladi, qolgan servislar o'rniga stub qo'yiladi.
+
+```yaml
+# compose.yaml: faqat shu servisga kerak bo'lgan narsalar ko'tariladi.
+# Qo'shni servislar o'rniga WireMock, shunda noutbukda bitta JVM qoladi.
+services:
+  postgres:
+    image: postgres:16.4
+    environment:
+      POSTGRES_DB: orders
+      POSTGRES_USER: order_app
+      POSTGRES_PASSWORD: local
+    ports: [ "5432:5432" ]
+
+  payment-stub:
+    image: wiremock/wiremock:3.9.1
+    command: [ "--verbose", "--global-response-templating" ]
+    volumes:
+      - ./stubs/payment:/home/wiremock
+    ports: [ "8081:8080" ]
+
+  inventory-stub:
+    image: wiremock/wiremock:3.9.1
+    volumes:
+      - ./stubs/inventory:/home/wiremock
+    ports: [ "8082:8080" ]
+```
+
+Stub ning asosiy xavfi shartnomadan ortda qolishi, shuning uchun stub fayllari qo'lda yozilmaydi: ular shartnoma testidan hosil qilinadi yoki real infratuzilma bilan yonma-yon tekshiriladi ([testcontainers asoslari](../testing/08-testcontainers-bilan-real-infratuzilmada.md#82-testcontainers-asoslari-docker-api-ustida-hayot-aylanishi)).
+
+ESLATMA: `compose.yaml` misoli, versiya raqamlari va retrospektiva savoli shu korpusning amaliy tavsiyasi. Kitoblar yechim turlarini sanaydi, aniq konfiguratsiya bermaydi.
+
+## 6.17 Amalda qo'llash
 
 - [ ] Eng ko'p incident bergan uch modulni aniqlang va har biri uchun lead time hamda incident sonini raqamda yozib qo'ying.
 - [ ] Git tarixidan oxirgi 6 oyda eng ko'p o'zgargan 15 faylni chiqarib, ularning bog'lanish sonini tekshiring va ikkitasini bo'lishni rejalashtiring.
@@ -450,7 +540,16 @@ Murakkablikni boshqarish haqidagi bob ikkita noqulay haqiqat bilan yopiladi. Ikk
 - John Ousterhout, *A Philosophy of Software Design*, 1-nashr, Yaknyam Press, 2018, 19.2 va P15 printsipi - inkrement birligi abstraksiya bo'lishi, xususiyat emas; agile ning taktik dasturlashga og'ish xavfi; abstraksiyani kerak bo'lgunicha qoldirish mumkinligi
 - Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 5.1 (74-75-betlar) - dizayn "wicked problem" ekani (Rittel va Webber, 1973), Tacoma Narrows ko'prigi misoli, dizayn jarayonining loyqa ekani; 5.3 (107-bet) - qo'pol kuch evristikasi (Lampson) va ikkilik qidiruv tarixi misoli
 - Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 27.3 (651-652-betlar) - loyiha hajmi oshganda xato turining o'zgarishi (kichik loyihada 75 foiz konstruksiya xatosi, kattada 50 foiz) va hajm bo'yicha xato zichligi jadvali
-- ESLATMA: 6.2 dagi uch joy modeli, 6.7 dagi raqamli mo'ljallar (lead time, change failure rate, churn chegaralari), 6.8 dagi mavjudlik hisobi va jamoa o'lchami qoidasi, 6.9 dagi "uchinchi real holat" qoidasi, 6.10 dagi taklif shabloni, 6.13 dagi Spring jadvali va 6.14 dagi sprint o'lchovi shu korpusning amaliy tavsiyasi, kitobdan olingan emas
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 1-bob ("Developer Experience" bo'limi) - JVM kabi resursga o'ch runtime bitta dasturchi mashinasida ko'tariladigan servis sonini cheklashi, to'rt yoki beshta JVM servisiga qarshi o'n yoki yigirmata, lokal ko'tarib bo'lmaydigan bulut servislari, "bulutda ishlab chiqish" ga qarshi dalil (qayta aloqa tsikli) va qamrovni cheklash tavsiyasi hamda uning jamoaviy egalik bilan to'qnashuvi. Bu nashrning qo'limizdagi elektron nusxasida barqaror bet raqami yo'q, shuning uchun faqat bob va bo'lim nomi ko'rsatilgan
+- Sam Newman, *Monolith to Microservices*, O'Reilly, 2019, 5-bob (222-223) - lokal dasturchi tajribasi: bir xil to'rt yoki beshta JVM servisi o'lchovi, belgilari (lokal build va ishga tushirish uzayishi, kattaroq mashina so'rovi qisqa muddatli yechim ekani), Go, Node va Python jamoalarining chegaraga kechroq yetishi, jamoaviy egalikning moyilligi va qattiq egalikdagi jamoaning stub mexanizmi, yechimlar (stub bilan to'sish, boshqa joydagi nusxaga qaratish, to'liq masofaviy muhit va uning uch narxi, Kubernetes uchun Telepresence gibridi), dasturchi tajribasi uchun qayta aloqa mexanizmi talabi
+- Titus Winters, Tom Manshreck, Hyrum Wright (tahr.), *Software Engineering at Google*, O'Reilly, 2020, 9-bob ("Code Is a Liability" bo'limi) - kod majburiyat ekani va samolyot yonilg'isi taqqoslashi, yangi xususiyat haqiqatan kerakligini oldindan tekshirish, dublikat kodning kodning umuman bo'lmasligidan ham qimmat tushishi, utility kodi uchun avval qidirish va "noldan yozayotgan bo'lsangiz, noto'g'ri qilayotgansiz"
+- Titus Winters, Tom Manshreck, Hyrum Wright (tahr.), *Software Engineering at Google*, O'Reilly, 2020, 24-bob ("ship only what gets used" xulosasi) - xususiyatning narxi va qiymatini ishlab turganda kuzatish, ishlatilmaydigan xususiyatni olib tashlash va A/B tajriba bilan muvozanatlash
+- Dustin Boswell, Trevor Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011 (copyright 2012), 13-bob (144-145-betlar) - bir martalik log tahlili uchun dastur yozilmasligi, Unix buyruqlari quvuri 20 qatorlik kodni almashtirishi va manba nazoratiga hech narsa qo'shilmagani uchun tekshiruv hamda texnik xizmat yuki qolmasligi
+- George Fairbanks, *Just Enough Software Architecture*, 1-nashr, 2010, 9.7 - komponent konfiguratsiyasini bajariladigan koddan deklarativ konfiguratsiya fayliga chiqarish (manba kodini statik tahlil qilish qiyin, deklarativ faylni tahlil qilish oson); 10.5 - Ward Cunningham ning texnik qarz ta'rifi (kodning muammo haqidagi joriy tushunchaga nisbatan to'plangan nomuvofiqligi), divergence ni modelni kod bilan solishtirib topish va ta'rifning arxitekturaga ham yoyilishi
+- Sam Newman, *Monolith to Microservices*, 1-nashr, O'Reilly, 2020, 1-bob (18-bet) - modul yoki mikroservis chegarasidan iloji boricha kam narsa ochish, interfeysga chiqqanni qaytarib olish qiyinligi va yashirilganni keyin ochish mumkinligi, Parnas ning axborotni yashirish g'oyasi; 5-bob (233-235-betlar) - egasiz servis muammosi, metadata reyestri (repozitoriy skaneri va service discovery bilan boyitilgan), Financial Times ning Biz Ops vositasi va System Operability Score
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 15-bob ("The Orphaned Service" bo'limi) - mayda servis oylar o'zgarmasligi kutilgan natija ekani, jamoa tuzilmasi bounded context ga mos bo'lsa de facto egalik bo'lishi va qayta yozish arzonligi, hamda polyglot stek da jamoa texnologiyani bilmasa o'zgartirish qiyinlashishi; 16-bob ("Technical Debt" bo'limi) - vision o'zgarganda unga mos kelmaydigan qismlarning yangi qarz bo'lishi, arxitektorning qarz darajasini bilishi, yumshoq yo'l-yo'riq yoki muntazam ko'riladigan debt log tanlovi. Bu nashrning qo'limizdagi elektron nusxasida barqaror bet raqami yo'q, shuning uchun faqat bob va bo'lim nomi ko'rsatilgan
+- ESLATMA: 6.4 dagi `@ConditionalOnProperty` va profil fayllari misoli, 6.5 dagi "bir marta kerakmi" mezoni, 6.8 dagi egasiz servis signallari jadvali shu korpusning qo'shimchasi
+- ESLATMA: 6.2 dagi uch joy modeli, 6.7 dagi raqamli mo'ljallar (lead time, change failure rate, churn chegaralari), 6.8 dagi mavjudlik hisobi va jamoa o'lchami qoidasi, 6.9 dagi "uchinchi real holat" qoidasi, 6.10 dagi taklif shabloni, 6.13 dagi Spring jadvali 6.14 dagi sprint o'lchovi va 6.16 dagi `compose.yaml` misoli bilan retrospektiva savoli shu korpusning amaliy tavsiyasi, kitobdan olingan emas
 
 ---
 

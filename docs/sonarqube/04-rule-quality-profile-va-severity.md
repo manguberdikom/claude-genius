@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 4. Rule, quality profile va severity (Rules, Profiles and Severity)
 
@@ -131,6 +131,44 @@ curl -sS -u "$SONAR_TOKEN:" -X POST \
 ```
 
 Bu bitta harakat profilni "serverdagi sirli sozlama" dan "code review dan o'tadigan fayl" ga aylantiradi. Profilni kim, qachon va nega o'zgartirganini pull request tarixidan ko'rasiz.
+
+Yangi qoidani profilga qanday kiritish kerakligi alohida savol va
+Google ning statik tahlil tajribasi unga aniq javob beradi: ishonch
+avval, majburiylik keyin. Tricorder da yangi analizator dastlab
+faqat ayrim loyihalar uchun ixtiyoriy yoqiladi, foydalanuvchi
+fikri bilan yaxshilanadi, foydalanuvchi bazasi va ishonch
+qurilgandan keyingina hammaga standart (on-by-default) qilinadi.
+Kitobning misoli: Java kodining o'qilishini yaxshilaydigan, xulqni
+o'zgartirmaydigan analizator boshida "juda shovqinli" deb
+qabul qilingan, keyin esa foydalanuvchilar uning natijalarini
+ko'proq so'ray boshlagan. Teskari tomoni ham bor: ba'zi qoida
+abadiy ixtiyoriy qoladi, chunki u faqat ayrim loyihalarga
+tegishli. Kitobning misoli protobuf xabarlarining buzuvchi
+o'zgarishini belgilaydigan analizator: bunday o'zgarish faqat
+serializatsiyalangan ma'lumot biror joyda saqlanadigan loyihada
+xavfli, saqlamaydigan loyihada esa qoida shovqin bo'ladi.
+
+Shundan Sonar profilini boshqarishda ikki amaliy natija chiqadi.
+Birinchi: yangi qoidani darhol `BLOCKER` qilib butun tashkilotga
+yoqmang, uni avval bitta loyihaning profilida, quality gate ni
+bloklamaydigan severity bilan yurgizib, topilmalarning haqiqatan
+to'g'ri ekanini tekshiring; keyin `Extend` qilingan ota profilga
+ko'tarasiz. Ikkinchi, va kitob buni alohida urg'ulaydi:
+sozlanishi loyiha darajasida bo'lishi kerak, foydalanuvchi
+darajasida emas. Loyiha darajasidagi sozlanish jamoaning hamma
+a'zosi bir xil natijani ko'rishini ta'minlaydi va bir dasturchi
+muammoni tuzatib, ikkinchisi uni qayta kiritayotgan holatni
+to'sadi. Google dastlab foydalanuvchiga natijani yashirish va
+ishonch darajasini tanlash imkonini bergan, keyin uni butunlay
+olib tashlagan va shikoyatlarning sababini so'ragan: shikoyat
+ortida sozlanish ehtiyoji emas, linter dagi xatolar va false
+positive lar chiqqan (bir misolda C++ linter i Objective-C
+fayllarida ishlab, foydasiz natija bergan). Ya'ni foydalanuvchiga
+berilgan sozlanish xatoni yashiradi va fikr-mulohazani to'xtatadi.
+Sonar tilida bu: `sonar.issue.ignore` va `@SuppressWarnings` ni
+shaxsiy qulaylik uchun emas, loyiha uchun asoslangan qaror
+sifatida ishlatish, va ularni repodagi faylga yozib review ga
+qo'yish (12-bob va 24-bob).
 
 ## 4.4 Qoidani o'chirish qachon to'g'ri qaror, qachon o'zini aldash
 
@@ -339,6 +377,16 @@ Oxirgi maslahat: profilni kichik tuting. 600 ta yoqilgan qoida 200 tasidan yaxsh
 - [ ] Keyingi SonarQube yangilanishini avval staging da bajarib, yangi qoidalardan kelgan issue larni jamoa bilan bir o'tirishda baholang.
 
 ## Manbalar
+
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at
+  Google*, O'Reilly, 2020, 20-bob ("Per-Project Customization") - 4.3
+  dagi yangi tekshiruvni avval ixtiyoriy yoqib, ishonch qurilgach
+  standart qilish bosqichi, ayrim loyihalarga tegishli qoidaning
+  ixtiyoriy qolishi (saqlangan serializatsiya formati misoli),
+  sozlanishning loyiha darajasida va foydalanuvchi darajasida
+  bo'lmasligi hamda foydalanuvchiga berilgan sozlanish xatoni
+  yashirgani keysi. Bu nashrning qo'limizdagi nusxasida chop etilgan
+  bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
 
 - [sonarqube 9.9 LTA, `BackupAction.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-webserver-webapi/src/main/java/org/sonar/server/qualityprofile/ws/BackupAction.java) - `api/qualityprofiles/backup` (5.2 dan), XML eksport, `restore` orqali tiklash va admin huquqi talab qilinmasligi
 - [sonarqube 9.9 LTA, `ChangeParentAction.java`](https://raw.githubusercontent.com/SonarSource/sonarqube/9.9.8.100196/server/sonar-webserver-webapi/src/main/java/org/sonar/server/qualityprofile/ws/ChangeParentAction.java) - nasl bog'lanishini (Extend) API orqali o'zgartirish

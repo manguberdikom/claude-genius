@@ -80,6 +80,16 @@ GLOSSARY_SKIP = {"stack"}
 # Domen oti yolg'iz dalil emas: "customer null" mavzu emas, "Account
 # Lockout" kabi ko'p so'zli taxallus esa score_aliases orqali topiladi.
 DOMAIN_NOUNS = {"customer", "account", "notification"}
+# Buyruq fe'li va umumiy inglizcha so'z: taxallus va sarlavhada uchraydi
+# ("Push Down Dependency", "Create Component Domains", "Treiber Stack",
+# "Duplicate Static Reference Data"), shuning uchun lug'atga kiradi va
+# korpusda kamyob. Yolg'iz o'zi dalil bo'lsa "commit qil va push qil" va
+# xato matnidagi "duplicate key" taklif olib kelardi. Iborada (taxallus,
+# ikki so'zli moslik) ular baribir ishlaydi.
+COMMAND_WORDS = {"build", "change", "clean", "commit", "copy", "create",
+                 "delete", "duplicate", "find", "move", "open", "pull", "push",
+                 "read", "remove", "rename", "replace", "stack", "start",
+                 "update", "write"}
 
 # Stack trace: frame va exception xabari mavzu emas, sinf nomlari shovqin.
 FRAME = re.compile(r"^\s*at\s+[\w.$<>]+\(", re.M)
@@ -319,13 +329,25 @@ def expand(prompt, vocab, synonyms):
     ("o'chirilgan", "qator") yolg'iz o'zi kamyob atamaga bog'lab
     bo'lmaydi, ibora esa mavzuni aniq bildiradi.
     """
-    out, seq = set(), []
+    out = set()
     for token in tokens(prompt):
         forms = roots(token, vocab)
-        seq.append(forms)
         out |= forms
         for form in forms:
             out.update(synonyms.get(form, ()))
+    return out | phrase_targets(prompt, vocab, synonyms)
+
+
+def phrase_targets(prompt, vocab, synonyms):
+    """So'rovda ketma-ket turgan ibora kalitlarining nishonlari.
+
+    Ibora mavzuni aniq bildiradi, shuning uchun uning nishoni so'rovda
+    to'g'ridan yozilgan atama kabi dalil (`direct`): "har qatorga alohida
+    so'rov" da `so'rov` korpus o'sgani sari kamyob bo'lmay qoldi va
+    yolg'iz `n+1` sinonim sifatida dalil bo'lmasdi.
+    """
+    seq = [roots(token, vocab) for token in tokens(prompt)]
+    out = set()
     for key, targets in synonyms.items():
         words = key.split()
         if len(words) > 1 and any(
@@ -582,10 +604,12 @@ def suggest(prompt):
     prompt = clean_prompt(prompt)
     idf = load_idf(len(sections))
     aliases = read_tsv("aliases.tsv")
-    term_vocab = (term_vocabulary(aliases) | title_terms(sections)) - DOMAIN_NOUNS
+    term_vocab = ((term_vocabulary(aliases) | title_terms(sections))
+                  - DOMAIN_NOUNS - COMMAND_WORDS)
     synonyms = load_synonyms()
     wanted = expand(prompt, idf, synonyms)
-    direct = set().union(*(roots(t, idf) for t in tokens(prompt)))
+    direct = set().union(*(roots(t, idf) for t in tokens(prompt)),
+                         phrase_targets(prompt, idf, synonyms))
     scores = score_sections(wanted, sections, idf, term_vocab, direct,
                             synonym_echo(direct, synonyms))
     scores = score_aliases(prompt, aliases, scores)

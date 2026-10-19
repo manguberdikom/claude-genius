@@ -23,6 +23,10 @@ Qaror tavsiya qilganda:
    (`architect 7`: nosozlik turlari, ssenariylar jadvali).
 5. Qaror muhim bo'lsa, ADR yozing (`architect 3`: ADR tuzilishi).
 
+`/manguberdi` shu sessiyada chaqirilgan bo'lsa dizayn qarori
+`rejalashtiruvchi` ga, kod o'zgarishi `dasturchi` ga beriladi; bu skill
+o'shanda faqat bob jadvali.
+
 ## Mavzu - bob jadvali
 
 Fayl ustuni bob qayerdaligini ko'rsatadi. Bob butunligicha o'qilmaydi
@@ -90,7 +94,7 @@ Test strategiyasi: `spring-testing` skilli.
 Bob jadvali mavzuni topadi, bu asboblar esa ish oldidan faktni beradi:
 
 ```bash
-python3 tools/rules_for.py <fayl>...        # tegilayotgan faylga qaysi boblar
+python3 tools/rules_for.py --vazifa="<vazifa>" <fayl>...   # retsept, umumiy qoidalar, boblar
 python3 tools/schema_from_entities.py <src> # baza tuzilishi, ulanmasdan
 tools/doc.sh find -f "<so'rov>"             # matn ichidan qidirish
 tools/doc.sh outline architect <bob>        # bobdagi bo'limlar

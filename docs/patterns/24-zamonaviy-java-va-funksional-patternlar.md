@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 24. Zamonaviy Java va funksional patternlar (Modern Java & Functional Patterns)
 
@@ -402,6 +402,8 @@ batches.forEach(orderRepository::saveAllAndFlush);
 - Modulli monolitda har bir modul o'z `DomainEventHandler` provider'ini ro'yxatdan o'tkazishi.
 - Mijozga xos biznes qoidalari implementatsiyasini alohida artifact sifatida deploy qilish.
 
+**Qidirishning narxi va `provides` ning qamrovi.** `ServiceLoader` orqali provider qidirish nisbatan qimmat amal: u resurs fayllarini (yoki modul deskriptorlarini) o'qiydi, sinflarni yuklaydi va ularni yaratadi, shuning uchun haqiqiy ilovada natija bir marta olinib keshlanadi - har chaqiruvda `ServiceLoader.load(...)` yozish issiq yo'lda seziladigan xarajat beradi. JPMS tomonida esa ko'pincha chalkashtiriladigan tafsilot bor: provider ni `provides ... with` bilan e'lon qilish uning implementatsiya paketini EKSPORT QILMAYDI. Paket niqoblangan holida qoladi va implementatsiya faqat servis interfeysi orqali ochiladi, ya'ni iste'molchi sinf nomini bilmaydi ham, unga `requires` qo'shishi ham shart emas. `uses` esa iste'molchi tomonida yoziladi: u modul shu servisni `ServiceLoader` bilan qidiradi degan e'lon.
+
 **Ehtiyot bo'ling:** ServiceLoader DI bermaydi - provider'lar no-arg konstruktor bilan yaratiladi, shuning uchun bean'larni ularga qo'lda uzatish kerak (Boot shu sababli `EnvironmentPostProcessor` uchun maxsus konstruktor qoidalarini qo'llaydi). `META-INF/services` fayllari shaded/fat JAR yasashda bir-birini o'chirib tashlashi mumkin (Maven Shade uchun `ServicesResourceTransformer` kerak), GraalVM native image'da esa reflection/SPI ro'yxatga olinmasa provider topilmaydi.
 
 ## 24.23 Memoizatsiya (Memoization)
@@ -457,6 +459,8 @@ batches.forEach(orderRepository::saveAllAndFlush);
 - Cache'dan qaytarilgan obyektni nusxalab berish, chaqiruvchi keshdagi nusxani o'zgartirmasligi uchun.
 - JPA entity getter'ida ichki kolleksiyani `unmodifiableList` qilib qaytarish va `addItem()` metodi bilan boshqarish.
 - Massiv qabul qiladigan public API'da `Arrays.copyOf` bilan kiruvchi massivni izolyatsiya qilish.
+
+**Himoya hamma joyda kerak emas.** Korpusda himoya qoidalari ko'p, lekin ularning chegarasi ham qoida: himoyali programmalashning narxi bor (kod uzayadi, har tekshiruv sinovdan o'tishi kerak) va u faqat haqiqiy xavf bor joyda to'lanadi. Uch holatda ishning bir qismi allaqachon bajarilgan: kirishi dizayn bo'yicha boshqa joyda tekshirilgan sinfda (masalan validatsiyadan o'tgan DTO ni qabul qiladigan ichki servis), kuchli tipli tilda (tur o'zi qiymat to'plamini cheklaydi) va istisnolari e'lon qilinadigan tilda (chaqiruvchi nimani ushlashi kerakligini kompilyatordan biladi). Java uchalasiga ham kiradi, shuning uchun bu yerda himoya chegarani kesib o'tadigan joyga - public API, tashqi kirish, mutable obyektni qabul qilish va qaytarish - yig'iladi, ichki qatlamda esa invariantga ishonish mumkin.
 
 **Ehtiyot bo'ling:** `List.copyOf` sayoz (shallow) nusxa - ichidagi elementlar mutable bo'lsa, immutability illyuziyaga aylanadi; shuningdek `null` elementga ruxsat bermaydi va `NullPointerException` tashlaydi. Juda katta kolleksiyalarni har getter chaqiruvida nusxalash sezilarli GC yuki beradi, Hibernate boshqaradigan kolleksiyani almashtirish esa `orphanRemoval` va lazy loading'ni sindiradi - bunday joylarda nusxa o'rniga faqat o'qiladigan ko'rinish (unmodifiable view) qaytarish to'g'riroq.
 
@@ -549,6 +553,27 @@ batches.forEach(orderRepository::saveAllAndFlush);
 - CLI yoki desktop vositalari uchun o'zini-o'zi ta'minlovchi (self-contained) runtime tarqatish.
 
 **Ehtiyot bo'ling:** Spring, Hibernate va Jackson reflection'ga kuchli tayanadi, shuning uchun `opens` ni to'g'ri sozlamaslik `InaccessibleObjectException` ga olib keladi; split package'lar esa modullashgan qurilishni butunlay to'xtatadi. Oddiy Spring Boot web ilovasi uchun JPMS ko'pincha foyda bermaydi - modulyar monolit chegaralari uchun Spring Modulith (`spring-modulith` 1.x) yoki ArchUnit amaliyroq tanlov.
+
+**Paketni ochish joyi `module-info`, buyruq satri emas:** modul
+tashqariga ochadigan paketlar `module-info.java` dagi `exports`
+bilan e'lon qilinadi va bu modulning shartnomasi. Buyruq satridagi
+`--add-exports` opsiyasi ham qonuniy va ishlaydi, lekin
+Boyarsky/Selikoff uni tavsiya etilmaydigan yo'l deb belgilaydi.
+Sababi tuzilishda: `--add-exports` chegarani modul tavsifida emas,
+ishga tushirish buyrug'ida buzadi, demak shartnoma kodni o'qib
+bilinmaydi va har muhitda (IDE, build, konteyner, CI) qayta
+takrorlanishi kerak. Amaliy qoida: `--add-exports` va
+`--add-opens` ni faqat o'zgartira olmaydigan uchinchi tomon moduli
+uchun vaqtinchalik chora sifatida ishlatish va har birini sabab
+izohi bilan build faylida qayd qilish; o'z modulingizda esa
+`exports` va reflection uchun `opens` ni `module-info.java` ga
+yozish.
+
+**`exports` va `opens` bir xil narsa emas.** Ikki direktiva ko'pincha almashtirib ishlatiladi va aynan shu farq Hibernate yoki Jackson refleksiyasini sozlashda kerak bo'ladi. `exports` kompilyatsiya vaqti va ish vaqti kirishini birga beradi: paketdagi public turlar tashqaridan ko'rinadi va ularga kod yozish mumkin. `opens` esa faqat ish vaqti va refleksiya kirishini beradi, kompilyatsiya vaqtida paket yopiq qoladi - shuning uchun u entity paketini ORM ga ochish uchun to'g'ri vosita. Ikkisi bir-birini inkor qilmaydi: bitta paketni ham `exports`, ham `opens` qilish qonuniy va kutubxona API si refleksiyaga ham tayansa shunday yoziladi. Butun modulni ochish kerak bo'lsa deskriptor `open module` deb e'lon qilinadi; bunda hamma paket ish vaqtida ochiq bo'ladi, shuning uchun uning ichida `opens` yozilmaydi (va yozishga ruxsat ham yo'q). Qualified export (`exports ... to`) esa maxsus holat va unga ortiqcha ishonmaslik kerak: u paketni nomlangan modullardan yopadi, lekin niqoblangan moduldagi koddan himoya qilmaydi.
+
+**`requires` tranzitiv emas.** Modul grafini qurishda birinchi uchraydigan savol shu: A moduli B ga, B esa C ga `requires` bo'lsa, A dan C ga murojaat qilish mumkin emas - har modul o'ziga kerak bo'lgan hamma modulni o'zining `requires` gapi bilan sanaydi. Tranzitivlik faqat oshkor beriladi: `requires transitive C` degan modul o'z iste'molchilariga C ni ham o'qitadi va bu API ning qismiga aylanadi (tipik holat - metod imzosida boshqa moduldagi tur qaytarilsa). Shundan modul yo'liga oddiy jar qo'yganda chiqadigan cheklov keladi: avtomatik modul migratsiya uchun qulay, lekin ishonchsiz - uning nomi va o'qish grafi jar tarkibiga qarab aniqlanadi, demak jar o'zgarganda jim o'zgaradi va shu sababli avtomatik modulga `requires transitive` qo'yish tavsiya etilmaydi.
+
+**Direktivani olib tashlash binar moslikni buzadi.** Modul deskriptori ham shartnoma, shuning uchun unga tegish binar moslik qoidalariga bo'ysunadi. Keng tarqatilgan modulning `exports` yoki `opens` direktivasini butunlay olib tashlash yoki uni qualified shaklga (`exports ... to`) o'tkazib qamrovni toraytirish mavjud binarlarni `IllegalAccessError` bilan sindiradi: kod kompilyatsiya qilingan, lekin kirish huquqi ish vaqtida yo'q. `requires transitive` ni olib tashlash ham xuddi shunday buzadi, chunki iste'molchilar o'zlarining `requires` ini yozmasdan tranzitiv o'qishga tayangan bo'ladi. Shuning uchun direktivani qisqartirish major versiya ishi va u qolgan buzadigan o'zgarishlar bilan bir joyga yig'iladi.
 
 ## 24.33 O'qiluvchanlik uchun text block va switch ifodalari (Text Blocks & Switch Expressions for Readability)
 
@@ -718,6 +743,20 @@ public final class BoundedEventBuffer<E extends DomainEvent> {
 }
 ```
 
+**Tur parametrining nusxasini yaratish mumkin emas.** Generik sinf yozayotgan odam birinchi marta aynan shu devorga uriladi: `new T()` kompilyatsiya qilinmaydi, chunki erasure dan keyin `T` qanday sinf ekani ish vaqtida mavjud emas va konstruktorni chaqirishga asos qolmaydi. Yechim yaratish mas'uliyatini chaqiruvchiga o'tkazishdan iborat va ikki shakli bor: `Supplier<T>` uzatish (eng toza - chaqiruvchi lambdada qanday yaratishini o'zi aytadi) yoki `Class<T>` tur tokenini uzatib `cls.getDeclaredConstructor().newInstance()` bilan refleksiya orqali yaratish. Ikkinchisi faqat haqiqatan sinf obyekti kerak bo'lganda (masalan refleksiyaga tayangan mapper da) tanlanadi, chunki u xatoni kompilyatsiyadan ish vaqtiga ko'chiradi.
+
+```java
+// `new T()` mumkin emas: yaratishni chaqiruvchi beradi
+static <T> List<T> fill(int size, Supplier<T> factory) {
+    List<T> result = new ArrayList<>(size);
+    for (int i = 0; i < size; i++) {
+        result.add(factory.get());
+    }
+    return result;
+}
+// chaqiruv joyi: fill(3, ArrayList::new)
+```
+
 **Ehtiyot bo'ling:** `@SuppressWarnings("unchecked")` ni butun sinfga yoki butun metodga qo'ymang, faqat cast turgan e'lonning o'ziga qo'yiladi, aks holda keyinroq qo'shilgan haqiqiy xato ham jim bo'ladi. Cast xavfsizligi isboti massivning sinf ichida qolishiga tayanadi: uni getter orqali tashqariga chiqarsangiz, chegaralanmagan `<E>` da kompilyator chaqiruv joyiga yashirin cast qo'yadi va u `[Ljava.lang.Object;` ni kutilgan massiv turiga o'tkaza olmay yiqiladi (JDK 21.0.12 da tekshirildi) - bu Bloch ogohlantirgan heap pollution ning amaliy ko'rinishi; yuqoridagi chegaralangan shakl shu tuzoqni yo'q qiladi. Kitob Java 9 davrida yozilgan, lekin ikki taqiq Java 25 da ham o'zgarmagan: massiv yaratishda element turi reifiable bo'lishi shart (JLS 25, 15.10.1) va tur argumenti faqat reference tur yoki wildcard bo'ladi (JLS 25, 4.5.1), shuning uchun `Stack<int>` bugun ham kompilyatsiya qilinmaydi. O'zgargan narsa boshqa: Java 21 dan keyin yopiq variantlar to'plami uchun generik konteyner emas, `sealed interface` plus `record` to'g'riroq modellashtirish beradi (qarang: [Sealed interfeyslar va pattern matching](#242-sealed-interfeyslar-va-pattern-matching-sealed-interfaces--pattern-matching--algebraic-data-types)).
 
 ## 24.42 Amalda qo'llash
@@ -734,11 +773,26 @@ public final class BoundedEventBuffer<E extends DomainEvent> {
 
 ## Manbalar
 
+- Boyarsky/Selikoff, *OCP Java SE 17 Developer Practice Tests*,
+  Appendix (7-bob javoblari, 8-savol) - 24.32 dagi qoida: modul
+  tashqariga ochadigan paketlar `module-info` dagi `exports` bilan
+  e'lon qilinadi va `--add-exports` buyruq satri opsiyasi qonuniy
+  bo'lsa ham tavsiya etilmaydi. Bu kitobning qo'limizdagi nusxasida
+  chop etilgan bet raqami yo'q, shuning uchun bo'lim va savol raqami
+  ko'rsatilgan
+
 - Herbert Schildt, *Java The Complete Reference*, 15-bob - lambda ifodalari
 - Joshua Bloch, *Effective Java*, 3-nashr, Addison-Wesley, 2018, "Item 29: Favor generic types", 130-134-betlar - `Object` li konteynerni generik turga aylantirish, generik massiv taqiqining ikki yechimi va heap pollution narxi
 - *The Java Language Specification, Java SE 25 Edition* (Gosling, Joy, Steele, Bracha, Buckley, Smith, Bierman), 15.10.1 - massiv yaratishda element turi reifiable bo'lishi shart; 4.5.1 - tur argumenti faqat reference tur yoki wildcard
 - Herbert Schildt, *Java The Complete Reference*, 17-bob - `switch` ifodasi, record va boshqa yangi imkoniyatlar
 - Herbert Schildt, *Java The Complete Reference*, 16-bob - modullar tizimi (JPMS)
+- Herbert Schildt, *Java The Complete Reference*, 12-nashr, McGraw-Hill, 2022, 14-bob (387-bet) - tur parametrining nusxasini yaratish (`new T()`) mumkin emasligi va fabrika kerak bo'lsa `Supplier<T>` yoki `Class<T>` uzatilishi (24.41)
+- Herbert Schildt, *Java The Complete Reference*, 12-nashr, McGraw-Hill, 2022, 16-bob (428, 431 va 445-betlar) - `requires` ning tranzitiv bo'lmasligi va tranzitivlikning `requires transitive` bilan oshkor berilishi, qualified export (`exports ... to`) ning paketni niqoblangan moduldan himoya qilmasligi, `opens` faqat ish vaqti va refleksiya kirishini berishi hamda bitta paketni ham `exports` ham `opens` qilish mumkinligi, `open module` da hamma paket ochiq bo'lgani uchun uning ichida `opens` yozilmasligi (24.32)
+- *The Java Language Specification, Java SE 25 Edition* (Gosling, Joy, Steele, Bracha, Buckley, Smith, Bierman), 7-bob (443-bet) - modul yo'liga qo'yilgan oddiy jar dan hosil bo'ladigan avtomatik modulning nomi va o'qish grafi jar tarkibiga qarab aniqlanishi, shundan kelib chiqib unga `requires transitive` qo'yish tavsiya etilmasligi (24.32)
+- *The Java Language Specification, Java SE 25 Edition* (Gosling, Joy, Steele, Bracha, Buckley, Smith, Bierman), 13-bob (472-bet) - keng tarqatilgan modulning `exports` yoki `opens` direktivasini olib tashlash yoki tor doiraga o'tkazish mavjud binarlarni `IllegalAccessError` bilan sindirishi, `requires transitive` ni olib tashlash ham buzadigan o'zgarish ekani (24.32)
+- Boyarsky/Selikoff, *OCP Java SE 17 Study Guide*, 12-bob (682-bet) va shu bobning "Creating a Service" bo'limi - `ServiceLoader` orqali qidirish nisbatan qimmat ekani va natijaning keshlanishi, servis provayderini `provides`/`uses` bilan berganda implementatsiya paketi eksport qilinmasligi (24.22)
+- Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr, Pragmatic Engineer BV, 2023, 8-bob (120-bet) - himoyali programmalash hamma joyda kerak emasligi: kirishi dizayn bo'yicha tekshirilgan sinfda, kuchli tipli tilda va istisnolari e'lon qilinadigan tilda kompilyator ishning bir qismini bajaradi (24.26)
+- ESLATMA: 24.22 dagi `ServiceLoader.load` ni issiq yo'lda chaqirmaslik maslahati, 24.26 dagi "himoya chegarani kesib o'tadigan joyga yig'iladi" xulosasi va 24.41 dagi `Supplier<T>` kod misoli shu korpusning amaliy qo'shimchasi, kitoblarda shu shaklda yo'q
 - Boyarsky/Selikoff, *OCP Java SE 17 Study Guide*, 8, 10-boblar - lambda, funksional interfeyslar va oqim
 - JDK: javac xususiyat jadvali (`Source.Feature` - har bir til imkoniyati qaysi versiyada final bo'lgani) va `Preview` (qaysisi hali preview). openjdk/jdk, tag `jdk-27-ga` (commit `815ff4dc327fe17f2433c7d115a5a503af10f3c4`); solishtirish uchun `jdk-21-ga`, `jdk-22-ga`, `jdk-23-ga`, `jdk-24-ga`, `jdk-25-ga`, `jdk-26-ga` teglari ham o'qildi. GPL-2.0 with Classpath Exception. https://github.com/openjdk/jdk/blob/815ff4dc327fe17f2433c7d115a5a503af10f3c4/src/jdk.compiler/share/classes/com/sun/tools/javac/code/Source.java
 - JDK: `StructuredTaskScope` (`@PreviewFeature` 21 dan 27 gacha saqlanib turadi), `ScopedValue` (25 da final), `Gatherer` va `Gatherers` (24 da final, faqat besh factory metod), `Stream.gather`. openjdk/jdk, tag `jdk-27-ga`. GPL-2.0 with Classpath Exception. https://github.com/openjdk/jdk/blob/815ff4dc327fe17f2433c7d115a5a503af10f3c4/src/java.base/share/classes/java/util/concurrent/StructuredTaskScope.java

@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 1. Review nima uchun bor va nimani haqiqatda beradi (Why Review Exists)
 
 <details>
-<summary>Bu bobdagi 14 bo'lim</summary>
+<summary>Bu bobdagi 15 bo'lim</summary>
 
 - [1.1 Review ning uchta haqiqiy mahsuloti](#11-review-ning-uchta-haqiqiy-mahsuloti)
 - [1.2 Review nimani topmaydi](#12-review-nimani-topmaydi)
@@ -22,7 +22,8 @@
 - [1.11 Review ning oltita foydasi va eng muhimi qaysi](#111-review-ning-oltita-foydasi-va-eng-muhimi-qaysi)
 - [1.12 Xato topish usullarining o'lchangan samarasi](#112-xato-topish-usullarining-olchangan-samarasi)
 - [1.13 Review mavjudligining oldini olish ta'siri](#113-review-mavjudligining-oldini-olish-tasiri)
-- [1.14 Amalda qo'llash](#114-amalda-qollash)
+- [1.14 Boshqa jamoa kodiga review: internal open source](#114-boshqa-jamoa-kodiga-review-internal-open-source)
+- [1.15 Amalda qo'llash](#115-amalda-qollash)
 
 </details>
 
@@ -284,7 +285,36 @@ public class PayoutService {
 
 Uchinchi fakt tartibning o'zi haqida. Code Complete Capers Jones ning kuzatuvini keltiradi: u o'rgangan loyihalardan 99 foiz va undan yuqori xato topish darajasiga chiqqanlarining hammasi rasmiy inspeksiya ishlatgan, 75 foizdan past darajada qolganlarining birortasi esa ishlatmagan. Bu sababiy bog'liqlikni isbotlamaydi, lekin yo'nalishni aniq ko'rsatadi: yuqori topish darajasi tasodifan kelmaydi, u tartibdan keladi.
 
-## 1.14 Amalda qo'llash
+## 1.14 Boshqa jamoa kodiga review: internal open source
+
+Yuqoridagi barcha bo'limlar bitta jamoaning o'z kodini review qilishini ko'rsatadi. Lekin ko'p tashkilotda eng qiyin review chegara ustida turadi: funksiya SIZGA kerak, kod esa boshqa jamoaning servisida. Newman buni aniq keltirib chiqaradi: ikki jamoa bir vaqtda bitta servisga o'zgarish kerak bo'lgan holatda to'rt yo'l bor va uchtasi yomon (kutish, servis jamoasiga odam qo'shish, servisni ikkiga bo'lish), to'rtinchisi esa open source dunyosidan olinadi (Newman, 15-bob, "Internal Open Source").
+
+To'rt yo'lning uchtasi ham ko'r-ko'rona tanlanmaydi, har birining
+ajratuvchi sharti bor. Kutish funksiyaning muhimligi va kechikish
+uzunligiga qarab yoki butunlay normal, yoki jiddiy muammo bo'ladi.
+Jamoaga odam qo'shish texnologiya steki va dasturlash idiomalari
+qanchalik standart bo'lsa shuncha oson, lekin Newman narxini ham
+aytadi: standartlashtirish jamoaning har ish uchun to'g'ri yechimni
+tanlash imkonini kamaytiradi va o'zining boshqa samarasizliklarini
+keltiradi. Servisni ikkiga bo'lish esa eng ko'p noto'g'ri paytda
+tanlanadigan yo'l. Newman ning mezoni aniq: agar kerakli o'zgarish
+kichik bo'lsa va o'sha sohada kelajakda ko'p ishlash ehtimoli past
+bo'lsa, bo'lish erta qaror bo'ladi; aksincha, kitobning misolida
+o'sha sohada o'n haftalik funksiyalar navbatda turgan bo'lsa,
+servisni ajratib, egalikni o'sha jamoaga berish ma'noli. Ya'ni
+chegara bo'ylab bo'lish qarori bugungi bitta PR dan emas, o'sha
+sohaga kutilayotgan ish hajmidan chiqadi (Newman, 15-bob,
+"Delivery Bottlenecks").
+
+Model shunday ishlaydi: odatdagi open source da kichik guruh core committer bo'ladi, ular kodning qo'riqchisi va egasi; o'zgarish kerak bo'lsa yo ulardan so'raysiz, yo o'zingiz yozib pull request yuborasiz. Tashkilot ichida ham xuddi shu taqsimot qo'llanadi: ISHONILGAN committer lar (yadro jamoa) va ishonilmagan committer lar (tashqaridan o'zgarish yuboruvchilar) ajratiladi. Bu review uchun [1.4](#14-approve-nimani-anglatadi-va-nimani-anglatmaydi) va [1.5](#15-review-masuliyatni-kochirmaydi) dagi javobgarlik chizig'ini o'zgartirmaydi, faqat aniqroq qiladi: approve ni yadro jamoa beradi va kod sog'ligi uchun javobgarlik ham o'sha yerda qoladi.
+
+Yadro jamoaning roli gatekeeper. Uning vazifasi ikkita: o'zgarish idiomatik jihatdan izchil bo'lishini, ya'ni kodbazaning umumiy uslubiga rioya qilishini tekshirish, va bugungi o'zgarish rejalashtirilgan kelajak o'zgarishlarni qiyinlashtirib qo'ymasligini ko'rish. Newman narxni ham ochiq aytadi: yaxshi gatekeeper yuboruvchi bilan ochiq muloqot qilib, uni to'g'ri yo'lga undab, ko'p vaqt sarflaydi; yomon gatekeeper esa shu rolni kuch ko'rsatish yoki arzimagan texnik tanlov ustida diniy bahs uchun ishlatadi, va ikkisi ham vaqt oladi. Shuning uchun qarorni bitta savol bilan qabul qiling: gatekeeper bo'lishning ortiqcha yuki arziydimi, yadro jamoa shu vaqtni boshqa narsaga sarflasa foydaliroq bo'lmaydimi (Newman, 15-bob, "Role of the Core Committers").
+
+Uchinchi element - YETUKLIK sharti va bu modelni qachon yoqish kerakligini belgilaydi. Servis qanchalik beqaror va yosh bo'lsa, tashqi o'zgarishni qabul qilish shunchalik qiyin: yadro jamoaning o'zi hali "yaxshi" nimani bildirishini bilmaydi, demak yaxshi submission ni ham taniy olmaydi, bu bosqichda esa servisning o'zi tez o'zgarib turadi. Ko'p open source loyiha birinchi versiyaning o'zagi tugamaguncha keng, ishonilmagan guruhdan submission qabul qilmaydi, va tashkilot ichida ham shu model to'g'ri: servis yetilib, kamdan kam o'zgaradigan holatga kelgandan keyin uni boshqa jamoalarga ochish mantiqli (Newman, 15-bob, "Maturity").
+
+To'rtinchi element - asbob. Internal open source ishlashi uchun pull request yuborish imkoniyati bo'lgan taqsimlangan versiya nazorati kerak; tashkilot kattaligiga qarab patch ni muhokama qiladigan va rivojlantiradigan vosita ham kerak bo'ladi, bu to'liq code review tizimi bo'lishi shart emas, lekin qatorlar ustida inline izoh berish imkoniyati juda foydali. Oxirgi talab texnik: tashqi committer dasturni qurib, deploy qilib, natijani boshqalarga yetkazishi juda oson bo'lishi kerak, ya'ni aniq yozilgan build va deploy pipeline i hamda markazlashgan artefakt repozitoriysi; texnologiya steki qanchalik standart bo'lsa, boshqa jamoadan patch kelishi shunchalik oson (Newman, 15-bob, "Tooling"). Shu talablar bajarilmasa, model qog'ozda qoladi: PR keladi, lekin uni tekshirib, qurib, chiqarishning arzon yo'li bo'lmaydi.
+
+## 1.15 Amalda qo'llash
 
 - [ ] Jamoa bilan bir sahifali `REVIEW.md` yozing: maqsad, izoh darajalari, SLA va xavfli o'zgarishlar ro'yxati.
 - [ ] Oxirgi 50 ta PR izohini uch sinfga ajratib sanang: xato, maintainability, mashina tuta oladigan narsa. Uchinchi sinf 20 foizdan ko'p bo'lsa, linter va formatter sozlamasini tuzating.
@@ -294,6 +324,7 @@ Uchinchi fakt tartibning o'zi haqida. Code Complete Capers Jones ning kuzatuvini
 - [ ] Approve uchun uch darajali shablonni joriy qiling va yuqori xavfli PR uchun 3-darajani majburiy qilib qo'ying.
 - [ ] Oxirgi uchta incidentni olib, har biri uchun "review nega ko'rmadi" savoliga javob yozing va checklistga bitta band qo'shing.
 - [ ] Katta o'zgarishlar uchun dizayn eskizi bosqichini joriy qiling: 5 dan ko'p yangi fayl yoki yangi jadval bo'lsa, avval bir sahifa.
+- [ ] Boshqa jamoa PR yuboradigan servislarni ro'yxatga oling: har biri uchun yadro committer lar kim, servis yetukmi va build plus deploy yo'li tashqi committer uchun hujjatlashtirilganmi.
 
 ## Manbalar
 
@@ -308,6 +339,8 @@ Uchinchi fakt tartibning o'zi haqida. Code Complete Capers Jones ning kuzatuvini
 - Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 20.3, jadval 20-3 (472-bet) - modal darajalardan kumulyativ samarani hisoblash usuli
 - Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 21.4, jadval 21-1 (495-bet) - juftlikda ishlash 40-60 foiz, rasmiy inspeksiya 45-70 foiz, norasmiy review 20-40 foiz
 - Steve McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 21.1 "Collaborative Construction Complements Other Quality-Assurance Techniques" (481-bet) - ishim ko'riladi deb bilgan odam o'zini sinchiklab tekshiradi; Wiegers ro'yxati (noaniq xato xabari, yetarli bo'lmagan izoh, qotib qolgan qiymat, takroriy naqsh); Capers Jones: 99 foiz topish darajasiga chiqqan loyihalarning hammasi rasmiy inspeksiya ishlatgan
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 15-bob ("Delivery Bottlenecks") - 1.14 dagi to'rt yo'lning ajratuvchi shartlari: kutishning narxi funksiya muhimligiga bog'liqligi, jamoaga odam qo'shish standart stek bilan osonlashishi va standartlashtirishning to'g'ri yechim tanlash imkonini kamaytirishi, servisni bo'lish o'zgarish kichik va sohada kelajak ish kam bo'lsa erta qaror bo'lishi, o'n haftalik ringtone funksiyalari misoli. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 15-bob ("Internal Open Source", "Role of the Core Committers", "Maturity", "Tooling") - ishonilgan va ishonilmagan committer ajratmasi, gatekeeper ning idiomatik izchillik va kelajak o'zgarishlarni tekshirishi, yaxshi va yomon gatekeeper ikkisi ham vaqt olishi, yetuk bo'lmagan servisda tashqi submission ni qabul qilish qiyinligi, pull request va inline izoh vositasi hamda aniq build plus deploy yo'li talabi. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomlari ko'rsatilgan
 
 ---
 

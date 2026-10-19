@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 10. Ma'lumotlarni boshqarish va taqsimlash patternlari (Data Management & Distribution Patterns)
 
 <details>
-<summary>Bu bobdagi 32 bo'lim</summary>
+<summary>Bu bobdagi 34 bo'lim</summary>
 
 - [10.1 Yumshoq o'chirish (Soft Delete)](#101-yumshoq-ochirish-soft-delete)
 - [10.2 Audit izi / Auditlash (Audit Trail / Auditing)](#102-audit-izi--auditlash-audit-trail--auditing)
@@ -40,7 +40,9 @@
 - [10.29 Taqsimlangan lock (Distributed Lock - Redis, ShedLock, Database)](#1029-taqsimlangan-lock-distributed-lock---redis-shedlock-database)
 - [10.30 Idempotentlik ombori (Idempotency Store)](#1030-idempotentlik-ombori-idempotency-store)
 - [10.31 Dual Write muammosi (Dual Write Problem)](#1031-dual-write-muammosi-dual-write-problem)
-- [10.32 Amalda qo'llash](#1032-amalda-qollash)
+- [10.32 Spring Data NoSQL ulanish sozlamalari (Cassandra and MongoDB connection settings)](#1032-spring-data-nosql-ulanish-sozlamalari-cassandra-and-mongodb-connection-settings)
+- [10.33 Hujjat va UDT mapping (Document and User-Defined Type Mapping)](#1033-hujjat-va-udt-mapping-document-and-user-defined-type-mapping)
+- [10.34 Amalda qo'llash](#1034-amalda-qollash)
 
 </details>
 
@@ -624,6 +626,8 @@ public Account load(long id) {
 
 **Ehtiyot bo'ling:** Ko'rinish eventual consistent - foydalanuvchi o'zi yozgan ma'lumotni darhol ko'rmasligi mumkin, shuning uchun read-your-writes kerak bo'lgan ekranlarda to'g'ridan-to'g'ri write model'dan o'qing. Yana bir tuzoq: ko'rinishni qayta qurish (rebuild) yo'lini kun birinchi kunidan loyihalashtirmaslik - event bilan yangilanadigan modelda bug topilganda uni noldan tiklash imkoniyati bo'lishi shart.
 
+Ko'rinish uchun qaysi bazani tanlash savoliga [poliglot persistence](#1011-poliglot-persistence-polyglot-persistence)dagi umumiy mulohazadan aniqroq mezon bor, chunki o'qish modelining ish profili juda tor. Ko'rinish faqat oddiy tranzaksiyalardan foydalanadi (bitta qatorni yoki hujjatni yangilash) va qat'iy belgilangan, oldindan ma'lum bo'lgan so'rovlar to'plamini bajaradi - UI shu so'rovlarni so'raydi va ularning ro'yxati kod bilan birga keladi. Shu profil NoSQL ning kuchli tomoniga to'g'ri tushadi (kalit bo'yicha tez kirish, gorizontal masshtablash) va kamchiligidan zarar ko'rmaydi (murakkab JOIN va ad-hoc so'rov kerak emas, ko'p jadvalli tranzaksiya kerak emas). Shuning uchun CQRS ko'rinishi uchun NoSQL ko'pincha to'g'ri tanlov bo'ladi. Lekin qaror avtomatik emas: zamonaviy relyatsion baza ham bu profilni bajaradi (JSONB, partial va covering indeks, materiallashtirilgan ko'rinish), va jamoa SQL ni hamda uning operatsiyasini allaqachon yaxshi biladi. Shuning uchun mezon ikkitadir: ko'rinishning hajmi va kirish naqshi NoSQL ni talab qiladimi, va yangi bazani ishlatish narxini ([poliglot persistence](#1011-poliglot-persistence-polyglot-persistence) bo'limidagi ro'yxat) jamoa ko'tara oladimi.
+
 ```sql
 -- Materiallashtirilgan ko'rinish: qimmat agregat oldindan hisoblanadi
 CREATE MATERIALIZED VIEW daily_revenue AS
@@ -807,7 +811,62 @@ public class RefundCompensation {
 - Bug tahlili uchun production holatini aynan replay qilib lokal muhitda tiklash.
 - Yangi analitik read model'ni mavjud event'lardan noldan qurib olish (retroactive reporting).
 
-**Ehtiyot bo'ling:** Event schema evolyutsiyasi (upcasting) va GDPR'ning "o'chirilish huquqi" immutable jurnal bilan to'qnashadi - shuning uchun shaxsiy ma'lumotlarni event ichida emas, kalit bilan ajratilgan shifrlangan "crypto-shredding" omborida saqlang. Event Sourcing'ni butun tizimga emas, faqat tarix va audit haqiqatan zarur bo'lgan core domenlarga qo'llang; CRUD'ga yaqin modullarda u ortiqcha murakkablik va juda qimmat debugging keltiradi.
+**Ehtiyot bo'ling:** Omborni qaysi texnologiyada qurish esa sagaga ta'sir qiladi va bu qaror ketma-ketligini belgilaydi. [Orkestratsiyaga asoslangan saga](14-microservices-patternlari.md#149-saga-orkestratsiya-saga-orchestration)da orkestratorning holati yangilanishi va keyingi qadam uchun xabar yuborilishi atomik bo'lishi kerak, aks holda holat saqlanib xabar yuborilmay qolishi (saga qotib qoladi) yoki xabar ketib holat saqlanmasligi (qadam ikki marta bajariladi) mumkin. Relyatsion bazadagi event store bu yerda yengillik beradi: uning moslashuvchan ACID tranzaksiyasi saga holatini va chiqish xabarini (outbox qatori sifatida) bitta tranzaksiyada yozishga imkon beradi. NoSQL dagi event store da bu kafolat yo'q yoki bitta hujjat/partition bilan cheklangan, shuning uchun u yerda saga holati va xabar yuborishni bog'lash uchun qo'shimcha mexanizm (bir hujjat ichiga yozish, yoki idempotent qayta yuborish) qurishga to'g'ri keladi. Ya'ni "event store uchun qaysi baza" savoli saga ni loyihalashdan oldin hal qilinadi, keyin emas.
+
+Event schema evolyutsiyasi (upcasting) va GDPR'ning "o'chirilish huquqi" immutable jurnal bilan to'qnashadi - shuning uchun shaxsiy ma'lumotlarni event ichida emas, kalit bilan ajratilgan shifrlangan "crypto-shredding" omborida saqlang. Event Sourcing'ni butun tizimga emas, faqat tarix va audit haqiqatan zarur bo'lgan core domenlarga qo'llang; CRUD'ga yaqin modullarda u ortiqcha murakkablik va juda qimmat debugging keltiradi.
+
+Omborni relyatsion bazada qurganda yangi event larni chiqarishning eng tabiiy ko'ringan usuli buzuq: monoton o'sadigan ustun bo'yicha `WHERE event_id > :last` so'rovi bilan polling qilish event yo'qotadi. Sabab tartibda: identifikator (sequence yoki identity) qiymati tranzaksiya boshlanishida olinadi, commit esa boshqa tartibda bo'lishi mumkin. Tranzaksiya A `event_id = 100` ni olib sekin ishlayotganda tranzaksiya B `event_id = 101` ni olib commit qilsa, publisher 101 ni ko'rib `last = 101` qilib qo'yadi; A keyin commit qilganda uning 100 raqamli event i hech qachon o'qilmaydi. Natija jim ma'lumot yo'qotish: xato log ga chiqmaydi, faqat iste'molchining holati noto'g'ri bo'ladi. To'g'ri yechimlar: event ga chiqarilgan-chiqarilmagan belgisini qo'yib shu belgi bo'yicha so'rash va o'qilgandan keyin yangilash ([Tranzaksion Outbox](#1014-tranzaksion-outbox-transactional-outbox) shu shaklda ishlaydi), yoki identifikator o'rniga tranzaksiya log ini kuzatish ([CDC](#1016-malumot-ozgarishini-ushlash-change-data-capture--debezium)). Shu tuzoq [Polling Publisher](14-microservices-patternlari.md#1414-polling-publisher-polling-publisher) ning har qanday implementatsiyasiga tegishli.
+
+**CDC va event sourcing: bir xil shakl, boshqa niyat:**
+[10.16](#1016-malumot-ozgarishini-ushlash-change-data-capture--debezium)
+dagi CDC ham o'zgarishlarni log qilib saqlaydi, shuning uchun ikkisi
+chalkashadi. Kleppmann farqni abstraksiya darajasida qo'yadi. CDC da
+ilova bazani o'zgaradigan (mutable) tarzda ishlatadi: yozuvni
+yangilaydi va o'chiradi, o'zgarishlar logi esa bazadan past
+darajada (masalan replikatsiya logini tahlil qilib) chiqariladi va
+bazaga yozayotgan ilova CDC borligini bilishi ham shart emas. Event
+sourcing da esa ilova mantiqi o'zgarmas hodisalar ustiga ataylab
+quriladi, ombor faqat qo'shiladi, yangilash va o'chirish esa
+tavsiya etilmaydi yoki taqiqlanadi, hodisalar past darajadagi holat
+o'zgarishini emas, ilova darajasida sodir bo'lgan narsani ifodalaydi.
+
+Farq amaliy natijaga olib keladi va bu natija eng ko'p
+o'tkazib yuboriladigan nuqta - **log compaction**. CDC da yozuvni
+yangilash hodisasi odatda yozuvning butun yangi versiyasini
+tashiydi, demak kalitning hozirgi qiymati shu kalit uchun eng
+oxirgi hodisa bilan to'liq aniqlanadi va compaction o'sha kalit
+uchun avvalgi hodisalarni tashlab yuborishi mumkin. Event sourcing
+da esa keyingi hodisa oldingisini bekor qilmaydi (hodisa
+foydalanuvchi amalining niyatini ifodalaydi, holat yangilanishining
+mexanikasini emas), shuning uchun yakuniy holatni tiklash uchun
+tarixning to'lig'i kerak va shu ma'noda compaction mumkin emas.
+Kleppmann ning misoli niyat farqini ko'rsatadi: "talaba kursga
+yozilishini bekor qildi" degan hodisa bitta amalning niyatini
+neytral ifodalaydi, "enrollments jadvalidan bitta yozuv o'chirildi
+va student feedback jadvaliga bekor qilish sababi qo'shildi" degan
+yon ta'sirlar esa ma'lumot keyin qanday ishlatilishi haqida ko'p
+taxminni ichiga qotirib qo'yadi. Shuning uchun yangi funksiya
+("bo'sh joy navbatdagi odamga taklif qilinadi") qo'shilganda event
+sourcing yondashuvi yangi yon ta'sirni mavjud hodisaga osongina
+ulash imkonini beradi. Tanlov qoidasi: audit va niyat kerak bo'lsa
+event sourcing, mavjud CRUD bazadan hosila ma'lumot kerak bo'lsa
+CDC; ikkisini bir topicda aralashtirish compaction siyosatini
+noto'g'ri qiladi.
+
+**Hodisa omborini agregat ID bo'yicha shardlash:** 10.24 da
+`(aggregate_id, sequence_no)` unikal cheklovi bor, lekin
+masshtablash savoli ochiq qolgan. Khononov javobni oddiy qiladi:
+hodisa manbali model osongina masshtablanadi, chunki agregat bilan
+bog'liq barcha amal bitta agregat doirasida bajariladi, demak
+hodisa omborini **agregat ID lari bo'yicha** shardlash mumkin va
+bitta agregat nusxasiga tegishli hamma hodisa bitta shardda
+turishi kerak. Amaliy natija: shard kaliti `aggregate_id`,
+shardlar orasida tranzaksiya kerak emas, va agregatlar orasidagi
+izchillik baribir yakuniy bo'ladi. Teskari tomoni ham shundan
+chiqadi: global tartib yoki butun ombor bo'ylab so'rov kerak
+bo'lsa, u shard chegarasini kesib o'tadi, shuning uchun hisobot
+uchun alohida proyeksiya quriladi
+([10.18](#1018-materiallashtirilgan-korinish-materialized-view)).
 
 ```sql
 -- Event store: faqat qo'shiladi, o'zgartirilmaydi
@@ -887,7 +946,7 @@ retention:
 
 **Tavsif:** Ma'lumotlar diskda shifrlangan holda saqlanadi, shunda disk, backup yoki dump o'g'irlangan taqdirda ham o'qib bo'lmaydi. Encryption at rest butun hajm yoki tablespace darajasida (TDE) shaffof ishlaydi, field-level encryption esa faqat tanlangan ustunlarni (passport raqami, karta, telefon) ilova darajasida shifrlaydi va DBA'dan ham himoya qiladi. Qidiruv kerak bo'lsa, deterministik shifr yoki blind index (HMAC) qo'shiladi.
 
-**Spring'da qayerda uchraydi:** Spring Security Crypto moduli shifrlashni beradi, lekin qaysi factory metodni tanlash muhim: `Encryptors.stronger(password, salt)` AES-GCM bilan `BytesEncryptor` qaytaradi, `TextEncryptor` esa `Encryptors.delux(password, salt)` dan keladi (u `stronger` ustiga hex kodlash qo'shadi). `AttributeConverter` da satr bilan ishlayotgan bo'lsangiz sizga `delux` kerak; JPA'da `@Convert(converter = ...)` bilan `AttributeConverter` yozib, ustunni shaffof shifrlash odatiy yondashuv. Kalitlarni Spring Cloud Vault (`spring-cloud-starter-vault-config`), AWS KMS yoki `spring-cloud-aws-starter-secrets-manager` orqali olish kerak - `application.properties`da emas. Spring Cloud Config Server `{cipher}` prefiksli qiymatlarni va `/encrypt` endpoint'ini qo'llab-quvvatlaydi; Jasypt (`jasypt-spring-boot-starter`) konfiguratsiya shifrlash uchun keng ishlatiladi. Java 17+ da `javax.crypto` va `KeyStore` standart API sifatida mavjud.
+**Spring'da qayerda uchraydi:** Spring Security Crypto moduli shifrlashni beradi, lekin qaysi factory metodni tanlash muhim: `Encryptors.stronger(password, salt)` AES-GCM bilan `BytesEncryptor` qaytaradi, `TextEncryptor` esa `Encryptors.delux(password, salt)` dan keladi (u `stronger` ustiga hex kodlash qo'shadi). `AttributeConverter` da satr bilan ishlayotgan bo'lsangiz sizga `delux` kerak; JPA'da `@Convert(converter = ...)` bilan `AttributeConverter` yozib, ustunni shaffof shifrlash odatiy yondashuv. Kalitlarni Spring Cloud Vault (`spring-cloud-starter-vault-config`), AWS KMS yoki `spring-cloud-aws-starter-secrets-manager` orqali olish kerak - `application.properties`da emas. Spring Cloud Config Server `{cipher}` prefiksli qiymatlarni va `/encrypt` endpoint'ini qo'llab-quvvatlaydi; Jasypt (`jasypt-spring-boot-starter`) konfiguratsiya shifrlash uchun keng ishlatiladi. Java 17+ da `javax.crypto` va `KeyStore` standart API sifatida mavjud. Salt va kalitni shu modulning `KeyGenerators` fabrikasi beradi: `KeyGenerators.string()` 8 baytli kalitni hex satr qilib qaytaradigan `StringKeyGenerator` (odatda salt uchun), `KeyGenerators.secureRandom(len)` har chaqiruvda yangi qiymat beradigan `BytesKeyGenerator`, `KeyGenerators.shared(len)` esa har chaqiruvda bir xil kalitni qaytaradi (Spilca, 4-bob, 97-99-bet). Matn uchun uch variant bor: `Encryptors.text` (`standard` ustida, AES-CBC), `Encryptors.delux` (`stronger` ustida, AES-GCM) va `Encryptors.queryableText` - oxirgisi bir xil kirishga bir xil chiqish beradi, shuning uchun shifrlangan ustun bo'yicha qidirish kerak bo'lganda aynan shu tanlanadi (Spilca, 4-bob, 100-bet).
 
 ```java
 @Converter
@@ -906,7 +965,7 @@ public class EncryptedStringConverter implements AttributeConverter<String, Stri
 - Event Sourcing'da shaxsiy ma'lumotlarni foydalanuvchi kaliti bilan shifrlab, "crypto-shredding" orqali o'chirish.
 - Multi-tenant SaaS'da har bir tenant uchun alohida kalit bilan izolyatsiya.
 
-**Ehtiyot bo'ling:** Shifrlangan ustun bo'yicha `LIKE`, `ORDER BY` va oddiy index ishlamaydi - qidiruv kerak bo'lsa oldindan blind index yoki deterministik shifrni loyihalashtiring, aks holda butun jadvalni dekriptlash bilan tugaydi. Kalit rotatsiyasi va kalitni yo'qotish rejasini boshidan o'ylab qo'ying: kalitsiz backup - foydasiz backup, va kodga "hardcode" qilingan kalit shifrlashni butunlay ma'nosiz qiladi.
+**Ehtiyot bo'ling:** Shifrlangan ustun bo'yicha `LIKE`, `ORDER BY` va oddiy index ishlamaydi - qidiruv kerak bo'lsa oldindan blind index yoki deterministik shifrni loyihalashtiring, aks holda butun jadvalni dekriptlash bilan tugaydi. Kalit rotatsiyasi va kalitni yo'qotish rejasini boshidan o'ylab qo'ying: kalitsiz backup - foydasiz backup, va kodga "hardcode" qilingan kalit shifrlashni butunlay ma'nosiz qiladi. `Encryptors.noOpText()` esa hech narsa shifrlamaydi: u demo va shifrlash narxisiz o'lchov uchun, konfiguratsiya orqali ishlab chiqarishga tushib qolmasligi kerak (Spilca, 4-bob, 100-bet). `KeyGenerators.shared(...)` har chaqiruvda bir xil qiymat berganini unutmang - u har yozuv uchun alohida salt kerak bo'lgan joyga to'g'ri kelmaydi.
 
 ## 10.28 O'qish/yozishni ajratish (Read/Write Splitting)
 
@@ -1037,7 +1096,71 @@ public void placeSafely(Order order) {
 }
 ```
 
-## 10.32 Amalda qo'llash
+## 10.32 Spring Data NoSQL ulanish sozlamalari (Cassandra and MongoDB connection settings)
+
+**Tavsif:** Ikki NoSQL store ni Spring Boot ga ulash tartibi deyarli bir xil: starter qo'shiladi, autokonfiguratsiya repository'larni yoqadi, qolgani bir necha sozlama kaliti. Cassandra tomonidagi eng kichik majburiy sozlama - keyspace nomi. Keyspace - node ichidagi jadvallar guruhi, relyatsion bazadagi jadval, view va constraint guruhiga taqqoslanadi; uni avtomatik yaratish mumkin bo'lsa-da, CQL bilan qo'lda yaratish osonroq (Walls, 4-bob, 96-bet). MongoDB tomoni esa standart holatda lokal server va 27017 portga tayanadi, ishlab chiqarishda host, port, foydalanuvchi, parol va baza nomi beriladi (Walls, 4-bob, 106-107-bet).
+
+**Spring'da qayerda uchraydi:** `spring-boot-starter-data-cassandra` va `spring-boot-starter-data-mongodb` (reaktiv variantlari alohida starterlar). Cassandra kalitlari: `keyspace-name`, `schema-action` (standart `none`; ishlab chiqishda `recreate` jadval va UDT larni har ishga tushishda qayta yaratadi), `local-datacenter` (drayverning load-balancing policy si uchun; bir node'li setupda `datacenter1`), `contact-points` va `port` (standart holatda lokal node va 9042) (Walls, 4-bob, 97-bet). ESLATMA: kitob Spring Boot 2.5 ga tayanadi va bu kalitlarni `spring.data.cassandra.*` prefiksida yozadi; Boot 3 dan ular `spring.cassandra.*` ga ko'chdi, eski prefiks deprecated. MongoDB kalitlari `spring.data.mongodb` prefiksida: `host`, `port`, `username`, `password`, `database`, yoki ularning o'rniga bitta `uri`; hech biri majburiy emas, chunki standart qiymatlar lokal serverga ishlaydi (Walls, 4-bob, 107-bet). ESLATMA: Boot 4 da bu prefiks ham `spring.mongodb.*` ga ko'chdi.
+
+**Qo'llanish keyslari:**
+- Bir node'li Cassandra ni Docker da ko'tarib, `local-datacenter: datacenter1` bilan lokal ishlab chiqish.
+- Ishlab chiqishda `schema-action: recreate`, ishlab chiqarishda `none` qo'yib, schema ni migratsiya vositasiga qoldirish.
+- Bir nechta data center ga tarqalgan klasterda `contact-points` ro'yxati va `local-datacenter` bilan so'rovni yaqin DC ga yo'naltirish.
+- Mongo ni dev va testda container bilan, ishlab chiqarishda autentifikatsiyali host bilan ishlatish.
+- Poliglot persistence qarorini amalga oshirishda ulanish sozlamalarini profil bo'yicha ajratish (qarang: [Poliglot persistence](#1011-poliglot-persistence-polyglot-persistence)).
+
+**Ehtiyot bo'ling:** `schema-action: recreate` har ishga tushishda jadval va UDT larni tashlab yuboradi - u faqat ishlab chiqish uchun, ishlab chiqarishda standart `none` qoladi (Walls, 4-bob, 97-bet). `local-datacenter` qiymati klasterdagi nom bilan mos kelmasa drayver ulanmaydi yoki so'rovni uzoq DC ga yuboradi. Cassandra starter JPA/JDBC starter ning o'rniga keladi: ikkisini bir loyihada qoldirish ortiqcha autokonfiguratsiya va chalkash xatolar beradi (Walls, 4-bob, 95-bet). ESLATMA: kitob Mongo ni dev da Flapdoodle embedded baza bilan ko'taradi; Boot 3 dan embedded Mongo autokonfiguratsiyasi olib tashlangan, uning o'rniga Testcontainers ishlatiladi. Parol va foydalanuvchi nomi hech qachon fayldagi oddiy matn bo'lib qolmaydi (qarang: [Diskda va maydon darajasida shifrlash](#1027-diskda-va-maydon-darajasida-shifrlash-encryption-at-rest--field-level-encryption)).
+
+```yaml
+spring:
+  cassandra:                   # Boot 3 dan: kitobdagi spring.data.cassandra.* o'rniga
+    keyspace-name: taco_cloud
+    local-datacenter: datacenter1
+    schema-action: none        # ishlab chiqishda: recreate
+    contact-points: [casshost-1.example.com, casshost-2.example.com]
+    port: 9042
+  data:
+    mongodb:                   # Boot 4 da prefiks spring.mongodb.* ga ko'chdi
+      host: mongodb.example.com
+      port: 27017
+      database: tacocloud
+      username: tacocloud      # parol secret manager yoki Vault dan keladi
+```
+
+## 10.33 Hujjat va UDT mapping (Document and User-Defined Type Mapping)
+
+**Tavsif:** Relyatsion modelda bola yozuv tashqi kalit bilan ulanadi; hujjat va kolonka-store da esa u ota yozuvning ichiga ko'chiriladi va mapping shu farqni aks ettiradi. MongoDB da aggregate ildizi `@Document` va `@Id` oladi, aggregate a'zolari esa subdocument sifatida hech qanday persistence annotatsiyasisiz yoziladi (Walls, 4-bob, 109-bet). Cassandra da kolleksiya ustuni faqat native tiplardan yoki user-defined type (UDT) dan tashkil topishi mumkin, shuning uchun bola entity uchun alohida UDT sinfi yasaladi. UDT - tashqi kalitning denormallashgan analogi: u havola emas, boshqa jadvaldan ko'chirilgan ma'lumotni o'zida tashiydi (Walls, 4-bob, 101-bet).
+
+**Spring'da qayerda uchraydi:** MongoDB: `@Document(collection = "...")` (standart kolleksiya nomi - sinf nomi, birinchi harfi kichik), `@Id` (Spring Data Commons; `Serializable` har qanday tur, masalan `String` yoki `Long`), `@Field` maydon nomini va tartibini belgilash uchun, `@Transient` saqlanmasligi kerak bo'lgan maydon uchun; qat'iy majburiylari faqat `@Document` va `@Id`, annotatsiyasiz maydonning nomi property nomi bilan bir xil qoladi (Walls, 4-bob, 107-108-bet). Cassandra: `@Table`, `@PrimaryKey`, `@PrimaryKeyColumn(type = PrimaryKeyType.PARTITIONED | CLUSTERED)`, `@Column` va `@UserDefinedType("ingredient")`. `@Table` bilan mapping qilingan entity ni UDT sifatida qayta ishlatib bo'lmaydi - alohida sinf yoziladi; unda `id` bo'lishi shart emas va UDT ichida boshqa UDT ro'yxati bo'lishi mumkin (Walls, 4-bob, 101-104-bet).
+
+**Qo'llanish keyslari:**
+- Buyurtma va uning satrlarini bitta Mongo hujjatida saqlab, bitta o'qishda to'liq aggregate olish.
+- Cassandra jadvalidagi kolleksiya ustunini UDT ro'yxati bilan to'ldirish va join'ni butunlay yo'qotish.
+- Hisoblangan yoki vaqtinchalik maydonni `@Transient` bilan hujjatdan chiqarib tashlash.
+- Sinf nomini o'zgartirmasdan kolleksiya yoki maydon nomini qulflash (`@Document(collection = ...)`, `@Field`).
+- Bir domen sinfini ikki store uchun ishlatmaslik: Cassandra UDT va Mongo hujjati uchun alohida sinflar.
+
+**Ehtiyot bo'ling:** UDT ustunidagi qiymat - nusxa: manba jadvaldagi qator o'zgarganda nusxalar o'zidan o'zgarmaydi, ularni yangilash ilovaning vazifasi bo'lib qoladi. Shu sababli JPA uchun yozilgan domen sinflarini ko'chirib, faqat annotatsiyalarni almashtirish bilan Cassandra ga o'tib bo'lmaydi - model qayta o'ylanadi (Walls, 4-bob, 105-bet). Mongo tomonida `@Transient` qo'yilgan maydon o'qishda ham to'ldirilmaydi: uni servis qatlami tiklashi kerak; `@Field` bilan nom o'zgartirilgandan keyin esa mavjud hujjatlarda eski nom qolib ketadi, ya'ni migratsiya yoki ikki nomni o'qiydigan kod kerak.
+
+```java
+// MongoDB: aggregate ildizi hujjat, a'zolari subdocument
+@Document(collection = "orders")
+public class TacoOrder {
+    @Id private String id;
+    @Field("placed_at") private Instant placedAt;
+    @Transient private BigDecimal total;     // hujjatga yozilmaydi
+    private List<Taco> tacos = new ArrayList<>();   // subdocument: annotatsiya kerak emas
+}
+
+// Cassandra: kolleksiya ustuni UDT dan tashkil topadi
+@UserDefinedType("ingredient")
+public class IngredientUDT {
+    private final String name;               // id shart emas: bu nusxa, havola emas
+    private final Ingredient.Type type;
+}
+```
+
+## 10.34 Amalda qo'llash
 
 - [ ] Bir nechta servis yoki modul bitta jadvalga yozadigan joylarni aniqlang - bu Shared Database anti-patterni.
 - [ ] Tranzaksiya ichida xabar yuboradigan kodni toping va har birini Transactional Outbox ga o'tkazish rejasini yozing.
@@ -1050,6 +1173,20 @@ public void placeSafely(Order order) {
 
 ## Manbalar
 
+- Martin Kleppmann, *Designing Data-Intensive Applications*, O'Reilly,
+  2017, 11-bob (457-459-betlar) - 10.24 dagi CDC va event sourcing
+  farqi abstraksiya darajasida (CDC da ilova bazani o'zgaradigan
+  tarzda ishlatadi va log past darajada chiqariladi, event sourcing da
+  mantiq o'zgarmas hodisalar ustiga quriladi), niyat va yon ta'sir
+  farqi (kursni bekor qilish misoli) hamda log compaction ning CDC da
+  mumkin, event sourcing da esa mumkin emasligi
+- Vlad Khononov, *Learning Domain-Driven Design*, O'Reilly, 2021,
+  7-bob (114) - 10.24 dagi hodisa omborini agregat ID lari bo'yicha
+  shardlash: barcha amal bitta agregat doirasida bo'lgani uchun
+  masshtablash oson va bitta agregat hodisalari bitta shardda turadi
+
+- Craig Walls, *Spring in Action* 6th, 4-bob - Spring Data Cassandra va MongoDB ni sozlash, hujjat va UDT mapping
+- Laurentiu Spilca, *Spring Security in Action*, 4-bob - Spring Security Crypto moduli: key generator va encryptor tanlovi
 - Hibernate ORM kodi: `@SoftDelete` (6.4 dan, default `SoftDeleteType.DELETED` va `deleted` ustuni), `SoftDeleteType`, `@SQLRestriction` (6.3 dan), `@SQLDelete`, `@Filter`/`@FilterDef`, `@Subselect`. hibernate/hibernate-orm, tag `7.4.13` (commit `ba8526adf869e8cd3b4ab4bf7f09aa46daf8ab7e`); versiya tarixi uchun `6.3.0`, `6.4.0`, `6.6.58` va `7.0.0` teglari ham o'qildi. Apache-2.0. https://github.com/hibernate/hibernate-orm/blob/ba8526adf869e8cd3b4ab4bf7f09aa46daf8ab7e/hibernate-core/src/main/java/org/hibernate/annotations/SoftDelete.java
 - Hibernate ORM: `@Where` 6.3 da deprecated, 7.0 da olib tashlangan (`@SQLRestriction` bilan almashtiriladi) va yadrodagi yangi `org.hibernate.annotations.Audited` (7.4 dan, Envers'dagisidan boshqa paket). hibernate/hibernate-orm, teglar `6.3.0` (commit `a4bebd7e0dd638a4bf5971198d3ae11c87cd95d5`) va `7.4.13`. Apache-2.0. https://github.com/hibernate/hibernate-orm/blob/a4bebd7e0dd638a4bf5971198d3ae11c87cd95d5/hibernate-core/src/main/java/org/hibernate/annotations/Where.java
 - Spring Data Commons kodi: auditing annotatsiyalari (`@CreatedDate`, `@CreatedBy`, ...), `AuditorAware`, `AuditingHandler` (bean yo'q bo'lsa jim log) va `RevisionRepository` (Envers'ga xos emas). spring-projects/spring-data-commons, tag `4.1.1` (commit `2a54699bfbd8c2a956066ef7d50cd089b7500bdc`). Apache-2.0. https://github.com/spring-projects/spring-data-commons/blob/2a54699bfbd8c2a956066ef7d50cd089b7500bdc/src/main/java/org/springframework/data/auditing/AuditingHandler.java
@@ -1069,6 +1206,9 @@ public void placeSafely(Order order) {
 - ShedLock kodi: `@SchedulerLock` (`name`, `lockAtMostFor`, `lockAtLeastFor`) va provider modullari. lukas-krecan/ShedLock, tag `shedlock-parent-7.10.1` (commit `c88efaf9d58cf72b4b8943a9c9d26ddd9d2c829c`). Apache-2.0. https://github.com/lukas-krecan/ShedLock/blob/c88efaf9d58cf72b4b8943a9c9d26ddd9d2c829c/spring/shedlock-spring/src/main/java/net/javacrumbs/shedlock/spring/annotation/SchedulerLock.java
 - Spring Integration kodi: `LockRegistry` implementatsiyalari (`RedisLockRegistry`, `JdbcLockRegistry`, `ZookeeperLockRegistry`), `IdempotentReceiverInterceptor`, metadata store'lar. spring-projects/spring-integration, tag `v7.1.1` (commit `60931e3b56c32b4457c73e824864bfa2bbfc1aa7`). Apache-2.0. https://github.com/spring-projects/spring-integration/blob/60931e3b56c32b4457c73e824864bfa2bbfc1aa7/spring-integration-jdbc/src/main/java/org/springframework/integration/jdbc/lock/JdbcLockRegistry.java
 - Spring Modulith: `EventPublicationRegistry` va `spring-modulith-events-jpa`/`-kafka` modullari. spring-projects/spring-modulith, tag `2.1.1` (commit `83ce54cfc5229f9fe748afc332d8c728ecd0b81c`). Apache-2.0. https://github.com/spring-projects/spring-modulith/tree/83ce54cfc5229f9fe748afc332d8c728ecd0b81c/spring-modulith-events
+- Chris Richardson, *Microservices Patterns: With Examples in Java*, Manning, 2019, 6-bob (197-bet) - event store dan yangi event larni `event_id > ?` so'rovi bilan olishning buzuqligi: tranzaksiyalar identifikator tartibidan boshqa tartibda commit bo'lishi va publisher o'rtadagi event ni o'tkazib yuborishi (10.24)
+- Chris Richardson, *Microservices Patterns: With Examples in Java*, Manning, 2019, 6-bob (216-bet) - orkestratsiyaga asoslangan saga ni event sourcing bilan birlashtirish qulayligi event store RDBMS da yoki NoSQL da ekaniga bog'liqligi: RDBMS ning moslashuvchan ACID tranzaksiyasi saga holati va xabar yuborishni atomik qilishi, NoSQL da bu kafolat bo'lmasligi (10.24)
+- Chris Richardson, *Microservices Patterns: With Examples in Java*, Manning, 2019, 7-bob (243-bet) - CQRS ko'rinishi uchun NoSQL ko'pincha to'g'ri tanlov bo'lishi sababi: ko'rinish faqat oddiy tranzaksiyalar va qat'iy belgilangan so'rovlar to'plamini ishlatib NoSQL ning kuchli tomonidan foyda olishi va kamchiligidan zarar ko'rmasligi, shu bilan birga zamonaviy RDBMS ham yetarli bo'lishi va jamoaning SQL bilimi hisobga olinishi (10.18)
 
 ---
 

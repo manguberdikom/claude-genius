@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 3. Xulq-atvor patternlari (Behavioral Patterns)
 
@@ -81,6 +81,11 @@ public class DiscountChain {
 }
 ```
 
+**Qurish qarorlari:** Zanjirni ikki yo'l bilan qurish mumkin. Birinchi yo'l - mavjud havolalar ustida: butun-qism ierarxiyasidagi ota havolasi allaqachon zanjir bo'lib turadi, shuning uchun alohida `successor` maydoni e'lon qilmaslik joy tejaydi (qarang: [Kompozitni qurish qarorlari](02-strukturaviy-patternlar.md#222-kompozitni-qurish-qarorlari-implementing-composite)). Ikkinchi yo'l - oshkora zanjir, va u mavjud tuzilma kerakli ketma-ketlikka mos kelmaganda majburiy bo'lib qoladi. Qaror mezoni sodda: zanjir tartibi daraxt shakliga teng bo'lsa mavjud havolalarni ishlating, aks holda ortiqcha havola yozishdan qochmang - noto'g'ri tuzilmani zanjir sifatida ishlatish keyinchalik tartibni o'zgartirishni imkonsiz qiladi.
+
+Ikkinchi qaror handler bazasiga tegishli: baza sinf successor'ni saqlab, so'rovni shartsiz uzatadigan default implementatsiya bersin. Shunda so'rovga qiziqmagan konkret handler hech narsa qayta yozmaydi va yangi handler yozish "faqat men hal qiladigan holatni yoz" degan ishga aylanadi; uzatishni har handlerga takrorlash esa bir kuni bitta joyda esdan chiqadi va so'rov jim yo'qoladi.
+
+Uchinchi qaror - so'rovni qanday ifodalash, va bu tanlov zanjirning kengaytiriluvchanligini belgilaydi. Qattiq yozilgan metod chaqiruvi xavfsiz, lekin faqat qat'iy to'plamdagi so'rovni uzatadi. Kod parametri bilan bitta metod to'plamni ochiq qiladi, lekin dispatch uchun shart operatori kerak bo'ladi va parametrlar tur-xavfsiz uzatilmaydi. Alohida so'rov obyekti parametrlarni birga olib yuradi va subclass bilan kengayadi, narxi esa handler so'rov turini aniqlashi kerakligi. ESLATMA: Java 17+ da uchinchi variantning narxi yo'qoladi - `sealed interface Request` va pattern matching'li `switch` dispatch'ni tur-xavfsiz qiladi va to'liqlikni kompilyator tekshiradi.
 ## 3.2 Buyruq (Command)
 
 **Tavsif:** Amalni obyekt sifatida inkapsulyatsiya qiladi: bajariladigan ish, uning parametrlari va receiver bitta sinfga joylanadi. Shu sababli amalni navbatga qo'yish, kechiktirish, qayta urinish, jurnalga yozish yoki bekor qilish (undo) mumkin bo'ladi. Chaqiruvchi (invoker) amal nima qilishini bilmaydi - faqat `execute()` ni biladi, bu esa chaqiruvchini mantiqdan to'liq ajratadi.
@@ -118,6 +123,11 @@ public class AccountCommandHandler {
 }
 ```
 
+**Qurish qarorlari:** Birinchi qaror - buyruq qanchalik aqlli bo'lishi, va bu spektr, ikki holatli tanlov emas. Bir chekkada buyruq faqat receiver bilan amalni bog'laydi va o'zi hech narsa qilmaydi. Ikkinchi chekkada buyruq hech kimga delegatsiya qilmasdan hammasini o'zi bajaradi - mustaqil receiver mavjud bo'lmaganda shunday bo'ladi. Orada receiver'ni ish vaqtida topadigan buyruq turadi. Chekka tanlovlar aniq, oraliq variant esa eng ko'p xatoga olib keladi: buyruq receiver'ni o'zi izlasa, u konteyner yoki reyestrga bog'lanadi va testda alohida yurmaydi.
+
+Ikkinchi qaror undo ni qo'llab-quvvatlashga tegishli va u uch narsani saqlashni talab qiladi: receiver, amal argumentlari, hamda receiver'ning o'zgarishi mumkin asl qiymatlari. Bir daraja undo uchun oxirgi bajarilgan buyruqni saqlash yetadi; ko'p daraja undo va redo uchun tarix ro'yxati kerak bo'ladi va ro'yxat uzunligi mavjud daraja sonini belgilaydi. Shu yerdan uchinchi qaror chiqadi: bajarilgandan keyin holati o'zgaradigan buyruq tarix ro'yxatiga qo'yilishdan OLDIN nusxalanishi shart, aks holda bir xil buyruq obyektining ikki chaqirig'i tarixda farqlanmaydi va undo noto'g'ri qiymatni tiklaydi; holati o'zgarmaydigan buyruqqa esa havola yetadi. ESLATMA: Java'da buyruqni immutable `record` qilib yozish bu nusxalashni butunlay keraksiz qiladi, shuning uchun tarix ro'yxati bilan ishlaydigan kodda `record` default tanlov.
+
+To'rtinchi tafsilot uzoq undo va redo ketma-ketligida chiqadi: amallarni teskari hisoblash bilan tiklaganda xato to'planadi va ilova holati asl qiymatlardan uzoqlashadi. Shuning uchun aniq tiklash kerak bo'lsa buyruqqa [Memento](#36-memento-memento) orqali qo'shimcha ma'lumot beriladi - u boshqa obyektlarning ichini ochmasdan asl holatni olib yuradi.
 ## 3.3 Interpretator (Interpreter)
 
 **Tavsif:** Ma'lum bir tilning grammatikasini obyekt daraxti (AST) sifatida ifodalab, shu daraxtni aylanib chiqib ifodani hisoblaydi. Har bir grammatik qoida alohida sinfga mos keladi, shuning uchun til yangi konstruksiyalar bilan kengaytiriladi. Natijada biznes qoidalari yoki filtrlar kompilyatsiya qilinmagan, matn ko'rinishida saqlanib, runtime'da bajariladi.
@@ -149,6 +159,11 @@ public class SpelRuleEngine {
 // matches("total > 1000000 and customer.vip", order)
 ```
 
+**Qurish qarorlari:** Patternni tanlashdan oldin bitta shart tekshiriladi: u faqat unumdorlik tanqid bo'lmagan joyda ishlatiladi. Daraxtni to'g'ridan-to'g'ri hisoblash eng sodda, lekin eng sekin yo'l; tez interpretatorlar daraxtni hisoblamaydi, avval uni boshqa shaklga o'giradi (masalan regulyar ifodani holat mashinasiga). Demak qoida matn ko'rinishida saqlanishi talab bo'lsa, lekin u issiq yo'lda millionlab marta bajarilsa, yechim interpretatsiya emas, kompilyatsiya yoki keshlangan o'tkazish bo'ladi.
+
+Ikkinchi qaror - AST ni kim yasaydi. Pattern parsing'ni o'z ichiga OLMAYDI va bu alohida qaror: daraxt jadval asosidagi parser bilan, qo'lda yozilgan recursive descent parser bilan yoki to'g'ridan-to'g'ri klient tomonidan (fluent qurish orqali) yasaladi. Patternni tanlab, parsing qarorini qoldirib qo'yish keng tarqalgan xato: grammatika o'sgandan keyin parser ni almashtirish daraxt sinflarini ham qayta yozishga olib keladi.
+
+Uchinchi qaror amallarni qayerda ushlashga tegishli. `interpret` amalini grammatika sinflarining o'zida ushlash faqat bitta amal bo'lganda qulay; ifoda ustida tur tekshiruvi, optimizatsiya va kod generatsiyasi ham kerak bo'lsa, ularni [Tashrifchi](#311-tashrifchi-visitor) ga chiqarish kerak, aks holda har yangi amal barcha grammatika sinfini o'zgartiradi. To'rtinchi qaror xotiraga tegishli: terminal simvollar daraxtda juda ko'p takrorlanadi va ularni [Flyweight](02-strukturaviy-patternlar.md#26-flyweight-flyweight) bilan bo'lishish mumkin, chunki terminal tugun o'z o'rnini saqlamaydi va kontekstni ota tugundan parametr sifatida oladi - bu intrinsic va extrinsic holat ajratishning toza namunasi.
 ## 3.4 Iterator (Iterator)
 
 **Tavsif:** To'plam elementlarini uning ichki tuzilishini oshkor qilmasdan ketma-ket aylanib chiqish usulini beradi. Aylanish holati (kursor) alohida obyektda saqlanadi, shuning uchun bir to'plam ustida bir nechta mustaqil obxod bo'lishi mumkin. Katta ma'lumotlar bilan ishlaganda esa butun to'plamni xotiraga olmasdan, bo'lak-bo'lak o'qishga yo'l ochadi.
@@ -182,6 +197,9 @@ public class OrderExport {
 }
 ```
 
+**Qurish qarorlari:** Birinchi qaror - obxod algoritmini kim belgilaydi. Iterator belgilasa, bitta kolleksiya ustida turli obxod algoritmini (oldindan, keyin, filtrlangan) ishlatish oson bo'ladi; narxi esa inkapsulyatsiyada - algoritm kolleksiyaning yopiq maydonlariga murojaat qilsa, kolleksiya o'z ichini iteratorga ochishga majbur bo'ladi. Kolleksiya belgilasa, iterator faqat joriy pozitsiyani saqlaydi va bunday yengil iterator kursor deb ataladi; shunda inkapsulyatsiya saqlanadi, lekin obxod shakli bitta bo'lib qoladi. ESLATMA: Java'da ikki variant ham tilda bor - `Iterator` kursor shaklini, `Spliterator` va `Stream` esa obxod algoritmini tashqariga chiqargan shaklni beradi.
+
+Ikkinchi qaror [Kompozit](02-strukturaviy-patternlar.md#23-kompozit-composite) ustida ishlaganda chiqadi va u yerda tashqi iterator qiyin: pozitsiya bitta indeks emas, ko'p qatlamni qamragan yo'l, shuning uchun uni stack'da saqlash kerak bo'ladi. Uch variantning narxi turlicha: ichki rekursiv obxod yo'lni chaqiruv stack'ida saqlab kodni soddalashtiradi, lekin obxodni to'xtatib turish qiyin; tashqi iterator stack'ni o'zi boshqarib to'xtatishga ruxsat beradi, lekin kodi og'ir; tugunlar aka-uka va ota havolasiga ega bo'lsa esa kursor-asosidagi iterator eng yengil chiqadi, chunki pozitsiya bitta tugun havolasidan iborat bo'ladi.
 ## 3.5 Vositachi (Mediator)
 
 **Tavsif:** Ko'p komponentni bir-biri bilan to'g'ridan-to'g'ri gaplashtirish o'rniga, muloqotni bitta vositachi obyektga yuklaydi. Natijada N×N bog'liqlik to'ri N ta bog'liqlikka aylanadi va komponentlar bir-birini bilmasdan ishlaydi. Koordinatsiya mantiqi bir joyda to'planadi, bu uni test qilish va o'zgartirishni osonlashtiradi.
@@ -219,6 +237,9 @@ class StockReservation {
 }
 ```
 
+**Qurish qarorlari:** Abstrakt Mediator sinfi har doim kerak emas: kolleague'lar faqat bitta vositachi bilan ishlasa, abstraksiya hech narsa qo'shmaydi va u faqat bir kolleague turi turli vositachilar bilan ishlashi kerak bo'lganda qiymat beradi. Ikkinchi qaror muhimroq - kolleague vositachi bilan qanday gaplashadi. Ikki yo'l bor. Birinchi: vositachini kuzatuvchi qilib qo'yish - kolleague Subject bo'lib holat o'zgarganda xabar beradi va yuboruvchi haqida hech narsa aytmaydi (qarang: [Kuzatuvchi](#37-kuzatuvchi-observer)). Ikkinchi: vositachida maxsus bildirish interfeysi bo'lib, kolleague o'zini argument sifatida uzatadi; shunda vositachi yuboruvchini taniydi va aniqroq yo'naltiradi, lekin ikki tomon kuchliroq bog'lanadi. ESLATMA: Spring'da birinchi yo'l `ApplicationEventPublisher` bilan default, ikkinchi yo'l esa hodisa sinfiga yuboruvchi identifikatorini kiritish yoki aniq interfeysli `@Service` vositachi yozish ko'rinishida qoladi.
+
+Fasad bilan vositachini aralashtirmaslik uchun ajratuvchi chiziq protokol yo'nalishida: [Fasad](02-strukturaviy-patternlar.md#25-fasad-facade) bir yo'nalishli, ya'ni fasad quyi tizim obyektlariga so'rov qiladi, teskarisi emas, va yangi xulq qo'shmaydi; vositachi esa ko'p yo'nalishli va kolleague'lar o'zi bera olmaydigan hamkorlikni yuzaga keltiradi. Shuning uchun "quyi tizim menga javob qaytarmaydi, faqat chaqiriladi" bo'lsa fasad, "ikki tomon bir-biriga reaksiya qiladi" bo'lsa vositachi. Biznes qarori kimda turishi bo'yicha ajratish esa alohida yozilgan (qarang: [Orkestrator vs fasad](08-biznes-logika-va-service-qatlam-patternlari.md#825-orkestrator-vs-fasad-orchestrator-vs-facade)).
 ## 3.6 Memento (Memento)
 
 **Tavsif:** Obyektning ichki holatini inkapsulyatsiyani buzmasdan tashqi "snapshot" sifatida saqlaydi va keyin shu holatga qaytarish imkonini beradi. Snapshot ichini faqat egasi tushunadi, boshqalar uni shunchaki saqlovchi (caretaker) sifatida ushlab turadi. Shu tufayli undo, checkpoint va davom ettirish (resume) imkoniyatlari paydo bo'ladi.
@@ -251,6 +272,7 @@ public class ImportJob {
 // Spring Batch da bir xil g'oya: ExecutionContext ni JobRepository saqlaydi
 ```
 
+**Qurish qarorlari:** Patternning kam aytiladigan foydasi Originator tomonida: memento Originator'ni soddalashtiradi. Versiyalarni klient saqlagani uchun Originator saqlashni boshqarmaydi, eski versiyalarni hisoblab yurmaydi va klient "men tugatdim" deb xabar berishi kerak bo'lmaydi; holat egasi faqat snapshot yasash va undan tiklashni biladi. Shu qulaylikning narxi esa saqlovchi tomonida va u yashirin: caretaker memento ichida qancha holat borligini bilmaydi, chunki memento ataylab qora quti. Yengil ko'rinadigan caretaker shu sababli kutilmagan xotira narxini ko'tarib qolishi mumkin, demak memento'ni o'z vaqtida bo'shatish - caretaker'ning oshkora mas'uliyati bo'lishi kerak: necha snapshot saqlanadi, qancha vaqt yashaydi va kim o'chiradi degan savollarga javob kodda turishi lozim. ESLATMA: Spring Batch'da bu javob framework tomonidan berilgan - `ExecutionContext` hajmi `JobRepository` jadvalidagi ustun uzunligi bilan cheklangan, shuning uchun u checkpoint uchun kichik qiymatlar saqlashga majburlaydi.
 ## 3.7 Kuzatuvchi (Observer)
 
 **Tavsif:** Bitta subyekt holati o'zgarganda unga obuna bo'lgan barcha kuzatuvchilarga avtomatik xabar beradi. Subyekt kuzatuvchilarning konkret turini bilmaydi, shuning uchun yangi reaksiyalarni mavjud kodga tegmasdan qo'shish mumkin. Bu "ochiq-yopiq" printsipini amalda ta'minlaydigan eng keng tarqalgan mexanizm.
@@ -275,6 +297,10 @@ class OrderPaidListener {
 - WebSocket/SSE orqali frontend'ga real vaqt yangilanishlarini uzatish.
 
 **Ehtiyot bo'ling:** Standart `@EventListener` chaqiruvi sinxron va bir xil thread'da bajariladi - og'ir listener publisher tranzaksiyasini uzaytiradi yoki uni sindiradi; shuning uchun `AFTER_COMMIT` yoki `@Async` dan foydalaning, lekin `@Async` bilan hodisa yo'qolishi mumkinligini hisobga olib outbox qo'llang. Listener'lar soni ko'paygach, oqim "yashirin" bo'lib qoladi: bir hodisa boshqa hodisani chaqiradigan kaskadlar va ro'yxatdan yechilmagan listener'lar (memory leak) ni nazorat qilish kerak.
+
+**Qurish qarorlari:** Subject va Observer orasidagi abstrakt bog'lanish arxitektura darajasida bitta aniq ish qiladi: u qatlamlashni saqlaydi. Past qatlamdagi subject yuqori qatlamdagi observer'ga xabar berishi mumkin va bog'liqlik yo'nalishi buzilmaydi, chunki subject observer'ning turini bilmaydi - u faqat obuna interfeysini biladi. Shuning uchun domen moduli infratuzilma moduliga hodisa yuborishi mumkin bo'lib qoladi, teskari yo'naltirilgan import esa paydo bo'lmaydi (qarang: [Bog'liqliklarni teskari aylantirish printsipi](26-dizayn-printsiplari-solid-grasp-va-umumiy.md#265-bogliqliklarni-teskari-aylantirish-printsipi-dependency-inversion-principle)). Teskari holat ham qoidani ko'rsatadi: Subject va Observer rollarini bitta obyektga qo'shsangiz, u obyekt ikki qatlamni qamraydi yoki ikkisidan bittasiga tiqilib qoladi va qatlam chegarasi yo'qoladi.
+
+Ikkinchi qaror xabar shakliga tegishli va u bitta observer bir nechta subject'ni kuzatganda majburiy bo'ladi: `update` chaqirig'ida subject o'zini uzatishi kerak, aks holda observer qaysi subject xabar berganini bilmaydi va reaksiyani to'g'ri manbaga bog'lay olmaydi. ESLATMA: Spring'da bu talab hodisa sinfining o'zi bilan bajariladi - hodisa payloadi manbani (agregat identifikatorini yoki `ApplicationEvent.getSource()` ni) olib yurgani uchun alohida `update(subject)` imzosi kerak bo'lmaydi; lekin bir xil hodisa sinfini ikki manba uchun ishlatsangiz, manba maydonini payloadga kiritish shart bo'lib qoladi.
 
 ## 3.8 Holat (State)
 
@@ -309,6 +335,11 @@ public enum OrderState {
 }
 ```
 
+**Qurish qarorlari:** Birinchi qaror - o'tish mezonini kim belgilaydi. Mezon qat'iy va kam o'zgaradigan bo'lsa, u Context'da turadi: o'tish jadvali bitta joyda va holat sinflari bir-birini bilmaydi. Moslashuvchanroq yo'l - State sinfining o'zi keyingi holatini va qachon o'tishni aytishi; narxi esa bog'lanishda, chunki shunda bir State kamida bitta boshqa State'ni bilib qoladi va o'tish grafigi sinflar bo'ylab tarqaladi. Yuqoridagi `enum` misoli ikkinchi yo'lni ko'rsatadi; o'tishlar soni o'sganda jadvalni Context'ga yoki konfiguratsiyaga ko'chirish arzonroq tushadi.
+
+Ikkinchi qaror holat obyektlarining umriga tegishli: ularni oldindan yaratib saqlash yoki kerak bo'lganda yaratib tashlash. Holat tez-tez o'zgarsa oldindan yaratish afzal, chunki yaratish narxi bir marta to'lanadi; holat kamdan-kam o'zgarsa va holat obyekti ko'p ma'lumot saqlasa, kerak bo'lganda yaratish xotirani tejaydi. Bu qaror uchinchisi bilan bog'langan: State obyektlari maydonsiz bo'lsa, holat ularning turida kodlangan bo'lgani uchun turli kontekstlar ularni bo'lishishi mumkin, ya'ni ular amalda intrinsic holatsiz flyweight (qarang: [Flyweight](02-strukturaviy-patternlar.md#26-flyweight-flyweight)). ESLATMA: Java'da bo'lishiladigan holat obyektining tabiiy shakli `enum`, Spring'da esa maydonsiz singleton bean; holat obyektiga maydon qo'shilishi bilan bo'lishish taqiqlanadi va bu o'zgarish jim o'tib ketadi, shuning uchun holat sinflarini maydonsiz saqlash qoida bo'lishi kerak.
+
+To'rtinchi tafsilot patternning yashirin kafolati: o'tishlar Context nuqtai nazaridan atomar, chunki o'tishda bitta o'zgaruvchi qayta bog'lanadi, bir nechta emas. Shuning uchun yarim o'tgan, nomuvofiq ichki holat yuzaga kelmaydi - `if` zanjiri bilan yozilgan holat mantiqida esa ikki-uch maydon ketma-ket o'zgargani uchun aynan shunday nomuvofiq oraliq holatlar paydo bo'ladi.
 ## 3.9 Strategiya (Strategy)
 
 **Tavsif:** Bir vazifani bajarishning bir nechta algoritmini alohida sinflarga ajratib, umumiy interfeys ortida almashtiriladigan qiladi. Mijoz kodi qaysi algoritm ishlayotganini bilmaydi va shart operatorlari o'rniga shunchaki interfeysga tayanadi. Yangi variant qo'shish mavjud kodni o'zgartirishni talab qilmaydi - bu DI konteynerlari bilan eng tabiiy birlashadigan pattern.
@@ -334,6 +365,10 @@ class PaymentRouter {
 - Multi-tenant tizimda tenant'ga xos biznes qoidalarini alohida strategiya bean'lari bilan berish.
 
 **Ehtiyot bo'ling:** Faqat bitta implementatsiya bo'lgan joyda interfeys yaratish - bu "spekulyativ generallik", keraksiz qatlam; ikkinchi variant real paydo bo'lganda ajratish arzonroq. Strategiyalar orasida umumiy mutable state ulashmang va `Map` orqali tanlashda kalitni (bean nomini) oshkora `enum` yoki annotatsiya bilan bog'lang, aks holda noto'g'ri kalit runtime'da `NullPointerException` beradi.
+
+**Qurish qarorlari:** Asosiy qaror - Strategy va Context orasida ma'lumot qanday almashadi, va ikki yo'lning ikkisi ham narx bilan keladi. Birinchi yo'l: Context kerakli ma'lumotni parametr sifatida uzatadi. Ikkisi ajratilgan qoladi va strategiya Context turini bilmaydi, lekin Context sodda strategiyaga ham kerak bo'lmagan ma'lumotni tayyorlab uzatadi. Ikkinchi yo'l: Context o'zini uzatadi va strategiya kerakligini o'zi so'raydi. Strategiya aniq kerakligini oladi, lekin Context o'z ma'lumotiga kengroq interfeys ochishga majbur bo'ladi va ikkisi kuchliroq bog'lanadi.
+
+Shu yerdan o'lchanadigan oqibat chiqadi: Strategy interfeysi barcha konkret strategiyalar uchun umumiy bo'lgani uchun sodda strategiya unga uzatilgan ma'lumotning hammasini ishlatmaydi va Context behuda parametr tayyorlaydi. Agar tayyorlash qimmat bo'lsa (so'rov, hisoblash, tashqi chaqiruv), bog'lanishni ataylab kuchaytirish to'g'ri qaror bo'ladi - masalan ma'lumotni `Supplier` sifatida uzatib, faqat so'ragan strategiya uchun hisoblash. ESLATMA: Java'da oraliq yo'l ham bor va u ko'pincha eng yaxshisi - Context o'zini emas, faqat o'ziga kerakli tor ko'rinishni (`record` yoki kichik interfeys) uzatadi; shunda parametr ro'yxati ham o'smaydi, Context ham ichini ochmaydi.
 
 ## 3.10 Shablon metodi (Template Method)
 
@@ -367,6 +402,11 @@ public abstract class ImportTemplate<T> {
 }
 ```
 
+**Qurish qarorlari:** Birinchi va eng ko'p unutiladigan talab hujjatlashtirishga tegishli: qaysi amal hook (qayta yozish MUMKIN) va qaysi biri abstrakt (qayta yozish SHART) ekanini oshkora aytish kerak. Subclass yozuvchi buni bilmasa abstrakt sinfni samarali qayta ishlatolmaydi - u yo ortiqcha metod qayta yozadi, yo kerakli qadamni tashlab ketadi. ESLATMA: Java'da ajratishning yarmi tilda bor (`abstract` metod qayta yozishni majburlaydi), qolgan yarmi esa Javadoc zimmasida: hook metodning Javadoc i default xulqni va qayta yozilganda nima o'zgarishini aytishi kerak.
+
+Ikkinchi qaror miqdorga tegishli: subclass qayta yozishi kerak primitiv amallar sonini minimallashtiring. Qancha ko'p amal qayta yozilishi shart bo'lsa, shuncha og'ir va xatoga moyil kengaytirish chiqadi; uchta majburiy metod o'rniga bitta parametr obyekti yoki bitta strategiya ko'pincha yetadi. Uchinchi qaror esa o'qiluvchanlikka tegishli va arzon: qayta yozilishi kerak amalni nomlash konventsiyasi bilan belgilab qo'yish. Spring'ning `doFilterInternal`, `doRead` va `doInBackground` nomlaridagi `do` prefiksi aynan shu vazifani bajaradi - template metod va kengaytirish nuqtasi koddan bir qarashda ajraladi.
+
+To'rtinchi qaror merosning eng tez-tez uchraydigan xatosini yo'q qiladi: ota amalini qayta yozib `super` ni chaqirishni esdan chiqarish oson va bu xato jim o'tadi, chunki kod kompilyatsiya qilinadi. Yechim strukturaviy: shu amalni template metodga aylantirib, uning o'zgaradigan qismini hook'ka chiqarsangiz, ota nazoratni o'z qo'lida ushlaydi va chaqirishni esdan chiqarish imkoniyati yo'qoladi. Bu meros ierarxiyasida nazoratning yuqoriga va pastga sakrashi muammosidan farq qiladi (qarang: [Yo-Yo muammosi](25-anti-patternlar.md#2512-yo-yo-muammosi-yo-yo-problem)): bu yerda gap bitta metodning shartnomasida.
 ## 3.11 Tashrifchi (Visitor)
 
 **Tavsif:** Obyekt tuzilmasi (masalan AST yoki hujjat daraxti) ustida bajariladigan amalni alohida "tashrifchi" sinfga chiqaradi, shunda yangi amal qo'shish uchun element sinflarini o'zgartirish kerak bo'lmaydi. Double dispatch orqali har bir element tashrifchining o'ziga mos `visitXxx()` metodini chaqiradi. Natijada tuzilma barqaror, amallar esa erkin kengayadigan bo'ladi.
@@ -399,6 +439,11 @@ public static BigDecimal eval(Node n) {
 }
 ```
 
+**Qurish qarorlari:** Birinchi qaror - obyekt tuzilmasini kim aylanib chiqadi, va uch variant bor. Tuzilmaning o'zi aylansa (kolleksiya elementlar bo'ylab yurib `accept` ni chaqiradi, kompozit o'zini rekursiv aylanadi) obxod kodi bitta joyda qoladi va bu eng ko'p ishlatiladigan yo'l. Alohida [iterator](#34-iterator-iterator) ishlatish obxod tartibini almashtirish imkonini beradi. Uchinchi variant - obxodni visitor'ning o'ziga yuklash: u obxod kodini har visitor'da takrorlaydi, shuning uchun faqat obxod tartibi amal natijasiga bog'liq bo'lganda (masalan ildizdan pastga qarab kontekst to'planganda) asosli bo'ladi.
+
+Ikkinchi qaror patternning kam nomlanadigan foydasiga tegishli: visitor obxod paytida holat to'playdi. Visitor bo'lmasa shu holat obxod metodlariga qo'shimcha argument bo'lib o'tar yoki global o'zgaruvchi bo'lib qolar edi; visitor esa uni o'z maydonida saqlaydi va obxod imzosini toza qoldiradi. Uchinchi - to'lanadigan narx: visitor inkapsulyatsiyani buzadi, chunki element ichki holatini visitor'ga yetarli qilish uchun sinflarga ochiq amallar qo'shishga majbur bo'lasiz. Bu element turi qo'shish qiyinligidan alohida narx va u patternni tanlashdan oldin hisobga olinadi.
+
+Visitor'ni iteratordan ustun qiladigan bitta xususiyat bor va u tanlovni ko'pincha hal qiladi: visitor bir-biriga aloqasi yo'q, umumiy ota turi bo'lmagan sinflarni ham aylanadi, iterator esa faqat umumiy turga ega elementlar ustida ishlaydi. ESLATMA: Java'da shu ustunlik `sealed` ierarxiya bilan yo'qoladi - umumiy ota tur majburiy bo'lgani uchun pattern matching'li `switch` yetadi; aralash, umumiy turga keltirilmaydigan sinflar ustida esa visitor hali ham yagona yo'l.
 ## 3.12 Bo'sh obyekt (Null Object)
 
 **Tavsif:** `null` qaytarish o'rniga interfeysni amalga oshiruvchi, lekin "hech nima qilmaydigan" neytral obyekt qaytaradi. Mijoz kodi `if (x != null)` tekshiruvlaridan xoli bo'ladi va xulq bir xil polimorf yo'l bilan davom etadi. Bu, ayniqsa, optional hamkor komponentlar (logger, metrika, cache, notifier) uchun kodni ancha toza qiladi.
@@ -1016,6 +1061,20 @@ uchta munosabat saqlanadi.
 - Freeman/Robson, *Head First Design Patterns* 2nd, 12-bob (494-bet) - compound pattern ta'rifi: bir nechta patternni ko'p masalada qayta ishlatiladigan umumiy yechimga birlashtirish
 - Freeman/Robson, *Head First Design Patterns* 2nd, 12-bob (526-527-bet) - MVC compound pattern sifatida: Observer, Strategy va Composite munosabatlari
 - Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, 1.2-bo'lim (4-6-bet) - MVC ichidagi Observer, Composite va Strategy, hamda Factory Method bilan Decorator ning qo'shimcha roli
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Chain of Responsibility, Implementation (226-228-bet) - zanjirni mavjud havolalar ustida qurish, baza handler'ning shartsiz uzatuvchi default i va so'rovni ifodalashning uch yo'li
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Command, Implementation (238-239-bet) - buyruq aqlliligi spektri, undo uchun saqlanadigan uch narsa, tarix ro'yxati, nusxalash talabi va xato to'planishiga qarshi Memento
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Interpreter, Applicability va Implementation (245 va 247-248-bet) - unumdorlik sharti, parsing patternga kirmasligi, amalni Visitor'ga chiqarish va terminal simvollarni Flyweight bilan bo'lishish
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Iterator, Implementation (260-261 va 263-bet) - obxod algoritmini kim belgilashi, kursor shakli va kompozit ustidagi iteratorning uch varianti
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Mediator, Implementation (277-bet) - abstrakt Mediator qachon kerak emasligi va kolleague bilan vositachi orasidagi muloqotning ikki shakli
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Mediator, Related Patterns (282-bet) - Facade bir yo'nalishli, Mediator ko'p yo'nalishli protokol beradi
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Memento, Consequences (286-287-bet) - Originator'ni soddalashtirishi va caretaker'ning yashirin xotira narxi
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Observer, Consequences va Implementation (295 va 297-bet) - abstrakt bog'lanish qatlamlashni saqlashi va bir nechta subject kuzatilganda `update` ga subject uzatilishi
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, State, Consequences va Implementation (307 va 309-bet) - o'tishlarning atomarligi, maydonsiz State obyektlarini bo'lishish va holat obyektlarini oldindan yaratish yoki talabga ko'ra yaratish
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, State, Implementation (308-bet) - o'tish mezonini Context yoki State sinfining o'zi belgilashi
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Strategy, Implementation va Consequences (318-320-bet) - Strategy va Context orasidagi ma'lumot almashinuvining ikki yo'li va umumiy interfeysdan kelib chiqadigan ortiqcha parametr narxi
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Template Method, Implementation (326-328 va 330-bet) - hook va abstrakt amalni ajratib hujjatlashtirish, primitiv amallar sonini minimallashtirish, nomlash konventsiyasi va `super` ni chaqirishni esdan chiqarish muammosi
+- Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides, *Design Patterns*, Addison-Wesley, 1995, Visitor, Consequences va Implementation (336-337 va 339-340-bet) - umumiy ota turi bo'lmagan sinflarni aylanish, holat to'plash, inkapsulyatsiyani buzish narxi va obxod mas'uliyatining uch varianti
+- ESLATMA: kitoblarda yo'q, korpus qo'shgan qism - so'rov obyekti uchun `sealed` va pattern matching javobi; buyruqni immutable `record` qilish nusxalash talabini yo'q qilishi; `Iterator` va `Spliterator`/`Stream` ni GoF ning ikki variantiga xaritalash; vositachilikning `ApplicationEventPublisher` ko'rinishi; Spring Batch `ExecutionContext` hajmi caretaker mas'uliyatiga misol sifatida; hodisa payloadida manbani olib yurish; maydonsiz holat uchun `enum` va singleton bean; Strategy ga tor ko'rinish (`record`) uzatish; hook metod uchun Javadoc talabi; visitor ustunligining `sealed` bilan yo'qolishi
 
 ---
 

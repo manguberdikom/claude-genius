@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 8. Clean code review: nomlash, kognitiv yuk, metod shakli (Clean Code at the Review Table)
 
@@ -299,6 +299,8 @@ O'qiluvchanlikning eng yaxshi sinovi - review ning o'zi. Agar reviewer kodni tus
 
 Foydali odat: muallif review savoliga javob yozganida o'zidan so'rashi kerak - shu javob kodda bo'lishi kerakmidi. Ko'p hollarda javob "ha" bo'ladi va u nom, tur yoki qisqa izohga aylanadi. Shu bilan review bir martalik suhbatdan doimiy bilimga aylanadi.
 
+Reviewer ni tanlash ham shu o'lchovning bir qismi. Orosz o'qiluvchanlik bo'yicha fikrni kodbazani BILMAYDIGAN odamdan so'rashni maslahat beradi: u mantiqqa emas, kodni qanchalik kuzata olishiga qaraydi, va shuning uchun izohlarining ko'pi aynan o'qiluvchanlik haqida bo'ladi (Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr, Pragmatic Engineer, 2023, 8-bob, 116-bet). Domen biladigan reviewer buni bera olmaydi, chunki u bo'sh joylarni boshidagi bilim bilan to'ldiradi va ularni ko'rmaydi. Amaliy shakl: muhim yoki uzoq yashaydigan kod uchun ikki reviewer belgilanadi, bittasi domenni biladi, ikkinchisi ataylab bilmaydi; ikkinchisining izohlari bloklamaydi, lekin ularning soni o'qiluvchanlik o'lchovi bo'lib qoladi.
+
 ## 8.11 Amalda qo'llash
 
 - [ ] `spotless` yoki `google-java-format` ni CI ga qo'shib, formatlash izohlarini butunlay taqiqlang.
@@ -317,6 +319,8 @@ Foydali odat: muallif review savoliga javob yozganida o'zidan so'rashi kerak - s
 - [Google Java Style Guide](https://raw.githubusercontent.com/google/styleguide/aee99aa581bd852c8a40814c1c8d0f8aa79a0ba2/javaguide.html) - mashina tekshiradigan uslub qoidalari
 - [Google, What to Look For in a Code Review](https://raw.githubusercontent.com/google/eng-practices/3bb3ec25b3b0199f4940b1aa75f0ac5c5753301c/review/reviewer/looking-for.md) - nomlash, izoh va uslub bo'yicha review savollari
 - John Ousterhout, *A Philosophy of Software Design*, 1-nashr, Yaknyam Press, 2018, 16.5 - commit dan oldin butun diffni ko'zdan kechirish va har bir o'zgarish hujjatda aks etganini tekshirish; shu ko'rib chiqishning qolib ketgan debug kodini va tuzatilmagan TODO bandlarini ham topishi
+- Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr, Pragmatic Engineer, 2023, 8-bob (116-bet) - o'qiluvchanlik bo'yicha fikrni kodbazani bilmaydigan odamdan so'rash: u mantiqqa emas, kodni kuzata olishiga qaraydi va izohlarining ko'pi o'qiluvchanlik haqida bo'ladi
+- ESLATMA: ikki reviewer tayinlash va bilmaydigan reviewer izohlarini bloklamaydigan o'lchov sifatida ishlatish tavsiyasi shu korpusning qo'shimchasi
 
 ---
 

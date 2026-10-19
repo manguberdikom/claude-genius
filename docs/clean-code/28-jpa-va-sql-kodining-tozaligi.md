@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 28. JPA va SQL kodining tozaligi (Clean JPA and SQL)
 
@@ -183,6 +183,36 @@ JPQL va native query uchun uch qoida bor. Birinchi, matn bloki ishlatish (12.9) 
 List<PaymentRow> findSettledSince(@Param("status") String status, @Param("from") Instant from);
 ```
 
+Pozitsion parametrdan qochish qoidasining ortida yana bir sabab turadi:
+JDBC da ustun va parametr indekslari **birdan** boshlanadi, noldan emas.
+Java ning qolgan hammasi (massiv, `List`, `String` indeksi) noldan
+boshlanganidan keyin bu farq jim xatoga aylanadi, va u kompilyatsiyada
+emas, so'rov bajarilganda `SQLException` bo'lib chiqadi. Shu sababli
+nomlangan parametr faqat o'qilish uchun emas, xato manbasini olib
+tashlash uchun ham tanlanadi.
+
+Natijani qo'lda o'qiydigan joyda (`RowMapper`, `ResultSetExtractor`,
+yalang JDBC) ikkinchi qoida qo'shiladi: **qiymat ustun nomi bilan
+olinadi, indeks bilan emas.** Indeks `select` dagi ustunlar tartibiga
+bog'langan, ya'ni so'rovga yangi ustun qo'shilsa yoki tartib o'zgarsa,
+mapping jim siljiydi va kod o'rniga ma'lumot buziladi. Nom bilan o'qish
+bu bog'liqlikni butunlay olib tashlaydi.
+
+```java
+// yomon: indeksga bog'langan - select ga ustun qo'shilsa mapping siljiydi
+private PaymentRow map(ResultSet rs, int rowNum) throws SQLException {
+    return new PaymentRow(rs.getLong(1), rs.getBigDecimal(2), rs.getTimestamp(3).toInstant());
+}
+
+// yaxshi: ustun nomi bilan - so'rov tartibidan mustaqil
+private PaymentRow map(ResultSet rs, int rowNum) throws SQLException {
+    return new PaymentRow(
+            rs.getLong("id"),
+            rs.getBigDecimal("amount"),
+            rs.getTimestamp("settled_at").toInstant());
+}
+```
+
 ## 28.7 Projeksiya va DTO qaytarish
 
 Butun entitetni o'qish kerak bo'lmasa, uni o'qimaslik kerak: projeksiya kamroq ustun oladi, lazy muammolarini yo'qotadi va entitetni tranzaksiyadan tashqariga chiqarmaydi ([patternlar hujjatidagi](../patterns/README.md) API da JPA entitetlarini fosh qilish anti-patterni).
@@ -272,6 +302,9 @@ Qoidalar: bir faylda bir mantiqiy o'zgarish, migratsiyani qo'lda tahrirlamaslik 
 - [ ] SQL fayllarini 28.8 qoidalariga keltirib, `select *` ni ustun ro'yxatiga almashtiring.
 
 ## Manbalar
+
+- Boyarsky/Selikoff, *OCP Java SE 17 Study Guide*, 15-bob ("Getting Data from a ResultSet" bo'limi) - JDBC da ustun va parametr indekslarining birdan boshlanishi
+- Paul Deitel va Harvey Deitel, *Java How to Program*, 10-nashr, Pearson, 24-bob (1067-bet) - `ResultSet` dan qiymatni ustun nomi bilan olish, ustun tartibi o'zgarganda indeksga bog'langan kodning buzilishi
 
 - [Hibernate 6.6 User Guide, Fetching](https://raw.githubusercontent.com/hibernate/hibernate-orm/6.6/documentation/src/main/asciidoc/userguide/chapters/fetching/Fetching.adoc) - hamma assotsiatsiyani statik lazy belgilash tavsiyasi va uning Jakarta Persistence default i bilan ziddiyati, entity graph va fetch rejimlari
 - [Hibernate 6.6 User Guide, Persistence Context](https://raw.githubusercontent.com/hibernate/hibernate-orm/6.6/documentation/src/main/asciidoc/userguide/chapters/pc/PersistenceContext.adoc) - persistence context, entitet holatlari va identifikator bo'yicha tenglik

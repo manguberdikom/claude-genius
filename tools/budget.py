@@ -39,9 +39,8 @@ holat faylida (`<git-common-dir>/genius-guruh.json`) bo'lsa qabul
 qilinadi: aks holda har chaqiruvga yangi `guruh: xN` yozib chegara
 aylanib o'tilardi.
 
-Zanjirdagi to'rtta aktyor sanaladi. `qidiruv`, `tahlil` va `Explore`
-sanalmaydi: ular zanjir qadami emas, o'qish asbobi, va ularni cheklash
-arzon yo'lni qimmat qiladi. Qolgan har qanday subagent (general-purpose,
+Zanjirdagi to'rtta aktyor sanaladi. `Explore` sanalmaydi: u zanjir
+qadami emas, o'qish asbobi, va uni cheklash arzon yo'lni qimmat qiladi. Qolgan har qanday subagent (general-purpose,
 boshqa plaginning agenti) `boshqa` hisobiga tushadi. Chegara unga faqat
 shu so'rovda zanjir aktyori chaqirilgan bo'lsa qo'llanadi: aks holda
 aktyor ishi nomsiz agent orqali cheksiz yurardi. Zanjirsiz oddiy ishda
@@ -70,7 +69,7 @@ ACTORS = ("rejalashtiruvchi", "dasturchi", "test-muhandis", "review")
 LIMIT = 2
 
 # O'qish asboblari: sanalmaydi.
-FREE = ("qidiruv", "tahlil", "Explore")
+FREE = ("Explore",)
 # Qolgan subagentlar shu bitta hisobga tushadi.
 OTHER = "boshqa"
 # Plagin sifatida o'rnatilganda nom shu prefiks bilan keladi.

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 4. Concurrency patternlari (Concurrency Patterns)
 
@@ -585,6 +585,8 @@ start.countDown();           // start berildi
 - Mustaqil validatsiya qoidalari to'plamini bir so'rov ichida parallel bajarish.
 
 **Ehtiyot bo'ling:** `commonPool` butun JVM uchun umumiy va sig'imi `CPU-1` ga teng - unda blocking I/O bajarish (JDBC, HTTP) butun ilovani, hatto boshqa parallel stream'larni ham to'xtatib qo'yadi; I/O uchun alohida pool yoki virtual thread ishlatilsin. Agar blocking muqarrar bo'lsa, `ForkJoinPool.ManagedBlocker` qo'llang va bo'lish chuqurligini ortiqcha mayda qilmang, aks holda koordinatsiya narxi foydadan oshadi.
+
+Chegarani (threshold) tanlashda xato qilish kerak bo'lsa, yuqoriga qarab xato qilish afzal: kichik chegarada vazifa yaratish, navbatga qo'yish va o'g'irlash ishning o'zidan ko'p vaqt oladi, katta chegarada esa eng yomon holat parallellikning yetarli ishlatilmasligi bo'ladi. `ForkJoinTask` hujjati mo'ljal beradi: bitta vazifa taxminan 100 dan 10 000 gacha hisob qadamini bajarishi kerak - yuqoridagi `THRESHOLD = 10_000` shu oraliqning yuqori chekkasi. Ikkinchi cheklov `compute()` ichida qulf ishlatmaslik: bo'lib-hal qilish strategiyasi tashqi sinxronlashga mos emas, chunki vazifalar bir-birining tugashini kutadi va qulf bu kutishni deadlock ga aylantiradi. Vazifalar orasida muvofiqlashtirish zarur bo'lsa, `Phaser` kabi fork-join bilan birga ishlashga mo'ljallangan vosita ishlatiladi, `synchronized` yoki semafor emas.
 
 ```java
 // Fork-Join: ishni bo'lib, natijani yig'ish. Faqat CPU ishi uchun.
@@ -1248,6 +1250,8 @@ public class ConcurrentStack<E> {
 - [OpenJDK 25, `ConcurrentHashMap.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/util/concurrent/ConcurrentHashMap.java) - lock striping, `computeIfAbsent` ning atomarligi va aggregate status metodlari
 - [spring-framework, `DefaultSingletonBeanRegistry.java`](https://raw.githubusercontent.com/spring-projects/spring-framework/v7.0.0/spring-beans/src/main/java/org/springframework/beans/factory/support/DefaultSingletonBeanRegistry.java) - singleton cache da `ConcurrentHashMap` va `ReentrantLock` (`singletonLock`) bilan ikki marta tekshirish
 - [OpenJDK 25, `ScopedValue.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/lang/ScopedValue.java) - `where`/`run`/`call` API si, `StructuredTaskScope` bilan meros va kam sonda ishlatish tavsiyasi
+- Herbert Schildt, *Java The Complete Reference*, 29-bob (1004-bet) - ketma-ket chegarani yuqoriga qarab tanlash, `ForkJoinTask` hujjatidagi 100 dan 10 000 gacha hisob qadami mo'ljali va `compute()` ichida `synchronized` yoki semafor ishlatmaslik (`Phaser` istisno)
+- ESLATMA: kitobda yo'q, korpus qo'shgan qism - bo'limdagi `THRESHOLD = 10_000` qiymatini shu mo'ljalning yuqori chekkasi deb bog'lash
 
 ---
 

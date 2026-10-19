@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 41. O'zgarishni kiritish jarayoni: kichik qadamlar (Working in Small Steps)
 
@@ -154,6 +154,8 @@ Juftlikda ishlash review ning real vaqtdagi shakli va u ba'zi vazifalarda ancha 
 
 Juftlikda ishlash hamma vazifa uchun emas: oddiy, aniq ishlarda u resursni ikki barobar sarflaydi va foyda bermaydi.
 
+Jadvalga yana bitta qator qo'shiladi va uning sababi boshqacha: **refaktoring**. Fowler refaktoringni juftlikda qilishni tavsiya qiladi, chunki juftlik bu yerda nafaqat xatoni ushlaydi, balki o'lchov asbobi bo'ladi. Sherigingiz nima qilayotganingizni tushunmasa, buni signal deb olish kerak: u ko'pincha o'zingiz ham tushunmayotganingizni bildiradi, ya'ni qadam juda katta bo'lgan va uni qisqartirish vaqti kelgan ([qadam yiqilganda](38-refaktoringni-xavfsiz-bajarish.md#3817-qadam-yiqilganda-debug-emas-oxirgi-yaxshi-commitga-qaytish)). Shu signal tufayli refaktoring juftlik uchun eng mos vazifalardan biri bo'lib qoladi: qadam kichik bo'lgani uchun navigator oqimni kuzatib turadi va "nega" savolini darhol beradi.
+
 ## 41.8 Ishni tugatish ta'rifi (definition of done)
 
 "Tayyor" so'zining ma'nosi kelishilmasa, ish hech qachon tugamaydi: kod yozildi, lekin test yo'q; test bor, lekin hujjat yo'q; hammasi bor, lekin monitoring yo'q. Yozilgan ta'rif shu noaniqlikni yopadi.
@@ -231,6 +233,10 @@ Yozuv shaxsiy bo'lgani uchun unga sir, token va ishlab chiqarish ma'lumoti yozil
   ([https://github.com/git/git/blob/v2.56.0/Documentation/git-diff.adoc](https://github.com/git/git/blob/v2.56.0/Documentation/git-diff.adoc),
   tag `v2.56.0`, GPL-2.0) - 41.6 dagi uch nuqtali diff ning
   `git diff $(git merge-base A B) B` ga tengligi.
+- Martin Fowler, *Refactoring: Improving the Design of Existing Code*,
+  1-nashr, Addison-Wesley, 1999, 15-bob (335-bet) - refaktoringni juftlikda
+  qilish tavsiyasi va sherikning tushunmasligini signal deb olish: bu
+  ko'pincha o'zining ham tushunmayotganini bildiradi.
 
 ---
 

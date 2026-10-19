@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 7. Nosozlik haqida fikrlash (Thinking About Failure)
 
 <details>
-<summary>Bu bobdagi 12 bo'lim</summary>
+<summary>Bu bobdagi 15 bo'lim</summary>
 
 - [7.1 Hamma narsa buziladi: tarmoq, disk, protsess, boshqa servis](#71-hamma-narsa-buziladi-tarmoq-disk-protsess-boshqa-servis)
 - [7.2 Nosozlik turlari: to'liq to'xtash, sekinlashuv, qisman javob, yolg'on javob](#72-nosozlik-turlari-toliq-toxtash-sekinlashuv-qisman-javob-yolgon-javob)
@@ -20,7 +20,10 @@
 - [7.9 Tiklanish vaqti: RTO va RPO raqamlarini kelishib olish](#79-tiklanish-vaqti-rto-va-rpo-raqamlarini-kelishib-olish)
 - [7.10 Nosozlik ssenariylarini oldindan yozish: "nima bo'lsa, nima qilamiz" jadvali](#710-nosozlik-ssenariylarini-oldindan-yozish-nima-bolsa-nima-qilamiz-jadvali)
 - [7.11 Risk-storming: xavfni jamoa bilan diagramma ustida topish](#711-risk-storming-xavfni-jamoa-bilan-diagramma-ustida-topish)
-- [7.12 Amalda qo'llash](#712-amalda-qollash)
+- [7.12 Chidamlilikning to'rt qismi: kutilmagan vaziyat va doimiy moslashish](#712-chidamlilikning-tort-qismi-kutilmagan-vaziyat-va-doimiy-moslashish)
+- [7.13 Xavfni taqsimlash: bitta host, bitta fizik quti, bitta zona](#713-xavfni-taqsimlash-bitta-host-bitta-fizik-quti-bitta-zona)
+- [7.14 Riskni baholashdan keyin: yo'nalish, yig'indi, texnika va backlog](#714-riskni-baholashdan-keyin-yonalish-yigindi-texnika-va-backlog)
+- [7.15 Amalda qo'llash](#715-amalda-qollash)
 
 </details>
 
@@ -33,6 +36,8 @@ Nosozlik haqida fikrlash arxitektorni developerdan ajratadigan eng aniq chegara.
 Taqsimlangan tizimda nosozlik hodisa emas, doimiy holat. Tarmoq paketi yo'qoladi, TCP ulanish firewall ning ulanish jadvalidan tushib qoladi, disk fsync'ni 400 ms kechiktiradi, JVM 3 sekundlik full GC ga ketadi, Kubernetes node'ni evict qiladi. Bu ro'yxatning har bir bandi oyda bir necha marta sodir bo'ladi, va ularning hech biri sizning kodingizdagi bug emas.
 
 Arxitektor har bir tashqi chaqiruv uchun uchta savolga javob tayyorlaydi. Bu chaqiruv eng ko'p qancha kutadi. Kutish tugagach nima bo'ladi. Chaqiruv ikkinchi marta bajarilsa, biznes natija buziladimi.
+
+Bu savollarga javob berishning narxi haqida bitta e'tirozni oldindan yopish kerak, chunki u har suhbatda chiqadi. Nygard narx farqini aniq aytadi: yuqori barqarorlikdagi dizayn barqarorsiz dizayn bilan deyarli bir xil narxga tushadi (Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 3-bob, 36-bet). Sabab shaklda: timeout qo'yish, retry siyosatini yozish va fallback ni belgilash kodda qo'shimcha qator emas, boshqa qator. `restClient.get()` ni timeout bilan sozlash timeout siz sozlashdan qimmat emas, lekin ikkinchisi birinchi sekinlashuvda butun thread pool ini yo'qotadi. Shuning uchun barqarorlik byudjetdan emas, diqqatdan chiqadi, va "hozir vaqtimiz yo'q" degan dalil bu bo'limdagi qarorlarga qo'llanmaydi. Bu Nygard ning o'z chegarasini ham ko'rsatadi: gap bitta chaqiruv darajasidagi qarorlar haqida, [ko'p zona va ko'p region](#713-xavfni-taqsimlash-bitta-host-bitta-fizik-quti-bitta-zona) kabi infratuzilma qarorlari esa real pul turadi.
 
 Eng ko'p uchraydigan xato: timeout belgilanmagan chaqiruv. Spring'da `RestClient` yoki `WebClient` da timeout qo'yilmasa, OS darajasidagi TCP retransmission limitiga tayanadi. Linux'da `tcp_retries2` ning default qiymati 15 ta qayta uzatish bo'lib, bu taxminan YIGIRMA DAQIQALIK timeout beradi - 15 raqami qayta uzatish soni, daqiqa emas, bu ikkisi tez-tez aralashtiriladi.
 
@@ -56,9 +61,15 @@ spring:
 
 PostgreSQL tomonida ham chegara kerak. `statement_timeout` uzoq so'rovni uzadi, `lock_timeout` navbatda qotib qolishni to'xtatadi, `idle_in_transaction_session_timeout` ochiq tranzaksiyani tashlab ketgan protsessni tozalaydi. Hisobot servisi uchun `statement_timeout` ni 30 sekund, OLTP to'lov servisi uchun 3 sekund qilib ajratish normal qaror.
 
+Timeout qiymatlarining o'zi ham abadiy emas. *Fundamentals of Software Architecture* taqsimlangan hisoblashning yolg'onlari ro'yxatida alohida bandni shu joyga qo'yadi: topologiya hech qachon o'zgarmaydi degan faraz yolg'on. Tarmoqdagi "kichik" yangilanish, qurilma almashtirish yoki marshrut o'zgarishi latency haqidagi farazlarni buzadi va production da timeout hamda circuit breaker larni ishga tushirib yuboradi, holbuki kodda hech narsa o'zgarmagan. Kitobning tavsiyasi tashkiliy: arxitektor operations va tarmoq administratorlari bilan doimiy aloqada bo'lsin, ya'ni tarmoq o'zgarishlari haqida oldindan bilsin. Amalda bu shunday ko'rinadi: p99 latency ning sabablari ro'yxatida "tarmoq o'zgarishi" doim bo'ladi, va reja bo'yicha tarmoq ishi oldidan integratsiya timeout lari qayta ko'riladi.
+
+Oxirgi va eng umumiy savol: nosozlikni ko'tarishga urinish kerakmi yoki oldini olish. Kleppmann javobni ikki toifaga ajratadi va mezon davolash imkoniyati: davolab bo'ladigan nosozlikda chidamlilik afzal, davolab bo'lmaydigan joyda esa oldini olish (7-bet). Ikkinchi toifaning asosiy misoli xavfsizlik: hujumchi tizimga kirib maxfiy ma'lumotga ega bo'lsa, bu hodisani qaytarib bo'lmaydi, shuning uchun bu yerda chidamlilik emas, to'siq ishlatiladi. Bu bobdagi butun apparat (retry, bulkhead, degradatsiya) birinchi toifa uchun; ikkinchi toifaning yozuvi [20-bob](20-spring-security-filter-chain-oauth2-jwt.md) va [7.7](#77-malumot-yoqolishi-va-buzilishi-qaysi-biri-koproq-qorqinchli) da.
+
 ## 7.2 Nosozlik turlari: to'liq to'xtash, sekinlashuv, qisman javob, yolg'on javob
 
 Quyidagi to'rt turlik ajratish shu korpusning amaliy taksonomiyasi. Nygard ning *Release It!* kitobi asosiy farqni ikki turda qo'yadi - tez xato va sekin xato - va sekin javobni ancha xavfliroq deb ataydi; kaskad nosozlik belgilari sifatida esa "crashing, hung threads, empty responses, or nonsense replies" ni sanaydi. Ya'ni pastdagi "yolg'on javob" tushunchasi kitobdagi "nonsense replies" ga yaqin, lekin alohida atama sifatida kitobda yo'q.
+
+Turlardan tashqari yuklamaning shaklini ham ajratish kerak, chunki u qaysi nosozlik chiqishini belgilaydi. Nygard materiallar mexanikasidan ikki atama oladi: impulse (zarba) bu tez va qisqa kuch, stress esa uzoq davomli kuch, va stress strain, ya'ni deformatsiya hosil qiladi (Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 3-bob, 37-bet). Ikkisining amaliy farqi joyda: zarba tegilgan joyda sinadi, strain esa tizimning uzoq nuqtasida ko'rinadi. Misoli tanish: marketing xabari yuborilgandan keyingi bir daqiqalik trafik portlashi zarba va u kirish qatlamida ko'rinadi; shu trafikning ikki soat davom etishi stress, va u navbat to'lishi, connection pool ning charchashi yoki replikatsiya lag i shaklida uchinchi servisda chiqadi. Shu sababli yuk testi ikki shaklda o'tkaziladi va [cho'qqi koeffitsienti](08-ishlash-va-resurs-hissi-napkin-math.md#82-oddiy-hisob-kuniga-n-sorov-nechta-rps-boladi-choqqi-koeffitsienti) hisobi faqat zarbani qoplaydi, stress emas.
 
 To'rt turdagi nosozlik bir xil emas, va ularni aniqlash qiyinligi ham bir xil emas. To'liq to'xtash eng oson tur: ulanish rad etiladi, xato darhol ko'rinadi, alert ishlaydi. Sekinlashuv qiyinroq: servis javob beradi, lekin p99 latency 80 ms dan 4 sekundga chiqadi.
 
@@ -84,6 +95,20 @@ Nol qoldiq va "bilmayman" bir xil ma'no emas. Birinchisi mijozga "tugadi" deb ko
 | Sekinlashuv | p99 latency, thread pool to'lishi | 1-5 daqiqa | kaskadga aylanadi |
 | Qisman javob | natija hajmi metrikasi, element soni | soatlar | sekin va yashirin |
 | Yolg'on javob | ma'lumot solishtirish, reconciliation | kunlar | eng qimmat |
+
+Yuqoridagi to'rtlik amaliy, lekin u yagona taksonomiya emas. Newman Tanenbaum va Steen ning *Distributed Systems* kitobidan jarayonlararo aloqadagi besh nosozlik turini keltiradi va bu ro'yxat boshqa o'qda turadi: u biznes ta'siri emas, protokol xulqi bo'yicha ajratadi.
+
+| Tanenbaum va Steen turi | Nima ko'rinadi | Yuqoridagi to'rtlikda qaysi qator |
+|---|---|---|
+| Crash failure | server qulaguncha hammasi yaxshi edi, keyin javob yo'q | to'liq to'xtash |
+| Omission failure | yubordingiz, javob kelmadi; yoki event yuborib turgan servis shunchaki to'xtadi | to'liq to'xtash va qisman javob orasida |
+| Timing failure | biror narsa kech yoki juda erta sodir bo'ldi | sekinlashuv |
+| Response failure | javob keldi, lekin noto'g'ri yoki kerakli maydonlar yo'q | qisman javob, yolg'on javob |
+| Arbitrary (Byzantine) failure | nosozlik bo'lganini ham, sababini ham qatnashchilar kelishib ola olmaydi | to'rtlikda yo'q |
+
+Ikki qator alohida ahamiyatli. **Omission failure** ning ikkinchi yarmi, ya'ni event oqimining jim to'xtashi, odatda hech qanday xato belgisi bermaydi: iste'molchi kutishda turadi va metrikada xato ko'rinmaydi, shuning uchun bu holat uchun "oxirgi event vaqti" metrikasi va yo'qlik alerti kerak bo'ladi. **Arbitrary failure** esa korpusning to'rtligida yo'q va bu ataylab: u ichki tizimlarda kamdan kam uchraydi.
+
+Kitobdan keladigan xulosa esa mijoz tomoniga tegishli: bu xatolarning ko'pi vaqtinchalik, ya'ni o'tib ketadigan muammo. Shuning uchun mijoz xatoni ikki guruhga ajrata olishi kerak, qayta urinish ma'noga egami yoki inson aralashuvi kerakmi. HTTP ni Newman shu talabning namunasi deb keltiradi: 400 toifasi so'rovning o'zida muammo borligini aytadi, demak `404 Not Found` ni qayta urinishdan ma'no yo'q; 500 toifasi quyi tomondagi muammoni bildiradi va uning bir qismi vaqtinchalik, shuning uchun `503 Service Unavailable` da qayta urinish o'rinli, `501 Not Implemented` da esa yordam bermaydi. Qayta urinishning o'z qoidalari [7.4](#74-qayta-urinish-qachon-zarar-keltiradi-retry-boroni-va-retry-byudjeti) da.
 
 ## 7.3 Sekin servis o'lgan servisdan xavfliroq: navbat to'lishi va orqaga bosim
 
@@ -240,6 +265,16 @@ Thread pool darajasida ham shu mantiq ishlaydi. Tashqi to'lov provayderiga chaqi
 
 Ajratish mezoni oddiy: so'rovning latency profili, biznes muhimligi va downstream bog'liqligi. Uchalasidan biri boshqalardan keskin farq qilsa, alohida hovuz oqlanadi.
 
+Chegarani qayerdan o'tkazish kerakligini esa Nygard boshqa o'qda qo'yadi: bo'linish chegarasi biznes ta'siri bilan arxitekturani kesishtirib topiladi, va amalda uch shakldan biri chiqadi, ya'ni chegara chaqiruvchi bo'yicha, funksionallik bo'yicha yoki topologiya bo'yicha o'tadi (Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 5-bob, 121-bet). Uchalasi bir xil narsani ajratmaydi va tanlov "nima yiqilsa kim zarar ko'radi" savolidan chiqadi.
+
+| Chegara shakli | Nima bo'yicha ajratiladi | To'lov tizimidagi misol |
+|---|---|---|
+| Chaqiruvchi bo'yicha | kim so'rov yuborayotgani | mobil ilova va ichki admin paneli alohida pool va alohida rate limit oladi |
+| Funksionallik bo'yicha | so'rov qanday ish qilayotgani | to'lov va hisobot alohida `DataSource` oladi (yuqoridagi kod) |
+| Topologiya bo'yicha | so'rov qayerda bajarilayotgani | o'qish standby ga, yozish primary ga ketadi; nusxalar zona bo'yicha tarqaladi |
+
+Ikki qadamli tekshiruv shu jadvalni qarorga aylantiradi. Birinchi qadam: har chegara nomzodi uchun "u yiqilsa qaysi biznes amali ishlashda davom etadi" degan savolga javob yoziladi. Ikkinchi qadam: javob "hech biri" bo'lsa chegara qiymat bermaydi va u faqat murakkablik qo'shadi, ya'ni ikki pool o'rniga bitta pool va aniq timeout yetadi.
+
 ## 7.9 Tiklanish vaqti: RTO va RPO raqamlarini kelishib olish
 
 RTO: nosozlikdan keyin xizmat qancha vaqtda qayta ishlashi kerak. RPO: qancha ma'lumot yo'qolishiga ruxsat berilgan. Bu ikki raqam arxitekturani belgilaydi, aksi emas. Shuning uchun ular jamoa xohishi emas, biznes bilan yozma kelishuv bo'lishi kerak.
@@ -323,7 +358,102 @@ Xavfni topish ishning yarmi: Brown uchta yumshatish yo'lini sanaydi. O'qitish yo
 
 Natija yozib qolinadi. Brown ehtimoli yoki ta'siri "yo'q" deb baholangan xavflarni ham jurnalda saqlashni aytadi, chunki keyin shart o'zgaradi. Texnik xavf egasi masalasida uning tavsiyasi aniq: xavf reyestri ko'pincha texnik bo'lmagan loyiha menejeri qo'lida bo'ladi, texnik xavflarning egasi esa arxitektura roli bo'lishi kerak. Mashqni loyiha boshida bir marta emas, iteratsiya rejalashtirish va retrospektivada ham o'tkazish mumkin.
 
-## 7.12 Amalda qo'llash
+## 7.12 Chidamlilikning to'rt qismi: kutilmagan vaziyat va doimiy moslashish
+
+Bu bobning qolgan qismi kutilgan nosozliklar bilan ishlaydi: timeout, retry, bulkhead va degradatsiya rejasi oldindan ma'lum muammolar uchun qo'yiladi. Newman shu nuqtada atamani keng oladi va chidamlilik (resiliency) so'zi juda erkin ishlatilishi tufayli soha tor tushunilishini aytadi; keyin IT dan tashqaridagi resilience engineering sohasiga, aniqrog'i David D. Woods ning tasnifiga murojaat qiladi (Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 12-bob, "What Is Resiliency?" bo'limi).
+
+| Qism | Ta'rifi | Bu bobdagi o'rni |
+| --- | --- | --- |
+| Robustness | kutilgan buzilishni yutib yuborish qobiliyati | bobning asosiy qismi: timeout, retry, bulkhead, zaxira javob |
+| Rebound | og'ir hodisadan keyin tiklanish qobiliyati | [tiklanish vaqti](#79-tiklanish-vaqti-rto-va-rpo-raqamlarini-kelishib-olish) va tiklash rejasi |
+| Graceful extensibility | kutilmagan vaziyat bilan qanchalik yaxshi kurashish | shu bo'limning birinchi yarmi |
+| Sustained adaptability | o'zgarib turgan muhit, manfaatdor tomonlar va talablarga doimiy moslashish | shu bo'limning ikkinchi yarmi |
+
+Robustness oldingi bilimni talab qiladi va u faqat kodga tegishli emas: Newman odamlarni ham shu qatorga qo'yadi, ya'ni on-call da bitta odam bo'lsa va u kasal bo'lib qolsa yoki incident paytida bog'lanib bo'lmasa, tizim robust emas (12-bob, "Robustness"). Yana bir eslatma qarshi tomondan keladi: robustness ni oshirish tizimga murakkablik qo'shadi va bu yangi muammolarning manbasi bo'ladi, shuning uchun har bir bunday qadam oddiy xarajat va foyda hisobi bilan emas, "natijada chiqadigan murakkabroq tizim bilan kelishaman" degan savol bilan baholanadi.
+
+**Graceful extensibility: avtomatlashtirish kutilmaganga yetmaydi.** Kutilmaganga tayyor bo'lmagan tizim mo'rt bo'ladi: kutgan chegaraga yaqinlashganda u yetarli ishlay olmasdan parchalanadi. Newman tashkiliy omilni birinchi qo'yadi: mas'uliyat markazda emas, tashkilot ichiga taqsimlangan yassi tuzilmalar kutilmaganga yaxshiroq tayyorlanadi, chunki odam nima qilishi kerakligida cheklangan bo'lsa va qat'iy qoidalar to'plamiga ergashishga majbur bo'lsa, uning kutilmaganni hal qilish qobiliyati keskin qisqaradi (12-bob, "Graceful Extensibility"). Keyin avtomatlashtirish haqidagi nozik fikr keladi: avtomatlashtirish ajoyib narsa, u bor odam bilan ko'proq ish qilish imkonini beradi, lekin shu bilan odam sonini kamaytirish imkonini ham beradi, va aynan shu joyda xavf bor, chunki avtomatlashtirish kutilmaganni boshqarmaydi. Newman ning xulosasi aniq: tizimni yoqimli ravishda kengaytirish, ya'ni kutilmaganni hal qilish qobiliyati to'g'ri ko'nikma, tajriba va mas'uliyatga ega odamlarning joyida turishidan keladi. Amalda bu on-call rotatsiyasini "eng arzon odam" bo'yicha emas, tizimni biladigan odamlar bo'yicha tuzish, va runbook ni qadam ro'yxati emas, qaror bera oladigan odam uchun kontekst deb yozish degani.
+
+**Sustained adaptability: muvaffaqiyatga ishonib qolmaslik.** Bu qism o'zini oqlab qo'ymaslikni talab qiladi. Newman Woods ning gapini keltiradi: ilgari qanchalik yaxshi ishlagan bo'lsak ham, qanchalik muvaffaqiyatli bo'lsak ham, kelajak boshqacha bo'lishi mumkin va biz unga yaxshi moslanmagan bo'lishimiz mumkin; hali katastrofik uzilishni ko'rmagan bo'lsak, bu uning bo'lmasligini bildirmaydi (12-bob, "Sustained Adaptability"). Shu yerda chaos engineering foydali vosita bo'lib keladi, lekin asosiy shart boshqa: tizimga butun holda qarash kerak, va Newman paradoksni ko'rsatadi, ya'ni kichik, mustaqil va mahalliy mas'uliyati yuqori jamoalarga intilish katta rasmni ko'rishni yo'qotish bilan tugashi mumkin. Ikkinchi shart madaniyat: incidentdan keyin odamlar jazodan qo'rqmasdan ma'lumot bo'lishadigan muhit bo'lishi kerak, kutilmaganni haqiqatan tekshirib saboq chiqarish uchun esa vaqt, energiya va odam kerak, ya'ni qisqa muddatda funksiya yetkazishga ketadigan resurs kamayadi. Shuning uchun bu qarorning o'zi muvozanat: qisqa muddatli yetkazib berish va uzoq muddatli moslashish orasidagi nuqtani topish, va bu bir martalik tadbir emas, doimiy sarmoya.
+
+Bobning asosiy xulosasi shu yerda o'zgaradi. Newman ochiq yozadi: mikroservis arxitekturasi robustness ga yordam beradi, lekin chidamlilik uchun bu yetarli emas; kengroq ma'noda chidamlilik dasturning emas, tizimni quradigan va yurituvchi odamlarning xususiyati (12-bob, "And Microservice Architecture"). Ya'ni bu bobdagi timeout va circuit breaker ro'yxati to'liq bajarilgan tizim ham faqat bitta qismdan o'tgan bo'ladi.
+
+## 7.13 Xavfni taqsimlash: bitta host, bitta fizik quti, bitta zona
+
+Chidamlilik uchun masshtablashning bir yo'li hammasini bitta savatga solmaslik. Newman eng sodda shakldan boshlaydi: bitta hostda bir nechta servis turmasin, chunki shu hostning uzilishi bir vaqtda bir nechta servisga tegadi. Keyin esa savolni aniqlashtiradi, ya'ni "host" nimani bildiradi (Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 12-bob, "Spreading Your Risk" bo'limi). Bu [bulkhead](#78-nosozlik-tasirini-cheklash-bulkhead-va-alohida-resurs-hovuzlari) bilan bir xil g'oya emas: bulkhead resurs hovuzlarini ajratadi, bu bo'lim esa nusxalarning fizik joylashuvini ajratadi.
+
+Newman uchta yashirin umumiylikni sanaydi va ularning har biri "biz ajratdik" degan ishonchni buzadi.
+
+| Yashirin umumiylik | Nima bo'ladi | Nima tekshiriladi |
+| --- | --- | --- |
+| Virtual host lar bitta fizik qutida | servislar alohida host da, lekin quti yiqilsa bir nechtasi birga ketadi | virtualizatsiya platformasi host larni turli fizik qutiga tarqatishni qo'llab-quvvatlaydimi |
+| VM ildiz bo'limi bitta SAN ga bog'langan | SAN yiqilsa unga ulangan hamma VM ketadi | SAN ning yagona nosozlik nuqtasi ekani hujjatda tan olinganmi |
+| Hamma nusxa bitta rack yoki bitta ma'lumot markazida | rack yoki markaz darajasidagi uzilish hammasini oladi | nusxalar rack va markaz bo'yicha taqsimlanganmi |
+
+Ikkinchi qator ayniqsa qiymatli, chunki u odatda e'tirozsiz qabul qilinadigan taxminni buzadi. Newman ichki virtualizatsiya platformalarida VM ning ildiz bo'limini bitta SAN ga biriktirish keng tarqalgan amaliyot ekanini aytadi va qo'shadi: SAN lar katta, qimmat va yiqilmaydigan qilib loyihalangan, shunga qaramay uning o'z tajribasida oxirgi o'n yilda kamida ikki marta katta va qimmat SAN yiqilgan, va har safar natija jiddiy bo'lgan (12-bob, "Spreading Your Risk").
+
+Yashirin umumiylikning statistik oqibati ham bor va u hisobda eng ko'p qilinadigan xato. Nygard nosozliklarning mustaqil emasligini alohida ta'kidlaydi: bir qatlamdagi nosozlik boshqa qatlamdagi nosozlikning ehtimolini oshiradi, shuning uchun ehtimollarni bir-biriga ko'paytirib "bunday bo'lmaydi" degan xulosa chiqarilmaydi (Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 3-bob, 41-bet). "Ikki nusxaning ikkisi ham yiqilish ehtimoli 0.001 ni 0.001 ga ko'paytiradi" shaklidagi hisob mustaqillik farazini talab qiladi, yuqoridagi jadval esa shu farazning uch marta buzilishini ko'rsatadi: bitta fizik quti, bitta SAN, bitta rack. Shu sababli risk hisobida ehtimollar ko'paytirilmaydi, balki umumiy nosozlik nuqtalari sanab chiqiladi va har biri alohida qator bo'ladi. Bir xil xato SLA larni ko'paytirishda ham chiqadi: uch bog'liqlikning har biri 99.9 foiz bo'lsa, yig'indi 99.7 foizdan yaxshi bo'lmaydi, va bog'liq nosozlik bo'lsa bu raqam ham optimistik.
+
+Bulutda bu masala provayderning tuzilmasiga bog'lanadi. Newman AWS misolini beradi: AWS region larga bo'linadi va ularni alohida bulut deb o'ylash mumkin, har bir region esa ikki yoki undan ko'p availability zone ga bo'linadi, va bu zonalar AWS ning ma'lumot markaziga teng keladi. Xulosasi majburiy shaklda yozilgan: servislarni bir nechta availability zone ga tarqatish shart, chunki AWS yakka node ning, hatto butun bir availability zone ning mavjudligi bo'yicha hech qanday kafolat bermaydi; hisoblash servisi uchun u faqat region uchun butun holda oylik davrda 99.95 foiz ish vaqtini taklif qiladi, shuning uchun yuklarni bitta region ichidagi bir nechta zonaga tarqatish kerak bo'ladi, ba'zilar uchun esa bu ham yetmaydi va servislar bir nechta region da yuritiladi (12-bob, "Spreading Your Risk"). Ko'p region qarorining o'z narxi va shartlari bor: korpusdagi yozuvi [aktiv-passiv va aktiv-aktiv tanlovi](41-kop-region-kechikish-rezidentlik-failover.md#414-aktiv-passiv-va-aktiv-aktiv-orasidagi-tanlov) bo'limida.
+
+Kubernetes da bu qoida sozlamaga tushadi, va asosiy xato bitta: `replicas: 3` yozib, uchta pod bitta node yoki bitta zonaga tushganini tekshirmaslik.
+
+```yaml
+# Uchta nusxa uchta zonaga va turli node ga tarqatiladi.
+# topologySpreadConstraints bo'lmasa scheduler uchalasini bitta node ga qo'yishi mumkin.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+spec:
+  replicas: 3
+  template:
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone   # availability zone bo'yicha
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels: { app: order-service }
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname        # node bo'yicha
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels: { app: order-service }
+```
+
+Oxirgi qism shartnomaga tegishli va u texnik emas. Newman provayderning SLA sini bilib, unga qarab rejalashtirishni talab qiladi va aniq misol beradi: har chorakda servislaringiz to'rt soatdan ko'p o'chmasligi kerak bo'lsa, provayder esa chorakda maksimal sakkiz soat uzilishni kafolatlasa, siz yo o'z SLA ni o'zgartirasiz, yo boshqa yechim topasiz. Bundan tashqari provayder "kafolat" bergani uchun o'z javobgarligini cheklab qo'yadi, shuning uchun provayder majburiyatini bajarmasa buning sizga qanday ta'siri bo'lishini oldindan tushunib, B yoki C rejasi kerakligini aniqlab qo'yish kerak; Newman bir nechta mijozining avariyadan tiklash platformasini ataylab boshqa provayderda ushlab turganini keltiradi (12-bob, "Spreading Your Risk"). Shu raqamlarning o'z tomoningizdagi shakli [mavjudlik raqamlari](37-xarajat-slo-va-biznes-bilan-muloqot.md#377-mavjudlik-raqamlari-999-va-9999-orasidagi-amaliy-farq-va-narxi) bo'limida hisoblangan.
+
+## 7.14 Riskni baholashdan keyin: yo'nalish, yig'indi, texnika va backlog
+
+[7.11](#711-risk-storming-xavfni-jamoa-bilan-diagramma-ustida-topish) mashqning o'zini beradi: diagramma, mustaqil baholash, yopishtirish, kelishuv. Mashq tugagandan keyin esa stiker to'dasi qoladi va uni hisobotga, keyin ishga aylantirish kerak bo'ladi. Bu bo'lim shu ikkinchi yarmini yozadi; manbalar *Fundamentals of Software Architecture* ning risk bobi va Fairbanks ning risk-driven modeli.
+
+**Yig'indi va vaqt bo'yicha kuzatish.** Risk matritsasidan chiqqan raqamlar risk assessment hisobotiga yig'iladi: qatorlar baholash mezonlari (mavjudlik, ishlash, masshtab, ma'lumot izchilligi), ustunlar servis yoki domen hududlari. Raqamlar ikki yo'nalishda jamlanadi, mezon bo'yicha va servis bo'yicha; kitob misolida ma'lumot izchilligi mezoni 17 ball bilan eng yuqori, mavjudlik 10 ball bilan eng past riskli, hududlar bo'yicha esa mijozni ro'yxatga olish eng ko'p, buyurtmani bajarish eng kam risk ko'taradi. Shu nisbiy raqamlarni vaqt bo'yicha kuzatish aniq foyda beradi: ular ma'lum mezon yoki hudud ichida yaxshilanish yoki yomonlashishni ko'rsatadi.
+
+**Hisobotni filtrlab ko'rsatish.** Kitob to'liq jadvalni taqdim etmaslikni aytadi: filtrlash kontekst ichida aniq xabarni ko'rsatish uchun zarur. Yig'ilish maqsadi tizimning yuqori riskli hududlarini ko'rsatish bo'lsa, faqat yuqori risk qatorlari qoldiriladi, bu signal va shovqin nisbatini yaxshilaydi va holat haqida tiniq rasm beradi.
+
+**Yo'nalishni belgilash.** Hisobot bitta vaqt kesimini ko'rsatadi va yaxshilanish yoki yomonlashishni aytmaydi. Yo'nalishni qo'shishda kitob tajribadan chiqqan ogohlantirish beradi: yuqoriga o'q nimani bildirishini so'raganda odamlarning qariyb 50 foizi "yomonlashmoqda", qariyb 50 foizi "yaxshilanmoqda" deb o'qiydi, chap va o'ng o'qlar bilan ham shunday. Kalit (legend) qo'shish yordam bermaydi, chunki foydalanuvchi kalitdan pastga o'tgandan keyin chalkashlik qaytadi. Shuning uchun ikki ishlaydigan shakl bor: risk bahosi yoniga universal plyus va minus belgisi, yoki o'q bilan birga u yo'naltirilgan raqamni yozish, chunki raqam kalitni keraksiz qiladi. Yo'nalishning o'zi taxmindan olinmaydi: u fitness function lar orqali uzluksiz o'lchov bilan aniqlanadi, ya'ni har mezon obyektiv tahlil qilinib trend chiqariladi.
+
+**Noma'lum texnologiya alohida qoida.** Kitobning aniq tavsiyasi: sinalmagan yoki noma'lum texnologiyaga har doim eng yuqori risk bahosi (9) beriladi, chunki risk matritsasi bu o'lchamda ishlamaydi. Misol ham ta'limiy: bitta qatnashchi Redis keshini 9 ball bilan belgilagan, boshqalar esa unda umuman risk ko'rmagan; sababini so'raganda javob "Redis nima?" bo'lgan. Bundan ikki xulosa chiqadi. Birinchisi, dasturchilarni mashqqa olib kirish muhim: jamoadagi dasturchi texnologiyani bilmasligi arxitektor uchun umumiy risk haqidagi qimmatli ma'lumot. Ikkinchisi, bitta qatnashchi ko'rgan riskni boshqalar ko'rmasligi normal holat va u aynan muhokama qilinishi kerak bo'lgan qator.
+
+**Ustuvorlikni manfaatdorlar bilan tasdiqlash.** Fairbanks bitta shart qo'yadi: agar arxitekturaga sarflanayotgan vaqt byudjetda sezilarli bo'lsa, vaqt va pul manfaatdorlarning ustuvorligiga mos sarflanayotganini tasdiqlash kerak. Jamoaning risk tasavvuri manfaatdorlarning tasavvuri bilan bir xil bo'lmasligi mumkin. Risk ikki o'lchamda tasniflanadi, manfaatdorlar uchun ustuvorlik va dasturchilar sezgan qiyinlik. Chegara ham aytilgan: platforma tanlovi kabi ba'zi texnik risklarni manfaatdorlar baholay olmaydi, demak ikkinchi o'lchov dasturchilarda qoladi.
+
+**Texnikaning riskka mosligi.** Risk aniqlangandan keyin uni kamaytiradigan texnika tanlanadi, va texnikalar universal emas. Fairbanks jismoniy dunyo bilan taqqoslaydi: bolg'a mix uchun, tornavida vint uchun; vintni bolg'alash mumkin, lekin natija yomon. Dasturiy tomonda moslik shunday ko'rinadi.
+
+| Risk | Mos texnika |
+|---|---|
+| Ishonchlilik (reliability) | rate monotonic analysis |
+| Xavfsizlik (security) | threat modeling |
+| Ishlash (performance) | queueing theory, throughput modellashtirish |
+
+Qo'shimcha mezon viewtype bo'yicha moslik: modifiability ni modul ko'rinishidan, ishlashni runtime ko'rinishidan, xavfsizlikni deployment va modul ko'rinishidan o'ylash osonroq, yagona nosozlik nuqtalarini esa modul ko'rinishi emas, allocation ko'rinishi ochadi. Bu korpusda shu uchta ko'rinish [03-bob](03-qaror-qabul-qilish-va-uni-hujjatlashtirish.md) dagi qaror yozuvi bilan birga ishlatiladi.
+
+**Risk backlog va story darajasi.** Iteratsiya oxirida har risk uchun "faoliyat riskni yetarlicha kamaytirdimi" degan savol beriladi. Ko'p holda risk radardan tushadi, lekin tushmasa Fairbanks ni qoidasi aniq: risk tizim uchun **testlanadigan** element sifatida yozib qo'yiladi, va shu risk backlog ining boshlanishi bo'ladi. Kichik risklar iteratsiya ichida hal qilinadi va backlog ga umuman chiqmaydi, kattalari esa xususiyat kabi rejalashtiriladi. Bitta backlog da xususiyat va riskni birga yuritish ustuvorlashni murakkablashtiradi, lekin kitobning tavsiyasi shunday: product owner ga arxitektura risklarini ham ustuvorlash mas'uliyati beriladi va dasturchilar unga texnik riskni tushuntiradi. Misol ham tanish: product owner backlog ning pastida "xavfsizlik" ni ko'radi, dasturchilar esa uni xavfsizlikni keyin qo'shib bo'lmasligini tushuntirishi kerak.
+
+Shu bilan birga *Fundamentals of Software Architecture* risk matritsasini user story ga ham qo'llaydi: birinchi o'lcham story iteratsiya ichida bajarilmasa umumiy ta'siri, ikkinchisi bajarilmaslik ehtimoli. Story grooming da shu ikki o'lchov bilan yuqori riskli story lar ajratiladi, ularni diqqat bilan kuzatish va ustuvorlashtirish mumkin bo'ladi, hamda iteratsiyaning umumiy risk bahosi chiqadi.
+
+Natijada [7.10](#710-nosozlik-ssenariylarini-oldindan-yozish-nima-bolsa-nima-qilamiz-jadvali) dagi ssenariy jadvali, 7.11 dagi mashq va bu bo'limdagi hisobot bitta zanjir bo'ladi: mashq risk topadi, hisobot uni yig'indi va yo'nalish bilan ko'rsatadi, backlog esa uni testlanadigan ishga aylantiradi. Zanjirning har qadamida mezon bir xil, ehtimol va ta'sir ko'paytmasi.
+
+## 7.15 Amalda qo'llash
 
 - [ ] Servisdagi barcha tashqi chaqiruvlarni sanab, timeout qo'yilmaganlarini topib, har biriga SLO dan kelib chiqqan aniq qiymat belgilash.
 - [ ] Little qonuni bilan hisoblab ko'rish: eng muhim downstream o'n barobar sekinlashgan ssenariyni oling, thread pool va connection pool qachon to'ladi va qancha so'rov rad etiladi.
@@ -342,8 +472,18 @@ Natija yozib qolinadi. Brown ehtimoli yoki ta'siri "yo'q" deb baholangan xavflar
 - Michael T. Nygard, *Release It!*, 1-nashr, 2007, 5-bob - Use Timeouts (111-114-betlar: "hope is not a design method", navbatga qo'yib keyin qayta urinish), Circuit Breaker (115-118-betlar: timeout bilan juftlik, kalit ochiq bo'lgandagi javob biznes qarori), Bulkheads (119 va 122-betlar: kema bo'limlari analogiyasi, thread pool'ni ajratish), Steady State (124-bet), Fail Fast (131-bet), Handshaking (134-bet), Test Harness (136-bet)
 - Simon Brown, *Software Architecture for Developers*, Leanpub, 2014, 64-bob - Risk-storming (181-183-betlar: to'rt qadam, xavfni mustaqil va sukutda yozish, 5-10 daqiqalik cheklov, stikerni diagrammaga yopishtirish, Planning Poker uslubida umumiy bahoga kelish, uchta yumshatish yo'li, ehtimoli yoki ta'siri "yo'q" bo'lgan xavfni ham jurnalda saqlash)
 - Simon Brown, *Software Architecture for Developers*, Leanpub, 2014, 64-bob, "Collective ownership" (184-bet: xavf reyestri odatda texnik bo'lmagan loyiha menejerida bo'ladi, texnik xavflarning egasi esa arxitektura roli bo'lishi kerak)
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 12-bob ("What Is Resiliency?", "Robustness", "Rebound", "Graceful Extensibility", "Sustained Adaptability", "And Microservice Architecture" bo'limlari) - David D. Woods ning chidamlilik tasnifi va to'rt qismi; robustness oldingi bilimni talab qilishi va odamlarga ham tegishli ekani (yakka on-call), robustness ni oshirish murakkablik qo'shishi; yassi tashkilotning kutilmaganga yaxshiroq tayyorligi, avtomatlashtirishning kutilmaganni boshqarmasligi va odam ko'nikmasi bilan mas'uliyatining zarurati; Woods ning "ilgari muvaffaqiyatli bo'lganimiz kelajak uchun kafolat emas" gapi, chaos engineering ning o'rni, butun tizimga qarash va ayblamaslik madaniyati talabi, qisqa muddatli yetkazib berish bilan uzoq muddatli moslashish muvozanati; mikroservisning faqat robustness ga yordam berishi va chidamlilik odamlarning xususiyati ekani. Bu nashrning qo'limizdagi elektron nusxasida barqaror bet raqami yo'q, shuning uchun faqat bob va bo'lim nomi ko'rsatilgan
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 12-bob ("Spreading Your Risk" bo'limi) - bitta hostda bir nechta servis turmasligi, "host" ning virtual tushuncha ekani va virtual host larni turli fizik qutiga tarqatish, VM ildiz bo'limining bitta SAN ga bog'lanishi va muallif tajribasida o'n yilda kamida ikki marta SAN yiqilgani, rack va ma'lumot markazi bo'yicha tarqatish, AWS region va availability zone tuzilmasi, yakka node yoki butun zona uchun kafolat yo'qligi va hisoblash servisi uchun region bo'yicha oylik 99.95 foiz ko'rsatkichi, provayder SLA sidagi to'rt va sakkiz soat misoli, provayderning javobgarlikni cheklashi va boshqa provayderdagi zaxira platforma
+- Mark Richards, Neal Ford, *Fundamentals of Software Architecture*, O'Reilly, 2020, 9-bob ("Fallacy #5: The Topology Never Changes" bo'limi) - tarmoq topologiyasi doim o'zgarishi, "kichik" yangilanish latency farazlarini buzib timeout va circuit breaker larni ishga tushirishi, arxitektorning operations va tarmoq administratorlari bilan doimiy aloqasi
+- Mark Richards, Neal Ford, *Fundamentals of Software Architecture*, O'Reilly, 2020, 20-bob ("Risk Assessments", "Consensus", "Agile Story Risk Analysis" bo'limlari) - risk assessment hisoboti, mezon va domen bo'yicha yig'indi hamda vaqt bo'yicha kuzatish, yuqori riskni filtrlab ko'rsatish (signal va shovqin), yo'nalishni plyus-minus yoki o'q bilan raqam orqali belgilash va odamlarning o'qni turlicha o'qishi, yo'nalishni fitness function lardan olish, noma'lum yoki sinalmagan texnologiyaga eng yuqori risk (9) berish va Redis misoli, risk matritsasini user story ga qo'llash. Qo'limizdagi nusxada chop etilgan bet raqami yo'q, shuning uchun faqat bob va bo'lim nomi ko'rsatilgan
+- George Fairbanks, *Just Enough Software Architecture*, 1-nashr, 2010, 3.3 - arxitektura sarfi byudjetda sezilarli bo'lsa risk ustuvorligini manfaatdorlar bilan tasdiqlash, riskning ikki o'lchami (manfaatdor ustuvorligi va dasturchi sezgan qiyinlik) va platforma tanlovi kabi texnik riskni manfaatdorlar baholay olmasligi; 3.5 - texnikalarning riskka mosligi (rate monotonic analysis va reliability, threat modeling va security, queueing theory va performance) hamda viewtype bo'yicha moslik; 3.11 - riskni testlanadigan element sifatida backlogga yozish, kichik riskni iteratsiya ichida hal qilish, katta riskni xususiyat kabi rejalashtirish va bitta feature-risk backlog
+- Martin Kleppmann, *Designing Data-Intensive Applications*, 1-nashr, O'Reilly, 2017, 1-bob (7-bet) - davolab bo'ladigan nosozlikda chidamlilik, davolab bo'lmaydigan joyda (maxfiy ma'lumot sizib chiqishi) oldini olish afzalligi
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 4-bob - Tanenbaum va Steen ning *Distributed Systems* kitobidan jarayonlararo aloqadagi besh nosozlik turi (crash, omission, timing, response, arbitrary yoki Byzantine), ularning ko'pi vaqtinchalik ekani va mijozning qayta urinish hamda inson aralashuvini ajrata olishi talabi, HTTP ning 400 va 500 toifalari misolida. Bu nashrning qo'limizdagi elektron nusxasida barqaror bet raqami yo'q, shuning uchun faqat bob ko'rsatilgan
+- Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 3-bob (36, 37 va 41-betlar) - yuqori barqarorlikdagi dizayn barqarorsiz dizayn bilan deyarli bir xil narxga tushishi; impulse (zarba) va stress (uzoq davomli kuch) farqi hamda stress hosil qiladigan strain ning tizimning uzoq nuqtasida ko'rinishi; nosozliklarning mustaqil emasligi, bir qatlamdagi nosozlikning boshqasining ehtimolini oshirishi va ehtimollarni ko'paytirib xulosa chiqarib bo'lmasligi
+- Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 5-bob (121-bet) - bo'linish chegarasini biznes ta'siri bilan arxitekturani kesishtirib topish va chegaraning chaqiruvchi, funksionallik yoki topologiya bo'yicha o'tishi
+- ESLATMA: 7.1 dagi `statement_timeout` qiymatlari va p99 sabablari ro'yxati haqidagi tavsiya, 7.2 dagi Tanenbaum turlarini korpus to'rtligiga moslash jadvali va "oxirgi event vaqti" metrikasi, 7.14 dagi viewtype va qaror yozuvi bog'lanishi shu korpusning qo'shimchasi
 - ESLATMA: mavjud nusxa 1-nashr (2007). 2-nashrda (2018) pattern ro'yxati kengaytirilgan va bir qismi qayta nomlangan (masalan "Attacks of Self-Denial" va "Use Timeouts" nomlari o'zgargan), shuning uchun 2-nashrga xos nomlar bu yerda iqtibos qilinmaydi
-- ESLATMA: 7.2 dagi to'rt turlik taksonomiya, 7.3 dagi Little qonuni va timeout byudjeti, 7.4 dagi retry byudjeti foizi va jitter oraliqlari, 7.5 dagi idempotentlik yechimlari, 7.7 dagi backup qatlamlari, 7.9 dagi RTO va RPO raqamlari va 7.10 dagi ssenariy soni shu korpusning amaliy tavsiyasi, kitobdan olingan emas
+- ESLATMA: 7.2 dagi to'rt turlik taksonomiya, 7.3 dagi Little qonuni va timeout byudjeti, 7.4 dagi retry byudjeti foizi va jitter oraliqlari, 7.5 dagi idempotentlik yechimlari, 7.7 dagi backup qatlamlari, 7.9 dagi RTO va RPO raqamlari 7.10 dagi ssenariy soni, 7.12 dagi on-call va runbook tavsiyasi hamda 7.13 dagi Kubernetes `topologySpreadConstraints` misoli shu korpusning amaliy tavsiyasi, kitobdan olingan emas
 - ESLATMA: 7.11 dagi risk-storming Brown kitobidan olingan; Nygard ning *Release It!* 1-nashrida bu texnika yo'q
 
 ---

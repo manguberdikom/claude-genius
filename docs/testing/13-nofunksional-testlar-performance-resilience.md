@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 13. Nofunksional testlar: performance, resilience, xavfsizlik (Non-Functional Testing)
 
@@ -53,6 +53,8 @@ Ko'pchilik jamoa "load test" deganda bitta narsani tushunadi, aslida esa turlari
 | Breakpoint | Tizim qayerda sinadi va qanday sinadi | Chegarasiz o'sish | Yangi komponent kiritilganda |
 
 Amaliy tartib: avval capacity (bitta instance qancha), keyin load (SLO), keyin soak (barqarorlik), undan keyin spike va breakpoint. Stress va breakpoint natijasi ko'pincha eng qimmatli: ular timeout, bulkhead va circuit breaker sozlamalarining to'g'ri yoki noto'g'riligini ko'rsatadi.
+
+Jadvaldagi har tur yuklamani OSHIRISH bilan ishlaydi, lekin bitta arzon muqobil ham bor va u alohida yuk generatsiya infratuzilmasini talab qilmaydi. Orosz yuklama testini trafikni oshirib emas, infratuzilmani kichraytirib o'tkazishni taklif qiladi: 10x trafikni to'liq klasterda sinash o'rniga hozirgi trafikni klasterning o'ndan bir qismi ko'tara oladimi deb tekshiriladi; ikkinchi variant esa production so'rovlarini ataylab batch qilib, keyin oshirilgan tezlikda yuborish (Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr, Pragmatic Engineer, 2023, 14-bob, 202-bet). Birinchi usul [scalability va capacity](#132-performance-test-turlari) qatorlarining teskari shakli: o'zgaradigan narsa yuk emas, sig'im. Chegarasi ham bor: usul ilova qatlami gorizontal masshtablanadigan va umumiy resurs (baza, kesh, broker) bottleneck bo'lmagan holatda ishonchli, aks holda kichraytirilgan klaster boshqa bottleneck ni ko'rsatadi. Ikkinchi usul real so'rov shaklini saqlaydi, shuning uchun sintetik skript yozish kerak bo'lmaydi, lekin idempotent bo'lmagan so'rovlar uchun yaramaydi.
 
 ## 13.3 Vositalar: Gatling, k6, JMeter, Locust
 
@@ -184,9 +186,11 @@ Ikkinchi qoida - **o'rtacha qiymatni unutish**. O'rtacha 120 ms bo'lgan tizimda 
 
 Uchinchi qoida - **coordinated omission**. Closed model'da (fiksirlangan VU soni, har biri javobni kutadi) server sekinlashsa, yuklama ham o'z-o'zidan kamayadi va sekin so'rovlar o'lchovga tushmaydi - natija haqiqatdan chiroyliroq ko'rinadi. Yechim: arrival-rate / open model (`injectOpen`, `ramping-arrival-rate`) va so'rov yuborilishi kerak bo'lgan vaqtdan boshlab o'lchash.
 
-To'rtinchi qoida - **bitta o'zgaruvchi**. Har bir testda faqat bitta narsa o'zgarsin: yoki yuklama, yoki pool hajmi, yoki JVM flag. Ikkitasini birga o'zgartirsangiz, natijani talqin qila olmaysiz. GC ta'siri shu yerda ko'rinadi: G1 bilan ZGC'ni taqqoslayotganda heap hajmi va yuklama bir xil bo'lishi shart.
+To'rtinchi qoida - **ikki versiyani bir xil mashinada yurgizish**. Performance diff testida, ya'ni bazaviy va yangi versiyani solishtirganda, binar yurgizilayotgan mashina natijaga ta'sir qiladi: baza tezroq mashinada yoki tezroq tarmoqda yursa, yangi versiya regressiya bo'lib ko'rinadi. Shuning uchun optimal joylashtirish - ikki versiyani **bitta mashinada** yurgizish. Ikkisi bir mashinaga sig'masa, kalibrlash yo'li bor: bir necha marta yurgizib cho'qqi va vodiylarni olib tashlash. Yuk va stress xatti-harakati tizimning emergent xususiyati (u alohida komponentga tegishli emas, butun tizimdan kelib chiqadi), shuning uchun bunday test production ga qanchalik o'xshasa, shunchalik qiymatli, va production topologiyasidan keladigan shovqinni yumshatish qiyin.
 
-Beshinchi qoida - **ishlab chiqarishga o'xshash muhit va ma'lumot hajmi**. Indekssiz query ning narxi jadval o'sishi bilan chiziqli o'sadi, shuning uchun o'n ming qatorda sezilmagan to'liq skanerlash o'n million qatorda butun endpoint ni yiqitadi. Aniq raqam baza, apparat va ma'lumot taqsimotiga bog'liq, shuning uchun uni o'z muhitingizda `EXPLAIN (ANALYZE, BUFFERS)` bilan o'lchash kerak, kitobdan olmaslik. CPU limiti, replica soni, tarmoq topologiyasi, TLS, ingress va feature flag'lar ham prod'dagiday bo'lishi kerak. Farqlar bo'lsa, ularni test hisobotida ochiq yozing.
+Beshinchi qoida - **bitta o'zgaruvchi**. Har bir testda faqat bitta narsa o'zgarsin: yoki yuklama, yoki pool hajmi, yoki JVM flag. Ikkitasini birga o'zgartirsangiz, natijani talqin qila olmaysiz. GC ta'siri shu yerda ko'rinadi: G1 bilan ZGC'ni taqqoslayotganda heap hajmi va yuklama bir xil bo'lishi shart.
+
+Oltinchi qoida - **ishlab chiqarishga o'xshash muhit va ma'lumot hajmi**. Indekssiz query ning narxi jadval o'sishi bilan chiziqli o'sadi, shuning uchun o'n ming qatorda sezilmagan to'liq skanerlash o'n million qatorda butun endpoint ni yiqitadi. Aniq raqam baza, apparat va ma'lumot taqsimotiga bog'liq, shuning uchun uni o'z muhitingizda `EXPLAIN (ANALYZE, BUFFERS)` bilan o'lchash kerak, kitobdan olmaslik. CPU limiti, replica soni, tarmoq topologiyasi, TLS, ingress va feature flag'lar ham prod'dagiday bo'lishi kerak. Farqlar bo'lsa, ularni test hisobotida ochiq yozing.
 
 ## 13.6 Yuklama ostida nimani kuzatish
 
@@ -403,6 +407,15 @@ Nofunksional testlarning eng ko'p uchraydigan muvaffaqiyatsizlik sababi - noto'g
 | Release oldidan | Load + spike prod'ga o'xshash muhitda, chaos eksperimentlari, SBOM va litsenziya tekshiruvi | 0,5-1 kun | Ha, release checklist |
 | Prod'da | Canary (metrika bo'yicha avtomatik rollback), synthetic monitoring, SLO va error budget kuzatuvi, doimiy JFR | Doimiy | Avtomatik rollback |
 
+**Nofunksional talablar ham piramidaga bo'ysunadi.** Newman "nonfunctional" atamasi o'rniga **cross-functional requirement** (CFR) atamasini afzal ko'radi, chunki bu xususiyatlar bitta funksiya sifatida yozilmaydi, ko'p kesishgan ishning natijasi bo'lib paydo bo'ladi. CFR larning ko'pi faqat production da to'liq qondiriladi, lekin maqsadga qarab borayotganimizni ko'rsatadigan test strategiyasi tuzilishi mumkin, va u yuqoridagi jadvaldan tashqari yana bir qoidaga tayanadi: testlar piramidaga bo'ysunadi.
+
+Amalda ikki harakat:
+
+- **E2E yuk testi bottleneck ni topgach, uni pastroq qatlamda ushlaydigan kichik qamrovli test yoziladi.** Yuk testi bir marta "qaysi joy sekin" degan savolga javob beradi; shundan keyin o'sha joyni har PR da tekshirish uchun ulkan testni qaytarish shart emas.
+- **Ba'zi CFR lar tez test bilan tekshiriladi.** Newman ning misoli: generatsiya qilingan HTML da accessibility elementlari (mos boshqaruvlar) borligini tekshirish uchun tarmoq murojaati ham, brauzer ham kerak emas, bu `@WebMvcTest` darajasida bajariladi.
+
+Uchinchi maslahat vaqt haqida: CFR lar ko'pincha juda kech ko'rib chiqiladi; ularni **iloji boricha erta** ko'rib, keyin muntazam qayta ko'rish kerak. CFR ni servis darajasida ham belgilash mumkin va bu mikroservisning foydasi: to'lov servisi uchun talab qilinadigan ishonchlilik tavsiya servisidan yuqori bo'lishi normal, va bu farq SLO sifatida yoziladi.
+
 Kim ko'radi va qanday qaror qabul qiladi: PR darajasidagi natijani muallif va reviewer ko'radi - qizil bo'lsa, merge bo'lmaydi. Nightly va haftalik natijalar uchun aniq egasi bo'lishi kerak (performance uchun servis jamoasi tech lead'i, xavfsizlik uchun security champion) - "hamma ko'radi" degani "hech kim ko'rmaydi". Trend muhim: bitta test natijasi emas, p95 va p99'ning haftalar bo'yicha o'zgarishi. Qaror mezonlari oldindan yozilgan bo'lsin: SLO buzilishi - release to'xtatiladi; 10% regressiya - tergov ishi ochiladi; critical CVE - belgilangan SLA ichida tuzatiladi; error budget tugadi - yangi funksiyalar to'xtaydi.
 
 ## 13.15 Anti-patternlar
@@ -436,6 +449,8 @@ Kim ko'radi va qanday qaror qabul qiladi: PR darajasidagi natijani muallif va re
 
 ## Manbalar
 
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at Google*, O'Reilly, 2020, 14-bob ("Performance, Load, and Stress testing") - performance diff testida ikki versiyani bir xil mashinada yurgizish zarurati, sig'masa bir necha yurgizish bilan cho'qqi va vodiylarni olib tashlab kalibrlash, yuk xatti-harakatining emergent xususiyat ekani. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
+- Sam Newman, *Building Microservices: Designing Fine-Grained Systems*, 2-nashr, O'Reilly, 2021, 9-bob ("Cross-Functional Testing") - nonfunctional o'rniga cross-functional atamasi, CFR larning asosan production da qondirilishi, testlarning piramidaga bo'ysunishi, E2E yuk testi topgan bottleneck ni kichik qamrovli test bilan ushlash va accessibility elementlarini generatsiya qilingan HTML da tez tekshirish. Bu nashrning nusxasida barqaror bet raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
 - Spring Framework, `DefaultClientRequestObservationConvention`
   ([https://github.com/spring-projects/spring-framework/blob/v6.2.19/spring-web/src/main/java/org/springframework/http/client/observation/DefaultClientRequestObservationConvention.java](https://github.com/spring-projects/spring-framework/blob/v6.2.19/spring-web/src/main/java/org/springframework/http/client/observation/DefaultClientRequestObservationConvention.java),
   tag `v6.2.19`, Apache-2.0) - 13.9 dagi `status` va `outcome` teglari
@@ -477,6 +492,8 @@ Kim ko'radi va qanday qaror qabul qiladi: PR darajasidagi natijani muallif va re
   ([https://github.com/async-profiler/async-profiler/tree/v4.5/docs](https://github.com/async-profiler/async-profiler/tree/v4.5/docs),
   tag `v4.5`, Apache-2.0) - 13.7 dagi `-e cpu`, `-e wall -t`, `-e alloc`
   rejimlari.
+- Gergely Orosz, *The Software Engineer's Guidebook*, 1-nashr, Pragmatic Engineer, 2023, 14-bob (202-bet) - yuklama testini trafikni oshirib emas, infratuzilmani kichraytirib o'tkazish (hozirgi trafikni klasterning o'ndan bir qismi ko'tara oladimi) va production so'rovlarini batch qilib keyin oshirilgan tezlikda yuborish
+- ESLATMA: usulning chegarasi (ilova qatlami gorizontal masshtablanishi va umumiy resurs bottleneck bo'lmasligi, idempotent bo'lmagan so'rovlar uchun yaramasligi) shu korpusning qo'shimchasi
 
 ---
 

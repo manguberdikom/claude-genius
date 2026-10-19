@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 12. Gorizontal formatlash va kod uslubi (Horizontal Formatting and Style)
 
@@ -74,6 +74,46 @@ private OutputStream output;
 private Request request;
 ```
 
+Boswell va Foucher ustun bo'yicha tekislashni "foydali bo'lganda ishlat" deb
+beradi va u yuqoridagi qoidaga zid ko'rinadi. Zid emas: ikki manba boshqa
+narsani tekislaydi. Kitob foyda ko'rgan misollari - bir xil shakldagi
+**qatorlar jadvali**: bir xil yordamchi metodning to'rt chaqiruvi bir xil
+tartibdagi argumentlar bilan, yoki `wget` kodidagi yuzdan ortiq buyruq yozuvi
+(`nom`, `maydon`, `ishlovchi` ustunlari). Bunda ustun "ko'z uchun suyanch"
+beradi: bitta ustunni yuqoridan pastga kuzatish mumkin bo'ladi va qatorlar
+bir xil tekislanganda `equest` kabi imlo xatosi yoki tushib qolgan qiymat
+ko'zga tashlanadi. Kitobning o'z tavsiyasi ham ehtiyotkor: sinab ko'r, qimmatga
+tushsa to'xta - va narxi sifatida aynan qo'lda ushlab turish mehnati va
+kattalashgan diff keltiriladi (Boswell/Foucher, *The Art of Readable Code*,
+1-nashr, O'Reilly, 2011, 4-bob (38-39-bet)).
+
+Ajratuvchi shart shundan chiqadi: **nima tekislanmoqda**.
+
+| Tekislanayotgan narsa | Qaror | Sabab |
+|---|---|---|
+| Mustaqil e'lon va tayinlashlar | tekislanmaydi | ustun hech narsa solishtirmaydi, diff shovqini qoladi |
+| Bir xil shakldagi qatorlar jadvali (parametrlangan test, kalit-ishlovchi jadvali) | tekislash haqli | ustunni yuqoridan pastga solishtirish mumkin, farq va imlo xatosi ko'rinadi |
+| Formatter saqlab qolmaydigan har qanday tekislash | tekislanmaydi | qo'lda ushlab turiladi va har formatlashda qaytib keladi |
+
+Uchinchi qatorni Java amaliyoti hal qiladi: kod formatlash avtomatlashtirilgan
+bo'lsa, tekislash haqida bahs ham tugaydi, chunki
+[bitta jamoa, bitta uslub](13-formatlashni-avtomatlashtirish-va-diff.md#131-bitta-jamoa-bitta-uslub-tanlov-emas-sozlama)
+qoidasi bo'yicha fayl shaklini odam emas, asbob belgilaydi. Jadval shaklidagi
+ma'lumot esa Java da ko'pincha koddan butunlay chiqariladi: parametrlangan
+testda `@CsvSource` matniga, konfiguratsiyada esa resurs fayliga. Shunda
+jadval ham o'qiladi, tekislash ham formatter bilan urishmaydi.
+
+```java
+// yaxshi: jadval shaklidagi ma'lumot tekislangan, lekin u kod emas - CSV matni
+@ParameterizedTest
+@CsvSource({
+        "TASHKENT,   100.00, 12.00",
+        "FREE_ZONE,  100.00,  0.00",
+        "SAMARKAND,  100.00, 12.00"
+})
+void calculatesTax(Region region, String net, String expectedTax) { ... }
+```
+
 ## 12.4 Indentatsiya va uni buzmaslik
 
 Indentatsiya kodning ierarxiyasini ko'rsatadigan asosiy vosita. Java konvensiyasi: 4 bo'shliq, tab emas (tab turli muhitlarda turlicha ko'rinadi va diff ni buzadi). Ikkinchi darajali davomiy qator uchun 8 bo'shliq.
@@ -126,6 +166,8 @@ Java ekotizimida K&R uslubi standart: ochiluvchi qavs shu qatorda, yopiluvchi qa
 
 Bir qatorli `if` (4.8 da ko'rilgan) formatlash nuqtai nazaridan ham zararli: u diff da qo'shilgan qatorni ko'rinmas qiladi va qavs qo'shishni talab qiladi.
 
+Kvadrat qavsning joyi ham shu bo'limga kiradi, chunki Java eski shaklga ham ruxsat beradi: massiv qaytaradigan metodda qavslar parametr ro'yxatidan **keyin** yozilishi mumkin (`int f()[]`). Bu C dan kelgan sintaksis va yangi kodda ishlatilmaydi: qavs turga tegishli, shuning uchun `int[] f()` deb yoziladi. O'zgaruvchi e'lonida ham xuddi shunday - `int a[]` emas, `int[] a` (11.5).
+
 ## 12.7 Import tartibi va yulduzcha import
 
 Importlar tartibi guruhlangan va alifbo bo'yicha saralangan bo'lishi kerak, aks holda har bir yangi import diff da tasodifiy joyga tushadi va konfliktlar ko'payadi.
@@ -146,6 +188,56 @@ import uz.shop.order.OrderApi;
 
 import static java.util.Comparator.comparing;
 import static java.util.function.Predicate.not;
+```
+
+Java 25 da importning yangi shakli paydo bo'ldi va u yulduzchadan kattaroq
+xavf tug'diradi: `import module M` modul `M` eksport qilgan barcha paketlarning
+public top-level sinf va interfeyslarini on-demand import qiladi, qo'shimcha
+ravishda `M` ni o'qish orqali joriy modul o'qiydigan modullar eksport qilgan
+paketlarni ham (*The Java Language Specification, Java SE 25 Edition*, 7.5.5
+(227-228-bet)). Ya'ni bitta qatorning qamrovi bir paket emas, modul grafi.
+
+Spetsifikatsiyaning o'zi noaniqlik misollarini beradi. `import module
+java.base;` va `import module java.desktop;` yonma-yon turganda `List`
+nomi noaniq bo'ladi va kompilyatsiya xatosi beradi, chunki `java.util.List`
+va `java.awt.List` ikkisi ham ko'rinadi. Bundan ham muhimi: **bitta** modulni
+import qilish ham yetarli - `import module java.desktop;` dan keyin `Element`
+nomi noaniq, chunki modul `javax.swing.text` va
+`javax.swing.text.html.parser` paketlarini eksport qiladi va ikkisida ham
+`Element` bor. Yechim bitta: noaniqlikni single-type-import bilan hal qilish
+(`import java.util.List;`) (shu yerda, 7.5.5 (229-230-bet)).
+
+```java
+// yomon: qamrovi modul grafi, nom to'qnashuvi kompilyatsiya xatosi beradi
+import module java.base;
+import module java.desktop;
+
+List<Order> orders = new ArrayList<>();   // xato: List noaniq
+
+// yaxshi: aniq import, nom qayerdan kelgani ko'rinadi
+import java.util.ArrayList;
+import java.util.List;
+```
+
+ESLATMA: `import module` ni ishlab chiqarish kodida ishlatmaslik shu korpusning
+tavsiyasi. Spetsifikatsiya shaklni va noaniqlik qoidalarini beradi, siyosat
+bermaydi; qoida yulduzcha import bilan bir xil sababdan chiqadi - nom qayerdan
+kelganini yashiradi, bu yerda esa yashirish qamrovi bir paket emas, butun modul
+grafi. Qisqa skript va tajriba kodida u qulay, chunki o'sha joyda importni
+qo'lda boshqarish qiymat bermaydi.
+
+Import nomni qayerdan kelganini ko'rsatsa, chaqiruv shakli esa a'zo kimga tegishli ekanini ko'rsatadi: statik metod va statik maydonga sinf nomi va nuqta bilan murojaat qilinadi, nusxa orqali emas. `thread.sleep(100)` kompilyatsiya o'tadi, lekin o'quvchiga metod nusxaga tegishlidek ko'rinadi va `Thread.sleep(100)` ning joriy thread ni to'xtatishini yashiradi. Bu statik tahlil qoidasiga ham tushadi (42.3).
+
+```java
+// yomon: statik a'zo nusxa orqali chaqirilgan
+Thread worker = new Thread(task);
+worker.sleep(100);                 // aslida Thread.sleep: joriy thread uxlaydi
+Integer value = 0;
+value.parseInt("42");              // aslida Integer.parseInt
+
+// yaxshi: egasi nomdan ko'rinadi
+Thread.sleep(100);
+Integer.parseInt("42");
 ```
 
 ## 12.8 Zanjirli chaqiruv va oqimni bo'lish
@@ -229,6 +321,26 @@ Tuzoq ayniqsa mavjud faylni skript bilan tahrirlaganda qo'shiladi: fayl `utf-8-s
 
 `.properties` faylida BOM kompilyatsiyani yiqitmaydi, lekin **birinchi kalit** nomiga qo'shilib ketadi va u kalit topilmay qoladi. Fayl oxiriga qator qo'shish esa xavfsiz.
 
+### Fayl boshidagi sarlavha izohi: nima turadi, nima turmaydi
+
+Fayl boshida izoh bloki bo'lishi mumkin va u ham fayl darajasidagi konvensiya. Darsliklar har bir fayl sarlavha izohida muallif nomi va sanani talab qiladi, korpus esa jurnal izohi va mualliflik imzosini [yomon izoh](09-yomon-izohlar-katalogi.md#95-jurnal-izohlari-va-mualliflik-imzolari) deb beradi. Ajratuvchi shart - ma'lumot qayerda **saqlanadi**: litsenziya va huquqiy matn faylning o'zida turishi shart, chunki fayl repodan ko'chirilganda ham u bilan birga ketadi va huquqiy kuchi shundan kelib chiqadi; mualliflik va o'zgarish tarixi esa VCS da qoladi, chunki `git log` va `git blame` ularni aniq va yangi holda beradi, qo'lda yozilgan imzo esa birinchi tahrirdan keyin eskiradi.
+
+```java
+// yaxshi: faqat litsenziya, tarix yo'q
+/*
+ * Copyright 2026 Shop Platform. Litsenziya: Apache-2.0.
+ */
+package uz.shop.payment;
+
+// yomon: mualliflik va o'zgarish tarixi faylda
+/*
+ * Muallif: A. Karimov
+ * Yaratilgan: 2026-03-14
+ * O'zgarishlar:
+ *   2026-04-02  qaytarish qo'shildi (B. Aliyev)
+ */
+```
+
 ## 12.11 Amalda qo'llash
 
 - [ ] Qator uzunligi chegarasini tanlab (100 tavsiya etiladi), uni formatter va Checkstyle da bir xil qiymatga qo'ying.
@@ -244,6 +356,14 @@ Tuzoq ayniqsa mavjud faylni skript bilan tahrirlaganda qo'shiladi: fayl `utf-8-s
 
 - [Google Java Style Guide](https://raw.githubusercontent.com/google/styleguide/aee99aa581bd852c8a40814c1c8d0f8aa79a0ba2/javaguide.html) - qator uzunligi, bo'shliq, qavs, import tartibi va yulduzcha importning taqiqlanishi
 - Robert C. Martin, *Clean Code*, 5-bob - gorizontal formatlash va zichlik
+- Dustin Boswell, Trevor Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011 (copyright 2012), 4-bob (38-39-betlar) - ustun bo'yicha tekislashning foydali holati (bir xil shakldagi chaqiruvlar va `wget` buyruqlar jadvali), `equest` imlo xatosining ko'zga tashlanishi, va narxi sifatida qo'lda ushlab turish mehnati bilan kattalashgan diff
+- *The Java Language Specification, Java SE 25 Edition* (Gosling, Joy, Steele, Bracha, Buckley, Smith, Bierman), 7.5.5 (227-230-betlar) - `import module M` ning qamrovi (modul eksport qilgan va transitive o'qiladigan paketlar), `java.base` bilan `java.desktop` dagi `List` noaniqligi, bitta modul ichidagi `Element` noaniqligi va single-type-import bilan hal qilish
+- *The Java Language Specification, Java SE 25 Edition* (Gosling, Joy, Steele, Bracha, Buckley, Smith, Bierman), 8-bob (289-bet) - massiv qaytaradigan metodda kvadrat qavsni parametr ro'yxatidan keyin yozish shaklining eski sintaksis ekani
+- Paul Deitel va Harvey Deitel, *Java How to Program*, 10-nashr, Early Objects, Pearson, 8-bob (341-bet) - statik metodni sinf nomi va nuqta bilan chaqirish, nusxa orqali emas
+- Y. Daniel Liang, *Introduction to Java Programming*, 9-nashr, Pearson, 2013, 8-bob (315-bet) - statik metod va statik maydonni sinf nomi bilan chaqirish (ikkinchi mustaqil manba)
+- Paul Deitel va Harvey Deitel, *Java How to Program*, 10-nashr, Early Objects, Pearson, 2-bob (37-bet) - har fayl boshida sarlavha izohi va unda muallif bilan sanani ko'rsatish talabi
+- ESLATMA: fayl sarlavha izohini faqat litsenziya va huquqiy matnga cheklash, mualliflik bilan o'zgarish tarixini VCS ga qoldirish ajratuvchi sharti korpus qarori: Deitel (2-bob, 37-bet) sarlavha izohida muallif va sanani talab qiladi, korpusning yomon izohlar katalogi esa jurnal izohi va mualliflik imzosini taqiqlaydi, shart ikkisini bir-biriga qarshi qo'ymasdan ajratadi
+- ESLATMA: `Thread.sleep` va litsenziya sarlavhasi kod misollari korpus qo'shimchasi
 
 ---
 

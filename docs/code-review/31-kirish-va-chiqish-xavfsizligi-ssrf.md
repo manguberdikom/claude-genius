@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 31. Kirish va chiqish xavfsizligi: SSRF, deserializatsiya, fayllar (Input and Output Safety)
 
@@ -248,6 +248,14 @@ if (input.length() > 256) throw new InputTooLong();
 | Sekin mijoz (slowloris) | Ulanish timeout i, reverse proxy |
 | Qimmat so'rov (hisobot) | Navbat, kesh, rate limit |
 | Log to'lishi | Log darajasi, rate limit, disk alert |
+| Hash to'qnashuvi hujumi | Ishonchsiz kalitni map ga qo'ymaslik, kalit sonini cheklash |
+| Deseriyalash bombasi | Native deseriyalashdan voz kechish, oqim hajmi va vaqt chegarasi |
+
+Jadvalga qo'shilgan ikki qator alohida izoh talab qiladi, chunki ikkisi ham odatdagi himoyalardan o'tib ketadi.
+
+**Qat'iy (fiksirlangan) hash funksiyasi hujumga ochiq.** Raqib hamma kaliti bitta slotga tushadigan to'plam tanlab, hash jadvalidagi qidiruvni `O(1)` dan `Theta(n)` ga aylantiradi, va yechim hash ni tasodifiylashtirish (Cormen, Leiserson, Rivest, Stein, *Introduction to Algorithms*, 3-nashr, MIT Press, 11-bob, 265-bet). Review da bu ishonchsiz kalitni `HashMap` yoki `HashSet` ga qo'yadigan har joyga tegadi: HTTP so'rov parametrlari, JSON obyektining maydon nomlari, header lar. Amaliy himoya kalit sonini cheklash va kalitni to'g'ridan-to'g'ri map ga qo'ymaslik; `String.hashCode` o'zgarmas va uni tasodifiylashtirib bo'lmaydi, shuning uchun kalit sonini cheklash yagona ishonchli chora.
+
+**Deseriyalash bombasi gadget talab qilmaydi.** Juda kichik oqim (Bloch ning misolida 5744 bayt, 201 ta ichma-ich `HashSet`) deseriyalashda amalda cheksiz vaqt oladi, chunki `hashCode` eksponensial marta chaqiriladi (Joshua Bloch, *Effective Java*, 3-nashr, Addison-Wesley, 2018, Item 85, 340-bet). Muhimi review uchun: `ObjectInputFilter` bu hujumni TO'SMAYDI, chunki filtr sinf nomlari va grafning kattaligi bo'yicha ishlaydi, bu bomba esa ruxsat berilgan sinflardan va kichik grafdan tuzilgan. Yagona ishonchli yechim yuqoridagi qoidaning o'zi, ya'ni ishonchsiz ma'lumot uchun Java native deseriyalashdan butunlay voz kechish.
 
 ```java
 // Rate limit: review da so'raladigan minimal himoya.
@@ -280,6 +288,23 @@ public class RateLimitFilter extends OncePerRequestFilter {
 // (qattiqroq) chegara bormi.
 ```
 
+Jadvaldagi himoyalarning yarmi bitta sodda qoidaning qo'llanishi:
+kirishdagi har qiymatning diapazoni va har satrning uzunligi
+cheklangan bo'lishi kerak. Kleppmann buni ommaviy ilova uchun
+majburiy deb beradi va sababini aytadi: chegarasiz qiymat katta
+xotira ajratish orqali xizmat ko'rsatishdan bosh tortishga
+(DoS) olib keladi. Firewall ortidagi ichki servis yumshoqroq
+tekshiruv bilan o'tishi mumkin, lekin u yerda ham qiymatlarning
+asosiy sanity tekshiruvi (masalan protokolni tahlil qilish paytida)
+foydali. Review da bu "noma'lum uzunlik" ni topish ishi:
+`@Size(max = ...)` siz `String` maydoni, chegarasiz `List`,
+`@Min`/`@Max` siz son, `Integer.parseInt` ga to'g'ridan-to'g'ri
+tushadigan parametr, va `@RequestBody` ga biriktirilgan sinfdagi
+validatsiyasiz maydonlar. Chegarani faqat perimetrda emas, DTO
+darajasida yozish kerak, chunki ichki servis chaqiruvi perimetrni
+chetlab o'tadi (ESLATMA: Java tomondagi aniq annotatsiyalar korpus
+qo'shimchasi, kitob tilga bog'lanmagan qoidani beradi).
+
 ## 31.7 Review checklisti: kirish va chiqish
 
 | Savol | Nega |
@@ -311,8 +336,17 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
 ## Manbalar
 
+- Martin Kleppmann, *Designing Data-Intensive Applications*, O'Reilly,
+  2017, 8-bob (306-bet) - 31.6 dagi kirishni diapazon va satr
+  uzunligi bo'yicha cheklash talabi hamda chegarasiz qiymatning katta
+  xotira ajratish orqali DoS ga olib kelishi; ichki servisda
+  yumshoqroq, lekin mavjud bo'lishi kerak bo'lgan sanity tekshiruvi
+
 - [OWASP, SSRF Prevention Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.md) - domen whitelist ining DNS rebinding ga qarshi yetarli emasligi va ulanishni tekshirilgan IP ga bog'lash talabi, hex/octal/dword/URL/aralash kodlash bilan chetlab o'tish, to'siladigan diapazonlar ro'yxati (IPv6 `fc00::/7` va `fe80::/10` bilan), redirect ni o'chirish
 - [OWASP, Deserialization Cheat Sheet](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/72865b1e3b5754246a101778dc00b37f9c233373/cheatsheets/Deserialization_Cheat_Sheet.md) - tekshiriladigan API ro'yxati (`readUnshared`, `readResolve`, `readExternal`, `XMLDecoder`, `XStream.fromXML`), serialization filter da resurs chegaralari, `resolveClass` ning chegarasi, oqimni tanish belgilari, `private transient`
+- Thomas H. Cormen, Charles E. Leiserson, Ronald L. Rivest, Clifford Stein, *Introduction to Algorithms*, 3-nashr, MIT Press, 11-bob (265-bet) - qat'iy hash funksiyasining hujumga ochiqligi: raqib hamma kaliti bitta slotga tushadigan to'plam tanlab qidiruvni `Theta(n)` ga aylantirishi va yechim hash ni tasodifiylashtirish bo'lishi
+- Joshua Bloch, *Effective Java*, 3-nashr, Addison-Wesley, 2018, Item 85 (340-bet) - "deseriyalash bombasi": 5744 baytlik oqim va 201 ta ichma-ich `HashSet` deseriyalashda cheksiz vaqt olishi, chunki `hashCode` eksponensial marta chaqirilishi
+- ESLATMA: `ObjectInputFilter` ning deseriyalash bombasini to'smasligi va kalit sonini cheklash tavsiyasi shu korpusning review xulosasi
 
 ---
 

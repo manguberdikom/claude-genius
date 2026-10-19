@@ -3,6 +3,12 @@
 
     python3 tools/review_status.py            # quruq: nima o'zgaradi
     python3 tools/review_status.py --yoz      # yozadi (boblar va README lar)
+    python3 tools/review_status.py --imzo 68 --yoz   # navbat boshidagi 68 bob: tekshirilgan
+
+`--imzo N` ni faqat ODAM yurgizadi va natijani o'z nomidan commit qiladi:
+`check_docs` `tekshirilgan` qatorini Claude commit qilganini xato deydi
+(CONTRIBUTING.md, Tekshiruv tartibi, 4-qoida). Bob `docs/review-queue.tsv`
+tartibida olinadi, ya'ni agentlar eng ko'p tayanadiganlari.
 
 Nega skript: holat 224 bobda turadi va `review.tsv` o'zgarganda
 hammasi birga yangilanishi kerak. Qo'lda yozilsa ikkisi darhol
@@ -41,6 +47,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 REVIEW = os.path.join(ROOT, "docs", "review.tsv")
+QUEUE = os.path.join(ROOT, "docs", "review-queue.tsv")
 MANIFEST = os.path.join(ROOT, "docs", "manifest.json")
 
 MARKER = "> Holat:"
@@ -165,10 +172,46 @@ def apply_readme(text, line, anchor):
     return "\n".join(lines), True
 
 
+def queue_head(count, path=QUEUE):
+    """Navbatning birinchi `count` bobi: [(hujjat, bob)]."""
+    out = []
+    for row in read_review(path).values():
+        if row.get("tartib", "").isdigit() and int(row["tartib"]) <= count:
+            out.append((int(row["tartib"]), (row["hujjat"], row["bob"])))
+    return [key for _, key in sorted(out)]
+
+
+def sign(keys, day, path=REVIEW):
+    """`keys` qatorlarini `tekshirilgan`, `odam` qiladi; boshqa qatorga tegmaydi."""
+    lines = io.open(path, encoding="utf-8").read().split("\n")
+    header = next(l for l in lines if l and not l.startswith("#")).split("\t")
+    col = {name: i for i, name in enumerate(header)}
+    for i, line in enumerate(lines):
+        parts = line.split("\t")
+        if len(parts) == len(header) and (parts[col["hujjat"]], parts[col["bob"]]) in keys:
+            parts[col["holat"]], parts[col["sana"]] = "tekshirilgan", day
+            parts[col["tekshiruvchi"]] = "odam"
+            lines[i] = "\t".join(parts)
+    with io.open(path, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write("\n".join(lines))
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(add_help=True)
     parser.add_argument("--yoz", action="store_true")
+    parser.add_argument("--imzo", type=int, metavar="N",
+                        help="navbat boshidagi N bob: tekshirilgan (faqat odam)")
+    parser.add_argument("--sana", default=None, help="YYYY-MM-DD, sukut bugun")
     args = parser.parse_args(argv)
+
+    if args.imzo:
+        import datetime
+        keys = queue_head(args.imzo)
+        print("tekshirilgan%s: %d bob (%s)" % ("" if args.yoz else " (quruq, --yoz bilan yoziladi)",
+                                               len(keys), ", ".join("%s %s" % k for k in keys)))
+        if not args.yoz:
+            return 0
+        sign(set(keys), args.sana or datetime.date.today().isoformat())
 
     review = read_review()
     changed = missing = 0

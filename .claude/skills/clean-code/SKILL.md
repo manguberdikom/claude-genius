@@ -22,6 +22,9 @@ Toza kod tekshiruvi tartibi:
 
 Har bob `Amalda qo'llash` tekshiruv ro'yxati bilan tugaydi.
 
+`/manguberdi` shu sessiyada chaqirilgan bo'lsa kod o'zgarishi aktyorga
+beriladi (`dasturchi`); bu skill o'shanda faqat bob jadvali.
+
 ## Vazifa - bob jadvali
 
 Jadval bobni topadi. Bobni butun o'qimang: `tools/doc.sh outline clean-code <bob>`
@@ -69,7 +72,7 @@ Bu hujjat qoida beradi, arxitektura qarori bermaydi:
 ## Asboblar
 
 ```bash
-python3 tools/rules_for.py <fayl>      # Java yozishdan OLDIN majburiy
+python3 tools/rules_for.py --vazifa="<vazifa>" <fayl>   # Java yozishdan OLDIN majburiy
 python3 tools/check_code.py <fayl>     # yozgandan keyin mexanik qoidalar
 tools/doc.sh outline clean-code <bob>    # bobdagi bo'limlar
 tools/doc.sh show clean-code <bob.bo'lim> # faqat o'sha bo'lim

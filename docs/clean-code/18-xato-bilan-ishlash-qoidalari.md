@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 18. Xato bilan ishlash qoidalari (Error Handling Rules)
 
@@ -107,6 +107,16 @@ try {
 ```
 
 Shu uslub "o'rash" (wrapping) deb ataladi va u uchinchi tomon kutubxonasiga bog'liqlikni ham kamaytiradi: kutubxona almashtirilsa, faqat wrapper o'zgaradi.
+
+O'rash ham bepul emas, shuning uchun uni **ortiqcha ishlatmaslik** kerak: har qatlamda qayta o'ralgan istisno stack trace ni uzaytiradi va sababni topishni qiyinlashtiradi. Qarorlar tartibi uch bosqichli va yuqoridan pastga qaraladi.
+
+| Bosqich | Nima qilinadi | Qachon |
+|---|---|---|
+| 1. Oldini olish | yuqori metod parametrlarini past qatlamga uzatishdan **oldin** tekshirish | tekshirish mumkin bo'lganda: eng arzon yo'l, istisno umuman tug'ilmaydi |
+| 2. Chetlab o'tish | past qatlam istisnosini yuqori qatlamda jimgina chetlab o'tib log qilish | holatni chaqiruvchidan yashirish mumkin bo'lganda va ish davom etishi kerak bo'lganda |
+| 3. Tarjima | istisnoni abstraksiyaga mos istisnoga o'rash, sabab bilan | yuqori ikkisi mumkin bo'lmaganda |
+
+Ya'ni tarjima oxirgi variant, birinchi emas. Ikkinchi bosqichda log yozish majburiy: istisno chaqiruvchidan yashirilgani uchun uning yagona izi log bo'lib qoladi ([log qilish yoki tashlash](19-istisno-mexanikasi-va-resurslar.md#197-log-qilish-yoki-tashlash-ikkisini-birga-qilmaslik)).
 
 ## 18.4 `try` blokini alohida funksiyaga chiqarish
 
@@ -216,6 +226,18 @@ Metod to'plam qaytarsa, u hech qachon `null` qaytarmasligi kerak - bu Java da en
 
 Shu qoidaning `Map`, `Set`, `Stream` va massiv uchun ekvivalentlari: `Map.of()`, `Set.of()`, `Stream.empty()`, `new String[0]`.
 
+Massiv qaytarishda yonma-yon turadigan qoida ham bor: `toArray` ga uzatiladigan massivni ishlash uchun **oldindan ajratmang**. `list.toArray(new String[list.size()])` shakli tezroq ko'rinadi, lekin o'lchovlar bunday qilish zararli ekanini ko'rsatgan va zamonaviy JVM da nol uzunlikdagi massiv tezroq. Bundan tashqari o'lchamni oldin hisoblash ko'p threadli muhitda xato manbai: `size()` va `toArray` orasida to'plam o'sib ketsa, qaytgan massiv qisqartirilib qoladi. Shuning uchun yagona shakl - `new String[0]`, va u konstantaga chiqariladi.
+
+```java
+// yomon: oldindan ajratish - foydasi yo'q, poyga sharti bor
+return names.toArray(new String[names.size()]);
+
+// yaxshi: nol uzunlikdagi massiv, konstanta sifatida
+private static final String[] EMPTY_NAMES = new String[0];
+
+return names.toArray(EMPTY_NAMES);
+```
+
 ## 18.9 Istisnoni oqim boshqarish uchun ishlatmaslik
 
 Istisno **istisnoli** holat uchun. Normal oqimda istisno tashlash uch zarar keltiradi: stack trace yaratish qimmat (issiq yo'lda sezilarli), kod o'qilmaydi, va haqiqiy xatolar shovqin ichida ko'rinmay qoladi.
@@ -279,6 +301,7 @@ Har bir xato holati uchun yangi istisno sinfi yozish kod bazasini kattalashtirad
 | Obyekt holati bu chaqiruvga tayyor emas | `IllegalStateException` |
 | Operatsiya bu implementatsiyada yo'q | `UnsupportedOperationException` |
 | Hisob arifmetik qoidani buzdi | `ArithmeticException` |
+| Taqiqlangan joyda bir vaqtda o'zgartirish aniqlandi | `ConcurrentModificationException` |
 
 ```java
 // yomon: standart istisnoni takrorlaydigan o'z sinfi
@@ -292,7 +315,13 @@ if (quantity <= 0) {
 }
 ```
 
+`ConcurrentModificationException` ni ishlatganda bitta tafsilotni bilish kerak: u faqat **ishora**. Istisno bitta thread uchun mo'ljallangan obyekt bir vaqtda o'zgartirilayotganini aniqlaganda tashlanadi, lekin bir vaqtda o'zgartirishni ishonchli aniqlashning umuman yo'li yo'q: to'plamlar buni arzon hisoblagich bilan taxmin qiladi, shuning uchun istisno kelmasligi ham mumkin. Natijada `ConcurrentModificationException` ni **ushlab** mantiq qurish xato: u faqat xatoni erta ko'rsatadigan vosita, kafolat emas. To'g'ri yechim sinxronlash yoki `ConcurrentHashMap` kabi tur tanlash.
+
 O'z istisno sinfi haqli bo'ladigan ikki holat bor. Birinchisi: chaqiruvchi shu xatoni **alohida** ushlab, boshqa yo'l tanlashi kerak (`InsufficientFundsException` ni ushlab, boshqa to'lov usuliga o'tish). Ikkinchisi: istisno xabarda sig'maydigan ma'lumot tashiydi (qolgan balans, kutish muddati, qayta urinish vaqti). Ikkisi ham yo'q bo'lsa, standart istisno yetadi. `IllegalArgumentException` va `IllegalStateException` orasidagi tanlov qoidasi: argument qiymatidan qat'i nazar chaqiruv noto'g'ri bo'lsa, bu holat xatosi; aks holda argument xatosi.
+
+Uchinchi dalil ham bor va u o'z sinfini yozishdan tiyilish uchun yetarli: standart istisnoni voris olib tafsilot qo'shish mumkin, **lekin istisnolar seriyalanadi**. Seriyalanadigan sinf esa alohida yuk: uning seriyalash shakli de-fakto API ga aylanadi, versiyalar orasida mos kelishi kerak va har bir maydon shu shartnomaga qo'shiladi (25.4). Ya'ni "shunchaki bitta maydon qo'shdim" degan istisno sinfi aslida yangi seriyalash shartnomasini e'lon qiladi. Shuning uchun yaxshi sababsiz o'z istisno sinfi yozilmaydi.
+
+Istisno sinfi haqli deb qaror qilingandan keyin ikkinchi savol keladi: u **tekshiriladigan** bo'ladimi. Mezon ikki shartning **birga** bajarilishi: holatni API ni to'g'ri ishlatish bilan oldini olish mumkin emas, VA programmist istisnoga duch kelganda foydali amal qila oladi. Ikkinchi shart ko'pincha e'tibordan qoladi: "foydali amal" degani qayta urinish, muqobil manbaga o'tish yoki foydalanuvchidan boshqa kiritish so'rash kabi aniq tiklanish yo'li. Chaqiruvchining qila oladigan yagona ishi log yozib yiqilish bo'lsa, tekshiriladigan istisno hech narsa bermaydi va faqat `try-catch` shovqinini keltiradi: bunda tekshirilmaydigan istisno to'g'ri tanlov. Dasturlash xatosi (yaroqsiz argument, noto'g'ri tartibdagi chaqiruv) va tiklanmaydigan holat esa har doim tekshirilmaydigan bo'ladi. To'liq qaror va iyerarxiya dizayni arxitektor hujjatidagi [istisnolar dizayni](../architect/13-zamonaviy-java-tili-va-api-dizayni.md#137-istisnolar-dizayni-tekshiriladigan-va-tekshirilmaydigan-oz-ierarxiyangiz) bo'limida.
 
 Standart istisnoni ishlatish tanlovi API shartnomasining bir qismi: u `@throws` da yoziladi ([`@param`, `@return`, `@throws` to'liqligi](10-javadoc-va-api-hujjati.md#103-param-return-throws-toliqligi)) va keyin uni o'zgartirish buzuvchi o'zgarish bo'ladi.
 
@@ -379,6 +408,12 @@ Oxirgi va eng oson esdan chiqadigan qoida: himoya kodining o'zi ham kod. Har par
 
 - Joshua Bloch, *Effective Java* 3rd, Item 69 - istisno faqat istisno holat uchun
 - Joshua Bloch, *Effective Java* 3rd, Item 70, 71 - tekshiriladigan va tekshirilmaydigan istisno tanlovi
+- Joshua Bloch, *Effective Java* 3rd, Item 71 (298-bet) - tekshiriladigan istisno faqat ikki shart birga bajarilganda haqli bo'lishi: holatni API ni to'g'ri ishlatish bilan oldini olish mumkin emasligi va programmistning foydali amal qila olishi
+- Joshua Bloch, *Effective Java* 3rd, Item 72 (300-bet) - `ConcurrentModificationException` ning faqat ishora bo'lishi: bir vaqtda o'zgartirishni ishonchli aniqlash mumkin emasligi
+- Joshua Bloch, *Effective Java* 3rd, Item 72 (301-bet) - istisnolarning seriyalanishi va bu yukning o'z istisno sinfini yaxshi sababsiz yozmaslik uchun yetarli dalil bo'lishi
+- Joshua Bloch, *Effective Java* 3rd, Item 73 (303-bet) - istisno tarjimasini ortiqcha ishlatmaslik: eng yaxshi yo'l past qatlam istisnosining oldini olish, keyingisi uni yuqori qatlamda chetlab o'tib log qilish
+- Joshua Bloch, *Effective Java* 3rd, Item 54 (248-bet) - `toArray` ga uzatiladigan massivni ishlash uchun oldindan ajratmaslik va nol uzunlikdagi massiv uzatish
+- ESLATMA: Liang (*Introduction to Java Programming*, 9-nashr, Pearson, 2013, 14-bob, 540-bet) o'z istisno sinfini `Exception` dan voris olib TEKSHIRILADIGAN qilishni talab qiladi; korpus esa tekshirilmaydiganni afzal ko'radi (arxitektor hujjatidagi istisnolar dizayni). Ikkisini ajratuvchi shart yuqorida yozilgan: tekshiriladigan istisno faqat chaqiruvchi uchun ma'noli tiklanish yo'li (qayta urinish, muqobil manba) bo'lganda tanlanadi, dasturlash xatosi va tiklanmaydigan holat esa tekshirilmaydigan bo'ladi
 - Joshua Bloch, *Effective Java* 3rd, Item 72 - standart istisnolardan foydalanish
 - Joshua Bloch, *Effective Java* 3rd, Item 73 - abstraksiyaga mos istisno tashlash
 - Joshua Bloch, *Effective Java* 3rd, Item 54 - `null` emas, bo'sh to'plam qaytarish

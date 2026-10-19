@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 14. Java tili darajasidagi xatolar katalogi (Language-Level Defects)
 
@@ -316,6 +316,8 @@ public enum Config {
 }
 ```
 
+Polimorfizm bilan bog'liq eng jim xato esa maydonlarda chiqadi: **maydon murojaati polimorf emas, u kompilyatsiya paytida hal qilinadi.** Voris sinfda superklassdagi maydon bilan bir xil nomli maydon e'lon qilish uni override qilmaydi, YASHIRADI (hiding), va qaysi maydon o'qilishi obyektning haqiqiy turiga emas, havola turiga qarab aniqlanadi (Boyarsky/Selikoff, *OCP Java SE 17 Developer Study Guide*, 6-bob, 284-bet). Binar tomoni ham bor va u kutubxona chiqaradigan jamoaga tegishli: shunday maydon qo'shish manba kodida nom ma'nosini o'zgartiradi, eski binar esa hamon superklass maydonini o'qiydi (*The Java Language Specification, Java SE 25 Edition*, 13-bob, 480-bet). Review qoidasi qat'iy: ierarxiyada bir xil nomli maydon umuman bo'lmasin; `protected` maydon o'rniga accessor ishlatilsa bu holat tug'ilmaydi.
+
 ## 14.9 Istisnolar: tur va kontekst
 
 ```java
@@ -405,6 +407,8 @@ Bu skriptni CI da ogohlantirish sifatida ishlatish mumkin, lekin bloklamaslik ke
 - Joshua Bloch, *Effective Java* 3rd, Item 11 - `hashCode` ni `equals` bilan birga yozish; Item 14 - `compareTo` va `equals` nomuvofiqligi
 - [OpenJDK 25, `ConcurrentHashMap.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/util/concurrent/ConcurrentHashMap.java) - kolleksiyalarning `equals` va `hashCode` ga tayanishi, aggregate status metodlari
 - [OpenJDK 25, `ForkJoinPool.java`](https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/classes/java/util/concurrent/ForkJoinPool.java) - `parallelStream()` ortidagi `commonPool` va uning hajmi
+- Jeanne Boyarsky, Scott Selikoff, *OCP Java SE 17 Developer Study Guide*, 6-bob (284-bet) - voris sinfda superklass maydoni bilan bir xil nomli maydon e'lon qilish uni yashirishi (hiding), override qilmasligi va qaysi maydon o'qilishi havola turiga qarab aniqlanishi
+- *The Java Language Specification, Java SE 25 Edition* (Gosling, Joy, Steele, Bracha, Buckley, Smith, Bierman), 13-bob (480-bet) - maydon murojaati polimorf emasligi va kompilyatsiya paytida hal qilinishi: yashiruvchi maydon qo'shish manba kodida nom ma'nosini o'zgartirishi, eski binar esa superklass maydonini o'qishda davom etishi
 
 ---
 

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Arxitektor miyasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 8. Ishlash va resurs hissi: napkin math (Performance Intuition and Napkin Math)
 
@@ -166,12 +166,12 @@ Qator versiyasining header'i haqida Rogov ning xulosasi aniq: header katta chiqa
 -- real uzunligini beradi (Rogov, 3.2, 65-bet).
 SELECT lp_len FROM heap_page_items(get_raw_page('orders', 0));
 
--- Jadval va indekslarning hozirgi hajmi (Rogov, 8.1, 136-bet):
+-- Jadval va indekslarning hozirgi hajmi (Rogov, 8.1, 137-bet):
 SELECT pg_size_pretty(pg_table_size('orders'))   AS jadval,
        pg_size_pretty(pg_indexes_size('orders')) AS indekslar;
 ```
 
-Bir yillik o'sish shundan keyin oddiy ko'paytma bo'ladi: o'lchangan qator hajmi ko'paytiriladi kunlik qator oqimiga, ko'paytiriladi 365 ga. Indekslarni alohida sanash kerak va natija kutilganidan katta chiqishi normal: Rogov ning misolida jadval 67 MB, uning indekslari 109 MB, ya'ni indekslar jadvaldan katta (8.1, 136-bet).
+Bir yillik o'sish shundan keyin oddiy ko'paytma bo'ladi: o'lchangan qator hajmi ko'paytiriladi kunlik qator oqimiga, ko'paytiriladi 365 ga. Indekslarni alohida sanash kerak va natija kutilganidan katta chiqishi normal: Rogov ning misolida jadval 67 MB, uning indekslari 109 MB, ya'ni indekslar jadvaldan katta (8.1, 137-bet).
 
 Partitioning qarori shu o'lchangan raqamdan keladi, taxmindan emas. Hisob jadval ishchi to'plami buffer cache va OS cache ga sig'adimi degan savolga javob berganda qaror ham tayyor bo'ladi, va bu savol [keshning o'rni](#89-qachon-kesh-kerak-emas-malumotlar-bazasi-allaqachon-yetarli) bo'limida davom etadi.
 
@@ -211,7 +211,18 @@ MeterRegistryCustomizer<MeterRegistry> persentillar() {
 }
 ```
 
+Beshinchi nuqta persentil tanlashdan oldin turadi va u maqsad haqida. Bitta so'rovning ichida, real vaqtda "yuklamani rad etamizmi" degan qarorni p99 bilan chiqarib bo'lmaydi, chunki p99 ni har so'rovda qayta hisoblash arzon emas. Nygard shu rol uchun oxirgi yigirma tranzaksiyaning siljuvchi o'rtachasini tavsiya qiladi (Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 4.9-bo'lim, 100-bet). Bu yuqoridagi "o'rtacha sekin javobni yashiradi" qoidasiga qarshi emas, chunki ajratuvchi shart o'lchov MAQSADI:
+
+| Maqsad | Qaysi statistika | Nega | Qayerda hisoblanadi |
+|---|---|---|---|
+| Protsess ichida yuklamani rad etish yoki degradatsiya rejimiga o'tish | oxirgi N tranzaksiyaning siljuvchi o'rtachasi yoki EWMA | arzon, lahzali, holati bir necha baytda sig'adi | ilova ichida, har so'rovda |
+| SLO baholash, alert va hisobot | p95, p99, kerak bo'lsa p999 | chetga chiqishlarni ko'rsatadi va foydalanuvchi tajribasiga mos keladi | monitoring tizimida, histogram dan |
+
+Ikkisi bir xil raqam emas va bir-birini almashtirmaydi. Siljuvchi o'rtacha yuk ortganini tez sezadi, lekin qancha foydalanuvchi zarar ko'rganini aytmaydi; p99 buning teskarisi. Shuning uchun [Fail Fast](07-nosozlik-haqida-fikrlash.md#78-nosozlik-tasirini-cheklash-bulkhead-va-alohida-resurs-hovuzlari) shaklidagi himoya ichidagi chegara ilovaning o'z arzon o'lchovidan oladi, [SLO](37-xarajat-slo-va-biznes-bilan-muloqot.md#375-sli-slo-va-sla-farqi-ularni-togri-tanlash) esa histogramdan. Ikki o'lchov bitta nom bilan atalsa (masalan ikkisi ham "javob vaqti chegarasi" deb yozilsa), alert bir joyda, himoya boshqa joyda ishlaydi va sabab uzoq izlanadi.
+
 Nega server tomonda hisoblangan persentil emas, xom histogram kerak: Kleppmann persentillarni o'rtachalashni, masalan vaqt o'lchamini kamaytirish yoki bir nechta mashinaning natijasini birlashtirish uchun, matematik jihatdan ma'nosiz deb ataydi; javob vaqti ma'lumotini birlashtirishning to'g'ri yo'li histogram larni qo'shish (1-bob, 16-bet). Micrometer hujjati xuddi shuni API darajasida takrorlaydi: client-side persentillarni taglar bo'ylab birlashtirish mumkin emas, histogram asosidagi persentillarni esa bucket qiymatlarini qo'shib birlashtirish mumkin, Prometheus'da `histogram_quantile` shuni qiladi. Arzon taqribiy algoritmlar ham sanab o'tilgan: forward decay, t-digest, HdrHistogram (Kleppmann, 1-bob, 16-bet).
+
+Oxirgi qo'shimcha maqsad haqida emas, optimallashtirish nishoni haqida. Shirazi javob vaqtining TARQALISHINI (variance) kamaytirishni birinchi maqsad qilib qo'yishni maslahat beradi, chunki foydalanuvchi o'rtachani emas, yuqori persentilni eslaydi; shuning uchun variance kamaysa, o'rtacha bir oz oshsa ham tizim tezroq sezilishi mumkin (Jack Shirazi, *Java Performance Tuning*, 2-nashr, O'Reilly, 2003, 1.5-bo'lim). Amaliy shakli aniq: p99 ni p50 ga bo'lgan nisbat o'lchov bo'lib yoziladi va u yaxshilanish nishoni bo'ladi, chunki shu nisbat bitta raqamda GC pauzalari, navbat va retry larning hammasini ushlaydi. ESLATMA: kitob 2003 yilda yozilgan va bu yerdan faqat tamoyil olinadi; uning eksponensial taqsimot farazi va koeffitsientlari zamonaviy JVM da tekshirilmagan, shuning uchun korpusga ko'chirilmaydi. Nisbat uchun maqsadli qiymat ham kitobdan emas, o'z o'lchovingizdan chiqadi.
 
 ## 8.7 Tarmoq safari soni: bitta so'rovda nechta tashqi chaqiruv bor
 
@@ -330,6 +341,14 @@ Shuning uchun har bir performance o'zgarishi aniq talab va aniq son bilan boshla
 | Thread pool o'sishi yordam bermaydi | chegara pastdagi resursda | Little qonuni va cheklov tahlili (Goetz 11.4, Nygard 8.2) |
 | "Bu yer sekin bo'lsa kerak" | sezgiga ishonish | o'lchash, gipoteza, izolyatsiya qiluvchi test (Shirazi, 1.4) |
 | Benchmark natijasi ko'chmaydi | bitta thread, boshqa kompilyator, vendor raqami | o'z yuk profilingizda o'lchash (Gregg 6.5.11, Shirazi 1.8) |
+| Yuk sifatida natija o'lchanadi | rate metrikasi throttling dan keyin olingan | qo'yilgan yukni o'lchash: navbat uzunligi, load average (Gregg 6.5) |
+| Bitta nusxa tezlashdi, tizim tezlashmadi | o'lchov bitta instans latency sida | umumiy throughput ni o'lchash (Nygard 5-bob, 123-bet) |
+
+Yuklamani tavsiflashda o'lchov nishoni bitta nozik joyda buziladi. Gregg CPU uchun yuk xarakteristikasini yozganda yetkazilgan unumni emas, QO'YILGAN yukni o'lchashni talab qiladi, va `load average` ning mosligini aynan shu bilan izohlaydi: u bajarilgan ishni emas, bajarilishini kutayotgan ishni ham sanaydi (Brendan Gregg, *Systems Performance: Enterprise and the Cloud*, 1-nashr, Prentice Hall, 2013, 6.5-bo'lim, 216-bet). Farq amalda shunday chiqadi: CPU throttling boshlangandan keyin "sekundiga bajarilgan so'rov" metrikasi tushadi, lekin bu yukning kamayishi degani emas, bu natijaning kamayishi; yuk esa navbatda o'sib turadi. Shuning uchun sig'im hisobida kirish tomonidagi o'lchov (navbat uzunligi, kutish vaqti, `load average`, cgroup dagi `nr_throttled`) chiqish tomonidagi o'lchovdan oldin o'qiladi. Gregg shu yerda yana bitta qoida beradi va u eng katta yutuqni ko'rsatadi: ishni tezlashtirishdan oldin keraksiz ishni topib yo'q qilish kerak, chunki bajarilmaydigan ish nol vaqt oladi.
+
+ESLATMA: qo'limizdagi nusxada shu kitobning faqat 6-bobi bor, Gregg ning umumiy metodologiyalari (USE metodining to'liq ta'rifi va boshqalar) esa 2-bobda. Shuning uchun bu yerda faqat 6.5 dan, ya'ni metodologiyaning CPU ga qo'llanishidan chiqadigan qoida yozilgan; umumiy metodologiyani bu nusxadan chiqarib bo'lmaydi va u iqtibos qilinmaydi.
+
+Nygard shu farqning qaror tomonini beradi: CPU binding ni sinaganda bitta serverning javob vaqtini emas, umumiy throughput ni o'lchash kerak (Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 5-bob, 123-bet). Sabab oddiy: binding bitta nusxaning kesh lokalligini yaxshilashi mumkin, lekin yadrolarni band qilib qolgan nusxalarni qisib qo'yadi, va ikki ta'sirning yig'indisi faqat tizim darajasidagi o'lchovda ko'rinadi.
 
 ## 8.11 Amdahl qonuni: ketma-ket ulush masshtablanishning chegarasi
 
@@ -347,6 +366,8 @@ Kitob serializatsiyaning samaradorlik narxini ham beradi va bu jadvaldan ko'ra t
 Amaliy ma'nosi: masshtablash rejasi "nechta instance qo'yamiz" savolidan emas, "ketma-ket qolgan joy qayerda" savolidan boshlanadi. Goetz asosiy aybdorni nomlaydi: concurrent ilovalarda masshtablanishga asosiy tahdid eksklyuziv resurs qulfi (11.4, 145-bet). Kitobdagi serializatsiya manbalari ro'yxati ham shu: umumiy ish navbatidan vazifa olish sinxronizatsiya talab qiladi; natijani qayta ishlash, masalan log fayliga yozish yoki umumiy natija to'plamiga qo'yish, ham serializatsiya manbasi; har bir thread o'z natija strukturasini yuritsa, oxirgi merge serializatsiya bo'ladi. Umumiy qoida shundan: istalgan umumiy ma'lumot strukturasiga murojaat programmaga serializatsiya elementini kiritadi (11.2, 140-141-betlar). Goetz ning xulosasi qisqa: hamma concurrent ilovada serializatsiya manbalari bor, o'zingizda yo'q deb o'ylasangiz yana qarang (11.2, 141-bet).
 
 Ikkinchi xulosa o'lchovga tegishli: yuk oshganda throughput chiziqli o'smasa va kechikish o'sa boshlasa, sabab odatda yadro yetishmasligi emas, ketma-ket bo'lak. Bu [qulf raqobati](11-concurrency-thread-lock-atomic-happens.md#1115-qulf-raqobatini-kamaytirish-qamrov-bolish-striping-va-issiq-maydon) o'lchovi bilan birga o'qiladi: qaysi resurs navbat yasayotganini topmasdan qo'shilgan har bir thread faqat kontekst almashinuvini oshiradi, va uning narxi 8.1 dagi jadvalda turadi.
+
+Amdahl qonunining ikkinchi, o'lchovsiz ishlatilishi ham bor va arxitektor uchun u ko'pincha foydaliroq. Serializatsiyani bevosita o'lchash qiyin, lekin qonundan o'lchovsiz ham foyda olish mumkin: algoritmni **limitda** o'ylab ko'rish, ya'ni yuzlab yoki minglab protsessorda nima bo'lishini tasavvur qilish, masshtablanish chegarasi qayerda paydo bo'lishini ko'rsatadi. To'rt yadroli tizimda masshtablanadigan ko'rinadigan algoritmda hali uchramagan yashirin bottleneck bo'lishi mumkin (Goetz, 11.2.2, 142-bet). Kitobning o'z misoli qulf granularligini kamaytirishning ikki usulini shu linzadan taqqoslaydi: qulfni ikkiga bo'lish (lock splitting) ko'p protsessordan foydalanish tomon uzoqqa olib bormaydi, qulfni ko'pga bo'lish (lock striping) esa ancha istiqbolli, chunki bo'laklar to'plamining o'lchamini protsessor soni oshgani sari oshirish mumkin. Qoidaning o'zi ham bor va u muhim: optimizatsiya har doim real unumdorlik talabi fonida qaraladi, va ba'zi hollarda qulfni ikkiga bo'lish talabni qondirish uchun yetarli bo'ladi (11.2.2, 142-bet). Ikki usulning mexanikasi va ularning issiq maydon bilan munosabati [qulf raqobatini kamaytirish bo'limida](11-concurrency-thread-lock-atomic-happens.md#1115-qulf-raqobatini-kamaytirish-qamrov-bolish-striping-va-issiq-maydon).
 
 ## 8.12 O'sish tartibi: n ortganda narx qanday o'zgaradi (Order of Growth, Big O)
 
@@ -403,6 +424,47 @@ public List<Shipment> matchIndexed(List<Order> orders, List<Shipment> shipments)
 Java to'plamlarining narxi shu til bilan yozilgan: `ArrayList.get(index)` `O(1)`, `contains` va `indexOf` `O(n)`, `addFirst` `ArrayList` da `O(n)` lekin `LinkedList` da `O(1)` (Liang, 26.1-jadval, 950-bet); hashing bilan izlash, qo'shish va o'chirish `O(1)` (Liang, 28.1, 998-bet). To'plam tanlashning toza kod tomoni [to'plam turini tanlash](../clean-code/23-toplamlar-va-generiklar-gigiyenasi.md#231-togri-toplam-turini-tanlash) bo'limida.
 
 O'sish tartibi [Little qonuni](#83-little-qonuni-parallellik-kechikish-va-throughput-bogliqligi) va [Amdahl qonuni](#811-amdahl-qonuni-ketma-ket-ulush-masshtablanishning-chegarasi) bilan aralashmaydi: Little qonuni tizimdagi bir vaqtdagi ishlar sonini bog'laydi, Amdahl qonuni ketma-ket ulush tufayli tezlanish chegarasini beradi, o'sish tartibi esa bitta operatsiyaning narxini kirish hajmiga bog'laydi.
+
+O'sish tartibini aniqlikka almashtirish esa alohida texnika va uning kanonik misoli hisoblagich. Boswell va Foucher "oxirgi daqiqa va oxirgi soat" hisoblagichini uch urinishda quradi va ikki muammoni nomlaydi. Birinchisi xotira: har voqeani ro'yxatda saqlasa, sekundiga 100 marta chaqiriladigan yuqori trafikli serverda oxirgi bir soatlik ma'lumot taxminan 5 MB oladi, ya'ni chaqiruv tez-tez bo'lgani sayin xotira o'sadi, holbuki production kutubxonasi katta va bashoratsiz xotira ishlatmasligi kerak. Ikkinchisi so'rov narxi: ro'yxat bo'ylab yurish `O(n)` bo'ladi.
+
+Yechim aniqlikni unumdorlikka ongli almashtirish. Kitobning kuzatuvi: bunday hisoblagichni ishlatadigan ko'p ilova yuqori aniqlikni talab qilmaydi. Shuning uchun kichik vaqt oynasidagi voqealar bitta chelakka yig'iladi va bitta yig'indi bilan ifodalanadi: oxirgi daqiqa 60 ta diskret chelakka, har biri 1 sekund kenglikda, oxirgi soat esa 60 ta chelakka, har biri 1 daqiqa kenglikda. Natijada `MinuteCount()` va `HourCount()` 60 da bir aniqlikka ega bo'ladi, bu esa maqbul, va eng muhimi dizayn qat'iy hamda bashoratli xotira ishlatadi. Aniqlik yetmasa chelak soni oshiriladi, buning narxi esa kattaroq xotira (15-bob, 174-175-betlar).
+
+```java
+// Chelakli oyna hisoblagichi: xotira qat'iy, so'rov O(1), xato taxminan 1/60.
+final class TrailingBucketCounter {
+
+    private final long[] buckets;      // 60 ta chelak: xotira chaqiruv soniga bog'liq emas
+    private final long bucketMillis;
+    private long lastBucketStart;
+    private int head;
+    private long total;                // yig'indi oldindan saqlanadi: so'rov O(1)
+
+    void add(long count, long nowMillis) {
+        shiftTo(nowMillis);
+        buckets[head] += count;
+        total += count;
+    }
+
+    long trailingCount(long nowMillis) {
+        shiftTo(nowMillis);
+        return total;                  // ro'yxat bo'ylab yurish yo'q
+    }
+
+    private void shiftTo(long nowMillis) {
+        long steps = (nowMillis - lastBucketStart) / bucketMillis;
+        for (long i = 0; i < Math.min(steps, buckets.length); i++) {
+            head = (head + 1) % buckets.length;
+            total -= buckets[head];    // eng eski chelak oynadan chiqadi
+            buckets[head] = 0;
+        }
+        if (steps > 0) {
+            lastBucketStart += steps * bucketMillis;
+        }
+    }
+}
+```
+
+Qaror mezoni ochiq yoziladi: chelak kengligi aniqlikni belgilaydi, chelak soni xotirani belgilaydi, va ikkisining almashuvi hisoblagichni ishlatadigan tomonning aniqlik talabidan chiqadi. Shu sababli bunday hisoblagichni o'zi yozishdan oldin savol beriladi: Micrometer ning `Timer` yoki `DistributionSummary` i allaqachon shu ishni qilmayaptimi ([30-bob](30-kuzatuvchanlik-amaliyoti-log-metrika-trace.md)), chunki o'z implementatsiyasi [6.5](06-murakkablikni-boshqarish.md#65-kodni-ochirish-eng-kam-baholangan-arxitektura-ishi) dagi "kod majburiyat" qoidasiga tushadi.
 
 ## 8.13 Amortizatsiyalangan narx: bitta operatsiya qimmat, ketma-ketlik arzon (Amortized Analysis)
 
@@ -465,7 +527,24 @@ Fowler degradatsiya atamasini aynan shu farq uchun ishlatadi: B tizimi A dan ko'
 
 **Efficiency** ishlashni resursga bo'lgan qiymat. Fowler ning misoli: ikki CPU da 30 tps beradigan tizim to'rt bir xil CPU da 40 tps beradigan tizimdan samaraliroq (8-bet). Bu capacity dan boshqa savolga javob beradi: capacity "qancha ko'taradi" deydi, efficiency "qancha pulga ko'taradi" deydi. Shuning uchun xarajat suhbatida throughput yolg'iz keltirilmaydi, u resurs soniga bo'linadi.
 
+JCiP shu lug'atga bitta ajratish qo'shadi va u qaror uchun Fowler ning ro'yxatidan ham keskinroq. Unumdorlik o'lchovlari ikki guruhga bo'linadi: xizmat vaqti va latency "berilgan ish birligi qanchalik tez bajariladi" degan savolga javob beradi, sig'im va throughput esa "berilgan hisoblash resursi bilan qancha ish bajarish mumkin" degan savolga. Masshtablanish esa alohida ta'rifga ega: qo'shimcha hisoblash resursi (CPU, xotira, saqlash, I/O o'tkazuvchanligi) qo'shilganda throughput yoki sig'imni oshirish qobiliyati (Goetz, 11.1.1, 137-bet).
+
+Ajratishning amaliy natijasi sozlash yo'nalishida ko'rinadi. Unumdorlik uchun sozlaganda maqsad shu ishni kamroq kuch bilan qilish: natijani keshlab qayta ishlatish yoki `O(n^2)` algoritmni `O(n log n)` ga almashtirish. Masshtablanish uchun sozlaganda esa maqsad muammoni parallellashtirish yo'lini topish, ya'ni ko'proq resurs bilan ko'proq ish qilish. Ikki jihat butunlay alohida va ba'zan bir-biriga **zid**: yuqori masshtablanishga yoki apparatdan yaxshi foydalanishga erishish uchun ko'pincha har bir alohida vazifani ishlashga ketadigan ish hajmi oshiriladi, masalan vazifa bir nechta konveyer bosqichiga bo'lganda. Kitob hatto bitta threadli dasturda unumdorlikni oshiradigan ko'p hiyla masshtablanish uchun zararli ekanini aytadi (11.1.1, 137-138-bet).
+
+Kanonik misol uch qatlamli ilova: prezentatsiya, biznes mantiqi va saqlash ajratilgan va turli tizimlarda bajarilishi mumkin. Monolit ilova **birinchi** ish birligi uchun deyarli har doim yaxshiroq unumdorlik beradi, chunki unda qatlamlar orasidagi tarmoq kechikishi ham, hisoblash jarayonini alohida abstraksiya qatlamlariga ajratishning narxi (navbatga qo'yish, muvofiqlashtirish, ma'lumotni ko'chirish) ham yo'q. Lekin monolit o'z ishlov sig'imiga yetganda jiddiy muammo paydo bo'ladi: sig'imni sezilarli oshirish juda qiyin bo'lishi mumkin. Shuning uchun uzunroq xizmat vaqti yoki ish birligiga ko'proq resurs sarfi ongli ravishda qabul qilinadi va u ko'proq resurs qo'shib kattaroq yukni ko'tarish imkoniyatiga almashtiriladi. Server ilovasida odatda "qancha" tomoni, ya'ni masshtablanish, throughput va sig'im muhimroq; interaktiv ilovada esa latency ustun turadi, chunki foydalanuvchi progress belgisini kutib o'tirmasligi kerak (11.1.1, 138-bet). Oxirgi gap Fowler ning responsiveness ta'rifi bilan bir xil joyga ishora qiladi, demak ikki kitob bu yerda zid emas: ikkisi ham "qanchalik tez" va "qancha" o'lchovlarini ajratishni va qaysi birini optimallashtirayotganingizni oshkor aytishni talab qiladi.
+
 Fowler atama ro'yxatining oldiga bitta shart qo'yadi va u bu bobdagi hamma raqamga tegishli: ishlash haqidagi har qanday maslahat sizning konfiguratsiyangizda o'lchanmaguncha fakt deb qabul qilinmaydi, va konfiguratsiyadagi sezilarli o'zgarish (JVM versiyasi, apparat, baza) ishlash haqidagi har qanday faktni bekor qilishi mumkin, shuning uchun optimizatsiyalar qaytadan tekshiriladi; ba'zan o'tmishda yordam bergan optimizatsiya yangi muhitda zarar keltirayotgani aniqlanadi (7-bet). Shu talabning amaliy shakli [o'lchovsiz optimallashtirish](#810-olchovsiz-optimallashtirish-taxmin-qilib-emas-olchab-tuzatish) bo'limida.
+
+Ro'yxatga yana bitta juftlik qo'shiladi va u ko'pincha bitta so'z bilan atalib chalkashlik keltiradi: masshtablanish (scalability) va elastiklik (elasticity). *Fundamentals of Software Architecture* ularni ikki boshqa savolga bog'laydi. Masshtablanish ko'p sonli parallel foydalanuvchi yukiga chidash qobiliyati, ya'ni o'sish bo'yicha javob berishni saqlash. Elastiklik esa to'satdan keladigan portlashga chidash: kitobning misoli konsert chiptasi savdosi, ya'ni yuk bir zumda ko'tarilib keyin tushadi. Ikkisi alohida o'lchanadi va ko'p tizimda ikkisi ham kerak, lekin biri boshqasini keltirmaydi: mehmonxona bron tizimi yuqori masshtablanishga ega bo'lib, elastiklikni umuman talab qilmasligi mumkin.
+
+*The Hard Parts* farqning mexanikasini ham beradi va bu arxitektura qaroriga to'g'ridan to'g'ri tegadi. Masshtablanish modullilikka bog'liq, elastiklik esa boshlanish vaqtiga, aniqrog'i o'rtacha ishga tushish vaqtiga (mean time to startup, MTTS), ya'ni servis granulyarligiga: mayda servis tez ko'tariladi va shuning uchun to'satdan yuk portlashiga tez javob beradi, yirik servis esa modullilik yetarli bo'lsa ham elastik emas (3-bob, 56-bet). Shundan uchinchi qoida chiqadi: ikkisining ham yuqori darajasi kerak bo'lsa, servislar orasidagi sinxron aloqa minimal bo'lishi kerak, chunki har sinxron chaqiruv ikki servisning sig'imini bir-biriga bog'laydi.
+
+| O'lchov | Savol | Nimaga bog'liq | Qaror |
+|---|---|---|---|
+| Masshtablanish | o'sib borayotgan yukda javob beramizmi | modullilik | chegarani to'g'ri qo'yish, gorizontal duplikatsiya |
+| Elastiklik | bir zumdagi portlashda javob beramizmi | MTTS, servis granulyarligi | ishga tushish vaqtini qisqartirish, mayda servis, oldindan isitilgan pod |
+
+Spring tomonida MTTS aniq o'lchanadigan narsa: `ApplicationStartup` metrikasi, lazy initialization, AOT va CDS. Uning yozuvi [31-bob](31-deployment-haqiqati-konteyner-cgroup-jvm-va.md) da; bu yerda faqat qaror muhim, elastiklik talab qilinsa boshlanish vaqti arxitektura o'lchovi bo'ladi, operatsion tafsilot emas.
 
 ## 8.15 Kritik yo'l atrofida qayta loyihalash va past darajali chegara
 
@@ -496,6 +575,12 @@ public BigDecimal total(Order order) {
 }
 ```
 
+Qayta loyihalash hamma joyda ishlamaydi va chegarani Bloch aniq qo'yadi: uchta dizayn qarori keyinchalik o'zgartirilmaydi, shuning uchun ularning ishlash oqibati hozir hisoblanadi. Bu uchlik API, wire darajasidagi protokol va saqlanadigan ma'lumot formati, va ular tizim erishishi mumkin bo'lgan ishlash chegarasini belgilaydi (Joshua Bloch, *Effective Java*, 3-nashr, Addison-Wesley, 2018, Item 67, 286-bet). Shundan amaliy tartib chiqadi: har qanday qayta loyihalash ishi avval "sekin joy shu uchlikdan tashqaridami" degan savol bilan boshlanadi. Javob "ha" bo'lsa yuqoridagi ideal kod usuli ishlaydi; javob "yo'q" bo'lsa, o'lchov natijasi kod emas, migratsiya rejasiga aylanadi va u [qaytarib bo'lmaydigan qarorlar](01-arxitektorning-fikrlash-modeli.md#15-qaytarib-boladigan-va-qaytarib-bolmaydigan-qarorlar) qatorida yuritiladi.
+
+Teskari yo'nalishga esa Bloch taqiq qo'yadi: API ni ishlash uchun buzish yomon g'oya, chunki ishlash muammosi platformaning keyingi relizida yoki apparat yangilanishida yo'qolishi mumkin, buzilgan API esa umrbod qoladi. Uning misoli `java.awt.Component.getSize`: u o'zgaradigan `Dimension` qaytaradi va shu sababli har chaqiruvda yangi obyekt yaratishga majbur, va bu qaror keyin ham tuzatilmagan (Item 67, 287-bet). Review tilida bu bitta savol bo'ladi: "bu optimizatsiya shartnomani o'zgartiradimi". Javob "ha" bo'lsa, o'zgarish [API moslik](../code-review/37-api-moslik-va-breaking-change-review.md#371-breaking-change-katalogi) jarayonidan o'tadi, ishlash dalili esa uni tezlashtirmaydi.
+
+Shu bilan birga API dizayni ishlashga ta'sir qilmaydi degani emas, va Bloch uchta aniq oqibatni sanaydi: `public` turni o'zgaradigan qilish uni himoyalangan nusxalar bilan o'ralishga majbur qiladi va har chaqiruvda nusxa olinadi; kompozitsiya o'rniga vorislikni tanlash sinfni superclass ga umrbod bog'laydi va uning ishlash cheklovlarini meros qilib oladi; interfeys o'rniga implementatsiya turini API da ishlatish keyinchalik tezroq implementatsiyaga o'tishni to'sadi (Item 67, 287-bet). Korpusda uchalasi alohida joyda yozilgan va sabablari boshqa (o'zgarmaslik, [vorislikdan ustun kompozitsiya](../patterns/26-dizayn-printsiplari-solid-grasp-va-umumiy.md#2617-vorislikdan-ustun-kompozitsiya-composition-over-inheritance), bog'liqlik yo'nalishi), lekin bu yerda ularning umumiy tomoni muhim: uchtasi ham ishlash chegarasini API da qotib qoldiradi.
+
 Qayta loyihalash qayerda to'xtashi kerakligini Martin belgilaydi, va uning da'vosi tor: ishlash albatta arxitektura masalasi, lekin ma'lumot saqlashga kelganda u biznes qoidalaridan butunlay ajratib, o'z ichiga yopib qo'yiladigan masala. Ma'lumotni saqlovchidan tez olish va tez yozish kerak, lekin bu past darajali tashvish va u past darajali ma'lumotga kirish mexanizmlari bilan hal qilinadi; tizimning umumiy arxitekturasiga uning aloqasi yo'q (Martin, *Clean Architecture*, Prentice Hall, 2018, 30-bob). Bu korpusdagi "ishlash arxitektura masalasi" qarashiga zid emas, uning qamrovini aniqlashtiradi: indeks qo'shish, batch qilish, kesh yoki o'qish uchun denormalizatsiyalangan model repository chegarasining ichida qoladi va domen modelining shaklini o'zgartirmaydi. Agar tezlik uchun domen modelini buzish taklif qilinayotgan bo'lsa, demak chegara noto'g'ri joyda; chegara o'rni [sxema chegarasi](05-abstraksiya-hissi-bogliqlik-va-chegaralar.md#59-sxema-chegarasi-boshqa-servisning-jadvaliga-tegmaslik-qoidasi) bo'limida.
 
 ## 8.16 Amalda qo'llash
@@ -518,6 +603,9 @@ Qayta loyihalash qayerda to'xtashi kerakligini Martin belgilaydi, va uning da'vo
 
 - Brendan Gregg, *Systems Performance: Enterprise and the Cloud*, Prentice Hall, 2014, 6.4.1-bo'lim (202-203-betlar) - L1 cache bir necha takt, L2 o'n ikkiga yaqin takt, main memory taxminan 60 ns va 4 GHz da taxminan 240 takt; MMU translyatsiyasi ham kechikish qo'shadi; cache kechikishini micro-benchmarking bilan o'lchash (LMbench, Intel Xeon E5620 2.4 GHz)
 - Brendan Gregg, *Systems Performance*, Prentice Hall, 2014, 6.5-6.5.2-bo'limlar (215-216-betlar) - metodologiya tartibi (performance monitoring, USE, profiling, micro-benchmarking, static analysis); USE metodining uch o'lchovi utilization, saturation, errors; load average CPU sonidan oshsa saturation, `vmstat` idle 10 foizdan kam bo'lsa muammo; CPU quota fizik 100 foizga yetmasdan tugashi
+- Brendan Gregg, *Systems Performance: Enterprise and the Cloud*, 1-nashr, Prentice Hall, 6.5-bo'lim (216-bet) - yuklamani tavsiflashda yetkazilgan unum emas, qo'yilgan yuk o'lchanishi va `load average` ning shu sababli mos kelishi; eng katta yutuq ko'pincha keraksiz ishni topib yo'q qilishdan kelishi. ESLATMA: qo'limizdagi nusxada faqat 6-bob bor, umumiy metodologiyalar (USE metodining to'liq ta'rifi) 2-bobda, shuning uchun bu yerda faqat 6.5 dan, ya'ni metodologiyaning CPU ga qo'llanishidan chiqadigan qoida iqtibos qilingan
+- Michael T. Nygard, *Release It!*, 1-nashr, Pragmatic Bookshelf, 2007, 4.9-bo'lim (100-bet) va 5-bob (123-bet) - protsess ichidagi real vaqtli qaror uchun oxirgi yigirma tranzaksiyaning siljuvchi o'rtachasi; CPU binding ni sinaganda bitta serverning javob vaqti emas, umumiy throughput o'lchanishi
+- Joshua Bloch, *Effective Java*, 3-nashr, Addison-Wesley, 2018, Item 67 (286-287-betlar) - keyinchalik o'zgartirilmaydigan uch dizayn qarori (API, wire darajasidagi protokol, saqlanadigan ma'lumot formati) va ularning ishlash chegarasini belgilashi; API ni ishlash uchun buzishning yomon g'oya bo'lishi va `java.awt.Component.getSize` misoli; API dizayni qarorlarining ishlashga aniq ta'siri (o'zgaradigan `public` tur va himoyalangan nusxalar, kompozitsiya o'rniga vorislik, interfeys o'rniga implementatsiya turi)
 - Brendan Gregg, *Systems Performance*, Prentice Hall, 2014, 6.5.6, 6.5.11 va 6.5.12-bo'limlar (220, 223-224-betlar) - 5 daqiqalik monitoring intervali cho'qqini yashiradi, sekundlik o'lchov afzal; benchmark ko'pincha kompilyator optimizatsiyasini o'lchaydi va bitta thread natijasi ko'p CPU da ma'nosini yo'qotadi; sig'im rejalashtirishning uch qadami
 - Martin Kleppmann, *Designing Data-Intensive Applications*, O'Reilly, 2017, 1-bob (11, 13-18-betlar) - yuk parametrlari va Twitter 2012 (tweet joylash 4.6k RPS o'rtacha, 12k RPS dan oshgan cho'qqi, home timeline 300k RPS), fan-out ning ta'rifi, latency va response time farqi, p999 da yozilgan Amazon talabi va 100 ms uchun 1 foiz savdo, SLA ning median va p99 shakli, head-of-line blocking va mijoz tomonda o'lchash, yuklama generatori qoidasi, tail latency amplification, persentillarni o'rtachalashning ma'nosizligi va histogram qo'shish, forward decay / t-digest / HdrHistogram, 100 000 x 1 kB va 3 x 2 GB tizimlarining farqi
 - Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley Professional, 8.2-bo'lim (106-107-betlar) - pool o'lchamini hard-code qilmaslik va `Runtime.availableProcessors`; juda katta va juda kichik pool narxi; compute-intensive uchun Ncpu + 1; `N_threads = N_cpu * U_cpu * (1 + W / C)` formulasi va uning uchta kattaligi; boshqa resurslar uchun yuqori chegara hisobi; thread pool o'lchamining connection pool bilan chegaralanishi
@@ -527,7 +615,7 @@ Qayta loyihalash qayerda to'xtashi kerakligini Martin belgilaydi, va uning da'vo
 - Michael T. Nygard, *Release It!*, 1-nashr, 2007, 8.5-bo'lim (167-168-betlar) - "CPU is cheap" afsonasi, CPU takti clock time va latency ekani; 250 ms x kuniga 1 mln tranzaksiya = kuniga 69.4 soat CPU va 80 foiz load factor bilan to'rt qo'shimcha server; thread uzoq band bo'lsa navbatga tushish ehtimoli oshishi; kutayotgan web server ushlab turgan socket va xotira
 - Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 1.3-bo'lim (34-35-betlar) va 12.2-bo'lim (201-bet) - har bir klient uchun alohida backend process, ulanish ko'paygandagi xotira narxi, qisqa ulanishlarning narxi, process ro'yxatini skanerlash va klient soni o'sishi bilan ishlashning tushishi; connection pooling va PgBouncer / Odyssey; tranzaksiyaga lokal resurslar sharti; `max_connections` default 100
 - Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 3.1-3.2-bo'limlar (62-66-betlar) - sahifa tuzilishi, 8 192 baytlik sahifa, item pointer aynan to'rt bayt, olti baytlik TID, qator header'i katta va "tor" jadvalda metadata ma'lumotdan oshib ketishi, tekislash va ustun tartibining ta'siri (40 bayt va 34 bayt)
-- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 8.1-bo'lim (136-bet) va 9-bob (154, 158-159-betlar) - `pg_table_size` va `pg_indexes_size` bilan o'lchash, indeks jadvaldan katta chiqishi (67 MB va 109 MB); `pg_statio_all_tables` va `heap_blks_hit` / `heap_blks_read`; `shared_buffers`, cache miss har doim fizik I/O emasligi, optimal hajm uchun sehrli formula yo'qligi va eksperiment tavsiyasi
+- Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 8.1-bo'lim (137-bet) va 9-bob (154, 158-159-betlar) - `pg_table_size` va `pg_indexes_size` bilan o'lchash, indeks jadvaldan katta chiqishi (67 MB va 109 MB); `pg_statio_all_tables` va `heap_blks_hit` / `heap_blks_read`; `shared_buffers`, cache miss har doim fizik I/O emasligi, optimal hajm uchun sehrli formula yo'qligi va eksperiment tavsiyasi
 - Egor Rogov, *PostgreSQL 14 Internals*, Postgres Professional, 2022, 11.1-bo'lim (182-185-betlar) - sinxron commit disk sinxronizatsiyasini kutishi va uning latency / throughput narxi; `synchronous_commit = off` da `3 x wal_writer_delay` oraligidagi ma'lumot yo'qolishi (default 0.6 sekund); pgbench o'lchovi 1.491 ms / 670 tps va 0.485 ms / 2 060 tps
 - Jack Shirazi, *Java Performance Tuning*, 2-nashr, O'Reilly, 2003, 1.3, 1.4, 1.7 va 1.8-bo'limlar - faqat metodologiya uchun: uch cheklovchi resurs (CPU, xotira, disk va tarmoq I/O), bottleneck ketma-ket almashishi va buffer ni hamma joyga qo'yish xatosi, reverse lookup ni parallellashtirish misoli, bottleneck ni fan sifatida aniqlashning to'qqiz qadami, top beshta bottleneck tartibi, wall-clock time va variance, kerak bo'lmagan ishni tashlash, vendor benchmark larining foydasizligi
 - JEP 453: Structured Concurrency (Preview) - `StructuredTaskScope` preview API ekani va default o'chirilgani, `ShutdownOnFailure` shutdown siyosati bitta subtask yiqilganda qolganini bekor qilishi
@@ -543,7 +631,13 @@ Qayta loyihalash qayerda to'xtashi kerakligini Martin belgilaydi, va uning da'vo
 - John Ousterhout, *A Philosophy of Software Design*, 1-nashr, Yaknyam Press, 2018, 20.3 - fundamental tuzatish (kesh, boshqa algoritm) birinchi tanlov bo'lishi va kritik yo'lni qayta loyihalash oxirgi chora bo'lishi; "ideal" kodni mavjud strukturadan qat'i nazar tasavvur qilish qadamlari; maxsus holatlarni boshidagi bitta tekshiruv bilan kritik yo'ldan chiqarish va maxsus holat kodini soddalik uchun tuzish
 - Robert C. Martin, *Clean Architecture*, Prentice Hall, 2018, 30-bob - ishlash arxitektura masalasi bo'lishi, lekin ma'lumot saqlash tezligi biznes qoidalaridan ajratib yopiladigan past darajali tashvish ekani
 - ESLATMA: 8.4 dagi `connection-timeout`, `max-lifetime` va `leak-detection-threshold` qiymatlari, 8.16 dagi tekshiruv ro'yxatining tartibi shu korpusning amaliy tavsiyasi, kitobdan olingan emas
+- Mark Richards, Neal Ford, *Fundamentals of Software Architecture*, O'Reilly, 2020, 5-bob ("Explicit Characteristics" bo'limi) - masshtablanish ko'p parallel foydalanuvchiga chidash, elastiklik to'satdan portlashga chidash (konsert chiptasi misoli), ikkisining alohida o'lchanishi va biri boshqasini keltirmasligi (mehmonxona bron misoli). Qo'limizdagi nusxada chop etilgan bet raqami yo'q, shuning uchun faqat bob va bo'lim nomi ko'rsatilgan
+- Neal Ford va boshqalar, *Software Architecture: The Hard Parts*, 1-nashr, O'Reilly, 2021 (copyright 2022), 3-bob (56-bet) - elastiklikning o'rtacha ishga tushish vaqtiga (MTTS) va servis granulyarligiga, masshtablanishning modullilikka bog'liqligi, hamda yuqori masshtab va elastiklik uchun servislararo sinxron aloqani minimal ushlash
+- Dustin Boswell, Trevor Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011 (copyright 2012), 15-bob (174-175-betlar) - oxirgi daqiqa va soat hisoblagichida har voqeani ro'yxatda saqlashning xotira (taxminan 5 MB) va `O(n)` so'rov narxi, aniqlikni unumdorlikka almashtirib voqealarni 60 ta chelakka yig'ish, natijadagi 1/60 aniqlik va qat'iy hamda bashoratli xotira
+- ESLATMA: 8.12 dagi `TrailingBucketCounter` Java implementatsiyasi va Micrometer haqidagi savol shu korpusning qo'shimchasi: Boswell va Foucher kodni C++ da beradi
 - ESLATMA: 8.14 dagi 202 bilan javob qaytaradigan `requestReport` misoli va 8.15 dagi `total` misoli shu korpusning Java tarjimasi: Fowler va Ousterhout bu kodni bermaydi
+- Brian Goetz va boshqalar, *Java Concurrency in Practice*, Addison-Wesley Professional, 11.1.1-bo'lim (137-138-betlar) va 11.2.2-bo'lim (142-bet) - "qanchalik tez" (xizmat vaqti, latency) va "qancha" (sig'im, throughput) o'lchovlarining ajratilishi, masshtablanishning ta'rifi; unumdorlik va masshtablanish uchun sozlashning turli yo'nalishi va ularning zid bo'lishi, masshtablanish uchun vazifa boshiga ish hajmining oshishi; uch qatlamli va monolit ilovaning taqqoslovi; Amdahl qonunini o'lchovsiz, limitda o'ylab ishlatish va shu linzada lock splitting bilan lock striping ning farqi
+
 
 ---
 

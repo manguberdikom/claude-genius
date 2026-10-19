@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Kod review](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 21. Konfiguratsiya, profil va feature flag review (Configuration)
 
@@ -201,6 +201,8 @@ Review talablari har bir yangi flag uchun:
 2. Standart qiymat. Konfiguratsiya yetib kelmasa, qaysi yo'l ishlaydi.
 3. Qamrov: butun foydalanuvchilar uchunmi yoki bir qismi. Qism bo'lsa, taqsimlash barqarormi (bir foydalanuvchi har so'rovda boshqa yo'lga tushmasligi kerak).
 4. Ikki yo'l ham test bilan qoplanganmi.
+5. Flag ni yoqish o'zi ham bosqichli yoyiladimi. Flag kodni emas, konfiguratsiyani o'zgartiradi, lekin ta'siri deploy bilan bir xil: Winters/Manshreck/Wright flag qiymatini bir zumda foydalanuvchilarning 100 foiziga yoqishni yaxshi fikr emas deb ataydi va konfiguratsiyani xavfsiz bosqichlar bilan yoyadigan xizmatni yaxshi sarmoya deb hisoblaydi. Review savoli: bu flag ni kim, qanday bosqichda va qanday metrikaga qarab oshiradi.
+6. Flag maxfiylik vositasi sifatida ishlatilmaydi. Flag ostidagi kod binarda turadi: yetarlicha obfuskatsiya qilinmagan bo'lsa uni ko'rib tahlil qilish mumkin, va hamma funksiyani murakkablikni oshirmasdan flag ostiga yashirib ham bo'lmaydi. Ya'ni flag relizni e'londan ajratishga yaxshi, sirni saqlashga emas.
 
 ```java
 // Flag ni hujjatlashtirish: kodda, konfiguratsiyada emas.
@@ -314,6 +316,14 @@ Oxirgi buyruq muhim: `application.yml` dagi qiymat prodda ishlamasligi mumkin, c
 - [ ] Prodda haqiqatda ishlayotgan konfiguratsiyani `configprops` va K8s env orqali tekshirib, `application.yml` bilan farqini hujjatlashtiring.
 
 ## Manbalar
+
+- Titus Winters, Tom Manshreck, Hyrum Wright, *Software Engineering at
+  Google*, O'Reilly, 2020, 24-bob ("Evaluating Changes in Isolation:
+  Flag-Guarding Features") - 21.6 dagi flag konfiguratsiyasini bir
+  zumda 100 foizga yoqmaslik qoidasi, xavfsiz konfiguratsiya yoyish
+  xizmatining qiymati va flag ning maxfiylik vositasi
+  bo'lmasligi. Bu nashrning qo'limizdagi nusxasida chop etilgan bet
+  raqami yo'q, shuning uchun bob va bo'lim nomi ko'rsatilgan
 
 - [Spring Boot 4.0, Externalized Configuration](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/documentation/spring-boot-docs/src/docs/antora/modules/reference/pages/features/external-config.adoc) - manbalar tartibi, `.properties` ning YAML dan ustunligi, `@PropertySource` ning kechligi, test manbalarining yuqoriligi
 - [Spring Boot 4.0, Profiles](https://raw.githubusercontent.com/spring-projects/spring-boot/v4.0.0/documentation/spring-boot-docs/src/docs/antora/modules/reference/pages/features/profiles.adoc) - `spring.profiles.active`, `default`, `include` va `group` ning profilga xos hujjatda taqiqlanishi

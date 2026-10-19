@@ -2,12 +2,12 @@
 
 [Barcha hujjatlar](../../README.md) / [Toza kod qoidalari](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-19). Manbalar bob oxirida.
 
 # 6. Shart, mantiq va boshqaruv oqimi (Conditionals and Control Flow)
 
 <details>
-<summary>Bu bobdagi 12 bo'lim</summary>
+<summary>Bu bobdagi 13 bo'lim</summary>
 
 - [6.1 Shartni nomlash va inkapsulyatsiya qilish](#61-shartni-nomlash-va-inkapsulyatsiya-qilish)
 - [6.2 Inkor shartdan qochish va De Morgan qoidasi](#62-inkor-shartdan-qochish-va-de-morgan-qoidasi)
@@ -20,7 +20,8 @@
 - [6.9 Yashirin vaqt bog'liqligini ko'rinadigan qilish](#69-yashirin-vaqt-bogliqligini-korinadigan-qilish)
 - [6.10 Takrorlangan `switch` va turga qarab shoxlanish](#610-takrorlangan-switch-va-turga-qarab-shoxlanish)
 - [6.11 Jadvalga asoslangan kirish: indeks jadvali va pog'onali jadval](#611-jadvalga-asoslangan-kirish-indeks-jadvali-va-pogonali-jadval)
-- [6.12 Amalda qo'llash](#612-amalda-qollash)
+- [6.12 O'qish tartibi: taqqoslash, shox va oqimni yashiradigan konstruksiyalar](#612-oqish-tartibi-taqqoslash-shox-va-oqimni-yashiradigan-konstruksiyalar)
+- [6.13 Amalda qo'llash](#613-amalda-qollash)
 
 </details>
 
@@ -102,6 +103,62 @@ if (order.isPaid() || (order.isPending() && !order.isExpired())) { ... }
 
 Qavslar balansini ko'z bilan tekshirishning oson yo'li ham bor: ifoda bo'ylab chapdan o'ngga yurib, ochuvchi qavsda sanoqni bittaga oshirasiz, yopuvchida bittaga kamaytirasiz; oxirida nol chiqsa, qavslar juft.
 
+Qavs ifodani tushunarli qiladi, lekin uni **qisqartirmaydi**. Uchinchi xato shakl
+aynan qisqartirish istagidan tug'iladi: `&&` va `||` ning qisqa tutashuv
+(short-circuit) xulqidan foydalanib, tayinlash va shartni bitta ifodaga siqish.
+Boswell va Foucher o'z kodlaridan misol keltiradi - `assert((!(bucket =
+FindBucket(key))) || !bucket->IsOccupied());` qatori "kalit uchun bucket ni ol;
+`null` bo'lmasa, band emasligini tekshir" degani, lekin bir qator bo'lsa ham
+ko'pchilik programmistni to'xtatib o'ylantiradi; ikki qatorga yoyilgan shakl
+aynan shu ishni qiladi va o'qiladi. Mualliflar sababini ham aytadi: mantiqni
+qisqa "nugget" ga siqishda zavq bor, u kichik jumboqni yechishga o'xshaydi,
+lekin natija keyin o'qiydigan odam uchun tezlik to'siqi bo'ladi
+(Boswell/Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011, 8-bob
+(86-bet)).
+
+```java
+// yomon: tayinlash shart ichiga siqilgan
+if ((bucket = findBucket(key)) == null || !bucket.isOccupied()) { ... }
+
+// yaxshi: ikki qator, bir ish bir joyda
+Bucket bucket = findBucket(key);
+if (bucket == null || !bucket.isOccupied()) { ... }
+```
+
+Chegara: qisqa tutashuvning o'zi taqiqlanmaydi. `if (bucket != null &&
+bucket.isOccupied())` yoki `if (order != null && order.isPaid())` toza shakl,
+chunki ikkinchi operand faqat tekshiruv, yon ta'siri yo'q (shu yerda, 86-bet).
+Ajratuvchi shart ham shu: `&&` va `||` operandlarida tayinlash, `remove`,
+`next()` kabi holatni o'zgartiradigan chaqiruv bo'lmasin. Yon ta'sir bo'lsa,
+operandning bajarilishi shartga bog'liq bo'lib qoladi va bu kodni o'qib
+bilinmaydi; shu sabab [shartli ifodalarni birlashtirish](37-refaktoring-harakatlari-katalogi-iii-shart.md#372-shartli-ifodalarni-birlashtirish-consolidate-conditional-expression)
+refaktoringi ham yon ta'sir bor joyda taqiqlanadi.
+
+**Chalkashgan mantiqda teskari masalani yeching.** Shartni chegara tuzatmalari bilan ketma-ket yamash - `<=` ni `<` ga almashtirish, keyin uchinchi holat qo'shish - murakkablikning aniq belgisi. Boswell va Foucher ning misoli: ikki oraliq kesishishini tekshiradigan `overlapsWith` har ikki uchning qarshi oraliq ichiga tushishini tekshirgan, ikki marta tuzatilgan va har tuzatmadan keyin yangi xato chiqqan; uchinchi urinishda shart uch qismli va o'qilmaydigan bo'lib qolgan.
+
+Yechim - to'xtab **teskari masalani** yechish. "Kesishadi" ning teskarisi "kesishmaydi" va u ikki holatdan iborat: qarshi oraliq biz boshlashimizdan oldin tugaydi, yoki biz tugaganimizdan keyin boshlanadi. Har shartda ikki qiymat qoladi, shuning uchun `<=` to'g'rimi degan savolga diqqat yetadi.
+
+```java
+public record DateRange(LocalDate begin, LocalDate end) {   // [begin, end)
+
+    // Yomon: chegara tuzatmalari bilan yamalgan shart
+    boolean overlapsWithTangled(DateRange other) {
+        return (!begin.isBefore(other.begin) && begin.isBefore(other.end))
+                || (end.isAfter(other.begin) && !end.isAfter(other.end))
+                || (!begin.isAfter(other.begin) && !end.isBefore(other.end));
+    }
+
+    // Yaxshi: teskari masala, har qatorda bitta taqqoslash
+    boolean overlapsWith(DateRange other) {
+        if (!other.end().isAfter(begin)) return false;   // bizdan oldin tugadi
+        if (!other.begin().isBefore(end)) return false;  // bizdan keyin boshlandi
+        return true;
+    }
+}
+```
+
+Teskari masalaga o'tishning boshqa shakllari ham bor: massivni teskari tartibda aylanish yoki ma'lumot tuzilmasini oxiridan boshlab to'ldirish. Umumiy signal bitta: shart uchinchi marta tuzatilayotgan bo'lsa, yechim shartni tuzatishda emas, masalani boshqa tomondan qo'yishda.
+
 ## 6.4 `else` ni yo'q qilish usullari
 
 `else` bloki ko'pincha keraksiz va uni yo'qotish kodni tekislaydi. To'rt usul bor: guard clause bilan erta qaytish, standart qiymatni oldin belgilash, `switch` ifodasiga o'tish, va polimorfizm ([patternlar hujjatidagi](../patterns/README.md) polimorfizm printsipi).
@@ -143,6 +200,43 @@ String tier = total > 1000 ? "GOLD" : total > 500 ? "SILVER" : total > 100 ? "BR
 CustomerTier tier = CustomerTier.forAnnualSpend(total);
 ```
 
+To'rtinchi holat Java ga xos va o'qilishdan emas, semantikadan keladi: ternarning
+ikki shoxi har xil numeric turda bo'lsa, ifodaning turi **ko'tariladi**.
+Spetsifikatsiya qoidasi: shoxlar bir xil turda bo'lmasa va maxsus holatlarga
+(primitiv va uning boxed jufti, `byte`/`short` jufti, `int` konstantasi) tushmasa,
+ikki operandga umumiy numeric promotion qo'llanadi va ifoda turi shu ko'tarilgan
+tur bo'ladi; promotion esa unboxing ni ham o'z ichiga oladi (*The Java Language
+Specification, Java SE 25 Edition*, 15.25.2 (711-712-bet)).
+
+Bundan ikki tuzoq chiqadi. Birinchisi jim tur o'zgarishi: bir shoxi `int`,
+ikkinchisi `double` bo'lsa, butun ifoda `double` bo'ladi, shuning uchun `int`
+kutgan joyda kasr paydo bo'ladi. Ikkinchisi va qimmatlisi: bir shoxi primitiv
+`int`, ikkinchisi `Integer` bo'lsa, qoida bo'yicha ifoda turi `int` bo'ladi,
+demak `Integer` unboxing qilinadi - va u `null` bo'lsa chaqiruv
+`NullPointerException` bilan yiqiladi, hatto shu shox tanlanmagan bo'lsa ham
+tanlanishi mumkin bo'lgani uchun tur shunday hisoblanadi.
+
+```java
+// yomon: ifoda turi double bo'lib ketdi
+double discount = isMember ? 1 : 0.5;          // 1 emas, 1.0
+
+// yomon: ifoda turi int, shuning uchun bonus unboxing qilinadi
+Integer bonus = repository.findBonus(userId);  // null bo'lishi mumkin
+int total = base + (isMember ? bonus : 0);     // bonus == null -> NPE
+
+// yaxshi: shoxlar bir turda, null oshkor hal qilingan
+int total = base + (isMember ? Objects.requireNonNullElse(bonus, 0) : 0);
+
+// yaxshi: boxed natija kerak bo'lsa, ikki shox ham boxed
+Integer applied = isMember ? bonus : Integer.valueOf(0);
+```
+
+Qoida: ternarning ikki shoxi bir xil turda bo'lsin. Aralashsa, turni oshkor
+yozish yoki `if/else` ga o'tish kerak; boxed qiymat qatnashsa esa `null` ni
+ternardan oldin hal qilish kerak. Shu tuzoqning boshqa shakllari
+[avtoboxing narxi va `null` unboxing](20-primitiv-son-va-pul.md#206-avtoboxing-narxi-va-null-unboxing)
+bo'limida.
+
 ## 6.6 `switch` ni toza ishlatish: to'liqlik, `default`, fallthrough
 
 Zamonaviy Java da `switch` **ifodasi** (`->` shakli) eski `switch` gapidan ustun, chunki fallthrough xatosi yo'q, har bir shox qiymat qaytaradi va `sealed` tur ustida to'liqligi kompilyator tomonidan tekshiriladi ([arxitektor hujjatidagi](../architect/README.md) sealed interfeys va pattern matching bo'limlari).
@@ -172,6 +266,10 @@ Uchta-to'rtta shoxli `switch` da `case` lar tartibi ahamiyatsiz, lekin o'nlab ho
 - **Chastota bo'yicha.** Eng ko'p bajariladigan shox yuqorida: o'quvchi ro'yxatni ko'pincha aynan shu shoxni izlab ochadi.
 
 Tanlangan tartibni buzadigan yangi `case` ni "oxiriga qo'shib qo'yish" vaqt o'tishi bilan tartibni yo'qotadi, shuning uchun tartib qaysi ekani bir marta kelishiladi va code review da tekshiriladi.
+
+Boshqaruv ifodasining **turi** ham tanlov: satr ustida `switch` faqat ma'lumot allaqachon satr shaklida kelganda yoziladi. Satr `switch` i kompilyatorda hash hisobi va `equals` solishtirishlari zanjiriga aylanadi, `enum` yoki `int` ustidagi `switch` esa to'g'ridan-to'g'ri jadval bo'yicha o'tadi. Shuning uchun domen holati satr sifatida tashib yurilgan bo'lsa, `switch` dan oldin uni `enum` ga aylantirish ikki foyda beradi: to'liqlik tekshiruvi qaytadi va noto'g'ri qiymat chegarada ushlanadi.
+
+Eski `switch` ni yangi shaklga ko'chirayotgan diffda yana bitta cheklov esga tushadi: bitta `switch` da `->` shoxi bilan `:` shoxini aralashtirib bo'lmaydi, ikkisidan bittasi tanlanadi. Shuning uchun ko'chirish qisman qilinmaydi: `switch` butunlay yangi shaklga o'tadi yoki butunlay eski shaklda qoladi.
 
 ## 6.7 Chegaraviy shartlarni inkapsulyatsiya qilish
 
@@ -276,6 +374,8 @@ public enum ShippingMethod {
 }
 ```
 
+Qoidaning chegarasi ham bor va ajratuvchi shart oddiy: **enum kimga tegishli**. Enum sizning kodingizda bo'lsa, xatti-harakat enum ichiga kiradi. Enum sizga tegishli bo'lmasa (kutubxona yoki boshqa modulning enumi), unga metod qo'sholmaysiz, shuning uchun konstantaga xos xatti-harakatni tashqarida, shu enum ustidagi `switch` da yozish o'rinli bo'ladi. Bunday `switch` hid emas: u yagona joyda turadi va enum egasi o'zgarganda kompilyator (to'liqlik tekshiruvi orqali) sizni ogohlantiradi.
+
 ## 6.11 Jadvalga asoslangan kirish: indeks jadvali va pog'onali jadval
 
 Oldingi bo'lim shoxlanishni enum yoki polimorfizmga ko'chirdi. Uchinchi yo'l ham bor: shoxlanishni **ma'lumotga** ko'chirish. Shart zanjiri qiymatni toifaga bog'lashdan boshqa ish qilmasa, bu bog'lanish jadvalda saqlanadi, kod esa faqat qidirish qiladi. Kalitni to'g'ridan-to'g'ri jadval indeksiga aylantirish mumkin bo'lmaganda ikki sxema qoladi (McConnell, *Code Complete*, 2-nashr, Microsoft Press, 2004, 18.3-18.4 (425-426-bet)).
@@ -303,7 +403,53 @@ public final class DiscountTable {
 
 Pog'onali jadvalning uchta tuzog'i bor va ularning hammasi chegarada. Birinchisi: eng yuqori va eng past pog'ona yopilgan bo'lishi kerak, aks holda chetdagi qiymat hech bir oraliqqa tushmaydi (yuqoridagi kodda `0L` pog'onasi shu uchun turadi, bo'lmasa `floorEntry` `null` qaytaradi). Ikkinchisi: `<` va `<=` ni almashtirib yuborish; qidirishni `floorEntry` ga topshirish shu savolni ma'lumot tuzilmasi darajasida bir marta hal qiladi, qo'lda yozilgan siklda esa u har tahrirda qaytadi ([chegaraviy shartlarni inkapsulyatsiya qilish](#67-chegaraviy-shartlarni-inkapsulyatsiya-qilish)). Uchinchisi: jadval uzun bo'lsa ketma-ket qidirish qimmatga tushadi, shuning uchun binar qidirish yoki indeks sxemasiga o'tiladi - `NavigableMap` da bu allaqachon logarifmik. Qidirishning o'zi esa har doim alohida metodda turadi: jadval sxemasi keyin o'zgarsa, chaqiruvchilar o'zgarmaydi.
 
-## 6.12 Amalda qo'llash
+## 6.12 O'qish tartibi: taqqoslash, shox va oqimni yashiradigan konstruksiyalar
+
+6.1-6.11 shartning **mazmuni** haqida: nomlash, soddalashtirish, jadvalga ko'chirish. Bu bo'lim esa bir xil mantiqning qaysi **tartibda** yozilishi haqida. Mantiq o'zgarmaydi, o'qish tezligi o'zgaradi.
+
+**Taqqoslashda o'zgaruvchan ifoda chapda, barqaror qiymat o'ngda.** `length >= 10` va `10 <= length` bir narsa, lekin birinchisi tez o'qiladi. Qoida: chap tomonga **tekshirilayotgan**, qiymati o'zgarib turadigan ifoda, o'ng tomonga esa unga qarshi solishtirilayotgan, qiymati barqarorroq ifoda yoziladi. Bu tabiiy gap tuzilishiga mos keladi: "yiliga kamida 100 ming ishlasa" deyiladi, "18 yil sizning yoshingizdan kichik yoki tengmi" deyilmaydi. Shuning uchun `while (bytesReceived < bytesExpected)` to'g'ri shakl: `bytesReceived` sikl davomida o'sadi, `bytesExpected` esa barqaror.
+
+Eski "Yoda notation" (`if (NULL == obj)`) `==` ni tasodifan `=` deb yozishdan saqlash uchun ishlatilgan. Java da bu muammo yo'q: `if (obj = null)` kompilyatsiya qilinmaydi, chunki shart `boolean` talab qiladi; `boolean` o'zgaruvchida esa (`if (flag = true)`) kompilyator ogohlantiradi va statik tahlil xato beradi (42.1). Ya'ni teskari tartibni Java da ishlatish uchun sabab qolmagan.
+
+**`if`/`else` shoxlari tartibi tanlanadi.** Uch mezon bor va ular odatda bir yo'nalishni ko'rsatadi:
+
+1. **Avval ijobiy shart**, inkor emas: `if (debug)`, `if (!debug)` emas (6.2).
+2. **Avval oddiy shox** - uni yo'ldan chiqarish uchun; shu bilan `if` ham, `else` ham bitta ekranga sig'ishi mumkin bo'ladi.
+3. **Avval qiziq yoki xavfli shox.**
+
+Mezonlar to'qnashsa, qaror o'ylab qabul qilinadi, lekin ko'p holatda g'olib aniq. Boswell va Foucher ning misoli: `if (!url.hasQueryParameter("expand_all"))` bilan boshlangan blok o'quvchining diqqatini darhol `expand_all` holatiga qaratadi, chunki inkor "pushti fil haqida o'ylama" kabi ishlaydi - inkorning o'zi e'tibordan chiqadi, nomlangan narsa esa qoladi. Shunda `expand_all` ham qiziq, ham ijobiy shox, demak u oldinga qo'yiladi.
+
+```java
+// Yomon: inkor shart oldinda, lekin diqqat ikkinchi shoxda
+if (!url.hasQueryParameter("expand_all")) {
+    response.render(items);
+} else {
+    items.forEach(Item::expand);
+    response.render(items);
+}
+
+// Yaxshi: qiziq va ijobiy shox oldinda
+if (url.hasQueryParameter("expand_all")) {
+    items.forEach(Item::expand);
+}
+response.render(items);
+```
+
+**Bajarilish yo'lini yashiradigan konstruksiyalar kodning katta ulushiga tarqatilmaydi.** O'quvchi ideal holatda `main` dan boshlab qadamma-qadam kuzatib chiqa olishi kerak. Quyidagi konstruksiyalar bu kuzatishni buzadi va shu sababli nuqtali ishlatiladi:
+
+| Konstruksiya | Nima yashiradi |
+|---|---|
+| Thread (`ExecutorService`, `@Async`) | kod qachon bajarilishi noaniq |
+| Signal va interrupt ishlovchisi, shutdown hook | istalgan paytda bajarilishi mumkin |
+| Istisno | bajarilish bir necha chaqiruv orqali yuqoriga ko'tariladi |
+| Funksiya ko'rsatkichi va anonim funksiya (lambda, callback) | qaysi kod yurishini kompilyatsiya paytida bilib bo'lmaydi |
+| Virtual metod (`object.virtualMethod()`) | noma'lum voris sinfning kodi chaqiriladi |
+
+Bu konstruksiyalarning har biri foydali va ba'zilari kodni o'qiladigan va kamroq takrorlanadigan qiladi: Spring ning o'zi proxy, `@Transactional` va `@EventListener` orqali shu mexanizmlarga tayanadi. Qoida miqdor haqida: kodning juda katta ulushi shu konstruksiyalarga tayanmasligi kerak, aks holda xatoni kuzatish keskin qiyinlashadi. Praktik chegara - **bitta oqimda ikkitadan ko'p yashirin sakrash bo'lmasin**: controller dan `@Async` metodga, u yerdan event listener ga, u yerdan yana lambda callback ga o'tgan oqimni hech kim kuzata olmaydi.
+
+ESLATMA: "bitta oqimda ikkitadan ko'p emas" chegarasi korpus qo'shimchasi; kitob aniq son bermaydi, faqat "katta ulush" deydi.
+
+## 6.13 Amalda qo'llash
 
 - [ ] Uch va undan ko'p operandli shart ifodalarini topib, har birini nomlangan `boolean` yoki domen metodiga chiqaring.
 - [ ] `!(...)` shaklidagi inkor ifodalarni De Morgan bilan soddalashtirib, ijobiy shartga aylantiring.
@@ -319,6 +465,8 @@ Pog'onali jadvalning uchta tuzog'i bor va ularning hammasi chegarada. Birinchisi
 
 ## Manbalar
 
+- Dustin Boswell, Trevor Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011 (copyright 2012), 7-bob (70-72, 79-80-betlar) - taqqoslashda o'zgaruvchan ifodani chapga va barqaror qiymatni o'ngga qo'yish, `if`/`else` shoxlari tartibining uch mezoni va inkor shartning diqqatni aynan shu holatga qaratishi, bajarilish yo'lini yashiradigan konstruksiyalarni kodning katta ulushiga tarqatmaslik
+- Dustin Boswell, Trevor Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011 (copyright 2012), 8-bob (87-88-betlar) - shartni chegara tuzatmalari bilan ketma-ket yamash murakkablik belgisi ekani va teskari masalani yechish texnikasi (oraliqlar kesishmasligi ikki holatdan iborat)
 - Robert C. Martin, *Clean Code*, 3-bob ("Switch Statements") - `switch` ni past darajali sinfga ko'chirish va polimorfizm bilan almashtirish
 - Robert C. Martin, *Clean Code*, 17-bob, G23, G28, G29, G33 - `if/else` o'rniga polimorfizm, shartni inkapsulyatsiya qilish, inkor shartdan qochish, chegaraviy shartni inkapsulyatsiya
 - Herbert Schildt, *Java The Complete Reference*, 5-bob - boshqaruv gaplari, `switch` va fallthrough semantikasi
@@ -328,6 +476,11 @@ Pog'onali jadvalning uchta tuzog'i bor va ularning hammasi chegarada. Birinchisi
 - Steve McConnell, *Code Complete*, 2-nashr, 19.1 (437-bet) - ustunlikka tayanmasdan qavs qo'yish
 - Steve McConnell, *Code Complete*, 2-nashr, 19.1 (440-bet) - sonli ifodani son o'qi tartibida yozish
 - [Java API, `java.util.NavigableMap`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/NavigableMap.html) - `floorEntry`: berilgan kalitdan katta bo'lmagan eng katta kalit
+- Herbert Schildt, *Java The Complete Reference*, 12-nashr, McGraw Hill, 2022, 5-bob (94-bet) - satr ustida `switch` ni faqat ma'lumot allaqachon satr shaklida bo'lganda ishlatish va satr `switch` ining hash bilan `equals` solishtirishlari zanjiriga aylanishi
+- Herbert Schildt, *Java The Complete Reference*, 12-nashr, McGraw Hill, 2022, 17-bob (458-bet) - bitta `switch` da `->` shoxi bilan `:` shoxini aralashtirib bo'lmasligi
+- Joshua Bloch, *Effective Java* 3rd, Item 34 (167-bet) - enum ustidagi `switch` sizga tegishli bo'lmagan enum ga konstantaga xos xatti-harakat qo'shish uchun o'rinli ekani
+- Dustin Boswell, Trevor Foucher, *The Art of Readable Code*, 1-nashr, O'Reilly, 2011 (copyright 2012), 8-bob (86-bet) - qisqa tutashuv mantiqini suiiste'mol qilish, `assert((!(bucket = FindBucket(key))) || !bucket->IsOccupied())` misoli, "aqlli nugget" ogohlantirishi va `if (object && object->method())` toza shakli
+- *The Java Language Specification, Java SE 25 Edition* (Gosling, Joy, Steele, Bracha, Buckley, Smith, Bierman), 15.25.2 (711-712-betlar) - numeric ternarning tur qoidalari: primitiv va boxed juft uchun natija primitiv tur bo'lishi, aks holda umumiy numeric promotion va promotion ning unboxing ni o'z ichiga olishi
 
 ---
 
