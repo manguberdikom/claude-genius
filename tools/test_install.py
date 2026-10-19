@@ -25,6 +25,7 @@ install.py ni ps1 CI qadamlari sinaydi.
 
 import atexit
 import ast
+import contextlib
 import importlib.util
 import io
 import json
@@ -778,6 +779,162 @@ def case_backup_ornatiladigan_ichida_rad():
     ]
 
 
+def zaxira_yasa(home, *nomlar):
+    for nom in nomlar:
+        os.makedirs(os.path.join(home, nom), exist_ok=True)
+
+
+def zaxiralar_of(home):
+    return sorted(n for n in os.listdir(home) if n.startswith(".claude-backup"))
+
+
+def case_eski_zaxira_royxati():
+    """`eski_zaxiralar` faqat sukut nomdagi rostakam papkani oladi va yangisini qoldiradi."""
+    home = tmpdir("uy_")
+    eski = [".claude-backup-20260101-000001", ".claude-backup-20260102-000002",
+            ".claude-backup-20260103-000003", ".claude-backup-20260104-000004",
+            ".claude-backup-20260105-000005", ".claude-backup-20260106-000006",
+            ".claude-backup-20260107-000007"]
+    zaxira_yasa(home, *eski)
+    # Nomi mos kelmaydigan qo'shnilar: hech qachon ro'yxatga tushmaydi.
+    zaxira_yasa(home, ".claude-backup-zaxira", ".claude-backup-2026-01-08",
+                ".claude-backup-20260108-00000", "zaxira-1", ".claude")
+    put(os.path.join(home, ".claude-backup-20250101-000000"), "fayl, papka emas")
+    rows = [
+        ("eski ro'yxati: 7 dan 5 saqlanib 2 ta eng eskisi qaytadi",
+         [os.path.basename(p) for p in I.eski_zaxiralar(home, 5)] == eski[:2]),
+        ("eski ro'yxati: saqlash soni papkadan katta bo'lsa bo'sh",
+         I.eski_zaxiralar(home, 99) == []),
+        ("eski ro'yxati: 0 hech narsa o'chirmaydi", I.eski_zaxiralar(home, 0) == []),
+        ("eski ro'yxati: manfiy ham hech narsa o'chirmaydi", I.eski_zaxiralar(home, -1) == []),
+        ("eski ro'yxati: nomi mos kelmagan papka, fayl va .claude tegilmaydi",
+         all(".claude-backup-zaxira" not in p and ".claude-backup-2026-01-08" not in p
+             and ".claude-backup-20260108-00000" not in p and "zaxira-1" not in p
+             and ".claude-backup-20250101-000000" not in p
+             for p in I.eski_zaxiralar(home, 1))),
+        ("eski ro'yxati: yo'q papka xato bermaydi",
+         I.eski_zaxiralar(os.path.join(home, "yoq"), 5) == []),
+    ]
+    if POSIX:
+        link = os.path.join(home, ".claude-backup-20240101-000000")
+        os.symlink(os.path.join(home, ".claude"), link)
+        rows.append(("eski ro'yxati: nomi mos symlink ham tegilmaydi",
+                     link not in I.eski_zaxiralar(home, 1)))
+    return rows
+
+
+class SoxtaOpts(object):
+    """`zaxira_tozala` ctx dan faqat shu uchtasini o'qiydi."""
+
+    def __init__(self, backup_to, saqlash):
+        self.backup_to = backup_to
+        self.zaxira_saqlash = saqlash
+
+
+class SoxtaCtx(object):
+    def __init__(self, home, backup_to="", saqlash=5):
+        self.home = home
+        self.opts = SoxtaOpts(backup_to, saqlash)
+
+
+def tozala_chaqir(ctx, apply):
+    """`zaxira_tozala` ni chaqirib chiqishini qaytaradi: butun o'rnatishsiz."""
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        I.zaxira_tozala(ctx, apply)
+    return out.getvalue()
+
+
+def case_zaxira_tozala_ozi():
+    """`zaxira_tozala` ning o'zi: o'chirish, quruq yurish va --backup-to.
+
+    Butun o'rnatish Windows da yurmaydi (apply holatlari POSIX da), shuning uchun
+    o'chirish mantig'i shu yerda hamma platformada tekshiriladi.
+    """
+    eski = [".claude-backup-20260101-000001", ".claude-backup-20260102-000002",
+            ".claude-backup-20260103-000003", ".claude-backup-20260104-000004",
+            ".claude-backup-20260105-000005", ".claude-backup-20260106-000006",
+            ".claude-backup-20260107-000007"]
+
+    def uy():
+        home = tmpdir("uy_")
+        zaxira_yasa(home, *eski)
+        return home
+
+    ochir = uy()
+    out_ochir = tozala_chaqir(SoxtaCtx(ochir), True)
+
+    quruq = uy()
+    out_quruq = tozala_chaqir(SoxtaCtx(quruq), False)
+
+    saqla = uy()
+    out_saqla = tozala_chaqir(SoxtaCtx(saqla, saqlash=0), True)
+
+    boshqa = uy()
+    out_boshqa = tozala_chaqir(SoxtaCtx(boshqa, backup_to=os.path.join(boshqa, "z")), True)
+    return [
+        ("tozala: 7 dan 5 qoldi", zaxiralar_of(ochir) == eski[2:]),
+        ("tozala: o'chirilgani nomi bilan aytildi va yig'ma qator chiqdi",
+         all(n in out_ochir for n in eski[:2])
+         and "eski zaxira o'chirildi: 2 ta, oxirgi 5 tasi qoldi" in out_ochir),
+        ("tozala: quruq yurishda hech narsa o'chmaydi, ro'yxat chiqadi",
+         zaxiralar_of(quruq) == eski and "o'chirilmadi" in out_quruq
+         and all(n in out_quruq for n in eski[:2])),
+        ("tozala: saqlash 0 bo'lsa tegilmaydi va jim",
+         zaxiralar_of(saqla) == eski and out_saqla == ""),
+        ("tozala: --backup-to berilsa tegilmaydi va jim",
+         zaxiralar_of(boshqa) == eski and out_boshqa == ""),
+    ]
+
+
+def case_eski_zaxira_tozalanadi():
+    """--apply yangi zaxirani yozib eskilarini o'chiradi; quruq yurish va --backup-to tegmaydi."""
+    if not POSIX:
+        return SKIP
+    eski = [".claude-backup-20260101-000001", ".claude-backup-20260102-000002",
+            ".claude-backup-20260103-000003", ".claude-backup-20260104-000004",
+            ".claude-backup-20260105-000005", ".claude-backup-20260106-000006",
+            ".claude-backup-20260107-000007"]
+
+    def uy_bilan_zaxira():
+        home = tmpdir("uy_")
+        put(os.path.join(home, ".claude", "skills", "manguberdi", "SKILL.md"), "x")
+        zaxira_yasa(home, *eski)
+        return home
+
+    quruq = uy_bilan_zaxira()
+    res_quruq = run_install(quruq)
+
+    home = uy_bilan_zaxira()
+    res = run_install(home, "--apply")
+    qolgan = zaxiralar_of(home)
+
+    saqlangan = uy_bilan_zaxira()
+    res_saqla = run_install(saqlangan, "--apply", "--zaxira-saqlash", "0")
+
+    boshqa = uy_bilan_zaxira()
+    res_boshqa = run_install(boshqa, "--apply", "--backup-to", os.path.join(boshqa, "z"))
+
+    manfiy = uy_bilan_zaxira()
+    res_manfiy = run_install(manfiy, "--apply", "--zaxira-saqlash", "-2")
+    return [
+        ("--apply: 7 eski + 1 yangi dan 5 tasi qoldi", res.returncode == 0 and len(qolgan) == 5),
+        ("--apply: eng eski 3 tasi o'chdi, yangilari qoldi",
+         qolgan[:4] == eski[3:] and qolgan[4].startswith(".claude-backup-")),
+        ("--apply: o'chirilgani nomi bilan aytildi",
+         all(n in res.stdout for n in eski[:3]) and "eski zaxira o'chirildi: 3 ta" in res.stdout),
+        ("quruq yurish: hech narsa o'chmadi, ro'yxat ko'rsatildi",
+         zaxiralar_of(quruq) == eski and "o'chirilmadi" in res_quruq.stdout),
+        ("--zaxira-saqlash 0: eskilari joyida",
+         res_saqla.returncode == 0 and len(zaxiralar_of(saqlangan)) == 8),
+        ("--backup-to berilsa sukut joydagilarga tegilmaydi",
+         res_boshqa.returncode == 0 and zaxiralar_of(boshqa) == eski),
+        ("--zaxira-saqlash manfiy: rad etiladi va eskilari joyida",
+         res_manfiy.returncode == 1 and "manfiy bo'la olmaydi" in res_manfiy.stdout
+         and zaxiralar_of(manfiy) == eski),
+    ]
+
+
 def case_uninstall_manifest_boyicha():
     """Manifest bo'lsa faqat undagi aktyorlar olinadi; yo'q bo'lsa nom bo'yicha va ogohlantirish."""
     if not POSIX:
@@ -1278,14 +1435,14 @@ def case_ps1_parametrlari_install_pyga_uzatiladi():
     u eski nom), uzatiladigan har bayroqni install.py taniydi."""
     text = ps1_text()
     block = re.search(r"\bparam\((.*?)\n\)", re.sub(r"<#.*?#>", "", text, flags=re.S), re.S)
-    names = re.findall(r"\[(?:string|switch)\]\$(\w+)", block.group(1) if block else "")
+    names = re.findall(r"\[(?:string|switch|int)\]\$(\w+)", block.group(1) if block else "")
     flags = {n: "--" + re.sub(r"(?<!^)(?=[A-Z])", "-", n).lower() for n in names}
     known = set(I.parser_yasa()._option_string_actions)
     used = set(re.findall(r"'(--[a-z0-9-]+)'", "\n".join(ps1_code())))
     missing = [n for n, f in flags.items() if n != "Update" and f not in used]
     unknown = sorted(used - known)
     return [
-        ("ps1 parametrlari topildi: %s" % names, len(names) == 9 and "Update" in names),
+        ("ps1 parametrlari topildi: %s" % names, len(names) == 10 and "Update" in names),
         ("ps1 -> install.py: har parametr uzatiladi (yo'q: %s)" % missing, not missing),
         ("ps1 -> install.py: -Update uzatilmaydi (eski nom, hech narsa o'zgartirmaydi)",
          "'--update'" not in text),
@@ -1434,6 +1591,9 @@ CASES = [
     ("symlink: zaxirada havola, nishon joyida", case_symlink_zaxirasi),
     ("klon ichiga symlink rad etiladi", case_klon_ichiga_symlink_rad),
     ("--backup-to o'chiriladigan birlik ichida rad", case_backup_ornatiladigan_ichida_rad),
+    ("eski zaxira ro'yxati faqat sukut nomdagi papka", case_eski_zaxira_royxati),
+    ("zaxira_tozala: o'chirish, quruq yurish, --backup-to", case_zaxira_tozala_ozi),
+    ("eski zaxira tozalanadi, quruq yurish tegmaydi", case_eski_zaxira_tozalanadi),
     ("--uninstall manifest bo'yicha", case_uninstall_manifest_boyicha),
     ("HOME bo'sh yoki / rad etiladi", case_uy_papka_rad),
     ("--reset --include-auth --project --apply", case_reset_include_auth_va_project_apply),

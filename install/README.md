@@ -252,6 +252,13 @@ avvalgi zaxira ustidan yozilmaydi. Har birlik `<ota>--<nom>` shaklida
 turadi (masalan `.claude--settings.json`), qaytarish
 [Orqaga qaytarish](#orqaga-qaytarish) bo'limida.
 
+Zaxiralar to'planib qolmaydi: har yurish sukut joydagilardan eng yangi
+beshtasini qoldirib eskilarini o'chiradi va har birini nomi bilan aytadi.
+Sonni `-ZaxiraSaqlash <n>` o'zgartiradi, `0` esa hech narsa o'chirmaydi.
+Faqat `.claude-backup-<yyyymmdd>-<hhmmss>` nomidagi rostakam papka
+hisobga olinadi, shuning uchun `-BackupTo` bilan tanlagan joyingizga va
+boshqa nomdagi papkaga tegilmaydi. `-Apply` siz faqat ro'yxat chiqadi.
+
 ### Proyektning o'z sozlamasi ham tozalanishi kerak bo'lsa
 
 ```powershell

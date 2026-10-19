@@ -107,6 +107,11 @@
   Zaxira papkasi. Berilmasa $HOME\.claude-backup-<vaqt> ishlatiladi.
   Bo'sh bo'lmagan papka rad etiladi: avvalgi zaxira ustidan yozilmaydi.
 
+.PARAMETER ZaxiraSaqlash
+  Sukut joyda saqlanadigan zaxira soni; undan eskilari o'chiriladi.
+  Berilmasa Python sukuti (5). 0 bersangiz hech narsa o'chirilmaydi.
+  -BackupTo bilan birga e'tiborsiz: o'sha papkaning siyosati sizniki.
+
 .EXAMPLE
   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
   .\install\manguberdi.ps1 -GeniusPath C:\src\claude-genius
@@ -147,7 +152,8 @@ param(
   [switch]$ConfirmReset,
   [switch]$Uninstall,
   [switch]$IncludeAuth,
-  [string]$BackupTo = ""
+  [string]$BackupTo = "",
+  [int]$ZaxiraSaqlash = -1
 )
 
 Set-StrictMode -Version Latest
@@ -267,6 +273,8 @@ if ($BackupTo) {
   $BackupTo = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($BackupTo)
   $pyArgs += @('--backup-to', $BackupTo.TrimEnd('\', '/'))
 }
+# -1: berilmagan, Python o'z sukutini ishlatadi.
+if ($ZaxiraSaqlash -ge 0) { $pyArgs += @('--zaxira-saqlash', "$ZaxiraSaqlash") }
 if (-not $Uninstall) {
   $BashExe = Find-GitBash
   if ($BashExe) { $pyArgs += @('--bash', $BashExe) }

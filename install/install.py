@@ -112,6 +112,15 @@ CONFIG_ITEMS = ("settings.json", "settings.local.json", "CLAUDE.md",
                 "skills", "agents", "commands", "plugins", "hooks", "rules",
                 "output-styles")
 
+# Sukut joydagi zaxiralardan nechtasi saqlanadi (hozirgi yurish yozgani ham shu
+# sanoqda). Har `--apply` bittadan qoldirardi va hech narsa tozalamasdi:
+# 2026-10-19 da uy papkasida 30 ta to'plangan edi.
+ZAXIRA_SAQLASH = 5
+
+# Avtomatik faqat shu nomdagi papka o'chiriladi: `--backup-to` bergan boshqa
+# nomli zaxira hisobga ham olinmaydi.
+ZAXIRA_NAQSH = re.compile(r"\A\.claude-backup-\d{8}-\d{6}\Z")
+
 # Klon to'liqligi (`/` ajratgich bilan). install/merge_settings.py (--reset
 # siz) va install/uninstall_settings.py ni kod o'zi qo'shadi.
 REQUIRED = (
@@ -170,7 +179,8 @@ WSL_BASH = re.compile(r"[\\/](system32|windowsapps)[\\/]bash\.exe\Z", re.I)
 PS_BAYROQ = {"--apply": "-Apply", "--update": "-Update", "--uninstall": "-Uninstall",
              "--reset": "-Reset", "--confirm-reset": "-ConfirmReset",
              "--include-auth": "-IncludeAuth", "--project": "-Project",
-             "--backup-to": "-BackupTo", "--genius-path": "-GeniusPath"}
+             "--backup-to": "-BackupTo", "--genius-path": "-GeniusPath",
+             "--zaxira-saqlash": "-ZaxiraSaqlash"}
 PS_BAYROQ_RE = re.compile(r"(?<![\w-])(%s)(?![\w-])" % "|".join(
     sorted((re.escape(k) for k in PS_BAYROQ), key=len, reverse=True)))
 CHIQISH = {"ps1": False}
@@ -323,6 +333,9 @@ def tekshir_argumentlar(opts):
                    "--update qo'shuvchi qayta o'rnatish.")
     if opts.confirm_reset and not opts.reset:
         raise Xato("--confirm-reset faqat --reset bilan beriladi.")
+    if opts.zaxira_saqlash < 0:
+        raise Xato("--zaxira-saqlash manfiy bo'la olmaydi: %d. Eskisini saqlab "
+                   "qolish uchun 0 bering." % opts.zaxira_saqlash)
     if os.environ.get("CLAUDE_CONFIG_DIR"):
         raise Xato("CLAUDE_CONFIG_DIR o'rnatilgan (%s): Claude Code sozlamani o'sha "
                    "yerdan o'qiydi, skript esa ~/.claude ni o'zgartiradi. O'zgaruvchini "
@@ -361,6 +374,28 @@ def zaxira_tekshir(path):
     if os.path.exists(path) and (not os.path.isdir(path) or os.listdir(path)):
         raise Xato("zaxira papkasi bo'sh emas: %s. Avvalgi zaxira ustidan yozilmaydi: "
                    "yangi yo'l bering yoki --backup-to ni olib tashlang." % path)
+
+
+def eski_zaxiralar(home, saqlash):
+    """O'chiriladigan zaxiralar, eng eskisidan boshlab; yangi `saqlash` tasi qoladi.
+
+    Ro'yxat nomlarning o'zidan tuziladi, hisoblangan istisnodan emas: uy
+    papkasidagi BEVOSITA farzand, nomi `ZAXIRA_NAQSH` ga to'liq mos, rostakam
+    papka (symlink emas). Nom sanadan iborat, shuning uchun alifbo tartibi vaqt
+    tartibi. `saqlash` 0 yoki manfiy bo'lsa hech narsa o'chirilmaydi.
+    """
+    if saqlash < 1:
+        return []
+    try:
+        names = sorted(os.listdir(home))
+    except OSError:
+        return []
+    found = []
+    for name in names:
+        path = os.path.join(home, name)
+        if ZAXIRA_NAQSH.match(name) and os.path.isdir(path) and not os.path.islink(path):
+            found.append(path)
+    return found[:-saqlash]
 
 
 def managed_ogohlantirish(plat):
@@ -567,6 +602,28 @@ def zaxira_ol(paths, backup_to):
         leaf = os.path.basename(path)
         parent = os.path.basename(os.path.dirname(path))
         nusxa(path, os.path.join(backup_to, "%s--%s" % (parent, leaf)))
+
+
+def zaxira_tozala(ctx, apply):
+    """Yangi zaxira yozilgandan keyin eskilarini o'chiradi va har birini nomi bilan aytadi.
+
+    `--backup-to` berilgan bo'lsa tegilmaydi: joyni foydalanuvchi tanlagan, uning
+    saqlash siyosati ham o'ziniki. `--apply` siz faqat ro'yxat ko'rsatiladi.
+    """
+    if ctx.opts.backup_to:
+        return
+    eski = eski_zaxiralar(ctx.home, ctx.opts.zaxira_saqlash)
+    if not eski:
+        return
+    for path in eski:
+        step("eski zaxira: %s" % os.path.basename(path))
+    if not apply:
+        step("--apply yo'q: %d ta eski zaxira o'chirilmadi" % len(eski))
+        return
+    for path in eski:
+        olib_tashla(path)
+    step("eski zaxira o'chirildi: %d ta, oxirgi %d tasi qoldi"
+         % (len(eski), ctx.opts.zaxira_saqlash))
 
 
 class Ctx(object):
@@ -844,6 +901,7 @@ def ornatish(ctx, allow):
         if apply:
             zaxira_ol(to_backup, ctx.backup_to)
             step("zaxira yozildi: %d birlik" % len(to_backup))
+    zaxira_tozala(ctx, apply)
 
     # --- 1b. Snapshot ---
     say()
@@ -1075,6 +1133,7 @@ def olib_tashlash(ctx):
         if ctx.apply:
             zaxira_ol(to_backup, ctx.backup_to)
             step("zaxira yozildi: %d birlik" % len(to_backup))
+    zaxira_tozala(ctx, ctx.apply)
 
     say()
     say("2. Skill va aktyorlar")
@@ -1138,6 +1197,9 @@ def parser_yasa():
                         help="--reset bilan shu proyektdagi .claude/ ham tozalanadi")
     parser.add_argument("--backup-to", default="",
                         help="zaxira papkasi (sukut ~/.claude-backup-<vaqt>), bo'sh bo'lmasa rad etiladi")
+    parser.add_argument("--zaxira-saqlash", type=int, default=ZAXIRA_SAQLASH,
+                        help="sukut joyda saqlanadigan zaxira soni, eskilari o'chadi "
+                             "(0: hech narsa o'chirilmaydi; --backup-to bilan e'tiborsiz)")
     # Quyidagilar manguberdi.ps1 va sinov uchun: oddiy foydalanuvchiga kerak emas.
     parser.add_argument("--platforma", choices=("auto", "posix", "nt"), default="auto",
                         help=argparse.SUPPRESS)
