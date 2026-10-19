@@ -7,8 +7,9 @@ da ko'rinadi. Yangi versiya chiqqanda shu ro'yxatning boshiga yoziladi.
 
 - `tools/metod_bormi.py`: metod yozishdan oldin shu ish bormi; muhim
   maydonni qaysi metodlar o'zgartiradi (`--ozgartiradi`).
-- Muhim qiymat (pul, balans, holat) bitta domen metodi orqali: umumiy
-  qoida, ijro rejasi va review mezoni; `check_code` entity dagi pul yoki
+- Holat bir teshikdan o'zgaradi (clean-code 16.6, patterns 26.16, 13.15):
+  umumiy qoida, ijro rejasi va review mezoni; pul, balans, holat uchun
+  majburiy; `check_code` entity dagi pul yoki
   holat maydonining public setterini ushlaydi (code-review 9.7).
 
 ## 0.3.0 (2026-10-19)

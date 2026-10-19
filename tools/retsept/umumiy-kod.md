@@ -1,7 +1,7 @@
 # Umumiy yozish qoidalari: har Java fayl (sonarqube 28.17)
 
 - Metod yozishdan oldin shu ish bormi: `python3 tools/metod_bormi.py <src> <so'zlar>`; bor metod chaqiriladi, qayta yozilmaydi va bitta ish uchun ikkinchi metod ochilmaydi (clean-code 32.2).
-- Muhim qiymat (pul, balans, holat) bitta domen metodi orqali o'zgaradi, qoida shu metodda: entity da public setter yo'q, servis `setX` ketma-ketligini yozmaydi; tekshiruv `python3 tools/metod_bormi.py <src> --ozgartiradi <maydon>` (code-review 9.7, 13.1, clean-code 16.7).
+- Holat bir teshikdan o'zgaradi: sukut o'zgarmas (`record`, `final`, clean-code 16.1); o'zgarishi kerak bo'lsa faqat o'z obyektining bitta metodi orqali, qoida shu metodda (Tell Don't Ask, patterns 26.16; agregat root orqali, patterns 13.15; mutatsiya bir joyda, clean-code 16.6); servis `setX` ketma-ketligini yozmaydi (clean-code 14.1, 16.7). Pul, balans, holat uchun majburiy, `check_code` entity setterini ushlaydi; tekshiruv `python3 tools/metod_bormi.py <src> --ozgartiradi <maydon>` (code-review 9.7, 13.1).
 - Kartadan ortiq qatlam, interfeys, wrapper yo'q, pattern faqat kodda bor muammoga (patterns 25.25), chetga chiqilsa sababi hisobotda; Singleton, Factory, Registry qo'lda emas: bean, `@Bean`, `Map<String, T>` (patterns 1.1, 1.17, 5.3).
 - Bitta ish bitta metod: faqat qiymati (status, path, stavka) farq qilsa parametrli metod yoki private yordamchi (clean-code 37.8); takror blok Extract Method (clean-code 32.2, sonarqube 27.7); boshqa sababdan o'zgaradigan o'xshash kod birlashtirilmaydi, flag parametr yo'q (code-review 7.5, patterns 26.19).
 - Erta qaytish, guard clause (clean-code 37.3); izoh "nega" ni aytadi, kodni takrorlamaydi (clean-code 8.4, 9.2).
