@@ -68,6 +68,10 @@ inson tekshirmagan, shuning uchun u muhokama qilinishi mumkin.
    Kartada `reja:` bo'lsa u ham mezon: rejaning "yozilmaydi" bandi
    buzilgan yoki rejadan sababsiz chetga chiqilgan bo'lsa topilma
    (`o'rta`, xato yoki xavf bo'lsa `yuqori`).
+   Diffda yangi metod bo'lsa `python3 tools/metod_bormi.py <src> <nom
+   bo'laklari>`: shu ishni qiladigan metod bor edi bo'lsa topilma. Pul,
+   balans yoki holat maydoniga tegilgan bo'lsa `--ozgartiradi <maydon>`:
+   bittadan ko'p yozuvchi `o'rta` (pul bo'lsa `yuqori`).
    `# Umumiy yozish qoidalari` bloki (`tools/retsept/umumiy-kod.md`,
    test faylida `umumiy-test.md`) yozuvchi amal qilgan aynan o'sha
    ro'yxat: buzilishi kalit yoki bo'lim raqami bilan topilma.

@@ -157,6 +157,33 @@ def line_of(text, pos):
     return text.count("\n", 0, pos) + 1
 
 
+# Muhim qiymat: pul va holat. Entity da ular tashqaridan setter bilan
+# o'zgarsa, qoida (manfiy emas, faqat PAID dan SHIPPED ga) har chaqiruvchida
+# takrorlanadi yoki unutiladi: qiymat bitta domen metodi orqali o'zgaradi.
+CRITICAL_FIELD_RE = re.compile(
+    r"\bprivate\s+(?:final\s+)?(BigDecimal|Money|\w*(?:Status|State))\s+(\w+)\s*[;=]")
+
+
+def check_critical_setter(code):
+    """Entity dagi pul yoki holat maydonining public setteri (code-review 9.7)."""
+    if not re.search(r"@(?:jakarta\.persistence\.|javax\.persistence\.)?Entity\b", code):
+        return []
+    out = []
+    for m in CRITICAL_FIELD_RE.finditer(code):
+        name = m.group(2)
+        setter = re.search(r"\bpublic\s+\w+\s+(set%s)\s*\(" % re.escape(name[:1].upper() + name[1:]),
+                           code)
+        if setter:
+            out.append(_find(
+                "", "o'rta", code, setter.start(1),
+                "`%s` %s maydonini tashqaridan o'zgartiradi: muhim qiymat bitta "
+                "domen metodi orqali o'zgaradi (`markPaid`, `applyDiscount`), "
+                "qoida o'sha metodda; setter olib tashlansin."
+                % (setter.group(1), "pul" if m.group(1) in ("BigDecimal", "Money") else "holat"),
+                "Domain Model", ref="code-review 9.7"))
+    return out
+
+
 def check_text(text, path):
     """Faylning mexanik qoidalarga mosligi."""
     code = strip_noise(text)
@@ -176,6 +203,9 @@ def check_text(text, path):
             "Fayl BOM bilan boshlanadi: `javac` `illegal character: '\\ufeff'` "
             "beradi. Fayl BOM siz UTF-8 da yozilsin.",
             "Encoding", ref="clean-code 12.10"))
+
+    if not is_test:
+        out.extend(check_critical_setter(code))
 
     for match in re.finditer(r"catch\s*\([^)]*\)\s*(\{\s*\})", code):
         # Izohli blok Sonar uchun bo'sh emas (java:S108 istisnosi). Izoh

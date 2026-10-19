@@ -3,6 +3,14 @@
 Har versiya `VERSION` faylida, o'rnatilgani `python3 tools/versiya.py`
 da ko'rinadi. Yangi versiya chiqqanda shu ro'yxatning boshiga yoziladi.
 
+## 0.3.1 (2026-10-19)
+
+- `tools/metod_bormi.py`: metod yozishdan oldin shu ish bormi; muhim
+  maydonni qaysi metodlar o'zgartiradi (`--ozgartiradi`).
+- Muhim qiymat (pul, balans, holat) bitta domen metodi orqali: umumiy
+  qoida, ijro rejasi va review mezoni; `check_code` entity dagi pul yoki
+  holat maydonining public setterini ushlaydi (code-review 9.7).
+
 ## 0.3.0 (2026-10-19)
 
 - Qaror opus da, ijro sonnet da: `rejalashtiruvchi` opus, har kod

@@ -62,7 +62,10 @@ fayl boshqacha) sababi hisobotda bir jumla bilan.
    yozilmagan `.java` fayl belgisini nomidan oladi (`Controller`,
    `Repository`, `*Test` va hokazo). Markdown hujjat uchun 2 qaytaradi,
    bu xato emas: qoidani `tools/doc.sh find` bilan oling.
-2. **Doirani aniqlang.** Faqat so'ralgan ishni qiling. Yonidagi eski kod
+2. **Doirani aniqlang.** Yangi metoddan oldin
+   `python3 tools/metod_bormi.py <src> <so'zlar>`: bor metod chaqiriladi.
+   Pul, balans yoki holat faqat o'sha domen metodi orqali o'zgaradi
+   (`--ozgartiradi <maydon>` bitta yozuvchi ko'rsatsin). Faqat so'ralgan ishni qiling. Yonidagi eski kod
    yomon bo'lsa, uni tuzatmang: oxirida alohida ayting.
 3. **Qoidani bo'lim darajasida tanlang.** Reja qadami bilan chaqirilgan
    bo'lsangiz, qadamdagi pattern va bo'lim raqami promptda yoki reja

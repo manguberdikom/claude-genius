@@ -32,6 +32,7 @@
       "Bash(python3 tools/test_budget.py:*)",
       "Bash(python3 tools/handoff.py:*)",
       "Bash(python3 tools/versiya.py:*)",
+      "Bash(python3 tools/metod_bormi.py:*)",
       "Bash(git diff:*)",
       "Bash(git status:*)",
       "Bash(python3 tools/test_handoff.py:*)",

@@ -1913,6 +1913,27 @@ def case_nokalit_join():
     return rows
 
 
+SETTER_CASES = [
+    # (nom, kod, kutilgan soni): pul va holat bitta domen metodi orqali.
+    ("entity pul setteri", 'package shop;\\nimport jakarta.persistence.*;\\nimport java.math.BigDecimal;\\n@Entity\\npublic class Acc {\\n    @Id private Long id;\\n    private BigDecimal balance;\n    public void setBalance(BigDecimal b) { this.balance = b; }\n}\\n', 1),
+    ("entity holat setteri", 'package shop;\\nimport jakarta.persistence.*;\\nimport java.math.BigDecimal;\\n@Entity\\npublic class Acc {\\n    @Id private Long id;\\n    private OrderStatus status;\n    public void setStatus(OrderStatus s) { this.status = s; }\n}\\n', 1),
+    ("oddiy maydon setteri toza", 'package shop;\\nimport jakarta.persistence.*;\\nimport java.math.BigDecimal;\\n@Entity\\npublic class Acc {\\n    @Id private Long id;\\n    private String name;\n    public void setName(String n) { this.name = n; }\n}\\n', 0),
+    ("domen metodi toza", 'package shop;\\nimport jakarta.persistence.*;\\nimport java.math.BigDecimal;\\n@Entity\\npublic class Acc {\\n    @Id private Long id;\\n    private BigDecimal balance;\n    public void debit(BigDecimal a) { this.balance = balance.subtract(a); }\n}\\n', 0),
+    ("DTO (entity emas) setteri toza", 'package shop;\nimport java.math.BigDecimal;\npublic class AccDto {\n    private BigDecimal balance;\n    public void setBalance(BigDecimal b) { this.balance = b; }\n}\n', 0),
+]
+
+
+def case_muhim_setter():
+    rows = []
+    for name, code, expect in SETTER_CASES:
+        got = [f for f in check_code.check_text(code, MAIN) if f.ref == "code-review 9.7"]
+        rows.append(("%s (topildi: %d)" % (name, len(got)), len(got) == expect))
+    test_file = [f for f in check_code.check_text(SETTER_CASES[0][1], TEST)
+                 if f.ref == "code-review 9.7"]
+    rows.append(("test faylida tekshirilmaydi", not test_file))
+    return rows
+
+
 SECTIONS = [
     ("Topilishi kerak", case_topilishi),
     ("Qo'llanmaga ulanish", case_qollanma),
@@ -1930,6 +1951,7 @@ SECTIONS = [
     ("Test sizishi va static ArchUnit grafi", case_flaky_qoidalar),
     ("to_regclass(..)::text va schema li nom", case_regclass_matn),
     ("Bitta natijali @Query va kalitsiz join", case_nokalit_join),
+    ("Pul va holat setteri", case_muhim_setter),
     ("Toza fayl", case_toza_fayl),
     ("Ko'p fayl", case_kop_fayl),
     ("Zanjir majburlanadi", case_zanjir),

@@ -25,7 +25,11 @@ qabul qilinadi, yozuvchiga qoldirilmaydi. Avval `rules_for --no-mark
 --vazifa=...` va tegiladigan fayllar o'qiladi. 25 qatordan oshmaydi:
 
 1. **Fayllar:** tegiladiganlari (yangi fayl ham, masalan `@Enable*`
-   konfiguratsiya).
+   konfiguratsiya). Avval `python3 tools/metod_bormi.py <src> <inglizcha
+   so'zlar>`: shu ishni qiladigan metod bor bo'lsa reja uni chaqiradi,
+   yangisini ochmaydi. Pul, balans yoki holat o'zgarsa
+   `--ozgartiradi <maydon>`: yozuvchi bitta domen metodi bo'lsin, rejada
+   uning nomi.
 2. **O'zgarish:** har faylda metod imzosi, qaysi Spring/JDK API, eng
    kichik shakl (kerak bo'lsa 3-8 qatorli eskiz). Bir ish bitta metod:
    faqat qiymati farq qiladigan ish uchun bitta parametrli metod yoki
