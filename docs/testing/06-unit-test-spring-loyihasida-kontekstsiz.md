@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Testlash qo'llanmasi](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-20). Manbalar bob oxirida.
 
 # 6. Unit test Spring loyihasida: kontekstsiz testlash (Unit Testing in a Spring Project)
 

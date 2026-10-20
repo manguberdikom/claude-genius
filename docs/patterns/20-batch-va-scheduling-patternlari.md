@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-20). Manbalar bob oxirida.
 
 # 20. Batch va scheduling patternlari (Batch & Scheduling Patterns)
 

@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [Dizayn patternlar](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-20). Manbalar bob oxirida.
 
 # 17. Resilience va cloud dizayn patternlari (Resilience & Cloud Design Patterns)
 

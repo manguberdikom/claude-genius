@@ -2,7 +2,7 @@
 
 [Barcha hujjatlar](../../README.md) / [SonarQube](README.md)
 
-> Holat: tekshirilmoqda. Da'volar hali manbaga solishtirilmoqda.
+> Holat: tekshirilgan (2026-10-20). Manbalar bob oxirida.
 
 # 28. Xato katalogi: maintainability, nomlash, o'lik kod va uslub (Catalog: Maintainability, Naming)
 
